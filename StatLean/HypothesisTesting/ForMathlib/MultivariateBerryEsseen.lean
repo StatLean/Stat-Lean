@@ -2541,7 +2541,8 @@ note that claimed it was): exploiting the Gaussian mollification the hybrid tele
 free, `ε^{-3}` can be replaced by `ε^{-1}`, which balances at `(β/√n)^{1/2} = n^{-1/4}`. The
 analytic core of that improvement is proved in the Cameron–Martin section at the end of this
 file; the three remaining assembly bricks are listed in the module docstring. The sharp
-`400 k^{1/4} · β/√n` needs Bentkus's self-improving induction and is not attempted. (Ball's theorem gives the sharp shell constant `4 k^{1/4}`, which is
+`400 k^{1/4} · β/√n` needs Bentkus's self-improving induction and is not attempted.
+(Ball's theorem gives the sharp shell constant `4 k^{1/4}`, which is
 exactly the dimension factor of Bentkus's bound; only *finiteness* at fixed `k` is needed here, and
 that is what `GaussianShell` proves elementarily.)
 
@@ -3515,5 +3516,158 @@ private lemma abs_integral_gaussian_smoothed_swap_le {C : ℝ}
 end SmoothedSwap
 
 end GaussianTilt
+
+/-! #### Gaussian convolution: the second of the three assembly bricks -/
+
+section GaussianConvolution
+
+variable {k : ℕ}
+
+/-- **Gaussian convolution.** The sum of independent `σ`- and `c`-scaled standard Gaussians is
+a `√(σ² + c²)`-scaled standard Gaussian. Proved by characteristic functions
+(`Measure.ext_of_charFun`), the product measure factorising the integral through
+`integral_prod_mul`. -/
+private lemma map_stdGaussian_pair_smul_add (σ c : ℝ) :
+    (((stdGaussian (EuclideanSpace ℝ (Fin k))).prod
+          (stdGaussian (EuclideanSpace ℝ (Fin k)))).map fun p => σ • p.1 + c • p.2)
+      = (stdGaussian (EuclideanSpace ℝ (Fin k))).map
+          fun z => Real.sqrt (σ ^ 2 + c ^ 2) • z := by
+  haveI hL : IsProbabilityMeasure ((((stdGaussian (EuclideanSpace ℝ (Fin k))).prod
+      (stdGaussian (EuclideanSpace ℝ (Fin k)))).map fun p => σ • p.1 + c • p.2)) :=
+    Measure.isProbabilityMeasure_map (by fun_prop)
+  haveI hR : IsProbabilityMeasure ((stdGaussian (EuclideanSpace ℝ (Fin k))).map
+      fun z => Real.sqrt (σ ^ 2 + c ^ 2) • z) :=
+    Measure.isProbabilityMeasure_map (by fun_prop)
+  -- `charFun_apply` is definitional, so both unfoldings below are `rfl`; going through them
+  -- keeps every integral in one and the same notation for `rw`.
+  have hunfold : ∀ (μ : Measure (EuclideanSpace ℝ (Fin k))) (s : EuclideanSpace ℝ (Fin k)),
+      charFun μ s = ∫ x, Complex.exp ((⟪x, s⟫_ℝ : ℂ) * Complex.I) ∂μ := fun _ _ => rfl
+  have hstd : ∀ s : EuclideanSpace ℝ (Fin k),
+      (∫ x, Complex.exp ((⟪x, s⟫_ℝ : ℂ) * Complex.I)
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        = Complex.exp (-(‖s‖ : ℝ) ^ 2 / 2) := fun s => charFun_stdGaussian s
+  refine Measure.ext_of_charFun ?_
+  funext t
+  have hs2 : Real.sqrt (σ ^ 2 + c ^ 2) ^ 2 = σ ^ 2 + c ^ 2 := Real.sq_sqrt (by positivity)
+  have hRHS : charFun ((stdGaussian (EuclideanSpace ℝ (Fin k))).map
+      fun z => Real.sqrt (σ ^ 2 + c ^ 2) • z) t
+      = Complex.exp (-((σ ^ 2 + c ^ 2) * ‖t‖ ^ 2 : ℝ) / 2) := by
+    rw [hunfold, integral_map (by fun_prop) (by fun_prop)]
+    have hin : ∀ z : EuclideanSpace ℝ (Fin k),
+        ((⟪Real.sqrt (σ ^ 2 + c ^ 2) • z, t⟫_ℝ : ℝ) : ℂ)
+          = ((⟪z, Real.sqrt (σ ^ 2 + c ^ 2) • t⟫_ℝ : ℝ) : ℂ) := by
+      intro z
+      rw [real_inner_smul_left, real_inner_smul_right]
+    simp_rw [hin]
+    rw [hstd]
+    congr 1
+    have hnorm : ‖Real.sqrt (σ ^ 2 + c ^ 2) • t‖ ^ 2 = (σ ^ 2 + c ^ 2) * ‖t‖ ^ 2 := by
+      rw [norm_smul, Real.norm_eq_abs, mul_pow, sq_abs, hs2]
+    have hcast : ((‖Real.sqrt (σ ^ 2 + c ^ 2) • t‖ : ℝ) : ℂ) ^ 2
+        = (((σ ^ 2 + c ^ 2) * ‖t‖ ^ 2 : ℝ) : ℂ) := by
+      rw [← Complex.ofReal_pow, hnorm]
+    rw [hcast]
+  have hLHS : charFun ((((stdGaussian (EuclideanSpace ℝ (Fin k))).prod
+      (stdGaussian (EuclideanSpace ℝ (Fin k)))).map fun p => σ • p.1 + c • p.2)) t
+      = Complex.exp (-((σ ^ 2 + c ^ 2) * ‖t‖ ^ 2 : ℝ) / 2) := by
+    rw [hunfold, integral_map (by fun_prop) (by fun_prop)]
+    have hfac : ∀ p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k),
+        Complex.exp ((⟪σ • p.1 + c • p.2, t⟫_ℝ : ℂ) * Complex.I)
+          = Complex.exp ((⟪p.1, σ • t⟫_ℝ : ℂ) * Complex.I)
+            * Complex.exp ((⟪p.2, c • t⟫_ℝ : ℂ) * Complex.I) := by
+      intro p
+      rw [← Complex.exp_add]
+      congr 1
+      have h1 : ⟪σ • p.1 + c • p.2, t⟫_ℝ = ⟪p.1, σ • t⟫_ℝ + ⟪p.2, c • t⟫_ℝ := by
+        rw [inner_add_left, real_inner_smul_left, real_inner_smul_left,
+          real_inner_smul_right, real_inner_smul_right]
+      rw [h1]
+      push_cast
+      ring
+    simp_rw [hfac]
+    have hnorm1 : ∀ r : ℝ, ‖Complex.exp ((r : ℂ) * Complex.I)‖ = 1 := by
+      intro r
+      rw [Complex.norm_exp]
+      simp
+    have hint : Integrable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        Complex.exp ((⟪p.1, σ • t⟫_ℝ : ℂ) * Complex.I)
+          * Complex.exp ((⟪p.2, c • t⟫_ℝ : ℂ) * Complex.I))
+        ((stdGaussian (EuclideanSpace ℝ (Fin k))).prod
+          (stdGaussian (EuclideanSpace ℝ (Fin k)))) := by
+      refine Integrable.mono' (integrable_const (1 : ℝ)) (by fun_prop) ?_
+      filter_upwards with p
+      rw [norm_mul, hnorm1, hnorm1, one_mul]
+    rw [integral_prod _ hint]
+    have hinner : ∀ x : EuclideanSpace ℝ (Fin k),
+        (∫ y, Complex.exp ((⟪x, σ • t⟫_ℝ : ℂ) * Complex.I)
+            * Complex.exp ((⟪y, c • t⟫_ℝ : ℂ) * Complex.I)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+          = Complex.exp ((⟪x, σ • t⟫_ℝ : ℂ) * Complex.I)
+            * Complex.exp (-(‖c • t‖ : ℝ) ^ 2 / 2) := by
+      intro x
+      have h : (∫ y, Complex.exp ((⟪x, σ • t⟫_ℝ : ℂ) * Complex.I)
+            * Complex.exp ((⟪y, c • t⟫_ℝ : ℂ) * Complex.I)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+          = Complex.exp ((⟪x, σ • t⟫_ℝ : ℂ) * Complex.I)
+            * ∫ y, Complex.exp ((⟪y, c • t⟫_ℝ : ℂ) * Complex.I)
+                ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := integral_const_mul _ _
+      rw [h, hstd (c • t)]
+    simp_rw [hinner]
+    have h2 : (∫ x, Complex.exp ((⟪x, σ • t⟫_ℝ : ℂ) * Complex.I)
+          * Complex.exp (-(‖c • t‖ : ℝ) ^ 2 / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        = (∫ x, Complex.exp ((⟪x, σ • t⟫_ℝ : ℂ) * Complex.I)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+          * Complex.exp (-(‖c • t‖ : ℝ) ^ 2 / 2) := integral_mul_const _ _
+    rw [h2, hstd (σ • t), ← Complex.exp_add]
+    congr 1
+    have h1 : ((‖σ • t‖ : ℝ) : ℂ) ^ 2 = ((σ ^ 2 * ‖t‖ ^ 2 : ℝ) : ℂ) := by
+      rw [← Complex.ofReal_pow, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
+    have h2 : ((‖c • t‖ : ℝ) : ℂ) ^ 2 = ((c ^ 2 * ‖t‖ ^ 2 : ℝ) : ℂ) := by
+      rw [← Complex.ofReal_pow, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
+    rw [h1, h2]
+    push_cast
+    ring
+  rw [hLHS, hRHS]
+
+/-- The integral form of `map_stdGaussian_pair_smul_add`: the two-fold Gaussian smoothing at
+scales `σ` and `c` is a single Gaussian smoothing at scale `√(σ² + c²)`. -/
+private lemma integral_gaussian_pair_smul_add (σ c : ℝ)
+    {F : EuclideanSpace ℝ (Fin k) → ℝ} (hF : Continuous F) (hFb : ∀ x, |F x| ≤ 1)
+    (a : EuclideanSpace ℝ (Fin k)) :
+    (∫ u, (∫ z, F (a + σ • z + c • u) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      = ∫ z, F (a + Real.sqrt (σ ^ 2 + c ^ 2) • z)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  have hprodint : Integrable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+      F (a + (σ • p.1 + c • p.2)))
+      ((stdGaussian (EuclideanSpace ℝ (Fin k))).prod
+        (stdGaussian (EuclideanSpace ℝ (Fin k)))) := by
+    refine Integrable.mono' (integrable_const (1 : ℝ)) (by fun_prop) ?_
+    filter_upwards with p
+    rw [Real.norm_eq_abs]
+    exact hFb _
+  have hstep : (∫ u, (∫ z, F (a + σ • z + c • u)
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      = ∫ p, F (a + (σ • p.1 + c • p.2))
+          ∂(((stdGaussian (EuclideanSpace ℝ (Fin k))).prod
+            (stdGaussian (EuclideanSpace ℝ (Fin k))))) := by
+    rw [integral_prod_symm _ hprodint]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun u => ?_)
+    refine integral_congr_ae (Filter.Eventually.of_forall fun z => ?_)
+    dsimp only
+    rw [add_assoc]
+  rw [hstep]
+  have hmapL : (∫ p, F (a + (σ • p.1 + c • p.2))
+        ∂(((stdGaussian (EuclideanSpace ℝ (Fin k))).prod
+          (stdGaussian (EuclideanSpace ℝ (Fin k))))))
+      = ∫ w, F (a + w) ∂((((stdGaussian (EuclideanSpace ℝ (Fin k))).prod
+          (stdGaussian (EuclideanSpace ℝ (Fin k)))).map fun p => σ • p.1 + c • p.2)) := by
+    rw [integral_map (by fun_prop) (by fun_prop)]
+  rw [hmapL, map_stdGaussian_pair_smul_add σ c,
+    integral_map (by fun_prop) (by fun_prop)]
+
+end GaussianConvolution
 
 end StatLean.HypothesisTesting
