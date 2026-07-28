@@ -1102,14 +1102,17 @@ lemma charFun_map_studentPair_eq (F : Measure ℝ) [IsProbabilityMeasure F] (hFa
   rw [hstep2, integral_congr_ae (Filter.Eventually.of_forall hsmul), hstep3,
     integral_congr_ae (Filter.Eventually.of_forall hptwise), hpull, quadPhaseInt]
 
-/-- On the unit sphere of `ℝ²` the `ℓ¹` norm dominates `1`. This is what makes the cocompact
-bound `|t₀| + |t₁| ≥ R` of the quadratic-phase estimate available on the whole ray. -/
+/-- In `ℝ²` the `ℓ¹` norm dominates the Euclidean one. This is what makes the cocompact bound
+`|t₀| + |t₁| ≥ R` of the quadratic-phase estimate available along every ray. -/
+private lemma norm_le_abs_add_abs (t : EuclideanSpace ℝ (Fin 2)) : ‖t‖ ≤ |t 0| + |t 1| := by
+  rw [EuclideanSpace.norm_eq, Fin.sum_univ_two, Real.norm_eq_abs, Real.norm_eq_abs]
+  have hnn : (0 : ℝ) ≤ |t 0| + |t 1| := by positivity
+  refine le_trans (Real.sqrt_le_sqrt ?_) (le_of_eq (Real.sqrt_sq hnn))
+  nlinarith [abs_nonneg (t 0), abs_nonneg (t 1)]
+
+/-- On the unit sphere the `ℓ¹` norm dominates `1`. -/
 private lemma one_le_abs_add_abs_of_norm_eq_one {θ : EuclideanSpace ℝ (Fin 2)} (hθ : ‖θ‖ = 1) :
-    1 ≤ |θ 0| + |θ 1| := by
-  have h := EuclideanSpace.norm_eq θ
-  rw [hθ, Fin.sum_univ_two, eq_comm, Real.sqrt_eq_one, Real.norm_eq_abs,
-    Real.norm_eq_abs] at h
-  nlinarith [abs_nonneg (θ 0), abs_nonneg (θ 1), h]
+    1 ≤ |θ 0| + |θ 1| := hθ ▸ norm_le_abs_add_abs θ
 
 /-- **(M3)(i) — the studentizing pair satisfies the multivariate Cramér condition.**
 
@@ -1144,6 +1147,58 @@ theorem vecCramerCondition_map_studentPair (F : Measure ℝ) [IsProbabilityMeasu
     rw [abs_mul, abs_of_pos hSpos]
   rw [habs0, habs1]
   nlinarith [hS, hSpos, hℓ1]
+
+/-- **Every projection of the studentizing pair's law is non-lattice.** The one-dimensional
+Cramér condition holds for `projLaw (F ∘ Z⁻¹) t` in every nonzero direction `t`, by the same
+quadratic-phase bound: along the ray `s ↦ s • t` the `ℓ¹` size of the coefficient pair is
+`|s|(|t₀| + |t₁|) ≥ |s|‖t‖ → ∞`. This is the pointwise input of
+`exists_bound_lt_one_of_projLaw_cramer`. -/
+theorem cramerCondition_projLaw_studentPair (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hFac : F ≪ volume) {t : EuclideanSpace ℝ (Fin 2)} (ht : t ≠ 0) :
+    CramerCondition (projLaw (F.map (studentPair F)) t) := by
+  obtain ⟨R, hR, hRbd⟩ :=
+    exists_bound_norm_quadPhaseInt_of_integrable (integrable_centredDensity F)
+      (ε := 1 / 2) (by norm_num)
+  have htpos : (0 : ℝ) < ‖t‖ := norm_pos_iff.2 ht
+  refine ⟨1 / 2, by norm_num, ?_⟩
+  filter_upwards [(tendsto_norm_cocompact_atTop (E := ℝ)).eventually_ge_atTop
+    (R / ‖t‖)] with s hs
+  have habs : (R / ‖t‖) ≤ |s| := by rwa [Real.norm_eq_abs] at hs
+  rw [← charFun_smul_eq_charFun_map_inner, charFun_map_studentPair_eq F hFac]
+  have hcoord0 : (s • t) 0 = s * t 0 := rfl
+  have hcoord1 : (s • t) 1 = s * t 1 := rfl
+  rw [norm_mul, Complex.norm_exp_ofReal_mul_I, one_mul, hcoord0, hcoord1]
+  refine hRbd (s * t 0) (s * t 1) ?_
+  have hℓ1 : ‖t‖ ≤ |t 0| + |t 1| := norm_le_abs_add_abs t
+  have habs0 : |s * t 0| = |s| * |t 0| := abs_mul _ _
+  have habs1 : |s * t 1| = |s| * |t 1| := abs_mul _ _
+  have hRle : R ≤ |s| * ‖t‖ := by
+    rw [div_le_iff₀ htpos] at habs
+    linarith
+  rw [habs0, habs1]
+  nlinarith [abs_nonneg s, hℓ1, hRle]
+
+/-- **The Cramér tail of the studentized expansion, in the form the assembly consumes.**
+
+For every `ε > 0` there is a single `c < 1` with `‖φ_{ρ_n}(t)‖ ≤ cⁿ` on the whole outer range
+`ε√n ≤ ‖t‖`, where `ρ_n = vecRootLaw F (studentPair F) n`. This is the bivariate analogue of
+`edgeworthGap_tail_le`, and it completes (M3): the compactness half
+(`exists_bound_lt_one_of_projLaw_cramer`), the multivariate Cramér condition
+(`vecCramerCondition_map_studentPair`) and the transfer to the root
+(`norm_charFun_vecRootLaw_le_pow`, which removes the need for Hall's conditioning device) are
+now all in place, under no hypothesis on `F` beyond `F ≪ volume`. -/
+theorem exists_bound_norm_charFun_vecRootLaw_studentPair (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hFac : F ≪ volume) {ε : ℝ} (hε : 0 < ε) :
+    ∃ c : ℝ, c < 1 ∧ ∀ n : ℕ, 0 < n → ∀ t : EuclideanSpace ℝ (Fin 2),
+      ε * Real.sqrt (n : ℝ) ≤ ‖t‖ →
+        ‖charFun (vecRootLaw F (studentPair F) n) t‖ ≤ c ^ n := by
+  haveI : IsProbabilityMeasure (F.map (studentPair F)) :=
+    Measure.isProbabilityMeasure_map (measurable_studentPair F).aemeasurable
+  obtain ⟨c, hc, hcbd⟩ := exists_bound_lt_one_of_projLaw_cramer (F.map (studentPair F))
+    (vecCramerCondition_map_studentPair F hFac)
+    (fun t ht => cramerCondition_projLaw_studentPair F hFac ht) hε
+  exact ⟨c, hc, fun n hn t ht =>
+    norm_charFun_vecRootLaw_le_pow F (measurable_studentPair F) hε hcbd hn ht⟩
 
 /-! ### The deterministic core of (M2): the studentizing factor is its own Taylor polynomial
 
