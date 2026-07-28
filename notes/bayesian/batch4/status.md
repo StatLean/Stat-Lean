@@ -198,3 +198,21 @@ doob closure. W4: `bay/bpe-final`; full gates; merge to `main`.
 7. `SeparatedLoss.strict` states vdV's sup–inf gap via an explicit separating threshold.
 8. `one_sub_lintegral_le_lintegral_one_sub` carries a measurability hypothesis (necessary).
 
+## 2026-07-28 — renamed away from book numbers (user request)
+
+Files and titles must name the mathematics, not the vdV numbering; the book number is cited
+**only** in each module's `**Reference.**` block.
+
+| was | now |
+|---|---|
+| `BernsteinVonMises/Theorem10_1.lean` | `BernsteinVonMises/PosteriorNormality.lean` |
+| `BayesEstimators/Theorem10_8.lean` | `BayesEstimators/PointEstimatorLimits.lean` |
+| `DoobConsistency/Theorem10_10.lean` | `DoobConsistency/PosteriorConsistency.lean` |
+
+No *declaration* carried a book number, so theorem names are unchanged (`bernstein_von_mises`,
+`bayes_estimator_asymptotics`, `doob_consistency`, `exponential_tests`, …). Also removed book
+numbers from module titles, declaration-docstring headlines and prose; the CLAUDE.md-mandated
+hypothesis tags keep their `<ref> §X.Y` shape but now cite the *section* (`vdV §10.2/§10.3/
+§10.4`) instead of a theorem number. Docs/imports only — no proof or statement line changed;
+docstring delimiters verified byte-identical, all imports resolve, umbrella complete.
+

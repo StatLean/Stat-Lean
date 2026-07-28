@@ -3,10 +3,11 @@ import StatLean.ConcentrationInequalities.SubGaussian.Hoeffding
 import StatLean.ConcentrationInequalities.SubGaussian.Bounded
 
 /-!
-# Boosting consistent tests to exponential power (far range of Lemma 10.3)
+# Boosting consistent tests to exponential power (far range)
 
-The second half of vdV Lemma 10.3: given *any* uniformly consistent test sequence for
-`H₀ : θ = θ₀` against `H₁ : ‖θ − θ₀‖ ≥ ε` (condition (10.2)), one can construct tests whose
+The second half of vdV §10.2: given *any* uniformly consistent test sequence for
+`H₀ : θ = θ₀` against `H₁ : ‖θ − θ₀‖ ≥ ε` (the uniform-tests condition), one can construct tests
+whose
 type-II error decays **exponentially** in `n`, uniformly over the far alternatives. The
 construction blocks the sample into groups of a fixed size `kb`, applies the given level-`kb`
 test to each block, and rejects when the average of the block tests exceeds `1/2`; Hoeffding's
@@ -284,14 +285,14 @@ private lemma bvmBlockAvg_one_sub {kb : ℕ} (g : (Fin kb → 𝓧) → ℝ) {n 
     nsmul_eq_mul, mul_one]
   field_simp
 
-/-- **Exponentially consistent tests on the far range** (vdV Lemma 10.3, second test
-sequence): under the tests condition (10.2), for every `ε > 0` there are measurable
+/-- **Exponentially consistent tests on the far range** (vdV §10.2, second test
+sequence): under the uniform-tests condition, for every `ε > 0` there are measurable
 `[0,1]`-tests with vanishing size at `θ₀` and type-II error `≤ exp(−c n)` uniformly over
 `‖θ − θ₀‖ ≥ ε`, for `n` large. -/
 theorem exists_boosted_tests
     -- USER-INPUT: dominated iid model with normalized densities; vdV §10.2, p. 140
     (hPDF : IsPDFOf M μ)
-    -- USER-INPUT: the tests condition (10.2); vdV Thm 10.1
+    -- USER-INPUT: the uniform-tests condition; vdV §10.2
     (hTests : UniformlyConsistentTests M μ θ₀) {ε : ℝ}
     -- LEAN-ONLY: nontrivial separation radius
     (hε : 0 < ε) :

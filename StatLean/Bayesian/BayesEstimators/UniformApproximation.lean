@@ -1,11 +1,12 @@
 import StatLean.Bayesian.BayesEstimators.Defs
 import StatLean.Bayesian.BayesEstimators.PosteriorTails
-import StatLean.Bayesian.BernsteinVonMises.Theorem10_1
+import StatLean.Bayesian.BernsteinVonMises.PosteriorNormality
 
 /-!
 # Uniform approximation of the recentred posterior-risk process
 
-Part 3 of the proof of vdV Theorem 10.8, in recentred form: after the change of variables
+Part 3 of the proof of the Bayes-point-estimator theorem, in recentred form: after the change of
+variables
 `t = τ + Δₙ`, the posterior-risk process approximates the **deterministic** limit criterion
 `g = bpeGaussCriterion` uniformly over balls, in `P^n_{θ₀}`-probability:
 
@@ -21,11 +22,13 @@ Theorem 10.8, pp. 148–149 (the processes `Z_{n,M}`, `W_{n,M}` and their compar
 
 **Proof formalization notes.** The deviation splits into (i) the truncated part
 `∫_{‖h‖ ≤ Mₙ'} ℓ(τ + Δₙ − h) d(Post − N(Δₙ,J⁻¹))`, bounded by
-`(sup_{ball} ℓ) · tvDist` (`lintegral_le_lintegral_add_tvDist` + Theorem 10.1); (ii) the
-posterior tail, bounded by display (10.9) (`posterior_tail_lintegral_tendsto`); (iii) the
+`(sup_{ball} ℓ) · tvDist` (`lintegral_le_lintegral_add_tvDist` + the Bernstein–von Mises theorem);
+(ii) the
+posterior tail, bounded by the polynomial-weighted posterior-tail bound
+(`posterior_tail_lintegral_tendsto`); (iii) the
 Gaussian tail, bounded by `gaussian_loss_convolution_lt_top`-style domination and score-sum
 tightness. The book's `ℓ^∞(K)`-weak-convergence route (Corollary 5.58) is replaced by this
-majorant statement — a formalization deviation recorded in `Theorem10_8.lean`.
+majorant statement — a formalization deviation recorded in `PointEstimatorLimits.lean`.
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
@@ -613,9 +616,9 @@ theorem posteriorRisk_shifted_majorant
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
@@ -624,9 +627,9 @@ theorem posteriorRisk_shifted_majorant
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
     -- LEAN-ONLY: joint measurability of the model densities (regularity)
     (hM_joint : Measurable (Function.uncurry M.density))
-    -- USER-INPUT: the tests condition (10.2); vdV Thm 10.1
+    -- USER-INPUT: the uniform-tests condition; vdV §10.2
     (hTests : UniformlyConsistentTests M μ θ₀)
-    -- USER-INPUT: the prior condition; vdV Thm 10.1
+    -- USER-INPUT: the prior condition; vdV §10.2
     (hπ : HasLocalDensity π θ₀ r₀ f)
     {ℓ : EuclideanSpace ℝ (Fin k) → ℝ≥0∞}
     -- LEAN-ONLY: measurable loss (regularity)
@@ -635,7 +638,7 @@ theorem posteriorRisk_shifted_majorant
     (hp : 0 ≤ p)
     -- USER-INPUT: polynomial growth of the loss; vdV §10.3, p. 147
     (hpoly : PolyGrowthLoss p ℓ)
-    -- USER-INPUT: finite prior `p`-moment; vdV Thm 10.8
+    -- USER-INPUT: finite prior `p`-moment; vdV §10.3
     (hmom : ∫⁻ θ, ENNReal.ofReal (‖θ‖ ^ p) ∂π < ∞)
     {R : ℝ}
     -- LEAN-ONLY: nontrivial approximation radius
@@ -679,7 +682,8 @@ theorem posteriorRisk_shifted_majorant
     exists_slow_rate (fun n => productMeasure M μ θ₀ n)
       (fun n ω => bvmTV κ π θ₀ J sc n ω) htvmeas htvfin
       (bernstein_von_mises_lintegral hPDF hsc hDQM hJ_pd hJ hκ hM_joint hTests hπ) hp
-  -- Step 2: exponentially powerful tests for this radius sequence, hence display (10.9)
+  -- Step 2: exponentially powerful tests for this radius sequence, hence the polynomial-weighted
+  -- posterior-tail bound
   obtain ⟨φ, c, hc, hφ⟩ := exponential_tests hPDF hsc hDQM hJ_pd hJ hTests hMdiv
   have hTp := posterior_tail_lintegral_tendsto hPDF hsc hDQM hJ_pd hJ hκ hM_joint hπ hp hmom
     hMdiv hc hφ

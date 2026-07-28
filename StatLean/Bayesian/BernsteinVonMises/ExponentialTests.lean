@@ -2,10 +2,11 @@ import StatLean.Bayesian.BernsteinVonMises.ScoreTest
 import StatLean.Bayesian.BernsteinVonMises.TestBoost
 
 /-!
-# Lemma 10.3: exponentially powerful tests
+# Exponentially powerful tests
 
-Assembly of vdV Lemma 10.3: under the conditions of Theorem 10.1 (DQM at `θ₀`, nonsingular
-Fisher information, tests condition (10.2)), for every `Mₙ → ∞` there are tests `φₙ` and a
+Assembly of the exponential-tests lemma: under the conditions of the Bernstein–von Mises theorem
+(DQM at `θ₀`, nonsingular
+Fisher information, the uniform-tests condition), for every `Mₙ → ∞` there are tests `φₙ` and a
 constant `c > 0` with
 `P^n_{θ₀} φₙ → 0` and `P^n_θ(1 − φₙ) ≤ exp(−c n (‖θ−θ₀‖² ∧ 1))` for every
 `‖θ − θ₀‖ ≥ Mₙ/√n` and every sufficiently large `n`.
@@ -52,7 +53,7 @@ variable {M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))} {μ : Measure 
 variable {θ₀ : EuclideanSpace ℝ (Fin k)} {sc : 𝓧 → EuclideanSpace ℝ (Fin k)}
 variable {J : Matrix (Fin k) (Fin k) ℝ}
 
-/-- **vdV Lemma 10.3** (exponentially powerful tests). Under the conditions of Theorem 10.1,
+/-- **Exponentially powerful tests**. Under the conditions of the Bernstein–von Mises theorem,
 for every `Mₙ → ∞` there exist tests `φₙ` and `c > 0` with vanishing size at `θ₀` and
 type-II error `≤ exp(−c n (‖θ−θ₀‖² ∧ 1))` uniformly over `‖θ − θ₀‖ ≥ Mₙ/√n`, for `n`
 large. -/
@@ -61,17 +62,17 @@ theorem exponential_tests
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
       ⟪u, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) v))⟫)
-    -- USER-INPUT: the tests condition (10.2); vdV Thm 10.1
+    -- USER-INPUT: the uniform-tests condition; vdV §10.2
     (hTests : UniformlyConsistentTests M μ θ₀)
     {Mseq : ℕ → ℝ}
-    -- USER-INPUT: the localization radii diverge; vdV Lemma 10.3 (`Mₙ → ∞`)
+    -- USER-INPUT: the localization radii diverge; vdV §10.2 (`Mₙ → ∞`)
     (hM : Tendsto Mseq atTop atTop) :
     ∃ (φ : ∀ n : ℕ, (Fin n → 𝓧) → ℝ) (c : ℝ), 0 < c ∧
       IsExpConsistentTestSeq M μ θ₀ Mseq c φ := by

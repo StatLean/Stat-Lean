@@ -7,7 +7,8 @@ import Mathlib.MeasureTheory.Function.FactorsThrough
 /-!
 # Accessibility: the parameter is a measurable function of the data sequence
 
-The measure-theoretic heart of vdV Theorem 10.10, display (10.11): under identifiability,
+The measure-theoretic heart of Doob's consistency theorem, the parameter-recovery identity: under
+identifiability,
 there is a measurable `g : 𝓧^ℕ → Θ` with `g(X₁, X₂, …) = Θ̄` almost surely under the joint
 law. vdV proves this via "accessible functions" and the monotone-class Lemmas 10.12/10.13;
 here the retraction is constructed explicitly, absorbing both lemmas:
@@ -16,7 +17,7 @@ here the retraction is constructed explicitly, absorbing both lemmas:
   in a standard Borel space (countably generated σ-algebra; π-system uniqueness);
 * `empirical_freq_ae_tendsto` — the strong law for the empirical frequencies
   `n⁻¹ #{i < n : Xᵢ ∈ A} → K θ (A)`, `K θ`-iid-a.s.;
-* `exists_measurable_retraction` — the headline (10.11): the map
+* `exists_measurable_retraction` — the headline the parameter-recovery identity: the map
   `F : θ ↦ (K θ (Aₘ))ₘ ∈ ℝ^ℕ` is measurable and injective (identifiability +
   determining family), hence a measurable embedding by Lusin–Souslin; composing a
   measurable retraction of `F` with the empirical-limit map recovers `Θ̄` from the data
@@ -122,13 +123,14 @@ theorem empirical_freq_ae_tendsto (K : Kernel Θ 𝓧) [IsMarkovKernel K] (θ : 
   filter_upwards [hlln] with ω hω
   simpa only [smul_eq_mul] using hω
 
-/-- **Display (10.11)**: under identifiability (`θ ↦ K θ` injective), with `𝓧` standard
+/-- **The parameter-recovery identity**: under identifiability (`θ ↦ K θ` injective), with `𝓧`
+standard
 Borel and `Θ` standard Borel and nonempty, there is a measurable `g : 𝓧^ℕ → Θ` recovering
 the parameter from the data sequence almost surely under the joint law. -/
 theorem exists_measurable_retraction [StandardBorelSpace Θ] [Nonempty Θ]
     [StandardBorelSpace 𝓧]
     (K : Kernel Θ 𝓧) [IsMarkovKernel K]
-    -- USER-INPUT: identifiability, `P_θ ≠ P_{θ'}` for `θ ≠ θ'`; vdV Thm 10.10
+    -- USER-INPUT: identifiability, `P_θ ≠ P_{θ'}` for `θ ≠ θ'`; vdV §10.20
     (hK_inj : Function.Injective fun θ => K θ)
     (π : Measure Θ) [IsProbabilityMeasure π] :
     ∃ g : (ℕ → 𝓧) → Θ, Measurable g ∧

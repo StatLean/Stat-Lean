@@ -3,11 +3,12 @@ import StatLean.Bayesian.BernsteinVonMises.PosteriorConcentration
 import StatLean.Bayesian.BernsteinVonMises.LocalApproximation
 
 /-!
-# Theorem 10.1: the Bernstein–von Mises theorem
+# The Bernstein–von Mises theorem
 
-Assembly of vdV Theorem 10.1. Let the model be an iid sample from a dominated parametric
+Assembly of the Bernstein–von Mises theorem. Let the model be an iid sample from a dominated
+parametric
 family that is differentiable in quadratic mean at `θ₀` with nonsingular Fisher information
-`J`, let the tests condition (10.2) hold, and let the prior be a probability measure that is
+`J`, let the uniform-tests condition hold, and let the prior be a probability measure that is
 absolutely continuous near `θ₀` with a density continuous and positive at `θ₀`. Then the
 total-variation distance between the posterior law of `h = √n(θ − θ₀)` and the random
 Gaussian `N(Δ_{n,θ₀}, J⁻¹)`, `Δ_{n,θ₀} = J⁻¹ (n^{-1/2} ∑ sc(Xᵢ))`, tends to zero in
@@ -18,7 +19,7 @@ Gaussian `N(Δ_{n,θ₀}, J⁻¹)`, `Δ_{n,θ₀} = J⁻¹ (n^{-1/2} ∑ sc(Xᵢ
 * `bernstein_von_mises` — the headline, in unrolled in-probability form;
 * `bernstein_von_mises_lintegral` — the expectation form
   `∫ tvDist dP^n_{θ₀} → 0` (equivalent since `tvDist ≤ 1`), the form consumed by
-  Theorem 10.8.
+  the Bayes-point-estimator theorem.
 
 **Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical
 and Probabilistic Mathematics, Cambridge University Press, 1998, Chapter 10 (Bayes
@@ -32,7 +33,7 @@ via `tvDist_cond_le` and `bvmLocalPosterior_compl_ball`), the third by score-sum
 plus the mean-uniform Gaussian tail bound
 (`multivariateGaussian_compl_closedBall_uniform_small`), the second by Step B
 (`local_tv_tendsto`) at fixed `M`; conclude by a `limsup`-in-`M` argument (for every `δ`,
-`limsup_n P(tvDist ≥ δ) ≤ ε(M) → 0`). The tests of Lemma 10.3 are supplied by
+`limsup_n P(tvDist ≥ δ) ≤ ε(M) → 0`). The tests of the exponential-tests lemma are supplied by
 `exponential_tests`.
 
 **Bibliographic comments.** The theorem's name refers to S. Bernstein, *Theory of
@@ -113,9 +114,9 @@ theorem scoreSum_uniformly_tight
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
@@ -166,9 +167,10 @@ theorem scoreSum_uniformly_tight
   rw [hpre, ← Measure.map_apply (hscm n) hmeas]
   exact le_trans (measure_mono hsub) (hC n)
 
-/-- **Theorem 10.1 (Bernstein–von Mises).** Let the experiment be an iid sample from the
+/-- **The Bernstein–von Mises theorem.** Let the experiment be an iid sample from the
 dominated family `κ θ = p_θ · μ`, differentiable in quadratic mean at `θ₀` with nonsingular
-Fisher information `J`; let uniformly consistent tests exist (condition (10.2)); and let the
+Fisher information `J`; let uniformly consistent tests exist (the uniform-tests condition); and let
+the
 prior `π` be absolutely continuous near `θ₀` with density continuous and positive at `θ₀`.
 Then for every `δ > 0`,
 `P^n_{θ₀} { tvDist( posterior law of √n(θ−θ₀), N(Δ_{n,θ₀}, J⁻¹) ) ≥ δ } → 0`. -/
@@ -177,9 +179,9 @@ theorem bernstein_von_mises
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information matrix; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information matrix; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
@@ -188,9 +190,9 @@ theorem bernstein_von_mises
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
     -- LEAN-ONLY: joint measurability of the model densities (regularity)
     (hM_joint : Measurable (Function.uncurry M.density))
-    -- USER-INPUT: the tests condition (10.2); vdV Thm 10.1
+    -- USER-INPUT: the uniform-tests condition; vdV §10.2
     (hTests : UniformlyConsistentTests M μ θ₀)
-    -- USER-INPUT: the prior condition; vdV Thm 10.1
+    -- USER-INPUT: the prior condition; vdV §10.2
     (hπ : HasLocalDensity π θ₀ r₀ f) :
     ∀ δ : ℝ≥0∞, 0 < δ →
       Tendsto (fun n => productMeasure M μ θ₀ n
@@ -233,7 +235,7 @@ theorem bernstein_von_mises
         (tendsto_natCast_atTop_atTop.comp hMnat)
     · filter_upwards [eventually_ge_atTop (Nb 0)] with n hn
       exact hNb _ n (Nat.findGreatest_spec (P := fun j => Nb j ≤ n) (Nat.zero_le n) hn)
-  -- Lemma 10.3 supplies the exponentially powerful tests along this `Mseq`.
+  -- the exponential-tests lemma supplies the exponentially powerful tests along this `Mseq`.
   obtain ⟨φ, c, hc, hφ⟩ := exponential_tests hPDF hsc hDQM hJ_pd hJ hTests hMseq_tendsto
   have hStepA := posterior_mass_compl_ball_tendsto (κ := κ) hPDF hsc hDQM hJ_pd hJ hκ hM_joint
     hπ hMseq_tendsto hc hφ
@@ -382,7 +384,7 @@ private lemma measurable_bvmTV (κ : Kernel (EuclideanSpace ℝ (Fin k)) 𝓧) [
   have h := measurable_tvDist_kernel (bvmLocalPosterior κ π θ₀ n) (bvmGaussianKernel J hsc n)
   simpa only [bvmTV, bvmGaussianKernel_apply] using h
 
-/-- **Theorem 10.1, expectation form**: the mean total-variation deviation vanishes,
+/-- **Bernstein–von Mises, expectation form**: the mean total-variation deviation vanishes,
 `∫ tvDist(posterior, Gaussian) dP^n_{θ₀} → 0`. Equivalent to `bernstein_von_mises` since
 `tvDist ≤ 1`; this is the form consumed by the Bayes-point-estimator theorem. -/
 theorem bernstein_von_mises_lintegral
@@ -390,9 +392,9 @@ theorem bernstein_von_mises_lintegral
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information matrix; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information matrix; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
@@ -401,9 +403,9 @@ theorem bernstein_von_mises_lintegral
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
     -- LEAN-ONLY: joint measurability of the model densities (regularity)
     (hM_joint : Measurable (Function.uncurry M.density))
-    -- USER-INPUT: the tests condition (10.2); vdV Thm 10.1
+    -- USER-INPUT: the uniform-tests condition; vdV §10.2
     (hTests : UniformlyConsistentTests M μ θ₀)
-    -- USER-INPUT: the prior condition; vdV Thm 10.1
+    -- USER-INPUT: the prior condition; vdV §10.2
     (hπ : HasLocalDensity π θ₀ r₀ f) :
     Tendsto (fun n => ∫⁻ ω, bvmTV κ π θ₀ J sc n ω ∂(productMeasure M μ θ₀ n))
       atTop (𝓝 0) := by

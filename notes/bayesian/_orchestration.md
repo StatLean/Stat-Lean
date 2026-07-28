@@ -21,10 +21,10 @@ gate_targets:
   bvm-local: [StatLean.Bayesian.BernsteinVonMises.LocalApproximation]
   bvm-conc: [StatLean.Bayesian.BernsteinVonMises.PosteriorConcentration]
   bpe-aux: [StatLean.Bayesian.BayesEstimators.PosteriorTails, StatLean.Bayesian.BayesEstimators.ArgminConsistency]
-  doob-final: [StatLean.Bayesian.DoobConsistency.Theorem10_10]
-  bvm-assembly: [StatLean.Bayesian.BernsteinVonMises.Theorem10_1, StatLean.Bayesian.BernsteinVonMises.EfficientCentering]
+  doob-final: [StatLean.Bayesian.DoobConsistency.PosteriorConsistency]
+  bvm-assembly: [StatLean.Bayesian.BernsteinVonMises.PosteriorNormality, StatLean.Bayesian.BernsteinVonMises.EfficientCentering]
   bpe-approx: [StatLean.Bayesian.BayesEstimators.UniformApproximation]
-  bpe-final: [StatLean.Bayesian.BayesEstimators.Theorem10_8]
+  bpe-final: [StatLean.Bayesian.BayesEstimators.PointEstimatorLimits]
 ```
 
 ### Progress log (batch4)

@@ -5,11 +5,12 @@ import Mathlib.MeasureTheory.MeasurableSpace.Basic
 /-!
 # Deterministic argmin consistency
 
-The elementary analytic lemma behind vdV's application of the argmax theorem in Theorem 10.8
+The elementary analytic lemma behind vdV's application of the argmax theorem in the
+Bayes-point-estimator theorem
 (Corollary 5.58 there): if a sequence of `ℝ≥0∞`-valued criteria converges to a **fixed**
 continuous function `g` with a unique minimizer, uniformly on a ball containing the relevant
 points, then approximate minimizers converge to the minimizer. Deterministic sequences only —
-the in-probability version is obtained pointwise on good events in `Theorem10_8.lean`.
+the in-probability version is obtained pointwise on good events in `PointEstimatorLimits.lean`.
 
 * `exists_gap_of_unique_argmin` — well-separation on balls: continuity + uniqueness of the
   minimizer produce a positive gap `g(u₀) + η ≤ g(u)` for `‖u − u₀‖ ≥ ρ`, `‖u‖ ≤ R`
@@ -22,9 +23,10 @@ and Probabilistic Mathematics, Cambridge University Press, 1998, Chapter 5, §5.
 (Corollary 5.58) and Chapter 10, §10.3 (its use in Theorem 10.8, p. 149).
 
 **Proof formalization notes.** This replaces the `ℓ^∞(K)`-valued weak-convergence route of
-the book by a direct in-probability argument (the limit criterion in Theorem 10.8 is `g`
+the book by a direct in-probability argument (the limit criterion in the Bayes-point-estimator
+theorem is `g`
 recentred by the random `Δₙ`, so after recentring the limit is *deterministic*); recorded as
-a formalization deviation in the Theorem 10.8 file.
+a formalization deviation in `PointEstimatorLimits.lean`.
 -/
 
 open Filter Topology
@@ -54,7 +56,7 @@ a positive gap `η` with `g u₀ + η ≤ g u` whenever `‖u‖ ≤ R` and `ρ 
 theorem exists_gap_of_unique_argmin {g : EuclideanSpace ℝ (Fin k) → ℝ≥0∞}
     -- LEAN-ONLY: continuity of the limit criterion (derived from the Gaussian density)
     (hg : Continuous g) {u₀ : EuclideanSpace ℝ (Fin k)}
-    -- USER-INPUT: uniqueness of the minimizer; vdV Thm 10.8 ("any two minimizers coincide")
+    -- USER-INPUT: uniqueness of the minimizer; vdV §10.3 ("any two minimizers coincide")
     (hunique : ∀ u, u ≠ u₀ → g u₀ < g u)
     {R : ℝ}
     -- LEAN-ONLY: the ball contains the minimizer
@@ -87,7 +89,7 @@ with `εₘ, δₘ → 0` and `‖τₘ‖ ≤ R`; if `g` is continuous with uni
 theorem argmin_tendsto_of_uniform_approx {g : EuclideanSpace ℝ (Fin k) → ℝ≥0∞}
     -- LEAN-ONLY: continuity of the limit criterion (derived from the Gaussian density)
     (hg : Continuous g) {u₀ : EuclideanSpace ℝ (Fin k)}
-    -- USER-INPUT: uniqueness of the minimizer; vdV Thm 10.8 ("any two minimizers coincide")
+    -- USER-INPUT: uniqueness of the minimizer; vdV §10.3 ("any two minimizers coincide")
     (hunique : ∀ u, u ≠ u₀ → g u₀ < g u)
     {R : ℝ}
     -- LEAN-ONLY: the ball contains the minimizer

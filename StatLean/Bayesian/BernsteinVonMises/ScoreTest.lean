@@ -3,9 +3,9 @@ import StatLean.ConcentrationInequalities.SubGaussian.Hoeffding
 import StatLean.ConcentrationInequalities.SubGaussian.Bounded
 
 /-!
-# The truncated-score test (moderate range of Lemma 10.3)
+# The truncated-score test (moderate range)
 
-The first half of vdV Lemma 10.3: a test based on the empirical mean of the coordinatewise
+The first half of vdV §10.2: a test based on the empirical mean of the coordinatewise
 **truncated score** `sc^L` detects alternatives in the moderate range
 `Mₙ/√n ≤ ‖θ − θ₀‖ ≤ ε` with exponential type-II error.
 
@@ -225,7 +225,7 @@ theorem truncScore_mean_expansion
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc) {L : ℝ}
     -- LEAN-ONLY: positive truncation level
     (hL : 0 < L) :
@@ -712,9 +712,9 @@ theorem truncScore_separation
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
@@ -1133,7 +1133,7 @@ private lemma moderate_expI {Mn nR kv Lv : ℝ} (hn : 0 < nR) (hk : 0 < kv) (hL 
   have h3 : nR ≠ 0 := ne_of_gt hn
   field_simp
 
-/-- **The moderate-range tests** (vdV Lemma 10.3, first test sequence): measurable
+/-- **The moderate-range tests** (vdV §10.2, first test sequence): measurable
 `[0,1]`-valued tests `φₙ` with `P^n_{θ₀} φₙ → 0` and, for all large `n`,
 `P^n_θ(1 − φₙ) ≤ exp(−c n ‖θ−θ₀‖²)` whenever `Mₙ/√n ≤ ‖θ − θ₀‖ ≤ ε`. -/
 theorem exists_moderate_tests
@@ -1141,15 +1141,15 @@ theorem exists_moderate_tests
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
       ⟪u, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) v))⟫)
     {Mseq : ℕ → ℝ}
-    -- USER-INPUT: the localization radii diverge; vdV Lemma 10.3 (`Mₙ → ∞`)
+    -- USER-INPUT: the localization radii diverge; vdV §10.2 (`Mₙ → ∞`)
     (hM : Tendsto Mseq atTop atTop) :
     ∃ (φ : ∀ n : ℕ, (Fin n → 𝓧) → ℝ) (ε c : ℝ), 0 < ε ∧ 0 < c ∧
       (∀ n, Measurable (φ n)) ∧ (∀ n ω, φ n ω ∈ Set.Icc (0 : ℝ) 1) ∧

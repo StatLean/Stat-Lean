@@ -6,7 +6,7 @@ import Mathlib.Probability.Kernel.CondDistrib
 /-!
 # The posterior martingale and Lévy's upward theorem
 
-The martingale half of the proof of vdV Theorem 10.10: on the joint space
+The martingale half of the proof of Doob's consistency theorem: on the joint space
 `Ω = (ℕ → 𝓧) × Θ`, the posterior probabilities `Π(A | X₁..Xₙ)` form a bounded martingale
 for the observation filtration, and converge almost surely to the indicator `1_A(Θ̄)` once
 the parameter is (a.e.) a measurable function of the data sequence.
@@ -21,7 +21,7 @@ the parameter is (a.e.) a measurable function of the data sequence.
   `condKernel` of the same measure);
 * `posterior_ae_tendsto_indicator` — Lévy's upward convergence of the posterior masses to
   `1_A(Θ̄)`, given a measurable a.e.-retraction of the parameter from the data (display
-  (10.11), supplied by `Accessible.lean`).
+  the parameter-recovery identity, supplied by `Accessible.lean`).
 
 **Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical
 and Probabilistic Mathematics, Cambridge University Press, 1998, Chapter 10, §10.4, proof of
@@ -103,11 +103,12 @@ theorem condDistrib_doobData_eq_posterior [StandardBorelSpace Θ] [Nonempty Θ]
 
 /-- **Lévy upward convergence of the posterior masses** (vdV p. 149, the martingale
 display): given a measurable a.e.-retraction of the parameter from the data sequence
-(display (10.11)), for every measurable `A ⊆ Θ` the posterior masses converge
+(the parameter-recovery identity), for every measurable `A ⊆ Θ` the posterior masses converge
 `doobJoint`-a.s. to the indicator `1_A(Θ̄)`. -/
 theorem posterior_ae_tendsto_indicator [StandardBorelSpace Θ] [Nonempty Θ]
     (K : Kernel Θ 𝓧) [IsMarkovKernel K] (π : Measure Θ) [IsProbabilityMeasure π]
-    -- LEAN-ONLY: display (10.11) — the parameter is a.e. a measurable function of the
+    -- LEAN-ONLY: the parameter-recovery identity — the parameter is a.e. a measurable function of
+    -- the
     -- data; supplied by `exists_measurable_retraction` (vdV p. 149)
     (hrec : ∃ g : (ℕ → 𝓧) → Θ, Measurable g ∧
       ∀ᵐ ω ∂(doobJoint K π), g ω.1 = ω.2)

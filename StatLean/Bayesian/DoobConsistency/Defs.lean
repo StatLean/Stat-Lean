@@ -5,7 +5,7 @@ import Mathlib.MeasureTheory.Constructions.Polish.Basic
 /-!
 # Doob consistency: the joint sequential experiment (data model)
 
-Data model for vdV Theorem 10.10 (Doob's posterior consistency theorem). On the product
+Data model for Doob's consistency theorem (Doob's posterior consistency theorem). On the product
 space `Ω := (ℕ → 𝓧) × Θ` (infinite data sequence first, matching the data-first orientation
 of `condDistrib` and `posterior`), we record:
 

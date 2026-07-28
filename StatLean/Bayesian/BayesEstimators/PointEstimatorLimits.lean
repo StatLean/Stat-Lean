@@ -3,9 +3,10 @@ import StatLean.Bayesian.BayesEstimators.ArgminConsistency
 import StatLean.AsymptoticStatistics.ForMathlib.Anderson
 
 /-!
-# Theorem 10.8: asymptotics of Bayes point estimators
+# Asymptotics of Bayes point estimators
 
-Assembly of vdV Theorem 10.8. Under the conditions of the Bernstein–von Mises theorem, for a
+Assembly of the Bayes-point-estimator theorem. Under the conditions of the Bernstein–von Mises
+theorem, for a
 loss `ℓ` satisfying the separation and polynomial-growth conditions with a matching prior
 moment, any (approximate) minimizer `Tₙ` of the posterior risk
 `t ↦ ∫ ℓ(√n(t − θ)) dΠ(θ | X₁..Xₙ)` satisfies
@@ -176,7 +177,7 @@ private lemma exists_radius_gaussCriterion_tail_le (J : Matrix (Fin k) (Fin k) �
     have h3 := Real.rpow_le_rpow (norm_nonneg (u - z)) h1 hq
     linarith
 
-/-- **Part 2 of the proof of Theorem 10.8: uniform tightness** of the standardized Bayes
+/-- **Uniform tightness of the standardized Bayes point estimators** of the standardized Bayes
 point estimators `√n(Tₙ − θ₀)` (vdV p. 148: the separation condition forces the minimizer
 into balls of fixed radius with probability tending to one). -/
 theorem bpe_tight
@@ -184,9 +185,9 @@ theorem bpe_tight
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
@@ -195,9 +196,9 @@ theorem bpe_tight
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
     -- LEAN-ONLY: joint measurability of the model densities (regularity)
     (hM_joint : Measurable (Function.uncurry M.density))
-    -- USER-INPUT: the tests condition (10.2); vdV Thm 10.1
+    -- USER-INPUT: the uniform-tests condition; vdV §10.2
     (hTests : UniformlyConsistentTests M μ θ₀)
-    -- USER-INPUT: the prior condition; vdV Thm 10.1
+    -- USER-INPUT: the prior condition; vdV §10.2
     (hπ : HasLocalDensity π θ₀ r₀ f)
     -- LEAN-ONLY: measurable loss (regularity)
     (hℓ : Measurable ℓ)
@@ -207,7 +208,7 @@ theorem bpe_tight
     (hp : 0 ≤ p)
     -- USER-INPUT: polynomial growth of the loss; vdV §10.3, p. 147
     (hpoly : PolyGrowthLoss p ℓ)
-    -- USER-INPUT: finite prior `p`-moment; vdV Thm 10.8
+    -- USER-INPUT: finite prior `p`-moment; vdV §10.3
     (hmom : ∫⁻ θ, ENNReal.ofReal (‖θ‖ ^ p) ∂π < ∞)
     -- LEAN-ONLY: measurable estimators (vdV p. 147: "an implicit assumption")
     (hT_meas : ∀ n, Measurable (T n))
@@ -229,7 +230,8 @@ theorem bpe_tight
   -- tail is itself a posterior risk for the truncated envelope loss, so the majorant of Part 3
   -- plus the *deterministic* Gaussian tail bound (`exists_radius_gaussCriterion_tail_le`) make
   -- it `≤ 2γ` in probability. Against the gain `η · Post(B̄(0,a)) ≥ η p₀ = δ₀ > 3γ` obtained
-  -- from Theorem 10.1 and the Gaussian density lower bound, `hT` at `t = 0` then rules out
+  -- from the Bernstein–von Mises theorem and the Gaussian density lower bound, `hT` at `t = 0` then
+  -- rules out
   -- `‖√n(Tₙ − θ₀)‖ ≥ K := max (5a) (3ρ)`.
   classical
   haveI hprob : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
@@ -502,7 +504,7 @@ private theorem argmin_close_of_gap {g z : EuclideanSpace ℝ (Fin k) → ℝ≥
       _ = g u₀ + (e + (δ + δ)) := by ring
   exact absurd ((ENNReal.add_le_add_iff_left hfin).1 (hlow.trans hup)) (not_le.2 hslack)
 
-/-- **Theorem 10.8 (Bayes point estimators), recentred form.** Under the Bernstein–von Mises
+/-- **Bayes point estimators, recentred form.** Under the Bernstein–von Mises
 conditions, the loss conditions, the prior moment, and the uniqueness of the minimizer `u₀`
 of the limit criterion `g`, the approximate posterior-risk minimizers satisfy
 `√n(Tₙ − θ₀) − Δ_{n,θ₀} → u₀` in `P^n_{θ₀}`-probability. -/
@@ -511,9 +513,9 @@ theorem bayes_estimator_asymptotics
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
@@ -522,9 +524,9 @@ theorem bayes_estimator_asymptotics
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
     -- LEAN-ONLY: joint measurability of the model densities (regularity)
     (hM_joint : Measurable (Function.uncurry M.density))
-    -- USER-INPUT: the tests condition (10.2); vdV Thm 10.1
+    -- USER-INPUT: the uniform-tests condition; vdV §10.2
     (hTests : UniformlyConsistentTests M μ θ₀)
-    -- USER-INPUT: the prior condition; vdV Thm 10.1
+    -- USER-INPUT: the prior condition; vdV §10.2
     (hπ : HasLocalDensity π θ₀ r₀ f)
     -- LEAN-ONLY: measurable loss (regularity)
     (hℓ : Measurable ℓ)
@@ -534,7 +536,7 @@ theorem bayes_estimator_asymptotics
     (hp : 0 ≤ p)
     -- USER-INPUT: polynomial growth of the loss; vdV §10.3, p. 147
     (hpoly : PolyGrowthLoss p ℓ)
-    -- USER-INPUT: finite prior `p`-moment; vdV Thm 10.8
+    -- USER-INPUT: finite prior `p`-moment; vdV §10.3
     (hmom : ∫⁻ θ, ENNReal.ofReal (‖θ‖ ^ p) ∂π < ∞)
     -- LEAN-ONLY: measurable estimators (vdV p. 147: "an implicit assumption")
     (hT_meas : ∀ n, Measurable (T n))
@@ -545,7 +547,7 @@ theorem bayes_estimator_asymptotics
       bpePosteriorRisk κ π θ₀ ℓ n (Real.sqrt n • (T n ω - θ₀)) ω
         ≤ bpePosteriorRisk κ π θ₀ ℓ n t ω + εseq n)
     {u₀ : EuclideanSpace ℝ (Fin k)}
-    -- USER-INPUT: the limit criterion has the unique minimizer `u₀`; vdV Thm 10.8
+    -- USER-INPUT: the limit criterion has the unique minimizer `u₀`; vdV §10.3
     -- ("provided that any two minimizers of this process coincide almost surely")
     (hunique : ∀ u, u ≠ u₀ → bpeGaussCriterion J ℓ u₀ < bpeGaussCriterion J ℓ u) :
     ∀ ε : ℝ, 0 < ε →
@@ -652,16 +654,16 @@ theorem bayes_estimator_asymptotics
     _ = 3 * (ε' / 4) := hcalc
     _ < ε' := by linarith
 
-/-- **Theorem 10.8, weak-convergence form**: `√n(Tₙ − θ₀) ⇝ N(u₀, J⁻¹)` under `P^n_{θ₀}`
+/-- **Bayes point estimators, weak-convergence form**: `√n(Tₙ − θ₀) ⇝ N(u₀, J⁻¹)` under `P^n_{θ₀}`
 (the law of `X + u₀` for `X ∼ N(0, J⁻¹)`, i.e. of the minimizer of the limit process). -/
 theorem bayes_estimator_weakConverges
     -- USER-INPUT: dominated iid model with normalized densities; vdV §10.2, p. 140
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
@@ -670,9 +672,9 @@ theorem bayes_estimator_weakConverges
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
     -- LEAN-ONLY: joint measurability of the model densities (regularity)
     (hM_joint : Measurable (Function.uncurry M.density))
-    -- USER-INPUT: the tests condition (10.2); vdV Thm 10.1
+    -- USER-INPUT: the uniform-tests condition; vdV §10.2
     (hTests : UniformlyConsistentTests M μ θ₀)
-    -- USER-INPUT: the prior condition; vdV Thm 10.1
+    -- USER-INPUT: the prior condition; vdV §10.2
     (hπ : HasLocalDensity π θ₀ r₀ f)
     -- LEAN-ONLY: measurable loss (regularity)
     (hℓ : Measurable ℓ)
@@ -682,7 +684,7 @@ theorem bayes_estimator_weakConverges
     (hp : 0 ≤ p)
     -- USER-INPUT: polynomial growth of the loss; vdV §10.3, p. 147
     (hpoly : PolyGrowthLoss p ℓ)
-    -- USER-INPUT: finite prior `p`-moment; vdV Thm 10.8
+    -- USER-INPUT: finite prior `p`-moment; vdV §10.3
     (hmom : ∫⁻ θ, ENNReal.ofReal (‖θ‖ ^ p) ∂π < ∞)
     -- LEAN-ONLY: measurable estimators (vdV p. 147: "an implicit assumption")
     (hT_meas : ∀ n, Measurable (T n))
@@ -693,7 +695,7 @@ theorem bayes_estimator_weakConverges
       bpePosteriorRisk κ π θ₀ ℓ n (Real.sqrt n • (T n ω - θ₀)) ω
         ≤ bpePosteriorRisk κ π θ₀ ℓ n t ω + εseq n)
     {u₀ : EuclideanSpace ℝ (Fin k)}
-    -- USER-INPUT: the limit criterion has the unique minimizer `u₀`; vdV Thm 10.8
+    -- USER-INPUT: the limit criterion has the unique minimizer `u₀`; vdV §10.3
     (hunique : ∀ u, u ≠ u₀ → bpeGaussCriterion J ℓ u₀ < bpeGaussCriterion J ℓ u) :
     WeakConverges
       (fun n => (productMeasure M μ θ₀ n).map
@@ -761,11 +763,11 @@ theorem bayes_estimator_weakConverges
 is the origin (`anderson_lemma_loss` gives `g(0) ≤ g(u)`; uniqueness upgrades it to
 `u₀ = 0`). -/
 theorem gaussCriterion_argmin_zero_of_bowlShaped
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
-    -- USER-INPUT: bowl-shaped loss; vdV §8.2 / Lemma 8.5
+    -- USER-INPUT: bowl-shaped loss; vdV §8.5
     (hL : BowlShaped ℓ) {u₀ : EuclideanSpace ℝ (Fin k)}
-    -- USER-INPUT: the limit criterion has the unique minimizer `u₀`; vdV Thm 10.8
+    -- USER-INPUT: the limit criterion has the unique minimizer `u₀`; vdV §10.3
     (hunique : ∀ u, u ≠ u₀ → bpeGaussCriterion J ℓ u₀ < bpeGaussCriterion J ℓ u) :
     u₀ = 0 := by
   -- Anderson's lemma: the criterion is minimized at the origin.
@@ -786,7 +788,7 @@ theorem gaussCriterion_argmin_zero_of_bowlShaped
   by_contra hne
   exact absurd (hmin u₀) (not_le.2 (hunique 0 (Ne.symm hne)))
 
-/-- **Theorem 10.8 for bowl-shaped losses** (vdV: "In particular, for every nonzero,
+/-- **Bayes point estimators for bowl-shaped losses** (vdV: "In particular, for every nonzero,
 subconvex loss function it converges to `X`"): the standardized Bayes estimators are
 asymptotically efficient, `√n(Tₙ − θ₀) ⇝ N(0, J⁻¹)`. -/
 theorem bayes_estimator_asymptotics_bowlShaped
@@ -794,9 +796,9 @@ theorem bayes_estimator_asymptotics_bowlShaped
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
@@ -805,11 +807,11 @@ theorem bayes_estimator_asymptotics_bowlShaped
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
     -- LEAN-ONLY: joint measurability of the model densities (regularity)
     (hM_joint : Measurable (Function.uncurry M.density))
-    -- USER-INPUT: the tests condition (10.2); vdV Thm 10.1
+    -- USER-INPUT: the uniform-tests condition; vdV §10.2
     (hTests : UniformlyConsistentTests M μ θ₀)
-    -- USER-INPUT: the prior condition; vdV Thm 10.1
+    -- USER-INPUT: the prior condition; vdV §10.2
     (hπ : HasLocalDensity π θ₀ r₀ f)
-    -- USER-INPUT: bowl-shaped loss; vdV §8.2 / Lemma 8.5
+    -- USER-INPUT: bowl-shaped loss; vdV §8.5
     (hL : BowlShaped ℓ)
     -- USER-INPUT: the loss separation condition; vdV §10.3, p. 147
     (hsep : SeparatedLoss ℓ)
@@ -817,7 +819,7 @@ theorem bayes_estimator_asymptotics_bowlShaped
     (hp : 0 ≤ p)
     -- USER-INPUT: polynomial growth of the loss; vdV §10.3, p. 147
     (hpoly : PolyGrowthLoss p ℓ)
-    -- USER-INPUT: finite prior `p`-moment; vdV Thm 10.8
+    -- USER-INPUT: finite prior `p`-moment; vdV §10.3
     (hmom : ∫⁻ θ, ENNReal.ofReal (‖θ‖ ^ p) ∂π < ∞)
     -- LEAN-ONLY: measurable estimators (vdV p. 147: "an implicit assumption")
     (hT_meas : ∀ n, Measurable (T n))
@@ -828,7 +830,7 @@ theorem bayes_estimator_asymptotics_bowlShaped
       bpePosteriorRisk κ π θ₀ ℓ n (Real.sqrt n • (T n ω - θ₀)) ω
         ≤ bpePosteriorRisk κ π θ₀ ℓ n t ω + εseq n)
     {u₀ : EuclideanSpace ℝ (Fin k)}
-    -- USER-INPUT: the limit criterion has the unique minimizer `u₀`; vdV Thm 10.8
+    -- USER-INPUT: the limit criterion has the unique minimizer `u₀`; vdV §10.3
     (hunique : ∀ u, u ≠ u₀ → bpeGaussCriterion J ℓ u₀ < bpeGaussCriterion J ℓ u) :
     WeakConverges
       (fun n => (productMeasure M μ θ₀ n).map

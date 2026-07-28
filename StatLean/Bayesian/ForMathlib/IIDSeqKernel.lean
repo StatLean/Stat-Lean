@@ -22,7 +22,7 @@ kernel-valued version; this file supplies it:
 * `iidSeqKernel_map_restrict` — restriction to the first `n` coordinates recovers
   `iidKernel κ n` (via `AsymptoticStatistics.pi_const_eq_infinitePi_map`).
 
-This is the sampling model of Doob's consistency theorem (vdV Theorem 10.10).
+This is the sampling model of Doob's consistency theorem (Doob's consistency theorem).
 
 **Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical
 and Probabilistic Mathematics, Cambridge University Press, 1998, Chapter 10 (Bayes
@@ -86,7 +86,7 @@ theorem measurable_infinitePi_const_kernel (κ : Kernel Θ 𝓧) [IsMarkovKernel
       exact Measurable.ennreal_tsum ihg
 
 /-- The **infinite iid product kernel** `θ ↦ (κ θ)^{⊗ ℕ}` on `ℕ → 𝓧`: the law of an infinite
-iid sample from the model `κ θ` (the sampling model of vdV Theorem 10.10). -/
+iid sample from the model `κ θ` (the sampling model of Doob's consistency theorem). -/
 noncomputable def iidSeqKernel (κ : Kernel Θ 𝓧) [IsMarkovKernel κ] : Kernel Θ (ℕ → 𝓧) :=
   ⟨fun θ => Measure.infinitePi fun _ : ℕ => κ θ, measurable_infinitePi_const_kernel κ⟩
 

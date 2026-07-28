@@ -15,7 +15,7 @@ and Pinsker's inequality turns it into a mean-Lipschitz total-variation bound:
   `tvDist (N(a,S)) (N(b,S)) ≤ (⟪a − b, S⁻¹(a − b)⟫ / 4) ^ (1/2)`.
 
 This is the brick behind the efficient-centering corollary of the Bernstein–von Mises
-theorem (vdV Chapter 10, remark after Lemma 10.3, p. 144): replacing the centering
+theorem (vdV Chapter 10, remark after the exponential-tests lemma, p. 144): replacing the centering
 `Δ_{n,θ₀}` by any asymptotically equivalent sequence `√n(θ̂_n − θ₀)` changes the Gaussian
 approximation by at most a multiple of the difference of the centers.
 

@@ -5,9 +5,9 @@ import StatLean.Bayesian.Updating.IID
 /-!
 # Step A: posterior concentration on `√n`-balls
 
-The first half of the proof of vdV Theorem 10.1: the posterior mass outside the balls
+The first half of the proof of the Bernstein–von Mises theorem: the posterior mass outside the balls
 `‖θ − θ₀‖ ≤ Mₙ/√n` tends to zero in `P^n_{θ₀}`-probability, for every `Mₙ → ∞`, given
-exponentially powerful tests (Lemma 10.3) and the prior conditions.
+exponentially powerful tests (the exponential-tests lemma) and the prior conditions.
 
 * `bvmLocalPosterior_compl_ball` — pushforward bookkeeping: the local posterior's mass
   outside the radius-`Mₙ` ball is the θ-posterior's mass outside the radius-`Mₙ/√n` ball;
@@ -25,7 +25,7 @@ Theorem 10.1, p. 142 ("In view of Lemma 10.3 … the first step of the proof").
 predictive-a.e.; their exceptional sets are killed under `P^n_{θ₀}` by
 `measure_tendsto_zero_of_predictive_null`. The test kills the event `{φₙ ≥ 1/2}`-side under
 `P^n_{θ₀}` directly (type-I error → 0 and Markov's inequality); the `(1 − φₙ)`-side is
-bounded through the mixture by `mixture_posterior_test_bound`, then by Lemma 10.3's
+bounded through the mixture by `mixture_posterior_test_bound`, then by the exponential-tests lemma's
 exponential bound integrated against the prior (`prior_tail_split`) and the small-ball lower
 bound (`prior_ball_inv_sqrt_lower`), and transferred back by the contiguity swap
 (`mutuallyContiguous_mixture_base`).
@@ -197,7 +197,7 @@ private lemma ennreal_add_lt_of_lt_half {d a b : ℝ≥0∞} (ha : a < d / 2) (h
     _ = d := ENNReal.add_halves d
 
 /-- **Step A: posterior concentration** (vdV p. 142). Under the model, Fisher, test and prior
-conditions of Theorem 10.1, for every `Mₙ → ∞` and every `δ > 0`,
+conditions of the Bernstein–von Mises theorem, for every `Mₙ → ∞` and every `δ > 0`,
 `P^n_{θ₀} { posterior mass of {‖θ − θ₀‖ ≥ Mₙ/√n} ≥ δ } → 0`. The tests are taken in the
 Lemma-10.3 conclusion shape (`IsExpConsistentTestSeq`), discharged at assembly by
 `exponential_tests`. -/
@@ -206,9 +206,9 @@ theorem posterior_mass_compl_ball_tendsto
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
@@ -217,15 +217,15 @@ theorem posterior_mass_compl_ball_tendsto
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
     -- LEAN-ONLY: joint measurability of the model densities (regularity)
     (hM_joint : Measurable (Function.uncurry M.density))
-    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    -- USER-INPUT: the prior condition of the Bernstein–von Mises theorem; vdV §10.2, p. 141
     (hπ : HasLocalDensity π θ₀ r₀ f)
     {Mseq : ℕ → ℝ}
     -- USER-INPUT: the localization radii diverge; vdV §10.2 (`Mₙ → ∞`)
     (hM : Tendsto Mseq atTop atTop)
     {φ : ∀ n : ℕ, (Fin n → 𝓧) → ℝ} {c : ℝ}
-    -- LEAN-ONLY: positive exponential rate (supplied by Lemma 10.3)
+    -- LEAN-ONLY: positive exponential rate (supplied by the exponential-tests lemma)
     (hc : 0 < c)
-    -- USER-INPUT: exponentially powerful tests; vdV Lemma 10.3 (discharged at assembly)
+    -- USER-INPUT: exponentially powerful tests; vdV §10.2 (discharged at assembly)
     (hφ : IsExpConsistentTestSeq M μ θ₀ Mseq c φ) :
     ∀ δ : ℝ≥0∞, 0 < δ →
       Tendsto (fun n => productMeasure M μ θ₀ n

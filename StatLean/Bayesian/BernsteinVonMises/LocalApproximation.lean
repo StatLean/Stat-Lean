@@ -7,7 +7,8 @@ import StatLean.Bayesian.Updating.IID
 /-!
 # Step B: Gaussian approximation of the conditioned local posterior
 
-The second half of the proof of vdV Theorem 10.1: on every **fixed** ball `C = B̄(0, R)` of
+The second half of the proof of the Bernstein–von Mises theorem: on every **fixed** ball `C = B̄(0,
+R)` of
 the local parameter, the total-variation distance between the `C`-conditioned local
 posterior and the `C`-conditioned Gaussian `N(Δ_{n,θ₀}, J⁻¹)` tends to zero in
 `P^n_{θ₀}`-probability.
@@ -192,7 +193,7 @@ private lemma exists_bvmGaussian_eq_smul_withDensity (hJ_pd : J.PosDef) (n : ℕ
 /-- **The conditioned Gaussian as a density ratio**: for positive definite `J`,
 `(N(Δₙ, J⁻¹))[|C] A = (∫_{A∩C} bvmGaussDens dλ) / (∫_C bvmGaussDens dλ)`. -/
 theorem cond_bvmGaussian_apply
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef) (n : ℕ) (ω : Fin n → 𝓧)
     {C A : Set (EuclideanSpace ℝ (Fin k))}
     -- LEAN-ONLY: measurable localization and target sets (regularity)
@@ -319,7 +320,7 @@ theorem cond_bvmLocalPosterior_apply_ae
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
     -- LEAN-ONLY: joint measurability of the model densities (regularity)
     (hM_joint : Measurable (Function.uncurry M.density))
-    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    -- USER-INPUT: the prior condition of the Bernstein–von Mises theorem; vdV §10.2, p. 141
     (hπ : HasLocalDensity π θ₀ r₀ f)
     {R : ℝ}
     -- LEAN-ONLY: nontrivial localization radius
@@ -422,12 +423,12 @@ theorem bvmLogRatio_tendsto
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
       ⟪u, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) v))⟫)
-    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    -- USER-INPUT: the prior condition of the Bernstein–von Mises theorem; vdV §10.2, p. 141
     (hπ : HasLocalDensity π θ₀ r₀ f)
     (g h : EuclideanSpace ℝ (Fin k)) :
     ∀ ε : ℝ, 0 < ε →
@@ -682,7 +683,7 @@ private lemma cond_bvmLocalPosterior_eq_withDensity_ae
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
     -- LEAN-ONLY: joint measurability of the model densities (regularity)
     (hM_joint : Measurable (Function.uncurry M.density))
-    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    -- USER-INPUT: the prior condition of the Bernstein–von Mises theorem; vdV §10.2, p. 141
     (hπ : HasLocalDensity π θ₀ r₀ f) {R : ℝ}
     -- LEAN-ONLY: nontrivial localization radius
     (hR : 0 < R)
@@ -894,9 +895,9 @@ private lemma tvDist_cond_le_bvmStepBBound
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
     -- LEAN-ONLY: joint measurability of the model densities (regularity)
     (hM_joint : Measurable (Function.uncurry M.density))
-    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    -- USER-INPUT: the prior condition of the Bernstein–von Mises theorem; vdV §10.2, p. 141
     (hπ : HasLocalDensity π θ₀ r₀ f)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef) {R K : ℝ}
     -- LEAN-ONLY: nontrivial localization radius
     (hR : 0 < R)
@@ -1016,7 +1017,7 @@ private lemma lintegral_bvmMixture_eq
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
     -- LEAN-ONLY: joint measurability of the model densities (regularity)
     (hM_joint : Measurable (Function.uncurry M.density))
-    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    -- USER-INPUT: the prior condition of the Bernstein–von Mises theorem; vdV §10.2, p. 141
     (hπ : HasLocalDensity π θ₀ r₀ f) {u : ℝ}
     -- LEAN-ONLY: the rescaled ball sits inside the absolute-continuity zone
     {n : ℕ} (hn1 : 1 ≤ n) (hn : u < r₀ * Real.sqrt n)
@@ -1389,9 +1390,9 @@ private lemma lintegral_bvmPairDefect_tendsto
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
@@ -1400,7 +1401,7 @@ private lemma lintegral_bvmPairDefect_tendsto
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
     -- LEAN-ONLY: joint measurability of the model densities (regularity)
     (hM_joint : Measurable (Function.uncurry M.density))
-    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    -- USER-INPUT: the prior condition of the Bernstein–von Mises theorem; vdV §10.2, p. 141
     (hπ : HasLocalDensity π θ₀ r₀ f)
     (g h : EuclideanSpace ℝ (Fin k)) :
     Tendsto (fun n => ∫⁻ ω, bvmPairDefect M f θ₀ J sc n h g ω
@@ -1641,9 +1642,9 @@ private lemma lintegral_bvmStepBBound_mul_tendsto
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
@@ -1652,7 +1653,7 @@ private lemma lintegral_bvmStepBBound_mul_tendsto
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
     -- LEAN-ONLY: joint measurability of the model densities (regularity)
     (hM_joint : Measurable (Function.uncurry M.density))
-    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    -- USER-INPUT: the prior condition of the Bernstein–von Mises theorem; vdV §10.2, p. 141
     (hπ : HasLocalDensity π θ₀ r₀ f) {R u : ℝ}
     -- LEAN-ONLY: nontrivial localization radius, inner ball inside the outer one
     (hR : 0 < R) (hu : u ≤ R) :
@@ -1764,9 +1765,9 @@ private lemma exists_scoreSum_bound
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
@@ -1819,7 +1820,7 @@ private lemma bvmNumer_ne_top_and_tvDist_zero_ae
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
     -- LEAN-ONLY: joint measurability of the model densities (regularity)
     (hM_joint : Measurable (Function.uncurry M.density))
-    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    -- USER-INPUT: the prior condition of the Bernstein–von Mises theorem; vdV §10.2, p. 141
     (hπ : HasLocalDensity π θ₀ r₀ f) {R : ℝ}
     -- LEAN-ONLY: nontrivial localization radius
     (hR : 0 < R)
@@ -1903,9 +1904,9 @@ theorem local_tv_tendsto
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
@@ -1914,7 +1915,7 @@ theorem local_tv_tendsto
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
     -- LEAN-ONLY: joint measurability of the model densities (regularity)
     (hM_joint : Measurable (Function.uncurry M.density))
-    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    -- USER-INPUT: the prior condition of the Bernstein–von Mises theorem; vdV §10.2, p. 141
     (hπ : HasLocalDensity π θ₀ r₀ f)
     {R : ℝ}
     -- LEAN-ONLY: nontrivial localization radius

@@ -1,10 +1,11 @@
-import StatLean.Bayesian.BernsteinVonMises.Theorem10_1
+import StatLean.Bayesian.BernsteinVonMises.PosteriorNormality
 import StatLean.Bayesian.ForMathlib.GaussianTV
 
 /-!
 # Efficient centering: the posterior is approximately `N(θ̂ₙ, (n I_{θ₀})⁻¹)`
 
-The corollary after Theorem 10.1 (vdV p. 144): the centering `Δ_{n,θ₀}` may be replaced by
+The corollary after the Bernstein–von Mises theorem (vdV p. 144): the centering `Δ_{n,θ₀}` may be
+replaced by
 any **asymptotically efficient** estimator sequence. If `√n(θ̂ₙ − θ₀) − Δ_{n,θ₀} → 0` in
 `P^n_{θ₀}`-probability, then on the *original* parameter scale
 `‖ P_{Θ̄ | X₁..Xₙ} − N(θ̂ₙ, (n I_{θ₀})⁻¹) ‖ → 0` in `P^n_{θ₀}`-probability.
@@ -141,7 +142,8 @@ private lemma exists_eps_tvDist_multivariateGaussian_lt
   rw [hhalf]
   linarith
 
-/-- **Efficient centering** (vdV p. 144). Under the hypotheses of Theorem 10.1, if the
+/-- **Efficient centering** (vdV p. 144). Under the hypotheses of the Bernstein–von Mises theorem,
+if the
 estimator sequence `θ̂ₙ` is asymptotically efficient — i.e.
 `√n(θ̂ₙ − θ₀) − Δ_{n,θ₀} → 0` in `P^n_{θ₀}`-probability — then the posterior law of `Θ̄`
 itself is approximated by `N(θ̂ₙ, (n)⁻¹ J⁻¹)` in total variation, in
@@ -152,9 +154,9 @@ theorem bernstein_von_mises_efficient_centering
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information matrix; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information matrix; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
@@ -163,9 +165,9 @@ theorem bernstein_von_mises_efficient_centering
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
     -- LEAN-ONLY: joint measurability of the model densities (regularity)
     (hM_joint : Measurable (Function.uncurry M.density))
-    -- USER-INPUT: the tests condition (10.2); vdV Thm 10.1
+    -- USER-INPUT: the uniform-tests condition; vdV §10.2
     (hTests : UniformlyConsistentTests M μ θ₀)
-    -- USER-INPUT: the prior condition; vdV Thm 10.1
+    -- USER-INPUT: the prior condition; vdV §10.2
     (hπ : HasLocalDensity π θ₀ r₀ f)
     {est : ∀ n : ℕ, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k)}
     -- LEAN-ONLY: measurable estimators (regularity)

@@ -5,7 +5,8 @@ import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 /-!
 # Prior small-ball bounds and the exponential tail split
 
-Quantitative consequences of the prior condition of vdV Theorem 10.1 (`HasLocalDensity`):
+Quantitative consequences of the prior condition of the Bernstein–von Mises theorem
+(`HasLocalDensity`):
 
 * `prior_ball_inv_sqrt_lower` — the small-ball lower bound
   `π(B(θ₀, u/√n)) ≳ n^{-k/2}` (continuity and positivity of the density at `θ₀`);
@@ -98,7 +99,7 @@ private lemma prior_smallBall_lower_aux (hπ : HasLocalDensity π θ₀ r₀ f) 
 condition, for every fixed `u > 0` there is `c > 0` with
 `c · (√n)⁻ᵏ ≤ π(B(θ₀, u/√n))` for all large `n`. -/
 theorem prior_ball_inv_sqrt_lower
-    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    -- USER-INPUT: the prior condition of the Bernstein–von Mises theorem; vdV §10.2, p. 141
     (hπ : HasLocalDensity π θ₀ r₀ f) {u : ℝ}
     -- LEAN-ONLY: nontrivial ball radius
     (hu : 0 < u) :
@@ -137,7 +138,7 @@ theorem prior_ball_inv_sqrt_lower
 Lebesgue measure (density bounded by continuity at `θ₀`). Returns a radius `D ≤ r₀` on which
 the comparison holds. -/
 theorem prior_smallBall_upper
-    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    -- USER-INPUT: the prior condition of the Bernstein–von Mises theorem; vdV §10.2, p. 141
     (hπ : HasLocalDensity π θ₀ r₀ f) :
     ∃ D : ℝ, 0 < D ∧ D ≤ r₀ ∧ ∃ Cb : ℝ≥0∞, Cb ≠ ∞ ∧
       ∀ s : Set (EuclideanSpace ℝ (Fin k)), s ⊆ Metric.ball θ₀ D → MeasurableSet s →
@@ -153,7 +154,7 @@ theorem prior_smallBall_upper
 /-- **Local volume lower comparison**: near `θ₀` the prior dominates a positive multiple of
 Lebesgue measure (density positive by continuity at `θ₀`). -/
 theorem prior_smallBall_lower
-    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    -- USER-INPUT: the prior condition of the Bernstein–von Mises theorem; vdV §10.2, p. 141
     (hπ : HasLocalDensity π θ₀ r₀ f) :
     ∃ D : ℝ, 0 < D ∧ D ≤ r₀ ∧ ∃ cb : ℝ≥0∞, 0 < cb ∧
       ∀ s : Set (EuclideanSpace ℝ (Fin k)), s ⊆ Metric.ball θ₀ D → MeasurableSet s →
@@ -331,9 +332,9 @@ Split at a radius `D` from `prior_smallBall_upper`: on the moderate zone substit
 density bound and compare with the Gaussian integral `∫_{‖h‖ ≥ Mₙ} e^{−c‖h‖²} dh → 0`; on
 the far zone bound by `(√n)ᵏ e^{−c n D²} · π(univ) → 0`. -/
 theorem prior_tail_split
-    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    -- USER-INPUT: the prior condition of the Bernstein–von Mises theorem; vdV §10.2, p. 141
     (hπ : HasLocalDensity π θ₀ r₀ f) {c : ℝ}
-    -- LEAN-ONLY: positive exponential rate (supplied by Lemma 10.3)
+    -- LEAN-ONLY: positive exponential rate (supplied by the exponential-tests lemma)
     (hc : 0 < c) {Mseq : ℕ → ℝ}
     -- USER-INPUT: the localization radii diverge; vdV §10.2, p. 141 (`Mₙ → ∞`)
     (hM : Tendsto Mseq atTop atTop) :

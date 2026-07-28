@@ -20,10 +20,12 @@ measure `π` on the parameter space. Objects:
 * `bvmGaussian J sc n ω` — the random Gaussian approximation `N(Δ_{n,θ₀}, J⁻¹)`;
 * `bvmTV` — the (sup-form) total-variation distance between the two, the quantity that the
   Bernstein–von Mises theorem sends to `0` in probability;
-* `UniformlyConsistentTests` — the tests condition (10.2);
-* `IsExpConsistentTestSeq` — the conclusion shape of Lemma 10.3 (exponentially powerful
+* `UniformlyConsistentTests` — the uniform-tests condition;
+* `IsExpConsistentTestSeq` — the conclusion shape of the exponential-tests lemma (exponentially
+powerful
   tests);
-* `HasLocalDensity` — the prior condition of Theorem 10.1: absolute continuity in a
+* `HasLocalDensity` — the prior condition of the Bernstein–von Mises theorem: absolute continuity in
+a
   neighborhood of `θ₀` with a Lebesgue density continuous and positive at `θ₀` (the prior is
   arbitrary outside the neighborhood).
 
@@ -97,7 +99,7 @@ noncomputable def bvmEffScore (J : Matrix (Fin k) (Fin k) ℝ)
   Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹ (scoreSum sc n ω)
 
 
-/-- The **random Gaussian approximation** `N(Δ_{n,θ₀}, J⁻¹)` of vdV Theorem 10.1. -/
+/-- The **random Gaussian approximation** `N(Δ_{n,θ₀}, J⁻¹)` of the Bernstein–von Mises theorem. -/
 noncomputable def bvmGaussian (J : Matrix (Fin k) (Fin k) ℝ)
     (sc : 𝓧 → EuclideanSpace ℝ (Fin k)) (n : ℕ) (ω : Fin n → 𝓧) :
     Measure (EuclideanSpace ℝ (Fin k)) :=
@@ -112,7 +114,7 @@ noncomputable def bvmTV (κ : Kernel (EuclideanSpace ℝ (Fin k)) 𝓧) [IsMarko
     (sc : 𝓧 → EuclideanSpace ℝ (Fin k)) (n : ℕ) (ω : Fin n → 𝓧) : ℝ≥0∞ :=
   tvDist (bvmLocalPosterior κ π θ₀ n ω) (bvmGaussian J sc n ω)
 
-/-- **The tests condition (10.2)**: for every `ε > 0` there are tests `φₙ : 𝓧ⁿ → [0,1]` with
+/-- **The the uniform-tests condition**: for every `ε > 0` there are tests `φₙ : 𝓧ⁿ → [0,1]` with
 `P^n_{θ₀} φₙ → 0` and `sup_{‖θ−θ₀‖ ≥ ε} P^n_θ (1 − φₙ) → 0`. The supremum over the
 (uncountable) alternative is unrolled into an eventually-uniform bound. -/
 def UniformlyConsistentTests (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k)))
@@ -124,7 +126,7 @@ def UniformlyConsistentTests (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin
       ∀ δ : ℝ, 0 < δ → ∀ᶠ n in atTop, ∀ θ, ε ≤ ‖θ - θ₀‖ →
         ∫ ω, (1 - φ n ω) ∂(productMeasure M μ θ n) ≤ δ
 
-/-- **Exponentially powerful test sequence** — the conclusion shape of vdV Lemma 10.3: tests
+/-- **Exponentially powerful test sequence** — the conclusion shape of vdV §10.2: tests
 with vanishing size at `θ₀` and type-II error `≤ exp(−c n (‖θ−θ₀‖² ∧ 1))` uniformly over
 `‖θ − θ₀‖ ≥ Mₙ/√n`, for `n` large. -/
 structure IsExpConsistentTestSeq (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k)))
@@ -134,34 +136,35 @@ structure IsExpConsistentTestSeq (M : ParametricFamily 𝓧 (EuclideanSpace ℝ 
   measurable : ∀ n, Measurable (φ n)
   /-- Constitutive (vdV p. 141 footnote): tests take values in `[0,1]`. -/
   mem_Icc : ∀ n ω, φ n ω ∈ Set.Icc (0 : ℝ) 1
-  /-- Constitutive (vdV Lemma 10.3): the size at the true parameter vanishes,
+  /-- Constitutive (vdV §10.2): the size at the true parameter vanishes,
   `P^n_{θ₀} φₙ → 0`. -/
   typeI : Tendsto (fun n => ∫ ω, φ n ω ∂(productMeasure M μ θ₀ n)) atTop (𝓝 0)
-  /-- Constitutive (vdV Lemma 10.3): the exponential type-II bound
+  /-- Constitutive (vdV §10.2): the exponential type-II bound
   `P^n_θ(1 − φₙ) ≤ exp(−c n (‖θ−θ₀‖² ∧ 1))` for all `‖θ − θ₀‖ ≥ Mₙ/√n` and `n` large. -/
   typeII : ∃ N₀ : ℕ, ∀ n, N₀ ≤ n → ∀ θ, Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖ →
     ∫ ω, (1 - φ n ω) ∂(productMeasure M μ θ n)
       ≤ Real.exp (-c * n * min (‖θ - θ₀‖ ^ 2) 1)
 
-/-- **The prior condition of Theorem 10.1**: `π` is absolutely continuous on the ball
+/-- **The prior condition of the Bernstein–von Mises theorem**: `π` is absolutely continuous on the
+ball
 `B(θ₀, r₀)` with a Lebesgue density `f` continuous and positive at `θ₀`; outside the ball
 `π` is arbitrary. -/
 structure HasLocalDensity (π : Measure (EuclideanSpace ℝ (Fin k)))
     (θ₀ : EuclideanSpace ℝ (Fin k)) (r₀ : ℝ) (f : EuclideanSpace ℝ (Fin k) → ℝ) :
     Prop where
-  /-- Constitutive (vdV Thm 10.1): the neighborhood of absolute continuity is nonempty. -/
+  /-- Constitutive (vdV §10.2): the neighborhood of absolute continuity is nonempty. -/
   rad_pos : 0 < r₀
-  /-- Constitutive (vdV Thm 10.1): `f` is a density — wlog nonnegative. -/
+  /-- Constitutive (vdV §10.2): `f` is a density — wlog nonnegative. -/
   nonneg : ∀ θ, 0 ≤ f θ
-  /-- Constitutive (vdV Thm 10.1): `f` is a density — wlog Borel measurable
+  /-- Constitutive (vdV §10.2): `f` is a density — wlog Borel measurable
   (Radon–Nikodym supplies a measurable version). -/
   measurable : Measurable f
-  /-- Constitutive (vdV Thm 10.1): on `B(θ₀, r₀)` the prior has Lebesgue density `f`. -/
+  /-- Constitutive (vdV §10.2): on `B(θ₀, r₀)` the prior has Lebesgue density `f`. -/
   restrict_eq : π.restrict (Metric.ball θ₀ r₀)
     = (volume.restrict (Metric.ball θ₀ r₀)).withDensity fun θ => ENNReal.ofReal (f θ)
-  /-- Constitutive (vdV Thm 10.1): the density is continuous at `θ₀`. -/
+  /-- Constitutive (vdV §10.2): the density is continuous at `θ₀`. -/
   continuousAt : ContinuousAt f θ₀
-  /-- Constitutive (vdV Thm 10.1): the density is positive at `θ₀`. -/
+  /-- Constitutive (vdV §10.2): the density is positive at `θ₀`. -/
   pos : 0 < f θ₀
 
 /-- Under the dominated-model hypothesis `hκ`, the classical product experiment

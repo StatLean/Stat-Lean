@@ -5,7 +5,8 @@ import StatLean.AsymptoticStatistics.ForMathlib.ContiguityIntegralComparison
 /-!
 # The contiguity swap: base law vs localized prior mixtures
 
-vdV's proof of Theorem 10.1 constantly exchanges the base law `P^n_{θ₀}` with the Bayesian
+vdV's proof of the Bernstein–von Mises theorem constantly exchanges the base law `P^n_{θ₀}` with the
+Bayesian
 mixture `P_{n,U} = ∫ P^n_{θ} dΠ̄ₙ(θ)` over the shrinking prior ball `U/√n` ("we may always
 exchange `P_{n,0}` and `P_{n,U}`", p. 141). This file supplies that swap:
 
@@ -30,7 +31,7 @@ Theorem 10.1, pp. 141–142 (the preliminary contiguity observations), and Chapt
 **Proof formalization notes.** Per-`h` contiguity routes through
 `Contiguity.mutuallyContiguous_of_log_normal_of_integral_comparison` with the comparison
 supplied by `AsymptoticRepresentation.productMeasure_integral_comparison_boundedMeasurable`
-(support-free; vdV Thm 10.1 makes no common-support assumption). The mixture direction uses
+(support-free; vdV §10.2 makes no common-support assumption). The mixture direction uses
 the two-sided prior-vs-Lebesgue comparison on small balls (`PriorSmallBall`), an
 `L¹`-subsequence extraction (`TendstoInMeasure.exists_seq_tendsto_ae`), a single-`h`
 application of the per-`h` lemma along the subsequence (`Contiguous.comp_subseq`), and
@@ -83,9 +84,9 @@ theorem logLikelihood_weakConverges
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
@@ -184,9 +185,9 @@ theorem mutuallyContiguous_local_alternative
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
@@ -292,22 +293,22 @@ private lemma bvmMixture_apply
 
 /-- **The contiguity swap** (vdV p. 141: "`P_{n,U} ◁▷ P_{n,0}`"): the base law and the
 localized prior mixture are mutually contiguous, given the model and prior conditions of
-Theorem 10.1. -/
+the Bernstein–von Mises theorem. -/
 theorem mutuallyContiguous_mixture_base
     -- USER-INPUT: dominated iid model with normalized densities; vdV §10.2, p. 140
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
       ⟪u, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) v))⟫)
     -- USER-INPUT: dominated iid model, `κ θ = p_θ · μ`; vdV §10.2, p. 140
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
-    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    -- USER-INPUT: the prior condition of the Bernstein–von Mises theorem; vdV §10.2, p. 141
     (hπ : HasLocalDensity π θ₀ r₀ f) {u : ℝ}
     -- LEAN-ONLY: nontrivial localization radius
     (hu : 0 < u) :
@@ -597,16 +598,16 @@ theorem measure_tendsto_zero_of_predictive_null
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
       ⟪u, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) v))⟫)
     -- USER-INPUT: dominated iid model, `κ θ = p_θ · μ`; vdV §10.2, p. 140
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
-    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    -- USER-INPUT: the prior condition of the Bernstein–von Mises theorem; vdV §10.2, p. 141
     (hπ : HasLocalDensity π θ₀ r₀ f)
     {N : ∀ n : ℕ, Set (Fin n → 𝓧)}
     -- LEAN-ONLY: measurable exceptional events (regularity)

@@ -25,19 +25,19 @@ BernsteinVonMises/
 ├── PriorSmallBall → MixtureContiguity → PosteriorConcentration (= Step A)
 │                                            [lanes bvm-conc / bvm-local]
 ├── LocalApproximation                        (= Step B)                 [lane bvm-local]
-└── Theorem10_1 → EfficientCentering          (assembly)                 [lane bvm-assembly]
+└── PosteriorNormality → EfficientCentering          (assembly)                 [lane bvm-assembly]
 
 BayesEstimators/
 ├── Defs (SeparatedLoss/PolyGrowth/risk process/limit criterion)         [laptop]
 ├── PosteriorTails (10.9) + ArgminConsistency (deterministic)            [lane bpe-aux]
 ├── UniformApproximation (majorant form; consumes Thm 10.1)              [lane bpe-approx]
-└── Theorem10_8 (tightness + assembly + Anderson corollary)              [lane bpe-final]
+└── PointEstimatorLimits (tightness + assembly + Anderson corollary)              [lane bpe-final]
 
 DoobConsistency/
 ├── Defs (doobJoint/doobData/doobSigma/StronglyConsistentAt)             [laptop]
 ├── PosteriorMartingale (σ-algebra identities, condDistrib=posterior, Lévy upward)
 ├── Accessible (SLLN + countable determining family + Lusin–Souslin retraction = (10.11))
-└── Theorem10_10 (assembly)                                              [lane doob-core]
+└── PosteriorNormality0 (assembly)                                              [lane doob-core]
 ```
 
 ## Key design decisions (details in the plan file)

@@ -14,7 +14,8 @@ Data model for vdV §10.3 (Bayes point estimators). A loss `ℓ : ℝ^k → [0,�
 * `bpePosteriorRisk` — the local posterior-risk process
   `Zₙ(τ)(ω) = ∫ ℓ(τ − h) d(bvmLocalPosterior)(h)`;
 * `bpeGaussCriterion` — the deterministic limit criterion
-  `g(u) = ∫ ℓ(u − z) dN(0, J⁻¹)(z)` (the process of vdV Theorem 10.8 recentred by `X`:
+  `g(u) = ∫ ℓ(u − z) dN(0, J⁻¹)(z)` (the process of the Bayes-point-estimator theorem recentred by
+  `X`:
   `∫ ℓ(t − h) dN(X, J⁻¹)(h) = g(t − X)`).
 
 **Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical
@@ -47,9 +48,10 @@ structure SeparatedLoss (ℓ : EuclideanSpace ℝ (Fin k) → ℝ≥0∞) : Prop
   some scale `M` and threshold `c`. Stated with an explicit separating `c` to avoid `sSup`/
   `sInf` while remaining equivalent to vdV's sup–inf form.
 
-  The gap — not merely one pair with `ℓ x < ℓ y` — is what Part 2 of the proof of
-  Theorem 10.8 consumes (vdV p. 148 sets `η := ℓ̲(2δ) − ℓ̄(δ) > 0`). The weaker pointwise
-  reading is genuinely insufficient: the `0–1` loss `ℓ(u) = 1 − 1_{u = 0}` satisfies `mono`
+  The gap — not merely one pair with `ℓ x < ℓ y` — is what the tightness step of the
+  Bayes-point-estimator theorem consumes (vdV p. 148 sets `η := ℓ̲(2δ) − ℓ̄(δ) > 0`). The
+  weaker pointwise reading is genuinely insufficient: the `0–1` loss
+  `ℓ(u) = 1 − 1_{u = 0}` satisfies `mono`
   and has `ℓ 0 < ℓ y`, yet its sup and inf coincide at every scale, its posterior risk is
   constant against an atomless posterior, every point is a minimizer, and tightness fails.
   Consistently, vdV's own sufficient condition ("`ℓ(h) = ℓ₀(‖h‖)` with `ℓ₀` nondecreasing and
@@ -69,7 +71,7 @@ noncomputable def bpePosteriorRisk (κ : Kernel (EuclideanSpace ℝ (Fin k)) �
     (τ : EuclideanSpace ℝ (Fin k)) (ω : Fin n → 𝓧) : ℝ≥0∞ :=
   ∫⁻ h, ℓ (τ - h) ∂(bvmLocalPosterior κ π θ₀ n ω)
 
-/-- The **deterministic limit criterion** `g(u) = ∫ ℓ(u − z) dN(0, J⁻¹)(z)` (vdV Thm 10.8:
+/-- The **deterministic limit criterion** `g(u) = ∫ ℓ(u − z) dN(0, J⁻¹)(z)` (vdV §10.3:
 the limit process is `t ↦ g(t − X)` for `X ∼ N(0, J⁻¹)`). -/
 noncomputable def bpeGaussCriterion (J : Matrix (Fin k) (Fin k) ℝ)
     (ℓ : EuclideanSpace ℝ (Fin k) → ℝ≥0∞) (u : EuclideanSpace ℝ (Fin k)) : ℝ≥0∞ :=

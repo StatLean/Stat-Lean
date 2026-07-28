@@ -92,18 +92,18 @@ import StatLean.Bayesian.BernsteinVonMises.TestBoost
 import StatLean.Bayesian.BernsteinVonMises.ExponentialTests
 import StatLean.Bayesian.BernsteinVonMises.PosteriorConcentration
 import StatLean.Bayesian.BernsteinVonMises.LocalApproximation
-import StatLean.Bayesian.BernsteinVonMises.Theorem10_1
+import StatLean.Bayesian.BernsteinVonMises.PosteriorNormality
 import StatLean.Bayesian.BernsteinVonMises.EfficientCentering
 import StatLean.Bayesian.BayesEstimators.Defs
 import StatLean.Bayesian.BayesEstimators.PosteriorTails
 import StatLean.Bayesian.BayesEstimators.ArgminConsistency
 import StatLean.Bayesian.BayesEstimators.UniformApproximation
-import StatLean.Bayesian.BayesEstimators.Theorem10_8
+import StatLean.Bayesian.BayesEstimators.PointEstimatorLimits
 import StatLean.Bayesian.DoobConsistency.Defs
 import StatLean.Bayesian.DoobConsistency.Basic
 import StatLean.Bayesian.DoobConsistency.PosteriorMartingale
 import StatLean.Bayesian.DoobConsistency.Accessible
-import StatLean.Bayesian.DoobConsistency.Theorem10_10
+import StatLean.Bayesian.DoobConsistency.PosteriorConsistency
 
 /-!
 # Bayesian — area umbrella

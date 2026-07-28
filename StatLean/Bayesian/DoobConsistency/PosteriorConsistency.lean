@@ -2,9 +2,9 @@ import StatLean.Bayesian.DoobConsistency.PosteriorMartingale
 import StatLean.Bayesian.DoobConsistency.Accessible
 
 /-!
-# Theorem 10.10: Doob's posterior consistency theorem
+# Doob's posterior consistency theorem
 
-Assembly of vdV Theorem 10.10: for an identifiable model on a standard Borel sample space
+Assembly of Doob's consistency theorem: for an identifiable model on a standard Borel sample space
 with a Polish parameter space, and **any** prior probability measure `π`, the posterior is
 strongly consistent at `π`-almost every parameter. No smoothness, dominatedness, or
 compactness is assumed.
@@ -40,7 +40,7 @@ namespace StatLean.Bayesian
 
 variable {Θ 𝓧 : Type*} [mΘ : MeasurableSpace Θ] [m𝓧 : MeasurableSpace 𝓧]
 
-/-- **Theorem 10.10 (Doob's consistency theorem).** Let `𝓧` be standard Borel, let `Θ` be a
+/-- **Doob's consistency theorem.** Let `𝓧` be standard Borel, let `Θ` be a
 Polish metric parameter space (Borel σ-algebra), and let the model `θ ↦ K θ` be
 identifiable. Then for every prior probability measure `π`, the posterior is strongly
 consistent at `π`-almost every `θ`: `K θ`-iid-almost-surely, the posterior mass of every
@@ -48,7 +48,7 @@ consistent at `π`-almost every `θ`: `K θ`-iid-almost-surely, the posterior ma
 theorem doob_consistency [MetricSpace Θ] [PolishSpace Θ] [BorelSpace Θ] [Nonempty Θ]
     [StandardBorelSpace 𝓧]
     (K : Kernel Θ 𝓧) [IsMarkovKernel K]
-    -- USER-INPUT: identifiability, `P_θ ≠ P_{θ'}` for `θ ≠ θ'`; vdV Thm 10.10
+    -- USER-INPUT: identifiability, `P_θ ≠ P_{θ'}` for `θ ≠ θ'`; vdV §10.20
     (hK_inj : Function.Injective fun θ => K θ)
     (π : Measure Θ) [IsProbabilityMeasure π] :
     ∀ᵐ θ ∂π, StronglyConsistentAt K π θ := by

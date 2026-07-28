@@ -3,12 +3,13 @@ import StatLean.Bayesian.BernsteinVonMises.PosteriorConcentration
 import StatLean.Bayesian.BernsteinVonMises.PriorSmallBall
 
 /-!
-# Display (10.9): negligibility of the posterior tails with polynomial weights
+# Negligibility of the posterior tails with polynomial weights
 
-The first part of the proof of vdV Theorem 10.8: for every `Mₙ → ∞`, the local posterior
+The first part of the proof of the Bayes-point-estimator theorem: for every `Mₙ → ∞`, the local
+posterior
 integral of the polynomial envelope `1 + ‖h‖ᵖ` outside the radius-`Mₙ` balls tends to zero
 in `P^n_{θ₀}`-probability, provided the prior has a finite `p`-th moment. This strengthens
-Step A of Theorem 10.1 from posterior *masses* to *weighted* masses.
+Step A of the Bernstein–von Mises theorem from posterior *masses* to *weighted* masses.
 
 **Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical
 and Probabilistic Mathematics, Cambridge University Press, 1998, Chapter 10, §10.3, proof of
@@ -561,19 +562,21 @@ private theorem tail_mixture_bound
     _ ≤ a⁻¹ * (δ⁻¹ * (c₁⁻¹ * ENNReal.ofReal (Real.sqrt n ^ k) * I)) := by gcongr
     _ = a⁻¹ * δ⁻¹ * c₁⁻¹ * (ENNReal.ofReal (Real.sqrt n ^ k) * I) := by ring
 
-/-- **Display (10.9)** (vdV p. 148): the polynomial-weighted posterior tails are negligible.
+/-- **The polynomial-weighted posterior-tail bound** (vdV p. 148): the polynomial-weighted posterior
+tails are negligible.
 For every `Mₙ → ∞` and `δ > 0`,
 `P^n_{θ₀} { ∫_{‖h‖ ≥ Mₙ} (1 + ‖h‖ᵖ) d(local posterior) ≥ δ } → 0`,
-given the model/Fisher/prior conditions of Theorem 10.1, exponentially powerful tests
-(Lemma 10.3 shape), and the prior moment `∫ ‖θ‖ᵖ dπ < ∞`. -/
+given the model/Fisher/prior conditions of the Bernstein–von Mises theorem, exponentially powerful
+tests
+(the exponential-tests lemma shape), and the prior moment `∫ ‖θ‖ᵖ dπ < ∞`. -/
 theorem posterior_tail_lintegral_tendsto
     -- USER-INPUT: dominated iid model with normalized densities; vdV §10.2, p. 140
     (hPDF : IsPDFOf M μ)
     -- LEAN-ONLY: measurable score (regularity)
     (hsc : Measurable sc)
-    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV §10.2
     (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
-    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    -- USER-INPUT: nonsingular Fisher information; vdV §10.2
     (hJ_pd : J.PosDef)
     -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
     (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
@@ -582,20 +585,20 @@ theorem posterior_tail_lintegral_tendsto
     (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
     -- LEAN-ONLY: joint measurability of the model densities (regularity)
     (hM_joint : Measurable (Function.uncurry M.density))
-    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    -- USER-INPUT: the prior condition of the Bernstein–von Mises theorem; vdV §10.2, p. 141
     (hπ : HasLocalDensity π θ₀ r₀ f)
     {p : ℝ}
     -- LEAN-ONLY: nonnegative growth exponent (vdV §10.3: `p ≥ 0`)
     (hp : 0 ≤ p)
-    -- USER-INPUT: finite prior `p`-moment, `∫ ‖θ‖ᵖ dΠ < ∞`; vdV Thm 10.8
+    -- USER-INPUT: finite prior `p`-moment, `∫ ‖θ‖ᵖ dΠ < ∞`; vdV §10.3
     (hmom : ∫⁻ θ, ENNReal.ofReal (‖θ‖ ^ p) ∂π < ∞)
     {Mseq : ℕ → ℝ}
     -- USER-INPUT: the localization radii diverge; vdV §10.3 (`Mₙ → ∞`)
     (hM : Tendsto Mseq atTop atTop)
     {φ : ∀ n : ℕ, (Fin n → 𝓧) → ℝ} {c : ℝ}
-    -- LEAN-ONLY: positive exponential rate (supplied by Lemma 10.3)
+    -- LEAN-ONLY: positive exponential rate (supplied by the exponential-tests lemma)
     (hc : 0 < c)
-    -- USER-INPUT: exponentially powerful tests; vdV Lemma 10.3 (discharged at assembly)
+    -- USER-INPUT: exponentially powerful tests; vdV §10.2 (discharged at assembly)
     (hφ : IsExpConsistentTestSeq M μ θ₀ Mseq c φ) :
     ∀ δ : ℝ≥0∞, 0 < δ →
       Tendsto (fun n => productMeasure M μ θ₀ n
