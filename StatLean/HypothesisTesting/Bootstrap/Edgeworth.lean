@@ -6636,7 +6636,68 @@ Proved and axiom-clean after wave 26: everything listed after wave 25, **and**
 (`abs_studentizedRootCDF_sub_comp_le`, `abs_studentizedRootCDF_sub_truncAt_le`, `truncAt` with
 `truncAt_ne_setOf`, `abs_truncAt_sub_le`, `norm_studentPair_truncAt_le`), the `charFun` bridge
 (`charFun_map_deltaSurrogate`, `norm_charFun_map_deltaSurrogate_sub_graded_le`) and the
-formalized witness `exists_measurable_charFun_map_eq_one`. -/
+formalized witness `exists_measurable_charFun_map_eq_one`.
+
+**Status after the wave-27 re-derivation.** The residue is still **one** item, but it is a
+different one, and the change is a correction of the *method*, not a refinement of it. Wave 26
+recorded the residue as "an exponentially small bound on `‖φ_{ρₙ∘Hₙ⁻¹}(θ)‖` over `|θ| ≳ √n`",
+to be produced by Hall's conditioning device. That device, in the form prescribed — freeze
+`n − k` coordinates, linearise `Hₙ` in the free block, multiply the conditional Cramér bounds —
+**cannot produce it, at any `k`**, and the obstruction is deterministic and formalized.
+
+* **THE CORRECTION — the linearisation bookkeeping is arithmetically dead.**
+  `deltaSurrogate_sub_linear_ge`: for every increment `h` with `h₀ ≥ 0`,
+  `Hₙ(h) − h₀/σ ≥ r h₀(−h₁)/(2σ³)`, where `h₀/σ` is the linearisation `Hₙ(0) + ⟪∇Hₙ(0), h⟫`.
+  In the quadrant `h₀ ≥ 0 ≥ h₁` **all three** nonlinear terms of the surrogate are nonnegative,
+  so the second-order term `−uvr/2` is not cancelled by the two third-order ones but reinforced:
+  the error is at least `r h₀|h₁|/(2σ³)` (`abs_deltaSurrogate_sub_linear_ge`), never `o(r|h|²)`.
+  On a free block of `k` coordinates the root's increment has `|h₀| ≍ σ√(k/n)` and
+  `|h₁| ≍ σ²√(k/n)`, so at `|θ| ≍ √n` and `r = n^{-1/2}` the additive price of replacing
+  `E e^{iθ(L+R)}` by `E e^{iθL}` is `|θ|·r·|h₀h₁|/(2σ³) ≍ k/n`, while the Cramér gain the block
+  buys is `ρ^k`. Reaching `O(n^{-3/2})` needs `k = O(n^{-1/2})`; making `ρ^k` small needs
+  `k ≍ n`. **Incompatible** — the third wave in three in which a prescribed route died on an
+  arithmetic incompatibility (wave 25: the truncation level; wave 26: the uniform moment
+  allowance). Conditioning on `|Xᵢ − m|` instead (Hall's own variant, which freezes `v` and
+  leaves the signs free) removes the `uv` term but leaves `u³r²/2`, and the same computation
+  gives `≍ k n^{-1/2}/n`, again `O(n^{-1/2})` at `k ≍ n`.
+
+* **THE ROUTE — the root's Cramér tail *does* transfer, by Fourier synthesis.**
+  `exists_measurable_charFun_map_eq_one` rules out a transfer that uses *nothing* about the
+  functional; it does not rule out one that uses that `Hₙ` is a polynomial with non-vanishing
+  gradient on the bulk. Writing the multiplier as a superposition of characters around the
+  carrier `t₀ = θ∇Hₙ(0) = (θ/σ)e₀` turns `φ_ρ` into `φ_{ρ∘Hₙ⁻¹}`:
+  `∫ e^{iθHₙ} dρ = ∫ a(s) φ_ρ(t₀ + s) ds` (`integral_fourierSynth`, Fubini on `ρ ⊗ volume`), and
+  every frequency that carries mass satisfies `‖t₀ + s‖ ≥ ‖t₀‖ − R`, which is exactly the band
+  where `exists_bound_norm_charFun_vecRootLaw_studentPair` gives `cⁿ`. The transfer inequality
+  is `norm_integral_fourierSynth_le` (`Γκ + ε`), the packaged outer-range bound is
+  `norm_charFun_map_deltaSurrogate_vecRootLaw_le` (`Γcⁿ + ε + η`), and the datum it consumes is
+  `HasFourierCertificate` — **a deterministic statement about one explicit polynomial phase
+  against Lebesgue measure on `ℝ²`, with no sampling law, no `n`-fold product and no
+  conditioning in it**. `hasFourierCertificate_of_eqOn` reduces it further, to an exact
+  synthesis on the bulk plus the mass the law puts outside.
+
+* **A trap inside that reduction, and it is recorded in the statement.** The `L¹(ρ)` error may
+  **not** be priced by the crude `‖e^{iθHₙ} − synthesis‖ ≤ 1 + Γ`: `Γ` is polynomially large in
+  `n` (it is the `L¹` mass of the transform of a function oscillating at frequency `M`), and
+  that estimate would demand `ρ{‖w‖ > M} = O(n^{-3/2−K})`. The gap must be bounded on its own
+  terms, and for the intended witness it is: the synthesis *is* `e^{iθHₙ(w)}χ(w/M)`, so the gap
+  is `e^{iθHₙ(w)}(1 − χ(w/M))`, of modulus at most `1`. Hence the hypothesis `B` of
+  `hasFourierCertificate_of_eqOn`.
+
+* **The arithmetic of the certificate, and it closes.** At `M = n^{3/8}`: `η ≤ ρ{‖w‖ > M}` is
+  `O(M^{-4}) = O(n^{-3/2})` under a fourth moment of the root; the phase `θ(Hₙ − w₀/σ)` has
+  gradient `O(θrM) = O(M)`, so `N` integrations by parts give `‖s‖^N|a(s)| ≲ M^{N+2}` and the
+  leakage past `R = |θ|/(2σ) ≍ √n` is `O(M^{N+2}R^{2−N}) = O(n^{7/4−N/8})`, so `N = 26`
+  suffices; and `Γ` is polynomial in `M`, which is all that is needed against `cⁿ`. The named
+  brick is `exists_fourierCertificate_deltaSurrogate`, and it is the **only** `sorry` besides
+  the two headline statements.
+
+Proved and axiom-clean after wave 27: everything listed after wave 26, **and** `fourierSynth`
+with `integrable_fourierSynth`, `norm_fourierSynth_le`, `integral_fourierSynth`,
+`norm_integral_fourierSynth_le`, `HasFourierCertificate` with `hasFourierCertificate_of_eqOn`,
+`norm_charFun_map_deltaSurrogate_le_of_certificate`,
+`norm_charFun_map_deltaSurrogate_vecRootLaw_le`, and the formalized obstruction
+`deltaSurrogate_sub_linear_ge` / `abs_deltaSurrogate_sub_linear_ge`. -/
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
@@ -6776,6 +6837,22 @@ outer range is on the law of the *surrogate*, a pushforward of the root's law al
 map, and `exists_bound_norm_charFun_vecRootLaw_studentPair` bounds the root's characteristic
 function — `exists_measurable_charFun_map_eq_one` is the formalized witness that no implication
 between the two holds for a general measurable functional. See the wave-26 note on
+`edgeworth_studentized_uniform`.
+
+**After the wave-27 re-derivation the residue over there is a *deterministic* item, and this
+corollary still adds nothing.** The wave-26 reading — that the outer range needs Hall's
+conditioning device — is overturned twice over. First, that device cannot work: the
+linearisation error of `Hₙ` over a free block of `k` coordinates costs `≍ k/n` in the phase
+(`deltaSurrogate_sub_linear_ge`, a one-sided bound with no cancellation available in the
+quadrant `h₀ ≥ 0 ≥ h₁`) while the Cramér gain is only `ρ^k`, and the two requirements are
+incompatible. Second, the root's Cramér tail *does* transfer to the surrogate — not for a
+general measurable functional, which is all the wave-26 witness rules out, but for a polynomial
+with non-vanishing gradient on the bulk, by writing its multiplier as a superposition of
+characters clustered around the carrier `(θ/σ)e₀` and pairing that superposition with the law
+(`integral_fourierSynth`, `norm_integral_fourierSynth_le`,
+`norm_charFun_map_deltaSurrogate_vecRootLaw_le`). What is left over there is the *deterministic*
+`exists_fourierCertificate_deltaSurrogate` — one explicit polynomial phase against Lebesgue
+measure on `ℝ²`, with no sampling law and no conditioning in it. See the wave-27 note on
 `edgeworth_studentized_uniform`. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
