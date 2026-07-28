@@ -3794,19 +3794,25 @@ def HasFourierCertificate (μ : Measure E₂) (σ r θ : ℝ) (t₀ : E₂) (R �
 
 /-- **A certificate from an exact synthesis on the bulk.** If the synthesis reproduces the
 multiplier *exactly* on a set `S` — which is what Fourier inversion gives for a cut-off
-multiplier, on the set where the cut-off is `1` — then the `L¹(μ)` error costs only the mass
-`μ(Sᶜ)` that the law puts outside the bulk, at the crude rate `1 + Γ`.
+multiplier, on the set where the cut-off is `1` — and misses it by at most `B` off `S`, then the
+`L¹(μ)` error costs only `B · μ(Sᶜ)`.
 
-This is the reduction that makes `HasFourierCertificate` a purely deterministic requirement plus
-one tail bound: with `S` the ball of radius `M` and `M = n^{3/8}`, a fourth moment of the root
-gives `μ(Sᶜ) = O(n^{-3/2})`, which is the accuracy the Esseen split needs. -/
+**The bound `B` must be supplied, not read off from `Γ`.** The crude estimate
+`‖e^{iθHₙ} − synthesis‖ ≤ 1 + Γ` is useless here, because `Γ` is polynomially large in `n` and
+would force the bulk to carry all but `n^{-3/2-K}` of the mass. For the intended witness
+`B = 1`: the synthesis is *exactly* `e^{iθHₙ(w)}χ(w/M)`, so the difference is
+`e^{iθHₙ(w)}(1 − χ(w/M))`, of modulus at most `1` and vanishing on the bulk. With `S` the ball
+of radius `M` and `M = n^{3/8}`, a fourth moment of the root prices `μ(Sᶜ)` at `O(n^{-3/2})` —
+the accuracy the Esseen split needs. -/
 theorem hasFourierCertificate_of_eqOn (μ : Measure E₂) [IsProbabilityMeasure μ]
-    (σ r θ : ℝ) {a : E₂ → ℂ} (ha : Integrable a) (t₀ : E₂) {R Γ ε η : ℝ}
+    (σ r θ : ℝ) {a : E₂ → ℂ} (ha : Integrable a) (t₀ : E₂) {R Γ ε η B : ℝ}
     (hΓ : ∫ s : E₂, ‖a s‖ ≤ Γ) (htail : ∫ s in {s : E₂ | R < ‖s‖}, ‖a s‖ ≤ ε)
     {S : Set E₂} (hS : MeasurableSet S)
     (heq : ∀ w ∈ S, fourierSynth a t₀ w
       = Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ)))
-    (hη : (1 + Γ) * (μ Sᶜ).toReal ≤ η) :
+    (hout : ∀ w ∈ Sᶜ, ‖Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ))
+      - fourierSynth a t₀ w‖ ≤ B)
+    (hη : B * (μ Sᶜ).toReal ≤ η) :
     HasFourierCertificate μ σ r θ t₀ R Γ ε η := by
   refine ⟨a, ha, hΓ, htail, ?_⟩
   set f : E₂ → ℂ :=
@@ -3824,9 +3830,6 @@ theorem hasFourierCertificate_of_eqOn (μ : Measure E₂) [IsProbabilityMeasure 
       (Filter.Eventually.of_forall fun w => le_of_eq (hfnorm w))
   have hsint : Integrable (fourierSynth a t₀) μ := integrable_fourierSynth μ ha t₀
   have hdint : Integrable (fun w => ‖f w - fourierSynth a t₀ w‖) μ := (hfint.sub hsint).norm
-  have hbdd : ∀ w : E₂, ‖f w - fourierSynth a t₀ w‖ ≤ 1 + Γ := fun w =>
-    (norm_sub_le _ _).trans
-      (add_le_add (le_of_eq (hfnorm w)) ((norm_fourierSynth_le t₀ w).trans hΓ))
   have hsplit : (∫ w, ‖f w - fourierSynth a t₀ w‖ ∂μ)
       = (∫ w in S, ‖f w - fourierSynth a t₀ w‖ ∂μ)
         + ∫ w in Sᶜ, ‖f w - fourierSynth a t₀ w‖ ∂μ :=
@@ -3836,11 +3839,11 @@ theorem hasFourierCertificate_of_eqOn (μ : Measure E₂) [IsProbabilityMeasure 
     filter_upwards [ae_restrict_mem hS] with w hw
     rw [heq w hw, sub_self, norm_zero]
     rfl
-  have hSc : (∫ w in Sᶜ, ‖f w - fourierSynth a t₀ w‖ ∂μ) ≤ (1 + Γ) * (μ Sᶜ).toReal := by
-    have hmono : (∫ w in Sᶜ, ‖f w - fourierSynth a t₀ w‖ ∂μ) ≤ ∫ _w in Sᶜ, (1 + Γ) ∂μ :=
+  have hSc : (∫ w in Sᶜ, ‖f w - fourierSynth a t₀ w‖ ∂μ) ≤ B * (μ Sᶜ).toReal := by
+    have hmono : (∫ w in Sᶜ, ‖f w - fourierSynth a t₀ w‖ ∂μ) ≤ ∫ _w in Sᶜ, B ∂μ :=
       setIntegral_mono_on hdint.integrableOn (integrable_const _) hS.compl
-        (fun w _ => hbdd w)
-    have hconst : (∫ _w in Sᶜ, (1 + Γ) ∂μ) = (μ Sᶜ).toReal * (1 + Γ) := by
+        (fun w hw => hout w hw)
+    have hconst : (∫ _w in Sᶜ, B ∂μ) = (μ Sᶜ).toReal * B := by
       rw [setIntegral_const, smul_eq_mul, measureReal_def]
     rw [hconst] at hmono
     linarith [hmono]
@@ -4215,6 +4218,50 @@ lemma norm_studentPair_truncAt_le (F : Measure ℝ) {τ : ℝ} (hτ : 0 ≤ τ) 
       exact pow_le_pow_left₀ (abs_nonneg _) hb 2
     linarith
   linarith
+
+/-- **(W27) The one remaining analytic item of the studentized expansion, as a named brick.**
+
+For the law of the truncated bivariate root there is, at every `n` and every outer frequency
+`|θ| ≥ c₀√n`, a Fourier certificate for the surrogate's multiplier: carrier
+`t₀ = (θ/σ)e₀` (the frequency of the leading character `e^{iθw₀/σ}`), admitted bandwidth
+`R = |θ|/(2σ)` — so the whole band that is used satisfies `‖t₀‖ − R = |θ|/(2σ) ≥ c₀√n/(2σ)`,
+which is where `exists_bound_norm_charFun_vecRootLaw_studentPair` gives `cⁿ` — mass `Γ n`
+growing at most polynomially, leakage and `L¹` error `O(n^{-3/2})`.
+
+Granting this, `norm_charFun_map_deltaSurrogate_vecRootLaw_le` produces the outer-range bound
+`Γ n·cⁿ + O(n^{-3/2}) = O(n^{-3/2})` that `esseen_split` consumes at `δ = n⁻¹`, `ρ = c√n`, and
+the studentized expansion closes.
+
+**Why this is the right shape.** The intended construction is
+`a = 𝓕[w ↦ e^{iθ(Hₙ(w) − w₀/σ)}χ(w/M)]` at `M = n^{3/8}` with `χ` a smooth cut-off equal to `1`
+on the unit ball; then `fourierSynth a t₀ w = e^{iθHₙ(w)}χ(w/M)` by Fourier inversion, so
+`hasFourierCertificate_of_eqOn` applies with `B = 1` and `η ≤ ρ_n{‖w‖ > M} = O(M^{-4})`, a
+fourth moment of the root. The phase `θ(Hₙ − w₀/σ)` has gradient `O(θrM) = O(M)`, so `N`
+integrations by parts give `‖s‖^N|a(s)| ≲ M^{N+2}` and the leakage past `R ≍ √n` is
+`O(M^{N+2}R^{2−N}) = O(n^{7/4 − N/8})`; `N = 26` suffices. The mass `Γ` is polynomial in `M`,
+hence in `n`, which is all that is needed against `cⁿ`.
+
+**This replaces, and is strictly smaller than, the conditioning device the wave-26 note and the
+wave-27 prompt prescribed.** It is a statement about one explicit polynomial phase against
+Lebesgue measure on `ℝ²` — no sampling law, no `n`-fold product, no conditioning. The route it
+replaces is not merely harder: `deltaSurrogate_sub_linear_ge` shows it cannot work at all, since
+the linearisation error over a free block of `k` coordinates costs `≍ k/n` in the phase while
+the Cramér gain is only `ρ^k`. -/
+theorem exists_fourierCertificate_deltaSurrogate
+    -- USER-INPUT: finite fourth moment of the sampling law, which is what prices the bulk
+    (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F)
+    -- USER-INPUT: the scale of the surrogate, and the outer range
+    {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) :
+    ∃ (Γ : ℕ → ℝ) (C : ℝ) (K : ℕ), 0 < C ∧ (∀ n : ℕ, Γ n ≤ C * (n : ℝ) ^ K) ∧
+      ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ * Real.sqrt (n : ℝ) ≤ |θ| →
+        HasFourierCertificate
+          (vecRootLaw F
+            (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n)
+          σ ((Real.sqrt (n : ℝ))⁻¹) θ ((θ / σ) • coordDir 0) (|θ| / (2 * σ))
+          (Γ n) (C / ((n : ℝ) * Real.sqrt (n : ℝ)))
+          (C / ((n : ℝ) * Real.sqrt (n : ℝ))) := by
+  sorry
 
 end StudentizedReduction
 
