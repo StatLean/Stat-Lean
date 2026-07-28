@@ -7,6 +7,7 @@ import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
+import Mathlib.Analysis.Fourier.Inversion
 
 /-!
 # One-term Edgeworth expansions for the mean, and their uniform form
@@ -172,7 +173,7 @@ expansions to improve accuracy, is due to R. Beran ("Bootstrap methods in statis
 -/
 
 open Filter MeasureTheory ProbabilityTheory
-open scoped ENNReal NNReal Topology RealInnerProductSpace
+open scoped ENNReal NNReal Topology RealInnerProductSpace FourierTransform
 
 namespace StatLean.HypothesisTesting
 
@@ -4192,6 +4193,108 @@ theorem norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band
   haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
   exact norm_charFun_map_deltaSurrogate_le_of_bandCertificate _ σ r θ (pow_nonneg hc n) hcert
     (fun t ht => hcram t (le_trans hR ht))
+
+/-! ### The weight of a bulk multiplier: synthesis *is* Fourier inversion
+
+The three data a certificate has to produce — the exact synthesis on the bulk, the mass and the
+leakage — are all data about **one** object, the Fourier transform `𝓕 g` of the bulk multiplier
+`g = e^{iθ(Hₙ − w₀/σ)}χ(·/M)`, once the weight is normalized correctly. `fourierWeight` performs
+that normalization: `fourierSynth` integrates against the character `e^{i⟪w,·⟫}` while Mathlib's
+`𝓕` uses `e^{-2πi⟪·,·⟫}`, and the discrepancy is exactly a dilation by `2π`, whose Jacobian on
+`ℝ²` is `(2π)²`.
+
+After these three lemmas the certificate is a statement with no `fourierSynth` in it at all:
+supply a `g` that is continuous, integrable, with integrable transform, equal to `e^{iθHₙ}` on
+the bulk and of modulus `≤ 1` off it, and the certificate follows from bounds on
+`∫‖𝓕 g‖` and `∫_{‖t₀ + 2πv‖ < R}‖𝓕 g‖`. -/
+
+/-- The **Fourier weight** of a bulk multiplier `g`: the dilation of `𝓕 g` whose synthesis
+around a carrier `t₀` reproduces `e^{i⟪·,t₀⟫} g`. The factor `(2π)⁻²` is the Jacobian of the
+dilation on `ℝ²`. -/
+noncomputable def fourierWeight (g : E₂ → ℂ) (s : E₂) : ℂ :=
+  ((2 * Real.pi)⁻¹ ^ 2 : ℝ) • 𝓕 g (((2 * Real.pi)⁻¹ : ℝ) • s)
+
+/-- **Synthesis of the Fourier weight is Fourier inversion.** `fourierSynth (fourierWeight g) t₀`
+is `e^{i⟪·,t₀⟫} g` exactly — everywhere, not merely on a bulk. Applied at
+`g = e^{iθ(Hₙ − w₀/σ)}χ(·/M)` and `t₀ = (θ/σ)e₀` this is the "exact synthesis on the bulk" step of
+the construction, and it discharges it in the strong form: the synthesis equals
+`e^{iθHₙ}χ(·/M)` at *every* point, so the only error is the cut-off's, which is what
+`hasFourierCertificateOnBand_of_eqOn` prices with `B = 1`. -/
+theorem fourierSynth_fourierWeight (g : E₂ → ℂ) (hgc : Continuous g)
+    (hg : Integrable g) (hgh : Integrable (𝓕 g)) (t₀ w : E₂) :
+    fourierSynth (fourierWeight g) t₀ w
+      = Complex.exp ((⟪w, t₀⟫ : ℝ) * Complex.I) * g w := by
+  have hpi : (0 : ℝ) < 2 * Real.pi := by positivity
+  set l : ℝ := (2 * Real.pi)⁻¹ with hl
+  have hl0 : l ≠ 0 := by rw [hl]; positivity
+  set G : E₂ → ℂ := fun v =>
+    ((l ^ 2 : ℝ) : ℂ) * 𝓕 g v * Complex.exp ((⟪w, t₀ + l⁻¹ • v⟫ : ℝ) * Complex.I) with hG
+  have hstep : ∀ s : E₂,
+      fourierWeight g s * Complex.exp ((⟪w, t₀ + s⟫ : ℝ) * Complex.I) = G (l • s) := by
+    intro s
+    have hinv : l⁻¹ • (l • s) = s := by
+      rw [smul_smul, inv_mul_cancel₀ hl0, one_smul]
+    rw [hG]
+    simp only [hinv, fourierWeight, ← hl]
+    rw [Complex.real_smul]
+  have hsynth : fourierSynth (fourierWeight g) t₀ w = ∫ s : E₂, G (l • s) := by
+    rw [fourierSynth]
+    exact integral_congr_ae (Filter.Eventually.of_forall hstep)
+  have hrank : Module.finrank ℝ E₂ = 2 := by simp
+  have hcomp : (∫ s : E₂, G (l • s)) = |(l ^ Module.finrank ℝ E₂)⁻¹| • ∫ v : E₂, G v :=
+    Measure.integral_comp_smul volume G l
+  rw [hsynth, hcomp, hrank]
+  have habs : |(l ^ 2)⁻¹| = (l ^ 2)⁻¹ := abs_of_nonneg (by positivity)
+  rw [habs]
+  have hGeq : ∀ v : E₂, G v
+      = ((l ^ 2 : ℝ) : ℂ) * Complex.exp ((⟪w, t₀⟫ : ℝ) * Complex.I)
+          * (Complex.exp (((2 * Real.pi * ⟪v, w⟫ : ℝ)) * Complex.I) • 𝓕 g v) := by
+    intro v
+    have hin : (⟪w, t₀ + l⁻¹ • v⟫ : ℝ) = (⟪w, t₀⟫ : ℝ) + 2 * Real.pi * (⟪v, w⟫ : ℝ) := by
+      rw [inner_add_right, real_inner_smul_right, hl, inv_inv, real_inner_comm w v]
+    simp only [hG, hin, smul_eq_mul, Complex.ofReal_add, add_mul, Complex.exp_add]
+    ring
+  have hpull : (∫ v : E₂, G v)
+      = ((l ^ 2 : ℝ) : ℂ) * Complex.exp ((⟪w, t₀⟫ : ℝ) * Complex.I)
+        * ∫ v : E₂, (Complex.exp (((2 * Real.pi * ⟪v, w⟫ : ℝ)) * Complex.I) • 𝓕 g v) :=
+    (integral_congr_ae (Filter.Eventually.of_forall hGeq)).trans
+      (MeasureTheory.integral_const_mul _ _)
+  have hinv2 : (∫ v : E₂, (Complex.exp (((2 * Real.pi * ⟪v, w⟫ : ℝ)) * Complex.I) • 𝓕 g v))
+      = g w := by
+    rw [← Real.fourierInv_eq', hgc.fourierInv_fourier_eq hg hgh]
+  have hcoef : (((l ^ 2)⁻¹ : ℝ) : ℂ) * ((l ^ 2 : ℝ) : ℂ) = 1 := by
+    rw [← Complex.ofReal_mul, inv_mul_cancel₀ (pow_ne_zero 2 hl0)]
+    norm_num
+  rw [hpull, hinv2, Complex.real_smul]
+  linear_combination (Complex.exp ((⟪w, t₀⟫ : ℝ) * Complex.I) * g w) * hcoef
+
+/-- The Fourier weight is integrable as soon as `𝓕 g` is. -/
+theorem integrable_fourierWeight {g : E₂ → ℂ} (hgh : Integrable (𝓕 g)) :
+    Integrable (fourierWeight g) := by
+  have hl0 : ((2 * Real.pi)⁻¹ : ℝ) ≠ 0 := by positivity
+  exact (hgh.comp_smul hl0).smul (((2 * Real.pi)⁻¹ ^ 2 : ℝ))
+
+/-- **The mass of the Fourier weight is the `L¹` mass of `𝓕 g`, on the nose.** The dilation and
+its Jacobian cancel exactly, so the certificate's `Γ` is the Wiener norm of the bulk multiplier
+and nothing else. -/
+theorem integral_norm_fourierWeight (g : E₂ → ℂ) :
+    (∫ s : E₂, ‖fourierWeight g s‖) = ∫ v : E₂, ‖𝓕 g v‖ := by
+  have hpi : (0 : ℝ) < 2 * Real.pi := by positivity
+  set l : ℝ := (2 * Real.pi)⁻¹ with hl
+  have hl0 : (0 : ℝ) < l := by rw [hl]; positivity
+  have hrank : Module.finrank ℝ E₂ = 2 := by simp
+  have hnorm : ∀ s : E₂, ‖fourierWeight g s‖ = l ^ 2 * ‖𝓕 g (l • s)‖ := by
+    intro s
+    rw [fourierWeight, ← hl, Complex.real_smul, norm_mul, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_pos (by positivity)]
+  have h1 : (∫ s : E₂, ‖fourierWeight g s‖) = ∫ s : E₂, l ^ 2 * ‖𝓕 g (l • s)‖ :=
+    integral_congr_ae (Filter.Eventually.of_forall hnorm)
+  have h2 : (∫ s : E₂, l ^ 2 * ‖𝓕 g (l • s)‖)
+      = l ^ 2 * ∫ s : E₂, ‖𝓕 g (l • s)‖ := MeasureTheory.integral_const_mul _ _
+  have h3 : (∫ s : E₂, ‖𝓕 g (l • s)‖) = |(l ^ Module.finrank ℝ E₂)⁻¹| • ∫ v : E₂, ‖𝓕 g v‖ :=
+    Measure.integral_comp_smul volume (fun v => ‖𝓕 g v‖) l
+  rw [h1, h2, h3, hrank, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (l ^ 2)⁻¹), smul_eq_mul,
+    ← mul_assoc, mul_inv_cancel₀ (by positivity : (l : ℝ) ^ 2 ≠ 0), one_mul]
 
 /-- **The linearisation of the surrogate has a one-sided error, and it is of the full second
 order.** For every increment `h` with `h₀ ≥ 0`,
