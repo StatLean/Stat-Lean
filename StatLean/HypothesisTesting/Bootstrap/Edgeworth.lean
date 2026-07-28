@@ -290,6 +290,110 @@ theorem exists_bound_lt_one_of_cramer [IsProbabilityMeasure F]
 
 end Cramer
 
+/-! ## Cramér's condition in an inner product space — (M3)(i)
+
+The Cramér tail of the *studentized* expansion needs a bound `‖φ_ρ t‖ ≤ c < 1` on a whole
+region `ε ≤ ‖t‖` of the plane, for `ρ` the law of the bivariate summand. The note on
+`edgeworth_studentized_uniform` isolates two halves of that requirement, and this section
+proves the second one and makes the first one precise.
+
+* *The directional reduction is free.* `charFun_smul_eq_charFun_map_inner` evaluated at `s = 1`
+  says `φ_μ(t) = φ_{projLaw μ t}(1)`, so the strict bound `‖φ_μ(t)‖ < 1` at a **single**
+  nonzero `t` is the one-dimensional `norm_charFun_lt_one_of_cramer` applied to the projected
+  law, at the argument `1 ≠ 0` (`norm_charFun_lt_one_of_projLaw_cramer`). No two-dimensional
+  input, and no uniformity, is used here.
+* *Uniformity over directions is a compactness statement, and it is proved here.* Given the
+  cocompact bound of `VecCramerCondition` and the pointwise strict bound above,
+  `exists_bound_lt_one_of_vecCramer` produces a single `c < 1` valid on all of `ε ≤ ‖t‖`: the
+  bound holds off a compact `K` by hypothesis, and on the compact `K ∩ {ε ≤ ‖t‖}` the
+  continuous function `‖φ_μ‖` attains a maximum at some `t₀`, which is `< 1` because
+  `‖t₀‖ ≥ ε > 0` forces `t₀ ≠ 0`. This is the "compactness argument over the circle" the note
+  calls for, in the form that is actually needed — over a compact annulus rather than the
+  circle, which avoids having to control the radial variable separately.
+
+What remains open in (M3)(i) is only the cocompact half itself, `VecCramerCondition`, for the
+*specific* bivariate law of `studentPair F`. That law is carried by a parabola and hence is
+singular in `ℝ²` even when `F ≪ volume`, so it is not supplied by Riemann–Lebesgue: on the
+axis `t₁ = 0` it is the one-dimensional Cramér condition for `F`, while for `t₁` bounded away
+from `0` the phase `t₀y + t₁y²` is genuinely quadratic and the decay is a van der Corput
+second-derivative estimate. Uniformity across the transition between the two regimes is the
+classical delicate point, and it is *not* a corollary of the directionwise conditions —
+multivariate Cramér is strictly stronger than Cramér in every direction. -/
+
+section VecCramer
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+
+/-- **Cramér's condition in an inner product space**: the modulus of the characteristic
+function is eventually bounded by a constant strictly below `1` off the compact sets. The
+verbatim analogue of `CramerCondition`, with `Filter.cocompact ℝ` replaced by
+`Filter.cocompact E`. -/
+def VecCramerCondition (μ : Measure E) : Prop :=
+  ∃ c : ℝ, c < 1 ∧ ∀ᶠ t in Filter.cocompact E, ‖charFun μ t‖ ≤ c
+
+/-- **The strict bound at a single nonzero direction is one-dimensional.**
+
+`φ_μ(t) = φ_{projLaw μ t}(1)` by `charFun_smul_eq_charFun_map_inner` at `s = 1`, so
+`‖φ_μ(t)‖ < 1` as soon as the *projected* law in the direction `t` satisfies the
+one-dimensional Cramér condition. For the bivariate law of `studentPair F` the projected law in
+the direction `t` is the law of `t₀(X − μ) + t₁((X − μ)² − σ²)`, a nonconstant polynomial image
+of `F`, so absolute continuity of `F` supplies the hypothesis in every direction. -/
+theorem norm_charFun_lt_one_of_projLaw_cramer (μ : Measure E) [IsProbabilityMeasure μ] {t : E}
+    (hproj : CramerCondition (projLaw μ t)) : ‖charFun μ t‖ < 1 := by
+  have h : charFun μ t = charFun (projLaw μ t) 1 := by
+    have h1 := charFun_smul_eq_charFun_map_inner μ t 1
+    rwa [one_smul] at h1
+  rw [h]
+  exact norm_charFun_lt_one_of_cramer hproj one_ne_zero
+
+/-- **The uniform Cramér bound on `ε ≤ ‖t‖`, in an inner product space.**
+
+A single constant `c < 1` dominating `‖φ_μ t‖ on the whole region `ε ≤ ‖t‖`, from the cocompact
+bound plus the pointwise strict bound off the origin. This is the exact analogue of
+`exists_bound_lt_one_of_cramer` and is what an Edgeworth tail estimate consumes; the proof is
+the compactness argument over directions, run on the compact set `K ∩ {ε ≤ ‖t‖}`. -/
+theorem exists_bound_lt_one_of_vecCramer (μ : Measure E) [IsProbabilityMeasure μ]
+    (hCramer : VecCramerCondition μ) (hpt : ∀ t : E, t ≠ 0 → ‖charFun μ t‖ < 1)
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ c : ℝ, c < 1 ∧ ∀ t : E, ε ≤ ‖t‖ → ‖charFun μ t‖ ≤ c := by
+  obtain ⟨c₀, hc₀, hev⟩ := hCramer
+  rw [Filter.eventually_iff, mem_cocompact] at hev
+  obtain ⟨K, hKcomp, hKsub⟩ := hev
+  have hAcomp : IsCompact (K ∩ {t : E | ε ≤ ‖t‖}) :=
+    hKcomp.inter_right (isClosed_le continuous_const continuous_norm)
+  rcases (K ∩ {t : E | ε ≤ ‖t‖}).eq_empty_or_nonempty with hAe | hAne
+  · refine ⟨c₀, hc₀, fun t ht => ?_⟩
+    have htK : t ∉ K := fun hK => by
+      have hmem : t ∈ K ∩ {t : E | ε ≤ ‖t‖} := ⟨hK, ht⟩
+      rw [hAe] at hmem
+      exact hmem.elim
+    exact hKsub htK
+  · obtain ⟨t₀, ht₀mem, ht₀max⟩ := hAcomp.exists_isMaxOn hAne
+      (Continuous.continuousOn (continuous_charFun (μ := μ)).norm)
+    have ht₀ne : t₀ ≠ 0 := by
+      intro h0
+      have hge : ε ≤ ‖t₀‖ := ht₀mem.2
+      rw [h0, norm_zero] at hge
+      linarith
+    refine ⟨max c₀ ‖charFun μ t₀‖, max_lt hc₀ (hpt t₀ ht₀ne), fun t ht => ?_⟩
+    by_cases hK : t ∈ K
+    · exact (ht₀max ⟨hK, ht⟩).trans (le_max_right _ _)
+    · exact (hKsub hK).trans (le_max_left _ _)
+
+/-- **The uniform Cramér bound from the directionwise conditions plus the cocompact bound.**
+The packaged form: the pointwise hypothesis of `exists_bound_lt_one_of_vecCramer` is discharged
+direction by direction through the projection identity. -/
+theorem exists_bound_lt_one_of_projLaw_cramer (μ : Measure E) [IsProbabilityMeasure μ]
+    (hCramer : VecCramerCondition μ)
+    (hdir : ∀ t : E, t ≠ 0 → CramerCondition (projLaw μ t))
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ c : ℝ, c < 1 ∧ ∀ t : E, ε ≤ ‖t‖ → ‖charFun μ t‖ ≤ c :=
+  exists_bound_lt_one_of_vecCramer μ hCramer
+    (fun t ht => norm_charFun_lt_one_of_projLaw_cramer μ (hdir t ht)) hε
+
+end VecCramer
+
 /-! ## The Lipschitz modulus of the normal distribution function
 
 `abs_measure_Iic_sub_le_charFun` (Esseen's smoothing inequality, proved in
