@@ -4432,6 +4432,156 @@ private lemma inv_mul_sqrt_le_telescope {j : ℕ} (hj : 2 ≤ j) :
     linear_combination (a * b) * hprod
   nlinarith [e1, e2]
 
+/-- **The `j^{-3/2}` tail of the telescope**, as a standalone sum bound: for every cut `J ≥ 2`,
+`∑_{J ≤ j < m} j^{-3/2} ≤ 3 J^{-1/2}`. This is `inv_mul_sqrt_le_telescope` summed, and it is the
+piece of the ledger that produces the `ε⁻¹` (at `J = ⌈ε²n⌉`, `J^{-1/2} = (ε√n)^{-1}`). Wave 32
+factored it out of `sum_le_of_bounded_and_decay` so that the *weighted* ledger
+`sum_le_of_bounded_and_weighted_decay` can reuse it. -/
+private lemma sum_Ico_inv_mul_sqrt_le {J m : ℕ} (hJ : 2 ≤ J) :
+    ∑ j ∈ Finset.Ico J m, (1 : ℝ) / ((j : ℝ) * Real.sqrt (j : ℝ))
+      ≤ 3 / Real.sqrt (J : ℝ) := by
+  have hJr : (2 : ℝ) ≤ (J : ℝ) := by exact_mod_cast hJ
+  have hJpos : (0 : ℝ) < Real.sqrt J := Real.sqrt_pos.mpr (by linarith)
+  rcases lt_or_ge J m with hm | hm
+  swap
+  · rw [Finset.Ico_eq_empty (by omega)]
+    simp only [Finset.sum_empty]
+    positivity
+  have hsplit : ∑ j ∈ Finset.Ico J m, (1 : ℝ) / ((j : ℝ) * Real.sqrt (j : ℝ))
+      = (1 : ℝ) / ((J : ℝ) * Real.sqrt (J : ℝ))
+        + ∑ j ∈ Finset.Ico (J + 1) m, (1 : ℝ) / ((j : ℝ) * Real.sqrt (j : ℝ)) :=
+    Finset.sum_eq_sum_Ico_succ_bot hm _
+  have hfirst : (1 : ℝ) / ((J : ℝ) * Real.sqrt (J : ℝ)) ≤ 1 / Real.sqrt J := by
+    have hs : Real.sqrt J ≤ (J : ℝ) * Real.sqrt J := by
+      nlinarith [Real.sqrt_nonneg (J : ℝ)]
+    exact one_div_le_one_div_of_le hJpos hs
+  have hstep : ∀ j ∈ Finset.Ico (J + 1) m,
+      (1 : ℝ) / ((j : ℝ) * Real.sqrt (j : ℝ))
+        ≤ 2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ)) := by
+    intro j hjmem
+    have hj2 : 2 ≤ j := by
+      have := (Finset.mem_Ico.1 hjmem).1
+      omega
+    exact inv_mul_sqrt_le_telescope hj2
+  have htel : ∑ j ∈ Finset.Ico (J + 1) m,
+      2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ))
+      ≤ 2 / Real.sqrt J := by
+    set g : ℕ → ℝ := fun i => 1 / Real.sqrt ((J : ℝ) + (i : ℝ)) with hg
+    have hre : ∑ j ∈ Finset.Ico (J + 1) m,
+        2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ))
+        = ∑ i ∈ Finset.range (m - (J + 1)), 2 * (g i - g (i + 1)) := by
+      rw [Finset.sum_Ico_eq_sum_range]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      have h1 : ((J + 1 + i : ℕ) : ℝ) - 1 = (J : ℝ) + (i : ℝ) := by push_cast; ring
+      have h2 : ((J + 1 + i : ℕ) : ℝ) = (J : ℝ) + ((i + 1 : ℕ) : ℝ) := by push_cast; ring
+      rw [h1, h2, hg]
+    rw [hre, ← Finset.mul_sum, Finset.sum_range_sub' g]
+    have hg0 : g 0 = 1 / Real.sqrt J := by
+      rw [hg]; norm_num
+    have hgnn : 0 ≤ g (m - (J + 1)) := by
+      rw [hg]; positivity
+    rw [hg0]
+    have : 2 * (1 / Real.sqrt (J : ℝ) - g (m - (J + 1))) ≤ 2 * (1 / Real.sqrt (J : ℝ)) := by
+      nlinarith
+    calc 2 * (1 / Real.sqrt (J : ℝ) - g (m - (J + 1)))
+        ≤ 2 * (1 / Real.sqrt (J : ℝ)) := this
+      _ = 2 / Real.sqrt J := by ring
+  have hsum2 : ∑ j ∈ Finset.Ico (J + 1) m, (1 : ℝ) / ((j : ℝ) * Real.sqrt (j : ℝ))
+      ≤ 2 / Real.sqrt J := (Finset.sum_le_sum hstep).trans htel
+  rw [hsplit]
+  have : 1 / Real.sqrt (J : ℝ) + 2 / Real.sqrt (J : ℝ) = 3 / Real.sqrt J := by ring
+  linarith [hfirst, hsum2]
+
+/-- `1/j ≤ log j − log (j−1)` for `j ≥ 2`, straight from `log x ≤ x − 1` applied to
+`x = (j−1)/j`. Summed, this is the harmonic bound that puts the logarithm into the ledger. -/
+private lemma one_div_le_log_sub_log {j : ℕ} (hj : 2 ≤ j) :
+    (1 : ℝ) / (j : ℝ) ≤ Real.log (j : ℝ) - Real.log ((j : ℝ) - 1) := by
+  have hj2 : (2 : ℝ) ≤ (j : ℝ) := by exact_mod_cast hj
+  have hjpos : (0 : ℝ) < (j : ℝ) := by linarith
+  have hj1 : (0 : ℝ) < (j : ℝ) - 1 := by linarith
+  have hdiv : (0 : ℝ) < ((j : ℝ) - 1) / (j : ℝ) := by positivity
+  have h := Real.log_le_sub_one_of_pos hdiv
+  rw [Real.log_div hj1.ne' hjpos.ne'] at h
+  have hval : ((j : ℝ) - 1) / (j : ℝ) - 1 = -(1 / (j : ℝ)) := by
+    rw [sub_div, div_self hjpos.ne']; ring
+  rw [hval] at h
+  linarith
+
+/-- **The harmonic tail of the ledger** (wave 32): `∑_{J ≤ j < m} j^{-1} ≤ 1 + log(m/J)`.
+
+This is the **only** source of the logarithm in `berryEsseen_convex_sharp`. It appears because
+the per-step localisation weight of the telescope is `4 C_k σⱼ + W` with `σⱼ = √(j/n)`, and
+`j^{-3/2} · σⱼ = n^{-1/2} j^{-1}`: one of the three halves of the decay exponent is eaten by the
+step's own smoothing width, turning the summable `j^{-3/2}` into the harmonic `j^{-1}`. At the
+cut `J = ⌈ε² n⌉` the bound is `1 + log(1/ε²) = 1 + 2 log(1/ε)`.
+
+The `max … 1` makes the statement unconditional in `m` (for `m ≤ J` the sum is empty). -/
+private lemma sum_Ico_one_div_le {J m : ℕ} (hJ : 2 ≤ J) :
+    ∑ j ∈ Finset.Ico J m, (1 : ℝ) / (j : ℝ)
+      ≤ 1 + Real.log (max ((m : ℝ) / (J : ℝ)) 1) := by
+  have hJr : (2 : ℝ) ≤ (J : ℝ) := by exact_mod_cast hJ
+  have hJpos : (0 : ℝ) < (J : ℝ) := by linarith
+  have hlogmax : 0 ≤ Real.log (max ((m : ℝ) / (J : ℝ)) 1) :=
+    Real.log_nonneg (le_max_right _ _)
+  rcases le_or_gt m J with hm | hm
+  · rw [Finset.Ico_eq_empty (by omega)]
+    simp only [Finset.sum_empty]
+    linarith
+  · have hsplit : ∑ j ∈ Finset.Ico J m, (1 : ℝ) / (j : ℝ)
+        = (1 : ℝ) / (J : ℝ) + ∑ j ∈ Finset.Ico (J + 1) m, (1 : ℝ) / (j : ℝ) :=
+      Finset.sum_eq_sum_Ico_succ_bot hm _
+    have hfirst : (1 : ℝ) / (J : ℝ) ≤ 1 := by
+      rw [div_le_one hJpos]; linarith
+    set g : ℕ → ℝ := fun i => Real.log ((J : ℝ) + (i : ℝ)) with hg
+    have hstep : ∀ j ∈ Finset.Ico (J + 1) m,
+        (1 : ℝ) / (j : ℝ) ≤ Real.log (j : ℝ) - Real.log ((j : ℝ) - 1) := by
+      intro j hjmem
+      have hj2 : 2 ≤ j := by have := (Finset.mem_Ico.1 hjmem).1; omega
+      exact one_div_le_log_sub_log hj2
+    have hre : ∑ j ∈ Finset.Ico (J + 1) m,
+        (Real.log (j : ℝ) - Real.log ((j : ℝ) - 1))
+        = ∑ i ∈ Finset.range (m - (J + 1)), (g (i + 1) - g i) := by
+      rw [Finset.sum_Ico_eq_sum_range]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      have h1 : ((J + 1 + i : ℕ) : ℝ) = (J : ℝ) + ((i + 1 : ℕ) : ℝ) := by push_cast; ring
+      have h2 : ((J + 1 + i : ℕ) : ℝ) - 1 = (J : ℝ) + (i : ℝ) := by push_cast; ring
+      simp only [hg]
+      rw [h2, h1]
+    have htel : ∑ i ∈ Finset.range (m - (J + 1)), (g (i + 1) - g i)
+        = g (m - (J + 1)) - g 0 := Finset.sum_range_sub g _
+    have hg0 : g 0 = Real.log (J : ℝ) := by rw [hg]; norm_num
+    have hcast : ((m - (J + 1) : ℕ) : ℝ) = (m : ℝ) - (J : ℝ) - 1 := by
+      have hle : J + 1 ≤ m := hm
+      have h : ((m - (J + 1) : ℕ) : ℝ) = (m : ℝ) - ((J : ℝ) + 1) := by
+        rw [Nat.cast_sub hle]; push_cast; ring
+      rw [h]; ring
+    have hgm : g (m - (J + 1)) = Real.log ((m : ℝ) - 1) := by
+      simp only [hg]
+      rw [hcast]
+      congr 1
+      ring
+    have hmr : (2 : ℝ) ≤ (m : ℝ) := by
+      have : (J : ℝ) + 1 ≤ (m : ℝ) := by exact_mod_cast hm
+      linarith
+    have hlogm : Real.log ((m : ℝ) - 1) ≤ Real.log (m : ℝ) :=
+      Real.log_le_log (by linarith) (by linarith)
+    have hrest : ∑ j ∈ Finset.Ico (J + 1) m, (1 : ℝ) / (j : ℝ)
+        ≤ Real.log (m : ℝ) - Real.log (J : ℝ) := by
+      calc ∑ j ∈ Finset.Ico (J + 1) m, (1 : ℝ) / (j : ℝ)
+          ≤ ∑ j ∈ Finset.Ico (J + 1) m,
+              (Real.log (j : ℝ) - Real.log ((j : ℝ) - 1)) := Finset.sum_le_sum hstep
+        _ = g (m - (J + 1)) - g 0 := by rw [hre, htel]
+        _ = Real.log ((m : ℝ) - 1) - Real.log (J : ℝ) := by rw [hgm, hg0]
+        _ ≤ Real.log (m : ℝ) - Real.log (J : ℝ) := by linarith
+    have hlogdiv : Real.log (m : ℝ) - Real.log (J : ℝ)
+        ≤ Real.log (max ((m : ℝ) / (J : ℝ)) 1) := by
+      have hd : Real.log ((m : ℝ) / (J : ℝ)) = Real.log (m : ℝ) - Real.log (J : ℝ) :=
+        Real.log_div (by linarith) (by linarith)
+      rw [← hd]
+      exact Real.log_le_log (by positivity) (le_max_left _ _)
+    rw [hsplit]
+    linarith
+
 /-- **The elementary sum estimate.** If a nonnegative sequence is bounded both by a constant
 `θ` and, from `j ≥ 1` on, by `j^{-3/2}`, then its partial sums are at most `J θ + 3/√J` for
 every cut `J ≥ 2`. Choosing `J ≈ θ^{-2/3}` gives `O(θ^{1/3})`, which is exactly the step that
@@ -4445,54 +4595,9 @@ private lemma sum_le_of_bounded_and_decay {θ : ℝ} (hθ : 0 ≤ θ) {n J : ℕ
   have hJpos : (0 : ℝ) < Real.sqrt J := Real.sqrt_pos.mpr (by linarith)
   have htail : ∀ m : ℕ, ∑ j ∈ Finset.Ico J m, T j ≤ 3 / Real.sqrt J := by
     intro m
-    rcases lt_or_ge J m with hm | hm
-    swap
-    · rw [Finset.Ico_eq_empty (by omega)]
-      simp
-      positivity
-    -- the first term of the tail, then a telescoping sum
-    have hsplit : ∑ j ∈ Finset.Ico J m, T j
-        = T J + ∑ j ∈ Finset.Ico (J + 1) m, T j := Finset.sum_eq_sum_Ico_succ_bot hm T
-    have hfirst : T J ≤ 1 / Real.sqrt J := by
-      refine (hTdec J (by omega)).trans ?_
-      have hs : Real.sqrt J ≤ (J : ℝ) * Real.sqrt J := by
-        nlinarith [Real.sqrt_nonneg (J : ℝ)]
-      exact one_div_le_one_div_of_le hJpos hs
-    have hstep : ∀ j ∈ Finset.Ico (J + 1) m,
-        T j ≤ 2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ)) := by
-      intro j hjmem
-      have hj2 : 2 ≤ j := by
-        have := (Finset.mem_Ico.1 hjmem).1
-        omega
-      exact (hTdec j (by omega)).trans (inv_mul_sqrt_le_telescope hj2)
-    have htel : ∑ j ∈ Finset.Ico (J + 1) m,
-        2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ))
-        ≤ 2 / Real.sqrt J := by
-      set g : ℕ → ℝ := fun i => 1 / Real.sqrt ((J : ℝ) + (i : ℝ)) with hg
-      have hre : ∑ j ∈ Finset.Ico (J + 1) m,
-          2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ))
-          = ∑ i ∈ Finset.range (m - (J + 1)), 2 * (g i - g (i + 1)) := by
-        rw [Finset.sum_Ico_eq_sum_range]
-        refine Finset.sum_congr rfl fun i _ => ?_
-        have h1 : ((J + 1 + i : ℕ) : ℝ) - 1 = (J : ℝ) + (i : ℝ) := by push_cast; ring
-        have h2 : ((J + 1 + i : ℕ) : ℝ) = (J : ℝ) + ((i + 1 : ℕ) : ℝ) := by push_cast; ring
-        rw [h1, h2, hg]
-      rw [hre, ← Finset.mul_sum, Finset.sum_range_sub' g]
-      have hg0 : g 0 = 1 / Real.sqrt J := by
-        rw [hg]; norm_num
-      have hgnn : 0 ≤ g (m - (J + 1)) := by
-        rw [hg]; positivity
-      rw [hg0]
-      have : 2 * (1 / Real.sqrt (J : ℝ) - g (m - (J + 1))) ≤ 2 * (1 / Real.sqrt (J : ℝ)) := by
-        nlinarith
-      calc 2 * (1 / Real.sqrt (J : ℝ) - g (m - (J + 1)))
-          ≤ 2 * (1 / Real.sqrt (J : ℝ)) := this
-        _ = 2 / Real.sqrt J := by ring
-    have hsum2 : ∑ j ∈ Finset.Ico (J + 1) m, T j ≤ 2 / Real.sqrt J :=
-      (Finset.sum_le_sum hstep).trans htel
-    rw [hsplit]
-    have : 1 / Real.sqrt (J : ℝ) + 2 / Real.sqrt (J : ℝ) = 3 / Real.sqrt J := by ring
-    linarith [hfirst, hsum2]
+    refine le_trans (Finset.sum_le_sum fun j hjmem => ?_) (sum_Ico_inv_mul_sqrt_le hJ)
+    have := (Finset.mem_Ico.1 hjmem).1
+    exact hTdec j (by omega)
   rcases le_total n J with hn | hn
   · have h1 : ∑ j ∈ Finset.range n, T j ≤ ∑ j ∈ Finset.range n, θ :=
       Finset.sum_le_sum fun j _ => hTθ j
@@ -4540,6 +4645,89 @@ private lemma sum_le_of_bounded_and_decay_const {K θ : ℝ} (hK : 0 < K) (hθ :
   rw [← Finset.sum_div, div_le_iff₀ hK] at h
   refine h.trans_eq ?_
   field_simp
+
+/-- **The summation ledger of the WEIGHTED telescope** (wave 32, PROVED).
+
+This is the arithmetic certificate behind the logarithm in `berryEsseen_convex_sharp`, isolated
+from all the measure theory. The *localised* telescope of `localised_swap_bound_small_weight`
+produces, at step `j ≥ 1`, a bound of the shape
+
+`Tⱼ ≤ (per-step weight) × (decay) = (4 C_k σⱼ + W) × 3β/(j √j)`,  `σⱼ = √(j/n)`,
+
+and `σⱼ/(j√j) = n^{-1/2} j^{-1}`, so the hypothesis below with `K₁ = 12 C_k β n^{-1/2}` and
+`K₂ = 3 β W` is exactly what the analytic half has to deliver. The conclusion is then
+
+`J θ + K₁ (1 + log(n/J)) + 3 K₂ /√J`,
+
+and at the cut `J = ⌈ε² n⌉` (so `n/J ≤ ε⁻²` and `J^{-1/2} ≤ (ε√n)⁻¹`), with the elementary step
+bound `θ = (C₃/ε³)/6 · n^{-3/2} · 3β`, this reads
+
+`(3/2) C₃ δ ε⁻¹ + 12 C_k δ (1 + 2 log(1/ε)) + 9 δ W ε⁻¹`,  `δ = β/√n`,
+
+i.e. `A δ (ε⁻¹(W + C_k ε) + C_k (1 + log(1/ε)))`. **Both exponents of the ledger are verified
+here**: the `j^{-1}` piece is genuinely harmonic (`sum_Ico_one_div_le` — this and nothing else is
+where the logarithm comes from), and the `j^{-3/2}` piece is genuinely summable to `J^{-1/2}`
+(`sum_Ico_inv_mul_sqrt_le` — this is the `ε⁻¹` the frozen statement already carried).
+
+What remains open in the brick is the *analytic* half — the production of the per-step
+hypothesis `hTdec`, i.e. the localised weighted swap at a single step — not this bookkeeping. -/
+private lemma sum_le_of_bounded_and_weighted_decay {K₁ K₂ θ : ℝ}
+    (hK₁ : 0 ≤ K₁) (hK₂ : 0 ≤ K₂) (hθ : 0 ≤ θ)
+    {n J : ℕ} (hJ : 2 ≤ J) {T : ℕ → ℝ} (hTnn : ∀ j, 0 ≤ T j) (hTθ : ∀ j, T j ≤ θ)
+    (hTdec : ∀ j, 1 ≤ j → T j ≤ K₁ / (j : ℝ) + K₂ / ((j : ℝ) * Real.sqrt (j : ℝ))) :
+    ∑ j ∈ Finset.range n, T j
+      ≤ (J : ℝ) * θ + K₁ * (1 + Real.log (max ((n : ℝ) / (J : ℝ)) 1))
+        + 3 * K₂ / Real.sqrt (J : ℝ) := by
+  classical
+  have hJr : (2 : ℝ) ≤ (J : ℝ) := by exact_mod_cast hJ
+  have hJs : (0 : ℝ) < Real.sqrt (J : ℝ) := Real.sqrt_pos.mpr (by linarith)
+  have hlog0 : 0 ≤ Real.log (max ((n : ℝ) / (J : ℝ)) 1) :=
+    Real.log_nonneg (le_max_right _ _)
+  have hlogterm : 0 ≤ K₁ * (1 + Real.log (max ((n : ℝ) / (J : ℝ)) 1)) :=
+    mul_nonneg hK₁ (by linarith)
+  have htailterm : (0 : ℝ) ≤ 3 * K₂ / Real.sqrt (J : ℝ) := by positivity
+  have htail : ∑ j ∈ Finset.Ico J n, T j
+      ≤ K₁ * (1 + Real.log (max ((n : ℝ) / (J : ℝ)) 1)) + 3 * K₂ / Real.sqrt (J : ℝ) := by
+    have hb : ∑ j ∈ Finset.Ico J n, T j
+        ≤ ∑ j ∈ Finset.Ico J n,
+            (K₁ / (j : ℝ) + K₂ / ((j : ℝ) * Real.sqrt (j : ℝ))) := by
+      refine Finset.sum_le_sum fun j hjmem => ?_
+      have := (Finset.mem_Ico.1 hjmem).1
+      exact hTdec j (by omega)
+    have hsp : ∑ j ∈ Finset.Ico J n,
+          (K₁ / (j : ℝ) + K₂ / ((j : ℝ) * Real.sqrt (j : ℝ)))
+        = K₁ * ∑ j ∈ Finset.Ico J n, (1 : ℝ) / (j : ℝ)
+          + K₂ * ∑ j ∈ Finset.Ico J n, (1 : ℝ) / ((j : ℝ) * Real.sqrt (j : ℝ)) := by
+      rw [Finset.sum_add_distrib]
+      congr 1
+      · rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun j _ => by ring
+      · rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun j _ => by ring
+    rw [hsp] at hb
+    have hh := mul_le_mul_of_nonneg_left (sum_Ico_one_div_le (J := J) (m := n) hJ) hK₁
+    have hs := mul_le_mul_of_nonneg_left (sum_Ico_inv_mul_sqrt_le (J := J) (m := n) hJ) hK₂
+    have hval : K₂ * (3 / Real.sqrt (J : ℝ)) = 3 * K₂ / Real.sqrt (J : ℝ) := by ring
+    linarith
+  rcases le_total n J with hn | hn
+  · have h1 : ∑ j ∈ Finset.range n, T j ≤ ∑ _j ∈ Finset.range n, θ :=
+      Finset.sum_le_sum fun j _ => hTθ j
+    have h2 : ∑ _j ∈ Finset.range n, (θ : ℝ) = (n : ℝ) * θ := by
+      rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+    have h3 : (n : ℝ) ≤ (J : ℝ) := by exact_mod_cast hn
+    nlinarith [mul_le_mul_of_nonneg_right h3 hθ]
+  · have hsplit : ∑ j ∈ Finset.range n, T j
+        = (∑ j ∈ Finset.Ico 0 J, T j) + ∑ j ∈ Finset.Ico J n, T j := by
+      rw [Finset.sum_Ico_consecutive T (Nat.zero_le J) hn, Finset.range_eq_Ico]
+    have h1 : ∑ j ∈ Finset.Ico 0 J, T j ≤ (J : ℝ) * θ := by
+      have hle := Finset.sum_le_sum (f := T) (g := fun _ => θ)
+        (fun j (_ : j ∈ Finset.Ico 0 J) => hTθ j)
+      have h2 : ∑ _j ∈ Finset.Ico 0 J, (θ : ℝ) = (J : ℝ) * θ := by
+        rw [Finset.sum_const, Nat.card_Ico, nsmul_eq_mul]
+        simp
+      linarith [hle, h2.le, h2.ge]
+    rw [hsplit]
+    linarith
 
 end SumEstimate
 
@@ -6790,6 +6978,13 @@ factor `2` for `ε ≤ 1`, and the `1 +` inside makes the extra term nonnegative
 statement is then unambiguously *weaker* than the frozen one — it is implied by Bentkus's
 theorem, as the frozen form was).
 
+**The ledger is FORMALISED, not merely asserted.** `sum_le_of_bounded_and_weighted_decay` is the
+statement above as a proved lemma about real sequences, over the two tail bounds
+`sum_Ico_one_div_le` (harmonic — the logarithm) and `sum_Ico_inv_mul_sqrt_le` (summable — the
+`ε⁻¹`), both proved. So the bookkeeping half of this brick is discharged; what is left is the
+*analytic* half, the production of its per-step hypothesis `hTdec` — see "What is still
+missing" below.
+
 **Remark (trading the log for a power).** If the Gaussian tail is used in its Markov form
 `stdGaussian_norm_ge_le p` at a *fixed* order `p = 2m`, rather than at all orders at once, the
 per-step weight is `(σⱼ/r)^{m}` and the harmonic sum is replaced by a convergent one; the
@@ -6798,10 +6993,17 @@ than the log form for every fixed `m`, so the route below is not restructured fo
 
 ## What is still missing (wave 32, re-derived)
 
-One item: the *assembly* itself — a weighted rerun of `abs_integral_smooth_sub_gaussian_improved`
-in which `hboundB` carries the per-step weight. Its two analytic ingredients are both in place
-(the wave-19 weighted lemma `abs_integral_mul_vecTiltRemainder_le_of_support` and its wave-29
-constant-off/Gaussian-tail extensions), but the shift-length restriction has to be handled:
+One item, and it is now sharply delimited: **the per-step weighted swap bound**, i.e. the
+hypothesis `hTdec` of `sum_le_of_bounded_and_weighted_decay`. Concretely, a weighted rerun of
+`hboundB` inside `abs_integral_smooth_sub_gaussian_improved`, delivering at step `j ≥ 1`
+
+`|∫ Gⱼ(· + v) dν − ∫ Gⱼ(· + v) dγ| ≤ (4 C_k σⱼ + W) · 3 C_t (β + β_G) / (j √j)`
+
+in place of the unweighted `C_t (β + β_G)/(j√j)`. Everything downstream of it — the summation,
+the cut `J = ⌈ε²n⌉`, the fixed point, the headline — is proved. Its two analytic ingredients are
+in place (the wave-19 weighted lemma `abs_integral_mul_vecTiltRemainder_le_of_support` and its
+wave-29 constant-off/Gaussian-tail extensions), but the shift-length restriction has to be
+handled:
 
 * **The `‖w‖ ≤ 1` restriction.** Both the wave-19 lemma and its wave-29 constant-off extension
   require a Cameron–Martin shift of length at most `1` (for `‖w‖ > 1` the `L²` norm of the tilt
