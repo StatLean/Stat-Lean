@@ -456,6 +456,50 @@ theorem exists_bound_lt_one_of_projLaw_cramer (μ : Measure E) [IsProbabilityMea
   exists_bound_lt_one_of_vecCramer μ hCramer
     (fun t ht => norm_charFun_lt_one_of_projLaw_cramer μ (hdir t ht)) hε
 
+/-- **Multivariate Cramér is exactly a Riemann–Lebesgue statement that is uniform over the
+unit sphere of directions.**
+
+`VecCramerCondition μ` follows from a single bound `‖φ_{projLaw μ θ}(R)‖ ≤ c < 1` holding for
+every unit vector `θ` and every large radius `R`. The proof is the projection identity written
+in polar form: `t = ‖t‖ • (t/‖t‖)`, so `φ_μ(t) = φ_{projLaw μ (t/‖t‖)}(‖t‖)`, and in a proper
+space `‖t‖ → ∞` along `cocompact E`.
+
+This pins down what is left of (M3)(i) for the law of `studentPair F`, and it is the reason
+that residue is *not* a corollary of the directionwise conditions. Each projected law
+`ν_θ = law of θ₀(X − μ) + θ₁((X − μ)² − σ²)` is a nonconstant polynomial image of an absolutely
+continuous law and hence itself absolutely continuous, so `‖φ_{ν_θ}(R)‖ → 0` as `R → ∞` for
+every *fixed* `θ` by Riemann–Lebesgue (`cramerCondition_of_absolutelyContinuous`). What is
+missing — and only this — is that the convergence be **uniform over the compact sphere**. Two
+routes are classical, and both give the stronger conclusion `limsup = 0` rather than merely
+`< 1`:
+
+* the two-regime van der Corput argument (`|θ₁|` bounded away from `0`: second-derivative test
+  on the genuinely quadratic phase `θ₀y + θ₁y²`; `|θ₁|` small: first-derivative test, the phase
+  being close to linear), with the uniformity across the transition as the delicate point;
+* the soft route: `θ ↦ ν_θ` is continuous in total variation on the sphere — the density of
+  `ν_θ` is `∑_{roots} f(y)/|θ₀ + 2θ₁y|`, whose `|·|^{-1/2}` singularity at the critical value
+  `−θ₀/(2θ₁)` escapes to infinity as `θ₁ → 0` and therefore carries vanishing mass — and
+  Riemann–Lebesgue is uniform on totally bounded subsets of `L¹`, since
+  `‖φ_ν(R) − φ_{ν'}(R)‖ ≤ ‖ν − ν'‖_{TV}` for every `R`.
+
+Neither is available in Mathlib at present. -/
+theorem vecCramerCondition_of_uniform_sphere [ProperSpace E] (μ : Measure E)
+    {c R₀ : ℝ} (hc : c < 1) (hR₀ : 0 < R₀)
+    (h : ∀ θ : E, ‖θ‖ = 1 → ∀ R : ℝ, R₀ ≤ R → ‖charFun (projLaw μ θ) R‖ ≤ c) :
+    VecCramerCondition μ := by
+  refine ⟨c, hc, ?_⟩
+  filter_upwards [(tendsto_norm_cocompact_atTop (E := E)).eventually_ge_atTop R₀] with t ht
+  have htpos : (0 : ℝ) < ‖t‖ := lt_of_lt_of_le hR₀ ht
+  set θ : E := (‖t‖)⁻¹ • t with hθdef
+  have hθ : ‖θ‖ = 1 := by
+    rw [hθdef, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ htpos.ne']
+  have hpolar : (‖t‖ : ℝ) • θ = t := by
+    rw [hθdef, smul_smul, mul_inv_cancel₀ htpos.ne', one_smul]
+  have hid : charFun μ t = charFun (projLaw μ θ) ‖t‖ := by
+    rw [← charFun_smul_eq_charFun_map_inner μ θ ‖t‖, hpolar]
+  rw [hid]
+  exact h θ hθ ‖t‖ ht
+
 end VecCramer
 
 /-! ## The Lipschitz modulus of the normal distribution function
@@ -1032,6 +1076,241 @@ theorem abs_studentFactor_sub_taylor_le (u v r : ℝ)
           mul_le_mul_of_nonneg_left (abs_inv_sqrt_one_add_sub_le hx) (abs_nonneg u)
         linarith
     _ = |u| ^ 3 * r ^ 2 / 2 + |u| * x ^ 2 := by ring
+
+/-! ### (M2) re-derived: the second-order surrogate is not accurate enough, and the
+third-order one is
+
+Wave 13 recorded the remaining half of (M2) as the tail estimate
+`P(|u|³r²/2 + |u|x² > εn⁻¹) = O(n⁻¹)`. **That claim is false**, and the reason is arithmetic
+rather than technical. With `r = n^{-1/2}` the first term is `|u|³/(2n)`, so
+
+`{|u|³ r²/2 > ε n⁻¹} = {|u|³ > 2ε}`,
+
+an event of probability bounded away from `0`: under the central limit theorem `u` converges
+to a nondegenerate Gaussian, so `P(|u|³ > 2ε) → P(|N(0,σ²)|³ > 2ε) > 0` for every fixed
+`ε > 0`. No truncation of the summands can repair this — the failure is at the level of the
+limit law, not of the tails.
+
+What the arithmetic actually says is that the *deterministic* input has to be one order
+better. Chasing the constants: if the surrogate is `H` and `|T̃ − H| ≤ Q · n^{-α}` with `Q` a
+random variable having `p` moments, then splitting at `λ` gives an error
+`P(Q > λ n^{α−1}) + sup_x P(H ∈ (x, x + λ n^{-1}])`, i.e. `≈ λ⁻ᵖ n^{p(1−α)} + λ n^{-1}`, which
+is `O(n^{-1})` only if `α > 1`. The second-order surrogate has `α = 1` exactly, and *no* choice
+of `λ` works; the third-order surrogate has `α = 3/2`, and then `λ = √n` with `p = 2` gives
+`O(n^{-1})` on both sides. This is why Hall's smooth-function expansions retain the quadratic
+term of the delta-method Taylor polynomial even for a *one-term* expansion.
+
+The two results below supply that third-order deterministic core, by the same purely algebraic
+substitution `a = √(1 + x)` that closed the second-order one: the remainder is exhibited as an
+explicit product `(a − 1)³ · (polynomial)/(8a)`, so the estimate is uniform in `x` and no
+calculus is involved. `abs_studentFactor_sub_taylor3_le'` then puts it in the shape the
+probability consumes — an explicit `r³` times a polynomial in the two coordinates. -/
+
+private lemma abs_sub_le_add_abs (a b : ℝ) : |a - b| ≤ |a| + |b| := by
+  have h := abs_add_le a (-b)
+  rwa [← sub_eq_add_neg, abs_neg] at h
+
+/-- **Uniform third-order Taylor bound for the studentizing factor.**
+`|(1 + x)^{-1/2} − (1 − x/2 + 3x²/8)| ≤ |x|³` for `|x| ≤ 1/2`.
+
+Substituting `a = √(1 + x)` turns the remainder into `−(a − 1)³(3a² + 9a + 8)/(8a)` and `|x|³`
+into `|a − 1|³(a + 1)³`, so the claim is the elementary `(3a² + 9a + 8) ≤ 8a(a + 1)³` on the
+range `a ≥ 0.7` that `|x| ≤ 1/2` forces. -/
+theorem abs_inv_sqrt_one_add_sub_taylor3_le {x : ℝ} (hx : |x| ≤ 1 / 2) :
+    |(Real.sqrt (1 + x))⁻¹ - (1 - x / 2 + 3 * x ^ 2 / 8)| ≤ |x| ^ 3 := by
+  obtain ⟨hx1, hx2⟩ := abs_le.1 hx
+  have h1x : (0 : ℝ) < 1 + x := by linarith
+  set a : ℝ := Real.sqrt (1 + x) with ha
+  have hapos : 0 < a := Real.sqrt_pos.2 h1x
+  have hasq : a ^ 2 = 1 + x := Real.sq_sqrt h1x.le
+  have hxa : x = a ^ 2 - 1 := by linarith
+  have ha7 : (0.7 : ℝ) ≤ a := by nlinarith [hasq, hapos, sq_nonneg (a - 0.7)]
+  have hkey : a⁻¹ - (1 - x / 2 + 3 * x ^ 2 / 8)
+      = -((a - 1) ^ 3 * (3 * a ^ 2 + 9 * a + 8)) / (8 * a) := by
+    rw [hxa]
+    field_simp
+    ring
+  have hpolypos : (0 : ℝ) < 3 * a ^ 2 + 9 * a + 8 := by nlinarith [hapos]
+  have hx3 : |x| ^ 3 = |a - 1| ^ 3 * (a + 1) ^ 3 := by
+    have hfac : x = (a - 1) * (a + 1) := by rw [hxa]; ring
+    rw [hfac, abs_mul, mul_pow, abs_of_nonneg (by linarith : (0 : ℝ) ≤ a + 1)]
+  have habs : |(-((a - 1) ^ 3 * (3 * a ^ 2 + 9 * a + 8))) / (8 * a)|
+      = |a - 1| ^ 3 * (3 * a ^ 2 + 9 * a + 8) / (8 * a) := by
+    rw [abs_div, abs_neg, abs_mul, abs_pow, abs_of_pos hpolypos,
+      abs_of_pos (by linarith : (0 : ℝ) < 8 * a)]
+  rw [hkey, habs, hx3, div_le_iff₀ (by positivity)]
+  have hpoly : (0 : ℝ) ≤ 8 * a ^ 4 + 24 * a ^ 3 + 21 * a ^ 2 - a - 8 := by
+    nlinarith [ha7, hapos, sq_nonneg (a - 0.7)]
+  nlinarith [mul_nonneg (pow_nonneg (abs_nonneg (a - 1)) 3) hpoly]
+
+/-- **The third-order pointwise polynomial replacement for the studentized root.**
+
+With `r = n^{-1/2}` and `x = v r − u² r²`, the exact studentized root `u (1 + x)^{-1/2}` differs
+from the *quadratic* delta-method surrogate
+
+`H = u − u v r/2 + u³ r²/2 + 3 u v² r²/8`
+
+by at most `|u| |x|³ + (3/4)|u|³|v| r³ + (3/8)|u|⁵ r⁴`. The last two terms are the `r³` and `r⁴`
+parts of `u(1 − x/2 + 3x²/8)` that `H` discards.
+
+Unlike `abs_studentFactor_sub_taylor_le`, whose error is `O(r²) = O(n⁻¹)` and therefore of the
+same order as the accuracy being claimed, this error is `O(r³) = O(n^{-3/2})` — one power
+better, which is exactly the margin the split into a tail event and an anti-concentration
+interval consumes. -/
+theorem abs_studentFactor_sub_taylor3_le (u v r : ℝ)
+    (hx : |v * r - u ^ 2 * r ^ 2| ≤ 1 / 2) :
+    |u * (Real.sqrt (1 + (v * r - u ^ 2 * r ^ 2)))⁻¹
+        - (u - u * v * r / 2 + u ^ 3 * r ^ 2 / 2 + 3 * u * v ^ 2 * r ^ 2 / 8)|
+      ≤ |u| * |v * r - u ^ 2 * r ^ 2| ^ 3
+        + 3 / 4 * |u| ^ 3 * |v| * |r| ^ 3 + 3 / 8 * |u| ^ 5 * |r| ^ 4 := by
+  set x : ℝ := v * r - u ^ 2 * r ^ 2 with hxdef
+  have hsplit : u * (Real.sqrt (1 + x))⁻¹
+        - (u - u * v * r / 2 + u ^ 3 * r ^ 2 / 2 + 3 * u * v ^ 2 * r ^ 2 / 8)
+      = u * ((Real.sqrt (1 + x))⁻¹ - (1 - x / 2 + 3 * x ^ 2 / 8))
+        - 3 / 4 * (u ^ 3 * v * r ^ 3) + 3 / 8 * (u ^ 5 * r ^ 4) := by
+    rw [hxdef]
+    ring
+  have habs3 : |3 / 4 * (u ^ 3 * v * r ^ 3)| = 3 / 4 * |u| ^ 3 * |v| * |r| ^ 3 := by
+    rw [abs_mul, abs_mul, abs_mul, abs_pow, abs_pow,
+      abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 3 / 4)]
+    ring
+  have habs4 : |3 / 8 * (u ^ 5 * r ^ 4)| = 3 / 8 * |u| ^ 5 * |r| ^ 4 := by
+    rw [abs_mul, abs_mul, abs_pow, abs_pow, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 3 / 8)]
+    ring
+  calc |u * (Real.sqrt (1 + x))⁻¹
+          - (u - u * v * r / 2 + u ^ 3 * r ^ 2 / 2 + 3 * u * v ^ 2 * r ^ 2 / 8)|
+      = |u * ((Real.sqrt (1 + x))⁻¹ - (1 - x / 2 + 3 * x ^ 2 / 8))
+          - 3 / 4 * (u ^ 3 * v * r ^ 3) + 3 / 8 * (u ^ 5 * r ^ 4)| := by rw [hsplit]
+    _ ≤ |u * ((Real.sqrt (1 + x))⁻¹ - (1 - x / 2 + 3 * x ^ 2 / 8))
+          - 3 / 4 * (u ^ 3 * v * r ^ 3)| + |3 / 8 * (u ^ 5 * r ^ 4)| := abs_add_le _ _
+    _ ≤ |u * ((Real.sqrt (1 + x))⁻¹ - (1 - x / 2 + 3 * x ^ 2 / 8))|
+          + |3 / 4 * (u ^ 3 * v * r ^ 3)| + |3 / 8 * (u ^ 5 * r ^ 4)| := by
+        linarith [abs_sub_le_add_abs
+          (u * ((Real.sqrt (1 + x))⁻¹ - (1 - x / 2 + 3 * x ^ 2 / 8)))
+          (3 / 4 * (u ^ 3 * v * r ^ 3))]
+    _ = |u| * |(Real.sqrt (1 + x))⁻¹ - (1 - x / 2 + 3 * x ^ 2 / 8)|
+          + 3 / 4 * |u| ^ 3 * |v| * |r| ^ 3 + 3 / 8 * |u| ^ 5 * |r| ^ 4 := by
+        rw [abs_mul, habs3, habs4]
+    _ ≤ |u| * |x| ^ 3 + 3 / 4 * |u| ^ 3 * |v| * |r| ^ 3 + 3 / 8 * |u| ^ 5 * |r| ^ 4 := by
+        have hstep := mul_le_mul_of_nonneg_left
+          (abs_inv_sqrt_one_add_sub_taylor3_le hx) (abs_nonneg u)
+        linarith
+
+/-- **The third-order replacement, in the shape the probability consumes.**
+For `0 ≤ r ≤ 1` the error of the quadratic delta-method surrogate is `r³` times an explicit
+polynomial in the two coordinates:
+
+`|T̃ − H| ≤ r³ (4|u||v|³ + 4|u|⁷ + (3/4)|u|³|v| + (3/8)|u|⁵)`.
+
+Combined with a second moment for the bracket — which is where truncation of the summands at
+level `√n` enters, since the bracket involves powers of the coordinates beyond the fourth —
+Markov's inequality at the level `λ = √n` gives `P(|T̃ − H| > n⁻¹) = O(n⁻¹)`, and the companion
+anti-concentration estimate `sup_x P(H ∈ (x, x + n⁻¹]) = O(n⁻¹)` completes (M2). -/
+theorem abs_studentFactor_sub_taylor3_le' (u v r : ℝ) (hr : 0 ≤ r) (hr1 : r ≤ 1)
+    (hx : |v * r - u ^ 2 * r ^ 2| ≤ 1 / 2) :
+    |u * (Real.sqrt (1 + (v * r - u ^ 2 * r ^ 2)))⁻¹
+        - (u - u * v * r / 2 + u ^ 3 * r ^ 2 / 2 + 3 * u * v ^ 2 * r ^ 2 / 8)|
+      ≤ r ^ 3 * (4 * |u| * |v| ^ 3 + 4 * |u| ^ 7
+          + 3 / 4 * |u| ^ 3 * |v| + 3 / 8 * |u| ^ 5) := by
+  have habsr : |r| = r := abs_of_nonneg hr
+  have hxle : |v * r - u ^ 2 * r ^ 2| ≤ |v| * r + u ^ 2 * r ^ 2 := by
+    calc |v * r - u ^ 2 * r ^ 2| ≤ |v * r| + |u ^ 2 * r ^ 2| := abs_sub_le_add_abs _ _
+      _ = |v| * r + u ^ 2 * r ^ 2 := by
+          rw [abs_mul, abs_mul, habsr, abs_of_nonneg (sq_nonneg u),
+            abs_of_nonneg (sq_nonneg r)]
+  have hcube : |v * r - u ^ 2 * r ^ 2| ^ 3
+      ≤ 4 * (|v| ^ 3 * r ^ 3 + |u| ^ 6 * r ^ 6) := by
+    have h0 : (0 : ℝ) ≤ |v| * r := mul_nonneg (abs_nonneg v) hr
+    have h1 : (0 : ℝ) ≤ u ^ 2 * r ^ 2 := by positivity
+    have hmono : |v * r - u ^ 2 * r ^ 2| ^ 3 ≤ (|v| * r + u ^ 2 * r ^ 2) ^ 3 :=
+      pow_le_pow_left₀ (abs_nonneg _) hxle 3
+    have hconv : (|v| * r + u ^ 2 * r ^ 2) ^ 3
+        ≤ 4 * ((|v| * r) ^ 3 + (u ^ 2 * r ^ 2) ^ 3) := by nlinarith [sq_nonneg (|v| * r
+          - u ^ 2 * r ^ 2), h0, h1]
+    have he : (|v| * r) ^ 3 + (u ^ 2 * r ^ 2) ^ 3 = |v| ^ 3 * r ^ 3 + |u| ^ 6 * r ^ 6 := by
+      have hu : (u ^ 2) ^ 3 = |u| ^ 6 := by
+        rw [← sq_abs u, ← pow_mul]
+      rw [mul_pow, mul_pow, hu]
+      ring
+    calc |v * r - u ^ 2 * r ^ 2| ^ 3 ≤ (|v| * r + u ^ 2 * r ^ 2) ^ 3 := hmono
+      _ ≤ 4 * ((|v| * r) ^ 3 + (u ^ 2 * r ^ 2) ^ 3) := hconv
+      _ = 4 * (|v| ^ 3 * r ^ 3 + |u| ^ 6 * r ^ 6) := by rw [he]
+  have hr6 : r ^ 6 ≤ r ^ 3 := pow_le_pow_of_le_one hr hr1 (by norm_num)
+  have hr4 : r ^ 4 ≤ r ^ 3 := pow_le_pow_of_le_one hr hr1 (by norm_num)
+  refine (abs_studentFactor_sub_taylor3_le u v r hx).trans ?_
+  rw [habsr]
+  have hu0 : (0 : ℝ) ≤ |u| := abs_nonneg u
+  have h1 : |u| * |v * r - u ^ 2 * r ^ 2| ^ 3
+      ≤ |u| * (4 * (|v| ^ 3 * r ^ 3 + |u| ^ 6 * r ^ 3)) := by
+    refine mul_le_mul_of_nonneg_left (hcube.trans ?_) hu0
+    have : |u| ^ 6 * r ^ 6 ≤ |u| ^ 6 * r ^ 3 :=
+      mul_le_mul_of_nonneg_left hr6 (by positivity)
+    linarith
+  have h2 : 3 / 8 * |u| ^ 5 * r ^ 4 ≤ 3 / 8 * |u| ^ 5 * r ^ 3 :=
+    mul_le_mul_of_nonneg_left hr4 (by positivity)
+  nlinarith [h1, h2, hu0]
+
+/-! ### (M2), the assembly: a distribution function is stable under a small perturbation
+
+The split the corrected (M2) runs on, isolated as a statement about two arbitrary random
+variables on a probability space: the distribution functions of `S` and `T` differ by at most
+the probability that they are `δ`-apart plus the mass `T` puts on a `2δ`-window. Both halves of
+what is left of (M2) — the moment bound feeding Markov's inequality on the first term, and the
+anti-concentration bound on the second — are hypotheses of this lemma rather than parts of it,
+so the assembly no longer has to be redone once they are available. -/
+
+/-- **Distribution functions are stable under a small perturbation.**
+`|P(S ≤ x) − P(T ≤ x)| ≤ P(|S − T| > δ) + P(x − δ < T ≤ x + δ)`, for any two measurable real
+random variables and any `δ ≥ 0`. -/
+theorem abs_measure_le_sub_le_of_dist_le {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsProbabilityMeasure P] {S T : Ω → ℝ} (hS : Measurable S) (hT : Measurable T)
+    {δ : ℝ} (hδ : 0 ≤ δ) (x : ℝ) :
+    |(P {ω | S ω ≤ x}).toReal - (P {ω | T ω ≤ x}).toReal|
+      ≤ (P {ω | δ < |S ω - T ω|}).toReal
+        + (P {ω | x - δ < T ω ∧ T ω ≤ x + δ}).toReal := by
+  set A : Set Ω := {ω | S ω ≤ x} with hA
+  set B : Set Ω := {ω | T ω ≤ x} with hB
+  set C : Set Ω := {ω | x - δ < T ω ∧ T ω ≤ x + δ} with hC
+  set D : Set Ω := {ω | δ < |S ω - T ω|} with hD
+  have hfin : ∀ s : Set Ω, P s ≠ ⊤ := fun s => (measure_lt_top P s).ne
+  have hsub1 : A ⊆ B ∪ C ∪ D := by
+    intro ω hω
+    have hωx : S ω ≤ x := hω
+    by_cases hd : δ < |S ω - T ω|
+    · exact Or.inr hd
+    · obtain ⟨hlo, _⟩ := abs_le.1 (not_lt.1 hd)
+      by_cases hb : T ω ≤ x
+      · exact Or.inl (Or.inl hb)
+      · have hb' : x < T ω := not_le.1 hb
+        have hmem : x - δ < T ω ∧ T ω ≤ x + δ := ⟨by linarith, by linarith⟩
+        exact Or.inl (Or.inr hmem)
+  have hsub2 : B ⊆ A ∪ C ∪ D := by
+    intro ω hω
+    have hωx : T ω ≤ x := hω
+    by_cases hd : δ < |S ω - T ω|
+    · exact Or.inr hd
+    · obtain ⟨_, hhi⟩ := abs_le.1 (not_lt.1 hd)
+      by_cases hc : x - δ < T ω
+      · have hmem : x - δ < T ω ∧ T ω ≤ x + δ := ⟨hc, by linarith⟩
+        exact Or.inl (Or.inr hmem)
+      · have hc' : T ω ≤ x - δ := not_lt.1 hc
+        have hmem : S ω ≤ x := by linarith
+        exact Or.inl (Or.inl hmem)
+  have hbound : ∀ U V W X : Set Ω, U ⊆ V ∪ W ∪ X →
+      (P U).toReal ≤ (P V).toReal + (P W).toReal + (P X).toReal := by
+    intro U V W X hUsub
+    have h1 : P U ≤ P V + P W + P X :=
+      (measure_mono hUsub).trans
+        ((measure_union_le _ _).trans (add_le_add (measure_union_le V W) (le_refl (P X))))
+    have hne : P V + P W + P X ≠ ⊤ :=
+      ENNReal.add_ne_top.2 ⟨ENNReal.add_ne_top.2 ⟨hfin V, hfin W⟩, hfin X⟩
+    have h2 := ENNReal.toReal_mono hne h1
+    rwa [ENNReal.toReal_add (ENNReal.add_ne_top.2 ⟨hfin V, hfin W⟩) (hfin X),
+      ENNReal.toReal_add (hfin V) (hfin W)] at h2
+  have h1 := hbound A B C D hsub1
+  have h2 := hbound B A C D hsub2
+  rw [abs_sub_le_iff]
+  constructor <;> linarith
 
 end StudentizedReduction
 
@@ -2455,6 +2734,92 @@ theorem edgeworth_mean_uniform [IsProbabilityMeasure F]
             + 2 * (C₁ + (1 + 512 * Real.pi ^ 3 * |skewness F|) * C₂) * (Real.pi ^ 2 * c)⁻¹
             + 3 * (2 + 6 * |skewness F|) + 1 := by linarith
 
+/-! ## Anti-concentration of the centred root, at the `O(n⁻¹)` accuracy
+
+The corrected (M2) needs, besides a moment bound, that the surrogate put `O(δ + n⁻¹)` mass on
+an interval of length `δ`. For the *centred* root that is a corollary of the closed
+`edgeworth_mean_uniform` and costs nothing beyond the Lipschitz modulus of the approximant,
+which `setIntegral_abs_edgeworthDensity_le` already supplies with a constant independent of
+`n`. This is the half of the anti-concentration companion that is not circular: the surrogate
+of the studentized problem is a perturbation of this root, and what a later wave has to add is
+only the transfer across that perturbation. -/
+
+/-- **The Edgeworth approximant is Lipschitz, with a constant independent of `n`.**
+`edgeworthCDF γ n b − edgeworthCDF γ n a ≤ (2π)^{-1/2}(1 + 66|γ|)(b − a)` for `a ≤ b`.
+
+The approximant is the `densityCDF` of `edgeworthDensity` (`densityCDF_edgeworthDensity`), so
+the increment is the integral of that density over `(a, b]`, and
+`setIntegral_abs_edgeworthDensity_le` bounds it. -/
+theorem edgeworthCDF_sub_le (γ : ℝ) {n : ℕ} (hn : 1 ≤ n) {a b : ℝ} (hab : a ≤ b) :
+    edgeworthCDF γ n b - edgeworthCDF γ n a
+      ≤ (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |γ|) * (b - a) := by
+  have hint := integrable_edgeworthDensity γ n
+  have hsplit : Set.Iic b = Set.Iic a ∪ Set.Ioc a b := by
+    rw [Set.Iic_union_Ioc_eq_Iic hab]
+  have hdisj : Disjoint (Set.Iic a) (Set.Ioc a b) := by
+    rw [Set.disjoint_left]
+    intro x hx hx'
+    exact absurd hx' (by simp [Set.mem_Iic.1 hx])
+  have hincr : edgeworthCDF γ n b - edgeworthCDF γ n a
+      = ∫ y in Set.Ioc a b, edgeworthDensity γ n y := by
+    rw [← densityCDF_edgeworthDensity, ← densityCDF_edgeworthDensity, densityCDF, densityCDF,
+      hsplit, setIntegral_union hdisj measurableSet_Ioc hint.integrableOn hint.integrableOn]
+    ring
+  rw [hincr]
+  calc ∫ y in Set.Ioc a b, edgeworthDensity γ n y
+      ≤ ∫ y in Set.Ioc a b, |edgeworthDensity γ n y| :=
+        integral_mono hint.integrableOn hint.abs.integrableOn fun y => le_abs_self _
+    _ ≤ (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |γ|) * (b - a) :=
+        setIntegral_abs_edgeworthDensity_le γ hn hab
+
+/-- **Anti-concentration of the centred sample-mean root, to `O(n⁻¹)`.**
+The root puts at most `C(b − a) + C/n` mass on `(a, b]`, uniformly in the interval and in `n`.
+
+This is `edgeworth_mean_uniform` at the two endpoints plus `edgeworthCDF_sub_le`; the point is
+that the additive term is `O(n⁻¹)` and not `O(n^{-1/2})`, which is what the corrected (M2)
+consumes at the scale `δ = n⁻¹`. A Berry–Esseen bound would only give `O(n^{-1/2})` here and
+would be useless for a one-term expansion. -/
+theorem meanRootCDF_sub_le [IsProbabilityMeasure F]
+    -- USER-INPUT: finite fourth moment of the sampling law
+    (hF4 : MemLp (fun t : ℝ => t) 4 F)
+    -- USER-INPUT: nonzero variance
+    (hFvar : 0 < Var[fun t : ℝ => t; F])
+    -- USER-INPUT: Cramér's condition
+    (hCramer : CramerCondition F) :
+    ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ a b : ℝ, a ≤ b →
+      meanRootCDF F n b - meanRootCDF F n a ≤ C * (b - a) + C / n := by
+  obtain ⟨C₀, hC₀, hC⟩ := edgeworth_mean_uniform hF4 hFvar hCramer
+  set σ : ℝ := Real.sqrt Var[fun t : ℝ => t; F] with hσdef
+  have hσ : 0 < σ := Real.sqrt_pos.2 hFvar
+  set K : ℝ := (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness F|) with hKdef
+  have hK0 : 0 < K := edgeworthTV_pos (skewness F)
+  refine ⟨K / σ + 2 * C₀, by positivity, fun n hn a b hab => ?_⟩
+  have hn1 : 1 ≤ n := hn
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have ha := hC n hn a
+  have hb := hC n hn b
+  rw [← edgeworthCDF_eq_approx F hFvar n a] at ha
+  rw [← edgeworthCDF_eq_approx F hFvar n b] at hb
+  have hAa := (abs_le.1 ha).1
+  have hAb := (abs_le.1 hb).2
+  have hlip : edgeworthCDF (skewness F) n (b / σ) - edgeworthCDF (skewness F) n (a / σ)
+      ≤ K * (b / σ - a / σ) :=
+    edgeworthCDF_sub_le (skewness F) hn1 (by gcongr)
+  have hdiff : b / σ - a / σ = (b - a) / σ := by ring
+  rw [hdiff] at hlip
+  have hdivle : K * ((b - a) / σ) = K / σ * (b - a) := by ring
+  rw [hdivle] at hlip
+  have hmono : K / σ * (b - a) ≤ (K / σ + 2 * C₀) * (b - a) := by
+    have hba : (0 : ℝ) ≤ b - a := by linarith
+    nlinarith [hba, hC₀]
+  have hcn : 2 * (C₀ / (n : ℝ)) ≤ (K / σ + 2 * C₀) / (n : ℝ) := by
+    have h1 : 2 * (C₀ / (n : ℝ)) = 2 * C₀ / (n : ℝ) := by ring
+    have h2 : (0 : ℝ) < K / σ := by positivity
+    rw [h1]
+    gcongr
+    linarith
+  linarith [hAa, hAb, hlip, hmono, hcn]
+
 /-- **One-term Edgeworth expansion for the studentized sample mean, uniform in the argument.**
 
 Under a finite fourth moment and absolute continuity of the sampling law, the sampling
@@ -2618,7 +2983,85 @@ In short: what wave 12 called "the smallest genuinely missing piece" (M1)(b), th
 half of (M3), and the whole deterministic half of (M2) are proved and axiom-clean. The residue
 is three items that are all genuinely probabilistic — a one-factor Berry–Esseen bookkeeping for
 `φ^{n−1}`, a truncation-based tail bound with its anti-concentration companion, and the
-multivariate Cramér condition for a parabola-carried law together with Hall's conditioning. -/
+multivariate Cramér condition for a parabola-carried law together with Hall's conditioning.
+
+**Status after the wave-14 re-derivation.** Of the three probabilistic residues wave 13 left,
+the first is now CLOSED, the third has one of its two halves CLOSED and the other reduced to a
+single named analytic fact, and the second has been found to be **stated falsely** and has been
+replaced by a correct version whose deterministic half and whose assembly are both closed.
+
+* (R1) **The one-factor bookkeeping for `φ^{n−1}` — CLOSED.** The `OneFactor` section of
+  `ForMathlib/BivariateEdgeworth.lean` proves it axiom-clean and it is entirely elementary.
+  `norm_charFun_sub_one_le` gives `‖φ_μ(t) − 1‖ ≤ (3/2)∫⟪x,t⟫²` for a law centred in the
+  direction `t` — the centring is what makes this quadratic rather than linear, and hence what
+  makes the whole correction `O(n⁻¹)` rather than `O(n^{-1/2})`, which at `O(n^{-1/2})` would
+  have swamped the very coefficient the studentized expansion exists to produce. With
+  `‖z^{n−1} − z^n‖ = ‖z‖^{n−1}‖1 − z‖ ≤ ‖1 − z‖` (`norm_pow_sub_pow_succ_le`) and the rescaled
+  argument `c = n^{-1/2}a`, `norm_charFun_pow_sub_charFun_vecRootLaw_le` reads
+  `‖φ(n^{-1/2}a)^{n−1} − φ_{ρ_n}(a)‖ ≤ (3/2)v/n`, and
+  `norm_mixCharFun_vecRootLaw_sub_charFun_le` restates (M1)(b) against `φ_{ρ_n}(a)` itself:
+  `‖mix_{ρ_n}(b,a) − iκ φ_{ρ_n}(a)‖ ≤ 3M/(2√n) + (3/2)|κ|v/n`. The surviving factor is now
+  exactly the quantity `norm_charFun_vecRootLaw_sub_edgeworth_le` estimates, so the damped
+  expansion applies to it verbatim and the two expansions add.
+* (R2) **The truncation tail bound — the statement wave 13 recorded is FALSE, and the correct
+  one needs a third-order surrogate, whose deterministic half and assembly are CLOSED.**
+  Wave 13 asked for `P(|u|³r²/2 + |u|x² > εn⁻¹) = O(n⁻¹)`. With `r = n^{-1/2}` the first term
+  is `|u|³/(2n)`, so that event is `{|u|³ > 2ε}`, whose probability converges to
+  `P(|N(0,σ²)|³ > 2ε) > 0`. The failure is at the level of the limit law, so **no truncation of
+  the summands can repair it**; the claim is false as stated for every fixed `ε > 0`.
+  The arithmetic of the split explains what is really required. If `|T̃ₙ − Hₙ| ≤ Q n^{-α}` with
+  `Q` having `p` moments, the two terms of `abs_measure_le_sub_le_of_dist_le` at scale
+  `δ = λn⁻¹` are `≈ λ^{-p} n^{p(1−α)}` and `≈ λn⁻¹`, and their sum is `O(n⁻¹)` only when
+  `α > 1`. The second-order surrogate has `α = 1` *exactly*, and no choice of `λ` works. The
+  third-order surrogate has `α = 3/2`, and then `λ = √n` with `p = 2` gives `O(n⁻¹)` on both
+  sides. This is exactly why Hall retains the quadratic term of the delta-method Taylor
+  polynomial even for a *one-term* expansion; wave 13's second-order surrogate was one order
+  too coarse for the accuracy claimed.
+  Closed here, axiom-clean: `abs_inv_sqrt_one_add_sub_taylor3_le`
+  (`|(1+x)^{-1/2} − (1 − x/2 + 3x²/8)| ≤ |x|³` on `|x| ≤ 1/2`, by the same purely algebraic
+  substitution `a = √(1+x)`, the remainder coming out as `−(a−1)³(3a²+9a+8)/(8a)`),
+  `abs_studentFactor_sub_taylor3_le` and `abs_studentFactor_sub_taylor3_le'` (the same in the
+  shape the probability consumes, `|T̃ₙ − Hₙ| ≤ r³(4|u||v|³ + 4|u|⁷ + (3/4)|u|³|v| +
+  (3/8)|u|⁵)`), and `abs_measure_le_sub_le_of_dist_le` (the assembly, for arbitrary random
+  variables). **What is left of (M2)** is precisely the two hypotheses of the last of these: a
+  second moment for that bracket — this is where truncation of the summands at level `√n`
+  genuinely enters, the bracket carrying powers of the coordinates beyond the fourth — and the
+  anti-concentration `sup_x P(Hₙ ∈ (x, x + n⁻¹]) = O(n⁻¹)`.
+  Of the anti-concentration, the non-circular half is closed here too: `edgeworthCDF_sub_le`
+  (the approximant is Lipschitz with a constant independent of `n`, read off from
+  `setIntegral_abs_edgeworthDensity_le`) and `meanRootCDF_sub_le` give
+  `P(root ∈ (a,b]) ≤ C(b − a) + C/n` for the **centred** root, uniformly in the interval and in
+  `n`. That the additive term is `O(n⁻¹)` and not `O(n^{-1/2})` is the whole point, and it is
+  what makes `edgeworth_mean_uniform` — rather than a Berry–Esseen bound, which would be
+  useless here — the right input. What a later wave must add is only the transfer of this
+  estimate across the `O_p(n^{-1/2})` perturbation `Hₙ − u`, and that is where the note's
+  "break the circularity with a cruder `O(n^{-1/2})` expansion" belongs.
+* (R3) **The Cramér residue — Hall's conditioning is NOT needed, and the remaining half is a
+  single uniformity statement.** `norm_charFun_vecRootLaw_le_pow` shows that a uniform bound
+  `‖φ_{F∘Z⁻¹}(t)‖ ≤ c` on `ε ≤ ‖t‖` transfers to `‖φ_{ρ_n}(t)‖ ≤ cⁿ` on `ε√n ≤ ‖t‖`, by
+  `charFun_vecRootLaw` and nothing else: `ρ_n` *is* a normalised sum, so its characteristic
+  function *is* an `n`-th power. **This overturns (M3)(ii).** Conditioning on `n − k`
+  coordinates would be needed only for the law of a *nonlinear* functional of the root, and the
+  (M1)(b) route never forms one — it works throughout with `charFun ρ_n` and `mixCharFun ρ_n`,
+  both of which factorise exactly.
+  For (M3)(i), `vecCramerCondition_of_uniform_sphere` writes the projection identity in polar
+  form: `VecCramerCondition μ` follows from `‖φ_{projLaw μ θ}(R)‖ ≤ c < 1` for all unit `θ` and
+  all large `R`. Since each projected law `ν_θ` is a nonconstant polynomial image of an
+  absolutely continuous law and hence absolutely continuous, Riemann–Lebesgue gives the decay
+  for every **fixed** direction. **What is left of (M3) is exactly that the decay be uniform
+  over the compact sphere of directions** — a statement about a two-parameter oscillatory
+  integral, provable either by the two-regime van der Corput argument or by total-variation
+  continuity of `θ ↦ ν_θ` plus the uniformity of Riemann–Lebesgue on totally bounded subsets of
+  `L¹`. Both routes give `limsup = 0`, strictly stronger than the `< 1` needed. Neither is
+  available in Mathlib at present; this is the only genuinely analytic item left in the whole
+  route.
+
+Net after wave 14, the residue is two items rather than three, and neither is a bookkeeping
+step: (i) a second moment for an explicit polynomial in the bivariate root together with the
+anti-concentration of its surrogate, and (ii) uniform Riemann–Lebesgue over the sphere for the
+parabola-carried law. Everything else in the chain — (S1), (S2), (M1)(a-not-needed), (M1)(b)
+including the one-factor bookkeeping, the deterministic core and the assembly of (M2), and both
+the direction-uniformity and the root transfer of (M3) — is proved and axiom-clean. -/
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
@@ -2647,13 +3090,22 @@ expansion, the quantile version follows by inverting it (the Cornish–Fisher st
 function theorem applied to `x ↦ Φ(x) + (γ/6)φ(x)(2x² + 1) n^{-1/2}`, using that `φ` is bounded
 below on the compact `z`-range corresponding to `α ∈ [ε, 1 − ε]`, which is where the hypothesis
 `0 < ε < 1/2` is used). It therefore inherits, and adds nothing to, the obstruction recorded on
-`edgeworth_studentized_uniform` — which, after the wave-13 re-derivation, is three purely
-probabilistic residues there: a one-factor Berry–Esseen bookkeeping for `φ^{n−1}`, a
-truncation-based tail bound with its anti-concentration companion, and the multivariate Cramér
-condition for the parabola-carried bivariate law together with Hall's conditioning. (S1) the
-bivariate expansion, (S2) the exact reduction of the studentized root to a bivariate mean,
-(M1)(b) the mixed-characteristic-function expansion, the deterministic half of (M2) and the
-direction-uniform half of (M3) are all closed. -/
+`edgeworth_studentized_uniform` — which, after the wave-14 re-derivation, is **two** items, not
+three:
+
+* a second moment for the explicit polynomial bracket of `abs_studentFactor_sub_taylor3_le'`
+  (this is where truncation of the summands at level `√n` enters) together with the
+  anti-concentration of the quadratic delta-method surrogate at scale `n⁻¹`;
+* uniform Riemann–Lebesgue over the compact sphere of directions for the parabola-carried
+  bivariate law, i.e. the hypothesis of `vecCramerCondition_of_uniform_sphere`.
+
+Closed and axiom-clean over there: (S1) the bivariate expansion, (S2) the exact reduction of
+the studentized root to a bivariate mean, (M1)(b) the mixed-characteristic-function expansion
+*together with* the one-factor `φ^{n−1}` bookkeeping (`norm_mixCharFun_vecRootLaw_sub_charFun_le`),
+the deterministic core and the assembly of (M2) in their corrected third-order form, the
+direction-uniformity of (M3), and the transfer of the Cramér tail to the vector root
+(`norm_charFun_vecRootLaw_le_pow`, which removes the need for Hall's conditioning device
+altogether). -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
