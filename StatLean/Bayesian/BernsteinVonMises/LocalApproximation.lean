@@ -509,6 +509,260 @@ theorem bvmLogRatio_tendsto
           + (productMeasure M μ θ₀ n).real {ω : Fin n → 𝓧 | ε / 3 ≤ |res h n ω|} :=
         measureReal_union_le _ _
 
+/-! ### Step-B bricks -/
+
+-- LEAN-ONLY: the pair-ratio Jensen bound in the form needed here. Unlike
+-- `tvDist_normalize_le_double_lintegral` this version does **not** require the first density
+-- to be a.e. positive — the local joint density vanishes wherever the model density does —
+-- because the scalar Jensen step is applied directly to the antisymmetric numerator
+-- `s h * t g − s g * t h`.
+private lemma tvDist_normalize_le_double_lintegral_antisymm {α : Type*} [MeasurableSpace α]
+    (base : Measure α) {s t : α → ℝ≥0∞} (hs : Measurable s) (ht : Measurable t)
+    (hs0 : ∫⁻ y, s y ∂base ≠ 0) (hsT : ∫⁻ y, s y ∂base ≠ ∞)
+    (ht0 : ∫⁻ y, t y ∂base ≠ 0) (htT : ∫⁻ y, t y ∂base ≠ ∞) :
+    Minimaxity.tvDist (base.withDensity fun x => s x / ∫⁻ y, s y ∂base)
+        (base.withDensity fun x => t x / ∫⁻ y, t y ∂base)
+      ≤ ((∫⁻ y, s y ∂base) * ∫⁻ y, t y ∂base)⁻¹
+          * ∫⁻ h, ∫⁻ g, (s h * t g - s g * t h) ∂base ∂base := by
+  classical
+  set Zs := ∫⁻ y, s y ∂base with hZs
+  set Zt := ∫⁻ y, t y ∂base with hZt
+  have hpm : Measurable fun x => s x / Zs := hs.div_const Zs
+  have hqm : Measurable fun x => t x / Zt := ht.div_const Zt
+  have hmass : ∀ (u : α → ℝ≥0∞) (Z : ℝ≥0∞), Z = ∫⁻ y, u y ∂base → Z ≠ 0 → Z ≠ ∞ →
+      ∫⁻ x, u x / Z ∂base = 1 := by
+    intro u Z hZ h0 hT
+    simp only [div_eq_mul_inv]
+    rw [lintegral_mul_const' _ _ (ENNReal.inv_ne_top.mpr h0), ← hZ]
+    exact ENNReal.mul_inv_cancel h0 hT
+  haveI : IsProbabilityMeasure (base.withDensity fun x => s x / Zs) := ⟨by
+    rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
+    exact hmass s Zs hZs hs0 hsT⟩
+  haveI : IsProbabilityMeasure (base.withDensity fun x => t x / Zt) := ⟨by
+    rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
+    exact hmass t Zt hZt ht0 htT⟩
+  rw [tvDist_withDensity_eq base hpm hqm]
+  have hZ0 : Zs * Zt ≠ 0 := mul_ne_zero hs0 ht0
+  have e1 : ∀ x, (Zs * Zt)⁻¹ * (s x * Zt) = s x / Zs := by
+    intro x
+    rw [ENNReal.mul_inv (Or.inl hs0) (Or.inl hsT), div_eq_mul_inv,
+      show Zs⁻¹ * Zt⁻¹ * (s x * Zt) = Zt⁻¹ * Zt * (s x * Zs⁻¹) from by ring,
+      ENNReal.inv_mul_cancel ht0 htT, one_mul]
+  have e2 : ∀ x, (Zs * Zt)⁻¹ * (t x * Zs) = t x / Zt := by
+    intro x
+    rw [ENNReal.mul_inv (Or.inl hs0) (Or.inl hsT), div_eq_mul_inv,
+      show Zs⁻¹ * Zt⁻¹ * (t x * Zs) = Zs⁻¹ * Zs * (t x * Zt⁻¹) from by ring,
+      ENNReal.inv_mul_cancel hs0 hsT, one_mul]
+  have key : ∀ x, s x / Zs - t x / Zt = (Zs * Zt)⁻¹ * (s x * Zt - t x * Zs) := by
+    intro x
+    rw [ENNReal.mul_sub (fun _ _ => ENNReal.inv_ne_top.mpr hZ0), e1, e2]
+  simp_rw [key]
+  rw [lintegral_const_mul _ ((hs.mul_const Zt).sub (ht.mul_const Zs))]
+  refine mul_le_mul_left' (lintegral_mono fun x => ?_) _
+  have h1 : s x * Zt = ∫⁻ g, s x * t g ∂base := by
+    rw [hZt, lintegral_const_mul _ ht]
+  have h2 : t x * Zs = ∫⁻ g, s g * t x ∂base := by
+    rw [hZs, lintegral_mul_const _ hs, mul_comm]
+  rw [h1, h2]
+  exact lintegral_sub_le _ _ (hs.mul_const (t x))
+
+-- LEAN-ONLY: two-sided bound on the unnormalized Gaussian density over a ball of radius `R`,
+-- in terms of a bound `K` on the score sum.
+private lemma bvmGaussDens_bounds (J : Matrix (Fin k) (Fin k) ℝ)
+    (sc : 𝓧 → EuclideanSpace ℝ (Fin k)) {R K : ℝ} (hR : 0 ≤ R) {n : ℕ} {ω : Fin n → 𝓧}
+    (hK : ‖scoreSum sc n ω‖ ≤ K) {g : EuclideanSpace ℝ (Fin k)} (hg : ‖g‖ ≤ R) :
+    ENNReal.ofReal (Real.exp (-(R * K + ‖Matrix.toEuclideanCLM (𝕜 := ℝ) J‖ * R ^ 2)))
+          ≤ bvmGaussDens J sc n g ω ∧
+        bvmGaussDens J sc n g ω
+          ≤ ENNReal.ofReal
+              (Real.exp (R * K + ‖Matrix.toEuclideanCLM (𝕜 := ℝ) J‖ * R ^ 2)) := by
+  set L := Matrix.toEuclideanCLM (𝕜 := ℝ) J with hL
+  have hK0 : 0 ≤ K := le_trans (norm_nonneg _) hK
+  have hdens : bvmGaussDens J sc n g ω
+      = ENNReal.ofReal (Real.exp (⟪g, scoreSum sc n ω⟫ - (1 / 2 : ℝ) * ⟪g, L g⟫)) := rfl
+  have h1 : |⟪g, scoreSum sc n ω⟫| ≤ R * K := by
+    refine le_trans (abs_real_inner_le_norm _ _) ?_
+    exact mul_le_mul hg hK (norm_nonneg _) hR
+  have h2 : |⟪g, L g⟫| ≤ ‖L‖ * R ^ 2 := by
+    refine le_trans (abs_real_inner_le_norm _ _) ?_
+    have hLg : ‖L g‖ ≤ ‖L‖ * R :=
+      le_trans (L.le_opNorm g) (by exact mul_le_mul_of_nonneg_left hg (norm_nonneg _))
+    calc ‖g‖ * ‖L g‖ ≤ R * (‖L‖ * R) :=
+          mul_le_mul hg hLg (norm_nonneg _) hR
+      _ = ‖L‖ * R ^ 2 := by ring
+  have hLR : 0 ≤ ‖L‖ * R ^ 2 := by positivity
+  obtain ⟨h1a, h1b⟩ := abs_le.mp h1
+  obtain ⟨h2a, h2b⟩ := abs_le.mp h2
+  constructor
+  · rw [hdens]
+    exact ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr (by linarith))
+  · rw [hdens]
+    exact ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr (by linarith))
+
+-- LEAN-ONLY: the Gaussian normalizer over a fixed ball is positive and finite.
+private lemma lintegral_bvmGaussDens_pos (J : Matrix (Fin k) (Fin k) ℝ)
+    (sc : 𝓧 → EuclideanSpace ℝ (Fin k)) {R : ℝ} (hR : 0 < R) (n : ℕ) (ω : Fin n → 𝓧) :
+    0 < ∫⁻ y in Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R,
+        bvmGaussDens J sc n y ω := by
+  set b : ℝ := R * ‖scoreSum sc n ω‖ + ‖Matrix.toEuclideanCLM (𝕜 := ℝ) J‖ * R ^ 2 with hb
+  have hlow : ∀ y ∈ Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R,
+      ENNReal.ofReal (Real.exp (-b)) ≤ bvmGaussDens J sc n y ω := by
+    intro y hy
+    rw [Metric.mem_closedBall, dist_zero_right] at hy
+    exact (bvmGaussDens_bounds J sc hR.le le_rfl hy).1
+  have hmono := setLIntegral_mono_ae (μ := (volume : Measure (EuclideanSpace ℝ (Fin k))))
+    (s := Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R)
+    (f := fun _ => ENNReal.ofReal (Real.exp (-b)))
+    (g := fun y => bvmGaussDens J sc n y ω) (measurable_bvmGaussDens J sc n ω).aemeasurable
+    (Filter.Eventually.of_forall hlow)
+  refine lt_of_lt_of_le ?_ hmono
+  rw [setLIntegral_const]
+  refine ENNReal.mul_pos (ENNReal.ofReal_pos.mpr (Real.exp_pos _)).ne' ?_
+  exact (lt_of_lt_of_le (Metric.measure_ball_pos volume 0 hR)
+    (measure_mono Metric.ball_subset_closedBall)).ne'
+
+private lemma lintegral_bvmGaussDens_ne_top (J : Matrix (Fin k) (Fin k) ℝ)
+    (sc : 𝓧 → EuclideanSpace ℝ (Fin k)) {R : ℝ} (hR : 0 ≤ R) (n : ℕ) (ω : Fin n → 𝓧) :
+    (∫⁻ y in Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R,
+        bvmGaussDens J sc n y ω) ≠ ∞ := by
+  set b : ℝ := R * ‖scoreSum sc n ω‖ + ‖Matrix.toEuclideanCLM (𝕜 := ℝ) J‖ * R ^ 2 with hb
+  have hup : ∀ y ∈ Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R,
+      bvmGaussDens J sc n y ω ≤ ENNReal.ofReal (Real.exp b) := by
+    intro y hy
+    rw [Metric.mem_closedBall, dist_zero_right] at hy
+    exact (bvmGaussDens_bounds J sc hR le_rfl hy).2
+  refine ne_top_of_le_ne_top ?_ (setLIntegral_mono' measurableSet_closedBall hup)
+  rw [setLIntegral_const]
+  exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top measure_closedBall_lt_top.ne
+
+-- LEAN-ONLY: on the event `‖scoreSum‖ ≤ K`, the conditioned Gaussian density is bounded by a
+-- constant depending only on `(R, K, J)` — the comparison with normalized Lebesgue measure
+-- on the ball.
+private lemma bvmGaussDens_div_lintegral_le (J : Matrix (Fin k) (Fin k) ℝ)
+    (sc : 𝓧 → EuclideanSpace ℝ (Fin k)) {R K : ℝ} (hR : 0 < R) {n : ℕ} {ω : Fin n → 𝓧}
+    (hK : ‖scoreSum sc n ω‖ ≤ K) {g : EuclideanSpace ℝ (Fin k)} (hg : ‖g‖ ≤ R) :
+    bvmGaussDens J sc n g ω / (∫⁻ y in Metric.closedBall
+          (0 : EuclideanSpace ℝ (Fin k)) R, bvmGaussDens J sc n y ω)
+      ≤ ENNReal.ofReal (Real.exp
+            (2 * (R * K + ‖Matrix.toEuclideanCLM (𝕜 := ℝ) J‖ * R ^ 2)))
+          / volume (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R) := by
+  set b : ℝ := R * K + ‖Matrix.toEuclideanCLM (𝕜 := ℝ) J‖ * R ^ 2 with hb
+  set V := volume (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R) with hV
+  have hlow : ∀ y ∈ Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R,
+      ENNReal.ofReal (Real.exp (-b)) ≤ bvmGaussDens J sc n y ω := by
+    intro y hy
+    rw [Metric.mem_closedBall, dist_zero_right] at hy
+    exact (bvmGaussDens_bounds J sc hR.le hK hy).1
+  have hTlow : ENNReal.ofReal (Real.exp (-b)) * V
+      ≤ ∫⁻ y in Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R,
+          bvmGaussDens J sc n y ω := by
+    have hmono := setLIntegral_mono_ae (μ := (volume : Measure (EuclideanSpace ℝ (Fin k))))
+      (s := Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R)
+      (f := fun _ => ENNReal.ofReal (Real.exp (-b)))
+      (g := fun y => bvmGaussDens J sc n y ω) (measurable_bvmGaussDens J sc n ω).aemeasurable
+      (Filter.Eventually.of_forall hlow)
+    rwa [setLIntegral_const] at hmono
+  have hnum : bvmGaussDens J sc n g ω ≤ ENNReal.ofReal (Real.exp b) :=
+    (bvmGaussDens_bounds J sc hR.le hK hg).2
+  refine le_trans (ENNReal.div_le_div hnum hTlow) (le_of_eq ?_)
+  have hsplit : ENNReal.ofReal (Real.exp b)
+      = ENNReal.ofReal (Real.exp (-b)) * ENNReal.ofReal (Real.exp (2 * b)) := by
+    rw [← ENNReal.ofReal_mul (Real.exp_nonneg _), ← Real.exp_add]
+    ring_nf
+  rw [hsplit]
+  exact ENNReal.mul_div_mul_left _ _ (ENNReal.ofReal_pos.mpr (Real.exp_pos _)).ne'
+    ENNReal.ofReal_ne_top
+
+-- LEAN-ONLY: measure-level form of `cond_bvmLocalPosterior_apply_ae`. The exceptional set is
+-- **uniform in the target event** because the input is the measure-level Bayes formula
+-- `posterior_iid_eq_withDensity_prod_likelihood` (rather than its set-evaluated corollary),
+-- which is what allows the conditioned posterior to be fed to a total-variation bound.
+private lemma cond_bvmLocalPosterior_eq_withDensity_ae
+    -- USER-INPUT: dominated iid model, `κ θ = p_θ · μ`; vdV §10.2, p. 140
+    (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
+    -- LEAN-ONLY: joint measurability of the model densities (regularity)
+    (hM_joint : Measurable (Function.uncurry M.density))
+    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    (hπ : HasLocalDensity π θ₀ r₀ f) {R : ℝ}
+    -- LEAN-ONLY: nontrivial localization radius
+    (hR : 0 < R)
+    -- LEAN-ONLY: the rescaled ball sits inside the absolute-continuity zone
+    {n : ℕ} (hn : R < r₀ * Real.sqrt n) :
+    ∀ᵐ ω ∂(iidKernel κ n ∘ₘ π),
+      bvmNumer M f θ₀ n (Metric.closedBall 0 R) ω ≠ 0 →
+        ((bvmLocalPosterior κ π θ₀ n ω)[|Metric.closedBall
+              (0 : EuclideanSpace ℝ (Fin k)) R])
+          = (volume.restrict (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R)).withDensity
+              fun h => bvmJointDens M f θ₀ n h ω
+                / bvmNumer M f θ₀ n (Metric.closedBall 0 R) ω := by
+  classical
+  have hsqrt : 0 < Real.sqrt n := by
+    rcases le_or_gt (Real.sqrt n) 0 with hle | hlt
+    · exact absurd hn (by nlinarith [hπ.rad_pos])
+    · exact hlt
+  have hn1 : 1 ≤ n := by
+    rcases Nat.eq_zero_or_pos n with h0 | h1
+    · subst h0; simp at hsqrt
+    · exact h1
+  set C : Set (EuclideanSpace ℝ (Fin k)) := Metric.closedBall 0 R with hCdef
+  have hC : MeasurableSet C := measurableSet_closedBall
+  have hsub : ∀ D : Set (EuclideanSpace ℝ (Fin k)), D ⊆ C →
+      bvmLocalScale θ₀ n ⁻¹' D ⊆ Metric.ball θ₀ r₀ := by
+    intro D hD θ hθ
+    have h1 : bvmLocalScale θ₀ n θ ∈ C := hD hθ
+    rw [hCdef, Metric.mem_closedBall, dist_zero_right, bvmLocalScale, norm_smul,
+      Real.norm_eq_abs, abs_of_pos hsqrt] at h1
+    rw [Metric.mem_ball, dist_eq_norm]
+    have h2 : Real.sqrt n * ‖θ - θ₀‖ < Real.sqrt n * r₀ :=
+      lt_of_le_of_lt h1 (by rw [mul_comm]; exact hn)
+    exact lt_of_mul_lt_mul_left h2 hsqrt.le
+  have hdens_meas : Measurable
+      (Function.uncurry fun θ (x : 𝓧) => ENNReal.ofReal (M.density θ x)) :=
+    ENNReal.measurable_ofReal.comp hM_joint
+  have hP : Measurable (Function.uncurry
+      fun (θ : EuclideanSpace ℝ (Fin k)) (x : Fin n → 𝓧) =>
+        ∏ i, ENNReal.ofReal (M.density θ (x i))) :=
+    measurable_uncurry_prod_likelihood hdens_meas
+  have hκ' : ∀ θ, iidKernel κ n θ
+      = (Measure.pi fun _ : Fin n => μ).withDensity
+          fun x => ∏ i, ENNReal.ofReal (M.density θ (x i)) :=
+    fun θ => iidKernel_withDensity hdens_meas hκ n θ
+  have hqpos : (0 : ℝ) < ((Real.sqrt n)⁻¹) ^ k := by positivity
+  have hq : ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k) ≠ 0 := (ENNReal.ofReal_pos.mpr hqpos).ne'
+  filter_upwards [posterior_iid_eq_withDensity_prod_likelihood hdens_meas hκ n,
+    posterior_apply_eq_div (π := π) hP hκ' (MeasurableSet.univ
+      (α := EuclideanSpace ℝ (Fin k)))] with ω hωpost hωU hS
+  set Z := ∫⁻ θ', (∏ i, ENNReal.ofReal (M.density θ' (ω i))) ∂π with hZdef
+  have hZ1 : Z / Z = 1 := by
+    have h := hωU
+    simp only [Measure.restrict_univ, measure_univ] at h
+    exact h.symm
+  have hZne : Z ≠ 0 := by intro h0; rw [h0] at hZ1; simp at hZ1
+  have hZtop : Z ≠ ∞ := by intro h0; rw [h0] at hZ1; simp at hZ1
+  have hpostB : ∀ B : Set (EuclideanSpace ℝ (Fin k)), MeasurableSet B →
+      ((iidKernel κ n)†π) ω B
+        = (∫⁻ θ in B, (∏ i, ENNReal.ofReal (M.density θ (ω i))) ∂π) / Z := by
+    intro B hB
+    rw [hωpost, withDensity_apply _ hB]
+    simp_rw [div_eq_mul_inv]
+    exact lintegral_mul_const' _ _ (ENNReal.inv_ne_top.mpr hZne)
+  have hmap : ∀ S : Set (EuclideanSpace ℝ (Fin k)), MeasurableSet S →
+      bvmLocalPosterior κ π θ₀ n ω S
+        = ((iidKernel κ n)†π) ω (bvmLocalScale θ₀ n ⁻¹' S) := by
+    intro S hS'
+    rw [bvmLocalPosterior, Kernel.map_apply' _ (measurable_bvmLocalScale θ₀ n) _ hS']
+  ext A hA
+  rw [ProbabilityTheory.cond_apply hC, hmap C hC, hmap (C ∩ A) (hC.inter hA),
+    hpostB _ ((measurable_bvmLocalScale θ₀ n) hC),
+    hpostB _ ((measurable_bvmLocalScale θ₀ n) (hC.inter hA)),
+    lintegral_preimage_eq_jac_mul_bvmNumer hπ hM_joint hn1 hC (hsub C le_rfl) ω,
+    lintegral_preimage_eq_jac_mul_bvmNumer hπ hM_joint hn1 (hC.inter hA)
+      (hsub (C ∩ A) Set.inter_subset_left) ω,
+    Set.inter_comm C A, ennreal_posterior_ratio hq ENNReal.ofReal_ne_top hZne hZtop,
+    withDensity_apply _ hA, Measure.restrict_restrict hA]
+  simp_rw [div_eq_mul_inv]
+  exact (lintegral_mul_const' _ _ (ENNReal.inv_ne_top.mpr hS)).symm
+
 /-- **Step B: the conditioned Bernstein–von Mises convergence** (vdV pp. 142–143). For every
 fixed radius `R > 0` and every `δ > 0`, the `P^n_{θ₀}`-probability that the conditioned
 local posterior and the conditioned Gaussian differ by at least `δ` in total variation tends
