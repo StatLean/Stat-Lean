@@ -4298,4 +4298,294 @@ private lemma abs_integral_smooth_sub_gaussian_improved {n : ℕ} (hk : 0 < k) {
 
 end ImprovedTelescope
 
+/-! #### The improved convex headline `(β/√n)^{1/2}`
+
+With brick (i) in hand the assembly is the same `ε`-balance as for
+`berryEsseen_convex_elementary`, except that the mollifier cost is now `ε^{-1}` rather than
+`ε^{-3}`, so the balance `ε^{-1} β/√n + C_k ε` is minimised at `ε = (β/√n)^{1/2}` instead of
+`(β/√n)^{1/4}`. The cut in the telescope is `J = max 2 ⌈ε² n⌉`, for which
+`J (M/6) n^{-3/2} ≤ C₃/(2 ε √n)` and `3C/√J ≤ 3C/(ε √n)`.
+
+Two side remarks on the bookkeeping. First, `J ≤ ε² n + 2` only helps when `ε² n ≥ 1`; when
+`ε² n < 1` the claimed bound already exceeds `1` (because `β ≥ k^{3/2} ≥ 1`), so the inequality
+is trivial and is discharged separately. Second, the elementary bounds
+`berryEsseen_convex_elementary` and `berryEsseen_ball_elementary` are left untouched: they are
+proved and are consumed elsewhere, and the improved bound is a *different* (stronger) statement
+rather than a restatement. -/
+
+section ImprovedAssembly
+
+set_option maxHeartbeats 1600000 in
+/-- **Improved convex Berry–Esseen bound, Lévy (thickening) form.** For every dimension `k > 0`
+there is a constant `C` such that for every convex measurable `B`, every width `ε > 0` and every
+`n > 0`,
+
+`μₙ(B) ≤ γ(Bᵋ) + C (β/√n)/ε` and `γ(B) ≤ μₙ(Bᵋ) + C (β/√n)/ε`.
+
+This is `berryEsseen_convex_levy_elementary` with `ε³` improved to `ε`: the mollifier's
+third-derivative cost `M = C₃/ε³` now enters only through `M^{1/3}`, by
+`abs_integral_smooth_sub_gaussian_improved`. -/
+theorem berryEsseen_convex_levy_improved {k : ℕ} (hk : 0 < k) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
+      (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ),
+      0 < n → 0 < ε → IsProbabilityMeasure ν →
+      (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0) →
+      (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
+      Integrable (fun y => ‖y‖ ^ 3) ν → MeasurableSet B → Convex ℝ B →
+      ((((Measure.pi fun _ : Fin n => ν).map
+              fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) B).toReal
+            ≤ ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+                (Metric.thickening ε B)).toReal
+              + C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) / ε)
+        ∧ (((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) B).toReal
+            ≤ (((Measure.pi fun _ : Fin n => ν).map
+                fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i)
+                  (Metric.thickening ε B)).toReal
+              + C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) / ε) := by
+  obtain ⟨C₃, hC₃pos, hC₃⟩ := exists_smoothed_convex_indicator k
+  obtain ⟨Ct, hCtpos, hCt⟩ := exists_tiltRemainder_bound
+  refine ⟨3 * C₃ / 2 + 9 * Ct + 2, by positivity, ?_⟩
+  intro n ν B ε hn hε hνp hmean hcov hβint hBmeas hBconv
+  haveI := hνp
+  have hγstd : (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+      = stdGaussian (EuclideanSpace ℝ (Fin k)) := multivariateGaussian_zero_one
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
+  set μ : Measure (EuclideanSpace ℝ (Fin k)) :=
+    (Measure.pi fun _ : Fin n => ν).map (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) with hμdef
+  haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
+  haveI hμprob : IsProbabilityMeasure μ := by
+    rw [hμdef]; exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+  set β : ℝ := ∫ y, ‖y‖ ^ 3 ∂ν with hβdef
+  have hβpos : 0 < β := integral_norm_cube_pos hk hcov hβint
+  have hk1 : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
+  have hsk : (1 : ℝ) ≤ Real.sqrt (k : ℝ) := by
+    have h := Real.sqrt_le_sqrt hk1
+    rwa [Real.sqrt_one] at h
+  have hβ1 : 1 ≤ β := by
+    have h := sqrt_dim_mul_dim_le_integral_norm_cube hcov hβint
+    rw [← hβdef] at h
+    nlinarith [h, hsk, hk1]
+  have hnr : (0 : ℝ) < n := by exact_mod_cast hn
+  have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
+  set q : ℝ := β / Real.sqrt (n : ℝ) with hqdef
+  have hqpos : 0 < q := div_pos hβpos hsn
+  set t : ℝ := ε * Real.sqrt (n : ℝ) with htdef
+  have htpos : 0 < t := by rw [htdef]; positivity
+  have ht2 : t ^ 2 = ε ^ 2 * (n : ℝ) := by
+    rw [htdef, mul_pow, Real.sq_sqrt hnr.le]
+  have hqt : q / ε = β / t := by
+    rw [hqdef, htdef, div_div]
+    congr 1
+    ring
+  -- the degenerate window `ε² n < 1`, where the claimed bound already exceeds `1`
+  have htrivial : t < 1 → (1 : ℝ) ≤ (3 * C₃ / 2 + 9 * Ct + 2) * q / ε := by
+    intro ht1
+    have hb : 1 ≤ β / t := by
+      rw [le_div_iff₀ htpos]
+      nlinarith [hβ1, ht1, htpos]
+    have hqe : 1 ≤ q / ε := by rw [hqt]; exact hb
+    have hsplit : (3 * C₃ / 2 + 9 * Ct + 2) * q / ε
+        = (3 * C₃ / 2 + 9 * Ct + 2) * (q / ε) := by ring
+    rw [hsplit]
+    nlinarith [hqe, hC₃pos, hCtpos]
+  have hμ1 : (μ B).toReal ≤ 1 := by
+    have h := measure_mono (μ := μ) (Set.subset_univ B)
+    rw [measure_univ] at h
+    simpa using ENNReal.toReal_mono (by simp) h
+  have hγ1 : (γ B).toReal ≤ 1 := by
+    have h := measure_mono (μ := γ) (Set.subset_univ B)
+    rw [measure_univ] at h
+    simpa using ENNReal.toReal_mono (by simp) h
+  rcases lt_or_ge t 1 with hsmall | hbig
+  · have h := htrivial hsmall
+    exact ⟨by linarith [ENNReal.toReal_nonneg (a := γ (Metric.thickening ε B))],
+      by linarith [ENNReal.toReal_nonneg (a := μ (Metric.thickening ε B))]⟩
+  -- ### the main window `ε² n ≥ 1`
+  obtain ⟨f, hfcd, hf0, hf1, hfB, hfsupp, hfD⟩ := hC₃ B hBconv hε
+  have hfbd : ∀ x, |f x| ≤ 1 := fun x => abs_le.2 ⟨by linarith [hf0 x], hf1 x⟩
+  have hfint : ∀ ρ : Measure (EuclideanSpace ℝ (Fin k)), IsProbabilityMeasure ρ →
+      Integrable f ρ := by
+    intro ρ hρ
+    haveI := hρ
+    exact (integrable_const (1 : ℝ)).mono' hfcd.continuous.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => by rw [Real.norm_eq_abs]; exact hfbd x)
+  set J : ℕ := max 2 ⌈ε ^ 2 * (n : ℝ)⌉₊ with hJdef
+  have hJ2 : 2 ≤ J := le_max_left _ _
+  have hJlow : t ^ 2 ≤ (J : ℝ) := by
+    rw [ht2]
+    refine le_trans (Nat.le_ceil _) ?_
+    have hmem : ⌈ε ^ 2 * (n : ℝ)⌉₊ ≤ J := by rw [hJdef]; exact le_max_right _ _
+    exact_mod_cast hmem
+  have hJhigh : (J : ℝ) ≤ t ^ 2 + 2 := by
+    rw [ht2]
+    have hc : ((⌈ε ^ 2 * (n : ℝ)⌉₊ : ℕ) : ℝ) < ε ^ 2 * (n : ℝ) + 1 :=
+      Nat.ceil_lt_add_one (by positivity)
+    have hmax : (J : ℝ) = max 2 ((⌈ε ^ 2 * (n : ℝ)⌉₊ : ℕ) : ℝ) := by
+      rw [hJdef]; push_cast; rfl
+    rw [hmax]
+    have hnn : (0 : ℝ) ≤ ε ^ 2 * (n : ℝ) := by positivity
+    rcases max_cases (2 : ℝ) ((⌈ε ^ 2 * (n : ℝ)⌉₊ : ℕ) : ℝ) with ⟨he, _⟩ | ⟨he, _⟩
+    · rw [he]; linarith
+    · rw [he]; linarith
+  have hsqrtJ : t ≤ Real.sqrt (J : ℝ) := by
+    have h1 : Real.sqrt (t ^ 2) ≤ Real.sqrt (J : ℝ) := Real.sqrt_le_sqrt hJlow
+    rwa [Real.sqrt_sq htpos.le] at h1
+  -- the improved telescope at `M = C₃/ε³` and cut `J`
+  have hswap := abs_integral_smooth_sub_gaussian_improved hk hCtpos hCt hn hνp hmean hcov hβint
+    hfcd hfbd (M := C₃ / ε ^ 3) (by positivity) hfD hJ2
+  rw [← hγstd, ← hμdef, ← hβdef] at hswap
+  -- the two moment bounds
+  have hβGle : (∫ z, ‖z‖ ^ 3 ∂γ) ≤ 2 * β := by
+    have h1 := integral_norm_cube_gaussian_le (k := k) hk
+    rw [← hγdef] at h1
+    have h2 := sqrt_dim_mul_dim_le_integral_norm_cube hcov hβint
+    rw [← hβdef] at h2
+    linarith
+  have hβGnn : 0 ≤ ∫ z, ‖z‖ ^ 3 ∂γ := integral_nonneg fun z => by positivity
+  -- the coefficient estimate
+  have hεne : ε ≠ 0 := hε.ne'
+  have hsnne : Real.sqrt (n : ℝ) ≠ 0 := hsn.ne'
+  have ht3 : t ^ 3 = ε ^ 3 * ((n : ℝ) * Real.sqrt (n : ℝ)) := by
+    have hcube : Real.sqrt (n : ℝ) ^ 3 = (n : ℝ) * Real.sqrt (n : ℝ) := by
+      have h2 : Real.sqrt (n : ℝ) ^ 2 = (n : ℝ) := Real.sq_sqrt hnr.le
+      calc Real.sqrt (n : ℝ) ^ 3 = Real.sqrt (n : ℝ) ^ 2 * Real.sqrt (n : ℝ) := by ring
+        _ = (n : ℝ) * Real.sqrt (n : ℝ) := by rw [h2]
+    rw [htdef, mul_pow, hcube]
+  have hθ : C₃ / ε ^ 3 / 6 / ((n : ℝ) * Real.sqrt (n : ℝ)) = C₃ / (6 * t ^ 3) := by
+    rw [ht3]
+    field_simp
+  have hJ3 : (J : ℝ) ≤ 3 * t ^ 2 := by nlinarith [hJhigh, hbig, htpos]
+  have hpart1 : (J : ℝ) * (C₃ / (6 * t ^ 3)) ≤ C₃ / (2 * t) := by
+    rw [← mul_div_assoc, div_le_div_iff₀ (by positivity) (by positivity)]
+    nlinarith [mul_le_mul_of_nonneg_right hJ3 (by positivity : (0 : ℝ) ≤ 2 * C₃ * t),
+      hC₃pos, htpos]
+  have hpart2 : 3 * Ct / Real.sqrt (J : ℝ) ≤ 3 * Ct / t :=
+    div_le_div_of_nonneg_left (by positivity) htpos hsqrtJ
+  have hcoeff : (J : ℝ) * (C₃ / ε ^ 3 / 6 / ((n : ℝ) * Real.sqrt (n : ℝ)))
+      + 3 * Ct / Real.sqrt (J : ℝ) ≤ (C₃ / 2 + 3 * Ct) / t := by
+    rw [hθ]
+    have hsplit : (C₃ / 2 + 3 * Ct) / t = C₃ / (2 * t) + 3 * Ct / t := by
+      field_simp
+    rw [hsplit]
+    linarith [hpart1, hpart2]
+  have hcoeffnn : 0 ≤ (J : ℝ) * (C₃ / ε ^ 3 / 6 / ((n : ℝ) * Real.sqrt (n : ℝ)))
+      + 3 * Ct / Real.sqrt (J : ℝ) := by positivity
+  -- the assembled error bound
+  have herr : |(∫ x, f x ∂μ) - (∫ x, f x ∂γ)|
+      ≤ (3 * C₃ / 2 + 9 * Ct + 2) * q / ε := by
+    refine hswap.trans ?_
+    have hstep1 : ((J : ℝ) * (C₃ / ε ^ 3 / 6 / ((n : ℝ) * Real.sqrt (n : ℝ)))
+          + 3 * Ct / Real.sqrt (J : ℝ)) * (β + (∫ z, ‖z‖ ^ 3 ∂γ))
+        ≤ ((C₃ / 2 + 3 * Ct) / t) * (3 * β) := by
+      have h1 : β + (∫ z, ‖z‖ ^ 3 ∂γ) ≤ 3 * β := by linarith
+      have h2 : (0 : ℝ) ≤ (C₃ / 2 + 3 * Ct) / t := by positivity
+      nlinarith [hcoeff, hcoeffnn, h1, h2, hβpos]
+    refine hstep1.trans ?_
+    have hval : ((C₃ / 2 + 3 * Ct) / t) * (3 * β) = (3 * C₃ / 2 + 9 * Ct) * (β / t) := by
+      field_simp
+      ring
+    rw [hval, ← hqt]
+    have hqe : 0 ≤ q / ε := by positivity
+    have hfin : (3 * C₃ / 2 + 9 * Ct + 2) * q / ε
+        = (3 * C₃ / 2 + 9 * Ct) * (q / ε) + 2 * (q / ε) := by ring
+    rw [hfin]
+    nlinarith [hqe]
+  -- the sandwich
+  have hthick : MeasurableSet (Metric.thickening ε B) := Metric.isOpen_thickening.measurableSet
+  have hlowμ : (μ B).toReal ≤ ∫ x, f x ∂μ :=
+    measureReal_le_integral_of_eq_one hBmeas (hfint μ hμprob) hf0 hfB
+  have hlowγ : (γ B).toReal ≤ ∫ x, f x ∂γ :=
+    measureReal_le_integral_of_eq_one hBmeas (hfint γ hγprob) hf0 hfB
+  have huppμ : (∫ x, f x ∂μ) ≤ (μ (Metric.thickening ε B)).toReal :=
+    integral_le_measureReal_of_support_subset hthick (hfint μ hμprob) hf1 hfsupp
+  have huppγ : (∫ x, f x ∂γ) ≤ (γ (Metric.thickening ε B)).toReal :=
+    integral_le_measureReal_of_support_subset hthick (hfint γ hγprob) hf1 hfsupp
+  have hswap' := abs_le.1 herr
+  constructor
+  · linarith [hswap'.2, hlowμ, huppγ]
+  · linarith [hswap'.1, hlowγ, huppμ]
+
+/-- **Improved convex-set Berry–Esseen bound.** For every dimension `k > 0` there is a constant
+`C` such that for all `n > 0`, every centred identity-covariance law `ν` with finite third
+moment `β = ∫‖y‖³ dν`, and every measurable convex `B`,
+
+`|μₙ(B) − γ(B)| ≤ C (β/√n)^{1/2} = O(n^{-1/4})`.
+
+This is a strict improvement on the exponent `1/4` of `berryEsseen_convex_elementary`
+(`n^{-1/8}`), and it is the ceiling of the *non-inductive* elementary route: see the wave-13
+amendment in the module docstring. The residual gap to Bentkus's `400 k^{1/4} β/√n` is a further
+factor `(β/√n)^{1/2}`, obtainable only by the self-improving induction
+`Δ ≤ A ε^{-3} δ (C_k ε + 2Δ) + C_k ε`, which is not attempted here.
+
+The constant is `C = C₀ + C_k` with `C₀` from `berryEsseen_convex_levy_improved` and
+`C_k = gaussianShellConst k = 8k^{3/2}/√(2π)`; the balance is `ε = (β/√n)^{1/2}`, at which
+`(β/√n)/ε = ε`. The proof is the same two-sided thickening/erosion argument as
+`berryEsseen_convex_elementary`. -/
+theorem berryEsseen_convex_improved {k : ℕ} (hk : 0 < k) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
+      (B : Set (EuclideanSpace ℝ (Fin k))),
+      0 < n → IsProbabilityMeasure ν →
+      (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0) →
+      (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
+      Integrable (fun y => ‖y‖ ^ 3) ν → MeasurableSet B → Convex ℝ B →
+      |((((Measure.pi fun _ : Fin n => ν)).map
+            fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) B).toReal
+          - ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) B).toReal|
+        ≤ C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) ^ ((1 : ℝ) / 2) := by
+  obtain ⟨C₀, hC₀pos, hlevy⟩ := berryEsseen_convex_levy_improved hk
+  have hCkpos : 0 < gaussianShellConst k := gaussianShellConst_pos hk
+  refine ⟨C₀ + gaussianShellConst k, by linarith, ?_⟩
+  intro n ν B hn hνp hmean hcov hβint hBmeas hBconv
+  haveI := hνp
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
+  set μ : Measure (EuclideanSpace ℝ (Fin k)) :=
+    (Measure.pi fun _ : Fin n => ν).map (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) with hμdef
+  haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
+  haveI hμprob : IsProbabilityMeasure μ := by
+    rw [hμdef]; exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+  set β : ℝ := ∫ y, ‖y‖ ^ 3 ∂ν with hβdef
+  have hβpos : 0 < β := integral_norm_cube_pos hk hcov hβint
+  have hnr : (0 : ℝ) < n := by exact_mod_cast hn
+  have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
+  set q : ℝ := β / Real.sqrt (n : ℝ) with hqdef
+  have hqpos : 0 < q := div_pos hβpos hsn
+  have hεpos : 0 < q ^ ((1 : ℝ) / 2) := Real.rpow_pos_of_pos hqpos _
+  have hbal : q / q ^ ((1 : ℝ) / 2) = q ^ ((1 : ℝ) / 2) := by
+    have hsum : q ^ ((1 : ℝ) / 2) * q ^ ((1 : ℝ) / 2) = q := by
+      rw [← Real.rpow_add hqpos]
+      norm_num
+    rw [div_eq_iff (Real.rpow_pos_of_pos hqpos _).ne']
+    exact hsum.symm
+  have hC₀bal : C₀ * q / q ^ ((1 : ℝ) / 2) = C₀ * q ^ ((1 : ℝ) / 2) := by
+    rw [mul_div_assoc, hbal]
+  have hlevyB := hlevy n ν B (q ^ ((1 : ℝ) / 2)) hn hεpos hνp hmean hcov hβint hBmeas hBconv
+  rw [← hμdef, ← hβdef, ← hqdef, hC₀bal] at hlevyB
+  have hEmeas : MeasurableSet (erosion (q ^ ((1 : ℝ) / 2)) B) :=
+    (isOpen_erosion _ B).measurableSet
+  have hEconv : Convex ℝ (erosion (q ^ ((1 : ℝ) / 2)) B) := convex_erosion hBconv
+  have hlevyE := hlevy n ν (erosion (q ^ ((1 : ℝ) / 2)) B) (q ^ ((1 : ℝ) / 2)) hn hεpos hνp
+    hmean hcov hβint hEmeas hEconv
+  rw [← hμdef, ← hβdef, ← hqdef, hC₀bal] at hlevyE
+  have hthick : (γ (Metric.thickening (q ^ ((1 : ℝ) / 2)) B)).toReal
+      ≤ (γ B).toReal + gaussianShellConst k * q ^ ((1 : ℝ) / 2) := by
+    refine toReal_le_add_of_le_add_ofReal (measure_ne_top _ _) (by positivity) ?_
+    have := gaussian_thickening_le hk hBconv hεpos
+    rwa [← hγdef] at this
+  have herode : (γ B).toReal
+      ≤ (γ (erosion (q ^ ((1 : ℝ) / 2)) B)).toReal
+        + gaussianShellConst k * q ^ ((1 : ℝ) / 2) := by
+    refine toReal_le_add_of_le_add_ofReal (measure_ne_top _ _) (by positivity) ?_
+    have := gaussian_le_erosion_add hk hBmeas hBconv hεpos
+    rwa [← hγdef] at this
+  have hback : (μ (Metric.thickening (q ^ ((1 : ℝ) / 2))
+      (erosion (q ^ ((1 : ℝ) / 2)) B))).toReal ≤ (μ B).toReal :=
+    ENNReal.toReal_mono (measure_ne_top _ _)
+      (measure_mono (thickening_erosion_subset _ B))
+  rw [abs_sub_le_iff]
+  constructor
+  · linarith [hlevyB.1]
+  · linarith [hlevyE.2]
+
+end ImprovedAssembly
+
 end StatLean.HypothesisTesting
