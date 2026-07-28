@@ -886,6 +886,8 @@ private lemma tvDist_normalize_le_const_mul {α : Type*} [MeasurableSpace α]
 -- LEAN-ONLY: the pointwise Step-B majorization. Where the Bayes formula holds, the local mass
 -- is nondegenerate and the score sum is bounded by `K`, the conditioned total-variation
 -- distance is at most a `(R, K, J)`-constant times `bvmStepBBound`.
+-- The elaboration of the two `withDensity` rewrites plus the normalized Jensen bound exceeds
+-- the default heartbeat budget (large `ℝ≥0∞` density terms), hence the raised limit.
 set_option maxHeartbeats 1000000 in
 private lemma tvDist_cond_le_bvmStepBBound
     -- USER-INPUT: dominated iid model, `κ θ = p_θ · μ`; vdV §10.2, p. 140
@@ -1158,7 +1160,8 @@ private lemma bvmPairRatio_eq_exp_bvmLogRatio {g h : EuclideanSpace ℝ (Fin k)}
       fun i => Real.log_div (hx i).ne' (h0 i).ne'
     rw [Real.log_prod (fun i _ => (hx i).ne'), hP0d,
       Real.log_prod (fun i _ => (h0 i).ne')]
-    show ∑ i, Real.log (M.density (θ₀ + (Real.sqrt n)⁻¹ • x) (ω i) / M.density θ₀ (ω i)) = _
+    change ∑ i, Real.log (M.density (θ₀ + (Real.sqrt n)⁻¹ • x) (ω i)
+      / M.density θ₀ (ω i)) = _
     rw [← Finset.sum_sub_distrib]
     exact Finset.sum_congr rfl fun i _ => hsplit i
   have hinnersub : ⟪g - h, scoreSum sc n ω⟫
@@ -1609,7 +1612,7 @@ private lemma measurable_bvmPairDefect_pair
   unfold bvmPairDefect
   exact ((hsh.mul htg).sub (hsg.mul hth)).div htg
 
-private lemma measurable_bvmPairDefect_pair' 
+private lemma measurable_bvmPairDefect_pair'
     (hM_joint : Measurable (Function.uncurry M.density)) (hf : Measurable f)
     (J : Matrix (Fin k) (Fin k) ℝ) {sc : 𝓧 → EuclideanSpace ℝ (Fin k)} (hsc : Measurable sc)
     (n : ℕ) (ω : Fin n → 𝓧) :
