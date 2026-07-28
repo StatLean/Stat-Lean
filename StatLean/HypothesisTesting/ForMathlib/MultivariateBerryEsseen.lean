@@ -84,7 +84,8 @@ outright and is axiom-clean. Its two ingredients are
   erosion twin `γ(B) ≤ γ(B₋ᵋ) + C_k ε`. These are `gaussian_thickening_le` and
   `gaussian_le_erosion_add` of `StatLean.HypothesisTesting.ForMathlib.GaussianShell`, proved
   there elementarily (convex slice + supporting hyperplane + `2k` coordinate shifts) with the
-  explicit constant `C_k = 8 k^{3/2}/√(2π)`. Ball's Gaussian-surface-area theorem gives the
+  explicit constant `C_k = 4 e² √k` (wave 22; the wave-3 coordinate cover gave the factor-`k`
+  worse `8 k^{3/2}/√(2π)`). Ball's Gaussian-surface-area theorem gives the
   sharp `4 k^{1/4}` — exactly the dimension factor of Bentkus's constant — but the assembly
   needs only finiteness of `C_k` at fixed `k`.
 
@@ -214,9 +215,9 @@ resolved, and the recursion is assembled: `berryEsseen_convex_sharp` states the 
 `|μₙ(B) − γ(B)| ≤ 72 A C_k · β/√n` for measurable convex `B`,
 
 **linear in `δ = β/√n`**, proved from `exists_convexDiscrepancy_recursion` fed to
-`le_of_selfImproving_induction`. It is not axiom-clean: it inherits exactly two named,
-precisely stated bricks, `hybridLaw_shell_le` and `exists_localised_swap_bound`. Everything
-between the bricks and the headline is proved.
+`le_of_selfImproving_induction`. It is not axiom-clean: it inherited exactly two named,
+precisely stated bricks, `hybridLaw_shell_le` and `exists_localised_swap_bound` (the first is
+proved in wave 22, below). Everything between the bricks and the headline is proved.
 
 *Obstacle 1 (the class) is overturned rather than solved.* The `ε`-shell of a convex set is
 `Bᵋ \ interior B`, a difference of two convex sets — but the induction does **not** have to be
@@ -236,18 +237,33 @@ normalised sum of `m = n − j ≥ n/2` summands, so only the discrepancies at s
 exactly the neighbour range of `le_of_selfImproving_induction`, which closes at `K = 18 A C`
 with no base case.
 
-**The two remaining bricks.** `hybridLaw_shell_le` — the shell mass of every hybrid is
-`≤ 2 C_k ε + 2Y`; its geometry is proved (affine transport of `Metric.thickening` and
-`interior`), its debt is the Fubini factorisation of `hybridLaw` as `ρ ∗ γ_σ` plus the Gaussian
-scaling identity. `exists_localised_swap_bound` — `abs_integral_smooth_sub_gaussian_improved`
-rerun with the wave-19 weighted Cameron–Martin remainder in place of the uniform one, so that
-each step is weighted by the hybrid's shell mass. The best *proved* convex bound remains
-`berryEsseen_convex_improved` at `(β/√n)^{1/2}`.
+## Wave-22 amendment: brick H is proved, and the shell constant drops from `k^{3/2}` to `√k`
 
-**Constant deviation** (provable-constants rule): this route gives `C ∼ k^{3/2}`, through
-`gaussianShellConst k = 8 k^{3/2}/√(2π)`, not Bentkus's `400 k^{1/4}`. The `k`-power is an
-artefact of the crude coordinate-slice proof of `gaussian_thickening_le`; nothing in the
-recursion depends on it.
+**Brick H is discharged.** `hybridLaw_shell_le` is now a theorem, axiom-clean. The debt wave 20
+identified — the Fubini factorisation of `hybridLaw` — is supplied by applying `Measure.prod`'s
+two Fubini identities to the explicit hybrid map: `Measure.prod_apply` in the Gaussian-dominant
+regime `2j ≥ n`, `Measure.prod_apply_symm` in the sum-dominant regime `2j ≤ n`, in each case
+landing on the wave-20 affine transport `measureReal_shell_preimage_aff_le`. The only genuinely
+new ingredient is `map_sum_pi_dirac_drop`: the `δ₀` factors of the hybrid product measure drop
+out of the law of the coordinate sum, so the sum-dominant regime really does see `sumLaw (n−j) ν`
+(proved by characteristic functions — `charFun_map_sum_pi` — with no index surgery). The moment
+hypotheses turn out to be unnecessary for brick H: it is purely geometric.
+
+**The one remaining brick.** `exists_localised_swap_bound` —
+`abs_integral_smooth_sub_gaussian_improved` rerun with a shell-weighted Cameron–Martin remainder
+in place of the uniform one, so that each step of the telescope is weighted by the *hybrid's*
+shell mass. Note that it asks for the `L^∞` weight `W`, which is strictly stronger than the
+wave-19 `L²` lemma `abs_integral_mul_vecTiltRemainder_le_of_support` (that one gives `√W`, hence
+only `O(n^{-1/3})`), and is not a corollary of it: the weight must be carried by the hybrid law,
+not by `γ`. The best *proved* convex bound remains `berryEsseen_convex_improved` at
+`(β/√n)^{1/2}`.
+
+**Constant deviation** (provable-constants rule): this route now gives `C ∼ k^{1/2}`, through
+`gaussianShellConst k = 4 e² √k`, not Bentkus's `400 k^{1/4}`. Wave 22 removed the factor `k`
+that the `2k`-fold coordinate cover used to contribute to the shell bound — a single random
+Gaussian shift replaces it (`gaussian_le_of_gaussian_shift_cover`) — and the residual `√k` is
+the first absolute moment `E‖Z‖ ≤ √k` of that shift. Closing the last gap to `k^{1/4}` needs
+Ball's Gaussian-surface-area theorem; nothing in the recursion depends on it.
 
 **Reference.** V. Bentkus, "On the dependence of the Berry–Esseen bound on dimension,"
 *J. Statist. Plann. Inference* **113** (2003), 385–402. E. L. Lehmann and J. P. Romano,
@@ -2686,7 +2702,7 @@ Optimising `ε` in `ε^{-3} β/√n + C ε` balances steps 2–3 at `ε = (β/�
 order `(β/√n)^{1/4} = n^{-1/8}` — **not** the `n^{-1/2}` rate of the frozen
 `bentkus_berry_esseen_convex`. The constant also carries a dimension factor: it is
 `C = C₀ + C_k` with `C₀` the third-derivative constant of `exists_smoothed_convex_indicator` and
-`C_k = gaussianShellConst k = 8k^{3/2}/√(2π)` the Gaussian boundary-shell constant.
+`C_k = gaussianShellConst k = 4 e² √k` the Gaussian boundary-shell constant.
 
 **This exponent is not the ceiling of the elementary route** (wave-13 correction of an earlier
 note that claimed it was): exploiting the Gaussian mollification the hybrid telescope carries for
@@ -4938,7 +4954,7 @@ factor `(β/√n)^{1/2}`, obtainable only by the self-improving induction
 `Δ ≤ A ε^{-3} δ (C_k ε + 2Δ) + C_k ε`, which is not attempted here.
 
 The constant is `C = C₀ + C_k` with `C₀` from `berryEsseen_convex_levy_improved` and
-`C_k = gaussianShellConst k = 8k^{3/2}/√(2π)`; the balance is `ε = (β/√n)^{1/2}`, at which
+`C_k = gaussianShellConst k = 4 e² √k`; the balance is `ε = (β/√n)^{1/2}`, at which
 `(β/√n)/ε = ε`. The proof is the same two-sided thickening/erosion argument as
 `berryEsseen_convex_elementary`. -/
 theorem berryEsseen_convex_improved {k : ℕ} (hk : 0 < k) :
@@ -6112,17 +6128,19 @@ with
 `|μₙ(B) − γ(B)| ≤ C β/√n` for every measurable convex `B`,
 
 i.e. Bentkus's rate, linear in `δ = β/√n`, with the dimension entering only through
-`C = 18 A (4 C_k) = 72 A gaussianShellConst k`, `gaussianShellConst k = 8 k^{3/2}/√(2π)`.
+`C = 18 A (4 C_k) = 72 A gaussianShellConst k`, `gaussianShellConst k = 4 e² √k`.
 
 This is `exists_convexDiscrepancy_recursion` fed to `le_of_selfImproving_induction`. It is
-**not** axiom-clean: it inherits the two stated-but-unproved bricks `hybridLaw_shell_le` and
-`exists_localised_swap_bound`. The best *proved* convex bound remains
-`berryEsseen_convex_improved` at `(β/√n)^{1/2}`.
+**not** axiom-clean: after wave 22 it inherits exactly **one** stated-but-unproved brick,
+`exists_localised_swap_bound` (brick H, `hybridLaw_shell_le`, is now proved). The best *proved*
+convex bound remains `berryEsseen_convex_improved` at `(β/√n)^{1/2}`.
 
-Note the `k`-power: `gaussianShellConst k ~ k^{3/2}`, so this route gives `C ~ k^{3/2}`, not
-Bentkus's `400 k^{1/4}`. The `k^{1/4}` comes from a sharper Gaussian shell estimate than
-`gaussian_thickening_le` (which is proved here by a crude coordinate-slice cover); nothing in
-the recursion changes. Per the provable-constants rule the statement records `k^{3/2}`. -/
+Note the `k`-power: `gaussianShellConst k = 4 e² √k`, so this route gives `C ∼ k^{1/2}`, not
+Bentkus's `400 k^{1/4}`. Wave 22 removed the factor `k` that the coordinate-slice cover of
+`gaussian_thickening_le` used to contribute (see `gaussian_le_of_gaussian_shift_cover`); the
+remaining `√k` is the first absolute moment `E‖Z‖ ≤ √k` of the Gaussian shift, and closing the
+gap to `k^{1/4}` needs Ball's Gaussian-surface-area theorem. Nothing in the recursion changes.
+Per the provable-constants rule the statement records `k^{1/2}`. -/
 theorem berryEsseen_convex_sharp {k : ℕ} (hk : 0 < k) :
     ∃ C : ℝ, 0 < C ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))),

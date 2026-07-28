@@ -202,7 +202,7 @@ theorem bentkus_berry_esseen_convex {k n : ℕ} {ν : Measure (EuclideanSpace �
   -- telescope carrying its own Gaussian smoothing — is
   -- `abs_integral_smooth_sub_gaussian_improved`, and the headline it yields is
   -- `ForMathlib.MultivariateBerryEsseen.berryEsseen_convex_improved`,
-  --   `|μₙ(B) − γ(B)| ≤ C (β/√n)^{1/2}` for measurable convex `B`, `C = C₀ + 8k^{3/2}/√(2π)`,
+  --   `|μₙ(B) − γ(B)| ≤ C (β/√n)^{1/2}` for measurable convex `B`, `C = C₀ + gaussianShellConst k`,
   -- 0-sorry and axiom-clean, together with its Lévy form `berryEsseen_convex_levy_improved`.
   -- So the convex side of the elementary route now stands at `n^{-1/4}`, not `n^{-1/8}`.
   -- The *ball* side too: `berryEsseen_ball_improved` gives `C (β/√n)^{1/2}` with the same
@@ -247,7 +247,8 @@ theorem bentkus_berry_esseen_convex {k n : ℕ} {ν : Measure (EuclideanSpace �
   --   `|μₙ(B) − γ(B)| ≤ 72 A C_k · β/√n` for measurable convex `B`,
   -- LINEAR in `β/√n`, proved from `exists_convexDiscrepancy_recursion` fed to
   -- `le_of_selfImproving_induction`.  It is NOT axiom-clean: it inherits exactly two named
-  -- bricks, `hybridLaw_shell_le` and `exists_localised_swap_bound` (both `sorry`).
+  -- bricks, `hybridLaw_shell_le` and `exists_localised_swap_bound` (both `sorry` at the time;
+  -- the first is proved in wave 22, see below).
   -- • Obstacle 1 (the class) is OVERTURNED, not solved.  The `ε`-shell is a difference of two
   --   convex sets, but the induction need not be enlarged to that class:
   --   `μ(B₁ \ B₂) = μ(B₁) − μ(B₂)` for `B₂ ⊆ B₁`, so two applications of the convex bound
@@ -261,13 +262,25 @@ theorem bentkus_berry_esseen_convex {k n : ℕ} {ν : Measure (EuclideanSpace �
   --   has `m = n − j ≥ n/2` summands.  `m = n` must be included (the `j = 0` hybrid IS `μₙ`),
   --   which `le_of_selfImproving_induction` handles with `Y = max (2Kδ) (D n)`, closing at
   --   `K = 18 A C` with no base case.
-  -- What is left is the two bricks: the Fubini factorisation of `hybridLaw` as `ρ ∗ γ_σ` plus
-  -- Gaussian scaling (for H), and the rerun of `abs_integral_smooth_sub_gaussian_improved`
-  -- with the wave-19 weighted Cameron–Martin remainder (for L).
-  -- CONSTANT: that route gives `C ∼ k^{3/2}` (through `gaussianShellConst k = 8k^{3/2}/√(2π)`),
-  -- not `400 k^{1/4}`; the `k`-power is an artefact of the crude coordinate-slice proof of
-  -- `gaussian_thickening_le`, not of the recursion.  This declaration keeps its sharp Bentkus
-  -- form with `400 k^{1/4}` and stays the pre-agreed, consumer-free debt of this file: wiring
+  -- WAVE-22: BRICK H IS PROVED (`hybridLaw_shell_le`, axiom-clean), so `berryEsseen_convex_sharp`
+  -- now rests on exactly ONE brick, `exists_localised_swap_bound`.  Brick H came out of the two
+  -- Fubini identities for `Measure.prod` applied to the explicit `hybridLaw` map, plus the
+  -- wave-20 affine transport; the only non-formal ingredient was `map_sum_pi_dirac_drop`, that
+  -- the `δ₀` factors of the hybrid product drop out of the law of the coordinate sum (proved by
+  -- characteristic functions, no index surgery).  What is left is brick L: the rerun of
+  -- `abs_integral_smooth_sub_gaussian_improved` with a shell-weighted Cameron–Martin remainder.
+  -- Note that brick L as stated asks for the `L^∞` weight `W`, which is STRICTLY STRONGER than
+  -- the wave-19 `L²`/Cauchy–Schwarz lemma `abs_integral_mul_vecTiltRemainder_le_of_support`
+  -- (that one delivers `√W`, hence only `O(n^{-1/3})` through
+  -- `cube_le_of_selfImproving_smoothed_sqrt`).  The `L^∞` form is not a corollary of the
+  -- wave-19 lemma: it needs the shell weight to be carried by the HYBRID law rather than by `γ`.
+  -- CONSTANT: WAVE-22 also improved the shell constant from `k^{3/2}` to `k^{1/2}`.
+  -- `gaussianShellConst k` is now `4 e² √k` (`gaussian_le_of_gaussian_shift_cover`: one random
+  -- Gaussian shift instead of the `2k`-fold coordinate cover), so the route gives `C ∼ k^{1/2}`,
+  -- still not `400 k^{1/4}` — the residual `√k` is `E‖Z‖ ≤ √k` and closing it needs Ball's
+  -- Gaussian-surface-area theorem, not anything in the recursion.  This declaration keeps its
+  -- sharp Bentkus form with `400 k^{1/4}` and stays the pre-agreed, consumer-free debt of this
+  -- file: wiring
   -- it to `berryEsseen_convex_sharp` would neither discharge it (the constant differs) nor
   -- reduce the project's `sorry` count (that theorem is itself brick-backed).
   sorry
