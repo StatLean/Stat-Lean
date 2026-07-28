@@ -4853,8 +4853,89 @@ lemma leakage_ledger_four_gt {n : ℕ} (hn : 2 ≤ n) :
   rw [leakage_ledger_exponent hn0, inv_mul_sqrt_eq_rpow hn0]
   exact Real.rpow_lt_rpow_of_exponent_lt h1 (by norm_num)
 
-/-- **(W27, AMENDED IN W30) The one remaining analytic item of the studentized expansion, as a
-named brick.**
+/-! ### The certificate, split into its three quantitative inputs
+
+With the multiplier built, `hasFourierCertificateOnBand_of_bulkMultiplier` reduces
+`exists_fourierCertificate_deltaSurrogate` to exactly three numbered estimates, and the reduction
+is now *proved*, not prose: the certificate below is assembled from them with no further analytic
+content. Two are deterministic statements about `𝓕 g` for one explicit polynomial phase against
+Lebesgue measure on `ℝ²`; the third is a fourth moment of the truncated root.
+
+**(A) The mass, polynomial** — `exists_integral_norm_fourier_bulkMultiplier_le`. `g` is `C^∞` with
+support in `‖w‖ ≤ 2M`, so `𝓕 g` is Schwartz and integrable, and integrating by parts three times
+in each variable gives `∫‖𝓕 g‖ ≲ M²·sup_{|α| ≤ 3}‖∂^α g‖_∞`; every derivative of the phase is a
+polynomial in `M` and `|θ|` (degree `≤ 3` in `w₀`, `≤ 2` in `w₁`, coefficients carrying
+`r = n^{-1/2}`) and every derivative of the cut-off costs `M^{-1}`. Hence a bound
+`C n^K(1 + |θ|)^K`. No cancellation is used — this is the crude bound, and it is all that is
+needed against `cⁿ`.
+
+**(B) The leakage, the non-stationary-phase estimate** —
+`exists_integral_norm_fourierWeight_bulkMultiplier_band_le`. On the bad set `‖t₀ + s‖ < R` the
+total phase `Φ = θHₙ − ⟪·, s⟫` has `|∂_{w₀}Φ| ≥ (4/3)|θ|/σ` (`deltaSurrogate_slope_ge`: the
+`(5/6)|θ|/σ` from the surrogate and the `|θ|/(2σ)` from the band *add*, since both carry the sign
+of `θ`). Five applications of `L^t f = ∂_{w₀}(f/(i∂_{w₀}Φ))` to the cut-off then give
+`‖𝓕 g(s)‖ ≲ M²·(gain)⁵` with `gain = σ/(M|θ|) + (27/16)Mr²/(σ|θ|) = O(n^{-7/8})`
+(`bulk_gain_phase_le`); against the bad set's area `≍ n` the ledger
+(`leakage_ledger_exponent`, `leakage_ledger_five_le`) returns `n^{-17/8} ≤ n^{-3/2}`, and
+`leakage_ledger_four_gt` shows four applications would not. Fubini over `w₁` is harmless — the
+support is compact.
+
+**(C) The tail of the truncated root** — `exists_measure_norm_gt_bulkRadius_le`. `ρ_n` is the law
+of `n^{-1/2}∑Z(Xᵢ)` for `Z = studentPair F ∘ truncAt m √n`, bounded by
+`norm_studentPair_truncAt_le`; expanding `E‖w‖⁴` over the four indices leaves a diagonal
+`n^{-1}E‖Z‖⁴ = O(n)` and a pair block `3(E‖Z‖²)² = O(1)`, so Markov at the fourth moment gives
+`ρ_n{‖w‖ > M} ≤ E‖w‖⁴/M⁴ = O(n/M⁴)`, which `tail_ledger_exponent` identifies with `O(n^{-3/2})`
+at `M = n^{5/8}` exactly. This is the only probabilistic input of the three, and it is the line
+that *forces* the bulk radius.
+
+All three are `sorry`. The assembly below is not. -/
+
+/-- **(A) The mass of the bulk multiplier's transform is polynomial in `n` and `|θ|`** — the first
+of the three inputs of `exists_fourierCertificate_deltaSurrogate`; see the section note.
+
+`g` is smooth with support in a ball of radius `2M`, so `𝓕 g` decays faster than any polynomial
+and repeated integration by parts bounds `∫‖𝓕 g‖` by `M²` times a supremum of derivatives of `g`,
+each of which is polynomial in `M = n^{5/8}` and `|θ|`. -/
+theorem exists_integral_norm_fourier_bulkMultiplier_le {σ : ℝ} (hσ : 0 < σ) :
+    ∃ (C : ℝ) (K : ℕ), 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ θ : ℝ,
+      Integrable (𝓕 (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n))) ∧
+        (∫ v : E₂, ‖𝓕 (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) v‖)
+          ≤ C * (n : ℝ) ^ K * (1 + |θ|) ^ K := by
+  sorry
+
+/-- **(B) The non-stationary-phase estimate: the weight carries `O(n^{-3/2})` on the
+low-frequency ball** — the second input, and the analytic heart of the certificate.
+
+On `‖t₀ + s‖ < c₀√n/(2σ)` the total phase `θHₙ − ⟪·, s⟫` has first `w₀`-derivative at least
+`(4/3)|θ|/σ` in modulus, everywhere and with no cut-off (`deltaSurrogate_slope_ge`), so five
+integrations by parts against `L^t f = ∂_{w₀}(f/(i∂_{w₀}Φ))` gain `O(n^{-7/8})` each; the ledger
+lemmas verify that this closes at `n^{-17/8}` and that four would not. -/
+theorem exists_integral_norm_fourierWeight_bulkMultiplier_band_le
+    {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) :
+    ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ * Real.sqrt (n : ℝ) ≤ |θ| →
+      (∫ s in {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < c₀ * Real.sqrt (n : ℝ) / (2 * σ)},
+          ‖fourierWeight (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) s‖)
+        ≤ C / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
+  sorry
+
+/-- **(C) The truncated root leaves the bulk with probability `O(n^{-3/2})`** — the third input,
+and the only probabilistic one.
+
+The truncated summand is bounded (`norm_studentPair_truncAt_le`, `≍ n` at level `τ = √n`), so
+`E‖w‖⁴ = n^{-1}E‖Z‖⁴ + 3(E‖Z‖²)² = O(n)` and Markov gives `O(n/M⁴)`, which
+`tail_ledger_exponent` reads as `O(n^{-3/2})` at `M = n^{5/8}`. The factor `2` is the `B = 2` of
+`hasFourierCertificateOnBand_of_eqOn`. -/
+theorem exists_measure_norm_gt_bulkRadius_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F) :
+    ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, 0 < n →
+      2 * ((vecRootLaw F
+            (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n)
+          {w : E₂ | bulkRadius n < ‖w‖}).toReal
+        ≤ C / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
+  sorry
+
+/-- **(W27, AMENDED IN W30, ASSEMBLED IN W31) The remaining analytic item of the studentized
+expansion, as a named brick.**
 
 For the law of the truncated bivariate root there is, at every `n` and every outer frequency
 `|θ| ≥ c₀√n`, a Fourier certificate for the surrogate's multiplier: carrier `t₀ = (θ/σ)e₀` (the
@@ -4905,7 +4986,16 @@ The synthesis step is *gone*: `fourierSynth_fourierWeight` gives
 `fourierSynth (fourierWeight g) t₀ = e^{i⟪·,t₀⟫} g` at every point, by Fourier inversion, and
 `integral_norm_fourierWeight` identifies the mass with `∫‖𝓕 g‖` exactly. What is left is one
 non-stationary-phase estimate for one explicit polynomial phase, with the gradient lower bound
-already in hand (`deltaSurrogate_slope_ge`). -/
+already in hand (`deltaSurrogate_slope_ge`).
+
+**WAVE 31: this theorem is no longer a `sorry`.** `g` is built (`bulkMultiplier` at
+`M = bulkRadius n = n^{5/8}`), its five elementary hypotheses are proved, and the proof below
+assembles the certificate from the three named inputs (A), (B), (C) of the section note with no
+analytic content of its own: `Γ n θ` is taken to be the (A)-bound itself, and the single constant
+`C` of the signature is the maximum of the three. The residue is those three `sorry`s — two
+deterministic bounds on `𝓕 g` and one fourth moment of the truncated root — and the exponent
+ledger that ties them together is verified (`leakage_ledger_five_le`, `tail_ledger_exponent`),
+including the fact that `N = 5` is minimal (`leakage_ledger_four_gt`). -/
 theorem exists_fourierCertificate_deltaSurrogate
     -- USER-INPUT: finite fourth moment of the sampling law, which is what prices the bulk
     (F : Measure ℝ) [IsProbabilityMeasure F]
@@ -4922,7 +5012,39 @@ theorem exists_fourierCertificate_deltaSurrogate
           (c₀ * Real.sqrt (n : ℝ) / (2 * σ))
           (Γ n θ) (C / ((n : ℝ) * Real.sqrt (n : ℝ)))
           (C / ((n : ℝ) * Real.sqrt (n : ℝ))) := by
-  sorry
+  obtain ⟨CA, K, hCA, hA⟩ := exists_integral_norm_fourier_bulkMultiplier_le hσ
+  obtain ⟨CB, hCB, hB⟩ := exists_integral_norm_fourierWeight_bulkMultiplier_band_le hσ hc₀
+  obtain ⟨CC, hCC, hC⟩ := exists_measure_norm_gt_bulkRadius_le F hF4
+  refine ⟨fun n θ => CA * (n : ℝ) ^ K * (1 + |θ|) ^ K, max CA (max CB CC), K,
+    lt_of_lt_of_le hCA (le_max_left _ _), ?_, ?_⟩
+  · intro n θ
+    have h1 : CA ≤ max CA (max CB CC) := le_max_left _ _
+    have h2 : (0 : ℝ) ≤ (n : ℝ) ^ K := by positivity
+    have h3 : (0 : ℝ) ≤ (1 + |θ|) ^ K := by positivity
+    exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right h1 h2) h3
+  · intro n hn θ hθ
+    have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hden : (0 : ℝ) < (n : ℝ) * Real.sqrt (n : ℝ) := by positivity
+    have hM : 0 < bulkRadius n := bulkRadius_pos hn
+    set Z : ℝ → E₂ :=
+      fun y => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y) with hZdef
+    have hZm : Measurable Z := (measurable_studentPair F).comp (measurable_truncAt _ _)
+    haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZm n
+    obtain ⟨hAint, hAmass⟩ := hA n hn θ
+    have hS : MeasurableSet {w : E₂ | ‖w‖ ≤ bulkRadius n} :=
+      measurableSet_le continuous_norm.measurable measurable_const
+    have hcompl : ({w : E₂ | ‖w‖ ≤ bulkRadius n})ᶜ = {w : E₂ | bulkRadius n < ‖w‖} := by
+      ext w; simp [not_le]
+    refine hasFourierCertificateOnBand_of_bulkMultiplier (vecRootLaw F Z n) hσ
+      ((Real.sqrt (n : ℝ))⁻¹) θ (continuous_bulkMultiplier _ _ _ _)
+      (integrable_bulkMultiplier hM _ _ _) hAint hAmass ?_ hS
+      (fun w hw => bulkMultiplier_eq_of_norm_le hM _ _ _ hw)
+      (norm_bulkMultiplier_le_one _ _ _ _) ?_
+    · refine (hB n hn θ hθ).trans ?_
+      exact div_le_div_of_nonneg_right (le_trans (le_max_left _ _) (le_max_right CA _)) hden.le
+    · rw [hcompl]
+      refine (hC n hn).trans ?_
+      exact div_le_div_of_nonneg_right (le_trans (le_max_right _ _) (le_max_right CA _)) hden.le
 
 end StudentizedReduction
 
