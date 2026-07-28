@@ -1,4 +1,5 @@
 import StatLean.HypothesisTesting.Bootstrap.NonparametricMean
+import StatLean.HypothesisTesting.ForMathlib.BivariateEdgeworth
 import StatLean.HypothesisTesting.ForMathlib.EsseenSmoothing
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
@@ -69,6 +70,15 @@ Subsampling Methods), §18.4 (Higher Order Asymptotic Comparisons), Theorems 18.
   outer range (`edgeworthCharFun_tail_le`, `edgeworthGap_tail_le`) and the glue
   (`esseen_split`, `abs_meanRootCDF_sub_edgeworthCDF_le`). See the status note (E1)–(E4) on that
   theorem.
+* The **studentized** route is set up here too, and two of its steps are proved.
+  `ForMathlib/BivariateEdgeworth.lean` supplies the multivariate damped expansion — via the
+  projection identity `charFun_smul_eq_charFun_map_inner`, which makes the restriction of a
+  characteristic function to a ray a *one-dimensional* characteristic function, so that no
+  two-dimensional argument is needed — and `studentizedRootCDF_eq_vecRootLaw` below identifies
+  `studentizedRootCDF F n` **exactly** with a set-function of the bivariate root law of
+  `studentPair F = (X − μ, (X − μ)² − σ²)`. What is left is the passage from a ray-wise
+  characteristic-function estimate to a set-function estimate over the resulting *curved*
+  region; see the status note (S1)–(S2), (M1)–(M3) on `edgeworth_studentized_uniform`.
 * The quantile expansion is the Cornish–Fisher inversion of the studentized expansion; it is
   stated as its own result because the coverage-error computations use the quantile form
   directly.
@@ -85,7 +95,7 @@ expansions to improve accuracy, is due to R. Beran ("Bootstrap methods in statis
 -/
 
 open Filter MeasureTheory ProbabilityTheory
-open scoped ENNReal NNReal Topology
+open scoped ENNReal NNReal Topology RealInnerProductSpace
 
 namespace StatLean.HypothesisTesting
 
@@ -609,6 +619,173 @@ lemma cramerCondition_centredLaw (F : Measure ℝ) [IsProbabilityMeasure F]
   exact ⟨c, hc, hev.mono fun s hs => by rw [norm_charFun_centredLaw]; exact hs⟩
 
 end RootLaw
+
+/-! ## The studentized root as a function of a bivariate mean
+
+The studentized root is **not** a normalised sum, so its characteristic function is not a power
+and `norm_charFun_pow_sub_edgeworth_le` does not apply to it. What it *is* is a fixed smooth
+function of the bivariate sample mean of `Z(x) = (x − μ, (x − μ)² − σ²)`, which is a normalised
+sum in `ℝ²` and to which `ForMathlib/BivariateEdgeworth.lean` does apply. This section makes
+that reduction exact: `studentizedRootCDF F n x` is the mass, under the *bivariate* root law
+`vecRootLaw F (studentPair F) n`, of the region `{w : H_n(w) ≤ x}` with
+
+`H_n(w) = w₀ / √(σ² + w₁ n^{-1/2} − w₀² n^{-1})`.
+
+The region is curved and depends on `n`; that is the whole difficulty of the studentized
+expansion, and it is exactly what the note on `edgeworth_studentized_uniform` isolates. -/
+
+section StudentizedReduction
+
+/-- The **studentizing pair** `Z(x) = (x − E_F X, (x − E_F X)² − Var_F X)`, a centred random
+vector in `ℝ²` whose sample mean carries both the numerator and the denominator of the
+studentized root. -/
+noncomputable def studentPair (F : Measure ℝ) : ℝ → EuclideanSpace ℝ (Fin 2) := fun x =>
+  WithLp.toLp 2 ![x - ∫ s, s ∂F, (x - ∫ s, s ∂F) ^ 2 - Var[fun t : ℝ => t; F]]
+
+lemma measurable_studentPair (F : Measure ℝ) : Measurable (studentPair F) := by
+  have hvec : Measurable fun x : ℝ =>
+      (![x - ∫ s, s ∂F, (x - ∫ s, s ∂F) ^ 2 - Var[fun t : ℝ => t; F]] : Fin 2 → ℝ) := by
+    refine measurable_pi_lambda _ fun i => ?_
+    fin_cases i
+    · change Measurable fun x : ℝ => x - ∫ s, s ∂F
+      fun_prop
+    · change Measurable fun x : ℝ => (x - ∫ s, s ∂F) ^ 2 - Var[fun t : ℝ => t; F]
+      fun_prop
+  have htoLp : Measurable (WithLp.toLp 2 : (Fin 2 → ℝ) → EuclideanSpace ℝ (Fin 2)) := by
+    fun_prop
+  exact htoLp.comp hvec
+
+/-- **The plug-in sample variance, recentred at an arbitrary point.**
+`n⁻¹ ∑ (yᵢ − ȳ)² = n⁻¹ ∑ (yᵢ − m)² − (ȳ − m)²` for every `m`. This is the identity that turns
+the denominator of the studentized root into a function of the bivariate mean. -/
+private lemma sampleVariance_eq_sub {n : ℕ} (hn : 0 < n) (m : ℝ) (y : Fin n → ℝ) :
+    sampleVariance y
+      = (n : ℝ)⁻¹ * (∑ i, (y i - m) ^ 2) - ((n : ℝ)⁻¹ * (∑ i, y i) - m) ^ 2 := by
+  have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
+  set S : ℝ := ∑ i, y i with hS
+  set db : ℝ := (n : ℝ)⁻¹ * S - m with hdb
+  have hsum1 : ∑ i, (y i - m) = (n : ℝ) * db := by
+    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      nsmul_eq_mul, hdb, ← hS]
+    field_simp
+  have hpt : ∀ i, (y i - (n : ℝ)⁻¹ * S) ^ 2
+      = (y i - m) ^ 2 - 2 * db * (y i - m) + db ^ 2 := by
+    intro i
+    rw [hdb]; ring
+  have hkey : ∑ i, (y i - (n : ℝ)⁻¹ * S) ^ 2
+      = (∑ i, (y i - m) ^ 2) - (n : ℝ) * db ^ 2 := by
+    simp_rw [hpt]
+    rw [Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum, hsum1,
+      Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    ring
+  rw [sampleVariance, hkey]
+  field_simp
+
+/-- **The studentized root is a fixed smooth function of the bivariate mean.**
+`studentizedRootCDF F n x` is the mass that the bivariate root law of `studentPair F` gives to
+the region `{w : w₀/√(σ² + w₁ n^{-1/2} − w₀² n^{-1}) ≤ x}`.
+
+This is the reduction the studentized Edgeworth expansion runs on: the left-hand side is a
+distribution function of a statistic that is *not* a sum, the right-hand side is a set-function
+of a law to which the multivariate damped expansion
+(`norm_charFun_smul_pow_sub_edgeworth_le`, `charFun_vecRootLaw`) applies. -/
+theorem studentizedRootCDF_eq_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {n : ℕ}
+    (hn : 0 < n) (x : ℝ) :
+    studentizedRootCDF F n x
+      = (vecRootLaw F (studentPair F) n
+          {w : EuclideanSpace ℝ (Fin 2) |
+            w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
+              - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ x}).toReal := by
+  set m : ℝ := ∫ s, s ∂F with hm
+  set v : ℝ := Var[fun t : ℝ => t; F] with hv
+  have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
+  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hn0
+  have hnn : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) := Real.mul_self_sqrt hn0.le
+  set R : Set (EuclideanSpace ℝ (Fin 2)) :=
+    {w | w 0 / Real.sqrt (v + w 1 * (Real.sqrt n)⁻¹ - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ x} with hR
+  have hRm : MeasurableSet R := by
+    have h0 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 0 := by fun_prop
+    have h1 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 1 := by fun_prop
+    refine measurableSet_le (h0.div ?_) measurable_const
+    exact (((h1.mul_const ((Real.sqrt n)⁻¹)).const_add v).sub
+      ((h0.pow_const 2).mul_const ((n : ℝ)⁻¹))).sqrt
+  -- the coordinates of the vector root
+  have hcoord : ∀ (y : Fin n → ℝ) (i : Fin 2),
+      ((Real.sqrt n)⁻¹ • ∑ j, studentPair F (y j)) i
+        = (Real.sqrt n)⁻¹ * ∑ j, (studentPair F (y j)) i := by
+    intro y i
+    simp [Finset.sum_apply]
+  have hset : {y : Fin n → ℝ |
+        Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - m) / Real.sqrt (sampleVariance y) ≤ x}
+      = (fun y : Fin n → ℝ => (Real.sqrt n)⁻¹ • ∑ j, studentPair F (y j)) ⁻¹' R := by
+    ext y
+    have h0 : ((Real.sqrt n)⁻¹ • ∑ j, studentPair F (y j)) 0
+        = Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - m) := by
+      rw [hcoord y 0]
+      have hcomp : ∀ j, (studentPair F (y j)) 0 = y j - m := fun j => rfl
+      simp_rw [hcomp]
+      rw [← sqrt_mul_sub_mean_eq hn m y]
+    have h1 : ((Real.sqrt n)⁻¹ • ∑ j, studentPair F (y j)) 1
+        = (Real.sqrt n)⁻¹ * ∑ j, ((y j - m) ^ 2 - v) := by
+      rw [hcoord y 1]
+      have hcomp : ∀ j, (studentPair F (y j)) 1 = (y j - m) ^ 2 - v := fun j => rfl
+      simp_rw [hcomp]
+    have hrad : v + ((Real.sqrt n)⁻¹ * ∑ j, ((y j - m) ^ 2 - v)) * (Real.sqrt n)⁻¹
+        - (Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - m)) ^ 2 * (n : ℝ)⁻¹
+        = sampleVariance y := by
+      have hinv : (Real.sqrt (n : ℝ))⁻¹ * (Real.sqrt (n : ℝ))⁻¹ = (n : ℝ)⁻¹ := by
+        rw [← mul_inv, hnn]
+      have e1 : ∀ X : ℝ, ((Real.sqrt (n : ℝ))⁻¹ * X) * (Real.sqrt (n : ℝ))⁻¹
+          = (n : ℝ)⁻¹ * X := fun X => by rw [← hinv]; ring
+      have e2 : ∀ B : ℝ, (Real.sqrt (n : ℝ) * B) ^ 2 = (n : ℝ) * B ^ 2 := fun B => by
+        rw [mul_pow, sq, hnn]
+      have hsum : ∑ j, ((y j - m) ^ 2 - v) = (∑ j, (y j - m) ^ 2) - (n : ℝ) * v := by
+        rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+          nsmul_eq_mul]
+      rw [sampleVariance_eq_sub hn m y, hsum, e1, e2]
+      field_simp
+      ring
+    simp only [Set.mem_preimage, hR, Set.mem_setOf_eq, h0, h1, hrad]
+  rw [studentizedRootCDF, ← hm, hset, vecRootLaw,
+    Measure.map_apply (measurable_vecRoot (measurable_studentPair F) n) hRm]
+
+/-- The inner product with the studentizing pair, in coordinates. -/
+lemma inner_studentPair (F : Measure ℝ) (t : EuclideanSpace ℝ (Fin 2)) (x : ℝ) :
+    (⟪studentPair F x, t⟫ : ℝ)
+      = t 0 * (x - ∫ s, s ∂F)
+        + t 1 * ((x - ∫ s, s ∂F) ^ 2 - Var[fun s : ℝ => s; F]) := by
+  -- over `ℝ` the scalar inner product `⟪a, b⟫` is *definitionally* `b * a`
+  rw [studentPair, PiLp.inner_apply, Fin.sum_univ_two]
+  rfl
+
+/-- **The studentizing pair is centred in every direction.** This is the `hmean` hypothesis of
+`norm_charFun_smul_pow_sub_edgeworth_le` for the bivariate law of `studentPair F`. -/
+lemma integral_inner_studentPair (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : MemLp (fun s : ℝ => s) 4 F) (t : EuclideanSpace ℝ (Fin 2)) :
+    ∫ w, (⟪w, t⟫ : ℝ) ∂(F.map (studentPair F)) = 0 := by
+  set m : ℝ := ∫ s, s ∂F with hm
+  set v : ℝ := Var[fun s : ℝ => s; F] with hv
+  have hi1 : Integrable (fun y : ℝ => y) (centredLaw F) := integrable_id_centredLaw F hF4
+  have hi2 : Integrable (fun y : ℝ => y ^ 2) (centredLaw F) := integrable_sq_centredLaw F hF4
+  have hg : ∫ y, (t 0 * y + t 1 * (y ^ 2 - v)) ∂(centredLaw F)
+      = ∫ x, (t 0 * (x - m) + t 1 * ((x - m) ^ 2 - v)) ∂F :=
+    integral_centredLaw F (g := fun y : ℝ => t 0 * y + t 1 * (y ^ 2 - v)) (by fun_prop)
+  have h1 : Integrable (fun y : ℝ => t 0 * y) (centredLaw F) := hi1.const_mul _
+  have hsub : Integrable (fun y : ℝ => y ^ 2 - v) (centredLaw F) := hi2.sub (integrable_const v)
+  have h2 : Integrable (fun y : ℝ => t 1 * (y ^ 2 - v)) (centredLaw F) := hsub.const_mul _
+  have hs1 : ∫ y : ℝ, y ∂(centredLaw F) = 0 :=
+    integral_id_centredLaw F (hF4.integrable (by norm_num))
+  have hs2 : ∫ y : ℝ, (y ^ 2 - v) ∂(centredLaw F) = 0 := by
+    rw [integral_sub hi2 (integrable_const v), integral_sq_centredLaw, integral_const]
+    simp [hv]
+  have hval : ∫ y, (t 0 * y + t 1 * (y ^ 2 - v)) ∂(centredLaw F) = 0 := by
+    rw [integral_add h1 h2, integral_const_mul, integral_const_mul, hs1, hs2]
+    ring
+  rw [integral_map (measurable_studentPair F).aemeasurable (by fun_prop)]
+  simp_rw [inner_studentPair F t, ← hm, ← hv]
+  rw [← hg, hval]
+
+end StudentizedReduction
 
 /-! ## The Edgeworth approximant on the standardized scale
 
@@ -2042,21 +2219,46 @@ is unskewed.
 DEFERRAL-ELIGIBLE (planned debt). The statement is correct as written (TSH4 Thm 18.4.1; the
 studentized root is a smooth function of the pair of means `(X̄, X̄₂)`, absolute continuity of
 `F` supplies the joint Cramér condition, and `E X⁴ < ∞` gives the `O(n⁻¹)` remainder). It is
-not proved here, and it is strictly harder than `edgeworth_mean_uniform`: (E1)–(E4) recorded
-there are now all closed, but this theorem needs in addition the **bivariate** Edgeworth
-expansion for `(X̄, X̄₂)` together with the delta-method transfer to the smooth function
-`(u, v) ↦ u/√(v − u²)`. That single missing estimate is what the re-derivation below isolates.
+not proved here. It is strictly harder than `edgeworth_mean_uniform`, whose (E1)–(E4) are all
+closed.
 
-Several pieces this note used to name as missing are now present, and the corresponding
-verdicts are dead. The CDF-level Esseen inversion is proved
-(`abs_measure_Iic_sub_le_charFun` in `ForMathlib/EsseenSmoothing.lean`), so is its
-signed-density form (`abs_measure_Iic_sub_densityCDF_le_charFun`), so is the Cramér-tail
-bookkeeping (`setIntegral_mul_esseenWeight_tail_le`, `exists_pow_mul_geometric_le`), and so is
-the damped characteristic-function expansion — recorded as *the* binding estimate —
-(`norm_charFun_pow_sub_edgeworth_le` in `ForMathlib/BerryEsseen.lean`) together with the
-Hermite Fourier identity (`integral_hermite3_mul_cexp_mul_gaussian`).
+**Status after the wave-12 re-derivation: the bivariate expansion is no longer missing, and
+the residual obstruction is smaller and different from the one recorded before.** Two pieces
+of the route are now PROVED, and the earlier verdict "the bivariate Edgeworth expansion is the
+single missing estimate" is superseded.
 
-**Re-derivation of the bivariate verdict: it stands, and it is now isolated.** Three points.
+* (S1) **The bivariate expansion — CLOSED.** `ForMathlib/BivariateEdgeworth.lean` proves it
+  axiom-clean, in an arbitrary real inner product space and hence in `ℝ²`:
+  `charFun_vecRootLaw` (`φ_{vecRootLaw F Z n}(t) = φ_{F ∘ Z⁻¹}(n^{-1/2} • t)ⁿ`, direct on
+  `Measure.pi` exactly as `charFun_meanRootLaw`), `norm_charFun_smul_le_exp_neg_sq` (the
+  Gaussian window majorant) and `norm_charFun_smul_pow_sub_edgeworth_le` (the damped one-term
+  expansion), assembled into `norm_charFun_vecRootLaw_sub_edgeworth_le`:
+  `‖φ_{vecRootLaw}(t) − e^{−v(t)/2}(1 − i m₃(t) n^{-1/2}/6)‖ ≤ (damped remainder)`.
+  *The recorded route is superseded, in the direction of being easier.* The note said this
+  "needs a two-dimensional analogue of `norm_charFun_le_exp_neg_sq`". No two-dimensional
+  argument is needed at all: `charFun_smul_eq_charFun_map_inner` shows that the restriction of
+  `φ_μ` to the ray `s ↦ s • t` **is** the characteristic function of the one-dimensional
+  projected law `μ ∘ ⟪·,t⟫⁻¹`, so every hypothesis and every conclusion of the one-dimensional
+  theorems transfers verbatim, with the moments replaced by the directional moments
+  `∫⟪x,t⟫^k` — which are precisely the contractions of the cumulant tensors with `t`. The one
+  thing the note got right is that nondegeneracy is used: the window conditions are
+  direction-dependent through `v(t) = ⟪Σt,t⟫`, and making the window uniform over directions
+  needs `v(t) ≥ λ_min ‖t‖²`, i.e. a nonsingular covariance of `(X, X²)`.
+* (S2) **The reduction of the studentized root to that bivariate mean — CLOSED, and exact.**
+  `studentizedRootCDF_eq_vecRootLaw` above proves
+  `studentizedRootCDF F n x = ρ_n{w : w₀/√(σ² + w₁ n^{-1/2} − w₀² n^{-1}) ≤ x}` with
+  `ρ_n = vecRootLaw F (studentPair F) n` the law of the bivariate root of
+  `Z(x) = (x − μ, (x − μ)² − σ²)`. There is no approximation in this step: it is the algebraic
+  identity `n⁻¹∑(yᵢ − ȳ)² = n⁻¹∑(yᵢ − m)² − (ȳ − m)²` (`sampleVariance_eq_sub`) together with
+  `sqrt_mul_sub_mean_eq`. So the delta-method function `(u, v) ↦ u/√(v − u²)` is not an
+  approximation either; it is the exact statistic. `inner_studentPair` and
+  `integral_inner_studentPair` supply the first of the hypotheses (S1) consumes for this pair:
+  the directional expansion `⟪Z(x), t⟫ = t₀(x − μ) + t₁((x − μ)² − σ²)` and the fact that it is
+  centred, `∫⟪w, t⟫ dρ = 0`, in **every** direction `t`.
+
+**Re-derivation: what is left is three estimates, all of them about turning (S1) into a
+statement about the curved region of (S2).** The following also re-confirms two facts that do
+not change.
 
 * *The rate is not weaker here.* Both this theorem and `edgeworth_mean_uniform` are stated with
   the same remainder `C/n`; there is no `O(n^{-1/2+ε})` slack in the statement to exploit.
@@ -2071,17 +2273,53 @@ Hermite Fourier identity (`integral_hermite3_mul_cexp_mul_gaussian`).
   all Slutsky and the continuous-mapping theorem give — cannot produce the studentized
   `n^{-1/2}` coefficient. The advantage of studentizing *is* this discrepancy; an argument that
   loses it proves nothing.
-* *What is genuinely missing is one estimate, not the whole route.* The CDF-level half of the
-  argument is dimension-free in the sense that matters: after the delta-method transfer one is
-  still comparing two laws **on the line** — the law of the studentized root and its signed
-  approximant — so `abs_measure_Iic_sub_densityCDF_le_charFun`, `normalCDF_sub_le` and the
-  tail lemmas apply verbatim. What does *not* transfer is the characteristic-function estimate:
-  `√n(X̄ − μ)/σ̂` is **not** a sum of i.i.d. summands, so its characteristic function is not a
-  power of `charFun F` and `norm_charFun_pow_sub_edgeworth_le` cannot be applied to it. The
-  standard remedy is to pass to `(X̄, X̄₂)`, which *is* an i.i.d. sum in `ℝ²`, expand there, and
-  transfer through the smooth function `(u, v) ↦ u/√(v − u²)`. That needs a two-dimensional
-  analogue of `norm_charFun_le_exp_neg_sq`, whose window is governed by the smallest eigenvalue
-  of the covariance of `(X, X²)` and therefore needs the nondegeneracy that `hFac` supplies. -/
+
+The three estimates are:
+
+* (M1) **A set-function expansion over a curved region.** (S1) controls `φ_{ρ_n}` on rays;
+  (S2) asks for `ρ_n(R_n(x))` with `R_n(x)` a *curved* planar region, not a half-space, and
+  moving with `n` and with `x`. The one-dimensional smoothing chain does not apply as it
+  stands: `abs_measure_Iic_sub_densityCDF_le_charFun` compares two laws **on the line** through
+  half-lines `(-∞, x]`. There are two ways across, and neither is present.
+  *(a)* A multidimensional smoothing inequality (Bhattacharya–Rao) over a class of sets with a
+  uniform boundary-shell estimate. This would need a `ℝ²` Esseen inequality and an
+  anti-concentration bound for the shell `{|H_n(w) − x| ≤ ε}` under the Gaussian comparison —
+  neither is in the repo (`ForMathlib/GaussianShell.lean` proves a *coordinate-slice* shell
+  bound for convex sets, and `R_n(x)` is not convex).
+  *(b)* Return to the line by expanding the characteristic function of the *scalar* statistic
+  itself. Writing `U = w₀/σ`, `V = w₁/σ²`, the exact statistic is
+  `H_n = U(1 + V n^{-1/2} − U² n^{-1})^{-1/2}`, whose Taylor surrogate is
+  `T̃_n = U − U V n^{-1/2}/2`. Then
+  `E e^{iθ T̃_n} = E e^{iθU} − (iθ/(2√n)) E[U V e^{iθU}] + O(n⁻¹)`, and the two expectations are
+  values of `ψ_n(θ, s) = φ_{ρ_n}(θ e₁/σ + s e₂/σ²)` and of `−∂_s ψ_n(θ, s)|_{s=0}`. (S1)
+  expands `ψ_n` but **not** its `s`-derivative: differentiating an inequality is not allowed,
+  so a separate expansion of `∂_s ψ_n` — equivalently of `E[V e^{iθU}]`, one extra moment of
+  the summands under the integral — is required. This is the smallest genuinely missing piece
+  and is the natural next target.
+* (M2) **The uniform polynomial replacement.** `|P(H_n ≤ x) − P(T̃_n ≤ x)| ≤ C/n` uniformly in
+  `x`. This is where the difficulty of the studentized expansion is concentrated, and it is not
+  a corollary of anything above. It needs both (i) a tail bound
+  `P(|H_n − T̃_n| > εn⁻¹) = O(n⁻¹)` — under a fourth moment only, this requires truncating the
+  summands at level `√n` and is the classical delicate step — and (ii) an anti-concentration
+  estimate for `T̃_n`, that its law charges every interval of length `δ` by `O(δ)` uniformly in
+  `n`, without which a small perturbation of the statistic does not give a small perturbation
+  of the distribution function. (ii) is normally read off from the expansion being proved,
+  which has to be broken by proving a cruder version of it first.
+* (M3) **The Cramér tail for a statistic that is not a sum.** For the centred root the outer
+  range was free, because `|φ_{P_n}(ξ)| = |φ_{F₀}(ξ/√n)|ⁿ ≤ cⁿ` (`edgeworthGap_tail_le`). The
+  studentized root's characteristic function is not a power, so `exists_bound_lt_one_of_cramer`
+  does not apply to it. The bivariate law `ρ_n` *is* a normalised sum, so its own tail is
+  controlled by the bivariate Cramér condition — and `charFun_smul_eq_charFun_map_inner`
+  reduces that condition to the one-dimensional Cramér condition for the projected law of
+  `t₀(X − μ) + t₁((X − μ)² − σ²)` in each direction, which `hFac` supplies because a nonconstant
+  quadratic image of an absolutely continuous law is absolutely continuous. What that reduction
+  does *not* give for free is uniformity in the direction on `‖t‖ ≥ ε`, which needs a
+  compactness argument over the circle, and it does not transfer from `ρ_n` to the law of
+  `H_n(W_n)` — the classical device there is Hall's conditioning on `n − k` of the coordinates.
+
+In short: the earlier note's "one missing estimate, the bivariate expansion" is now proved, and
+what replaces it is (M1)(b) — an expansion of the *`s`-derivative* of the bivariate
+characteristic function — together with the two genuinely analytic items (M2) and (M3). -/
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
@@ -2110,8 +2348,9 @@ expansion, the quantile version follows by inverting it (the Cornish–Fisher st
 function theorem applied to `x ↦ Φ(x) + (γ/6)φ(x)(2x² + 1) n^{-1/2}`, using that `φ` is bounded
 below on the compact `z`-range corresponding to `α ∈ [ε, 1 − ε]`, which is where the hypothesis
 `0 < ε < 1/2` is used). It therefore inherits, and adds nothing to, the obstruction recorded on
-`edgeworth_studentized_uniform` — which, now that (E1)–(E4) on `edgeworth_mean_uniform` are all
-closed, is the bivariate expansion alone. -/
+`edgeworth_studentized_uniform` — which, after the wave-12 re-derivation, is (M1)(b), (M2) and
+(M3) there; (S1) the bivariate expansion and (S2) the reduction of the studentized root to a
+bivariate mean are both closed. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
