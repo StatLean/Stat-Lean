@@ -39,6 +39,20 @@ proved:
 * `abs_measure_le_sub_le_of_peel` — the dyadically peeled perturbation bound, whose strata are
   joint window-times-tail events; it strictly strengthens the single-scale
   `abs_measure_le_sub_le_of_dist_le`, which cannot reach `O(n⁻¹)` for the studentized root;
+* `measure_abs_sub_le_of_abs_cdf_sub_le`, `abs_measure_le_sub_le_of_peel_strata` — the two-sided
+  window bound `P(|T − x| ≤ w) ≤ 2Aw + 2ε` and the peeled assembly that takes per-stratum
+  bounds directly;
+* `measure_inter_prod_le`, `measure_pi_inter_coord_le`, `subset_union_large_summand`,
+  `measure_pi_inter_le_of_large_summand` — the classical route to the *conditional* window
+  estimate: independence of the retained block for a product measure and for one coordinate of
+  a `Measure.pi`, the one-large-summand decomposition, and the union bound over the choices of
+  dominant index;
+* `centredDensity`, `charFun_map_studentPair_eq`, `vecCramerCondition_map_studentPair`,
+  `cramerCondition_projLaw_studentPair`,
+  `exists_bound_norm_charFun_vecRootLaw_studentPair` — the multivariate Cramér condition for the
+  parabola-carried law of `studentPair F` and the resulting Cramér tail `‖φ_{ρ_n}(t)‖ ≤ cⁿ` on
+  `ε√n ≤ ‖t‖`, from the identification of the projected characteristic function with a
+  quadratic-phase integral of the centred density;
 * `normalCDF_sub_le`, `stdNormalCDF_sub_le` — the Lipschitz modulus of the normal distribution
   function, the constant `A` that Esseen's smoothing inequality consumes;
 * `edgeworth_mean_uniform` — the expansion for the centred root, with a uniform `O(n^{-1})`
@@ -4084,7 +4098,102 @@ into the studentized chain — `exists_bound_norm_quadPhaseInt_of_integrable` ha
 `vecCramerCondition_of_uniform_sphere` for the law of `studentPair F`, and the surrogate's
 characteristic function has to be assembled from the `k ≤ 4` instances of
 `multiCharFun_vecRootLaw` — but neither of those is an obstruction: each is a composition of
-statements that are proved. -/
+statements that are proved.
+
+**Status after the wave-18 re-derivation.** (M3) is now **closed end to end**, the classical
+route to (X3) is **built** and its residue is two named probabilistic inputs rather than an
+unformalised argument, and one of wave 17's two "not an obstruction" claims about the wiring is
+**wrong** — the multilinear assembly is not free under a fourth moment.
+
+* (M3) **CLOSED — the studentized chain has its Cramér tail.** The wiring wave 17 left composed
+  with no loss. `charFun_map_studentPair_eq` proves
+  `φ_{F∘Z⁻¹}(t) = e^{−i t₁ v} ∫ f(y) e^{i(t₀y + t₁y²)} dy` with `f = (dF/dx)(· + m)` the centred
+  density (`centredDensity`, integrable by `integrable_centredDensity`); the substitution
+  `x = y + m` is translation invariance of Lebesgue measure and the prefactor is unimodular, so
+  the *modulus* of the projected characteristic function is exactly a quadratic-phase integral.
+  `vecCramerCondition_map_studentPair` then feeds `exists_bound_norm_quadPhaseInt_of_integrable`
+  to `vecCramerCondition_of_uniform_sphere`, using only `‖θ‖ ≤ |θ₀| + |θ₁|` in `ℝ²` so that
+  `|Rθ₀| + |Rθ₁| ≥ R‖θ‖ = R` on the unit sphere: **the two regimes combine with no loss and no
+  further compactness argument over directions is needed** beyond the polar identity.
+  `cramerCondition_projLaw_studentPair` gives the directionwise conditions from the same
+  estimate, and `exists_bound_norm_charFun_vecRootLaw_studentPair` packages everything with
+  `norm_charFun_vecRootLaw_le_pow` into the bivariate analogue of `edgeworthGap_tail_le`:
+  a single `c < 1` with `‖φ_{ρ_n}(t)‖ ≤ cⁿ` on the whole outer range `ε√n ≤ ‖t‖`, under no
+  hypothesis on `F` beyond `F ≪ volume`. Wave 13's verdict — that multivariate Cramér for the
+  parabola-carried law is strictly stronger than the directionwise conditions, and is the real
+  content — is confirmed; what the content turned out to be is exactly the quadratic-phase
+  estimate.
+* (X3) **The classical route is BUILT; the residue is two named inputs, and wave 17's *shape*
+  for it is wrong.** The three ingredients wave 17 called absent are now present and
+  axiom-clean:
+  – `measure_inter_prod_le`: for an arbitrary product measure, `P(A ∩ B) ≤ P(A)·sup_a Q(B_a)`
+    when `A` is carried by the first factor. This is the whole content of "the retained block is
+    independent of the dominant coordinate"; it is three lines from `Measure.prod_apply` and an
+    indicator.
+  – `measure_pi_inter_coord_le`: its `Measure.pi` form, for a tail event carried by the single
+    coordinate `i`, transported through `MeasurableEquiv.piFinSuccAbove`
+    (`measurePreserving_piFinSuccAbove` splits `Measure.pi` as `μ ⊗ Measure.pi (rest)` exactly,
+    with `Fin.insertNth i` as the inverse). No disintegration and no conditional expectation is
+    needed: the split is an equality of measures.
+  – `subset_union_large_summand`: the one-large-summand decomposition, as a **deterministic and
+    exact** containment — either some `|Y(ωᵢ)|` exceeds the truncation level `τ`, or truncating
+    every summand at `τ` leaves the sum unchanged, so the *truncated* sum already exceeds `λ`.
+  `measure_pi_inter_le_of_large_summand` and its real form
+  `measure_pi_inter_le_of_large_summand_toReal` combine the three with a union bound over the
+  `n + 1` choices of dominant index, and `abs_measure_le_sub_le_of_peel_strata` is the variant of
+  the assembly that consumes the result. `measure_abs_sub_le_of_abs_cdf_sub_le` supplies the
+  two-sided window `P(|T − x| ≤ w) ≤ 2Aw + 2ε` in both the marginal shape (`hwin`) and, as
+  `measure_abs_sub_le_ofReal`, the `ℝ≥0∞` shape the slice hypothesis wants.
+  **The correction.** Wave 17 recorded the residue as the literal product
+  `P(A ∩ B) ≤ P(A)·(A·2^{k+1}δ + η)`. That is not what the classical route produces, and it
+  should not be asked for: the decomposition gives `P(A ∩ B) ≤ (∑ᵢ P(Aᵢ))·c + P(R)`, and
+  recovering `P(A)` on the right would need a *lower* bound on `P(A)` in terms of the
+  one-coordinate tails — a small-ball statement that is false in general (a sum can be large
+  with every summand moderate) and that the peeled arithmetic never uses.
+  `abs_measure_le_sub_le_of_peel_window` is therefore only worth keeping because it names the
+  product form; `abs_measure_le_sub_le_of_peel_strata` is the assembly the route actually feeds,
+  and `sum_dyadic_strata_le` still verifies the arithmetic at `O(n⁻¹)`.
+  **What is left of (X3) is two inputs**, both now sharply delimited:
+  (a) *the conditional window bound*: `Q{z : |T(insertNth i y z) − x| ≤ w} ≤ 2Aw + 2η`, uniformly
+      in the frozen value `y`. By `measure_abs_sub_le_ofReal` this reduces to a distributional
+      approximation for `T` **with one coordinate frozen** — a root law of the same kind on the
+      remaining `n` coordinates, but with an `n`-dependent shift and scale inherited from the
+      frozen coordinate. Transferring the (M1)(b) expansion to the retained block *uniformly
+      over the frozen value* is the honest remaining content.
+  (b) *the truncated-sum remainder* `P(λ < |∑ᵢ Ỹ(ωᵢ)|)` with `|Ỹ| ≤ τ`. **Chebyshev is not
+      enough, and this is worth recording because it is the natural first attempt**: truncation
+      does not decrease the second moment, so `P ≤ n E[Y²]/λ²` is *exactly* the untruncated
+      Chebyshev bound and the decomposition has gained nothing. What closes it is an exponential
+      (Bernstein / Fuk–Nagaev) bound for sums of bounded independent summands, at the exponents
+      `λ ≍ 2ᵏ n^{1/6}`, `τ ≍ λ√n`. Mathlib has no Bernstein inequality for bounded independent
+      summands, and neither `ForMathlib/SteinMethod` nor `ForMathlib/CombinatorialCLT` supplies
+      one. So (X3) is now **one missing analytic tool plus one transfer**, not an unformalised
+      classical argument.
+* (X2) **The multilinear wiring is NOT free — wave 17's "neither of those is an obstruction" is
+  wrong for this half.** The algebra is free, as recorded: `multiCharFun_vecRootLaw` supplies the
+  weights `uv`, `u³`, `uv²` and `(uv)²` that expanding `E[e^{iθHₙ}]` in powers of `r = n^{-1/2}`
+  produces. The *analysis* is not. An `O(n⁻¹)` remainder requires the expansion to order `r²`,
+  and the Taylor remainder of the exponential at that order is
+  `‖e^{iz} − ∑_{j<3}(iz)^j/j!‖ ≤ |z|³/6` with `z = θ(−uvr/2 + u³r²/2 + 3uv²r²/8)`, whose
+  expectation is of order `E[|u|³|v|³] r³`. That is a **third** moment of `v`, i.e. `E|X − μ|⁶`;
+  the second-order truncation `|z|²/2` is no better, since `E[u²v²]` expands into
+  `E[(X−μ)²((X−μ)²−σ²)²] ≍ E X⁶` as well. Under a **fourth** moment the surrogate's transform
+  therefore needs the same truncation apparatus as (X3)(b) — which is exactly why Hall truncates
+  the summands at `√n` before expanding. This is recorded rather than built, so that no later
+  wave takes wave 17's "free composition" at face value.
+
+Net after wave 18 the residue is **two** items, and they share a tool:
+(i) an exponential inequality for sums of bounded independent summands (Bernstein / Fuk–Nagaev),
+consumed both by the truncated-sum remainder of (X3)(b) and by the truncation that makes the
+(X2) multilinear expansion legitimate under a fourth moment;
+(ii) the transfer of the (M1)(b) expansion to the `n`-coordinate block obtained by freezing one
+coordinate, uniformly in the frozen value, which is (X3)(a).
+Proved and axiom-clean: (S1), (S2), (M1)(b) for linear weights with the `φ^{n−1}` bookkeeping,
+the multilinear identity (X2), the deterministic core of (M2) and all three of its assemblies
+(single-scale, dyadically peeled, per-stratum), the marginal and two-sided anti-concentration
+statements, **the whole of (M3) including the Cramér tail of the bivariate root**, uniform
+Riemann–Lebesgue on totally bounded and compactly parametrised `L¹` families, both
+quadratic-phase regimes, and the four conditioning bricks of (X3). -/
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
@@ -4135,15 +4244,33 @@ The other two items wave 15 recorded are now closed and axiom-clean: the `|t₁|
 `multiCharFun_vecRootLaw`), which supplies the bilinear, trilinear and quartic weights that the
 degree-four surrogate's characteristic function consumes.
 
+**After the wave-18 re-derivation the residue over there is two items, and this corollary still
+adds nothing to either.** (M3) is now closed end to end — the multivariate Cramér condition for
+the parabola-carried law of `studentPair F` (`vecCramerCondition_map_studentPair`, via the
+identification of the projected characteristic function with a quadratic-phase integral in
+`charFun_map_studentPair_eq`) and with it the Cramér tail of the bivariate root
+(`exists_bound_norm_charFun_vecRootLaw_studentPair`). The classical route to (X3) is built:
+the independence of the retained block (`measure_inter_prod_le`, `measure_pi_inter_coord_le`),
+the one-large-summand decomposition (`subset_union_large_summand`), the union bound over the
+dominant indices (`measure_pi_inter_le_of_large_summand`), the two-sided window
+(`measure_abs_sub_le_of_abs_cdf_sub_le`) and the assembly that consumes them
+(`abs_measure_le_sub_le_of_peel_strata`). What remains is (i) an exponential inequality for sums
+of bounded independent summands, needed both for the truncated-sum remainder of (X3) and for the
+truncation that legitimises the multilinear expansion under a fourth moment, and (ii) the
+transfer of the (M1)(b) expansion to the block obtained by freezing one coordinate, uniformly in
+the frozen value.
+
 Closed and axiom-clean over there: (S1) the bivariate expansion, (S2) the exact reduction of
 the studentized root to a bivariate mean, (M1)(b) the mixed-characteristic-function expansion
 for linear weights *together with* the one-factor `φ^{n−1}` bookkeeping
-(`norm_mixCharFun_vecRootLaw_sub_charFun_le`), the deterministic core of (M2) in its corrected
-third-order form together with both the single-scale and the dyadically peeled assemblies, the
-marginal anti-concentration statements, the whole of (M3) — the direction-uniformity, the
-transfer of the Cramér tail to the vector root (`norm_charFun_vecRootLaw_le_pow`, which removes
-the need for Hall's conditioning device altogether) and both quadratic-phase regimes — and
-uniform Riemann–Lebesgue on totally bounded and on compactly parametrised `L¹` families. -/
+(`norm_mixCharFun_vecRootLaw_sub_charFun_le`), the multilinear identity, the deterministic core
+of (M2) in its corrected third-order form together with all three of its assemblies, the
+marginal and two-sided anti-concentration statements, **the whole of (M3)** — the
+direction-uniformity, the multivariate Cramér condition for the studentizing pair, the transfer
+of the Cramér tail to the vector root (`norm_charFun_vecRootLaw_le_pow`, which removes the need
+for Hall's conditioning device altogether) and both quadratic-phase regimes — uniform
+Riemann–Lebesgue on totally bounded and on compactly parametrised `L¹` families, and the
+conditioning bricks of (X3). -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
