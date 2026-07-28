@@ -219,8 +219,12 @@ resolved, and the recursion is assembled: `berryEsseen_convex_sharp` states the 
 **linear in `δ = β/√n`**, proved from `exists_convexDiscrepancy_recursion` fed to
 `le_of_selfImproving_induction`. It is not axiom-clean: it inherited exactly two named,
 precisely stated bricks, `hybridLaw_shell_le` and `exists_localised_swap_bound` (the first is
-proved in wave 22, below; the second's weight hypothesis is amended in wave 29). Everything
-between the bricks and the headline is proved.
+proved in wave 22, below; the second's weight hypothesis is amended in wave 29, its conclusion
+in wave 32). Everything between the bricks and the headline is proved.
+
+*(As frozen in wave 20 the headline is log-free. Wave 32 amends it to carry one logarithm,
+`C (β/√n)(1 + log(max (√n/β) e))`, and replaces `le_of_selfImproving_induction` by
+`le_of_selfImproving_induction_log`; see the wave-32 section below for the forcing.)*
 
 *Obstacle 1 (the class) is overturned rather than solved.* The `ε`-shell of a convex set is
 `Bᵋ \ interior B`, a difference of two convex sets — but the induction does **not** have to be
@@ -319,8 +323,37 @@ needs `‖w‖ = ‖y‖/√j ≤ 1`, so the wave-19 lemma does *not* apply verb
 either, and the large-`‖y‖` region has to be handled by the tilt identity directly (its
 `v`-average costs a two-sided shell at width `c‖y‖` — which is why the amended hypothesis is
 stated at all widths); and the summed weight is `δ(2 C_k log(1/ε) + W/ε)`, so this route yields
-the sharp rate **up to one logarithm**, `C_k (β/√n)(1 + log(√n/β))`. The logarithm is intrinsic
-to a single mollification width.
+the sharp rate **up to one logarithm**. The logarithm is intrinsic to a single mollification
+width.
+
+## Wave-32 amendment: the logarithm is EXECUTED, headline included
+
+Wave 29 predicted the logarithm but left every conclusion frozen, on the ground that weakening
+them then "would be a guess rather than a forced amendment". Wave 32 supplies the forcing — the
+summation ledger, recorded in full at `localised_swap_bound_small_weight` — and carries the term
+through the whole chain. Both exponents in that ledger are verified as part of the amendment:
+`j^{-3/2}·σⱼ = c·j^{-1}` is a **harmonic** sum over `J < j ≤ n` (this, and only this, is where
+the logarithm comes from), while `∑_{j>J} j^{-3/2} ≤ 2J^{-1/2} = 2(ε√n)^{-1}` reproduces the
+`ε⁻¹` the frozen statements already carried.
+
+* `localised_swap_bound_small_weight` — conclusion amended to
+  `A δ (ε⁻¹(W + C_k ε) + C_k(1 + log(1 + ε⁻¹)))`. Still the file's one and only brick.
+* `exists_localised_swap_bound`, `exists_convexDiscrepancy_recursion` — amended; the proved
+  large-weight half is untouched (its log-free conclusion is *smaller*, so it still closes the
+  amended goal), and the doubling of `A` that wave 24 introduced also absorbs the new term.
+* `le_of_selfImproving_induction_log` (**new, proved**) — the strong induction re-solved with the
+  extra `A δ C (1 + log(1 + ε⁻¹))`. It still closes **linearly**, at `K = 20 A C`, because the
+  log factor `Mₙ = 1 + log(1 + (8Aδₙ)⁻¹)` is monotone in the *right* direction along the
+  neighbour range (`m ≤ n ⟹ δₘ ≥ δₙ ⟹ Mₘ ≤ Mₙ`); `M ≥ 1` absorbs the log-free terms.
+* `berryEsseen_convex_sharp` — headline amended to
+  `C (β/√n)(1 + log(max (√n/β) e))`, `C = 160 (A+1) gaussianShellConst k`. The log-free form is
+  **not** retracted (it is true, being Bentkus's theorem); it is simply not what this route
+  proves, and the provable-constants rule forbids recording it.
+
+A remark on the alternative: using the Gaussian tail `stdGaussian_norm_ge_le` at a *fixed* order
+`p = 2m` rather than at all orders trades the logarithm for `ε^{-1/(m+1)}`, i.e. the headline
+`(β/√n)^{m/(m+1)}` — strictly weaker than the log form for every fixed `m`, so the route is not
+restructured for it.
 
 **Constant deviation** (provable-constants rule): this route now gives `C ∼ k^{1/2}`, through
 `gaussianShellConst k = 4 e² √k`, not Bentkus's `400 k^{1/4}`. Wave 22 removed the factor `k`
@@ -4402,6 +4435,156 @@ private lemma inv_mul_sqrt_le_telescope {j : ℕ} (hj : 2 ≤ j) :
     linear_combination (a * b) * hprod
   nlinarith [e1, e2]
 
+/-- **The `j^{-3/2}` tail of the telescope**, as a standalone sum bound: for every cut `J ≥ 2`,
+`∑_{J ≤ j < m} j^{-3/2} ≤ 3 J^{-1/2}`. This is `inv_mul_sqrt_le_telescope` summed, and it is the
+piece of the ledger that produces the `ε⁻¹` (at `J = ⌈ε²n⌉`, `J^{-1/2} = (ε√n)^{-1}`). Wave 32
+factored it out of `sum_le_of_bounded_and_decay` so that the *weighted* ledger
+`sum_le_of_bounded_and_weighted_decay` can reuse it. -/
+private lemma sum_Ico_inv_mul_sqrt_le {J m : ℕ} (hJ : 2 ≤ J) :
+    ∑ j ∈ Finset.Ico J m, (1 : ℝ) / ((j : ℝ) * Real.sqrt (j : ℝ))
+      ≤ 3 / Real.sqrt (J : ℝ) := by
+  have hJr : (2 : ℝ) ≤ (J : ℝ) := by exact_mod_cast hJ
+  have hJpos : (0 : ℝ) < Real.sqrt J := Real.sqrt_pos.mpr (by linarith)
+  rcases lt_or_ge J m with hm | hm
+  swap
+  · rw [Finset.Ico_eq_empty (by omega)]
+    simp only [Finset.sum_empty]
+    positivity
+  have hsplit : ∑ j ∈ Finset.Ico J m, (1 : ℝ) / ((j : ℝ) * Real.sqrt (j : ℝ))
+      = (1 : ℝ) / ((J : ℝ) * Real.sqrt (J : ℝ))
+        + ∑ j ∈ Finset.Ico (J + 1) m, (1 : ℝ) / ((j : ℝ) * Real.sqrt (j : ℝ)) :=
+    Finset.sum_eq_sum_Ico_succ_bot hm _
+  have hfirst : (1 : ℝ) / ((J : ℝ) * Real.sqrt (J : ℝ)) ≤ 1 / Real.sqrt J := by
+    have hs : Real.sqrt J ≤ (J : ℝ) * Real.sqrt J := by
+      nlinarith [Real.sqrt_nonneg (J : ℝ)]
+    exact one_div_le_one_div_of_le hJpos hs
+  have hstep : ∀ j ∈ Finset.Ico (J + 1) m,
+      (1 : ℝ) / ((j : ℝ) * Real.sqrt (j : ℝ))
+        ≤ 2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ)) := by
+    intro j hjmem
+    have hj2 : 2 ≤ j := by
+      have := (Finset.mem_Ico.1 hjmem).1
+      omega
+    exact inv_mul_sqrt_le_telescope hj2
+  have htel : ∑ j ∈ Finset.Ico (J + 1) m,
+      2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ))
+      ≤ 2 / Real.sqrt J := by
+    set g : ℕ → ℝ := fun i => 1 / Real.sqrt ((J : ℝ) + (i : ℝ)) with hg
+    have hre : ∑ j ∈ Finset.Ico (J + 1) m,
+        2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ))
+        = ∑ i ∈ Finset.range (m - (J + 1)), 2 * (g i - g (i + 1)) := by
+      rw [Finset.sum_Ico_eq_sum_range]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      have h1 : ((J + 1 + i : ℕ) : ℝ) - 1 = (J : ℝ) + (i : ℝ) := by push_cast; ring
+      have h2 : ((J + 1 + i : ℕ) : ℝ) = (J : ℝ) + ((i + 1 : ℕ) : ℝ) := by push_cast; ring
+      rw [h1, h2, hg]
+    rw [hre, ← Finset.mul_sum, Finset.sum_range_sub' g]
+    have hg0 : g 0 = 1 / Real.sqrt J := by
+      rw [hg]; norm_num
+    have hgnn : 0 ≤ g (m - (J + 1)) := by
+      rw [hg]; positivity
+    rw [hg0]
+    have : 2 * (1 / Real.sqrt (J : ℝ) - g (m - (J + 1))) ≤ 2 * (1 / Real.sqrt (J : ℝ)) := by
+      nlinarith
+    calc 2 * (1 / Real.sqrt (J : ℝ) - g (m - (J + 1)))
+        ≤ 2 * (1 / Real.sqrt (J : ℝ)) := this
+      _ = 2 / Real.sqrt J := by ring
+  have hsum2 : ∑ j ∈ Finset.Ico (J + 1) m, (1 : ℝ) / ((j : ℝ) * Real.sqrt (j : ℝ))
+      ≤ 2 / Real.sqrt J := (Finset.sum_le_sum hstep).trans htel
+  rw [hsplit]
+  have : 1 / Real.sqrt (J : ℝ) + 2 / Real.sqrt (J : ℝ) = 3 / Real.sqrt J := by ring
+  linarith [hfirst, hsum2]
+
+/-- `1/j ≤ log j − log (j−1)` for `j ≥ 2`, straight from `log x ≤ x − 1` applied to
+`x = (j−1)/j`. Summed, this is the harmonic bound that puts the logarithm into the ledger. -/
+private lemma one_div_le_log_sub_log {j : ℕ} (hj : 2 ≤ j) :
+    (1 : ℝ) / (j : ℝ) ≤ Real.log (j : ℝ) - Real.log ((j : ℝ) - 1) := by
+  have hj2 : (2 : ℝ) ≤ (j : ℝ) := by exact_mod_cast hj
+  have hjpos : (0 : ℝ) < (j : ℝ) := by linarith
+  have hj1 : (0 : ℝ) < (j : ℝ) - 1 := by linarith
+  have hdiv : (0 : ℝ) < ((j : ℝ) - 1) / (j : ℝ) := by positivity
+  have h := Real.log_le_sub_one_of_pos hdiv
+  rw [Real.log_div hj1.ne' hjpos.ne'] at h
+  have hval : ((j : ℝ) - 1) / (j : ℝ) - 1 = -(1 / (j : ℝ)) := by
+    rw [sub_div, div_self hjpos.ne']; ring
+  rw [hval] at h
+  linarith
+
+/-- **The harmonic tail of the ledger** (wave 32): `∑_{J ≤ j < m} j^{-1} ≤ 1 + log(m/J)`.
+
+This is the **only** source of the logarithm in `berryEsseen_convex_sharp`. It appears because
+the per-step localisation weight of the telescope is `4 C_k σⱼ + W` with `σⱼ = √(j/n)`, and
+`j^{-3/2} · σⱼ = n^{-1/2} j^{-1}`: one of the three halves of the decay exponent is eaten by the
+step's own smoothing width, turning the summable `j^{-3/2}` into the harmonic `j^{-1}`. At the
+cut `J = ⌈ε² n⌉` the bound is `1 + log(1/ε²) = 1 + 2 log(1/ε)`.
+
+The `max … 1` makes the statement unconditional in `m` (for `m ≤ J` the sum is empty). -/
+private lemma sum_Ico_one_div_le {J m : ℕ} (hJ : 2 ≤ J) :
+    ∑ j ∈ Finset.Ico J m, (1 : ℝ) / (j : ℝ)
+      ≤ 1 + Real.log (max ((m : ℝ) / (J : ℝ)) 1) := by
+  have hJr : (2 : ℝ) ≤ (J : ℝ) := by exact_mod_cast hJ
+  have hJpos : (0 : ℝ) < (J : ℝ) := by linarith
+  have hlogmax : 0 ≤ Real.log (max ((m : ℝ) / (J : ℝ)) 1) :=
+    Real.log_nonneg (le_max_right _ _)
+  rcases le_or_gt m J with hm | hm
+  · rw [Finset.Ico_eq_empty (by omega)]
+    simp only [Finset.sum_empty]
+    linarith
+  · have hsplit : ∑ j ∈ Finset.Ico J m, (1 : ℝ) / (j : ℝ)
+        = (1 : ℝ) / (J : ℝ) + ∑ j ∈ Finset.Ico (J + 1) m, (1 : ℝ) / (j : ℝ) :=
+      Finset.sum_eq_sum_Ico_succ_bot hm _
+    have hfirst : (1 : ℝ) / (J : ℝ) ≤ 1 := by
+      rw [div_le_one hJpos]; linarith
+    set g : ℕ → ℝ := fun i => Real.log ((J : ℝ) + (i : ℝ)) with hg
+    have hstep : ∀ j ∈ Finset.Ico (J + 1) m,
+        (1 : ℝ) / (j : ℝ) ≤ Real.log (j : ℝ) - Real.log ((j : ℝ) - 1) := by
+      intro j hjmem
+      have hj2 : 2 ≤ j := by have := (Finset.mem_Ico.1 hjmem).1; omega
+      exact one_div_le_log_sub_log hj2
+    have hre : ∑ j ∈ Finset.Ico (J + 1) m,
+        (Real.log (j : ℝ) - Real.log ((j : ℝ) - 1))
+        = ∑ i ∈ Finset.range (m - (J + 1)), (g (i + 1) - g i) := by
+      rw [Finset.sum_Ico_eq_sum_range]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      have h1 : ((J + 1 + i : ℕ) : ℝ) = (J : ℝ) + ((i + 1 : ℕ) : ℝ) := by push_cast; ring
+      have h2 : ((J + 1 + i : ℕ) : ℝ) - 1 = (J : ℝ) + (i : ℝ) := by push_cast; ring
+      simp only [hg]
+      rw [h2, h1]
+    have htel : ∑ i ∈ Finset.range (m - (J + 1)), (g (i + 1) - g i)
+        = g (m - (J + 1)) - g 0 := Finset.sum_range_sub g _
+    have hg0 : g 0 = Real.log (J : ℝ) := by rw [hg]; norm_num
+    have hcast : ((m - (J + 1) : ℕ) : ℝ) = (m : ℝ) - (J : ℝ) - 1 := by
+      have hle : J + 1 ≤ m := hm
+      have h : ((m - (J + 1) : ℕ) : ℝ) = (m : ℝ) - ((J : ℝ) + 1) := by
+        rw [Nat.cast_sub hle]; push_cast; ring
+      rw [h]; ring
+    have hgm : g (m - (J + 1)) = Real.log ((m : ℝ) - 1) := by
+      simp only [hg]
+      rw [hcast]
+      congr 1
+      ring
+    have hmr : (2 : ℝ) ≤ (m : ℝ) := by
+      have : (J : ℝ) + 1 ≤ (m : ℝ) := by exact_mod_cast hm
+      linarith
+    have hlogm : Real.log ((m : ℝ) - 1) ≤ Real.log (m : ℝ) :=
+      Real.log_le_log (by linarith) (by linarith)
+    have hrest : ∑ j ∈ Finset.Ico (J + 1) m, (1 : ℝ) / (j : ℝ)
+        ≤ Real.log (m : ℝ) - Real.log (J : ℝ) := by
+      calc ∑ j ∈ Finset.Ico (J + 1) m, (1 : ℝ) / (j : ℝ)
+          ≤ ∑ j ∈ Finset.Ico (J + 1) m,
+              (Real.log (j : ℝ) - Real.log ((j : ℝ) - 1)) := Finset.sum_le_sum hstep
+        _ = g (m - (J + 1)) - g 0 := by rw [hre, htel]
+        _ = Real.log ((m : ℝ) - 1) - Real.log (J : ℝ) := by rw [hgm, hg0]
+        _ ≤ Real.log (m : ℝ) - Real.log (J : ℝ) := by linarith
+    have hlogdiv : Real.log (m : ℝ) - Real.log (J : ℝ)
+        ≤ Real.log (max ((m : ℝ) / (J : ℝ)) 1) := by
+      have hd : Real.log ((m : ℝ) / (J : ℝ)) = Real.log (m : ℝ) - Real.log (J : ℝ) :=
+        Real.log_div (by linarith) (by linarith)
+      rw [← hd]
+      exact Real.log_le_log (by positivity) (le_max_left _ _)
+    rw [hsplit]
+    linarith
+
 /-- **The elementary sum estimate.** If a nonnegative sequence is bounded both by a constant
 `θ` and, from `j ≥ 1` on, by `j^{-3/2}`, then its partial sums are at most `J θ + 3/√J` for
 every cut `J ≥ 2`. Choosing `J ≈ θ^{-2/3}` gives `O(θ^{1/3})`, which is exactly the step that
@@ -4415,54 +4598,9 @@ private lemma sum_le_of_bounded_and_decay {θ : ℝ} (hθ : 0 ≤ θ) {n J : ℕ
   have hJpos : (0 : ℝ) < Real.sqrt J := Real.sqrt_pos.mpr (by linarith)
   have htail : ∀ m : ℕ, ∑ j ∈ Finset.Ico J m, T j ≤ 3 / Real.sqrt J := by
     intro m
-    rcases lt_or_ge J m with hm | hm
-    swap
-    · rw [Finset.Ico_eq_empty (by omega)]
-      simp
-      positivity
-    -- the first term of the tail, then a telescoping sum
-    have hsplit : ∑ j ∈ Finset.Ico J m, T j
-        = T J + ∑ j ∈ Finset.Ico (J + 1) m, T j := Finset.sum_eq_sum_Ico_succ_bot hm T
-    have hfirst : T J ≤ 1 / Real.sqrt J := by
-      refine (hTdec J (by omega)).trans ?_
-      have hs : Real.sqrt J ≤ (J : ℝ) * Real.sqrt J := by
-        nlinarith [Real.sqrt_nonneg (J : ℝ)]
-      exact one_div_le_one_div_of_le hJpos hs
-    have hstep : ∀ j ∈ Finset.Ico (J + 1) m,
-        T j ≤ 2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ)) := by
-      intro j hjmem
-      have hj2 : 2 ≤ j := by
-        have := (Finset.mem_Ico.1 hjmem).1
-        omega
-      exact (hTdec j (by omega)).trans (inv_mul_sqrt_le_telescope hj2)
-    have htel : ∑ j ∈ Finset.Ico (J + 1) m,
-        2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ))
-        ≤ 2 / Real.sqrt J := by
-      set g : ℕ → ℝ := fun i => 1 / Real.sqrt ((J : ℝ) + (i : ℝ)) with hg
-      have hre : ∑ j ∈ Finset.Ico (J + 1) m,
-          2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ))
-          = ∑ i ∈ Finset.range (m - (J + 1)), 2 * (g i - g (i + 1)) := by
-        rw [Finset.sum_Ico_eq_sum_range]
-        refine Finset.sum_congr rfl fun i _ => ?_
-        have h1 : ((J + 1 + i : ℕ) : ℝ) - 1 = (J : ℝ) + (i : ℝ) := by push_cast; ring
-        have h2 : ((J + 1 + i : ℕ) : ℝ) = (J : ℝ) + ((i + 1 : ℕ) : ℝ) := by push_cast; ring
-        rw [h1, h2, hg]
-      rw [hre, ← Finset.mul_sum, Finset.sum_range_sub' g]
-      have hg0 : g 0 = 1 / Real.sqrt J := by
-        rw [hg]; norm_num
-      have hgnn : 0 ≤ g (m - (J + 1)) := by
-        rw [hg]; positivity
-      rw [hg0]
-      have : 2 * (1 / Real.sqrt (J : ℝ) - g (m - (J + 1))) ≤ 2 * (1 / Real.sqrt (J : ℝ)) := by
-        nlinarith
-      calc 2 * (1 / Real.sqrt (J : ℝ) - g (m - (J + 1)))
-          ≤ 2 * (1 / Real.sqrt (J : ℝ)) := this
-        _ = 2 / Real.sqrt J := by ring
-    have hsum2 : ∑ j ∈ Finset.Ico (J + 1) m, T j ≤ 2 / Real.sqrt J :=
-      (Finset.sum_le_sum hstep).trans htel
-    rw [hsplit]
-    have : 1 / Real.sqrt (J : ℝ) + 2 / Real.sqrt (J : ℝ) = 3 / Real.sqrt J := by ring
-    linarith [hfirst, hsum2]
+    refine le_trans (Finset.sum_le_sum fun j hjmem => ?_) (sum_Ico_inv_mul_sqrt_le hJ)
+    have := (Finset.mem_Ico.1 hjmem).1
+    exact hTdec j (by omega)
   rcases le_total n J with hn | hn
   · have h1 : ∑ j ∈ Finset.range n, T j ≤ ∑ j ∈ Finset.range n, θ :=
       Finset.sum_le_sum fun j _ => hTθ j
@@ -4510,6 +4648,89 @@ private lemma sum_le_of_bounded_and_decay_const {K θ : ℝ} (hK : 0 < K) (hθ :
   rw [← Finset.sum_div, div_le_iff₀ hK] at h
   refine h.trans_eq ?_
   field_simp
+
+/-- **The summation ledger of the WEIGHTED telescope** (wave 32, PROVED).
+
+This is the arithmetic certificate behind the logarithm in `berryEsseen_convex_sharp`, isolated
+from all the measure theory. The *localised* telescope of `localised_swap_bound_small_weight`
+produces, at step `j ≥ 1`, a bound of the shape
+
+`Tⱼ ≤ (per-step weight) × (decay) = (4 C_k σⱼ + W) × 3β/(j √j)`,  `σⱼ = √(j/n)`,
+
+and `σⱼ/(j√j) = n^{-1/2} j^{-1}`, so the hypothesis below with `K₁ = 12 C_k β n^{-1/2}` and
+`K₂ = 3 β W` is exactly what the analytic half has to deliver. The conclusion is then
+
+`J θ + K₁ (1 + log(n/J)) + 3 K₂ /√J`,
+
+and at the cut `J = ⌈ε² n⌉` (so `n/J ≤ ε⁻²` and `J^{-1/2} ≤ (ε√n)⁻¹`), with the elementary step
+bound `θ = (C₃/ε³)/6 · n^{-3/2} · 3β`, this reads
+
+`(3/2) C₃ δ ε⁻¹ + 12 C_k δ (1 + 2 log(1/ε)) + 9 δ W ε⁻¹`,  `δ = β/√n`,
+
+i.e. `A δ (ε⁻¹(W + C_k ε) + C_k (1 + log(1/ε)))`. **Both exponents of the ledger are verified
+here**: the `j^{-1}` piece is genuinely harmonic (`sum_Ico_one_div_le` — this and nothing else is
+where the logarithm comes from), and the `j^{-3/2}` piece is genuinely summable to `J^{-1/2}`
+(`sum_Ico_inv_mul_sqrt_le` — this is the `ε⁻¹` the frozen statement already carried).
+
+What remains open in the brick is the *analytic* half — the production of the per-step
+hypothesis `hTdec`, i.e. the localised weighted swap at a single step — not this bookkeeping. -/
+private lemma sum_le_of_bounded_and_weighted_decay {K₁ K₂ θ : ℝ}
+    (hK₁ : 0 ≤ K₁) (hK₂ : 0 ≤ K₂) (hθ : 0 ≤ θ)
+    {n J : ℕ} (hJ : 2 ≤ J) {T : ℕ → ℝ} (hTnn : ∀ j, 0 ≤ T j) (hTθ : ∀ j, T j ≤ θ)
+    (hTdec : ∀ j, 1 ≤ j → T j ≤ K₁ / (j : ℝ) + K₂ / ((j : ℝ) * Real.sqrt (j : ℝ))) :
+    ∑ j ∈ Finset.range n, T j
+      ≤ (J : ℝ) * θ + K₁ * (1 + Real.log (max ((n : ℝ) / (J : ℝ)) 1))
+        + 3 * K₂ / Real.sqrt (J : ℝ) := by
+  classical
+  have hJr : (2 : ℝ) ≤ (J : ℝ) := by exact_mod_cast hJ
+  have hJs : (0 : ℝ) < Real.sqrt (J : ℝ) := Real.sqrt_pos.mpr (by linarith)
+  have hlog0 : 0 ≤ Real.log (max ((n : ℝ) / (J : ℝ)) 1) :=
+    Real.log_nonneg (le_max_right _ _)
+  have hlogterm : 0 ≤ K₁ * (1 + Real.log (max ((n : ℝ) / (J : ℝ)) 1)) :=
+    mul_nonneg hK₁ (by linarith)
+  have htailterm : (0 : ℝ) ≤ 3 * K₂ / Real.sqrt (J : ℝ) := by positivity
+  have htail : ∑ j ∈ Finset.Ico J n, T j
+      ≤ K₁ * (1 + Real.log (max ((n : ℝ) / (J : ℝ)) 1)) + 3 * K₂ / Real.sqrt (J : ℝ) := by
+    have hb : ∑ j ∈ Finset.Ico J n, T j
+        ≤ ∑ j ∈ Finset.Ico J n,
+            (K₁ / (j : ℝ) + K₂ / ((j : ℝ) * Real.sqrt (j : ℝ))) := by
+      refine Finset.sum_le_sum fun j hjmem => ?_
+      have := (Finset.mem_Ico.1 hjmem).1
+      exact hTdec j (by omega)
+    have hsp : ∑ j ∈ Finset.Ico J n,
+          (K₁ / (j : ℝ) + K₂ / ((j : ℝ) * Real.sqrt (j : ℝ)))
+        = K₁ * ∑ j ∈ Finset.Ico J n, (1 : ℝ) / (j : ℝ)
+          + K₂ * ∑ j ∈ Finset.Ico J n, (1 : ℝ) / ((j : ℝ) * Real.sqrt (j : ℝ)) := by
+      rw [Finset.sum_add_distrib]
+      congr 1
+      · rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun j _ => by ring
+      · rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun j _ => by ring
+    rw [hsp] at hb
+    have hh := mul_le_mul_of_nonneg_left (sum_Ico_one_div_le (J := J) (m := n) hJ) hK₁
+    have hs := mul_le_mul_of_nonneg_left (sum_Ico_inv_mul_sqrt_le (J := J) (m := n) hJ) hK₂
+    have hval : K₂ * (3 / Real.sqrt (J : ℝ)) = 3 * K₂ / Real.sqrt (J : ℝ) := by ring
+    linarith
+  rcases le_total n J with hn | hn
+  · have h1 : ∑ j ∈ Finset.range n, T j ≤ ∑ _j ∈ Finset.range n, θ :=
+      Finset.sum_le_sum fun j _ => hTθ j
+    have h2 : ∑ _j ∈ Finset.range n, (θ : ℝ) = (n : ℝ) * θ := by
+      rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+    have h3 : (n : ℝ) ≤ (J : ℝ) := by exact_mod_cast hn
+    nlinarith [mul_le_mul_of_nonneg_right h3 hθ]
+  · have hsplit : ∑ j ∈ Finset.range n, T j
+        = (∑ j ∈ Finset.Ico 0 J, T j) + ∑ j ∈ Finset.Ico J n, T j := by
+      rw [Finset.sum_Ico_consecutive T (Nat.zero_le J) hn, Finset.range_eq_Ico]
+    have h1 : ∑ j ∈ Finset.Ico 0 J, T j ≤ (J : ℝ) * θ := by
+      have hle := Finset.sum_le_sum (f := T) (g := fun _ => θ)
+        (fun j (_ : j ∈ Finset.Ico 0 J) => hTθ j)
+      have h2 : ∑ _j ∈ Finset.Ico 0 J, (θ : ℝ) = (J : ℝ) * θ := by
+        rw [Finset.sum_const, Nat.card_Ico, nsmul_eq_mul]
+        simp
+      linarith [hle, h2.le, h2.ge]
+    rw [hsplit]
+    linarith
 
 end SumEstimate
 
@@ -5674,6 +5895,162 @@ theorem le_of_selfImproving_induction {A C b : ℝ} {D : ℕ → ℝ}
       rw [hKdef]
       nlinarith [hA.le, hC.le, hδpos.le]
 
+/-- **The self-improving induction with the mollification logarithm** (wave 32).
+
+The hybrid telescope smooths step `j` at width `σⱼ = √(j/n)`, sweeping from `ε` to `1`, while
+the test function has the *single* width `ε`. The localised swap therefore pays, at step `j`,
+the weight `C σⱼ + W` rather than `W`, and the balanced sum over the tail `j > J = ⌈ε²n⌉`
+contributes
+
+`∑_{J<j≤n} j^{-3/2}(C σⱼ + W) β/√n = δ (C ∑_{J<j≤n} j^{-1} + W J^{-1/2}) ≍ δ (2C log(1/ε) + W/ε)`
+
+— see the ledger on `localised_swap_bound_small_weight`. So the recursion this route produces
+carries an extra additive `A δ C (1 + log(1 + ε⁻¹))` on top of the `A δ ε⁻¹ (Cε + 2Y)` of
+`le_of_selfImproving_induction`, and the fixed point has to be re-solved with it.
+
+It re-solves *linearly*, at the price of one logarithm in the answer. Put
+`δₙ = b/√n` and `Mₙ = 1 + log(1 + (8Aδₙ)⁻¹)`. On the neighbour range `n/2 ≤ m ≤ n` one has both
+`δₘ ≤ 2δₙ` (as before) **and** `Mₘ ≤ Mₙ` — the log factor is monotone in the *right* direction,
+because `m ≤ n` gives `δₘ ≥ δₙ`. So `K δ M` self-propagates with `Y = 2 K δₙ Mₙ`, and at the
+same cut `ε = 8Aδₙ` the recursion reads `D n ≤ 9ACδ + Y/4 + ACδM`. Using `M ≥ 1` to absorb the
+log-free term, the two cases close at `K = 20 A C` and `K = (40/3) A C` respectively. As with
+`le_of_selfImproving_induction` no base case is needed.
+
+The `1 + ε⁻¹` inside the logarithm (rather than a bare `ε⁻¹`) is deliberate: it makes the extra
+term nonnegative for *every* `ε > 0`, so the amended recursion is unambiguously weaker than the
+frozen one and no `ε ≤ 1` side condition has to be threaded through the call sites. -/
+theorem le_of_selfImproving_induction_log {A C b : ℝ} {D : ℕ → ℝ}
+    (hA : 0 < A) (hC : 0 < C) (hb : 0 < b)
+    (hrec : ∀ n : ℕ, 0 < n → ∀ ε : ℝ, 0 < ε → ∀ Y : ℝ,
+      (∀ m : ℕ, n ≤ 2 * m → m ≤ n → D m ≤ Y) →
+      D n ≤ A * (b / Real.sqrt n) * ε⁻¹ * (C * ε + 2 * Y)
+        + A * (b / Real.sqrt n) * C * (1 + Real.log (1 + ε⁻¹))
+        + C * ε) :
+    ∀ n : ℕ, 0 < n → D n ≤ 20 * (A * C) * (b / Real.sqrt n)
+      * (1 + Real.log (1 + (8 * A * (b / Real.sqrt n))⁻¹)) := by
+  intro n
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    intro hn
+    have hnr : (0 : ℝ) < n := by exact_mod_cast hn
+    have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
+    set δ : ℝ := b / Real.sqrt (n : ℝ) with hδdef
+    have hδpos : 0 < δ := by rw [hδdef]; positivity
+    set M : ℝ := 1 + Real.log (1 + (8 * A * δ)⁻¹) with hMdef
+    have hM1 : 1 ≤ M := by
+      have h : 0 ≤ Real.log (1 + (8 * A * δ)⁻¹) := by
+        refine Real.log_nonneg ?_
+        have : (0 : ℝ) < (8 * A * δ)⁻¹ := by positivity
+        linarith
+      rw [hMdef]; linarith
+    set K : ℝ := 20 * (A * C) with hKdef
+    have hKpos : 0 < K := by rw [hKdef]; positivity
+    set Y : ℝ := max (2 * K * δ * M) (D n) with hYdef
+    have hY : ∀ m : ℕ, n ≤ 2 * m → m ≤ n → D m ≤ Y := by
+      intro m hm2 hmn
+      rcases eq_or_lt_of_le hmn with rfl | hlt
+      · exact le_max_right _ _
+      have hm : 0 < m := by omega
+      have hmr : (0 : ℝ) < m := by exact_mod_cast hm
+      have hsm : 0 < Real.sqrt (m : ℝ) := Real.sqrt_pos.mpr hmr
+      have hstep := ih m hlt hm
+      have hcast : (n : ℝ) ≤ 2 * (m : ℝ) := by exact_mod_cast hm2
+      have hsqrt : Real.sqrt (n : ℝ) ≤ 2 * Real.sqrt (m : ℝ) := by
+        have h1 : Real.sqrt (n : ℝ) ≤ Real.sqrt (4 * (m : ℝ)) :=
+          Real.sqrt_le_sqrt (by linarith)
+        have h2 : Real.sqrt (4 * (m : ℝ)) = 2 * Real.sqrt (m : ℝ) := by
+          rw [show (4 : ℝ) * (m : ℝ) = 2 ^ 2 * (m : ℝ) by ring,
+            Real.sqrt_mul (by positivity), Real.sqrt_sq (by norm_num)]
+        rwa [h2] at h1
+      have hsmn : Real.sqrt (m : ℝ) ≤ Real.sqrt (n : ℝ) :=
+        Real.sqrt_le_sqrt (by exact_mod_cast hmn)
+      set δm : ℝ := b / Real.sqrt (m : ℝ) with hδm
+      have hδmpos : 0 < δm := by rw [hδm]; positivity
+      have hδmle : δm ≤ 2 * δ := by
+        rw [hδm, hδdef, div_le_iff₀ hsm]
+        have h : b / Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = b := by field_simp
+        nlinarith [mul_le_mul_of_nonneg_left hsqrt (by positivity : (0:ℝ) ≤ b /
+          Real.sqrt (n : ℝ))]
+      have hδmge : δ ≤ δm := by
+        rw [hδm, hδdef]
+        exact div_le_div_of_nonneg_left hb.le hsm hsmn
+      set Mm : ℝ := 1 + Real.log (1 + (8 * A * δm)⁻¹) with hMm
+      have hMmle : Mm ≤ M := by
+        rw [hMm, hMdef]
+        have h1 : (8 * A * δm)⁻¹ ≤ (8 * A * δ)⁻¹ := by
+          rw [inv_le_inv₀ (by positivity) (by positivity)]
+          nlinarith
+        have h2 : (0:ℝ) < 1 + (8 * A * δm)⁻¹ := by positivity
+        have := Real.log_le_log h2 (by linarith : (1 : ℝ) + (8 * A * δm)⁻¹
+          ≤ 1 + (8 * A * δ)⁻¹)
+        linarith
+      have hMm1 : 1 ≤ Mm := by
+        have h : 0 ≤ Real.log (1 + (8 * A * δm)⁻¹) := by
+          refine Real.log_nonneg ?_
+          have : (0 : ℝ) < (8 * A * δm)⁻¹ := by positivity
+          linarith
+        rw [hMm]; linarith
+      refine le_trans (le_trans hstep ?_) (le_max_left _ _)
+      have hKδm : 0 ≤ K * δm := by positivity
+      have hM0 : (0 : ℝ) ≤ M := by linarith
+      calc K * δm * Mm ≤ K * δm * M := mul_le_mul_of_nonneg_left hMmle hKδm
+        _ ≤ K * (2 * δ) * M :=
+            mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hδmle hKpos.le) hM0
+        _ = 2 * K * δ * M := by ring
+    have hεpos : 0 < 8 * A * δ := by positivity
+    have h := hrec n hn (8 * A * δ) hεpos Y hY
+    rw [← hδdef] at h
+    have hinv : A * δ * (8 * A * δ)⁻¹ = 1 / 8 := by
+      rw [mul_inv, ← mul_assoc]; field_simp
+    rw [show A * δ * (8 * A * δ)⁻¹ * (C * (8 * A * δ) + 2 * Y)
+        = (A * δ * (8 * A * δ)⁻¹) * (C * (8 * A * δ) + 2 * Y) from rfl, hinv,
+      ← hMdef] at h
+    have hexp : (1 : ℝ) / 8 * (C * (8 * A * δ) + 2 * Y) + A * δ * C * M + C * (8 * A * δ)
+        = 9 * (A * C) * δ + Y / 4 + A * C * δ * M := by ring
+    rw [hexp] at h
+    have hACδ : 0 < A * C * δ := by positivity
+    rcases le_total (D n) (2 * K * δ * M) with hcase | hcase
+    · have hmax : Y = 2 * K * δ * M := by rw [hYdef]; exact max_eq_left hcase
+      rw [hmax] at h
+      rw [hKdef] at h ⊢
+      nlinarith [hACδ, hM1]
+    · have hmax : Y = D n := by rw [hYdef]; exact max_eq_right hcase
+      rw [hmax] at h
+      rw [hKdef]
+      nlinarith [hACδ, hM1]
+
+/-- The log factor the induction carries, `1 + log(1 + (Aδ)⁻¹)`, converted into the form the
+headline records, `1 + log(max δ⁻¹ e)`, at the cost of a factor `2`. (The `max … e` keeps the
+headline's factor `≥ 1` for every `δ`, including the uninteresting range `δ ≥ 1` where the
+bound is vacuous anyway.) -/
+theorem log_shift_le {A δ : ℝ} (hA : 1 ≤ A) (hδ : 0 < δ) :
+    1 + Real.log (1 + (A * δ)⁻¹) ≤ 2 * (1 + Real.log (max δ⁻¹ (Real.exp 1))) := by
+  set L : ℝ := Real.log (max δ⁻¹ (Real.exp 1)) with hL
+  have hmax : Real.exp 1 ≤ max δ⁻¹ (Real.exp 1) := le_max_right _ _
+  have hL1 : 1 ≤ L := by
+    rw [hL]
+    calc (1 : ℝ) = Real.log (Real.exp 1) := by rw [Real.log_exp]
+      _ ≤ _ := Real.log_le_log (Real.exp_pos 1) hmax
+  have hinv : (A * δ)⁻¹ ≤ δ⁻¹ := by
+    rw [inv_le_inv₀ (by positivity) (by positivity)]
+    nlinarith
+  have hd : δ⁻¹ ≤ max δ⁻¹ (Real.exp 1) := le_max_left _ _
+  have hpos : (0 : ℝ) < max δ⁻¹ (Real.exp 1) := lt_of_lt_of_le (Real.exp_pos 1) hmax
+  have h1 : (1 : ℝ) ≤ max δ⁻¹ (Real.exp 1) := le_trans (by
+    have := Real.add_one_le_exp (1 : ℝ); linarith) hmax
+  have hstep : 1 + (A * δ)⁻¹ ≤ 2 * max δ⁻¹ (Real.exp 1) := by linarith
+  have hlog : Real.log (1 + (A * δ)⁻¹) ≤ Real.log 2 + L := by
+    have h2 : (0:ℝ) < 1 + (A * δ)⁻¹ := by positivity
+    calc Real.log (1 + (A * δ)⁻¹)
+        ≤ Real.log (2 * max δ⁻¹ (Real.exp 1)) := Real.log_le_log h2 hstep
+      _ = Real.log 2 + L := by rw [Real.log_mul (by norm_num) hpos.ne', hL]
+  have hlog2 : Real.log 2 ≤ 1 := by
+    calc Real.log 2 ≤ Real.log (Real.exp 1) :=
+          Real.log_le_log (by norm_num) (by
+            have := Real.add_one_le_exp (1:ℝ); nlinarith [Real.exp_pos (1:ℝ)])
+      _ = 1 := Real.log_exp 1
+  linarith
+
 end SelfImprovingInduction
 
 section ConvexDiscrepancy
@@ -6565,9 +6942,71 @@ unaffected. Note that the amendment does not weaken the *content*: the frozen st
 (it is implied by Bentkus's theorem, since its right-hand side is `≥ A C_k β/√n`); what the
 amendment records is the interface the *proof* needs.
 
-## What is still missing (wave 29, re-derived)
+## Wave 32: the CONCLUSION is amended too — the logarithm is forced
 
-Two items, both about the summand `y` rather than the geometry.
+Wave 29 left the conclusion in its frozen (log-free) form on the ground that weakening it then
+"would be a guess rather than a forced amendment". It is not a guess: the summation ledger below
+*forces* it, and wave 32 executes the amendment.
+
+**The ledger.** Write `c = n^{-1/2}`, `σⱼ = c√j`, `δ = β/√n`, `J = ⌈ε²n⌉`. The telescope has
+`n` steps; step `j` is smoothed at width `σⱼ` and its localised Cameron–Martin cost is
+
+`(per-step weight) × C_t β_j / (j √j)`,  `β_j ≍ β + β_G ≤ 3β`,
+
+by `abs_integral_gaussian_smoothed_swap_le` (this is `hboundB` of
+`abs_integral_smooth_sub_gaussian_improved`; the `j^{-3/2}` is `(c/σⱼ)³`). The *weight* the
+localisation supplies at step `j` is the two-sided-shell mass at the radius that step can
+afford, which is a multiple of `σⱼ`, so it is `4 C_k σⱼ + W` — hence the amended hypothesis. The
+tail of the balanced sum is therefore
+
+`∑_{J<j≤n} j^{-3/2}(4C_k σⱼ + W)·3β = 3β(4C_k c ∑_{J<j≤n} j^{-1} + W ∑_{J<j≤n} j^{-3/2})`.
+
+Now `c = n^{-1/2}` and `β c = δ`, so the first piece is `12 C_k δ ∑_{J<j≤n} j^{-1}
+≤ 12 C_k δ (1 + log(n/J)) ≤ 12 C_k δ (1 + log(1/ε²)) = 12 C_k δ (1 + 2 log(1/ε))`, and the
+second is `3 β W ∑_{j>J} j^{-3/2} ≤ 6 β W J^{-1/2} ≤ 6 β W /(ε√n) = 6 δ W ε⁻¹`. The head
+`j ≤ J` is the classical shell-localised swap, `J·(M/6)c³·3β ≤ (3/2) C₃ δ ε⁻¹` exactly as in
+`abs_integral_smooth_sub_gaussian_balanced`. Summing:
+
+`A δ (ε⁻¹ (W + C_k ε) + C_k (1 + log(1/ε)))`,
+
+which is the conclusion now recorded. **Both exponents check out**: `j^{-1}` (not `j^{-1/2}`)
+after `σⱼ = c√j` cancels one `√j`, giving the harmonic sum and hence the logarithm; and
+`j^{-3/2}` summed from `J` gives `J^{-1/2} = (ε√n)^{-1}`, i.e. exactly the `ε⁻¹` the frozen form
+already carried. The logarithm is intrinsic to a *single* mollification width: killing it needs
+per-step widths `εⱼ ≍ σⱼ`, which the frozen single `f` cannot provide.
+
+The statement below writes `1 + log(1 + ε⁻¹)` rather than `1 + log(1/ε)`; the two agree up to a
+factor `2` for `ε ≤ 1`, and the `1 +` inside makes the extra term nonnegative for *every*
+`ε > 0`, so no `ε ≤ 1` side condition has to be threaded through the call sites (and the amended
+statement is then unambiguously *weaker* than the frozen one — it is implied by Bentkus's
+theorem, as the frozen form was).
+
+**The ledger is FORMALISED, not merely asserted.** `sum_le_of_bounded_and_weighted_decay` is the
+statement above as a proved lemma about real sequences, over the two tail bounds
+`sum_Ico_one_div_le` (harmonic — the logarithm) and `sum_Ico_inv_mul_sqrt_le` (summable — the
+`ε⁻¹`), both proved. So the bookkeeping half of this brick is discharged; what is left is the
+*analytic* half, the production of its per-step hypothesis `hTdec` — see "What is still
+missing" below.
+
+**Remark (trading the log for a power).** If the Gaussian tail is used in its Markov form
+`stdGaussian_norm_ge_le p` at a *fixed* order `p = 2m`, rather than at all orders at once, the
+per-step weight is `(σⱼ/r)^{m}` and the harmonic sum is replaced by a convergent one; the
+logarithm becomes `ε^{-1/(m+1)}` and the headline `(β/√n)^{m/(m+1)}`. That is strictly weaker
+than the log form for every fixed `m`, so the route below is not restructured for it.
+
+## What is still missing (wave 32, re-derived)
+
+One item, and it is now sharply delimited: **the per-step weighted swap bound**, i.e. the
+hypothesis `hTdec` of `sum_le_of_bounded_and_weighted_decay`. Concretely, a weighted rerun of
+`hboundB` inside `abs_integral_smooth_sub_gaussian_improved`, delivering at step `j ≥ 1`
+
+`|∫ Gⱼ(· + v) dν − ∫ Gⱼ(· + v) dγ| ≤ (4 C_k σⱼ + W) · 3 C_t (β + β_G) / (j √j)`
+
+in place of the unweighted `C_t (β + β_G)/(j√j)`. Everything downstream of it — the summation,
+the cut `J = ⌈ε²n⌉`, the fixed point, the headline — is proved. Its two analytic ingredients are
+in place (the wave-19 weighted lemma `abs_integral_mul_vecTiltRemainder_le_of_support` and its
+wave-29 constant-off/Gaussian-tail extensions), but the shift-length restriction has to be
+handled:
 
 * **The `‖w‖ ≤ 1` restriction.** Both the wave-19 lemma and its wave-29 constant-off extension
   require a Cameron–Martin shift of length at most `1` (for `‖w‖ > 1` the `L²` norm of the tilt
@@ -6579,20 +7018,8 @@ Two items, both about the summand `y` rather than the geometry.
   factor `1 + ‖w‖²  ≤ 2‖w‖³` and whose first term is localised *after averaging in `v`*, the
   mismatch `a_v ≠ a_{v + c y}` costing the mass of a `c‖y‖`-neighbourhood of `∂B`, i.e. again a
   two-sided shell, at width `c‖y‖ ≤ σⱼ‖w‖`. This is the reason the amended hypothesis is stated
-  at *all* widths and not merely at the `σⱼ`.
-* **The size of the summed weight.** With the per-step weight `C_k σⱼ + W`, the balanced sum
-  `∑_{j>J} j^{-3/2}(C_k σⱼ + W)` contributes `β n^{-1/2}(C_k ∑_{J<j≤n} j^{-1} + W J^{-1/2})`,
-  i.e. `δ (C_k · 2 log(1/ε) + W/ε)`. The logarithm is intrinsic to a single mollification width:
-  killing it needs per-step widths `εⱼ ≍ σⱼ`, which the frozen single `f` cannot provide. So the
-  conclusion this route will produce is
-  `A δ (ε⁻¹(W + C_k ε) + C_k (1 + log (1/ε)))`, and the headline it feeds is the sharp rate up
-  to one logarithm, `C_k (β/√n)(1 + log(√n/β))`. That is strictly better than the proved
-  `(β/√n)^{1/2}` of `berryEsseen_convex_improved`. The conclusion below is left in its frozen
-  (log-free) form: the extra term is not yet proved, and the frozen form is *true* (Bentkus), so
-  weakening it now would be a guess rather than a forced amendment. If the Gaussian tail is used
-  in its Markov form `stdGaussian_norm_ge_le p` with a *fixed* `p = 2m`, the logarithm is
-  replaced by `ε^{-1/(m+1)}` and the headline by `(β/√n)^{m/(m+1)}`; the logarithm needs the
-  tail at all orders at once. -/
+  at *all* widths and not merely at the `σⱼ`. Third-moment integrability of `y` prices the
+  `{‖y‖ > √j}` tail. -/
 theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 0 < C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
@@ -6612,8 +7039,9 @@ theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (h
       W + gaussianShellConst k * ε ≤ 1 →
       |(∫ x, f x ∂(sumLaw n ν))
           - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))|
-        ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * ε⁻¹
-            * (W + gaussianShellConst k * ε) := by
+        ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
+            * (ε⁻¹ * (W + gaussianShellConst k * ε)
+              + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by
   sorry
 
 /-- **Brick L (wave 24: AMENDED, and proved over `localised_swap_bound_small_weight`).** *The
@@ -6648,12 +7076,19 @@ The proof splits at `W + C_k ε = 1`: above it,
 `exists_smooth_swap_bound_of_one_le_weight` closes the goal with no localisation at all; below
 it, the content is the named brick `localised_swap_bound_small_weight`.
 
-**Wave 29 amended the weight hypothesis** (only; the conclusion is unchanged). `W` is no longer
-a bound on the mass of the single outer shell `B^{2ε} \ interior B`, but on the excess over
-`4 C_k s` of the mass of the *two-sided* shell `B^s \ B_{-s}`, **at every width `s > 0`**. Both
-changes are forced by the localisation the proof actually uses — see the analysis on
-`localised_swap_bound_small_weight` — and both are free here, because
-`hybridLaw_wideShell_le` proves exactly that, at every width, with the same `2Y`. -/
+**Wave 29 amended the weight hypothesis.** `W` is no longer a bound on the mass of the single
+outer shell `B^{2ε} \ interior B`, but on the excess over `4 C_k s` of the mass of the
+*two-sided* shell `B^s \ B_{-s}`, **at every width `s > 0`**. Both changes are forced by the
+localisation the proof actually uses — see the analysis on `localised_swap_bound_small_weight` —
+and both are free here, because `hybridLaw_wideShell_le` proves exactly that, at every width,
+with the same `2Y`.
+
+**Wave 32 amends the conclusion**, adding `+ C_k (1 + log(1 + ε⁻¹))` inside the bracket: the
+summation ledger on `localised_swap_bound_small_weight` forces a logarithm, because the
+telescope's own smoothing widths `σⱼ = √(j/n)` sweep from `ε` to `1` while the test function has
+the single width `ε`. The large-weight half `exists_smooth_swap_bound_of_one_le_weight` is
+proved and is *unaffected*: its conclusion is the log-free one, which is smaller, so it still
+closes the amended goal. Only the small-weight half changes. -/
 theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 0 < C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
@@ -6672,8 +7107,9 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
           ≤ 4 * gaussianShellConst k * s + W) →
       |(∫ x, f x ∂(sumLaw n ν))
           - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))|
-        ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * ε⁻¹
-            * (W + gaussianShellConst k * ε) := by
+        ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
+            * (ε⁻¹ * (W + gaussianShellConst k * ε)
+              + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by
   obtain ⟨A₁, hA₁, h₁⟩ := exists_smooth_swap_bound_of_one_le_weight k hk hC₃
   obtain ⟨A₂, hA₂, h₂⟩ := localised_swap_bound_small_weight k hk hC₃
   refine ⟨A₁ + A₂, by linarith, ?_⟩
@@ -6683,47 +7119,69 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
   have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
   have hβ0 : 0 < ∫ y, ‖y‖ ^ 3 ∂ν := integral_norm_cube_pos hk hcov hβint
   have hCk : 0 < gaussianShellConst k := gaussianShellConst_pos hk
-  have hbase : 0 ≤ (∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ) * ε⁻¹
-      * (W + gaussianShellConst k * ε) :=
-    mul_nonneg (mul_nonneg (div_nonneg hβ0.le hsn.le) (inv_pos.2 hε).le)
-      (by nlinarith [mul_pos hCk hε])
+  have hδ0 : 0 ≤ (∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ) := div_nonneg hβ0.le hsn.le
+  have hlog0 : 0 ≤ Real.log (1 + ε⁻¹) :=
+    Real.log_nonneg (by have : (0:ℝ) < ε⁻¹ := inv_pos.2 hε; linarith)
+  have hbrk0 : 0 ≤ ε⁻¹ * (W + gaussianShellConst k * ε) := by
+    have : (0:ℝ) < gaussianShellConst k * ε := mul_pos hCk hε
+    exact mul_nonneg (inv_pos.2 hε).le (by linarith)
+  have hbase : 0 ≤ (∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)
+      * (ε⁻¹ * (W + gaussianShellConst k * ε)
+        + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by
+    refine mul_nonneg hδ0 (by nlinarith [mul_nonneg hCk.le hlog0])
+  have hexp : ∀ A : ℝ, A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
+      * (ε⁻¹ * (W + gaussianShellConst k * ε)
+        + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹)))
+      = A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)
+        * (ε⁻¹ * (W + gaussianShellConst k * ε)
+          + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹)))) := fun A => by ring
   rcases le_or_gt 1 (W + gaussianShellConst k * ε) with hge | hlt
-  · have h := h₁ n ν ε f (W + gaussianShellConst k * ε) hn hνp hmean hcov hβint hε hf hfb
+  · -- the large-weight half is proved, and its (log-free) conclusion is smaller
+    have h := h₁ n ν ε f (W + gaussianShellConst k * ε) hn hνp hmean hcov hβint hε hf hfb
       hD hge
     refine h.trans ?_
-    have hexp : ∀ A : ℝ, A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * ε⁻¹
+    have hsmall : A₁ * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * ε⁻¹
         * (W + gaussianShellConst k * ε)
-        = A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ) * ε⁻¹
-          * (W + gaussianShellConst k * ε)) := fun A => by ring
+        ≤ A₁ * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
+          * (ε⁻¹ * (W + gaussianShellConst k * ε)
+            + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by
+      have hA₁δ : 0 ≤ A₁ * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) :=
+        mul_nonneg hA₁.le hδ0
+      have hextra : 0 ≤ gaussianShellConst k * (1 + Real.log (1 + ε⁻¹)) := by
+        nlinarith [mul_nonneg hCk.le hlog0]
+      nlinarith [mul_nonneg hA₁δ hextra]
+    refine hsmall.trans ?_
     rw [hexp A₁, hexp (A₁ + A₂)]
     exact mul_le_mul_of_nonneg_right (by linarith) hbase
   · have h := h₂ n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hf hfb hD hsupp hone hW0 hW
       hlt.le
     refine h.trans ?_
-    have hexp : ∀ A : ℝ, A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * ε⁻¹
-        * (W + gaussianShellConst k * ε)
-        = A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ) * ε⁻¹
-          * (W + gaussianShellConst k * ε)) := fun A => by ring
     rw [hexp A₂, hexp (A₁ + A₂)]
     exact mul_le_mul_of_nonneg_right (by linarith) hbase
 
 /-- **The recursion, produced.** For every measurable convex `B`, every cut `ε > 0` and every
 bound `Y` on the discrepancies at the neighbour sizes `n/2 ≤ m ≤ n`,
 
-`Δ(μₙ, γ) ≤ A (β/√n) ε⁻¹ (C ε + 2Y) + C ε`, `C = 4 C_k`,
+`Δ(μₙ, γ) ≤ A (β/√n) ε⁻¹ (C ε + 2Y) + A (β/√n) C (1 + log(1 + ε⁻¹)) + C ε`, `C = 4 C_k`,
 
-which is exactly the hypothesis of `le_of_selfImproving_induction`. Bricks H and L supply the
-weighted swap estimate; everything else here is the two-sided thickening/erosion sandwich of
+which is exactly the hypothesis of `le_of_selfImproving_induction_log`. Bricks H and L supply
+the weighted swap estimate; everything else here is the two-sided thickening/erosion sandwich of
 `berryEsseen_convex_improved` with the mollifier of `exists_smoothed_convex_indicator`.
 
 Wave 24: brick L now delivers the weight `W + C_k ε` rather than `W` (its wave-20 form is false,
 see `exists_localised_swap_bound`). Since the call site supplies `W = 4 C_k ε + 2 Y` with
 `Y ≥ 0`, one has `W + C_k ε ≤ 2 W`, so the extra term is absorbed by doubling `A`; the statement
-here is unchanged.
+here was unchanged.
 
 Wave 29: brick L's weight hypothesis is now the *two-sided* shell at *every* width, supplied
 here by `hybridLaw_wideShell_le` instead of `hybridLaw_shell_le`. The same `W = 4 C_k ε + 2 Y`
-works verbatim, so the statement here is again unchanged. -/
+works verbatim, so the statement here was again unchanged.
+
+Wave 32: brick L's *conclusion* now carries `+ C_k (1 + log(1 + ε⁻¹))`, forced by the summation
+ledger (see there), and that term is inherited here verbatim — it does not interact with the
+`W`-bookkeeping at all, since the sandwich only ever adds `|∫f dμ − ∫f dγ|` to Gaussian shell
+masses. The same doubling of `A` absorbs `C_k ≤ 8 C_k = 2·(4 C_k)` in the new term. Downstream,
+`le_of_selfImproving_induction` is replaced by `le_of_selfImproving_induction_log`. -/
 theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k))) (ε Y : ℝ),
       0 < n → IsProbabilityMeasure ν →
@@ -6737,6 +7195,8 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
           (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
         ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * ε⁻¹
             * (4 * gaussianShellConst k * ε + 2 * Y)
+          + A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * (4 * gaussianShellConst k)
+            * (1 + Real.log (1 + ε⁻¹))
           + 4 * gaussianShellConst k * ε := by
   obtain ⟨C₃, hC₃pos, hC₃⟩ := exists_smoothed_convex_indicator k
   obtain ⟨A, hApos, hA⟩ := exists_localised_swap_bound k hk hC₃pos
@@ -6757,7 +7217,10 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
   have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
   set δ : ℝ := β / Real.sqrt (n : ℝ) with hδdef
   have hδpos : 0 < δ := by rw [hδdef]; positivity
-  set E : ℝ := 2 * A * δ * ε⁻¹ * (4 * gaussianShellConst k * ε + 2 * Y) with hEdef
+  have hlog0 : 0 ≤ Real.log (1 + ε⁻¹) :=
+    Real.log_nonneg (by have : (0:ℝ) < ε⁻¹ := inv_pos.2 hε; linarith)
+  set E : ℝ := 2 * A * δ * ε⁻¹ * (4 * gaussianShellConst k * ε + 2 * Y)
+    + 2 * A * δ * (4 * gaussianShellConst k) * (1 + Real.log (1 + ε⁻¹)) with hEdef
   -- the Lévy form, for an arbitrary measurable convex set
   have hlevy : ∀ S : Set (EuclideanSpace ℝ (Fin k)), MeasurableSet S → Convex ℝ S →
       (μ S).toReal ≤ (γ (Metric.thickening ε S)).toReal + E
@@ -6791,11 +7254,32 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
       refine h.trans ?_
       rw [hEdef]
       have hu : 0 ≤ A * δ * ε⁻¹ := by positivity
-      calc A * δ * ε⁻¹
-              * (4 * gaussianShellConst k * ε + 2 * Y + gaussianShellConst k * ε)
-          ≤ A * δ * ε⁻¹ * (2 * (4 * gaussianShellConst k * ε + 2 * Y)) :=
-            mul_le_mul_of_nonneg_left (by nlinarith [mul_pos hCk hε]) hu
-        _ = 2 * A * δ * ε⁻¹ * (4 * gaussianShellConst k * ε + 2 * Y) := by ring
+      have hAδ : 0 ≤ A * δ := by positivity
+      -- the `ε⁻¹` bracket, as before: `W + C_k ε ≤ 2 W`
+      have hpart1 : A * δ * ε⁻¹
+            * (4 * gaussianShellConst k * ε + 2 * Y + gaussianShellConst k * ε)
+          ≤ 2 * A * δ * ε⁻¹ * (4 * gaussianShellConst k * ε + 2 * Y) := by
+        calc A * δ * ε⁻¹
+                * (4 * gaussianShellConst k * ε + 2 * Y + gaussianShellConst k * ε)
+            ≤ A * δ * ε⁻¹ * (2 * (4 * gaussianShellConst k * ε + 2 * Y)) :=
+              mul_le_mul_of_nonneg_left (by nlinarith [mul_pos hCk hε]) hu
+          _ = 2 * A * δ * ε⁻¹ * (4 * gaussianShellConst k * ε + 2 * Y) := by ring
+      -- the new logarithmic term: `C_k ≤ 8 C_k`
+      have hpart2 : A * δ * (gaussianShellConst k * (1 + Real.log (1 + ε⁻¹)))
+          ≤ 2 * A * δ * (4 * gaussianShellConst k) * (1 + Real.log (1 + ε⁻¹)) := by
+        have h7 : 0 ≤ A * δ * (7 * gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by
+          have : 0 ≤ 7 * gaussianShellConst k * (1 + Real.log (1 + ε⁻¹)) := by
+            nlinarith [mul_nonneg hCk.le hlog0]
+          exact mul_nonneg hAδ this
+        nlinarith [h7]
+      have hsplit : A * δ * (ε⁻¹ * (4 * gaussianShellConst k * ε + 2 * Y
+              + gaussianShellConst k * ε)
+            + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹)))
+          = A * δ * ε⁻¹ * (4 * gaussianShellConst k * ε + 2 * Y
+              + gaussianShellConst k * ε)
+            + A * δ * (gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by ring
+      rw [hsplit]
+      linarith
     have hthickm : MeasurableSet (Metric.thickening ε S) :=
       Metric.isOpen_thickening.measurableSet
     have hlowμ : (μ S).toReal ≤ ∫ x, f x ∂μ :=
@@ -6832,29 +7316,34 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
   · linarith
   · linarith
 
-/-- **The sharp convex Berry–Esseen bound.** For every dimension `k > 0` there is a constant `C`
-with
+/-- **The sharp convex Berry–Esseen bound, up to one logarithm** (conclusion AMENDED in
+wave 32). For every dimension `k > 0` there is a constant `C` with
 
-`|μₙ(B) − γ(B)| ≤ C β/√n` for every measurable convex `B`,
+`|μₙ(B) − γ(B)| ≤ C (β/√n) (1 + log(max (√n/β) e))` for every measurable convex `B`,
 
-i.e. Bentkus's rate, linear in `δ = β/√n`, with the dimension entering only through
-`C = 18 A (4 C_k) = 72 A gaussianShellConst k`, `gaussianShellConst k = 4 e² √k`.
+i.e. Bentkus's rate up to a single logarithmic factor, with the dimension entering only through
+`C = 40 ((A+1) (4 C_k)) = 160 (A+1) gaussianShellConst k`, `gaussianShellConst k = 4 e² √k`.
+This is strictly better than the *proved* `(β/√n)^{1/2}` of `berryEsseen_convex_improved`.
 
-This is `exists_convexDiscrepancy_recursion` fed to `le_of_selfImproving_induction`. It is
-**not** axiom-clean: after wave 24 it inherits exactly **one** stated-but-unproved brick,
+This is `exists_convexDiscrepancy_recursion` fed to `le_of_selfImproving_induction_log`. It is
+**not** axiom-clean: it inherits exactly **one** stated-but-unproved brick,
 `localised_swap_bound_small_weight` — the small-weight half of brick L (brick H,
-`hybridLaw_shell_le`, is proved; the large-weight half of brick L,
+`hybridLaw_shell_le` / `hybridLaw_wideShell_le`, is proved; the large-weight half of brick L,
 `exists_smooth_swap_bound_of_one_le_weight`, is proved; brick L's wave-20 form was false and is
-amended, see `exists_localised_swap_bound`). The best *proved* convex bound remains
-`berryEsseen_convex_improved` at `(β/√n)^{1/2}`.
+amended, see `exists_localised_swap_bound`).
 
-**Wave 29 (expected amendment).** The residue's weight hypothesis is amended (two-sided shell,
-every width; free here, supplied by `hybridLaw_wideShell_le`) and its docstring re-derives what
-the route produces: `A δ (ε⁻¹(W + C_k ε) + C_k(1 + log(1/ε)))`. When that lands, the conclusion
-*here* will have to carry one logarithm, `C_k (β/√n)(1 + log(√n/β))` — the log is intrinsic to
-using a single mollification width `ε` for every step of the telescope, whose own widths
-`σⱼ = √(j/n)` sweep from `ε` to `1`. The log-free form below is not retracted (it is true, being
-Bentkus's theorem); it is simply not what this route will prove.
+**Why the logarithm (wave 32: the amendment is EXECUTED).** Wave 29's docstring predicted it;
+wave 32 records the forcing ledger on `localised_swap_bound_small_weight` and carries the term
+through. The telescope smooths step `j` at width `σⱼ = √(j/n)`, and those widths sweep from `ε`
+to `1` while the test function has the single width `ε`; the per-step localisation weight is
+therefore `4 C_k σⱼ + W`, and `∑_{J<j≤n} j^{-3/2} σⱼ = c ∑_{J<j≤n} j^{-1}` is a *harmonic* sum,
+worth `2 log(1/ε)` at the cut `J = ⌈ε² n⌉`. At the fixed point `ε ≍ A δ` that is
+`log(1/(Aδ)) ≍ log(√n/β)`. Killing the logarithm needs per-step mollification widths
+`εⱼ ≍ σⱼ`, which a single frozen `f` cannot provide.
+
+The log-free form `|μₙ(B) − γ(B)| ≤ C β/√n` is **not** retracted — it is true, being Bentkus's
+theorem — it is simply not what this route proves, and the provable-constants rule forbids
+recording it here.
 
 Note the `k`-power: `gaussianShellConst k = 4 e² √k`, so this route gives `C ∼ k^{1/2}`, not
 Bentkus's `400 k^{1/4}`. Wave 22 removed the factor `k` that the coordinate-slice cover of
@@ -6871,24 +7360,61 @@ theorem berryEsseen_convex_sharp {k : ℕ} (hk : 0 < k) :
       Integrable (fun y => ‖y‖ ^ 3) ν → MeasurableSet B → Convex ℝ B →
       |((sumLaw n ν) B).toReal
           - ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) B).toReal|
-        ≤ C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) := by
+        ≤ C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
+            * (1 + Real.log (max (Real.sqrt (n : ℝ) / (∫ y, ‖y‖ ^ 3 ∂ν)) (Real.exp 1))) := by
   obtain ⟨A, hApos, hA⟩ := exists_convexDiscrepancy_recursion k hk
   have hCk : 0 < gaussianShellConst k := gaussianShellConst_pos hk
-  refine ⟨18 * (A * (4 * gaussianShellConst k)), by positivity, ?_⟩
+  refine ⟨40 * ((A + 1) * (4 * gaussianShellConst k)), by positivity, ?_⟩
   intro n ν B hn hνp hmean hcov hβint hBm hBc
   haveI := hνp
+  have hnr : (0 : ℝ) < n := by exact_mod_cast hn
+  have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
   set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
   haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
   set β : ℝ := ∫ y, ‖y‖ ^ 3 ∂ν with hβdef
   have hβpos : 0 < β := integral_norm_cube_pos hk hcov hβint
-  have hind := le_of_selfImproving_induction (A := A) (C := 4 * gaussianShellConst k)
-    (b := β) (D := fun m => convexDiscrepancy (sumLaw m ν) γ) hApos (by linarith) hβpos
+  set δ : ℝ := β / Real.sqrt (n : ℝ) with hδdef
+  have hδpos : 0 < δ := by rw [hδdef]; positivity
+  -- the recursion, with `A` enlarged to `A + 1` so that `1 ≤ 8 (A + 1)` for `log_shift_le`
+  have hind := le_of_selfImproving_induction_log (A := A + 1)
+    (C := 4 * gaussianShellConst k) (b := β)
+    (D := fun m => convexDiscrepancy (sumLaw m ν) γ) (by linarith) (by linarith) hβpos
     (fun m hm ε hε Y hY => by
+      have hY0 : 0 ≤ Y :=
+        le_trans convexDiscrepancy_nonneg (hY m (by omega) le_rfl)
       have h := hA m ν ε Y hm hνp hmean hcov hβint hε (by
         intro m' h1 h2; exact hY m' h1 h2)
       rw [← hβdef] at h
-      exact h) n hn
-  exact le_trans (le_convexDiscrepancy hBm hBc) hind
+      refine h.trans ?_
+      have hmr : (0 : ℝ) < m := by exact_mod_cast hm
+      have hsm : 0 < Real.sqrt (m : ℝ) := Real.sqrt_pos.mpr hmr
+      have hd : (0 : ℝ) ≤ β / Real.sqrt (m : ℝ) := by positivity
+      have hlog0 : 0 ≤ Real.log (1 + ε⁻¹) :=
+        Real.log_nonneg (by have : (0:ℝ) < ε⁻¹ := inv_pos.2 hε; linarith)
+      have ht1 : 0 ≤ β / Real.sqrt (m : ℝ) * ε⁻¹
+          * (4 * gaussianShellConst k * ε + 2 * Y) := by
+        have : (0:ℝ) < 4 * gaussianShellConst k * ε := by positivity
+        exact mul_nonneg (mul_nonneg hd (inv_pos.2 hε).le) (by linarith)
+      have ht2 : 0 ≤ β / Real.sqrt (m : ℝ) * (4 * gaussianShellConst k)
+          * (1 + Real.log (1 + ε⁻¹)) := by
+        have : (0:ℝ) ≤ 1 + Real.log (1 + ε⁻¹) := by linarith
+        exact mul_nonneg (mul_nonneg hd (by positivity)) this
+      nlinarith [ht1, ht2]) n hn
+  -- convert the induction's own log factor into the headline's
+  have hlog := log_shift_le (A := 8 * (A + 1)) (δ := δ) (by linarith) hδpos
+  have hKpos : (0 : ℝ) ≤ 20 * ((A + 1) * (4 * gaussianShellConst k)) * δ := by
+    rw [hδdef]; positivity
+  have hinvδ : δ⁻¹ = Real.sqrt (n : ℝ) / β := by rw [hδdef, inv_div]
+  rw [← hδdef] at hind
+  rw [hinvδ] at hlog
+  refine le_trans (le_convexDiscrepancy hBm hBc) (le_trans hind ?_)
+  calc 20 * ((A + 1) * (4 * gaussianShellConst k)) * δ
+          * (1 + Real.log (1 + (8 * (A + 1) * δ)⁻¹))
+      ≤ 20 * ((A + 1) * (4 * gaussianShellConst k)) * δ
+          * (2 * (1 + Real.log (max (Real.sqrt (n : ℝ) / β) (Real.exp 1)))) :=
+        mul_le_mul_of_nonneg_left hlog hKpos
+    _ = 40 * ((A + 1) * (4 * gaussianShellConst k)) * δ
+          * (1 + Real.log (max (Real.sqrt (n : ℝ) / β) (Real.exp 1))) := by ring
 
 end ConvexDiscrepancy
 

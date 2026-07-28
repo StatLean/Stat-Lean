@@ -98,14 +98,17 @@ open StatLean.MultipleTesting (chiSquared)
 
 **Not present: the convex-sets reference statement.** An earlier revision stated here, as a
 quoted reference with a `sorry` body, the sharp multivariate Berry–Esseen bound over all
-measurable convex sets at the rate `400 k^{1/4} β/√n` (Bentkus 2003). It was removed: it had
-no consumers anywhere in the repository — the limit theorem below consumes only the **ball**
-version, which is discharged — and the *proved* convex-sets bounds live in
-`ForMathlib.MultivariateBerryEsseen`: `berryEsseen_convex_elementary` at `(β/√n)^{1/4}`,
+measurable convex sets at the rate `400 k^{1/4} β/√n` (Bentkus 2003). It was removed
+(user-authorized): it had no consumers anywhere in the repository — the limit theorem below
+consumes only the **ball** version, which is discharged — and the *proved* convex-sets bounds
+live in `ForMathlib.MultivariateBerryEsseen`: `berryEsseen_convex_elementary` at `(β/√n)^{1/4}`,
 `berryEsseen_convex_improved` at `(β/√n)^{1/2}`, and the brick-backed sharp-rate development
-`berryEsseen_convex_sharp`. The dimensional gap between those constants and Bentkus's sharp
-`400 k^{1/4}` is a Gaussian surface-area input (Ball 1993) whose formalisation is an
-independent project; see the module docstring of `ForMathlib.MultivariateBerryEsseen`. -/
+`berryEsseen_convex_sharp`, whose route (waves 13–32) closed every structural obstacle in turn —
+including two verdicts that once named Ball's Gaussian-surface-area theorem as the blocker for
+the *rate*, both later overturned — and now delivers `C(β/√n)(1 + log(√n/β))` unconditionally,
+`C ∼ √k`. What remains open is only the *constant*: Ball's theorem is what separates that `√k`
+from Bentkus's sharp `k^{1/4}`, and closing it is an independent project; see the module
+docstring of `ForMathlib.MultivariateBerryEsseen`. -/
 
 /-- **Berry–Esseen bound over Euclidean balls, with a dimension-free constant (honest rate).**
 There is an absolute constant `C` — independent of the dimension, of the sample size and of the
