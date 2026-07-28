@@ -16,9 +16,10 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 This file develops the elementary "smooth the indicator + Lindeberg swap" route to a
 multivariate Berry–Esseen bound, as suggested for
-`StatLean.HypothesisTesting.GoodnessOfFit.SmoothTestLargeK`. The two statements quoted
-there, `bentkus_berry_esseen_convex` (constant `400 k^{1/4}`) and
-`bentkus_berry_esseen_ball` (dimension-free `C`), are **Bentkus (2003)**: a sharp,
+`StatLean.HypothesisTesting.GoodnessOfFit.SmoothTestLargeK`. The statement quoted there,
+`bentkus_berry_esseen_ball` (dimension-free `C`) — and the convex-sets reference statement
+(constant `400 k^{1/4}`) that an earlier revision also quoted, since removed as
+consumer-free — are **Bentkus (2003)**: a sharp,
 research-level dimension factor obtained by Fourier analysis over convex bodies. Their sharp
 `β/√n` *rate* is not reproduced here; what is proved here is the honest elementary rate
 `(β/√n)^{1/4}`, over balls (`berryEsseen_ball_elementary`, which discharges
@@ -181,9 +182,10 @@ to it). The ingredients:
 ## Wave-19 amendment: the two ingredients of the induction, and what is still missing
 
 The wave-16 note named the missing induction as a *two-part project* rather than a verdict. Both
-parts are now discharged, each as a standalone, `0`-sorry, axiom-clean statement; the
-declaration `SmoothTestLargeK.bentkus_berry_esseen_convex` nevertheless stays `sorry`, because
-the two parts do not by themselves produce the recursion — see below.
+parts are now discharged, each as a standalone, `0`-sorry, axiom-clean statement. (The
+consumer-free reference statement `SmoothTestLargeK.bentkus_berry_esseen_convex`, which quoted
+Bentkus's sharp constant, has since been removed; the two parts do not by themselves produce
+the recursion — see below.)
 
 **(1) The weighted Cameron–Martin remainder** (`integral_abs_mul_vecTiltRemainder_le`, with the
 localised corollary `abs_integral_mul_vecTiltRemainder_le_of_support`). The existing
@@ -2761,8 +2763,9 @@ finite third moment `β = ∫‖y‖³ dν`, and every measurable convex `B`,
 where `μₙ` is the law of `n^{-1/2} ∑ᵢ Yᵢ` and `γ = N(0, I_k)`.
 
 Optimising `ε` in `ε^{-3} β/√n + C ε` balances steps 2–3 at `ε = (β/√n)^{1/4}`, giving an error of
-order `(β/√n)^{1/4} = n^{-1/8}` — **not** the `n^{-1/2}` rate of the frozen
-`bentkus_berry_esseen_convex`. The constant also carries a dimension factor: it is
+order `(β/√n)^{1/4} = n^{-1/8}` — **not** Bentkus's sharp `n^{-1/2}` rate (the consumer-free
+reference statement that quoted it has been removed). The constant also carries a dimension
+factor: it is
 `C = C₀ + C_k` with `C₀` the third-derivative constant of `exists_smoothed_convex_indicator` and
 `C_k = gaussianShellConst k = 4 e² √k` the Gaussian boundary-shell constant.
 

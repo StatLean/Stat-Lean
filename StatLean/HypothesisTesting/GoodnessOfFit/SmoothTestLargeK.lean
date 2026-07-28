@@ -18,9 +18,9 @@ so that the test rejecting when that ratio exceeds `z_{1−α}` is asymptoticall
 
 Contents:
 
-* `bentkus_berry_esseen_convex`, `bentkus_berry_esseen_ball` — the multivariate
-  Berry–Esseen bound the limit theorem rests on, over convex sets and over Euclidean
-  balls; **statement only**;
+* `bentkus_berry_esseen_ball` — the multivariate Berry–Esseen bound over Euclidean
+  balls that the limit theorem rests on, with a dimension-free constant at the honest
+  elementary rate (discharged by `berryEsseen_ball_elementary`);
 * `weakConverges_of_tendsto_cdf` — the Helly–Bray/Lévy inversion on the line: pointwise
   convergence of distribution functions to that of a probability measure implies weak
   convergence (built from Mathlib's π-system criterion for weak convergence);
@@ -94,242 +94,18 @@ namespace StatLean.HypothesisTesting
 open AsymptoticStatistics (WeakConverges)
 open StatLean.MultipleTesting (chiSquared)
 
-/-! ### The multivariate Berry–Esseen bound (statement only) -/
+/-! ### The multivariate Berry–Esseen bound over Euclidean balls (statement only)
 
-/-- **Berry–Esseen bound over convex sets.** For i.i.d. mean-zero random vectors in `ℝ^k`
-with identity covariance and third absolute moment `β = E‖Y‖³`, the normal approximation
-to the law of `n^{-1/2} ∑ᵢ Yᵢ` is accurate to `400 k^{1/4} β n^{-1/2}`, uniformly over
-measurable convex sets.
-
-DEFERRAL-ELIGIBLE (planned debt; proofless in the reference tradition, cf. Bentkus 2003):
-this statement is quoted, not proved, and its proof is an independent project.
-
-**UNUSED (wave 11).** This declaration now has no consumer anywhere in the repository, and no
-downstream theorem rests on it. The convex-set normal approximation is available *proved* — at
-the honest elementary rate `C_k (β/√n)^{1/4}` rather than the sharp `400 k^{1/4} β/√n` — as
-`StatLean.HypothesisTesting.berryEsseen_convex_elementary` in
-`ForMathlib.MultivariateBerryEsseen`, whose last missing ingredient (the Gaussian
-boundary-shell bound `γ(Bᵋ) ≤ γ(B) + C_k ε` for convex `B`) is now proved in
-`ForMathlib.GaussianShell`. The statement below is kept only as the quoted *sharp* reference
-form; a human decides whether to remove it. -/
-theorem bentkus_berry_esseen_convex {k n : ℕ} {ν : Measure (EuclideanSpace ℝ (Fin k))}
-    {B : Set (EuclideanSpace ℝ (Fin k))}
-    -- USER-INPUT: a nonempty sample
-    (hn : 0 < n)
-    -- USER-INPUT: a nondegenerate dimension
-    (hk : 0 < k)
-    -- USER-INPUT: `ν` is the common law of the summands
-    (hν : IsProbabilityMeasure ν)
-    -- USER-INPUT: the summands are centred; Bentkus 2003
-    (hmean : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)
-    -- USER-INPUT: the summands have identity covariance; Bentkus 2003
-    (hcov : ∀ u v : EuclideanSpace ℝ (Fin k),
-      (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ)
-    -- USER-INPUT: the third absolute moment is finite
-    (hβ : Integrable (fun y => ‖y‖ ^ 3) ν)
-    -- USER-INPUT: the comparison set is measurable (convexity does not imply it in
-    -- dimension `≥ 2`)
-    (hBmeas : MeasurableSet B)
-    -- USER-INPUT: the comparison set is convex; Bentkus 2003
-    (hBconv : Convex ℝ B) :
-    |((((Measure.pi fun _ : Fin n => ν)).map
-          fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) B).toReal
-        - ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) B).toReal|
-      ≤ 400 * (k : ℝ) ^ ((1 : ℝ) / 4) * (∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ) := by
-  -- TODO (RE-DERIVED AGAIN this batch; the deferral verdict is CONFIRMED once more, and
-  -- this one honestly stays.  Nothing acquired in this batch touches it: the new material is
-  -- the mixture–Neyman–Pearson closure of `AsymptoticMaximin.asymptotic_maximin_upper_bound`
-  -- — a least-favourable spherical mixture, Cameron–Martin tilting of the standard Gaussian,
-  -- and a Slutsky/weak-convergence limit passage — none of which produces a *quantitative*
-  -- normal-approximation rate over convex bodies, which is the entire content here.)
-  --
-  -- The statement is the *sharp* Bentkus (2003) bound: rate `β/√n = n^{-1/2}` in the sample
-  -- size, dimensional factor exactly `k^{1/4}`, absolute constant `400`, uniformly over all
-  -- measurable convex sets.  Its proof is Fourier-analytic over convex bodies (surface-area
-  -- / isoperimetric control of the `ε`-neighbourhood of `∂B` for the Gaussian measure) and
-  -- is an independent project; nothing of that machinery exists in Mathlib v4.29.1.
-  --
-  -- It cannot be wired to the sibling `bentkus_berry_esseen_ball` below.  That one is
-  -- discharged by `ForMathlib.MultivariateBerryEsseen.berryEsseen_ball_elementary`, whose
-  -- honest rate is `C (β/√n)^{1/4} = C n^{-1/8}` — obtained by the elementary
-  -- "smooth the indicator + Lindeberg swap" route, at the balance `ε⁻³ β/√n + Cε`.  (An
-  -- earlier version of this comment called the exponent `1/4` "intrinsic"; that is FALSE,
-  -- see the wave-13/16 amendment below — but the *ball* assembly has not been redone at the
-  -- better exponent, so the sibling still quotes `1/4`.)  That rate is strictly
-  -- weaker than `n^{-1/2}`, so it does not imply this statement in any regime; conversely
-  -- this statement is not needed by any consumer in the file — the growing-`k` limit
-  -- theorem below consumes only the *ball* version, and does so at the weaker rate, which
-  -- still gives `→ 0` under the source's growth condition `k³/n → 0`.
-  --
-  -- So this declaration is a quoted reference statement with no downstream dependants, and
-  -- stays as the planned, pre-agreed debt.
-  --
-  -- RE-CHECKED (wave 5), including the explicit question whether the consumer can be
-  -- rerouted to the ball version or the statement weakened to a provable rate.
-  -- • REROUTING IS ALREADY DONE.  A repository-wide search finds no consumer of this
-  --   declaration at all — `smoothStat_largeK_weakConverges_gaussian` goes through
-  --   `bentkus_berry_esseen_ball` (hence `berryEsseen_ball_elementary`, which is discharged),
-  --   and the only other mentions of this name are in the docstrings of
-  --   `ForMathlib/MultivariateBerryEsseen`.  So there is nothing downstream to amend.
-  --   This is unchanged in wave 11: still zero consumers.
-  --
-  -- WAVE-11 AMENDMENT (the second wave-5 bullet is now WRONG and is corrected here).  That
-  -- bullet claimed the *weakened* statement `≤ C_k (β/√n)^{1/4}` over convex sets was "the
-  -- same open problem with a different exponent", on the ground that the elementary route
-  -- only smooths radial indicators.  That was a mis-derivation: the mollification of
-  -- `exists_smoothed_convex_indicator` smooths the indicator of an *arbitrary* set, and the
-  -- only genuinely convex-specific input is the Gaussian boundary-shell bound
-  -- `γ(Bᵋ) ≤ γ(B) + C_k ε`, which is now proved elementarily (no Ball, no isoperimetry) in
-  -- `ForMathlib/GaussianShell`.  Consequently the weakened convex statement is PROVED, as
-  -- `ForMathlib.MultivariateBerryEsseen.berryEsseen_convex_elementary`, 0-sorry and
-  -- axiom-clean.  Any future consumer that tolerates the `1/4` exponent should be wired to
-  -- that theorem rather than to this one.
-  --
-  -- What is *not* available, and is what this declaration still quotes, is the SHARP rate:
-  -- `β/√n` with dimensional factor exactly `k^{1/4}` and absolute constant `400`.
-  --
-  -- WAVE-13 AMENDMENT (the previous sentence here was WRONG and is corrected).  That sentence
-  -- claimed the elementary balance `ε⁻³ β/√n + C_k ε`, minimised at `ε ∼ (β/√n)^{1/4}`,
-  -- "cannot do better whatever the shell constant is".  The arithmetic is right for that
-  -- balance, but the balance is not forced: the `j`-th step of the hybrid telescope already
-  -- carries an independent `N(0,(j/n)I_k)` summand, and for a Gaussian mollification the
-  -- Lindeberg remainder costs `σ_j^{-3}`, not `‖D³f‖_∞`, because the shift can be moved onto
-  -- the *density* (Cameron–Martin) instead of onto the test function.  Summing
-  -- `min(A ε⁻³ n^{-3/2}, j^{-3/2})` over `j < n` turns `ε⁻³` into `ε⁻¹`, and the balance
-  -- `ε⁻¹ β/√n + C_k ε` gives the strictly better elementary rate `(β/√n)^{1/2} = n^{-1/4}`.
-  --
-  -- WAVE-16: THAT IMPROVEMENT IS NOW PROVED IN FULL.  The last assembly brick — the hybrid
-  -- telescope carrying its own Gaussian smoothing — is
-  -- `abs_integral_smooth_sub_gaussian_improved`, and the headline it yields is
-  -- `ForMathlib.MultivariateBerryEsseen.berryEsseen_convex_improved`,
-  --   `|μₙ(B) − γ(B)| ≤ C (β/√n)^{1/2}` for measurable convex `B`, `C = C₀ + gaussianShellConst k`,
-  -- 0-sorry and axiom-clean, together with its Lévy form `berryEsseen_convex_levy_improved`.
-  -- So the convex side of the elementary route now stands at `n^{-1/4}`, not `n^{-1/8}`.
-  -- The *ball* side too: `berryEsseen_ball_improved` gives `C (β/√n)^{1/2}` with the same
-  -- dimension-free constant shape, the two exponents now sharing the `ε`-generic assembly
-  -- `berryEsseen_ball_of_swap`.  The sibling `bentkus_berry_esseen_ball` below is left wired
-  -- to the `1/4` version, since `(β/√n)^{1/2}` and `(β/√n)^{1/4}` are not comparable when
-  -- `β/√n > 1` and no consumer needs the better exponent.
-  --
-  -- Even the improved elementary ceiling is `(β/√n)^{1/2}`, not `β/√n`, and THIS statement is
-  -- still not implied by it.  RE-DERIVED (wave 16), concretely: the missing factor comes from
-  -- the swap error being bounded *globally*, whereas `D³` of a mollified indicator lives on
-  -- the `ε`-shell of `∂B`.  Localising replaces the uniform step bound by one weighted by
-  -- `P(hybrid ∈ shell)`, which is an anti-concentration bound for the **hybrid** laws — not
-  -- available from `gaussian_thickening_le`, which is about `γ` only.  Bentkus closes this by
-  -- the self-improving induction `Δ ≤ A ε⁻³ δ (C_k ε + 2Δ) + C_k ε` (closing at
-  -- `Δ ≲ C_k δ^{1/3}`, and at the sharp rate when iterated with the Gaussian smoothing).
-  -- Formalising it needs a *weighted* version of `integral_abs_vecTiltRemainder_le` — the
-  -- Cameron–Martin remainder integrated against `|G|` rather than bounded by `‖G‖_∞ = 1`,
-  -- i.e. a Hölder/`L²` form of that lemma — plus an induction over `n` in which the bound
-  -- being proved appears on both sides.
-  --
-  -- WAVE-19: BOTH OF THOSE TWO INGREDIENTS ARE NOW PROVED, and the deferral verdict is
-  -- correspondingly narrowed — the gap is no longer "an independent project" but one
-  -- precisely stated probabilistic step.
-  -- • The weighted bound is `integral_abs_mul_vecTiltRemainder_le`, with the localised
-  --   corollary `abs_integral_mul_vecTiltRemainder_le_of_support`: a test function with
-  --   `|G| ≤ 1` supported on a set `S` pairs with the Cameron–Martin remainder at cost
-  --   `√(γ S) · √tiltSqConst · ‖w‖³`.  It rests on the new `L²` remainder bound
-  --   `integral_sq_vecTiltRemainder_le`, which is again DIMENSION-FREE (same
-  --   one-dimensional-marginal reduction) and still cubic in the shift, so the telescope
-  --   arithmetic is unchanged.  (It needs `‖w‖ ≤ 1`, which is exactly the regime the
-  --   telescope uses; the `L²` statement is false for large tilts.)
-  -- • The recursion is solved in the `SelfImproving` section of the same file, in all three
-  --   shapes: `Δ ≤ A δ ε⁻³ (C_k ε + 2Δ) + C_k ε` closes at `Δ ≲ C_k δ^{1/3}`; the SMOOTHED
-  --   recursion `Δ ≤ A δ ε⁻¹ (C_k ε + 2Δ) + C_k ε` — `ε⁻¹` being what the Gaussian smoothing
-  --   of the hybrid telescope already buys — closes at `Δ ≤ 10 A C_k δ`, i.e. EXACTLY the
-  --   sharp `β/√n` rate; and the Cauchy–Schwarz variant that the `L²` weighting actually
-  --   supplies, `Δ ≤ A δ ε⁻¹ √(C_k ε + 2Δ) + C_k ε`, closes at `Δ ≲ (C_k β/√n)^{2/3}`,
-  --   i.e. `O(n^{-1/3})`.
-  -- WAVE-20: THE RECURSION IS NOW PRODUCED, and both structural obstacles are resolved.  The
-  -- sharp headline `ForMathlib.MultivariateBerryEsseen.berryEsseen_convex_sharp` states
-  --   `|μₙ(B) − γ(B)| ≤ 72 A C_k · β/√n` for measurable convex `B`,
-  -- LINEAR in `β/√n`, proved from `exists_convexDiscrepancy_recursion` fed to
-  -- `le_of_selfImproving_induction`.  It is NOT axiom-clean: it inherits exactly two named
-  -- bricks, `hybridLaw_shell_le` and `exists_localised_swap_bound` (both `sorry` at the time;
-  -- the first is proved in wave 22, see below).
-  -- • Obstacle 1 (the class) is OVERTURNED, not solved.  The `ε`-shell is a difference of two
-  --   convex sets, but the induction need not be enlarged to that class:
-  --   `μ(B₁ \ B₂) = μ(B₁) − μ(B₂)` for `B₂ ⊆ B₁`, so two applications of the convex bound
-  --   suffice (`measureReal_diff_le_of_convexDiscrepancy`); the difference structure survives
-  --   only as the factor `2` in `C ε + 2Δ`.  The class is `convexDiscrepancy`, and it is
-  --   affine-invariant (`measureReal_shell_preimage_aff_le`, proved).
-  -- • Obstacle 2 (the family) is solved by the neighbour range `n/2 ≤ m ≤ n`.  `hybridLaw`
-  --   makes the hybrid an explicit measure; for `2j ≥ n` its own Gaussian component (width
-  --   `≥ 1/√2`) bounds the shell mass with NO induction
-  --   (`gaussian_measureReal_shell_preimage_aff_le`, proved), and for `2j ≤ n` the sum part
-  --   has `m = n − j ≥ n/2` summands.  `m = n` must be included (the `j = 0` hybrid IS `μₙ`),
-  --   which `le_of_selfImproving_induction` handles with `Y = max (2Kδ) (D n)`, closing at
-  --   `K = 18 A C` with no base case.
-  -- WAVE-22: BRICK H IS PROVED (`hybridLaw_shell_le`, axiom-clean), so `berryEsseen_convex_sharp`
-  -- now rests on exactly ONE brick, `exists_localised_swap_bound`.  Brick H came out of the two
-  -- Fubini identities for `Measure.prod` applied to the explicit `hybridLaw` map, plus the
-  -- wave-20 affine transport; the only non-formal ingredient was `map_sum_pi_dirac_drop`, that
-  -- the `δ₀` factors of the hybrid product drop out of the law of the coordinate sum (proved by
-  -- characteristic functions, no index surgery).  What is left is brick L: the rerun of
-  -- `abs_integral_smooth_sub_gaussian_improved` with a shell-weighted Cameron–Martin remainder.
-  -- Note that brick L as stated asks for the `L^∞` weight `W`, which is STRICTLY STRONGER than
-  -- the wave-19 `L²`/Cauchy–Schwarz lemma `abs_integral_mul_vecTiltRemainder_le_of_support`
-  -- (that one delivers `√W`, hence only `O(n^{-1/3})` through
-  -- `cube_le_of_selfImproving_smoothed_sqrt`).  The `L^∞` form is not a corollary of the
-  -- wave-19 lemma: it needs the shell weight to be carried by the HYBRID law rather than by `γ`.
-  -- CONSTANT: WAVE-22 also improved the shell constant from `k^{3/2}` to `k^{1/2}`.
-  -- `gaussianShellConst k` is now `4 e² √k` (`gaussian_le_of_gaussian_shift_cover`: one random
-  -- Gaussian shift instead of the `2k`-fold coordinate cover), so the route gives `C ∼ k^{1/2}`,
-  -- still not `400 k^{1/4}` — the residual `√k` is `E‖Z‖ ≤ √k` and closing it needs Ball's
-  -- Gaussian-surface-area theorem, not anything in the recursion.  This declaration keeps its
-  -- sharp Bentkus form with `400 k^{1/4}` and stays the pre-agreed, consumer-free debt of this
-  -- file: wiring
-  -- it to `berryEsseen_convex_sharp` would neither discharge it (the constant differs) nor
-  -- reduce the project's `sorry` count (that theorem is itself brick-backed).
-  --
-  -- WAVE-24: BRICK L AS FROZEN IS FALSE, and is amended; its large-weight half is proved.  The
-  -- wave-20 statement asked for `|∫f dμₙ − ∫f dγ| ≤ A (β/√n) ε⁻¹ W` with the BARE hybrid shell
-  -- weight `W`.  Counterexample (in full at `exists_localised_swap_bound`): `k = 1`, `n = 1`,
-  -- `ε = 1`, `ν` two-point with mass `p` at `−a`, `a = √((1−p)/p)`, `B = (−∞, −a/2]`.  The shell
-  -- `[−a/2, −a/2+2)` misses both atoms of `ν`, so `W ≍ e^{−a²/8}` is admissible, while
-  -- `∫f dν = p`; as `p ↓ 0` the left side is polynomially small and the right side
-  -- exponentially small.  The mechanism: `W` may sit far BELOW the Gaussian shell scale
-  -- `C_k ε`, which no swap estimate can exploit.  The amendment replaces the weight by
-  -- `W + C_k ε`; it is free at the only call site, so `berryEsseen_convex_sharp` and its
-  -- constant are unchanged.
-  -- • PROVED, axiom-clean: `exists_smooth_swap_bound_of_one_le_weight` — the amended brick
-  --   whenever `W + C_k ε ≥ 1`, with NO localisation at all.
-  -- • The residue is one named brick, `localised_swap_bound_small_weight` (same statement under
-  --   `W + C_k ε ≤ 1`), and the wave-22 claim that the localisation is a mechanical rerun of the
-  --   telescope with the wave-19 `L²` lemma substituted is OVERTURNED.  Splitting
-  --   `f = 1_{interior B} + g` leaves `∫ 1_K R_w dγ = γ(K − w) − Q_w(K)` with `K` convex, whose
-  --   control by the shell mass wave 24 read as a Gaussian surface-area statement about convex
-  --   bodies, i.e. Ball's input again.
-  --
-  -- WAVE-29: THAT LAST VERDICT IS OVERTURNED — no surface area is involved.  The tilt remainder
-  -- has MEAN ZERO (`integral_vecTiltRemainder_eq_zero`), so a constant may be subtracted from
-  -- the test function for free; a mollified convex indicator is CONSTANT on the ball of radius
-  -- `r` about any `v` at distance `≥ r` from the shell; and Cauchy–Schwarz against the plain
-  -- Gaussian tail `γ{‖z‖ ≥ r/σ}` (`stdGaussian_norm_ge_le`, Markov at any order) localises the
-  -- indicator half.  New, proved, axiom-clean, dimension-free:
-  -- `abs_integral_mul_vecTiltRemainder_le_of_const_off` and
-  -- `abs_integral_shift_vecTiltRemainder_le_of_const_ball`.
-  -- • Two corrections to the brick's interface, both forced and both FREE at the call site, so
-  --   the recursion and `berryEsseen_convex_sharp` are again unchanged.  (i) The bad set is the
-  --   TWO-SIDED shell `Bˢ \ B_{−s}`: the localisation also fails just INSIDE `B`, which the
-  --   frozen outer-shell hypothesis could not see.  (ii) It must be controlled at EVERY width
-  --   `s`, because step `j` is smoothed at `σⱼ = √(j/n)`, which for `j` near `n` is `≫ ε`.
-  --   `hybridLaw_wideShell_le` (wave 29, proved) is brick H for exactly that, at every width;
-  --   the conditioning shared with `hybridLaw_shell_le` is factored as
-  --   `hybridLaw_le_of_affine_le`.
-  -- • Two gaps neither wave 24 nor the wave-29 plan had seen: the `L²` tilt bound needs
-  --   `‖w‖ = ‖y‖/√j ≤ 1`, so the wave-19 lemma does NOT apply verbatim to the `g` part either
-  --   (the large-`‖y‖` region needs the tilt identity directly, and its `v`-average costs a
-  --   two-sided shell at width `c‖y‖` — hence "every width"); and the summed weight is
-  --   `δ(2 C_k log(1/ε) + W/ε)`, so this route will give the sharp rate UP TO ONE LOGARITHM,
-  --   `C_k (β/√n)(1 + log(√n/β))`.  The log is intrinsic to a single mollification width.
-  -- So THIS declaration is unchanged and stays the pre-agreed debt: the sharp `β/√n` route is
-  -- still brick-backed, its eventual conclusion will carry a logarithm, and even then it gives
-  -- `C ∼ √k`, not `400 k^{1/4}` — for the CONSTANT (not the rate) Ball's theorem is still what
-  -- separates the two.
-  sorry
+**Not present: the convex-sets reference statement.** An earlier revision stated here, as a
+quoted reference with a `sorry` body, the sharp multivariate Berry–Esseen bound over all
+measurable convex sets at the rate `400 k^{1/4} β/√n` (Bentkus 2003). It was removed: it had
+no consumers anywhere in the repository — the limit theorem below consumes only the **ball**
+version, which is discharged — and the *proved* convex-sets bounds live in
+`ForMathlib.MultivariateBerryEsseen`: `berryEsseen_convex_elementary` at `(β/√n)^{1/4}`,
+`berryEsseen_convex_improved` at `(β/√n)^{1/2}`, and the brick-backed sharp-rate development
+`berryEsseen_convex_sharp`. The dimensional gap between those constants and Bentkus's sharp
+`400 k^{1/4}` is a Gaussian surface-area input (Ball 1993) whose formalisation is an
+independent project; see the module docstring of `ForMathlib.MultivariateBerryEsseen`. -/
 
 /-- **Berry–Esseen bound over Euclidean balls, with a dimension-free constant (honest rate).**
 There is an absolute constant `C` — independent of the dimension, of the sample size and of the
