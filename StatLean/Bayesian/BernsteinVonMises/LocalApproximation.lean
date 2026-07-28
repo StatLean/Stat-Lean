@@ -1755,6 +1755,142 @@ private lemma lintegral_bvmStepBBound_mul_tendsto
   refine ENNReal.tendsto_nhds_zero.mpr fun ε hε => ?_
   exact ((ENNReal.tendsto_nhds_zero.mp hdct) ε hε).mono fun n hn => le_trans (hle n) hn
 
+-- LEAN-ONLY: uniform tightness of the score sums (score CLT + Prohorov's converse).
+private lemma exists_scoreSum_bound
+    -- USER-INPUT: dominated iid model with normalized densities; vdV §10.2, p. 140
+    (hPDF : IsPDFOf M μ)
+    -- LEAN-ONLY: measurable score (regularity)
+    (hsc : Measurable sc)
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
+    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    (hJ_pd : J.PosDef)
+    -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
+    (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
+      ⟪u, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) v))⟫)
+    {ε : ℝ≥0∞} (hε : 0 < ε) :
+    ∃ K : ℝ, 0 < K ∧ ∀ n : ℕ,
+      productMeasure M μ θ₀ n {ω : Fin n → 𝓧 | K < ‖scoreSum sc n ω‖} ≤ ε := by
+  classical
+  haveI hProb : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
+    AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
+      M μ hPDF θ₀ n
+  have hscmeas : ∀ n : ℕ, Measurable (scoreSum sc n) := by
+    intro n
+    have hsum : Measurable fun ω : Fin n → 𝓧 => ∑ i, sc (ω i) :=
+      Finset.measurable_sum Finset.univ fun i _ => hsc.comp (measurable_pi_apply i)
+    unfold scoreSum
+    exact hsum.const_smul ((Real.sqrt (n : ℝ))⁻¹)
+  haveI hmapProb : ∀ n : ℕ,
+      IsProbabilityMeasure ((productMeasure M μ θ₀ n).map (scoreSum sc n)) := fun n => ⟨by
+    rw [Measure.map_apply (hscmeas n) MeasurableSet.univ, Set.preimage_univ, measure_univ]⟩
+  haveI hGprob : IsProbabilityMeasure
+      (ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J) := inferInstance
+  have hwc := AsymptoticStatistics.AsymptoticRepresentation.scoreSum_weakly_converges
+    M μ θ₀ sc hsc (hPDF.density_integral_eq_one θ₀) (hPDF.density_integrable θ₀)
+    (fun _ _ => hPDF.density_integral_eq_one _) (fun _ _ => hPDF.density_integrable _)
+    hDQM J hJ_pd.posSemidef hJ
+  have htight := AsymptoticStatistics.Prohorov.weakConverges_range_tight
+    (fun n => (productMeasure M μ θ₀ n).map (scoreSum sc n)) _ hwc
+  obtain ⟨Kc, hKc, hKle⟩ :=
+    MeasureTheory.isTightMeasureSet_iff_exists_isCompact_measure_compl_le.mp htight ε hε
+  obtain ⟨r, hr⟩ := hKc.isBounded.subset_closedBall 0
+  refine ⟨max r 1, lt_of_lt_of_le one_pos (le_max_right _ _), fun n => ?_⟩
+  have hsub : {x : EuclideanSpace ℝ (Fin k) | max r 1 < ‖x‖} ⊆ Kcᶜ := by
+    intro x hx hxK
+    have hx' := hr hxK
+    rw [Metric.mem_closedBall, dist_zero_right] at hx'
+    exact absurd (lt_of_le_of_lt (le_max_left r 1) hx) (not_lt.mpr hx')
+  calc productMeasure M μ θ₀ n {ω : Fin n → 𝓧 | max r 1 < ‖scoreSum sc n ω‖}
+      = ((productMeasure M μ θ₀ n).map (scoreSum sc n))
+          {x : EuclideanSpace ℝ (Fin k) | max r 1 < ‖x‖} := by
+        rw [Measure.map_apply (hscmeas n) (measurableSet_lt measurable_const measurable_norm),
+          Set.preimage_setOf_eq]
+    _ ≤ ((productMeasure M μ θ₀ n).map (scoreSum sc n)) Kcᶜ := measure_mono hsub
+    _ ≤ ε := hKle _ ⟨n, rfl⟩
+
+-- LEAN-ONLY: the local mass is finite predictive-a.e., and where it vanishes the conditioned
+-- posterior is the zero measure (so the conditioned total-variation distance vanishes too).
+private lemma bvmNumer_ne_top_and_tvDist_zero_ae
+    -- USER-INPUT: dominated iid model, `κ θ = p_θ · μ`; vdV §10.2, p. 140
+    (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
+    -- LEAN-ONLY: joint measurability of the model densities (regularity)
+    (hM_joint : Measurable (Function.uncurry M.density))
+    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    (hπ : HasLocalDensity π θ₀ r₀ f) {R : ℝ}
+    -- LEAN-ONLY: nontrivial localization radius
+    (hR : 0 < R)
+    -- LEAN-ONLY: the rescaled ball sits inside the absolute-continuity zone
+    {n : ℕ} (hn : R < r₀ * Real.sqrt n) :
+    ∀ᵐ ω ∂(iidKernel κ n ∘ₘ π),
+      bvmNumer M f θ₀ n (Metric.closedBall 0 R) ω ≠ ∞ ∧
+        (bvmNumer M f θ₀ n (Metric.closedBall 0 R) ω = 0 →
+          Minimaxity.tvDist
+            ((bvmLocalPosterior κ π θ₀ n ω)[|Metric.closedBall
+              (0 : EuclideanSpace ℝ (Fin k)) R])
+            ((bvmGaussian J sc n ω)[|Metric.closedBall
+              (0 : EuclideanSpace ℝ (Fin k)) R]) = 0) := by
+  classical
+  have hsqrt : 0 < Real.sqrt n := by
+    rcases le_or_gt (Real.sqrt n) 0 with hle | hlt
+    · exact absurd hn (by nlinarith [hπ.rad_pos])
+    · exact hlt
+  have hn1 : 1 ≤ n := by
+    rcases Nat.eq_zero_or_pos n with h0 | h1
+    · subst h0; simp at hsqrt
+    · exact h1
+  set C : Set (EuclideanSpace ℝ (Fin k)) := Metric.closedBall 0 R with hCdef
+  have hC : MeasurableSet C := measurableSet_closedBall
+  have hsubC : bvmLocalScale θ₀ n ⁻¹' C ⊆ Metric.ball θ₀ r₀ := by
+    intro θ hθ
+    have h1 : bvmLocalScale θ₀ n θ ∈ C := hθ
+    rw [hCdef, Metric.mem_closedBall, dist_zero_right, bvmLocalScale, norm_smul,
+      Real.norm_eq_abs, abs_of_pos hsqrt] at h1
+    rw [Metric.mem_ball, dist_eq_norm]
+    have h2 : Real.sqrt n * ‖θ - θ₀‖ < Real.sqrt n * r₀ :=
+      lt_of_le_of_lt h1 (by rw [mul_comm]; exact hn)
+    exact lt_of_mul_lt_mul_left h2 hsqrt.le
+  have hdens_meas : Measurable
+      (Function.uncurry fun θ (x : 𝓧) => ENNReal.ofReal (M.density θ x)) :=
+    ENNReal.measurable_ofReal.comp hM_joint
+  have hP : Measurable (Function.uncurry
+      fun (θ : EuclideanSpace ℝ (Fin k)) (x : Fin n → 𝓧) =>
+        ∏ i, ENNReal.ofReal (M.density θ (x i))) :=
+    measurable_uncurry_prod_likelihood hdens_meas
+  have hκ' : ∀ θ, iidKernel κ n θ
+      = (Measure.pi fun _ : Fin n => μ).withDensity
+          fun x => ∏ i, ENNReal.ofReal (M.density θ (x i)) :=
+    fun θ => iidKernel_withDensity hdens_meas hκ n θ
+  have hpreC : MeasurableSet (bvmLocalScale θ₀ n ⁻¹' C) := (measurable_bvmLocalScale θ₀ n) hC
+  have hqpos : (0 : ℝ) < ((Real.sqrt n)⁻¹) ^ k := by positivity
+  have hq : ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k) ≠ 0 := (ENNReal.ofReal_pos.mpr hqpos).ne'
+  filter_upwards [posterior_apply_eq_div (π := π) hP hκ' (MeasurableSet.univ
+      (α := EuclideanSpace ℝ (Fin k))),
+    posterior_apply_eq_div (π := π) hP hκ' hpreC] with ω hωU hωC
+  set Z := ∫⁻ θ', (∏ i, ENNReal.ofReal (M.density θ' (ω i))) ∂π with hZdef
+  have hZ1 : Z / Z = 1 := by
+    have h := hωU
+    simp only [Measure.restrict_univ, measure_univ] at h
+    exact h.symm
+  have hZtop : Z ≠ ∞ := by intro h0; rw [h0] at hZ1; simp at hZ1
+  have hjac := lintegral_preimage_eq_jac_mul_bvmNumer hπ hM_joint hn1 hC hsubC ω
+  have hle : ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k) * bvmNumer M f θ₀ n C ω ≤ Z := by
+    rw [← hjac]
+    exact lintegral_mono' Measure.restrict_le_self le_rfl
+  have h1 : bvmNumer M f θ₀ n C ω ≠ ∞ := by
+    intro htop
+    rw [htop, ENNReal.mul_top hq] at hle
+    exact hZtop (top_le_iff.mp hle)
+  refine ⟨h1, fun hS0 => ?_⟩
+  have hpost : bvmLocalPosterior κ π θ₀ n ω C = 0 := by
+    rw [bvmLocalPosterior, Kernel.map_apply' _ (measurable_bvmLocalScale θ₀ n) _ hC, hωC,
+      hjac, hS0, mul_zero, ENNReal.zero_div]
+  have hcond : ((bvmLocalPosterior κ π θ₀ n ω)[|C]) = 0 := by
+    rw [ProbabilityTheory.cond, Measure.restrict_eq_zero.mpr hpost, smul_zero]
+  rw [hcond]
+  refine le_antisymm (iSup_le fun t => iSup_le fun _ => ?_) (zero_le _)
+  simp
+
 /-- **Step B: the conditioned Bernstein–von Mises convergence** (vdV pp. 142–143). For every
 fixed radius `R > 0` and every `δ > 0`, the `P^n_{θ₀}`-probability that the conditioned
 local posterior and the conditioned Gaussian differ by at least `δ` in total variation tends
