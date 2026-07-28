@@ -7283,7 +7283,58 @@ handled:
   mismatch `a_v ≠ a_{v + c y}` costing the mass of a `c‖y‖`-neighbourhood of `∂B`, i.e. again a
   two-sided shell, at width `c‖y‖ ≤ σⱼ‖w‖`. This is the reason the amended hypothesis is stated
   at *all* widths and not merely at the `σⱼ`. Third-moment integrability of `y` prices the
-  `{‖y‖ > √j}` tail. -/
+  `{‖y‖ > √j}` tail.
+
+## Wave 35: the bookkeeping side is CLOSED, and two ledger corrections
+
+Wave 35 discharges the rest of the bookkeeping in Lean and sharpens the residue. The reduction
+
+`localised_swap_bound_of_weighted_telescope`
+
+is proved and axiom-clean: it derives this theorem's conclusion, with the explicit constant
+`18 C₃ + 33 C_t`, from the weighted hybrid telescope at every cut `J ≥ 2`, by taking
+`J = max 2 ⌈ε² n⌉` and running the arithmetic of `weighted_ledger_balance`. Its `D` is an
+arbitrary real and no hypothesis about `B` or `f` is used, so it is exactly the reduction and
+nothing more. With `sum_le_of_bounded_and_weighted_decay` (wave 32, the summation half) the
+entire non-analytic side of this brick is now machine-checked.
+
+**Correction 1 (the head must be weighted too).** The wave-32 ledger estimates the head
+`j ≤ J` as `J·(M/6)c³·3β ≤ (3/2) C₃ δ ε⁻¹`, *unweighted*. That cannot close: the amended
+conclusion contains **no bare `ε⁻¹`** — every `ε⁻¹` in it appears as `ε⁻¹(W + C_k ε)`, which
+stays bounded as `ε ↓ 0` when `W = 0`, while `(3/2) C₃ δ ε⁻¹` blows up. So the elementary
+(third-order Taylor) steps must be localised as well, at the weight `4 C_k σ_J + W`, with
+`σ_J = √J/√n ≤ 2ε` at the chosen cut; the head then lands on `18 C₃ δ ε⁻¹(W + C_k ε)`. This is
+recorded in the hypothesis of `localised_swap_bound_of_weighted_telescope` and is now the
+*second* analytic item, alongside the Cameron–Martin one below.
+
+**Correction 2 (the window `1 ≤ ε √n` is not optional).** The ledger is silent about `ε √n < 1`,
+and there it fails: the cut degenerates to `J = 2`, the head becomes `≍ C₃ β (W/t³ + C_k ε/t⁴)`
+with `t = ε √n`, and this exceeds the right-hand side `≍ β (W/t + C_k/√n)` by `t^{-2}`. No cut
+repairs it, because the elementary step bound beats the Cameron–Martin one only for `j ≲ ε² n`,
+i.e. for no step at all. Nor is the trivial bound `|∫ f dμ − ∫ f dγ| ≤ 2` available here (unlike
+in `exists_smooth_swap_bound_of_one_le_weight`, where `W ≥ 1` makes the right-hand side `≥ A`):
+for `ε √n < 1` the right-hand side is `≥ A C_k β/√n`, which is `o(1)`. The statement is still
+*true* in that window — it is implied by Bentkus's theorem, as the whole amended statement is —
+but this route cannot prove it there, since sandwiching `f` between `1_B` and `1_{B^ε}` leaves
+exactly `|μₙ(B) − γ(B)| ≤ A C_k β/√n`, the sharp bound itself. A future wave must either thread
+`1 ≤ ε √n` through `exists_localised_swap_bound` and `exists_convexDiscrepancy_recursion` (it is
+free at the call site iff the recursion is only ever run at `ε ≥ n^{-1/2}`, which has not been
+checked), or find a separate argument for the small window.
+
+**The residue, after wave 35.** Two per-step estimates on the hybrid telescope, both localised
+by the two-sided-shell hypothesis, and nothing else:
+
+* *head steps* (`j ≤ J`): the elementary swap `abs_integral_swap_step_le` localised to weight
+  `4 C_k σ_J + W`, cost `(M/6) n^{-3/2}(β + β_G)` — correction 1;
+* *tail steps* (`j > J`): the Cameron–Martin swap `abs_integral_gaussian_smoothed_swap_le`
+  localised to weight `4 C_k σⱼ + W`, cost `C_t(β + β_G)/(j√j)` — the wave-32 item, whose
+  `‖w‖ ≤ 1` obstruction is analysed above.
+
+Both are averaged statements (the weight is a *mass* under `hybridLaw n j ν`, not a pointwise
+bound), so `hstepgen` inside `abs_integral_smooth_sub_gaussian_improved` has to be generalised
+from a constant `D` to a `v`-dependent one integrated against the remaining coordinates. That
+generalisation, and the two estimates, are all that stand between this `sorry` and the headline.
+-/
 theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 0 < C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
@@ -7306,6 +7357,10 @@ theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (h
         ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
             * (ε⁻¹ * (W + gaussianShellConst k * ε)
               + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by
+  -- Wave 35: the reduction to the weighted telescope is proved and axiom-clean, see
+  -- `localised_swap_bound_of_weighted_telescope`; what is missing is its hypothesis `htel`,
+  -- i.e. the two localised per-step swap estimates listed at the end of the note above (and,
+  -- separately, the window `ε √n < 1`, which this route does not reach — correction 2).
   sorry
 
 /-- **Brick L (wave 24: AMENDED, and proved over `localised_swap_bound_small_weight`).** *The
