@@ -33,6 +33,11 @@ proved:
 * `abs_inv_sqrt_one_add_sub_le`, `abs_studentFactor_sub_taylor_le` — the uniform second-order
   Taylor bound for the studentizing factor `(1 + x)^{-1/2}`, proved algebraically, and the
   resulting `O(n^{-1})` pointwise replacement of the studentized root by its surrogate;
+* `measure_Ioc_le_of_abs_cdf_sub_le`, `abs_measure_le_sub_le_of_cdf_approx` — anti-concentration
+  is a *corollary* of an approximate distribution function, not a separate hypothesis;
+* `abs_measure_le_sub_le_of_peel` — the dyadically peeled perturbation bound, whose strata are
+  joint window-times-tail events; it strictly strengthens the single-scale
+  `abs_measure_le_sub_le_of_dist_le`, which cannot reach `O(n⁻¹)` for the studentized root;
 * `normalCDF_sub_le`, `stdNormalCDF_sub_le` — the Lipschitz modulus of the normal distribution
   function, the constant `A` that Esseen's smoothing inequality consumes;
 * `edgeworth_mean_uniform` — the expansion for the centred root, with a uniform `O(n^{-1})`
@@ -1309,6 +1314,239 @@ theorem abs_measure_le_sub_le_of_dist_le {Ω : Type*} [MeasurableSpace Ω] (P : 
       ENNReal.toReal_add (hfin V) (hfin W)] at h2
   have h1 := hbound A B C D hsub1
   have h2 := hbound B A C D hsub2
+  rw [abs_sub_le_iff]
+  constructor <;> linarith
+
+/-! ### The anti-concentration hypothesis is free
+
+Wave 14's note recorded the anti-concentration `sup_x P(H_n ∈ (x, x + n⁻¹]) = O(n⁻¹)` for the
+delta-method surrogate as one of the two things left of (M2), to be obtained by "first proving a
+cruder `O(n^{-1/2})` expansion and bootstrapping". **That is both unnecessary and insufficient**,
+and the reason is arithmetic. A Berry–Esseen-grade bound `|P(H_n ≤ x) − Φ(x)| ≤ Cn^{-1/2}` gives
+only `P(H_n ∈ (x, x + n⁻¹]) ≤ C'n⁻¹ + 2Cn^{-1/2} = O(n^{-1/2})`, one whole order short of what
+the assembly consumes; a cruder expansion can never produce a finer interval bound than its own
+accuracy.
+
+What is true is better: anti-concentration at scale `n⁻¹` is a **corollary of the very expansion
+the route is proving for `H_n`**, and therefore costs nothing. `measure_Ioc_le_of_abs_cdf_sub_le`
+below is the observation, in the general form: if the distribution function of `T` is within `ε`
+of an `A`-Lipschitz comparison function `G`, then `T` puts at most `A(b − a) + 2ε` on `(a, b]`.
+Applied with `T = H_n`, `G` the Edgeworth approximant (Lipschitz uniformly in `n` by
+`setIntegral_abs_edgeworthDensity_le`) and `ε = C/n` — which is exactly the conclusion of the
+(M1)(b) route for `H_n`, needed anyway — it yields `A n⁻¹ + 2Cn⁻¹`, as required. There is no
+circularity: the expansion for `H_n` is proved first, by characteristic functions, and the
+anti-concentration is read off it afterwards. -/
+
+/-- **Anti-concentration from an approximate distribution function.** If `|P(T ≤ x) − G(x)| ≤ ε`
+uniformly and `G` has Lipschitz constant `A`, then `P(a < T ≤ b) ≤ A(b − a) + 2ε`. -/
+theorem measure_Ioc_le_of_abs_cdf_sub_le {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsProbabilityMeasure P] {T : Ω → ℝ} (hT : Measurable T) {G : ℝ → ℝ} {A ε : ℝ}
+    (hG : ∀ a b : ℝ, a ≤ b → G b - G a ≤ A * (b - a))
+    (happrox : ∀ x : ℝ, |(P {ω | T ω ≤ x}).toReal - G x| ≤ ε)
+    {a b : ℝ} (hab : a ≤ b) :
+    (P {ω | a < T ω ∧ T ω ≤ b}).toReal ≤ A * (b - a) + 2 * ε := by
+  have hSa : MeasurableSet {ω | T ω ≤ a} := hT measurableSet_Iic
+  have hC : MeasurableSet {ω | a < T ω ∧ T ω ≤ b} := hT measurableSet_Ioc
+  have hdisj : Disjoint {ω | T ω ≤ a} {ω | a < T ω ∧ T ω ≤ b} := by
+    rw [Set.disjoint_left]
+    rintro ω hω ⟨hω', -⟩
+    exact absurd hω (not_le.2 hω')
+  have hunion : {ω | T ω ≤ a} ∪ {ω | a < T ω ∧ T ω ≤ b} = {ω | T ω ≤ b} := by
+    ext ω
+    simp only [Set.mem_union, Set.mem_setOf_eq]
+    constructor
+    · rintro (h | ⟨-, h⟩)
+      · linarith
+      · exact h
+    · intro h
+      rcases le_or_gt (T ω) a with h' | h'
+      · exact Or.inl h'
+      · exact Or.inr ⟨h', h⟩
+  have htoreal : (P {ω | a < T ω ∧ T ω ≤ b}).toReal
+      = (P {ω | T ω ≤ b}).toReal - (P {ω | T ω ≤ a}).toReal := by
+    rw [← hunion, measure_union hdisj hC,
+      ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)]
+    ring
+  have h1 := abs_le.1 (happrox b)
+  have h2 := abs_le.1 (happrox a)
+  have h3 := hG a b hab
+  rw [htoreal]
+  linarith [h1.1, h1.2, h2.1, h2.2]
+
+/-- **The corrected (M2) assembly.** The anti-concentration term of
+`abs_measure_le_sub_le_of_dist_le` is discharged by the approximation of `T`'s distribution
+function itself: if `|P(T ≤ x) − G(x)| ≤ ε` uniformly with `G` `A`-Lipschitz, then
+
+`|P(S ≤ x) − G(x)| ≤ P(|S − T| > δ) + 2Aδ + 3ε`.
+
+With `T = H_n` the delta-method surrogate, `G` the Edgeworth approximant, `ε = C/n` and
+`δ = n⁻¹`, every term but the first is `O(n⁻¹)` automatically — so what (M2) really needs is
+*only* the tail bound `P(|T̃_n − H_n| > n⁻¹) = O(n⁻¹)`, and nothing about anti-concentration. -/
+theorem abs_measure_le_sub_le_of_cdf_approx {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsProbabilityMeasure P] {S T : Ω → ℝ} (hS : Measurable S) (hT : Measurable T)
+    {G : ℝ → ℝ} {A ε δ : ℝ} (hδ : 0 ≤ δ)
+    (hG : ∀ a b : ℝ, a ≤ b → G b - G a ≤ A * (b - a))
+    (happrox : ∀ x : ℝ, |(P {ω | T ω ≤ x}).toReal - G x| ≤ ε) (x : ℝ) :
+    |(P {ω | S ω ≤ x}).toReal - G x|
+      ≤ (P {ω | δ < |S ω - T ω|}).toReal + 2 * A * δ + 3 * ε := by
+  have hsplit := abs_measure_le_sub_le_of_dist_le P hS hT hδ x
+  have hwin : (P {ω | x - δ < T ω ∧ T ω ≤ x + δ}).toReal ≤ A * (2 * δ) + 2 * ε := by
+    have h := measure_Ioc_le_of_abs_cdf_sub_le P hT hG happrox
+      (a := x - δ) (b := x + δ) (by linarith)
+    have harg : x + δ - (x - δ) = 2 * δ := by ring
+    rwa [harg] at h
+  have hT' := abs_le.1 (happrox x)
+  have hS' : |(P {ω | S ω ≤ x}).toReal - G x|
+      ≤ |(P {ω | S ω ≤ x}).toReal - (P {ω | T ω ≤ x}).toReal|
+        + |(P {ω | T ω ≤ x}).toReal - G x| :=
+    abs_sub_le _ _ _
+  have hTx := happrox x
+  have hnn : (0 : ℝ) ≤ (P {ω | δ < |S ω - T ω|}).toReal := ENNReal.toReal_nonneg
+  linarith
+
+/-! ### The peeled assembly: what the corrected (M2) really needs
+
+`abs_measure_le_sub_le_of_dist_le` splits at a **single** scale `δ`, and (see the note on
+`edgeworth_studentized_uniform`) that split cannot reach `O(n⁻¹)` for the studentized root under
+a finite fourth moment alone: `δ` is forced down to `n⁻¹` by the anti-concentration term, and at
+that scale `P(|T̃ₙ − Hₙ| > n⁻¹)` is genuinely of order `n^{-1/3}`, not `n⁻¹`, because the second
+coordinate `v` of the bivariate root has only two moments and its `v³` contribution to the
+Taylor remainder is heavy-tailed.
+
+The classical repair is not a better surrogate but a better *split*: peel dyadically, and use
+that the two events are nearly independent. The symmetric difference `{S ≤ x} Δ {T ≤ x}` is
+contained in `{|T − x| ≤ δ}` together with the strata `{2ᵏδ < |S − T|} ∩ {|T − x| ≤ 2^{k+1}δ}`
+and a final tail — because on the symmetric difference `T` is always within `|S − T|` of `x`, so
+a large discrepancy *forces* `T` to be correspondingly far from `x`. Each stratum is a **joint**
+event: the window mass at scale `2^{k+1}δ` times the tail of `|S − T|` at scale `2ᵏδ`. With
+`δ = n⁻¹`, window mass `≈ 2ᵏδ + n⁻¹` and tail `≈ (2ᵏδ n^{3/2})^{-2/3}`, the strata sum to
+`O(n⁻¹)`, which the single-scale split cannot achieve.
+
+The lemma below is that containment, as a statement about two arbitrary real random variables;
+it is a strict strengthening of `abs_measure_le_sub_le_of_dist_le` (which is the case `K = 0`
+after bounding each stratum by its tail factor alone). -/
+
+/-- The dyadic index: if `δ < d ≤ 2^K δ` then `d` sits in some dyadic window
+`(2ᵏδ, 2^{k+1}δ]` with `k < K`. -/
+private lemma exists_dyadic_index {d δ : ℝ} (hδ : 0 < δ) {K : ℕ}
+    (hlo : δ < d) (hhi : d ≤ 2 ^ K * δ) :
+    ∃ k, k < K ∧ 2 ^ k * δ < d ∧ d ≤ 2 ^ (k + 1) * δ := by
+  classical
+  have hK : 0 < K := by
+    rcases Nat.eq_zero_or_pos K with h | h
+    · rw [h] at hhi
+      norm_num at hhi
+      linarith
+    · exact h
+  set s : Finset ℕ := (Finset.range K).filter (fun k => 2 ^ k * δ < d) with hs
+  have h0 : (0 : ℕ) ∈ s := by
+    refine Finset.mem_filter.2 ⟨Finset.mem_range.2 hK, ?_⟩
+    simpa using hlo
+  have hne : s.Nonempty := ⟨0, h0⟩
+  set k := s.max' hne with hk
+  have hkmem : k ∈ s := s.max'_mem hne
+  obtain ⟨hkr, hklt⟩ := Finset.mem_filter.1 hkmem
+  refine ⟨k, Finset.mem_range.1 hkr, hklt, ?_⟩
+  by_cases hnext : k + 1 < K
+  · by_contra hcon
+    have hmem : k + 1 ∈ s :=
+      Finset.mem_filter.2 ⟨Finset.mem_range.2 hnext, not_le.1 hcon⟩
+    have hle := s.le_max' _ hmem
+    omega
+  · have hkK : k + 1 = K := by
+      have := Finset.mem_range.1 hkr
+      omega
+    rw [hkK]
+    exact hhi
+
+/-- **The dyadically peeled perturbation bound.** For any two real random variables, any
+`δ > 0` and any `K`,
+
+`|P(S ≤ x) − P(T ≤ x)| ≤ P(|T − x| ≤ δ) + ∑_{k<K} P(2ᵏδ < |S − T|, |T − x| ≤ 2^{k+1}δ)
+                        + P(2^K δ < |S − T|)`.
+
+Each middle term is a **joint** event, which is what makes the estimate strictly stronger than
+the single-scale split of `abs_measure_le_sub_le_of_dist_le`: a large discrepancy `|S − T|` only
+matters where it can move `T` across `x`, and there `T` is far from `x` by the same amount. -/
+theorem abs_measure_le_sub_le_of_peel {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsProbabilityMeasure P] {S T : Ω → ℝ} {δ : ℝ} (hδ : 0 < δ) (K : ℕ) (x : ℝ) :
+    |(P {ω | S ω ≤ x}).toReal - (P {ω | T ω ≤ x}).toReal|
+      ≤ (P {ω | |T ω - x| ≤ δ}).toReal
+        + ∑ k ∈ Finset.range K,
+            (P {ω | 2 ^ k * δ < |S ω - T ω| ∧ |T ω - x| ≤ 2 ^ (k + 1) * δ}).toReal
+        + (P {ω | 2 ^ K * δ < |S ω - T ω|}).toReal := by
+  classical
+  have hfin : ∀ s : Set Ω, P s ≠ ⊤ := fun s => (measure_lt_top P s).ne
+  set W : Set Ω := ({ω | |T ω - x| ≤ δ} : Set Ω)
+      ∪ (⋃ k ∈ Finset.range K,
+          {ω | 2 ^ k * δ < |S ω - T ω| ∧ |T ω - x| ≤ 2 ^ (k + 1) * δ})
+      ∪ {ω | 2 ^ K * δ < |S ω - T ω|} with hW
+  have hkey : ∀ ω : Ω, |T ω - x| ≤ |S ω - T ω| → ω ∈ W := by
+    intro ω hω
+    rw [hW]
+    rcases le_or_gt |S ω - T ω| δ with hd | hd
+    · exact Set.mem_union_left _ (Set.mem_union_left _ (le_trans hω hd))
+    · rcases lt_or_ge (2 ^ K * δ) |S ω - T ω| with hKlt | hKge
+      · exact Set.mem_union_right _ hKlt
+      · obtain ⟨k, hkK, hk1, hk2⟩ := exists_dyadic_index hδ hd hKge
+        exact Set.mem_union_left _ (Set.mem_union_right _
+          (Set.mem_iUnion₂.2 ⟨k, Finset.mem_range.2 hkK, ⟨hk1, le_trans hω hk2⟩⟩))
+  have hA : {ω | S ω ≤ x} ⊆ {ω | T ω ≤ x} ∪ W := by
+    intro ω hω
+    by_cases hb : T ω ≤ x
+    · exact Set.mem_union_left _ hb
+    · refine Set.mem_union_right _ (hkey ω ?_)
+      have hb' : x < T ω := not_le.1 hb
+      have hSx : S ω ≤ x := hω
+      rw [abs_of_pos (by linarith : (0 : ℝ) < T ω - x), abs_sub_comm,
+        abs_of_pos (by linarith : (0 : ℝ) < T ω - S ω)]
+      linarith
+  have hB : {ω | T ω ≤ x} ⊆ {ω | S ω ≤ x} ∪ W := by
+    intro ω hω
+    by_cases hb : S ω ≤ x
+    · exact Set.mem_union_left _ hb
+    · refine Set.mem_union_right _ (hkey ω ?_)
+      have hb' : x < S ω := not_le.1 hb
+      have hTx : T ω ≤ x := hω
+      rcases eq_or_lt_of_le hTx with heq | hlt
+      · rw [heq]
+        simp only [sub_self, abs_zero]
+        exact abs_nonneg _
+      · rw [abs_of_neg (by linarith : T ω - x < 0),
+          abs_of_pos (by linarith : (0 : ℝ) < S ω - T ω)]
+        linarith
+  have hsumne : (∑ k ∈ Finset.range K,
+      P {ω | 2 ^ k * δ < |S ω - T ω| ∧ |T ω - x| ≤ 2 ^ (k + 1) * δ}) ≠ ⊤ :=
+    ENNReal.sum_ne_top.2 fun k _ => hfin _
+  have hWle : P W ≤ P {ω | |T ω - x| ≤ δ}
+      + (∑ k ∈ Finset.range K,
+          P {ω | 2 ^ k * δ < |S ω - T ω| ∧ |T ω - x| ≤ 2 ^ (k + 1) * δ})
+      + P {ω | 2 ^ K * δ < |S ω - T ω|} := by
+    rw [hW]
+    refine (measure_union_le _ _).trans (add_le_add ?_ le_rfl)
+    exact (measure_union_le _ _).trans
+      (add_le_add le_rfl (measure_biUnion_finset_le _ _))
+  have hWtoReal : (P W).toReal ≤ (P {ω | |T ω - x| ≤ δ}).toReal
+      + ∑ k ∈ Finset.range K,
+          (P {ω | 2 ^ k * δ < |S ω - T ω| ∧ |T ω - x| ≤ 2 ^ (k + 1) * δ}).toReal
+      + (P {ω | 2 ^ K * δ < |S ω - T ω|}).toReal := by
+    have hne : (P {ω | |T ω - x| ≤ δ}
+        + (∑ k ∈ Finset.range K,
+            P {ω | 2 ^ k * δ < |S ω - T ω| ∧ |T ω - x| ≤ 2 ^ (k + 1) * δ})
+        + P {ω | 2 ^ K * δ < |S ω - T ω|}) ≠ ⊤ :=
+      ENNReal.add_ne_top.2 ⟨ENNReal.add_ne_top.2 ⟨hfin _, hsumne⟩, hfin _⟩
+    have h := ENNReal.toReal_mono hne hWle
+    rwa [ENNReal.toReal_add (ENNReal.add_ne_top.2 ⟨hfin _, hsumne⟩) (hfin _),
+      ENNReal.toReal_add (hfin _) hsumne,
+      ENNReal.toReal_sum (fun k _ => hfin _)] at h
+  have hbound : ∀ U V : Set Ω, U ⊆ V ∪ W →
+      (P U).toReal ≤ (P V).toReal + (P W).toReal := by
+    intro U V hUsub
+    have h1 : P U ≤ P V + P W := (measure_mono hUsub).trans (measure_union_le _ _)
+    have h2 := ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨hfin V, hfin W⟩) h1
+    rwa [ENNReal.toReal_add (hfin V) (hfin W)] at h2
+  have h1 := hbound _ _ hA
+  have h2 := hbound _ _ hB
   rw [abs_sub_le_iff]
   constructor <;> linarith
 
@@ -3061,7 +3299,121 @@ step: (i) a second moment for an explicit polynomial in the bivariate root toget
 anti-concentration of its surrogate, and (ii) uniform Riemann–Lebesgue over the sphere for the
 parabola-carried law. Everything else in the chain — (S1), (S2), (M1)(a-not-needed), (M1)(b)
 including the one-factor bookkeeping, the deterministic core and the assembly of (M2), and both
-the direction-uniformity and the root transfer of (M3) — is proved and axiom-clean. -/
+the direction-uniformity and the root transfer of (M3) — is proved and axiom-clean.
+
+**Status after the wave-15 re-derivation.** Of the two residues wave 14 left, the first splits
+into two halves of opposite character: one of them is **not an obstruction at all** and the
+route wave 14 recommended for it does not work, while the other is **stated falsely** — for the
+second consecutive wave, and again at the level of the limit behaviour rather than of a
+constant. The second residue's recommended route has been built, and what is left of it is one
+sharply delimited oscillatory estimate. A further item, not recorded by any earlier wave, is
+identified below.
+
+* (W1) **Anti-concentration of the surrogate is free, and wave 14's route to it is
+  insufficient — CLOSED.** Wave 14 asked for `sup_x P(Hₙ ∈ (x, x + n⁻¹]) = O(n⁻¹)` and proposed
+  "break the circularity by first proving a cruder `O(n^{-1/2})` expansion". That cannot work:
+  a distributional approximation of accuracy `η` bounds the mass of an interval of length `ℓ` by
+  `Aℓ + 2η` and by nothing better, so a `O(n^{-1/2})`-accurate expansion yields only
+  `O(n^{-1/2})` at `ℓ = n⁻¹`, one whole order short. No amount of bootstrapping repairs this,
+  because the deficit is in the *input's* accuracy, not in the argument.
+  What is true is that the estimate costs nothing. `measure_Ioc_le_of_abs_cdf_sub_le` (proved
+  above, axiom-clean) is the general statement `|P(T ≤ ·) − G| ≤ ε` and `G` `A`-Lipschitz imply
+  `P(a < T ≤ b) ≤ A(b − a) + 2ε`; applied to `T = Hₙ`, `G` the Edgeworth approximant (Lipschitz
+  uniformly in `n`, `setIntegral_abs_edgeworthDensity_le`) and `ε = C/n` — the conclusion of the
+  (M1)(b) route for `Hₙ`, which the argument needs anyway and proves *before* this step — it
+  gives exactly `O(n⁻¹)`. `abs_measure_le_sub_le_of_cdf_approx` packages the whole of (M2) with
+  that term already discharged: `|P(S ≤ x) − G(x)| ≤ P(|S − T| > δ) + 2Aδ + 3ε`. There is no
+  circularity anywhere, and no cruder expansion is needed.
+* (W2) **The tail half of (M2) is FALSE as recorded, at `n^{-1/3}` against the claimed `n⁻¹`,
+  and no finite-order surrogate repairs it.** Two separate failures.
+  *(i) The requested hypothesis does not exist.* Wave 14 asked for "a second moment for the
+  bracket" `4|u||v|³ + 4|u|⁷ + …`. A second moment of `|u|⁷` is `E[u¹⁴]`, which is infinite for
+  every sampling law with exactly four moments; truncation of the summands at `√n` does make it
+  finite, but then Rosenthal's inequality gives `E[v̄¹²] ≍ n⁵` (the truncated summands of `v` are
+  bounded only by `n`, not by `√n`), so the truncated bracket has `E[B²] ≍ n^{5/2}` and Markov at
+  the level `√n` gives `n^{3/2}` — no information at all.
+  *(ii) The conclusion is false, not merely unprovable this way.* Take `F` absolutely continuous
+  with `P(|X| > s) ≍ s⁻⁴(log s)⁻²`, so `E X⁴ < ∞` and Cramér's condition holds. Then
+  `Y = (X − μ)² − σ²` satisfies `P(Y > t) ≍ t⁻²(log t)⁻²`, so `E Y² < ∞` but no more, and
+  `P(|v| > 2n^{1/6}) ≍ n·P(Y > 4n^{2/3}) ≍ n^{-1/3}(log n)⁻²`, dominated by a single large
+  summand. On that event `x = vr − u²r² ≍ n^{-1/3}` — well inside the `|x| ≤ 1/2` window, so the
+  third-order Taylor estimate is *sharp* there, not merely loose — and the exact remainder
+  `−(5/16)x³ + O(x⁴)` gives `|T̃ₙ − Hₙ| ≍ (5/16)·8·|u|·n⁻¹ > n⁻¹` as soon as `|u| ≥ 1`. The
+  single large summand contributes only `O(n^{-1/6})` to `u`, so `u` is still asymptotically
+  standard normal and `P(|u| ≥ 1) → 0.317…`. Hence
+  `P(|T̃ₙ − Hₙ| > n⁻¹) ≳ c·n^{-1/3}(log n)⁻²`, not `O(n⁻¹)`.
+  Raising the order of the surrogate does not help: for the order-`j` polynomial the remainder is
+  `≍ |u||v|^{j+1}n^{-(j+1)/2}`, and `P(|v| > n^{1/2 − 1/(j+1)}) ≍ n^{-1 + 2/(j+1)}`, which is
+  `O(n⁻¹)` only in the limit `j → ∞`. **The single-scale split of
+  `abs_measure_le_sub_le_of_dist_le` therefore cannot deliver `C/n` for the studentized root
+  under a finite fourth moment**, whatever surrogate is used — `δ` is pinned to `n⁻¹` from above
+  by (W1)'s window term and the tail term is `n^{-1/3}` there.
+  *The repair is a better split, not a better surrogate*, and it is closed here:
+  `abs_measure_le_sub_le_of_peel` (axiom-clean) peels dyadically and produces **joint** strata
+  `{2ᵏδ < |S − T|} ∩ {|T − x| ≤ 2^{k+1}δ}`, using that on the symmetric difference `T` is always
+  within `|S − T|` of `x`. With `δ = n⁻¹`, stratum `k` is bounded by
+  `P(|v| ≳ 2^{k/3}n^{1/6}) · (2ᵏn⁻¹ + n⁻¹) ≍ 2^{-2k/3}n^{-1/3}·2ᵏn⁻¹ = 2^{k/3}n^{-4/3}`, and
+  summing to `K ≍ log₂ n` (where `2^K n⁻¹ ≍ 1`, i.e. where the window is the whole line) gives
+  `n^{1/3}·n^{-4/3} = n⁻¹`; the final tail `P(|S − T| ≳ 1) ≲ P(|v| ≳ √n) = O(n⁻¹)` is the same
+  event that keeps `|x| ≤ 1/2`. So the arithmetic closes at `O(n⁻¹)` — but every stratum is a
+  **joint** window-times-tail estimate, i.e. it needs anti-concentration of `Hₙ` *conditionally
+  on `v` being large*, which the marginal estimate of (W1) does not give. That conditional
+  estimate is the honest residue of (M2).
+* (W3) **Uniform Riemann–Lebesgue: the recommended route is built; the residue is one
+  oscillatory estimate.** `ForMathlib/UniformRiemannLebesgue.lean` (new, axiom-clean) proves
+  wave 14's "soft route" in full generality:
+  `tendsto_fourierOsc_cocompact` is Riemann–Lebesgue in the `charFun` normalisation;
+  `norm_fourierOsc_sub_le` is the contraction `‖ℱf(s) − ℱg(s)‖ ≤ ‖f − g‖_{L¹}`, valid at every
+  frequency; `eventually_norm_fourierOsc_le_of_totallyBounded` is the headline — Riemann–Lebesgue
+  is **uniform on any family admitting finite `L¹` `ε`-nets**, by applying it to the finitely
+  many net elements and intersecting the eventualities; and
+  `eventually_norm_fourierOsc_le_of_isCompact` specialises this to a family parametrised
+  continuously in `L¹` by a compact set, which is the form the sphere of directions produces.
+  Applied to the parabola: writing `f` for the density of `X − μ`, the projected characteristic
+  function in the direction `(t₀, t₁)` is `∫ f(y)e^{i(t₀y + t₁y²)}dy` up to a unimodular factor,
+  and `eventually_norm_quadPhaseInt_le` proves it tends to `0` as `|t₀| → ∞` **uniformly over
+  `|t₁| ≤ M`**, for every `M`: the twisted densities `e^{it₁y²}f` depend on `t₁` continuously in
+  `L¹` (dominated convergence, dominating function `2‖f‖`) and `|t₁| ≤ M` is compact.
+  `exists_bound_norm_quadPhaseInt` shows the two regimes combine into the cocompact bound that
+  `vecCramerCondition_of_uniform_sphere` consumes.
+  **What is left of (M3)(i)** is therefore exactly the complementary regime `|t₁| → ∞`,
+  uniformly in `t₀`. It is *not* a Riemann–Lebesgue statement — the twists `e^{it₁y²}f` are not
+  relatively compact in `L¹` as `t₁` ranges over an unbounded set — and it is true for every
+  `f ∈ L¹`, by the autocorrelation identity
+  `|I|² = ∫ e^{i(t₀h + t₁h²)} ĝ_h(2t₁h) dh` with `g_h(z) = f(z + h)\overline{f(z)}`: Fubini is
+  licensed by `∫∫|f(z + h)f(z)| = ‖f‖₁²`, that same quantity dominates the integrand, and for
+  each `h ≠ 0` the inner Fourier transform vanishes as `|t₁| → ∞`, so dominated convergence along
+  the (countably generated) cocompact filter finishes. That is the single genuinely analytic item
+  left in the whole route, and it is now a statement about one explicit integral rather than
+  about "uniformity over the sphere".
+* (W4) **An item no earlier wave recorded: the surrogate's characteristic function needs
+  *multilinearly* weighted mixed transforms, and `mixCharFun` supplies only the linear ones.**
+  `mixCharFun μ b t = ∫ ⟪w,b⟫e^{i⟪w,t⟫}` has a **linear** weight. The surrogate
+  `Hₙ = u − uvr/2 + u³r²/2 + 3uv²r²/8` is a polynomial of degree four in the coordinates, so
+  expanding `E[e^{iθHₙ}]` in powers of `r` produces the weights `uv`, `u³`, `uv²` and `(uv)²` —
+  bilinear, trilinear and quartic — none of which is a `mixCharFun`. This affects wave 13's
+  second-order surrogate equally (its leading correction already needs `E[uv e^{iθu}]`), so it
+  is not an artefact of the third-order repair. The gap is not a wall: the exact factorisation
+  `mixCharFun_vecRootLaw` rests only on the weight being a *sum over coordinates*, and a product
+  of `m` such sums expands into `m` distinguished factors, so the same
+  `integral_fintype_prod_eq_prod` argument applies with a diagonal/off-diagonal bookkeeping. But
+  it has to be built, and until it is, the "expansion for `Hₙ`" that (W1) reads its
+  anti-concentration off is not available either.
+
+Net after wave 15, the residue is three items, all of them precisely stated:
+(i) the **conditional** anti-concentration of `Hₙ` given a large second coordinate, feeding the
+joint strata of `abs_measure_le_sub_le_of_peel` — the marginal version is free by (W1), and the
+single-scale route it replaces is provably dead by (W2);
+(ii) the `|t₁| → ∞` regime of `∫ f(y)e^{i(t₀y + t₁y²)}dy`, uniform in `t₀` — everything else in
+(M3) is proved, including the whole `L¹`/compactness apparatus and the `|t₁|` bounded regime;
+(iii) the multilinear extension of `mixCharFun` needed for the surrogate's characteristic
+function (W4).
+Proved and axiom-clean: (S1), (S2), (M1)(b) for linear weights including the one-factor `φ^{n−1}`
+bookkeeping, the deterministic core of (M2) in its corrected third-order form, both the
+single-scale and the dyadically peeled assemblies, the marginal anti-concentration of both the
+centred root and any variable with an approximated distribution function, the direction-uniformity
+and root transfer of (M3), and uniform Riemann–Lebesgue on totally bounded and on compactly
+parametrised `L¹` families. -/
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
@@ -3090,22 +3442,30 @@ expansion, the quantile version follows by inverting it (the Cornish–Fisher st
 function theorem applied to `x ↦ Φ(x) + (γ/6)φ(x)(2x² + 1) n^{-1/2}`, using that `φ` is bounded
 below on the compact `z`-range corresponding to `α ∈ [ε, 1 − ε]`, which is where the hypothesis
 `0 < ε < 1/2` is used). It therefore inherits, and adds nothing to, the obstruction recorded on
-`edgeworth_studentized_uniform` — which, after the wave-14 re-derivation, is **two** items, not
-three:
+`edgeworth_studentized_uniform` — which, after the wave-15 re-derivation, is **three** items,
+each of them a single named statement:
 
-* a second moment for the explicit polynomial bracket of `abs_studentFactor_sub_taylor3_le'`
-  (this is where truncation of the summands at level `√n` enters) together with the
-  anti-concentration of the quadratic delta-method surrogate at scale `n⁻¹`;
-* uniform Riemann–Lebesgue over the compact sphere of directions for the parabola-carried
-  bivariate law, i.e. the hypothesis of `vecCramerCondition_of_uniform_sphere`.
+* the **conditional** anti-concentration of the delta-method surrogate given a large second
+  coordinate, which is what the joint strata of `abs_measure_le_sub_le_of_peel` consume. The
+  *marginal* anti-concentration is free (`measure_Ioc_le_of_abs_cdf_sub_le`), and the
+  single-scale route wave 14 recorded is provably dead: `P(|T̃ₙ − Hₙ| > n⁻¹)` is of order
+  `n^{-1/3}` under a finite fourth moment, with an explicit witness;
+* the `|t₁| → ∞` regime of `∫ f(y)e^{i(t₀y + t₁y²)}dy`, uniformly in `t₀`. The `|t₁|` bounded
+  regime, and the whole `L¹`-compactness apparatus behind "uniform Riemann–Lebesgue over the
+  sphere", are proved in `ForMathlib/UniformRiemannLebesgue.lean`;
+* a multilinear extension of `mixCharFun`: the surrogate is a degree-four polynomial in the two
+  coordinates, so its characteristic function needs `∫ w₀w₁e^{i⟪w,t⟫}` and its cubic and quartic
+  analogues, while `mixCharFun` carries a linear weight only.
 
 Closed and axiom-clean over there: (S1) the bivariate expansion, (S2) the exact reduction of
 the studentized root to a bivariate mean, (M1)(b) the mixed-characteristic-function expansion
-*together with* the one-factor `φ^{n−1}` bookkeeping (`norm_mixCharFun_vecRootLaw_sub_charFun_le`),
-the deterministic core and the assembly of (M2) in their corrected third-order form, the
-direction-uniformity of (M3), and the transfer of the Cramér tail to the vector root
-(`norm_charFun_vecRootLaw_le_pow`, which removes the need for Hall's conditioning device
-altogether). -/
+for linear weights *together with* the one-factor `φ^{n−1}` bookkeeping
+(`norm_mixCharFun_vecRootLaw_sub_charFun_le`), the deterministic core of (M2) in its corrected
+third-order form together with both the single-scale and the dyadically peeled assemblies, the
+marginal anti-concentration statements, the direction-uniformity of (M3), the transfer of the
+Cramér tail to the vector root (`norm_charFun_vecRootLaw_le_pow`, which removes the need for
+Hall's conditioning device altogether), and uniform Riemann–Lebesgue on totally bounded and on
+compactly parametrised `L¹` families. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
