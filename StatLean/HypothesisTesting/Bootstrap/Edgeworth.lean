@@ -939,6 +939,86 @@ lemma integral_inner_studentPair (F : Measure ℝ) [IsProbabilityMeasure F]
   simp_rw [inner_studentPair F t, ← hm, ← hv]
   rw [← hg, hval]
 
+/-! ### The deterministic core of (M2): the studentizing factor is its own Taylor polynomial
+
+`studentizedRootCDF_eq_vecRootLaw` shows the studentized root is the *exact* smooth function
+`(u, x) ↦ u (1 + x)^{-1/2}` of the bivariate mean, with `x = v n^{-1/2} − u² n^{-1}` on the
+standardized scale. Item (M2) asks to replace it by its Taylor surrogate
+`T̃_n = u − u v n^{-1/2}/2` with an error that is `O(n^{-1})` *uniformly*, and it has two halves:
+a deterministic pointwise bound, and a probabilistic tail estimate on the polynomial that bound
+produces. The deterministic half is closed here, with explicit constants and no smallness
+assumption beyond `|x| ≤ 1/2`.
+
+The proof is purely algebraic; no calculus and no mean value theorem are used. Substituting
+`a = √(1 + x)`, so that `x = a² − 1`,
+
+`(1 + x)^{-1/2} − (1 − x/2) = a⁻¹ − 1 + (a² − 1)/2 = (a³ − 3a + 2)/(2a) = (a − 1)²(a + 2)/(2a)`
+
+while `x² = (a − 1)²(a + 1)²`, so the claim is the elementary inequality
+`(a + 2)/(2a) ≤ (a + 1)²`, valid on the range `a ≥ 0.7` that `|x| ≤ 1/2` forces. Writing the
+remainder as an explicit product of a square and a polynomial is what makes the estimate
+uniform in `x`, which is what (M2) needs and what a Taylor-with-Lagrange-remainder statement
+would not directly give. -/
+
+/-- **Uniform second-order Taylor bound for the studentizing factor.**
+`|(1 + x)^{-1/2} − (1 − x/2)| ≤ x²` for `|x| ≤ 1/2`. -/
+theorem abs_inv_sqrt_one_add_sub_le {x : ℝ} (hx : |x| ≤ 1 / 2) :
+    |(Real.sqrt (1 + x))⁻¹ - (1 - x / 2)| ≤ x ^ 2 := by
+  obtain ⟨hx1, hx2⟩ := abs_le.1 hx
+  have h1x : (0 : ℝ) < 1 + x := by linarith
+  set a : ℝ := Real.sqrt (1 + x) with ha
+  have hapos : 0 < a := Real.sqrt_pos.2 h1x
+  have hasq : a ^ 2 = 1 + x := Real.sq_sqrt h1x.le
+  have hxa : x = a ^ 2 - 1 := by linarith
+  have ha7 : (0.7 : ℝ) ≤ a := by nlinarith [hasq, hapos, sq_nonneg (a - 0.7)]
+  have hkey : a⁻¹ - (1 - x / 2) = (a - 1) ^ 2 * (a + 2) / (2 * a) := by
+    rw [hxa]
+    field_simp
+    ring
+  have hx2eq : x ^ 2 = (a - 1) ^ 2 * (a + 1) ^ 2 := by rw [hxa]; ring
+  rw [hkey, hx2eq, abs_of_nonneg (by positivity), div_le_iff₀ (by positivity)]
+  have hpoly : (0 : ℝ) ≤ 2 * a ^ 3 + 4 * a ^ 2 + a - 2 := by nlinarith [ha7, hapos]
+  nlinarith [mul_nonneg (sq_nonneg (a - 1)) hpoly]
+
+/-- **The pointwise polynomial replacement for the studentized root.**
+
+With `r = n^{-1/2}` and `x = v r − u² r²` the exact studentized root is `u (1 + x)^{-1/2}` and
+its Taylor surrogate is `u − u v r / 2`; the two differ by at most
+
+`|u|³ r²/2 + |u| x²`,
+
+which is `O(n^{-1})` times a polynomial in the two coordinates. The first term is the *cubic*
+correction that the surrogate discards — it is exactly what makes the studentized `n^{-1/2}`
+coefficient `(1/6)γ(2t² + 1)` differ from the centred one — and the second is the genuine
+second-order remainder.
+
+This is (M2)(i) with the probability removed. What is still missing for (M2) is the tail
+estimate `P(|u|³ r²/2 + |u| x² > ε n^{-1}) = O(n^{-1})` for the bivariate root, which under a
+fourth moment only requires truncating the summands at level `√n`, and the anti-concentration
+of the surrogate's law. -/
+theorem abs_studentFactor_sub_taylor_le (u v r : ℝ)
+    (hx : |v * r - u ^ 2 * r ^ 2| ≤ 1 / 2) :
+    |u * (Real.sqrt (1 + (v * r - u ^ 2 * r ^ 2)))⁻¹ - (u - u * v * r / 2)|
+      ≤ |u| ^ 3 * r ^ 2 / 2 + |u| * (v * r - u ^ 2 * r ^ 2) ^ 2 := by
+  set x : ℝ := v * r - u ^ 2 * r ^ 2 with hxdef
+  have hsplit : u * (Real.sqrt (1 + x))⁻¹ - (u - u * v * r / 2)
+      = u * ((Real.sqrt (1 + x))⁻¹ - (1 - x / 2)) + u ^ 3 * r ^ 2 / 2 := by
+    rw [hxdef]
+    ring
+  have habs3 : |u ^ 3 * r ^ 2 / 2| = |u| ^ 3 * r ^ 2 / 2 := by
+    rw [abs_div, abs_mul, abs_pow, abs_pow, sq_abs]
+    norm_num
+  calc |u * (Real.sqrt (1 + x))⁻¹ - (u - u * v * r / 2)|
+      = |u * ((Real.sqrt (1 + x))⁻¹ - (1 - x / 2)) + u ^ 3 * r ^ 2 / 2| := by rw [hsplit]
+    _ ≤ |u * ((Real.sqrt (1 + x))⁻¹ - (1 - x / 2))| + |u ^ 3 * r ^ 2 / 2| := abs_add_le _ _
+    _ = |u| * |(Real.sqrt (1 + x))⁻¹ - (1 - x / 2)| + |u| ^ 3 * r ^ 2 / 2 := by
+        rw [abs_mul, habs3]
+    _ ≤ |u| * x ^ 2 + |u| ^ 3 * r ^ 2 / 2 := by
+        have hstep :=
+          mul_le_mul_of_nonneg_left (abs_inv_sqrt_one_add_sub_le hx) (abs_nonneg u)
+        linarith
+    _ = |u| ^ 3 * r ^ 2 / 2 + |u| * x ^ 2 := by ring
+
 end StudentizedReduction
 
 /-! ## The Edgeworth approximant on the standardized scale
