@@ -6484,34 +6484,81 @@ theorem exists_smooth_swap_bound_of_one_le_weight (k : ℕ) (hk : 0 < k) {C₃ :
       mul_le_mul hs1 hW (by norm_num) (mul_nonneg (by linarith) hq0.le)
     linarith
 
-/-- **Brick L below the Gaussian shell scale (stated, not proved).** *The hybrid telescope with
-every step estimated by the localised weighted swap bound*, in the only regime that has any
-content: the total weight `W + C_k ε` is at most `1`.
+/-- **Brick L below the Gaussian shell scale (stated, not proved; hypothesis AMENDED in
+wave 29).** *The hybrid telescope with every step estimated by the localised weighted swap
+bound*, in the only regime that has any content: the total weight `W + C_k ε` is at most `1`.
 
 This is `abs_integral_smooth_sub_gaussian_improved` rerun with a shell-weighted Cameron–Martin
-remainder in place of the uniform `integral_abs_vecTiltRemainder_le`: since `D³` of the
-mollified indicator of `B` at width `ε` vanishes on `interior B` and off `Bᵋ`, each step of the
-telescope should be weighted by the mass that the `j`-th hybrid law puts on the shell
-`B^{2ε} \ interior B` (the factor `2` absorbs the closure of the support). Summing the weighted
-steps with the cut `J = ⌈ε² n⌉` of `abs_integral_smooth_sub_gaussian_balanced` gives
-`A (β/√n) ε⁻¹ W` in place of the unweighted `A (β/√n) ε⁻¹`.
+remainder in place of the uniform `integral_abs_vecTiltRemainder_le`. Summing the weighted steps
+with the cut `J = ⌈ε² n⌉` of `abs_integral_smooth_sub_gaussian_balanced` gives `A (β/√n) ε⁻¹ W`
+in place of the unweighted `A (β/√n) ε⁻¹`.
 
 The `L^∞` form is stated (weight `W`, not `√W`), which is what the sharp `β/√n` rate needs; the
 wave-19 `L²`/Cauchy–Schwarz form `abs_integral_mul_vecTiltRemainder_le_of_support` delivers `√W`
 instead, for which `cube_le_of_selfImproving_smoothed_sqrt` gives `O(n^{-1/3})`.
 
-**What is genuinely missing** (wave 24, re-derived). The wave-22 docstring asserted that the
-localisation is a mechanical rerun of the telescope with the wave-19 lemma substituted. That is
-*not* so, and the obstruction is precise. Along the Cameron–Martin route the test function
-enters as `G(z) = f(v + σⱼ z)` — the function itself, **not** its third derivative, which has
-been moved onto the Gaussian density. `G` is not supported on the shell: `f = 1` on `B`. Writing
-`f = 1_{interior B} + g` with `g` supported on the shell and `|g| ≤ 1` splits the step into a
-part that *is* localised (`abs_integral_mul_vecTiltRemainder_le_of_support` applies to `g`
-verbatim) and the indicator part
-`∫ 1_K(z) R_w(z) dγ(z) = γ(K − w) − Q_w(K)`, `K = {z | v + σⱼ z ∈ interior B}` convex,
-which is the second-order Taylor remainder in `w` of `w ↦ γ(K − w)`. Bounding *that* by the
+## Wave 29: the wave-24 diagnosis is WRONG, and the hypothesis is amended
+
+Wave 24 wrote: splitting `f = 1_{interior B} + g` localises the `g` half by the wave-19 lemma,
+but leaves the indicator half `∫ 1_K R_w dγ = γ(K − w) − Q_w(K)`, and "bounding *that* by the
 shell mass is a Gaussian surface-area statement about convex bodies — the same input as Ball's
-theorem — and is not among the file's ingredients. -/
+theorem". **That verdict is overturned.** No surface area is involved. The tilt remainder has
+mean zero, `integral_vecTiltRemainder_eq_zero`, so a *constant* may be subtracted from the test
+function for free; and near a point `v` at distance `≥ r` from the boundary the mollified
+indicator *is* constant on the ball of radius `r`. Cauchy–Schwarz against the plain **Gaussian
+tail** `γ{‖z‖ ≥ r/σ}` then localises the indicator half:
+`abs_integral_mul_vecTiltRemainder_le_of_const_off` and
+`abs_integral_shift_vecTiltRemainder_le_of_const_ball`, with `stdGaussian_norm_ge_le` (Markov at
+any order) supplying the tail. All four are proved and axiom-clean; none of them mentions a
+surface measure, and their constants are dimension-free.
+
+**Why the hypothesis had to change.** Two corrections to the wave-24 interface, both forced by
+the localisation just described and both *free* at the only call site:
+
+1. *The shell must be two-sided.* The per-point weight is small exactly when `f` is constant on
+   a ball about `v`, i.e. when `v` is outside the thickening **or inside the erosion**. The bad
+   set is `B^s \ B_{-s}`, and its inner half `B \ B_{-s}` is invisible to the frozen hypothesis,
+   which speaks only of `B^{2ε} \ interior B`.
+2. *Every width must be controlled, not just `2ε`.* Step `j` of the telescope is smoothed at
+   `σⱼ = √(j/n)`, and the localisation radius that step can afford is a multiple of `σⱼ`, not of
+   `ε`. For `j > J = ⌈ε²n⌉` one has `σⱼ ≥ ε`, and for `j` near `n` one has `σⱼ ≈ 1 ≫ ε`; the
+   frozen hypothesis says nothing about neighbourhoods at those scales.
+
+`hybridLaw_wideShell_le` (wave 29, proved) supplies exactly the amended hypothesis at the call
+site, at every width, with the constant `4 C_k` and the same `2Y` that brick H already carries —
+so `exists_convexDiscrepancy_recursion`, `berryEsseen_convex_sharp` and its constant are
+unaffected. Note that the amendment does not weaken the *content*: the frozen statement is true
+(it is implied by Bentkus's theorem, since its right-hand side is `≥ A C_k β/√n`); what the
+amendment records is the interface the *proof* needs.
+
+## What is still missing (wave 29, re-derived)
+
+Two items, both about the summand `y` rather than the geometry.
+
+* **The `‖w‖ ≤ 1` restriction.** Both the wave-19 lemma and its wave-29 constant-off extension
+  require a Cameron–Martin shift of length at most `1` (for `‖w‖ > 1` the `L²` norm of the tilt
+  blows up like `e^{‖w‖²}` — see `integral_sq_tiltRemainder_le`). At step `j` the shift is
+  `w = (c/σⱼ) y` with `c = n^{-1/2}`, i.e. `‖w‖ = ‖y‖/√j`, so the bound applies only on
+  `{‖y‖ ≤ √j}`. Wave 24's claim that the wave-19 lemma "applies to `g` verbatim" is therefore
+  also too optimistic. On `{‖y‖ > √j}` one must instead use the tilt identity directly:
+  `∫ G R_w dγ = ∫ (G(· + w) − a) dγ − ∫ (G − a)·Q_w dγ`, whose second term is localised with the
+  factor `1 + ‖w‖²  ≤ 2‖w‖³` and whose first term is localised *after averaging in `v`*, the
+  mismatch `a_v ≠ a_{v + c y}` costing the mass of a `c‖y‖`-neighbourhood of `∂B`, i.e. again a
+  two-sided shell, at width `c‖y‖ ≤ σⱼ‖w‖`. This is the reason the amended hypothesis is stated
+  at *all* widths and not merely at the `σⱼ`.
+* **The size of the summed weight.** With the per-step weight `C_k σⱼ + W`, the balanced sum
+  `∑_{j>J} j^{-3/2}(C_k σⱼ + W)` contributes `β n^{-1/2}(C_k ∑_{J<j≤n} j^{-1} + W J^{-1/2})`,
+  i.e. `δ (C_k · 2 log(1/ε) + W/ε)`. The logarithm is intrinsic to a single mollification width:
+  killing it needs per-step widths `εⱼ ≍ σⱼ`, which the frozen single `f` cannot provide. So the
+  conclusion this route will produce is
+  `A δ (ε⁻¹(W + C_k ε) + C_k (1 + log (1/ε)))`, and the headline it feeds is the sharp rate up
+  to one logarithm, `C_k (β/√n)(1 + log(√n/β))`. That is strictly better than the proved
+  `(β/√n)^{1/2}` of `berryEsseen_convex_improved`. The conclusion below is left in its frozen
+  (log-free) form: the extra term is not yet proved, and the frozen form is *true* (Bentkus), so
+  weakening it now would be a guess rather than a forced amendment. If the Gaussian tail is used
+  in its Markov form `stdGaussian_norm_ge_le p` with a *fixed* `p = 2m`, the logarithm is
+  replaced by `ε^{-1/(m+1)}` and the headline by `(β/√n)^{m/(m+1)}`; the logarithm needs the
+  tail at all orders at once. -/
 theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 0 < C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
@@ -6524,8 +6571,10 @@ theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (h
       ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
       (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
       (∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B) → (∀ x ∈ B, f x = 1) →
-      (∀ j : ℕ, j ≤ n →
-        ((hybridLaw n j ν) (Metric.thickening (2 * ε) B \ interior B)).toReal ≤ W) →
+      0 ≤ W →
+      (∀ j : ℕ, j ≤ n → ∀ s : ℝ, 0 < s →
+        ((hybridLaw n j ν) (Metric.thickening s B \ erosion s B)).toReal
+          ≤ 4 * gaussianShellConst k * s + W) →
       W + gaussianShellConst k * ε ≤ 1 →
       |(∫ x, f x ∂(sumLaw n ν))
           - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))|
@@ -6563,7 +6612,14 @@ killed, and the amended statement is what Bentkus's argument actually produces.
 
 The proof splits at `W + C_k ε = 1`: above it,
 `exists_smooth_swap_bound_of_one_le_weight` closes the goal with no localisation at all; below
-it, the content is the named brick `localised_swap_bound_small_weight`. -/
+it, the content is the named brick `localised_swap_bound_small_weight`.
+
+**Wave 29 amended the weight hypothesis** (only; the conclusion is unchanged). `W` is no longer
+a bound on the mass of the single outer shell `B^{2ε} \ interior B`, but on the excess over
+`4 C_k s` of the mass of the *two-sided* shell `B^s \ B_{-s}`, **at every width `s > 0`**. Both
+changes are forced by the localisation the proof actually uses — see the analysis on
+`localised_swap_bound_small_weight` — and both are free here, because
+`hybridLaw_wideShell_le` proves exactly that, at every width, with the same `2Y`. -/
 theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 0 < C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
@@ -6576,8 +6632,10 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
       ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
       (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
       (∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B) → (∀ x ∈ B, f x = 1) →
-      (∀ j : ℕ, j ≤ n →
-        ((hybridLaw n j ν) (Metric.thickening (2 * ε) B \ interior B)).toReal ≤ W) →
+      0 ≤ W →
+      (∀ j : ℕ, j ≤ n → ∀ s : ℝ, 0 < s →
+        ((hybridLaw n j ν) (Metric.thickening s B \ erosion s B)).toReal
+          ≤ 4 * gaussianShellConst k * s + W) →
       |(∫ x, f x ∂(sumLaw n ν))
           - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))|
         ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * ε⁻¹
@@ -6585,13 +6643,12 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
   obtain ⟨A₁, hA₁, h₁⟩ := exists_smooth_swap_bound_of_one_le_weight k hk hC₃
   obtain ⟨A₂, hA₂, h₂⟩ := localised_swap_bound_small_weight k hk hC₃
   refine ⟨A₁ + A₂, by linarith, ?_⟩
-  intro n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hf hfb hD hsupp hone hW
+  intro n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hf hfb hD hsupp hone hW0 hW
   haveI := hνp
   have hnr : (0 : ℝ) < n := by exact_mod_cast hn
   have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
   have hβ0 : 0 < ∫ y, ‖y‖ ^ 3 ∂ν := integral_norm_cube_pos hk hcov hβint
   have hCk : 0 < gaussianShellConst k := gaussianShellConst_pos hk
-  have hW0 : 0 ≤ W := le_trans ENNReal.toReal_nonneg (hW 0 (Nat.zero_le n))
   have hbase : 0 ≤ (∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ) * ε⁻¹
       * (W + gaussianShellConst k * ε) :=
     mul_nonneg (mul_nonneg (div_nonneg hβ0.le hsn.le) (inv_pos.2 hε).le)
@@ -6606,7 +6663,7 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
           * (W + gaussianShellConst k * ε)) := fun A => by ring
     rw [hexp A₁, hexp (A₁ + A₂)]
     exact mul_le_mul_of_nonneg_right (by linarith) hbase
-  · have h := h₂ n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hf hfb hD hsupp hone hW
+  · have h := h₂ n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hf hfb hD hsupp hone hW0 hW
       hlt.le
     refine h.trans ?_
     have hexp : ∀ A : ℝ, A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * ε⁻¹
@@ -6628,7 +6685,11 @@ weighted swap estimate; everything else here is the two-sided thickening/erosion
 Wave 24: brick L now delivers the weight `W + C_k ε` rather than `W` (its wave-20 form is false,
 see `exists_localised_swap_bound`). Since the call site supplies `W = 4 C_k ε + 2 Y` with
 `Y ≥ 0`, one has `W + C_k ε ≤ 2 W`, so the extra term is absorbed by doubling `A`; the statement
-here is unchanged. -/
+here is unchanged.
+
+Wave 29: brick L's weight hypothesis is now the *two-sided* shell at *every* width, supplied
+here by `hybridLaw_wideShell_le` instead of `hybridLaw_shell_le`. The same `W = 4 C_k ε + 2 Y`
+works verbatim, so the statement here is again unchanged. -/
 theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k))) (ε Y : ℝ),
       0 < n → IsProbabilityMeasure ν →
@@ -6676,20 +6737,22 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
       haveI := hρ
       exact (integrable_const (1 : ℝ)).mono' hfcd.continuous.aestronglyMeasurable
         (Filter.Eventually.of_forall fun x => by rw [Real.norm_eq_abs]; exact hfbd x)
-    -- brick H at width `2ε`, uniformly in `j`
-    have hW : ∀ j : ℕ, j ≤ n →
-        ((hybridLaw n j ν) (Metric.thickening (2 * ε) S \ interior S)).toReal
-          ≤ 4 * gaussianShellConst k * ε + 2 * Y := by
-      intro j hjn
-      have h := hybridLaw_shell_le (k := k) hk (n := n) (j := j) hn hjn hmean hcov hβint
-        hSm hSc (ε := 2 * ε) (by linarith) hY
-      calc ((hybridLaw n j ν) (Metric.thickening (2 * ε) S \ interior S)).toReal
-          ≤ 2 * gaussianShellConst k * (2 * ε) + 2 * Y := h
-        _ = 4 * gaussianShellConst k * ε + 2 * Y := by ring
+    -- brick H for the two-sided shell, at EVERY width, uniformly in `j` (wave 29)
+    have hW0 : (0 : ℝ) ≤ 4 * gaussianShellConst k * ε + 2 * Y := by
+      have : (0 : ℝ) < 4 * gaussianShellConst k * ε := by positivity
+      linarith
+    have hW : ∀ j : ℕ, j ≤ n → ∀ s : ℝ, 0 < s →
+        ((hybridLaw n j ν) (Metric.thickening s S \ erosion s S)).toReal
+          ≤ 4 * gaussianShellConst k * s + (4 * gaussianShellConst k * ε + 2 * Y) := by
+      intro j hjn s hs
+      have h := hybridLaw_wideShell_le (k := k) hk (n := n) (j := j) hn hjn
+        (ν := ν) hSm hSc (ε := s) hs hY
+      have hpos : (0 : ℝ) < 4 * gaussianShellConst k * ε := by positivity
+      linarith
     -- brick L
     have herr : |(∫ x, f x ∂μ) - (∫ x, f x ∂γ)| ≤ E := by
       have h := hA n ν S ε f (4 * gaussianShellConst k * ε + 2 * Y) hn hνp hmean hcov hβint
-        hSm hSc hε hfcd hfbd hfD hfsupp hfS hW
+        hSm hSc hε hfcd hfbd hfD hfsupp hfS hW0 hW
       rw [← hμdef, ← hβdef, ← hδdef] at h
       refine h.trans ?_
       rw [hEdef]
