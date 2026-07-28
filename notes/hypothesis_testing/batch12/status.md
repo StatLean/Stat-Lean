@@ -455,3 +455,33 @@ Landmark closures (all axiom-clean):
 4. `bentkus_berry_esseen_convex` — quotes the **sharp** Bentkus 2003 rate `400 k^{1/4} β/√n`.
    **Zero consumers** repository-wide; the weakened convex statement at the elementary rate
    `C_k(β/√n)^{1/4}` is proved as `berryEsseen_convex_elementary`.
+
+### Waves 13–24 (2026-07-28): the multivariate Berry–Esseen line reaches its honest boundary
+
+Sequence of verdicts *overturned* on re-derivation, each by building the object the previous
+note described: the Stieltjes-inversion obstruction (wave 3-era), "Ball's theorem is needed for
+the Gaussian shell bound" (wave 10 — a dimension-*dependent* constant suffices, and
+`gaussian_thickening_le` was proved elementarily), "the exponent 1/4 is intrinsic" (wave 13 —
+the hybrid telescope's `j`-th step is already Gaussian-mollified, so a Cameron–Martin tilt
+replaces the mollifier's `ε^{-3}` by `ε^{-1}`), and "Bentkus's induction is not attempted"
+(waves 19–20 — the scalar fixed points and then the recursion itself were produced).
+
+**Proved and axiom-clean now:** `berryEsseen_convex_improved` and `berryEsseen_ball_improved`
+at `(β/√n)^{1/2}`; the whole Cameron–Martin apparatus including the weighted (Hölder/`L²`)
+remainder; the hybrid telescope; the self-improving recursion over the convex-discrepancy class
+and the hybrid family; brick H `hybridLaw_shell_le`; and the Gaussian shell constant improved
+from `k^{3/2}` to **`√k`**.
+
+**The boundary.** Wave 24 found brick L FALSE as frozen — witness `k = 1`, `n = 1`, `ν` the
+two-point law with mass `p` at `−a`, `a = √((1−p)/p)`, `B = (−∞, −a/2]`: the shell misses both
+atoms, so the bare weight `W ≍ e^{−a²/8}` is admissible while the discrepancy is `≍ p`. The
+minimal amendment (weight `W + C_k ε`, free at the only call site) is applied, and the
+large-weight half is proved (`exists_smooth_swap_bound_of_one_le_weight`). What remains,
+`localised_swap_bound_small_weight`, is *"a Gaussian surface-area statement about convex bodies
+— the same input as Ball's"*. And the same input is what separates the route's `√k` from the
+book's `400 k^{1/4}` in `bentkus_berry_esseen_convex`.
+
+So **both** remaining Berry–Esseen items reduce to one research-level theorem (K. Ball,
+*Gaussian surface area of convex bodies*), whose formalisation is a project in its own right.
+This is recorded as the honest stopping point of this line, not as a verdict to be re-litigated:
+unlike its predecessors it is a named external theorem, not a gap in the local argument.
