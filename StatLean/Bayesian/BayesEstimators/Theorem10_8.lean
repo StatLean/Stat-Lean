@@ -52,7 +52,8 @@ open MeasureTheory ProbabilityTheory Filter Topology
 open scoped ENNReal ProbabilityTheory RealInnerProductSpace
 open AsymptoticStatistics (ParametricFamily IsPDFOf DifferentiableQuadraticMean
   fisherInformation BowlShaped WeakConverges)
-open AsymptoticStatistics.AsymptoticRepresentation (productMeasure)
+open AsymptoticStatistics.AsymptoticRepresentation (productMeasure scoreSum
+  productMeasure_isProbabilityMeasure scoreSum_weakly_converges)
 
 namespace StatLean.Bayesian
 
@@ -211,7 +212,63 @@ theorem bayes_estimator_weakConverges
       (fun n => (productMeasure M μ θ₀ n).map
         (fun ω => Real.sqrt n • (T n ω - θ₀)))
       (multivariateGaussian u₀ J⁻¹) := by
-  sorry
+  classical
+  haveI hprob : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
+    productMeasure_isProbabilityMeasure M μ hPDF θ₀ n
+  haveI hGprob : IsProbabilityMeasure (multivariateGaussian u₀ J⁻¹) := inferInstance
+  -- measurability of the score sums and of the estimators
+  have hscsum : ∀ n : ℕ, Measurable (scoreSum sc n) := by
+    intro n
+    unfold AsymptoticStatistics.AsymptoticRepresentation.scoreSum
+    exact (Finset.univ.measurable_sum
+      (fun i _ => hsc.comp (measurable_pi_apply i))).const_smul ((Real.sqrt (n : ℝ))⁻¹ : ℝ)
+  -- the affine map `z ↦ u₀ + J⁻¹ z`
+  set A : EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin k) :=
+    Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹ with hA
+  have hfc : Continuous fun z : EuclideanSpace ℝ (Fin k) => u₀ + A z :=
+    continuous_const.add A.continuous
+  have hfm : Measurable fun z : EuclideanSpace ℝ (Fin k) => u₀ + A z :=
+    measurable_const.add A.measurable
+  -- the score CLT `scoreSum ⇝ N(0, J)`
+  have hCLT := scoreSum_weakly_converges M μ θ₀ sc hsc (hPDF.density_integral_eq_one θ₀)
+    (hPDF.density_integrable θ₀) (fun _ _ => hPDF.density_integral_eq_one _)
+    (fun _ _ => hPDF.density_integrable _) hDQM J hJ_pd.posSemidef hJ
+  -- push forward by the affine map: `u₀ + Δₙ ⇝ N(u₀, J⁻¹)`
+  have hlim : (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
+      (fun z => u₀ + A z) = multivariateGaussian u₀ J⁻¹ := by
+    rw [show (fun z : EuclideanSpace ℝ (Fin k) => u₀ + A z) = (fun x => u₀ + x) ∘ A from rfl,
+      ← Measure.map_map (measurable_const_add u₀) A.measurable,
+      show (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map A
+        = multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹ from
+        AsymptoticStatistics.multivariateGaussian_map_matrix_inv hJ_pd,
+      AsymptoticStatistics.multivariateGaussian_map_const_add]
+  have hX : WeakConverges (fun n => (productMeasure M μ θ₀ n).map
+      (fun ω => u₀ + bvmEffScore J sc n ω)) (multivariateGaussian u₀ J⁻¹) := by
+    have hmap := hCLT.map hfc hfm
+    rw [hlim] at hmap
+    have hcomp : ∀ n : ℕ, ((productMeasure M μ θ₀ n).map (scoreSum sc n)).map
+        (fun z => u₀ + A z) = (productMeasure M μ θ₀ n).map
+          (fun ω => u₀ + bvmEffScore J sc n ω) := by
+      intro n
+      rw [Measure.map_map hfm (hscsum n)]
+      rfl
+    simpa only [hcomp] using hmap
+  -- Slutsky: the estimators differ from `u₀ + Δₙ` by an `oₚ(1)`
+  refine WeakConverges.slutsky_of_tendstoInMeasure_dist
+    (X := fun n ω => u₀ + bvmEffScore J sc n ω)
+    (Y := fun n ω => Real.sqrt n • (T n ω - θ₀))
+    (fun n => (measurable_const.add (A.measurable.comp (hscsum n))).aemeasurable)
+    (fun n => (((hT_meas n).sub measurable_const).const_smul
+      (Real.sqrt (n : ℝ))).aemeasurable) hX ?_
+  intro ε hε
+  have hkey := bayes_estimator_asymptotics hPDF hsc hDQM hJ_pd hJ hκ hM_joint hTests hπ
+    hℓ hsep hp hpoly hmom hT_meas hεseq hT hunique ε hε
+  refine hkey.congr fun n => ?_
+  congr 1
+  ext ω
+  simp only [Set.mem_setOf_eq, dist_eq_norm]
+  rw [show u₀ + bvmEffScore J sc n ω - Real.sqrt n • (T n ω - θ₀)
+      = -(Real.sqrt n • (T n ω - θ₀) - bvmEffScore J sc n ω - u₀) by abel, norm_neg]
 
 /-- **Anderson step**: for a bowl-shaped loss, the unique minimizer of the limit criterion
 is the origin (`anderson_lemma_loss` gives `g(0) ≤ g(u)`; uniqueness upgrades it to
