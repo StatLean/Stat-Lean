@@ -86,11 +86,72 @@ outright and is axiom-clean. Its two ingredients are
   sharp `4 k^{1/4}` — exactly the dimension factor of Bentkus's constant — but the assembly
   needs only finiteness of `C_k` at fixed `k`.
 
-Crucially, the elementary balance of steps 2–3 still does **not** reach
-the `β/√n` *rate* of the frozen statements: optimising `ε` in `ε^{-3} β/√n + C ε` gives an error
-of order `(β/√n)^{1/4}`, i.e. `n^{-1/8}`, not `n^{-1/2}`. That is a genuine feature of the
-mollifier method (the sharp rate needs characteristic functions / Esseen's smoothing lemma), and
-it is reported precisely rather than papered over.
+With `ε` optimised in `ε^{-3} β/√n + C_k ε` the assembled bound is `(β/√n)^{1/4} = n^{-1/8}`.
+
+## Wave-13 amendment: the exponent `1/4` is **not** intrinsic; the elementary ceiling is `1/2`
+
+Earlier notes in this file (and in `SmoothTestLargeK`) asserted that the balance
+`ε^{-3} β/√n + C_k ε` "cannot do better whatever the shell constant is, so the gap is the rate".
+The arithmetic is right *for that balance*, but the conclusion is wrong: the balance itself is
+not forced. Re-derivation, from scratch:
+
+* In the hybrid telescope the `j`-th step compares `ν` with `γ` inside a background whose first
+  `j` coordinates are **already Gaussian**. That background therefore contains an independent
+  `N(0,(j/n) I_k)` summand: the test function seen by step `j` is automatically mollified at
+  scale `σⱼ = √(j/n)`, for free.
+* For a Gaussian mollification the third-order Lindeberg remainder does **not** cost
+  `‖D³f‖_∞`. Writing the shift as a Cameron–Martin tilt,
+  `∫ f(z + a) dγ(z) = ∫ f(z) exp(⟪a,z⟫ − ‖a‖²/2) dγ(z)`
+  (`integral_gaussian_shift_eq_tilt`), the expansion parameter is the *density*, not the test
+  function. The tilt's second-order Taylor remainder is `O(‖a‖³)` in `L¹(γ)` with an **absolute,
+  dimension-free** constant (`exists_tiltRemainder_bound`, `integral_abs_vecTiltRemainder_le`),
+  and its zeroth/first/second-order terms take the same value for *any two* centred
+  identity-covariance laws (`tiltPoly_fubini`) — the exact analogue of the classical
+  cancellation, but for the Cameron–Martin expansion. With `a = (c/σⱼ) • y` and `c = n^{-1/2}`,
+  step `j` costs `C (c/σⱼ)³ (β + β_G) = C (β + β_G) j^{-3/2}` in place of
+  `(‖D³f‖_∞/6) c³ (β + β_G)`. This is `abs_integral_gaussian_smoothed_swap_le`, proved below.
+* Taking at each step the *better* of the two bounds, the telescope costs
+  `(β + β_G) · Σ_{j<n} min(A ε^{-3} n^{-3/2}, j^{-3/2})`. With `θ := A ε^{-3} n^{-3/2}` the sum
+  splits at `j* = θ^{-2/3}` into `j* θ = θ^{1/3}` and `Σ_{j ≥ j*} j^{-3/2} ≤ 3 θ^{1/3}`, so the
+  total is `≤ 4 (A)^{1/3} (β + β_G)/(ε √n)`: the factor `ε^{-3}` has become `ε^{-1}`.
+* The balance is therefore `ε^{-1} β/√n + C_k ε`, minimised at `ε ∼ (β/√n)^{1/2}`, giving
+  `|μₙ(B) − γ(B)| ≲ √(C_k) · (β/√n)^{1/2} = O(n^{-1/4})` — a strict improvement on `n^{-1/8}`,
+  with the dimension entering only through `√(C_k)`.
+
+**Why `1/2` and not `1`.** The remaining loss is that the swap error is bounded *globally*,
+whereas `D³` of a mollified indicator is supported on the `ε`-shell of `∂B`. Localising costs a
+factor `P(hybrid ∈ shell)`, which requires the anti-concentration bound for the **hybrid** laws,
+not just for `γ`; that is a self-improving induction over `n` (`Δ ≤ A ε^{-3} δ (C_k ε + 2Δ) +
+C_k ε`, which closes at `Δ ≲ C_k δ^{1/3}` and, iterated with the Gaussian smoothing above, at
+the sharp rate). That induction is Bentkus's actual argument and is not attempted here. So the
+honest ceiling of the *non-inductive* elementary route is `(β/√n)^{1/2}`, and the residual gap
+to Bentkus is a further factor `(β/√n)^{1/2}`.
+
+**Status of the improvement.** Everything below is proved outright (`0`-sorry).
+
+* *Analytic core.* `exists_tiltRemainder_bound` (scalar, absolute constant),
+  `integral_abs_vecTiltRemainder_le` (multivariate, **dimension-free**, by reduction to the
+  one-dimensional marginal), `integral_gaussian_shift_eq_tilt` (Cameron–Martin),
+  `tiltPoly_fubini` (the moment cancellation) and, assembling these,
+  `abs_integral_gaussian_smoothed_swap_le` — the swap step at cost `C (c/σ)³ (β_ν + β_ρ)`.
+* *Assembly brick (ii).* `map_stdGaussian_pair_smul_add` / `integral_gaussian_pair_smul_add`:
+  the Gaussian convolution `γ_σ ∗ γ_c = γ_{√(σ²+c²)}`, in measure and in integral form.
+* *Assembly brick (iii).* `sum_le_of_bounded_and_decay`: if `0 ≤ T j ≤ θ` and
+  `T j ≤ j^{-3/2}` for `j ≥ 1` then `Σ_{j<n} T j ≤ J θ + 3/√J` for every cut `J ≥ 2` — the
+  displayed sum estimate, proved by the backward telescoping bound
+  `inv_mul_sqrt_le_telescope` (`j^{-3/2} ≤ 2((j−1)^{-1/2} − j^{-1/2})`), with no integral
+  comparison. Choosing `J ≈ θ^{-2/3}` gives `O(θ^{1/3})`.
+
+**The one remaining brick is (i)**: the telescope itself. Concretely, `Iⱼ` should be
+`∫ x, (∫ z, f (n^{-1/2} • (∑ₗ xₗ) + (j/n)^{1/2} • z) dγ(z)) d(Measure.pi κ'ⱼ)` with
+`κ'ⱼ i = if i < j then Measure.dirac 0 else ν`; `integral_pi_sum_peel` peels coordinate `j`
+verbatim (the integrand is a bounded continuous function of `∑ₗ xₗ`), brick (ii) identifies the
+`(j+1)`-st smoothing with the `j`-th plus one fresh `n^{-1/2}`-scaled Gaussian, the step is
+`abs_integral_gaussian_smoothed_swap_le` for `j ≥ 1` and `abs_integral_swap_step_le` for
+`j = 0`, and brick (iii) sums the steps. The two endpoints need
+`Measure.pi (fun _ => Measure.dirac 0) = Measure.dirac 0` (for `I n`) and `√0 = 0` (for `I 0`).
+Until that lands, `berryEsseen_convex_elementary` and `berryEsseen_ball_elementary` keep their
+proved `(β/√n)^{1/4}` form.
 
 **Reference.** V. Bentkus, "On the dependence of the Berry–Esseen bound on dimension,"
 *J. Statist. Plann. Inference* **113** (2003), 385–402. E. L. Lehmann and J. P. Romano,
@@ -2485,14 +2546,19 @@ finite third moment `β = ∫‖y‖³ dν`, and every measurable convex `B`,
 
 where `μₙ` is the law of `n^{-1/2} ∑ᵢ Yᵢ` and `γ = N(0, I_k)`.
 
-This is the strongest bound the elementary "smooth the indicator + Lindeberg swap" route yields.
 Optimising `ε` in `ε^{-3} β/√n + C ε` balances steps 2–3 at `ε = (β/√n)^{1/4}`, giving an error of
 order `(β/√n)^{1/4} = n^{-1/8}` — **not** the `n^{-1/2}` rate of the frozen
 `bentkus_berry_esseen_convex`. The constant also carries a dimension factor: it is
 `C = C₀ + C_k` with `C₀` the third-derivative constant of `exists_smoothed_convex_indicator` and
-`C_k = gaussianShellConst k = 8k^{3/2}/√(2π)` the Gaussian boundary-shell constant. Both deviations
-are intrinsic to the mollifier method; the sharp `400 k^{1/4} · β/√n` needs Bentkus's Fourier
-analysis and is not attempted. (Ball's theorem gives the sharp shell constant `4 k^{1/4}`, which is
+`C_k = gaussianShellConst k = 8k^{3/2}/√(2π)` the Gaussian boundary-shell constant.
+
+**This exponent is not the ceiling of the elementary route** (wave-13 correction of an earlier
+note that claimed it was): exploiting the Gaussian mollification the hybrid telescope carries for
+free, `ε^{-3}` can be replaced by `ε^{-1}`, which balances at `(β/√n)^{1/2} = n^{-1/4}`. The
+analytic core of that improvement is proved in the Cameron–Martin section at the end of this
+file; the three remaining assembly bricks are listed in the module docstring. The sharp
+`400 k^{1/4} · β/√n` needs Bentkus's self-improving induction and is not attempted.
+(Ball's theorem gives the sharp shell constant `4 k^{1/4}`, which is
 exactly the dimension factor of Bentkus's bound; only *finiteness* at fixed `k` is needed here, and
 that is what `GaussianShell` proves elementarily.)
 
@@ -2576,5 +2642,1180 @@ theorem berryEsseen_convex_elementary {k : ℕ} (hk : 0 < k) :
   · linarith [hlevyE.2]
 
 end ElementaryRoute
+
+/-! ### Wave-13: the Cameron–Martin (Gaussian-smoothing) route to a better exponent
+
+The material below is the analytic core of a **strict improvement of the exponent** of
+`berryEsseen_convex_elementary`, from `(β/√n)^{1/4}` to `(β/√n)^{1/2}`; see the
+"wave-13 amendment" in the module docstring for the derivation and for what is still missing
+before the improved headline can be assembled. Everything here is proved outright.
+
+The point is that the `j`-th step of the hybrid telescope already carries an independent
+`N(0,(j/n) I_k)` summand, so its test function is automatically Gaussian-mollified at scale
+`σ_j = √(j/n)`; and for a Gaussian mollification the Lindeberg remainder costs `σ_j^{-3}` rather
+than `‖D³f‖_∞`, because the shift can be moved onto the *density* (Cameron–Martin) instead of
+onto the test function. -/
+
+
+
+section GaussianTilt
+
+/-- Third-order Taylor bound for the real exponential, valid on **all** of `ℝ`
+(Mathlib's `Real.exp_bound` needs `|x| ≤ 1`). The constant is `1/2` rather than the sharp
+`1/6` because the remainder integral is bounded by its sup times the length of the
+interval. -/
+private lemma abs_exp_sub_taylor_two_le (x : ℝ) :
+    |Real.exp x - (1 + x + x ^ 2 / 2)| ≤ |x| ^ 3 * Real.exp |x| / 2 := by
+  set G : ℝ → ℝ := fun u => ((x - u) ^ 2 / 2 + (x - u) + 1) * Real.exp u with hG
+  have hderiv : ∀ u : ℝ, HasDerivAt G ((x - u) ^ 2 / 2 * Real.exp u) u := by
+    intro u
+    have h1 : HasDerivAt (fun u : ℝ => (x - u) ^ 2 / 2 + (x - u) + 1)
+        (-(x - u) - 1) u := by
+      have hsub : HasDerivAt (fun u : ℝ => x - u) (-1) u := by
+        simpa using (hasDerivAt_id u).const_sub x
+      have hsq : HasDerivAt (fun u : ℝ => (x - u) ^ 2) (2 * (x - u) * (-1)) u := by
+        simpa using hsub.pow 2
+      have := ((hsq.div_const 2).add hsub).add_const (1 : ℝ)
+      convert this using 1
+      ring
+    have h2 : HasDerivAt (fun u : ℝ => Real.exp u) (Real.exp u) u := Real.hasDerivAt_exp u
+    have := h1.mul h2
+    convert this using 1
+    ring
+  have hint : ∫ u in (0 : ℝ)..x, (x - u) ^ 2 / 2 * Real.exp u = G x - G 0 :=
+    intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ => hderiv u)
+      (Continuous.intervalIntegrable (by fun_prop) _ _)
+  have hGx : G x = Real.exp x := by simp [hG]
+  have hG0 : G 0 = 1 + x + x ^ 2 / 2 := by simp [hG]; ring
+  have hbound : ∀ u ∈ Set.uIoc (0 : ℝ) x,
+      ‖(x - u) ^ 2 / 2 * Real.exp u‖ ≤ x ^ 2 / 2 * Real.exp |x| := by
+    intro u hu
+    have hu' : |u| ≤ |x| := by
+      rcases le_total (0 : ℝ) x with hx | hx
+      · rw [Set.uIoc_of_le hx] at hu
+        rw [abs_of_nonneg hu.1.le, abs_of_nonneg hx]
+        exact hu.2
+      · rw [Set.uIoc_of_ge hx] at hu
+        rw [abs_of_nonpos hu.2, abs_of_nonpos hx]
+        linarith [hu.1]
+    have hxu : |x - u| ≤ |x| := by
+      rcases le_total (0 : ℝ) x with hx | hx
+      · rw [Set.uIoc_of_le hx] at hu
+        rw [abs_of_nonneg (by linarith [hu.2] : (0:ℝ) ≤ x - u), abs_of_nonneg hx]
+        linarith [hu.1]
+      · rw [Set.uIoc_of_ge hx] at hu
+        rw [abs_of_nonpos (by linarith [hu.1] : x - u ≤ 0), abs_of_nonpos hx]
+        linarith [hu.2]
+    have hsq : (x - u) ^ 2 ≤ x ^ 2 := by
+      rw [← sq_abs (x - u), ← sq_abs x]
+      exact pow_le_pow_left₀ (abs_nonneg _) hxu 2
+    have hexp : Real.exp u ≤ Real.exp |x| := Real.exp_le_exp.2 (le_trans (le_abs_self u) hu')
+    rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (by positivity : (0:ℝ) ≤ (x - u) ^ 2 / 2),
+      abs_of_pos (Real.exp_pos u)]
+    exact mul_le_mul (by linarith) hexp (Real.exp_pos u).le (by positivity)
+  have hle := intervalIntegral.norm_integral_le_of_norm_le_const hbound
+  rw [hint, hGx, hG0, Real.norm_eq_abs] at hle
+  refine hle.trans ?_
+  have hz : |x - 0| = |x| := by ring_nf
+  rw [hz, show x ^ 2 = |x| ^ 2 from (sq_abs x).symm]
+  nlinarith [abs_nonneg x, Real.exp_pos |x|]
+
+/-! ### Elementary envelopes -/
+
+/-- `y ≤ exp y`. -/
+private lemma self_le_exp (y : ℝ) : y ≤ Real.exp y := by
+  have := Real.add_one_le_exp y
+  linarith
+
+/-- `|t| ≤ exp t + exp (-t)`. -/
+private lemma abs_le_exp_add_exp (t : ℝ) : |t| ≤ Real.exp t + Real.exp (-t) := by
+  rcases abs_cases t with ⟨h, _⟩ | ⟨h, _⟩
+  · rw [h]; linarith [self_le_exp t, Real.exp_pos (-t)]
+  · rw [h]; linarith [self_le_exp (-t), Real.exp_pos t]
+
+/-- `exp |t| ≤ exp t + exp (-t)`. -/
+private lemma exp_abs_le_exp_add_exp (t : ℝ) :
+    Real.exp |t| ≤ Real.exp t + Real.exp (-t) := by
+  rcases abs_cases t with ⟨h, _⟩ | ⟨h, _⟩
+  · rw [h]; linarith [Real.exp_pos (-t)]
+  · rw [h]; linarith [Real.exp_pos t]
+
+/-- `t² ≤ 4 (exp t + exp (-t))`. -/
+private lemma sq_le_exp_add_exp (t : ℝ) : t ^ 2 ≤ 4 * (Real.exp t + Real.exp (-t)) := by
+  have hkey : ∀ y : ℝ, 0 ≤ y → y ^ 2 ≤ 4 * Real.exp y := by
+    intro y hy
+    have h1 : y / 2 + 1 ≤ Real.exp (y / 2) := Real.add_one_le_exp _
+    have h2 : (0 : ℝ) ≤ y / 2 + 1 := by linarith
+    have h3 : (y / 2 + 1) ^ 2 ≤ Real.exp (y / 2) ^ 2 := pow_le_pow_left₀ h2 h1 2
+    have h4 : Real.exp (y / 2) ^ 2 = Real.exp y := by
+      rw [← Real.exp_nat_mul]; congr 1; ring
+    nlinarith
+  have habs : |t| ^ 2 ≤ 4 * Real.exp |t| := hkey _ (abs_nonneg t)
+  have hex := exp_abs_le_exp_add_exp t
+  nlinarith [sq_abs t]
+
+/-- `y³ ≤ 27 exp y` for `y ≥ 0`. -/
+private lemma cube_le_exp {y : ℝ} (hy : 0 ≤ y) : y ^ 3 ≤ 27 * Real.exp y := by
+  have h1 : y / 3 + 1 ≤ Real.exp (y / 3) := Real.add_one_le_exp _
+  have h2 : (0 : ℝ) ≤ y / 3 + 1 := by linarith
+  have h3 : (y / 3 + 1) ^ 3 ≤ Real.exp (y / 3) ^ 3 := pow_le_pow_left₀ h2 h1 3
+  have h4 : Real.exp (y / 3) ^ 3 = Real.exp y := by
+    rw [← Real.exp_nat_mul]; congr 1; ring
+  nlinarith
+
+/-! ### Gaussian moments used by the tilt bound -/
+
+private lemma integrable_exp_mul_gauss (a : ℝ) :
+    Integrable (fun t : ℝ => Real.exp (a * t)) (gaussianReal 0 1) :=
+  integrable_exp_mul_gaussianReal a
+
+private lemma integral_exp_mul_gauss (a : ℝ) :
+    (∫ t, Real.exp (a * t) ∂(gaussianReal 0 1)) = Real.exp (a ^ 2 / 2) := by
+  rw [integral_exp_mul_gaussianReal 0 1 a]
+  norm_num
+
+private lemma exp_neg_mul_eq (a : ℝ) :
+    (fun t : ℝ => Real.exp (-a * t)) = fun t : ℝ => Real.exp (-(a * t)) := by
+  funext t; congr 1; ring
+
+private lemma integrable_cosh (a : ℝ) :
+    Integrable (fun t : ℝ => Real.exp (a * t) + Real.exp (-(a * t))) (gaussianReal 0 1) := by
+  have h2 := integrable_exp_mul_gauss (-a)
+  rw [exp_neg_mul_eq a] at h2
+  exact (integrable_exp_mul_gauss a).add h2
+
+private lemma integral_cosh (a : ℝ) :
+    (∫ t, (Real.exp (a * t) + Real.exp (-(a * t))) ∂(gaussianReal 0 1))
+      = 2 * Real.exp (a ^ 2 / 2) := by
+  have h2 := integrable_exp_mul_gauss (-a)
+  rw [exp_neg_mul_eq a] at h2
+  rw [integral_add (integrable_exp_mul_gauss a) h2, ← exp_neg_mul_eq a,
+    integral_exp_mul_gauss a, integral_exp_mul_gauss (-a), show (-a) ^ 2 = a ^ 2 by ring]
+  ring
+
+private lemma integrable_cosh_one :
+    Integrable (fun t : ℝ => Real.exp t + Real.exp (-t)) (gaussianReal 0 1) := by
+  have h := integrable_cosh 1
+  simp only [one_mul] at h
+  exact h
+
+private lemma integral_cosh_one :
+    (∫ t, (Real.exp t + Real.exp (-t)) ∂(gaussianReal 0 1)) = 2 * Real.exp (1 / 2) := by
+  have h := integral_cosh 1
+  simp only [one_mul] at h
+  rw [h]
+  norm_num
+
+private lemma integral_cosh_two :
+    (∫ t, (Real.exp (2 * t) + Real.exp (-(2 * t))) ∂(gaussianReal 0 1)) = 2 * Real.exp 2 := by
+  rw [integral_cosh 2]
+  norm_num
+
+private lemma integrable_id_gauss : Integrable (fun t : ℝ => t) (gaussianReal 0 1) := by
+  refine Integrable.mono' integrable_cosh_one (by fun_prop) ?_
+  filter_upwards with t
+  rw [Real.norm_eq_abs]
+  exact abs_le_exp_add_exp t
+
+private lemma integrable_sq_gauss : Integrable (fun t : ℝ => t ^ 2) (gaussianReal 0 1) := by
+  refine Integrable.mono' (integrable_cosh_one.const_mul 4) (by fun_prop) ?_
+  filter_upwards with t
+  rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg t)]
+  exact sq_le_exp_add_exp t
+
+/-! ### The scalar tilt remainder -/
+
+/-- The **scalar tilt remainder**: the error in the second-order expansion, in the tilt
+parameter `s`, of the Cameron–Martin density `exp (s t − s²/2)` of the standard Gaussian
+shifted by `s`. Its first three coefficients are the Hermite polynomials `1`, `t`, `t² − 1`. -/
+private noncomputable def tiltRemainder (s t : ℝ) : ℝ :=
+  Real.exp (s * t - s ^ 2 / 2) - (1 + s * t + s ^ 2 * (t ^ 2 - 1) / 2)
+
+private lemma integrable_exp_tilt (s : ℝ) :
+    Integrable (fun t : ℝ => Real.exp (s * t - s ^ 2 / 2)) (gaussianReal 0 1) := by
+  have hre : (fun t : ℝ => Real.exp (s * t - s ^ 2 / 2))
+      = fun t : ℝ => Real.exp (-(s ^ 2 / 2)) * Real.exp (s * t) := by
+    funext t; rw [← Real.exp_add]; congr 1; ring
+  rw [hre]
+  exact (integrable_exp_mul_gauss s).const_mul _
+
+private lemma integral_exp_tilt (s : ℝ) :
+    (∫ t, Real.exp (s * t - s ^ 2 / 2) ∂(gaussianReal 0 1)) = 1 := by
+  have hre : (fun t : ℝ => Real.exp (s * t - s ^ 2 / 2))
+      = fun t : ℝ => Real.exp (-(s ^ 2 / 2)) * Real.exp (s * t) := by
+    funext t; rw [← Real.exp_add]; congr 1; ring
+  rw [hre, integral_const_mul, integral_exp_mul_gauss s, ← Real.exp_add]
+  norm_num
+
+private lemma integrable_tiltRemainder (s : ℝ) :
+    Integrable (fun t => tiltRemainder s t) (gaussianReal 0 1) :=
+  (integrable_exp_tilt s).sub
+    (((integrable_const (1 : ℝ)).add (integrable_id_gauss.const_mul s)).add
+      (((integrable_sq_gauss.sub (integrable_const (1 : ℝ))).const_mul (s ^ 2)).div_const 2))
+
+/-- The (parameter-free) envelope controlling the tilt remainder for small tilts. -/
+private noncomputable def tiltEnvSmall (t : ℝ) : ℝ :=
+  27 / 2 * Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t)))
+    + ((Real.exp t + Real.exp (-t)) / 2 + 1 / 8)
+
+private lemma integrable_tiltEnvSmall : Integrable tiltEnvSmall (gaussianReal 0 1) :=
+  ((integrable_cosh 2).const_mul _).add
+    ((integrable_cosh_one.div_const 2).add (integrable_const _))
+
+private lemma integral_tiltEnvSmall_le :
+    (∫ t, tiltEnvSmall t ∂(gaussianReal 0 1)) ≤ 30 * Real.exp 3 + 3 := by
+  have hA : Integrable (fun t : ℝ =>
+      27 / 2 * Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t)))) (gaussianReal 0 1) :=
+    (integrable_cosh 2).const_mul _
+  have hB : Integrable (fun t : ℝ => (Real.exp t + Real.exp (-t)) / 2) (gaussianReal 0 1) :=
+    integrable_cosh_one.div_const 2
+  have hC : Integrable (fun _ : ℝ => (1 / 8 : ℝ)) (gaussianReal 0 1) := integrable_const _
+  have hBC : Integrable (fun t : ℝ => (Real.exp t + Real.exp (-t)) / 2 + 1 / 8)
+      (gaussianReal 0 1) := hB.add hC
+  have hval : (∫ t, tiltEnvSmall t ∂(gaussianReal 0 1))
+      = 27 / 2 * Real.exp 1 * (2 * Real.exp 2) + ((2 * Real.exp (1 / 2)) / 2 + 1 / 8) := by
+    simp only [tiltEnvSmall]
+    rw [integral_add hA hBC, integral_add hB hC, integral_const_mul, integral_div,
+      integral_cosh_two, integral_cosh_one, integral_const]
+    simp
+  rw [hval]
+  have he3 : Real.exp 1 * Real.exp 2 = Real.exp 3 := by rw [← Real.exp_add]; norm_num
+  have hhalf : Real.exp (1 / 2) ≤ Real.exp 3 := Real.exp_le_exp.2 (by norm_num)
+  have hE31 : (1 : ℝ) ≤ Real.exp 3 := Real.one_le_exp (by norm_num)
+  nlinarith [Real.exp_pos (1:ℝ), Real.exp_pos (2:ℝ)]
+
+/-- The (parameter-free) envelope controlling the tilt remainder for large tilts, apart from
+the tilt-dependent exponential term. -/
+private noncomputable def tiltEnvLarge (t : ℝ) : ℝ :=
+  4 * (Real.exp t + Real.exp (-t)) + 1
+
+private lemma integrable_tiltEnvLarge : Integrable tiltEnvLarge (gaussianReal 0 1) :=
+  (integrable_cosh_one.const_mul 4).add (integrable_const _)
+
+private lemma integral_tiltEnvLarge :
+    (∫ t, tiltEnvLarge t ∂(gaussianReal 0 1)) = 4 * (2 * Real.exp (1 / 2)) + 1 := by
+  simp only [tiltEnvLarge]
+  rw [integral_add (integrable_cosh_one.const_mul 4) (integrable_const _), integral_const_mul,
+    integral_cosh_one, integral_const]
+  simp
+
+/-- The `L¹(γ)` bound on the tilt remainder for **small** tilts: the third-order Taylor
+expansion of `exp` with an exponential envelope. -/
+private lemma integral_abs_tiltRemainder_le_of_le_one {s : ℝ} (hs : 0 ≤ s) (hs1 : s ≤ 1) :
+    (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ (30 * Real.exp 3 + 3) * s ^ 3 := by
+  have hpt : ∀ t : ℝ, |tiltRemainder s t| ≤ s ^ 3 * tiltEnvSmall t := by
+    intro t
+    set x : ℝ := s * t - s ^ 2 / 2 with hx
+    have hsplit : tiltRemainder s t
+        = (Real.exp x - (1 + x + x ^ 2 / 2)) + (-(s ^ 3 * t / 2) + s ^ 4 / 8) := by
+      simp only [tiltRemainder, hx]; ring
+    have hxabs : |x| ≤ s * (|t| + 1 / 2) := by
+      have h1 : |x| ≤ s * |t| + s ^ 2 / 2 := by
+        rw [hx]
+        calc |s * t - s ^ 2 / 2| ≤ |s * t| + |s ^ 2 / 2| := abs_sub _ _
+          _ = s * |t| + s ^ 2 / 2 := by
+              rw [abs_mul, abs_of_nonneg hs,
+                abs_of_nonneg (by positivity : (0:ℝ) ≤ s ^ 2 / 2)]
+      nlinarith
+    have hcube : |x| ^ 3 ≤ s ^ 3 * (|t| + 1 / 2) ^ 3 := by
+      have h := pow_le_pow_left₀ (abs_nonneg x) hxabs 3
+      calc |x| ^ 3 ≤ (s * (|t| + 1 / 2)) ^ 3 := h
+        _ = s ^ 3 * (|t| + 1 / 2) ^ 3 := by ring
+    have hexpx : Real.exp |x| ≤ Real.exp (|t| + 1 / 2) := by
+      refine Real.exp_le_exp.2 (hxabs.trans ?_)
+      nlinarith [abs_nonneg t]
+    have hbig : (|t| + 1 / 2) ^ 3 ≤ 27 * Real.exp (|t| + 1 / 2) := cube_le_exp (by positivity)
+    have hexpabs : Real.exp (|t| + 1 / 2) * Real.exp (|t| + 1 / 2)
+        = Real.exp 1 * Real.exp (2 * |t|) := by
+      rw [← Real.exp_add, ← Real.exp_add]; congr 1; ring
+    have hcosh2 : Real.exp (2 * |t|) ≤ Real.exp (2 * t) + Real.exp (-(2 * t)) := by
+      rcases abs_cases t with ⟨h, _⟩ | ⟨h, _⟩
+      · rw [h]; linarith [Real.exp_pos (-(2 * t))]
+      · rw [h]
+        have he : Real.exp (2 * -t) = Real.exp (-(2 * t)) := by congr 1; ring
+        rw [he]; linarith [Real.exp_pos (2 * t)]
+    have hT := abs_exp_sub_taylor_two_le x
+    have hterm1 : |x| ^ 3 * Real.exp |x| / 2
+        ≤ s ^ 3 * (27 / 2 * Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t)))) := by
+      have e1 : |x| ^ 3 * Real.exp |x|
+          ≤ (s ^ 3 * (|t| + 1 / 2) ^ 3) * Real.exp (|t| + 1 / 2) :=
+        mul_le_mul hcube hexpx (Real.exp_pos _).le (by positivity)
+      have e2 : (s ^ 3 * (|t| + 1 / 2) ^ 3) * Real.exp (|t| + 1 / 2)
+          ≤ (s ^ 3 * (27 * Real.exp (|t| + 1 / 2))) * Real.exp (|t| + 1 / 2) :=
+        mul_le_mul_of_nonneg_right
+          (mul_le_mul_of_nonneg_left hbig (by positivity : (0:ℝ) ≤ s ^ 3))
+          (Real.exp_pos _).le
+      have e3 : (s ^ 3 * (27 * Real.exp (|t| + 1 / 2))) * Real.exp (|t| + 1 / 2)
+          = s ^ 3 * 27 * (Real.exp 1 * Real.exp (2 * |t|)) := by
+        rw [mul_assoc (s ^ 3) _ _, mul_assoc, hexpabs]; ring
+      have e5 : s ^ 3 * 27 * (Real.exp 1 * Real.exp (2 * |t|))
+          ≤ s ^ 3 * 27 * (Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t)))) :=
+        mul_le_mul_of_nonneg_left
+          (mul_le_mul_of_nonneg_left hcosh2 (Real.exp_pos 1).le) (by positivity)
+      have e6 : s ^ 3 * 27 * (Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t))))
+          = 2 * (s ^ 3 * (27 / 2 * Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t))))) := by
+        ring
+      have hnn : (0:ℝ) ≤ s ^ 3 * (27 / 2 * Real.exp 1
+          * (Real.exp (2 * t) + Real.exp (-(2 * t)))) := by positivity
+      linarith [e1, e2, e5]
+    have hterm2 : |(-(s ^ 3 * t / 2) + s ^ 4 / 8)|
+        ≤ s ^ 3 * ((Real.exp t + Real.exp (-t)) / 2) + s ^ 3 * (1 / 8 : ℝ) := by
+      have hAdd := abs_add_le (-(s ^ 3 * t / 2)) (s ^ 4 / 8)
+      have e1 : |(-(s ^ 3 * t / 2))| = s ^ 3 / 2 * |t| := by
+        rw [abs_neg, show s ^ 3 * t / 2 = s ^ 3 / 2 * t by ring, abs_mul,
+          abs_of_nonneg (by positivity : (0:ℝ) ≤ s ^ 3 / 2)]
+      have e2 : |s ^ 4 / 8| = s ^ 4 / 8 := abs_of_nonneg (by positivity)
+      rw [e1, e2] at hAdd
+      have h2 : s ^ 4 ≤ s ^ 3 := by nlinarith [pow_nonneg hs 3]
+      nlinarith [abs_le_exp_add_exp t, pow_nonneg hs 3]
+    have hexpand : s ^ 3 * tiltEnvSmall t
+        = s ^ 3 * (27 / 2 * Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t))))
+          + (s ^ 3 * ((Real.exp t + Real.exp (-t)) / 2) + s ^ 3 * (1 / 8 : ℝ)) := by
+      simp only [tiltEnvSmall]; ring
+    rw [hsplit, hexpand]
+    calc |(Real.exp x - (1 + x + x ^ 2 / 2)) + (-(s ^ 3 * t / 2) + s ^ 4 / 8)|
+        ≤ |Real.exp x - (1 + x + x ^ 2 / 2)| + |(-(s ^ 3 * t / 2) + s ^ 4 / 8)| :=
+          abs_add_le _ _
+      _ ≤ _ := by linarith [hT, hterm1, hterm2]
+  refine (integral_mono (integrable_tiltRemainder s).abs
+    (integrable_tiltEnvSmall.const_mul (s ^ 3)) hpt).trans ?_
+  rw [integral_const_mul]
+  nlinarith [integral_tiltEnvSmall_le, pow_nonneg hs 3]
+
+/-- The `L¹(γ)` bound on the tilt remainder for **large** tilts, where the trivial termwise
+bound already beats `s³`. -/
+private lemma integral_abs_tiltRemainder_le_of_one_le {s : ℝ} (hs1 : 1 ≤ s) :
+    (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ (30 * Real.exp 3 + 3) * s ^ 3 := by
+  have hs : (0 : ℝ) ≤ s := by linarith
+  have hA : Integrable (fun t : ℝ => Real.exp (s * t - s ^ 2 / 2)) (gaussianReal 0 1) :=
+    integrable_exp_tilt s
+  have hW : Integrable
+      (fun t : ℝ => 1 + s * (Real.exp t + Real.exp (-t)) + s ^ 2 * tiltEnvLarge t / 2)
+      (gaussianReal 0 1) :=
+    ((integrable_const (1 : ℝ)).add (integrable_cosh_one.const_mul s)).add
+      ((integrable_tiltEnvLarge.const_mul (s ^ 2)).div_const 2)
+  have hpt : ∀ t : ℝ, |tiltRemainder s t|
+      ≤ Real.exp (s * t - s ^ 2 / 2)
+        + (1 + s * (Real.exp t + Real.exp (-t)) + s ^ 2 * tiltEnvLarge t / 2) := by
+    intro t
+    have ha := abs_le_exp_add_exp t
+    have hb := sq_le_exp_add_exp t
+    have hc : |1 + s * t + s ^ 2 * (t ^ 2 - 1) / 2|
+        ≤ 1 + s * |t| + s ^ 2 * (t ^ 2 + 1) / 2 := by
+      have e1 : |1 + s * t| ≤ 1 + s * |t| := by
+        calc |1 + s * t| ≤ |(1:ℝ)| + |s * t| := abs_add_le _ _
+          _ = 1 + s * |t| := by rw [abs_one, abs_mul, abs_of_nonneg hs]
+      have e2 : |s ^ 2 * (t ^ 2 - 1) / 2| ≤ s ^ 2 * (t ^ 2 + 1) / 2 := by
+        rw [show s ^ 2 * (t ^ 2 - 1) / 2 = s ^ 2 / 2 * (t ^ 2 - 1) by ring, abs_mul,
+          abs_of_nonneg (by positivity : (0:ℝ) ≤ s ^ 2 / 2)]
+        have habs : |t ^ 2 - 1| ≤ t ^ 2 + 1 := by
+          rcases abs_cases (t ^ 2 - 1) with ⟨h, _⟩ | ⟨h, _⟩ <;> rw [h] <;> nlinarith [sq_nonneg t]
+        nlinarith [sq_nonneg s]
+      calc |1 + s * t + s ^ 2 * (t ^ 2 - 1) / 2|
+          ≤ |1 + s * t| + |s ^ 2 * (t ^ 2 - 1) / 2| := abs_add_le _ _
+        _ ≤ (1 + s * |t|) + s ^ 2 * (t ^ 2 + 1) / 2 := by linarith
+        _ = 1 + s * |t| + s ^ 2 * (t ^ 2 + 1) / 2 := by ring
+    have h0 : |tiltRemainder s t|
+        ≤ Real.exp (s * t - s ^ 2 / 2) + |1 + s * t + s ^ 2 * (t ^ 2 - 1) / 2| := by
+      simp only [tiltRemainder]
+      calc |Real.exp (s * t - s ^ 2 / 2) - (1 + s * t + s ^ 2 * (t ^ 2 - 1) / 2)|
+          ≤ |Real.exp (s * t - s ^ 2 / 2)| + |1 + s * t + s ^ 2 * (t ^ 2 - 1) / 2| :=
+            abs_sub _ _
+        _ = _ := by rw [abs_of_pos (Real.exp_pos _)]
+    simp only [tiltEnvLarge]
+    nlinarith [sq_nonneg s, Real.exp_pos t, Real.exp_pos (-t)]
+  have h1s : Integrable (fun t : ℝ => 1 + s * (Real.exp t + Real.exp (-t)))
+      (gaussianReal 0 1) := (integrable_const (1 : ℝ)).add (integrable_cosh_one.const_mul s)
+  have h2s : Integrable (fun t : ℝ => s ^ 2 * tiltEnvLarge t / 2) (gaussianReal 0 1) :=
+    (integrable_tiltEnvLarge.const_mul (s ^ 2)).div_const 2
+  have hWval : (∫ t, (1 + s * (Real.exp t + Real.exp (-t)) + s ^ 2 * tiltEnvLarge t / 2)
+      ∂(gaussianReal 0 1))
+      = 1 + s * (2 * Real.exp (1 / 2)) + s ^ 2 * (4 * (2 * Real.exp (1 / 2)) + 1) / 2 := by
+    rw [integral_add h1s h2s,
+      integral_add (integrable_const (1 : ℝ)) (integrable_cosh_one.const_mul s),
+      integral_const, integral_const_mul, integral_cosh_one, integral_div, integral_const_mul,
+      integral_tiltEnvLarge]
+    simp
+  refine (integral_mono (integrable_tiltRemainder s).abs (hA.add hW)
+    (fun t => by simpa using hpt t)).trans ?_
+  simp only [Pi.add_apply]
+  rw [integral_add hA hW, integral_exp_tilt s, hWval]
+  have hhalf : Real.exp (1 / 2) ≤ Real.exp 3 := Real.exp_le_exp.2 (by norm_num)
+  have hE31 : (1 : ℝ) ≤ Real.exp 3 := Real.one_le_exp (by norm_num)
+  have hcube1 : s ≤ s ^ 3 := by nlinarith
+  have hsq1 : s ^ 2 ≤ s ^ 3 := by nlinarith
+  have hone : (1 : ℝ) ≤ s ^ 3 := by nlinarith
+  nlinarith [Real.exp_pos ((1:ℝ) / 2)]
+
+/-- **The tilt remainder is cubically small in the tilt parameter, in `L¹` of the Gaussian.**
+This is the analytic heart of the improved bound: the third-order Taylor error of the
+Cameron–Martin density is `O(s³)` *after integration against the Gaussian*, with an absolute
+constant. (Pointwise it is *not* `O(s³)`: `exp (s t)` is unbounded in `t`.) -/
+private lemma exists_tiltRemainder_bound :
+    ∃ C : ℝ, 0 < C ∧ ∀ s : ℝ, 0 ≤ s →
+      (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ C * s ^ 3 := by
+  refine ⟨30 * Real.exp 3 + 3, by positivity, fun s hs => ?_⟩
+  rcases le_total s 1 with h | h
+  · exact integral_abs_tiltRemainder_le_of_le_one hs h
+  · exact integral_abs_tiltRemainder_le_of_one_le h
+
+
+/-! ### The multivariate Cameron–Martin tilt -/
+
+section MultivariateTilt
+
+variable {k : ℕ}
+
+private lemma continuous_tiltRemainder (s : ℝ) : Continuous (fun t => tiltRemainder s t) := by
+  unfold tiltRemainder
+  fun_prop
+
+/-- The **vector tilt remainder**: the second-order Taylor error, in the shift `w`, of the
+Cameron–Martin density `exp (⟪w,z⟫ − ‖w‖²/2)` of `N(0,I_k)` translated by `w`. -/
+private noncomputable def vecTiltRemainder (w z : EuclideanSpace ℝ (Fin k)) : ℝ :=
+  Real.exp (⟪w, z⟫_ℝ - ‖w‖ ^ 2 / 2)
+    - (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2)
+
+/-- **The vector tilt remainder is cubically small in the shift, in `L¹(N(0,I_k))`.**
+Reduction to the scalar statement `exists_tiltRemainder_bound` by the one-dimensional marginal
+`⟪ŵ, ·⟫ ∼ N(0,1)` (`stdGaussian_map_inner_unit`): the whole expression depends on `z` only
+through that marginal. The constant is **dimension-free**. -/
+private lemma integral_abs_vecTiltRemainder_le {C : ℝ}
+    (hC : ∀ s : ℝ, 0 ≤ s → (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ C * s ^ 3)
+    (w : EuclideanSpace ℝ (Fin k)) :
+    (∫ z, |vecTiltRemainder w z| ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      ≤ C * ‖w‖ ^ 3 := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · simp [vecTiltRemainder]
+  · have hnw : 0 < ‖w‖ := norm_pos_iff.mpr hw
+    obtain ⟨u, hunit, hwu⟩ : ∃ u : EuclideanSpace ℝ (Fin k), ‖u‖ = 1 ∧ w = ‖w‖ • u :=
+      ⟨‖w‖⁻¹ • w, by
+        rw [norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.mpr hnw)]
+        field_simp, by rw [smul_smul, mul_inv_cancel₀ hnw.ne', one_smul]⟩
+    have hinner : ∀ z : EuclideanSpace ℝ (Fin k), ⟪w, z⟫_ℝ = ‖w‖ * ⟪u, z⟫_ℝ := by
+      intro z
+      conv_lhs => rw [hwu]
+      rw [real_inner_smul_left]
+    have hrw : ∀ z : EuclideanSpace ℝ (Fin k),
+        vecTiltRemainder w z = tiltRemainder ‖w‖ (⟪u, z⟫_ℝ) := by
+      intro z
+      simp only [vecTiltRemainder, tiltRemainder, hinner z]
+      ring
+    simp_rw [hrw]
+    have hmap : Measure.map (fun y : EuclideanSpace ℝ (Fin k) => ⟪u, y⟫_ℝ)
+        (stdGaussian (EuclideanSpace ℝ (Fin k))) = gaussianReal 0 1 := by
+      have h := stdGaussian_map_inner_unit u hunit
+      rwa [multivariateGaussian_zero_one] at h
+    have hpush : (∫ z, |tiltRemainder ‖w‖ (⟪u, z⟫_ℝ)|
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        = ∫ t, |tiltRemainder ‖w‖ t| ∂(gaussianReal 0 1) := by
+      rw [← hmap, integral_map (by fun_prop)
+        ((continuous_tiltRemainder ‖w‖).abs.aestronglyMeasurable)]
+    rw [hpush]
+    exact hC ‖w‖ hnw.le
+
+/-- **Cameron–Martin: a Gaussian shift is an exponential tilt.** For a bounded continuous `g`,
+`∫ g(z + a) dγ = ∫ g(z) exp(⟪a,z⟫ − ‖a‖²/2) dγ`. This is
+`stdGaussian_withDensity_exp_shift` read as an integral identity; it is what replaces the
+third derivative of `g` by a factor `σ⁻³` in the Lindeberg swap. -/
+private lemma integral_gaussian_shift_eq_tilt {g : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hg : Continuous g) (a : EuclideanSpace ℝ (Fin k)) :
+    (∫ z, g (z + a) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      = ∫ z, g z * Real.exp (⟪a, z⟫_ℝ - ‖a‖ ^ 2 / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  have hmapint : (∫ z, g (z + a) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      = ∫ z, g z ∂((stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun y => y + a)) := by
+    rw [integral_map (by fun_prop) hg.aestronglyMeasurable]
+  rw [hmapint, ← stdGaussian_withDensity_exp_shift a,
+    integral_withDensity_eq_integral_toReal_smul (by fun_prop)
+      (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top) g]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun z => ?_)
+  dsimp only
+  rw [ENNReal.toReal_ofReal (Real.exp_nonneg _), smul_eq_mul, mul_comm]
+
+end MultivariateTilt
+
+
+/-! ### Gaussian moments and the smoothed swap step -/
+
+section SmoothedSwap
+
+variable {k : ℕ}
+
+private lemma memLp_norm_gauss (p : ℕ) :
+    Integrable (fun z : EuclideanSpace ℝ (Fin k) => ‖z‖ ^ p)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  have hL : MemLp (id : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k))
+      ((p : ℕ) : ℝ≥0∞) (stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+    IsGaussian.memLp_id _ _ (by simp)
+  simpa using hL.integrable_norm_pow'
+
+private lemma integrable_norm_gauss :
+    Integrable (fun z : EuclideanSpace ℝ (Fin k) => ‖z‖)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  have := memLp_norm_gauss (k := k) 1
+  simpa using this
+
+private lemma integrable_exp_inner_gauss (a : EuclideanSpace ℝ (Fin k)) :
+    Integrable (fun z : EuclideanSpace ℝ (Fin k) => Real.exp ⟪a, z⟫_ℝ)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  refine Integrable.of_integral_ne_zero ?_
+  rw [integral_exp_inner_stdGaussian a]
+  exact (Real.exp_pos _).ne'
+
+/-- The `z`-integrability of the tilted integrand, for a fixed shift `a`. -/
+private lemma integrable_mul_exp_tilt_gauss {G : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hG : Continuous G) (hGb : ∀ x, |G x| ≤ 1) (a : EuclideanSpace ℝ (Fin k)) :
+    Integrable (fun z => G z * Real.exp (⟪a, z⟫_ℝ - ‖a‖ ^ 2 / 2))
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  have hre : (fun z : EuclideanSpace ℝ (Fin k) => G z * Real.exp (⟪a, z⟫_ℝ - ‖a‖ ^ 2 / 2))
+      = fun z => Real.exp (-(‖a‖ ^ 2 / 2)) * (G z * Real.exp ⟪a, z⟫_ℝ) := by
+    funext z
+    rw [show ⟪a, z⟫_ℝ - ‖a‖ ^ 2 / 2 = -(‖a‖ ^ 2 / 2) + ⟪a, z⟫_ℝ by ring, Real.exp_add]
+    ring
+  rw [hre]
+  refine Integrable.const_mul ?_ _
+  refine Integrable.mono' (integrable_exp_inner_gauss a) (by fun_prop) ?_
+  filter_upwards with z
+  rw [Real.norm_eq_abs, abs_mul, abs_of_pos (Real.exp_pos _)]
+  nlinarith [hGb z, Real.exp_pos ⟪a, z⟫_ℝ, abs_nonneg (G z)]
+
+/-- The `z`-integrability of the quadratic Taylor part of the tilt, for a fixed shift. -/
+private lemma integrable_mul_tiltPoly_gauss {G : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hG : Continuous G) (hGb : ∀ x, |G x| ≤ 1) (a : EuclideanSpace ℝ (Fin k)) :
+    Integrable (fun z => G z * (1 + ⟪a, z⟫_ℝ + (⟪a, z⟫_ℝ ^ 2 - ‖a‖ ^ 2) / 2))
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  have h1 : Integrable (fun z : EuclideanSpace ℝ (Fin k) => ⟪a, z⟫_ℝ)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    refine Integrable.mono' (integrable_norm_gauss.const_mul ‖a‖) (by fun_prop) ?_
+    filter_upwards with z
+    rw [Real.norm_eq_abs]
+    exact abs_real_inner_le_norm a z
+  have h2 : Integrable (fun z : EuclideanSpace ℝ (Fin k) => ⟪a, z⟫_ℝ ^ 2)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    refine Integrable.mono' ((memLp_norm_gauss (k := k) 2).const_mul (‖a‖ ^ 2)) (by fun_prop) ?_
+    filter_upwards with z
+    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+    have := abs_real_inner_le_norm a z
+    nlinarith [abs_nonneg (⟪a, z⟫_ℝ), sq_abs (⟪a, z⟫_ℝ), norm_nonneg a, norm_nonneg z]
+  have hpoly : Integrable
+      (fun z : EuclideanSpace ℝ (Fin k) => 1 + ⟪a, z⟫_ℝ + (⟪a, z⟫_ℝ ^ 2 - ‖a‖ ^ 2) / 2)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+    ((integrable_const (1 : ℝ)).add h1).add ((h2.sub (integrable_const _)).div_const 2)
+  refine Integrable.mono' hpoly.abs (by fun_prop) ?_
+  filter_upwards with z
+  rw [Real.norm_eq_abs, abs_mul]
+  nlinarith [hGb z, abs_nonneg (G z),
+    abs_nonneg (1 + ⟪a, z⟫_ℝ + (⟪a, z⟫_ℝ ^ 2 - ‖a‖ ^ 2) / 2)]
+
+
+private lemma integrable_vecTiltRemainder (a : EuclideanSpace ℝ (Fin k)) :
+    Integrable (fun z => vecTiltRemainder a z)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  have h1 := integrable_mul_exp_tilt_gauss (G := fun _ : EuclideanSpace ℝ (Fin k) => (1 : ℝ))
+    continuous_const (fun _ => by norm_num) a
+  have h2 := integrable_mul_tiltPoly_gauss (G := fun _ : EuclideanSpace ℝ (Fin k) => (1 : ℝ))
+    continuous_const (fun _ => by norm_num) a
+  refine (h1.sub h2).congr (Filter.Eventually.of_forall fun z => ?_)
+  simp only [Pi.sub_apply, one_mul, vecTiltRemainder]
+
+/-- **The polynomial part of the tilt has the same integral for every centred,
+identity-covariance law.** This is the exact analogue of the vanishing of the linear term and
+the coincidence of the quadratic term in the classical Lindeberg swap — here for the
+*Cameron–Martin* expansion rather than the Taylor expansion of the test function. -/
+private lemma tiltPoly_fubini {τ : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure τ]
+    (hmean : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂τ) = 0)
+    (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂τ) = ⟪u, v⟫_ℝ)
+    (hτ1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) τ)
+    (hτ2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) τ)
+    (hdim : (∫ y, ‖y‖ ^ 2 ∂τ) = (k : ℝ))
+    {G : EuclideanSpace ℝ (Fin k) → ℝ} (hG : Continuous G) (hGb : ∀ x, |G x| ≤ 1)
+    {lam : ℝ} (hlam : 0 ≤ lam) :
+    Integrable (fun y => ∫ z, G z * (1 + ⟪lam • y, z⟫_ℝ
+        + (⟪lam • y, z⟫_ℝ ^ 2 - ‖lam • y‖ ^ 2) / 2)
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) τ
+      ∧ (∫ y, (∫ z, G z * (1 + ⟪lam • y, z⟫_ℝ
+          + (⟪lam • y, z⟫_ℝ ^ 2 - ‖lam • y‖ ^ 2) / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂τ)
+        = ∫ z, G z * (1 + lam ^ 2 * (‖z‖ ^ 2 - (k : ℝ)) / 2)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  classical
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := stdGaussian (EuclideanSpace ℝ (Fin k)) with hγ
+  have hsmul : ∀ (y z : EuclideanSpace ℝ (Fin k)),
+      ⟪lam • y, z⟫_ℝ = lam * ⟪y, z⟫_ℝ := fun y z => real_inner_smul_left _ _ _
+  have hnsmul : ∀ y : EuclideanSpace ℝ (Fin k), ‖lam • y‖ ^ 2 = lam ^ 2 * ‖y‖ ^ 2 := by
+    intro y
+    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hlam, mul_pow]
+  -- the product-integrability of the polynomial integrand
+  have henv : Integrable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+      1 + lam * (‖p.1‖ * ‖p.2‖)
+        + (lam ^ 2 * (‖p.1‖ ^ 2 * ‖p.2‖ ^ 2) + lam ^ 2 * ‖p.1‖ ^ 2) / 2) (τ.prod γ) := by
+    have e1 : Integrable (fun _ : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        (1 : ℝ)) (τ.prod γ) := integrable_const _
+    have e2 : Integrable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        lam * (‖p.1‖ * ‖p.2‖)) (τ.prod γ) :=
+      (hτ1.mul_prod integrable_norm_gauss).const_mul lam
+    have e3 : Integrable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        lam ^ 2 * (‖p.1‖ ^ 2 * ‖p.2‖ ^ 2)) (τ.prod γ) :=
+      (hτ2.mul_prod (memLp_norm_gauss (k := k) 2)).const_mul (lam ^ 2)
+    have e4 : Integrable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        lam ^ 2 * ‖p.1‖ ^ 2) (τ.prod γ) := (hτ2.comp_fst γ).const_mul (lam ^ 2)
+    have e34 : Integrable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        lam ^ 2 * (‖p.1‖ ^ 2 * ‖p.2‖ ^ 2) + lam ^ 2 * ‖p.1‖ ^ 2) (τ.prod γ) := e3.add e4
+    exact (e1.add e2).add (e34.div_const 2)
+  have hprod : Integrable (Function.uncurry fun (y z : EuclideanSpace ℝ (Fin k)) =>
+      G z * (1 + ⟪lam • y, z⟫_ℝ + (⟪lam • y, z⟫_ℝ ^ 2 - ‖lam • y‖ ^ 2) / 2)) (τ.prod γ) := by
+    refine Integrable.mono' henv (by fun_prop) ?_
+    filter_upwards with p
+    obtain ⟨y, z⟩ := p
+    set ip : ℝ := ⟪y, z⟫_ℝ with hip
+    have hin : |ip| ≤ ‖y‖ * ‖z‖ := abs_real_inner_le_norm _ _
+    have hsq : ip ^ 2 ≤ ‖y‖ ^ 2 * ‖z‖ ^ 2 := by
+      calc ip ^ 2 = |ip| ^ 2 := (sq_abs _).symm
+        _ ≤ (‖y‖ * ‖z‖) ^ 2 := pow_le_pow_left₀ (abs_nonneg _) hin 2
+        _ = ‖y‖ ^ 2 * ‖z‖ ^ 2 := by ring
+    have hval : (Function.uncurry fun (y z : EuclideanSpace ℝ (Fin k)) =>
+        G z * (1 + ⟪lam • y, z⟫_ℝ + (⟪lam • y, z⟫_ℝ ^ 2 - ‖lam • y‖ ^ 2) / 2)) (y, z)
+        = G z * (1 + lam * ip + (lam ^ 2 * ip ^ 2 - lam ^ 2 * ‖y‖ ^ 2) / 2) := by
+      simp only [Function.uncurry, hsmul, hnsmul, hip]
+      ring
+    rw [Real.norm_eq_abs, hval]
+    have p1 : lam * ip ≤ lam * (‖y‖ * ‖z‖) := by nlinarith [hlam, hin, le_abs_self ip]
+    have p2 : -(lam * (‖y‖ * ‖z‖)) ≤ lam * ip := by nlinarith [hlam, hin, neg_abs_le ip]
+    have p3 : lam ^ 2 * ip ^ 2 ≤ lam ^ 2 * (‖y‖ ^ 2 * ‖z‖ ^ 2) :=
+      mul_le_mul_of_nonneg_left hsq (sq_nonneg lam)
+    have p4 : (0 : ℝ) ≤ lam ^ 2 * ‖y‖ ^ 2 := by positivity
+    have p5 : (0 : ℝ) ≤ lam ^ 2 * ip ^ 2 := by positivity
+    have hpabs : |1 + lam * ip + (lam ^ 2 * ip ^ 2 - lam ^ 2 * ‖y‖ ^ 2) / 2|
+        ≤ 1 + lam * (‖y‖ * ‖z‖)
+          + (lam ^ 2 * (‖y‖ ^ 2 * ‖z‖ ^ 2) + lam ^ 2 * ‖y‖ ^ 2) / 2 := by
+      rw [abs_le]
+      constructor <;> linarith
+    have hnn : (0 : ℝ) ≤ 1 + lam * (‖y‖ * ‖z‖)
+        + (lam ^ 2 * (‖y‖ ^ 2 * ‖z‖ ^ 2) + lam ^ 2 * ‖y‖ ^ 2) / 2 := by
+      have : (0 : ℝ) ≤ lam * (‖y‖ * ‖z‖) := by positivity
+      have h2 : (0 : ℝ) ≤ lam ^ 2 * (‖y‖ ^ 2 * ‖z‖ ^ 2) := by positivity
+      linarith
+    calc |G z * (1 + lam * ip + (lam ^ 2 * ip ^ 2 - lam ^ 2 * ‖y‖ ^ 2) / 2)|
+        = |G z| * |1 + lam * ip + (lam ^ 2 * ip ^ 2 - lam ^ 2 * ‖y‖ ^ 2) / 2| := abs_mul _ _
+      _ ≤ 1 * (1 + lam * (‖y‖ * ‖z‖)
+            + (lam ^ 2 * (‖y‖ ^ 2 * ‖z‖ ^ 2) + lam ^ 2 * ‖y‖ ^ 2) / 2) :=
+          mul_le_mul (hGb z) hpabs (abs_nonneg _) (by norm_num)
+      _ = _ := by ring
+  refine ⟨hprod.integral_prod_left, ?_⟩
+  rw [integral_integral_swap hprod]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun z => ?_)
+  -- the inner `τ`-integral
+  have h1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ⟪y, z⟫_ℝ) τ := by
+    refine Integrable.mono' (hτ1.mul_const ‖z‖) (by fun_prop) ?_
+    filter_upwards with y
+    rw [Real.norm_eq_abs]
+    exact abs_real_inner_le_norm y z
+  have h2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ⟪y, z⟫_ℝ ^ 2) τ := by
+    refine Integrable.mono' (hτ2.mul_const (‖z‖ ^ 2)) (by fun_prop) ?_
+    filter_upwards with y
+    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+    nlinarith [abs_real_inner_le_norm y z, abs_nonneg (⟪y, z⟫_ℝ), sq_abs (⟪y, z⟫_ℝ),
+      norm_nonneg y, norm_nonneg z]
+  have hmeanz : (∫ y, ⟪y, z⟫_ℝ ∂τ) = 0 := by
+    have h := hmean z
+    rw [← h]
+    exact integral_congr_ae (Filter.Eventually.of_forall fun y => (real_inner_comm y z).symm)
+  have hcovz : (∫ y, ⟪y, z⟫_ℝ ^ 2 ∂τ) = ‖z‖ ^ 2 := by
+    have h := hcov z z
+    rw [real_inner_self_eq_norm_sq] at h
+    rw [← h]
+    exact integral_congr_ae (Filter.Eventually.of_forall fun y => by
+      dsimp only
+      rw [sq, ← real_inner_comm y z])
+  have hinner : (∫ y, G z * (1 + ⟪lam • y, z⟫_ℝ
+      + (⟪lam • y, z⟫_ℝ ^ 2 - ‖lam • y‖ ^ 2) / 2) ∂τ)
+      = G z * (1 + lam ^ 2 * (‖z‖ ^ 2 - (k : ℝ)) / 2) := by
+    have hrwf : (fun y : EuclideanSpace ℝ (Fin k) => G z * (1 + ⟪lam • y, z⟫_ℝ
+        + (⟪lam • y, z⟫_ℝ ^ 2 - ‖lam • y‖ ^ 2) / 2))
+        = fun y => G z * ((1 + lam * ⟪y, z⟫_ℝ)
+          + (lam ^ 2 * ⟪y, z⟫_ℝ ^ 2 - lam ^ 2 * ‖y‖ ^ 2) / 2) := by
+      funext y
+      rw [hsmul y z, hnsmul y]
+      ring
+    rw [hrwf, integral_const_mul]
+    congr 1
+    have i1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => 1 + lam * ⟪y, z⟫_ℝ) τ :=
+      (integrable_const (1 : ℝ)).add (h1.const_mul lam)
+    have i2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) =>
+        (lam ^ 2 * ⟪y, z⟫_ℝ ^ 2 - lam ^ 2 * ‖y‖ ^ 2) / 2) τ :=
+      ((h2.const_mul (lam ^ 2)).sub (hτ2.const_mul (lam ^ 2))).div_const 2
+    rw [integral_add i1 i2,
+      integral_add (integrable_const (1 : ℝ)) (h1.const_mul lam), integral_const,
+      integral_const_mul, hmeanz, integral_div,
+      integral_sub (h2.const_mul (lam ^ 2)) (hτ2.const_mul (lam ^ 2)),
+      integral_const_mul, integral_const_mul, hcovz, hdim]
+    simp only [probReal_univ, smul_eq_mul, mul_one]
+    ring
+  simpa using hinner
+
+/-- **The Gaussian-smoothed Lindeberg swap step.** If the test function is first mollified by a
+Gaussian of scale `σ > 0`, then replacing a summand of law `τ` (centred, identity covariance,
+finite third moment) by *any* other such law costs at most `C (c/σ)³ β_τ` — with **no third
+derivative of the test function**: the three derivatives are absorbed by the Gaussian kernel
+through the Cameron–Martin formula. This is the ingredient that replaces the factor `ε⁻³` of
+the mollifier route by `σ⁻³`, and hence improves the exponent of the elementary
+Berry–Esseen rate. -/
+private lemma abs_integral_gaussian_smoothed_sub_common_le {C : ℝ}
+    (hC : ∀ s : ℝ, 0 ≤ s → (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ C * s ^ 3)
+    {τ : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure τ]
+    (hmean : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂τ) = 0)
+    (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂τ) = ⟪u, v⟫_ℝ)
+    (hτ1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) τ)
+    (hτ2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) τ)
+    (hτ3 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 3) τ)
+    (hdim : (∫ y, ‖y‖ ^ 2 ∂τ) = (k : ℝ))
+    {F : EuclideanSpace ℝ (Fin k) → ℝ} (hF : Continuous F) (hFb : ∀ x, |F x| ≤ 1)
+    (v : EuclideanSpace ℝ (Fin k)) {σ c : ℝ} (hσ : 0 < σ) (hc : 0 ≤ c) :
+    |(∫ y, (∫ z, F (v + σ • z + c • y) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂τ)
+        - ∫ z, F (v + σ • z) * (1 + (c / σ) ^ 2 * (‖z‖ ^ 2 - (k : ℝ)) / 2)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+      ≤ C * (c / σ) ^ 3 * ∫ y, ‖y‖ ^ 3 ∂τ := by
+  classical
+  set lam : ℝ := c / σ with hlamdef
+  have hlam : (0 : ℝ) ≤ lam := div_nonneg hc hσ.le
+  have hsc : σ * lam = c := by rw [hlamdef]; field_simp
+  set G : EuclideanSpace ℝ (Fin k) → ℝ := fun z => F (v + σ • z) with hGdef
+  have hGcont : Continuous G := by rw [hGdef]; fun_prop
+  have hGb : ∀ x, |G x| ≤ 1 := fun x => hFb _
+  have hGRint : ∀ a : EuclideanSpace ℝ (Fin k),
+      Integrable (fun z => G z * vecTiltRemainder a z)
+        (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    intro a
+    refine ((integrable_mul_exp_tilt_gauss hGcont hGb a).sub
+      (integrable_mul_tiltPoly_gauss hGcont hGb a)).congr
+      (Filter.Eventually.of_forall fun z => ?_)
+    simp only [Pi.sub_apply, vecTiltRemainder]
+    ring
+  -- (i) each inner integral is a Cameron–Martin tilt integral
+  have hshift : ∀ y : EuclideanSpace ℝ (Fin k),
+      (∫ z, F (v + σ • z + c • y) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        = ∫ z, G z * Real.exp (⟪lam • y, z⟫_ℝ - ‖lam • y‖ ^ 2 / 2)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    intro y
+    have hpt : ∀ z : EuclideanSpace ℝ (Fin k),
+        F (v + σ • z + c • y) = G (z + lam • y) := by
+      intro z
+      have harg : v + σ • (z + lam • y) = v + σ • z + c • y := by
+        rw [smul_add, smul_smul, hsc, ← add_assoc]
+      simp only [hGdef]
+      rw [harg]
+    simp_rw [hpt]
+    exact integral_gaussian_shift_eq_tilt hGcont (lam • y)
+  -- (ii) split the tilt into its quadratic Taylor part and the remainder
+  have hsplit : ∀ y : EuclideanSpace ℝ (Fin k),
+      (∫ z, G z * Real.exp (⟪lam • y, z⟫_ℝ - ‖lam • y‖ ^ 2 / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        = (∫ z, G z * (1 + ⟪lam • y, z⟫_ℝ
+            + (⟪lam • y, z⟫_ℝ ^ 2 - ‖lam • y‖ ^ 2) / 2)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+          + ∫ z, G z * vecTiltRemainder (lam • y) z
+              ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    intro y
+    rw [← integral_add (integrable_mul_tiltPoly_gauss hGcont hGb (lam • y)) (hGRint (lam • y))]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun z => ?_)
+    simp only [vecTiltRemainder]
+    ring
+  -- integrability of the two `y`-integrands
+  have hΦcont : Continuous (fun y : EuclideanSpace ℝ (Fin k) =>
+      ∫ z, F (v + σ • z + c • y) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) := by
+    refine continuous_of_dominated (fun y => (hF.comp (by fun_prop)).aestronglyMeasurable)
+      (fun y => Filter.Eventually.of_forall fun z => ?_) (integrable_const (1 : ℝ))
+      (Filter.Eventually.of_forall fun z => by fun_prop)
+    rw [Real.norm_eq_abs]
+    exact hFb _
+  have hΦint : Integrable (fun y : EuclideanSpace ℝ (Fin k) =>
+      ∫ z, F (v + σ • z + c • y) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) τ := by
+    refine Integrable.mono' (integrable_const (1 : ℝ)) hΦcont.aestronglyMeasurable ?_
+    filter_upwards with y
+    have h := norm_integral_le_of_norm_le_const
+      (μ := stdGaussian (EuclideanSpace ℝ (Fin k))) (C := (1 : ℝ))
+      (f := fun z => F (v + σ • z + c • y))
+      (Filter.Eventually.of_forall fun z => by rw [Real.norm_eq_abs]; exact hFb _)
+    simpa using h
+  obtain ⟨hQint, hQval⟩ := tiltPoly_fubini hmean hcov hτ1 hτ2 hdim hGcont hGb hlam
+  have hRint : Integrable (fun y : EuclideanSpace ℝ (Fin k) =>
+      ∫ z, G z * vecTiltRemainder (lam • y) z
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) τ := by
+    refine (hΦint.sub hQint).congr (Filter.Eventually.of_forall fun y => ?_)
+    simp only [Pi.sub_apply, hshift y, hsplit y]
+    ring
+  have hsum : (∫ y, (∫ z, F (v + σ • z + c • y)
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂τ)
+      = (∫ y, (∫ z, G z * (1 + ⟪lam • y, z⟫_ℝ
+          + (⟪lam • y, z⟫_ℝ ^ 2 - ‖lam • y‖ ^ 2) / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂τ)
+        + ∫ y, (∫ z, G z * vecTiltRemainder (lam • y) z
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂τ := by
+    rw [← integral_add hQint hRint]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
+    dsimp only
+    rw [hshift y, hsplit y]
+  rw [hsum, hQval, hGdef]
+  rw [add_sub_cancel_left]
+  -- the remainder bound
+  have hbnd : ∀ y : EuclideanSpace ℝ (Fin k),
+      |∫ z, G z * vecTiltRemainder (lam • y) z
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))| ≤ C * lam ^ 3 * ‖y‖ ^ 3 := by
+    intro y
+    calc |∫ z, G z * vecTiltRemainder (lam • y) z
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+        ≤ ∫ z, |G z * vecTiltRemainder (lam • y) z|
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := abs_integral_le_integral_abs
+      _ ≤ ∫ z, |vecTiltRemainder (lam • y) z|
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+          refine integral_mono (hGRint _).abs (integrable_vecTiltRemainder _).abs fun z => ?_
+          rw [abs_mul]
+          nlinarith [hGb z, abs_nonneg (G z), abs_nonneg (vecTiltRemainder (lam • y) z)]
+      _ ≤ C * ‖lam • y‖ ^ 3 := integral_abs_vecTiltRemainder_le hC _
+      _ = C * lam ^ 3 * ‖y‖ ^ 3 := by
+          rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hlam, mul_pow]
+          ring
+  calc |∫ y, (∫ z, G z * vecTiltRemainder (lam • y) z
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂τ|
+      ≤ ∫ y, |∫ z, G z * vecTiltRemainder (lam • y) z
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))| ∂τ := abs_integral_le_integral_abs
+    _ ≤ ∫ y, C * lam ^ 3 * ‖y‖ ^ 3 ∂τ :=
+        integral_mono hRint.abs (hτ3.const_mul _) hbnd
+    _ = C * lam ^ 3 * ∫ y, ‖y‖ ^ 3 ∂τ := integral_const_mul _ _
+
+/-- **Two-law form of the Gaussian-smoothed swap.** Both laws are compared with the *same*
+number — the Cameron–Martin polynomial part, which by `tiltPoly_fubini` depends only on the
+first two moments — so the whole cost is the two tilt remainders. -/
+private lemma abs_integral_gaussian_smoothed_swap_le {C : ℝ}
+    (hC : ∀ s : ℝ, 0 ≤ s → (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ C * s ^ 3)
+    {ν ρ : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure ν] [IsProbabilityMeasure ρ]
+    (hmeanν : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)
+    (hcovν : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ)
+    (hν1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) ν)
+    (hν2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) ν)
+    (hν3 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 3) ν)
+    (hνdim : (∫ y, ‖y‖ ^ 2 ∂ν) = (k : ℝ))
+    (hmeanρ : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ρ) = 0)
+    (hcovρ : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ρ) = ⟪u, v⟫_ℝ)
+    (hρ1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) ρ)
+    (hρ2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) ρ)
+    (hρ3 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 3) ρ)
+    (hρdim : (∫ y, ‖y‖ ^ 2 ∂ρ) = (k : ℝ))
+    {F : EuclideanSpace ℝ (Fin k) → ℝ} (hF : Continuous F) (hFb : ∀ x, |F x| ≤ 1)
+    (v : EuclideanSpace ℝ (Fin k)) {σ c : ℝ} (hσ : 0 < σ) (hc : 0 ≤ c) :
+    |(∫ y, (∫ z, F (v + σ • z + c • y) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ν)
+        - (∫ y, (∫ z, F (v + σ • z + c • y)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ρ)|
+      ≤ C * (c / σ) ^ 3 * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ)) := by
+  have hν := abs_integral_gaussian_smoothed_sub_common_le hC hmeanν hcovν hν1 hν2 hν3 hνdim
+    hF hFb v hσ hc
+  have hρ := abs_integral_gaussian_smoothed_sub_common_le hC hmeanρ hcovρ hρ1 hρ2 hρ3 hρdim
+    hF hFb v hσ hc
+  set A : ℝ := ∫ y, (∫ z, F (v + σ • z + c • y)
+    ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ν with hA
+  set B : ℝ := ∫ y, (∫ z, F (v + σ • z + c • y)
+    ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ρ with hB
+  set D : ℝ := ∫ z, F (v + σ • z) * (1 + (c / σ) ^ 2 * (‖z‖ ^ 2 - (k : ℝ)) / 2)
+    ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) with hD
+  have htri : |A - B| ≤ |A - D| + |B - D| := by
+    have h := abs_sub (A - D) (B - D)
+    calc |A - B| = |(A - D) - (B - D)| := by ring_nf
+      _ ≤ |A - D| + |B - D| := abs_sub _ _
+  have hexp : C * (c / σ) ^ 3 * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ))
+      = C * (c / σ) ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ν) + C * (c / σ) ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ρ) := by ring
+  rw [hexp]
+  linarith [htri, hν, hρ]
+
+end SmoothedSwap
+
+end GaussianTilt
+
+/-! #### Gaussian convolution: the second of the three assembly bricks -/
+
+section GaussianConvolution
+
+variable {k : ℕ}
+
+/-- **Gaussian convolution.** The sum of independent `σ`- and `c`-scaled standard Gaussians is
+a `√(σ² + c²)`-scaled standard Gaussian. Proved by characteristic functions
+(`Measure.ext_of_charFun`), the product measure factorising the integral through
+`integral_prod_mul`. -/
+private lemma map_stdGaussian_pair_smul_add (σ c : ℝ) :
+    (((stdGaussian (EuclideanSpace ℝ (Fin k))).prod
+          (stdGaussian (EuclideanSpace ℝ (Fin k)))).map fun p => σ • p.1 + c • p.2)
+      = (stdGaussian (EuclideanSpace ℝ (Fin k))).map
+          fun z => Real.sqrt (σ ^ 2 + c ^ 2) • z := by
+  haveI hL : IsProbabilityMeasure ((((stdGaussian (EuclideanSpace ℝ (Fin k))).prod
+      (stdGaussian (EuclideanSpace ℝ (Fin k)))).map fun p => σ • p.1 + c • p.2)) :=
+    Measure.isProbabilityMeasure_map (by fun_prop)
+  haveI hR : IsProbabilityMeasure ((stdGaussian (EuclideanSpace ℝ (Fin k))).map
+      fun z => Real.sqrt (σ ^ 2 + c ^ 2) • z) :=
+    Measure.isProbabilityMeasure_map (by fun_prop)
+  -- `charFun_apply` is definitional, so both unfoldings below are `rfl`; going through them
+  -- keeps every integral in one and the same notation for `rw`.
+  have hunfold : ∀ (μ : Measure (EuclideanSpace ℝ (Fin k))) (s : EuclideanSpace ℝ (Fin k)),
+      charFun μ s = ∫ x, Complex.exp ((⟪x, s⟫_ℝ : ℂ) * Complex.I) ∂μ := fun _ _ => rfl
+  have hstd : ∀ s : EuclideanSpace ℝ (Fin k),
+      (∫ x, Complex.exp ((⟪x, s⟫_ℝ : ℂ) * Complex.I)
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        = Complex.exp (-(‖s‖ : ℝ) ^ 2 / 2) := fun s => charFun_stdGaussian s
+  refine Measure.ext_of_charFun ?_
+  funext t
+  have hs2 : Real.sqrt (σ ^ 2 + c ^ 2) ^ 2 = σ ^ 2 + c ^ 2 := Real.sq_sqrt (by positivity)
+  have hRHS : charFun ((stdGaussian (EuclideanSpace ℝ (Fin k))).map
+      fun z => Real.sqrt (σ ^ 2 + c ^ 2) • z) t
+      = Complex.exp (-((σ ^ 2 + c ^ 2) * ‖t‖ ^ 2 : ℝ) / 2) := by
+    rw [hunfold, integral_map (by fun_prop) (by fun_prop)]
+    have hin : ∀ z : EuclideanSpace ℝ (Fin k),
+        ((⟪Real.sqrt (σ ^ 2 + c ^ 2) • z, t⟫_ℝ : ℝ) : ℂ)
+          = ((⟪z, Real.sqrt (σ ^ 2 + c ^ 2) • t⟫_ℝ : ℝ) : ℂ) := by
+      intro z
+      rw [real_inner_smul_left, real_inner_smul_right]
+    simp_rw [hin]
+    rw [hstd]
+    congr 1
+    have hnorm : ‖Real.sqrt (σ ^ 2 + c ^ 2) • t‖ ^ 2 = (σ ^ 2 + c ^ 2) * ‖t‖ ^ 2 := by
+      rw [norm_smul, Real.norm_eq_abs, mul_pow, sq_abs, hs2]
+    have hcast : ((‖Real.sqrt (σ ^ 2 + c ^ 2) • t‖ : ℝ) : ℂ) ^ 2
+        = (((σ ^ 2 + c ^ 2) * ‖t‖ ^ 2 : ℝ) : ℂ) := by
+      rw [← Complex.ofReal_pow, hnorm]
+    rw [hcast]
+  have hLHS : charFun ((((stdGaussian (EuclideanSpace ℝ (Fin k))).prod
+      (stdGaussian (EuclideanSpace ℝ (Fin k)))).map fun p => σ • p.1 + c • p.2)) t
+      = Complex.exp (-((σ ^ 2 + c ^ 2) * ‖t‖ ^ 2 : ℝ) / 2) := by
+    rw [hunfold, integral_map (by fun_prop) (by fun_prop)]
+    have hfac : ∀ p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k),
+        Complex.exp ((⟪σ • p.1 + c • p.2, t⟫_ℝ : ℂ) * Complex.I)
+          = Complex.exp ((⟪p.1, σ • t⟫_ℝ : ℂ) * Complex.I)
+            * Complex.exp ((⟪p.2, c • t⟫_ℝ : ℂ) * Complex.I) := by
+      intro p
+      rw [← Complex.exp_add]
+      congr 1
+      have h1 : ⟪σ • p.1 + c • p.2, t⟫_ℝ = ⟪p.1, σ • t⟫_ℝ + ⟪p.2, c • t⟫_ℝ := by
+        rw [inner_add_left, real_inner_smul_left, real_inner_smul_left,
+          real_inner_smul_right, real_inner_smul_right]
+      rw [h1]
+      push_cast
+      ring
+    simp_rw [hfac]
+    have hnorm1 : ∀ r : ℝ, ‖Complex.exp ((r : ℂ) * Complex.I)‖ = 1 := by
+      intro r
+      rw [Complex.norm_exp]
+      simp
+    have hint : Integrable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        Complex.exp ((⟪p.1, σ • t⟫_ℝ : ℂ) * Complex.I)
+          * Complex.exp ((⟪p.2, c • t⟫_ℝ : ℂ) * Complex.I))
+        ((stdGaussian (EuclideanSpace ℝ (Fin k))).prod
+          (stdGaussian (EuclideanSpace ℝ (Fin k)))) := by
+      refine Integrable.mono' (integrable_const (1 : ℝ)) (by fun_prop) ?_
+      filter_upwards with p
+      rw [norm_mul, hnorm1, hnorm1, one_mul]
+    rw [integral_prod _ hint]
+    have hinner : ∀ x : EuclideanSpace ℝ (Fin k),
+        (∫ y, Complex.exp ((⟪x, σ • t⟫_ℝ : ℂ) * Complex.I)
+            * Complex.exp ((⟪y, c • t⟫_ℝ : ℂ) * Complex.I)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+          = Complex.exp ((⟪x, σ • t⟫_ℝ : ℂ) * Complex.I)
+            * Complex.exp (-(‖c • t‖ : ℝ) ^ 2 / 2) := by
+      intro x
+      have h : (∫ y, Complex.exp ((⟪x, σ • t⟫_ℝ : ℂ) * Complex.I)
+            * Complex.exp ((⟪y, c • t⟫_ℝ : ℂ) * Complex.I)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+          = Complex.exp ((⟪x, σ • t⟫_ℝ : ℂ) * Complex.I)
+            * ∫ y, Complex.exp ((⟪y, c • t⟫_ℝ : ℂ) * Complex.I)
+                ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := integral_const_mul _ _
+      rw [h, hstd (c • t)]
+    simp_rw [hinner]
+    have h2 : (∫ x, Complex.exp ((⟪x, σ • t⟫_ℝ : ℂ) * Complex.I)
+          * Complex.exp (-(‖c • t‖ : ℝ) ^ 2 / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        = (∫ x, Complex.exp ((⟪x, σ • t⟫_ℝ : ℂ) * Complex.I)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+          * Complex.exp (-(‖c • t‖ : ℝ) ^ 2 / 2) := integral_mul_const _ _
+    rw [h2, hstd (σ • t), ← Complex.exp_add]
+    congr 1
+    have h1 : ((‖σ • t‖ : ℝ) : ℂ) ^ 2 = ((σ ^ 2 * ‖t‖ ^ 2 : ℝ) : ℂ) := by
+      rw [← Complex.ofReal_pow, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
+    have h2 : ((‖c • t‖ : ℝ) : ℂ) ^ 2 = ((c ^ 2 * ‖t‖ ^ 2 : ℝ) : ℂ) := by
+      rw [← Complex.ofReal_pow, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
+    rw [h1, h2]
+    push_cast
+    ring
+  rw [hLHS, hRHS]
+
+/-- The integral form of `map_stdGaussian_pair_smul_add`: the two-fold Gaussian smoothing at
+scales `σ` and `c` is a single Gaussian smoothing at scale `√(σ² + c²)`. -/
+private lemma integral_gaussian_pair_smul_add (σ c : ℝ)
+    {F : EuclideanSpace ℝ (Fin k) → ℝ} (hF : Continuous F) (hFb : ∀ x, |F x| ≤ 1)
+    (a : EuclideanSpace ℝ (Fin k)) :
+    (∫ u, (∫ z, F (a + σ • z + c • u) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      = ∫ z, F (a + Real.sqrt (σ ^ 2 + c ^ 2) • z)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  have hprodint : Integrable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+      F (a + (σ • p.1 + c • p.2)))
+      ((stdGaussian (EuclideanSpace ℝ (Fin k))).prod
+        (stdGaussian (EuclideanSpace ℝ (Fin k)))) := by
+    refine Integrable.mono' (integrable_const (1 : ℝ)) (by fun_prop) ?_
+    filter_upwards with p
+    rw [Real.norm_eq_abs]
+    exact hFb _
+  have hstep : (∫ u, (∫ z, F (a + σ • z + c • u)
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      = ∫ p, F (a + (σ • p.1 + c • p.2))
+          ∂(((stdGaussian (EuclideanSpace ℝ (Fin k))).prod
+            (stdGaussian (EuclideanSpace ℝ (Fin k))))) := by
+    rw [integral_prod_symm _ hprodint]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun u => ?_)
+    refine integral_congr_ae (Filter.Eventually.of_forall fun z => ?_)
+    dsimp only
+    rw [add_assoc]
+  rw [hstep]
+  have hmapL : (∫ p, F (a + (σ • p.1 + c • p.2))
+        ∂(((stdGaussian (EuclideanSpace ℝ (Fin k))).prod
+          (stdGaussian (EuclideanSpace ℝ (Fin k))))))
+      = ∫ w, F (a + w) ∂((((stdGaussian (EuclideanSpace ℝ (Fin k))).prod
+          (stdGaussian (EuclideanSpace ℝ (Fin k)))).map fun p => σ • p.1 + c • p.2)) := by
+    rw [integral_map (by fun_prop) (by fun_prop)]
+  rw [hmapL, map_stdGaussian_pair_smul_add σ c,
+    integral_map (by fun_prop) (by fun_prop)]
+
+end GaussianConvolution
+
+/-! #### The sum estimate: the third of the three assembly bricks -/
+
+section SumEstimate
+
+/-- The backward telescoping bound `j^{-3/2} ≤ 2 ((j−1)^{-1/2} − j^{-1/2})`, valid for
+`j ≥ 2`. It is what turns the tail of `Σ j^{-3/2}` into `2/√(J−1)` without any integral
+comparison. -/
+private lemma inv_mul_sqrt_le_telescope {j : ℕ} (hj : 2 ≤ j) :
+    1 / ((j : ℝ) * Real.sqrt j)
+      ≤ 2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ)) := by
+  have hj1 : (1 : ℝ) ≤ (j : ℝ) - 1 := by
+    have : (2 : ℝ) ≤ (j : ℝ) := by exact_mod_cast hj
+    linarith
+  set a : ℝ := Real.sqrt ((j : ℝ) - 1) with hadef
+  set b : ℝ := Real.sqrt (j : ℝ) with hbdef
+  have ha2 : a ^ 2 = (j : ℝ) - 1 := Real.sq_sqrt (by linarith)
+  have hb2 : b ^ 2 = (j : ℝ) := Real.sq_sqrt (by linarith)
+  have ha : 0 < a := Real.sqrt_pos.mpr (by linarith)
+  have hb : 0 < b := Real.sqrt_pos.mpr (by linarith)
+  have hba : 0 < b - a := by nlinarith
+  have hprod : (b - a) * (a + b) = 1 := by nlinarith
+  -- `b ≤ a + 1/(2a)`, hence `ab ≤ a² + 1/2`
+  have hble : b ≤ a + 1 / (2 * a) := by
+    have hc : (0 : ℝ) < a + 1 / (2 * a) := by positivity
+    have hexp : (a + 1 / (2 * a)) ^ 2 = a ^ 2 + 1 + 1 / (4 * a ^ 2) := by
+      field_simp
+      ring
+    have hsq : b ^ 2 ≤ (a + 1 / (2 * a)) ^ 2 := by
+      rw [hexp, hb2]
+      have h4 : (0 : ℝ) ≤ 1 / (4 * a ^ 2) := by positivity
+      linarith [ha2]
+    nlinarith [hsq, hb, hc]
+  have key : a * b ≤ a ^ 2 + 1 / 2 := by
+    have h := mul_le_mul_of_nonneg_left hble ha.le
+    have hcancel : a * (1 / (2 * a)) = 1 / 2 := by field_simp
+    nlinarith [h, hcancel]
+  have poly : a * b * (a + b) ≤ 2 * b ^ 3 := by nlinarith [mul_le_mul_of_nonneg_left key hb.le]
+  have hcube : (j : ℝ) * b = b ^ 3 := by rw [← hb2]; ring
+  rw [hcube]
+  rw [div_le_iff₀ (by positivity : (0 : ℝ) < b ^ 3)]
+  have h1 : 2 * (1 / a - 1 / b) * b ^ 3 = 2 * (b - a) * b ^ 3 / (a * b) := by
+    field_simp
+  rw [h1, le_div_iff₀ (by positivity : (0 : ℝ) < a * b)]
+  have e1 := mul_le_mul_of_nonneg_left poly hba.le
+  have e2 : (b - a) * (a * b * (a + b)) = a * b := by
+    linear_combination (a * b) * hprod
+  nlinarith [e1, e2]
+
+/-- **The elementary sum estimate.** If a nonnegative sequence is bounded both by a constant
+`θ` and, from `j ≥ 1` on, by `j^{-3/2}`, then its partial sums are at most `J θ + 3/√J` for
+every cut `J ≥ 2`. Choosing `J ≈ θ^{-2/3}` gives `O(θ^{1/3})`, which is exactly the step that
+turns the mollifier factor `ε^{-3}` into `ε^{-1}` in the improved Lindeberg telescope. -/
+private lemma sum_le_of_bounded_and_decay {θ : ℝ} (hθ : 0 ≤ θ) {n J : ℕ} (hJ : 2 ≤ J)
+    {T : ℕ → ℝ} (hTnn : ∀ j, 0 ≤ T j) (hTθ : ∀ j, T j ≤ θ)
+    (hTdec : ∀ j, 1 ≤ j → T j ≤ 1 / ((j : ℝ) * Real.sqrt j)) :
+    ∑ j ∈ Finset.range n, T j ≤ (J : ℝ) * θ + 3 / Real.sqrt J := by
+  classical
+  have hJr : (2 : ℝ) ≤ (J : ℝ) := by exact_mod_cast hJ
+  have hJpos : (0 : ℝ) < Real.sqrt J := Real.sqrt_pos.mpr (by linarith)
+  have htail : ∀ m : ℕ, ∑ j ∈ Finset.Ico J m, T j ≤ 3 / Real.sqrt J := by
+    intro m
+    rcases lt_or_ge J m with hm | hm
+    swap
+    · rw [Finset.Ico_eq_empty (by omega)]
+      simp
+      positivity
+    -- the first term of the tail, then a telescoping sum
+    have hsplit : ∑ j ∈ Finset.Ico J m, T j
+        = T J + ∑ j ∈ Finset.Ico (J + 1) m, T j := Finset.sum_eq_sum_Ico_succ_bot hm T
+    have hfirst : T J ≤ 1 / Real.sqrt J := by
+      refine (hTdec J (by omega)).trans ?_
+      have hs : Real.sqrt J ≤ (J : ℝ) * Real.sqrt J := by
+        nlinarith [Real.sqrt_nonneg (J : ℝ)]
+      exact one_div_le_one_div_of_le hJpos hs
+    have hstep : ∀ j ∈ Finset.Ico (J + 1) m,
+        T j ≤ 2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ)) := by
+      intro j hjmem
+      have hj2 : 2 ≤ j := by
+        have := (Finset.mem_Ico.1 hjmem).1
+        omega
+      exact (hTdec j (by omega)).trans (inv_mul_sqrt_le_telescope hj2)
+    have htel : ∑ j ∈ Finset.Ico (J + 1) m,
+        2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ))
+        ≤ 2 / Real.sqrt J := by
+      set g : ℕ → ℝ := fun i => 1 / Real.sqrt ((J : ℝ) + (i : ℝ)) with hg
+      have hre : ∑ j ∈ Finset.Ico (J + 1) m,
+          2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ))
+          = ∑ i ∈ Finset.range (m - (J + 1)), 2 * (g i - g (i + 1)) := by
+        rw [Finset.sum_Ico_eq_sum_range]
+        refine Finset.sum_congr rfl fun i _ => ?_
+        have h1 : ((J + 1 + i : ℕ) : ℝ) - 1 = (J : ℝ) + (i : ℝ) := by push_cast; ring
+        have h2 : ((J + 1 + i : ℕ) : ℝ) = (J : ℝ) + ((i + 1 : ℕ) : ℝ) := by push_cast; ring
+        rw [h1, h2, hg]
+      rw [hre, ← Finset.mul_sum, Finset.sum_range_sub' g]
+      have hg0 : g 0 = 1 / Real.sqrt J := by
+        rw [hg]; norm_num
+      have hgnn : 0 ≤ g (m - (J + 1)) := by
+        rw [hg]; positivity
+      rw [hg0]
+      have : 2 * (1 / Real.sqrt (J : ℝ) - g (m - (J + 1))) ≤ 2 * (1 / Real.sqrt (J : ℝ)) := by
+        nlinarith
+      calc 2 * (1 / Real.sqrt (J : ℝ) - g (m - (J + 1)))
+          ≤ 2 * (1 / Real.sqrt (J : ℝ)) := this
+        _ = 2 / Real.sqrt J := by ring
+    have hsum2 : ∑ j ∈ Finset.Ico (J + 1) m, T j ≤ 2 / Real.sqrt J :=
+      (Finset.sum_le_sum hstep).trans htel
+    rw [hsplit]
+    have : 1 / Real.sqrt (J : ℝ) + 2 / Real.sqrt (J : ℝ) = 3 / Real.sqrt J := by ring
+    linarith [hfirst, hsum2]
+  rcases le_total n J with hn | hn
+  · have h1 : ∑ j ∈ Finset.range n, T j ≤ ∑ j ∈ Finset.range n, θ :=
+      Finset.sum_le_sum fun j _ => hTθ j
+    have h2 : ∑ j ∈ Finset.range n, (θ : ℝ) = (n : ℝ) * θ := by
+      rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+    have h3 : (n : ℝ) ≤ (J : ℝ) := by exact_mod_cast hn
+    have h4 : (0 : ℝ) ≤ 3 / Real.sqrt J := by positivity
+    nlinarith
+  · have hsplit : ∑ j ∈ Finset.range n, T j
+        = (∑ j ∈ Finset.Ico 0 J, T j) + ∑ j ∈ Finset.Ico J n, T j := by
+      rw [Finset.sum_Ico_consecutive T (Nat.zero_le J) hn, Finset.range_eq_Ico]
+    have h1 : ∑ j ∈ Finset.Ico 0 J, T j ≤ (J : ℝ) * θ := by
+      have := Finset.sum_le_sum (f := T) (g := fun _ => θ)
+        (fun j (_ : j ∈ Finset.Ico 0 J) => hTθ j)
+      have h2 : ∑ _j ∈ Finset.Ico 0 J, (θ : ℝ) = (J : ℝ) * θ := by
+        rw [Finset.sum_const, Nat.card_Ico, nsmul_eq_mul]
+        simp
+      linarith [this, h2.le, h2.ge]
+    rw [hsplit]
+    linarith [h1, htail n]
+
+end SumEstimate
 
 end StatLean.HypothesisTesting

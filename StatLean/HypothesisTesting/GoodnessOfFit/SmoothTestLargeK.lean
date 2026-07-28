@@ -184,11 +184,31 @@ theorem bentkus_berry_esseen_convex {k n : ℕ} {ν : Measure (EuclideanSpace �
   -- that theorem rather than to this one.
   --
   -- What is *not* available, and is what this declaration still quotes, is the SHARP rate:
-  -- `β/√n` with dimensional factor exactly `k^{1/4}` and absolute constant `400`.  The
-  -- elementary balance `ε⁻³ β/√n + C_k ε` is minimised at `ε ∼ (β/√n)^{1/4}` and cannot do
-  -- better whatever the shell constant is, so the gap is the rate, not the shell bound.
-  -- The declaration therefore keeps its sharp Bentkus form and stays the pre-agreed,
-  -- consumer-free debt of this file.
+  -- `β/√n` with dimensional factor exactly `k^{1/4}` and absolute constant `400`.
+  --
+  -- WAVE-13 AMENDMENT (the previous sentence here was WRONG and is corrected).  That sentence
+  -- claimed the elementary balance `ε⁻³ β/√n + C_k ε`, minimised at `ε ∼ (β/√n)^{1/4}`,
+  -- "cannot do better whatever the shell constant is".  The arithmetic is right for that
+  -- balance, but the balance is not forced: the `j`-th step of the hybrid telescope already
+  -- carries an independent `N(0,(j/n)I_k)` summand, and for a Gaussian mollification the
+  -- Lindeberg remainder costs `σ_j^{-3}`, not `‖D³f‖_∞`, because the shift can be moved onto
+  -- the *density* (Cameron–Martin) instead of onto the test function.  Summing
+  -- `min(A ε⁻³ n^{-3/2}, j^{-3/2})` over `j < n` turns `ε⁻³` into `ε⁻¹`, and the balance
+  -- `ε⁻¹ β/√n + C_k ε` gives the strictly better elementary rate `(β/√n)^{1/2} = n^{-1/4}`.
+  -- The analytic core of that improvement is PROVED (0-sorry) in
+  -- `ForMathlib/MultivariateBerryEsseen`: `exists_tiltRemainder_bound`,
+  -- `integral_abs_vecTiltRemainder_le`, `integral_gaussian_shift_eq_tilt`, `tiltPoly_fubini`
+  -- and `abs_integral_gaussian_smoothed_swap_le`, together with two of the three assembly
+  -- bricks (`map_stdGaussian_pair_smul_add` / `integral_gaussian_pair_smul_add`, the Gaussian
+  -- convolution; and `sum_le_of_bounded_and_decay`, the sum estimate).  Only the hybrid
+  -- telescope itself is still open; see the "wave-13 amendment" block of that file's module
+  -- docstring for the full derivation and for the precise shape of the missing brick.
+  --
+  -- Even that improved elementary ceiling is `(β/√n)^{1/2}`, not `β/√n`: closing the last
+  -- factor needs the anti-concentration bound applied to the *hybrid* laws, i.e. Bentkus's
+  -- self-improving induction over `n`, which is an independent project.  The declaration
+  -- therefore keeps its sharp Bentkus form and stays the pre-agreed, consumer-free debt of
+  -- this file.
   sorry
 
 /-- **Berry–Esseen bound over Euclidean balls, with a dimension-free constant (honest rate).**
