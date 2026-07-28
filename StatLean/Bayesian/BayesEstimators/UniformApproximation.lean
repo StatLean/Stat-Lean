@@ -490,7 +490,7 @@ truncated parts are compared by total variation (the truncated loss is bounded b
 tails of the posterior and of the Gaussian. -/
 private lemma bpe_two_sided
     {ℓ : EuclideanSpace ℝ (Fin k) → ℝ≥0∞} (hℓ : Measurable ℓ) {p : ℝ} (hp : 0 ≤ p)
-    (hpoly : PolyGrowthLoss p ℓ) {R ρ : ℝ} (hR : 0 ≤ R) (hρ : 0 ≤ ρ)
+    (hpoly : PolyGrowthLoss p ℓ) {R ρ : ℝ} (hR : 0 ≤ R) (_hρ : 0 ≤ ρ)
     (n : ℕ) (ω : Fin n → 𝓧) {τ : EuclideanSpace ℝ (Fin k)} (hτ : ‖τ‖ ≤ R) :
     bpePosteriorRisk κ π θ₀ ℓ n (τ + bvmEffScore J sc n ω) ω
         ≤ bpeGaussCriterion J ℓ τ
