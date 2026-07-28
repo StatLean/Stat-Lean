@@ -300,6 +300,39 @@ theorem eventually_norm_quadPhaseInt_le {f : ℝ → ℂ} (hf : Integrable f) (M
   rw [quadPhaseInt_eq_fourierOsc]
   exact ht₀ t₁ (Set.mem_Icc.2 (abs_le.1 ht₁))
 
+/-- An eventuality along `cocompact ℝ` is a statement about all large `|s|`. -/
+lemma exists_abs_le_of_eventually_cocompact {p : ℝ → Prop}
+    (hp : ∀ᶠ s in Filter.cocompact ℝ, p s) :
+    ∃ R : ℝ, 0 < R ∧ ∀ s : ℝ, R ≤ |s| → p s := by
+  rw [cocompact_eq_atBot_atTop, Filter.eventually_sup] at hp
+  obtain ⟨hbot, htop⟩ := hp
+  obtain ⟨a, ha⟩ := Filter.eventually_atBot.1 hbot
+  obtain ⟨b, hb⟩ := Filter.eventually_atTop.1 htop
+  refine ⟨max 1 (max |a| |b|), lt_of_lt_of_le one_pos (le_max_left _ _), fun s hs => ?_⟩
+  have hb' : |b| ≤ max 1 (max |a| |b|) := le_trans (le_max_right _ _) (le_max_right _ _)
+  have ha' : |a| ≤ max 1 (max |a| |b|) := le_trans (le_max_left _ _) (le_max_right _ _)
+  rcases le_or_gt 0 s with h | h
+  · rw [abs_of_nonneg h] at hs
+    exact hb s (le_trans (le_trans (le_abs_self b) hb') hs)
+  · rw [abs_of_neg h] at hs
+    exact ha s (by linarith [neg_abs_le a])
+
+/-- **The two regimes combine.** Taking the complementary large-coefficient estimate as an
+explicit hypothesis — it is *not* a Riemann–Lebesgue statement, see the section note — the
+quadratic-phase integral is uniformly small once `|t₀| + |t₁|` is large, which is exactly the
+cocompact bound a multivariate Cramér condition asks for. -/
+theorem exists_bound_norm_quadPhaseInt {f : ℝ → ℂ} (hf : Integrable f) {ε : ℝ} (hε : 0 < ε)
+    {M : ℝ} (hM : 0 < M)
+    -- the large-coefficient regime: van der Corput, or the autocorrelation identity
+    (hlarge : ∀ t₀ t₁ : ℝ, M ≤ |t₁| → ‖quadPhaseInt f t₀ t₁‖ ≤ ε) :
+    ∃ R : ℝ, 0 < R ∧ ∀ t₀ t₁ : ℝ, R ≤ |t₀| + |t₁| → ‖quadPhaseInt f t₀ t₁‖ ≤ ε := by
+  obtain ⟨R₀, hR₀, hR⟩ := exists_abs_le_of_eventually_cocompact
+    (eventually_norm_quadPhaseInt_le hf M hε)
+  refine ⟨R₀ + M, by linarith, fun t₀ t₁ ht => ?_⟩
+  rcases le_or_gt M |t₁| with h | h
+  · exact hlarge t₀ t₁ h
+  · exact hR t₀ (by linarith) t₁ h.le
+
 end QuadraticPhase
 
 end StatLean.HypothesisTesting
