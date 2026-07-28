@@ -3554,6 +3554,49 @@ theorem norm_charFun_map_deltaSurrogate_sub_graded_le (μ : Measure E₂)
   rw [charFun_map_deltaSurrogate]
   exact norm_integral_cexp_deltaSurrogate_sub_graded_le μ hσ hr hr1 θ h2 h3 h4 h5 hrem
 
+/-- **The outer range of the Esseen chain is not a corollary of the root's Cramér tail.**
+
+There is a measurable functional `G` of the bivariate root such that `‖φ_{μ∘G⁻¹}(2π)‖ = 1` for
+**every** law `μ` — in particular for every law satisfying any Cramér tail one likes. So no
+implication of the form "`‖φ_{ρ_n}(t)‖ ≤ cⁿ` on `‖t‖ ≥ ε√n`" ⟹ "`‖φ_{ρ_n∘G⁻¹}(θ)‖` small for
+`|θ| ≥ ρ`" can hold for a general measurable `G`: the hypothesis is a statement about the law of
+the root and the conclusion is a statement about a *pushforward* of it along a nonlinear map, and
+the two are independent.
+
+The witness is the two-valued `G(w) = 1_{w₀ > 0}`, whose pushforward is carried by the integer
+lattice; it is *not* degenerate — for any `μ` charging both half-planes the pushforward has full
+support in `{0,1}` — so non-degeneracy of the functional is not what is missing either.
+
+This is the formalized half of the wave-26 correction on `edgeworth_studentized_uniform`: the
+Esseen chain's outer range is on the law of the surrogate `Hₙ`, and
+`exists_bound_norm_charFun_vecRootLaw_studentPair` bounds the characteristic function of the
+*root*. `Hₙ` is of course not `⌊·⌋`, and its outer-range bound is true; the point is that
+deducing it is an analytic item — the same category distinction wave 21 found for the *window*
+of the peeled assembly, one level up. -/
+theorem exists_measurable_charFun_map_eq_one :
+    ∃ G : E₂ → ℝ, Measurable G ∧
+      ∀ μ : Measure E₂, IsProbabilityMeasure μ → charFun (μ.map G) (2 * Real.pi) = 1 := by
+  have h0 : Measurable fun w : E₂ => w 0 := by fun_prop
+  have hG : Measurable fun w : E₂ => if 0 < w 0 then (1 : ℝ) else 0 :=
+    Measurable.ite (measurableSet_lt measurable_const h0) measurable_const measurable_const
+  refine ⟨fun w : E₂ => if 0 < w 0 then (1 : ℝ) else 0, hG, ?_⟩
+  intro μ hμ
+  rw [charFun_apply_real, integral_map hG.aemeasurable (by fun_prop)]
+  have hpt : ∀ w : E₂,
+      Complex.exp (((2 * Real.pi : ℝ) : ℂ)
+        * ((if 0 < w 0 then (1 : ℝ) else 0 : ℝ) : ℂ) * Complex.I) = 1 := by
+    intro w
+    by_cases hw : 0 < w 0
+    · rw [if_pos hw]
+      have hcast : ((2 * Real.pi : ℝ) : ℂ) * ((1 : ℝ) : ℂ) * Complex.I
+          = 2 * (Real.pi : ℂ) * Complex.I := by push_cast; ring
+      rw [hcast]
+      exact Complex.exp_two_pi_mul_I
+    · rw [if_neg hw]
+      simp
+  simp_rw [hpt]
+  simp
+
 /-! ### Residue (ii), re-derived: the transform's own hypotheses fail under a fourth moment
 
 Wave 23 recorded residue (ii) as "`∫ surrogateRemPoly` is a moment of degree nine, infinite
