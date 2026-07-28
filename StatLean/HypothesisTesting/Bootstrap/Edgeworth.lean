@@ -1312,6 +1312,93 @@ theorem abs_measure_le_sub_le_of_dist_le {Ω : Type*} [MeasurableSpace Ω] (P : 
   rw [abs_sub_le_iff]
   constructor <;> linarith
 
+/-! ### The anti-concentration hypothesis is free
+
+Wave 14's note recorded the anti-concentration `sup_x P(H_n ∈ (x, x + n⁻¹]) = O(n⁻¹)` for the
+delta-method surrogate as one of the two things left of (M2), to be obtained by "first proving a
+cruder `O(n^{-1/2})` expansion and bootstrapping". **That is both unnecessary and insufficient**,
+and the reason is arithmetic. A Berry–Esseen-grade bound `|P(H_n ≤ x) − Φ(x)| ≤ Cn^{-1/2}` gives
+only `P(H_n ∈ (x, x + n⁻¹]) ≤ C'n⁻¹ + 2Cn^{-1/2} = O(n^{-1/2})`, one whole order short of what
+the assembly consumes; a cruder expansion can never produce a finer interval bound than its own
+accuracy.
+
+What is true is better: anti-concentration at scale `n⁻¹` is a **corollary of the very expansion
+the route is proving for `H_n`**, and therefore costs nothing. `measure_Ioc_le_of_abs_cdf_sub_le`
+below is the observation, in the general form: if the distribution function of `T` is within `ε`
+of an `A`-Lipschitz comparison function `G`, then `T` puts at most `A(b − a) + 2ε` on `(a, b]`.
+Applied with `T = H_n`, `G` the Edgeworth approximant (Lipschitz uniformly in `n` by
+`setIntegral_abs_edgeworthDensity_le`) and `ε = C/n` — which is exactly the conclusion of the
+(M1)(b) route for `H_n`, needed anyway — it yields `A n⁻¹ + 2Cn⁻¹`, as required. There is no
+circularity: the expansion for `H_n` is proved first, by characteristic functions, and the
+anti-concentration is read off it afterwards. -/
+
+/-- **Anti-concentration from an approximate distribution function.** If `|P(T ≤ x) − G(x)| ≤ ε`
+uniformly and `G` has Lipschitz constant `A`, then `P(a < T ≤ b) ≤ A(b − a) + 2ε`. -/
+theorem measure_Ioc_le_of_abs_cdf_sub_le {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsProbabilityMeasure P] {T : Ω → ℝ} (hT : Measurable T) {G : ℝ → ℝ} {A ε : ℝ}
+    (hG : ∀ a b : ℝ, a ≤ b → G b - G a ≤ A * (b - a))
+    (happrox : ∀ x : ℝ, |(P {ω | T ω ≤ x}).toReal - G x| ≤ ε)
+    {a b : ℝ} (hab : a ≤ b) :
+    (P {ω | a < T ω ∧ T ω ≤ b}).toReal ≤ A * (b - a) + 2 * ε := by
+  have hSa : MeasurableSet {ω | T ω ≤ a} := hT measurableSet_Iic
+  have hC : MeasurableSet {ω | a < T ω ∧ T ω ≤ b} := hT measurableSet_Ioc
+  have hdisj : Disjoint {ω | T ω ≤ a} {ω | a < T ω ∧ T ω ≤ b} := by
+    rw [Set.disjoint_left]
+    rintro ω hω ⟨hω', -⟩
+    exact absurd hω (not_le.2 hω')
+  have hunion : {ω | T ω ≤ a} ∪ {ω | a < T ω ∧ T ω ≤ b} = {ω | T ω ≤ b} := by
+    ext ω
+    simp only [Set.mem_union, Set.mem_setOf_eq]
+    constructor
+    · rintro (h | ⟨-, h⟩)
+      · linarith
+      · exact h
+    · intro h
+      rcases le_or_gt (T ω) a with h' | h'
+      · exact Or.inl h'
+      · exact Or.inr ⟨h', h⟩
+  have htoreal : (P {ω | a < T ω ∧ T ω ≤ b}).toReal
+      = (P {ω | T ω ≤ b}).toReal - (P {ω | T ω ≤ a}).toReal := by
+    rw [← hunion, measure_union hdisj hC,
+      ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)]
+    ring
+  have h1 := abs_le.1 (happrox b)
+  have h2 := abs_le.1 (happrox a)
+  have h3 := hG a b hab
+  rw [htoreal]
+  linarith [h1.1, h1.2, h2.1, h2.2]
+
+/-- **The corrected (M2) assembly.** The anti-concentration term of
+`abs_measure_le_sub_le_of_dist_le` is discharged by the approximation of `T`'s distribution
+function itself: if `|P(T ≤ x) − G(x)| ≤ ε` uniformly with `G` `A`-Lipschitz, then
+
+`|P(S ≤ x) − G(x)| ≤ P(|S − T| > δ) + 2Aδ + 3ε`.
+
+With `T = H_n` the delta-method surrogate, `G` the Edgeworth approximant, `ε = C/n` and
+`δ = n⁻¹`, every term but the first is `O(n⁻¹)` automatically — so what (M2) really needs is
+*only* the tail bound `P(|T̃_n − H_n| > n⁻¹) = O(n⁻¹)`, and nothing about anti-concentration. -/
+theorem abs_measure_le_sub_le_of_cdf_approx {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsProbabilityMeasure P] {S T : Ω → ℝ} (hS : Measurable S) (hT : Measurable T)
+    {G : ℝ → ℝ} {A ε δ : ℝ} (hδ : 0 ≤ δ)
+    (hG : ∀ a b : ℝ, a ≤ b → G b - G a ≤ A * (b - a))
+    (happrox : ∀ x : ℝ, |(P {ω | T ω ≤ x}).toReal - G x| ≤ ε) (x : ℝ) :
+    |(P {ω | S ω ≤ x}).toReal - G x|
+      ≤ (P {ω | δ < |S ω - T ω|}).toReal + 2 * A * δ + 3 * ε := by
+  have hsplit := abs_measure_le_sub_le_of_dist_le P hS hT hδ x
+  have hwin : (P {ω | x - δ < T ω ∧ T ω ≤ x + δ}).toReal ≤ A * (2 * δ) + 2 * ε := by
+    have h := measure_Ioc_le_of_abs_cdf_sub_le P hT hG happrox
+      (a := x - δ) (b := x + δ) (by linarith)
+    have harg : x + δ - (x - δ) = 2 * δ := by ring
+    rwa [harg] at h
+  have hT' := abs_le.1 (happrox x)
+  have hS' : |(P {ω | S ω ≤ x}).toReal - G x|
+      ≤ |(P {ω | S ω ≤ x}).toReal - (P {ω | T ω ≤ x}).toReal|
+        + |(P {ω | T ω ≤ x}).toReal - G x| :=
+    abs_sub_le _ _ _
+  have hTx := happrox x
+  have hnn : (0 : ℝ) ≤ (P {ω | δ < |S ω - T ω|}).toReal := ENNReal.toReal_nonneg
+  linarith
+
 end StudentizedReduction
 
 /-! ## The Edgeworth approximant on the standardized scale
