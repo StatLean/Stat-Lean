@@ -5083,12 +5083,505 @@ noncomputable def schwartzBulkMultiplier (σ r θ : ℝ) {M : ℝ} (hM : 0 < M) 
     ((schwartzBulkMultiplier σ r θ hM : SchwartzMap E₂ ℂ) : E₂ → ℂ)
       = bulkMultiplier σ r θ M := rfl
 
-/-- NAMED RESIDUE (A2). -/
+/-! ## A graded derivative-bound calculus -/
+
+/-- Iterated derivatives of a continuous linear functional. -/
+lemma norm_iteratedFDeriv_clm_le (L : E₂ →L[ℝ] ℝ) (i : ℕ) (w : E₂) :
+    ‖iteratedFDeriv ℝ i (⇑L) w‖ ≤ ‖L‖ * (1 + ‖w‖) := by
+  have hLn : (0:ℝ) ≤ ‖L‖ := norm_nonneg _
+  have hwn : (0:ℝ) ≤ ‖w‖ := norm_nonneg _
+  match i with
+  | 0 =>
+      rw [norm_iteratedFDeriv_zero]
+      calc ‖L w‖ ≤ ‖L‖ * ‖w‖ := L.le_opNorm w
+        _ ≤ ‖L‖ * (1 + ‖w‖) := by nlinarith
+  | (j+1) =>
+      rw [← norm_iteratedFDeriv_fderiv]
+      have hfd : (fun x : E₂ => fderiv ℝ (⇑L) x) = fun _ : E₂ => L := by
+        funext x; exact L.fderiv
+      rw [show (fderiv ℝ (⇑L)) = fun _ : E₂ => L from hfd]
+      match j with
+      | 0 => rw [norm_iteratedFDeriv_zero]; nlinarith
+      | (k+1) =>
+          rw [iteratedFDeriv_const_of_ne (by omega) L, Pi.zero_apply, norm_zero]
+          nlinarith
+
+/-- Weakening the constant in a graded derivative bound. -/
+lemma gradedBound_const_mono {f : E₂ → ℝ} {m d : ℕ} {C C' : ℝ} (hCC : C ≤ C')
+    (h : ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i f w‖ ≤ C * (1 + ‖w‖) ^ d) :
+    ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i f w‖ ≤ C' * (1 + ‖w‖) ^ d := by
+  intro i hi w
+  refine (h i hi w).trans ?_
+  have : (0:ℝ) ≤ (1 + ‖w‖) ^ d := by positivity
+  nlinarith
+
+/-- Weakening the degree in a graded derivative bound. -/
+lemma gradedBound_deg_mono {f : E₂ → ℝ} {m d d' : ℕ} {C : ℝ} (hC : 0 ≤ C) (hd : d ≤ d')
+    (h : ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i f w‖ ≤ C * (1 + ‖w‖) ^ d) :
+    ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i f w‖ ≤ C * (1 + ‖w‖) ^ d' := by
+  intro i hi w
+  refine (h i hi w).trans ?_
+  have h1 : (1:ℝ) ≤ 1 + ‖w‖ := by have := norm_nonneg w; linarith
+  exact mul_le_mul_of_nonneg_left (pow_le_pow_right₀ h1 hd) hC
+
+lemma gradedBound_const {m : ℕ} (c : ℝ) :
+    ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i (fun _ : E₂ => c) w‖ ≤ |c| * (1 + ‖w‖) ^ 0 := by
+  intro i _ w
+  match i with
+  | 0 => rw [norm_iteratedFDeriv_zero]; simp
+  | (j+1) =>
+      rw [iteratedFDeriv_const_of_ne (by omega) c, Pi.zero_apply, norm_zero]
+      positivity
+
+lemma gradedBound_coord {m : ℕ} (j : Fin 2) :
+    ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i (fun w : E₂ => w j) w‖
+      ≤ 1 * (1 + ‖w‖) ^ 1 := by
+  have heq : (fun w : E₂ => w j) = ⇑(innerSL ℝ (coordDir j)) := by
+    funext w
+    simp only [innerSL_apply_apply]
+    rw [← inner_coordDir j w]
+    exact real_inner_comm _ _
+  have hnorm : ‖innerSL ℝ (coordDir j)‖ ≤ 1 := by
+    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun w => ?_
+    have h := abs_real_inner_le_norm (coordDir j) w
+    have hc : ‖coordDir j‖ = 1 := by
+      rw [coordDir]; simp
+    rw [hc, one_mul] at h
+    simpa [Real.norm_eq_abs] using h
+  intro i _ w
+  rw [heq, pow_one, one_mul]
+  refine (norm_iteratedFDeriv_clm_le _ i w).trans ?_
+  have : (0:ℝ) ≤ 1 + ‖w‖ := by have := norm_nonneg w; linarith
+  nlinarith
+
+/-- Leibniz for graded derivative bounds. -/
+lemma gradedBound_mul {f g : E₂ → ℝ} {m d₁ d₂ : ℕ} {C₁ C₂ : ℝ}
+    (hf : ContDiff ℝ (⊤ : ℕ∞) f) (hg : ContDiff ℝ (⊤ : ℕ∞) g)
+    (hC₁ : 0 ≤ C₁) (hC₂ : 0 ≤ C₂)
+    (h1 : ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i f w‖ ≤ C₁ * (1 + ‖w‖) ^ d₁)
+    (h2 : ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i g w‖ ≤ C₂ * (1 + ‖w‖) ^ d₂) :
+    ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i (fun w => f w * g w) w‖
+      ≤ 2 ^ m * C₁ * C₂ * (1 + ‖w‖) ^ (d₁ + d₂) := by
+  intro i hi w
+  have hmain := norm_iteratedFDeriv_mul_le (𝕜 := ℝ) (A := ℝ) (N := ((⊤ : ℕ∞) : WithTop ℕ∞))
+    hf hg w (n := i) (mod_cast le_top)
+  refine hmain.trans ?_
+  have hw0 : (0:ℝ) ≤ (1 + ‖w‖) := by have := norm_nonneg w; linarith
+  have hterm : ∀ j ∈ Finset.range (i + 1),
+      (i.choose j : ℝ) * ‖iteratedFDeriv ℝ j f w‖ * ‖iteratedFDeriv ℝ (i - j) g w‖
+        ≤ (i.choose j : ℝ) * (C₁ * C₂ * (1 + ‖w‖) ^ (d₁ + d₂)) := by
+    intro j hj
+    have hjm : j ≤ m := le_trans (Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)) hi
+    have hijm : i - j ≤ m := le_trans (Nat.sub_le i j) hi
+    have e := mul_le_mul (h1 j hjm w) (h2 (i - j) hijm w) (norm_nonneg _) (by positivity)
+    calc (i.choose j : ℝ) * ‖iteratedFDeriv ℝ j f w‖ * ‖iteratedFDeriv ℝ (i - j) g w‖
+        = (i.choose j : ℝ) * (‖iteratedFDeriv ℝ j f w‖ * ‖iteratedFDeriv ℝ (i - j) g w‖) := by
+          ring
+      _ ≤ (i.choose j : ℝ) * ((C₁ * (1 + ‖w‖) ^ d₁) * (C₂ * (1 + ‖w‖) ^ d₂)) :=
+          mul_le_mul_of_nonneg_left e (by positivity)
+      _ = (i.choose j : ℝ) * (C₁ * C₂ * (1 + ‖w‖) ^ (d₁ + d₂)) := by rw [pow_add]; ring
+  calc ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) * ‖iteratedFDeriv ℝ j f w‖
+          * ‖iteratedFDeriv ℝ (i - j) g w‖
+      ≤ ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) * (C₁ * C₂ * (1 + ‖w‖) ^ (d₁ + d₂)) :=
+        Finset.sum_le_sum hterm
+    _ = (∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ)) * (C₁ * C₂ * (1 + ‖w‖) ^ (d₁ + d₂)) := by
+        rw [Finset.sum_mul]
+    _ = (2 : ℝ) ^ i * (C₁ * C₂ * (1 + ‖w‖) ^ (d₁ + d₂)) := by
+        rw [← Nat.cast_sum, Nat.sum_range_choose]; push_cast; ring
+    _ ≤ (2 : ℝ) ^ m * (C₁ * C₂ * (1 + ‖w‖) ^ (d₁ + d₂)) := by
+        have h2m : (2 : ℝ) ^ i ≤ 2 ^ m := pow_le_pow_right₀ (by norm_num) hi
+        have : (0:ℝ) ≤ C₁ * C₂ * (1 + ‖w‖) ^ (d₁ + d₂) := by positivity
+        nlinarith
+    _ = 2 ^ m * C₁ * C₂ * (1 + ‖w‖) ^ (d₁ + d₂) := by ring
+
+lemma gradedBound_add {f g : E₂ → ℝ} {m d : ℕ} {C₁ C₂ : ℝ}
+    (hf : ContDiff ℝ (⊤ : ℕ∞) f) (hg : ContDiff ℝ (⊤ : ℕ∞) g)
+    (h1 : ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i f w‖ ≤ C₁ * (1 + ‖w‖) ^ d)
+    (h2 : ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i g w‖ ≤ C₂ * (1 + ‖w‖) ^ d) :
+    ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i (fun w => f w + g w) w‖
+      ≤ (C₁ + C₂) * (1 + ‖w‖) ^ d := by
+  intro i hi w
+  have hsplit : iteratedFDeriv ℝ i (fun w => f w + g w) w
+      = iteratedFDeriv ℝ i f w + iteratedFDeriv ℝ i g w :=
+    iteratedFDeriv_add_apply (hf.contDiffAt.of_le (mod_cast le_top))
+      (hg.contDiffAt.of_le (mod_cast le_top))
+  rw [hsplit]
+  calc ‖iteratedFDeriv ℝ i f w + iteratedFDeriv ℝ i g w‖
+      ≤ ‖iteratedFDeriv ℝ i f w‖ + ‖iteratedFDeriv ℝ i g w‖ := norm_add_le _ _
+    _ ≤ C₁ * (1 + ‖w‖) ^ d + C₂ * (1 + ‖w‖) ^ d := add_le_add (h1 i hi w) (h2 i hi w)
+    _ = (C₁ + C₂) * (1 + ‖w‖) ^ d := by ring
+
+/-! ## The cubic phase -/
+
+/-- All derivatives of the cubic `a w₀w₁ + b w₀³ + c w₀w₁²` are bounded by
+`8^m (|a| + |b| + |c|) (1 + ‖w‖)³` up to order `m`. -/
+lemma norm_iteratedFDeriv_cubic_le (m : ℕ) (a b c : ℝ) :
+    ∀ i ≤ m, ∀ w : E₂,
+      ‖iteratedFDeriv ℝ i (fun w : E₂ =>
+          a * w 0 * w 1 + (b * w 0 * w 0 * w 0 + c * w 0 * w 1 * w 1)) w‖
+        ≤ 8 ^ m * (|a| + |b| + |c|) * (1 + ‖w‖) ^ 3 := by
+  have h0 : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => w 0 := contDiff_coord 0
+  have h1 : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => w 1 := contDiff_coord 1
+  have hlin : ∀ x : ℝ, ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => x * w 0 := fun x =>
+    contDiff_const.mul h0
+  have hq2 : ∀ x : ℝ, ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => x * w 0 * w 0 := fun x =>
+    (hlin x).mul h0
+  have hq2' : ∀ x : ℝ, ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => x * w 0 * w 1 := fun x =>
+    (hlin x).mul h1
+  have hq3 : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => b * w 0 * w 0 * w 0 := (hq2 b).mul h0
+  have hq3' : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => c * w 0 * w 1 * w 1 := (hq2' c).mul h1
+  -- degree-one pieces
+  have hA : ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i (fun w : E₂ => a * w 0) w‖
+      ≤ 2 ^ m * |a| * 1 * (1 + ‖w‖) ^ (0 + 1) :=
+    gradedBound_mul contDiff_const h0 (abs_nonneg a) zero_le_one (gradedBound_const a)
+      (gradedBound_coord 0)
+  have hB1 : ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i (fun w : E₂ => b * w 0) w‖
+      ≤ 2 ^ m * |b| * 1 * (1 + ‖w‖) ^ (0 + 1) :=
+    gradedBound_mul contDiff_const h0 (abs_nonneg b) zero_le_one (gradedBound_const b)
+      (gradedBound_coord 0)
+  have hC1 : ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i (fun w : E₂ => c * w 0) w‖
+      ≤ 2 ^ m * |c| * 1 * (1 + ‖w‖) ^ (0 + 1) :=
+    gradedBound_mul contDiff_const h0 (abs_nonneg c) zero_le_one (gradedBound_const c)
+      (gradedBound_coord 0)
+  -- degree-two pieces
+  have hT1 : ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i (fun w : E₂ => a * w 0 * w 1) w‖
+      ≤ 2 ^ m * (2 ^ m * |a| * 1) * 1 * (1 + ‖w‖) ^ (0 + 1 + 1) :=
+    gradedBound_mul (hlin a) h1 (by positivity) zero_le_one hA (gradedBound_coord 1)
+  have hB2 : ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i (fun w : E₂ => b * w 0 * w 0) w‖
+      ≤ 2 ^ m * (2 ^ m * |b| * 1) * 1 * (1 + ‖w‖) ^ (0 + 1 + 1) :=
+    gradedBound_mul (hlin b) h0 (by positivity) zero_le_one hB1 (gradedBound_coord 0)
+  have hC2 : ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i (fun w : E₂ => c * w 0 * w 1) w‖
+      ≤ 2 ^ m * (2 ^ m * |c| * 1) * 1 * (1 + ‖w‖) ^ (0 + 1 + 1) :=
+    gradedBound_mul (hlin c) h1 (by positivity) zero_le_one hC1 (gradedBound_coord 1)
+  -- degree-three pieces
+  have hT2 : ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i (fun w : E₂ => b * w 0 * w 0 * w 0) w‖
+      ≤ 2 ^ m * (2 ^ m * (2 ^ m * |b| * 1) * 1) * 1 * (1 + ‖w‖) ^ (0 + 1 + 1 + 1) :=
+    gradedBound_mul (hq2 b) h0 (by positivity) zero_le_one hB2 (gradedBound_coord 0)
+  have hT3 : ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i (fun w : E₂ => c * w 0 * w 1 * w 1) w‖
+      ≤ 2 ^ m * (2 ^ m * (2 ^ m * |c| * 1) * 1) * 1 * (1 + ‖w‖) ^ (0 + 1 + 1 + 1) :=
+    gradedBound_mul (hq2' c) h1 (by positivity) zero_le_one hC2 (gradedBound_coord 1)
+  have hT1' : ∀ i ≤ m, ∀ w : E₂, ‖iteratedFDeriv ℝ i (fun w : E₂ => a * w 0 * w 1) w‖
+      ≤ 2 ^ m * (2 ^ m * |a| * 1) * 1 * (1 + ‖w‖) ^ 3 :=
+    gradedBound_deg_mono (by positivity) (by norm_num) hT1
+  have hT23 : ∀ i ≤ m, ∀ w : E₂,
+      ‖iteratedFDeriv ℝ i (fun w : E₂ => b * w 0 * w 0 * w 0 + c * w 0 * w 1 * w 1) w‖
+        ≤ (2 ^ m * (2 ^ m * (2 ^ m * |b| * 1) * 1) * 1
+            + 2 ^ m * (2 ^ m * (2 ^ m * |c| * 1) * 1) * 1) * (1 + ‖w‖) ^ 3 :=
+    gradedBound_add hq3 hq3' hT2 hT3
+  have hsum := gradedBound_add (hq2' a) (hq3.add hq3') hT1' hT23
+  refine gradedBound_const_mono ?_ hsum
+  have e1 : (2:ℝ) ^ m * (2 ^ m * |a| * 1) * 1 = 4 ^ m * |a| := by
+    rw [show (4:ℝ) = 2 * 2 by norm_num, mul_pow]; ring
+  have e2 : (2:ℝ) ^ m * (2 ^ m * (2 ^ m * |b| * 1) * 1) * 1 = 8 ^ m * |b| := by
+    rw [show (8:ℝ) = 2 * 2 * 2 by norm_num, mul_pow, mul_pow]; ring
+  have e3 : (2:ℝ) ^ m * (2 ^ m * (2 ^ m * |c| * 1) * 1) * 1 = 8 ^ m * |c| := by
+    rw [show (8:ℝ) = 2 * 2 * 2 by norm_num, mul_pow, mul_pow]; ring
+  have h48 : (4:ℝ) ^ m ≤ 8 ^ m := pow_le_pow_left₀ (by norm_num) (by norm_num) m
+  have ha := abs_nonneg a
+  rw [e1, e2, e3]
+  nlinarith [mul_le_mul_of_nonneg_right h48 ha]
+
+/-! ## The cut-off -/
+
+lemma exists_bound_iteratedFDeriv_bulkCutoff_single (i : ℕ) :
+    ∃ B : ℝ, 0 < B ∧ ∀ x : E₂, ‖iteratedFDeriv ℝ i (⇑bulkCutoff) x‖ ≤ B := by
+  have hle : ((i : ℕ∞) : WithTop ℕ∞) ≤ ((⊤ : ℕ∞) : WithTop ℕ∞) := WithTop.coe_le_coe.2 le_top
+  have hcont : Continuous fun x : E₂ => ‖iteratedFDeriv ℝ i (⇑bulkCutoff) x‖ :=
+    ((bulkCutoff.contDiff (n := (⊤ : ℕ∞))).continuous_iteratedFDeriv hle).norm
+  have hcs : HasCompactSupport fun x : E₂ => ‖iteratedFDeriv ℝ i (⇑bulkCutoff) x‖ :=
+    (bulkCutoff.hasCompactSupport.iteratedFDeriv i).norm
+  obtain ⟨B, hB⟩ := hcs.exists_bound_of_continuous hcont
+  have h0 : (0:ℝ) ≤ B := by
+    have := hB (0 : E₂)
+    have h2 : (0:ℝ) ≤ ‖iteratedFDeriv ℝ i (⇑bulkCutoff) (0 : E₂)‖ := norm_nonneg _
+    rw [Real.norm_eq_abs, abs_of_nonneg h2] at this
+    linarith
+  refine ⟨B + 1, by linarith, fun x => ?_⟩
+  have := hB x
+  rw [Real.norm_eq_abs, abs_of_nonneg (norm_nonneg _)] at this
+  linarith
+
+lemma exists_bound_iteratedFDeriv_bulkCutoff (m : ℕ) :
+    ∃ B : ℝ, 0 < B ∧ ∀ i ≤ m, ∀ x : E₂, ‖iteratedFDeriv ℝ i (⇑bulkCutoff) x‖ ≤ B := by
+  induction m with
+  | zero =>
+      obtain ⟨B, hB0, hB⟩ := exists_bound_iteratedFDeriv_bulkCutoff_single 0
+      exact ⟨B, hB0, fun i hi x => by
+        obtain rfl : i = 0 := Nat.le_zero.mp hi
+        exact hB x⟩
+  | succ m ih =>
+      obtain ⟨B, hB0, hB⟩ := ih
+      obtain ⟨B', hB'0, hB'⟩ := exists_bound_iteratedFDeriv_bulkCutoff_single (m + 1)
+      refine ⟨max B B', lt_max_of_lt_left hB0, fun i hi x => ?_⟩
+      rcases Nat.eq_or_lt_of_le hi with h | h
+      · subst h; exact (hB' x).trans (le_max_right _ _)
+      · exact (hB i (Nat.lt_succ_iff.mp h) x).trans (le_max_left _ _)
+
+/-- Derivatives of the dilated cut-off are bounded by the undilated ones once `M ≥ 1`. -/
+lemma norm_iteratedFDeriv_bulkCutoff_dilate_le {M B : ℝ} (hM : 1 ≤ M) {i : ℕ}
+    (hB : ∀ x : E₂, ‖iteratedFDeriv ℝ i (⇑bulkCutoff) x‖ ≤ B) (w : E₂) :
+    ‖iteratedFDeriv ℝ i (fun w : E₂ => (bulkCutoff (M⁻¹ • w) : ℝ)) w‖ ≤ B := by
+  set L : E₂ →L[ℝ] E₂ := M⁻¹ • ContinuousLinearMap.id ℝ E₂ with hL
+  have hM0 : (0:ℝ) < M := lt_of_lt_of_le zero_lt_one hM
+  have hLnorm : ‖L‖ ≤ 1 := by
+    have h1 : ‖L‖ ≤ ‖(M⁻¹ : ℝ)‖ * ‖ContinuousLinearMap.id ℝ E₂‖ := by
+      rw [hL]; exact norm_smul_le _ _
+    have h2 : ‖ContinuousLinearMap.id ℝ E₂‖ ≤ 1 := ContinuousLinearMap.norm_id_le
+    have h3 : ‖(M⁻¹ : ℝ)‖ ≤ 1 := by
+      rw [Real.norm_eq_abs, abs_of_pos (by positivity)]
+      rw [inv_le_one_iff₀]; right; exact hM
+    have h4 : (0:ℝ) ≤ ‖(M⁻¹ : ℝ)‖ := norm_nonneg _
+    nlinarith
+  have hcomp : (fun w : E₂ => (bulkCutoff (M⁻¹ • w) : ℝ)) = (⇑bulkCutoff) ∘ L := rfl
+  rw [hcomp, L.iteratedFDeriv_comp_right (bulkCutoff.contDiff (n := (⊤ : ℕ∞)))
+    w (i := i) (mod_cast le_top)]
+  refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
+  have hprod : (∏ _j : Fin i, ‖L‖) = ‖L‖ ^ i := by
+    rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+  rw [hprod]
+  have hpow : ‖L‖ ^ i ≤ 1 := pow_le_one₀ (norm_nonneg _) hLnorm
+  have hnn : (0:ℝ) ≤ ‖iteratedFDeriv ℝ i (⇑bulkCutoff) (L w)‖ := norm_nonneg _
+  nlinarith [hB (L w)]
+
+/-! ## The oscillatory factor -/
+
+lemma iteratedDeriv_expI (i : ℕ) :
+    (iteratedDeriv i fun t : ℝ => Complex.exp (Complex.I * (t : ℂ)))
+      = fun t : ℝ => Complex.I ^ i * Complex.exp (Complex.I * (t : ℂ)) := by
+  induction i with
+  | zero => funext t; simp
+  | succ i ih =>
+      rw [iteratedDeriv_succ, ih]
+      funext t
+      have h0 : HasDerivAt (fun t : ℝ => (Complex.I * (t : ℂ))) Complex.I t := by
+        simpa using (Complex.ofRealCLM.hasDerivAt (x := t)).const_mul Complex.I
+      have hd : HasDerivAt (fun t : ℝ => Complex.exp (Complex.I * (t : ℂ)))
+          (Complex.exp (Complex.I * (t : ℂ)) * Complex.I) t := h0.cexp
+      rw [(HasDerivAt.const_mul (Complex.I ^ i) hd).deriv]
+      ring
+
+lemma contDiff_expI : ContDiff ℝ (⊤ : ℕ∞) fun t : ℝ => Complex.exp (Complex.I * (t : ℂ)) :=
+  (Complex.contDiff_exp (𝕜 := ℝ)).comp (contDiff_const.mul Complex.ofRealCLM.contDiff)
+
+lemma norm_iteratedFDeriv_expI_le (i : ℕ) (t : ℝ) :
+    ‖iteratedFDeriv ℝ i (fun t : ℝ => Complex.exp (Complex.I * (t : ℂ))) t‖ ≤ 1 := by
+  rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv,
+    show iteratedDeriv i (fun t : ℝ => Complex.exp (Complex.I * (t : ℂ))) t
+      = Complex.I ^ i * Complex.exp (Complex.I * (t : ℂ)) from congrFun (iteratedDeriv_expI i) t]
+  simp [Complex.norm_exp]
+
+/-- Faà di Bruno for the oscillatory factor: every derivative up to order `m` is `≤ m! D^m`. -/
+lemma norm_iteratedFDeriv_expPhase_le {q : E₂ → ℝ} (hq : ContDiff ℝ (⊤ : ℕ∞) q)
+    {m : ℕ} {D : ℝ} (hD1 : 1 ≤ D) (w : E₂)
+    (hDb : ∀ i ≤ m, ‖iteratedFDeriv ℝ i q w‖ ≤ D) :
+    ∀ j ≤ m, ‖iteratedFDeriv ℝ j (fun w : E₂ =>
+        Complex.exp (Complex.I * ((q w : ℝ) : ℂ))) w‖ ≤ (Nat.factorial m : ℝ) * D ^ m := by
+  intro j hj
+  have hcomp : (fun w : E₂ => Complex.exp (Complex.I * ((q w : ℝ) : ℂ)))
+      = (fun t : ℝ => Complex.exp (Complex.I * (t : ℂ))) ∘ q := rfl
+  rw [hcomp]
+  have hmain := norm_iteratedFDeriv_comp_le (𝕜 := ℝ) (n := j)
+    (N := ((⊤ : ℕ∞) : WithTop ℕ∞)) contDiff_expI hq (mod_cast le_top) w
+    (C := 1) (D := D)
+    (fun i _ => norm_iteratedFDeriv_expI_le i (q w))
+    (fun i hi1 hij => by
+      refine (hDb i (le_trans hij hj)).trans ?_
+      have := pow_le_pow_right₀ hD1 hi1
+      simpa using this)
+  refine hmain.trans ?_
+  have h1 : (Nat.factorial j : ℝ) ≤ (Nat.factorial m : ℝ) := by exact_mod_cast Nat.factorial_le hj
+  have h2 : D ^ j ≤ D ^ m := pow_le_pow_right₀ hD1 hj
+  have h3 : (0:ℝ) ≤ D ^ j := by positivity
+  have h4 : (0:ℝ) ≤ (Nat.factorial j : ℝ) := by positivity
+  nlinarith
+
+/-! ## The residue (A2) -/
+
+-- The assembly chains a Leibniz split, a Faà di Bruno bound and the cubic-derivative
+-- calculus below; the elaboration is long but shallow, and the default budget is not enough.
+set_option maxHeartbeats 1600000 in
+/-- **(A2) The sup-norm of every derivative of the bulk multiplier is polynomial in `n` and
+`|θ|`** — the wave-34 residue of input (A), and now **proved**.
+
+`g = χ(·/M)·e^{iθQ}` with `Q = Hₙ − w₀/σ`. Off `‖w‖ ≤ 2M` every derivative vanishes
+(`iteratedFDeriv_bulkMultiplier_eq_zero`), so the bound is only needed on that ball. There
+`norm_iteratedFDeriv_mul_le` splits the product; the cut-off contributes
+`‖D^i χ(·/M)‖ ≤ B_m·‖M⁻¹‖^i ≤ B_m` because `M = n^{5/8} ≥ 1`
+(`norm_iteratedFDeriv_bulkCutoff_dilate_le`, `exists_bound_iteratedFDeriv_bulkCutoff`); and the
+oscillatory factor is bounded by `m!·D^m` through `norm_iteratedFDeriv_comp_le` with `C = 1`
+(every derivative of `t ↦ e^{it}` has modulus one, `norm_iteratedFDeriv_expI_le`) and
+`D = (1 + X)(1 + |θ|)n³`, which dominates the derivatives of the phase because `θQ` is the
+*cubic* `a w₀w₁ + b w₀³ + c w₀w₁²` with `|a| + |b| + |c| ≤ |θ|·Cσ` (using `r = n^{-1/2} ≤ 1`) and
+`(1 + ‖w‖)³ ≤ 27n³` on the ball (`norm_iteratedFDeriv_cubic_le`). The exponent `K = 3m` and the
+constant `2^m B m! (1 + X)^m` depend on `m` and `σ` only, which is all input (A) consumes. -/
 theorem exists_norm_iteratedFDeriv_bulkMultiplier_le {σ : ℝ} (hσ : 0 < σ) (m : ℕ) :
     ∃ (A : ℝ) (K : ℕ), 0 < A ∧ ∀ n : ℕ, 0 < n → ∀ (θ : ℝ) (w : E₂),
       ‖iteratedFDeriv ℝ m (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) w‖
         ≤ A * (n : ℝ) ^ K * (1 + |θ|) ^ K := by
-  sorry
+  obtain ⟨B, hB0, hB⟩ := exists_bound_iteratedFDeriv_bulkCutoff m
+  obtain ⟨Cs, hCs⟩ : ∃ x : ℝ, x = 1 / (2 * σ ^ 3) + 1 / (2 * σ ^ 3) + 3 / (8 * σ ^ 5) := ⟨_, rfl⟩
+  have hCs0 : 0 < Cs := by rw [hCs]; positivity
+  obtain ⟨X, hX⟩ : ∃ x : ℝ, x = 27 * 8 ^ m * Cs := ⟨_, rfl⟩
+  have hX0 : 0 < X := by rw [hX]; positivity
+  refine ⟨2 ^ m * B * (Nat.factorial m : ℝ) * (1 + X) ^ m, 3 * m, by positivity, ?_⟩
+  intro n hn θ w
+  have hn1 : (1:ℝ) ≤ (n:ℝ) := by exact_mod_cast hn
+  have hθ1 : (1:ℝ) ≤ 1 + |θ| := by have := abs_nonneg θ; linarith
+  set r : ℝ := (Real.sqrt (n : ℝ))⁻¹ with hrdef
+  set M : ℝ := bulkRadius n with hMdef
+  have hM0 : 0 < M := bulkRadius_pos hn
+  have hM1 : (1:ℝ) ≤ M := by
+    have h := Real.rpow_le_rpow_of_exponent_le hn1 (show (0:ℝ) ≤ 5 / 8 by norm_num)
+    rw [Real.rpow_zero] at h
+    rw [hMdef, bulkRadius]; exact h
+  have hMn : M ≤ (n:ℝ) := by
+    have h := Real.rpow_le_rpow_of_exponent_le hn1 (show (5:ℝ) / 8 ≤ 1 by norm_num)
+    rw [Real.rpow_one] at h
+    rw [hMdef, bulkRadius]; exact h
+  have hsq1 : (1:ℝ) ≤ Real.sqrt (n:ℝ) := by
+    rw [show (1:ℝ) = Real.sqrt 1 by simp]
+    exact Real.sqrt_le_sqrt hn1
+  have hr0 : 0 < r := by rw [hrdef]; positivity
+  have hr1 : r ≤ 1 := by
+    rw [hrdef, inv_le_one_iff₀]; right; exact hsq1
+  rcases le_or_gt ‖w‖ (2 * M) with hw | hw
+  swap
+  · rw [iteratedFDeriv_bulkMultiplier_eq_zero hM0 σ r θ m hw, norm_zero]
+    positivity
+  -- the phase is a cubic
+  obtain ⟨a, ha⟩ : ∃ x : ℝ, x = -(θ * r) / (2 * σ ^ 3) := ⟨_, rfl⟩
+  obtain ⟨b, hb⟩ : ∃ x : ℝ, x = θ * r ^ 2 / (2 * σ ^ 3) := ⟨_, rfl⟩
+  obtain ⟨c, hc⟩ : ∃ x : ℝ, x = 3 * (θ * r ^ 2) / (8 * σ ^ 5) := ⟨_, rfl⟩
+  have hphase : (fun v : E₂ => θ * (deltaSurrogate σ r v - v 0 / σ))
+      = fun v : E₂ => a * v 0 * v 1 + (b * v 0 * v 0 * v 0 + c * v 0 * v 1 * v 1) := by
+    subst ha; subst hb; subst hc
+    funext v
+    rw [deltaSurrogate]
+    field_simp
+    ring
+  have hqcd : ContDiff ℝ (⊤ : ℕ∞) fun v : E₂ => θ * (deltaSurrogate σ r v - v 0 / σ) :=
+    contDiff_const.mul ((contDiff_deltaSurrogate σ r).sub ((contDiff_coord 0).div_const σ))
+  have hq : ∀ i ≤ m,
+      ‖iteratedFDeriv ℝ i (fun v : E₂ => θ * (deltaSurrogate σ r v - v 0 / σ)) w‖
+        ≤ 8 ^ m * (|a| + |b| + |c|) * (1 + ‖w‖) ^ 3 := by
+    intro i hi
+    rw [hphase]
+    exact norm_iteratedFDeriv_cubic_le m a b c i hi w
+  -- the coefficients are bounded by `|θ|·Cs`
+  have habc : |a| + |b| + |c| ≤ |θ| * Cs := by
+    have hs3 : (0:ℝ) < 2 * σ ^ 3 := by positivity
+    have hs5 : (0:ℝ) < 8 * σ ^ 5 := by positivity
+    have ea : |a| ≤ |θ| * (1 / (2 * σ ^ 3)) := by
+      rw [ha, abs_div, abs_neg, abs_mul, abs_of_pos hr0, abs_of_pos hs3]
+      rw [div_le_iff₀ hs3]
+      have : |θ| * r ≤ |θ| * 1 := by
+        exact mul_le_mul_of_nonneg_left hr1 (abs_nonneg θ)
+      calc |θ| * r ≤ |θ| * 1 := this
+        _ = |θ| * (1 / (2 * σ ^ 3)) * (2 * σ ^ 3) := by field_simp
+    have eb : |b| ≤ |θ| * (1 / (2 * σ ^ 3)) := by
+      rw [hb, abs_div, abs_mul, abs_pow, abs_of_pos hr0, abs_of_pos hs3, div_le_iff₀ hs3]
+      have hr2 : r ^ 2 ≤ 1 := by nlinarith
+      calc |θ| * r ^ 2 ≤ |θ| * 1 := mul_le_mul_of_nonneg_left hr2 (abs_nonneg θ)
+        _ = |θ| * (1 / (2 * σ ^ 3)) * (2 * σ ^ 3) := by field_simp
+    have ec : |c| ≤ |θ| * (3 / (8 * σ ^ 5)) := by
+      rw [hc, abs_div, abs_mul, abs_mul, abs_pow, abs_of_pos hr0, abs_of_pos hs5,
+        show |(3:ℝ)| = 3 from by norm_num, div_le_iff₀ hs5]
+      have hr2 : r ^ 2 ≤ 1 := by nlinarith
+      calc 3 * (|θ| * r ^ 2) ≤ 3 * (|θ| * 1) :=
+            mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hr2 (abs_nonneg θ)) (by norm_num)
+        _ = |θ| * (3 / (8 * σ ^ 5)) * (8 * σ ^ 5) := by field_simp
+    rw [hCs]
+    nlinarith [ea, eb, ec]
+  -- the ball `‖w‖ ≤ 2M ≤ 2n` costs only `27 n³`
+  have hw3 : (1 + ‖w‖) ^ 3 ≤ 27 * (n:ℝ) ^ 3 := by
+    have h1 : 1 + ‖w‖ ≤ 3 * (n:ℝ) := by
+      have h2 : ‖w‖ ≤ 2 * (n:ℝ) := le_trans hw (by linarith)
+      linarith
+    calc (1 + ‖w‖) ^ 3 ≤ (3 * (n:ℝ)) ^ 3 :=
+          pow_le_pow_left₀ (by have := norm_nonneg w; linarith) h1 3
+      _ = 27 * (n:ℝ) ^ 3 := by ring
+  obtain ⟨D, hDdef⟩ : ∃ x : ℝ, x = (1 + X) * (1 + |θ|) * (n:ℝ) ^ 3 := ⟨_, rfl⟩
+  have hn3 : (1:ℝ) ≤ (n:ℝ) ^ 3 := one_le_pow₀ hn1
+  have hD1 : (1:ℝ) ≤ D := by
+    rw [hDdef]
+    have h1 : (1:ℝ) ≤ 1 + X := by linarith
+    have hP : (1:ℝ) ≤ (1 + X) * (1 + |θ|) := by nlinarith [abs_nonneg θ, hX0.le]
+    nlinarith [hP, hn3]
+  have hqD : ∀ i ≤ m,
+      ‖iteratedFDeriv ℝ i (fun v : E₂ => θ * (deltaSurrogate σ r v - v 0 / σ)) w‖ ≤ D := by
+    intro i hi
+    refine (hq i hi).trans ?_
+    have hstep : (8:ℝ) ^ m * (|a| + |b| + |c|) * (1 + ‖w‖) ^ 3
+        ≤ 8 ^ m * (|θ| * Cs) * (27 * (n:ℝ) ^ 3) := by
+      refine mul_le_mul ?_ hw3 (by positivity) (by positivity)
+      exact mul_le_mul_of_nonneg_left habc (by positivity)
+    refine hstep.trans ?_
+    have heq : (8:ℝ) ^ m * (|θ| * Cs) * (27 * (n:ℝ) ^ 3) = X * |θ| * (n:ℝ) ^ 3 := by
+      rw [hX]; ring
+    rw [heq, hDdef]
+    have hle : X * |θ| ≤ (1 + X) * (1 + |θ|) := by nlinarith [abs_nonneg θ, hX0.le]
+    exact mul_le_mul_of_nonneg_right hle (by positivity)
+  have hexp := norm_iteratedFDeriv_expPhase_le hqcd hD1 w hqD
+  -- the cut-off
+  have hcutcd : ContDiff ℝ (⊤ : ℕ∞) fun v : E₂ => (bulkCutoff (M⁻¹ • v) : ℝ) :=
+    bulkCutoff.contDiff.comp (contDiff_id.const_smul M⁻¹)
+  have hcut : ∀ i ≤ m,
+      ‖iteratedFDeriv ℝ i (fun v : E₂ => ((bulkCutoff (M⁻¹ • v) : ℝ) : ℂ)) w‖ ≤ B := by
+    intro i hi
+    rw [show (fun v : E₂ => (((bulkCutoff (M⁻¹ • v) : ℝ) : ℂ)))
+          = ⇑Complex.ofRealLI ∘ fun v : E₂ => (bulkCutoff (M⁻¹ • v) : ℝ) from rfl,
+      Complex.ofRealLI.norm_iteratedFDeriv_comp_left hcutcd.contDiffAt (mod_cast le_top)]
+    exact norm_iteratedFDeriv_bulkCutoff_dilate_le hM1 (hB i hi) w
+  -- Leibniz
+  have hfun : bulkMultiplier σ r θ M
+      = fun v : E₂ => ((bulkCutoff (M⁻¹ • v) : ℝ) : ℂ)
+          * Complex.exp (Complex.I * ((θ * (deltaSurrogate σ r v - v 0 / σ) : ℝ) : ℂ)) := rfl
+  have hcd1 : ContDiff ℝ (⊤ : ℕ∞) fun v : E₂ => (((bulkCutoff (M⁻¹ • v) : ℝ) : ℂ)) :=
+    Complex.ofRealCLM.contDiff.comp hcutcd
+  have hcd2 : ContDiff ℝ (⊤ : ℕ∞) fun v : E₂ =>
+      Complex.exp (Complex.I * ((θ * (deltaSurrogate σ r v - v 0 / σ) : ℝ) : ℂ)) :=
+    contDiff_expI.comp hqcd
+  rw [hfun]
+  refine (norm_iteratedFDeriv_mul_le (𝕜 := ℝ) (A := ℂ) (N := ((⊤ : ℕ∞) : WithTop ℕ∞))
+    hcd1 hcd2 w (n := m) (mod_cast le_top)).trans ?_
+  have hterm : ∀ j ∈ Finset.range (m + 1),
+      (m.choose j : ℝ) * ‖iteratedFDeriv ℝ j
+            (fun v : E₂ => (((bulkCutoff (M⁻¹ • v) : ℝ) : ℂ))) w‖
+          * ‖iteratedFDeriv ℝ (m - j) (fun v : E₂ =>
+              Complex.exp (Complex.I * ((θ * (deltaSurrogate σ r v - v 0 / σ) : ℝ) : ℂ))) w‖
+        ≤ (m.choose j : ℝ) * (B * ((Nat.factorial m : ℝ) * D ^ m)) := by
+    intro j hj
+    have hjm : j ≤ m := Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
+    have e := mul_le_mul (hcut j hjm) (hexp (m - j) (Nat.sub_le m j)) (norm_nonneg _) hB0.le
+    calc (m.choose j : ℝ) * ‖_‖ * ‖_‖
+        = (m.choose j : ℝ) * (‖iteratedFDeriv ℝ j
+              (fun v : E₂ => (((bulkCutoff (M⁻¹ • v) : ℝ) : ℂ))) w‖
+            * ‖iteratedFDeriv ℝ (m - j) (fun v : E₂ =>
+                Complex.exp (Complex.I
+                  * ((θ * (deltaSurrogate σ r v - v 0 / σ) : ℝ) : ℂ))) w‖) := by ring
+      _ ≤ (m.choose j : ℝ) * (B * ((Nat.factorial m : ℝ) * D ^ m)) :=
+          mul_le_mul_of_nonneg_left e (by positivity)
+  refine le_trans (Finset.sum_le_sum hterm) ?_
+  have hsum : ∑ j ∈ Finset.range (m + 1), (m.choose j : ℝ)
+        * (B * ((Nat.factorial m : ℝ) * D ^ m))
+      = (2:ℝ) ^ m * (B * ((Nat.factorial m : ℝ) * D ^ m)) := by
+    rw [← Finset.sum_mul, ← Nat.cast_sum, Nat.sum_range_choose]; push_cast; ring
+  rw [hsum, hDdef]
+  have hpow : ((1 + X) * (1 + |θ|) * (n:ℝ) ^ 3) ^ m
+      = (1 + X) ^ m * (1 + |θ|) ^ m * (n:ℝ) ^ (3 * m) := by
+    rw [mul_pow, mul_pow, ← pow_mul]
+  rw [hpow]
+  have hθmono : (1 + |θ|) ^ m ≤ (1 + |θ|) ^ (3 * m) :=
+    pow_le_pow_right₀ hθ1 (by omega)
+  have hnn : (0:ℝ) ≤ 2 ^ m * B * (Nat.factorial m : ℝ) * (1 + X) ^ m * (n:ℝ) ^ (3 * m) := by
+    have : (0:ℝ) ≤ (1 + X) ^ m := by positivity
+    positivity
+  calc (2:ℝ) ^ m * (B * ((Nat.factorial m : ℝ)
+          * ((1 + X) ^ m * (1 + |θ|) ^ m * (n:ℝ) ^ (3 * m))))
+      = 2 ^ m * B * (Nat.factorial m : ℝ) * (1 + X) ^ m * (n:ℝ) ^ (3 * m)
+          * (1 + |θ|) ^ m := by ring
+    _ ≤ 2 ^ m * B * (Nat.factorial m : ℝ) * (1 + X) ^ m * (n:ℝ) ^ (3 * m)
+          * (1 + |θ|) ^ (3 * m) := mul_le_mul_of_nonneg_left hθmono hnn
 
 theorem exists_seminorm_bulkMultiplier_le {σ : ℝ} (hσ : 0 < σ) (k m : ℕ) :
     ∃ (A : ℝ) (K : ℕ), 0 < A ∧ ∀ (n : ℕ) (hn : 0 < n) (θ : ℝ),
