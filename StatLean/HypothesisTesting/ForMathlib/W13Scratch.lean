@@ -559,6 +559,153 @@ private lemma integrable_mul_tiltPoly_gauss {G : EuclideanSpace ℝ (Fin k) → 
   nlinarith [hGb z, abs_nonneg (G z),
     abs_nonneg (1 + ⟪a, z⟫_ℝ + (⟪a, z⟫_ℝ ^ 2 - ‖a‖ ^ 2) / 2)]
 
+
+private lemma integrable_vecTiltRemainder (a : EuclideanSpace ℝ (Fin k)) :
+    Integrable (fun z => vecTiltRemainder a z)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  have h1 := integrable_mul_exp_tilt_gauss (G := fun _ : EuclideanSpace ℝ (Fin k) => (1 : ℝ))
+    continuous_const (fun _ => by norm_num) a
+  have h2 := integrable_mul_tiltPoly_gauss (G := fun _ : EuclideanSpace ℝ (Fin k) => (1 : ℝ))
+    continuous_const (fun _ => by norm_num) a
+  refine (h1.sub h2).congr (Filter.Eventually.of_forall fun z => ?_)
+  simp only [Pi.sub_apply, one_mul, vecTiltRemainder]
+
+/-- **The polynomial part of the tilt has the same integral for every centred,
+identity-covariance law.** This is the exact analogue of the vanishing of the linear term and
+the coincidence of the quadratic term in the classical Lindeberg swap — here for the
+*Cameron–Martin* expansion rather than the Taylor expansion of the test function. -/
+private lemma tiltPoly_fubini {τ : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure τ]
+    (hmean : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂τ) = 0)
+    (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂τ) = ⟪u, v⟫_ℝ)
+    (hτ1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) τ)
+    (hτ2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) τ)
+    (hdim : (∫ y, ‖y‖ ^ 2 ∂τ) = (k : ℝ))
+    {G : EuclideanSpace ℝ (Fin k) → ℝ} (hG : Continuous G) (hGb : ∀ x, |G x| ≤ 1)
+    {lam : ℝ} (hlam : 0 ≤ lam) :
+    Integrable (fun y => ∫ z, G z * (1 + ⟪lam • y, z⟫_ℝ
+        + (⟪lam • y, z⟫_ℝ ^ 2 - ‖lam • y‖ ^ 2) / 2)
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) τ
+      ∧ (∫ y, (∫ z, G z * (1 + ⟪lam • y, z⟫_ℝ
+          + (⟪lam • y, z⟫_ℝ ^ 2 - ‖lam • y‖ ^ 2) / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂τ)
+        = ∫ z, G z * (1 + lam ^ 2 * (‖z‖ ^ 2 - (k : ℝ)) / 2)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  classical
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := stdGaussian (EuclideanSpace ℝ (Fin k)) with hγ
+  have hsmul : ∀ (y z : EuclideanSpace ℝ (Fin k)),
+      ⟪lam • y, z⟫_ℝ = lam * ⟪y, z⟫_ℝ := fun y z => real_inner_smul_left _ _ _
+  have hnsmul : ∀ y : EuclideanSpace ℝ (Fin k), ‖lam • y‖ ^ 2 = lam ^ 2 * ‖y‖ ^ 2 := by
+    intro y
+    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hlam, mul_pow]
+  -- the product-integrability of the polynomial integrand
+  have henv : Integrable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+      1 + lam * (‖p.1‖ * ‖p.2‖)
+        + (lam ^ 2 * (‖p.1‖ ^ 2 * ‖p.2‖ ^ 2) + lam ^ 2 * ‖p.1‖ ^ 2) / 2) (τ.prod γ) := by
+    have e1 : Integrable (fun _ : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        (1 : ℝ)) (τ.prod γ) := integrable_const _
+    have e2 : Integrable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        lam * (‖p.1‖ * ‖p.2‖)) (τ.prod γ) :=
+      (hτ1.mul_prod integrable_norm_gauss).const_mul lam
+    have e3 : Integrable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        lam ^ 2 * (‖p.1‖ ^ 2 * ‖p.2‖ ^ 2)) (τ.prod γ) :=
+      (hτ2.mul_prod (memLp_norm_gauss (k := k) 2)).const_mul (lam ^ 2)
+    have e4 : Integrable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        lam ^ 2 * ‖p.1‖ ^ 2) (τ.prod γ) := (hτ2.comp_fst γ).const_mul (lam ^ 2)
+    have e34 : Integrable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        lam ^ 2 * (‖p.1‖ ^ 2 * ‖p.2‖ ^ 2) + lam ^ 2 * ‖p.1‖ ^ 2) (τ.prod γ) := e3.add e4
+    exact (e1.add e2).add (e34.div_const 2)
+  have hprod : Integrable (Function.uncurry fun (y z : EuclideanSpace ℝ (Fin k)) =>
+      G z * (1 + ⟪lam • y, z⟫_ℝ + (⟪lam • y, z⟫_ℝ ^ 2 - ‖lam • y‖ ^ 2) / 2)) (τ.prod γ) := by
+    refine Integrable.mono' henv (by fun_prop) ?_
+    filter_upwards with p
+    obtain ⟨y, z⟩ := p
+    set ip : ℝ := ⟪y, z⟫_ℝ with hip
+    have hin : |ip| ≤ ‖y‖ * ‖z‖ := abs_real_inner_le_norm _ _
+    have hsq : ip ^ 2 ≤ ‖y‖ ^ 2 * ‖z‖ ^ 2 := by
+      calc ip ^ 2 = |ip| ^ 2 := (sq_abs _).symm
+        _ ≤ (‖y‖ * ‖z‖) ^ 2 := pow_le_pow_left₀ (abs_nonneg _) hin 2
+        _ = ‖y‖ ^ 2 * ‖z‖ ^ 2 := by ring
+    have hval : (Function.uncurry fun (y z : EuclideanSpace ℝ (Fin k)) =>
+        G z * (1 + ⟪lam • y, z⟫_ℝ + (⟪lam • y, z⟫_ℝ ^ 2 - ‖lam • y‖ ^ 2) / 2)) (y, z)
+        = G z * (1 + lam * ip + (lam ^ 2 * ip ^ 2 - lam ^ 2 * ‖y‖ ^ 2) / 2) := by
+      simp only [Function.uncurry, hsmul, hnsmul, hip]
+      ring
+    rw [Real.norm_eq_abs, hval]
+    have p1 : lam * ip ≤ lam * (‖y‖ * ‖z‖) := by nlinarith [hlam, hin, le_abs_self ip]
+    have p2 : -(lam * (‖y‖ * ‖z‖)) ≤ lam * ip := by nlinarith [hlam, hin, neg_abs_le ip]
+    have p3 : lam ^ 2 * ip ^ 2 ≤ lam ^ 2 * (‖y‖ ^ 2 * ‖z‖ ^ 2) :=
+      mul_le_mul_of_nonneg_left hsq (sq_nonneg lam)
+    have p4 : (0 : ℝ) ≤ lam ^ 2 * ‖y‖ ^ 2 := by positivity
+    have p5 : (0 : ℝ) ≤ lam ^ 2 * ip ^ 2 := by positivity
+    have hpabs : |1 + lam * ip + (lam ^ 2 * ip ^ 2 - lam ^ 2 * ‖y‖ ^ 2) / 2|
+        ≤ 1 + lam * (‖y‖ * ‖z‖)
+          + (lam ^ 2 * (‖y‖ ^ 2 * ‖z‖ ^ 2) + lam ^ 2 * ‖y‖ ^ 2) / 2 := by
+      rw [abs_le]
+      constructor <;> linarith
+    have hnn : (0 : ℝ) ≤ 1 + lam * (‖y‖ * ‖z‖)
+        + (lam ^ 2 * (‖y‖ ^ 2 * ‖z‖ ^ 2) + lam ^ 2 * ‖y‖ ^ 2) / 2 := by
+      have : (0 : ℝ) ≤ lam * (‖y‖ * ‖z‖) := by positivity
+      have h2 : (0 : ℝ) ≤ lam ^ 2 * (‖y‖ ^ 2 * ‖z‖ ^ 2) := by positivity
+      linarith
+    calc |G z * (1 + lam * ip + (lam ^ 2 * ip ^ 2 - lam ^ 2 * ‖y‖ ^ 2) / 2)|
+        = |G z| * |1 + lam * ip + (lam ^ 2 * ip ^ 2 - lam ^ 2 * ‖y‖ ^ 2) / 2| := abs_mul _ _
+      _ ≤ 1 * (1 + lam * (‖y‖ * ‖z‖)
+            + (lam ^ 2 * (‖y‖ ^ 2 * ‖z‖ ^ 2) + lam ^ 2 * ‖y‖ ^ 2) / 2) :=
+          mul_le_mul (hGb z) hpabs (abs_nonneg _) (by norm_num)
+      _ = _ := by ring
+  refine ⟨hprod.integral_prod_left, ?_⟩
+  rw [integral_integral_swap hprod]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun z => ?_)
+  -- the inner `τ`-integral
+  have h1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ⟪y, z⟫_ℝ) τ := by
+    refine Integrable.mono' (hτ1.mul_const ‖z‖) (by fun_prop) ?_
+    filter_upwards with y
+    rw [Real.norm_eq_abs]
+    exact abs_real_inner_le_norm y z
+  have h2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ⟪y, z⟫_ℝ ^ 2) τ := by
+    refine Integrable.mono' (hτ2.mul_const (‖z‖ ^ 2)) (by fun_prop) ?_
+    filter_upwards with y
+    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+    nlinarith [abs_real_inner_le_norm y z, abs_nonneg (⟪y, z⟫_ℝ), sq_abs (⟪y, z⟫_ℝ),
+      norm_nonneg y, norm_nonneg z]
+  have hmeanz : (∫ y, ⟪y, z⟫_ℝ ∂τ) = 0 := by
+    have h := hmean z
+    rw [← h]
+    exact integral_congr_ae (Filter.Eventually.of_forall fun y => (real_inner_comm y z).symm)
+  have hcovz : (∫ y, ⟪y, z⟫_ℝ ^ 2 ∂τ) = ‖z‖ ^ 2 := by
+    have h := hcov z z
+    rw [real_inner_self_eq_norm_sq] at h
+    rw [← h]
+    exact integral_congr_ae (Filter.Eventually.of_forall fun y => by
+      dsimp only
+      rw [sq, ← real_inner_comm y z])
+  have hinner : (∫ y, G z * (1 + ⟪lam • y, z⟫_ℝ
+      + (⟪lam • y, z⟫_ℝ ^ 2 - ‖lam • y‖ ^ 2) / 2) ∂τ)
+      = G z * (1 + lam ^ 2 * (‖z‖ ^ 2 - (k : ℝ)) / 2) := by
+    have hrwf : (fun y : EuclideanSpace ℝ (Fin k) => G z * (1 + ⟪lam • y, z⟫_ℝ
+        + (⟪lam • y, z⟫_ℝ ^ 2 - ‖lam • y‖ ^ 2) / 2))
+        = fun y => G z * ((1 + lam * ⟪y, z⟫_ℝ)
+          + (lam ^ 2 * ⟪y, z⟫_ℝ ^ 2 - lam ^ 2 * ‖y‖ ^ 2) / 2) := by
+      funext y
+      rw [hsmul y z, hnsmul y]
+      ring
+    rw [hrwf, integral_const_mul]
+    congr 1
+    have i1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => 1 + lam * ⟪y, z⟫_ℝ) τ :=
+      (integrable_const (1 : ℝ)).add (h1.const_mul lam)
+    have i2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) =>
+        (lam ^ 2 * ⟪y, z⟫_ℝ ^ 2 - lam ^ 2 * ‖y‖ ^ 2) / 2) τ :=
+      ((h2.const_mul (lam ^ 2)).sub (hτ2.const_mul (lam ^ 2))).div_const 2
+    rw [integral_add i1 i2,
+      integral_add (integrable_const (1 : ℝ)) (h1.const_mul lam), integral_const,
+      integral_const_mul, hmeanz, integral_div,
+      integral_sub (h2.const_mul (lam ^ 2)) (hτ2.const_mul (lam ^ 2)),
+      integral_const_mul, integral_const_mul, hcovz, hdim]
+    simp only [probReal_univ, smul_eq_mul, mul_one]
+    ring
+  simpa using hinner
+
 end SmoothedSwap
 
 end GaussianTilt
