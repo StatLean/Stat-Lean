@@ -1,6 +1,7 @@
 import StatLean.HypothesisTesting.Bootstrap.NonparametricMean
 import StatLean.HypothesisTesting.ForMathlib.BivariateEdgeworth
 import StatLean.HypothesisTesting.ForMathlib.EsseenSmoothing
+import StatLean.HypothesisTesting.ForMathlib.UniformRiemannLebesgue
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
@@ -1001,6 +1002,148 @@ lemma integral_inner_studentPair (F : Measure ℝ) [IsProbabilityMeasure F]
   rw [integral_map (measurable_studentPair F).aemeasurable (by fun_prop)]
   simp_rw [inner_studentPair F t, ← hm, ← hv]
   rw [← hg, hval]
+
+/-! ### (M3)(i) for the studentizing pair: the parabola-carried law satisfies multivariate Cramér
+
+`vecCramerCondition_of_uniform_sphere` reduces `VecCramerCondition μ` to a single bound
+`‖φ_{projLaw μ θ}(R)‖ ≤ c < 1` holding for every unit direction `θ` and every large radius `R`.
+For `μ` the law of `studentPair F = (X − m, (X − m)² − v)` the projected characteristic function
+is, up to a unimodular factor, exactly a quadratic-phase integral of the centred density:
+
+`φ_{projLaw μ θ}(R) = e^{−i R θ₁ v} ∫ f(y) e^{i(Rθ₀ y + Rθ₁ y²)} dy`, `f = (dF/dx)(· + m)`.
+
+`ForMathlib/UniformRiemannLebesgue.lean` bounds that integral uniformly once `|t₀| + |t₁|` is
+large, for every `f ∈ L¹` — the bounded-`t₁` regime by uniform Riemann–Lebesgue on a compactly
+parametrised `L¹` family, and the `|t₁| → ∞` regime by the autocorrelation identity. On the unit
+sphere `|Rθ₀| + |Rθ₁| = R(|θ₀| + |θ₁|) ≥ R‖θ‖ = R`, so the two combine with no loss and (M3) is
+complete: wave 13's diagnosis that "multivariate Cramér is strictly stronger than Cramér in
+every direction" for this parabola-carried law was right, and the extra content is precisely the
+quadratic-phase estimate. -/
+
+/-- The density of the **centred** sampling law, as a complex-valued `L¹` function:
+`y ↦ (dF/dx)(y + m)`. This is the `f` to which the quadratic-phase estimates of
+`ForMathlib/UniformRiemannLebesgue.lean` are applied. -/
+noncomputable def centredDensity (F : Measure ℝ) : ℝ → ℂ :=
+  fun y => ((F.rnDeriv volume (y + ∫ s, s ∂F)).toReal : ℂ)
+
+/-- The centred density is integrable: it is a translate of the Radon–Nikodym derivative of a
+finite measure. -/
+lemma integrable_centredDensity (F : Measure ℝ) [IsFiniteMeasure F] :
+    Integrable (centredDensity F) := by
+  have hbase : Integrable (fun x : ℝ => (F.rnDeriv volume x).toReal) volume :=
+    integrable_toReal_of_lintegral_ne_top (F.measurable_rnDeriv volume).aemeasurable
+      (Measure.lintegral_rnDeriv_lt_top F volume).ne
+  have hC : Integrable (fun x : ℝ => ((F.rnDeriv volume x).toReal : ℂ)) volume := hbase.ofReal
+  exact hC.comp_add_right _
+
+/-- **The characteristic function of the studentizing pair is a quadratic-phase integral.**
+Writing `f` for the centred density, `m` for the mean and `v` for the variance,
+
+`φ_{F ∘ Z⁻¹}(t) = e^{−i t₁ v} ∫ f(y) e^{i(t₀y + t₁y²)} dy`.
+
+The exponential prefactor is unimodular, so it disappears from every modulus estimate; the
+substitution `x = y + m` is applied to the density and is translation invariance of Lebesgue
+measure, exactly as in the autocorrelation identity. -/
+lemma charFun_map_studentPair_eq (F : Measure ℝ) [IsProbabilityMeasure F] (hFac : F ≪ volume)
+    (t : EuclideanSpace ℝ (Fin 2)) :
+    charFun (F.map (studentPair F)) t
+      = Complex.exp ((-(t 1 * Var[fun s : ℝ => s; F]) : ℝ) * Complex.I)
+        * quadPhaseInt (centredDensity F) (t 0) (t 1) := by
+  set m : ℝ := ∫ s, s ∂F with hm
+  set v : ℝ := Var[fun s : ℝ => s; F] with hv
+  set p : ℝ → ℝ≥0∞ := F.rnDeriv volume with hpdef
+  have hpm : Measurable p := F.measurable_rnDeriv volume
+  have hplt : ∀ᵐ x ∂(volume : Measure ℝ), p x < ⊤ := Measure.rnDeriv_lt_top F volume
+  have hFd : (volume : Measure ℝ).withDensity p = F :=
+    Measure.withDensity_rnDeriv_eq F volume hFac
+  have hstep1 : charFun (F.map (studentPair F)) t
+      = ∫ x : ℝ, Complex.exp ((t 0 * (x - m) + t 1 * ((x - m) ^ 2 - v) : ℝ) * Complex.I) ∂F := by
+    rw [charFun_apply, integral_map (measurable_studentPair F).aemeasurable (by fun_prop)]
+    simp_rw [inner_studentPair F t, ← hm, ← hv]
+  have hstep2 : charFun (F.map (studentPair F)) t
+      = ∫ x : ℝ, (p x).toReal •
+          Complex.exp ((t 0 * (x - m) + t 1 * ((x - m) ^ 2 - v) : ℝ) * Complex.I)
+          ∂(volume : Measure ℝ) := by
+    rw [hstep1, ← hFd, integral_withDensity_eq_integral_toReal_smul hpm hplt]
+    rfl
+  have hstep3 : (∫ x : ℝ, (p x).toReal *
+        Complex.exp ((t 0 * (x - m) + t 1 * ((x - m) ^ 2 - v) : ℝ) * Complex.I))
+      = ∫ y : ℝ, (p (y + m)).toReal *
+          Complex.exp ((t 0 * (y + m - m) + t 1 * ((y + m - m) ^ 2 - v) : ℝ) * Complex.I) :=
+    (integral_add_right_eq_self
+      (fun x : ℝ => ((p x).toReal : ℂ) *
+        Complex.exp ((t 0 * (x - m) + t 1 * ((x - m) ^ 2 - v) : ℝ) * Complex.I)) m).symm
+  have hsmul : ∀ x : ℝ, (p x).toReal •
+      Complex.exp ((t 0 * (x - m) + t 1 * ((x - m) ^ 2 - v) : ℝ) * Complex.I)
+      = ((p x).toReal : ℂ) *
+        Complex.exp ((t 0 * (x - m) + t 1 * ((x - m) ^ 2 - v) : ℝ) * Complex.I) :=
+    fun _ => Complex.real_smul
+  have hptwise : ∀ y : ℝ, ((p (y + m)).toReal : ℂ) *
+        Complex.exp ((t 0 * (y + m - m) + t 1 * ((y + m - m) ^ 2 - v) : ℝ) * Complex.I)
+      = Complex.exp ((-(t 1 * v) : ℝ) * Complex.I)
+        * (Complex.exp ((t 0 * y + t 1 * y ^ 2 : ℝ) * Complex.I) * centredDensity F y) := by
+    intro y
+    have hcancel : y + m - m = y := by ring
+    have hcd : centredDensity F y = ((p (y + m)).toReal : ℂ) := by
+      rw [centredDensity, hpdef, hm]
+    have hprod : Complex.exp ((-(t 1 * v) : ℝ) * Complex.I)
+        * Complex.exp ((t 0 * y + t 1 * y ^ 2 : ℝ) * Complex.I)
+        = Complex.exp ((t 0 * y + t 1 * (y ^ 2 - v) : ℝ) * Complex.I) := by
+      rw [← Complex.exp_add]
+      congr 1
+      push_cast
+      ring
+    rw [hcancel, hcd, ← mul_assoc, hprod, mul_comm]
+  have hpull : (∫ y : ℝ, Complex.exp ((-(t 1 * v) : ℝ) * Complex.I)
+        * (Complex.exp ((t 0 * y + t 1 * y ^ 2 : ℝ) * Complex.I) * centredDensity F y))
+      = Complex.exp ((-(t 1 * v) : ℝ) * Complex.I)
+        * ∫ y : ℝ, Complex.exp ((t 0 * y + t 1 * y ^ 2 : ℝ) * Complex.I) * centredDensity F y :=
+    integral_const_mul _ _
+  rw [hstep2, integral_congr_ae (Filter.Eventually.of_forall hsmul), hstep3,
+    integral_congr_ae (Filter.Eventually.of_forall hptwise), hpull, quadPhaseInt]
+
+/-- On the unit sphere of `ℝ²` the `ℓ¹` norm dominates `1`. This is what makes the cocompact
+bound `|t₀| + |t₁| ≥ R` of the quadratic-phase estimate available on the whole ray. -/
+private lemma one_le_abs_add_abs_of_norm_eq_one {θ : EuclideanSpace ℝ (Fin 2)} (hθ : ‖θ‖ = 1) :
+    1 ≤ |θ 0| + |θ 1| := by
+  have h := EuclideanSpace.norm_eq θ
+  rw [hθ, Fin.sum_univ_two, eq_comm, Real.sqrt_eq_one, Real.norm_eq_abs,
+    Real.norm_eq_abs] at h
+  nlinarith [abs_nonneg (θ 0), abs_nonneg (θ 1), h]
+
+/-- **(M3)(i) — the studentizing pair satisfies the multivariate Cramér condition.**
+
+For an absolutely continuous sampling law the bivariate law of `Z = (X − m, (X − m)² − v)`,
+though carried by a parabola and hence singular in `ℝ²`, has a characteristic function bounded
+away from `1` off every compact set. This is the hypothesis
+`norm_charFun_vecRootLaw_le_pow` consumes to produce the Cramér tail of the studentized
+expansion, and with it the whole of (M3) is closed.
+
+The proof is the wiring wave 17 identified: the projected characteristic function *is* a
+quadratic-phase integral of the centred density (`charFun_map_studentPair_eq`), and
+`exists_bound_norm_quadPhaseInt_of_integrable` bounds those uniformly once `|t₀| + |t₁|` is
+large, for every `f ∈ L¹`. No smoothness of `F` beyond `F ≪ volume` is used. -/
+theorem vecCramerCondition_map_studentPair (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hFac : F ≪ volume) : VecCramerCondition (F.map (studentPair F)) := by
+  obtain ⟨R, hR, hRbd⟩ :=
+    exists_bound_norm_quadPhaseInt_of_integrable (integrable_centredDensity F)
+      (ε := 1 / 2) (by norm_num)
+  refine vecCramerCondition_of_uniform_sphere (F.map (studentPair F))
+    (c := 1 / 2) (R₀ := R) (by norm_num) hR ?_
+  intro θ hθ S hS
+  have hSpos : (0 : ℝ) < S := lt_of_lt_of_le hR hS
+  rw [← charFun_smul_eq_charFun_map_inner, charFun_map_studentPair_eq F hFac]
+  have hcoord0 : (S • θ) 0 = S * θ 0 := rfl
+  have hcoord1 : (S • θ) 1 = S * θ 1 := rfl
+  rw [norm_mul, Complex.norm_exp_ofReal_mul_I, one_mul, hcoord0, hcoord1]
+  refine hRbd (S * θ 0) (S * θ 1) ?_
+  have hℓ1 : 1 ≤ |θ 0| + |θ 1| := one_le_abs_add_abs_of_norm_eq_one hθ
+  have habs0 : |S * θ 0| = S * |θ 0| := by
+    rw [abs_mul, abs_of_pos hSpos]
+  have habs1 : |S * θ 1| = S * |θ 1| := by
+    rw [abs_mul, abs_of_pos hSpos]
+  rw [habs0, habs1]
+  nlinarith [hS, hSpos, hℓ1]
 
 /-! ### The deterministic core of (M2): the studentizing factor is its own Taylor polynomial
 
