@@ -7505,7 +7505,69 @@ Both are averaged statements (the weight is a *mass* under `hybridLaw n j ν`, n
 bound), so `hstepgen` inside `abs_integral_smooth_sub_gaussian_improved` has to be generalised
 from a constant `D` to a `v`-dependent one integrated against the remaining coordinates. That
 generalisation, and the two estimates, are all that stand between this `sorry` and the headline.
--/
+
+## Wave 36: the structural half is BUILT, and the head estimate is not what wave 35 said
+
+**Built and machine-checked this wave** (besides Correction 2 above, now resolved):
+
+* `abs_sub_integral_peel_le_integral` — the telescope step with a `v`-*dependent* bound. The
+  wave-16 argument never used constancy of `D`, only `integral_mono` against a constant, so the
+  generalisation costs one integrability hypothesis and nothing else.
+  `abs_integral_smooth_sub_gaussian_improved` is rewired through it (its `hstepfun`), with the
+  old constant-`D` `hstepgen` re-derived in three lines; the telescope's conclusion is
+  unchanged.
+* `integral_hybridLaw_eq` and `integral_peel_eq_integral_hybridLaw` — the **bridge**. Wave 20
+  asserted that `hybridLaw n j ν` "is exactly the measure against which
+  `abs_integral_smooth_sub_gaussian_improved` evaluates its `j`-th test function", but that
+  identity had never been recorded in Lean: brick H speaks about `hybridLaw`, the telescope
+  about `Iⱼ`, and nothing connected them. It is a *prerequisite*, not a convenience — the
+  weight of both localised estimates is a shell mass under `hybridLaw n j ν`, so without the
+  bridge neither estimate can be stated in the form the reduction consumes. The two lemmas
+  together say: if `D v` is the average over the peeled coordinate `u ~ ν` and the smoothing
+  `z ~ γ` of a bounded continuous `F` at `c(v + u) + σⱼ z`, then `∫ D(∑ₗ yₗ) dR` is exactly
+  `∫ F d(hybridLaw n j ν)`. So a shell indicator there produces precisely the mass the amended
+  weight hypothesis bounds.
+
+**The head estimate is NOT `abs_integral_swap_step_le` localised.** Wave 35's Correction 1
+describes the head as "the elementary swap `abs_integral_swap_step_le` localised to weight
+`4 C_k σ_J + W`". That understates it in the same way wave 24's "the wave-19 lemma applies to
+`g` verbatim" understated the Cameron–Martin half. `abs_integral_swap_step_le` bounds the
+third-order Taylor remainder by the **global** `‖D³f‖_∞ ≤ C₃/ε³`. Localising means using
+instead that `D³f` is *supported* in the shell — but the Lagrange remainder controls `D³f`
+along the whole segment `[a, a + c y]`, not at a point, so what the shell indicator is
+evaluated at is a neighbourhood of width `c‖y‖`, which is **unbounded** in `y`. (This is the
+same mechanism as the `‖w‖ ≤ 1` obstruction above, and the second reason the amended hypothesis
+is stated at *all* widths `s` rather than only at the `σⱼ`.)
+
+Pricing the segment naively costs `∫ ‖y‖³ · 4 C_k c‖y‖ dν`, i.e. a **fourth** moment, which
+`hβint` does not give. The repair is a two-regime split at `‖y‖ = R := ε √n` — note this is
+`≥ 1` exactly by the window of Correction 2, which is why item 1 above had to come first:
+
+* `‖y‖ ≤ R`: the segment stays within `c‖y‖ ≤ ε` of `a`, so the shell is at width `≍ 2ε` and
+  the localised Taylor bound gives the wave-35 head shape, weight `4 C_k (ε + σ_J) + W`;
+* `‖y‖ > R`: do not Taylor-expand at all — bound the remainder by its lower-order terms,
+  localised at the varying width `c‖y‖`, so the weight is `4 C_k c‖y‖ + W` and only
+  `∫_{‖y‖>R} ‖y‖^p dν ≤ β / R^{3−p}` (`p ≤ 2`) is needed. Summed over the `J ≍ ε² n` head
+  steps this contributes `≍ C_k δ + W δ ε⁻¹`, which **is** of the allowed shape
+  `δ(ε⁻¹(W + C_k ε) + C_k …)`.
+
+Two consequences, both of which wave 37 should treat as claims to check rather than as settled:
+
+1. *The interface is missing hypotheses.* The far regime bounds the remainder by its first- and
+   second-order terms, so it needs `‖Df‖ ≤ C₁/ε` and `‖D²f‖ ≤ C₂/ε²`. Neither this theorem's
+   hypotheses nor `exists_smoothed_convex_indicator`'s conclusion supplies them — both carry
+   only the *third*-order bound (checked this wave). They are presumably free from the
+   `ContDiffBump` construction, but they have to be added and proved, not assumed.
+2. *`htel`'s head shape may need one extra additive term.* The far regime's contribution is not
+   of the form `(M/6) c³ X · (4 C_k (ε + σ_J) + W)` that
+   `localised_swap_bound_of_weighted_telescope` freezes; it is absorbed by that term only if
+   `C₃ ≥ 1`, which is not among `exists_smoothed_convex_indicator`'s guarantees. Either that
+   normalisation is added, or `htel` gains a `+ (C_k δ + W δ ε⁻¹)` summand — a weakening the
+   ledger has room for, since both pieces are already in the conclusion's shape.
+
+**The arithmetic of this section was derived on paper this wave and is NOT machine-checked**,
+unlike the ledger of wave 32 and the reduction of wave 35. It is recorded here because it
+changes what the residue *is*, not because it is finished. -/
 theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 0 < C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
