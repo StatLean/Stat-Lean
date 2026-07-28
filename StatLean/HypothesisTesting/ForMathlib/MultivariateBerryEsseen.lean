@@ -217,7 +217,8 @@ resolved, and the recursion is assembled: `berryEsseen_convex_sharp` states the 
 **linear in `δ = β/√n`**, proved from `exists_convexDiscrepancy_recursion` fed to
 `le_of_selfImproving_induction`. It is not axiom-clean: it inherited exactly two named,
 precisely stated bricks, `hybridLaw_shell_le` and `exists_localised_swap_bound` (the first is
-proved in wave 22, below). Everything between the bricks and the headline is proved.
+proved in wave 22, below; the second's weight hypothesis is amended in wave 29). Everything
+between the bricks and the headline is proved.
 
 *Obstacle 1 (the class) is overturned rather than solved.* The `ε`-shell of a convex set is
 `Bᵋ \ interior B`, a difference of two convex sets — but the induction does **not** have to be
@@ -283,11 +284,41 @@ unweighted `abs_integral_smooth_sub_gaussian_balanced`, and for `ε√n < 1` it 
 localisation a mechanical substitution of the wave-19 lemma). Along the Cameron–Martin route the
 test function enters as `G(z) = f(v + σⱼ z)` — the function, not its third derivative, which has
 been moved onto the Gaussian density — and `G` is *not* supported on the shell, since `f = 1` on
-`B`. Splitting `f = 1_{interior B} + g` localises the `g` part verbatim
-(`abs_integral_mul_vecTiltRemainder_le_of_support`), but leaves
-`∫ 1_K(z) R_w(z) dγ(z) = γ(K − w) − Q_w(K)` with `K` convex — the second-order Taylor remainder
-in `w` of `w ↦ γ(K − w)`, whose control by the shell mass is a Gaussian surface-area statement
-about convex bodies (Ball's input), absent from Mathlib v4.29.1 and from this file.
+`B`. Splitting `f = 1_{interior B} + g` leaves the indicator part
+`∫ 1_K(z) R_w(z) dγ(z) = γ(K − w) − Q_w(K)` with `K` convex. Wave 24 concluded that controlling
+that by the shell mass is a Gaussian surface-area statement about convex bodies (Ball's input);
+**wave 29 overturns this** — see the next section.
+
+## Wave-29 amendment: no surface area is needed; the two-sided shell; the residue re-scoped
+
+**The wave-24 obstruction is not real.** The tilt remainder has *mean zero*,
+`integral_vecTiltRemainder_eq_zero`, so a constant may be subtracted from the test function for
+free (`abs_integral_mul_vecTiltRemainder_le_of_const_off`, the wave-19 lemma extended from
+"vanishes off `S`" to "is constant off `S`"). A mollified convex indicator is constant on the
+ball of radius `r` about any `v` at distance `≥ r` from the shell, so the indicator part is
+localised by the plain **Gaussian tail** `γ{‖z‖ ≥ r/σ}`
+(`abs_integral_shift_vecTiltRemainder_le_of_const_ball`), which `stdGaussian_norm_ge_le` supplies
+by Markov at any order. All of these are proved, axiom-clean, and dimension-free; no surface
+measure occurs anywhere.
+
+**The shell must be two-sided, and controlled at every width.** The set of points where the
+localisation fails is `Bˢ \ B_{−s}` — the *two-sided* shell — and the width `s` that step `j` of
+the telescope must afford is a multiple of the step width `σⱼ = √(j/n)`, which for `j` near `n`
+is `≫ ε`. `gaussian_measureReal_wideShell_le`, `measureReal_wideShell_le_of_convexDiscrepancy`
+and their affine transports repeat the outer-shell chain for the two-sided shell (cost: a factor
+`2`), and `hybridLaw_wideShell_le` is brick H for it, at every width, uniformly in `j`. The
+conditioning that both bricks H share is factored out as `hybridLaw_le_of_affine_le`.
+
+**Consequently the weight hypothesis of brick L is amended** (hypothesis only, conclusion
+untouched, and free at the only call site): see `localised_swap_bound_small_weight`.
+
+**Two gaps the wave-24/29 plans did not see**, both recorded in full there: the `L²` tilt bound
+needs `‖w‖ = ‖y‖/√j ≤ 1`, so the wave-19 lemma does *not* apply verbatim to the shell part
+either, and the large-`‖y‖` region has to be handled by the tilt identity directly (its
+`v`-average costs a two-sided shell at width `c‖y‖` — which is why the amended hypothesis is
+stated at all widths); and the summed weight is `δ(2 C_k log(1/ε) + W/ε)`, so this route yields
+the sharp rate **up to one logarithm**, `C_k (β/√n)(1 + log(√n/β))`. The logarithm is intrinsic
+to a single mollification width.
 
 **Constant deviation** (provable-constants rule): this route now gives `C ∼ k^{1/2}`, through
 `gaussianShellConst k = 4 e² √k`, not Bentkus's `400 k^{1/4}`. Wave 22 removed the factor `k`

@@ -298,17 +298,37 @@ theorem bentkus_berry_esseen_convex {k n : ℕ} {ν : Measure (EuclideanSpace �
   --   whenever `W + C_k ε ≥ 1`, with NO localisation at all.
   -- • The residue is one named brick, `localised_swap_bound_small_weight` (same statement under
   --   `W + C_k ε ≤ 1`), and the wave-22 claim that the localisation is a mechanical rerun of the
-  --   telescope with the wave-19 `L²` lemma substituted is OVERTURNED.  The obstruction is
-  --   precise: along the Cameron–Martin route the test function enters as `G(z) = f(v + σⱼ z)`,
-  --   the FUNCTION and not its third derivative (which has been moved onto the Gaussian
-  --   density), and `G` is not supported on the shell since `f = 1` on `B`.  Splitting
-  --   `f = 1_{interior B} + g` localises the `g` part verbatim, but leaves
-  --   `∫ 1_K R_w dγ = γ(K − w) − Q_w(K)` with `K` convex — the second-order Taylor remainder in
-  --   `w` of `w ↦ γ(K − w)`, whose control by the shell mass is exactly a Gaussian
-  --   surface-area statement about convex bodies, i.e. Ball's input again.
+  --   telescope with the wave-19 `L²` lemma substituted is OVERTURNED.  Splitting
+  --   `f = 1_{interior B} + g` leaves `∫ 1_K R_w dγ = γ(K − w) − Q_w(K)` with `K` convex, whose
+  --   control by the shell mass wave 24 read as a Gaussian surface-area statement about convex
+  --   bodies, i.e. Ball's input again.
+  --
+  -- WAVE-29: THAT LAST VERDICT IS OVERTURNED — no surface area is involved.  The tilt remainder
+  -- has MEAN ZERO (`integral_vecTiltRemainder_eq_zero`), so a constant may be subtracted from
+  -- the test function for free; a mollified convex indicator is CONSTANT on the ball of radius
+  -- `r` about any `v` at distance `≥ r` from the shell; and Cauchy–Schwarz against the plain
+  -- Gaussian tail `γ{‖z‖ ≥ r/σ}` (`stdGaussian_norm_ge_le`, Markov at any order) localises the
+  -- indicator half.  New, proved, axiom-clean, dimension-free:
+  -- `abs_integral_mul_vecTiltRemainder_le_of_const_off` and
+  -- `abs_integral_shift_vecTiltRemainder_le_of_const_ball`.
+  -- • Two corrections to the brick's interface, both forced and both FREE at the call site, so
+  --   the recursion and `berryEsseen_convex_sharp` are again unchanged.  (i) The bad set is the
+  --   TWO-SIDED shell `Bˢ \ B_{−s}`: the localisation also fails just INSIDE `B`, which the
+  --   frozen outer-shell hypothesis could not see.  (ii) It must be controlled at EVERY width
+  --   `s`, because step `j` is smoothed at `σⱼ = √(j/n)`, which for `j` near `n` is `≫ ε`.
+  --   `hybridLaw_wideShell_le` (wave 29, proved) is brick H for exactly that, at every width;
+  --   the conditioning shared with `hybridLaw_shell_le` is factored as
+  --   `hybridLaw_le_of_affine_le`.
+  -- • Two gaps neither wave 24 nor the wave-29 plan had seen: the `L²` tilt bound needs
+  --   `‖w‖ = ‖y‖/√j ≤ 1`, so the wave-19 lemma does NOT apply verbatim to the `g` part either
+  --   (the large-`‖y‖` region needs the tilt identity directly, and its `v`-average costs a
+  --   two-sided shell at width `c‖y‖` — hence "every width"); and the summed weight is
+  --   `δ(2 C_k log(1/ε) + W/ε)`, so this route will give the sharp rate UP TO ONE LOGARITHM,
+  --   `C_k (β/√n)(1 + log(√n/β))`.  The log is intrinsic to a single mollification width.
   -- So THIS declaration is unchanged and stays the pre-agreed debt: the sharp `β/√n` route is
-  -- still brick-backed, and even when it closes it will give `C ∼ √k`, not `400 k^{1/4}` —
-  -- the same Ball ingredient is what separates the two.
+  -- still brick-backed, its eventual conclusion will carry a logarithm, and even then it gives
+  -- `C ∼ √k`, not `400 k^{1/4}` — for the CONSTANT (not the rate) Ball's theorem is still what
+  -- separates the two.
   sorry
 
 /-- **Berry–Esseen bound over Euclidean balls, with a dimension-free constant (honest rate).**
