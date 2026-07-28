@@ -2734,6 +2734,92 @@ theorem edgeworth_mean_uniform [IsProbabilityMeasure F]
             + 2 * (C₁ + (1 + 512 * Real.pi ^ 3 * |skewness F|) * C₂) * (Real.pi ^ 2 * c)⁻¹
             + 3 * (2 + 6 * |skewness F|) + 1 := by linarith
 
+/-! ## Anti-concentration of the centred root, at the `O(n⁻¹)` accuracy
+
+The corrected (M2) needs, besides a moment bound, that the surrogate put `O(δ + n⁻¹)` mass on
+an interval of length `δ`. For the *centred* root that is a corollary of the closed
+`edgeworth_mean_uniform` and costs nothing beyond the Lipschitz modulus of the approximant,
+which `setIntegral_abs_edgeworthDensity_le` already supplies with a constant independent of
+`n`. This is the half of the anti-concentration companion that is not circular: the surrogate
+of the studentized problem is a perturbation of this root, and what a later wave has to add is
+only the transfer across that perturbation. -/
+
+/-- **The Edgeworth approximant is Lipschitz, with a constant independent of `n`.**
+`edgeworthCDF γ n b − edgeworthCDF γ n a ≤ (2π)^{-1/2}(1 + 66|γ|)(b − a)` for `a ≤ b`.
+
+The approximant is the `densityCDF` of `edgeworthDensity` (`densityCDF_edgeworthDensity`), so
+the increment is the integral of that density over `(a, b]`, and
+`setIntegral_abs_edgeworthDensity_le` bounds it. -/
+theorem edgeworthCDF_sub_le (γ : ℝ) {n : ℕ} (hn : 1 ≤ n) {a b : ℝ} (hab : a ≤ b) :
+    edgeworthCDF γ n b - edgeworthCDF γ n a
+      ≤ (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |γ|) * (b - a) := by
+  have hint := integrable_edgeworthDensity γ n
+  have hsplit : Set.Iic b = Set.Iic a ∪ Set.Ioc a b := by
+    rw [Set.Iic_union_Ioc_eq_Iic hab]
+  have hdisj : Disjoint (Set.Iic a) (Set.Ioc a b) := by
+    rw [Set.disjoint_left]
+    intro x hx hx'
+    exact absurd hx' (by simp [Set.mem_Iic.1 hx])
+  have hincr : edgeworthCDF γ n b - edgeworthCDF γ n a
+      = ∫ y in Set.Ioc a b, edgeworthDensity γ n y := by
+    rw [← densityCDF_edgeworthDensity, ← densityCDF_edgeworthDensity, densityCDF, densityCDF,
+      hsplit, setIntegral_union hdisj measurableSet_Ioc hint.integrableOn hint.integrableOn]
+    ring
+  rw [hincr]
+  calc ∫ y in Set.Ioc a b, edgeworthDensity γ n y
+      ≤ ∫ y in Set.Ioc a b, |edgeworthDensity γ n y| :=
+        integral_mono hint.integrableOn hint.abs.integrableOn fun y => le_abs_self _
+    _ ≤ (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |γ|) * (b - a) :=
+        setIntegral_abs_edgeworthDensity_le γ hn hab
+
+/-- **Anti-concentration of the centred sample-mean root, to `O(n⁻¹)`.**
+The root puts at most `C(b − a) + C/n` mass on `(a, b]`, uniformly in the interval and in `n`.
+
+This is `edgeworth_mean_uniform` at the two endpoints plus `edgeworthCDF_sub_le`; the point is
+that the additive term is `O(n⁻¹)` and not `O(n^{-1/2})`, which is what the corrected (M2)
+consumes at the scale `δ = n⁻¹`. A Berry–Esseen bound would only give `O(n^{-1/2})` here and
+would be useless for a one-term expansion. -/
+theorem meanRootCDF_sub_le [IsProbabilityMeasure F]
+    -- USER-INPUT: finite fourth moment of the sampling law
+    (hF4 : MemLp (fun t : ℝ => t) 4 F)
+    -- USER-INPUT: nonzero variance
+    (hFvar : 0 < Var[fun t : ℝ => t; F])
+    -- USER-INPUT: Cramér's condition
+    (hCramer : CramerCondition F) :
+    ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ a b : ℝ, a ≤ b →
+      meanRootCDF F n b - meanRootCDF F n a ≤ C * (b - a) + C / n := by
+  obtain ⟨C₀, hC₀, hC⟩ := edgeworth_mean_uniform hF4 hFvar hCramer
+  set σ : ℝ := Real.sqrt Var[fun t : ℝ => t; F] with hσdef
+  have hσ : 0 < σ := Real.sqrt_pos.2 hFvar
+  set K : ℝ := (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness F|) with hKdef
+  have hK0 : 0 < K := edgeworthTV_pos (skewness F)
+  refine ⟨K / σ + 2 * C₀, by positivity, fun n hn a b hab => ?_⟩
+  have hn1 : 1 ≤ n := hn
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have ha := hC n hn a
+  have hb := hC n hn b
+  rw [← edgeworthCDF_eq_approx F hFvar n a] at ha
+  rw [← edgeworthCDF_eq_approx F hFvar n b] at hb
+  have hAa := (abs_le.1 ha).1
+  have hAb := (abs_le.1 hb).2
+  have hlip : edgeworthCDF (skewness F) n (b / σ) - edgeworthCDF (skewness F) n (a / σ)
+      ≤ K * (b / σ - a / σ) :=
+    edgeworthCDF_sub_le (skewness F) hn1 (by gcongr)
+  have hdiff : b / σ - a / σ = (b - a) / σ := by ring
+  rw [hdiff] at hlip
+  have hdivle : K * ((b - a) / σ) = K / σ * (b - a) := by ring
+  rw [hdivle] at hlip
+  have hmono : K / σ * (b - a) ≤ (K / σ + 2 * C₀) * (b - a) := by
+    have hba : (0 : ℝ) ≤ b - a := by linarith
+    nlinarith [hba, hC₀]
+  have hcn : 2 * (C₀ / (n : ℝ)) ≤ (K / σ + 2 * C₀) / (n : ℝ) := by
+    have h1 : 2 * (C₀ / (n : ℝ)) = 2 * C₀ / (n : ℝ) := by ring
+    have h2 : (0 : ℝ) < K / σ := by positivity
+    rw [h1]
+    gcongr
+    linarith
+  linarith [hAa, hAb, hlip, hmono, hcn]
+
 /-- **One-term Edgeworth expansion for the studentized sample mean, uniform in the argument.**
 
 Under a finite fourth moment and absolute continuity of the sampling law, the sampling
@@ -2940,8 +3026,16 @@ replaced by a correct version whose deterministic half and whose assembly are bo
   variables). **What is left of (M2)** is precisely the two hypotheses of the last of these: a
   second moment for that bracket — this is where truncation of the summands at level `√n`
   genuinely enters, the bracket carrying powers of the coordinates beyond the fourth — and the
-  anti-concentration `sup_x P(Hₙ ∈ (x, x + n⁻¹]) = O(n⁻¹)`, for which the circularity is broken
-  by first proving a cruder `O(n^{-1/2})` expansion.
+  anti-concentration `sup_x P(Hₙ ∈ (x, x + n⁻¹]) = O(n⁻¹)`.
+  Of the anti-concentration, the non-circular half is closed here too: `edgeworthCDF_sub_le`
+  (the approximant is Lipschitz with a constant independent of `n`, read off from
+  `setIntegral_abs_edgeworthDensity_le`) and `meanRootCDF_sub_le` give
+  `P(root ∈ (a,b]) ≤ C(b − a) + C/n` for the **centred** root, uniformly in the interval and in
+  `n`. That the additive term is `O(n⁻¹)` and not `O(n^{-1/2})` is the whole point, and it is
+  what makes `edgeworth_mean_uniform` — rather than a Berry–Esseen bound, which would be
+  useless here — the right input. What a later wave must add is only the transfer of this
+  estimate across the `O_p(n^{-1/2})` perturbation `Hₙ − u`, and that is where the note's
+  "break the circularity with a cruder `O(n^{-1/2})` expansion" belongs.
 * (R3) **The Cramér residue — Hall's conditioning is NOT needed, and the remaining half is a
   single uniformity statement.** `norm_charFun_vecRootLaw_le_pow` shows that a uniform bound
   `‖φ_{F∘Z⁻¹}(t)‖ ≤ c` on `ε ≤ ‖t‖` transfers to `‖φ_{ρ_n}(t)‖ ≤ cⁿ` on `ε√n ≤ ‖t‖`, by
