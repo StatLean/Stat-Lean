@@ -55,6 +55,19 @@ moments of the projected law.
   factor is `O(N^{-1/2})` for a centred `Z`, so the block is `N^{-1}·N²·O(N⁻¹) = O(1)`, exactly
   the order of the diagonal. The `k = 1` intuition — where there is no off-diagonal at all — is
   therefore misleading, and the `k ≥ 2` estimate is a genuine analytic item rather than wiring.
+* `norm_multiCharFun_vecRootLaw_two_sub_le` — the `k = 2` **estimate** itself, the analytic half
+  the closed form leaves open:
+  `‖multi_{ρ_N}(b,a) − (κ₀₁φ(c)^{N−1} − κ₀κ₁φ(c)^{N−2})‖ ≤ N^{-1/2}·multiTwoRemConst`,
+  for a law centred in both slot directions, with `κ₀₁ = ∫⟪x,b₀⟫⟪x,b₁⟫` and
+  `κ_j = ∫⟪x,b_j⟫⟪x,a⟫`. Its ingredients are `norm_integral_ofReal_mul_cexp_sub_le` for the
+  diagonal slot (**no** centring: the diagonal has its `O(1)` limit already at zeroth order) and
+  `norm_mixCharFun_sub_mul_I_le` for the two single slots (centring **essential**: without it
+  the off-diagonal block, whose multiplicity is `N − 1`, diverges). The off-diagonal limit is
+  `−κ₀κ₁`, of the same order as the diagonal and of opposite sign.
+* `ae_norm_vecRootLaw_le` — a **bounded** summand gives a root with bounded support: `‖Z‖ ≤ K`
+  pointwise implies `‖root‖ ≤ √n·K` pointwise, so every polynomial in the root's coordinates is
+  integrable with no moment hypothesis on `F` at all. This is what truncation buys, and it is
+  the moment half of the studentized route's truncated-law replacement.
 
 ## Proof formalization notes
 
