@@ -5671,13 +5671,175 @@ theorem exists_integral_norm_fourier_bulkMultiplier_le {σ : ℝ} (hσ : 0 < σ)
     _ = C₀ * (1 + ∑ i ∈ s, A i) * (n : ℝ) ^ (∑ i ∈ s, K i)
           * (1 + |θ|) ^ (∑ i ∈ s, K i) := by ring
 
+/-! ### Towards input (B): the elementary integration by parts
+
+The leakage estimate iterates `L^t f = ∂(f / (i∂Φ))` five times against the total phase. The
+single step is elementary and is discharged here, once and for all, together with the two facts
+that make the iteration legitimate: `L` maps smooth compactly supported functions to smooth
+compactly supported functions. What is *not* here is the quantitative half --- the bound on
+`‖L^5 f‖_{L¹}` that turns each application into a factor `O(n^{-7/8})`; see the note on
+`exists_integral_norm_fourierWeight_bulkMultiplier_band_le`. -/
+
+/-- **The `L`-transform of a smooth function against a non-vanishing phase is smooth** --- half
+of what makes the five-fold iteration of `integral_expPhase_ibp` legitimate. -/
+lemma contDiff_ibpStep {f : ℝ → ℂ} {Φ : ℝ → ℝ}
+    (hf : ContDiff ℝ (⊤ : ℕ∞) f) (hΦ : ContDiff ℝ (⊤ : ℕ∞) Φ)
+    (hΦ0 : ∀ x : ℝ, deriv Φ x ≠ 0) :
+    ContDiff ℝ (⊤ : ℕ∞)
+      (deriv fun y : ℝ => f y / (Complex.I * ((deriv Φ y : ℝ) : ℂ))) := by
+  have hΦ' : ContDiff ℝ (⊤ : ℕ∞) (deriv Φ) := (contDiff_infty_iff_deriv.mp hΦ).2
+  have hdc : ContDiff ℝ (⊤ : ℕ∞) fun y : ℝ => Complex.I * ((deriv Φ y : ℝ) : ℂ) :=
+    contDiff_const.mul (Complex.ofRealCLM.contDiff.comp hΦ')
+  have hd0 : ∀ y : ℝ, (Complex.I * ((deriv Φ y : ℝ) : ℂ)) ≠ 0 := fun y =>
+    mul_ne_zero Complex.I_ne_zero (by simpa using hΦ0 y)
+  have huc : ContDiff ℝ (⊤ : ℕ∞) fun y : ℝ => f y / (Complex.I * ((deriv Φ y : ℝ) : ℂ)) := by
+    simp only [div_eq_mul_inv]
+    exact hf.mul (hdc.inv hd0)
+  exact (contDiff_infty_iff_deriv.mp huc).2
+
+/-- **The `L`-transform preserves compact support** --- the other half. Note that no hypothesis
+on `Φ` is needed: dividing by `i∂Φ` cannot enlarge the support, and `deriv` never does. -/
+lemma hasCompactSupport_ibpStep {f : ℝ → ℂ} {Φ : ℝ → ℝ} (hfs : HasCompactSupport f) :
+    HasCompactSupport (deriv fun y : ℝ => f y / (Complex.I * ((deriv Φ y : ℝ) : ℂ))) := by
+  refine HasCompactSupport.deriv ?_
+  refine HasCompactSupport.intro hfs.isCompact fun x hx => ?_
+  rw [image_eq_zero_of_notMem_tsupport hx, zero_div]
+
+/-- **One integration by parts against a non-stationary phase, on the line** --- the elementary
+step of the leakage estimate.
+
+Writing `e^{iΦ} = (i∂Φ)^{-1}∂(e^{iΦ})`, which is legitimate exactly because `∂Φ` never vanishes,
+and integrating by parts on `(-∞, ∞)` (`integral_mul_deriv_eq_deriv_mul_of_integrable`; the
+boundary terms are free because `f` has compact support) gives
+
+`∫ f e^{iΦ} = -∫ ∂(f/(i∂Φ)) e^{iΦ}`.
+
+Each application therefore replaces `f` by `L f = ∂(f/(i∂Φ))`, and `contDiff_ibpStep` /
+`hasCompactSupport_ibpStep` say that `L f` satisfies the same hypotheses, so the identity may be
+iterated any number of times. The **gain** is not visible in this statement: it comes from the
+size of `L f` relative to `f`, which is where the lower bound `|∂Φ| ≥ (4/3)|θ|/σ` of
+`deltaSurrogate_slope_ge` is spent. -/
+theorem integral_expPhase_ibp {f : ℝ → ℂ} {Φ : ℝ → ℝ}
+    (hf : ContDiff ℝ (⊤ : ℕ∞) f) (hfs : HasCompactSupport f)
+    (hΦ : ContDiff ℝ (⊤ : ℕ∞) Φ) (hΦ0 : ∀ x : ℝ, deriv Φ x ≠ 0) :
+    (∫ x : ℝ, f x * Complex.exp (Complex.I * (Φ x : ℂ)))
+      = -∫ x : ℝ, deriv (fun y : ℝ => f y / (Complex.I * ((deriv Φ y : ℝ) : ℂ))) x
+          * Complex.exp (Complex.I * (Φ x : ℂ)) := by
+  have hΦ' : ContDiff ℝ (⊤ : ℕ∞) (deriv Φ) := (contDiff_infty_iff_deriv.mp hΦ).2
+  have hdc : ContDiff ℝ (⊤ : ℕ∞) fun y : ℝ => Complex.I * ((deriv Φ y : ℝ) : ℂ) :=
+    contDiff_const.mul (Complex.ofRealCLM.contDiff.comp hΦ')
+  have hd0 : ∀ y : ℝ, (Complex.I * ((deriv Φ y : ℝ) : ℂ)) ≠ 0 := fun y =>
+    mul_ne_zero Complex.I_ne_zero (by simpa using hΦ0 y)
+  have huc : ContDiff ℝ (⊤ : ℕ∞) fun y : ℝ => f y / (Complex.I * ((deriv Φ y : ℝ) : ℂ)) := by
+    simp only [div_eq_mul_inv]
+    exact hf.mul (hdc.inv hd0)
+  have hus : HasCompactSupport fun y : ℝ => f y / (Complex.I * ((deriv Φ y : ℝ) : ℂ)) := by
+    refine HasCompactSupport.intro hfs.isCompact fun x hx => ?_
+    rw [image_eq_zero_of_notMem_tsupport hx, zero_div]
+  have hvc : Continuous fun y : ℝ => Complex.exp (Complex.I * (Φ y : ℂ)) :=
+    Complex.continuous_exp.comp (continuous_const.mul (Complex.continuous_ofReal.comp
+      hΦ.continuous))
+  have hvd : ∀ x : ℝ, HasDerivAt (fun y : ℝ => Complex.exp (Complex.I * (Φ y : ℂ)))
+      (Complex.exp (Complex.I * (Φ x : ℂ)) * (Complex.I * ((deriv Φ x : ℝ) : ℂ))) x := by
+    intro x
+    have h1 : HasDerivAt Φ (deriv Φ x) x :=
+      (hΦ.differentiable (by simp) x).hasDerivAt
+    exact (h1.ofReal_comp.const_mul Complex.I).cexp
+  have hud : ∀ x : ℝ,
+      HasDerivAt (fun y : ℝ => f y / (Complex.I * ((deriv Φ y : ℝ) : ℂ)))
+        (deriv (fun y : ℝ => f y / (Complex.I * ((deriv Φ y : ℝ) : ℂ))) x) x := fun x =>
+    (huc.differentiable (by simp) x).hasDerivAt
+  have hprod : (fun y : ℝ => f y / (Complex.I * ((deriv Φ y : ℝ) : ℂ)))
+      * (fun x : ℝ => Complex.exp (Complex.I * (Φ x : ℂ)) * (Complex.I * ((deriv Φ x : ℝ) : ℂ)))
+      = fun x : ℝ => f x * Complex.exp (Complex.I * (Φ x : ℂ)) := by
+    funext x
+    have hne := hd0 x
+    simp only [Pi.mul_apply]
+    have key : f x / (Complex.I * ((deriv Φ x : ℝ) : ℂ))
+          * (Complex.exp (Complex.I * (Φ x : ℂ)) * (Complex.I * ((deriv Φ x : ℝ) : ℂ)))
+        = f x * Complex.exp (Complex.I * (Φ x : ℂ))
+          * ((Complex.I * ((deriv Φ x : ℝ) : ℂ)) / (Complex.I * ((deriv Φ x : ℝ) : ℂ))) := by
+      ring
+    rw [key, div_self hne, mul_one]
+  have hfv : Continuous fun x : ℝ => f x * Complex.exp (Complex.I * (Φ x : ℂ)) :=
+    hf.continuous.mul hvc
+  have hfvs : HasCompactSupport fun x : ℝ => f x * Complex.exp (Complex.I * (Φ x : ℂ)) :=
+    hfs.mul_right
+  have huv' : Integrable ((fun y : ℝ => f y / (Complex.I * ((deriv Φ y : ℝ) : ℂ)))
+      * fun x : ℝ => Complex.exp (Complex.I * (Φ x : ℂ))
+          * (Complex.I * ((deriv Φ x : ℝ) : ℂ))) := by
+    rw [hprod]
+    exact hfv.integrable_of_hasCompactSupport hfvs
+  have hu'v : Integrable ((deriv fun y : ℝ => f y / (Complex.I * ((deriv Φ y : ℝ) : ℂ)))
+      * fun x : ℝ => Complex.exp (Complex.I * (Φ x : ℂ))) := by
+    refine Continuous.integrable_of_hasCompactSupport ?_ ?_
+    · exact ((contDiff_infty_iff_deriv.mp huc).2.continuous).mul hvc
+    · exact (hasCompactSupport_ibpStep (Φ := Φ) hfs).mul_right
+  have huv : Integrable ((fun y : ℝ => f y / (Complex.I * ((deriv Φ y : ℝ) : ℂ)))
+      * fun x : ℝ => Complex.exp (Complex.I * (Φ x : ℂ))) := by
+    refine Continuous.integrable_of_hasCompactSupport ?_ ?_
+    · exact huc.continuous.mul hvc
+    · exact hus.mul_right
+  have hmain := integral_mul_deriv_eq_deriv_mul_of_integrable
+    (u := fun y : ℝ => f y / (Complex.I * ((deriv Φ y : ℝ) : ℂ)))
+    (u' := deriv fun y : ℝ => f y / (Complex.I * ((deriv Φ y : ℝ) : ℂ)))
+    (v := fun y : ℝ => Complex.exp (Complex.I * (Φ y : ℂ)))
+    (v' := fun x : ℝ =>
+      Complex.exp (Complex.I * (Φ x : ℂ)) * (Complex.I * ((deriv Φ x : ℝ) : ℂ)))
+    (fun x _ => hud x) (fun x _ => hvd x) huv' hu'v huv
+  have hlhs : (∫ x : ℝ, f x / (Complex.I * ((deriv Φ x : ℝ) : ℂ))
+        * (Complex.exp (Complex.I * (Φ x : ℂ)) * (Complex.I * ((deriv Φ x : ℝ) : ℂ))))
+      = ∫ x : ℝ, f x * Complex.exp (Complex.I * (Φ x : ℂ)) :=
+    integral_congr_ae (Filter.Eventually.of_forall fun x => congrFun hprod x)
+  rw [← hlhs]
+  exact hmain
+
+/-- **The norm form of one integration by parts.** `|e^{iΦ}| = 1`, so the whole content of one
+step is the `L¹` norm of the transformed amplitude. This is the shape the five-fold iteration
+consumes. -/
+theorem norm_integral_expPhase_le_ibp {f : ℝ → ℂ} {Φ : ℝ → ℝ}
+    (hf : ContDiff ℝ (⊤ : ℕ∞) f) (hfs : HasCompactSupport f)
+    (hΦ : ContDiff ℝ (⊤ : ℕ∞) Φ) (hΦ0 : ∀ x : ℝ, deriv Φ x ≠ 0) :
+    ‖∫ x : ℝ, f x * Complex.exp (Complex.I * (Φ x : ℂ))‖
+      ≤ ∫ x : ℝ, ‖deriv (fun y : ℝ => f y / (Complex.I * ((deriv Φ y : ℝ) : ℂ))) x‖ := by
+  rw [integral_expPhase_ibp hf hfs hΦ hΦ0, norm_neg]
+  refine (norm_integral_le_integral_norm _).trans (le_of_eq ?_)
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  simp [Complex.norm_exp]
+
 /-- **(B) The non-stationary-phase estimate: the weight carries `O(n^{-3/2})` on the
-low-frequency ball** — the second input, and the analytic heart of the certificate.
+low-frequency ball** — the second input, the analytic heart of the certificate, and **still the
+only open analytic item of the certificate after wave 35**.
 
 On `‖t₀ + s‖ < c₀√n/(2σ)` the total phase `θHₙ − ⟪·, s⟫` has first `w₀`-derivative at least
 `(4/3)|θ|/σ` in modulus, everywhere and with no cut-off (`deltaSurrogate_slope_ge`), so five
-integrations by parts against `L^t f = ∂_{w₀}(f/(i∂_{w₀}Φ))` gain `O(n^{-7/8})` each; the ledger
-lemmas verify that this closes at `n^{-17/8}` and that four would not. -/
+integrations by parts against `L f = ∂_{w₀}(f/(i∂_{w₀}Φ))` gain `O(n^{-7/8})` each; the ledger
+lemmas verify that this closes at `n^{-17/8}` (`leakage_ledger_five_le`) and that four would not
+(`leakage_ledger_four_gt`).
+
+**WHAT WAVE 35 ADDS, AND WHAT IS HONESTLY LEFT.** The *identity* half of the estimate is now
+proved rather than asserted: `integral_expPhase_ibp` is one integration by parts against a
+non-vanishing phase on the line, in the exact form the iteration needs, and `contDiff_ibpStep` /
+`hasCompactSupport_ibpStep` say that the transform `L` preserves the class, so the five-fold
+iteration is legitimate as stated. `norm_integral_expPhase_le_ibp` is its norm form.
+
+What is **not** done, and it is the quantitative half — the part that actually carries the
+exponent:
+
+* the graded bound on `‖L^k f‖_{L¹(dw₀)}` for `k ≤ 5`, uniformly over the bad set. Each `L`
+  either differentiates the cut-off `χ(·/M)` (cost `M^{-1}`) or `1/∂_{w₀}Φ` (cost `∂²Φ/(∂Φ)²`),
+  and it is the *second* branch that produces the `(27/16)Mr²/(σ|θ|)` half of
+  `bulk_gain_phase_le`. Bounding it needs a derivative calculus with **negative** powers —
+  bounds on the derivatives of `1/∂_{w₀}Φ` from a lower bound on `|∂_{w₀}Φ|` — which the
+  graded calculus of input (A2) (`gradedBound_mul`, `gradedBound_add`) does not yet supply;
+* the reduction of `𝓕 g` to an iterated integral, so that the one-dimensional identity applies
+  fibrewise in `w₀` at each frozen `w₁` (Fubini is harmless — the support is compact — but the
+  measurable identification of `E₂` with `ℝ × ℝ` is not free);
+* the outer bookkeeping: the `w₁`-integration over a set of length `≍ M` and the `s`-integration
+  over the bad set of area `≍ n`, which is where `leakage_ledger_exponent` is consumed.
+
+No obstruction to any of the three is known, and the arithmetic they have to reproduce is
+already verified in the file. This is a budget statement, not a verdict. -/
 theorem exists_integral_norm_fourierWeight_bulkMultiplier_band_le
     {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) :
     ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ * Real.sqrt (n : ℝ) ≤ |θ| →
