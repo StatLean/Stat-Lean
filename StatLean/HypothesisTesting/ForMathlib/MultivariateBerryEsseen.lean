@@ -5498,6 +5498,95 @@ theorem measureReal_shell_le_of_convexDiscrepancy (hk : 0 < k)
   linarith
 
 
+/-! #### Affine transport of the shell -/
+
+/-- The dilation-translation `x ↦ r • x + a` as a homeomorphism. -/
+noncomputable def affHomeo {r : ℝ} (hr : r ≠ 0) (a : EuclideanSpace ℝ (Fin k)) :
+    EuclideanSpace ℝ (Fin k) ≃ₜ EuclideanSpace ℝ (Fin k) :=
+  (Homeomorph.smulOfNeZero r hr).trans (Homeomorph.addRight a)
+
+lemma affHomeo_apply {r : ℝ} (hr : r ≠ 0) (a x : EuclideanSpace ℝ (Fin k)) :
+    affHomeo hr a x = r • x + a := rfl
+
+/-- Convexity is preserved by the affine preimage. -/
+lemma convex_preimage_aff {r : ℝ} {a : EuclideanSpace ℝ (Fin k)}
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBc : Convex ℝ B) :
+    Convex ℝ ((fun x => r • x + a) ⁻¹' B) := by
+  intro x hx y hy s t hs ht hst
+  simp only [Set.mem_preimage] at hx hy ⊢
+  have hrw : r • (s • x + t • y) + a = s • (r • x + a) + t • (r • y + a) := by
+    calc r • (s • x + t • y) + a = (s * r) • x + (t * r) • y + a := by
+          simp only [smul_add, smul_smul]; rw [mul_comm r s, mul_comm r t]
+      _ = (s * r) • x + (t * r) • y + (s + t) • a := by rw [hst, one_smul]
+      _ = s • (r • x + a) + t • (r • y + a) := by
+          simp only [smul_add, smul_smul, add_smul]; abel
+  rw [hrw]
+  exact hBc hx hy hs ht hst
+
+/-- **Affine transport of the thickening.** For `r > 0`, `(r • · + a)⁻¹(Bᵋ) = (B')^{ε/r}` where
+`B' = (r • · + a)⁻¹(B)`. -/
+lemma preimage_aff_thickening {r : ℝ} (hr : 0 < r) (a : EuclideanSpace ℝ (Fin k))
+    (B : Set (EuclideanSpace ℝ (Fin k))) {ε : ℝ} (_hε : 0 < ε) :
+    (fun x => r • x + a) ⁻¹' (Metric.thickening ε B)
+      = Metric.thickening (ε / r) ((fun x => r • x + a) ⁻¹' B) := by
+  ext x
+  simp only [Set.mem_preimage]
+  constructor
+  · intro hx
+    obtain ⟨z, hzB, hzlt⟩ := Metric.mem_thickening_iff.1 hx
+    refine Metric.mem_thickening_iff.2 ⟨r⁻¹ • (z - a), ?_, ?_⟩
+    · simp only [Set.mem_preimage]
+      rw [smul_smul, mul_inv_cancel₀ hr.ne', one_smul, sub_add_cancel]
+      exact hzB
+    · have hdist : dist (r • x + a) z = r * dist x (r⁻¹ • (z - a)) := by
+        rw [dist_eq_norm, dist_eq_norm, ← norm_smul_of_nonneg hr.le]
+        congr 1
+        rw [smul_sub, smul_smul, mul_inv_cancel₀ hr.ne', one_smul]
+        abel
+      rw [hdist] at hzlt
+      rw [lt_div_iff₀ hr, mul_comm]
+      exact hzlt
+  · intro hx
+    obtain ⟨w, hwB, hwlt⟩ := Metric.mem_thickening_iff.1 hx
+    simp only [Set.mem_preimage] at hwB
+    refine Metric.mem_thickening_iff.2 ⟨r • w + a, hwB, ?_⟩
+    have hdist : dist (r • x + a) (r • w + a) = r * dist x w := by
+      rw [dist_eq_norm, dist_eq_norm, ← norm_smul_of_nonneg hr.le]
+      congr 1
+      rw [smul_sub]
+      abel
+    rw [hdist]
+    rw [lt_div_iff₀ hr, mul_comm] at hwlt
+    exact hwlt
+
+/-- **Affine transport of the interior.** -/
+lemma preimage_aff_interior {r : ℝ} (hr : 0 < r) (a : EuclideanSpace ℝ (Fin k))
+    (B : Set (EuclideanSpace ℝ (Fin k))) :
+    (fun x => r • x + a) ⁻¹' (interior B) = interior ((fun x => r • x + a) ⁻¹' B) := by
+  have h := (affHomeo (k := k) hr.ne' a).preimage_interior B
+  exact h
+
+/-- **The shell bound, transported along a dilation-translation.** This is the geometric heart
+of brick H: conditioning the hybrid law on its Gaussian coordinate turns the shell event into an
+affine preimage of a shell, and the class of measurable convex sets is affine-invariant. -/
+theorem measureReal_shell_preimage_aff_le (hk : 0 < k)
+    (μ : Measure (EuclideanSpace ℝ (Fin k))) [IsProbabilityMeasure μ]
+    {r : ℝ} (hr : 0 < r) (a : EuclideanSpace ℝ (Fin k))
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBm : MeasurableSet B) (hBc : Convex ℝ B)
+    {ε : ℝ} (hε : 0 < ε) :
+    (μ ((fun x => r • x + a) ⁻¹' (Metric.thickening ε B \ interior B))).toReal
+      ≤ gaussianShellConst k * (ε / r)
+        + 2 * convexDiscrepancy μ (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) := by
+  set B' : Set (EuclideanSpace ℝ (Fin k)) := (fun x => r • x + a) ⁻¹' B with hB'def
+  have hmeas : Measurable (fun x : EuclideanSpace ℝ (Fin k) => r • x + a) := by fun_prop
+  have hB'm : MeasurableSet B' := hmeas hBm
+  have hB'c : Convex ℝ B' := convex_preimage_aff hBc
+  have hset : (fun x => r • x + a) ⁻¹' (Metric.thickening ε B \ interior B)
+      = Metric.thickening (ε / r) B' \ interior B' := by
+    rw [Set.preimage_diff, preimage_aff_thickening hr a B hε, preimage_aff_interior hr a B]
+  rw [hset]
+  exact measureReal_shell_le_of_convexDiscrepancy hk μ hB'm hB'c (by positivity)
+
 /-! ### Wave-20: the hybrid family, and the recursion it produces -/
 
 /-- The law of the normalised sum `n^{-1/2} ∑ᵢ Yᵢ` of `n` i.i.d. copies of `ν`. -/
@@ -5551,9 +5640,12 @@ This is where the induction is consumed, and the reason the neighbour range of
   `measureReal_shell_le_of_convexDiscrepancy` applies and gives
   `C_k ε/λ + 2 Δ_m ≤ √2 C_k ε + 2 Y`.
 
-What is missing is the Lean-level convolution/disintegration bookkeeping: the Fubini
-factorisation of `hybridLaw` as `ρ ∗ γ_σ`, the affine transport of `Metric.thickening` and
-`interior`, and the Gaussian scaling identity. -/
+The affine transport that both regimes need is **proved** just above
+(`measureReal_shell_preimage_aff_le`, via `preimage_aff_thickening` and
+`preimage_aff_interior`): the preimage of an `ε`-shell of a convex set under `x ↦ r x + a` is
+the `(ε/r)`-shell of a convex set, so the class the induction runs on is affine-invariant. What
+is missing is the Lean-level convolution/disintegration bookkeeping: the Fubini factorisation of
+`hybridLaw` as `ρ ∗ γ_σ` and the Gaussian scaling identity `γ_σ(S) = γ(σ⁻¹ S)`. -/
 theorem hybridLaw_shell_le (hk : 0 < k) {n j : ℕ} (hn : 0 < n) (hj : j ≤ n)
     {ν : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure ν]
     (hmean : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)
