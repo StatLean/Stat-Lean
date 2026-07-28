@@ -72,6 +72,23 @@ proved:
   `norm_integral_cexp_deltaSurrogate_sub_le` — the surrogate's characteristic function assembled
   from the `k ≤ 4` instances of `multiCharFun`, over an **arbitrary** law of the bivariate root
   (so the marginal and the additively-perturbed instances of (X3) are one statement);
+* `surrogateRemGraded`, `norm_cexp_surrogate_sub_expansion_graded_le`,
+  `norm_integral_cexp_deltaSurrogate_sub_graded_le`, `surrogateRemGraded_le` — the same
+  expansion and the same transform with the envelope **graded in `r`**, each power of `r` left
+  attached to the monomial it came from. This is the wave-25 correction: the collapsed envelope
+  `surrogateRemPoly` cannot be made `O(n⁻¹)` under a fourth moment at *any* truncation level,
+  and the graded one is `O(n⁻¹)` at the classical level `τ = √n` and only there. The collapsed
+  statements are retained as corollaries;
+* `measure_pi_exists_coord_mem_le`, `abs_measure_pi_sub_comp_le`,
+  `measure_abs_gt_le_fourth_moment` — the price of truncation: replacing every summand by its
+  truncation moves a distribution function by at most `n·F{x : T x ≠ x}`, a **union bound** with
+  an exact coupling off the bad event, and Markov at the fourth moment makes that `O(n⁻¹)` at
+  `τ = √n`;
+* `vecRootLaw_one`, `integrable_surrogate_inputs_of_bounded` — the other half: at `n = 1` the
+  root's law is the summand's, which exhibits the transform's hypotheses `h4`, `h5` as *sixth*-
+  and fifth-moment conditions (so they are **false** under a fourth moment); and boundedness of
+  the summand discharges all five hypotheses of the transform for every `n`, with no moment
+  hypothesis on `F` at all;
 * `centredDensity`, `charFun_map_studentPair_eq`, `vecCramerCondition_map_studentPair`,
   `cramerCondition_projLaw_studentPair`,
   `exists_bound_norm_charFun_vecRootLaw_studentPair` — the multivariate Cramér condition for the
@@ -2349,6 +2366,128 @@ theorem measure_pi_truncated_sum_le_exp {n : ℕ} (μ : Measure ℝ) [IsProbabil
       = -lam ^ 2 / (8 * ((n : ℝ) * τ ^ 2)) := by ring
   rw [harg]
 
+/-! ### The change of law: what truncating the summands costs
+
+The truncated-law replacement has two halves and they are different objects. The **moment**
+half is `ae_norm_vecRootLaw_le` of `ForMathlib/BivariateEdgeworth.lean`: once `‖Z‖ ≤ K`
+pointwise, the root's law is carried by a ball of radius `√n·K`, so every polynomial in its
+coordinates is integrable and no moment hypothesis on `F` is needed at all. The **price** half
+is here: replacing every summand by its truncation changes the law of the sample, and what it
+costs is the probability that *any one* coordinate is truncated.
+
+**That price is a union bound, not a concentration inequality**, and this is worth recording
+because wave 23 recorded it as "the change of law paid for separately by exactly the tail
+estimate `measure_pi_truncated_sum_le_exp` supplies". It is not the same object:
+`measure_pi_truncated_sum_le_exp` bounds `P(λ < |∑ Ỹ(ωᵢ)|)`, the tail of a truncated *sum*,
+which is what (X3)(b)'s one-large-summand remainder needs. The change of law needs
+`P(∃ i, Xᵢ is truncated)`, and the coupling that makes the two samples equal off that event is
+*exact*: `subset_union_large_summand` already contains the deterministic half of it.
+
+The arithmetic is tight and leaves no room. At the classical truncation level `τ = √n` a finite
+fourth moment gives `n·F{|ξ| > √n} ≤ n·E ξ⁴/n² = E ξ⁴/n`, which is exactly the target `O(n⁻¹)`;
+a truncation at `n^{1/2−δ}` would be cheaper for the moments and *more* expensive here, at
+`n^{4δ−1}`, and at `δ ≥ 1/4` it fails outright. That the classical level is forced from both
+sides is the reason it is the classical level. -/
+
+/-- **The union bound over the coordinates of a product measure.** The probability that some
+coordinate lands in `G` is at most `n · F G`. -/
+theorem measure_pi_exists_coord_mem_le {n : ℕ} (F : Measure ℝ) [IsProbabilityMeasure F]
+    {G : Set ℝ} (hG : MeasurableSet G) :
+    (Measure.pi fun _ : Fin n => F) {y : Fin n → ℝ | ∃ i, y i ∈ G} ≤ (n : ℝ≥0∞) * F G := by
+  classical
+  have hcover : {y : Fin n → ℝ | ∃ i, y i ∈ G}
+      = ⋃ i : Fin n, (fun y : Fin n → ℝ => y i) ⁻¹' G := by
+    ext y; simp [Set.mem_iUnion]
+  have hcoord : ∀ i : Fin n,
+      (Measure.pi fun _ : Fin n => F) ((fun y : Fin n → ℝ => y i) ⁻¹' G) = F G := fun i =>
+    (MeasureTheory.measurePreserving_eval (fun _ : Fin n => F) i).measure_preimage
+      hG.nullMeasurableSet
+  rw [hcover]
+  refine (measure_iUnion_fintype_le _ _).trans ?_
+  rw [Finset.sum_congr rfl fun i (_ : i ∈ Finset.univ) => hcoord i, Finset.sum_const,
+    Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+
+/-- **Truncating the summands costs at most the probability that some coordinate is
+truncated.** For any measurable `T : ℝ → ℝ` and any measurable event `s` of the sample,
+
+`|P(y ∈ s) − P((T(yᵢ))ᵢ ∈ s)| ≤ n · F{x : T x ≠ x}`.
+
+The coupling is exact: off the event that some coordinate is moved, the truncated sample *is*
+the sample, so the two events differ only inside that event. Nothing about `T` beyond
+measurability is used — in particular the statement covers every truncation scheme, not just
+the classical `|x − m| ≤ τ` one. -/
+theorem abs_measure_pi_sub_comp_le {n : ℕ} (F : Measure ℝ) [IsProbabilityMeasure F]
+    {T : ℝ → ℝ} (hT : Measurable T) (hbad : MeasurableSet {x : ℝ | T x ≠ x})
+    {s : Set (Fin n → ℝ)} (hs : MeasurableSet s) :
+    |((Measure.pi fun _ : Fin n => F) s).toReal
+        - ((Measure.pi fun _ : Fin n => F)
+            ((fun y : Fin n → ℝ => fun i => T (y i)) ⁻¹' s)).toReal|
+      ≤ (n : ℝ) * (F {x : ℝ | T x ≠ x}).toReal := by
+  classical
+  set P : Measure (Fin n → ℝ) := Measure.pi fun _ : Fin n => F with hP
+  set τmap : (Fin n → ℝ) → (Fin n → ℝ) := fun y i => T (y i) with hτmap
+  set Bad : Set (Fin n → ℝ) := {y : Fin n → ℝ | ∃ i, y i ∈ {x : ℝ | T x ≠ x}} with hBad
+  have hτmeas : Measurable τmap :=
+    measurable_pi_lambda _ fun i => hT.comp (measurable_pi_apply i)
+  have hfix : ∀ y : Fin n → ℝ, y ∉ Bad → τmap y = y := by
+    intro y hy
+    funext i
+    by_contra hne
+    exact hy ⟨i, hne⟩
+  have hsub1 : s ⊆ τmap ⁻¹' s ∪ Bad := by
+    intro y hy
+    by_cases hb : y ∈ Bad
+    · exact Or.inr hb
+    · exact Or.inl (by simp only [Set.mem_preimage, hfix y hb]; exact hy)
+  have hsub2 : τmap ⁻¹' s ⊆ s ∪ Bad := by
+    intro y hy
+    by_cases hb : y ∈ Bad
+    · exact Or.inr hb
+    · refine Or.inl ?_
+      have : τmap y ∈ s := hy
+      rwa [hfix y hb] at this
+  have hBadle : P Bad ≤ (n : ℝ≥0∞) * F {x : ℝ | T x ≠ x} :=
+    measure_pi_exists_coord_mem_le F hbad
+  have hfin : ∀ A : Set (Fin n → ℝ), P A ≠ ⊤ := fun A => measure_ne_top _ _
+  have hstep : ∀ A B : Set (Fin n → ℝ), A ⊆ B ∪ Bad →
+      (P A).toReal ≤ (P B).toReal + (n : ℝ) * (F {x : ℝ | T x ≠ x}).toReal := by
+    intro A B hAB
+    have h1 : P A ≤ P B + P Bad := (measure_mono hAB).trans (measure_union_le _ _)
+    have h2 : (P A).toReal ≤ (P B + P Bad).toReal :=
+      ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨hfin _, hfin _⟩) h1
+    rw [ENNReal.toReal_add (hfin _) (hfin _)] at h2
+    have h3 : (P Bad).toReal ≤ ((n : ℝ≥0∞) * F {x : ℝ | T x ≠ x}).toReal :=
+      ENNReal.toReal_mono (ENNReal.mul_ne_top (by simp) (measure_ne_top _ _)) hBadle
+    rw [ENNReal.toReal_mul, ENNReal.toReal_natCast] at h3
+    linarith
+  rw [abs_sub_le_iff]
+  exact ⟨by linarith [hstep s (τmap ⁻¹' s) hsub1], by linarith [hstep (τmap ⁻¹' s) s hsub2]⟩
+
+/-- **Markov at the fourth moment, in the shape the truncation level consumes.**
+`F{τ < |g|} ≤ E[g⁴]/τ⁴`. At `τ = √n` this is `E[g⁴]/n²`, so the union bound
+`n · F{τ < |g|}` of `abs_measure_pi_sub_comp_le` is `E[g⁴]/n` — the target `O(n⁻¹)` exactly. -/
+theorem measure_abs_gt_le_fourth_moment (F : Measure ℝ) [IsProbabilityMeasure F]
+    {g : ℝ → ℝ} (hg : Measurable g) (hg4 : Integrable (fun x => g x ^ 4) F)
+    {τ : ℝ} (hτ : 0 < τ) :
+    (F {x : ℝ | τ < |g x|}).toReal ≤ (∫ x, g x ^ 4 ∂F) / τ ^ 4 := by
+  have hmk := MeasureTheory.mul_meas_ge_le_integral_of_nonneg
+    (μ := F) (f := fun x => g x ^ 4) (Filter.Eventually.of_forall fun x => by positivity)
+    hg4 (τ ^ 4)
+  have hsub : {x : ℝ | τ < |g x|} ⊆ {x : ℝ | τ ^ 4 ≤ g x ^ 4} := by
+    intro x hx
+    have hx' : τ < |g x| := hx
+    have hpow : τ ^ 4 ≤ |g x| ^ 4 := pow_le_pow_left₀ hτ.le hx'.le 4
+    have habs : |g x| ^ 4 = g x ^ 4 := by
+      rw [← abs_pow, abs_of_nonneg (by positivity : (0 : ℝ) ≤ g x ^ 4)]
+    rw [habs] at hpow
+    exact hpow
+  have hmono : (F {x : ℝ | τ < |g x|}).toReal ≤ (F {x : ℝ | τ ^ 4 ≤ g x ^ 4}).toReal :=
+    ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono hsub)
+  rw [le_div_iff₀ (by positivity : (0 : ℝ) < τ ^ 4)]
+  have hmk' : τ ^ 4 * (F {x : ℝ | τ ^ 4 ≤ g x ^ 4}).toReal ≤ ∫ x, g x ^ 4 ∂F := by
+    simpa [measureReal_def] using hmk
+  nlinarith [hmono, hmk', (by positivity : (0 : ℝ) < τ ^ 4)]
+
 /-! ### (X3)(a): the frozen-coordinate window bound, uniform in the frozen value
 
 Wave 18 recorded the second half of (X3) as: "*Transferring the (M1)(b) expansion to the
@@ -2743,6 +2882,103 @@ noncomputable def surrogateRemPoly (θ u v : ℝ) : ℝ :=
     + θ ^ 2 / 2 * (|u| * |v| * (|u| ^ 3 / 2 + 3 * |u| * |v| ^ 2 / 8)
         + (|u| ^ 3 / 2 + 3 * |u| * |v| ^ 2 / 8) ^ 2)
 
+lemma surrogateRemPoly_nonneg (θ u v : ℝ) : 0 ≤ surrogateRemPoly θ u v := by
+  rw [surrogateRemPoly]; positivity
+
+/-- The envelope is monotone in `|u|` and `|v|` — every coefficient is nonnegative. This is what
+turns a *bounded* root into a bounded remainder: on the support of the truncated root's law the
+envelope is a constant, so `∫ surrogateRemPoly` is finite with no moment hypothesis at all. -/
+lemma surrogateRemPoly_le_of_abs_le (θ : ℝ) {u v A B : ℝ} (hu : |u| ≤ A) (hv : |v| ≤ B) :
+    surrogateRemPoly θ u v ≤ surrogateRemPoly θ A B := by
+  have hA : (0 : ℝ) ≤ A := le_trans (abs_nonneg u) hu
+  have hB : (0 : ℝ) ≤ B := le_trans (abs_nonneg v) hv
+  have hu0 : (0 : ℝ) ≤ |u| := abs_nonneg u
+  have hv0 : (0 : ℝ) ≤ |v| := abs_nonneg v
+  rw [surrogateRemPoly, surrogateRemPoly, abs_of_nonneg hA, abs_of_nonneg hB]
+  gcongr <;> first | assumption | positivity
+
+/-! ### The envelope has to be graded in `r`, and that is what decides the truncation level
+
+`surrogateRemPoly` is obtained from the pointwise expansion by collapsing every power of `r`
+onto a single `r³` (the step `r² ≤ r` in the proof below). **That collapse is not harmless**, and
+the wave-25 re-derivation of residue (ii) is exactly this: with it, *no* truncation level makes
+the remainder `O(n⁻¹)` under a fourth moment; without it, the classical level `τ = √n` makes
+every single monomial `O(n⁻¹)` and nothing else does.
+
+Write `ξ = X − μ`, `η = ξ² − σ²`, `ũ`, `ṽ` for the roots of the summands truncated at `τ`, and
+recall `r = n^{-1/2}`. Truncation gives `E|ξ̃|^p ≲ τ^{p−4}Eξ⁴` and `E|η̃|^p ≲ (τ²)^{p−2}Eη²`, so
+by the single-large-summand term of a Rosenthal bound
+
+  `E|ũ|^p ≲ 1 + n^{1−p/2}τ^{p−4}`,   `E|ṽ|^q ≲ 1 + n^{1−q/2}(τ²)^{q−2}`.
+
+At `τ = √n` these are `E|ũ|^p ≲ 1` for every `p`, but `E|ṽ|³ ≍ √n`, `E|ṽ|⁴ ≍ n`, `E|ṽ|⁵ ≍ n^{3/2}`,
+`E|ṽ|⁶ ≍ n²` — the second coordinate does *not* have bounded moments, and cannot: `η` has only
+two moments when `ξ` has four.
+
+Now compare the two envelopes on the worst monomial `|u|³|v|⁶`.
+
+* **Collapsed.** `surrogateRemPoly` contributes `r³|u|³|v|⁶`, so `r³E|ṽ|⁶ ≍ n^{-3/2}n² = n^{1/2}`
+  — off by `n^{3/2}`. Lowering `τ` to repair it needs `n^{-2}τ⁸ = O(n^{1/2})`, i.e.
+  `τ = O(n^{5/16})`; but the change of law (`abs_measure_pi_sub_comp_le` with Markov) needs
+  `n·Eξ⁴/τ⁴ = O(n⁻¹)`, i.e. `τ ≥ n^{1/2}`. **The two requirements are incompatible**, so the
+  collapsed envelope cannot be repaired by any choice of truncation level. This overturns the
+  wave-23 prescription ("choose the truncation level so both halves are `O(n⁻¹)`; level `√n` is
+  the classical choice") as stated: with `surrogateRemPoly` there is no such level.
+* **Graded.** `surrogateRemGraded` keeps `r⁶A³`, so the same monomial contributes
+  `r⁶E|ṽ|⁶ ≍ n^{-3}n² = n⁻¹`. Every other monomial lands on `n⁻¹` too, and *exactly* on it:
+  `r³|u|³|v|³ → n^{-3/2}·√n`, `r⁴|u|³|v|⁴ → n^{-2}·n`, `r⁵|u|³|v|⁵ → n^{-5/2}·n^{3/2}`,
+  `r³|u||v|A → n^{-3/2}·√n`, `r⁴A² → n^{-2}·n`. The truncation level `τ = √n` is therefore
+  forced from *three* sides — the change of law from below, and these moments together with the
+  `E|ũ|^p` bound from above — which is why it is the classical level.
+
+`surrogateRemGraded_le` shows the graded envelope is never worse than the collapsed one, so
+nothing downstream is lost by proving the graded form and deducing the collapsed one. -/
+
+/-- The **`r`-graded** envelope of the surrogate's transform remainder: the same polynomial as
+`surrogateRemPoly`, but with each power of `r` left attached to the monomial it came from. See
+the note above for why the grading is the whole content. -/
+noncomputable def surrogateRemGraded (θ u v r : ℝ) : ℝ :=
+  |θ| ^ 3 * (r * (|u| * |v| / 2) + r ^ 2 * (|u| ^ 3 / 2 + 3 * |u| * |v| ^ 2 / 8)) ^ 3 / 6
+    + θ ^ 2 / 2 * (r ^ 3 * (|u| * |v| * (|u| ^ 3 / 2 + 3 * |u| * |v| ^ 2 / 8))
+        + r ^ 4 * (|u| ^ 3 / 2 + 3 * |u| * |v| ^ 2 / 8) ^ 2)
+
+lemma surrogateRemGraded_nonneg (θ u v : ℝ) {r : ℝ} (hr : 0 ≤ r) :
+    0 ≤ surrogateRemGraded θ u v r := by
+  rw [surrogateRemGraded]; positivity
+
+private lemma remGraded_le_aux (θ : ℝ) {r P A : ℝ} (hr : 0 ≤ r) (hr1 : r ≤ 1)
+    (hP : 0 ≤ P) (hA : 0 ≤ A) :
+    |θ| ^ 3 * (r * P + r ^ 2 * A) ^ 3 / 6
+        + θ ^ 2 / 2 * (r ^ 3 * (2 * P * A) + r ^ 4 * A ^ 2)
+      ≤ r ^ 3 * (|θ| ^ 3 * (P + A) ^ 3 / 6 + θ ^ 2 / 2 * (2 * P * A + A ^ 2)) := by
+  have hr2 : r ^ 2 ≤ r := by nlinarith
+  have hbase : r * P + r ^ 2 * A ≤ r * (P + A) := by nlinarith
+  have h0 : (0 : ℝ) ≤ r * P + r ^ 2 * A := by positivity
+  have hcube : (r * P + r ^ 2 * A) ^ 3 ≤ (r * (P + A)) ^ 3 := pow_le_pow_left₀ h0 hbase 3
+  have hcube' : (r * (P + A)) ^ 3 = r ^ 3 * (P + A) ^ 3 := by ring
+  have hr43 : r ^ 4 ≤ r ^ 3 := by nlinarith
+  have hsq : r ^ 4 * A ^ 2 ≤ r ^ 3 * A ^ 2 := mul_le_mul_of_nonneg_right hr43 (sq_nonneg A)
+  have h1 : |θ| ^ 3 * (r * P + r ^ 2 * A) ^ 3 / 6
+      ≤ |θ| ^ 3 * (r ^ 3 * (P + A) ^ 3) / 6 := by
+    have hm := mul_le_mul_of_nonneg_left (hcube.trans_eq hcube')
+      (by positivity : (0 : ℝ) ≤ |θ| ^ 3)
+    linarith
+  have h2 : θ ^ 2 / 2 * (r ^ 3 * (2 * P * A) + r ^ 4 * A ^ 2)
+      ≤ θ ^ 2 / 2 * (r ^ 3 * (2 * P * A) + r ^ 3 * A ^ 2) := by
+    have hm := mul_le_mul_of_nonneg_left hsq (by positivity : (0 : ℝ) ≤ θ ^ 2 / 2)
+    linarith
+  linarith [h1, h2]
+
+/-- **The graded envelope is never worse than the collapsed one.** `surrogateRemGraded ≤
+r³·surrogateRemPoly` for `0 ≤ r ≤ 1` — the collapsed form is exactly what the graded one becomes
+after `r² ≤ r` is used three times. -/
+lemma surrogateRemGraded_le (θ u v : ℝ) {r : ℝ} (hr : 0 ≤ r) (hr1 : r ≤ 1) :
+    surrogateRemGraded θ u v r ≤ r ^ 3 * surrogateRemPoly θ u v := by
+  have h := remGraded_le_aux θ (P := |u| * |v| / 2)
+    (A := |u| ^ 3 / 2 + 3 * |u| * |v| ^ 2 / 8) hr hr1 (by positivity) (by positivity)
+  rw [surrogateRemGraded, surrogateRemPoly]
+  linarith [h]
+
 set_option maxHeartbeats 800000 in
 /-- **The pointwise expansion of the surrogate's character.**
 
@@ -2757,7 +2993,7 @@ function, which is `charFun_deltaSurrogate_sub_multiCharFun_le`.
 Note where the quartic weight comes from: it is *not* a term of `Hₙ`, it is the square of the
 leading correction, produced by the second-order truncation of `e^{iθ(Hₙ−u)}`. Reading the
 expansion off `Hₙ` alone would miss it and would leave an uncontrolled `O(n⁻¹)`. -/
-theorem norm_cexp_surrogate_sub_expansion_le (θ u v r : ℝ) (hr : 0 ≤ r) (hr1 : r ≤ 1) :
+theorem norm_cexp_surrogate_sub_expansion_graded_le (θ u v r : ℝ) (hr : 0 ≤ r) :
     ‖Complex.exp (Complex.I * ((θ * (u - u * v * r / 2 + u ^ 3 * r ^ 2 / 2
             + 3 * u * v ^ 2 * r ^ 2 / 8) : ℝ) : ℂ))
         - Complex.exp (Complex.I * ((θ * u : ℝ) : ℂ)) *
@@ -2765,14 +3001,9 @@ theorem norm_cexp_surrogate_sub_expansion_le (θ u v r : ℝ) (hr : 0 ≤ r) (hr
             + Complex.I * ((θ * u ^ 3 * r ^ 2 / 2 : ℝ) : ℂ)
             + Complex.I * ((3 * θ * (u * v ^ 2) * r ^ 2 / 8 : ℝ) : ℂ)
             - ((θ ^ 2 * (u * v) ^ 2 * r ^ 2 / 8 : ℝ) : ℂ))‖
-      ≤ r ^ 3 * surrogateRemPoly θ u v := by
-  have hr2 : r ^ 2 ≤ r := by
-    calc r ^ 2 ≤ r ^ 1 := pow_le_pow_of_le_one hr hr1 (by norm_num)
-      _ = r := pow_one r
-  have hr4 : r ^ 4 ≤ r ^ 3 := pow_le_pow_of_le_one hr hr1 (by norm_num)
+      ≤ surrogateRemGraded θ u v r := by
   set A : ℝ := |u| ^ 3 / 2 + 3 * |u| * |v| ^ 2 / 8 with hAdef
   have hA0 : 0 ≤ A := by rw [hAdef]; positivity
-  set B : ℝ := |u| * |v| / 2 + A with hBdef
   set Q : ℝ := -(u * v * r / 2) with hQdef
   set P : ℝ := u ^ 3 * r ^ 2 / 2 + 3 * u * v ^ 2 * r ^ 2 / 8 with hPdef
   set D : ℝ := Q + P with hDdef
@@ -2789,12 +3020,10 @@ theorem norm_cexp_surrogate_sub_expansion_le (θ u v r : ℝ) (hr : 0 ≤ r) (hr
     calc |P| ≤ |u ^ 3 * r ^ 2 / 2| + |3 * u * v ^ 2 * r ^ 2 / 8| := by
           rw [hPdef]; exact abs_add_le _ _
       _ = r ^ 2 * A := by rw [h1, h2, hAdef]; ring
-  have hDabs : |D| ≤ r * B := by
+  have hDabs : |D| ≤ r * (|u| * |v| / 2) + r ^ 2 * A := by
     have hstep : |D| ≤ |Q| + |P| := by rw [hDdef]; exact abs_add_le _ _
-    have hrA : r ^ 2 * A ≤ r * A := mul_le_mul_of_nonneg_right hr2 hA0
     rw [hQabs] at hstep
-    rw [hBdef]
-    linarith [hstep, hPabs, hrA]
+    linarith [hstep, hPabs]
   have harg : θ * (u - u * v * r / 2 + u ^ 3 * r ^ 2 / 2 + 3 * u * v ^ 2 * r ^ 2 / 8)
       = θ * u + θ * D := by rw [hDdef, hQdef, hPdef]; ring
   have hpoly : (1 - Complex.I * ((θ * (u * v) * r / 2 : ℝ) : ℂ)
@@ -2808,14 +3037,15 @@ theorem norm_cexp_surrogate_sub_expansion_le (θ u v r : ℝ) (hr : 0 ≤ r) (hr
     rw [Complex.norm_exp]; simp
   rw [hunit, one_mul]
   refine (norm_cexp_sub_second_order_le (θ * D) (θ * Q)).trans ?_
-  have hcube : |θ * D| ^ 3 / 6 ≤ r ^ 3 * (|θ| ^ 3 * B ^ 3 / 6) := by
-    have h1 : |D| ^ 3 ≤ (r * B) ^ 3 := pow_le_pow_left₀ (abs_nonneg D) hDabs 3
+  have hcube : |θ * D| ^ 3 / 6
+      ≤ |θ| ^ 3 * (r * (|u| * |v| / 2) + r ^ 2 * A) ^ 3 / 6 := by
+    have h1 : |D| ^ 3 ≤ (r * (|u| * |v| / 2) + r ^ 2 * A) ^ 3 :=
+      pow_le_pow_left₀ (abs_nonneg D) hDabs 3
     have h2 := mul_le_mul_of_nonneg_left h1 (by positivity : (0 : ℝ) ≤ |θ| ^ 3)
     calc |θ * D| ^ 3 / 6 = |θ| ^ 3 * |D| ^ 3 / 6 := by rw [abs_mul, mul_pow]
-      _ ≤ |θ| ^ 3 * (r * B) ^ 3 / 6 := by linarith
-      _ = r ^ 3 * (|θ| ^ 3 * B ^ 3 / 6) := by ring
+      _ ≤ |θ| ^ 3 * (r * (|u| * |v| / 2) + r ^ 2 * A) ^ 3 / 6 := by linarith
   have hquad : |(θ * D) ^ 2 - (θ * Q) ^ 2| / 2
-      ≤ r ^ 3 * (θ ^ 2 / 2 * (|u| * |v| * A + A ^ 2)) := by
+      ≤ θ ^ 2 / 2 * (r ^ 3 * (|u| * |v| * A) + r ^ 4 * A ^ 2) := by
     have hexp : (θ * D) ^ 2 - (θ * Q) ^ 2 = θ ^ 2 * (2 * Q * P + P ^ 2) := by
       rw [hDdef]; ring
     have hQP : |2 * Q * P + P ^ 2| ≤ 2 * |Q| * |P| + |P| ^ 2 := by
@@ -2827,21 +3057,36 @@ theorem norm_cexp_surrogate_sub_expansion_le (θ u v r : ℝ) (hr : 0 ≤ r) (hr
       calc 2 * |Q| * |P| = (|u| * |v| * r) * |P| := by rw [hQabs]; ring
         _ ≤ (|u| * |v| * r) * (r ^ 2 * A) := mul_le_mul_of_nonneg_left hPabs hc
         _ = r ^ 3 * (|u| * |v| * A) := by ring
-    have hb2 : |P| ^ 2 ≤ r ^ 3 * A ^ 2 := by
+    have hb2 : |P| ^ 2 ≤ r ^ 4 * A ^ 2 := by
       calc |P| ^ 2 ≤ (r ^ 2 * A) ^ 2 := pow_le_pow_left₀ (abs_nonneg P) hPabs 2
         _ = r ^ 4 * A ^ 2 := by ring
-        _ ≤ r ^ 3 * A ^ 2 := mul_le_mul_of_nonneg_right hr4 (sq_nonneg A)
     have habs : |θ ^ 2 * (2 * Q * P + P ^ 2)| = θ ^ 2 * |2 * Q * P + P ^ 2| := by
       rw [abs_mul, abs_of_nonneg (sq_nonneg θ)]
-    have hsum : |2 * Q * P + P ^ 2| ≤ r ^ 3 * (|u| * |v| * A) + r ^ 3 * A ^ 2 := by
+    have hsum : |2 * Q * P + P ^ 2| ≤ r ^ 3 * (|u| * |v| * A) + r ^ 4 * A ^ 2 := by
       linarith [hQP, hb1, hb2]
     have hmul := mul_le_mul_of_nonneg_left hsum (sq_nonneg θ)
     rw [hexp, habs]
     calc θ ^ 2 * |2 * Q * P + P ^ 2| / 2
-        ≤ θ ^ 2 * (r ^ 3 * (|u| * |v| * A) + r ^ 3 * A ^ 2) / 2 := by linarith
-      _ = r ^ 3 * (θ ^ 2 / 2 * (|u| * |v| * A + A ^ 2)) := by ring
-  rw [surrogateRemPoly, ← hAdef, ← hBdef]
+        ≤ θ ^ 2 * (r ^ 3 * (|u| * |v| * A) + r ^ 4 * A ^ 2) / 2 := by linarith
+      _ = θ ^ 2 / 2 * (r ^ 3 * (|u| * |v| * A) + r ^ 4 * A ^ 2) := by ring
+  rw [surrogateRemGraded, ← hAdef]
   linarith [hcube, hquad]
+
+/-- **The pointwise expansion with the collapsed envelope**, as the earlier waves stated it.
+It is the graded bound of `norm_cexp_surrogate_sub_expansion_graded_le` followed by
+`surrogateRemGraded_le`; the note above records why the collapsed form is the one that cannot be
+made `O(n⁻¹)` under a fourth moment, at any truncation level. -/
+theorem norm_cexp_surrogate_sub_expansion_le (θ u v r : ℝ) (hr : 0 ≤ r) (hr1 : r ≤ 1) :
+    ‖Complex.exp (Complex.I * ((θ * (u - u * v * r / 2 + u ^ 3 * r ^ 2 / 2
+            + 3 * u * v ^ 2 * r ^ 2 / 8) : ℝ) : ℂ))
+        - Complex.exp (Complex.I * ((θ * u : ℝ) : ℂ)) *
+          (1 - Complex.I * ((θ * (u * v) * r / 2 : ℝ) : ℂ)
+            + Complex.I * ((θ * u ^ 3 * r ^ 2 / 2 : ℝ) : ℂ)
+            + Complex.I * ((3 * θ * (u * v ^ 2) * r ^ 2 / 8 : ℝ) : ℂ)
+            - ((θ ^ 2 * (u * v) ^ 2 * r ^ 2 / 8 : ℝ) : ℂ))‖
+      ≤ r ^ 3 * surrogateRemPoly θ u v :=
+  (norm_cexp_surrogate_sub_expansion_graded_le θ u v r hr).trans
+    (surrogateRemGraded_le θ u v hr hr1)
 
 /-! ### The surrogate's characteristic function, assembled from the multilinear identity
 
@@ -3152,13 +3397,15 @@ and on a block whose bivariate mean is additively perturbed, and by
 What it does **not** do is bound the right-hand side: `∫ surrogateRemPoly` is a ninth moment of
 the coordinates of `μ`, and making it `O(1)` under a finite fourth moment of `F` is exactly the
 truncation step. -/
-theorem norm_integral_cexp_deltaSurrogate_sub_le (μ : Measure E₂) [IsProbabilityMeasure μ]
+theorem norm_integral_cexp_deltaSurrogate_sub_graded_le (μ : Measure E₂)
+    [IsProbabilityMeasure μ]
     {σ : ℝ} (hσ : 0 < σ) {r : ℝ} (hr : 0 ≤ r) (hr1 : r ≤ 1) (θ : ℝ)
     (h2 : Integrable (fun w : E₂ => |w 0 * w 1|) μ)
     (h3 : Integrable (fun w : E₂ => |w 0 ^ 3|) μ)
     (h4 : Integrable (fun w : E₂ => |w 0 * w 1 ^ 2|) μ)
     (h5 : Integrable (fun w : E₂ => |(w 0 * w 1) ^ 2|) μ)
-    (hrem : Integrable (fun w : E₂ => surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2)) μ) :
+    (hrem : Integrable
+      (fun w : E₂ => surrogateRemGraded θ (w 0 / σ) (w 1 / σ ^ 2) r) μ) :
     ‖(∫ w, Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ)) ∂μ)
         - (charFun μ ((θ / σ) • coordDir 0)
           - Complex.I * ((θ * r / (2 * σ ^ 3) : ℝ) : ℂ)
@@ -3169,7 +3416,7 @@ theorem norm_integral_cexp_deltaSurrogate_sub_le (μ : Measure E₂) [IsProbabil
               * multiCharFun μ surrW3b ((θ / σ) • coordDir 0)
           - ((θ ^ 2 * r ^ 2 / (8 * σ ^ 6) : ℝ) : ℂ)
               * multiCharFun μ surrW4 ((θ / σ) • coordDir 0))‖
-      ≤ r ^ 3 * ∫ w, surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2) ∂μ := by
+      ≤ ∫ w, surrogateRemGraded θ (w 0 / σ) (w 1 / σ ^ 2) r ∂μ := by
   have hσ0 : σ ≠ 0 := hσ.ne'
   set t : E₂ := (θ / σ) • coordDir 0 with htdef
   set c₂ : ℝ := θ * r / (2 * σ ^ 3) with hc2
@@ -3192,9 +3439,10 @@ theorem norm_integral_cexp_deltaSurrogate_sub_le (μ : Measure E₂) [IsProbabil
   have hpt : ∀ w : E₂,
       ‖Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ))
         - expansionIntegrand c₂ c₃ c₄ c₅ t w‖
-      ≤ r ^ 3 * surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2) := by
+      ≤ surrogateRemGraded θ (w 0 / σ) (w 1 / σ ^ 2) r := by
     intro w
-    have hkey := norm_cexp_surrogate_sub_expansion_le θ (w 0 / σ) (w 1 / σ ^ 2) r hr hr1
+    have hkey :=
+      norm_cexp_surrogate_sub_expansion_graded_le θ (w 0 / σ) (w 1 / σ ^ 2) r hr
     have hd : θ * deltaSurrogate σ r w
         = θ * ((w 0 / σ) - (w 0 / σ) * (w 1 / σ ^ 2) * r / 2 + (w 0 / σ) ^ 3 * r ^ 2 / 2
             + 3 * (w 0 / σ) * (w 1 / σ ^ 2) ^ 2 * r ^ 2 / 8) := by rw [deltaSurrogate]
@@ -3217,13 +3465,168 @@ theorem norm_integral_cexp_deltaSurrogate_sub_le (μ : Measure E₂) [IsProbabil
   refine (norm_integral_le_integral_norm _).trans ?_
   have hmono : (∫ w, ‖Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ))
         - expansionIntegrand c₂ c₃ c₄ c₅ t w‖ ∂μ)
-      ≤ ∫ w, r ^ 3 * surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2) ∂μ :=
-    integral_mono (hF.sub hG).norm (hrem.const_mul _) hpt
-  have hc : (∫ w, r ^ 3 * surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2) ∂μ)
-      = r ^ 3 * ∫ w, surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2) ∂μ :=
-    MeasureTheory.integral_const_mul _ _
-  linarith [hmono, hc.le, hc.ge]
+      ≤ ∫ w, surrogateRemGraded θ (w 0 / σ) (w 1 / σ ^ 2) r ∂μ :=
+    integral_mono (hF.sub hG).norm hrem hpt
+  exact hmono
 
+/-- **The assembled transform with the collapsed envelope**, the form the earlier waves recorded.
+It is `norm_integral_cexp_deltaSurrogate_sub_graded_le` composed with `surrogateRemGraded_le`;
+see the note on the grading for why the collapsed form cannot reach `O(n⁻¹)` under a fourth
+moment at any truncation level, while the graded one does at `τ = √n`. -/
+theorem norm_integral_cexp_deltaSurrogate_sub_le (μ : Measure E₂) [IsProbabilityMeasure μ]
+    {σ : ℝ} (hσ : 0 < σ) {r : ℝ} (hr : 0 ≤ r) (hr1 : r ≤ 1) (θ : ℝ)
+    (h2 : Integrable (fun w : E₂ => |w 0 * w 1|) μ)
+    (h3 : Integrable (fun w : E₂ => |w 0 ^ 3|) μ)
+    (h4 : Integrable (fun w : E₂ => |w 0 * w 1 ^ 2|) μ)
+    (h5 : Integrable (fun w : E₂ => |(w 0 * w 1) ^ 2|) μ)
+    (hrem : Integrable (fun w : E₂ => surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2)) μ) :
+    ‖(∫ w, Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ)) ∂μ)
+        - (charFun μ ((θ / σ) • coordDir 0)
+          - Complex.I * ((θ * r / (2 * σ ^ 3) : ℝ) : ℂ)
+              * multiCharFun μ surrW2 ((θ / σ) • coordDir 0)
+          + Complex.I * ((θ * r ^ 2 / (2 * σ ^ 3) : ℝ) : ℂ)
+              * multiCharFun μ surrW3a ((θ / σ) • coordDir 0)
+          + Complex.I * ((3 * θ * r ^ 2 / (8 * σ ^ 5) : ℝ) : ℂ)
+              * multiCharFun μ surrW3b ((θ / σ) • coordDir 0)
+          - ((θ ^ 2 * r ^ 2 / (8 * σ ^ 6) : ℝ) : ℂ)
+              * multiCharFun μ surrW4 ((θ / σ) • coordDir 0))‖
+      ≤ r ^ 3 * ∫ w, surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2) ∂μ := by
+  have hgm : Measurable fun w : E₂ => surrogateRemGraded θ (w 0 / σ) (w 1 / σ ^ 2) r := by
+    simp only [surrogateRemGraded]
+    fun_prop
+  have hle : ∀ w : E₂, surrogateRemGraded θ (w 0 / σ) (w 1 / σ ^ 2) r
+      ≤ r ^ 3 * surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2) := fun w =>
+    surrogateRemGraded_le θ _ _ hr hr1
+  have hgint : Integrable
+      (fun w : E₂ => surrogateRemGraded θ (w 0 / σ) (w 1 / σ ^ 2) r) μ := by
+    refine Integrable.mono' (hrem.const_mul (r ^ 3)) hgm.aestronglyMeasurable ?_
+    filter_upwards with w
+    rw [Real.norm_eq_abs, abs_of_nonneg (surrogateRemGraded_nonneg _ _ _ hr)]
+    exact hle w
+  refine (norm_integral_cexp_deltaSurrogate_sub_graded_le μ hσ hr hr1 θ h2 h3 h4 h5
+    hgint).trans ?_
+  have hmono := integral_mono hgint (hrem.const_mul (r ^ 3)) hle
+  rwa [MeasureTheory.integral_const_mul] at hmono
+
+/-! ### Residue (ii), re-derived: the transform's own hypotheses fail under a fourth moment
+
+Wave 23 recorded residue (ii) as "`∫ surrogateRemPoly` is a moment of degree nine, infinite
+under a fourth moment". **That understates it, and the understatement matters.** The hypotheses
+`h4` and `h5` of `norm_integral_cexp_deltaSurrogate_sub_le` — the integrability of the weights
+`w₀w₁²` and `(w₀w₁)²` against the law of the root — are themselves *false* for the untruncated
+bivariate root under a finite fourth moment. It is not that the remainder is too large; the
+main terms `M₃ᵇ` and `M₄` do not exist.
+
+The computation is short and worth writing down, with `ξ = X − μ`, `η = ξ² − σ²`,
+`u = n^{-1/2}∑ξᵢ/σ`, `v = n^{-1/2}∑ηᵢ/σ²`. Expanding `E[u²v²]` over the `n⁴` index choices, the
+fully diagonal block `i = j = k = l` contributes `n^{-2}·n·E[ξ²η²]`, and
+`E[ξ²η²] = E[ξ²(ξ² − σ²)²]` is a **sixth** moment of `ξ`. No cancellation removes it: every
+other block is a product of lower moments, all nonnegative after the diagonal is isolated.
+Likewise `E[|u|v²]` has the diagonal block `n^{-3/2}·n·E[|ξ|η²] ≍ E|ξ|⁵`. By contrast `h2` needs
+`E[ξ²|η|] ≍ Eξ⁴` and `h3` needs `E|ξ|³`, both finite — so exactly two of the four weights fail,
+and they are the two that carry `v²`.
+
+`vecRootLaw_one` below makes the claim checkable rather than heuristic: at `n = 1` the law of
+the root *is* the law of the summand, so `h5` reads verbatim `Integrable (ξ·η)² = E[ξ²η²] < ∞`,
+a sixth-moment condition on the sampling law. A law with `Eξ⁴ < ∞ = Eξ⁶` therefore falsifies the
+hypothesis outright.
+
+**The consequence for the programme.** Residues (i) and (ii) of the wave-23 note are *not*
+independent: the `k = 3, 4` estimates asked for by (i) are estimates of quantities that (ii)
+must first make finite. Both are discharged at once by running the expansion on the law of the
+*truncated* summands, and `integrable_surrogate_inputs_of_bounded` is that discharge: once
+`‖Z‖ ≤ K` pointwise, all five hypotheses of `norm_integral_cexp_deltaSurrogate_sub_le` hold for
+every `n`, with no moment hypothesis on `F` whatsoever. The price is
+`abs_measure_pi_sub_comp_le`, and at the classical level `τ = √n` it is `O(n⁻¹)`. -/
+
+/-- **The root of a single observation is the observation.** `vecRootLaw F Z 1 = F ∘ Z⁻¹`.
+
+Stated because it turns the transform's hypotheses at `n = 1` into moment conditions on the
+*sampling* law, where they can be read off: `h5` becomes `E[(⟪Z,e₀⟫⟪Z,e₁⟫)²] < ∞`, a sixth
+moment of `X − μ` for the studentizing pair. -/
+theorem vecRootLaw_one {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+    (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E} (hZ : Measurable Z) :
+    vecRootLaw F Z 1 = F.map Z := by
+  have hfun : (fun y : Fin 1 → ℝ => (Real.sqrt ((1 : ℕ) : ℝ))⁻¹ • ∑ i, Z (y i))
+      = Z ∘ fun y : Fin 1 → ℝ => y 0 := by
+    funext y
+    simp [Fin.sum_univ_one]
+  rw [vecRootLaw, hfun, ← Measure.map_map hZ (measurable_pi_apply (0 : Fin 1)),
+    (MeasureTheory.measurePreserving_eval (fun _ : Fin 1 => F) (0 : Fin 1)).map_eq]
+
+/-- **Truncation discharges every hypothesis of the surrogate's transform, at once.**
+
+If the summand is bounded (`‖Z x‖ ≤ K`), the root's law is carried by the ball of radius `√n·K`
+(`ae_norm_vecRootLaw_le`), so each of the four multilinear weights and the degree-nine envelope
+`surrogateRemPoly` is bounded on the support and hence integrable. **No moment hypothesis on
+`F` is used**: boundedness of the summand replaces all of them.
+
+This is the moment half of residue (ii), and it simultaneously supplies what residue (i) asks
+for at `k = 3, 4` — those weights are the very quantities `h4`, `h5` assert to be finite, and
+under a fourth moment of the untruncated law they are not. -/
+theorem integrable_surrogate_inputs_of_bounded (F : Measure ℝ) [IsProbabilityMeasure F]
+    {Z : ℝ → E₂} (hZ : Measurable Z) {K : ℝ} (hK : ∀ x, ‖Z x‖ ≤ K) (n : ℕ)
+    {σ : ℝ} (hσ : 0 < σ) (θ : ℝ) :
+    Integrable (fun w : E₂ => |w 0 * w 1|) (vecRootLaw F Z n) ∧
+      Integrable (fun w : E₂ => |w 0 ^ 3|) (vecRootLaw F Z n) ∧
+      Integrable (fun w : E₂ => |w 0 * w 1 ^ 2|) (vecRootLaw F Z n) ∧
+      Integrable (fun w : E₂ => |(w 0 * w 1) ^ 2|) (vecRootLaw F Z n) ∧
+      Integrable (fun w : E₂ => surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2))
+        (vecRootLaw F Z n) := by
+  haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
+  set R : ℝ := Real.sqrt (n : ℝ) * K with hRdef
+  have hK0 : (0 : ℝ) ≤ K := le_trans (norm_nonneg _) (hK 0)
+  have hR0 : (0 : ℝ) ≤ R := by rw [hRdef]; positivity
+  have hae : ∀ᵐ w ∂(vecRootLaw F Z n), ‖w‖ ≤ R := ae_norm_vecRootLaw_le F hZ hK n
+  -- the coordinate bound, through the inner product with the coordinate direction
+  have hcoord : ∀ (w : E₂) (i : Fin 2), |w i| ≤ ‖w‖ := by
+    intro w i
+    have hnorm : ‖coordDir i‖ = 1 := by
+      rw [coordDir, EuclideanSpace.norm_single]
+      simp
+    have h := abs_real_inner_le_norm w (coordDir i)
+    rwa [inner_coordDir, hnorm, mul_one] at h
+  have hbox : ∀ᵐ w ∂(vecRootLaw F Z n), |w 0| ≤ R ∧ |w 1| ≤ R := by
+    filter_upwards [hae] with w hw
+    exact ⟨le_trans (hcoord w 0) hw, le_trans (hcoord w 1) hw⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · refine integrable_of_ae_abs_le (by fun_prop) (C := R ^ 2) ?_
+    filter_upwards [hbox] with w hw
+    rw [abs_abs, abs_mul]
+    calc |w 0| * |w 1| ≤ R * R := mul_le_mul hw.1 hw.2 (abs_nonneg _) hR0
+      _ = R ^ 2 := by ring
+  · refine integrable_of_ae_abs_le (by fun_prop) (C := R ^ 3) ?_
+    filter_upwards [hbox] with w hw
+    rw [abs_abs, abs_pow]
+    exact pow_le_pow_left₀ (abs_nonneg _) hw.1 3
+  · refine integrable_of_ae_abs_le (by fun_prop) (C := R ^ 3) ?_
+    filter_upwards [hbox] with w hw
+    rw [abs_abs, abs_mul, abs_pow]
+    have h1 : |w 1| ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (abs_nonneg _) hw.2 2
+    calc |w 0| * |w 1| ^ 2 ≤ R * R ^ 2 :=
+          mul_le_mul hw.1 h1 (by positivity) hR0
+      _ = R ^ 3 := by ring
+  · refine integrable_of_ae_abs_le (by fun_prop) (C := R ^ 4) ?_
+    filter_upwards [hbox] with w hw
+    rw [abs_abs, abs_pow, abs_mul]
+    have h1 : |w 0| * |w 1| ≤ R * R := mul_le_mul hw.1 hw.2 (abs_nonneg _) hR0
+    calc (|w 0| * |w 1|) ^ 2 ≤ (R * R) ^ 2 :=
+          pow_le_pow_left₀ (by positivity) h1 2
+      _ = R ^ 4 := by ring
+  · have hmeas : Measurable fun w : E₂ => surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2) := by
+      simp only [surrogateRemPoly]
+      fun_prop
+    refine integrable_of_ae_abs_le hmeas.aestronglyMeasurable
+      (C := surrogateRemPoly θ (R / σ) (R / σ ^ 2)) ?_
+    filter_upwards [hbox] with w hw
+    obtain ⟨hw0, hw1⟩ := hw
+    rw [abs_of_nonneg (surrogateRemPoly_nonneg _ _ _)]
+    refine surrogateRemPoly_le_of_abs_le θ ?_ ?_
+    · rw [abs_div, abs_of_pos hσ]
+      gcongr
+    · rw [abs_div, abs_of_pos (by positivity : (0 : ℝ) < σ ^ 2)]
+      gcongr
 
 end StudentizedReduction
 
@@ -5429,7 +5832,83 @@ pointwise second-order expansion of its character `norm_cexp_surrogate_sub_expan
 explicit envelope `surrogateRemPoly`, the four multilinear weights and their `multiCharFun`
 identities, the assembled transform `norm_integral_cexp_deltaSurrogate_sub_le` over an arbitrary
 law of the bivariate root, and the closed-form `k = 2` assignment sum
-`multiCharFun_vecRootLaw_two`. -/
+`multiCharFun_vecRootLaw_two`.
+
+**Status after the wave-25 re-derivation.** The `k = 2` estimate is **closed**, and the two
+items wave 23 listed as (i) and (ii) turn out to be **one** item with a common cause, whose
+location is not where wave 23 put it. Two of wave 23's own prescriptions are overturned, and one
+of the prompt's.
+
+* **CLOSED — residue (i) at `k = 2`.** `norm_multiCharFun_vecRootLaw_two_sub_le` supplies the
+  analytic half at the required `O(N^{-1/2})` accuracy:
+  `‖multi_{ρ_N}(b,a) − (κ₀₁φ(c)^{N−1} − κ₀κ₁φ(c)^{N−2})‖ ≤ N^{-1/2}·multiTwoRemConst`. The two
+  ingredients are `norm_integral_ofReal_mul_cexp_sub_le` (new; `‖e^{iy} − 1‖ ≤ |y|`) for the
+  diagonal slot, which needs **no** centring because the diagonal already has its `O(1)` limit
+  at zeroth order, and `norm_mixCharFun_sub_mul_I_le` for the two single slots, where the
+  centring is what keeps the off-diagonal block — multiplicity `N − 1` — from diverging. The
+  off-diagonal limit is `−κ₀κ₁`: same order as the diagonal, **opposite sign**, confirming the
+  wave-23 warning quantitatively. Note also that the multiplicity may be used exactly: the
+  replacement of `N − 1` by `N` costs only `N⁻¹|κ₀κ₁|`.
+* **THE FIRST CORRECTION — residues (i) and (ii) are the same item, and (i) at `k = 3, 4` is
+  not even well posed for the untruncated root.** The hypotheses `h4`, `h5` of
+  `norm_integral_cexp_deltaSurrogate_sub_le` are the integrability of the weights `w₀w₁²` and
+  `(w₀w₁)²` against the root's law — i.e. exactly the quantities residue (i) asks to *estimate*
+  at `k = 3, 4`. With `ξ = X − μ`, `η = ξ² − σ²`, the fully diagonal block of `E[u²v²]` is
+  `n^{-2}·n·E[ξ²η²]`, a **sixth** moment of `ξ`; that of `E[|u|v²]` is `E|ξ|⁵`. So under a finite
+  fourth moment those two weights are **infinite** and there is nothing to estimate. By contrast
+  `h2` needs only `E[ξ²|η|] ≍ Eξ⁴` and `h3` only `E|ξ|³`: exactly the two weights carrying `v²`
+  fail, and they are exactly the two that (i) could not reach. `vecRootLaw_one` makes this
+  checkable rather than heuristic — at `n = 1` the root's law *is* the summand's, so `h5` reads
+  verbatim `E[(ξη)²] < ∞`. Wave 23 recorded only `∫ surrogateRemPoly` as infinite; the main
+  terms are too.
+* **THE SECOND CORRECTION — the truncation level cannot repair `surrogateRemPoly`, at any
+  value.** This overturns wave 23's prescription ("choose the truncation level so both halves
+  are `O(n⁻¹)`; level `√n` is the classical choice") *as stated*, because with the collapsed
+  envelope no level exists. Writing `ũ`, `ṽ` for the roots of the summands truncated at `τ`,
+  the single-large-summand term of a Rosenthal bound gives `E|ũ|^p ≲ 1 + n^{1−p/2}τ^{p−4}` and
+  `E|ṽ|^q ≲ 1 + n^{1−q/2}τ^{2q−4}`. The worst monomial of `surrogateRemPoly` is `|u|³|v|⁶`,
+  entering as `r³|u|³|v|⁶`, so it needs `n^{-2}τ⁸ = O(n^{1/2})`, i.e. `τ = O(n^{5/16})`; the
+  change of law needs `n·Eξ⁴/τ⁴ = O(n⁻¹)`, i.e. `τ ≥ n^{1/2}`. **Incompatible.**
+* **THE REPAIR, and it is in the envelope, not the level.** `surrogateRemPoly` is obtained from
+  the pointwise expansion by collapsing every power of `r` onto a single `r³` — the step
+  `r² ≤ r`, used three times. `surrogateRemGraded` keeps the grading, and then *every* monomial
+  is `O(n⁻¹)` at `τ = √n` and exactly on it: `r³|u|³|v|³ → n^{-3/2}√n`,
+  `r⁴|u|³|v|⁴ → n^{-2}n`, `r⁵|u|³|v|⁵ → n^{-5/2}n^{3/2}`, `r⁶|u|³|v|⁶ → n^{-3}n²`,
+  `r³|u||v|A → n^{-3/2}√n`, `r⁴A² → n^{-2}n`. The classical level is therefore forced from
+  *three* sides — the change of law from below, these moments and `E|ũ|^p ≲ 1` from above.
+  `norm_cexp_surrogate_sub_expansion_graded_le` and
+  `norm_integral_cexp_deltaSurrogate_sub_graded_le` are the graded statements;
+  `surrogateRemGraded_le` shows nothing is lost, and the collapsed forms are kept as corollaries.
+* **BUILT — both halves of the truncated-law replacement.** The price:
+  `measure_pi_exists_coord_mem_le` (union bound over the coordinates of a `Measure.pi`),
+  `abs_measure_pi_sub_comp_le` (`|P(y ∈ s) − P((T yᵢ)ᵢ ∈ s)| ≤ n·F{T x ≠ x}`, for an arbitrary
+  measurable `T` and an arbitrary measurable event, by the exact coupling off the bad event) and
+  `measure_abs_gt_le_fourth_moment` (Markov). **This is a third conflation corrected**: wave 21
+  and wave 23 both recorded the price as `measure_pi_truncated_sum_le_exp`, which bounds the
+  tail of a truncated *sum* — the object (X3)(b) consumes, not this one. The moment half:
+  `ae_norm_vecRootLaw_le` (a bounded summand gives a root with bounded support) and
+  `integrable_surrogate_inputs_of_bounded`, which discharges **all five** hypotheses of the
+  transform for every `n` under `‖Z‖ ≤ K` alone.
+
+Net after wave 25 the residue is **two** items, and the second is a composition:
+(i) the `k = 3, 4` estimates, at `O(1)` accuracy, **on the truncated law** — where the
+    quantities are now finite (`integrable_surrogate_inputs_of_bounded`) and the moments of the
+    truncated summands are the ones tabulated above. Their combinatorial half is the partition
+    lattice of `Fin k` rather than a single diagonal; the `k = 2` proof is the template, and the
+    counting is the only new work. Note that boundedness alone does **not** give the `O(1)`
+    bound — at `τ = √n` the support radius is `√n·K ≍ n^{3/2}` — so the centring and the
+    assignment counting are still needed; boundedness only makes the quantities exist;
+(ii) the Esseen chain on top, unchanged from wave 23's description: a composition of
+    `abs_measure_Iic_sub_densityCDF_le_charFun`, `esseen_split`,
+    `exists_bound_norm_charFun_vecRootLaw_studentPair` for the outer range and
+    `norm_integral_cexp_deltaSurrogate_sub_graded_le` for the window, in the shape
+    `abs_meanRootCDF_sub_edgeworthCDF_le` has in the scalar case — now with the change of law
+    `abs_measure_pi_sub_comp_le` inserted once, at the outermost level.
+
+Proved and axiom-clean after wave 25: everything listed after wave 23, **and** the `k = 2`
+estimate `norm_multiCharFun_vecRootLaw_two_sub_le` with its zeroth-order slot brick, the graded
+envelope with its expansion and its transform, the bounded-support moment brick, and the three
+change-of-law bricks. -/
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
@@ -5539,7 +6018,22 @@ showed that two analytic items, not zero, stand between that and the Esseen chai
 `multiCharFun_vecRootLaw_two`, and whose off-diagonal block is of the *same order* as the
 diagonal, so the `k = 1` intuition is quantitatively wrong), and the truncated-law replacement
 that makes `∫ surrogateRemPoly` — a ninth moment of the root's coordinates — finite under a
-fourth moment. See the wave-23 note on `edgeworth_studentized_uniform`. -/
+fourth moment. See the wave-23 note on `edgeworth_studentized_uniform`.
+
+**After the wave-25 re-derivation those two items are one, the `k = 2` half is closed, and this
+corollary still adds nothing.** `norm_multiCharFun_vecRootLaw_two_sub_le` is the `k = 2` estimate
+at the required `O(N^{-1/2})` accuracy. What the re-derivation found is that the `k = 3, 4`
+weights and the "truncated-law replacement" are the *same* item: under a finite fourth moment the
+weights `w₀w₁²` and `(w₀w₁)²` of the root are **infinite** (their diagonal blocks are `E|ξ|⁵` and
+`E[ξ²η²] ≍ Eξ⁶`), so `h4` and `h5` of the transform are false and there is nothing at `k = 3, 4`
+to estimate until the summands are truncated. It also found that the truncation *level* cannot
+repair the collapsed envelope `surrogateRemPoly` — the requirement `τ = O(n^{5/16})` from its
+worst monomial is incompatible with the requirement `τ ≥ n^{1/2}` from the change of law — and
+that the repair is the **grading** of the envelope in `r` (`surrogateRemGraded`), after which
+`τ = √n` makes every monomial exactly `O(n⁻¹)`. Both halves of the replacement are now built
+(`abs_measure_pi_sub_comp_le` for the price, `integrable_surrogate_inputs_of_bounded` for the
+moments). What remains over there is the `k = 3, 4` counting on the truncated law and the Esseen
+chain. See the wave-25 note on `edgeworth_studentized_uniform`. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
