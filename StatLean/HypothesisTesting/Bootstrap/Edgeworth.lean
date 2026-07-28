@@ -3597,6 +3597,357 @@ theorem exists_measurable_charFun_map_eq_one :
   simp_rw [hpt]
   simp
 
+/-! ### The outer range, re-derived: the root's Cramér tail *does* transfer, by synthesis
+
+`exists_measurable_charFun_map_eq_one` says that no implication "root's tail ⟹ pushforward's
+tail" holds for a *general measurable* functional. It does not say the surrogate's outer-range
+bound is unobtainable from the root's — and it is not. What the witness rules out is a transfer
+that uses nothing about the functional; what a transfer can use is that `Hₙ` is a **polynomial
+with non-vanishing gradient on the bulk**, so that the multiplier `w ↦ e^{iθHₙ(w)}` is, after a
+cut-off, a *superposition of characters at frequencies clustered around the carrier*
+`t₀ = θ∇Hₙ(0) = (θ/σ)e₀`. Pairing that superposition with the law of the root turns the root's
+characteristic function into the surrogate's:
+
+`∫ e^{iθHₙ} dρ = ∫ â(s) φ_ρ(t₀ + s) ds`,
+
+and every frequency that appears satisfies `‖t₀ + s‖ ≥ ‖t₀‖ − R ≥ ε₀√n`, which is exactly the
+region where `exists_bound_norm_charFun_vecRootLaw_studentPair` gives `cⁿ`. That is the content
+of `fourierSynth`, `integral_fourierSynth`, `norm_integral_fourierSynth_le` and
+`norm_charFun_map_deltaSurrogate_vecRootLaw_le` below: the outer range of the Esseen chain is a
+**proved** consequence of the root's Cramér tail together with a Fourier certificate for the
+multiplier, `HasFourierCertificate`, which is a deterministic statement with no probability in
+it.
+
+The three constants of a certificate are exactly the three things the arithmetic constrains, and
+none of them is tight. Writing `M` for the cut-off radius and `R = |θ|/(2σ)` for the admitted
+bandwidth:
+
+* the mass `Γ = ∫‖â‖` may be **polynomial** in `n` — it multiplies `cⁿ`;
+* the leakage `ε = ∫_{‖s‖>R}‖â‖` must be `O(n^{-3/2})`. The multiplier whose transform `â` is
+  is `w ↦ e^{iθ(Hₙ(w) − w₀/σ)}χ(w/M)`, whose phase has gradient `θ∇(Hₙ − w₀/σ) = O(θrM) = O(M)`;
+  with `M = n^{3/8}` and `R ≍ √n` the ratio is `n^{-1/8}` per integration by parts, so twelve of
+  them suffice;
+* the `L¹(ρ)` error `η` is at most `ρ{‖w‖ > M}`, and at `M = n^{3/8}` a fourth moment of the
+  root gives `O(n^{-3/2})`.
+
+**The correction this records.** The wave-26 note and the wave-27 prompt prescribe Hall's
+conditioning device — freeze `n − k` coordinates, linearise `Hₙ` in the free block, and multiply
+the conditional Cramér bounds. That composition **cannot reach `O(n^{-3/2})`, at any `k`**, and
+the reason is deterministic: `deltaSurrogate_sub_linear_ge` shows the linearisation error of
+`Hₙ` at an increment `h` is *at least* `r|h₀h₁|/(2σ³)` whenever `h₀ ≥ 0` — the second-order term
+`−uvr/2` is not cancelled by the two third-order terms, it is reinforced by them once `h₁ ≤ 0`.
+On a free block of `k` coordinates the increment has `|h₀| ≍ σ√(k/n)` and `|h₁| ≍ σ²√(k/n)`, so
+with `|θ| ≍ √n` and `r = n^{-1/2}` the additive price of the linearisation is
+`|θ| · r · |h₀h₁|/(2σ³) ≍ k/n`, while the Cramér gain from the block is `ρ^k`. The first
+demands `k = O(n^{-1/2})` and the second `k ≍ n`: **incompatible**, exactly as wave 25 found for
+the truncation level. Freezing the second coordinate instead (Hall's own variant: condition on
+`|X_i − m|`, leaving the signs free) removes the `uv` term but leaves `u³r²/2`, and the same
+computation gives a price `≍ k n^{-1/2}/n^{0}`, again `O(n^{-1/2})` at `k ≍ n`. The
+linearisation bookkeeping — "bound `E e^{i(L+R)}` by `E e^{iL}` plus `E|R|`" — is what fails; a
+transfer that keeps the whole phase and moves it to the frequency side does not.
+
+`HasFourierCertificate` is therefore the single remaining item, and it is *smaller* than the
+statement it replaces: it is a fact about one explicit polynomial phase against Lebesgue measure
+on `ℝ²`, with no sampling law, no `n`-fold product and no conditioning in it. -/
+
+/-- The **Fourier synthesis** of a weight `a ∈ L¹(ℝ²)` around a carrier frequency `t₀`:
+`w ↦ ∫ a(s) e^{i⟪w, t₀+s⟫} ds`. Pairing it against a law is what turns a bound on that law's
+characteristic function into a bound on an integral of a *nonlinear* multiplier. -/
+noncomputable def fourierSynth (a : E₂ → ℂ) (t₀ : E₂) (w : E₂) : ℂ :=
+  ∫ s : E₂, a s * Complex.exp ((⟪w, t₀ + s⟫ : ℝ) * Complex.I)
+
+private lemma continuous_synthKernel (t₀ : E₂) :
+    Continuous fun p : E₂ × E₂ => Complex.exp ((⟪p.1, t₀ + p.2⟫ : ℝ) * Complex.I) := by
+  have hinner : Continuous fun p : E₂ × E₂ => (⟪p.1, t₀ + p.2⟫ : ℝ) :=
+    continuous_inner.comp (continuous_fst.prodMk (continuous_const.add continuous_snd))
+  exact Complex.continuous_exp.comp
+    ((Complex.continuous_ofReal.comp hinner).mul continuous_const)
+
+private lemma aesm_synthKernel (μ : Measure E₂) {a : E₂ → ℂ} (ha : Integrable a) (t₀ : E₂) :
+    AEStronglyMeasurable
+      (fun p : E₂ × E₂ => a p.2 * Complex.exp ((⟪p.1, t₀ + p.2⟫ : ℝ) * Complex.I))
+      (μ.prod volume) :=
+  (ha.aestronglyMeasurable.comp_snd).mul (continuous_synthKernel t₀).aestronglyMeasurable
+
+private lemma norm_synthKernel (t₀ : E₂) (a : E₂ → ℂ) (w s : E₂) :
+    ‖a s * Complex.exp ((⟪w, t₀ + s⟫ : ℝ) * Complex.I)‖ = ‖a s‖ := by
+  rw [norm_mul, Complex.norm_exp_ofReal_mul_I, mul_one]
+
+private lemma integrable_synthKernel (μ : Measure E₂) [IsFiniteMeasure μ] {a : E₂ → ℂ}
+    (ha : Integrable a) (t₀ : E₂) :
+    Integrable (fun p : E₂ × E₂ => a p.2 * Complex.exp ((⟪p.1, t₀ + p.2⟫ : ℝ) * Complex.I))
+      (μ.prod volume) := by
+  refine (integrable_prod_iff (aesm_synthKernel μ ha t₀)).2 ⟨?_, ?_⟩
+  · filter_upwards with w
+    refine Integrable.mono' ha.norm ?_ (Filter.Eventually.of_forall fun s => ?_)
+    · exact ha.aestronglyMeasurable.mul
+        ((continuous_synthKernel t₀).comp (Continuous.prodMk continuous_const
+          continuous_id)).aestronglyMeasurable
+    · exact le_of_eq (norm_synthKernel t₀ a w s)
+  · have hcongr : ∀ w : E₂,
+        (∫ s : E₂, ‖a s * Complex.exp ((⟪w, t₀ + s⟫ : ℝ) * Complex.I)‖)
+          = ∫ s : E₂, ‖a s‖ := fun w =>
+      integral_congr_ae (Filter.Eventually.of_forall fun s => norm_synthKernel t₀ a w s)
+    simp_rw [hcongr]
+    exact integrable_const _
+
+/-- A synthesis with an integrable weight is integrable against any finite measure. -/
+lemma integrable_fourierSynth (μ : Measure E₂) [IsFiniteMeasure μ] {a : E₂ → ℂ}
+    (ha : Integrable a) (t₀ : E₂) : Integrable (fourierSynth a t₀) μ :=
+  (integrable_synthKernel μ ha t₀).integral_prod_left
+
+/-- **Synthesis is the adjoint of the characteristic function.**
+`∫ (synthesis of a) dμ = ∫ a(s) φ_μ(t₀ + s) ds`. This is the identity that moves an integral of
+a *nonlinear* multiplier against a law onto the frequency side, where the law is only ever seen
+through `φ_μ`. -/
+lemma integral_fourierSynth (μ : Measure E₂) [IsFiniteMeasure μ] {a : E₂ → ℂ}
+    (ha : Integrable a) (t₀ : E₂) :
+    ∫ w, fourierSynth a t₀ w ∂μ = ∫ s : E₂, a s * charFun μ (t₀ + s) := by
+  have hswap := integral_integral_swap (μ := μ) (ν := (volume : Measure E₂))
+    (f := fun w s => a s * Complex.exp ((⟪w, t₀ + s⟫ : ℝ) * Complex.I))
+    (integrable_synthKernel μ ha t₀)
+  have hinner : ∀ s : E₂,
+      (∫ w, a s * Complex.exp ((⟪w, t₀ + s⟫ : ℝ) * Complex.I) ∂μ)
+        = a s * charFun μ (t₀ + s) := by
+    intro s
+    have h := MeasureTheory.integral_const_mul (μ := μ) (a s)
+      (fun w : E₂ => Complex.exp ((⟪w, t₀ + s⟫ : ℝ) * Complex.I))
+    exact h.trans (by rw [charFun_apply]; rfl)
+  simp only [fourierSynth]
+  rw [hswap]
+  exact integral_congr_ae (Filter.Eventually.of_forall hinner)
+
+/-- The synthesis is bounded by the mass of its weight. -/
+lemma norm_fourierSynth_le {a : E₂ → ℂ} (t₀ : E₂) (w : E₂) :
+    ‖fourierSynth a t₀ w‖ ≤ ∫ s : E₂, ‖a s‖ := by
+  rw [fourierSynth]
+  refine (norm_integral_le_integral_norm _).trans (le_of_eq ?_)
+  refine integral_congr_ae (Filter.Eventually.of_forall fun s => ?_)
+  simp only [norm_mul, Complex.norm_exp_ofReal_mul_I, mul_one]
+
+/-- **The transfer inequality.** If the characteristic function of `μ` is at most `κ` on the
+whole band `‖t‖ ≥ ‖t₀‖ − R`, then the synthesis of a weight of mass `Γ` whose leakage past
+radius `R` is `ε` integrates to at most `Γκ + ε`.
+
+The two terms are the two things a certificate has to pay for: frequencies inside the band see
+the small bound `κ`, frequencies outside it are only known to see `‖φ_μ‖ ≤ 1` and must therefore
+carry little mass. -/
+theorem norm_integral_fourierSynth_le (μ : Measure E₂) [IsProbabilityMeasure μ]
+    {a : E₂ → ℂ} (ha : Integrable a) (t₀ : E₂) {R Γ ε κ : ℝ} (hκ : 0 ≤ κ)
+    (hΓ : ∫ s : E₂, ‖a s‖ ≤ Γ)
+    (htail : ∫ s in {s : E₂ | R < ‖s‖}, ‖a s‖ ≤ ε)
+    (hbd : ∀ t : E₂, ‖t₀‖ - R ≤ ‖t‖ → ‖charFun μ t‖ ≤ κ) :
+    ‖∫ w, fourierSynth a t₀ w ∂μ‖ ≤ Γ * κ + ε := by
+  set A : Set E₂ := {s : E₂ | R < ‖s‖} with hAdef
+  have hA : MeasurableSet A := measurableSet_lt measurable_const continuous_norm.measurable
+  set g : E₂ → ℂ := fun s => a s * charFun μ (t₀ + s) with hgdef
+  have hgm : AEStronglyMeasurable g volume :=
+    ha.aestronglyMeasurable.mul
+      ((continuous_charFun.comp (continuous_const.add continuous_id)).aestronglyMeasurable)
+  have hgle : ∀ s : E₂, ‖g s‖ ≤ ‖a s‖ := by
+    intro s
+    rw [hgdef, norm_mul]
+    exact le_of_le_of_eq (mul_le_of_le_one_right (norm_nonneg _) (norm_charFun_le_one _)) rfl
+  have hgint : Integrable g := Integrable.mono' ha.norm hgm
+    (Filter.Eventually.of_forall hgle)
+  rw [integral_fourierSynth μ ha t₀, ← integral_add_compl hA hgint]
+  refine (norm_add_le _ _).trans ?_
+  have hAbd : ‖∫ s in A, g s‖ ≤ ε :=
+    (norm_integral_le_integral_norm _).trans
+      (le_trans (setIntegral_mono hgint.norm.integrableOn ha.norm.integrableOn hgle) htail)
+  have hAcbd : ‖∫ s in Aᶜ, g s‖ ≤ Γ * κ := by
+    refine (norm_integral_le_integral_norm _).trans ?_
+    have hstep : ∫ s in Aᶜ, ‖g s‖ ≤ ∫ s in Aᶜ, ‖a s‖ * κ := by
+      refine setIntegral_mono_on hgint.norm.integrableOn
+        ((ha.norm.mul_const κ).integrableOn) hA.compl ?_
+      intro s hs
+      have hsR : ‖s‖ ≤ R := not_lt.1 hs
+      have hge : ‖t₀‖ - R ≤ ‖t₀ + s‖ := by
+        have h1 : ‖t₀‖ ≤ ‖t₀ + s‖ + ‖s‖ := by simpa using norm_sub_le (t₀ + s) s
+        linarith
+      rw [hgdef, norm_mul]
+      exact mul_le_mul_of_nonneg_left (hbd _ hge) (norm_nonneg _)
+    have hmul : ∫ s in Aᶜ, ‖a s‖ * κ = (∫ s in Aᶜ, ‖a s‖) * κ :=
+      MeasureTheory.integral_mul_const _ _
+    have hle : ∫ s in Aᶜ, ‖a s‖ ≤ Γ :=
+      le_trans (setIntegral_le_integral ha.norm
+        (Filter.Eventually.of_forall fun s => norm_nonneg _)) hΓ
+    calc ∫ s in Aᶜ, ‖g s‖ ≤ (∫ s in Aᶜ, ‖a s‖) * κ := by rw [← hmul]; exact hstep
+      _ ≤ Γ * κ := mul_le_mul_of_nonneg_right hle hκ
+  linarith
+
+/-- **A Fourier certificate for the surrogate's multiplier.** The deterministic datum that
+turns the root's Cramér tail into the surrogate's outer-range bound: a weight `a ∈ L¹(ℝ²)` of
+mass at most `Γ`, with at most `ε` of that mass outside the ball of radius `R`, whose synthesis
+around the carrier `t₀` reproduces `e^{iθHₙ}` up to `η` in `L¹(μ)`.
+
+The intended witness is `a = 𝓕[w ↦ e^{iθ(Hₙ(w) − w₀/σ)}χ(w/M)]` with `t₀ = (θ/σ)e₀` the carrier
+of the leading character, `χ` a smooth cut-off and `M` the bulk radius; then `η` is at most
+`μ{‖w‖ > M}`, `R` may be taken to be `|θ|/(2σ)`, and `Γ`, `ε` are the `L¹` mass and the
+high-frequency leakage of the transform of a compactly supported smooth function whose phase
+oscillates at frequency `O(M)`. Nothing about the sampling law enters. -/
+def HasFourierCertificate (μ : Measure E₂) (σ r θ : ℝ) (t₀ : E₂) (R Γ ε η : ℝ) : Prop :=
+  ∃ a : E₂ → ℂ, Integrable a ∧ (∫ s : E₂, ‖a s‖) ≤ Γ ∧
+    (∫ s in {s : E₂ | R < ‖s‖}, ‖a s‖) ≤ ε ∧
+    (∫ w, ‖Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ))
+      - fourierSynth a t₀ w‖ ∂μ) ≤ η
+
+/-- **A certificate from an exact synthesis on the bulk.** If the synthesis reproduces the
+multiplier *exactly* on a set `S` — which is what Fourier inversion gives for a cut-off
+multiplier, on the set where the cut-off is `1` — and misses it by at most `B` off `S`, then the
+`L¹(μ)` error costs only `B · μ(Sᶜ)`.
+
+**The bound `B` must be supplied, not read off from `Γ`.** The crude estimate
+`‖e^{iθHₙ} − synthesis‖ ≤ 1 + Γ` is useless here, because `Γ` is polynomially large in `n` and
+would force the bulk to carry all but `n^{-3/2-K}` of the mass. For the intended witness
+`B = 1`: the synthesis is *exactly* `e^{iθHₙ(w)}χ(w/M)`, so the difference is
+`e^{iθHₙ(w)}(1 − χ(w/M))`, of modulus at most `1` and vanishing on the bulk. With `S` the ball
+of radius `M` and `M = n^{3/8}`, a fourth moment of the root prices `μ(Sᶜ)` at `O(n^{-3/2})` —
+the accuracy the Esseen split needs. -/
+theorem hasFourierCertificate_of_eqOn (μ : Measure E₂) [IsProbabilityMeasure μ]
+    (σ r θ : ℝ) {a : E₂ → ℂ} (ha : Integrable a) (t₀ : E₂) {R Γ ε η B : ℝ}
+    (hΓ : ∫ s : E₂, ‖a s‖ ≤ Γ) (htail : ∫ s in {s : E₂ | R < ‖s‖}, ‖a s‖ ≤ ε)
+    {S : Set E₂} (hS : MeasurableSet S)
+    (heq : ∀ w ∈ S, fourierSynth a t₀ w
+      = Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ)))
+    (hout : ∀ w ∈ Sᶜ, ‖Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ))
+      - fourierSynth a t₀ w‖ ≤ B)
+    (hη : B * (μ Sᶜ).toReal ≤ η) :
+    HasFourierCertificate μ σ r θ t₀ R Γ ε η := by
+  refine ⟨a, ha, hΓ, htail, ?_⟩
+  set f : E₂ → ℂ :=
+    fun w => Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ)) with hfdef
+  have hfmeas : Measurable f := by
+    have h1 : Measurable fun w : E₂ => (θ * deltaSurrogate σ r w : ℝ) :=
+      (measurable_deltaSurrogate σ r).const_mul θ
+    exact Complex.measurable_exp.comp ((Complex.measurable_ofReal.comp h1).const_mul Complex.I)
+  have hfnorm : ∀ w : E₂, ‖f w‖ = 1 := by
+    intro w
+    rw [hfdef]
+    simp [Complex.norm_exp]
+  have hfint : Integrable f μ :=
+    Integrable.mono' (integrable_const (1 : ℝ)) hfmeas.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun w => le_of_eq (hfnorm w))
+  have hsint : Integrable (fourierSynth a t₀) μ := integrable_fourierSynth μ ha t₀
+  have hdint : Integrable (fun w => ‖f w - fourierSynth a t₀ w‖) μ := (hfint.sub hsint).norm
+  have hsplit : (∫ w, ‖f w - fourierSynth a t₀ w‖ ∂μ)
+      = (∫ w in S, ‖f w - fourierSynth a t₀ w‖ ∂μ)
+        + ∫ w in Sᶜ, ‖f w - fourierSynth a t₀ w‖ ∂μ :=
+    (integral_add_compl hS hdint).symm
+  have hSzero : (∫ w in S, ‖f w - fourierSynth a t₀ w‖ ∂μ) = 0 := by
+    refine integral_eq_zero_of_ae ?_
+    filter_upwards [ae_restrict_mem hS] with w hw
+    rw [heq w hw, sub_self, norm_zero]
+    rfl
+  have hSc : (∫ w in Sᶜ, ‖f w - fourierSynth a t₀ w‖ ∂μ) ≤ B * (μ Sᶜ).toReal := by
+    have hmono : (∫ w in Sᶜ, ‖f w - fourierSynth a t₀ w‖ ∂μ) ≤ ∫ _w in Sᶜ, B ∂μ :=
+      setIntegral_mono_on hdint.integrableOn (integrable_const _) hS.compl
+        (fun w hw => hout w hw)
+    have hconst : (∫ _w in Sᶜ, B ∂μ) = (μ Sᶜ).toReal * B := by
+      rw [setIntegral_const, smul_eq_mul, measureReal_def]
+    rw [hconst] at hmono
+    linarith [hmono]
+  rw [hsplit, hSzero, zero_add]
+  exact hSc.trans hη
+
+/-- **The outer-range bound for the surrogate, from a certificate and a Cramér band.**
+`‖φ_{μ∘Hₙ⁻¹}(θ)‖ ≤ Γκ + ε + η` whenever `‖φ_μ‖ ≤ κ` on the band `‖t‖ ≥ ‖t₀‖ − R`. -/
+theorem norm_charFun_map_deltaSurrogate_le_of_certificate (μ : Measure E₂)
+    [IsProbabilityMeasure μ] (σ r θ : ℝ) {t₀ : E₂} {R Γ ε η κ : ℝ} (hκ : 0 ≤ κ)
+    (hcert : HasFourierCertificate μ σ r θ t₀ R Γ ε η)
+    (hbd : ∀ t : E₂, ‖t₀‖ - R ≤ ‖t‖ → ‖charFun μ t‖ ≤ κ) :
+    ‖charFun (μ.map (deltaSurrogate σ r)) θ‖ ≤ Γ * κ + ε + η := by
+  obtain ⟨a, ha, hΓ, htail, happrox⟩ := hcert
+  rw [charFun_map_deltaSurrogate]
+  set f : E₂ → ℂ :=
+    fun w => Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ)) with hfdef
+  have hfmeas : Measurable f := by
+    have h1 : Measurable fun w : E₂ => (θ * deltaSurrogate σ r w : ℝ) :=
+      (measurable_deltaSurrogate σ r).const_mul θ
+    exact Complex.measurable_exp.comp ((Complex.measurable_ofReal.comp h1).const_mul Complex.I)
+  have hfnorm : ∀ w : E₂, ‖f w‖ = 1 := by
+    intro w
+    rw [hfdef]
+    simp [Complex.norm_exp]
+  have hfint : Integrable f μ :=
+    Integrable.mono' (integrable_const (1 : ℝ)) hfmeas.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun w => le_of_eq (hfnorm w))
+  have hsint : Integrable (fourierSynth a t₀) μ := integrable_fourierSynth μ ha t₀
+  have hsplit : (∫ w, f w ∂μ)
+      = (∫ w, (f w - fourierSynth a t₀ w) ∂μ) + ∫ w, fourierSynth a t₀ w ∂μ := by
+    rw [integral_sub hfint hsint]
+    ring
+  calc ‖∫ w, f w ∂μ‖
+      = ‖(∫ w, (f w - fourierSynth a t₀ w) ∂μ) + ∫ w, fourierSynth a t₀ w ∂μ‖ := by
+        rw [← hsplit]
+    _ ≤ ‖∫ w, (f w - fourierSynth a t₀ w) ∂μ‖ + ‖∫ w, fourierSynth a t₀ w ∂μ‖ :=
+        norm_add_le _ _
+    _ ≤ η + (Γ * κ + ε) :=
+        add_le_add (le_trans (norm_integral_le_integral_norm _) happrox)
+          (norm_integral_fourierSynth_le μ ha t₀ hκ hΓ htail hbd)
+    _ = Γ * κ + ε + η := by ring
+
+/-- **The outer range of the Esseen chain, on the surrogate's law, from the root's Cramér
+tail.** The composition `exists_bound_norm_charFun_vecRootLaw_studentPair` (which gives `cⁿ` on
+`‖t‖ ≥ ε₀√n`) with a certificate whose admitted band `‖t₀‖ − R` clears `ε₀√n`:
+
+`‖φ_{ρₙ∘Hₙ⁻¹}(θ)‖ ≤ Γcⁿ + ε + η`.
+
+This is the statement wave 26 recorded as "not a composition". It *is* one — the missing datum
+was not a probabilistic estimate but the certificate, and `exists_measurable_charFun_map_eq_one`
+is consistent with that: its two-valued witness admits no certificate with small leakage,
+because the Fourier transform of an indicator has no decay. -/
+theorem norm_charFun_map_deltaSurrogate_vecRootLaw_le
+    (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E₂} (hZ : Measurable Z)
+    {n : ℕ} {c ε₀ : ℝ} (hc : 0 ≤ c)
+    (hcram : ∀ t : E₂, ε₀ * Real.sqrt (n : ℝ) ≤ ‖t‖ →
+      ‖charFun (vecRootLaw F Z n) t‖ ≤ c ^ n)
+    (σ r θ : ℝ) {t₀ : E₂} {R Γ ε η : ℝ}
+    (hR : ε₀ * Real.sqrt (n : ℝ) ≤ ‖t₀‖ - R)
+    (hcert : HasFourierCertificate (vecRootLaw F Z n) σ r θ t₀ R Γ ε η) :
+    ‖charFun ((vecRootLaw F Z n).map (deltaSurrogate σ r)) θ‖ ≤ Γ * c ^ n + ε + η := by
+  haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
+  exact norm_charFun_map_deltaSurrogate_le_of_certificate _ σ r θ (pow_nonneg hc n) hcert
+    (fun t ht => hcram t (le_trans hR ht))
+
+/-- **The linearisation of the surrogate has a one-sided error, and it is of the full second
+order.** For every increment `h` with `h₀ ≥ 0`,
+
+`Hₙ(h) − h₀/σ ≥ r h₀(−h₁)/(2σ³)`,
+
+`h₀/σ` being `Hₙ(0) + ⟪∇Hₙ(0), h⟫`. Once `h₁ ≤ 0` all three of the surrogate's nonlinear terms
+are nonnegative, so nothing cancels the second-order term `−uvr/2`: the error is *at least*
+`r h₀|h₁|/(2σ³)`, not `o(r|h|²)`.
+
+This is what kills the conditioning-by-linearisation route to the outer range. On a free block
+of `k` of the `n` coordinates the increment of the root has `|h₀| ≍ σ√(k/n)`, `|h₁| ≍ σ²√(k/n)`,
+so at `|θ| ≍ √n` and `r = n^{-1/2}` the phase error `|θ|·(Hₙ(w + h) − Hₙ(w) − ⟪∇Hₙ(w), h⟫)` is
+of order `k/n`, whereas the Cramér gain the block buys is `ρ^k`. Making the first `O(n^{-3/2})`
+forces `k = O(n^{-1/2})` and making the second small forces `k ≍ n`. See the section note. -/
+theorem deltaSurrogate_sub_linear_ge {σ : ℝ} (hσ : 0 < σ) (r : ℝ) (h : E₂) (ha : 0 ≤ h 0) :
+    r * h 0 * (-h 1) / (2 * σ ^ 3) ≤ deltaSurrogate σ r h - h 0 / σ := by
+  have hu : 0 ≤ h 0 / σ := div_nonneg ha hσ.le
+  have h1 : (0 : ℝ) ≤ (h 0 / σ) ^ 3 * r ^ 2 / 2 :=
+    div_nonneg (mul_nonneg (pow_nonneg hu 3) (sq_nonneg r)) (by norm_num)
+  have h2 : (0 : ℝ) ≤ 3 * (h 0 / σ) * (h 1 / σ ^ 2) ^ 2 * r ^ 2 / 8 :=
+    div_nonneg (mul_nonneg (mul_nonneg (mul_nonneg (by norm_num) hu) (sq_nonneg _))
+      (sq_nonneg r)) (by norm_num)
+  have h3 : r * h 0 * (-h 1) / (2 * σ ^ 3) = -((h 0 / σ) * (h 1 / σ ^ 2) * r / 2) := by
+    field_simp
+  rw [deltaSurrogate, h3]
+  linarith
+
+/-- The one-sided bound of `deltaSurrogate_sub_linear_ge`, read as a lower bound on the size of
+the linearisation error in the quadrant `h₀ ≥ 0 ≥ h₁`. -/
+theorem abs_deltaSurrogate_sub_linear_ge {σ : ℝ} (hσ : 0 < σ) {r : ℝ} (hr : 0 ≤ r) (h : E₂)
+    (ha : 0 ≤ h 0) (hb : h 1 ≤ 0) :
+    r * h 0 * |h 1| / (2 * σ ^ 3) ≤ |deltaSurrogate σ r h - h 0 / σ| := by
+  have habs : |h 1| = -h 1 := abs_of_nonpos hb
+  have hnn : 0 ≤ r * h 0 * (-h 1) / (2 * σ ^ 3) :=
+    div_nonneg (mul_nonneg (mul_nonneg hr ha) (neg_nonneg.2 hb)) (by positivity)
+  rw [habs]
+  exact le_trans (deltaSurrogate_sub_linear_ge hσ r h ha) (le_abs_self _)
+
 /-! ### Residue (ii), re-derived: the transform's own hypotheses fail under a fourth moment
 
 Wave 23 recorded residue (ii) as "`∫ surrogateRemPoly` is a moment of degree nine, infinite
@@ -3867,6 +4218,50 @@ lemma norm_studentPair_truncAt_le (F : Measure ℝ) {τ : ℝ} (hτ : 0 ≤ τ) 
       exact pow_le_pow_left₀ (abs_nonneg _) hb 2
     linarith
   linarith
+
+/-- **(W27) The one remaining analytic item of the studentized expansion, as a named brick.**
+
+For the law of the truncated bivariate root there is, at every `n` and every outer frequency
+`|θ| ≥ c₀√n`, a Fourier certificate for the surrogate's multiplier: carrier
+`t₀ = (θ/σ)e₀` (the frequency of the leading character `e^{iθw₀/σ}`), admitted bandwidth
+`R = |θ|/(2σ)` — so the whole band that is used satisfies `‖t₀‖ − R = |θ|/(2σ) ≥ c₀√n/(2σ)`,
+which is where `exists_bound_norm_charFun_vecRootLaw_studentPair` gives `cⁿ` — mass `Γ n`
+growing at most polynomially, leakage and `L¹` error `O(n^{-3/2})`.
+
+Granting this, `norm_charFun_map_deltaSurrogate_vecRootLaw_le` produces the outer-range bound
+`Γ n·cⁿ + O(n^{-3/2}) = O(n^{-3/2})` that `esseen_split` consumes at `δ = n⁻¹`, `ρ = c√n`, and
+the studentized expansion closes.
+
+**Why this is the right shape.** The intended construction is
+`a = 𝓕[w ↦ e^{iθ(Hₙ(w) − w₀/σ)}χ(w/M)]` at `M = n^{3/8}` with `χ` a smooth cut-off equal to `1`
+on the unit ball; then `fourierSynth a t₀ w = e^{iθHₙ(w)}χ(w/M)` by Fourier inversion, so
+`hasFourierCertificate_of_eqOn` applies with `B = 1` and `η ≤ ρ_n{‖w‖ > M} = O(M^{-4})`, a
+fourth moment of the root. The phase `θ(Hₙ − w₀/σ)` has gradient `O(θrM) = O(M)`, so `N`
+integrations by parts give `‖s‖^N|a(s)| ≲ M^{N+2}` and the leakage past `R ≍ √n` is
+`O(M^{N+2}R^{2−N}) = O(n^{7/4 − N/8})`; `N = 26` suffices. The mass `Γ` is polynomial in `M`,
+hence in `n`, which is all that is needed against `cⁿ`.
+
+**This replaces, and is strictly smaller than, the conditioning device the wave-26 note and the
+wave-27 prompt prescribed.** It is a statement about one explicit polynomial phase against
+Lebesgue measure on `ℝ²` — no sampling law, no `n`-fold product, no conditioning. The route it
+replaces is not merely harder: `deltaSurrogate_sub_linear_ge` shows it cannot work at all, since
+the linearisation error over a free block of `k` coordinates costs `≍ k/n` in the phase while
+the Cramér gain is only `ρ^k`. -/
+theorem exists_fourierCertificate_deltaSurrogate
+    -- USER-INPUT: finite fourth moment of the sampling law, which is what prices the bulk
+    (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F)
+    -- USER-INPUT: the scale of the surrogate, and the outer range
+    {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) :
+    ∃ (Γ : ℕ → ℝ) (C : ℝ) (K : ℕ), 0 < C ∧ (∀ n : ℕ, Γ n ≤ C * (n : ℝ) ^ K) ∧
+      ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ * Real.sqrt (n : ℝ) ≤ |θ| →
+        HasFourierCertificate
+          (vecRootLaw F
+            (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n)
+          σ ((Real.sqrt (n : ℝ))⁻¹) θ ((θ / σ) • coordDir 0) (|θ| / (2 * σ))
+          (Γ n) (C / ((n : ℝ) * Real.sqrt (n : ℝ)))
+          (C / ((n : ℝ) * Real.sqrt (n : ℝ))) := by
+  sorry
 
 end StudentizedReduction
 
@@ -6241,7 +6636,68 @@ Proved and axiom-clean after wave 26: everything listed after wave 25, **and**
 (`abs_studentizedRootCDF_sub_comp_le`, `abs_studentizedRootCDF_sub_truncAt_le`, `truncAt` with
 `truncAt_ne_setOf`, `abs_truncAt_sub_le`, `norm_studentPair_truncAt_le`), the `charFun` bridge
 (`charFun_map_deltaSurrogate`, `norm_charFun_map_deltaSurrogate_sub_graded_le`) and the
-formalized witness `exists_measurable_charFun_map_eq_one`. -/
+formalized witness `exists_measurable_charFun_map_eq_one`.
+
+**Status after the wave-27 re-derivation.** The residue is still **one** item, but it is a
+different one, and the change is a correction of the *method*, not a refinement of it. Wave 26
+recorded the residue as "an exponentially small bound on `‖φ_{ρₙ∘Hₙ⁻¹}(θ)‖` over `|θ| ≳ √n`",
+to be produced by Hall's conditioning device. That device, in the form prescribed — freeze
+`n − k` coordinates, linearise `Hₙ` in the free block, multiply the conditional Cramér bounds —
+**cannot produce it, at any `k`**, and the obstruction is deterministic and formalized.
+
+* **THE CORRECTION — the linearisation bookkeeping is arithmetically dead.**
+  `deltaSurrogate_sub_linear_ge`: for every increment `h` with `h₀ ≥ 0`,
+  `Hₙ(h) − h₀/σ ≥ r h₀(−h₁)/(2σ³)`, where `h₀/σ` is the linearisation `Hₙ(0) + ⟪∇Hₙ(0), h⟫`.
+  In the quadrant `h₀ ≥ 0 ≥ h₁` **all three** nonlinear terms of the surrogate are nonnegative,
+  so the second-order term `−uvr/2` is not cancelled by the two third-order ones but reinforced:
+  the error is at least `r h₀|h₁|/(2σ³)` (`abs_deltaSurrogate_sub_linear_ge`), never `o(r|h|²)`.
+  On a free block of `k` coordinates the root's increment has `|h₀| ≍ σ√(k/n)` and
+  `|h₁| ≍ σ²√(k/n)`, so at `|θ| ≍ √n` and `r = n^{-1/2}` the additive price of replacing
+  `E e^{iθ(L+R)}` by `E e^{iθL}` is `|θ|·r·|h₀h₁|/(2σ³) ≍ k/n`, while the Cramér gain the block
+  buys is `ρ^k`. Reaching `O(n^{-3/2})` needs `k = O(n^{-1/2})`; making `ρ^k` small needs
+  `k ≍ n`. **Incompatible** — the third wave in three in which a prescribed route died on an
+  arithmetic incompatibility (wave 25: the truncation level; wave 26: the uniform moment
+  allowance). Conditioning on `|Xᵢ − m|` instead (Hall's own variant, which freezes `v` and
+  leaves the signs free) removes the `uv` term but leaves `u³r²/2`, and the same computation
+  gives `≍ k n^{-1/2}/n`, again `O(n^{-1/2})` at `k ≍ n`.
+
+* **THE ROUTE — the root's Cramér tail *does* transfer, by Fourier synthesis.**
+  `exists_measurable_charFun_map_eq_one` rules out a transfer that uses *nothing* about the
+  functional; it does not rule out one that uses that `Hₙ` is a polynomial with non-vanishing
+  gradient on the bulk. Writing the multiplier as a superposition of characters around the
+  carrier `t₀ = θ∇Hₙ(0) = (θ/σ)e₀` turns `φ_ρ` into `φ_{ρ∘Hₙ⁻¹}`:
+  `∫ e^{iθHₙ} dρ = ∫ a(s) φ_ρ(t₀ + s) ds` (`integral_fourierSynth`, Fubini on `ρ ⊗ volume`), and
+  every frequency that carries mass satisfies `‖t₀ + s‖ ≥ ‖t₀‖ − R`, which is exactly the band
+  where `exists_bound_norm_charFun_vecRootLaw_studentPair` gives `cⁿ`. The transfer inequality
+  is `norm_integral_fourierSynth_le` (`Γκ + ε`), the packaged outer-range bound is
+  `norm_charFun_map_deltaSurrogate_vecRootLaw_le` (`Γcⁿ + ε + η`), and the datum it consumes is
+  `HasFourierCertificate` — **a deterministic statement about one explicit polynomial phase
+  against Lebesgue measure on `ℝ²`, with no sampling law, no `n`-fold product and no
+  conditioning in it**. `hasFourierCertificate_of_eqOn` reduces it further, to an exact
+  synthesis on the bulk plus the mass the law puts outside.
+
+* **A trap inside that reduction, and it is recorded in the statement.** The `L¹(ρ)` error may
+  **not** be priced by the crude `‖e^{iθHₙ} − synthesis‖ ≤ 1 + Γ`: `Γ` is polynomially large in
+  `n` (it is the `L¹` mass of the transform of a function oscillating at frequency `M`), and
+  that estimate would demand `ρ{‖w‖ > M} = O(n^{-3/2−K})`. The gap must be bounded on its own
+  terms, and for the intended witness it is: the synthesis *is* `e^{iθHₙ(w)}χ(w/M)`, so the gap
+  is `e^{iθHₙ(w)}(1 − χ(w/M))`, of modulus at most `1`. Hence the hypothesis `B` of
+  `hasFourierCertificate_of_eqOn`.
+
+* **The arithmetic of the certificate, and it closes.** At `M = n^{3/8}`: `η ≤ ρ{‖w‖ > M}` is
+  `O(M^{-4}) = O(n^{-3/2})` under a fourth moment of the root; the phase `θ(Hₙ − w₀/σ)` has
+  gradient `O(θrM) = O(M)`, so `N` integrations by parts give `‖s‖^N|a(s)| ≲ M^{N+2}` and the
+  leakage past `R = |θ|/(2σ) ≍ √n` is `O(M^{N+2}R^{2−N}) = O(n^{7/4−N/8})`, so `N = 26`
+  suffices; and `Γ` is polynomial in `M`, which is all that is needed against `cⁿ`. The named
+  brick is `exists_fourierCertificate_deltaSurrogate`, and it is the **only** `sorry` besides
+  the two headline statements.
+
+Proved and axiom-clean after wave 27: everything listed after wave 26, **and** `fourierSynth`
+with `integrable_fourierSynth`, `norm_fourierSynth_le`, `integral_fourierSynth`,
+`norm_integral_fourierSynth_le`, `HasFourierCertificate` with `hasFourierCertificate_of_eqOn`,
+`norm_charFun_map_deltaSurrogate_le_of_certificate`,
+`norm_charFun_map_deltaSurrogate_vecRootLaw_le`, and the formalized obstruction
+`deltaSurrogate_sub_linear_ge` / `abs_deltaSurrogate_sub_linear_ge`. -/
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
@@ -6381,6 +6837,22 @@ outer range is on the law of the *surrogate*, a pushforward of the root's law al
 map, and `exists_bound_norm_charFun_vecRootLaw_studentPair` bounds the root's characteristic
 function — `exists_measurable_charFun_map_eq_one` is the formalized witness that no implication
 between the two holds for a general measurable functional. See the wave-26 note on
+`edgeworth_studentized_uniform`.
+
+**After the wave-27 re-derivation the residue over there is a *deterministic* item, and this
+corollary still adds nothing.** The wave-26 reading — that the outer range needs Hall's
+conditioning device — is overturned twice over. First, that device cannot work: the
+linearisation error of `Hₙ` over a free block of `k` coordinates costs `≍ k/n` in the phase
+(`deltaSurrogate_sub_linear_ge`, a one-sided bound with no cancellation available in the
+quadrant `h₀ ≥ 0 ≥ h₁`) while the Cramér gain is only `ρ^k`, and the two requirements are
+incompatible. Second, the root's Cramér tail *does* transfer to the surrogate — not for a
+general measurable functional, which is all the wave-26 witness rules out, but for a polynomial
+with non-vanishing gradient on the bulk, by writing its multiplier as a superposition of
+characters clustered around the carrier `(θ/σ)e₀` and pairing that superposition with the law
+(`integral_fourierSynth`, `norm_integral_fourierSynth_le`,
+`norm_charFun_map_deltaSurrogate_vecRootLaw_le`). What is left over there is the *deterministic*
+`exists_fourierCertificate_deltaSurrogate` — one explicit polynomial phase against Lebesgue
+measure on `ℝ²`, with no sampling law and no conditioning in it. See the wave-27 note on
 `edgeworth_studentized_uniform`. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
