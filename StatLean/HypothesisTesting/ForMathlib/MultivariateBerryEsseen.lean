@@ -6895,6 +6895,270 @@ theorem exists_smooth_swap_bound_of_one_le_weight (k : ℕ) (hk : 0 < k) {C₃ :
       mul_le_mul hs1 hW (by norm_num) (mul_nonneg (by linarith) hq0.le)
     linarith
 
+set_option maxHeartbeats 800000 in
+-- three `field_simp`-normalised term matchings against a common `δ P`/`δ Q` basis, each with
+-- its own `nlinarith`/`positivity` side goals, in one declaration
+/-- **The `ε`-balance of the weighted ledger, as pure arithmetic (wave 35, PROVED).**
+
+This is the second — and last — bookkeeping half of brick L, isolated from all measure theory
+exactly as `sum_le_of_bounded_and_weighted_decay` isolates the first. Given the output of a
+*weighted* hybrid telescope at a cut `Jr`,
+
+`D ≤ Jr·(M/6)/(nr √nr)·X·(4 C_k (ε + √Jr/√nr) + W)`
+`  + 4 C_k C_t X/√nr·(1 + log⁺(nr/Jr)) + 3 W C_t X/√Jr`,  `M = C₃/ε³`,
+
+with the cut in the window `t² ≤ Jr ≤ 3 t²`, `t = ε √nr ≥ 1` (which `Jr = max 2 ⌈ε² nr⌉`
+delivers), and with `X ≤ 3β`, `β ≥ 1`, the conclusion is brick L's right-hand side with the
+explicit constant `18 C₃ + 33 C_t`:
+
+`D ≤ (18 C₃ + 33 C_t)·(β/√nr)·(ε⁻¹(W + C_k ε) + C_k (1 + log(1 + ε⁻¹)))`.
+
+The three terms are matched separately: the weighted head against `18 C₃ δ ε⁻¹(W + C_k ε)`
+(using `Jr ≤ 3t²` twice — once for `Jr (M/6)/(nr√nr) ≤ C₃/(2t)`, once for
+`√Jr/√nr ≤ 2ε`, so that the head's own shell weight is at most `12 C_k ε + W`), the harmonic
+middle against `24 C_t δ C_k (1 + log(1 + ε⁻¹))` (using `nr/Jr ≤ ε⁻² ≤ (1 + ε⁻¹)²`, which is
+where the logarithm is finally priced), and the summable tail against `9 C_t δ ε⁻¹(W + C_k ε)`
+(using `√Jr ≥ t`).
+
+**Wave 35 correction to the wave-32 ledger.** The head term *must carry the shell weight too*.
+The wave-32 note estimates it as `J·(M/6)c³·3β ≤ (3/2) C₃ δ ε⁻¹`, unweighted; but the amended
+conclusion contains **no bare `ε⁻¹`** — its `ε⁻¹` always appears as `ε⁻¹(W + C_k ε)`, which
+stays bounded as `ε ↓ 0` when `W = 0`, while `(3/2) C₃ δ ε⁻¹` blows up. So an unweighted head
+cannot be absorbed, at any constant `A`. The head steps are the ones smoothed at width
+`σⱼ ≤ σ_J ≍ ε`, and the localisation of the *elementary* (third-order Taylor) swap at those
+steps supplies exactly the missing factor `4 C_k σ_J + W ≤ 12 C_k ε + W`; that is the shape
+hypothesised here, and with it the head lands on `ε⁻¹(W + C_k ε)` as the conclusion requires.
+
+**Wave 35: the window `1 ≤ ε √n` is not optional.** For `ε √n < 1` the cut degenerates to
+`Jr = 2` and the head is `≍ C₃ β (W/t³ + C_k ε/t⁴)`, which exceeds brick L's right-hand side
+`≍ β(W/t + C_k/√n)` by `t^{-2}`; no choice of cut repairs this, since the elementary step bound
+is only ever better than the Cameron–Martin one for `j ≲ ε² n < 1`, i.e. for no step at all.
+Wave 32's ledger is silent about that regime; see the note on
+`localised_swap_bound_small_weight`. -/
+private lemma weighted_ledger_balance
+    {C₃ Ct Ck ε W β X D t Jr sn nr : ℝ}
+    (hC₃ : 0 < C₃) (hCt : 0 < Ct) (hCk : 0 < Ck) (hε : 0 < ε) (hW : 0 ≤ W)
+    (hsn : 0 < sn) (hβ1 : 1 ≤ β) (hX0 : 0 ≤ X) (hX3 : X ≤ 3 * β)
+    (hsn2 : sn ^ 2 = nr) (htdef : t = ε * sn) (hbig : 1 ≤ t)
+    (hJlow : t ^ 2 ≤ Jr) (hJ3 : Jr ≤ 3 * t ^ 2)
+    (hD : D ≤ Jr * (C₃ / ε ^ 3 / 6 / (nr * sn)) * X
+              * (4 * Ck * (ε + Real.sqrt Jr / sn) + W)
+          + 4 * Ck * Ct * X / sn * (1 + Real.log (max (nr / Jr) 1))
+          + 3 * (W * Ct * X) / Real.sqrt Jr) :
+    D ≤ (18 * C₃ + 33 * Ct) * (β / sn)
+        * (ε⁻¹ * (W + Ck * ε) + Ck * (1 + Real.log (1 + ε⁻¹))) := by
+  rw [← hsn2] at hD
+  have htpos : (0 : ℝ) < t := by linarith
+  have hJrpos : (0 : ℝ) < Jr := by nlinarith
+  have hβ0 : (0 : ℝ) < β := by linarith
+  have hεi : (0 : ℝ) < ε⁻¹ := inv_pos.2 hε
+  set L : ℝ := Real.log (1 + ε⁻¹) with hLdef
+  have hL0 : 0 ≤ L := Real.log_nonneg (by linarith)
+  set δ : ℝ := β / sn with hδdef
+  have hδ0 : 0 < δ := by rw [hδdef]; positivity
+  set P : ℝ := ε⁻¹ * (W + Ck * ε) with hPdef
+  set Q : ℝ := Ck * (1 + L) with hQdef
+  have hP0 : 0 < P := by rw [hPdef]; have : 0 < Ck * ε := mul_pos hCk hε; positivity
+  have hQ0 : 0 < Q := by rw [hQdef]; positivity
+  have hδP : δ * P = β * (W + Ck * ε) / t := by
+    rw [hδdef, hPdef, htdef]; field_simp
+  have hδQ : δ * Q = β * (Ck * (1 + L)) / sn := by
+    rw [hδdef, hQdef]; field_simp
+  -- ### the two square-root facts about the cut
+  have hsqrtJ : t ≤ Real.sqrt Jr := by
+    have h1 : Real.sqrt (t ^ 2) ≤ Real.sqrt Jr := Real.sqrt_le_sqrt hJlow
+    rwa [Real.sqrt_sq htpos.le] at h1
+  have hsqrtJ2 : Real.sqrt Jr ≤ 2 * t := by
+    have h1 : Real.sqrt Jr ≤ Real.sqrt ((2 * t) ^ 2) := Real.sqrt_le_sqrt (by nlinarith)
+    rwa [Real.sqrt_sq (by positivity)] at h1
+  have hsqrtJ0 : (0 : ℝ) < Real.sqrt Jr := lt_of_lt_of_le htpos hsqrtJ
+  -- ### term 1: the weighted head
+  have hθ : C₃ / ε ^ 3 / 6 / (sn ^ 2 * sn) = C₃ / (6 * t ^ 3) := by
+    rw [htdef]; field_simp
+  have hw0 : (0 : ℝ) ≤ 4 * Ck * (ε + Real.sqrt Jr / sn) + W := by positivity
+  have hw : 4 * Ck * (ε + Real.sqrt Jr / sn) + W ≤ 12 * Ck * ε + W := by
+    have h1 : Real.sqrt Jr / sn ≤ 2 * ε := by
+      rw [div_le_iff₀ hsn]
+      calc Real.sqrt Jr ≤ 2 * t := hsqrtJ2
+        _ = 2 * ε * sn := by rw [htdef]; ring
+    nlinarith [hCk, h1]
+  have hA1 : Jr * (C₃ / (6 * t ^ 3)) ≤ C₃ / (2 * t) := by
+    rw [← mul_div_assoc, div_le_div_iff₀ (by positivity) (by positivity)]
+    nlinarith [mul_le_mul_of_nonneg_right hJ3 (by positivity : (0 : ℝ) ≤ 2 * C₃ * t)]
+  have hA1nn : (0 : ℝ) ≤ Jr * (C₃ / (6 * t ^ 3)) := by positivity
+  have hT1 : Jr * (C₃ / ε ^ 3 / 6 / (sn ^ 2 * sn)) * X
+        * (4 * Ck * (ε + Real.sqrt Jr / sn) + W)
+      ≤ 18 * C₃ * (δ * P) := by
+    rw [hθ]
+    have hstep1 : Jr * (C₃ / (6 * t ^ 3)) * X * (4 * Ck * (ε + Real.sqrt Jr / sn) + W)
+        ≤ (C₃ / (2 * t)) * (3 * β) * (12 * Ck * ε + W) := by
+      have h1 : Jr * (C₃ / (6 * t ^ 3)) * X ≤ (C₃ / (2 * t)) * (3 * β) := by
+        have h2 : Jr * (C₃ / (6 * t ^ 3)) * X ≤ (C₃ / (2 * t)) * X :=
+          mul_le_mul_of_nonneg_right hA1 hX0
+        have h3 : (C₃ / (2 * t)) * X ≤ (C₃ / (2 * t)) * (3 * β) :=
+          mul_le_mul_of_nonneg_left hX3 (by positivity)
+        linarith
+      have h4 : (0 : ℝ) ≤ (C₃ / (2 * t)) * (3 * β) := by positivity
+      calc Jr * (C₃ / (6 * t ^ 3)) * X * (4 * Ck * (ε + Real.sqrt Jr / sn) + W)
+          ≤ (C₃ / (2 * t)) * (3 * β) * (4 * Ck * (ε + Real.sqrt Jr / sn) + W) :=
+            mul_le_mul_of_nonneg_right h1 hw0
+        _ ≤ (C₃ / (2 * t)) * (3 * β) * (12 * Ck * ε + W) :=
+            mul_le_mul_of_nonneg_left hw h4
+    have hgap : 18 * C₃ * (δ * P) - (C₃ / (2 * t)) * (3 * β) * (12 * Ck * ε + W)
+        = 33 / 2 * (C₃ * β * W / t) := by
+      rw [hδP]; field_simp; ring
+    have hgap0 : (0 : ℝ) ≤ 33 / 2 * (C₃ * β * W / t) := by positivity
+    linarith
+  -- ### term 3: the summable tail
+  have hT3 : 3 * (W * Ct * X) / Real.sqrt Jr ≤ 9 * Ct * (δ * P) := by
+    have h1 : 3 * (W * Ct * X) / Real.sqrt Jr ≤ 3 * (W * Ct * (3 * β)) / Real.sqrt Jr := by
+      gcongr
+    have h2 : 3 * (W * Ct * (3 * β)) / Real.sqrt Jr ≤ 3 * (W * Ct * (3 * β)) / t :=
+      div_le_div_of_nonneg_left (by positivity) htpos hsqrtJ
+    have hgap : 9 * Ct * (δ * P) - 3 * (W * Ct * (3 * β)) / t
+        = 9 * (Ct * β * (Ck * ε) / t) := by
+      rw [hδP]; field_simp; ring
+    have hgap0 : (0 : ℝ) ≤ 9 * (Ct * β * (Ck * ε) / t) := by positivity
+    linarith
+  -- ### term 2: the harmonic (logarithmic) middle
+  have hlog : Real.log (max (sn ^ 2 / Jr) 1) ≤ 2 * L := by
+    have hmax1 : sn ^ 2 / Jr ≤ (1 + ε⁻¹) ^ 2 := by
+      have h1 : sn ^ 2 / Jr ≤ sn ^ 2 / t ^ 2 :=
+        div_le_div_of_nonneg_left (by positivity) (by positivity) hJlow
+      have h2 : sn ^ 2 / t ^ 2 = (ε⁻¹) ^ 2 := by
+        rw [htdef]; field_simp
+      rw [h2] at h1
+      exact h1.trans (pow_le_pow_left₀ hεi.le (by linarith) 2)
+    have hmax2 : (1 : ℝ) ≤ (1 + ε⁻¹) ^ 2 := by nlinarith [hεi, sq_nonneg ε⁻¹]
+    have hmax : max (sn ^ 2 / Jr) 1 ≤ (1 + ε⁻¹) ^ 2 := max_le hmax1 hmax2
+    have hpos : (0 : ℝ) < max (sn ^ 2 / Jr) 1 := lt_of_lt_of_le one_pos (le_max_right _ _)
+    have h := Real.log_le_log hpos hmax
+    rw [Real.log_pow] at h
+    push_cast at h
+    rw [hLdef]
+    exact h
+  have hT2 : 4 * Ck * Ct * X / sn * (1 + Real.log (max (sn ^ 2 / Jr) 1))
+      ≤ 24 * Ct * (δ * Q) := by
+    have h1 : 4 * Ck * Ct * X / sn ≤ 4 * Ck * Ct * (3 * β) / sn := by gcongr
+    have h2 : 1 + Real.log (max (sn ^ 2 / Jr) 1) ≤ 2 * (1 + L) := by linarith
+    have h3 : (0 : ℝ) ≤ 1 + Real.log (max (sn ^ 2 / Jr) 1) := by
+      have : (0 : ℝ) ≤ Real.log (max (sn ^ 2 / Jr) 1) :=
+        Real.log_nonneg (le_max_right _ _)
+      linarith
+    have h4 : (0 : ℝ) ≤ 4 * Ck * Ct * (3 * β) / sn := by positivity
+    have h5 : 4 * Ck * Ct * X / sn * (1 + Real.log (max (sn ^ 2 / Jr) 1))
+        ≤ 4 * Ck * Ct * (3 * β) / sn * (2 * (1 + L)) :=
+      mul_le_mul h1 h2 h3 h4
+    have h6 : 4 * Ck * Ct * (3 * β) / sn * (2 * (1 + L)) = 24 * Ct * (δ * Q) := by
+      rw [hδQ]; field_simp; ring
+    linarith
+  -- ### assembling
+  have hsplit : (18 * C₃ + 33 * Ct) * δ * (P + Q)
+      = 18 * C₃ * (δ * P) + 33 * Ct * (δ * P) + 18 * C₃ * (δ * Q)
+        + 33 * Ct * (δ * Q) := by ring
+  have hδP0 : (0 : ℝ) ≤ δ * P := by positivity
+  have hδQ0 : (0 : ℝ) ≤ δ * Q := by positivity
+  have hrest : (0 : ℝ) ≤ 24 * Ct * (δ * P) + 18 * C₃ * (δ * Q) + 9 * Ct * (δ * Q) := by
+    have h1 : (0 : ℝ) ≤ Ct * (δ * P) := mul_nonneg hCt.le hδP0
+    have h2 : (0 : ℝ) ≤ C₃ * (δ * Q) := mul_nonneg hC₃.le hδQ0
+    have h3 : (0 : ℝ) ≤ Ct * (δ * Q) := mul_nonneg hCt.le hδQ0
+    linarith
+  linarith
+
+/-- **Brick L reduced to its analytic half (wave 35, PROVED).**
+
+`localised_swap_bound_small_weight` *follows from the weighted hybrid telescope alone*: given
+the telescoped estimate at **every** cut `J ≥ 2` — head steps estimated by the localised
+elementary (third-order Taylor) swap at weight `4 C_k (ε + √J/√n) + W`, tail steps by the
+localised Cameron–Martin swap, summed by `sum_le_of_bounded_and_weighted_decay` — the brick's
+conclusion follows with the explicit constant `18 C₃ + 33 C_t`, by choosing the cut
+`J = max 2 ⌈ε² n⌉` and running `weighted_ledger_balance`. Nothing about `B`, `f`, or the shell
+hypothesis enters here: `D` is an arbitrary real, so this is *exactly* the reduction and no more.
+
+Together with `sum_le_of_bounded_and_weighted_decay` this discharges the whole bookkeeping side
+of brick L in Lean; what is left is the analytic production of the two per-step estimates, which
+is the hypothesis `htel` — see the note on `localised_swap_bound_small_weight`.
+
+The two measure-theoretic hypotheses are used only for the two moment facts the ledger needs:
+`β ≥ k^{3/2} ≥ 1` (`sqrt_dim_mul_dim_le_integral_norm_cube`) and `β + β_G ≤ 3β`
+(`integral_norm_cube_gaussian_le`).
+
+The window `1 ≤ ε √n` is required, and is not a technicality: see the last paragraph of
+`weighted_ledger_balance`. -/
+theorem localised_swap_bound_of_weighted_telescope (hk : 0 < k) {n : ℕ} (hn : 0 < n)
+    {ν : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure ν]
+    (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ)
+    (hβint : Integrable (fun y => ‖y‖ ^ 3) ν)
+    {C₃ Ct ε W D : ℝ} (hC₃ : 0 < C₃) (hCt : 0 < Ct) (hε : 0 < ε) (hW : 0 ≤ W)
+    (hbig : 1 ≤ ε * Real.sqrt (n : ℝ))
+    (htel : ∀ J : ℕ, 2 ≤ J →
+      D ≤ (J : ℝ) * (C₃ / ε ^ 3 / 6 / ((n : ℝ) * Real.sqrt (n : ℝ)))
+              * ((∫ y, ‖y‖ ^ 3 ∂ν)
+                + ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+              * (4 * gaussianShellConst k
+                  * (ε + Real.sqrt (J : ℝ) / Real.sqrt (n : ℝ)) + W)
+          + 4 * gaussianShellConst k * Ct
+              * ((∫ y, ‖y‖ ^ 3 ∂ν)
+                + ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+              / Real.sqrt (n : ℝ) * (1 + Real.log (max ((n : ℝ) / (J : ℝ)) 1))
+          + 3 * (W * Ct
+              * ((∫ y, ‖y‖ ^ 3 ∂ν)
+                + ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))))
+              / Real.sqrt (J : ℝ)) :
+    D ≤ (18 * C₃ + 33 * Ct) * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
+        * (ε⁻¹ * (W + gaussianShellConst k * ε)
+          + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by
+  have hnr : (0 : ℝ) < n := by exact_mod_cast hn
+  have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
+  have hsn2 : Real.sqrt (n : ℝ) ^ 2 = (n : ℝ) := Real.sq_sqrt hnr.le
+  have hCk : 0 < gaussianShellConst k := gaussianShellConst_pos hk
+  have hγstd : (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+      = stdGaussian (EuclideanSpace ℝ (Fin k)) := multivariateGaussian_zero_one
+  -- the two moment facts
+  have hk1 : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
+  have hlyap := sqrt_dim_mul_dim_le_integral_norm_cube hcov hβint
+  have hβ1 : 1 ≤ ∫ y, ‖y‖ ^ 3 ∂ν := by
+    have hs : 1 ≤ Real.sqrt (k : ℝ) := by
+      rw [show (1 : ℝ) = Real.sqrt 1 by simp]
+      exact Real.sqrt_le_sqrt hk1
+    nlinarith
+  have hγ3 := integral_norm_cube_gaussian_le (k := k) hk
+  rw [hγstd] at hγ3
+  have hX3 : (∫ y, ‖y‖ ^ 3 ∂ν)
+        + (∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      ≤ 3 * (∫ y, ‖y‖ ^ 3 ∂ν) := by linarith
+  have hX0 : (0 : ℝ) ≤ (∫ y, ‖y‖ ^ 3 ∂ν)
+      + (∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) := by
+    have h1 : (0 : ℝ) ≤ ∫ y, ‖y‖ ^ 3 ∂ν := integral_nonneg fun y => by positivity
+    have h2 : (0 : ℝ) ≤ ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+      integral_nonneg fun z => by positivity
+    linarith
+  -- the cut `J = max 2 ⌈ε² n⌉`
+  set t : ℝ := ε * Real.sqrt (n : ℝ) with htdef
+  have htpos : 0 < t := by rw [htdef]; positivity
+  have ht2 : t ^ 2 = ε ^ 2 * (n : ℝ) := by rw [htdef, mul_pow, hsn2]
+  set J : ℕ := max 2 ⌈ε ^ 2 * (n : ℝ)⌉₊ with hJdef
+  have hJ2 : 2 ≤ J := le_max_left _ _
+  have hJlow : t ^ 2 ≤ (J : ℝ) := by
+    rw [ht2]
+    refine le_trans (Nat.le_ceil _) ?_
+    have hmem : ⌈ε ^ 2 * (n : ℝ)⌉₊ ≤ J := by rw [hJdef]; exact le_max_right _ _
+    exact_mod_cast hmem
+  have hJhigh : (J : ℝ) ≤ t ^ 2 + 2 := by
+    rw [ht2]
+    have hmax : (J : ℝ) = max 2 ((⌈ε ^ 2 * (n : ℝ)⌉₊ : ℕ) : ℝ) := by
+      rw [hJdef]; push_cast; rfl
+    have hc : ((⌈ε ^ 2 * (n : ℝ)⌉₊ : ℕ) : ℝ) < ε ^ 2 * (n : ℝ) + 1 :=
+      Nat.ceil_lt_add_one (by positivity)
+    have hnn : (0 : ℝ) ≤ ε ^ 2 * (n : ℝ) := by positivity
+    rw [hmax]
+    rcases max_cases (2 : ℝ) ((⌈ε ^ 2 * (n : ℝ)⌉₊ : ℕ) : ℝ) with ⟨he, _⟩ | ⟨he, _⟩
+    · rw [he]; linarith
+    · rw [he]; linarith
+  have hJ3 : (J : ℝ) ≤ 3 * t ^ 2 := by nlinarith [hJhigh, hbig, htpos]
+  exact weighted_ledger_balance hC₃ hCt hCk hε hW hsn hβ1 hX0 hX3 hsn2 htdef hbig hJlow hJ3
+    (htel J hJ2)
+
 /-- **Brick L below the Gaussian shell scale (stated, not proved; hypothesis AMENDED in
 wave 29).** *The hybrid telescope with every step estimated by the localised weighted swap
 bound*, in the only regime that has any content: the total weight `W + C_k ε` is at most `1`.
