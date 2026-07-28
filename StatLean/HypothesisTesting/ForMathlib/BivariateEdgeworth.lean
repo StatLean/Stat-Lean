@@ -1215,6 +1215,7 @@ lemma slotCharFun_eq_integral_map (F : Measure ℝ) {Z : ℝ → E} (hZ : Measur
           * Complex.exp ((⟪w, c⟫ : ℝ) * Complex.I) ∂(F.map Z) := by
   rw [slotCharFun, integral_map hZ.aemeasurable (by fun_prop)]
 
+omit [SecondCountableTopology E] in
 /-- **A weighted character is within one moment of the weight's own integral.**
 `‖∫ g e^{i⟪·,t⟫} − ∫ g‖ ≤ ∫ |g| |⟪·,t⟫|`, from `‖e^{iy} − 1‖ ≤ |y|`.
 
@@ -1274,6 +1275,8 @@ noncomputable def multiTwoRemConst (μ : Measure E) (b : Fin 2 → E) (a : E) : 
         * ∫ x, |(⟪x, b 1⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2 ∂μ
 
 set_option maxHeartbeats 1000000 in
+-- The proof carries six named moments and three slot estimates through a long chain of
+-- norm inequalities; the default heartbeat budget is not enough for the final elaboration.
 /-- **The `k = 2` estimate for the multilinearly weighted characteristic function of a vector
 root.**
 
@@ -1766,5 +1769,72 @@ theorem norm_charFun_vecRootLaw_le_pow (F : Measure ℝ) [IsProbabilityMeasure F
   exact pow_le_pow_left₀ (norm_nonneg _) (hc _ hge) n
 
 end OneFactor
+
+/-! ## Bounded summands: the root has bounded support, so every moment of it is finite
+
+The multilinear weights of the studentized surrogate's transform are moments of the *root*, and
+under a finite fourth moment of the sampling law two of them are **infinite** — see the wave-25
+note on `edgeworth_studentized_uniform` in `Bootstrap/Edgeworth.lean`. The classical repair is
+to truncate the summands before expanding. What truncation buys, at the level of this file, is
+completely elementary and is recorded here: if `‖Z‖ ≤ K` pointwise then the root
+`n^{-1/2}∑Z(yᵢ)` is bounded by `√n·K` pointwise, so its law is carried by a ball and *every*
+polynomial in its coordinates is integrable — no moment hypothesis on `F` survives at all.
+
+The price of the truncation is a change of law, and that is paid on the other side, by the
+union bound `measure_pi_exists_coord_mem_le` of `Bootstrap/Edgeworth.lean`. The two are
+complementary and neither is `measure_pi_truncated_sum_le_exp`, which bounds the tail of a
+truncated *sum*. -/
+
+section BoundedRoot
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+
+/-- A bounded measurable function is integrable against a finite measure. This is the only
+integrability statement the truncated route needs: after truncation every weight is bounded on
+the support of the root's law. -/
+lemma integrable_of_ae_abs_le {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] {f : α → ℝ} (hf : AEStronglyMeasurable f μ) {C : ℝ}
+    (h : ∀ᵐ x ∂μ, |f x| ≤ C) : Integrable f μ := by
+  refine Integrable.mono' (integrable_const C) hf ?_
+  filter_upwards [h] with x hx
+  rwa [Real.norm_eq_abs]
+
+/-- **A bounded summand gives a root with bounded support.** If `‖Z x‖ ≤ K` for every `x`, the
+law of the root `n^{-1/2}∑_{i<n} Z(yᵢ)` is carried by the closed ball of radius `√n·K`.
+
+The bound is pointwise on the product space and is transported by `ae_map_iff`; no independence
+and no moment of `F` is used. -/
+theorem ae_norm_vecRootLaw_le (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E}
+    (hZ : Measurable Z) {K : ℝ} (hK : ∀ x, ‖Z x‖ ≤ K) (n : ℕ) :
+    ∀ᵐ w ∂(vecRootLaw F Z n), ‖w‖ ≤ Real.sqrt (n : ℝ) * K := by
+  have hK0 : (0 : ℝ) ≤ K := le_trans (norm_nonneg _) (hK 0)
+  have hmeas : MeasurableSet {w : E | ‖w‖ ≤ Real.sqrt (n : ℝ) * K} :=
+    measurableSet_le (by fun_prop) measurable_const
+  rw [vecRootLaw, ae_map_iff (measurable_vecRoot hZ n).aemeasurable hmeas]
+  refine Filter.Eventually.of_forall fun y => ?_
+  have hsum : ‖∑ i, Z (y i)‖ ≤ (n : ℝ) * K := by
+    calc ‖∑ i, Z (y i)‖ ≤ ∑ _i : Fin n, K :=
+          (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ => hK (y i))
+      _ = (n : ℝ) * K := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  have hsn : (0 : ℝ) ≤ (Real.sqrt (n : ℝ))⁻¹ := by positivity
+  have hkey : (Real.sqrt (n : ℝ))⁻¹ * ((n : ℝ) * K) ≤ Real.sqrt (n : ℝ) * K := by
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · simp
+    · have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+      have hsq : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hn0
+      have hid : (Real.sqrt (n : ℝ))⁻¹ * (n : ℝ) = Real.sqrt (n : ℝ) := by
+        have h2 : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) :=
+          Real.mul_self_sqrt hn0.le
+        field_simp
+        linarith [h2]
+      have heq : (Real.sqrt (n : ℝ))⁻¹ * ((n : ℝ) * K) = Real.sqrt (n : ℝ) * K := by
+        linear_combination K * hid
+      exact heq.le
+  simp only [norm_smul, Real.norm_eq_abs, abs_of_nonneg hsn]
+  exact le_trans (mul_le_mul_of_nonneg_left hsum hsn) hkey
+
+end BoundedRoot
 
 end StatLean.HypothesisTesting
