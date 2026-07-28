@@ -205,10 +205,11 @@ theorem bentkus_berry_esseen_convex {k n : ℕ} {ν : Measure (EuclideanSpace �
   --   `|μₙ(B) − γ(B)| ≤ C (β/√n)^{1/2}` for measurable convex `B`, `C = C₀ + 8k^{3/2}/√(2π)`,
   -- 0-sorry and axiom-clean, together with its Lévy form `berryEsseen_convex_levy_improved`.
   -- So the convex side of the elementary route now stands at `n^{-1/4}`, not `n^{-1/8}`.
-  -- (The *ball* headline `berryEsseen_ball_elementary` was deliberately left at `1/4`: the
-  -- improved telescope applies verbatim to its radial test function, but its `ε`-optimisation
-  -- is a separate ~200-line assembly with existing consumers, and re-doing it buys nothing
-  -- downstream — the growing-`k` consumer only needs `→ 0` under `k³/n → 0`.)
+  -- The *ball* side too: `berryEsseen_ball_improved` gives `C (β/√n)^{1/2}` with the same
+  -- dimension-free constant shape, the two exponents now sharing the `ε`-generic assembly
+  -- `berryEsseen_ball_of_swap`.  The sibling `bentkus_berry_esseen_ball` below is left wired
+  -- to the `1/4` version, since `(β/√n)^{1/2}` and `(β/√n)^{1/4}` are not comparable when
+  -- `β/√n > 1` and no consumer needs the better exponent.
   --
   -- Even the improved elementary ceiling is `(β/√n)^{1/2}`, not `β/√n`, and THIS statement is
   -- still not implied by it.  RE-DERIVED (wave 16), concretely: the missing factor comes from
@@ -241,10 +242,11 @@ via Fourier analysis over convex bodies. What is proved here (`berryEsseen_ball_
 `ForMathlib.MultivariateBerryEsseen`) is the strongest bound the *elementary* "smooth the
 indicator + Lindeberg swap" route delivers honestly at the balance `ε⁻³ β/√n + C ε`, which is
 minimised at `ε ~ (β/√n)^{1/4}`: `C · (β/√n)^{1/4} = C n^{-1/8}`.  (Wave-16 correction of an
-earlier claim here that the exponent `1/4` is *intrinsic*: it is not — for convex sets
-`berryEsseen_convex_improved` reaches `(β/√n)^{1/2}`, and the same Gaussian-smoothed telescope
-applies to the radial test function used here.  The ball `ε`-optimisation has simply not been
-re-done, because no consumer needs the better exponent.)  The sharp `n^{-1/2}` is not attempted.
+earlier claim here that the exponent `1/4` is *intrinsic*: it is not.  The same elementary route
+with the Gaussian-smoothed telescope gives `berryEsseen_ball_improved`, `C · (β/√n)^{1/2}`, also
+with an absolute constant.  This declaration keeps the `1/4` form because the two are
+incomparable when `β/√n > 1`, and because the growing-`k` consumer below only needs `→ 0` under
+`k³/n → 0`, which the `1/4` form already gives.)  The sharp `n^{-1/2}` is not attempted.
 This
 weaker rate still suffices for every consumer here: with `β ≤ B k^{3/2}` the error is
 `≤ C (B k^{3/2}/√n)^{1/4}`, which `→ 0` under exactly the source's growth condition `k³/n → 0`,
