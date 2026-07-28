@@ -3670,4 +3670,136 @@ private lemma integral_gaussian_pair_smul_add (σ c : ℝ)
 
 end GaussianConvolution
 
+/-! #### The sum estimate: the third of the three assembly bricks -/
+
+section SumEstimate
+
+/-- The backward telescoping bound `j^{-3/2} ≤ 2 ((j−1)^{-1/2} − j^{-1/2})`, valid for
+`j ≥ 2`. It is what turns the tail of `Σ j^{-3/2}` into `2/√(J−1)` without any integral
+comparison. -/
+private lemma inv_mul_sqrt_le_telescope {j : ℕ} (hj : 2 ≤ j) :
+    1 / ((j : ℝ) * Real.sqrt j)
+      ≤ 2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ)) := by
+  have hj1 : (1 : ℝ) ≤ (j : ℝ) - 1 := by
+    have : (2 : ℝ) ≤ (j : ℝ) := by exact_mod_cast hj
+    linarith
+  set a : ℝ := Real.sqrt ((j : ℝ) - 1) with hadef
+  set b : ℝ := Real.sqrt (j : ℝ) with hbdef
+  have ha2 : a ^ 2 = (j : ℝ) - 1 := Real.sq_sqrt (by linarith)
+  have hb2 : b ^ 2 = (j : ℝ) := Real.sq_sqrt (by linarith)
+  have ha : 0 < a := Real.sqrt_pos.mpr (by linarith)
+  have hb : 0 < b := Real.sqrt_pos.mpr (by linarith)
+  have hba : 0 < b - a := by nlinarith
+  have hprod : (b - a) * (a + b) = 1 := by nlinarith
+  -- `b ≤ a + 1/(2a)`, hence `ab ≤ a² + 1/2`
+  have hble : b ≤ a + 1 / (2 * a) := by
+    have hc : (0 : ℝ) < a + 1 / (2 * a) := by positivity
+    have hexp : (a + 1 / (2 * a)) ^ 2 = a ^ 2 + 1 + 1 / (4 * a ^ 2) := by
+      field_simp
+      ring
+    have hsq : b ^ 2 ≤ (a + 1 / (2 * a)) ^ 2 := by
+      rw [hexp, hb2]
+      have h4 : (0 : ℝ) ≤ 1 / (4 * a ^ 2) := by positivity
+      linarith [ha2]
+    nlinarith [hsq, hb, hc]
+  have key : a * b ≤ a ^ 2 + 1 / 2 := by
+    have h := mul_le_mul_of_nonneg_left hble ha.le
+    have hcancel : a * (1 / (2 * a)) = 1 / 2 := by field_simp
+    nlinarith [h, hcancel]
+  have poly : a * b * (a + b) ≤ 2 * b ^ 3 := by nlinarith [mul_le_mul_of_nonneg_left key hb.le]
+  have hcube : (j : ℝ) * b = b ^ 3 := by rw [← hb2]; ring
+  rw [hcube]
+  rw [div_le_iff₀ (by positivity : (0 : ℝ) < b ^ 3)]
+  have h1 : 2 * (1 / a - 1 / b) * b ^ 3 = 2 * (b - a) * b ^ 3 / (a * b) := by
+    field_simp
+  rw [h1, le_div_iff₀ (by positivity : (0 : ℝ) < a * b)]
+  have e1 := mul_le_mul_of_nonneg_left poly hba.le
+  have e2 : (b - a) * (a * b * (a + b)) = a * b := by
+    linear_combination (a * b) * hprod
+  nlinarith [e1, e2]
+
+/-- **The elementary sum estimate.** If a nonnegative sequence is bounded both by a constant
+`θ` and, from `j ≥ 1` on, by `j^{-3/2}`, then its partial sums are at most `J θ + 3/√J` for
+every cut `J ≥ 2`. Choosing `J ≈ θ^{-2/3}` gives `O(θ^{1/3})`, which is exactly the step that
+turns the mollifier factor `ε^{-3}` into `ε^{-1}` in the improved Lindeberg telescope. -/
+private lemma sum_le_of_bounded_and_decay {θ : ℝ} (hθ : 0 ≤ θ) {n J : ℕ} (hJ : 2 ≤ J)
+    {T : ℕ → ℝ} (hTnn : ∀ j, 0 ≤ T j) (hTθ : ∀ j, T j ≤ θ)
+    (hTdec : ∀ j, 1 ≤ j → T j ≤ 1 / ((j : ℝ) * Real.sqrt j)) :
+    ∑ j ∈ Finset.range n, T j ≤ (J : ℝ) * θ + 3 / Real.sqrt J := by
+  classical
+  have hJr : (2 : ℝ) ≤ (J : ℝ) := by exact_mod_cast hJ
+  have hJpos : (0 : ℝ) < Real.sqrt J := Real.sqrt_pos.mpr (by linarith)
+  have htail : ∀ m : ℕ, ∑ j ∈ Finset.Ico J m, T j ≤ 3 / Real.sqrt J := by
+    intro m
+    rcases lt_or_ge J m with hm | hm
+    swap
+    · rw [Finset.Ico_eq_empty (by omega)]
+      simp
+      positivity
+    -- the first term of the tail, then a telescoping sum
+    have hsplit : ∑ j ∈ Finset.Ico J m, T j
+        = T J + ∑ j ∈ Finset.Ico (J + 1) m, T j := Finset.sum_eq_sum_Ico_succ_bot hm T
+    have hfirst : T J ≤ 1 / Real.sqrt J := by
+      refine (hTdec J (by omega)).trans ?_
+      have hs : Real.sqrt J ≤ (J : ℝ) * Real.sqrt J := by
+        nlinarith [Real.sqrt_nonneg (J : ℝ)]
+      exact one_div_le_one_div_of_le hJpos hs
+    have hstep : ∀ j ∈ Finset.Ico (J + 1) m,
+        T j ≤ 2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ)) := by
+      intro j hjmem
+      have hj2 : 2 ≤ j := by
+        have := (Finset.mem_Ico.1 hjmem).1
+        omega
+      exact (hTdec j (by omega)).trans (inv_mul_sqrt_le_telescope hj2)
+    have htel : ∑ j ∈ Finset.Ico (J + 1) m,
+        2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ))
+        ≤ 2 / Real.sqrt J := by
+      set g : ℕ → ℝ := fun i => 1 / Real.sqrt ((J : ℝ) + (i : ℝ)) with hg
+      have hre : ∑ j ∈ Finset.Ico (J + 1) m,
+          2 * (1 / Real.sqrt ((j : ℝ) - 1) - 1 / Real.sqrt (j : ℝ))
+          = ∑ i ∈ Finset.range (m - (J + 1)), 2 * (g i - g (i + 1)) := by
+        rw [Finset.sum_Ico_eq_sum_range]
+        refine Finset.sum_congr rfl fun i _ => ?_
+        have h1 : ((J + 1 + i : ℕ) : ℝ) - 1 = (J : ℝ) + (i : ℝ) := by push_cast; ring
+        have h2 : ((J + 1 + i : ℕ) : ℝ) = (J : ℝ) + ((i + 1 : ℕ) : ℝ) := by push_cast; ring
+        rw [h1, h2, hg]
+      rw [hre, ← Finset.mul_sum, Finset.sum_range_sub' g]
+      have hg0 : g 0 = 1 / Real.sqrt J := by
+        rw [hg]; norm_num
+      have hgnn : 0 ≤ g (m - (J + 1)) := by
+        rw [hg]; positivity
+      rw [hg0]
+      have : 2 * (1 / Real.sqrt (J : ℝ) - g (m - (J + 1))) ≤ 2 * (1 / Real.sqrt (J : ℝ)) := by
+        nlinarith
+      calc 2 * (1 / Real.sqrt (J : ℝ) - g (m - (J + 1)))
+          ≤ 2 * (1 / Real.sqrt (J : ℝ)) := this
+        _ = 2 / Real.sqrt J := by ring
+    have hsum2 : ∑ j ∈ Finset.Ico (J + 1) m, T j ≤ 2 / Real.sqrt J :=
+      (Finset.sum_le_sum hstep).trans htel
+    rw [hsplit]
+    have : 1 / Real.sqrt (J : ℝ) + 2 / Real.sqrt (J : ℝ) = 3 / Real.sqrt J := by ring
+    linarith [hfirst, hsum2]
+  rcases le_total n J with hn | hn
+  · have h1 : ∑ j ∈ Finset.range n, T j ≤ ∑ j ∈ Finset.range n, θ :=
+      Finset.sum_le_sum fun j _ => hTθ j
+    have h2 : ∑ j ∈ Finset.range n, (θ : ℝ) = (n : ℝ) * θ := by
+      rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+    have h3 : (n : ℝ) ≤ (J : ℝ) := by exact_mod_cast hn
+    have h4 : (0 : ℝ) ≤ 3 / Real.sqrt J := by positivity
+    nlinarith
+  · have hsplit : ∑ j ∈ Finset.range n, T j
+        = (∑ j ∈ Finset.Ico 0 J, T j) + ∑ j ∈ Finset.Ico J n, T j := by
+      rw [Finset.sum_Ico_consecutive T (Nat.zero_le J) hn, Finset.range_eq_Ico]
+    have h1 : ∑ j ∈ Finset.Ico 0 J, T j ≤ (J : ℝ) * θ := by
+      have := Finset.sum_le_sum (f := T) (g := fun _ => θ)
+        (fun j (_ : j ∈ Finset.Ico 0 J) => hTθ j)
+      have h2 : ∑ _j ∈ Finset.Ico 0 J, (θ : ℝ) = (J : ℝ) * θ := by
+        rw [Finset.sum_const, Nat.card_Ico, nsmul_eq_mul]
+        simp
+      linarith [this, h2.le, h2.ge]
+    rw [hsplit]
+    linarith [h1, htail n]
+
+end SumEstimate
+
 end StatLean.HypothesisTesting
