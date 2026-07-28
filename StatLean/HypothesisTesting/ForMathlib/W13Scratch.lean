@@ -486,6 +486,81 @@ private lemma integral_gaussian_shift_eq_tilt {g : EuclideanSpace ℝ (Fin k) �
 
 end MultivariateTilt
 
+
+/-! ### Gaussian moments and the smoothed swap step -/
+
+section SmoothedSwap
+
+variable {k : ℕ}
+
+private lemma memLp_norm_gauss (p : ℕ) :
+    Integrable (fun z : EuclideanSpace ℝ (Fin k) => ‖z‖ ^ p)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  have hL : MemLp (id : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k))
+      ((p : ℕ) : ℝ≥0∞) (stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+    IsGaussian.memLp_id _ _ (by simp)
+  simpa using hL.integrable_norm_pow'
+
+private lemma integrable_norm_gauss :
+    Integrable (fun z : EuclideanSpace ℝ (Fin k) => ‖z‖)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  have := memLp_norm_gauss (k := k) 1
+  simpa using this
+
+private lemma integrable_exp_inner_gauss (a : EuclideanSpace ℝ (Fin k)) :
+    Integrable (fun z : EuclideanSpace ℝ (Fin k) => Real.exp ⟪a, z⟫_ℝ)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  refine Integrable.of_integral_ne_zero ?_
+  rw [integral_exp_inner_stdGaussian a]
+  exact (Real.exp_pos _).ne'
+
+/-- The `z`-integrability of the tilted integrand, for a fixed shift `a`. -/
+private lemma integrable_mul_exp_tilt_gauss {G : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hG : Continuous G) (hGb : ∀ x, |G x| ≤ 1) (a : EuclideanSpace ℝ (Fin k)) :
+    Integrable (fun z => G z * Real.exp (⟪a, z⟫_ℝ - ‖a‖ ^ 2 / 2))
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  have hre : (fun z : EuclideanSpace ℝ (Fin k) => G z * Real.exp (⟪a, z⟫_ℝ - ‖a‖ ^ 2 / 2))
+      = fun z => Real.exp (-(‖a‖ ^ 2 / 2)) * (G z * Real.exp ⟪a, z⟫_ℝ) := by
+    funext z
+    rw [show ⟪a, z⟫_ℝ - ‖a‖ ^ 2 / 2 = -(‖a‖ ^ 2 / 2) + ⟪a, z⟫_ℝ by ring, Real.exp_add]
+    ring
+  rw [hre]
+  refine Integrable.const_mul ?_ _
+  refine Integrable.mono' (integrable_exp_inner_gauss a) (by fun_prop) ?_
+  filter_upwards with z
+  rw [Real.norm_eq_abs, abs_mul, abs_of_pos (Real.exp_pos _)]
+  nlinarith [hGb z, Real.exp_pos ⟪a, z⟫_ℝ, abs_nonneg (G z)]
+
+/-- The `z`-integrability of the quadratic Taylor part of the tilt, for a fixed shift. -/
+private lemma integrable_mul_tiltPoly_gauss {G : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hG : Continuous G) (hGb : ∀ x, |G x| ≤ 1) (a : EuclideanSpace ℝ (Fin k)) :
+    Integrable (fun z => G z * (1 + ⟪a, z⟫_ℝ + (⟪a, z⟫_ℝ ^ 2 - ‖a‖ ^ 2) / 2))
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  have h1 : Integrable (fun z : EuclideanSpace ℝ (Fin k) => ⟪a, z⟫_ℝ)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    refine Integrable.mono' (integrable_norm_gauss.const_mul ‖a‖) (by fun_prop) ?_
+    filter_upwards with z
+    rw [Real.norm_eq_abs]
+    exact abs_real_inner_le_norm a z
+  have h2 : Integrable (fun z : EuclideanSpace ℝ (Fin k) => ⟪a, z⟫_ℝ ^ 2)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    refine Integrable.mono' ((memLp_norm_gauss (k := k) 2).const_mul (‖a‖ ^ 2)) (by fun_prop) ?_
+    filter_upwards with z
+    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+    have := abs_real_inner_le_norm a z
+    nlinarith [abs_nonneg (⟪a, z⟫_ℝ), sq_abs (⟪a, z⟫_ℝ), norm_nonneg a, norm_nonneg z]
+  have hpoly : Integrable
+      (fun z : EuclideanSpace ℝ (Fin k) => 1 + ⟪a, z⟫_ℝ + (⟪a, z⟫_ℝ ^ 2 - ‖a‖ ^ 2) / 2)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+    ((integrable_const (1 : ℝ)).add h1).add ((h2.sub (integrable_const _)).div_const 2)
+  refine Integrable.mono' hpoly.abs (by fun_prop) ?_
+  filter_upwards with z
+  rw [Real.norm_eq_abs, abs_mul]
+  nlinarith [hGb z, abs_nonneg (G z),
+    abs_nonneg (1 + ⟪a, z⟫_ℝ + (⟪a, z⟫_ℝ ^ 2 - ‖a‖ ^ 2) / 2)]
+
+end SmoothedSwap
+
 end GaussianTilt
 
 end StatLean.HypothesisTesting
