@@ -268,6 +268,72 @@ theorem charFun_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ �
     rw [charFun_apply, integral_map hZ.aemeasurable (by fun_prop)]
   rw [hstep1, hstep2, hstep3]
 
+/-- **The one-term Edgeworth expansion of a vector root, at the level of characteristic
+functions.** For a directionally centred `Z` with directional second moment `v`, third moment
+`m₃` and finite fourth moment, and for `t` in the direction-dependent window,
+
+`‖φ_{vecRootLaw F Z n}(t) − e^{−v/2}(1 − i m₃ n^{-1/2}/6)‖ ≤ (the damped remainder)`,
+
+written with `n = m + 2`. The Gaussian factor and the `n^{-1/2}` correction are exactly the
+Fourier transform of the multivariate Edgeworth signed density in the direction `t`.
+
+**This is the bivariate expansion that `Bootstrap/Edgeworth.lean` records as the sole missing
+ingredient of the studentized expansion**, specialised to `E = ℝ²` and
+`Z = studentPair F = (X − μ, (X − μ)² − σ²)`. It is the composition of `charFun_vecRootLaw`
+with `norm_charFun_smul_pow_sub_edgeworth_le`; the scaling `n s² = 1` at `s = n^{-1/2}` turns
+`e^{−n v s²/2}` into `e^{−v/2}` and `n s³` into `s`. -/
+theorem norm_charFun_vecRootLaw_sub_edgeworth_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    {Z : ℝ → E} (hZ : Measurable Z) {t : E} {v m₃ : ℝ} (m : ℕ)
+    (hint1 : Integrable (fun x : E => ⟪x, t⟫) (F.map Z))
+    (hint2 : Integrable (fun x : E => ⟪x, t⟫ ^ 2) (F.map Z))
+    (hint3 : Integrable (fun x : E => |⟪x, t⟫| ^ 3) (F.map Z))
+    (hint4 : Integrable (fun x : E => ⟪x, t⟫ ^ 4) (F.map Z))
+    (hmean : ∫ x, ⟪x, t⟫ ∂(F.map Z) = 0) (hvar : ∫ x, ⟪x, t⟫ ^ 2 ∂(F.map Z) = v)
+    (hthird : ∫ x, ⟪x, t⟫ ^ 3 ∂(F.map Z) = m₃)
+    (hs2 : v * (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹ ^ 2 ≤ 2)
+    (hs3 : (∫ x, |⟪x, t⟫| ^ 3 ∂(F.map Z)) * |(Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹|
+      ≤ 3 * v / 2) :
+    ‖charFun (vecRootLaw F Z (m + 2)) t
+        - ((Real.exp (-(v / 2)) : ℝ) : ℂ)
+            * (1 - Complex.I * (m₃ : ℂ) * (((Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹ : ℝ) : ℂ) / 6)‖
+      ≤ Real.exp (-(v * (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹ ^ 2 / 4)) ^ m *
+          (((m : ℝ) + 2) * ((m : ℝ) + 1) / 2
+              * ((∫ x, |⟪x, t⟫| ^ 3 ∂(F.map Z))
+                  * |(Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹| ^ 3 / 6
+                + (v * (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹ ^ 2 / 2) ^ 2 / 2) ^ 2
+            + ((m : ℝ) + 2)
+              * ((v * (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹ ^ 2 / 2)
+                  * (|m₃| * |(Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹| ^ 3 / 6)
+                + ((∫ x, ⟪x, t⟫ ^ 4 ∂(F.map Z))
+                    * |(Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹| ^ 4 / 24
+                  + (v * (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹ ^ 2 / 2) ^ 2 / 2))) := by
+  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
+  set s : ℝ := (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹ with hs
+  have hne : ((m : ℝ) + 2) ≠ 0 := by positivity
+  have hN : (0 : ℝ) < ((m + 2 : ℕ) : ℝ) := by push_cast; positivity
+  have hsq : s ^ 2 = (((m + 2 : ℕ) : ℝ))⁻¹ := by
+    rw [hs, inv_pow, Real.sq_sqrt hN.le]
+  have h2 : ((m : ℝ) + 2) * s ^ 2 = 1 := by
+    rw [hsq]; push_cast; field_simp
+  have hgauss : ((Real.exp (-(v * s ^ 2 / 2)) : ℝ) : ℂ) ^ (m + 2)
+      = ((Real.exp (-(v / 2)) : ℝ) : ℂ) := by
+    rw [← Complex.ofReal_pow, ← Real.exp_nat_mul, Complex.ofReal_inj]
+    congr 1
+    push_cast
+    linear_combination (-(v / 2)) * h2
+  have hreal : ((m : ℝ) + 2) * s ^ 3 = s := by
+    calc ((m : ℝ) + 2) * s ^ 3 = (((m : ℝ) + 2) * s ^ 2) * s := by ring
+      _ = s := by rw [h2, one_mul]
+  have hcorr : ((m : ℂ) + 2) * Complex.I * (m₃ : ℂ) * (s : ℂ) ^ 3 / 6
+      = Complex.I * (m₃ : ℂ) * (s : ℂ) / 6 := by
+    have hc : ((m : ℂ) + 2) * (s : ℂ) ^ 3 = (s : ℂ) := by exact_mod_cast hreal
+    calc ((m : ℂ) + 2) * Complex.I * (m₃ : ℂ) * (s : ℂ) ^ 3 / 6
+        = Complex.I * (m₃ : ℂ) * (((m : ℂ) + 2) * (s : ℂ) ^ 3) / 6 := by ring
+      _ = Complex.I * (m₃ : ℂ) * (s : ℂ) / 6 := by rw [hc]
+  rw [charFun_vecRootLaw F hZ, ← hs, ← hgauss, ← hcorr]
+  exact norm_charFun_smul_pow_sub_edgeworth_le (F.map Z) hint1 hint2 hint3 hint4 hmean hvar
+    hthird hs2 hs3 m
+
 end VecRoot
 
 end StatLean.HypothesisTesting
