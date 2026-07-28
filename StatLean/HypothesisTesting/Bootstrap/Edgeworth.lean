@@ -2,6 +2,7 @@ import StatLean.HypothesisTesting.Bootstrap.NonparametricMean
 import StatLean.HypothesisTesting.ForMathlib.BivariateEdgeworth
 import StatLean.HypothesisTesting.ForMathlib.EsseenSmoothing
 import StatLean.HypothesisTesting.ForMathlib.UniformRiemannLebesgue
+import StatLean.ConcentrationInequalities.SubGaussian.Bounded
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
@@ -2153,6 +2154,176 @@ theorem abs_measure_le_sub_le_of_peel_strata {Ω : Type*} [MeasurableSpace Ω] (
       ≤ ∑ k ∈ Finset.range K, s k :=
     Finset.sum_le_sum fun k _ => hstrat k
   linarith
+
+/-! ### (X3)(b): the truncated-sum remainder, by an exponential inequality
+
+Wave 18 recorded that the remainder `P(λ < |∑ᵢ Ỹ(ωᵢ)|)` left by the one-large-summand
+decomposition **cannot** be closed by Chebyshev — truncation does not decrease the second
+moment, so `P ≤ n E[Y²]/λ²` is *exactly* the untruncated bound and the decomposition has gained
+nothing — and that what closes it is an exponential inequality for sums of **bounded**
+independent summands. That inequality is in the repository: the sub-Gaussian half of
+`ConcentrationInequalities` has `isSubGaussian_of_mem_Icc` (Hoeffding's lemma: a variable in
+`[a, b]` is sub-Gaussian with proxy `(b − a)²/4`), which composes with Mathlib's
+`HasSubgaussianMGF.measure_sum_ge_le_of_iIndepFun`.
+
+Two adaptations are needed to make it usable here, and neither is deep. The cross-area import
+direction is the one `ForMathlib/DKWUniform.lean` already uses.
+
+* **The product setting.** The summands here are the coordinates of a `Measure.pi`, not an
+  abstract independent family; `iIndepFun_pi` is exactly the bridge, and
+  `measurePreserving_eval` identifies the coordinate mean with the one-dimensional mean
+  (`integral_pi_coord`).
+* **The centring.** Truncation shifts the mean, so the bound has to be stated for the *centred*
+  sum and the shift reinstated afterwards. `measure_pi_truncated_sum_le_exp` does that
+  bookkeeping: as long as the accumulated shift `n·|E Ỹ|` is at most `λ/2`, the uncentred tail
+  is bounded by `2exp(−λ²/(8nτ²))`, which is the shape the peeled arithmetic consumes
+  (at `λ ≍ 2ᵏ n^{1/6}`, `τ ≍ λ√n` the exponent is `≍ −2^{-2k}n^{-4/3}`, so the remainder is
+  negligible against every stratum).
+
+`hτ` is *not* needed for the two-sided bound itself — the proxy `(τ − (−τ))²/4 = τ²` is the same
+for either sign — but a negative `τ` makes the hypothesis `∀ y, |Y y| ≤ τ` vacuously false, so
+nothing is lost by carrying it. -/
+
+/-- The mean of a coordinate function under a product measure is the one-dimensional mean. -/
+lemma integral_pi_coord {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Y : ℝ → ℝ} (hY : Measurable Y) (i : Fin n) :
+    ∫ ω : Fin n → ℝ, Y (ω i) ∂(Measure.pi fun _ : Fin n => μ) = ∫ y, Y y ∂μ := by
+  have hmp := MeasureTheory.measurePreserving_eval (fun _ : Fin n => μ) i
+  conv_rhs => rw [← hmp.map_eq]
+  rw [integral_map (measurable_pi_apply i).aemeasurable hY.aestronglyMeasurable]
+
+/-- **(X3)(b), one-sided: Hoeffding's inequality on a product measure.** If `|Y| ≤ τ`, then
+under `n` independent draws the centred sum `∑ᵢ(Y(ωᵢ) − E Y)` exceeds `λ` with probability at
+most `exp(−λ²/(2nτ²))`.
+
+This is `StatLean.ConcentrationInequalities.isSubGaussian_of_mem_Icc` (Hoeffding's lemma for a
+bounded variable, proxy `(b − a)²/4`) fed to Mathlib's sum-tail bound, with `iIndepFun_pi`
+supplying the independence of the coordinates of a `Measure.pi`. -/
+theorem measure_pi_sum_ge_le_exp {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Y : ℝ → ℝ} (hY : Measurable Y) {τ : ℝ} (hτ : 0 ≤ τ) (hbdd : ∀ y, |Y y| ≤ τ)
+    {lam : ℝ} (hlam : 0 ≤ lam) :
+    ((Measure.pi fun _ : Fin n => μ)
+        {ω : Fin n → ℝ | lam ≤ ∑ i, (Y (ω i) - ∫ y, Y y ∂μ)}).toReal
+      ≤ Real.exp (-lam ^ 2 / (2 * ((n : ℝ) * τ ^ 2))) := by
+  classical
+  set P : Measure (Fin n → ℝ) := Measure.pi fun _ : Fin n => μ with hP
+  set c : ℝ≥0 := (‖τ - -τ‖₊ / 2) ^ 2 with hc
+  have hcR : ((c : ℝ≥0) : ℝ) = τ ^ 2 := by
+    rw [hc]
+    push_cast
+    rw [Real.norm_eq_abs, abs_of_nonneg (by linarith : (0 : ℝ) ≤ τ - -τ)]
+    ring
+  have hindep : iIndepFun (fun (i : Fin n) (ω : Fin n → ℝ) => Y (ω i)) P :=
+    iIndepFun_pi (X := fun _ : Fin n => Y) (fun _ => hY.aemeasurable)
+  have hindep' : iIndepFun
+      (fun (i : Fin n) (ω : Fin n → ℝ) => Y (ω i) - ∫ y, Y y ∂μ) P :=
+    hindep.comp _ (fun _ => measurable_id.sub_const _)
+  have hsubG : ∀ i : Fin n,
+      HasSubgaussianMGF (fun ω : Fin n → ℝ => Y (ω i) - ∫ y, Y y ∂μ) c P := by
+    intro i
+    have hmem : ∀ᵐ ω ∂P, Y (ω i) ∈ Set.Icc (-τ) τ :=
+      Filter.Eventually.of_forall fun ω => abs_le.1 (hbdd (ω i))
+    have h := StatLean.ConcentrationInequalities.isSubGaussian_of_mem_Icc
+      (μ := P) (X := fun ω : Fin n → ℝ => Y (ω i)) (a := -τ) (b := τ)
+      ((hY.comp (measurable_pi_apply i)).aemeasurable) hmem
+    rwa [StatLean.ConcentrationInequalities.isSubGaussian_iff, integral_pi_coord μ hY i] at h
+  have hmain := ProbabilityTheory.HasSubgaussianMGF.measure_sum_ge_le_of_iIndepFun hindep'
+    (c := fun _ : Fin n => c) (s := Finset.univ) (fun i _ => hsubG i) hlam
+  have hsum : ((∑ _i : Fin n, c : ℝ≥0) : ℝ) = (n : ℝ) * τ ^ 2 := by
+    rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    push_cast
+    rw [hcR]
+  rw [hsum] at hmain
+  exact hmain
+
+/-- **(X3)(b), two-sided.** The same bound for `|∑ᵢ(Y(ωᵢ) − E Y)|`, at the cost of a factor `2`:
+apply the one-sided estimate to `Y` and to `−Y`, whose bound `|−Y| ≤ τ` is the same. -/
+theorem measure_pi_abs_sum_le_exp {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Y : ℝ → ℝ} (hY : Measurable Y) {τ : ℝ} (hτ : 0 ≤ τ) (hbdd : ∀ y, |Y y| ≤ τ)
+    {lam : ℝ} (hlam : 0 ≤ lam) :
+    ((Measure.pi fun _ : Fin n => μ)
+        {ω : Fin n → ℝ | lam ≤ |∑ i, (Y (ω i) - ∫ y, Y y ∂μ)|}).toReal
+      ≤ 2 * Real.exp (-lam ^ 2 / (2 * ((n : ℝ) * τ ^ 2))) := by
+  classical
+  set P : Measure (Fin n → ℝ) := Measure.pi fun _ : Fin n => μ with hP
+  have h1 := measure_pi_sum_ge_le_exp (n := n) μ hY hτ hbdd hlam
+  have h2 := measure_pi_sum_ge_le_exp (n := n) (Y := fun y => -Y y) μ (hY.neg) hτ
+    (fun y => by rw [abs_neg]; exact hbdd y) hlam
+  have hneg : ∀ ω : Fin n → ℝ,
+      (∑ i, (-Y (ω i) - ∫ y, -Y y ∂μ)) = -∑ i, (Y (ω i) - ∫ y, Y y ∂μ) := by
+    intro ω
+    have hstep : ∀ i : Fin n, (-Y (ω i) - ∫ y, -Y y ∂μ) = -(Y (ω i) - ∫ y, Y y ∂μ) := by
+      intro i
+      rw [integral_neg]
+      ring
+    rw [Finset.sum_congr rfl fun i _ => hstep i, Finset.sum_neg_distrib]
+  have h2' : (P {ω : Fin n → ℝ | lam ≤ -∑ i, (Y (ω i) - ∫ y, Y y ∂μ)}).toReal
+      ≤ Real.exp (-lam ^ 2 / (2 * ((n : ℝ) * τ ^ 2))) := by
+    refine le_trans (le_of_eq ?_) h2
+    congr 2
+    ext ω
+    simp only [Set.mem_setOf_eq, hneg ω]
+  have hsub : {ω : Fin n → ℝ | lam ≤ |∑ i, (Y (ω i) - ∫ y, Y y ∂μ)|}
+      ⊆ {ω : Fin n → ℝ | lam ≤ ∑ i, (Y (ω i) - ∫ y, Y y ∂μ)}
+        ∪ {ω : Fin n → ℝ | lam ≤ -∑ i, (Y (ω i) - ∫ y, Y y ∂μ)} := by
+    intro ω hω
+    have hω' : lam ≤ |∑ i, (Y (ω i) - ∫ y, Y y ∂μ)| := hω
+    simp only [Set.mem_union, Set.mem_setOf_eq]
+    rcases abs_cases (∑ i, (Y (ω i) - ∫ y, Y y ∂μ)) with ⟨he, _⟩ | ⟨he, _⟩
+    · exact Or.inl (by rw [← he]; exact hω')
+    · exact Or.inr (by rw [← he]; exact hω')
+  have hle := (measure_mono (μ := P) hsub).trans (measure_union_le _ _)
+  have hfin := ENNReal.toReal_mono
+    (ENNReal.add_ne_top.2 ⟨measure_ne_top _ _, measure_ne_top _ _⟩) hle
+  rw [ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)] at hfin
+  linarith [hfin, h1, h2']
+
+/-- **(X3)(b), in the shape the one-large-summand decomposition produces.** The remainder of
+`measure_pi_inter_le_of_large_summand` is the tail of the sum of the summands *truncated at* `τ`,
+which is uncentred. Provided the accumulated mean shift `n·|E Ỹ|` is at most `λ/2` — which is the
+regime the peeled arithmetic works in, since `E Ỹ` is the tail contribution `−E[Y 1_{|Y| > τ}]`
+of a centred `Y` — the tail is bounded by `2exp(−λ²/(8nτ²))`.
+
+This is what closes (X3)(b): **Chebyshev provably cannot**, because truncation does not decrease
+the second moment, and `n E[Y²]/λ²` is exactly the bound one had before decomposing. -/
+theorem measure_pi_truncated_sum_le_exp {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Y : ℝ → ℝ} (hY : Measurable Y) {τ : ℝ} (hτ : 0 ≤ τ) {lam : ℝ} (hlam : 0 ≤ lam)
+    (hmean : (n : ℝ) * |∫ y, (if |Y y| ≤ τ then Y y else 0) ∂μ| ≤ lam / 2) :
+    ((Measure.pi fun _ : Fin n => μ)
+        {ω : Fin n → ℝ | lam < |∑ i, (if |Y (ω i)| ≤ τ then Y (ω i) else 0)|}).toReal
+      ≤ 2 * Real.exp (-lam ^ 2 / (8 * ((n : ℝ) * τ ^ 2))) := by
+  classical
+  set W : ℝ → ℝ := fun y => if |Y y| ≤ τ then Y y else 0 with hW
+  have hWm : Measurable W :=
+    Measurable.ite (measurableSet_le hY.abs measurable_const) hY measurable_const
+  have hWbdd : ∀ y, |W y| ≤ τ := by
+    intro y
+    by_cases h : |Y y| ≤ τ
+    · rw [hW]; simp only [if_pos h]; exact h
+    · rw [hW]; simp only [if_neg h, abs_zero]; exact hτ
+  set m : ℝ := ∫ y, W y ∂μ with hm
+  have hsub : {ω : Fin n → ℝ | lam < |∑ i, W (ω i)|}
+      ⊆ {ω : Fin n → ℝ | lam / 2 ≤ |∑ i, (W (ω i) - m)|} := by
+    intro ω hω
+    have hω' : lam < |∑ i, W (ω i)| := hω
+    have hsplit : (∑ i, W (ω i)) = (∑ i, (W (ω i) - m)) + (n : ℝ) * m := by
+      rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+        nsmul_eq_mul]
+      ring
+    have h1 : |∑ i, W (ω i)| ≤ |∑ i, (W (ω i) - m)| + (n : ℝ) * |m| := by
+      rw [hsplit]
+      refine (abs_add_le _ _).trans ?_
+      rw [abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ))]
+    simp only [Set.mem_setOf_eq]
+    linarith [hmean, h1, hω']
+  have hmono := ENNReal.toReal_mono (measure_ne_top _ _)
+    (measure_mono (μ := Measure.pi fun _ : Fin n => μ) hsub)
+  refine hmono.trans ?_
+  have h := measure_pi_abs_sum_le_exp (n := n) μ hWm hτ hWbdd (by linarith : (0 : ℝ) ≤ lam / 2)
+  refine h.trans ?_
+  have harg : -(lam / 2) ^ 2 / (2 * ((n : ℝ) * τ ^ 2))
+      = -lam ^ 2 / (8 * ((n : ℝ) * τ ^ 2)) := by ring
+  rw [harg]
 
 end StudentizedReduction
 
