@@ -2453,6 +2453,70 @@ theorem measure_pi_abs_root_insertNth_le {n : ℕ} (μ : Measure ℝ) [IsProbabi
     nlinarith [hA, hsn.le, hkey]
   nlinarith [hratio, hw, hA]
 
+/-- **(X3), CLOSED: the joint stratum bound.** The two inputs wave 18 left compose with the four
+conditioning bricks it built, and the result is a single estimate of the joint mass of
+
+* a **tail event carried by a coordinate sum**, `{λ < |∑ᵢ Y(ωᵢ)|}`, and
+* a **window event for the root**, `{|Rₙ₊₁ − x| ≤ w}`,
+
+namely `(n+1)·μ{|Y| > τ}·(2√2 A w + 2η) + 2exp(−λ²/(8(n+1)τ²))`.
+
+Every ingredient is now proved: `subset_union_large_summand` decomposes the tail into the `n+1`
+one-coordinate events plus a truncated-sum remainder; `measure_pi_inter_coord_le` conditions each
+one-coordinate event on its dominant coordinate; `measure_pi_abs_root_insertNth_le` supplies the
+slice bound, **uniformly in the frozen value**, from the *marginal* window bound at size `n`; and
+`measure_pi_truncated_sum_le_exp` — Hoeffding on the product measure — estimates the remainder,
+where wave 18 correctly recorded that Chebyshev cannot.
+
+The three properties wave 17 proved this shape must have are all visible here: the product
+structure survives on the one-coordinate part (where it is true), the remainder is separated
+rather than absorbed, and no lower bound on the tail probability is needed. What the peeled
+assembly consumes is exactly this, as its per-stratum hypothesis `hstrat`; the arithmetic that
+turns a geometric family of these into `O(n⁻¹)` is `sum_dyadic_strata_le`.
+
+What is **not** supplied here, and is the route-specific work that remains, is the deterministic
+containment turning `{2ᵏδ < |T̃ₙ − Hₙ|}` into a tail event of the shape `{λₖ < |∑ᵢ Y(ωᵢ)|}` —
+that needs the delta-method surrogate `Hₙ` itself, via `abs_studentFactor_sub_taylor3_le'`. -/
+theorem measure_pi_stratum_le {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Y Z : ℝ → ℝ} (hY : Measurable Y) (hZ : Measurable Z)
+    {A η τ lam x w : ℝ} (hA : 0 ≤ A) (hη : 0 ≤ η) (hτ : 0 ≤ τ) (hw : 0 ≤ w)
+    (hn : 0 < n) (hlam : 0 ≤ lam)
+    (hwin : ∀ u w : ℝ, 0 ≤ w →
+      ((Measure.pi fun _ : Fin n => μ)
+          {z : Fin n → ℝ | |(Real.sqrt (n : ℝ))⁻¹ * ∑ j, Z (z j) - u| ≤ w}).toReal
+        ≤ 2 * A * w + 2 * η)
+    (hmean : ((n + 1 : ℕ) : ℝ) * |∫ y, (if |Y y| ≤ τ then Y y else 0) ∂μ| ≤ lam / 2) :
+    ((Measure.pi fun _ : Fin (n + 1) => μ)
+        ({ω : Fin (n + 1) → ℝ | lam < |∑ i, Y (ω i)|} ∩
+          {ω : Fin (n + 1) → ℝ |
+            |(Real.sqrt ((n : ℝ) + 1))⁻¹ * ∑ j, Z (ω j) - x| ≤ w})).toReal
+      ≤ ((n : ℝ) + 1)
+          * ((μ {y : ℝ | τ < |Y y|}).toReal * (2 * (Real.sqrt 2 * A) * w + 2 * η))
+        + 2 * Real.exp (-lam ^ 2 / (8 * (((n + 1 : ℕ) : ℝ) * τ ^ 2))) := by
+  classical
+  set B : Set (Fin (n + 1) → ℝ) :=
+    {ω : Fin (n + 1) → ℝ | |(Real.sqrt ((n : ℝ) + 1))⁻¹ * ∑ j, Z (ω j) - x| ≤ w} with hBdef
+  have hsumZ : Measurable fun ω : Fin (n + 1) → ℝ => ∑ j, Z (ω j) :=
+    Finset.measurable_sum _ fun j _ => hZ.comp (measurable_pi_apply j)
+  have hB : MeasurableSet B :=
+    (((measurable_const.mul hsumZ).sub_const x).abs) measurableSet_Iic
+  set c : ℝ := 2 * (Real.sqrt 2 * A) * w + 2 * η with hcdef
+  have hc : 0 ≤ c := by positivity
+  have hslice : ∀ (i : Fin (n + 1)) (y : ℝ),
+      (Measure.pi fun _ : Fin n => μ)
+          {z : Fin n → ℝ | (i.insertNth y z : Fin (n + 1) → ℝ) ∈ B} ≤ ENNReal.ofReal c := by
+    intro i y
+    have hset : {z : Fin n → ℝ | (i.insertNth y z : Fin (n + 1) → ℝ) ∈ B}
+        = {z : Fin n → ℝ |
+            |(Real.sqrt ((n : ℝ) + 1))⁻¹
+              * ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j) - x| ≤ w} := rfl
+    rw [hset, ← ENNReal.ofReal_toReal (measure_ne_top _ _)]
+    exact ENNReal.ofReal_le_ofReal (measure_pi_abs_root_insertNth_le μ hA hn i hwin y x hw)
+  have hmain := measure_pi_inter_le_of_large_summand_toReal (n := n) μ hY lam τ hB hc hslice
+  refine hmain.trans ?_
+  have hrem := measure_pi_truncated_sum_le_exp (n := n + 1) μ hY hτ hlam hmean
+  linarith
+
 end StudentizedReduction
 
 /-! ## The Edgeworth approximant on the standardized scale
