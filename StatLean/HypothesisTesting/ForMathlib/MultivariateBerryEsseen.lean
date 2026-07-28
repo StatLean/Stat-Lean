@@ -22,7 +22,9 @@ there, `bentkus_berry_esseen_convex` (constant `400 k^{1/4}`) and
 research-level dimension factor obtained by Fourier analysis over convex bodies. Their sharp
 `β/√n` *rate* is not reproduced here; what is proved here is the honest elementary rate
 `(β/√n)^{1/4}`, over balls (`berryEsseen_ball_elementary`, which discharges
-`bentkus_berry_esseen_ball`) and over convex sets (`berryEsseen_convex_elementary`).
+`bentkus_berry_esseen_ball`) and over convex sets (`berryEsseen_convex_elementary`) — and, over
+convex sets, the strictly better `(β/√n)^{1/2}` of `berryEsseen_convex_improved`, obtained by
+the Cameron–Martin route of the wave-13/16 sections at the end of the file.
 
 What this file records instead is the strongest bound the elementary route yields *honestly*.
 The single ingredient that is proved unconditionally and is genuinely dimension-free is the
@@ -127,7 +129,17 @@ the sharp rate). That induction is Bentkus's actual argument and is not attempte
 honest ceiling of the *non-inductive* elementary route is `(β/√n)^{1/2}`, and the residual gap
 to Bentkus is a further factor `(β/√n)^{1/2}`.
 
-**Status of the improvement.** Everything below is proved outright (`0`-sorry).
+**Status of the improvement (wave 16: COMPLETE, `0`-sorry and axiom-clean).** The improved
+headline is
+
+`berryEsseen_convex_improved` — `|μₙ(B) − γ(B)| ≤ C (β/√n)^{1/2} = O(n^{-1/4})` for measurable
+convex `B`, with `C = C₀ + gaussianShellConst k`,
+
+together with its Lévy/thickening form `berryEsseen_convex_levy_improved`
+(`μₙ(B) ≤ γ(Bᵋ) + C (β/√n)/ε` and its mirror image — note the mollifier cost `ε^{-1}`, not
+`ε^{-3}`). The proved `berryEsseen_convex_elementary` and `berryEsseen_ball_elementary` are
+deliberately left untouched: they are separate, weaker statements with existing consumers, and
+nothing about them is retracted. The ingredients:
 
 * *Analytic core.* `exists_tiltRemainder_bound` (scalar, absolute constant),
   `integral_abs_vecTiltRemainder_le` (multivariate, **dimension-free**, by reduction to the
@@ -142,16 +154,23 @@ to Bentkus is a further factor `(β/√n)^{1/2}`.
   `inv_mul_sqrt_le_telescope` (`j^{-3/2} ≤ 2((j−1)^{-1/2} − j^{-1/2})`), with no integral
   comparison. Choosing `J ≈ θ^{-2/3}` gives `O(θ^{1/3})`.
 
-**The one remaining brick is (i)**: the telescope itself. Concretely, `Iⱼ` should be
-`∫ x, (∫ z, f (n^{-1/2} • (∑ₗ xₗ) + (j/n)^{1/2} • z) dγ(z)) d(Measure.pi κ'ⱼ)` with
-`κ'ⱼ i = if i < j then Measure.dirac 0 else ν`; `integral_pi_sum_peel` peels coordinate `j`
-verbatim (the integrand is a bounded continuous function of `∑ₗ xₗ`), brick (ii) identifies the
-`(j+1)`-st smoothing with the `j`-th plus one fresh `n^{-1/2}`-scaled Gaussian, the step is
-`abs_integral_gaussian_smoothed_swap_le` for `j ≥ 1` and `abs_integral_swap_step_le` for
-`j = 0`, and brick (iii) sums the steps. The two endpoints need
-`Measure.pi (fun _ => Measure.dirac 0) = Measure.dirac 0` (for `I n`) and `√0 = 0` (for `I 0`).
-Until that lands, `berryEsseen_convex_elementary` and `berryEsseen_ball_elementary` keep their
-proved `(β/√n)^{1/4}` form.
+* *Assembly brick (i) — the telescope itself* (wave 16): `abs_integral_smooth_sub_gaussian_improved`.
+  `Iⱼ = ∫ x, (∫ z, f (n^{-1/2} • (∑ₗ xₗ) + (j/n)^{1/2} • z) dγ(z)) d(Measure.pi κ'ⱼ)` with
+  `κ'ⱼ i = if i < j then Measure.dirac 0 else ν`. `integral_pi_sum_peel` peels coordinate `j`
+  verbatim (the integrand is a bounded continuous function of `∑ₗ xₗ`; its continuity is
+  `continuous_integral_add_smul`, dominated convergence with the constant bound `1`). Brick (ii)
+  identifies the `(j+1)`-st smoothing with the `j`-th plus one fresh `n^{-1/2}`-scaled Gaussian,
+  so *the same single step* both kills a coordinate and widens the mollification. The step bound
+  is `abs_integral_gaussian_smoothed_swap_le` for `j ≥ 1` and, for **every** `j` (in particular
+  `j = 0`, where the smoothing has width `0`), `abs_integral_swap_step_le` applied after
+  `integral_integral_swap` moves the smoothing variable outside. Brick (iii) sums the minimum of
+  the two, giving `(J (M/6) n^{-3/2} + 3C/√J)(β_ν + β_G)` for every cut `J ≥ 2`. The endpoints
+  are `measure_pi_dirac_zero` (`⨂ δ₀ = δ₀`, by `Measure.pi_eq`) for `I n` and `√0 = 0` for `I 0`.
+
+  In the assembly the cut is `J = max 2 ⌈ε² n⌉`, which gives `J (M/6) n^{-3/2} ≤ C₃/(2ε√n)` and
+  `3C/√J ≤ 3C/(ε√n)`. The bookkeeping `J ≤ ε² n + 2` is only useful when `ε² n ≥ 1`; in the
+  complementary window the asserted bound already exceeds `1` (because `β ≥ k^{3/2} ≥ 1`), so
+  that case is discharged from `μₙ(B) ≤ 1` alone.
 
 **Reference.** V. Bentkus, "On the dependence of the Berry–Esseen bound on dimension,"
 *J. Statist. Plann. Inference* **113** (2003), 385–402. E. L. Lehmann and J. P. Romano,
@@ -2554,10 +2573,11 @@ order `(β/√n)^{1/4} = n^{-1/8}` — **not** the `n^{-1/2}` rate of the frozen
 
 **This exponent is not the ceiling of the elementary route** (wave-13 correction of an earlier
 note that claimed it was): exploiting the Gaussian mollification the hybrid telescope carries for
-free, `ε^{-3}` can be replaced by `ε^{-1}`, which balances at `(β/√n)^{1/2} = n^{-1/4}`. The
-analytic core of that improvement is proved in the Cameron–Martin section at the end of this
-file; the three remaining assembly bricks are listed in the module docstring. The sharp
-`400 k^{1/4} · β/√n` needs Bentkus's self-improving induction and is not attempted.
+free, `ε^{-3}` can be replaced by `ε^{-1}`, which balances at `(β/√n)^{1/2} = n^{-1/4}`. As of
+wave 16 that improvement is **proved**, as `berryEsseen_convex_improved` at the end of this file
+(`0`-sorry, axiom-clean); this theorem is kept as it stands because it has consumers and is a
+different, weaker statement. The sharp `400 k^{1/4} · β/√n` needs Bentkus's self-improving
+induction and is still not attempted.
 (Ball's theorem gives the sharp shell constant `4 k^{1/4}`, which is
 exactly the dimension factor of Bentkus's bound; only *finiteness* at fixed `k` is needed here, and
 that is what `GaussianShell` proves elementarily.)
@@ -2647,8 +2667,9 @@ end ElementaryRoute
 
 The material below is the analytic core of a **strict improvement of the exponent** of
 `berryEsseen_convex_elementary`, from `(β/√n)^{1/4}` to `(β/√n)^{1/2}`; see the
-"wave-13 amendment" in the module docstring for the derivation and for what is still missing
-before the improved headline can be assembled. Everything here is proved outright.
+"wave-13 amendment" in the module docstring for the derivation. Everything here is proved
+outright, and as of wave 16 so is the assembly: the improved headline is
+`berryEsseen_convex_improved`, at the very end of the file.
 
 The point is that the `j`-th step of the hybrid telescope already carries an independent
 `N(0,(j/n) I_k)` summand, so its test function is automatically Gaussian-mollified at scale

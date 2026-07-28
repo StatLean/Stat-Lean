@@ -152,8 +152,10 @@ theorem bentkus_berry_esseen_convex {k n : ℕ} {ν : Measure (EuclideanSpace �
   -- It cannot be wired to the sibling `bentkus_berry_esseen_ball` below.  That one is
   -- discharged by `ForMathlib.MultivariateBerryEsseen.berryEsseen_ball_elementary`, whose
   -- honest rate is `C (β/√n)^{1/4} = C n^{-1/8}` — obtained by the elementary
-  -- "smooth the indicator + Lindeberg swap" route, whose exponent `1/4` is intrinsic
-  -- (optimising `ε⁻³ β/√n + Cε` balances at `ε ∼ (β/√n)^{1/4}`).  That rate is strictly
+  -- "smooth the indicator + Lindeberg swap" route, at the balance `ε⁻³ β/√n + Cε`.  (An
+  -- earlier version of this comment called the exponent `1/4` "intrinsic"; that is FALSE,
+  -- see the wave-13/16 amendment below — but the *ball* assembly has not been redone at the
+  -- better exponent, so the sibling still quotes `1/4`.)  That rate is strictly
   -- weaker than `n^{-1/2}`, so it does not imply this statement in any regime; conversely
   -- this statement is not needed by any consumer in the file — the growing-`k` limit
   -- theorem below consumes only the *ball* version, and does so at the weaker rate, which
@@ -195,20 +197,33 @@ theorem bentkus_berry_esseen_convex {k n : ℕ} {ν : Measure (EuclideanSpace �
   -- the *density* (Cameron–Martin) instead of onto the test function.  Summing
   -- `min(A ε⁻³ n^{-3/2}, j^{-3/2})` over `j < n` turns `ε⁻³` into `ε⁻¹`, and the balance
   -- `ε⁻¹ β/√n + C_k ε` gives the strictly better elementary rate `(β/√n)^{1/2} = n^{-1/4}`.
-  -- The analytic core of that improvement is PROVED (0-sorry) in
-  -- `ForMathlib/MultivariateBerryEsseen`: `exists_tiltRemainder_bound`,
-  -- `integral_abs_vecTiltRemainder_le`, `integral_gaussian_shift_eq_tilt`, `tiltPoly_fubini`
-  -- and `abs_integral_gaussian_smoothed_swap_le`, together with two of the three assembly
-  -- bricks (`map_stdGaussian_pair_smul_add` / `integral_gaussian_pair_smul_add`, the Gaussian
-  -- convolution; and `sum_le_of_bounded_and_decay`, the sum estimate).  Only the hybrid
-  -- telescope itself is still open; see the "wave-13 amendment" block of that file's module
-  -- docstring for the full derivation and for the precise shape of the missing brick.
   --
-  -- Even that improved elementary ceiling is `(β/√n)^{1/2}`, not `β/√n`: closing the last
-  -- factor needs the anti-concentration bound applied to the *hybrid* laws, i.e. Bentkus's
-  -- self-improving induction over `n`, which is an independent project.  The declaration
-  -- therefore keeps its sharp Bentkus form and stays the pre-agreed, consumer-free debt of
-  -- this file.
+  -- WAVE-16: THAT IMPROVEMENT IS NOW PROVED IN FULL.  The last assembly brick — the hybrid
+  -- telescope carrying its own Gaussian smoothing — is
+  -- `abs_integral_smooth_sub_gaussian_improved`, and the headline it yields is
+  -- `ForMathlib.MultivariateBerryEsseen.berryEsseen_convex_improved`,
+  --   `|μₙ(B) − γ(B)| ≤ C (β/√n)^{1/2}` for measurable convex `B`, `C = C₀ + 8k^{3/2}/√(2π)`,
+  -- 0-sorry and axiom-clean, together with its Lévy form `berryEsseen_convex_levy_improved`.
+  -- So the convex side of the elementary route now stands at `n^{-1/4}`, not `n^{-1/8}`.
+  -- (The *ball* headline `berryEsseen_ball_elementary` was deliberately left at `1/4`: the
+  -- improved telescope applies verbatim to its radial test function, but its `ε`-optimisation
+  -- is a separate ~200-line assembly with existing consumers, and re-doing it buys nothing
+  -- downstream — the growing-`k` consumer only needs `→ 0` under `k³/n → 0`.)
+  --
+  -- Even the improved elementary ceiling is `(β/√n)^{1/2}`, not `β/√n`, and THIS statement is
+  -- still not implied by it.  RE-DERIVED (wave 16), concretely: the missing factor comes from
+  -- the swap error being bounded *globally*, whereas `D³` of a mollified indicator lives on
+  -- the `ε`-shell of `∂B`.  Localising replaces the uniform step bound by one weighted by
+  -- `P(hybrid ∈ shell)`, which is an anti-concentration bound for the **hybrid** laws — not
+  -- available from `gaussian_thickening_le`, which is about `γ` only.  Bentkus closes this by
+  -- the self-improving induction `Δ ≤ A ε⁻³ δ (C_k ε + 2Δ) + C_k ε` (closing at
+  -- `Δ ≲ C_k δ^{1/3}`, and at the sharp rate when iterated with the Gaussian smoothing).
+  -- Formalising it needs a *weighted* version of `integral_abs_vecTiltRemainder_le` — the
+  -- Cameron–Martin remainder integrated against `|G|` rather than bounded by `‖G‖_∞ = 1`,
+  -- i.e. a Hölder/`L²` form of that lemma — plus an induction over `n` in which the bound
+  -- being proved appears on both sides.  That is a self-contained further project; it was not
+  -- attempted in wave 16.  The declaration therefore keeps its sharp Bentkus form and stays
+  -- the pre-agreed, consumer-free debt of this file.
   sorry
 
 /-- **Berry–Esseen bound over Euclidean balls, with a dimension-free constant (honest rate).**
@@ -224,9 +239,13 @@ and the law.
 **Honest deviation from the book.** Bentkus (2003) states the sharp rate `C β/√n = C n^{-1/2}`,
 via Fourier analysis over convex bodies. What is proved here (`berryEsseen_ball_elementary`, in
 `ForMathlib.MultivariateBerryEsseen`) is the strongest bound the *elementary* "smooth the
-indicator + Lindeberg swap" route delivers honestly: `C · (β/√n)^{1/4} = C n^{-1/8}`. The
-exponent `1/4` is intrinsic to the mollifier method — optimising the smoothing width `ε` in
-`ε⁻³ β/√n + C ε` balances at `ε ~ (β/√n)^{1/4}` — and the sharp `n^{-1/2}` is not attempted. This
+indicator + Lindeberg swap" route delivers honestly at the balance `ε⁻³ β/√n + C ε`, which is
+minimised at `ε ~ (β/√n)^{1/4}`: `C · (β/√n)^{1/4} = C n^{-1/8}`.  (Wave-16 correction of an
+earlier claim here that the exponent `1/4` is *intrinsic*: it is not — for convex sets
+`berryEsseen_convex_improved` reaches `(β/√n)^{1/2}`, and the same Gaussian-smoothed telescope
+applies to the radial test function used here.  The ball `ε`-optimisation has simply not been
+re-done, because no consumer needs the better exponent.)  The sharp `n^{-1/2}` is not attempted.
+This
 weaker rate still suffices for every consumer here: with `β ≤ B k^{3/2}` the error is
 `≤ C (B k^{3/2}/√n)^{1/4}`, which `→ 0` under exactly the source's growth condition `k³/n → 0`,
 since `(k^{3/2}/√n)^{1/4} → 0 ⟺ k³/n → 0`. This statement is therefore *not* deferral-eligible;
