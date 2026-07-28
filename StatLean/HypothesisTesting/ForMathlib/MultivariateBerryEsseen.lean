@@ -4812,6 +4812,54 @@ private lemma continuous_integral_add_smul {σ : Measure (EuclideanSpace ℝ (Fi
     (Filter.Eventually.of_forall fun u =>
       hF.comp (continuous_id.add continuous_const))
 
+/-- **The telescope step with a bound that may depend on the remaining coordinates**
+(wave 36: the *structural* half of brick L's residue).
+
+The wave-16 telescope estimates one step by a **constant** pointwise bound `D` on the peeled
+difference `|∫ g(u + v) dν − ∫ g(u + v) dσ|`, uniformly in the remaining sum `v = ∑ₗ yₗ`. The
+two localised swap estimates that brick L needs
+(`localised_swap_bound_small_weight`) are not of that form: their weight is the mass of a
+two-sided shell under the hybrid law, i.e. an *average*, not a pointwise bound. What they do
+supply is a bound `D v` that varies with `v` — typically `D v = (shell indicator averaged over
+the peeled coordinate and the smoothing Gaussian) × cost`.
+
+This lemma is that generalisation, and it is exactly as cheap: the wave-16 argument never used
+constancy of `D`, only `integral_mono` against a constant. Replacing the constant by an
+integrable function of `∑ₗ yₗ` costs one integrability hypothesis and nothing else.
+
+**How the conclusion becomes a hybrid mass at the call site.** The right-hand side
+`∫ D(∑ₗ yₗ) d(⨂ κ')` is an integral against the law of the sum of the *remaining* `n − 1`
+coordinates. When `D v` is itself an average over the peeled coordinate `u ~ ν` and the
+smoothing variable `z ~ γ` of a function of `c(v + u) + sⱼ z`, that iterated integral is by
+Fubini an integral against the law of `c ∑ᵢ yᵢ + sⱼ z`, which is `hybridLaw n j ν` — so a
+shell indicator there produces precisely the two-sided-shell mass the amended weight
+hypothesis bounds. That identification is the caller's step, not this lemma's. -/
+private lemma abs_sub_integral_peel_le_integral {k m : ℕ}
+    (ν σ : Measure (EuclideanSpace ℝ (Fin k)))
+    [IsProbabilityMeasure ν] [IsProbabilityMeasure σ]
+    (κ' : Fin m → Measure (EuclideanSpace ℝ (Fin k))) [∀ l, IsProbabilityMeasure (κ' l)]
+    {g : EuclideanSpace ℝ (Fin k) → ℝ} (hg : Continuous g) (hgb : ∀ x, |g x| ≤ 1)
+    {D : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hDint : Integrable (fun y : Fin m → EuclideanSpace ℝ (Fin k) => D (∑ l, y l))
+      (Measure.pi κ'))
+    (hbound : ∀ v : EuclideanSpace ℝ (Fin k),
+      |(∫ u, g (u + v) ∂ν) - (∫ u, g (u + v) ∂σ)| ≤ D v) :
+    |(∫ y, (∫ u, g (u + ∑ l, y l) ∂ν) ∂(Measure.pi κ'))
+        - (∫ y, (∫ u, g (u + ∑ l, y l) ∂σ) ∂(Measure.pi κ'))|
+      ≤ ∫ y, D (∑ l, y l) ∂(Measure.pi κ') := by
+  have hAint : Integrable (fun y : (_ : Fin m) → EuclideanSpace ℝ (Fin k) =>
+      ∫ u, g (u + ∑ l, y l) ∂ν) (Measure.pi κ') :=
+    (integrable_peel_prod ν κ' hg hgb).integral_prod_right
+  have hBint : Integrable (fun y : (_ : Fin m) → EuclideanSpace ℝ (Fin k) =>
+      ∫ u, g (u + ∑ l, y l) ∂σ) (Measure.pi κ') :=
+    (integrable_peel_prod σ κ' hg hgb).integral_prod_right
+  rw [← integral_sub hAint hBint]
+  calc |∫ y, ((∫ u, g (u + ∑ l, y l) ∂ν) - (∫ u, g (u + ∑ l, y l) ∂σ)) ∂(Measure.pi κ')|
+      ≤ ∫ y, |(∫ u, g (u + ∑ l, y l) ∂ν) - (∫ u, g (u + ∑ l, y l) ∂σ)|
+          ∂(Measure.pi κ') := abs_integral_le_integral_abs
+    _ ≤ ∫ y, D (∑ l, y l) ∂(Measure.pi κ') :=
+        integral_mono (hAint.sub hBint).abs hDint fun y => hbound _
+
 set_option maxHeartbeats 1600000 in
 /-- **The hybrid telescope with Gaussian smoothing (brick (i)).** For every cut `J ≥ 2` the
 normal approximation error of a `C³` test function bounded by `1` with `‖D³f‖ ≤ M` is at most
@@ -4947,13 +4995,19 @@ private lemma abs_integral_smooth_sub_gaussian_improved {n : ℕ} (hk : 0 < k) {
     · infer_instance
     · exact hν
   set I : ℕ → ℝ := fun j => ∫ x, G j (∑ l, x l) ∂(Measure.pi (κ j)) with hIdef
-  -- one telescope step, given any uniform pointwise bound on the peeled difference
-  have hstepgen : ∀ j : ℕ, j < m + 1 → ∀ D : ℝ, 0 ≤ D →
+  -- one telescope step, given a bound on the peeled difference that may itself depend on the
+  -- remaining coordinates (wave 36: the `v`-dependent form, via
+  -- `abs_sub_integral_peel_le_integral`; the constant case is `hstepgen` below)
+  have hstepfun : ∀ j : ℕ, ∀ hj : j < m + 1, ∀ D : EuclideanSpace ℝ (Fin k) → ℝ,
+      Integrable (fun y : (_ : Fin m) → EuclideanSpace ℝ (Fin k) => D (∑ l, y l))
+        (Measure.pi fun l : Fin m => κ j ((⟨j, hj⟩ : Fin (m + 1)).succAbove l)) →
       (∀ v : EuclideanSpace ℝ (Fin k),
         |(∫ u, G j (u + v) ∂ν)
-          - (∫ u, G j (u + v) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))| ≤ D) →
-      |I j - I (j + 1)| ≤ D := by
-    intro j hj D hD hbound
+          - (∫ u, G j (u + v) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))| ≤ D v) →
+      |I j - I (j + 1)|
+        ≤ ∫ y, D (∑ l, y l)
+            ∂(Measure.pi fun l : Fin m => κ j ((⟨j, hj⟩ : Fin (m + 1)).succAbove l)) := by
+    intro j hj D hDint hbound
     set i : Fin (m + 1) := ⟨j, hj⟩ with hidef
     have hival : ((i : Fin (m + 1)) : ℕ) = j := by rw [hidef]
     have hji : κ j i = ν := by
@@ -4984,14 +5038,6 @@ private lemma abs_integral_smooth_sub_gaussian_improved {n : ℕ} (hk : 0 < k) {
       intro y
       rw [integral_dirac, zero_add]
       exact (hconv j _).symm
-    have hAint : Integrable (fun y : (_ : Fin m) → EuclideanSpace ℝ (Fin k) =>
-        ∫ u, G j (u + ∑ l, y l) ∂ν) R :=
-      (integrable_peel_prod ν (fun l : Fin m => κ j (i.succAbove l))
-        (hGcont j) (hGb j)).integral_prod_right
-    have hBint : Integrable (fun y : (_ : Fin m) → EuclideanSpace ℝ (Fin k) =>
-        ∫ u, G j (u + ∑ l, y l) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) R :=
-      (integrable_peel_prod (stdGaussian (EuclideanSpace ℝ (Fin k)))
-        (fun l : Fin m => κ j (i.succAbove l)) (hGcont j) (hGb j)).integral_prod_right
     have hIj : I j = ∫ y, (∫ u, G j (u + ∑ l, y l) ∂ν) ∂R := by
       rw [hIdef]; exact hpeel0
     have hIj1 : I (j + 1)
@@ -4999,15 +5045,21 @@ private lemma abs_integral_smooth_sub_gaussian_improved {n : ℕ} (hk : 0 < k) {
       rw [hIdef]
       refine hpeel1.trans ?_
       exact integral_congr_ae (Filter.Eventually.of_forall fun y => hdirac y)
-    rw [hIj, hIj1, ← integral_sub hAint hBint]
-    calc |∫ y, ((∫ u, G j (u + ∑ l, y l) ∂ν)
-            - (∫ u, G j (u + ∑ l, y l) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))) ∂R|
-        ≤ ∫ y, |(∫ u, G j (u + ∑ l, y l) ∂ν)
-            - (∫ u, G j (u + ∑ l, y l) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))| ∂R :=
-          abs_integral_le_integral_abs
-      _ ≤ ∫ _y, D ∂R :=
-          integral_mono (hAint.sub hBint).abs (integrable_const _) fun y => hbound _
-      _ = D := by rw [integral_const]; simp
+    rw [hIj, hIj1]
+    exact abs_sub_integral_peel_le_integral ν (stdGaussian (EuclideanSpace ℝ (Fin k)))
+      (fun l : Fin m => κ j (i.succAbove l)) (hGcont j) (hGb j) hDint hbound
+  -- the constant case, which is what the two *unlocalised* step bounds below supply
+  have hstepgen : ∀ j : ℕ, j < m + 1 → ∀ D : ℝ, 0 ≤ D →
+      (∀ v : EuclideanSpace ℝ (Fin k),
+        |(∫ u, G j (u + v) ∂ν)
+          - (∫ u, G j (u + v) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))| ≤ D) →
+      |I j - I (j + 1)| ≤ D := by
+    intro j hj D _ hbound
+    haveI : ∀ l : Fin m, IsProbabilityMeasure (κ j ((⟨j, hj⟩ : Fin (m + 1)).succAbove l)) :=
+      fun l => hκp j _
+    have h := hstepfun j hj (fun _ => D) (integrable_const _) hbound
+    rw [integral_const] at h
+    simpa using h
   -- the peeled difference, written with the smoothing variable displayed
   have hrw : ∀ (σ : Measure (EuclideanSpace ℝ (Fin k))) (j : ℕ)
       (v : EuclideanSpace ℝ (Fin k)),
