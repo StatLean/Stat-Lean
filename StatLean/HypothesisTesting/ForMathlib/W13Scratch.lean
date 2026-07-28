@@ -410,6 +410,82 @@ private lemma exists_tiltRemainder_bound :
   · exact integral_abs_tiltRemainder_le_of_le_one hs h
   · exact integral_abs_tiltRemainder_le_of_one_le h
 
+
+/-! ### The multivariate Cameron–Martin tilt -/
+
+section MultivariateTilt
+
+variable {k : ℕ}
+
+private lemma continuous_tiltRemainder (s : ℝ) : Continuous (fun t => tiltRemainder s t) := by
+  unfold tiltRemainder
+  fun_prop
+
+/-- The **vector tilt remainder**: the second-order Taylor error, in the shift `w`, of the
+Cameron–Martin density `exp (⟪w,z⟫ − ‖w‖²/2)` of `N(0,I_k)` translated by `w`. -/
+private noncomputable def vecTiltRemainder (w z : EuclideanSpace ℝ (Fin k)) : ℝ :=
+  Real.exp (⟪w, z⟫_ℝ - ‖w‖ ^ 2 / 2)
+    - (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2)
+
+/-- **The vector tilt remainder is cubically small in the shift, in `L¹(N(0,I_k))`.**
+Reduction to the scalar statement `exists_tiltRemainder_bound` by the one-dimensional marginal
+`⟪ŵ, ·⟫ ∼ N(0,1)` (`stdGaussian_map_inner_unit`): the whole expression depends on `z` only
+through that marginal. The constant is **dimension-free**. -/
+private lemma integral_abs_vecTiltRemainder_le {C : ℝ}
+    (hC : ∀ s : ℝ, 0 ≤ s → (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ C * s ^ 3)
+    (w : EuclideanSpace ℝ (Fin k)) :
+    (∫ z, |vecTiltRemainder w z| ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      ≤ C * ‖w‖ ^ 3 := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · simp [vecTiltRemainder]
+  · have hnw : 0 < ‖w‖ := norm_pos_iff.mpr hw
+    obtain ⟨u, hunit, hwu⟩ : ∃ u : EuclideanSpace ℝ (Fin k), ‖u‖ = 1 ∧ w = ‖w‖ • u :=
+      ⟨‖w‖⁻¹ • w, by
+        rw [norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.mpr hnw)]
+        field_simp, by rw [smul_smul, mul_inv_cancel₀ hnw.ne', one_smul]⟩
+    have hinner : ∀ z : EuclideanSpace ℝ (Fin k), ⟪w, z⟫_ℝ = ‖w‖ * ⟪u, z⟫_ℝ := by
+      intro z
+      conv_lhs => rw [hwu]
+      rw [real_inner_smul_left]
+    have hrw : ∀ z : EuclideanSpace ℝ (Fin k),
+        vecTiltRemainder w z = tiltRemainder ‖w‖ (⟪u, z⟫_ℝ) := by
+      intro z
+      simp only [vecTiltRemainder, tiltRemainder, hinner z]
+      ring
+    simp_rw [hrw]
+    have hmap : Measure.map (fun y : EuclideanSpace ℝ (Fin k) => ⟪u, y⟫_ℝ)
+        (stdGaussian (EuclideanSpace ℝ (Fin k))) = gaussianReal 0 1 := by
+      have h := stdGaussian_map_inner_unit u hunit
+      rwa [multivariateGaussian_zero_one] at h
+    have hpush : (∫ z, |tiltRemainder ‖w‖ (⟪u, z⟫_ℝ)|
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        = ∫ t, |tiltRemainder ‖w‖ t| ∂(gaussianReal 0 1) := by
+      rw [← hmap, integral_map (by fun_prop)
+        ((continuous_tiltRemainder ‖w‖).abs.aestronglyMeasurable)]
+    rw [hpush]
+    exact hC ‖w‖ hnw.le
+
+/-- **Cameron–Martin: a Gaussian shift is an exponential tilt.** For a bounded continuous `g`,
+`∫ g(z + a) dγ = ∫ g(z) exp(⟪a,z⟫ − ‖a‖²/2) dγ`. This is
+`stdGaussian_withDensity_exp_shift` read as an integral identity; it is what replaces the
+third derivative of `g` by a factor `σ⁻³` in the Lindeberg swap. -/
+private lemma integral_gaussian_shift_eq_tilt {g : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hg : Continuous g) (a : EuclideanSpace ℝ (Fin k)) :
+    (∫ z, g (z + a) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      = ∫ z, g z * Real.exp (⟪a, z⟫_ℝ - ‖a‖ ^ 2 / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  have hmapint : (∫ z, g (z + a) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      = ∫ z, g z ∂((stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun y => y + a)) := by
+    rw [integral_map (by fun_prop) hg.aestronglyMeasurable]
+  rw [hmapint, ← stdGaussian_withDensity_exp_shift a,
+    integral_withDensity_eq_integral_toReal_smul (by fun_prop)
+      (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top) g]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun z => ?_)
+  dsimp only
+  rw [ENNReal.toReal_ofReal (Real.exp_nonneg _), smul_eq_mul, mul_comm]
+
+end MultivariateTilt
+
 end GaussianTilt
 
 end StatLean.HypothesisTesting
