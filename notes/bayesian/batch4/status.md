@@ -131,4 +131,17 @@ doob closure. W4: `bay/bpe-final`; full gates; merge to `main`.
   bpe-final), local_tv_tendsto (debt-localtv), truncScore_mean_expansion (debt-score),
   gaussian_loss_convolution_continuous (debt-gauss). Three of the four chapter targets
   (Thm 10.1, Lemma 10.3, Thm 10.10) plus the corollary are COMPLETE.
+- 2026-07-27: **AXIOM AUDIT (Tier-0, on batch4 @ 3a0797d)** — `#print axioms` via a temporary
+  scaffold. CLEAN (`[propext, Classical.choice, Quot.sound]`): `doob_consistency`,
+  `posterior_mass_compl_ball_tendsto` (Step A), `mutuallyContiguous_mixture_base`,
+  `posterior_tail_lintegral_tendsto` (10.9), `argmin_tendsto_of_uniform_approx`.
+  Still carrying `sorryAx` **transitively**: `bernstein_von_mises`(+`_lintegral`),
+  `bernstein_von_mises_efficient_centering`, `exponential_tests`,
+  `posteriorRisk_shifted_majorant`.
+  Cause: the two open debts live in OTHER files — `local_tv_tendsto` (LocalApproximation)
+  feeds Thm 10.1 and everything downstream; `truncScore_mean_expansion` (ScoreTest) feeds
+  `exists_moderate_tests` → `exponential_tests` → Thm 10.1.
+  **Lesson (already in CLAUDE.md, re-confirmed): a 0-sorry FILE is not an axiom-clean
+  THEOREM.** Per-file sorry counts must never be reported as completion; only `#print axioms`
+  settles it. Re-run the scaffold after every debt merge.
 
