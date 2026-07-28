@@ -1,4 +1,5 @@
 import StatLean.HypothesisTesting.Bootstrap.NonparametricMean
+import StatLean.HypothesisTesting.ForMathlib.BivariateEdgeworth
 import StatLean.HypothesisTesting.ForMathlib.EsseenSmoothing
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
@@ -609,6 +610,137 @@ lemma cramerCondition_centredLaw (F : Measure ℝ) [IsProbabilityMeasure F]
   exact ⟨c, hc, hev.mono fun s hs => by rw [norm_charFun_centredLaw]; exact hs⟩
 
 end RootLaw
+
+/-! ## The studentized root as a function of a bivariate mean
+
+The studentized root is **not** a normalised sum, so its characteristic function is not a power
+and `norm_charFun_pow_sub_edgeworth_le` does not apply to it. What it *is* is a fixed smooth
+function of the bivariate sample mean of `Z(x) = (x − μ, (x − μ)² − σ²)`, which is a normalised
+sum in `ℝ²` and to which `ForMathlib/BivariateEdgeworth.lean` does apply. This section makes
+that reduction exact: `studentizedRootCDF F n x` is the mass, under the *bivariate* root law
+`vecRootLaw F (studentPair F) n`, of the region `{w : H_n(w) ≤ x}` with
+
+`H_n(w) = w₀ / √(σ² + w₁ n^{-1/2} − w₀² n^{-1})`.
+
+The region is curved and depends on `n`; that is the whole difficulty of the studentized
+expansion, and it is exactly what the note on `edgeworth_studentized_uniform` isolates. -/
+
+section StudentizedReduction
+
+/-- The **studentizing pair** `Z(x) = (x − E_F X, (x − E_F X)² − Var_F X)`, a centred random
+vector in `ℝ²` whose sample mean carries both the numerator and the denominator of the
+studentized root. -/
+noncomputable def studentPair (F : Measure ℝ) : ℝ → EuclideanSpace ℝ (Fin 2) := fun x =>
+  WithLp.toLp 2 ![x - ∫ s, s ∂F, (x - ∫ s, s ∂F) ^ 2 - Var[fun t : ℝ => t; F]]
+
+lemma measurable_studentPair (F : Measure ℝ) : Measurable (studentPair F) := by
+  have hvec : Measurable fun x : ℝ =>
+      (![x - ∫ s, s ∂F, (x - ∫ s, s ∂F) ^ 2 - Var[fun t : ℝ => t; F]] : Fin 2 → ℝ) := by
+    refine measurable_pi_lambda _ fun i => ?_
+    fin_cases i
+    · change Measurable fun x : ℝ => x - ∫ s, s ∂F
+      fun_prop
+    · change Measurable fun x : ℝ => (x - ∫ s, s ∂F) ^ 2 - Var[fun t : ℝ => t; F]
+      fun_prop
+  have htoLp : Measurable (WithLp.toLp 2 : (Fin 2 → ℝ) → EuclideanSpace ℝ (Fin 2)) := by
+    fun_prop
+  exact htoLp.comp hvec
+
+/-- **The plug-in sample variance, recentred at an arbitrary point.**
+`n⁻¹ ∑ (yᵢ − ȳ)² = n⁻¹ ∑ (yᵢ − m)² − (ȳ − m)²` for every `m`. This is the identity that turns
+the denominator of the studentized root into a function of the bivariate mean. -/
+private lemma sampleVariance_eq_sub {n : ℕ} (hn : 0 < n) (m : ℝ) (y : Fin n → ℝ) :
+    sampleVariance y
+      = (n : ℝ)⁻¹ * (∑ i, (y i - m) ^ 2) - ((n : ℝ)⁻¹ * (∑ i, y i) - m) ^ 2 := by
+  have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
+  set S : ℝ := ∑ i, y i with hS
+  set db : ℝ := (n : ℝ)⁻¹ * S - m with hdb
+  have hsum1 : ∑ i, (y i - m) = (n : ℝ) * db := by
+    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      nsmul_eq_mul, hdb, ← hS]
+    field_simp
+  have hpt : ∀ i, (y i - (n : ℝ)⁻¹ * S) ^ 2
+      = (y i - m) ^ 2 - 2 * db * (y i - m) + db ^ 2 := by
+    intro i
+    rw [hdb]; ring
+  have hkey : ∑ i, (y i - (n : ℝ)⁻¹ * S) ^ 2
+      = (∑ i, (y i - m) ^ 2) - (n : ℝ) * db ^ 2 := by
+    simp_rw [hpt]
+    rw [Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum, hsum1,
+      Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    ring
+  rw [sampleVariance, hkey]
+  field_simp
+
+/-- **The studentized root is a fixed smooth function of the bivariate mean.**
+`studentizedRootCDF F n x` is the mass that the bivariate root law of `studentPair F` gives to
+the region `{w : w₀/√(σ² + w₁ n^{-1/2} − w₀² n^{-1}) ≤ x}`.
+
+This is the reduction the studentized Edgeworth expansion runs on: the left-hand side is a
+distribution function of a statistic that is *not* a sum, the right-hand side is a set-function
+of a law to which the multivariate damped expansion
+(`norm_charFun_smul_pow_sub_edgeworth_le`, `charFun_vecRootLaw`) applies. -/
+theorem studentizedRootCDF_eq_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {n : ℕ}
+    (hn : 0 < n) (x : ℝ) :
+    studentizedRootCDF F n x
+      = (vecRootLaw F (studentPair F) n
+          {w : EuclideanSpace ℝ (Fin 2) |
+            w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
+              - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ x}).toReal := by
+  set m : ℝ := ∫ s, s ∂F with hm
+  set v : ℝ := Var[fun t : ℝ => t; F] with hv
+  have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
+  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hn0
+  have hnn : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) := Real.mul_self_sqrt hn0.le
+  set R : Set (EuclideanSpace ℝ (Fin 2)) :=
+    {w | w 0 / Real.sqrt (v + w 1 * (Real.sqrt n)⁻¹ - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ x} with hR
+  have hRm : MeasurableSet R := by
+    have h0 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 0 := by fun_prop
+    have h1 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 1 := by fun_prop
+    refine measurableSet_le (h0.div ?_) measurable_const
+    exact (((h1.mul_const ((Real.sqrt n)⁻¹)).const_add v).sub
+      ((h0.pow_const 2).mul_const ((n : ℝ)⁻¹))).sqrt
+  -- the coordinates of the vector root
+  have hcoord : ∀ (y : Fin n → ℝ) (i : Fin 2),
+      ((Real.sqrt n)⁻¹ • ∑ j, studentPair F (y j)) i
+        = (Real.sqrt n)⁻¹ * ∑ j, (studentPair F (y j)) i := by
+    intro y i
+    simp [Finset.sum_apply]
+  have hset : {y : Fin n → ℝ |
+        Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - m) / Real.sqrt (sampleVariance y) ≤ x}
+      = (fun y : Fin n → ℝ => (Real.sqrt n)⁻¹ • ∑ j, studentPair F (y j)) ⁻¹' R := by
+    ext y
+    have h0 : ((Real.sqrt n)⁻¹ • ∑ j, studentPair F (y j)) 0
+        = Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - m) := by
+      rw [hcoord y 0]
+      have hcomp : ∀ j, (studentPair F (y j)) 0 = y j - m := fun j => rfl
+      simp_rw [hcomp]
+      rw [← sqrt_mul_sub_mean_eq hn m y]
+    have h1 : ((Real.sqrt n)⁻¹ • ∑ j, studentPair F (y j)) 1
+        = (Real.sqrt n)⁻¹ * ∑ j, ((y j - m) ^ 2 - v) := by
+      rw [hcoord y 1]
+      have hcomp : ∀ j, (studentPair F (y j)) 1 = (y j - m) ^ 2 - v := fun j => rfl
+      simp_rw [hcomp]
+    have hrad : v + ((Real.sqrt n)⁻¹ * ∑ j, ((y j - m) ^ 2 - v)) * (Real.sqrt n)⁻¹
+        - (Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - m)) ^ 2 * (n : ℝ)⁻¹
+        = sampleVariance y := by
+      have hinv : (Real.sqrt (n : ℝ))⁻¹ * (Real.sqrt (n : ℝ))⁻¹ = (n : ℝ)⁻¹ := by
+        rw [← mul_inv, hnn]
+      have e1 : ∀ X : ℝ, ((Real.sqrt (n : ℝ))⁻¹ * X) * (Real.sqrt (n : ℝ))⁻¹
+          = (n : ℝ)⁻¹ * X := fun X => by rw [← hinv]; ring
+      have e2 : ∀ B : ℝ, (Real.sqrt (n : ℝ) * B) ^ 2 = (n : ℝ) * B ^ 2 := fun B => by
+        rw [mul_pow, sq, hnn]
+      have hsum : ∑ j, ((y j - m) ^ 2 - v) = (∑ j, (y j - m) ^ 2) - (n : ℝ) * v := by
+        rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+          nsmul_eq_mul]
+      rw [sampleVariance_eq_sub hn m y, hsum, e1, e2]
+      field_simp
+      ring
+    simp only [Set.mem_preimage, hR, Set.mem_setOf_eq, h0, h1, hrad]
+  rw [studentizedRootCDF, ← hm, hset, vecRootLaw,
+    Measure.map_apply (measurable_vecRoot (measurable_studentPair F) n) hRm]
+
+end StudentizedReduction
 
 /-! ## The Edgeworth approximant on the standardized scale
 

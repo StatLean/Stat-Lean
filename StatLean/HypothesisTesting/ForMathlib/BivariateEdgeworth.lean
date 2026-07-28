@@ -216,7 +216,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
 
 /-- The root map `y ↦ n^{-1/2} ∑ᵢ Z(yᵢ)` is measurable. -/
-private lemma measurable_vecRoot {Z : ℝ → E} (hZ : Measurable Z) (n : ℕ) :
+lemma measurable_vecRoot {Z : ℝ → E} (hZ : Measurable Z) (n : ℕ) :
     Measurable fun y : Fin n → ℝ => (Real.sqrt n)⁻¹ • ∑ i, Z (y i) :=
   (continuous_const_smul ((Real.sqrt n)⁻¹ : ℝ)).measurable.comp
     (Finset.measurable_sum _ fun i _ => hZ.comp (measurable_pi_apply i))
