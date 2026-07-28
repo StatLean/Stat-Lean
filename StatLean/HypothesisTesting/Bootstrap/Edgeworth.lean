@@ -456,6 +456,50 @@ theorem exists_bound_lt_one_of_projLaw_cramer (μ : Measure E) [IsProbabilityMea
   exists_bound_lt_one_of_vecCramer μ hCramer
     (fun t ht => norm_charFun_lt_one_of_projLaw_cramer μ (hdir t ht)) hε
 
+/-- **Multivariate Cramér is exactly a Riemann–Lebesgue statement that is uniform over the
+unit sphere of directions.**
+
+`VecCramerCondition μ` follows from a single bound `‖φ_{projLaw μ θ}(R)‖ ≤ c < 1` holding for
+every unit vector `θ` and every large radius `R`. The proof is the projection identity written
+in polar form: `t = ‖t‖ • (t/‖t‖)`, so `φ_μ(t) = φ_{projLaw μ (t/‖t‖)}(‖t‖)`, and in a proper
+space `‖t‖ → ∞` along `cocompact E`.
+
+This pins down what is left of (M3)(i) for the law of `studentPair F`, and it is the reason
+that residue is *not* a corollary of the directionwise conditions. Each projected law
+`ν_θ = law of θ₀(X − μ) + θ₁((X − μ)² − σ²)` is a nonconstant polynomial image of an absolutely
+continuous law and hence itself absolutely continuous, so `‖φ_{ν_θ}(R)‖ → 0` as `R → ∞` for
+every *fixed* `θ` by Riemann–Lebesgue (`cramerCondition_of_absolutelyContinuous`). What is
+missing — and only this — is that the convergence be **uniform over the compact sphere**. Two
+routes are classical, and both give the stronger conclusion `limsup = 0` rather than merely
+`< 1`:
+
+* the two-regime van der Corput argument (`|θ₁|` bounded away from `0`: second-derivative test
+  on the genuinely quadratic phase `θ₀y + θ₁y²`; `|θ₁|` small: first-derivative test, the phase
+  being close to linear), with the uniformity across the transition as the delicate point;
+* the soft route: `θ ↦ ν_θ` is continuous in total variation on the sphere — the density of
+  `ν_θ` is `∑_{roots} f(y)/|θ₀ + 2θ₁y|`, whose `|·|^{-1/2}` singularity at the critical value
+  `−θ₀/(2θ₁)` escapes to infinity as `θ₁ → 0` and therefore carries vanishing mass — and
+  Riemann–Lebesgue is uniform on totally bounded subsets of `L¹`, since
+  `‖φ_ν(R) − φ_{ν'}(R)‖ ≤ ‖ν − ν'‖_{TV}` for every `R`.
+
+Neither is available in Mathlib at present. -/
+theorem vecCramerCondition_of_uniform_sphere [ProperSpace E] (μ : Measure E)
+    {c R₀ : ℝ} (hc : c < 1) (hR₀ : 0 < R₀)
+    (h : ∀ θ : E, ‖θ‖ = 1 → ∀ R : ℝ, R₀ ≤ R → ‖charFun (projLaw μ θ) R‖ ≤ c) :
+    VecCramerCondition μ := by
+  refine ⟨c, hc, ?_⟩
+  filter_upwards [(tendsto_norm_cocompact_atTop (E := E)).eventually_ge_atTop R₀] with t ht
+  have htpos : (0 : ℝ) < ‖t‖ := lt_of_lt_of_le hR₀ ht
+  set θ : E := (‖t‖)⁻¹ • t with hθdef
+  have hθ : ‖θ‖ = 1 := by
+    rw [hθdef, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ htpos.ne']
+  have hpolar : (‖t‖ : ℝ) • θ = t := by
+    rw [hθdef, smul_smul, mul_inv_cancel₀ htpos.ne', one_smul]
+  have hid : charFun μ t = charFun (projLaw μ θ) ‖t‖ := by
+    rw [← charFun_smul_eq_charFun_map_inner μ θ ‖t‖, hpolar]
+  rw [hid]
+  exact h θ hθ ‖t‖ ht
+
 end VecCramer
 
 /-! ## The Lipschitz modulus of the normal distribution function

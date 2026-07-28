@@ -940,6 +940,33 @@ theorem norm_mixCharFun_vecRootLaw_sub_charFun_le (F : Measure ℝ) [IsProbabili
     exact mul_le_mul_of_nonneg_right h2 (abs_nonneg _)
   linarith
 
+/-- **The Cramér tail transfers to a vector root for free.**
+
+If `‖φ_{F∘Z⁻¹}(t)‖ ≤ c` on the whole region `ε ≤ ‖t‖`, then `‖φ_{ρ_n}(t)‖ ≤ cⁿ` on the region
+`ε√n ≤ ‖t‖`. This is `charFun_vecRootLaw` and nothing else: the law of the vector root *is* a
+normalised sum, so its characteristic function *is* an `n`-th power, and the rescaling by
+`n^{-1/2}` converts the region `ε ≤ ‖·‖` into `ε√n ≤ ‖·‖`.
+
+It is the exact analogue, for the bivariate law, of what `edgeworthGap_tail_le` does for the
+centred root, and it shows that **no conditioning device is needed at the level of `ρ_n`**: the
+transfer that wave 13 attributed to Hall's trick of conditioning on `n − k` of the coordinates
+is free here. Conditioning would be needed only for the law of a *nonlinear* functional of the
+root, which the (M1)(b) route never forms. -/
+theorem norm_charFun_vecRootLaw_le_pow (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E}
+    (hZ : Measurable Z) {c ε : ℝ} (hε : 0 < ε)
+    (hc : ∀ t : E, ε ≤ ‖t‖ → ‖charFun (F.map Z) t‖ ≤ c)
+    {n : ℕ} (hn : 0 < n) {t : E} (ht : ε * Real.sqrt (n : ℝ) ≤ ‖t‖) :
+    ‖charFun (vecRootLaw F Z n) t‖ ≤ c ^ n := by
+  have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hn0
+  have hscale : ‖((Real.sqrt (n : ℝ))⁻¹ : ℝ) • t‖ = ‖t‖ / Real.sqrt (n : ℝ) := by
+    rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hsn, inv_mul_eq_div]
+  have hge : ε ≤ ‖((Real.sqrt (n : ℝ))⁻¹ : ℝ) • t‖ := by
+    rw [hscale, le_div_iff₀ hsn]
+    linarith
+  rw [charFun_vecRootLaw F hZ, norm_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _) (hc _ hge) n
+
 end OneFactor
 
 end StatLean.HypothesisTesting
