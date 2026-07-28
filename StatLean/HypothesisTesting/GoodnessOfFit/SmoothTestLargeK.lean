@@ -283,6 +283,32 @@ theorem bentkus_berry_esseen_convex {k n : ℕ} {ν : Measure (EuclideanSpace �
   -- file: wiring
   -- it to `berryEsseen_convex_sharp` would neither discharge it (the constant differs) nor
   -- reduce the project's `sorry` count (that theorem is itself brick-backed).
+  --
+  -- WAVE-24: BRICK L AS FROZEN IS FALSE, and is amended; its large-weight half is proved.  The
+  -- wave-20 statement asked for `|∫f dμₙ − ∫f dγ| ≤ A (β/√n) ε⁻¹ W` with the BARE hybrid shell
+  -- weight `W`.  Counterexample (in full at `exists_localised_swap_bound`): `k = 1`, `n = 1`,
+  -- `ε = 1`, `ν` two-point with mass `p` at `−a`, `a = √((1−p)/p)`, `B = (−∞, −a/2]`.  The shell
+  -- `[−a/2, −a/2+2)` misses both atoms of `ν`, so `W ≍ e^{−a²/8}` is admissible, while
+  -- `∫f dν = p`; as `p ↓ 0` the left side is polynomially small and the right side
+  -- exponentially small.  The mechanism: `W` may sit far BELOW the Gaussian shell scale
+  -- `C_k ε`, which no swap estimate can exploit.  The amendment replaces the weight by
+  -- `W + C_k ε`; it is free at the only call site, so `berryEsseen_convex_sharp` and its
+  -- constant are unchanged.
+  -- • PROVED, axiom-clean: `exists_smooth_swap_bound_of_one_le_weight` — the amended brick
+  --   whenever `W + C_k ε ≥ 1`, with NO localisation at all.
+  -- • The residue is one named brick, `localised_swap_bound_small_weight` (same statement under
+  --   `W + C_k ε ≤ 1`), and the wave-22 claim that the localisation is a mechanical rerun of the
+  --   telescope with the wave-19 `L²` lemma substituted is OVERTURNED.  The obstruction is
+  --   precise: along the Cameron–Martin route the test function enters as `G(z) = f(v + σⱼ z)`,
+  --   the FUNCTION and not its third derivative (which has been moved onto the Gaussian
+  --   density), and `G` is not supported on the shell since `f = 1` on `B`.  Splitting
+  --   `f = 1_{interior B} + g` localises the `g` part verbatim, but leaves
+  --   `∫ 1_K R_w dγ = γ(K − w) − Q_w(K)` with `K` convex — the second-order Taylor remainder in
+  --   `w` of `w ↦ γ(K − w)`, whose control by the shell mass is exactly a Gaussian
+  --   surface-area statement about convex bodies, i.e. Ball's input again.
+  -- So THIS declaration is unchanged and stays the pre-agreed debt: the sharp `β/√n` route is
+  -- still brick-backed, and even when it closes it will give `C ∼ √k`, not `400 k^{1/4}` —
+  -- the same Ball ingredient is what separates the two.
   sorry
 
 /-- **Berry–Esseen bound over Euclidean balls, with a dimension-free constant (honest rate).**
