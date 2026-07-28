@@ -2083,6 +2083,39 @@ theorem measure_pi_inter_le_of_large_summand {n : ℕ} (μ : Measure ℝ) [IsPro
         rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
         norm_cast
 
+/-- **The one-large-summand bound in real form**, which is the shape
+`abs_measure_le_sub_le_of_peel_strata` consumes for its per-stratum hypothesis. Everything in
+sight is a finite measure, so the passage through `ENNReal.toReal` is bookkeeping. -/
+theorem measure_pi_inter_le_of_large_summand_toReal {n : ℕ} (μ : Measure ℝ)
+    [IsProbabilityMeasure μ] {Y : ℝ → ℝ} (hY : Measurable Y) (lam τ : ℝ)
+    {B : Set (Fin (n + 1) → ℝ)} (hB : MeasurableSet B) {c : ℝ} (hc : 0 ≤ c)
+    (hslice : ∀ (i : Fin (n + 1)) (y : ℝ),
+      (Measure.pi fun _ : Fin n => μ) {z : Fin n → ℝ | i.insertNth y z ∈ B}
+        ≤ ENNReal.ofReal c) :
+    ((Measure.pi fun _ : Fin (n + 1) => μ)
+        ({ω : Fin (n + 1) → ℝ | lam < |∑ i, Y (ω i)|} ∩ B)).toReal
+      ≤ ((n : ℝ) + 1) * ((μ {y : ℝ | τ < |Y y|}).toReal * c)
+        + ((Measure.pi fun _ : Fin (n + 1) => μ)
+            {ω : Fin (n + 1) → ℝ |
+              lam < |∑ i, (if |Y (ω i)| ≤ τ then Y (ω i) else 0)|}).toReal := by
+  classical
+  set P : Measure (Fin (n + 1) → ℝ) := Measure.pi fun _ : Fin (n + 1) => μ with hP
+  set R : Set (Fin (n + 1) → ℝ) :=
+    {ω : Fin (n + 1) → ℝ | lam < |∑ i, (if |Y (ω i)| ≤ τ then Y (ω i) else 0)|} with hRdef
+  have hbase := measure_pi_inter_le_of_large_summand μ hY lam τ hB hslice
+  have hne : ((n : ℝ≥0∞) + 1) * (μ {y : ℝ | τ < |Y y|} * ENNReal.ofReal c) + P R ≠ ⊤ := by
+    refine ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top ?_ ?_, (measure_lt_top P R).ne⟩
+    · exact ENNReal.add_ne_top.2 ⟨ENNReal.natCast_ne_top n, ENNReal.one_ne_top⟩
+    · exact ENNReal.mul_ne_top (measure_ne_top _ _) ENNReal.ofReal_ne_top
+  have h := ENNReal.toReal_mono hne hbase
+  rwa [ENNReal.toReal_add (ENNReal.mul_ne_top
+      (ENNReal.add_ne_top.2 ⟨ENNReal.natCast_ne_top n, ENNReal.one_ne_top⟩)
+      (ENNReal.mul_ne_top (measure_ne_top _ _) ENNReal.ofReal_ne_top))
+      (measure_lt_top P R).ne,
+    ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_add (ENNReal.natCast_ne_top n)
+      ENNReal.one_ne_top, ENNReal.toReal_natCast, ENNReal.toReal_one,
+    ENNReal.toReal_ofReal hc] at h
+
 /-- **The peeled assembly with per-stratum bounds.** The variant of
 `abs_measure_le_sub_le_of_peel_window` that consumes a direct bound on each joint stratum
 rather than the product form. This is what the one-large-summand route to (X3) actually
