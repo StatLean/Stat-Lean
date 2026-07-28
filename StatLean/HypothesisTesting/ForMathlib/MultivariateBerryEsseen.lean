@@ -258,6 +258,37 @@ only `O(n^{-1/3})`), and is not a corollary of it: the weight must be carried by
 not by `γ`. The best *proved* convex bound remains `berryEsseen_convex_improved` at
 `(β/√n)^{1/2}`.
 
+## Wave-24 amendment: brick L as frozen is FALSE; the amended brick, and its provable half
+
+**The wave-20 statement of brick L is false.** It asserted
+`|∫f dμₙ − ∫f dγ| ≤ A (β/√n) ε⁻¹ W` for the *bare* weight `W`, and the bare weight can sit far
+below the Gaussian shell scale `C_k ε` while the two laws are still far apart. The witness, in
+full at `exists_localised_swap_bound`, is `k = 1`, `n = 1`, `ε = 1` and a two-point law with an
+atom of mass `p` at `−a`, `a = √((1−p)/p)`, against the half-line `B = (−∞, −a/2]`: the shell
+misses both atoms, so `W` may be taken exponentially small in `1/p`, while the left-hand side is
+`≍ p`.
+
+**The amendment** replaces the weight by `W + C_k ε`, `C_k = gaussianShellConst k`. It is free at
+the only call site — `exists_convexDiscrepancy_recursion` feeds `W = 4 C_k ε + 2 Y` with `Y ≥ 0`,
+and `W + C_k ε ≤ (5/4) W` there — so the recursion, `berryEsseen_convex_sharp` and its constant
+shape are unchanged apart from a factor `2` absorbed into `A`.
+
+**Half of the amended brick is now proved.** `exists_smooth_swap_bound_of_one_le_weight` closes
+it whenever the total weight is `≥ 1`, with no localisation whatsoever: for `ε√n ≥ 1` it is the
+unweighted `abs_integral_smooth_sub_gaussian_balanced`, and for `ε√n < 1` it is `|∫f dμ − ∫f dγ|
+≤ 2` together with `(β/√n) ε⁻¹ ≥ β ≥ k^{3/2} ≥ 1`. What is left is the named brick
+`localised_swap_bound_small_weight`, the same statement under `W + C_k ε ≤ 1`.
+
+**What that residue actually needs** (this corrects the wave-22 reading, which called the
+localisation a mechanical substitution of the wave-19 lemma). Along the Cameron–Martin route the
+test function enters as `G(z) = f(v + σⱼ z)` — the function, not its third derivative, which has
+been moved onto the Gaussian density — and `G` is *not* supported on the shell, since `f = 1` on
+`B`. Splitting `f = 1_{interior B} + g` localises the `g` part verbatim
+(`abs_integral_mul_vecTiltRemainder_le_of_support`), but leaves
+`∫ 1_K(z) R_w(z) dγ(z) = γ(K − w) − Q_w(K)` with `K` convex — the second-order Taylor remainder
+in `w` of `w ↦ γ(K − w)`, whose control by the shell mass is a Gaussian surface-area statement
+about convex bodies (Ball's input), absent from Mathlib v4.29.1 and from this file.
+
 **Constant deviation** (provable-constants rule): this route now gives `C ∼ k^{1/2}`, through
 `gaussianShellConst k = 4 e² √k`, not Bentkus's `400 k^{1/4}`. Wave 22 removed the factor `k`
 that the `2k`-fold coordinate cover used to contribute to the shell bound — a single random
@@ -5985,21 +6016,163 @@ theorem hybridLaw_shell_le (hk : 0 < k) {n j : ℕ} (hn : 0 < n) (hj : j ≤ n)
           rw [lintegral_const, measure_univ, mul_one]
 
 
-/-- **Brick L (stated, not proved).** *The hybrid telescope with every step estimated by the
-localised weighted swap bound.*
+/-- **Brick L above the Gaussian shell scale (wave 24: PROVED, and no localisation needed).**
+As soon as the weight is at least `1`, the *unweighted* balanced telescope already gives the
+localised bound, with no reference to `B` at all: for `ε √n ≥ 1` it is
+`abs_integral_smooth_sub_gaussian_balanced` together with `W ≥ 1`, and for `ε √n < 1` it is the
+trivial bound `|∫ f dμ − ∫ f dγ| ≤ 2` together with
+`(β/√n) ε⁻¹ = β/(ε√n) ≥ β ≥ k^{3/2} ≥ 1`.
 
-This is `abs_integral_smooth_sub_gaussian_improved` rerun with
-`abs_integral_mul_vecTiltRemainder_le_of_support` (wave 19) in place of the uniform
-`integral_abs_vecTiltRemainder_le`: since `D³` of the mollified indicator of `B` at width `ε`
-vanishes on `interior B` and off `Bᵋ`, each step of the telescope is weighted by the mass that
-the `j`-th hybrid law puts on the shell `B^{2ε} \ interior B` (the factor `2` absorbs the
-closure of the support). Summing the weighted steps with the cut `J = ⌈ε² n⌉` of
-`abs_integral_smooth_sub_gaussian_balanced` gives `A (β/√n) ε⁻¹ W` in place of the unweighted
-`A (β/√n) ε⁻¹` — the whole content of the improvement.
+This is exactly the regime in which brick L has no content; see `exists_localised_swap_bound`,
+whose proof splits on `W + C_k ε ≥ 1` and sends this half here. -/
+theorem exists_smooth_swap_bound_of_one_le_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ}
+    (hC₃ : 0 < C₃) :
+    ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
+      (f : EuclideanSpace ℝ (Fin k) → ℝ) (W : ℝ),
+      0 < n → IsProbabilityMeasure ν →
+      (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0) →
+      (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
+      Integrable (fun y => ‖y‖ ^ 3) ν → 0 < ε →
+      ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
+      (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) → 1 ≤ W →
+      |(∫ x, f x ∂(sumLaw n ν))
+          - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))|
+        ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * ε⁻¹ * W := by
+  obtain ⟨Ct, hCt0, hCt⟩ := exists_tiltRemainder_bound
+  refine ⟨2 + (3 * C₃ / 2 + 9 * Ct), by positivity, ?_⟩
+  intro n ν ε f W hn hνp hmean hcov hβint hε hf hfb hD hW
+  haveI := hνp
+  set β : ℝ := ∫ y, ‖y‖ ^ 3 ∂ν with hβdef
+  have hnr : (0 : ℝ) < n := by exact_mod_cast hn
+  have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
+  have hk1 : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
+  have hβ1 : 1 ≤ β := by
+    have h := sqrt_dim_mul_dim_le_integral_norm_cube hcov hβint
+    rw [← hβdef] at h
+    have hs : 1 ≤ Real.sqrt (k : ℝ) := by
+      rw [show (1 : ℝ) = Real.sqrt 1 by simp]
+      exact Real.sqrt_le_sqrt hk1
+    nlinarith
+  set q : ℝ := β / Real.sqrt (n : ℝ) * ε⁻¹ with hqdef
+  have hq0 : 0 < q := by rw [hqdef]; positivity
+  have hsl : (Measure.pi fun _ : Fin n => ν).map
+      (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) = sumLaw n ν := rfl
+  have hgoal : (2 + (3 * C₃ / 2 + 9 * Ct)) * (β / Real.sqrt (n : ℝ)) * ε⁻¹ * W
+      = (2 + (3 * C₃ / 2 + 9 * Ct)) * q * W := by rw [hqdef]; ring
+  rw [hgoal]
+  rcases le_or_gt 1 (ε * Real.sqrt (n : ℝ)) with hbig | hsmall
+  · have h := abs_integral_smooth_sub_gaussian_balanced hk hCt0 hCt hn hνp hmean hcov
+      hβint hf hfb hC₃ hε hD hbig
+    rw [hsl, ← hβdef] at h
+    have hval : (3 * C₃ / 2 + 9 * Ct) * (β / Real.sqrt (n : ℝ)) / ε
+        = (3 * C₃ / 2 + 9 * Ct) * q := by rw [hqdef]; ring
+    rw [hval] at h
+    refine h.trans ?_
+    have hKq : (0 : ℝ) ≤ (2 + (3 * C₃ / 2 + 9 * Ct)) * q :=
+      mul_nonneg (by linarith) hq0.le
+    nlinarith [mul_nonneg hKq (sub_nonneg.2 hW), hq0]
+  · have hbdd : |(∫ x, f x ∂(sumLaw n ν))
+        - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))| ≤ 2 := by
+      haveI : IsProbabilityMeasure (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) :=
+        inferInstance
+      have h1 := abs_integral_le_one (σ := sumLaw n ν) hf.continuous hfb
+      have h2 := abs_integral_le_one
+        (σ := multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) hf.continuous hfb
+      have h3 := abs_le.1 h1
+      have h4 := abs_le.1 h2
+      rw [abs_le]
+      constructor <;> linarith
+    refine hbdd.trans ?_
+    have hqe : q * (ε * Real.sqrt (n : ℝ)) = β := by
+      rw [hqdef]; field_simp
+    have hq1 : 1 ≤ q := by
+      nlinarith [mul_nonneg hq0.le (sub_nonneg.2 hsmall.le), hqe, hβ1]
+    have hs1 : (2 : ℝ) * 1 ≤ (2 + (3 * C₃ / 2 + 9 * Ct)) * q :=
+      mul_le_mul (by linarith) hq1 (by norm_num) (by linarith)
+    have hs2 : ((2 : ℝ) * 1) * 1 ≤ ((2 + (3 * C₃ / 2 + 9 * Ct)) * q) * W :=
+      mul_le_mul hs1 hW (by norm_num) (mul_nonneg (by linarith) hq0.le)
+    linarith
+
+/-- **Brick L below the Gaussian shell scale (stated, not proved).** *The hybrid telescope with
+every step estimated by the localised weighted swap bound*, in the only regime that has any
+content: the total weight `W + C_k ε` is at most `1`.
+
+This is `abs_integral_smooth_sub_gaussian_improved` rerun with a shell-weighted Cameron–Martin
+remainder in place of the uniform `integral_abs_vecTiltRemainder_le`: since `D³` of the
+mollified indicator of `B` at width `ε` vanishes on `interior B` and off `Bᵋ`, each step of the
+telescope should be weighted by the mass that the `j`-th hybrid law puts on the shell
+`B^{2ε} \ interior B` (the factor `2` absorbs the closure of the support). Summing the weighted
+steps with the cut `J = ⌈ε² n⌉` of `abs_integral_smooth_sub_gaussian_balanced` gives
+`A (β/√n) ε⁻¹ W` in place of the unweighted `A (β/√n) ε⁻¹`.
 
 The `L^∞` form is stated (weight `W`, not `√W`), which is what the sharp `β/√n` rate needs; the
 wave-19 `L²`/Cauchy–Schwarz form `abs_integral_mul_vecTiltRemainder_le_of_support` delivers `√W`
-instead, for which `cube_le_of_selfImproving_smoothed_sqrt` gives `O(n^{-1/3})`. -/
+instead, for which `cube_le_of_selfImproving_smoothed_sqrt` gives `O(n^{-1/3})`.
+
+**What is genuinely missing** (wave 24, re-derived). The wave-22 docstring asserted that the
+localisation is a mechanical rerun of the telescope with the wave-19 lemma substituted. That is
+*not* so, and the obstruction is precise. Along the Cameron–Martin route the test function
+enters as `G(z) = f(v + σⱼ z)` — the function itself, **not** its third derivative, which has
+been moved onto the Gaussian density. `G` is not supported on the shell: `f = 1` on `B`. Writing
+`f = 1_{interior B} + g` with `g` supported on the shell and `|g| ≤ 1` splits the step into a
+part that *is* localised (`abs_integral_mul_vecTiltRemainder_le_of_support` applies to `g`
+verbatim) and the indicator part
+`∫ 1_K(z) R_w(z) dγ(z) = γ(K − w) − Q_w(K)`, `K = {z | v + σⱼ z ∈ interior B}` convex,
+which is the second-order Taylor remainder in `w` of `w ↦ γ(K − w)`. Bounding *that* by the
+shell mass is a Gaussian surface-area statement about convex bodies — the same input as Ball's
+theorem — and is not among the file's ingredients. -/
+theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 0 < C₃) :
+    ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
+      (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
+      (f : EuclideanSpace ℝ (Fin k) → ℝ) (W : ℝ),
+      0 < n → IsProbabilityMeasure ν →
+      (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0) →
+      (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
+      Integrable (fun y => ‖y‖ ^ 3) ν →
+      MeasurableSet B → Convex ℝ B → 0 < ε →
+      ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
+      (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
+      (∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B) → (∀ x ∈ B, f x = 1) →
+      (∀ j : ℕ, j ≤ n →
+        ((hybridLaw n j ν) (Metric.thickening (2 * ε) B \ interior B)).toReal ≤ W) →
+      W + gaussianShellConst k * ε ≤ 1 →
+      |(∫ x, f x ∂(sumLaw n ν))
+          - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))|
+        ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * ε⁻¹
+            * (W + gaussianShellConst k * ε) := by
+  sorry
+
+/-- **Brick L (wave 24: AMENDED, and proved over `localised_swap_bound_small_weight`).** *The
+hybrid telescope with every step estimated by the localised weighted swap bound.*
+
+**The wave-20 form of this statement is FALSE**, with the conclusion
+`≤ A (β/√n) ε⁻¹ W` for the bare weight `W`. Witness (`k = 1`, `n = 1`, `ε = 1`, `p ↓ 0`): let
+`ν` put mass `p` at `−a` and mass `1 − p` at `b`, with `a = √((1−p)/p)` and `b = √(p/(1−p))`, so
+that `ν` is centred with unit variance and `β = ∫|y|³ dν ∼ p^{-1/2}`. Take `B = (−∞, −T]` with
+`T = a/2` (convex, measurable) and `f` any admissible mollified indicator. Then
+
+* `sumLaw 1 ν = ν` and `hybridLaw 1 0 ν = ν`, `hybridLaw 1 1 ν = γ`;
+* the shell `B^{2} \ interior B = [−T, −T+2)` misses both atoms of `ν` (as `−a = −2T` and
+  `b > 0 > −T + 2` once `T > 2`), so `W := 2 e^{−T²/2}` is admissible;
+* `∫ f dν = p` (the atom at `−a = −2T` lies in `B`, the atom at `b` lies off `Bᵋ`), while
+  `∫ f dγ ≤ e^{−(T−1)²/2}`, so the left-hand side is `≥ p − e^{−(T−1)²/2}`;
+* the right-hand side is `A · p^{-1/2} · 1 · 2 e^{−T²/2}` with `T = a/2 ∼ 1/(2√p)`, i.e.
+  `∼ 2A p^{-1/2} e^{−1/(8p)}`.
+
+As `p ↓ 0` the left-hand side is polynomially small and the right-hand side is exponentially
+small, so no `A` works. The mechanism is that `W` is allowed to be *far below* the Gaussian
+shell scale `C_k ε`, which no swap estimate can exploit: a hybrid law can miss the shell
+entirely and still be far from Gaussian.
+
+**The amendment** adds `C_k ε` to the weight, `C_k = gaussianShellConst k`. It costs nothing at
+the only call site: `exists_convexDiscrepancy_recursion` invokes brick L with
+`W = 4 C_k ε + 2 Y`, and `W + C_k ε ≤ (5/4) (4 C_k ε + 2 Y)` since `Y ≥ 0`, so the recursion is
+unchanged except for a factor `2` in its constant. Every counterexample of the above shape is
+killed, and the amended statement is what Bentkus's argument actually produces.
+
+The proof splits at `W + C_k ε = 1`: above it,
+`exists_smooth_swap_bound_of_one_le_weight` closes the goal with no localisation at all; below
+it, the content is the named brick `localised_swap_bound_small_weight`. -/
 theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 0 < C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
@@ -6016,8 +6189,41 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
         ((hybridLaw n j ν) (Metric.thickening (2 * ε) B \ interior B)).toReal ≤ W) →
       |(∫ x, f x ∂(sumLaw n ν))
           - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))|
-        ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * ε⁻¹ * W := by
-  sorry
+        ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * ε⁻¹
+            * (W + gaussianShellConst k * ε) := by
+  obtain ⟨A₁, hA₁, h₁⟩ := exists_smooth_swap_bound_of_one_le_weight k hk hC₃
+  obtain ⟨A₂, hA₂, h₂⟩ := localised_swap_bound_small_weight k hk hC₃
+  refine ⟨A₁ + A₂, by linarith, ?_⟩
+  intro n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hf hfb hD hsupp hone hW
+  haveI := hνp
+  have hnr : (0 : ℝ) < n := by exact_mod_cast hn
+  have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
+  have hβ0 : 0 < ∫ y, ‖y‖ ^ 3 ∂ν := integral_norm_cube_pos hk hcov hβint
+  have hCk : 0 < gaussianShellConst k := gaussianShellConst_pos hk
+  have hW0 : 0 ≤ W := le_trans ENNReal.toReal_nonneg (hW 0 (Nat.zero_le n))
+  have hbase : 0 ≤ (∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ) * ε⁻¹
+      * (W + gaussianShellConst k * ε) :=
+    mul_nonneg (mul_nonneg (div_nonneg hβ0.le hsn.le) (inv_pos.2 hε).le)
+      (by nlinarith [mul_pos hCk hε])
+  rcases le_or_gt 1 (W + gaussianShellConst k * ε) with hge | hlt
+  · have h := h₁ n ν ε f (W + gaussianShellConst k * ε) hn hνp hmean hcov hβint hε hf hfb
+      hD hge
+    refine h.trans ?_
+    have hexp : ∀ A : ℝ, A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * ε⁻¹
+        * (W + gaussianShellConst k * ε)
+        = A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ) * ε⁻¹
+          * (W + gaussianShellConst k * ε)) := fun A => by ring
+    rw [hexp A₁, hexp (A₁ + A₂)]
+    exact mul_le_mul_of_nonneg_right (by linarith) hbase
+  · have h := h₂ n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hf hfb hD hsupp hone hW
+      hlt.le
+    refine h.trans ?_
+    have hexp : ∀ A : ℝ, A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * ε⁻¹
+        * (W + gaussianShellConst k * ε)
+        = A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ) * ε⁻¹
+          * (W + gaussianShellConst k * ε)) := fun A => by ring
+    rw [hexp A₂, hexp (A₁ + A₂)]
+    exact mul_le_mul_of_nonneg_right (by linarith) hbase
 
 /-- **The recursion, produced.** For every measurable convex `B`, every cut `ε > 0` and every
 bound `Y` on the discrepancies at the neighbour sizes `n/2 ≤ m ≤ n`,
@@ -6026,7 +6232,12 @@ bound `Y` on the discrepancies at the neighbour sizes `n/2 ≤ m ≤ n`,
 
 which is exactly the hypothesis of `le_of_selfImproving_induction`. Bricks H and L supply the
 weighted swap estimate; everything else here is the two-sided thickening/erosion sandwich of
-`berryEsseen_convex_improved` with the mollifier of `exists_smoothed_convex_indicator`. -/
+`berryEsseen_convex_improved` with the mollifier of `exists_smoothed_convex_indicator`.
+
+Wave 24: brick L now delivers the weight `W + C_k ε` rather than `W` (its wave-20 form is false,
+see `exists_localised_swap_bound`). Since the call site supplies `W = 4 C_k ε + 2 Y` with
+`Y ≥ 0`, one has `W + C_k ε ≤ 2 W`, so the extra term is absorbed by doubling `A`; the statement
+here is unchanged. -/
 theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k))) (ε Y : ℝ),
       0 < n → IsProbabilityMeasure ν →
@@ -6043,10 +6254,14 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
           + 4 * gaussianShellConst k * ε := by
   obtain ⟨C₃, hC₃pos, hC₃⟩ := exists_smoothed_convex_indicator k
   obtain ⟨A, hApos, hA⟩ := exists_localised_swap_bound k hk hC₃pos
-  refine ⟨A, hApos, ?_⟩
+  refine ⟨2 * A, by linarith, ?_⟩
   intro n ν ε Y hn hνp hmean hcov hβint hε hY
   haveI := hνp
   have hCk : 0 < gaussianShellConst k := gaussianShellConst_pos hk
+  have hY0 : 0 ≤ Y := by
+    haveI : IsProbabilityMeasure (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) :=
+      inferInstance
+    exact le_trans convexDiscrepancy_nonneg (hY n (by omega) le_rfl)
   set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
   haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
   set μ : Measure (EuclideanSpace ℝ (Fin k)) := sumLaw n ν with hμdef
@@ -6056,7 +6271,7 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
   have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
   set δ : ℝ := β / Real.sqrt (n : ℝ) with hδdef
   have hδpos : 0 < δ := by rw [hδdef]; positivity
-  set E : ℝ := A * δ * ε⁻¹ * (4 * gaussianShellConst k * ε + 2 * Y) with hEdef
+  set E : ℝ := 2 * A * δ * ε⁻¹ * (4 * gaussianShellConst k * ε + 2 * Y) with hEdef
   -- the Lévy form, for an arbitrary measurable convex set
   have hlevy : ∀ S : Set (EuclideanSpace ℝ (Fin k)), MeasurableSet S → Convex ℝ S →
       (μ S).toReal ≤ (γ (Metric.thickening ε S)).toReal + E
@@ -6085,7 +6300,14 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
       have h := hA n ν S ε f (4 * gaussianShellConst k * ε + 2 * Y) hn hνp hmean hcov hβint
         hSm hSc hε hfcd hfbd hfD hfsupp hfS hW
       rw [← hμdef, ← hβdef, ← hδdef] at h
-      exact h
+      refine h.trans ?_
+      rw [hEdef]
+      have hu : 0 ≤ A * δ * ε⁻¹ := by positivity
+      calc A * δ * ε⁻¹
+              * (4 * gaussianShellConst k * ε + 2 * Y + gaussianShellConst k * ε)
+          ≤ A * δ * ε⁻¹ * (2 * (4 * gaussianShellConst k * ε + 2 * Y)) :=
+            mul_le_mul_of_nonneg_left (by nlinarith [mul_pos hCk hε]) hu
+        _ = 2 * A * δ * ε⁻¹ * (4 * gaussianShellConst k * ε + 2 * Y) := by ring
     have hthickm : MeasurableSet (Metric.thickening ε S) :=
       Metric.isOpen_thickening.measurableSet
     have hlowμ : (μ S).toReal ≤ ∫ x, f x ∂μ :=
@@ -6131,9 +6353,12 @@ i.e. Bentkus's rate, linear in `δ = β/√n`, with the dimension entering only 
 `C = 18 A (4 C_k) = 72 A gaussianShellConst k`, `gaussianShellConst k = 4 e² √k`.
 
 This is `exists_convexDiscrepancy_recursion` fed to `le_of_selfImproving_induction`. It is
-**not** axiom-clean: after wave 22 it inherits exactly **one** stated-but-unproved brick,
-`exists_localised_swap_bound` (brick H, `hybridLaw_shell_le`, is now proved). The best *proved*
-convex bound remains `berryEsseen_convex_improved` at `(β/√n)^{1/2}`.
+**not** axiom-clean: after wave 24 it inherits exactly **one** stated-but-unproved brick,
+`localised_swap_bound_small_weight` — the small-weight half of brick L (brick H,
+`hybridLaw_shell_le`, is proved; the large-weight half of brick L,
+`exists_smooth_swap_bound_of_one_le_weight`, is proved; brick L's wave-20 form was false and is
+amended, see `exists_localised_swap_bound`). The best *proved* convex bound remains
+`berryEsseen_convex_improved` at `(β/√n)^{1/2}`.
 
 Note the `k`-power: `gaussianShellConst k = 4 e² √k`, so this route gives `C ∼ k^{1/2}`, not
 Bentkus's `400 k^{1/4}`. Wave 22 removed the factor `k` that the coordinate-slice cover of
