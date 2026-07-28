@@ -2918,6 +2918,10 @@ private lemma integrable_tiltRemainder (s : ℝ) :
     (((integrable_const (1 : ℝ)).add (integrable_id_gauss.const_mul s)).add
       (((integrable_sq_gauss.sub (integrable_const (1 : ℝ))).const_mul (s ^ 2)).div_const 2))
 
+private lemma continuous_tiltRemainder (s : ℝ) : Continuous (fun t => tiltRemainder s t) := by
+  unfold tiltRemainder
+  fun_prop
+
 /-- The (parameter-free) envelope controlling the tilt remainder for small tilts. -/
 private noncomputable def tiltEnvSmall (t : ℝ) : ℝ :=
   27 / 2 * Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t)))
@@ -2964,86 +2968,90 @@ private lemma integral_tiltEnvLarge :
     integral_cosh_one, integral_const]
   simp
 
+/-- **The pointwise envelope for small tilts.** For `0 ≤ s ≤ 1` the tilt remainder is at most
+`s³` times a fixed, tilt-independent exponential envelope. Extracted from (and consumed by)
+`integral_abs_tiltRemainder_le_of_le_one`; the `L²` refinement of §wave-19 reuses it verbatim. -/
+private lemma abs_tiltRemainder_le_envSmall {s : ℝ} (hs : 0 ≤ s) (hs1 : s ≤ 1) (t : ℝ) :
+    |tiltRemainder s t| ≤ s ^ 3 * tiltEnvSmall t := by
+  set x : ℝ := s * t - s ^ 2 / 2 with hx
+  have hsplit : tiltRemainder s t
+      = (Real.exp x - (1 + x + x ^ 2 / 2)) + (-(s ^ 3 * t / 2) + s ^ 4 / 8) := by
+    simp only [tiltRemainder, hx]; ring
+  have hxabs : |x| ≤ s * (|t| + 1 / 2) := by
+    have h1 : |x| ≤ s * |t| + s ^ 2 / 2 := by
+      rw [hx]
+      calc |s * t - s ^ 2 / 2| ≤ |s * t| + |s ^ 2 / 2| := abs_sub _ _
+        _ = s * |t| + s ^ 2 / 2 := by
+            rw [abs_mul, abs_of_nonneg hs,
+              abs_of_nonneg (by positivity : (0:ℝ) ≤ s ^ 2 / 2)]
+    nlinarith
+  have hcube : |x| ^ 3 ≤ s ^ 3 * (|t| + 1 / 2) ^ 3 := by
+    have h := pow_le_pow_left₀ (abs_nonneg x) hxabs 3
+    calc |x| ^ 3 ≤ (s * (|t| + 1 / 2)) ^ 3 := h
+      _ = s ^ 3 * (|t| + 1 / 2) ^ 3 := by ring
+  have hexpx : Real.exp |x| ≤ Real.exp (|t| + 1 / 2) := by
+    refine Real.exp_le_exp.2 (hxabs.trans ?_)
+    nlinarith [abs_nonneg t]
+  have hbig : (|t| + 1 / 2) ^ 3 ≤ 27 * Real.exp (|t| + 1 / 2) := cube_le_exp (by positivity)
+  have hexpabs : Real.exp (|t| + 1 / 2) * Real.exp (|t| + 1 / 2)
+      = Real.exp 1 * Real.exp (2 * |t|) := by
+    rw [← Real.exp_add, ← Real.exp_add]; congr 1; ring
+  have hcosh2 : Real.exp (2 * |t|) ≤ Real.exp (2 * t) + Real.exp (-(2 * t)) := by
+    rcases abs_cases t with ⟨h, _⟩ | ⟨h, _⟩
+    · rw [h]; linarith [Real.exp_pos (-(2 * t))]
+    · rw [h]
+      have he : Real.exp (2 * -t) = Real.exp (-(2 * t)) := by congr 1; ring
+      rw [he]; linarith [Real.exp_pos (2 * t)]
+  have hT := abs_exp_sub_taylor_two_le x
+  have hterm1 : |x| ^ 3 * Real.exp |x| / 2
+      ≤ s ^ 3 * (27 / 2 * Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t)))) := by
+    have e1 : |x| ^ 3 * Real.exp |x|
+        ≤ (s ^ 3 * (|t| + 1 / 2) ^ 3) * Real.exp (|t| + 1 / 2) :=
+      mul_le_mul hcube hexpx (Real.exp_pos _).le (by positivity)
+    have e2 : (s ^ 3 * (|t| + 1 / 2) ^ 3) * Real.exp (|t| + 1 / 2)
+        ≤ (s ^ 3 * (27 * Real.exp (|t| + 1 / 2))) * Real.exp (|t| + 1 / 2) :=
+      mul_le_mul_of_nonneg_right
+        (mul_le_mul_of_nonneg_left hbig (by positivity : (0:ℝ) ≤ s ^ 3))
+        (Real.exp_pos _).le
+    have e3 : (s ^ 3 * (27 * Real.exp (|t| + 1 / 2))) * Real.exp (|t| + 1 / 2)
+        = s ^ 3 * 27 * (Real.exp 1 * Real.exp (2 * |t|)) := by
+      rw [mul_assoc (s ^ 3) _ _, mul_assoc, hexpabs]; ring
+    have e5 : s ^ 3 * 27 * (Real.exp 1 * Real.exp (2 * |t|))
+        ≤ s ^ 3 * 27 * (Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t)))) :=
+      mul_le_mul_of_nonneg_left
+        (mul_le_mul_of_nonneg_left hcosh2 (Real.exp_pos 1).le) (by positivity)
+    have e6 : s ^ 3 * 27 * (Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t))))
+        = 2 * (s ^ 3 * (27 / 2 * Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t))))) := by
+      ring
+    have hnn : (0:ℝ) ≤ s ^ 3 * (27 / 2 * Real.exp 1
+        * (Real.exp (2 * t) + Real.exp (-(2 * t)))) := by positivity
+    linarith [e1, e2, e5]
+  have hterm2 : |(-(s ^ 3 * t / 2) + s ^ 4 / 8)|
+      ≤ s ^ 3 * ((Real.exp t + Real.exp (-t)) / 2) + s ^ 3 * (1 / 8 : ℝ) := by
+    have hAdd := abs_add_le (-(s ^ 3 * t / 2)) (s ^ 4 / 8)
+    have e1 : |(-(s ^ 3 * t / 2))| = s ^ 3 / 2 * |t| := by
+      rw [abs_neg, show s ^ 3 * t / 2 = s ^ 3 / 2 * t by ring, abs_mul,
+        abs_of_nonneg (by positivity : (0:ℝ) ≤ s ^ 3 / 2)]
+    have e2 : |s ^ 4 / 8| = s ^ 4 / 8 := abs_of_nonneg (by positivity)
+    rw [e1, e2] at hAdd
+    have h2 : s ^ 4 ≤ s ^ 3 := by nlinarith [pow_nonneg hs 3]
+    nlinarith [abs_le_exp_add_exp t, pow_nonneg hs 3]
+  have hexpand : s ^ 3 * tiltEnvSmall t
+      = s ^ 3 * (27 / 2 * Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t))))
+        + (s ^ 3 * ((Real.exp t + Real.exp (-t)) / 2) + s ^ 3 * (1 / 8 : ℝ)) := by
+    simp only [tiltEnvSmall]; ring
+  rw [hsplit, hexpand]
+  calc |(Real.exp x - (1 + x + x ^ 2 / 2)) + (-(s ^ 3 * t / 2) + s ^ 4 / 8)|
+      ≤ |Real.exp x - (1 + x + x ^ 2 / 2)| + |(-(s ^ 3 * t / 2) + s ^ 4 / 8)| :=
+        abs_add_le _ _
+    _ ≤ _ := by linarith [hT, hterm1, hterm2]
+
 /-- The `L¹(γ)` bound on the tilt remainder for **small** tilts: the third-order Taylor
 expansion of `exp` with an exponential envelope. -/
 private lemma integral_abs_tiltRemainder_le_of_le_one {s : ℝ} (hs : 0 ≤ s) (hs1 : s ≤ 1) :
     (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ (30 * Real.exp 3 + 3) * s ^ 3 := by
-  have hpt : ∀ t : ℝ, |tiltRemainder s t| ≤ s ^ 3 * tiltEnvSmall t := by
-    intro t
-    set x : ℝ := s * t - s ^ 2 / 2 with hx
-    have hsplit : tiltRemainder s t
-        = (Real.exp x - (1 + x + x ^ 2 / 2)) + (-(s ^ 3 * t / 2) + s ^ 4 / 8) := by
-      simp only [tiltRemainder, hx]; ring
-    have hxabs : |x| ≤ s * (|t| + 1 / 2) := by
-      have h1 : |x| ≤ s * |t| + s ^ 2 / 2 := by
-        rw [hx]
-        calc |s * t - s ^ 2 / 2| ≤ |s * t| + |s ^ 2 / 2| := abs_sub _ _
-          _ = s * |t| + s ^ 2 / 2 := by
-              rw [abs_mul, abs_of_nonneg hs,
-                abs_of_nonneg (by positivity : (0:ℝ) ≤ s ^ 2 / 2)]
-      nlinarith
-    have hcube : |x| ^ 3 ≤ s ^ 3 * (|t| + 1 / 2) ^ 3 := by
-      have h := pow_le_pow_left₀ (abs_nonneg x) hxabs 3
-      calc |x| ^ 3 ≤ (s * (|t| + 1 / 2)) ^ 3 := h
-        _ = s ^ 3 * (|t| + 1 / 2) ^ 3 := by ring
-    have hexpx : Real.exp |x| ≤ Real.exp (|t| + 1 / 2) := by
-      refine Real.exp_le_exp.2 (hxabs.trans ?_)
-      nlinarith [abs_nonneg t]
-    have hbig : (|t| + 1 / 2) ^ 3 ≤ 27 * Real.exp (|t| + 1 / 2) := cube_le_exp (by positivity)
-    have hexpabs : Real.exp (|t| + 1 / 2) * Real.exp (|t| + 1 / 2)
-        = Real.exp 1 * Real.exp (2 * |t|) := by
-      rw [← Real.exp_add, ← Real.exp_add]; congr 1; ring
-    have hcosh2 : Real.exp (2 * |t|) ≤ Real.exp (2 * t) + Real.exp (-(2 * t)) := by
-      rcases abs_cases t with ⟨h, _⟩ | ⟨h, _⟩
-      · rw [h]; linarith [Real.exp_pos (-(2 * t))]
-      · rw [h]
-        have he : Real.exp (2 * -t) = Real.exp (-(2 * t)) := by congr 1; ring
-        rw [he]; linarith [Real.exp_pos (2 * t)]
-    have hT := abs_exp_sub_taylor_two_le x
-    have hterm1 : |x| ^ 3 * Real.exp |x| / 2
-        ≤ s ^ 3 * (27 / 2 * Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t)))) := by
-      have e1 : |x| ^ 3 * Real.exp |x|
-          ≤ (s ^ 3 * (|t| + 1 / 2) ^ 3) * Real.exp (|t| + 1 / 2) :=
-        mul_le_mul hcube hexpx (Real.exp_pos _).le (by positivity)
-      have e2 : (s ^ 3 * (|t| + 1 / 2) ^ 3) * Real.exp (|t| + 1 / 2)
-          ≤ (s ^ 3 * (27 * Real.exp (|t| + 1 / 2))) * Real.exp (|t| + 1 / 2) :=
-        mul_le_mul_of_nonneg_right
-          (mul_le_mul_of_nonneg_left hbig (by positivity : (0:ℝ) ≤ s ^ 3))
-          (Real.exp_pos _).le
-      have e3 : (s ^ 3 * (27 * Real.exp (|t| + 1 / 2))) * Real.exp (|t| + 1 / 2)
-          = s ^ 3 * 27 * (Real.exp 1 * Real.exp (2 * |t|)) := by
-        rw [mul_assoc (s ^ 3) _ _, mul_assoc, hexpabs]; ring
-      have e5 : s ^ 3 * 27 * (Real.exp 1 * Real.exp (2 * |t|))
-          ≤ s ^ 3 * 27 * (Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t)))) :=
-        mul_le_mul_of_nonneg_left
-          (mul_le_mul_of_nonneg_left hcosh2 (Real.exp_pos 1).le) (by positivity)
-      have e6 : s ^ 3 * 27 * (Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t))))
-          = 2 * (s ^ 3 * (27 / 2 * Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t))))) := by
-        ring
-      have hnn : (0:ℝ) ≤ s ^ 3 * (27 / 2 * Real.exp 1
-          * (Real.exp (2 * t) + Real.exp (-(2 * t)))) := by positivity
-      linarith [e1, e2, e5]
-    have hterm2 : |(-(s ^ 3 * t / 2) + s ^ 4 / 8)|
-        ≤ s ^ 3 * ((Real.exp t + Real.exp (-t)) / 2) + s ^ 3 * (1 / 8 : ℝ) := by
-      have hAdd := abs_add_le (-(s ^ 3 * t / 2)) (s ^ 4 / 8)
-      have e1 : |(-(s ^ 3 * t / 2))| = s ^ 3 / 2 * |t| := by
-        rw [abs_neg, show s ^ 3 * t / 2 = s ^ 3 / 2 * t by ring, abs_mul,
-          abs_of_nonneg (by positivity : (0:ℝ) ≤ s ^ 3 / 2)]
-      have e2 : |s ^ 4 / 8| = s ^ 4 / 8 := abs_of_nonneg (by positivity)
-      rw [e1, e2] at hAdd
-      have h2 : s ^ 4 ≤ s ^ 3 := by nlinarith [pow_nonneg hs 3]
-      nlinarith [abs_le_exp_add_exp t, pow_nonneg hs 3]
-    have hexpand : s ^ 3 * tiltEnvSmall t
-        = s ^ 3 * (27 / 2 * Real.exp 1 * (Real.exp (2 * t) + Real.exp (-(2 * t))))
-          + (s ^ 3 * ((Real.exp t + Real.exp (-t)) / 2) + s ^ 3 * (1 / 8 : ℝ)) := by
-      simp only [tiltEnvSmall]; ring
-    rw [hsplit, hexpand]
-    calc |(Real.exp x - (1 + x + x ^ 2 / 2)) + (-(s ^ 3 * t / 2) + s ^ 4 / 8)|
-        ≤ |Real.exp x - (1 + x + x ^ 2 / 2)| + |(-(s ^ 3 * t / 2) + s ^ 4 / 8)| :=
-          abs_add_le _ _
-      _ ≤ _ := by linarith [hT, hterm1, hterm2]
   refine (integral_mono (integrable_tiltRemainder s).abs
-    (integrable_tiltEnvSmall.const_mul (s ^ 3)) hpt).trans ?_
+    (integrable_tiltEnvSmall.const_mul (s ^ 3)) (abs_tiltRemainder_le_envSmall hs hs1)).trans ?_
   rw [integral_const_mul]
   nlinarith [integral_tiltEnvSmall_le, pow_nonneg hs 3]
 
@@ -3124,6 +3132,91 @@ private lemma exists_tiltRemainder_bound :
   · exact integral_abs_tiltRemainder_le_of_le_one hs h
   · exact integral_abs_tiltRemainder_le_of_one_le h
 
+/-! ### Wave-19: the same remainder in `L²` (the weighted / Hölder refinement)
+
+`integral_abs_vecTiltRemainder_le` bounds the Cameron–Martin remainder in `L¹(γ)`, which is
+exactly what a swap against a test function with `‖G‖_∞ ≤ 1` needs. The *localised* swap — the
+one Bentkus's induction consumes — pairs the remainder instead with a `G` supported on the
+`ε`-shell of `∂B`, and must pay only for the shell. Cauchy–Schwarz turns that into an `L²`
+bound on the remainder, proved here by the same envelope, whose square is still Gaussian
+integrable. -/
+
+private lemma tiltEnvSmall_nonneg (t : ℝ) : 0 ≤ tiltEnvSmall t := by
+  unfold tiltEnvSmall
+  positivity
+
+/-- A single exponential envelope dominating `tiltEnvSmall`, so that its square is again a
+(`4`-fold) exponential. -/
+private lemma tiltEnvSmall_le_cosh_two (t : ℝ) :
+    tiltEnvSmall t ≤ (27 / 2 * Real.exp 1 + 1) * (Real.exp (2 * t) + Real.exp (-(2 * t))) := by
+  have hx : 0 < Real.exp t := Real.exp_pos t
+  have hy : 0 < Real.exp (-t) := Real.exp_pos (-t)
+  have hxy : Real.exp t * Real.exp (-t) = 1 := by
+    rw [← Real.exp_add]; simp
+  have h2t : Real.exp (2 * t) = Real.exp t ^ 2 := by
+    rw [show (2 : ℝ) * t = t + t by ring, Real.exp_add]; ring
+  have h2t' : Real.exp (-(2 * t)) = Real.exp (-t) ^ 2 := by
+    rw [show -((2 : ℝ) * t) = -t + -t by ring, Real.exp_add]; ring
+  have hsum : 2 ≤ Real.exp t + Real.exp (-t) := by
+    nlinarith [sq_nonneg (Real.exp t - 1)]
+  unfold tiltEnvSmall
+  rw [h2t, h2t']
+  nlinarith [sq_nonneg (Real.exp t + Real.exp (-t) - 2), Real.exp_pos (1 : ℝ)]
+
+private lemma sq_tiltEnvSmall_le (t : ℝ) :
+    tiltEnvSmall t ^ 2
+      ≤ 2 * (27 / 2 * Real.exp 1 + 1) ^ 2
+          * (Real.exp (4 * t) + Real.exp (-(4 * t))) := by
+  have h4 : Real.exp (4 * t) = Real.exp (2 * t) ^ 2 := by
+    rw [show (4 : ℝ) * t = 2 * t + 2 * t by ring, Real.exp_add]; ring
+  have h4' : Real.exp (-(4 * t)) = Real.exp (-(2 * t)) ^ 2 := by
+    rw [show -((4 : ℝ) * t) = -(2 * t) + -(2 * t) by ring, Real.exp_add]; ring
+  have hsq := pow_le_pow_left₀ (tiltEnvSmall_nonneg t) (tiltEnvSmall_le_cosh_two t) 2
+  rw [h4, h4']
+  nlinarith [mul_nonneg (sq_nonneg (27 / 2 * Real.exp 1 + 1))
+    (sq_nonneg (Real.exp (2 * t) - Real.exp (-(2 * t))))]
+
+/-- The absolute constant of the `L²` tilt bound, `4 (27e/2 + 1)² e⁸`. -/
+private noncomputable def tiltSqConst : ℝ := 4 * (27 / 2 * Real.exp 1 + 1) ^ 2 * Real.exp 8
+
+private lemma tiltSqConst_pos : 0 < tiltSqConst := by
+  unfold tiltSqConst; positivity
+
+private lemma integrable_sq_tiltRemainder {s : ℝ} (hs : 0 ≤ s) (hs1 : s ≤ 1) :
+    Integrable (fun t => tiltRemainder s t ^ 2) (gaussianReal 0 1) := by
+  refine Integrable.mono'
+    ((integrable_cosh 4).const_mul (s ^ 6 * (2 * (27 / 2 * Real.exp 1 + 1) ^ 2)))
+    ((continuous_tiltRemainder s).pow 2).aestronglyMeasurable ?_
+  filter_upwards with t
+  rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+  have h1 : tiltRemainder s t ^ 2 ≤ (s ^ 3 * tiltEnvSmall t) ^ 2 := by
+    calc tiltRemainder s t ^ 2 = |tiltRemainder s t| ^ 2 := (sq_abs _).symm
+      _ ≤ (s ^ 3 * tiltEnvSmall t) ^ 2 :=
+          pow_le_pow_left₀ (abs_nonneg _) (abs_tiltRemainder_le_envSmall hs hs1 t) 2
+  have h2 := sq_tiltEnvSmall_le t
+  nlinarith [pow_nonneg hs 6]
+
+/-- **The tilt remainder is `O(s³)` in `L²(γ)` as well**, for `0 ≤ s ≤ 1`, with an absolute
+constant. (For `s ≥ 1` this is false: `∫ exp(2st − s²) dγ = exp(s²)` blows up. The localisation
+only ever uses shifts of length `≤ 1`, which is the regime `c/σⱼ ≤ 1` of the telescope.) -/
+private lemma integral_sq_tiltRemainder_le {s : ℝ} (hs : 0 ≤ s) (hs1 : s ≤ 1) :
+    (∫ t, tiltRemainder s t ^ 2 ∂(gaussianReal 0 1)) ≤ tiltSqConst * s ^ 6 := by
+  have hpt : ∀ t : ℝ, tiltRemainder s t ^ 2
+      ≤ s ^ 6 * (2 * (27 / 2 * Real.exp 1 + 1) ^ 2)
+          * (Real.exp (4 * t) + Real.exp (-(4 * t))) := by
+    intro t
+    have h1 : tiltRemainder s t ^ 2 ≤ (s ^ 3 * tiltEnvSmall t) ^ 2 := by
+      calc tiltRemainder s t ^ 2 = |tiltRemainder s t| ^ 2 := (sq_abs _).symm
+        _ ≤ (s ^ 3 * tiltEnvSmall t) ^ 2 :=
+            pow_le_pow_left₀ (abs_nonneg _) (abs_tiltRemainder_le_envSmall hs hs1 t) 2
+    have h2 := sq_tiltEnvSmall_le t
+    nlinarith [pow_nonneg hs 6]
+  refine (integral_mono (integrable_sq_tiltRemainder hs hs1)
+    ((integrable_cosh 4).const_mul _) hpt).trans ?_
+  have h16 : ((4 : ℝ) ^ 2) / 2 = 8 := by norm_num
+  rw [integral_const_mul, integral_cosh 4, h16]
+  exact le_of_eq (by unfold tiltSqConst; ring)
+
 
 /-! ### The multivariate Cameron–Martin tilt -/
 
@@ -3131,15 +3224,57 @@ section MultivariateTilt
 
 variable {k : ℕ}
 
-private lemma continuous_tiltRemainder (s : ℝ) : Continuous (fun t => tiltRemainder s t) := by
-  unfold tiltRemainder
-  fun_prop
-
 /-- The **vector tilt remainder**: the second-order Taylor error, in the shift `w`, of the
 Cameron–Martin density `exp (⟪w,z⟫ − ‖w‖²/2)` of `N(0,I_k)` translated by `w`. -/
 private noncomputable def vecTiltRemainder (w z : EuclideanSpace ℝ (Fin k)) : ℝ :=
   Real.exp (⟪w, z⟫_ℝ - ‖w‖ ^ 2 / 2)
     - (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2)
+
+private lemma continuous_vecTiltRemainder (w : EuclideanSpace ℝ (Fin k)) :
+    Continuous (fun z => vecTiltRemainder w z) := by
+  unfold vecTiltRemainder
+  fun_prop
+
+/-- The one-dimensional marginal of `N(0,I_k)` along a unit vector, as a pushforward. -/
+private lemma stdGaussian_map_inner_unit_eq {u : EuclideanSpace ℝ (Fin k)} (hu : ‖u‖ = 1) :
+    Measure.map (fun y : EuclideanSpace ℝ (Fin k) => ⟪u, y⟫_ℝ)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) = gaussianReal 0 1 := by
+  have h := stdGaussian_map_inner_unit u hu
+  rwa [multivariateGaussian_zero_one] at h
+
+/-- Transfer of an integral along the one-dimensional marginal: this is what makes every bound
+of this section **dimension-free**. -/
+private lemma integral_comp_inner_unit_eq {φ : ℝ → ℝ} (hφ : Continuous φ)
+    {u : EuclideanSpace ℝ (Fin k)} (hu : ‖u‖ = 1) :
+    (∫ z, φ (⟪u, z⟫_ℝ) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      = ∫ t, φ t ∂(gaussianReal 0 1) := by
+  rw [← stdGaussian_map_inner_unit_eq hu, integral_map (by fun_prop) hφ.aestronglyMeasurable]
+
+/-- Transfer of integrability along the one-dimensional marginal. -/
+private lemma integrable_comp_inner_unit {φ : ℝ → ℝ} (hφ : Continuous φ)
+    {u : EuclideanSpace ℝ (Fin k)} (hu : ‖u‖ = 1) (hint : Integrable φ (gaussianReal 0 1)) :
+    Integrable (fun z => φ (⟪u, z⟫_ℝ)) (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  have hmap := stdGaussian_map_inner_unit_eq hu
+  have hae : AEMeasurable (fun y : EuclideanSpace ℝ (Fin k) => ⟪u, y⟫_ℝ)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by fun_prop
+  exact (integrable_map_measure hφ.aestronglyMeasurable hae).1 (by rwa [hmap])
+
+/-- **The one-dimensional reduction of the vector tilt remainder.** The whole expression depends
+on `z` only through the marginal `⟪ŵ, z⟫`, with tilt parameter `‖w‖`. -/
+private lemma exists_unit_vecTiltRemainder_eq {w : EuclideanSpace ℝ (Fin k)} (hw : w ≠ 0) :
+    ∃ u : EuclideanSpace ℝ (Fin k), ‖u‖ = 1 ∧
+      ∀ z, vecTiltRemainder w z = tiltRemainder ‖w‖ (⟪u, z⟫_ℝ) := by
+  have hnw : 0 < ‖w‖ := norm_pos_iff.mpr hw
+  obtain ⟨u, hunit, hwu⟩ : ∃ u : EuclideanSpace ℝ (Fin k), ‖u‖ = 1 ∧ w = ‖w‖ • u :=
+    ⟨‖w‖⁻¹ • w, by
+      rw [norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.mpr hnw)]
+      field_simp, by rw [smul_smul, mul_inv_cancel₀ hnw.ne', one_smul]⟩
+  refine ⟨u, hunit, fun z => ?_⟩
+  have hinner : ⟪w, z⟫_ℝ = ‖w‖ * ⟪u, z⟫_ℝ := by
+    conv_lhs => rw [hwu]
+    rw [real_inner_smul_left]
+  simp only [vecTiltRemainder, tiltRemainder, hinner]
+  ring
 
 /-- **The vector tilt remainder is cubically small in the shift, in `L¹(N(0,I_k))`.**
 Reduction to the scalar statement `exists_tiltRemainder_bound` by the one-dimensional marginal
@@ -3152,32 +3287,142 @@ private lemma integral_abs_vecTiltRemainder_le {C : ℝ}
       ≤ C * ‖w‖ ^ 3 := by
   rcases eq_or_ne w 0 with rfl | hw
   · simp [vecTiltRemainder]
-  · have hnw : 0 < ‖w‖ := norm_pos_iff.mpr hw
-    obtain ⟨u, hunit, hwu⟩ : ∃ u : EuclideanSpace ℝ (Fin k), ‖u‖ = 1 ∧ w = ‖w‖ • u :=
-      ⟨‖w‖⁻¹ • w, by
-        rw [norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.mpr hnw)]
-        field_simp, by rw [smul_smul, mul_inv_cancel₀ hnw.ne', one_smul]⟩
-    have hinner : ∀ z : EuclideanSpace ℝ (Fin k), ⟪w, z⟫_ℝ = ‖w‖ * ⟪u, z⟫_ℝ := by
-      intro z
-      conv_lhs => rw [hwu]
-      rw [real_inner_smul_left]
-    have hrw : ∀ z : EuclideanSpace ℝ (Fin k),
-        vecTiltRemainder w z = tiltRemainder ‖w‖ (⟪u, z⟫_ℝ) := by
-      intro z
-      simp only [vecTiltRemainder, tiltRemainder, hinner z]
-      ring
+  · obtain ⟨u, hu, hrw⟩ := exists_unit_vecTiltRemainder_eq hw
+    have hnw : 0 < ‖w‖ := norm_pos_iff.mpr hw
     simp_rw [hrw]
-    have hmap : Measure.map (fun y : EuclideanSpace ℝ (Fin k) => ⟪u, y⟫_ℝ)
-        (stdGaussian (EuclideanSpace ℝ (Fin k))) = gaussianReal 0 1 := by
-      have h := stdGaussian_map_inner_unit u hunit
-      rwa [multivariateGaussian_zero_one] at h
-    have hpush : (∫ z, |tiltRemainder ‖w‖ (⟪u, z⟫_ℝ)|
-          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
-        = ∫ t, |tiltRemainder ‖w‖ t| ∂(gaussianReal 0 1) := by
-      rw [← hmap, integral_map (by fun_prop)
-        ((continuous_tiltRemainder ‖w‖).abs.aestronglyMeasurable)]
-    rw [hpush]
+    rw [integral_comp_inner_unit_eq (φ := fun t => |tiltRemainder ‖w‖ t|)
+      (continuous_tiltRemainder ‖w‖).abs hu]
     exact hC ‖w‖ hnw.le
+
+/-- **`L²` version of `integral_abs_vecTiltRemainder_le`** (wave 19), for shifts of length at
+most `1`, with the same dimension-free constant mechanism: the one-dimensional marginal. -/
+private lemma integral_sq_vecTiltRemainder_le {w : EuclideanSpace ℝ (Fin k)} (hw : ‖w‖ ≤ 1) :
+    (∫ z, vecTiltRemainder w z ^ 2 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      ≤ tiltSqConst * ‖w‖ ^ 6 := by
+  rcases eq_or_ne w 0 with rfl | hw0
+  · simp [vecTiltRemainder]
+  · obtain ⟨u, hu, hrw⟩ := exists_unit_vecTiltRemainder_eq hw0
+    simp_rw [hrw]
+    rw [integral_comp_inner_unit_eq (φ := fun t => tiltRemainder ‖w‖ t ^ 2)
+      ((continuous_tiltRemainder ‖w‖).pow 2) hu]
+    exact integral_sq_tiltRemainder_le (norm_nonneg w) hw
+
+private lemma integrable_sq_vecTiltRemainder {w : EuclideanSpace ℝ (Fin k)} (hw : ‖w‖ ≤ 1) :
+    Integrable (fun z => vecTiltRemainder w z ^ 2)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  rcases eq_or_ne w 0 with rfl | hw0
+  · have hzero : (fun z : EuclideanSpace ℝ (Fin k) =>
+        vecTiltRemainder (0 : EuclideanSpace ℝ (Fin k)) z ^ 2) = fun _ => 0 := by
+      funext z; simp [vecTiltRemainder]
+    rw [hzero]
+    exact integrable_zero _ _ _
+  · obtain ⟨u, hu, hrw⟩ := exists_unit_vecTiltRemainder_eq hw0
+    simp_rw [hrw]
+    exact integrable_comp_inner_unit (φ := fun t => tiltRemainder ‖w‖ t ^ 2)
+      ((continuous_tiltRemainder ‖w‖).pow 2) hu
+      (integrable_sq_tiltRemainder (norm_nonneg w) hw)
+
+private lemma memLp_two_vecTiltRemainder {w : EuclideanSpace ℝ (Fin k)} (hw : ‖w‖ ≤ 1) :
+    MemLp (fun z => vecTiltRemainder w z) 2 (stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+  (memLp_two_iff_integrable_sq (continuous_vecTiltRemainder w).aestronglyMeasurable).2
+    (integrable_sq_vecTiltRemainder hw)
+
+/-- **The weighted (Hölder / `L²`) form of `integral_abs_vecTiltRemainder_le`** — the first of
+the two ingredients the sharp Bentkus rate needs (wave 19).
+
+`integral_abs_vecTiltRemainder_le` bounds `∫ |R_w| dγ ≤ C‖w‖³`, which is what one pairs with a
+test function bounded by `‖G‖_∞ = 1`. Here the remainder is paired with `|G|` itself:
+
+`∫ |G| |R_w| dγ ≤ ‖G‖_{L²(γ)} · √tiltSqConst · ‖w‖³`.
+
+Two things survive the refinement: the constant is still **absolute** (no `k`), because
+`integral_sq_vecTiltRemainder_le` is again proved through the one-dimensional marginal; and the
+power of `‖w‖` is still `3`, so the telescope arithmetic is unchanged. What is bought is that a
+`G` supported on the `ε`-shell of `∂B` now costs `√(γ(shell))` rather than `1`. -/
+private lemma integral_abs_mul_vecTiltRemainder_le
+    {G : EuclideanSpace ℝ (Fin k) → ℝ} (hGc : Continuous G)
+    (hG2 : Integrable (fun z => G z ^ 2) (stdGaussian (EuclideanSpace ℝ (Fin k))))
+    {w : EuclideanSpace ℝ (Fin k)} (hw : ‖w‖ ≤ 1) :
+    (∫ z, |G z| * |vecTiltRemainder w z| ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      ≤ Real.sqrt (∫ z, G z ^ 2 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+          * (Real.sqrt tiltSqConst * ‖w‖ ^ 3) := by
+  have hGabs : MemLp (fun z => |G z|) (ENNReal.ofReal 2)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    rw [show ENNReal.ofReal (2 : ℝ) = 2 by norm_num]
+    refine (memLp_two_iff_integrable_sq hGc.abs.aestronglyMeasurable).2 ?_
+    simpa [sq_abs] using hG2
+  have hRabs : MemLp (fun z => |vecTiltRemainder w z|) (ENNReal.ofReal 2)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    rw [show ENNReal.ofReal (2 : ℝ) = 2 by norm_num]
+    exact (memLp_two_vecTiltRemainder hw).abs
+  have hmain := integral_mul_le_Lp_mul_Lq_of_nonneg
+    (μ := stdGaussian (EuclideanSpace ℝ (Fin k))) Real.HolderConjugate.two_two
+    (Filter.Eventually.of_forall fun z => abs_nonneg (G z))
+    (Filter.Eventually.of_forall fun z => abs_nonneg (vecTiltRemainder w z)) hGabs hRabs
+  have hrp : ∀ x : ℝ, x ^ (2 : ℝ) = x ^ (2 : ℕ) := by
+    intro x
+    rw [show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num, Real.rpow_natCast]
+  simp only [hrp, sq_abs, ← Real.sqrt_eq_rpow] at hmain
+  refine hmain.trans ?_
+  have hR : Real.sqrt (∫ z, vecTiltRemainder w z ^ 2
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      ≤ Real.sqrt tiltSqConst * ‖w‖ ^ 3 := by
+    calc Real.sqrt (∫ z, vecTiltRemainder w z ^ 2
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        ≤ Real.sqrt (tiltSqConst * ‖w‖ ^ 6) :=
+          Real.sqrt_le_sqrt (integral_sq_vecTiltRemainder_le hw)
+      _ = Real.sqrt tiltSqConst * ‖w‖ ^ 3 := by
+          rw [show ‖w‖ ^ 6 = (‖w‖ ^ 3) ^ 2 by ring, Real.sqrt_mul tiltSqConst_pos.le,
+            Real.sqrt_sq (by positivity)]
+  exact mul_le_mul_of_nonneg_left hR (Real.sqrt_nonneg _)
+
+/-- **The localised weighted bound.** If `|G| ≤ 1` and `G` vanishes off a measurable set `S`
+— the shape of the third-derivative term of a mollified convex indicator, whose support is the
+`ε`-shell of `∂B` — then the Cameron–Martin remainder paired with `G` costs `√(γ S)`:
+
+`|∫ G · R_w dγ| ≤ √(γ S) · √tiltSqConst · ‖w‖³`.
+
+This is the localisation the wave-16 note identified as missing. The `√` (rather than a bare
+`γ S`) is the price of Cauchy–Schwarz; see `le_of_selfImproving_smoothed_sqrt` at the end of the
+file for what the resulting recursion closes at. -/
+private lemma abs_integral_mul_vecTiltRemainder_le_of_support
+    {G : EuclideanSpace ℝ (Fin k) → ℝ} (hGc : Continuous G) (hG1 : ∀ z, |G z| ≤ 1)
+    {S : Set (EuclideanSpace ℝ (Fin k))} (hS : MeasurableSet S)
+    (hsupp : ∀ z, z ∉ S → G z = 0)
+    {w : EuclideanSpace ℝ (Fin k)} (hw : ‖w‖ ≤ 1) :
+    |∫ z, G z * vecTiltRemainder w z ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+      ≤ Real.sqrt ((stdGaussian (EuclideanSpace ℝ (Fin k)) S).toReal)
+          * (Real.sqrt tiltSqConst * ‖w‖ ^ 3) := by
+  have hsq1 : ∀ z, G z ^ 2 ≤ S.indicator (fun _ => (1 : ℝ)) z := by
+    intro z
+    by_cases hz : z ∈ S
+    · rw [Set.indicator_of_mem hz]
+      nlinarith [hG1 z, abs_nonneg (G z), sq_abs (G z)]
+    · rw [Set.indicator_of_notMem hz, hsupp z hz]
+      norm_num
+  have hind : Integrable (S.indicator fun _ => (1 : ℝ))
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := (integrable_const (1 : ℝ)).indicator hS
+  have hG2 : Integrable (fun z => G z ^ 2)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    refine Integrable.mono' hind ((hGc.pow 2).aestronglyMeasurable) ?_
+    filter_upwards with z
+    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+    exact hsq1 z
+  have hbd : (∫ z, G z ^ 2 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      ≤ (stdGaussian (EuclideanSpace ℝ (Fin k)) S).toReal := by
+    refine (integral_mono hG2 hind hsq1).trans ?_
+    rw [integral_indicator_const (1 : ℝ) hS, measureReal_def, smul_eq_mul, mul_one]
+  calc |∫ z, G z * vecTiltRemainder w z ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+      ≤ ∫ z, |G z * vecTiltRemainder w z| ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+        abs_integral_le_integral_abs
+    _ = ∫ z, |G z| * |vecTiltRemainder w z|
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by simp only [abs_mul]
+    _ ≤ Real.sqrt (∫ z, G z ^ 2 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+          * (Real.sqrt tiltSqConst * ‖w‖ ^ 3) :=
+        integral_abs_mul_vecTiltRemainder_le hGc hG2 hw
+    _ ≤ Real.sqrt ((stdGaussian (EuclideanSpace ℝ (Fin k)) S).toReal)
+          * (Real.sqrt tiltSqConst * ‖w‖ ^ 3) :=
+        mul_le_mul_of_nonneg_right (Real.sqrt_le_sqrt hbd) (by positivity)
 
 /-- **Cameron–Martin: a Gaussian shift is an exponential tilt.** For a bounded continuous `g`,
 `∫ g(z + a) dγ = ∫ g(z) exp(⟪a,z⟫ − ‖a‖²/2) dγ`. This is
