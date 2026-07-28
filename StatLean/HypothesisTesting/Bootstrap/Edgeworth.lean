@@ -3508,6 +3508,95 @@ theorem norm_integral_cexp_deltaSurrogate_sub_le (μ : Measure E₂) [IsProbabil
   have hmono := integral_mono hgint (hrem.const_mul (r ^ 3)) hle
   rwa [MeasureTheory.integral_const_mul] at hmono
 
+/-- **The transform is the characteristic function of the surrogate's law.**
+`φ_{μ ∘ Hₙ⁻¹}(θ) = ∫ e^{iθHₙ} ∂μ`.
+
+This is the bridge between `norm_integral_cexp_deltaSurrogate_sub_graded_le` and the Esseen
+machinery: `abs_measure_Iic_sub_densityCDF_le_charFun` consumes a *characteristic function of a
+law on the line*, and the law in question is the pushforward of the bivariate root's law under
+the surrogate — not the root's law itself. Recording the bridge as its own statement is what
+makes that distinction visible; see the wave-26 note on `edgeworth_studentized_uniform` for why
+it matters on the outer range. -/
+lemma charFun_map_deltaSurrogate (μ : Measure E₂) (σ r θ : ℝ) :
+    charFun (μ.map (deltaSurrogate σ r)) θ
+      = ∫ w, Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ)) ∂μ := by
+  rw [charFun_apply_real,
+    integral_map (measurable_deltaSurrogate σ r).aemeasurable (by fun_prop)]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun w => ?_)
+  congr 1
+  push_cast
+  ring
+
+/-- **The surrogate's transform, in characteristic-function form.** The restatement of
+`norm_integral_cexp_deltaSurrogate_sub_graded_le` that the Esseen chain consumes: the left-hand
+side is now literally `charFun` of a law on the line, so it can be fed to
+`abs_measure_Iic_sub_densityCDF_le_charFun`. -/
+theorem norm_charFun_map_deltaSurrogate_sub_graded_le (μ : Measure E₂)
+    [IsProbabilityMeasure μ]
+    {σ : ℝ} (hσ : 0 < σ) {r : ℝ} (hr : 0 ≤ r) (hr1 : r ≤ 1) (θ : ℝ)
+    (h2 : Integrable (fun w : E₂ => |w 0 * w 1|) μ)
+    (h3 : Integrable (fun w : E₂ => |w 0 ^ 3|) μ)
+    (h4 : Integrable (fun w : E₂ => |w 0 * w 1 ^ 2|) μ)
+    (h5 : Integrable (fun w : E₂ => |(w 0 * w 1) ^ 2|) μ)
+    (hrem : Integrable
+      (fun w : E₂ => surrogateRemGraded θ (w 0 / σ) (w 1 / σ ^ 2) r) μ) :
+    ‖charFun (μ.map (deltaSurrogate σ r)) θ
+        - (charFun μ ((θ / σ) • coordDir 0)
+          - Complex.I * ((θ * r / (2 * σ ^ 3) : ℝ) : ℂ)
+              * multiCharFun μ surrW2 ((θ / σ) • coordDir 0)
+          + Complex.I * ((θ * r ^ 2 / (2 * σ ^ 3) : ℝ) : ℂ)
+              * multiCharFun μ surrW3a ((θ / σ) • coordDir 0)
+          + Complex.I * ((3 * θ * r ^ 2 / (8 * σ ^ 5) : ℝ) : ℂ)
+              * multiCharFun μ surrW3b ((θ / σ) • coordDir 0)
+          - ((θ ^ 2 * r ^ 2 / (8 * σ ^ 6) : ℝ) : ℂ)
+              * multiCharFun μ surrW4 ((θ / σ) • coordDir 0))‖
+      ≤ ∫ w, surrogateRemGraded θ (w 0 / σ) (w 1 / σ ^ 2) r ∂μ := by
+  rw [charFun_map_deltaSurrogate]
+  exact norm_integral_cexp_deltaSurrogate_sub_graded_le μ hσ hr hr1 θ h2 h3 h4 h5 hrem
+
+/-- **The outer range of the Esseen chain is not a corollary of the root's Cramér tail.**
+
+There is a measurable functional `G` of the bivariate root such that `‖φ_{μ∘G⁻¹}(2π)‖ = 1` for
+**every** law `μ` — in particular for every law satisfying any Cramér tail one likes. So no
+implication of the form "`‖φ_{ρ_n}(t)‖ ≤ cⁿ` on `‖t‖ ≥ ε√n`" ⟹ "`‖φ_{ρ_n∘G⁻¹}(θ)‖` small for
+`|θ| ≥ ρ`" can hold for a general measurable `G`: the hypothesis is a statement about the law of
+the root and the conclusion is a statement about a *pushforward* of it along a nonlinear map, and
+the two are independent.
+
+The witness is the two-valued `G(w) = 1_{w₀ > 0}`, whose pushforward is carried by the integer
+lattice; it is *not* degenerate — for any `μ` charging both half-planes the pushforward has full
+support in `{0,1}` — so non-degeneracy of the functional is not what is missing either.
+
+This is the formalized half of the wave-26 correction on `edgeworth_studentized_uniform`: the
+Esseen chain's outer range is on the law of the surrogate `Hₙ`, and
+`exists_bound_norm_charFun_vecRootLaw_studentPair` bounds the characteristic function of the
+*root*. `Hₙ` is of course not `⌊·⌋`, and its outer-range bound is true; the point is that
+deducing it is an analytic item — the same category distinction wave 21 found for the *window*
+of the peeled assembly, one level up. -/
+theorem exists_measurable_charFun_map_eq_one :
+    ∃ G : E₂ → ℝ, Measurable G ∧
+      ∀ μ : Measure E₂, IsProbabilityMeasure μ → charFun (μ.map G) (2 * Real.pi) = 1 := by
+  have h0 : Measurable fun w : E₂ => w 0 := by fun_prop
+  have hG : Measurable fun w : E₂ => if 0 < w 0 then (1 : ℝ) else 0 :=
+    Measurable.ite (measurableSet_lt measurable_const h0) measurable_const measurable_const
+  refine ⟨fun w : E₂ => if 0 < w 0 then (1 : ℝ) else 0, hG, ?_⟩
+  intro μ hμ
+  rw [charFun_apply_real, integral_map hG.aemeasurable (by fun_prop)]
+  have hpt : ∀ w : E₂,
+      Complex.exp (((2 * Real.pi : ℝ) : ℂ)
+        * ((if 0 < w 0 then (1 : ℝ) else 0 : ℝ) : ℂ) * Complex.I) = 1 := by
+    intro w
+    by_cases hw : 0 < w 0
+    · rw [if_pos hw]
+      have hcast : ((2 * Real.pi : ℝ) : ℂ) * ((1 : ℝ) : ℂ) * Complex.I
+          = 2 * (Real.pi : ℂ) * Complex.I := by push_cast; ring
+      rw [hcast]
+      exact Complex.exp_two_pi_mul_I
+    · rw [if_neg hw]
+      simp
+  simp_rw [hpt]
+  simp
+
 /-! ### Residue (ii), re-derived: the transform's own hypotheses fail under a fourth moment
 
 Wave 23 recorded residue (ii) as "`∫ surrogateRemPoly` is a moment of degree nine, infinite
@@ -3627,6 +3716,157 @@ theorem integrable_surrogate_inputs_of_bounded (F : Measure ℝ) [IsProbabilityM
       gcongr
     · rw [abs_div, abs_of_pos (by positivity : (0 : ℝ) < σ ^ 2)]
       gcongr
+
+/-! ### The change of law, inserted once at the outermost level
+
+`abs_measure_pi_sub_comp_le` prices an arbitrary coordinatewise truncation against an arbitrary
+measurable event of the sample. The studentized route needs it at exactly one place — the
+outermost one, before any expansion — and the results below carry it there.
+
+The point worth recording is that **the statistic does not change**. `studentizedRootCDF F n z`
+is, by `studentizedRootCDF_eq_vecRootLaw`, the mass the bivariate root law gives to a fixed
+curved region `R` whose defining constants (`Var_F X`) come from the *sampling* law `F` and are
+frozen once and for all. Truncating replaces the law of the summand by the law of the truncated
+summand, i.e. replaces `vecRootLaw F (studentPair F) n` by `vecRootLaw F (studentPair F ∘ T) n`,
+and leaves `R` alone. So the comparison is between two laws evaluated on *the same* set, and
+`abs_measure_pi_sub_comp_le` applies verbatim; no re-derivation of the reduction is needed.
+
+Recording the composed form `studentPair F ∘ T` rather than the pushforward `F.map T` is not
+cosmetic: `ae_norm_vecRootLaw_le`, and through it
+`integrable_surrogate_inputs_of_bounded`, asks for `‖Z x‖ ≤ K` at **every** `x`, which the
+composition satisfies (`norm_studentPair_truncAt_le`) while `studentPair F` itself of course does
+not. The two laws are equal — `(F.map T).map (studentPair F) = F.map (studentPair F ∘ T)` — but
+only the composed spelling discharges the hypothesis.
+
+At the classical level `τ = √n` the price is `n · Eξ⁴/n² = Eξ⁴/n`, which is the target `O(n⁻¹)`
+exactly; see the note above `measure_pi_exists_coord_mem_le` for why the level is forced from
+both sides. -/
+
+/-- The **classical truncation** of the observations at level `τ` around the centring `m`: an
+observation further than `τ` from `m` is replaced by `m` itself. -/
+noncomputable def truncAt (m τ : ℝ) : ℝ → ℝ := fun x => if |x - m| ≤ τ then x else m
+
+lemma measurable_truncAt (m τ : ℝ) : Measurable (truncAt m τ) := by
+  refine Measurable.ite ?_ measurable_id measurable_const
+  exact measurableSet_le (by fun_prop) measurable_const
+
+/-- The truncated observation is within `τ` of the centring, **for every** `x`. -/
+lemma abs_truncAt_sub_le {m τ : ℝ} (hτ : 0 ≤ τ) (x : ℝ) : |truncAt m τ x - m| ≤ τ := by
+  rw [truncAt]
+  by_cases h : |x - m| ≤ τ
+  · rwa [if_pos h]
+  · rw [if_neg h, sub_self, abs_zero]; exact hτ
+
+/-- The set on which the truncation moves the observation is exactly the tail `{τ < |x − m|}`. -/
+lemma truncAt_ne_setOf {m τ : ℝ} (hτ : 0 ≤ τ) :
+    {x : ℝ | truncAt m τ x ≠ x} = {x : ℝ | τ < |x - m|} := by
+  ext x
+  simp only [Set.mem_setOf_eq, truncAt]
+  constructor
+  · intro hx
+    by_contra hle
+    rw [not_lt] at hle
+    exact hx (if_pos hle)
+  · intro hx hEq
+    rw [if_neg (not_le.2 hx)] at hEq
+    rw [← hEq, sub_self, abs_zero] at hx
+    linarith
+
+/-- **The change of law at the outermost level.** For an arbitrary measurable truncation `T`,
+the studentized distribution function of the sample and that of the truncated sample differ by
+at most `n · F{T x ≠ x}` — the region of `studentizedRootCDF_eq_vecRootLaw` being the *same* set
+for both. -/
+theorem abs_studentizedRootCDF_sub_comp_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    {n : ℕ} (hn : 0 < n) {T : ℝ → ℝ} (hT : Measurable T)
+    (hbad : MeasurableSet {x : ℝ | T x ≠ x}) (z : ℝ) :
+    |studentizedRootCDF F n z
+        - (vecRootLaw F (fun y : ℝ => studentPair F (T y)) n
+            {w : EuclideanSpace ℝ (Fin 2) |
+              w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
+                - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z}).toReal|
+      ≤ (n : ℝ) * (F {x : ℝ | T x ≠ x}).toReal := by
+  classical
+  have hRm : MeasurableSet {w : EuclideanSpace ℝ (Fin 2) |
+      w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
+        - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z} := by
+    have h0 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 0 := by fun_prop
+    have h1 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 1 := by fun_prop
+    refine measurableSet_le (h0.div ?_) measurable_const
+    exact (((h1.mul_const ((Real.sqrt n)⁻¹)).const_add Var[fun t : ℝ => t; F]).sub
+      ((h0.pow_const 2).mul_const ((n : ℝ)⁻¹))).sqrt
+  have hZm : Measurable (studentPair F) := measurable_studentPair F
+  have hZTm : Measurable (fun y : ℝ => studentPair F (T y)) := hZm.comp hT
+  have hsm : MeasurableSet
+      ((fun y : Fin n → ℝ => (Real.sqrt n)⁻¹ • ∑ j, studentPair F (y j)) ⁻¹'
+        {w : EuclideanSpace ℝ (Fin 2) |
+          w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
+            - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z}) :=
+    hRm.preimage (measurable_vecRoot hZm n)
+  have h1 : studentizedRootCDF F n z
+      = ((Measure.pi fun _ : Fin n => F)
+          ((fun y : Fin n → ℝ => (Real.sqrt n)⁻¹ • ∑ j, studentPair F (y j)) ⁻¹'
+            {w : EuclideanSpace ℝ (Fin 2) |
+              w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
+                - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z})).toReal := by
+    rw [studentizedRootCDF_eq_vecRootLaw F hn z, vecRootLaw,
+      Measure.map_apply (measurable_vecRoot hZm n) hRm]
+  have h2 : (vecRootLaw F (fun y : ℝ => studentPair F (T y)) n
+        {w : EuclideanSpace ℝ (Fin 2) |
+          w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
+            - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z}).toReal
+      = ((Measure.pi fun _ : Fin n => F)
+          ((fun y : Fin n → ℝ => fun i => T (y i)) ⁻¹'
+            ((fun y : Fin n → ℝ => (Real.sqrt n)⁻¹ • ∑ j, studentPair F (y j)) ⁻¹'
+              {w : EuclideanSpace ℝ (Fin 2) |
+                w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
+                  - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z}))).toReal := by
+    rw [vecRootLaw, Measure.map_apply (measurable_vecRoot hZTm n) hRm]
+    rfl
+  rw [h1, h2]
+  exact abs_measure_pi_sub_comp_le F hT hbad hsm
+
+/-- **The change of law at the classical truncation, priced by the fourth moment.**
+`|studentizedRootCDF F n z − (its truncated-sample analogue)| ≤ n · E[(X − μ)⁴]/τ⁴`; at
+`τ = √n` the right-hand side is `E[(X − μ)⁴]/n`. -/
+theorem abs_studentizedRootCDF_sub_truncAt_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F)
+    {n : ℕ} (hn : 0 < n) {τ : ℝ} (hτ : 0 < τ) (z : ℝ) :
+    |studentizedRootCDF F n z
+        - (vecRootLaw F (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) τ y)) n
+            {w : EuclideanSpace ℝ (Fin 2) |
+              w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
+                - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z}).toReal|
+      ≤ (n : ℝ) * ((∫ x, (x - ∫ s, s ∂F) ^ 4 ∂F) / τ ^ 4) := by
+  have hset := truncAt_ne_setOf (m := ∫ s, s ∂F) hτ.le
+  have hbad : MeasurableSet {x : ℝ | truncAt (∫ s, s ∂F) τ x ≠ x} := by
+    rw [hset]
+    exact measurableSet_lt measurable_const (by fun_prop)
+  refine (abs_studentizedRootCDF_sub_comp_le F hn (measurable_truncAt _ _) hbad z).trans ?_
+  rw [hset]
+  refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+  exact measure_abs_gt_le_fourth_moment F (by fun_prop) hF4 hτ
+
+/-- **The truncated studentizing pair is bounded, at every point.** This is what makes
+`integrable_surrogate_inputs_of_bounded` — and with it every hypothesis of the surrogate's
+transform — available on the truncated law. -/
+lemma norm_studentPair_truncAt_le (F : Measure ℝ) {τ : ℝ} (hτ : 0 ≤ τ) (x : ℝ) :
+    ‖studentPair F (truncAt (∫ s, s ∂F) τ x)‖
+      ≤ τ + (τ ^ 2 + |Var[fun t : ℝ => t; F]|) := by
+  set m : ℝ := ∫ s, s ∂F with hm
+  set y : ℝ := truncAt m τ x with hy
+  have hb : |y - m| ≤ τ := abs_truncAt_sub_le hτ x
+  have h0 : (studentPair F y) 0 = y - m := rfl
+  have h1 : (studentPair F y) 1 = (y - m) ^ 2 - Var[fun t : ℝ => t; F] := rfl
+  refine (norm_le_abs_add_abs (studentPair F y)).trans ?_
+  rw [h0, h1]
+  have hsq : |(y - m) ^ 2 - Var[fun t : ℝ => t; F]|
+      ≤ τ ^ 2 + |Var[fun t : ℝ => t; F]| := by
+    refine (abs_sub_le_add_abs _ _).trans ?_
+    have : |(y - m) ^ 2| ≤ τ ^ 2 := by
+      rw [abs_pow]
+      exact pow_le_pow_left₀ (abs_nonneg _) hb 2
+    linarith
+  linarith
 
 end StudentizedReduction
 
@@ -5908,7 +6148,100 @@ Net after wave 25 the residue is **two** items, and the second is a composition:
 Proved and axiom-clean after wave 25: everything listed after wave 23, **and** the `k = 2`
 estimate `norm_multiCharFun_vecRootLaw_two_sub_le` with its zeroth-order slot brick, the graded
 envelope with its expansion and its transform, the bounded-support moment brick, and the three
-change-of-law bricks. -/
+change-of-law bricks.
+
+**Status after the wave-26 re-derivation.** Residue (i) is **closed, at every `k` at once**, and
+by a route that makes wave 25's own prescription for it unnecessary. Residue (ii) is **not** the
+composition the wave-25 note and its successor prompt describe: one of its four components is a
+genuine analytic item, and the reason is a category distinction of exactly the kind wave 21 found
+one level down.
+
+* **CLOSED — residue (i), for every `k`.** `norm_multiCharFun_vecRootLaw_le` in
+  `ForMathlib/BivariateEdgeworth.lean`: for a law centred in every slot direction and under the
+  **graded** moment allowance — `∫|⟪x,b_l⟫||⟪x,a⟫| ≤ Q` for a single slot, and
+  `∫∏_{l∈T}|⟪x,b_l⟫| ≤ Q(√N)^{|T|−2}` for `|T| ≥ 2` —
+  `‖multi_{ρ_N}(b,a)‖ ≤ (k+1)k^kQ^k`, uniformly in `N`, in `a` and in `k`. At `k = 3, 4` on the
+  truncated law this is exactly what the coefficients `c₃`, `c₄`, `c₅` of the transform consume.
+* **THE FIRST CORRECTION — the partition lattice is not needed, and neither is any cancellation
+  between partitions.** Wave 25 recorded residue (i) as "the same thing with the partition
+  lattice of `Fin k` in place of a single diagonal; the counting is the only new work". That is
+  the right description of an *identification of the limit* — which is what `k = 2` needs, because
+  `c₂` is `O(N^{-1/2})` and there the diagonal and off-diagonal blocks are of the same order and
+  opposite sign. It is the wrong description of an `O(1)` **bound**, which is all `k = 3, 4` need.
+  A bound requires no cancellation *between* partitions, only the cancellation *inside* a
+  singleton slot — i.e. the centring. So the assignment sum is estimated term by term:
+  every fibre factor `r^{|T|}·‖slot_T(c)‖` is at most `Q/N` whatever `|T|` is (`|T| = 0`:
+  `‖φ(c)‖ ≤ 1`; `|T| = 1`: `r·rQ`, by the centring; `|T| = j ≥ 2`: `r^j·Q(√N)^{j−2}`), the
+  `σ`-summand is `(Q/N)^{|image σ|}`, and the whole estimate collapses to the elementary count
+  `sum_div_pow_card_image_le`: `∑_{σ : Fin k → Fin N}(Q/N)^{|image σ|} ≤ (k+1)k^kQ^k`, proved by
+  one containment — a `σ` with image of size `m` maps into one of at most `N^m` subsets, in at
+  most `m^k` ways. No lattice of partitions and no Stirling numbers appear.
+  **The grading of the moment hypothesis is the whole content**, and it is forced. A *uniform*
+  allowance would have to be taken of the order of the largest slot moment, and on the truncated
+  law at `τ = √n` that is `E[ξ̃²η̃²] ≍ N`; then `Q^k` is useless. The graded allowance makes every
+  fibre factor equal to `Q/N` regardless of `|T|`, and the exponents match on the nose. This is
+  the wave-25 grading of the envelope in `r`, one level up, and it is the second time in two
+  waves that a collapsed inequality had to be regraded.
+* **BUILT — the change of law, carried to the outermost level.**
+  `abs_studentizedRootCDF_sub_comp_le`: for an arbitrary measurable truncation `T`,
+  `|studentizedRootCDF F n z − (vecRootLaw F (studentPair F ∘ T) n R).toReal| ≤ n·F{T x ≠ x}`,
+  with `R` the curved region of `studentizedRootCDF_eq_vecRootLaw`. The statistic does not change
+  — `R`'s constants come from the sampling law and are frozen — so the two laws are compared on
+  the *same* set and `abs_measure_pi_sub_comp_le` applies verbatim.
+  `abs_studentizedRootCDF_sub_truncAt_le` is the classical instance, `truncAt m τ` with
+  `truncAt_ne_setOf` identifying the moved set as exactly `{τ < |x − m|}` and
+  `measure_abs_gt_le_fourth_moment` pricing it at `n·Eξ⁴/τ⁴`, i.e. `Eξ⁴/n` at `τ = √n`.
+  `norm_studentPair_truncAt_le` bounds `‖studentPair F (truncAt m τ x)‖` at **every** `x`, which
+  is why the composed spelling `studentPair F ∘ T` is used rather than the pushforward `F.map T`:
+  the two laws are equal, but only the composition discharges the pointwise hypothesis of
+  `ae_norm_vecRootLaw_le`, and through it of `integrable_surrogate_inputs_of_bounded`.
+* **BUILT — the bridge to the Esseen machinery.** `charFun_map_deltaSurrogate`
+  (`φ_{μ∘Hₙ⁻¹}(θ) = ∫ e^{iθHₙ}∂μ`) and `norm_charFun_map_deltaSurrogate_sub_graded_le`, the
+  restatement of the graded transform whose left-hand side is literally a `charFun` of a law on
+  the line — the object `abs_measure_Iic_sub_densityCDF_le_charFun` consumes.
+* **THE SECOND CORRECTION — residue (ii) is not a composition; its outer range is an analytic
+  item.** The wave-25 note (and the wave-26 prompt) describe residue (ii) as
+  `abs_measure_Iic_sub_densityCDF_le_charFun` + `esseen_split` +
+  `exists_bound_norm_charFun_vecRootLaw_studentPair` *for the outer range* + the graded transform
+  for the window. Three of those four are indeed already in place. The third is not applicable:
+  **it bounds the characteristic function of the *root*, and the Esseen chain runs on the law of
+  the *surrogate***, i.e. on a pushforward of the root's law along a nonlinear map. The bridge
+  `charFun_map_deltaSurrogate` makes the distinction unavoidable, and
+  `exists_measurable_charFun_map_eq_one` formalizes that it is a real one: there is a *measurable,
+  non-degenerate* functional `G` of the root — the two-valued `1_{w₀>0}` — with
+  `φ_{μ∘G⁻¹}(2π) = 1` for **every** law `μ`. So no implication of the shape
+  "`‖φ_{ρ_n}(t)‖ ≤ cⁿ` on `‖t‖ ≥ ε√n` ⟹ `‖φ_{ρ_n∘G⁻¹}(θ)‖` small on `|θ| ≥ ρ`" holds for a
+  general measurable `G`, and non-degeneracy of `G` is not the missing ingredient.
+  This is the same category distinction wave 21 recorded for the *window* of the peeled
+  assembly ("the window is on `Hₙ`, not on a root, and `measure_abs_sub_le_of_affine` does not
+  apply") — now for the *outer range* of the Esseen split, one level up. Wave 18's verdict that
+  `norm_charFun_vecRootLaw_le_pow` "removes the need for Hall's conditioning device altogether"
+  is thereby delimited: it removes it for the root, not for the statistic.
+  **The arithmetic leaves no slack, and it says how strong the missing bound must be.** With
+  `δ = n⁻¹` and the split at `ρ = c√n`, `esseen_split`'s tail contribution is
+  `2M/(δπ²ρ) = 2M√n/(π²c)`, so the target `O(n⁻¹)` forces `M = O(n^{-3/2})`: an *exponentially
+  small* bound on `‖∫e^{iθHₙ}‖` over `|θ| ≳ √n`, not a `o(1)` one. That is precisely what Hall's
+  conditioning device produces — freeze `n − k` coordinates, use the Lebesgue component of the
+  conditional law of the `k` free ones (available here from `hFac : F ≪ volume`), and estimate the
+  resulting oscillatory integral, whose phase has gradient of order `|θ|n^{-1/2} ≳ 1` in each free
+  coordinate. `ForMathlib/UniformRiemannLebesgue.lean` and the two quadratic-phase regimes of
+  (M3) are the tools that a construction of it would use; none of them is applied to `Hₙ` today.
+
+Net after wave 26 the residue is **one** item: an exponentially small bound on
+`‖charFun ((vecRootLaw F (studentPair F ∘ truncAt m τ) n).map (deltaSurrogate σ r)) θ‖` over the
+outer range `|θ| ≳ √n`, for `F ≪ volume`. Everything else the studentized expansion needs is
+present, proved and axiom-clean: (S1), (S2), (M1)(b), the multilinear identity and now the
+multilinear *estimate at every `k`*, the deterministic core of (M2) with all three assemblies,
+(M3) in full, the whole of (X3), the surrogate with its graded expansion and transform, the
+truncated-law replacement in both halves, the `charFun` bridge, and Esseen smoothing against a
+signed `L¹` density with its window/tail split.
+
+Proved and axiom-clean after wave 26: everything listed after wave 25, **and**
+`norm_multiCharFun_vecRootLaw_le` with `sum_div_pow_card_image_le`, the outermost change of law
+(`abs_studentizedRootCDF_sub_comp_le`, `abs_studentizedRootCDF_sub_truncAt_le`, `truncAt` with
+`truncAt_ne_setOf`, `abs_truncAt_sub_le`, `norm_studentPair_truncAt_le`), the `charFun` bridge
+(`charFun_map_deltaSurrogate`, `norm_charFun_map_deltaSurrogate_sub_graded_le`) and the
+formalized witness `exists_measurable_charFun_map_eq_one`. -/
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
@@ -6033,7 +6366,22 @@ that the repair is the **grading** of the envelope in `r` (`surrogateRemGraded`)
 `τ = √n` makes every monomial exactly `O(n⁻¹)`. Both halves of the replacement are now built
 (`abs_measure_pi_sub_comp_le` for the price, `integrable_surrogate_inputs_of_bounded` for the
 moments). What remains over there is the `k = 3, 4` counting on the truncated law and the Esseen
-chain. See the wave-25 note on `edgeworth_studentized_uniform`. -/
+chain. See the wave-25 note on `edgeworth_studentized_uniform`.
+
+**After the wave-26 re-derivation the `k = 3, 4` half is closed and the Esseen chain is down to
+one analytic item, and this corollary still adds nothing.** `norm_multiCharFun_vecRootLaw_le`
+gives the `O(1)` multilinear estimate at **every** `k` at once, and it does so without the
+partition lattice wave 25 prescribed: at `O(1)` accuracy no cancellation between partitions is
+needed, only the centring inside a singleton slot, so the assignment sum is estimated term by
+term and the counting collapses to `∑_σ (Q/N)^{|image σ|} ≤ (k+1)k^kQ^k`. The change of law is
+now carried to the outermost level (`abs_studentizedRootCDF_sub_truncAt_le`) and the transform is
+restated as a genuine characteristic function (`charFun_map_deltaSurrogate`). What the
+re-derivation also found is that residue (ii) is **not** the composition it was recorded as: its
+outer range is on the law of the *surrogate*, a pushforward of the root's law along a nonlinear
+map, and `exists_bound_norm_charFun_vecRootLaw_studentPair` bounds the root's characteristic
+function — `exists_measurable_charFun_map_eq_one` is the formalized witness that no implication
+between the two holds for a general measurable functional. See the wave-26 note on
+`edgeworth_studentized_uniform`. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
