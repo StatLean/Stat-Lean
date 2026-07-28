@@ -159,6 +159,63 @@ private lemma coord_hoeffding {P : Measure 𝓧} [IsProbabilityMeasure P] {n : �
   rw [hsumc]
   field_simp
 
+/-! ### `L²` bricks for the DQM expansion of the truncated-score mean -/
+
+/-- Integration against `P_θ = p_θ · μ` is integration of `p_θ • g` against `μ` (bridge used
+in the DQM expansion of the truncated-score mean). -/
+private lemma integral_bvmOneObs_aux {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] (θ : EuclideanSpace ℝ (Fin k)) (g : 𝓧 → E) :
+    ∫ x, g x ∂(bvmOneObs M μ θ) = ∫ x, M.density θ x • g x ∂μ := by
+  rw [bvmOneObs, integral_withDensity_eq_integral_toReal_smul
+    (M.density_meas θ).ennreal_ofReal
+    (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  simp only [ENNReal.toReal_ofReal (M.density_nonneg θ x)]
+
+/-- `‖h‖² = o(‖h‖)` at the origin. -/
+private lemma isLittleO_norm_sq_norm {E : Type*} [NormedAddCommGroup E] :
+    (fun h : E => ‖h‖ ^ 2) =o[𝓝 (0 : E)] fun h : E => ‖h‖ := by
+  rw [Asymptotics.isLittleO_iff]
+  intro c hc
+  filter_upwards [Metric.ball_mem_nhds (0 : E) hc] with h hh
+  rw [mem_ball_zero_iff] at hh
+  rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _), Real.norm_eq_abs,
+    abs_of_nonneg (norm_nonneg _)]
+  nlinarith only [norm_nonneg h, hh]
+
+/-- **Little-o packaging of the Cauchy–Schwarz bound.** If a nonnegative quantity `G` is
+dominated by `b · (2√A + c‖h‖² + 2A)` with `A = o(‖h‖²)`, then `G = o(‖h‖)`. -/
+private lemma isLittleO_of_sqrt_bound {E : Type*} [NormedAddCommGroup E]
+    {G A : E → ℝ} {b c : ℝ}
+    (hG0 : ∀ h, 0 ≤ G h) (hAnn : ∀ h, 0 ≤ A h)
+    (hAo : A =o[𝓝 (0 : E)] fun h => ‖h‖ ^ 2)
+    (hG : ∀ h, G h ≤ b * (2 * Real.sqrt (A h) + (c * ‖h‖ ^ 2 + 2 * A h))) :
+    G =o[𝓝 (0 : E)] fun h => ‖h‖ := by
+  have hnsq : (fun h : E => ‖h‖ ^ 2) =o[𝓝 (0 : E)] fun h : E => ‖h‖ :=
+    isLittleO_norm_sq_norm
+  have hsqrtA : (fun h : E => Real.sqrt (A h)) =o[𝓝 (0 : E)] fun h : E => ‖h‖ := by
+    rw [Asymptotics.isLittleO_iff]
+    intro ε hε
+    filter_upwards [Asymptotics.isLittleO_iff.1 hAo (c := ε ^ 2) (by positivity)] with h hh
+    rw [Real.norm_eq_abs, abs_of_nonneg (hAnn h), Real.norm_eq_abs,
+      abs_of_nonneg (sq_nonneg _)] at hh
+    rw [Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _), Real.norm_eq_abs,
+      abs_of_nonneg (norm_nonneg _)]
+    calc Real.sqrt (A h) ≤ Real.sqrt (ε ^ 2 * ‖h‖ ^ 2) := Real.sqrt_le_sqrt hh
+      _ = ε * ‖h‖ := by
+          rw [Real.sqrt_mul (sq_nonneg ε), Real.sqrt_sq hε.le, Real.sqrt_sq (norm_nonneg h)]
+  have hmaj : (fun h : E => b * (2 * Real.sqrt (A h) + (c * ‖h‖ ^ 2 + 2 * A h)))
+      =o[𝓝 (0 : E)] fun h : E => ‖h‖ := by
+    refine Asymptotics.IsLittleO.const_mul_left ?_ b
+    exact (hsqrtA.const_mul_left 2).add
+      ((hnsq.const_mul_left c).add ((hAo.trans hnsq).const_mul_left 2))
+  refine Asymptotics.IsBigO.trans_isLittleO ?_ hmaj
+  refine Asymptotics.IsBigO.of_bound 1 (Filter.Eventually.of_forall fun h => ?_)
+  rw [one_mul]
+  simp only [Real.norm_eq_abs]
+  rw [abs_of_nonneg (hG0 h)]
+  exact (hG h).trans (le_abs_self _)
+
 /-- **DQM differentiation of the truncated-score mean** (vdV p. 143, "It follows that
 `P_θ ℓ̇^L_{θ₀} − P_{θ₀} ℓ̇^L_{θ₀} = (P_{θ₀} ℓ̇^L_{θ₀} ℓ̇^T_{θ₀} + o(1))(θ − θ₀)`"): the map
 `θ ↦ P_θ sc^L` is differentiable at `θ₀` with derivative acting as
@@ -176,7 +233,270 @@ theorem truncScore_mean_expansion
         - ∫ x, bvmTruncScore sc L x ∂(bvmOneObs M μ θ₀)
         - ∫ x, ⟪θ - θ₀, sc x⟫ • bvmTruncScore sc L x ∂(bvmOneObs M μ θ₀))
       =o[𝓝 θ₀] fun θ => ‖θ - θ₀‖ := by
-  sorry
+  classical
+  have hp0 : Integrable (M.density θ₀) μ := hPDF.density_integrable θ₀
+  have hpx : ∀ x, 0 ≤ M.density θ₀ x := M.density_nonneg θ₀
+  have hsx : ∀ x, 0 ≤ M.sqrtDensity θ₀ x := M.sqrtDensity_nonneg θ₀
+  have hfm : Measurable (bvmTruncScore sc L) := measurable_bvmTruncScore hsc L
+  have hfb : ∀ x, ‖bvmTruncScore sc L x‖ ≤ Real.sqrt k * L := norm_bvmTruncScore_le sc hL.le
+  have hB0 : (0 : ℝ) ≤ Real.sqrt k * L := mul_nonneg (Real.sqrt_nonneg _) hL.le
+  set f : 𝓧 → EuclideanSpace ℝ (Fin k) := bvmTruncScore sc L with hfdef
+  set B : ℝ := Real.sqrt k * L with hBdef
+  -- square-integrability of the score against the density at `θ₀`
+  have hsq2 : Integrable (fun x => ‖sc x‖ ^ 2 * M.density θ₀ x) μ :=
+    AsymptoticStatistics.dqm_norm_sq_score_integrable M μ θ₀ sc hp0 hDQM
+      (fun _ _ => hPDF.density_integrable _)
+  have hscp : Integrable (fun x => ‖sc x‖ * M.density θ₀ x) μ := by
+    refine (hp0.add hsq2).mono' ((hsc.norm.mul (M.density_meas θ₀)).aestronglyMeasurable)
+      (Filter.Eventually.of_forall fun x => ?_)
+    have hkey : ‖sc x‖ ≤ 1 + ‖sc x‖ ^ 2 := by
+      nlinarith only [sq_nonneg (‖sc x‖ - 1), norm_nonneg (sc x)]
+    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (norm_nonneg _) (hpx x))]
+    simp only [Pi.add_apply]
+    nlinarith only [hpx x, hkey]
+  -- the three `μ`-integrands are integrable
+  have hI1 : ∀ θ : EuclideanSpace ℝ (Fin k),
+      Integrable (fun x => M.density θ x • f x) μ := by
+    intro θ
+    refine ((hPDF.density_integrable θ).const_mul B).mono'
+      (((M.density_meas θ).aestronglyMeasurable).smul hfm.aestronglyMeasurable)
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (M.density_nonneg θ x)]
+    calc M.density θ x * ‖f x‖ ≤ M.density θ x * B :=
+          mul_le_mul_of_nonneg_left (hfb x) (M.density_nonneg θ x)
+      _ = B * M.density θ x := mul_comm _ _
+  have hinm : ∀ h : EuclideanSpace ℝ (Fin k), Measurable fun x => (⟪h, sc x⟫ : ℝ) :=
+    fun h => Measurable.const_inner (c := h) hsc
+  have hI3 : ∀ h : EuclideanSpace ℝ (Fin k),
+      Integrable (fun x => M.density θ₀ x • ((⟪h, sc x⟫ : ℝ) • f x)) μ := by
+    intro h
+    refine (hscp.const_mul (‖h‖ * B)).mono'
+      (((M.density_meas θ₀).aestronglyMeasurable).smul
+        (((hinm h).smul hfm).aestronglyMeasurable))
+      (Filter.Eventually.of_forall fun x => ?_)
+    simp only [norm_smul, Real.norm_eq_abs]
+    rw [abs_of_nonneg (hpx x)]
+    calc M.density θ₀ x * (|(⟪h, sc x⟫ : ℝ)| * ‖f x‖)
+        ≤ M.density θ₀ x * ((‖h‖ * ‖sc x‖) * B) := by
+          refine mul_le_mul_of_nonneg_left ?_ (hpx x)
+          exact mul_le_mul (abs_real_inner_le_norm h (sc x)) (hfb x) (norm_nonneg _)
+            (mul_nonneg (norm_nonneg _) (norm_nonneg _))
+      _ = ‖h‖ * B * (‖sc x‖ * M.density θ₀ x) := by ring
+  -- `L²` bricks
+  have hMemS : MemLp (M.sqrtDensity θ₀) 2 μ := M.sqrtDensity_memLp_two μ θ₀ hp0
+  have hs2 : ∫ x, M.sqrtDensity θ₀ x ^ 2 ∂μ = 1 := by
+    simp_rw [ParametricFamily.sqrtDensity_sq]
+    exact hPDF.density_integral_eq_one θ₀
+  have hWmeas : ∀ h : EuclideanSpace ℝ (Fin k),
+      Measurable fun x => (⟪h, sc x⟫ : ℝ) * M.sqrtDensity θ₀ x :=
+    fun h => (hinm h).mul (M.sqrtDensity_meas θ₀)
+  have hWpt : ∀ (h : EuclideanSpace ℝ (Fin k)) (x : 𝓧),
+      ((⟪h, sc x⟫ : ℝ) * M.sqrtDensity θ₀ x) ^ 2
+        ≤ ‖h‖ ^ 2 * (‖sc x‖ ^ 2 * M.density θ₀ x) := by
+    intro h x
+    have h1' : (⟪h, sc x⟫ : ℝ) ^ 2 ≤ ‖h‖ ^ 2 * ‖sc x‖ ^ 2 := by
+      rw [← sq_abs, ← mul_pow]
+      exact pow_le_pow_left₀ (abs_nonneg _) (abs_real_inner_le_norm h (sc x)) 2
+    calc ((⟪h, sc x⟫ : ℝ) * M.sqrtDensity θ₀ x) ^ 2
+        = (⟪h, sc x⟫ : ℝ) ^ 2 * M.density θ₀ x := by
+          rw [mul_pow, ParametricFamily.sqrtDensity_sq]
+      _ ≤ ‖h‖ ^ 2 * ‖sc x‖ ^ 2 * M.density θ₀ x := mul_le_mul_of_nonneg_right h1' (hpx x)
+      _ = ‖h‖ ^ 2 * (‖sc x‖ ^ 2 * M.density θ₀ x) := by ring
+  have hWint : ∀ h : EuclideanSpace ℝ (Fin k),
+      Integrable (fun x => ((⟪h, sc x⟫ : ℝ) * M.sqrtDensity θ₀ x) ^ 2) μ := by
+    intro h
+    refine (hsq2.const_mul (‖h‖ ^ 2)).mono' (((hWmeas h).pow_const 2).aestronglyMeasurable)
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+    exact hWpt h x
+  have hMemW : ∀ h : EuclideanSpace ℝ (Fin k),
+      MemLp (fun x => (⟪h, sc x⟫ : ℝ) * M.sqrtDensity θ₀ x) 2 μ :=
+    fun h => (memLp_two_iff_integrable_sq (hWmeas h).aestronglyMeasurable).2 (hWint h)
+  have hWbd : ∀ h : EuclideanSpace ℝ (Fin k),
+      ∫ x, ((⟪h, sc x⟫ : ℝ) * M.sqrtDensity θ₀ x) ^ 2 ∂μ
+        ≤ ‖h‖ ^ 2 * ∫ x, ‖sc x‖ ^ 2 * M.density θ₀ x ∂μ := by
+    intro h
+    have hmono := integral_mono (hWint h) (hsq2.const_mul (‖h‖ ^ 2)) (hWpt h)
+    rwa [integral_const_mul] at hmono
+  have hMemD : ∀ h : EuclideanSpace ℝ (Fin k),
+      MemLp (fun x => M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x) 2 μ :=
+    fun h => (M.sqrtDensity_memLp_two μ (θ₀ + h) (hPDF.density_integrable _)).sub hMemS
+  have hMemR : ∀ h : EuclideanSpace ℝ (Fin k),
+      MemLp (fun x => M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+        - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x) 2 μ := by
+    intro h
+    have heq : (fun x => M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+          - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x)
+        = fun x => (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x)
+          - (1 / 2 : ℝ) * ((⟪h, sc x⟫ : ℝ) * M.sqrtDensity θ₀ x) := by
+      funext x; ring
+    rw [heq]
+    exact (hMemD h).sub ((hMemW h).const_mul (1 / 2 : ℝ))
+  -- the quantitative bound, direction by direction
+  have hbnd : ∀ h : EuclideanSpace ℝ (Fin k),
+      ‖∫ x, f x ∂(bvmOneObs M μ (θ₀ + h)) - ∫ x, f x ∂(bvmOneObs M μ θ₀)
+          - ∫ x, (⟪h, sc x⟫ : ℝ) • f x ∂(bvmOneObs M μ θ₀)‖
+        ≤ B * (2 * Real.sqrt (∫ x, (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+              - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x) ^ 2 ∂μ)
+            + ((∫ x, ‖sc x‖ ^ 2 * M.density θ₀ x ∂μ) / 2 * ‖h‖ ^ 2
+              + 2 * ∫ x, (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+                  - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x) ^ 2 ∂μ)) := by
+    intro h
+    have hddm : Measurable fun x => M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x :=
+      (M.sqrtDensity_meas (θ₀ + h)).sub (M.sqrtDensity_meas θ₀)
+    have hrrm : Measurable fun x => M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+        - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x :=
+      hddm.sub ((measurable_const.mul (hinm h)).mul (M.sqrtDensity_meas θ₀))
+    have hdd2 : Integrable (fun x =>
+        (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x) ^ 2) μ := (hMemD h).integrable_sq
+    have hrr2 : Integrable (fun x => (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+        - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x) ^ 2) μ := (hMemR h).integrable_sq
+    have hrs : Integrable (fun x => (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+        - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x) * M.sqrtDensity θ₀ x) μ :=
+      (hMemR h).integrable_mul hMemS
+    have hrs' : Integrable (fun x => |M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+        - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x| * M.sqrtDensity θ₀ x) μ := by
+      refine hrs.abs.congr (Filter.Eventually.of_forall fun x => ?_)
+      simp only [abs_mul, abs_of_nonneg (hsx x)]
+    -- the scalar majorant is integrable
+    have hscalB : Integrable (fun x =>
+        (2 * (|M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+              - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x| * M.sqrtDensity θ₀ x)
+          + (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x) ^ 2) * B) μ :=
+      ((hrs'.const_mul 2).add hdd2).mul_const B
+    -- pointwise domination of the combined integrand
+    have hptdom : ∀ x, ‖(2 * ((M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+            - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x) * M.sqrtDensity θ₀ x)
+          + (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x) ^ 2) • f x‖
+        ≤ (2 * (|M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+              - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x| * M.sqrtDensity θ₀ x)
+            + (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x) ^ 2) * B := by
+      intro x
+      set a : ℝ := M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+        - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x with ha
+      set d : ℝ := M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x with hd
+      have h1 : |2 * (a * M.sqrtDensity θ₀ x) + d ^ 2|
+          ≤ 2 * (|a| * M.sqrtDensity θ₀ x) + d ^ 2 := by
+        have e1 : |2 * (a * M.sqrtDensity θ₀ x)| = 2 * (|a| * M.sqrtDensity θ₀ x) := by
+          rw [abs_mul, abs_mul, abs_of_nonneg (hsx x)]; norm_num
+        have e2 : |d ^ 2| = d ^ 2 := abs_of_nonneg (sq_nonneg _)
+        calc |2 * (a * M.sqrtDensity θ₀ x) + d ^ 2|
+            ≤ |2 * (a * M.sqrtDensity θ₀ x)| + |d ^ 2| := abs_add_le _ _
+          _ = 2 * (|a| * M.sqrtDensity θ₀ x) + d ^ 2 := by rw [e1, e2]
+      have h2 : (0 : ℝ) ≤ 2 * (|a| * M.sqrtDensity θ₀ x) + d ^ 2 :=
+        add_nonneg (mul_nonneg (by norm_num) (mul_nonneg (abs_nonneg _) (hsx x)))
+          (sq_nonneg _)
+      rw [norm_smul, Real.norm_eq_abs]
+      exact mul_le_mul h1 (hfb x) (norm_nonneg _) h2
+    have hcomb : Integrable (fun x => (2 * ((M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+          - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x) * M.sqrtDensity θ₀ x)
+        + (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x) ^ 2) • f x) μ :=
+      hscalB.mono' ((((measurable_const.mul (hrrm.mul (M.sqrtDensity_meas θ₀))).add
+        (hddm.pow_const 2)).aestronglyMeasurable).smul hfm.aestronglyMeasurable)
+        (Filter.Eventually.of_forall hptdom)
+    -- rewrite the displacement as a single `μ`-integral
+    have hGeq : (∫ x, f x ∂(bvmOneObs M μ (θ₀ + h)) - ∫ x, f x ∂(bvmOneObs M μ θ₀)
+          - ∫ x, (⟪h, sc x⟫ : ℝ) • f x ∂(bvmOneObs M μ θ₀))
+        = ∫ x, (2 * ((M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+              - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x) * M.sqrtDensity θ₀ x)
+            + (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x) ^ 2) • f x ∂μ := by
+      have hI12 : Integrable (fun x => M.density (θ₀ + h) x • f x - M.density θ₀ x • f x) μ :=
+        (hI1 (θ₀ + h)).sub (hI1 θ₀)
+      have hptid : ∀ x, M.density (θ₀ + h) x • f x - M.density θ₀ x • f x
+            - M.density θ₀ x • ((⟪h, sc x⟫ : ℝ) • f x)
+          = (2 * ((M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+                - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x) * M.sqrtDensity θ₀ x)
+              + (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x) ^ 2) • f x := by
+        intro x
+        have hkey : 2 * ((M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+              - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x) * M.sqrtDensity θ₀ x)
+            + (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x) ^ 2
+            = M.density (θ₀ + h) x - M.density θ₀ x - ⟪h, sc x⟫ * M.density θ₀ x := by
+          rw [← ParametricFamily.sqrtDensity_sq M (θ₀ + h) x,
+            ← ParametricFamily.sqrtDensity_sq M θ₀ x]
+          ring
+        rw [hkey]
+        module
+      rw [integral_bvmOneObs_aux, integral_bvmOneObs_aux, integral_bvmOneObs_aux,
+        ← integral_sub (hI1 (θ₀ + h)) (hI1 θ₀), ← integral_sub hI12 (hI3 h)]
+      exact integral_congr_ae (Filter.Eventually.of_forall fun x => hptid x)
+    -- Cauchy–Schwarz against `√p_{θ₀}` (whose `L²` norm is `1`)
+    have hCS : ∫ x, |M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+          - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x| * M.sqrtDensity θ₀ x ∂μ
+        ≤ Real.sqrt (∫ x, (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+            - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x) ^ 2 ∂μ) := by
+      have hpow : ∀ y : ℝ, y ^ (2 : ℝ) = y ^ 2 := fun y => by
+        rw [show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num, Real.rpow_natCast]
+      have htwo : ENNReal.ofReal (2 : ℝ) = 2 := by simp
+      have hmr2 : MemLp (fun x => |M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+          - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x|)
+          (ENNReal.ofReal (2 : ℝ)) μ := by
+        rw [htwo]; exact (hMemR h).abs
+      have hms2 : MemLp (M.sqrtDensity θ₀) (ENNReal.ofReal (2 : ℝ)) μ := by
+        rw [htwo]; exact hMemS
+      have hhold := MeasureTheory.integral_mul_le_Lp_mul_Lq_of_nonneg (μ := μ)
+        Real.HolderConjugate.two_two
+        (Filter.Eventually.of_forall fun x => abs_nonneg _)
+        (Filter.Eventually.of_forall hsx) hmr2 hms2
+      simp only [hpow, sq_abs] at hhold
+      rw [hs2, ← Real.sqrt_eq_rpow, ← Real.sqrt_eq_rpow, Real.sqrt_one, mul_one] at hhold
+      exact hhold
+    -- the squared increment is `O(‖h‖²)`
+    have hDbd : ∫ x, (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x) ^ 2 ∂μ
+        ≤ (∫ x, ‖sc x‖ ^ 2 * M.density θ₀ x ∂μ) / 2 * ‖h‖ ^ 2
+          + 2 * ∫ x, (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+              - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x) ^ 2 ∂μ := by
+      have hpt : ∀ x, (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x) ^ 2
+          ≤ (1 / 2 : ℝ) * ((⟪h, sc x⟫ : ℝ) * M.sqrtDensity θ₀ x) ^ 2
+            + 2 * (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+                - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x) ^ 2 := by
+        intro x
+        nlinarith only [sq_nonneg (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+          - (⟪h, sc x⟫ : ℝ) * M.sqrtDensity θ₀ x)]
+      have hmono := integral_mono hdd2
+        (((hWint h).const_mul (1 / 2 : ℝ)).add (hrr2.const_mul 2)) hpt
+      simp only [Pi.add_apply] at hmono
+      rw [integral_add ((hWint h).const_mul (1 / 2 : ℝ)) (hrr2.const_mul 2),
+        integral_const_mul, integral_const_mul] at hmono
+      have := hWbd h
+      linarith
+    rw [hGeq]
+    calc ‖∫ x, (2 * ((M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+            - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x) * M.sqrtDensity θ₀ x)
+          + (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x) ^ 2) • f x ∂μ‖
+        ≤ ∫ x, ‖(2 * ((M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+              - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x) * M.sqrtDensity θ₀ x)
+            + (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x) ^ 2) • f x‖ ∂μ :=
+          norm_integral_le_integral_norm _
+      _ ≤ ∫ x, (2 * (|M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+              - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x| * M.sqrtDensity θ₀ x)
+            + (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x) ^ 2) * B ∂μ :=
+          integral_mono hcomb.norm hscalB hptdom
+      _ = B * (2 * (∫ x, |M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+              - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x| * M.sqrtDensity θ₀ x ∂μ)
+            + ∫ x, (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x) ^ 2 ∂μ) := by
+          rw [integral_mul_const, integral_add (hrs'.const_mul 2) hdd2, integral_const_mul]
+          ring
+      _ ≤ B * (2 * Real.sqrt (∫ x, (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+              - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x) ^ 2 ∂μ)
+            + ((∫ x, ‖sc x‖ ^ 2 * M.density θ₀ x ∂μ) / 2 * ‖h‖ ^ 2
+              + 2 * ∫ x, (M.sqrtDensity (θ₀ + h) x - M.sqrtDensity θ₀ x
+                  - (1 / 2 : ℝ) * ⟪h, sc x⟫ * M.sqrtDensity θ₀ x) ^ 2 ∂μ)) := by
+          refine mul_le_mul_of_nonneg_left ?_ hB0
+          linarith [hCS, hDbd]
+  -- assemble the little-o statement at the origin, then translate to `θ₀`
+  have hfinal := isLittleO_of_sqrt_bound
+    (G := fun h : EuclideanSpace ℝ (Fin k) =>
+      ‖∫ x, f x ∂(bvmOneObs M μ (θ₀ + h)) - ∫ x, f x ∂(bvmOneObs M μ θ₀)
+        - ∫ x, (⟪h, sc x⟫ : ℝ) • f x ∂(bvmOneObs M μ θ₀)‖)
+    (b := B) (c := (∫ x, ‖sc x‖ ^ 2 * M.density θ₀ x ∂μ) / 2)
+    (fun _ => norm_nonneg _) (fun _ => integral_nonneg fun _ => sq_nonneg _)
+    hDQM.isLittleO hbnd
+  rw [Asymptotics.isLittleO_norm_left] at hfinal
+  have htend : Tendsto (fun θ : EuclideanSpace ℝ (Fin k) => θ - θ₀) (𝓝 θ₀) (𝓝 0) := by
+    simpa using (continuous_sub_right θ₀).tendsto θ₀
+  have hsimp : ∀ θ : EuclideanSpace ℝ (Fin k), θ₀ + (θ - θ₀) = θ := fun θ => by abel
+  simpa only [Function.comp_def, hsimp] using hfinal.comp_tendsto htend
 
 /-! ### Bridges to the dominating measure, and the truncation defect -/
 
@@ -995,3 +1315,4 @@ theorem exists_moderate_tests
     ring
 
 end StatLean.Bayesian
+
