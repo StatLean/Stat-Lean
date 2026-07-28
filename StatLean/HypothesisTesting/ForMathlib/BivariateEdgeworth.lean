@@ -1169,6 +1169,378 @@ theorem multiCharFun_vecRootLaw_two (F : Measure ℝ) [IsProbabilityMeasure F] {
 
 end MultiTwo
 
+/-! ### The `k = 2` estimate: the analytic half
+
+`multiCharFun_vecRootLaw_two` closes the *combinatorial* half of the `k = 2` estimate. What is
+left is the analytic half, and it is the same one-factor Taylor bound that
+`norm_mixCharFun_vecRootLaw_sub_le` performs at `k = 1`, now applied to the three surviving
+slots of the closed form:
+
+* `slot_{{0,1}}(c) = ∫⟪x,b₀⟫⟪x,b₁⟫e^{i⟪x,c⟫}` is within `‖e^{iy} − 1‖ ≤ |y|` of the plain
+  covariance `κ₀₁ = ∫⟪x,b₀⟫⟪x,b₁⟫`, at cost `N^{-1/2}∫|⟪x,b₀⟫⟪x,b₁⟫||⟪x,a⟫|`. **No centring is
+  used here**: the diagonal block already has its `O(1)` limit at zeroth order;
+* `slot_{{j}}(c) = mix_μ(b_j, c)` is within `(3/2)N⁻¹∫|⟪x,b_j⟫|⟪x,a⟫²` of `i N^{-1/2} κ_j` with
+  `κ_j = ∫⟪x,b_j⟫⟪x,a⟫`, by `norm_mixCharFun_sub_mul_I_le`. **Here the centring is what
+  matters**: without `∫⟪x,b_j⟫ = 0` the slot is `O(1)` rather than `O(N^{-1/2})`, and the
+  off-diagonal block — which carries the factor `N(N−1)N^{-1} = N − 1` — would diverge.
+
+The two combine to `multi_{ρ_N}(b,a) = κ₀₁φ^{N−1} − κ₀κ₁φ^{N−2} + O(N^{-1/2})`, the accuracy the
+studentized surrogate's coefficient `c₂ = θr/2σ³` requires. Three points are worth recording.
+
+*The off-diagonal limit is `−κ₀κ₁`, not `0`.* The product of the two purely imaginary leading
+terms is `(i N^{-1/2}κ₀)(i N^{-1/2}κ₁) = −κ₀κ₁/N`, and the block's multiplicity `N − 1` cancels
+the `N⁻¹` exactly. This is the quantitative form of the wave-23 warning: the block is of the
+same order as the diagonal, and its sign is opposite.
+
+*The error of the multiplicity is `O(N⁻¹)`, not `O(1)`.* `(N − 1)/N = 1 − N⁻¹`, so replacing
+`N − 1` by `N` costs only `N⁻¹|κ₀κ₁|` — which is why the closed form can be used with the exact
+coefficient `N(N−1)` and no loss.
+
+*The two powers `φ^{N−1}` and `φ^{N−2}` are kept apart.* Collapsing them costs `‖φ(c) − 1‖`,
+which is `O(N⁻¹)` only after a centring in the direction `a` (`norm_charFun_sub_one_le`); since
+the consumer compares both powers with the same Gaussian anyway, nothing is gained by doing it
+here, and one hypothesis is saved. -/
+
+section MultiTwoEstimate
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+
+/-- `slotCharFun` read on the pushforward law: the slot factor is a weighted character of
+`F.map Z`, not of `F`. -/
+lemma slotCharFun_eq_integral_map (F : Measure ℝ) {Z : ℝ → E} (hZ : Measurable Z) {k : ℕ}
+    (b : Fin k → E) (T : Finset (Fin k)) (c : E) :
+    slotCharFun F Z b T c
+      = ∫ w, (∏ l ∈ T, ((⟪w, b l⟫ : ℝ) : ℂ))
+          * Complex.exp ((⟪w, c⟫ : ℝ) * Complex.I) ∂(F.map Z) := by
+  rw [slotCharFun, integral_map hZ.aemeasurable (by fun_prop)]
+
+/-- **A weighted character is within one moment of the weight's own integral.**
+`‖∫ g e^{i⟪·,t⟫} − ∫ g‖ ≤ ∫ |g| |⟪·,t⟫|`, from `‖e^{iy} − 1‖ ≤ |y|`.
+
+This is the zeroth-order companion of `norm_mixCharFun_sub_mul_I_le`: no centring is needed
+because the leading term is the weight's integral itself rather than `0`. It is what the
+*diagonal* slot of the `k = 2` estimate consumes. -/
+lemma norm_integral_ofReal_mul_cexp_sub_le (μ : Measure E) {g : E → ℝ} {t : E}
+    (hgmeas : Measurable g) (hg : Integrable g μ)
+    (hgt : Integrable (fun x : E => |g x| * |(⟪x, t⟫ : ℝ)|) μ) :
+    ‖(∫ w, ((g w : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) ∂μ)
+        - ((∫ w, g w ∂μ : ℝ) : ℂ)‖
+      ≤ ∫ w, |g w| * |(⟪w, t⟫ : ℝ)| ∂μ := by
+  have htm : Measurable fun w : E => (⟪w, t⟫ : ℝ) := measurable_inner_right t
+  have hem : Measurable fun w : E => Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) := by fun_prop
+  have hA : Integrable
+      (fun w : E => ((g w : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)) μ := by
+    refine Integrable.mono' hg.norm
+      (((Complex.measurable_ofReal.comp hgmeas).mul hem).aestronglyMeasurable) ?_
+    filter_upwards with w
+    rw [norm_mul, Complex.norm_real, Complex.norm_exp]
+    simp
+  have hB : Integrable (fun w : E => ((g w : ℝ) : ℂ)) μ := hg.ofReal
+  have hkey : (∫ w, ((g w : ℝ) : ℂ)
+        * (Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) - 1) ∂μ)
+      = (∫ w, ((g w : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) ∂μ)
+        - ((∫ w, g w ∂μ : ℝ) : ℂ) := by
+    have hpt : ∀ w : E, ((g w : ℝ) : ℂ) * (Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) - 1)
+        = ((g w : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)
+          - ((g w : ℝ) : ℂ) := fun w => by ring
+    have hsp : (∫ w, (((g w : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)
+          - ((g w : ℝ) : ℂ)) ∂μ)
+        = (∫ w, ((g w : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) ∂μ)
+          - ∫ w, ((g w : ℝ) : ℂ) ∂μ := integral_sub hA hB
+    calc (∫ w, ((g w : ℝ) : ℂ) * (Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) - 1) ∂μ)
+        = ∫ w, (((g w : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)
+            - ((g w : ℝ) : ℂ)) ∂μ := integral_congr_ae (Filter.Eventually.of_forall hpt)
+      _ = _ := by rw [hsp, integral_complex_ofReal]
+  rw [← hkey]
+  refine norm_integral_le_of_norm_le hgt (Filter.Eventually.of_forall fun w => ?_)
+  rw [norm_mul, Complex.norm_real, Real.norm_eq_abs]
+  refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)
+  have h := Real.norm_exp_I_mul_ofReal_sub_one_le (x := (⟪w, t⟫ : ℝ))
+  rw [Real.norm_eq_abs] at h
+  rwa [mul_comm ((⟪w, t⟫ : ℝ) : ℂ) Complex.I]
+
+/-- The remainder constant of the `k = 2` estimate: the mixed third moments of the two slot
+directions against `a`, the two covariances, and their products. Every summand is a moment of
+the *sampling* law, not of the root, so it does not grow with `N`. -/
+noncomputable def multiTwoRemConst (μ : Measure E) (b : Fin 2 → E) (a : E) : ℝ :=
+  (∫ x, |(⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ)| * |(⟪x, a⟫ : ℝ)| ∂μ)
+    + |∫ x, (⟪x, b 0⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂μ| * |∫ x, (⟪x, b 1⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂μ|
+    + 3 / 2 * (|∫ x, (⟪x, b 0⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂μ|
+          * ∫ x, |(⟪x, b 1⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2 ∂μ
+        + (∫ x, |(⟪x, b 0⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2 ∂μ)
+          * |∫ x, (⟪x, b 1⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂μ|)
+    + 9 / 4 * (∫ x, |(⟪x, b 0⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2 ∂μ)
+        * ∫ x, |(⟪x, b 1⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2 ∂μ
+
+set_option maxHeartbeats 1000000 in
+/-- **The `k = 2` estimate for the multilinearly weighted characteristic function of a vector
+root.**
+
+`‖multi_{ρ_N}(b, a) − (κ₀₁ φ(c)^{N−1} − κ₀κ₁ φ(c)^{N−2})‖ ≤ N^{-1/2} · multiTwoRemConst`,
+
+with `c = N^{-1/2} • a`, `κ₀₁ = ∫⟪x,b₀⟫⟪x,b₁⟫`, `κ_j = ∫⟪x,b_j⟫⟪x,a⟫`, for a law centred in
+both slot directions.
+
+This is the analytic half of the item the wave-23 note of `Bootstrap/Edgeworth.lean` records as
+residue (i) at `k = 2`, and its accuracy `O(N^{-1/2})` is what the studentized surrogate's
+coefficient `c₂ = θr/2σ³` needs. The off-diagonal contribution `−κ₀κ₁ φ^{N−2}` is *not* a
+remainder: it is of the same order as the diagonal and of opposite sign, so the `k = 1` picture
+— where no off-diagonal exists — would give the wrong limit. -/
+theorem norm_multiCharFun_vecRootLaw_two_sub_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    {Z : ℝ → E} (hZ : Measurable Z) {N : ℕ} (hN : 1 ≤ N) (b : Fin 2 → E) (a : E)
+    (hint : ∀ T : Finset (Fin 2),
+      Integrable (fun x : ℝ => ∏ l ∈ T, |(⟪Z x, b l⟫ : ℝ)|) F)
+    (hb0 : Integrable (fun x : E => (⟪x, b 0⟫ : ℝ)) (F.map Z))
+    (hb1 : Integrable (fun x : E => (⟪x, b 1⟫ : ℝ)) (F.map Z))
+    (hm0 : ∫ x, (⟪x, b 0⟫ : ℝ) ∂(F.map Z) = 0)
+    (hm1 : ∫ x, (⟪x, b 1⟫ : ℝ) ∂(F.map Z) = 0)
+    (hb0a : Integrable (fun x : E => (⟪x, b 0⟫ : ℝ) * (⟪x, a⟫ : ℝ)) (F.map Z))
+    (hb1a : Integrable (fun x : E => (⟪x, b 1⟫ : ℝ) * (⟪x, a⟫ : ℝ)) (F.map Z))
+    (hb0a2 : Integrable (fun x : E => |(⟪x, b 0⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2) (F.map Z))
+    (hb1a2 : Integrable (fun x : E => |(⟪x, b 1⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2) (F.map Z))
+    (hprod : Integrable (fun x : E => (⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ)) (F.map Z))
+    (hproda : Integrable
+      (fun x : E => |(⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ)| * |(⟪x, a⟫ : ℝ)|) (F.map Z)) :
+    ‖multiCharFun (vecRootLaw F Z N) b a
+        - (((∫ x, (⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ) ∂(F.map Z) : ℝ) : ℂ)
+              * charFun (F.map Z) ((Real.sqrt (N : ℝ))⁻¹ • a) ^ (N - 1)
+            - (((∫ x, (⟪x, b 0⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z))
+                  * (∫ x, (⟪x, b 1⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z)) : ℝ) : ℂ)
+              * charFun (F.map Z) ((Real.sqrt (N : ℝ))⁻¹ • a) ^ (N - 2))‖
+      ≤ (Real.sqrt (N : ℝ))⁻¹ * multiTwoRemConst (F.map Z) b a := by
+  classical
+  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
+  have hN1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
+  have hNpos : (0 : ℝ) < (N : ℝ) := lt_of_lt_of_le zero_lt_one hN1
+  have hsq : (1 : ℝ) ≤ Real.sqrt (N : ℝ) := by
+    rw [show (1 : ℝ) = Real.sqrt 1 from (Real.sqrt_one).symm]
+    exact Real.sqrt_le_sqrt hN1
+  set r : ℝ := (Real.sqrt (N : ℝ))⁻¹ with hrdef
+  have hrpos : 0 < r := by
+    rw [hrdef]; exact inv_pos.2 (lt_of_lt_of_le zero_lt_one hsq)
+  have hr1 : r ≤ 1 := by
+    rw [hrdef]; exact inv_le_one_of_one_le₀ hsq
+  have hr2 : r ^ 2 = ((N : ℝ))⁻¹ := by
+    rw [hrdef, inv_pow, Real.sq_sqrt hNpos.le]
+  have hNr : (N : ℝ) * r ^ 2 = 1 := by rw [hr2]; field_simp
+  have hr2le : r ^ 2 ≤ r := by nlinarith [hrpos, hr1]
+  set c : E := r • a with hcdef
+  set φ : ℂ := charFun (F.map Z) c with hφdef
+  have hφ1 : ‖φ‖ ≤ 1 := by rw [hφdef]; exact norm_charFun_le_one c
+  have hφp : ∀ m : ℕ, ‖φ ^ m‖ ≤ 1 := fun m => by
+    rw [norm_pow]; exact pow_le_one₀ (norm_nonneg _) hφ1
+  have hca : ∀ w : E, (⟪w, c⟫ : ℝ) = r * (⟪w, a⟫ : ℝ) := fun w => by
+    rw [hcdef, real_inner_smul_right]
+  -- the moments
+  set κ01 : ℝ := ∫ x, (⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ) ∂(F.map Z) with hκ01
+  set κ0 : ℝ := ∫ x, (⟪x, b 0⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z) with hκ0
+  set κ1 : ℝ := ∫ x, (⟪x, b 1⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z) with hκ1
+  set M0 : ℝ := ∫ x, |(⟪x, b 0⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z) with hM0
+  set M1 : ℝ := ∫ x, |(⟪x, b 1⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z) with hM1
+  set M01 : ℝ := ∫ x, |(⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ)| * |(⟪x, a⟫ : ℝ)| ∂(F.map Z) with hM01
+  have hM0nn : 0 ≤ M0 := by rw [hM0]; exact integral_nonneg fun x => by positivity
+  have hM1nn : 0 ≤ M1 := by rw [hM1]; exact integral_nonneg fun x => by positivity
+  have hM01nn : 0 ≤ M01 := by rw [hM01]; exact integral_nonneg fun x => by positivity
+  -- the diagonal slot
+  have hdiag : ‖slotCharFun F Z b Finset.univ c - (κ01 : ℂ)‖ ≤ r * M01 := by
+    have hgm : Measurable fun w : E => (⟪w, b 0⟫ : ℝ) * (⟪w, b 1⟫ : ℝ) :=
+      (measurable_inner_right (b 0)).mul (measurable_inner_right (b 1))
+    have hgt : Integrable
+        (fun x : E => |(⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ)| * |(⟪x, c⟫ : ℝ)|) (F.map Z) := by
+      have hEq : (fun x : E => |(⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ)| * |(⟪x, c⟫ : ℝ)|)
+          = fun x : E => r * (|(⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ)| * |(⟪x, a⟫ : ℝ)|) := by
+        funext x
+        rw [hca x, abs_mul r ((⟪x, a⟫ : ℝ)), abs_of_pos hrpos]
+        ring
+      rw [hEq]
+      exact hproda.const_mul r
+    have hmom : (∫ x, |(⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ)| * |(⟪x, c⟫ : ℝ)| ∂(F.map Z))
+        = r * M01 := by
+      have hEq : ∀ x : E, |(⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ)| * |(⟪x, c⟫ : ℝ)|
+          = r * (|(⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ)| * |(⟪x, a⟫ : ℝ)|) := fun x => by
+        rw [hca x, abs_mul r ((⟪x, a⟫ : ℝ)), abs_of_pos hrpos]; ring
+      simp_rw [hEq]
+      rw [hM01]
+      exact integral_const_mul _ _
+    have hslot : slotCharFun F Z b Finset.univ c
+        = ∫ w, (((⟪w, b 0⟫ : ℝ) * (⟪w, b 1⟫ : ℝ) : ℝ) : ℂ)
+            * Complex.exp ((⟪w, c⟫ : ℝ) * Complex.I) ∂(F.map Z) := by
+      rw [slotCharFun_eq_integral_map F hZ]
+      refine integral_congr_ae (Filter.Eventually.of_forall fun w => ?_)
+      simp only [Fin.prod_univ_two, Complex.ofReal_mul]
+    rw [hslot, hκ01, ← hmom]
+    exact norm_integral_ofReal_mul_cexp_sub_le (F.map Z) hgm hprod hgt
+  -- the two single slots
+  have hslotone : ∀ j : Fin 2, ∀ κ M : ℝ,
+      Integrable (fun x : E => (⟪x, b j⟫ : ℝ)) (F.map Z) →
+      (∫ x, (⟪x, b j⟫ : ℝ) ∂(F.map Z)) = 0 →
+      Integrable (fun x : E => (⟪x, b j⟫ : ℝ) * (⟪x, a⟫ : ℝ)) (F.map Z) →
+      Integrable (fun x : E => |(⟪x, b j⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2) (F.map Z) →
+      (∫ x, (⟪x, b j⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z)) = κ →
+      (∫ x, |(⟪x, b j⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z)) = M →
+      ‖slotCharFun F Z b {j} c - Complex.I * ((r * κ : ℝ) : ℂ)‖ ≤ 3 / 2 * (r ^ 2 * M) := by
+    intro j κ M hbj hmj hbja hbja2 hκj hMj
+    have hbtc : Integrable (fun x : E => (⟪x, b j⟫ : ℝ) * (⟪x, c⟫ : ℝ)) (F.map Z) := by
+      have hEq : (fun x : E => (⟪x, b j⟫ : ℝ) * (⟪x, c⟫ : ℝ))
+          = fun x : E => r * ((⟪x, b j⟫ : ℝ) * (⟪x, a⟫ : ℝ)) := by
+        funext x; rw [hca x]; ring
+      rw [hEq]; exact hbja.const_mul r
+    have hbt2c : Integrable (fun x : E => |(⟪x, b j⟫ : ℝ)| * (⟪x, c⟫ : ℝ) ^ 2) (F.map Z) := by
+      have hEq : (fun x : E => |(⟪x, b j⟫ : ℝ)| * (⟪x, c⟫ : ℝ) ^ 2)
+          = fun x : E => r ^ 2 * (|(⟪x, b j⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2) := by
+        funext x; rw [hca x]; ring
+      rw [hEq]; exact hbja2.const_mul (r ^ 2)
+    have hκc : (∫ x, (⟪x, b j⟫ : ℝ) * (⟪x, c⟫ : ℝ) ∂(F.map Z)) = r * κ := by
+      have hEq : ∀ x : E, (⟪x, b j⟫ : ℝ) * (⟪x, c⟫ : ℝ)
+          = r * ((⟪x, b j⟫ : ℝ) * (⟪x, a⟫ : ℝ)) := fun x => by rw [hca x]; ring
+      simp_rw [hEq]
+      rw [integral_const_mul, hκj]
+    have hMc : (∫ x, |(⟪x, b j⟫ : ℝ)| * (⟪x, c⟫ : ℝ) ^ 2 ∂(F.map Z)) = r ^ 2 * M := by
+      have hEq : ∀ x : E, |(⟪x, b j⟫ : ℝ)| * (⟪x, c⟫ : ℝ) ^ 2
+          = r ^ 2 * (|(⟪x, b j⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2) := fun x => by rw [hca x]; ring
+      simp_rw [hEq]
+      rw [integral_const_mul, hMj]
+    have h := norm_mixCharFun_sub_mul_I_le (F.map Z) hbj hbtc hbt2c hmj
+    rw [hκc, hMc] at h
+    rwa [slotCharFun_singleton F hZ b j c]
+  have e0 : ‖slotCharFun F Z b {0} c - Complex.I * ((r * κ0 : ℝ) : ℂ)‖
+      ≤ 3 / 2 * (r ^ 2 * M0) := hslotone 0 κ0 M0 hb0 hm0 hb0a hb0a2 hκ0.symm hM0.symm
+  have e1 : ‖slotCharFun F Z b {1} c - Complex.I * ((r * κ1 : ℝ) : ℂ)‖
+      ≤ 3 / 2 * (r ^ 2 * M1) := hslotone 1 κ1 M1 hb1 hm1 hb1a hb1a2 hκ1.symm hM1.symm
+  -- the closed form of the assignment sum, with `r² N = 1` used to clear the prefactor
+  have hw : ((r : ℝ) : ℂ) ^ 2 * (N : ℂ) = 1 := by
+    have : ((r ^ 2 * (N : ℝ) : ℝ) : ℂ) = ((1 : ℝ) : ℂ) := by
+      rw [show r ^ 2 * (N : ℝ) = 1 by linarith [hNr]]
+    push_cast at this
+    linear_combination this
+  have hid : multiCharFun (vecRootLaw F Z N) b a
+      = slotCharFun F Z b Finset.univ c * φ ^ (N - 1)
+        + ((N : ℂ) - 1) * (slotCharFun F Z b {0} c
+            * (slotCharFun F Z b {1} c * φ ^ (N - 2))) := by
+    rw [multiCharFun_vecRootLaw_two F hZ b hint a, ← hrdef, ← hcdef, ← hφdef]
+    have hexpand : (((r : ℝ) : ℂ)) ^ 2 * ((N : ℂ) * (slotCharFun F Z b Finset.univ c * φ ^ (N - 1))
+          + (N : ℂ) * ((N : ℂ) - 1) * (slotCharFun F Z b {0} c
+              * (slotCharFun F Z b {1} c * φ ^ (N - 2))))
+        = (((r : ℝ) : ℂ) ^ 2 * (N : ℂ)) * (slotCharFun F Z b Finset.univ c * φ ^ (N - 1))
+          + (((r : ℝ) : ℂ) ^ 2 * (N : ℂ)) * (((N : ℂ) - 1) * (slotCharFun F Z b {0} c
+              * (slotCharFun F Z b {1} c * φ ^ (N - 2)))) := by ring
+    rw [hexpand, hw, one_mul, one_mul]
+  -- the algebraic decomposition of the difference
+  set s01 : ℂ := slotCharFun F Z b Finset.univ c with hs01
+  set s0 : ℂ := slotCharFun F Z b {0} c with hs0
+  set s1 : ℂ := slotCharFun F Z b {1} c with hs1
+  set p0 : ℂ := Complex.I * ((r * κ0 : ℝ) : ℂ) with hp0
+  set p1 : ℂ := Complex.I * ((r * κ1 : ℝ) : ℂ) with hp1
+  have hp0n : ‖p0‖ = r * |κ0| := by
+    rw [hp0, norm_mul, Complex.norm_I, one_mul, Complex.norm_real, Real.norm_eq_abs, abs_mul,
+      abs_of_pos hrpos]
+  have hp1n : ‖p1‖ = r * |κ1| := by
+    rw [hp1, norm_mul, Complex.norm_I, one_mul, Complex.norm_real, Real.norm_eq_abs, abs_mul,
+      abs_of_pos hrpos]
+  have hs0n : ‖s0‖ ≤ r * |κ0| + 3 / 2 * (r ^ 2 * M0) := by
+    have hsplit : s0 = p0 + (s0 - p0) := by ring
+    calc ‖s0‖ = ‖p0 + (s0 - p0)‖ := by rw [← hsplit]
+      _ ≤ ‖p0‖ + ‖s0 - p0‖ := norm_add_le _ _
+      _ ≤ r * |κ0| + 3 / 2 * (r ^ 2 * M0) := by rw [hp0n]; linarith [e0]
+  have hp0p1 : p0 * p1 = -(((r ^ 2 * (κ0 * κ1) : ℝ)) : ℂ) := by
+    rw [hp0, hp1]
+    push_cast
+    ring_nf
+    rw [Complex.I_sq]
+    ring
+  have hoffprod : ‖s0 * s1 - p0 * p1‖
+      ≤ (r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+        + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|) := by
+    have heq : s0 * s1 - p0 * p1 = s0 * (s1 - p1) + (s0 - p0) * p1 := by ring
+    rw [heq]
+    refine (norm_add_le _ _).trans ?_
+    rw [norm_mul, norm_mul, hp1n]
+    have h1 : ‖s0‖ * ‖s1 - p1‖ ≤ (r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1)) :=
+      mul_le_mul hs0n e1 (norm_nonneg _) (by positivity)
+    have h2 : ‖s0 - p0‖ * (r * |κ1|) ≤ 3 / 2 * (r ^ 2 * M0) * (r * |κ1|) :=
+      mul_le_mul_of_nonneg_right e0 (by positivity)
+    linarith
+  -- the multiplicity `N − 1` and the exact cancellation of the leading off-diagonal term
+  have hmult : ((N : ℂ) - 1) * (p0 * p1) + ((κ0 * κ1 : ℝ) : ℂ)
+      = ((r ^ 2 * (κ0 * κ1) : ℝ) : ℂ) := by
+    have hcast : ((N : ℂ) - 1) = ((((N : ℝ) - 1 : ℝ)) : ℂ) := by push_cast; ring
+    rw [hp0p1, hcast, ← Complex.ofReal_neg, ← Complex.ofReal_mul, ← Complex.ofReal_add,
+      Complex.ofReal_inj]
+    have hfin : ((N : ℝ) - 1) * (r ^ 2 * (κ0 * κ1)) = (κ0 * κ1) - r ^ 2 * (κ0 * κ1) := by
+      linear_combination (κ0 * κ1) * hNr
+    linarith [hfin]
+  have hNm1 : ‖((N : ℂ) - 1)‖ = (N : ℝ) - 1 := by
+    have hcast : ((N : ℂ) - 1) = ((((N : ℝ) - 1 : ℝ)) : ℂ) := by push_cast; ring
+    rw [hcast, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (by linarith : (0:ℝ) ≤ (N:ℝ) - 1)]
+  have hT2 : ‖((N : ℂ) - 1) * (s0 * s1) + ((κ0 * κ1 : ℝ) : ℂ)‖
+      ≤ ((N : ℝ) - 1) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+          + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|)) + r ^ 2 * |κ0 * κ1| := by
+    have heq : ((N : ℂ) - 1) * (s0 * s1) + ((κ0 * κ1 : ℝ) : ℂ)
+        = ((N : ℂ) - 1) * (s0 * s1 - p0 * p1)
+          + (((N : ℂ) - 1) * (p0 * p1) + ((κ0 * κ1 : ℝ) : ℂ)) := by ring
+    rw [heq, hmult]
+    refine (norm_add_le _ _).trans ?_
+    rw [norm_mul, hNm1, Complex.norm_real, Real.norm_eq_abs, abs_mul,
+      abs_of_nonneg (by positivity : (0:ℝ) ≤ r ^ 2)]
+    have := mul_le_mul_of_nonneg_left hoffprod (by linarith : (0:ℝ) ≤ (N:ℝ) - 1)
+    linarith
+  -- assembly
+  have hsplit : multiCharFun (vecRootLaw F Z N) b a
+      - ((κ01 : ℂ) * φ ^ (N - 1) - ((κ0 * κ1 : ℝ) : ℂ) * φ ^ (N - 2))
+      = (s01 - (κ01 : ℂ)) * φ ^ (N - 1)
+        + (((N : ℂ) - 1) * (s0 * s1) + ((κ0 * κ1 : ℝ) : ℂ)) * φ ^ (N - 2) := by
+    rw [hid]; ring
+  rw [hsplit]
+  refine (norm_add_le _ _).trans ?_
+  rw [norm_mul, norm_mul]
+  have hb1' : ‖(s01 - (κ01 : ℂ))‖ * ‖φ ^ (N - 1)‖ ≤ r * M01 :=
+    calc ‖(s01 - (κ01 : ℂ))‖ * ‖φ ^ (N - 1)‖ ≤ (r * M01) * 1 :=
+          mul_le_mul hdiag (hφp _) (norm_nonneg _) (by positivity)
+      _ = r * M01 := mul_one _
+  have hnn2 : (0 : ℝ) ≤ ((N : ℝ) - 1) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0))
+        * (3 / 2 * (r ^ 2 * M1)) + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|)) + r ^ 2 * |κ0 * κ1| := by
+    have hA : (0 : ℝ) ≤ (r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+        + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|) := by positivity
+    have hB : (0 : ℝ) ≤ (N : ℝ) - 1 := by linarith
+    have hC : (0 : ℝ) ≤ r ^ 2 * |κ0 * κ1| := by positivity
+    nlinarith [mul_nonneg hB hA]
+  have hb2' : ‖((N : ℂ) - 1) * (s0 * s1) + ((κ0 * κ1 : ℝ) : ℂ)‖ * ‖φ ^ (N - 2)‖
+      ≤ ((N : ℝ) - 1) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+          + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|)) + r ^ 2 * |κ0 * κ1| :=
+    calc ‖((N : ℂ) - 1) * (s0 * s1) + ((κ0 * κ1 : ℝ) : ℂ)‖ * ‖φ ^ (N - 2)‖
+        ≤ (((N : ℝ) - 1) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+            + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|)) + r ^ 2 * |κ0 * κ1|) * 1 :=
+          mul_le_mul hT2 (hφp _) (norm_nonneg _) hnn2
+      _ = _ := mul_one _
+  -- the arithmetic: `N − 1 ≤ N` and `N r² = 1` turn `N r³` into `r` and `N r⁴` into `r²`
+  have hmid : ((N : ℝ) - 1) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+        + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|))
+      ≤ 3 / 2 * r * |κ0| * M1 + 9 / 4 * r ^ 2 * M0 * M1 + 3 / 2 * r * M0 * |κ1| := by
+    have hpos : (0 : ℝ) ≤ (r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+        + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|) := by positivity
+    have hle : ((N : ℝ) - 1) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+          + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|))
+        ≤ (N : ℝ) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+          + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|)) :=
+      mul_le_mul_of_nonneg_right (by linarith) hpos
+    have heq : (N : ℝ) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+          + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|))
+        = 3 / 2 * r * |κ0| * M1 + 9 / 4 * r ^ 2 * M0 * M1 + 3 / 2 * r * M0 * |κ1| := by
+      linear_combination (3 / 2 * r * |κ0| * M1 + 9 / 4 * r ^ 2 * M0 * M1
+        + 3 / 2 * r * M0 * |κ1|) * hNr
+    linarith [hle, heq.le, heq.ge]
+  rw [multiTwoRemConst, ← hκ0, ← hκ1, ← hM0, ← hM1, ← hM01]
+  have habs : |κ0 * κ1| = |κ0| * |κ1| := abs_mul _ _
+  have h1 : r ^ 2 * |κ0 * κ1| ≤ r * (|κ0| * |κ1|) := by
+    rw [habs]
+    exact mul_le_mul_of_nonneg_right hr2le (by positivity)
+  have h2 : 9 / 4 * r ^ 2 * M0 * M1 ≤ 9 / 4 * (r * (M0 * M1)) := by
+    nlinarith [mul_nonneg (sub_nonneg.2 hr2le) (mul_nonneg hM0nn hM1nn)]
+  linarith [hb1', hb2', hmid, h1, h2]
+
+end MultiTwoEstimate
+
 
 /-! ## One-factor bookkeeping: from `φ^{n−1}` to `φ^n`
 
