@@ -224,7 +224,23 @@ theorem gaussCriterion_argmin_zero_of_bowlShaped
     -- USER-INPUT: the limit criterion has the unique minimizer `u₀`; vdV Thm 10.8
     (hunique : ∀ u, u ≠ u₀ → bpeGaussCriterion J ℓ u₀ < bpeGaussCriterion J ℓ u) :
     u₀ = 0 := by
-  sorry
+  -- Anderson's lemma: the criterion is minimized at the origin.
+  have hmin : ∀ u, bpeGaussCriterion J ℓ 0 ≤ bpeGaussCriterion J ℓ u := by
+    intro u
+    have hzero : bpeGaussCriterion J ℓ 0
+        = ∫⁻ z, ℓ z ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹) := by
+      simp only [bpeGaussCriterion, zero_sub]
+      exact lintegral_congr fun z => hL.symm z
+    have hu : bpeGaussCriterion J ℓ u
+        = ∫⁻ z, ℓ (z + -u) ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹) := by
+      refine lintegral_congr fun z => ?_
+      rw [← hL.symm (u - z)]
+      congr 1
+      abel
+    rw [hzero, hu]
+    exact AsymptoticStatistics.anderson_lemma_loss hJ_pd.inv.posSemidef hL (-u)
+  by_contra hne
+  exact absurd (hmin u₀) (not_le.2 (hunique 0 (Ne.symm hne)))
 
 /-- **Theorem 10.8 for bowl-shaped losses** (vdV: "In particular, for every nonzero,
 subconvex loss function it converges to `X`"): the standardized Bayes estimators are
@@ -274,6 +290,9 @@ theorem bayes_estimator_asymptotics_bowlShaped
       (fun n => (productMeasure M μ θ₀ n).map
         (fun ω => Real.sqrt n • (T n ω - θ₀)))
       (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹) := by
-  sorry
+  have hu₀ : u₀ = 0 := gaussCriterion_argmin_zero_of_bowlShaped hJ_pd hL hunique
+  subst hu₀
+  exact bayes_estimator_weakConverges hPDF hsc hDQM hJ_pd hJ hκ hM_joint hTests hπ
+    hL.measurable hsep hp hpoly hmom hT_meas hεseq hT hunique
 
 end StatLean.Bayesian
