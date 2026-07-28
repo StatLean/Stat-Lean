@@ -8,6 +8,7 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 import Mathlib.Analysis.Fourier.Inversion
+import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 
 /-!
 # One-term Edgeworth expansions for the mean, and their uniform form
@@ -4656,6 +4657,201 @@ lemma norm_studentPair_truncAt_le (F : Measure ℝ) {τ : ℝ} (hτ : 0 ≤ τ) 
       exact pow_le_pow_left₀ (abs_nonneg _) hb 2
     linarith
   linarith
+
+/-! ### The bulk multiplier, built; and the exponent ledger, verified
+
+Wave 30 reduced the certificate to "two bounds on `𝓕 g`" for `g = e^{iθ(Hₙ − w₀/σ)}χ(·/M)`, but
+left `g` itself as prose. It is built here — `bulkMultiplier`, with `bulkCutoff` the smooth
+`ContDiffBump` equal to `1` on the unit ball and supported in the ball of radius `2` — together
+with the five elementary facts `hasFourierCertificateOnBand_of_bulkMultiplier` consumes:
+continuity, integrability (compact support), modulus at most `1`, and the identification with the
+perturbation character on the bulk `‖w‖ ≤ M`.
+
+**The exponent ledger, checked line by line, and the wave-30 numerology stands.** The wave-30
+note asserts that at `M = n^{5/8}`, gain `n^{-7/8}` per part, prefactor `M² = n^{5/4}` and bad-set
+area `≍ n`, five integrations by parts close the leakage at `O(n^{-3/2})`. The four lemmas
+`bulkRadius_pow`, `leakage_ledger_exponent`, `leakage_ledger_five_le` and `tail_ledger_exponent`
+turn that arithmetic into checkable statements, and it is correct: the ledger returns
+`n^{9/4 − 7N/8}`, which at `N = 5` is `n^{-17/8} ≤ n^{-3/2}`.
+
+**What the check adds: `N = 5` is not a safe margin, it is the minimum.**
+`leakage_ledger_four_gt` is the formalized witness — at `N = 4` the ledger returns `n^{-5/4}`,
+which *exceeds* `n^{-3/2}` at every `n ≥ 2`. The wave-30 prompt's remark that "a sixth part costs
+nothing" is right, but a fourth-and-final one would have been fatal. (Three waves in a row
+corrected their predecessor's numerology; this one does not have to.)
+
+**One correction, and it is a misplaced `σ`.** The wave-30 note prices the second term of an
+integration by parts as `(27/16)Mr²σ/|θ|`. The scale sits on the wrong side: the phase's second
+derivative is `∂²_{w₀}(θHₙ) = 3θur²/σ² ≤ 3|θ|Mr²/σ³` on the support, and dividing by
+`|∂_{w₀}(θHₙ − ⟪·,s⟫)|² ≥ (4/3)²θ²/σ²` gives `(27/16)Mr²/(σ|θ|)`. Nothing downstream moves —
+`σ` is a constant of the problem and the `n`-exponent is unchanged — but the ledger lemma
+`bulk_gain_phase_le` is stated in the corrected form. -/
+
+/-- The **bulk cut-off**: the smooth bump equal to `1` on the unit ball of `ℝ²` and vanishing
+outside the ball of radius `2`. Its dilate `χ(·/M)` localizes the surrogate's multiplier to the
+bulk `‖w‖ ≤ M` while keeping every derivative bounded by `C_k M^{-k}`, which is what the
+integrations by parts of the leakage estimate spend. -/
+noncomputable def bulkCutoff : ContDiffBump (0 : E₂) := ⟨1, 2, by norm_num, by norm_num⟩
+
+lemma continuous_deltaSurrogate (σ r : ℝ) : Continuous (deltaSurrogate σ r) := by
+  have h0 : Continuous fun w : E₂ => w 0 := by fun_prop
+  have h1 : Continuous fun w : E₂ => w 1 := by fun_prop
+  unfold deltaSurrogate
+  fun_prop
+
+/-- The **bulk multiplier** `g = χ(w/M)·e^{iθ(Hₙ(w) − w₀/σ)}`: the perturbation character of the
+delta-method surrogate, localized to the bulk. This is the `g` of
+`hasFourierCertificateOnBand_of_bulkMultiplier`; the certificate's weight is `fourierWeight g`
+and all three of its data are data about `𝓕 g`. -/
+noncomputable def bulkMultiplier (σ r θ M : ℝ) (w : E₂) : ℂ :=
+  (bulkCutoff (M⁻¹ • w) : ℝ) *
+    Complex.exp (Complex.I * ((θ * (deltaSurrogate σ r w - w 0 / σ) : ℝ) : ℂ))
+
+lemma continuous_bulkMultiplier (σ r θ M : ℝ) : Continuous (bulkMultiplier σ r θ M) := by
+  unfold bulkMultiplier
+  have hc : Continuous fun w : E₂ => (bulkCutoff (M⁻¹ • w) : ℝ) :=
+    bulkCutoff.continuous.comp (continuous_const_smul _)
+  have hp : Continuous fun w : E₂ => (θ * (deltaSurrogate σ r w - w 0 / σ) : ℝ) := by
+    have h0 : Continuous fun w : E₂ => w 0 := by fun_prop
+    exact ((continuous_deltaSurrogate σ r).sub (h0.div_const σ)).const_mul θ
+  exact (Complex.continuous_ofReal.comp hc).mul
+    (Complex.continuous_exp.comp ((Complex.continuous_ofReal.comp hp).const_mul Complex.I))
+
+/-- The bulk multiplier has modulus at most `1` — the `hnorm` hypothesis of the reduction, and
+the reason its `L¹(ρ)` error is priced by `2ρ(Sᶜ)` rather than by the polynomially large `Γ`. -/
+lemma norm_bulkMultiplier_le_one (σ r θ M : ℝ) (w : E₂) : ‖bulkMultiplier σ r θ M w‖ ≤ 1 := by
+  have hexp :
+      ‖Complex.exp (Complex.I * ((θ * (deltaSurrogate σ r w - w 0 / σ) : ℝ) : ℂ))‖ = 1 := by
+    simp [Complex.norm_exp]
+  rw [bulkMultiplier, norm_mul, hexp, mul_one, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_nonneg bulkCutoff.nonneg]
+  exact bulkCutoff.le_one
+
+/-- On the bulk `‖w‖ ≤ M` the cut-off is `1`, so the multiplier *is* the perturbation character.
+This is the `heq` hypothesis of the reduction, at `S = {w : ‖w‖ ≤ M}`. -/
+lemma bulkMultiplier_eq_of_norm_le {M : ℝ} (hM : 0 < M) (σ r θ : ℝ) {w : E₂} (hw : ‖w‖ ≤ M) :
+    bulkMultiplier σ r θ M w
+      = Complex.exp (Complex.I * ((θ * (deltaSurrogate σ r w - w 0 / σ) : ℝ) : ℂ)) := by
+  have hone : (bulkCutoff (M⁻¹ • w) : ℝ) = 1 := by
+    refine bulkCutoff.one_of_mem_closedBall ?_
+    have : ‖M⁻¹ • w‖ ≤ 1 := by
+      rw [norm_smul, norm_inv, Real.norm_eq_abs, abs_of_pos hM, inv_mul_le_iff₀ hM]
+      simpa using hw
+    simpa [Metric.mem_closedBall] using this
+  rw [bulkMultiplier, hone]
+  push_cast
+  ring
+
+lemma hasCompactSupport_bulkMultiplier {M : ℝ} (hM : 0 < M) (σ r θ : ℝ) :
+    HasCompactSupport (bulkMultiplier σ r θ M) := by
+  refine HasCompactSupport.intro (isCompact_closedBall (0 : E₂) (2 * M)) ?_
+  intro w hw
+  have hnw : 2 * M < ‖w‖ := by
+    simpa [Metric.mem_closedBall, not_le] using hw
+  have hzero : (bulkCutoff (M⁻¹ • w) : ℝ) = 0 := by
+    refine bulkCutoff.zero_of_le_dist ?_
+    have : (2 : ℝ) ≤ ‖M⁻¹ • w‖ := by
+      rw [norm_smul, norm_inv, Real.norm_eq_abs, abs_of_pos hM, ← div_eq_inv_mul, le_div_iff₀ hM]
+      linarith
+    simpa [dist_eq_norm, bulkCutoff] using this
+  rw [bulkMultiplier, hzero]
+  simp
+
+lemma integrable_bulkMultiplier {M : ℝ} (hM : 0 < M) (σ r θ : ℝ) :
+    Integrable (bulkMultiplier σ r θ M) :=
+  (continuous_bulkMultiplier σ r θ M).integrable_of_hasCompactSupport
+    (hasCompactSupport_bulkMultiplier hM σ r θ)
+
+/-- The **bulk radius** `M = n^{5/8}`, forced by `tail_ledger_exponent`: the truncated root has
+`E‖w‖⁴ = O(n)` and no more, so Markov at the fourth moment reaches `O(n^{-3/2})` exactly at this
+radius. Wave 27's `n^{3/8}` came from a fourth moment of the root that `hF4` does not supply. -/
+noncomputable def bulkRadius (n : ℕ) : ℝ := (n : ℝ) ^ ((5 : ℝ) / 8)
+
+lemma bulkRadius_pos {n : ℕ} (hn : 0 < n) : 0 < bulkRadius n :=
+  Real.rpow_pos_of_pos (by exact_mod_cast hn) _
+
+lemma bulkRadius_pow (n k : ℕ) : bulkRadius n ^ k = (n : ℝ) ^ ((5 : ℝ) / 8 * k) := by
+  rw [bulkRadius, ← Real.rpow_natCast ((n : ℝ) ^ ((5 : ℝ) / 8)) k,
+    ← Real.rpow_mul (Nat.cast_nonneg n)]
+
+lemma inv_mul_sqrt_eq_rpow {n : ℕ} (hn : 0 < n) :
+    ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ = (n : ℝ) ^ (-(3 : ℝ) / 2) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hs : Real.sqrt (n : ℝ) = (n : ℝ) ^ ((1 : ℝ) / 2) := Real.sqrt_eq_rpow _
+  calc ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹
+      = ((n : ℝ) ^ (1 : ℝ) * (n : ℝ) ^ ((1 : ℝ) / 2))⁻¹ := by rw [hs, Real.rpow_one]
+    _ = ((n : ℝ) ^ ((3 : ℝ) / 2))⁻¹ := by rw [← Real.rpow_add h0]; norm_num
+    _ = (n : ℝ) ^ (-(3 : ℝ) / 2) := by rw [← Real.rpow_neg h0.le]; norm_num
+
+/-- **The leakage ledger at `N` integrations by parts.** Bad-set area `≍ n`, prefactor
+`M² = n^{5/4}` and a gain `n^{-7/8}` per part multiply to `n^{9/4 − 7N/8}`. -/
+lemma leakage_ledger_exponent {n : ℕ} (hn : 0 < n) (N : ℕ) :
+    (n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(7 : ℝ) / 8)) ^ N
+      = (n : ℝ) ^ ((9 : ℝ) / 4 - 7 * N / 8) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hp : bulkRadius n ^ 2 = (n : ℝ) ^ ((5 : ℝ) / 4) := by rw [bulkRadius_pow]; norm_num
+  have hq : ((n : ℝ) ^ (-(7 : ℝ) / 8)) ^ N = (n : ℝ) ^ (-(7 : ℝ) / 8 * N) := by
+    rw [← Real.rpow_natCast ((n : ℝ) ^ (-(7 : ℝ) / 8)) N, ← Real.rpow_mul h0.le]
+  calc (n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(7 : ℝ) / 8)) ^ N
+      = (n : ℝ) ^ (1 : ℝ) * (n : ℝ) ^ ((5 : ℝ) / 4) * (n : ℝ) ^ (-(7 : ℝ) / 8 * N) := by
+        rw [hp, hq, Real.rpow_one]
+    _ = (n : ℝ) ^ ((1 : ℝ) + (5 : ℝ) / 4 + -(7 : ℝ) / 8 * N) := by
+        rw [← Real.rpow_add h0, ← Real.rpow_add h0]
+    _ = (n : ℝ) ^ ((9 : ℝ) / 4 - 7 * N / 8) := by ring_nf
+
+/-- **The tail ledger.** `E‖w‖⁴ = O(n)` against `M⁴ = n^{5/2}` is `n^{-3/2}` on the nose: the
+bulk radius is forced by this line from below, and the leakage ledger caps it from above. -/
+lemma tail_ledger_exponent {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) / bulkRadius n ^ 4 = ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hp : bulkRadius n ^ 4 = (n : ℝ) ^ ((5 : ℝ) / 2) := by rw [bulkRadius_pow]; norm_num
+  rw [hp, inv_mul_sqrt_eq_rpow hn, div_eq_iff (by positivity), ← Real.rpow_add h0,
+    ← Real.rpow_one (n : ℝ)]
+  norm_num
+
+/-- **The gain of one integration by parts, from the phase's second derivative.**
+`M r²/(σ|θ|) ≤ σ⁻¹c₀⁻¹ n^{-7/8}` at `M = n^{5/8}`, `r = n^{-1/2}`, `|θ| ≥ c₀√n` — stated with
+the `σ` on the corrected side; see the section note. This is the dominant of the two costs, the
+cut-off's being `σ/(M|θ|) = O(n^{-9/8})`. -/
+lemma bulk_gain_phase_le {n : ℕ} (hn : 0 < n) {c₀ θ : ℝ} (hc₀ : 0 < c₀)
+    (hθ : c₀ * Real.sqrt (n : ℝ) ≤ |θ|) :
+    bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / |θ| ≤ c₀⁻¹ * (n : ℝ) ^ (-(7 : ℝ) / 8) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hs : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 h0
+  have hsq : ((Real.sqrt (n : ℝ))⁻¹) ^ 2 = ((n : ℝ))⁻¹ := by
+    rw [inv_pow, Real.sq_sqrt h0.le]
+  have hMnn : (0 : ℝ) ≤ bulkRadius n * ((n : ℝ))⁻¹ := by
+    have := bulkRadius_pos hn; positivity
+  have hsr : Real.sqrt (n : ℝ) = (n : ℝ) ^ ((1 : ℝ) / 2) := Real.sqrt_eq_rpow _
+  have hkey : (n : ℝ) ^ ((5 : ℝ) / 8) * ((n : ℝ))⁻¹ / (n : ℝ) ^ ((1 : ℝ) / 2)
+      = (n : ℝ) ^ (-(7 : ℝ) / 8) := by
+    rw [← Real.rpow_neg_one (n : ℝ), ← Real.rpow_add h0, div_eq_iff (by positivity),
+      ← Real.rpow_add h0]
+    norm_num
+  calc bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / |θ|
+      = bulkRadius n * ((n : ℝ))⁻¹ / |θ| := by rw [hsq]
+    _ ≤ bulkRadius n * ((n : ℝ))⁻¹ / (c₀ * Real.sqrt (n : ℝ)) := by gcongr
+    _ = c₀⁻¹ * (n : ℝ) ^ (-(7 : ℝ) / 8) := by
+        rw [bulkRadius, hsr, div_mul_eq_div_div_swap, hkey, div_eq_inv_mul]
+
+/-- **`N = 5` integrations by parts close the leakage.** The ledger returns `n^{-17/8}`, which is
+below the required `n^{-3/2}`. -/
+lemma leakage_ledger_five_le {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(7 : ℝ) / 8)) ^ 5
+      ≤ ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ := by
+  have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  rw [leakage_ledger_exponent hn, inv_mul_sqrt_eq_rpow hn]
+  exact Real.rpow_le_rpow_of_exponent_le h1 (by norm_num)
+
+/-- **`N = 4` does not, and this is the formalized witness.** The ledger returns `n^{-5/4}`,
+*strictly larger* than `n^{-3/2}` at every `n ≥ 2`. Five parts is the minimum, not a margin. -/
+lemma leakage_ledger_four_gt {n : ℕ} (hn : 2 ≤ n) :
+    ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹
+      < (n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(7 : ℝ) / 8)) ^ 4 := by
+  have hn0 : 0 < n := lt_of_lt_of_le (by norm_num) hn
+  have h1 : (1 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [leakage_ledger_exponent hn0, inv_mul_sqrt_eq_rpow hn0]
+  exact Real.rpow_lt_rpow_of_exponent_lt h1 (by norm_num)
 
 /-- **(W27, AMENDED IN W30) The one remaining analytic item of the studentized expansion, as a
 named brick.**
