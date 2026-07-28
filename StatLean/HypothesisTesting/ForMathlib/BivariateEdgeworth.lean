@@ -49,6 +49,12 @@ moments of the projected law.
   The third-order delta-method surrogate of the studentized route is a degree-four polynomial
   in the coordinates of the root, so its characteristic function is a finite combination of
   `multiCharFun`s with `k ≤ 4`, and is *not* reachable from the one-slot theory.
+* `multiCharFun_vecRootLaw_two` — the `k = 2` assignment sum **in closed form**:
+  `multi_{ρ_N}(b,a) = N^{-1}(N·slot_{{0,1}}(c)φ^{N−1} + N(N−1)·slot_{{0}}(c)slot_{{1}}(c)φ^{N−2})`.
+  The point of stating it is that the off-diagonal block is **not** negligible: each single-slot
+  factor is `O(N^{-1/2})` for a centred `Z`, so the block is `N^{-1}·N²·O(N⁻¹) = O(1)`, exactly
+  the order of the diagonal. The `k = 1` intuition — where there is no off-diagonal at all — is
+  therefore misleading, and the `k ≥ 2` estimate is a genuine analytic item rather than wiring.
 
 ## Proof formalization notes
 

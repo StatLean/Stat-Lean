@@ -59,6 +59,19 @@ proved:
   `subset_union_large_coord` — the assembled joint-stratum bound over an arbitrary statistic,
   its free root instance, and the deterministic bridge from the third-order Taylor remainder to
   a coordinate-sum tail;
+* `deltaSurrogate`, `exactStudent_eq`, `abs_exactStudent_sub_deltaSurrogate_le` — the
+  delta-method surrogate `Hₙ = u − uvr/2 + u³r²/2 + 3uv²r²/8` as an object on the bivariate root,
+  the identification of the exact studentized statistic with the studentizing factor, and the
+  deterministic half of (M2) in those terms;
+* `norm_cexp_surrogate_sub_expansion_le`, `surrogateRemPoly` — the pointwise second-order
+  expansion of `e^{iθHₙ}`, whose four weights are `uv`, `u³`, `uv²` and `(uv)²`; the quartic one
+  is the *square of the leading correction*, not a term of `Hₙ`, and would be dropped by a
+  first-order expansion;
+* `coordDir`, `surrW2`, `surrW3a`, `surrW3b`, `surrW4` and the `multiCharFun_surrW*` identities,
+  `expansionIntegrand`, `integrable_expansionIntegrand`, `integral_expansionIntegrand_eq`,
+  `norm_integral_cexp_deltaSurrogate_sub_le` — the surrogate's characteristic function assembled
+  from the `k ≤ 4` instances of `multiCharFun`, over an **arbitrary** law of the bivariate root
+  (so the marginal and the additively-perturbed instances of (X3) are one statement);
 * `centredDensity`, `charFun_map_studentPair_eq`, `vecCramerCondition_map_studentPair`,
   `cramerCondition_projLaw_studentPair`,
   `exists_bound_norm_charFun_vecRootLaw_studentPair` — the multivariate Cramér condition for the
@@ -5374,6 +5387,8 @@ therefore **two** items, not one, and neither is bookkeeping.
   same order as the diagonal**. Discarding it, as the `k = 1` intuition invites, would change the
   *limit* of `M₂` and not just its remainder. That is the counterexample to the "free
   composition" reading, in the same family as wave 18's.
+  `ForMathlib/BivariateEdgeworth.lean`'s `multiCharFun_vecRootLaw_two` now carries out that
+  split exactly, so the claim above is not a heuristic count but a proved identity.
   The accuracies required are unequal and worth recording, because they bound the work: `c₂` is
   `O(n^{-1/2})`, so `M₂` is needed to `O(n^{-1/2})`; `c₃`, `c₄`, `c₅` are `O(n⁻¹)`, so
   `M₃ᵃ`, `M₃ᵇ`, `M₄` are needed only to `O(1)` — but a bound is still an estimate that the
@@ -5392,10 +5407,14 @@ therefore **two** items, not one, and neither is bookkeeping.
 
 Net after wave 23 the residue is **two** items plus a composition:
 (i) an *estimate* for `multiCharFun (vecRootLaw F Z n) b a` at `k = 2` to `O(n^{-1/2})` accuracy
-    and at `k = 3, 4` to `O(1)`, whose combinatorial half is the diagonal/off-diagonal split of
-    the assignment sum of `multiCharFun_vecRootLaw` (for `k = 2`:
-    `n^{-1}(n·slot_{01}φ^{n−1} + n(n−1)·slot_0 slot_1 φ^{n−2})`) and whose analytic half is the
-    one-factor Taylor bound that `norm_mixCharFun_vecRootLaw_sub_le` already performs at `k = 1`;
+    and at `k = 3, 4` to `O(1)`. Its **combinatorial half is now closed** for `k = 2`:
+    `multiCharFun_vecRootLaw_two` evaluates the assignment sum exactly as
+    `N^{-1}(N·slot_{01}(c)φ(c)^{N−1} + N(N−1)·slot_0(c)slot_1(c)φ(c)^{N−2})`, for every `N`
+    (the degenerate `N = 0, 1` are absorbed by the vanishing coefficient `N(N−1)`). What is left
+    of it is the analytic half — the one-factor Taylor bound that
+    `norm_mixCharFun_vecRootLaw_sub_le` already performs at `k = 1` — and the same split for
+    `k = 3, 4`, where the partition of the assignment sum is by the partition lattice of
+    `Fin k` rather than by a single diagonal;
 (ii) the truncated-law replacement that makes `∫ surrogateRemPoly` finite and `O(1)` under a
     fourth moment, together with the tail estimate for the change of law;
 (iii) the Esseen chain on top, which — once (i) and (ii) are in place — is a composition of
@@ -5408,8 +5427,9 @@ Proved and axiom-clean after wave 23: everything listed after wave 21, **and** t
 `deltaSurrogate` with its exact-statistic identity and its deterministic (M2) bound, the
 pointwise second-order expansion of its character `norm_cexp_surrogate_sub_expansion_le` with the
 explicit envelope `surrogateRemPoly`, the four multilinear weights and their `multiCharFun`
-identities, and the assembled transform `norm_integral_cexp_deltaSurrogate_sub_le` over an
-arbitrary law of the bivariate root. -/
+identities, the assembled transform `norm_integral_cexp_deltaSurrogate_sub_le` over an arbitrary
+law of the bivariate root, and the closed-form `k = 2` assignment sum
+`multiCharFun_vecRootLaw_two`. -/
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
@@ -5508,7 +5528,18 @@ function of the retained pair. Since the conditional window bound for `Hₙ` is 
 the **one** item: the `O(n⁻¹)` expansion of `Hₙ` itself, uniform in the argument and stable under
 an additive perturbation of the bivariate mean. No analytic tool for it is missing — what is
 missing is the construction of `Hₙ`, its characteristic function assembled from the `k ≤ 4`
-instances of `multiCharFun_vecRootLaw`, and the Esseen chain on top. -/
+instances of `multiCharFun_vecRootLaw`, and the Esseen chain on top.
+
+**After the wave-23 re-derivation that last sentence is wrong in its second half, and this
+corollary still adds nothing.** The construction is done — `deltaSurrogate`,
+`norm_cexp_surrogate_sub_expansion_le` and `norm_integral_cexp_deltaSurrogate_sub_le` assemble
+`E[e^{iθHₙ}]` from the `k ≤ 4` weights over an arbitrary law of the bivariate root — and doing it
+showed that two analytic items, not zero, stand between that and the Esseen chain: the `k ≥ 2`
+*estimate* for `multiCharFun` (whose `k = 2` combinatorial half is now closed by
+`multiCharFun_vecRootLaw_two`, and whose off-diagonal block is of the *same order* as the
+diagonal, so the `k = 1` intuition is quantitatively wrong), and the truncated-law replacement
+that makes `∫ surrogateRemPoly` — a ninth moment of the root's coordinates — finite under a
+fourth moment. See the wave-23 note on `edgeworth_studentized_uniform`. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
