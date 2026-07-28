@@ -3294,7 +3294,121 @@ step: (i) a second moment for an explicit polynomial in the bivariate root toget
 anti-concentration of its surrogate, and (ii) uniform Riemann–Lebesgue over the sphere for the
 parabola-carried law. Everything else in the chain — (S1), (S2), (M1)(a-not-needed), (M1)(b)
 including the one-factor bookkeeping, the deterministic core and the assembly of (M2), and both
-the direction-uniformity and the root transfer of (M3) — is proved and axiom-clean. -/
+the direction-uniformity and the root transfer of (M3) — is proved and axiom-clean.
+
+**Status after the wave-15 re-derivation.** Of the two residues wave 14 left, the first splits
+into two halves of opposite character: one of them is **not an obstruction at all** and the
+route wave 14 recommended for it does not work, while the other is **stated falsely** — for the
+second consecutive wave, and again at the level of the limit behaviour rather than of a
+constant. The second residue's recommended route has been built, and what is left of it is one
+sharply delimited oscillatory estimate. A further item, not recorded by any earlier wave, is
+identified below.
+
+* (W1) **Anti-concentration of the surrogate is free, and wave 14's route to it is
+  insufficient — CLOSED.** Wave 14 asked for `sup_x P(Hₙ ∈ (x, x + n⁻¹]) = O(n⁻¹)` and proposed
+  "break the circularity by first proving a cruder `O(n^{-1/2})` expansion". That cannot work:
+  a distributional approximation of accuracy `η` bounds the mass of an interval of length `ℓ` by
+  `Aℓ + 2η` and by nothing better, so a `O(n^{-1/2})`-accurate expansion yields only
+  `O(n^{-1/2})` at `ℓ = n⁻¹`, one whole order short. No amount of bootstrapping repairs this,
+  because the deficit is in the *input's* accuracy, not in the argument.
+  What is true is that the estimate costs nothing. `measure_Ioc_le_of_abs_cdf_sub_le` (proved
+  above, axiom-clean) is the general statement `|P(T ≤ ·) − G| ≤ ε` and `G` `A`-Lipschitz imply
+  `P(a < T ≤ b) ≤ A(b − a) + 2ε`; applied to `T = Hₙ`, `G` the Edgeworth approximant (Lipschitz
+  uniformly in `n`, `setIntegral_abs_edgeworthDensity_le`) and `ε = C/n` — the conclusion of the
+  (M1)(b) route for `Hₙ`, which the argument needs anyway and proves *before* this step — it
+  gives exactly `O(n⁻¹)`. `abs_measure_le_sub_le_of_cdf_approx` packages the whole of (M2) with
+  that term already discharged: `|P(S ≤ x) − G(x)| ≤ P(|S − T| > δ) + 2Aδ + 3ε`. There is no
+  circularity anywhere, and no cruder expansion is needed.
+* (W2) **The tail half of (M2) is FALSE as recorded, at `n^{-1/3}` against the claimed `n⁻¹`,
+  and no finite-order surrogate repairs it.** Two separate failures.
+  *(i) The requested hypothesis does not exist.* Wave 14 asked for "a second moment for the
+  bracket" `4|u||v|³ + 4|u|⁷ + …`. A second moment of `|u|⁷` is `E[u¹⁴]`, which is infinite for
+  every sampling law with exactly four moments; truncation of the summands at `√n` does make it
+  finite, but then Rosenthal's inequality gives `E[v̄¹²] ≍ n⁵` (the truncated summands of `v` are
+  bounded only by `n`, not by `√n`), so the truncated bracket has `E[B²] ≍ n^{5/2}` and Markov at
+  the level `√n` gives `n^{3/2}` — no information at all.
+  *(ii) The conclusion is false, not merely unprovable this way.* Take `F` absolutely continuous
+  with `P(|X| > s) ≍ s⁻⁴(log s)⁻²`, so `E X⁴ < ∞` and Cramér's condition holds. Then
+  `Y = (X − μ)² − σ²` satisfies `P(Y > t) ≍ t⁻²(log t)⁻²`, so `E Y² < ∞` but no more, and
+  `P(|v| > 2n^{1/6}) ≍ n·P(Y > 4n^{2/3}) ≍ n^{-1/3}(log n)⁻²`, dominated by a single large
+  summand. On that event `x = vr − u²r² ≍ n^{-1/3}` — well inside the `|x| ≤ 1/2` window, so the
+  third-order Taylor estimate is *sharp* there, not merely loose — and the exact remainder
+  `−(5/16)x³ + O(x⁴)` gives `|T̃ₙ − Hₙ| ≍ (5/16)·8·|u|·n⁻¹ > n⁻¹` as soon as `|u| ≥ 1`. The
+  single large summand contributes only `O(n^{-1/6})` to `u`, so `u` is still asymptotically
+  standard normal and `P(|u| ≥ 1) → 0.317…`. Hence
+  `P(|T̃ₙ − Hₙ| > n⁻¹) ≳ c·n^{-1/3}(log n)⁻²`, not `O(n⁻¹)`.
+  Raising the order of the surrogate does not help: for the order-`j` polynomial the remainder is
+  `≍ |u||v|^{j+1}n^{-(j+1)/2}`, and `P(|v| > n^{1/2 − 1/(j+1)}) ≍ n^{-1 + 2/(j+1)}`, which is
+  `O(n⁻¹)` only in the limit `j → ∞`. **The single-scale split of
+  `abs_measure_le_sub_le_of_dist_le` therefore cannot deliver `C/n` for the studentized root
+  under a finite fourth moment**, whatever surrogate is used — `δ` is pinned to `n⁻¹` from above
+  by (W1)'s window term and the tail term is `n^{-1/3}` there.
+  *The repair is a better split, not a better surrogate*, and it is closed here:
+  `abs_measure_le_sub_le_of_peel` (axiom-clean) peels dyadically and produces **joint** strata
+  `{2ᵏδ < |S − T|} ∩ {|T − x| ≤ 2^{k+1}δ}`, using that on the symmetric difference `T` is always
+  within `|S − T|` of `x`. With `δ = n⁻¹`, stratum `k` is bounded by
+  `P(|v| ≳ 2^{k/3}n^{1/6}) · (2ᵏn⁻¹ + n⁻¹) ≍ 2^{-2k/3}n^{-1/3}·2ᵏn⁻¹ = 2^{k/3}n^{-4/3}`, and
+  summing to `K ≍ log₂ n` (where `2^K n⁻¹ ≍ 1`, i.e. where the window is the whole line) gives
+  `n^{1/3}·n^{-4/3} = n⁻¹`; the final tail `P(|S − T| ≳ 1) ≲ P(|v| ≳ √n) = O(n⁻¹)` is the same
+  event that keeps `|x| ≤ 1/2`. So the arithmetic closes at `O(n⁻¹)` — but every stratum is a
+  **joint** window-times-tail estimate, i.e. it needs anti-concentration of `Hₙ` *conditionally
+  on `v` being large*, which the marginal estimate of (W1) does not give. That conditional
+  estimate is the honest residue of (M2).
+* (W3) **Uniform Riemann–Lebesgue: the recommended route is built; the residue is one
+  oscillatory estimate.** `ForMathlib/UniformRiemannLebesgue.lean` (new, axiom-clean) proves
+  wave 14's "soft route" in full generality:
+  `tendsto_fourierOsc_cocompact` is Riemann–Lebesgue in the `charFun` normalisation;
+  `norm_fourierOsc_sub_le` is the contraction `‖ℱf(s) − ℱg(s)‖ ≤ ‖f − g‖_{L¹}`, valid at every
+  frequency; `eventually_norm_fourierOsc_le_of_totallyBounded` is the headline — Riemann–Lebesgue
+  is **uniform on any family admitting finite `L¹` `ε`-nets**, by applying it to the finitely
+  many net elements and intersecting the eventualities; and
+  `eventually_norm_fourierOsc_le_of_isCompact` specialises this to a family parametrised
+  continuously in `L¹` by a compact set, which is the form the sphere of directions produces.
+  Applied to the parabola: writing `f` for the density of `X − μ`, the projected characteristic
+  function in the direction `(t₀, t₁)` is `∫ f(y)e^{i(t₀y + t₁y²)}dy` up to a unimodular factor,
+  and `eventually_norm_quadPhaseInt_le` proves it tends to `0` as `|t₀| → ∞` **uniformly over
+  `|t₁| ≤ M`**, for every `M`: the twisted densities `e^{it₁y²}f` depend on `t₁` continuously in
+  `L¹` (dominated convergence, dominating function `2‖f‖`) and `|t₁| ≤ M` is compact.
+  `exists_bound_norm_quadPhaseInt` shows the two regimes combine into the cocompact bound that
+  `vecCramerCondition_of_uniform_sphere` consumes.
+  **What is left of (M3)(i)** is therefore exactly the complementary regime `|t₁| → ∞`,
+  uniformly in `t₀`. It is *not* a Riemann–Lebesgue statement — the twists `e^{it₁y²}f` are not
+  relatively compact in `L¹` as `t₁` ranges over an unbounded set — and it is true for every
+  `f ∈ L¹`, by the autocorrelation identity
+  `|I|² = ∫ e^{i(t₀h + t₁h²)} ĝ_h(2t₁h) dh` with `g_h(z) = f(z + h)\overline{f(z)}`: Fubini is
+  licensed by `∫∫|f(z + h)f(z)| = ‖f‖₁²`, that same quantity dominates the integrand, and for
+  each `h ≠ 0` the inner Fourier transform vanishes as `|t₁| → ∞`, so dominated convergence along
+  the (countably generated) cocompact filter finishes. That is the single genuinely analytic item
+  left in the whole route, and it is now a statement about one explicit integral rather than
+  about "uniformity over the sphere".
+* (W4) **An item no earlier wave recorded: the surrogate's characteristic function needs
+  *multilinearly* weighted mixed transforms, and `mixCharFun` supplies only the linear ones.**
+  `mixCharFun μ b t = ∫ ⟪w,b⟫e^{i⟪w,t⟫}` has a **linear** weight. The surrogate
+  `Hₙ = u − uvr/2 + u³r²/2 + 3uv²r²/8` is a polynomial of degree four in the coordinates, so
+  expanding `E[e^{iθHₙ}]` in powers of `r` produces the weights `uv`, `u³`, `uv²` and `(uv)²` —
+  bilinear, trilinear and quartic — none of which is a `mixCharFun`. This affects wave 13's
+  second-order surrogate equally (its leading correction already needs `E[uv e^{iθu}]`), so it
+  is not an artefact of the third-order repair. The gap is not a wall: the exact factorisation
+  `mixCharFun_vecRootLaw` rests only on the weight being a *sum over coordinates*, and a product
+  of `m` such sums expands into `m` distinguished factors, so the same
+  `integral_fintype_prod_eq_prod` argument applies with a diagonal/off-diagonal bookkeeping. But
+  it has to be built, and until it is, the "expansion for `Hₙ`" that (W1) reads its
+  anti-concentration off is not available either.
+
+Net after wave 15, the residue is three items, all of them precisely stated:
+(i) the **conditional** anti-concentration of `Hₙ` given a large second coordinate, feeding the
+joint strata of `abs_measure_le_sub_le_of_peel` — the marginal version is free by (W1), and the
+single-scale route it replaces is provably dead by (W2);
+(ii) the `|t₁| → ∞` regime of `∫ f(y)e^{i(t₀y + t₁y²)}dy`, uniform in `t₀` — everything else in
+(M3) is proved, including the whole `L¹`/compactness apparatus and the `|t₁|` bounded regime;
+(iii) the multilinear extension of `mixCharFun` needed for the surrogate's characteristic
+function (W4).
+Proved and axiom-clean: (S1), (S2), (M1)(b) for linear weights including the one-factor `φ^{n−1}`
+bookkeeping, the deterministic core of (M2) in its corrected third-order form, both the
+single-scale and the dyadically peeled assemblies, the marginal anti-concentration of both the
+centred root and any variable with an approximated distribution function, the direction-uniformity
+and root transfer of (M3), and uniform Riemann–Lebesgue on totally bounded and on compactly
+parametrised `L¹` families. -/
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
@@ -3323,22 +3437,30 @@ expansion, the quantile version follows by inverting it (the Cornish–Fisher st
 function theorem applied to `x ↦ Φ(x) + (γ/6)φ(x)(2x² + 1) n^{-1/2}`, using that `φ` is bounded
 below on the compact `z`-range corresponding to `α ∈ [ε, 1 − ε]`, which is where the hypothesis
 `0 < ε < 1/2` is used). It therefore inherits, and adds nothing to, the obstruction recorded on
-`edgeworth_studentized_uniform` — which, after the wave-14 re-derivation, is **two** items, not
-three:
+`edgeworth_studentized_uniform` — which, after the wave-15 re-derivation, is **three** items,
+each of them a single named statement:
 
-* a second moment for the explicit polynomial bracket of `abs_studentFactor_sub_taylor3_le'`
-  (this is where truncation of the summands at level `√n` enters) together with the
-  anti-concentration of the quadratic delta-method surrogate at scale `n⁻¹`;
-* uniform Riemann–Lebesgue over the compact sphere of directions for the parabola-carried
-  bivariate law, i.e. the hypothesis of `vecCramerCondition_of_uniform_sphere`.
+* the **conditional** anti-concentration of the delta-method surrogate given a large second
+  coordinate, which is what the joint strata of `abs_measure_le_sub_le_of_peel` consume. The
+  *marginal* anti-concentration is free (`measure_Ioc_le_of_abs_cdf_sub_le`), and the
+  single-scale route wave 14 recorded is provably dead: `P(|T̃ₙ − Hₙ| > n⁻¹)` is of order
+  `n^{-1/3}` under a finite fourth moment, with an explicit witness;
+* the `|t₁| → ∞` regime of `∫ f(y)e^{i(t₀y + t₁y²)}dy`, uniformly in `t₀`. The `|t₁|` bounded
+  regime, and the whole `L¹`-compactness apparatus behind "uniform Riemann–Lebesgue over the
+  sphere", are proved in `ForMathlib/UniformRiemannLebesgue.lean`;
+* a multilinear extension of `mixCharFun`: the surrogate is a degree-four polynomial in the two
+  coordinates, so its characteristic function needs `∫ w₀w₁e^{i⟪w,t⟫}` and its cubic and quartic
+  analogues, while `mixCharFun` carries a linear weight only.
 
 Closed and axiom-clean over there: (S1) the bivariate expansion, (S2) the exact reduction of
 the studentized root to a bivariate mean, (M1)(b) the mixed-characteristic-function expansion
-*together with* the one-factor `φ^{n−1}` bookkeeping (`norm_mixCharFun_vecRootLaw_sub_charFun_le`),
-the deterministic core and the assembly of (M2) in their corrected third-order form, the
-direction-uniformity of (M3), and the transfer of the Cramér tail to the vector root
-(`norm_charFun_vecRootLaw_le_pow`, which removes the need for Hall's conditioning device
-altogether). -/
+for linear weights *together with* the one-factor `φ^{n−1}` bookkeeping
+(`norm_mixCharFun_vecRootLaw_sub_charFun_le`), the deterministic core of (M2) in its corrected
+third-order form together with both the single-scale and the dyadically peeled assemblies, the
+marginal anti-concentration statements, the direction-uniformity of (M3), the transfer of the
+Cramér tail to the vector root (`norm_charFun_vecRootLaw_le_pow`, which removes the need for
+Hall's conditioning device altogether), and uniform Riemann–Lebesgue on totally bounded and on
+compactly parametrised `L¹` families. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
