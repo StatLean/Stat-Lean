@@ -111,7 +111,74 @@ theorem bpe_tight
     ∀ ε : ℝ≥0∞, 0 < ε → ∃ K : ℝ, 0 < K ∧ ∀ᶠ n : ℕ in atTop,
       productMeasure M μ θ₀ n
           {ω | K ≤ ‖Real.sqrt n • (T n ω - θ₀)‖} ≤ ε := by
+  -- LEFT AS DEBT: the statement is FALSE as frozen. vdV's Part-2 argument needs a *positive*
+  -- sup–inf gap `inf_{‖y‖ ≥ 2M} ℓ − sup_{‖x‖ ≤ M} ℓ > 0` for some `M`, but the frozen
+  -- `SeparatedLoss.strict` field only supplies a single pointwise pair `ℓ x < ℓ y`, which is
+  -- strictly weaker. `separatedLoss_zeroOne_no_gap` below exhibits the `0–1` loss as a
+  -- witness: it satisfies `SeparatedLoss` and `PolyGrowthLoss 0`, yet has zero gap at every
+  -- scale, so its posterior risk `Zₙ(τ) = 1 − Post{τ}` is identically `1` whenever the local
+  -- posterior is atomless (e.g. Gaussian location model with Gaussian prior). Every `τ` is
+  -- then an exact minimizer, and a measurable selection escaping to infinity satisfies `hT`
+  -- with `εseq = 0` while violating the conclusion. Repair: strengthen `SeparatedLoss.strict`
+  -- in `Defs.lean` to vdV's genuine sup–inf form (that file is outside this touch-set).
   sorry
+
+/-- **Obstruction witness for `bpe_tight`.** The `0–1` loss `ℓ(u) = 1 − 1_{u = 0}` satisfies
+the frozen `SeparatedLoss` (and `PolyGrowthLoss 0`), yet at *every* scale `M > 0` the sup–inf
+inequality `sup_{‖x‖ ≤ M} ℓ ≤ inf_{‖y‖ ≥ 2M} ℓ` is an equality — witnessed here by `x, y`
+with `‖x‖ ≤ M`, `2M ≤ ‖y‖` and `ℓ y ≤ ℓ x`. So the frozen `strict` field (one pointwise pair
+`ℓ x < ℓ y`) does not imply vdV's strict sup–inf separation, which is what Part 2 of the
+proof of Theorem 10.8 consumes. -/
+private theorem separatedLoss_zeroOne_no_gap (hk : 0 < k) :
+    ∃ ℓ01 : EuclideanSpace ℝ (Fin k) → ℝ≥0∞,
+      Measurable ℓ01 ∧ SeparatedLoss ℓ01 ∧ PolyGrowthLoss 0 ℓ01 ∧
+      ∀ M : ℝ, 0 < M → ∃ x y : EuclideanSpace ℝ (Fin k),
+        ‖x‖ ≤ M ∧ 2 * M ≤ ‖y‖ ∧ ℓ01 y ≤ ℓ01 x := by
+  classical
+  set e : EuclideanSpace ℝ (Fin k) := EuclideanSpace.single (⟨0, hk⟩ : Fin k) (1 : ℝ) with he
+  have hnorme : ‖e‖ = 1 := by simp [he]
+  have he0 : e ≠ 0 := by
+    intro h
+    rw [h, norm_zero] at hnorme
+    exact zero_ne_one hnorme
+  have hsmul : ∀ c : ℝ, 0 < c → ‖c • e‖ = c ∧ c • e ≠ 0 := by
+    intro c hc
+    refine ⟨by rw [norm_smul, hnorme, mul_one, Real.norm_eq_abs, abs_of_pos hc], ?_⟩
+    exact smul_ne_zero hc.ne' he0
+  have hone : (1 : ℝ≥0∞) ≤ ENNReal.ofReal 2 := by
+    rw [← ENNReal.ofReal_one]
+    exact ENNReal.ofReal_le_ofReal (by norm_num)
+  refine ⟨fun u => if u = 0 then 0 else 1, ?_, ⟨?_, ?_⟩, ?_, ?_⟩
+  · exact Measurable.ite (measurableSet_singleton (0 : EuclideanSpace ℝ (Fin k)))
+      measurable_const measurable_const
+  · -- monotonicity: any `y` with `2M ≤ ‖y‖` is nonzero, so `ℓ y = 1` dominates
+    intro M hM x y _ hy
+    have hy0 : y ≠ 0 := by
+      intro h
+      rw [h, norm_zero] at hy
+      linarith
+    rw [if_neg hy0]
+    split_ifs <;> simp
+  · -- strictness at the single pair `(0, 2e)`
+    obtain ⟨hn2, hz2⟩ := hsmul 2 two_pos
+    refine ⟨1, one_pos, 0, (2 : ℝ) • e, by simp, ?_, ?_⟩
+    · rw [hn2]; norm_num
+    · rw [if_pos rfl, if_neg hz2]; exact zero_lt_one
+  · -- polynomial growth with exponent `0`
+    intro h
+    have h2 : ENNReal.ofReal (1 + ‖h‖ ^ (0 : ℝ)) = ENNReal.ofReal 2 := by
+      rw [Real.rpow_zero]; norm_num
+    change (if h = 0 then (0 : ℝ≥0∞) else 1) ≤ ENNReal.ofReal (1 + ‖h‖ ^ (0 : ℝ))
+    rw [h2]
+    split_ifs
+    · exact zero_le _
+    · exact hone
+  · -- no gap at any scale: both witnesses are nonzero, so both losses equal `1`
+    intro M hM
+    obtain ⟨hn1, hz1⟩ := hsmul (M / 2) (by linarith)
+    obtain ⟨hn2, hz2⟩ := hsmul (2 * M) (by linarith)
+    exact ⟨(M / 2) • e, (2 * M) • e, by rw [hn1]; linarith, by rw [hn2],
+      by simp [hz1, hz2]⟩
 
 /-- **Pointwise argmin consistency** (the single-`ω` form of `argmin_tendsto_of_uniform_approx`,
 whose sequential shape does not fit the `ω`-wise application needed below): if `τ` is an
