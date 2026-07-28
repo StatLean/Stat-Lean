@@ -48,6 +48,17 @@ proved:
   estimate: independence of the retained block for a product measure and for one coordinate of
   a `Measure.pi`, the one-large-summand decomposition, and the union bound over the choices of
   dominant index;
+* `measure_pi_sum_ge_le_exp`, `measure_pi_abs_sum_le_exp`, `measure_pi_truncated_sum_le_exp` —
+  Hoeffding's inequality for bounded independent summands, adapted to the `Measure.pi` product
+  setting and to the uncentred sum that truncation leaves; this is what estimates the remainder
+  of the one-large-summand decomposition, where Chebyshev provably cannot;
+* `root_insertNth_eq`, `measure_abs_sub_le_of_affine`, `measure_pi_abs_root_insertNth_le` — the
+  frozen-coordinate transfer: freezing one coordinate of a root is an affine reparametrisation
+  of the retained block, and a location-uniform window bound survives it untouched;
+* `measure_pi_stratum_le`, `measure_pi_stratum_root_le`, `taylor3_bracket_le`,
+  `subset_union_large_coord` — the assembled joint-stratum bound over an arbitrary statistic,
+  its free root instance, and the deterministic bridge from the third-order Taylor remainder to
+  a coordinate-sum tail;
 * `centredDensity`, `charFun_map_studentPair_eq`, `vecCramerCondition_map_studentPair`,
   `cramerCondition_projLaw_studentPair`,
   `exists_bound_norm_charFun_vecRootLaw_studentPair` — the multivariate Cramér condition for the
@@ -4640,7 +4651,90 @@ the multilinear identity (X2), the deterministic core of (M2) and all three of i
 (single-scale, dyadically peeled, per-stratum), the marginal and two-sided anti-concentration
 statements, **the whole of (M3) including the Cramér tail of the bivariate root**, uniform
 Riemann–Lebesgue on totally bounded and compactly parametrised `L¹` families, both
-quadratic-phase regimes, and the four conditioning bricks of (X3). -/
+quadratic-phase regimes, and the four conditioning bricks of (X3).
+
+**Status after the wave-21 re-derivation.** Both named inputs of the wave-18 residue are now
+**closed and axiom-clean**, the (X3) apparatus composes end to end, and the re-derivation
+establishes that (X3)(a) *as wave 18 stated it* is not the statement the peeled assembly
+consumes. The residue is therefore **one** item, and it is not (X3).
+
+* (i) **The exponential inequality — CLOSED, and the tool was already in the repository.**
+  `measure_pi_sum_ge_le_exp` (one-sided), `measure_pi_abs_sum_le_exp` (two-sided) and
+  `measure_pi_truncated_sum_le_exp` (the uncentred shape truncation actually leaves). The route
+  is `isSubGaussian_of_mem_Icc` from `ConcentrationInequalities/SubGaussian/Bounded.lean` —
+  Hoeffding's lemma, proxy `(b − a)²/4` — fed to Mathlib's
+  `HasSubgaussianMGF.measure_sum_ge_le_of_iIndepFun`, with `iIndepFun_pi` bridging the product
+  setting and `measurePreserving_eval` identifying the coordinate mean. The cross-area import
+  is the one `ForMathlib/DKWUniform.lean` already uses.
+  **Two choices worth recording so no later wave re-litigates them.** Bernstein's
+  `HasBernsteinCondition` is a *worse* fit than Hoeffding's lemma here, not a better one: it
+  demands `E X = 0` and a prescribed variance, and the truncated summand `Ỹ` is not centred and
+  has no prescribed variance — whereas *boundedness* is exactly what truncation delivers, and it
+  is all Hoeffding's lemma asks. And `hoeffding` in `SubGaussian/Hoeffding.lean` is `ℕ`- and
+  `Finset.range`-indexed, so `Fin n` sums over a `Measure.pi` go through the Mathlib sum-tail
+  directly rather than through it. Wave 18's diagnosis that Chebyshev cannot close this is
+  confirmed and is now visible in the statement: the bound is exponential in `λ²/(nτ²)`, and no
+  second-moment estimate produces that.
+* (ii) **The frozen-coordinate transfer — CLOSED, and FREE. Wave 18 asked for strictly more than
+  is needed.** `root_insertNth_eq` shows that freezing coordinate `i` of the size-`(n+1)` root at
+  `y` gives `(n+1)^{-1/2}Z(y) + s_n·(the size-n root)` with `s_n = √n/√(n+1)`. So the frozen
+  value enters **only** through the additive shift, and the scale `s_n` is inherited from the
+  *sample size*, not from the frozen coordinate — wave 18's "an `n`-dependent shift **and scale**
+  inherited from the frozen coordinate" is wrong about the scale, and `s_n ∈ [1/√2, 1)` for every
+  `n ≥ 1`. Since the window bound the slice hypothesis consumes is already *uniform in the
+  location*, an additive shift costs nothing (`measure_abs_sub_le_of_affine`), and the constant
+  degrades only by `1/s_n ≤ √2` (`measure_pi_abs_root_insertNth_le`). **No re-run of the (M1)(b)
+  argument on the block is needed**: location-uniformity survives every affine reparametrisation
+  of the argument. This is the second wave-18 requirement to be found overstated, and the reason
+  is the same as for the first (wave 17's literal product shape).
+* **(X3) composes end to end.** `measure_pi_stratum_le` takes the frozen-coordinate window bound
+  for an *arbitrary* measurable statistic as its one hypothesis and discharges everything else —
+  the one-large-summand decomposition, the conditioning on the dominant coordinate, and the
+  truncated-sum remainder — producing `(n+1)·μ{|Y| > τ}·c + 2exp(−λ²/(8(n+1)τ²))`, which is
+  exactly the per-stratum hypothesis of `abs_measure_le_sub_le_of_peel_strata`.
+  `measure_pi_stratum_root_le` is the instance where the hypothesis is free. And
+  `taylor3_bracket_le` / `subset_union_large_coord` supply the missing deterministic step: the
+  bracket of `abs_studentFactor_sub_taylor3_le'` is at most `(73/8)M⁷` on the box
+  `|u|, |v| ≤ M`, so each dyadic stratum of `|T̃ₙ − Hₙ|` is contained in a union of two
+  coordinate-sum tail events at the level `M ≍ (2ᵏδ/r³)^{1/7}` — and `u`, `v` *are* coordinate
+  sums.
+* **THE CORRECTION, and it relocates the residue.** The window in
+  `abs_measure_le_sub_le_of_peel_strata` is on `T`, and in the studentized route `T` is the
+  surrogate `Hₙ = u − uvr/2 + u³r²/2 + 3uv²r²/8`, **not** a root. Freezing a coordinate makes
+  `(u, v)` affine in the retained pair, but `Hₙ` is then a *polynomial* of that pair, and
+  `measure_abs_sub_le_of_affine` does not apply to it. So the free root instance is not the one
+  the assembly consumes.
+  The surrogate cannot be traded for a root either. Taking `T = u`, whose expansion is already
+  proved (`edgeworth_mean_uniform`), makes `|S − T| = O(r)` instead of `O(r³)`; the peeled sum
+  `∑_k τ_k·A·2^{k+1}δ` then runs to `2ᵏ ≍ √n` before the tail decays, and totals `≍ √n·n⁻¹
+  = n^{-1/2}` — a factor `n^{1/2}` short. That is exactly why the surrogate exists, and it is a
+  fourth candidate substitute joining the three of wave 17 on the list of things that provably
+  fall short.
+  But the conditional window bound for `Hₙ` is **not an independent item**: by
+  `measure_abs_sub_le_of_abs_cdf_sub_le` it is a distribution-function approximation for `Hₙ` on
+  a size-`n` block whose bivariate mean is additively perturbed — the *same* object as the
+  marginal one, at a shifted pair. So both halves of what is left are the one thing.
+
+Net after wave 21 the residue is **one** item: the `O(n⁻¹)` Edgeworth expansion of the
+delta-method surrogate `Hₙ` itself, uniform in the argument and stable under an additive
+perturbation of the bivariate mean. Every input to it is present and proved — the multilinear
+identity (X2) supplying the weights `uv`, `u³`, `uv²`, `(uv)²`; the truncation that legitimises
+that expansion under a fourth moment, which is (i) above; the Cramér tail of the bivariate root
+(M3); and Esseen smoothing against a signed `L¹` density. What is *absent* is the assembly:
+`Hₙ` is not defined in this file, its characteristic function has not been put together from the
+`k ≤ 4` instances of `multiCharFun_vecRootLaw`, and the Esseen chain on top of it — the bivariate
+analogue of `abs_meanRootCDF_sub_edgeworthCDF_le`, some 230 lines in the scalar case — has not
+been built. That is the whole of what separates this statement from its proof; it is one
+construction and one assembly, with no missing analytic tool.
+
+Proved and axiom-clean after wave 21: (S1), (S2), (M1)(b) with the `φ^{n−1}` bookkeeping, the
+multilinear identity (X2), the deterministic core of (M2) and all three of its assemblies, the
+marginal and two-sided anti-concentration statements, the whole of (M3) including the Cramér
+tail of the bivariate root, uniform Riemann–Lebesgue on totally bounded and compactly
+parametrised `L¹` families, both quadratic-phase regimes, the four conditioning bricks of (X3),
+**the exponential inequality for bounded independent summands on a product measure, the
+frozen-coordinate transfer, the assembled joint-stratum bound, and the Taylor-to-coordinate-sum
+bridge**. -/
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
@@ -4717,7 +4811,28 @@ direction-uniformity, the multivariate Cramér condition for the studentizing pa
 of the Cramér tail to the vector root (`norm_charFun_vecRootLaw_le_pow`, which removes the need
 for Hall's conditioning device altogether) and both quadratic-phase regimes — uniform
 Riemann–Lebesgue on totally bounded and on compactly parametrised `L¹` families, and the
-conditioning bricks of (X3). -/
+conditioning bricks of (X3).
+
+**After the wave-21 re-derivation the residue over there is a single item, and this corollary
+still adds nothing to it.** Both wave-18 inputs are closed: the exponential inequality for
+bounded independent summands on a product measure (`measure_pi_truncated_sum_le_exp`, from
+`isSubGaussian_of_mem_Icc`) and the frozen-coordinate transfer
+(`measure_pi_abs_root_insertNth_le`), the second of which turned out to be *free* — a
+location-uniform window bound survives an affine reparametrisation, so wave 18's demand that the
+(M1)(b) expansion be re-run on the retained block was strictly more than is needed. The (X3)
+apparatus now composes end to end (`measure_pi_stratum_le` and its free root instance
+`measure_pi_stratum_root_le`, with `subset_union_large_coord` bridging the Taylor remainder to a
+coordinate-sum tail).
+
+What the re-derivation also establishes is that the free root instance is not the one the peeled
+assembly consumes: its window is on the delta-method surrogate `Hₙ`, a degree-four polynomial in
+the bivariate mean, and freezing a coordinate leaves it a polynomial rather than an affine
+function of the retained pair. Since the conditional window bound for `Hₙ` is by
+`measure_abs_sub_le_of_abs_cdf_sub_le` the same object as the marginal one, everything left is
+the **one** item: the `O(n⁻¹)` expansion of `Hₙ` itself, uniform in the argument and stable under
+an additive perturbation of the bivariate mean. No analytic tool for it is missing — what is
+missing is the construction of `Hₙ`, its characteristic function assembled from the `k ≤ 4`
+instances of `multiCharFun_vecRootLaw`, and the Esseen chain on top. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
