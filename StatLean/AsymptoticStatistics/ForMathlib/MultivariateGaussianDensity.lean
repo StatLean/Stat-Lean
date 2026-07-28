@@ -574,6 +574,84 @@ theorem gaussian_loss_convolution_continuous
     (hp : 0 ≤ p) :
     Continuous fun u : EuclideanSpace ℝ ι =>
       ∫⁻ z, ℓ (u - z) ∂(multivariateGaussian (0 : EuclideanSpace ℝ ι) S) := by
-  sorry
+  classical
+  obtain ⟨c, hcpos, hctop, hc⟩ := multivariateGaussian_eq_smul_withDensity hS
+  set q : EuclideanSpace ℝ ι → ℝ≥0∞ := fun x =>
+    ENNReal.ofReal (Real.exp (-⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x⟫ / 2)) with hqdef
+  have hqmeas : Measurable q := by rw [hqdef]; fun_prop
+  have hqcont : Continuous q := by
+    have hinner : Continuous fun x : EuclideanSpace ℝ ι =>
+        ⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x⟫ :=
+      continuous_id.inner (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹).continuous
+    rw [hqdef]
+    exact ENNReal.continuous_ofReal.comp
+      (Real.continuous_exp.comp (hinner.neg.div_const 2))
+  have hltop : ∀ y : EuclideanSpace ℝ ι, ℓ y ≠ ∞ := fun y =>
+    ne_top_of_le_ne_top ENNReal.ofReal_ne_top (hpoly y)
+  -- Step 1: move the `u`-dependence from the loss onto the (continuous) Gaussian density,
+  -- by writing the measure through its density and substituting `y := u − z`.
+  have hrw : ∀ u : EuclideanSpace ℝ ι,
+      (∫⁻ z, ℓ (u - z) ∂(multivariateGaussian (0 : EuclideanSpace ℝ ι) S))
+        = c * ∫⁻ y, q (u - y) * ℓ y ∂volume := by
+    intro u
+    have hcs : Measurable fun z : EuclideanSpace ℝ ι => u - z := measurable_const_sub u
+    rw [hc, lintegral_smul_measure,
+      lintegral_withDensity_eq_lintegral_mul _ hqmeas
+        (g := fun z : EuclideanSpace ℝ ι => ℓ (u - z)) (hmeas.comp hcs), smul_eq_mul]
+    congr 1
+    have hmp : MeasurePreserving (fun t : EuclideanSpace ℝ ι => u - t)
+        (volume : Measure (EuclideanSpace ℝ ι)) volume :=
+      Measure.measurePreserving_sub_left volume u
+    have hstep := hmp.lintegral_comp (f := fun z : EuclideanSpace ℝ ι => q z * ℓ (u - z))
+      (hqmeas.mul (hmeas.comp hcs))
+    simpa [Pi.mul_apply, sub_sub_cancel] using hstep.symm
+  have hfun : (fun u : EuclideanSpace ℝ ι =>
+      ∫⁻ z, ℓ (u - z) ∂(multivariateGaussian (0 : EuclideanSpace ℝ ι) S))
+      = fun u : EuclideanSpace ℝ ι => c * ∫⁻ y, q (u - y) * ℓ y ∂volume := funext hrw
+  rw [hfun]
+  refine Continuous.comp' (ENNReal.continuous_const_mul hctop) ?_
+  -- Step 2: dominated convergence along `𝓝 u₀`, with a Gaussian-tail envelope valid on a
+  -- fixed ball around `u₀`.
+  rw [continuous_iff_continuousAt]
+  intro u₀
+  obtain ⟨b, hbdom⟩ := exp_mahalanobis_shift_le hS (‖u₀‖ + 1)
+  have hbnd : Measurable fun y : EuclideanSpace ℝ ι =>
+      ENNReal.ofReal (Real.exp (-⟪y, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) y⟫ / 4))
+        * ENNReal.ofReal (1 + ‖y‖ ^ p) := by fun_prop
+  have key : Tendsto (fun u : EuclideanSpace ℝ ι => ∫⁻ y, q (u - y) * ℓ y ∂volume)
+      (𝓝 u₀) (𝓝 (∫⁻ y, q (u₀ - y) * ℓ y ∂volume)) := by
+    refine tendsto_lintegral_filter_of_dominated_convergence
+      (fun y => ENNReal.ofReal (Real.exp b) *
+        (ENNReal.ofReal (Real.exp (-⟪y, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) y⟫ / 4))
+          * ENNReal.ofReal (1 + ‖y‖ ^ p))) ?_ ?_ ?_ ?_
+    · exact Filter.Eventually.of_forall fun u =>
+        (hqmeas.comp (measurable_const_sub u)).mul hmeas
+    · filter_upwards [Metric.ball_mem_nhds u₀ one_pos] with u hu
+      have hunorm : ‖u‖ ≤ ‖u₀‖ + 1 := by
+        have hd : ‖u - u₀‖ < 1 := by rwa [Metric.mem_ball, dist_eq_norm] at hu
+        have hsplit : u₀ + (u - u₀) = u := by abel
+        calc ‖u‖ = ‖u₀ + (u - u₀)‖ := by rw [hsplit]
+          _ ≤ ‖u₀‖ + ‖u - u₀‖ := norm_add_le _ _
+          _ ≤ ‖u₀‖ + 1 := by linarith
+      refine Filter.Eventually.of_forall fun y => ?_
+      have h1 : q (u - y) ≤ ENNReal.ofReal (Real.exp b)
+          * ENNReal.ofReal (Real.exp (-⟪y, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) y⟫ / 4)) := by
+        simp only [hqdef]
+        rw [← ENNReal.ofReal_mul (Real.exp_pos b).le]
+        exact ENNReal.ofReal_le_ofReal (hbdom u y hunorm)
+      calc q (u - y) * ℓ y
+          ≤ (ENNReal.ofReal (Real.exp b)
+              * ENNReal.ofReal (Real.exp (-⟪y, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) y⟫ / 4)))
+              * ENNReal.ofReal (1 + ‖y‖ ^ p) := mul_le_mul' h1 (hpoly y)
+        _ = _ := by rw [mul_assoc]
+    · rw [lintegral_const_mul _ hbnd]
+      exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+        (poly_gaussian_quarter_lintegral_ne_top hS hp)
+    · refine Filter.Eventually.of_forall fun y => ?_
+      have hc1 : Continuous fun u : EuclideanSpace ℝ ι => q (u - y) :=
+        hqcont.comp (continuous_id.sub continuous_const)
+      exact ((ENNReal.continuous_mul_const (hltop y)).comp' hc1).tendsto u₀
+  exact key
 
 end AsymptoticStatistics
+
