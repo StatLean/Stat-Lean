@@ -763,41 +763,50 @@ private lemma cond_bvmLocalPosterior_eq_withDensity_ae
   simp_rw [div_eq_mul_inv]
   exact (lintegral_mul_const' _ _ (ENNReal.inv_ne_top.mpr hS)).symm
 
--- LEAN-ONLY: joint measurability of the local joint density in `(h, ω)`.
-private lemma measurable_bvmJointDens_uncurry
-    (hM_joint : Measurable (Function.uncurry M.density)) (hf : Measurable f) (n : ℕ) :
-    Measurable (Function.uncurry
-      fun (h : EuclideanSpace ℝ (Fin k)) (ω : Fin n → 𝓧) => bvmJointDens M f θ₀ n h ω) := by
-  have hun : Measurable fun hh : EuclideanSpace ℝ (Fin k) => bvmLocalUnscale θ₀ n hh :=
-    measurable_bvmLocalUnscale θ₀ n
-  unfold Function.uncurry bvmJointDens
+-- LEAN-ONLY: measurability of the local joint density along measurable selections.
+private lemma measurable_bvmJointDens_comp {α : Type*} [MeasurableSpace α]
+    (hM_joint : Measurable (Function.uncurry M.density)) (hf : Measurable f) (n : ℕ)
+    {a : α → EuclideanSpace ℝ (Fin k)} {b : α → Fin n → 𝓧}
+    (ha : Measurable a) (hb : Measurable b) :
+    Measurable fun x : α => bvmJointDens M f θ₀ n (a x) (b x) := by
+  have hun : Measurable fun x : α => bvmLocalUnscale θ₀ n (a x) :=
+    (measurable_bvmLocalUnscale θ₀ n).comp ha
+  unfold bvmJointDens
   refine Measurable.mul ?_ ?_
-  · refine Finset.univ.measurable_prod fun i _ => ?_
+  · refine Finset.measurable_prod Finset.univ fun i _ => ?_
     exact ENNReal.measurable_ofReal.comp
-      (hM_joint.comp ((hun.comp measurable_fst).prodMk
-        ((measurable_pi_apply i).comp measurable_snd)))
-  · exact ENNReal.measurable_ofReal.comp (hf.comp (hun.comp measurable_fst))
+      (hM_joint.comp (hun.prodMk ((measurable_pi_apply i).comp hb)))
+  · exact ENNReal.measurable_ofReal.comp (hf.comp hun)
 
--- LEAN-ONLY: joint measurability of the unnormalized Gaussian density in `(h, ω)`.
-private lemma measurable_bvmGaussDens_uncurry (J : Matrix (Fin k) (Fin k) ℝ)
-    {sc : 𝓧 → EuclideanSpace ℝ (Fin k)} (hsc : Measurable sc) (n : ℕ) :
-    Measurable (Function.uncurry
-      fun (h : EuclideanSpace ℝ (Fin k)) (ω : Fin n → 𝓧) => bvmGaussDens J sc n h ω) := by
+-- LEAN-ONLY: measurability of the unnormalized Gaussian density along measurable selections.
+private lemma measurable_bvmGaussDens_comp {α : Type*} [MeasurableSpace α]
+    (J : Matrix (Fin k) (Fin k) ℝ)
+    {sc : 𝓧 → EuclideanSpace ℝ (Fin k)} (hsc : Measurable sc) (n : ℕ)
+    {a : α → EuclideanSpace ℝ (Fin k)} {b : α → Fin n → 𝓧}
+    (ha : Measurable a) (hb : Measurable b) :
+    Measurable fun x : α => bvmGaussDens J sc n (a x) (b x) := by
   have hsum : Measurable fun ω : Fin n → 𝓧 => ∑ i, sc (ω i) :=
     Finset.measurable_sum Finset.univ fun i _ => hsc.comp (measurable_pi_apply i)
   have hscore : Measurable fun ω : Fin n → 𝓧 => scoreSum sc n ω := by
     simp only [scoreSum]
     exact hsum.const_smul ((Real.sqrt (n : ℝ))⁻¹)
-  have hinner : Measurable fun p : EuclideanSpace ℝ (Fin k) × (Fin n → 𝓧) =>
-      ⟪p.1, scoreSum sc n p.2⟫ :=
-    measurable_fst.inner (hscore.comp measurable_snd)
-  have hquad : Measurable fun p : EuclideanSpace ℝ (Fin k) × (Fin n → 𝓧) =>
-      (1 / 2 : ℝ) * ⟪p.1, (Matrix.toEuclideanCLM (𝕜 := ℝ) J) p.1⟫ := by
-    have hcont : Continuous fun x : EuclideanSpace ℝ (Fin k) =>
-        (1 / 2 : ℝ) * ⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) J) x⟫ := by fun_prop
-    exact hcont.measurable.comp measurable_fst
+  have hinner : Measurable fun x : α => ⟪a x, scoreSum sc n (b x)⟫ :=
+    ha.inner (hscore.comp hb)
+  have hquad : Measurable fun x : α =>
+      (1 / 2 : ℝ) * ⟪a x, (Matrix.toEuclideanCLM (𝕜 := ℝ) J) (a x)⟫ := by
+    have hcont : Continuous fun y : EuclideanSpace ℝ (Fin k) =>
+        (1 / 2 : ℝ) * ⟪y, (Matrix.toEuclideanCLM (𝕜 := ℝ) J) y⟫ := by fun_prop
+    exact hcont.measurable.comp ha
   exact ENNReal.measurable_ofReal.comp
     (Real.continuous_exp.measurable.comp (hinner.sub hquad))
+
+-- LEAN-ONLY: a scalar cancellation used to strip the local-mass normalizer.
+private lemma ennreal_inv_mul_mul_le (S G : ℝ≥0∞) : S⁻¹ * G * S ≤ G := by
+  rcases eq_or_ne S 0 with h0 | h0
+  · simp [h0]
+  rcases eq_or_ne S ∞ with hT | hT
+  · simp [hT]
+  · rw [show S⁻¹ * G * S = S⁻¹ * S * G from by ring, ENNReal.inv_mul_cancel h0 hT, one_mul]
 
 /-- The **pair defect** of vdV p. 143, in `t`-normalized form: the antisymmetric numerator
 `s(h) t(g) − s(g) t(h)` divided by `t(g)`. Integrating it over `C × C` and normalizing by the
@@ -953,6 +962,150 @@ private lemma tvDist_cond_le_bvmStepBBound
     (volume.restrict (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R))
     (s := fun h => bvmJointDens M f θ₀ n h ω) (t := fun h => bvmGaussDens J sc n h ω)
     hsmeas htmeas hS hSfin hT0 hTT htpos htfin hcT hc
+
+-- LEAN-ONLY: joint measurability of the pair defect in `(ω, h, g)`.
+private lemma measurable_bvmPairDefect
+    (hM_joint : Measurable (Function.uncurry M.density)) (hf : Measurable f)
+    (J : Matrix (Fin k) (Fin k) ℝ) {sc : 𝓧 → EuclideanSpace ℝ (Fin k)} (hsc : Measurable sc)
+    (n : ℕ) :
+    Measurable fun q : ((Fin n → 𝓧) × EuclideanSpace ℝ (Fin k))
+        × EuclideanSpace ℝ (Fin k) => bvmPairDefect M f θ₀ J sc n q.1.2 q.2 q.1.1 := by
+  have hsh := measurable_bvmJointDens_comp (M := M) (θ₀ := θ₀) hM_joint hf n
+    (a := fun q : ((Fin n → 𝓧) × EuclideanSpace ℝ (Fin k)) × EuclideanSpace ℝ (Fin k) => q.1.2)
+    (b := fun q => q.1.1) measurable_fst.snd measurable_fst.fst
+  have hsg := measurable_bvmJointDens_comp (M := M) (θ₀ := θ₀) hM_joint hf n
+    (a := fun q : ((Fin n → 𝓧) × EuclideanSpace ℝ (Fin k)) × EuclideanSpace ℝ (Fin k) => q.2)
+    (b := fun q => q.1.1) measurable_snd measurable_fst.fst
+  have hth := measurable_bvmGaussDens_comp J hsc n
+    (a := fun q : ((Fin n → 𝓧) × EuclideanSpace ℝ (Fin k)) × EuclideanSpace ℝ (Fin k) => q.1.2)
+    (b := fun q => q.1.1) measurable_fst.snd measurable_fst.fst
+  have htg := measurable_bvmGaussDens_comp J hsc n
+    (a := fun q : ((Fin n → 𝓧) × EuclideanSpace ℝ (Fin k)) × EuclideanSpace ℝ (Fin k) => q.2)
+    (b := fun q => q.1.1) measurable_snd measurable_fst.fst
+  unfold bvmPairDefect
+  exact ((hsh.mul htg).sub (hsg.mul hth)).div htg
+
+-- LEAN-ONLY: measurability of the Step-B majorant as a statistic.
+private lemma measurable_bvmStepBBound
+    (hM_joint : Measurable (Function.uncurry M.density)) (hf : Measurable f)
+    (J : Matrix (Fin k) (Fin k) ℝ) {sc : 𝓧 → EuclideanSpace ℝ (Fin k)} (hsc : Measurable sc)
+    (n : ℕ) (R : ℝ) :
+    Measurable (bvmStepBBound M f θ₀ J sc n R) := by
+  have h1 := (measurable_bvmPairDefect (M := M) (θ₀ := θ₀) hM_joint hf J hsc n)
+  have h2 : Measurable fun p : (Fin n → 𝓧) × EuclideanSpace ℝ (Fin k) =>
+      ∫⁻ g in Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R,
+        bvmPairDefect M f θ₀ J sc n p.2 g p.1 ∂volume :=
+    h1.lintegral_prod_right'
+      (ν := volume.restrict (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R))
+  have h3 : Measurable fun ω : Fin n → 𝓧 =>
+      ∫⁻ h in Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R,
+        ∫⁻ g in Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R,
+          bvmPairDefect M f θ₀ J sc n h g ω ∂volume ∂volume :=
+    h2.lintegral_prod_right'
+      (ν := volume.restrict (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R))
+  unfold bvmStepBBound
+  exact ((measurable_bvmNumer (θ₀ := θ₀) hM_joint hf n measurableSet_closedBall).inv).mul h3
+
+-- LEAN-ONLY: the localized prior mixture, written as a density against the dominating product
+-- measure. The Jacobian and the prior small-ball mass are the two scalars; the density itself
+-- is `bvmNumer` on the local ball.
+private lemma lintegral_bvmMixture_eq
+    -- USER-INPUT: dominated iid model, `κ θ = p_θ · μ`; vdV §10.2, p. 140
+    (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
+    -- LEAN-ONLY: joint measurability of the model densities (regularity)
+    (hM_joint : Measurable (Function.uncurry M.density))
+    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    (hπ : HasLocalDensity π θ₀ r₀ f) {u : ℝ}
+    -- LEAN-ONLY: the rescaled ball sits inside the absolute-continuity zone
+    {n : ℕ} (hn1 : 1 ≤ n) (hn : u < r₀ * Real.sqrt n)
+    {F : (Fin n → 𝓧) → ℝ≥0∞}
+    -- LEAN-ONLY: measurable integrand (regularity)
+    (hF : Measurable F) :
+    ∫⁻ ω, F ω ∂(bvmMixture κ π θ₀ u n)
+      = (π (Metric.ball θ₀ (u / Real.sqrt n)))⁻¹ * ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k)
+          * ∫⁻ ω, F ω * bvmNumer M f θ₀ n (Metric.ball 0 u) ω
+              ∂(Measure.pi fun _ : Fin n => μ) := by
+  classical
+  have hnR : (0 : ℝ) < n := by exact_mod_cast hn1
+  have hsqrt : 0 < Real.sqrt n := Real.sqrt_pos.mpr hnR
+  have hdens_meas : Measurable
+      (Function.uncurry fun θ (x : 𝓧) => ENNReal.ofReal (M.density θ x)) :=
+    ENNReal.measurable_ofReal.comp hM_joint
+  have hκ' : ∀ θ, iidKernel κ n θ
+      = (Measure.pi fun _ : Fin n => μ).withDensity
+          fun x => ∏ i, ENNReal.ofReal (M.density θ (x i)) :=
+    fun θ => iidKernel_withDensity hdens_meas hκ n θ
+  have hlik : Measurable fun p : EuclideanSpace ℝ (Fin k) × (Fin n → 𝓧) =>
+      ∏ i, ENNReal.ofReal (M.density p.1 (p.2 i)) := by
+    refine Finset.measurable_prod Finset.univ fun i _ => ?_
+    exact ENNReal.measurable_ofReal.comp
+      (hM_joint.comp (measurable_fst.prodMk ((measurable_pi_apply i).comp measurable_snd)))
+  have hlikθ : ∀ θ : EuclideanSpace ℝ (Fin k),
+      Measurable fun x : Fin n → 𝓧 => ∏ i, ENNReal.ofReal (M.density θ (x i)) := by
+    intro θ
+    refine Finset.measurable_prod Finset.univ fun i _ => ?_
+    exact ENNReal.measurable_ofReal.comp
+      (hM_joint.comp (measurable_const.prodMk (measurable_pi_apply i)))
+  have hball : bvmLocalScale θ₀ n ⁻¹' (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u)
+      = Metric.ball θ₀ (u / Real.sqrt n) := by
+    ext θ
+    simp only [Set.mem_preimage, Metric.mem_ball, bvmLocalScale, sub_zero,
+      norm_smul, Real.norm_eq_abs, abs_of_pos hsqrt, dist_eq_norm]
+    rw [lt_div_iff₀ hsqrt, mul_comm (Real.sqrt (n : ℝ)) ‖θ - θ₀‖]
+  have hsub : bvmLocalScale θ₀ n ⁻¹' (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u)
+      ⊆ Metric.ball θ₀ r₀ := by
+    rw [hball]
+    refine Metric.ball_subset_ball ?_
+    rw [div_le_iff₀ hsqrt]
+    exact hn.le
+  -- Step 1: unfold the mixture.
+  have step1 : ∫⁻ ω, F ω ∂(bvmMixture κ π θ₀ u n)
+      = (π (Metric.ball θ₀ (u / Real.sqrt n)))⁻¹
+          * ∫⁻ θ in Metric.ball θ₀ (u / Real.sqrt n),
+              ∫⁻ ω, F ω ∂(iidKernel κ n θ) ∂π := by
+    unfold bvmMixture
+    rw [Measure.lintegral_bind (Kernel.aemeasurable _) hF.aemeasurable,
+      ProbabilityTheory.cond, lintegral_smul_measure, smul_eq_mul]
+  -- Step 2: the per-parameter integral against the dominating measure.
+  have step2 : ∀ θ : EuclideanSpace ℝ (Fin k), ∫⁻ ω, F ω ∂(iidKernel κ n θ)
+      = ∫⁻ ω, (∏ i, ENNReal.ofReal (M.density θ (ω i))) * F ω
+          ∂(Measure.pi fun _ : Fin n => μ) := by
+    intro θ
+    rw [hκ' θ, lintegral_withDensity_eq_lintegral_mul _ (hlikθ θ) hF]
+    rfl
+  -- Step 3: Tonelli.
+  have hjoint : Measurable (Function.uncurry
+      fun (θ : EuclideanSpace ℝ (Fin k)) (ω : Fin n → 𝓧) =>
+        (∏ i, ENNReal.ofReal (M.density θ (ω i))) * F ω) := by
+    unfold Function.uncurry
+    exact hlik.mul (hF.comp measurable_snd)
+  have step3 : ∫⁻ θ in Metric.ball θ₀ (u / Real.sqrt n),
+        ∫⁻ ω, (∏ i, ENNReal.ofReal (M.density θ (ω i))) * F ω
+          ∂(Measure.pi fun _ : Fin n => μ) ∂π
+      = ∫⁻ ω, ∫⁻ θ in Metric.ball θ₀ (u / Real.sqrt n),
+          (∏ i, ENNReal.ofReal (M.density θ (ω i))) * F ω ∂π
+          ∂(Measure.pi fun _ : Fin n => μ) :=
+    lintegral_lintegral_swap hjoint.aemeasurable
+  -- Step 4: the inner prior integral is the Jacobian times `bvmNumer`.
+  have step4 : ∀ ω : Fin n → 𝓧,
+      ∫⁻ θ in Metric.ball θ₀ (u / Real.sqrt n),
+          (∏ i, ENNReal.ofReal (M.density θ (ω i))) * F ω ∂π
+        = ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k)
+            * (F ω * bvmNumer M f θ₀ n (Metric.ball 0 u) ω) := by
+    intro ω
+    have hae : AEMeasurable (fun θ : EuclideanSpace ℝ (Fin k) =>
+        ∏ i, ENNReal.ofReal (M.density θ (ω i)))
+        (π.restrict (Metric.ball θ₀ (u / Real.sqrt n))) :=
+      (hlik.comp (measurable_id.prodMk measurable_const)).aemeasurable
+    rw [lintegral_mul_const'' _ hae, ← hball,
+      lintegral_preimage_eq_jac_mul_bvmNumer hπ hM_joint hn1 measurableSet_ball hsub ω]
+    ring
+  rw [step1]
+  simp_rw [step2]
+  rw [step3]
+  simp_rw [step4]
+  rw [lintegral_const_mul' _ _ (ENNReal.ofReal_ne_top (r := ((Real.sqrt (n : ℝ))⁻¹) ^ k)),
+    ← mul_assoc]
 
 /-- **Step B: the conditioned Bernstein–von Mises convergence** (vdV pp. 142–143). For every
 fixed radius `R > 0` and every `δ > 0`, the `P^n_{θ₀}`-probability that the conditioned
