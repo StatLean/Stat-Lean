@@ -5031,4 +5031,181 @@ theorem berryEsseen_ball_improved :
 
 end ImprovedAssembly
 
+
+/-! ### Wave-19: the fixed points of Bentkus's self-improving recursion
+
+The wave-16 note isolated *two* missing ingredients for the sharp rate. The first is the
+weighted Cameron–Martin bound `integral_abs_mul_vecTiltRemainder_le` proved above. The second is
+the **self-improving induction over `n`**: the localised swap bounds the discrepancy at sample
+size `n` by an expression in which the discrepancy *itself* reappears, through the
+anti-concentration of the hybrid laws.
+
+Write `Δ` for the supremum, over measurable convex `B`, of `|μₙ(B) − γ(B)|`, and `δ = β/√n`.
+The localised telescope replaces the uniform step bound by one weighted by
+`P(hybrid ∈ ε-shell of ∂B)`, and that shell probability is at most
+`γ(shell) + 2Δ ≤ C_k ε + 2Δ` — Gaussian shell mass (`gaussian_thickening_le`) plus twice the
+discrepancy being bounded. The recursions that result are the following three; this section
+solves all three as statements about real numbers, so that the only thing left for the
+probabilistic side is to *produce* the hypothesis `hrec`.
+
+* `le_of_selfImproving_cube` / `cube_le_of_selfImproving_cube`: the recursion of the wave-16
+  note verbatim, `Δ ≤ A δ ε⁻³ (C ε + 2Δ) + C ε` for every `ε > 0`, closes at
+  `Δ ≤ (5/2) C e` with `e³ = 4Aδ`, i.e. `Δ³ ≤ 63 C³ A δ`, i.e. `Δ ≲ C δ^{1/3}`.
+* `le_of_selfImproving_smoothed`: the same recursion **after** the Gaussian smoothing of the
+  hybrid telescope, which turns `ε⁻³` into `ε⁻¹` (this is the wave-13/16 improvement,
+  `abs_integral_smooth_sub_gaussian_improved`). It closes at `Δ ≤ 10 A C δ` — **linear in
+  `δ = β/√n`, i.e. exactly the sharp Bentkus rate**, with the dimension entering only through
+  the shell constant `C = C_k`. This is the precise sense in which "the induction, iterated
+  with the Gaussian smoothing, gives the sharp rate".
+* `le_of_selfImproving_smoothed_sqrt` / `cube_le_of_selfImproving_smoothed_sqrt`: the variant
+  actually supplied by the `L²` weighting proved above, `Δ ≤ A δ ε⁻¹ √(C ε + 2Δ) + C ε`, whose
+  fixed point is `Δ ≤ 6 m²` with `m³ = C A δ`, i.e. `Δ³ ≤ 216 (C A δ)²`, i.e.
+  `Δ ≲ (C β/√n)^{2/3} = O(n^{-1/3})`.
+
+**Honest status of the probabilistic step.** What is *not* proved here is the production of
+`hrec`: it needs the localised telescope, i.e. a rerun of
+`abs_integral_smooth_sub_gaussian_improved`
+in which each step is estimated by `abs_integral_mul_vecTiltRemainder_le_of_support` with
+`G = D³` of the mollified indicator (supported on the `ε`-shell) instead of by the uniform
+`abs_integral_gaussian_smoothed_swap_le`, and in which the shell probability *for the hybrid law*
+is controlled by the induction hypothesis at the smaller sample sizes. Two concrete obstacles
+remain, both structural rather than arithmetic:
+
+1. the shell of `∂B` must be a *set* to which the induction hypothesis applies — one needs
+   `γ`-shell mass of a convex set to be estimated by the discrepancy over convex sets, and the
+   shell `Bᵋ \ B₋ᵋ` is a difference of two convex sets, so the induction must be run on the
+   class of such differences (Bentkus does this; it costs a factor `2` in the constant, which is
+   why `2Δ` appears in the recursion above);
+2. the induction is over `n`, and the hybrid at step `j` is a law of *`j` Gaussian plus `n − j`
+   `ν`* summands, not a rescaled sum of `j` summands, so the inductive hypothesis has to be
+   stated for the whole hybrid family rather than for `μₙ` alone.
+
+Neither is attempted here. What the section does deliver is that once `hrec` is available in any
+of the three shapes, the rate follows by pure arithmetic — including, in the smoothed case, the
+sharp `β/√n`. -/
+
+section SelfImproving
+
+/-- **Solving `u ≤ a √u + b`**: the quadratic step behind the square-root recursion. -/
+private lemma le_of_le_sqrt_mul {u a b : ℝ} (hu : 0 ≤ u)
+    (h : u ≤ a * Real.sqrt u + b) : u ≤ 4 / 3 * (a ^ 2 + b) := by
+  have hs : Real.sqrt u ^ 2 = u := Real.sq_sqrt hu
+  nlinarith [sq_nonneg (Real.sqrt u - 2 * a), Real.sqrt_nonneg u]
+
+/-- Subadditivity of `√`. -/
+private lemma sqrt_add_le_sqrt_add_sqrt {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) :
+    Real.sqrt (x + y) ≤ Real.sqrt x + Real.sqrt y := by
+  have h1 : x + y ≤ (Real.sqrt x + Real.sqrt y) ^ 2 := by
+    have hx' := Real.sq_sqrt hx
+    have hy' := Real.sq_sqrt hy
+    nlinarith [Real.sqrt_nonneg x, Real.sqrt_nonneg y]
+  calc Real.sqrt (x + y) ≤ Real.sqrt ((Real.sqrt x + Real.sqrt y) ^ 2) := Real.sqrt_le_sqrt h1
+    _ = Real.sqrt x + Real.sqrt y := Real.sqrt_sq (by positivity)
+
+/-- **The unsmoothed self-improving recursion** `Δ ≤ A δ ε⁻³ (C ε + 2Δ) + C ε` (Bentkus), at the
+cut `e³ = 4Aδ` where the `2Δ` term is absorbed into `Δ/2`. -/
+theorem le_of_selfImproving_cube {A C δ Δ e : ℝ}
+    (he : 0 < e) (hcube : e ^ 3 = 4 * (A * δ))
+    (hrec : ∀ ε : ℝ, 0 < ε → Δ ≤ A * δ * (ε ^ 3)⁻¹ * (C * ε + 2 * Δ) + C * ε) :
+    Δ ≤ 5 / 2 * C * e := by
+  have hpos : (0 : ℝ) < e ^ 3 := pow_pos he 3
+  have hAδ : 0 < A * δ := by linarith [hcube ▸ hpos]
+  have h := hrec e he
+  rw [hcube] at h
+  have hq : A * δ * (4 * (A * δ))⁻¹ = 1 / 4 := by
+    rw [mul_inv, ← mul_assoc, mul_comm (A * δ) (4 : ℝ)⁻¹, mul_assoc,
+      mul_inv_cancel₀ hAδ.ne']
+    norm_num
+  rw [hq] at h
+  linarith
+
+/-- Root-free form of `le_of_selfImproving_cube`: `Δ³ ≤ 63 C³ A δ`, i.e. `Δ ≲ C (Aδ)^{1/3}`. -/
+theorem cube_le_of_selfImproving_cube {A C δ Δ : ℝ} (hΔ : 0 ≤ Δ) (hC : 0 ≤ C)
+    (hAδ : 0 < A * δ)
+    (hrec : ∀ ε : ℝ, 0 < ε → Δ ≤ A * δ * (ε ^ 3)⁻¹ * (C * ε + 2 * Δ) + C * ε) :
+    Δ ^ 3 ≤ 63 * C ^ 3 * (A * δ) := by
+  set e : ℝ := (4 * (A * δ)) ^ ((1 : ℝ) / 3) with he'
+  have h4 : (0 : ℝ) < 4 * (A * δ) := by linarith
+  have he : 0 < e := Real.rpow_pos_of_pos h4 _
+  have hcube : e ^ 3 = 4 * (A * δ) := by
+    rw [he', ← Real.rpow_natCast ((4 * (A * δ)) ^ ((1 : ℝ) / 3)) 3, ← Real.rpow_mul h4.le]
+    norm_num
+  have hmain := le_of_selfImproving_cube he hcube hrec
+  have hcubed : Δ ^ 3 ≤ (5 / 2 * C * e) ^ 3 := pow_le_pow_left₀ hΔ hmain 3
+  have hexp : (5 / 2 * C * e) ^ 3 = (5 / 2) ^ 3 * C ^ 3 * e ^ 3 := by ring
+  rw [hexp, hcube] at hcubed
+  nlinarith [pow_nonneg hC 3]
+
+/-- **The smoothed self-improving recursion — the sharp `β/√n` fixed point.** After the Gaussian
+smoothing carried by the hybrid telescope the mollifier cost is `ε⁻¹`, not `ε⁻³`
+(`berryEsseen_convex_levy_improved`); with the localisation weight `C ε + 2Δ` the recursion
+`Δ ≤ A δ ε⁻¹ (C ε + 2Δ) + C ε` closes at `Δ ≤ 10 A C δ` — **linear in `δ = β/√n`**. -/
+theorem le_of_selfImproving_smoothed {A C δ Δ : ℝ} (hAδ : 0 < A * δ)
+    (hrec : ∀ ε : ℝ, 0 < ε → Δ ≤ A * δ * ε⁻¹ * (C * ε + 2 * Δ) + C * ε) :
+    Δ ≤ 10 * (A * δ) * C := by
+  have h := hrec (4 * (A * δ)) (by linarith)
+  have hq : A * δ * (4 * (A * δ))⁻¹ = 1 / 4 := by
+    rw [mul_inv, ← mul_assoc, mul_comm (A * δ) (4 : ℝ)⁻¹, mul_assoc,
+      mul_inv_cancel₀ hAδ.ne']
+    norm_num
+  rw [hq] at h
+  nlinarith
+
+/-- **The `L²`-weighted (Cauchy–Schwarz) smoothed recursion.** This is the shape the weighted
+bound `abs_integral_mul_vecTiltRemainder_le_of_support` actually produces: the shell weight
+enters under a square root. At the cut `ε = m²/C`, `m³ = C A δ`, it closes at `Δ ≤ 6 m²`. -/
+theorem le_of_selfImproving_smoothed_sqrt {A C δ Δ m : ℝ} (hΔ : 0 ≤ Δ) (hC : 0 < C)
+    (hm : 0 < m) (hm3 : m ^ 3 = C * (A * δ))
+    (hrec : ∀ ε : ℝ, 0 < ε →
+      Δ ≤ A * δ * ε⁻¹ * Real.sqrt (C * ε + 2 * Δ) + C * ε) :
+    Δ ≤ 6 * m ^ 2 := by
+  have hAδ : 0 < A * δ := by
+    have h3 : 0 < m ^ 3 := pow_pos hm 3
+    rw [hm3] at h3
+    nlinarith
+  set ε : ℝ := m ^ 2 / C with hε'
+  have hε : 0 < ε := by positivity
+  have hCε : C * ε = m ^ 2 := by
+    rw [hε']; field_simp
+  have hAε : A * δ * ε⁻¹ = m := by
+    rw [hε']
+    field_simp
+    nlinarith [hm3]
+  have h := hrec ε hε
+  rw [hAε, hCε] at h
+  have hsub : Real.sqrt (m ^ 2 + 2 * Δ) ≤ m + Real.sqrt 2 * Real.sqrt Δ := by
+    have h1 := sqrt_add_le_sqrt_add_sqrt (x := m ^ 2) (y := 2 * Δ)
+      (by positivity) (by positivity)
+    rw [Real.sqrt_sq hm.le, Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 2)] at h1
+    exact h1
+  have hstep : Δ ≤ (Real.sqrt 2 * m) * Real.sqrt Δ + 2 * m ^ 2 := by
+    nlinarith [Real.sqrt_nonneg Δ, hm.le]
+  have hfix := le_of_le_sqrt_mul hΔ hstep
+  have h2 : (Real.sqrt 2 * m) ^ 2 = 2 * m ^ 2 := by
+    rw [mul_pow, Real.sq_sqrt (by norm_num : (0:ℝ) ≤ 2)]
+  rw [h2] at hfix
+  linarith
+
+/-- Root-free form: `Δ³ ≤ 216 (C A δ)²`, i.e. `Δ ≲ (C β/√n)^{2/3} = O(n^{-1/3})` — strictly
+better than the proved `O(n^{-1/4})` of `berryEsseen_convex_improved`, strictly weaker than the
+sharp `O(n^{-1/2})` that the unweighted (`L¹`) localisation would give. -/
+theorem cube_le_of_selfImproving_smoothed_sqrt {A C δ Δ : ℝ} (hΔ : 0 ≤ Δ) (hC : 0 < C)
+    (hAδ : 0 < A * δ)
+    (hrec : ∀ ε : ℝ, 0 < ε →
+      Δ ≤ A * δ * ε⁻¹ * Real.sqrt (C * ε + 2 * Δ) + C * ε) :
+    Δ ^ 3 ≤ 216 * (C * (A * δ)) ^ 2 := by
+  have hpos : (0 : ℝ) < C * (A * δ) := by positivity
+  set m : ℝ := (C * (A * δ)) ^ ((1 : ℝ) / 3) with hm'
+  have hm : 0 < m := Real.rpow_pos_of_pos hpos _
+  have hm3 : m ^ 3 = C * (A * δ) := by
+    rw [hm', ← Real.rpow_natCast ((C * (A * δ)) ^ ((1 : ℝ) / 3)) 3, ← Real.rpow_mul hpos.le]
+    norm_num
+  have hmain := le_of_selfImproving_smoothed_sqrt hΔ hC hm hm3 hrec
+  have hcubed : Δ ^ 3 ≤ (6 * m ^ 2) ^ 3 := pow_le_pow_left₀ hΔ hmain 3
+  have hexp : (6 * m ^ 2) ^ 3 = 216 * (m ^ 3) ^ 2 := by ring
+  rw [hexp, hm3] at hcubed
+  exact hcubed
+
+end SelfImproving
+
 end StatLean.HypothesisTesting
