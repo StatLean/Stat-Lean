@@ -1,6 +1,7 @@
 import StatLean.HypothesisTesting.Bootstrap.NonparametricMean
 import StatLean.HypothesisTesting.ForMathlib.BivariateEdgeworth
 import StatLean.HypothesisTesting.ForMathlib.EsseenSmoothing
+import StatLean.HypothesisTesting.ForMathlib.UniformRiemannLebesgue
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
@@ -38,6 +39,20 @@ proved:
 * `abs_measure_le_sub_le_of_peel` — the dyadically peeled perturbation bound, whose strata are
   joint window-times-tail events; it strictly strengthens the single-scale
   `abs_measure_le_sub_le_of_dist_le`, which cannot reach `O(n⁻¹)` for the studentized root;
+* `measure_abs_sub_le_of_abs_cdf_sub_le`, `abs_measure_le_sub_le_of_peel_strata` — the two-sided
+  window bound `P(|T − x| ≤ w) ≤ 2Aw + 2ε` and the peeled assembly that takes per-stratum
+  bounds directly;
+* `measure_inter_prod_le`, `measure_pi_inter_coord_le`, `subset_union_large_summand`,
+  `measure_pi_inter_le_of_large_summand` — the classical route to the *conditional* window
+  estimate: independence of the retained block for a product measure and for one coordinate of
+  a `Measure.pi`, the one-large-summand decomposition, and the union bound over the choices of
+  dominant index;
+* `centredDensity`, `charFun_map_studentPair_eq`, `vecCramerCondition_map_studentPair`,
+  `cramerCondition_projLaw_studentPair`,
+  `exists_bound_norm_charFun_vecRootLaw_studentPair` — the multivariate Cramér condition for the
+  parabola-carried law of `studentPair F` and the resulting Cramér tail `‖φ_{ρ_n}(t)‖ ≤ cⁿ` on
+  `ε√n ≤ ‖t‖`, from the identification of the projected characteristic function with a
+  quadratic-phase integral of the centred density;
 * `normalCDF_sub_le`, `stdNormalCDF_sub_le` — the Lipschitz modulus of the normal distribution
   function, the constant `A` that Esseen's smoothing inequality consumes;
 * `edgeworth_mean_uniform` — the expansion for the centred root, with a uniform `O(n^{-1})`
@@ -1002,6 +1017,203 @@ lemma integral_inner_studentPair (F : Measure ℝ) [IsProbabilityMeasure F]
   simp_rw [inner_studentPair F t, ← hm, ← hv]
   rw [← hg, hval]
 
+/-! ### (M3)(i) for the studentizing pair: the parabola-carried law satisfies multivariate Cramér
+
+`vecCramerCondition_of_uniform_sphere` reduces `VecCramerCondition μ` to a single bound
+`‖φ_{projLaw μ θ}(R)‖ ≤ c < 1` holding for every unit direction `θ` and every large radius `R`.
+For `μ` the law of `studentPair F = (X − m, (X − m)² − v)` the projected characteristic function
+is, up to a unimodular factor, exactly a quadratic-phase integral of the centred density:
+
+`φ_{projLaw μ θ}(R) = e^{−i R θ₁ v} ∫ f(y) e^{i(Rθ₀ y + Rθ₁ y²)} dy`, `f = (dF/dx)(· + m)`.
+
+`ForMathlib/UniformRiemannLebesgue.lean` bounds that integral uniformly once `|t₀| + |t₁|` is
+large, for every `f ∈ L¹` — the bounded-`t₁` regime by uniform Riemann–Lebesgue on a compactly
+parametrised `L¹` family, and the `|t₁| → ∞` regime by the autocorrelation identity. On the unit
+sphere `|Rθ₀| + |Rθ₁| = R(|θ₀| + |θ₁|) ≥ R‖θ‖ = R`, so the two combine with no loss and (M3) is
+complete: wave 13's diagnosis that "multivariate Cramér is strictly stronger than Cramér in
+every direction" for this parabola-carried law was right, and the extra content is precisely the
+quadratic-phase estimate. -/
+
+/-- The density of the **centred** sampling law, as a complex-valued `L¹` function:
+`y ↦ (dF/dx)(y + m)`. This is the `f` to which the quadratic-phase estimates of
+`ForMathlib/UniformRiemannLebesgue.lean` are applied. -/
+noncomputable def centredDensity (F : Measure ℝ) : ℝ → ℂ :=
+  fun y => ((F.rnDeriv volume (y + ∫ s, s ∂F)).toReal : ℂ)
+
+/-- The centred density is integrable: it is a translate of the Radon–Nikodym derivative of a
+finite measure. -/
+lemma integrable_centredDensity (F : Measure ℝ) [IsFiniteMeasure F] :
+    Integrable (centredDensity F) := by
+  have hbase : Integrable (fun x : ℝ => (F.rnDeriv volume x).toReal) volume :=
+    integrable_toReal_of_lintegral_ne_top (F.measurable_rnDeriv volume).aemeasurable
+      (Measure.lintegral_rnDeriv_lt_top F volume).ne
+  have hC : Integrable (fun x : ℝ => ((F.rnDeriv volume x).toReal : ℂ)) volume := hbase.ofReal
+  exact hC.comp_add_right _
+
+/-- **The characteristic function of the studentizing pair is a quadratic-phase integral.**
+Writing `f` for the centred density, `m` for the mean and `v` for the variance,
+
+`φ_{F ∘ Z⁻¹}(t) = e^{−i t₁ v} ∫ f(y) e^{i(t₀y + t₁y²)} dy`.
+
+The exponential prefactor is unimodular, so it disappears from every modulus estimate; the
+substitution `x = y + m` is applied to the density and is translation invariance of Lebesgue
+measure, exactly as in the autocorrelation identity. -/
+lemma charFun_map_studentPair_eq (F : Measure ℝ) [IsProbabilityMeasure F] (hFac : F ≪ volume)
+    (t : EuclideanSpace ℝ (Fin 2)) :
+    charFun (F.map (studentPair F)) t
+      = Complex.exp ((-(t 1 * Var[fun s : ℝ => s; F]) : ℝ) * Complex.I)
+        * quadPhaseInt (centredDensity F) (t 0) (t 1) := by
+  set m : ℝ := ∫ s, s ∂F with hm
+  set v : ℝ := Var[fun s : ℝ => s; F] with hv
+  set p : ℝ → ℝ≥0∞ := F.rnDeriv volume with hpdef
+  have hpm : Measurable p := F.measurable_rnDeriv volume
+  have hplt : ∀ᵐ x ∂(volume : Measure ℝ), p x < ⊤ := Measure.rnDeriv_lt_top F volume
+  have hFd : (volume : Measure ℝ).withDensity p = F :=
+    Measure.withDensity_rnDeriv_eq F volume hFac
+  have hstep1 : charFun (F.map (studentPair F)) t
+      = ∫ x : ℝ, Complex.exp ((t 0 * (x - m) + t 1 * ((x - m) ^ 2 - v) : ℝ) * Complex.I) ∂F := by
+    rw [charFun_apply, integral_map (measurable_studentPair F).aemeasurable (by fun_prop)]
+    simp_rw [inner_studentPair F t, ← hm, ← hv]
+  have hstep2 : charFun (F.map (studentPair F)) t
+      = ∫ x : ℝ, (p x).toReal •
+          Complex.exp ((t 0 * (x - m) + t 1 * ((x - m) ^ 2 - v) : ℝ) * Complex.I)
+          ∂(volume : Measure ℝ) := by
+    rw [hstep1, ← hFd, integral_withDensity_eq_integral_toReal_smul hpm hplt]
+    rfl
+  have hstep3 : (∫ x : ℝ, (p x).toReal *
+        Complex.exp ((t 0 * (x - m) + t 1 * ((x - m) ^ 2 - v) : ℝ) * Complex.I))
+      = ∫ y : ℝ, (p (y + m)).toReal *
+          Complex.exp ((t 0 * (y + m - m) + t 1 * ((y + m - m) ^ 2 - v) : ℝ) * Complex.I) :=
+    (integral_add_right_eq_self
+      (fun x : ℝ => ((p x).toReal : ℂ) *
+        Complex.exp ((t 0 * (x - m) + t 1 * ((x - m) ^ 2 - v) : ℝ) * Complex.I)) m).symm
+  have hsmul : ∀ x : ℝ, (p x).toReal •
+      Complex.exp ((t 0 * (x - m) + t 1 * ((x - m) ^ 2 - v) : ℝ) * Complex.I)
+      = ((p x).toReal : ℂ) *
+        Complex.exp ((t 0 * (x - m) + t 1 * ((x - m) ^ 2 - v) : ℝ) * Complex.I) :=
+    fun _ => Complex.real_smul
+  have hptwise : ∀ y : ℝ, ((p (y + m)).toReal : ℂ) *
+        Complex.exp ((t 0 * (y + m - m) + t 1 * ((y + m - m) ^ 2 - v) : ℝ) * Complex.I)
+      = Complex.exp ((-(t 1 * v) : ℝ) * Complex.I)
+        * (Complex.exp ((t 0 * y + t 1 * y ^ 2 : ℝ) * Complex.I) * centredDensity F y) := by
+    intro y
+    have hcancel : y + m - m = y := by ring
+    have hcd : centredDensity F y = ((p (y + m)).toReal : ℂ) := by
+      rw [centredDensity, hpdef, hm]
+    have hprod : Complex.exp ((-(t 1 * v) : ℝ) * Complex.I)
+        * Complex.exp ((t 0 * y + t 1 * y ^ 2 : ℝ) * Complex.I)
+        = Complex.exp ((t 0 * y + t 1 * (y ^ 2 - v) : ℝ) * Complex.I) := by
+      rw [← Complex.exp_add]
+      congr 1
+      push_cast
+      ring
+    rw [hcancel, hcd, ← mul_assoc, hprod, mul_comm]
+  have hpull : (∫ y : ℝ, Complex.exp ((-(t 1 * v) : ℝ) * Complex.I)
+        * (Complex.exp ((t 0 * y + t 1 * y ^ 2 : ℝ) * Complex.I) * centredDensity F y))
+      = Complex.exp ((-(t 1 * v) : ℝ) * Complex.I)
+        * ∫ y : ℝ, Complex.exp ((t 0 * y + t 1 * y ^ 2 : ℝ) * Complex.I) * centredDensity F y :=
+    integral_const_mul _ _
+  rw [hstep2, integral_congr_ae (Filter.Eventually.of_forall hsmul), hstep3,
+    integral_congr_ae (Filter.Eventually.of_forall hptwise), hpull, quadPhaseInt]
+
+/-- In `ℝ²` the `ℓ¹` norm dominates the Euclidean one. This is what makes the cocompact bound
+`|t₀| + |t₁| ≥ R` of the quadratic-phase estimate available along every ray. -/
+private lemma norm_le_abs_add_abs (t : EuclideanSpace ℝ (Fin 2)) : ‖t‖ ≤ |t 0| + |t 1| := by
+  rw [EuclideanSpace.norm_eq, Fin.sum_univ_two, Real.norm_eq_abs, Real.norm_eq_abs]
+  have hnn : (0 : ℝ) ≤ |t 0| + |t 1| := by positivity
+  refine le_trans (Real.sqrt_le_sqrt ?_) (le_of_eq (Real.sqrt_sq hnn))
+  nlinarith [abs_nonneg (t 0), abs_nonneg (t 1)]
+
+/-- On the unit sphere the `ℓ¹` norm dominates `1`. -/
+private lemma one_le_abs_add_abs_of_norm_eq_one {θ : EuclideanSpace ℝ (Fin 2)} (hθ : ‖θ‖ = 1) :
+    1 ≤ |θ 0| + |θ 1| := hθ ▸ norm_le_abs_add_abs θ
+
+/-- **(M3)(i) — the studentizing pair satisfies the multivariate Cramér condition.**
+
+For an absolutely continuous sampling law the bivariate law of `Z = (X − m, (X − m)² − v)`,
+though carried by a parabola and hence singular in `ℝ²`, has a characteristic function bounded
+away from `1` off every compact set. This is the hypothesis
+`norm_charFun_vecRootLaw_le_pow` consumes to produce the Cramér tail of the studentized
+expansion, and with it the whole of (M3) is closed.
+
+The proof is the wiring wave 17 identified: the projected characteristic function *is* a
+quadratic-phase integral of the centred density (`charFun_map_studentPair_eq`), and
+`exists_bound_norm_quadPhaseInt_of_integrable` bounds those uniformly once `|t₀| + |t₁|` is
+large, for every `f ∈ L¹`. No smoothness of `F` beyond `F ≪ volume` is used. -/
+theorem vecCramerCondition_map_studentPair (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hFac : F ≪ volume) : VecCramerCondition (F.map (studentPair F)) := by
+  obtain ⟨R, hR, hRbd⟩ :=
+    exists_bound_norm_quadPhaseInt_of_integrable (integrable_centredDensity F)
+      (ε := 1 / 2) (by norm_num)
+  refine vecCramerCondition_of_uniform_sphere (F.map (studentPair F))
+    (c := 1 / 2) (R₀ := R) (by norm_num) hR ?_
+  intro θ hθ S hS
+  have hSpos : (0 : ℝ) < S := lt_of_lt_of_le hR hS
+  rw [← charFun_smul_eq_charFun_map_inner, charFun_map_studentPair_eq F hFac]
+  have hcoord0 : (S • θ) 0 = S * θ 0 := rfl
+  have hcoord1 : (S • θ) 1 = S * θ 1 := rfl
+  rw [norm_mul, Complex.norm_exp_ofReal_mul_I, one_mul, hcoord0, hcoord1]
+  refine hRbd (S * θ 0) (S * θ 1) ?_
+  have hℓ1 : 1 ≤ |θ 0| + |θ 1| := one_le_abs_add_abs_of_norm_eq_one hθ
+  have habs0 : |S * θ 0| = S * |θ 0| := by
+    rw [abs_mul, abs_of_pos hSpos]
+  have habs1 : |S * θ 1| = S * |θ 1| := by
+    rw [abs_mul, abs_of_pos hSpos]
+  rw [habs0, habs1]
+  nlinarith [hS, hSpos, hℓ1]
+
+/-- **Every projection of the studentizing pair's law is non-lattice.** The one-dimensional
+Cramér condition holds for `projLaw (F ∘ Z⁻¹) t` in every nonzero direction `t`, by the same
+quadratic-phase bound: along the ray `s ↦ s • t` the `ℓ¹` size of the coefficient pair is
+`|s|(|t₀| + |t₁|) ≥ |s|‖t‖ → ∞`. This is the pointwise input of
+`exists_bound_lt_one_of_projLaw_cramer`. -/
+theorem cramerCondition_projLaw_studentPair (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hFac : F ≪ volume) {t : EuclideanSpace ℝ (Fin 2)} (ht : t ≠ 0) :
+    CramerCondition (projLaw (F.map (studentPair F)) t) := by
+  obtain ⟨R, hR, hRbd⟩ :=
+    exists_bound_norm_quadPhaseInt_of_integrable (integrable_centredDensity F)
+      (ε := 1 / 2) (by norm_num)
+  have htpos : (0 : ℝ) < ‖t‖ := norm_pos_iff.2 ht
+  refine ⟨1 / 2, by norm_num, ?_⟩
+  filter_upwards [(tendsto_norm_cocompact_atTop (E := ℝ)).eventually_ge_atTop
+    (R / ‖t‖)] with s hs
+  have habs : (R / ‖t‖) ≤ |s| := by rwa [Real.norm_eq_abs] at hs
+  rw [← charFun_smul_eq_charFun_map_inner, charFun_map_studentPair_eq F hFac]
+  have hcoord0 : (s • t) 0 = s * t 0 := rfl
+  have hcoord1 : (s • t) 1 = s * t 1 := rfl
+  rw [norm_mul, Complex.norm_exp_ofReal_mul_I, one_mul, hcoord0, hcoord1]
+  refine hRbd (s * t 0) (s * t 1) ?_
+  have hℓ1 : ‖t‖ ≤ |t 0| + |t 1| := norm_le_abs_add_abs t
+  have habs0 : |s * t 0| = |s| * |t 0| := abs_mul _ _
+  have habs1 : |s * t 1| = |s| * |t 1| := abs_mul _ _
+  have hRle : R ≤ |s| * ‖t‖ := by
+    rw [div_le_iff₀ htpos] at habs
+    linarith
+  rw [habs0, habs1]
+  nlinarith [abs_nonneg s, hℓ1, hRle]
+
+/-- **The Cramér tail of the studentized expansion, in the form the assembly consumes.**
+
+For every `ε > 0` there is a single `c < 1` with `‖φ_{ρ_n}(t)‖ ≤ cⁿ` on the whole outer range
+`ε√n ≤ ‖t‖`, where `ρ_n = vecRootLaw F (studentPair F) n`. This is the bivariate analogue of
+`edgeworthGap_tail_le`, and it completes (M3): the compactness half
+(`exists_bound_lt_one_of_projLaw_cramer`), the multivariate Cramér condition
+(`vecCramerCondition_map_studentPair`) and the transfer to the root
+(`norm_charFun_vecRootLaw_le_pow`, which removes the need for Hall's conditioning device) are
+now all in place, under no hypothesis on `F` beyond `F ≪ volume`. -/
+theorem exists_bound_norm_charFun_vecRootLaw_studentPair (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hFac : F ≪ volume) {ε : ℝ} (hε : 0 < ε) :
+    ∃ c : ℝ, c < 1 ∧ ∀ n : ℕ, 0 < n → ∀ t : EuclideanSpace ℝ (Fin 2),
+      ε * Real.sqrt (n : ℝ) ≤ ‖t‖ →
+        ‖charFun (vecRootLaw F (studentPair F) n) t‖ ≤ c ^ n := by
+  haveI : IsProbabilityMeasure (F.map (studentPair F)) :=
+    Measure.isProbabilityMeasure_map (measurable_studentPair F).aemeasurable
+  obtain ⟨c, hc, hcbd⟩ := exists_bound_lt_one_of_projLaw_cramer (F.map (studentPair F))
+    (vecCramerCondition_map_studentPair F hFac)
+    (fun t ht => cramerCondition_projLaw_studentPair F hFac ht) hε
+  exact ⟨c, hc, fun n hn t ht =>
+    norm_charFun_vecRootLaw_le_pow F (measurable_studentPair F) hε hcbd hn ht⟩
+
 /-! ### The deterministic core of (M2): the studentizing factor is its own Taylor polynomial
 
 `studentizedRootCDF_eq_vecRootLaw` shows the studentized root is the *exact* smooth function
@@ -1373,6 +1585,53 @@ theorem measure_Ioc_le_of_abs_cdf_sub_le {Ω : Type*} [MeasurableSpace Ω] (P : 
   rw [htoreal]
   linarith [h1.1, h1.2, h2.1, h2.2]
 
+/-- **The two-sided window bound.** The form in which the peeled assembly and the conditional
+window estimate both consume anti-concentration: if `|P(T ≤ ·) − G| ≤ ε` uniformly and `G` is
+`A`-Lipschitz with `A ≥ 0`, then `P(|T − x| ≤ w) ≤ 2Aw + 2ε` for every `w ≥ 0` — including
+`w = 0`, where it says the atom of `T` at `x` is at most `2ε`.
+
+The closed window `[x − w, x + w]` is not an `Ioc`, so the estimate is run on
+`(x − w − u, x + w]` for every `u > 0` and the auxiliary `u` is then sent to `0`; that is where
+`0 ≤ A` is used. -/
+theorem measure_abs_sub_le_of_abs_cdf_sub_le {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsProbabilityMeasure P] {T : Ω → ℝ} (hT : Measurable T) {G : ℝ → ℝ} {A ε : ℝ}
+    (hA : 0 ≤ A) (hG : ∀ a b : ℝ, a ≤ b → G b - G a ≤ A * (b - a))
+    (happrox : ∀ x : ℝ, |(P {ω | T ω ≤ x}).toReal - G x| ≤ ε)
+    (x : ℝ) {w : ℝ} (hw : 0 ≤ w) :
+    (P {ω | |T ω - x| ≤ w}).toReal ≤ 2 * A * w + 2 * ε := by
+  refine le_of_forall_pos_le_add fun δ hδ => ?_
+  have hA1 : (0 : ℝ) < A + 1 := by linarith
+  set u : ℝ := δ / (A + 1) with hu
+  have hu0 : 0 < u := by positivity
+  have hAu : A * u ≤ δ := by
+    rw [hu, mul_div_assoc', div_le_iff₀ hA1]
+    nlinarith [hδ.le]
+  have hsub : {ω | |T ω - x| ≤ w} ⊆ {ω | x - w - u < T ω ∧ T ω ≤ x + w} := by
+    intro ω hω
+    have hω' : |T ω - x| ≤ w := hω
+    obtain ⟨hlo, hhi⟩ := abs_le.1 hω'
+    exact ⟨by linarith, by linarith⟩
+  have hmono : (P {ω | |T ω - x| ≤ w}).toReal
+      ≤ (P {ω | x - w - u < T ω ∧ T ω ≤ x + w}).toReal :=
+    ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono hsub)
+  have hwin := measure_Ioc_le_of_abs_cdf_sub_le P hT hG happrox
+    (a := x - w - u) (b := x + w) (by linarith)
+  have harg : x + w - (x - w - u) = 2 * w + u := by ring
+  rw [harg] at hwin
+  nlinarith [hmono, hwin, hAu]
+
+/-- The two-sided window bound in `ℝ≥0∞`, which is the shape `measure_pi_inter_coord_le`
+consumes for its slice hypothesis. -/
+theorem measure_abs_sub_le_ofReal {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsProbabilityMeasure P] {T : Ω → ℝ} (hT : Measurable T) {G : ℝ → ℝ} {A ε : ℝ}
+    (hA : 0 ≤ A) (hG : ∀ a b : ℝ, a ≤ b → G b - G a ≤ A * (b - a))
+    (happrox : ∀ x : ℝ, |(P {ω | T ω ≤ x}).toReal - G x| ≤ ε)
+    (x : ℝ) {w : ℝ} (hw : 0 ≤ w) :
+    P {ω | |T ω - x| ≤ w} ≤ ENNReal.ofReal (2 * A * w + 2 * ε) := by
+  have h := measure_abs_sub_le_of_abs_cdf_sub_le P hT hA hG happrox x hw
+  rw [← ENNReal.ofReal_toReal (measure_ne_top P {ω | |T ω - x| ≤ w})]
+  exact ENNReal.ofReal_le_ofReal h
+
 /-- **The corrected (M2) assembly.** The anti-concentration term of
 `abs_measure_le_sub_le_of_dist_le` is discharged by the approximation of `T`'s distribution
 function itself: if `|P(T ≤ x) − G(x)| ≤ ε` uniformly with `G` `A`-Lipschitz, then
@@ -1652,6 +1911,248 @@ lemma sum_dyadic_strata_le {A η δ B q : ℝ} (hδ : 0 ≤ δ) (hA : 0 ≤ A) (
     linarith
   refine (Finset.sum_le_sum hterm).trans_eq ?_
   rw [Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.mul_sum]
+
+/-! ### (X3): the conditional window estimate and the independence it rests on
+
+`abs_measure_le_sub_le_of_peel_window` isolates the residue of (M2) as one hypothesis: the
+window estimate has to survive **conditionally on the tail event**
+`{2ᵏδ < |S − T|}`. The section note above records why none of the soft substitutes reaches
+`O(n⁻¹)` — `min(P A, P B)` gives `n^{-3/5}`, Cauchy–Schwarz gives `n^{-1/2}`, and every
+Markov-inside-the-window dodge needs six or eight moments of `X` rather than four.
+
+The classical route is genuinely probabilistic and has three ingredients, none of which was in
+the repository before this section:
+
+1. **Independence of the retained block.** If the tail event depended on a *single* coordinate,
+   the conditioning would be free: the remaining coordinates are independent of it, so the
+   window estimate for the retained `n − 1`-block applies verbatim under the conditional law.
+   `measure_inter_prod_le` is that statement for an arbitrary product measure — `P(A ∩ B)
+   ≤ P(A)·sup_a Q(B_a)` when `A` is carried by the first factor — and
+   `measure_pi_inter_coord_le` transports it to one coordinate of a `Measure.pi`, through
+   `MeasurableEquiv.piFinSuccAbove`, which splits `Measure.pi` as
+   `μ ⊗ Measure.pi (the other n coordinates)` exactly.
+2. **The one-large-summand decomposition.** The tail event is *not* carried by one coordinate;
+   it is `{λ < |∑ᵢ Y(ωᵢ)|}`. But on it a single summand dominates, and the deterministic
+   containment `subset_union_large_summand` says exactly that: either some `|Y(ωᵢ)|` exceeds the
+   truncation level `τ`, or the sum is unchanged by truncating every summand at `τ`. The first
+   alternative is a union of `n` one-coordinate events; the second is the truncated-sum
+   remainder, which is where a Fuk–Nagaev-type estimate enters and which is left as an explicit
+   hypothesis here.
+3. **The union bound over the choices of dominant index.** `measure_pi_inter_le_of_large_summand`
+   combines 1 and 2: each of the `n` one-coordinate events contributes `P(Aᵢ)·c` by the
+   conditioning brick, and the remainder contributes at most its own probability.
+
+The conclusion has the shape `P(A ∩ B) ≤ (∑ᵢ P(Aᵢ))·c + P(R)` rather than the literal product
+`P(A)·c` of `abs_measure_le_sub_le_of_peel_window`. That is the honest form: recovering `P(A)`
+on the right would need a *lower* bound on `P(A)` in terms of the one-coordinate tails, which is
+a small-ball statement and is not what the peeled arithmetic consumes.
+`abs_measure_le_sub_le_of_peel_strata` is therefore the variant of the assembly that takes the
+per-stratum bounds directly, and it is what this route feeds. -/
+
+/-- **Conditioning on the first factor of a product measure.** If `A₀` is carried by the first
+factor and every slice `B_a = {b | (a, b) ∈ B}` has `Q`-measure at most `c`, then
+
+`(ν ⊗ Q)((A₀ × univ) ∩ B) ≤ ν(A₀) · c`.
+
+This is the exact form in which independence discharges a conditioning: the second factor never
+sees `A₀`, so the bound on its slices is uniform over the first. -/
+theorem measure_inter_prod_le {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    (ν : Measure α) [SFinite ν] (Q : Measure β) [SFinite Q]
+    {A₀ : Set α} (hA₀ : MeasurableSet A₀) {B : Set (α × β)} (hB : MeasurableSet B)
+    {c : ℝ≥0∞} (hslice : ∀ a : α, Q (Prod.mk a ⁻¹' B) ≤ c) :
+    (ν.prod Q) ((A₀ ×ˢ (Set.univ : Set β)) ∩ B) ≤ ν A₀ * c := by
+  classical
+  have hmeas : MeasurableSet ((A₀ ×ˢ (Set.univ : Set β)) ∩ B) :=
+    (hA₀.prod MeasurableSet.univ).inter hB
+  rw [Measure.prod_apply hmeas]
+  have hle : ∀ a : α, Q (Prod.mk a ⁻¹' ((A₀ ×ˢ (Set.univ : Set β)) ∩ B))
+      ≤ A₀.indicator (fun _ => c) a := by
+    intro a
+    by_cases ha : a ∈ A₀
+    · rw [Set.indicator_of_mem ha]
+      exact le_trans (measure_mono fun b hb => hb.2) (hslice a)
+    · have hempty : Prod.mk a ⁻¹' ((A₀ ×ˢ (Set.univ : Set β)) ∩ B) = ∅ := by
+        ext b
+        simp only [Set.mem_preimage, Set.mem_inter_iff, Set.mem_prod, Set.mem_univ, and_true,
+          Set.mem_empty_iff_false, iff_false, not_and]
+        exact fun h => absurd h ha
+      rw [hempty, measure_empty]
+      exact zero_le _
+  calc ∫⁻ a, Q (Prod.mk a ⁻¹' ((A₀ ×ˢ (Set.univ : Set β)) ∩ B)) ∂ν
+      ≤ ∫⁻ a, A₀.indicator (fun _ => c) a ∂ν := lintegral_mono hle
+    _ = ν A₀ * c := by
+        rw [lintegral_indicator hA₀, lintegral_const, Measure.restrict_apply_univ, mul_comm]
+
+/-- **Conditioning on one coordinate of a product measure.** The `Measure.pi` form of
+`measure_inter_prod_le`: if the tail event is `{ω | ω i ∈ A₀}` — carried by the single
+coordinate `i` — and every slice of `B` obtained by fixing that coordinate has measure at most
+`c` under the product law of the remaining `n` coordinates, then
+
+`P({ω | ω i ∈ A₀} ∩ B) ≤ μ(A₀) · c`.
+
+`MeasurableEquiv.piFinSuccAbove` splits `Measure.pi` as `μ ⊗ Measure.pi (rest)` exactly
+(`measurePreserving_piFinSuccAbove`), and `Fin.insertNth i` is the inverse of that split. This
+is the "independence of the retained block" that the classical route to (X3) uses: conditionally
+on the dominant coordinate, the remaining `n` coordinates form a root law of the same kind, to
+which the *marginal* window estimate applies. -/
+theorem measure_pi_inter_coord_le {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    (i : Fin (n + 1)) {A₀ : Set ℝ} (hA₀ : MeasurableSet A₀)
+    {B : Set (Fin (n + 1) → ℝ)} (hB : MeasurableSet B) {c : ℝ≥0∞}
+    (hslice : ∀ y : ℝ,
+      (Measure.pi fun _ : Fin n => μ) {z : Fin n → ℝ | i.insertNth y z ∈ B} ≤ c) :
+    (Measure.pi fun _ : Fin (n + 1) => μ) ({ω | ω i ∈ A₀} ∩ B) ≤ μ A₀ * c := by
+  classical
+  set e := MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => ℝ) i with he
+  have hmp := measurePreserving_piFinSuccAbove (fun _ : Fin (n + 1) => μ) i
+  set Q : Measure (Fin n → ℝ) := Measure.pi fun _ : Fin n => μ with hQ
+  set B' : Set (ℝ × (Fin n → ℝ)) := e.symm ⁻¹' B with hB'def
+  have hB'm : MeasurableSet B' := e.symm.measurable hB
+  have hpre : ({ω : Fin (n + 1) → ℝ | ω i ∈ A₀} ∩ B)
+      = e ⁻¹' ((A₀ ×ˢ (Set.univ : Set (Fin n → ℝ))) ∩ B') := by
+    ext ω
+    simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_prod, Set.mem_univ, and_true,
+      Set.mem_setOf_eq, hB'def, MeasurableEquiv.symm_apply_apply]
+    exact Iff.rfl
+  have hmeas' : MeasurableSet ((A₀ ×ˢ (Set.univ : Set (Fin n → ℝ))) ∩ B') :=
+    (hA₀.prod MeasurableSet.univ).inter hB'm
+  rw [hpre, hmp.measure_preimage hmeas'.nullMeasurableSet]
+  refine measure_inter_prod_le μ Q hA₀ hB'm ?_
+  intro y
+  have hslc : Prod.mk y ⁻¹' B' = {z : Fin n → ℝ | i.insertNth y z ∈ B} := by
+    ext z
+    exact Iff.rfl
+  rw [hslc]
+  exact hslice y
+
+/-- **The one-large-summand decomposition.** A sum of `n` terms can only exceed `λ` in modulus
+if either some individual term exceeds the truncation level `τ` in modulus, or the sum is
+unchanged by truncating every term at `τ` — in which case the *truncated* sum already exceeds
+`λ`. The containment is deterministic and exact; the probabilistic content is entirely in the
+estimate of the two pieces.
+
+The first alternative is a union of `n` events, each carried by a *single* coordinate, which is
+what `measure_pi_inter_coord_le` consumes. The second is the truncated-sum remainder. -/
+lemma subset_union_large_summand {n : ℕ} (Y : ℝ → ℝ) (lam τ : ℝ) :
+    {ω : Fin n → ℝ | lam < |∑ i, Y (ω i)|}
+      ⊆ (⋃ i : Fin n, {ω : Fin n → ℝ | τ < |Y (ω i)|})
+        ∪ {ω : Fin n → ℝ | lam < |∑ i, (if |Y (ω i)| ≤ τ then Y (ω i) else 0)|} := by
+  classical
+  intro ω hω
+  by_cases hbig : ∃ i : Fin n, τ < |Y (ω i)|
+  · obtain ⟨i, hi⟩ := hbig
+    exact Set.mem_union_left _ (Set.mem_iUnion.2 ⟨i, hi⟩)
+  · refine Set.mem_union_right _ ?_
+    have hall : ∀ i : Fin n, |Y (ω i)| ≤ τ := by
+      intro i
+      exact not_lt.1 fun h => hbig ⟨i, h⟩
+    have hsum : (∑ i, (if |Y (ω i)| ≤ τ then Y (ω i) else 0)) = ∑ i, Y (ω i) :=
+      Finset.sum_congr rfl fun i _ => if_pos (hall i)
+    rw [Set.mem_setOf_eq, hsum]
+    exact hω
+
+/-- **The conditional window estimate from a one-large-summand decomposition.**
+
+Combining `subset_union_large_summand` (the decomposition), `measure_pi_inter_coord_le` (the
+independence of the retained block) and a union bound over the `n + 1` choices of dominant
+index: the joint mass of the tail event `{λ < |∑ᵢ Y(ωᵢ)|}` and an arbitrary event `B` whose
+one-coordinate slices all have mass at most `c` is bounded by
+
+`(n + 1) · μ{|Y| > τ} · c + P(truncated sum still exceeds λ)`.
+
+This is the honest shape of (X3): the product structure `tail × window` is recovered on the
+*one-coordinate* part, which is where it is true, and the remainder is separated out rather
+than absorbed. The remainder is a Fuk–Nagaev-type estimate on a sum of bounded summands and is
+an explicit hypothesis of the peeled assembly, not of this lemma. -/
+theorem measure_pi_inter_le_of_large_summand {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Y : ℝ → ℝ} (hY : Measurable Y) (lam τ : ℝ)
+    {B : Set (Fin (n + 1) → ℝ)} (hB : MeasurableSet B) {c : ℝ≥0∞}
+    (hslice : ∀ (i : Fin (n + 1)) (y : ℝ),
+      (Measure.pi fun _ : Fin n => μ) {z : Fin n → ℝ | i.insertNth y z ∈ B} ≤ c) :
+    (Measure.pi fun _ : Fin (n + 1) => μ)
+        ({ω : Fin (n + 1) → ℝ | lam < |∑ i, Y (ω i)|} ∩ B)
+      ≤ (n + 1) * (μ {y : ℝ | τ < |Y y|} * c)
+        + (Measure.pi fun _ : Fin (n + 1) => μ)
+            {ω : Fin (n + 1) → ℝ | lam < |∑ i, (if |Y (ω i)| ≤ τ then Y (ω i) else 0)|} := by
+  classical
+  set P : Measure (Fin (n + 1) → ℝ) := Measure.pi fun _ : Fin (n + 1) => μ with hP
+  set A₀ : Set ℝ := {y : ℝ | τ < |Y y|} with hA₀def
+  have hA₀ : MeasurableSet A₀ := measurableSet_lt measurable_const hY.abs
+  set R : Set (Fin (n + 1) → ℝ) :=
+    {ω : Fin (n + 1) → ℝ | lam < |∑ i, (if |Y (ω i)| ≤ τ then Y (ω i) else 0)|} with hRdef
+  have hsub : ({ω : Fin (n + 1) → ℝ | lam < |∑ i, Y (ω i)|} ∩ B)
+      ⊆ (⋃ i : Fin (n + 1), ({ω : Fin (n + 1) → ℝ | ω i ∈ A₀} ∩ B)) ∪ R := by
+    intro ω hω
+    rcases subset_union_large_summand (n := n + 1) Y lam τ hω.1 with h | h
+    · obtain ⟨i, hi⟩ := Set.mem_iUnion.1 h
+      exact Set.mem_union_left _ (Set.mem_iUnion.2 ⟨i, ⟨hi, hω.2⟩⟩)
+    · exact Set.mem_union_right _ h
+  refine (measure_mono hsub).trans ?_
+  refine (measure_union_le _ _).trans (add_le_add ?_ le_rfl)
+  refine (measure_iUnion_fintype_le _ _).trans ?_
+  have hterm : ∀ i : Fin (n + 1), P ({ω : Fin (n + 1) → ℝ | ω i ∈ A₀} ∩ B) ≤ μ A₀ * c :=
+    fun i => measure_pi_inter_coord_le μ i hA₀ hB (hslice i)
+  calc (∑ i : Fin (n + 1), P ({ω : Fin (n + 1) → ℝ | ω i ∈ A₀} ∩ B))
+      ≤ ∑ _i : Fin (n + 1), μ A₀ * c := Finset.sum_le_sum fun i _ => hterm i
+    _ = (n + 1) * (μ A₀ * c) := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+        norm_cast
+
+/-- **The one-large-summand bound in real form**, which is the shape
+`abs_measure_le_sub_le_of_peel_strata` consumes for its per-stratum hypothesis. Everything in
+sight is a finite measure, so the passage through `ENNReal.toReal` is bookkeeping. -/
+theorem measure_pi_inter_le_of_large_summand_toReal {n : ℕ} (μ : Measure ℝ)
+    [IsProbabilityMeasure μ] {Y : ℝ → ℝ} (hY : Measurable Y) (lam τ : ℝ)
+    {B : Set (Fin (n + 1) → ℝ)} (hB : MeasurableSet B) {c : ℝ} (hc : 0 ≤ c)
+    (hslice : ∀ (i : Fin (n + 1)) (y : ℝ),
+      (Measure.pi fun _ : Fin n => μ) {z : Fin n → ℝ | i.insertNth y z ∈ B}
+        ≤ ENNReal.ofReal c) :
+    ((Measure.pi fun _ : Fin (n + 1) => μ)
+        ({ω : Fin (n + 1) → ℝ | lam < |∑ i, Y (ω i)|} ∩ B)).toReal
+      ≤ ((n : ℝ) + 1) * ((μ {y : ℝ | τ < |Y y|}).toReal * c)
+        + ((Measure.pi fun _ : Fin (n + 1) => μ)
+            {ω : Fin (n + 1) → ℝ |
+              lam < |∑ i, (if |Y (ω i)| ≤ τ then Y (ω i) else 0)|}).toReal := by
+  classical
+  set P : Measure (Fin (n + 1) → ℝ) := Measure.pi fun _ : Fin (n + 1) => μ with hP
+  set R : Set (Fin (n + 1) → ℝ) :=
+    {ω : Fin (n + 1) → ℝ | lam < |∑ i, (if |Y (ω i)| ≤ τ then Y (ω i) else 0)|} with hRdef
+  have hbase := measure_pi_inter_le_of_large_summand μ hY lam τ hB hslice
+  have hne : ((n : ℝ≥0∞) + 1) * (μ {y : ℝ | τ < |Y y|} * ENNReal.ofReal c) + P R ≠ ⊤ := by
+    refine ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top ?_ ?_, (measure_lt_top P R).ne⟩
+    · exact ENNReal.add_ne_top.2 ⟨ENNReal.natCast_ne_top n, ENNReal.one_ne_top⟩
+    · exact ENNReal.mul_ne_top (measure_ne_top _ _) ENNReal.ofReal_ne_top
+  have h := ENNReal.toReal_mono hne hbase
+  rwa [ENNReal.toReal_add (ENNReal.mul_ne_top
+      (ENNReal.add_ne_top.2 ⟨ENNReal.natCast_ne_top n, ENNReal.one_ne_top⟩)
+      (ENNReal.mul_ne_top (measure_ne_top _ _) ENNReal.ofReal_ne_top))
+      (measure_lt_top P R).ne,
+    ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_add (ENNReal.natCast_ne_top n)
+      ENNReal.one_ne_top, ENNReal.toReal_natCast, ENNReal.toReal_one,
+    ENNReal.toReal_ofReal hc] at h
+
+/-- **The peeled assembly with per-stratum bounds.** The variant of
+`abs_measure_le_sub_le_of_peel_window` that consumes a direct bound on each joint stratum
+rather than the product form. This is what the one-large-summand route to (X3) actually
+produces: `measure_pi_inter_le_of_large_summand` gives
+`(n + 1)·μ{|Y| > τ}·c + P(remainder)` for the `k`-th stratum, which is *not* literally
+`P(tail)·(A·2^{k+1}δ + η)`, and forcing it into that shape would need a lower bound on the tail
+probability — a small-ball statement the arithmetic does not need. -/
+theorem abs_measure_le_sub_le_of_peel_strata {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsProbabilityMeasure P] {S T : Ω → ℝ} {δ A η : ℝ} (hδ : 0 < δ) (K : ℕ) (x : ℝ)
+    (s : ℕ → ℝ) {t : ℝ}
+    (hwin : ∀ w : ℝ, 0 ≤ w → (P {ω | |T ω - x| ≤ w}).toReal ≤ A * w + η)
+    (hstrat : ∀ k : ℕ,
+      (P {ω | 2 ^ k * δ < |S ω - T ω| ∧ |T ω - x| ≤ 2 ^ (k + 1) * δ}).toReal ≤ s k)
+    (htail : (P {ω | 2 ^ K * δ < |S ω - T ω|}).toReal ≤ t) :
+    |(P {ω | S ω ≤ x}).toReal - (P {ω | T ω ≤ x}).toReal|
+      ≤ (A * δ + η) + (∑ k ∈ Finset.range K, s k) + t := by
+  have hpeel := abs_measure_le_sub_le_of_peel P (S := S) (T := T) hδ K x
+  have hbase : (P {ω | |T ω - x| ≤ δ}).toReal ≤ A * δ + η := hwin δ hδ.le
+  have hsum : (∑ k ∈ Finset.range K,
+      (P {ω | 2 ^ k * δ < |S ω - T ω| ∧ |T ω - x| ≤ 2 ^ (k + 1) * δ}).toReal)
+      ≤ ∑ k ∈ Finset.range K, s k :=
+    Finset.sum_le_sum fun k _ => hstrat k
+  linarith
 
 end StudentizedReduction
 
@@ -3597,7 +4098,102 @@ into the studentized chain — `exists_bound_norm_quadPhaseInt_of_integrable` ha
 `vecCramerCondition_of_uniform_sphere` for the law of `studentPair F`, and the surrogate's
 characteristic function has to be assembled from the `k ≤ 4` instances of
 `multiCharFun_vecRootLaw` — but neither of those is an obstruction: each is a composition of
-statements that are proved. -/
+statements that are proved.
+
+**Status after the wave-18 re-derivation.** (M3) is now **closed end to end**, the classical
+route to (X3) is **built** and its residue is two named probabilistic inputs rather than an
+unformalised argument, and one of wave 17's two "not an obstruction" claims about the wiring is
+**wrong** — the multilinear assembly is not free under a fourth moment.
+
+* (M3) **CLOSED — the studentized chain has its Cramér tail.** The wiring wave 17 left composed
+  with no loss. `charFun_map_studentPair_eq` proves
+  `φ_{F∘Z⁻¹}(t) = e^{−i t₁ v} ∫ f(y) e^{i(t₀y + t₁y²)} dy` with `f = (dF/dx)(· + m)` the centred
+  density (`centredDensity`, integrable by `integrable_centredDensity`); the substitution
+  `x = y + m` is translation invariance of Lebesgue measure and the prefactor is unimodular, so
+  the *modulus* of the projected characteristic function is exactly a quadratic-phase integral.
+  `vecCramerCondition_map_studentPair` then feeds `exists_bound_norm_quadPhaseInt_of_integrable`
+  to `vecCramerCondition_of_uniform_sphere`, using only `‖θ‖ ≤ |θ₀| + |θ₁|` in `ℝ²` so that
+  `|Rθ₀| + |Rθ₁| ≥ R‖θ‖ = R` on the unit sphere: **the two regimes combine with no loss and no
+  further compactness argument over directions is needed** beyond the polar identity.
+  `cramerCondition_projLaw_studentPair` gives the directionwise conditions from the same
+  estimate, and `exists_bound_norm_charFun_vecRootLaw_studentPair` packages everything with
+  `norm_charFun_vecRootLaw_le_pow` into the bivariate analogue of `edgeworthGap_tail_le`:
+  a single `c < 1` with `‖φ_{ρ_n}(t)‖ ≤ cⁿ` on the whole outer range `ε√n ≤ ‖t‖`, under no
+  hypothesis on `F` beyond `F ≪ volume`. Wave 13's verdict — that multivariate Cramér for the
+  parabola-carried law is strictly stronger than the directionwise conditions, and is the real
+  content — is confirmed; what the content turned out to be is exactly the quadratic-phase
+  estimate.
+* (X3) **The classical route is BUILT; the residue is two named inputs, and wave 17's *shape*
+  for it is wrong.** The three ingredients wave 17 called absent are now present and
+  axiom-clean:
+  – `measure_inter_prod_le`: for an arbitrary product measure, `P(A ∩ B) ≤ P(A)·sup_a Q(B_a)`
+    when `A` is carried by the first factor. This is the whole content of "the retained block is
+    independent of the dominant coordinate"; it is three lines from `Measure.prod_apply` and an
+    indicator.
+  – `measure_pi_inter_coord_le`: its `Measure.pi` form, for a tail event carried by the single
+    coordinate `i`, transported through `MeasurableEquiv.piFinSuccAbove`
+    (`measurePreserving_piFinSuccAbove` splits `Measure.pi` as `μ ⊗ Measure.pi (rest)` exactly,
+    with `Fin.insertNth i` as the inverse). No disintegration and no conditional expectation is
+    needed: the split is an equality of measures.
+  – `subset_union_large_summand`: the one-large-summand decomposition, as a **deterministic and
+    exact** containment — either some `|Y(ωᵢ)|` exceeds the truncation level `τ`, or truncating
+    every summand at `τ` leaves the sum unchanged, so the *truncated* sum already exceeds `λ`.
+  `measure_pi_inter_le_of_large_summand` and its real form
+  `measure_pi_inter_le_of_large_summand_toReal` combine the three with a union bound over the
+  `n + 1` choices of dominant index, and `abs_measure_le_sub_le_of_peel_strata` is the variant of
+  the assembly that consumes the result. `measure_abs_sub_le_of_abs_cdf_sub_le` supplies the
+  two-sided window `P(|T − x| ≤ w) ≤ 2Aw + 2ε` in both the marginal shape (`hwin`) and, as
+  `measure_abs_sub_le_ofReal`, the `ℝ≥0∞` shape the slice hypothesis wants.
+  **The correction.** Wave 17 recorded the residue as the literal product
+  `P(A ∩ B) ≤ P(A)·(A·2^{k+1}δ + η)`. That is not what the classical route produces, and it
+  should not be asked for: the decomposition gives `P(A ∩ B) ≤ (∑ᵢ P(Aᵢ))·c + P(R)`, and
+  recovering `P(A)` on the right would need a *lower* bound on `P(A)` in terms of the
+  one-coordinate tails — a small-ball statement that is false in general (a sum can be large
+  with every summand moderate) and that the peeled arithmetic never uses.
+  `abs_measure_le_sub_le_of_peel_window` is therefore only worth keeping because it names the
+  product form; `abs_measure_le_sub_le_of_peel_strata` is the assembly the route actually feeds,
+  and `sum_dyadic_strata_le` still verifies the arithmetic at `O(n⁻¹)`.
+  **What is left of (X3) is two inputs**, both now sharply delimited:
+  (a) *the conditional window bound*: `Q{z : |T(insertNth i y z) − x| ≤ w} ≤ 2Aw + 2η`, uniformly
+      in the frozen value `y`. By `measure_abs_sub_le_ofReal` this reduces to a distributional
+      approximation for `T` **with one coordinate frozen** — a root law of the same kind on the
+      remaining `n` coordinates, but with an `n`-dependent shift and scale inherited from the
+      frozen coordinate. Transferring the (M1)(b) expansion to the retained block *uniformly
+      over the frozen value* is the honest remaining content.
+  (b) *the truncated-sum remainder* `P(λ < |∑ᵢ Ỹ(ωᵢ)|)` with `|Ỹ| ≤ τ`. **Chebyshev is not
+      enough, and this is worth recording because it is the natural first attempt**: truncation
+      does not decrease the second moment, so `P ≤ n E[Y²]/λ²` is *exactly* the untruncated
+      Chebyshev bound and the decomposition has gained nothing. What closes it is an exponential
+      (Bernstein / Fuk–Nagaev) bound for sums of bounded independent summands, at the exponents
+      `λ ≍ 2ᵏ n^{1/6}`, `τ ≍ λ√n`. Mathlib has no Bernstein inequality for bounded independent
+      summands, and neither `ForMathlib/SteinMethod` nor `ForMathlib/CombinatorialCLT` supplies
+      one. So (X3) is now **one missing analytic tool plus one transfer**, not an unformalised
+      classical argument.
+* (X2) **The multilinear wiring is NOT free — wave 17's "neither of those is an obstruction" is
+  wrong for this half.** The algebra is free, as recorded: `multiCharFun_vecRootLaw` supplies the
+  weights `uv`, `u³`, `uv²` and `(uv)²` that expanding `E[e^{iθHₙ}]` in powers of `r = n^{-1/2}`
+  produces. The *analysis* is not. An `O(n⁻¹)` remainder requires the expansion to order `r²`,
+  and the Taylor remainder of the exponential at that order is
+  `‖e^{iz} − ∑_{j<3}(iz)^j/j!‖ ≤ |z|³/6` with `z = θ(−uvr/2 + u³r²/2 + 3uv²r²/8)`, whose
+  expectation is of order `E[|u|³|v|³] r³`. That is a **third** moment of `v`, i.e. `E|X − μ|⁶`;
+  the second-order truncation `|z|²/2` is no better, since `E[u²v²]` expands into
+  `E[(X−μ)²((X−μ)²−σ²)²] ≍ E X⁶` as well. Under a **fourth** moment the surrogate's transform
+  therefore needs the same truncation apparatus as (X3)(b) — which is exactly why Hall truncates
+  the summands at `√n` before expanding. This is recorded rather than built, so that no later
+  wave takes wave 17's "free composition" at face value.
+
+Net after wave 18 the residue is **two** items, and they share a tool:
+(i) an exponential inequality for sums of bounded independent summands (Bernstein / Fuk–Nagaev),
+consumed both by the truncated-sum remainder of (X3)(b) and by the truncation that makes the
+(X2) multilinear expansion legitimate under a fourth moment;
+(ii) the transfer of the (M1)(b) expansion to the `n`-coordinate block obtained by freezing one
+coordinate, uniformly in the frozen value, which is (X3)(a).
+Proved and axiom-clean: (S1), (S2), (M1)(b) for linear weights with the `φ^{n−1}` bookkeeping,
+the multilinear identity (X2), the deterministic core of (M2) and all three of its assemblies
+(single-scale, dyadically peeled, per-stratum), the marginal and two-sided anti-concentration
+statements, **the whole of (M3) including the Cramér tail of the bivariate root**, uniform
+Riemann–Lebesgue on totally bounded and compactly parametrised `L¹` families, both
+quadratic-phase regimes, and the four conditioning bricks of (X3). -/
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
@@ -3648,15 +4244,33 @@ The other two items wave 15 recorded are now closed and axiom-clean: the `|t₁|
 `multiCharFun_vecRootLaw`), which supplies the bilinear, trilinear and quartic weights that the
 degree-four surrogate's characteristic function consumes.
 
+**After the wave-18 re-derivation the residue over there is two items, and this corollary still
+adds nothing to either.** (M3) is now closed end to end — the multivariate Cramér condition for
+the parabola-carried law of `studentPair F` (`vecCramerCondition_map_studentPair`, via the
+identification of the projected characteristic function with a quadratic-phase integral in
+`charFun_map_studentPair_eq`) and with it the Cramér tail of the bivariate root
+(`exists_bound_norm_charFun_vecRootLaw_studentPair`). The classical route to (X3) is built:
+the independence of the retained block (`measure_inter_prod_le`, `measure_pi_inter_coord_le`),
+the one-large-summand decomposition (`subset_union_large_summand`), the union bound over the
+dominant indices (`measure_pi_inter_le_of_large_summand`), the two-sided window
+(`measure_abs_sub_le_of_abs_cdf_sub_le`) and the assembly that consumes them
+(`abs_measure_le_sub_le_of_peel_strata`). What remains is (i) an exponential inequality for sums
+of bounded independent summands, needed both for the truncated-sum remainder of (X3) and for the
+truncation that legitimises the multilinear expansion under a fourth moment, and (ii) the
+transfer of the (M1)(b) expansion to the block obtained by freezing one coordinate, uniformly in
+the frozen value.
+
 Closed and axiom-clean over there: (S1) the bivariate expansion, (S2) the exact reduction of
 the studentized root to a bivariate mean, (M1)(b) the mixed-characteristic-function expansion
 for linear weights *together with* the one-factor `φ^{n−1}` bookkeeping
-(`norm_mixCharFun_vecRootLaw_sub_charFun_le`), the deterministic core of (M2) in its corrected
-third-order form together with both the single-scale and the dyadically peeled assemblies, the
-marginal anti-concentration statements, the whole of (M3) — the direction-uniformity, the
-transfer of the Cramér tail to the vector root (`norm_charFun_vecRootLaw_le_pow`, which removes
-the need for Hall's conditioning device altogether) and both quadratic-phase regimes — and
-uniform Riemann–Lebesgue on totally bounded and on compactly parametrised `L¹` families. -/
+(`norm_mixCharFun_vecRootLaw_sub_charFun_le`), the multilinear identity, the deterministic core
+of (M2) in its corrected third-order form together with all three of its assemblies, the
+marginal and two-sided anti-concentration statements, **the whole of (M3)** — the
+direction-uniformity, the multivariate Cramér condition for the studentizing pair, the transfer
+of the Cramér tail to the vector root (`norm_charFun_vecRootLaw_le_pow`, which removes the need
+for Hall's conditioning device altogether) and both quadratic-phase regimes — uniform
+Riemann–Lebesgue on totally bounded and on compactly parametrised `L¹` families, and the
+conditioning bricks of (X3). -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
