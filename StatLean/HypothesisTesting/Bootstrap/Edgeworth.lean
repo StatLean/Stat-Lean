@@ -4900,12 +4900,18 @@ too: `measure_norm_gt_le_fourth_moment` is Markov on the plane,
 and `tail_ledger_exponent` turns `O(n/M⁴)` into `O(n^{-3/2})` at `M = n^{5/8}` exactly. This is
 the only probabilistic input of the three, and it is the line that *forces* the bulk radius.
 
-**One `sorry` after wave 34, and it is not (A).** (A) is proved: the mass bound is *not* an
-integration-by-parts estimate at all but a continuity statement about
-`𝓢 --𝓕--> 𝓢 --toLp 1--> L¹`, and what is left of it is the elementary
+**One `sorry` after wave 35, and it is (B).** (A) is **proved end to end**: the mass bound is
+*not* an integration-by-parts estimate at all but a continuity statement about
+`𝓢 --𝓕--> 𝓢 --toLp 1--> L¹` (wave 34), and its last elementary residue
 `exists_norm_iteratedFDeriv_bulkMultiplier_le` --- one bound on `‖D^m g‖_∞`, polynomial in `n`
-and `1 + |θ|`, at each fixed order `m`. (B) is untouched. (C), the assembly below, and the
-exponent ledger are proved. -/
+and `1 + |θ|`, at each fixed order `m` --- is closed by wave 35, through the graded derivative
+calculus `gradedBound_const`/`gradedBound_coord`/`gradedBound_mul`/`gradedBound_add` and
+`norm_iteratedFDeriv_cubic_le`. (C), the assembly below, and the exponent ledger are proved.
+
+(B) is the only open item. Wave 35 proves its *identity* half --- `integral_expPhase_ibp`, one
+integration by parts against a non-vanishing phase, together with `contDiff_ibpStep` and
+`hasCompactSupport_ibpStep`, which make the five-fold iteration legitimate --- and leaves the
+*quantitative* half open, with its three pieces named on the theorem itself. -/
 
 /-! ### Input (A), first half: the transform of the bulk multiplier is integrable
 
@@ -9368,7 +9374,8 @@ certificate's residue is (B) plus that brick; this theorem and its corollary are
   is the *only* place the bulk radius enters (A); (A) would hold at any `M` polynomial in `n`,
   which is why the ledger's choice `M = n^{5/8}` is dictated by (C) and (B) alone.
 
-* **THE RESIDUE OF (A) IS ONE ELEMENTARY BOUND**, `exists_norm_iteratedFDeriv_bulkMultiplier_le`:
+* **THE RESIDUE OF (A) WAS ONE ELEMENTARY BOUND, AND WAVE 35 CLOSES IT** ---
+  `exists_norm_iteratedFDeriv_bulkMultiplier_le`:
   for each fixed `m`, `‖D^m g‖_∞ ≤ A n^K (1 + |θ|)^K`. The route is fixed and every tool for it
   is in the pin: `norm_iteratedFDeriv_mul_le` splits `χ(·/M)·e^{iθQ}`;
   `norm_iteratedFDeriv_comp_le` bounds the exponential by `m!·C·D^m` with `C = 1` (every
@@ -9381,6 +9388,15 @@ certificate's residue is (B) plus that brick; this theorem and its corollary are
   which moves all of the `n`-dependence into the three scalar coefficients of `Q`. **This is a
   budget statement, not a verdict: nothing about it is structural, and the constants may be as
   crude as one likes --- only the degree has to be independent of `n` and `θ`, and it is.**
+  **Wave 35 executed exactly this, with one deviation: the dilation trick the note prescribes is
+  not needed for the cut-off either.** `norm_iteratedFDeriv_bulkCutoff_dilate_le` bounds
+  `‖D^i χ(·/M)‖` by `‖D^i χ‖_∞·‖M^{-1}·id‖^i ≤ ‖D^i χ‖_∞` directly
+  (`ContinuousLinearMap.iteratedFDeriv_comp_right` plus
+  `ContinuousMultilinearMap.norm_compContinuousLinearMap_le`), because `M = n^{5/8} ≥ 1` makes
+  the chain-rule factor a *gain*, not a cost; the `M`-dependent-constant trap is avoided by never
+  taking a supremum on the big ball at all. All of the `n`-dependence sits, as predicted, in the
+  three scalar coefficients of `Q` --- `a = −θr/(2σ³)`, `b = θr²/(2σ³)`, `c = 3θr²/(8σ⁵)` --- and
+  in `(1 + ‖w‖)³ ≤ 27n³` on the support. The exponent is `K = 3m`.
 
 * **THE WAVE-31 SLOPE ARITHMETIC IS CONFIRMED, INDEPENDENTLY.** `deltaSurrogate_slope_ge` proves
   `5/6 ≤ 1 − x/2 + 3x²/8`, and the bound is *attained* at `x = 2/3`, so `5/6` is sharp and not a
@@ -9404,7 +9420,38 @@ range), `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` fed by the certi
 range), the Esseen chain `esseen_split` / `abs_measure_Iic_sub_densityCDF_le_charFun` at
 `δ = n⁻¹`, `ρ = c√n`, and the peeled window `abs_measure_le_sub_le_of_peel_strata` with
 `sum_dyadic_strata_le`. No missing analytic tool is known; the assembly was **not attempted in
-wave 31 and not attempted in wave 33**, and is not claimed. -/
+wave 31 and not attempted in wave 33**, and is not claimed.
+
+**Status after wave 35. Input (A) is COMPLETE. The certificate's residue is exactly (B), and
+(B)'s residue is exactly its quantitative half. This theorem and its corollary are untouched.**
+
+* **(A) IS CLOSED.** `exists_norm_iteratedFDeriv_bulkMultiplier_le` is proved, so
+  `exists_seminorm_bulkMultiplier_le` and `exists_integral_norm_fourier_bulkMultiplier_le` are
+  proved outright. The tool that did it is a small **graded derivative calculus** on the plane
+  --- `gradedBound_const`, `gradedBound_coord`, `gradedBound_mul` (Leibniz, constant `2^m`),
+  `gradedBound_add`, `gradedBound_const_mono`, `gradedBound_deg_mono`, over the base case
+  `norm_iteratedFDeriv_clm_le` --- which is reusable, and is the natural place for (B)'s missing
+  piece to live.
+
+* **THE IDENTITY HALF OF (B) IS CLOSED.** `integral_expPhase_ibp` is one integration by parts
+  against a non-vanishing phase on the line, `∫ f e^{iΦ} = −∫ ∂(f/(i∂Φ)) e^{iΦ}`, proved from
+  `integral_mul_deriv_eq_deriv_mul_of_integrable`: the boundary terms are free because `f` has
+  compact support, and all three integrability side conditions are
+  continuity-with-compact-support. `contDiff_ibpStep` and `hasCompactSupport_ibpStep` say that
+  `L` preserves the class, so the five-fold iteration the ledger prices is legitimate *as
+  stated*, not merely plausible.
+
+* **WHAT (B) STILL NEEDS IS QUANTITATIVE, IN THREE NAMED PIECES**, recorded on the theorem: (i)
+  the graded bound on `‖L^k f‖_{L¹(dw₀)}` for `k ≤ 5`, which needs the graded calculus extended
+  to **negative** powers --- derivatives of `1/∂_{w₀}Φ` out of the lower bound
+  `|∂_{w₀}Φ| ≥ (4/3)|θ|/σ`, the branch that produces the `(27/16)Mr²/(σ|θ|)` half of
+  `bulk_gain_phase_le`; (ii) the fibrewise reduction of `𝓕 g` to an iterated integral; (iii) the
+  outer `w₁`- and `s`-bookkeeping that `leakage_ledger_exponent` consumes. **The estimate was not
+  forced and is not claimed.**
+
+* **NOTHING ELSE MOVED.** (C), the ledger, the slope arithmetic and
+  `exists_fourierCertificate_deltaSurrogate` are as wave 34 left them, and the assembly of this
+  theorem was again **not attempted**. -/
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
