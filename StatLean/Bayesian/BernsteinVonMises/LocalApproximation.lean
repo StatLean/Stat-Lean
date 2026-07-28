@@ -1282,6 +1282,311 @@ private lemma lintegral_bvmPairDefect_le
         lintegral_bvmJointDens_mul hκ hM_joint h measurable_const
     _ = ENNReal.ofReal (f (bvmLocalUnscale θ₀ n h)) := by simp
 
+-- LEAN-ONLY: Markov-type split for a `[0,1]`-valued integrand.
+private lemma lintegral_le_add_measure_gt {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsProbabilityMeasure P] {Y : Ω → ℝ≥0∞} (hY : Measurable Y) (hY1 : ∀ ω, Y ω ≤ 1)
+    (a : ℝ≥0∞) : ∫⁻ ω, Y ω ∂P ≤ a + P {ω | a < Y ω} := by
+  have hS : MeasurableSet {ω | a < Y ω} := measurableSet_lt measurable_const hY
+  rw [← lintegral_add_compl Y hS]
+  have h1 : ∫⁻ ω in {ω | a < Y ω}, Y ω ∂P ≤ P {ω | a < Y ω} := by
+    calc ∫⁻ ω in {ω | a < Y ω}, Y ω ∂P ≤ ∫⁻ _ in {ω | a < Y ω}, (1 : ℝ≥0∞) ∂P :=
+          lintegral_mono fun ω => hY1 ω
+      _ = P {ω | a < Y ω} := setLIntegral_one _
+  have h2 : ∫⁻ ω in {ω | a < Y ω}ᶜ, Y ω ∂P ≤ a := by
+    calc ∫⁻ ω in {ω | a < Y ω}ᶜ, Y ω ∂P ≤ ∫⁻ _ in {ω | a < Y ω}ᶜ, a ∂P :=
+          setLIntegral_mono_ae measurable_const.aemeasurable
+            (Filter.Eventually.of_forall fun ω hω => by
+              simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_lt] at hω
+              exact hω)
+      _ = a * P {ω | a < Y ω}ᶜ := setLIntegral_const _ _
+      _ ≤ a := by
+          calc a * P {ω | a < Y ω}ᶜ ≤ a * 1 := mul_le_mul_left' prob_le_one _
+            _ = a := mul_one a
+  calc ∫⁻ ω in {ω | a < Y ω}, Y ω ∂P + ∫⁻ ω in {ω | a < Y ω}ᶜ, Y ω ∂P
+      ≤ P {ω | a < Y ω} + a := add_le_add h1 h2
+    _ = a + P {ω | a < Y ω} := add_comm _ _
+
+-- LEAN-ONLY: measurability of the common-support rectangle's complement.
+private lemma measurableSet_bvmBad (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ) :
+    MeasurableSet {ω : Fin n → 𝓧 | ¬ ∀ i, 0 < M.density θ (ω i)} := by
+  have heq : {ω : Fin n → 𝓧 | ¬ ∀ i, 0 < M.density θ (ω i)}
+      = ⋃ i : Fin n, {ω : Fin n → 𝓧 | M.density θ (ω i) ≤ 0} := by
+    ext ω; simp [not_forall, not_lt]
+  rw [heq]
+  exact MeasurableSet.iUnion fun i =>
+    measurableSet_le ((M.density_meas θ).comp (measurable_pi_apply i)) measurable_const
+
+-- LEAN-ONLY: the sampling law at `θ` charges no sample where its own density vanishes.
+private lemma productMeasure_bvmBad_eq_zero
+    -- USER-INPUT: dominated iid model, `κ θ = p_θ · μ`; vdV §10.2, p. 140
+    (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
+    -- LEAN-ONLY: joint measurability of the model densities (regularity)
+    (hM_joint : Measurable (Function.uncurry M.density))
+    (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ) :
+    productMeasure M μ θ n {ω : Fin n → 𝓧 | ¬ ∀ i, 0 < M.density θ (ω i)} = 0 := by
+  classical
+  have hdens_meas : Measurable
+      (Function.uncurry fun θ' (x : 𝓧) => ENNReal.ofReal (M.density θ' x)) :=
+    ENNReal.measurable_ofReal.comp hM_joint
+  have hlikθ : Measurable fun x : Fin n → 𝓧 =>
+      ∏ i, ENNReal.ofReal (M.density θ (x i)) :=
+    Finset.measurable_prod Finset.univ fun i _ =>
+      ENNReal.measurable_ofReal.comp ((M.density_meas θ).comp (measurable_pi_apply i))
+  have hS := measurableSet_bvmBad (M := M) θ n
+  have hPθ : productMeasure M μ θ n = (Measure.pi fun _ : Fin n => μ).withDensity
+      fun x => ∏ i, ENNReal.ofReal (M.density θ (x i)) := by
+    rw [productMeasure_eq_iidKernel_apply hκ θ n]
+    exact iidKernel_withDensity hdens_meas hκ n θ
+  rw [hPθ, withDensity_apply _ hS]
+  refine setLIntegral_eq_zero hS fun ω hω => ?_
+  simp only [Set.mem_setOf_eq, not_forall, not_lt] at hω
+  obtain ⟨i, hi⟩ := hω
+  exact Finset.prod_eq_zero (Finset.mem_univ i) (ENNReal.ofReal_eq_zero.mpr hi)
+
+-- LEAN-ONLY: measurability of the log pair ratio as a statistic.
+private lemma measurable_bvmLogRatio (J : Matrix (Fin k) (Fin k) ℝ)
+    {sc : 𝓧 → EuclideanSpace ℝ (Fin k)} (hsc : Measurable sc) (n : ℕ)
+    (g h : EuclideanSpace ℝ (Fin k)) :
+    Measurable fun ω : Fin n → 𝓧 => bvmLogRatio M f θ₀ J sc n g h ω := by
+  have hsum : Measurable fun ω : Fin n → 𝓧 => ∑ i, sc (ω i) :=
+    Finset.measurable_sum Finset.univ fun i _ => hsc.comp (measurable_pi_apply i)
+  have hscore : Measurable fun ω : Fin n → 𝓧 => scoreSum sc n ω := by
+    simp only [scoreSum]
+    exact hsum.const_smul ((Real.sqrt (n : ℝ))⁻¹)
+  unfold bvmLogRatio
+  refine (((AsymptoticStatistics.AsymptoticRepresentation.logLikelihood_measurable
+    M θ₀ g n).sub (AsymptoticStatistics.AsymptoticRepresentation.logLikelihood_measurable
+    M θ₀ h n)).add measurable_const).sub ?_
+  exact ((measurable_const.inner hscore).sub measurable_const).add measurable_const
+
+-- LEAN-ONLY: measurability of the `ℝ≥0∞` pair ratio as a statistic.
+private lemma measurable_bvmPairRatio
+    (hM_joint : Measurable (Function.uncurry M.density)) (hf : Measurable f)
+    (J : Matrix (Fin k) (Fin k) ℝ) {sc : 𝓧 → EuclideanSpace ℝ (Fin k)} (hsc : Measurable sc)
+    (n : ℕ) (g h : EuclideanSpace ℝ (Fin k)) :
+    Measurable fun ω : Fin n → 𝓧 =>
+      bvmJointDens M f θ₀ n g ω * bvmGaussDens J sc n h ω
+        / (bvmJointDens M f θ₀ n h ω * bvmGaussDens J sc n g ω) := by
+  have hsg := measurable_bvmJointDens_comp (M := M) (θ₀ := θ₀) hM_joint hf n
+    (a := fun _ : Fin n → 𝓧 => g) (b := fun ω => ω) measurable_const measurable_id
+  have hsh := measurable_bvmJointDens_comp (M := M) (θ₀ := θ₀) hM_joint hf n
+    (a := fun _ : Fin n → 𝓧 => h) (b := fun ω => ω) measurable_const measurable_id
+  have htg := measurable_bvmGaussDens_comp J hsc n
+    (a := fun _ : Fin n → 𝓧 => g) (b := fun ω => ω) measurable_const measurable_id
+  have hth := measurable_bvmGaussDens_comp J hsc n
+    (a := fun _ : Fin n → 𝓧 => h) (b := fun ω => ω) measurable_const measurable_id
+  exact (hsg.mul hth).div (hsh.mul htg)
+
+/-- **Fixed-pair vanishing of the pair defect** (vdV p. 143): for fixed `g, h` the
+`μⁿ`-integral of the pair defect tends to zero. This combines `bvmLogRatio_tendsto` with
+mutual contiguity of the local alternatives (to move the exceptional sets, including the
+non-common-support rectangle, from `P^n_{θ₀}` to `P^n_{θ₀+h/√n}`). -/
+private lemma lintegral_bvmPairDefect_tendsto
+    -- USER-INPUT: dominated iid model with normalized densities; vdV §10.2, p. 140
+    (hPDF : IsPDFOf M μ)
+    -- LEAN-ONLY: measurable score (regularity)
+    (hsc : Measurable sc)
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
+    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    (hJ_pd : J.PosDef)
+    -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
+    (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
+      ⟪u, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) v))⟫)
+    -- USER-INPUT: dominated iid model, `κ θ = p_θ · μ`; vdV §10.2, p. 140
+    (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
+    -- LEAN-ONLY: joint measurability of the model densities (regularity)
+    (hM_joint : Measurable (Function.uncurry M.density))
+    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    (hπ : HasLocalDensity π θ₀ r₀ f)
+    (g h : EuclideanSpace ℝ (Fin k)) :
+    Tendsto (fun n => ∫⁻ ω, bvmPairDefect M f θ₀ J sc n h g ω
+        ∂(Measure.pi fun _ : Fin n => μ)) atTop (𝓝 0) := by
+  classical
+  haveI hProb : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
+      IsProbabilityMeasure (productMeasure M μ θ n) := fun θ n =>
+    AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
+      M μ hPDF θ n
+  set ρ : ∀ n : ℕ, (Fin n → 𝓧) → ℝ≥0∞ := fun n ω =>
+    bvmJointDens M f θ₀ n g ω * bvmGaussDens J sc n h ω
+      / (bvmJointDens M f θ₀ n h ω * bvmGaussDens J sc n g ω) with hρdef
+  have hρmeas : ∀ n, Measurable (ρ n) := fun n =>
+    measurable_bvmPairRatio (M := M) (θ₀ := θ₀) hM_joint hπ.measurable J hsc n g h
+  have hYmeas : ∀ n, Measurable fun ω : Fin n → 𝓧 => 1 - ρ n ω := fun n =>
+    measurable_const.sub (hρmeas n)
+  -- the pair defect integral factorizes
+  have hident : ∀ n : ℕ, ∫⁻ ω, bvmPairDefect M f θ₀ J sc n h g ω
+        ∂(Measure.pi fun _ : Fin n => μ)
+      = ENNReal.ofReal (f (bvmLocalUnscale θ₀ n h))
+          * ∫⁻ ω, (1 - ρ n ω) ∂(productMeasure M μ (bvmLocalUnscale θ₀ n h) n) := by
+    intro n
+    rw [← lintegral_bvmJointDens_mul hκ hM_joint h (hYmeas n)]
+    exact lintegral_congr fun ω => bvmPairDefect_eq n h g ω
+  -- the deterministic prefactor converges
+  have hunsc : Tendsto (fun n : ℕ => bvmLocalUnscale θ₀ n h) atTop (𝓝 θ₀) := by
+    have hsq : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹) atTop (𝓝 0) :=
+      tendsto_inv_atTop_zero.comp (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
+    have hsm : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹ • h) atTop (𝓝 ((0 : ℝ) • h)) :=
+      hsq.smul_const h
+    have := tendsto_const_nhds (x := θ₀) (f := (atTop : Filter ℕ)) |>.add hsm
+    simpa [bvmLocalUnscale] using this
+  have hfpre : Tendsto (fun n : ℕ => ENNReal.ofReal (f (bvmLocalUnscale θ₀ n h))) atTop
+      (𝓝 (ENNReal.ofReal (f θ₀))) :=
+    (ENNReal.continuous_ofReal.tendsto _).comp (hπ.continuousAt.tendsto.comp hunsc)
+  -- the main convergence
+  have hmain : Tendsto (fun n : ℕ =>
+      ∫⁻ ω, (1 - ρ n ω) ∂(productMeasure M μ (bvmLocalUnscale θ₀ n h) n)) atTop (𝓝 0) := by
+    have hcontig : ∀ x : EuclideanSpace ℝ (Fin k),
+        AsymptoticStatistics.Contiguity.MutuallyContiguous (ι := ℕ)
+          (Ω := fun n => Fin n → 𝓧) atTop (fun n => productMeasure M μ θ₀ n)
+          (fun n => productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • x) n) :=
+      fun x => mutuallyContiguous_local_alternative hPDF hsc hDQM hJ_pd hJ x
+    -- the three exceptional rectangles vanish under `P^n_{θ₀+h/√n}`
+    have hbad : ∀ x : EuclideanSpace ℝ (Fin k),
+        Tendsto (fun n : ℕ => productMeasure M μ (bvmLocalUnscale θ₀ n h) n
+          {ω : Fin n → 𝓧 | ¬ ∀ i, 0 < M.density (bvmLocalUnscale θ₀ n x) (ω i)})
+          atTop (𝓝 0) := by
+      intro x
+      refine (hcontig h).1 _ (fun n => measurableSet_bvmBad (M := M) _ n) ?_
+      refine (hcontig x).2 _ (fun n => measurableSet_bvmBad (M := M) _ n) ?_
+      simpa using tendsto_const_nhds (x := (0 : ℝ≥0∞)) (f := (atTop : Filter ℕ))
+        |>.congr fun n => (productMeasure_bvmBad_eq_zero hκ hM_joint
+          (bvmLocalUnscale θ₀ n x) n).symm
+    have hbad0 : Tendsto (fun n : ℕ => productMeasure M μ (bvmLocalUnscale θ₀ n h) n
+        {ω : Fin n → 𝓧 | ¬ ∀ i, 0 < M.density θ₀ (ω i)}) atTop (𝓝 0) := by
+      refine (hcontig h).1 _ (fun n => measurableSet_bvmBad (M := M) _ n) ?_
+      simpa using tendsto_const_nhds (x := (0 : ℝ≥0∞)) (f := (atTop : Filter ℕ))
+        |>.congr fun n => (productMeasure_bvmBad_eq_zero hκ hM_joint θ₀ n).symm
+    -- the prior density is positive along both shrinking sequences
+    have hfpos : ∀ x : EuclideanSpace ℝ (Fin k),
+        ∀ᶠ n : ℕ in atTop, 0 < f (bvmLocalUnscale θ₀ n x) := by
+      intro x
+      have hx : Tendsto (fun n : ℕ => bvmLocalUnscale θ₀ n x) atTop (𝓝 θ₀) := by
+        have hsq : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹) atTop (𝓝 0) :=
+          tendsto_inv_atTop_zero.comp (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
+        have hsm : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹ • x) atTop (𝓝 ((0 : ℝ) • x)) :=
+          hsq.smul_const x
+        have := tendsto_const_nhds (x := θ₀) (f := (atTop : Filter ℕ)) |>.add hsm
+        simpa [bvmLocalUnscale] using this
+      exact (hπ.continuousAt.tendsto.comp hx).eventually
+        (eventually_gt_nhds hπ.pos)
+    -- the ε-level bound
+    have hlim : ∀ ε₀ : ℝ, 0 < ε₀ → ε₀ < 1 → ∀ᶠ n : ℕ in atTop,
+        ∫⁻ ω, (1 - ρ n ω) ∂(productMeasure M μ (bvmLocalUnscale θ₀ n h) n)
+          ≤ ENNReal.ofReal (2 * ε₀) := by
+      intro ε₀ hε₀ hε₀1
+      have h1ε : (0 : ℝ) < 1 - ε₀ := by linarith
+      set c : ℝ := -Real.log (1 - ε₀) with hcdef
+      have hcpos : 0 < c := by
+        rw [hcdef, neg_pos]
+        exact Real.log_neg h1ε (by linarith)
+      have hlr : Tendsto (fun n : ℕ => productMeasure M μ (bvmLocalUnscale θ₀ n h) n
+          {ω : Fin n → 𝓧 | c ≤ |bvmLogRatio M f θ₀ J sc n g h ω|}) atTop (𝓝 0) := by
+        refine (hcontig h).1 _ (fun n => measurableSet_le measurable_const
+          (measurable_bvmLogRatio (M := M) (θ₀ := θ₀) (f := f) J hsc n g h).abs) ?_
+        have hreal := bvmLogRatio_tendsto (M := M) (f := f) (π := π) (r₀ := r₀)
+          hPDF hsc hDQM hJ hπ g h c hcpos
+        have hcong : ∀ n : ℕ, ENNReal.ofReal ((productMeasure M μ θ₀ n).real
+            {ω : Fin n → 𝓧 | c ≤ |bvmLogRatio M f θ₀ J sc n g h ω|})
+            = productMeasure M μ θ₀ n
+                {ω : Fin n → 𝓧 | c ≤ |bvmLogRatio M f θ₀ J sc n g h ω|} := fun n => by
+          rw [measureReal_def, ENNReal.ofReal_toReal (measure_ne_top _ _)]
+        have h2 := (ENNReal.continuous_ofReal.tendsto (0 : ℝ)).comp hreal
+        rw [ENNReal.ofReal_zero] at h2
+        exact Filter.Tendsto.congr (fun n => by
+          simp only [Function.comp_apply]; exact hcong n) h2
+      have hsum : Tendsto (fun n : ℕ =>
+          productMeasure M μ (bvmLocalUnscale θ₀ n h) n
+              {ω : Fin n → 𝓧 | ¬ ∀ i, 0 < M.density θ₀ (ω i)}
+            + (productMeasure M μ (bvmLocalUnscale θ₀ n h) n
+                {ω : Fin n → 𝓧 | ¬ ∀ i, 0 < M.density (bvmLocalUnscale θ₀ n g) (ω i)}
+              + (productMeasure M μ (bvmLocalUnscale θ₀ n h) n
+                  {ω : Fin n → 𝓧 | ¬ ∀ i, 0 < M.density (bvmLocalUnscale θ₀ n h) (ω i)}
+                + productMeasure M μ (bvmLocalUnscale θ₀ n h) n
+                    {ω : Fin n → 𝓧 | c ≤ |bvmLogRatio M f θ₀ J sc n g h ω|})))
+          atTop (𝓝 0) := by
+        simpa using hbad0.add ((hbad g).add ((hbad h).add hlr))
+      have hev := (ENNReal.tendsto_nhds_zero.mp hsum) (ENNReal.ofReal ε₀)
+        (by simpa using hε₀)
+      filter_upwards [hev, hfpos g, hfpos h] with n hn hfg hfh
+      have hincl : {ω : Fin n → 𝓧 | ENNReal.ofReal ε₀ < 1 - ρ n ω}
+          ⊆ {ω : Fin n → 𝓧 | ¬ ∀ i, 0 < M.density θ₀ (ω i)}
+            ∪ ({ω : Fin n → 𝓧 | ¬ ∀ i, 0 < M.density (bvmLocalUnscale θ₀ n g) (ω i)}
+              ∪ ({ω : Fin n → 𝓧 | ¬ ∀ i, 0 < M.density (bvmLocalUnscale θ₀ n h) (ω i)}
+                ∪ {ω : Fin n → 𝓧 | c ≤ |bvmLogRatio M f θ₀ J sc n g h ω|})) := by
+        intro ω hω
+        by_contra hcon
+        simp only [Set.mem_union, not_or] at hcon
+        obtain ⟨hc0, hcg, hch, hclr⟩ :
+            ω ∉ {ω : Fin n → 𝓧 | ¬ ∀ i, 0 < M.density θ₀ (ω i)} ∧
+            ω ∉ {ω : Fin n → 𝓧 | ¬ ∀ i, 0 < M.density (bvmLocalUnscale θ₀ n g) (ω i)} ∧
+            ω ∉ {ω : Fin n → 𝓧 | ¬ ∀ i, 0 < M.density (bvmLocalUnscale θ₀ n h) (ω i)} ∧
+            ω ∉ {ω : Fin n → 𝓧 | c ≤ |bvmLogRatio M f θ₀ J sc n g h ω|} :=
+          ⟨hcon.1, hcon.2.1, hcon.2.2.1, hcon.2.2.2⟩
+        simp only [Set.mem_setOf_eq, not_not] at hc0 hcg hch
+        simp only [Set.mem_setOf_eq, not_le] at hclr
+        have hexp : ρ n ω
+            = ENNReal.ofReal (Real.exp (bvmLogRatio M f θ₀ J sc n g h ω)) :=
+          bvmPairRatio_eq_exp_bvmLogRatio hfg hfh hc0 hcg hch
+        have hle1 : ENNReal.ofReal ε₀ ≤ 1 := by
+          rw [← ENNReal.ofReal_one]
+          exact ENNReal.ofReal_le_ofReal hε₀1.le
+        have hlt : ρ n ω < 1 - ENNReal.ofReal ε₀ := by
+          by_contra hge
+          rw [not_lt] at hge
+          have h1 : (1 : ℝ≥0∞) ≤ ENNReal.ofReal ε₀ + ρ n ω := by
+            calc (1 : ℝ≥0∞) = ENNReal.ofReal ε₀ + (1 - ENNReal.ofReal ε₀) :=
+                  (add_tsub_cancel_of_le hle1).symm
+              _ ≤ ENNReal.ofReal ε₀ + ρ n ω := add_le_add le_rfl hge
+          have hmono : (1 : ℝ≥0∞) - ρ n ω ≤ ENNReal.ofReal ε₀ := tsub_le_iff_right.mpr h1
+          exact absurd (lt_of_lt_of_le hω hmono) (lt_irrefl _)
+        rw [hexp, show (1 : ℝ≥0∞) - ENNReal.ofReal ε₀ = ENNReal.ofReal (1 - ε₀) by
+          rw [ENNReal.ofReal_sub _ hε₀.le, ENNReal.ofReal_one]] at hlt
+        have hlt' : Real.exp (bvmLogRatio M f θ₀ J sc n g h ω) < 1 - ε₀ :=
+          (ENNReal.ofReal_lt_ofReal_iff h1ε).mp hlt
+        have hlog : bvmLogRatio M f θ₀ J sc n g h ω < Real.log (1 - ε₀) :=
+          (Real.lt_log_iff_exp_lt h1ε).mpr hlt'
+        have : c ≤ |bvmLogRatio M f θ₀ J sc n g h ω| := by
+          rw [hcdef]
+          refine le_trans (le_of_eq rfl) ?_
+          rw [abs_of_neg (by linarith [Real.log_neg h1ε (by linarith : 1 - ε₀ < 1)])]
+          linarith
+        exact absurd this (not_le.mpr hclr)
+      calc ∫⁻ ω, (1 - ρ n ω) ∂(productMeasure M μ (bvmLocalUnscale θ₀ n h) n)
+          ≤ ENNReal.ofReal ε₀ + productMeasure M μ (bvmLocalUnscale θ₀ n h) n
+              {ω : Fin n → 𝓧 | ENNReal.ofReal ε₀ < 1 - ρ n ω} :=
+            lintegral_le_add_measure_gt _ (hYmeas n) (fun ω => tsub_le_self) _
+        _ ≤ ENNReal.ofReal ε₀ + (productMeasure M μ (bvmLocalUnscale θ₀ n h) n
+                {ω : Fin n → 𝓧 | ¬ ∀ i, 0 < M.density θ₀ (ω i)}
+              + (productMeasure M μ (bvmLocalUnscale θ₀ n h) n
+                  {ω : Fin n → 𝓧 | ¬ ∀ i, 0 < M.density (bvmLocalUnscale θ₀ n g) (ω i)}
+                + (productMeasure M μ (bvmLocalUnscale θ₀ n h) n
+                    {ω : Fin n → 𝓧 | ¬ ∀ i, 0 < M.density (bvmLocalUnscale θ₀ n h) (ω i)}
+                  + productMeasure M μ (bvmLocalUnscale θ₀ n h) n
+                      {ω : Fin n → 𝓧 | c ≤ |bvmLogRatio M f θ₀ J sc n g h ω|}))) := by
+            refine add_le_add le_rfl (le_trans (measure_mono hincl) ?_)
+            refine le_trans (measure_union_le _ _) (add_le_add le_rfl ?_)
+            exact le_trans (measure_union_le _ _) (add_le_add le_rfl (measure_union_le _ _))
+        _ ≤ ENNReal.ofReal ε₀ + ENNReal.ofReal ε₀ := add_le_add le_rfl hn
+        _ = ENNReal.ofReal (2 * ε₀) := by
+            rw [two_mul, ENNReal.ofReal_add hε₀.le hε₀.le]
+    refine ENNReal.tendsto_nhds_zero.mpr fun ε hε => ?_
+    rcases eq_or_ne ε ∞ with rfl | hεT
+    · exact Eventually.of_forall fun n => le_top
+    · have hεr : 0 < ε.toReal := ENNReal.toReal_pos hε.ne' hεT
+      refine (hlim (min (1 / 2) (ε.toReal / 4)) (lt_min (by norm_num) (by linarith))
+        (lt_of_le_of_lt (min_le_left _ _) (by norm_num))).mono fun n hn => ?_
+      refine le_trans hn ?_
+      have hle : 2 * min (1 / 2 : ℝ) (ε.toReal / 4) ≤ ε.toReal := by
+        have := min_le_right (1 / 2 : ℝ) (ε.toReal / 4)
+        linarith
+      calc ENNReal.ofReal (2 * min (1 / 2 : ℝ) (ε.toReal / 4))
+          ≤ ENNReal.ofReal ε.toReal := ENNReal.ofReal_le_ofReal hle
+        _ = ε := ENNReal.ofReal_toReal hεT
+  have := ENNReal.Tendsto.mul hfpre (Or.inr (by simp)) hmain (Or.inr ENNReal.ofReal_ne_top)
+  rw [mul_zero] at this
+  exact this.congr fun n => (hident n).symm
+
 /-- **Step B: the conditioned Bernstein–von Mises convergence** (vdV pp. 142–143). For every
 fixed radius `R > 0` and every `δ > 0`, the `P^n_{θ₀}`-probability that the conditioned
 local posterior and the conditioned Gaussian differ by at least `δ` in total variation tends
