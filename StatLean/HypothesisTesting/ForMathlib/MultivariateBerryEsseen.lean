@@ -125,9 +125,10 @@ whereas `D³` of a mollified indicator is supported on the `ε`-shell of `∂B`.
 factor `P(hybrid ∈ shell)`, which requires the anti-concentration bound for the **hybrid** laws,
 not just for `γ`; that is a self-improving induction over `n` (`Δ ≤ A ε^{-3} δ (C_k ε + 2Δ) +
 C_k ε`, which closes at `Δ ≲ C_k δ^{1/3}` and, iterated with the Gaussian smoothing above, at
-the sharp rate). That induction is Bentkus's actual argument and is not attempted here. So the
-honest ceiling of the *non-inductive* elementary route is `(β/√n)^{1/2}`, and the residual gap
-to Bentkus is a further factor `(β/√n)^{1/2}`.
+the sharp rate). That induction is Bentkus's actual argument; its two ingredients are proved in
+wave 19 (see the amendment below), its probabilistic assembly is not. So the honest ceiling of
+the *non-inductive* elementary route is `(β/√n)^{1/2}`, and the residual gap to Bentkus is a
+further factor `(β/√n)^{1/2}`.
 
 **Status of the improvement (wave 16: COMPLETE, `0`-sorry and axiom-clean).** The improved
 headline is
@@ -175,6 +176,47 @@ to it). The ingredients:
   `3C/√J ≤ 3C/(ε√n)`. The bookkeeping `J ≤ ε² n + 2` is only useful when `ε² n ≥ 1`; in the
   complementary window the asserted bound already exceeds `1` (because `β ≥ k^{3/2} ≥ 1`), so
   that case is discharged from `μₙ(B) ≤ 1` alone.
+
+## Wave-19 amendment: the two ingredients of the induction, and what is still missing
+
+The wave-16 note named the missing induction as a *two-part project* rather than a verdict. Both
+parts are now discharged, each as a standalone, `0`-sorry, axiom-clean statement; the
+declaration `SmoothTestLargeK.bentkus_berry_esseen_convex` nevertheless stays `sorry`, because
+the two parts do not by themselves produce the recursion — see below.
+
+**(1) The weighted Cameron–Martin remainder** (`integral_abs_mul_vecTiltRemainder_le`, with the
+localised corollary `abs_integral_mul_vecTiltRemainder_le_of_support`). The existing
+`integral_abs_vecTiltRemainder_le` bounds the remainder against `‖G‖_∞ = 1`; the localisation
+needs it integrated against `|G|`. Cauchy–Schwarz reduces this to an `L²(γ)` bound on the
+remainder, `integral_sq_vecTiltRemainder_le : ∫ R_w² dγ ≤ tiltSqConst ‖w‖⁶` for `‖w‖ ≤ 1`,
+proved by the same exponential envelope as the `L¹` bound (whose square is again Gaussian
+integrable, `sq_tiltEnvSmall_le`) and by the same one-dimensional-marginal reduction — so the
+constant is again **dimension-free** and the power of `‖w‖` is still `3`. The upshot is that a
+test function supported on the `ε`-shell of `∂B` costs `√(γ(shell))` instead of `1`.
+(`‖w‖ ≤ 1` is not a defect: the `L²` statement is *false* for large tilts, where
+`∫ exp(2st − s²) dγ = exp(s²)`; the telescope only ever uses `‖w‖ = c/σⱼ ≤ 1`.)
+
+**(2) The self-improving recursion**, solved in the `SelfImproving` section at the end of the
+file. Three shapes, all proved:
+
+* `Δ ≤ A δ ε⁻³ (C ε + 2Δ) + C ε` (the wave-16 note verbatim) ⟹ `Δ³ ≤ 63 C³ A δ`;
+* `Δ ≤ A δ ε⁻¹ (C ε + 2Δ) + C ε` (after the Gaussian smoothing that this file already proves,
+  which is what turns `ε⁻³` into `ε⁻¹`) ⟹ `Δ ≤ 10 A C δ`, i.e. **exactly the sharp `β/√n`
+  rate**, with the dimension only in `C = C_k`;
+* `Δ ≤ A δ ε⁻¹ √(C ε + 2Δ) + C ε` — the shape the `L²` weighting of (1) actually delivers —
+  ⟹ `Δ³ ≤ 216 (C A δ)²`, i.e. `O(n^{-1/3})`.
+
+**What is still missing**, and why the headline is not amended: the *production* of the
+hypothesis `hrec`. It requires rerunning `abs_integral_smooth_sub_gaussian_improved` with each
+step estimated by the localised weighted bound instead of the uniform one, and controlling the
+shell probability *of the hybrid law* by the inductive hypothesis. Two structural obstacles are
+recorded in the `SelfImproving` docstring: the `ε`-shell of a convex set is a *difference* of
+two convex sets, so the induction has to run on that class (this is the source of the `2Δ`); and
+the induction is over the whole hybrid family, not over `μₙ` alone. Neither is arithmetic, and
+neither was attempted. The honest summary is therefore unchanged at the level of headlines —
+`berryEsseen_convex_improved` at `(β/√n)^{1/2}` remains the best *proved* convex bound — but the
+gap to Bentkus is now localised in a single, precisely stated probabilistic step rather than in
+"an independent project".
 
 **Reference.** V. Bentkus, "On the dependence of the Berry–Esseen bound on dimension,"
 *J. Statist. Plann. Inference* **113** (2003), 385–402. E. L. Lehmann and J. P. Romano,
