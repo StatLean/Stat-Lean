@@ -5334,7 +5334,83 @@ tail of the bivariate root, uniform Riemann–Lebesgue on totally bounded and co
 parametrised `L¹` families, both quadratic-phase regimes, the four conditioning bricks of (X3),
 **the exponential inequality for bounded independent summands on a product measure, the
 frozen-coordinate transfer, the assembled joint-stratum bound, and the Taylor-to-coordinate-sum
-bridge**. -/
+bridge**.
+
+**Status after the wave-23 re-derivation.** The construction wave 21 named is **built**, and
+building it **overturns wave 21's own verdict** that "no analytic tool for it is missing — what
+is missing is the construction and the assembly". Two genuine analytic items were invisible
+until the construction existed, and both are now visible in named objects. The residue is
+therefore **two** items, not one, and neither is bookkeeping.
+
+* **BUILT — the surrogate is an object and its transform is assembled.**
+  `deltaSurrogate σ r w = u − uvr/2 + u³r²/2 + 3uv²r²/8` on the standardized coordinates
+  `u = w₀/σ`, `v = w₁/σ²`; `exactStudent_eq` identifies the region of
+  `studentizedRootCDF_eq_vecRootLaw` with the studentizing factor the Taylor core estimates, and
+  `abs_exactStudent_sub_deltaSurrogate_le` is the deterministic half of (M2) stated on the
+  bivariate root. `norm_cexp_surrogate_sub_expansion_le` is the pointwise second-order expansion
+  of `e^{iθHₙ}` — expanded to second order because the leading correction is already `O(r)`, so
+  the quartic weight `(uv)²` appears as `(iθq)²/2` with `q = −uvr/2` and is *not* a term of `Hₙ`;
+  reading the expansion off `Hₙ` alone would silently drop it. `coordDir`, `surrW2`, `surrW3a`,
+  `surrW3b`, `surrW4` and the four `multiCharFun_surrW*` identities name the `k = 2, 3, 3, 4`
+  weights; `expansionIntegrand`, `integrable_expansionIntegrand` and
+  `integral_expansionIntegrand_eq` integrate the expansion term by term; and
+  `norm_integral_cexp_deltaSurrogate_sub_le` is the result:
+  `|E[e^{iθHₙ}] − (φ_μ − ic₂M₂ + ic₃M₃ᵃ + ic₄M₃ᵇ − c₅M₄)| ≤ r³ ∫ surrogateRemPoly`
+  at the direction `(θ/σ)•e₀`, with `c₂ = θr/2σ³`, `c₃ = θr²/2σ³`, `c₄ = 3θr²/8σ⁵`,
+  `c₅ = θ²r²/8σ⁶`. It is stated over an **arbitrary** law `μ` of the bivariate root, so the
+  marginal and the additively-perturbed instances the peeled assembly needs are one statement.
+  The cubic exponential remainder it rests on is exported as `norm_cexp_sub_quadratic_le`.
+* **THE FIRST CORRECTION — (X2) supplies the weights but not their values, and for `k ≥ 2` the
+  estimate does not exist.** `multiCharFun_vecRootLaw` is an *identity*: a sum over the `nᵏ`
+  assignments. The only *estimate* in the repository is `norm_mixCharFun_vecRootLaw_sub_le`,
+  which is `k = 1`. Wave 21 read "(X2) supplies exactly the weights the surrogate needs" as
+  meaning the values come with them; they do not.
+  **And the naive extrapolation from `k = 1` is quantitatively wrong, not merely unproved.** For
+  `k = 1` there is only a diagonal: all `n` assignments coincide, and `n·n^{-1/2} = √n` is the
+  whole content. For `k = 2` the assignment sum splits into `n` diagonal terms
+  (`n^{-1}·n·slot_{01}(c)·φ(c)^{n−1}`, of order `1`) and `n(n−1)` off-diagonal ones
+  (`n^{-1}·n(n−1)·slot_0(c)·slot_1(c)·φ(c)^{n−2}`). Each single-slot factor is `O(n^{-1/2})`
+  because `Z` is centred, so the off-diagonal block is `n^{-1}·n²·O(n⁻¹) = O(1)` — **exactly the
+  same order as the diagonal**. Discarding it, as the `k = 1` intuition invites, would change the
+  *limit* of `M₂` and not just its remainder. That is the counterexample to the "free
+  composition" reading, in the same family as wave 18's.
+  The accuracies required are unequal and worth recording, because they bound the work: `c₂` is
+  `O(n^{-1/2})`, so `M₂` is needed to `O(n^{-1/2})`; `c₃`, `c₄`, `c₅` are `O(n⁻¹)`, so
+  `M₃ᵃ`, `M₃ᵇ`, `M₄` are needed only to `O(1)` — but a bound is still an estimate that the
+  identity does not give.
+* **THE SECOND CORRECTION — wave 21's item (i) is closed as a concentration statement and open
+  as a moment statement.** Wave 18 was right that "the multilinear wiring is not free" and named
+  a truncation as the price; wave 21 recorded that price as paid by
+  `measure_pi_truncated_sum_le_exp`. It is not the same object. That lemma bounds a **tail
+  probability** of a truncated sum; what the expansion consumes is `∫ surrogateRemPoly`, a
+  **moment** — of degree nine in the coordinates of the root, so of order `E|X − μ|^{18}` in the
+  sampling law. Under a finite fourth moment it is simply infinite, and no concentration
+  inequality makes it finite. The truncation therefore has to be inserted *before* the expansion
+  — the expansion run on the law of the truncated summands, with the change of law paid for
+  separately by exactly the tail estimate `measure_pi_truncated_sum_le_exp` supplies. The two
+  statements are complementary, not the same; wave 21 conflated them.
+
+Net after wave 23 the residue is **two** items plus a composition:
+(i) an *estimate* for `multiCharFun (vecRootLaw F Z n) b a` at `k = 2` to `O(n^{-1/2})` accuracy
+    and at `k = 3, 4` to `O(1)`, whose combinatorial half is the diagonal/off-diagonal split of
+    the assignment sum of `multiCharFun_vecRootLaw` (for `k = 2`:
+    `n^{-1}(n·slot_{01}φ^{n−1} + n(n−1)·slot_0 slot_1 φ^{n−2})`) and whose analytic half is the
+    one-factor Taylor bound that `norm_mixCharFun_vecRootLaw_sub_le` already performs at `k = 1`;
+(ii) the truncated-law replacement that makes `∫ surrogateRemPoly` finite and `O(1)` under a
+    fourth moment, together with the tail estimate for the change of law;
+(iii) the Esseen chain on top, which — once (i) and (ii) are in place — is a composition of
+    `abs_measure_Iic_sub_densityCDF_le_charFun`, `esseen_split`,
+    `exists_bound_norm_charFun_vecRootLaw_studentPair` for the outer range, and
+    `norm_integral_cexp_deltaSurrogate_sub_le` for the window, in the shape
+    `abs_meanRootCDF_sub_edgeworthCDF_le` has in the scalar case.
+
+Proved and axiom-clean after wave 23: everything listed after wave 21, **and** the surrogate
+`deltaSurrogate` with its exact-statistic identity and its deterministic (M2) bound, the
+pointwise second-order expansion of its character `norm_cexp_surrogate_sub_expansion_le` with the
+explicit envelope `surrogateRemPoly`, the four multilinear weights and their `multiCharFun`
+identities, and the assembled transform `norm_integral_cexp_deltaSurrogate_sub_le` over an
+arbitrary law of the bivariate root. -/
+
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
