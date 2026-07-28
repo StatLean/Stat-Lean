@@ -2546,6 +2546,61 @@ theorem measure_pi_stratum_root_le {n : ℕ} (μ : Measure ℝ) [IsProbabilityMe
   intro i y
   exact measure_pi_abs_root_insertNth_le μ hA hn i hwin y x hw
 
+/-! ### The bridge from the Taylor remainder to a coordinate-sum tail
+
+`measure_pi_stratum_le` estimates the joint mass of a **coordinate-sum** tail and a window. The
+tail the peeled assembly hands it is `{2ᵏδ < |T̃ₙ − Hₙ|}`, which is not a coordinate sum. The two
+lemmas here close that gap deterministically: by `abs_studentFactor_sub_taylor3_le'` the
+remainder is `r³` times an explicit bracket in `(|u|, |v|)`, and a large bracket forces a large
+coordinate — and `u`, `v` **are** coordinate sums (the two components of the bivariate root of
+`studentPair F`). So each dyadic stratum splits into two events of exactly the shape
+`measure_pi_stratum_le` consumes, at the level `M ≍ (2ᵏδ/r³)^{1/7}`. -/
+
+/-- The third-order Taylor bracket is dominated by `(73/8)M⁷` on the box `|u|, |v| ≤ M`
+(for `M ≥ 1`, where the fourth-degree monomials are absorbed into the seventh). -/
+lemma taylor3_bracket_le {M u v : ℝ} (hM : 1 ≤ M) (hu : |u| ≤ M) (hv : |v| ≤ M) :
+    4 * |u| * |v| ^ 3 + 4 * |u| ^ 7 + 3 / 4 * |u| ^ 3 * |v| + 3 / 8 * |u| ^ 5
+      ≤ 73 / 8 * M ^ 7 := by
+  have hM0 : (0 : ℝ) ≤ M := by linarith
+  have ha : (0 : ℝ) ≤ |u| := abs_nonneg u
+  have hb : (0 : ℝ) ≤ |v| := abs_nonneg v
+  have hpow : ∀ k : ℕ, k ≤ 7 → M ^ k ≤ M ^ 7 := fun k hk => pow_le_pow_right₀ hM hk
+  have h1 : |u| * |v| ^ 3 ≤ M ^ 7 := by
+    calc |u| * |v| ^ 3 ≤ M * M ^ 3 :=
+          mul_le_mul hu (pow_le_pow_left₀ hb hv 3) (by positivity) hM0
+      _ = M ^ 4 := by ring
+      _ ≤ M ^ 7 := hpow 4 (by norm_num)
+  have h2 : |u| ^ 7 ≤ M ^ 7 := pow_le_pow_left₀ ha hu 7
+  have h3 : |u| ^ 3 * |v| ≤ M ^ 7 := by
+    calc |u| ^ 3 * |v| ≤ M ^ 3 * M :=
+          mul_le_mul (pow_le_pow_left₀ ha hu 3) hv hb (by positivity)
+      _ = M ^ 4 := by ring
+      _ ≤ M ^ 7 := hpow 4 (by norm_num)
+  have h4 : |u| ^ 5 ≤ M ^ 7 :=
+    le_trans (pow_le_pow_left₀ ha hu 5) (hpow 5 (by norm_num))
+  linarith
+
+/-- **The tail of the third-order remainder is carried by a large coordinate.** If the
+`r³`-scaled Taylor bracket exceeds `d`, and `d` is at least `r³(73/8)M⁷`, then one of the two
+coordinates exceeds `M` in modulus. Composed with `abs_studentFactor_sub_taylor3_le'` this turns
+each dyadic stratum of `|T̃ₙ − Hₙ|` into a union of two coordinate-sum tail events, which is
+exactly what `measure_pi_stratum_le` takes. -/
+lemma subset_union_large_coord {Ω : Type*} (u v : Ω → ℝ) {M r d : ℝ} (hM : 1 ≤ M)
+    (hr : 0 ≤ r) (hd : r ^ 3 * (73 / 8 * M ^ 7) ≤ d) :
+    {ω : Ω | d < r ^ 3 * (4 * |u ω| * |v ω| ^ 3 + 4 * |u ω| ^ 7
+        + 3 / 4 * |u ω| ^ 3 * |v ω| + 3 / 8 * |u ω| ^ 5)}
+      ⊆ {ω : Ω | M < |u ω|} ∪ {ω : Ω | M < |v ω|} := by
+  intro ω hω
+  by_contra hcon
+  simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_lt] at hcon
+  have hbr := taylor3_bracket_le hM hcon.1 hcon.2
+  have hmul : r ^ 3 * (4 * |u ω| * |v ω| ^ 3 + 4 * |u ω| ^ 7
+      + 3 / 4 * |u ω| ^ 3 * |v ω| + 3 / 8 * |u ω| ^ 5) ≤ r ^ 3 * (73 / 8 * M ^ 7) :=
+    mul_le_mul_of_nonneg_left hbr (by positivity)
+  have hω' : d < r ^ 3 * (4 * |u ω| * |v ω| ^ 3 + 4 * |u ω| ^ 7
+      + 3 / 4 * |u ω| ^ 3 * |v ω| + 3 / 8 * |u ω| ^ 5) := hω
+  linarith
+
 end StudentizedReduction
 
 /-! ## The Edgeworth approximant on the standardized scale
