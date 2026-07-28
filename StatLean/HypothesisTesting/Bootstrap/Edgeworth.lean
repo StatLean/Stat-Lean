@@ -7367,7 +7367,23 @@ characters clustered around the carrier `(θ/σ)e₀` and pairing that superposi
 `norm_charFun_map_deltaSurrogate_vecRootLaw_le`). What is left over there is the *deterministic*
 `exists_fourierCertificate_deltaSurrogate` — one explicit polynomial phase against Lebesgue
 measure on `ℝ²`, with no sampling law and no conditioning in it. See the wave-27 note on
-`edgeworth_studentized_uniform`. -/
+`edgeworth_studentized_uniform`.
+
+**After the wave-30 re-derivation the residue over there is a single non-stationary-phase
+estimate, and this corollary still adds nothing.** The wave-27 *shape* of the certificate is
+corrected twice. Its `L¹` error was priced by "a fourth moment of the root", which `hF4` does not
+supply — the root's second coordinate is a normalized sum of `(Xᵢ − m)²`, so on the truncated law
+`E w₁⁴ = O(n)` and the bulk radius is forced up to `n^{5/8}`, at which point the phase's gradient
+exceeds the admitted bandwidth `|θ|/(2σ)`, which cannot be enlarged. The repair is to relocate
+the leakage ball to the **low-frequency** ball `{s : ‖t₀ + s‖ < R}` (`HasFourierCertificateOnBand`
+and its transfer chain, all proved), after which the requirement is the non-stationarity of the
+*total* phase — and `deltaSurrogate_slope_ge` gives `σ ∂_{w₀}Hₙ ≥ 5/6` for all `u, v, r`, with no
+cut-off and uniformly in the bulk radius: the surrogate has no stationary points at all. The mass
+must additionally be allowed to carry `θ`. With `fourierSynth_fourierWeight` (synthesis *is*
+Fourier inversion), `integral_norm_fourierWeight` and
+`hasFourierCertificateOnBand_of_bulkMultiplier`, what is left over there is one bound on
+`∫‖𝓕 g‖`, one on the weight's mass over the low-frequency ball, and one fourth moment of the
+truncated root. See the wave-30 note on `edgeworth_studentized_uniform`. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
