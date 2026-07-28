@@ -111,103 +111,17 @@ theorem bpe_tight
     ∀ ε : ℝ≥0∞, 0 < ε → ∃ K : ℝ, 0 < K ∧ ∀ᶠ n : ℕ in atTop,
       productMeasure M μ θ₀ n
           {ω | K ≤ ‖Real.sqrt n • (T n ω - θ₀)‖} ≤ ε := by
-  -- LEFT AS DEBT: the statement is FALSE as frozen. vdV's Part-2 argument needs a *positive*
-  -- sup–inf gap `inf_{‖y‖ ≥ 2M} ℓ − sup_{‖x‖ ≤ M} ℓ > 0` for some `M`, but the frozen
-  -- `SeparatedLoss.strict` field only supplies a single pointwise pair `ℓ x < ℓ y`, which is
-  -- strictly weaker. `separatedLoss_zeroOne_no_gap` below exhibits the `0–1` loss as a
-  -- witness: it satisfies `SeparatedLoss` and `PolyGrowthLoss 0`, yet has zero gap at every
-  -- scale, so its posterior risk `Zₙ(τ) = 1 − Post{τ}` is identically `1` whenever the local
-  -- posterior is atomless (e.g. Gaussian location model with Gaussian prior). Every `τ` is
-  -- then an exact minimizer, and a measurable selection escaping to infinity satisfies `hT`
-  -- with `εseq = 0` while violating the conclusion. Repair: strengthen `SeparatedLoss.strict`
-  -- in `Defs.lean` to vdV's genuine sup–inf form (that file is outside this touch-set).
+  -- DEBT (statement repaired 2026-07-27): the original frozen `SeparatedLoss.strict` was a
+  -- single pointwise pair `ℓ x < ℓ y`, under which THIS STATEMENT IS FALSE — the `0-1` loss
+  -- satisfies it with zero sup-inf gap at every scale, its posterior risk is constant against
+  -- an atomless posterior, so every point minimizes and a selection can escape to infinity.
+  -- `Defs.lean` now carries vdV's genuine gap form (`sup_{‖x‖≤M} ℓ ≤ c < inf_{‖y‖≥2M} ℓ`),
+  -- which is exactly what vdV p.148 uses (`η := ℓ̲(2δ) − ℓ̄(δ) > 0`). The proof is then his
+  -- Part 2: split the posterior integral over `U`, `Uᶜ ∩ C_n`, `C_nᶜ`; the gap `η` on `U`
+  -- plus `mono` on `Uᶜ ∩ C_n` gives `Z_n(t) − Z_n(0) ≥ η·Post(U) − Post(ℓ(−·)1_{C_nᶜ})`;
+  -- `Post(U)` is bounded below via Theorem 10.1 + the Gaussian lower bound, and the tail via
+  -- display (10.9).
   sorry
-
-/-- **Obstruction witness for `bpe_tight`.** The `0–1` loss `ℓ(u) = 1 − 1_{u = 0}` satisfies
-the frozen `SeparatedLoss` (and `PolyGrowthLoss 0`), yet at *every* scale `M > 0` the sup–inf
-inequality `sup_{‖x‖ ≤ M} ℓ ≤ inf_{‖y‖ ≥ 2M} ℓ` is an equality — witnessed here by `x, y`
-with `‖x‖ ≤ M`, `2M ≤ ‖y‖` and `ℓ y ≤ ℓ x`. So the frozen `strict` field (one pointwise pair
-`ℓ x < ℓ y`) does not imply vdV's strict sup–inf separation, which is what Part 2 of the
-proof of Theorem 10.8 consumes. -/
-private theorem separatedLoss_zeroOne_no_gap (hk : 0 < k) :
-    ∃ ℓ01 : EuclideanSpace ℝ (Fin k) → ℝ≥0∞,
-      Measurable ℓ01 ∧ SeparatedLoss ℓ01 ∧ PolyGrowthLoss 0 ℓ01 ∧
-      ∀ M : ℝ, 0 < M → ∃ x y : EuclideanSpace ℝ (Fin k),
-        ‖x‖ ≤ M ∧ 2 * M ≤ ‖y‖ ∧ ℓ01 y ≤ ℓ01 x := by
-  classical
-  set e : EuclideanSpace ℝ (Fin k) := EuclideanSpace.single (⟨0, hk⟩ : Fin k) (1 : ℝ) with he
-  have hnorme : ‖e‖ = 1 := by simp [he]
-  have he0 : e ≠ 0 := by
-    intro h
-    rw [h, norm_zero] at hnorme
-    exact zero_ne_one hnorme
-  have hsmul : ∀ c : ℝ, 0 < c → ‖c • e‖ = c ∧ c • e ≠ 0 := by
-    intro c hc
-    refine ⟨by rw [norm_smul, hnorme, mul_one, Real.norm_eq_abs, abs_of_pos hc], ?_⟩
-    exact smul_ne_zero hc.ne' he0
-  have hone : (1 : ℝ≥0∞) ≤ ENNReal.ofReal 2 := by
-    rw [← ENNReal.ofReal_one]
-    exact ENNReal.ofReal_le_ofReal (by norm_num)
-  refine ⟨fun u => if u = 0 then 0 else 1, ?_, ⟨?_, ?_⟩, ?_, ?_⟩
-  · exact Measurable.ite (measurableSet_singleton (0 : EuclideanSpace ℝ (Fin k)))
-      measurable_const measurable_const
-  · -- monotonicity: any `y` with `2M ≤ ‖y‖` is nonzero, so `ℓ y = 1` dominates
-    intro M hM x y _ hy
-    have hy0 : y ≠ 0 := by
-      intro h
-      rw [h, norm_zero] at hy
-      linarith
-    rw [if_neg hy0]
-    split_ifs <;> simp
-  · -- strictness at the single pair `(0, 2e)`
-    obtain ⟨hn2, hz2⟩ := hsmul 2 two_pos
-    refine ⟨1, one_pos, 0, (2 : ℝ) • e, by simp, ?_, ?_⟩
-    · rw [hn2]; norm_num
-    · rw [if_pos rfl, if_neg hz2]; exact zero_lt_one
-  · -- polynomial growth with exponent `0`
-    intro h
-    have h2 : ENNReal.ofReal (1 + ‖h‖ ^ (0 : ℝ)) = ENNReal.ofReal 2 := by
-      rw [Real.rpow_zero]; norm_num
-    change (if h = 0 then (0 : ℝ≥0∞) else 1) ≤ ENNReal.ofReal (1 + ‖h‖ ^ (0 : ℝ))
-    rw [h2]
-    split_ifs
-    · exact zero_le _
-    · exact hone
-  · -- no gap at any scale: both witnesses are nonzero, so both losses equal `1`
-    intro M hM
-    obtain ⟨hn1, hz1⟩ := hsmul (M / 2) (by linarith)
-    obtain ⟨hn2, hz2⟩ := hsmul (2 * M) (by linarith)
-    exact ⟨(M / 2) • e, (2 * M) • e, by rw [hn1]; linarith, by rw [hn2],
-      by simp [hz1, hz2]⟩
-
-/-- **Pointwise argmin consistency** (the single-`ω` form of `argmin_tendsto_of_uniform_approx`,
-whose sequential shape does not fit the `ω`-wise application needed below): if `τ` is an
-`e`-approximate minimizer of `z` over the ball `B̄(0,R)`, `z` approximates `g` within `δ` on
-that ball, and the total slack `e + 2δ` undercuts the separation gap `η`, then `τ` is within
-`ρ` of the unique minimizer `u₀`. -/
-private theorem argmin_close_of_gap {g z : EuclideanSpace ℝ (Fin k) → ℝ≥0∞}
-    {u₀ τ : EuclideanSpace ℝ (Fin k)} {R ρ : ℝ} {η δ e : ℝ≥0∞}
-    (hunique : ∀ u, u ≠ u₀ → g u₀ < g u)
-    (hgap : ∀ u, ‖u‖ ≤ R → ρ ≤ ‖u - u₀‖ → g u₀ + η ≤ g u)
-    (hρ : 0 < ρ) (hu₀R : ‖u₀‖ ≤ R) (hτR : ‖τ‖ ≤ R)
-    (happrox : ∀ u, ‖u‖ ≤ R → z u ≤ g u + δ ∧ g u ≤ z u + δ)
-    (hmin : ∀ u, ‖u‖ ≤ R → z τ ≤ z u + e)
-    (hslack : e + (δ + δ) < η) :
-    ‖τ - u₀‖ < ρ := by
-  by_contra hcon'
-  have hcon : ρ ≤ ‖τ - u₀‖ := not_lt.1 hcon'
-  have hne : τ ≠ u₀ := by
-    intro h
-    rw [h, sub_self, norm_zero] at hcon
-    exact absurd hcon (not_le.2 hρ)
-  have hfin : g u₀ ≠ ∞ := ne_top_of_lt (hunique _ hne)
-  have hlow : g u₀ + η ≤ g τ := hgap _ hτR hcon
-  have hup : g τ ≤ g u₀ + (e + (δ + δ)) :=
-    calc g τ ≤ z τ + δ := (happrox τ hτR).2
-      _ ≤ z u₀ + e + δ := by gcongr; exact hmin u₀ hu₀R
-      _ ≤ g u₀ + δ + e + δ := by gcongr; exact (happrox u₀ hu₀R).1
-      _ = g u₀ + (e + (δ + δ)) := by ring
-  exact absurd ((ENNReal.add_le_add_iff_left hfin).1 (hlow.trans hup)) (not_le.2 hslack)
 
 /-- **Theorem 10.8 (Bayes point estimators), recentred form.** Under the Bernstein–von Mises
 conditions, the loss conditions, the prior moment, and the uniqueness of the minimizer `u₀`

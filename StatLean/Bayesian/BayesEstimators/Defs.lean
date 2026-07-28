@@ -39,11 +39,23 @@ variable {k : ℕ} {𝓧 : Type*} [m𝓧 : MeasurableSpace 𝓧]
 every `M > 0`, with strict inequality for at least one pair; stated pointwise. -/
 structure SeparatedLoss (ℓ : EuclideanSpace ℝ (Fin k) → ℝ≥0∞) : Prop where
   /-- Constitutive (vdV §10.3, p. 147): the two-scale monotonicity
+  `sup_{‖h‖ ≤ M} ℓ ≤ inf_{‖h‖ ≥ 2M} ℓ`, in pointwise form
   `‖x‖ ≤ M → 2M ≤ ‖y‖ → ℓ x ≤ ℓ y`. -/
   mono : ∀ M : ℝ, 0 < M → ∀ x y, ‖x‖ ≤ M → 2 * M ≤ ‖y‖ → ℓ x ≤ ℓ y
-  /-- Constitutive (vdV §10.3, p. 147): strictness for at least one `M` (rules out constant
-  losses). -/
-  strict : ∃ M : ℝ, 0 < M ∧ ∃ x y, ‖x‖ ≤ M ∧ 2 * M ≤ ‖y‖ ∧ ℓ x < ℓ y
+  /-- Constitutive (vdV §10.3, p. 147): "with strict inequality for at least one `M`" — a
+  genuine **gap** between the two levels, i.e. `sup_{‖x‖ ≤ M} ℓ ≤ c < inf_{‖y‖ ≥ 2M} ℓ` for
+  some scale `M` and threshold `c`. Stated with an explicit separating `c` to avoid `sSup`/
+  `sInf` while remaining equivalent to vdV's sup–inf form.
+
+  The gap — not merely one pair with `ℓ x < ℓ y` — is what Part 2 of the proof of
+  Theorem 10.8 consumes (vdV p. 148 sets `η := ℓ̲(2δ) − ℓ̄(δ) > 0`). The weaker pointwise
+  reading is genuinely insufficient: the `0–1` loss `ℓ(u) = 1 − 1_{u = 0}` satisfies `mono`
+  and has `ℓ 0 < ℓ y`, yet its sup and inf coincide at every scale, its posterior risk is
+  constant against an atomless posterior, every point is a minimizer, and tightness fails.
+  Consistently, vdV's own sufficient condition ("`ℓ(h) = ℓ₀(‖h‖)` with `ℓ₀` nondecreasing and
+  **not constant on `(0, ∞)`**") excludes that loss. -/
+  strict : ∃ M : ℝ, 0 < M ∧ ∃ c : ℝ≥0∞,
+    (∀ x, ‖x‖ ≤ M → ℓ x ≤ c) ∧ ∀ y, 2 * M ≤ ‖y‖ → c < ℓ y
 
 /-- **Polynomial growth of the loss** (vdV p. 147): `ℓ(h) ≤ 1 + ‖h‖ᵖ`. -/
 def PolyGrowthLoss (p : ℝ) (ℓ : EuclideanSpace ℝ (Fin k) → ℝ≥0∞) : Prop :=
