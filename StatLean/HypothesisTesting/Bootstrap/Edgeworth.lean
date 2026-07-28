@@ -1653,6 +1653,215 @@ lemma sum_dyadic_strata_le {A η δ B q : ℝ} (hδ : 0 ≤ δ) (hA : 0 ≤ A) (
   refine (Finset.sum_le_sum hterm).trans_eq ?_
   rw [Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.mul_sum]
 
+/-! ### (X3): the conditional window estimate and the independence it rests on
+
+`abs_measure_le_sub_le_of_peel_window` isolates the residue of (M2) as one hypothesis: the
+window estimate has to survive **conditionally on the tail event**
+`{2ᵏδ < |S − T|}`. The section note above records why none of the soft substitutes reaches
+`O(n⁻¹)` — `min(P A, P B)` gives `n^{-3/5}`, Cauchy–Schwarz gives `n^{-1/2}`, and every
+Markov-inside-the-window dodge needs six or eight moments of `X` rather than four.
+
+The classical route is genuinely probabilistic and has three ingredients, none of which was in
+the repository before this section:
+
+1. **Independence of the retained block.** If the tail event depended on a *single* coordinate,
+   the conditioning would be free: the remaining coordinates are independent of it, so the
+   window estimate for the retained `n − 1`-block applies verbatim under the conditional law.
+   `measure_inter_prod_le` is that statement for an arbitrary product measure — `P(A ∩ B)
+   ≤ P(A)·sup_a Q(B_a)` when `A` is carried by the first factor — and
+   `measure_pi_inter_coord_le` transports it to one coordinate of a `Measure.pi`, through
+   `MeasurableEquiv.piFinSuccAbove`, which splits `Measure.pi` as
+   `μ ⊗ Measure.pi (the other n coordinates)` exactly.
+2. **The one-large-summand decomposition.** The tail event is *not* carried by one coordinate;
+   it is `{λ < |∑ᵢ Y(ωᵢ)|}`. But on it a single summand dominates, and the deterministic
+   containment `subset_union_large_summand` says exactly that: either some `|Y(ωᵢ)|` exceeds the
+   truncation level `τ`, or the sum is unchanged by truncating every summand at `τ`. The first
+   alternative is a union of `n` one-coordinate events; the second is the truncated-sum
+   remainder, which is where a Fuk–Nagaev-type estimate enters and which is left as an explicit
+   hypothesis here.
+3. **The union bound over the choices of dominant index.** `measure_pi_inter_le_of_large_summand`
+   combines 1 and 2: each of the `n` one-coordinate events contributes `P(Aᵢ)·c` by the
+   conditioning brick, and the remainder contributes at most its own probability.
+
+The conclusion has the shape `P(A ∩ B) ≤ (∑ᵢ P(Aᵢ))·c + P(R)` rather than the literal product
+`P(A)·c` of `abs_measure_le_sub_le_of_peel_window`. That is the honest form: recovering `P(A)`
+on the right would need a *lower* bound on `P(A)` in terms of the one-coordinate tails, which is
+a small-ball statement and is not what the peeled arithmetic consumes.
+`abs_measure_le_sub_le_of_peel_strata` is therefore the variant of the assembly that takes the
+per-stratum bounds directly, and it is what this route feeds. -/
+
+/-- **Conditioning on the first factor of a product measure.** If `A₀` is carried by the first
+factor and every slice `B_a = {b | (a, b) ∈ B}` has `Q`-measure at most `c`, then
+
+`(ν ⊗ Q)((A₀ × univ) ∩ B) ≤ ν(A₀) · c`.
+
+This is the exact form in which independence discharges a conditioning: the second factor never
+sees `A₀`, so the bound on its slices is uniform over the first. -/
+theorem measure_inter_prod_le {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    (ν : Measure α) [SFinite ν] (Q : Measure β) [SFinite Q]
+    {A₀ : Set α} (hA₀ : MeasurableSet A₀) {B : Set (α × β)} (hB : MeasurableSet B)
+    {c : ℝ≥0∞} (hslice : ∀ a : α, Q (Prod.mk a ⁻¹' B) ≤ c) :
+    (ν.prod Q) ((A₀ ×ˢ (Set.univ : Set β)) ∩ B) ≤ ν A₀ * c := by
+  classical
+  have hmeas : MeasurableSet ((A₀ ×ˢ (Set.univ : Set β)) ∩ B) :=
+    (hA₀.prod MeasurableSet.univ).inter hB
+  rw [Measure.prod_apply hmeas]
+  have hle : ∀ a : α, Q (Prod.mk a ⁻¹' ((A₀ ×ˢ (Set.univ : Set β)) ∩ B))
+      ≤ A₀.indicator (fun _ => c) a := by
+    intro a
+    by_cases ha : a ∈ A₀
+    · rw [Set.indicator_of_mem ha]
+      exact le_trans (measure_mono fun b hb => hb.2) (hslice a)
+    · have hempty : Prod.mk a ⁻¹' ((A₀ ×ˢ (Set.univ : Set β)) ∩ B) = ∅ := by
+        ext b
+        simp only [Set.mem_preimage, Set.mem_inter_iff, Set.mem_prod, Set.mem_univ, and_true,
+          Set.mem_empty_iff_false, iff_false, not_and]
+        exact fun h => absurd h ha
+      rw [hempty, measure_empty]
+      exact zero_le _
+  calc ∫⁻ a, Q (Prod.mk a ⁻¹' ((A₀ ×ˢ (Set.univ : Set β)) ∩ B)) ∂ν
+      ≤ ∫⁻ a, A₀.indicator (fun _ => c) a ∂ν := lintegral_mono hle
+    _ = ν A₀ * c := by
+        rw [lintegral_indicator hA₀, lintegral_const, Measure.restrict_apply_univ, mul_comm]
+
+/-- **Conditioning on one coordinate of a product measure.** The `Measure.pi` form of
+`measure_inter_prod_le`: if the tail event is `{ω | ω i ∈ A₀}` — carried by the single
+coordinate `i` — and every slice of `B` obtained by fixing that coordinate has measure at most
+`c` under the product law of the remaining `n` coordinates, then
+
+`P({ω | ω i ∈ A₀} ∩ B) ≤ μ(A₀) · c`.
+
+`MeasurableEquiv.piFinSuccAbove` splits `Measure.pi` as `μ ⊗ Measure.pi (rest)` exactly
+(`measurePreserving_piFinSuccAbove`), and `Fin.insertNth i` is the inverse of that split. This
+is the "independence of the retained block" that the classical route to (X3) uses: conditionally
+on the dominant coordinate, the remaining `n` coordinates form a root law of the same kind, to
+which the *marginal* window estimate applies. -/
+theorem measure_pi_inter_coord_le {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    (i : Fin (n + 1)) {A₀ : Set ℝ} (hA₀ : MeasurableSet A₀)
+    {B : Set (Fin (n + 1) → ℝ)} (hB : MeasurableSet B) {c : ℝ≥0∞}
+    (hslice : ∀ y : ℝ,
+      (Measure.pi fun _ : Fin n => μ) {z : Fin n → ℝ | i.insertNth y z ∈ B} ≤ c) :
+    (Measure.pi fun _ : Fin (n + 1) => μ) ({ω | ω i ∈ A₀} ∩ B) ≤ μ A₀ * c := by
+  classical
+  set e := MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => ℝ) i with he
+  have hmp := measurePreserving_piFinSuccAbove (fun _ : Fin (n + 1) => μ) i
+  set Q : Measure (Fin n → ℝ) := Measure.pi fun _ : Fin n => μ with hQ
+  set B' : Set (ℝ × (Fin n → ℝ)) := e.symm ⁻¹' B with hB'def
+  have hB'm : MeasurableSet B' := e.symm.measurable hB
+  have hpre : ({ω : Fin (n + 1) → ℝ | ω i ∈ A₀} ∩ B)
+      = e ⁻¹' ((A₀ ×ˢ (Set.univ : Set (Fin n → ℝ))) ∩ B') := by
+    ext ω
+    simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_prod, Set.mem_univ, and_true,
+      Set.mem_setOf_eq, hB'def, MeasurableEquiv.symm_apply_apply]
+    exact Iff.rfl
+  have hmeas' : MeasurableSet ((A₀ ×ˢ (Set.univ : Set (Fin n → ℝ))) ∩ B') :=
+    (hA₀.prod MeasurableSet.univ).inter hB'm
+  rw [hpre, hmp.measure_preimage hmeas'.nullMeasurableSet]
+  refine measure_inter_prod_le μ Q hA₀ hB'm ?_
+  intro y
+  have hslc : Prod.mk y ⁻¹' B' = {z : Fin n → ℝ | i.insertNth y z ∈ B} := by
+    ext z
+    exact Iff.rfl
+  rw [hslc]
+  exact hslice y
+
+/-- **The one-large-summand decomposition.** A sum of `n` terms can only exceed `λ` in modulus
+if either some individual term exceeds the truncation level `τ` in modulus, or the sum is
+unchanged by truncating every term at `τ` — in which case the *truncated* sum already exceeds
+`λ`. The containment is deterministic and exact; the probabilistic content is entirely in the
+estimate of the two pieces.
+
+The first alternative is a union of `n` events, each carried by a *single* coordinate, which is
+what `measure_pi_inter_coord_le` consumes. The second is the truncated-sum remainder. -/
+lemma subset_union_large_summand {n : ℕ} (Y : ℝ → ℝ) (lam τ : ℝ) :
+    {ω : Fin n → ℝ | lam < |∑ i, Y (ω i)|}
+      ⊆ (⋃ i : Fin n, {ω : Fin n → ℝ | τ < |Y (ω i)|})
+        ∪ {ω : Fin n → ℝ | lam < |∑ i, (if |Y (ω i)| ≤ τ then Y (ω i) else 0)|} := by
+  classical
+  intro ω hω
+  by_cases hbig : ∃ i : Fin n, τ < |Y (ω i)|
+  · obtain ⟨i, hi⟩ := hbig
+    exact Set.mem_union_left _ (Set.mem_iUnion.2 ⟨i, hi⟩)
+  · refine Set.mem_union_right _ ?_
+    have hall : ∀ i : Fin n, |Y (ω i)| ≤ τ := by
+      intro i
+      exact not_lt.1 fun h => hbig ⟨i, h⟩
+    have hsum : (∑ i, (if |Y (ω i)| ≤ τ then Y (ω i) else 0)) = ∑ i, Y (ω i) :=
+      Finset.sum_congr rfl fun i _ => if_pos (hall i)
+    rw [Set.mem_setOf_eq, hsum]
+    exact hω
+
+/-- **The conditional window estimate from a one-large-summand decomposition.**
+
+Combining `subset_union_large_summand` (the decomposition), `measure_pi_inter_coord_le` (the
+independence of the retained block) and a union bound over the `n + 1` choices of dominant
+index: the joint mass of the tail event `{λ < |∑ᵢ Y(ωᵢ)|}` and an arbitrary event `B` whose
+one-coordinate slices all have mass at most `c` is bounded by
+
+`(n + 1) · μ{|Y| > τ} · c + P(truncated sum still exceeds λ)`.
+
+This is the honest shape of (X3): the product structure `tail × window` is recovered on the
+*one-coordinate* part, which is where it is true, and the remainder is separated out rather
+than absorbed. The remainder is a Fuk–Nagaev-type estimate on a sum of bounded summands and is
+an explicit hypothesis of the peeled assembly, not of this lemma. -/
+theorem measure_pi_inter_le_of_large_summand {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Y : ℝ → ℝ} (hY : Measurable Y) (lam τ : ℝ)
+    {B : Set (Fin (n + 1) → ℝ)} (hB : MeasurableSet B) {c : ℝ≥0∞}
+    (hslice : ∀ (i : Fin (n + 1)) (y : ℝ),
+      (Measure.pi fun _ : Fin n => μ) {z : Fin n → ℝ | i.insertNth y z ∈ B} ≤ c) :
+    (Measure.pi fun _ : Fin (n + 1) => μ)
+        ({ω : Fin (n + 1) → ℝ | lam < |∑ i, Y (ω i)|} ∩ B)
+      ≤ (n + 1) * (μ {y : ℝ | τ < |Y y|} * c)
+        + (Measure.pi fun _ : Fin (n + 1) => μ)
+            {ω : Fin (n + 1) → ℝ | lam < |∑ i, (if |Y (ω i)| ≤ τ then Y (ω i) else 0)|} := by
+  classical
+  set P : Measure (Fin (n + 1) → ℝ) := Measure.pi fun _ : Fin (n + 1) => μ with hP
+  set A₀ : Set ℝ := {y : ℝ | τ < |Y y|} with hA₀def
+  have hA₀ : MeasurableSet A₀ := measurableSet_lt measurable_const hY.abs
+  set R : Set (Fin (n + 1) → ℝ) :=
+    {ω : Fin (n + 1) → ℝ | lam < |∑ i, (if |Y (ω i)| ≤ τ then Y (ω i) else 0)|} with hRdef
+  have hsub : ({ω : Fin (n + 1) → ℝ | lam < |∑ i, Y (ω i)|} ∩ B)
+      ⊆ (⋃ i : Fin (n + 1), ({ω : Fin (n + 1) → ℝ | ω i ∈ A₀} ∩ B)) ∪ R := by
+    intro ω hω
+    rcases subset_union_large_summand (n := n + 1) Y lam τ hω.1 with h | h
+    · obtain ⟨i, hi⟩ := Set.mem_iUnion.1 h
+      exact Set.mem_union_left _ (Set.mem_iUnion.2 ⟨i, ⟨hi, hω.2⟩⟩)
+    · exact Set.mem_union_right _ h
+  refine (measure_mono hsub).trans ?_
+  refine (measure_union_le _ _).trans (add_le_add ?_ le_rfl)
+  refine (measure_iUnion_fintype_le _ _).trans ?_
+  have hterm : ∀ i : Fin (n + 1), P ({ω : Fin (n + 1) → ℝ | ω i ∈ A₀} ∩ B) ≤ μ A₀ * c :=
+    fun i => measure_pi_inter_coord_le μ i hA₀ hB (hslice i)
+  calc (∑ i : Fin (n + 1), P ({ω : Fin (n + 1) → ℝ | ω i ∈ A₀} ∩ B))
+      ≤ ∑ _i : Fin (n + 1), μ A₀ * c := Finset.sum_le_sum fun i _ => hterm i
+    _ = (n + 1) * (μ A₀ * c) := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+        norm_cast
+
+/-- **The peeled assembly with per-stratum bounds.** The variant of
+`abs_measure_le_sub_le_of_peel_window` that consumes a direct bound on each joint stratum
+rather than the product form. This is what the one-large-summand route to (X3) actually
+produces: `measure_pi_inter_le_of_large_summand` gives
+`(n + 1)·μ{|Y| > τ}·c + P(remainder)` for the `k`-th stratum, which is *not* literally
+`P(tail)·(A·2^{k+1}δ + η)`, and forcing it into that shape would need a lower bound on the tail
+probability — a small-ball statement the arithmetic does not need. -/
+theorem abs_measure_le_sub_le_of_peel_strata {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsProbabilityMeasure P] {S T : Ω → ℝ} {δ A η : ℝ} (hδ : 0 < δ) (K : ℕ) (x : ℝ)
+    (s : ℕ → ℝ) {t : ℝ}
+    (hwin : ∀ w : ℝ, 0 ≤ w → (P {ω | |T ω - x| ≤ w}).toReal ≤ A * w + η)
+    (hstrat : ∀ k : ℕ,
+      (P {ω | 2 ^ k * δ < |S ω - T ω| ∧ |T ω - x| ≤ 2 ^ (k + 1) * δ}).toReal ≤ s k)
+    (htail : (P {ω | 2 ^ K * δ < |S ω - T ω|}).toReal ≤ t) :
+    |(P {ω | S ω ≤ x}).toReal - (P {ω | T ω ≤ x}).toReal|
+      ≤ (A * δ + η) + (∑ k ∈ Finset.range K, s k) + t := by
+  have hpeel := abs_measure_le_sub_le_of_peel P (S := S) (T := T) hδ K x
+  have hbase : (P {ω | |T ω - x| ≤ δ}).toReal ≤ A * δ + η := hwin δ hδ.le
+  have hsum : (∑ k ∈ Finset.range K,
+      (P {ω | 2 ^ k * δ < |S ω - T ω| ∧ |T ω - x| ≤ 2 ^ (k + 1) * δ}).toReal)
+      ≤ ∑ k ∈ Finset.range K, s k :=
+    Finset.sum_le_sum fun k _ => hstrat k
+  linarith
+
 end StudentizedReduction
 
 /-! ## The Edgeworth approximant on the standardized scale
