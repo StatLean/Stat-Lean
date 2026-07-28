@@ -1571,6 +1571,53 @@ theorem measure_Ioc_le_of_abs_cdf_sub_le {Ω : Type*} [MeasurableSpace Ω] (P : 
   rw [htoreal]
   linarith [h1.1, h1.2, h2.1, h2.2]
 
+/-- **The two-sided window bound.** The form in which the peeled assembly and the conditional
+window estimate both consume anti-concentration: if `|P(T ≤ ·) − G| ≤ ε` uniformly and `G` is
+`A`-Lipschitz with `A ≥ 0`, then `P(|T − x| ≤ w) ≤ 2Aw + 2ε` for every `w ≥ 0` — including
+`w = 0`, where it says the atom of `T` at `x` is at most `2ε`.
+
+The closed window `[x − w, x + w]` is not an `Ioc`, so the estimate is run on
+`(x − w − u, x + w]` for every `u > 0` and the auxiliary `u` is then sent to `0`; that is where
+`0 ≤ A` is used. -/
+theorem measure_abs_sub_le_of_abs_cdf_sub_le {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsProbabilityMeasure P] {T : Ω → ℝ} (hT : Measurable T) {G : ℝ → ℝ} {A ε : ℝ}
+    (hA : 0 ≤ A) (hG : ∀ a b : ℝ, a ≤ b → G b - G a ≤ A * (b - a))
+    (happrox : ∀ x : ℝ, |(P {ω | T ω ≤ x}).toReal - G x| ≤ ε)
+    (x : ℝ) {w : ℝ} (hw : 0 ≤ w) :
+    (P {ω | |T ω - x| ≤ w}).toReal ≤ 2 * A * w + 2 * ε := by
+  refine le_of_forall_pos_le_add fun δ hδ => ?_
+  have hA1 : (0 : ℝ) < A + 1 := by linarith
+  set u : ℝ := δ / (A + 1) with hu
+  have hu0 : 0 < u := by positivity
+  have hAu : A * u ≤ δ := by
+    rw [hu, mul_div_assoc', div_le_iff₀ hA1]
+    nlinarith [hδ.le]
+  have hsub : {ω | |T ω - x| ≤ w} ⊆ {ω | x - w - u < T ω ∧ T ω ≤ x + w} := by
+    intro ω hω
+    have hω' : |T ω - x| ≤ w := hω
+    obtain ⟨hlo, hhi⟩ := abs_le.1 hω'
+    exact ⟨by linarith, by linarith⟩
+  have hmono : (P {ω | |T ω - x| ≤ w}).toReal
+      ≤ (P {ω | x - w - u < T ω ∧ T ω ≤ x + w}).toReal :=
+    ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono hsub)
+  have hwin := measure_Ioc_le_of_abs_cdf_sub_le P hT hG happrox
+    (a := x - w - u) (b := x + w) (by linarith)
+  have harg : x + w - (x - w - u) = 2 * w + u := by ring
+  rw [harg] at hwin
+  nlinarith [hmono, hwin, hAu]
+
+/-- The two-sided window bound in `ℝ≥0∞`, which is the shape `measure_pi_inter_coord_le`
+consumes for its slice hypothesis. -/
+theorem measure_abs_sub_le_ofReal {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsProbabilityMeasure P] {T : Ω → ℝ} (hT : Measurable T) {G : ℝ → ℝ} {A ε : ℝ}
+    (hA : 0 ≤ A) (hG : ∀ a b : ℝ, a ≤ b → G b - G a ≤ A * (b - a))
+    (happrox : ∀ x : ℝ, |(P {ω | T ω ≤ x}).toReal - G x| ≤ ε)
+    (x : ℝ) {w : ℝ} (hw : 0 ≤ w) :
+    P {ω | |T ω - x| ≤ w} ≤ ENNReal.ofReal (2 * A * w + 2 * ε) := by
+  have h := measure_abs_sub_le_of_abs_cdf_sub_le P hT hA hG happrox x hw
+  rw [← ENNReal.ofReal_toReal (measure_ne_top P {ω | |T ω - x| ≤ w})]
+  exact ENNReal.ofReal_le_ofReal h
+
 /-- **The corrected (M2) assembly.** The anti-concentration term of
 `abs_measure_le_sub_le_of_dist_le` is discharged by the approximation of `T`'s distribution
 function itself: if `|P(T ≤ x) − G(x)| ≤ ε` uniformly with `G` `A`-Lipschitz, then
