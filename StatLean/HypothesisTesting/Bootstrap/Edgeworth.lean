@@ -59,6 +59,19 @@ proved:
   `subset_union_large_coord` — the assembled joint-stratum bound over an arbitrary statistic,
   its free root instance, and the deterministic bridge from the third-order Taylor remainder to
   a coordinate-sum tail;
+* `deltaSurrogate`, `exactStudent_eq`, `abs_exactStudent_sub_deltaSurrogate_le` — the
+  delta-method surrogate `Hₙ = u − uvr/2 + u³r²/2 + 3uv²r²/8` as an object on the bivariate root,
+  the identification of the exact studentized statistic with the studentizing factor, and the
+  deterministic half of (M2) in those terms;
+* `norm_cexp_surrogate_sub_expansion_le`, `surrogateRemPoly` — the pointwise second-order
+  expansion of `e^{iθHₙ}`, whose four weights are `uv`, `u³`, `uv²` and `(uv)²`; the quartic one
+  is the *square of the leading correction*, not a term of `Hₙ`, and would be dropped by a
+  first-order expansion;
+* `coordDir`, `surrW2`, `surrW3a`, `surrW3b`, `surrW4` and the `multiCharFun_surrW*` identities,
+  `expansionIntegrand`, `integrable_expansionIntegrand`, `integral_expansionIntegrand_eq`,
+  `norm_integral_cexp_deltaSurrogate_sub_le` — the surrogate's characteristic function assembled
+  from the `k ≤ 4` instances of `multiCharFun`, over an **arbitrary** law of the bivariate root
+  (so the marginal and the additively-perturbed instances of (X3) are one statement);
 * `centredDensity`, `charFun_map_studentPair_eq`, `vecCramerCondition_map_studentPair`,
   `cramerCondition_projLaw_studentPair`,
   `exists_bound_norm_charFun_vecRootLaw_studentPair` — the multivariate Cramér condition for the
@@ -2612,6 +2625,606 @@ lemma subset_union_large_coord {Ω : Type*} (u v : Ω → ℝ) {M r d : ℝ} (hM
       + 3 / 4 * |u ω| ^ 3 * |v ω| + 3 / 8 * |u ω| ^ 5) := hω
   linarith
 
+/-! ### The delta-method surrogate itself
+
+Everything above speaks *about* the surrogate `Hₙ` without ever naming it: the deterministic
+core `abs_studentFactor_sub_taylor3_le'` carries it as a bare polynomial in two real variables,
+and the peeled assembly carries it as an abstract statistic `T`. The wave-21 re-derivation
+located the whole remaining residue in the surrogate's own distribution theory, so it has to
+become an object. This is that object.
+
+`deltaSurrogate σ r` is the third-order delta-method polynomial *as a function of the bivariate
+root* `w ∈ ℝ²`, on the standardized scale `u = w₀/σ`, `v = w₁/σ²`:
+
+`Hₙ(w) = u − uvr/2 + u³r²/2 + 3uv²r²/8`, `r = n^{-1/2}`.
+
+`exactStudent_eq` identifies the exact statistic that `studentizedRootCDF_eq_vecRootLaw`
+produces — `w₀/√(σ² + w₁r − w₀²r²)` — with the studentizing factor `u(1 + x)^{-1/2}` at
+`x = vr − u²r²` that the Taylor core estimates, so that
+`abs_exactStudent_sub_deltaSurrogate_le` is the deterministic half of (M2) *stated on the
+bivariate root* rather than on two anonymous reals. -/
+
+/-- The **delta-method surrogate** `Hₙ`, as a function of the bivariate root `w = (w₀, w₁)`.
+
+On the standardized scale `u = w₀/σ`, `v = w₁/σ²` it is `u − uvr/2 + u³r²/2 + 3uv²r²/8`, the
+third-order Taylor polynomial of the studentizing factor. The **third** order is not optional:
+the second-order surrogate `u − uvr/2` has `|T̃ₙ − Hₙ| = O(r²)`, and the peeled arithmetic of
+`abs_measure_le_sub_le_of_peel_strata` closes only at `O(r³)` — see the note on
+`abs_studentFactor_sub_taylor3_le`. -/
+noncomputable def deltaSurrogate (σ r : ℝ) (w : EuclideanSpace ℝ (Fin 2)) : ℝ :=
+  w 0 / σ - (w 0 / σ) * (w 1 / σ ^ 2) * r / 2 + (w 0 / σ) ^ 3 * r ^ 2 / 2
+    + 3 * (w 0 / σ) * (w 1 / σ ^ 2) ^ 2 * r ^ 2 / 8
+
+lemma measurable_deltaSurrogate (σ r : ℝ) : Measurable (deltaSurrogate σ r) := by
+  have h0 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 0 := by fun_prop
+  have h1 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 1 := by fun_prop
+  unfold deltaSurrogate
+  fun_prop
+
+/-- **The exact studentized statistic, on the standardized scale.** The region of
+`studentizedRootCDF_eq_vecRootLaw` is cut out by `w₀/√(σ² + w₁r − w₀²r²)`, and that is exactly
+`u(1 + (vr − u²r²))^{-1/2}` with `u = w₀/σ`, `v = w₁/σ²` — the argument of the Taylor core. The
+scale factors out of the square root because `σ > 0`. -/
+lemma exactStudent_eq {σ : ℝ} (hσ : 0 < σ) (r : ℝ) (w : EuclideanSpace ℝ (Fin 2)) :
+    w 0 / Real.sqrt (σ ^ 2 + w 1 * r - w 0 ^ 2 * r ^ 2)
+      = (w 0 / σ) *
+          (Real.sqrt (1 + ((w 1 / σ ^ 2) * r - (w 0 / σ) ^ 2 * r ^ 2)))⁻¹ := by
+  have hfac : σ ^ 2 + w 1 * r - w 0 ^ 2 * r ^ 2
+      = σ ^ 2 * (1 + ((w 1 / σ ^ 2) * r - (w 0 / σ) ^ 2 * r ^ 2)) := by
+    field_simp
+    ring
+  rw [hfac, Real.sqrt_mul (sq_nonneg σ), Real.sqrt_sq hσ.le]
+  field_simp
+
+/-- **The deterministic half of (M2), on the bivariate root.** The exact statistic and the
+surrogate differ by `r³` times the explicit bracket of `abs_studentFactor_sub_taylor3_le'`,
+evaluated at the standardized coordinates. This is the form `subset_union_large_coord` consumes:
+its `u` and `v` are the two coordinates of the root, divided by `σ` and `σ²`. -/
+theorem abs_exactStudent_sub_deltaSurrogate_le {σ : ℝ} (hσ : 0 < σ) {r : ℝ} (hr : 0 ≤ r)
+    (hr1 : r ≤ 1) (w : EuclideanSpace ℝ (Fin 2))
+    (hx : |(w 1 / σ ^ 2) * r - (w 0 / σ) ^ 2 * r ^ 2| ≤ 1 / 2) :
+    |w 0 / Real.sqrt (σ ^ 2 + w 1 * r - w 0 ^ 2 * r ^ 2) - deltaSurrogate σ r w|
+      ≤ r ^ 3 * (4 * |w 0 / σ| * |w 1 / σ ^ 2| ^ 3 + 4 * |w 0 / σ| ^ 7
+          + 3 / 4 * |w 0 / σ| ^ 3 * |w 1 / σ ^ 2| + 3 / 8 * |w 0 / σ| ^ 5) := by
+  rw [exactStudent_eq hσ r w, deltaSurrogate]
+  exact abs_studentFactor_sub_taylor3_le' (w 0 / σ) (w 1 / σ ^ 2) r hr hr1 hx
+
+/-! ### The transform of the surrogate: the deterministic expansion
+
+`E[e^{iθHₙ}]` is not a power of a characteristic function, so nothing above applies to it
+directly. What it *is* is `E[e^{iθu} · e^{iθ(Hₙ−u)}]` with `Hₙ − u = O(r)`, and expanding the
+second factor to second order in `r` produces exactly the weights the multilinear identity
+(X2) supplies: `uv` (bilinear), `u³` and `uv²` (trilinear), `(uv)²` (quartic).
+
+The expansion has to be carried to **second** order, not first: the leading correction is
+already `O(r) = O(n^{-1/2})`, so a first-order remainder would be `O(n⁻¹)` and would swamp the
+term the expansion is trying to produce. That is why the quartic weight `(uv)²` appears at all —
+it is `(iθq)²/2` with `q = −uvr/2` the leading correction — and it is why
+`norm_cexp_sub_quadratic_le` (the **cubic** remainder) is the right input.
+
+`norm_cexp_surrogate_sub_expansion_le` is that expansion, pointwise and with no probability in
+it. Its remainder is `r³ · surrogateRemPoly θ u v`, an explicit polynomial of degree nine in
+`(|u|, |v|)`. **The degree is the whole content of the wave-18 warning** and is recorded here in
+a form no later wave can misread: integrating `surrogateRemPoly` against the law of the root
+needs moments of the root far beyond the fourth, so the expansion is legitimate under a finite
+fourth moment of `F` only after the summands are truncated — which is what
+`measure_pi_truncated_sum_le_exp` is for. -/
+
+/-- Second-order Taylor bound for `e^{iy}` with a *perturbed* quadratic coefficient: the
+polynomial `1 + iy − z²/2` need not carry the exact square. The cost is the cubic remainder plus
+`|y² − z²|/2`, and in the application `y = θD` is the full correction while `z = θQ` is only its
+leading part, so `|y² − z²|` is `O(r³)` while `y²` alone is only `O(r²)`. -/
+private lemma norm_cexp_sub_second_order_le (y z : ℝ) :
+    ‖Complex.exp (Complex.I * (y : ℂ)) - (1 + Complex.I * (y : ℂ) - (z : ℂ) ^ 2 / 2)‖
+      ≤ |y| ^ 3 / 6 + |y ^ 2 - z ^ 2| / 2 := by
+  have heq : Complex.exp (Complex.I * (y : ℂ)) - (1 + Complex.I * (y : ℂ) - (z : ℂ) ^ 2 / 2)
+      = (Complex.exp (Complex.I * (y : ℂ)) - (1 + Complex.I * (y : ℂ) - (y : ℂ) ^ 2 / 2))
+        - (((y ^ 2 - z ^ 2) / 2 : ℝ) : ℂ) := by
+    push_cast; ring
+  have hn : ‖((((y ^ 2 - z ^ 2) / 2 : ℝ)) : ℂ)‖ = |y ^ 2 - z ^ 2| / 2 := by
+    rw [Complex.norm_real, Real.norm_eq_abs, abs_div]
+    norm_num
+  calc ‖Complex.exp (Complex.I * (y : ℂ)) - (1 + Complex.I * (y : ℂ) - (z : ℂ) ^ 2 / 2)‖
+      ≤ ‖Complex.exp (Complex.I * (y : ℂ)) - (1 + Complex.I * (y : ℂ) - (y : ℂ) ^ 2 / 2)‖
+          + ‖((((y ^ 2 - z ^ 2) / 2 : ℝ)) : ℂ)‖ := by rw [heq]; exact norm_sub_le _ _
+    _ ≤ |y| ^ 3 / 6 + |y ^ 2 - z ^ 2| / 2 := by
+        rw [hn]; linarith [norm_cexp_sub_quadratic_le y]
+
+/-- The polynomial envelope of the surrogate's transform remainder: with
+`A = |u|³/2 + 3|u||v|²/8` (the second-order part of `Hₙ − u`, unscaled) and
+`B = |u||v|/2 + A` (the whole of it),
+
+`surrogateRemPoly θ u v = |θ|³B³/6 + (θ²/2)(|u||v|A + A²)`.
+
+It is of degree nine in the coordinates; see the note above on why that is unavoidable and what
+pays for it. -/
+noncomputable def surrogateRemPoly (θ u v : ℝ) : ℝ :=
+  |θ| ^ 3 * (|u| * |v| / 2 + (|u| ^ 3 / 2 + 3 * |u| * |v| ^ 2 / 8)) ^ 3 / 6
+    + θ ^ 2 / 2 * (|u| * |v| * (|u| ^ 3 / 2 + 3 * |u| * |v| ^ 2 / 8)
+        + (|u| ^ 3 / 2 + 3 * |u| * |v| ^ 2 / 8) ^ 2)
+
+set_option maxHeartbeats 800000 in
+/-- **The pointwise expansion of the surrogate's character.**
+
+`e^{iθHₙ} = e^{iθu}(1 − iθ(uv)r/2 + iθu³r²/2 + 3iθ(uv²)r²/8 − θ²(uv)²r²/8) + O(r³)`,
+
+uniformly in `(u, v)` up to the explicit polynomial `surrogateRemPoly`. The four monomials in
+the bracket are precisely the weights `uv`, `u³`, `uv²`, `(uv)²` that
+`multiCharFun_vecRootLaw` evaluates for `k = 2, 3, 3, 4`; integrating this bound against the
+law of the bivariate root turns it into a statement about the surrogate's characteristic
+function, which is `charFun_deltaSurrogate_sub_multiCharFun_le`.
+
+Note where the quartic weight comes from: it is *not* a term of `Hₙ`, it is the square of the
+leading correction, produced by the second-order truncation of `e^{iθ(Hₙ−u)}`. Reading the
+expansion off `Hₙ` alone would miss it and would leave an uncontrolled `O(n⁻¹)`. -/
+theorem norm_cexp_surrogate_sub_expansion_le (θ u v r : ℝ) (hr : 0 ≤ r) (hr1 : r ≤ 1) :
+    ‖Complex.exp (Complex.I * ((θ * (u - u * v * r / 2 + u ^ 3 * r ^ 2 / 2
+            + 3 * u * v ^ 2 * r ^ 2 / 8) : ℝ) : ℂ))
+        - Complex.exp (Complex.I * ((θ * u : ℝ) : ℂ)) *
+          (1 - Complex.I * ((θ * (u * v) * r / 2 : ℝ) : ℂ)
+            + Complex.I * ((θ * u ^ 3 * r ^ 2 / 2 : ℝ) : ℂ)
+            + Complex.I * ((3 * θ * (u * v ^ 2) * r ^ 2 / 8 : ℝ) : ℂ)
+            - ((θ ^ 2 * (u * v) ^ 2 * r ^ 2 / 8 : ℝ) : ℂ))‖
+      ≤ r ^ 3 * surrogateRemPoly θ u v := by
+  have hr2 : r ^ 2 ≤ r := by
+    calc r ^ 2 ≤ r ^ 1 := pow_le_pow_of_le_one hr hr1 (by norm_num)
+      _ = r := pow_one r
+  have hr4 : r ^ 4 ≤ r ^ 3 := pow_le_pow_of_le_one hr hr1 (by norm_num)
+  set A : ℝ := |u| ^ 3 / 2 + 3 * |u| * |v| ^ 2 / 8 with hAdef
+  have hA0 : 0 ≤ A := by rw [hAdef]; positivity
+  set B : ℝ := |u| * |v| / 2 + A with hBdef
+  set Q : ℝ := -(u * v * r / 2) with hQdef
+  set P : ℝ := u ^ 3 * r ^ 2 / 2 + 3 * u * v ^ 2 * r ^ 2 / 8 with hPdef
+  set D : ℝ := Q + P with hDdef
+  have hQabs : |Q| = |u| * |v| * r / 2 := by
+    rw [hQdef, abs_neg, abs_div, abs_mul, abs_mul, abs_of_nonneg hr]
+    norm_num
+  have hPabs : |P| ≤ r ^ 2 * A := by
+    have h1 : |u ^ 3 * r ^ 2 / 2| = |u| ^ 3 * r ^ 2 / 2 := by
+      rw [abs_div, abs_mul, abs_pow, abs_pow, abs_of_nonneg hr]
+      norm_num
+    have h2 : |3 * u * v ^ 2 * r ^ 2 / 8| = 3 * |u| * |v| ^ 2 * r ^ 2 / 8 := by
+      rw [abs_div, abs_mul, abs_mul, abs_mul, abs_pow, abs_pow, abs_of_nonneg hr]
+      norm_num
+    calc |P| ≤ |u ^ 3 * r ^ 2 / 2| + |3 * u * v ^ 2 * r ^ 2 / 8| := by
+          rw [hPdef]; exact abs_add_le _ _
+      _ = r ^ 2 * A := by rw [h1, h2, hAdef]; ring
+  have hDabs : |D| ≤ r * B := by
+    have hstep : |D| ≤ |Q| + |P| := by rw [hDdef]; exact abs_add_le _ _
+    have hrA : r ^ 2 * A ≤ r * A := mul_le_mul_of_nonneg_right hr2 hA0
+    rw [hQabs] at hstep
+    rw [hBdef]
+    linarith [hstep, hPabs, hrA]
+  have harg : θ * (u - u * v * r / 2 + u ^ 3 * r ^ 2 / 2 + 3 * u * v ^ 2 * r ^ 2 / 8)
+      = θ * u + θ * D := by rw [hDdef, hQdef, hPdef]; ring
+  have hpoly : (1 - Complex.I * ((θ * (u * v) * r / 2 : ℝ) : ℂ)
+        + Complex.I * ((θ * u ^ 3 * r ^ 2 / 2 : ℝ) : ℂ)
+        + Complex.I * ((3 * θ * (u * v ^ 2) * r ^ 2 / 8 : ℝ) : ℂ)
+        - ((θ ^ 2 * (u * v) ^ 2 * r ^ 2 / 8 : ℝ) : ℂ))
+      = 1 + Complex.I * ((θ * D : ℝ) : ℂ) - ((θ * Q : ℝ) : ℂ) ^ 2 / 2 := by
+    rw [hDdef, hQdef, hPdef]; push_cast; ring
+  rw [harg, hpoly, Complex.ofReal_add, mul_add, Complex.exp_add, ← mul_sub, norm_mul]
+  have hunit : ‖Complex.exp (Complex.I * ((θ * u : ℝ) : ℂ))‖ = 1 := by
+    rw [Complex.norm_exp]; simp
+  rw [hunit, one_mul]
+  refine (norm_cexp_sub_second_order_le (θ * D) (θ * Q)).trans ?_
+  have hcube : |θ * D| ^ 3 / 6 ≤ r ^ 3 * (|θ| ^ 3 * B ^ 3 / 6) := by
+    have h1 : |D| ^ 3 ≤ (r * B) ^ 3 := pow_le_pow_left₀ (abs_nonneg D) hDabs 3
+    have h2 := mul_le_mul_of_nonneg_left h1 (by positivity : (0 : ℝ) ≤ |θ| ^ 3)
+    calc |θ * D| ^ 3 / 6 = |θ| ^ 3 * |D| ^ 3 / 6 := by rw [abs_mul, mul_pow]
+      _ ≤ |θ| ^ 3 * (r * B) ^ 3 / 6 := by linarith
+      _ = r ^ 3 * (|θ| ^ 3 * B ^ 3 / 6) := by ring
+  have hquad : |(θ * D) ^ 2 - (θ * Q) ^ 2| / 2
+      ≤ r ^ 3 * (θ ^ 2 / 2 * (|u| * |v| * A + A ^ 2)) := by
+    have hexp : (θ * D) ^ 2 - (θ * Q) ^ 2 = θ ^ 2 * (2 * Q * P + P ^ 2) := by
+      rw [hDdef]; ring
+    have hQP : |2 * Q * P + P ^ 2| ≤ 2 * |Q| * |P| + |P| ^ 2 := by
+      calc |2 * Q * P + P ^ 2| ≤ |2 * Q * P| + |P ^ 2| := abs_add_le _ _
+        _ = 2 * |Q| * |P| + |P| ^ 2 := by
+            rw [abs_mul, abs_mul, abs_pow, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 2)]
+    have hb1 : 2 * |Q| * |P| ≤ r ^ 3 * (|u| * |v| * A) := by
+      have hc : (0 : ℝ) ≤ |u| * |v| * r := by positivity
+      calc 2 * |Q| * |P| = (|u| * |v| * r) * |P| := by rw [hQabs]; ring
+        _ ≤ (|u| * |v| * r) * (r ^ 2 * A) := mul_le_mul_of_nonneg_left hPabs hc
+        _ = r ^ 3 * (|u| * |v| * A) := by ring
+    have hb2 : |P| ^ 2 ≤ r ^ 3 * A ^ 2 := by
+      calc |P| ^ 2 ≤ (r ^ 2 * A) ^ 2 := pow_le_pow_left₀ (abs_nonneg P) hPabs 2
+        _ = r ^ 4 * A ^ 2 := by ring
+        _ ≤ r ^ 3 * A ^ 2 := mul_le_mul_of_nonneg_right hr4 (sq_nonneg A)
+    have habs : |θ ^ 2 * (2 * Q * P + P ^ 2)| = θ ^ 2 * |2 * Q * P + P ^ 2| := by
+      rw [abs_mul, abs_of_nonneg (sq_nonneg θ)]
+    have hsum : |2 * Q * P + P ^ 2| ≤ r ^ 3 * (|u| * |v| * A) + r ^ 3 * A ^ 2 := by
+      linarith [hQP, hb1, hb2]
+    have hmul := mul_le_mul_of_nonneg_left hsum (sq_nonneg θ)
+    rw [hexp, habs]
+    calc θ ^ 2 * |2 * Q * P + P ^ 2| / 2
+        ≤ θ ^ 2 * (r ^ 3 * (|u| * |v| * A) + r ^ 3 * A ^ 2) / 2 := by linarith
+      _ = r ^ 3 * (θ ^ 2 / 2 * (|u| * |v| * A + A ^ 2)) := by ring
+  rw [surrogateRemPoly, ← hAdef, ← hBdef]
+  linarith [hcube, hquad]
+
+/-! ### The surrogate's characteristic function, assembled from the multilinear identity
+
+This is the construction the wave-21 note recorded as absent. `E[e^{iθHₙ}]` is not a power of a
+characteristic function and no expansion above applies to it; what
+`norm_cexp_surrogate_sub_expansion_le` supplies is a *pointwise* second-order expansion whose
+four weights are exactly the ones `multiCharFun_vecRootLaw` evaluates. Integrating it against an
+arbitrary law `μ` of the bivariate root — no product structure is used here, so the statement
+applies verbatim to a shifted pair, which is what the conditional window bound of (X3) needs —
+turns it into
+
+`E[e^{iθHₙ}] = φ_μ(θe₀/σ) − ic₂ multi₂ + ic₃ multi₃ᵃ + ic₄ multi₃ᵇ − c₅ multi₄ + O(r³)`,
+
+with `c₂ = θr/2σ³`, `c₃ = θr²/2σ³`, `c₄ = 3θr²/8σ⁵`, `c₅ = θ²r²/8σ⁶` and the remainder
+`r³ ∫ surrogateRemPoly`. Each `multi` is a `multiCharFun` at `k = 2, 3, 3, 4`, so (X2) factorises
+it over the coordinates and the assembly can proceed exactly as in the scalar case.
+
+**What this does and does not settle.** The identity and the remainder bound are unconditional
+and axiom-clean. The *size* of the remainder is not: `∫ surrogateRemPoly` is a ninth moment of
+the root's coordinates, finite under a fourth moment of `F` only after truncation. That is the
+one place where `measure_pi_truncated_sum_le_exp` has to enter, and it is the reason the Esseen
+chain on top of this cannot simply copy the scalar one. -/
+
+local notation "E₂" => EuclideanSpace ℝ (Fin 2)
+
+/-- The coordinate directions of `ℝ²`. The surrogate's transform is evaluated in the direction
+`(θ/σ) • coordDir 0` — the first coordinate only, because `Hₙ` is a polynomial whose *character*
+is carried by `u` alone; the second coordinate enters only through the weights. -/
+noncomputable def coordDir (i : Fin 2) : E₂ := EuclideanSpace.single i (1 : ℝ)
+
+lemma inner_coordDir (i : Fin 2) (w : E₂) : (⟪w, coordDir i⟫ : ℝ) = w i := by
+  rw [coordDir, PiLp.inner_apply, Fin.sum_univ_two]
+  fin_cases i <;> first | exact one_mul _ | simp [inner]
+
+lemma inner_smul_coordDir (c : ℝ) (i : Fin 2) (w : E₂) :
+    (⟪w, c • coordDir i⟫ : ℝ) = c * w i := by
+  rw [real_inner_smul_right, inner_coordDir]
+
+/-- A real weight with an integrable modulus, times a character, is integrable: the character is
+unimodular, so nothing beyond the weight's integrability is needed. -/
+lemma integrable_weight_cexp {μ : Measure E₂} {f : E₂ → ℝ} (hfm : Measurable f)
+    (hf : Integrable (fun w => |f w|) μ) (t : E₂) :
+    Integrable (fun w => ((f w : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)) μ := by
+  have hmeas : Measurable fun w : E₂ =>
+      ((f w : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) := by
+    have h1 : Measurable fun w : E₂ => ((f w : ℝ) : ℂ) := Complex.measurable_ofReal.comp hfm
+    have h2 : Measurable fun w : E₂ => Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) := by
+      have : Measurable fun w : E₂ => (⟪w, t⟫ : ℝ) := by fun_prop
+      fun_prop
+    exact h1.mul h2
+  refine Integrable.mono' hf hmeas.aestronglyMeasurable ?_
+  filter_upwards with w
+  rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, Complex.norm_exp]
+  simp
+
+/-- The bilinear weight family carrying `w ↦ w₀w₁`. -/
+noncomputable def surrW2 : Fin 2 → E₂ := ![coordDir 0, coordDir 1]
+/-- The trilinear weight family carrying `w ↦ w₀³`. -/
+noncomputable def surrW3a : Fin 3 → E₂ := ![coordDir 0, coordDir 0, coordDir 0]
+/-- The trilinear weight family carrying `w ↦ w₀w₁²`. -/
+noncomputable def surrW3b : Fin 3 → E₂ := ![coordDir 0, coordDir 1, coordDir 1]
+/-- The quartic weight family carrying `w ↦ (w₀w₁)²`. -/
+noncomputable def surrW4 : Fin 4 → E₂ := ![coordDir 0, coordDir 1, coordDir 0, coordDir 1]
+
+lemma multiCharFun_surrW2 (μ : Measure E₂) (t : E₂) :
+    multiCharFun μ surrW2 t
+      = ∫ w, ((w 0 * w 1 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) ∂μ := by
+  rw [multiCharFun]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun w => ?_)
+  have h : (∏ l : Fin 2, ((⟪w, surrW2 l⟫ : ℝ) : ℂ)) = ((w 0 * w 1 : ℝ) : ℂ) := by
+    rw [Fin.prod_univ_two, show surrW2 0 = coordDir 0 from rfl,
+      show surrW2 1 = coordDir 1 from rfl]
+    simp only [inner_coordDir]
+    push_cast
+    ring
+  simp only [h]
+
+lemma multiCharFun_surrW3a (μ : Measure E₂) (t : E₂) :
+    multiCharFun μ surrW3a t
+      = ∫ w, ((w 0 ^ 3 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) ∂μ := by
+  rw [multiCharFun]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun w => ?_)
+  have h : (∏ l : Fin 3, ((⟪w, surrW3a l⟫ : ℝ) : ℂ)) = ((w 0 ^ 3 : ℝ) : ℂ) := by
+    rw [Fin.prod_univ_three, show surrW3a 0 = coordDir 0 from rfl,
+      show surrW3a 1 = coordDir 0 from rfl, show surrW3a 2 = coordDir 0 from rfl]
+    simp only [inner_coordDir]
+    push_cast
+    ring
+  simp only [h]
+
+lemma multiCharFun_surrW3b (μ : Measure E₂) (t : E₂) :
+    multiCharFun μ surrW3b t
+      = ∫ w, ((w 0 * w 1 ^ 2 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) ∂μ := by
+  rw [multiCharFun]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun w => ?_)
+  have h : (∏ l : Fin 3, ((⟪w, surrW3b l⟫ : ℝ) : ℂ)) = ((w 0 * w 1 ^ 2 : ℝ) : ℂ) := by
+    rw [Fin.prod_univ_three, show surrW3b 0 = coordDir 0 from rfl,
+      show surrW3b 1 = coordDir 1 from rfl, show surrW3b 2 = coordDir 1 from rfl]
+    simp only [inner_coordDir]
+    push_cast
+    ring
+  simp only [h]
+
+lemma multiCharFun_surrW4 (μ : Measure E₂) (t : E₂) :
+    multiCharFun μ surrW4 t
+      = ∫ w, (((w 0 * w 1) ^ 2 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) ∂μ := by
+  rw [multiCharFun]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun w => ?_)
+  have h : (∏ l : Fin 4, ((⟪w, surrW4 l⟫ : ℝ) : ℂ)) = (((w 0 * w 1) ^ 2 : ℝ) : ℂ) := by
+    rw [Fin.prod_univ_four, show surrW4 0 = coordDir 0 from rfl,
+      show surrW4 1 = coordDir 1 from rfl, show surrW4 2 = coordDir 0 from rfl,
+      show surrW4 3 = coordDir 1 from rfl]
+    simp only [inner_coordDir]
+    push_cast
+    ring
+  simp only [h]
+
+/-- The integrand of the surrogate's second-order expansion: the character in the direction `t`
+weighted by the degree-four polynomial that `norm_cexp_surrogate_sub_expansion_le` produces. -/
+noncomputable def expansionIntegrand (c₂ c₃ c₄ c₅ : ℝ) (t w : E₂) : ℂ :=
+  Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) *
+    (1 - Complex.I * ((c₂ * (w 0 * w 1) : ℝ) : ℂ)
+      + Complex.I * ((c₃ * w 0 ^ 3 : ℝ) : ℂ)
+      + Complex.I * ((c₄ * (w 0 * w 1 ^ 2) : ℝ) : ℂ)
+      - ((c₅ * (w 0 * w 1) ^ 2 : ℝ) : ℂ))
+
+lemma expansionIntegrand_eq (c₂ c₃ c₄ c₅ : ℝ) (t w : E₂) :
+    expansionIntegrand c₂ c₃ c₄ c₅ t w
+      = Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)
+        - Complex.I * (c₂ : ℂ) *
+            (((w 0 * w 1 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I))
+        + Complex.I * (c₃ : ℂ) *
+            (((w 0 ^ 3 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I))
+        + Complex.I * (c₄ : ℂ) *
+            (((w 0 * w 1 ^ 2 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I))
+        - (c₅ : ℂ) *
+            ((((w 0 * w 1) ^ 2 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)) := by
+  rw [expansionIntegrand]
+  push_cast
+  ring
+
+section Expansion
+
+variable {μ : Measure E₂} [IsFiniteMeasure μ] {c₂ c₃ c₄ c₅ : ℝ} {t : E₂}
+  (h2 : Integrable (fun w : E₂ => |w 0 * w 1|) μ)
+  (h3 : Integrable (fun w : E₂ => |w 0 ^ 3|) μ)
+  (h4 : Integrable (fun w : E₂ => |w 0 * w 1 ^ 2|) μ)
+  (h5 : Integrable (fun w : E₂ => |(w 0 * w 1) ^ 2|) μ)
+
+/-- The character alone is integrable against a finite measure: it is unimodular. -/
+private lemma integrable_char (μ : Measure E₂) [IsFiniteMeasure μ] (t : E₂) :
+    Integrable (fun w : E₂ => Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)) μ := by
+  have hm : Measurable fun w : E₂ => Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) := by
+    have hi : Measurable fun w : E₂ => (⟪w, t⟫ : ℝ) := by fun_prop
+    fun_prop
+  refine Integrable.mono' (integrable_const (1 : ℝ)) hm.aestronglyMeasurable ?_
+  filter_upwards with w
+  rw [Complex.norm_exp]
+  simp
+
+include h2 h3 h4 h5 in
+lemma integrable_expansionIntegrand :
+    Integrable (expansionIntegrand c₂ c₃ c₄ c₅ t) μ := by
+  have hI0 := integrable_char μ t
+  have hI2 := integrable_weight_cexp (μ := μ) (f := fun w : E₂ => w 0 * w 1) (by fun_prop) h2 t
+  have hI3a := integrable_weight_cexp (μ := μ) (f := fun w : E₂ => w 0 ^ 3) (by fun_prop) h3 t
+  have hI3b :=
+    integrable_weight_cexp (μ := μ) (f := fun w : E₂ => w 0 * w 1 ^ 2) (by fun_prop) h4 t
+  have hI4 :=
+    integrable_weight_cexp (μ := μ) (f := fun w : E₂ => (w 0 * w 1) ^ 2) (by fun_prop) h5 t
+  have hJ2 := hI2.const_mul (Complex.I * (c₂ : ℂ))
+  have hJ3a := hI3a.const_mul (Complex.I * (c₃ : ℂ))
+  have hJ3b := hI3b.const_mul (Complex.I * (c₄ : ℂ))
+  have hJ4 := hI4.const_mul ((c₅ : ℂ))
+  have hsum : Integrable (fun w : E₂ =>
+      Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)
+        - Complex.I * (c₂ : ℂ) *
+            (((w 0 * w 1 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I))
+        + Complex.I * (c₃ : ℂ) *
+            (((w 0 ^ 3 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I))
+        + Complex.I * (c₄ : ℂ) *
+            (((w 0 * w 1 ^ 2 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I))
+        - (c₅ : ℂ) *
+            ((((w 0 * w 1) ^ 2 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I))) μ :=
+    (((hI0.sub hJ2).add hJ3a).add hJ3b).sub hJ4
+  exact hsum.congr
+    (Filter.Eventually.of_forall fun w => (expansionIntegrand_eq c₂ c₃ c₄ c₅ t w).symm)
+
+set_option maxHeartbeats 1000000 in
+include h2 h3 h4 h5 in
+/-- **The surrogate's expansion integrates to the multilinear combination.**
+
+The four weights `w₀w₁`, `w₀³`, `w₀w₁²`, `(w₀w₁)²` are exactly the `k = 2, 3, 3, 4` instances of
+`multiCharFun`, so this identity is the bridge from the pointwise expansion to (X2). No moment
+assumption beyond the integrability of the four weights enters. -/
+theorem integral_expansionIntegrand_eq :
+    (∫ w, expansionIntegrand c₂ c₃ c₄ c₅ t w ∂μ)
+      = charFun μ t
+        - Complex.I * (c₂ : ℂ) * multiCharFun μ surrW2 t
+        + Complex.I * (c₃ : ℂ) * multiCharFun μ surrW3a t
+        + Complex.I * (c₄ : ℂ) * multiCharFun μ surrW3b t
+        - (c₅ : ℂ) * multiCharFun μ surrW4 t := by
+  have hI0 := integrable_char μ t
+  have hI2 := integrable_weight_cexp (μ := μ) (f := fun w : E₂ => w 0 * w 1) (by fun_prop) h2 t
+  have hI3a := integrable_weight_cexp (μ := μ) (f := fun w : E₂ => w 0 ^ 3) (by fun_prop) h3 t
+  have hI3b :=
+    integrable_weight_cexp (μ := μ) (f := fun w : E₂ => w 0 * w 1 ^ 2) (by fun_prop) h4 t
+  have hI4 :=
+    integrable_weight_cexp (μ := μ) (f := fun w : E₂ => (w 0 * w 1) ^ 2) (by fun_prop) h5 t
+  have hJ2 := hI2.const_mul (Complex.I * (c₂ : ℂ))
+  have hJ3a := hI3a.const_mul (Complex.I * (c₃ : ℂ))
+  have hJ3b := hI3b.const_mul (Complex.I * (c₄ : ℂ))
+  have hJ4 := hI4.const_mul ((c₅ : ℂ))
+  have hs1 : (∫ w : E₂, Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)
+        - Complex.I * (c₂ : ℂ) *
+            (((w 0 * w 1 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)) ∂μ)
+      = (∫ w : E₂, Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) ∂μ)
+        - ∫ w : E₂, Complex.I * (c₂ : ℂ) *
+            (((w 0 * w 1 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)) ∂μ :=
+    integral_sub hI0 hJ2
+  have hs2 : (∫ w : E₂, Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)
+        - Complex.I * (c₂ : ℂ) *
+            (((w 0 * w 1 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I))
+        + Complex.I * (c₃ : ℂ) *
+            (((w 0 ^ 3 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)) ∂μ)
+      = (∫ w : E₂, Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)
+          - Complex.I * (c₂ : ℂ) *
+              (((w 0 * w 1 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)) ∂μ)
+        + ∫ w : E₂, Complex.I * (c₃ : ℂ) *
+            (((w 0 ^ 3 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)) ∂μ :=
+    integral_add (hI0.sub hJ2) hJ3a
+  have hs3 : (∫ w : E₂, Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)
+        - Complex.I * (c₂ : ℂ) *
+            (((w 0 * w 1 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I))
+        + Complex.I * (c₃ : ℂ) *
+            (((w 0 ^ 3 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I))
+        + Complex.I * (c₄ : ℂ) *
+            (((w 0 * w 1 ^ 2 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)) ∂μ)
+      = (∫ w : E₂, Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)
+          - Complex.I * (c₂ : ℂ) *
+              (((w 0 * w 1 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I))
+          + Complex.I * (c₃ : ℂ) *
+              (((w 0 ^ 3 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)) ∂μ)
+        + ∫ w : E₂, Complex.I * (c₄ : ℂ) *
+            (((w 0 * w 1 ^ 2 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)) ∂μ :=
+    integral_add ((hI0.sub hJ2).add hJ3a) hJ3b
+  have hs4 : (∫ w : E₂, Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)
+        - Complex.I * (c₂ : ℂ) *
+            (((w 0 * w 1 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I))
+        + Complex.I * (c₃ : ℂ) *
+            (((w 0 ^ 3 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I))
+        + Complex.I * (c₄ : ℂ) *
+            (((w 0 * w 1 ^ 2 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I))
+        - (c₅ : ℂ) *
+            ((((w 0 * w 1) ^ 2 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)) ∂μ)
+      = (∫ w : E₂, Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)
+          - Complex.I * (c₂ : ℂ) *
+              (((w 0 * w 1 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I))
+          + Complex.I * (c₃ : ℂ) *
+              (((w 0 ^ 3 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I))
+          + Complex.I * (c₄ : ℂ) *
+              (((w 0 * w 1 ^ 2 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)) ∂μ)
+        - ∫ w : E₂, (c₅ : ℂ) *
+            ((((w 0 * w 1) ^ 2 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)) ∂μ :=
+    integral_sub (((hI0.sub hJ2).add hJ3a).add hJ3b) hJ4
+  have e2 : (∫ w : E₂, Complex.I * (c₂ : ℂ) *
+        (((w 0 * w 1 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)) ∂μ)
+      = Complex.I * (c₂ : ℂ) *
+        ∫ w : E₂, ((w 0 * w 1 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) ∂μ :=
+    integral_const_mul _ _
+  have e3a : (∫ w : E₂, Complex.I * (c₃ : ℂ) *
+        (((w 0 ^ 3 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)) ∂μ)
+      = Complex.I * (c₃ : ℂ) *
+        ∫ w : E₂, ((w 0 ^ 3 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) ∂μ :=
+    integral_const_mul _ _
+  have e3b : (∫ w : E₂, Complex.I * (c₄ : ℂ) *
+        (((w 0 * w 1 ^ 2 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)) ∂μ)
+      = Complex.I * (c₄ : ℂ) *
+        ∫ w : E₂, ((w 0 * w 1 ^ 2 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) ∂μ :=
+    integral_const_mul _ _
+  have e4 : (∫ w : E₂, (c₅ : ℂ) *
+        ((((w 0 * w 1) ^ 2 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I)) ∂μ)
+      = (c₅ : ℂ) *
+        ∫ w : E₂, (((w 0 * w 1) ^ 2 : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) ∂μ :=
+    integral_const_mul _ _
+  rw [integral_congr_ae (Filter.Eventually.of_forall (expansionIntegrand_eq c₂ c₃ c₄ c₅ t)),
+    hs4, hs3, hs2, hs1, e2, e3a, e3b, e4, charFun_apply, multiCharFun_surrW2,
+    multiCharFun_surrW3a, multiCharFun_surrW3b, multiCharFun_surrW4]
+
+end Expansion
+
+set_option maxHeartbeats 1000000 in
+/-- **The characteristic function of the delta-method surrogate, over an arbitrary law of the
+bivariate root.**
+
+`|E[e^{iθHₙ}] − (φ_μ − ic₂ multi₂ + ic₃ multi₃ᵃ + ic₄ multi₃ᵇ − c₅ multi₄)| ≤ r³ ∫ remPoly`,
+
+at the direction `(θ/σ) • e₀` and with `c₂ = θr/2σ³`, `c₃ = θr²/2σ³`, `c₄ = 3θr²/8σ⁵`,
+`c₅ = θ²r²/8σ⁶`.
+
+**This is the construction wave 21 recorded as missing**, and it is stated over an arbitrary
+`μ` on purpose: the peeled assembly needs the surrogate's distribution theory both marginally
+and on a block whose bivariate mean is additively perturbed, and by
+`measure_abs_sub_le_of_abs_cdf_sub_le` those are the same statement at two different laws. Taking
+`μ = vecRootLaw F (studentPair F) n` gives the marginal instance and feeds each `multiCharFun` to
+`multiCharFun_vecRootLaw`.
+
+What it does **not** do is bound the right-hand side: `∫ surrogateRemPoly` is a ninth moment of
+the coordinates of `μ`, and making it `O(1)` under a finite fourth moment of `F` is exactly the
+truncation step. -/
+theorem norm_integral_cexp_deltaSurrogate_sub_le (μ : Measure E₂) [IsProbabilityMeasure μ]
+    {σ : ℝ} (hσ : 0 < σ) {r : ℝ} (hr : 0 ≤ r) (hr1 : r ≤ 1) (θ : ℝ)
+    (h2 : Integrable (fun w : E₂ => |w 0 * w 1|) μ)
+    (h3 : Integrable (fun w : E₂ => |w 0 ^ 3|) μ)
+    (h4 : Integrable (fun w : E₂ => |w 0 * w 1 ^ 2|) μ)
+    (h5 : Integrable (fun w : E₂ => |(w 0 * w 1) ^ 2|) μ)
+    (hrem : Integrable (fun w : E₂ => surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2)) μ) :
+    ‖(∫ w, Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ)) ∂μ)
+        - (charFun μ ((θ / σ) • coordDir 0)
+          - Complex.I * ((θ * r / (2 * σ ^ 3) : ℝ) : ℂ)
+              * multiCharFun μ surrW2 ((θ / σ) • coordDir 0)
+          + Complex.I * ((θ * r ^ 2 / (2 * σ ^ 3) : ℝ) : ℂ)
+              * multiCharFun μ surrW3a ((θ / σ) • coordDir 0)
+          + Complex.I * ((3 * θ * r ^ 2 / (8 * σ ^ 5) : ℝ) : ℂ)
+              * multiCharFun μ surrW3b ((θ / σ) • coordDir 0)
+          - ((θ ^ 2 * r ^ 2 / (8 * σ ^ 6) : ℝ) : ℂ)
+              * multiCharFun μ surrW4 ((θ / σ) • coordDir 0))‖
+      ≤ r ^ 3 * ∫ w, surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2) ∂μ := by
+  have hσ0 : σ ≠ 0 := hσ.ne'
+  set t : E₂ := (θ / σ) • coordDir 0 with htdef
+  set c₂ : ℝ := θ * r / (2 * σ ^ 3) with hc2
+  set c₃ : ℝ := θ * r ^ 2 / (2 * σ ^ 3) with hc3
+  set c₄ : ℝ := 3 * θ * r ^ 2 / (8 * σ ^ 5) with hc4
+  set c₅ : ℝ := θ ^ 2 * r ^ 2 / (8 * σ ^ 6) with hc5
+  have hF : Integrable (fun w : E₂ =>
+      Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ))) μ := by
+    have hm : Measurable fun w : E₂ =>
+        Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ)) := by
+      have hi : Measurable fun w : E₂ => θ * deltaSurrogate σ r w :=
+        (measurable_deltaSurrogate σ r).const_mul θ
+      fun_prop
+    refine Integrable.mono' (integrable_const (1 : ℝ)) hm.aestronglyMeasurable ?_
+    filter_upwards with w
+    rw [Complex.norm_exp]
+    simp
+  have hG : Integrable (expansionIntegrand c₂ c₃ c₄ c₅ t) μ :=
+    integrable_expansionIntegrand h2 h3 h4 h5
+  have hpt : ∀ w : E₂,
+      ‖Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ))
+        - expansionIntegrand c₂ c₃ c₄ c₅ t w‖
+      ≤ r ^ 3 * surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2) := by
+    intro w
+    have hkey := norm_cexp_surrogate_sub_expansion_le θ (w 0 / σ) (w 1 / σ ^ 2) r hr hr1
+    have hd : θ * deltaSurrogate σ r w
+        = θ * ((w 0 / σ) - (w 0 / σ) * (w 1 / σ ^ 2) * r / 2 + (w 0 / σ) ^ 3 * r ^ 2 / 2
+            + 3 * (w 0 / σ) * (w 1 / σ ^ 2) ^ 2 * r ^ 2 / 8) := by rw [deltaSurrogate]
+    have hI : (⟪w, t⟫ : ℝ) = θ * (w 0 / σ) := by
+      rw [htdef, inner_smul_coordDir]; ring
+    have k2 : c₂ * (w 0 * w 1) = θ * ((w 0 / σ) * (w 1 / σ ^ 2)) * r / 2 := by
+      rw [hc2]; field_simp
+    have k3 : c₃ * w 0 ^ 3 = θ * (w 0 / σ) ^ 3 * r ^ 2 / 2 := by
+      rw [hc3]; field_simp
+    have k4 : c₄ * (w 0 * w 1 ^ 2)
+        = 3 * θ * ((w 0 / σ) * (w 1 / σ ^ 2) ^ 2) * r ^ 2 / 8 := by
+      rw [hc4]; field_simp
+    have k5 : c₅ * (w 0 * w 1) ^ 2
+        = θ ^ 2 * ((w 0 / σ) * (w 1 / σ ^ 2)) ^ 2 * r ^ 2 / 8 := by
+      rw [hc5]; field_simp
+    rw [hd, expansionIntegrand, hI, k2, k3, k4, k5,
+      mul_comm ((θ * (w 0 / σ) : ℝ) : ℂ) Complex.I]
+    exact hkey
+  rw [← integral_expansionIntegrand_eq h2 h3 h4 h5, ← integral_sub hF hG]
+  refine (norm_integral_le_integral_norm _).trans ?_
+  have hmono : (∫ w, ‖Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ))
+        - expansionIntegrand c₂ c₃ c₄ c₅ t w‖ ∂μ)
+      ≤ ∫ w, r ^ 3 * surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2) ∂μ :=
+    integral_mono (hF.sub hG).norm (hrem.const_mul _) hpt
+  have hc : (∫ w, r ^ 3 * surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2) ∂μ)
+      = r ^ 3 * ∫ w, surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2) ∂μ :=
+    MeasureTheory.integral_const_mul _ _
+  linarith [hmono, hc.le, hc.ge]
+
+
 end StudentizedReduction
 
 /-! ## The Edgeworth approximant on the standardized scale
@@ -4734,7 +5347,90 @@ tail of the bivariate root, uniform Riemann–Lebesgue on totally bounded and co
 parametrised `L¹` families, both quadratic-phase regimes, the four conditioning bricks of (X3),
 **the exponential inequality for bounded independent summands on a product measure, the
 frozen-coordinate transfer, the assembled joint-stratum bound, and the Taylor-to-coordinate-sum
-bridge**. -/
+bridge**.
+
+**Status after the wave-23 re-derivation.** The construction wave 21 named is **built**, and
+building it **overturns wave 21's own verdict** that "no analytic tool for it is missing — what
+is missing is the construction and the assembly". Two genuine analytic items were invisible
+until the construction existed, and both are now visible in named objects. The residue is
+therefore **two** items, not one, and neither is bookkeeping.
+
+* **BUILT — the surrogate is an object and its transform is assembled.**
+  `deltaSurrogate σ r w = u − uvr/2 + u³r²/2 + 3uv²r²/8` on the standardized coordinates
+  `u = w₀/σ`, `v = w₁/σ²`; `exactStudent_eq` identifies the region of
+  `studentizedRootCDF_eq_vecRootLaw` with the studentizing factor the Taylor core estimates, and
+  `abs_exactStudent_sub_deltaSurrogate_le` is the deterministic half of (M2) stated on the
+  bivariate root. `norm_cexp_surrogate_sub_expansion_le` is the pointwise second-order expansion
+  of `e^{iθHₙ}` — expanded to second order because the leading correction is already `O(r)`, so
+  the quartic weight `(uv)²` appears as `(iθq)²/2` with `q = −uvr/2` and is *not* a term of `Hₙ`;
+  reading the expansion off `Hₙ` alone would silently drop it. `coordDir`, `surrW2`, `surrW3a`,
+  `surrW3b`, `surrW4` and the four `multiCharFun_surrW*` identities name the `k = 2, 3, 3, 4`
+  weights; `expansionIntegrand`, `integrable_expansionIntegrand` and
+  `integral_expansionIntegrand_eq` integrate the expansion term by term; and
+  `norm_integral_cexp_deltaSurrogate_sub_le` is the result:
+  `|E[e^{iθHₙ}] − (φ_μ − ic₂M₂ + ic₃M₃ᵃ + ic₄M₃ᵇ − c₅M₄)| ≤ r³ ∫ surrogateRemPoly`
+  at the direction `(θ/σ)•e₀`, with `c₂ = θr/2σ³`, `c₃ = θr²/2σ³`, `c₄ = 3θr²/8σ⁵`,
+  `c₅ = θ²r²/8σ⁶`. It is stated over an **arbitrary** law `μ` of the bivariate root, so the
+  marginal and the additively-perturbed instances the peeled assembly needs are one statement.
+  The cubic exponential remainder it rests on is exported as `norm_cexp_sub_quadratic_le`.
+* **THE FIRST CORRECTION — (X2) supplies the weights but not their values, and for `k ≥ 2` the
+  estimate does not exist.** `multiCharFun_vecRootLaw` is an *identity*: a sum over the `nᵏ`
+  assignments. The only *estimate* in the repository is `norm_mixCharFun_vecRootLaw_sub_le`,
+  which is `k = 1`. Wave 21 read "(X2) supplies exactly the weights the surrogate needs" as
+  meaning the values come with them; they do not.
+  **And the naive extrapolation from `k = 1` is quantitatively wrong, not merely unproved.** For
+  `k = 1` there is only a diagonal: all `n` assignments coincide, and `n·n^{-1/2} = √n` is the
+  whole content. For `k = 2` the assignment sum splits into `n` diagonal terms
+  (`n^{-1}·n·slot_{01}(c)·φ(c)^{n−1}`, of order `1`) and `n(n−1)` off-diagonal ones
+  (`n^{-1}·n(n−1)·slot_0(c)·slot_1(c)·φ(c)^{n−2}`). Each single-slot factor is `O(n^{-1/2})`
+  because `Z` is centred, so the off-diagonal block is `n^{-1}·n²·O(n⁻¹) = O(1)` — **exactly the
+  same order as the diagonal**. Discarding it, as the `k = 1` intuition invites, would change the
+  *limit* of `M₂` and not just its remainder. That is the counterexample to the "free
+  composition" reading, in the same family as wave 18's.
+  `ForMathlib/BivariateEdgeworth.lean`'s `multiCharFun_vecRootLaw_two` now carries out that
+  split exactly, so the claim above is not a heuristic count but a proved identity.
+  The accuracies required are unequal and worth recording, because they bound the work: `c₂` is
+  `O(n^{-1/2})`, so `M₂` is needed to `O(n^{-1/2})`; `c₃`, `c₄`, `c₅` are `O(n⁻¹)`, so
+  `M₃ᵃ`, `M₃ᵇ`, `M₄` are needed only to `O(1)` — but a bound is still an estimate that the
+  identity does not give.
+* **THE SECOND CORRECTION — wave 21's item (i) is closed as a concentration statement and open
+  as a moment statement.** Wave 18 was right that "the multilinear wiring is not free" and named
+  a truncation as the price; wave 21 recorded that price as paid by
+  `measure_pi_truncated_sum_le_exp`. It is not the same object. That lemma bounds a **tail
+  probability** of a truncated sum; what the expansion consumes is `∫ surrogateRemPoly`, a
+  **moment** — of degree nine in the coordinates of the root, so of order `E|X − μ|^{18}` in the
+  sampling law. Under a finite fourth moment it is simply infinite, and no concentration
+  inequality makes it finite. The truncation therefore has to be inserted *before* the expansion
+  — the expansion run on the law of the truncated summands, with the change of law paid for
+  separately by exactly the tail estimate `measure_pi_truncated_sum_le_exp` supplies. The two
+  statements are complementary, not the same; wave 21 conflated them.
+
+Net after wave 23 the residue is **two** items plus a composition:
+(i) an *estimate* for `multiCharFun (vecRootLaw F Z n) b a` at `k = 2` to `O(n^{-1/2})` accuracy
+    and at `k = 3, 4` to `O(1)`. Its **combinatorial half is now closed** for `k = 2`:
+    `multiCharFun_vecRootLaw_two` evaluates the assignment sum exactly as
+    `N^{-1}(N·slot_{01}(c)φ(c)^{N−1} + N(N−1)·slot_0(c)slot_1(c)φ(c)^{N−2})`, for every `N`
+    (the degenerate `N = 0, 1` are absorbed by the vanishing coefficient `N(N−1)`). What is left
+    of it is the analytic half — the one-factor Taylor bound that
+    `norm_mixCharFun_vecRootLaw_sub_le` already performs at `k = 1` — and the same split for
+    `k = 3, 4`, where the partition of the assignment sum is by the partition lattice of
+    `Fin k` rather than by a single diagonal;
+(ii) the truncated-law replacement that makes `∫ surrogateRemPoly` finite and `O(1)` under a
+    fourth moment, together with the tail estimate for the change of law;
+(iii) the Esseen chain on top, which — once (i) and (ii) are in place — is a composition of
+    `abs_measure_Iic_sub_densityCDF_le_charFun`, `esseen_split`,
+    `exists_bound_norm_charFun_vecRootLaw_studentPair` for the outer range, and
+    `norm_integral_cexp_deltaSurrogate_sub_le` for the window, in the shape
+    `abs_meanRootCDF_sub_edgeworthCDF_le` has in the scalar case.
+
+Proved and axiom-clean after wave 23: everything listed after wave 21, **and** the surrogate
+`deltaSurrogate` with its exact-statistic identity and its deterministic (M2) bound, the
+pointwise second-order expansion of its character `norm_cexp_surrogate_sub_expansion_le` with the
+explicit envelope `surrogateRemPoly`, the four multilinear weights and their `multiCharFun`
+identities, the assembled transform `norm_integral_cexp_deltaSurrogate_sub_le` over an arbitrary
+law of the bivariate root, and the closed-form `k = 2` assignment sum
+`multiCharFun_vecRootLaw_two`. -/
+
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
@@ -4832,7 +5528,18 @@ function of the retained pair. Since the conditional window bound for `Hₙ` is 
 the **one** item: the `O(n⁻¹)` expansion of `Hₙ` itself, uniform in the argument and stable under
 an additive perturbation of the bivariate mean. No analytic tool for it is missing — what is
 missing is the construction of `Hₙ`, its characteristic function assembled from the `k ≤ 4`
-instances of `multiCharFun_vecRootLaw`, and the Esseen chain on top. -/
+instances of `multiCharFun_vecRootLaw`, and the Esseen chain on top.
+
+**After the wave-23 re-derivation that last sentence is wrong in its second half, and this
+corollary still adds nothing.** The construction is done — `deltaSurrogate`,
+`norm_cexp_surrogate_sub_expansion_le` and `norm_integral_cexp_deltaSurrogate_sub_le` assemble
+`E[e^{iθHₙ}]` from the `k ≤ 4` weights over an arbitrary law of the bivariate root — and doing it
+showed that two analytic items, not zero, stand between that and the Esseen chain: the `k ≥ 2`
+*estimate* for `multiCharFun` (whose `k = 2` combinatorial half is now closed by
+`multiCharFun_vecRootLaw_two`, and whose off-diagonal block is of the *same order* as the
+diagonal, so the `k = 1` intuition is quantitatively wrong), and the truncated-law replacement
+that makes `∫ surrogateRemPoly` — a ninth moment of the root's coordinates — finite under a
+fourth moment. See the wave-23 note on `edgeworth_studentized_uniform`. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)

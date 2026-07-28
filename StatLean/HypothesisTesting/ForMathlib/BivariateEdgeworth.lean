@@ -49,6 +49,12 @@ moments of the projected law.
   The third-order delta-method surrogate of the studentized route is a degree-four polynomial
   in the coordinates of the root, so its characteristic function is a finite combination of
   `multiCharFun`s with `k ≤ 4`, and is *not* reachable from the one-slot theory.
+* `multiCharFun_vecRootLaw_two` — the `k = 2` assignment sum **in closed form**:
+  `multi_{ρ_N}(b,a) = N^{-1}(N·slot_{{0,1}}(c)φ^{N−1} + N(N−1)·slot_{{0}}(c)slot_{{1}}(c)φ^{N−2})`.
+  The point of stating it is that the off-diagonal block is **not** negligible: each single-slot
+  factor is `O(N^{-1/2})` for a centred `Z`, so the block is `N^{-1}·N²·O(N⁻¹) = O(1)`, exactly
+  the order of the diagonal. The `k = 1` intuition — where there is no off-diagonal at all — is
+  therefore misleading, and the `k ≥ 2` estimate is a genuine analytic item rather than wiring.
 
 ## Proof formalization notes
 
@@ -958,6 +964,211 @@ theorem multiCharFun_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {Z : 
   rfl
 
 end Mixed
+
+/-! ### The `k = 2` diagonal/off-diagonal split, and why it is not bookkeeping
+
+`multiCharFun_vecRootLaw` is an **identity**, not an estimate: it expresses the multilinearly
+weighted characteristic function of a vector root as a sum over the `nᵏ` assignments of weight
+slots to coordinates. Turning it into an estimate is what the studentized surrogate's transform
+needs, and `norm_mixCharFun_vecRootLaw_sub_le` does it only for `k = 1`.
+
+The `k = 1` case is deceptively simple because there is nothing to split: all `n` assignments
+coincide, and the whole content is the surviving `n · n^{-1/2} = √n`. For `k = 2` the sum
+genuinely splits, and **both halves contribute at the same order**:
+
+* the `n` *diagonal* assignments give `n^{-1} · n · slot_{\{0,1\}}(c) · φ(c)^{n−1}`, of order `1`;
+* the `n(n − 1)` *off-diagonal* ones give
+  `n^{-1} · n(n − 1) · slot_{\{0\}}(c) · slot_{\{1\}}(c) · φ(c)^{n−2}`, and each single-slot factor
+  is `O(n^{-1/2})` when `Z` is centred — so this block is `n^{-1} · n² · O(n⁻¹) = O(1)` as well.
+
+Discarding the off-diagonal block, as the `k = 1` picture invites, would therefore change the
+*limit* and not merely the remainder. That is why `Bootstrap/Edgeworth.lean`'s wave-23 note
+records the `k ≥ 2` estimate as a genuine analytic residue rather than as wiring.
+
+`multiCharFun_vecRootLaw_two` is the exact combinatorial half of that estimate: it evaluates the
+assignment sum in closed form, leaving only a one-factor Taylor bound on `slot_{\{0\}}`,
+`slot_{\{1\}}` and `slot_{\{0,1\}}` — the same kind of estimate
+`norm_mixCharFun_vecRootLaw_sub_le` already performs at `k = 1`. The identity holds for every
+`N`, including the degenerate `N = 0` and `N = 1` where the coefficient `N(N − 1)` vanishes on
+its own. -/
+
+section MultiTwo
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+
+private lemma prod_fiber_diag {N : ℕ} (g : Finset (Fin 2) → ℂ) (j : Fin N) :
+    (∏ i : Fin N, g (Finset.univ.filter fun l : Fin 2 => (![j, j] : Fin 2 → Fin N) l = i))
+      = g Finset.univ * g ∅ ^ (N - 1) := by
+  classical
+  set h : Fin N → ℂ :=
+    fun i => g (Finset.univ.filter fun l : Fin 2 => (![j, j] : Fin 2 → Fin N) l = i) with hh
+  have hj : h j = g Finset.univ := by
+    have hset : (Finset.univ.filter fun l : Fin 2 => (![j, j] : Fin 2 → Fin N) l = j)
+        = Finset.univ := by
+      ext l
+      fin_cases l <;> simp
+    rw [hh]
+    simp only [hset]
+  have hother : ∀ i : Fin N, i ≠ j → h i = g ∅ := by
+    intro i hi
+    have hset : (Finset.univ.filter fun l : Fin 2 => (![j, j] : Fin 2 → Fin N) l = i)
+        = ∅ := by
+      ext l
+      fin_cases l <;> simp [Ne.symm hi]
+    rw [hh]
+    simp only [hset]
+  rw [← Finset.mul_prod_erase Finset.univ h (Finset.mem_univ j), hj]
+  congr 1
+  have hcard : (Finset.univ.erase j).card = N - 1 := by
+    rw [Finset.card_erase_of_mem (Finset.mem_univ j), Finset.card_univ, Fintype.card_fin]
+  calc (∏ x ∈ Finset.univ.erase j, h x) = ∏ _x ∈ Finset.univ.erase j, g ∅ :=
+        Finset.prod_congr rfl fun x hx => hother x (Finset.mem_erase.1 hx).1
+    _ = g ∅ ^ (N - 1) := by rw [Finset.prod_const, hcard]
+
+private lemma prod_fiber_offdiag {N : ℕ} (g : Finset (Fin 2) → ℂ) {j k : Fin N} (hjk : j ≠ k) :
+    (∏ i : Fin N, g (Finset.univ.filter fun l : Fin 2 => (![j, k] : Fin 2 → Fin N) l = i))
+      = g {0} * (g {1} * g ∅ ^ (N - 2)) := by
+  classical
+  set h : Fin N → ℂ :=
+    fun i => g (Finset.univ.filter fun l : Fin 2 => (![j, k] : Fin 2 → Fin N) l = i) with hh
+  have hj : h j = g {0} := by
+    have hset : (Finset.univ.filter fun l : Fin 2 => (![j, k] : Fin 2 → Fin N) l = j)
+        = {0} := by
+      ext l
+      fin_cases l <;> simp [Ne.symm hjk]
+    rw [hh]
+    simp only [hset]
+  have hk : h k = g {1} := by
+    have hset : (Finset.univ.filter fun l : Fin 2 => (![j, k] : Fin 2 → Fin N) l = k)
+        = {1} := by
+      ext l
+      fin_cases l <;> simp [hjk]
+    rw [hh]
+    simp only [hset]
+  have hother : ∀ i : Fin N, i ≠ j → i ≠ k → h i = g ∅ := by
+    intro i hij hik
+    have hset : (Finset.univ.filter fun l : Fin 2 => (![j, k] : Fin 2 → Fin N) l = i)
+        = ∅ := by
+      ext l
+      fin_cases l <;> simp [Ne.symm hij, Ne.symm hik]
+    rw [hh]
+    simp only [hset]
+  have hkmem : k ∈ Finset.univ.erase j := Finset.mem_erase.2 ⟨Ne.symm hjk, Finset.mem_univ k⟩
+  rw [← Finset.mul_prod_erase Finset.univ h (Finset.mem_univ j), hj,
+    ← Finset.mul_prod_erase (Finset.univ.erase j) h hkmem, hk]
+  congr 2
+  have hcard : ((Finset.univ.erase j).erase k).card = N - 2 := by
+    rw [Finset.card_erase_of_mem hkmem, Finset.card_erase_of_mem (Finset.mem_univ j),
+      Finset.card_univ, Fintype.card_fin]
+    omega
+  calc (∏ x ∈ (Finset.univ.erase j).erase k, h x)
+      = ∏ _x ∈ (Finset.univ.erase j).erase k, g ∅ :=
+        Finset.prod_congr rfl fun x hx =>
+          hother x (Finset.mem_erase.1 (Finset.mem_erase.1 hx).2).1 (Finset.mem_erase.1 hx).1
+    _ = g ∅ ^ (N - 2) := by rw [Finset.prod_const, hcard]
+
+private lemma sum_pi_fin_two {N : ℕ} {M : Type*} [AddCommMonoid M] (G : (Fin 2 → Fin N) → M) :
+    (∑ σ : Fin 2 → Fin N, G σ) = ∑ j : Fin N, ∑ k : Fin N, G ![j, k] := by
+  have hfun : ∀ σ : Fin 2 → Fin N, (![σ 0, σ 1] : Fin 2 → Fin N) = σ := by
+    intro σ
+    funext l
+    fin_cases l <;> rfl
+  have h1 : (∑ σ : Fin 2 → Fin N, G σ) = ∑ p : Fin N × Fin N, G ![p.1, p.2] :=
+    Fintype.sum_equiv (piFinTwoEquiv fun _ => Fin N) _ _ fun σ => by
+      simp only [piFinTwoEquiv_apply]
+      exact (congrArg G (hfun σ)).symm
+  rw [h1, Fintype.sum_prod_type]
+
+variable (F : Measure ℝ) (Z : ℝ → E) (b : Fin 2 → E) (c : E)
+
+omit [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] in
+/-- The diagonal fibre computation, in the shape `multiCharFun_vecRootLaw` produces. -/
+private lemma prod_fiber_diag' {N : ℕ} (j : Fin N) :
+    (∏ i : Fin N, slotCharFun F Z b
+        (Finset.univ.filter fun l : Fin 2 => (![j, j] : Fin 2 → Fin N) l = i) c)
+      = slotCharFun F Z b Finset.univ c * slotCharFun F Z b ∅ c ^ (N - 1) :=
+  prod_fiber_diag (fun T => slotCharFun F Z b T c) j
+
+omit [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] in
+/-- The off-diagonal fibre computation, in the shape `multiCharFun_vecRootLaw` produces. -/
+private lemma prod_fiber_offdiag' {N : ℕ} {j k : Fin N} (hjk : j ≠ k) :
+    (∏ i : Fin N, slotCharFun F Z b
+        (Finset.univ.filter fun l : Fin 2 => (![j, k] : Fin 2 → Fin N) l = i) c)
+      = slotCharFun F Z b {0} c *
+          (slotCharFun F Z b {1} c * slotCharFun F Z b ∅ c ^ (N - 2)) :=
+  prod_fiber_offdiag (fun T => slotCharFun F Z b T c) hjk
+
+set_option maxHeartbeats 800000 in
+-- The `Finset` rewrites below run over a nested sum whose summand is a product over `Fin N`
+-- of `slotCharFun`s; the default heartbeat budget is not enough.
+/-- **The `k = 2` assignment sum, in closed form.**
+
+`multi_{ρ_N}(b, a) = N^{-1}(N · slot_{{0,1}}(c) φ(c)^{N−1} + N(N−1) · slot_{{0}}(c) slot_{{1}}(c)
+φ(c)^{N−2})` with `c = N^{-1/2} • a`.
+
+This is the exact combinatorial half of the `k = 2` estimate the studentized surrogate's
+transform consumes; see the note above for why the second summand cannot be dropped. -/
+theorem multiCharFun_vecRootLaw_two (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E}
+    (hZ : Measurable Z) {N : ℕ} (b : Fin 2 → E)
+    (hint : ∀ T : Finset (Fin 2),
+      Integrable (fun x : ℝ => ∏ l ∈ T, |(⟪Z x, b l⟫ : ℝ)|) F)
+    (a : E) :
+    multiCharFun (vecRootLaw F Z N) b a
+      = (((Real.sqrt (N : ℝ))⁻¹ : ℝ) : ℂ) ^ 2 *
+        ((N : ℂ) * (slotCharFun F Z b Finset.univ ((Real.sqrt (N : ℝ))⁻¹ • a)
+              * charFun (F.map Z) ((Real.sqrt (N : ℝ))⁻¹ • a) ^ (N - 1))
+          + (N : ℂ) * ((N : ℂ) - 1)
+              * (slotCharFun F Z b {0} ((Real.sqrt (N : ℝ))⁻¹ • a)
+                  * (slotCharFun F Z b {1} ((Real.sqrt (N : ℝ))⁻¹ • a)
+                      * charFun (F.map Z) ((Real.sqrt (N : ℝ))⁻¹ • a) ^ (N - 2)))) := by
+  classical
+  rw [multiCharFun_vecRootLaw F hZ b hint a]
+  congr 1
+  rw [sum_pi_fin_two]
+  have hempty := slotCharFun_empty F hZ b ((Real.sqrt (N : ℝ))⁻¹ • a)
+  have hdiag : ∀ j : Fin N,
+      (∏ i : Fin N, slotCharFun F Z b
+          (Finset.univ.filter fun l : Fin 2 => (![j, j] : Fin 2 → Fin N) l = i)
+          ((Real.sqrt (N : ℝ))⁻¹ • a))
+        = slotCharFun F Z b Finset.univ ((Real.sqrt (N : ℝ))⁻¹ • a)
+            * charFun (F.map Z) ((Real.sqrt (N : ℝ))⁻¹ • a) ^ (N - 1) := by
+    intro j
+    rw [prod_fiber_diag' F Z b ((Real.sqrt (N : ℝ))⁻¹ • a) j, hempty]
+  have hoff : ∀ j k : Fin N, j ≠ k →
+      (∏ i : Fin N, slotCharFun F Z b
+          (Finset.univ.filter fun l : Fin 2 => (![j, k] : Fin 2 → Fin N) l = i)
+          ((Real.sqrt (N : ℝ))⁻¹ • a))
+        = slotCharFun F Z b {0} ((Real.sqrt (N : ℝ))⁻¹ • a)
+            * (slotCharFun F Z b {1} ((Real.sqrt (N : ℝ))⁻¹ • a)
+                * charFun (F.map Z) ((Real.sqrt (N : ℝ))⁻¹ • a) ^ (N - 2)) := by
+    intro j k hjk
+    rw [prod_fiber_offdiag' F Z b ((Real.sqrt (N : ℝ))⁻¹ • a) hjk, hempty]
+  have hinner : ∀ j : Fin N,
+      (∑ k : Fin N, ∏ i : Fin N, slotCharFun F Z b
+          (Finset.univ.filter fun l : Fin 2 => (![j, k] : Fin 2 → Fin N) l = i)
+          ((Real.sqrt (N : ℝ))⁻¹ • a))
+        = slotCharFun F Z b Finset.univ ((Real.sqrt (N : ℝ))⁻¹ • a)
+              * charFun (F.map Z) ((Real.sqrt (N : ℝ))⁻¹ • a) ^ (N - 1)
+          + ((N : ℂ) - 1) * (slotCharFun F Z b {0} ((Real.sqrt (N : ℝ))⁻¹ • a)
+              * (slotCharFun F Z b {1} ((Real.sqrt (N : ℝ))⁻¹ • a)
+                  * charFun (F.map Z) ((Real.sqrt (N : ℝ))⁻¹ • a) ^ (N - 2))) := by
+    intro j
+    have hN : 0 < N := lt_of_le_of_lt (Nat.zero_le j.val) j.isLt
+    have hcard : (Finset.univ.erase j).card = N - 1 := by
+      rw [Finset.card_erase_of_mem (Finset.mem_univ j), Finset.card_univ, Fintype.card_fin]
+    have hcast : (((N - 1 : ℕ) : ℂ)) = (N : ℂ) - 1 := by
+      have := Nat.cast_sub (R := ℂ) hN
+      simpa using this
+    rw [← Finset.add_sum_erase Finset.univ _ (Finset.mem_univ j), hdiag j,
+      Finset.sum_congr rfl (fun k hk => hoff j k (Ne.symm (Finset.mem_erase.1 hk).1)),
+      Finset.sum_const, hcard, nsmul_eq_mul, hcast]
+  rw [Finset.sum_congr rfl (fun j (_ : j ∈ Finset.univ) => hinner j), Finset.sum_const,
+    Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  ring
+
+end MultiTwo
+
 
 /-! ## One-factor bookkeeping: from `φ^{n−1}` to `φ^n`
 
