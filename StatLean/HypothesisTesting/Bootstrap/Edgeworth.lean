@@ -2,6 +2,7 @@ import StatLean.HypothesisTesting.Bootstrap.NonparametricMean
 import StatLean.HypothesisTesting.ForMathlib.BivariateEdgeworth
 import StatLean.HypothesisTesting.ForMathlib.EsseenSmoothing
 import StatLean.HypothesisTesting.ForMathlib.UniformRiemannLebesgue
+import StatLean.ConcentrationInequalities.SubGaussian.Bounded
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
@@ -47,6 +48,17 @@ proved:
   estimate: independence of the retained block for a product measure and for one coordinate of
   a `Measure.pi`, the one-large-summand decomposition, and the union bound over the choices of
   dominant index;
+* `measure_pi_sum_ge_le_exp`, `measure_pi_abs_sum_le_exp`, `measure_pi_truncated_sum_le_exp` —
+  Hoeffding's inequality for bounded independent summands, adapted to the `Measure.pi` product
+  setting and to the uncentred sum that truncation leaves; this is what estimates the remainder
+  of the one-large-summand decomposition, where Chebyshev provably cannot;
+* `root_insertNth_eq`, `measure_abs_sub_le_of_affine`, `measure_pi_abs_root_insertNth_le` — the
+  frozen-coordinate transfer: freezing one coordinate of a root is an affine reparametrisation
+  of the retained block, and a location-uniform window bound survives it untouched;
+* `measure_pi_stratum_le`, `measure_pi_stratum_root_le`, `taylor3_bracket_le`,
+  `subset_union_large_coord` — the assembled joint-stratum bound over an arbitrary statistic,
+  its free root instance, and the deterministic bridge from the third-order Taylor remainder to
+  a coordinate-sum tail;
 * `centredDensity`, `charFun_map_studentPair_eq`, `vecCramerCondition_map_studentPair`,
   `cramerCondition_projLaw_studentPair`,
   `exists_bound_norm_charFun_vecRootLaw_studentPair` — the multivariate Cramér condition for the
@@ -2154,6 +2166,452 @@ theorem abs_measure_le_sub_le_of_peel_strata {Ω : Type*} [MeasurableSpace Ω] (
     Finset.sum_le_sum fun k _ => hstrat k
   linarith
 
+/-! ### (X3)(b): the truncated-sum remainder, by an exponential inequality
+
+Wave 18 recorded that the remainder `P(λ < |∑ᵢ Ỹ(ωᵢ)|)` left by the one-large-summand
+decomposition **cannot** be closed by Chebyshev — truncation does not decrease the second
+moment, so `P ≤ n E[Y²]/λ²` is *exactly* the untruncated bound and the decomposition has gained
+nothing — and that what closes it is an exponential inequality for sums of **bounded**
+independent summands. That inequality is in the repository: the sub-Gaussian half of
+`ConcentrationInequalities` has `isSubGaussian_of_mem_Icc` (Hoeffding's lemma: a variable in
+`[a, b]` is sub-Gaussian with proxy `(b − a)²/4`), which composes with Mathlib's
+`HasSubgaussianMGF.measure_sum_ge_le_of_iIndepFun`.
+
+Two adaptations are needed to make it usable here, and neither is deep. The cross-area import
+direction is the one `ForMathlib/DKWUniform.lean` already uses.
+
+* **The product setting.** The summands here are the coordinates of a `Measure.pi`, not an
+  abstract independent family; `iIndepFun_pi` is exactly the bridge, and
+  `measurePreserving_eval` identifies the coordinate mean with the one-dimensional mean
+  (`integral_pi_coord`).
+* **The centring.** Truncation shifts the mean, so the bound has to be stated for the *centred*
+  sum and the shift reinstated afterwards. `measure_pi_truncated_sum_le_exp` does that
+  bookkeeping: as long as the accumulated shift `n·|E Ỹ|` is at most `λ/2`, the uncentred tail
+  is bounded by `2exp(−λ²/(8nτ²))`, which is the shape the peeled arithmetic consumes
+  (at `λ ≍ 2ᵏ n^{1/6}`, `τ ≍ λ√n` the exponent is `≍ −2^{-2k}n^{-4/3}`, so the remainder is
+  negligible against every stratum).
+
+`hτ` is *not* needed for the two-sided bound itself — the proxy `(τ − (−τ))²/4 = τ²` is the same
+for either sign — but a negative `τ` makes the hypothesis `∀ y, |Y y| ≤ τ` vacuously false, so
+nothing is lost by carrying it. -/
+
+/-- The mean of a coordinate function under a product measure is the one-dimensional mean. -/
+lemma integral_pi_coord {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Y : ℝ → ℝ} (hY : Measurable Y) (i : Fin n) :
+    ∫ ω : Fin n → ℝ, Y (ω i) ∂(Measure.pi fun _ : Fin n => μ) = ∫ y, Y y ∂μ := by
+  have hmp := MeasureTheory.measurePreserving_eval (fun _ : Fin n => μ) i
+  conv_rhs => rw [← hmp.map_eq]
+  rw [integral_map (measurable_pi_apply i).aemeasurable hY.aestronglyMeasurable]
+
+/-- **(X3)(b), one-sided: Hoeffding's inequality on a product measure.** If `|Y| ≤ τ`, then
+under `n` independent draws the centred sum `∑ᵢ(Y(ωᵢ) − E Y)` exceeds `λ` with probability at
+most `exp(−λ²/(2nτ²))`.
+
+This is `StatLean.ConcentrationInequalities.isSubGaussian_of_mem_Icc` (Hoeffding's lemma for a
+bounded variable, proxy `(b − a)²/4`) fed to Mathlib's sum-tail bound, with `iIndepFun_pi`
+supplying the independence of the coordinates of a `Measure.pi`. -/
+theorem measure_pi_sum_ge_le_exp {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Y : ℝ → ℝ} (hY : Measurable Y) {τ : ℝ} (hτ : 0 ≤ τ) (hbdd : ∀ y, |Y y| ≤ τ)
+    {lam : ℝ} (hlam : 0 ≤ lam) :
+    ((Measure.pi fun _ : Fin n => μ)
+        {ω : Fin n → ℝ | lam ≤ ∑ i, (Y (ω i) - ∫ y, Y y ∂μ)}).toReal
+      ≤ Real.exp (-lam ^ 2 / (2 * ((n : ℝ) * τ ^ 2))) := by
+  classical
+  set P : Measure (Fin n → ℝ) := Measure.pi fun _ : Fin n => μ with hP
+  set c : ℝ≥0 := (‖τ - -τ‖₊ / 2) ^ 2 with hc
+  have hcR : ((c : ℝ≥0) : ℝ) = τ ^ 2 := by
+    rw [hc]
+    push_cast
+    rw [Real.norm_eq_abs, abs_of_nonneg (by linarith : (0 : ℝ) ≤ τ - -τ)]
+    ring
+  have hindep : iIndepFun (fun (i : Fin n) (ω : Fin n → ℝ) => Y (ω i)) P :=
+    iIndepFun_pi (X := fun _ : Fin n => Y) (fun _ => hY.aemeasurable)
+  have hindep' : iIndepFun
+      (fun (i : Fin n) (ω : Fin n → ℝ) => Y (ω i) - ∫ y, Y y ∂μ) P :=
+    hindep.comp _ (fun _ => measurable_id.sub_const _)
+  have hsubG : ∀ i : Fin n,
+      HasSubgaussianMGF (fun ω : Fin n → ℝ => Y (ω i) - ∫ y, Y y ∂μ) c P := by
+    intro i
+    have hmem : ∀ᵐ ω ∂P, Y (ω i) ∈ Set.Icc (-τ) τ :=
+      Filter.Eventually.of_forall fun ω => abs_le.1 (hbdd (ω i))
+    have h := StatLean.ConcentrationInequalities.isSubGaussian_of_mem_Icc
+      (μ := P) (X := fun ω : Fin n → ℝ => Y (ω i)) (a := -τ) (b := τ)
+      ((hY.comp (measurable_pi_apply i)).aemeasurable) hmem
+    rwa [StatLean.ConcentrationInequalities.isSubGaussian_iff, integral_pi_coord μ hY i] at h
+  have hmain := ProbabilityTheory.HasSubgaussianMGF.measure_sum_ge_le_of_iIndepFun hindep'
+    (c := fun _ : Fin n => c) (s := Finset.univ) (fun i _ => hsubG i) hlam
+  have hsum : ((∑ _i : Fin n, c : ℝ≥0) : ℝ) = (n : ℝ) * τ ^ 2 := by
+    rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    push_cast
+    rw [hcR]
+  rw [hsum] at hmain
+  exact hmain
+
+/-- **(X3)(b), two-sided.** The same bound for `|∑ᵢ(Y(ωᵢ) − E Y)|`, at the cost of a factor `2`:
+apply the one-sided estimate to `Y` and to `−Y`, whose bound `|−Y| ≤ τ` is the same. -/
+theorem measure_pi_abs_sum_le_exp {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Y : ℝ → ℝ} (hY : Measurable Y) {τ : ℝ} (hτ : 0 ≤ τ) (hbdd : ∀ y, |Y y| ≤ τ)
+    {lam : ℝ} (hlam : 0 ≤ lam) :
+    ((Measure.pi fun _ : Fin n => μ)
+        {ω : Fin n → ℝ | lam ≤ |∑ i, (Y (ω i) - ∫ y, Y y ∂μ)|}).toReal
+      ≤ 2 * Real.exp (-lam ^ 2 / (2 * ((n : ℝ) * τ ^ 2))) := by
+  classical
+  set P : Measure (Fin n → ℝ) := Measure.pi fun _ : Fin n => μ with hP
+  have h1 := measure_pi_sum_ge_le_exp (n := n) μ hY hτ hbdd hlam
+  have h2 := measure_pi_sum_ge_le_exp (n := n) (Y := fun y => -Y y) μ (hY.neg) hτ
+    (fun y => by rw [abs_neg]; exact hbdd y) hlam
+  have hneg : ∀ ω : Fin n → ℝ,
+      (∑ i, (-Y (ω i) - ∫ y, -Y y ∂μ)) = -∑ i, (Y (ω i) - ∫ y, Y y ∂μ) := by
+    intro ω
+    have hstep : ∀ i : Fin n, (-Y (ω i) - ∫ y, -Y y ∂μ) = -(Y (ω i) - ∫ y, Y y ∂μ) := by
+      intro i
+      rw [integral_neg]
+      ring
+    rw [Finset.sum_congr rfl fun i _ => hstep i, Finset.sum_neg_distrib]
+  have h2' : (P {ω : Fin n → ℝ | lam ≤ -∑ i, (Y (ω i) - ∫ y, Y y ∂μ)}).toReal
+      ≤ Real.exp (-lam ^ 2 / (2 * ((n : ℝ) * τ ^ 2))) := by
+    refine le_trans (le_of_eq ?_) h2
+    congr 2
+    ext ω
+    simp only [Set.mem_setOf_eq, hneg ω]
+  have hsub : {ω : Fin n → ℝ | lam ≤ |∑ i, (Y (ω i) - ∫ y, Y y ∂μ)|}
+      ⊆ {ω : Fin n → ℝ | lam ≤ ∑ i, (Y (ω i) - ∫ y, Y y ∂μ)}
+        ∪ {ω : Fin n → ℝ | lam ≤ -∑ i, (Y (ω i) - ∫ y, Y y ∂μ)} := by
+    intro ω hω
+    have hω' : lam ≤ |∑ i, (Y (ω i) - ∫ y, Y y ∂μ)| := hω
+    simp only [Set.mem_union, Set.mem_setOf_eq]
+    rcases abs_cases (∑ i, (Y (ω i) - ∫ y, Y y ∂μ)) with ⟨he, _⟩ | ⟨he, _⟩
+    · exact Or.inl (by rw [← he]; exact hω')
+    · exact Or.inr (by rw [← he]; exact hω')
+  have hle := (measure_mono (μ := P) hsub).trans (measure_union_le _ _)
+  have hfin := ENNReal.toReal_mono
+    (ENNReal.add_ne_top.2 ⟨measure_ne_top _ _, measure_ne_top _ _⟩) hle
+  rw [ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)] at hfin
+  linarith [hfin, h1, h2']
+
+/-- **(X3)(b), in the shape the one-large-summand decomposition produces.** The remainder of
+`measure_pi_inter_le_of_large_summand` is the tail of the sum of the summands *truncated at* `τ`,
+which is uncentred. Provided the accumulated mean shift `n·|E Ỹ|` is at most `λ/2` — which is the
+regime the peeled arithmetic works in, since `E Ỹ` is the tail contribution `−E[Y 1_{|Y| > τ}]`
+of a centred `Y` — the tail is bounded by `2exp(−λ²/(8nτ²))`.
+
+This is what closes (X3)(b): **Chebyshev provably cannot**, because truncation does not decrease
+the second moment, and `n E[Y²]/λ²` is exactly the bound one had before decomposing. -/
+theorem measure_pi_truncated_sum_le_exp {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Y : ℝ → ℝ} (hY : Measurable Y) {τ : ℝ} (hτ : 0 ≤ τ) {lam : ℝ} (hlam : 0 ≤ lam)
+    (hmean : (n : ℝ) * |∫ y, (if |Y y| ≤ τ then Y y else 0) ∂μ| ≤ lam / 2) :
+    ((Measure.pi fun _ : Fin n => μ)
+        {ω : Fin n → ℝ | lam < |∑ i, (if |Y (ω i)| ≤ τ then Y (ω i) else 0)|}).toReal
+      ≤ 2 * Real.exp (-lam ^ 2 / (8 * ((n : ℝ) * τ ^ 2))) := by
+  classical
+  set W : ℝ → ℝ := fun y => if |Y y| ≤ τ then Y y else 0 with hW
+  have hWm : Measurable W :=
+    Measurable.ite (measurableSet_le hY.abs measurable_const) hY measurable_const
+  have hWbdd : ∀ y, |W y| ≤ τ := by
+    intro y
+    by_cases h : |Y y| ≤ τ
+    · rw [hW]; simp only [if_pos h]; exact h
+    · rw [hW]; simp only [if_neg h, abs_zero]; exact hτ
+  set m : ℝ := ∫ y, W y ∂μ with hm
+  have hsub : {ω : Fin n → ℝ | lam < |∑ i, W (ω i)|}
+      ⊆ {ω : Fin n → ℝ | lam / 2 ≤ |∑ i, (W (ω i) - m)|} := by
+    intro ω hω
+    have hω' : lam < |∑ i, W (ω i)| := hω
+    have hsplit : (∑ i, W (ω i)) = (∑ i, (W (ω i) - m)) + (n : ℝ) * m := by
+      rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+        nsmul_eq_mul]
+      ring
+    have h1 : |∑ i, W (ω i)| ≤ |∑ i, (W (ω i) - m)| + (n : ℝ) * |m| := by
+      rw [hsplit]
+      refine (abs_add_le _ _).trans ?_
+      rw [abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ))]
+    simp only [Set.mem_setOf_eq]
+    linarith [hmean, h1, hω']
+  have hmono := ENNReal.toReal_mono (measure_ne_top _ _)
+    (measure_mono (μ := Measure.pi fun _ : Fin n => μ) hsub)
+  refine hmono.trans ?_
+  have h := measure_pi_abs_sum_le_exp (n := n) μ hWm hτ hWbdd (by linarith : (0 : ℝ) ≤ lam / 2)
+  refine h.trans ?_
+  have harg : -(lam / 2) ^ 2 / (2 * ((n : ℝ) * τ ^ 2))
+      = -lam ^ 2 / (8 * ((n : ℝ) * τ ^ 2)) := by ring
+  rw [harg]
+
+/-! ### (X3)(a): the frozen-coordinate window bound, uniform in the frozen value
+
+Wave 18 recorded the second half of (X3) as: "*Transferring the (M1)(b) expansion to the
+retained block uniformly over the frozen value is the honest remaining content*", the retained
+block being "a root law of the same kind on the remaining `n` coordinates, but with an
+`n`-dependent shift **and scale** inherited from the frozen coordinate".
+
+**That is more than is needed, and the parenthetical about the scale is wrong.** Freezing
+coordinate `i` of the size-`(n+1)` root at the value `y` gives, by `root_insertNth_eq`,
+
+`(n+1)^{-1/2} ∑_j Z((insertNth i y z)_j) = (n+1)^{-1/2}Z(y) + s_n · (n^{-1/2} ∑_j Z(z_j))`,
+`s_n = √n/√(n+1)`,
+
+so the frozen value enters **only** through the additive shift `(n+1)^{-1/2}Z(y)`; the scale
+`s_n` is inherited from the *sample size*, not from the frozen coordinate, and it is pinned in
+`[1/√2, 1)` for every `n ≥ 1`. Since the window bound that the slice hypothesis consumes is
+already **uniform in the location** `x` — that is what `measure_abs_sub_le_of_abs_cdf_sub_le`
+delivers, and it is what the marginal statement of (W1) provides at size `n` — an additive shift
+costs nothing at all: `measure_abs_sub_le_of_affine` re-centres the window and rescales its
+width, and the constant degrades only by the factor `1/s_n ≤ √2`.
+
+So (X3)(a) does **not** require re-running (M1)(b) on the block: it is a corollary of the
+*marginal* window bound at size `n`, which is exactly the estimate wave 15 already recorded as
+free. This is the second wave-18 requirement to be found overstated (the first being the
+literal product shape of wave 17), and the reason is the same in both cases: the peeled
+arithmetic consumes location-uniform bounds, and location-uniformity is preserved by every
+affine reparametrisation of the argument. -/
+
+/-- Freezing one coordinate of a sum over `Fin (n+1)` splits off the frozen summand. -/
+lemma sum_insertNth {n : ℕ} (Z : ℝ → ℝ) (i : Fin (n + 1)) (y : ℝ) (z : Fin n → ℝ) :
+    (∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j))
+      = Z y + ∑ j : Fin n, Z (z j) := by
+  rw [Fin.sum_univ_succAbove (fun j => Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)) i]
+  simp [Fin.insertNth_apply_same, Fin.insertNth_apply_succAbove]
+
+/-- **The frozen coordinate enters only as an additive shift.** The size-`(n+1)` root with
+coordinate `i` frozen at `y` is `shift(y) + s_n · (the size-`n` root on the retained block)`,
+with the *deterministic* scale `s_n = √n/√(n+1)`. This is the structural reason (X3)(a) is
+available uniformly in `y`. -/
+lemma root_insertNth_eq {n : ℕ} (Z : ℝ → ℝ) (hn : 0 < n) (i : Fin (n + 1)) (y : ℝ)
+    (z : Fin n → ℝ) :
+    (Real.sqrt ((n : ℝ) + 1))⁻¹ * ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)
+      = (Real.sqrt ((n : ℝ) + 1))⁻¹ * Z y
+        + (Real.sqrt (n : ℝ) / Real.sqrt ((n : ℝ) + 1))
+            * ((Real.sqrt (n : ℝ))⁻¹ * ∑ j : Fin n, Z (z j)) := by
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hs : Real.sqrt (n : ℝ) ≠ 0 := (Real.sqrt_pos.2 hnR).ne'
+  rw [sum_insertNth]
+  field_simp
+
+/-- **Window bounds transfer through an affine change of variable, with no loss in the shift.**
+If `S` satisfies the two-sided window bound with constants `(A, η)` *uniformly in the location*,
+then so does `a + s·S`, with constants `(A/s, η)` — for **every** shift `a`, and with a bound
+that does not depend on `a`.
+
+This is the whole content of "uniformly in the frozen value": a location-uniform bound is
+invariant under translation of the argument, so the only thing a change of variable can cost is
+the scale factor. -/
+lemma measure_abs_sub_le_of_affine {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    {S : Ω → ℝ} {a s A η : ℝ} (hs : 0 < s)
+    (hwin : ∀ u w : ℝ, 0 ≤ w → (P {ω | |S ω - u| ≤ w}).toReal ≤ 2 * A * w + 2 * η)
+    (x : ℝ) {w : ℝ} (hw : 0 ≤ w) :
+    (P {ω | |a + s * S ω - x| ≤ w}).toReal ≤ 2 * (A / s) * w + 2 * η := by
+  have hsne : s ≠ 0 := ne_of_gt hs
+  have hset : {ω | |a + s * S ω - x| ≤ w} = {ω | |S ω - (x - a) / s| ≤ w / s} := by
+    ext ω
+    have hid : a + s * S ω - x = s * (S ω - (x - a) / s) := by
+      field_simp
+      ring
+    have habs : |a + s * S ω - x| = s * |S ω - (x - a) / s| := by
+      rw [hid, abs_mul, abs_of_pos hs]
+    simp only [Set.mem_setOf_eq, habs, ← le_div_iff₀' hs]
+  rw [hset]
+  refine (hwin ((x - a) / s) (w / s) (by positivity)).trans (le_of_eq ?_)
+  field_simp
+
+/-- **(X3)(a), CLOSED: the frozen-coordinate window bound, uniform in the frozen value.**
+
+Granted the *marginal* window bound for the size-`n` root — `P(|Rₙ − u| ≤ w) ≤ 2Aw + 2η`
+uniformly in `u`, which is what `measure_abs_sub_le_of_abs_cdf_sub_le` reads off any
+distribution-function approximation — the size-`(n+1)` root with one coordinate frozen at an
+arbitrary `y` satisfies the same bound with the constant degraded only by `√2`, and with **no
+dependence on `y`**.
+
+Together with `measure_pi_truncated_sum_le_exp` this discharges both halves of (X3) **for a
+root-type window**: see `measure_pi_stratum_root_le`.
+
+**Caveat, and it is the wave-21 finding that matters most.** This is (X3)(a) exactly as wave 18
+and the brief for this wave stated it — "the remaining coordinates form a root law of the same
+kind" — and as such it is closed, and free. But it is **not** the statement the peeled assembly
+consumes. In `abs_measure_le_sub_le_of_peel_strata` the window is on `T`, and in the studentized
+route `T` is the delta-method surrogate `Hₙ = u − uvr/2 + u³r²/2 + 3uv²r²/8`, a degree-four
+polynomial in the bivariate mean — not a root. Freezing a coordinate makes `(u, v)` an affine
+function of the retained pair (`root_insertNth_eq` applies to each coordinate separately), but
+`Hₙ` is then a *polynomial*, not an affine function, of that pair, and
+`measure_abs_sub_le_of_affine` does not apply to it.
+
+Nor can the surrogate be traded for a root: taking `T = u`, whose expansion is already proved
+(`edgeworth_mean_uniform`), makes `|S − T| = O(r)` rather than `O(r³)`, and the peeled sum
+`∑_k τ_k A 2^{k+1}δ` is then `≍ √n · n⁻¹ = n^{-1/2}` — a factor `n^{1/2}` short. That is
+precisely why the surrogate exists. -/
+theorem measure_pi_abs_root_insertNth_le {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Z : ℝ → ℝ} {A η : ℝ} (hA : 0 ≤ A) (hn : 0 < n) (i : Fin (n + 1))
+    (hwin : ∀ u w : ℝ, 0 ≤ w →
+      ((Measure.pi fun _ : Fin n => μ)
+          {z : Fin n → ℝ | |(Real.sqrt (n : ℝ))⁻¹ * ∑ j, Z (z j) - u| ≤ w}).toReal
+        ≤ 2 * A * w + 2 * η)
+    (y x : ℝ) {w : ℝ} (hw : 0 ≤ w) :
+    ((Measure.pi fun _ : Fin n => μ)
+        {z : Fin n → ℝ |
+          |(Real.sqrt ((n : ℝ) + 1))⁻¹
+              * ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j) - x| ≤ w}).toReal
+      ≤ 2 * (Real.sqrt 2 * A) * w + 2 * η := by
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hnR
+  have hsn1 : (0 : ℝ) < Real.sqrt ((n : ℝ) + 1) := Real.sqrt_pos.2 (by linarith)
+  set s : ℝ := Real.sqrt (n : ℝ) / Real.sqrt ((n : ℝ) + 1) with hsdef
+  have hspos : 0 < s := by positivity
+  have hset : {z : Fin n → ℝ |
+      |(Real.sqrt ((n : ℝ) + 1))⁻¹
+          * ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j) - x| ≤ w}
+      = {z : Fin n → ℝ |
+        |(Real.sqrt ((n : ℝ) + 1))⁻¹ * Z y
+          + s * ((Real.sqrt (n : ℝ))⁻¹ * ∑ j : Fin n, Z (z j)) - x| ≤ w} := by
+    ext z
+    simp only [Set.mem_setOf_eq, root_insertNth_eq Z hn i y z]
+    exact Iff.rfl
+  rw [hset]
+  refine (measure_abs_sub_le_of_affine (P := Measure.pi fun _ : Fin n => μ)
+    hspos hwin x hw).trans ?_
+  -- `A / s = A √(n+1)/√n ≤ √2 A` for `n ≥ 1`.
+  have hratio : A / s ≤ Real.sqrt 2 * A := by
+    rw [hsdef, div_div_eq_mul_div, div_le_iff₀ hsn]
+    have hkey : Real.sqrt ((n : ℝ) + 1) ≤ Real.sqrt 2 * Real.sqrt (n : ℝ) := by
+      rw [← Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 2)]
+      refine Real.sqrt_le_sqrt ?_
+      have : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+      linarith
+    nlinarith [hA, hsn.le, hkey]
+  nlinarith [hratio, hw, hA]
+
+/-- **(X3), assembled: the joint stratum bound over an arbitrary statistic.** The two inputs
+wave 18 left compose with the four conditioning bricks it built, and the result is a single
+estimate of the joint mass of
+
+* a **tail event carried by a coordinate sum**, `{λ < |∑ᵢ Y(ωᵢ)|}`, and
+* a **window event for an arbitrary measurable statistic** `T`, `{|T − x| ≤ w}`,
+
+namely `(n+1)·μ{|Y| > τ}·c + 2exp(−λ²/(8(n+1)τ²))`, where `c` bounds the window mass of `T` on
+every frozen-coordinate slice.
+
+Every probabilistic ingredient is proved: `subset_union_large_summand` decomposes the tail into
+the `n+1` one-coordinate events plus a truncated-sum remainder; `measure_pi_inter_coord_le`
+conditions each one-coordinate event on its dominant coordinate; and
+`measure_pi_truncated_sum_le_exp` — Hoeffding on the product measure — estimates the remainder,
+where wave 18 correctly recorded that Chebyshev cannot.
+
+The three properties wave 17 established this shape must have are all visible here: the product
+structure survives on the one-coordinate part (where it is true), the remainder is separated
+rather than absorbed, and no lower bound on the tail probability is needed. What the peeled
+assembly consumes is exactly this, as its per-stratum hypothesis `hstrat`; the arithmetic that
+turns a geometric family of these into `O(n⁻¹)` is `sum_dyadic_strata_le`.
+
+The one remaining hypothesis is `hslice`, the frozen-coordinate window bound for `T` uniform in
+the frozen value. `measure_pi_abs_root_insertNth_le` discharges it *for free* when `T` is a
+**root**; see the caveat there for why the studentized route's `T` is not one. -/
+theorem measure_pi_stratum_le {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Y : ℝ → ℝ} (hY : Measurable Y) {T : (Fin (n + 1) → ℝ) → ℝ} (hT : Measurable T)
+    {c τ lam x w : ℝ} (hc : 0 ≤ c) (hτ : 0 ≤ τ) (hlam : 0 ≤ lam)
+    (hslice : ∀ (i : Fin (n + 1)) (y : ℝ),
+      ((Measure.pi fun _ : Fin n => μ)
+          {z : Fin n → ℝ | |T (i.insertNth y z) - x| ≤ w}).toReal ≤ c)
+    (hmean : ((n + 1 : ℕ) : ℝ) * |∫ y, (if |Y y| ≤ τ then Y y else 0) ∂μ| ≤ lam / 2) :
+    ((Measure.pi fun _ : Fin (n + 1) => μ)
+        ({ω : Fin (n + 1) → ℝ | lam < |∑ i, Y (ω i)|} ∩
+          {ω : Fin (n + 1) → ℝ | |T ω - x| ≤ w})).toReal
+      ≤ ((n : ℝ) + 1) * ((μ {y : ℝ | τ < |Y y|}).toReal * c)
+        + 2 * Real.exp (-lam ^ 2 / (8 * (((n + 1 : ℕ) : ℝ) * τ ^ 2))) := by
+  classical
+  set B : Set (Fin (n + 1) → ℝ) := {ω : Fin (n + 1) → ℝ | |T ω - x| ≤ w} with hBdef
+  have hB : MeasurableSet B := ((hT.sub_const x).abs) measurableSet_Iic
+  have hslice' : ∀ (i : Fin (n + 1)) (y : ℝ),
+      (Measure.pi fun _ : Fin n => μ)
+          {z : Fin n → ℝ | (i.insertNth y z : Fin (n + 1) → ℝ) ∈ B} ≤ ENNReal.ofReal c := by
+    intro i y
+    have hset : {z : Fin n → ℝ | (i.insertNth y z : Fin (n + 1) → ℝ) ∈ B}
+        = {z : Fin n → ℝ | |T (i.insertNth y z) - x| ≤ w} := rfl
+    rw [hset, ← ENNReal.ofReal_toReal (measure_ne_top _ _)]
+    exact ENNReal.ofReal_le_ofReal (hslice i y)
+  have hmain := measure_pi_inter_le_of_large_summand_toReal (n := n) μ hY lam τ hB hc hslice'
+  refine hmain.trans ?_
+  have hrem := measure_pi_truncated_sum_le_exp (n := n + 1) μ hY hτ hlam hmean
+  linarith
+
+/-- **(X3) for a root-type window: fully closed, with no hypothesis left but the marginal
+window bound at size `n`.** The instance of `measure_pi_stratum_le` in which the statistic is a
+root, so that `measure_pi_abs_root_insertNth_le` discharges `hslice` for free. -/
+theorem measure_pi_stratum_root_le {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Y Z : ℝ → ℝ} (hY : Measurable Y) (hZ : Measurable Z)
+    {A η τ lam x w : ℝ} (hA : 0 ≤ A) (hη : 0 ≤ η) (hτ : 0 ≤ τ) (hw : 0 ≤ w)
+    (hn : 0 < n) (hlam : 0 ≤ lam)
+    (hwin : ∀ u w : ℝ, 0 ≤ w →
+      ((Measure.pi fun _ : Fin n => μ)
+          {z : Fin n → ℝ | |(Real.sqrt (n : ℝ))⁻¹ * ∑ j, Z (z j) - u| ≤ w}).toReal
+        ≤ 2 * A * w + 2 * η)
+    (hmean : ((n + 1 : ℕ) : ℝ) * |∫ y, (if |Y y| ≤ τ then Y y else 0) ∂μ| ≤ lam / 2) :
+    ((Measure.pi fun _ : Fin (n + 1) => μ)
+        ({ω : Fin (n + 1) → ℝ | lam < |∑ i, Y (ω i)|} ∩
+          {ω : Fin (n + 1) → ℝ |
+            |(Real.sqrt ((n : ℝ) + 1))⁻¹ * ∑ j, Z (ω j) - x| ≤ w})).toReal
+      ≤ ((n : ℝ) + 1)
+          * ((μ {y : ℝ | τ < |Y y|}).toReal * (2 * (Real.sqrt 2 * A) * w + 2 * η))
+        + 2 * Real.exp (-lam ^ 2 / (8 * (((n + 1 : ℕ) : ℝ) * τ ^ 2))) := by
+  classical
+  have hsumZ : Measurable fun ω : Fin (n + 1) → ℝ => ∑ j, Z (ω j) :=
+    Finset.measurable_sum _ fun j _ => hZ.comp (measurable_pi_apply j)
+  refine measure_pi_stratum_le (T := fun ω => (Real.sqrt ((n : ℝ) + 1))⁻¹ * ∑ j, Z (ω j))
+    μ hY (measurable_const.mul hsumZ) (by positivity) hτ hlam ?_ hmean
+  intro i y
+  exact measure_pi_abs_root_insertNth_le μ hA hn i hwin y x hw
+
+/-! ### The bridge from the Taylor remainder to a coordinate-sum tail
+
+`measure_pi_stratum_le` estimates the joint mass of a **coordinate-sum** tail and a window. The
+tail the peeled assembly hands it is `{2ᵏδ < |T̃ₙ − Hₙ|}`, which is not a coordinate sum. The two
+lemmas here close that gap deterministically: by `abs_studentFactor_sub_taylor3_le'` the
+remainder is `r³` times an explicit bracket in `(|u|, |v|)`, and a large bracket forces a large
+coordinate — and `u`, `v` **are** coordinate sums (the two components of the bivariate root of
+`studentPair F`). So each dyadic stratum splits into two events of exactly the shape
+`measure_pi_stratum_le` consumes, at the level `M ≍ (2ᵏδ/r³)^{1/7}`. -/
+
+/-- The third-order Taylor bracket is dominated by `(73/8)M⁷` on the box `|u|, |v| ≤ M`
+(for `M ≥ 1`, where the fourth-degree monomials are absorbed into the seventh). -/
+lemma taylor3_bracket_le {M u v : ℝ} (hM : 1 ≤ M) (hu : |u| ≤ M) (hv : |v| ≤ M) :
+    4 * |u| * |v| ^ 3 + 4 * |u| ^ 7 + 3 / 4 * |u| ^ 3 * |v| + 3 / 8 * |u| ^ 5
+      ≤ 73 / 8 * M ^ 7 := by
+  have hM0 : (0 : ℝ) ≤ M := by linarith
+  have ha : (0 : ℝ) ≤ |u| := abs_nonneg u
+  have hb : (0 : ℝ) ≤ |v| := abs_nonneg v
+  have hpow : ∀ k : ℕ, k ≤ 7 → M ^ k ≤ M ^ 7 := fun k hk => pow_le_pow_right₀ hM hk
+  have h1 : |u| * |v| ^ 3 ≤ M ^ 7 := by
+    calc |u| * |v| ^ 3 ≤ M * M ^ 3 :=
+          mul_le_mul hu (pow_le_pow_left₀ hb hv 3) (by positivity) hM0
+      _ = M ^ 4 := by ring
+      _ ≤ M ^ 7 := hpow 4 (by norm_num)
+  have h2 : |u| ^ 7 ≤ M ^ 7 := pow_le_pow_left₀ ha hu 7
+  have h3 : |u| ^ 3 * |v| ≤ M ^ 7 := by
+    calc |u| ^ 3 * |v| ≤ M ^ 3 * M :=
+          mul_le_mul (pow_le_pow_left₀ ha hu 3) hv hb (by positivity)
+      _ = M ^ 4 := by ring
+      _ ≤ M ^ 7 := hpow 4 (by norm_num)
+  have h4 : |u| ^ 5 ≤ M ^ 7 :=
+    le_trans (pow_le_pow_left₀ ha hu 5) (hpow 5 (by norm_num))
+  linarith
+
+/-- **The tail of the third-order remainder is carried by a large coordinate.** If the
+`r³`-scaled Taylor bracket exceeds `d`, and `d` is at least `r³(73/8)M⁷`, then one of the two
+coordinates exceeds `M` in modulus. Composed with `abs_studentFactor_sub_taylor3_le'` this turns
+each dyadic stratum of `|T̃ₙ − Hₙ|` into a union of two coordinate-sum tail events, which is
+exactly what `measure_pi_stratum_le` takes. -/
+lemma subset_union_large_coord {Ω : Type*} (u v : Ω → ℝ) {M r d : ℝ} (hM : 1 ≤ M)
+    (hr : 0 ≤ r) (hd : r ^ 3 * (73 / 8 * M ^ 7) ≤ d) :
+    {ω : Ω | d < r ^ 3 * (4 * |u ω| * |v ω| ^ 3 + 4 * |u ω| ^ 7
+        + 3 / 4 * |u ω| ^ 3 * |v ω| + 3 / 8 * |u ω| ^ 5)}
+      ⊆ {ω : Ω | M < |u ω|} ∪ {ω : Ω | M < |v ω|} := by
+  intro ω hω
+  by_contra hcon
+  simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_lt] at hcon
+  have hbr := taylor3_bracket_le hM hcon.1 hcon.2
+  have hmul : r ^ 3 * (4 * |u ω| * |v ω| ^ 3 + 4 * |u ω| ^ 7
+      + 3 / 4 * |u ω| ^ 3 * |v ω| + 3 / 8 * |u ω| ^ 5) ≤ r ^ 3 * (73 / 8 * M ^ 7) :=
+    mul_le_mul_of_nonneg_left hbr (by positivity)
+  have hω' : d < r ^ 3 * (4 * |u ω| * |v ω| ^ 3 + 4 * |u ω| ^ 7
+      + 3 / 4 * |u ω| ^ 3 * |v ω| + 3 / 8 * |u ω| ^ 5) := hω
+  linarith
+
 end StudentizedReduction
 
 /-! ## The Edgeworth approximant on the standardized scale
@@ -4193,7 +4651,90 @@ the multilinear identity (X2), the deterministic core of (M2) and all three of i
 (single-scale, dyadically peeled, per-stratum), the marginal and two-sided anti-concentration
 statements, **the whole of (M3) including the Cramér tail of the bivariate root**, uniform
 Riemann–Lebesgue on totally bounded and compactly parametrised `L¹` families, both
-quadratic-phase regimes, and the four conditioning bricks of (X3). -/
+quadratic-phase regimes, and the four conditioning bricks of (X3).
+
+**Status after the wave-21 re-derivation.** Both named inputs of the wave-18 residue are now
+**closed and axiom-clean**, the (X3) apparatus composes end to end, and the re-derivation
+establishes that (X3)(a) *as wave 18 stated it* is not the statement the peeled assembly
+consumes. The residue is therefore **one** item, and it is not (X3).
+
+* (i) **The exponential inequality — CLOSED, and the tool was already in the repository.**
+  `measure_pi_sum_ge_le_exp` (one-sided), `measure_pi_abs_sum_le_exp` (two-sided) and
+  `measure_pi_truncated_sum_le_exp` (the uncentred shape truncation actually leaves). The route
+  is `isSubGaussian_of_mem_Icc` from `ConcentrationInequalities/SubGaussian/Bounded.lean` —
+  Hoeffding's lemma, proxy `(b − a)²/4` — fed to Mathlib's
+  `HasSubgaussianMGF.measure_sum_ge_le_of_iIndepFun`, with `iIndepFun_pi` bridging the product
+  setting and `measurePreserving_eval` identifying the coordinate mean. The cross-area import
+  is the one `ForMathlib/DKWUniform.lean` already uses.
+  **Two choices worth recording so no later wave re-litigates them.** Bernstein's
+  `HasBernsteinCondition` is a *worse* fit than Hoeffding's lemma here, not a better one: it
+  demands `E X = 0` and a prescribed variance, and the truncated summand `Ỹ` is not centred and
+  has no prescribed variance — whereas *boundedness* is exactly what truncation delivers, and it
+  is all Hoeffding's lemma asks. And `hoeffding` in `SubGaussian/Hoeffding.lean` is `ℕ`- and
+  `Finset.range`-indexed, so `Fin n` sums over a `Measure.pi` go through the Mathlib sum-tail
+  directly rather than through it. Wave 18's diagnosis that Chebyshev cannot close this is
+  confirmed and is now visible in the statement: the bound is exponential in `λ²/(nτ²)`, and no
+  second-moment estimate produces that.
+* (ii) **The frozen-coordinate transfer — CLOSED, and FREE. Wave 18 asked for strictly more than
+  is needed.** `root_insertNth_eq` shows that freezing coordinate `i` of the size-`(n+1)` root at
+  `y` gives `(n+1)^{-1/2}Z(y) + s_n·(the size-n root)` with `s_n = √n/√(n+1)`. So the frozen
+  value enters **only** through the additive shift, and the scale `s_n` is inherited from the
+  *sample size*, not from the frozen coordinate — wave 18's "an `n`-dependent shift **and scale**
+  inherited from the frozen coordinate" is wrong about the scale, and `s_n ∈ [1/√2, 1)` for every
+  `n ≥ 1`. Since the window bound the slice hypothesis consumes is already *uniform in the
+  location*, an additive shift costs nothing (`measure_abs_sub_le_of_affine`), and the constant
+  degrades only by `1/s_n ≤ √2` (`measure_pi_abs_root_insertNth_le`). **No re-run of the (M1)(b)
+  argument on the block is needed**: location-uniformity survives every affine reparametrisation
+  of the argument. This is the second wave-18 requirement to be found overstated, and the reason
+  is the same as for the first (wave 17's literal product shape).
+* **(X3) composes end to end.** `measure_pi_stratum_le` takes the frozen-coordinate window bound
+  for an *arbitrary* measurable statistic as its one hypothesis and discharges everything else —
+  the one-large-summand decomposition, the conditioning on the dominant coordinate, and the
+  truncated-sum remainder — producing `(n+1)·μ{|Y| > τ}·c + 2exp(−λ²/(8(n+1)τ²))`, which is
+  exactly the per-stratum hypothesis of `abs_measure_le_sub_le_of_peel_strata`.
+  `measure_pi_stratum_root_le` is the instance where the hypothesis is free. And
+  `taylor3_bracket_le` / `subset_union_large_coord` supply the missing deterministic step: the
+  bracket of `abs_studentFactor_sub_taylor3_le'` is at most `(73/8)M⁷` on the box
+  `|u|, |v| ≤ M`, so each dyadic stratum of `|T̃ₙ − Hₙ|` is contained in a union of two
+  coordinate-sum tail events at the level `M ≍ (2ᵏδ/r³)^{1/7}` — and `u`, `v` *are* coordinate
+  sums.
+* **THE CORRECTION, and it relocates the residue.** The window in
+  `abs_measure_le_sub_le_of_peel_strata` is on `T`, and in the studentized route `T` is the
+  surrogate `Hₙ = u − uvr/2 + u³r²/2 + 3uv²r²/8`, **not** a root. Freezing a coordinate makes
+  `(u, v)` affine in the retained pair, but `Hₙ` is then a *polynomial* of that pair, and
+  `measure_abs_sub_le_of_affine` does not apply to it. So the free root instance is not the one
+  the assembly consumes.
+  The surrogate cannot be traded for a root either. Taking `T = u`, whose expansion is already
+  proved (`edgeworth_mean_uniform`), makes `|S − T| = O(r)` instead of `O(r³)`; the peeled sum
+  `∑_k τ_k·A·2^{k+1}δ` then runs to `2ᵏ ≍ √n` before the tail decays, and totals `≍ √n·n⁻¹
+  = n^{-1/2}` — a factor `n^{1/2}` short. That is exactly why the surrogate exists, and it is a
+  fourth candidate substitute joining the three of wave 17 on the list of things that provably
+  fall short.
+  But the conditional window bound for `Hₙ` is **not an independent item**: by
+  `measure_abs_sub_le_of_abs_cdf_sub_le` it is a distribution-function approximation for `Hₙ` on
+  a size-`n` block whose bivariate mean is additively perturbed — the *same* object as the
+  marginal one, at a shifted pair. So both halves of what is left are the one thing.
+
+Net after wave 21 the residue is **one** item: the `O(n⁻¹)` Edgeworth expansion of the
+delta-method surrogate `Hₙ` itself, uniform in the argument and stable under an additive
+perturbation of the bivariate mean. Every input to it is present and proved — the multilinear
+identity (X2) supplying the weights `uv`, `u³`, `uv²`, `(uv)²`; the truncation that legitimises
+that expansion under a fourth moment, which is (i) above; the Cramér tail of the bivariate root
+(M3); and Esseen smoothing against a signed `L¹` density. What is *absent* is the assembly:
+`Hₙ` is not defined in this file, its characteristic function has not been put together from the
+`k ≤ 4` instances of `multiCharFun_vecRootLaw`, and the Esseen chain on top of it — the bivariate
+analogue of `abs_meanRootCDF_sub_edgeworthCDF_le`, some 230 lines in the scalar case — has not
+been built. That is the whole of what separates this statement from its proof; it is one
+construction and one assembly, with no missing analytic tool.
+
+Proved and axiom-clean after wave 21: (S1), (S2), (M1)(b) with the `φ^{n−1}` bookkeeping, the
+multilinear identity (X2), the deterministic core of (M2) and all three of its assemblies, the
+marginal and two-sided anti-concentration statements, the whole of (M3) including the Cramér
+tail of the bivariate root, uniform Riemann–Lebesgue on totally bounded and compactly
+parametrised `L¹` families, both quadratic-phase regimes, the four conditioning bricks of (X3),
+**the exponential inequality for bounded independent summands on a product measure, the
+frozen-coordinate transfer, the assembled joint-stratum bound, and the Taylor-to-coordinate-sum
+bridge**. -/
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
@@ -4270,7 +4811,28 @@ direction-uniformity, the multivariate Cramér condition for the studentizing pa
 of the Cramér tail to the vector root (`norm_charFun_vecRootLaw_le_pow`, which removes the need
 for Hall's conditioning device altogether) and both quadratic-phase regimes — uniform
 Riemann–Lebesgue on totally bounded and on compactly parametrised `L¹` families, and the
-conditioning bricks of (X3). -/
+conditioning bricks of (X3).
+
+**After the wave-21 re-derivation the residue over there is a single item, and this corollary
+still adds nothing to it.** Both wave-18 inputs are closed: the exponential inequality for
+bounded independent summands on a product measure (`measure_pi_truncated_sum_le_exp`, from
+`isSubGaussian_of_mem_Icc`) and the frozen-coordinate transfer
+(`measure_pi_abs_root_insertNth_le`), the second of which turned out to be *free* — a
+location-uniform window bound survives an affine reparametrisation, so wave 18's demand that the
+(M1)(b) expansion be re-run on the retained block was strictly more than is needed. The (X3)
+apparatus now composes end to end (`measure_pi_stratum_le` and its free root instance
+`measure_pi_stratum_root_le`, with `subset_union_large_coord` bridging the Taylor remainder to a
+coordinate-sum tail).
+
+What the re-derivation also establishes is that the free root instance is not the one the peeled
+assembly consumes: its window is on the delta-method surrogate `Hₙ`, a degree-four polynomial in
+the bivariate mean, and freezing a coordinate leaves it a polynomial rather than an affine
+function of the retained pair. Since the conditional window bound for `Hₙ` is by
+`measure_abs_sub_le_of_abs_cdf_sub_le` the same object as the marginal one, everything left is
+the **one** item: the `O(n⁻¹)` expansion of `Hₙ` itself, uniform in the argument and stable under
+an additive perturbation of the bivariate mean. No analytic tool for it is missing — what is
+missing is the construction of `Hₙ`, its characteristic function assembled from the `k ≤ 4`
+instances of `multiCharFun_vecRootLaw`, and the Esseen chain on top. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
