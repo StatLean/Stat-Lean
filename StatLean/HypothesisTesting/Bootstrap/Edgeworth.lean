@@ -4,6 +4,7 @@ import StatLean.HypothesisTesting.ForMathlib.EsseenSmoothing
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
+import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 
 /-!
 # One-term Edgeworth expansions for the mean, and their uniform form
@@ -287,6 +288,55 @@ theorem exists_bound_lt_one_of_cramer [IsProbabilityMeasure F]
   rcases abs_cases s with ⟨he, _⟩ | ⟨he, _⟩
   · rw [he] at hs; exact key s hs
   · rw [he] at hs; rw [← hsym s]; exact key (-s) hs
+
+/-- **An absolutely continuous law satisfies Cramér's condition.**
+
+This is the Riemann–Lebesgue lemma, in the form the Edgeworth expansions consume: writing
+`F = volume.withDensity (dF/dx)`, the characteristic function of `F` is the Fourier integral of
+its density up to the reparametrisation `s = −2πw`, so `φ_F(s) → 0` as `|s| → ∞`, and in
+particular `‖φ_F(s)‖ ≤ 1/2` off a compact set.
+
+The point of recording it is that `edgeworth_studentized_uniform` is stated under `F ≪ volume`
+while `edgeworth_mean_uniform` is stated under `CramerCondition F`: this lemma is the bridge
+between the two hypothesis sets, so the studentized statement's smoothness assumption is
+strictly stronger than the centred one's, as it should be. -/
+theorem cramerCondition_of_absolutelyContinuous (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF : F ≪ volume) : CramerCondition F := by
+  set p : ℝ → ℝ≥0∞ := F.rnDeriv volume with hpdef
+  have hpm : Measurable p := F.measurable_rnDeriv volume
+  have hplt : ∀ᵐ x ∂(volume : Measure ℝ), p x < ⊤ := Measure.rnDeriv_lt_top F volume
+  have hFd : (volume : Measure ℝ).withDensity p = F :=
+    Measure.withDensity_rnDeriv_eq F volume hF
+  -- the characteristic function is the Fourier integral of the density, at `w = −s/(2π)`
+  have hchar : ∀ s : ℝ, charFun F s
+      = ∫ v : ℝ, Real.fourierChar (-(v * (-(2 * Real.pi)⁻¹ * s)))
+          • (((p v).toReal : ℝ) : ℂ) := by
+    intro s
+    rw [charFun_apply_real, ← hFd, integral_withDensity_eq_integral_toReal_smul hpm hplt]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun v => ?_)
+    simp only []
+    have hex : (2 * Real.pi * -(v * (-(2 * Real.pi)⁻¹ * s)) : ℝ) = s * v := by
+      have hpi : (2 * Real.pi) ≠ 0 := by positivity
+      field_simp
+    rw [Circle.smul_def, Real.fourierChar_apply, hex, smul_eq_mul, Complex.ofReal_mul]
+    change (((p v).toReal : ℝ) : ℂ) * Complex.exp (((s : ℝ) : ℂ) * ((v : ℝ) : ℂ) * Complex.I)
+      = Complex.exp (((s : ℝ) : ℂ) * ((v : ℝ) : ℂ) * Complex.I) * (((p v).toReal : ℝ) : ℂ)
+    ring
+  have hRL : Filter.Tendsto (fun w : ℝ => ∫ v : ℝ, Real.fourierChar (-(v * w))
+        • (((p v).toReal : ℝ) : ℂ)) (Filter.cocompact ℝ) (nhds 0) :=
+    Real.tendsto_integral_exp_smul_cocompact _
+  have hc : (-(2 * Real.pi)⁻¹ : ℝ) ≠ 0 := by
+    have hpi : Real.pi ≠ 0 := Real.pi_ne_zero
+    simp [hpi]
+  have hmap : Filter.Tendsto (fun s : ℝ => -(2 * Real.pi)⁻¹ * s)
+      (Filter.cocompact ℝ) (Filter.cocompact ℝ) :=
+    le_of_eq (Homeomorph.mulLeft₀ (-(2 * Real.pi)⁻¹ : ℝ) hc).map_cocompact
+  have hTend : Filter.Tendsto (fun s : ℝ => charFun F s) (Filter.cocompact ℝ) (nhds 0) := by
+    have hcomp := hRL.comp hmap
+    simpa [Function.comp_def, hchar] using hcomp
+  refine ⟨1 / 2, by norm_num, ?_⟩
+  filter_upwards [NormedAddGroup.tendsto_nhds_zero.1 hTend (1 / 2) (by norm_num)] with s hs
+  exact hs.le
 
 end Cramer
 
