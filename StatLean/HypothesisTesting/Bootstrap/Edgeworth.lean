@@ -33,6 +33,11 @@ proved:
 * `abs_inv_sqrt_one_add_sub_le`, `abs_studentFactor_sub_taylor_le` — the uniform second-order
   Taylor bound for the studentizing factor `(1 + x)^{-1/2}`, proved algebraically, and the
   resulting `O(n^{-1})` pointwise replacement of the studentized root by its surrogate;
+* `measure_Ioc_le_of_abs_cdf_sub_le`, `abs_measure_le_sub_le_of_cdf_approx` — anti-concentration
+  is a *corollary* of an approximate distribution function, not a separate hypothesis;
+* `abs_measure_le_sub_le_of_peel` — the dyadically peeled perturbation bound, whose strata are
+  joint window-times-tail events; it strictly strengthens the single-scale
+  `abs_measure_le_sub_le_of_dist_le`, which cannot reach `O(n⁻¹)` for the studentized root;
 * `normalCDF_sub_le`, `stdNormalCDF_sub_le` — the Lipschitz modulus of the normal distribution
   function, the constant `A` that Esseen's smoothing inequality consumes;
 * `edgeworth_mean_uniform` — the expansion for the centred root, with a uniform `O(n^{-1})`
