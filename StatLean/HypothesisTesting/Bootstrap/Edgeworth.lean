@@ -3910,6 +3910,289 @@ theorem norm_charFun_map_deltaSurrogate_vecRootLaw_le
   exact norm_charFun_map_deltaSurrogate_le_of_certificate _ σ r θ (pow_nonneg hc n) hcert
     (fun t ht => hcram t (le_trans hR ht))
 
+/-! ### (W30) The leakage ball belongs at the origin of *frequency*, not of `s`
+
+The wave-27 certificate measures the leakage of the weight `a` **outside a ball of radius
+`R = |θ|/(2σ)` centred at `s = 0`**, so that every frequency carrying mass satisfies
+`‖t₀ + s‖ ≥ ‖t₀‖ − R`. That shape is unreachable, for two independent arithmetic reasons, and
+the repair is not a change of constants but a relocation of the ball.
+
+**(1) The `L¹(ρ)` error is not `O(M^{-4})` under the standing hypothesis.** The error is at best
+`ρ{‖w‖ > M}`, and the wave-27 note prices that by "a fourth moment of the root". There is no
+such thing here. The root's *second* coordinate is `w₁ = n^{-1/2}∑((Xᵢ − m)² − σ²)`, so a fourth
+moment of `F` — which is all `hF4` gives — is only a **second** moment of its summand `ζ`. On
+the truncated law, whose level `τ = √n` is forced from both sides by the change of law
+(`abs_studentizedRootCDF_sub_truncAt_le` and the note above `measure_pi_exists_coord_mem_le`),
+`E ζ⁴ ≤ (τ² + σ²)² E ζ² ≍ n² E ξ⁴`, whence
+
+`E w₁⁴ = n⁻¹ E ζ⁴ + 3(1 − n⁻¹)(E ζ²)² = O(n)`, **not** `O(1)`,
+
+and this is sharp — for `P(|ξ| > t) ≍ t^{-4}(log t)^{-2}` the first term is `≍ n/(log n)²`. So
+`ρ{‖w‖ > M} ≲ min(M^{-2}, n M^{-4})`, and `η = O(n^{-3/2})` forces `M ≥ n^{5/8}`, not the
+`M = n^{3/8}` the wave-27 note records. (A rectangle `|w₀| ≤ n^{3/8}`, `|w₁| ≤ n^{5/8}` is
+admissible — `w₀` does have four moments — but does not lower the `w₁` radius, which is what the
+phase's gradient sees.)
+
+**(2) At `M ≥ n^{5/8}` the multiplier's spectrum genuinely leaves the ball.** The phase
+`θ(Hₙ − w₀/σ)` has gradient `≍ |θ|(Mr + M²r²) = |θ| n^{1/8}` on a bulk of radius `M = n^{5/8}`,
+which exceeds the admitted bandwidth `R = |θ|/(2σ)` by `n^{1/8}`; and `R` cannot be enlarged,
+since `‖t₀‖ − R ≥ ε₀√n` caps it at `|θ|/σ`. Integration by parts against `‖s‖ > R` therefore has
+no gain to extract. This is the fourth arithmetic incompatibility in the series (wave 25: the
+truncation level; wave 26: the uniform moment allowance; wave 27: the linearisation block size).
+
+**(3) The repair, and it is structural.** What the transfer inequality actually needs is not that
+the weight sit near the carrier, but that it put little mass on the frequencies where `‖φ_ρ‖` is
+*not* small — the **low-frequency ball** `‖t₀ + s‖ < R`. Relocating the leakage set from
+`{s : R < ‖s‖}` to `{s : ‖t₀ + s‖ < R}` costs nothing in the transfer inequality; it *simplifies*
+it, since the triangle inequality `‖t₀ + s‖ ≥ ‖t₀‖ − ‖s‖` is no longer needed. And it changes the
+analytic requirement completely. On the relocated bad set `s₀ ≈ −θ/σ`, so the total phase
+`θHₙ(w) − ⟪w, s⟫` has
+
+`∂_{w₀}(θHₙ − ⟪·, s⟫) = θ ∂_{w₀}Hₙ − s₀`, and `σ ∂_{w₀}Hₙ = 1 − vr/2 + 3u²r²/2 + 3v²r²/8 ≥ 5/6`
+
+**for all `u, v, r`** — `deltaSurrogate_slope_ge`, because `1 − x/2 + 3x²/8` has minimum `5/6` at
+`x = 2/3` and the term `3u²r²/2` is nonnegative. Hence on `‖t₀ + s‖ ≤ R ≤ |θ|/(2σ)`
+
+`|∂_{w₀}(θHₙ − ⟪·, s⟫)| ≥ (5/6)|θ|/σ + |θ|/σ − R ≥ (4/3)|θ|/σ`,
+
+a lower bound **valid on the whole plane, with no cut-off, uniformly in `M`**. The surrogate has
+*no stationary points at all*: on `u = 0` the slope is `1 − vr/2 + 3v²r²/8 > 0`, and the other
+branch `∂_v Hₙ = 0` forces `vr = 2/3`, where the slope is `2/3 + 1/6 + 3u²r²/2 > 0`. That is the
+fact which makes the root's Cramér tail transfer, and it is entirely invisible in the
+ball-at-the-origin formulation, which asks instead that the *perturbation* `Hₙ − w₀/σ` be slowly
+varying — a demand the bulk radius `M` defeats.
+`deltaSurrogate_add_smul_coordDir_ge` is the cut-off-free integrated form of the slope bound.
+
+With the ball relocated the arithmetic closes at `M = n^{5/8}`: each integration by parts in `w₀`
+gains `‖χ'‖σ/(M|θ|) + (27/16)Mr²σ/|θ| = O(n^{-9/8}) + O(n^{-7/8})` against a prefactor
+`∫χ(·/M) = O(M²) = O(n^{5/4})` and a bad-set area `≍ ε₀²n`, so `N = 5` integrations by parts give
+`O(n^{9/4} · n^{-35/8}) = O(n^{-3/2})`. Twelve, let alone the wave-27 note's twenty-six, are not
+needed; what was needed was the right bad set.
+
+**(4) The mass may not be taken uniform in `θ`.** `Γ` is at least the `L¹` mass of the transform
+of a function oscillating at frequency `≍ |θ|n^{1/4}` over a ball of radius `M`, hence grows like
+`M²(|θ|n^{1/4})² ≍ n^{7/4}θ²`; the construction offers no `θ`-uniform bound, and the wave-27
+signature's `Γ : ℕ → ℝ` is amended to `Γ : ℕ → ℝ → ℝ` bounded polynomially in `n` and `|θ|`
+jointly. This is free downstream: `Γ(n, θ)cⁿ` exceeds the trivial bound `‖φ‖ ≤ 2` only for
+`|θ| ≳ c^{-n/K}`, and the Esseen weight `min(1/(π|ξ|), 1/(δπ²ξ²))` prices the whole range beyond
+a cut `T` at `2/(δπ²T)` — exponentially small at that `T`. -/
+
+/-- **The surrogate's slope along the first coordinate is bounded below by `5/6`, always.**
+`σ ∂_{w₀}Hₙ = 1 − x/2 + 3u²r²/2 + 3x²/8` at `x = vr`, and `1 − x/2 + 3x²/8` has minimum `5/6`.
+
+No hypothesis on `u`, `v` or `r` is used: the delta-method surrogate has **no stationary
+points**, on the bulk or off it. This is the deterministic fact that makes the root's Cramér
+tail transfer to the surrogate; see the section note. -/
+theorem deltaSurrogate_slope_ge (x : ℝ) : (5 : ℝ) / 6 ≤ 1 - x / 2 + 3 * x ^ 2 / 8 := by
+  nlinarith [sq_nonneg (x - 2 / 3)]
+
+private lemma coordDir_add_apply_zero (w : E₂) (t : ℝ) :
+    (w + t • (coordDir 0 : E₂)) 0 = w 0 + t := by
+  simp [coordDir, EuclideanSpace.single_apply]
+
+private lemma coordDir_add_apply_one (w : E₂) (t : ℝ) :
+    (w + t • (coordDir 0 : E₂)) 1 = w 1 := by
+  simp [coordDir, EuclideanSpace.single_apply]
+
+/-- **The cut-off-free integrated form of `deltaSurrogate_slope_ge`.** Moving the argument by
+`t ≥ 0` along the first coordinate increases the surrogate by at least `5t/(6σ)` — at every `w`,
+every `r`, and with no bulk restriction whatsoever.
+
+The cubic increment is handled without any bound on `u`: `(u + d)³ − u³ = d(3u² + 3ud + d²)` and
+the bracket is a quadratic form of nonpositive discriminant, hence nonnegative for every `u` when
+`d ≥ 0`. -/
+theorem deltaSurrogate_add_smul_coordDir_ge {σ : ℝ} (hσ : 0 < σ) (r : ℝ) (w : E₂)
+    {t : ℝ} (ht : 0 ≤ t) :
+    deltaSurrogate σ r w + 5 * t / (6 * σ)
+      ≤ deltaSurrogate σ r (w + t • (coordDir 0 : E₂)) := by
+  rw [deltaSurrogate, deltaSurrogate, coordDir_add_apply_zero, coordDir_add_apply_one]
+  set u : ℝ := w 0 / σ with hu
+  set v : ℝ := w 1 / σ ^ 2 with hv
+  set d : ℝ := t / σ with hd
+  have hd0 : 0 ≤ d := div_nonneg ht hσ.le
+  have hsum : (w 0 + t) / σ = u + d := by rw [hu, hd]; ring
+  rw [hsum]
+  have hkey : (5 : ℝ) / 6 * d ≤ (u + d) - (u + d) * v * r / 2 + (u + d) ^ 3 * r ^ 2 / 2
+      + 3 * (u + d) * v ^ 2 * r ^ 2 / 8
+      - (u - u * v * r / 2 + u ^ 3 * r ^ 2 / 2 + 3 * u * v ^ 2 * r ^ 2 / 8) := by
+    have hexp : (u + d) - (u + d) * v * r / 2 + (u + d) ^ 3 * r ^ 2 / 2
+        + 3 * (u + d) * v ^ 2 * r ^ 2 / 8
+        - (u - u * v * r / 2 + u ^ 3 * r ^ 2 / 2 + 3 * u * v ^ 2 * r ^ 2 / 8)
+        = d * (1 - v * r / 2 + 3 * (v * r) ^ 2 / 8)
+          + r ^ 2 * d * (3 * u ^ 2 + 3 * u * d + d ^ 2) / 2 := by ring
+    rw [hexp]
+    have h1 : (5 : ℝ) / 6 ≤ 1 - v * r / 2 + 3 * (v * r) ^ 2 / 8 := deltaSurrogate_slope_ge (v * r)
+    have hq : (0 : ℝ) ≤ 3 * u ^ 2 + 3 * u * d + d ^ 2 := by
+      nlinarith [sq_nonneg (2 * u + d), sq_nonneg u, sq_nonneg d]
+    have h2 : (0 : ℝ) ≤ r ^ 2 * d * (3 * u ^ 2 + 3 * u * d + d ^ 2) / 2 :=
+      div_nonneg (mul_nonneg (mul_nonneg (sq_nonneg r) hd0) hq) (by norm_num)
+    nlinarith [mul_le_mul_of_nonneg_left h1 hd0]
+  have hdc : 5 * t / (6 * σ) = 5 / 6 * d := by rw [hd]; field_simp
+  rw [hdc]
+  linarith
+
+/-- **A Fourier certificate with the leakage measured on the low-frequency ball.** Identical to
+`HasFourierCertificate` except that the mass the weight is forbidden to carry is the mass it puts
+on `{s : ‖t₀ + s‖ < R}` — the frequencies at which the law's characteristic function is *not*
+known to be small — rather than the mass outside a ball centred at `s = 0`.
+
+The two are not comparable, and this is the one the construction can meet: see the section note.
+`R` is now directly the Cramér radius `ε₀√n`, with no bookkeeping through `‖t₀‖ − R`. -/
+def HasFourierCertificateOnBand (μ : Measure E₂) (σ r θ : ℝ) (t₀ : E₂) (R Γ ε η : ℝ) : Prop :=
+  ∃ a : E₂ → ℂ, Integrable a ∧ (∫ s : E₂, ‖a s‖) ≤ Γ ∧
+    (∫ s in {s : E₂ | ‖t₀ + s‖ < R}, ‖a s‖) ≤ ε ∧
+    (∫ w, ‖Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ))
+      - fourierSynth a t₀ w‖ ∂μ) ≤ η
+
+/-- **The transfer inequality, on the relocated ball.** If `‖φ_μ‖ ≤ κ` off the ball of radius
+`R`, then the synthesis of a weight of mass `Γ` carrying at most `ε` inside that ball integrates
+to at most `Γκ + ε`. Compare `norm_integral_fourierSynth_le`: the frequencies are now split
+exactly where the hypothesis on `φ_μ` splits them, so no triangle inequality intervenes. -/
+theorem norm_integral_fourierSynth_le_of_band (μ : Measure E₂) [IsProbabilityMeasure μ]
+    {a : E₂ → ℂ} (ha : Integrable a) (t₀ : E₂) {R Γ ε κ : ℝ} (hκ : 0 ≤ κ)
+    (hΓ : ∫ s : E₂, ‖a s‖ ≤ Γ)
+    (htail : ∫ s in {s : E₂ | ‖t₀ + s‖ < R}, ‖a s‖ ≤ ε)
+    (hbd : ∀ t : E₂, R ≤ ‖t‖ → ‖charFun μ t‖ ≤ κ) :
+    ‖∫ w, fourierSynth a t₀ w ∂μ‖ ≤ Γ * κ + ε := by
+  set A : Set E₂ := {s : E₂ | ‖t₀ + s‖ < R} with hAdef
+  have hAm : Measurable fun s : E₂ => ‖t₀ + s‖ :=
+    (continuous_const.add continuous_id).norm.measurable
+  have hA : MeasurableSet A := measurableSet_lt hAm measurable_const
+  set g : E₂ → ℂ := fun s => a s * charFun μ (t₀ + s) with hgdef
+  have hgm : AEStronglyMeasurable g volume :=
+    ha.aestronglyMeasurable.mul
+      ((continuous_charFun.comp (continuous_const.add continuous_id)).aestronglyMeasurable)
+  have hgle : ∀ s : E₂, ‖g s‖ ≤ ‖a s‖ := by
+    intro s
+    rw [hgdef, norm_mul]
+    exact le_of_le_of_eq (mul_le_of_le_one_right (norm_nonneg _) (norm_charFun_le_one _)) rfl
+  have hgint : Integrable g := Integrable.mono' ha.norm hgm
+    (Filter.Eventually.of_forall hgle)
+  rw [integral_fourierSynth μ ha t₀, ← integral_add_compl hA hgint]
+  refine (norm_add_le _ _).trans ?_
+  have hAbd : ‖∫ s in A, g s‖ ≤ ε :=
+    (norm_integral_le_integral_norm _).trans
+      (le_trans (setIntegral_mono hgint.norm.integrableOn ha.norm.integrableOn hgle) htail)
+  have hAcbd : ‖∫ s in Aᶜ, g s‖ ≤ Γ * κ := by
+    refine (norm_integral_le_integral_norm _).trans ?_
+    have hstep : ∫ s in Aᶜ, ‖g s‖ ≤ ∫ s in Aᶜ, ‖a s‖ * κ := by
+      refine setIntegral_mono_on hgint.norm.integrableOn
+        ((ha.norm.mul_const κ).integrableOn) hA.compl ?_
+      intro s hs
+      rw [hgdef, norm_mul]
+      exact mul_le_mul_of_nonneg_left (hbd _ (not_lt.1 hs)) (norm_nonneg _)
+    have hmul : ∫ s in Aᶜ, ‖a s‖ * κ = (∫ s in Aᶜ, ‖a s‖) * κ :=
+      MeasureTheory.integral_mul_const _ _
+    have hle : ∫ s in Aᶜ, ‖a s‖ ≤ Γ :=
+      le_trans (setIntegral_le_integral ha.norm
+        (Filter.Eventually.of_forall fun s => norm_nonneg _)) hΓ
+    calc ∫ s in Aᶜ, ‖g s‖ ≤ (∫ s in Aᶜ, ‖a s‖) * κ := by rw [← hmul]; exact hstep
+      _ ≤ Γ * κ := mul_le_mul_of_nonneg_right hle hκ
+  linarith
+
+/-- **A band certificate from an exact synthesis on the bulk.** The relocated-ball analogue of
+`hasFourierCertificate_of_eqOn`; the bound `B` off the bulk must still be supplied on its own
+terms and not read off from `Γ`, for the reason recorded there. -/
+theorem hasFourierCertificateOnBand_of_eqOn (μ : Measure E₂) [IsProbabilityMeasure μ]
+    (σ r θ : ℝ) {a : E₂ → ℂ} (ha : Integrable a) (t₀ : E₂) {R Γ ε η B : ℝ}
+    (hΓ : ∫ s : E₂, ‖a s‖ ≤ Γ)
+    (htail : ∫ s in {s : E₂ | ‖t₀ + s‖ < R}, ‖a s‖ ≤ ε)
+    {S : Set E₂} (hS : MeasurableSet S)
+    (heq : ∀ w ∈ S, fourierSynth a t₀ w
+      = Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ)))
+    (hout : ∀ w ∈ Sᶜ, ‖Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ))
+      - fourierSynth a t₀ w‖ ≤ B)
+    (hη : B * (μ Sᶜ).toReal ≤ η) :
+    HasFourierCertificateOnBand μ σ r θ t₀ R Γ ε η := by
+  refine ⟨a, ha, hΓ, htail, ?_⟩
+  set f : E₂ → ℂ :=
+    fun w => Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ)) with hfdef
+  have hfmeas : Measurable f := by
+    have h1 : Measurable fun w : E₂ => (θ * deltaSurrogate σ r w : ℝ) :=
+      (measurable_deltaSurrogate σ r).const_mul θ
+    exact Complex.measurable_exp.comp ((Complex.measurable_ofReal.comp h1).const_mul Complex.I)
+  have hfnorm : ∀ w : E₂, ‖f w‖ = 1 := by
+    intro w
+    rw [hfdef]
+    simp [Complex.norm_exp]
+  have hfint : Integrable f μ :=
+    Integrable.mono' (integrable_const (1 : ℝ)) hfmeas.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun w => le_of_eq (hfnorm w))
+  have hsint : Integrable (fourierSynth a t₀) μ := integrable_fourierSynth μ ha t₀
+  have hdint : Integrable (fun w => ‖f w - fourierSynth a t₀ w‖) μ := (hfint.sub hsint).norm
+  have hsplit : (∫ w, ‖f w - fourierSynth a t₀ w‖ ∂μ)
+      = (∫ w in S, ‖f w - fourierSynth a t₀ w‖ ∂μ)
+        + ∫ w in Sᶜ, ‖f w - fourierSynth a t₀ w‖ ∂μ :=
+    (integral_add_compl hS hdint).symm
+  have hSzero : (∫ w in S, ‖f w - fourierSynth a t₀ w‖ ∂μ) = 0 := by
+    refine integral_eq_zero_of_ae ?_
+    filter_upwards [ae_restrict_mem hS] with w hw
+    rw [heq w hw, sub_self, norm_zero]
+    rfl
+  have hSc : (∫ w in Sᶜ, ‖f w - fourierSynth a t₀ w‖ ∂μ) ≤ B * (μ Sᶜ).toReal := by
+    have hmono : (∫ w in Sᶜ, ‖f w - fourierSynth a t₀ w‖ ∂μ) ≤ ∫ _w in Sᶜ, B ∂μ :=
+      setIntegral_mono_on hdint.integrableOn (integrable_const _) hS.compl
+        (fun w hw => hout w hw)
+    have hconst : (∫ _w in Sᶜ, B ∂μ) = (μ Sᶜ).toReal * B := by
+      rw [setIntegral_const, smul_eq_mul, measureReal_def]
+    rw [hconst] at hmono
+    linarith [hmono]
+  rw [hsplit, hSzero, zero_add]
+  exact hSc.trans hη
+
+/-- **The outer-range bound for the surrogate, from a band certificate and a Cramér ball.** -/
+theorem norm_charFun_map_deltaSurrogate_le_of_bandCertificate (μ : Measure E₂)
+    [IsProbabilityMeasure μ] (σ r θ : ℝ) {t₀ : E₂} {R Γ ε η κ : ℝ} (hκ : 0 ≤ κ)
+    (hcert : HasFourierCertificateOnBand μ σ r θ t₀ R Γ ε η)
+    (hbd : ∀ t : E₂, R ≤ ‖t‖ → ‖charFun μ t‖ ≤ κ) :
+    ‖charFun (μ.map (deltaSurrogate σ r)) θ‖ ≤ Γ * κ + ε + η := by
+  obtain ⟨a, ha, hΓ, htail, happrox⟩ := hcert
+  rw [charFun_map_deltaSurrogate]
+  set f : E₂ → ℂ :=
+    fun w => Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ)) with hfdef
+  have hfmeas : Measurable f := by
+    have h1 : Measurable fun w : E₂ => (θ * deltaSurrogate σ r w : ℝ) :=
+      (measurable_deltaSurrogate σ r).const_mul θ
+    exact Complex.measurable_exp.comp ((Complex.measurable_ofReal.comp h1).const_mul Complex.I)
+  have hfnorm : ∀ w : E₂, ‖f w‖ = 1 := by
+    intro w
+    rw [hfdef]
+    simp [Complex.norm_exp]
+  have hfint : Integrable f μ :=
+    Integrable.mono' (integrable_const (1 : ℝ)) hfmeas.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun w => le_of_eq (hfnorm w))
+  have hsint : Integrable (fourierSynth a t₀) μ := integrable_fourierSynth μ ha t₀
+  have hsplit : (∫ w, f w ∂μ)
+      = (∫ w, (f w - fourierSynth a t₀ w) ∂μ) + ∫ w, fourierSynth a t₀ w ∂μ := by
+    rw [integral_sub hfint hsint]
+    ring
+  calc ‖∫ w, f w ∂μ‖
+      = ‖(∫ w, (f w - fourierSynth a t₀ w) ∂μ) + ∫ w, fourierSynth a t₀ w ∂μ‖ := by
+        rw [← hsplit]
+    _ ≤ ‖∫ w, (f w - fourierSynth a t₀ w) ∂μ‖ + ‖∫ w, fourierSynth a t₀ w ∂μ‖ :=
+        norm_add_le _ _
+    _ ≤ η + (Γ * κ + ε) :=
+        add_le_add (le_trans (norm_integral_le_integral_norm _) happrox)
+          (norm_integral_fourierSynth_le_of_band μ ha t₀ hκ hΓ htail hbd)
+    _ = Γ * κ + ε + η := by ring
+
+/-- **The outer range of the Esseen chain, on the surrogate's law, from the root's Cramér tail
+and a band certificate.** The relocated-ball analogue of
+`norm_charFun_map_deltaSurrogate_vecRootLaw_le`; the hypothesis relating `R` to the Cramér radius
+is now the direct `ε₀√n ≤ R` instead of `ε₀√n ≤ ‖t₀‖ − R`. -/
+theorem norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band
+    (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E₂} (hZ : Measurable Z)
+    {n : ℕ} {c ε₀ : ℝ} (hc : 0 ≤ c)
+    (hcram : ∀ t : E₂, ε₀ * Real.sqrt (n : ℝ) ≤ ‖t‖ →
+      ‖charFun (vecRootLaw F Z n) t‖ ≤ c ^ n)
+    (σ r θ : ℝ) {t₀ : E₂} {R Γ ε η : ℝ}
+    (hR : ε₀ * Real.sqrt (n : ℝ) ≤ R)
+    (hcert : HasFourierCertificateOnBand (vecRootLaw F Z n) σ r θ t₀ R Γ ε η) :
+    ‖charFun ((vecRootLaw F Z n).map (deltaSurrogate σ r)) θ‖ ≤ Γ * c ^ n + ε + η := by
+  haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
+  exact norm_charFun_map_deltaSurrogate_le_of_bandCertificate _ σ r θ (pow_nonneg hc n) hcert
+    (fun t ht => hcram t (le_trans hR ht))
+
 /-- **The linearisation of the surrogate has a one-sided error, and it is of the full second
 order.** For every increment `h` with `h₀ ≥ 0`,
 
