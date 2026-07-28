@@ -189,4 +189,117 @@ theorem eventually_norm_fourierOsc_le_of_isCompact {α : Type*} [TopologicalSpac
 
 end Uniform
 
+/-! ## The application: an oscillatory integral with a quadratic phase
+
+For a law carried by the parabola `y ↦ (y, y²)` — the law of `(X − μ, (X − μ)² − σ²)` that the
+studentized Edgeworth expansion runs on — the characteristic function in the direction
+`t = (t₀, t₁)` is, up to a unimodular factor, `∫ f(y) e^{i(t₀y + t₁y²)} dy` with `f` the density
+of `X − μ`. A multivariate Cramér condition asks for this to stay away from `1` as `‖t‖ → ∞`,
+uniformly.
+
+Two regimes have to be treated separately, and only the first is a Riemann–Lebesgue statement:
+
+* `|t₁|` bounded. Then `‖t‖ → ∞` forces `|t₀| → ∞`, and the integral is the Fourier transform,
+  at frequency `t₀`, of the **twisted density** `y ↦ e^{it₁y²}f(y)`. The twists form a family
+  parametrised by the compact interval `|t₁| ≤ M`, continuously in `L¹` — dominated convergence,
+  with dominating function `2‖f‖` — so `eventually_norm_fourierOsc_le_of_isCompact` applies and
+  gives decay uniform in `t₁`. That is `eventually_norm_quadPhaseInt_le` below.
+* `|t₁| → ∞`. Here the phase is genuinely quadratic and no `L¹` family is compact: the twists
+  `e^{it₁y²}f` oscillate away from each other in `L¹`. The classical estimates are van der
+  Corput's second-derivative test, or the soft autocorrelation identity
+  `|I|² = ∫ e^{i(t₀h + t₁h²)} ĝ_h(2t₁h) dh` with `g_h(z) = f(z + h)\overline{f(z)}`, which for
+  compactly supported `f` confines `h` to a compact set and lets dominated convergence take
+  `|t₁| → ∞`. Neither is proved here; see the note on `edgeworth_studentized_uniform`. -/
+
+section QuadraticPhase
+
+/-- The density twisted by the quadratic part of the phase: `y ↦ e^{i t y²} f(y)`. -/
+noncomputable def quadTwist (f : ℝ → ℂ) (t : ℝ) : ℝ → ℂ :=
+  fun y => Complex.exp ((t * y ^ 2 : ℝ) * Complex.I) * f y
+
+/-- The oscillatory integral with a quadratic phase, `∫ f(y) e^{i(t₀y + t₁y²)} dy`. -/
+noncomputable def quadPhaseInt (f : ℝ → ℂ) (t₀ t₁ : ℝ) : ℂ :=
+  ∫ y : ℝ, Complex.exp ((t₀ * y + t₁ * y ^ 2 : ℝ) * Complex.I) * f y
+
+/-- Twisting the density turns a quadratic phase into a linear one. -/
+lemma quadPhaseInt_eq_fourierOsc (f : ℝ → ℂ) (t₀ t₁ : ℝ) :
+    quadPhaseInt f t₀ t₁ = fourierOsc (quadTwist f t₁) t₀ := by
+  refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
+  change Complex.exp ((t₀ * y + t₁ * y ^ 2 : ℝ) * Complex.I) * f y
+    = Complex.exp ((y * t₀ : ℝ) * Complex.I)
+        * (Complex.exp ((t₁ * y ^ 2 : ℝ) * Complex.I) * f y)
+  rw [← mul_assoc, ← Complex.exp_add]
+  congr 2
+  push_cast
+  ring
+
+/-- The twist does not change the modulus, hence preserves integrability. -/
+lemma integrable_quadTwist {f : ℝ → ℂ} (hf : Integrable f) (t : ℝ) :
+    Integrable (quadTwist f t) := by
+  refine Integrable.mono' hf.norm ?_ (Filter.Eventually.of_forall fun y => ?_)
+  · exact (Complex.continuous_exp.comp (by fun_prop)).aestronglyMeasurable.mul
+      hf.aestronglyMeasurable
+  · rw [quadTwist, norm_mul, Complex.norm_exp_ofReal_mul_I, one_mul]
+
+/-- **The twists depend on the quadratic coefficient continuously in `L¹`.** Dominated
+convergence with the dominating function `2‖f‖`: this is what makes the family over a compact
+range of coefficients totally bounded, and hence Riemann–Lebesgue uniform over it. -/
+lemma exists_nhds_integral_norm_quadTwist_sub_le {f : ℝ → ℂ} (hf : Integrable f) (a : ℝ)
+    {δ : ℝ} (hδ : 0 < δ) :
+    ∃ U ∈ 𝓝 a, ∀ b ∈ U, (∫ y : ℝ, ‖quadTwist f b y - quadTwist f a y‖) ≤ δ := by
+  set Φ : ℝ → ℝ → ℝ := fun b y => ‖quadTwist f b y - quadTwist f a y‖ with hΦ
+  have hmeas : ∀ b : ℝ, AEStronglyMeasurable (Φ b) (volume : Measure ℝ) := by
+    intro b
+    exact (((Complex.continuous_exp.comp (by fun_prop)).aestronglyMeasurable.mul
+      hf.aestronglyMeasurable).sub ((Complex.continuous_exp.comp
+        (by fun_prop)).aestronglyMeasurable.mul hf.aestronglyMeasurable)).norm
+  have hbd : ∀ b : ℝ, ∀ y : ℝ, ‖Φ b y‖ ≤ 2 * ‖f y‖ := by
+    intro b y
+    have h1 : ‖quadTwist f b y‖ = ‖f y‖ := by
+      rw [quadTwist, norm_mul, Complex.norm_exp_ofReal_mul_I, one_mul]
+    have h2 : ‖quadTwist f a y‖ = ‖f y‖ := by
+      rw [quadTwist, norm_mul, Complex.norm_exp_ofReal_mul_I, one_mul]
+    have := norm_sub_le (quadTwist f b y) (quadTwist f a y)
+    rw [h1, h2] at this
+    rw [hΦ, Real.norm_eq_abs, abs_of_nonneg (norm_nonneg _)]
+    linarith
+  have hcontpt : ∀ y : ℝ, ContinuousAt (fun b : ℝ => Φ b y) a := by
+    intro y
+    refine Continuous.continuousAt ?_
+    exact ((Complex.continuous_exp.comp (by fun_prop)).mul continuous_const).sub
+      continuous_const |>.norm
+  have hCA : ContinuousAt (fun b : ℝ => ∫ y : ℝ, Φ b y) a :=
+    continuousAt_of_dominated (Filter.Eventually.of_forall fun b => hmeas b)
+      (Filter.Eventually.of_forall fun b =>
+        Filter.Eventually.of_forall fun y => hbd b y)
+      (hf.norm.const_mul 2) (Filter.Eventually.of_forall hcontpt)
+  have hzero : (∫ y : ℝ, Φ a y) = 0 := by
+    simp [hΦ]
+  have hev : ∀ᶠ b in 𝓝 a, (∫ y : ℝ, Φ b y) ≤ δ := by
+    have hlt := Metric.tendsto_nhds.1 hCA δ hδ
+    filter_upwards [hlt] with b hb
+    have hnn : 0 ≤ ∫ y : ℝ, Φ b y := integral_nonneg fun y => norm_nonneg _
+    rw [Real.dist_eq, hzero, sub_zero, abs_of_nonneg hnn] at hb
+    exact hb.le
+  obtain ⟨U, hU, hUb⟩ := Filter.eventually_iff_exists_mem.1 hev
+  exact ⟨U, hU, hUb⟩
+
+/-- **The linear regime of the quadratic-phase estimate.**
+
+For a fixed `L¹` function `f` and a fixed bound `M`, `∫ f(y)e^{i(t₀y + t₁y²)} dy → 0` as
+`|t₀| → ∞`, **uniformly over `|t₁| ≤ M`**. This is Riemann–Lebesgue applied to the compactly
+parametrised family of twisted densities `e^{it₁y²}f`, and it is one of the two regimes a
+multivariate Cramér condition for a parabola-carried law decomposes into. -/
+theorem eventually_norm_quadPhaseInt_le {f : ℝ → ℂ} (hf : Integrable f) (M : ℝ) {ε : ℝ}
+    (hε : 0 < ε) :
+    ∀ᶠ t₀ in Filter.cocompact ℝ, ∀ t₁ : ℝ, |t₁| ≤ M → ‖quadPhaseInt f t₀ t₁‖ ≤ ε := by
+  have hmain := eventually_norm_fourierOsc_le_of_isCompact (K := Set.Icc (-M) M)
+    isCompact_Icc (quadTwist f) (fun a _ => integrable_quadTwist hf a)
+    (fun a _ δ hδ => exists_nhds_integral_norm_quadTwist_sub_le hf a hδ) hε
+  filter_upwards [hmain] with t₀ ht₀ t₁ ht₁
+  rw [quadPhaseInt_eq_fourierOsc]
+  exact ht₀ t₁ (Set.mem_Icc.2 (abs_le.1 ht₁))
+
+end QuadraticPhase
+
 end StatLean.HypothesisTesting
