@@ -222,6 +222,19 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
     exact key (-y) hz
 
 open Complex in
+/-- **The cubic remainder bound for `e^{iy}`, in public form.**
+`‖exp (I y) − (1 + I y − y²/2)‖ ≤ |y|³/6`.
+
+This is the `min`-free half of the private `norm_cexp_sub_taylor_le`, exported because the
+*studentized* Edgeworth chain of `Bootstrap/Edgeworth.lean` expands `E[e^{iθHₙ}]` for the
+delta-method surrogate `Hₙ` and needs the **cubic** — not the quadratic — remainder in order to
+reach an `O(n⁻¹)` accuracy: the leading correction of the surrogate is itself of size `n^{-1/2}`,
+so a quadratic remainder would only be `O(n⁻¹)` and would swamp the second-order term. -/
+lemma norm_cexp_sub_quadratic_le (y : ℝ) :
+    ‖Complex.exp (I * y) - (1 + I * y - (y : ℂ) ^ 2 / 2)‖ ≤ |y| ^ 3 / 6 :=
+  (norm_cexp_sub_taylor_le y).trans (min_le_left _ _)
+
+open Complex in
 /-- **Second-order remainder bound for `e^{iy}`**, in the shape the *studentized* expansion
 consumes: `‖exp (I y) − 1 − I y‖ ≤ 3 y² / 2`.
 
