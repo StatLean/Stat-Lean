@@ -22,7 +22,9 @@ there, `bentkus_berry_esseen_convex` (constant `400 k^{1/4}`) and
 research-level dimension factor obtained by Fourier analysis over convex bodies. Their sharp
 `β/√n` *rate* is not reproduced here; what is proved here is the honest elementary rate
 `(β/√n)^{1/4}`, over balls (`berryEsseen_ball_elementary`, which discharges
-`bentkus_berry_esseen_ball`) and over convex sets (`berryEsseen_convex_elementary`).
+`bentkus_berry_esseen_ball`) and over convex sets (`berryEsseen_convex_elementary`) — and, over
+convex sets, the strictly better `(β/√n)^{1/2}` of `berryEsseen_convex_improved`, obtained by
+the Cameron–Martin route of the wave-13/16 sections at the end of the file.
 
 What this file records instead is the strongest bound the elementary route yields *honestly*.
 The single ingredient that is proved unconditionally and is genuinely dimension-free is the
@@ -127,7 +129,21 @@ the sharp rate). That induction is Bentkus's actual argument and is not attempte
 honest ceiling of the *non-inductive* elementary route is `(β/√n)^{1/2}`, and the residual gap
 to Bentkus is a further factor `(β/√n)^{1/2}`.
 
-**Status of the improvement.** Everything below is proved outright (`0`-sorry).
+**Status of the improvement (wave 16: COMPLETE, `0`-sorry and axiom-clean).** The improved
+headline is
+
+`berryEsseen_convex_improved` — `|μₙ(B) − γ(B)| ≤ C (β/√n)^{1/2} = O(n^{-1/4})` for measurable
+convex `B`, with `C = C₀ + gaussianShellConst k`,
+
+together with its Lévy/thickening form `berryEsseen_convex_levy_improved`
+(`μₙ(B) ≤ γ(Bᵋ) + C (β/√n)/ε` and its mirror image — note the mollifier cost `ε^{-1}`, not
+`ε^{-3}`) and the **ball** version `berryEsseen_ball_improved`, which keeps the dimension-free
+constant of `berryEsseen_ball_elementary` at the better exponent. The proved
+`berryEsseen_convex_elementary` and `berryEsseen_ball_elementary` are deliberately left
+untouched: they are separate, weaker statements with existing consumers, and nothing about them
+is retracted (the ball assembly is now shared: `berryEsseen_ball_of_swap` is `ε`-generic and
+takes the swap estimate as a hypothesis, so the two exponents differ only in which swap is fed
+to it). The ingredients:
 
 * *Analytic core.* `exists_tiltRemainder_bound` (scalar, absolute constant),
   `integral_abs_vecTiltRemainder_le` (multivariate, **dimension-free**, by reduction to the
@@ -142,16 +158,23 @@ to Bentkus is a further factor `(β/√n)^{1/2}`.
   `inv_mul_sqrt_le_telescope` (`j^{-3/2} ≤ 2((j−1)^{-1/2} − j^{-1/2})`), with no integral
   comparison. Choosing `J ≈ θ^{-2/3}` gives `O(θ^{1/3})`.
 
-**The one remaining brick is (i)**: the telescope itself. Concretely, `Iⱼ` should be
-`∫ x, (∫ z, f (n^{-1/2} • (∑ₗ xₗ) + (j/n)^{1/2} • z) dγ(z)) d(Measure.pi κ'ⱼ)` with
-`κ'ⱼ i = if i < j then Measure.dirac 0 else ν`; `integral_pi_sum_peel` peels coordinate `j`
-verbatim (the integrand is a bounded continuous function of `∑ₗ xₗ`), brick (ii) identifies the
-`(j+1)`-st smoothing with the `j`-th plus one fresh `n^{-1/2}`-scaled Gaussian, the step is
-`abs_integral_gaussian_smoothed_swap_le` for `j ≥ 1` and `abs_integral_swap_step_le` for
-`j = 0`, and brick (iii) sums the steps. The two endpoints need
-`Measure.pi (fun _ => Measure.dirac 0) = Measure.dirac 0` (for `I n`) and `√0 = 0` (for `I 0`).
-Until that lands, `berryEsseen_convex_elementary` and `berryEsseen_ball_elementary` keep their
-proved `(β/√n)^{1/4}` form.
+* *Assembly brick (i) — the telescope itself* (wave 16): `abs_integral_smooth_sub_gaussian_improved`.
+  `Iⱼ = ∫ x, (∫ z, f (n^{-1/2} • (∑ₗ xₗ) + (j/n)^{1/2} • z) dγ(z)) d(Measure.pi κ'ⱼ)` with
+  `κ'ⱼ i = if i < j then Measure.dirac 0 else ν`. `integral_pi_sum_peel` peels coordinate `j`
+  verbatim (the integrand is a bounded continuous function of `∑ₗ xₗ`; its continuity is
+  `continuous_integral_add_smul`, dominated convergence with the constant bound `1`). Brick (ii)
+  identifies the `(j+1)`-st smoothing with the `j`-th plus one fresh `n^{-1/2}`-scaled Gaussian,
+  so *the same single step* both kills a coordinate and widens the mollification. The step bound
+  is `abs_integral_gaussian_smoothed_swap_le` for `j ≥ 1` and, for **every** `j` (in particular
+  `j = 0`, where the smoothing has width `0`), `abs_integral_swap_step_le` applied after
+  `integral_integral_swap` moves the smoothing variable outside. Brick (iii) sums the minimum of
+  the two, giving `(J (M/6) n^{-3/2} + 3C/√J)(β_ν + β_G)` for every cut `J ≥ 2`. The endpoints
+  are `measure_pi_dirac_zero` (`⨂ δ₀ = δ₀`, by `Measure.pi_eq`) for `I n` and `√0 = 0` for `I 0`.
+
+  In the assembly the cut is `J = max 2 ⌈ε² n⌉`, which gives `J (M/6) n^{-3/2} ≤ C₃/(2ε√n)` and
+  `3C/√J ≤ 3C/(ε√n)`. The bookkeeping `J ≤ ε² n + 2` is only useful when `ε² n ≥ 1`; in the
+  complementary window the asserted bound already exceeds `1` (because `β ≥ k^{3/2} ≥ 1`), so
+  that case is discharged from `μₙ(B) ≤ 1` alone.
 
 **Reference.** V. Bentkus, "On the dependence of the Berry–Esseen bound on dimension,"
 *J. Statist. Plann. Inference* **113** (2003), 385–402. E. L. Lehmann and J. P. Romano,
@@ -2113,6 +2136,195 @@ private lemma integral_norm_cube_pos {k : ℕ} (hk : 0 < k)
   have h := sqrt_dim_mul_dim_le_integral_norm_cube hcov hβ
   nlinarith [h, hsk, hk0]
 
+/-- **The `ε`-generic core of the ball assembly.** Everything in the ball headline except the
+Lindeberg swap itself: given a smoothed radial indicator with third-derivative constant
+`C₃/ε³`, the Gaussian shell bound with constant `Cac`, and *any* swap estimate of the shape
+`|∫f dμₙ − ∫f dγ| ≤ D ε` for such test functions, the ball comparison is `≤ (Cac + D) ε`.
+
+Factoring this out is what lets the same assembly serve both the elementary balance
+(`D = C₃/2`, `ε = (β/√n)^{1/4}`, via `abs_integral_smooth_sub_gaussian_le`) and the improved one
+(`D = 3C₃/2 + 9C`, `ε = (β/√n)^{1/2}`, via `abs_integral_smooth_sub_gaussian_balanced`). -/
+private lemma berryEsseen_ball_of_swap {k n : ℕ} (hk : 0 < k)
+    {ν : Measure (EuclideanSpace ℝ (Fin k))} (hνp : IsProbabilityMeasure ν)
+    {C₃ Cac D ε : ℝ} (hCacpos : 0 < Cac) (hDnn : 0 ≤ D) (hεpos : 0 < ε)
+    (hC₃ : ∀ a : ℝ, 0 ≤ a → ∃ f : EuclideanSpace ℝ (Fin k) → ℝ,
+      ContDiff ℝ 3 f ∧ (∀ x, 0 ≤ f x) ∧ (∀ x, f x ≤ 1) ∧
+      (∀ x, ‖x‖ ≤ a → f x = 1) ∧ (∀ x, a + ε < ‖x‖ → f x = 0) ∧
+      (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3))
+    (hCac : ∀ a w : ℝ, 0 ≤ a → 0 ≤ w →
+      ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+        {z | a < ‖z‖ ∧ ‖z‖ ≤ a + w}).toReal ≤ Cac * w)
+    (herr : ∀ f : EuclideanSpace ℝ (Fin k) → ℝ, ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
+      (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
+      |(∫ x, f x ∂((Measure.pi fun _ : Fin n => ν).map
+            fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i))
+        - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))| ≤ D * ε)
+    (t : ℝ) :
+    |((((Measure.pi fun _ : Fin n => ν)).map
+          fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) {z | ‖z‖ ^ 2 ≤ t}).toReal
+        - ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+            {z | ‖z‖ ^ 2 ≤ t}).toReal|
+      ≤ (Cac + D) * ε := by
+  haveI := hνp
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
+  set μ : Measure (EuclideanSpace ℝ (Fin k)) :=
+    (Measure.pi fun _ : Fin n => ν).map (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) with hμdef
+  haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
+  haveI hμprob : IsProbabilityMeasure μ := by
+    rw [hμdef]; exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+  -- measurability of the balls, and the two sandwich steps
+  have hballmeas : ∀ a : ℝ, MeasurableSet {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ a} :=
+    fun a => measurableSet_le (by fun_prop) measurable_const
+  have hlow : ∀ (ρ : Measure (EuclideanSpace ℝ (Fin k))), IsProbabilityMeasure ρ →
+      ∀ (f : EuclideanSpace ℝ (Fin k) → ℝ) (a : ℝ), Integrable f ρ → (∀ x, 0 ≤ f x) →
+      (∀ x, ‖x‖ ≤ a → f x = 1) → (ρ {z | ‖z‖ ≤ a}).toReal ≤ ∫ x, f x ∂ρ := by
+    intro ρ hρ f a hfint hf0 hone
+    haveI := hρ
+    have hind : Integrable (Set.indicator {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ a}
+        (fun _ => (1 : ℝ))) ρ := by
+      rw [integrable_indicator_iff (hballmeas a)]
+      exact integrableOn_const (measure_ne_top _ _)
+    calc (ρ {z | ‖z‖ ≤ a}).toReal
+        = ∫ x, Set.indicator {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ a} (fun _ => (1 : ℝ)) x ∂ρ := by
+          rw [integral_indicator (hballmeas a), setIntegral_const, measureReal_def, smul_eq_mul,
+            mul_one]
+      _ ≤ ∫ x, f x ∂ρ := by
+          refine integral_mono hind hfint fun x => ?_
+          by_cases hx : ‖x‖ ≤ a
+          · rw [Set.indicator_of_mem (show x ∈ {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ a} from hx),
+              hone x hx]
+          · rw [Set.indicator_of_notMem (show x ∉ {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ a} from hx)]
+            exact hf0 x
+  have hupp : ∀ (ρ : Measure (EuclideanSpace ℝ (Fin k))), IsProbabilityMeasure ρ →
+      ∀ (f : EuclideanSpace ℝ (Fin k) → ℝ) (b : ℝ), Integrable f ρ → (∀ x, f x ≤ 1) →
+      (∀ x, b < ‖x‖ → f x = 0) → (∫ x, f x ∂ρ) ≤ (ρ {z | ‖z‖ ≤ b}).toReal := by
+    intro ρ hρ f b hfint hf1 hzero
+    haveI := hρ
+    have hind : Integrable (Set.indicator {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ b}
+        (fun _ => (1 : ℝ))) ρ := by
+      rw [integrable_indicator_iff (hballmeas b)]
+      exact integrableOn_const (measure_ne_top _ _)
+    calc (∫ x, f x ∂ρ)
+        ≤ ∫ x, Set.indicator {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ b} (fun _ => (1 : ℝ)) x ∂ρ := by
+          refine integral_mono hfint hind fun x => ?_
+          by_cases hx : ‖x‖ ≤ b
+          · rw [Set.indicator_of_mem (show x ∈ {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ b} from hx)]
+            exact hf1 x
+          · rw [Set.indicator_of_notMem (show x ∉ {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ b} from hx),
+              hzero x (not_le.mp hx)]
+      _ = (ρ {z | ‖z‖ ≤ b}).toReal := by
+          rw [integral_indicator (hballmeas b), setIntegral_const, measureReal_def, smul_eq_mul,
+            mul_one]
+  -- shell anti-concentration in the two-ball form
+  have hshell : ∀ a b : ℝ, 0 ≤ a → a ≤ b →
+      (γ {z | ‖z‖ ≤ b}).toReal ≤ (γ {z | ‖z‖ ≤ a}).toReal + Cac * (b - a) := by
+    intro a b ha hab
+    have h1 := hCac a (b - a) ha (by linarith)
+    rw [show a + (b - a) = b from by ring] at h1
+    have hsub : {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ b}
+        ⊆ {z | ‖z‖ ≤ a} ∪ {z | a < ‖z‖ ∧ ‖z‖ ≤ b} := by
+      intro z hz
+      rcases le_or_gt ‖z‖ a with h | h
+      · exact Or.inl h
+      · exact Or.inr ⟨h, hz⟩
+    have h2 : γ {z | ‖z‖ ≤ b} ≤ γ {z | ‖z‖ ≤ a} + γ {z | a < ‖z‖ ∧ ‖z‖ ≤ b} :=
+      (measure_mono hsub).trans (measure_union_le _ _)
+    have h3 := ENNReal.toReal_mono
+      (ENNReal.add_ne_top.mpr ⟨measure_ne_top _ _, measure_ne_top _ _⟩) h2
+    rw [ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)] at h3
+    linarith
+  -- integrability of any `[0,1]`-valued continuous test function
+  have hfint : ∀ (ρ : Measure (EuclideanSpace ℝ (Fin k))), IsProbabilityMeasure ρ →
+      ∀ f : EuclideanSpace ℝ (Fin k) → ℝ, ContDiff ℝ 3 f → (∀ x, 0 ≤ f x) → (∀ x, f x ≤ 1) →
+      Integrable f ρ := by
+    intro ρ hρ f hfcd hf0 hf1
+    haveI := hρ
+    refine Integrable.mono' (integrable_const (1 : ℝ)) hfcd.continuous.aestronglyMeasurable ?_
+    filter_upwards with x
+    rw [Real.norm_eq_abs, abs_of_nonneg (hf0 x)]
+    exact hf1 x
+  rcases lt_or_ge t 0 with ht | ht
+  · -- degenerate case: the ball is empty
+    have hempty : {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ t} = ∅ := by
+      ext z
+      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      exact lt_of_lt_of_le ht (sq_nonneg _)
+    rw [hempty]
+    simp only [measure_empty, ENNReal.toReal_zero, sub_zero, abs_zero]
+    have : 0 < (Cac + D) * ε := mul_pos (by linarith) hεpos
+    linarith
+  · -- the ball is `{‖z‖ ≤ s}` with `s = √t`
+    set s : ℝ := Real.sqrt t with hsdef
+    have hs0 : 0 ≤ s := Real.sqrt_nonneg t
+    have hSset : {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ t} = {z | ‖z‖ ≤ s} := by
+      ext z
+      simp only [Set.mem_setOf_eq, hsdef]
+      constructor
+      · intro h
+        rw [← Real.sqrt_sq (norm_nonneg z)]
+        exact Real.sqrt_le_sqrt h
+      · intro h
+        have hmul := mul_self_le_mul_self (norm_nonneg z) h
+        rw [Real.mul_self_sqrt ht] at hmul
+        rw [pow_two]; exact hmul
+    rw [hSset]
+    refine abs_sub_le_iff.mpr ⟨?_, ?_⟩
+    · -- upper deviation
+      obtain ⟨f, hfcd, hf0, hf1, hfone, hfzero, hfD3⟩ := hC₃ s hs0
+      have hIμ := hfint μ hμprob f hfcd hf0 hf1
+      have hIγ := hfint γ hγprob f hfcd hf0 hf1
+      have hswap := herr f hfcd (fun x => abs_le.mpr ⟨by linarith [hf0 x], hf1 x⟩) hfD3
+      rw [abs_sub_le_iff] at hswap
+      have hchain : (μ {z | ‖z‖ ≤ s}).toReal
+          ≤ (γ {z | ‖z‖ ≤ s}).toReal + (Cac + D) * ε := by
+        calc (μ {z | ‖z‖ ≤ s}).toReal
+            ≤ ∫ x, f x ∂μ := hlow μ hμprob f s hIμ hf0 hfone
+          _ ≤ (∫ x, f x ∂γ) + D * ε := by linarith [hswap.1]
+          _ ≤ (γ {z | ‖z‖ ≤ s + ε}).toReal + D * ε := by
+              have := hupp γ hγprob f (s + ε) hIγ hf1 hfzero
+              linarith
+          _ ≤ ((γ {z | ‖z‖ ≤ s}).toReal + Cac * (s + ε - s)) + D * ε := by
+              have := hshell s (s + ε) hs0 (by linarith)
+              linarith
+          _ = (γ {z | ‖z‖ ≤ s}).toReal + (Cac + D) * ε := by ring
+      linarith
+    · -- lower deviation
+      rcases le_or_gt ε s with hse | hse
+      · obtain ⟨f, hfcd, hf0, hf1, hfone, hfzero, hfD3⟩ := hC₃ (s - ε) (by linarith)
+        have hfzero' : ∀ x, s < ‖x‖ → f x = 0 := fun x hx => hfzero x (by linarith)
+        have hIμ := hfint μ hμprob f hfcd hf0 hf1
+        have hIγ := hfint γ hγprob f hfcd hf0 hf1
+        have hswap := herr f hfcd (fun x => abs_le.mpr ⟨by linarith [hf0 x], hf1 x⟩) hfD3
+        rw [abs_sub_le_iff] at hswap
+        have hchain : (γ {z | ‖z‖ ≤ s}).toReal
+            ≤ (μ {z | ‖z‖ ≤ s}).toReal + (Cac + D) * ε := by
+          calc (γ {z | ‖z‖ ≤ s}).toReal
+              ≤ (γ {z | ‖z‖ ≤ s - ε}).toReal + Cac * (s - (s - ε)) :=
+                hshell (s - ε) s (by linarith) (by linarith)
+            _ ≤ (∫ x, f x ∂γ) + Cac * ε := by
+                have := hlow γ hγprob f (s - ε) hIγ hf0 hfone
+                have harith : s - (s - ε) = ε := by ring
+                rw [harith]
+                linarith
+            _ ≤ ((∫ x, f x ∂μ) + D * ε) + Cac * ε := by linarith [hswap.2]
+            _ ≤ ((μ {z | ‖z‖ ≤ s}).toReal + D * ε) + Cac * ε := by
+                have := hupp μ hμprob f s hIμ hf1 hfzero'
+                linarith
+            _ = (μ {z | ‖z‖ ≤ s}).toReal + (Cac + D) * ε := by ring
+        linarith
+      · -- `s < ε`: the ball is inside `{‖z‖ ≤ ε}` and the Gaussian has no atom at the origin
+        have h1 := hshell 0 s le_rfl hs0
+        have h0 : γ {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ 0} = 0 := by
+          rw [hγdef]; exact gaussian_origin_measure_zero hk
+        rw [h0] at h1
+        simp only [ENNReal.toReal_zero, zero_add] at h1
+        have h2 : (0 : ℝ) ≤ (μ {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ s}).toReal :=
+          ENNReal.toReal_nonneg
+        have h3 : Cac * (s - 0) ≤ Cac * ε :=
+          mul_le_mul_of_nonneg_left (by linarith) hCacpos.le
+        have h4 : 0 ≤ D * ε := by positivity
+        linarith
+
 /-- **Elementary ball Berry–Esseen bound, with a dimension-free constant (honest, non-sharp).**
 There is an *absolute* constant `C` — independent of the dimension `k`, the sample size `n` and
 the sampling law `ν` — such that the normal approximation to the law of `‖n^{-1/2} ∑ᵢ Yᵢ‖²` over
@@ -2178,13 +2390,6 @@ theorem berryEsseen_ball_elementary :
   refine ⟨Cac + C₃ / 2, by positivity, ?_⟩
   intro k n ν t hn hk hνp hmean hcov hβint
   haveI := hνp
-  -- abbreviations for the two laws being compared
-  set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
-  set μ : Measure (EuclideanSpace ℝ (Fin k)) :=
-    (Measure.pi fun _ : Fin n => ν).map (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) with hμdef
-  haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
-  haveI hμprob : IsProbabilityMeasure μ := by
-    rw [hμdef]; exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
   -- the smoothing width `ε = (β/√n)^{1/4}`
   set β : ℝ := ∫ y, ‖y‖ ^ 3 ∂ν with hβdef
   have hβpos : 0 < β := integral_norm_cube_pos hk hcov hβint
@@ -2201,185 +2406,43 @@ theorem berryEsseen_ball_elementary :
   have hq3 : q / ε ^ 3 = ε := by
     rw [← hεq]; field_simp
   -- the Gaussian third moment is at most `2β`
-  have hβGle : (∫ z, ‖z‖ ^ 3 ∂γ) ≤ 2 * β := by
+  have hβGle : (∫ z, ‖z‖ ^ 3 ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))
+      ≤ 2 * β := by
     have h1 := integral_norm_cube_gaussian_le (k := k) hk
-    rw [← hγdef] at h1
     have h2 := sqrt_dim_mul_dim_le_integral_norm_cube hcov hβint
     rw [← hβdef] at h2
     linarith
   -- the Lindeberg swap, with the `ε`-balance already carried out
   have herr : ∀ f : EuclideanSpace ℝ (Fin k) → ℝ, ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
-      (∀ z, ‖iteratedFDeriv ℝ 3 f z‖ ≤ C₃ / ε ^ 3) →
-      |(∫ x, f x ∂μ) - (∫ x, f x ∂γ)| ≤ C₃ / 2 * ε := by
+      (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
+      |(∫ x, f x ∂((Measure.pi fun _ : Fin n => ν).map
+            fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i))
+        - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))|
+        ≤ C₃ / 2 * ε := by
     intro f hfcd hfbd hfD3
     have hswap := abs_integral_smooth_sub_gaussian_le (ν := ν) hn hνp hmean hcov hβint hfcd hfbd
       (M := C₃ / ε ^ 3) (by positivity) hfD3
-    rw [← hμdef, ← hγdef, ← hβdef] at hswap
+    rw [← hβdef] at hswap
     refine hswap.trans ?_
     have hA : 0 ≤ C₃ / ε ^ 3 / 6 := by positivity
-    have h3q : (β + (∫ z, ‖z‖ ^ 3 ∂γ)) / Real.sqrt (n : ℝ) ≤ 3 * q := by
+    have h3q : (β + (∫ z, ‖z‖ ^ 3 ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)))
+        / Real.sqrt (n : ℝ) ≤ 3 * q := by
       rw [hqdef, div_le_iff₀ hsn]
       have hcancel : 3 * (β / Real.sqrt (n : ℝ)) * Real.sqrt (n : ℝ) = 3 * β := by
         field_simp
       rw [hcancel]
       linarith
-    calc C₃ / ε ^ 3 / 6 * (β + (∫ z, ‖z‖ ^ 3 ∂γ)) / Real.sqrt (n : ℝ)
-        = C₃ / ε ^ 3 / 6 * ((β + (∫ z, ‖z‖ ^ 3 ∂γ)) / Real.sqrt (n : ℝ)) := by ring
+    calc C₃ / ε ^ 3 / 6
+          * (β + (∫ z, ‖z‖ ^ 3 ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)))
+          / Real.sqrt (n : ℝ)
+        = C₃ / ε ^ 3 / 6
+            * ((β + (∫ z, ‖z‖ ^ 3 ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)))
+              / Real.sqrt (n : ℝ)) := by ring
       _ ≤ C₃ / ε ^ 3 / 6 * (3 * q) := mul_le_mul_of_nonneg_left h3q hA
       _ = C₃ / 2 * (q / ε ^ 3) := by ring
       _ = C₃ / 2 * ε := by rw [hq3]
-  -- measurability of the balls, and the two sandwich steps
-  have hballmeas : ∀ a : ℝ, MeasurableSet {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ a} :=
-    fun a => measurableSet_le (by fun_prop) measurable_const
-  have hlow : ∀ (ρ : Measure (EuclideanSpace ℝ (Fin k))), IsProbabilityMeasure ρ →
-      ∀ (f : EuclideanSpace ℝ (Fin k) → ℝ) (a : ℝ), Integrable f ρ → (∀ x, 0 ≤ f x) →
-      (∀ x, ‖x‖ ≤ a → f x = 1) → (ρ {z | ‖z‖ ≤ a}).toReal ≤ ∫ x, f x ∂ρ := by
-    intro ρ hρ f a hfint hf0 hone
-    haveI := hρ
-    have hind : Integrable (Set.indicator {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ a}
-        (fun _ => (1 : ℝ))) ρ := by
-      rw [integrable_indicator_iff (hballmeas a)]
-      exact integrableOn_const (measure_ne_top _ _)
-    calc (ρ {z | ‖z‖ ≤ a}).toReal
-        = ∫ x, Set.indicator {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ a} (fun _ => (1 : ℝ)) x ∂ρ := by
-          rw [integral_indicator (hballmeas a), setIntegral_const, measureReal_def, smul_eq_mul,
-            mul_one]
-      _ ≤ ∫ x, f x ∂ρ := by
-          refine integral_mono hind hfint fun x => ?_
-          by_cases hx : ‖x‖ ≤ a
-          · rw [Set.indicator_of_mem (show x ∈ {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ a} from hx),
-              hone x hx]
-          · rw [Set.indicator_of_notMem (show x ∉ {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ a} from hx)]
-            exact hf0 x
-  have hupp : ∀ (ρ : Measure (EuclideanSpace ℝ (Fin k))), IsProbabilityMeasure ρ →
-      ∀ (f : EuclideanSpace ℝ (Fin k) → ℝ) (b : ℝ), Integrable f ρ → (∀ x, f x ≤ 1) →
-      (∀ x, b < ‖x‖ → f x = 0) → (∫ x, f x ∂ρ) ≤ (ρ {z | ‖z‖ ≤ b}).toReal := by
-    intro ρ hρ f b hfint hf1 hzero
-    haveI := hρ
-    have hind : Integrable (Set.indicator {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ b}
-        (fun _ => (1 : ℝ))) ρ := by
-      rw [integrable_indicator_iff (hballmeas b)]
-      exact integrableOn_const (measure_ne_top _ _)
-    calc (∫ x, f x ∂ρ)
-        ≤ ∫ x, Set.indicator {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ b} (fun _ => (1 : ℝ)) x ∂ρ := by
-          refine integral_mono hfint hind fun x => ?_
-          by_cases hx : ‖x‖ ≤ b
-          · rw [Set.indicator_of_mem (show x ∈ {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ b} from hx)]
-            exact hf1 x
-          · rw [Set.indicator_of_notMem (show x ∉ {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ b} from hx),
-              hzero x (not_le.mp hx)]
-      _ = (ρ {z | ‖z‖ ≤ b}).toReal := by
-          rw [integral_indicator (hballmeas b), setIntegral_const, measureReal_def, smul_eq_mul,
-            mul_one]
-  -- shell anti-concentration in the two-ball form
-  have hshell : ∀ a b : ℝ, 0 ≤ a → a ≤ b →
-      (γ {z | ‖z‖ ≤ b}).toReal ≤ (γ {z | ‖z‖ ≤ a}).toReal + Cac * (b - a) := by
-    intro a b ha hab
-    have h1 := hCac k hk a (b - a) ha (by linarith)
-    rw [show a + (b - a) = b from by ring, ← hγdef] at h1
-    have hsub : {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ b}
-        ⊆ {z | ‖z‖ ≤ a} ∪ {z | a < ‖z‖ ∧ ‖z‖ ≤ b} := by
-      intro z hz
-      rcases le_or_gt ‖z‖ a with h | h
-      · exact Or.inl h
-      · exact Or.inr ⟨h, hz⟩
-    have h2 : γ {z | ‖z‖ ≤ b} ≤ γ {z | ‖z‖ ≤ a} + γ {z | a < ‖z‖ ∧ ‖z‖ ≤ b} :=
-      (measure_mono hsub).trans (measure_union_le _ _)
-    have h3 := ENNReal.toReal_mono
-      (ENNReal.add_ne_top.mpr ⟨measure_ne_top _ _, measure_ne_top _ _⟩) h2
-    rw [ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)] at h3
-    linarith
-  -- integrability of any `[0,1]`-valued continuous test function
-  have hfint : ∀ (ρ : Measure (EuclideanSpace ℝ (Fin k))), IsProbabilityMeasure ρ →
-      ∀ f : EuclideanSpace ℝ (Fin k) → ℝ, ContDiff ℝ 3 f → (∀ x, 0 ≤ f x) → (∀ x, f x ≤ 1) →
-      Integrable f ρ := by
-    intro ρ hρ f hfcd hf0 hf1
-    haveI := hρ
-    refine Integrable.mono' (integrable_const (1 : ℝ)) hfcd.continuous.aestronglyMeasurable ?_
-    filter_upwards with x
-    rw [Real.norm_eq_abs, abs_of_nonneg (hf0 x)]
-    exact hf1 x
-  rcases lt_or_ge t 0 with ht | ht
-  · -- degenerate case: the ball is empty
-    have hempty : {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ t} = ∅ := by
-      ext z
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
-      exact lt_of_lt_of_le ht (sq_nonneg _)
-    rw [hempty]
-    simp only [measure_empty, ENNReal.toReal_zero, sub_zero, abs_zero]
-    have : 0 < (Cac + C₃ / 2) * ε := mul_pos (by linarith) hεpos
-    linarith
-  · -- the ball is `{‖z‖ ≤ s}` with `s = √t`
-    set s : ℝ := Real.sqrt t with hsdef
-    have hs0 : 0 ≤ s := Real.sqrt_nonneg t
-    have hSset : {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ t} = {z | ‖z‖ ≤ s} := by
-      ext z
-      simp only [Set.mem_setOf_eq, hsdef]
-      constructor
-      · intro h
-        rw [← Real.sqrt_sq (norm_nonneg z)]
-        exact Real.sqrt_le_sqrt h
-      · intro h
-        have hmul := mul_self_le_mul_self (norm_nonneg z) h
-        rw [Real.mul_self_sqrt ht] at hmul
-        rw [pow_two]; exact hmul
-    rw [hSset]
-    refine abs_sub_le_iff.mpr ⟨?_, ?_⟩
-    · -- upper deviation
-      obtain ⟨f, hfcd, hf0, hf1, hfone, hfzero, hfD3⟩ := hC₃ k s hs0 hεpos
-      have hIμ := hfint μ hμprob f hfcd hf0 hf1
-      have hIγ := hfint γ hγprob f hfcd hf0 hf1
-      have hswap := herr f hfcd (fun x => abs_le.mpr ⟨by linarith [hf0 x], hf1 x⟩) hfD3
-      rw [abs_sub_le_iff] at hswap
-      have hchain : (μ {z | ‖z‖ ≤ s}).toReal
-          ≤ (γ {z | ‖z‖ ≤ s}).toReal + (Cac + C₃ / 2) * ε := by
-        calc (μ {z | ‖z‖ ≤ s}).toReal
-            ≤ ∫ x, f x ∂μ := hlow μ hμprob f s hIμ hf0 hfone
-          _ ≤ (∫ x, f x ∂γ) + C₃ / 2 * ε := by linarith [hswap.1]
-          _ ≤ (γ {z | ‖z‖ ≤ s + ε}).toReal + C₃ / 2 * ε := by
-              have := hupp γ hγprob f (s + ε) hIγ hf1 hfzero
-              linarith
-          _ ≤ ((γ {z | ‖z‖ ≤ s}).toReal + Cac * (s + ε - s)) + C₃ / 2 * ε := by
-              have := hshell s (s + ε) hs0 (by linarith)
-              linarith
-          _ = (γ {z | ‖z‖ ≤ s}).toReal + (Cac + C₃ / 2) * ε := by ring
-      linarith
-    · -- lower deviation
-      rcases le_or_gt ε s with hse | hse
-      · obtain ⟨f, hfcd, hf0, hf1, hfone, hfzero, hfD3⟩ := hC₃ k (s - ε) (by linarith) hεpos
-        have hfzero' : ∀ x, s < ‖x‖ → f x = 0 := fun x hx => hfzero x (by linarith)
-        have hIμ := hfint μ hμprob f hfcd hf0 hf1
-        have hIγ := hfint γ hγprob f hfcd hf0 hf1
-        have hswap := herr f hfcd (fun x => abs_le.mpr ⟨by linarith [hf0 x], hf1 x⟩) hfD3
-        rw [abs_sub_le_iff] at hswap
-        have hchain : (γ {z | ‖z‖ ≤ s}).toReal
-            ≤ (μ {z | ‖z‖ ≤ s}).toReal + (Cac + C₃ / 2) * ε := by
-          calc (γ {z | ‖z‖ ≤ s}).toReal
-              ≤ (γ {z | ‖z‖ ≤ s - ε}).toReal + Cac * (s - (s - ε)) :=
-                hshell (s - ε) s (by linarith) (by linarith)
-            _ ≤ (∫ x, f x ∂γ) + Cac * ε := by
-                have := hlow γ hγprob f (s - ε) hIγ hf0 hfone
-                have harith : s - (s - ε) = ε := by ring
-                rw [harith]
-                linarith
-            _ ≤ ((∫ x, f x ∂μ) + C₃ / 2 * ε) + Cac * ε := by linarith [hswap.2]
-            _ ≤ ((μ {z | ‖z‖ ≤ s}).toReal + C₃ / 2 * ε) + Cac * ε := by
-                have := hupp μ hμprob f s hIμ hf1 hfzero'
-                linarith
-            _ = (μ {z | ‖z‖ ≤ s}).toReal + (Cac + C₃ / 2) * ε := by ring
-        linarith
-      · -- `s < ε`: the ball is inside `{‖z‖ ≤ ε}` and the Gaussian has no atom at the origin
-        have h1 := hshell 0 s le_rfl hs0
-        have h0 : γ {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ 0} = 0 := by
-          rw [hγdef]; exact gaussian_origin_measure_zero hk
-        rw [h0] at h1
-        simp only [ENNReal.toReal_zero, zero_add] at h1
-        have h2 : (0 : ℝ) ≤ (μ {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ≤ s}).toReal :=
-          ENNReal.toReal_nonneg
-        have h3 : Cac * (s - 0) ≤ Cac * ε :=
-          mul_le_mul_of_nonneg_left (by linarith) hCacpos.le
-        have h4 : 0 ≤ C₃ / 2 * ε := by positivity
-        linarith
+  exact berryEsseen_ball_of_swap hk hνp hCacpos (by positivity) hεpos
+    (fun a ha => hC₃ k a ha hεpos) (fun a w ha hw => hCac k hk a w ha hw) herr t
 
 /-! #### The convex headline in Lévy (thickening) form
 
@@ -2554,10 +2617,11 @@ order `(β/√n)^{1/4} = n^{-1/8}` — **not** the `n^{-1/2}` rate of the frozen
 
 **This exponent is not the ceiling of the elementary route** (wave-13 correction of an earlier
 note that claimed it was): exploiting the Gaussian mollification the hybrid telescope carries for
-free, `ε^{-3}` can be replaced by `ε^{-1}`, which balances at `(β/√n)^{1/2} = n^{-1/4}`. The
-analytic core of that improvement is proved in the Cameron–Martin section at the end of this
-file; the three remaining assembly bricks are listed in the module docstring. The sharp
-`400 k^{1/4} · β/√n` needs Bentkus's self-improving induction and is not attempted.
+free, `ε^{-3}` can be replaced by `ε^{-1}`, which balances at `(β/√n)^{1/2} = n^{-1/4}`. As of
+wave 16 that improvement is **proved**, as `berryEsseen_convex_improved` at the end of this file
+(`0`-sorry, axiom-clean); this theorem is kept as it stands because it has consumers and is a
+different, weaker statement. The sharp `400 k^{1/4} · β/√n` needs Bentkus's self-improving
+induction and is still not attempted.
 (Ball's theorem gives the sharp shell constant `4 k^{1/4}`, which is
 exactly the dimension factor of Bentkus's bound; only *finiteness* at fixed `k` is needed here, and
 that is what `GaussianShell` proves elementarily.)
@@ -2647,8 +2711,9 @@ end ElementaryRoute
 
 The material below is the analytic core of a **strict improvement of the exponent** of
 `berryEsseen_convex_elementary`, from `(β/√n)^{1/4}` to `(β/√n)^{1/2}`; see the
-"wave-13 amendment" in the module docstring for the derivation and for what is still missing
-before the improved headline can be assembled. Everything here is proved outright.
+"wave-13 amendment" in the module docstring for the derivation. Everything here is proved
+outright, and as of wave 16 so is the assembly: the improved headline is
+`berryEsseen_convex_improved`, at the very end of the file.
 
 The point is that the `j`-th step of the hybrid telescope already carries an independent
 `N(0,(j/n) I_k)` summand, so its test function is automatically Gaussian-mollified at scale
@@ -3816,6 +3881,909 @@ private lemma sum_le_of_bounded_and_decay {θ : ℝ} (hθ : 0 ≤ θ) {n J : ℕ
     rw [hsplit]
     linarith [h1, htail n]
 
+/-- **The sum estimate with an explicit decay constant.** The rescaling of
+`sum_le_of_bounded_and_decay` by a positive factor `K`: if `0 ≤ T j ≤ θ` and `T j ≤ K j^{-3/2}`
+for `j ≥ 1`, then `Σ_{j<n} T j ≤ J θ + 3K/√J` for every cut `J ≥ 2`. This is the form the
+hybrid telescope consumes, `K` being `C (β_ν + β_G)` and `θ` the elementary step bound. -/
+private lemma sum_le_of_bounded_and_decay_const {K θ : ℝ} (hK : 0 < K) (hθ : 0 ≤ θ)
+    {n J : ℕ} (hJ : 2 ≤ J) {T : ℕ → ℝ} (hTnn : ∀ j, 0 ≤ T j) (hTθ : ∀ j, T j ≤ θ)
+    (hTdec : ∀ j, 1 ≤ j → T j ≤ K / ((j : ℝ) * Real.sqrt j)) :
+    ∑ j ∈ Finset.range n, T j ≤ (J : ℝ) * θ + 3 * K / Real.sqrt J := by
+  have hKinv : (0 : ℝ) ≤ K⁻¹ := (inv_pos.mpr hK).le
+  have hJr : (2 : ℝ) ≤ (J : ℝ) := by exact_mod_cast hJ
+  have hJs : (0 : ℝ) < Real.sqrt (J : ℝ) := Real.sqrt_pos.mpr (by linarith)
+  have h := sum_le_of_bounded_and_decay (θ := θ / K) (by positivity) (n := n) hJ
+    (T := fun j => T j / K) (fun j => div_nonneg (hTnn j) hK.le)
+    (fun j => by
+      simpa [div_eq_mul_inv] using mul_le_mul_of_nonneg_right (hTθ j) hKinv)
+    (fun j hj => by
+      have hj1 : (1 : ℝ) ≤ (j : ℝ) := by exact_mod_cast hj
+      have hsj : (0 : ℝ) < Real.sqrt (j : ℝ) := Real.sqrt_pos.mpr (by linarith)
+      have hjs : (0 : ℝ) < (j : ℝ) * Real.sqrt (j : ℝ) := mul_pos (by linarith) hsj
+      rw [div_le_iff₀ hK]
+      have h3 : 1 / ((j : ℝ) * Real.sqrt j) * K = K / ((j : ℝ) * Real.sqrt j) := by ring
+      rw [h3]
+      exact hTdec j hj)
+  rw [← Finset.sum_div, div_le_iff₀ hK] at h
+  refine h.trans_eq ?_
+  field_simp
+
 end SumEstimate
+
+/-! #### Brick (i): the hybrid telescope that carries its own Gaussian smoothing
+
+The three bricks above are assembled here. The telescoped functional is
+
+`Iⱼ = ∫ x, (∫ z, f (n^{-1/2} (∑ₗ xₗ) + √(j/n) z) dγ(z)) d(⨂ᵢ κ'ⱼ(i))`,
+`κ'ⱼ(i) = if i < j then δ₀ else ν`,
+
+so that `I₀` is the law of the normalized sum (the `j = 0` smoothing has width `√0 = 0`) and
+`I_n` is the standard Gaussian (all coordinates are Dirac at the origin, and the smoothing has
+width `1`). One step replaces the `j`-th coordinate's `ν` by `δ₀` *and* widens the smoothing from
+`√(j/n)` to `√((j+1)/n)` — and by `integral_gaussian_pair_smul_add` (brick (ii)) that is exactly
+the statement that the fresh `n^{-1/2}`-scaled Gaussian is absorbed into the smoothing. Hence
+each step is the comparison of `ν` with `N(0,I_k)` *inside a Gaussian-smoothed test function*,
+and admits **two** bounds:
+
+* the elementary one, `abs_integral_swap_step_le` after a Fubini swap that puts the smoothing
+  variable outside — cost `(M/6) n^{-3/2}(β_ν + β_G)`, valid at every step including `j = 0`;
+* the Cameron–Martin one, `abs_integral_gaussian_smoothed_swap_le` — cost
+  `C (n^{-1/2}/√(j/n))³ (β_ν + β_G) = C (β_ν+β_G) j^{-3/2}`, valid for `j ≥ 1`.
+
+`sum_le_of_bounded_and_decay_const` (brick (iii)) sums the minimum of the two. -/
+
+section ImprovedTelescope
+
+variable {k : ℕ}
+
+/-- The product of Dirac masses at the origin is the Dirac mass at the origin. -/
+private lemma measure_pi_dirac_zero (N : ℕ) :
+    (Measure.pi fun _ : Fin N => Measure.dirac (0 : EuclideanSpace ℝ (Fin k)))
+      = Measure.dirac (fun _ : Fin N => (0 : EuclideanSpace ℝ (Fin k))) := by
+  classical
+  refine Measure.pi_eq ?_
+  intro s hs
+  by_cases h : ∀ i, (0 : EuclideanSpace ℝ (Fin k)) ∈ s i
+  · have hmem : (fun _ : Fin N => (0 : EuclideanSpace ℝ (Fin k))) ∈ Set.univ.pi s :=
+      fun i _ => h i
+    rw [Measure.dirac_apply_of_mem hmem]
+    exact (Finset.prod_eq_one fun i _ => Measure.dirac_apply_of_mem (h i)).symm
+  · push_neg at h
+    obtain ⟨i, hi⟩ := h
+    have hnot : (fun _ : Fin N => (0 : EuclideanSpace ℝ (Fin k))) ∉ Set.univ.pi s := by
+      intro hcon
+      exact hi (hcon i (Set.mem_univ i))
+    rw [Measure.dirac_apply' _ (MeasurableSet.univ_pi hs), Set.indicator_of_notMem hnot]
+    refine (Finset.prod_eq_zero (Finset.mem_univ i) ?_).symm
+    rw [Measure.dirac_apply' _ (hs i), Set.indicator_of_notMem hi]
+
+/-- A bounded continuous function is integrable against any probability measure. -/
+private lemma integrable_of_bounded_continuous {τ : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure τ] {F : EuclideanSpace ℝ (Fin k) → ℝ} (hF : Continuous F)
+    (hFb : ∀ x, |F x| ≤ 1) : Integrable F τ :=
+  (integrable_const (1 : ℝ)).mono' hF.aestronglyMeasurable
+    (Filter.Eventually.of_forall fun x => by rw [Real.norm_eq_abs]; exact hFb x)
+
+/-- The average of a function bounded by `1` is bounded by `1`. -/
+private lemma abs_integral_le_one {σ : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure σ] {F : EuclideanSpace ℝ (Fin k) → ℝ} (hF : Continuous F)
+    (hFb : ∀ x, |F x| ≤ 1) : |∫ x, F x ∂σ| ≤ 1 := by
+  calc |∫ x, F x ∂σ| ≤ ∫ x, |F x| ∂σ := abs_integral_le_integral_abs
+    _ ≤ ∫ _x, (1 : ℝ) ∂σ :=
+        integral_mono (integrable_of_bounded_continuous hF hFb).abs
+          (integrable_const _) hFb
+    _ = 1 := by rw [integral_const]; simp
+
+/-- Smoothing a bounded continuous function by a probability law preserves continuity
+(dominated convergence, with the constant bound `1`). -/
+private lemma continuous_integral_add_smul {σ : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure σ] {F : EuclideanSpace ℝ (Fin k) → ℝ} (hF : Continuous F)
+    (hFb : ∀ x, |F x| ≤ 1) (t : ℝ) :
+    Continuous fun w : EuclideanSpace ℝ (Fin k) => ∫ u, F (w + t • u) ∂σ := by
+  refine continuous_of_dominated (bound := fun _ => (1 : ℝ))
+    (fun w => (hF.comp (continuous_const.add (continuous_const_smul t))).aestronglyMeasurable)
+    (fun w => Filter.Eventually.of_forall fun u => by
+      rw [Real.norm_eq_abs]; exact hFb _)
+    (integrable_const 1)
+    (Filter.Eventually.of_forall fun u =>
+      hF.comp (continuous_id.add continuous_const))
+
+set_option maxHeartbeats 1600000 in
+/-- **The hybrid telescope with Gaussian smoothing (brick (i)).** For every cut `J ≥ 2` the
+normal approximation error of a `C³` test function bounded by `1` with `‖D³f‖ ≤ M` is at most
+
+`(J (M/6) n^{-3/2} + 3C/√J) (β_ν + β_G)`,
+
+where `C` is the absolute constant of `exists_tiltRemainder_bound`. Choosing `J ≈ (C/θ)^{2/3}`
+with `θ = (M/6) n^{-3/2}` makes this `O(C^{2/3} θ^{1/3}) (β_ν + β_G)`, i.e. `M^{1/3}/√n` in place
+of the `M/√n` of `abs_integral_smooth_sub_gaussian_le`. For a mollified indicator of width `ε`
+this turns `ε^{-3}` into `ε^{-1}`, which is the whole point. -/
+private lemma abs_integral_smooth_sub_gaussian_improved {n : ℕ} (hk : 0 < k) {C : ℝ}
+    (hC0 : 0 < C)
+    (hC : ∀ s : ℝ, 0 ≤ s → (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ C * s ^ 3)
+    {ν : Measure (EuclideanSpace ℝ (Fin k))} (hn : 0 < n) (hν : IsProbabilityMeasure ν)
+    (hmean : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)
+    (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ)
+    (hβ : Integrable (fun y => ‖y‖ ^ 3) ν)
+    {f : EuclideanSpace ℝ (Fin k) → ℝ} (hf : ContDiff ℝ 3 f) (hfb : ∀ x, |f x| ≤ 1)
+    {M : ℝ} (hM0 : 0 ≤ M) (hM : ∀ z, ‖iteratedFDeriv ℝ 3 f z‖ ≤ M)
+    {J : ℕ} (hJ : 2 ≤ J) :
+    |(∫ x, f x ∂((Measure.pi fun _ : Fin n => ν).map
+            fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i))
+        - (∫ x, f x ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))|
+      ≤ ((J : ℝ) * (M / 6 / ((n : ℝ) * Real.sqrt (n : ℝ))) + 3 * C / Real.sqrt (J : ℝ))
+          * ((∫ y, ‖y‖ ^ 3 ∂ν)
+            + (∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))) := by
+  classical
+  haveI := hν
+  -- ### Gaussian moment facts
+  have hmeanγ : ∀ u : EuclideanSpace ℝ (Fin k),
+      (∫ z, ⟪u, z⟫_ℝ ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) = 0 := by
+    intro u
+    simpa using integral_strongDual_stdGaussian (E := EuclideanSpace ℝ (Fin k)) (innerSL ℝ u)
+  have hcovγ : ∀ u w : EuclideanSpace ℝ (Fin k),
+      (∫ z, ⟪u, z⟫_ℝ * ⟪w, z⟫_ℝ ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) = ⟪u, w⟫_ℝ := by
+    intro u w
+    have hL2 : MemLp id 2 (stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+      IsGaussian.memLp_id _ 2 (by simp)
+    have hid : (stdGaussian (EuclideanSpace ℝ (Fin k)))[id] = (0 : EuclideanSpace ℝ (Fin k)) :=
+      integral_id_stdGaussian
+    have h := covarianceBilin_apply (μ := stdGaussian (EuclideanSpace ℝ (Fin k))) hL2 u w
+    rw [hid] at h
+    simp only [sub_zero] at h
+    rw [← h, covarianceBilin_stdGaussian]
+    exact innerSL_apply_apply (𝕜 := ℝ) u w
+  have hβγ : Integrable (fun z : EuclideanSpace ℝ (Fin k) => ‖z‖ ^ 3)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    have hL3 : MemLp id ((3 : ℕ) : ℝ≥0∞) (stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+      IsGaussian.memLp_id _ _ (by simp)
+    simpa using hL3.integrable_norm_pow'
+  have hν1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) ν := integrable_norm_of_cube hβ
+  have hν2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) ν :=
+    integrable_normSq_of_cube hβ
+  have hγ1 : Integrable (fun z : EuclideanSpace ℝ (Fin k) => ‖z‖)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := integrable_norm_of_cube hβγ
+  have hγ2 : Integrable (fun z : EuclideanSpace ℝ (Fin k) => ‖z‖ ^ 2)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := integrable_normSq_of_cube hβγ
+  have hνdim : (∫ y, ‖y‖ ^ 2 ∂ν) = (k : ℝ) := integral_normSq_eq_dim hcov hβ
+  have hγdim : (∫ z, ‖z‖ ^ 2 ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) = (k : ℝ) :=
+    integral_normSq_eq_dim hcovγ hβγ
+  have hβνpos : 0 < ∫ y, ‖y‖ ^ 3 ∂ν := integral_norm_cube_pos hk hcov hβ
+  have hβγnn : 0 ≤ ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+    integral_nonneg fun z => by positivity
+  -- ### the telescope
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, (Nat.succ_pred_eq_of_pos hn).symm⟩
+  have hNr : (0 : ℝ) < ((m + 1 : ℕ) : ℝ) := by positivity
+  have hsN : 0 < Real.sqrt ((m + 1 : ℕ) : ℝ) := Real.sqrt_pos.mpr hNr
+  set X : ℝ := (∫ y, ‖y‖ ^ 3 ∂ν)
+    + (∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) with hXdef
+  have hXpos : 0 < X := by rw [hXdef]; linarith
+  set c : ℝ := (Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ with hcdef
+  have hcpos : 0 < c := by rw [hcdef]; positivity
+  have hcne : c ≠ 0 := hcpos.ne'
+  set s : ℕ → ℝ := fun j => c * Real.sqrt (j : ℝ) with hsdef
+  have hs0 : s 0 = 0 := by rw [hsdef]; simp
+  have hsN1 : s (m + 1) = 1 := by
+    rw [hsdef, hcdef]
+    dsimp only
+    exact inv_mul_cancel₀ hsN.ne'
+  have hspos : ∀ j : ℕ, 1 ≤ j → 0 < s j := by
+    intro j hj
+    have hj1 : (1 : ℝ) ≤ (j : ℝ) := by exact_mod_cast hj
+    have hsq : (0 : ℝ) < Real.sqrt (j : ℝ) := Real.sqrt_pos.mpr (by linarith)
+    rw [hsdef]
+    dsimp only
+    positivity
+  set Φ : ℕ → EuclideanSpace ℝ (Fin k) → ℝ :=
+    fun j x => ∫ z, f (x + s j • z) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) with hΦdef
+  set G : ℕ → EuclideanSpace ℝ (Fin k) → ℝ := fun j w => Φ j (c • w) with hGdef
+  have hΦcont : ∀ j, Continuous (Φ j) := fun j =>
+    continuous_integral_add_smul hf.continuous hfb (s j)
+  have hΦb : ∀ (j : ℕ) (x : EuclideanSpace ℝ (Fin k)), |Φ j x| ≤ 1 := fun j x =>
+    abs_integral_le_one
+      (hf.continuous.comp (continuous_const.add (continuous_const_smul (s j))))
+      (fun z => hfb _)
+  have hGcont : ∀ j, Continuous (G j) := fun j => (hΦcont j).comp (continuous_const_smul c)
+  have hGb : ∀ (j : ℕ) (w : EuclideanSpace ℝ (Fin k)), |G j w| ≤ 1 := fun j w => hΦb j _
+  -- the Gaussian convolution identity: one fresh `c`-scaled Gaussian widens the smoothing
+  have hconv : ∀ (j : ℕ) (v : EuclideanSpace ℝ (Fin k)),
+      (∫ u, G j (u + v) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) = G (j + 1) v := by
+    intro j v
+    have hjsq : Real.sqrt (j : ℝ) ^ 2 = (j : ℝ) := Real.sq_sqrt (Nat.cast_nonneg j)
+    have hsq : Real.sqrt ((s j) ^ 2 + c ^ 2) = s (j + 1) := by
+      have h1 : (s j) ^ 2 + c ^ 2 = c ^ 2 * (((j + 1 : ℕ) : ℝ)) := by
+        rw [hsdef]
+        dsimp only
+        push_cast
+        rw [mul_pow, hjsq]
+        ring
+      rw [h1, Real.sqrt_mul (by positivity), Real.sqrt_sq hcpos.le, hsdef]
+    have h := integral_gaussian_pair_smul_add (k := k) (s j) c hf.continuous hfb (c • v)
+    rw [hsq] at h
+    calc (∫ u, G j (u + v) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        = ∫ u, (∫ z, f (c • v + s j • z + c • u)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+          refine integral_congr_ae (Filter.Eventually.of_forall fun u => ?_)
+          simp only [hGdef, hΦdef]
+          refine integral_congr_ae (Filter.Eventually.of_forall fun z => ?_)
+          congr 1
+          rw [smul_add]
+          abel
+      _ = ∫ z, f (c • v + s (j + 1) • z) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := h
+      _ = G (j + 1) v := by simp only [hGdef, hΦdef]
+  -- the hybrid family
+  set κ : ℕ → Fin (m + 1) → Measure (EuclideanSpace ℝ (Fin k)) :=
+    fun j i => if (i : ℕ) < j then Measure.dirac 0 else ν with hκdef
+  haveI hκp : ∀ (j : ℕ) (i : Fin (m + 1)), IsProbabilityMeasure (κ j i) := by
+    intro j i
+    rw [hκdef]
+    dsimp only
+    split_ifs
+    · infer_instance
+    · exact hν
+  set I : ℕ → ℝ := fun j => ∫ x, G j (∑ l, x l) ∂(Measure.pi (κ j)) with hIdef
+  -- one telescope step, given any uniform pointwise bound on the peeled difference
+  have hstepgen : ∀ j : ℕ, j < m + 1 → ∀ D : ℝ, 0 ≤ D →
+      (∀ v : EuclideanSpace ℝ (Fin k),
+        |(∫ u, G j (u + v) ∂ν)
+          - (∫ u, G j (u + v) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))| ≤ D) →
+      |I j - I (j + 1)| ≤ D := by
+    intro j hj D hD hbound
+    set i : Fin (m + 1) := ⟨j, hj⟩ with hidef
+    have hival : ((i : Fin (m + 1)) : ℕ) = j := by rw [hidef]
+    have hji : κ j i = ν := by
+      rw [hκdef]; dsimp only; rw [if_neg (by rw [hival]; omega)]
+    have hji1 : κ (j + 1) i = Measure.dirac 0 := by
+      rw [hκdef]; dsimp only; rw [if_pos (by rw [hival]; omega)]
+    have hoff : (fun l : Fin m => κ (j + 1) (i.succAbove l))
+        = fun l : Fin m => κ j (i.succAbove l) := by
+      funext l
+      have hne : ((i.succAbove l : Fin (m + 1)) : ℕ) ≠ j := by
+        intro h
+        exact Fin.succAbove_ne i l (Fin.ext (by rw [h, hival]))
+      rw [hκdef]
+      dsimp only
+      by_cases hlt : ((i.succAbove l : Fin (m + 1)) : ℕ) < j
+      · rw [if_pos hlt, if_pos (by omega)]
+      · rw [if_neg (by omega), if_neg hlt]
+    have hpeel0 := integral_pi_sum_peel (κ j) i (hGcont j) (hGb j)
+    have hpeel1 := integral_pi_sum_peel (κ (j + 1)) i (hGcont (j + 1)) (hGb (j + 1))
+    rw [hji] at hpeel0
+    rw [hji1, hoff] at hpeel1
+    set R : Measure ((_ : Fin m) → EuclideanSpace ℝ (Fin k)) :=
+      Measure.pi (fun l : Fin m => κ j (i.succAbove l)) with hRdef
+    haveI hRp : IsProbabilityMeasure R := by rw [hRdef]; infer_instance
+    have hdirac : ∀ y : (_ : Fin m) → EuclideanSpace ℝ (Fin k),
+        (∫ u, G (j + 1) (u + ∑ l, y l) ∂(Measure.dirac (0 : EuclideanSpace ℝ (Fin k))))
+          = ∫ u, G j (u + ∑ l, y l) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+      intro y
+      rw [integral_dirac, zero_add]
+      exact (hconv j _).symm
+    have hAint : Integrable (fun y : (_ : Fin m) → EuclideanSpace ℝ (Fin k) =>
+        ∫ u, G j (u + ∑ l, y l) ∂ν) R :=
+      (integrable_peel_prod ν (fun l : Fin m => κ j (i.succAbove l))
+        (hGcont j) (hGb j)).integral_prod_right
+    have hBint : Integrable (fun y : (_ : Fin m) → EuclideanSpace ℝ (Fin k) =>
+        ∫ u, G j (u + ∑ l, y l) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) R :=
+      (integrable_peel_prod (stdGaussian (EuclideanSpace ℝ (Fin k)))
+        (fun l : Fin m => κ j (i.succAbove l)) (hGcont j) (hGb j)).integral_prod_right
+    have hIj : I j = ∫ y, (∫ u, G j (u + ∑ l, y l) ∂ν) ∂R := by
+      rw [hIdef]; exact hpeel0
+    have hIj1 : I (j + 1)
+        = ∫ y, (∫ u, G j (u + ∑ l, y l) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂R := by
+      rw [hIdef]
+      refine hpeel1.trans ?_
+      exact integral_congr_ae (Filter.Eventually.of_forall fun y => hdirac y)
+    rw [hIj, hIj1, ← integral_sub hAint hBint]
+    calc |∫ y, ((∫ u, G j (u + ∑ l, y l) ∂ν)
+            - (∫ u, G j (u + ∑ l, y l) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))) ∂R|
+        ≤ ∫ y, |(∫ u, G j (u + ∑ l, y l) ∂ν)
+            - (∫ u, G j (u + ∑ l, y l) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))| ∂R :=
+          abs_integral_le_integral_abs
+      _ ≤ ∫ _y, D ∂R :=
+          integral_mono (hAint.sub hBint).abs (integrable_const _) fun y => hbound _
+      _ = D := by rw [integral_const]; simp
+  -- the peeled difference, written with the smoothing variable displayed
+  have hrw : ∀ (σ : Measure (EuclideanSpace ℝ (Fin k))) (j : ℕ)
+      (v : EuclideanSpace ℝ (Fin k)),
+      (∫ u, G j (u + v) ∂σ)
+        = ∫ u, (∫ z, f (c • v + s j • z + c • u)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂σ := by
+    intro σ j v
+    refine integral_congr_ae (Filter.Eventually.of_forall fun u => ?_)
+    simp only [hGdef, hΦdef]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun z => ?_)
+    congr 1
+    rw [smul_add]
+    abel
+  -- (a) the elementary bound, valid at every step
+  have hboundA : ∀ (j : ℕ) (v : EuclideanSpace ℝ (Fin k)),
+      |(∫ u, G j (u + v) ∂ν)
+        - (∫ u, G j (u + v) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))|
+        ≤ M / 6 * c ^ 3 * X := by
+    intro j v
+    rw [hrw ν j v, hrw (stdGaussian (EuclideanSpace ℝ (Fin k))) j v]
+    have hunc : ∀ σ : Measure (EuclideanSpace ℝ (Fin k)), IsProbabilityMeasure σ →
+        Integrable (Function.uncurry fun u z : EuclideanSpace ℝ (Fin k) =>
+            f (c • v + s j • z + c • u))
+          (σ.prod (stdGaussian (EuclideanSpace ℝ (Fin k)))) := by
+      intro σ hσ
+      haveI := hσ
+      refine (integrable_const (1 : ℝ)).mono' ?_ (Filter.Eventually.of_forall fun p => ?_)
+      · exact (hf.continuous.comp (by fun_prop)).aestronglyMeasurable
+      · rw [Real.norm_eq_abs]; exact hfb _
+    have hswapν := integral_integral_swap (hunc ν hν)
+    have hswapγ := integral_integral_swap
+      (hunc (stdGaussian (EuclideanSpace ℝ (Fin k))) inferInstance)
+    simp only [Function.uncurry] at hswapν hswapγ
+    rw [hswapν, hswapγ]
+    have hcont : ∀ σ : Measure (EuclideanSpace ℝ (Fin k)), IsProbabilityMeasure σ →
+        Continuous fun z : EuclideanSpace ℝ (Fin k) =>
+          ∫ u, f (c • v + s j • z + c • u) ∂σ := by
+      intro σ hσ
+      haveI := hσ
+      exact (continuous_integral_add_smul (σ := σ) hf.continuous hfb c).comp
+        (continuous_const.add (continuous_const_smul (s j)))
+    have hbd : ∀ σ : Measure (EuclideanSpace ℝ (Fin k)), IsProbabilityMeasure σ →
+        ∀ z : EuclideanSpace ℝ (Fin k),
+          |∫ u, f (c • v + s j • z + c • u) ∂σ| ≤ 1 := by
+      intro σ hσ z
+      haveI := hσ
+      exact abs_integral_le_one
+        (hf.continuous.comp (continuous_const.add (continuous_const_smul c)))
+        (fun u => hfb _)
+    have hint1 : Integrable (fun z : EuclideanSpace ℝ (Fin k) =>
+        ∫ u, f (c • v + s j • z + c • u) ∂ν)
+        (stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+      integrable_of_bounded_continuous (hcont ν hν) (hbd ν hν)
+    have hint2 : Integrable (fun z : EuclideanSpace ℝ (Fin k) =>
+        ∫ u, f (c • v + s j • z + c • u) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        (stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+      integrable_of_bounded_continuous
+        (hcont (stdGaussian (EuclideanSpace ℝ (Fin k))) inferInstance)
+        (hbd (stdGaussian (EuclideanSpace ℝ (Fin k))) inferInstance)
+    rw [← integral_sub hint1 hint2]
+    calc |∫ z, ((∫ u, f (c • v + s j • z + c • u) ∂ν)
+            - (∫ u, f (c • v + s j • z + c • u)
+                ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))))
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+        ≤ ∫ z, |(∫ u, f (c • v + s j • z + c • u) ∂ν)
+            - (∫ u, f (c • v + s j • z + c • u)
+                ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))|
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := abs_integral_le_integral_abs
+      _ ≤ ∫ _z, M / 6 * c ^ 3 * X ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+          refine integral_mono (hint1.sub hint2).abs (integrable_const _) fun z => ?_
+          have hpt := abs_integral_swap_step_le hmean hcov hβ hmeanγ hcovγ hβγ hf hfb hM
+            (c • v + s j • z) hcpos.le
+          rw [← hXdef] at hpt
+          exact hpt
+      _ = M / 6 * c ^ 3 * X := by rw [integral_const]; simp
+  -- (b) the Cameron–Martin bound, valid from the first step on
+  have hboundB : ∀ j : ℕ, 1 ≤ j → ∀ v : EuclideanSpace ℝ (Fin k),
+      |(∫ u, G j (u + v) ∂ν)
+        - (∫ u, G j (u + v) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))|
+        ≤ C * X / ((j : ℝ) * Real.sqrt (j : ℝ)) := by
+    intro j hj v
+    rw [hrw ν j v, hrw (stdGaussian (EuclideanSpace ℝ (Fin k))) j v]
+    have h := abs_integral_gaussian_smoothed_swap_le hC hmean hcov hν1 hν2 hβ hνdim
+      hmeanγ hcovγ hγ1 hγ2 hβγ hγdim hf.continuous hfb (c • v) (hspos j hj) hcpos.le
+    refine h.trans_eq ?_
+    have hj1 : (1 : ℝ) ≤ (j : ℝ) := by exact_mod_cast hj
+    have hsq : (0 : ℝ) < Real.sqrt (j : ℝ) := Real.sqrt_pos.mpr (by linarith)
+    have hsqne : Real.sqrt (j : ℝ) ≠ 0 := hsq.ne'
+    have hratio : c / s j = 1 / Real.sqrt (j : ℝ) := by
+      rw [hsdef]
+      dsimp only
+      field_simp
+    have hjs : Real.sqrt (j : ℝ) ^ 3 = (j : ℝ) * Real.sqrt (j : ℝ) := by
+      have h2 : Real.sqrt (j : ℝ) ^ 2 = (j : ℝ) := Real.sq_sqrt (by linarith)
+      calc Real.sqrt (j : ℝ) ^ 3 = Real.sqrt (j : ℝ) ^ 2 * Real.sqrt (j : ℝ) := by ring
+        _ = (j : ℝ) * Real.sqrt (j : ℝ) := by rw [h2]
+    rw [hXdef, hratio, div_pow, one_pow, hjs]
+    ring
+  -- ### summing the steps
+  set T : ℕ → ℝ := fun j => if j < m + 1 then |I j - I (j + 1)| else 0 with hTdef
+  have hθnn : 0 ≤ M / 6 * c ^ 3 * X := by positivity
+  have hTnn : ∀ j, 0 ≤ T j := by
+    intro j
+    rw [hTdef]
+    dsimp only
+    split_ifs
+    · positivity
+    · exact le_rfl
+  have hTθ : ∀ j, T j ≤ M / 6 * c ^ 3 * X := by
+    intro j
+    rw [hTdef]
+    dsimp only
+    split_ifs with hjlt
+    · exact hstepgen j hjlt _ hθnn (hboundA j)
+    · exact hθnn
+  have hTdec : ∀ j, 1 ≤ j → T j ≤ C * X / ((j : ℝ) * Real.sqrt j) := by
+    intro j hj
+    have hnn : 0 ≤ C * X / ((j : ℝ) * Real.sqrt (j : ℝ)) := by positivity
+    rw [hTdef]
+    dsimp only
+    split_ifs with hjlt
+    · exact hstepgen j hjlt _ hnn (hboundB j hj)
+    · exact hnn
+  have hsum := sum_le_of_bounded_and_decay_const (K := C * X) (θ := M / 6 * c ^ 3 * X)
+    (by positivity) hθnn (n := m + 1) hJ hTnn hTθ hTdec
+  have htel : ∀ N : ℕ, |I 0 - I N| ≤ ∑ j ∈ Finset.range N, |I j - I (j + 1)| := by
+    intro N
+    induction N with
+    | zero => simp
+    | succ N ih =>
+      rw [Finset.sum_range_succ]
+      have h3 : |I 0 - I (N + 1)| ≤ |I 0 - I N| + |I N - I (N + 1)| := abs_sub_le _ _ _
+      linarith
+  have hTsum : ∑ j ∈ Finset.range (m + 1), |I j - I (j + 1)|
+      = ∑ j ∈ Finset.range (m + 1), T j := by
+    refine Finset.sum_congr rfl fun j hj => ?_
+    rw [hTdef]
+    dsimp only
+    rw [if_pos (Finset.mem_range.1 hj)]
+  -- ### the two endpoints
+  have hκ0 : κ 0 = fun _ : Fin (m + 1) => ν := by
+    funext i; rw [hκdef]; simp
+  have hκN : κ (m + 1) = fun _ : Fin (m + 1) => Measure.dirac 0 := by
+    funext i; rw [hκdef]; dsimp only; rw [if_pos i.isLt]
+  have hG0 : ∀ w : EuclideanSpace ℝ (Fin k), G 0 w = f (c • w) := by
+    intro w
+    simp only [hGdef, hΦdef, hs0, zero_smul, add_zero]
+    rw [integral_const]
+    simp
+  have hI0 : I 0 = ∫ x, f x ∂((Measure.pi fun _ : Fin (m + 1) => ν).map
+      fun y => c • ∑ i, y i) := by
+    rw [integral_map (by fun_prop) hf.continuous.aestronglyMeasurable]
+    simp only [hIdef]
+    rw [hκ0]
+    exact integral_congr_ae (Filter.Eventually.of_forall fun x => hG0 _)
+  have hIN : I (m + 1) = ∫ z, f z ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    simp only [hIdef]
+    rw [hκN, measure_pi_dirac_zero, integral_dirac]
+    simp only [Finset.sum_const_zero, hGdef, hΦdef, hsN1, one_smul, smul_zero, zero_add]
+  have hfin : |I 0 - I (m + 1)|
+      ≤ (J : ℝ) * (M / 6 * c ^ 3 * X) + 3 * (C * X) / Real.sqrt (J : ℝ) := by
+    calc |I 0 - I (m + 1)| ≤ ∑ j ∈ Finset.range (m + 1), |I j - I (j + 1)| := htel _
+      _ = ∑ j ∈ Finset.range (m + 1), T j := hTsum
+      _ ≤ _ := hsum
+  rw [hI0, hIN] at hfin
+  refine hfin.trans_eq ?_
+  have hcube : Real.sqrt ((m + 1 : ℕ) : ℝ) ^ 3
+      = ((m + 1 : ℕ) : ℝ) * Real.sqrt ((m + 1 : ℕ) : ℝ) := by
+    have h2 : Real.sqrt ((m + 1 : ℕ) : ℝ) ^ 2 = ((m + 1 : ℕ) : ℝ) := Real.sq_sqrt hNr.le
+    calc Real.sqrt ((m + 1 : ℕ) : ℝ) ^ 3
+        = Real.sqrt ((m + 1 : ℕ) : ℝ) ^ 2 * Real.sqrt ((m + 1 : ℕ) : ℝ) := by ring
+      _ = ((m + 1 : ℕ) : ℝ) * Real.sqrt ((m + 1 : ℕ) : ℝ) := by rw [h2]
+  have hc3 : c ^ 3 = 1 / (((m + 1 : ℕ) : ℝ) * Real.sqrt ((m + 1 : ℕ) : ℝ)) := by
+    rw [hcdef, inv_pow, ← hcube, one_div]
+  rw [hc3]
+  ring
+
+end ImprovedTelescope
+
+/-! #### The improved convex headline `(β/√n)^{1/2}`
+
+With brick (i) in hand the assembly is the same `ε`-balance as for
+`berryEsseen_convex_elementary`, except that the mollifier cost is now `ε^{-1}` rather than
+`ε^{-3}`, so the balance `ε^{-1} β/√n + C_k ε` is minimised at `ε = (β/√n)^{1/2}` instead of
+`(β/√n)^{1/4}`. The cut in the telescope is `J = max 2 ⌈ε² n⌉`, for which
+`J (M/6) n^{-3/2} ≤ C₃/(2 ε √n)` and `3C/√J ≤ 3C/(ε √n)`.
+
+Two side remarks on the bookkeeping. First, `J ≤ ε² n + 2` only helps when `ε² n ≥ 1`; when
+`ε² n < 1` the claimed bound already exceeds `1` (because `β ≥ k^{3/2} ≥ 1`), so the inequality
+is trivial and is discharged separately. Second, the elementary bounds
+`berryEsseen_convex_elementary` and `berryEsseen_ball_elementary` are left untouched: they are
+proved and are consumed elsewhere, and the improved bound is a *different* (stronger) statement
+rather than a restatement. -/
+
+section ImprovedAssembly
+
+/-- **The improved telescope with the cut already chosen.** For a mollified test function with
+`‖D³f‖ ≤ C₃/ε³`, and in the window `ε √n ≥ 1`, choosing the cut `J = max 2 ⌈ε² n⌉` in
+`abs_integral_smooth_sub_gaussian_improved` gives
+
+`|∫ f dμₙ − ∫ f dγ| ≤ (3C₃/2 + 9C) (β/√n)/ε`,
+
+the mollifier entering through `ε^{-1}` rather than `ε^{-3}`. The arithmetic is
+`J (C₃/6) ε^{-3} n^{-3/2} ≤ C₃/(2ε√n)` (using `J ≤ ε²n + 2 ≤ 3ε²n`) and
+`3C/√J ≤ 3C/(ε√n)`, followed by `β + β_G ≤ 3β`. -/
+private lemma abs_integral_smooth_sub_gaussian_balanced {k n : ℕ} (hk : 0 < k) {Ct : ℝ}
+    (hCt0 : 0 < Ct)
+    (hCt : ∀ s : ℝ, 0 ≤ s → (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ Ct * s ^ 3)
+    {ν : Measure (EuclideanSpace ℝ (Fin k))} (hn : 0 < n) (hν : IsProbabilityMeasure ν)
+    (hmean : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)
+    (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ)
+    (hβ : Integrable (fun y => ‖y‖ ^ 3) ν)
+    {f : EuclideanSpace ℝ (Fin k) → ℝ} (hf : ContDiff ℝ 3 f) (hfb : ∀ x, |f x| ≤ 1)
+    {C₃ ε : ℝ} (hC₃ : 0 < C₃) (hε : 0 < ε)
+    (hD : ∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3)
+    (hbig : 1 ≤ ε * Real.sqrt (n : ℝ)) :
+    |(∫ x, f x ∂((Measure.pi fun _ : Fin n => ν).map
+            fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i))
+        - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))|
+      ≤ (3 * C₃ / 2 + 9 * Ct) * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) / ε := by
+  haveI := hν
+  have hγstd : (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+      = stdGaussian (EuclideanSpace ℝ (Fin k)) := multivariateGaussian_zero_one
+  rw [hγstd]
+  have hnr : (0 : ℝ) < n := by exact_mod_cast hn
+  have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
+  set t : ℝ := ε * Real.sqrt (n : ℝ) with htdef
+  have htpos : 0 < t := by rw [htdef]; positivity
+  have ht2 : t ^ 2 = ε ^ 2 * (n : ℝ) := by rw [htdef, mul_pow, Real.sq_sqrt hnr.le]
+  set J : ℕ := max 2 ⌈ε ^ 2 * (n : ℝ)⌉₊ with hJdef
+  have hJ2 : 2 ≤ J := le_max_left _ _
+  have hJlow : t ^ 2 ≤ (J : ℝ) := by
+    rw [ht2]
+    refine le_trans (Nat.le_ceil _) ?_
+    have hmem : ⌈ε ^ 2 * (n : ℝ)⌉₊ ≤ J := by rw [hJdef]; exact le_max_right _ _
+    exact_mod_cast hmem
+  have hJhigh : (J : ℝ) ≤ t ^ 2 + 2 := by
+    rw [ht2]
+    have hmax : (J : ℝ) = max 2 ((⌈ε ^ 2 * (n : ℝ)⌉₊ : ℕ) : ℝ) := by
+      rw [hJdef]; push_cast; rfl
+    have hc : ((⌈ε ^ 2 * (n : ℝ)⌉₊ : ℕ) : ℝ) < ε ^ 2 * (n : ℝ) + 1 :=
+      Nat.ceil_lt_add_one (by positivity)
+    have hnn : (0 : ℝ) ≤ ε ^ 2 * (n : ℝ) := by positivity
+    rw [hmax]
+    rcases max_cases (2 : ℝ) ((⌈ε ^ 2 * (n : ℝ)⌉₊ : ℕ) : ℝ) with ⟨he, _⟩ | ⟨he, _⟩
+    · rw [he]; linarith
+    · rw [he]; linarith
+  have hsqrtJ : t ≤ Real.sqrt (J : ℝ) := by
+    have h1 : Real.sqrt (t ^ 2) ≤ Real.sqrt (J : ℝ) := Real.sqrt_le_sqrt hJlow
+    rwa [Real.sqrt_sq htpos.le] at h1
+  have hswap := abs_integral_smooth_sub_gaussian_improved hk hCt0 hCt hn hν hmean hcov hβ
+    hf hfb (M := C₃ / ε ^ 3) (by positivity) hD hJ2
+  refine hswap.trans ?_
+  set B : ℝ := ∫ y, ‖y‖ ^ 3 ∂ν with hBdef
+  have hBpos : 0 < B := integral_norm_cube_pos hk hcov hβ
+  have hβGle : (∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ≤ 2 * B := by
+    have h1 := integral_norm_cube_gaussian_le (k := k) hk
+    rw [hγstd] at h1
+    have h2 := sqrt_dim_mul_dim_le_integral_norm_cube hcov hβ
+    rw [← hBdef] at h2
+    linarith
+  have hεne : ε ≠ 0 := hε.ne'
+  have hsnne : Real.sqrt (n : ℝ) ≠ 0 := hsn.ne'
+  have ht3 : t ^ 3 = ε ^ 3 * ((n : ℝ) * Real.sqrt (n : ℝ)) := by
+    have hcube : Real.sqrt (n : ℝ) ^ 3 = (n : ℝ) * Real.sqrt (n : ℝ) := by
+      have h2 : Real.sqrt (n : ℝ) ^ 2 = (n : ℝ) := Real.sq_sqrt hnr.le
+      calc Real.sqrt (n : ℝ) ^ 3 = Real.sqrt (n : ℝ) ^ 2 * Real.sqrt (n : ℝ) := by ring
+        _ = (n : ℝ) * Real.sqrt (n : ℝ) := by rw [h2]
+    rw [htdef, mul_pow, hcube]
+  have hθ : C₃ / ε ^ 3 / 6 / ((n : ℝ) * Real.sqrt (n : ℝ)) = C₃ / (6 * t ^ 3) := by
+    rw [ht3]
+    field_simp
+  have hJ3 : (J : ℝ) ≤ 3 * t ^ 2 := by nlinarith [hJhigh, hbig, htpos]
+  have hpart1 : (J : ℝ) * (C₃ / (6 * t ^ 3)) ≤ C₃ / (2 * t) := by
+    rw [← mul_div_assoc, div_le_div_iff₀ (by positivity) (by positivity)]
+    nlinarith [mul_le_mul_of_nonneg_right hJ3 (by positivity : (0 : ℝ) ≤ 2 * C₃ * t),
+      hC₃, htpos]
+  have hpart2 : 3 * Ct / Real.sqrt (J : ℝ) ≤ 3 * Ct / t :=
+    div_le_div_of_nonneg_left (by positivity) htpos hsqrtJ
+  have hcoeff : (J : ℝ) * (C₃ / ε ^ 3 / 6 / ((n : ℝ) * Real.sqrt (n : ℝ)))
+      + 3 * Ct / Real.sqrt (J : ℝ) ≤ (C₃ / 2 + 3 * Ct) / t := by
+    rw [hθ]
+    have hsplit : (C₃ / 2 + 3 * Ct) / t = C₃ / (2 * t) + 3 * Ct / t := by
+      field_simp
+    rw [hsplit]
+    linarith [hpart1, hpart2]
+  have hcoeffnn : 0 ≤ (J : ℝ) * (C₃ / ε ^ 3 / 6 / ((n : ℝ) * Real.sqrt (n : ℝ)))
+      + 3 * Ct / Real.sqrt (J : ℝ) := by positivity
+  have hstep1 : ((J : ℝ) * (C₃ / ε ^ 3 / 6 / ((n : ℝ) * Real.sqrt (n : ℝ)))
+        + 3 * Ct / Real.sqrt (J : ℝ))
+        * (B + (∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))))
+      ≤ ((C₃ / 2 + 3 * Ct) / t) * (3 * B) := by
+    have h1 : B + (∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ≤ 3 * B := by
+      linarith
+    have h2 : (0 : ℝ) ≤ (C₃ / 2 + 3 * Ct) / t := by positivity
+    nlinarith [hcoeff, hcoeffnn, h1, h2, hBpos]
+  refine hstep1.trans (le_of_eq ?_)
+  rw [htdef]
+  field_simp
+  ring
+
+set_option maxHeartbeats 1600000 in
+/-- **Improved convex Berry–Esseen bound, Lévy (thickening) form.** For every dimension `k > 0`
+there is a constant `C` such that for every convex measurable `B`, every width `ε > 0` and every
+`n > 0`,
+
+`μₙ(B) ≤ γ(Bᵋ) + C (β/√n)/ε` and `γ(B) ≤ μₙ(Bᵋ) + C (β/√n)/ε`.
+
+This is `berryEsseen_convex_levy_elementary` with `ε³` improved to `ε`: the mollifier's
+third-derivative cost `M = C₃/ε³` now enters only through `M^{1/3}`, by
+`abs_integral_smooth_sub_gaussian_improved`. -/
+theorem berryEsseen_convex_levy_improved {k : ℕ} (hk : 0 < k) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
+      (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ),
+      0 < n → 0 < ε → IsProbabilityMeasure ν →
+      (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0) →
+      (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
+      Integrable (fun y => ‖y‖ ^ 3) ν → MeasurableSet B → Convex ℝ B →
+      ((((Measure.pi fun _ : Fin n => ν).map
+              fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) B).toReal
+            ≤ ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+                (Metric.thickening ε B)).toReal
+              + C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) / ε)
+        ∧ (((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) B).toReal
+            ≤ (((Measure.pi fun _ : Fin n => ν).map
+                fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i)
+                  (Metric.thickening ε B)).toReal
+              + C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) / ε) := by
+  obtain ⟨C₃, hC₃pos, hC₃⟩ := exists_smoothed_convex_indicator k
+  obtain ⟨Ct, hCtpos, hCt⟩ := exists_tiltRemainder_bound
+  refine ⟨3 * C₃ / 2 + 9 * Ct + 2, by positivity, ?_⟩
+  intro n ν B ε hn hε hνp hmean hcov hβint hBmeas hBconv
+  haveI := hνp
+  have hγstd : (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+      = stdGaussian (EuclideanSpace ℝ (Fin k)) := multivariateGaussian_zero_one
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
+  set μ : Measure (EuclideanSpace ℝ (Fin k)) :=
+    (Measure.pi fun _ : Fin n => ν).map (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) with hμdef
+  haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
+  haveI hμprob : IsProbabilityMeasure μ := by
+    rw [hμdef]; exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+  set β : ℝ := ∫ y, ‖y‖ ^ 3 ∂ν with hβdef
+  have hβpos : 0 < β := integral_norm_cube_pos hk hcov hβint
+  have hk1 : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
+  have hsk : (1 : ℝ) ≤ Real.sqrt (k : ℝ) := by
+    have h := Real.sqrt_le_sqrt hk1
+    rwa [Real.sqrt_one] at h
+  have hβ1 : 1 ≤ β := by
+    have h := sqrt_dim_mul_dim_le_integral_norm_cube hcov hβint
+    rw [← hβdef] at h
+    nlinarith [h, hsk, hk1]
+  have hnr : (0 : ℝ) < n := by exact_mod_cast hn
+  have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
+  set q : ℝ := β / Real.sqrt (n : ℝ) with hqdef
+  have hqpos : 0 < q := div_pos hβpos hsn
+  set t : ℝ := ε * Real.sqrt (n : ℝ) with htdef
+  have htpos : 0 < t := by rw [htdef]; positivity
+  have ht2 : t ^ 2 = ε ^ 2 * (n : ℝ) := by
+    rw [htdef, mul_pow, Real.sq_sqrt hnr.le]
+  have hqt : q / ε = β / t := by
+    rw [hqdef, htdef, div_div]
+    congr 1
+    ring
+  -- the degenerate window `ε² n < 1`, where the claimed bound already exceeds `1`
+  have htrivial : t < 1 → (1 : ℝ) ≤ (3 * C₃ / 2 + 9 * Ct + 2) * q / ε := by
+    intro ht1
+    have hb : 1 ≤ β / t := by
+      rw [le_div_iff₀ htpos]
+      nlinarith [hβ1, ht1, htpos]
+    have hqe : 1 ≤ q / ε := by rw [hqt]; exact hb
+    have hsplit : (3 * C₃ / 2 + 9 * Ct + 2) * q / ε
+        = (3 * C₃ / 2 + 9 * Ct + 2) * (q / ε) := by ring
+    rw [hsplit]
+    nlinarith [hqe, hC₃pos, hCtpos]
+  have hμ1 : (μ B).toReal ≤ 1 := by
+    have h := measure_mono (μ := μ) (Set.subset_univ B)
+    rw [measure_univ] at h
+    simpa using ENNReal.toReal_mono (by simp) h
+  have hγ1 : (γ B).toReal ≤ 1 := by
+    have h := measure_mono (μ := γ) (Set.subset_univ B)
+    rw [measure_univ] at h
+    simpa using ENNReal.toReal_mono (by simp) h
+  rcases lt_or_ge t 1 with hsmall | hbig
+  · have h := htrivial hsmall
+    exact ⟨by linarith [ENNReal.toReal_nonneg (a := γ (Metric.thickening ε B))],
+      by linarith [ENNReal.toReal_nonneg (a := μ (Metric.thickening ε B))]⟩
+  -- ### the main window `ε² n ≥ 1`
+  obtain ⟨f, hfcd, hf0, hf1, hfB, hfsupp, hfD⟩ := hC₃ B hBconv hε
+  have hfbd : ∀ x, |f x| ≤ 1 := fun x => abs_le.2 ⟨by linarith [hf0 x], hf1 x⟩
+  have hfint : ∀ ρ : Measure (EuclideanSpace ℝ (Fin k)), IsProbabilityMeasure ρ →
+      Integrable f ρ := by
+    intro ρ hρ
+    haveI := hρ
+    exact (integrable_const (1 : ℝ)).mono' hfcd.continuous.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => by rw [Real.norm_eq_abs]; exact hfbd x)
+  have hbig' : (1 : ℝ) ≤ ε * Real.sqrt (n : ℝ) := by rw [htdef] at hbig; exact hbig
+  have herr : |(∫ x, f x ∂μ) - (∫ x, f x ∂γ)|
+      ≤ (3 * C₃ / 2 + 9 * Ct + 2) * q / ε := by
+    have h := abs_integral_smooth_sub_gaussian_balanced hk hCtpos hCt hn hνp hmean hcov hβint
+      hfcd hfbd hC₃pos hε hfD hbig'
+    rw [← hμdef, ← hγdef, ← hβdef, ← hqdef] at h
+    refine h.trans ?_
+    have hqe : 0 ≤ q / ε := by positivity
+    have e1 : (3 * C₃ / 2 + 9 * Ct) * q / ε = (3 * C₃ / 2 + 9 * Ct) * (q / ε) := by ring
+    have e2 : (3 * C₃ / 2 + 9 * Ct + 2) * q / ε
+        = (3 * C₃ / 2 + 9 * Ct) * (q / ε) + 2 * (q / ε) := by ring
+    rw [e1, e2]
+    linarith
+  -- the sandwich
+  have hthick : MeasurableSet (Metric.thickening ε B) := Metric.isOpen_thickening.measurableSet
+  have hlowμ : (μ B).toReal ≤ ∫ x, f x ∂μ :=
+    measureReal_le_integral_of_eq_one hBmeas (hfint μ hμprob) hf0 hfB
+  have hlowγ : (γ B).toReal ≤ ∫ x, f x ∂γ :=
+    measureReal_le_integral_of_eq_one hBmeas (hfint γ hγprob) hf0 hfB
+  have huppμ : (∫ x, f x ∂μ) ≤ (μ (Metric.thickening ε B)).toReal :=
+    integral_le_measureReal_of_support_subset hthick (hfint μ hμprob) hf1 hfsupp
+  have huppγ : (∫ x, f x ∂γ) ≤ (γ (Metric.thickening ε B)).toReal :=
+    integral_le_measureReal_of_support_subset hthick (hfint γ hγprob) hf1 hfsupp
+  have hswap' := abs_le.1 herr
+  constructor
+  · linarith [hswap'.2, hlowμ, huppγ]
+  · linarith [hswap'.1, hlowγ, huppμ]
+
+/-- **Improved convex-set Berry–Esseen bound.** For every dimension `k > 0` there is a constant
+`C` such that for all `n > 0`, every centred identity-covariance law `ν` with finite third
+moment `β = ∫‖y‖³ dν`, and every measurable convex `B`,
+
+`|μₙ(B) − γ(B)| ≤ C (β/√n)^{1/2} = O(n^{-1/4})`.
+
+This is a strict improvement on the exponent `1/4` of `berryEsseen_convex_elementary`
+(`n^{-1/8}`), and it is the ceiling of the *non-inductive* elementary route: see the wave-13
+amendment in the module docstring. The residual gap to Bentkus's `400 k^{1/4} β/√n` is a further
+factor `(β/√n)^{1/2}`, obtainable only by the self-improving induction
+`Δ ≤ A ε^{-3} δ (C_k ε + 2Δ) + C_k ε`, which is not attempted here.
+
+The constant is `C = C₀ + C_k` with `C₀` from `berryEsseen_convex_levy_improved` and
+`C_k = gaussianShellConst k = 8k^{3/2}/√(2π)`; the balance is `ε = (β/√n)^{1/2}`, at which
+`(β/√n)/ε = ε`. The proof is the same two-sided thickening/erosion argument as
+`berryEsseen_convex_elementary`. -/
+theorem berryEsseen_convex_improved {k : ℕ} (hk : 0 < k) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
+      (B : Set (EuclideanSpace ℝ (Fin k))),
+      0 < n → IsProbabilityMeasure ν →
+      (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0) →
+      (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
+      Integrable (fun y => ‖y‖ ^ 3) ν → MeasurableSet B → Convex ℝ B →
+      |((((Measure.pi fun _ : Fin n => ν)).map
+            fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) B).toReal
+          - ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) B).toReal|
+        ≤ C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) ^ ((1 : ℝ) / 2) := by
+  obtain ⟨C₀, hC₀pos, hlevy⟩ := berryEsseen_convex_levy_improved hk
+  have hCkpos : 0 < gaussianShellConst k := gaussianShellConst_pos hk
+  refine ⟨C₀ + gaussianShellConst k, by linarith, ?_⟩
+  intro n ν B hn hνp hmean hcov hβint hBmeas hBconv
+  haveI := hνp
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
+  set μ : Measure (EuclideanSpace ℝ (Fin k)) :=
+    (Measure.pi fun _ : Fin n => ν).map (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) with hμdef
+  haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
+  haveI hμprob : IsProbabilityMeasure μ := by
+    rw [hμdef]; exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+  set β : ℝ := ∫ y, ‖y‖ ^ 3 ∂ν with hβdef
+  have hβpos : 0 < β := integral_norm_cube_pos hk hcov hβint
+  have hnr : (0 : ℝ) < n := by exact_mod_cast hn
+  have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
+  set q : ℝ := β / Real.sqrt (n : ℝ) with hqdef
+  have hqpos : 0 < q := div_pos hβpos hsn
+  have hεpos : 0 < q ^ ((1 : ℝ) / 2) := Real.rpow_pos_of_pos hqpos _
+  have hbal : q / q ^ ((1 : ℝ) / 2) = q ^ ((1 : ℝ) / 2) := by
+    have hsum : q ^ ((1 : ℝ) / 2) * q ^ ((1 : ℝ) / 2) = q := by
+      rw [← Real.rpow_add hqpos]
+      norm_num
+    rw [div_eq_iff (Real.rpow_pos_of_pos hqpos _).ne']
+    exact hsum.symm
+  have hC₀bal : C₀ * q / q ^ ((1 : ℝ) / 2) = C₀ * q ^ ((1 : ℝ) / 2) := by
+    rw [mul_div_assoc, hbal]
+  have hlevyB := hlevy n ν B (q ^ ((1 : ℝ) / 2)) hn hεpos hνp hmean hcov hβint hBmeas hBconv
+  rw [← hμdef, ← hβdef, ← hqdef, hC₀bal] at hlevyB
+  have hEmeas : MeasurableSet (erosion (q ^ ((1 : ℝ) / 2)) B) :=
+    (isOpen_erosion _ B).measurableSet
+  have hEconv : Convex ℝ (erosion (q ^ ((1 : ℝ) / 2)) B) := convex_erosion hBconv
+  have hlevyE := hlevy n ν (erosion (q ^ ((1 : ℝ) / 2)) B) (q ^ ((1 : ℝ) / 2)) hn hεpos hνp
+    hmean hcov hβint hEmeas hEconv
+  rw [← hμdef, ← hβdef, ← hqdef, hC₀bal] at hlevyE
+  have hthick : (γ (Metric.thickening (q ^ ((1 : ℝ) / 2)) B)).toReal
+      ≤ (γ B).toReal + gaussianShellConst k * q ^ ((1 : ℝ) / 2) := by
+    refine toReal_le_add_of_le_add_ofReal (measure_ne_top _ _) (by positivity) ?_
+    have := gaussian_thickening_le hk hBconv hεpos
+    rwa [← hγdef] at this
+  have herode : (γ B).toReal
+      ≤ (γ (erosion (q ^ ((1 : ℝ) / 2)) B)).toReal
+        + gaussianShellConst k * q ^ ((1 : ℝ) / 2) := by
+    refine toReal_le_add_of_le_add_ofReal (measure_ne_top _ _) (by positivity) ?_
+    have := gaussian_le_erosion_add hk hBmeas hBconv hεpos
+    rwa [← hγdef] at this
+  have hback : (μ (Metric.thickening (q ^ ((1 : ℝ) / 2))
+      (erosion (q ^ ((1 : ℝ) / 2)) B))).toReal ≤ (μ B).toReal :=
+    ENNReal.toReal_mono (measure_ne_top _ _)
+      (measure_mono (thickening_erosion_subset _ B))
+  rw [abs_sub_le_iff]
+  constructor
+  · linarith [hlevyB.1]
+  · linarith [hlevyE.2]
+
+/-- **Improved ball Berry–Esseen bound, with a dimension-free constant.** There is an
+*absolute* constant `C` — independent of the dimension `k`, the sample size `n` and the sampling
+law `ν` — with
+
+`|μₙ{‖z‖² ≤ t} − γ{‖z‖² ≤ t}| ≤ C (β/√n)^{1/2} = O(n^{-1/4})`
+
+uniformly in the threshold `t`. This is `berryEsseen_ball_elementary` at the better exponent:
+the two share the `ε`-generic assembly `berryEsseen_ball_of_swap`, and differ only in which swap
+estimate is fed to it — `abs_integral_smooth_sub_gaussian_le` (cost `C₃/2 · ε`, balanced at
+`ε = (β/√n)^{1/4}`) versus `abs_integral_smooth_sub_gaussian_balanced` (cost
+`(3C₃/2 + 9C) · ε`, balanced at `ε = (β/√n)^{1/2}`).
+
+The window hypothesis `ε √n ≥ 1` of the balanced swap is automatic at this `ε`: it says
+`ε² n = (β/√n) n = β √n ≥ 1`, and `β ≥ k^{3/2} ≥ 1`, `n ≥ 1`.
+
+All three constants are dimension-free (`Cac` from `gaussian_ball_shell_measure_le`, `C₃` from
+`exists_smoothed_radial_indicator`, `C` from `exists_tiltRemainder_bound`), so the improved
+constant `Cac + 3C₃/2 + 9C` is too. `berryEsseen_ball_elementary` is kept as it stands: it is
+what `SmoothTestLargeK.bentkus_berry_esseen_ball` is wired to, and nothing there needs the better
+exponent. -/
+theorem berryEsseen_ball_improved :
+    ∃ C : ℝ, 0 < C ∧ ∀ (k n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k))) (t : ℝ),
+      0 < n → 0 < k → IsProbabilityMeasure ν →
+      (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0) →
+      (∀ u v : EuclideanSpace ℝ (Fin k),
+        (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
+      Integrable (fun y => ‖y‖ ^ 3) ν →
+      |((((Measure.pi fun _ : Fin n => ν)).map
+            fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) {z | ‖z‖ ^ 2 ≤ t}).toReal
+          - ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+              {z | ‖z‖ ^ 2 ≤ t}).toReal|
+        ≤ C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) ^ ((1 : ℝ) / 2) := by
+  obtain ⟨C₃, hC₃pos, hC₃⟩ := exists_smoothed_radial_indicator
+  obtain ⟨Cac, hCacpos, hCac⟩ := gaussian_ball_shell_measure_le
+  obtain ⟨Ct, hCtpos, hCt⟩ := exists_tiltRemainder_bound
+  refine ⟨Cac + (3 * C₃ / 2 + 9 * Ct), by positivity, ?_⟩
+  intro k n ν t hn hk hνp hmean hcov hβint
+  haveI := hνp
+  set β : ℝ := ∫ y, ‖y‖ ^ 3 ∂ν with hβdef
+  have hβpos : 0 < β := integral_norm_cube_pos hk hcov hβint
+  have hk1 : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
+  have hsk : (1 : ℝ) ≤ Real.sqrt (k : ℝ) := by
+    have h := Real.sqrt_le_sqrt hk1
+    rwa [Real.sqrt_one] at h
+  have hβ1 : 1 ≤ β := by
+    have h := sqrt_dim_mul_dim_le_integral_norm_cube hcov hβint
+    rw [← hβdef] at h
+    nlinarith [h, hsk, hk1]
+  have hnr : (0 : ℝ) < n := by exact_mod_cast hn
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
+  have hsn1 : (1 : ℝ) ≤ Real.sqrt (n : ℝ) := by
+    have h := Real.sqrt_le_sqrt hn1
+    rwa [Real.sqrt_one] at h
+  have hsq : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) := Real.mul_self_sqrt hnr.le
+  set q : ℝ := β / Real.sqrt (n : ℝ) with hqdef
+  have hqpos : 0 < q := div_pos hβpos hsn
+  set ε : ℝ := q ^ ((1 : ℝ) / 2) with hεdef
+  have hεpos : 0 < ε := Real.rpow_pos_of_pos hqpos _
+  have hεsq : ε ^ 2 = q := by
+    rw [hεdef, ← Real.rpow_natCast (q ^ ((1 : ℝ) / 2)) 2, ← Real.rpow_mul hqpos.le]
+    norm_num
+  have hqε : q / ε = ε := by
+    rw [← hεsq, pow_two, mul_div_assoc, div_self hεpos.ne', mul_one]
+  -- the window hypothesis `ε √n ≥ 1`
+  have hqn1 : 1 ≤ q * (n : ℝ) := by
+    have h1 : Real.sqrt (n : ℝ) ≤ β * (n : ℝ) := by
+      have hb : Real.sqrt (n : ℝ) * 1 ≤ Real.sqrt (n : ℝ) * (β * Real.sqrt (n : ℝ)) := by
+        refine mul_le_mul_of_nonneg_left ?_ hsn.le
+        nlinarith [hβ1, hsn1]
+      rw [mul_one] at hb
+      calc Real.sqrt (n : ℝ) ≤ Real.sqrt (n : ℝ) * (β * Real.sqrt (n : ℝ)) := hb
+        _ = β * (Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ)) := by ring
+        _ = β * (n : ℝ) := by rw [hsq]
+    rw [hqdef, div_mul_eq_mul_div, le_div_iff₀ hsn]
+    linarith
+  have hbig : (1 : ℝ) ≤ ε * Real.sqrt (n : ℝ) := by
+    have hp : 0 < ε * Real.sqrt (n : ℝ) := by positivity
+    have hsqr : (ε * Real.sqrt (n : ℝ)) ^ 2 = q * (n : ℝ) := by
+      rw [mul_pow, Real.sq_sqrt hnr.le, hεsq]
+    nlinarith [hqn1, hp, hsqr]
+  have herr : ∀ f : EuclideanSpace ℝ (Fin k) → ℝ, ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
+      (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
+      |(∫ x, f x ∂((Measure.pi fun _ : Fin n => ν).map
+            fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i))
+        - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))|
+        ≤ (3 * C₃ / 2 + 9 * Ct) * ε := by
+    intro f hfcd hfbd hfD3
+    have h := abs_integral_smooth_sub_gaussian_balanced hk hCtpos hCt hn hνp hmean hcov hβint
+      hfcd hfbd hC₃pos hεpos hfD3 hbig
+    rw [← hβdef] at h
+    refine h.trans_eq ?_
+    rw [← hqdef, mul_div_assoc, hqε]
+  exact berryEsseen_ball_of_swap hk hνp hCacpos (by positivity) hεpos
+    (fun a ha => hC₃ k a ha hεpos) (fun a w ha hw => hCac k hk a w ha hw) herr t
+
+end ImprovedAssembly
 
 end StatLean.HypothesisTesting
