@@ -1587,6 +1587,174 @@ private lemma lintegral_bvmPairDefect_tendsto
   rw [mul_zero] at this
   exact this.congr fun n => (hident n).symm
 
+-- LEAN-ONLY: joint measurability of the pair defect in `(ω, (h, g))`.
+private lemma measurable_bvmPairDefect_pair
+    (hM_joint : Measurable (Function.uncurry M.density)) (hf : Measurable f)
+    (J : Matrix (Fin k) (Fin k) ℝ) {sc : 𝓧 → EuclideanSpace ℝ (Fin k)} (hsc : Measurable sc)
+    (n : ℕ) :
+    Measurable fun q : (Fin n → 𝓧) × (EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k)) =>
+      bvmPairDefect M f θ₀ J sc n q.2.1 q.2.2 q.1 := by
+  have hsh := measurable_bvmJointDens_comp (M := M) (θ₀ := θ₀) hM_joint hf n
+    (a := fun q : (Fin n → 𝓧) × (EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k)) => q.2.1)
+    (b := fun q => q.1) measurable_snd.fst measurable_fst
+  have hsg := measurable_bvmJointDens_comp (M := M) (θ₀ := θ₀) hM_joint hf n
+    (a := fun q : (Fin n → 𝓧) × (EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k)) => q.2.2)
+    (b := fun q => q.1) measurable_snd.snd measurable_fst
+  have hth := measurable_bvmGaussDens_comp J hsc n
+    (a := fun q : (Fin n → 𝓧) × (EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k)) => q.2.1)
+    (b := fun q => q.1) measurable_snd.fst measurable_fst
+  have htg := measurable_bvmGaussDens_comp J hsc n
+    (a := fun q : (Fin n → 𝓧) × (EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k)) => q.2.2)
+    (b := fun q => q.1) measurable_snd.snd measurable_fst
+  unfold bvmPairDefect
+  exact ((hsh.mul htg).sub (hsg.mul hth)).div htg
+
+private lemma measurable_bvmPairDefect_pair' 
+    (hM_joint : Measurable (Function.uncurry M.density)) (hf : Measurable f)
+    (J : Matrix (Fin k) (Fin k) ℝ) {sc : 𝓧 → EuclideanSpace ℝ (Fin k)} (hsc : Measurable sc)
+    (n : ℕ) (ω : Fin n → 𝓧) :
+    Measurable fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+      bvmPairDefect M f θ₀ J sc n p.1 p.2 ω := by
+  have hsh := measurable_bvmJointDens_comp (M := M) (θ₀ := θ₀) hM_joint hf n
+    (a := fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) => p.1)
+    (b := fun _ => ω) measurable_fst measurable_const
+  have hsg := measurable_bvmJointDens_comp (M := M) (θ₀ := θ₀) hM_joint hf n
+    (a := fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) => p.2)
+    (b := fun _ => ω) measurable_snd measurable_const
+  have hth := measurable_bvmGaussDens_comp J hsc n
+    (a := fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) => p.1)
+    (b := fun _ => ω) measurable_fst measurable_const
+  have htg := measurable_bvmGaussDens_comp J hsc n
+    (a := fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) => p.2)
+    (b := fun _ => ω) measurable_snd measurable_const
+  unfold bvmPairDefect
+  exact ((hsh.mul htg).sub (hsg.mul hth)).div htg
+
+/-- **The Step-B majorant vanishes in mixture mean** (vdV p. 143, last display): Fubini turns
+the `μⁿ`-mean of the (unnormalized) Step-B majorant into a double Lebesgue integral of the
+fixed-pair defects, which vanishes by dominated convergence. -/
+private lemma lintegral_bvmStepBBound_mul_tendsto
+    -- USER-INPUT: dominated iid model with normalized densities; vdV §10.2, p. 140
+    (hPDF : IsPDFOf M μ)
+    -- LEAN-ONLY: measurable score (regularity)
+    (hsc : Measurable sc)
+    -- USER-INPUT: differentiability in quadratic mean at θ₀; vdV Thm 10.1
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ sc)
+    -- USER-INPUT: nonsingular Fisher information; vdV Thm 10.1
+    (hJ_pd : J.PosDef)
+    -- LEAN-ONLY: the abstract Fisher form is the matrix `J` (bridging identity)
+    (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
+      ⟪u, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) v))⟫)
+    -- USER-INPUT: dominated iid model, `κ θ = p_θ · μ`; vdV §10.2, p. 140
+    (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
+    -- LEAN-ONLY: joint measurability of the model densities (regularity)
+    (hM_joint : Measurable (Function.uncurry M.density))
+    -- USER-INPUT: the prior condition of Theorem 10.1; vdV §10.2, p. 141
+    (hπ : HasLocalDensity π θ₀ r₀ f) {R u : ℝ}
+    -- LEAN-ONLY: nontrivial localization radius, inner ball inside the outer one
+    (hR : 0 < R) (hu : u ≤ R) :
+    Tendsto (fun n => ∫⁻ ω, bvmStepBBound M f θ₀ J sc n R ω
+        * bvmNumer M f θ₀ n (Metric.ball 0 u) ω ∂(Measure.pi fun _ : Fin n => μ))
+      atTop (𝓝 0) := by
+  classical
+  set C : Set (EuclideanSpace ℝ (Fin k)) := Metric.closedBall 0 R with hCdef
+  set lamC : Measure (EuclideanSpace ℝ (Fin k)) := volume.restrict C with hlamC
+  have hCmeas : MeasurableSet C := measurableSet_closedBall
+  have hVfin : lamC Set.univ ≠ ∞ := by
+    rw [hlamC, Measure.restrict_apply_univ]
+    exact measure_closedBall_lt_top.ne
+  haveI : IsFiniteMeasure lamC := ⟨lt_of_le_of_ne le_top hVfin⟩
+  have hsub : Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u ⊆ C :=
+    Metric.ball_subset_closedBall.trans (Metric.closedBall_subset_closedBall hu)
+  -- Step 1: bound the integrand by the unnormalized double integral.
+  have hstep1 : ∀ (n : ℕ) (ω : Fin n → 𝓧),
+      bvmStepBBound M f θ₀ J sc n R ω * bvmNumer M f θ₀ n (Metric.ball 0 u) ω
+        ≤ ∫⁻ h in C, ∫⁻ g in C, bvmPairDefect M f θ₀ J sc n h g ω ∂volume ∂volume := by
+    intro n ω
+    have hmono : bvmNumer M f θ₀ n (Metric.ball 0 u) ω ≤ bvmNumer M f θ₀ n C ω :=
+      lintegral_mono' (Measure.restrict_mono hsub le_rfl) le_rfl
+    calc bvmStepBBound M f θ₀ J sc n R ω * bvmNumer M f θ₀ n (Metric.ball 0 u) ω
+        ≤ bvmStepBBound M f θ₀ J sc n R ω * bvmNumer M f θ₀ n C ω :=
+          mul_le_mul_left' hmono _
+      _ ≤ ∫⁻ h in C, ∫⁻ g in C, bvmPairDefect M f θ₀ J sc n h g ω ∂volume ∂volume :=
+          ennreal_inv_mul_mul_le _ _
+  -- Step 2: Fubini.
+  have hstep2 : ∀ n : ℕ,
+      ∫⁻ ω, (∫⁻ h in C, ∫⁻ g in C, bvmPairDefect M f θ₀ J sc n h g ω ∂volume ∂volume)
+          ∂(Measure.pi fun _ : Fin n => μ)
+        = ∫⁻ p, (∫⁻ ω, bvmPairDefect M f θ₀ J sc n p.1 p.2 ω
+            ∂(Measure.pi fun _ : Fin n => μ)) ∂(lamC.prod lamC) := by
+    intro n
+    have hjoint := measurable_bvmPairDefect_pair (M := M) (θ₀ := θ₀) hM_joint
+      hπ.measurable J hsc n
+    have hinner : ∀ ω : Fin n → 𝓧,
+        (∫⁻ h in C, ∫⁻ g in C, bvmPairDefect M f θ₀ J sc n h g ω ∂volume ∂volume)
+          = ∫⁻ p, bvmPairDefect M f θ₀ J sc n p.1 p.2 ω ∂(lamC.prod lamC) := by
+      intro ω
+      rw [lintegral_prod _
+        (measurable_bvmPairDefect_pair' (M := M) (θ₀ := θ₀) hM_joint hπ.measurable
+          J hsc n ω).aemeasurable]
+    simp_rw [hinner]
+    refine lintegral_lintegral_swap ?_
+    unfold Function.uncurry
+    exact hjoint.aemeasurable
+  -- Step 3: dominated convergence for the double Lebesgue integral.
+  have hdct : Tendsto (fun n : ℕ => ∫⁻ p, (∫⁻ ω, bvmPairDefect M f θ₀ J sc n p.1 p.2 ω
+      ∂(Measure.pi fun _ : Fin n => μ)) ∂(lamC.prod lamC)) atTop (𝓝 0) := by
+    have hbound : ∀ᶠ n : ℕ in atTop, ∀ᵐ p ∂(lamC.prod lamC),
+        (∫⁻ ω, bvmPairDefect M f θ₀ J sc n p.1 p.2 ω ∂(Measure.pi fun _ : Fin n => μ))
+          ≤ ENNReal.ofReal (f θ₀ + 1) := by
+      have hcont : ∀ᶠ θ in 𝓝 θ₀, f θ < f θ₀ + 1 :=
+        hπ.continuousAt.eventually (Iio_mem_nhds (lt_add_one (f θ₀)))
+      obtain ⟨δ, hδ, hδf⟩ := Metric.eventually_nhds_iff.mp hcont
+      have hshrink : Tendsto (fun n : ℕ => R / Real.sqrt n) atTop (𝓝 0) := by
+        have hsq : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹) atTop (𝓝 0) :=
+          tendsto_inv_atTop_zero.comp (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
+        simpa [div_eq_mul_inv] using hsq.const_mul R
+      filter_upwards [hshrink.eventually (Iio_mem_nhds hδ), eventually_gt_atTop 0]
+        with n hn hn0
+      have hnR : (0 : ℝ) < n := by exact_mod_cast hn0
+      have hsqrt : 0 < Real.sqrt n := Real.sqrt_pos.mpr hnR
+      rw [hlamC, Measure.prod_restrict]
+      refine ae_restrict_of_forall_mem (hCmeas.prod hCmeas) fun p hp => ?_
+      have hp1 : ‖p.1‖ ≤ R := by
+        have := hp.1
+        rwa [hCdef, Metric.mem_closedBall, dist_zero_right] at this
+      have hdist : dist (bvmLocalUnscale θ₀ n p.1) θ₀ < δ := by
+        rw [bvmLocalUnscale, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
+          abs_of_pos (inv_pos.mpr hsqrt), inv_mul_eq_div]
+        refine lt_of_le_of_lt (div_le_div_of_nonneg_right hp1 hsqrt.le) ?_
+        exact Set.mem_Iio.mp hn
+      refine le_trans (lintegral_bvmPairDefect_le hPDF hκ hM_joint p.1 p.2) ?_
+      exact ENNReal.ofReal_le_ofReal (le_of_lt (hδf hdist))
+    have hmeas : ∀ᶠ n : ℕ in atTop, Measurable (fun p :
+        EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        ∫⁻ ω, bvmPairDefect M f θ₀ J sc n p.1 p.2 ω ∂(Measure.pi fun _ : Fin n => μ)) := by
+      refine Filter.Eventually.of_forall fun n => ?_
+      have hjoint := measurable_bvmPairDefect_pair (M := M) (θ₀ := θ₀) hM_joint
+        hπ.measurable J hsc n
+      exact hjoint.lintegral_prod_left' (μ := (Measure.pi fun _ : Fin n => μ))
+    have hlim : ∀ᵐ p ∂(lamC.prod lamC), Tendsto (fun n : ℕ =>
+        ∫⁻ ω, bvmPairDefect M f θ₀ J sc n p.1 p.2 ω ∂(Measure.pi fun _ : Fin n => μ))
+        atTop (𝓝 0) :=
+      Filter.Eventually.of_forall fun p =>
+        lintegral_bvmPairDefect_tendsto hPDF hsc hDQM hJ_pd hJ hκ hM_joint hπ p.2 p.1
+    have hfin : ∫⁻ _, ENNReal.ofReal (f θ₀ + 1) ∂(lamC.prod lamC) ≠ ∞ := by
+      rw [lintegral_const]
+      exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top (measure_ne_top _ _)
+    have := tendsto_lintegral_filter_of_dominated_convergence
+      (fun _ => ENNReal.ofReal (f θ₀ + 1)) hmeas hbound hfin hlim
+    simpa using this
+  have hle : ∀ n : ℕ, ∫⁻ ω, bvmStepBBound M f θ₀ J sc n R ω
+      * bvmNumer M f θ₀ n (Metric.ball 0 u) ω ∂(Measure.pi fun _ : Fin n => μ)
+      ≤ ∫⁻ p, (∫⁻ ω, bvmPairDefect M f θ₀ J sc n p.1 p.2 ω
+          ∂(Measure.pi fun _ : Fin n => μ)) ∂(lamC.prod lamC) := by
+    intro n
+    rw [← hstep2 n]
+    exact lintegral_mono (hstep1 n)
+  refine ENNReal.tendsto_nhds_zero.mpr fun ε hε => ?_
+  exact ((ENNReal.tendsto_nhds_zero.mp hdct) ε hε).mono fun n hn => le_trans (hle n) hn
+
 /-- **Step B: the conditioned Bernstein–von Mises convergence** (vdV pp. 142–143). For every
 fixed radius `R > 0` and every `δ > 0`, the `P^n_{θ₀}`-probability that the conditioned
 local posterior and the conditioned Gaussian differ by at least `δ` in total variation tends
