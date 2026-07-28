@@ -168,4 +168,33 @@ doob closure. W4: `bay/bpe-final`; full gates; merge to `main`.
   repair + helper restore, debt-localtv, debt-tight (6c0f1d6).
 - **Batch sorry inventory: 0.** Final verification in flight: full-library build +
   `#print axioms` over all 16 headline/load-bearing declarations.
+- 2026-07-27: **FINAL VERIFICATION PASSED.**
+  * Full library build (target-less, whole `lean_lib StatLean`): **3794 jobs green, 0 sorry
+    warnings library-wide**.
+  * `#print axioms` over all 16 headline/load-bearing declarations: **every one is exactly
+    `[propext, Classical.choice, Quot.sound]`** — no `sorryAx`. Covered: `bernstein_von_mises`
+    (+`_lintegral`), `bernstein_von_mises_efficient_centering`, `exponential_tests`,
+    `bpe_tight`, `bayes_estimator_asymptotics` (+`_weakConverges`, `_bowlShaped`),
+    `gaussCriterion_argmin_zero_of_bowlShaped`, `doob_consistency`,
+    `posterior_mass_compl_ball_tendsto`, `local_tv_tendsto`,
+    `mutuallyContiguous_mixture_base`, `posterior_tail_lintegral_tendsto`,
+    `posteriorRisk_shifted_majorant`, `argmin_tendsto_of_uniform_approx`.
+  * Audit scaffold removed.
+  * NOTE: a target-less `lean-fasrc-build` does NOT build files outside the umbrellas — the
+    scaffold had to be named explicitly. Also `--no-push` breaks the worktree sync when the
+    branch tip is local-only.
+
+## Documented deviations from vdV (for the statement-vs-book audit)
+
+1. `tvDist` is the sup-over-events distance = ½·vdV's `L¹` norm (immaterial for →0 claims).
+2. Δ_{n,θ₀} carries `I⁻¹` (ch-10 convention), realised as `bvmEffScore = J⁻¹ ∘ scoreSum`.
+3. Thm 10.8 replaces the book's `ℓ^∞(K)` argmax-CMT route by a recentred majorant plus
+   deterministic argmin consistency; `Tₙ` may be an `εₙ`-approximate minimiser (book: exact);
+   conclusion strengthened to in-probability convergence of `√n(Tₙ−θ₀) − Δₙ`.
+4. Thm 10.10 generalised to standard-Borel 𝓧 + Polish Θ; vdV Lemmas 10.12/10.13 are absorbed
+   into an explicit Lusin–Souslin retraction; consistency stated in ball form.
+5. Efficient centering takes vdV's Thm-8.14 expansion as the definition of efficiency.
+6. Prior modelled as a probability measure with local absolute continuity (a.c. only near θ₀).
+7. `SeparatedLoss.strict` states vdV's sup–inf gap via an explicit separating threshold.
+8. `one_sub_lintegral_le_lintegral_one_sub` carries a measurability hypothesis (necessary).
 
