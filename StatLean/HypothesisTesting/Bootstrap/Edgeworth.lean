@@ -2325,6 +2325,134 @@ theorem measure_pi_truncated_sum_le_exp {n : ℕ} (μ : Measure ℝ) [IsProbabil
       = -lam ^ 2 / (8 * ((n : ℝ) * τ ^ 2)) := by ring
   rw [harg]
 
+/-! ### (X3)(a): the frozen-coordinate window bound, uniform in the frozen value
+
+Wave 18 recorded the second half of (X3) as: "*Transferring the (M1)(b) expansion to the
+retained block uniformly over the frozen value is the honest remaining content*", the retained
+block being "a root law of the same kind on the remaining `n` coordinates, but with an
+`n`-dependent shift **and scale** inherited from the frozen coordinate".
+
+**That is more than is needed, and the parenthetical about the scale is wrong.** Freezing
+coordinate `i` of the size-`(n+1)` root at the value `y` gives, by `root_insertNth_eq`,
+
+`(n+1)^{-1/2} ∑_j Z((insertNth i y z)_j) = (n+1)^{-1/2}Z(y) + s_n · (n^{-1/2} ∑_j Z(z_j))`,
+`s_n = √n/√(n+1)`,
+
+so the frozen value enters **only** through the additive shift `(n+1)^{-1/2}Z(y)`; the scale
+`s_n` is inherited from the *sample size*, not from the frozen coordinate, and it is pinned in
+`[1/√2, 1)` for every `n ≥ 1`. Since the window bound that the slice hypothesis consumes is
+already **uniform in the location** `x` — that is what `measure_abs_sub_le_of_abs_cdf_sub_le`
+delivers, and it is what the marginal statement of (W1) provides at size `n` — an additive shift
+costs nothing at all: `measure_abs_sub_le_of_affine` re-centres the window and rescales its
+width, and the constant degrades only by the factor `1/s_n ≤ √2`.
+
+So (X3)(a) does **not** require re-running (M1)(b) on the block: it is a corollary of the
+*marginal* window bound at size `n`, which is exactly the estimate wave 15 already recorded as
+free. This is the second wave-18 requirement to be found overstated (the first being the
+literal product shape of wave 17), and the reason is the same in both cases: the peeled
+arithmetic consumes location-uniform bounds, and location-uniformity is preserved by every
+affine reparametrisation of the argument. -/
+
+/-- Freezing one coordinate of a sum over `Fin (n+1)` splits off the frozen summand. -/
+lemma sum_insertNth {n : ℕ} (Z : ℝ → ℝ) (i : Fin (n + 1)) (y : ℝ) (z : Fin n → ℝ) :
+    (∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j))
+      = Z y + ∑ j : Fin n, Z (z j) := by
+  rw [Fin.sum_univ_succAbove (fun j => Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)) i]
+  simp [Fin.insertNth_apply_same, Fin.insertNth_apply_succAbove]
+
+/-- **The frozen coordinate enters only as an additive shift.** The size-`(n+1)` root with
+coordinate `i` frozen at `y` is `shift(y) + s_n · (the size-`n` root on the retained block)`,
+with the *deterministic* scale `s_n = √n/√(n+1)`. This is the structural reason (X3)(a) is
+available uniformly in `y`. -/
+lemma root_insertNth_eq {n : ℕ} (Z : ℝ → ℝ) (hn : 0 < n) (i : Fin (n + 1)) (y : ℝ)
+    (z : Fin n → ℝ) :
+    (Real.sqrt ((n : ℝ) + 1))⁻¹ * ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)
+      = (Real.sqrt ((n : ℝ) + 1))⁻¹ * Z y
+        + (Real.sqrt (n : ℝ) / Real.sqrt ((n : ℝ) + 1))
+            * ((Real.sqrt (n : ℝ))⁻¹ * ∑ j : Fin n, Z (z j)) := by
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hs : Real.sqrt (n : ℝ) ≠ 0 := (Real.sqrt_pos.2 hnR).ne'
+  rw [sum_insertNth]
+  field_simp
+
+/-- **Window bounds transfer through an affine change of variable, with no loss in the shift.**
+If `S` satisfies the two-sided window bound with constants `(A, η)` *uniformly in the location*,
+then so does `a + s·S`, with constants `(A/s, η)` — for **every** shift `a`, and with a bound
+that does not depend on `a`.
+
+This is the whole content of "uniformly in the frozen value": a location-uniform bound is
+invariant under translation of the argument, so the only thing a change of variable can cost is
+the scale factor. -/
+lemma measure_abs_sub_le_of_affine {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    {S : Ω → ℝ} {a s A η : ℝ} (hs : 0 < s)
+    (hwin : ∀ u w : ℝ, 0 ≤ w → (P {ω | |S ω - u| ≤ w}).toReal ≤ 2 * A * w + 2 * η)
+    (x : ℝ) {w : ℝ} (hw : 0 ≤ w) :
+    (P {ω | |a + s * S ω - x| ≤ w}).toReal ≤ 2 * (A / s) * w + 2 * η := by
+  have hsne : s ≠ 0 := ne_of_gt hs
+  have hset : {ω | |a + s * S ω - x| ≤ w} = {ω | |S ω - (x - a) / s| ≤ w / s} := by
+    ext ω
+    have hid : a + s * S ω - x = s * (S ω - (x - a) / s) := by
+      field_simp
+      ring
+    have habs : |a + s * S ω - x| = s * |S ω - (x - a) / s| := by
+      rw [hid, abs_mul, abs_of_pos hs]
+    simp only [Set.mem_setOf_eq, habs, ← le_div_iff₀' hs]
+  rw [hset]
+  refine (hwin ((x - a) / s) (w / s) (by positivity)).trans (le_of_eq ?_)
+  field_simp
+
+/-- **(X3)(a), CLOSED: the frozen-coordinate window bound, uniform in the frozen value.**
+
+Granted the *marginal* window bound for the size-`n` root — `P(|Rₙ − u| ≤ w) ≤ 2Aw + 2η`
+uniformly in `u`, which is what `measure_abs_sub_le_of_abs_cdf_sub_le` reads off any
+distribution-function approximation — the size-`(n+1)` root with one coordinate frozen at an
+arbitrary `y` satisfies the same bound with the constant degraded only by `√2`, and with **no
+dependence on `y`**.
+
+Together with `measure_pi_truncated_sum_le_exp` this discharges both halves of (X3): the
+`hslice` hypothesis of `measure_pi_inter_coord_le` / `measure_pi_inter_le_of_large_summand` is
+exactly this statement (via `measure_abs_sub_le_ofReal`), and the remainder those lemmas leave
+is exactly the truncated-sum tail. -/
+theorem measure_pi_abs_root_insertNth_le {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Z : ℝ → ℝ} {A η : ℝ} (hA : 0 ≤ A) (hn : 0 < n) (i : Fin (n + 1))
+    (hwin : ∀ u w : ℝ, 0 ≤ w →
+      ((Measure.pi fun _ : Fin n => μ)
+          {z : Fin n → ℝ | |(Real.sqrt (n : ℝ))⁻¹ * ∑ j, Z (z j) - u| ≤ w}).toReal
+        ≤ 2 * A * w + 2 * η)
+    (y x : ℝ) {w : ℝ} (hw : 0 ≤ w) :
+    ((Measure.pi fun _ : Fin n => μ)
+        {z : Fin n → ℝ |
+          |(Real.sqrt ((n : ℝ) + 1))⁻¹
+              * ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j) - x| ≤ w}).toReal
+      ≤ 2 * (Real.sqrt 2 * A) * w + 2 * η := by
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hnR
+  have hsn1 : (0 : ℝ) < Real.sqrt ((n : ℝ) + 1) := Real.sqrt_pos.2 (by linarith)
+  set s : ℝ := Real.sqrt (n : ℝ) / Real.sqrt ((n : ℝ) + 1) with hsdef
+  have hspos : 0 < s := by positivity
+  have hset : {z : Fin n → ℝ |
+      |(Real.sqrt ((n : ℝ) + 1))⁻¹
+          * ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j) - x| ≤ w}
+      = {z : Fin n → ℝ |
+        |(Real.sqrt ((n : ℝ) + 1))⁻¹ * Z y
+          + s * ((Real.sqrt (n : ℝ))⁻¹ * ∑ j : Fin n, Z (z j)) - x| ≤ w} := by
+    ext z
+    simp only [Set.mem_setOf_eq, root_insertNth_eq Z hn i y z]
+    exact Iff.rfl
+  rw [hset]
+  refine (measure_abs_sub_le_of_affine (P := Measure.pi fun _ : Fin n => μ)
+    hspos hwin x hw).trans ?_
+  -- `A / s = A √(n+1)/√n ≤ √2 A` for `n ≥ 1`.
+  have hratio : A / s ≤ Real.sqrt 2 * A := by
+    rw [hsdef, div_div_eq_mul_div, div_le_iff₀ hsn]
+    have hkey : Real.sqrt ((n : ℝ) + 1) ≤ Real.sqrt 2 * Real.sqrt (n : ℝ) := by
+      rw [← Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 2)]
+      refine Real.sqrt_le_sqrt ?_
+      have : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+      linarith
+    nlinarith [hA, hsn.le, hkey]
+  nlinarith [hratio, hw, hA]
+
 end StudentizedReduction
 
 /-! ## The Edgeworth approximant on the standardized scale
