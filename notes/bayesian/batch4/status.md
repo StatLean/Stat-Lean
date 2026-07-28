@@ -34,10 +34,11 @@ Statements now FROZEN.
 | doob-final | — | (absorbed by doob-core; lane not needed) | — | DONE | — |
 | assembly (Theorem10_1, EfficientCentering) | 3 | Bay/BernsteinVonMises/{Theorem10_1,EfficientCentering} | conc, local, tests | **MERGED 0-sorry (THM 10.1 + corollary)** | — |
 | bpe-approx (UniformApproximation) | 3 | Bay/BayesEstimators/UniformApproximation | assembly | **MERGED 0-sorry** | — |
-| bpe-final (Theorem10_8) | 4 | Bay/BayesEstimators/Theorem10_8 | bpe-approx, bpe-aux | IN_FLIGHT | bowl-shaped corollary insulated |
-| debt-gauss | 4 | AS/ForMathlib/MultivariateGaussianDensity | — | IN_FLIGHT | — |
-| debt-score | 4 | Bay/BernsteinVonMises/ScoreTest | — | IN_FLIGHT | — |
-| debt-localtv | 4 | Bay/BernsteinVonMises/LocalApproximation | — | IN_FLIGHT | — |
+| bpe-final (Theorem10_8) | 4 | Bay/BayesEstimators/Theorem10_8 | bpe-approx, bpe-aux | **MERGED 4/5** | — |
+| debt-tight (bpe_tight, repaired stmt) | 5 | Bay/BayesEstimators/Theorem10_8 | defs-repair | **MERGED 0-sorry** | — |
+| debt-gauss | 4 | AS/ForMathlib/MultivariateGaussianDensity | — | **MERGED 0-sorry** | — |
+| debt-score | 4 | Bay/BernsteinVonMises/ScoreTest | — | **MERGED 0-sorry** | — |
+| debt-localtv | 4 | Bay/BernsteinVonMises/LocalApproximation | — | **MERGED 0-sorry** | — |
 
 Laptop-only (no lane may touch): `*/Defs.lean` (all four new `Defs.lean` after gate),
 `StatLean/Bayesian.lean`, `StatLean/AsymptoticStatistics.lean`, `StatLean.lean`,
@@ -144,4 +145,27 @@ doob closure. W4: `bay/bpe-final`; full gates; merge to `main`.
   **Lesson (already in CLAUDE.md, re-confirmed): a 0-sorry FILE is not an axiom-clean
   THEOREM.** Per-file sorry counts must never be reported as completion; only `#print axioms`
   settles it. Re-run the scaffold after every debt merge.
+
+## STATE: all Chapter-10 targets closed, ZERO SORRIES in the batch (2026-07-27)
+
+- **STATEMENT DEFECT #2 (lane bpe-final).** `SeparatedLoss.strict` as originally frozen —
+  "∃ one pair with `ℓ x < ℓ y`" — makes `bpe_tight` **FALSE**. The lane supplied a
+  machine-checked witness: the `0-1` loss satisfies the weak form, has zero sup–inf gap at
+  every scale, so against an atomless posterior its risk is constant, every point minimises,
+  and a selection escaping to infinity breaks tightness. vdV p.147 means the *sup–inf* gap is
+  strict (he uses `η := ℓ̲(2δ) − ℓ̄(δ) > 0` on p.148), and his own sufficient condition
+  ("`ℓ₀` nondecreasing, not constant on `(0,∞)`") excludes the `0-1` loss.
+  **LAPTOP REPAIR:** `strict : ∃ M > 0, ∃ c, (∀ x, ‖x‖ ≤ M → ℓ x ≤ c) ∧ ∀ y, 2M ≤ ‖y‖ → c < ℓ y`
+  (explicit separating threshold, equivalent to vdV's sup–inf form, avoids `sSup`/`sInf` in
+  `ℝ≥0∞`). All four already-closed Thm 10.8 proofs still compile ⇒ none of them had leaned on
+  the weak form. `debt-tight` then closed `bpe_tight` against the repaired definition.
+- **OPERATIONAL ERROR (mine).** I ran a `--worktree` gate on `bay/debt-localtv` while its lane
+  was still live; the wrapper's worktree-sync can clobber a running session. No damage this
+  time (HEAD and the 0-sorry working tree survived), and the "sorry at line 516" it reported
+  was just the stale pre-push tip — fan-out lanes push only at session end.
+  **RULE: never gate a branch whose lane is still in `squeue`.**
+- Merges: debt-gauss (3a0797d), debt-score (32275b7), bpe-final (c3eb561), SeparatedLoss
+  repair + helper restore, debt-localtv, debt-tight (6c0f1d6).
+- **Batch sorry inventory: 0.** Final verification in flight: full-library build +
+  `#print axioms` over all 16 headline/load-bearing declarations.
 
