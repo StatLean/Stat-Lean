@@ -9,6 +9,7 @@ import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 import Mathlib.Analysis.Fourier.Inversion
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 
 /-!
 # One-term Edgeworth expansions for the mean, and their uniform form
@@ -4867,7 +4868,10 @@ content. Two are deterministic statements about `𝓕 g` for one explicit polyno
 Lebesgue measure on `ℝ²`; the third is a fourth moment of the truncated root.
 
 **(A) The mass, polynomial** — `exists_integral_norm_fourier_bulkMultiplier_le`. `g` is `C^∞` with
-support in `‖w‖ ≤ 2M`, so `𝓕 g` is Schwartz and integrable, and integrating by parts three times
+support in `‖w‖ ≤ 2M` (`contDiff_bulkMultiplier`, `hasCompactSupport_bulkMultiplier`), so `𝓕 g` is
+Schwartz and integrable — **wave 33 proves that half** (`schwartzOfCompactSupport`,
+`integrable_fourier_bulkMultiplier`) and it is no longer part of the statement — and integrating
+by parts three times
 in each variable gives `∫‖𝓕 g‖ ≲ M²·sup_{|α| ≤ 3}‖∂^α g‖_∞`; every derivative of the phase is a
 polynomial in `M` and `|θ|` (degree `≤ 3` in `w₀`, `≤ 2` in `w₁`, coefficients carrying
 `r = n^{-1/2}`) and every derivative of the cut-off costs `M^{-1}`. Hence a bound
@@ -4900,6 +4904,85 @@ the only probabilistic input of the three, and it is the line that *forces* the 
 one explicit polynomial phase against Lebesgue measure on `ℝ²`, and neither of them structure.
 (C), the assembly below, and the exponent ledger are proved. -/
 
+/-! ### Input (A), first half: the transform of the bulk multiplier is integrable
+
+(A) asks for two things about `g = bulkMultiplier`: that `𝓕 g` be integrable, and that its `L¹`
+mass be polynomial in `n` and `|θ|`. The first is free once `g` is exhibited as a Schwartz
+function, and `g` is one for a soft reason — it is `C^∞` with compact support. That implication is
+not in Mathlib (there is no `𝓓 → 𝓢` bridge in this pin), so it is proved here:
+`schwartzOfCompactSupport`, whose decay bound is `HasCompactSupport.exists_bound_of_continuous`
+applied to `‖x‖^k‖D^n f(x)‖` — continuous, and compactly supported because
+`HasCompactSupport.iteratedFDeriv` is. `SchwartzMap.fourierTransformCLM` then keeps it Schwartz
+and `SchwartzMap.integrable` finishes.
+
+**This does not touch the mass bound**, which is the actual content of (A) and needs explicit
+iterated-derivative bounds for `g` on `‖w‖ ≤ 2M`, polynomial in `M = n^{5/8}` and `|θ|`. What it
+does is take the integrability conjunct out of the residue, and give the smoothness of the
+multiplier (`contDiff_bulkMultiplier`, through `contDiff_deltaSurrogate` and `contDiff_coord`)
+which any such bound has to start from anyway. -/
+
+/-- A smooth compactly supported function on the plane is a Schwartz function. -/
+noncomputable def schwartzOfCompactSupport (f : E₂ → ℂ)
+    (hf : ContDiff ℝ (⊤ : ℕ∞) f) (hcs : HasCompactSupport f) : SchwartzMap E₂ ℂ where
+  toFun := f
+  smooth' := hf
+  decay' := by
+    intro k n
+    have hle : ((n : ℕ∞) : WithTop ℕ∞) ≤ ((⊤ : ℕ∞) : WithTop ℕ∞) :=
+      WithTop.coe_le_coe.2 le_top
+    have hcont : Continuous fun x : E₂ => ‖x‖ ^ k * ‖iteratedFDeriv ℝ n f x‖ :=
+      (continuous_norm.pow k).mul (hf.continuous_iteratedFDeriv hle).norm
+    have hsupp : HasCompactSupport fun x : E₂ => ‖x‖ ^ k * ‖iteratedFDeriv ℝ n f x‖ :=
+      HasCompactSupport.mul_left ((hcs.iteratedFDeriv n).norm)
+    obtain ⟨C, hC⟩ := hsupp.exists_bound_of_continuous hcont
+    refine ⟨C, fun x => ?_⟩
+    have h := hC x
+    rwa [Real.norm_eq_abs, abs_of_nonneg (by positivity)] at h
+
+/-- **The Fourier transform of a smooth compactly supported function is integrable.** -/
+lemma integrable_fourier_of_compactSupport {f : E₂ → ℂ}
+    (hf : ContDiff ℝ (⊤ : ℕ∞) f) (hcs : HasCompactSupport f) :
+    Integrable (𝓕 f) :=
+  (SchwartzMap.fourierTransformCLM ℂ (schwartzOfCompactSupport f hf hcs)).integrable
+
+/-- Coordinate evaluation on the plane is smooth. -/
+lemma contDiff_coord (i : Fin 2) : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => w i := by
+  have h : (fun w : E₂ => w i) = fun w : E₂ => (innerSL ℝ (coordDir i)) w := by
+    funext w
+    rw [← inner_coordDir i w]
+    exact real_inner_comm _ _
+  rw [h]
+  exact (innerSL ℝ (coordDir i)).contDiff
+
+lemma contDiff_deltaSurrogate (σ r : ℝ) : ContDiff ℝ (⊤ : ℕ∞) (deltaSurrogate σ r) := by
+  have h0 : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => w 0 := contDiff_coord 0
+  have h1 : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => w 1 := contDiff_coord 1
+  unfold deltaSurrogate
+  fun_prop
+
+lemma contDiff_bulkMultiplier (σ r θ M : ℝ) :
+    ContDiff ℝ (⊤ : ℕ∞) (bulkMultiplier σ r θ M) := by
+  have hcut : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => (bulkCutoff (M⁻¹ • w) : ℝ) :=
+    bulkCutoff.contDiff.comp (contDiff_id.const_smul M⁻¹)
+  have h0 : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => w 0 := contDiff_coord 0
+  have hp : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => (θ * (deltaSurrogate σ r w - w 0 / σ) : ℝ) :=
+    contDiff_const.mul ((contDiff_deltaSurrogate σ r).sub (h0.div_const σ))
+  have hpc : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ =>
+      (((θ * (deltaSurrogate σ r w - w 0 / σ) : ℝ) : ℂ)) :=
+    Complex.ofRealCLM.contDiff.comp hp
+  have hexp : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ =>
+      Complex.exp (Complex.I * ((θ * (deltaSurrogate σ r w - w 0 / σ) : ℝ) : ℂ)) :=
+    (Complex.contDiff_exp (𝕜 := ℝ)).comp (contDiff_const.mul hpc)
+  have hcutc : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => ((bulkCutoff (M⁻¹ • w) : ℝ) : ℂ) :=
+    Complex.ofRealCLM.contDiff.comp hcut
+  exact hcutc.mul hexp
+
+/-- **The transform of the bulk multiplier is integrable** — the first half of input (A). -/
+lemma integrable_fourier_bulkMultiplier {M : ℝ} (hM : 0 < M) (σ r θ : ℝ) :
+    Integrable (𝓕 (bulkMultiplier σ r θ M)) :=
+  integrable_fourier_of_compactSupport (contDiff_bulkMultiplier σ r θ M)
+    (hasCompactSupport_bulkMultiplier hM σ r θ)
+
 /-- **(A) The mass of the bulk multiplier's transform is polynomial in `n` and `|θ|`** — the first
 of the three inputs of `exists_fourierCertificate_deltaSurrogate`; see the section note.
 
@@ -4908,9 +4991,8 @@ and repeated integration by parts bounds `∫‖𝓕 g‖` by `M²` times a supr
 each of which is polynomial in `M = n^{5/8}` and `|θ|`. -/
 theorem exists_integral_norm_fourier_bulkMultiplier_le {σ : ℝ} (hσ : 0 < σ) :
     ∃ (C : ℝ) (K : ℕ), 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ θ : ℝ,
-      Integrable (𝓕 (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n))) ∧
-        (∫ v : E₂, ‖𝓕 (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) v‖)
-          ≤ C * (n : ℝ) ^ K * (1 + |θ|) ^ K := by
+      (∫ v : E₂, ‖𝓕 (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) v‖)
+        ≤ C * (n : ℝ) ^ K * (1 + |θ|) ^ K := by
   sorry
 
 /-- **(B) The non-stationary-phase estimate: the weight carries `O(n^{-3/2})` on the
@@ -4986,7 +5068,7 @@ mean term `8n⁴(E U)⁴` — which is what forces the two truncation-tail bound
 
 /-- The integral of a degree-four polynomial in a bounded measurable function. -/
 lemma integral_poly_four_of_bounded {α : Type*} [MeasurableSpace α] (ν : Measure α)
-    [IsProbabilityMeasure ν] {W : α → ℝ} (hW : Measurable W) {D : ℝ} (hD : 0 ≤ D)
+    [IsProbabilityMeasure ν] {W : α → ℝ} (hW : Measurable W) {D : ℝ} (_hD : 0 ≤ D)
     (hWb : ∀ z, |W z| ≤ D) (c₀ c₁ c₂ c₃ c₄ : ℝ) :
     ∫ z, (c₀ + c₁ * W z + c₂ * W z ^ 2 + c₃ * W z ^ 3 + c₄ * W z ^ 4) ∂ν
       = c₀ + c₁ * (∫ z, W z ∂ν) + c₂ * (∫ z, W z ^ 2 ∂ν) + c₃ * (∫ z, W z ^ 3 ∂ν)
@@ -5071,7 +5153,7 @@ lemma integral_add_pow_two_of_bounded {α : Type*} [MeasurableSpace α] (ν : Me
 
 /-- A shifted bounded variable, integrated. -/
 lemma integral_add_of_bounded {α : Type*} [MeasurableSpace α] (ν : Measure α)
-    [IsProbabilityMeasure ν] {S : α → ℝ} (hS : Measurable S) {D : ℝ} (hD : 0 ≤ D)
+    [IsProbabilityMeasure ν] {S : α → ℝ} (hS : Measurable S) {D : ℝ} (_hD : 0 ≤ D)
     (hSb : ∀ z, |S z| ≤ D) (a : ℝ) :
     ∫ z, (a + S z) ∂ν = a + (∫ z, S z ∂ν) := by
   have hI : Integrable S ν :=
@@ -5851,7 +5933,8 @@ theorem exists_fourierCertificate_deltaSurrogate
       fun y => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y) with hZdef
     have hZm : Measurable Z := (measurable_studentPair F).comp (measurable_truncAt _ _)
     haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZm n
-    obtain ⟨hAint, hAmass⟩ := hA n hn θ
+    have hAmass := hA n hn θ
+    have hAint := integrable_fourier_bulkMultiplier hM σ ((Real.sqrt (n : ℝ))⁻¹) θ
     have hS : MeasurableSet {w : E₂ | ‖w‖ ≤ bulkRadius n} :=
       measurableSet_le continuous_norm.measurable measurable_const
     have hcompl : ({w : E₂ | ‖w‖ ≤ bulkRadius n})ᶜ = {w : E₂ | bulkRadius n < ‖w‖} := by
@@ -8411,12 +8494,18 @@ estimates; this theorem and its corollary are untouched and still `sorry`.**
   `τ = √n`. The `n`-exponent of (C) is unchanged and nothing downstream moves — the wave-30/31
   numerology stands — but the argument the note gives for it is incomplete as written.
 
-* **(A) AND (B) WERE NOT ATTEMPTED IN THIS WAVE, and that is a budget statement, not a verdict.**
-  Both are estimates on `𝓕 g` for `g = χ(w/M)e^{iθ(Hₙ − w₀/σ)}`, and both need what this
-  development does not have: explicit control of the iterated derivatives of `g` on `‖w‖ ≤ 2M`,
-  polynomial in `M = n^{5/8}` and `|θ|`. (A) additionally needs `Integrable (𝓕 g)`, i.e. `g`
-  exhibited as a Schwartz function; (B) needs the five-fold integration by parts against the
-  proved slope bound `deltaSurrogate_slope_ge`. No obstruction to either is known.
+* **(A) LOSES ITS INTEGRABILITY CONJUNCT.** `g` is `C^∞` (`contDiff_bulkMultiplier`, through
+  `contDiff_deltaSurrogate` and `contDiff_coord`) with compact support, hence Schwartz, hence
+  `𝓕 g` is Schwartz and integrable. The implication "smooth and compactly supported ⇒ Schwartz"
+  is absent from this Mathlib pin — there is no `𝓓 → 𝓢` bridge — so it is proved here as
+  `schwartzOfCompactSupport`. `exists_integral_norm_fourier_bulkMultiplier_le` is restated
+  without the conjunct.
+
+* **THE MASS BOUND OF (A), AND ALL OF (B), WERE NOT ATTEMPTED, and that is a budget statement,
+  not a verdict.** Both need what this development does not have: explicit control of the
+  iterated derivatives of `g` on `‖w‖ ≤ 2M`, polynomial in `M = n^{5/8}` and `|θ|`. (B) needs in
+  addition the five-fold integration by parts against the proved slope bound
+  `deltaSurrogate_slope_ge`. No obstruction to either is known.
 
 **What is honestly *not* done, and it is bookkeeping rather than analysis.** This theorem itself
 is still `sorry`. Granting (A), (B), (C), the chain is: `abs_studentizedRootCDF_sub_truncAt_le`
