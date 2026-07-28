@@ -2865,6 +2865,21 @@ noncomputable def surrogateRemPoly (θ u v : ℝ) : ℝ :=
     + θ ^ 2 / 2 * (|u| * |v| * (|u| ^ 3 / 2 + 3 * |u| * |v| ^ 2 / 8)
         + (|u| ^ 3 / 2 + 3 * |u| * |v| ^ 2 / 8) ^ 2)
 
+lemma surrogateRemPoly_nonneg (θ u v : ℝ) : 0 ≤ surrogateRemPoly θ u v := by
+  rw [surrogateRemPoly]; positivity
+
+/-- The envelope is monotone in `|u|` and `|v|` — every coefficient is nonnegative. This is what
+turns a *bounded* root into a bounded remainder: on the support of the truncated root's law the
+envelope is a constant, so `∫ surrogateRemPoly` is finite with no moment hypothesis at all. -/
+lemma surrogateRemPoly_le_of_abs_le (θ : ℝ) {u v A B : ℝ} (hu : |u| ≤ A) (hv : |v| ≤ B) :
+    surrogateRemPoly θ u v ≤ surrogateRemPoly θ A B := by
+  have hA : (0 : ℝ) ≤ A := le_trans (abs_nonneg u) hu
+  have hB : (0 : ℝ) ≤ B := le_trans (abs_nonneg v) hv
+  have hu0 : (0 : ℝ) ≤ |u| := abs_nonneg u
+  have hv0 : (0 : ℝ) ≤ |v| := abs_nonneg v
+  rw [surrogateRemPoly, surrogateRemPoly, abs_of_nonneg hA, abs_of_nonneg hB]
+  gcongr <;> first | assumption | positivity
+
 set_option maxHeartbeats 800000 in
 /-- **The pointwise expansion of the surrogate's character.**
 
@@ -3346,6 +3361,125 @@ theorem norm_integral_cexp_deltaSurrogate_sub_le (μ : Measure E₂) [IsProbabil
     MeasureTheory.integral_const_mul _ _
   linarith [hmono, hc.le, hc.ge]
 
+/-! ### Residue (ii), re-derived: the transform's own hypotheses fail under a fourth moment
+
+Wave 23 recorded residue (ii) as "`∫ surrogateRemPoly` is a moment of degree nine, infinite
+under a fourth moment". **That understates it, and the understatement matters.** The hypotheses
+`h4` and `h5` of `norm_integral_cexp_deltaSurrogate_sub_le` — the integrability of the weights
+`w₀w₁²` and `(w₀w₁)²` against the law of the root — are themselves *false* for the untruncated
+bivariate root under a finite fourth moment. It is not that the remainder is too large; the
+main terms `M₃ᵇ` and `M₄` do not exist.
+
+The computation is short and worth writing down, with `ξ = X − μ`, `η = ξ² − σ²`,
+`u = n^{-1/2}∑ξᵢ/σ`, `v = n^{-1/2}∑ηᵢ/σ²`. Expanding `E[u²v²]` over the `n⁴` index choices, the
+fully diagonal block `i = j = k = l` contributes `n^{-2}·n·E[ξ²η²]`, and
+`E[ξ²η²] = E[ξ²(ξ² − σ²)²]` is a **sixth** moment of `ξ`. No cancellation removes it: every
+other block is a product of lower moments, all nonnegative after the diagonal is isolated.
+Likewise `E[|u|v²]` has the diagonal block `n^{-3/2}·n·E[|ξ|η²] ≍ E|ξ|⁵`. By contrast `h2` needs
+`E[ξ²|η|] ≍ Eξ⁴` and `h3` needs `E|ξ|³`, both finite — so exactly two of the four weights fail,
+and they are the two that carry `v²`.
+
+`vecRootLaw_one` below makes the claim checkable rather than heuristic: at `n = 1` the law of
+the root *is* the law of the summand, so `h5` reads verbatim `Integrable (ξ·η)² = E[ξ²η²] < ∞`,
+a sixth-moment condition on the sampling law. A law with `Eξ⁴ < ∞ = Eξ⁶` therefore falsifies the
+hypothesis outright.
+
+**The consequence for the programme.** Residues (i) and (ii) of the wave-23 note are *not*
+independent: the `k = 3, 4` estimates asked for by (i) are estimates of quantities that (ii)
+must first make finite. Both are discharged at once by running the expansion on the law of the
+*truncated* summands, and `integrable_surrogate_inputs_of_bounded` is that discharge: once
+`‖Z‖ ≤ K` pointwise, all five hypotheses of `norm_integral_cexp_deltaSurrogate_sub_le` hold for
+every `n`, with no moment hypothesis on `F` whatsoever. The price is
+`abs_measure_pi_sub_comp_le`, and at the classical level `τ = √n` it is `O(n⁻¹)`. -/
+
+/-- **The root of a single observation is the observation.** `vecRootLaw F Z 1 = F ∘ Z⁻¹`.
+
+Stated because it turns the transform's hypotheses at `n = 1` into moment conditions on the
+*sampling* law, where they can be read off: `h5` becomes `E[(⟪Z,e₀⟫⟪Z,e₁⟫)²] < ∞`, a sixth
+moment of `X − μ` for the studentizing pair. -/
+theorem vecRootLaw_one {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+    (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E} (hZ : Measurable Z) :
+    vecRootLaw F Z 1 = F.map Z := by
+  have hfun : (fun y : Fin 1 → ℝ => (Real.sqrt ((1 : ℕ) : ℝ))⁻¹ • ∑ i, Z (y i))
+      = Z ∘ fun y : Fin 1 → ℝ => y 0 := by
+    funext y
+    simp [Fin.sum_univ_one]
+  rw [vecRootLaw, hfun, ← Measure.map_map hZ (measurable_pi_apply (0 : Fin 1)),
+    (MeasureTheory.measurePreserving_eval (fun _ : Fin 1 => F) (0 : Fin 1)).map_eq]
+
+/-- **Truncation discharges every hypothesis of the surrogate's transform, at once.**
+
+If the summand is bounded (`‖Z x‖ ≤ K`), the root's law is carried by the ball of radius `√n·K`
+(`ae_norm_vecRootLaw_le`), so each of the four multilinear weights and the degree-nine envelope
+`surrogateRemPoly` is bounded on the support and hence integrable. **No moment hypothesis on
+`F` is used**: boundedness of the summand replaces all of them.
+
+This is the moment half of residue (ii), and it simultaneously supplies what residue (i) asks
+for at `k = 3, 4` — those weights are the very quantities `h4`, `h5` assert to be finite, and
+under a fourth moment of the untruncated law they are not. -/
+theorem integrable_surrogate_inputs_of_bounded (F : Measure ℝ) [IsProbabilityMeasure F]
+    {Z : ℝ → E₂} (hZ : Measurable Z) {K : ℝ} (hK : ∀ x, ‖Z x‖ ≤ K) (n : ℕ)
+    {σ : ℝ} (hσ : 0 < σ) (θ : ℝ) :
+    Integrable (fun w : E₂ => |w 0 * w 1|) (vecRootLaw F Z n) ∧
+      Integrable (fun w : E₂ => |w 0 ^ 3|) (vecRootLaw F Z n) ∧
+      Integrable (fun w : E₂ => |w 0 * w 1 ^ 2|) (vecRootLaw F Z n) ∧
+      Integrable (fun w : E₂ => |(w 0 * w 1) ^ 2|) (vecRootLaw F Z n) ∧
+      Integrable (fun w : E₂ => surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2))
+        (vecRootLaw F Z n) := by
+  haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
+  set R : ℝ := Real.sqrt (n : ℝ) * K with hRdef
+  have hK0 : (0 : ℝ) ≤ K := le_trans (norm_nonneg _) (hK 0)
+  have hR0 : (0 : ℝ) ≤ R := by rw [hRdef]; positivity
+  have hae : ∀ᵐ w ∂(vecRootLaw F Z n), ‖w‖ ≤ R := ae_norm_vecRootLaw_le F hZ hK n
+  -- the coordinate bound, through the inner product with the coordinate direction
+  have hcoord : ∀ (w : E₂) (i : Fin 2), |w i| ≤ ‖w‖ := by
+    intro w i
+    have hnorm : ‖coordDir i‖ = 1 := by
+      rw [coordDir, EuclideanSpace.norm_single]
+      simp
+    have h := abs_real_inner_le_norm w (coordDir i)
+    rwa [inner_coordDir, hnorm, mul_one] at h
+  have hbox : ∀ᵐ w ∂(vecRootLaw F Z n), |w 0| ≤ R ∧ |w 1| ≤ R := by
+    filter_upwards [hae] with w hw
+    exact ⟨le_trans (hcoord w 0) hw, le_trans (hcoord w 1) hw⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · refine integrable_of_ae_abs_le (by fun_prop) (C := R ^ 2) ?_
+    filter_upwards [hbox] with w hw
+    rw [abs_abs, abs_mul]
+    calc |w 0| * |w 1| ≤ R * R := mul_le_mul hw.1 hw.2 (abs_nonneg _) hR0
+      _ = R ^ 2 := by ring
+  · refine integrable_of_ae_abs_le (by fun_prop) (C := R ^ 3) ?_
+    filter_upwards [hbox] with w hw
+    rw [abs_abs, abs_pow]
+    exact pow_le_pow_left₀ (abs_nonneg _) hw.1 3
+  · refine integrable_of_ae_abs_le (by fun_prop) (C := R ^ 3) ?_
+    filter_upwards [hbox] with w hw
+    rw [abs_abs, abs_mul, abs_pow]
+    have h1 : |w 1| ^ 2 ≤ R ^ 2 := pow_le_pow_left₀ (abs_nonneg _) hw.2 2
+    calc |w 0| * |w 1| ^ 2 ≤ R * R ^ 2 :=
+          mul_le_mul hw.1 h1 (by positivity) hR0
+      _ = R ^ 3 := by ring
+  · refine integrable_of_ae_abs_le (by fun_prop) (C := R ^ 4) ?_
+    filter_upwards [hbox] with w hw
+    rw [abs_abs, abs_pow, abs_mul]
+    have h1 : |w 0| * |w 1| ≤ R * R := mul_le_mul hw.1 hw.2 (abs_nonneg _) hR0
+    calc (|w 0| * |w 1|) ^ 2 ≤ (R * R) ^ 2 :=
+          pow_le_pow_left₀ (by positivity) h1 2
+      _ = R ^ 4 := by ring
+  · have hmeas : Measurable fun w : E₂ => surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2) := by
+      simp only [surrogateRemPoly]
+      fun_prop
+    refine integrable_of_ae_abs_le hmeas.aestronglyMeasurable
+      (C := surrogateRemPoly θ (R / σ) (R / σ ^ 2)) ?_
+    filter_upwards [hbox] with w hw
+    obtain ⟨hw0, hw1⟩ := hw
+    rw [abs_of_nonneg (surrogateRemPoly_nonneg _ _ _)]
+    refine surrogateRemPoly_le_of_abs_le θ ?_ ?_
+    · rw [abs_div, abs_of_pos hσ]
+      gcongr
+    · rw [abs_div, abs_of_pos (by positivity : (0 : ℝ) < σ ^ 2)]
+      gcongr
 
 end StudentizedReduction
 
