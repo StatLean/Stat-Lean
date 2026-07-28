@@ -97,6 +97,11 @@ proved:
   parabola-carried law of `studentPair F` and the resulting Cramér tail `‖φ_{ρ_n}(t)‖ ≤ cⁿ` on
   `ε√n ≤ ‖t‖`, from the identification of the projected characteristic function with a
   quadratic-phase integral of the centred density;
+* `bulkCutoff`, `bulkMultiplier`, `bulkRadius` — the witness of the surrogate's Fourier
+  certificate, `χ(w/M)e^{iθ(Hₙ(w) − w₀/σ)}` at `M = n^{5/8}`, with the five elementary facts the
+  reduction consumes, and the verified exponent ledger (`leakage_ledger_exponent`,
+  `leakage_ledger_five_le`, `tail_ledger_exponent`, `bulk_gain_phase_le`) — including
+  `leakage_ledger_four_gt`, the witness that four integrations by parts do *not* suffice;
 * `normalCDF_sub_le`, `stdNormalCDF_sub_le` — the Lipschitz modulus of the normal distribution
   function, the constant `A` that Esseen's smoothing inequality consumes;
 * `edgeworth_mean_uniform` — the expansion for the centred root, with a uniform `O(n^{-1})`
@@ -7610,7 +7615,56 @@ Proved and axiom-clean after wave 30, in addition: `deltaSurrogate_slope_ge`,
 `norm_charFun_map_deltaSurrogate_le_of_bandCertificate`,
 `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band`, `fourierWeight` with
 `fourierSynth_fourierWeight`, `integrable_fourierWeight`, `integral_norm_fourierWeight` and
-`hasFourierCertificateOnBand_of_bulkMultiplier`. -/
+`hasFourierCertificateOnBand_of_bulkMultiplier`.
+
+**Status after wave 31. The wave-30 numerology is confirmed — the first wave in four that does
+not have to correct its predecessor's arithmetic — and the certificate is no longer a `sorry`.**
+
+* **THE WITNESS IS BUILT.** `bulkCutoff` (a `ContDiffBump`, `1` on the unit ball, supported in
+  radius `2`), `bulkMultiplier σ r θ M = χ(w/M)e^{iθ(Hₙ(w) − w₀/σ)}` and `bulkRadius n = n^{5/8}`,
+  with the five hypotheses `hasFourierCertificateOnBand_of_bulkMultiplier` consumes all proved:
+  `continuous_bulkMultiplier`, `integrable_bulkMultiplier` (through
+  `hasCompactSupport_bulkMultiplier`), `norm_bulkMultiplier_le_one` and
+  `bulkMultiplier_eq_of_norm_le`. `exists_fourierCertificate_deltaSurrogate` is now **proved**
+  from three named inputs, with no analytic content in the assembly.
+
+* **THE LEDGER IS VERIFIED, AND `N = 5` IS SHARP.** `leakage_ledger_exponent` returns
+  `n^{9/4 − 7N/8}`; `leakage_ledger_five_le` closes `N = 5` at `n^{-17/8} ≤ n^{-3/2}`; and
+  `leakage_ledger_four_gt` is the formalized witness that `N = 4` returns `n^{-5/4}`, which
+  *exceeds* `n^{-3/2}` at every `n ≥ 2`. The wave-30 prompt's "a sixth part costs nothing" is
+  right; a fourth-and-final one would have been fatal. `tail_ledger_exponent` confirms that
+  `M = n^{5/8}` is exactly what `E‖w‖⁴ = O(n)` buys, and `bulk_gain_phase_le` that the dominant
+  per-part gain is `O(n^{-7/8})`.
+
+* **ONE CORRECTION, and it is a misplaced `σ`.** The wave-30 note prices the second
+  integration-by-parts term as `(27/16)Mr²σ/|θ|`; it is `(27/16)Mr²/(σ|θ|)`, since
+  `∂²_{w₀}(θHₙ) = 3θur²/σ²` is divided by a squared slope `≥ (4/3)²θ²/σ²`. The `n`-exponent is
+  unchanged and nothing downstream moves.
+
+* **INPUT (C) IS DOWN TO THE MOMENT ALONE.** `measure_norm_gt_le_fourth_moment` (Markov on the
+  plane) and `integrable_norm_pow_four_vecRootLaw_truncAt` (**free** — the truncated root has
+  bounded support, so integrability was never part of the residue) reduce
+  `exists_measure_norm_gt_bulkRadius_le`, now proved, to
+  `exists_integral_norm_pow_four_vecRootLaw_truncAt_le`: `E‖w‖⁴ ≤ A n`.
+
+**The residue is three estimates, and none of them is structural.**
+(A) `exists_integral_norm_fourier_bulkMultiplier_le` — the crude Schwartz bound `∫‖𝓕 g‖ ≤ Γ`,
+polynomial in `n` and `|θ|`; (B) `exists_integral_norm_fourierWeight_bulkMultiplier_band_le` —
+the non-stationary-phase estimate, five integrations by parts against
+`|∂_{w₀}(θHₙ − ⟪·,s⟫)| ≥ (4/3)|θ|/σ`; (C) `exists_integral_norm_pow_four_vecRootLaw_truncAt_le` —
+the fourth moment of the truncated root. Every other ingredient of this theorem is proved: the
+file's only other `sorry`s are this statement and its corollary.
+
+**What is honestly *not* done, and it is bookkeeping rather than analysis.** This theorem itself
+is still `sorry`. Granting (A), (B), (C), the chain is: `abs_studentizedRootCDF_sub_truncAt_le`
+(change of law at `τ = √n`), `studentizedRootCDF_eq_vecRootLaw` with
+`abs_exactStudent_sub_deltaSurrogate_le` (reduction to the surrogate),
+`norm_charFun_map_deltaSurrogate_sub_graded_le` with `norm_multiCharFun_vecRootLaw_le` (the inner
+range), `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` fed by the certificate (the outer
+range), the Esseen chain `esseen_split` / `abs_measure_Iic_sub_densityCDF_le_charFun` at
+`δ = n⁻¹`, `ρ = c√n`, and the peeled window `abs_measure_le_sub_le_of_peel_strata` with
+`sum_dyadic_strata_le`. No missing analytic tool is known; the assembly was not attempted in this
+wave and is not claimed. -/
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
@@ -7782,7 +7836,24 @@ must additionally be allowed to carry `θ`. With `fourierSynth_fourierWeight` (s
 Fourier inversion), `integral_norm_fourierWeight` and
 `hasFourierCertificateOnBand_of_bulkMultiplier`, what is left over there is one bound on
 `∫‖𝓕 g‖`, one on the weight's mass over the low-frequency ball, and one fourth moment of the
-truncated root. See the wave-30 note on `edgeworth_studentized_uniform`. -/
+truncated root. See the wave-30 note on `edgeworth_studentized_uniform`.
+
+**After wave 31 the certificate over there is proved, the residue is three estimates, and this
+corollary still adds nothing.** The witness `g` is built (`bulkMultiplier` at
+`bulkRadius n = n^{5/8}`) with all five of its elementary hypotheses,
+`exists_fourierCertificate_deltaSurrogate` is assembled from inputs (A), (B), (C) with no analytic
+content of its own, and input (C) is reduced to the moment alone by
+`measure_norm_gt_le_fourth_moment` and the free `integrable_norm_pow_four_vecRootLaw_truncAt`.
+The wave-30 exponent budget is verified rather than asserted (`leakage_ledger_exponent`,
+`leakage_ledger_five_le`, `tail_ledger_exponent`), with `leakage_ledger_four_gt` showing `N = 5`
+is the minimum and not a margin; the only correction is a misplaced `σ` in the note's per-part
+cost. See the wave-31 note on `edgeworth_studentized_uniform`.
+
+**The inversion step this corollary needs is unchanged and unattempted.** Granted
+`edgeworth_studentized_uniform`, it is the implicit-function inversion of
+`x ↦ Φ(x) + (γ/6)φ(x)(2x² + 1)n^{-1/2}` on the compact `z`-range `[Φ⁻¹(ε), Φ⁻¹(1 − ε)]`, where
+`φ` is bounded below — that is what `0 < ε < 1/2` buys — together with the transfer of a uniform
+CDF bound to `cdfPseudoInverse`. No analytic obstruction is known; it is deferred, not blocked. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
