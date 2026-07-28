@@ -744,4 +744,202 @@ theorem norm_mixCharFun_vecRootLaw_sub_le (F : Measure ℝ) [IsProbabilityMeasur
 
 end Mixed
 
+/-! ## One-factor bookkeeping: from `φ^{n−1}` to `φ^n`
+
+`norm_mixCharFun_vecRootLaw_sub_le` compares the mixed characteristic function of a vector
+root with `iκ φ(n^{-1/2}a)^{n−1}` — an `(n−1)`-st power, while `charFun_vecRootLaw` and the
+damped expansion `norm_charFun_smul_pow_sub_edgeworth_le` both speak about the `n`-th power
+`φ(n^{-1/2}a)^n = φ_{ρ_n}(a)`. This section supplies the missing factor.
+
+The estimate is elementary and costs `O(n^{-1})`, i.e. it is invisible at the accuracy of a
+one-term expansion. Indeed `z^{n−1} − z^n = z^{n−1}(1 − z)`, and `‖z‖ ≤ 1` for a characteristic
+function, so the whole difference is bounded by `‖1 − φ(c)‖` at the *rescaled* argument
+`c = n^{-1/2} • a`; for a law centred in the direction `a` this is
+`‖∫ (e^{i⟪x,c⟫} − 1 − i⟪x,c⟫)‖ ≤ (3/2)∫⟪x,c⟫² = (3/2) v(a)/n`.
+
+The centring is what makes this `O(n^{-1})` rather than `O(n^{-1/2})`: without it the linear
+term survives and the bound is only `‖∫⟪x,c⟫‖ = O(n^{-1/2})`, which would swamp the
+`n^{-1/2}` coefficient the studentized expansion is trying to produce. -/
+
+section OneFactor
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+
+/-- **A characteristic function is quadratically close to `1` in a centred direction.**
+`‖φ_μ(t) − 1‖ ≤ (3/2)∫⟪x,t⟫²` whenever `∫⟪x,t⟫ = 0`.
+
+This is `norm_cexp_sub_one_sub_mul_I_le` integrated against `μ`, with the centring used to
+delete the linear term of the expansion of `e^{i⟪x,t⟫}`. -/
+theorem norm_charFun_sub_one_le (μ : Measure E) [IsProbabilityMeasure μ] {t : E}
+    (hint1 : Integrable (fun x : E => (⟪x, t⟫ : ℝ)) μ)
+    (hint2 : Integrable (fun x : E => (⟪x, t⟫ : ℝ) ^ 2) μ)
+    (hmean : ∫ x, (⟪x, t⟫ : ℝ) ∂μ = 0) :
+    ‖charFun μ t - 1‖ ≤ 3 / 2 * ∫ x, (⟪x, t⟫ : ℝ) ^ 2 ∂μ := by
+  have htm : Measurable fun x : E => (⟪x, t⟫ : ℝ) := measurable_inner_right t
+  have hA : Integrable (fun x : E => Complex.exp ((⟪x, t⟫ : ℝ) * Complex.I)) μ := by
+    refine Integrable.mono' (integrable_const (1 : ℝ)) (by fun_prop) ?_
+    filter_upwards with x
+    rw [Complex.norm_exp]
+    simp
+  have hC : Integrable (fun x : E => Complex.I * ((⟪x, t⟫ : ℝ) : ℂ)) μ :=
+    hint1.ofReal.const_mul Complex.I
+  have hcf : ∫ x, Complex.exp ((⟪x, t⟫ : ℝ) * Complex.I) ∂μ = charFun μ t := by
+    rw [charFun_apply]
+  have hIC : ∫ x, Complex.I * ((⟪x, t⟫ : ℝ) : ℂ) ∂μ = 0 := by
+    have h1 : ∫ x, Complex.I * ((⟪x, t⟫ : ℝ) : ℂ) ∂μ
+        = Complex.I * ∫ x, ((⟪x, t⟫ : ℝ) : ℂ) ∂μ := integral_const_mul _ _
+    rw [h1, integral_complex_ofReal, hmean, Complex.ofReal_zero, mul_zero]
+  have hkey : ∫ x, (Complex.exp ((⟪x, t⟫ : ℝ) * Complex.I) - 1
+        - Complex.I * ((⟪x, t⟫ : ℝ) : ℂ)) ∂μ = charFun μ t - 1 := by
+    have hs1 : ∫ x, (Complex.exp ((⟪x, t⟫ : ℝ) * Complex.I) - 1
+          - Complex.I * ((⟪x, t⟫ : ℝ) : ℂ)) ∂μ
+        = (∫ x, (Complex.exp ((⟪x, t⟫ : ℝ) * Complex.I) - 1) ∂μ)
+          - ∫ x, Complex.I * ((⟪x, t⟫ : ℝ) : ℂ) ∂μ :=
+      integral_sub (hA.sub (integrable_const 1)) hC
+    have hs2 : ∫ x, (Complex.exp ((⟪x, t⟫ : ℝ) * Complex.I) - 1) ∂μ
+        = (∫ x, Complex.exp ((⟪x, t⟫ : ℝ) * Complex.I) ∂μ) - ∫ _x : E, (1 : ℂ) ∂μ :=
+      integral_sub hA (integrable_const 1)
+    rw [hs1, hs2, hIC, hcf]
+    simp
+  rw [← hkey]
+  have hdom : Integrable (fun x : E => 3 / 2 * (⟪x, t⟫ : ℝ) ^ 2) μ := hint2.const_mul (3 / 2)
+  have hpt : ∀ x : E, ‖Complex.exp ((⟪x, t⟫ : ℝ) * Complex.I) - 1
+      - Complex.I * ((⟪x, t⟫ : ℝ) : ℂ)‖ ≤ 3 / 2 * (⟪x, t⟫ : ℝ) ^ 2 := by
+    intro x
+    have hcomm : Complex.exp ((⟪x, t⟫ : ℝ) * Complex.I) - 1 - Complex.I * ((⟪x, t⟫ : ℝ) : ℂ)
+        = Complex.exp (Complex.I * ((⟪x, t⟫ : ℝ) : ℂ)) - 1
+          - Complex.I * ((⟪x, t⟫ : ℝ) : ℂ) := by
+      rw [mul_comm ((⟪x, t⟫ : ℝ) : ℂ) Complex.I]
+    rw [hcomm]
+    have h := norm_cexp_sub_one_sub_mul_I_le (⟪x, t⟫ : ℝ)
+    linarith
+  refine (norm_integral_le_of_norm_le hdom (Filter.Eventually.of_forall hpt)).trans ?_
+  exact le_of_eq (integral_const_mul _ _)
+
+/-- Dropping one factor from a power of a number of modulus at most `1` costs `‖1 − z‖`. -/
+lemma norm_pow_sub_pow_succ_le {z : ℂ} (hz : ‖z‖ ≤ 1) (m : ℕ) :
+    ‖z ^ m - z ^ (m + 1)‖ ≤ ‖1 - z‖ := by
+  have he : z ^ m - z ^ (m + 1) = z ^ m * (1 - z) := by ring
+  rw [he, norm_mul]
+  refine mul_le_of_le_one_left (norm_nonneg _) ?_
+  rw [norm_pow]
+  exact pow_le_one₀ (norm_nonneg _) hz
+
+/-- **The one-factor comparison for the characteristic function of a vector root.**
+
+`‖φ_{F∘Z⁻¹}(n^{-1/2}a)^{n−1} − φ_{ρ_n}(a)‖ ≤ (3/2) v/n`, with `v = ∫⟪x,a⟫²` the directional
+variance, for a law centred in the direction `a`.
+
+This is the bookkeeping that lets the `(n−1)`-st power produced by the mixed expansion
+(M1)(b) be replaced by the characteristic function of the vector root itself, to which the
+damped expansion `norm_charFun_vecRootLaw_sub_edgeworth_le` applies verbatim. -/
+theorem norm_charFun_pow_sub_charFun_vecRootLaw_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    {Z : ℝ → E} (hZ : Measurable Z) {a : E} (m : ℕ)
+    (ha : Integrable (fun x : E => (⟪x, a⟫ : ℝ)) (F.map Z))
+    (ha2 : Integrable (fun x : E => (⟪x, a⟫ : ℝ) ^ 2) (F.map Z))
+    (hmean : ∫ x, (⟪x, a⟫ : ℝ) ∂(F.map Z) = 0) :
+    ‖charFun (F.map Z) ((Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ • a) ^ m
+        - charFun (vecRootLaw F Z (m + 1)) a‖
+      ≤ 3 / 2 * ((∫ x, (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z)) / ((m : ℝ) + 1)) := by
+  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
+  have hNpos : (0 : ℝ) < ((m + 1 : ℕ) : ℝ) := by positivity
+  set r : ℝ := (Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ with hrdef
+  set c : E := r • a with hcdef
+  have hc1 : ∀ x : E, (⟪x, c⟫ : ℝ) = r * (⟪x, a⟫ : ℝ) := fun x => by
+    rw [hcdef, real_inner_smul_right]
+  have hrsq : r ^ 2 = (((m : ℝ) + 1))⁻¹ := by
+    rw [hrdef, inv_pow, Real.sq_sqrt hNpos.le]
+    push_cast
+    ring
+  -- the directional data in the rescaled direction
+  have hac : Integrable (fun x : E => (⟪x, c⟫ : ℝ)) (F.map Z) := by
+    have h1 : (fun x : E => (⟪x, c⟫ : ℝ)) = fun x : E => r * (⟪x, a⟫ : ℝ) := by
+      funext x; exact hc1 x
+    rw [h1]
+    exact ha.const_mul r
+  have hac2 : Integrable (fun x : E => (⟪x, c⟫ : ℝ) ^ 2) (F.map Z) := by
+    have h1 : (fun x : E => (⟪x, c⟫ : ℝ) ^ 2) = fun x : E => r ^ 2 * (⟪x, a⟫ : ℝ) ^ 2 := by
+      funext x; rw [hc1 x]; ring
+    rw [h1]
+    exact ha2.const_mul (r ^ 2)
+  have hmeanc : ∫ x, (⟪x, c⟫ : ℝ) ∂(F.map Z) = 0 := by
+    have h1 : ∀ x : E, (⟪x, c⟫ : ℝ) = r * (⟪x, a⟫ : ℝ) := hc1
+    simp_rw [h1]
+    rw [integral_const_mul, hmean, mul_zero]
+  have hvarc : ∫ x, (⟪x, c⟫ : ℝ) ^ 2 ∂(F.map Z)
+      = r ^ 2 * ∫ x, (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z) := by
+    have h1 : ∀ x : E, (⟪x, c⟫ : ℝ) ^ 2 = r ^ 2 * (⟪x, a⟫ : ℝ) ^ 2 := fun x => by
+      rw [hc1 x]; ring
+    simp_rw [h1]
+    exact integral_const_mul _ _
+  -- the two estimates
+  have hone : ‖charFun (F.map Z) c - 1‖
+      ≤ 3 / 2 * (r ^ 2 * ∫ x, (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z)) := by
+    have h := norm_charFun_sub_one_le (F.map Z) hac hac2 hmeanc
+    rwa [hvarc] at h
+  have hpow := norm_pow_sub_pow_succ_le (norm_charFun_le_one (μ := F.map Z) c) m
+  have hroot : charFun (vecRootLaw F Z (m + 1)) a = charFun (F.map Z) c ^ (m + 1) := by
+    rw [charFun_vecRootLaw F hZ, ← hrdef, ← hcdef]
+  rw [hroot]
+  calc ‖charFun (F.map Z) c ^ m - charFun (F.map Z) c ^ (m + 1)‖
+      ≤ ‖1 - charFun (F.map Z) c‖ := hpow
+    _ = ‖charFun (F.map Z) c - 1‖ := norm_sub_rev _ _
+    _ ≤ 3 / 2 * (r ^ 2 * ∫ x, (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z)) := hone
+    _ = 3 / 2 * ((∫ x, (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z)) / ((m : ℝ) + 1)) := by
+        rw [hrsq]; ring
+
+/-- **(M1)(b), with the one-factor bookkeeping done: the mixed characteristic function of a
+vector root against the characteristic function of that same root.**
+
+`‖mix_{ρ_n}(b,a) − i κ φ_{ρ_n}(a)‖ ≤ 3M/(2√n) + (3/2)|κ| v/n`, with `κ = ∫⟪x,b⟫⟪x,a⟫`,
+`M = ∫|⟪x,b⟫|⟪x,a⟫²` and `v = ∫⟪x,a⟫²`, for a law centred in the directions `a` and `b`.
+
+This is the form the studentized route consumes: the right-hand factor is now
+`φ_{ρ_n}(a) = charFun (vecRootLaw F Z n) a` itself, so the damped expansion
+`norm_charFun_vecRootLaw_sub_edgeworth_le` — which estimates exactly that quantity — applies to
+it verbatim, and the two expansions can be added. The extra cost `(3/2)|κ|v/n` is `O(n^{-1})`,
+invisible at the accuracy of a one-term expansion. -/
+theorem norm_mixCharFun_vecRootLaw_sub_charFun_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    {Z : ℝ → E} (hZ : Measurable Z) {a b : E} (m : ℕ)
+    (hb : Integrable (fun x : E => (⟪x, b⟫ : ℝ)) (F.map Z))
+    (ha : Integrable (fun x : E => (⟪x, a⟫ : ℝ)) (F.map Z))
+    (ha2 : Integrable (fun x : E => (⟪x, a⟫ : ℝ) ^ 2) (F.map Z))
+    (hba : Integrable (fun x : E => (⟪x, b⟫ : ℝ) * (⟪x, a⟫ : ℝ)) (F.map Z))
+    (hba2 : Integrable (fun x : E => |(⟪x, b⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2) (F.map Z))
+    (hmeanb : ∫ x, (⟪x, b⟫ : ℝ) ∂(F.map Z) = 0)
+    (hmeana : ∫ x, (⟪x, a⟫ : ℝ) ∂(F.map Z) = 0) :
+    ‖mixCharFun (vecRootLaw F Z (m + 1)) b a
+        - Complex.I * ((∫ x, (⟪x, b⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z) : ℝ) : ℂ)
+            * charFun (vecRootLaw F Z (m + 1)) a‖
+      ≤ 3 / (2 * Real.sqrt ((m + 1 : ℕ) : ℝ))
+            * ∫ x, |(⟪x, b⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z)
+          + 3 / 2 * ((∫ x, (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z)) / ((m : ℝ) + 1))
+              * |∫ x, (⟪x, b⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z)| := by
+  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
+  set κ : ℝ := ∫ x, (⟪x, b⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z) with hκdef
+  set c : E := (Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ • a with hcdef
+  have h1 := norm_mixCharFun_vecRootLaw_sub_le F hZ m hb hba hba2 hmeanb
+  rw [← hκdef, ← hcdef] at h1
+  have h2 := norm_charFun_pow_sub_charFun_vecRootLaw_le F hZ m ha ha2 hmeana
+  rw [← hcdef] at h2
+  have hsplit : mixCharFun (vecRootLaw F Z (m + 1)) b a
+        - Complex.I * (κ : ℂ) * charFun (vecRootLaw F Z (m + 1)) a
+      = (mixCharFun (vecRootLaw F Z (m + 1)) b a
+          - Complex.I * (κ : ℂ) * charFun (F.map Z) c ^ m)
+        + Complex.I * (κ : ℂ)
+            * (charFun (F.map Z) c ^ m - charFun (vecRootLaw F Z (m + 1)) a) := by
+    ring
+  rw [hsplit]
+  refine (norm_add_le _ _).trans ?_
+  have hsecond : ‖Complex.I * (κ : ℂ)
+      * (charFun (F.map Z) c ^ m - charFun (vecRootLaw F Z (m + 1)) a)‖
+      ≤ 3 / 2 * ((∫ x, (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z)) / ((m : ℝ) + 1)) * |κ| := by
+    rw [norm_mul, norm_mul, Complex.norm_I, one_mul, Complex.norm_real, Real.norm_eq_abs]
+    rw [mul_comm]
+    exact mul_le_mul_of_nonneg_right h2 (abs_nonneg _)
+  linarith
+
+end OneFactor
+
 end StatLean.HypothesisTesting
