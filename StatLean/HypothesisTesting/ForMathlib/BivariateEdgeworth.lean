@@ -34,6 +34,13 @@ moments of the projected law.
 * `norm_charFun_smul_pow_sub_edgeworth_le` — the damped one-term Edgeworth expansion in `E`.
 * `charFun_vecRootLaw` — `φ_{vecRootLaw F Z n}(t) = φ_{F ∘ Z⁻¹}(n^{-1/2} • t)ⁿ`, the
   factorisation that lets the previous item be applied to a sample mean.
+* `mixCharFun` — the **mixed** characteristic function `∫ ⟪w,b⟫ e^{i⟪w,t⟫} ∂μ`, together with
+  its exact factorisation on a vector root (`mixCharFun_vecRootLaw`), the first-order Taylor
+  bound on a single factor (`norm_mixCharFun_sub_mul_I_le`) and the resulting one-term expansion
+  `‖mix_{ρ_n}(b,a) − iκ φ(n^{-1/2}a)^{n−1}‖ ≤ 3M/(2√n)`
+  (`norm_mixCharFun_vecRootLaw_sub_le`). Up to a factor `i` this is the directional derivative
+  of `charFun`; it is estimated directly because the studentized expansion needs an *inequality*
+  for it and inequalities cannot be differentiated.
 
 ## Proof formalization notes
 

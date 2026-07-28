@@ -24,6 +24,15 @@ proved:
 * `norm_charFun_lt_one_of_cramer`, `exists_bound_lt_one_of_cramer` — what Cramér's condition
   buys off the origin: `‖φ_F s‖ < 1` for every `s ≠ 0`, and a single constant `c < 1`
   dominating `‖φ_F‖` on a whole region `ε ≤ |s|`. This is the input of the Cramér tail;
+* `cramerCondition_of_absolutelyContinuous` — Riemann–Lebesgue: `F ≪ volume` implies Cramér's
+  condition, so the studentized hypothesis set is stronger than the centred one;
+* `VecCramerCondition`, `norm_charFun_lt_one_of_projLaw_cramer`,
+  `exists_bound_lt_one_of_vecCramer` — the same off-the-origin bound in an inner product space,
+  uniform over directions; the strict bound in one direction is one-dimensional and the
+  uniformity is compactness;
+* `abs_inv_sqrt_one_add_sub_le`, `abs_studentFactor_sub_taylor_le` — the uniform second-order
+  Taylor bound for the studentizing factor `(1 + x)^{-1/2}`, proved algebraically, and the
+  resulting `O(n^{-1})` pointwise replacement of the studentized root by its surrogate;
 * `normalCDF_sub_le`, `stdNormalCDF_sub_le` — the Lipschitz modulus of the normal distribution
   function, the constant `A` that Esseen's smoothing inequality consumes;
 * `edgeworth_mean_uniform` — the expansion for the centred root, with a uniform `O(n^{-1})`
@@ -71,15 +80,20 @@ Subsampling Methods), §18.4 (Higher Order Asymptotic Comparisons), Theorems 18.
   outer range (`edgeworthCharFun_tail_le`, `edgeworthGap_tail_le`) and the glue
   (`esseen_split`, `abs_meanRootCDF_sub_edgeworthCDF_le`). See the status note (E1)–(E4) on that
   theorem.
-* The **studentized** route is set up here too, and two of its steps are proved.
+* The **studentized** route is set up here too, and most of its analytic steps are proved.
   `ForMathlib/BivariateEdgeworth.lean` supplies the multivariate damped expansion — via the
   projection identity `charFun_smul_eq_charFun_map_inner`, which makes the restriction of a
   characteristic function to a ray a *one-dimensional* characteristic function, so that no
-  two-dimensional argument is needed — and `studentizedRootCDF_eq_vecRootLaw` below identifies
-  `studentizedRootCDF F n` **exactly** with a set-function of the bivariate root law of
-  `studentPair F = (X − μ, (X − μ)² − σ²)`. What is left is the passage from a ray-wise
-  characteristic-function estimate to a set-function estimate over the resulting *curved*
-  region; see the status note (S1)–(S2), (M1)–(M3) on `edgeworth_studentized_uniform`.
+  two-dimensional argument is needed — together with the expansion of the *mixed* characteristic
+  function `∫ ⟪w,b⟫e^{i⟪w,a⟫}` that the scalar route needs and that no differentiation of an
+  inequality can give (`mixCharFun_vecRootLaw`, `norm_mixCharFun_vecRootLaw_sub_le`), while
+  `studentizedRootCDF_eq_vecRootLaw` below identifies `studentizedRootCDF F n` **exactly** with
+  a set-function of the bivariate root law of `studentPair F = (X − μ, (X − μ)² − σ²)`, and
+  `abs_studentFactor_sub_taylor_le` bounds the exact statistic against its Taylor surrogate
+  uniformly. What is left is probabilistic: a truncation-based tail bound with its
+  anti-concentration companion, and the multivariate Cramér condition for the parabola-carried
+  bivariate law (the direction-uniform half of which is the `VecCramer` section below). See the
+  status note (S1)–(S2), (M1)–(M3) on `edgeworth_studentized_uniform`.
 * The quantile expansion is the Cornish–Fisher inversion of the studentized expansion; it is
   stated as its own result because the coverage-error computations use the quantile form
   directly.
@@ -2508,52 +2522,103 @@ not change.
   `n^{-1/2}` coefficient. The advantage of studentizing *is* this discrepancy; an argument that
   loses it proves nothing.
 
-The three estimates are:
+**Status after the wave-13 re-derivation.** Of the three estimates (M1), (M2), (M3) recorded
+by wave 12, the two pieces that wave singled out as "the smallest genuinely missing one" and
+"the compactness argument over the circle" are now PROVED, together with the whole
+deterministic half of (M2). What survives is exactly three *probabilistic* items, listed at the
+end. As before, two facts do not change and are re-confirmed:
 
-* (M1) **A set-function expansion over a curved region.** (S1) controls `φ_{ρ_n}` on rays;
-  (S2) asks for `ρ_n(R_n(x))` with `R_n(x)` a *curved* planar region, not a half-space, and
-  moving with `n` and with `x`. The one-dimensional smoothing chain does not apply as it
-  stands: `abs_measure_Iic_sub_densityCDF_le_charFun` compares two laws **on the line** through
-  half-lines `(-∞, x]`. There are two ways across, and neither is present.
-  *(a)* A multidimensional smoothing inequality (Bhattacharya–Rao) over a class of sets with a
-  uniform boundary-shell estimate. This would need a `ℝ²` Esseen inequality and an
-  anti-concentration bound for the shell `{|H_n(w) − x| ≤ ε}` under the Gaussian comparison —
-  neither is in the repo (`ForMathlib/GaussianShell.lean` proves a *coordinate-slice* shell
-  bound for convex sets, and `R_n(x)` is not convex).
-  *(b)* Return to the line by expanding the characteristic function of the *scalar* statistic
-  itself. Writing `U = w₀/σ`, `V = w₁/σ²`, the exact statistic is
-  `H_n = U(1 + V n^{-1/2} − U² n^{-1})^{-1/2}`, whose Taylor surrogate is
-  `T̃_n = U − U V n^{-1/2}/2`. Then
-  `E e^{iθ T̃_n} = E e^{iθU} − (iθ/(2√n)) E[U V e^{iθU}] + O(n⁻¹)`, and the two expectations are
-  values of `ψ_n(θ, s) = φ_{ρ_n}(θ e₁/σ + s e₂/σ²)` and of `−∂_s ψ_n(θ, s)|_{s=0}`. (S1)
-  expands `ψ_n` but **not** its `s`-derivative: differentiating an inequality is not allowed,
-  so a separate expansion of `∂_s ψ_n` — equivalently of `E[V e^{iθU}]`, one extra moment of
-  the summands under the integral — is required. This is the smallest genuinely missing piece
-  and is the natural next target.
-* (M2) **The uniform polynomial replacement.** `|P(H_n ≤ x) − P(T̃_n ≤ x)| ≤ C/n` uniformly in
-  `x`. This is where the difficulty of the studentized expansion is concentrated, and it is not
-  a corollary of anything above. It needs both (i) a tail bound
-  `P(|H_n − T̃_n| > εn⁻¹) = O(n⁻¹)` — under a fourth moment only, this requires truncating the
-  summands at level `√n` and is the classical delicate step — and (ii) an anti-concentration
-  estimate for `T̃_n`, that its law charges every interval of length `δ` by `O(δ)` uniformly in
-  `n`, without which a small perturbation of the statistic does not give a small perturbation
-  of the distribution function. (ii) is normally read off from the expansion being proved,
-  which has to be broken by proving a cruder version of it first.
-* (M3) **The Cramér tail for a statistic that is not a sum.** For the centred root the outer
-  range was free, because `|φ_{P_n}(ξ)| = |φ_{F₀}(ξ/√n)|ⁿ ≤ cⁿ` (`edgeworthGap_tail_le`). The
+* *The rate is not weaker here.* Both this theorem and `edgeworth_mean_uniform` are stated with
+  the same remainder `C/n`; there is no `O(n^{-1/2+ε})` slack in the statement to exploit.
+* *No Slutsky-type reduction to the centred root can work, at any rate finer than `n^{-1/2}`.*
+  Evaluating the centred approximant at the argument `σt` gives
+  `Φ(t) − (1/6)γφ(t)(t² − 1)n^{-1/2}` (the `σ`'s cancel: `φ(σt/σ) = φ(t)` and
+  `(σt)²/σ² − 1 = t² − 1`), while the studentized approximant is
+  `Φ(t) + (1/6)γφ(t)(2t² + 1)n^{-1/2}`. Their difference is exactly
+  `(1/2) γ t² φ(t) n^{-1/2}`, which is nonzero for every `t ≠ 0` as soon as `γ ≠ 0`. So the two
+  sampling distribution functions differ at order `n^{-1/2}`, and a reduction of one to the
+  other that is accurate to `O(n⁻¹)` — indeed any argument controlling only `o(1)`, which is
+  all Slutsky and the continuous-mapping theorem give — cannot produce the studentized
+  `n^{-1/2}` coefficient. The advantage of studentizing *is* this discrepancy; an argument that
+  loses it proves nothing.
+
+The three estimates, and what is now proved of each:
+
+* (M1) **The scalar route — (b) CLOSED, and (a) is confirmed not to be needed.** (S1) controls
+  `φ_{ρ_n}` on rays, while (S2) asks for `ρ_n(R_n(x))` with `R_n(x)` a *curved* planar region.
+  Wave 12 offered two ways across: *(a)* a multidimensional smoothing inequality
+  (Bhattacharya–Rao) with a boundary-shell estimate over a non-convex region — still absent, and
+  still not needed; *(b)* returning to the line by expanding the characteristic function of the
+  scalar statistic, whose one missing ingredient was an expansion of `∂_s ψ_n(θ, s)|_{s=0}`,
+  equivalently of `E[V e^{iθU}]`, which cannot be obtained by differentiating the (S1)
+  inequality.
+  *That ingredient is now proved*, in `ForMathlib/BivariateEdgeworth.lean`, and it turned out to
+  be *easier* than (S1) rather than harder. The quantity is `mixCharFun μ b t = ∫ ⟪w,b⟫e^{i⟪w,t⟫}`,
+  and it factorises **exactly** on a vector root (`mixCharFun_vecRootLaw`): the weight
+  `n^{-1/2}∑ᵢ⟪Z(yᵢ),b⟫` is a sum, so the integrand splits into `n` products over the coordinates
+  each with a single distinguished factor, and `integral_fintype_prod_eq_prod` evaluates every
+  one of them. A first-order Taylor bound on the distinguished factor
+  (`norm_mixCharFun_sub_mul_I_le`, costing exactly the one extra moment `∫|⟪x,b⟫|⟪x,t⟫²` that
+  wave 12 predicted) then gives `norm_mixCharFun_vecRootLaw_sub_le`:
+  `‖mix_{ρ_n}(b,a) − i κ φ(n^{-1/2}a)^{n−1}‖ ≤ 3M/(2√n)`, with `κ = ∫⟪x,b⟫⟪x,a⟫`.
+  Note what the arithmetic says: the `√n` of the factorisation cancels the `n^{-1/2}` of the
+  covariance in the rescaled direction, so the mixed quantity has a *nonvanishing* limit
+  `iκe^{−v/2}` — this is the analytic source of the studentized coefficient
+  `(1/6)γ(2t² + 1)` and of its difference from the centred one. **What is left of (M1)(b)** is
+  only the replacement of `φ(n^{-1/2}a)^{n−1}` by `e^{−v/2}`: a Berry–Esseen-level estimate for
+  an `(n−1)`-st power at the argument `n^{-1/2}`, off by one factor from
+  `norm_charFun_smul_pow_sub_edgeworth_le`, plus the assembly of the two expansions into a
+  smoothing inequality on the line.
+* (M2) **The uniform polynomial replacement — the deterministic half CLOSED.** The target is
+  `|P(H_n ≤ x) − P(T̃_n ≤ x)| ≤ C/n` uniformly in `x`, and it needs (i) a pointwise/tail bound
+  on `H_n − T̃_n` and (ii) anti-concentration for `T̃_n`.
+  *The deterministic content of (i) is now proved.* `abs_inv_sqrt_one_add_sub_le` gives the
+  **uniform** second-order bound `|(1+x)^{-1/2} − (1 − x/2)| ≤ x²` on `|x| ≤ 1/2` — proved
+  purely algebraically by substituting `a = √(1+x)`, which turns the remainder into
+  `(a−1)²(a+2)/(2a)` and `x²` into `(a−1)²(a+1)²`, so that the whole claim is the elementary
+  `(a+2)/(2a) ≤ (a+1)²` on `a ≥ 0.7`. No calculus and no Lagrange remainder are involved, and
+  uniformity in `x` — the property (M2) actually needs — is manifest.
+  `abs_studentFactor_sub_taylor_le` reads off, for `r = n^{-1/2}` and `x = vr − u²r²`,
+  `|u(1+x)^{-1/2} − (u − uvr/2)| ≤ |u|³r²/2 + |u|x²`: an explicit `O(n⁻¹)` times a polynomial in
+  the two coordinates, whose first term is precisely the cubic correction the surrogate
+  discards. **What is left of (M2)** is the probability: the tail estimate
+  `P(|u|³r²/2 + |u|x² > εn⁻¹) = O(n⁻¹)` for the bivariate root, which under a fourth moment only
+  needs truncation of the summands at level `√n` (the classical delicate step;
+  `ForMathlib/CombinatorialCLT` is the model), and the anti-concentration of `T̃_n`, for which
+  the circularity is broken by first proving a cruder `O(n^{-1/2})` expansion.
+* (M3) **The Cramér tail — the direction-uniformity CLOSED.** For the centred root the outer
+  range was free because `|φ_{P_n}(ξ)| = |φ_{F₀}(ξ/√n)|ⁿ ≤ cⁿ` (`edgeworthGap_tail_le`); the
   studentized root's characteristic function is not a power, so `exists_bound_lt_one_of_cramer`
-  does not apply to it. The bivariate law `ρ_n` *is* a normalised sum, so its own tail is
-  controlled by the bivariate Cramér condition — and `charFun_smul_eq_charFun_map_inner`
-  reduces that condition to the one-dimensional Cramér condition for the projected law of
-  `t₀(X − μ) + t₁((X − μ)² − σ²)` in each direction, which `hFac` supplies because a nonconstant
-  quadratic image of an absolutely continuous law is absolutely continuous. What that reduction
-  does *not* give for free is uniformity in the direction on `‖t‖ ≥ ε`, which needs a
-  compactness argument over the circle, and it does not transfer from `ρ_n` to the law of
-  `H_n(W_n)` — the classical device there is Hall's conditioning on `n − k` of the coordinates.
+  does not apply. The bivariate law `ρ_n` *is* a normalised sum, and wave 12 recorded two gaps
+  in exploiting that: uniformity in the direction on `‖t‖ ≥ ε`, and the transfer from `ρ_n` to
+  the law of `H_n(W_n)`.
+  *The first gap is now closed*, in the `VecCramer` section above. `VecCramerCondition` is the
+  verbatim analogue of `CramerCondition` with `cocompact ℝ` replaced by `cocompact E`;
+  `norm_charFun_lt_one_of_projLaw_cramer` shows the strict bound at a single nonzero direction
+  is purely one-dimensional (`φ_μ(t) = φ_{projLaw μ t}(1)` at `s = 1 ≠ 0`); and
+  `exists_bound_lt_one_of_vecCramer` runs the compactness argument — off a compact `K` the bound
+  is the cocompact one, and on the compact `K ∩ {ε ≤ ‖t‖}` the continuous `‖φ_μ‖` attains a
+  maximum at a point that is nonzero, hence `< 1`. This is the "compactness argument over the
+  circle", in the form that is actually needed (over a compact annulus, which avoids controlling
+  the radius separately). `cramerCondition_of_absolutelyContinuous` additionally supplies the
+  Riemann–Lebesgue bridge `F ≪ volume → CramerCondition F`, so this theorem's hypothesis set is
+  now formally stronger than `edgeworth_mean_uniform`'s.
+  **What is left of (M3)** is (i) `VecCramerCondition` for the *specific* law of
+  `studentPair F`. Wave 12's parenthetical "`hFac` supplies it because a nonconstant quadratic
+  image of an absolutely continuous law is absolutely continuous" is **only correct for the
+  directionwise conditions**, and multivariate Cramér is strictly stronger than Cramér in every
+  direction: the law of `(X − μ, (X − μ)² − σ²)` is carried by a parabola and is singular in
+  `ℝ²` however smooth `F` is, so Riemann–Lebesgue does not apply to it. On the axis `t₁ = 0` the
+  condition is the one-dimensional one for `F`; for `t₁` away from `0` the phase `t₀y + t₁y²` is
+  genuinely quadratic and the decay is a van der Corput second-derivative estimate; uniformity
+  across the transition is the real content. And (ii) the transfer from `ρ_n` to the law of
+  `H_n(W_n)` — Hall's device of conditioning on `n − k` of the coordinates.
 
-In short: the earlier note's "one missing estimate, the bivariate expansion" is now proved, and
-what replaces it is (M1)(b) — an expansion of the *`s`-derivative* of the bivariate
-characteristic function — together with the two genuinely analytic items (M2) and (M3). -/
+In short: what wave 12 called "the smallest genuinely missing piece" (M1)(b), the compactness
+half of (M3), and the whole deterministic half of (M2) are proved and axiom-clean. The residue
+is three items that are all genuinely probabilistic — a one-factor Berry–Esseen bookkeeping for
+`φ^{n−1}`, a truncation-based tail bound with its anti-concentration companion, and the
+multivariate Cramér condition for a parabola-carried law together with Hall's conditioning. -/
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
@@ -2582,9 +2647,13 @@ expansion, the quantile version follows by inverting it (the Cornish–Fisher st
 function theorem applied to `x ↦ Φ(x) + (γ/6)φ(x)(2x² + 1) n^{-1/2}`, using that `φ` is bounded
 below on the compact `z`-range corresponding to `α ∈ [ε, 1 − ε]`, which is where the hypothesis
 `0 < ε < 1/2` is used). It therefore inherits, and adds nothing to, the obstruction recorded on
-`edgeworth_studentized_uniform` — which, after the wave-12 re-derivation, is (M1)(b), (M2) and
-(M3) there; (S1) the bivariate expansion and (S2) the reduction of the studentized root to a
-bivariate mean are both closed. -/
+`edgeworth_studentized_uniform` — which, after the wave-13 re-derivation, is three purely
+probabilistic residues there: a one-factor Berry–Esseen bookkeeping for `φ^{n−1}`, a
+truncation-based tail bound with its anti-concentration companion, and the multivariate Cramér
+condition for the parabola-carried bivariate law together with Hall's conditioning. (S1) the
+bivariate expansion, (S2) the exact reduction of the studentized root to a bivariate mean,
+(M1)(b) the mixed-characteristic-function expansion, the deterministic half of (M2) and the
+direction-uniform half of (M3) are all closed. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
