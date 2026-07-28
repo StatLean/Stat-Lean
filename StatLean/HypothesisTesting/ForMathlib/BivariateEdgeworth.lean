@@ -531,6 +531,210 @@ theorem mixCharFun_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {Z : �
     _ = (Real.sqrt ((m + 1 : ℕ) : ℝ) : ℂ) * mixCharFun (F.map Z) b c
           * charFun (F.map Z) c ^ m := by rw [hrmC]; ring
 
+/-- **First-order Taylor bound for the mixed characteristic function.**
+
+For a law `μ` that is centred in the direction `b`,
+
+`‖∫ ⟪x,b⟫ e^{i⟪x,t⟫} ∂μ − i ∫ ⟪x,b⟫⟪x,t⟫ ∂μ‖ ≤ (3/2) ∫ |⟪x,b⟫| ⟪x,t⟫² ∂μ`.
+
+The centring kills the constant term of `e^{i⟪x,t⟫} = 1 + i⟪x,t⟫ + O(⟪x,t⟫²)` and what survives
+at first order is the *covariance* of the two directions. The remainder costs one moment more
+than the plain characteristic function would (`|⟪x,b⟫|⟪x,t⟫²` rather than `⟪x,t⟫²`) — this is
+the "one extra moment of the summands under the integral" that the studentized route pays. -/
+theorem norm_mixCharFun_sub_mul_I_le (μ : Measure E) [IsProbabilityMeasure μ] {b t : E}
+    (hb : Integrable (fun x : E => (⟪x, b⟫ : ℝ)) μ)
+    (hbt : Integrable (fun x : E => (⟪x, b⟫ : ℝ) * (⟪x, t⟫ : ℝ)) μ)
+    (hbt2 : Integrable (fun x : E => |(⟪x, b⟫ : ℝ)| * (⟪x, t⟫ : ℝ) ^ 2) μ)
+    (hmean : ∫ x, (⟪x, b⟫ : ℝ) ∂μ = 0) :
+    ‖mixCharFun μ b t - Complex.I * ((∫ x, (⟪x, b⟫ : ℝ) * (⟪x, t⟫ : ℝ) ∂μ : ℝ) : ℂ)‖
+      ≤ 3 / 2 * ∫ x, |(⟪x, b⟫ : ℝ)| * (⟪x, t⟫ : ℝ) ^ 2 ∂μ := by
+  have hbm : Measurable fun x : E => (⟪x, b⟫ : ℝ) := measurable_inner_right b
+  have htm : Measurable fun x : E => (⟪x, t⟫ : ℝ) := measurable_inner_right t
+  -- the three integrable pieces of the expansion of the integrand
+  have hA : Integrable
+      (fun x : E => ((⟪x, b⟫ : ℝ) : ℂ) * Complex.exp ((⟪x, t⟫ : ℝ) * Complex.I)) μ := by
+    refine Integrable.mono' hb.norm (by fun_prop) ?_
+    filter_upwards with x
+    rw [norm_mul, Complex.norm_real, Complex.norm_exp]
+    simp
+  have hB : Integrable (fun x : E => ((⟪x, b⟫ : ℝ) : ℂ)) μ := hb.ofReal
+  have hCeq : (fun x : E => ((⟪x, b⟫ : ℝ) : ℂ) * (Complex.I * ((⟪x, t⟫ : ℝ) : ℂ)))
+      = fun x : E => Complex.I * (((⟪x, b⟫ : ℝ) * (⟪x, t⟫ : ℝ) : ℝ) : ℂ) := by
+    funext x
+    push_cast
+    ring
+  have hC : Integrable
+      (fun x : E => ((⟪x, b⟫ : ℝ) : ℂ) * (Complex.I * ((⟪x, t⟫ : ℝ) : ℂ))) μ := by
+    rw [hCeq]
+    exact hbt.ofReal.const_mul Complex.I
+  -- the exact identity: the difference is the integral of the second-order remainder
+  have hkey : ∫ x, ((⟪x, b⟫ : ℝ) : ℂ)
+        * (Complex.exp ((⟪x, t⟫ : ℝ) * Complex.I) - 1 - Complex.I * ((⟪x, t⟫ : ℝ) : ℂ)) ∂μ
+      = mixCharFun μ b t - Complex.I * ((∫ x, (⟪x, b⟫ : ℝ) * (⟪x, t⟫ : ℝ) ∂μ : ℝ) : ℂ) := by
+    have hexp : ∀ x : E, ((⟪x, b⟫ : ℝ) : ℂ)
+          * (Complex.exp ((⟪x, t⟫ : ℝ) * Complex.I) - 1 - Complex.I * ((⟪x, t⟫ : ℝ) : ℂ))
+        = ((⟪x, b⟫ : ℝ) : ℂ) * Complex.exp ((⟪x, t⟫ : ℝ) * Complex.I)
+          - ((⟪x, b⟫ : ℝ) : ℂ)
+          - ((⟪x, b⟫ : ℝ) : ℂ) * (Complex.I * ((⟪x, t⟫ : ℝ) : ℂ)) := fun x => by ring
+    have hIB : ∫ x, ((⟪x, b⟫ : ℝ) : ℂ) ∂μ = 0 := by
+      rw [integral_complex_ofReal, hmean, Complex.ofReal_zero]
+    have hIC : ∫ x, ((⟪x, b⟫ : ℝ) : ℂ) * (Complex.I * ((⟪x, t⟫ : ℝ) : ℂ)) ∂μ
+        = Complex.I * ((∫ x, (⟪x, b⟫ : ℝ) * (⟪x, t⟫ : ℝ) ∂μ : ℝ) : ℂ) := by
+      have h1 : ∫ x, Complex.I * (((⟪x, b⟫ : ℝ) * (⟪x, t⟫ : ℝ) : ℝ) : ℂ) ∂μ
+          = Complex.I * ∫ x, (((⟪x, b⟫ : ℝ) * (⟪x, t⟫ : ℝ) : ℝ) : ℂ) ∂μ :=
+        integral_const_mul _ _
+      rw [hCeq, h1, integral_complex_ofReal]
+    calc ∫ x, ((⟪x, b⟫ : ℝ) : ℂ)
+            * (Complex.exp ((⟪x, t⟫ : ℝ) * Complex.I) - 1
+              - Complex.I * ((⟪x, t⟫ : ℝ) : ℂ)) ∂μ
+        = ∫ x, (((⟪x, b⟫ : ℝ) : ℂ) * Complex.exp ((⟪x, t⟫ : ℝ) * Complex.I)
+              - ((⟪x, b⟫ : ℝ) : ℂ)
+              - ((⟪x, b⟫ : ℝ) : ℂ) * (Complex.I * ((⟪x, t⟫ : ℝ) : ℂ))) ∂μ :=
+          integral_congr_ae (Filter.Eventually.of_forall hexp)
+      _ = (∫ x, (((⟪x, b⟫ : ℝ) : ℂ) * Complex.exp ((⟪x, t⟫ : ℝ) * Complex.I)
+              - ((⟪x, b⟫ : ℝ) : ℂ)) ∂μ)
+            - ∫ x, ((⟪x, b⟫ : ℝ) : ℂ) * (Complex.I * ((⟪x, t⟫ : ℝ) : ℂ)) ∂μ :=
+          integral_sub (hA.sub hB) hC
+      _ = ((∫ x, ((⟪x, b⟫ : ℝ) : ℂ) * Complex.exp ((⟪x, t⟫ : ℝ) * Complex.I) ∂μ)
+            - ∫ x, ((⟪x, b⟫ : ℝ) : ℂ) ∂μ)
+            - ∫ x, ((⟪x, b⟫ : ℝ) : ℂ) * (Complex.I * ((⟪x, t⟫ : ℝ) : ℂ)) ∂μ := by
+          rw [integral_sub hA hB]
+      _ = mixCharFun μ b t - Complex.I * ((∫ x, (⟪x, b⟫ : ℝ) * (⟪x, t⟫ : ℝ) ∂μ : ℝ) : ℂ) := by
+          rw [hIB, hIC, mixCharFun, sub_zero]
+  rw [← hkey]
+  have hdom : Integrable (fun x : E => 3 / 2 * (|(⟪x, b⟫ : ℝ)| * (⟪x, t⟫ : ℝ) ^ 2)) μ :=
+    hbt2.const_mul (3 / 2)
+  have hpt : ∀ x : E, ‖((⟪x, b⟫ : ℝ) : ℂ)
+        * (Complex.exp ((⟪x, t⟫ : ℝ) * Complex.I) - 1 - Complex.I * ((⟪x, t⟫ : ℝ) : ℂ))‖
+      ≤ 3 / 2 * (|(⟪x, b⟫ : ℝ)| * (⟪x, t⟫ : ℝ) ^ 2) := by
+    intro x
+    have hcomm : Complex.exp ((⟪x, t⟫ : ℝ) * Complex.I) - 1 - Complex.I * ((⟪x, t⟫ : ℝ) : ℂ)
+        = Complex.exp (Complex.I * ((⟪x, t⟫ : ℝ) : ℂ)) - 1
+          - Complex.I * ((⟪x, t⟫ : ℝ) : ℂ) := by
+      rw [mul_comm ((⟪x, t⟫ : ℝ) : ℂ) Complex.I]
+    rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, hcomm]
+    calc |(⟪x, b⟫ : ℝ)| * ‖Complex.exp (Complex.I * ((⟪x, t⟫ : ℝ) : ℂ)) - 1
+            - Complex.I * ((⟪x, t⟫ : ℝ) : ℂ)‖
+        ≤ |(⟪x, b⟫ : ℝ)| * (3 * (⟪x, t⟫ : ℝ) ^ 2 / 2) :=
+          mul_le_mul_of_nonneg_left (norm_cexp_sub_one_sub_mul_I_le _) (abs_nonneg _)
+      _ = 3 / 2 * (|(⟪x, b⟫ : ℝ)| * (⟪x, t⟫ : ℝ) ^ 2) := by ring
+  refine (norm_integral_le_of_norm_le hdom (Filter.Eventually.of_forall hpt)).trans ?_
+  exact le_of_eq (integral_const_mul _ _)
+
+/-- **(M1)(b), assembled: the one-term expansion of the mixed characteristic function of a
+vector root.**
+
+`‖∫ ⟪w,b⟫ e^{i⟪w,a⟫} ∂ρ_n − i κ φ(n^{-1/2} a)^{n−1}‖ ≤ 3 M /(2√n)`, with
+`κ = ∫ ⟪x,b⟫⟪x,a⟫` the covariance of the two directions and
+`M = ∫ |⟪x,b⟫|⟪x,a⟫²` the mixed third moment, for a law centred in the direction `b`.
+
+This is the estimate the studentized route of `Bootstrap/Edgeworth.lean` records as (M1)(b) —
+the expansion of `∂_s ψ_n(θ, s)|_{s=0}`, equivalently of `E[V e^{iθU}]`, which cannot be
+obtained by differentiating the inequality of `norm_charFun_vecRootLaw_sub_edgeworth_le`.
+
+Two features are worth recording. First, the leading term is *not* damped by the extra `n^{-1/2}`
+that the naive count suggests: the `√n` produced by the factorisation cancels exactly against
+the `n^{-1/2}` of the covariance in the rescaled direction, so the mixed quantity has a
+nonvanishing limit `i κ e^{−v/2}`, which is precisely the source of the studentized
+`n^{-1/2}` coefficient `(1/6)γ(2t² + 1)` and of its difference from the centred one. Second,
+what remains between this statement and the Gaussian limit is only the replacement of
+`φ(n^{-1/2} a)^{n−1}` by `e^{−v/2}`, i.e. a Berry–Esseen-level estimate for an `(n−1)`-st power
+at the argument `n^{-1/2}` — a mismatch of one factor with
+`norm_charFun_smul_pow_sub_edgeworth_le`, not a new analytic difficulty. -/
+theorem norm_mixCharFun_vecRootLaw_sub_le (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E}
+    (hZ : Measurable Z) {a b : E} (m : ℕ)
+    (hb : Integrable (fun x : E => (⟪x, b⟫ : ℝ)) (F.map Z))
+    (hba : Integrable (fun x : E => (⟪x, b⟫ : ℝ) * (⟪x, a⟫ : ℝ)) (F.map Z))
+    (hba2 : Integrable (fun x : E => |(⟪x, b⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2) (F.map Z))
+    (hmean : ∫ x, (⟪x, b⟫ : ℝ) ∂(F.map Z) = 0) :
+    ‖mixCharFun (vecRootLaw F Z (m + 1)) b a
+        - Complex.I * ((∫ x, (⟪x, b⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z) : ℝ) : ℂ)
+            * charFun (F.map Z) ((Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ • a) ^ m‖
+      ≤ 3 / (2 * Real.sqrt ((m + 1 : ℕ) : ℝ))
+          * ∫ x, |(⟪x, b⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z) := by
+  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
+  have hNpos : (0 : ℝ) < ((m + 1 : ℕ) : ℝ) := by positivity
+  have hsq : (0 : ℝ) < Real.sqrt ((m + 1 : ℕ) : ℝ) := Real.sqrt_pos.2 hNpos
+  set r : ℝ := (Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ with hrdef
+  set c : E := r • a with hcdef
+  set κ : ℝ := ∫ x, (⟪x, b⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z) with hκdef
+  set M : ℝ := ∫ x, |(⟪x, b⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z) with hMdef
+  have hc1 : ∀ x : E, (⟪x, c⟫ : ℝ) = r * (⟪x, a⟫ : ℝ) := fun x => by
+    rw [hcdef, real_inner_smul_right]
+  -- the two directional moments in the rescaled direction `c`
+  have hκc : ∫ x, (⟪x, b⟫ : ℝ) * (⟪x, c⟫ : ℝ) ∂(F.map Z) = r * κ := by
+    have h1 : ∀ x : E, (⟪x, b⟫ : ℝ) * (⟪x, c⟫ : ℝ)
+        = r * ((⟪x, b⟫ : ℝ) * (⟪x, a⟫ : ℝ)) := fun x => by rw [hc1 x]; ring
+    simp_rw [h1]
+    rw [hκdef]
+    exact integral_const_mul _ _
+  have hMc : ∫ x, |(⟪x, b⟫ : ℝ)| * (⟪x, c⟫ : ℝ) ^ 2 ∂(F.map Z) = r ^ 2 * M := by
+    have h1 : ∀ x : E, |(⟪x, b⟫ : ℝ)| * (⟪x, c⟫ : ℝ) ^ 2
+        = r ^ 2 * (|(⟪x, b⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2) := fun x => by rw [hc1 x]; ring
+    simp_rw [h1]
+    rw [hMdef]
+    exact integral_const_mul _ _
+  have hbtc : Integrable (fun x : E => (⟪x, b⟫ : ℝ) * (⟪x, c⟫ : ℝ)) (F.map Z) := by
+    have h1 : (fun x : E => (⟪x, b⟫ : ℝ) * (⟪x, c⟫ : ℝ))
+        = fun x : E => r * ((⟪x, b⟫ : ℝ) * (⟪x, a⟫ : ℝ)) := by
+      funext x; rw [hc1 x]; ring
+    rw [h1]
+    exact hba.const_mul r
+  have hbt2c : Integrable (fun x : E => |(⟪x, b⟫ : ℝ)| * (⟪x, c⟫ : ℝ) ^ 2) (F.map Z) := by
+    have h1 : (fun x : E => |(⟪x, b⟫ : ℝ)| * (⟪x, c⟫ : ℝ) ^ 2)
+        = fun x : E => r ^ 2 * (|(⟪x, b⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2) := by
+      funext x; rw [hc1 x]; ring
+    rw [h1]
+    exact hba2.const_mul (r ^ 2)
+  -- the single-factor estimate, in the rescaled direction
+  have hone : ‖mixCharFun (F.map Z) b c - Complex.I * ((r * κ : ℝ) : ℂ)‖
+      ≤ 3 / 2 * (r ^ 2 * M) := by
+    have h := norm_mixCharFun_sub_mul_I_le (F.map Z) hb hbtc hbt2c hmean
+    rwa [hκc, hMc] at h
+  -- the factorisation, and the cancellation `√n · n^{-1/2} = 1`
+  have hbZ : Integrable (fun x : ℝ => (⟪Z x, b⟫ : ℝ)) F :=
+    (integrable_map_measure hb.aestronglyMeasurable hZ.aemeasurable).1 hb
+  have hfac := mixCharFun_vecRootLaw F hZ hbZ m a
+  rw [← hrdef, ← hcdef] at hfac
+  have hsr : (Real.sqrt ((m + 1 : ℕ) : ℝ)) * r = 1 := by
+    rw [hrdef]; field_simp
+  have hsrC : ((Real.sqrt ((m + 1 : ℕ) : ℝ) : ℝ) : ℂ) * ((r : ℝ) : ℂ) = 1 := by
+    exact_mod_cast congrArg (fun z : ℝ => (z : ℂ)) hsr
+  have halg : mixCharFun (vecRootLaw F Z (m + 1)) b a
+        - Complex.I * (κ : ℂ) * charFun (F.map Z) c ^ m
+      = ((Real.sqrt ((m + 1 : ℕ) : ℝ) : ℝ) : ℂ)
+          * (mixCharFun (F.map Z) b c - Complex.I * ((r * κ : ℝ) : ℂ))
+          * charFun (F.map Z) c ^ m := by
+    rw [hfac]
+    have hexp : ((Real.sqrt ((m + 1 : ℕ) : ℝ) : ℝ) : ℂ) * (Complex.I * ((r * κ : ℝ) : ℂ))
+        = Complex.I * (κ : ℂ) := by
+      rw [Complex.ofReal_mul]
+      calc ((Real.sqrt ((m + 1 : ℕ) : ℝ) : ℝ) : ℂ)
+            * (Complex.I * (((r : ℝ) : ℂ) * ((κ : ℝ) : ℂ)))
+          = (((Real.sqrt ((m + 1 : ℕ) : ℝ) : ℝ) : ℂ) * ((r : ℝ) : ℂ))
+              * (Complex.I * ((κ : ℝ) : ℂ)) := by ring
+        _ = Complex.I * (κ : ℂ) := by rw [hsrC, one_mul]
+    rw [mul_sub, hexp]
+    ring
+  rw [halg, norm_mul, norm_mul]
+  have hBle : ‖charFun (F.map Z) c ^ m‖ ≤ 1 := by
+    rw [norm_pow]
+    exact pow_le_one₀ (norm_nonneg _) (norm_charFun_le_one c)
+  have hM0 : (0 : ℝ) ≤ M := integral_nonneg fun x => by positivity
+  have hnormsq : ‖((Real.sqrt ((m + 1 : ℕ) : ℝ) : ℝ) : ℂ)‖ = Real.sqrt ((m + 1 : ℕ) : ℝ) := by
+    rw [Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hsq.le]
+  calc ‖((Real.sqrt ((m + 1 : ℕ) : ℝ) : ℝ) : ℂ)‖
+        * ‖mixCharFun (F.map Z) b c - Complex.I * ((r * κ : ℝ) : ℂ)‖
+        * ‖charFun (F.map Z) c ^ m‖
+      ≤ Real.sqrt ((m + 1 : ℕ) : ℝ) * (3 / 2 * (r ^ 2 * M)) * 1 := by
+        rw [hnormsq]
+        exact mul_le_mul (mul_le_mul_of_nonneg_left hone hsq.le) hBle (norm_nonneg _)
+          (mul_nonneg hsq.le (by positivity))
+    _ = 3 / (2 * Real.sqrt ((m + 1 : ℕ) : ℝ)) * M := by
+        have hne : Real.sqrt ((m + 1 : ℕ) : ℝ) ≠ 0 := hsq.ne'
+        rw [hrdef]
+        field_simp
+
 end Mixed
 
 end StatLean.HypothesisTesting
