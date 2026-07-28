@@ -1176,6 +1176,112 @@ private lemma bvmPairRatio_eq_exp_bvmLogRatio {g h : EuclideanSpace ℝ (Fin k)}
   rw [hJg, hJh, hGg, hGh, ← ENNReal.ofReal_mul (mul_pos hPg hfg).le,
     ← ENNReal.ofReal_mul (mul_pos hPh hfh).le, ← ENNReal.ofReal_div_of_pos hden, hratio]
 
+-- LEAN-ONLY: the algebraic identity turning the pair defect into `s(h) · (1 − ρ)`.
+private lemma ennreal_defect_eq {A B C D : ℝ≥0∞} (hA : A ≠ ∞) (hD0 : D ≠ 0) (hDT : D ≠ ∞) :
+    (A * D - C * B) / D = A * (1 - C * B / (A * D)) := by
+  rcases eq_or_ne A 0 with hA0 | hA0
+  · simp [hA0]
+  · have hcancel : A * (C * B / (A * D)) = C * B / D := by
+      rw [div_eq_mul_inv, div_eq_mul_inv, ENNReal.mul_inv (Or.inl hA0) (Or.inl hA),
+        show A * (C * B * (A⁻¹ * D⁻¹)) = A * A⁻¹ * (C * B * D⁻¹) from by ring,
+        ENNReal.mul_inv_cancel hA0 hA, one_mul]
+    have hAD : A * D / D = A := by
+      rw [div_eq_mul_inv, mul_assoc, ENNReal.mul_inv_cancel hD0 hDT, mul_one]
+    rw [ENNReal.mul_sub (fun _ _ => hA), mul_one, hcancel,
+      ENNReal.sub_div (fun _ _ => hD0), hAD]
+
+-- LEAN-ONLY: the local joint density is finite.
+private lemma bvmJointDens_ne_top (n : ℕ) (h : EuclideanSpace ℝ (Fin k)) (ω : Fin n → 𝓧) :
+    bvmJointDens M f θ₀ n h ω ≠ ∞ := by
+  have hprod : (∏ i, ENNReal.ofReal (M.density (bvmLocalUnscale θ₀ n h) (ω i)))
+      = ENNReal.ofReal (∏ i, M.density (bvmLocalUnscale θ₀ n h) (ω i)) :=
+    (ENNReal.ofReal_prod_of_nonneg (fun i _ => M.density_nonneg _ _)).symm
+  rw [bvmJointDens, hprod]
+  exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top ENNReal.ofReal_ne_top
+
+private lemma bvmGaussDens_ne_zero (J : Matrix (Fin k) (Fin k) ℝ)
+    (sc : 𝓧 → EuclideanSpace ℝ (Fin k)) (n : ℕ) (h : EuclideanSpace ℝ (Fin k))
+    (ω : Fin n → 𝓧) : bvmGaussDens J sc n h ω ≠ 0 := by
+  simp only [bvmGaussDens, ne_eq, ENNReal.ofReal_eq_zero, not_le]
+  exact Real.exp_pos _
+
+private lemma bvmGaussDens_ne_top' (J : Matrix (Fin k) (Fin k) ℝ)
+    (sc : 𝓧 → EuclideanSpace ℝ (Fin k)) (n : ℕ) (h : EuclideanSpace ℝ (Fin k))
+    (ω : Fin n → 𝓧) : bvmGaussDens J sc n h ω ≠ ∞ := by
+  simp only [bvmGaussDens]
+  exact ENNReal.ofReal_ne_top
+
+-- LEAN-ONLY: the pair defect as local joint density times the truncated pair-ratio defect.
+private lemma bvmPairDefect_eq (n : ℕ) (h g : EuclideanSpace ℝ (Fin k)) (ω : Fin n → 𝓧) :
+    bvmPairDefect M f θ₀ J sc n h g ω
+      = bvmJointDens M f θ₀ n h ω
+          * (1 - bvmJointDens M f θ₀ n g ω * bvmGaussDens J sc n h ω
+              / (bvmJointDens M f θ₀ n h ω * bvmGaussDens J sc n g ω)) :=
+  ennreal_defect_eq (bvmJointDens_ne_top n h ω) (bvmGaussDens_ne_zero J sc n g ω)
+    (bvmGaussDens_ne_top' J sc n g ω)
+
+private lemma bvmPairDefect_le (n : ℕ) (h g : EuclideanSpace ℝ (Fin k)) (ω : Fin n → 𝓧) :
+    bvmPairDefect M f θ₀ J sc n h g ω ≤ bvmJointDens M f θ₀ n h ω := by
+  rw [bvmPairDefect_eq]
+  exact mul_le_of_le_one_right' (by simp)
+
+-- LEAN-ONLY: integrating the local joint density against the dominating measure turns it into
+-- the prior density times the sampling law at `θ₀ + h/√n`.
+private lemma lintegral_bvmJointDens_mul
+    -- USER-INPUT: dominated iid model, `κ θ = p_θ · μ`; vdV §10.2, p. 140
+    (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
+    -- LEAN-ONLY: joint measurability of the model densities (regularity)
+    (hM_joint : Measurable (Function.uncurry M.density))
+    {n : ℕ} (h : EuclideanSpace ℝ (Fin k)) {X : (Fin n → 𝓧) → ℝ≥0∞}
+    -- LEAN-ONLY: measurable integrand (regularity)
+    (hX : Measurable X) :
+    ∫⁻ ω, bvmJointDens M f θ₀ n h ω * X ω ∂(Measure.pi fun _ : Fin n => μ)
+      = ENNReal.ofReal (f (bvmLocalUnscale θ₀ n h))
+          * ∫⁻ ω, X ω ∂(productMeasure M μ (bvmLocalUnscale θ₀ n h) n) := by
+  classical
+  have hdens_meas : Measurable
+      (Function.uncurry fun θ (x : 𝓧) => ENNReal.ofReal (M.density θ x)) :=
+    ENNReal.measurable_ofReal.comp hM_joint
+  have hlikθ : Measurable fun x : Fin n → 𝓧 =>
+      ∏ i, ENNReal.ofReal (M.density (bvmLocalUnscale θ₀ n h) (x i)) := by
+    refine Finset.measurable_prod Finset.univ fun i _ => ?_
+    exact ENNReal.measurable_ofReal.comp
+      (hM_joint.comp (measurable_const.prodMk (measurable_pi_apply i)))
+  have hPθ : productMeasure M μ (bvmLocalUnscale θ₀ n h) n
+      = (Measure.pi fun _ : Fin n => μ).withDensity
+          fun x => ∏ i, ENNReal.ofReal (M.density (bvmLocalUnscale θ₀ n h) (x i)) := by
+    rw [productMeasure_eq_iidKernel_apply hκ (bvmLocalUnscale θ₀ n h) n]
+    exact iidKernel_withDensity hdens_meas hκ n _
+  rw [hPθ, lintegral_withDensity_eq_lintegral_mul _ hlikθ hX,
+    ← lintegral_const_mul' _ _ (ENNReal.ofReal_ne_top
+      (r := f (bvmLocalUnscale θ₀ n h)))]
+  refine lintegral_congr fun ω => ?_
+  simp only [bvmJointDens, Pi.mul_apply]
+  ring
+
+private lemma lintegral_bvmPairDefect_le
+    -- USER-INPUT: dominated iid model with normalized densities; vdV §10.2, p. 140
+    (hPDF : IsPDFOf M μ)
+    -- USER-INPUT: dominated iid model, `κ θ = p_θ · μ`; vdV §10.2, p. 140
+    (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
+    -- LEAN-ONLY: joint measurability of the model densities (regularity)
+    (hM_joint : Measurable (Function.uncurry M.density))
+    {n : ℕ} (h g : EuclideanSpace ℝ (Fin k)) :
+    ∫⁻ ω, bvmPairDefect M f θ₀ J sc n h g ω ∂(Measure.pi fun _ : Fin n => μ)
+      ≤ ENNReal.ofReal (f (bvmLocalUnscale θ₀ n h)) := by
+  haveI : IsProbabilityMeasure (productMeasure M μ (bvmLocalUnscale θ₀ n h) n) :=
+    AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
+      M μ hPDF _ n
+  calc ∫⁻ ω, bvmPairDefect M f θ₀ J sc n h g ω ∂(Measure.pi fun _ : Fin n => μ)
+      ≤ ∫⁻ ω, bvmJointDens M f θ₀ n h ω ∂(Measure.pi fun _ : Fin n => μ) :=
+        lintegral_mono fun ω => bvmPairDefect_le n h g ω
+    _ = ∫⁻ ω, bvmJointDens M f θ₀ n h ω * 1 ∂(Measure.pi fun _ : Fin n => μ) := by
+        simp
+    _ = ENNReal.ofReal (f (bvmLocalUnscale θ₀ n h))
+          * ∫⁻ _, (1 : ℝ≥0∞) ∂(productMeasure M μ (bvmLocalUnscale θ₀ n h) n) :=
+        lintegral_bvmJointDens_mul hκ hM_joint h measurable_const
+    _ = ENNReal.ofReal (f (bvmLocalUnscale θ₀ n h)) := by simp
+
 /-- **Step B: the conditioned Bernstein–von Mises convergence** (vdV pp. 142–143). For every
 fixed radius `R > 0` and every `δ > 0`, the `P^n_{θ₀}`-probability that the conditioned
 local posterior and the conditioned Gaussian differ by at least `δ` in total variation tends
