@@ -6540,6 +6540,50 @@ instance isProbabilityMeasure_hybridLaw (n j : ℕ) (ν : Measure (EuclideanSpac
     intro i; split <;> infer_instance
   exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
 
+/-- **The hybrid law IS the telescope's `j`-th test measure** (wave 36).
+
+`hybridLaw` was introduced (wave 20) with the comment that it is "exactly the measure against
+which `abs_integral_smooth_sub_gaussian_improved` evaluates its `j`-th test function", but that
+identity was never recorded in Lean — brick H speaks about `hybridLaw`, the telescope speaks
+about `Iⱼ = ∫ Gⱼ(∑ₗ xₗ) d(⨂ κⱼ)`, and nothing connected them. It is needed as soon as the
+per-step swap bounds are *localised*, because their weight is a two-sided-shell mass **under
+`hybridLaw n j ν`** while the object the telescope averages is `Iⱼ`; without this lemma the two
+localised estimates of `localised_swap_bound_small_weight` cannot even be stated in the form its
+reduction consumes.
+
+The content is one Fubini: unfolding `hybridLaw`'s `map`, the outer integral over the product
+`(⨂ κⱼ) ⊗ γ` factors into the smoothing integral inside the product integral, and
+`sⱼ = √j/√n = c √j` is the telescope's own smoothing width. -/
+theorem integral_hybridLaw_eq {n j : ℕ} (ν : Measure (EuclideanSpace ℝ (Fin k)))
+    [IsProbabilityMeasure ν] {f : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hf : Continuous f) (hfb : ∀ x, |f x| ≤ 1) :
+    (∫ x, f x ∂(hybridLaw n j ν))
+      = ∫ x, (∫ z, f ((Real.sqrt (n : ℝ))⁻¹ • (∑ i, x i)
+              + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • z)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+          ∂(Measure.pi fun i : Fin n =>
+              if (i : ℕ) < j then Measure.dirac 0 else ν) := by
+  haveI : ∀ i : Fin n, IsProbabilityMeasure
+      (if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν) := by
+    intro i; split <;> infer_instance
+  set P : Measure ((_ : Fin n) → EuclideanSpace ℝ (Fin k)) :=
+    Measure.pi fun i : Fin n =>
+      if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν with hPdef
+  haveI : IsProbabilityMeasure P := by rw [hPdef]; infer_instance
+  set Φ : ((_ : Fin n) → EuclideanSpace ℝ (Fin k)) × EuclideanSpace ℝ (Fin k)
+      → EuclideanSpace ℝ (Fin k) :=
+    fun p => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
+      + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2 with hΦdef
+  have hΦmeas : Measurable Φ := by rw [hΦdef]; fun_prop
+  have hint : Integrable (fun p => f (Φ p))
+      (P.prod (stdGaussian (EuclideanSpace ℝ (Fin k)))) := by
+    refine (integrable_const (1 : ℝ)).mono'
+      (hf.measurable.comp hΦmeas).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun p => by rw [Real.norm_eq_abs]; exact hfb _)
+  rw [hybridLaw, ← hPdef, ← hΦdef,
+    integral_map hΦmeas.aemeasurable hf.aestronglyMeasurable]
+  exact integral_prod _ hint
+
 /-- The characteristic function of the law of a sum of independent summands is the product of
 the characteristic functions. -/
 private lemma charFun_map_sum_pi {N : ℕ}
