@@ -2530,14 +2530,18 @@ finite third moment `β = ∫‖y‖³ dν`, and every measurable convex `B`,
 
 where `μₙ` is the law of `n^{-1/2} ∑ᵢ Yᵢ` and `γ = N(0, I_k)`.
 
-This is the strongest bound the elementary "smooth the indicator + Lindeberg swap" route yields.
 Optimising `ε` in `ε^{-3} β/√n + C ε` balances steps 2–3 at `ε = (β/√n)^{1/4}`, giving an error of
 order `(β/√n)^{1/4} = n^{-1/8}` — **not** the `n^{-1/2}` rate of the frozen
 `bentkus_berry_esseen_convex`. The constant also carries a dimension factor: it is
 `C = C₀ + C_k` with `C₀` the third-derivative constant of `exists_smoothed_convex_indicator` and
-`C_k = gaussianShellConst k = 8k^{3/2}/√(2π)` the Gaussian boundary-shell constant. Both deviations
-are intrinsic to the mollifier method; the sharp `400 k^{1/4} · β/√n` needs Bentkus's Fourier
-analysis and is not attempted. (Ball's theorem gives the sharp shell constant `4 k^{1/4}`, which is
+`C_k = gaussianShellConst k = 8k^{3/2}/√(2π)` the Gaussian boundary-shell constant.
+
+**This exponent is not the ceiling of the elementary route** (wave-13 correction of an earlier
+note that claimed it was): exploiting the Gaussian mollification the hybrid telescope carries for
+free, `ε^{-3}` can be replaced by `ε^{-1}`, which balances at `(β/√n)^{1/2} = n^{-1/4}`. The
+analytic core of that improvement is proved in the Cameron–Martin section at the end of this
+file; the three remaining assembly bricks are listed in the module docstring. The sharp
+`400 k^{1/4} · β/√n` needs Bentkus's self-improving induction and is not attempted. (Ball's theorem gives the sharp shell constant `4 k^{1/4}`, which is
 exactly the dimension factor of Bentkus's bound; only *finiteness* at fixed `k` is needed here, and
 that is what `GaussianShell` proves elementarily.)
 
