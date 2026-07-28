@@ -3508,6 +3508,52 @@ theorem norm_integral_cexp_deltaSurrogate_sub_le (μ : Measure E₂) [IsProbabil
   have hmono := integral_mono hgint (hrem.const_mul (r ^ 3)) hle
   rwa [MeasureTheory.integral_const_mul] at hmono
 
+/-- **The transform is the characteristic function of the surrogate's law.**
+`φ_{μ ∘ Hₙ⁻¹}(θ) = ∫ e^{iθHₙ} ∂μ`.
+
+This is the bridge between `norm_integral_cexp_deltaSurrogate_sub_graded_le` and the Esseen
+machinery: `abs_measure_Iic_sub_densityCDF_le_charFun` consumes a *characteristic function of a
+law on the line*, and the law in question is the pushforward of the bivariate root's law under
+the surrogate — not the root's law itself. Recording the bridge as its own statement is what
+makes that distinction visible; see the wave-26 note on `edgeworth_studentized_uniform` for why
+it matters on the outer range. -/
+lemma charFun_map_deltaSurrogate (μ : Measure E₂) (σ r θ : ℝ) :
+    charFun (μ.map (deltaSurrogate σ r)) θ
+      = ∫ w, Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ)) ∂μ := by
+  rw [charFun_apply_real,
+    integral_map (measurable_deltaSurrogate σ r).aemeasurable (by fun_prop)]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun w => ?_)
+  congr 1
+  push_cast
+  ring
+
+/-- **The surrogate's transform, in characteristic-function form.** The restatement of
+`norm_integral_cexp_deltaSurrogate_sub_graded_le` that the Esseen chain consumes: the left-hand
+side is now literally `charFun` of a law on the line, so it can be fed to
+`abs_measure_Iic_sub_densityCDF_le_charFun`. -/
+theorem norm_charFun_map_deltaSurrogate_sub_graded_le (μ : Measure E₂)
+    [IsProbabilityMeasure μ]
+    {σ : ℝ} (hσ : 0 < σ) {r : ℝ} (hr : 0 ≤ r) (hr1 : r ≤ 1) (θ : ℝ)
+    (h2 : Integrable (fun w : E₂ => |w 0 * w 1|) μ)
+    (h3 : Integrable (fun w : E₂ => |w 0 ^ 3|) μ)
+    (h4 : Integrable (fun w : E₂ => |w 0 * w 1 ^ 2|) μ)
+    (h5 : Integrable (fun w : E₂ => |(w 0 * w 1) ^ 2|) μ)
+    (hrem : Integrable
+      (fun w : E₂ => surrogateRemGraded θ (w 0 / σ) (w 1 / σ ^ 2) r) μ) :
+    ‖charFun (μ.map (deltaSurrogate σ r)) θ
+        - (charFun μ ((θ / σ) • coordDir 0)
+          - Complex.I * ((θ * r / (2 * σ ^ 3) : ℝ) : ℂ)
+              * multiCharFun μ surrW2 ((θ / σ) • coordDir 0)
+          + Complex.I * ((θ * r ^ 2 / (2 * σ ^ 3) : ℝ) : ℂ)
+              * multiCharFun μ surrW3a ((θ / σ) • coordDir 0)
+          + Complex.I * ((3 * θ * r ^ 2 / (8 * σ ^ 5) : ℝ) : ℂ)
+              * multiCharFun μ surrW3b ((θ / σ) • coordDir 0)
+          - ((θ ^ 2 * r ^ 2 / (8 * σ ^ 6) : ℝ) : ℂ)
+              * multiCharFun μ surrW4 ((θ / σ) • coordDir 0))‖
+      ≤ ∫ w, surrogateRemGraded θ (w 0 / σ) (w 1 / σ ^ 2) r ∂μ := by
+  rw [charFun_map_deltaSurrogate]
+  exact norm_integral_cexp_deltaSurrogate_sub_graded_le μ hσ hr hr1 θ h2 h3 h4 h5 hrem
+
 /-! ### Residue (ii), re-derived: the transform's own hypotheses fail under a fourth moment
 
 Wave 23 recorded residue (ii) as "`∫ surrogateRemPoly` is a moment of degree nine, infinite
