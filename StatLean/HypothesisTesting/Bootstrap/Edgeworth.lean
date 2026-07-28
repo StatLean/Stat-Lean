@@ -4900,9 +4900,12 @@ too: `measure_norm_gt_le_fourth_moment` is Markov on the plane,
 and `tail_ledger_exponent` turns `O(n/M⁴)` into `O(n^{-3/2})` at `M = n^{5/8}` exactly. This is
 the only probabilistic input of the three, and it is the line that *forces* the bulk radius.
 
-**Two `sorry`s after wave 33** — (A) and (B), both of them deterministic estimates on `𝓕 g` for
-one explicit polynomial phase against Lebesgue measure on `ℝ²`, and neither of them structure.
-(C), the assembly below, and the exponent ledger are proved. -/
+**One `sorry` after wave 34, and it is not (A).** (A) is proved: the mass bound is *not* an
+integration-by-parts estimate at all but a continuity statement about
+`𝓢 --𝓕--> 𝓢 --toLp 1--> L¹`, and what is left of it is the elementary
+`exists_norm_iteratedFDeriv_bulkMultiplier_le` --- one bound on `‖D^m g‖_∞`, polynomial in `n`
+and `1 + |θ|`, at each fixed order `m`. (B) is untouched. (C), the assembly below, and the
+exponent ledger are proved. -/
 
 /-! ### Input (A), first half: the transform of the bulk multiplier is integrable
 
@@ -8681,11 +8684,61 @@ estimates; this theorem and its corollary are untouched and still `sorry`.**
   `schwartzOfCompactSupport`. `exists_integral_norm_fourier_bulkMultiplier_le` is restated
   without the conjunct.
 
-* **THE MASS BOUND OF (A), AND ALL OF (B), WERE NOT ATTEMPTED, and that is a budget statement,
-  not a verdict.** Both need what this development does not have: explicit control of the
-  iterated derivatives of `g` on `‖w‖ ≤ 2M`, polynomial in `M = n^{5/8}` and `|θ|`. (B) needs in
-  addition the five-fold integration by parts against the proved slope bound
+* **THE MASS BOUND OF (A) WAS NOT ATTEMPTED IN WAVE 33; ALL OF (B) STILL IS NOT.** Both were
+  described as needing explicit control of the iterated derivatives of `g` on `‖w‖ ≤ 2M`. For
+  (A) that description is **overturned by wave 34** --- see below. For (B) it stands, together
+  with the five-fold integration by parts against the proved slope bound
   `deltaSurrogate_slope_ge`. No obstruction to either is known.
+
+**Status after wave 34. Input (A) is PROVED, over one elementary derivative brick; the
+certificate's residue is (B) plus that brick; this theorem and its corollary are untouched.**
+
+* **(A) IS NOT AN INTEGRATION-BY-PARTS ESTIMATE, and the wave-31 prescription for it is
+  overturned.** The section note above (and the wave-30/31 notes) price the mass as
+  `∫‖𝓕 g‖ ≲ M²·sup_{|α| ≤ 3}‖∂^α g‖_∞`, "integrating by parts three times in each variable".
+  None of that has to be done. `g ↦ ∫‖𝓕 g‖` is the norm of the composite *continuous linear map*
+  `𝓢(ℝ²,ℂ) --fourierTransformCLM--> 𝓢(ℝ²,ℂ) --toLp 1--> L¹`, so `Seminorm.bound_of_continuous`
+  against `schwartz_withSeminorms` returns a finite set `s ⊆ ℕ × ℕ` of Schwartz indices and one
+  constant `C`, *uniform over all Schwartz functions*, with
+  `∫‖𝓕 g‖ ≤ C·max_{(k,m) ∈ s} S_{k,m}(g)` (`exists_bound_integral_norm_fourier_schwartz`). The
+  three-derivatives-and-`M²` bookkeeping is exactly what Mathlib's construction of
+  `fourierTransformCLM` already carries; re-deriving it by hand would have been duplicated work.
+  The opacity of `s` costs nothing: the per-index constants are absorbed by `1 + ∑_{i ∈ s} A i`
+  and the per-index exponents by `∑_{i ∈ s} K i`, since `n ≥ 1` and `1 + |θ| ≥ 1`.
+
+* **THE COMPACT SUPPORT PAYS FOR THE `‖w‖^k` FACTOR, AND `M = n^{5/8} ≤ n` MAKES IT FREE.**
+  `tsupport_bulkMultiplier_subset` puts `tsupport g` inside `‖w‖ ≤ 2M` and
+  `iteratedFDeriv_bulkMultiplier_eq_zero` kills every derivative outside it, so
+  `S_{k,m}(g) ≤ 2^k n^k · sup_w ‖D^m g(w)‖` (`exists_seminorm_bulkMultiplier_le`). Note that this
+  is the *only* place the bulk radius enters (A); (A) would hold at any `M` polynomial in `n`,
+  which is why the ledger's choice `M = n^{5/8}` is dictated by (C) and (B) alone.
+
+* **THE RESIDUE OF (A) IS ONE ELEMENTARY BOUND**, `exists_norm_iteratedFDeriv_bulkMultiplier_le`:
+  for each fixed `m`, `‖D^m g‖_∞ ≤ A n^K (1 + |θ|)^K`. The route is fixed and every tool for it
+  is in the pin: `norm_iteratedFDeriv_mul_le` splits `χ(·/M)·e^{iθQ}`;
+  `norm_iteratedFDeriv_comp_le` bounds the exponential by `m!·C·D^m` with `C = 1` (every
+  derivative of `t ↦ e^{it}` has modulus `1`) and `D = 1 + ∑_{i ≤ m}‖D^i(θQ)‖`, which is legal
+  because `D ≥ 1` makes `D ≥ D^i` unnecessary --- one only needs `‖D^i(θQ)‖ ≤ D^i`; and the
+  derivatives of the *cubic* `Q = Hₙ − w₀/σ = −uvr/2 + u³r²/2 + 3uv²r²/8` are polynomial in `M`
+  and `|θ|` and vanish above order three. The one trap is that a compactness bound taken on the
+  ball `‖w‖ ≤ 2M` has an `M`-dependent, a-priori-uncontrolled constant; the fix is to take it on
+  the *unit* ball after the dilation `w = 2Mx` (`ContinuousLinearMap.iteratedFDeriv_comp_right`),
+  which moves all of the `n`-dependence into the three scalar coefficients of `Q`. **This is a
+  budget statement, not a verdict: nothing about it is structural, and the constants may be as
+  crude as one likes --- only the degree has to be independent of `n` and `θ`, and it is.**
+
+* **THE WAVE-31 SLOPE ARITHMETIC IS CONFIRMED, INDEPENDENTLY.** `deltaSurrogate_slope_ge` proves
+  `5/6 ≤ 1 − x/2 + 3x²/8`, and the bound is *attained* at `x = 2/3`, so `5/6` is sharp and not a
+  rounded constant. The `∂_u Hₙ = 1 − vr/2 + 3u²r²/2 + 3v²r²/8` reading is right: the `3u²r²/2`
+  term is nonnegative and simply discarded, and `x = vr` is the only variable in play. On the
+  band, `|θ| ≥ c₀√n` makes the radius `c₀√n/(2σ)` at most `|θ|/(2σ)`, so `−s₀` carries the sign
+  of `θ` with modulus at least `|θ|/(2σ)`; the two terms therefore add to
+  `(5/6 + 1/2)|θ|/σ = (4/3)|θ|/σ`. Wave 31's `4/3` is correct, and so is its correction of
+  wave 30's misplaced `σ` in `(27/16)Mr²/(σ|θ|)`.
+
+* **THE `N = 5` LEDGER IS RE-VERIFIED.** `leakage_ledger_exponent` gives `n^{9/4 − 7N/8}`;
+  `N = 5` returns `n^{−17/8} ≤ n^{−3/2}` and `N = 4` returns `n^{−5/4} > n^{−3/2}`. Both are
+  proved in the file and both are arithmetically right. Wave 34 changes nothing here.
 
 **What is honestly *not* done, and it is bookkeeping rather than analysis.** This theorem itself
 is still `sorry`. Granting (A), (B), (C), the chain is: `abs_studentizedRootCDF_sub_truncAt_le`
