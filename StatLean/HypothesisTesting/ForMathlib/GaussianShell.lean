@@ -25,12 +25,16 @@ the elementary convex Berry–Esseen bound
 `StatLean.HypothesisTesting.berryEsseen_convex_elementary`, where the *sharp* form of the constant
 (K. Ball's `4 k^{1/4}` bound on the Gaussian surface area of a convex body) is what produces the
 dimension factor `k^{1/4}` of Bentkus (2003). The elementary assembly only needs *finiteness* of
-`C_k` at fixed `k`, and that is what is proved here, with the explicit constant
-`C_k = 8 k^{3/2}/√(2π)` (`gaussianShellConst`).
+`C_k` at fixed `k`; what is proved here is the explicit constant
+
+`C_k = 4 e² √k` (`gaussianShellConst`),
+
+i.e. the dimension factor `√k`. Ball's `k^{1/4}` is not reached, but the crude `k^{3/2}` of the
+coordinate-slice cover is improved by a full factor `k` (wave 22).
 
 ## The argument
 
-Everything rests on one elementary observation about convex sets and *coordinate lines*.
+Everything rests on one elementary observation about convex sets and *lines*.
 
 * (Support) If `V` is convex and `x ∉ interior V` then some `u ≠ 0` supports `V` at `x`:
   `⟪u, w - x⟫ ≤ 0` for all `w ∈ V` (`exists_inner_le_zero_of_notMem_interior`). For
@@ -44,14 +48,30 @@ Everything rests on one elementary observation about convex sets and *coordinate
   line parallel to `eᵢ` in a set of diameter `≤ |c|` — because the trace of `V` on such a line is
   an interval. Its Gaussian mass is therefore at most `2|c|/√(2π)`, by Fubini for
   `γ = ⨂ N(0,1)` (`map_pi_eq_stdGaussian`) and the `1/√(2π)` bound on the one-dimensional
-  Gaussian density (`gaussian_mem_notMem_shift_le`). This step is where the Gaussian enters; note
-  that the bound is *dimension-free*, the factor `k^{3/2}` coming only from the `2k` coordinate
-  directions and the `√k` loss in the escape step.
+  Gaussian density (`gaussian_mem_notMem_shift_le`). This step is where the Gaussian enters, and
+  the bound is *dimension-free*. Rotation invariance of `γ` (`stdGaussian_map` along the isometry
+  produced by `exists_isometry_apply_single`) upgrades it to an **arbitrary** shift direction:
+  `gaussian_mem_notMem_vadd_le`.
 
-Combining: the shell `Bᵋ \ B` (resp. `B \ B_{-ε}`) is covered by the `2k` sets
-`{x ∈ Bᵋ : x ± c • eᵢ ∉ Bᵋ}` with `c = 2ε√k`, giving `γ(shell) ≤ 2k · 2c/√(2π) = C_k ε`.
+The wave-3 covering combined these by unioning the `2k` sets `{x ∈ Bᵋ : x ± c • eᵢ ∉ Bᵋ}` with
+`c = 2ε√k`, giving `γ(shell) ≤ 2k · 2c/√(2π) ∼ k^{3/2} ε`: a factor `k` from the union and a
+factor `√k` from the escape step. The `k` is an artefact of the coordinate cover, and wave 22
+removes it (`gaussian_le_of_gaussian_shift_cover`): take a **single** random shift `w = 2ε Z`
+with `Z ∼ N(0, I_k)` and integrate the two sides of
 
-The same covering with `c → 0` shows `γ(V \ interior V) = 0` for every convex `V`
+`1_{S}(x) · 1{x + w ∉ V}`
+
+against `γ ⊗ γ` in the two orders.
+
+* Integrating in `w` first (at fixed `x`, so **no measurable selection of the supporting normal
+  is needed**) the escape event contains `{z : ⟪u, z⟫ ≥ 1}`, whose probability is the standard
+  normal tail `P(Z ≥ 1) ≥ e^{-2}/√(2π)`, a dimension-free constant.
+* Integrating in `x` first gives the directional slice bound `2‖w‖/√(2π)`, whose `w`-average is
+  `2 · 2ε · E‖Z‖/√(2π) ≤ 4ε√k/√(2π)`.
+
+Dividing, `γ(shell) ≤ 4 e² √k ε = C_k ε`. Only `E‖Z‖ ≤ √k` carries a dimension factor.
+
+The old coordinate covering with `c → 0` still shows `γ(V \ interior V) = 0` for every convex `V`
 (`gaussian_diff_interior_eq_zero`), which is the degenerate case (`interior B = ∅`, i.e. `B` inside
 a hyperplane) of the erosion bound.
 -/
@@ -413,23 +433,346 @@ private lemma gaussian_le_of_shift_cover (hk : 0 < k)
         congr 1
         ring
 
+/-! ### The sharp cover: a single Gaussian shift
+
+The `2k` coordinate shifts above cost a factor `k` on top of the `√k` lost in the escape step,
+giving `C_k ∼ k^{3/2}`. Replacing the coordinate cover by **one** random shift `w = 2ε Z`,
+`Z ∼ N(0, I_k)`, removes the `k` entirely and leaves only `E‖Z‖ ≤ √k`, so `C_k ∼ √k`. Three
+ingredients: rotation invariance of `γ` (to run the slice bound along `w` rather than along a
+coordinate axis), the first absolute moment of `γ`, and a lower bound on the standard normal
+tail. -/
+
+/-- Every unit vector is the image of a coordinate vector under a linear isometry of
+`EuclideanSpace ℝ (Fin k)`: complete `u` to an orthonormal basis and transport the standard
+basis onto it. -/
+private lemma exists_isometry_apply_single (hk : 0 < k) {u : EuclideanSpace ℝ (Fin k)}
+    (hu : ‖u‖ = 1) :
+    ∃ (i : Fin k) (R : EuclideanSpace ℝ (Fin k) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin k)),
+      R (EuclideanSpace.single i (1 : ℝ)) = u := by
+  classical
+  obtain ⟨i⟩ : Nonempty (Fin k) := Fin.pos_iff_nonempty.mp hk
+  have hcard : Module.finrank ℝ (EuclideanSpace ℝ (Fin k)) = Fintype.card (Fin k) := by simp
+  have horth : Orthonormal ℝ (({i} : Set (Fin k)).restrict (fun _ : Fin k => u)) := by
+    constructor
+    · intro x; simpa using hu
+    · intro x y hxy
+      exact absurd (Subtype.ext (x.2.trans y.2.symm)) hxy
+  obtain ⟨b, hb⟩ := horth.exists_orthonormalBasis_extension_of_card_eq hcard
+  refine ⟨i, (EuclideanSpace.basisFun (Fin k) ℝ).equiv b (Equiv.refl _), ?_⟩
+  rw [← EuclideanSpace.basisFun_apply, OrthonormalBasis.equiv_apply_basis]
+  simpa using hb i rfl
+
+/-- **Directional slice anti-concentration.** The coordinate-slice bound
+`gaussian_mem_notMem_shift_le` holds for a shift along an *arbitrary* vector `w`, with the same
+dimension-free constant: the standard Gaussian is invariant under the linear isometry carrying a
+coordinate axis onto `w`, and that isometry carries a convex set to a convex set. -/
+lemma gaussian_mem_notMem_vadd_le (hk : 0 < k) (w : EuclideanSpace ℝ (Fin k))
+    {V : Set (EuclideanSpace ℝ (Fin k))} (hVm : MeasurableSet V) (hVc : Convex ℝ V) :
+    multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 {x | x ∈ V ∧ x + w ∉ V}
+      ≤ ENNReal.ofReal (2 * ‖w‖ / Real.sqrt (2 * π)) := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · have hempty : {x : EuclideanSpace ℝ (Fin k) | x ∈ V ∧ x + 0 ∉ V} = ∅ := by
+      ext x
+      simp only [add_zero, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_and, not_not]
+      exact fun h => h
+    rw [hempty]
+    simp
+  · have hnw : 0 < ‖w‖ := norm_pos_iff.mpr hw
+    have hunit : ‖(‖w‖⁻¹ • w : EuclideanSpace ℝ (Fin k))‖ = 1 := by
+      rw [norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.mpr hnw)]
+      field_simp
+    obtain ⟨i, R, hR⟩ := exists_isometry_apply_single hk hunit
+    have hRw : R (‖w‖ • EuclideanSpace.single i (1 : ℝ)) = w := by
+      rw [map_smul, hR, smul_smul, mul_inv_cancel₀ hnw.ne', one_smul]
+    have hRmeas : Measurable (R : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k)) :=
+      R.continuous.measurable
+    set V' : Set (EuclideanSpace ℝ (Fin k)) := R ⁻¹' V with hV'def
+    have hV'm : MeasurableSet V' := hRmeas hVm
+    have hV'c : Convex ℝ V' := by
+      intro x hx y hy s r hs hr hsr
+      simp only [hV'def, Set.mem_preimage] at hx hy ⊢
+      have hlin : R (s • x + r • y) = s • R x + r • R y := by
+        rw [map_add, map_smul, map_smul]
+      rw [hlin]
+      exact hVc hx hy hs hr hsr
+    have hpre : (R : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k)) ⁻¹'
+        {x | x ∈ V ∧ x + w ∉ V}
+        = {y | y ∈ V' ∧ y + ‖w‖ • EuclideanSpace.single i (1 : ℝ) ∉ V'} := by
+      ext y
+      have hadd : R (y + ‖w‖ • EuclideanSpace.single i (1 : ℝ)) = R y + w := by
+        rw [map_add, hRw]
+      simp only [Set.mem_preimage, Set.mem_setOf_eq, hV'def, hadd]
+    have hinvar : multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1
+        {x | x ∈ V ∧ x + w ∉ V}
+        = multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1
+            {y | y ∈ V' ∧ y + ‖w‖ • EuclideanSpace.single i (1 : ℝ) ∉ V'} := by
+      have hTm : MeasurableSet {x : EuclideanSpace ℝ (Fin k) | x ∈ V ∧ x + w ∉ V} :=
+        hVm.inter ((measurable_id.add_const w) hVm.compl)
+      have hmap : (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1).map R
+          = multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 := by
+        rw [multivariateGaussian_zero_one]
+        exact stdGaussian_map R
+      conv_lhs => rw [← hmap]
+      rw [Measure.map_apply hRmeas hTm, hpre]
+    rw [hinvar]
+    have h := gaussian_mem_notMem_shift_le hk i ‖w‖ hV'm hV'c
+    rwa [abs_of_pos hnw] at h
+
+/-- The one-dimensional marginal of `N(0, I_k)` along a unit vector. -/
+lemma gaussian_map_inner_unit (hk : 0 < k) {u : EuclideanSpace ℝ (Fin k)} (hu : ‖u‖ = 1) :
+    Measure.map (fun z => ⟪u, z⟫_ℝ) (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+      = gaussianReal 0 1 := by
+  obtain ⟨i, R, hR⟩ := exists_isometry_apply_single hk hu
+  have hfun : (fun z : EuclideanSpace ℝ (Fin k) => ⟪u, z⟫_ℝ)
+      = (fun y : EuclideanSpace ℝ (Fin k) => y i) ∘ (R.symm : _ → _) := by
+    funext z
+    have h : ⟪u, z⟫_ℝ = ⟪R (EuclideanSpace.single i (1 : ℝ)), R (R.symm z)⟫_ℝ := by
+      rw [hR, R.apply_symm_apply]
+    rw [h, R.inner_map_map]
+    simpa using EuclideanSpace.inner_single_left (𝕜 := ℝ) i (1 : ℝ) (R.symm z)
+  have hinv : (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1).map
+      (R.symm : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k))
+      = multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 := by
+    rw [multivariateGaussian_zero_one]
+    exact stdGaussian_map R.symm
+  have heval := measurePreserving_eval_multivariateGaussian
+    (μ := (0 : EuclideanSpace ℝ (Fin k))) (S := (1 : Matrix (Fin k) (Fin k) ℝ))
+    Matrix.PosSemidef.one (i := i)
+  rw [hfun, ← Measure.map_map (by fun_prop) R.symm.continuous.measurable, hinv]
+  simpa using heval.map_eq
+
+/-- The second moment of the standard one-dimensional Gaussian. -/
+private lemma integral_sq_gaussianReal_std : (∫ t : ℝ, t ^ 2 ∂(gaussianReal 0 1)) = 1 := by
+  have hmem : MemLp (id : ℝ → ℝ) 2 (gaussianReal 0 1) := memLp_id_gaussianReal 2
+  have h := variance_eq_sub (μ := gaussianReal 0 1) hmem
+  rw [variance_id_gaussianReal] at h
+  simp only [id_eq, Pi.pow_apply] at h
+  rw [integral_id_gaussianReal] at h
+  push_cast at h
+  nlinarith [h]
+
+/-- `∫ ‖z‖² dγ = k`. -/
+private lemma integral_normSq_gaussian (k : ℕ) :
+    (∫ z, ‖z‖ ^ 2 ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)) = (k : ℝ) := by
+  have hmp : ∀ i : Fin k, MeasurePreserving (fun z : EuclideanSpace ℝ (Fin k) => z i)
+      (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) (gaussianReal 0 1) := by
+    intro i
+    have h := measurePreserving_eval_multivariateGaussian
+      (μ := (0 : EuclideanSpace ℝ (Fin k))) (S := (1 : Matrix (Fin k) (Fin k) ℝ))
+      Matrix.PosSemidef.one (i := i)
+    simpa using h
+  have hint : ∀ i : Fin k, Integrable
+      (fun z : EuclideanSpace ℝ (Fin k) => z i ^ 2)
+      (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) := by
+    intro i
+    have hsq : Integrable (fun t : ℝ => t ^ 2) (gaussianReal 0 1) :=
+      (memLp_id_gaussianReal (μ := 0) (v := 1) 2).integrable_sq
+    rw [← (hmp i).map_eq] at hsq
+    exact (integrable_map_measure (by fun_prop) (by fun_prop)).1 hsq
+  have hcoord : ∀ i : Fin k,
+      (∫ z : EuclideanSpace ℝ (Fin k), z i ^ 2
+        ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)) = 1 := by
+    intro i
+    rw [← integral_sq_gaussianReal_std, ← (hmp i).map_eq,
+      integral_map (by fun_prop) (by fun_prop)]
+  have hnormsq : ∀ z : EuclideanSpace ℝ (Fin k), ‖z‖ ^ 2 = ∑ i, z i ^ 2 := by
+    intro z
+    rw [EuclideanSpace.norm_eq, Real.sq_sqrt (by positivity)]
+    exact Finset.sum_congr rfl fun i _ => by rw [Real.norm_eq_abs, sq_abs]
+  calc (∫ z, ‖z‖ ^ 2 ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))
+      = ∫ z, ∑ i, z i ^ 2 ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) :=
+        integral_congr_ae (ae_of_all _ fun z => hnormsq z)
+    _ = ∑ i, ∫ z, z i ^ 2 ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) :=
+        integral_finset_sum _ fun i _ => hint i
+    _ = (k : ℝ) := by rw [Finset.sum_congr rfl fun i _ => hcoord i]; simp
+
+private lemma integrable_norm_gaussian (k : ℕ) :
+    Integrable (fun z : EuclideanSpace ℝ (Fin k) => ‖z‖)
+      (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) :=
+  (IsGaussian.integrable_id (μ := multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)).norm
+
+/-- `E‖Z‖ ≤ √k`: Cauchy–Schwarz against `E‖Z‖² = k`. -/
+private lemma integral_norm_gaussian_le (k : ℕ) :
+    (∫ z, ‖z‖ ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)) ≤ Real.sqrt (k : ℝ) := by
+  have hmem : MemLp (fun z : EuclideanSpace ℝ (Fin k) => ‖z‖) 2
+      (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) :=
+    (IsGaussian.memLp_two_id
+      (μ := multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)).norm
+  have hvar := variance_eq_sub (μ := multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) hmem
+  have hnn : 0 ≤ variance (fun z : EuclideanSpace ℝ (Fin k) => ‖z‖)
+      (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) := variance_nonneg _ _
+  have hsq : (∫ z, ((fun z : EuclideanSpace ℝ (Fin k) => ‖z‖) ^ 2) z
+      ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)) = (k : ℝ) := by
+    simp only [Pi.pow_apply]
+    exact integral_normSq_gaussian k
+  rw [hsq] at hvar
+  have hle : (∫ z, ‖z‖ ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)) ^ 2
+      ≤ (k : ℝ) := by linarith
+  have h0 : 0 ≤ ∫ z, ‖z‖ ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) :=
+    integral_nonneg fun z => norm_nonneg z
+  exact (Real.le_sqrt h0 (by positivity)).2 hle
+
+/-- A crude but explicit lower bound on the standard normal tail `P(Z ≥ 1)`. -/
+private lemma gaussianReal_Ici_one_ge :
+    ENNReal.ofReal (Real.exp (-2) / Real.sqrt (2 * π))
+      ≤ gaussianReal 0 1 (Set.Ici (1 : ℝ)) := by
+  have hsub : Set.Icc (1 : ℝ) 2 ⊆ Set.Ici (1 : ℝ) := fun x hx => hx.1
+  refine le_trans ?_ (measure_mono hsub)
+  rw [gaussianReal_apply 0 one_ne_zero (Set.Icc (1 : ℝ) 2)]
+  have hlow : ∀ x ∈ Set.Icc (1 : ℝ) 2,
+      ENNReal.ofReal (Real.exp (-2) / Real.sqrt (2 * π)) ≤ gaussianPDF 0 1 x := by
+    intro x hx
+    refine ENNReal.ofReal_le_ofReal ?_
+    have hx2 : x ^ 2 ≤ 4 := by nlinarith [hx.1, hx.2]
+    have hexp : Real.exp (-2) ≤ Real.exp (-(x - 0) ^ 2 / (2 * 1)) := by
+      apply Real.exp_le_exp.2
+      nlinarith [hx2]
+    have hpos : (0 : ℝ) < Real.sqrt (2 * π * 1) := by
+      apply Real.sqrt_pos.2; positivity
+    have hval : gaussianPDFReal 0 1 x
+        = (Real.sqrt (2 * π * 1))⁻¹ * Real.exp (-(x - 0) ^ 2 / (2 * 1)) := rfl
+    rw [hval]
+    have hs : Real.sqrt (2 * π * 1) = Real.sqrt (2 * π) := by norm_num
+    rw [hs, div_eq_inv_mul]
+    exact mul_le_mul_of_nonneg_left hexp (by positivity)
+  calc ENNReal.ofReal (Real.exp (-2) / Real.sqrt (2 * π))
+      = ENNReal.ofReal (Real.exp (-2) / Real.sqrt (2 * π)) * volume (Set.Icc (1 : ℝ) 2) := by
+        rw [Real.volume_Icc]
+        norm_num
+    _ = ∫⁻ _ in Set.Icc (1 : ℝ) 2, ENNReal.ofReal (Real.exp (-2) / Real.sqrt (2 * π)) :=
+        (setLIntegral_const _ _).symm
+    _ ≤ ∫⁻ x in Set.Icc (1 : ℝ) 2, gaussianPDF 0 1 x :=
+        lintegral_mono_ae ((ae_restrict_iff' measurableSet_Icc).2 (ae_of_all _ hlow))
+
+/-- **The Gaussian-shift cover.** If every point of the measurable set `S ⊆ V` (`V` measurable
+convex) escapes `V` under every shift `w` with `⟪u, w⟫ ≥ 2ε` for some *unit* `u` depending on the
+point, then `γ S ≤ 4 e² √k ε`.
+
+This replaces the `2k`-fold coordinate cover of `gaussian_le_of_shift_cover` by a **single random
+shift** `w = 2ε Z`, `Z ∼ N(0, I_k)`, and costs only `√k` instead of `k^{3/2}`:
+
+* the *upper* estimate integrates the directional slice bound `2‖w‖/√(2π)` against the law of
+  `w`, which costs `E‖Z‖ ≤ √k` (`integral_norm_gaussian_le`);
+* the *lower* estimate is dimension-free: for each fixed `x` the escape event contains
+  `{z : ⟪u, z⟫ ≥ 1}`, whose probability is the standard normal tail `P(Z ≥ 1) ≥ e^{-2}/√(2π)`,
+  independent of `x` — and, crucially, no measurable selection of `u` is needed, because the
+  bound is applied inside the inner integral at fixed `x`. -/
+private lemma gaussian_le_of_gaussian_shift_cover (hk : 0 < k)
+    {V S : Set (EuclideanSpace ℝ (Fin k))} (hVm : MeasurableSet V) (hVc : Convex ℝ V)
+    (hSm : MeasurableSet S) (hSV : S ⊆ V) {ε : ℝ} (hε : 0 < ε)
+    (hcover : ∀ x ∈ S, ∃ u : EuclideanSpace ℝ (Fin k), ‖u‖ = 1 ∧
+      ∀ w : EuclideanSpace ℝ (Fin k), 2 * ε ≤ ⟪u, w⟫_ℝ → x + w ∉ V) :
+    multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 S
+      ≤ ENNReal.ofReal (4 * Real.exp 2 * Real.sqrt (k : ℝ) * ε) := by
+  have hsq : (0 : ℝ) < Real.sqrt (2 * π) := Real.sqrt_pos.2 (by positivity)
+  set γ := multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 with hγ
+  set A : Set (EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k)) :=
+    {p | p.1 ∈ S ∧ p.1 + (2 * ε) • p.2 ∉ V} with hA
+  have hAm : MeasurableSet A := by
+    have h1 : MeasurableSet
+        {p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) | p.1 ∈ S} :=
+      measurable_fst hSm
+    have h2 : MeasurableSet
+        {p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) |
+          p.1 + (2 * ε) • p.2 ∉ V} :=
+      (by fun_prop : Measurable fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        p.1 + (2 * ε) • p.2) hVm.compl
+    exact h1.inter h2
+  set c₀ : ℝ≥0∞ := ENNReal.ofReal (Real.exp (-2) / Real.sqrt (2 * π)) with hc₀
+  have hc₀ne : c₀ ≠ 0 := by
+    rw [hc₀, ne_eq, ENNReal.ofReal_eq_zero, not_le]
+    positivity
+  have hc₀top : c₀ ≠ ⊤ := ENNReal.ofReal_ne_top
+  -- lower estimate, via Fubini in the shift variable
+  have hlow : c₀ * γ S ≤ (γ.prod γ) A := by
+    rw [Measure.prod_apply hAm]
+    have hpt : ∀ x, S.indicator (fun _ => c₀) x ≤ γ (Prod.mk x ⁻¹' A) := by
+      intro x
+      by_cases hx : x ∈ S
+      · rw [Set.indicator_of_mem hx]
+        obtain ⟨u, hu, hesc⟩ := hcover x hx
+        have hsub : (fun z => ⟪u, z⟫_ℝ) ⁻¹' (Set.Ici (1 : ℝ)) ⊆ Prod.mk x ⁻¹' A := by
+          intro z hz
+          have hz1 : (1 : ℝ) ≤ ⟪u, z⟫_ℝ := hz
+          refine ⟨hx, hesc _ ?_⟩
+          rw [real_inner_smul_right]
+          nlinarith
+        calc c₀ ≤ gaussianReal 0 1 (Set.Ici (1 : ℝ)) := gaussianReal_Ici_one_ge
+          _ = γ ((fun z => ⟪u, z⟫_ℝ) ⁻¹' (Set.Ici (1 : ℝ))) := by
+              rw [hγ, ← Measure.map_apply (by fun_prop) measurableSet_Ici,
+                gaussian_map_inner_unit hk hu]
+          _ ≤ γ (Prod.mk x ⁻¹' A) := measure_mono hsub
+      · rw [Set.indicator_of_notMem hx]
+        exact zero_le _
+    calc c₀ * γ S = ∫⁻ x, S.indicator (fun _ => c₀) x ∂γ := by
+          rw [lintegral_indicator hSm, setLIntegral_const]
+      _ ≤ ∫⁻ x, γ (Prod.mk x ⁻¹' A) ∂γ := lintegral_mono hpt
+  -- upper estimate, via Fubini in the point variable
+  have hupp : (γ.prod γ) A
+      ≤ ENNReal.ofReal (2 * (2 * ε) * Real.sqrt (k : ℝ) / Real.sqrt (2 * π)) := by
+    rw [Measure.prod_apply_symm hAm]
+    have hpt : ∀ z, γ ((fun x => (x, z)) ⁻¹' A)
+        ≤ ENNReal.ofReal ((2 * (2 * ε) / Real.sqrt (2 * π)) * ‖z‖) := by
+      intro z
+      have hsub : (fun x => (x, z)) ⁻¹' A
+          ⊆ {x | x ∈ V ∧ x + (2 * ε) • z ∉ V} := fun x hx => ⟨hSV hx.1, hx.2⟩
+      calc γ ((fun x => (x, z)) ⁻¹' A)
+          ≤ γ {x | x ∈ V ∧ x + (2 * ε) • z ∉ V} := measure_mono hsub
+        _ ≤ ENNReal.ofReal (2 * ‖(2 * ε) • z‖ / Real.sqrt (2 * π)) :=
+            gaussian_mem_notMem_vadd_le hk _ hVm hVc
+        _ = ENNReal.ofReal ((2 * (2 * ε) / Real.sqrt (2 * π)) * ‖z‖) := by
+            rw [norm_smul, Real.norm_eq_abs, abs_of_pos (by linarith)]
+            congr 1
+            ring
+    have hInt : Integrable
+        (fun z : EuclideanSpace ℝ (Fin k) => (2 * (2 * ε) / Real.sqrt (2 * π)) * ‖z‖) γ :=
+      (integrable_norm_gaussian k).const_mul _
+    have hnn : 0 ≤ᵐ[γ]
+        fun z : EuclideanSpace ℝ (Fin k) => (2 * (2 * ε) / Real.sqrt (2 * π)) * ‖z‖ := by
+      filter_upwards with z
+      have : (0 : ℝ) ≤ 2 * (2 * ε) / Real.sqrt (2 * π) := by positivity
+      exact mul_nonneg this (norm_nonneg z)
+    have hival : (∫ z, (2 * (2 * ε) / Real.sqrt (2 * π)) * ‖z‖ ∂γ)
+        = (2 * (2 * ε) / Real.sqrt (2 * π)) * ∫ z, ‖z‖ ∂γ := integral_const_mul _ _
+    calc ∫⁻ z, γ ((fun x => (x, z)) ⁻¹' A) ∂γ
+        ≤ ∫⁻ z, ENNReal.ofReal ((2 * (2 * ε) / Real.sqrt (2 * π)) * ‖z‖) ∂γ :=
+          lintegral_mono hpt
+      _ = ENNReal.ofReal (∫ z, (2 * (2 * ε) / Real.sqrt (2 * π)) * ‖z‖ ∂γ) :=
+          (ofReal_integral_eq_lintegral_ofReal hInt hnn).symm
+      _ ≤ ENNReal.ofReal (2 * (2 * ε) * Real.sqrt (k : ℝ) / Real.sqrt (2 * π)) := by
+          refine ENNReal.ofReal_le_ofReal ?_
+          rw [hival]
+          have hb := integral_norm_gaussian_le k
+          have hc : (0 : ℝ) ≤ 2 * (2 * ε) / Real.sqrt (2 * π) := by positivity
+          calc (2 * (2 * ε) / Real.sqrt (2 * π)) * ∫ z, ‖z‖ ∂γ
+              ≤ (2 * (2 * ε) / Real.sqrt (2 * π)) * Real.sqrt (k : ℝ) :=
+                mul_le_mul_of_nonneg_left hb hc
+            _ = 2 * (2 * ε) * Real.sqrt (k : ℝ) / Real.sqrt (2 * π) := by ring
+  -- combine
+  have hkey : c₀ * γ S ≤ c₀ * ENNReal.ofReal (4 * Real.exp 2 * Real.sqrt (k : ℝ) * ε) := by
+    refine le_trans (le_trans hlow hupp) (le_of_eq ?_)
+    rw [hc₀, ← ENNReal.ofReal_mul (by positivity)]
+    congr 1
+    have he : Real.exp (-2) * Real.exp 2 = 1 := by
+      rw [← Real.exp_add]
+      norm_num
+    field_simp
+    nlinarith [he, hsq]
+  exact (ENNReal.mul_le_mul_iff_right hc₀ne hc₀top).1 hkey
+
 /-! ### The shell bounds -/
 
-/-- The constant of the Gaussian shell bound, `C_k = 8 k^{3/2}/√(2π)`. (Ball's sharp constant is
-`4 k^{1/4}`; only finiteness at fixed `k` is needed here.) -/
-noncomputable def gaussianShellConst (k : ℕ) : ℝ := 8 * k * Real.sqrt k / Real.sqrt (2 * π)
+/-- The constant of the Gaussian shell bound, `C_k = 4 e² √k` (wave 22; the wave-3 coordinate
+cover gave `8 k^{3/2}/√(2π)`, a factor `k` worse). Ball's sharp constant is `4 k^{1/4}`; the
+`√k` here is what the single-Gaussian-shift cover of `gaussian_le_of_gaussian_shift_cover`
+provably gives, and per the provable-constants rule that is what is recorded. -/
+noncomputable def gaussianShellConst (k : ℕ) : ℝ := 4 * Real.exp 2 * Real.sqrt k
 
 lemma gaussianShellConst_pos (hk : 0 < k) : 0 < gaussianShellConst k := by
   have hk' : (0 : ℝ) < k := by exact_mod_cast hk
   have : 0 < Real.sqrt k := Real.sqrt_pos.2 hk'
   unfold gaussianShellConst
   positivity
-
-/-- The covering constant at width `c = 2ε√k` is exactly `C_k ε`. -/
-private lemma shift_cover_const (_hk : 0 < k) (ε : ℝ) :
-    4 * (k : ℝ) * (2 * ε * Real.sqrt k) / Real.sqrt (2 * π) = gaussianShellConst k * ε := by
-  unfold gaussianShellConst
-  ring
 
 /-- **A convex set differs from its interior by a Gaussian-null set.** Every non-interior point of
 a convex `V` carries a supporting functional, so it leaves `V` after an arbitrarily small
@@ -464,43 +807,64 @@ theorem gaussian_diff_interior_eq_zero (hk : 0 < k)
   rw [hval, ENNReal.ofReal_coe_nnreal] at this
   simpa using this
 
-/-- **Outer shell bound.** For convex `B`, the `ε`-thickening adds at most `C_k ε` Gaussian mass.
+/-- **Outer shell bound.** For convex `B`, the `ε`-thickening adds at most `C_k ε` Gaussian
+mass, `C_k = 4 e² √k`.
 
-A point of `Bᵋ \ B` is not in `interior B`, so a supporting functional escapes it by `2ε` along a
-coordinate axis (`c = 2ε√k`), which leaves `Bᵋ` altogether; `Bᵋ` is convex and open, so the slice
-bound applies to it. -/
+A point of `Bᵋ \ interior B` carries a unit supporting functional `u` of `B`, and any shift `w`
+with `⟪u, w⟫ ≥ 2ε` moves it out of `Bᵋ` altogether (it would otherwise be within `ε` of some
+`b ∈ B`, forcing `2ε ≤ ⟪u, x + w − b⟫ ≤ ‖x + w − b‖ < ε`). `Bᵋ` is convex and open, so
+`gaussian_le_of_gaussian_shift_cover` applies to it. -/
 theorem gaussian_thickening_le (hk : 0 < k) {B : Set (EuclideanSpace ℝ (Fin k))}
     (hBc : Convex ℝ B) {ε : ℝ} (hε : 0 < ε) :
     multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 (Metric.thickening ε B)
       ≤ multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 B
         + ENNReal.ofReal (gaussianShellConst k * ε) := by
-  have hkr : (0 : ℝ) < Real.sqrt k := Real.sqrt_pos.2 (by exact_mod_cast hk)
+  rw [gaussianShellConst]
   set W := Metric.thickening ε B with hW
   have hWopen : IsOpen W := Metric.isOpen_thickening
   have hWconv : Convex ℝ W := hBc.thickening ε
-  set c : ℝ := 2 * ε * Real.sqrt k with hc
-  have hcpos : 0 < c := by rw [hc]; positivity
-  have hshell : multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 (W \ B)
-      ≤ ENNReal.ofReal (gaussianShellConst k * ε) := by
-    rw [← shift_cover_const hk ε, ← hc]
-    refine gaussian_le_of_shift_cover hk hWopen.measurableSet hWconv hcpos.le fun x hx => ?_
-    have hxint : x ∉ interior B := fun h => hx.2 (interior_subset h)
-    obtain ⟨u, hu0, hu⟩ := exists_inner_le_zero_of_notMem_interior hk hBc hxint
-    obtain ⟨i, d, hd, hdist⟩ := exists_dist_ge_of_inner_le_zero hk hu0 hu hcpos.le
-    refine ⟨i, d, hd, hx.1, fun hmem => ?_⟩
-    obtain ⟨z, hzB, hzlt⟩ := Metric.mem_thickening_iff.1 hmem
-    have hge := hdist z (subset_closure hzB)
-    have hck : c / Real.sqrt k = 2 * ε := by
-      rw [hc, mul_div_assoc, div_self hkr.ne', mul_one]
+  have hSm : MeasurableSet (W \ interior B) :=
+    hWopen.measurableSet.diff isOpen_interior.measurableSet
+  have hshell : multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 (W \ interior B)
+      ≤ ENNReal.ofReal (4 * Real.exp 2 * Real.sqrt (k : ℝ) * ε) := by
+    refine gaussian_le_of_gaussian_shift_cover hk hWopen.measurableSet hWconv hSm
+      (fun x hx => hx.1) hε ?_
+    intro x hx
+    obtain ⟨u₀, hu₀, hu⟩ := exists_inner_le_zero_of_notMem_interior hk hBc hx.2
+    have hn : 0 < ‖u₀‖ := norm_pos_iff.2 hu₀
+    have hunit : ‖(‖u₀‖⁻¹ • u₀ : EuclideanSpace ℝ (Fin k))‖ = 1 := by
+      rw [norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hn)]
+      field_simp
+    refine ⟨‖u₀‖⁻¹ • u₀, hunit, ?_⟩
+    intro w hw hmem
+    obtain ⟨b, hbB, hlt⟩ := Metric.mem_thickening_iff.1 hmem
+    have h1 : ⟪(‖u₀‖⁻¹ • u₀ : EuclideanSpace ℝ (Fin k)), b - x⟫_ℝ ≤ 0 := by
+      rw [real_inner_smul_left]
+      have h := hu b (subset_closure hbB)
+      have hinv : 0 < ‖u₀‖⁻¹ := inv_pos.2 hn
+      nlinarith
+    have hsplit : x + w - b = w - (b - x) := by abel
+    have h3 : ⟪(‖u₀‖⁻¹ • u₀ : EuclideanSpace ℝ (Fin k)), x + w - b⟫_ℝ
+        = ⟪(‖u₀‖⁻¹ • u₀ : EuclideanSpace ℝ (Fin k)), w⟫_ℝ
+          - ⟪(‖u₀‖⁻¹ • u₀ : EuclideanSpace ℝ (Fin k)), b - x⟫_ℝ := by
+      rw [hsplit, inner_sub_right]
+    have h2 : ⟪(‖u₀‖⁻¹ • u₀ : EuclideanSpace ℝ (Fin k)), x + w - b⟫_ℝ ≤ ‖x + w - b‖ := by
+      calc ⟪(‖u₀‖⁻¹ • u₀ : EuclideanSpace ℝ (Fin k)), x + w - b⟫_ℝ
+          ≤ ‖(‖u₀‖⁻¹ • u₀ : EuclideanSpace ℝ (Fin k))‖ * ‖x + w - b‖ := real_inner_le_norm _ _
+        _ = ‖x + w - b‖ := by rw [hunit, one_mul]
+    have hdist : ‖x + w - b‖ < ε := by
+      rw [← dist_eq_norm]
+      exact hlt
     linarith
   calc multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 W
-      ≤ multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 (B ∪ (W \ B)) := by
+      ≤ multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 (B ∪ (W \ interior B)) := by
         refine measure_mono fun x hx => ?_
         by_cases hxB : x ∈ B
         · exact Or.inl hxB
-        · exact Or.inr ⟨hx, hxB⟩
+        · exact Or.inr ⟨hx, fun h => hxB (interior_subset h)⟩
     _ ≤ multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 B
-        + multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 (W \ B) := measure_union_le _ _
+        + multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 (W \ interior B) :=
+        measure_union_le _ _
     _ ≤ _ := add_le_add le_rfl hshell
 
 /-! ### The erosion (inner parallel body) -/
@@ -564,37 +928,57 @@ lemma thickening_erosion_subset (ε : ℝ) (B : Set (EuclideanSpace ℝ (Fin k))
   exact interior_subset (ha (Metric.mem_closedBall.2 hlt.le))
 
 /-- **Inner shell bound.** For convex measurable `B`, eroding by `ε` costs at most `C_k ε` of
-Gaussian mass. A point of `B` that is not in the erosion has a point `z` within `ε` that is not
-interior to `B`; the functional supporting `B` at `z` escapes `2ε` along a coordinate axis, hence
-still escapes `ε` from `x`. -/
+Gaussian mass. A point `x` of `B` outside the erosion has a point `z` within `ε` that is not
+interior to `B`; the unit functional `u` supporting `B` at `z` satisfies
+`⟪u, (x + w) − z⟫ ≥ ⟪u, w⟫ − ‖x − z‖ ≥ 2ε − ε > 0` for every shift `w` with `⟪u, w⟫ ≥ 2ε`, so
+`x + w ∉ B`. -/
 theorem gaussian_le_erosion_add (hk : 0 < k) {B : Set (EuclideanSpace ℝ (Fin k))}
     (hBm : MeasurableSet B) (hBc : Convex ℝ B) {ε : ℝ} (hε : 0 < ε) :
     multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 B
       ≤ multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 (erosion ε B)
         + ENNReal.ofReal (gaussianShellConst k * ε) := by
-  have hkr : (0 : ℝ) < Real.sqrt k := Real.sqrt_pos.2 (by exact_mod_cast hk)
-  set c : ℝ := 2 * ε * Real.sqrt k with hc
-  have hcpos : 0 < c := by rw [hc]; positivity
+  rw [gaussianShellConst]
+  have hSm : MeasurableSet (B \ erosion ε B) :=
+    hBm.diff (isOpen_erosion ε B).measurableSet
   have hshell : multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 (B \ erosion ε B)
-      ≤ ENNReal.ofReal (gaussianShellConst k * ε) := by
-    rw [← shift_cover_const hk ε, ← hc]
-    refine gaussian_le_of_shift_cover hk hBm hBc hcpos.le fun x hx => ?_
+      ≤ ENNReal.ofReal (4 * Real.exp 2 * Real.sqrt (k : ℝ) * ε) := by
+    refine gaussian_le_of_gaussian_shift_cover hk hBm hBc hSm (fun x hx => hx.1) hε ?_
+    intro x hx
     obtain ⟨z, hzball, hzint⟩ :=
       Set.not_subset.1 (hx.2 : ¬ (Metric.closedBall x ε ⊆ interior B))
-    obtain ⟨u, hu0, hu⟩ := exists_inner_le_zero_of_notMem_interior hk hBc hzint
-    obtain ⟨i, d, hd, hdist⟩ := exists_dist_ge_of_inner_le_zero hk hu0 hu hcpos.le
-    refine ⟨i, d, hd, hx.1, fun hmem => ?_⟩
-    have hge := hdist _ (subset_closure hmem)
-    -- the shifted point `x + d•eᵢ` is within `ε` of `z + d•eᵢ`
-    have htri : dist (z + d • EuclideanSpace.single i (1 : ℝ))
-        (x + d • EuclideanSpace.single i (1 : ℝ)) ≤ ε := by
-      simp only [dist_eq_norm]
-      have : z + d • EuclideanSpace.single i (1 : ℝ) - (x + d • EuclideanSpace.single i (1 : ℝ))
-          = z - x := by abel
-      rw [this]
-      simpa [dist_eq_norm] using Metric.mem_closedBall.1 hzball
-    have hck : c / Real.sqrt k = 2 * ε := by
-      rw [hc, mul_div_assoc, div_self hkr.ne', mul_one]
+    obtain ⟨u₀, hu₀, hu⟩ := exists_inner_le_zero_of_notMem_interior hk hBc hzint
+    have hn : 0 < ‖u₀‖ := norm_pos_iff.2 hu₀
+    have hunit : ‖(‖u₀‖⁻¹ • u₀ : EuclideanSpace ℝ (Fin k))‖ = 1 := by
+      rw [norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hn)]
+      field_simp
+    refine ⟨‖u₀‖⁻¹ • u₀, hunit, ?_⟩
+    intro w hw hmem
+    have h1 : ⟪(‖u₀‖⁻¹ • u₀ : EuclideanSpace ℝ (Fin k)), (x + w) - z⟫_ℝ ≤ 0 := by
+      rw [real_inner_smul_left]
+      have h := hu (x + w) (subset_closure hmem)
+      have hinv : 0 < ‖u₀‖⁻¹ := inv_pos.2 hn
+      nlinarith
+    have hsplit : (x + w) - z = w + (x - z) := by abel
+    have h3 : ⟪(‖u₀‖⁻¹ • u₀ : EuclideanSpace ℝ (Fin k)), (x + w) - z⟫_ℝ
+        = ⟪(‖u₀‖⁻¹ • u₀ : EuclideanSpace ℝ (Fin k)), w⟫_ℝ
+          + ⟪(‖u₀‖⁻¹ • u₀ : EuclideanSpace ℝ (Fin k)), x - z⟫_ℝ := by
+      rw [hsplit, inner_add_right]
+    have h2 : -‖x - z‖ ≤ ⟪(‖u₀‖⁻¹ • u₀ : EuclideanSpace ℝ (Fin k)), x - z⟫_ℝ := by
+      have hcs : ⟪(‖u₀‖⁻¹ • u₀ : EuclideanSpace ℝ (Fin k)), z - x⟫_ℝ ≤ ‖z - x‖ := by
+        have h := real_inner_le_norm (‖u₀‖⁻¹ • u₀ : EuclideanSpace ℝ (Fin k)) (z - x)
+        rwa [hunit, one_mul] at h
+      rw [norm_sub_rev] at hcs
+      have hneg : ⟪(‖u₀‖⁻¹ • u₀ : EuclideanSpace ℝ (Fin k)), x - z⟫_ℝ
+          = -⟪(‖u₀‖⁻¹ • u₀ : EuclideanSpace ℝ (Fin k)), z - x⟫_ℝ := by
+        rw [← inner_neg_right]
+        congr 1
+        abel
+      rw [hneg]
+      linarith
+    have hdz : ‖x - z‖ ≤ ε := by
+      have h := Metric.mem_closedBall.1 hzball
+      rw [dist_eq_norm] at h
+      rwa [norm_sub_rev] at h
     linarith
   calc multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 B
       ≤ multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1
