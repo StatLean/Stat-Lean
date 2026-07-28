@@ -6845,6 +6845,14 @@ This is `exists_convexDiscrepancy_recursion` fed to `le_of_selfImproving_inducti
 amended, see `exists_localised_swap_bound`). The best *proved* convex bound remains
 `berryEsseen_convex_improved` at `(β/√n)^{1/2}`.
 
+**Wave 29 (expected amendment).** The residue's weight hypothesis is amended (two-sided shell,
+every width; free here, supplied by `hybridLaw_wideShell_le`) and its docstring re-derives what
+the route produces: `A δ (ε⁻¹(W + C_k ε) + C_k(1 + log(1/ε)))`. When that lands, the conclusion
+*here* will have to carry one logarithm, `C_k (β/√n)(1 + log(√n/β))` — the log is intrinsic to
+using a single mollification width `ε` for every step of the telescope, whose own widths
+`σⱼ = √(j/n)` sweep from `ε` to `1`. The log-free form below is not retracted (it is true, being
+Bentkus's theorem); it is simply not what this route will prove.
+
 Note the `k`-power: `gaussianShellConst k = 4 e² √k`, so this route gives `C ∼ k^{1/2}`, not
 Bentkus's `400 k^{1/4}`. Wave 22 removed the factor `k` that the coordinate-slice cover of
 `gaussian_thickening_le` used to contribute (see `gaussian_le_of_gaussian_shift_cover`); the
