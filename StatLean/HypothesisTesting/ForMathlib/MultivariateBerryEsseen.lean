@@ -206,17 +206,48 @@ file. Three shapes, all proved:
 * `Δ ≤ A δ ε⁻¹ √(C ε + 2Δ) + C ε` — the shape the `L²` weighting of (1) actually delivers —
   ⟹ `Δ³ ≤ 216 (C A δ)²`, i.e. `O(n^{-1/3})`.
 
-**What is still missing**, and why the headline is not amended: the *production* of the
-hypothesis `hrec`. It requires rerunning `abs_integral_smooth_sub_gaussian_improved` with each
-step estimated by the localised weighted bound instead of the uniform one, and controlling the
-shell probability *of the hybrid law* by the inductive hypothesis. Two structural obstacles are
-recorded in the `SelfImproving` docstring: the `ε`-shell of a convex set is a *difference* of
-two convex sets, so the induction has to run on that class (this is the source of the `2Δ`); and
-the induction is over the whole hybrid family, not over `μₙ` alone. Neither is arithmetic, and
-neither was attempted. The honest summary is therefore unchanged at the level of headlines —
-`berryEsseen_convex_improved` at `(β/√n)^{1/2}` remains the best *proved* convex bound — but the
-gap to Bentkus is now localised in a single, precisely stated probabilistic step rather than in
-"an independent project".
+## Wave-20 amendment: the recursion is produced; the residue is two named bricks
+
+Wave 19 left the *production* of `hrec` open, with two structural obstacles. Both are now
+resolved, and the recursion is assembled: `berryEsseen_convex_sharp` states the sharp rate
+
+`|μₙ(B) − γ(B)| ≤ 72 A C_k · β/√n` for measurable convex `B`,
+
+**linear in `δ = β/√n`**, proved from `exists_convexDiscrepancy_recursion` fed to
+`le_of_selfImproving_induction`. It is not axiom-clean: it inherits exactly two named,
+precisely stated bricks, `hybridLaw_shell_le` and `exists_localised_swap_bound`. Everything
+between the bricks and the headline is proved.
+
+*Obstacle 1 (the class) is overturned rather than solved.* The `ε`-shell of a convex set is
+`Bᵋ \ interior B`, a difference of two convex sets — but the induction does **not** have to be
+enlarged to that class. `measureReal_diff_le_of_convexDiscrepancy` observes that
+`μ(B₁ \ B₂) = μ(B₁) − μ(B₂)` for `B₂ ⊆ B₁`, so two applications of the *convex* bound suffice;
+the difference structure survives only as the factor `2` in `C ε + 2Δ`. The class the induction
+runs on is `convexDiscrepancy`, the supremum over measurable convex sets, and it is closed under
+everything the argument does to it — including affine maps
+(`measureReal_shell_preimage_aff_le`).
+
+*Obstacle 2 (the family) is solved by the range `n/2 ≤ m ≤ n`.* `hybridLaw n j ν` makes the
+telescope's hybrid `n^{-1/2} ∑_{i ≥ j} Yᵢ + (j/n)^{1/2} Z` an explicit measure. For `2j ≥ n` its
+own Gaussian component has width `≥ 1/√2` and bounds the shell mass outright, with no induction
+(`gaussian_measureReal_shell_preimage_aff_le`, proved). For `2j ≤ n` the non-Gaussian part is a
+normalised sum of `m = n − j ≥ n/2` summands, so only the discrepancies at sizes
+`n/2 ≤ m ≤ n` are needed — including `m = n` itself, since the `j = 0` hybrid *is* `μₙ`. That is
+exactly the neighbour range of `le_of_selfImproving_induction`, which closes at `K = 18 A C`
+with no base case.
+
+**The two remaining bricks.** `hybridLaw_shell_le` — the shell mass of every hybrid is
+`≤ 2 C_k ε + 2Y`; its geometry is proved (affine transport of `Metric.thickening` and
+`interior`), its debt is the Fubini factorisation of `hybridLaw` as `ρ ∗ γ_σ` plus the Gaussian
+scaling identity. `exists_localised_swap_bound` — `abs_integral_smooth_sub_gaussian_improved`
+rerun with the wave-19 weighted Cameron–Martin remainder in place of the uniform one, so that
+each step is weighted by the hybrid's shell mass. The best *proved* convex bound remains
+`berryEsseen_convex_improved` at `(β/√n)^{1/2}`.
+
+**Constant deviation** (provable-constants rule): this route gives `C ∼ k^{3/2}`, through
+`gaussianShellConst k = 8 k^{3/2}/√(2π)`, not Bentkus's `400 k^{1/4}`. The `k`-power is an
+artefact of the crude coordinate-slice proof of `gaussian_thickening_le`; nothing in the
+recursion depends on it.
 
 **Reference.** V. Bentkus, "On the dependence of the Berry–Esseen bound on dimension,"
 *J. Statist. Plann. Inference* **113** (2003), 385–402. E. L. Lehmann and J. P. Romano,
@@ -5249,5 +5280,629 @@ theorem cube_le_of_selfImproving_smoothed_sqrt {A C δ Δ : ℝ} (hΔ : 0 ≤ Δ
   exact hcubed
 
 end SelfImproving
+
+/-! ### Wave-20: the recursion run as an induction over the hybrid family
+
+The wave-19 fixed points solve the recursion at a *single* scale: they take the inequality
+`Δ ≤ A δ ε⁻¹ (C ε + 2Δ) + C ε` as given, with the *same* `Δ` on both sides. That is not the shape
+the telescope produces. The `2Δ` on the right is the shell mass of a **hybrid** law
+`c ∑_{i ≥ j} Yᵢ + sⱼ Z`, whose non-Gaussian part is a normalised sum of `m = n − j` summands, so
+what the right-hand side really sees is the discrepancy `Δ_m` at the *smaller* sample sizes. The
+present section supplies the two missing pieces of bookkeeping.
+
+* `le_of_selfImproving_induction` — the recursion as a **strong induction over `n`**. The
+  hypothesis is allowed to invoke an arbitrary bound `Y` on `Δ_m` for the neighbours
+  `n/2 ≤ m ≤ n` only; this is the range that the telescope actually needs, because for
+  `j ≤ n/2` one has `m = n − j ≥ n/2`, while for `j ≥ n/2` the hybrid carries a Gaussian
+  component of width `sⱼ ≥ 1/√2` and its shell mass is bounded outright by the Gaussian
+  anti-concentration estimate `gaussian_thickening_le`, with no induction at all. Since
+  `√m ≥ √n/2` on that range, the inductive bound `K β/√m` self-propagates with `Y = 2 K δ`,
+  and the cut `ε = 8 A δ` closes the loop at `K = 18 A C` — the **sharp `β/√n` rate**, with no
+  base case needed (for `n = 1` the neighbour range is empty).
+
+* `convexDiscrepancy` and `measureReal_shell_le_of_convexDiscrepancy` — the class the induction
+  runs on, and the *derivation* of the shape `C ε + 2Δ`. The `ε`-shell of a convex `B` is
+  `Bᵋ \ interior B`, a **difference of two convex sets**; that is why the factor is `2Δ` and not
+  `Δ`. But — and this corrects the wave-19 reading of the obstacle — the induction does **not**
+  have to be enlarged to the class of differences of convex sets: a difference `B₁ \ B₂` with
+  `B₂ ⊆ B₁` has `μ(B₁ \ B₂) = μ(B₁) − μ(B₂)`, so two applications of the *convex* bound suffice
+  (`measureReal_diff_le_of_convexDiscrepancy`). The class of measurable convex sets is closed
+  under the operations the induction performs.
+-/
+
+section SelfImprovingInduction
+
+/-- **The self-improving recursion, run as a strong induction over the sample size.**
+
+If `D : ℕ → ℝ` satisfies, for every `n ≥ 1`, every cut `ε > 0` and every bound `Y` valid on the
+neighbour range `n/2 ≤ m < n`,
+
+`D n ≤ A (b/√n) ε⁻¹ (C ε + 2 Y) + C ε`,
+
+then `D n ≤ 18 A C (b/√n)` for all `n ≥ 1`.
+
+This is the shape the localised hybrid telescope produces (see the section docstring): the `2Y`
+is the shell mass of the hybrid laws, whose non-Gaussian part is a normalised sum of
+`m = n − j ≥ n/2` summands. The proof is a strong induction with `Y = 2 K δ` (legitimate because
+`√m ≥ √n/2` on the neighbour range) and the cut `ε = 8 A δ`, at which the recursion reads
+`D n ≤ 9 A C δ + Y/4`. The neighbour range includes `m = n` — the hybrid at `j = 0` is `μₙ`
+itself — so `Y = max (2 K δ) (D n)`, and the two cases close at `K = 18 A C` and `12 A C`
+respectively. No base case is needed. -/
+theorem le_of_selfImproving_induction {A C b : ℝ} {D : ℕ → ℝ}
+    (hA : 0 < A) (hC : 0 < C) (hb : 0 < b)
+    (hrec : ∀ n : ℕ, 0 < n → ∀ ε : ℝ, 0 < ε → ∀ Y : ℝ,
+      (∀ m : ℕ, n ≤ 2 * m → m ≤ n → D m ≤ Y) →
+      D n ≤ A * (b / Real.sqrt n) * ε⁻¹ * (C * ε + 2 * Y) + C * ε) :
+    ∀ n : ℕ, 0 < n → D n ≤ 18 * (A * C) * (b / Real.sqrt n) := by
+  intro n
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    intro hn
+    set K : ℝ := 18 * (A * C) with hKdef
+    have hKpos : 0 < K := by rw [hKdef]; positivity
+    have hnr : (0 : ℝ) < n := by exact_mod_cast hn
+    have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
+    set δ : ℝ := b / Real.sqrt (n : ℝ) with hδdef
+    have hδpos : 0 < δ := by rw [hδdef]; positivity
+    set Y : ℝ := max (2 * K * δ) (D n) with hYdef
+    have hY : ∀ m : ℕ, n ≤ 2 * m → m ≤ n → D m ≤ Y := by
+      intro m hm2 hmn
+      rcases eq_or_lt_of_le hmn with rfl | hlt
+      · exact le_max_right _ _
+      have hm : 0 < m := by omega
+      have hmr : (0 : ℝ) < m := by exact_mod_cast hm
+      have hsm : 0 < Real.sqrt (m : ℝ) := Real.sqrt_pos.mpr hmr
+      have hstep := ih m hlt hm
+      have hcast : (n : ℝ) ≤ 2 * (m : ℝ) := by exact_mod_cast hm2
+      have hsqrt : Real.sqrt (n : ℝ) ≤ 2 * Real.sqrt (m : ℝ) := by
+        have h1 : Real.sqrt (n : ℝ) ≤ Real.sqrt (4 * (m : ℝ)) :=
+          Real.sqrt_le_sqrt (by linarith)
+        have h2 : Real.sqrt (4 * (m : ℝ)) = 2 * Real.sqrt (m : ℝ) := by
+          rw [show (4 : ℝ) * (m : ℝ) = 2 ^ 2 * (m : ℝ) by ring,
+            Real.sqrt_mul (by positivity), Real.sqrt_sq (by norm_num)]
+        rwa [h2] at h1
+      have hqnn : 0 ≤ b / Real.sqrt (n : ℝ) := by positivity
+      have hq : b / Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = b := by field_simp
+      have hratio : b / Real.sqrt (m : ℝ) ≤ 2 * δ := by
+        rw [hδdef, div_le_iff₀ hsm]
+        nlinarith [mul_le_mul_of_nonneg_left hsqrt hqnn, hq]
+      refine le_trans (le_trans hstep ?_) (le_max_left _ _)
+      calc K * (b / Real.sqrt (m : ℝ)) ≤ K * (2 * δ) := by nlinarith [hKpos.le]
+        _ = 2 * K * δ := by ring
+    have hεpos : 0 < 8 * A * δ := by positivity
+    have h := hrec n hn (8 * A * δ) hεpos Y hY
+    have hinv : A * δ * (8 * A * δ)⁻¹ = 1 / 8 := by
+      rw [mul_inv, ← mul_assoc]; field_simp
+    rw [← hδdef] at h
+    rw [show A * δ * (8 * A * δ)⁻¹ * (C * (8 * A * δ) + 2 * Y)
+        = (A * δ * (8 * A * δ)⁻¹) * (C * (8 * A * δ) + 2 * Y) from rfl, hinv] at h
+    have hexp : (1 : ℝ) / 8 * (C * (8 * A * δ) + 2 * Y) + C * (8 * A * δ)
+        = 9 * (A * C) * δ + Y / 4 := by ring
+    rw [hexp] at h
+    rcases le_total (D n) (2 * K * δ) with hcase | hcase
+    · have hmax : Y = 2 * K * δ := by rw [hYdef]; exact max_eq_left hcase
+      rw [hmax] at h
+      rw [hKdef] at h ⊢
+      linarith
+    · have hmax : Y = D n := by rw [hYdef]; exact max_eq_right hcase
+      rw [hmax] at h
+      rw [hKdef]
+      nlinarith [hA.le, hC.le, hδpos.le]
+
+end SelfImprovingInduction
+
+section ConvexDiscrepancy
+
+variable {k : ℕ}
+
+/-- The set of discrepancies over measurable convex sets — the class the self-improving
+induction runs on. -/
+def convexDiscrepancySet (μ ν : Measure (EuclideanSpace ℝ (Fin k))) : Set ℝ :=
+  {d : ℝ | ∃ B : Set (EuclideanSpace ℝ (Fin k)),
+      MeasurableSet B ∧ Convex ℝ B ∧ d = |(μ B).toReal - (ν B).toReal|}
+
+/-- `Δ(μ, ν)`, the supremum of `|μ B − ν B|` over measurable convex `B`. -/
+noncomputable def convexDiscrepancy (μ ν : Measure (EuclideanSpace ℝ (Fin k))) : ℝ :=
+  sSup (convexDiscrepancySet μ ν)
+
+variable {μ ν : Measure (EuclideanSpace ℝ (Fin k))}
+
+private lemma measureReal_le_one' (μ : Measure (EuclideanSpace ℝ (Fin k)))
+    [IsProbabilityMeasure μ] (s : Set (EuclideanSpace ℝ (Fin k))) : (μ s).toReal ≤ 1 := by
+  have h := measure_mono (μ := μ) (Set.subset_univ s)
+  rw [measure_univ] at h
+  simpa using ENNReal.toReal_mono (by simp) h
+
+lemma convexDiscrepancySet_nonempty (μ ν : Measure (EuclideanSpace ℝ (Fin k))) :
+    (convexDiscrepancySet μ ν).Nonempty :=
+  ⟨_, ∅, MeasurableSet.empty, convex_empty, rfl⟩
+
+lemma convexDiscrepancySet_bddAbove [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    BddAbove (convexDiscrepancySet μ ν) := by
+  refine ⟨1, ?_⟩
+  rintro d ⟨B, -, -, rfl⟩
+  have h1 := measureReal_le_one' μ B
+  have h2 := measureReal_le_one' ν B
+  have h3 : (0 : ℝ) ≤ (μ B).toReal := ENNReal.toReal_nonneg
+  have h4 : (0 : ℝ) ≤ (ν B).toReal := ENNReal.toReal_nonneg
+  rw [abs_le]
+  constructor <;> linarith
+
+/-- Every measurable convex set is controlled by `Δ`. -/
+lemma le_convexDiscrepancy [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBm : MeasurableSet B) (hBc : Convex ℝ B) :
+    |(μ B).toReal - (ν B).toReal| ≤ convexDiscrepancy μ ν :=
+  le_csSup convexDiscrepancySet_bddAbove ⟨B, hBm, hBc, rfl⟩
+
+lemma convexDiscrepancy_nonneg [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    0 ≤ convexDiscrepancy μ ν := by
+  have h := le_convexDiscrepancy (μ := μ) (ν := ν) MeasurableSet.empty convex_empty
+  simpa using le_trans (abs_nonneg _) h
+
+lemma convexDiscrepancy_le_one [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    convexDiscrepancy μ ν ≤ 1 := by
+  refine csSup_le (convexDiscrepancySet_nonempty μ ν) ?_
+  rintro d ⟨B, -, -, rfl⟩
+  have h1 := measureReal_le_one' μ B
+  have h2 := measureReal_le_one' ν B
+  have h3 : (0 : ℝ) ≤ (μ B).toReal := ENNReal.toReal_nonneg
+  have h4 : (0 : ℝ) ≤ (ν B).toReal := ENNReal.toReal_nonneg
+  rw [abs_le]
+  constructor <;> linarith
+
+private lemma measureReal_sdiff (μ : Measure (EuclideanSpace ℝ (Fin k))) [IsFiniteMeasure μ]
+    {s t : Set (EuclideanSpace ℝ (Fin k))} (hts : t ⊆ s) (htm : MeasurableSet t) :
+    (μ (s \ t)).toReal = (μ s).toReal - (μ t).toReal := by
+  rw [measure_diff hts htm.nullMeasurableSet (measure_ne_top _ _),
+    ENNReal.toReal_sub_of_le (measure_mono hts) (measure_ne_top _ _)]
+
+/-- **The `2Δ` brick.** The discrepancy on a *difference of two convex sets* is at most `2Δ`:
+this is exactly where the factor `2` of Bentkus's recursion `C ε + 2Δ` comes from, and it is why
+the induction never has to leave the class of convex sets. -/
+theorem measureReal_diff_le_of_convexDiscrepancy [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    {B₁ B₂ : Set (EuclideanSpace ℝ (Fin k))} (h₁m : MeasurableSet B₁) (h₁c : Convex ℝ B₁)
+    (h₂m : MeasurableSet B₂) (h₂c : Convex ℝ B₂) (hsub : B₂ ⊆ B₁) :
+    (μ (B₁ \ B₂)).toReal ≤ (ν (B₁ \ B₂)).toReal + 2 * convexDiscrepancy μ ν := by
+  have e1 := measureReal_sdiff μ hsub h₂m
+  have e2 := measureReal_sdiff ν hsub h₂m
+  have d1 := abs_le.1 (le_convexDiscrepancy (μ := μ) (ν := ν) h₁m h₁c)
+  have d2 := abs_le.1 (le_convexDiscrepancy (μ := μ) (ν := ν) h₂m h₂c)
+  rw [e1, e2]
+  linarith [d1.1, d1.2, d2.1, d2.2]
+
+/-- The Gaussian mass of the outer shell `Bᵋ \ interior B` of a convex set is at most `C_k ε`. -/
+theorem gaussian_measureReal_shell_le (hk : 0 < k)
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBm : MeasurableSet B) (hBc : Convex ℝ B)
+    {ε : ℝ} (hε : 0 < ε) :
+    ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+        (Metric.thickening ε B \ interior B)).toReal ≤ gaussianShellConst k * ε := by
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
+  haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
+  have hintB : interior B ⊆ Metric.thickening ε B :=
+    interior_subset.trans (Metric.self_subset_thickening hε B)
+  have hzero : γ (B \ interior B) = 0 := gaussian_diff_interior_eq_zero hk hBm hBc
+  have hint : γ (interior B) = γ B := by
+    refine le_antisymm (measure_mono interior_subset) ?_
+    calc γ B ≤ γ (interior B ∪ (B \ interior B)) := by
+          refine measure_mono fun x hx => ?_
+          by_cases h : x ∈ interior B
+          · exact Or.inl h
+          · exact Or.inr ⟨hx, h⟩
+      _ ≤ γ (interior B) + γ (B \ interior B) := measure_union_le _ _
+      _ = γ (interior B) := by rw [hzero, add_zero]
+  have hdiff : (γ (Metric.thickening ε B \ interior B)).toReal
+      = (γ (Metric.thickening ε B)).toReal - (γ B).toReal := by
+    rw [measureReal_sdiff γ hintB isOpen_interior.measurableSet, hint]
+  have hthick := gaussian_thickening_le hk hBc hε
+  rw [← hγdef] at hthick
+  have htr : (γ (Metric.thickening ε B)).toReal
+      ≤ (γ B).toReal + gaussianShellConst k * ε := by
+    have h := ENNReal.toReal_mono (by
+      exact ENNReal.add_ne_top.2 ⟨measure_ne_top _ _, ENNReal.ofReal_ne_top⟩) hthick
+    rwa [ENNReal.toReal_add (measure_ne_top _ _) ENNReal.ofReal_ne_top,
+      ENNReal.toReal_ofReal
+        (le_of_lt (mul_pos (gaussianShellConst_pos hk) hε))] at h
+  rw [hdiff]
+  linarith
+
+/-- **The shell bound: the source of `C ε + 2Δ`.** For any probability law `μ` on `ℝᵏ` and any
+measurable convex `B`, the mass that `μ` puts on the `ε`-shell `Bᵋ \ interior B` — which is
+exactly the support of `D³` of the mollified indicator of `B` at width `ε` — is at most
+`C_k ε + 2 Δ(μ, γ)`. -/
+theorem measureReal_shell_le_of_convexDiscrepancy (hk : 0 < k)
+    (μ : Measure (EuclideanSpace ℝ (Fin k))) [IsProbabilityMeasure μ]
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBm : MeasurableSet B) (hBc : Convex ℝ B)
+    {ε : ℝ} (hε : 0 < ε) :
+    (μ (Metric.thickening ε B \ interior B)).toReal
+      ≤ gaussianShellConst k * ε
+        + 2 * convexDiscrepancy μ (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) := by
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
+  haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
+  have hintB : interior B ⊆ Metric.thickening ε B :=
+    interior_subset.trans (Metric.self_subset_thickening hε B)
+  have h := measureReal_diff_le_of_convexDiscrepancy (μ := μ) (ν := γ)
+    (B₁ := Metric.thickening ε B) (B₂ := interior B)
+    Metric.isOpen_thickening.measurableSet (hBc.thickening ε)
+    isOpen_interior.measurableSet hBc.interior hintB
+  have hg := gaussian_measureReal_shell_le hk hBm hBc hε
+  rw [← hγdef] at hg
+  linarith
+
+
+/-! #### Affine transport of the shell -/
+
+/-- The dilation-translation `x ↦ r • x + a` as a homeomorphism. -/
+noncomputable def affHomeo {r : ℝ} (hr : r ≠ 0) (a : EuclideanSpace ℝ (Fin k)) :
+    EuclideanSpace ℝ (Fin k) ≃ₜ EuclideanSpace ℝ (Fin k) :=
+  (Homeomorph.smulOfNeZero r hr).trans (Homeomorph.addRight a)
+
+lemma affHomeo_apply {r : ℝ} (hr : r ≠ 0) (a x : EuclideanSpace ℝ (Fin k)) :
+    affHomeo hr a x = r • x + a := rfl
+
+/-- Convexity is preserved by the affine preimage. -/
+lemma convex_preimage_aff {r : ℝ} {a : EuclideanSpace ℝ (Fin k)}
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBc : Convex ℝ B) :
+    Convex ℝ ((fun x => r • x + a) ⁻¹' B) := by
+  intro x hx y hy s t hs ht hst
+  simp only [Set.mem_preimage] at hx hy ⊢
+  have hrw : r • (s • x + t • y) + a = s • (r • x + a) + t • (r • y + a) := by
+    calc r • (s • x + t • y) + a = (s * r) • x + (t * r) • y + a := by
+          simp only [smul_add, smul_smul]; rw [mul_comm r s, mul_comm r t]
+      _ = (s * r) • x + (t * r) • y + (s + t) • a := by rw [hst, one_smul]
+      _ = s • (r • x + a) + t • (r • y + a) := by
+          simp only [smul_add, smul_smul, add_smul]; abel
+  rw [hrw]
+  exact hBc hx hy hs ht hst
+
+/-- **Affine transport of the thickening.** For `r > 0`, `(r • · + a)⁻¹(Bᵋ) = (B')^{ε/r}` where
+`B' = (r • · + a)⁻¹(B)`. -/
+lemma preimage_aff_thickening {r : ℝ} (hr : 0 < r) (a : EuclideanSpace ℝ (Fin k))
+    (B : Set (EuclideanSpace ℝ (Fin k))) {ε : ℝ} (_hε : 0 < ε) :
+    (fun x => r • x + a) ⁻¹' (Metric.thickening ε B)
+      = Metric.thickening (ε / r) ((fun x => r • x + a) ⁻¹' B) := by
+  ext x
+  simp only [Set.mem_preimage]
+  constructor
+  · intro hx
+    obtain ⟨z, hzB, hzlt⟩ := Metric.mem_thickening_iff.1 hx
+    refine Metric.mem_thickening_iff.2 ⟨r⁻¹ • (z - a), ?_, ?_⟩
+    · simp only [Set.mem_preimage]
+      rw [smul_smul, mul_inv_cancel₀ hr.ne', one_smul, sub_add_cancel]
+      exact hzB
+    · have hdist : dist (r • x + a) z = r * dist x (r⁻¹ • (z - a)) := by
+        rw [dist_eq_norm, dist_eq_norm, ← norm_smul_of_nonneg hr.le]
+        congr 1
+        rw [smul_sub, smul_smul, mul_inv_cancel₀ hr.ne', one_smul]
+        abel
+      rw [hdist] at hzlt
+      rw [lt_div_iff₀ hr, mul_comm]
+      exact hzlt
+  · intro hx
+    obtain ⟨w, hwB, hwlt⟩ := Metric.mem_thickening_iff.1 hx
+    simp only [Set.mem_preimage] at hwB
+    refine Metric.mem_thickening_iff.2 ⟨r • w + a, hwB, ?_⟩
+    have hdist : dist (r • x + a) (r • w + a) = r * dist x w := by
+      rw [dist_eq_norm, dist_eq_norm, ← norm_smul_of_nonneg hr.le]
+      congr 1
+      rw [smul_sub]
+      abel
+    rw [hdist]
+    rw [lt_div_iff₀ hr, mul_comm] at hwlt
+    exact hwlt
+
+/-- **Affine transport of the interior.** -/
+lemma preimage_aff_interior {r : ℝ} (hr : 0 < r) (a : EuclideanSpace ℝ (Fin k))
+    (B : Set (EuclideanSpace ℝ (Fin k))) :
+    (fun x => r • x + a) ⁻¹' (interior B) = interior ((fun x => r • x + a) ⁻¹' B) := by
+  have h := (affHomeo (k := k) hr.ne' a).preimage_interior B
+  exact h
+
+/-- **The shell bound, transported along a dilation-translation.** This is the geometric heart
+of brick H: conditioning the hybrid law on its Gaussian coordinate turns the shell event into an
+affine preimage of a shell, and the class of measurable convex sets is affine-invariant. -/
+theorem measureReal_shell_preimage_aff_le (hk : 0 < k)
+    (μ : Measure (EuclideanSpace ℝ (Fin k))) [IsProbabilityMeasure μ]
+    {r : ℝ} (hr : 0 < r) (a : EuclideanSpace ℝ (Fin k))
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBm : MeasurableSet B) (hBc : Convex ℝ B)
+    {ε : ℝ} (hε : 0 < ε) :
+    (μ ((fun x => r • x + a) ⁻¹' (Metric.thickening ε B \ interior B))).toReal
+      ≤ gaussianShellConst k * (ε / r)
+        + 2 * convexDiscrepancy μ (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) := by
+  set B' : Set (EuclideanSpace ℝ (Fin k)) := (fun x => r • x + a) ⁻¹' B with hB'def
+  have hmeas : Measurable (fun x : EuclideanSpace ℝ (Fin k) => r • x + a) := by fun_prop
+  have hB'm : MeasurableSet B' := hmeas hBm
+  have hB'c : Convex ℝ B' := convex_preimage_aff hBc
+  have hset : (fun x => r • x + a) ⁻¹' (Metric.thickening ε B \ interior B)
+      = Metric.thickening (ε / r) B' \ interior B' := by
+    rw [Set.preimage_diff, preimage_aff_thickening hr a B hε, preimage_aff_interior hr a B]
+  rw [hset]
+  exact measureReal_shell_le_of_convexDiscrepancy hk μ hB'm hB'c (by positivity)
+
+/-- A measure has no discrepancy with itself. -/
+lemma convexDiscrepancy_self (μ : Measure (EuclideanSpace ℝ (Fin k)))
+    [IsProbabilityMeasure μ] : convexDiscrepancy μ μ = 0 := by
+  refine le_antisymm (csSup_le (convexDiscrepancySet_nonempty μ μ) ?_) convexDiscrepancy_nonneg
+  rintro d ⟨B, -, -, rfl⟩
+  simp
+
+/-- **The Gaussian regime of brick H, proved.** For the *Gaussian* law itself the affine shell
+bound carries no `Δ` term at all:
+
+`γ((r · + a)⁻¹(Bᵋ \ interior B)) ≤ C_k ε/r`.
+
+This is exactly the estimate that controls the hybrid laws with `2j ≥ n`, where the hybrid's own
+`N(0, (j/n) I_k)` component has width `σ = √j/√n ≥ 1/√2` and hence supplies the whole
+anti-concentration bound `√2 C_k ε` **without any induction**. Only the sum-dominant regime
+`2j ≤ n` consumes the inductive hypothesis. -/
+theorem gaussian_measureReal_shell_preimage_aff_le (hk : 0 < k)
+    {r : ℝ} (hr : 0 < r) (a : EuclideanSpace ℝ (Fin k))
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBm : MeasurableSet B) (hBc : Convex ℝ B)
+    {ε : ℝ} (hε : 0 < ε) :
+    ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+        ((fun x => r • x + a) ⁻¹' (Metric.thickening ε B \ interior B))).toReal
+      ≤ gaussianShellConst k * (ε / r) := by
+  haveI : IsProbabilityMeasure (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) :=
+    inferInstance
+  have h := measureReal_shell_preimage_aff_le hk
+    (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) hr a hBm hBc hε
+  rw [convexDiscrepancy_self] at h
+  linarith
+
+/-! ### Wave-20: the hybrid family, and the recursion it produces -/
+
+/-- The law of the normalised sum `n^{-1/2} ∑ᵢ Yᵢ` of `n` i.i.d. copies of `ν`. -/
+noncomputable def sumLaw (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k))) :
+    Measure (EuclideanSpace ℝ (Fin k)) :=
+  (Measure.pi fun _ : Fin n => ν).map fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i
+
+instance isProbabilityMeasure_sumLaw (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
+    [IsProbabilityMeasure ν] : IsProbabilityMeasure (sumLaw n ν) := by
+  rw [sumLaw]
+  exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+
+/-- **The `j`-th hybrid law of the telescope**: the law of
+
+`n^{-1/2} ∑_{i ≥ j} Yᵢ + (j/n)^{1/2} Z`, `Yᵢ ~ ν` i.i.d., `Z ~ N(0, I_k)`,
+
+which is exactly the measure against which `abs_integral_smooth_sub_gaussian_improved` evaluates
+its `j`-th test function (`κ'ⱼ i = if i < j then δ₀ else ν`, smoothing width `sⱼ = √j/√n`). At
+`j = 0` it is `sumLaw n ν`; at `j = n` it is the standard Gaussian. The self-improving induction
+runs over this whole family, not over `sumLaw n ν` alone. -/
+noncomputable def hybridLaw (n j : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k))) :
+    Measure (EuclideanSpace ℝ (Fin k)) :=
+  ((Measure.pi fun i : Fin n => if (i : ℕ) < j then Measure.dirac 0 else ν).prod
+      (stdGaussian (EuclideanSpace ℝ (Fin k)))).map
+    fun p => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
+      + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2
+
+instance isProbabilityMeasure_hybridLaw (n j : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
+    [IsProbabilityMeasure ν] : IsProbabilityMeasure (hybridLaw n j ν) := by
+  rw [hybridLaw]
+  haveI : ∀ i : Fin n, IsProbabilityMeasure
+      (if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν) := by
+    intro i; split <;> infer_instance
+  exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+
+/-- **Brick H (stated, not proved).** *The shell mass of every hybrid law is `≤ 2 C_k ε + 2Y`,
+uniformly in `j`.*
+
+This is where the induction is consumed, and the reason the neighbour range of
+`le_of_selfImproving_induction` is `n/2 ≤ m ≤ n`. The two regimes:
+
+* **`2j ≥ n` (Gaussian-dominant).** The hybrid is `ρ ∗ γ_σ` with `σ = √j/√n ≥ 1/√2`. Then
+  `(ρ ∗ γ_σ)(S) = ∫ γ_σ(S − x) dρ(x)`, and for `S = Bᵋ \ interior B` the translate `S − x` is
+  the `ε`-shell of the convex set `B − x`, whose `γ_σ`-mass is the `γ`-mass of the `(ε/σ)`-shell
+  of `σ⁻¹ (B − x)`; `gaussian_measureReal_shell_le` bounds this by `C_k ε/σ ≤ √2 C_k ε`. **No
+  induction is needed in this regime** — the hybrid's own Gaussian component does the work.
+* **`2j ≤ n` (sum-dominant).** The non-Gaussian part is a normalised sum of `m = n − j ≥ n/2`
+  summands, scaled by `λ = √(m/n) ≥ 1/√2`. Conditioning on the Gaussian coordinate `z`, the
+  event is `S_m/√m ∈ λ⁻¹ (S − sⱼ z)`, the `(ε/λ)`-shell of the convex set `λ⁻¹ (B − sⱼ z)`; the
+  class of measurable convex sets is affine-invariant, so
+  `measureReal_shell_le_of_convexDiscrepancy` applies and gives
+  `C_k ε/λ + 2 Δ_m ≤ √2 C_k ε + 2 Y`.
+
+The affine transport that both regimes need is **proved** just above
+(`measureReal_shell_preimage_aff_le`, via `preimage_aff_thickening` and
+`preimage_aff_interior`): the preimage of an `ε`-shell of a convex set under `x ↦ r x + a` is
+the `(ε/r)`-shell of a convex set, so the class the induction runs on is affine-invariant. What
+is missing is the Lean-level convolution/disintegration bookkeeping: the Fubini factorisation of
+`hybridLaw` as `ρ ∗ γ_σ` and the Gaussian scaling identity `γ_σ(S) = γ(σ⁻¹ S)`. -/
+theorem hybridLaw_shell_le (hk : 0 < k) {n j : ℕ} (hn : 0 < n) (hj : j ≤ n)
+    {ν : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure ν]
+    (hmean : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)
+    (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ)
+    (hβ : Integrable (fun y => ‖y‖ ^ 3) ν)
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBm : MeasurableSet B) (hBc : Convex ℝ B)
+    {ε : ℝ} (hε : 0 < ε) {Y : ℝ}
+    (hY : ∀ m : ℕ, n ≤ 2 * m → m ≤ n →
+      convexDiscrepancy (sumLaw m ν) (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+        ≤ Y) :
+    ((hybridLaw n j ν) (Metric.thickening ε B \ interior B)).toReal
+      ≤ 2 * gaussianShellConst k * ε + 2 * Y := by
+  sorry
+
+/-- **Brick L (stated, not proved).** *The hybrid telescope with every step estimated by the
+localised weighted swap bound.*
+
+This is `abs_integral_smooth_sub_gaussian_improved` rerun with
+`abs_integral_mul_vecTiltRemainder_le_of_support` (wave 19) in place of the uniform
+`integral_abs_vecTiltRemainder_le`: since `D³` of the mollified indicator of `B` at width `ε`
+vanishes on `interior B` and off `Bᵋ`, each step of the telescope is weighted by the mass that
+the `j`-th hybrid law puts on the shell `B^{2ε} \ interior B` (the factor `2` absorbs the
+closure of the support). Summing the weighted steps with the cut `J = ⌈ε² n⌉` of
+`abs_integral_smooth_sub_gaussian_balanced` gives `A (β/√n) ε⁻¹ W` in place of the unweighted
+`A (β/√n) ε⁻¹` — the whole content of the improvement.
+
+The `L^∞` form is stated (weight `W`, not `√W`), which is what the sharp `β/√n` rate needs; the
+wave-19 `L²`/Cauchy–Schwarz form `abs_integral_mul_vecTiltRemainder_le_of_support` delivers `√W`
+instead, for which `cube_le_of_selfImproving_smoothed_sqrt` gives `O(n^{-1/3})`. -/
+theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 0 < C₃) :
+    ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
+      (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
+      (f : EuclideanSpace ℝ (Fin k) → ℝ) (W : ℝ),
+      0 < n → IsProbabilityMeasure ν →
+      (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0) →
+      (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
+      Integrable (fun y => ‖y‖ ^ 3) ν →
+      MeasurableSet B → Convex ℝ B → 0 < ε →
+      ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
+      (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
+      (∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B) → (∀ x ∈ B, f x = 1) →
+      (∀ j : ℕ, j ≤ n →
+        ((hybridLaw n j ν) (Metric.thickening (2 * ε) B \ interior B)).toReal ≤ W) →
+      |(∫ x, f x ∂(sumLaw n ν))
+          - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))|
+        ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * ε⁻¹ * W := by
+  sorry
+
+/-- **The recursion, produced.** For every measurable convex `B`, every cut `ε > 0` and every
+bound `Y` on the discrepancies at the neighbour sizes `n/2 ≤ m ≤ n`,
+
+`Δ(μₙ, γ) ≤ A (β/√n) ε⁻¹ (C ε + 2Y) + C ε`, `C = 4 C_k`,
+
+which is exactly the hypothesis of `le_of_selfImproving_induction`. Bricks H and L supply the
+weighted swap estimate; everything else here is the two-sided thickening/erosion sandwich of
+`berryEsseen_convex_improved` with the mollifier of `exists_smoothed_convex_indicator`. -/
+theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
+    ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k))) (ε Y : ℝ),
+      0 < n → IsProbabilityMeasure ν →
+      (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0) →
+      (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
+      Integrable (fun y => ‖y‖ ^ 3) ν → 0 < ε →
+      (∀ m : ℕ, n ≤ 2 * m → m ≤ n →
+        convexDiscrepancy (sumLaw m ν) (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+          ≤ Y) →
+      convexDiscrepancy (sumLaw n ν)
+          (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+        ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * ε⁻¹
+            * (4 * gaussianShellConst k * ε + 2 * Y)
+          + 4 * gaussianShellConst k * ε := by
+  obtain ⟨C₃, hC₃pos, hC₃⟩ := exists_smoothed_convex_indicator k
+  obtain ⟨A, hApos, hA⟩ := exists_localised_swap_bound k hk hC₃pos
+  refine ⟨A, hApos, ?_⟩
+  intro n ν ε Y hn hνp hmean hcov hβint hε hY
+  haveI := hνp
+  have hCk : 0 < gaussianShellConst k := gaussianShellConst_pos hk
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
+  haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
+  set μ : Measure (EuclideanSpace ℝ (Fin k)) := sumLaw n ν with hμdef
+  set β : ℝ := ∫ y, ‖y‖ ^ 3 ∂ν with hβdef
+  have hβpos : 0 < β := integral_norm_cube_pos hk hcov hβint
+  have hnr : (0 : ℝ) < n := by exact_mod_cast hn
+  have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
+  set δ : ℝ := β / Real.sqrt (n : ℝ) with hδdef
+  have hδpos : 0 < δ := by rw [hδdef]; positivity
+  set E : ℝ := A * δ * ε⁻¹ * (4 * gaussianShellConst k * ε + 2 * Y) with hEdef
+  -- the Lévy form, for an arbitrary measurable convex set
+  have hlevy : ∀ S : Set (EuclideanSpace ℝ (Fin k)), MeasurableSet S → Convex ℝ S →
+      (μ S).toReal ≤ (γ (Metric.thickening ε S)).toReal + E
+        ∧ (γ S).toReal ≤ (μ (Metric.thickening ε S)).toReal + E := by
+    intro S hSm hSc
+    obtain ⟨f, hfcd, hf0, hf1, hfS, hfsupp, hfD⟩ := hC₃ S hSc hε
+    have hfbd : ∀ x, |f x| ≤ 1 := fun x => abs_le.2 ⟨by linarith [hf0 x], hf1 x⟩
+    have hfint : ∀ ρ : Measure (EuclideanSpace ℝ (Fin k)), IsProbabilityMeasure ρ →
+        Integrable f ρ := by
+      intro ρ hρ
+      haveI := hρ
+      exact (integrable_const (1 : ℝ)).mono' hfcd.continuous.aestronglyMeasurable
+        (Filter.Eventually.of_forall fun x => by rw [Real.norm_eq_abs]; exact hfbd x)
+    -- brick H at width `2ε`, uniformly in `j`
+    have hW : ∀ j : ℕ, j ≤ n →
+        ((hybridLaw n j ν) (Metric.thickening (2 * ε) S \ interior S)).toReal
+          ≤ 4 * gaussianShellConst k * ε + 2 * Y := by
+      intro j hjn
+      have h := hybridLaw_shell_le (k := k) hk (n := n) (j := j) hn hjn hmean hcov hβint
+        hSm hSc (ε := 2 * ε) (by linarith) hY
+      calc ((hybridLaw n j ν) (Metric.thickening (2 * ε) S \ interior S)).toReal
+          ≤ 2 * gaussianShellConst k * (2 * ε) + 2 * Y := h
+        _ = 4 * gaussianShellConst k * ε + 2 * Y := by ring
+    -- brick L
+    have herr : |(∫ x, f x ∂μ) - (∫ x, f x ∂γ)| ≤ E := by
+      have h := hA n ν S ε f (4 * gaussianShellConst k * ε + 2 * Y) hn hνp hmean hcov hβint
+        hSm hSc hε hfcd hfbd hfD hfsupp hfS hW
+      rw [← hμdef, ← hβdef, ← hδdef] at h
+      exact h
+    have hthickm : MeasurableSet (Metric.thickening ε S) :=
+      Metric.isOpen_thickening.measurableSet
+    have hlowμ : (μ S).toReal ≤ ∫ x, f x ∂μ :=
+      measureReal_le_integral_of_eq_one hSm (hfint μ inferInstance) hf0 hfS
+    have hlowγ : (γ S).toReal ≤ ∫ x, f x ∂γ :=
+      measureReal_le_integral_of_eq_one hSm (hfint γ hγprob) hf0 hfS
+    have huppμ : (∫ x, f x ∂μ) ≤ (μ (Metric.thickening ε S)).toReal :=
+      integral_le_measureReal_of_support_subset hthickm (hfint μ inferInstance) hf1 hfsupp
+    have huppγ : (∫ x, f x ∂γ) ≤ (γ (Metric.thickening ε S)).toReal :=
+      integral_le_measureReal_of_support_subset hthickm (hfint γ hγprob) hf1 hfsupp
+    have hsplit := abs_le.1 herr
+    exact ⟨by linarith [hsplit.2], by linarith [hsplit.1]⟩
+  -- the two-sided sandwich, set by set
+  refine csSup_le (convexDiscrepancySet_nonempty _ _) ?_
+  rintro d ⟨B, hBm, hBc, rfl⟩
+  have hthick : (γ (Metric.thickening ε B)).toReal
+      ≤ (γ B).toReal + gaussianShellConst k * ε := by
+    refine toReal_le_add_of_le_add_ofReal (measure_ne_top _ _) (by positivity) ?_
+    have := gaussian_thickening_le hk hBc hε
+    rwa [← hγdef] at this
+  have hEmeas : MeasurableSet (erosion ε B) := (isOpen_erosion _ B).measurableSet
+  have hEconv : Convex ℝ (erosion ε B) := convex_erosion hBc
+  have herode : (γ B).toReal ≤ (γ (erosion ε B)).toReal + gaussianShellConst k * ε := by
+    refine toReal_le_add_of_le_add_ofReal (measure_ne_top _ _) (by positivity) ?_
+    have := gaussian_le_erosion_add hk hBm hBc hε
+    rwa [← hγdef] at this
+  have hback : (μ (Metric.thickening ε (erosion ε B))).toReal ≤ (μ B).toReal :=
+    ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono (thickening_erosion_subset _ B))
+  have h1 := (hlevy B hBm hBc).1
+  have h2 := (hlevy (erosion ε B) hEmeas hEconv).2
+  have hCkε : gaussianShellConst k * ε ≤ 4 * gaussianShellConst k * ε := by nlinarith
+  rw [abs_sub_le_iff]
+  constructor
+  · linarith
+  · linarith
+
+/-- **The sharp convex Berry–Esseen bound.** For every dimension `k > 0` there is a constant `C`
+with
+
+`|μₙ(B) − γ(B)| ≤ C β/√n` for every measurable convex `B`,
+
+i.e. Bentkus's rate, linear in `δ = β/√n`, with the dimension entering only through
+`C = 18 A (4 C_k) = 72 A gaussianShellConst k`, `gaussianShellConst k = 8 k^{3/2}/√(2π)`.
+
+This is `exists_convexDiscrepancy_recursion` fed to `le_of_selfImproving_induction`. It is
+**not** axiom-clean: it inherits the two stated-but-unproved bricks `hybridLaw_shell_le` and
+`exists_localised_swap_bound`. The best *proved* convex bound remains
+`berryEsseen_convex_improved` at `(β/√n)^{1/2}`.
+
+Note the `k`-power: `gaussianShellConst k ~ k^{3/2}`, so this route gives `C ~ k^{3/2}`, not
+Bentkus's `400 k^{1/4}`. The `k^{1/4}` comes from a sharper Gaussian shell estimate than
+`gaussian_thickening_le` (which is proved here by a crude coordinate-slice cover); nothing in
+the recursion changes. Per the provable-constants rule the statement records `k^{3/2}`. -/
+theorem berryEsseen_convex_sharp {k : ℕ} (hk : 0 < k) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
+      (B : Set (EuclideanSpace ℝ (Fin k))),
+      0 < n → IsProbabilityMeasure ν →
+      (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0) →
+      (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
+      Integrable (fun y => ‖y‖ ^ 3) ν → MeasurableSet B → Convex ℝ B →
+      |((sumLaw n ν) B).toReal
+          - ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) B).toReal|
+        ≤ C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) := by
+  obtain ⟨A, hApos, hA⟩ := exists_convexDiscrepancy_recursion k hk
+  have hCk : 0 < gaussianShellConst k := gaussianShellConst_pos hk
+  refine ⟨18 * (A * (4 * gaussianShellConst k)), by positivity, ?_⟩
+  intro n ν B hn hνp hmean hcov hβint hBm hBc
+  haveI := hνp
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
+  haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
+  set β : ℝ := ∫ y, ‖y‖ ^ 3 ∂ν with hβdef
+  have hβpos : 0 < β := integral_norm_cube_pos hk hcov hβint
+  have hind := le_of_selfImproving_induction (A := A) (C := 4 * gaussianShellConst k)
+    (b := β) (D := fun m => convexDiscrepancy (sumLaw m ν) γ) hApos (by linarith) hβpos
+    (fun m hm ε hε Y hY => by
+      have h := hA m ν ε Y hm hνp hmean hcov hβint hε (by
+        intro m' h1 h2; exact hY m' h1 h2)
+      rw [← hβdef] at h
+      exact h) n hn
+  exact le_trans (le_convexDiscrepancy hBm hBc) hind
+
+end ConvexDiscrepancy
 
 end StatLean.HypothesisTesting
