@@ -472,6 +472,91 @@ theorem gaussian_loss_convolution_lt_top
   rw [lintegral_add_left measurable_const, lintegral_const, measure_univ, mul_one]
   exact ENNReal.add_lt_top.mpr ⟨ENNReal.one_lt_top, lt_top_iff_ne_top.mpr hfin⟩
 
+-- The Mahalanobis form of `S⁻¹` is the squared norm of the whitened vector `(√S)⁻¹ x`.
+private lemma inner_mahalanobis_eq_norm_sq {S : Matrix ι ι ℝ} (hS : S.PosDef)
+    (x : EuclideanSpace ℝ ι) :
+    ⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x⟫
+      = ‖(Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)⁻¹) x‖ ^ 2 := by
+  classical
+  have hQPD : (CFC.sqrt S).PosDef := hS.posDef_sqrt
+  have hQQ : CFC.sqrt S * CFC.sqrt S = S := CFC.sqrt_mul_sqrt_self _ hS.posSemidef.nonneg
+  have hBB : (CFC.sqrt S)⁻¹ * (CFC.sqrt S)⁻¹ = S⁻¹ := by rw [← Matrix.mul_inv_rev, hQQ]
+  have hBsa : IsSelfAdjoint ((CFC.sqrt S)⁻¹) := hQPD.isHermitian.inv
+  set_option backward.isDefEq.respectTransparency false in
+  have hA'sa : IsSelfAdjoint (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)⁻¹) :=
+    hBsa.map (Matrix.toEuclideanCLM (𝕜 := ℝ))
+  have hswap : ∀ a b : EuclideanSpace ℝ ι,
+      ⟪a, (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)⁻¹) b⟫
+        = ⟪(Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)⁻¹) a, b⟫ := by
+    intro a b
+    have h := ContinuousLinearMap.adjoint_inner_left
+      (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)⁻¹) b a
+    rw [hA'sa.adjoint_eq] at h
+    exact h.symm
+  have hSinv : (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x
+      = (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)⁻¹)
+          ((Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)⁻¹) x) := by
+    rw [← hBB, map_mul]; rfl
+  rw [hSinv, hswap, real_inner_self_eq_norm_sq]
+
+-- Integrability of `polynomial × (half-rate Gaussian density)`: the density `exp(−⟪y,S⁻¹y⟫/4)`
+-- is the density of the twice-as-wide Gaussian `N(0, 2S)`, so this is
+-- `gaussian_loss_convolution_lt_top` for `2 • S`.
+private lemma poly_gaussian_quarter_lintegral_ne_top {S : Matrix ι ι ℝ} (hS : S.PosDef)
+    {p : ℝ} (hp : 0 ≤ p) :
+    (∫⁻ y : EuclideanSpace ℝ ι,
+        ENNReal.ofReal (Real.exp (-⟪y, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) y⟫ / 4))
+          * ENNReal.ofReal (1 + ‖y‖ ^ p) ∂volume) ≠ ∞ := by
+  classical
+  have hdet : IsUnit S.det := (Matrix.isUnit_iff_isUnit_det _).mp hS.isUnit
+  have hS₂ : ((2 : ℝ) • S).PosDef := hS.smul (by norm_num)
+  have hinv : ((2 : ℝ) • S)⁻¹ = (2⁻¹ : ℝ) • S⁻¹ := by
+    refine Matrix.inv_eq_right_inv ?_
+    rw [Matrix.smul_mul, Matrix.mul_smul, Matrix.mul_nonsing_inv _ hdet, smul_smul]
+    norm_num
+  have hform : ∀ y : EuclideanSpace ℝ ι,
+      Real.exp (-⟪y, (Matrix.toEuclideanCLM (𝕜 := ℝ) ((2 : ℝ) • S)⁻¹) y⟫ / 2)
+        = Real.exp (-⟪y, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) y⟫ / 4) := by
+    intro y
+    congr 1
+    rw [hinv, map_smul, ContinuousLinearMap.smul_apply, real_inner_smul_right]
+    ring
+  obtain ⟨c₂, hc₂pos, hc₂top, hc₂⟩ := multivariateGaussian_eq_smul_withDensity hS₂
+  have hfin := gaussian_loss_convolution_lt_top ((2 : ℝ) • S)
+    (ℓ := fun h : EuclideanSpace ℝ ι => ENNReal.ofReal (1 + ‖h‖ ^ p))
+    (fun _ => le_rfl) hp 0
+  rw [hc₂, lintegral_smul_measure,
+    lintegral_withDensity_eq_lintegral_mul _ (by fun_prop) (by fun_prop)] at hfin
+  simp only [Pi.mul_apply, zero_sub, norm_neg, smul_eq_mul] at hfin
+  simp_rw [hform] at hfin
+  intro hcon
+  rw [hcon, ENNReal.mul_top hc₂pos.ne'] at hfin
+  simp at hfin
+
+-- Mean-uniform Gaussian-kernel domination: for `‖u‖ ≤ B` the shifted Gaussian density
+-- `exp(−⟪u−y, S⁻¹(u−y)⟫/2)` is bounded by a constant times the half-rate density
+-- `exp(−⟪y,S⁻¹y⟫/4)`, uniformly in `y`.
+private lemma exp_mahalanobis_shift_le {S : Matrix ι ι ℝ} (hS : S.PosDef) (B : ℝ) :
+    ∃ b : ℝ, ∀ u y : EuclideanSpace ℝ ι, ‖u‖ ≤ B →
+      Real.exp (-⟪u - y, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) (u - y)⟫ / 2)
+        ≤ Real.exp b * Real.exp (-⟪y, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) y⟫ / 4) := by
+  classical
+  set A' := Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)⁻¹ with hA'
+  refine ⟨(‖A'‖ * B) ^ 2 / 2, fun u y hu => ?_⟩
+  have hty := inner_mahalanobis_eq_norm_sq hS y
+  have hTy := inner_mahalanobis_eq_norm_sq hS (u - y)
+  rw [← hA'] at hty hTy
+  have hsub : |‖A' u‖ - ‖A' y‖| ≤ ‖A' (u - y)‖ := by
+    rw [map_sub]; exact abs_norm_sub_norm_le _ _
+  have hα : ‖A' u‖ ≤ ‖A'‖ * B :=
+    (A'.le_opNorm u).trans (mul_le_mul_of_nonneg_left hu (norm_nonneg A'))
+  have hα2 : ‖A' u‖ ^ 2 ≤ (‖A'‖ * B) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hα 2
+  have hsq : (‖A' u‖ - ‖A' y‖) ^ 2 ≤ ‖A' (u - y)‖ ^ 2 := by
+    nlinarith [sq_abs (‖A' u‖ - ‖A' y‖), abs_nonneg (‖A' u‖ - ‖A' y‖), hsub]
+  rw [hty, hTy, ← Real.exp_add]
+  refine Real.exp_le_exp.mpr ?_
+  nlinarith [hsq, hα2, sq_nonneg (2 * ‖A' u‖ - ‖A' y‖)]
+
 /-- **Continuity of the Gaussian loss average** `u ↦ ∫⁻ ℓ(u − z) dN(0,S)(z)` for a measurable,
 polynomially growing loss and positive definite `S`. This derives the continuity of the limit
 criterion in vdV Theorem 10.8 (there taken for granted from smoothness of the normal density);
