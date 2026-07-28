@@ -54,6 +54,7 @@ open AsymptoticStatistics (ParametricFamily IsPDFOf DifferentiableQuadraticMean
   fisherInformation BowlShaped WeakConverges)
 open AsymptoticStatistics.AsymptoticRepresentation (productMeasure scoreSum
   productMeasure_isProbabilityMeasure scoreSum_weakly_converges)
+open StatLean.Minimaxity (tvDist tvDist_comm)
 
 namespace StatLean.Bayesian
 
@@ -66,6 +67,114 @@ variable {κ : Kernel (EuclideanSpace ℝ (Fin k)) 𝓧} [IsMarkovKernel κ]
 variable {r₀ : ℝ} {f : EuclideanSpace ℝ (Fin k) → ℝ}
 variable {ℓ : EuclideanSpace ℝ (Fin k) → ℝ≥0∞} {p : ℝ}
 variable {T : ∀ n : ℕ, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k)} {εseq : ℕ → ℝ≥0∞}
+
+/-! ### Elementary bookkeeping for Part 2 -/
+
+/-- `1 + (x+y)ᵍ ≤ 2ᵍ (1+xᵍ)(1+yᵍ)` for nonnegative `x`, `y`, `q`: the multiplicative splitting
+of the polynomial envelope, used to detach a bounded shift from the integration variable. -/
+private lemma tight_one_add_rpow_add_le {x y q : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) (hq : 0 ≤ q) :
+    1 + (x + y) ^ q ≤ 2 ^ q * (1 + x ^ q) * (1 + y ^ q) := by
+  have h2 : (1 : ℝ) ≤ 2 ^ q := by
+    simpa using Real.rpow_le_rpow_of_exponent_le (x := 2) (by norm_num) hq
+  have h2p : (0 : ℝ) ≤ 2 ^ q := Real.rpow_nonneg (by norm_num) q
+  have hxp : (0 : ℝ) ≤ x ^ q := Real.rpow_nonneg hx q
+  have hyp : (0 : ℝ) ≤ y ^ q := Real.rpow_nonneg hy q
+  have hmax : (x + y) ^ q ≤ 2 ^ q * (x ^ q + y ^ q) := by
+    have hle : x + y ≤ 2 * max x y := by
+      rcases le_total x y with h | h
+      · rw [max_eq_right h]; linarith
+      · rw [max_eq_left h]; linarith
+    have h0 : (0 : ℝ) ≤ max x y := le_trans hx (le_max_left x y)
+    have hmm : (max x y) ^ q ≤ x ^ q + y ^ q := by
+      rcases le_total x y with h | h
+      · rw [max_eq_right h]; linarith
+      · rw [max_eq_left h]; linarith
+    calc (x + y) ^ q ≤ (2 * max x y) ^ q := Real.rpow_le_rpow (by linarith) hle hq
+      _ = 2 ^ q * (max x y) ^ q := Real.mul_rpow (by norm_num) h0
+      _ ≤ 2 ^ q * (x ^ q + y ^ q) := mul_le_mul_of_nonneg_left hmm h2p
+  nlinarith [mul_nonneg (mul_nonneg h2p hxp) hyp]
+
+/-- **One radius kills the Gaussian tail, uniformly over a fixed ball of centers.** For every
+tolerance `δ > 0` there is a radius `r` (as large as one likes) such that every loss dominated
+by the polynomial envelope and vanishing on `B̄(0,r)` has Gaussian criterion at most `δ` at all
+`‖u‖ ≤ R`. Deterministic; dominated convergence against the Gaussian polynomial moment. -/
+private lemma exists_radius_gaussCriterion_tail_le (J : Matrix (Fin k) (Fin k) ℝ) {q R r₁ : ℝ}
+    (hq : 0 ≤ q) (hR : 0 ≤ R) {δ : ℝ≥0∞} (hδ : 0 < δ) :
+    ∃ r : ℝ, r₁ ≤ r ∧ 0 < r ∧ ∀ w : EuclideanSpace ℝ (Fin k) → ℝ≥0∞,
+      (∀ x, ‖x‖ ≤ r → w x = 0) → (∀ x, w x ≤ ENNReal.ofReal (1 + ‖x‖ ^ q)) →
+      ∀ u : EuclideanSpace ℝ (Fin k), ‖u‖ ≤ R → bpeGaussCriterion J w u ≤ δ := by
+  classical
+  have hrpow : Continuous fun s : ℝ => s ^ q :=
+    continuous_iff_continuousAt.2 fun s => Real.continuousAt_rpow_const s q (Or.inr hq)
+  have hWmeas : Measurable fun z : EuclideanSpace ℝ (Fin k) =>
+      ENNReal.ofReal (1 + ‖z‖ ^ q) :=
+    (continuous_const.add (hrpow.comp continuous_norm)).measurable.ennreal_ofReal
+  obtain ⟨G, hGdef⟩ : ∃ G : EuclideanSpace ℝ (Fin k) → ℝ≥0∞,
+      ∀ z, G z = ENNReal.ofReal (1 + (R + ‖z‖) ^ q) := ⟨_, fun _ => rfl⟩
+  have hGmeas : Measurable G := by
+    rw [funext hGdef]
+    exact (continuous_const.add
+      (hrpow.comp (continuous_const.add continuous_norm))).measurable.ennreal_ofReal
+  have hGfin : ∫⁻ z, G z ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹) ≠ ∞ := by
+    have hbase : ∫⁻ z, ENNReal.ofReal (1 + ‖z‖ ^ q)
+        ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹) < ∞ := by
+      have h := AsymptoticStatistics.gaussian_loss_convolution_lt_top J⁻¹
+        (ℓ := fun x : EuclideanSpace ℝ (Fin k) => ENNReal.ofReal (1 + ‖x‖ ^ q))
+        (fun _ => le_rfl) hq 0
+      simpa using h
+    have hptw : ∀ z, G z
+        ≤ ENNReal.ofReal (2 ^ q * (1 + R ^ q)) * ENNReal.ofReal (1 + ‖z‖ ^ q) := by
+      intro z
+      have h2q : (0 : ℝ) ≤ 2 ^ q := Real.rpow_nonneg (by norm_num) q
+      have hRq : (0 : ℝ) ≤ R ^ q := Real.rpow_nonneg hR q
+      rw [hGdef z, ← ENNReal.ofReal_mul (by positivity)]
+      refine ENNReal.ofReal_le_ofReal ?_
+      have h := tight_one_add_rpow_add_le hR (norm_nonneg z) hq
+      linarith
+    refine ne_top_of_le_ne_top ?_ (lintegral_mono hptw)
+    rw [lintegral_const_mul _ hWmeas]
+    exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top hbase.ne
+  -- the deterministic tails vanish along integer radii
+  have hEtend : Tendsto (fun j : ℕ => ∫⁻ z, ({z : EuclideanSpace ℝ (Fin k) | (j : ℝ) < ‖z‖}
+      ).indicator G z ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹))
+      atTop (𝓝 0) := by
+    have hmeas : ∀ j : ℕ, Measurable
+        (({z : EuclideanSpace ℝ (Fin k) | (j : ℝ) < ‖z‖}).indicator G) := fun _ =>
+      hGmeas.indicator (measurableSet_lt measurable_const (by fun_prop))
+    have hbound : ∀ j : ℕ, ({z : EuclideanSpace ℝ (Fin k) | (j : ℝ) < ‖z‖}).indicator G
+        ≤ᵐ[multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹] G := fun _ =>
+      Eventually.of_forall fun z => Set.indicator_le_self' (fun _ _ => zero_le _) z
+    have hlim : ∀ᵐ z ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹),
+        Tendsto (fun j : ℕ => ({z : EuclideanSpace ℝ (Fin k) | (j : ℝ) < ‖z‖}).indicator G z)
+          atTop (𝓝 0) := by
+      refine Eventually.of_forall fun z => ?_
+      have hev : ∀ᶠ j : ℕ in atTop,
+          ({z : EuclideanSpace ℝ (Fin k) | (j : ℝ) < ‖z‖}).indicator G z = 0 := by
+        filter_upwards [eventually_ge_atTop ⌈‖z‖⌉₊] with j hj
+        refine Set.indicator_of_notMem ?_ _
+        simp only [Set.mem_setOf_eq, not_lt]
+        exact le_trans (Nat.le_ceil _) (Nat.cast_le.2 hj)
+      exact Tendsto.congr' (hev.mono fun j hj => hj.symm) tendsto_const_nhds
+    have h := tendsto_lintegral_of_dominated_convergence G hmeas hbound hGfin hlim
+    simpa using h
+  obtain ⟨j, hj⟩ := (ENNReal.tendsto_nhds_zero.mp hEtend δ hδ).exists
+  refine ⟨max r₁ (max 1 (R + j + 1)), le_max_left _ _,
+    lt_of_lt_of_le one_pos (le_trans (le_max_left _ _) (le_max_right _ _)), ?_⟩
+  intro w hw0 hwle u hu
+  rw [bpeGaussCriterion]
+  refine le_trans (lintegral_mono fun z => ?_) hj
+  by_cases hz : ‖u - z‖ ≤ max r₁ (max 1 (R + j + 1))
+  · rw [hw0 _ hz]; exact zero_le _
+  · rw [not_le] at hz
+    have h1 : ‖u - z‖ ≤ R + ‖z‖ := le_trans (norm_sub_le u z) (by linarith)
+    have hj1 : R + (j : ℝ) + 1 ≤ max r₁ (max 1 (R + j + 1)) :=
+      le_trans (le_max_right _ _) (le_max_right _ _)
+    have h2 : (j : ℝ) < ‖z‖ := by linarith
+    rw [Set.indicator_of_mem
+      (show z ∈ {z : EuclideanSpace ℝ (Fin k) | (j : ℝ) < ‖z‖} from h2), hGdef]
+    refine le_trans (hwle _) (ENNReal.ofReal_le_ofReal ?_)
+    have h3 := Real.rpow_le_rpow (norm_nonneg (u - z)) h1 hq
+    linarith
 
 /-- **Part 2 of the proof of Theorem 10.8: uniform tightness** of the standardized Bayes
 point estimators `√n(Tₙ − θ₀)` (vdV p. 148: the separation condition forces the minimizer
@@ -111,17 +220,258 @@ theorem bpe_tight
     ∀ ε : ℝ≥0∞, 0 < ε → ∃ K : ℝ, 0 < K ∧ ∀ᶠ n : ℕ in atTop,
       productMeasure M μ θ₀ n
           {ω | K ≤ ‖Real.sqrt n • (T n ω - θ₀)‖} ≤ ε := by
-  -- DEBT (statement repaired 2026-07-27): the original frozen `SeparatedLoss.strict` was a
-  -- single pointwise pair `ℓ x < ℓ y`, under which THIS STATEMENT IS FALSE — the `0-1` loss
-  -- satisfies it with zero sup-inf gap at every scale, its posterior risk is constant against
-  -- an atomless posterior, so every point minimizes and a selection can escape to infinity.
-  -- `Defs.lean` now carries vdV's genuine gap form (`sup_{‖x‖≤M} ℓ ≤ c < inf_{‖y‖≥2M} ℓ`),
-  -- which is exactly what vdV p.148 uses (`η := ℓ̲(2δ) − ℓ̄(δ) > 0`). The proof is then his
-  -- Part 2: split the posterior integral over `U`, `Uᶜ ∩ C_n`, `C_nᶜ`; the gap `η` on `U`
-  -- plus `mono` on `Uᶜ ∩ C_n` gives `Z_n(t) − Z_n(0) ≥ η·Post(U) − Post(ℓ(−·)1_{C_nᶜ})`;
-  -- `Post(U)` is bounded below via Theorem 10.1 + the Gaussian lower bound, and the tail via
-  -- display (10.9).
-  sorry
+  -- vdV p. 148, Part 2, with the gap read off the repaired `SeparatedLoss.strict`.
+  -- Writing `a` for its scale and `y₀` for any point with `‖y₀‖ = 2a`, the additive gap is
+  -- `η := min (ℓ y₀ − c) 1 > 0`, and `‖x‖ ≤ a`, `4a ≤ ‖y‖` force `ℓ x + η ≤ ℓ y`.
+  -- Two facts drive the argument: (i) `ℓ(−h) ≤ ℓ(τ − h)` whenever `3‖h‖ ≤ ‖τ‖` (`mono` at the
+  -- scale `‖τ‖/3`), so truncating the posterior at a *fixed* radius `ρ` and comparing `Zₙ(τ)`
+  -- with `Zₙ(0)` costs only the tail `∫_{‖h‖ > ρ} (1 + ‖h‖ᵖ) d(local posterior)`; (ii) that
+  -- tail is itself a posterior risk for the truncated envelope loss, so the majorant of Part 3
+  -- plus the *deterministic* Gaussian tail bound (`exists_radius_gaussCriterion_tail_le`) make
+  -- it `≤ 2γ` in probability. Against the gain `η · Post(B̄(0,a)) ≥ η p₀ = δ₀ > 3γ` obtained
+  -- from Theorem 10.1 and the Gaussian density lower bound, `hT` at `t = 0` then rules out
+  -- `‖√n(Tₙ − θ₀)‖ ≥ K := max (5a) (3ρ)`.
+  classical
+  haveI hprob : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
+    productMeasure_isProbabilityMeasure M μ hPDF θ₀ n
+  intro ε hε
+  rcases isEmpty_or_nonempty (Fin k) with hk | hk
+  · -- degenerate parameter space: the standardized estimator is identically `0`
+    haveI := hk
+    refine ⟨1, one_pos, Filter.Eventually.of_forall fun n => ?_⟩
+    have hempty : {ω : Fin n → 𝓧 | (1 : ℝ) ≤ ‖Real.sqrt n • (T n ω - θ₀)‖} = ∅ := by
+      ext ω
+      simp [EuclideanSpace.norm_eq]
+    rw [hempty, measure_empty]
+    exact zero_le _
+  obtain ⟨i⟩ := hk
+  -- (1) the separation gap `η` at the scale `a`, in the additive form of vdV p. 148
+  obtain ⟨a, ha, c, hcle, hclt⟩ := hsep.strict
+  obtain ⟨y₀, hy₀⟩ : ∃ y₀ : EuclideanSpace ℝ (Fin k), ‖y₀‖ = 2 * a := by
+    refine ⟨EuclideanSpace.single i (2 * a), ?_⟩
+    simp [ha.le]
+  have hcc : c < ℓ y₀ := hclt y₀ hy₀.ge
+  set η : ℝ≥0∞ := min (ℓ y₀ - c) 1 with hηdef
+  have hηpos : 0 < η := lt_min (tsub_pos_of_lt hcc) one_pos
+  have hηtop : η ≠ ∞ := ne_top_of_le_ne_top ENNReal.one_ne_top (min_le_right _ _)
+  have hcη : c + η ≤ ℓ y₀ := by
+    calc c + η ≤ c + (ℓ y₀ - c) := by gcongr; exact min_le_left _ _
+      _ = ℓ y₀ - c + c := add_comm _ _
+      _ = ℓ y₀ := tsub_add_cancel_of_le hcc.le
+  have hgapl : ∀ x y : EuclideanSpace ℝ (Fin k), ‖x‖ ≤ a → 4 * a ≤ ‖y‖ → ℓ x + η ≤ ℓ y := by
+    intro x y hx hy
+    calc ℓ x + η ≤ c + η := by gcongr; exact hcle x hx
+      _ ≤ ℓ y₀ := hcη
+      _ ≤ ℓ y := hsep.mono (2 * a) (by linarith) y₀ y hy₀.le (by linarith)
+  have hmono3 : ∀ h τ : EuclideanSpace ℝ (Fin k), 0 < ‖τ‖ → 3 * ‖h‖ ≤ ‖τ‖ →
+      ℓ (-h) ≤ ℓ (τ - h) := by
+    intro h τ hτ hh
+    refine hsep.mono (‖τ‖ / 3) (by linarith) (-h) (τ - h) (by rw [norm_neg]; linarith) ?_
+    have h1 : ‖τ‖ - ‖h‖ ≤ ‖τ - h‖ := norm_sub_norm_le τ h
+    linarith
+  -- (2) the probability budget
+  set t : ℝ≥0∞ := ε / 2 / 2 with htdef
+  have ht0 : 0 < t := ENNReal.half_pos (ENNReal.half_pos hε.ne').ne'
+  have htt : t + t = ε / 2 := by rw [htdef]; exact ENNReal.add_halves _
+  have ht3 : t + (t + t) ≤ ε := by
+    calc t + (t + t) ≤ (t + t) + (t + t) := add_le_add le_add_self le_rfl
+      _ = ε / 2 + ε / 2 := by rw [htt]
+      _ = ε := ENNReal.add_halves ε
+  -- (3) tightness of the centering sequence
+  obtain ⟨K₂, hK₂pos, hK₂⟩ := scoreSum_uniformly_tight hPDF hsc hDQM hJ_pd hJ ht0
+  set A : EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin k) :=
+    Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹ with hAdef
+  have hAeq : ∀ (n : ℕ) (ω : Fin n → 𝓧), bvmEffScore J sc n ω = A (scoreSum sc n ω) :=
+    fun _ _ => by rw [hAdef]; rfl
+  set C : ℝ := ‖A‖ * K₂ with hCdef
+  have hCnn : 0 ≤ C := mul_nonneg (norm_nonneg _) hK₂pos.le
+  -- (4) the Gaussian lower bound on the small ball, uniformly over the tight centerings
+  set Bs : Set (EuclideanSpace ℝ (Fin k)) := Metric.closedBall 0 a with hBsdef
+  have hBmeas : MeasurableSet Bs := measurableSet_closedBall
+  obtain ⟨c₀, hc₀pos, hc₀⟩ :=
+    AsymptoticStatistics.exists_pos_smul_volume_le_multivariateGaussian hJ_pd.inv C a
+  set q₀ : ℝ≥0∞ := c₀ * volume Bs with hq₀def
+  have hq₀pos : 0 < q₀ :=
+    ENNReal.mul_pos hc₀pos.ne' (Metric.measure_closedBall_pos volume 0 ha).ne'
+  have hq₀le : q₀ ≤ 1 := by
+    refine le_trans (hc₀ 0 (by simpa using hCnn) Bs Set.Subset.rfl hBmeas) ?_
+    exact prob_le_one
+  have hq₀top : q₀ ≠ ∞ := ne_top_of_le_ne_top ENNReal.one_ne_top hq₀le
+  set p₀ : ℝ≥0∞ := q₀ / 2 with hp₀def
+  have hp₀pos : 0 < p₀ := ENNReal.half_pos hq₀pos.ne'
+  have hp₀top : p₀ ≠ ∞ := by
+    rw [hp₀def]; exact ne_top_of_le_ne_top hq₀top ENNReal.half_le_self
+  -- (5) the gain budget `δ₀ = η · p₀` and its quarters
+  set δ₀ : ℝ≥0∞ := η * p₀ with hδ₀def
+  have hδ₀pos : 0 < δ₀ := ENNReal.mul_pos hηpos.ne' hp₀pos.ne'
+  have hδ₀top : δ₀ ≠ ∞ := ENNReal.mul_ne_top hηtop hp₀top
+  set γ : ℝ≥0∞ := δ₀ / 2 / 2 with hγdef
+  have hγpos : 0 < γ := ENNReal.half_pos (ENNReal.half_pos hδ₀pos.ne').ne'
+  have hγsum : γ + (γ + γ) < δ₀ := by
+    have hh0 : δ₀ / 2 ≠ 0 := (ENNReal.half_pos hδ₀pos.ne').ne'
+    have hhtop : δ₀ / 2 ≠ ∞ := ne_top_of_le_ne_top hδ₀top ENNReal.half_le_self
+    have hγγ : γ + γ = δ₀ / 2 := by rw [hγdef]; exact ENNReal.add_halves _
+    have hγlt : γ < δ₀ / 2 := by rw [hγdef]; exact ENNReal.half_lt_self hh0 hhtop
+    calc γ + (γ + γ) = γ + δ₀ / 2 := by rw [hγγ]
+      _ < δ₀ / 2 + δ₀ / 2 := by exact ENNReal.add_lt_add_right hhtop hγlt
+      _ = δ₀ := ENNReal.add_halves δ₀
+  -- (6) a truncation radius killing the Gaussian tail, and the truncated envelope loss
+  obtain ⟨ρ, hρa, hρpos, hρtail⟩ :=
+    exists_radius_gaussCriterion_tail_le J (q := p) (R := C + 1) (r₁ := a)
+      hp (by linarith) hγpos
+  obtain ⟨ℓ', hℓ'⟩ : ∃ w : EuclideanSpace ℝ (Fin k) → ℝ≥0∞,
+      ∀ x, w x = if ρ < ‖x‖ then ENNReal.ofReal (1 + ‖x‖ ^ p) else 0 := ⟨_, fun _ => rfl⟩
+  have hrpow : Continuous fun s : ℝ => s ^ p :=
+    continuous_iff_continuousAt.2 fun s => Real.continuousAt_rpow_const s p (Or.inr hp)
+  have hWmeas : Measurable fun z : EuclideanSpace ℝ (Fin k) =>
+      ENNReal.ofReal (1 + ‖z‖ ^ p) :=
+    (continuous_const.add (hrpow.comp continuous_norm)).measurable.ennreal_ofReal
+  have hℓ'meas : Measurable ℓ' := by
+    rw [funext hℓ']
+    exact Measurable.ite (measurableSet_lt measurable_const (by fun_prop)) hWmeas
+      measurable_const
+  have hℓ'poly : PolyGrowthLoss p ℓ' := by
+    intro h
+    rw [hℓ' h]
+    split_ifs
+    · exact le_rfl
+    · exact zero_le _
+  have hℓ'0 : ∀ x : EuclideanSpace ℝ (Fin k), ‖x‖ ≤ ρ → ℓ' x = 0 := by
+    intro x hx; rw [hℓ' x, if_neg (not_lt.2 hx)]
+  -- (7) the uniform majorant for the truncated loss
+  obtain ⟨Mn, -, hMntend, hMnapprox⟩ :=
+    posteriorRisk_shifted_majorant hPDF hsc hDQM hJ_pd hJ hκ hM_joint hTests hπ hℓ'meas hp
+      hℓ'poly hmom (R := C + 1) (by linarith)
+  -- (8) the tightness radius
+  set K : ℝ := max (5 * a) (3 * ρ) with hKdef
+  have hKpos : 0 < K := lt_of_lt_of_le (by linarith) (le_max_left _ _)
+  refine ⟨K, hKpos, ?_⟩
+  have hbvm := bernstein_von_mises hPDF hsc hDQM hJ_pd hJ hκ hM_joint hTests hπ p₀ hp₀pos
+  filter_upwards [hK₂, ENNReal.tendsto_nhds_zero.mp hbvm t ht0,
+    ENNReal.tendsto_nhds_zero.mp (hMntend γ hγpos) t ht0,
+    ENNReal.tendsto_nhds_zero.mp hεseq γ hγpos] with n h1 h2 h3 h4
+  have hsub : {ω : Fin n → 𝓧 | K ≤ ‖Real.sqrt n • (T n ω - θ₀)‖} ⊆
+      {ω | K₂ < ‖scoreSum sc n ω‖} ∪
+        ({ω | p₀ ≤ bvmTV κ π θ₀ J sc n ω} ∪ {ω | γ ≤ Mn n ω}) := by
+    intro ω hω
+    by_contra hnot
+    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le, not_lt] at hnot
+    obtain ⟨hb1, hb2, hb3⟩ := hnot
+    simp only [Set.mem_setOf_eq] at hω
+    set τ : EuclideanSpace ℝ (Fin k) := Real.sqrt n • (T n ω - θ₀) with hτdef
+    set Δ : EuclideanSpace ℝ (Fin k) := bvmEffScore J sc n ω with hΔdef
+    set Post : Measure (EuclideanSpace ℝ (Fin k)) := bvmLocalPosterior κ π θ₀ n ω with hPostdef
+    haveI hPostP : IsProbabilityMeasure Post := by rw [hPostdef]; infer_instance
+    have hΔC : ‖Δ‖ ≤ C := by
+      rw [hΔdef, hAeq n ω, hCdef]
+      exact (A.le_opNorm _).trans (mul_le_mul_of_nonneg_left hb1 (norm_nonneg A))
+    have hτpos : 0 < ‖τ‖ := lt_of_lt_of_le hKpos hω
+    -- the posterior mass of the small ball is bounded below
+    have hPostB : p₀ ≤ Post Bs := by
+      haveI hGP : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
+        change IsProbabilityMeasure (multivariateGaussian _ _); infer_instance
+      have hGB : q₀ ≤ bvmGaussian J sc n ω Bs := hc₀ Δ hΔC Bs Set.Subset.rfl hBmeas
+      have htvc : tvDist (bvmGaussian J sc n ω) Post = bvmTV κ π θ₀ J sc n ω :=
+        (tvDist_comm _ _).symm
+      have hsupr : bvmGaussian J sc n ω Bs - Post Bs ≤ bvmTV κ π θ₀ J sc n ω := by
+        rw [← htvc]
+        exact le_iSup₂ (f := fun s (_ : MeasurableSet s) =>
+          bvmGaussian J sc n ω s - Post s) Bs hBmeas
+      have hstep : bvmGaussian J sc n ω Bs ≤ Post Bs + bvmTV κ π θ₀ J sc n ω :=
+        le_trans (tsub_le_iff_right.1 hsupr) (le_of_eq (add_comm _ _))
+      have h5 : q₀ ≤ Post Bs + p₀ :=
+        le_trans hGB (le_trans hstep (add_le_add le_rfl hb2.le))
+      have hq : p₀ + p₀ = q₀ := by rw [hp₀def]; exact ENNReal.add_halves q₀
+      rw [← hq] at h5
+      exact (ENNReal.add_le_add_iff_right hp₀top).1 h5
+    -- the truncation set
+    set S : Set (EuclideanSpace ℝ (Fin k)) := {h | ‖h‖ ≤ ρ} with hSdef
+    have hSmeas : MeasurableSet S := measurableSet_le (by fun_prop) measurable_const
+    have hBS : Bs ⊆ S := fun x hx => le_trans (mem_closedBall_zero_iff.1 hx) hρa
+    have hℓneg : Measurable fun h : EuclideanSpace ℝ (Fin k) => ℓ (-h) := hℓ.comp (by fun_prop)
+    set Aq : ℝ≥0∞ := ∫⁻ h in S, ℓ (-h) ∂Post with hAqdef
+    -- the truncated part is finite
+    have hAqle : Aq ≤ ENNReal.ofReal (1 + ρ ^ p) := by
+      calc Aq ≤ ∫⁻ _ in S, ENNReal.ofReal (1 + ρ ^ p) ∂Post := by
+            refine lintegral_mono_ae ?_
+            filter_upwards [ae_restrict_mem hSmeas] with h hh
+            refine (hpoly (-h)).trans ?_
+            rw [norm_neg]
+            exact ENNReal.ofReal_le_ofReal
+              (by linarith [Real.rpow_le_rpow (norm_nonneg h) hh hp])
+        _ = ENNReal.ofReal (1 + ρ ^ p) * Post S := setLIntegral_const _ _
+        _ ≤ ENNReal.ofReal (1 + ρ ^ p) * 1 := by gcongr; exact prob_le_one
+        _ = ENNReal.ofReal (1 + ρ ^ p) := mul_one _
+    have hAqtop : Aq ≠ ∞ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top hAqle
+    -- the lower bound on the risk at a far-away point
+    have hind : ∫⁻ h in S, Bs.indicator (fun _ => η) h ∂Post = η * Post Bs := by
+      rw [lintegral_indicator hBmeas, setLIntegral_const, Measure.restrict_apply hBmeas,
+        Set.inter_eq_self_of_subset_left hBS]
+    have hZτ : Aq + δ₀ ≤ bpePosteriorRisk κ π θ₀ ℓ n τ ω := by
+      have hδ₀le : δ₀ ≤ η * Post Bs := by rw [hδ₀def]; gcongr
+      have hptw : ∀ h ∈ S, ℓ (-h) + Bs.indicator (fun _ => η) h ≤ ℓ (τ - h) := by
+        intro h hh
+        have hhρ : ‖h‖ ≤ ρ := hh
+        have h3 : 3 * ‖h‖ ≤ ‖τ‖ := by
+          have h3ρ : 3 * ρ ≤ K := le_max_right _ _
+          linarith
+        by_cases hB : h ∈ Bs
+        · have hha : ‖h‖ ≤ a := mem_closedBall_zero_iff.1 hB
+          have h5a : 5 * a ≤ K := le_max_left _ _
+          have h4a : 4 * a ≤ ‖τ - h‖ := by
+            have hns := norm_sub_norm_le τ h
+            linarith
+          rw [Set.indicator_of_mem hB]
+          exact hgapl (-h) (τ - h) (by rw [norm_neg]; exact hha) h4a
+        · rw [Set.indicator_of_notMem hB, add_zero]
+          exact hmono3 h τ hτpos h3
+      calc Aq + δ₀ ≤ Aq + η * Post Bs := add_le_add le_rfl hδ₀le
+        _ = ∫⁻ h in S, (ℓ (-h) + Bs.indicator (fun _ => η) h) ∂Post := by
+              rw [lintegral_add_left hℓneg, hind, ← hAqdef]
+        _ ≤ ∫⁻ h in S, ℓ (τ - h) ∂Post := by
+              refine lintegral_mono_ae ?_
+              filter_upwards [ae_restrict_mem hSmeas] with h hh
+              exact hptw h hh
+        _ ≤ ∫⁻ h, ℓ (τ - h) ∂Post := lintegral_mono' Measure.restrict_le_self le_rfl
+    -- the upper bound on the risk at the origin
+    have hZ0 : bpePosteriorRisk κ π θ₀ ℓ n 0 ω ≤ Aq + (γ + γ) := by
+      have hsplit0 : bpePosteriorRisk κ π θ₀ ℓ n 0 ω = Aq + ∫⁻ h in Sᶜ, ℓ (-h) ∂Post := by
+        rw [hAqdef, bpePosteriorRisk]
+        simp_rw [zero_sub]
+        exact (lintegral_add_compl _ hSmeas).symm
+      have heq : bpePosteriorRisk κ π θ₀ ℓ' n 0 ω
+          = ∫⁻ h in Sᶜ, ENNReal.ofReal (1 + ‖h‖ ^ p) ∂Post := by
+        rw [bpePosteriorRisk, ← lintegral_indicator hSmeas.compl]
+        refine lintegral_congr fun h => ?_
+        rw [zero_sub, hℓ' (-h), norm_neg, Set.indicator_apply]
+        congr 1
+        simp [hSdef, not_le]
+      have hmaj : bpePosteriorRisk κ π θ₀ ℓ' n 0 ω ≤ γ + γ := by
+        have h5 := (hMnapprox n ω (-Δ) (by rw [norm_neg]; linarith)).1
+        rw [neg_add_cancel] at h5
+        exact le_trans h5 (add_le_add (hρtail ℓ' hℓ'0 (fun x => hℓ'poly x) (-Δ)
+          (by rw [norm_neg]; linarith)) hb3.le)
+      rw [heq] at hmaj
+      have htail : ∫⁻ h in Sᶜ, ℓ (-h) ∂Post ≤ γ + γ := by
+        refine le_trans (lintegral_mono_ae ?_) hmaj
+        filter_upwards with h
+        have hh := hpoly (-h)
+        rwa [norm_neg] at hh
+      rw [hsplit0]
+      exact add_le_add le_rfl htail
+    -- the two bounds are incompatible
+    have hfinal : Aq + δ₀ ≤ Aq + (γ + (γ + γ)) := by
+      calc Aq + δ₀ ≤ bpePosteriorRisk κ π θ₀ ℓ n τ ω := hZτ
+        _ ≤ bpePosteriorRisk κ π θ₀ ℓ n 0 ω + εseq n := hT n ω 0
+        _ ≤ (Aq + (γ + γ)) + γ := add_le_add hZ0 h4
+        _ = Aq + (γ + (γ + γ)) := by ring
+    exact absurd ((ENNReal.add_le_add_iff_left hAqtop).1 hfinal) (not_le.2 hγsum)
+  calc productMeasure M μ θ₀ n {ω | K ≤ ‖Real.sqrt n • (T n ω - θ₀)‖}
+      ≤ productMeasure M μ θ₀ n ({ω | K₂ < ‖scoreSum sc n ω‖} ∪
+        ({ω | p₀ ≤ bvmTV κ π θ₀ J sc n ω} ∪ {ω | γ ≤ Mn n ω})) := measure_mono hsub
+    _ ≤ t + (t + t) := (measure_union_le _ _).trans
+        (add_le_add h1 ((measure_union_le _ _).trans (add_le_add h2 h3)))
+    _ ≤ ε := ht3
 
 /-- **Pointwise argmin consistency** (the single-`ω` form of `argmin_tendsto_of_uniform_approx`,
 whose sequential shape does not fit the `ω`-wise application needed below): if `τ` is an
