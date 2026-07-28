@@ -4502,47 +4502,64 @@ lemma norm_studentPair_truncAt_le (F : Measure ℝ) {τ : ℝ} (hτ : 0 ≤ τ) 
     linarith
   linarith
 
-/-- **(W27) The one remaining analytic item of the studentized expansion, as a named brick.**
+/-- **(W27, AMENDED IN W30) The one remaining analytic item of the studentized expansion, as a
+named brick.**
 
 For the law of the truncated bivariate root there is, at every `n` and every outer frequency
-`|θ| ≥ c₀√n`, a Fourier certificate for the surrogate's multiplier: carrier
-`t₀ = (θ/σ)e₀` (the frequency of the leading character `e^{iθw₀/σ}`), admitted bandwidth
-`R = |θ|/(2σ)` — so the whole band that is used satisfies `‖t₀‖ − R = |θ|/(2σ) ≥ c₀√n/(2σ)`,
-which is where `exists_bound_norm_charFun_vecRootLaw_studentPair` gives `cⁿ` — mass `Γ n`
-growing at most polynomially, leakage and `L¹` error `O(n^{-3/2})`.
+`|θ| ≥ c₀√n`, a Fourier certificate for the surrogate's multiplier: carrier `t₀ = (θ/σ)e₀` (the
+frequency of the leading character `e^{iθw₀/σ}`), leakage measured on the **low-frequency ball**
+`{s : ‖t₀ + s‖ < c₀√n/(2σ)}` — whose complement is where
+`exists_bound_norm_charFun_vecRootLaw_studentPair` gives `cⁿ`, at `ε₀ = c₀/(2σ)` — mass `Γ n θ`
+growing at most polynomially in `n` and `|θ|` jointly, leakage and `L¹` error `O(n^{-3/2})`.
 
-Granting this, `norm_charFun_map_deltaSurrogate_vecRootLaw_le` produces the outer-range bound
-`Γ n·cⁿ + O(n^{-3/2}) = O(n^{-3/2})` that `esseen_split` consumes at `δ = n⁻¹`, `ρ = c√n`, and
-the studentized expansion closes.
+Granting this, `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` produces the outer-range
+bound `Γ(n,θ)·cⁿ + O(n^{-3/2})` that the Esseen chain consumes at `δ = n⁻¹`, `ρ = c√n`, and the
+studentized expansion closes.
 
-**Why this is the right shape.** The intended construction is
-`a = 𝓕[w ↦ e^{iθ(Hₙ(w) − w₀/σ)}χ(w/M)]` at `M = n^{3/8}` with `χ` a smooth cut-off equal to `1`
-on the unit ball; then `fourierSynth a t₀ w = e^{iθHₙ(w)}χ(w/M)` by Fourier inversion, so
-`hasFourierCertificate_of_eqOn` applies with `B = 1` and `η ≤ ρ_n{‖w‖ > M} = O(M^{-4})`, a
-fourth moment of the root. The phase `θ(Hₙ − w₀/σ)` has gradient `O(θrM) = O(M)`, so `N`
-integrations by parts give `‖s‖^N|a(s)| ≲ M^{N+2}` and the leakage past `R ≍ √n` is
-`O(M^{N+2}R^{2−N}) = O(n^{7/4 − N/8})`; `N = 26` suffices. The mass `Γ` is polynomial in `M`,
-hence in `n`, which is all that is needed against `cⁿ`.
+**TWO AMENDMENTS OFF THE WAVE-27 STATEMENT, both forced; see the section note above
+`deltaSurrogate_slope_ge` for the arithmetic.**
 
-**This replaces, and is strictly smaller than, the conditioning device the wave-26 note and the
-wave-27 prompt prescribed.** It is a statement about one explicit polynomial phase against
-Lebesgue measure on `ℝ²` — no sampling law, no `n`-fold product, no conditioning. The route it
-replaces is not merely harder: `deltaSurrogate_sub_linear_ge` shows it cannot work at all, since
-the linearisation error over a free block of `k` coordinates costs `≍ k/n` in the phase while
-the Cramér gain is only `ρ^k`. -/
+* **The leakage ball is relocated**, from `{s : |θ|/(2σ) < ‖s‖}` to `{s : ‖t₀ + s‖ < c₀√n/(2σ)}`.
+  The wave-27 shape cannot be met. Its `L¹` error is priced by `ρ_n{‖w‖ > M}`, and the wave-27
+  note's `O(M^{-4})` is not available: the root's second coordinate is a normalized sum of
+  `(Xᵢ − m)²`, of which `hF4` is only a *second* moment, so on the truncated law
+  `E w₁⁴ = O(n)` and `η = O(n^{-3/2})` forces `M ≥ n^{5/8}` rather than `n^{3/8}`; and at that
+  radius the phase `θ(Hₙ − w₀/σ)` has gradient `≍ |θ|n^{1/8}`, which exceeds the admitted
+  bandwidth `|θ|/(2σ)`, so no integration by parts against `‖s‖ > R` has anything to extract.
+  On the relocated ball the requirement is instead that the *total* phase `θHₙ − ⟪·,s⟫` be
+  non-stationary, and `deltaSurrogate_slope_ge` gives that with no cut-off and uniformly in `M`:
+  `σ ∂_{w₀}Hₙ ≥ 5/6` everywhere, so `|∂_{w₀}(θHₙ − ⟪·,s⟫)| ≥ (4/3)|θ|/σ` on the bad set.
+  `N = 5` integrations by parts then close it at `M = n^{5/8}`.
+* **The mass carries `θ`.** `Γ` is at least the `L¹` mass of the transform of a function
+  oscillating at frequency `≍ |θ|n^{1/4}` over a ball of radius `M`, hence `≍ n^{7/4}θ²`; the
+  construction gives no `θ`-uniform bound and `Γ : ℕ → ℝ` is amended to `Γ : ℕ → ℝ → ℝ`. This is
+  free at the call site: `Γ(n,θ)cⁿ` exceeds the trivial `‖φ‖ ≤ 2` only past `|θ| ≍ c^{-n/K}`, and
+  the Esseen weight prices everything beyond a cut `T` at `2/(δπ²T)`.
+
+**What is unchanged.** The item is still deterministic — one explicit polynomial phase against
+Lebesgue measure on `ℝ²`, with no sampling law, no `n`-fold product and no conditioning — and it
+is still strictly smaller than the conditioning device the wave-26 note and the wave-27 prompt
+prescribed, which `deltaSurrogate_sub_linear_ge` shows cannot work at all.
+
+**The construction, as corrected.** `a = 𝓕[w ↦ e^{iθ(Hₙ(w) − w₀/σ)}χ(w/M)]` at `M = n^{5/8}`,
+`χ` a smooth cut-off equal to `1` on the unit ball; then `fourierSynth a t₀ w = e^{iθHₙ(w)}χ(w/M)`
+by Fourier inversion, so `hasFourierCertificateOnBand_of_eqOn` applies with `B = 1` and
+`η ≤ ρ_n{‖w‖ > M} = O(n · M^{-4}) = O(n^{-3/2})`. -/
 theorem exists_fourierCertificate_deltaSurrogate
     -- USER-INPUT: finite fourth moment of the sampling law, which is what prices the bulk
     (F : Measure ℝ) [IsProbabilityMeasure F]
     (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F)
     -- USER-INPUT: the scale of the surrogate, and the outer range
     {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) :
-    ∃ (Γ : ℕ → ℝ) (C : ℝ) (K : ℕ), 0 < C ∧ (∀ n : ℕ, Γ n ≤ C * (n : ℝ) ^ K) ∧
+    ∃ (Γ : ℕ → ℝ → ℝ) (C : ℝ) (K : ℕ), 0 < C ∧
+      (∀ (n : ℕ) (θ : ℝ), Γ n θ ≤ C * (n : ℝ) ^ K * (1 + |θ|) ^ K) ∧
       ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ * Real.sqrt (n : ℝ) ≤ |θ| →
-        HasFourierCertificate
+        HasFourierCertificateOnBand
           (vecRootLaw F
             (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n)
-          σ ((Real.sqrt (n : ℝ))⁻¹) θ ((θ / σ) • coordDir 0) (|θ| / (2 * σ))
-          (Γ n) (C / ((n : ℝ) * Real.sqrt (n : ℝ)))
+          σ ((Real.sqrt (n : ℝ))⁻¹) θ ((θ / σ) • coordDir 0)
+          (c₀ * Real.sqrt (n : ℝ) / (2 * σ))
+          (Γ n θ) (C / ((n : ℝ) * Real.sqrt (n : ℝ)))
           (C / ((n : ℝ) * Real.sqrt (n : ℝ))) := by
   sorry
 
