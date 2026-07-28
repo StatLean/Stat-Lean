@@ -4983,17 +4983,197 @@ lemma integrable_fourier_bulkMultiplier {M : ℝ} (hM : 0 < M) (σ r θ : ℝ) :
   integrable_fourier_of_compactSupport (contDiff_bulkMultiplier σ r θ M)
     (hasCompactSupport_bulkMultiplier hM σ r θ)
 
+/-! ### Input (A), second half: the mass bound
+
+The soft half of (A) is now structural rather than analytic. `∫‖𝓕 g‖` is, as a function of the
+Schwartz function `g`, the norm of the composite continuous linear map
+`𝓢(ℝ², ℂ) --𝓕--> 𝓢(ℝ², ℂ) --toLp 1--> L¹`, so `Seminorm.bound_of_continuous` against
+`schwartz_withSeminorms` returns a **finite** set `s` of Schwartz indices and one universal
+constant `C` with `∫‖𝓕 g‖ ≤ C·max_{(k,m) ∈ s} S_{k,m}(g)` --- for *every* `g` at once
+(`exists_bound_integral_norm_fourier_schwartz`). No decay estimate on `𝓕 g` is needed and no
+integration by parts is performed: the `M²`-and-three-derivatives bookkeeping the wave-31 note
+describes is what Mathlib's construction of `fourierTransformCLM` already carries.
+
+That reduces (A) to the *Schwartz seminorms of `g` itself*. Since `g` is supported in
+`‖w‖ ≤ 2M` (`tsupport_bulkMultiplier_subset`, and `iteratedFDeriv_bulkMultiplier_eq_zero` off
+that ball) and `M = n^{5/8} ≤ n`, the factor `‖w‖^k` costs only `2^k n^k`, so
+`S_{k,m}(g) ≤ 2^k n^k · sup_w ‖D^m g(w)‖` (`exists_seminorm_bulkMultiplier_le`), and the finite
+`s` is absorbed by summing the per-index constants and exponents.
+
+**The residue of (A) is therefore one elementary estimate and nothing else**:
+`exists_norm_iteratedFDeriv_bulkMultiplier_le` --- for each fixed order `m`, a bound on
+`‖D^m g‖_∞` polynomial in `n` and `1 + |θ|`. This is a Leibniz split of the product
+`χ(·/M)·e^{iθQ}` (`norm_iteratedFDeriv_mul_le`), a Faà di Bruno bound on the exponential
+(`norm_iteratedFDeriv_comp_le`, with `C = 1` since every derivative of `t ↦ e^{it}` has modulus
+`1`), and the derivatives of the *cubic* `Q = Hₙ − w₀/σ`, which are polynomial in `M` and `|θ|`
+and vanish above order three. Nothing about it is structural, and the constants may be as crude
+as one likes: only the *degree* has to be independent of `n` and `θ`, and it is. -/
+
 /-- **(A) The mass of the bulk multiplier's transform is polynomial in `n` and `|θ|`** — the first
 of the three inputs of `exists_fourierCertificate_deltaSurrogate`; see the section note.
 
 `g` is smooth with support in a ball of radius `2M`, so `𝓕 g` decays faster than any polynomial
 and repeated integration by parts bounds `∫‖𝓕 g‖` by `M²` times a supremum of derivatives of `g`,
 each of which is polynomial in `M = n^{5/8}` and `|θ|`. -/
+theorem exists_bound_integral_norm_fourier_schwartz :
+    ∃ (s : Finset (ℕ × ℕ)) (C : ℝ), 0 < C ∧ ∀ f : SchwartzMap E₂ ℂ,
+      (∫ v : E₂, ‖𝓕 (f : E₂ → ℂ) v‖)
+        ≤ C * (s.sup (schwartzSeminormFamily ℂ E₂ ℂ)) f := by
+  set T : SchwartzMap E₂ ℂ →L[ℂ] Lp ℂ 1 (volume : Measure E₂) :=
+    (SchwartzMap.toLpCLM ℂ ℂ 1 (volume : Measure E₂)).comp
+      (SchwartzMap.fourierTransformCLM ℂ (V := E₂) (E := ℂ)) with hT
+  set q : Seminorm ℂ (SchwartzMap E₂ ℂ) :=
+    (normSeminorm ℂ (Lp ℂ 1 (volume : Measure E₂))).comp T.toLinearMap with hq
+  have hqc : Continuous q := by
+    have hcoe : (q : SchwartzMap E₂ ℂ → ℝ) = fun f => ‖T f‖ := rfl
+    rw [hcoe]
+    exact T.continuous.norm
+  obtain ⟨s, C, hC0, hC⟩ :=
+    Seminorm.bound_of_continuous (schwartz_withSeminorms ℂ E₂ ℂ) q hqc
+  refine ⟨s, C, lt_of_le_of_ne C.coe_nonneg (by exact_mod_cast (Ne.symm hC0)), fun f => ?_⟩
+  have h1 : q f = ∫ v : E₂, ‖𝓕 (f : E₂ → ℂ) v‖ := by
+    have h : q f
+        = ‖(SchwartzMap.fourierTransformCLM ℂ (V := E₂) (E := ℂ) f).toLp
+            1 (volume : Measure E₂)‖ := rfl
+    rw [h, SchwartzMap.norm_toLp_one, SchwartzMap.fourierTransformCLM_apply]
+    rfl
+  have h2 := hC f
+  simp only [Seminorm.coe_smul, Pi.smul_apply, NNReal.smul_def, smul_eq_mul] at h2
+  rw [h1] at h2
+  exact h2
+
+lemma bulkMultiplier_eq_zero_of_lt {M : ℝ} (hM : 0 < M) (σ r θ : ℝ) {w : E₂}
+    (hw : 2 * M < ‖w‖) : bulkMultiplier σ r θ M w = 0 := by
+  have hzero : (bulkCutoff (M⁻¹ • w) : ℝ) = 0 := by
+    refine bulkCutoff.zero_of_le_dist ?_
+    have h2 : (2 : ℝ) ≤ ‖M⁻¹ • w‖ := by
+      rw [norm_smul, norm_inv, Real.norm_eq_abs, abs_of_pos hM, ← div_eq_inv_mul,
+        le_div_iff₀ hM]
+      linarith
+    simpa [dist_eq_norm, bulkCutoff] using h2
+  rw [bulkMultiplier, hzero]
+  simp
+
+lemma tsupport_bulkMultiplier_subset {M : ℝ} (hM : 0 < M) (σ r θ : ℝ) :
+    tsupport (bulkMultiplier σ r θ M) ⊆ Metric.closedBall (0 : E₂) (2 * M) := by
+  refine closure_minimal (fun w hw => ?_) Metric.isClosed_closedBall
+  by_contra hout
+  exact hw (bulkMultiplier_eq_zero_of_lt hM σ r θ
+    (by simpa [Metric.mem_closedBall, not_le] using hout))
+
+lemma iteratedFDeriv_bulkMultiplier_eq_zero {M : ℝ} (hM : 0 < M) (σ r θ : ℝ) (m : ℕ) {w : E₂}
+    (hw : 2 * M < ‖w‖) : iteratedFDeriv ℝ m (bulkMultiplier σ r θ M) w = 0 := by
+  have hns : w ∉ tsupport (bulkMultiplier σ r θ M) := by
+    intro h
+    have h2 := tsupport_bulkMultiplier_subset hM σ r θ h
+    rw [Metric.mem_closedBall, dist_zero_right] at h2
+    linarith
+  by_contra hne
+  exact hns (support_iteratedFDeriv_subset m hne)
+
+noncomputable def schwartzBulkMultiplier (σ r θ : ℝ) {M : ℝ} (hM : 0 < M) :
+    SchwartzMap E₂ ℂ :=
+  schwartzOfCompactSupport (bulkMultiplier σ r θ M) (contDiff_bulkMultiplier σ r θ M)
+    (hasCompactSupport_bulkMultiplier hM σ r θ)
+
+@[simp] lemma coe_schwartzBulkMultiplier (σ r θ : ℝ) {M : ℝ} (hM : 0 < M) :
+    ((schwartzBulkMultiplier σ r θ hM : SchwartzMap E₂ ℂ) : E₂ → ℂ)
+      = bulkMultiplier σ r θ M := rfl
+
+/-- NAMED RESIDUE (A2). -/
+theorem exists_norm_iteratedFDeriv_bulkMultiplier_le {σ : ℝ} (hσ : 0 < σ) (m : ℕ) :
+    ∃ (A : ℝ) (K : ℕ), 0 < A ∧ ∀ n : ℕ, 0 < n → ∀ (θ : ℝ) (w : E₂),
+      ‖iteratedFDeriv ℝ m (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) w‖
+        ≤ A * (n : ℝ) ^ K * (1 + |θ|) ^ K := by
+  sorry
+
+theorem exists_seminorm_bulkMultiplier_le {σ : ℝ} (hσ : 0 < σ) (k m : ℕ) :
+    ∃ (A : ℝ) (K : ℕ), 0 < A ∧ ∀ (n : ℕ) (hn : 0 < n) (θ : ℝ),
+      SchwartzMap.seminorm ℂ k m
+          (schwartzBulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius_pos hn))
+        ≤ A * (n : ℝ) ^ K * (1 + |θ|) ^ K := by
+  obtain ⟨A₀, K₀, hA₀, hA⟩ := exists_norm_iteratedFDeriv_bulkMultiplier_le hσ m
+  refine ⟨2 ^ k * A₀, k + K₀, by positivity, fun n hn θ => ?_⟩
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hθ1 : (1 : ℝ) ≤ 1 + |θ| := by have := abs_nonneg θ; linarith
+  have hMle : bulkRadius n ≤ (n : ℝ) := by
+    have hstep : (n : ℝ) ^ ((5 : ℝ) / 8) ≤ (n : ℝ) ^ (1 : ℝ) :=
+      Real.rpow_le_rpow_of_exponent_le hn1 (by norm_num)
+    rw [Real.rpow_one] at hstep
+    rw [bulkRadius]
+    exact hstep
+  have hMpos : 0 < bulkRadius n := bulkRadius_pos hn
+  refine SchwartzMap.seminorm_le_bound ℂ k m _ (by positivity) fun w => ?_
+  rw [coe_schwartzBulkMultiplier]
+  rcases le_or_gt ‖w‖ (2 * bulkRadius n) with hw | hw
+  · have h1 : ‖w‖ ^ k ≤ 2 ^ k * (n : ℝ) ^ k := by
+      have hwle : ‖w‖ ≤ 2 * (n : ℝ) := by
+        have : bulkRadius n ≤ (n : ℝ) := hMle
+        linarith
+      calc ‖w‖ ^ k ≤ (2 * (n : ℝ)) ^ k := pow_le_pow_left₀ (norm_nonneg w) hwle k
+        _ = 2 ^ k * (n : ℝ) ^ k := by rw [mul_pow]
+    have h2 := hA n hn θ w
+    calc ‖w‖ ^ k * ‖iteratedFDeriv ℝ m
+            (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) w‖
+        ≤ (2 ^ k * (n : ℝ) ^ k) * (A₀ * (n : ℝ) ^ K₀ * (1 + |θ|) ^ K₀) :=
+          mul_le_mul h1 h2 (norm_nonneg _) (by positivity)
+      _ = (2 ^ k * A₀) * ((n : ℝ) ^ (k + K₀)) * (1 + |θ|) ^ K₀ := by
+          rw [pow_add]; ring
+      _ ≤ (2 ^ k * A₀) * ((n : ℝ) ^ (k + K₀)) * (1 + |θ|) ^ (k + K₀) := by
+          have hmono := pow_le_pow_right₀ hθ1 (Nat.le_add_left K₀ k)
+          have hnn : (0 : ℝ) ≤ 2 ^ k * A₀ * (n : ℝ) ^ (k + K₀) := by positivity
+          exact mul_le_mul_of_nonneg_left hmono hnn
+  · rw [iteratedFDeriv_bulkMultiplier_eq_zero hMpos _ _ _ m hw, norm_zero, mul_zero]
+    positivity
+
 theorem exists_integral_norm_fourier_bulkMultiplier_le {σ : ℝ} (hσ : 0 < σ) :
     ∃ (C : ℝ) (K : ℕ), 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ θ : ℝ,
       (∫ v : E₂, ‖𝓕 (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) v‖)
         ≤ C * (n : ℝ) ^ K * (1 + |θ|) ^ K := by
-  sorry
+  obtain ⟨s, C₀, hC₀, hC⟩ := exists_bound_integral_norm_fourier_schwartz
+  have H : ∀ i : ℕ × ℕ, ∃ (A : ℝ) (K : ℕ), 0 < A ∧ ∀ (n : ℕ) (hn : 0 < n) (θ : ℝ),
+      SchwartzMap.seminorm ℂ i.1 i.2
+          (schwartzBulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius_pos hn))
+        ≤ A * (n : ℝ) ^ K * (1 + |θ|) ^ K :=
+    fun i => exists_seminorm_bulkMultiplier_le hσ i.1 i.2
+  choose A K hA hAle using H
+  have hsum : (0 : ℝ) ≤ ∑ i ∈ s, A i := Finset.sum_nonneg fun i _ => (hA i).le
+  have hB : (0 : ℝ) ≤ 1 + ∑ i ∈ s, A i := by linarith
+  refine ⟨C₀ * (1 + ∑ i ∈ s, A i), ∑ i ∈ s, K i, mul_pos hC₀ (by linarith),
+    fun n hn θ => ?_⟩
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hθ1 : (1 : ℝ) ≤ 1 + |θ| := by have := abs_nonneg θ; linarith
+  have hNK : (0 : ℝ) ≤ (n : ℝ) ^ (∑ i ∈ s, K i) := by positivity
+  have hTK : (0 : ℝ) ≤ (1 + |θ|) ^ (∑ i ∈ s, K i) := by positivity
+  have hfull : (0 : ℝ) ≤ (1 + ∑ i ∈ s, A i) * (n : ℝ) ^ (∑ i ∈ s, K i)
+      * (1 + |θ|) ^ (∑ i ∈ s, K i) := mul_nonneg (mul_nonneg hB hNK) hTK
+  have hsup : (s.sup (schwartzSeminormFamily ℂ E₂ ℂ))
+        (schwartzBulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius_pos hn))
+      ≤ (1 + ∑ i ∈ s, A i) * (n : ℝ) ^ (∑ i ∈ s, K i) * (1 + |θ|) ^ (∑ i ∈ s, K i) := by
+    refine Seminorm.finset_sup_apply_le hfull fun i hi => ?_
+    have h1 := hAle i n hn θ
+    have hAi : A i ≤ 1 + ∑ j ∈ s, A j := by
+      have := Finset.single_le_sum (f := A) (fun j _ => (hA j).le) hi
+      linarith
+    have hKi : K i ≤ ∑ j ∈ s, K j := Finset.single_le_sum (f := K) (fun j _ => Nat.zero_le _) hi
+    have e1 : (n : ℝ) ^ K i ≤ (n : ℝ) ^ (∑ j ∈ s, K j) := pow_le_pow_right₀ hn1 hKi
+    have e2 : (1 + |θ|) ^ K i ≤ (1 + |θ|) ^ (∑ j ∈ s, K j) := pow_le_pow_right₀ hθ1 hKi
+    have hpi : (0 : ℝ) ≤ (n : ℝ) ^ K i := by positivity
+    have hti : (0 : ℝ) ≤ (1 + |θ|) ^ K i := by positivity
+    calc (schwartzSeminormFamily ℂ E₂ ℂ) i
+            (schwartzBulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius_pos hn))
+        ≤ A i * (n : ℝ) ^ K i * (1 + |θ|) ^ K i := h1
+      _ ≤ (1 + ∑ j ∈ s, A j) * (n : ℝ) ^ (∑ j ∈ s, K j) * (1 + |θ|) ^ (∑ j ∈ s, K j) :=
+          mul_le_mul (mul_le_mul hAi e1 hpi hB) e2 hti (mul_nonneg hB hNK)
+  have hmain := hC (schwartzBulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius_pos hn))
+  rw [coe_schwartzBulkMultiplier] at hmain
+  calc (∫ v : E₂, ‖𝓕 (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) v‖)
+      ≤ C₀ * (s.sup (schwartzSeminormFamily ℂ E₂ ℂ))
+          (schwartzBulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius_pos hn)) := hmain
+    _ ≤ C₀ * ((1 + ∑ i ∈ s, A i) * (n : ℝ) ^ (∑ i ∈ s, K i)
+          * (1 + |θ|) ^ (∑ i ∈ s, K i)) := mul_le_mul_of_nonneg_left hsup hC₀.le
+    _ = C₀ * (1 + ∑ i ∈ s, A i) * (n : ℝ) ^ (∑ i ∈ s, K i)
+          * (1 + |θ|) ^ (∑ i ∈ s, K i) := by ring
 
 /-- **(B) The non-stationary-phase estimate: the weight carries `O(n^{-3/2})` on the
 low-frequency ball** — the second input, and the analytic heart of the certificate.
