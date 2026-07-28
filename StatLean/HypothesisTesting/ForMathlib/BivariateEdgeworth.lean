@@ -336,4 +336,201 @@ theorem norm_charFun_vecRootLaw_sub_edgeworth_le (F : Measure ℝ) [IsProbabilit
 
 end VecRoot
 
+/-! ## The mixed characteristic function
+
+The studentized route of `Bootstrap/Edgeworth.lean` needs, besides the expansion of
+`ψ_n(θ, s) = φ_{ρ_n}(θ e₁/σ + s e₂/σ²)` supplied by
+`norm_charFun_vecRootLaw_sub_edgeworth_le`, an expansion of the *`s`-derivative* of `ψ_n` at
+`s = 0`. Differentiating an inequality is not legitimate, so that estimate cannot be read off
+from the expansion; it is proved here from scratch, for the quantity the derivative is:
+
+`mixCharFun μ b t = ∫ ⟪w, b⟫ e^{i⟪w,t⟫} ∂μ`,
+
+the character in the direction `t` weighted by the coordinate in the direction `b`.
+
+The point of this section is that the mixed quantity is *easier* than the expansion, not
+harder. Its value on a vector root factorises **exactly** — one distinguished coordinate
+carrying the weight `⟪·, b⟫`, the remaining `n − 1` carrying only the character
+(`mixCharFun_vecRootLaw`) — and a first-order Taylor bound on the single distinguished factor
+(`norm_mixCharFun_sub_mul_I_le`) then gives the whole estimate, with the covariance
+`κ = ∫ ⟪x, b⟫⟪x, a⟫` as the limit and an `O(n^{-1/2})` remainder
+(`norm_mixCharFun_vecRootLaw_sub_le`). No smoothing, no window and no Cramér condition enter:
+the factorisation is an identity and the Taylor bound is pointwise. -/
+
+section Mixed
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+
+/-- The **mixed characteristic function** `∫ ⟪w, b⟫ e^{i⟪w,t⟫} ∂μ`.
+
+Up to the factor `i` this is the derivative of `charFun μ` at `t` in the direction `b`
+(Mathlib's `iteratedFDeriv_charFun` at `n = 1` computes exactly this integral), but it is
+defined and estimated directly: what the studentized expansion needs is an *inequality* for it,
+uniform in `t`, and inequalities cannot be differentiated. -/
+noncomputable def mixCharFun (μ : Measure E) (b t : E) : ℂ :=
+  ∫ w, ((⟪w, b⟫ : ℝ) : ℂ) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) ∂μ
+
+/-- The mixed characteristic function of a pushforward is a directional integral. -/
+lemma mixCharFun_map (F : Measure ℝ) {Z : ℝ → E} (hZ : Measurable Z) (b t : E) :
+    mixCharFun (F.map Z) b t
+      = ∫ x, ((⟪Z x, b⟫ : ℝ) : ℂ) * Complex.exp ((⟪Z x, t⟫ : ℝ) * Complex.I) ∂F := by
+  rw [mixCharFun, integral_map hZ.aemeasurable (by fun_prop)]
+
+/-- **The mixed characteristic function of a vector root factorises exactly.**
+
+`∫ ⟪w, b⟫ e^{i⟪w,a⟫} ∂(vecRootLaw F Z n) = √n · (∫ ⟪Z x, b⟫ e^{i⟪Z x, c⟫} ∂F) · φ(c)^{n−1}`,
+with `c = n^{-1/2} • a`.
+
+This is the analogue of `charFun_vecRootLaw` for the weighted character, and it is the reason
+(M1)(b) is tractable: the weight `⟪·, b⟫` of the root is `n^{-1/2} ∑ᵢ ⟪Z(yᵢ), b⟫`, a *sum*, so
+the integrand splits into `n` products over the coordinates, each with exactly one
+distinguished factor. Fubini on `Measure.pi` (`integral_fintype_prod_eq_prod`) evaluates each,
+and the `n` summands are equal; the surviving `n · n^{-1/2} = √n` is the whole reason the
+mixed quantity is of size `n^{-1/2}` larger than a plain characteristic function before the
+centring of `⟪·, b⟫` is used. -/
+theorem mixCharFun_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E}
+    (hZ : Measurable Z) {b : E} (hb : Integrable (fun x : ℝ => (⟪Z x, b⟫ : ℝ)) F)
+    (m : ℕ) (a : E) :
+    mixCharFun (vecRootLaw F Z (m + 1)) b a
+      = (Real.sqrt ((m + 1 : ℕ) : ℝ) : ℂ)
+          * mixCharFun (F.map Z) b ((Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ • a)
+          * charFun (F.map Z) ((Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ • a) ^ m := by
+  classical
+  have hNpos : (0 : ℝ) < ((m + 1 : ℕ) : ℝ) := by positivity
+  have hsq : (0 : ℝ) < Real.sqrt ((m + 1 : ℕ) : ℝ) := Real.sqrt_pos.2 hNpos
+  set r : ℝ := (Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ with hrdef
+  set c : E := r • a with hcdef
+  have hZb : Measurable fun x : ℝ => (⟪Z x, b⟫ : ℝ) := (measurable_inner_right b).comp hZ
+  have hZc : Measurable fun x : ℝ => (⟪Z x, c⟫ : ℝ) := (measurable_inner_right c).comp hZ
+  set g : ℝ → ℂ := fun x => Complex.exp ((⟪Z x, c⟫ : ℝ) * Complex.I) with hgdef
+  set f : ℝ → ℂ := fun x => ((⟪Z x, b⟫ : ℝ) : ℂ) * g x with hfdef
+  have hgnorm : ∀ x, ‖g x‖ = 1 := by
+    intro x
+    rw [hgdef]
+    simp [Complex.norm_exp]
+  have hgm : Measurable g := by rw [hgdef]; fun_prop
+  have hfm : Measurable f := by rw [hfdef]; fun_prop
+  -- the `i`-th summand of the weight, written as a product over the coordinates
+  set h : Fin (m + 1) → Fin (m + 1) → ℝ → ℂ :=
+    fun i j x => if j = i then f x else g x with hhdef
+  have hprod : ∀ (i : Fin (m + 1)) (y : Fin (m + 1) → ℝ),
+      ∏ j, h i j (y j) = ((⟪Z (y i), b⟫ : ℝ) : ℂ) * ∏ j, g (y j) := by
+    intro i y
+    have hfac : ∀ j : Fin (m + 1),
+        h i j (y j) = (if j = i then ((⟪Z (y j), b⟫ : ℝ) : ℂ) else 1) * g (y j) := by
+      intro j
+      by_cases hji : j = i
+      · simp [hhdef, hfdef, hji]
+      · simp [hhdef, hji]
+    simp_rw [hfac]
+    rw [Finset.prod_mul_distrib,
+      Finset.prod_ite_eq' Finset.univ i (fun j => ((⟪Z (y j), b⟫ : ℝ) : ℂ))]
+    simp
+  -- each summand is integrable on the product measure: its modulus is `|⟪Z(yᵢ), b⟫|`
+  have hint : ∀ i : Fin (m + 1),
+      Integrable (fun y : Fin (m + 1) → ℝ => ∏ j, h i j (y j))
+        (Measure.pi fun _ : Fin (m + 1) => F) := by
+    intro i
+    have hdom : Integrable (fun y : Fin (m + 1) → ℝ => |(⟪Z (y i), b⟫ : ℝ)|)
+        (Measure.pi fun _ : Fin (m + 1) => F) := by
+      have := (measurePreserving_eval (μ := fun _ : Fin (m + 1) => F)
+        i).integrable_comp_of_integrable hb.abs
+      simpa [Function.comp] using this
+    have hmeas : ∀ j : Fin (m + 1),
+        Measurable fun y : Fin (m + 1) → ℝ => h i j (y j) := by
+      intro j
+      rcases eq_or_ne j i with rfl | hji
+      · simpa [hhdef] using hfm.comp (measurable_pi_apply j)
+      · simpa [hhdef, hji] using hgm.comp (measurable_pi_apply j)
+    refine Integrable.mono' hdom
+      ((Finset.measurable_prod _ fun j _ => hmeas j).aestronglyMeasurable) ?_
+    filter_upwards with y
+    rw [hprod i y, norm_mul, Complex.norm_real, Real.norm_eq_abs]
+    have hone : ‖∏ j, g (y j)‖ = 1 := by
+      rw [norm_prod]
+      simp [hgnorm]
+    rw [hone, mul_one]
+  -- step 1: rewrite the mixed integral over the root law as an integral over the product
+  have hstep1 : mixCharFun (vecRootLaw F Z (m + 1)) b a
+      = ∫ y : Fin (m + 1) → ℝ, ((r : ℂ) * ∑ i, ∏ j, h i j (y j))
+        ∂(Measure.pi fun _ : Fin (m + 1) => F) := by
+    rw [mixCharFun, vecRootLaw,
+      integral_map (measurable_vecRoot hZ (m + 1)).aemeasurable (by fun_prop)]
+    simp only [← hrdef]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
+    have hbi : (⟪r • ∑ i, Z (y i), b⟫ : ℝ) = r * ∑ i : Fin (m + 1), (⟪Z (y i), b⟫ : ℝ) := by
+      rw [real_inner_smul_left, sum_inner]
+    have hai : (⟪r • ∑ i, Z (y i), a⟫ : ℝ) = ∑ i : Fin (m + 1), (⟪Z (y i), c⟫ : ℝ) := by
+      calc (⟪r • ∑ i, Z (y i), a⟫ : ℝ)
+          = r * ⟪∑ i, Z (y i), a⟫ := real_inner_smul_left _ _ _
+        _ = r * ∑ i : Fin (m + 1), (⟪Z (y i), a⟫ : ℝ) := by rw [sum_inner]
+        _ = ∑ i : Fin (m + 1), r * (⟪Z (y i), a⟫ : ℝ) := Finset.mul_sum _ _ _
+        _ = ∑ i : Fin (m + 1), (⟪Z (y i), c⟫ : ℝ) := by
+            simp only [hcdef, real_inner_smul_right]
+    simp only []
+    rw [hbi, hai]
+    have hexp : Complex.exp (((∑ i : Fin (m + 1), (⟪Z (y i), c⟫ : ℝ)) : ℝ) * Complex.I)
+        = ∏ j, g (y j) := by
+      rw [Complex.ofReal_sum, Finset.sum_mul, Complex.exp_sum]
+    rw [hexp]
+    simp_rw [hprod]
+    rw [← Finset.sum_mul]
+    push_cast
+    ring
+  rw [hstep1]
+  -- step 2: pull out the constant and swap the (finite) sum with the integral
+  have hstep2 : ∫ y : Fin (m + 1) → ℝ, ((r : ℂ) * ∑ i, ∏ j, h i j (y j))
+        ∂(Measure.pi fun _ : Fin (m + 1) => F)
+      = (r : ℂ) * ∫ y : Fin (m + 1) → ℝ, (∑ i, ∏ j, h i j (y j))
+        ∂(Measure.pi fun _ : Fin (m + 1) => F) := integral_const_mul _ _
+  have hstep3 : ∫ y : Fin (m + 1) → ℝ, (∑ i, ∏ j, h i j (y j))
+        ∂(Measure.pi fun _ : Fin (m + 1) => F)
+      = ∑ i, ∫ y : Fin (m + 1) → ℝ, ∏ j, h i j (y j)
+        ∂(Measure.pi fun _ : Fin (m + 1) => F) :=
+    integral_finset_sum _ fun i _ => hint i
+  -- step 3: Fubini on each summand, and the `n − 1` undistinguished factors give a power
+  have hA : ∫ x, f x ∂F = mixCharFun (F.map Z) b c := by
+    rw [mixCharFun_map F hZ]
+  have hB : ∫ x, g x ∂F = charFun (F.map Z) c := by
+    rw [charFun_apply, integral_map hZ.aemeasurable (by fun_prop)]
+  have hterm : ∀ i : Fin (m + 1),
+      ∫ y : Fin (m + 1) → ℝ, ∏ j, h i j (y j) ∂(Measure.pi fun _ : Fin (m + 1) => F)
+        = mixCharFun (F.map Z) b c * charFun (F.map Z) c ^ m := by
+    intro i
+    have hfub : ∫ y : Fin (m + 1) → ℝ, ∏ j, h i j (y j)
+          ∂(Measure.pi fun _ : Fin (m + 1) => F)
+        = ∏ j, ∫ x, h i j x ∂F :=
+      MeasureTheory.integral_fintype_prod_eq_prod (fun j : Fin (m + 1) => h i j)
+    rw [hfub]
+    have hval : ∀ j : Fin (m + 1),
+        (∫ x, h i j x ∂F) = if j = i then mixCharFun (F.map Z) b c else charFun (F.map Z) c := by
+      intro j
+      by_cases hji : j = i
+      · simp only [hhdef, hji, if_pos rfl]
+        exact hA
+      · simp only [hhdef, if_neg hji]
+        exact hB
+    simp_rw [hval]
+    rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ i), if_pos rfl]
+    congr 1
+    rw [Finset.prod_congr rfl (fun j hj => if_neg (Finset.ne_of_mem_erase hj)),
+      Finset.prod_const, Finset.card_erase_of_mem (Finset.mem_univ i)]
+    simp
+  rw [hstep2, hstep3]
+  simp_rw [hterm]
+  rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  have hrm : (r : ℝ) * ((m + 1 : ℕ) : ℝ) = Real.sqrt ((m + 1 : ℕ) : ℝ) := by
+    rw [hrdef, inv_mul_eq_div]
+    exact Real.div_sqrt
+  have hrmC : (r : ℂ) * ((m + 1 : ℕ) : ℂ) = ((Real.sqrt ((m + 1 : ℕ) : ℝ) : ℝ) : ℂ) := by
+    exact_mod_cast congrArg (fun z : ℝ => (z : ℂ)) hrm
+  calc (r : ℂ) * (((m + 1 : ℕ) : ℂ) * (mixCharFun (F.map Z) b c * charFun (F.map Z) c ^ m))
+      = ((r : ℂ) * ((m + 1 : ℕ) : ℂ))
+          * (mixCharFun (F.map Z) b c * charFun (F.map Z) c ^ m) := by ring
+    _ = (Real.sqrt ((m + 1 : ℕ) : ℝ) : ℂ) * mixCharFun (F.map Z) b c
+          * charFun (F.map Z) c ^ m := by rw [hrmC]; ring
+
+end Mixed
+
 end StatLean.HypothesisTesting

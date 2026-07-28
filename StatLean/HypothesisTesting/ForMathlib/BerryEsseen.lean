@@ -221,6 +221,28 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
     rw [hnn, abs_of_neg hy, show (y : ℝ) ^ 2 = (-y) ^ 2 from by ring]
     exact key (-y) hz
 
+open Complex in
+/-- **Second-order remainder bound for `e^{iy}`**, in the shape the *studentized* expansion
+consumes: `‖exp (I y) − 1 − I y‖ ≤ 3 y² / 2`.
+
+A corollary of `norm_cexp_sub_taylor_le` and the triangle inequality against the quadratic
+monomial. The constant is not the sharp one (`1/2`) and does not need to be: in
+`ForMathlib/BivariateEdgeworth.lean` it multiplies a remainder that is already `O(n^{-1/2})`
+after the `n`-fold factorisation, so only its finiteness matters. -/
+lemma norm_cexp_sub_one_sub_mul_I_le (y : ℝ) :
+    ‖Complex.exp (I * y) - 1 - I * y‖ ≤ 3 * y ^ 2 / 2 := by
+  have h : ‖Complex.exp (I * y) - (1 + I * y - (y : ℂ) ^ 2 / 2)‖ ≤ y ^ 2 :=
+    (norm_cexp_sub_taylor_le y).trans (min_le_right _ _)
+  have he : Complex.exp (I * y) - 1 - I * y
+      = Complex.exp (I * y) - (1 + I * y - (y : ℂ) ^ 2 / 2) - (y : ℂ) ^ 2 / 2 := by ring
+  have h2 : ‖((y : ℂ) ^ 2 / 2)‖ = y ^ 2 / 2 := by
+    rw [norm_div, ← Complex.ofReal_pow, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_nonneg (sq_nonneg y)]
+    norm_num
+  calc ‖Complex.exp (I * y) - 1 - I * y‖
+      ≤ ‖Complex.exp (I * y) - (1 + I * y - (y : ℂ) ^ 2 / 2)‖ + ‖((y : ℂ) ^ 2 / 2)‖ := by
+        rw [he]; exact norm_sub_le _ _
+    _ ≤ 3 * y ^ 2 / 2 := by rw [h2]; linarith
 
 open Complex in
 /-- **Uniform fourth-order remainder bound for `e^{iy}`.** The next order of
