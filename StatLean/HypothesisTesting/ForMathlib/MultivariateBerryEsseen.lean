@@ -5899,6 +5899,141 @@ theorem gaussian_measureReal_shell_preimage_aff_le (hk : 0 < k)
   rw [convexDiscrepancy_self] at h
   linarith
 
+/-! #### Wave-29: the *two-sided* shell, and its affine transport
+
+The localised swap step needs more than the outer shell `Bᵋ \ interior B`. A point `v` is
+harmless for the localisation exactly when the mollified indicator is **constant** on a ball
+around `v` (`abs_integral_shift_vecTiltRemainder_le_of_const_ball`), i.e. when `v` lies either
+outside the thickening or inside the *erosion*. The complement of that is the **two-sided**
+shell `Bᵋ \ B_{-ε}`, and the inner half `B \ B_{-ε}` is invisible to
+`measureReal_shell_le_of_convexDiscrepancy`. The bounds below repeat the outer-shell chain for
+the two-sided shell; the cost is a factor `2`, since `gaussian_thickening_le` and
+`gaussian_le_erosion_add` each contribute `C_k ε`. -/
+
+/-- The erosion sits inside the interior (its centre lies in its own closed ball). -/
+lemma erosion_subset_interior {ε : ℝ} (hε : 0 ≤ ε) (B : Set (EuclideanSpace ℝ (Fin k))) :
+    erosion ε B ⊆ interior B := fun _ hx => hx (Metric.mem_closedBall_self hε)
+
+/-- **Affine transport of the erosion.** For `r > 0`,
+`(r • · + a)⁻¹(B_{-ε}) = (B')_{-ε/r}` where `B' = (r • · + a)⁻¹(B)`. -/
+lemma preimage_aff_erosion {r : ℝ} (hr : 0 < r) (a : EuclideanSpace ℝ (Fin k))
+    (B : Set (EuclideanSpace ℝ (Fin k))) {ε : ℝ} (_hε : 0 < ε) :
+    (fun x => r • x + a) ⁻¹' (erosion ε B)
+      = erosion (ε / r) ((fun x => r • x + a) ⁻¹' B) := by
+  have hint : (fun x => r • x + a) ⁻¹' (interior B)
+      = interior ((fun x => r • x + a) ⁻¹' B) := preimage_aff_interior hr a B
+  ext x
+  simp only [Set.mem_preimage, erosion, Set.mem_setOf_eq]
+  rw [← hint]
+  constructor
+  · intro hsub y hy
+    simp only [Set.mem_preimage]
+    refine hsub ?_
+    simp only [Metric.mem_closedBall, dist_eq_norm] at hy ⊢
+    have hrw : r • y + a - (r • x + a) = r • (y - x) := by rw [smul_sub]; abel
+    rw [hrw, norm_smul, Real.norm_eq_abs, abs_of_pos hr]
+    have h1 : r * ‖y - x‖ ≤ r * (ε / r) := mul_le_mul_of_nonneg_left hy hr.le
+    have h2 : r * (ε / r) = ε := by field_simp
+    linarith
+  · intro hsub y hy
+    have hy' : r⁻¹ • (y - a) ∈ Metric.closedBall x (ε / r) := by
+      have hrw : dist (r⁻¹ • (y - a)) x = r⁻¹ * dist y (r • x + a) := by
+        rw [dist_eq_norm, dist_eq_norm, ← norm_smul_of_nonneg (inv_pos.2 hr).le]
+        congr 1
+        match_scalars <;> field_simp
+      rw [Metric.mem_closedBall, hrw, div_eq_inv_mul]
+      exact mul_le_mul_of_nonneg_left (Metric.mem_closedBall.1 hy) (inv_pos.2 hr).le
+    have h := hsub hy'
+    simp only [Set.mem_preimage] at h
+    rwa [smul_smul, mul_inv_cancel₀ hr.ne', one_smul, sub_add_cancel] at h
+
+/-- The Gaussian mass of the **two-sided** shell `Bᵋ \ B_{-ε}` of a convex set is at most
+`2 C_k ε`. -/
+theorem gaussian_measureReal_wideShell_le (hk : 0 < k)
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBm : MeasurableSet B) (hBc : Convex ℝ B)
+    {ε : ℝ} (hε : 0 < ε) :
+    ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+        (Metric.thickening ε B \ erosion ε B)).toReal
+      ≤ 2 * gaussianShellConst k * ε := by
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
+  haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
+  have hEsub : erosion ε B ⊆ Metric.thickening ε B :=
+    (erosion_subset_interior hε.le B).trans
+      (interior_subset.trans (Metric.self_subset_thickening hε B))
+  have hdiff : (γ (Metric.thickening ε B \ erosion ε B)).toReal
+      = (γ (Metric.thickening ε B)).toReal - (γ (erosion ε B)).toReal :=
+    measureReal_sdiff γ hEsub (isOpen_erosion ε B).measurableSet
+  have hCkε : (0 : ℝ) ≤ gaussianShellConst k * ε :=
+    le_of_lt (mul_pos (gaussianShellConst_pos hk) hε)
+  have hthick : (γ (Metric.thickening ε B)).toReal
+      ≤ (γ B).toReal + gaussianShellConst k * ε := by
+    refine toReal_le_add_of_le_add_ofReal (measure_ne_top _ _) hCkε ?_
+    have := gaussian_thickening_le hk hBc hε
+    rwa [← hγdef] at this
+  have herode : (γ B).toReal ≤ (γ (erosion ε B)).toReal + gaussianShellConst k * ε := by
+    refine toReal_le_add_of_le_add_ofReal (measure_ne_top _ _) hCkε ?_
+    have := gaussian_le_erosion_add hk hBm hBc hε
+    rwa [← hγdef] at this
+  rw [hdiff]
+  linarith
+
+/-- The **two-sided** shell bound for an arbitrary law, at the price of `2Δ`. The two-sided
+shell is again a difference of two convex sets, so `measureReal_diff_le_of_convexDiscrepancy`
+applies verbatim. -/
+theorem measureReal_wideShell_le_of_convexDiscrepancy (hk : 0 < k)
+    (μ : Measure (EuclideanSpace ℝ (Fin k))) [IsProbabilityMeasure μ]
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBm : MeasurableSet B) (hBc : Convex ℝ B)
+    {ε : ℝ} (hε : 0 < ε) :
+    (μ (Metric.thickening ε B \ erosion ε B)).toReal
+      ≤ 2 * gaussianShellConst k * ε
+        + 2 * convexDiscrepancy μ (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) := by
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
+  haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
+  have hEsub : erosion ε B ⊆ Metric.thickening ε B :=
+    (erosion_subset_interior hε.le B).trans
+      (interior_subset.trans (Metric.self_subset_thickening hε B))
+  have h := measureReal_diff_le_of_convexDiscrepancy (μ := μ) (ν := γ)
+    (B₁ := Metric.thickening ε B) (B₂ := erosion ε B)
+    Metric.isOpen_thickening.measurableSet (hBc.thickening ε)
+    (isOpen_erosion ε B).measurableSet (convex_erosion hBc) hEsub
+  have hg := gaussian_measureReal_wideShell_le hk hBm hBc hε
+  rw [← hγdef] at hg
+  linarith
+
+/-- The two-sided shell bound, transported along a dilation-translation. -/
+theorem measureReal_wideShell_preimage_aff_le (hk : 0 < k)
+    (μ : Measure (EuclideanSpace ℝ (Fin k))) [IsProbabilityMeasure μ]
+    {r : ℝ} (hr : 0 < r) (a : EuclideanSpace ℝ (Fin k))
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBm : MeasurableSet B) (hBc : Convex ℝ B)
+    {ε : ℝ} (hε : 0 < ε) :
+    (μ ((fun x => r • x + a) ⁻¹' (Metric.thickening ε B \ erosion ε B))).toReal
+      ≤ 2 * gaussianShellConst k * (ε / r)
+        + 2 * convexDiscrepancy μ (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) := by
+  set B' : Set (EuclideanSpace ℝ (Fin k)) := (fun x => r • x + a) ⁻¹' B with hB'def
+  have hmeas : Measurable (fun x : EuclideanSpace ℝ (Fin k) => r • x + a) := by fun_prop
+  have hB'm : MeasurableSet B' := hmeas hBm
+  have hB'c : Convex ℝ B' := convex_preimage_aff hBc
+  have hset : (fun x => r • x + a) ⁻¹' (Metric.thickening ε B \ erosion ε B)
+      = Metric.thickening (ε / r) B' \ erosion (ε / r) B' := by
+    rw [Set.preimage_diff, preimage_aff_thickening hr a B hε, preimage_aff_erosion hr a B hε]
+  rw [hset]
+  exact measureReal_wideShell_le_of_convexDiscrepancy hk μ hB'm hB'c (by positivity)
+
+/-- The Gaussian regime of the two-sided shell: no `Δ` term at all. -/
+theorem gaussian_measureReal_wideShell_preimage_aff_le (hk : 0 < k)
+    {r : ℝ} (hr : 0 < r) (a : EuclideanSpace ℝ (Fin k))
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBm : MeasurableSet B) (hBc : Convex ℝ B)
+    {ε : ℝ} (hε : 0 < ε) :
+    ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+        ((fun x => r • x + a) ⁻¹' (Metric.thickening ε B \ erosion ε B))).toReal
+      ≤ 2 * gaussianShellConst k * (ε / r) := by
+  haveI : IsProbabilityMeasure (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) :=
+    inferInstance
+  have h := measureReal_wideShell_preimage_aff_le hk
+    (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) hr a hBm hBc hε
+  rw [convexDiscrepancy_self] at h
+  linarith
+
 /-! ### Wave-20: the hybrid family, and the recursion it produces -/
 
 /-- The law of the normalised sum `n^{-1/2} ∑ᵢ Yᵢ` of `n` i.i.d. copies of `ν`. -/
