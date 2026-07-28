@@ -6584,6 +6584,54 @@ theorem integral_hybridLaw_eq {n j : ℕ} (ν : Measure (EuclideanSpace ℝ (Fin
     integral_map hΦmeas.aemeasurable hf.aestronglyMeasurable]
   exact integral_prod _ hint
 
+/-- **The peeled average IS a hybrid-law average** (wave 36).
+
+The second half of the bridge. `abs_sub_integral_peel_le_integral` bounds a telescope step by
+`∫ D(∑ₗ yₗ) dR`, an average over the *remaining* `n − 1` coordinates; brick H
+(`hybridLaw_wideShell_le`) bounds masses under `hybridLaw n j ν`, which averages over *all* `n`
+coordinates and the smoothing Gaussian. This lemma is the identity that closes the gap: when
+the bound `D v` is itself the average over the peeled coordinate `u ~ ν` and the smoothing
+variable `z ~ γ` of a bounded continuous `F` evaluated at `c(v + u) + σⱼ z`, then
+
+`∫ D(∑ₗ yₗ) dR = ∫ F d(hybridLaw n j ν)`.
+
+Taking `F` a (mollified) indicator of the two-sided shell turns the conclusion of
+`abs_sub_integral_peel_le_integral` into exactly the quantity the amended weight hypothesis of
+`localised_swap_bound_small_weight` bounds. The proof is `integral_pi_sum_peel` run *backwards*
+on `integral_hybridLaw_eq`, at the coordinate `i = j` where `κⱼ i = ν`. -/
+theorem integral_peel_eq_integral_hybridLaw {m j : ℕ} (hj : j < m + 1)
+    (ν : Measure (EuclideanSpace ℝ (Fin k))) [IsProbabilityMeasure ν]
+    {F : EuclideanSpace ℝ (Fin k) → ℝ} (hF : Continuous F) (hFb : ∀ x, |F x| ≤ 1) :
+    (∫ x, F x ∂(hybridLaw (m + 1) j ν))
+      = ∫ y, (∫ u, (∫ z, F ((Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ • (u + ∑ l, y l)
+                + (Real.sqrt (j : ℝ) / Real.sqrt ((m + 1 : ℕ) : ℝ)) • z)
+              ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ν)
+          ∂(Measure.pi fun l : Fin m =>
+              (fun i : Fin (m + 1) =>
+                if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν)
+                ((⟨j, hj⟩ : Fin (m + 1)).succAbove l)) := by
+  classical
+  set κ : Fin (m + 1) → Measure (EuclideanSpace ℝ (Fin k)) :=
+    fun i => if (i : ℕ) < j then Measure.dirac 0 else ν with hκdef
+  haveI hκp : ∀ i, IsProbabilityMeasure (κ i) := by
+    intro i; rw [hκdef]; dsimp only; split <;> infer_instance
+  set c : ℝ := (Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ with hcdef
+  set s : ℝ := Real.sqrt (j : ℝ) / Real.sqrt ((m + 1 : ℕ) : ℝ) with hsdef
+  set g : EuclideanSpace ℝ (Fin k) → ℝ :=
+    fun w => ∫ z, F (c • w + s • z) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) with hgdef
+  have hgcont : Continuous g := by
+    rw [hgdef]
+    exact (continuous_integral_add_smul hF hFb s).comp (continuous_const_smul c)
+  have hgb : ∀ w, |g w| ≤ 1 := fun w =>
+    abs_integral_le_one (hF.comp (continuous_const.add (continuous_const_smul s)))
+      (fun z => hFb _)
+  have hν : κ (⟨j, hj⟩ : Fin (m + 1)) = ν := by
+    rw [hκdef]; dsimp only; rw [if_neg (by omega)]
+  rw [integral_hybridLaw_eq ν hF hFb, ← hκdef]
+  have h := integral_pi_sum_peel κ (⟨j, hj⟩ : Fin (m + 1)) hgcont hgb
+  rw [hν] at h
+  exact h
+
 /-- The characteristic function of the law of a sum of independent summands is the product of
 the characteristic functions. -/
 private lemma charFun_map_sum_pi {N : ℕ}
