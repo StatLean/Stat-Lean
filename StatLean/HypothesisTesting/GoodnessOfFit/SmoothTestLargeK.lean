@@ -325,8 +325,34 @@ theorem bentkus_berry_esseen_convex {k n : ℕ} {ν : Measure (EuclideanSpace �
   --   two-sided shell at width `c‖y‖` — hence "every width"); and the summed weight is
   --   `δ(2 C_k log(1/ε) + W/ε)`, so this route will give the sharp rate UP TO ONE LOGARITHM,
   --   `C_k (β/√n)(1 + log(√n/β))`.  The log is intrinsic to a single mollification width.
+  --
+  -- WAVE-32: THE LOGARITHM IS NOW EXECUTED, headline included.  Wave 29 predicted it but froze
+  -- every conclusion, on the ground that weakening them then "would be a guess rather than a
+  -- forced amendment".  Wave 32 supplies the forcing — the summation ledger, recorded in full at
+  -- `localised_swap_bound_small_weight` — and carries the term through.  Both exponents of that
+  -- ledger are VERIFIED as part of the amendment: with `σⱼ = c√j`, `c = n^{-1/2}`, the per-step
+  -- cost `j^{-3/2}` times the per-step weight `4 C_k σⱼ + W` splits into
+  --   `c ∑_{J<j≤n} j^{-1}`   — HARMONIC, worth `2 log(1/ε)` at `J = ⌈ε²n⌉`: the logarithm, and
+  --                            the ONLY place it comes from; and
+  --   `W ∑_{j>J} j^{-3/2} ≤ 2 W J^{-1/2} = 2W/(ε√n)` — the `ε⁻¹` the frozen form already had.
+  -- The head `j ≤ J` is the classical shell-localised swap, `J(M/6)c³·3β ≤ (3/2)C₃ δ ε⁻¹`.
+  -- • `localised_swap_bound_small_weight` — conclusion amended to
+  --   `A δ (ε⁻¹(W + C_k ε) + C_k(1 + log(1 + ε⁻¹)))`.  Still the ONE brick of that file.
+  -- • `exists_localised_swap_bound`, `exists_convexDiscrepancy_recursion` — amended; the PROVED
+  --   large-weight half is untouched (its log-free conclusion is smaller, so it still closes the
+  --   amended goal), and wave 24's doubling of `A` also absorbs the new term.
+  -- • `le_of_selfImproving_induction_log` (NEW, PROVED) — the strong induction re-solved with the
+  --   extra `A δ C (1 + log(1 + ε⁻¹))`.  It still closes LINEARLY, at `K = 20 A C`: the log
+  --   factor `Mₙ = 1 + log(1 + (8Aδₙ)⁻¹)` is monotone the RIGHT way along the neighbour range
+  --   (`m ≤ n ⟹ δₘ ≥ δₙ ⟹ Mₘ ≤ Mₙ`), and `M ≥ 1` absorbs the log-free terms.
+  -- • `berryEsseen_convex_sharp` — headline amended to `C (β/√n)(1 + log(max (√n/β) e))` with
+  --   `C = 160 (A+1) gaussianShellConst k`.  The log-free form is NOT retracted (it is true,
+  --   being Bentkus's theorem); it is simply not what this route proves.
+  -- • Alternative, deliberately NOT taken: `stdGaussian_norm_ge_le` at a fixed order `p = 2m`
+  --   trades the logarithm for `ε^{-1/(m+1)}`, i.e. the headline `(β/√n)^{m/(m+1)}` — strictly
+  --   weaker than the log form for every fixed `m`.
   -- So THIS declaration is unchanged and stays the pre-agreed debt: the sharp `β/√n` route is
-  -- still brick-backed, its eventual conclusion will carry a logarithm, and even then it gives
+  -- still brick-backed, its conclusion now DOES carry a logarithm, and even then it gives
   -- `C ∼ √k`, not `400 k^{1/4}` — for the CONSTANT (not the rate) Ball's theorem is still what
   -- separates the two.
   sorry

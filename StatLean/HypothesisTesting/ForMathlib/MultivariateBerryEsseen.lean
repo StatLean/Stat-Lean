@@ -217,8 +217,12 @@ resolved, and the recursion is assembled: `berryEsseen_convex_sharp` states the 
 **linear in `δ = β/√n`**, proved from `exists_convexDiscrepancy_recursion` fed to
 `le_of_selfImproving_induction`. It is not axiom-clean: it inherited exactly two named,
 precisely stated bricks, `hybridLaw_shell_le` and `exists_localised_swap_bound` (the first is
-proved in wave 22, below; the second's weight hypothesis is amended in wave 29). Everything
-between the bricks and the headline is proved.
+proved in wave 22, below; the second's weight hypothesis is amended in wave 29, its conclusion
+in wave 32). Everything between the bricks and the headline is proved.
+
+*(As frozen in wave 20 the headline is log-free. Wave 32 amends it to carry one logarithm,
+`C (β/√n)(1 + log(max (√n/β) e))`, and replaces `le_of_selfImproving_induction` by
+`le_of_selfImproving_induction_log`; see the wave-32 section below for the forcing.)*
 
 *Obstacle 1 (the class) is overturned rather than solved.* The `ε`-shell of a convex set is
 `Bᵋ \ interior B`, a difference of two convex sets — but the induction does **not** have to be
@@ -317,8 +321,37 @@ needs `‖w‖ = ‖y‖/√j ≤ 1`, so the wave-19 lemma does *not* apply verb
 either, and the large-`‖y‖` region has to be handled by the tilt identity directly (its
 `v`-average costs a two-sided shell at width `c‖y‖` — which is why the amended hypothesis is
 stated at all widths); and the summed weight is `δ(2 C_k log(1/ε) + W/ε)`, so this route yields
-the sharp rate **up to one logarithm**, `C_k (β/√n)(1 + log(√n/β))`. The logarithm is intrinsic
-to a single mollification width.
+the sharp rate **up to one logarithm**. The logarithm is intrinsic to a single mollification
+width.
+
+## Wave-32 amendment: the logarithm is EXECUTED, headline included
+
+Wave 29 predicted the logarithm but left every conclusion frozen, on the ground that weakening
+them then "would be a guess rather than a forced amendment". Wave 32 supplies the forcing — the
+summation ledger, recorded in full at `localised_swap_bound_small_weight` — and carries the term
+through the whole chain. Both exponents in that ledger are verified as part of the amendment:
+`j^{-3/2}·σⱼ = c·j^{-1}` is a **harmonic** sum over `J < j ≤ n` (this, and only this, is where
+the logarithm comes from), while `∑_{j>J} j^{-3/2} ≤ 2J^{-1/2} = 2(ε√n)^{-1}` reproduces the
+`ε⁻¹` the frozen statements already carried.
+
+* `localised_swap_bound_small_weight` — conclusion amended to
+  `A δ (ε⁻¹(W + C_k ε) + C_k(1 + log(1 + ε⁻¹)))`. Still the file's one and only brick.
+* `exists_localised_swap_bound`, `exists_convexDiscrepancy_recursion` — amended; the proved
+  large-weight half is untouched (its log-free conclusion is *smaller*, so it still closes the
+  amended goal), and the doubling of `A` that wave 24 introduced also absorbs the new term.
+* `le_of_selfImproving_induction_log` (**new, proved**) — the strong induction re-solved with the
+  extra `A δ C (1 + log(1 + ε⁻¹))`. It still closes **linearly**, at `K = 20 A C`, because the
+  log factor `Mₙ = 1 + log(1 + (8Aδₙ)⁻¹)` is monotone in the *right* direction along the
+  neighbour range (`m ≤ n ⟹ δₘ ≥ δₙ ⟹ Mₘ ≤ Mₙ`); `M ≥ 1` absorbs the log-free terms.
+* `berryEsseen_convex_sharp` — headline amended to
+  `C (β/√n)(1 + log(max (√n/β) e))`, `C = 160 (A+1) gaussianShellConst k`. The log-free form is
+  **not** retracted (it is true, being Bentkus's theorem); it is simply not what this route
+  proves, and the provable-constants rule forbids recording it.
+
+A remark on the alternative: using the Gaussian tail `stdGaussian_norm_ge_le` at a *fixed* order
+`p = 2m` rather than at all orders trades the logarithm for `ε^{-1/(m+1)}`, i.e. the headline
+`(β/√n)^{m/(m+1)}` — strictly weaker than the log form for every fixed `m`, so the route is not
+restructured for it.
 
 **Constant deviation** (provable-constants rule): this route now gives `C ∼ k^{1/2}`, through
 `gaussianShellConst k = 4 e² √k`, not Bentkus's `400 k^{1/4}`. Wave 22 removed the factor `k`
