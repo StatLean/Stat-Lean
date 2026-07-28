@@ -41,6 +41,14 @@ moments of the projected law.
   (`norm_mixCharFun_vecRootLaw_sub_le`). Up to a factor `i` this is the directional derivative
   of `charFun`; it is estimated directly because the studentized expansion needs an *inequality*
   for it and inequalities cannot be differentiated.
+* `multiCharFun` — the **multilinear** extension `∫ (∏_{l<k} ⟪w, b l⟫) e^{i⟪w,t⟫} ∂μ`, with its
+  exact factorisation on a vector root (`multiCharFun_vecRootLaw`):
+  `multi_{ρ_n}(b,a) = n^{-k/2} ∑_{σ : Fin k → Fin n} ∏_{i<n} slot_{σ⁻¹(i)}(n^{-1/2} • a)`,
+  a sum over the `nᵏ` assignments of weight slots to coordinates. `mixCharFun` is the case
+  `k = 1` (where all `n` summands coincide and `n · n^{-1/2} = √n`) and `charFun` is `k = 0`.
+  The third-order delta-method surrogate of the studentized route is a degree-four polynomial
+  in the coordinates of the root, so its characteristic function is a finite combination of
+  `multiCharFun`s with `k ≤ 4`, and is *not* reachable from the one-slot theory.
 
 ## Proof formalization notes
 
@@ -741,6 +749,213 @@ theorem norm_mixCharFun_vecRootLaw_sub_le (F : Measure ℝ) [IsProbabilityMeasur
         have hne : Real.sqrt ((m + 1 : ℕ) : ℝ) ≠ 0 := hsq.ne'
         rw [hrdef]
         field_simp
+
+/-! ### The multilinear extension
+
+`mixCharFun` carries a **linear** weight `⟪·, b⟫`, and that is exactly one slot. The third-order
+delta-method surrogate of the studentized route,
+`Hₙ = u − uvr/2 + u³r²/2 + 3uv²r²/8` with `r = n^{-1/2}`, is a polynomial of degree four in the
+two coordinates, so expanding `E[e^{iθHₙ}]` in powers of `r` produces the weights `uv`, `u³`,
+`uv²` and `(uv)²` — bilinear, trilinear and quartic. None of them is a `mixCharFun`, and this
+is what makes the surrogate's characteristic function unavailable from the one-slot theory
+alone. (It affects the *second*-order surrogate equally: its leading correction already needs
+`E[uv e^{iθu}]`.)
+
+The extension is not a wall, and it is carried out here. The exact factorisation of
+`mixCharFun_vecRootLaw` rests only on the weight `⟪root, b⟫` being a *sum over the coordinates*;
+a product of `k` such sums expands (`Finset.prod_univ_sum`) into a sum over the `nᵏ`
+**assignments** `σ : Fin k → Fin n` of weight slots to coordinates. Regrouping an assignment
+fiberwise (`Finset.prod_fiberwise`) turns its summand into a genuine product over the
+coordinates — coordinate `i` carrying the weights in the fiber `σ⁻¹(i)` — and Fubini on
+`Measure.pi` evaluates it as a product of one-dimensional integrals. The result is
+
+`multi_{ρ_n}(b, a) = n^{-k/2} ∑_{σ : Fin k → Fin n} ∏_{i<n} slot_{σ⁻¹(i)}(n^{-1/2} • a)`,
+
+a purely combinatorial identity: no moment assumption enters it beyond what is needed to make
+each summand integrable. The one-slot statement is the case `k = 1`, where every `σ` has a
+single distinguished coordinate, all `n` summands are equal, and the surviving
+`n · n^{-1/2} = √n` is the `√n` of `mixCharFun_vecRootLaw`.
+
+The **diagonal/off-diagonal bookkeeping** the applications need is now visible in the identity
+rather than hidden: assignments `σ` that are injective contribute `k` distinct factors each
+carrying one slot (these give the "leading" terms), while assignments with collisions
+concentrate several slots on one coordinate and are suppressed by the extra powers of
+`n^{-1/2}` relative to the number of free coordinates. -/
+
+/-- The **multilinearly weighted characteristic function**
+`∫ (∏_{l<k} ⟪w, b l⟫) e^{i⟪w,t⟫} ∂μ`.
+
+For `k = 1` this is `mixCharFun` (`multiCharFun_one`) and for `k = 0` it is `charFun`
+(`multiCharFun_zero`). The studentized surrogate needs `k` up to `4`, with repetitions among
+the `b l` — the slots are an indexed family, not a set. -/
+noncomputable def multiCharFun (μ : Measure E) {k : ℕ} (b : Fin k → E) (t : E) : ℂ :=
+  ∫ w, (∏ l : Fin k, ((⟪w, b l⟫ : ℝ) : ℂ)) * Complex.exp ((⟪w, t⟫ : ℝ) * Complex.I) ∂μ
+
+/-- The **single-coordinate factor** of the factorisation: the character in the direction `c`
+of one summand, weighted by the inner products in the slots of `T`. `T = ∅` gives `charFun`
+and `T = {l}` gives `mixCharFun`, both of the pushforward `F.map Z`. -/
+noncomputable def slotCharFun (F : Measure ℝ) (Z : ℝ → E) {k : ℕ} (b : Fin k → E)
+    (T : Finset (Fin k)) (c : E) : ℂ :=
+  ∫ x, (∏ l ∈ T, ((⟪Z x, b l⟫ : ℝ) : ℂ)) * Complex.exp ((⟪Z x, c⟫ : ℝ) * Complex.I) ∂F
+
+omit [BorelSpace E] [SecondCountableTopology E] in
+@[simp] lemma multiCharFun_zero (μ : Measure E) (b : Fin 0 → E) (t : E) :
+    multiCharFun μ b t = charFun μ t := by
+  simp [multiCharFun, charFun_apply]
+
+omit [BorelSpace E] [SecondCountableTopology E] in
+@[simp] lemma multiCharFun_one (μ : Measure E) (b : E) (t : E) :
+    multiCharFun μ (fun _ : Fin 1 => b) t = mixCharFun μ b t := by
+  simp [multiCharFun, mixCharFun]
+
+lemma slotCharFun_empty (F : Measure ℝ) {Z : ℝ → E} (hZ : Measurable Z) {k : ℕ}
+    (b : Fin k → E) (c : E) :
+    slotCharFun F Z b ∅ c = charFun (F.map Z) c := by
+  rw [slotCharFun, charFun_apply, integral_map hZ.aemeasurable (by fun_prop)]
+  simp
+
+lemma slotCharFun_singleton (F : Measure ℝ) {Z : ℝ → E} (hZ : Measurable Z) {k : ℕ}
+    (b : Fin k → E) (l : Fin k) (c : E) :
+    slotCharFun F Z b {l} c = mixCharFun (F.map Z) (b l) c := by
+  rw [slotCharFun, mixCharFun_map F hZ]
+  simp
+
+/-- **The multilinearly weighted characteristic function of a vector root factorises exactly.**
+
+`∫ (∏_{l<k} ⟪w, b l⟫) e^{i⟪w,a⟫} ∂(vecRootLaw F Z n)
+   = n^{-k/2} ∑_{σ : Fin k → Fin n} ∏_{i<n} slot_{σ⁻¹(i)}(n^{-1/2} • a)`.
+
+This is the `k`-slot generalisation of `mixCharFun_vecRootLaw`, and it is what the third-order
+delta-method surrogate's characteristic function needs: the surrogate is a degree-four
+polynomial in the coordinates of the root, so its transform is a finite combination of
+`multiCharFun`s with `k ≤ 4`.
+
+The only hypothesis is that every *sub-product* of the weights be `F`-integrable, which is what
+makes each of the `nᵏ` assignment summands integrable on `Measure.pi`; for `Z = studentPair F`
+and `b` drawn from the two coordinate directions it is a moment condition on `F` of order at
+most `2k`. -/
+theorem multiCharFun_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E}
+    (hZ : Measurable Z) {k n : ℕ} (b : Fin k → E)
+    (hint : ∀ T : Finset (Fin k),
+      Integrable (fun x : ℝ => ∏ l ∈ T, |(⟪Z x, b l⟫ : ℝ)|) F)
+    (a : E) :
+    multiCharFun (vecRootLaw F Z n) b a
+      = (((Real.sqrt (n : ℝ))⁻¹ : ℝ) : ℂ) ^ k *
+          ∑ σ : Fin k → Fin n, ∏ i : Fin n,
+            slotCharFun F Z b (Finset.univ.filter fun l => σ l = i)
+              ((Real.sqrt (n : ℝ))⁻¹ • a) := by
+  classical
+  set r : ℝ := (Real.sqrt (n : ℝ))⁻¹ with hrdef
+  set c : E := r • a with hcdef
+  set g : ℝ → ℂ := fun x => Complex.exp ((⟪Z x, c⟫ : ℝ) * Complex.I) with hgdef
+  have hgnorm : ∀ x, ‖g x‖ = 1 := by
+    intro x; rw [hgdef]; simp [Complex.norm_exp]
+  have hgm : Measurable g := by rw [hgdef]; fun_prop
+  have hbm : ∀ l : Fin k, Measurable fun x : ℝ => (⟪Z x, b l⟫ : ℝ) :=
+    fun l => (measurable_inner_right (b l)).comp hZ
+  -- the single-coordinate factor attached to a set `T` of slots
+  set u : Finset (Fin k) → ℝ → ℂ :=
+    fun T x => (∏ l ∈ T, ((⟪Z x, b l⟫ : ℝ) : ℂ)) * g x with hudef
+  have hum : ∀ T, Measurable (u T) := by
+    intro T
+    refine Measurable.mul ?_ hgm
+    exact Finset.measurable_prod _ fun l _ => (Complex.measurable_ofReal.comp (hbm l))
+  have hunorm : ∀ (T : Finset (Fin k)) (x : ℝ), ‖u T x‖ = ∏ l ∈ T, |(⟪Z x, b l⟫ : ℝ)| := by
+    intro T x
+    rw [hudef, norm_mul, hgnorm, mul_one, norm_prod]
+    exact Finset.prod_congr rfl fun l _ => by
+      rw [Complex.norm_real, Real.norm_eq_abs]
+  have huint : ∀ T, Integrable (u T) F := by
+    intro T
+    refine Integrable.mono' (hint T) (hum T).aestronglyMeasurable ?_
+    filter_upwards with x
+    exact le_of_eq (hunorm T x)
+  -- the fibre of an assignment over a coordinate
+  set fib : (Fin k → Fin n) → Fin n → Finset (Fin k) :=
+    fun σ i => Finset.univ.filter fun l => σ l = i with hfibdef
+  -- step 1: the integrand over `Measure.pi`
+  have hstep1 : multiCharFun (vecRootLaw F Z n) b a
+      = ∫ y : Fin n → ℝ, ((r : ℂ) ^ k * ∑ σ : Fin k → Fin n, ∏ i, u (fib σ i) (y i))
+        ∂(Measure.pi fun _ : Fin n => F) := by
+    rw [multiCharFun, vecRootLaw,
+      integral_map (measurable_vecRoot hZ n).aemeasurable (by fun_prop)]
+    simp only [← hrdef]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
+    simp only []
+    -- the character factorises over the coordinates
+    have hai : (⟪r • ∑ i, Z (y i), a⟫ : ℝ) = ∑ i : Fin n, (⟪Z (y i), c⟫ : ℝ) := by
+      calc (⟪r • ∑ i, Z (y i), a⟫ : ℝ)
+          = r * ⟪∑ i, Z (y i), a⟫ := real_inner_smul_left _ _ _
+        _ = r * ∑ i : Fin n, (⟪Z (y i), a⟫ : ℝ) := by rw [sum_inner]
+        _ = ∑ i : Fin n, r * (⟪Z (y i), a⟫ : ℝ) := Finset.mul_sum _ _ _
+        _ = ∑ i : Fin n, (⟪Z (y i), c⟫ : ℝ) := by
+            simp only [hcdef, real_inner_smul_right]
+    have hexp : Complex.exp (((∑ i : Fin n, (⟪Z (y i), c⟫ : ℝ)) : ℝ) * Complex.I)
+        = ∏ i, g (y i) := by
+      rw [Complex.ofReal_sum, Finset.sum_mul, Complex.exp_sum]
+    -- the weight expands into assignments
+    have hwt : (∏ l : Fin k, ((⟪r • ∑ i, Z (y i), b l⟫ : ℝ) : ℂ))
+        = (r : ℂ) ^ k * ∑ σ : Fin k → Fin n, ∏ l : Fin k,
+            ((⟪Z (y (σ l)), b l⟫ : ℝ) : ℂ) := by
+      have hbl : ∀ l : Fin k, ((⟪r • ∑ i, Z (y i), b l⟫ : ℝ) : ℂ)
+          = (r : ℂ) * ∑ i : Fin n, ((⟪Z (y i), b l⟫ : ℝ) : ℂ) := by
+        intro l
+        have : (⟪r • ∑ i, Z (y i), b l⟫ : ℝ) = r * ∑ i : Fin n, (⟪Z (y i), b l⟫ : ℝ) := by
+          rw [real_inner_smul_left, sum_inner]
+        rw [this]
+        push_cast
+        ring
+      simp_rw [hbl]
+      rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+      congr 1
+      have := Finset.prod_univ_sum (fun _ : Fin k => (Finset.univ : Finset (Fin n)))
+        (fun (l : Fin k) (i : Fin n) => ((⟪Z (y i), b l⟫ : ℝ) : ℂ))
+      rw [this, Fintype.piFinset_univ]
+    rw [hai, hexp, hwt]
+    -- each assignment summand is the product over coordinates of the slot factors
+    have hassign : ∀ σ : Fin k → Fin n,
+        (∏ l : Fin k, ((⟪Z (y (σ l)), b l⟫ : ℝ) : ℂ)) * ∏ i, g (y i)
+          = ∏ i, u (fib σ i) (y i) := by
+      intro σ
+      have hsplit : (∏ i, u (fib σ i) (y i))
+          = (∏ i : Fin n, ∏ l ∈ fib σ i, ((⟪Z (y i), b l⟫ : ℝ) : ℂ)) * ∏ i, g (y i) := by
+        rw [hudef, ← Finset.prod_mul_distrib]
+      have hfibre : (∏ i : Fin n, ∏ l ∈ fib σ i, ((⟪Z (y i), b l⟫ : ℝ) : ℂ))
+          = ∏ l : Fin k, ((⟪Z (y (σ l)), b l⟫ : ℝ) : ℂ) := by
+        have hcongr : ∀ i : Fin n, (∏ l ∈ fib σ i, ((⟪Z (y i), b l⟫ : ℝ) : ℂ))
+            = ∏ l ∈ fib σ i, ((⟪Z (y (σ l)), b l⟫ : ℝ) : ℂ) := by
+          intro i
+          refine Finset.prod_congr rfl fun l hl => ?_
+          have : σ l = i := (Finset.mem_filter.1 hl).2
+          rw [this]
+        simp_rw [hcongr]
+        exact Finset.prod_fiberwise Finset.univ σ fun l => ((⟪Z (y (σ l)), b l⟫ : ℝ) : ℂ)
+      rw [hsplit, hfibre]
+    rw [mul_assoc, Finset.sum_mul]
+    congr 1
+    exact Finset.sum_congr rfl fun σ _ => hassign σ
+  -- step 2: pull out the constant, exchange the finite sum with the integral
+  have hint2 : ∀ σ : Fin k → Fin n,
+      Integrable (fun y : Fin n → ℝ => ∏ i, u (fib σ i) (y i))
+        (Measure.pi fun _ : Fin n => F) :=
+    fun σ => Integrable.fintype_prod fun i => huint (fib σ i)
+  have hstep2 : (∫ y : Fin n → ℝ, ((r : ℂ) ^ k * ∑ σ : Fin k → Fin n, ∏ i, u (fib σ i) (y i))
+        ∂(Measure.pi fun _ : Fin n => F))
+      = (r : ℂ) ^ k * ∫ y : Fin n → ℝ, (∑ σ : Fin k → Fin n, ∏ i, u (fib σ i) (y i))
+        ∂(Measure.pi fun _ : Fin n => F) := integral_const_mul _ _
+  have hstep3 : (∫ y : Fin n → ℝ, (∑ σ : Fin k → Fin n, ∏ i, u (fib σ i) (y i))
+        ∂(Measure.pi fun _ : Fin n => F))
+      = ∑ σ : Fin k → Fin n, ∫ y : Fin n → ℝ, ∏ i, u (fib σ i) (y i)
+        ∂(Measure.pi fun _ : Fin n => F) :=
+    integral_finset_sum _ fun σ _ => hint2 σ
+  -- step 3: Fubini on each assignment summand
+  have hstep4 : ∀ σ : Fin k → Fin n,
+      (∫ y : Fin n → ℝ, ∏ i, u (fib σ i) (y i) ∂(Measure.pi fun _ : Fin n => F))
+        = ∏ i, slotCharFun F Z b (fib σ i) c :=
+    fun σ => MeasureTheory.integral_fintype_prod_eq_prod fun i : Fin n => u (fib σ i)
+  rw [hstep1, hstep2, hstep3]
+  simp_rw [hstep4]
+  rfl
 
 end Mixed
 
