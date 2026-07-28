@@ -4296,6 +4296,58 @@ theorem integral_norm_fourierWeight (g : E₂ → ℂ) :
   rw [h1, h2, h3, hrank, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (l ^ 2)⁻¹), smul_eq_mul,
     ← mul_assoc, mul_inv_cancel₀ (by positivity : (l : ℝ) ^ 2 ≠ 0), one_mul]
 
+/-- **The certificate, reduced to a bulk multiplier — no `fourierSynth` left in the
+hypotheses.** Supply a `g : ℝ² → ℂ` which is continuous, integrable, has integrable transform,
+is of modulus at most `1` everywhere, and equals the *perturbation character*
+`e^{iθ(Hₙ(w) − w₀/σ)}` on a set `S`; then the carrier `t₀ = (θ/σ)e₀` supplies the leading
+character `e^{iθw₀/σ}`, the product is `e^{iθHₙ}` on `S`, and the certificate holds with
+
+* mass `Γ` any bound on `∫‖𝓕 g‖` (`integral_norm_fourierWeight`),
+* leakage `ε` any bound on the mass the weight puts on the low-frequency ball,
+* `L¹` error `η = 2μ(Sᶜ)` — the modulus-`1` bound off `S` is the `B` of
+  `hasFourierCertificateOnBand_of_eqOn`, and it is `2` rather than `1` only because the
+  hypothesis on `g` is `‖g‖ ≤ 1` rather than `‖g‖ = 1`.
+
+For the intended witness `g = e^{iθ(Hₙ − w₀/σ)}χ(·/M)` and `S = {‖w‖ ≤ M}` all five hypotheses
+are immediate except the two bounds on `𝓕 g`, which is exactly the non-stationary-phase content:
+see the section note above `deltaSurrogate_slope_ge`. -/
+theorem hasFourierCertificateOnBand_of_bulkMultiplier (μ : Measure E₂) [IsProbabilityMeasure μ]
+    {σ : ℝ} (hσ : 0 < σ) (r θ : ℝ) {g : E₂ → ℂ} (hgc : Continuous g) (hg : Integrable g)
+    (hgh : Integrable (𝓕 g)) {R Γ ε η : ℝ}
+    (hΓ : ∫ v : E₂, ‖𝓕 g v‖ ≤ Γ)
+    (htail : ∫ s in {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < R}, ‖fourierWeight g s‖ ≤ ε)
+    {S : Set E₂} (hS : MeasurableSet S)
+    (heq : ∀ w ∈ S,
+      g w = Complex.exp (Complex.I * ((θ * (deltaSurrogate σ r w - w 0 / σ) : ℝ) : ℂ)))
+    (hnorm : ∀ w : E₂, ‖g w‖ ≤ 1)
+    (hη : 2 * (μ Sᶜ).toReal ≤ η) :
+    HasFourierCertificateOnBand μ σ r θ ((θ / σ) • coordDir 0) R Γ ε η := by
+  set t₀ : E₂ := (θ / σ) • coordDir 0 with ht₀
+  have hsyn : ∀ w : E₂, fourierSynth (fourierWeight g) t₀ w
+      = Complex.exp ((⟪w, t₀⟫ : ℝ) * Complex.I) * g w :=
+    fourierSynth_fourierWeight g hgc hg hgh t₀
+  refine hasFourierCertificateOnBand_of_eqOn μ σ r θ (integrable_fourierWeight hgh) t₀
+    ((integral_norm_fourierWeight g).le.trans hΓ) htail hS ?_ ?_ hη
+  · intro w hw
+    rw [hsyn w, heq w hw, ht₀, inner_smul_coordDir, ← Complex.exp_add]
+    congr 1
+    have hcast : ((θ / σ * w 0 : ℝ) : ℂ) = ((θ : ℂ) * ((w 0 : ℝ) : ℂ)) / (σ : ℂ) := by
+      push_cast; ring
+    have hcast2 : ((θ * (deltaSurrogate σ r w - w 0 / σ) : ℝ) : ℂ)
+        = (θ : ℂ) * (((deltaSurrogate σ r w : ℝ) : ℂ) - ((w 0 : ℝ) : ℂ) / (σ : ℂ)) := by
+      push_cast; ring
+    rw [hcast, hcast2]
+    push_cast
+    ring
+  · intro w _
+    refine (norm_sub_le _ _).trans ?_
+    have h1 : ‖Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ))‖ = 1 := by
+      simp [Complex.norm_exp]
+    have h2 : ‖fourierSynth (fourierWeight g) t₀ w‖ ≤ 1 := by
+      rw [hsyn w, norm_mul, Complex.norm_exp_ofReal_mul_I, one_mul]
+      exact hnorm w
+    linarith
+
 /-- **The linearisation of the surrogate has a one-sided error, and it is of the full second
 order.** For every increment `h` with `h₀ ≥ 0`,
 
@@ -4644,10 +4696,20 @@ Lebesgue measure on `ℝ²`, with no sampling law, no `n`-fold product and no co
 is still strictly smaller than the conditioning device the wave-26 note and the wave-27 prompt
 prescribed, which `deltaSurrogate_sub_linear_ge` shows cannot work at all.
 
-**The construction, as corrected.** `a = 𝓕[w ↦ e^{iθ(Hₙ(w) − w₀/σ)}χ(w/M)]` at `M = n^{5/8}`,
-`χ` a smooth cut-off equal to `1` on the unit ball; then `fourierSynth a t₀ w = e^{iθHₙ(w)}χ(w/M)`
-by Fourier inversion, so `hasFourierCertificateOnBand_of_eqOn` applies with `B = 1` and
-`η ≤ ρ_n{‖w‖ > M} = O(n · M^{-4}) = O(n^{-3/2})`. -/
+**The construction, as corrected, and what is left of it.** Take
+`g = e^{iθ(Hₙ(w) − w₀/σ)}χ(w/M)` at `M = n^{5/8}`, `χ` a smooth cut-off equal to `1` on the unit
+ball, and `a = fourierWeight g`. Then `hasFourierCertificateOnBand_of_bulkMultiplier` — proved —
+reduces the whole brick to **two bounds on `𝓕 g` and one tail of the law**:
+
+* `∫‖𝓕 g‖ ≤ Γ(n,θ)`, polynomial;
+* `∫_{‖t₀ + s‖ < R}‖fourierWeight g s‖ ≤ C n^{-3/2}`, the non-stationary-phase estimate;
+* `2 ρ_n{‖w‖ > M} ≤ C n^{-3/2}`, the fourth moment of the truncated root.
+
+The synthesis step is *gone*: `fourierSynth_fourierWeight` gives
+`fourierSynth (fourierWeight g) t₀ = e^{i⟪·,t₀⟫} g` at every point, by Fourier inversion, and
+`integral_norm_fourierWeight` identifies the mass with `∫‖𝓕 g‖` exactly. What is left is one
+non-stationary-phase estimate for one explicit polynomial phase, with the gradient lower bound
+already in hand (`deltaSurrogate_slope_ge`). -/
 theorem exists_fourierCertificate_deltaSurrogate
     -- USER-INPUT: finite fourth moment of the sampling law, which is what prices the bulk
     (F : Measure ℝ) [IsProbabilityMeasure F]
@@ -7100,7 +7162,56 @@ with `integrable_fourierSynth`, `norm_fourierSynth_le`, `integral_fourierSynth`,
 `norm_integral_fourierSynth_le`, `HasFourierCertificate` with `hasFourierCertificate_of_eqOn`,
 `norm_charFun_map_deltaSurrogate_le_of_certificate`,
 `norm_charFun_map_deltaSurrogate_vecRootLaw_le`, and the formalized obstruction
-`deltaSurrogate_sub_linear_ge` / `abs_deltaSurrogate_sub_linear_ge`. -/
+`deltaSurrogate_sub_linear_ge` / `abs_deltaSurrogate_sub_linear_ge`.
+
+**Status after the wave-30 re-derivation. The residue is still one item, it is still
+deterministic, and it is now a single non-stationary-phase estimate — but the wave-27 *shape* of
+that item was wrong in two places, and both corrections are forced.**
+
+* **THE CORRECTION — the leakage ball is in the wrong place, and the pricing that put it there
+  is not available.** The wave-27 note prices the `L¹` error by `ρ_n{‖w‖ > M} = O(M^{-4})`, "a
+  fourth moment of the root". There is no fourth moment of the root here. The root's second
+  coordinate is `n^{-1/2}∑((Xᵢ − m)² − σ²)`, of whose summand `hF4` is only a **second** moment;
+  on the truncated law (level `τ = √n`, forced from both sides) `Eζ⁴ ≤ (τ² + σ²)²Eζ² ≍ n²Eξ⁴`,
+  so `E w₁⁴ = n⁻¹Eζ⁴ + 3(Eζ²)² = O(n)` — and sharply so, for `P(|ξ| > t) ≍ t^{-4}(log t)^{-2}`.
+  Hence `ρ_n{‖w‖ > M} ≲ min(M^{-2}, nM^{-4})` and `η = O(n^{-3/2})` forces `M ≥ n^{5/8}`, not
+  `n^{3/8}`. At that radius the phase `θ(Hₙ − w₀/σ)` has gradient `≍ |θ|n^{1/8}`, which
+  **exceeds** the admitted bandwidth `R = |θ|/(2σ)`; and `R` cannot be enlarged, since
+  `‖t₀‖ − R ≥ ε₀√n` caps it at `|θ|/σ`. Integration by parts against `‖s‖ > R` has nothing to
+  extract. Fourth arithmetic incompatibility in the series (wave 25: the truncation level; wave
+  26: the uniform moment allowance; wave 27: the linearisation block size).
+
+* **THE REPAIR — measure the leakage on the low-frequency ball, and the surrogate's
+  non-stationarity does the rest.** `HasFourierCertificateOnBand` forbids mass on
+  `{s : ‖t₀ + s‖ < R}` — the frequencies at which `‖φ_ρ‖` is not known to be small — instead of
+  outside a ball at `s = 0`. This is free in the transfer inequality
+  (`norm_integral_fourierSynth_le_of_band` is the old proof with one triangle inequality
+  *removed*), and it replaces "the perturbation `Hₙ − w₀/σ` is slowly varying", which `M`
+  defeats, by "the total phase `θHₙ − ⟪·,s⟫` is non-stationary", which is true with no cut-off
+  at all: `deltaSurrogate_slope_ge` gives `σ∂_{w₀}Hₙ = 1 − vr/2 + 3u²r²/2 + 3v²r²/8 ≥ 5/6` for
+  **all** `u, v, r`, so on the relocated bad set `|∂_{w₀}(θHₙ − ⟪·,s⟫)| ≥ (4/3)|θ|/σ`, uniformly
+  in `M`. The surrogate has no stationary points at all.
+  `deltaSurrogate_add_smul_coordDir_ge` is the integrated, cut-off-free form. `N = 5`
+  integrations by parts then close the leakage at `M = n^{5/8}`, against a prefactor `M²` and a
+  bad-set area `≍ ε₀²n`. The second amendment — `Γ` carries `θ` — is recorded at the statement.
+
+* **THE REDUCTION — the synthesis step is gone.** `fourierWeight g` is the dilation of `𝓕 g`
+  that reconciles `fourierSynth`'s character with Mathlib's, and
+  `fourierSynth_fourierWeight` gives `fourierSynth (fourierWeight g) t₀ = e^{i⟪·,t₀⟫}g` at
+  **every** point, by Fourier inversion; `integral_norm_fourierWeight` identifies the mass with
+  `∫‖𝓕 g‖` on the nose. `hasFourierCertificateOnBand_of_bulkMultiplier` packages this: the brick
+  now asks only for a continuous integrable `g` with integrable transform, of modulus `≤ 1`,
+  equal to `e^{iθ(Hₙ − w₀/σ)}` on a set `S`, together with `∫‖𝓕 g‖ ≤ Γ`, a bound on the mass of
+  the weight over the low-frequency ball, and `2ρ_n(Sᶜ) ≤ η`. **One non-stationary-phase estimate
+  for one explicit polynomial phase, with the gradient lower bound already in hand.**
+
+Proved and axiom-clean after wave 30, in addition: `deltaSurrogate_slope_ge`,
+`deltaSurrogate_add_smul_coordDir_ge`, `HasFourierCertificateOnBand` with
+`norm_integral_fourierSynth_le_of_band`, `hasFourierCertificateOnBand_of_eqOn`,
+`norm_charFun_map_deltaSurrogate_le_of_bandCertificate`,
+`norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band`, `fourierWeight` with
+`fourierSynth_fourierWeight`, `integrable_fourierWeight`, `integral_norm_fourierWeight` and
+`hasFourierCertificateOnBand_of_bulkMultiplier`. -/
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
