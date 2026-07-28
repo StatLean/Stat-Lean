@@ -217,7 +217,8 @@ resolved, and the recursion is assembled: `berryEsseen_convex_sharp` states the 
 **linear in `δ = β/√n`**, proved from `exists_convexDiscrepancy_recursion` fed to
 `le_of_selfImproving_induction`. It is not axiom-clean: it inherited exactly two named,
 precisely stated bricks, `hybridLaw_shell_le` and `exists_localised_swap_bound` (the first is
-proved in wave 22, below). Everything between the bricks and the headline is proved.
+proved in wave 22, below; the second's weight hypothesis is amended in wave 29). Everything
+between the bricks and the headline is proved.
 
 *Obstacle 1 (the class) is overturned rather than solved.* The `ε`-shell of a convex set is
 `Bᵋ \ interior B`, a difference of two convex sets — but the induction does **not** have to be
@@ -283,11 +284,41 @@ unweighted `abs_integral_smooth_sub_gaussian_balanced`, and for `ε√n < 1` it 
 localisation a mechanical substitution of the wave-19 lemma). Along the Cameron–Martin route the
 test function enters as `G(z) = f(v + σⱼ z)` — the function, not its third derivative, which has
 been moved onto the Gaussian density — and `G` is *not* supported on the shell, since `f = 1` on
-`B`. Splitting `f = 1_{interior B} + g` localises the `g` part verbatim
-(`abs_integral_mul_vecTiltRemainder_le_of_support`), but leaves
-`∫ 1_K(z) R_w(z) dγ(z) = γ(K − w) − Q_w(K)` with `K` convex — the second-order Taylor remainder
-in `w` of `w ↦ γ(K − w)`, whose control by the shell mass is a Gaussian surface-area statement
-about convex bodies (Ball's input), absent from Mathlib v4.29.1 and from this file.
+`B`. Splitting `f = 1_{interior B} + g` leaves the indicator part
+`∫ 1_K(z) R_w(z) dγ(z) = γ(K − w) − Q_w(K)` with `K` convex. Wave 24 concluded that controlling
+that by the shell mass is a Gaussian surface-area statement about convex bodies (Ball's input);
+**wave 29 overturns this** — see the next section.
+
+## Wave-29 amendment: no surface area is needed; the two-sided shell; the residue re-scoped
+
+**The wave-24 obstruction is not real.** The tilt remainder has *mean zero*,
+`integral_vecTiltRemainder_eq_zero`, so a constant may be subtracted from the test function for
+free (`abs_integral_mul_vecTiltRemainder_le_of_const_off`, the wave-19 lemma extended from
+"vanishes off `S`" to "is constant off `S`"). A mollified convex indicator is constant on the
+ball of radius `r` about any `v` at distance `≥ r` from the shell, so the indicator part is
+localised by the plain **Gaussian tail** `γ{‖z‖ ≥ r/σ}`
+(`abs_integral_shift_vecTiltRemainder_le_of_const_ball`), which `stdGaussian_norm_ge_le` supplies
+by Markov at any order. All of these are proved, axiom-clean, and dimension-free; no surface
+measure occurs anywhere.
+
+**The shell must be two-sided, and controlled at every width.** The set of points where the
+localisation fails is `Bˢ \ B_{−s}` — the *two-sided* shell — and the width `s` that step `j` of
+the telescope must afford is a multiple of the step width `σⱼ = √(j/n)`, which for `j` near `n`
+is `≫ ε`. `gaussian_measureReal_wideShell_le`, `measureReal_wideShell_le_of_convexDiscrepancy`
+and their affine transports repeat the outer-shell chain for the two-sided shell (cost: a factor
+`2`), and `hybridLaw_wideShell_le` is brick H for it, at every width, uniformly in `j`. The
+conditioning that both bricks H share is factored out as `hybridLaw_le_of_affine_le`.
+
+**Consequently the weight hypothesis of brick L is amended** (hypothesis only, conclusion
+untouched, and free at the only call site): see `localised_swap_bound_small_weight`.
+
+**Two gaps the wave-24/29 plans did not see**, both recorded in full there: the `L²` tilt bound
+needs `‖w‖ = ‖y‖/√j ≤ 1`, so the wave-19 lemma does *not* apply verbatim to the shell part
+either, and the large-`‖y‖` region has to be handled by the tilt identity directly (its
+`v`-average costs a two-sided shell at width `c‖y‖` — which is why the amended hypothesis is
+stated at all widths); and the summed weight is `δ(2 C_k log(1/ε) + W/ε)`, so this route yields
+the sharp rate **up to one logarithm**, `C_k (β/√n)(1 + log(√n/β))`. The logarithm is intrinsic
+to a single mollification width.
 
 **Constant deviation** (provable-constants rule): this route now gives `C ∼ k^{1/2}`, through
 `gaussianShellConst k = 4 e² √k`, not Bentkus's `400 k^{1/4}`. Wave 22 removed the factor `k`
@@ -3008,6 +3039,17 @@ private lemma integrable_sq_gauss : Integrable (fun t : ℝ => t ^ 2) (gaussianR
   rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg t)]
   exact sq_le_exp_add_exp t
 
+/-- The first moment of `N(0,1)`. -/
+private lemma integral_id_gauss : (∫ t : ℝ, t ∂(gaussianReal 0 1)) = 0 := by
+  simpa using ProbabilityTheory.integral_id_gaussianReal (μ := 0) (v := 1)
+
+/-- The second moment of `N(0,1)`, read off the variance. -/
+private lemma integral_sq_gauss : (∫ t : ℝ, t ^ 2 ∂(gaussianReal 0 1)) = 1 := by
+  have hV : Var[fun x : ℝ => x; gaussianReal 0 1] = 1 := by
+    simpa using ProbabilityTheory.variance_fun_id_gaussianReal (μ := 0) (v := 1)
+  rw [ProbabilityTheory.variance_eq_integral (by fun_prop)] at hV
+  simpa using hV
+
 /-! ### The scalar tilt remainder -/
 
 /-- The **scalar tilt remainder**: the error in the second-order expansion, in the tilt
@@ -3041,6 +3083,48 @@ private lemma integrable_tiltRemainder (s : ℝ) :
 private lemma continuous_tiltRemainder (s : ℝ) : Continuous (fun t => tiltRemainder s t) := by
   unfold tiltRemainder
   fun_prop
+
+/-- **The scalar tilt remainder has mean zero** under `N(0,1)`, for every tilt `s`.
+
+This is the identity `∫ exp(st − s²/2) dγ = 1` together with `∫ t dγ = 0` and `∫ t² dγ = 1`:
+the subtracted polynomial is precisely the second-order Hermite truncation of the tilt, and the
+tilt itself is a probability density. Wave 29: this innocuous fact is the whole reason the
+*indicator* half of a mollified convex indicator can be localised — see
+`abs_integral_mul_vecTiltRemainder_le_of_const_off`. -/
+private lemma integral_tiltRemainder_eq_zero (s : ℝ) :
+    (∫ t, tiltRemainder s t ∂(gaussianReal 0 1)) = 0 := by
+  have hA : Integrable (fun t : ℝ => 1 + s * t) (gaussianReal 0 1) :=
+    (integrable_const (1 : ℝ)).add (integrable_id_gauss.const_mul s)
+  have hB : Integrable (fun t : ℝ => s ^ 2 * (t ^ 2 - 1) / 2) (gaussianReal 0 1) :=
+    ((integrable_sq_gauss.sub (integrable_const (1 : ℝ))).const_mul (s ^ 2)).div_const 2
+  have hpoly : Integrable
+      (fun t : ℝ => 1 + s * t + s ^ 2 * (t ^ 2 - 1) / 2) (gaussianReal 0 1) := hA.add hB
+  have hsplit : (∫ t, tiltRemainder s t ∂(gaussianReal 0 1))
+      = (∫ t : ℝ, Real.exp (s * t - s ^ 2 / 2) ∂(gaussianReal 0 1))
+        - ∫ t : ℝ, (1 + s * t + s ^ 2 * (t ^ 2 - 1) / 2) ∂(gaussianReal 0 1) :=
+    integral_sub (integrable_exp_tilt s) hpoly
+  have hadd : (∫ t : ℝ, (1 + s * t + s ^ 2 * (t ^ 2 - 1) / 2) ∂(gaussianReal 0 1))
+      = (∫ t : ℝ, (1 + s * t) ∂(gaussianReal 0 1))
+        + ∫ t : ℝ, (s ^ 2 * (t ^ 2 - 1) / 2) ∂(gaussianReal 0 1) := integral_add hA hB
+  have hA' : (∫ t : ℝ, (1 + s * t) ∂(gaussianReal 0 1)) = 1 := by
+    have h := integral_add (μ := gaussianReal 0 1) (integrable_const (1 : ℝ))
+      (integrable_id_gauss.const_mul s)
+    rw [h, integral_const_mul, integral_id_gauss, integral_const]
+    simp
+  have hB' : (∫ t : ℝ, (s ^ 2 * (t ^ 2 - 1) / 2) ∂(gaussianReal 0 1)) = 0 := by
+    have h1 : (∫ t : ℝ, (s ^ 2 * (t ^ 2 - 1)) ∂(gaussianReal 0 1))
+        = s ^ 2 * ∫ t : ℝ, (t ^ 2 - 1) ∂(gaussianReal 0 1) :=
+      integral_const_mul _ _
+    have h2 : (∫ t : ℝ, (t ^ 2 - 1) ∂(gaussianReal 0 1))
+        = (∫ t : ℝ, t ^ 2 ∂(gaussianReal 0 1)) - ∫ _ : ℝ, (1 : ℝ) ∂(gaussianReal 0 1) :=
+      integral_sub integrable_sq_gauss (integrable_const (1 : ℝ))
+    have h3 : (∫ t : ℝ, (s ^ 2 * (t ^ 2 - 1) / 2) ∂(gaussianReal 0 1))
+        = (∫ t : ℝ, (s ^ 2 * (t ^ 2 - 1)) ∂(gaussianReal 0 1)) / 2 :=
+      integral_div _ _
+    rw [h3, h1, h2, integral_sq_gauss, integral_const]
+    simp
+  rw [hsplit, hadd, hA', hB', integral_exp_tilt s]
+  ring
 
 /-- The (parameter-free) envelope controlling the tilt remainder for small tilts. -/
 private noncomputable def tiltEnvSmall (t : ℝ) : ℝ :=
@@ -3396,6 +3480,20 @@ private lemma exists_unit_vecTiltRemainder_eq {w : EuclideanSpace ℝ (Fin k)} (
   simp only [vecTiltRemainder, tiltRemainder, hinner]
   ring
 
+/-- **The vector tilt remainder has mean zero.** Reduction of `integral_tiltRemainder_eq_zero`
+along the one-dimensional marginal. Consequently `∫ G · R_w dγ` is unchanged when a *constant*
+is subtracted from `G`; this is what localises the indicator half of a mollified convex
+indicator (see `abs_integral_mul_vecTiltRemainder_le_of_const_off`). -/
+private lemma integral_vecTiltRemainder_eq_zero (w : EuclideanSpace ℝ (Fin k)) :
+    (∫ z, vecTiltRemainder w z ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) = 0 := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · simp [vecTiltRemainder]
+  · obtain ⟨u, hu, hrw⟩ := exists_unit_vecTiltRemainder_eq hw
+    simp_rw [hrw]
+    rw [integral_comp_inner_unit_eq (φ := fun t => tiltRemainder ‖w‖ t)
+      (continuous_tiltRemainder ‖w‖) hu]
+    exact integral_tiltRemainder_eq_zero ‖w‖
+
 /-- **The vector tilt remainder is cubically small in the shift, in `L¹(N(0,I_k))`.**
 Reduction to the scalar statement `exists_tiltRemainder_bound` by the one-dimensional marginal
 `⟪ŵ, ·⟫ ∼ N(0,1)` (`stdGaussian_map_inner_unit`): the whole expression depends on `z` only
@@ -3586,6 +3684,36 @@ private lemma integrable_norm_gauss :
   have := memLp_norm_gauss (k := k) 1
   simpa using this
 
+/-- **The Gaussian norm tail, by Markov at any order.** `γ{‖z‖ ≥ R} ≤ E‖z‖^p / R^p`.
+
+Wave 29: this is the *only* input the localisation of the indicator half needs beyond
+`integral_vecTiltRemainder_eq_zero` — in particular no Gaussian surface area, and no
+concentration inequality: plain Markov at a high enough order `p`. -/
+private lemma stdGaussian_norm_ge_le (p : ℕ) {R : ℝ} (hR : 0 < R) :
+    ((stdGaussian (EuclideanSpace ℝ (Fin k))) {z | R ≤ ‖z‖}).toReal
+      ≤ (∫ z, ‖z‖ ^ p ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) / R ^ p := by
+  have hmk := mul_meas_ge_le_integral_of_nonneg
+    (μ := stdGaussian (EuclideanSpace ℝ (Fin k)))
+    (f := fun z : EuclideanSpace ℝ (Fin k) => ‖z‖ ^ p)
+    (Filter.Eventually.of_forall fun z => by positivity) (memLp_norm_gauss p) (R ^ p)
+  have hsub : {z : EuclideanSpace ℝ (Fin k) | R ≤ ‖z‖}
+      ⊆ {z : EuclideanSpace ℝ (Fin k) | R ^ p ≤ ‖z‖ ^ p} := by
+    intro z hz
+    exact pow_le_pow_left₀ hR.le hz p
+  have hmono : ((stdGaussian (EuclideanSpace ℝ (Fin k))) {z | R ≤ ‖z‖}).toReal
+      ≤ ((stdGaussian (EuclideanSpace ℝ (Fin k)))
+          {z : EuclideanSpace ℝ (Fin k) | R ^ p ≤ ‖z‖ ^ p}).toReal :=
+    ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono hsub)
+  rw [le_div_iff₀ (by positivity)]
+  calc ((stdGaussian (EuclideanSpace ℝ (Fin k))) {z | R ≤ ‖z‖}).toReal * R ^ p
+      ≤ ((stdGaussian (EuclideanSpace ℝ (Fin k)))
+          {z : EuclideanSpace ℝ (Fin k) | R ^ p ≤ ‖z‖ ^ p}).toReal * R ^ p :=
+        mul_le_mul_of_nonneg_right hmono (by positivity)
+    _ = R ^ p * ((stdGaussian (EuclideanSpace ℝ (Fin k))).real
+          {z : EuclideanSpace ℝ (Fin k) | R ^ p ≤ ‖z‖ ^ p}) := by
+        rw [measureReal_def]; ring
+    _ ≤ _ := hmk
+
 private lemma integrable_exp_inner_gauss (a : EuclideanSpace ℝ (Fin k)) :
     Integrable (fun z : EuclideanSpace ℝ (Fin k) => Real.exp ⟪a, z⟫_ℝ)
       (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
@@ -3648,6 +3776,113 @@ private lemma integrable_vecTiltRemainder (a : EuclideanSpace ℝ (Fin k)) :
     continuous_const (fun _ => by norm_num) a
   refine (h1.sub h2).congr (Filter.Eventually.of_forall fun z => ?_)
   simp only [Pi.sub_apply, one_mul, vecTiltRemainder]
+
+/-- **The localised weighted bound, for a test function that is CONSTANT off a small set**
+(wave 29). If `|G| ≤ 1` and `G ≡ a` off a measurable set `S`, with `|a| ≤ 1`, then
+
+`|∫ G · R_w dγ| ≤ 2 √(γ S) · √tiltSqConst · ‖w‖³`.
+
+`abs_integral_mul_vecTiltRemainder_le_of_support` is the case `a = 0`. The extension to a
+general constant is *not* cosmetic: it is exactly what the indicator half of a mollified convex
+indicator needs. Writing the mollified indicator `f = 1_{interior B} + g` with `g` shell-
+supported, the wave-19 lemma applies to `g` but not to `1_{interior B}`, whose Cameron–Martin
+error is `γ(K − w) − Q_w(K)` for the convex set `K = (interior B − v)/σ`. Wave 24's docstring
+concluded that bounding *that* by the shell mass is a Gaussian-surface-area statement, i.e.
+Ball's theorem. **That verdict is wrong.** Since `∫ R_w dγ = 0`
+(`integral_vecTiltRemainder_eq_zero`), one may subtract from `1_K` the constant it takes near
+the centre: if `v` is at distance `≥ r` from `∂B` then `1_K` is constant on the ball of radius
+`r/σ`, and Cauchy–Schwarz against the *Gaussian tail* `γ{‖z‖ ≥ r/σ}` — not against any surface
+measure — gives the localisation. See
+`abs_integral_shift_vecTiltRemainder_le_of_const_ball`. -/
+private lemma abs_integral_mul_vecTiltRemainder_le_of_const_off
+    {G : EuclideanSpace ℝ (Fin k) → ℝ} (hGc : Continuous G) (hG1 : ∀ z, |G z| ≤ 1)
+    {a : ℝ} (ha : |a| ≤ 1)
+    {S : Set (EuclideanSpace ℝ (Fin k))} (hS : MeasurableSet S)
+    (hoff : ∀ z, z ∉ S → G z = a)
+    {w : EuclideanSpace ℝ (Fin k)} (hw : ‖w‖ ≤ 1) :
+    |∫ z, G z * vecTiltRemainder w z ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+      ≤ 2 * Real.sqrt ((stdGaussian (EuclideanSpace ℝ (Fin k)) S).toReal)
+          * (Real.sqrt tiltSqConst * ‖w‖ ^ 3) := by
+  have hRint : Integrable (fun z => vecTiltRemainder w z)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := integrable_vecTiltRemainder w
+  have hHR : Integrable (fun z => (G z - a) * vecTiltRemainder w z)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    refine Integrable.mono' (hRint.abs.const_mul 2) (by fun_prop) ?_
+    filter_upwards with z
+    rw [Real.norm_eq_abs, abs_mul]
+    have h1 : |G z - a| ≤ 2 := by linarith [hG1 z, ha, abs_sub (G z) a]
+    nlinarith [abs_nonneg (vecTiltRemainder w z), abs_nonneg (G z - a)]
+  have haR : Integrable (fun z => a * vecTiltRemainder w z)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := hRint.const_mul a
+  have hdec : (∫ z, G z * vecTiltRemainder w z
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      = (∫ z, (G z - a) * vecTiltRemainder w z
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        + ∫ z, a * vecTiltRemainder w z ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    have h := integral_add hHR haR
+    rw [← h]
+    exact integral_congr_ae (Filter.Eventually.of_forall fun z => by ring)
+  have haR0 : (∫ z, a * vecTiltRemainder w z
+      ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) = 0 := by
+    have h := integral_const_mul (μ := stdGaussian (EuclideanSpace ℝ (Fin k))) a
+      (fun z => vecTiltRemainder w z)
+    rw [h, integral_vecTiltRemainder_eq_zero]
+    ring
+  have hhalf := abs_integral_mul_vecTiltRemainder_le_of_support
+    (G := fun z => (G z - a) / 2) (by fun_prop)
+    (fun z => by
+      have h1 : |G z - a| ≤ 2 := by linarith [hG1 z, ha, abs_sub (G z) a]
+      rw [abs_div, abs_of_nonneg (by norm_num : (0:ℝ) ≤ (2:ℝ))]
+      linarith)
+    hS (fun z hz => by dsimp only; rw [hoff z hz]; ring) hw
+  have hscale : (∫ z, (G z - a) * vecTiltRemainder w z
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      = 2 * ∫ z, ((G z - a) / 2) * vecTiltRemainder w z
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    have h := integral_const_mul (μ := stdGaussian (EuclideanSpace ℝ (Fin k))) 2
+      (fun z => ((G z - a) / 2) * vecTiltRemainder w z)
+    rw [← h]
+    exact integral_congr_ae (Filter.Eventually.of_forall fun z => by ring)
+  rw [hdec, haR0, add_zero, hscale, abs_mul, abs_of_nonneg (by norm_num : (0:ℝ) ≤ (2:ℝ))]
+  calc 2 * |∫ z, ((G z - a) / 2) * vecTiltRemainder w z
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+      ≤ 2 * (Real.sqrt ((stdGaussian (EuclideanSpace ℝ (Fin k)) S).toReal)
+          * (Real.sqrt tiltSqConst * ‖w‖ ^ 3)) :=
+        mul_le_mul_of_nonneg_left hhalf (by norm_num)
+    _ = 2 * Real.sqrt ((stdGaussian (EuclideanSpace ℝ (Fin k)) S).toReal)
+          * (Real.sqrt tiltSqConst * ‖w‖ ^ 3) := by ring
+
+/-- **The localised Cameron–Martin error at a point far from the boundary** (wave 29). If the
+bounded test function `F` is *constant* on the ball of radius `r` around `v` — which for a
+mollified convex indicator means exactly that `v` is at distance `≥ r` from the `ε`-shell of
+`∂B`, the constant being `1` inside and `0` outside — then the `σ`-smoothed Cameron–Martin
+remainder at `v` is weighted by the **Gaussian tail** `γ{‖z‖ ≥ r/σ}`:
+
+`|∫ F(v + σ z) R_w(z) dγ(z)| ≤ 2 √(γ{‖z‖ ≥ r/σ}) · √tiltSqConst · ‖w‖³`.
+
+Combined with `stdGaussian_norm_ge_le` at order `p`, the weight is `2 (E‖z‖^p)^{1/2}(σ/r)^{p/2}`.
+This is the localisation that wave 24 declared to be Ball's theorem; it is not. -/
+private lemma abs_integral_shift_vecTiltRemainder_le_of_const_ball
+    {F : EuclideanSpace ℝ (Fin k) → ℝ} (hF : Continuous F) (hFb : ∀ x, |F x| ≤ 1)
+    (v : EuclideanSpace ℝ (Fin k)) {σ r : ℝ} (hσ : 0 < σ) (hr : 0 < r)
+    {a : ℝ} (ha : |a| ≤ 1) (hconst : ∀ x, ‖x - v‖ < r → F x = a)
+    {w : EuclideanSpace ℝ (Fin k)} (hw : ‖w‖ ≤ 1) :
+    |∫ z, F (v + σ • z) * vecTiltRemainder w z
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+      ≤ 2 * Real.sqrt (((stdGaussian (EuclideanSpace ℝ (Fin k)))
+            {z | r / σ ≤ ‖z‖}).toReal) * (Real.sqrt tiltSqConst * ‖w‖ ^ 3) := by
+  have hSm : MeasurableSet {z : EuclideanSpace ℝ (Fin k) | r / σ ≤ ‖z‖} :=
+    (isClosed_le continuous_const continuous_norm).measurableSet
+  refine abs_integral_mul_vecTiltRemainder_le_of_const_off (G := fun z => F (v + σ • z))
+    (by fun_prop) (fun z => hFb _) ha hSm (fun z hz => ?_) hw
+  refine hconst _ ?_
+  have hz' : ‖z‖ < r / σ := lt_of_not_ge hz
+  have hnorm : ‖v + σ • z - v‖ = σ * ‖z‖ := by
+    rw [add_sub_cancel_left, norm_smul, Real.norm_eq_abs, abs_of_pos hσ]
+  rw [hnorm]
+  have hlt : σ * ‖z‖ < σ * (r / σ) := mul_lt_mul_of_pos_left hz' hσ
+  have heq : σ * (r / σ) = r := by field_simp
+  linarith [hlt, heq.le, heq.ge]
 
 /-- **The polynomial part of the tilt has the same integral for every centred,
 identity-covariance law.** This is the exact analogue of the vanishing of the linear term and
@@ -5695,6 +5930,141 @@ theorem gaussian_measureReal_shell_preimage_aff_le (hk : 0 < k)
   rw [convexDiscrepancy_self] at h
   linarith
 
+/-! #### Wave-29: the *two-sided* shell, and its affine transport
+
+The localised swap step needs more than the outer shell `Bᵋ \ interior B`. A point `v` is
+harmless for the localisation exactly when the mollified indicator is **constant** on a ball
+around `v` (`abs_integral_shift_vecTiltRemainder_le_of_const_ball`), i.e. when `v` lies either
+outside the thickening or inside the *erosion*. The complement of that is the **two-sided**
+shell `Bᵋ \ B_{-ε}`, and the inner half `B \ B_{-ε}` is invisible to
+`measureReal_shell_le_of_convexDiscrepancy`. The bounds below repeat the outer-shell chain for
+the two-sided shell; the cost is a factor `2`, since `gaussian_thickening_le` and
+`gaussian_le_erosion_add` each contribute `C_k ε`. -/
+
+/-- The erosion sits inside the interior (its centre lies in its own closed ball). -/
+lemma erosion_subset_interior {ε : ℝ} (hε : 0 ≤ ε) (B : Set (EuclideanSpace ℝ (Fin k))) :
+    erosion ε B ⊆ interior B := fun _ hx => hx (Metric.mem_closedBall_self hε)
+
+/-- **Affine transport of the erosion.** For `r > 0`,
+`(r • · + a)⁻¹(B_{-ε}) = (B')_{-ε/r}` where `B' = (r • · + a)⁻¹(B)`. -/
+lemma preimage_aff_erosion {r : ℝ} (hr : 0 < r) (a : EuclideanSpace ℝ (Fin k))
+    (B : Set (EuclideanSpace ℝ (Fin k))) {ε : ℝ} (_hε : 0 < ε) :
+    (fun x => r • x + a) ⁻¹' (erosion ε B)
+      = erosion (ε / r) ((fun x => r • x + a) ⁻¹' B) := by
+  have hint : (fun x => r • x + a) ⁻¹' (interior B)
+      = interior ((fun x => r • x + a) ⁻¹' B) := preimage_aff_interior hr a B
+  ext x
+  simp only [Set.mem_preimage, erosion, Set.mem_setOf_eq]
+  rw [← hint]
+  constructor
+  · intro hsub y hy
+    simp only [Set.mem_preimage]
+    refine hsub ?_
+    simp only [Metric.mem_closedBall, dist_eq_norm] at hy ⊢
+    have hrw : r • y + a - (r • x + a) = r • (y - x) := by rw [smul_sub]; abel
+    rw [hrw, norm_smul, Real.norm_eq_abs, abs_of_pos hr]
+    have h1 : r * ‖y - x‖ ≤ r * (ε / r) := mul_le_mul_of_nonneg_left hy hr.le
+    have h2 : r * (ε / r) = ε := by field_simp
+    linarith
+  · intro hsub y hy
+    have hy' : r⁻¹ • (y - a) ∈ Metric.closedBall x (ε / r) := by
+      have hrw : dist (r⁻¹ • (y - a)) x = r⁻¹ * dist y (r • x + a) := by
+        rw [dist_eq_norm, dist_eq_norm, ← norm_smul_of_nonneg (inv_pos.2 hr).le]
+        congr 1
+        match_scalars <;> field_simp
+      rw [Metric.mem_closedBall, hrw, div_eq_inv_mul]
+      exact mul_le_mul_of_nonneg_left (Metric.mem_closedBall.1 hy) (inv_pos.2 hr).le
+    have h := hsub hy'
+    simp only [Set.mem_preimage] at h
+    rwa [smul_smul, mul_inv_cancel₀ hr.ne', one_smul, sub_add_cancel] at h
+
+/-- The Gaussian mass of the **two-sided** shell `Bᵋ \ B_{-ε}` of a convex set is at most
+`2 C_k ε`. -/
+theorem gaussian_measureReal_wideShell_le (hk : 0 < k)
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBm : MeasurableSet B) (hBc : Convex ℝ B)
+    {ε : ℝ} (hε : 0 < ε) :
+    ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+        (Metric.thickening ε B \ erosion ε B)).toReal
+      ≤ 2 * gaussianShellConst k * ε := by
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
+  haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
+  have hEsub : erosion ε B ⊆ Metric.thickening ε B :=
+    (erosion_subset_interior hε.le B).trans
+      (interior_subset.trans (Metric.self_subset_thickening hε B))
+  have hdiff : (γ (Metric.thickening ε B \ erosion ε B)).toReal
+      = (γ (Metric.thickening ε B)).toReal - (γ (erosion ε B)).toReal :=
+    measureReal_sdiff γ hEsub (isOpen_erosion ε B).measurableSet
+  have hCkε : (0 : ℝ) ≤ gaussianShellConst k * ε :=
+    le_of_lt (mul_pos (gaussianShellConst_pos hk) hε)
+  have hthick : (γ (Metric.thickening ε B)).toReal
+      ≤ (γ B).toReal + gaussianShellConst k * ε := by
+    refine toReal_le_add_of_le_add_ofReal (measure_ne_top _ _) hCkε ?_
+    have := gaussian_thickening_le hk hBc hε
+    rwa [← hγdef] at this
+  have herode : (γ B).toReal ≤ (γ (erosion ε B)).toReal + gaussianShellConst k * ε := by
+    refine toReal_le_add_of_le_add_ofReal (measure_ne_top _ _) hCkε ?_
+    have := gaussian_le_erosion_add hk hBm hBc hε
+    rwa [← hγdef] at this
+  rw [hdiff]
+  linarith
+
+/-- The **two-sided** shell bound for an arbitrary law, at the price of `2Δ`. The two-sided
+shell is again a difference of two convex sets, so `measureReal_diff_le_of_convexDiscrepancy`
+applies verbatim. -/
+theorem measureReal_wideShell_le_of_convexDiscrepancy (hk : 0 < k)
+    (μ : Measure (EuclideanSpace ℝ (Fin k))) [IsProbabilityMeasure μ]
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBm : MeasurableSet B) (hBc : Convex ℝ B)
+    {ε : ℝ} (hε : 0 < ε) :
+    (μ (Metric.thickening ε B \ erosion ε B)).toReal
+      ≤ 2 * gaussianShellConst k * ε
+        + 2 * convexDiscrepancy μ (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) := by
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
+  haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
+  have hEsub : erosion ε B ⊆ Metric.thickening ε B :=
+    (erosion_subset_interior hε.le B).trans
+      (interior_subset.trans (Metric.self_subset_thickening hε B))
+  have h := measureReal_diff_le_of_convexDiscrepancy (μ := μ) (ν := γ)
+    (B₁ := Metric.thickening ε B) (B₂ := erosion ε B)
+    Metric.isOpen_thickening.measurableSet (hBc.thickening ε)
+    (isOpen_erosion ε B).measurableSet (convex_erosion hBc) hEsub
+  have hg := gaussian_measureReal_wideShell_le hk hBm hBc hε
+  rw [← hγdef] at hg
+  linarith
+
+/-- The two-sided shell bound, transported along a dilation-translation. -/
+theorem measureReal_wideShell_preimage_aff_le (hk : 0 < k)
+    (μ : Measure (EuclideanSpace ℝ (Fin k))) [IsProbabilityMeasure μ]
+    {r : ℝ} (hr : 0 < r) (a : EuclideanSpace ℝ (Fin k))
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBm : MeasurableSet B) (hBc : Convex ℝ B)
+    {ε : ℝ} (hε : 0 < ε) :
+    (μ ((fun x => r • x + a) ⁻¹' (Metric.thickening ε B \ erosion ε B))).toReal
+      ≤ 2 * gaussianShellConst k * (ε / r)
+        + 2 * convexDiscrepancy μ (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) := by
+  set B' : Set (EuclideanSpace ℝ (Fin k)) := (fun x => r • x + a) ⁻¹' B with hB'def
+  have hmeas : Measurable (fun x : EuclideanSpace ℝ (Fin k) => r • x + a) := by fun_prop
+  have hB'm : MeasurableSet B' := hmeas hBm
+  have hB'c : Convex ℝ B' := convex_preimage_aff hBc
+  have hset : (fun x => r • x + a) ⁻¹' (Metric.thickening ε B \ erosion ε B)
+      = Metric.thickening (ε / r) B' \ erosion (ε / r) B' := by
+    rw [Set.preimage_diff, preimage_aff_thickening hr a B hε, preimage_aff_erosion hr a B hε]
+  rw [hset]
+  exact measureReal_wideShell_le_of_convexDiscrepancy hk μ hB'm hB'c (by positivity)
+
+/-- The Gaussian regime of the two-sided shell: no `Δ` term at all. -/
+theorem gaussian_measureReal_wideShell_preimage_aff_le (hk : 0 < k)
+    {r : ℝ} (hr : 0 < r) (a : EuclideanSpace ℝ (Fin k))
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBm : MeasurableSet B) (hBc : Convex ℝ B)
+    {ε : ℝ} (hε : 0 < ε) :
+    ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+        ((fun x => r • x + a) ⁻¹' (Metric.thickening ε B \ erosion ε B))).toReal
+      ≤ 2 * gaussianShellConst k * (ε / r) := by
+  haveI : IsProbabilityMeasure (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) :=
+    inferInstance
+  have h := measureReal_wideShell_preimage_aff_le hk
+    (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) hr a hBm hBc hε
+  rw [convexDiscrepancy_self] at h
+  linarith
+
 /-! ### Wave-20: the hybrid family, and the recursion it produces -/
 
 /-- The law of the normalised sum `n^{-1/2} ∑ᵢ Yᵢ` of `n` i.i.d. copies of `ν`. -/
@@ -5834,8 +6204,123 @@ private lemma map_partial_sum_eq_smul_sumLaw {n j : ℕ} (hj : j ≤ n) (hm : 0 
   rw [hL, hR]
 
 set_option maxHeartbeats 1600000 in
--- The two-regime case split runs two long `calc` chains over `Measure.prod` applied to the
--- explicit hybrid map; the default budget is not enough to elaborate and kernel-check them.
+/-- **The conditioning skeleton of brick H** (wave 29: factored out). For *any* measurable set
+`S`, the hybrid mass `hybridLaw n j ν S` is bounded by any `c ≥ 0` that dominates the mass of
+every affine preimage `(r • · + a)⁻¹ S` with `r ≥ 1/2`, under the Gaussian in the
+Gaussian-dominant regime `n ≤ 2j` and under `sumLaw (n-j) ν` in the sum-dominant regime.
+
+The two Fubini identities (`Measure.prod_apply` / `Measure.prod_apply_symm`) and
+`map_partial_sum_eq_smul_sumLaw` are the whole content; the set `S` enters only through the two
+hypotheses. `hybridLaw_shell_le` (the outer shell) and `hybridLaw_wideShell_le` (the two-sided
+shell) are the two instances. -/
+private lemma hybridLaw_le_of_affine_le {n j : ℕ} (hn : 0 < n) (hj : j ≤ n)
+    {ν : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure ν]
+    {S : Set (EuclideanSpace ℝ (Fin k))} (hSm : MeasurableSet S) {c : ℝ} (hc : 0 ≤ c)
+    (hG : n ≤ 2 * j → ∀ r : ℝ, 1 / 2 ≤ r → ∀ a : EuclideanSpace ℝ (Fin k),
+      ((stdGaussian (EuclideanSpace ℝ (Fin k))) ((fun x => r • x + a) ⁻¹' S)).toReal ≤ c)
+    (hM : 2 * j < n → ∀ r : ℝ, 1 / 2 ≤ r → ∀ a : EuclideanSpace ℝ (Fin k),
+      ((sumLaw (n - j) ν) ((fun x => r • x + a) ⁻¹' S)).toReal ≤ c) :
+    ((hybridLaw n j ν) S).toReal ≤ c := by
+  haveI hinst : ∀ i : Fin n, IsProbabilityMeasure
+      (if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν) := by
+    intro i; split <;> infer_instance
+  have hnr : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hnr
+  suffices h : hybridLaw n j ν S ≤ ENNReal.ofReal c by
+    calc (hybridLaw n j ν S).toReal
+        ≤ (ENNReal.ofReal c).toReal := ENNReal.toReal_mono (by simp) h
+      _ = c := ENNReal.toReal_ofReal hc
+  have hΦ : Measurable (fun p : (Fin n → EuclideanSpace ℝ (Fin k)) × EuclideanSpace ℝ (Fin k) =>
+      (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
+        + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) := by fun_prop
+  rw [hybridLaw, Measure.map_apply hΦ hSm]
+  rcases le_or_gt n (2 * j) with hcase | hcase
+  · have hjpos : 0 < j := by omega
+    have hjr : (0 : ℝ) < (j : ℝ) := by exact_mod_cast hjpos
+    have hσpos : (0 : ℝ) < Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ) := by positivity
+    have hσsq : (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) ^ 2 = (j : ℝ) / (n : ℝ) := by
+      rw [div_pow, Real.sq_sqrt hjr.le, Real.sq_sqrt hnr.le]
+    have hσge : (1 : ℝ) / 2 ≤ Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ) := by
+      have hhalf : (1 : ℝ) / 2 ≤ (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) ^ 2 := by
+        rw [hσsq, le_div_iff₀ hnr]
+        have : (n : ℝ) ≤ 2 * (j : ℝ) := by exact_mod_cast hcase
+        linarith
+      nlinarith
+    rw [Measure.prod_apply (hΦ hSm)]
+    have hinner : ∀ y : Fin n → EuclideanSpace ℝ (Fin k),
+        (stdGaussian (EuclideanSpace ℝ (Fin k)))
+            (Prod.mk y ⁻¹' ((fun p : (Fin n → EuclideanSpace ℝ (Fin k))
+                × EuclideanSpace ℝ (Fin k) => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
+                  + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) ⁻¹' S))
+          ≤ ENNReal.ofReal c := by
+      intro y
+      have hset : (Prod.mk y ⁻¹' ((fun p : (Fin n → EuclideanSpace ℝ (Fin k))
+            × EuclideanSpace ℝ (Fin k) => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
+              + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) ⁻¹' S))
+          = (fun z => (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • z
+              + (Real.sqrt (n : ℝ))⁻¹ • (∑ i, y i)) ⁻¹' S := by
+        ext z
+        simp only [Set.mem_preimage]
+        rw [add_comm]
+      rw [hset]
+      exact (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) hc).2
+        (hG hcase _ hσge ((Real.sqrt (n : ℝ))⁻¹ • (∑ i, y i)))
+    calc ∫⁻ y, (stdGaussian (EuclideanSpace ℝ (Fin k))) (Prod.mk y ⁻¹' _)
+            ∂(Measure.pi fun i : Fin n =>
+              if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν)
+        ≤ ∫⁻ _, ENNReal.ofReal c
+            ∂(Measure.pi fun i : Fin n =>
+              if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν) :=
+          lintegral_mono hinner
+      _ = ENNReal.ofReal c := by rw [lintegral_const, measure_univ, mul_one]
+  · have hm : 0 < n - j := by omega
+    have hmn : n ≤ 2 * (n - j) := by omega
+    have hmr : (0 : ℝ) < ((n - j : ℕ) : ℝ) := by exact_mod_cast hm
+    have hlampos : (0 : ℝ) < Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ) := by positivity
+    have hlamsq : (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)) ^ 2
+        = ((n - j : ℕ) : ℝ) / (n : ℝ) := by
+      rw [div_pow, Real.sq_sqrt hmr.le, Real.sq_sqrt hnr.le]
+    have hlamge : (1 : ℝ) / 2 ≤ Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ) := by
+      have hhalf : (1 : ℝ) / 2 ≤ (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)) ^ 2 := by
+        rw [hlamsq, le_div_iff₀ hnr]
+        have : (n : ℝ) ≤ 2 * ((n - j : ℕ) : ℝ) := by exact_mod_cast hmn
+        linarith
+      nlinarith
+    rw [Measure.prod_apply_symm (hΦ hSm)]
+    have hinner : ∀ z : EuclideanSpace ℝ (Fin k),
+        (Measure.pi fun i : Fin n =>
+            if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν)
+            ((fun y => (y, z)) ⁻¹' ((fun p : (Fin n → EuclideanSpace ℝ (Fin k))
+                × EuclideanSpace ℝ (Fin k) => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
+                  + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) ⁻¹' S))
+          ≤ ENNReal.ofReal c := by
+      intro z
+      set a : EuclideanSpace ℝ (Fin k) := (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • z with hadef
+      have hTm : MeasurableSet ((fun w => w + a) ⁻¹' S) := (measurable_id.add_const a) hSm
+      have hset : ((fun y : Fin n → EuclideanSpace ℝ (Fin k) => (y, z))
+            ⁻¹' ((fun p : (Fin n → EuclideanSpace ℝ (Fin k))
+              × EuclideanSpace ℝ (Fin k) => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
+                + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) ⁻¹' S))
+          = (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) ⁻¹' ((fun w => w + a) ⁻¹' S) := by
+        ext y
+        simp only [Set.mem_preimage, hadef]
+      rw [hset, ← Measure.map_apply (by fun_prop) hTm,
+        map_partial_sum_eq_smul_sumLaw hj hm ν,
+        Measure.map_apply (by fun_prop) hTm]
+      have hset2 : ((fun x : EuclideanSpace ℝ (Fin k) =>
+            (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)) • x)
+            ⁻¹' ((fun w => w + a) ⁻¹' S))
+          = (fun x => (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)) • x + a) ⁻¹' S := rfl
+      rw [hset2]
+      exact (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) hc).2
+        (hM hcase _ hlamge a)
+    calc ∫⁻ z, (Measure.pi fun i : Fin n =>
+              if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν)
+            ((fun y => (y, z)) ⁻¹' _) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))
+        ≤ ∫⁻ _, ENNReal.ofReal c ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+          lintegral_mono hinner
+      _ = ENNReal.ofReal c := by rw [lintegral_const, measure_univ, mul_one]
+
 /-- **Brick H (wave 22: PROVED).** *The shell mass of every hybrid law is `≤ 2 C_k ε + 2Y`,
 uniformly in `j`.*
 
@@ -5863,6 +6348,10 @@ the two Fubini identities above together with `map_partial_sum_eq_smul_sumLaw`, 
 non-formal ingredient is `map_sum_pi_dirac_drop` — the `δ₀` factors of the hybrid product drop
 out of the law of the coordinate sum.
 
+Wave 29 factored the two-regime conditioning out as `hybridLaw_le_of_affine_le`, which knows
+nothing about the shell; what is left here is the two affine-transport estimates. The statement
+is unchanged.
+
 The moment hypotheses `hmean`, `hcov`, `hβ` are **not used**: the shell bound is purely
 geometric, and only enters the recursion through `convexDiscrepancy`, where the moments are
 already assumed. They are retained so that the statement matches the shape the recursion
@@ -5879,141 +6368,74 @@ theorem hybridLaw_shell_le (hk : 0 < k) {n j : ℕ} (hn : 0 < n) (hj : j ≤ n)
         ≤ Y) :
     ((hybridLaw n j ν) (Metric.thickening ε B \ interior B)).toReal
       ≤ 2 * gaussianShellConst k * ε + 2 * Y := by
-  haveI hinst : ∀ i : Fin n, IsProbabilityMeasure
-      (if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν) := by
-    intro i; split <;> infer_instance
-  have hgauss : multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1
-      = stdGaussian (EuclideanSpace ℝ (Fin k)) := multivariateGaussian_zero_one
   have hCk : 0 < gaussianShellConst k := gaussianShellConst_pos hk
   have hY0 : (0 : ℝ) ≤ Y := le_trans convexDiscrepancy_nonneg (hY n (by omega) le_rfl)
-  have hnr : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
-  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hnr
-  set S : Set (EuclideanSpace ℝ (Fin k)) := Metric.thickening ε B \ interior B with hSdef
-  have hSm : MeasurableSet S :=
-    Metric.isOpen_thickening.measurableSet.diff isOpen_interior.measurableSet
-  suffices h : hybridLaw n j ν S ≤ ENNReal.ofReal (2 * gaussianShellConst k * ε + 2 * Y) by
-    calc (hybridLaw n j ν S).toReal
-        ≤ (ENNReal.ofReal (2 * gaussianShellConst k * ε + 2 * Y)).toReal :=
-          ENNReal.toReal_mono (by simp) h
-      _ = 2 * gaussianShellConst k * ε + 2 * Y := ENNReal.toReal_ofReal (by positivity)
-  have hΦ : Measurable (fun p : (Fin n → EuclideanSpace ℝ (Fin k)) × EuclideanSpace ℝ (Fin k) =>
-      (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
-        + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) := by fun_prop
-  rw [hybridLaw, Measure.map_apply hΦ hSm]
-  rcases le_or_gt n (2 * j) with hcase | hcase
-  · -- **Gaussian-dominant regime.** The hybrid's own `N(0, (j/n) I)` component has `σ ≥ 1/√2`
-    -- and supplies the whole anti-concentration bound; no induction is used.
-    have hjpos : 0 < j := by omega
-    have hjr : (0 : ℝ) < (j : ℝ) := by exact_mod_cast hjpos
-    have hσpos : (0 : ℝ) < Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ) := by positivity
-    have hσsq : (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) ^ 2 = (j : ℝ) / (n : ℝ) := by
-      rw [div_pow, Real.sq_sqrt hjr.le, Real.sq_sqrt hnr.le]
-    have hσge : (1 : ℝ) / 2 ≤ Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ) := by
-      have hhalf : (1 : ℝ) / 2 ≤ (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) ^ 2 := by
-        rw [hσsq, le_div_iff₀ hnr]
-        have : (n : ℝ) ≤ 2 * (j : ℝ) := by exact_mod_cast hcase
-        linarith
-      nlinarith
-    have hεσ : ε / (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) ≤ 2 * ε := by
-      rw [div_le_iff₀ hσpos]; nlinarith
-    rw [Measure.prod_apply (hΦ hSm)]
-    have hinner : ∀ y : Fin n → EuclideanSpace ℝ (Fin k),
-        (stdGaussian (EuclideanSpace ℝ (Fin k)))
-            (Prod.mk y ⁻¹' ((fun p : (Fin n → EuclideanSpace ℝ (Fin k))
-                × EuclideanSpace ℝ (Fin k) => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
-                  + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) ⁻¹' S))
-          ≤ ENNReal.ofReal (2 * gaussianShellConst k * ε + 2 * Y) := by
-      intro y
-      have hset : (Prod.mk y ⁻¹' ((fun p : (Fin n → EuclideanSpace ℝ (Fin k))
-            × EuclideanSpace ℝ (Fin k) => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
-              + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) ⁻¹' S))
-          = (fun z => (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • z
-              + (Real.sqrt (n : ℝ))⁻¹ • (∑ i, y i)) ⁻¹' S := by
-        ext z
-        simp only [Set.mem_preimage]
-        rw [add_comm]
-      rw [hset, ← hgauss]
-      have hb := gaussian_measureReal_shell_preimage_aff_le hk hσpos
-        ((Real.sqrt (n : ℝ))⁻¹ • (∑ i, y i)) hBm hBc hε
-      rw [← hSdef] at hb
-      refine (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) (by positivity)).2 ?_
-      calc _ ≤ gaussianShellConst k * (ε / (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ))) := hb
-        _ ≤ gaussianShellConst k * (2 * ε) := by
-            exact mul_le_mul_of_nonneg_left hεσ hCk.le
-        _ ≤ 2 * gaussianShellConst k * ε + 2 * Y := by linarith
-    calc ∫⁻ y, (stdGaussian (EuclideanSpace ℝ (Fin k))) (Prod.mk y ⁻¹' _)
-            ∂(Measure.pi fun i : Fin n =>
-              if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν)
-        ≤ ∫⁻ _, ENNReal.ofReal (2 * gaussianShellConst k * ε + 2 * Y)
-            ∂(Measure.pi fun i : Fin n =>
-              if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν) :=
-          lintegral_mono hinner
-      _ = ENNReal.ofReal (2 * gaussianShellConst k * ε + 2 * Y) := by
-          rw [lintegral_const, measure_univ, mul_one]
-  · -- **Sum-dominant regime.** Condition on the Gaussian coordinate: the non-Gaussian part is a
-    -- normalised sum of `m = n − j ≥ n/2` summands, scaled by `λ = √(m/n) ≥ 1/√2`.
-    have hm : 0 < n - j := by omega
-    have hmn : n ≤ 2 * (n - j) := by omega
-    have hmle : n - j ≤ n := Nat.sub_le _ _
-    have hmr : (0 : ℝ) < ((n - j : ℕ) : ℝ) := by exact_mod_cast hm
-    have hlampos : (0 : ℝ) < Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ) := by positivity
-    have hlamsq : (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)) ^ 2
-        = ((n - j : ℕ) : ℝ) / (n : ℝ) := by
-      rw [div_pow, Real.sq_sqrt hmr.le, Real.sq_sqrt hnr.le]
-    have hlamge : (1 : ℝ) / 2 ≤ Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ) := by
-      have hhalf : (1 : ℝ) / 2 ≤ (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)) ^ 2 := by
-        rw [hlamsq, le_div_iff₀ hnr]
-        have : (n : ℝ) ≤ 2 * ((n - j : ℕ) : ℝ) := by exact_mod_cast hmn
-        linarith
-      nlinarith
-    have hεlam : ε / (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)) ≤ 2 * ε := by
-      rw [div_le_iff₀ hlampos]; nlinarith
-    rw [Measure.prod_apply_symm (hΦ hSm)]
-    have hinner : ∀ z : EuclideanSpace ℝ (Fin k),
-        (Measure.pi fun i : Fin n =>
-            if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν)
-            ((fun y => (y, z)) ⁻¹' ((fun p : (Fin n → EuclideanSpace ℝ (Fin k))
-                × EuclideanSpace ℝ (Fin k) => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
-                  + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) ⁻¹' S))
-          ≤ ENNReal.ofReal (2 * gaussianShellConst k * ε + 2 * Y) := by
-      intro z
-      set a : EuclideanSpace ℝ (Fin k) := (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • z with hadef
-      have hTm : MeasurableSet ((fun w => w + a) ⁻¹' S) := by
-        exact (measurable_id.add_const a) hSm
-      have hset : ((fun y : Fin n → EuclideanSpace ℝ (Fin k) => (y, z))
-            ⁻¹' ((fun p : (Fin n → EuclideanSpace ℝ (Fin k))
-              × EuclideanSpace ℝ (Fin k) => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
-                + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) ⁻¹' S))
-          = (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) ⁻¹' ((fun w => w + a) ⁻¹' S) := by
-        ext y
-        simp only [Set.mem_preimage, hadef]
-      rw [hset, ← Measure.map_apply (by fun_prop) hTm,
-        map_partial_sum_eq_smul_sumLaw hj hm ν,
-        Measure.map_apply (by fun_prop) hTm]
-      have hset2 : ((fun x : EuclideanSpace ℝ (Fin k) =>
-            (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)) • x)
-            ⁻¹' ((fun w => w + a) ⁻¹' S))
-          = (fun x => (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)) • x + a) ⁻¹' S := rfl
-      rw [hset2]
-      have hb := measureReal_shell_preimage_aff_le hk (sumLaw (n - j) ν) hlampos a hBm hBc hε
-      rw [← hSdef] at hb
-      have hYm := hY (n - j) hmn hmle
-      refine (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) (by positivity)).2 ?_
-      calc _ ≤ gaussianShellConst k
-              * (ε / (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)))
-            + 2 * convexDiscrepancy (sumLaw (n - j) ν)
-                (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) := hb
-        _ ≤ gaussianShellConst k * (2 * ε) + 2 * Y := by
-            have := mul_le_mul_of_nonneg_left hεlam hCk.le
-            linarith
-        _ ≤ 2 * gaussianShellConst k * ε + 2 * Y := by linarith
-    calc ∫⁻ z, (Measure.pi fun i : Fin n =>
-              if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν)
-            ((fun y => (y, z)) ⁻¹' _) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))
-        ≤ ∫⁻ _, ENNReal.ofReal (2 * gaussianShellConst k * ε + 2 * Y)
-            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := lintegral_mono hinner
-      _ = ENNReal.ofReal (2 * gaussianShellConst k * ε + 2 * Y) := by
-          rw [lintegral_const, measure_univ, mul_one]
+  have hgauss : multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1
+      = stdGaussian (EuclideanSpace ℝ (Fin k)) := multivariateGaussian_zero_one
+  have hbound : ∀ r : ℝ, 1 / 2 ≤ r → ε / r ≤ 2 * ε := by
+    intro r hr
+    have hrpos : (0 : ℝ) < r := by linarith
+    rw [div_le_iff₀ hrpos]; nlinarith
+  refine hybridLaw_le_of_affine_le hn hj
+    (Metric.isOpen_thickening.measurableSet.diff isOpen_interior.measurableSet)
+    (by positivity) (fun _ r hr a => ?_) (fun _ r hr a => ?_)
+  · have hrpos : (0 : ℝ) < r := by linarith
+    have hb := gaussian_measureReal_shell_preimage_aff_le hk hrpos a hBm hBc hε
+    rw [← hgauss]
+    have h2 := mul_le_mul_of_nonneg_left (hbound r hr) hCk.le
+    linarith
+  · have hrpos : (0 : ℝ) < r := by linarith
+    have hb := measureReal_shell_preimage_aff_le hk (sumLaw (n - j) ν) hrpos a hBm hBc hε
+    have hYm := hY (n - j) (by omega) (Nat.sub_le _ _)
+    have h2 := mul_le_mul_of_nonneg_left (hbound r hr) hCk.le
+    linarith
+
+/-- **Brick H for the two-sided shell (wave 29: PROVED).** *The mass every hybrid law puts on
+`Bᵋ \ B_{-ε}` is `≤ 4 C_k ε + 2Y`, uniformly in `j`.*
+
+The same instance of `hybridLaw_le_of_affine_le` as `hybridLaw_shell_le`, with the two-sided
+affine transports (`gaussian_measureReal_wideShell_preimage_aff_le`,
+`measureReal_wideShell_preimage_aff_le`) in place of the outer-shell ones; the constant doubles
+because the two-sided shell costs `C_k ε` on each side.
+
+This is the form the *localised* swap step needs. The localisation weight at a point `v` is
+controlled exactly when the mollified indicator is constant on a ball about `v`
+(`abs_integral_shift_vecTiltRemainder_le_of_const_ball`), which fails precisely on the two-sided
+shell; the outer shell `Bᵋ \ interior B` of `hybridLaw_shell_le` is blind to the inner half.
+Note that `ε` here is arbitrary: in the telescope it is the *step* width `σⱼ = √(j/n)`, not the
+mollifier width, and `σⱼ ≫ ε` for `j` large. -/
+theorem hybridLaw_wideShell_le (hk : 0 < k) {n j : ℕ} (hn : 0 < n) (hj : j ≤ n)
+    {ν : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure ν]
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBm : MeasurableSet B) (hBc : Convex ℝ B)
+    {ε : ℝ} (hε : 0 < ε) {Y : ℝ}
+    (hY : ∀ m : ℕ, n ≤ 2 * m → m ≤ n →
+      convexDiscrepancy (sumLaw m ν) (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+        ≤ Y) :
+    ((hybridLaw n j ν) (Metric.thickening ε B \ erosion ε B)).toReal
+      ≤ 4 * gaussianShellConst k * ε + 2 * Y := by
+  have hCk : 0 < gaussianShellConst k := gaussianShellConst_pos hk
+  have hY0 : (0 : ℝ) ≤ Y := le_trans convexDiscrepancy_nonneg (hY n (by omega) le_rfl)
+  have hgauss : multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1
+      = stdGaussian (EuclideanSpace ℝ (Fin k)) := multivariateGaussian_zero_one
+  have hbound : ∀ r : ℝ, 1 / 2 ≤ r → ε / r ≤ 2 * ε := by
+    intro r hr
+    have hrpos : (0 : ℝ) < r := by linarith
+    rw [div_le_iff₀ hrpos]; nlinarith
+  refine hybridLaw_le_of_affine_le hn hj
+    (Metric.isOpen_thickening.measurableSet.diff (isOpen_erosion ε B).measurableSet)
+    (by positivity) (fun _ r hr a => ?_) (fun _ r hr a => ?_)
+  · have hrpos : (0 : ℝ) < r := by linarith
+    have hb := gaussian_measureReal_wideShell_preimage_aff_le hk hrpos a hBm hBc hε
+    rw [← hgauss]
+    have h2 := mul_le_mul_of_nonneg_left (hbound r hr)
+      (by positivity : (0:ℝ) ≤ 2 * gaussianShellConst k)
+    linarith
+  · have hrpos : (0 : ℝ) < r := by linarith
+    have hb := measureReal_wideShell_preimage_aff_le hk (sumLaw (n - j) ν) hrpos a hBm hBc hε
+    have hYm := hY (n - j) (by omega) (Nat.sub_le _ _)
+    have h2 := mul_le_mul_of_nonneg_left (hbound r hr)
+      (by positivity : (0:ℝ) ≤ 2 * gaussianShellConst k)
+    linarith
 
 
 /-- **Brick L above the Gaussian shell scale (wave 24: PROVED, and no localisation needed).**
@@ -6093,34 +6515,81 @@ theorem exists_smooth_swap_bound_of_one_le_weight (k : ℕ) (hk : 0 < k) {C₃ :
       mul_le_mul hs1 hW (by norm_num) (mul_nonneg (by linarith) hq0.le)
     linarith
 
-/-- **Brick L below the Gaussian shell scale (stated, not proved).** *The hybrid telescope with
-every step estimated by the localised weighted swap bound*, in the only regime that has any
-content: the total weight `W + C_k ε` is at most `1`.
+/-- **Brick L below the Gaussian shell scale (stated, not proved; hypothesis AMENDED in
+wave 29).** *The hybrid telescope with every step estimated by the localised weighted swap
+bound*, in the only regime that has any content: the total weight `W + C_k ε` is at most `1`.
 
 This is `abs_integral_smooth_sub_gaussian_improved` rerun with a shell-weighted Cameron–Martin
-remainder in place of the uniform `integral_abs_vecTiltRemainder_le`: since `D³` of the
-mollified indicator of `B` at width `ε` vanishes on `interior B` and off `Bᵋ`, each step of the
-telescope should be weighted by the mass that the `j`-th hybrid law puts on the shell
-`B^{2ε} \ interior B` (the factor `2` absorbs the closure of the support). Summing the weighted
-steps with the cut `J = ⌈ε² n⌉` of `abs_integral_smooth_sub_gaussian_balanced` gives
-`A (β/√n) ε⁻¹ W` in place of the unweighted `A (β/√n) ε⁻¹`.
+remainder in place of the uniform `integral_abs_vecTiltRemainder_le`. Summing the weighted steps
+with the cut `J = ⌈ε² n⌉` of `abs_integral_smooth_sub_gaussian_balanced` gives `A (β/√n) ε⁻¹ W`
+in place of the unweighted `A (β/√n) ε⁻¹`.
 
 The `L^∞` form is stated (weight `W`, not `√W`), which is what the sharp `β/√n` rate needs; the
 wave-19 `L²`/Cauchy–Schwarz form `abs_integral_mul_vecTiltRemainder_le_of_support` delivers `√W`
 instead, for which `cube_le_of_selfImproving_smoothed_sqrt` gives `O(n^{-1/3})`.
 
-**What is genuinely missing** (wave 24, re-derived). The wave-22 docstring asserted that the
-localisation is a mechanical rerun of the telescope with the wave-19 lemma substituted. That is
-*not* so, and the obstruction is precise. Along the Cameron–Martin route the test function
-enters as `G(z) = f(v + σⱼ z)` — the function itself, **not** its third derivative, which has
-been moved onto the Gaussian density. `G` is not supported on the shell: `f = 1` on `B`. Writing
-`f = 1_{interior B} + g` with `g` supported on the shell and `|g| ≤ 1` splits the step into a
-part that *is* localised (`abs_integral_mul_vecTiltRemainder_le_of_support` applies to `g`
-verbatim) and the indicator part
-`∫ 1_K(z) R_w(z) dγ(z) = γ(K − w) − Q_w(K)`, `K = {z | v + σⱼ z ∈ interior B}` convex,
-which is the second-order Taylor remainder in `w` of `w ↦ γ(K − w)`. Bounding *that* by the
+## Wave 29: the wave-24 diagnosis is WRONG, and the hypothesis is amended
+
+Wave 24 wrote: splitting `f = 1_{interior B} + g` localises the `g` half by the wave-19 lemma,
+but leaves the indicator half `∫ 1_K R_w dγ = γ(K − w) − Q_w(K)`, and "bounding *that* by the
 shell mass is a Gaussian surface-area statement about convex bodies — the same input as Ball's
-theorem — and is not among the file's ingredients. -/
+theorem". **That verdict is overturned.** No surface area is involved. The tilt remainder has
+mean zero, `integral_vecTiltRemainder_eq_zero`, so a *constant* may be subtracted from the test
+function for free; and near a point `v` at distance `≥ r` from the boundary the mollified
+indicator *is* constant on the ball of radius `r`. Cauchy–Schwarz against the plain **Gaussian
+tail** `γ{‖z‖ ≥ r/σ}` then localises the indicator half:
+`abs_integral_mul_vecTiltRemainder_le_of_const_off` and
+`abs_integral_shift_vecTiltRemainder_le_of_const_ball`, with `stdGaussian_norm_ge_le` (Markov at
+any order) supplying the tail. All four are proved and axiom-clean; none of them mentions a
+surface measure, and their constants are dimension-free.
+
+**Why the hypothesis had to change.** Two corrections to the wave-24 interface, both forced by
+the localisation just described and both *free* at the only call site:
+
+1. *The shell must be two-sided.* The per-point weight is small exactly when `f` is constant on
+   a ball about `v`, i.e. when `v` is outside the thickening **or inside the erosion**. The bad
+   set is `B^s \ B_{-s}`, and its inner half `B \ B_{-s}` is invisible to the frozen hypothesis,
+   which speaks only of `B^{2ε} \ interior B`.
+2. *Every width must be controlled, not just `2ε`.* Step `j` of the telescope is smoothed at
+   `σⱼ = √(j/n)`, and the localisation radius that step can afford is a multiple of `σⱼ`, not of
+   `ε`. For `j > J = ⌈ε²n⌉` one has `σⱼ ≥ ε`, and for `j` near `n` one has `σⱼ ≈ 1 ≫ ε`; the
+   frozen hypothesis says nothing about neighbourhoods at those scales.
+
+`hybridLaw_wideShell_le` (wave 29, proved) supplies exactly the amended hypothesis at the call
+site, at every width, with the constant `4 C_k` and the same `2Y` that brick H already carries —
+so `exists_convexDiscrepancy_recursion`, `berryEsseen_convex_sharp` and its constant are
+unaffected. Note that the amendment does not weaken the *content*: the frozen statement is true
+(it is implied by Bentkus's theorem, since its right-hand side is `≥ A C_k β/√n`); what the
+amendment records is the interface the *proof* needs.
+
+## What is still missing (wave 29, re-derived)
+
+Two items, both about the summand `y` rather than the geometry.
+
+* **The `‖w‖ ≤ 1` restriction.** Both the wave-19 lemma and its wave-29 constant-off extension
+  require a Cameron–Martin shift of length at most `1` (for `‖w‖ > 1` the `L²` norm of the tilt
+  blows up like `e^{‖w‖²}` — see `integral_sq_tiltRemainder_le`). At step `j` the shift is
+  `w = (c/σⱼ) y` with `c = n^{-1/2}`, i.e. `‖w‖ = ‖y‖/√j`, so the bound applies only on
+  `{‖y‖ ≤ √j}`. Wave 24's claim that the wave-19 lemma "applies to `g` verbatim" is therefore
+  also too optimistic. On `{‖y‖ > √j}` one must instead use the tilt identity directly:
+  `∫ G R_w dγ = ∫ (G(· + w) − a) dγ − ∫ (G − a)·Q_w dγ`, whose second term is localised with the
+  factor `1 + ‖w‖²  ≤ 2‖w‖³` and whose first term is localised *after averaging in `v`*, the
+  mismatch `a_v ≠ a_{v + c y}` costing the mass of a `c‖y‖`-neighbourhood of `∂B`, i.e. again a
+  two-sided shell, at width `c‖y‖ ≤ σⱼ‖w‖`. This is the reason the amended hypothesis is stated
+  at *all* widths and not merely at the `σⱼ`.
+* **The size of the summed weight.** With the per-step weight `C_k σⱼ + W`, the balanced sum
+  `∑_{j>J} j^{-3/2}(C_k σⱼ + W)` contributes `β n^{-1/2}(C_k ∑_{J<j≤n} j^{-1} + W J^{-1/2})`,
+  i.e. `δ (C_k · 2 log(1/ε) + W/ε)`. The logarithm is intrinsic to a single mollification width:
+  killing it needs per-step widths `εⱼ ≍ σⱼ`, which the frozen single `f` cannot provide. So the
+  conclusion this route will produce is
+  `A δ (ε⁻¹(W + C_k ε) + C_k (1 + log (1/ε)))`, and the headline it feeds is the sharp rate up
+  to one logarithm, `C_k (β/√n)(1 + log(√n/β))`. That is strictly better than the proved
+  `(β/√n)^{1/2}` of `berryEsseen_convex_improved`. The conclusion below is left in its frozen
+  (log-free) form: the extra term is not yet proved, and the frozen form is *true* (Bentkus), so
+  weakening it now would be a guess rather than a forced amendment. If the Gaussian tail is used
+  in its Markov form `stdGaussian_norm_ge_le p` with a *fixed* `p = 2m`, the logarithm is
+  replaced by `ε^{-1/(m+1)}` and the headline by `(β/√n)^{m/(m+1)}`; the logarithm needs the
+  tail at all orders at once. -/
 theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 0 < C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
@@ -6133,8 +6602,10 @@ theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (h
       ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
       (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
       (∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B) → (∀ x ∈ B, f x = 1) →
-      (∀ j : ℕ, j ≤ n →
-        ((hybridLaw n j ν) (Metric.thickening (2 * ε) B \ interior B)).toReal ≤ W) →
+      0 ≤ W →
+      (∀ j : ℕ, j ≤ n → ∀ s : ℝ, 0 < s →
+        ((hybridLaw n j ν) (Metric.thickening s B \ erosion s B)).toReal
+          ≤ 4 * gaussianShellConst k * s + W) →
       W + gaussianShellConst k * ε ≤ 1 →
       |(∫ x, f x ∂(sumLaw n ν))
           - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))|
@@ -6172,7 +6643,14 @@ killed, and the amended statement is what Bentkus's argument actually produces.
 
 The proof splits at `W + C_k ε = 1`: above it,
 `exists_smooth_swap_bound_of_one_le_weight` closes the goal with no localisation at all; below
-it, the content is the named brick `localised_swap_bound_small_weight`. -/
+it, the content is the named brick `localised_swap_bound_small_weight`.
+
+**Wave 29 amended the weight hypothesis** (only; the conclusion is unchanged). `W` is no longer
+a bound on the mass of the single outer shell `B^{2ε} \ interior B`, but on the excess over
+`4 C_k s` of the mass of the *two-sided* shell `B^s \ B_{-s}`, **at every width `s > 0`**. Both
+changes are forced by the localisation the proof actually uses — see the analysis on
+`localised_swap_bound_small_weight` — and both are free here, because
+`hybridLaw_wideShell_le` proves exactly that, at every width, with the same `2Y`. -/
 theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 0 < C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
@@ -6185,8 +6663,10 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
       ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
       (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
       (∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B) → (∀ x ∈ B, f x = 1) →
-      (∀ j : ℕ, j ≤ n →
-        ((hybridLaw n j ν) (Metric.thickening (2 * ε) B \ interior B)).toReal ≤ W) →
+      0 ≤ W →
+      (∀ j : ℕ, j ≤ n → ∀ s : ℝ, 0 < s →
+        ((hybridLaw n j ν) (Metric.thickening s B \ erosion s B)).toReal
+          ≤ 4 * gaussianShellConst k * s + W) →
       |(∫ x, f x ∂(sumLaw n ν))
           - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))|
         ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * ε⁻¹
@@ -6194,13 +6674,12 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
   obtain ⟨A₁, hA₁, h₁⟩ := exists_smooth_swap_bound_of_one_le_weight k hk hC₃
   obtain ⟨A₂, hA₂, h₂⟩ := localised_swap_bound_small_weight k hk hC₃
   refine ⟨A₁ + A₂, by linarith, ?_⟩
-  intro n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hf hfb hD hsupp hone hW
+  intro n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hf hfb hD hsupp hone hW0 hW
   haveI := hνp
   have hnr : (0 : ℝ) < n := by exact_mod_cast hn
   have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
   have hβ0 : 0 < ∫ y, ‖y‖ ^ 3 ∂ν := integral_norm_cube_pos hk hcov hβint
   have hCk : 0 < gaussianShellConst k := gaussianShellConst_pos hk
-  have hW0 : 0 ≤ W := le_trans ENNReal.toReal_nonneg (hW 0 (Nat.zero_le n))
   have hbase : 0 ≤ (∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ) * ε⁻¹
       * (W + gaussianShellConst k * ε) :=
     mul_nonneg (mul_nonneg (div_nonneg hβ0.le hsn.le) (inv_pos.2 hε).le)
@@ -6215,7 +6694,7 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
           * (W + gaussianShellConst k * ε)) := fun A => by ring
     rw [hexp A₁, hexp (A₁ + A₂)]
     exact mul_le_mul_of_nonneg_right (by linarith) hbase
-  · have h := h₂ n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hf hfb hD hsupp hone hW
+  · have h := h₂ n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hf hfb hD hsupp hone hW0 hW
       hlt.le
     refine h.trans ?_
     have hexp : ∀ A : ℝ, A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * ε⁻¹
@@ -6237,7 +6716,11 @@ weighted swap estimate; everything else here is the two-sided thickening/erosion
 Wave 24: brick L now delivers the weight `W + C_k ε` rather than `W` (its wave-20 form is false,
 see `exists_localised_swap_bound`). Since the call site supplies `W = 4 C_k ε + 2 Y` with
 `Y ≥ 0`, one has `W + C_k ε ≤ 2 W`, so the extra term is absorbed by doubling `A`; the statement
-here is unchanged. -/
+here is unchanged.
+
+Wave 29: brick L's weight hypothesis is now the *two-sided* shell at *every* width, supplied
+here by `hybridLaw_wideShell_le` instead of `hybridLaw_shell_le`. The same `W = 4 C_k ε + 2 Y`
+works verbatim, so the statement here is again unchanged. -/
 theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k))) (ε Y : ℝ),
       0 < n → IsProbabilityMeasure ν →
@@ -6285,20 +6768,22 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
       haveI := hρ
       exact (integrable_const (1 : ℝ)).mono' hfcd.continuous.aestronglyMeasurable
         (Filter.Eventually.of_forall fun x => by rw [Real.norm_eq_abs]; exact hfbd x)
-    -- brick H at width `2ε`, uniformly in `j`
-    have hW : ∀ j : ℕ, j ≤ n →
-        ((hybridLaw n j ν) (Metric.thickening (2 * ε) S \ interior S)).toReal
-          ≤ 4 * gaussianShellConst k * ε + 2 * Y := by
-      intro j hjn
-      have h := hybridLaw_shell_le (k := k) hk (n := n) (j := j) hn hjn hmean hcov hβint
-        hSm hSc (ε := 2 * ε) (by linarith) hY
-      calc ((hybridLaw n j ν) (Metric.thickening (2 * ε) S \ interior S)).toReal
-          ≤ 2 * gaussianShellConst k * (2 * ε) + 2 * Y := h
-        _ = 4 * gaussianShellConst k * ε + 2 * Y := by ring
+    -- brick H for the two-sided shell, at EVERY width, uniformly in `j` (wave 29)
+    have hW0 : (0 : ℝ) ≤ 4 * gaussianShellConst k * ε + 2 * Y := by
+      have : (0 : ℝ) < 4 * gaussianShellConst k * ε := by positivity
+      linarith
+    have hW : ∀ j : ℕ, j ≤ n → ∀ s : ℝ, 0 < s →
+        ((hybridLaw n j ν) (Metric.thickening s S \ erosion s S)).toReal
+          ≤ 4 * gaussianShellConst k * s + (4 * gaussianShellConst k * ε + 2 * Y) := by
+      intro j hjn s hs
+      have h := hybridLaw_wideShell_le (k := k) hk (n := n) (j := j) hn hjn
+        (ν := ν) hSm hSc (ε := s) hs hY
+      have hpos : (0 : ℝ) < 4 * gaussianShellConst k * ε := by positivity
+      linarith
     -- brick L
     have herr : |(∫ x, f x ∂μ) - (∫ x, f x ∂γ)| ≤ E := by
       have h := hA n ν S ε f (4 * gaussianShellConst k * ε + 2 * Y) hn hνp hmean hcov hβint
-        hSm hSc hε hfcd hfbd hfD hfsupp hfS hW
+        hSm hSc hε hfcd hfbd hfD hfsupp hfS hW0 hW
       rw [← hμdef, ← hβdef, ← hδdef] at h
       refine h.trans ?_
       rw [hEdef]
@@ -6359,6 +6844,14 @@ This is `exists_convexDiscrepancy_recursion` fed to `le_of_selfImproving_inducti
 `exists_smooth_swap_bound_of_one_le_weight`, is proved; brick L's wave-20 form was false and is
 amended, see `exists_localised_swap_bound`). The best *proved* convex bound remains
 `berryEsseen_convex_improved` at `(β/√n)^{1/2}`.
+
+**Wave 29 (expected amendment).** The residue's weight hypothesis is amended (two-sided shell,
+every width; free here, supplied by `hybridLaw_wideShell_le`) and its docstring re-derives what
+the route produces: `A δ (ε⁻¹(W + C_k ε) + C_k(1 + log(1/ε)))`. When that lands, the conclusion
+*here* will have to carry one logarithm, `C_k (β/√n)(1 + log(√n/β))` — the log is intrinsic to
+using a single mollification width `ε` for every step of the telescope, whose own widths
+`σⱼ = √(j/n)` sweep from `ε` to `1`. The log-free form below is not retracted (it is true, being
+Bentkus's theorem); it is simply not what this route will prove.
 
 Note the `k`-power: `gaussianShellConst k = 4 e² √k`, so this route gives `C ∼ k^{1/2}`, not
 Bentkus's `400 k^{1/4}`. Wave 22 removed the factor `k` that the coordinate-slice cover of
