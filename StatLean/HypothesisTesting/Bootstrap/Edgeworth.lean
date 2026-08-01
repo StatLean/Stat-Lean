@@ -4664,6 +4664,155 @@ lemma norm_studentPair_truncAt_le (F : Measure ℝ) {τ : ℝ} (hτ : 0 ≤ τ) 
     linarith
   linarith
 
+/-! ### The Cramér tail on the truncated law
+
+**Wave 37: an unrecorded gap in the outer range of the studentized chain, and the brick that
+closes it.** `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` consumes a Cramér tail
+`hcram` and a certificate `hcert` **for the same law**, and
+`exists_fourierCertificate_deltaSurrogate` is stated — necessarily, since input (C) is a fourth
+moment of the *truncated* root — for `vecRootLaw F (studentPair F ∘ truncAt m √n) n`. But
+`exists_bound_norm_charFun_vecRootLaw_studentPair` is for the **untruncated** law, and its proof
+runs through `vecCramerCondition_map_studentPair`, which consumes `hFac : F ≪ volume`. **The
+truncated law is not absolutely continuous**: `truncAt m τ` collapses `{|x − m| > τ}` onto the
+single point `m`, so `F.map (studentPair F ∘ truncAt m τ)` carries an atom of mass
+`F{|x − m| > τ}` at `studentPair F m`. So the existing lemma does not apply, and neither does its
+proof.
+
+What repairs it is not a re-run of the Riemann–Lebesgue argument but a *perturbation*: the two
+laws are images of the **same** `F` under maps that differ only on the moved set, so their
+characteristic functions differ by at most twice its mass
+(`norm_charFun_map_comp_sub_le`), which at `τ = √n` is `2μ₄/n²`. The truncated law therefore
+satisfies the same off-the-origin bound with the constant degraded to `c + 2μ₄/n²`, and that is
+below `(1 + c)/2 < 1` for all `n` past an explicit threshold.
+
+**The shape of the conclusion differs from the untruncated one, and it has to.** The law depends
+on `n` (through the truncation level), so the constant does too, and no single `c` works at every
+`n`: the statement returns a pair `(c, N)` and holds for `n ≥ N`. The finitely many `n < N` are
+absorbed where the assembly absorbs its other small-`n` defects. -/
+
+/-- **A modification of the observation moves the characteristic function by at most twice the
+mass it moves.** -/
+lemma norm_charFun_map_comp_sub_le {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+    (F : Measure ℝ) [IsProbabilityMeasure F]
+    {Z : ℝ → E} (hZ : Measurable Z) {T : ℝ → ℝ} (hT : Measurable T)
+    (hbad : MeasurableSet {x : ℝ | T x ≠ x}) (t : E) :
+    ‖charFun (F.map (fun y => Z (T y))) t - charFun (F.map Z) t‖
+      ≤ 2 * (F {x : ℝ | T x ≠ x}).toReal := by
+  have hnorm1 : ∀ r : ℝ, ‖Complex.exp ((r : ℂ) * Complex.I)‖ = 1 := by
+    intro r; simp [Complex.norm_exp]
+  have hrepr : ∀ (W : ℝ → E), Measurable W →
+      charFun (F.map W) t = ∫ x, Complex.exp (((⟪W x, t⟫ : ℝ) : ℂ) * Complex.I) ∂F := by
+    intro W hW
+    rw [charFun_apply, integral_map hW.aemeasurable (by fun_prop)]
+  have hb : ∀ (W : ℝ → E), Measurable W →
+      Integrable (fun x => Complex.exp (((⟪W x, t⟫ : ℝ) : ℂ) * Complex.I)) F := by
+    intro W hW
+    refine Integrable.mono' (integrable_const (1 : ℝ)) ?_
+      (Filter.Eventually.of_forall fun x => le_of_eq (hnorm1 _))
+    exact (Complex.measurable_exp.comp (by fun_prop)).aestronglyMeasurable
+  rw [hrepr (fun y => Z (T y)) (hZ.comp hT), hrepr Z hZ,
+    ← integral_sub (hb (fun y => Z (T y)) (hZ.comp hT)) (hb Z hZ)]
+  have hptw : ∀ x : ℝ,
+      ‖Complex.exp (((⟪Z (T x), t⟫ : ℝ) : ℂ) * Complex.I)
+        - Complex.exp (((⟪Z x, t⟫ : ℝ) : ℂ) * Complex.I)‖
+      ≤ 2 * Set.indicator {x : ℝ | T x ≠ x} (fun _ => (1 : ℝ)) x := by
+    intro x
+    by_cases h : T x = x
+    · simp [h]
+    · rw [Set.indicator_of_mem (show x ∈ {x : ℝ | T x ≠ x} from h)]
+      calc ‖Complex.exp (((⟪Z (T x), t⟫ : ℝ) : ℂ) * Complex.I)
+            - Complex.exp (((⟪Z x, t⟫ : ℝ) : ℂ) * Complex.I)‖
+          ≤ ‖Complex.exp (((⟪Z (T x), t⟫ : ℝ) : ℂ) * Complex.I)‖
+            + ‖Complex.exp (((⟪Z x, t⟫ : ℝ) : ℂ) * Complex.I)‖ := norm_sub_le _ _
+        _ = 2 * 1 := by rw [hnorm1, hnorm1]; ring
+  have hind : Integrable
+      (fun x : ℝ => 2 * Set.indicator {x : ℝ | T x ≠ x} (fun _ => (1 : ℝ)) x) F := by
+    refine (Integrable.indicator (integrable_const (1 : ℝ)) hbad).const_mul 2
+  calc ‖∫ x, (Complex.exp (((⟪Z (T x), t⟫ : ℝ) : ℂ) * Complex.I)
+          - Complex.exp (((⟪Z x, t⟫ : ℝ) : ℂ) * Complex.I)) ∂F‖
+      ≤ ∫ x, ‖Complex.exp (((⟪Z (T x), t⟫ : ℝ) : ℂ) * Complex.I)
+          - Complex.exp (((⟪Z x, t⟫ : ℝ) : ℂ) * Complex.I)‖ ∂F :=
+        norm_integral_le_integral_norm _
+    _ ≤ ∫ x, 2 * Set.indicator {x : ℝ | T x ≠ x} (fun _ => (1 : ℝ)) x ∂F :=
+        integral_mono ((hb (fun y => Z (T y)) (hZ.comp hT)).sub (hb Z hZ)).norm hind hptw
+    _ = 2 * (F {x : ℝ | T x ≠ x}).toReal := by
+        rw [integral_const_mul, integral_indicator hbad, setIntegral_const, measureReal_def,
+          smul_eq_mul, mul_one]
+
+/-- **The Cramér tail for the TRUNCATED studentizing pair.** -/
+theorem exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt
+    (F : Measure ℝ) [IsProbabilityMeasure F] (hFac : F ≪ volume)
+    (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F)
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ (c : ℝ) (N : ℕ), c < 1 ∧ ∀ n : ℕ, N ≤ n → 0 < n →
+      ∀ t : EuclideanSpace ℝ (Fin 2), ε * Real.sqrt (n : ℝ) ≤ ‖t‖ →
+        ‖charFun (vecRootLaw F
+            (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n) t‖
+          ≤ c ^ n := by
+  haveI : IsProbabilityMeasure (F.map (studentPair F)) :=
+    Measure.isProbabilityMeasure_map (measurable_studentPair F).aemeasurable
+  obtain ⟨c₀, hc₀, hcbd⟩ := exists_bound_lt_one_of_projLaw_cramer (F.map (studentPair F))
+    (vecCramerCondition_map_studentPair F hFac)
+    (fun t ht => cramerCondition_projLaw_studentPair F hFac ht) hε
+  set c₁ : ℝ := max c₀ 0 with hc₁def
+  have hc₁0 : (0 : ℝ) ≤ c₁ := le_max_right _ _
+  have hc₁1 : c₁ < 1 := max_lt hc₀ one_pos
+  have hcbd₁ : ∀ t : EuclideanSpace ℝ (Fin 2), ε ≤ ‖t‖ →
+      ‖charFun (F.map (studentPair F)) t‖ ≤ c₁ :=
+    fun t ht => (hcbd t ht).trans (le_max_left _ _)
+  set μ4 : ℝ := ∫ x, (x - ∫ s, s ∂F) ^ 4 ∂F with hμ4def
+  have hμ40 : (0 : ℝ) ≤ μ4 := by
+    rw [hμ4def]; exact integral_nonneg fun x => by positivity
+  obtain ⟨N, hN⟩ := exists_nat_gt (4 * μ4 / (1 - c₁))
+  refine ⟨(1 + c₁) / 2, N + 1, by linarith, fun n hn hn0 t ht => ?_⟩
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn0
+  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hnR
+  have hNn : (4 : ℝ) * μ4 / (1 - c₁) ≤ (n : ℝ) := by
+    have : ((N : ℝ) + 1) ≤ (n : ℝ) := by exact_mod_cast hn
+    linarith
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn0
+  -- the mass that truncation moves
+  have hset := truncAt_ne_setOf (m := ∫ s, s ∂F) hsn.le
+  have hbad : MeasurableSet {x : ℝ | truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) x ≠ x} := by
+    rw [hset]; exact measurableSet_lt measurable_const (by fun_prop)
+  have hmass : (F {x : ℝ | truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) x ≠ x}).toReal
+      ≤ μ4 / (n : ℝ) ^ 2 := by
+    rw [hset]
+    have h := measure_abs_gt_le_fourth_moment F (g := fun x : ℝ => x - ∫ s, s ∂F)
+      (by fun_prop) hF4 hsn
+    have hpow : Real.sqrt (n : ℝ) ^ 4 = (n : ℝ) ^ 2 := by
+      have : Real.sqrt (n : ℝ) ^ 2 = (n : ℝ) := Real.sq_sqrt hnR.le
+      calc Real.sqrt (n : ℝ) ^ 4 = (Real.sqrt (n : ℝ) ^ 2) ^ 2 := by ring
+        _ = (n : ℝ) ^ 2 := by rw [this]
+    rwa [hpow] at h
+  have hkey : 2 * (μ4 / (n : ℝ) ^ 2) ≤ (1 - c₁) / 2 := by
+    have hn2 : (n : ℝ) ≤ (n : ℝ) ^ 2 := by nlinarith
+    have h4 : 4 * μ4 ≤ (1 - c₁) * (n : ℝ) := by
+      rw [div_le_iff₀ (by linarith)] at hNn; linarith
+    have h5 : 4 * μ4 ≤ (1 - c₁) * (n : ℝ) ^ 2 := by nlinarith
+    rw [mul_div_assoc', div_le_div_iff₀ (by positivity) (by norm_num)]
+    linarith
+  -- transfer the Cramér bound to the truncated law
+  have hZm : Measurable
+      (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) :=
+    (measurable_studentPair F).comp (measurable_truncAt _ _)
+  refine norm_charFun_vecRootLaw_le_pow F hZm hε (fun u hu => ?_) hn0 ht
+  have hpert := norm_charFun_map_comp_sub_le F (measurable_studentPair F)
+    (measurable_truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ))) hbad u
+  have hsub : ‖charFun (F.map
+        (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y))) u‖
+      ≤ ‖charFun (F.map (studentPair F)) u‖
+        + 2 * (F {x : ℝ | truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) x ≠ x}).toReal := by
+    have := norm_sub_norm_le
+      (charFun (F.map (fun y : ℝ => studentPair F
+        (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y))) u)
+      (charFun (F.map (studentPair F)) u)
+    linarith [hpert]
+  have h1 := hcbd₁ u hu
+  linarith [hmass, hkey, hsub]
+
+
 /-! ### The bulk multiplier, built; and the exponent ledger, verified
 
 Wave 30 reduced the certificate to "two bounds on `𝓕 g`" for `g = e^{iθ(Hₙ − w₀/σ)}χ(·/M)`, but
