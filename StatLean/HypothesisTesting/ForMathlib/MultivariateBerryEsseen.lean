@@ -7313,15 +7313,30 @@ exactly as `sum_le_of_bounded_and_weighted_decay` isolates the first. Given the 
 *weighted* hybrid telescope at a cut `Jr`,
 
 `D ≤ Jr·(M/6)/(nr √nr)·X·(4 C_k (ε + √Jr/√nr) + W)`
+`  + Jr·C₃/(nr √nr)·X·(32 C_k/ε² + 4W/ε³)`
 `  + 4 C_k C_t X/√nr·(1 + log⁺(nr/Jr)) + 3 W C_t X/√Jr`,  `M = C₃/ε³`,
 
 with the cut in the window `t² ≤ Jr ≤ 3 t²`, `t = ε √nr ≥ 1` (which `Jr = max 2 ⌈ε² nr⌉`
 delivers), and with `X ≤ 3β`, `β ≥ 1`, the conclusion is brick L's right-hand side with the
-explicit constant `18 C₃ + 33 C_t`:
+explicit constant `306 C₃ + 33 C_t`:
 
-`D ≤ (18 C₃ + 33 C_t)·(β/√nr)·(ε⁻¹(W + C_k ε) + C_k (1 + log(1 + ε⁻¹)))`.
+`D ≤ (306 C₃ + 33 C_t)·(β/√nr)·(ε⁻¹(W + C_k ε) + C_k (1 + log(1 + ε⁻¹)))`.
 
-The three terms are matched separately: the weighted head against `18 C₃ δ ε⁻¹(W + C_k ε)`
+**Wave 37: the second summand is new, and it is not optional.** It is the *far* half of the
+head estimate — the head steps at which the swap displacement `c‖u‖` exceeds `ε`, where the
+third-order Taylor bound is discarded in favour of the lower-order terms
+`2 + ‖D¹f‖ c‖u‖ + ½‖D²f‖ c²‖u‖²` (see `abs_taylor_remainder_localised_lower_le`). Wave 36
+conjectured that this half is absorbed by the *first* summand as soon as `C₃ ≥ 1`. **That is
+false**: at `Jr ≍ ε² nr` the first summand is `≍ 4 C₃ C_k δ + C₃ W δ/(2ε)` while the far half is
+`≍ 288 C₃ C_k δ + 36 C₃ W δ/ε`, i.e. a *constant multiple* (≈ 25×) of it, not a smaller
+quantity. So the ledger takes wave 36's other branch: `htel` gains the summand, and the constant
+moves from `18 C₃` to `306 C₃ = (18 + 288) C₃`. (The normalisation `C₃ ≥ 1` of wave 37's item 1
+is still convenient — it lets the constant term `2` be compared with `C₃ c²‖u‖²/ε²` — but it is
+not what makes the far half fit, and the far half is priced by a *third* moment either way.)
+
+The four terms are matched separately: the weighted head against `18 C₃ δ ε⁻¹(W + C_k ε)`, its
+far half against `288 C₃ δ ε⁻¹(W + C_k ε)` (using `Jr ≤ 3ε²nr` and `X ≤ 3β`; the gap is
+`252 C₃ β W/t ≥ 0`)
 (using `Jr ≤ 3t²` twice — once for `Jr (M/6)/(nr√nr) ≤ C₃/(2t)`, once for
 `√Jr/√nr ≤ 2ε`, so that the head's own shell weight is at most `12 C_k ε + W`), the harmonic
 middle against `24 C_t δ C_k (1 + log(1 + ε⁻¹))` (using `nr/Jr ≤ ε⁻² ≤ (1 + ε⁻¹)²`, which is
@@ -7351,9 +7366,10 @@ private lemma weighted_ledger_balance
     (hJlow : t ^ 2 ≤ Jr) (hJ3 : Jr ≤ 3 * t ^ 2)
     (hD : D ≤ Jr * (C₃ / ε ^ 3 / 6 / (nr * sn)) * X
               * (4 * Ck * (ε + Real.sqrt Jr / sn) + W)
+          + Jr * (C₃ / (nr * sn)) * X * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3)
           + 4 * Ck * Ct * X / sn * (1 + Real.log (max (nr / Jr) 1))
           + 3 * (W * Ct * X) / Real.sqrt Jr) :
-    D ≤ (18 * C₃ + 33 * Ct) * (β / sn)
+    D ≤ (306 * C₃ + 33 * Ct) * (β / sn)
         * (ε⁻¹ * (W + Ck * ε) + Ck * (1 + Real.log (1 + ε⁻¹))) := by
   rw [← hsn2] at hD
   have htpos : (0 : ℝ) < t := by linarith
@@ -7417,6 +7433,34 @@ private lemma weighted_ledger_balance
       rw [hδP]; field_simp; ring
     have hgap0 : (0 : ℝ) ≤ 33 / 2 * (C₃ * β * W / t) := by positivity
     linarith
+  -- ### term 1b: the FAR half of the head (wave 37)
+  have hT4 : Jr * (C₃ / (sn ^ 2 * sn)) * X * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3)
+      ≤ 288 * C₃ * (δ * P) := by
+    have hfac0 : (0 : ℝ) ≤ 32 * Ck / ε ^ 2 + 4 * W / ε ^ 3 := by positivity
+    have hCd : (0 : ℝ) ≤ C₃ / (sn ^ 2 * sn) := by positivity
+    have ha : Jr ≤ 3 * ε ^ 2 * sn ^ 2 := by rw [htdef] at hJ3; nlinarith
+    have h1 : Jr * (C₃ / (sn ^ 2 * sn)) * X
+        ≤ 3 * ε ^ 2 * sn ^ 2 * (C₃ / (sn ^ 2 * sn)) * (3 * β) := by
+      have e1 : Jr * (C₃ / (sn ^ 2 * sn)) ≤ 3 * ε ^ 2 * sn ^ 2 * (C₃ / (sn ^ 2 * sn)) :=
+        mul_le_mul_of_nonneg_right ha hCd
+      have e2 : (0 : ℝ) ≤ 3 * ε ^ 2 * sn ^ 2 * (C₃ / (sn ^ 2 * sn)) := by positivity
+      calc Jr * (C₃ / (sn ^ 2 * sn)) * X
+          ≤ 3 * ε ^ 2 * sn ^ 2 * (C₃ / (sn ^ 2 * sn)) * X :=
+            mul_le_mul_of_nonneg_right e1 hX0
+        _ ≤ 3 * ε ^ 2 * sn ^ 2 * (C₃ / (sn ^ 2 * sn)) * (3 * β) :=
+            mul_le_mul_of_nonneg_left hX3 e2
+    have h2 : Jr * (C₃ / (sn ^ 2 * sn)) * X * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3)
+        ≤ 3 * ε ^ 2 * sn ^ 2 * (C₃ / (sn ^ 2 * sn)) * (3 * β)
+          * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3) :=
+      mul_le_mul_of_nonneg_right h1 hfac0
+    rw [hδP]
+    have hgap : 288 * C₃ * (β * (W + Ck * ε) / t)
+        - 3 * ε ^ 2 * sn ^ 2 * (C₃ / (sn ^ 2 * sn)) * (3 * β)
+          * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3)
+        = 252 * (C₃ * β * W / t) := by
+      rw [htdef]; field_simp; ring
+    have hgap0 : (0 : ℝ) ≤ 252 * (C₃ * β * W / t) := by positivity
+    linarith
   -- ### term 3: the summable tail
   have hT3 : 3 * (W * Ct * X) / Real.sqrt Jr ≤ 9 * Ct * (δ * P) := by
     have h1 : 3 * (W * Ct * X) / Real.sqrt Jr ≤ 3 * (W * Ct * (3 * β)) / Real.sqrt Jr := by
@@ -7461,12 +7505,12 @@ private lemma weighted_ledger_balance
       rw [hδQ]; field_simp; ring
     linarith
   -- ### assembling
-  have hsplit : (18 * C₃ + 33 * Ct) * δ * (P + Q)
-      = 18 * C₃ * (δ * P) + 33 * Ct * (δ * P) + 18 * C₃ * (δ * Q)
+  have hsplit : (306 * C₃ + 33 * Ct) * δ * (P + Q)
+      = 306 * C₃ * (δ * P) + 33 * Ct * (δ * P) + 306 * C₃ * (δ * Q)
         + 33 * Ct * (δ * Q) := by ring
   have hδP0 : (0 : ℝ) ≤ δ * P := by positivity
   have hδQ0 : (0 : ℝ) ≤ δ * Q := by positivity
-  have hrest : (0 : ℝ) ≤ 24 * Ct * (δ * P) + 18 * C₃ * (δ * Q) + 9 * Ct * (δ * Q) := by
+  have hrest : (0 : ℝ) ≤ 24 * Ct * (δ * P) + 306 * C₃ * (δ * Q) + 9 * Ct * (δ * Q) := by
     have h1 : (0 : ℝ) ≤ Ct * (δ * P) := mul_nonneg hCt.le hδP0
     have h2 : (0 : ℝ) ≤ C₃ * (δ * Q) := mul_nonneg hC₃.le hδQ0
     have h3 : (0 : ℝ) ≤ Ct * (δ * Q) := mul_nonneg hCt.le hδQ0
@@ -7477,9 +7521,10 @@ private lemma weighted_ledger_balance
 
 `localised_swap_bound_small_weight` *follows from the weighted hybrid telescope alone*: given
 the telescoped estimate at **every** cut `J ≥ 2` — head steps estimated by the localised
-elementary (third-order Taylor) swap at weight `4 C_k (ε + √J/√n) + W`, tail steps by the
-localised Cameron–Martin swap, summed by `sum_le_of_bounded_and_weighted_decay` — the brick's
-conclusion follows with the explicit constant `18 C₃ + 33 C_t`, by choosing the cut
+elementary (third-order Taylor) swap at weight `4 C_k (ε + √J/√n) + W` *plus* its far half at
+the varying width (wave 37, second summand), tail steps by the localised Cameron–Martin swap,
+summed by `sum_le_of_bounded_and_weighted_decay` — the brick's
+conclusion follows with the explicit constant `306 C₃ + 33 C_t`, by choosing the cut
 `J = max 2 ⌈ε² n⌉` and running `weighted_ledger_balance`. Nothing about `B`, `f`, or the shell
 hypothesis enters here: `D` is an arbitrary real, so this is *exactly* the reduction and no more.
 
@@ -7505,6 +7550,10 @@ theorem localised_swap_bound_of_weighted_telescope (hk : 0 < k) {n : ℕ} (hn : 
                 + ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
               * (4 * gaussianShellConst k
                   * (ε + Real.sqrt (J : ℝ) / Real.sqrt (n : ℝ)) + W)
+          + (J : ℝ) * (C₃ / ((n : ℝ) * Real.sqrt (n : ℝ)))
+              * ((∫ y, ‖y‖ ^ 3 ∂ν)
+                + ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+              * (32 * gaussianShellConst k / ε ^ 2 + 4 * W / ε ^ 3)
           + 4 * gaussianShellConst k * Ct
               * ((∫ y, ‖y‖ ^ 3 ∂ν)
                 + ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
@@ -7513,7 +7562,7 @@ theorem localised_swap_bound_of_weighted_telescope (hk : 0 < k) {n : ℕ} (hn : 
               * ((∫ y, ‖y‖ ^ 3 ∂ν)
                 + ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))))
               / Real.sqrt (J : ℝ)) :
-    D ≤ (18 * C₃ + 33 * Ct) * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
+    D ≤ (306 * C₃ + 33 * Ct) * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
         * (ε⁻¹ * (W + gaussianShellConst k * ε)
           + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by
   have hnr : (0 : ℝ) < n := by exact_mod_cast hn
