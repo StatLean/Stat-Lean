@@ -7226,6 +7226,132 @@ private lemma abs_taylor_remainder_localised_lower_le {B : Set (EuclideanSpace �
       Set.indicator_of_notMem ha]
     simp
 
+/-- **The far regime priced (wave 37, PROVED).** For a displacement `t = c‖u‖` beyond the
+mollification width `ε`, the lower-order remainder bound times the shell weight at width `t` is
+dominated by `t³` and `t²` terms with an `ε^{-2}` in front. This is the pointwise arithmetic of
+the far half of the head estimate; combined with `setIntegral_norm_pow_tail_le` it shows that
+the far regime costs only a **third** moment of `ν`, which is why the naive fourth-moment
+obstruction of wave 36 is not real. -/
+private lemma far_regime_pointwise_le {C₃ Ck W ε t : ℝ} (hε : 0 < ε) (ht : ε ≤ t)
+    (hC₃ : 1 ≤ C₃) (hCk : 0 ≤ Ck) (hW : 0 ≤ W) :
+    (2 + C₃ / ε * t + 1 / 2 * (C₃ / ε ^ 2) * t ^ 2) * (8 * Ck * t + W)
+      ≤ 32 * C₃ * Ck * t ^ 3 / ε ^ 2 + 4 * C₃ * W * t ^ 2 / ε ^ 2 := by
+  have htp : 0 < t := lt_of_lt_of_le hε ht
+  have hbr : 2 + C₃ / ε * t + 1 / 2 * (C₃ / ε ^ 2) * t ^ 2 ≤ 4 * C₃ * t ^ 2 / ε ^ 2 := by
+    have key : (2 + C₃ / ε * t + 1 / 2 * (C₃ / ε ^ 2) * t ^ 2) * ε ^ 2
+        ≤ 4 * C₃ * t ^ 2 := by
+      have e1 : C₃ / ε * t * ε ^ 2 = C₃ * t * ε := by field_simp
+      have e2 : 1 / 2 * (C₃ / ε ^ 2) * t ^ 2 * ε ^ 2 = 1 / 2 * (C₃ * t ^ 2) := by
+        field_simp
+      have hexp : (2 + C₃ / ε * t + 1 / 2 * (C₃ / ε ^ 2) * t ^ 2) * ε ^ 2
+          = 2 * ε ^ 2 + C₃ * t * ε + 1 / 2 * (C₃ * t ^ 2) := by
+        rw [add_mul, add_mul, e1, e2]
+      rw [hexp]
+      nlinarith [mul_le_mul_of_nonneg_left ht (le_of_lt htp)]
+    rw [le_div_iff₀ (by positivity : (0 : ℝ) < ε ^ 2)]
+    exact key
+  have hw : (0 : ℝ) ≤ 8 * Ck * t + W := by positivity
+  calc (2 + C₃ / ε * t + 1 / 2 * (C₃ / ε ^ 2) * t ^ 2) * (8 * Ck * t + W)
+      ≤ (4 * C₃ * t ^ 2 / ε ^ 2) * (8 * Ck * t + W) := mul_le_mul_of_nonneg_right hbr hw
+    _ = 32 * C₃ * Ck * t ^ 3 / ε ^ 2 + 4 * C₃ * W * t ^ 2 / ε ^ 2 := by ring
+
+/-- **The far tail of a third moment (wave 37, PROVED).** `∫_{‖u‖ > R} ‖u‖^p dν ≤ β / R^q` for
+`p + q = 3`. This is the only integrability input the far regime needs: no fourth moment, and no
+moment beyond the `hβint` the brick already carries. -/
+private lemma setIntegral_norm_pow_tail_le {p q : ℕ} (hpq : p + q = 3) {R : ℝ} (hR : 0 < R)
+    {ν : Measure (EuclideanSpace ℝ (Fin k))}
+    (hβ : Integrable (fun u : EuclideanSpace ℝ (Fin k) => ‖u‖ ^ 3) ν) :
+    ∫ u in {u : EuclideanSpace ℝ (Fin k) | R < ‖u‖}, ‖u‖ ^ p ∂ν
+      ≤ (∫ u, ‖u‖ ^ 3 ∂ν) / R ^ q := by
+  set S : Set (EuclideanSpace ℝ (Fin k)) := {u | R < ‖u‖} with hSdef
+  have hSm : MeasurableSet S := measurableSet_lt measurable_const continuous_norm.measurable
+  have hptw : ∀ u ∈ S, ‖u‖ ^ p ≤ ‖u‖ ^ 3 / R ^ q := by
+    intro u hu
+    have hu' : R < ‖u‖ := hu
+    have hRq : R ^ q ≤ ‖u‖ ^ q := pow_le_pow_left₀ hR.le hu'.le q
+    rw [le_div_iff₀ (by positivity)]
+    calc ‖u‖ ^ p * R ^ q ≤ ‖u‖ ^ p * ‖u‖ ^ q :=
+          mul_le_mul_of_nonneg_left hRq (by positivity)
+      _ = ‖u‖ ^ 3 := by rw [← pow_add, hpq]
+  have hint : IntegrableOn (fun u : EuclideanSpace ℝ (Fin k) => ‖u‖ ^ p) S ν := by
+    refine Integrable.mono' ((hβ.restrict (s := S)).div_const (R ^ q))
+      (continuous_norm.pow p).aestronglyMeasurable.restrict ?_
+    refine (ae_restrict_iff' hSm).2 (Filter.Eventually.of_forall fun u hu => ?_)
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+    exact hptw u hu
+  calc ∫ u in S, ‖u‖ ^ p ∂ν ≤ ∫ u in S, ‖u‖ ^ 3 / R ^ q ∂ν :=
+        setIntegral_mono_on hint ((hβ.restrict (s := S)).div_const _) hSm hptw
+    _ = (∫ u in S, ‖u‖ ^ 3 ∂ν) / R ^ q := by rw [integral_div]
+    _ ≤ (∫ u, ‖u‖ ^ 3 ∂ν) / R ^ q := by
+        have h : (∫ u in S, ‖u‖ ^ 3 ∂ν) ≤ ∫ u, ‖u‖ ^ 3 ∂ν :=
+          setIntegral_le_integral hβ (Filter.Eventually.of_forall fun u => by positivity)
+        rw [div_eq_mul_inv, div_eq_mul_inv]
+        exact mul_le_mul_of_nonneg_right h (by positivity)
+
+set_option linter.unusedVariables false in
+-- the body is a named `sorry` brick: every hypothesis is part of the interface, none is used yet
+/-- **The per-step head estimate (wave 37: STATED, and this is brick L's whole residue on the
+head side).** *One head step of the hybrid telescope, localised, averaged against the step's own
+hybrid law.*
+
+`τ` is `hybridLaw n j ν` (wave 36's `integral_hybridLaw_eq` /
+`integral_peel_eq_integral_hybridLaw` identify the telescope's `j`-th test measure with it), `ν`
+is the swapped-in law and `ρ` the standard Gaussian, and `c = n^{-1/2}` is the step's scale. The
+right-hand side is *exactly* the pair of head summands that
+`localised_swap_bound_of_weighted_telescope` consumes, once summed over the `J` head steps.
+
+**Why this is the right statement, and what is left.** Everything in the derivation below is
+proved in this file; what is missing is only the assembly.
+
+* Both integrals are compared with the *same* second-order polynomial
+  `P(w) = f a + D¹f(a)w + ½ D²f(a)(w,w)`, whose `ν`- and `ρ`-integrals agree because both laws
+  are centred with identity covariance — this is the argument of `abs_integral_swap_step_le`,
+  unchanged. So the left-hand side is at most `∫∫|R_a(c u)| dν + ∫∫|R_a(c u)| dρ` with `R_a` the
+  remainder.
+* Pointwise, `|R_a(c u)|` carries the indicator of the **two-sided shell at the varying width**
+  `‖c u‖`: `abs_taylor_remainder_localised_le` (with `M = C₃/ε³`) in the near regime and
+  `abs_taylor_remainder_localised_lower_le` in the far regime. Off that shell the remainder is
+  identically `0` — `f` is constant on `closedBall a ‖c u‖`, so the value and both derivatives
+  agree with a constant's.
+* The shell `thickening (ε + s) B \ erosion s B` is **monotone in `s`**, so at `c‖u‖ ≤ ε` it is
+  contained in `thickening 2ε B \ erosion 2ε B` (mass `≤ 8 C_k ε + W`) and at `c‖u‖ ≥ ε` in
+  `thickening (2c‖u‖) B \ erosion (2c‖u‖) B` (mass `≤ 8 C_k c‖u‖ + W`). That is the *only* place
+  the amended two-sided-shell hypothesis at **all** widths is used, and it is exactly why wave 29
+  had to amend it.
+* Fubini turns `∫_τ ∫_ν` into `∫_ν ∫_τ`, the inner `τ`-integral of the shell indicator is the
+  shell mass, and the split at `‖u‖ = R := ε/c = ε√n` is priced by `far_regime_pointwise_le` and
+  `setIntegral_norm_pow_tail_le` (`p = 3` and `p = 2`, `q = 0` and `q = 1`) — a **third** moment
+  and nothing more.
+
+The remaining Lean work is measurability of `u ↦ τ(shell at width c‖u‖)` (monotone in `‖u‖`,
+hence measurable) and the Fubini bookkeeping; no further analytic input is needed. -/
+private lemma abs_integral_swap_step_localised_le
+    {ν ρ τ : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure ν] [IsProbabilityMeasure ρ] [IsProbabilityMeasure τ]
+    (hmeanν : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)
+    (hcovν : ∀ u w : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪w, y⟫_ℝ ∂ν) = ⟪u, w⟫_ℝ)
+    (hβν : Integrable (fun y => ‖y‖ ^ 3) ν)
+    (hmeanρ : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ρ) = 0)
+    (hcovρ : ∀ u w : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪w, y⟫_ℝ ∂ρ) = ⟪u, w⟫_ℝ)
+    (hβρ : Integrable (fun y => ‖y‖ ^ 3) ρ)
+    {B : Set (EuclideanSpace ℝ (Fin k))} {f : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hf : ContDiff ℝ 3 f) (hfb : ∀ x, |f x| ≤ 1)
+    {C₃ ε : ℝ} (hC₃ : 1 ≤ C₃) (hε : 0 < ε)
+    (hD3 : ∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3)
+    (hD1 : ∀ x, ‖iteratedFDeriv ℝ 1 f x‖ ≤ C₃ / ε)
+    (hD2 : ∀ x, ‖iteratedFDeriv ℝ 2 f x‖ ≤ C₃ / ε ^ 2)
+    (hone : ∀ x ∈ B, f x = 1) (hsupp : ∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B)
+    {Ck W : ℝ} (hCk : 0 < Ck) (hW : 0 ≤ W)
+    (hshell : ∀ s : ℝ, 0 < s →
+      (τ (Metric.thickening s B \ erosion s B)).toReal ≤ 4 * Ck * s + W)
+    {c : ℝ} (hc : 0 < c) :
+    (∫ a, |(∫ u, f (a + c • u) ∂ν) - (∫ u, f (a + c • u) ∂ρ)| ∂τ)
+      ≤ C₃ / ε ^ 3 / 6 * c ^ 3
+          * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ)) * (8 * Ck * ε + W)
+        + C₃ * c ^ 3 * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ))
+            * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3) := by
+  sorry
+
 /-- **Brick L above the Gaussian shell scale (wave 24: PROVED, and no localisation needed).**
 As soon as the weight is at least `1`, the *unweighted* balanced telescope already gives the
 localised bound, with no reference to `B` at all: for `ε √n ≥ 1` it is
