@@ -7092,6 +7092,140 @@ theorem hybridLaw_wideShell_le (hk : 0 < k) {n j : ℕ} (hn : 0 < n) (hj : j ≤
     linarith
 
 
+/-! #### Localising the swap remainder (wave 37)
+
+The head steps of the weighted telescope need the elementary swap *localised*: its cost must be
+multiplied by the indicator of a two-sided shell, whose mass under `hybridLaw n j ν` is what the
+amended weight hypothesis bounds. Wave 36 identified the obstruction — the Lagrange remainder
+controls `D³f` along the whole segment `[a, a + w]`, so the shell width is `‖w‖`, which is
+unbounded in `w`. The three lemmas here supply the localisation *at that varying width*, which
+is exactly what the two-regime split of the head estimate consumes.
+
+The mechanism is elementary and needs no Taylor theory at all: off the two-sided shell at width
+`‖w‖`, the test function is **constant on the closed ball** `closedBall a ‖w‖` (equal to `1` if
+`a` is in the erosion, to `0` if `a` is outside the `(ε + ‖w‖)`-thickening), so the value, the
+first derivative and the second derivative at `a` all agree with those of a constant and the
+whole second-order remainder *vanishes identically*. -/
+
+/-- Off the two-sided shell at width `s`, a test function that is `1` on `B` and supported in
+the `ε`-thickening of `B` is constant on the closed `s`-ball about `a`. -/
+private lemma const_on_closedBall_of_notMem_wideShell {B : Set (EuclideanSpace ℝ (Fin k))}
+    {f : EuclideanSpace ℝ (Fin k) → ℝ} {ε s : ℝ}
+    (hone : ∀ x ∈ B, f x = 1) (hsupp : ∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B)
+    {a : EuclideanSpace ℝ (Fin k)}
+    (ha : a ∉ Metric.thickening (ε + s) B \ erosion s B) :
+    ∃ C : ℝ, ∀ y ∈ Metric.closedBall a s, f y = C := by
+  simp only [Set.mem_diff, not_and, not_not] at ha
+  by_cases hth : a ∈ Metric.thickening (ε + s) B
+  · have h : a ∈ erosion s B := ha hth
+    exact ⟨1, fun y hy => hone y (interior_subset (h hy))⟩
+  · refine ⟨0, fun y hy => ?_⟩
+    by_contra hfy
+    apply hth
+    obtain ⟨z, hz, hdz⟩ := Metric.mem_thickening_iff.1 (hsupp y hfy)
+    refine Metric.mem_thickening_iff.2 ⟨z, hz, ?_⟩
+    have h1 : dist a y ≤ s := by
+      rw [dist_comm]; simpa [Metric.mem_closedBall] using hy
+    have := dist_triangle a y z
+    linarith
+
+/-- If `f` is constant on `closedBall a s` with `0 < s` and `‖w‖ ≤ s`, the second-order Taylor
+remainder at `a` in the direction `w` is exactly `0`: the value at `a + w` equals the value at
+`a`, and both derivatives at `a` are those of a constant. -/
+private lemma taylor_remainder_eq_zero_of_const_on_closedBall
+    {f : EuclideanSpace ℝ (Fin k) → ℝ} {a w : EuclideanSpace ℝ (Fin k)} {s C : ℝ}
+    (hs : 0 < s) (hw : ‖w‖ ≤ s) (h : ∀ y ∈ Metric.closedBall a s, f y = C) :
+    f (a + w) - f a - fderiv ℝ f a w - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => w) = 0 := by
+  have hev : f =ᶠ[nhds a] fun _ => C := by
+    refine Filter.eventuallyEq_of_mem (Metric.ball_mem_nhds a hs) fun y hy => ?_
+    exact h y (Metric.ball_subset_closedBall hy)
+  have hd1 : fderiv ℝ f a = 0 := by
+    rw [hev.fderiv_eq]
+    simp
+  have hd2 : iteratedFDeriv ℝ 2 f a = 0 := by
+    rw [(Filter.EventuallyEq.iteratedFDeriv ℝ hev 2).eq_of_nhds,
+      iteratedFDeriv_const_of_ne (by norm_num : (2 : ℕ) ≠ 0)]
+    simp
+  have h1 : f (a + w) = C := by
+    refine h _ ?_
+    simpa [Metric.mem_closedBall, dist_eq_norm] using hw
+  have h2 : f a = C := h a (by simp [Metric.mem_closedBall, hs.le])
+  rw [h1, h2, hd1, hd2]
+  simp
+
+/-- **The localised third-order remainder bound (head, near regime).** The global Lagrange
+bound `M/6 ‖w‖³` may be multiplied by the indicator of the two-sided shell at width `‖w‖`. -/
+private lemma abs_taylor_remainder_localised_le {B : Set (EuclideanSpace ℝ (Fin k))}
+    {f : EuclideanSpace ℝ (Fin k) → ℝ} {ε M : ℝ}
+    (hone : ∀ x ∈ B, f x = 1) (hsupp : ∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B)
+    (hglob : ∀ a w : EuclideanSpace ℝ (Fin k),
+      |f (a + w) - f a - fderiv ℝ f a w - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => w)|
+        ≤ M / 6 * ‖w‖ ^ 3)
+    (a w : EuclideanSpace ℝ (Fin k)) (hw : w ≠ 0) :
+    |f (a + w) - f a - fderiv ℝ f a w - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => w)|
+      ≤ (Metric.thickening (ε + ‖w‖) B \ erosion ‖w‖ B).indicator (fun _ => (1 : ℝ)) a
+        * (M / 6 * ‖w‖ ^ 3) := by
+  have hwpos : 0 < ‖w‖ := norm_pos_iff.2 hw
+  by_cases ha : a ∈ Metric.thickening (ε + ‖w‖) B \ erosion ‖w‖ B
+  · rw [Set.indicator_of_mem ha, one_mul]
+    exact hglob a w
+  · obtain ⟨C, hC⟩ := const_on_closedBall_of_notMem_wideShell hone hsupp ha
+    rw [taylor_remainder_eq_zero_of_const_on_closedBall hwpos le_rfl hC,
+      Set.indicator_of_notMem ha]
+    simp
+
+/-- **The localised lower-order remainder bound (head, far regime).** For `‖w‖` large the
+third-order bound is worse than simply discarding the expansion: the remainder is at most
+`2 + ‖D¹f‖‖w‖ + ½‖D²f‖‖w‖²`, and this too carries the shell indicator at width `‖w‖`. Together
+with the mollifier bounds `‖D¹f‖ ≤ C₃/ε`, `‖D²f‖ ≤ C₃/ε²` of `exists_smoothed_convex_indicator`
+(wave 37, item 1) this is what prices the far regime with only a *third* moment of `ν`. -/
+private lemma abs_taylor_remainder_localised_lower_le {B : Set (EuclideanSpace ℝ (Fin k))}
+    {f : EuclideanSpace ℝ (Fin k) → ℝ} {ε : ℝ}
+    (hone : ∀ x ∈ B, f x = 1) (hsupp : ∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B)
+    (hfb : ∀ x, |f x| ≤ 1)
+    (a w : EuclideanSpace ℝ (Fin k)) (hw : w ≠ 0) :
+    |f (a + w) - f a - fderiv ℝ f a w - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => w)|
+      ≤ (Metric.thickening (ε + ‖w‖) B \ erosion ‖w‖ B).indicator (fun _ => (1 : ℝ)) a
+        * (2 + ‖iteratedFDeriv ℝ 1 f a‖ * ‖w‖
+            + 1 / 2 * ‖iteratedFDeriv ℝ 2 f a‖ * ‖w‖ ^ 2) := by
+  have hwpos : 0 < ‖w‖ := norm_pos_iff.2 hw
+  by_cases ha : a ∈ Metric.thickening (ε + ‖w‖) B \ erosion ‖w‖ B
+  · rw [Set.indicator_of_mem ha, one_mul]
+    have h0 : |f (a + w) - f a| ≤ 2 := by
+      have e1 := abs_le.1 (hfb (a + w))
+      have e2 := abs_le.1 (hfb a)
+      rw [abs_le]
+      constructor <;> linarith [e1.1, e1.2, e2.1, e2.2]
+    have h1 : |fderiv ℝ f a w| ≤ ‖iteratedFDeriv ℝ 1 f a‖ * ‖w‖ := by
+      rw [norm_iteratedFDeriv_one]
+      exact (fderiv ℝ f a).le_opNorm w
+    have h2 : |iteratedFDeriv ℝ 2 f a (fun _ => w)| ≤ ‖iteratedFDeriv ℝ 2 f a‖ * ‖w‖ ^ 2 := by
+      have hop := ContinuousMultilinearMap.le_opNorm (iteratedFDeriv ℝ 2 f a)
+        (fun _ : Fin 2 => w)
+      have hprod : (∏ _i : Fin 2, ‖w‖) = ‖w‖ ^ 2 := by
+        rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+      rw [hprod] at hop
+      rw [← Real.norm_eq_abs]
+      exact hop
+    calc |f (a + w) - f a - fderiv ℝ f a w
+            - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => w)|
+        ≤ |f (a + w) - f a| + |fderiv ℝ f a w|
+            + |(1 / 2) * iteratedFDeriv ℝ 2 f a fun _ => w| := by
+          have e1 := abs_sub (f (a + w) - f a) (fderiv ℝ f a w)
+          have e2 := abs_sub (f (a + w) - f a - fderiv ℝ f a w)
+            ((1 / 2) * iteratedFDeriv ℝ 2 f a fun _ => w)
+          linarith
+      _ ≤ 2 + ‖iteratedFDeriv ℝ 1 f a‖ * ‖w‖
+            + 1 / 2 * ‖iteratedFDeriv ℝ 2 f a‖ * ‖w‖ ^ 2 := by
+          rw [abs_mul]
+          have habs : |(1 : ℝ) / 2| = 1 / 2 := by norm_num
+          rw [habs]
+          nlinarith [h0, h1, h2, abs_nonneg (iteratedFDeriv ℝ 2 f a fun _ => w)]
+  · obtain ⟨C, hC⟩ := const_on_closedBall_of_notMem_wideShell hone hsupp ha
+    rw [taylor_remainder_eq_zero_of_const_on_closedBall hwpos le_rfl hC,
+      Set.indicator_of_notMem ha]
+    simp
+
 /-- **Brick L above the Gaussian shell scale (wave 24: PROVED, and no localisation needed).**
 As soon as the weight is at least `1`, the *unweighted* balanced telescope already gives the
 localised bound, with no reference to `B` at all: for `ε √n ≥ 1` it is
