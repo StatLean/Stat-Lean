@@ -1065,6 +1065,77 @@ private lemma norm_iteratedFDeriv_three_convolution_le {k : ℕ}
   exact norm_convolution_le_of_bounded L₃ hnormL hbd
     (hφ3.continuous.integrable_of_hasCompactSupport hcs3) x
 
+set_option maxHeartbeats 1000000 in
+-- Same `precompR` defeq checks as the third-order bound, at one level.
+/-- The **first** derivative of a mollification is bounded by the `L¹`-norm of the first
+derivative of the kernel — the order-`1` case of the same convolution estimate that gives
+`norm_iteratedFDeriv_three_convolution_le` (wave 37). -/
+private lemma norm_iteratedFDeriv_one_convolution_le {k : ℕ}
+    {ind : EuclideanSpace ℝ (Fin k) → ℝ} (hind : LocallyIntegrable ind volume)
+    (hbd : ∀ t, |ind t| ≤ 1) (x : EuclideanSpace ℝ (Fin k)) :
+    ‖iteratedFDeriv ℝ 1 (ind ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] mbeMollifier k) x‖
+      ≤ ∫ t, ‖fderiv ℝ (mbeMollifier k) t‖ := by
+  set φ := mbeMollifier k with hφdef
+  have hφ : ContDiff ℝ (((4 : ℕ∞) : WithTop ℕ∞)) φ := mbeMollifier_contDiff k
+  have hcs : HasCompactSupport φ := mbeMollifier_hasCompactSupport k
+  set L₀ : ℝ →L[ℝ] ℝ →L[ℝ] ℝ := ContinuousLinearMap.lsmul ℝ ℝ with hL₀
+  set L₁ := L₀.precompR (EuclideanSpace ℝ (Fin k)) with hL₁
+  set φ₁ := fderiv ℝ φ with hφ₁
+  have hφ1 : ContDiff ℝ (((3 : ℕ∞) : WithTop ℕ∞)) φ₁ := hφ.fderiv_right (by norm_num)
+  have hcs1 : HasCompactSupport φ₁ := hcs.fderiv ℝ
+  have hd1 : fderiv ℝ (ind ⋆[L₀, volume] φ) = (ind ⋆[L₁, volume] φ₁) := by
+    funext y
+    exact (hcs.hasFDerivAt_convolution_right L₀ hind (hφ.of_le (by norm_num)) y).fderiv
+  have hkey : ‖iteratedFDeriv ℝ 1 (ind ⋆[L₀, volume] φ) x‖ = ‖(ind ⋆[L₁, volume] φ₁) x‖ := by
+    rw [show (1 : ℕ) = 0 + 1 from rfl, ← norm_iteratedFDeriv_fderiv, hd1]
+    simp [norm_iteratedFDeriv_zero]
+  rw [hkey]
+  have hnormL : ‖L₁‖ ≤ 1 := by
+    refine le_trans (ContinuousLinearMap.norm_precompR_le _ L₀) ?_
+    exact ContinuousLinearMap.opNorm_lsmul_le
+  exact norm_convolution_le_of_bounded L₁ hnormL hbd
+    (hφ1.continuous.integrable_of_hasCompactSupport hcs1) x
+
+set_option maxHeartbeats 1000000 in
+-- Same `precompR` defeq checks as the third-order bound, at two levels.
+/-- The **second** derivative of a mollification is bounded by the `L¹`-norm of the second
+derivative of the kernel — the order-`2` case of the same convolution estimate that gives
+`norm_iteratedFDeriv_three_convolution_le` (wave 37). -/
+private lemma norm_iteratedFDeriv_two_convolution_le {k : ℕ}
+    {ind : EuclideanSpace ℝ (Fin k) → ℝ} (hind : LocallyIntegrable ind volume)
+    (hbd : ∀ t, |ind t| ≤ 1) (x : EuclideanSpace ℝ (Fin k)) :
+    ‖iteratedFDeriv ℝ 2 (ind ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] mbeMollifier k) x‖
+      ≤ ∫ t, ‖fderiv ℝ (fderiv ℝ (mbeMollifier k)) t‖ := by
+  set φ := mbeMollifier k with hφdef
+  have hφ : ContDiff ℝ (((4 : ℕ∞) : WithTop ℕ∞)) φ := mbeMollifier_contDiff k
+  have hcs : HasCompactSupport φ := mbeMollifier_hasCompactSupport k
+  set L₀ : ℝ →L[ℝ] ℝ →L[ℝ] ℝ := ContinuousLinearMap.lsmul ℝ ℝ with hL₀
+  set L₁ := L₀.precompR (EuclideanSpace ℝ (Fin k)) with hL₁
+  set L₂ := L₁.precompR (EuclideanSpace ℝ (Fin k)) with hL₂
+  set φ₁ := fderiv ℝ φ with hφ₁
+  set φ₂ := fderiv ℝ φ₁ with hφ₂
+  have hφ1 : ContDiff ℝ (((3 : ℕ∞) : WithTop ℕ∞)) φ₁ := hφ.fderiv_right (by norm_num)
+  have hφ2 : ContDiff ℝ (((2 : ℕ∞) : WithTop ℕ∞)) φ₂ := hφ1.fderiv_right (by norm_num)
+  have hcs1 : HasCompactSupport φ₁ := hcs.fderiv ℝ
+  have hcs2 : HasCompactSupport φ₂ := hcs1.fderiv ℝ
+  have hd1 : fderiv ℝ (ind ⋆[L₀, volume] φ) = (ind ⋆[L₁, volume] φ₁) := by
+    funext y
+    exact (hcs.hasFDerivAt_convolution_right L₀ hind (hφ.of_le (by norm_num)) y).fderiv
+  have hd2 : fderiv ℝ (ind ⋆[L₁, volume] φ₁) = (ind ⋆[L₂, volume] φ₂) := by
+    funext y
+    exact (hcs1.hasFDerivAt_convolution_right L₁ hind (hφ1.of_le (by norm_num)) y).fderiv
+  have hkey : ‖iteratedFDeriv ℝ 2 (ind ⋆[L₀, volume] φ) x‖ = ‖(ind ⋆[L₂, volume] φ₂) x‖ := by
+    rw [show (2 : ℕ) = 1 + 1 from rfl, ← norm_iteratedFDeriv_fderiv, hd1,
+      show (1 : ℕ) = 0 + 1 from rfl, ← norm_iteratedFDeriv_fderiv, hd2]
+    simp [norm_iteratedFDeriv_zero]
+  rw [hkey]
+  have hnormL : ‖L₂‖ ≤ 1 := by
+    refine le_trans (ContinuousLinearMap.norm_precompR_le _ L₁) ?_
+    refine le_trans (ContinuousLinearMap.norm_precompR_le _ L₀) ?_
+    exact ContinuousLinearMap.opNorm_lsmul_le
+  exact norm_convolution_le_of_bounded L₂ hnormL hbd
+    (hφ2.continuous.integrable_of_hasCompactSupport hcs2) x
+
 /-- **Smoothed indicator at unit width, for an arbitrary set.** There is a constant `C₃`
 (depending only on the dimension `k`, and fixed *before* the set) such that every
 `B ⊆ ℝ^k` admits a `C³` function `f : ℝ^k → [0,1]` equal to `1` on `B`, supported inside the
@@ -1072,16 +1143,26 @@ unit thickening of `B`, with `‖D³f‖ ≤ C₃`.
 
 Take `f` to be the mollification of the indicator of `Metric.thickening (1/2) B` by
 `mbeMollifier k`. Note the empty set needs no special treatment: then `f = 0` and both the
-value and the support clause are vacuous. -/
+value and the support clause are vacuous.
+
+**Wave 37.** The conclusion now carries the first- and second-order bounds as well, produced by
+`norm_iteratedFDeriv_one_convolution_le` / `norm_iteratedFDeriv_two_convolution_le` — the same
+convolution estimate at one and two `precompR` levels instead of three. A *single* constant
+dominates all three orders (the `max` below), which is what the far-regime head estimate of
+brick L consumes; and it is `≥ 1` by construction, so `1 ≤ C₃` is free and is now part of the
+conclusion (wave 36 flagged this normalisation as the cheaper of its two options). -/
 private lemma exists_smoothed_indicator_unit (k : ℕ) :
-    ∃ C₃ : ℝ, 0 < C₃ ∧ ∀ B : Set (EuclideanSpace ℝ (Fin k)),
+    ∃ C₃ : ℝ, 1 ≤ C₃ ∧ ∀ B : Set (EuclideanSpace ℝ (Fin k)),
       ∃ f : EuclideanSpace ℝ (Fin k) → ℝ,
         ContDiff ℝ 3 f ∧ (∀ x, 0 ≤ f x) ∧ (∀ x, f x ≤ 1) ∧
         (∀ x ∈ B, f x = 1) ∧ (∀ x, f x ≠ 0 → x ∈ thickening 1 B) ∧
-        (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃) := by
+        (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃) ∧
+        (∀ x, ‖iteratedFDeriv ℝ 1 f x‖ ≤ C₃) ∧
+        (∀ x, ‖iteratedFDeriv ℝ 2 f x‖ ≤ C₃) := by
   set φ := mbeMollifier k with hφdef
-  refine ⟨max 1 (∫ t, ‖fderiv ℝ (fderiv ℝ (fderiv ℝ φ)) t‖),
-    lt_of_lt_of_le one_pos (le_max_left _ _), fun B => ?_⟩
+  refine ⟨max 1 (max (∫ t, ‖fderiv ℝ (fderiv ℝ (fderiv ℝ φ)) t‖)
+      (max (∫ t, ‖fderiv ℝ φ t‖) (∫ t, ‖fderiv ℝ (fderiv ℝ φ) t‖))),
+    le_max_left _ _, fun B => ?_⟩
   set A : Set (EuclideanSpace ℝ (Fin k)) := thickening (1 / 2) B with hAdef
   set ind : EuclideanSpace ℝ (Fin k) → ℝ := A.indicator (fun _ => (1 : ℝ)) with hinddef
   have hindmeas : Measurable ind := measurable_const.indicator isOpen_thickening.measurableSet
@@ -1105,7 +1186,7 @@ private lemma exists_smoothed_indicator_unit (k : ℕ) :
     have hmem : t ∈ Function.support φ := ht
     rw [hφdef, mbeMollifier_support] at hmem
     simpa [dist_zero_right] using hmem
-  refine ⟨ind ⋆[L₀, volume] φ, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨ind ⋆[L₀, volume] φ, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact (mbeMollifier_hasCompactSupport k).contDiff_convolution_right L₀ hind
       ((mbeMollifier_contDiff k).of_le (by norm_num))
   · intro x
@@ -1160,7 +1241,44 @@ private lemma exists_smoothed_indicator_unit (k : ℕ) :
     simp only [hpt]
     exact integral_zero _ _
   · intro x
-    exact le_trans (norm_iteratedFDeriv_three_convolution_le hind hindbd x) (le_max_right 1 _)
+    exact le_trans (norm_iteratedFDeriv_three_convolution_le hind hindbd x)
+      ((le_max_left _ _).trans (le_max_right 1 _))
+  · intro x
+    exact le_trans (norm_iteratedFDeriv_one_convolution_le hind hindbd x)
+      (((le_max_left _ _).trans (le_max_right _ _)).trans (le_max_right 1 _))
+  · intro x
+    exact le_trans (norm_iteratedFDeriv_two_convolution_le hind hindbd x)
+      (((le_max_right _ _).trans (le_max_right _ _)).trans (le_max_right 1 _))
+
+/-- **Scaling an iterated-derivative bound along a dilation.** If `‖Dⁱg‖ ≤ C` globally then the
+dilate `x ↦ g (ε⁻¹ • x)` satisfies `‖Dⁱ(g ∘ ε⁻¹)‖ ≤ C/εⁱ`, because
+`ContinuousLinearMap.iteratedFDeriv_comp_right` contributes exactly `‖L‖ⁱ ≤ ε^{-i}`. The bound
+`‖L‖ ≤ ε⁻¹` is used as an inequality rather than an equality, so the degenerate dimension
+`k = 0` (where `‖id‖ = 0`) is covered too. -/
+private lemma norm_iteratedFDeriv_comp_smul_le {k i : ℕ} {C ε : ℝ} (hε : 0 < ε) (hC : 0 ≤ C)
+    {g : EuclideanSpace ℝ (Fin k) → ℝ} (hgcd : ContDiff ℝ 3 g) (hi : i ≤ 3)
+    (hgD : ∀ y, ‖iteratedFDeriv ℝ i g y‖ ≤ C) (x : EuclideanSpace ℝ (Fin k)) :
+    ‖iteratedFDeriv ℝ i (fun x => g (ε⁻¹ • x)) x‖ ≤ C / ε ^ i := by
+  set L : EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin k) :=
+    ε⁻¹ • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin k)) with hLdef
+  have hLapp : ∀ x, L x = ε⁻¹ • x := by intro x; simp [hLdef]
+  have hLnorm : ‖L‖ ≤ ε⁻¹ := by
+    rw [hLdef, norm_smul, Real.norm_eq_abs, abs_of_pos (by positivity)]
+    have hid : ‖ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin k))‖ ≤ 1 :=
+      ContinuousLinearMap.norm_id_le
+    have hεinv : (0 : ℝ) ≤ ε⁻¹ := by positivity
+    nlinarith [hid, hεinv]
+  have hcomp : (fun x => g (ε⁻¹ • x)) = g ∘ L := by funext y; rw [Function.comp_apply, hLapp]
+  have hile : (i : WithTop ℕ∞) ≤ 3 := by exact_mod_cast hi
+  rw [hcomp, L.iteratedFDeriv_comp_right hgcd x hile]
+  refine le_trans (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _) ?_
+  have hprod : (∏ _j : Fin i, ‖L‖) = ‖L‖ ^ i := by
+    rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+  rw [hprod]
+  calc ‖iteratedFDeriv ℝ i g (L x)‖ * ‖L‖ ^ i ≤ C * ε⁻¹ ^ i := by
+        gcongr
+        exact hgD _
+    _ = C / ε ^ i := by rw [inv_pow]; ring
 
 /-- **Smoothed convex indicator with controlled third derivative.**
 In each dimension `k` there is a constant `C₃` (quantified *before* `B` and `ε`, so the bound
@@ -1175,26 +1293,30 @@ the continuous linear map `L : x ↦ ε⁻¹ • x`. Membership and support tran
 `‖L‖³ ≤ ε⁻³`. Note `‖L‖ ≤ ε⁻¹` is used as an inequality rather than an equality, so the
 degenerate dimension `k = 0` (where `‖id‖ = 0`) is covered too.
 
-Convexity of `B` is not used; it is kept only because the statement is frozen. -/
+Convexity of `B` is not used; it is kept only because the statement is frozen.
+
+**Wave 37.** The first- and second-order bounds `‖D¹f‖ ≤ C₃/ε`, `‖D²f‖ ≤ C₃/ε²` are now part
+of the conclusion, with the *same* constant `C₃ ≥ 1`: they are needed by the far regime of brick
+L's head estimate, which does not Taylor-expand and must bound the swap remainder by its
+lower-order terms. The scaling is the one already used for the third order, factored out as
+`norm_iteratedFDeriv_comp_smul_le`. -/
 private lemma exists_smoothed_convex_indicator (k : ℕ) :
-    ∃ C₃ : ℝ, 0 < C₃ ∧ ∀ B : Set (EuclideanSpace ℝ (Fin k)), Convex ℝ B → ∀ {ε : ℝ}, 0 < ε →
+    ∃ C₃ : ℝ, 1 ≤ C₃ ∧ ∀ B : Set (EuclideanSpace ℝ (Fin k)), Convex ℝ B → ∀ {ε : ℝ}, 0 < ε →
       ∃ f : EuclideanSpace ℝ (Fin k) → ℝ,
         ContDiff ℝ 3 f ∧ (∀ x, 0 ≤ f x) ∧ (∀ x, f x ≤ 1) ∧
         (∀ x ∈ B, f x = 1) ∧ (∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B) ∧
-        (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) := by
-  obtain ⟨C₃, hC₃pos, hC₃⟩ := exists_smoothed_indicator_unit k
-  refine ⟨C₃, hC₃pos, fun B _ ε hε => ?_⟩
-  obtain ⟨g, hgcd, hg0, hg1, hgB, hgsupp, hgD⟩ := hC₃ (ε⁻¹ • B)
+        (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) ∧
+        (∀ x, ‖iteratedFDeriv ℝ 1 f x‖ ≤ C₃ / ε) ∧
+        (∀ x, ‖iteratedFDeriv ℝ 2 f x‖ ≤ C₃ / ε ^ 2) := by
+  obtain ⟨C₃, hC₃one, hC₃⟩ := exists_smoothed_indicator_unit k
+  have hC₃pos : (0 : ℝ) < C₃ := lt_of_lt_of_le one_pos hC₃one
+  refine ⟨C₃, hC₃one, fun B _ ε hε => ?_⟩
+  obtain ⟨g, hgcd, hg0, hg1, hgB, hgsupp, hgD, hgD1, hgD2⟩ := hC₃ (ε⁻¹ • B)
   set L : EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin k) :=
     ε⁻¹ • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin k)) with hLdef
   have hLapp : ∀ x, L x = ε⁻¹ • x := by intro x; simp [hLdef]
-  have hLnorm : ‖L‖ ≤ ε⁻¹ := by
-    rw [hLdef, norm_smul, Real.norm_eq_abs, abs_of_pos (by positivity)]
-    have hid : ‖ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin k))‖ ≤ 1 :=
-      ContinuousLinearMap.norm_id_le
-    have hεinv : (0 : ℝ) ≤ ε⁻¹ := by positivity
-    nlinarith [hid, hεinv]
-  refine ⟨fun x => g (L x), hgcd.comp L.contDiff, fun x => hg0 _, fun x => hg1 _, ?_, ?_, ?_⟩
+  refine ⟨fun x => g (L x), hgcd.comp L.contDiff, fun x => hg0 _, fun x => hg1 _, ?_, ?_,
+    ?_, ?_, ?_⟩
   · intro x hx
     exact hgB _ (by rw [hLapp]; exact Set.smul_mem_smul_set hx)
   · intro x hx
@@ -1209,16 +1331,14 @@ private lemma exists_smoothed_convex_indicator (k : ℕ) :
     rw [inv_mul_lt_iff₀ hε] at hdz
     linarith
   · intro x
-    have hcomp : (fun x => g (L x)) = g ∘ L := rfl
-    rw [hcomp, L.iteratedFDeriv_comp_right hgcd x (le_refl _)]
-    refine le_trans (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _) ?_
-    have hprod : (∏ _i : Fin 3, ‖L‖) = ‖L‖ ^ 3 := by
-      rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
-    rw [hprod]
-    calc ‖iteratedFDeriv ℝ 3 g (L x)‖ * ‖L‖ ^ 3 ≤ C₃ * ε⁻¹ ^ 3 := by
-          gcongr
-          exact hgD _
-      _ = C₃ / ε ^ 3 := by rw [inv_pow]; ring
+    have h := norm_iteratedFDeriv_comp_smul_le (i := 3) hε hC₃pos.le hgcd le_rfl hgD x
+    simpa only [hLapp] using h
+  · intro x
+    have h := norm_iteratedFDeriv_comp_smul_le (i := 1) hε hC₃pos.le hgcd (by norm_num) hgD1 x
+    simpa only [hLapp, pow_one] using h
+  · intro x
+    have h := norm_iteratedFDeriv_comp_smul_le (i := 2) hε hC₃pos.le hgcd (by norm_num) hgD2 x
+    simpa only [hLapp] using h
 
 end ConvexSmoothing
 
@@ -2715,7 +2835,8 @@ theorem berryEsseen_convex_levy_elementary {k : ℕ} (hk : 0 < k) :
                 fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i)
                   (Metric.thickening ε B)).toReal
               + C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) / ε ^ 3) := by
-  obtain ⟨C₃, hC₃pos, hC₃⟩ := exists_smoothed_convex_indicator k
+  obtain ⟨C₃, hC₃one, hC₃⟩ := exists_smoothed_convex_indicator k
+  have hC₃pos : (0 : ℝ) < C₃ := lt_of_lt_of_le one_pos hC₃one
   refine ⟨C₃ / 2, by positivity, ?_⟩
   intro n ν B ε hn hε hνp hmean hcov hβint hBmeas hBconv
   haveI := hνp
@@ -2738,7 +2859,7 @@ theorem berryEsseen_convex_levy_elementary {k : ℕ} (hk : 0 < k) :
     rw [← hβdef] at h2
     linarith
   -- the smoothed indicator of `B` at width `ε`
-  obtain ⟨f, hfcd, hf0, hf1, hfB, hfsupp, hfD⟩ := hC₃ B hBconv hε
+  obtain ⟨f, hfcd, hf0, hf1, hfB, hfsupp, hfD, hfD1, hfD2⟩ := hC₃ B hBconv hε
   have hfbd : ∀ x, |f x| ≤ 1 := fun x => abs_le.2 ⟨by linarith [hf0 x], hf1 x⟩
   have hfint : ∀ ρ : Measure (EuclideanSpace ℝ (Fin k)), IsProbabilityMeasure ρ →
       Integrable f ρ := by
@@ -5388,7 +5509,8 @@ theorem berryEsseen_convex_levy_improved {k : ℕ} (hk : 0 < k) :
                 fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i)
                   (Metric.thickening ε B)).toReal
               + C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) / ε) := by
-  obtain ⟨C₃, hC₃pos, hC₃⟩ := exists_smoothed_convex_indicator k
+  obtain ⟨C₃, hC₃one, hC₃⟩ := exists_smoothed_convex_indicator k
+  have hC₃pos : (0 : ℝ) < C₃ := lt_of_lt_of_le one_pos hC₃one
   obtain ⟨Ct, hCtpos, hCt⟩ := exists_tiltRemainder_bound
   refine ⟨3 * C₃ / 2 + 9 * Ct + 2, by positivity, ?_⟩
   intro n ν B ε hn hε hνp hmean hcov hβint hBmeas hBconv
@@ -5447,7 +5569,7 @@ theorem berryEsseen_convex_levy_improved {k : ℕ} (hk : 0 < k) :
     exact ⟨by linarith [ENNReal.toReal_nonneg (a := γ (Metric.thickening ε B))],
       by linarith [ENNReal.toReal_nonneg (a := μ (Metric.thickening ε B))]⟩
   -- ### the main window `ε² n ≥ 1`
-  obtain ⟨f, hfcd, hf0, hf1, hfB, hfsupp, hfD⟩ := hC₃ B hBconv hε
+  obtain ⟨f, hfcd, hf0, hf1, hfB, hfsupp, hfD, hfD1, hfD2⟩ := hC₃ B hBconv hε
   have hfbd : ∀ x, |f x| ≤ 1 := fun x => abs_le.2 ⟨by linarith [hf0 x], hf1 x⟩
   have hfint : ∀ ρ : Measure (EuclideanSpace ℝ (Fin k)), IsProbabilityMeasure ρ →
       Integrable f ρ := by
@@ -7568,7 +7690,7 @@ Two consequences, both of which wave 37 should treat as claims to check rather t
 **The arithmetic of this section was derived on paper this wave and is NOT machine-checked**,
 unlike the ledger of wave 32 and the reduction of wave 35. It is recorded here because it
 changes what the residue *is*, not because it is finished. -/
-theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 0 < C₃) :
+theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 1 ≤ C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
       (f : EuclideanSpace ℝ (Fin k) → ℝ) (W : ℝ),
@@ -7582,6 +7704,10 @@ theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (h
       1 ≤ ε * Real.sqrt (n : ℝ) →
       ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
       (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
+      -- LEAN-ONLY: mollifier derivative bounds; supplied by
+      -- `exists_smoothed_convex_indicator` at every call site.
+      (∀ x, ‖iteratedFDeriv ℝ 1 f x‖ ≤ C₃ / ε) →
+      (∀ x, ‖iteratedFDeriv ℝ 2 f x‖ ≤ C₃ / ε ^ 2) →
       (∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B) → (∀ x ∈ B, f x = 1) →
       0 ≤ W →
       (∀ j : ℕ, j ≤ n → ∀ s : ℝ, 0 < s →
@@ -7645,7 +7771,7 @@ telescope's own smoothing widths `σⱼ = √(j/n)` sweep from `ε` to `1` while
 the single width `ε`. The large-weight half `exists_smooth_swap_bound_of_one_le_weight` is
 proved and is *unaffected*: its conclusion is the log-free one, which is smaller, so it still
 closes the amended goal. Only the small-weight half changes. -/
-theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 0 < C₃) :
+theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 1 ≤ C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
       (f : EuclideanSpace ℝ (Fin k) → ℝ) (W : ℝ),
@@ -7659,6 +7785,10 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
       1 ≤ ε * Real.sqrt (n : ℝ) →
       ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
       (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
+      -- LEAN-ONLY: mollifier derivative bounds; supplied by
+      -- `exists_smoothed_convex_indicator` at every call site.
+      (∀ x, ‖iteratedFDeriv ℝ 1 f x‖ ≤ C₃ / ε) →
+      (∀ x, ‖iteratedFDeriv ℝ 2 f x‖ ≤ C₃ / ε ^ 2) →
       (∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B) → (∀ x ∈ B, f x = 1) →
       0 ≤ W →
       (∀ j : ℕ, j ≤ n → ∀ s : ℝ, 0 < s →
@@ -7669,10 +7799,12 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
         ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
             * (ε⁻¹ * (W + gaussianShellConst k * ε)
               + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by
-  obtain ⟨A₁, hA₁, h₁⟩ := exists_smooth_swap_bound_of_one_le_weight k hk hC₃
+  have hC₃pos : (0 : ℝ) < C₃ := lt_of_lt_of_le one_pos hC₃
+  obtain ⟨A₁, hA₁, h₁⟩ := exists_smooth_swap_bound_of_one_le_weight k hk hC₃pos
   obtain ⟨A₂, hA₂, h₂⟩ := localised_swap_bound_small_weight k hk hC₃
   refine ⟨A₁ + A₂, by linarith, ?_⟩
-  intro n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hwin hf hfb hD hsupp hone hW0 hW
+  intro n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hwin hf hfb hD hD1 hD2 hsupp hone
+    hW0 hW
   haveI := hνp
   have hnr : (0 : ℝ) < n := by exact_mod_cast hn
   have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
@@ -7712,8 +7844,8 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
     refine hsmall.trans ?_
     rw [hexp A₁, hexp (A₁ + A₂)]
     exact mul_le_mul_of_nonneg_right (by linarith) hbase
-  · have h := h₂ n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hwin hf hfb hD hsupp hone
-      hW0 hW hlt.le
+  · have h := h₂ n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hwin hf hfb hD hD1 hD2
+      hsupp hone hW0 hW hlt.le
     refine h.trans ?_
     rw [hexp A₂, hexp (A₁ + A₂)]
     exact mul_le_mul_of_nonneg_right (by linarith) hbase
@@ -7759,8 +7891,9 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
           + A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * (4 * gaussianShellConst k)
             * (1 + Real.log (1 + ε⁻¹))
           + 4 * gaussianShellConst k * ε := by
-  obtain ⟨C₃, hC₃pos, hC₃⟩ := exists_smoothed_convex_indicator k
-  obtain ⟨A, hApos, hA⟩ := exists_localised_swap_bound k hk hC₃pos
+  obtain ⟨C₃, hC₃one, hC₃⟩ := exists_smoothed_convex_indicator k
+  have hC₃pos : (0 : ℝ) < C₃ := lt_of_lt_of_le one_pos hC₃one
+  obtain ⟨A, hApos, hA⟩ := exists_localised_swap_bound k hk hC₃one
   refine ⟨2 * A, by linarith, ?_⟩
   intro n ν ε Y hn hνp hmean hcov hβint hε hwin hY
   haveI := hνp
@@ -7787,7 +7920,7 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
       (μ S).toReal ≤ (γ (Metric.thickening ε S)).toReal + E
         ∧ (γ S).toReal ≤ (μ (Metric.thickening ε S)).toReal + E := by
     intro S hSm hSc
-    obtain ⟨f, hfcd, hf0, hf1, hfS, hfsupp, hfD⟩ := hC₃ S hSc hε
+    obtain ⟨f, hfcd, hf0, hf1, hfS, hfsupp, hfD, hfD1, hfD2⟩ := hC₃ S hSc hε
     have hfbd : ∀ x, |f x| ≤ 1 := fun x => abs_le.2 ⟨by linarith [hf0 x], hf1 x⟩
     have hfint : ∀ ρ : Measure (EuclideanSpace ℝ (Fin k)), IsProbabilityMeasure ρ →
         Integrable f ρ := by
@@ -7810,7 +7943,7 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
     -- brick L
     have herr : |(∫ x, f x ∂μ) - (∫ x, f x ∂γ)| ≤ E := by
       have h := hA n ν S ε f (4 * gaussianShellConst k * ε + 2 * Y) hn hνp hmean hcov hβint
-        hSm hSc hε hwin hfcd hfbd hfD hfsupp hfS hW0 hW
+        hSm hSc hε hwin hfcd hfbd hfD hfD1 hfD2 hfsupp hfS hW0 hW
       rw [← hμdef, ← hβdef, ← hδdef] at h
       refine h.trans ?_
       rw [hEdef]
