@@ -9600,7 +9600,77 @@ wave 31 and not attempted in wave 33**, and is not claimed.
 
 * **NOTHING ELSE MOVED.** (C), the ledger, the slope arithmetic and
   `exists_fourierCertificate_deltaSurrogate` are as wave 34 left them, and the assembly of this
-  theorem was again **not attempted**. -/
+  theorem was again **not attempted**.
+
+**Status after wave 37. THE ASSEMBLY WAS ATTEMPTED, AND THE PRESCRIBED CHAIN DOES NOT COMPOSE.**
+The corollary `cornishFisher_studentized_quantile` is closed (see there); this theorem is not,
+and the reason is not budget. The wave-35 chain description above — "no missing analytic tool is
+known; the assembly is bookkeeping" — is **overturned**. Every one of the six lemmas it names
+exists and is proved (`norm_multiCharFun_vecRootLaw_le` in `ForMathlib/BivariateEdgeworth.lean`
+and `abs_measure_Iic_sub_densityCDF_le_charFun` in `ForMathlib/EsseenSmoothing.lean`; the other
+four in this file), and their signatures are as described. But the chain needs four things it
+does not name, and three of them are still open.
+
+* **(U1) THERE IS NO COMPARISON DENSITY FOR THE STUDENTIZED APPROXIMANT.** Step 5 feeds
+  `abs_measure_Iic_sub_densityCDF_le_charFun`, which compares `P(-∞, x]` with `densityCDF q x`
+  for an `L¹` density `q`. The only `q` in the file is
+  `edgeworthDensity γ n u = φ(u)(1 + (γ/6)(u³ − 3u)n^{-1/2})`, whose `densityCDF` is
+  `edgeworthCDF γ n u = Φ(u) − (γ/6)φ(u)(u² − 1)n^{-1/2}` — the **mean** approximant, and the
+  one `edgeworth_mean_uniform` consumes. The approximant in *this* statement is
+  `Φ(t) + (γ/6)φ(t)(2t² + 1)n^{-1/2}`, whose density is
+  `φ(t)[1 + (γ/6)(3t − 2t³)n^{-1/2}]` — a different Hermite combination,
+  `3t − 2t³ = −2He₃(t) − 3He₁(t)` against `He₃` alone. Every lemma the mean assembly uses about
+  `edgeworthDensity` has to be re-proved for it: the FTC step (here the antiderivative is
+  `φ(u)(2u² + 1)` itself, which is the one convenience), `charFunDensity_...`,
+  `abs_...Density_le`, `setIntegral_abs_...Density_le`, `norm_charFunDensity_..._le`,
+  `...CharFun_tail_le` and `abs_...CDF_le`. The Gaussian Fourier moments they need
+  (`integral_hermite3_mul_cexp_mul_gaussian`, `integral_cexp_mul_gaussian`) are in
+  `ForMathlib/BerryEsseen.lean`, so no *tool* is missing — but a parallel apparatus of several
+  hundred lines is, and the chain description treats it as present.
+
+* **(U2) THE CRAMÉR TAIL WAS ON THE WRONG LAW — and this wave closes it.** Step 4's
+  `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` takes `hcram` and `hcert` for the
+  **same** law, and the certificate is necessarily on the *truncated* root law, while
+  `exists_bound_norm_charFun_vecRootLaw_studentPair` is on the untruncated one and its proof
+  consumes `hFac : F ≪ volume`, which truncation destroys. See the section note above
+  `norm_charFun_map_comp_sub_le`; the repair is
+  `exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt`, proved and axiom-clean, and its
+  conclusion returns a pair `(c, N)` rather than a single `c` because the law depends on `n`.
+
+* **(U3) THE PEELED WINDOW'S `hslice` IS STILL OPEN FOR THE SURROGATE, and the chain
+  description does not carry the file's own warning.** Step 6's `hstrat` is produced by
+  `measure_pi_stratum_le`, whose one open hypothesis is the frozen-coordinate window bound for
+  `T`, uniform in the frozen value. `measure_pi_stratum_root_le` discharges it *for free* when
+  `T` is a root — and the caveat recorded on `measure_pi_abs_root_insertNth_le` since wave 21
+  says in terms that **the studentized route's `T` is the surrogate `Hₙ`, a degree-four
+  polynomial in the bivariate mean, not a root**, so `measure_abs_sub_le_of_affine` does not
+  apply to it; and that `T` may not be traded back for the root `u`, since then
+  `|S − T| = O(r)` and the peeled sum is `n^{-1/2}`, a factor `√n` short. This is the *same*
+  item the corollary's docstring has named as the residue since wave 17 — the conditional
+  anti-concentration of the surrogate — and it is an analytic item, not bookkeeping.
+  `abs_measure_le_sub_le_of_peel_window` names it as a hypothesis (`hcond`) precisely because it
+  is not proved.
+
+* **(U4) STEP 3 PRODUCES A BOUND, AND THE WINDOW NEEDS AN EVALUATION.**
+  `norm_multiCharFun_vecRootLaw_le` is an `O(1)` **bound**, uniform in `k`, and wave 26 is right
+  that a bound is all `k = 3, 4` need. The window of the Esseen split needs the *leading-order*
+  behaviour of the whole of `norm_charFun_map_deltaSurrogate_sub_graded_le`'s right-hand side —
+  the `k = 2` slot (where `multiCharFun_vecRootLaw_two` and
+  `norm_multiCharFun_vecRootLaw_two_sub_le` do supply the evaluation) *and* the leading slot
+  `charFun μ ((θ/σ)e₀)`, an `n`-th power to be expanded by
+  `norm_charFun_smul_pow_sub_edgeworth_le` — assembled into
+  `‖φ_{surrogate}(θ) − φ_{q_n}(θ)‖ ≤ (K/n)·windowEnvelope`, the studentized analogue of
+  `exists_window_bound`. That assembly does not exist. It is not obstructed — all four inputs
+  are proved — but it is an estimate, not a rewriting.
+
+**Net.** The residue of this theorem is (U1) a construction, (U3) an analytic item that the file
+has named since wave 21 and that no soft substitute reaches under a fourth moment (see the
+section note above `abs_measure_le_sub_le_of_peel_window` for `min(P A, P B)` at `n^{-3/5}`,
+Cauchy–Schwarz at `n^{-1/2}`, and the Markov-inside-the-window dodges at six or eight moments),
+and (U4) one estimate. It is **not** bookkeeping, and it was not before wave 37 either; what
+wave 37 adds is that (U2) is closed and that the other three are now stated where the assembly
+would meet them. -/
+
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
