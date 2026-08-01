@@ -4812,6 +4812,54 @@ private lemma continuous_integral_add_smul {σ : Measure (EuclideanSpace ℝ (Fi
     (Filter.Eventually.of_forall fun u =>
       hF.comp (continuous_id.add continuous_const))
 
+/-- **The telescope step with a bound that may depend on the remaining coordinates**
+(wave 36: the *structural* half of brick L's residue).
+
+The wave-16 telescope estimates one step by a **constant** pointwise bound `D` on the peeled
+difference `|∫ g(u + v) dν − ∫ g(u + v) dσ|`, uniformly in the remaining sum `v = ∑ₗ yₗ`. The
+two localised swap estimates that brick L needs
+(`localised_swap_bound_small_weight`) are not of that form: their weight is the mass of a
+two-sided shell under the hybrid law, i.e. an *average*, not a pointwise bound. What they do
+supply is a bound `D v` that varies with `v` — typically `D v = (shell indicator averaged over
+the peeled coordinate and the smoothing Gaussian) × cost`.
+
+This lemma is that generalisation, and it is exactly as cheap: the wave-16 argument never used
+constancy of `D`, only `integral_mono` against a constant. Replacing the constant by an
+integrable function of `∑ₗ yₗ` costs one integrability hypothesis and nothing else.
+
+**How the conclusion becomes a hybrid mass at the call site.** The right-hand side
+`∫ D(∑ₗ yₗ) d(⨂ κ')` is an integral against the law of the sum of the *remaining* `n − 1`
+coordinates. When `D v` is itself an average over the peeled coordinate `u ~ ν` and the
+smoothing variable `z ~ γ` of a function of `c(v + u) + sⱼ z`, that iterated integral is by
+Fubini an integral against the law of `c ∑ᵢ yᵢ + sⱼ z`, which is `hybridLaw n j ν` — so a
+shell indicator there produces precisely the two-sided-shell mass the amended weight
+hypothesis bounds. That identification is the caller's step, not this lemma's. -/
+private lemma abs_sub_integral_peel_le_integral {k m : ℕ}
+    (ν σ : Measure (EuclideanSpace ℝ (Fin k)))
+    [IsProbabilityMeasure ν] [IsProbabilityMeasure σ]
+    (κ' : Fin m → Measure (EuclideanSpace ℝ (Fin k))) [∀ l, IsProbabilityMeasure (κ' l)]
+    {g : EuclideanSpace ℝ (Fin k) → ℝ} (hg : Continuous g) (hgb : ∀ x, |g x| ≤ 1)
+    {D : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hDint : Integrable (fun y : Fin m → EuclideanSpace ℝ (Fin k) => D (∑ l, y l))
+      (Measure.pi κ'))
+    (hbound : ∀ v : EuclideanSpace ℝ (Fin k),
+      |(∫ u, g (u + v) ∂ν) - (∫ u, g (u + v) ∂σ)| ≤ D v) :
+    |(∫ y, (∫ u, g (u + ∑ l, y l) ∂ν) ∂(Measure.pi κ'))
+        - (∫ y, (∫ u, g (u + ∑ l, y l) ∂σ) ∂(Measure.pi κ'))|
+      ≤ ∫ y, D (∑ l, y l) ∂(Measure.pi κ') := by
+  have hAint : Integrable (fun y : (_ : Fin m) → EuclideanSpace ℝ (Fin k) =>
+      ∫ u, g (u + ∑ l, y l) ∂ν) (Measure.pi κ') :=
+    (integrable_peel_prod ν κ' hg hgb).integral_prod_right
+  have hBint : Integrable (fun y : (_ : Fin m) → EuclideanSpace ℝ (Fin k) =>
+      ∫ u, g (u + ∑ l, y l) ∂σ) (Measure.pi κ') :=
+    (integrable_peel_prod σ κ' hg hgb).integral_prod_right
+  rw [← integral_sub hAint hBint]
+  calc |∫ y, ((∫ u, g (u + ∑ l, y l) ∂ν) - (∫ u, g (u + ∑ l, y l) ∂σ)) ∂(Measure.pi κ')|
+      ≤ ∫ y, |(∫ u, g (u + ∑ l, y l) ∂ν) - (∫ u, g (u + ∑ l, y l) ∂σ)|
+          ∂(Measure.pi κ') := abs_integral_le_integral_abs
+    _ ≤ ∫ y, D (∑ l, y l) ∂(Measure.pi κ') :=
+        integral_mono (hAint.sub hBint).abs hDint fun y => hbound _
+
 set_option maxHeartbeats 1600000 in
 /-- **The hybrid telescope with Gaussian smoothing (brick (i)).** For every cut `J ≥ 2` the
 normal approximation error of a `C³` test function bounded by `1` with `‖D³f‖ ≤ M` is at most
@@ -4947,13 +4995,19 @@ private lemma abs_integral_smooth_sub_gaussian_improved {n : ℕ} (hk : 0 < k) {
     · infer_instance
     · exact hν
   set I : ℕ → ℝ := fun j => ∫ x, G j (∑ l, x l) ∂(Measure.pi (κ j)) with hIdef
-  -- one telescope step, given any uniform pointwise bound on the peeled difference
-  have hstepgen : ∀ j : ℕ, j < m + 1 → ∀ D : ℝ, 0 ≤ D →
+  -- one telescope step, given a bound on the peeled difference that may itself depend on the
+  -- remaining coordinates (wave 36: the `v`-dependent form, via
+  -- `abs_sub_integral_peel_le_integral`; the constant case is `hstepgen` below)
+  have hstepfun : ∀ j : ℕ, ∀ hj : j < m + 1, ∀ D : EuclideanSpace ℝ (Fin k) → ℝ,
+      Integrable (fun y : (_ : Fin m) → EuclideanSpace ℝ (Fin k) => D (∑ l, y l))
+        (Measure.pi fun l : Fin m => κ j ((⟨j, hj⟩ : Fin (m + 1)).succAbove l)) →
       (∀ v : EuclideanSpace ℝ (Fin k),
         |(∫ u, G j (u + v) ∂ν)
-          - (∫ u, G j (u + v) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))| ≤ D) →
-      |I j - I (j + 1)| ≤ D := by
-    intro j hj D hD hbound
+          - (∫ u, G j (u + v) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))| ≤ D v) →
+      |I j - I (j + 1)|
+        ≤ ∫ y, D (∑ l, y l)
+            ∂(Measure.pi fun l : Fin m => κ j ((⟨j, hj⟩ : Fin (m + 1)).succAbove l)) := by
+    intro j hj D hDint hbound
     set i : Fin (m + 1) := ⟨j, hj⟩ with hidef
     have hival : ((i : Fin (m + 1)) : ℕ) = j := by rw [hidef]
     have hji : κ j i = ν := by
@@ -4984,14 +5038,6 @@ private lemma abs_integral_smooth_sub_gaussian_improved {n : ℕ} (hk : 0 < k) {
       intro y
       rw [integral_dirac, zero_add]
       exact (hconv j _).symm
-    have hAint : Integrable (fun y : (_ : Fin m) → EuclideanSpace ℝ (Fin k) =>
-        ∫ u, G j (u + ∑ l, y l) ∂ν) R :=
-      (integrable_peel_prod ν (fun l : Fin m => κ j (i.succAbove l))
-        (hGcont j) (hGb j)).integral_prod_right
-    have hBint : Integrable (fun y : (_ : Fin m) → EuclideanSpace ℝ (Fin k) =>
-        ∫ u, G j (u + ∑ l, y l) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) R :=
-      (integrable_peel_prod (stdGaussian (EuclideanSpace ℝ (Fin k)))
-        (fun l : Fin m => κ j (i.succAbove l)) (hGcont j) (hGb j)).integral_prod_right
     have hIj : I j = ∫ y, (∫ u, G j (u + ∑ l, y l) ∂ν) ∂R := by
       rw [hIdef]; exact hpeel0
     have hIj1 : I (j + 1)
@@ -4999,15 +5045,21 @@ private lemma abs_integral_smooth_sub_gaussian_improved {n : ℕ} (hk : 0 < k) {
       rw [hIdef]
       refine hpeel1.trans ?_
       exact integral_congr_ae (Filter.Eventually.of_forall fun y => hdirac y)
-    rw [hIj, hIj1, ← integral_sub hAint hBint]
-    calc |∫ y, ((∫ u, G j (u + ∑ l, y l) ∂ν)
-            - (∫ u, G j (u + ∑ l, y l) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))) ∂R|
-        ≤ ∫ y, |(∫ u, G j (u + ∑ l, y l) ∂ν)
-            - (∫ u, G j (u + ∑ l, y l) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))| ∂R :=
-          abs_integral_le_integral_abs
-      _ ≤ ∫ _y, D ∂R :=
-          integral_mono (hAint.sub hBint).abs (integrable_const _) fun y => hbound _
-      _ = D := by rw [integral_const]; simp
+    rw [hIj, hIj1]
+    exact abs_sub_integral_peel_le_integral ν (stdGaussian (EuclideanSpace ℝ (Fin k)))
+      (fun l : Fin m => κ j (i.succAbove l)) (hGcont j) (hGb j) hDint hbound
+  -- the constant case, which is what the two *unlocalised* step bounds below supply
+  have hstepgen : ∀ j : ℕ, j < m + 1 → ∀ D : ℝ, 0 ≤ D →
+      (∀ v : EuclideanSpace ℝ (Fin k),
+        |(∫ u, G j (u + v) ∂ν)
+          - (∫ u, G j (u + v) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))| ≤ D) →
+      |I j - I (j + 1)| ≤ D := by
+    intro j hj D _ hbound
+    haveI : ∀ l : Fin m, IsProbabilityMeasure (κ j ((⟨j, hj⟩ : Fin (m + 1)).succAbove l)) :=
+      fun l => hκp j _
+    have h := hstepfun j hj (fun _ => D) (integrable_const _) hbound
+    rw [integral_const] at h
+    simpa using h
   -- the peeled difference, written with the smoothing variable displayed
   have hrw : ∀ (σ : Measure (EuclideanSpace ℝ (Fin k))) (j : ℕ)
       (v : EuclideanSpace ℝ (Fin k)),
@@ -5920,8 +5972,8 @@ The `1 + ε⁻¹` inside the logarithm (rather than a bare `ε⁻¹`) is deliber
 term nonnegative for *every* `ε > 0`, so the amended recursion is unambiguously weaker than the
 frozen one and no `ε ≤ 1` side condition has to be threaded through the call sites. -/
 theorem le_of_selfImproving_induction_log {A C b : ℝ} {D : ℕ → ℝ}
-    (hA : 0 < A) (hC : 0 < C) (hb : 0 < b)
-    (hrec : ∀ n : ℕ, 0 < n → ∀ ε : ℝ, 0 < ε → ∀ Y : ℝ,
+    (hA : 0 < A) (hC : 0 < C) (hb : 0 < b) (hb1 : 1 ≤ 8 * A * b)
+    (hrec : ∀ n : ℕ, 0 < n → ∀ ε : ℝ, 0 < ε → 1 ≤ ε * Real.sqrt (n : ℝ) → ∀ Y : ℝ,
       (∀ m : ℕ, n ≤ 2 * m → m ≤ n → D m ≤ Y) →
       D n ≤ A * (b / Real.sqrt n) * ε⁻¹ * (C * ε + 2 * Y)
         + A * (b / Real.sqrt n) * C * (1 + Real.log (1 + ε⁻¹))
@@ -5998,7 +6050,15 @@ theorem le_of_selfImproving_induction_log {A C b : ℝ} {D : ℕ → ℝ}
             mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hδmle hKpos.le) hM0
         _ = 2 * K * δ * M := by ring
     have hεpos : 0 < 8 * A * δ := by positivity
-    have h := hrec n hn (8 * A * δ) hεpos Y hY
+    -- the induction only ever runs the recursion at the width `ε = 8 A δ`, and there
+    -- `ε √n = 8 A b` does not depend on `n`; so the localisation window is a hypothesis
+    -- on the *constants* alone (wave 36).
+    have hwin : 1 ≤ 8 * A * δ * Real.sqrt (n : ℝ) := by
+      have hne : Real.sqrt (n : ℝ) ≠ 0 := hsn.ne'
+      have h : 8 * A * δ * Real.sqrt (n : ℝ) = 8 * A * b := by
+        rw [hδdef]; field_simp
+      rw [h]; exact hb1
+    have h := hrec n hn (8 * A * δ) hεpos hwin Y hY
     rw [← hδdef] at h
     have hinv : A * δ * (8 * A * δ)⁻¹ = 1 / 8 := by
       rw [mul_inv, ← mul_assoc]; field_simp
@@ -6479,6 +6539,98 @@ instance isProbabilityMeasure_hybridLaw (n j : ℕ) (ν : Measure (EuclideanSpac
       (if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν) := by
     intro i; split <;> infer_instance
   exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+
+/-- **The hybrid law IS the telescope's `j`-th test measure** (wave 36).
+
+`hybridLaw` was introduced (wave 20) with the comment that it is "exactly the measure against
+which `abs_integral_smooth_sub_gaussian_improved` evaluates its `j`-th test function", but that
+identity was never recorded in Lean — brick H speaks about `hybridLaw`, the telescope speaks
+about `Iⱼ = ∫ Gⱼ(∑ₗ xₗ) d(⨂ κⱼ)`, and nothing connected them. It is needed as soon as the
+per-step swap bounds are *localised*, because their weight is a two-sided-shell mass **under
+`hybridLaw n j ν`** while the object the telescope averages is `Iⱼ`; without this lemma the two
+localised estimates of `localised_swap_bound_small_weight` cannot even be stated in the form its
+reduction consumes.
+
+The content is one Fubini: unfolding `hybridLaw`'s `map`, the outer integral over the product
+`(⨂ κⱼ) ⊗ γ` factors into the smoothing integral inside the product integral, and
+`sⱼ = √j/√n = c √j` is the telescope's own smoothing width. -/
+theorem integral_hybridLaw_eq {n j : ℕ} (ν : Measure (EuclideanSpace ℝ (Fin k)))
+    [IsProbabilityMeasure ν] {f : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hf : Continuous f) (hfb : ∀ x, |f x| ≤ 1) :
+    (∫ x, f x ∂(hybridLaw n j ν))
+      = ∫ x, (∫ z, f ((Real.sqrt (n : ℝ))⁻¹ • (∑ i, x i)
+              + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • z)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+          ∂(Measure.pi fun i : Fin n =>
+              if (i : ℕ) < j then Measure.dirac 0 else ν) := by
+  haveI : ∀ i : Fin n, IsProbabilityMeasure
+      (if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν) := by
+    intro i; split <;> infer_instance
+  set P : Measure ((_ : Fin n) → EuclideanSpace ℝ (Fin k)) :=
+    Measure.pi fun i : Fin n =>
+      if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν with hPdef
+  haveI : IsProbabilityMeasure P := by rw [hPdef]; infer_instance
+  set Φ : ((_ : Fin n) → EuclideanSpace ℝ (Fin k)) × EuclideanSpace ℝ (Fin k)
+      → EuclideanSpace ℝ (Fin k) :=
+    fun p => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
+      + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2 with hΦdef
+  have hΦmeas : Measurable Φ := by rw [hΦdef]; fun_prop
+  have hint : Integrable (fun p => f (Φ p))
+      (P.prod (stdGaussian (EuclideanSpace ℝ (Fin k)))) := by
+    refine (integrable_const (1 : ℝ)).mono'
+      (hf.measurable.comp hΦmeas).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun p => by rw [Real.norm_eq_abs]; exact hfb _)
+  rw [hybridLaw, ← hPdef, ← hΦdef,
+    integral_map hΦmeas.aemeasurable hf.aestronglyMeasurable]
+  exact integral_prod _ hint
+
+/-- **The peeled average IS a hybrid-law average** (wave 36).
+
+The second half of the bridge. `abs_sub_integral_peel_le_integral` bounds a telescope step by
+`∫ D(∑ₗ yₗ) dR`, an average over the *remaining* `n − 1` coordinates; brick H
+(`hybridLaw_wideShell_le`) bounds masses under `hybridLaw n j ν`, which averages over *all* `n`
+coordinates and the smoothing Gaussian. This lemma is the identity that closes the gap: when
+the bound `D v` is itself the average over the peeled coordinate `u ~ ν` and the smoothing
+variable `z ~ γ` of a bounded continuous `F` evaluated at `c(v + u) + σⱼ z`, then
+
+`∫ D(∑ₗ yₗ) dR = ∫ F d(hybridLaw n j ν)`.
+
+Taking `F` a (mollified) indicator of the two-sided shell turns the conclusion of
+`abs_sub_integral_peel_le_integral` into exactly the quantity the amended weight hypothesis of
+`localised_swap_bound_small_weight` bounds. The proof is `integral_pi_sum_peel` run *backwards*
+on `integral_hybridLaw_eq`, at the coordinate `i = j` where `κⱼ i = ν`. -/
+theorem integral_peel_eq_integral_hybridLaw {m j : ℕ} (hj : j < m + 1)
+    (ν : Measure (EuclideanSpace ℝ (Fin k))) [IsProbabilityMeasure ν]
+    {F : EuclideanSpace ℝ (Fin k) → ℝ} (hF : Continuous F) (hFb : ∀ x, |F x| ≤ 1) :
+    (∫ x, F x ∂(hybridLaw (m + 1) j ν))
+      = ∫ y, (∫ u, (∫ z, F ((Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ • (u + ∑ l, y l)
+                + (Real.sqrt (j : ℝ) / Real.sqrt ((m + 1 : ℕ) : ℝ)) • z)
+              ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ν)
+          ∂(Measure.pi fun l : Fin m =>
+              (fun i : Fin (m + 1) =>
+                if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν)
+                ((⟨j, hj⟩ : Fin (m + 1)).succAbove l)) := by
+  classical
+  set κ : Fin (m + 1) → Measure (EuclideanSpace ℝ (Fin k)) :=
+    fun i => if (i : ℕ) < j then Measure.dirac 0 else ν with hκdef
+  haveI hκp : ∀ i, IsProbabilityMeasure (κ i) := by
+    intro i; rw [hκdef]; dsimp only; split <;> infer_instance
+  set c : ℝ := (Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ with hcdef
+  set s : ℝ := Real.sqrt (j : ℝ) / Real.sqrt ((m + 1 : ℕ) : ℝ) with hsdef
+  set g : EuclideanSpace ℝ (Fin k) → ℝ :=
+    fun w => ∫ z, F (c • w + s • z) ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) with hgdef
+  have hgcont : Continuous g := by
+    rw [hgdef]
+    exact (continuous_integral_add_smul hF hFb s).comp (continuous_const_smul c)
+  have hgb : ∀ w, |g w| ≤ 1 := fun w =>
+    abs_integral_le_one (hF.comp (continuous_const.add (continuous_const_smul s)))
+      (fun z => hFb _)
+  have hν : κ (⟨j, hj⟩ : Fin (m + 1)) = ν := by
+    rw [hκdef]; dsimp only; rw [if_neg (by omega)]
+  rw [integral_hybridLaw_eq ν hF hFb, ← hκdef]
+  have h := integral_pi_sum_peel κ (⟨j, hj⟩ : Fin (m + 1)) hgcont hgb
+  rw [hν] at h
+  exact h
 
 /-- The characteristic function of the law of a sum of independent summands is the product of
 the characteristic functions. -/
@@ -7307,19 +7459,38 @@ stays bounded as `ε ↓ 0` when `W = 0`, while `(3/2) C₃ δ ε⁻¹` blows up
 recorded in the hypothesis of `localised_swap_bound_of_weighted_telescope` and is now the
 *second* analytic item, alongside the Cameron–Martin one below.
 
-**Correction 2 (the window `1 ≤ ε √n` is not optional).** The ledger is silent about `ε √n < 1`,
-and there it fails: the cut degenerates to `J = 2`, the head becomes `≍ C₃ β (W/t³ + C_k ε/t⁴)`
-with `t = ε √n`, and this exceeds the right-hand side `≍ β (W/t + C_k/√n)` by `t^{-2}`. No cut
-repairs it, because the elementary step bound beats the Cameron–Martin one only for `j ≲ ε² n`,
-i.e. for no step at all. Nor is the trivial bound `|∫ f dμ − ∫ f dγ| ≤ 2` available here (unlike
-in `exists_smooth_swap_bound_of_one_le_weight`, where `W ≥ 1` makes the right-hand side `≥ A`):
-for `ε √n < 1` the right-hand side is `≥ A C_k β/√n`, which is `o(1)`. The statement is still
-*true* in that window — it is implied by Bentkus's theorem, as the whole amended statement is —
-but this route cannot prove it there, since sandwiching `f` between `1_B` and `1_{B^ε}` leaves
-exactly `|μₙ(B) − γ(B)| ≤ A C_k β/√n`, the sharp bound itself. A future wave must either thread
-`1 ≤ ε √n` through `exists_localised_swap_bound` and `exists_convexDiscrepancy_recursion` (it is
-free at the call site iff the recursion is only ever run at `ε ≥ n^{-1/2}`, which has not been
-checked), or find a separate argument for the small window.
+**Correction 2 (the window `1 ≤ ε √n`) — RESOLVED in wave 36: it is now a hypothesis, and it
+is discharged at the call site.** The ledger is silent about `ε √n < 1`, and there it fails: the
+cut degenerates to `J = 2`, the head becomes `≍ C₃ β (W/t³ + C_k ε/t⁴)` with `t = ε √n`, and
+this exceeds the right-hand side `≍ β (W/t + C_k/√n)` by `t^{-2}`. No cut repairs it, because
+the elementary step bound beats the Cameron–Martin one only for `j ≲ ε² n`, i.e. for no step at
+all. Nor is the trivial bound `|∫ f dμ − ∫ f dγ| ≤ 2` available here (unlike in
+`exists_smooth_swap_bound_of_one_le_weight`, where `W ≥ 1` makes the right-hand side `≥ A`): for
+`ε √n < 1` the right-hand side is `≥ A C_k β/√n`, which is `o(1)`. The statement is still *true*
+in that window — it is implied by Bentkus's theorem, as the whole amended statement is — but
+this route cannot prove it there, since sandwiching `f` between `1_B` and `1_{B^ε}` leaves
+exactly `|μₙ(B) − γ(B)| ≤ A C_k β/√n`, the sharp bound itself.
+
+Wave 35 left open whether threading the window costs anything downstream. **It costs nothing**,
+and the reason is that the fixed point never visits the small window:
+
+* `le_of_selfImproving_induction_log` instantiates its `hrec` at exactly **one** width,
+  `ε = 8 A δ` with `δ = b/√n`. There `ε √n = 8 A b`, which **does not depend on `n`** — so the
+  window is a condition on the *constants* alone. Accordingly that lemma's `hrec` now demands
+  the recursion only for `1 ≤ ε √n`, and the lemma carries the hypothesis `1 ≤ 8 A b`; the side
+  condition is discharged internally by `√n · √n = n`.
+* At the unique call site, `berryEsseen_convex_sharp`, the induction is run with `A := A + 1`
+  (`A > 0` from `exists_convexDiscrepancy_recursion`) and `b := β = ∫‖y‖³ dν`. Since
+  `sqrt_dim_mul_dim_le_integral_norm_cube` gives `k^{3/2} ≤ β` and `k ≥ 1`, one has `β ≥ 1`, so
+  `ε √n = 8 (A + 1) β ≥ 8 ≥ 1` always. (This is the same `hβ1` already used inside
+  `localised_swap_bound_of_weighted_telescope`.)
+
+So `1 ≤ ε √n` now appears as a hypothesis of this theorem, of `exists_localised_swap_bound`
+(where the large-weight branch ignores it and the small-weight branch consumes it) and of
+`exists_convexDiscrepancy_recursion`, and the headline `berryEsseen_convex_sharp` is proved with
+its constant unchanged. **The small window is no longer an open gap of this route**, and the cut
+`J = max 2 ⌈ε² n⌉` is non-degenerate wherever the theorem is now stated, so the head/tail
+crossover below is genuine.
 
 **The residue, after wave 35.** Two per-step estimates on the hybrid telescope, both localised
 by the two-sided-shell hypothesis, and nothing else:
@@ -7334,7 +7505,69 @@ Both are averaged statements (the weight is a *mass* under `hybridLaw n j ν`, n
 bound), so `hstepgen` inside `abs_integral_smooth_sub_gaussian_improved` has to be generalised
 from a constant `D` to a `v`-dependent one integrated against the remaining coordinates. That
 generalisation, and the two estimates, are all that stand between this `sorry` and the headline.
--/
+
+## Wave 36: the structural half is BUILT, and the head estimate is not what wave 35 said
+
+**Built and machine-checked this wave** (besides Correction 2 above, now resolved):
+
+* `abs_sub_integral_peel_le_integral` — the telescope step with a `v`-*dependent* bound. The
+  wave-16 argument never used constancy of `D`, only `integral_mono` against a constant, so the
+  generalisation costs one integrability hypothesis and nothing else.
+  `abs_integral_smooth_sub_gaussian_improved` is rewired through it (its `hstepfun`), with the
+  old constant-`D` `hstepgen` re-derived in three lines; the telescope's conclusion is
+  unchanged.
+* `integral_hybridLaw_eq` and `integral_peel_eq_integral_hybridLaw` — the **bridge**. Wave 20
+  asserted that `hybridLaw n j ν` "is exactly the measure against which
+  `abs_integral_smooth_sub_gaussian_improved` evaluates its `j`-th test function", but that
+  identity had never been recorded in Lean: brick H speaks about `hybridLaw`, the telescope
+  about `Iⱼ`, and nothing connected them. It is a *prerequisite*, not a convenience — the
+  weight of both localised estimates is a shell mass under `hybridLaw n j ν`, so without the
+  bridge neither estimate can be stated in the form the reduction consumes. The two lemmas
+  together say: if `D v` is the average over the peeled coordinate `u ~ ν` and the smoothing
+  `z ~ γ` of a bounded continuous `F` at `c(v + u) + σⱼ z`, then `∫ D(∑ₗ yₗ) dR` is exactly
+  `∫ F d(hybridLaw n j ν)`. So a shell indicator there produces precisely the mass the amended
+  weight hypothesis bounds.
+
+**The head estimate is NOT `abs_integral_swap_step_le` localised.** Wave 35's Correction 1
+describes the head as "the elementary swap `abs_integral_swap_step_le` localised to weight
+`4 C_k σ_J + W`". That understates it in the same way wave 24's "the wave-19 lemma applies to
+`g` verbatim" understated the Cameron–Martin half. `abs_integral_swap_step_le` bounds the
+third-order Taylor remainder by the **global** `‖D³f‖_∞ ≤ C₃/ε³`. Localising means using
+instead that `D³f` is *supported* in the shell — but the Lagrange remainder controls `D³f`
+along the whole segment `[a, a + c y]`, not at a point, so what the shell indicator is
+evaluated at is a neighbourhood of width `c‖y‖`, which is **unbounded** in `y`. (This is the
+same mechanism as the `‖w‖ ≤ 1` obstruction above, and the second reason the amended hypothesis
+is stated at *all* widths `s` rather than only at the `σⱼ`.)
+
+Pricing the segment naively costs `∫ ‖y‖³ · 4 C_k c‖y‖ dν`, i.e. a **fourth** moment, which
+`hβint` does not give. The repair is a two-regime split at `‖y‖ = R := ε √n` — note this is
+`≥ 1` exactly by the window of Correction 2, which is why item 1 above had to come first:
+
+* `‖y‖ ≤ R`: the segment stays within `c‖y‖ ≤ ε` of `a`, so the shell is at width `≍ 2ε` and
+  the localised Taylor bound gives the wave-35 head shape, weight `4 C_k (ε + σ_J) + W`;
+* `‖y‖ > R`: do not Taylor-expand at all — bound the remainder by its lower-order terms,
+  localised at the varying width `c‖y‖`, so the weight is `4 C_k c‖y‖ + W` and only
+  `∫_{‖y‖>R} ‖y‖^p dν ≤ β / R^{3−p}` (`p ≤ 2`) is needed. Summed over the `J ≍ ε² n` head
+  steps this contributes `≍ C_k δ + W δ ε⁻¹`, which **is** of the allowed shape
+  `δ(ε⁻¹(W + C_k ε) + C_k …)`.
+
+Two consequences, both of which wave 37 should treat as claims to check rather than as settled:
+
+1. *The interface is missing hypotheses.* The far regime bounds the remainder by its first- and
+   second-order terms, so it needs `‖Df‖ ≤ C₁/ε` and `‖D²f‖ ≤ C₂/ε²`. Neither this theorem's
+   hypotheses nor `exists_smoothed_convex_indicator`'s conclusion supplies them — both carry
+   only the *third*-order bound (checked this wave). They are presumably free from the
+   `ContDiffBump` construction, but they have to be added and proved, not assumed.
+2. *`htel`'s head shape may need one extra additive term.* The far regime's contribution is not
+   of the form `(M/6) c³ X · (4 C_k (ε + σ_J) + W)` that
+   `localised_swap_bound_of_weighted_telescope` freezes; it is absorbed by that term only if
+   `C₃ ≥ 1`, which is not among `exists_smoothed_convex_indicator`'s guarantees. Either that
+   normalisation is added, or `htel` gains a `+ (C_k δ + W δ ε⁻¹)` summand — a weakening the
+   ledger has room for, since both pieces are already in the conclusion's shape.
+
+**The arithmetic of this section was derived on paper this wave and is NOT machine-checked**,
+unlike the ledger of wave 32 and the reduction of wave 35. It is recorded here because it
+changes what the residue *is*, not because it is finished. -/
 theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 0 < C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
@@ -7344,6 +7577,9 @@ theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (h
       (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
       Integrable (fun y => ‖y‖ ^ 3) ν →
       MeasurableSet B → Convex ℝ B → 0 < ε →
+      -- LEAN-ONLY: the localisation window; discharged at the unique call site from
+      -- `k^{3/2} ≤ β`, see the note (wave 36, "Correction 2, RESOLVED").
+      1 ≤ ε * Real.sqrt (n : ℝ) →
       ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
       (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
       (∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B) → (∀ x ∈ B, f x = 1) →
@@ -7359,8 +7595,9 @@ theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (h
               + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by
   -- Wave 35: the reduction to the weighted telescope is proved and axiom-clean, see
   -- `localised_swap_bound_of_weighted_telescope`; what is missing is its hypothesis `htel`,
-  -- i.e. the two localised per-step swap estimates listed at the end of the note above (and,
-  -- separately, the window `ε √n < 1`, which this route does not reach — correction 2).
+  -- i.e. the two localised per-step swap estimates listed at the end of the note above.
+  -- Wave 36: the window `1 ≤ ε √n` (correction 2) is now the hypothesis `hwin` above and is
+  -- discharged at the call site, so the residue is exactly those two estimates.
   sorry
 
 /-- **Brick L (wave 24: AMENDED, and proved over `localised_swap_bound_small_weight`).** *The
@@ -7417,6 +7654,9 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
       (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
       Integrable (fun y => ‖y‖ ^ 3) ν →
       MeasurableSet B → Convex ℝ B → 0 < ε →
+      -- LEAN-ONLY: the localisation window; ignored by the large-weight branch, passed to
+      -- `localised_swap_bound_small_weight` by the small-weight one (wave 36).
+      1 ≤ ε * Real.sqrt (n : ℝ) →
       ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
       (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
       (∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B) → (∀ x ∈ B, f x = 1) →
@@ -7432,7 +7672,7 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
   obtain ⟨A₁, hA₁, h₁⟩ := exists_smooth_swap_bound_of_one_le_weight k hk hC₃
   obtain ⟨A₂, hA₂, h₂⟩ := localised_swap_bound_small_weight k hk hC₃
   refine ⟨A₁ + A₂, by linarith, ?_⟩
-  intro n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hf hfb hD hsupp hone hW0 hW
+  intro n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hwin hf hfb hD hsupp hone hW0 hW
   haveI := hνp
   have hnr : (0 : ℝ) < n := by exact_mod_cast hn
   have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
@@ -7472,8 +7712,8 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
     refine hsmall.trans ?_
     rw [hexp A₁, hexp (A₁ + A₂)]
     exact mul_le_mul_of_nonneg_right (by linarith) hbase
-  · have h := h₂ n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hf hfb hD hsupp hone hW0 hW
-      hlt.le
+  · have h := h₂ n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hwin hf hfb hD hsupp hone
+      hW0 hW hlt.le
     refine h.trans ?_
     rw [hexp A₂, hexp (A₁ + A₂)]
     exact mul_le_mul_of_nonneg_right (by linarith) hbase
@@ -7507,6 +7747,8 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
       (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0) →
       (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
       Integrable (fun y => ‖y‖ ^ 3) ν → 0 < ε →
+      -- LEAN-ONLY: the localisation window brick L needs; free here, see the note (wave 36).
+      1 ≤ ε * Real.sqrt (n : ℝ) →
       (∀ m : ℕ, n ≤ 2 * m → m ≤ n →
         convexDiscrepancy (sumLaw m ν) (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
           ≤ Y) →
@@ -7520,7 +7762,7 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
   obtain ⟨C₃, hC₃pos, hC₃⟩ := exists_smoothed_convex_indicator k
   obtain ⟨A, hApos, hA⟩ := exists_localised_swap_bound k hk hC₃pos
   refine ⟨2 * A, by linarith, ?_⟩
-  intro n ν ε Y hn hνp hmean hcov hβint hε hY
+  intro n ν ε Y hn hνp hmean hcov hβint hε hwin hY
   haveI := hνp
   have hCk : 0 < gaussianShellConst k := gaussianShellConst_pos hk
   have hY0 : 0 ≤ Y := by
@@ -7568,7 +7810,7 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
     -- brick L
     have herr : |(∫ x, f x ∂μ) - (∫ x, f x ∂γ)| ≤ E := by
       have h := hA n ν S ε f (4 * gaussianShellConst k * ε + 2 * Y) hn hνp hmean hcov hβint
-        hSm hSc hε hfcd hfbd hfD hfsupp hfS hW0 hW
+        hSm hSc hε hwin hfcd hfbd hfD hfsupp hfS hW0 hW
       rw [← hμdef, ← hβdef, ← hδdef] at h
       refine h.trans ?_
       rw [hEdef]
@@ -7694,14 +7936,25 @@ theorem berryEsseen_convex_sharp {k : ℕ} (hk : 0 < k) :
   have hβpos : 0 < β := integral_norm_cube_pos hk hcov hβint
   set δ : ℝ := β / Real.sqrt (n : ℝ) with hδdef
   have hδpos : 0 < δ := by rw [hδdef]; positivity
+  -- `β ≥ k^{3/2} ≥ 1`, which is what discharges brick L's localisation window: the induction
+  -- runs the recursion only at `ε √m = 8 (A + 1) β ≥ 8` (wave 36).
+  have hβ1 : 1 ≤ β := by
+    have hk1 : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
+    have hs : 1 ≤ Real.sqrt (k : ℝ) := by
+      rw [show (1 : ℝ) = Real.sqrt 1 by simp]
+      exact Real.sqrt_le_sqrt hk1
+    have hlyap := sqrt_dim_mul_dim_le_integral_norm_cube hcov hβint
+    rw [← hβdef] at hlyap
+    nlinarith
   -- the recursion, with `A` enlarged to `A + 1` so that `1 ≤ 8 (A + 1)` for `log_shift_le`
   have hind := le_of_selfImproving_induction_log (A := A + 1)
     (C := 4 * gaussianShellConst k) (b := β)
     (D := fun m => convexDiscrepancy (sumLaw m ν) γ) (by linarith) (by linarith) hβpos
-    (fun m hm ε hε Y hY => by
+    (by nlinarith)
+    (fun m hm ε hε hwin Y hY => by
       have hY0 : 0 ≤ Y :=
         le_trans convexDiscrepancy_nonneg (hY m (by omega) le_rfl)
-      have h := hA m ν ε Y hm hνp hmean hcov hβint hε (by
+      have h := hA m ν ε Y hm hνp hmean hcov hβint hε hwin (by
         intro m' h1 h2; exact hY m' h1 h2)
       rw [← hβdef] at h
       refine h.trans ?_
