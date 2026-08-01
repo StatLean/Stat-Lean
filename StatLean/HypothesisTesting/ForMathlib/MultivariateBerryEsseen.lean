@@ -7998,7 +7998,60 @@ Two consequences, both of which wave 37 should treat as claims to check rather t
 
 **The arithmetic of this section was derived on paper this wave and is NOT machine-checked**,
 unlike the ledger of wave 32 and the reduction of wave 35. It is recorded here because it
-changes what the residue *is*, not because it is finished. -/
+changes what the residue *is*, not because it is finished.
+
+## Wave 37: the head estimate's inputs are supplied, and consequence 2 is OVERTURNED
+
+Both of wave 36's flagged claims were checked. One survived, one did not.
+
+**Consequence 1 (the missing interface hypotheses): CONFIRMED, and supplied.** The far regime
+does need `‖D¹f‖ ≤ C₃/ε` and `‖D²f‖ ≤ C₃/ε²`, and nothing supplied them. They are free from the
+`ContDiffBump` construction, exactly as guessed: `norm_iteratedFDeriv_one_convolution_le` and
+`norm_iteratedFDeriv_two_convolution_le` are the same `precompR` convolution estimate at one and
+two levels instead of three, and `norm_iteratedFDeriv_comp_smul_le` (the dilation scaling,
+factored out of the old order-3 proof) transports all three orders at once. A *single* constant
+now dominates `‖Dⁱf‖ εⁱ` for `i = 1, 2, 3`, and `1 ≤ C₃` is free because the source constant was
+already a `max 1 …`. Both bounds are hypotheses of this theorem now (marked LEAN-ONLY) and are
+discharged at every call site.
+
+**Consequence 2 (`htel` needs one extra summand): the `C₃ ≥ 1` branch is FALSE.** Wave 36 wrote
+that the far regime "is absorbed by that term only if `C₃ ≥ 1`". It is not absorbed at any
+normalisation. At the cut `J ≍ ε² n` the frozen head term is `≍ 4 C₃ C_k δ + C₃ W δ/(2ε)` while
+the far regime contributes `≍ 288 C₃ C_k δ + 36 C₃ W δ/ε` — a *constant multiple*, ≈ 25×, of it.
+So the ledger takes the other branch: `htel` (and `weighted_ledger_balance`) now carry the
+summand `J·C₃/(n√n)·X·(32 C_k/ε² + 4W/ε³)`, and the reduction's constant moves from
+`18 C₃ + 33 C_t` to `306 C₃ + 33 C_t`. The normalisation `C₃ ≥ 1` is kept because it is free and
+because it lets the constant term `2` be compared with `C₃ c²‖u‖²/ε²`, but it is *not* what
+makes the far half fit.
+
+**The localisation mechanism, PROVED — and it needs no Taylor theory.** Wave 36 described the
+obstruction correctly (the Lagrange remainder controls `D³f` along the whole segment, so the
+shell width is `‖w‖`, unbounded) but the repair is cheaper than expected. Off the two-sided
+shell at width `‖w‖`, the test function is *constant on `closedBall a ‖w‖`* — equal to `1` if
+`a` is in the erosion, to `0` if `a` is outside the `(ε + ‖w‖)`-thickening
+(`const_on_closedBall_of_notMem_wideShell`) — so the value at `a + w` and *both* derivatives at
+`a` are those of a constant and the entire second-order remainder is identically `0`
+(`taylor_remainder_eq_zero_of_const_on_closedBall`). Hence the global Lagrange bound and the
+lower-order bound may each simply be multiplied by the shell indicator at width `‖w‖`
+(`abs_taylor_remainder_localised_le`, `abs_taylor_remainder_localised_lower_le`). Since
+`thickening (ε + s) B \ erosion s B` is **monotone in `s`**, the near regime (`c‖u‖ ≤ ε`) is
+dominated by the shell at width `2ε` and the far regime (`c‖u‖ ≥ ε`) by the shell at width
+`2c‖u‖` — which is precisely why wave 29 had to state the weight hypothesis at *all* widths.
+
+**The third-moment claim, CONFIRMED.** `far_regime_pointwise_le` and
+`setIntegral_norm_pow_tail_le` are proved: the far regime's integrand is at most
+`32 C₃ C_k t³/ε² + 4 C₃ W t²/ε²` at `t = c‖u‖ ≥ ε`, and `∫_{‖u‖>R} ‖u‖^p dν ≤ β/R^{3−p}` prices
+it with `β` alone. No fourth moment appears anywhere.
+
+**What is left.** The head side is now a single named statement,
+`abs_integral_swap_step_localised_le`, in exactly the shape the amended reduction consumes; its
+docstring records the whole derivation, and every analytic input it needs is proved above. What
+that `sorry` still owes is bookkeeping: measurability of `u ↦ τ(shell at width c‖u‖)` (monotone
+in `‖u‖`) and the Fubini exchange. The **tail** side (item 3) was not attempted this wave, and
+note that wave 37's localisation mechanism does *not* transfer to it: the tail's integrand is
+`f` smeared by a Gaussian of width `σⱼ`, which for `j > J` is `≥ ε` and near `j = n` is `≍ 1`, so
+`f` being locally constant near `a` says nothing about it. The tail still needs the wave-29
+constant-off/Gaussian-tail lemmas and the `‖w‖ ≤ 1` analysis recorded above, unchanged. -/
 theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 1 ≤ C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
