@@ -9472,30 +9472,54 @@ least `(4/3)|θ|/σ` in modulus, everywhere and with no cut-off (`deltaSurrogate
 applications of `L f = ∂_{w₀}(f/(i∂_{w₀}Φ))` gains
 `σ/(M|θ|) + (27/16)Mr²/(σ|θ|) = O(n^{-3/8})`.
 
-**WHAT WAVE 35 ADDS, AND WHAT IS HONESTLY LEFT.** The *identity* half of the estimate is proved
-rather than asserted: `integral_expPhase_ibp` is one integration by parts against a
-non-vanishing phase on the line, in the exact form the iteration needs, and `contDiff_ibpStep` /
-`hasCompactSupport_ibpStep` say that the transform `L` preserves the class, so the ten-fold
-iteration is legitimate as stated. `norm_integral_expPhase_le_ibp` is its norm form.
+**WHAT IS PROVED AFTER WAVE 45, AND WHAT IS HONESTLY LEFT.** Wave 35 supplied the *identity*
+half: `integral_expPhase_ibp` is one integration by parts against a non-vanishing phase on the
+line, in the exact form the iteration needs, and `contDiff_ibpStep` / `hasCompactSupport_ibpStep`
+say the transform `L` preserves the class, so the ten-fold iteration is legitimate as stated.
 
-What is **not** done, and it is the quantitative half — the part that actually carries the
-exponent:
+**Wave 45 supplies the quantitative half, and the phase side of the fibrewise reduction.** The
+first of the three items below — the one wave 44 called "the one with real content" — is now a
+theorem:
 
-* the graded bound on `‖L^k f‖_{L¹(dw₀)}` for `k ≤ 10`, uniformly over the bad set. Each `L`
-  either differentiates the cut-off `χ(·/M)` (cost `M^{-1}`) or `1/∂_{w₀}Φ` (cost `∂²Φ/(∂Φ)²`),
-  and it is the *second* branch that produces the `(27/16)Mr²/(σ|θ|)` half of
-  `bulk_gain_phase_le`. Bounding it needs a derivative calculus with **negative** powers —
-  bounds on the derivatives of `1/∂_{w₀}Φ` from the slope floor `(4/3)|θ|/σ` — which the
-  graded calculus of input (A2) (`gradedBound_mul`, `gradedBound_add`) does not yet supply;
-* the reduction of `𝓕 g` to an iterated integral, so that the one-dimensional identity applies
-  fibrewise in `w₀` at each frozen `w₁` (Fubini is harmless — the support is compact — but the
-  measurable identification of `E₂` with `ℝ × ℝ` is not free);
-* the outer bookkeeping: the `w₁`-integration over a set of length `≍ M` and the `s`-integration
-  over the bad set, whose area is now `≍ log n` rather than `≍ n` — which only helps, since the
-  ledger above is run at the conservative `≍ n`.
+* `norm_integral_expPhase_le_graded` (order `N`, on an interval): a smooth amplitude supported in
+  `[-A, A]` and graded by the single scale `μ = εΛ` oscillates away all but `2A·P·(Cε)^N` of its
+  mass. Its engine is `exists_bound_iteratedDeriv_recipDeriv` — the derivatives of `1/∂Φ` off the
+  slope floor, obtained from the Riccati identity `(1/∂Φ)' = −∂²Φ·(1/∂Φ)²` by a two-line
+  induction. **Wave 44's reading of this item is overturned**: it recorded that "an existential
+  constant is useless there, since the exponent (B) has to produce is carried by the explicit
+  `L^{-(k+1)}`". Only **one** negative power of `Λ` ever appears, because the graded induction
+  reinvests the surplus powers of `Λ` into `μ = εΛ`, which is a *fixed point* of `L`; the exponent
+  is carried explicitly by `μ^j` and `ε^N` and the residual constant is purely combinatorial.
+  A second correction: the estimate **must** be local. The surrogate phase is a cubic in `w₀`, so
+  `|∂²Φ|` is unbounded on the line and no global hypothesis of the form `|∂^jΦ| ≤ εΛ²` is true;
+  only the non-vanishing of `∂Φ` survives globally, and it does (`abs_deriv_fibrePhase_ge`).
+* `norm_integral_fibrePhase_le`: the estimate applied to the surrogate at a frozen `w₁`. The
+  total phase restricted to a horizontal fibre **is** an explicit cubic (`fibrePhase_apply`), its
+  slope floor is `|θ|/(3σ)` at *every* `w₀` with no cut-off (the surrogate's `5/6` and the band's
+  `1/2` subtract, and `5/6 − 1/2 = 1/3`), and all its slope derivatives past the second vanish.
+  Run on the rescaled fibre `w₀ = Mx` — which is not cosmetic, since un-rescaled the cut-off's
+  own scale is thrown away and the per-part cost degrades to `3σ/|θ| = O(1)` in the middle range —
+  the gain per part is `81Mr²/(σ|θ|) + 3σ/(M|θ|)`, the two branches of one integration by parts.
+* `fibre_gain_le_bulk_gain` / `fibre_gain_ledger_ten_le`: that gain is dominated by the single
+  quantity `Mr²/|θ|` that `bulk_gain_phase_le_band` prices (because `M²r² = n^{1/4} ≥ 1`), and ten
+  of them against the prefactor `M²` and a bad set of area `≤ n` land at `O(n^{-3/2})` at every
+  band exponent `b ≥ 0`, `b = 0` included. **The wave-43/44 numerology needs no amendment.**
 
-No obstruction to any of the three is known, and the arithmetic they have to reproduce is
-already verified in the file. This is a budget statement, not a verdict. -/
+What is **still** not done, and it is now two items, both plumbing rather than analysis:
+
+* the **amplitude side** of the fibrewise reduction: `norm_integral_fibrePhase_le` wants
+  `‖∂^j_x f‖ ≤ P` for the rescaled cut-off `x ↦ χ((x, w₁/M))`, and the file has the two-dimensional
+  bound (`exists_bound_iteratedFDeriv_bulkCutoff`, `norm_iteratedFDeriv_bulkCutoff_dilate_le`) but
+  not the bridge from `iteratedFDeriv` on `E₂` to `iteratedDeriv` along a horizontal line. That
+  bridge is `ContinuousLinearMap.iteratedFDeriv_comp_right` at the norm-one embedding
+  `u ↦ u·e₀ + c·e₁`, composed with `iteratedFDeriv_comp_add_right`; it is a lemma, not a problem.
+* the **reduction of `𝓕 g` to an iterated integral** and the outer `w₁`/`s` bookkeeping: Fubini is
+  harmless (the support is compact) but the measure-preserving identification of `E₂` with `ℝ × ℝ`
+  is not free, and the `w₁`-integration over a set of length `≍ M` and the `s`-integration over the
+  bad set (area `≍ log n`, against a ledger run at the conservative `≍ n`) have to be assembled.
+
+No obstruction to either is known, and the arithmetic they have to reproduce is now *proved* in
+the file rather than merely checked. This is a budget statement, not a verdict. -/
 theorem exists_integral_norm_fourierWeight_bulkMultiplier_band_le
     {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) {Kb : ℝ} (hKb : 0 ≤ Kb) :
     ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ ≤ |θ| →
@@ -15407,7 +15431,27 @@ deviation is not a convenience: **under four moments this file has no route to t
 and the honest statement of what is proved carries eight. If a four-moment route is later found,
 this hypothesis is the thing to weaken, and nothing downstream of it depends on the exponent.
 
-Nothing else moved. -/
+Nothing else moved.
+
+**Status after wave 45. INPUT (B)'S ANALYTIC HEART IS PROVED; WHAT REMAINS OF (B) IS PLUMBING.
+THIS THEOREM IS STILL `sorry`, AND SO IS (B); WAVE 45 DOES NOT CLAIM OTHERWISE.**
+
+* **THE QUANTITATIVE HALF OF THE LEAKAGE ESTIMATE IS A THEOREM.**
+  `norm_integral_expPhase_le_graded` is a self-contained, order-`N`, *localised*
+  non-stationary-phase estimate on the line, and `norm_integral_fibrePhase_le` is it applied to
+  the surrogate at a frozen `w₁`, with gain `81Mr²/(σ|θ|) + 3σ/(M|θ|)` per part. See the note on
+  `exists_integral_norm_fourierWeight_bulkMultiplier_band_le` for what that discharges and for the
+  two wave-44 claims it overturns (the existential constant is fine; the estimate must be local).
+* **THE LEDGER DID NOT HAVE TO MOVE.** `fibre_gain_le_bulk_gain` shows the new gain is dominated
+  by the `Mr²/|θ|` of `bulk_gain_phase_le_band`, and `fibre_gain_ledger_ten_le` runs ten parts
+  against `M²` and a bad set of area `≤ n` to `O(n^{-3/2})` at every `b ≥ 0`. Three waves in a
+  row have now had to correct their predecessor's arithmetic; this one does not.
+* **ITEM 2 WAS NOT ATTEMPTED, AND THE REASON IS WAVE 43'S AND WAVE 44'S.** The three-regime
+  assembly has a statement for every regime, but the middle and outer regimes still rest on (B),
+  which is still a `sorry` — its two remaining items are the `iteratedFDeriv`-on-`E₂` to
+  `iteratedDeriv`-on-a-line bridge for the cut-off, and the Fubini reduction plus outer `w₁`/`s`
+  bookkeeping. Assembling now would produce a theorem whose only content is the `sorry` it
+  already has. **The file is still at two `sorry`s — this one and (B).** -/
 
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
