@@ -13050,29 +13050,32 @@ private lemma exists_studentized_low_range_core
         Kc * r ^ 2 * (|ξ| ^ 4 + |ξ| ^ 8) * D
           + P₂ * |ξ| * r
               * (r * (q₁ * |ξ| + q₂ * |ξ| ^ 2 + q₃ * |ξ| ^ 3 + q₄ * |ξ| ^ 4) * D
-                + G₁ * (Kb * r * (|ξ| ^ 3 + |ξ| ^ 4) * D)
-                + G₂ * |ξ| ^ 2 * (Kb * r * (|ξ| ^ 3 + |ξ| ^ 4) * D))
+                + G₁ * (Kb * r * (|ξ| ^ 2 + |ξ| ^ 3 + |ξ| ^ 4) * D)
+                + G₂ * |ξ| ^ 2 * (Kb * r * (|ξ| ^ 2 + |ξ| ^ 3 + |ξ| ^ 4) * D))
           + P₃a * |ξ| * r ^ 2 * D + P₃b * |ξ| * r ^ 2 * D + P₄ * |ξ| ^ 2 * r ^ 2 * D
           + r ^ 3 * (C₃ * |ξ| ^ 3 + C₂ * |ξ| ^ 2)
         ≤ Kw * r ^ 2 * windowEnvelope₁ ξ + Kr * r ^ 3 * |ξ| ^ 3 := by
   obtain ⟨α₁, hα₁d⟩ : ∃ x : ℝ, x = P₃a + P₃b := ⟨_, rfl⟩
   obtain ⟨α₂, hα₂d⟩ : ∃ x : ℝ, x = P₄ + P₂ * q₁ := ⟨_, rfl⟩
-  obtain ⟨α₃, hα₃d⟩ : ∃ x : ℝ, x = P₂ * q₂ := ⟨_, rfl⟩
+  obtain ⟨α₃, hα₃d⟩ : ∃ x : ℝ, x = P₂ * q₂ + P₂ * (G₁ * Kb) := ⟨_, rfl⟩
   obtain ⟨α₄, hα₄d⟩ : ∃ x : ℝ, x = Kc + P₂ * q₃ + P₂ * (G₁ * Kb) := ⟨_, rfl⟩
-  obtain ⟨α₅, hα₅d⟩ : ∃ x : ℝ, x = P₂ * q₄ + P₂ * (G₁ * Kb) := ⟨_, rfl⟩
+  obtain ⟨α₅, hα₅d⟩ : ∃ x : ℝ, x = P₂ * q₄ + P₂ * (G₁ * Kb) + P₂ * (G₂ * Kb) := ⟨_, rfl⟩
   obtain ⟨α₆, hα₆d⟩ : ∃ x : ℝ, x = P₂ * (G₂ * Kb) := ⟨_, rfl⟩
   obtain ⟨α₇, hα₇d⟩ : ∃ x : ℝ, x = P₂ * (G₂ * Kb) := ⟨_, rfl⟩
   obtain ⟨α₈, hα₈d⟩ : ∃ x : ℝ, x = Kc := ⟨_, rfl⟩
   have hα₁ : 0 ≤ α₁ := by rw [hα₁d]; exact add_nonneg hP₃a hP₃b
   have hα₂ : 0 ≤ α₂ := by rw [hα₂d]; exact add_nonneg hP₄ (mul_nonneg hP₂ hq₁)
-  have hα₃ : 0 ≤ α₃ := by rw [hα₃d]; exact mul_nonneg hP₂ hq₂
+  have hα₃ : 0 ≤ α₃ := by
+    rw [hα₃d]
+    exact add_nonneg (mul_nonneg hP₂ hq₂) (mul_nonneg hP₂ (mul_nonneg hG₁ hKb))
   have hα₄ : 0 ≤ α₄ := by
     rw [hα₄d]
     exact add_nonneg (add_nonneg hKc (mul_nonneg hP₂ hq₃))
       (mul_nonneg hP₂ (mul_nonneg hG₁ hKb))
   have hα₅ : 0 ≤ α₅ := by
     rw [hα₅d]
-    exact add_nonneg (mul_nonneg hP₂ hq₄) (mul_nonneg hP₂ (mul_nonneg hG₁ hKb))
+    exact add_nonneg (add_nonneg (mul_nonneg hP₂ hq₄)
+      (mul_nonneg hP₂ (mul_nonneg hG₁ hKb))) (mul_nonneg hP₂ (mul_nonneg hG₂ hKb))
   have hα₆ : 0 ≤ α₆ := by rw [hα₆d]; exact mul_nonneg hP₂ (mul_nonneg hG₂ hKb)
   have hα₇ : 0 ≤ α₇ := by rw [hα₇d]; exact mul_nonneg hP₂ (mul_nonneg hG₂ hKb)
   have hα₈ : 0 ≤ α₈ := by rw [hα₈d]; exact hKc
@@ -13099,8 +13102,8 @@ private lemma exists_studentized_low_range_core
   have hform : Kc * r ^ 2 * (|ξ| ^ 4 + |ξ| ^ 8) * D
       + P₂ * |ξ| * r
           * (r * (q₁ * |ξ| + q₂ * |ξ| ^ 2 + q₃ * |ξ| ^ 3 + q₄ * |ξ| ^ 4) * D
-            + G₁ * (Kb * r * (|ξ| ^ 3 + |ξ| ^ 4) * D)
-            + G₂ * |ξ| ^ 2 * (Kb * r * (|ξ| ^ 3 + |ξ| ^ 4) * D))
+            + G₁ * (Kb * r * (|ξ| ^ 2 + |ξ| ^ 3 + |ξ| ^ 4) * D)
+            + G₂ * |ξ| ^ 2 * (Kb * r * (|ξ| ^ 2 + |ξ| ^ 3 + |ξ| ^ 4) * D))
       + P₃a * |ξ| * r ^ 2 * D + P₃b * |ξ| * r ^ 2 * D + P₄ * |ξ| ^ 2 * r ^ 2 * D
       + r ^ 3 * (C₃ * |ξ| ^ 3 + C₂ * |ξ| ^ 2)
       = (r ^ 2 * α₁ * |ξ| + r ^ 2 * α₂ * |ξ| ^ 2 + r ^ 2 * α₃ * |ξ| ^ 3
@@ -13241,7 +13244,14 @@ inputs and of the graded remainder, evaluated at `a = (θ/σ)•e₀`, in their 
 * `hB1` — `norm_charFun_smul_pow_sub_edgeworth_le`, damped, `r²(|ξ|⁴ + |ξ|⁸)`;
 * `hB2` — `norm_multiCharFun_vecRootLaw_two_sub_damped_le`, damped, `r` times a quartic;
 * `hB5`, `hB6` — the two comparisons of `φ^{n−1}` and `φ^{n−2}` with `e^{−θ²/2}` that the
-  composition needs and that no earlier statement of (U4′) lists;
+  composition needs and that no earlier statement of (U4′) lists.  **Their bracket starts at
+  `|ξ|²`, not at `|ξ|³` as wave 47 stated it, and that is forced** (wave 48): the Gaussian
+  mismatch `e^{−(n−1)vs²/2} = e^{−θ²/2}e^{θ²r²/2}` contributes `e^{−θ²/2}·θ²r²/2`, of `θ`-degree
+  **two** with coefficient `r²`, and `Kb·r(|ξ|³+|ξ|⁴)·D` cannot dominate `r²|ξ|²` as `ξ → 0` at
+  fixed `n` — the ratio is `≍ r/|ξ|`, unbounded.  The wave-47 shape was therefore satisfied by
+  nothing; `|ξ|²` in the bracket is the minimal repair and it is free in the ledger, since the
+  slot's own prefactor `θr/(2σ³)` carries the contribution to `r²|ξ|³·D`, degree `3 ≤ 8`
+  (`exists_studentized_low_range_core`'s `α₃` and `α₅` absorb it);
 * `h3a`, `h3b`, `h4` — `norm_multiCharFun_vecRootLaw_damped_le` at `k = 3, 3, 4`, damped and
   `O(1)`.
 
@@ -13270,9 +13280,9 @@ private lemma exists_studentized_low_range_window_bound {σ γ : ℝ} (hσ : 0 <
           ≤ (Real.sqrt (n : ℝ))⁻¹
               * (q₁ * |ξ| + q₂ * |ξ| ^ 2 + q₃ * |ξ| ^ 3 + q₄ * |ξ| ^ 4) * D →
         ‖P1 - ((Real.exp (-θ ^ 2 / 2) : ℝ) : ℂ)‖
-          ≤ Kb * (Real.sqrt (n : ℝ))⁻¹ * (|ξ| ^ 3 + |ξ| ^ 4) * D →
+          ≤ Kb * (Real.sqrt (n : ℝ))⁻¹ * (|ξ| ^ 2 + |ξ| ^ 3 + |ξ| ^ 4) * D →
         ‖P2 - ((Real.exp (-θ ^ 2 / 2) : ℝ) : ℂ)‖
-          ≤ Kb * (Real.sqrt (n : ℝ))⁻¹ * (|ξ| ^ 3 + |ξ| ^ 4) * D →
+          ≤ Kb * (Real.sqrt (n : ℝ))⁻¹ * (|ξ| ^ 2 + |ξ| ^ 3 + |ξ| ^ 4) * D →
         ‖S3a‖ ≤ e₃a * D → ‖S3b‖ ≤ e₃b * D → ‖S4‖ ≤ e₄ * D →
         ‖Φ - charFunDensity (studentizedEdgeworthDensity γ n) θ‖
           ≤ Kw * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 * windowEnvelope₁ ξ
@@ -17806,3 +17816,5 @@ theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
 end Edgeworth
 
 end StatLean.HypothesisTesting
+
+-- wave-48 build-time probe
