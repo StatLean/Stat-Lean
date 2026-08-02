@@ -5845,22 +5845,113 @@ theorem norm_charFun_map_deltaSurrogate_le_of_bandCertificate (μ : Measure E₂
           (norm_integral_fourierSynth_le_of_band μ ha t₀ hκ hΓ htail hbd)
     _ = Γ * κ + ε + η := by ring
 
-/-- **The outer range of the Esseen chain, on the surrogate's law, from the root's Cramér tail
-and a band certificate.** The relocated-ball analogue of
-`norm_charFun_map_deltaSurrogate_vecRootLaw_le`; the hypothesis relating `R` to the Cramér radius
-is now the direct `ε₀√n ≤ R` instead of `ε₀√n ≤ ‖t₀‖ − R`. -/
+/-! ### The two-regime `κ`, and why the band no longer has to start at the Cramér radius
+
+**WAVE 44.** The consumer below asks for one thing off the band: a number `κ` with
+`‖φ_{ρₙ}(t)‖ ≤ κ` for every `‖t‖ ≥ R`. Wave 31 supplied it from the Cramér tail alone, `κ = cⁿ`,
+which is available only past `ε₀√n` and therefore forced `R ≥ ε₀√n` — and, through
+`band_radius_incompatible`, the whole certificate up to `|θ| ≍ √n`. Wave 43 identified that as
+the certificate's only obstruction and produced the missing ingredient
+(`norm_charFun_vecRootLaw_le_exp_neg_sq`): on the bulk `‖t‖ ≤ ε₁√n` the root's transform has
+Gaussian decay. The two together cover **every** `t` off a ball of radius `R ≥ 0`, at
+
+`κ = max(e^{−λR²/4}, cⁿ)`,
+
+which is `norm_charFun_vecRootLaw_le_max_of_band`. At `R = K√(log n)` the first entry is
+`n^{−λK²/4}` (`exp_neg_sq_band_radius_eq_rpow`), a negative power of `n` of any prescribed
+order — all the transfer inequality ever needed, since it prices the good frequencies by `Γκ`
+with `Γ` merely polynomial (`band_kappa_ledger`).
+
+The shift lemmas are here because the Gaussian majorant is a statement about a **centred** law
+and the truncated studentizing pair is not centred: truncation moves the mean by the mass it
+moves. Since `‖φ‖` does not see a translation, the majorant may be applied to `Z − a` for the
+mean vector `a` and read off for `Z`; that is `norm_charFun_vecRootLaw_sub_const`. No wave before
+this one noticed that the moment list of item (ii) has a fourth entry. -/
+
+section BandKappa
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+
+/-- **Translating the summand does not move `‖φ‖`.** -/
+lemma norm_charFun_map_sub_const (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E}
+    (hZ : Measurable Z) (a : E) (t : E) :
+    ‖charFun (F.map (fun y => Z y - a)) t‖ = ‖charFun (F.map Z) t‖ := by
+  have hrepr : ∀ (W : ℝ → E), Measurable W →
+      charFun (F.map W) t = ∫ x, Complex.exp (((⟪W x, t⟫ : ℝ) : ℂ) * Complex.I) ∂F := by
+    intro W hW
+    rw [charFun_apply, integral_map hW.aemeasurable (by fun_prop)]
+  rw [hrepr (fun y => Z y - a) (hZ.sub_const a), hrepr Z hZ]
+  have hpt : ∀ x : ℝ, Complex.exp (((⟪Z x - a, t⟫ : ℝ) : ℂ) * Complex.I)
+      = Complex.exp ((-(⟪a, t⟫ : ℝ) : ℝ) * Complex.I)
+        * Complex.exp (((⟪Z x, t⟫ : ℝ) : ℂ) * Complex.I) := by
+    intro x
+    rw [← Complex.exp_add]
+    congr 1
+    rw [inner_sub_left]
+    push_cast
+    ring
+  have hmul : (∫ x, Complex.exp ((-(⟪a, t⟫ : ℝ) : ℝ) * Complex.I)
+        * Complex.exp (((⟪Z x, t⟫ : ℝ) : ℂ) * Complex.I) ∂F)
+      = Complex.exp ((-(⟪a, t⟫ : ℝ) : ℝ) * Complex.I)
+        * ∫ x, Complex.exp (((⟪Z x, t⟫ : ℝ) : ℂ) * Complex.I) ∂F :=
+    MeasureTheory.integral_const_mul _ _
+  rw [integral_congr_ae (Filter.Eventually.of_forall hpt), hmul, norm_mul,
+    Complex.norm_exp_ofReal_mul_I, one_mul]
+
+/-- **Nor does it move the root's `‖φ‖`.** The root of the translated summand is the root
+translated by `√n a`, and `charFun_vecRootLaw` turns the statement into `n` copies of
+`norm_charFun_map_sub_const`. -/
+lemma norm_charFun_vecRootLaw_sub_const (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E}
+    (hZ : Measurable Z) (a : E) (n : ℕ) (t : E) :
+    ‖charFun (vecRootLaw F (fun y => Z y - a) n) t‖ = ‖charFun (vecRootLaw F Z n) t‖ := by
+  rw [charFun_vecRootLaw F (hZ.sub_const a) n, charFun_vecRootLaw F hZ n, norm_pow, norm_pow,
+    norm_charFun_map_sub_const F hZ a]
+
+/-- **The two-regime bound off a ball of radius `R`.** The Gaussian majorant on the bulk and the
+Cramér tail past `ε₁√n` meet with no gap, and the resulting `κ` is
+`max(e^{−λR²/4}, cⁿ)` — finite at every `R ≥ 0`, in particular at radii far below `√n`. -/
+theorem norm_charFun_vecRootLaw_le_max_of_band (F : Measure ℝ) [IsProbabilityMeasure F]
+    {Z : ℝ → E} {n : ℕ} {c lam ε₁ R : ℝ} (hlam : 0 ≤ lam) (hR : 0 ≤ R)
+    (hcram : ∀ t : E, ε₁ * Real.sqrt (n : ℝ) ≤ ‖t‖ →
+      ‖charFun (vecRootLaw F Z n) t‖ ≤ c ^ n)
+    (hbulk : ∀ t : E, ‖t‖ ≤ ε₁ * Real.sqrt (n : ℝ) →
+      ‖charFun (vecRootLaw F Z n) t‖ ≤ Real.exp (-(lam * ‖t‖ ^ 2 / 4)))
+    {t : E} (ht : R ≤ ‖t‖) :
+    ‖charFun (vecRootLaw F Z n) t‖ ≤ max (Real.exp (-(lam * R ^ 2 / 4))) (c ^ n) := by
+  rcases le_or_gt ‖t‖ (ε₁ * Real.sqrt (n : ℝ)) with h | h
+  · refine le_trans (hbulk t h) (le_max_of_le_left (Real.exp_le_exp.2 ?_))
+    have hsq : R ^ 2 ≤ ‖t‖ ^ 2 := by nlinarith
+    nlinarith
+  · exact le_trans (hcram t h.le) (le_max_right _ _)
+
+end BandKappa
+
+/-- **The outer *and middle* range of the Esseen chain, on the surrogate's law, from a band
+certificate and a two-regime bound on the root's transform.**
+
+**WAVE 44 AMENDS THE HYPOTHESIS, AND THIS IS WHAT WIDENS THE BAND.** The wave-31 form took the
+Cramér tail `cⁿ` and the constraint `ε₀√n ≤ R`, which `band_radius_incompatible` turns into
+`|θ| ≥ 2σε₀√n`. Here the root's transform is controlled in **both** regimes — Gaussian decay on
+`‖t‖ ≤ ε₁√n`, Cramér past it — so the band radius `R` is free (`0 ≤ R` is the only requirement)
+and the price is `κ = max(e^{−λR²/4}, cⁿ)` instead of `cⁿ`. At `R = K√(log n)` that is a
+negative power of `n` of order `λK²/4`, and the band condition of the certificate relaxes to
+`|θ| ≥ 2σK√(log n)`, below `n^{a}` for every `a > 0`. -/
 theorem norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band
     (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E₂} (hZ : Measurable Z)
-    {n : ℕ} {c ε₀ : ℝ} (hc : 0 ≤ c)
-    (hcram : ∀ t : E₂, ε₀ * Real.sqrt (n : ℝ) ≤ ‖t‖ →
+    {n : ℕ} {c lam ε₁ : ℝ} (hlam : 0 ≤ lam)
+    (hcram : ∀ t : E₂, ε₁ * Real.sqrt (n : ℝ) ≤ ‖t‖ →
       ‖charFun (vecRootLaw F Z n) t‖ ≤ c ^ n)
-    (σ r θ : ℝ) {t₀ : E₂} {R Γ ε η : ℝ}
-    (hR : ε₀ * Real.sqrt (n : ℝ) ≤ R)
+    (hbulk : ∀ t : E₂, ‖t‖ ≤ ε₁ * Real.sqrt (n : ℝ) →
+      ‖charFun (vecRootLaw F Z n) t‖ ≤ Real.exp (-(lam * ‖t‖ ^ 2 / 4)))
+    (σ r θ : ℝ) {t₀ : E₂} {R Γ ε η : ℝ} (hR : 0 ≤ R)
     (hcert : HasFourierCertificateOnBand (vecRootLaw F Z n) σ r θ t₀ R Γ ε η) :
-    ‖charFun ((vecRootLaw F Z n).map (deltaSurrogate σ r)) θ‖ ≤ Γ * c ^ n + ε + η := by
+    ‖charFun ((vecRootLaw F Z n).map (deltaSurrogate σ r)) θ‖
+      ≤ Γ * max (Real.exp (-(lam * R ^ 2 / 4))) (c ^ n) + ε + η := by
   haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
-  exact norm_charFun_map_deltaSurrogate_le_of_bandCertificate _ σ r θ (pow_nonneg hc n) hcert
-    (fun t ht => hcram t (le_trans hR ht))
+  refine norm_charFun_map_deltaSurrogate_le_of_bandCertificate _ σ r θ ?_ hcert
+    (fun t ht => norm_charFun_vecRootLaw_le_max_of_band F hlam hR hcram hbulk ht)
+  exact le_trans (Real.exp_nonneg _) (le_max_left _ _)
 
 /-! ### The weight of a bulk multiplier: synthesis *is* Fourier inversion
 
@@ -6945,6 +7036,46 @@ theorem norm_charFun_vecRootLaw_le_exp_neg_sq (F : Measure ℝ) [IsProbabilityMe
         nlinarith [sq_nonneg ‖t‖, hvl]
 
 end MiddleRangeBulk
+
+/-- **At the repaired band radius `R = K√(log n)` the Gaussian majorant is a negative power of
+`n`, of any prescribed order.** This is the whole arithmetic of the repair: `e^{−λR²/4}` becomes
+`n^{−λK²/4}`, and `K` is at the caller's disposal. -/
+lemma exp_neg_sq_band_radius_eq_rpow {lam K : ℝ} {n : ℕ} (hn : 1 ≤ n) :
+    Real.exp (-(lam * (K * Real.sqrt (Real.log (n : ℝ))) ^ 2 / 4))
+      = (n : ℝ) ^ (-(lam * K ^ 2 / 4)) := by
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hn0 : (0 : ℝ) < (n : ℝ) := lt_of_lt_of_le one_pos hn1
+  have hlog : 0 ≤ Real.log (n : ℝ) := Real.log_nonneg hn1
+  have hsq : (Real.sqrt (Real.log (n : ℝ))) ^ 2 = Real.log (n : ℝ) := Real.sq_sqrt hlog
+  rw [Real.rpow_def_of_pos hn0]
+  congr 1
+  rw [mul_pow, hsq]
+  ring
+
+/-- **A polynomial mass against a negative-power `κ` clears the ledger.** The transfer inequality
+`norm_integral_fourierSynth_le_of_band` prices the good frequencies by `Γκ`; since `Γ` is
+polynomial, any `κ ≤ n^{−q}` with `q ≥ p + 3/2` returns the required `O(n^{-3/2})`. This is why
+the exponentially strong `cⁿ` — the only bound wave 31 had, and the reason its band started at
+the Cramér radius — was overkill. -/
+lemma band_kappa_ledger {C Γ κ p q : ℝ} {n : ℕ} (hn : 1 ≤ n) (hC : 0 ≤ C)
+    (hΓ : Γ ≤ C * (n : ℝ) ^ p) (hΓ0 : 0 ≤ Γ) (hκ0 : 0 ≤ κ) (hκ : κ ≤ (n : ℝ) ^ (-q))
+    (hpq : p + 3 / 2 ≤ q) :
+    Γ * κ ≤ C / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hn0 : (0 : ℝ) < (n : ℝ) := lt_of_lt_of_le one_pos hn1
+  have hstep : Γ * κ ≤ (C * (n : ℝ) ^ p) * (n : ℝ) ^ (-q) :=
+    mul_le_mul hΓ hκ hκ0 (le_trans hΓ0 hΓ)
+  have hcomb : (C * (n : ℝ) ^ p) * (n : ℝ) ^ (-q) = C * (n : ℝ) ^ (p - q) := by
+    rw [mul_assoc, ← Real.rpow_add hn0]
+    ring_nf
+  have hval : (n : ℝ) ^ (-(3 : ℝ) / 2) = ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ := by
+    rw [inv_mul_sqrt_eq_rpow (n := n) (by omega)]
+  calc Γ * κ ≤ C * (n : ℝ) ^ (p - q) := by rw [← hcomb]; exact hstep
+    _ ≤ C * (n : ℝ) ^ (-(3 : ℝ) / 2) :=
+        mul_le_mul_of_nonneg_left
+          (Real.rpow_le_rpow_of_exponent_le hn1 (by linarith)) hC
+    _ = C / ((n : ℝ) * Real.sqrt (n : ℝ)) := by rw [hval, ← div_eq_mul_inv]
+
 /-! ### The certificate, split into its three quantitative inputs
 
 With the multiplier built, `hasFourierCertificateOnBand_of_bulkMultiplier` reduces
@@ -7901,41 +8032,64 @@ theorem norm_integral_expPhase_le_ibp {f : ℝ → ℂ} {Φ : ℝ → ℝ}
 
 /-- **(B) The non-stationary-phase estimate: the weight carries `O(n^{-3/2})` on the
 low-frequency ball** — the second input, the analytic heart of the certificate, and **still the
-only open analytic item of the certificate after wave 35**.
+only open analytic item of the certificate after wave 44**.
 
-On `‖t₀ + s‖ < c₀√n/(2σ)` the total phase `θHₙ − ⟪·, s⟫` has first `w₀`-derivative at least
-`(4/3)|θ|/σ` in modulus, everywhere and with no cut-off (`deltaSurrogate_slope_ge`), so five
-integrations by parts against `L f = ∂_{w₀}(f/(i∂_{w₀}Φ))` gain `O(n^{-7/8})` each; the ledger
-lemmas verify that this closes at `n^{-17/8}` (`leakage_ledger_five_le`) and that four would not
-(`leakage_ledger_four_gt`).
+**WAVE 44 RESTATES THIS AT THE REPAIRED BAND, AND THE RESTATEMENT IS THE POINT.** Wave 43 showed
+that what confined the certificate to `|θ| ≍ √n` was not this estimate's ledger but the band
+geometry it was stated at: the radius `R` had to be at least the Cramér radius `ε₀√n`, because
+`cⁿ` was the only bound on `‖φ_{ρₙ}‖` off a ball, and at most `|θ|/(2σ)`, whence
+`|θ| ≥ 2σε₀√n` (`band_radius_incompatible`). With the Gaussian bulk bound in hand
+(`norm_charFun_vecRootLaw_le_exp_neg_sq`, wave 43) and the two-regime `κ` assembled
+(`norm_charFun_vecRootLaw_le_max_of_band`, above), the radius may be taken to be `K√(log n)`,
+and the hypothesis on the frequency becomes
 
-**WHAT WAVE 35 ADDS, AND WHAT IS HONESTLY LEFT.** The *identity* half of the estimate is now
-proved rather than asserted: `integral_expPhase_ibp` is one integration by parts against a
+* a **constant** floor `c₀ ≤ |θ|` — the leakage ledger's `b = 0` (`leakage_ledger_ten_le`,
+  `bulk_gain_phase_le_band`), and it cannot be dropped: at `θ = 0` the multiplier is the bare
+  cut-off, whose transform puts mass `≍ M²R²` on the ball, so the statement is **false** without
+  it; and
+* the band condition `2σ·K√(log n) ≤ |θ|`, which is below `n^{a}` for every `a > 0`.
+
+Together these cover the whole middle range `n^{1/6} ≤ |θ|` that `esseen_split_low` leaves, as
+well as the outer range wave 31 had. **The price of the wider band is `N = 10` integrations by
+parts instead of `N = 5`** — the ledger returns `n^{9/4 − N(3/8 + b)}` at `|θ| ≍ n^{b}`
+(`leakage_ledger_band_exponent`), and `N ≥ (15/4)/(3/8 + b)` is `30/7` at `b = 1/2` and `10` at
+`b = 0`. The bulk radius does not move: input (C) fixes `M = n^{5/8}` with no `θ` in it.
+
+On the bad set `‖t₀ + s‖ < R` the total phase `Φ = θHₙ − ⟪·, s⟫` has first `w₀`-derivative at
+least `(4/3)|θ|/σ` in modulus, everywhere and with no cut-off (`deltaSurrogate_slope_ge`: the
+`(5/6)|θ|/σ` of the surrogate and the `|θ|/(2σ)` of the band *add*), so each of the ten
+applications of `L f = ∂_{w₀}(f/(i∂_{w₀}Φ))` gains
+`σ/(M|θ|) + (27/16)Mr²/(σ|θ|) = O(n^{-3/8})`.
+
+**WHAT WAVE 35 ADDS, AND WHAT IS HONESTLY LEFT.** The *identity* half of the estimate is proved
+rather than asserted: `integral_expPhase_ibp` is one integration by parts against a
 non-vanishing phase on the line, in the exact form the iteration needs, and `contDiff_ibpStep` /
-`hasCompactSupport_ibpStep` say that the transform `L` preserves the class, so the five-fold
+`hasCompactSupport_ibpStep` say that the transform `L` preserves the class, so the ten-fold
 iteration is legitimate as stated. `norm_integral_expPhase_le_ibp` is its norm form.
 
 What is **not** done, and it is the quantitative half — the part that actually carries the
 exponent:
 
-* the graded bound on `‖L^k f‖_{L¹(dw₀)}` for `k ≤ 5`, uniformly over the bad set. Each `L`
+* the graded bound on `‖L^k f‖_{L¹(dw₀)}` for `k ≤ 10`, uniformly over the bad set. Each `L`
   either differentiates the cut-off `χ(·/M)` (cost `M^{-1}`) or `1/∂_{w₀}Φ` (cost `∂²Φ/(∂Φ)²`),
   and it is the *second* branch that produces the `(27/16)Mr²/(σ|θ|)` half of
   `bulk_gain_phase_le`. Bounding it needs a derivative calculus with **negative** powers —
-  bounds on the derivatives of `1/∂_{w₀}Φ` from a lower bound on `|∂_{w₀}Φ|` — which the
+  bounds on the derivatives of `1/∂_{w₀}Φ` from the slope floor `(4/3)|θ|/σ` — which the
   graded calculus of input (A2) (`gradedBound_mul`, `gradedBound_add`) does not yet supply;
 * the reduction of `𝓕 g` to an iterated integral, so that the one-dimensional identity applies
   fibrewise in `w₀` at each frozen `w₁` (Fubini is harmless — the support is compact — but the
   measurable identification of `E₂` with `ℝ × ℝ` is not free);
 * the outer bookkeeping: the `w₁`-integration over a set of length `≍ M` and the `s`-integration
-  over the bad set of area `≍ n`, which is where `leakage_ledger_exponent` is consumed.
+  over the bad set, whose area is now `≍ log n` rather than `≍ n` — which only helps, since the
+  ledger above is run at the conservative `≍ n`.
 
 No obstruction to any of the three is known, and the arithmetic they have to reproduce is
 already verified in the file. This is a budget statement, not a verdict. -/
 theorem exists_integral_norm_fourierWeight_bulkMultiplier_band_le
-    {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) :
-    ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ * Real.sqrt (n : ℝ) ≤ |θ| →
-      (∫ s in {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < c₀ * Real.sqrt (n : ℝ) / (2 * σ)},
+    {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) {Kb : ℝ} (hKb : 0 ≤ Kb) :
+    ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ ≤ |θ| →
+      2 * σ * (Kb * Real.sqrt (Real.log (n : ℝ))) ≤ |θ| →
+      (∫ s in {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))},
           ‖fourierWeight (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) s‖)
         ≤ C / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
   sorry
@@ -8828,25 +8982,37 @@ analytic content of its own: `Γ n θ` is taken to be the (A)-bound itself, and 
 `C` of the signature is the maximum of the three. The residue is those three `sorry`s — two
 deterministic bounds on `𝓕 g` and one fourth moment of the truncated root — and the exponent
 ledger that ties them together is verified (`leakage_ledger_five_le`, `tail_ledger_exponent`),
-including the fact that `N = 5` is minimal (`leakage_ledger_four_gt`). -/
+including the fact that `N = 5` is minimal (`leakage_ledger_four_gt`).
+
+**WAVE 44: THE BAND IS WIDENED, AND WITH IT THE RANGE OF `θ` THE CERTIFICATE COVERS.** The
+radius is now `Kb√(log n)` and the frequency hypothesis is a constant floor `c₀ ≤ |θ|` together
+with the band condition `2σ·Kb√(log n) ≤ |θ|`, in place of the single `c₀√n ≤ |θ|`. Nothing in
+the assembly below changes — the widened band is entirely a property of input (B), and (A) and
+(C) never mention `θ` or `R` — but the consumer does: at radius `Kb√(log n)` the bound off the
+band is `κ = max(n^{−λKb²/4}, cⁿ)` (`norm_charFun_vecRootLaw_le_max_of_band`,
+`exp_neg_sq_band_radius_eq_rpow`), not `cⁿ`, and `band_kappa_ledger` is the check that a
+polynomial `Γ` against such a `κ` still clears `O(n^{-3/2})`. Since `√(log n) = o(n^{a})` for
+every `a > 0`, the certificate now reaches down into — and through — the middle range
+`n^{1/6} ≤ |θ| ≤ c√n` that `esseen_split_low` leaves open. -/
 theorem exists_fourierCertificate_deltaSurrogate
     -- USER-INPUT: finite fourth moment of the sampling law, which is what prices the bulk
     (F : Measure ℝ) [IsProbabilityMeasure F]
     (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F)
-    -- USER-INPUT: the scale of the surrogate, and the outer range
-    {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) :
+    -- USER-INPUT: the scale of the surrogate, the constant frequency floor, and the band
+    {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) {Kb : ℝ} (hKb : 0 ≤ Kb) :
     ∃ (Γ : ℕ → ℝ → ℝ) (C : ℝ) (K : ℕ), 0 < C ∧
       (∀ (n : ℕ) (θ : ℝ), Γ n θ ≤ C * (n : ℝ) ^ K * (1 + |θ|) ^ K) ∧
-      ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ * Real.sqrt (n : ℝ) ≤ |θ| →
+      ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ ≤ |θ| →
+        2 * σ * (Kb * Real.sqrt (Real.log (n : ℝ))) ≤ |θ| →
         HasFourierCertificateOnBand
           (vecRootLaw F
             (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n)
           σ ((Real.sqrt (n : ℝ))⁻¹) θ ((θ / σ) • coordDir 0)
-          (c₀ * Real.sqrt (n : ℝ) / (2 * σ))
+          (Kb * Real.sqrt (Real.log (n : ℝ)))
           (Γ n θ) (C / ((n : ℝ) * Real.sqrt (n : ℝ)))
           (C / ((n : ℝ) * Real.sqrt (n : ℝ))) := by
   obtain ⟨CA, K, hCA, hA⟩ := exists_integral_norm_fourier_bulkMultiplier_le hσ
-  obtain ⟨CB, hCB, hB⟩ := exists_integral_norm_fourierWeight_bulkMultiplier_band_le hσ hc₀
+  obtain ⟨CB, hCB, hB⟩ := exists_integral_norm_fourierWeight_bulkMultiplier_band_le hσ hc₀ hKb
   obtain ⟨CC, hCC, hC⟩ := exists_measure_norm_gt_bulkRadius_le F hF4
   refine ⟨fun n θ => CA * (n : ℝ) ^ K * (1 + |θ|) ^ K, max CA (max CB CC), K,
     lt_of_lt_of_le hCA (le_max_left _ _), ?_, ?_⟩
@@ -8855,7 +9021,7 @@ theorem exists_fourierCertificate_deltaSurrogate
     have h2 : (0 : ℝ) ≤ (n : ℝ) ^ K := by positivity
     have h3 : (0 : ℝ) ≤ (1 + |θ|) ^ K := by positivity
     exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right h1 h2) h3
-  · intro n hn θ hθ
+  · intro n hn θ hθ hband
     have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
     have hden : (0 : ℝ) < (n : ℝ) * Real.sqrt (n : ℝ) := by positivity
     have hM : 0 < bulkRadius n := bulkRadius_pos hn
@@ -8874,7 +9040,7 @@ theorem exists_fourierCertificate_deltaSurrogate
       (integrable_bulkMultiplier hM _ _ _) hAint hAmass ?_ hS
       (fun w hw => bulkMultiplier_eq_of_norm_le hM _ _ _ hw)
       (norm_bulkMultiplier_le_one _ _ _ _) ?_
-    · refine (hB n hn θ hθ).trans ?_
+    · refine (hB n hn θ hθ hband).trans ?_
       exact div_le_div_of_nonneg_right (le_trans (le_max_left _ _) (le_max_right CA _)) hden.le
     · rw [hcompl]
       refine (hC n hn).trans ?_
