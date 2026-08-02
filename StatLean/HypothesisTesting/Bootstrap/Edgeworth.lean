@@ -3936,6 +3936,24 @@ residue of (U3) is now bookkeeping: threading an existing proof's constants. It 
 analytic tool.** That is a strictly better verdict than wave 39's, and it is the one this wave
 is willing to defend; the threading itself is not done here and is not claimed.
 
+**WAVE 41 — THE THREADING IS DONE, AND THE PARAGRAPH ABOVE IS NOW HISTORY.**
+`edgeworth_mean_uniform_of_bounds` is the quantitative restatement this note asked for, and
+`exists_window_bound_slabRoot` is the slope-indexed window bound it was wanted for: **one** `A`
+and **one** `η = O(n⁻¹)`, at every slope. Two corrections to the pricing above, both in the
+direction of more work rather than less, and both recorded on `edgeworth_studentized_uniform`.
+
+*First*, the monotone-constant argument sketched here is right about `exists_window_core` but
+incomplete about `edgeworth_mean_uniform`: the skewness `γ` is a fifth constant, it is not among
+`(ρ₃, β₄, σ)`, and it has to be subsumed under them (`|γ| ≤ ρ₃/σ³ ≤ R/s₀³`) rather than assumed.
+That is legitimate only because `|γ|` enters the assembled constant with a positive coefficient
+at every one of its three occurrences, which is a fact about the assembly and not about the core.
+
+*Second*, "Cramér uniformly and for free" is very nearly true but not literally true.
+`exists_bound_norm_charFun_map_slabRoot` bounds `‖φ‖` on a *fixed* region `ε ≤ |s|`, while the
+quantitative theorem consumes the bound on `2πc/σ_κ ≤ |s|`; matching the two needs an **upper**
+bound on `σ_κ`, which no earlier wave recorded. It is again `abs_slabRoot_le`, so it is cheap,
+but it is an obligation and it is listed with the rest of (U3)'s remaining moment arithmetic.
+
 **One rate check, because it is the thing that would silently break.** The ledger needs
 `η₀ = O(n^{-2/3})`. A *Berry–Esseen* bound for the projected root gives only `O(n^{-1/2})` and is
 **not** enough — the reduction above is worth nothing without the `O(n⁻¹)` expansion behind it.
@@ -12672,12 +12690,75 @@ it are both overturned, and the moment hypothesis of this theorem is amended.**
   down — `exists_window_core` produces `K = A² + B² + C + D + 1` with `A = 4π³ρ₃/(3σ³)`,
   `B = 2π⁴`, `C = 8π⁵|m₃|/(3σ³)`, `D = 2π⁴β₄/(3σ⁴) + 2π⁴`, increasing in the moments and
   decreasing in `σ` — so the residue is threading an existing proof's constants. **Bookkeeping,
-  and not done here.**
+  and not done here.** *(Wave 41: done. See the wave-41 block below.)*
 
 * **(U4) AND (B) ARE UNCHANGED.** The quantitative half of (U4) — the `k = 3, 4` and
   graded-remainder terms priced against `windowEnvelope` — is as wave 38 left it, and input (B)
   is as wave 35 left it. **This theorem is therefore still `sorry`, and wave 40 does not claim
   otherwise.** What changed is that its residue no longer contains a missing analytic theory.
+
+**Status after wave 41. THE THREADING WAVE 40 ASKED FOR IS DONE, AND (U3)'s `hwin` IS PROVED AT
+EVERY SLOPE. (U4) AND (B) ARE UNTOUCHED, SO THIS THEOREM IS STILL `sorry` AND WAVE 41 DOES NOT
+CLAIM OTHERWISE.**
+
+* **THE CONSTANT IS EXPOSED (item 1).** `edgeworth_mean_uniform_of_bounds` is
+  `edgeworth_mean_uniform` with `C` quantified *before* the law, from four numbers: `ρ₃ ≤ R`,
+  `β₄ ≤ B`, `s₀ ≤ σ`, and a Cramér level `cr < 1` on `2πc/σ ≤ |s|`. Under it,
+  `exists_window_core_of_bounds` (the core's left-hand side is increasing in `(ρ, β, M)` and
+  decreasing in `σ`, so its witness at the extreme point `(R, B, R, s₀)` serves the class —
+  `gcongr` checks this in one line) and `exists_window_bound_of_bounds`. The one constant of
+  `edgeworth_mean_uniform` that is *not* among `(ρ₃, β₄, σ)` is the skewness, and it is
+  subsumed, not assumed: `|γ| ≤ ρ₃/σ³ ≤ R/s₀³` (`abs_skewness_le_of_bounds`). That step is sound
+  only because `|γ|` occurs in the assembled constant with a positive coefficient everywhere it
+  occurs — in `(2π)^{-1/2}(1 + 66|γ|)`, in `1 + 512π³|γ|`, and in the small-`n` bound
+  `2 + 6|γ|` — and that is the only monotonicity used. `meanRootCDF_sub_le_of_bounds` is the
+  anti-concentration companion in the same class form.
+
+* **(U3)'s `hwin` IS PRODUCED (item 1d), AND ITS ADDITIVE TERM IS `O(n⁻¹)`.**
+  `exists_window_bound_slabRoot` is the hypothesis `measure_pi_abs_deltaSurrogate_insertNth_le`,
+  `measure_pi_abs_slab_insertNth_le` and `measure_pi_vecRoot_slab_le_of_win` all call `hwin`,
+  verbatim, with **one** `A = Kb/s₀` and **one** `η = C₀/n` good at every slope and every `n`.
+  The joining brick is `measure_pi_root_eq_meanRootCDF`: the law of `(√n)⁻¹ ∑ f(zⱼ)` under
+  `Measure.pi F` *is* the centred root of `F.map f` for a centred summand, because the
+  pushforward of a product is the product of the pushforwards (`Measure.pi_map_pi`) and
+  `√n·n⁻¹ = (√n)⁻¹`. No i.i.d. transfer is used, here or anywhere in this file. The rest is
+  `edgeworthCDF_sub_le` for the approximant's Lipschitz modulus (law-dependence again killed by
+  the skewness bound and the variance floor) and `measure_abs_sub_le_of_abs_cdf_sub_le`.
+
+* **WHAT IS LEFT OF (U3), AND IT IS A DIFFERENT LIST FROM WAVE 40's.** Wave 40 priced the whole
+  residue as "threading an existing proof's constants". The threading is now done, and what
+  remains is *not* threading: it is the six slope-uniform hypotheses of
+  `exists_window_bound_slabRoot`, which are moment arithmetic about
+  `slabRoot (studentPair F) σ ·` under eight moments of `F`, taken as hypotheses there and
+  **not discharged**. Precisely, and each is mechanical:
+  1. `hmean` — `∫ slabRoot dF = 0`, i.e. `E Z₀ = 0` and `E Z₁ = 0` for `Z = studentPair F`.
+     Definitional in the mean and the variance.
+  2. `hLp` — `MemLp (slabRoot Z σ κ) 4 F`, slope-uniformly, by domination through
+     `abs_slabRoot_le` from `MemLp id 8 F`.
+  3. `hmom3`, `hmom4` — take `R`, `B` to be the integrals of the *dominating* function
+     `|Z₀|/σ + Kslope|Z₁|/σ²` to the third and fourth powers; the bounds are then
+     `integral_mono` against `abs_slabRoot_le` and need no expansion of the power of a sum.
+     Their finiteness is the same eight-moment fact as (2).
+  4. `hfloor` — `integral_slabRoot_sq_ge` gives `∫ slabRoot² ≥ ½ − κ²m₂` with `m₂ = ∫(Z₁/σ²)²`,
+     so `s₀ = 1/2` serves for `|κ| ≤ (2√m₂)⁻¹`. This one is **not** self-contained: it forces
+     `Kslope ≤ (2√m₂)⁻¹`, and whether `surrogateSlopeBound r x v₀ = O(|x||r|)` respects that
+     bound is a statement about the `|x|` range and the `n`-dependence, so it is discharged in
+     the final assembly and not before it.
+  5. `hcrb` — `exists_bound_norm_charFun_map_slabRoot` gives one `c < 1` on a *fixed* region
+     `ε ≤ |s|`, whereas the class statement asks for the bound on `2πc/σ_κ ≤ |s|`. Matching the
+     two needs an **upper** bound on `σ_κ` (so that `2πc/σ_κ ≥ 2πc/s₁ ≥ ε`), which is again
+     `abs_slabRoot_le`. This obligation is new — no earlier wave recorded it — and it is the
+     only place the Cramér input is not literally free.
+
+* **(U4) AND (B) ARE STILL UNCHANGED, AND ITEMS 2 AND 3 OF WAVE 41 WERE NOT ATTEMPTED.** The
+  quantitative half of (U4) — the `k = 3, 4` slots and the graded-remainder terms priced against
+  `windowEnvelope` — is as wave 38 left it; input (B) is as wave 35 left it; and the six-step
+  assembly below is as wave 37 left it. Wave 41 spent itself on item 1 and stops there. The
+  honest reason is budget, not an obstruction: this file is thirteen thousand lines and the wave
+  ran on a single core, so each rebuild costs about three and a half minutes, and item 1 —
+  three new headline theorems and five joining bricks, all axiom-clean — consumed the wave. No
+  new obstruction to (U4) or to the assembly was found, and none of the wave-38 pricing of (U4)
+  is contradicted by anything proved here. **This theorem is therefore still `sorry`.**
 
 **WAVE 40 — THE MOMENT HYPOTHESIS IS AMENDED FROM FOUR TO EIGHT, AND THIS IS A DEVIATION FROM
 THE CLASSICAL STATEMENT.** The classical studentized Edgeworth expansion (Hall, *The Bootstrap
