@@ -3310,6 +3310,118 @@ theorem measure_abs_deltaSurrogate_sub_le_of_window
   exact measure_abs_surrogate_window_le P (U := fun ω => G ω 0 / σ)
     (V := fun ω => G ω 1 / σ ^ 2) hw hL hwin htail
 
+/-! ### Nondegeneracy of the studentized pair from absolute continuity
+
+**WAVE 39.** Every route to a two-dimensional limit theorem for the bivariate root needs the
+limit covariance to be **nondegenerate**, and the hypothesis of `edgeworth_studentized_uniform`
+carries only `hFac : F ≪ volume`. That is enough, and the reason is elementary: a nonzero
+directional combination of the two coordinates of `studentPair F` is a nonconstant **quadratic**
+in the sample, and a quadratic takes any given value on at most two points, a Lebesgue-null set.
+So `⟪studentPair F ·, t⟫` cannot be a.s. constant for `t ≠ 0`, and its second moment is
+therefore strictly positive.
+
+This is the formal content of "a law with a density is not two-valued"; it is not in the file
+before this wave, and it is the one ingredient of the missing rectangle brick (see the note on
+`measure_abs_surrogate_window_le`) that is *not* missing. Both statements are recorded for an
+arbitrary quadratic so that they also cover the truncation-shifted and re-centred variants the
+studentized route produces. -/
+
+/-- **A law with a density is not carried by the level set of a quadratic.** If `F ≪ volume`
+and `(a, b) ≠ (0, 0)`, then `a·y + b·y² = c` fails on a set of full `F`-measure.
+
+The root set of `b·y² + a·y − c` has at most two points (completing the square when `b ≠ 0`, a
+singleton when `b = 0`), hence is Lebesgue-null, hence `F`-null. -/
+theorem not_ae_quadratic_eq_const_of_ac {F : Measure ℝ} [IsProbabilityMeasure F]
+    (hFac : F ≪ volume) {a b c : ℝ} (hab : a ≠ 0 ∨ b ≠ 0) :
+    ¬ (∀ᵐ y ∂F, a * y + b * y ^ 2 = c) := by
+  intro hae
+  have hfin : Set.Finite {y : ℝ | a * y + b * y ^ 2 = c} := by
+    rcases eq_or_ne b 0 with hb | hb
+    · have ha : a ≠ 0 := by
+        rcases hab with h | h
+        · exact h
+        · exact absurd hb h
+      refine Set.Finite.subset (Set.finite_singleton (c / a)) ?_
+      intro y hy
+      simp only [Set.mem_setOf_eq, hb] at hy
+      simp only [Set.mem_singleton_iff]
+      field_simp
+      linarith
+    · set s : ℝ := Real.sqrt ((a / (2 * b)) ^ 2 + c / b) with hs
+      refine Set.Finite.subset
+        ((Set.finite_singleton (-(a / (2 * b)) - s)).insert (-(a / (2 * b)) + s)) ?_
+      intro y hy
+      simp only [Set.mem_setOf_eq] at hy
+      have hd : (a / (2 * b)) ^ 2 + c / b = (y + a / (2 * b)) ^ 2 := by
+        have hc' : c = a * y + b * y ^ 2 := hy.symm
+        rw [hc']
+        field_simp
+        ring
+      have hd0 : (0:ℝ) ≤ (a / (2 * b)) ^ 2 + c / b := by rw [hd]; positivity
+      have hss : s ^ 2 = (a / (2 * b)) ^ 2 + c / b := Real.sq_sqrt hd0
+      have hzero : (y + a / (2 * b) - s) * (y + a / (2 * b) + s) = 0 := by
+        have hq : (y + a / (2 * b)) ^ 2 - s ^ 2 = 0 := by rw [hss, ← hd]; ring
+        nlinarith [hq]
+      simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
+      rcases mul_eq_zero.mp hzero with h | h
+      · exact Or.inl (by linarith)
+      · exact Or.inr (by linarith)
+  have hvol : volume {y : ℝ | a * y + b * y ^ 2 = c} = 0 := hfin.measure_zero _
+  have hF : F {y : ℝ | a * y + b * y ^ 2 = c} = 0 := hFac hvol
+  rw [MeasureTheory.ae_iff] at hae
+  have hle : F Set.univ ≤ F {y : ℝ | a * y + b * y ^ 2 = c}
+      + F {y : ℝ | ¬ (a * y + b * y ^ 2 = c)} := by
+    refine le_trans (measure_mono ?_) (measure_union_le _ _)
+    intro y _
+    by_cases h : a * y + b * y ^ 2 = c
+    · exact Or.inl h
+    · exact Or.inr h
+  rw [measure_univ, hF, hae] at hle
+  simp at hle
+
+/-- **Nondegeneracy: the second moment of a nonzero quadratic is strictly positive.** Under
+`F ≪ volume`, `∫ (a·y + b·y² − c)² ∂F > 0` whenever `(a, b) ≠ (0, 0)`. -/
+theorem integral_sq_quadratic_pos_of_ac {F : Measure ℝ} [IsProbabilityMeasure F]
+    (hFac : F ≪ volume) {a b c : ℝ} (hab : a ≠ 0 ∨ b ≠ 0)
+    (hint : Integrable (fun y : ℝ => (a * y + b * y ^ 2 - c) ^ 2) F) :
+    0 < ∫ y, (a * y + b * y ^ 2 - c) ^ 2 ∂F := by
+  have hnn : (0:ℝ) ≤ ∫ y, (a * y + b * y ^ 2 - c) ^ 2 ∂F :=
+    integral_nonneg fun y => sq_nonneg _
+  rcases lt_or_eq_of_le hnn with h | h
+  · exact h
+  · exfalso
+    refine not_ae_quadratic_eq_const_of_ac hFac (c := c) hab ?_
+    have hz := (integral_eq_zero_iff_of_nonneg (fun y => sq_nonneg _) hint).mp h.symm
+    filter_upwards [hz] with y hy
+    have hy' : (a * y + b * y ^ 2 - c) ^ 2 = 0 := hy
+    have h0 : a * y + b * y ^ 2 - c = 0 := sq_eq_zero_iff.mp hy'
+    linarith
+
+/-- **Nondegeneracy of `studentPair`, in coordinates.** The directional combination
+`t₀(y − μ) + t₁((y − μ)² − s²)` of the two coordinates of `studentPair F` has strictly positive
+second moment for every `(t₀, t₁) ≠ (0, 0)`, as soon as `F ≪ volume`.
+
+Written in coordinates rather than through `⟪studentPair F y, t⟫` on purpose: the statement is
+about the sampling law, and the inner product of `EuclideanSpace ℝ (Fin 2)` adds nothing but
+`PiLp` bookkeeping. Reading `studentPair F y = (y − μ, (y − μ)² − σ²)` off its definition, this
+*is* the nondegeneracy of the limit covariance of the bivariate root. -/
+theorem integral_studentPair_dir_sq_pos {F : Measure ℝ} [IsProbabilityMeasure F]
+    (hFac : F ≪ volume) {t₀ t₁ μ s2 : ℝ} (ht : t₀ ≠ 0 ∨ t₁ ≠ 0)
+    (hint : Integrable (fun y : ℝ => (t₀ * (y - μ) + t₁ * ((y - μ) ^ 2 - s2)) ^ 2) F) :
+    0 < ∫ y, (t₀ * (y - μ) + t₁ * ((y - μ) ^ 2 - s2)) ^ 2 ∂F := by
+  have heq : ∀ y : ℝ, t₀ * (y - μ) + t₁ * ((y - μ) ^ 2 - s2)
+      = (t₀ - 2 * μ * t₁) * y + t₁ * y ^ 2 - (t₀ * μ - t₁ * μ ^ 2 + t₁ * s2) := by
+    intro y; ring
+  have hab : (t₀ - 2 * μ * t₁) ≠ 0 ∨ t₁ ≠ 0 := by
+    rcases eq_or_ne t₁ 0 with h1 | h1
+    · refine Or.inl ?_
+      rcases ht with h | h
+      · simpa [h1] using h
+      · exact absurd h1 h
+    · exact Or.inr h1
+  simp only [heq]
+  exact integral_sq_quadratic_pos_of_ac hFac hab (by simpa only [heq] using hint)
+
 /-- **The exact studentized statistic, on the standardized scale.** The region of
 `studentizedRootCDF_eq_vecRootLaw` is cut out by `w₀/√(σ² + w₁r − w₀²r²)`, and that is exactly
 `u(1 + (vr − u²r²))^{-1/2}` with `u = w₀/σ`, `v = w₁/σ²` — the argument of the Taylor core. The
