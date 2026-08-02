@@ -10121,9 +10121,9 @@ private lemma weighted_ledger_balance
     (hD : D ≤ Jr * (C₃ / ε ^ 3 / 6 / (nr * sn)) * X
               * (4 * Ck * (ε + Real.sqrt Jr / sn) + W)
           + Jr * (C₃ / (nr * sn)) * X * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3)
-          + 12 * Ck * Ct * X / sn * Lam * (1 + Real.log (max (nr / Jr) 1))
-          + 3 * (W * Ct * X) / Real.sqrt Jr) :
-    D ≤ (306 * C₃ + 81 * Ct) * (β / sn)
+          + 68 * Ck * Ct * X / sn * Lam * (1 + Real.log (max (nr / Jr) 1))
+          + 12 * (W * Ct * X) / Real.sqrt Jr) :
+    D ≤ (306 * C₃ + 444 * Ct) * (β / sn)
         * (ε⁻¹ * (W + Ck * ε)
           + Ck * Dk * ((1 + Real.log (1 + ε⁻¹))
             * Real.sqrt (1 + Real.log (1 + ε⁻¹)))) := by
@@ -10221,15 +10221,16 @@ private lemma weighted_ledger_balance
     have hgap0 : (0 : ℝ) ≤ 252 * (C₃ * β * W / t) := by positivity
     linarith
   -- ### term 3: the summable tail
-  have hT3 : 3 * (W * Ct * X) / Real.sqrt Jr ≤ 9 * Ct * (δ * P) := by
-    have h1 : 3 * (W * Ct * X) / Real.sqrt Jr ≤ 3 * (W * Ct * (3 * β)) / Real.sqrt Jr := by
+  have hT3 : 12 * (W * Ct * X) / Real.sqrt Jr ≤ 36 * Ct * (δ * P) := by
+    have h1 : 12 * (W * Ct * X) / Real.sqrt Jr
+        ≤ 12 * (W * Ct * (3 * β)) / Real.sqrt Jr := by
       gcongr
-    have h2 : 3 * (W * Ct * (3 * β)) / Real.sqrt Jr ≤ 3 * (W * Ct * (3 * β)) / t :=
+    have h2 : 12 * (W * Ct * (3 * β)) / Real.sqrt Jr ≤ 12 * (W * Ct * (3 * β)) / t :=
       div_le_div_of_nonneg_left (by positivity) htpos hsqrtJ
-    have hgap : 9 * Ct * (δ * P) - 3 * (W * Ct * (3 * β)) / t
-        = 9 * (Ct * β * (Ck * ε) / t) := by
+    have hgap : 36 * Ct * (δ * P) - 12 * (W * Ct * (3 * β)) / t
+        = 36 * (Ct * β * (Ck * ε) / t) := by
       rw [hδP]; field_simp; ring
-    have hgap0 : (0 : ℝ) ≤ 9 * (Ct * β * (Ck * ε) / t) := by positivity
+    have hgap0 : (0 : ℝ) ≤ 36 * (Ct * β * (Ck * ε) / t) := by positivity
     linarith
   -- ### term 2: the harmonic (logarithmic) middle
   have hlog : Real.log (max (sn ^ 2 / Jr) 1) ≤ 2 * L := by
@@ -10248,33 +10249,34 @@ private lemma weighted_ledger_balance
     push_cast at h
     rw [hLdef]
     exact h
-  have hT2 : 12 * Ck * Ct * X / sn * Lam * (1 + Real.log (max (sn ^ 2 / Jr) 1))
-      ≤ 72 * Ct * (δ * Q) := by
-    have h1 : 12 * Ck * Ct * X / sn ≤ 12 * Ck * Ct * (3 * β) / sn := by gcongr
-    have h1' : 12 * Ck * Ct * X / sn * Lam
-        ≤ 12 * Ck * Ct * (3 * β) / sn * (Dk * Real.sqrt (1 + L)) := by
+  have hT2 : 68 * Ck * Ct * X / sn * Lam * (1 + Real.log (max (sn ^ 2 / Jr) 1))
+      ≤ 408 * Ct * (δ * Q) := by
+    have h1 : 68 * Ck * Ct * X / sn ≤ 68 * Ck * Ct * (3 * β) / sn := by gcongr
+    have h1' : 68 * Ck * Ct * X / sn * Lam
+        ≤ 68 * Ck * Ct * (3 * β) / sn * (Dk * Real.sqrt (1 + L)) := by
       refine mul_le_mul h1 hLamD (by linarith) (by positivity)
     have h2 : 1 + Real.log (max (sn ^ 2 / Jr) 1) ≤ 2 * (1 + L) := by linarith
     have h3 : (0 : ℝ) ≤ 1 + Real.log (max (sn ^ 2 / Jr) 1) := by
       have : (0 : ℝ) ≤ Real.log (max (sn ^ 2 / Jr) 1) :=
         Real.log_nonneg (le_max_right _ _)
       linarith
-    have h4 : (0 : ℝ) ≤ 12 * Ck * Ct * (3 * β) / sn * (Dk * Real.sqrt (1 + L)) := by
+    have h4 : (0 : ℝ) ≤ 68 * Ck * Ct * (3 * β) / sn * (Dk * Real.sqrt (1 + L)) := by
       positivity
-    have h5 : 12 * Ck * Ct * X / sn * Lam * (1 + Real.log (max (sn ^ 2 / Jr) 1))
-        ≤ 12 * Ck * Ct * (3 * β) / sn * (Dk * Real.sqrt (1 + L)) * (2 * (1 + L)) :=
+    have h5 : 68 * Ck * Ct * X / sn * Lam * (1 + Real.log (max (sn ^ 2 / Jr) 1))
+        ≤ 68 * Ck * Ct * (3 * β) / sn * (Dk * Real.sqrt (1 + L)) * (2 * (1 + L)) :=
       mul_le_mul h1' h2 h3 h4
-    have h6 : 12 * Ck * Ct * (3 * β) / sn * (Dk * Real.sqrt (1 + L)) * (2 * (1 + L))
-        = 72 * Ct * (δ * Q) := by
+    have h6 : 68 * Ck * Ct * (3 * β) / sn * (Dk * Real.sqrt (1 + L)) * (2 * (1 + L))
+        = 408 * Ct * (δ * Q) := by
       rw [hδQ]; field_simp; ring
     linarith
   -- ### assembling
-  have hsplit : (306 * C₃ + 81 * Ct) * δ * (P + Q)
-      = 306 * C₃ * (δ * P) + 81 * Ct * (δ * P) + 306 * C₃ * (δ * Q)
-        + 81 * Ct * (δ * Q) := by ring
+  have hsplit : (306 * C₃ + 444 * Ct) * δ * (P + Q)
+      = 306 * C₃ * (δ * P) + 444 * Ct * (δ * P) + 306 * C₃ * (δ * Q)
+        + 444 * Ct * (δ * Q) := by ring
   have hδP0 : (0 : ℝ) ≤ δ * P := by positivity
   have hδQ0 : (0 : ℝ) ≤ δ * Q := by positivity
-  have hrest : (0 : ℝ) ≤ 72 * Ct * (δ * P) + 306 * C₃ * (δ * Q) + 9 * Ct * (δ * Q) := by
+  have hrest : (0 : ℝ) ≤ 408 * Ct * (δ * P) + 306 * C₃ * (δ * Q)
+      + 36 * Ct * (δ * Q) := by
     have h1 : (0 : ℝ) ≤ Ct * (δ * P) := mul_nonneg hCt.le hδP0
     have h2 : (0 : ℝ) ≤ C₃ * (δ * Q) := mul_nonneg hC₃.le hδQ0
     have h3 : (0 : ℝ) ≤ Ct * (δ * Q) := mul_nonneg hCt.le hδQ0
@@ -10332,16 +10334,16 @@ theorem localised_swap_bound_of_weighted_telescope (hk : 0 < k) {n : ℕ} (hn : 
               * ((∫ y, ‖y‖ ^ 3 ∂ν)
                 + ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
               * (32 * gaussianShellConst k / ε ^ 2 + 4 * W / ε ^ 3)
-          + 12 * gaussianShellConst k * Ct
+          + 68 * gaussianShellConst k * Ct
               * ((∫ y, ‖y‖ ^ 3 ∂ν)
                 + ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
               / Real.sqrt (n : ℝ) * gaussianTailRadius k ε
               * (1 + Real.log (max ((n : ℝ) / (J : ℝ)) 1))
-          + 3 * (W * Ct
+          + 12 * (W * Ct
               * ((∫ y, ‖y‖ ^ 3 ∂ν)
                 + ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))))
               / Real.sqrt (J : ℝ)) :
-    D ≤ (306 * C₃ + 81 * Ct) * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
+    D ≤ (306 * C₃ + 444 * Ct) * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
         * (ε⁻¹ * (W + gaussianShellConst k * ε)
           + gaussianShellConst k * dimTailConst k
             * ((1 + Real.log (1 + ε⁻¹)) * Real.sqrt (1 + Real.log (1 + ε⁻¹)))) := by
