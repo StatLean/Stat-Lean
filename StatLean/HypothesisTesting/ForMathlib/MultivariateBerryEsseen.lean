@@ -362,7 +362,42 @@ Gaussian shift replaces it (`gaussian_le_of_gaussian_shift_cover`) — and the r
 the first absolute moment `E‖Z‖ ≤ √k` of that shift. Closing the last gap to `k^{1/4}` needs
 Ball's Gaussian-surface-area theorem; nothing in the recursion depends on it.
 
-**Reference.** V. Bentkus, "On the dependence of the Berry–Esseen bound on dimension,"
+## Wave-39 amendment: the sub-Gaussian norm tail, and a `3/2` power of the logarithm
+
+Wave 38 proved the head half of the per-step estimate (`abs_integral_swap_step_localised_le`)
+and showed that the *tail* half cannot be produced at the wave-32 frozen weight `4 C_k σⱼ + W`:
+the only Gaussian norm tail this file had was Markov at a fixed order, and localising the
+Cameron–Martin swap needs the tail to be `≲ σ²` at a radius `≍ σ`, which no polynomial tail
+gives. Wave 39 supplies the missing ingredient and pays its price openly.
+
+* `stdGaussian_norm_ge_le_exp` (**new, proved**) — `γ{‖z‖ ≥ M} ≤ 2k exp(-M²/(2k))`, by the
+  coordinate union bound over `stdGaussian_map_inner_unit` and the one-dimensional Chernoff
+  tails `gaussianReal_ge_le` / `gaussianReal_abs_ge_le`. Its inversion `gaussianTailRadius k σ`
+  satisfies `γ{‖z‖ ≥ gaussianTailRadius k σ} ≤ σ²`.
+* `abs_integral_gaussian_smoothed_swap_localised_le` — the tail brick, restated at the weight
+  route (b) actually delivers, `12 C_k σ · gaussianTailRadius k σ + W`. Still stated, not
+  proved; what it now owes is assembly, not a missing estimate.
+* `weighted_ledger_balance`, `localised_swap_bound_of_weighted_telescope` (**re-proved**) — the
+  ledger with the extra radius factor. `gaussianTailRadius` is antitone, so no new summation
+  lemma is needed; `gaussianTailRadius_le_dimTailConst` splits it as
+  `dimTailConst k · √(1 + log(1 + ε⁻¹))`, and multiplying by the harmonic factor gives the
+  `3/2` power `logPow32 ε`. Constant `306 C₃ + 33 C_t → 306 C₃ + 81 C_t`.
+* `le_of_selfImproving_induction_forcing` (**new, proved**) — the fixed point with an abstract
+  forcing factor. The wave-32 argument uses only `G ≥ 1` and antitonicity of `G`, so the `3/2`
+  power self-improves **at the same constant** `20 A C`; `le_of_selfImproving_induction_log` is
+  now its `G = 1 + log(1 + ε⁻¹)` instance and `le_of_selfImproving_induction_logPow32` the one
+  the amended ledger consumes.
+* `berryEsseen_convex_sharp` — headline amended to
+  `C (β/√n)(1 + log(max (√n/β) e))^{3/2}`, `C = 60 (A+1) · dimTailConst k · (4 C_k) ≍ k √(log k)`.
+
+**Two deviations, and which is intrinsic.** The `3/2` power *is* intrinsic to this route: the
+tail radius grows like `√(log(1/σ))` however sharp the norm tail is, and a fixed Markov order
+gives a *power* of `ε⁻¹` instead, which is worse. The dimension factor `√(k log k)` is *not*
+intrinsic — it is the price of proving the norm tail by a union bound rather than by
+`γ{‖z‖ ≥ M} ≤ exp(-(M − √k)²/2)` (Chernoff on `‖z‖² ∼ χ²_k`, or Borell–TIS, neither of which
+Mathlib has). Sharpening it would give `≍ √k` there and change nothing else.
+
+**Reference.** V. Bentkus, "On the dependence of the Berry–Esseen bound on dimension,\"
 *J. Statist. Plann. Inference* **113** (2003), 385–402. E. L. Lehmann and J. P. Romano,
 *Testing Statistical Hypotheses*, 4th ed., Springer, 2022, §16.4, Lemma 16.4.1.
 -/
