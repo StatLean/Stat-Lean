@@ -381,7 +381,8 @@ gives. Wave 39 supplies the missing ingredient and pays its price openly.
   ledger with the extra radius factor. `gaussianTailRadius` is antitone, so no new summation
   lemma is needed; `gaussianTailRadius_le_dimTailConst` splits it as
   `dimTailConst k · √(1 + log(1 + ε⁻¹))`, and multiplying by the harmonic factor gives the
-  `3/2` power `logPow32 ε`. Constant `306 C₃ + 33 C_t → 306 C₃ + 81 C_t`.
+  `3/2` power `logPow32 ε`. Constant `306 C₃ + 33 C_t → 306 C₃ + 81 C_t` (wave 41: `→ 444 C_t`,
+  the exact re-solution once the tail brick's own constants are known).
 * `le_of_selfImproving_induction_forcing` (**new, proved**) — the fixed point with an abstract
   forcing factor. The wave-32 argument uses only `G ≥ 1` and antitonicity of `G`, so the `3/2`
   power self-improves **at the same constant** `20 A C`; `le_of_selfImproving_induction_log` is
@@ -436,6 +437,40 @@ the fixed point, and `berryEsseen_convex_sharp` are unaffected up to an absolute
 `abs_integral_gaussian_smoothed_sub_common_le` but not exported; the Fubini at a varying width,
 which is `integral_far_shell_le` with a different bracket; and the two-law triangle
 inequality). No analytic input is missing — the first time that has been true of this brick.
+
+## Wave-41 amendment: the tail brick is PROVED, and brick L's residue is re-diagnosed
+
+**The tail brick `abs_integral_gaussian_smoothed_swap_localised_le` is closed**, open since
+wave 32. Wave 40's verdict — "no analytic input is missing, three named bookkeeping pieces
+remain" — is confirmed exactly: the pieces are `integral_gaussian_smoothed_sub_common_eq` (the
+tilt representation, now exported and the old `abs_…_sub_common_le` refactored into its
+corollary), `integral_localised_shell_le` (the Fubini at the varying width), and the two-law
+triangle inequality against the law-independent Cameron–Martin number. **No constant needed
+amending**: wave 40's `68 C_k σ R + 4 W` ledger is exact. Consequently the wave-40 FLAG on
+`localised_swap_bound_of_weighted_telescope` is executed — `htel`'s tail summands are now
+`68 …` and `12 …`, and `weighted_ledger_balance` re-solves at `306 C₃ + 444 C_t` (wave 40
+guessed `459 C_t` would suffice; `444` is exact, and the `C₃` half is untouched).
+
+**A claim of waves 36–40 is OVERTURNED, and it is what brick L still owes.** Both localised
+per-step bricks carry the docstring line "`τ` is `hybridLaw n j ν`". It is not. At step `j` the
+telescope peels coordinate `j`, so the base point of the step is `c·(∑ of the OTHER
+coordinates) + σⱼ z` and the swapped coordinate enters only as the `c u` *inside* the absolute
+value. The bricks' `τ` is therefore the **peeled** law; `hybridLaw n j ν` — which brick H bounds
+and which brick L's hypothesis asserts — is the law of that base point **plus** `c u`, as
+`integral_peel_eq_integral_hybridLaw`'s right-hand side `F(c(u + ∑ₗ yₗ) + σⱼ z)` says outright.
+Neither is a special case of the other: the peeled law is `hybridLaw` with the dirac cut at
+`j + 1` but the smoothing still at `j`, and `hybridLaw n j ν = (peeled law) ∗ (c·ν)`, which is
+the wrong direction to deconvolve.
+
+**The repair is named and built, and it costs only a constant.** `mem_wideShell_shift` /
+`indicator_wideShell_le_shift`: `1_{shell at s}(a) ≤ 1_{shell at s+t}(a + w)` for `‖w‖ ≤ t`.
+Both bricks already price the shell at width `2c‖u‖` (far regime) or `2ε ≥ 2c‖u‖` (near
+regime), so the shift `c u` is absorbed by one further `c‖u‖`, i.e. by `2 → 3` in the width and
+`8 C_k → 12 C_k` in the far half. What remains for brick L is then exactly: re-run the two
+bricks with the indicator at the shifted point, and run the localised telescope (`hstepfun` with
+the `v`-dependent `D`, `integral_peel_eq_integral_hybridLaw`, and
+`sum_le_of_bounded_and_weighted_decay`) to produce `htel`. **No analytic input is missing on
+either side** — both per-step estimates are now theorems.
 
 **Reference.** V. Bentkus, "On the dependence of the Berry–Esseen bound on dimension,\"
 *J. Statist. Plann. Inference* **113** (2003), 385–402. E. L. Lehmann and J. P. Romano,
@@ -8935,9 +8970,16 @@ private lemma integral_far_shell_le
 /-- **The per-step head estimate (wave 37: stated; wave 38: PROVED).** *One head step of the
 hybrid telescope, localised, averaged against the step's own hybrid law.*
 
-`τ` is `hybridLaw n j ν` (wave 36's `integral_hybridLaw_eq` /
-`integral_peel_eq_integral_hybridLaw` identify the telescope's `j`-th test measure with it), `ν`
-is the swapped-in law and `ρ` the standard Gaussian, and `c = n^{-1/2}` is the step's scale. The
+`τ` is the law of the step's base point, `ν` is the swapped-in law and `ρ` the standard
+Gaussian, and `c = n^{-1/2}` is the step's scale.
+
+**ERRATUM (wave 41).** Waves 37–40 wrote here that "`τ` is `hybridLaw n j ν` (wave 36's
+`integral_hybridLaw_eq` / `integral_peel_eq_integral_hybridLaw` identify the telescope's `j`-th
+test measure with it)". It is not: the base point of step `j` is `c·(∑ of the coordinates other
+than `j`) + σⱼ z`, the swapped coordinate appearing only as the `c u` inside the absolute value,
+whereas `hybridLaw n j ν` is the law of that base point *plus* `c u`. The transfer between them
+is `indicator_wideShell_le_shift`, at the price of `2 → 3` in the shell width; see the wave-41
+section of `localised_swap_bound_small_weight`. The
 right-hand side is *exactly* the pair of head summands that
 `localised_swap_bound_of_weighted_telescope` consumes, once summed over the `J` head steps.
 
@@ -9773,7 +9815,36 @@ proof already establishes internally (`hsum` composed with `hQval`) but does not
 (2) the Fubini `∫_v ∫_y 1_{shell at 2σ(R+s)}(v) · min(...) dν dτ = ∫_y τ(shell) · min(...) dν`,
 which is `integral_far_shell_le` verbatim with a different bracket and the varying width
 `g(y) = 2σ(R + (c/σ)‖y‖)` (`measurableSet_wideShell_prod` already accepts any continuous
-nonnegative width); (3) the two-law triangle inequality. No analytic input is missing. -/
+nonnegative width); (3) the two-law triangle inequality. No analytic input is missing.
+
+## Wave 41: PROVED, at wave 40's constants exactly
+
+All three pieces are executed as wave 40 named them, and nothing else was needed.
+
+* (1) is `integral_gaussian_smoothed_sub_common_eq`, which also returns the `τ`-integrability
+  of the `y`-integrand; `abs_integral_gaussian_smoothed_sub_common_le` is refactored into its
+  one-line corollary rather than duplicated.
+* (2) is `integral_localised_shell_le`. It needs **no** near/far split in `‖y‖` (unlike the head
+  side's `integral_far_shell_le`), because the width `2σ(R + (c/σ)‖y‖)` is bounded below by
+  `2σR > 0` at *every* `y`, so `hshell` applies everywhere and the whole `ν`-integral is
+  exchanged at once.
+* (3) is the triangle inequality against `D v`, the Cameron–Martin number, which `tiltPoly_fubini`
+  makes the *same* for `ν` and `ρ`.
+
+Two remarks on the assembly. First, every exchange of an inequality with an integral is by
+`integral_mono_of_nonneg`, which asks for integrability of the **majorant only**; so the
+absolute-value integrands — for which integrability would have to be proved separately at each
+of the three levels — are never required to be integrable. Second, the constants are wave 40's
+unchanged: the shell half gives `64 C_k σR + 4W` (`localised_step_weight_le` pointwise in `y`,
+then `hshell` at the varying width) and the far half `4 C_k C_t σ ≤ 4 C_k C_t σ R`, totalling
+`68 C_k σ R + 4 W`. The wave-40 ledger was exact.
+
+**What this brick's `τ` is, and what it is NOT** (wave 41; see also the head brick, which
+carries the same erratum). The docstring above says "`τ` is `hybridLaw n j ν`". That is wrong,
+and it is now brick L's only remaining obstruction: `τ` is the law of the step's base point,
+which at step `j` *excludes* the swapped coordinate, while `hybridLaw n j ν` includes it.
+`indicator_wideShell_le_shift` is the transfer that repairs it, at the price of `2 → 3` in the
+shell width. See the wave-41 section of `localised_swap_bound_small_weight`. -/
 private lemma abs_integral_gaussian_smoothed_swap_localised_le {Ct : ℝ}
     (hCt : ∀ s : ℝ, 0 ≤ s → (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ Ct * s ^ 3)
     -- LEAN-ONLY (wave 40), free: `Ct` may always be enlarged
@@ -10366,7 +10437,12 @@ bookkeeping lands, `htel`'s two tail summands must become `68 * …` and `12 * (
 and `weighted_ledger_balance`'s `81 * Ct` must be re-solved (`459 * Ct` certainly suffices; the
 `306 * C₃` head half is untouched). **No shape moves**, so the fixed point and
 `berryEsseen_convex_sharp` re-solve at the same `(1 + log(1+ε⁻¹))^{3/2}` power. The mismatch is
-left visible here rather than silently propagated, per the provable-constants rule. -/
+left visible here rather than silently propagated, per the provable-constants rule.
+
+**Wave 41: the flag is EXECUTED.** The tail brick landed, so `htel` now carries `68 * …` and
+`12 * …`, and the ledger is re-solved: the harmonic middle scales by exactly `68/12` (`72 → 408`)
+and the summable tail by exactly `12/3` (`9 → 36`), so the constant is `306 C₃ + 444 C_t` — wave
+40's `459` was an over-estimate. Nothing else moved. -/
 theorem localised_swap_bound_of_weighted_telescope (hk : 0 < k) {n : ℕ} (hn : 0 < n)
     {ν : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure ν]
     (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ)
@@ -10807,7 +10883,58 @@ in place of wave 32's `A δ (ε⁻¹(W + C_k ε) + C_k (1 + log(1 + ε⁻¹)))`.
 per-step hypothesis `htel` — has been re-run at the amended shape and is green, with constant
 `306 C₃ + 81 C_t`. So the shape of the answer is settled in Lean, not on paper; what this
 `sorry` still owes is the analytic production of `htel`'s tail summand, i.e. the assembly of
-`abs_integral_gaussian_smoothed_swap_localised_le`. -/
+`abs_integral_gaussian_smoothed_swap_localised_le`.
+
+## Wave 41: BOTH per-step estimates are now theorems, and the residue is re-diagnosed
+
+`abs_integral_gaussian_smoothed_swap_localised_le` is proved, at wave 40's constants exactly.
+Both per-step estimates that wave 35 listed as the residue — the head one (wave 38) and the tail
+one (wave 41) — are therefore theorems, and the ledger constants they feed are amended and
+machine-checked (`306 C₃ + 444 C_t`). **No analytic input is missing anywhere on this route.**
+
+**But the residue is not "just wire them up", and the reason overturns a claim of waves 36–40.**
+Every wave since 36 has recorded that `τ` in the two bricks "is `hybridLaw n j ν`", citing
+`integral_hybridLaw_eq` / `integral_peel_eq_integral_hybridLaw`. Checked this wave, it is false,
+and the discrepancy is exactly one swapped coordinate:
+
+* at step `j` the telescope peels coordinate `j` (`hstepfun`, via
+  `abs_sub_integral_peel_le_integral`), so the base point against which both bricks average is
+  `c·(∑ₗ yₗ) + σⱼ z`, with `y` ranging over
+  the **other** `n − 1` coordinates and `z` over the smoothing Gaussian. The swapped coordinate
+  appears only as the `c u` *inside* the absolute value, which is what makes the step a swap at
+  all. Call that law the *peeled* law;
+* `hybridLaw n j ν` — what brick H (`hybridLaw_wideShell_le`) bounds, and what this theorem's
+  weight hypothesis asserts — is the law of `c·(u + ∑ₗ yₗ) + σⱼ z`, `u ∼ ν`. That is literally
+  the right-hand side of `integral_peel_eq_integral_hybridLaw`;
+* the two are not comparable by an inclusion or a monotonicity. The peeled law is `hybridLaw`
+  with the dirac cut at `j + 1` but the smoothing still at `j` (so it is not a `hybridLaw` at
+  all, for any index), and `hybridLaw n j ν = (peeled law) ∗ (c·ν)`, which is the wrong
+  direction: a shell bound for a convolution does not give one for its factor.
+
+Both routes into the bricks hit this. Taking `D v` to be the step's own absolute difference and
+pulling the modulus through the smoothing integral (the move `hboundA` already makes) lands on
+the peeled law; and taking `D v` in the special form `integral_peel_eq_integral_hybridLaw`
+consumes requires the shell indicator to be evaluated at `c(v + u) + σⱼ z`, which is precisely
+what neither brick provides — both evaluate it at the base point, with `u` setting only the
+*width*.
+
+**The repair, named and already built.** `mem_wideShell_shift` / `indicator_wideShell_le_shift`:
+`1_{shell at s}(a) ≤ 1_{shell at s + t}(a + w)` whenever `‖w‖ ≤ t`. Both bricks already carry a
+width that dominates the shift: `2c‖u‖` in the far regime and `2ε ≥ 2c‖u‖` in the near one, so
+absorbing `c u` costs one more `c‖u‖`, i.e. `2 → 3` in the width and `8 C_k → 12 C_k` in the far
+half of the ledger — a constant, not a shape. So what this `sorry` owes, in full and for the
+first time with no analytic component, is:
+
+1. re-run `integral_abs_remainder_split_le` / `integral_far_shell_le` (head) and
+   `integral_localised_shell_le` (tail) with the indicator at the **shifted** point, via
+   `indicator_wideShell_le_shift`, so that both bricks' `τ` becomes `hybridLaw n j ν`;
+2. run the localised telescope: `hstepfun` with the `v`-dependent `D` of
+   `abs_sub_integral_peel_le_integral`, the bridge `integral_peel_eq_integral_hybridLaw`, and the
+   summation `sum_le_of_bounded_and_weighted_decay`, to produce `htel` at the amended constants;
+3. feed `htel` to `localised_swap_bound_of_weighted_telescope`, which is proved and green at
+   `306 C₃ + 444 C_t`.
+
+Step 3 is done, step 1's tool is built, and step 2 is the wiring wave 35 already described. -/
 theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 1 ≤ C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
@@ -11166,7 +11293,8 @@ and that radius is `σ · gaussianTailRadius k σ`, not `σ`; see
 forcing term `1 + log(1 + ε⁻¹)` into `logPow32 ε = (1 + log(1 + ε⁻¹))^{3/2}` and multiplies the
 constant by `dimTailConst k`. Both changes were checked, not assumed: the fixed point re-solves
 at the *same* constant `20 A C` (`le_of_selfImproving_induction_forcing`), and the ledger is
-re-proved at the amended shape (`weighted_ledger_balance`, constant `306 C₃ + 81 C_t`).
+re-proved at the amended shape (`weighted_ledger_balance`, constant `306 C₃ + 81 C_t`, and
+`306 C₃ + 444 C_t` after wave 41 folded in the tail brick's own constants).
 Sharpening `stdGaussian_norm_ge_le_exp` from the coordinate union bound to the additive form
 `γ{‖z‖ ≥ M} ≤ exp(-(M − √k)²/2)` would replace `dimTailConst k ≍ √(k log k)` by `≍ √k` and
 nothing else; the `3/2` power is intrinsic to this route, not an artefact of that bound (a
@@ -11301,3 +11429,4 @@ theorem berryEsseen_convex_sharp {k : ℕ} (hk : 0 < k) :
 end ConvexDiscrepancy
 
 end StatLean.HypothesisTesting
+
