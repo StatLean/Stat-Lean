@@ -3242,6 +3242,158 @@ private lemma integral_sq_gauss : (∫ t : ℝ, t ^ 2 ∂(gaussianReal 0 1)) = 1
   rw [ProbabilityTheory.variance_eq_integral (by fun_prop)] at hV
   simpa using hV
 
+/-- **`t⁴ ≤ 256 (eᵗ + e⁻ᵗ)`** (wave 40). The fourth-power analogue of `sq_le_exp_add_exp` and
+`cube_le_exp`, proved the same way from `1 + y/4 ≤ exp (y/4)`. It is what gives the fourth
+moment of `N(0,1)` an explicit bound without any Gamma-function apparatus. -/
+private lemma pow_four_le_cosh (t : ℝ) : t ^ 4 ≤ 256 * (Real.exp t + Real.exp (-t)) := by
+  have hkey : ∀ y : ℝ, 0 ≤ y → y ^ 4 ≤ 256 * Real.exp y := by
+    intro y hy
+    have h1 : y / 4 + 1 ≤ Real.exp (y / 4) := Real.add_one_le_exp _
+    have h2 : (0 : ℝ) ≤ y / 4 + 1 := by linarith
+    have h3 : (y / 4 + 1) ^ 4 ≤ Real.exp (y / 4) ^ 4 := pow_le_pow_left₀ h2 h1 4
+    have h4 : Real.exp (y / 4) ^ 4 = Real.exp y := by
+      rw [← Real.exp_nat_mul]; congr 1; ring
+    have h5 : y ^ 4 / 256 ≤ Real.exp y := by
+      calc y ^ 4 / 256 = (y / 4) ^ 4 := by ring
+        _ ≤ (y / 4 + 1) ^ 4 := pow_le_pow_left₀ (by linarith) (by linarith) 4
+        _ ≤ Real.exp (y / 4) ^ 4 := h3
+        _ = Real.exp y := h4
+    linarith
+  have habs : |t| ^ 4 ≤ 256 * Real.exp |t| := hkey _ (abs_nonneg t)
+  have hex : Real.exp |t| ≤ Real.exp t + Real.exp (-t) := by
+    rcases le_or_gt 0 t with h | h
+    · rw [abs_of_nonneg h]; linarith [Real.exp_pos (-t)]
+    · rw [abs_of_neg h]; linarith [Real.exp_pos t]
+  have h4 : |t| ^ 4 = t ^ 4 := by
+    rw [show (4 : ℕ) = 2 * 2 from rfl, pow_mul, pow_mul, sq_abs]
+  linarith [habs, hex, h4]
+
+private lemma integrable_pow_four_gauss :
+    Integrable (fun t : ℝ => t ^ 4) (gaussianReal 0 1) := by
+  refine Integrable.mono' (integrable_cosh_one.const_mul 256) (by fun_prop) ?_
+  filter_upwards with t
+  rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+  exact pow_four_le_cosh t
+
+private lemma exp_half_le : Real.exp (1 / 2) ≤ 1.65 := by
+  have h := Real.exp_one_lt_d9
+  have hsq : Real.exp (1 / 2) ^ 2 = Real.exp 1 := by
+    rw [sq, ← Real.exp_add]; norm_num
+  nlinarith [Real.exp_pos (1 / 2 : ℝ), hsq, h]
+
+/-- **An explicit bound on the fourth moment of `N(0,1)`** (wave 40). The exact value is `3`;
+all that is needed downstream is *some* explicit constant, and the exponential envelope
+`pow_four_le_cosh` supplies one. -/
+private lemma integral_pow_four_gauss_le :
+    (∫ t : ℝ, t ^ 4 ∂(gaussianReal 0 1)) ≤ 845 := by
+  have hmono := integral_mono integrable_pow_four_gauss (integrable_cosh_one.const_mul 256)
+    (fun t => pow_four_le_cosh t)
+  have he : (∫ t : ℝ, 256 * (Real.exp t + Real.exp (-t)) ∂(gaussianReal 0 1))
+      = 256 * ∫ t : ℝ, (Real.exp t + Real.exp (-t)) ∂(gaussianReal 0 1) :=
+    integral_const_mul _ _
+  rw [he, integral_cosh_one] at hmono
+  nlinarith [exp_half_le]
+
+/-- **The `L²` size of the Cameron–Martin *polynomial*** (wave 40):
+`∫ (1 + s t + s²(t²−1)/2)² dγ₁ ≤ 640 (1 + s²)²`, at **every** tilt parameter `s`.
+
+The `L²` bound `integral_sq_tiltRemainder_le` on the *remainder* is available only for `s ≤ 1`
+(and must be: `∫ R_s² ~ e^{s²}`). The polynomial part, by contrast, is polynomially bounded at
+every `s`, and that is exactly what removes the `‖w‖ ≤ 1` restriction from the far-in-`v` half
+of the tail brick's route (b) — see
+`abs_integral_shift_vecTiltRemainder_le_of_const_ball_any`. -/
+private lemma integral_sq_tiltPoly_le (s : ℝ) :
+    (∫ t : ℝ, (1 + s * t + s ^ 2 * (t ^ 2 - 1) / 2) ^ 2 ∂(gaussianReal 0 1))
+      ≤ 640 * (1 + s ^ 2) ^ 2 := by
+  have e1 : Integrable (fun _ : ℝ => (3 + 3 * s ^ 4 / 4)) (gaussianReal 0 1) :=
+    integrable_const _
+  have e2 : Integrable (fun t : ℝ => (3 * s ^ 2 - 3 * s ^ 4 / 2) * t ^ 2) (gaussianReal 0 1) :=
+    integrable_sq_gauss.const_mul _
+  have e3 : Integrable (fun t : ℝ => (3 * s ^ 4 / 4) * t ^ 4) (gaussianReal 0 1) :=
+    integrable_pow_four_gauss.const_mul _
+  have e12 : Integrable (fun t : ℝ =>
+      (3 + 3 * s ^ 4 / 4) + (3 * s ^ 2 - 3 * s ^ 4 / 2) * t ^ 2) (gaussianReal 0 1) := e1.add e2
+  have hdom : Integrable (fun t : ℝ =>
+      (3 + 3 * s ^ 4 / 4) + (3 * s ^ 2 - 3 * s ^ 4 / 2) * t ^ 2 + (3 * s ^ 4 / 4) * t ^ 4)
+      (gaussianReal 0 1) := e12.add e3
+  have hptw : ∀ t : ℝ, (1 + s * t + s ^ 2 * (t ^ 2 - 1) / 2) ^ 2
+      ≤ (3 + 3 * s ^ 4 / 4) + (3 * s ^ 2 - 3 * s ^ 4 / 2) * t ^ 2
+        + (3 * s ^ 4 / 4) * t ^ 4 := by
+    intro t
+    nlinarith [sq_nonneg (1 - s * t), sq_nonneg (1 - s ^ 2 * (t ^ 2 - 1) / 2),
+      sq_nonneg (s * t - s ^ 2 * (t ^ 2 - 1) / 2)]
+  have hqint : Integrable (fun t : ℝ => (1 + s * t + s ^ 2 * (t ^ 2 - 1) / 2) ^ 2)
+      (gaussianReal 0 1) := by
+    refine Integrable.mono' hdom (by fun_prop) ?_
+    filter_upwards with t
+    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+    exact hptw t
+  have hmono := integral_mono hqint hdom hptw
+  have hsplit1 := integral_add e12 e3
+  have hsplit2 := integral_add e1 e2
+  have hc1 : (∫ _t : ℝ, (3 + 3 * s ^ 4 / 4) ∂(gaussianReal 0 1)) = 3 + 3 * s ^ 4 / 4 := by
+    rw [integral_const]; simp
+  have hc2 : (∫ t : ℝ, (3 * s ^ 2 - 3 * s ^ 4 / 2) * t ^ 2 ∂(gaussianReal 0 1))
+      = (3 * s ^ 2 - 3 * s ^ 4 / 2) := by
+    rw [integral_const_mul, integral_sq_gauss, mul_one]
+  have hc3 : (∫ t : ℝ, (3 * s ^ 4 / 4) * t ^ 4 ∂(gaussianReal 0 1))
+      = (3 * s ^ 4 / 4) * ∫ t : ℝ, t ^ 4 ∂(gaussianReal 0 1) := integral_const_mul _ _
+  have hval : (∫ t : ℝ, ((3 + 3 * s ^ 4 / 4) + (3 * s ^ 2 - 3 * s ^ 4 / 2) * t ^ 2
+        + (3 * s ^ 4 / 4) * t ^ 4) ∂(gaussianReal 0 1))
+      = (3 + 3 * s ^ 4 / 4) + (3 * s ^ 2 - 3 * s ^ 4 / 2)
+        + (3 * s ^ 4 / 4) * ∫ t : ℝ, t ^ 4 ∂(gaussianReal 0 1) := by
+    rw [hsplit1, hsplit2, hc1, hc2, hc3]
+  rw [hval] at hmono
+  have h4 := integral_pow_four_gauss_le
+  nlinarith [hmono, mul_le_mul_of_nonneg_left h4 (by positivity : (0 : ℝ) ≤ 3 * s ^ 4 / 4),
+    sq_nonneg s, sq_nonneg (s ^ 2)]
+
+/-- **The `L¹` size of the Cameron–Martin polynomial** (wave 40):
+`∫ |1 + s t + s²(t²−1)/2| dγ₁ ≤ 1 + s + s²` for `s ≥ 0`. Used for the crude, *at most
+quadratic in `‖w‖`*, bound on a swap step — which is what keeps the near-in-`v` half of the
+large-shift regime inside a third moment. -/
+private lemma integral_abs_tiltPoly_le {s : ℝ} (hs : 0 ≤ s) :
+    (∫ t : ℝ, |1 + s * t + s ^ 2 * (t ^ 2 - 1) / 2| ∂(gaussianReal 0 1))
+      ≤ 1 + s + s ^ 2 := by
+  have e1 : Integrable (fun _ : ℝ => (1 + s / 2 + s ^ 2 / 2)) (gaussianReal 0 1) :=
+    integrable_const _
+  have e2 : Integrable (fun t : ℝ => (s / 2 + s ^ 2 / 2) * t ^ 2) (gaussianReal 0 1) :=
+    integrable_sq_gauss.const_mul _
+  have hdom : Integrable (fun t : ℝ =>
+      (1 + s / 2 + s ^ 2 / 2) + (s / 2 + s ^ 2 / 2) * t ^ 2) (gaussianReal 0 1) := e1.add e2
+  have hptw : ∀ t : ℝ, |1 + s * t + s ^ 2 * (t ^ 2 - 1) / 2|
+      ≤ (1 + s / 2 + s ^ 2 / 2) + (s / 2 + s ^ 2 / 2) * t ^ 2 := by
+    intro t
+    have h1 : |t| ≤ (1 + t ^ 2) / 2 := by nlinarith [sq_nonneg (|t| - 1), sq_abs t]
+    have hs2 : (0 : ℝ) ≤ s ^ 2 := sq_nonneg s
+    have hup : s * t ≤ s * ((1 + t ^ 2) / 2) := by
+      have := mul_le_mul_of_nonneg_left (le_abs_self t) hs
+      have h2 := mul_le_mul_of_nonneg_left h1 hs
+      linarith
+    have hlow : s * (-((1 + t ^ 2) / 2)) ≤ s * t := by
+      have := mul_le_mul_of_nonneg_left (neg_abs_le t) hs
+      have h2 := mul_le_mul_of_nonneg_left h1 hs
+      linarith
+    rw [abs_le]
+    constructor <;> nlinarith [hup, hlow, hs2, sq_nonneg t, mul_nonneg hs2 (sq_nonneg t)]
+  have hqint : Integrable (fun t : ℝ => |1 + s * t + s ^ 2 * (t ^ 2 - 1) / 2|)
+      (gaussianReal 0 1) := by
+    refine Integrable.mono' hdom (by fun_prop) ?_
+    filter_upwards with t
+    rw [Real.norm_eq_abs, abs_abs]
+    exact hptw t
+  have hmono := integral_mono hqint hdom hptw
+  have hsplit := integral_add e1 e2
+  have hc1 : (∫ _t : ℝ, (1 + s / 2 + s ^ 2 / 2) ∂(gaussianReal 0 1))
+      = 1 + s / 2 + s ^ 2 / 2 := by rw [integral_const]; simp
+  have hc2 : (∫ t : ℝ, (s / 2 + s ^ 2 / 2) * t ^ 2 ∂(gaussianReal 0 1))
+      = s / 2 + s ^ 2 / 2 := by rw [integral_const_mul, integral_sq_gauss, mul_one]
+  have hval : (∫ t : ℝ, ((1 + s / 2 + s ^ 2 / 2) + (s / 2 + s ^ 2 / 2) * t ^ 2)
+        ∂(gaussianReal 0 1))
+      = (1 + s / 2 + s ^ 2 / 2) + (s / 2 + s ^ 2 / 2) := by rw [hsplit, hc1, hc2]
+  rw [hval] at hmono
+  linarith
+
 /-! ### The scalar tilt remainder -/
 
 /-- The **scalar tilt remainder**: the error in the second-order expansion, in the tilt
@@ -3736,6 +3888,92 @@ private lemma memLp_two_vecTiltRemainder {w : EuclideanSpace ℝ (Fin k)} (hw : 
     MemLp (fun z => vecTiltRemainder w z) 2 (stdGaussian (EuclideanSpace ℝ (Fin k))) :=
   (memLp_two_iff_integrable_sq (continuous_vecTiltRemainder w).aestronglyMeasurable).2
     (integrable_sq_vecTiltRemainder hw)
+
+/-- The one-dimensional reduction of a plain inner product: `⟪w, z⟫ = ‖w‖ ⟪ŵ, z⟫`. This is
+`exists_unit_vecTiltRemainder_eq` stripped of the tilt, so that the *polynomial* part of the
+Cameron–Martin expansion can be reduced to `N(0,1)` in the same dimension-free way. -/
+private lemma exists_unit_inner_eq {w : EuclideanSpace ℝ (Fin k)} (hw : w ≠ 0) :
+    ∃ u : EuclideanSpace ℝ (Fin k), ‖u‖ = 1 ∧ ∀ z, ⟪w, z⟫_ℝ = ‖w‖ * ⟪u, z⟫_ℝ := by
+  have hnw : 0 < ‖w‖ := norm_pos_iff.mpr hw
+  refine ⟨‖w‖⁻¹ • w, ?_, fun z => ?_⟩
+  · rw [norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.mpr hnw)]
+    field_simp
+  · rw [real_inner_smul_left]
+    field_simp
+
+private lemma integrable_sq_vecTiltPoly (w : EuclideanSpace ℝ (Fin k)) :
+    Integrable (fun z => (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2) ^ 2)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · simp
+  · obtain ⟨u, hu, hip⟩ := exists_unit_inner_eq hw
+    have hrw : (fun z : EuclideanSpace ℝ (Fin k) =>
+        (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2) ^ 2)
+        = fun z => (fun t : ℝ => (1 + ‖w‖ * t + ‖w‖ ^ 2 * (t ^ 2 - 1) / 2) ^ 2)
+            (⟪u, z⟫_ℝ) := by
+      funext z
+      simp only [hip z]
+      ring
+    rw [hrw]
+    refine integrable_comp_inner_unit
+      (φ := fun t : ℝ => (1 + ‖w‖ * t + ‖w‖ ^ 2 * (t ^ 2 - 1) / 2) ^ 2) (by fun_prop) hu ?_
+    have f1 : Integrable (fun _ : ℝ => (3 + 3 * ‖w‖ ^ 4 / 4)) (gaussianReal 0 1) :=
+      integrable_const _
+    have f2 : Integrable (fun t : ℝ => (3 * ‖w‖ ^ 2 - 3 * ‖w‖ ^ 4 / 2) * t ^ 2)
+        (gaussianReal 0 1) := integrable_sq_gauss.const_mul _
+    have f3 : Integrable (fun t : ℝ => (3 * ‖w‖ ^ 4 / 4) * t ^ 4) (gaussianReal 0 1) :=
+      integrable_pow_four_gauss.const_mul _
+    have f12 : Integrable (fun t : ℝ =>
+        (3 + 3 * ‖w‖ ^ 4 / 4) + (3 * ‖w‖ ^ 2 - 3 * ‖w‖ ^ 4 / 2) * t ^ 2)
+        (gaussianReal 0 1) := f1.add f2
+    have fdom : Integrable (fun t : ℝ =>
+        (3 + 3 * ‖w‖ ^ 4 / 4) + (3 * ‖w‖ ^ 2 - 3 * ‖w‖ ^ 4 / 2) * t ^ 2
+          + (3 * ‖w‖ ^ 4 / 4) * t ^ 4) (gaussianReal 0 1) := f12.add f3
+    refine Integrable.mono' fdom (by fun_prop) ?_
+    filter_upwards with t
+    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+    nlinarith [sq_nonneg (1 - ‖w‖ * t), sq_nonneg (1 - ‖w‖ ^ 2 * (t ^ 2 - 1) / 2),
+      sq_nonneg (‖w‖ * t - ‖w‖ ^ 2 * (t ^ 2 - 1) / 2)]
+
+/-- **The `L²` size of the Cameron–Martin polynomial, dimension-free** (wave 40). The vector
+form of `integral_sq_tiltPoly_le`, by the one-dimensional marginal. -/
+private lemma integral_sq_vecTiltPoly_le (w : EuclideanSpace ℝ (Fin k)) :
+    (∫ z, (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2) ^ 2
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      ≤ 640 * (1 + ‖w‖ ^ 2) ^ 2 := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · norm_num
+  · obtain ⟨u, hu, hip⟩ := exists_unit_inner_eq hw
+    have hrw : (fun z : EuclideanSpace ℝ (Fin k) =>
+        (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2) ^ 2)
+        = fun z => (fun t : ℝ => (1 + ‖w‖ * t + ‖w‖ ^ 2 * (t ^ 2 - 1) / 2) ^ 2)
+            (⟪u, z⟫_ℝ) := by
+      funext z
+      simp only [hip z]
+      ring
+    rw [hrw, integral_comp_inner_unit_eq
+      (φ := fun t : ℝ => (1 + ‖w‖ * t + ‖w‖ ^ 2 * (t ^ 2 - 1) / 2) ^ 2) (by fun_prop) hu]
+    exact integral_sq_tiltPoly_le ‖w‖
+
+/-- **The `L¹` size of the Cameron–Martin polynomial, dimension-free** (wave 40). -/
+private lemma integral_abs_vecTiltPoly_le (w : EuclideanSpace ℝ (Fin k)) :
+    (∫ z, |1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2|
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      ≤ 1 + ‖w‖ + ‖w‖ ^ 2 := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · simp
+  · obtain ⟨u, hu, hip⟩ := exists_unit_inner_eq hw
+    have hrw : (fun z : EuclideanSpace ℝ (Fin k) =>
+        |1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2|)
+        = fun z => (fun t : ℝ => |1 + ‖w‖ * t + ‖w‖ ^ 2 * (t ^ 2 - 1) / 2|)
+            (⟪u, z⟫_ℝ) := by
+      funext z
+      simp only [hip z]
+      congr 1
+      ring
+    rw [hrw, integral_comp_inner_unit_eq
+      (φ := fun t : ℝ => |1 + ‖w‖ * t + ‖w‖ ^ 2 * (t ^ 2 - 1) / 2|) (by fun_prop) hu]
+    exact integral_abs_tiltPoly_le (norm_nonneg w)
 
 /-- **The weighted (Hölder / `L²`) form of `integral_abs_vecTiltRemainder_le`** — the first of
 the two ingredients the sharp Bentkus rate needs (wave 19).
@@ -4362,6 +4600,270 @@ private lemma abs_integral_shift_vecTiltRemainder_le_of_const_ball
   have hlt : σ * ‖z‖ < σ * (r / σ) := mul_lt_mul_of_pos_left hz' hσ
   have heq : σ * (r / σ) = r := by field_simp
   linarith [hlt, heq.le, heq.ge]
+
+/-- **The localised Cameron–Martin error at a point far from the boundary, at EVERY shift
+length (wave 40 — the `‖w‖ ≤ 1` restriction is REMOVED).**
+
+Waves 29–39 could only localise a swap step at a point `v` far from `∂B` when the shift `w`
+was short: `abs_integral_shift_vecTiltRemainder_le_of_const_ball` runs through
+`integral_sq_vecTiltRemainder_le`, whose hypothesis `‖w‖ ≤ 1` is *not* removable — the `L²`
+norm of the tilt remainder grows like `e^{‖w‖²/2}`. Every one of waves 32, 35, 38 and 39
+recorded "the `‖w‖ ≤ 1` restriction is still open" as the residue of the tail brick; at step
+`j` the shift is `w = (c/σ)y`, so the restriction is `‖y‖ ≤ √j`, and the complement is *not*
+priceable by the third moment alone (a bare constant in the per-step weight sums to `A δ ε⁻¹`,
+which is outside brick L's allowed shape — wave 35's Correction 1).
+
+**The repair, in one line.** Do not bound the tilt remainder in `L²`. Split it into its two
+halves and treat each with the structure it actually has:
+
+* the *exponential* half is a Gaussian shift (`integral_gaussian_shift_eq_tilt`), so if `F` is
+  constant on the ball of radius `σ(M + ‖w‖)` about `v` then the shifted integrand
+  `F(v + σ(z+w)) − a` already vanishes on `{‖z‖ < M}` — the shift is absorbed by the *radius*,
+  not by a norm bound. This half costs `2 γ{‖z‖ ≥ M}` at every `‖w‖`;
+* the *polynomial* half is a genuine polynomial, so its `L²` norm is polynomial in `‖w‖` at
+  every `‖w‖` (`integral_sq_vecTiltPoly_le`, `≤ 640(1+‖w‖²)²`), and Cauchy–Schwarz against the
+  Gaussian tail gives `2 √(γ{‖z‖ ≥ M}) · 26(1 + ‖w‖²)`.
+
+Both constants are **dimension-free** (the polynomial bound goes through the one-dimensional
+marginal, exactly as the wave-19/29 bounds do), and neither half needs a fourth moment of the
+summand law: the `‖w‖`-growth is quadratic, so against the localisation weight — which is
+itself linear in `‖w‖` — the product stays cubic.
+
+With `M = gaussianTailRadius k σ` (so `γ{‖z‖ ≥ M} ≤ σ²`, `stdGaussian_norm_ge_gaussianTailRadius_le`)
+this reads `≤ 2σ² + 52 σ (1 + ‖w‖²)`, which is the far-in-`v` input of route (b) of
+`abs_integral_gaussian_smoothed_swap_localised_le` at *every* shift length. -/
+private lemma abs_integral_shift_vecTiltRemainder_le_of_const_ball_any
+    {F : EuclideanSpace ℝ (Fin k) → ℝ} (hF : Continuous F) (hFb : ∀ x, |F x| ≤ 1)
+    (v : EuclideanSpace ℝ (Fin k)) {σ M : ℝ} (hσ : 0 < σ)
+    {a : ℝ} (ha : |a| ≤ 1) {w : EuclideanSpace ℝ (Fin k)}
+    (hconst : ∀ x, ‖x - v‖ < σ * (M + ‖w‖) → F x = a) :
+    |∫ z, F (v + σ • z) * vecTiltRemainder w z
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+      ≤ 2 * ((stdGaussian (EuclideanSpace ℝ (Fin k))) {z | M ≤ ‖z‖}).toReal
+        + 2 * Real.sqrt (((stdGaussian (EuclideanSpace ℝ (Fin k))) {z | M ≤ ‖z‖}).toReal)
+            * (26 * (1 + ‖w‖ ^ 2)) := by
+  classical
+  have hAm : MeasurableSet {z : EuclideanSpace ℝ (Fin k) | M ≤ ‖z‖} :=
+    (isClosed_le continuous_const continuous_norm).measurableSet
+  have hHc : Continuous (fun z : EuclideanSpace ℝ (Fin k) => F (v + σ • z) - a) := by
+    fun_prop
+  have hHb : ∀ z : EuclideanSpace ℝ (Fin k), |F (v + σ • z) - a| ≤ 2 := by
+    intro z
+    have h1 := abs_le.1 (hFb (v + σ • z))
+    have h2 := abs_le.1 ha
+    rw [abs_le]
+    constructor <;> linarith [h1.1, h1.2, h2.1, h2.2]
+  have hHzero : ∀ z : EuclideanSpace ℝ (Fin k), ‖z‖ < M + ‖w‖ →
+      F (v + σ • z) - a = 0 := by
+    intro z hz
+    have hnorm : ‖(v + σ • z) - v‖ = σ * ‖z‖ := by
+      rw [add_sub_cancel_left, norm_smul, Real.norm_eq_abs, abs_of_pos hσ]
+    have hlt : ‖(v + σ • z) - v‖ < σ * (M + ‖w‖) := by
+      rw [hnorm]; exact mul_lt_mul_of_pos_left hz hσ
+    rw [hconst _ hlt, sub_self]
+  have hHsupp : ∀ z : EuclideanSpace ℝ (Fin k),
+      z ∉ {z : EuclideanSpace ℝ (Fin k) | M ≤ ‖z‖} → F (v + σ • z) - a = 0 := by
+    intro z hz
+    have h1 : ‖z‖ < M := lt_of_not_ge hz
+    exact hHzero z (by linarith [norm_nonneg w])
+  -- (i) the constant may be subtracted, since `∫ R_w dγ = 0`
+  have hRint := integrable_vecTiltRemainder (k := k) w
+  have hHRint : Integrable (fun z => (F (v + σ • z) - a) * vecTiltRemainder w z)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    refine Integrable.mono' (hRint.abs.const_mul 2) (by fun_prop) ?_
+    filter_upwards with z
+    rw [Real.norm_eq_abs, abs_mul]
+    nlinarith [hHb z, abs_nonneg (vecTiltRemainder w z),
+      abs_nonneg (F (v + σ • z) - a)]
+  have haRint : Integrable (fun z => a * vecTiltRemainder w z)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := hRint.const_mul a
+  have haRval : (∫ z, a * vecTiltRemainder w z
+      ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) = 0 := by
+    rw [integral_const_mul, integral_vecTiltRemainder_eq_zero, mul_zero]
+  have hrecentre : (∫ z, F (v + σ • z) * vecTiltRemainder w z
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      = ∫ z, (F (v + σ • z) - a) * vecTiltRemainder w z
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    have hsum := integral_add hHRint haRint
+    have hcongr : (∫ z, F (v + σ • z) * vecTiltRemainder w z
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        = ∫ z, ((F (v + σ • z) - a) * vecTiltRemainder w z + a * vecTiltRemainder w z)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+      integral_congr_ae (Filter.Eventually.of_forall fun z => by ring)
+    rw [hcongr, hsum, haRval, add_zero]
+  -- (ii) split the tilt into its exponential and polynomial halves
+  have hEint : Integrable (fun z => (F (v + σ • z) - a)
+      * Real.exp (⟪w, z⟫_ℝ - ‖w‖ ^ 2 / 2))
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    have hhalf := integrable_mul_exp_tilt_gauss
+      (G := fun z : EuclideanSpace ℝ (Fin k) => (F (v + σ • z) - a) / 2) (by fun_prop)
+      (fun x => by
+        rw [abs_div, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ (2 : ℝ))]
+        linarith [hHb x]) w
+    refine (hhalf.const_mul 2).congr (Filter.Eventually.of_forall fun z => ?_)
+    dsimp only
+    ring
+  have hPint : Integrable (fun z => (F (v + σ • z) - a)
+      * (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2))
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    have hhalf := integrable_mul_tiltPoly_gauss
+      (G := fun z : EuclideanSpace ℝ (Fin k) => (F (v + σ • z) - a) / 2) (by fun_prop)
+      (fun x => by
+        rw [abs_div, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ (2 : ℝ))]
+        linarith [hHb x]) w
+    refine (hhalf.const_mul 2).congr (Filter.Eventually.of_forall fun z => ?_)
+    dsimp only
+    ring
+  have hsplit : (∫ z, (F (v + σ • z) - a) * vecTiltRemainder w z
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      = (∫ z, (F (v + σ • z) - a) * Real.exp (⟪w, z⟫_ℝ - ‖w‖ ^ 2 / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        - ∫ z, (F (v + σ • z) - a)
+            * (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    rw [← integral_sub hEint hPint]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun z => ?_)
+    simp only [vecTiltRemainder]
+    ring
+  -- (iii) the exponential half is a Gaussian shift, and the shift is absorbed by the radius
+  have hshift := integral_gaussian_shift_eq_tilt
+    (g := fun z : EuclideanSpace ℝ (Fin k) => F (v + σ • z) - a) hHc w
+  have hbdshift : ∀ z : EuclideanSpace ℝ (Fin k),
+      |F (v + σ • (z + w)) - a|
+        ≤ 2 * ({z : EuclideanSpace ℝ (Fin k) | M ≤ ‖z‖}).indicator
+            (fun _ => (1 : ℝ)) z := by
+    intro z
+    by_cases hz : z ∈ {z : EuclideanSpace ℝ (Fin k) | M ≤ ‖z‖}
+    · rw [Set.indicator_of_mem hz, mul_one]
+      exact hHb (z + w)
+    · have h1 : ‖z‖ < M := lt_of_not_ge hz
+      have h2 : ‖z + w‖ < M + ‖w‖ := lt_of_le_of_lt (norm_add_le z w) (by linarith)
+      rw [hHzero _ h2, Set.indicator_of_notMem hz]
+      simp
+  have hintshift : Integrable (fun z : EuclideanSpace ℝ (Fin k) =>
+      F (v + σ • (z + w)) - a) (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    refine Integrable.mono' (integrable_const (2 : ℝ)) (by fun_prop) ?_
+    filter_upwards with z
+    rw [Real.norm_eq_abs]
+    exact hHb (z + w)
+  have hindint : Integrable (fun z : EuclideanSpace ℝ (Fin k) =>
+      2 * ({z : EuclideanSpace ℝ (Fin k) | M ≤ ‖z‖}).indicator (fun _ => (1 : ℝ)) z)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+    ((integrable_const (1 : ℝ)).indicator hAm).const_mul 2
+  have hexpbd : |∫ z, (F (v + σ • z) - a) * Real.exp (⟪w, z⟫_ℝ - ‖w‖ ^ 2 / 2)
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+      ≤ 2 * ((stdGaussian (EuclideanSpace ℝ (Fin k))) {z | M ≤ ‖z‖}).toReal := by
+    rw [← hshift]
+    calc |∫ z, (F (v + σ • (z + w)) - a) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+        ≤ ∫ z, |F (v + σ • (z + w)) - a| ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+          abs_integral_le_integral_abs
+      _ ≤ ∫ z, 2 * ({z : EuclideanSpace ℝ (Fin k) | M ≤ ‖z‖}).indicator
+            (fun _ => (1 : ℝ)) z ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+          integral_mono hintshift.abs hindint hbdshift
+      _ = 2 * ((stdGaussian (EuclideanSpace ℝ (Fin k))) {z | M ≤ ‖z‖}).toReal := by
+          rw [integral_const_mul, integral_indicator_const (1 : ℝ) hAm]
+          simp [Measure.real]
+  -- (iv) the polynomial half by Cauchy–Schwarz against the Gaussian tail
+  have hHsq : Integrable (fun z => (F (v + σ • z) - a) ^ 2)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    refine Integrable.mono' (((integrable_const (1 : ℝ)).indicator hAm).const_mul 4)
+      (by fun_prop) ?_
+    filter_upwards with z
+    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+    by_cases hz : z ∈ {z : EuclideanSpace ℝ (Fin k) | M ≤ ‖z‖}
+    · rw [Set.indicator_of_mem hz, mul_one]
+      nlinarith [hHb z, abs_nonneg (F (v + σ • z) - a), sq_abs (F (v + σ • z) - a)]
+    · rw [hHsupp z hz, Set.indicator_of_notMem hz]
+      simp
+  have hHsqbd : (∫ z, (F (v + σ • z) - a) ^ 2
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      ≤ 4 * ((stdGaussian (EuclideanSpace ℝ (Fin k))) {z | M ≤ ‖z‖}).toReal := by
+    have hptw : ∀ z : EuclideanSpace ℝ (Fin k), (F (v + σ • z) - a) ^ 2
+        ≤ 4 * ({z : EuclideanSpace ℝ (Fin k) | M ≤ ‖z‖}).indicator
+            (fun _ => (1 : ℝ)) z := by
+      intro z
+      by_cases hz : z ∈ {z : EuclideanSpace ℝ (Fin k) | M ≤ ‖z‖}
+      · rw [Set.indicator_of_mem hz, mul_one]
+        nlinarith [hHb z, abs_nonneg (F (v + σ • z) - a), sq_abs (F (v + σ • z) - a)]
+      · rw [hHsupp z hz, Set.indicator_of_notMem hz]
+        simp
+    have hmono := integral_mono hHsq
+      (((integrable_const (1 : ℝ)).indicator hAm).const_mul 4) hptw
+    have hval : (∫ z, 4 * ({z : EuclideanSpace ℝ (Fin k) | M ≤ ‖z‖}).indicator
+          (fun _ => (1 : ℝ)) z ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        = 4 * ((stdGaussian (EuclideanSpace ℝ (Fin k))) {z | M ≤ ‖z‖}).toReal := by
+      rw [integral_const_mul, integral_indicator_const (1 : ℝ) hAm]
+      simp [Measure.real]
+    linarith [hmono, hval.le, hval.ge]
+  have hHabs : MemLp (fun z => |F (v + σ • z) - a|) (ENNReal.ofReal 2)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    rw [show ENNReal.ofReal (2 : ℝ) = 2 by norm_num]
+    refine (memLp_two_iff_integrable_sq hHc.abs.aestronglyMeasurable).2 ?_
+    simpa [sq_abs] using hHsq
+  have hPabs : MemLp (fun z : EuclideanSpace ℝ (Fin k) =>
+      |1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2|) (ENNReal.ofReal 2)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    rw [show ENNReal.ofReal (2 : ℝ) = 2 by norm_num]
+    refine (memLp_two_iff_integrable_sq (by fun_prop)).2 ?_
+    simpa [sq_abs] using integrable_sq_vecTiltPoly w
+  have hmain := integral_mul_le_Lp_mul_Lq_of_nonneg
+    (μ := stdGaussian (EuclideanSpace ℝ (Fin k))) Real.HolderConjugate.two_two
+    (Filter.Eventually.of_forall fun z => abs_nonneg (F (v + σ • z) - a))
+    (Filter.Eventually.of_forall fun z =>
+      abs_nonneg (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2)) hHabs hPabs
+  have hrp : ∀ x : ℝ, x ^ (2 : ℝ) = x ^ (2 : ℕ) := by
+    intro x
+    rw [show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num, Real.rpow_natCast]
+  simp only [hrp, sq_abs, ← Real.sqrt_eq_rpow] at hmain
+  have hsqrt4 : Real.sqrt (4 * ((stdGaussian (EuclideanSpace ℝ (Fin k)))
+        {z | M ≤ ‖z‖}).toReal)
+      = 2 * Real.sqrt (((stdGaussian (EuclideanSpace ℝ (Fin k)))
+        {z | M ≤ ‖z‖}).toReal) := by
+    rw [Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 4),
+      show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num : (0 : ℝ) ≤ 2)]
+  have hsqrtP : Real.sqrt (640 * (1 + ‖w‖ ^ 2) ^ 2) ≤ 26 * (1 + ‖w‖ ^ 2) := by
+    rw [Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 640),
+      Real.sqrt_sq (by positivity : (0 : ℝ) ≤ 1 + ‖w‖ ^ 2)]
+    have h1 : Real.sqrt 640 ≤ 26 := by
+      have h2 : Real.sqrt 640 ≤ Real.sqrt (26 ^ 2) := Real.sqrt_le_sqrt (by norm_num)
+      rwa [Real.sqrt_sq (by norm_num : (0 : ℝ) ≤ 26)] at h2
+    nlinarith [Real.sqrt_nonneg (640 : ℝ), sq_nonneg ‖w‖]
+  have hpolybd : |∫ z, (F (v + σ • z) - a)
+        * (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2)
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+      ≤ 2 * Real.sqrt (((stdGaussian (EuclideanSpace ℝ (Fin k)))
+          {z | M ≤ ‖z‖}).toReal) * (26 * (1 + ‖w‖ ^ 2)) := by
+    calc |∫ z, (F (v + σ • z) - a)
+            * (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+        ≤ ∫ z, |(F (v + σ • z) - a)
+            * (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2)|
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := abs_integral_le_integral_abs
+      _ = ∫ z, |F (v + σ • z) - a| * |1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2|
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by simp only [abs_mul]
+      _ ≤ Real.sqrt (∫ z, (F (v + σ • z) - a) ^ 2
+              ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+            * Real.sqrt (∫ z, (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2) ^ 2
+              ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) := hmain
+      _ ≤ Real.sqrt (4 * ((stdGaussian (EuclideanSpace ℝ (Fin k)))
+              {z | M ≤ ‖z‖}).toReal) * Real.sqrt (640 * (1 + ‖w‖ ^ 2) ^ 2) :=
+          mul_le_mul (Real.sqrt_le_sqrt hHsqbd)
+            (Real.sqrt_le_sqrt (integral_sq_vecTiltPoly_le w)) (Real.sqrt_nonneg _)
+            (Real.sqrt_nonneg _)
+      _ ≤ 2 * Real.sqrt (((stdGaussian (EuclideanSpace ℝ (Fin k)))
+              {z | M ≤ ‖z‖}).toReal) * (26 * (1 + ‖w‖ ^ 2)) := by
+          rw [hsqrt4]
+          exact mul_le_mul_of_nonneg_left hsqrtP (by positivity)
+  rw [hrecentre, hsplit]
+  calc |(∫ z, (F (v + σ • z) - a) * Real.exp (⟪w, z⟫_ℝ - ‖w‖ ^ 2 / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        - ∫ z, (F (v + σ • z) - a) * (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+      ≤ |∫ z, (F (v + σ • z) - a) * Real.exp (⟪w, z⟫_ℝ - ‖w‖ ^ 2 / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+        + |∫ z, (F (v + σ • z) - a) * (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))| := abs_sub _ _
+    _ ≤ _ := by linarith [hexpbd, hpolybd]
 
 /-- **The polynomial part of the tilt has the same integral for every centred,
 identity-covariance law.** This is the exact analogue of the vanishing of the linear term and
