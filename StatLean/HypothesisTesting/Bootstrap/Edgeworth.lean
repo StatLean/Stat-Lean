@@ -3583,7 +3583,7 @@ it consumes.
 **The statement.** `measure_abs_surrogate_window_slab_le` replaces the frozen-centre route's
 *marginal* window hypothesis by a **direction-uniform slab bound**
 
-`∀ κ' c' w', 0 ≤ w' → P(|U − κ'V − c'| ≤ w') ≤ A·w' + η₀`,
+`∀ κ' c' w', |κ'| ≤ K → 0 ≤ w' → P(|U − κ'V − c'| ≤ w') ≤ A·w' + η₀`,
 
 and returns the window mass of `Hₙ(U, V)` as
 
@@ -3680,9 +3680,14 @@ lemma abs_sub_affine_centre_le' {r x v₀ h m₀ m κ K L : ℝ}
 
 `P(|Hₙ(U, V) − x| ≤ w) ≤ A·((6/5)w + (6/5)·surrogateDefect r x v₀ K L) + η₀ + ρ`.
 
-The hypothesis `hslab` is uniform over *all* slopes `κ'` and all offsets `c'`, which is what
-"direction-uniform" means: the slab `{|u − κ'v − c'| ≤ w'}` of the plane is an arbitrary
-non-horizontal one, and the horizontal case is not needed because `Hₙ` is monotone in `u`.
+The hypothesis `hslab` is uniform over all offsets `c'` and over the slopes `κ'` the level curve
+can actually produce, `|κ'| ≤ surrogateSlopeBound r x v₀ = O(|x||r|)`. **The restriction to a
+bounded — indeed shrinking — slope range is not a technicality; it is what makes the hypothesis
+attainable**, and it is a correction to the wave-39 phrasing "direction-uniform slab bound",
+which suggested a supremum over the whole circle of directions. Only directions within
+`O(|x|n^{-1/2})` of the first coordinate axis are ever used, and along that shrinking family the
+projected summand is a *perturbation* of the first standardized coordinate; see the section
+below on `slabRoot`.
 
 This is the wave-40 replacement for `measure_abs_surrogate_window_le`, and it differs from it in
 exactly one place: the deviation of the level curve from the frozen centre is paid at the
@@ -3691,7 +3696,7 @@ truncation level `L` rather than linear. See the section note for the ledger ari
 theorem measure_abs_surrogate_window_slab_le
     {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsFiniteMeasure P]
     {U V : Ω → ℝ} {r x w v₀ L A η₀ ρ : ℝ} (hw : 0 ≤ w) (hL : 0 ≤ L) (hA : 0 ≤ A)
-    (hslab : ∀ κ' c' w' : ℝ, 0 ≤ w' →
+    (hslab : ∀ κ' c' w' : ℝ, |κ'| ≤ surrogateSlopeBound r x v₀ → 0 ≤ w' →
       (P {ω | |U ω - κ' * V ω - c'| ≤ w'}).toReal ≤ A * w' + η₀)
     (htail : (P {ω | L < |V ω - v₀|}).toReal ≤ ρ) :
     (P {ω | |(U ω - U ω * V ω * r / 2 + U ω ^ 3 * r ^ 2 / 2
@@ -3740,7 +3745,7 @@ theorem measure_abs_surrogate_window_slab_le
     (measure_mono hsub).trans (measure_union_le _ _)
   have h2 := ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨hfin _, hfin _⟩) h1
   rw [ENNReal.toReal_add (hfin _) (hfin _)] at h2
-  have h3 := hslab κ (m₀ - κ * v₀) W hW0
+  have h3 := hslab κ (m₀ - κ * v₀) W hκK hW0
   linarith
 
 /-- **The straightened slice bound on `deltaSurrogate` itself**, in the shape
@@ -3750,7 +3755,7 @@ theorem measure_abs_deltaSurrogate_sub_le_of_slab
     {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsFiniteMeasure P]
     {G : Ω → EuclideanSpace ℝ (Fin 2)} {σ r x w v₀ L A η₀ ρ : ℝ}
     (hw : 0 ≤ w) (hL : 0 ≤ L) (hA : 0 ≤ A)
-    (hslab : ∀ κ' c' w' : ℝ, 0 ≤ w' →
+    (hslab : ∀ κ' c' w' : ℝ, |κ'| ≤ surrogateSlopeBound r x v₀ → 0 ≤ w' →
       (P {ω | |G ω 0 / σ - κ' * (G ω 1 / σ ^ 2) - c'| ≤ w'}).toReal ≤ A * w' + η₀)
     (htail : (P {ω | L < |G ω 1 / σ ^ 2 - v₀|}).toReal ≤ ρ) :
     (P {ω | |deltaSurrogate σ r (G ω) - x| ≤ w}).toReal
