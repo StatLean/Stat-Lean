@@ -9641,7 +9641,14 @@ order `n^{-1/2}` are:
 The `−κ₀κ₁ φ^{n−2}` summand is the off-diagonal one wave 23 found cannot be dropped, and here is
 what it does: without it the bracket would be `γσ³` instead of `γσ³(1 − θ²)`, and the sum below
 would come out as `He₃` alone — the *mean* approximant — instead of the studentized one. So the
-identity is also a check on wave 23's finding. -/
+identity is also a check on wave 23's finding.
+
+**Wave 42.** The *estimate* half described in the first paragraph above — the shape
+`≤ (K/n)·windowEnvelope ξ` on the whole window `|ξ| ≤ c√n` — is **false**, at the origin and at
+the window edge both, and the four inputs cannot produce it for any envelope. The identity below
+is unaffected, and the amended shape uses it unchanged. See the section note above
+`not_exists_const_mul_windowEnvelope_ge` and the wave-42 block on
+`edgeworth_studentized_uniform`. -/
 
 /-- **(U4) — the leading-order identity of the studentized window, in the shape the two inputs
 produce.** The `n`-th-power slot's Edgeworth correction plus the evaluated `k = 2` slot equals
@@ -12975,6 +12982,74 @@ CLAIM OTHERWISE.**
   three new headline theorems and five joining bricks, all axiom-clean — consumed the wave. No
   new obstruction to (U4) or to the assembly was found, and none of the wave-38 pricing of (U4)
   is contradicted by anything proved here. **This theorem is therefore still `sorry`.**
+
+---
+
+**Status after wave 42. (U4) WAS ATTEMPTED AND ITS PRESCRIBED SHAPE IS FALSE. THE CHAIN HAS A
+MIDDLE RANGE THAT NOTHING IN THE FILE COVERS. THIS THEOREM IS STILL `sorry`, AND THE RESIDUE IS
+NOW TWO ITEMS, NOT ONE.** Waves 37, 38, 40 and 41 all priced the quantitative half of (U4) as
+"unobstructed — an estimate, not a rewriting", to be assembled from four proved inputs. Wave 42
+carried out that assembly attempt. It does not close, and the reason is not budget.
+
+* **THE SHAPE `≤ (K/n)·windowEnvelope ξ` IS FALSE AT BOTH ENDS OF THE WINDOW.** The two
+  refutations are `not_exists_const_mul_windowEnvelope_ge` and
+  `not_exists_windowEnvelope_bound_at_window_edge`, with `window_edge_graded_remainder_eq` and
+  `windowEnvelope_le_two_mul_pow_four` between them; the full accounting is the section note
+  above them. In one line each: at the **origin** `windowEnvelope` is of degree four, which is
+  right for a *sum* (every `n⁻¹` cumulant term of a sum has `θ`-degree at least four) and wrong
+  for the studentized root, whose `n⁻¹` transform discrepancy has a nonzero `θ¹` coefficient —
+  the `n^{-1/2}` means do agree, and that is exactly `studentized_window_leading_identity`, but
+  nothing in the file makes the `n⁻¹` means agree; at the **window edge** `|ξ| = c√n` the
+  leading monomial `r³|θ|³` of `surrogateRemGraded` equals `(2πc)³` for *every* `n`, while
+  `(K/n)·windowEnvelope (c√n)` decays like `e^{−π²c²n/2}n³`.
+
+* **THE OUTER-END REFUTATION IS ABOUT THE INPUTS, NOT THE ENVELOPE, AND IT DOES NOT GO AWAY.**
+  Three of the four inputs are *undamped* — they bound `‖·‖` by an integral of a modulus, with
+  no `φ^{n−k}` factor surviving — and on the window `|ξ| ≤ c√n` an undamped polynomial in `θ`
+  cannot be dominated by anything the Esseen split can integrate, since `esseen_split` weights
+  the window bound by `1/(π|ξ|)` over the whole line and therefore admits only envelopes with
+  `∫ Env(ξ)/|ξ| < ∞`, which must decay. Their status after this wave:
+  1. `norm_multiCharFun_vecRootLaw_le` (the `k = 3, 4` slots) — **repaired.**
+     `norm_multiCharFun_vecRootLaw_damped_le` in `ForMathlib/BivariateEdgeworth.lean` is the
+     same bound multiplied by `‖φ(N^{-1/2}•a)‖^{N−k}`, proved here; the damping was free (every
+     assignment leaves at least `N − k` coordinates unweighted, each contributing `φ(c)`, and
+     wave 26 rounded those up to `1`). **Wave 26's "a bound is all `k = 3, 4` need" is
+     overturned**: a bound is all they need at fixed `a`, and the window's `a = (θ/σ)•e₀` is
+     not fixed.
+  2. `norm_multiCharFun_vecRootLaw_two_sub_le` (the `k = 2` remainder) — repairable the same
+     way and **not done here**. Its error terms multiply `φ^{N−1}` and `φ^{N−2}`, so the
+     conclusion should carry `‖φ(c)‖^{N−2}`; the proof has to be re-run keeping those powers.
+     This is bookkeeping, and it is named so a later wave does not have to rediscover it.
+  3. `norm_charFun_map_deltaSurrogate_sub_graded_le` (the graded remainder) — **not repairable
+     at all**, and this is the item that blocks the window. It is a triangle inequality on
+     `|e^{iθHₙ} − e^{iθu}(1 + …)|`, so the phase `e^{iθu}` — the *only* source of damping in
+     the whole expansion — is discarded before the integral is taken, and no choice of
+     truncation level or grading puts it back. Keeping the phase would require the remainder
+     to be a *polynomial* weight, which is what `multiCharFun` handles; it is not one.
+
+* **THE NEW GAP: THE MIDDLE RANGE.** The four inputs do suffice on `|ξ| ≤ n^{a}` for small
+  `a > 0`, where `r³|θ|³ = n^{3a − 3/2}` is still `o(n⁻¹)` after the Esseen weight; and input
+  (B)'s certificate covers `|θ| ≥ c₀√n` (`exists_fourierCertificate_deltaSurrogate` takes
+  `c₀ * √n ≤ |θ|`, for any `c₀ > 0`, but always at order `√n`). **The range
+  `n^{a} ≤ |θ| ≤ c₀√n` is covered by neither**, and closing it needs a bound on
+  `‖φ_{ρₙ∘Hₙ⁻¹}(θ)‖` there that is not a Taylor expansion and not the certificate. No wave
+  before this one has named that range; wave 37's six-step chain, and every restatement of it
+  since, has an Esseen split at `ρ = c√n` with a single window bound, which is the shape this
+  wave refutes.
+
+* **WHAT (U4′) MUST LOOK LIKE.** For the record, so the next wave does not re-derive it: the
+  envelope has to start at degree one, `Env(ξ) = e^{−π²ξ²/2}(|ξ| + |ξ|⁸)` (the `k = 3` slot's
+  prefactor `θr²/2σ³` against an `O(1)` multilinear factor is `Θ(|θ|)`, and the `k = 2`
+  remainder is `Θ(θ²)`); `esseen_split` needs its twin for that envelope, which is routine
+  since `∫ Env(ξ)/|ξ|` is still a Gaussian moment; and the window itself has to be *split*,
+  with the expansion on `|ξ| ≤ n^{a}` and something else above it. Amending the envelope alone
+  does **not** repair anything — that is the content of the outer-end refutation.
+
+* **NOTHING ELSE MOVED, AND ITEM 2 WAS NOT ATTEMPTED.** (U1), (U2), (U3), (A), (C), the
+  certificate and its `sorry` (B) are as wave 41 left them; `cornishFisher_studentized_quantile`
+  still compiles over this theorem. The six-step assembly was not attempted because its third
+  step is the statement refuted above. **This theorem is therefore still `sorry`, and the file
+  is at two `sorry`s — this one and (B) — not one.**
 
 **WAVE 40 — THE MOMENT HYPOTHESIS IS AMENDED FROM FOUR TO EIGHT, AND THIS IS A DEVIATION FROM
 THE CLASSICAL STATEMENT.** The classical studentized Edgeworth expansion (Hall, *The Bootstrap
