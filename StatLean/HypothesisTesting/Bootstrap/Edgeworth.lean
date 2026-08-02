@@ -3936,6 +3936,24 @@ residue of (U3) is now bookkeeping: threading an existing proof's constants. It 
 analytic tool.** That is a strictly better verdict than wave 39's, and it is the one this wave
 is willing to defend; the threading itself is not done here and is not claimed.
 
+**WAVE 41 — THE THREADING IS DONE, AND THE PARAGRAPH ABOVE IS NOW HISTORY.**
+`edgeworth_mean_uniform_of_bounds` is the quantitative restatement this note asked for, and
+`exists_window_bound_slabRoot` is the slope-indexed window bound it was wanted for: **one** `A`
+and **one** `η = O(n⁻¹)`, at every slope. Two corrections to the pricing above, both in the
+direction of more work rather than less, and both recorded on `edgeworth_studentized_uniform`.
+
+*First*, the monotone-constant argument sketched here is right about `exists_window_core` but
+incomplete about `edgeworth_mean_uniform`: the skewness `γ` is a fifth constant, it is not among
+`(ρ₃, β₄, σ)`, and it has to be subsumed under them (`|γ| ≤ ρ₃/σ³ ≤ R/s₀³`) rather than assumed.
+That is legitimate only because `|γ|` enters the assembled constant with a positive coefficient
+at every one of its three occurrences, which is a fact about the assembly and not about the core.
+
+*Second*, "Cramér uniformly and for free" is very nearly true but not literally true.
+`exists_bound_norm_charFun_map_slabRoot` bounds `‖φ‖` on a *fixed* region `ε ≤ |s|`, while the
+quantitative theorem consumes the bound on `2πc/σ_κ ≤ |s|`; matching the two needs an **upper**
+bound on `σ_κ`, which no earlier wave recorded. It is again `abs_slabRoot_le`, so it is cheap,
+but it is an obligation and it is listed with the rest of (U3)'s remaining moment arithmetic.
+
 **One rate check, because it is the thing that would silently break.** The ledger needs
 `η₀ = O(n^{-2/3})`. A *Berry–Esseen* bound for the projected root gives only `O(n^{-1/2})` and is
 **not** enough — the reduction above is worth nothing without the `O(n⁻¹)` expansion behind it.
@@ -10081,6 +10099,165 @@ private lemma exists_window_bound (F : Measure ℝ) [IsProbabilityMeasure F]
   refine le_trans (le_of_eq ?_) hcore
   ring
 
+/-! ### The window estimate with its constant exposed
+
+`exists_window_bound` and `edgeworth_mean_uniform` return `∃ K` / `∃ C` with no exposed
+dependence on the law, and that — not any missing estimate — is what blocks their use on a
+*family* of laws. (U3) is exactly in that situation: the family is the slope-indexed projection
+`F.map (slabRoot (studentPair F) σ κ)`, and what it needs is **one** constant good for every
+slope. The block below re-runs the same proofs with the constants quantified *outside* the law.
+Each takes bounds `ρ₃ ≤ R`, `β₄ ≤ B`, `s₀ ≤ σ` and a uniform Cramér level `cr < 1`, and returns
+a constant depending on those four numbers alone.
+
+Nothing analytic is added, and the only step that is not a transcription is the monotonicity of
+`exists_window_core`'s left-hand side: it is increasing in `(ρ, β, M)` and decreasing in `σ`
+(every coefficient is nonnegative and `σ` occurs only as `1/σ`), so the constant produced at the
+extreme point `(R, B, R, s₀)` serves the whole class. `gcongr` checks that in one line.
+
+One parameter of `edgeworth_mean_uniform` is *not* among `(ρ₃, β₄, σ)`, namely the skewness, and
+it has to be subsumed rather than assumed: `|γ| = |∫x³|/σ³ ≤ ρ₃/σ³ ≤ R/s₀³`
+(`abs_skewness_le_of_bounds`). Everywhere `|γ|` occurs in the assembled constant it occurs with a
+positive coefficient, so replacing it by `R/s₀³` is an upper bound and nothing else changes. -/
+
+/-- `|γ| ≤ ρ₃/σ³ ≤ R/s₀³`. The skewness is the one constant of `edgeworth_mean_uniform` that is
+not among the parameters `(ρ₃, β₄, σ)`; this is where it is subsumed under them. -/
+private lemma abs_skewness_le_of_bounds (G : Measure ℝ) [IsProbabilityMeasure G]
+    (hGvar : 0 < Var[fun t : ℝ => t; G]) {R s₀ : ℝ} (hs₀ : 0 < s₀)
+    (hRb : (∫ x, |x| ^ 3 ∂(centredLaw G)) ≤ R)
+    (hsσ : s₀ ≤ Real.sqrt Var[fun t : ℝ => t; G]) :
+    |skewness G| ≤ R / s₀ ^ 3 := by
+  have hσ : 0 < Real.sqrt Var[fun t : ℝ => t; G] := Real.sqrt_pos.2 hGvar
+  have h1 : |(∫ x, x ^ 3 ∂(centredLaw G))| ≤ ∫ x, |x| ^ 3 ∂(centredLaw G) := by
+    calc |(∫ x, x ^ 3 ∂(centredLaw G))| ≤ ∫ x, |x ^ 3| ∂(centredLaw G) :=
+          abs_integral_le_integral_abs
+      _ = ∫ x, |x| ^ 3 ∂(centredLaw G) := by simp [abs_pow]
+  rw [integral_cube_centredLaw G hGvar, abs_mul,
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ Real.sqrt Var[fun t : ℝ => t; G] ^ 3)] at h1
+  rw [le_div_iff₀ (by positivity)]
+  have hcube : s₀ ^ 3 ≤ Real.sqrt Var[fun t : ℝ => t; G] ^ 3 := pow_le_pow_left₀ hs₀.le hsσ 3
+  nlinarith [abs_nonneg (skewness G)]
+
+/-- **The algebraic core with the constant depending on the bounds alone.** The left-hand side of
+`exists_window_core` is monotone — increasing in `(ρ, β, M)`, decreasing in `σ` — so the witness
+it produces at `(R, B, R, s₀)` dominates every law under the bounds. -/
+private lemma exists_window_core_of_bounds {R B s₀ : ℝ} (hR : 0 ≤ R) (hB : 0 ≤ B)
+    (hs₀ : 0 < s₀) :
+    ∃ K : ℝ, 0 < K ∧ ∀ ρ β M σ : ℝ, 0 ≤ ρ → ρ ≤ R → 0 ≤ β → β ≤ B → 0 ≤ M → M ≤ R →
+      s₀ ≤ σ → ∀ p τ N : ℝ, 0 ≤ p → 0 < τ → τ ≤ 1 → N * τ ^ 2 = 1 → 1 ≤ N →
+      N * (N - 1) / 2 * (ρ * (2 * Real.pi * p * τ / σ) ^ 3 / 6
+            + (4 * Real.pi ^ 2 * p ^ 2 * τ ^ 2 / 2) ^ 2 / 2) ^ 2
+          + N * ((4 * Real.pi ^ 2 * p ^ 2 * τ ^ 2 / 2)
+              * (M * (2 * Real.pi * p * τ / σ) ^ 3 / 6)
+            + (β * (2 * Real.pi * p * τ / σ) ^ 4 / 24
+              + (4 * Real.pi ^ 2 * p ^ 2 * τ ^ 2 / 2) ^ 2 / 2))
+        ≤ K * τ ^ 2 * (p ^ 4 + p ^ 8) := by
+  obtain ⟨K, hK0, hK⟩ := exists_window_core R B R s₀ hR hB hR hs₀
+  refine ⟨K, hK0, ?_⟩
+  intro ρ β M σ hρ hρR _hβ hβB _hM hMR hσ p τ N hp hτ hτ1 hN hN1
+  refine le_trans ?_ (hK p τ N hp hτ hτ1 hN hN1)
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have hσ0 : (0 : ℝ) < σ := lt_of_lt_of_le hs₀ hσ
+  have hq : (0 : ℝ) ≤ 2 * Real.pi * p * τ / σ := by positivity
+  have hqQ : 2 * Real.pi * p * τ / σ ≤ 2 * Real.pi * p * τ / s₀ := by gcongr
+  have hNN : (0 : ℝ) ≤ N * (N - 1) / 2 := by nlinarith
+  have hN0 : (0 : ℝ) ≤ N := by linarith
+  gcongr
+
+/-- **(E4).3 with the constant exposed.** `exists_window_bound`, verbatim, with `K` produced
+from the bounds `(R, B, s₀)` instead of from the law's own moments. -/
+private lemma exists_window_bound_of_bounds {R B s₀ : ℝ} (hR : 0 ≤ R) (hB : 0 ≤ B)
+    (hs₀ : 0 < s₀) {c : ℝ} (hc2 : c ≤ 1 / (Real.pi * Real.sqrt 2))
+    (hc3 : c ≤ 3 * s₀ ^ 3 / (4 * Real.pi * (R + 1))) :
+    ∃ K : ℝ, 0 < K ∧ ∀ G : Measure ℝ, IsProbabilityMeasure G →
+      MemLp (fun t : ℝ => t) 4 G → 0 < Var[fun t : ℝ => t; G] →
+      (∫ x, |x| ^ 3 ∂(centredLaw G)) ≤ R → (∫ x, x ^ 4 ∂(centredLaw G)) ≤ B →
+      s₀ ≤ Real.sqrt Var[fun t : ℝ => t; G] →
+      ∀ n : ℕ, 4 ≤ n → ∀ ξ : ℝ, |ξ| * (Real.sqrt n)⁻¹ ≤ c →
+        ‖charFun (stdRootLaw G n) (-(2 * Real.pi * ξ))
+            - charFunDensity (edgeworthDensity (skewness G) n) (-(2 * Real.pi * ξ))‖
+          ≤ K / n * windowEnvelope ξ := by
+  obtain ⟨K, hK0, hK⟩ := exists_window_core_of_bounds hR hB hs₀
+  refine ⟨K, hK0, ?_⟩
+  intro G hGp hF4 hFvar hRb hBb hsσ n hn ξ hξ
+  haveI := hGp
+  have hσ : 0 < Real.sqrt Var[fun t : ℝ => t; G] := Real.sqrt_pos.2 hFvar
+  have hρ0 : (0 : ℝ) ≤ ∫ x, |x| ^ 3 ∂(centredLaw G) :=
+    integral_nonneg fun x => by positivity
+  have hβ0 : (0 : ℝ) ≤ ∫ x, x ^ 4 ∂(centredLaw G) :=
+    integral_nonneg fun x => by positivity
+  have hFint : Integrable (fun t : ℝ => t) G := hF4.integrable (by norm_num)
+  have hvar : (∫ x, x ^ 2 ∂(centredLaw G)) = Real.sqrt Var[fun t : ℝ => t; G] ^ 2 := by
+    rw [integral_sq_centredLaw, Real.sq_sqrt hFvar.le]
+  have hthird : (∫ x, x ^ 3 ∂(centredLaw G))
+      = skewness G * Real.sqrt Var[fun t : ℝ => t; G] ^ 3 :=
+    integral_cube_centredLaw G hFvar
+  -- the third moment, bounded by `R` through `ρ₃`
+  have hm3R : |skewness G * Real.sqrt Var[fun t : ℝ => t; G] ^ 3| ≤ R := by
+    rw [← hthird]
+    refine le_trans ?_ hRb
+    calc |(∫ x, x ^ 3 ∂(centredLaw G))| ≤ ∫ x, |x ^ 3| ∂(centredLaw G) :=
+          abs_integral_le_integral_abs
+      _ = ∫ x, |x| ^ 3 ∂(centredLaw G) := by simp [abs_pow]
+  -- the window half-width is admissible for this law: `s₀ ≤ σ` and `ρ₃ ≤ R`
+  have hcube : s₀ ^ 3 ≤ Real.sqrt Var[fun t : ℝ => t; G] ^ 3 := pow_le_pow_left₀ hs₀.le hsσ 3
+  have hc3' : c ≤ 3 * Real.sqrt Var[fun t : ℝ => t; G] ^ 3
+      / (4 * Real.pi * ((∫ x, |x| ^ 3 ∂(centredLaw G)) + 1)) := by
+    refine hc3.trans ?_
+    have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+    gcongr
+  obtain ⟨m, rfl⟩ : ∃ m : ℕ, n = m + 2 := ⟨n - 2, by omega⟩
+  have hm2 : (2 : ℝ) ≤ (m : ℝ) := by exact_mod_cast (by omega : 2 ≤ m)
+  have hNR : ((m + 2 : ℕ) : ℝ) = (m : ℝ) + 2 := by push_cast; ring
+  have hNpos : (0 : ℝ) < ((m + 2 : ℕ) : ℝ) := by rw [hNR]; positivity
+  have hτ0 : (0 : ℝ) < (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹ := by positivity
+  have hτ2 : ((Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹) ^ 2 = (((m + 2 : ℕ) : ℝ))⁻¹ := by
+    rw [inv_pow, Real.sq_sqrt hNpos.le]
+  have hτeq : ((m : ℝ) + 2) * ((Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹) ^ 2 = 1 := by
+    rw [hτ2, ← hNR]
+    field_simp
+  have hτ1 : (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹ ≤ 1 := by
+    refine inv_le_one_of_one_le₀ ?_
+    have h1 : (1 : ℝ) ≤ ((m + 2 : ℕ) : ℝ) := by rw [hNR]; linarith
+    simpa using Real.sqrt_le_sqrt h1
+  have hwc := window_conditions hσ hρ0 hτ0.le hc2 hc3' hξ
+  have hbound := norm_charFun_pow_sub_edgeworth_le (centredLaw G)
+    (integrable_id_centredLaw G hF4) (integrable_sq_centredLaw G hF4)
+    (integrable_abs_cube_centredLaw G hF4) (integrable_pow_four_centredLaw G hF4)
+    (integral_id_centredLaw G hFint) hvar hthird hwc.1 hwc.2 m
+  have hBIGnn := nonneg_of_mul_nonneg_right ((norm_nonneg _).trans hbound)
+    (pow_pos (Real.exp_pos _) m)
+  have hsq := sq_window_arg (ξ := ξ) (τ := (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹) hσ
+  have habs := abs_window_arg (ξ := ξ) hσ hτ0.le
+  rw [charFun_stdRootLaw G (by omega : 0 < m + 2), charFunDensity_edgeworthDensity,
+    edgeworth_approx_eq (skewness G) (Real.sqrt Var[fun t : ℝ => t; G])
+      (-(2 * Real.pi * ξ)) hσ.ne' m (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹ hτeq]
+  refine hbound.trans ?_
+  rw [hsq, habs] at hBIGnn ⊢
+  set τ : ℝ := (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹ with hτdef
+  set σ : ℝ := Real.sqrt Var[fun t : ℝ => t; G] with hσdef
+  have hcore := hK (∫ x, |x| ^ 3 ∂(centredLaw G)) (∫ x, x ^ 4 ∂(centredLaw G))
+    |skewness G * σ ^ 3| σ hρ0 hRb hβ0 hBb (abs_nonneg _) hm3R hsσ
+    |ξ| τ ((m : ℝ) + 2) (abs_nonneg ξ) hτ0 hτ1 hτeq (by linarith)
+  have hdamp : Real.exp (-(4 * Real.pi ^ 2 * |ξ| ^ 2 * τ ^ 2 / 4)) ^ m
+      ≤ Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) := by
+    rw [← Real.exp_nat_mul]
+    refine Real.exp_le_exp.2 ?_
+    rw [sq_abs]
+    have hτ2nn : (0 : ℝ) ≤ τ ^ 2 := sq_nonneg τ
+    have h1 : (1 : ℝ) / 2 ≤ (m : ℝ) * τ ^ 2 := by
+      linarith [hτeq, mul_nonneg (by linarith : (0 : ℝ) ≤ (m : ℝ) - 2) hτ2nn]
+    linarith [mul_nonneg (mul_nonneg (sq_nonneg Real.pi) (sq_nonneg ξ))
+      (by linarith : (0 : ℝ) ≤ (m : ℝ) * τ ^ 2 - 1 / 2)]
+  have hRHS : K / ((m + 2 : ℕ) : ℝ) * windowEnvelope ξ
+      = Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) * (K * τ ^ 2 * (|ξ| ^ 4 + |ξ| ^ 8)) := by
+    unfold windowEnvelope
+    rw [hτ2]
+    ring
+  rw [hRHS]
+  refine mul_le_mul hdamp ?_ hBIGnn (Real.exp_pos _).le
+  refine le_trans (le_of_eq ?_) hcore
+  ring
+
 /-- **(E4).4 — the outer range.** Off the window the two characteristic functions are estimated
 separately: the law of the root by Cramér's condition (`hcr`, supplied by
 `exists_bound_lt_one_of_cramer` on the centred law), the approximant by its own Gaussian tail
@@ -10605,6 +10782,201 @@ theorem edgeworth_mean_uniform [IsProbabilityMeasure F]
             + 2 * (C₁ + (1 + 512 * Real.pi ^ 3 * |skewness F|) * C₂) * (Real.pi ^ 2 * c)⁻¹
             + 3 * (2 + 6 * |skewness F|) + 1 := by linarith
 
+/-- **`edgeworth_mean_uniform` with the constant quantified outside the law — wave 41, item 1.**
+
+This is the theorem (U3) needs and the one the wave-40 note asked for. The statement is
+`edgeworth_mean_uniform` verbatim, except that the constant `C` is produced *before* the law is
+chosen, from four numbers: an upper bound `R` on the absolute third moment of the centred law, an
+upper bound `B` on its fourth moment, a lower bound `s₀` on the standard deviation, and a Cramér
+level `cr < 1` valid on `2πc/σ ≤ |s|`. Every law meeting those four bounds gets the same `C`, so
+the conclusion can be applied to a *family* — which is exactly what
+`F.map (slabRoot (studentPair F) σ κ)` is as `κ` ranges over the slope window, and what
+`edgeworth_mean_uniform` as stated cannot serve.
+
+The window half-width `c` is an explicit parameter rather than a `min` buried in the proof,
+because the Cramér hypothesis has to be stated at the scale `2πc/σ` and the caller is the one
+holding a uniform Cramér bound (`exists_bound_norm_charFun_map_slabRoot` supplies one constant
+for all slopes at once). `c := min (1/(π√2)) (3s₀³/(4π(R+1)))` is always admissible.
+
+*Nothing analytic is new.* The proof is `edgeworth_mean_uniform`'s, with `exists_window_bound`
+replaced by `exists_window_bound_of_bounds`, the Cramér constant replaced by the given `cr`
+(`exists_bound_lt_one_of_cramer` is not called — its output is now a hypothesis), and every
+occurrence of `|γ|` bounded by `R/s₀³` through `abs_skewness_le_of_bounds`. The last step is
+sound only because `|γ|` occurs in the assembled constant with a positive coefficient
+everywhere it occurs — in the total-variation modulus `(2π)^{-1/2}(1 + 66|γ|)`, in the Gaussian
+tail factor `1 + 512π³|γ|`, and in the small-`n` bound `2 + 6|γ|` — which is checked in the two
+`gcongr`/`nlinarith` steps at the end of each branch and is the only place monotonicity in the
+skewness is used. -/
+theorem edgeworth_mean_uniform_of_bounds {R B s₀ cr c : ℝ} (hR : 0 ≤ R) (hB : 0 ≤ B)
+    (hs₀ : 0 < s₀) (hcr0 : 0 ≤ cr) (hcr1 : cr < 1) (hc0 : 0 < c)
+    (hc2 : c ≤ 1 / (Real.pi * Real.sqrt 2))
+    (hc3 : c ≤ 3 * s₀ ^ 3 / (4 * Real.pi * (R + 1))) :
+    ∃ C : ℝ, 0 < C ∧ ∀ G : Measure ℝ, IsProbabilityMeasure G →
+      MemLp (fun t : ℝ => t) 4 G → 0 < Var[fun t : ℝ => t; G] →
+      (∫ x, |x| ^ 3 ∂(centredLaw G)) ≤ R → (∫ x, x ^ 4 ∂(centredLaw G)) ≤ B →
+      s₀ ≤ Real.sqrt Var[fun t : ℝ => t; G] →
+      (∀ s : ℝ, 2 * Real.pi * c / Real.sqrt Var[fun t : ℝ => t; G] ≤ |s| →
+        ‖charFun (centredLaw G) s‖ ≤ cr) →
+      ∀ n : ℕ, 0 < n → ∀ t : ℝ,
+        |meanRootCDF G n t -
+          (stdNormalCDF (t / Real.sqrt Var[fun t : ℝ => t; G]) -
+            (1 / 6) * skewness G * stdNormalPDF (t / Real.sqrt Var[fun t : ℝ => t; G]) *
+              (t ^ 2 / Var[fun t : ℝ => t; G] - 1) * (Real.sqrt n)⁻¹)|
+        ≤ C / n := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  obtain ⟨K, hK0, hK⟩ := exists_window_bound_of_bounds hR hB hs₀ hc2 hc3
+  obtain ⟨C₁, hC₁0, hC₁⟩ := exists_pow_mul_geometric_le hcr0 hcr1 2
+  have hd0 : (0 : ℝ) ≤ Real.exp (-(Real.pi ^ 2 * c ^ 2)) := (Real.exp_pos _).le
+  have hd1 : Real.exp (-(Real.pi ^ 2 * c ^ 2)) < 1 := by
+    have hneg : -(Real.pi ^ 2 * c ^ 2) < 0 := by
+      have : (0 : ℝ) < Real.pi ^ 2 * c ^ 2 := mul_pos (by positivity) (pow_pos hc0 2)
+      linarith
+    calc Real.exp (-(Real.pi ^ 2 * c ^ 2)) < Real.exp 0 := Real.exp_lt_exp.2 hneg
+      _ = 1 := Real.exp_zero
+  obtain ⟨C₂, hC₂0, hC₂⟩ := exists_pow_mul_geometric_le hd0 hd1 2
+  -- the skewness is subsumed under the moment bounds
+  set Gs : ℝ := R / s₀ ^ 3 with hGsdef
+  have hGs0 : (0 : ℝ) ≤ Gs := by rw [hGsdef]; positivity
+  have hW0 : (0 : ℝ) ≤ ∫ ξ : ℝ, windowDom ξ := integral_nonneg fun ξ => windowDom_nonneg ξ
+  have hP0 : (0 : ℝ) ≤ (Real.pi ^ 2 * c)⁻¹ := inv_nonneg.2 (mul_nonneg (by positivity) hc0.le)
+  have hB0' : (0 : ℝ) ≤ 1 + 512 * Real.pi ^ 3 * Gs := by positivity
+  have hKW : (0 : ℝ) ≤ K * ∫ ξ : ℝ, windowDom ξ := mul_nonneg hK0.le hW0
+  have hTC : (0 : ℝ) ≤ 2 * (C₁ + (1 + 512 * Real.pi ^ 3 * Gs) * C₂) * (Real.pi ^ 2 * c)⁻¹ :=
+    mul_nonneg (by nlinarith [hC₁0, hC₂0, hB0']) hP0
+  refine ⟨K * (∫ ξ : ℝ, windowDom ξ)
+      + 2 * ((Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * Gs))
+      + 2 * (C₁ + (1 + 512 * Real.pi ^ 3 * Gs) * C₂) * (Real.pi ^ 2 * c)⁻¹
+      + 3 * (2 + 6 * Gs) + 1, by
+        have : (0 : ℝ) ≤ 2 * ((Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * Gs)) := by positivity
+        have h3 : (0 : ℝ) ≤ 3 * (2 + 6 * Gs) := by positivity
+        linarith, ?_⟩
+  intro G hGp hF4 hFvar hRb hBb hsσ hcrb n hn t
+  haveI := hGp
+  have hσ : 0 < Real.sqrt Var[fun t : ℝ => t; G] := Real.sqrt_pos.2 hFvar
+  have hgam : |skewness G| ≤ Gs := abs_skewness_le_of_bounds G hFvar hs₀ hRb hsσ
+  have hgam0 : (0 : ℝ) ≤ |skewness G| := abs_nonneg _
+  have hεle : 2 * Real.pi * c / Real.sqrt Var[fun t : ℝ => t; G]
+      * Real.sqrt Var[fun t : ℝ => t; G] ≤ 2 * Real.pi * c :=
+    le_of_eq (div_mul_cancel₀ _ hσ.ne')
+  have hn1 : 1 ≤ n := hn
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hnR
+  rw [← edgeworthCDF_eq_approx G hFvar n t]
+  rcases le_or_gt 4 n with h4 | h4
+  · -- the main range: the window estimate and the outer estimate, split at `c√n`
+    have hwin : ∀ ξ : ℝ, |ξ| ≤ c * Real.sqrt (n : ℝ) →
+        ‖charFun (stdRootLaw G n) (-(2 * Real.pi * ξ))
+            - charFunDensity (edgeworthDensity (skewness G) n) (-(2 * Real.pi * ξ))‖
+          ≤ K / (n : ℝ) * windowEnvelope ξ := by
+      intro ξ hξ
+      refine hK G hGp hF4 hFvar hRb hBb hsσ n h4 ξ ?_
+      rw [← div_eq_mul_inv, div_le_iff₀ hsn]
+      exact hξ
+    have hdpow : Real.exp (-(Real.pi ^ 2 * (c * Real.sqrt (n : ℝ)) ^ 2))
+        = Real.exp (-(Real.pi ^ 2 * c ^ 2)) ^ n := by
+      rw [← Real.exp_nat_mul]
+      congr 1
+      rw [mul_pow, Real.sq_sqrt hnR.le]
+      ring
+    have htail : ∀ ξ : ℝ, c * Real.sqrt (n : ℝ) ≤ |ξ| →
+        ‖charFun (stdRootLaw G n) (-(2 * Real.pi * ξ))
+            - charFunDensity (edgeworthDensity (skewness G) n) (-(2 * Real.pi * ξ))‖
+          ≤ cr ^ n
+            + (1 + 512 * Real.pi ^ 3 * |skewness G|)
+              * Real.exp (-(Real.pi ^ 2 * c ^ 2)) ^ n := by
+      intro ξ hξ
+      have h := edgeworthGap_tail_le G hFvar hc0.le hcrb hεle hn1 hξ
+      rwa [hdpow] at h
+    have hstep := abs_meanRootCDF_sub_edgeworthCDF_le G hFvar hn1 hc0
+      (div_nonneg hK0.le hnR.le) hwin htail t
+    have hnn : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) := Real.mul_self_sqrt hnR.le
+    have hDeq : 1 / (n : ℝ) * Real.pi ^ 2 * (c * Real.sqrt (n : ℝ))
+        = Real.pi ^ 2 * c / Real.sqrt (n : ℝ) := by
+      rw [eq_div_iff hsn.ne']
+      have h : 1 / (n : ℝ) * Real.pi ^ 2 * (c * Real.sqrt (n : ℝ)) * Real.sqrt (n : ℝ)
+          = Real.pi ^ 2 * c * (Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) / (n : ℝ)) := by ring
+      rw [h, hnn, div_self hnR.ne', mul_one]
+    rw [hDeq, div_div_eq_mul_div] at hstep
+    set Bc : ℝ := 1 + 512 * Real.pi ^ 3 * |skewness G| with hBcdef
+    set Ac : ℝ := (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness G|) with hAcdef
+    set Wc : ℝ := ∫ ξ : ℝ, windowDom ξ with hWcdef
+    set Mn : ℝ := cr ^ n + Bc * Real.exp (-(Real.pi ^ 2 * c ^ 2)) ^ n with hMndef
+    -- the two constants where the skewness enters, dominated by the parameter bound
+    have hB0 : (0 : ℝ) ≤ Bc := by rw [hBcdef]; positivity
+    have hBle : Bc ≤ 1 + 512 * Real.pi ^ 3 * Gs := by
+      rw [hBcdef]
+      have := mul_le_mul_of_nonneg_left hgam (by positivity : (0 : ℝ) ≤ 512 * Real.pi ^ 3)
+      linarith
+    have hAle : Ac ≤ (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * Gs) := by
+      rw [hAcdef]
+      have h66 := mul_le_mul_of_nonneg_left hgam (by norm_num : (0 : ℝ) ≤ 66)
+      exact mul_le_mul_of_nonneg_left (by linarith) (by positivity)
+    have hMn0 : (0 : ℝ) ≤ Mn :=
+      add_nonneg (pow_nonneg hcr0 n) (mul_nonneg hB0 (pow_nonneg hd0 n))
+    have hsqle : Real.sqrt (n : ℝ) ≤ (n : ℝ) := by
+      have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1
+      have h2 : Real.sqrt (n : ℝ) ≤ Real.sqrt ((n : ℝ) ^ 2) := Real.sqrt_le_sqrt (by nlinarith)
+      rwa [Real.sqrt_sq hnR.le] at h2
+    have hMn2 : Mn * Real.sqrt (n : ℝ) * (n : ℝ)
+        ≤ C₁ + (1 + 512 * Real.pi ^ 3 * Gs) * C₂ := by
+      have h1 : Mn * Real.sqrt (n : ℝ) * (n : ℝ) ≤ Mn * (n : ℝ) * (n : ℝ) :=
+        mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hsqle hMn0) hnR.le
+      have h2 : Mn * (n : ℝ) * (n : ℝ) ≤ C₁ + Bc * C₂ := by
+        rw [hMndef]
+        linarith [hC₁ n, mul_le_mul_of_nonneg_left (hC₂ n) hB0]
+      have h3 : Bc * C₂ ≤ (1 + 512 * Real.pi ^ 3 * Gs) * C₂ :=
+        mul_le_mul_of_nonneg_right hBle hC₂0.le
+      linarith
+    have hb2 : 2 * Mn * Real.sqrt (n : ℝ) / (Real.pi ^ 2 * c)
+        ≤ 2 * (C₁ + (1 + 512 * Real.pi ^ 3 * Gs) * C₂) * (Real.pi ^ 2 * c)⁻¹ / (n : ℝ) := by
+      rw [le_div_iff₀ hnR, div_eq_mul_inv]
+      linarith [mul_le_mul_of_nonneg_right hMn2 hP0]
+    calc |meanRootCDF G n t
+            - edgeworthCDF (skewness G) n (t / Real.sqrt Var[fun t : ℝ => t; G])|
+        ≤ K / (n : ℝ) * Wc + 2 * Mn * Real.sqrt (n : ℝ) / (Real.pi ^ 2 * c)
+            + 2 * (Ac * (1 / (n : ℝ))) := hstep
+      _ ≤ K * Wc / (n : ℝ)
+            + 2 * (C₁ + (1 + 512 * Real.pi ^ 3 * Gs) * C₂) * (Real.pi ^ 2 * c)⁻¹ / (n : ℝ)
+            + 2 * ((Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * Gs)) / (n : ℝ) := by
+          have e1 : K / (n : ℝ) * Wc = K * Wc / (n : ℝ) := by ring
+          have e3 : 2 * (Ac * (1 / (n : ℝ))) = 2 * Ac / (n : ℝ) := by ring
+          have e4 : 2 * Ac / (n : ℝ)
+              ≤ 2 * ((Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * Gs)) / (n : ℝ) := by
+            gcongr
+          linarith
+      _ ≤ (K * Wc + 2 * ((Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * Gs))
+            + 2 * (C₁ + (1 + 512 * Real.pi ^ 3 * Gs) * C₂) * (Real.pi ^ 2 * c)⁻¹
+            + 3 * (2 + 6 * Gs) + 1) / (n : ℝ) := by
+          rw [← add_div, ← add_div, div_eq_mul_inv, div_eq_mul_inv]
+          refine mul_le_mul_of_nonneg_right ?_ (by positivity)
+          have h3 : (0 : ℝ) ≤ 3 * (2 + 6 * Gs) := by positivity
+          linarith
+  · -- the finitely many small `n`, absorbed by boundedness of both sides
+    have hn3 : (n : ℝ) ≤ 3 := by exact_mod_cast (by omega : n ≤ 3)
+    have hm1 : |meanRootCDF G n t| ≤ 1 := by
+      rw [meanRootCDF_eq_stdRootLaw G n hFvar t, abs_of_nonneg ENNReal.toReal_nonneg]
+      simpa using ENNReal.toReal_mono (by simp) (prob_le_one (μ := stdRootLaw G n))
+    have hap := abs_edgeworthCDF_le (skewness G) hn1 (t / Real.sqrt Var[fun t : ℝ => t; G])
+    have htri : |meanRootCDF G n t
+          - edgeworthCDF (skewness G) n (t / Real.sqrt Var[fun t : ℝ => t; G])|
+        ≤ |meanRootCDF G n t|
+          + |edgeworthCDF (skewness G) n (t / Real.sqrt Var[fun t : ℝ => t; G])| := by
+      have h := abs_add_le (meanRootCDF G n t)
+        (-(edgeworthCDF (skewness G) n (t / Real.sqrt Var[fun t : ℝ => t; G])))
+      rw [abs_neg] at h
+      rw [sub_eq_add_neg]
+      exact h
+    rw [le_div_iff₀ hnR]
+    have hAc0 : (0 : ℝ) ≤ 2 * ((Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * Gs)) := by positivity
+    calc |meanRootCDF G n t
+            - edgeworthCDF (skewness G) n (t / Real.sqrt Var[fun t : ℝ => t; G])| * (n : ℝ)
+        ≤ (2 + 6 * Gs) * 3 := by
+          refine mul_le_mul (by linarith) hn3 hnR.le (by positivity)
+      _ ≤ K * (∫ ξ : ℝ, windowDom ξ)
+            + 2 * ((Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * Gs))
+            + 2 * (C₁ + (1 + 512 * Real.pi ^ 3 * Gs) * C₂) * (Real.pi ^ 2 * c)⁻¹
+            + 3 * (2 + 6 * Gs) + 1 := by linarith
+
 /-! ## Anti-concentration of the centred root, at the `O(n⁻¹)` accuracy
 
 The corrected (M2) needs, besides a moment bound, that the surrogate put `O(δ + n⁻¹)` mass on
@@ -10690,6 +11062,294 @@ theorem meanRootCDF_sub_le [IsProbabilityMeasure F]
     gcongr
     linarith
   linarith [hAa, hAb, hlip, hmono, hcn]
+
+/-- **`meanRootCDF_sub_le` with the constant quantified outside the law — wave 41, item 1.**
+
+The anti-concentration companion of `edgeworth_mean_uniform_of_bounds`, in the same class form:
+one `C`, chosen from `(R, B, s₀, cr, c)` before the law, such that *every* law meeting the
+bounds has its centred root putting at most `C(b − a) + C/n` mass on `(a, b]`.
+
+This is the shape (U3) actually consumes — `measure_pi_abs_deltaSurrogate_insertNth_le`'s
+`hwin` asks for `2Aw + 2η` on a window of half-width `w`, which is this statement with
+`A = C`, `η = C/(2n)` — and it is the reason the previous theorem had to be proved at all: the
+Lipschitz modulus `(2π)^{-1/2}(1 + 66|γ|)/σ` of the approximant is itself law-dependent, and is
+bounded here by `(2π)^{-1/2}(1 + 66R/s₀³)/s₀` using the same skewness bound and the variance
+floor. `O(n⁻¹)` and not `O(n^{-1/2})` is the whole point; see `meanRootCDF_sub_le`. -/
+theorem meanRootCDF_sub_le_of_bounds {R B s₀ cr c : ℝ} (hR : 0 ≤ R) (hB : 0 ≤ B)
+    (hs₀ : 0 < s₀) (hcr0 : 0 ≤ cr) (hcr1 : cr < 1) (hc0 : 0 < c)
+    (hc2 : c ≤ 1 / (Real.pi * Real.sqrt 2))
+    (hc3 : c ≤ 3 * s₀ ^ 3 / (4 * Real.pi * (R + 1))) :
+    ∃ C : ℝ, 0 < C ∧ ∀ G : Measure ℝ, IsProbabilityMeasure G →
+      MemLp (fun t : ℝ => t) 4 G → 0 < Var[fun t : ℝ => t; G] →
+      (∫ x, |x| ^ 3 ∂(centredLaw G)) ≤ R → (∫ x, x ^ 4 ∂(centredLaw G)) ≤ B →
+      s₀ ≤ Real.sqrt Var[fun t : ℝ => t; G] →
+      (∀ s : ℝ, 2 * Real.pi * c / Real.sqrt Var[fun t : ℝ => t; G] ≤ |s| →
+        ‖charFun (centredLaw G) s‖ ≤ cr) →
+      ∀ n : ℕ, 0 < n → ∀ a b : ℝ, a ≤ b →
+        meanRootCDF G n b - meanRootCDF G n a ≤ C * (b - a) + C / n := by
+  obtain ⟨C₀, hC₀, hC⟩ := edgeworth_mean_uniform_of_bounds hR hB hs₀ hcr0 hcr1 hc0 hc2 hc3
+  -- the law-free Lipschitz modulus of the approximant
+  set Kb : ℝ := (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * (R / s₀ ^ 3)) with hKbdef
+  have hKb0 : 0 < Kb := by
+    rw [hKbdef]
+    have h1 : (0 : ℝ) < (Real.sqrt (2 * Real.pi))⁻¹ := by positivity
+    have h2 : (0 : ℝ) ≤ R / s₀ ^ 3 := by positivity
+    have h3 : (0 : ℝ) < 1 + 66 * (R / s₀ ^ 3) := by linarith
+    exact mul_pos h1 h3
+  refine ⟨Kb / s₀ + 2 * C₀, by positivity, ?_⟩
+  intro G hGp hF4 hFvar hRb hBb hsσ hcrb n hn a b hab
+  haveI := hGp
+  set σ : ℝ := Real.sqrt Var[fun t : ℝ => t; G] with hσdef
+  have hσ : 0 < σ := Real.sqrt_pos.2 hFvar
+  set K : ℝ := (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness G|) with hKdef
+  have hK0 : 0 < K := edgeworthTV_pos (skewness G)
+  have hgam : |skewness G| ≤ R / s₀ ^ 3 := abs_skewness_le_of_bounds G hFvar hs₀ hRb hsσ
+  have hKle : K ≤ Kb := by
+    rw [hKdef, hKbdef]
+    refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+    linarith [mul_le_mul_of_nonneg_left hgam (by norm_num : (0 : ℝ) ≤ 66)]
+  have hKsle : K / σ ≤ Kb / s₀ := by
+    refine div_le_div₀ hKb0.le hKle hs₀ hsσ
+  have hn1 : 1 ≤ n := hn
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have ha := hC G hGp hF4 hFvar hRb hBb hsσ hcrb n hn a
+  have hb := hC G hGp hF4 hFvar hRb hBb hsσ hcrb n hn b
+  rw [← edgeworthCDF_eq_approx G hFvar n a] at ha
+  rw [← edgeworthCDF_eq_approx G hFvar n b] at hb
+  have hAa := (abs_le.1 ha).1
+  have hAb := (abs_le.1 hb).2
+  have hlip : edgeworthCDF (skewness G) n (b / σ) - edgeworthCDF (skewness G) n (a / σ)
+      ≤ K * (b / σ - a / σ) :=
+    edgeworthCDF_sub_le (skewness G) hn1 (by gcongr)
+  have hdiff : b / σ - a / σ = (b - a) / σ := by ring
+  rw [hdiff] at hlip
+  have hdivle : K * ((b - a) / σ) = K / σ * (b - a) := by ring
+  rw [hdivle] at hlip
+  have hba : (0 : ℝ) ≤ b - a := by linarith
+  have hmono : K / σ * (b - a) ≤ (Kb / s₀ + 2 * C₀) * (b - a) := by
+    nlinarith [hba, hC₀, hKsle]
+  have hcn : 2 * (C₀ / (n : ℝ)) ≤ (Kb / s₀ + 2 * C₀) / (n : ℝ) := by
+    have h1 : 2 * (C₀ / (n : ℝ)) = 2 * C₀ / (n : ℝ) := by ring
+    have h2 : (0 : ℝ) < Kb / s₀ := by positivity
+    rw [h1]
+    gcongr
+    linarith
+  linarith [hAa, hAb, hlip, hmono, hcn]
+
+/-! ### From the class statement to the slope family
+
+The two theorems above are stated for a *class* of laws; (U3) needs them for the specific,
+slope-indexed family `F.map (slabRoot (studentPair F) σ κ)`. Three small facts do the joining,
+and none of them is analytic.
+
+The first is the only one that is not bookkeeping about moments: `meanRootCDF` lives on
+`Measure.pi (fun _ => G)` while the window bound (U3) consumes lives on `Measure.pi (fun _ => F)`
+with the summand `slabRoot` applied coordinatewise. Those two are the same measure —
+`Measure.pi_map_pi` — and the two roots are the same function, because `√n·(n⁻¹ S) = (√n)⁻¹ S`.
+That is `measure_pi_root_eq_meanRootCDF`, and it is the reason no i.i.d. transfer is needed
+anywhere in this file: the pushforward of a product is the product of the pushforwards. -/
+
+/-- A law with mean zero is its own centring. Used to identify `centredLaw (F.map f)` with
+`F.map f` for a *centred* summand `f`, which is what makes the moment hypotheses of
+`edgeworth_mean_uniform_of_bounds` readable as moments of `f` under `F`. -/
+lemma centredLaw_eq_self (G : Measure ℝ) (h : (∫ s, s ∂G) = 0) : centredLaw G = G := by
+  unfold centredLaw
+  simp [h]
+
+/-- **The coordinatewise transfer.** The law of the root `(√n)⁻¹ ∑ f(zⱼ)` under
+`Measure.pi (fun _ => F)` is the law of the centred root under `Measure.pi (fun _ => F.map f)`,
+for a centred summand `f`. `Measure.pi_map_pi` — the pushforward of a product is the product of
+the pushforwards — is the whole content; the `√n` bookkeeping is `√n·n⁻¹ = (√n)⁻¹`. -/
+lemma measure_pi_root_eq_meanRootCDF (F : Measure ℝ) [IsProbabilityMeasure F] {f : ℝ → ℝ}
+    (hf : Measurable f) (hmean : (∫ y, f y ∂F) = 0) {n : ℕ} (hn : 0 < n) (x : ℝ) :
+    ((Measure.pi fun _ : Fin n => F)
+        {z : Fin n → ℝ | (Real.sqrt (n : ℝ))⁻¹ * ∑ j, f (z j) ≤ x}).toReal
+      = meanRootCDF (F.map f) n x := by
+  haveI : IsProbabilityMeasure (F.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hnR
+  have hmean' : (∫ t, t ∂(F.map f)) = 0 := by
+    rw [integral_map (f := fun t : ℝ => t) hf.aemeasurable (by fun_prop)]
+    exact hmean
+  have hpi : (Measure.pi fun _ : Fin n => F.map f)
+      = (Measure.pi fun _ : Fin n => F).map (fun z : Fin n → ℝ => fun i => f (z i)) :=
+    (Measure.pi_map_pi (fun _ => hf.aemeasurable)).symm
+  have hmeas : Measurable (fun z : Fin n → ℝ => fun i => f (z i)) :=
+    measurable_pi_lambda _ fun i => hf.comp (measurable_pi_apply i)
+  have hset : MeasurableSet
+      {y : Fin n → ℝ | Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂(F.map f)) ≤ x} := by
+    refine measurableSet_le ?_ measurable_const
+    fun_prop
+  -- `√n · n⁻¹ = (√n)⁻¹`
+  have hinv : Real.sqrt (n : ℝ) * ((n : ℝ))⁻¹ = (Real.sqrt (n : ℝ))⁻¹ := by
+    have hnn : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) := Real.mul_self_sqrt hnR.le
+    field_simp
+    linarith [hnn]
+  have hscale : ∀ S : ℝ, Real.sqrt (n : ℝ) * ((n : ℝ)⁻¹ * S) = (Real.sqrt (n : ℝ))⁻¹ * S := by
+    intro S
+    rw [← mul_assoc, hinv]
+  rw [meanRootCDF, hpi, Measure.map_apply hmeas hset]
+  congr 2
+  ext z
+  simp only [Set.mem_preimage, Set.mem_setOf_eq, hmean', sub_zero, hscale]
+
+/-- **The moments of the root's summand, read under `F`.** For a centred summand the three
+hypotheses `edgeworth_mean_uniform_of_bounds` places on `centredLaw G` are hypotheses on `f`
+under `F`, with no centring correction: this is `centredLaw_eq_self` plus `integral_map`. -/
+lemma integral_centredLaw_map_eq (F : Measure ℝ) [IsProbabilityMeasure F] {f : ℝ → ℝ}
+    (hf : Measurable f) (hmean : (∫ y, f y ∂F) = 0) {g : ℝ → ℝ} (hg : Measurable g) :
+    (∫ x, g x ∂(centredLaw (F.map f))) = ∫ y, g (f y) ∂F := by
+  haveI : IsProbabilityMeasure (F.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
+  have hmean' : (∫ t, t ∂(F.map f)) = 0 := by
+    rw [integral_map (f := fun t : ℝ => t) hf.aemeasurable (by fun_prop)]
+    exact hmean
+  rw [centredLaw_eq_self _ hmean', integral_map hf.aemeasurable hg.aestronglyMeasurable]
+
+/-- The variance of a centred pushforward is the second moment of the summand. -/
+lemma variance_map_eq (F : Measure ℝ) [IsProbabilityMeasure F] {f : ℝ → ℝ}
+    (hf : Measurable f) (hmean : (∫ y, f y ∂F) = 0) :
+    Var[fun t : ℝ => t; F.map f] = ∫ y, f y ^ 2 ∂F := by
+  haveI : IsProbabilityMeasure (F.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
+  have hmean' : (∫ t, t ∂(F.map f)) = 0 := by
+    rw [integral_map (f := fun t : ℝ => t) hf.aemeasurable (by fun_prop)]
+    exact hmean
+  rw [variance_eq_integral (by fun_prop), hmean']
+  simp only [sub_zero]
+  rw [integral_map (f := fun t : ℝ => t ^ 2) hf.aemeasurable (by fun_prop)]
+
+/-- **(U3)'s window hypothesis, produced — wave 41, item 1d.**
+
+This is `hwin` of `measure_pi_abs_deltaSurrogate_insertNth_le` (and of
+`measure_pi_abs_slab_insertNth_le`, and of `measure_pi_vecRoot_slab_le_of_win`) with
+`A = Kb/s₀` and `η = C₀/n`: **one** pair of constants, valid at every slope `|κ| ≤ Kslope` and
+every `n`, with the additive term `O(n⁻¹)` — which is the accuracy the wave-39/40 ledger needs
+and which a Berry–Esseen bound cannot supply.
+
+The chain is short because everything under it is now available. `measure_pi_root_eq_meanRootCDF`
+identifies the root of `slabRoot` under `Measure.pi F` with the centred root of the projected law
+`F.map (slabRoot Z σ κ)`; `edgeworth_mean_uniform_of_bounds` expands that law's root to `O(n⁻¹)`
+with a constant that does not depend on `κ`; `edgeworthCDF_sub_le` supplies the Lipschitz modulus
+of the approximant, whose law-dependence is again killed by the skewness bound and the variance
+floor; and `measure_abs_sub_le_of_abs_cdf_sub_le` turns a uniform distribution-function estimate
+into a uniform window estimate. Nothing here is an estimate: the estimate is
+`edgeworth_mean_uniform_of_bounds`.
+
+The six slope-uniform hypotheses are stated as hypotheses rather than derived, and that is
+deliberate — they are moment arithmetic about `slabRoot (studentPair F) σ ·` under eight moments
+of `F`, verified in the section note above `slabRoot` (`abs_slabRoot_le` dominates the summand
+slope-uniformly, `integral_slabRoot_sq_ge` is the variance floor by perturbation, and
+`exists_bound_norm_charFun_map_slabRoot` is the one Cramér constant for all slopes), but the
+arithmetic itself is *not* discharged here and this wave does not claim it. See the status note
+on `edgeworth_studentized_uniform` for the exact remaining list. -/
+theorem exists_window_bound_slabRoot (F : Measure ℝ) [IsProbabilityMeasure F]
+    {Z : ℝ → EuclideanSpace ℝ (Fin 2)} (hZ : Measurable Z) (σ : ℝ)
+    {R B s₀ cr c Kslope : ℝ} (hR : 0 ≤ R) (hB : 0 ≤ B) (hs₀ : 0 < s₀)
+    (hcr0 : 0 ≤ cr) (hcr1 : cr < 1) (hc0 : 0 < c)
+    (hc2 : c ≤ 1 / (Real.pi * Real.sqrt 2))
+    (hc3 : c ≤ 3 * s₀ ^ 3 / (4 * Real.pi * (R + 1)))
+    -- the summand is centred, slope-uniformly
+    (hmean : ∀ κ : ℝ, |κ| ≤ Kslope → (∫ y, slabRoot Z σ κ y ∂F) = 0)
+    -- four moments of the summand, slope-uniformly (eight moments of `X`)
+    (hLp : ∀ κ : ℝ, |κ| ≤ Kslope → MemLp (slabRoot Z σ κ) 4 F)
+    (hmom3 : ∀ κ : ℝ, |κ| ≤ Kslope → (∫ y, |slabRoot Z σ κ y| ^ 3 ∂F) ≤ R)
+    (hmom4 : ∀ κ : ℝ, |κ| ≤ Kslope → (∫ y, slabRoot Z σ κ y ^ 4 ∂F) ≤ B)
+    -- the variance floor, by perturbation
+    (hfloor : ∀ κ : ℝ, |κ| ≤ Kslope → s₀ ^ 2 ≤ ∫ y, slabRoot Z σ κ y ^ 2 ∂F)
+    -- one Cramér constant for every slope
+    (hcrb : ∀ κ : ℝ, |κ| ≤ Kslope → ∀ s : ℝ,
+      2 * Real.pi * c / Real.sqrt (∫ y, slabRoot Z σ κ y ^ 2 ∂F) ≤ |s| →
+      ‖charFun (F.map (slabRoot Z σ κ)) s‖ ≤ cr) :
+    ∃ A η : ℝ, 0 ≤ A ∧ 0 < η ∧ ∀ n : ℕ, 0 < n → ∀ κ u w : ℝ, |κ| ≤ Kslope → 0 ≤ w →
+      ((Measure.pi fun _ : Fin n => F)
+          {z : Fin n → ℝ |
+            |(Real.sqrt (n : ℝ))⁻¹ * ∑ j, slabRoot Z σ κ (z j) - u| ≤ w}).toReal
+        ≤ 2 * A * w + 2 * (η / n) := by
+  obtain ⟨C₀, hC₀, hC⟩ := edgeworth_mean_uniform_of_bounds hR hB hs₀ hcr0 hcr1 hc0 hc2 hc3
+  set Kb : ℝ := (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * (R / s₀ ^ 3)) with hKbdef
+  have hKb0 : 0 < Kb := by
+    rw [hKbdef]
+    have h1 : (0 : ℝ) < (Real.sqrt (2 * Real.pi))⁻¹ := by positivity
+    have h2 : (0 : ℝ) ≤ R / s₀ ^ 3 := by positivity
+    have h3 : (0 : ℝ) < 1 + 66 * (R / s₀ ^ 3) := by linarith
+    exact mul_pos h1 h3
+  refine ⟨Kb / s₀, C₀, by positivity, hC₀, ?_⟩
+  intro n hn κ u w hκ hw
+  have hn1 : 1 ≤ n := hn
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  set f : ℝ → ℝ := slabRoot Z σ κ with hfdef
+  have hfm : Measurable f := measurable_slabRoot hZ σ κ
+  have hf0 : (∫ y, f y ∂F) = 0 := hmean κ hκ
+  haveI : IsProbabilityMeasure (F.map f) := Measure.isProbabilityMeasure_map hfm.aemeasurable
+  have hvarG : Var[fun t : ℝ => t; F.map f] = ∫ y, f y ^ 2 ∂F := variance_map_eq F hfm hf0
+  have hfl : s₀ ^ 2 ≤ ∫ y, f y ^ 2 ∂F := hfloor κ hκ
+  have hvarpos : 0 < Var[fun t : ℝ => t; F.map f] := by
+    rw [hvarG]; exact lt_of_lt_of_le (by positivity) hfl
+  have hs₀G : s₀ ≤ Real.sqrt Var[fun t : ℝ => t; F.map f] := by
+    rw [hvarG]
+    calc s₀ = Real.sqrt (s₀ ^ 2) := (Real.sqrt_sq hs₀.le).symm
+      _ ≤ Real.sqrt (∫ y, f y ^ 2 ∂F) := Real.sqrt_le_sqrt hfl
+  have hsG : 0 < Real.sqrt Var[fun t : ℝ => t; F.map f] := lt_of_lt_of_le hs₀ hs₀G
+  -- the class hypotheses, read through the pushforward
+  have hLpG : MemLp (fun t : ℝ => t) 4 (F.map f) := by
+    rw [memLp_map_measure_iff (by fun_prop) hfm.aemeasurable]
+    exact hLp κ hκ
+  have hcen : centredLaw (F.map f) = F.map f := by
+    refine centredLaw_eq_self _ ?_
+    rw [integral_map (f := fun t : ℝ => t) hfm.aemeasurable (by fun_prop)]
+    exact hf0
+  have h3G : (∫ x, |x| ^ 3 ∂(centredLaw (F.map f))) ≤ R := by
+    rw [integral_centredLaw_map_eq F hfm hf0 (g := fun x : ℝ => |x| ^ 3) (by fun_prop)]
+    exact hmom3 κ hκ
+  have h4G : (∫ x, x ^ 4 ∂(centredLaw (F.map f))) ≤ B := by
+    rw [integral_centredLaw_map_eq F hfm hf0 (g := fun x : ℝ => x ^ 4) (by fun_prop)]
+    exact hmom4 κ hκ
+  have hcrG : ∀ s : ℝ, 2 * Real.pi * c / Real.sqrt Var[fun t : ℝ => t; F.map f] ≤ |s| →
+      ‖charFun (centredLaw (F.map f)) s‖ ≤ cr := by
+    intro s hs
+    rw [hcen]
+    exact hcrb κ hκ s (by rwa [hvarG] at hs)
+  have hmain := hC (F.map f) inferInstance hLpG hvarpos h3G h4G hs₀G hcrG n hn
+  -- the approximant and its slope-free Lipschitz modulus
+  set Gap : ℝ → ℝ := fun x => edgeworthCDF (skewness (F.map f)) n
+      (x / Real.sqrt Var[fun t : ℝ => t; F.map f]) with hGapdef
+  have hgam : |skewness (F.map f)| ≤ R / s₀ ^ 3 :=
+    abs_skewness_le_of_bounds (F.map f) hvarpos hs₀ h3G hs₀G
+  have hKle : (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness (F.map f)|) ≤ Kb := by
+    rw [hKbdef]
+    refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+    linarith [mul_le_mul_of_nonneg_left hgam (by norm_num : (0 : ℝ) ≤ 66)]
+  have hAlip : ∀ a b : ℝ, a ≤ b → Gap b - Gap a ≤ Kb / s₀ * (b - a) := by
+    intro a b hab
+    have hab' : a / Real.sqrt Var[fun t : ℝ => t; F.map f]
+        ≤ b / Real.sqrt Var[fun t : ℝ => t; F.map f] := by gcongr
+    have h := edgeworthCDF_sub_le (skewness (F.map f)) hn1 hab'
+    have hdiff : b / Real.sqrt Var[fun t : ℝ => t; F.map f]
+        - a / Real.sqrt Var[fun t : ℝ => t; F.map f]
+        = (b - a) / Real.sqrt Var[fun t : ℝ => t; F.map f] := by ring
+    rw [hdiff] at h
+    have hquot : (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness (F.map f)|)
+        / Real.sqrt Var[fun t : ℝ => t; F.map f] ≤ Kb / s₀ :=
+      div_le_div₀ hKb0.le hKle hs₀ hs₀G
+    have hba : (0 : ℝ) ≤ b - a := by linarith
+    have hrw : (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness (F.map f)|)
+          * ((b - a) / Real.sqrt Var[fun t : ℝ => t; F.map f])
+        = (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness (F.map f)|)
+            / Real.sqrt Var[fun t : ℝ => t; F.map f] * (b - a) := by ring
+    rw [hrw] at h
+    exact h.trans (mul_le_mul_of_nonneg_right hquot hba)
+  have happrox : ∀ x : ℝ,
+      |((Measure.pi fun _ : Fin n => F)
+          {z : Fin n → ℝ | (Real.sqrt (n : ℝ))⁻¹ * ∑ j, f (z j) ≤ x}).toReal - Gap x|
+        ≤ C₀ / n := by
+    intro x
+    rw [measure_pi_root_eq_meanRootCDF F hfm hf0 hn x, hGapdef]
+    have h := hmain x
+    rwa [← edgeworthCDF_eq_approx (F.map f) hvarpos n x] at h
+  have hTm : Measurable fun z : Fin n → ℝ => (Real.sqrt (n : ℝ))⁻¹ * ∑ j, f (z j) := by
+    refine measurable_const.mul (Finset.measurable_sum _ fun j _ => ?_)
+    exact hfm.comp (measurable_pi_apply j)
+  exact measure_abs_sub_le_of_abs_cdf_sub_le (Measure.pi fun _ : Fin n => F) hTm
+    (by positivity : (0 : ℝ) ≤ Kb / s₀) hAlip happrox u hw
 
 /-- **One-term Edgeworth expansion for the studentized sample mean, uniform in the argument.**
 
@@ -12030,12 +12690,75 @@ it are both overturned, and the moment hypothesis of this theorem is amended.**
   down — `exists_window_core` produces `K = A² + B² + C + D + 1` with `A = 4π³ρ₃/(3σ³)`,
   `B = 2π⁴`, `C = 8π⁵|m₃|/(3σ³)`, `D = 2π⁴β₄/(3σ⁴) + 2π⁴`, increasing in the moments and
   decreasing in `σ` — so the residue is threading an existing proof's constants. **Bookkeeping,
-  and not done here.**
+  and not done here.** *(Wave 41: done. See the wave-41 block below.)*
 
 * **(U4) AND (B) ARE UNCHANGED.** The quantitative half of (U4) — the `k = 3, 4` and
   graded-remainder terms priced against `windowEnvelope` — is as wave 38 left it, and input (B)
   is as wave 35 left it. **This theorem is therefore still `sorry`, and wave 40 does not claim
   otherwise.** What changed is that its residue no longer contains a missing analytic theory.
+
+**Status after wave 41. THE THREADING WAVE 40 ASKED FOR IS DONE, AND (U3)'s `hwin` IS PROVED AT
+EVERY SLOPE. (U4) AND (B) ARE UNTOUCHED, SO THIS THEOREM IS STILL `sorry` AND WAVE 41 DOES NOT
+CLAIM OTHERWISE.**
+
+* **THE CONSTANT IS EXPOSED (item 1).** `edgeworth_mean_uniform_of_bounds` is
+  `edgeworth_mean_uniform` with `C` quantified *before* the law, from four numbers: `ρ₃ ≤ R`,
+  `β₄ ≤ B`, `s₀ ≤ σ`, and a Cramér level `cr < 1` on `2πc/σ ≤ |s|`. Under it,
+  `exists_window_core_of_bounds` (the core's left-hand side is increasing in `(ρ, β, M)` and
+  decreasing in `σ`, so its witness at the extreme point `(R, B, R, s₀)` serves the class —
+  `gcongr` checks this in one line) and `exists_window_bound_of_bounds`. The one constant of
+  `edgeworth_mean_uniform` that is *not* among `(ρ₃, β₄, σ)` is the skewness, and it is
+  subsumed, not assumed: `|γ| ≤ ρ₃/σ³ ≤ R/s₀³` (`abs_skewness_le_of_bounds`). That step is sound
+  only because `|γ|` occurs in the assembled constant with a positive coefficient everywhere it
+  occurs — in `(2π)^{-1/2}(1 + 66|γ|)`, in `1 + 512π³|γ|`, and in the small-`n` bound
+  `2 + 6|γ|` — and that is the only monotonicity used. `meanRootCDF_sub_le_of_bounds` is the
+  anti-concentration companion in the same class form.
+
+* **(U3)'s `hwin` IS PRODUCED (item 1d), AND ITS ADDITIVE TERM IS `O(n⁻¹)`.**
+  `exists_window_bound_slabRoot` is the hypothesis `measure_pi_abs_deltaSurrogate_insertNth_le`,
+  `measure_pi_abs_slab_insertNth_le` and `measure_pi_vecRoot_slab_le_of_win` all call `hwin`,
+  verbatim, with **one** `A = Kb/s₀` and **one** `η = C₀/n` good at every slope and every `n`.
+  The joining brick is `measure_pi_root_eq_meanRootCDF`: the law of `(√n)⁻¹ ∑ f(zⱼ)` under
+  `Measure.pi F` *is* the centred root of `F.map f` for a centred summand, because the
+  pushforward of a product is the product of the pushforwards (`Measure.pi_map_pi`) and
+  `√n·n⁻¹ = (√n)⁻¹`. No i.i.d. transfer is used, here or anywhere in this file. The rest is
+  `edgeworthCDF_sub_le` for the approximant's Lipschitz modulus (law-dependence again killed by
+  the skewness bound and the variance floor) and `measure_abs_sub_le_of_abs_cdf_sub_le`.
+
+* **WHAT IS LEFT OF (U3), AND IT IS A DIFFERENT LIST FROM WAVE 40's.** Wave 40 priced the whole
+  residue as "threading an existing proof's constants". The threading is now done, and what
+  remains is *not* threading: it is the six slope-uniform hypotheses of
+  `exists_window_bound_slabRoot`, which are moment arithmetic about
+  `slabRoot (studentPair F) σ ·` under eight moments of `F`, taken as hypotheses there and
+  **not discharged**. Precisely, and each is mechanical:
+  1. `hmean` — `∫ slabRoot dF = 0`, i.e. `E Z₀ = 0` and `E Z₁ = 0` for `Z = studentPair F`.
+     Definitional in the mean and the variance.
+  2. `hLp` — `MemLp (slabRoot Z σ κ) 4 F`, slope-uniformly, by domination through
+     `abs_slabRoot_le` from `MemLp id 8 F`.
+  3. `hmom3`, `hmom4` — take `R`, `B` to be the integrals of the *dominating* function
+     `|Z₀|/σ + Kslope|Z₁|/σ²` to the third and fourth powers; the bounds are then
+     `integral_mono` against `abs_slabRoot_le` and need no expansion of the power of a sum.
+     Their finiteness is the same eight-moment fact as (2).
+  4. `hfloor` — `integral_slabRoot_sq_ge` gives `∫ slabRoot² ≥ ½ − κ²m₂` with `m₂ = ∫(Z₁/σ²)²`,
+     so `s₀ = 1/2` serves for `|κ| ≤ (2√m₂)⁻¹`. This one is **not** self-contained: it forces
+     `Kslope ≤ (2√m₂)⁻¹`, and whether `surrogateSlopeBound r x v₀ = O(|x||r|)` respects that
+     bound is a statement about the `|x|` range and the `n`-dependence, so it is discharged in
+     the final assembly and not before it.
+  5. `hcrb` — `exists_bound_norm_charFun_map_slabRoot` gives one `c < 1` on a *fixed* region
+     `ε ≤ |s|`, whereas the class statement asks for the bound on `2πc/σ_κ ≤ |s|`. Matching the
+     two needs an **upper** bound on `σ_κ` (so that `2πc/σ_κ ≥ 2πc/s₁ ≥ ε`), which is again
+     `abs_slabRoot_le`. This obligation is new — no earlier wave recorded it — and it is the
+     only place the Cramér input is not literally free.
+
+* **(U4) AND (B) ARE STILL UNCHANGED, AND ITEMS 2 AND 3 OF WAVE 41 WERE NOT ATTEMPTED.** The
+  quantitative half of (U4) — the `k = 3, 4` slots and the graded-remainder terms priced against
+  `windowEnvelope` — is as wave 38 left it; input (B) is as wave 35 left it; and the six-step
+  assembly below is as wave 37 left it. Wave 41 spent itself on item 1 and stops there. The
+  honest reason is budget, not an obstruction: this file is thirteen thousand lines and the wave
+  ran on a single core, so each rebuild costs about three and a half minutes, and item 1 —
+  three new headline theorems and five joining bricks, all axiom-clean — consumed the wave. No
+  new obstruction to (U4) or to the assembly was found, and none of the wave-38 pricing of (U4)
+  is contradicted by anything proved here. **This theorem is therefore still `sorry`.**
 
 **WAVE 40 — THE MOMENT HYPOTHESIS IS AMENDED FROM FOUR TO EIGHT, AND THIS IS A DEVIATION FROM
 THE CLASSICAL STATEMENT.** The classical studentized Edgeworth expansion (Hall, *The Bootstrap
