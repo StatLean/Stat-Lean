@@ -7142,6 +7142,437 @@ theorem norm_charFun_vecRootLaw_comp_le_exp_neg_sq
 
 end MiddleRangeBulk
 
+/-! ### Item (ii) of the wave-43 repair list: the moment inputs of the bulk majorant
+
+**WAVE 44 — ITEM (ii) IS DISCHARGED, AND IT IS DISCHARGED FOR THE UNTRUNCATED PAIR.** Wave 43
+left the middle range covered by the certificate modulo two things: (i) restating input (B) at
+the repaired band, and (ii) supplying the three direction-uniform moment hypotheses of
+`norm_charFun_vecRootLaw_le_exp_neg_sq` for `studentPair F ∘ truncAt`. (i) is done above.
+(ii) is done here, and the shape of the answer differs from the wave-43 note in two places:
+
+* **the truncated pair never appears.** `norm_charFun_vecRootLaw_comp_le_exp_neg_sq` moves the
+  majorant across the truncation at the cost of a constant, so all that is needed is the
+  majorant for `F.map (studentPair F)` — which is centred, so the *fourth* hypothesis (a zero
+  mean, `integral_inner_studentPair`) is free rather than false;
+* **the second moment is a quadratic form, and that is the whole of the nondegeneracy
+  argument.** `integral_inner_sq_map_studentPair` identifies `∫⟪x,t⟫²` with
+  `A t₀² + 2B t₀t₁ + C t₁²` for the three entries `studentCov00/01/11` of the limit covariance
+  of `(X − μ, (X − μ)² − σ²)`. The floor `λ‖t‖² ≤ ∫⟪x,t⟫²` is then *pure algebra*: `A > 0` and
+  `C > 0` are the form at the two axes, `AC − B² > 0` is the form at `(B, −A)`
+  (`= A(AC − B²)`, and `A > 0`), and a positive-definite binary quadratic form dominates
+  `λ(t₀² + t₁²)` at `λ = min(A, C, (AC − B²)/(A + C))`. **No compactness of the sphere and no
+  continuity of `t ↦ ∫⟪x,t⟫²` are used** — the wave-43 note's "direction-uniform" is a
+  two-dimensional linear-algebra fact, not an analytic one. Positivity at each fixed direction
+  is `integral_studentPair_dir_sq_pos`, which is where `hFac` is spent and the only place.
+* **the moment cost is six, not four.** The variance floor and ceiling need four moments of `F`;
+  the third absolute moment of a *quadratic* in `X` needs **six**. `hF8` covers it, so nothing
+  downstream moves, but the wave-43 note's "available under `hFac`" understates what is spent.
+
+`exists_bulk_majorant_vecRootLaw_studentPair_truncAt` is the conclusion, in exactly the form
+`norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` consumes as `hbulk`. -/
+
+section StudentCovariance
+
+variable (F : Measure ℝ) [IsProbabilityMeasure F]
+
+lemma norm_sq_eq_coords (t : E₂) : ‖t‖ ^ 2 = (t 0) ^ 2 + (t 1) ^ 2 := by
+  rw [← real_inner_self_eq_norm_sq, PiLp.inner_apply, Fin.sum_univ_two]
+  simp
+
+lemma abs_coord_le_norm (t : E₂) : |t 0| ≤ ‖t‖ ∧ |t 1| ≤ ‖t‖ := by
+  have h := norm_sq_eq_coords t
+  have h0 : (0 : ℝ) ≤ ‖t‖ := norm_nonneg t
+  constructor
+  · nlinarith [abs_nonneg (t 0), sq_abs (t 0), sq_nonneg (t 1)]
+  · nlinarith [abs_nonneg (t 1), sq_abs (t 1), sq_nonneg (t 0)]
+
+noncomputable def studentCov00 (F : Measure ℝ) : ℝ := ∫ y, y ^ 2 ∂(centredLaw F)
+
+noncomputable def studentCov01 (F : Measure ℝ) : ℝ :=
+  ∫ y, y * (y ^ 2 - Var[fun s : ℝ => s; F]) ∂(centredLaw F)
+
+noncomputable def studentCov11 (F : Measure ℝ) : ℝ :=
+  ∫ y, (y ^ 2 - Var[fun s : ℝ => s; F]) ^ 2 ∂(centredLaw F)
+
+lemma integrable_cube_centredLaw (hF4 : MemLp (fun t : ℝ => t) 4 F) :
+    Integrable (fun y : ℝ => y ^ 3) (centredLaw F) := by
+  refine Integrable.mono' (integrable_abs_cube_centredLaw F hF4) (by fun_prop)
+    (Filter.Eventually.of_forall fun y => ?_)
+  rw [Real.norm_eq_abs, abs_pow]
+
+lemma integrable_cov01 (hF4 : MemLp (fun t : ℝ => t) 4 F) :
+    Integrable (fun y : ℝ => y * (y ^ 2 - Var[fun s : ℝ => s; F])) (centredLaw F) := by
+  have h := (integrable_cube_centredLaw F hF4).sub
+    ((integrable_id_centredLaw F hF4).const_mul Var[fun s : ℝ => s; F])
+  refine h.congr (Filter.Eventually.of_forall fun y => ?_)
+  simp only [Pi.sub_apply]
+  ring
+
+lemma integrable_cov11 (hF4 : MemLp (fun t : ℝ => t) 4 F) :
+    Integrable (fun y : ℝ => (y ^ 2 - Var[fun s : ℝ => s; F]) ^ 2) (centredLaw F) := by
+  have h := ((integrable_pow_four_centredLaw F hF4).sub
+    ((integrable_sq_centredLaw F hF4).const_mul (2 * Var[fun s : ℝ => s; F]))).add
+    (integrable_const (Var[fun s : ℝ => s; F] ^ 2))
+  refine h.congr (Filter.Eventually.of_forall fun y => ?_)
+  simp only [Pi.sub_apply, Pi.add_apply]
+  ring
+
+lemma integrable_dir_sq_centredLaw (hF4 : MemLp (fun t : ℝ => t) 4 F) (t₀ t₁ : ℝ) :
+    Integrable
+      (fun y : ℝ => (t₀ * y + t₁ * (y ^ 2 - Var[fun s : ℝ => s; F])) ^ 2) (centredLaw F) := by
+  have h1 := (integrable_sq_centredLaw F hF4).const_mul (t₀ ^ 2)
+  have h2 := (integrable_cov01 F hF4).const_mul (2 * t₀ * t₁)
+  have h3 := (integrable_cov11 F hF4).const_mul (t₁ ^ 2)
+  have h := (h1.add h2).add h3
+  refine h.congr (Filter.Eventually.of_forall fun y => ?_)
+  simp only [Pi.add_apply]
+  ring
+
+lemma integrable_dir_sq_self (hF4 : MemLp (fun t : ℝ => t) 4 F) (t₀ t₁ : ℝ) :
+    Integrable (fun y : ℝ => (t₀ * (y - ∫ s, s ∂F)
+      + t₁ * ((y - ∫ s, s ∂F) ^ 2 - Var[fun s : ℝ => s; F])) ^ 2) F := by
+  have h := integrable_dir_sq_centredLaw F hF4 t₀ t₁
+  rw [centredLaw, integrable_map_measure (by fun_prop) (by fun_prop)] at h
+  exact h
+
+lemma integral_dir_sq_eq_quadratic (hF4 : MemLp (fun t : ℝ => t) 4 F) (t₀ t₁ : ℝ) :
+    (∫ y, (t₀ * (y - ∫ s, s ∂F)
+        + t₁ * ((y - ∫ s, s ∂F) ^ 2 - Var[fun s : ℝ => s; F])) ^ 2 ∂F)
+      = studentCov00 F * t₀ ^ 2 + 2 * studentCov01 F * t₀ * t₁
+        + studentCov11 F * t₁ ^ 2 := by
+  set v : ℝ := Var[fun s : ℝ => s; F] with hv
+  have hc := integral_centredLaw F
+    (g := fun y : ℝ => (t₀ * y + t₁ * (y ^ 2 - v)) ^ 2) (by fun_prop)
+  rw [← hc]
+  have h1 : Integrable (fun y : ℝ => t₀ ^ 2 * y ^ 2) (centredLaw F) :=
+    (integrable_sq_centredLaw F hF4).const_mul _
+  have h2 : Integrable (fun y : ℝ => (2 * t₀ * t₁) * (y * (y ^ 2 - v))) (centredLaw F) :=
+    (integrable_cov01 F hF4).const_mul _
+  have h3 : Integrable (fun y : ℝ => t₁ ^ 2 * (y ^ 2 - v) ^ 2) (centredLaw F) :=
+    (integrable_cov11 F hF4).const_mul _
+  have h12 : Integrable
+      (fun y : ℝ => t₀ ^ 2 * y ^ 2 + (2 * t₀ * t₁) * (y * (y ^ 2 - v))) (centredLaw F) :=
+    h1.add h2
+  have hpt : ∀ y : ℝ, (t₀ * y + t₁ * (y ^ 2 - v)) ^ 2
+      = t₀ ^ 2 * y ^ 2 + (2 * t₀ * t₁) * (y * (y ^ 2 - v)) + t₁ ^ 2 * (y ^ 2 - v) ^ 2 := by
+    intro y; ring
+  have e1 : (∫ y, t₀ ^ 2 * y ^ 2 ∂(centredLaw F)) = t₀ ^ 2 * ∫ y, y ^ 2 ∂(centredLaw F) :=
+    MeasureTheory.integral_const_mul _ _
+  have e2 : (∫ y, (2 * t₀ * t₁) * (y * (y ^ 2 - v)) ∂(centredLaw F))
+      = (2 * t₀ * t₁) * ∫ y, y * (y ^ 2 - v) ∂(centredLaw F) :=
+    MeasureTheory.integral_const_mul _ _
+  have e3 : (∫ y, t₁ ^ 2 * (y ^ 2 - v) ^ 2 ∂(centredLaw F))
+      = t₁ ^ 2 * ∫ y, (y ^ 2 - v) ^ 2 ∂(centredLaw F) :=
+    MeasureTheory.integral_const_mul _ _
+  rw [integral_congr_ae (Filter.Eventually.of_forall hpt), integral_add h12 h3,
+    integral_add h1 h2, e1, e2, e3, studentCov00, studentCov01, studentCov11, ← hv]
+  ring
+
+lemma integral_inner_sq_map_studentPair (hF4 : MemLp (fun t : ℝ => t) 4 F) (t : E₂) :
+    (∫ x, (⟪x, t⟫ : ℝ) ^ 2 ∂(F.map (studentPair F)))
+      = studentCov00 F * (t 0) ^ 2 + 2 * studentCov01 F * (t 0) * (t 1)
+        + studentCov11 F * (t 1) ^ 2 := by
+  rw [integral_map (measurable_studentPair F).aemeasurable (by fun_prop)]
+  simp_rw [inner_studentPair F t]
+  exact integral_dir_sq_eq_quadratic F hF4 (t 0) (t 1)
+
+lemma studentCov_pos_of_ac (hFac : F ≪ volume) (hF4 : MemLp (fun t : ℝ => t) 4 F)
+    {t₀ t₁ : ℝ} (ht : t₀ ≠ 0 ∨ t₁ ≠ 0) :
+    0 < studentCov00 F * t₀ ^ 2 + 2 * studentCov01 F * t₀ * t₁
+      + studentCov11 F * t₁ ^ 2 := by
+  rw [← integral_dir_sq_eq_quadratic F hF4 t₀ t₁]
+  exact integral_studentPair_dir_sq_pos hFac ht (integrable_dir_sq_self F hF4 t₀ t₁)
+
+theorem exists_variance_floor_map_studentPair (hFac : F ≪ volume)
+    (hF4 : MemLp (fun t : ℝ => t) 4 F) :
+    ∃ lam : ℝ, 0 < lam ∧ ∀ t : E₂,
+      lam * ‖t‖ ^ 2 ≤ ∫ x, (⟪x, t⟫ : ℝ) ^ 2 ∂(F.map (studentPair F)) := by
+  set A : ℝ := studentCov00 F with hA
+  set B : ℝ := studentCov01 F with hB
+  set C : ℝ := studentCov11 F with hC
+  have hApos : 0 < A := by
+    have h := studentCov_pos_of_ac F hFac hF4 (t₀ := 1) (t₁ := 0) (Or.inl one_ne_zero)
+    nlinarith [h]
+  have hCpos : 0 < C := by
+    have h := studentCov_pos_of_ac F hFac hF4 (t₀ := 0) (t₁ := 1) (Or.inr one_ne_zero)
+    nlinarith [h]
+  have hdet : 0 < A * C - B ^ 2 := by
+    have h := studentCov_pos_of_ac F hFac hF4 (t₀ := B) (t₁ := -A)
+      (Or.inr (by simpa using hApos.ne'))
+    have heq : A * B ^ 2 + 2 * B * B * (-A) + C * (-A) ^ 2 = A * (A * C - B ^ 2) := by ring
+    rw [heq] at h
+    nlinarith [h, hApos]
+  have hACpos : 0 < A + C := by linarith
+  set lam : ℝ := min A (min C ((A * C - B ^ 2) / (A + C))) with hlam
+  have hlam0 : 0 < lam := by
+    refine lt_min hApos (lt_min hCpos ?_)
+    positivity
+  refine ⟨lam, hlam0, fun t => ?_⟩
+  rw [integral_inner_sq_map_studentPair F hF4 t, norm_sq_eq_coords t, ← hA, ← hB, ← hC]
+  set t₀ : ℝ := t 0
+  set t₁ : ℝ := t 1
+  have hlA : lam ≤ A := min_le_left _ _
+  have hlC : lam ≤ C := le_trans (min_le_right _ _) (min_le_left _ _)
+  have hlD : lam ≤ (A * C - B ^ 2) / (A + C) :=
+    le_trans (min_le_right _ _) (min_le_right _ _)
+  have hlD' : lam * (A + C) ≤ A * C - B ^ 2 := by
+    rw [le_div_iff₀ hACpos] at hlD
+    linarith
+  have hac : B ^ 2 ≤ (A - lam) * (C - lam) := by nlinarith [sq_nonneg lam]
+  have hkey : 0 ≤ (A - lam) * t₀ ^ 2 + 2 * B * t₀ * t₁ + (C - lam) * t₁ ^ 2 := by
+    rcases eq_or_lt_of_le (by linarith : (0 : ℝ) ≤ A - lam) with h | h
+    · have hB0 : B = 0 := by nlinarith [sq_nonneg B]
+      rw [hB0, ← h]
+      nlinarith [sq_nonneg t₁, sq_nonneg t₀]
+    · nlinarith [sq_nonneg ((A - lam) * t₀ + B * t₁),
+        mul_nonneg (by linarith : (0 : ℝ) ≤ (A - lam) * (C - lam) - B ^ 2) (sq_nonneg t₁)]
+  nlinarith [hkey]
+
+theorem integral_inner_sq_map_studentPair_le (hF4 : MemLp (fun t : ℝ => t) 4 F) (t : E₂) :
+    (∫ x, (⟪x, t⟫ : ℝ) ^ 2 ∂(F.map (studentPair F)))
+      ≤ (studentCov00 F + studentCov11 F + |studentCov01 F|) * ‖t‖ ^ 2 := by
+  have hA : 0 ≤ studentCov00 F := integral_nonneg fun y => by positivity
+  have hC : 0 ≤ studentCov11 F := integral_nonneg fun y => by positivity
+  rw [integral_inner_sq_map_studentPair F hF4 t, norm_sq_eq_coords t]
+  have h1 : 2 * studentCov01 F * (t 0) * (t 1)
+      ≤ |studentCov01 F| * ((t 0) ^ 2 + (t 1) ^ 2) := by
+    nlinarith [sq_nonneg (t 0 - t 1), sq_nonneg (t 0 + t 1), le_abs_self (studentCov01 F),
+      neg_abs_le (studentCov01 F)]
+  nlinarith [sq_nonneg (t 0), sq_nonneg (t 1), abs_nonneg (studentCov01 F)]
+
+lemma one_add_pow_six_le {u : ℝ} (hu : 0 ≤ u) : (1 + u) ^ 6 ≤ 64 * (1 + u ^ 6) := by
+  rcases le_total u 1 with h | h
+  · have h1 : (1 + u) ^ 6 ≤ 2 ^ 6 := pow_le_pow_left₀ (by linarith) (by linarith) 6
+    have h2 : (0 : ℝ) ≤ u ^ 6 := by positivity
+    norm_num at h1 ⊢
+    linarith
+  · have h1 : (1 + u) ^ 6 ≤ (2 * u) ^ 6 := pow_le_pow_left₀ (by linarith) (by linarith) 6
+    have h2 : (2 * u) ^ 6 = 64 * u ^ 6 := by ring
+    nlinarith [h1]
+
+lemma memLp_six_centredLaw (hF6 : MemLp (fun t : ℝ => t) 6 F) :
+    MemLp (fun x : ℝ => x) 6 (centredLaw F) := by
+  rw [centredLaw, memLp_map_measure_iff (by fun_prop) (by fun_prop)]
+  exact hF6.sub (memLp_const _)
+
+lemma integrable_abs_pow_six_centredLaw (hF6 : MemLp (fun t : ℝ => t) 6 F) :
+    Integrable (fun x : ℝ => |x| ^ 6) (centredLaw F) := by
+  have h6 : MemLp (fun x : ℝ => x) ((6 : ℕ) : ℝ≥0∞) (centredLaw F) := by
+    simpa using memLp_six_centredLaw F hF6
+  simpa [Real.norm_eq_abs] using h6.integrable_norm_pow'
+
+lemma integrable_one_add_abs_pow_six (hF6 : MemLp (fun t : ℝ => t) 6 F) :
+    Integrable (fun y : ℝ => (1 + |y|) ^ 6) (centredLaw F) := by
+  have h1 : Integrable (fun y : ℝ => 1 + |y| ^ 6) (centredLaw F) := by
+    have h := (integrable_const (1 : ℝ)).add (integrable_abs_pow_six_centredLaw F hF6)
+    refine h.congr (Filter.Eventually.of_forall fun y => ?_)
+    simp only [Pi.add_apply]
+  refine Integrable.mono' (h1.const_mul 64) (by fun_prop)
+    (Filter.Eventually.of_forall fun y => ?_)
+  rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+  exact one_add_pow_six_le (abs_nonneg y)
+
+/-- The pointwise bound behind the third absolute moment. -/
+lemma dir_abs_cube_le (t : E₂) (y : ℝ) :
+    |t 0 * y + t 1 * (y ^ 2 - Var[fun s : ℝ => s; F])| ^ 3
+      ≤ (‖t‖ ^ 3 * (2 + |Var[fun s : ℝ => s; F]|) ^ 3) * (1 + |y|) ^ 6 := by
+  set v : ℝ := Var[fun s : ℝ => s; F] with hv
+  have htn : (0 : ℝ) ≤ ‖t‖ := norm_nonneg t
+  obtain ⟨ht0, ht1⟩ := abs_coord_le_norm t
+  have hin : |t 0 * y + t 1 * (y ^ 2 - v)| ≤ ‖t‖ * ((2 + |v|) * (1 + |y|) ^ 2) := by
+    have h1 : |t 0 * y + t 1 * (y ^ 2 - v)| ≤ |t 0| * |y| + |t 1| * |y ^ 2 - v| := by
+      calc |t 0 * y + t 1 * (y ^ 2 - v)| ≤ |t 0 * y| + |t 1 * (y ^ 2 - v)| :=
+            abs_add_le _ _
+        _ = |t 0| * |y| + |t 1| * |y ^ 2 - v| := by rw [abs_mul, abs_mul]
+    have h2 : |y ^ 2 - v| ≤ |y| ^ 2 + |v| := by
+      calc |y ^ 2 - v| ≤ |y ^ 2| + |v| := abs_sub _ _
+        _ = |y| ^ 2 + |v| := by rw [abs_pow]
+    have h3 : |y| + (|y| ^ 2 + |v|) ≤ (2 + |v|) * (1 + |y|) ^ 2 := by
+      nlinarith [abs_nonneg y, abs_nonneg v, sq_nonneg (abs y)]
+    have h4 : |t 0| * |y| + |t 1| * |y ^ 2 - v| ≤ ‖t‖ * (|y| + (|y| ^ 2 + |v|)) := by
+      have e1 : |t 0| * |y| ≤ ‖t‖ * |y| :=
+        mul_le_mul_of_nonneg_right ht0 (abs_nonneg y)
+      have e2 : |t 1| * |y ^ 2 - v| ≤ ‖t‖ * (|y| ^ 2 + |v|) := by
+        calc |t 1| * |y ^ 2 - v| ≤ ‖t‖ * |y ^ 2 - v| :=
+              mul_le_mul_of_nonneg_right ht1 (abs_nonneg _)
+          _ ≤ ‖t‖ * (|y| ^ 2 + |v|) := mul_le_mul_of_nonneg_left h2 htn
+      linarith
+    have h5 : ‖t‖ * (|y| + (|y| ^ 2 + |v|)) ≤ ‖t‖ * ((2 + |v|) * (1 + |y|) ^ 2) :=
+      mul_le_mul_of_nonneg_left h3 htn
+    linarith
+  have hcube := pow_le_pow_left₀ (abs_nonneg _) hin 3
+  calc |t 0 * y + t 1 * (y ^ 2 - v)| ^ 3
+      ≤ (‖t‖ * ((2 + |v|) * (1 + |y|) ^ 2)) ^ 3 := hcube
+    _ = (‖t‖ ^ 3 * (2 + |v|) ^ 3) * (1 + |y|) ^ 6 := by ring
+
+lemma integrable_dir_abs_cube_centredLaw (hF6 : MemLp (fun t : ℝ => t) 6 F) (t : E₂) :
+    Integrable (fun y : ℝ =>
+      |t 0 * y + t 1 * (y ^ 2 - Var[fun s : ℝ => s; F])| ^ 3) (centredLaw F) := by
+  refine Integrable.mono' ((integrable_one_add_abs_pow_six F hF6).const_mul
+    (‖t‖ ^ 3 * (2 + |Var[fun s : ℝ => s; F]|) ^ 3)) (by fun_prop)
+    (Filter.Eventually.of_forall fun y => ?_)
+  rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+  exact dir_abs_cube_le F t y
+
+/-- The **third absolute moment**, direction-uniform, at the cost of six moments of `F`. -/
+theorem integral_inner_abs_cube_map_studentPair_le (hF6 : MemLp (fun t : ℝ => t) 6 F)
+    (t : E₂) :
+    (∫ x, |(⟪x, t⟫ : ℝ)| ^ 3 ∂(F.map (studentPair F)))
+      ≤ ((2 + |Var[fun s : ℝ => s; F]|) ^ 3
+          * ∫ y, (1 + |y|) ^ 6 ∂(centredLaw F)) * ‖t‖ ^ 3 := by
+  set v : ℝ := Var[fun s : ℝ => s; F] with hv
+  have hdom : Integrable
+      (fun y : ℝ => (‖t‖ ^ 3 * (2 + |v|) ^ 3) * (1 + |y|) ^ 6) (centredLaw F) :=
+    (integrable_one_add_abs_pow_six F hF6).const_mul _
+  have hint := integrable_dir_abs_cube_centredLaw F hF6 t
+  rw [← hv] at hint
+  have hmap : (∫ x, |(⟪x, t⟫ : ℝ)| ^ 3 ∂(F.map (studentPair F)))
+      = ∫ y, |t 0 * y + t 1 * (y ^ 2 - v)| ^ 3 ∂(centredLaw F) := by
+    rw [integral_map (measurable_studentPair F).aemeasurable (by fun_prop)]
+    simp_rw [inner_studentPair F t, ← hv]
+    exact (integral_centredLaw F
+      (g := fun y : ℝ => |t 0 * y + t 1 * (y ^ 2 - v)| ^ 3) (by fun_prop)).symm
+  rw [hmap]
+  have hptw : ∀ y : ℝ, |t 0 * y + t 1 * (y ^ 2 - v)| ^ 3
+      ≤ (‖t‖ ^ 3 * (2 + |v|) ^ 3) * (1 + |y|) ^ 6 := by
+    intro y
+    have h := dir_abs_cube_le F t y
+    rw [← hv] at h
+    exact h
+  have hmono := integral_mono hint hdom hptw
+  have hconst : (∫ y, (‖t‖ ^ 3 * (2 + |v|) ^ 3) * (1 + |y|) ^ 6 ∂(centredLaw F))
+      = (‖t‖ ^ 3 * (2 + |v|) ^ 3) * ∫ y, (1 + |y|) ^ 6 ∂(centredLaw F) :=
+    MeasureTheory.integral_const_mul _ _
+  rw [hconst] at hmono
+  calc (∫ y, |t 0 * y + t 1 * (y ^ 2 - v)| ^ 3 ∂(centredLaw F))
+      ≤ (‖t‖ ^ 3 * (2 + |v|) ^ 3) * ∫ y, (1 + |y|) ^ 6 ∂(centredLaw F) := hmono
+    _ = ((2 + |v|) ^ 3 * ∫ y, (1 + |y|) ^ 6 ∂(centredLaw F)) * ‖t‖ ^ 3 := by ring
+
+lemma integrable_dir_centredLaw (hF4 : MemLp (fun t : ℝ => t) 4 F) (t₀ t₁ : ℝ) :
+    Integrable (fun y : ℝ => t₀ * y + t₁ * (y ^ 2 - Var[fun s : ℝ => s; F]))
+      (centredLaw F) := by
+  have h1 := (integrable_id_centredLaw F hF4).const_mul t₀
+  have h2 := ((integrable_sq_centredLaw F hF4).sub
+    (integrable_const Var[fun s : ℝ => s; F])).const_mul t₁
+  have h := h1.add h2
+  refine h.congr (Filter.Eventually.of_forall fun y => ?_)
+  simp only [Pi.add_apply, Pi.sub_apply]
+
+lemma integrable_inner_map_studentPair (hF4 : MemLp (fun t : ℝ => t) 4 F) (t : E₂) :
+    Integrable (fun x : E₂ => (⟪x, t⟫ : ℝ)) (F.map (studentPair F)) := by
+  rw [integrable_map_measure (by fun_prop) (measurable_studentPair F).aemeasurable]
+  simp_rw [Function.comp_def, inner_studentPair F t]
+  have h := integrable_dir_centredLaw F hF4 (t 0) (t 1)
+  rw [centredLaw, integrable_map_measure (by fun_prop) (by fun_prop)] at h
+  exact h
+
+lemma integrable_inner_sq_map_studentPair (hF4 : MemLp (fun t : ℝ => t) 4 F) (t : E₂) :
+    Integrable (fun x : E₂ => (⟪x, t⟫ : ℝ) ^ 2) (F.map (studentPair F)) := by
+  rw [integrable_map_measure (by fun_prop) (measurable_studentPair F).aemeasurable]
+  simp_rw [Function.comp_def, inner_studentPair F t]
+  exact integrable_dir_sq_self F hF4 (t 0) (t 1)
+
+lemma integrable_inner_abs_cube_map_studentPair (hF6 : MemLp (fun t : ℝ => t) 6 F) (t : E₂) :
+    Integrable (fun x : E₂ => |(⟪x, t⟫ : ℝ)| ^ 3) (F.map (studentPair F)) := by
+  rw [integrable_map_measure (by fun_prop) (measurable_studentPair F).aemeasurable]
+  simp_rw [Function.comp_def, inner_studentPair F t]
+  have h := integrable_dir_abs_cube_centredLaw F hF6 t
+  rw [centredLaw, integrable_map_measure (by fun_prop) (by fun_prop)] at h
+  exact h
+
+theorem exists_bulk_majorant_map_studentPair (hFac : F ≪ volume)
+    (hF4 : MemLp (fun t : ℝ => t) 4 F) (hF6 : MemLp (fun t : ℝ => t) 6 F) :
+    ∃ lam ε₁ : ℝ, 0 < lam ∧ 0 < ε₁ ∧ ∀ u : E₂, ‖u‖ ≤ ε₁ →
+      ‖charFun (F.map (studentPair F)) u‖ ≤ Real.exp (-(lam * ‖u‖ ^ 2 / 4)) := by
+  obtain ⟨lam, hlam, hfloor⟩ := exists_variance_floor_map_studentPair F hFac hF4
+  set V : ℝ := studentCov00 F + studentCov11 F + |studentCov01 F| with hV
+  set R : ℝ := (2 + |Var[fun s : ℝ => s; F]|) ^ 3
+    * ∫ y, (1 + |y|) ^ 6 ∂(centredLaw F) with hR
+  have hVpos : 0 < V := by
+    have h := hfloor (coordDir 0)
+    have hn : ‖(coordDir 0 : E₂)‖ = 1 := by rw [coordDir]; simp
+    have hc := integral_inner_sq_map_studentPair_le F hF4 (coordDir 0)
+    rw [hn] at h hc
+    nlinarith [h, hc]
+  have hRpos : 0 < R := by
+    have hone : (1 : ℝ) ≤ ∫ y, (1 + |y|) ^ 6 ∂(centredLaw F) := by
+      have h := integral_mono (integrable_const (1 : ℝ))
+        (integrable_one_add_abs_pow_six F hF6)
+        (fun y => one_le_pow₀ (by linarith [abs_nonneg y]))
+      simpa using h
+    have h2 : (0 : ℝ) < (2 + |Var[fun s : ℝ => s; F]|) ^ 3 := by positivity
+    rw [hR]
+    nlinarith
+  set ε₁ : ℝ := min (Real.sqrt (2 / V)) (3 * lam / (2 * R)) with hε
+  have hε0 : 0 < ε₁ := by
+    refine lt_min ?_ (by positivity)
+    exact Real.sqrt_pos.2 (by positivity)
+  refine ⟨lam, ε₁, hlam, hε0, fun u hu => ?_⟩
+  have hwin2 : V * ε₁ ^ 2 ≤ 2 := by
+    have h1 : ε₁ ≤ Real.sqrt (2 / V) := min_le_left _ _
+    have h2 : ε₁ ^ 2 ≤ 2 / V := by
+      have := Real.sq_sqrt (by positivity : (0 : ℝ) ≤ 2 / V)
+      nlinarith [hε0.le, Real.sqrt_nonneg (2 / V)]
+    rw [le_div_iff₀ hVpos] at h2
+    linarith
+  have hwin3 : R * ε₁ ≤ 3 * lam / 2 := by
+    have h1 : ε₁ ≤ 3 * lam / (2 * R) := min_le_right _ _
+    have h2 : R * ε₁ ≤ R * (3 * lam / (2 * R)) := mul_le_mul_of_nonneg_left h1 hRpos.le
+    have h3 : R * (3 * lam / (2 * R)) = 3 * lam / 2 := by field_simp
+    linarith
+  have hmain := norm_charFun_vecRootLaw_le_exp_neg_sq F (measurable_studentPair F)
+    hlam hε0.le (integrable_inner_map_studentPair F hF4)
+    (integrable_inner_sq_map_studentPair F hF4)
+    (integrable_inner_abs_cube_map_studentPair F hF6)
+    (integral_inner_studentPair F hF4) hfloor
+    (integral_inner_sq_map_studentPair_le F hF4)
+    (integral_inner_abs_cube_map_studentPair_le F hF6) hwin2 hwin3
+    (n := 1) one_pos (t := u) (by simpa using hu)
+  rwa [vecRootLaw_one F (measurable_studentPair F)] at hmain
+
+theorem exists_bulk_majorant_vecRootLaw_studentPair_truncAt (hFac : F ≪ volume)
+    (hF4 : MemLp (fun t : ℝ => t) 4 F) (hF6 : MemLp (fun t : ℝ => t) 6 F)
+    (hF4int : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F) :
+    ∃ lam ε₁ B : ℝ, 0 < lam ∧ 0 < ε₁ ∧ 0 ≤ B ∧ ∀ n : ℕ, 0 < n → ∀ t : E₂,
+      ‖t‖ ≤ ε₁ * Real.sqrt (n : ℝ) →
+      ‖charFun (vecRootLaw F
+          (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n) t‖
+        ≤ B * Real.exp (-(lam * ‖t‖ ^ 2 / 4)) := by
+  obtain ⟨lam, ε₁, hlam, hε₁, hmaj⟩ := exists_bulk_majorant_map_studentPair F hFac hF4 hF6
+  set μ4 : ℝ := ∫ x, (x - ∫ s, s ∂F) ^ 4 ∂F with hμ4
+  have hμ40 : 0 ≤ μ4 := integral_nonneg fun x => by positivity
+  refine ⟨lam, ε₁, Real.exp (2 * μ4 * Real.exp (lam * ε₁ ^ 2 / 4)), hlam, hε₁,
+    Real.exp_nonneg _, fun n hn t ht => ?_⟩
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hnR
+  have hset := truncAt_ne_setOf (m := ∫ s, s ∂F) hsn.le
+  have hbad : MeasurableSet
+      {x : ℝ | truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) x ≠ x} := by
+    rw [hset]; exact measurableSet_lt measurable_const (by fun_prop)
+  have hmass : (n : ℝ)
+      * (F {x : ℝ | truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) x ≠ x}).toReal ≤ μ4 := by
+    rw [hset]
+    have h := measure_abs_gt_le_fourth_moment F (g := fun x : ℝ => x - ∫ s, s ∂F)
+      (by fun_prop) hF4int hsn
+    have hpow : Real.sqrt (n : ℝ) ^ 4 = (n : ℝ) ^ 2 := by
+      have hs : Real.sqrt (n : ℝ) ^ 2 = (n : ℝ) := Real.sq_sqrt hnR.le
+      calc Real.sqrt (n : ℝ) ^ 4 = (Real.sqrt (n : ℝ) ^ 2) ^ 2 := by ring
+        _ = (n : ℝ) ^ 2 := by rw [hs]
+    rw [hpow, ← hμ4] at h
+    have h2 : (n : ℝ) * (F {x : ℝ | Real.sqrt (n : ℝ) < |x - ∫ s, s ∂F|}).toReal
+        ≤ (n : ℝ) * (μ4 / (n : ℝ) ^ 2) := mul_le_mul_of_nonneg_left h hnR.le
+    have h3 : (n : ℝ) * (μ4 / (n : ℝ) ^ 2) = μ4 / (n : ℝ) := by
+      field_simp
+    have h4 : μ4 / (n : ℝ) ≤ μ4 := by
+      rw [div_le_iff₀ hnR]
+      nlinarith
+    linarith
+  exact norm_charFun_vecRootLaw_comp_le_exp_neg_sq F (measurable_studentPair F)
+    (measurable_truncAt _ _) hbad hlam.le hε₁.le hn hmass hmaj ht
+
+end StudentCovariance
+
 /-- **At the repaired band radius `R = K√(log n)` the Gaussian majorant is a negative power of
 `n`, of any prescribed order.** This is the whole arithmetic of the repair: `e^{−λR²/4}` becomes
 `n^{−λK²/4}`, and `K` is at the caller's disposal. -/
