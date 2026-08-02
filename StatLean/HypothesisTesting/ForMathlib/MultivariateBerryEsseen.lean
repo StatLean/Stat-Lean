@@ -8021,6 +8021,119 @@ private lemma abs_integral_swap_step_localised_le
       = C₃ * c ^ 3 * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ))
         * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3) := by ring
   linarith
+set_option linter.unusedVariables false in
+-- the body is a named `sorry` brick: the hypotheses are the interface, see the docstring
+/-- **The per-step TAIL estimate (wave 38: STATED, NOT proved — and the wave-32/35 account of
+what it needs is CORRECTED here).** *One tail step `j > J` of the hybrid telescope, localised,
+averaged against the step's own hybrid law.*
+
+`τ` is `hybridLaw n j ν`, `σ = σⱼ = √(j/n)` is the step's Gaussian smoothing width and
+`c = n^{-1/2}` its scale, so the cost `Ct (c/σ)³ (β + β_G) = Ct (β + β_G)/(j√j)` is exactly the
+unweighted `abs_integral_gaussian_smoothed_swap_le`, and the weight `4 C_k σ + W` is exactly what
+`localised_swap_bound_of_weighted_telescope`'s tail summands consume once summed over `J < j ≤ n`
+(the harmonic sum `∑ σⱼ/(j√j) = c ∑ 1/j` is where the logarithm comes from).
+
+## What wave 32/35 said the residue was
+
+"Its two analytic ingredients are in place (the wave-19 weighted lemma
+`abs_integral_mul_vecTiltRemainder_le_of_support` and its wave-29 constant-off/Gaussian-tail
+extensions), but the shift-length restriction `‖w‖ ≤ 1` has to be handled."
+
+## What wave 38 finds: a THIRD ingredient is missing, and it is not bookkeeping
+
+The two available routes both fail to produce the frozen weight `4 C_k σ + W`.
+
+**Route (a), Cauchy–Schwarz against the shell (the wave-19 form).** Take `G(z) = F(v + σz)`,
+constant off `S_v = {z : v + σz ∈ shell}`, and apply
+`abs_integral_mul_vecTiltRemainder_le_of_const_off`. The weight at `v` is `2√(γ S_v)`, and
+averaging over `v` with Jensen gives `2√(∫ γ S_v dτ) = 2√(shell mass) ≍ √(4 C_k σ + W)`. This is
+the `√W` form the note on `localised_swap_bound_small_weight` already records, and the fixed
+point `cube_le_of_selfImproving_smoothed_sqrt` then gives `O(n^{-1/3})`, not `β/√n`. So route (a)
+cannot close brick L as stated.
+
+**Route (b), the near/far split in `v` (the wave-29 form).** Fix a radius `r` and split:
+
+* `v` within `r` of the shell: use the *unweighted* per-step bound (weight `1`, cost
+  `Ct (c/σ)³ X`). The `τ`-mass of that set of `v` is `≤ 4 C_k (r + ε) + W` by the amended
+  two-sided-shell hypothesis at width `r + ε`.
+* `v` at distance `≥ r`: `F` is constant on `closedBall v r`, so
+  `abs_integral_shift_vecTiltRemainder_le_of_const_ball` applies and the weight is
+  `2 √(γ{‖z‖ ≥ r/σ}) √tiltSqConst`, a **Gaussian tail** and nothing else.
+
+So route (b) delivers weight `4 C_k (r + ε) + W + 2√(γ{‖z‖ ≥ r/σ})·√tiltSqConst/Ct`, at every
+`r > 0`. For `j > J` one has `σ ≥ ε`, so the `4 C_k ε` is absorbed; the frozen weight
+`4 C_k σ + W` therefore needs an `r ≍ σ` at which the tail term is itself `≲ σ`, i.e.
+
+  `γ{‖z‖ ≥ M} ≲ σ²`  at  `M = r/σ ≍ 1`.
+
+**That is false**, and no choice of `r` repairs it with the tail bound this file has. The only
+tail available is `stdGaussian_norm_ge_le p`, Markov at order `p`:
+`γ{‖z‖ ≥ M} ≤ (∫‖z‖^p dγ)/M^p`. Making the tail term `≤ σ` forces `M ≳ σ^{-2/p}`, hence
+`r ≍ σ^{1 - 2/p}` and weight `≍ C_k σ^{1-2/p} + W`. Summing that over `J < j ≤ n` gives
+`≍ p·C_t·X·n^{-1/2}·ε^{-2/p}`, i.e. `≍ p C_t δ ε^{-2/p}` — a *power* of `ε⁻¹`, not a logarithm,
+and hence **not** of brick L's allowed shape `A δ (ε⁻¹(W + C_k ε) + C_k(1 + log(1 + ε⁻¹)))`
+(whose only `ε⁻¹` is the one multiplied by `W + C_k ε`; this is wave-35's Correction 1 argument
+again). This is the same phenomenon the note on `localised_swap_bound_small_weight` records as
+"Remark (trading the log for a power)", now seen from the other side: at a *fixed* Markov order
+the conclusion itself weakens to `(β/√n)^{m/(m+1)}`.
+
+**The missing ingredient, named.** What closes route (b) at `r ≍ σ√(log(1/σ))` — and hence
+delivers weight `4 C_k σ (√k + √(2 log(1/σ))) + W` — is a genuine *sub-Gaussian norm tail* for
+the standard Gaussian on `EuclideanSpace ℝ (Fin k)`, e.g.
+
+  `γ{‖z‖ ≥ M} ≤ exp(-(M - √k)²/2)`  for `M ≥ √k`,
+
+equivalently the moment bound `∫‖z‖^p dγ ≤ (C p k)^{p/2}` that lets `p` be optimised in
+`stdGaussian_norm_ge_le`. Neither is in this file (only `integral_norm_cube_gaussian_le`, the
+third moment, is), and neither is a bookkeeping step: it is a new, dimension-explicit
+concentration statement. The `Γ`-function apparatus of the `BallAntiConcentration` section
+(`le_Gamma_add_half`, `chiSquared_density_mul_sqrt_le`, `integrable_pow_chiSquared`) is the right
+starting point, since `‖z‖² ~ χ²_k`.
+
+**Consequence for `htel`, flagged and NOT silently absorbed.** Even with that tail, route (b)
+produces `4 C_k σ · (√k + √(2 log(1/σ)))+ W`, not `4 C_k σ + W`: the extra factor is
+`≤ √k + √(2 log(1/ε))` for every tail step (since `σ ≥ σ_J ≍ ε`), so the tail summands of
+`localised_swap_bound_of_weighted_telescope` — and therefore brick L's constant and the
+dimension factor `C ≍ √k` of `berryEsseen_convex_sharp` — would have to absorb it. Wave 39 must
+decide that explicitly rather than assume it away; the statement below is left in the frozen
+shape precisely so that the discrepancy stays visible.
+
+**The `‖w‖ ≤ 1` restriction is still open too**, unchanged from wave 32: at step `j` the shift is
+`w = (c/σ)y`, so the wave-29 lemmas apply only on `{‖y‖ ≤ √j}`, and the complement needs the
+direct tilt identity described in the note on `localised_swap_bound_small_weight`. Wave 38 did
+not attempt it, because the obstruction above is upstream of it. -/
+private lemma abs_integral_gaussian_smoothed_swap_localised_le {Ct : ℝ}
+    (hCt : ∀ s : ℝ, 0 ≤ s → (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ Ct * s ^ 3)
+    {ν ρ τ : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure ν] [IsProbabilityMeasure ρ] [IsProbabilityMeasure τ]
+    (hmeanν : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)
+    (hcovν : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ)
+    (hν1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) ν)
+    (hν2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) ν)
+    (hν3 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 3) ν)
+    (hνdim : (∫ y, ‖y‖ ^ 2 ∂ν) = (k : ℝ))
+    (hmeanρ : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ρ) = 0)
+    (hcovρ : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ρ) = ⟪u, v⟫_ℝ)
+    (hρ1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) ρ)
+    (hρ2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) ρ)
+    (hρ3 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 3) ρ)
+    (hρdim : (∫ y, ‖y‖ ^ 2 ∂ρ) = (k : ℝ))
+    {B : Set (EuclideanSpace ℝ (Fin k))} {F : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hF : Continuous F) (hFb : ∀ x, |F x| ≤ 1)
+    {ε : ℝ} (hε : 0 < ε)
+    (hone : ∀ x ∈ B, F x = 1) (hsupp : ∀ x, F x ≠ 0 → x ∈ Metric.thickening ε B)
+    {Ck W : ℝ} (hCk : 0 < Ck) (hW : 0 ≤ W)
+    (hshell : ∀ s : ℝ, 0 < s →
+      (τ (Metric.thickening s B \ erosion s B)).toReal ≤ 4 * Ck * s + W)
+    {σ c : ℝ} (hσ : 0 < σ) (hσε : ε ≤ σ) (hc : 0 < c) :
+    (∫ v, |(∫ y, (∫ z, F (v + σ • z + c • y)
+              ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ν)
+          - (∫ y, (∫ z, F (v + σ • z + c • y)
+              ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ρ)| ∂τ)
+      ≤ (4 * Ck * σ + W)
+        * (Ct * (c / σ) ^ 3 * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ))) := by
+  sorry
+
 /-- **Brick L above the Gaussian shell scale (wave 24: PROVED, and no localisation needed).**
 As soon as the weight is at least `1`, the *unweighted* balanced telescope already gives the
 localised bound, with no reference to `B` at all: for `ε √n ≥ 1` it is
@@ -8720,7 +8833,40 @@ in `‖u‖`) and the Fubini exchange. The **tail** side (item 3) was not attemp
 note that wave 37's localisation mechanism does *not* transfer to it: the tail's integrand is
 `f` smeared by a Gaussian of width `σⱼ`, which for `j > J` is `≥ ε` and near `j = n` is `≍ 1`, so
 `f` being locally constant near `a` says nothing about it. The tail still needs the wave-29
-constant-off/Gaussian-tail lemmas and the `‖w‖ ≤ 1` analysis recorded above, unchanged. -/
+constant-off/Gaussian-tail lemmas and the `‖w‖ ≤ 1` analysis recorded above, unchanged.
+
+## Wave 38: the head brick is CLOSED, and the tail's ingredient list was INCOMPLETE
+
+**The head side is proved.** `abs_integral_swap_step_localised_le` is now a theorem; see its
+docstring for the two new named bricks it rests on (`erosion_eq_ofReal_lt_infEdist` and the
+*joint* measurability `measurableSet_wideShell_prod`) and for the one correction wave 38 had to
+make to wave 37's account of the bookkeeping. So of the two per-step estimates listed at the end
+of the wave-35 residue, the first is discharged.
+
+**The tail side is now a named brick, `abs_integral_gaussian_smoothed_swap_localised_le`, and it
+is still open — but not for the reason recorded above.** Wave 32 wrote that the tail's "two
+analytic ingredients are in place" and that only the `‖w‖ ≤ 1` restriction had to be handled.
+Wave 38 checked that and it is **not** the case: a third ingredient is missing, and it is
+upstream of the `‖w‖ ≤ 1` question. In brief (the full arithmetic is on that brick):
+
+* The Cauchy–Schwarz route (wave 19) gives the weight as `√(shell mass)`, which is the `√W` form
+  and closes only at `O(n^{-1/3})`.
+* The near/far-in-`v` route (wave 29) gives the weight
+  `4 C_k (r + ε) + W + 2√(γ{‖z‖ ≥ r/σ})·√tiltSqConst/C_t` at every radius `r`. To reach the
+  frozen `4 C_k σ + W` one needs the Gaussian *norm* tail to be `≲ σ²` already at `r/σ ≍ 1`,
+  which is false; and with the only tail this file has — `stdGaussian_norm_ge_le p`, Markov at a
+  fixed order — the tail steps sum to `≍ p C_t δ ε^{-2/p}`, a **power** of `ε⁻¹` and not the
+  logarithm the conclusion allows.
+* What repairs it is a genuine sub-Gaussian tail `γ{‖z‖ ≥ M} ≤ exp(-(M-√k)²/2)` (equivalently
+  `∫‖z‖^p dγ ≤ (Cpk)^{p/2}`, which lets `p` be optimised in `stdGaussian_norm_ge_le`), and it is
+  absent. It is a new dimension-explicit concentration statement, not bookkeeping.
+* Even with it, the route produces `4 C_k σ (√k + √(2 log(1/σ))) + W`, so `htel`'s tail summands
+  — and hence brick L's constant and the `C ≍ √k` of `berryEsseen_convex_sharp` — carry an extra
+  `√(k + log(1/ε))` that wave 39 must price explicitly rather than assume away.
+
+So this `sorry` now has exactly one open input on the head side (none) and one on the tail side
+(the brick above), and the tail's own residue is three items, ordered: the Gaussian norm tail,
+the near/far-in-`v` assembly, and the `‖w‖ ≤ 1` complement. -/
 theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 1 ≤ C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
