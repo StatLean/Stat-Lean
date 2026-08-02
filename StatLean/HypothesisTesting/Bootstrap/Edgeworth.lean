@@ -10440,7 +10440,64 @@ section note above `abs_measure_le_sub_le_of_peel_window` for `min(P A, P B)` at
 Cauchy–Schwarz at `n^{-1/2}`, and the Markov-inside-the-window dodges at six or eight moments),
 and (U4) one estimate. It is **not** bookkeeping, and it was not before wave 37 either; what
 wave 37 adds is that (U2) is closed and that the other three are now stated where the assembly
-would meet them. -/
+would meet them.
+
+**Status after wave 38. (U1) IS CLOSED. (U4) HAS ITS IDENTITY AND NEEDS ONLY ITS ESTIMATE.
+(U3) IS REDUCED BY ONE DIMENSION AND ASSESSED. Nothing above is overturned.**
+
+* **(U1) — CLOSED, and the wave-37 description of it is accurate.** The parallel apparatus is
+  built as the studentized twin of `section Approximant`, ending in
+  `densityCDF_studentizedEdgeworthDensity` (`studentizedEdgeworthCDF` *is* the approximant of
+  this theorem, syntactically), `setIntegral_abs_studentizedEdgeworthDensity_le` (the `hA` of
+  `abs_measure_Iic_sub_densityCDF_le_charFun`, with the `n`-free constant
+  `(2π)^{-1/2}(1 + 130|γ|)`), `charFunDensity_studentizedEdgeworthDensity`,
+  `norm_charFunDensity_studentizedEdgeworthDensity_le`,
+  `studentizedEdgeworthCharFun_tail_le` and `abs_studentizedEdgeworthCDF_le`. Wave 37 was right
+  that no *tool* was missing and right that the FTC step is the one convenience (the
+  antiderivative is `+φ(t)(2t² + 1)`, the correction term itself, with no sign flip). It was
+  incomplete on one point: `integral_hermite3_mul_cexp_mul_gaussian` and
+  `integral_cexp_mul_gaussian` are **not** sufficient for the Fourier transform, because
+  `3t − 2t³ = −2He₃(t) − 3He₁(t)` has a `He₁` component; the `He₁` moment
+  (`integral_linear_mul_cexp_mul_gaussian`) had to be added to `ForMathlib/BerryEsseen.lean`.
+  The transform is `φ_{q_n}(θ) = e^{−θ²/2}(1 + iγ(2θ³ − 3θ)n^{-1/2}/6)`.
+
+* **(U4) — THE IDENTITY IS PROVED; WHAT IS LEFT IS THE ESTIMATE ALONE.** Wave 37 called (U4)
+  "an estimate, not a rewriting", and priced it as unobstructed. It is unobstructed, but it
+  contains one step that is neither: whether the two slots that survive at order `n^{-1/2}`
+  **add up to** `φ_{q_n}`. They do, exactly, and that is
+  `studentized_window_leading_identity` / `studentized_window_leading_eq_charFunDensity`,
+  proved in the studentized approximant block with the moment bookkeeping recorded there
+  (`κ₀₁ = γσ³`, `κ₀ = θσ`, `κ₁ = θγσ²`, `v = σ²`, `m₃ = γσ³`). Two things fall out of it that
+  are worth recording because they are checks on earlier waves, not consequences of them:
+  the identity is an **independent confirmation of (U1)'s Fourier transform** (the two routes
+  to `(2θ³ − 3θ)/6` — Hermite Gaussian moments, and the delta-method slots — are unrelated and
+  agree); and it **confirms wave 23's finding** that the off-diagonal summand `−κ₀κ₁φ^{n−2}` of
+  `norm_multiCharFun_vecRootLaw_two_sub_le` cannot be dropped, since without it the bracket is
+  `γσ³` instead of `γσ³(1 − θ²)` and the sum comes out as `He₃` alone — the *mean* approximant.
+  What (U4) still needs is purely quantitative: the `k = 3`, `k = 4` and graded-remainder terms
+  priced against `windowEnvelope`; the `O(n^{-1/2})` accuracy of the `k = 2` bracket
+  (`φ^{n−1}`, `φ^{n−2}` against `e^{−θ²/2}`, which is `norm_charFun_smul_pow_sub_edgeworth_le`
+  a second time); and the integrability side conditions of
+  `norm_multiCharFun_vecRootLaw_two_sub_le` for `studentPair F` under `hF4`. No further
+  identity is required and none of that can move the constants.
+
+* **(U3) — REDUCED BY ONE DIMENSION, AND ASSESSED IN FULL.** See the assessment block on
+  `abs_measure_le_sub_le_of_peel_window` for the statement with its quantifiers, the route, and
+  the Mathlib cost. The one thing to carry here: `Hₙ` is **globally** increasing in its first
+  standardized coordinate at rate at least `5/6` — every `u`, every `v`, every `r`, no window
+  and no smallness restriction — because `∂Hₙ/∂u = (1 − vr/2 + 3(vr)²/8) + (3/2)u²r²` and
+  `1 − x/2 + 3x²/8 = 5/6 + (3/8)(x − 2/3)²`. That is `surrogate_fst_increment_le`, and with
+  `abs_sub_le_of_surrogate_window` it turns a window in `Hₙ` into a window in the first
+  coordinate alone, of width `(12/5)` times as large. So the item is no longer
+  anti-concentration of a degree-four polynomial; it is anti-concentration of the first
+  coordinate of the bivariate root about a centre measurable for the second. It is still not
+  free, and it is still not bookkeeping: `measure_abs_sub_le_of_affine` is uniform over
+  *deterministic* centres only, and the two coordinate sums of `studentPair F` are dependent.
+
+**Net after wave 38.** The residue is (U3), an analytic item, plus the quantitative half of
+(U4). (U1) and (U2) are closed, and the two objects the assembly has to compare — the
+surrogate's transform and `charFunDensity (studentizedEdgeworthDensity γ n)` — now both exist
+in the file with their leading orders verified to agree. -/
 
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
