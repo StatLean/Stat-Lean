@@ -16327,7 +16327,71 @@ THIS THEOREM IS STILL `sorry`, AND SO IS (B); WAVE 45 DOES NOT CLAIM OTHERWISE.*
   which is still a `sorry` — its one remaining item is the Fubini reduction of `𝓕 g` to iterated
   integrals together with the outer `w₁`/`s` bookkeeping it feeds. Assembling now would produce a
   theorem whose only content is the `sorry` it
-  already has. **The file is still at two `sorry`s — this one and (B).** -/
+  already has. **The file is still at two `sorry`s — this one and (B).**
+
+---
+
+**Status after wave 46. INPUT (B) IS PROVED AND THE CERTIFICATE IS AXIOM-CLEAN; THIS FILE IS AT
+ONE `sorry`, AND IT IS THIS THEOREM. THE ASSEMBLY WAS ATTEMPTED AND IS NOT CLAIMED.**
+
+* **(B) IS CLOSED** — `exists_integral_norm_fourierWeight_bulkMultiplier_band_le`, open since
+  wave 31. The residue wave 45 named was the Fubini reduction, and it went through at wave 45's
+  constants with no amendment anywhere: `planeEquiv` (the volume-preserving identification of
+  `E₂` with `ℝ × ℝ`, out of Mathlib's `ofLp` and `finTwoArrow`), `integral_eq_integral_fibre`,
+  `fourierWeight_bulkMultiplier_eq`, `norm_integral_fibre_shift_le`,
+  `norm_fourierWeight_bulkMultiplier_le`, `volume_band_le`. Two things are worth recording
+  because they were not obvious in advance. First, **the band condition is not an extra
+  hypothesis on the frequency side** — `2σR ≤ |θ|` together with `|v_i| ≤ ‖v‖` is *exactly* the
+  non-stationarity hypothesis `|a| ≤ |θ|/(2σ)` of the wave-45 fibre estimate, read at
+  `a = θ/σ + s₀`. Second, **no measurability of the fibre integral is ever needed**: both outer
+  integrations are run against majorants through `integral_mono_of_nonneg`, so the only thing
+  that has to be proved about `w₁ ↦ ∫ …` is that it vanishes off `|w₁| ≤ 2M`, which is the
+  cut-off. `exists_fourierCertificate_deltaSurrogate` is consequently proved outright and
+  depends on no `sorry`, direct or transitive.
+
+* **ITEM 2 WAS ATTEMPTED, AND THE FIRST THING IT HITS IS NOT A MISSING ESTIMATE.** It is a
+  *parameter* that no previous statement of the six-step chain has carried: the outer radius `ρ`
+  of the Esseen split. Every restatement since wave 37 has inherited the mean's `ρ = c√n`, and
+  the mean's tail term closes there only because its `M` is geometric in `n` *uniformly in the
+  frequency* — the Cramér bound `norm_charFun_vecRootLaw_le_pow` holds on all of `|ξ| ≥ ρ`. The
+  studentized surrogate has no such bound in the file: what reaches its transform is the
+  certificate, and the certificate's `Γ` is **polynomial in `θ`** by construction — it is the
+  `L¹` mass of `𝓕` of a multiplier centred at that frequency — so it cannot serve as the `M` of
+  `esseen_split_low`'s `htail`, which is quantified over the whole tail. The section note above
+  `middle_range_ledger_exponent` prices the way out and this wave supplies the leakage half of
+  it (`exists_integral_norm_fourierWeight_bulkMultiplier_band_fourteen_le`); the section note
+  above `tail_ledger_exponent_general` prices what it then costs on input (C), and the answer is
+  `N = 138` at `M = n^{23/24}` — bounded, closing on the nose, and much more than the `N = 14`
+  the leakage half alone suggests. **A `θ`-uniform geometrically small bound on the surrogate's
+  transform past `c√n` would keep `ρ = c√n` and leave `N = 10` alone; nothing here rules one
+  out, and only the *certificate* is shown unable to supply it.**
+
+* **WHAT ITEM 2 STILL OWES, IN FULL.** Four items, of which exactly one is analytic.
+  1. *The low-range window bound on `|ξ| ≤ n^{1/6}`* — the shape
+     `g ξ ≤ Kw·windowEnvelope₁ ξ + Kr|ξ|³` with `Kw = O(n⁻¹)`, `Kr = O(n^{-3/2})`, assembled from
+     the four damped inputs and `studentized_window_leading_identity`. **This is the item with
+     content, it has been named since wave 43 and no wave has built it**, and it is the
+     studentized analogue of `exists_window_bound` — the largest single brick under
+     `edgeworth_mean_uniform`. Nothing about it is blocked: all four inputs are proved
+     (`norm_multiCharFun_vecRootLaw_damped_le`,
+     `norm_multiCharFun_vecRootLaw_two_sub_damped_le`, `norm_charFun_smul_pow_sub_edgeworth_le`,
+     `norm_charFun_map_deltaSurrogate_sub_graded_le`) and the leading identity is exact.
+  2. *The middle range.* Every input now exists and is proved:
+     `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` fed by the certificate,
+     `exists_bulk_majorant_vecRootLaw_studentPair_truncAt` (the Gaussian bulk),
+     `exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt` (the Cramér tail),
+     `norm_charFunDensity_studentizedEdgeworthDensity_le` (the comparison density). The only
+     missing piece is arithmetic: `band_kappa_ledger` is stated against the target
+     `n^{-3/2}` and wants a twin at the target the chosen `ρ` dictates.
+  3. *The outer range* — free once `ρ` is chosen at `n²`, since both transforms are bounded.
+  4. *The composition* — `abs_studentizedRootCDF_sub_truncAt_le` at `τ = √n`,
+     `studentizedRootCDF_eq_vecRootLaw` with `abs_exactStudent_sub_deltaSurrogate_le`, the
+     Esseen chain at `δ = n⁻¹`, and the peeled window
+     (`abs_measure_le_sub_le_of_peel_strata` over `measure_pi_stratum_le` and
+     `sum_dyadic_strata_le`, whose `hslice` and `hwin` waves 40 and 41 discharged).
+
+  **This theorem is therefore still `sorry`, and wave 46 does not claim otherwise — but for the
+  first time since wave 30 the reason is not an open input.** -/
 
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
