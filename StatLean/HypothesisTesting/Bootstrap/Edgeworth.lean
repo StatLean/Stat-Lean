@@ -9853,6 +9853,38 @@ theorem norm_fourierWeight_bulkMultiplier_le (N : ℕ) :
           pow_nonneg (by positivity : (0:ℝ) ≤ C * (81 * M * r ^ 2 / (σ * |θ|)
             + 3 * σ / (M * |θ|))) N]
 
+/-- **The band has area at most `4R²`.** -/
+lemma volume_band_le (t : E₂) {R : ℝ} (hR : 0 ≤ R) :
+    volume {s : E₂ | ‖t + s‖ < R} ≤ ENNReal.ofReal (4 * R ^ 2) := by
+  have hsub : {s : E₂ | ‖t + s‖ < R}
+      ⊆ planeEquiv ⁻¹' (Set.Ioo (-(t 0) - R) (-(t 0) + R) ×ˢ
+          Set.Ioo (-(t 1) - R) (-(t 1) + R)) := by
+    intro s hs
+    have hs' : ‖t + s‖ < R := hs
+    have h0 : |t 0 + s 0| < R := by
+      refine lt_of_le_of_lt ?_ hs'
+      have := (abs_coord_le_norm (t + s)).1
+      simpa using this
+    have h1 : |t 1 + s 1| < R := by
+      refine lt_of_le_of_lt ?_ hs'
+      have := (abs_coord_le_norm (t + s)).2
+      simpa using this
+    rw [abs_lt] at h0 h1
+    refine Set.mem_preimage.2 ?_
+    rw [planeEquiv_apply]
+    exact ⟨⟨by linarith [h0.1], by linarith [h0.2]⟩, ⟨by linarith [h1.1], by linarith [h1.2]⟩⟩
+  refine le_trans (measure_mono hsub) (le_of_eq ?_)
+  rw [measurePreserving_planeEquiv.measure_preimage
+    ((measurableSet_Ioo.prod measurableSet_Ioo).nullMeasurableSet)]
+  rw [Measure.volume_eq_prod, Measure.prod_prod, Real.volume_Ioo, Real.volume_Ioo]
+  rw [show -(t 0) + R - (-(t 0) - R) = 2 * R by ring, show -(t 1) + R - (-(t 1) - R) = 2 * R by
+    ring]
+  rw [← ENNReal.ofReal_mul (by linarith)]
+  congr 1
+  ring
+
+-- the ten-fold ledger arithmetic runs under a set integral
+set_option maxHeartbeats 1000000 in
 /-- **(B) The non-stationary-phase estimate: the weight carries `O(n^{-3/2})` on the
 low-frequency ball** — the second input, the analytic heart of the certificate, and **still the
 only open analytic item of the certificate after wave 44**.
@@ -9943,7 +9975,105 @@ theorem exists_integral_norm_fourierWeight_bulkMultiplier_band_le
       (∫ s in {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))},
           ‖fourierWeight (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) s‖)
         ≤ C / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
-  sorry
+  obtain ⟨C₁, hC₁0, hC₁⟩ := norm_fourierWeight_bulkMultiplier_le 10
+  refine ⟨4 * (Kb ^ 2 + 1) * C₁ ^ 11 * ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10, by positivity, ?_⟩
+  intro n hn θ hθc hband
+  have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hM : (1 : ℝ) ≤ bulkRadius n := by
+    rw [bulkRadius]; exact Real.one_le_rpow hn1 (by norm_num)
+  have hM0 : (0 : ℝ) < bulkRadius n := lt_of_lt_of_le zero_lt_one hM
+  have hθ0 : 0 < |θ| := lt_of_lt_of_le hc₀ hθc
+  have hθne : θ ≠ 0 := fun h => by simp [h] at hθ0
+  have hR0 : (0 : ℝ) ≤ Kb * Real.sqrt (Real.log (n : ℝ)) :=
+    mul_nonneg hKb (Real.sqrt_nonneg _)
+  set G : ℝ := 81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+      + 3 * σ / (bulkRadius n * |θ|) with hGdef
+  have hG0 : (0 : ℝ) ≤ G := by rw [hGdef]; positivity
+  -- the pointwise bound on the band
+  have hpt : ∀ s ∈ {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))},
+      ‖fourierWeight (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) s‖
+        ≤ C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 10 := by
+    intro s hs
+    refine hC₁ σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n) s hσ hM hθne ?_
+    have hco : |((θ / σ) • coordDir 0 + s) 0| ≤ ‖(θ / σ) • coordDir 0 + s‖ :=
+      (abs_coord_le_norm _).1
+    have hval : ((θ / σ) • coordDir 0 + s) 0 = θ / σ + s 0 := by
+      simp [coordDir]
+    rw [hval] at hco
+    have hs' : ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ)) := hs
+    have hle : Kb * Real.sqrt (Real.log (n : ℝ)) ≤ |θ| / (2 * σ) := by
+      rw [le_div_iff₀ (by positivity)]
+      linarith [hband]
+    linarith
+  -- the area of the band
+  have hAmeas : MeasurableSet
+      {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))} :=
+    (isOpen_lt (by fun_prop) continuous_const).measurableSet
+  have harea := volume_band_le ((θ / σ) • coordDir 0) hR0
+  have hfin : volume {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}
+      ≠ ⊤ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top harea
+  have hareaR : (volume {s : E₂ |
+      ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}).toReal
+      ≤ 4 * (Kb * Real.sqrt (Real.log (n : ℝ))) ^ 2 := by
+    refine le_trans (ENNReal.toReal_mono ENNReal.ofReal_ne_top harea) ?_
+    rw [ENNReal.toReal_ofReal (by positivity)]
+  -- the set integral
+  have hKbnd : (0 : ℝ) ≤ C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 10 := by positivity
+  have hsi : (∫ s in {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))},
+      ‖fourierWeight (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) s‖)
+      ≤ (C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 10)
+        * (volume {s : E₂ |
+            ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}).toReal := by
+    have h1 := integral_mono_of_nonneg
+      (μ := volume.restrict {s : E₂ |
+        ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))})
+      (f := fun s : E₂ =>
+        ‖fourierWeight (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) s‖)
+      (g := fun _ : E₂ => C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 10)
+      (Filter.Eventually.of_forall fun _ => norm_nonneg _)
+      (integrableOn_const hfin)
+      ((ae_restrict_iff' hAmeas).2 (Filter.Eventually.of_forall hpt))
+    refine le_trans h1 (le_of_eq ?_)
+    rw [setIntegral_const, smul_eq_mul, measureReal_def]
+    ring
+  -- the ledger
+  have hled : (n : ℝ) * bulkRadius n ^ 2 * G ^ 10
+      ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 * ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ := by
+    rw [hGdef]
+    exact fibre_gain_ledger_ten_le hn hσ hc₀ (le_refl (0 : ℝ))
+      (by rwa [Real.rpow_zero, mul_one])
+  have hlog : Real.log (n : ℝ) ≤ (n : ℝ) := by
+    have := Real.log_le_sub_one_of_pos hn0
+    linarith
+  have hlog0 : (0 : ℝ) ≤ Real.log (n : ℝ) := Real.log_nonneg hn1
+  have hsq : (Kb * Real.sqrt (Real.log (n : ℝ))) ^ 2 = Kb ^ 2 * Real.log (n : ℝ) := by
+    rw [mul_pow, Real.sq_sqrt hlog0]
+  refine le_trans hsi ?_
+  rw [div_eq_mul_inv]
+  calc (C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 10)
+        * (volume {s : E₂ |
+            ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}).toReal
+      ≤ (C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 10) * (4 * (Kb ^ 2 * (n : ℝ))) := by
+        refine mul_le_mul_of_nonneg_left ?_ hKbnd
+        have h2 : (volume {s : E₂ |
+            ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}).toReal
+            ≤ 4 * (Kb ^ 2 * Real.log (n : ℝ)) := by
+          rw [← hsq]; exact hareaR
+        have h3 : Kb ^ 2 * Real.log (n : ℝ) ≤ Kb ^ 2 * (n : ℝ) :=
+          mul_le_mul_of_nonneg_left hlog (sq_nonneg Kb)
+        linarith
+    _ = (4 * Kb ^ 2 * C₁ ^ 11) * ((n : ℝ) * bulkRadius n ^ 2 * G ^ 10) := by
+        rw [mul_pow]; ring
+    _ ≤ (4 * Kb ^ 2 * C₁ ^ 11)
+          * (((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 * ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹) := by
+        refine mul_le_mul_of_nonneg_left hled (by positivity)
+    _ ≤ 4 * (Kb ^ 2 + 1) * C₁ ^ 11 * ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10
+          * ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ := by
+        have hinv : (0 : ℝ) ≤ ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ := by positivity
+        have hl : (0 : ℝ) ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 := by positivity
+        nlinarith [sq_nonneg Kb, pow_nonneg hC₁0.le 11]
+
 
 /-- **Markov at the fourth moment, on the plane.** The vector analogue of
 `measure_abs_gt_le_fourth_moment`, and the whole of input (C) except the moment itself. -/
