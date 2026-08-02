@@ -3871,6 +3871,229 @@ private lemma stdGaussian_norm_ge_le (p : ℕ) {R : ℝ} (hR : 0 < R) :
         rw [measureReal_def]; ring
     _ ≤ _ := hmk
 
+/-- **One-dimensional Gaussian upper tail (Chernoff), wave 39.** `N(0,1)[s, ∞) ≤ e^{-s²/2}`.
+
+Immediate from the Chernoff bound at `t = s` together with the exact Gaussian mgf
+`∫ e^{s x} dN(0,1) = e^{s²/2}` (`integral_exp_mul_gaussianReal`). -/
+private lemma gaussianReal_ge_le {s : ℝ} (hs : 0 ≤ s) :
+    (gaussianReal 0 1).real {x : ℝ | s ≤ x} ≤ Real.exp (-(s ^ 2) / 2) := by
+  have hint : Integrable (fun x : ℝ => Real.exp (s * x)) (gaussianReal 0 1) :=
+    integrable_exp_mul_gaussianReal s
+  have h := measure_ge_le_exp_mul_mgf (μ := gaussianReal 0 1) (X := fun x : ℝ => x)
+    (t := s) s hs hint
+  have hmgf : mgf (fun x : ℝ => x) (gaussianReal 0 1) s = Real.exp (s ^ 2 / 2) := by
+    rw [mgf, integral_exp_mul_gaussianReal 0 1 s]
+    norm_num
+  rw [hmgf, ← Real.exp_add] at h
+  refine h.trans (le_of_eq ?_)
+  congr 1
+  ring
+
+/-- **One-dimensional Gaussian two-sided tail (wave 39).** `N(0,1){|x| ≥ s} ≤ 2 e^{-s²/2}`. -/
+private lemma gaussianReal_abs_ge_le {s : ℝ} (hs : 0 ≤ s) :
+    (gaussianReal 0 1).real {x : ℝ | s ≤ |x|} ≤ 2 * Real.exp (-(s ^ 2) / 2) := by
+  have hint : Integrable (fun x : ℝ => Real.exp (-s * x)) (gaussianReal 0 1) :=
+    integrable_exp_mul_gaussianReal (-s)
+  have hlow := measure_le_le_exp_mul_mgf (μ := gaussianReal 0 1) (X := fun x : ℝ => x)
+    (t := -s) (-s) (by linarith) hint
+  have hmgf : mgf (fun x : ℝ => x) (gaussianReal 0 1) (-s) = Real.exp (s ^ 2 / 2) := by
+    rw [mgf, integral_exp_mul_gaussianReal 0 1 (-s)]
+    norm_num
+  rw [hmgf, ← Real.exp_add] at hlow
+  have hlow' : (gaussianReal 0 1).real {x : ℝ | x ≤ -s} ≤ Real.exp (-(s ^ 2) / 2) := by
+    refine hlow.trans (le_of_eq ?_)
+    congr 1
+    ring
+  have hsub : {x : ℝ | s ≤ |x|} ⊆ {x : ℝ | s ≤ x} ∪ {x : ℝ | x ≤ -s} := by
+    intro x hx
+    simp only [Set.mem_setOf_eq] at hx
+    rcases abs_cases x with ⟨he, _⟩ | ⟨he, _⟩
+    · exact Or.inl (by simp only [Set.mem_setOf_eq]; linarith [hx, he.symm ▸ hx])
+    · refine Or.inr ?_
+      simp only [Set.mem_setOf_eq]
+      rw [he] at hx
+      linarith
+  have hmono : (gaussianReal 0 1).real {x : ℝ | s ≤ |x|}
+      ≤ (gaussianReal 0 1).real ({x : ℝ | s ≤ x} ∪ {x : ℝ | x ≤ -s}) :=
+    measureReal_mono hsub (by exact measure_ne_top _ _)
+  have hun : (gaussianReal 0 1).real ({x : ℝ | s ≤ x} ∪ {x : ℝ | x ≤ -s})
+      ≤ (gaussianReal 0 1).real {x : ℝ | s ≤ x}
+        + (gaussianReal 0 1).real {x : ℝ | x ≤ -s} := measureReal_union_le _ _
+  have hup := gaussianReal_ge_le hs
+  linarith
+
+/-- **The sub-Gaussian NORM tail of `N(0, I_k)` (wave 39: PROVED).** *The ingredient wave 38
+identified as missing, and the reason the tail brick's frozen weight was unreachable.*
+
+  `γ{‖z‖ ≥ M} ≤ 2 k · exp(-M²/(2k))`   for every `M ≥ 0` and `k ≥ 1`.
+
+Wave 38's note on `abs_integral_gaussian_smoothed_swap_localised_le` established that the only
+Gaussian norm tail this file had was `stdGaussian_norm_ge_le`, i.e. Markov at a *fixed* order
+`p`, and that at a fixed order the tail steps of the ledger sum to a **power** `ε^{-2/p}` of
+`ε⁻¹` rather than to a logarithm. Any genuinely sub-Gaussian decay repairs that; this is the
+cheapest such statement.
+
+**The route is the coordinate union bound, not concentration.** `{‖z‖ ≥ M}` is contained in
+`⋃ᵢ {|zᵢ| ≥ M/√k}` (else `‖z‖² = ∑ᵢ zᵢ² < k · M²/k`), each coordinate is `N(0,1)` — this is
+`stdGaussian_map_inner_unit` at the unit vector `EuclideanSpace.single i 1`, the very marginal
+computation the slab bound at the top of the file already uses — and the one-dimensional tail is
+`gaussianReal_abs_ge_le`. No Gaussian isoperimetry, no `χ²` moment generating function, no
+Borell–TIS.
+
+**The price of that route, recorded honestly (wave 39).** The bound wave 38 asked for was
+`γ{‖z‖ ≥ M} ≤ exp(-(M − √k)²/2)`, whose inversion is the *additive* radius
+`√k + √(2 log(1/σ))`. The union bound gives the weaker exponent `M²/(2k)` in place of
+`(M − √k)²/2`, whose inversion is the *multiplicative* radius `√(2k log 2k) + 2√(k log(1/σ))`
+(`gaussianTailRadius` below). The difference propagates to the headline as a dimension factor
+`√(k log k)` where the additive form would give `√k` — a constant-level, not shape-level,
+deviation: the `(1 + log(1 + ε⁻¹))^{3/2}` shape of the amended ledger is the same either way,
+because both radii are `O(√k) + O(√k)·√(log(1/σ))` and only the `√log` weight changes the
+summation. Upgrading to the additive form (Chernoff on `‖z‖² ∼ χ²_k`, i.e.
+`E e^{‖z‖²/4} = 2^{k/2}` from the `Γ`-density, or Borell–TIS which Mathlib does not have) would
+improve that factor and nothing else. -/
+private lemma stdGaussian_norm_ge_le_exp (hk : 0 < k) {M : ℝ} (hM : 0 ≤ M) :
+    (stdGaussian (EuclideanSpace ℝ (Fin k))).real {z | M ≤ ‖z‖}
+      ≤ 2 * (k : ℝ) * Real.exp (-(M ^ 2) / (2 * (k : ℝ))) := by
+  haveI : NeZero k := ⟨hk.ne'⟩
+  have hkr : (0 : ℝ) < k := by exact_mod_cast hk
+  have hγ : multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1
+      = stdGaussian (EuclideanSpace ℝ (Fin k)) := multivariateGaussian_zero_one
+  set s : ℝ := M / Real.sqrt (k : ℝ) with hsdef
+  have hs0 : 0 ≤ s := by rw [hsdef]; positivity
+  have hsk : s ^ 2 * (k : ℝ) = M ^ 2 := by
+    rw [hsdef, div_pow, Real.sq_sqrt hkr.le]
+    field_simp
+  have habs : MeasurableSet {x : ℝ | s ≤ |x|} :=
+    measurableSet_le measurable_const measurable_id.abs
+  -- each coordinate slab, by the one-dimensional two-sided tail
+  have hcoord : ∀ i : Fin k,
+      (stdGaussian (EuclideanSpace ℝ (Fin k))).real {z | s ≤ |z i|}
+        ≤ 2 * Real.exp (-(s ^ 2) / 2) := by
+    intro i
+    have hnorm : ‖(EuclideanSpace.single i (1 : ℝ))‖ = 1 := by simp
+    have hinner : ∀ z : EuclideanSpace ℝ (Fin k),
+        ⟪EuclideanSpace.single i (1 : ℝ), z⟫_ℝ = z i :=
+      fun z => (EuclideanSpace.inner_single_left i 1 z).trans (by simp)
+    have hmf : Measurable
+        (fun z : EuclideanSpace ℝ (Fin k) => ⟪EuclideanSpace.single i (1 : ℝ), z⟫_ℝ) := by
+      fun_prop
+    have hset : {z : EuclideanSpace ℝ (Fin k) | s ≤ |z i|}
+        = (fun z : EuclideanSpace ℝ (Fin k) => ⟪EuclideanSpace.single i (1 : ℝ), z⟫_ℝ) ⁻¹'
+            {x : ℝ | s ≤ |x|} := by
+      ext z
+      simp only [Set.mem_setOf_eq, Set.mem_preimage, hinner z]
+    have hmap := stdGaussian_map_inner_unit (EuclideanSpace.single i (1 : ℝ)) hnorm
+    rw [hγ] at hmap
+    have hval : (stdGaussian (EuclideanSpace ℝ (Fin k))) {z | s ≤ |z i|}
+        = gaussianReal 0 1 {x : ℝ | s ≤ |x|} := by
+      rw [hset, ← Measure.map_apply hmf habs, hmap]
+    rw [measureReal_def, hval, ← measureReal_def]
+    exact gaussianReal_abs_ge_le hs0
+  -- the union bound
+  have hsub : {z : EuclideanSpace ℝ (Fin k) | M ≤ ‖z‖}
+      ⊆ ⋃ i : Fin k, {z : EuclideanSpace ℝ (Fin k) | s ≤ |z i|} := by
+    intro z hz
+    simp only [Set.mem_setOf_eq] at hz
+    by_contra hcon
+    simp only [Set.mem_iUnion, Set.mem_setOf_eq, not_exists, not_le] at hcon
+    have hnormsq : ‖z‖ ^ 2 = ∑ i : Fin k, |z i| ^ 2 := by
+      rw [EuclideanSpace.norm_eq, Real.sq_sqrt (by positivity)]
+      exact Finset.sum_congr rfl fun i _ => by rw [Real.norm_eq_abs]
+    have hlt : ∑ i : Fin k, |z i| ^ 2 < ∑ _i : Fin k, s ^ 2 := by
+      refine Finset.sum_lt_sum_of_nonempty ?_ fun i _ => ?_
+      · exact Finset.univ_nonempty
+      · exact pow_lt_pow_left₀ (hcon i) (abs_nonneg _) two_ne_zero
+    rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul] at hlt
+    have h2 : ‖z‖ ^ 2 < M ^ 2 := by
+      rw [hnormsq]
+      calc ∑ i : Fin k, |z i| ^ 2 < (k : ℝ) * s ^ 2 := hlt
+        _ = M ^ 2 := by rw [← hsk]; ring
+    nlinarith [norm_nonneg z]
+  have hmono : (stdGaussian (EuclideanSpace ℝ (Fin k))) {z | M ≤ ‖z‖}
+      ≤ ∑ i : Fin k, (stdGaussian (EuclideanSpace ℝ (Fin k))) {z | s ≤ |z i|} := by
+    refine (measure_mono hsub).trans ?_
+    exact measure_iUnion_fintype_le _ _
+  have hfin : ∑ i : Fin k, (stdGaussian (EuclideanSpace ℝ (Fin k))) {z | s ≤ |z i|} ≠ ⊤ :=
+    (ENNReal.sum_lt_top.2 fun i _ => measure_lt_top _ _).ne
+  have htoReal : (stdGaussian (EuclideanSpace ℝ (Fin k))).real {z | M ≤ ‖z‖}
+      ≤ ∑ i : Fin k, (stdGaussian (EuclideanSpace ℝ (Fin k))).real {z | s ≤ |z i|} := by
+    rw [measureReal_def]
+    refine (ENNReal.toReal_mono hfin hmono).trans (le_of_eq ?_)
+    rw [ENNReal.toReal_sum (fun i _ => measure_ne_top _ _)]
+    rfl
+  have hsum : ∑ i : Fin k, (stdGaussian (EuclideanSpace ℝ (Fin k))).real {z | s ≤ |z i|}
+      ≤ (k : ℝ) * (2 * Real.exp (-(s ^ 2) / 2)) := by
+    calc ∑ i : Fin k, (stdGaussian (EuclideanSpace ℝ (Fin k))).real {z | s ≤ |z i|}
+        ≤ ∑ _i : Fin k, 2 * Real.exp (-(s ^ 2) / 2) := Finset.sum_le_sum fun i _ => hcoord i
+      _ = (k : ℝ) * (2 * Real.exp (-(s ^ 2) / 2)) := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  have hexp : -(s ^ 2) / 2 = -(M ^ 2) / (2 * (k : ℝ)) := by
+    rw [← hsk]; field_simp
+  rw [hexp] at hsum
+  linarith
+
+/-- **The radius at which the Gaussian norm tail drops below `σ²` (wave 39).**
+
+  `gaussianTailRadius k σ = √(2k log(2k)) + 2√(k log(1/σ))`.
+
+This is the exact inversion of `stdGaussian_norm_ge_le_exp`; see
+`stdGaussian_norm_ge_gaussianTailRadius_le`. It is the radius at which route (b) of the tail
+brick splits `v`-space, so the *whole* dependence of the amended tail weight on `k` and on the
+smoothing width `σ` is packaged here. Note the two summands: the first is the `√k`-type
+"dimension" term (the harmonic part of the ledger multiplies it), the second is the `√log(1/σ)`
+term (which is what forces the ledger's `(1 + log(1+ε⁻¹))^{3/2}`). -/
+noncomputable def gaussianTailRadius (k : ℕ) (σ : ℝ) : ℝ :=
+  Real.sqrt (2 * (k : ℝ) * Real.log (2 * (k : ℝ))) + 2 * Real.sqrt ((k : ℝ) * Real.log σ⁻¹)
+
+lemma gaussianTailRadius_nonneg (k : ℕ) (σ : ℝ) : 0 ≤ gaussianTailRadius k σ := by
+  unfold gaussianTailRadius; positivity
+
+/-- **The tail radius does what it is for (wave 39).** For `0 < σ ≤ 1`,
+`γ{‖z‖ ≥ gaussianTailRadius k σ} ≤ σ²`, hence `2√(that tail) ≤ 2σ`: the far-in-`v` half of
+route (b) is weighted by `O(σ)`, exactly as the ledger's tail summands need. -/
+lemma stdGaussian_norm_ge_gaussianTailRadius_le (hk : 0 < k) {σ : ℝ}
+    (hσ0 : 0 < σ) (hσ1 : σ ≤ 1) :
+    (stdGaussian (EuclideanSpace ℝ (Fin k))).real {z | gaussianTailRadius k σ ≤ ‖z‖}
+      ≤ σ ^ 2 := by
+  have hkr : (0 : ℝ) < k := by exact_mod_cast hk
+  have hk1 : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
+  have hlogσ : 0 ≤ Real.log σ⁻¹ := Real.log_nonneg (by rw [le_inv_comm₀ (by norm_num) hσ0]; simpa)
+  have hlog2k : 0 ≤ Real.log (2 * (k : ℝ)) := Real.log_nonneg (by linarith)
+  set A : ℝ := Real.sqrt (2 * (k : ℝ) * Real.log (2 * (k : ℝ))) with hA
+  set Bq : ℝ := 2 * Real.sqrt ((k : ℝ) * Real.log σ⁻¹) with hB
+  have hA0 : 0 ≤ A := Real.sqrt_nonneg _
+  have hB0 : 0 ≤ Bq := by rw [hB]; positivity
+  have hA2 : A ^ 2 = 2 * (k : ℝ) * Real.log (2 * (k : ℝ)) := Real.sq_sqrt (by positivity)
+  have hB2 : Bq ^ 2 = 4 * ((k : ℝ) * Real.log σ⁻¹) := by
+    rw [hB, mul_pow, Real.sq_sqrt (by positivity)]; ring
+  have hM2 : 2 * (k : ℝ) * Real.log (2 * (k : ℝ)) + 4 * ((k : ℝ) * Real.log σ⁻¹)
+      ≤ gaussianTailRadius k σ ^ 2 := by
+    have hexpand : gaussianTailRadius k σ ^ 2 = A ^ 2 + 2 * A * Bq + Bq ^ 2 := by
+      unfold gaussianTailRadius; rw [← hA, ← hB]; ring
+    rw [hexpand, hA2, hB2]
+    nlinarith [mul_nonneg hA0 hB0]
+  have hmain := stdGaussian_norm_ge_le_exp (k := k) hk (gaussianTailRadius_nonneg k σ)
+  refine hmain.trans ?_
+  have hE : -(gaussianTailRadius k σ ^ 2) / (2 * (k : ℝ))
+      ≤ -Real.log (2 * (k : ℝ)) - 2 * Real.log σ⁻¹ := by
+    rw [div_le_iff₀ (by positivity)]
+    nlinarith [hM2]
+  have h1 : Real.exp (-(gaussianTailRadius k σ ^ 2) / (2 * (k : ℝ)))
+      ≤ Real.exp (-Real.log (2 * (k : ℝ)) - 2 * Real.log σ⁻¹) := Real.exp_le_exp.2 hE
+  have hσ2 : Real.exp (2 * Real.log σ) = σ ^ 2 := by
+    rw [show (2 : ℝ) * Real.log σ = Real.log σ + Real.log σ by ring, Real.exp_add,
+      Real.exp_log hσ0]
+    ring
+  have h2 : Real.exp (-Real.log (2 * (k : ℝ)) - 2 * Real.log σ⁻¹)
+      = (2 * (k : ℝ))⁻¹ * σ ^ 2 := by
+    rw [Real.log_inv, show -Real.log (2 * (k : ℝ)) - 2 * -Real.log σ
+        = -Real.log (2 * (k : ℝ)) + 2 * Real.log σ by ring, Real.exp_add, Real.exp_neg,
+      Real.exp_log (by positivity), hσ2]
+  calc 2 * (k : ℝ) * Real.exp (-(gaussianTailRadius k σ ^ 2) / (2 * (k : ℝ)))
+      ≤ 2 * (k : ℝ) * ((2 * (k : ℝ))⁻¹ * σ ^ 2) := by
+        rw [← h2]; exact mul_le_mul_of_nonneg_left h1 (by positivity)
+    _ = σ ^ 2 := by field_simp
+
 private lemma integrable_exp_inner_gauss (a : EuclideanSpace ℝ (Fin k)) :
     Integrable (fun z : EuclideanSpace ℝ (Fin k) => Real.exp ⟪a, z⟫_ℝ)
       (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
