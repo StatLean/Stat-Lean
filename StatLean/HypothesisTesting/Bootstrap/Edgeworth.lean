@@ -1989,7 +1989,47 @@ neither is present as a usable brick:
 
 **Net price.** The reduction in (b) is free and is now in the file. What remains after it is a
 **new** analytic brick, one dimension smaller than the one wave 21 named, and it is still not
-bookkeeping. -/
+bookkeeping.
+
+---
+
+**WAVE 39 — THE CENTRE IS BUILT, THE RESIDUE IS PRICED, AND TWO CLAIMS ABOVE ARE CORRECTED.**
+Wave 38 named the centre `m(v, x)` but did not construct it. It is now in the file, together
+with its calculus, in the two sections above `exactStudent_eq`:
+
+* `exists_surrogate_centre`, `abs_sub_surrogate_centre_le` — the centre exists, satisfies the
+  free a-priori bound `|m| ≤ (6/5)|x|`, and the window pulls back to `|u − m(v, x)| ≤ (6/5)w`;
+* `abs_surrogate_centre_sub_le`, `abs_sub_frozen_centre_le_of_surrogate_window` — the centre is
+  **Lipschitz in `v`** with constant `O(|x||r|)`, by an exact identity rather than a mean value
+  argument;
+* `surrogate_increment_expand`, `exists_surrogate_slope`, `abs_sub_affine_centre_le` — the level
+  curve is **straight to second order**, with defect `O(|x|r²h²)`;
+* `measure_abs_surrogate_window_le`, `measure_abs_deltaSurrogate_sub_le_of_window` — the
+  resulting *unconditional* slice bound, out of a marginal window bound and a Chebyshev tail;
+* `integral_studentPair_dir_sq_pos` — the nondegeneracy every 2D route needs, free from `hFac`.
+
+**Correction (i) to (c) above.** "A two-dimensional Lévy concentration bound … dominates the
+random-centre form directly" is **false**. The window event is the curvilinear strip
+`{(u, v) : |u − m(v, x)| ≤ (6/5)w}`, not a slab. A slab bound applies only after the strip is
+straightened, and the straightening cost is precisely the second-order defect above.
+
+**Correction (ii) to (a) above.** "No dependence of the right-hand side on … the window centre
+`x`" is **too strong**. The peel is applied at a fixed `x`; `edgeworth_studentized_uniform`
+takes its supremum over `x` only at the end, where large `|x|` is absorbed by the tails of the
+two distribution functions. An `|x|^{2/3}η` constant is admissible — and requiring
+`x`-uniformity here would discard the only route that meets the ledger. The `y`- and
+`i`-uniformity requirements are genuine, and wave 39 adds a new observation about the first: the
+frozen part of the second coordinate, `a₁(y) = ((Y(y) − μ)² − σ²)/(σ²√(n+1))`, is unbounded in
+`y`, so `y`-uniformity is achievable **only** because the wave-37 truncation at `τ = √n` bounds
+it. See the section note on `measure_abs_surrogate_window_le`.
+
+**The residue, now with a number on it.** Granted a **direction-uniform slab bound**
+`P(root ∈ S) ≤ A·width(S) + η₀` with `η₀ = O(n⁻¹)`, the additive constant of the slice bound is
+`η₂ ≍ |x|r²L² + P(|v − v₀| > L)`, and `sum_dyadic_strata_le` needs `η₂ = O(n^{-2/3})`. Under the
+frozen four moments of `X` (Chebyshev, `L^{-2}`) the optimum is `|x|^{1/2}n^{-1/2}` — short by
+`n^{-1/6}`. Under **eight** moments of `X` (`L^{-4}`) the optimum is `|x|^{2/3}n^{-2/3}` and the
+ledger closes. So (U3) is now a single, sharply specified missing brick, with a known moment
+gap; it is not attempted here and is not claimed. -/
 theorem abs_measure_le_sub_le_of_peel_window {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     [IsProbabilityMeasure P] {S T : Ω → ℝ} {δ A η : ℝ} (hδ : 0 < δ) (K : ℕ) (x : ℝ)
     (τ : ℕ → ℝ)
@@ -11171,7 +11211,29 @@ would meet them.
 **Net after wave 38.** The residue is (U3), an analytic item, plus the quantitative half of
 (U4). (U1) and (U2) are closed, and the two objects the assembly has to compare — the
 surrogate's transform and `charFunDensity (studentizedEdgeworthDensity γ n)` — now both exist
-in the file with their leading orders verified to agree. -/
+in the file with their leading orders verified to agree.
+
+**Status after wave 39. (U3) IS PRICED, NOT CLOSED — AND WAVE 38'S ASSESSMENT OF IT IS WRONG
+IN TWO PLACES.** The centre `m(v, x)` wave 38 named is now built, together with its Lipschitz
+and second-order calculus and the unconditional slice bound they produce; the nondegeneracy
+input every two-dimensional route needs is proved free from `hFac`. The full accounting is in
+the wave-39 block of the assessment on `abs_measure_le_sub_le_of_peel_window` and in the two
+section notes above `exactStudent_eq`; the three things to carry here are:
+
+* the missing brick is now **one** named statement — a *direction-uniform slab bound* for the
+  bivariate root of `studentPair F`, `P(root ∈ S) ≤ A·width(S) + O(n⁻¹)` — and not a family of
+  candidate routes;
+* granted it, the ledger closes at `O(n⁻¹)` under **eight** moments of `X` and misses by
+  `n^{-1/6}` under the four this theorem assumes. That moment gap is new information: it says
+  the residue is not purely a missing tool;
+* wave 38's claim that such a slab bound "dominates the random-centre form directly" is false
+  (the window event is a curvilinear strip, and straightening it costs `|x|r²L²`), and its
+  demand for a constant independent of the window centre `x` is too strong (the peel runs at
+  fixed `x`). Both corrections matter: the first is why the second-order calculus had to be
+  built, and the second is what admits the only route that reaches the ledger.
+
+Nothing else moved: (A), (B), (C), (U1), (U2), the quantitative half of (U4), the certificate
+and this theorem are as wave 38 left them, and the assembly was **not attempted**. -/
 
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
