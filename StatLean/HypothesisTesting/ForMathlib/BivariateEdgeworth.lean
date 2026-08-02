@@ -1555,6 +1555,290 @@ theorem norm_multiCharFun_vecRootLaw_two_sub_le (F : Measure ℝ) [IsProbability
     nlinarith [mul_nonneg (sub_nonneg.2 hr2le) (mul_nonneg hM0nn hM1nn)]
   linarith [hb1', hb2', hmid, h1, h2]
 
+set_option maxHeartbeats 1000000 in
+-- Same shape as `norm_multiCharFun_vecRootLaw_two_sub_le`: six named moments and three slot
+-- estimates carried through a long chain of norm inequalities.
+/-- **The `k = 2` estimate, with its Gaussian damping kept.**
+
+`‖multi_{ρ_N}(b, a) − (κ₀₁φ(c)^{N−1} − κ₀κ₁φ(c)^{N−2})‖ ≤ N^{-1/2}·multiTwoRemConst·‖φ(c)‖^{N−2}`
+
+under exactly the hypotheses of `norm_multiCharFun_vecRootLaw_two_sub_le`, of which this is a
+strict sharpening. Both error terms of the decomposition multiply `φ(c)^{N−1}` or `φ(c)^{N−2}`
+— the assignment sum has nothing else in it — so the only change is that those two powers are
+kept instead of being rounded up to `1`.
+
+The companion of `norm_multiCharFun_vecRootLaw_damped_le` at `k = 2`, and needed for the same
+reason: the studentized window of `Bootstrap/Edgeworth.lean` evaluates this at `a = (θ/σ)•e₀`
+with `|θ|` growing like `√N`, where `multiTwoRemConst` is a polynomial in `|θ|` of degree four
+and the undamped bound has nothing to control it. See the wave-42 note there. -/
+theorem norm_multiCharFun_vecRootLaw_two_sub_damped_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    {Z : ℝ → E} (hZ : Measurable Z) {N : ℕ} (hN : 1 ≤ N) (b : Fin 2 → E) (a : E)
+    (hint : ∀ T : Finset (Fin 2),
+      Integrable (fun x : ℝ => ∏ l ∈ T, |(⟪Z x, b l⟫ : ℝ)|) F)
+    (hb0 : Integrable (fun x : E => (⟪x, b 0⟫ : ℝ)) (F.map Z))
+    (hb1 : Integrable (fun x : E => (⟪x, b 1⟫ : ℝ)) (F.map Z))
+    (hm0 : ∫ x, (⟪x, b 0⟫ : ℝ) ∂(F.map Z) = 0)
+    (hm1 : ∫ x, (⟪x, b 1⟫ : ℝ) ∂(F.map Z) = 0)
+    (hb0a : Integrable (fun x : E => (⟪x, b 0⟫ : ℝ) * (⟪x, a⟫ : ℝ)) (F.map Z))
+    (hb1a : Integrable (fun x : E => (⟪x, b 1⟫ : ℝ) * (⟪x, a⟫ : ℝ)) (F.map Z))
+    (hb0a2 : Integrable (fun x : E => |(⟪x, b 0⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2) (F.map Z))
+    (hb1a2 : Integrable (fun x : E => |(⟪x, b 1⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2) (F.map Z))
+    (hprod : Integrable (fun x : E => (⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ)) (F.map Z))
+    (hproda : Integrable
+      (fun x : E => |(⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ)| * |(⟪x, a⟫ : ℝ)|) (F.map Z)) :
+    ‖multiCharFun (vecRootLaw F Z N) b a
+        - (((∫ x, (⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ) ∂(F.map Z) : ℝ) : ℂ)
+              * charFun (F.map Z) ((Real.sqrt (N : ℝ))⁻¹ • a) ^ (N - 1)
+            - (((∫ x, (⟪x, b 0⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z))
+                  * (∫ x, (⟪x, b 1⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z)) : ℝ) : ℂ)
+              * charFun (F.map Z) ((Real.sqrt (N : ℝ))⁻¹ • a) ^ (N - 2))‖
+      ≤ (Real.sqrt (N : ℝ))⁻¹ * multiTwoRemConst (F.map Z) b a
+        * ‖charFun (F.map Z) ((Real.sqrt (N : ℝ))⁻¹ • a)‖ ^ (N - 2) := by
+  classical
+  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
+  have hN1 : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
+  have hNpos : (0 : ℝ) < (N : ℝ) := lt_of_lt_of_le zero_lt_one hN1
+  have hsq : (1 : ℝ) ≤ Real.sqrt (N : ℝ) := by
+    rw [show (1 : ℝ) = Real.sqrt 1 from (Real.sqrt_one).symm]
+    exact Real.sqrt_le_sqrt hN1
+  set r : ℝ := (Real.sqrt (N : ℝ))⁻¹ with hrdef
+  have hrpos : 0 < r := by
+    rw [hrdef]; exact inv_pos.2 (lt_of_lt_of_le zero_lt_one hsq)
+  have hr1 : r ≤ 1 := by
+    rw [hrdef]; exact inv_le_one_of_one_le₀ hsq
+  have hr2 : r ^ 2 = ((N : ℝ))⁻¹ := by
+    rw [hrdef, inv_pow, Real.sq_sqrt hNpos.le]
+  have hNr : (N : ℝ) * r ^ 2 = 1 := by rw [hr2]; field_simp
+  have hr2le : r ^ 2 ≤ r := by nlinarith [hrpos, hr1]
+  set c : E := r • a with hcdef
+  set φ : ℂ := charFun (F.map Z) c with hφdef
+  have hφ1 : ‖φ‖ ≤ 1 := by rw [hφdef]; exact norm_charFun_le_one c
+  have hφp : ∀ m : ℕ, N - 2 ≤ m → ‖φ ^ m‖ ≤ ‖φ‖ ^ (N - 2) := fun m hm => by
+    rw [norm_pow]; exact pow_le_pow_of_le_one (norm_nonneg _) hφ1 hm
+  have hφP : (0 : ℝ) ≤ ‖φ‖ ^ (N - 2) := by positivity
+  have hca : ∀ w : E, (⟪w, c⟫ : ℝ) = r * (⟪w, a⟫ : ℝ) := fun w => by
+    rw [hcdef, real_inner_smul_right]
+  -- the moments
+  set κ01 : ℝ := ∫ x, (⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ) ∂(F.map Z) with hκ01
+  set κ0 : ℝ := ∫ x, (⟪x, b 0⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z) with hκ0
+  set κ1 : ℝ := ∫ x, (⟪x, b 1⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z) with hκ1
+  set M0 : ℝ := ∫ x, |(⟪x, b 0⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z) with hM0
+  set M1 : ℝ := ∫ x, |(⟪x, b 1⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z) with hM1
+  set M01 : ℝ := ∫ x, |(⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ)| * |(⟪x, a⟫ : ℝ)| ∂(F.map Z) with hM01
+  have hM0nn : 0 ≤ M0 := by rw [hM0]; exact integral_nonneg fun x => by positivity
+  have hM1nn : 0 ≤ M1 := by rw [hM1]; exact integral_nonneg fun x => by positivity
+  have hM01nn : 0 ≤ M01 := by rw [hM01]; exact integral_nonneg fun x => by positivity
+  -- the diagonal slot
+  have hdiag : ‖slotCharFun F Z b Finset.univ c - (κ01 : ℂ)‖ ≤ r * M01 := by
+    have hgm : Measurable fun w : E => (⟪w, b 0⟫ : ℝ) * (⟪w, b 1⟫ : ℝ) :=
+      (measurable_inner_right (b 0)).mul (measurable_inner_right (b 1))
+    have hgt : Integrable
+        (fun x : E => |(⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ)| * |(⟪x, c⟫ : ℝ)|) (F.map Z) := by
+      have hEq : (fun x : E => |(⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ)| * |(⟪x, c⟫ : ℝ)|)
+          = fun x : E => r * (|(⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ)| * |(⟪x, a⟫ : ℝ)|) := by
+        funext x
+        rw [hca x, abs_mul r ((⟪x, a⟫ : ℝ)), abs_of_pos hrpos]
+        ring
+      rw [hEq]
+      exact hproda.const_mul r
+    have hmom : (∫ x, |(⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ)| * |(⟪x, c⟫ : ℝ)| ∂(F.map Z))
+        = r * M01 := by
+      have hEq : ∀ x : E, |(⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ)| * |(⟪x, c⟫ : ℝ)|
+          = r * (|(⟪x, b 0⟫ : ℝ) * (⟪x, b 1⟫ : ℝ)| * |(⟪x, a⟫ : ℝ)|) := fun x => by
+        rw [hca x, abs_mul r ((⟪x, a⟫ : ℝ)), abs_of_pos hrpos]; ring
+      simp_rw [hEq]
+      rw [hM01]
+      exact integral_const_mul _ _
+    have hslot : slotCharFun F Z b Finset.univ c
+        = ∫ w, (((⟪w, b 0⟫ : ℝ) * (⟪w, b 1⟫ : ℝ) : ℝ) : ℂ)
+            * Complex.exp ((⟪w, c⟫ : ℝ) * Complex.I) ∂(F.map Z) := by
+      rw [slotCharFun_eq_integral_map F hZ]
+      refine integral_congr_ae (Filter.Eventually.of_forall fun w => ?_)
+      simp only [Fin.prod_univ_two, Complex.ofReal_mul]
+    rw [hslot, hκ01, ← hmom]
+    exact norm_integral_ofReal_mul_cexp_sub_le (F.map Z) hgm hprod hgt
+  -- the two single slots
+  have hslotone : ∀ j : Fin 2, ∀ κ M : ℝ,
+      Integrable (fun x : E => (⟪x, b j⟫ : ℝ)) (F.map Z) →
+      (∫ x, (⟪x, b j⟫ : ℝ) ∂(F.map Z)) = 0 →
+      Integrable (fun x : E => (⟪x, b j⟫ : ℝ) * (⟪x, a⟫ : ℝ)) (F.map Z) →
+      Integrable (fun x : E => |(⟪x, b j⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2) (F.map Z) →
+      (∫ x, (⟪x, b j⟫ : ℝ) * (⟪x, a⟫ : ℝ) ∂(F.map Z)) = κ →
+      (∫ x, |(⟪x, b j⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2 ∂(F.map Z)) = M →
+      ‖slotCharFun F Z b {j} c - Complex.I * ((r * κ : ℝ) : ℂ)‖ ≤ 3 / 2 * (r ^ 2 * M) := by
+    intro j κ M hbj hmj hbja hbja2 hκj hMj
+    have hbtc : Integrable (fun x : E => (⟪x, b j⟫ : ℝ) * (⟪x, c⟫ : ℝ)) (F.map Z) := by
+      have hEq : (fun x : E => (⟪x, b j⟫ : ℝ) * (⟪x, c⟫ : ℝ))
+          = fun x : E => r * ((⟪x, b j⟫ : ℝ) * (⟪x, a⟫ : ℝ)) := by
+        funext x; rw [hca x]; ring
+      rw [hEq]; exact hbja.const_mul r
+    have hbt2c : Integrable (fun x : E => |(⟪x, b j⟫ : ℝ)| * (⟪x, c⟫ : ℝ) ^ 2) (F.map Z) := by
+      have hEq : (fun x : E => |(⟪x, b j⟫ : ℝ)| * (⟪x, c⟫ : ℝ) ^ 2)
+          = fun x : E => r ^ 2 * (|(⟪x, b j⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2) := by
+        funext x; rw [hca x]; ring
+      rw [hEq]; exact hbja2.const_mul (r ^ 2)
+    have hκc : (∫ x, (⟪x, b j⟫ : ℝ) * (⟪x, c⟫ : ℝ) ∂(F.map Z)) = r * κ := by
+      have hEq : ∀ x : E, (⟪x, b j⟫ : ℝ) * (⟪x, c⟫ : ℝ)
+          = r * ((⟪x, b j⟫ : ℝ) * (⟪x, a⟫ : ℝ)) := fun x => by rw [hca x]; ring
+      simp_rw [hEq]
+      rw [integral_const_mul, hκj]
+    have hMc : (∫ x, |(⟪x, b j⟫ : ℝ)| * (⟪x, c⟫ : ℝ) ^ 2 ∂(F.map Z)) = r ^ 2 * M := by
+      have hEq : ∀ x : E, |(⟪x, b j⟫ : ℝ)| * (⟪x, c⟫ : ℝ) ^ 2
+          = r ^ 2 * (|(⟪x, b j⟫ : ℝ)| * (⟪x, a⟫ : ℝ) ^ 2) := fun x => by rw [hca x]; ring
+      simp_rw [hEq]
+      rw [integral_const_mul, hMj]
+    have h := norm_mixCharFun_sub_mul_I_le (F.map Z) hbj hbtc hbt2c hmj
+    rw [hκc, hMc] at h
+    rwa [slotCharFun_singleton F hZ b j c]
+  have e0 : ‖slotCharFun F Z b {0} c - Complex.I * ((r * κ0 : ℝ) : ℂ)‖
+      ≤ 3 / 2 * (r ^ 2 * M0) := hslotone 0 κ0 M0 hb0 hm0 hb0a hb0a2 hκ0.symm hM0.symm
+  have e1 : ‖slotCharFun F Z b {1} c - Complex.I * ((r * κ1 : ℝ) : ℂ)‖
+      ≤ 3 / 2 * (r ^ 2 * M1) := hslotone 1 κ1 M1 hb1 hm1 hb1a hb1a2 hκ1.symm hM1.symm
+  -- the closed form of the assignment sum, with `r² N = 1` used to clear the prefactor
+  have hw : ((r : ℝ) : ℂ) ^ 2 * (N : ℂ) = 1 := by
+    have : ((r ^ 2 * (N : ℝ) : ℝ) : ℂ) = ((1 : ℝ) : ℂ) := by
+      rw [show r ^ 2 * (N : ℝ) = 1 by linarith [hNr]]
+    push_cast at this
+    linear_combination this
+  have hid : multiCharFun (vecRootLaw F Z N) b a
+      = slotCharFun F Z b Finset.univ c * φ ^ (N - 1)
+        + ((N : ℂ) - 1) * (slotCharFun F Z b {0} c
+            * (slotCharFun F Z b {1} c * φ ^ (N - 2))) := by
+    rw [multiCharFun_vecRootLaw_two F hZ b hint a, ← hrdef, ← hcdef, ← hφdef]
+    have hexpand : (((r : ℝ) : ℂ)) ^ 2 * ((N : ℂ) * (slotCharFun F Z b Finset.univ c * φ ^ (N - 1))
+          + (N : ℂ) * ((N : ℂ) - 1) * (slotCharFun F Z b {0} c
+              * (slotCharFun F Z b {1} c * φ ^ (N - 2))))
+        = (((r : ℝ) : ℂ) ^ 2 * (N : ℂ)) * (slotCharFun F Z b Finset.univ c * φ ^ (N - 1))
+          + (((r : ℝ) : ℂ) ^ 2 * (N : ℂ)) * (((N : ℂ) - 1) * (slotCharFun F Z b {0} c
+              * (slotCharFun F Z b {1} c * φ ^ (N - 2)))) := by ring
+    rw [hexpand, hw, one_mul, one_mul]
+  -- the algebraic decomposition of the difference
+  set s01 : ℂ := slotCharFun F Z b Finset.univ c with hs01
+  set s0 : ℂ := slotCharFun F Z b {0} c with hs0
+  set s1 : ℂ := slotCharFun F Z b {1} c with hs1
+  set p0 : ℂ := Complex.I * ((r * κ0 : ℝ) : ℂ) with hp0
+  set p1 : ℂ := Complex.I * ((r * κ1 : ℝ) : ℂ) with hp1
+  have hp0n : ‖p0‖ = r * |κ0| := by
+    rw [hp0, norm_mul, Complex.norm_I, one_mul, Complex.norm_real, Real.norm_eq_abs, abs_mul,
+      abs_of_pos hrpos]
+  have hp1n : ‖p1‖ = r * |κ1| := by
+    rw [hp1, norm_mul, Complex.norm_I, one_mul, Complex.norm_real, Real.norm_eq_abs, abs_mul,
+      abs_of_pos hrpos]
+  have hs0n : ‖s0‖ ≤ r * |κ0| + 3 / 2 * (r ^ 2 * M0) := by
+    have hsplit : s0 = p0 + (s0 - p0) := by ring
+    calc ‖s0‖ = ‖p0 + (s0 - p0)‖ := by rw [← hsplit]
+      _ ≤ ‖p0‖ + ‖s0 - p0‖ := norm_add_le _ _
+      _ ≤ r * |κ0| + 3 / 2 * (r ^ 2 * M0) := by rw [hp0n]; linarith [e0]
+  have hp0p1 : p0 * p1 = -(((r ^ 2 * (κ0 * κ1) : ℝ)) : ℂ) := by
+    rw [hp0, hp1]
+    push_cast
+    ring_nf
+    rw [Complex.I_sq]
+    ring
+  have hoffprod : ‖s0 * s1 - p0 * p1‖
+      ≤ (r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+        + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|) := by
+    have heq : s0 * s1 - p0 * p1 = s0 * (s1 - p1) + (s0 - p0) * p1 := by ring
+    rw [heq]
+    refine (norm_add_le _ _).trans ?_
+    rw [norm_mul, norm_mul, hp1n]
+    have h1 : ‖s0‖ * ‖s1 - p1‖ ≤ (r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1)) :=
+      mul_le_mul hs0n e1 (norm_nonneg _) (by positivity)
+    have h2 : ‖s0 - p0‖ * (r * |κ1|) ≤ 3 / 2 * (r ^ 2 * M0) * (r * |κ1|) :=
+      mul_le_mul_of_nonneg_right e0 (by positivity)
+    linarith
+  -- the multiplicity `N − 1` and the exact cancellation of the leading off-diagonal term
+  have hmult : ((N : ℂ) - 1) * (p0 * p1) + ((κ0 * κ1 : ℝ) : ℂ)
+      = ((r ^ 2 * (κ0 * κ1) : ℝ) : ℂ) := by
+    have hcast : ((N : ℂ) - 1) = ((((N : ℝ) - 1 : ℝ)) : ℂ) := by push_cast; ring
+    rw [hp0p1, hcast, ← Complex.ofReal_neg, ← Complex.ofReal_mul, ← Complex.ofReal_add,
+      Complex.ofReal_inj]
+    have hfin : ((N : ℝ) - 1) * (r ^ 2 * (κ0 * κ1)) = (κ0 * κ1) - r ^ 2 * (κ0 * κ1) := by
+      linear_combination (κ0 * κ1) * hNr
+    linarith [hfin]
+  have hNm1 : ‖((N : ℂ) - 1)‖ = (N : ℝ) - 1 := by
+    have hcast : ((N : ℂ) - 1) = ((((N : ℝ) - 1 : ℝ)) : ℂ) := by push_cast; ring
+    rw [hcast, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (by linarith : (0:ℝ) ≤ (N:ℝ) - 1)]
+  have hT2 : ‖((N : ℂ) - 1) * (s0 * s1) + ((κ0 * κ1 : ℝ) : ℂ)‖
+      ≤ ((N : ℝ) - 1) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+          + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|)) + r ^ 2 * |κ0 * κ1| := by
+    have heq : ((N : ℂ) - 1) * (s0 * s1) + ((κ0 * κ1 : ℝ) : ℂ)
+        = ((N : ℂ) - 1) * (s0 * s1 - p0 * p1)
+          + (((N : ℂ) - 1) * (p0 * p1) + ((κ0 * κ1 : ℝ) : ℂ)) := by ring
+    rw [heq, hmult]
+    refine (norm_add_le _ _).trans ?_
+    rw [norm_mul, hNm1, Complex.norm_real, Real.norm_eq_abs, abs_mul,
+      abs_of_nonneg (by positivity : (0:ℝ) ≤ r ^ 2)]
+    have := mul_le_mul_of_nonneg_left hoffprod (by linarith : (0:ℝ) ≤ (N:ℝ) - 1)
+    linarith
+  -- assembly
+  have hsplit : multiCharFun (vecRootLaw F Z N) b a
+      - ((κ01 : ℂ) * φ ^ (N - 1) - ((κ0 * κ1 : ℝ) : ℂ) * φ ^ (N - 2))
+      = (s01 - (κ01 : ℂ)) * φ ^ (N - 1)
+        + (((N : ℂ) - 1) * (s0 * s1) + ((κ0 * κ1 : ℝ) : ℂ)) * φ ^ (N - 2) := by
+    rw [hid]; ring
+  rw [hsplit]
+  refine (norm_add_le _ _).trans ?_
+  rw [norm_mul, norm_mul]
+  have hb1' : ‖(s01 - (κ01 : ℂ))‖ * ‖φ ^ (N - 1)‖ ≤ (r * M01) * ‖φ‖ ^ (N - 2) :=
+    mul_le_mul hdiag (hφp _ (by omega)) (norm_nonneg _) (by positivity)
+  have hnn2 : (0 : ℝ) ≤ ((N : ℝ) - 1) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0))
+        * (3 / 2 * (r ^ 2 * M1)) + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|)) + r ^ 2 * |κ0 * κ1| := by
+    have hA : (0 : ℝ) ≤ (r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+        + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|) := by positivity
+    have hB : (0 : ℝ) ≤ (N : ℝ) - 1 := by linarith
+    have hC : (0 : ℝ) ≤ r ^ 2 * |κ0 * κ1| := by positivity
+    nlinarith [mul_nonneg hB hA]
+  have hb2' : ‖((N : ℂ) - 1) * (s0 * s1) + ((κ0 * κ1 : ℝ) : ℂ)‖ * ‖φ ^ (N - 2)‖
+      ≤ (((N : ℝ) - 1) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+          + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|)) + r ^ 2 * |κ0 * κ1|) * ‖φ‖ ^ (N - 2) :=
+    mul_le_mul hT2 (hφp _ le_rfl) (norm_nonneg _) hnn2
+  -- the arithmetic: `N − 1 ≤ N` and `N r² = 1` turn `N r³` into `r` and `N r⁴` into `r²`
+  have hmid : ((N : ℝ) - 1) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+        + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|))
+      ≤ 3 / 2 * r * |κ0| * M1 + 9 / 4 * r ^ 2 * M0 * M1 + 3 / 2 * r * M0 * |κ1| := by
+    have hpos : (0 : ℝ) ≤ (r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+        + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|) := by positivity
+    have hle : ((N : ℝ) - 1) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+          + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|))
+        ≤ (N : ℝ) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+          + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|)) :=
+      mul_le_mul_of_nonneg_right (by linarith) hpos
+    have heq : (N : ℝ) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+          + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|))
+        = 3 / 2 * r * |κ0| * M1 + 9 / 4 * r ^ 2 * M0 * M1 + 3 / 2 * r * M0 * |κ1| := by
+      linear_combination (3 / 2 * r * |κ0| * M1 + 9 / 4 * r ^ 2 * M0 * M1
+        + 3 / 2 * r * M0 * |κ1|) * hNr
+    linarith [hle, heq.le, heq.ge]
+  have hplain : (r * M01)
+      + (((N : ℝ) - 1) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+          + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|)) + r ^ 2 * |κ0 * κ1|)
+      ≤ r * multiTwoRemConst (F.map Z) b a := by
+    rw [multiTwoRemConst, ← hκ0, ← hκ1, ← hM0, ← hM1, ← hM01]
+    have habs : |κ0 * κ1| = |κ0| * |κ1| := abs_mul _ _
+    have h1 : r ^ 2 * |κ0 * κ1| ≤ r * (|κ0| * |κ1|) := by
+      rw [habs]
+      exact mul_le_mul_of_nonneg_right hr2le (by positivity)
+    have h2 : 9 / 4 * r ^ 2 * M0 * M1 ≤ 9 / 4 * (r * (M0 * M1)) := by
+      nlinarith [mul_nonneg (sub_nonneg.2 hr2le) (mul_nonneg hM0nn hM1nn)]
+    linarith [hmid, h1, h2]
+  have hsum : ‖(s01 - (κ01 : ℂ))‖ * ‖φ ^ (N - 1)‖
+      + ‖((N : ℂ) - 1) * (s0 * s1) + ((κ0 * κ1 : ℝ) : ℂ)‖ * ‖φ ^ (N - 2)‖
+      ≤ ((r * M01)
+          + (((N : ℝ) - 1) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+              + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|)) + r ^ 2 * |κ0 * κ1|)) * ‖φ‖ ^ (N - 2) := by
+    have hexp : ((r * M01)
+        + (((N : ℝ) - 1) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+            + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|)) + r ^ 2 * |κ0 * κ1|)) * ‖φ‖ ^ (N - 2)
+        = (r * M01) * ‖φ‖ ^ (N - 2)
+          + (((N : ℝ) - 1) * ((r * |κ0| + 3 / 2 * (r ^ 2 * M0)) * (3 / 2 * (r ^ 2 * M1))
+              + 3 / 2 * (r ^ 2 * M0) * (r * |κ1|)) + r ^ 2 * |κ0 * κ1|) * ‖φ‖ ^ (N - 2) := by
+      ring
+    rw [hexp]
+    linarith [hb1', hb2']
+  refine hsum.trans ?_
+  exact mul_le_mul_of_nonneg_right hplain hφP
+
 end MultiTwoEstimate
 
 
@@ -2160,6 +2444,205 @@ theorem norm_multiCharFun_vecRootLaw_le (F : Measure ℝ) [IsProbabilityMeasure 
     _ ≤ ∑ σ : Fin k → Fin N, (Q / (N : ℝ)) ^ (Finset.image σ Finset.univ).card :=
         Finset.sum_le_sum fun σ _ => hperm σ
     _ ≤ ((k : ℝ) + 1) * (k : ℝ) ^ k * Q ^ k := sum_div_pow_card_image_le hN hQ
+
+set_option maxHeartbeats 800000 in
+-- Same shape as `norm_multiCharFun_vecRootLaw_le`: a per-fibre trichotomy carried through a
+-- product over `Fin N` and a sum over the `N^k` assignments; the default budget is not enough.
+/-- **The `O(1)` multilinear estimate, with its Gaussian damping kept.**
+
+`‖multi_{ρ_N}(b, a)‖ ≤ (k+1)k^k Q^k · ‖φ_{F∘Z⁻¹}(N^{-1/2} • a)‖^{N−k}`
+
+under exactly the hypotheses of `norm_multiCharFun_vecRootLaw_le`, of which this is a strict
+sharpening (`‖φ‖ ≤ 1`, so the damping factor is at most `1`).
+
+**Why the damping has to be kept, and why it is free.** Every assignment `σ : Fin k → Fin N`
+leaves `N − |image σ| ≥ N − k` coordinates *unweighted*, and each of them contributes the plain
+factor `slot_∅(c) = φ_{F∘Z⁻¹}(c)`. `norm_multiCharFun_vecRootLaw_le` throws those factors away
+one at a time (`‖φ(c)‖ ≤ 1`), which is harmless when `a` is fixed and fatal when `a` grows with
+`N`: the studentized window of `Bootstrap/Edgeworth.lean` evaluates this at `a = (θ/σ)•e₀` with
+`|θ|` up to `c√N`, where the `O(1)` bound has *polynomial growth in `θ`* and cannot be dominated
+by any envelope that the Esseen split can integrate. The damping factor is what restores
+`e^{−θ²/2}`, and the only change in the proof is that the empty fibres keep `‖φ(c)‖` instead of
+being rounded up to `1`. See the wave-42 note in `Bootstrap/Edgeworth.lean` on the shape of
+(U4). -/
+theorem norm_multiCharFun_vecRootLaw_damped_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    {Z : ℝ → E} (hZ : Measurable Z) {k N : ℕ} (hN : 1 ≤ N) (b : Fin k → E) (a : E)
+    {Q : ℝ} (hQ : 1 ≤ Q)
+    (hint : ∀ T : Finset (Fin k),
+      Integrable (fun x : ℝ => ∏ l ∈ T, |(⟪Z x, b l⟫ : ℝ)|) F)
+    (hbl : ∀ l : Fin k, Integrable (fun x : E => (⟪x, b l⟫ : ℝ)) (F.map Z))
+    (hcent : ∀ l : Fin k, (∫ x, (⟪x, b l⟫ : ℝ) ∂(F.map Z)) = 0)
+    (hbla : ∀ l : Fin k,
+      Integrable (fun x : E => |(⟪x, b l⟫ : ℝ)| * |(⟪x, a⟫ : ℝ)|) (F.map Z))
+    (hQ1 : ∀ l : Fin k, (∫ x, |(⟪x, b l⟫ : ℝ)| * |(⟪x, a⟫ : ℝ)| ∂(F.map Z)) ≤ Q)
+    (hQ2 : ∀ T : Finset (Fin k), 2 ≤ T.card →
+      (∫ x, ∏ l ∈ T, |(⟪x, b l⟫ : ℝ)| ∂(F.map Z))
+        ≤ Q * Real.sqrt (N : ℝ) ^ (T.card - 2)) :
+    ‖multiCharFun (vecRootLaw F Z N) b a‖
+      ≤ ((k : ℝ) + 1) * (k : ℝ) ^ k * Q ^ k
+        * ‖charFun (F.map Z) ((Real.sqrt (N : ℝ))⁻¹ • a)‖ ^ (N - k) := by
+  classical
+  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
+  have hN0 : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN
+  have hsq : (0 : ℝ) < Real.sqrt (N : ℝ) := Real.sqrt_pos.2 hN0
+  have hsq1 : (1 : ℝ) ≤ Real.sqrt (N : ℝ) := by
+    rw [show (1 : ℝ) = Real.sqrt 1 from Real.sqrt_one.symm]
+    exact Real.sqrt_le_sqrt (by exact_mod_cast hN)
+  rw [multiCharFun_vecRootLaw F hZ b hint a]
+  set r : ℝ := (Real.sqrt (N : ℝ))⁻¹ with hrdef
+  set c : E := r • a with hcdef
+  set D : ℝ := ‖charFun (F.map Z) c‖ with hDdef
+  have hD0 : 0 ≤ D := norm_nonneg _
+  have hD1 : D ≤ 1 := norm_charFun_le_one c
+  have hrpos : 0 < r := by rw [hrdef]; exact inv_pos.2 hsq
+  have hrsq : r * Real.sqrt (N : ℝ) = 1 := by rw [hrdef]; field_simp
+  have hr2 : r ^ 2 = ((N : ℝ))⁻¹ := by rw [hrdef, inv_pow, Real.sq_sqrt hN0.le]
+  have hca : ∀ w : E, (⟪w, c⟫ : ℝ) = r * (⟪w, a⟫ : ℝ) := fun w => by
+    rw [hcdef, real_inner_smul_right]
+  -- the per-fibre bound: the empty fibres now keep the damping factor `D`
+  have hslot : ∀ T : Finset (Fin k),
+      r ^ T.card * ‖slotCharFun F Z b T c‖ ≤ (if T = ∅ then D else Q / (N : ℝ)) := by
+    intro T
+    rcases eq_or_ne T ∅ with rfl | hTne
+    · rw [if_pos rfl, Finset.card_empty, pow_zero, one_mul, slotCharFun_empty F hZ b c]
+    rw [if_neg hTne]
+    have hpos : 1 ≤ T.card := Finset.card_pos.2 (Finset.nonempty_of_ne_empty hTne)
+    rcases eq_or_lt_of_le hpos with h1 | h2
+    · obtain ⟨l, rfl⟩ := Finset.card_eq_one.1 h1.symm
+      have hgm : Measurable fun w : E => (⟪w, b l⟫ : ℝ) := measurable_inner_right (b l)
+      have habs : ∀ x : E, |(⟪x, b l⟫ : ℝ)| * |(⟪x, c⟫ : ℝ)|
+          = r * (|(⟪x, b l⟫ : ℝ)| * |(⟪x, a⟫ : ℝ)|) := fun x => by
+        rw [hca x, abs_mul r ((⟪x, a⟫ : ℝ)), abs_of_pos hrpos]; ring
+      have hgt : Integrable (fun x : E => |(⟪x, b l⟫ : ℝ)| * |(⟪x, c⟫ : ℝ)|) (F.map Z) := by
+        have hEq : (fun x : E => |(⟪x, b l⟫ : ℝ)| * |(⟪x, c⟫ : ℝ)|)
+            = fun x : E => r * (|(⟪x, b l⟫ : ℝ)| * |(⟪x, a⟫ : ℝ)|) := funext habs
+        rw [hEq]; exact (hbla l).const_mul r
+      have hmom : (∫ x, |(⟪x, b l⟫ : ℝ)| * |(⟪x, c⟫ : ℝ)| ∂(F.map Z))
+          = r * ∫ x, |(⟪x, b l⟫ : ℝ)| * |(⟪x, a⟫ : ℝ)| ∂(F.map Z) := by
+        simp_rw [habs]
+        exact integral_const_mul _ _
+      have hbound := norm_integral_ofReal_mul_cexp_sub_le (F.map Z) hgm (hbl l) hgt
+      rw [hcent l] at hbound
+      simp only [Complex.ofReal_zero, sub_zero] at hbound
+      rw [hmom] at hbound
+      have hslot1 : ‖slotCharFun F Z b {l} c‖ ≤ r * Q := by
+        rw [slotCharFun_singleton F hZ b l c, mixCharFun]
+        exact hbound.trans (mul_le_mul_of_nonneg_left (hQ1 l) hrpos.le)
+      rw [Finset.card_singleton, pow_one]
+      calc r * ‖slotCharFun F Z b {l} c‖ ≤ r * (r * Q) :=
+            mul_le_mul_of_nonneg_left hslot1 hrpos.le
+        _ = Q / (N : ℝ) := by
+            rw [show r * (r * Q) = r ^ 2 * Q by ring, hr2]
+            field_simp
+    · have hnorm : ‖slotCharFun F Z b T c‖
+          ≤ ∫ x, ∏ l ∈ T, |(⟪x, b l⟫ : ℝ)| ∂(F.map Z) := by
+        have hmap : (∫ x, ∏ l ∈ T, |(⟪x, b l⟫ : ℝ)| ∂(F.map Z))
+            = ∫ x, ∏ l ∈ T, |(⟪Z x, b l⟫ : ℝ)| ∂F := by
+          rw [integral_map hZ.aemeasurable]
+          exact (Finset.measurable_prod _ fun l _ =>
+            (measurable_inner_right (b l)).abs).aestronglyMeasurable
+        rw [hmap, slotCharFun]
+        refine norm_integral_le_of_norm_le (hint T) (Filter.Eventually.of_forall fun x => ?_)
+        have hx : ‖(∏ l ∈ T, ((⟪Z x, b l⟫ : ℝ) : ℂ))
+            * Complex.exp ((⟪Z x, c⟫ : ℝ) * Complex.I)‖
+            = ∏ l ∈ T, |(⟪Z x, b l⟫ : ℝ)| := by
+          rw [norm_mul, norm_prod]
+          simp [Complex.norm_exp]
+        exact hx.le
+      obtain ⟨d, hd⟩ : ∃ d, T.card = d + 2 := ⟨T.card - 2, by omega⟩
+      have harith : r ^ (d + 2) * (Q * Real.sqrt (N : ℝ) ^ d) = Q / (N : ℝ) := by
+        have hstep : r ^ (d + 2) * Real.sqrt (N : ℝ) ^ d = ((N : ℝ))⁻¹ := by
+          calc r ^ (d + 2) * Real.sqrt (N : ℝ) ^ d
+              = (r * Real.sqrt (N : ℝ)) ^ d * r ^ 2 := by rw [mul_pow]; ring
+            _ = r ^ 2 := by rw [hrsq, one_pow, one_mul]
+            _ = ((N : ℝ))⁻¹ := hr2
+        calc r ^ (d + 2) * (Q * Real.sqrt (N : ℝ) ^ d)
+            = (r ^ (d + 2) * Real.sqrt (N : ℝ) ^ d) * Q := by ring
+          _ = ((N : ℝ))⁻¹ * Q := by rw [hstep]
+          _ = Q / (N : ℝ) := by field_simp
+      have hQ2' : (∫ x, ∏ l ∈ T, |(⟪x, b l⟫ : ℝ)| ∂(F.map Z))
+          ≤ Q * Real.sqrt (N : ℝ) ^ d := by
+        have := hQ2 T h2
+        rwa [hd, Nat.add_sub_cancel] at this
+      rw [hd]
+      calc r ^ (d + 2) * ‖slotCharFun F Z b T c‖
+          ≤ r ^ (d + 2) * (Q * Real.sqrt (N : ℝ) ^ d) := by
+            refine mul_le_mul_of_nonneg_left (hnorm.trans hQ2') (pow_nonneg hrpos.le _)
+        _ = Q / (N : ℝ) := harith
+  -- the per-assignment bound, now carrying `D^{N−k}`
+  have hperm : ∀ σ : Fin k → Fin N,
+      r ^ k * ∏ i : Fin N, ‖slotCharFun F Z b (Finset.univ.filter fun l => σ l = i) c‖
+        ≤ D ^ (N - k) * (Q / (N : ℝ)) ^ (Finset.image σ Finset.univ).card := by
+    intro σ
+    have himk : (Finset.image σ Finset.univ).card ≤ k := by
+      calc (Finset.image σ Finset.univ).card ≤ (Finset.univ : Finset (Fin k)).card :=
+            Finset.card_image_le
+        _ = k := by simp
+    have hsum : ∑ i : Fin N, (Finset.univ.filter fun l : Fin k => σ l = i).card = k := by
+      have hfw := Finset.card_eq_sum_card_fiberwise
+        (f := σ) (s := (Finset.univ : Finset (Fin k))) (t := (Finset.univ : Finset (Fin N)))
+        (fun x _ => Finset.mem_univ _)
+      simpa using hfw.symm
+    have hrk : r ^ k
+        = ∏ i : Fin N, r ^ (Finset.univ.filter fun l : Fin k => σ l = i).card := by
+      rw [Finset.prod_pow_eq_pow_sum, hsum]
+    rw [hrk, ← Finset.prod_mul_distrib]
+    refine (Finset.prod_le_prod (fun i _ => mul_nonneg (pow_nonneg hrpos.le _) (norm_nonneg _))
+      (fun i _ => hslot _)).trans ?_
+    have hif : ∀ i : Fin N,
+        (if (Finset.univ.filter fun l : Fin k => σ l = i) = ∅ then D else Q / (N : ℝ))
+          = (if i ∈ Finset.image σ Finset.univ then Q / (N : ℝ) else D) := by
+      intro i
+      by_cases hi : i ∈ Finset.image σ Finset.univ
+      · rw [if_pos hi, if_neg]
+        rw [Finset.mem_image] at hi
+        obtain ⟨l, _, hl⟩ := hi
+        exact Finset.nonempty_iff_ne_empty.1
+          ⟨l, Finset.mem_filter.2 ⟨Finset.mem_univ _, hl⟩⟩
+      · rw [if_neg hi, if_pos]
+        rw [Finset.filter_eq_empty_iff]
+        intro l _
+        exact fun hl => hi (Finset.mem_image.2 ⟨l, Finset.mem_univ _, hl⟩)
+    simp_rw [hif]
+    rw [Finset.prod_ite]
+    have hc1 : (Finset.univ.filter
+        (fun i : Fin N => i ∈ Finset.image σ Finset.univ)).card
+        = (Finset.image σ Finset.univ).card := by
+      rw [Finset.filter_mem_eq_inter, Finset.univ_inter]
+    have hc2 : (Finset.univ.filter
+        (fun i : Fin N => ¬ i ∈ Finset.image σ Finset.univ)).card
+        = N - (Finset.image σ Finset.univ).card := by
+      rw [Finset.filter_not, Finset.card_sdiff, Finset.inter_univ, hc1,
+        Finset.card_univ, Fintype.card_fin]
+    rw [Finset.prod_const, Finset.prod_const, hc1, hc2]
+    have hpowD : D ^ (N - (Finset.image σ Finset.univ).card) ≤ D ^ (N - k) :=
+      pow_le_pow_of_le_one hD0 hD1 (by omega)
+    calc (Q / (N : ℝ)) ^ (Finset.image σ Finset.univ).card
+            * D ^ (N - (Finset.image σ Finset.univ).card)
+        ≤ (Q / (N : ℝ)) ^ (Finset.image σ Finset.univ).card * D ^ (N - k) := by
+          refine mul_le_mul_of_nonneg_left hpowD (by positivity)
+      _ = D ^ (N - k) * (Q / (N : ℝ)) ^ (Finset.image σ Finset.univ).card := by ring
+  calc ‖((r : ℝ) : ℂ) ^ k * ∑ σ : Fin k → Fin N, ∏ i : Fin N,
+        slotCharFun F Z b (Finset.univ.filter fun l => σ l = i) c‖
+      = r ^ k * ‖∑ σ : Fin k → Fin N, ∏ i : Fin N,
+          slotCharFun F Z b (Finset.univ.filter fun l => σ l = i) c‖ := by
+        rw [norm_mul, norm_pow, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hrpos]
+    _ ≤ r ^ k * ∑ σ : Fin k → Fin N, ∏ i : Fin N,
+          ‖slotCharFun F Z b (Finset.univ.filter fun l => σ l = i) c‖ := by
+        refine mul_le_mul_of_nonneg_left ?_ (pow_nonneg hrpos.le k)
+        exact (norm_sum_le _ _).trans (Finset.sum_le_sum fun σ _ => le_of_eq (norm_prod _ _))
+    _ = ∑ σ : Fin k → Fin N, r ^ k * ∏ i : Fin N,
+          ‖slotCharFun F Z b (Finset.univ.filter fun l => σ l = i) c‖ :=
+        Finset.mul_sum _ _ _
+    _ ≤ ∑ σ : Fin k → Fin N,
+          D ^ (N - k) * (Q / (N : ℝ)) ^ (Finset.image σ Finset.univ).card :=
+        Finset.sum_le_sum fun σ _ => hperm σ
+    _ = D ^ (N - k)
+          * ∑ σ : Fin k → Fin N, (Q / (N : ℝ)) ^ (Finset.image σ Finset.univ).card := by
+        rw [← Finset.mul_sum]
+    _ ≤ D ^ (N - k) * (((k : ℝ) + 1) * (k : ℝ) ^ k * Q ^ k) := by
+        exact mul_le_mul_of_nonneg_left (sum_div_pow_card_image_le hN hQ) (by positivity)
+    _ = ((k : ℝ) + 1) * (k : ℝ) ^ k * Q ^ k * D ^ (N - k) := by ring
 
 end MultiBound
 

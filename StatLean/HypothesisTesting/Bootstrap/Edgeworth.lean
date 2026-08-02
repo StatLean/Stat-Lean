@@ -9641,7 +9641,14 @@ order `n^{-1/2}` are:
 The `−κ₀κ₁ φ^{n−2}` summand is the off-diagonal one wave 23 found cannot be dropped, and here is
 what it does: without it the bracket would be `γσ³` instead of `γσ³(1 − θ²)`, and the sum below
 would come out as `He₃` alone — the *mean* approximant — instead of the studentized one. So the
-identity is also a check on wave 23's finding. -/
+identity is also a check on wave 23's finding.
+
+**Wave 42.** The *estimate* half described in the first paragraph above — the shape
+`≤ (K/n)·windowEnvelope ξ` on the whole window `|ξ| ≤ c√n` — is **false**, at the origin and at
+the window edge both, and the four inputs cannot produce it for any envelope. The identity below
+is unaffected, and the amended shape uses it unchanged. See the section note above
+`not_exists_const_mul_windowEnvelope_ge` and the wave-42 block on
+`edgeworth_studentized_uniform`. -/
 
 /-- **(U4) — the leading-order identity of the studentized window, in the shape the two inputs
 produce.** The `n`-th-power slot's Edgeworth correction plus the evaluated `k = 2` slot equals
@@ -9784,6 +9791,222 @@ private lemma integrable_windowDom : Integrable windowDom := by
 
 private lemma add_sq_le_two_mul (a b : ℝ) : (a + b) ^ 2 ≤ 2 * a ^ 2 + 2 * b ^ 2 := by
   nlinarith [sq_nonneg (a - b)]
+
+/-! ### The studentized window cannot be shaped like the mean one
+
+**WAVE 42 — THE SHAPE PRESCRIBED FOR (U4) IS FALSE, AT BOTH ENDS OF THE WINDOW, AND THE THREE
+STATEMENTS BELOW ARE THE TWO REFUTATIONS AND THE SCALE COMPUTATION BETWEEN THEM.** Since wave 26
+the file has priced item (U4) — the studentized twin of `exists_window_bound` — as
+
+`‖φ_{surrogate}(θ) − φ_{q_n}(θ)‖ ≤ (K/n)·windowEnvelope ξ`  on  `|ξ| ≤ c√n`,  `θ = −2πξ`,
+
+"an estimate, not a rewriting", to be assembled from four proved inputs
+(`norm_charFun_map_deltaSurrogate_sub_graded_le`, `norm_charFun_smul_pow_sub_edgeworth_le`,
+`multiCharFun_vecRootLaw_two` with `norm_multiCharFun_vecRootLaw_two_sub_le`, and
+`norm_multiCharFun_vecRootLaw_le`). Wave 42 attempted that assembly. It does not exist, and the
+reason is not budget: **no constant `K` makes that inequality true**, and separately **the four
+inputs cannot produce it for any envelope at all**.
+
+* **The inner end — the envelope vanishes too fast at the origin.** `windowEnvelope` is
+  `e^{−π²ξ²/2}(|ξ|⁴ + |ξ|⁸)`, of order `ξ⁴` at `ξ = 0`. That is right for the *mean* root, whose
+  `n⁻¹` cumulant correction is `κ₄(iθ)⁴/24 + κ₃²(iθ)⁶/72` — every `n⁻¹` term of the cumulant
+  expansion of a *sum* has `θ`-degree at least four. The studentized root is not a sum, and its
+  transform's `n⁻¹` discrepancy has a nonzero `θ¹` coefficient: `Δ'(0) = i(E Hₙ − ∫ t q_n(t)dt)`,
+  and while the two means agree at order `n^{-1/2}` — that is exactly the content of
+  `studentized_window_leading_identity`, `E Hₙ = −γr/2 + O(r²)` against
+  `∫ t q_n = (γ/6)∫ tφ(t)(3t − 2t³)dt·r = −γr/2` — they do **not** agree at order `n⁻¹`, and no
+  identity in this file makes them. So `‖Δ(θ)‖ ≍ |θ|/n` near the origin while the prescribed
+  right-hand side is `≍ ξ⁴/n`. `not_exists_const_mul_windowEnvelope_ge` is the deterministic half
+  of this: no `K` dominates `|ξ|^p` by `K·windowEnvelope ξ` for any `p ≤ 3`.
+
+* **The outer end — the graded remainder is `Θ(1)` at the window edge.** This is the deeper of
+  the two, because it is a statement about the *inputs* and survives every amendment of the
+  envelope. `norm_charFun_map_deltaSurrogate_sub_graded_le` bounds the difference between the
+  surrogate's transform and its five-slot expansion by `∫ surrogateRemGraded θ (w₀/σ) (w₁/σ²) r`,
+  whose leading monomial is `|θ|³r³·E[(|u||v|/2)³]/6`. That bound carries **no damping in `θ`**:
+  it is a triangle inequality on `|e^{iθHₙ} − e^{iθu}(1 + …)|`, so the phase `e^{iθu}` — the only
+  source of the factor `φ^{n−k}` that damps every other slot — is discarded before the integral
+  is taken. At the edge of the window, `|ξ| = c√n`, `r³|θ|³` is `(2πc)³` **independently of `n`**
+  (`window_edge_graded_remainder_eq`), so the input's right-hand side does not tend to zero
+  there at all, while `(K/n)·windowEnvelope (c√n)` decays like `e^{−π²c²n/2}n⁴`
+  (`not_exists_windowEnvelope_bound_at_window_edge`). The same computation kills any envelope
+  whatsoever: the Esseen split integrates the window bound against `1/(π|ξ|)` over the *whole*
+  line, so an envelope usable in `esseen_split` must have `∫ Env(ξ)/|ξ| < ∞`, hence must decay,
+  hence must lose to a constant at `|ξ| = c√n`.
+
+**What this costs, precisely.** The four named inputs do **not** suffice for (U4) on
+`|ξ| ≤ c√n`; they suffice on `|ξ| ≤ n^{a}` for small `a > 0` — where the undamped remainder
+`r³|θ|³ = n^{3a − 3/2}` is still `o(n⁻¹)` after the Esseen weight — and input (B)'s certificate
+covers `|θ| ≥ c₀√n`. **The range `n^{a} ≤ |θ| ≤ c₀√n` is covered by neither.** That middle range
+is a new gap: no wave before this one has named it, and closing it needs a bound on
+`‖φ_{ρₙ∘Hₙ⁻¹}(θ)‖` there which is not a Taylor expansion (the expansion has no damping) and not
+the certificate (whose band starts at order `√n`). See the wave-42 block on
+`edgeworth_studentized_uniform`. -/
+
+/-- Below `1` the envelope is at most `2|ξ|⁴` — the shape of `windowEnvelope` at the origin. -/
+private lemma windowEnvelope_le_two_mul_pow_four {ξ : ℝ} (h : |ξ| ≤ 1) :
+    windowEnvelope ξ ≤ 2 * |ξ| ^ 4 := by
+  have hx : (0 : ℝ) ≤ |ξ| := abs_nonneg ξ
+  have h8 : |ξ| ^ 8 ≤ |ξ| ^ 4 := pow_le_pow_of_le_one hx h (by norm_num)
+  have hexp : Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) ≤ 1 := by
+    refine Real.exp_le_one_iff.2 ?_
+    have : (0 : ℝ) ≤ Real.pi ^ 2 * ξ ^ 2 / 2 := by positivity
+    linarith
+  have hsum : (0 : ℝ) ≤ |ξ| ^ 4 + |ξ| ^ 8 := by positivity
+  calc windowEnvelope ξ ≤ 1 * (|ξ| ^ 4 + |ξ| ^ 8) := by
+        unfold windowEnvelope; exact mul_le_mul_of_nonneg_right hexp hsum
+    _ ≤ 2 * |ξ| ^ 4 := by rw [one_mul]; linarith
+
+/-- **(U4)'s inner end: the prescribed envelope is too small at the origin.** No constant
+dominates a monomial of degree at most three by `windowEnvelope`, which is of degree four there.
+The studentized transform's `n⁻¹` discrepancy has a nonzero linear term (see the section note),
+so the shape `≤ (K/n)·windowEnvelope ξ` is false for it however large `K` is taken. -/
+private theorem not_exists_const_mul_windowEnvelope_ge {p : ℕ} (hp : p ≤ 3) :
+    ¬ ∃ K : ℝ, ∀ ξ : ℝ, 0 < |ξ| → |ξ| ^ p ≤ K * windowEnvelope ξ := by
+  rintro ⟨K, hK⟩
+  have hden : (0 : ℝ) < 2 + 2 * |K| := by positivity
+  set ξ : ℝ := 1 / (2 + 2 * |K|) with hξdef
+  have hξpos : 0 < ξ := by rw [hξdef]; positivity
+  have hξ1 : ξ ≤ 1 / 2 := by
+    rw [hξdef]
+    exact one_div_le_one_div_of_le (by norm_num) (by linarith [abs_nonneg K])
+  have habs : |ξ| = ξ := abs_of_pos hξpos
+  have hle1 : |ξ| ≤ 1 := by rw [habs]; linarith
+  have hmain := hK ξ (by rw [habs]; exact hξpos)
+  have henv := windowEnvelope_le_two_mul_pow_four hle1
+  rw [habs] at henv hmain
+  have hEnn : (0 : ℝ) ≤ windowEnvelope ξ := windowEnvelope_nonneg ξ
+  have hstep : K * windowEnvelope ξ ≤ |K| * (2 * ξ ^ 4) :=
+    le_trans (mul_le_mul_of_nonneg_right (le_abs_self K) hEnn)
+      (mul_le_mul_of_nonneg_left henv (abs_nonneg K))
+  have hpow : ξ ^ 3 ≤ ξ ^ p := pow_le_pow_of_le_one hξpos.le (by linarith) hp
+  have hkey : ξ ^ 3 ≤ |K| * (2 * ξ ^ 4) := le_trans hpow (le_trans hmain hstep)
+  have hξ3 : (0 : ℝ) < ξ ^ 3 := by positivity
+  have hone : (1 : ℝ) ≤ 2 * |K| * ξ := by nlinarith [hkey, hξ3, hξpos]
+  have hlt : 2 * |K| * ξ < 1 := by
+    rw [hξdef, mul_one_div, div_lt_one hden]
+    linarith [abs_nonneg K]
+  linarith
+
+/-- `e^{−x} ≤ (5/x)⁵` for `x > 0`, from `1 + x/5 ≤ e^{x/5}`. -/
+private lemma exp_neg_le_five_div_pow {x : ℝ} (hx : 0 < x) :
+    Real.exp (-x) ≤ (5 / x) ^ 5 := by
+  have h1 : x / 5 ≤ Real.exp (x / 5) := by
+    have := Real.add_one_le_exp (x / 5); linarith
+  have hpos : (0 : ℝ) < x / 5 := by linarith
+  have h2 : (x / 5) ^ 5 ≤ Real.exp (x / 5) ^ 5 := pow_le_pow_left₀ hpos.le h1 5
+  have h3 : Real.exp (x / 5) ^ 5 = Real.exp x := by
+    rw [← Real.exp_nat_mul]
+    congr 1
+    push_cast
+    ring
+  rw [h3] at h2
+  have h4 : (0 : ℝ) < (x / 5) ^ 5 := by positivity
+  rw [Real.exp_neg, inv_le_iff_one_le_mul₀ (Real.exp_pos x)]
+  have h5 : (5 / x) ^ 5 = ((x / 5) ^ 5)⁻¹ := by
+    rw [← inv_pow]; congr 1; rw [inv_div]
+  rw [h5, inv_mul_eq_div, le_div_iff₀ h4]
+  linarith
+
+/-- **The graded remainder is scale-invariant at the edge of the window.** With `r = n^{-1/2}`
+and `θ = −2πξ`, the leading monomial `r³|θ|³` of `surrogateRemGraded` takes the value `(2πc)³`
+at `|ξ| = c√n` — the *same* value for every `n`. This is the arithmetic behind the outer-end
+refutation: the input's bound does not vanish at the window edge, so it cannot be absorbed into
+`K/n` times anything that does. -/
+private theorem window_edge_graded_remainder_eq {c : ℝ} (hc : 0 ≤ c) {n : ℕ} (hn : 0 < n) :
+    ((Real.sqrt n)⁻¹) ^ 3 * |2 * Real.pi * (c * Real.sqrt n)| ^ 3 = (2 * Real.pi * c) ^ 3 := by
+  have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
+  have hs : (0 : ℝ) < Real.sqrt n := Real.sqrt_pos.2 hn0
+  have habs : |2 * Real.pi * (c * Real.sqrt n)| = 2 * Real.pi * c * Real.sqrt n := by
+    rw [abs_of_nonneg (by positivity : (0 : ℝ) ≤ 2 * Real.pi * (c * Real.sqrt n))]; ring
+  rw [habs, mul_pow, mul_pow]
+  field_simp
+
+/-- **(U4)'s outer end: a constant cannot be absorbed at the window edge.** The window bound
+`(K/n)·windowEnvelope ξ` evaluated at `|ξ| = c√n` decays like `e^{−π²c²n/2}n³`, so it is
+eventually smaller than the fixed positive number `(2πc)³` that
+`window_edge_graded_remainder_eq` shows the graded remainder contributes there. Together with
+`not_exists_const_mul_windowEnvelope_ge` this refutes the prescribed shape of (U4) at both
+ends. -/
+private theorem not_exists_windowEnvelope_bound_at_window_edge {c : ℝ} (hc : 0 < c) :
+    ¬ ∃ K : ℝ, ∀ n : ℕ, 0 < n →
+      (2 * Real.pi * c) ^ 3 ≤ K / n * windowEnvelope (c * Real.sqrt n) := by
+  rintro ⟨K, hK⟩
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have hA : (0 : ℝ) < (2 * Real.pi * c) ^ 3 := by positivity
+  by_cases hK0 : 0 < K
+  case neg =>
+    push_neg at hK0
+    have h1 := hK 1 (by norm_num)
+    have hEnn : (0 : ℝ) ≤ windowEnvelope (c * Real.sqrt (1 : ℕ)) :=
+      windowEnvelope_nonneg _
+    have : K / ((1 : ℕ) : ℝ) * windowEnvelope (c * Real.sqrt (1 : ℕ)) ≤ 0 := by
+      have : K / ((1 : ℕ) : ℝ) ≤ 0 := by simpa using hK0
+      exact mul_nonpos_of_nonpos_of_nonneg this hEnn
+    linarith
+  set D : ℝ := (10 / (Real.pi ^ 2 * c ^ 2)) ^ 5 * (c ^ 4 + c ^ 8) with hD
+  have hD0 : 0 < D := by rw [hD]; positivity
+  have hEnv : ∀ n : ℕ, 0 < n → windowEnvelope (c * Real.sqrt n) ≤ D / n := by
+    intro n hn
+    have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
+    have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast hn
+    have hsq : Real.sqrt (n : ℝ) ^ 2 = (n : ℝ) := Real.sq_sqrt hn0.le
+    have habs : |c * Real.sqrt n| = c * Real.sqrt n := abs_of_pos (by positivity)
+    have harg : Real.pi ^ 2 * (c * Real.sqrt n) ^ 2 / 2 = Real.pi ^ 2 * c ^ 2 * n / 2 := by
+      rw [mul_pow, hsq]; ring
+    have hx : (0 : ℝ) < Real.pi ^ 2 * c ^ 2 * n / 2 := by positivity
+    have hexp := exp_neg_le_five_div_pow hx
+    have hcoef : (5 / (Real.pi ^ 2 * c ^ 2 * n / 2)) ^ 5
+        = (10 / (Real.pi ^ 2 * c ^ 2)) ^ 5 * ((n : ℝ) ^ 5)⁻¹ := by
+      rw [← inv_pow, ← mul_pow]
+      congr 1
+      field_simp
+      ring
+    have hpoly : |c * Real.sqrt n| ^ 4 + |c * Real.sqrt n| ^ 8
+        ≤ (c ^ 4 + c ^ 8) * (n : ℝ) ^ 4 := by
+      rw [habs, mul_pow, mul_pow]
+      have e4 : Real.sqrt (n : ℝ) ^ 4 = (n : ℝ) ^ 2 := by
+        rw [show (4 : ℕ) = 2 * 2 from rfl, pow_mul, hsq]
+      have e8 : Real.sqrt (n : ℝ) ^ 8 = (n : ℝ) ^ 4 := by
+        rw [show (8 : ℕ) = 2 * 4 from rfl, pow_mul, hsq]
+      rw [e4, e8]
+      have h24 : (n : ℝ) ^ 2 ≤ (n : ℝ) ^ 4 := pow_le_pow_right₀ hn1 (by norm_num)
+      nlinarith [pow_nonneg (le_of_lt (lt_of_lt_of_le zero_lt_one hn1)) 4,
+        pow_pos (lt_of_lt_of_le zero_lt_one hn1) 4, pow_nonneg hc.le 4, pow_nonneg hc.le 8]
+    have hEnn : (0 : ℝ) ≤ |c * Real.sqrt n| ^ 4 + |c * Real.sqrt n| ^ 8 := by positivity
+    calc windowEnvelope (c * Real.sqrt n)
+        = Real.exp (-(Real.pi ^ 2 * c ^ 2 * n / 2))
+            * (|c * Real.sqrt n| ^ 4 + |c * Real.sqrt n| ^ 8) := by
+          unfold windowEnvelope; rw [harg]
+      _ ≤ ((10 / (Real.pi ^ 2 * c ^ 2)) ^ 5 * ((n : ℝ) ^ 5)⁻¹)
+            * ((c ^ 4 + c ^ 8) * (n : ℝ) ^ 4) := by
+          refine mul_le_mul ?_ hpoly hEnn (by positivity)
+          rw [← hcoef]; exact hexp
+      _ = D / n := by
+          rw [hD]
+          field_simp
+  obtain ⟨n, hn⟩ := exists_nat_gt (K * D / (2 * Real.pi * c) ^ 3)
+  have hn1 : 0 < n := by
+    by_contra h
+    push_neg at h
+    interval_cases n
+    · simp at hn
+      nlinarith [hn, div_pos (mul_pos hK0 hD0) hA]
+  have hn0 : (0 : ℝ) < n := by exact_mod_cast hn1
+  have hmain := hK n hn1
+  have hEnvn := hEnv n hn1
+  have hstep : K / n * windowEnvelope (c * Real.sqrt n) ≤ K / n * (D / n) := by
+    have hKn : (0 : ℝ) ≤ K / n := by positivity
+    exact mul_le_mul_of_nonneg_left hEnvn hKn
+  have hn1' : (1 : ℝ) ≤ n := by exact_mod_cast hn1
+  have hlast : K / n * (D / n) ≤ K * D / n := by
+    have hnn : (n : ℝ) ≤ (n : ℝ) * (n : ℝ) := by nlinarith
+    rw [div_mul_div_comm, div_le_div_iff₀ (by positivity) hn0]
+    exact mul_le_mul_of_nonneg_left hnn (mul_pos hK0 hD0).le
+  have hfinal : K * D / n < (2 * Real.pi * c) ^ 3 := by
+    rw [div_lt_iff₀ hn0, mul_comm ((2 * Real.pi * c) ^ 3) (n : ℝ)]
+    rwa [div_lt_iff₀ hA] at hn
+  linarith
 
 set_option maxHeartbeats 2000000 in
 -- The `field_simp`/`linear_combination` normalisations below run over a degree-8 rational
@@ -12759,6 +12982,78 @@ CLAIM OTHERWISE.**
   three new headline theorems and five joining bricks, all axiom-clean — consumed the wave. No
   new obstruction to (U4) or to the assembly was found, and none of the wave-38 pricing of (U4)
   is contradicted by anything proved here. **This theorem is therefore still `sorry`.**
+
+---
+
+**Status after wave 42. (U4) WAS ATTEMPTED AND ITS PRESCRIBED SHAPE IS FALSE. THE CHAIN HAS A
+MIDDLE RANGE THAT NOTHING IN THE FILE COVERS. THIS THEOREM IS STILL `sorry`, AND THE RESIDUE IS
+NOW TWO ITEMS, NOT ONE.** Waves 37, 38, 40 and 41 all priced the quantitative half of (U4) as
+"unobstructed — an estimate, not a rewriting", to be assembled from four proved inputs. Wave 42
+carried out that assembly attempt. It does not close, and the reason is not budget.
+
+* **THE SHAPE `≤ (K/n)·windowEnvelope ξ` IS FALSE AT BOTH ENDS OF THE WINDOW.** The two
+  refutations are `not_exists_const_mul_windowEnvelope_ge` and
+  `not_exists_windowEnvelope_bound_at_window_edge`, with `window_edge_graded_remainder_eq` and
+  `windowEnvelope_le_two_mul_pow_four` between them; the full accounting is the section note
+  above them. In one line each: at the **origin** `windowEnvelope` is of degree four, which is
+  right for a *sum* (every `n⁻¹` cumulant term of a sum has `θ`-degree at least four) and wrong
+  for the studentized root, whose `n⁻¹` transform discrepancy has a nonzero `θ¹` coefficient —
+  the `n^{-1/2}` means do agree, and that is exactly `studentized_window_leading_identity`, but
+  nothing in the file makes the `n⁻¹` means agree; at the **window edge** `|ξ| = c√n` the
+  leading monomial `r³|θ|³` of `surrogateRemGraded` equals `(2πc)³` for *every* `n`, while
+  `(K/n)·windowEnvelope (c√n)` decays like `e^{−π²c²n/2}n³`.
+
+* **THE OUTER-END REFUTATION IS ABOUT THE INPUTS, NOT THE ENVELOPE, AND IT DOES NOT GO AWAY.**
+  Three of the four inputs are *undamped* — they bound `‖·‖` by an integral of a modulus, with
+  no `φ^{n−k}` factor surviving — and on the window `|ξ| ≤ c√n` an undamped polynomial in `θ`
+  cannot be dominated by anything the Esseen split can integrate, since `esseen_split` weights
+  the window bound by `1/(π|ξ|)` over the whole line and therefore admits only envelopes with
+  `∫ Env(ξ)/|ξ| < ∞`, which must decay. Their status after this wave:
+  1. `norm_multiCharFun_vecRootLaw_le` (the `k = 3, 4` slots) — **repaired.**
+     `norm_multiCharFun_vecRootLaw_damped_le` in `ForMathlib/BivariateEdgeworth.lean` is the
+     same bound multiplied by `‖φ(N^{-1/2}•a)‖^{N−k}`, proved here; the damping was free (every
+     assignment leaves at least `N − k` coordinates unweighted, each contributing `φ(c)`, and
+     wave 26 rounded those up to `1`). **Wave 26's "a bound is all `k = 3, 4` need" is
+     overturned**: a bound is all they need at fixed `a`, and the window's `a = (θ/σ)•e₀` is
+     not fixed.
+  2. `norm_multiCharFun_vecRootLaw_two_sub_le` (the `k = 2` remainder) — **repaired.**
+     `norm_multiCharFun_vecRootLaw_two_sub_damped_le` carries `‖φ(c)‖^{N−2}`. Both error terms
+     of the decomposition multiply `φ^{N−1}` or `φ^{N−2}` — the assignment sum has nothing else
+     in it — so again the damping was free. Without it `multiTwoRemConst` at `a = (θ/σ)•e₀` is
+     an undamped polynomial in `|θ|` of degree four.
+  3. `norm_charFun_smul_pow_sub_edgeworth_le` (the leading `n`-th-power slot) — **damped
+     already**, by `e^{−(n−2)vs²/4}`; it is the one input of the four that was never the
+     problem, and it is where the mean assembly gets its whole envelope.
+  4. `norm_charFun_map_deltaSurrogate_sub_graded_le` (the graded remainder) — **not repairable
+     at all**, and this is the item that blocks the window. It is a triangle inequality on
+     `|e^{iθHₙ} − e^{iθu}(1 + …)|`, so the phase `e^{iθu}` — the *only* source of damping in
+     the whole expansion — is discarded before the integral is taken, and no choice of
+     truncation level or grading puts it back. Keeping the phase would require the remainder
+     to be a *polynomial* weight, which is what `multiCharFun` handles; it is not one.
+
+* **THE NEW GAP: THE MIDDLE RANGE.** The four inputs do suffice on `|ξ| ≤ n^{a}` for small
+  `a > 0`, where `r³|θ|³ = n^{3a − 3/2}` is still `o(n⁻¹)` after the Esseen weight; and input
+  (B)'s certificate covers `|θ| ≥ c₀√n` (`exists_fourierCertificate_deltaSurrogate` takes
+  `c₀ * √n ≤ |θ|`, for any `c₀ > 0`, but always at order `√n`). **The range
+  `n^{a} ≤ |θ| ≤ c₀√n` is covered by neither**, and closing it needs a bound on
+  `‖φ_{ρₙ∘Hₙ⁻¹}(θ)‖` there that is not a Taylor expansion and not the certificate. No wave
+  before this one has named that range; wave 37's six-step chain, and every restatement of it
+  since, has an Esseen split at `ρ = c√n` with a single window bound, which is the shape this
+  wave refutes.
+
+* **WHAT (U4′) MUST LOOK LIKE.** For the record, so the next wave does not re-derive it: the
+  envelope has to start at degree one, `Env(ξ) = e^{−π²ξ²/2}(|ξ| + |ξ|⁸)` (the `k = 3` slot's
+  prefactor `θr²/2σ³` against an `O(1)` multilinear factor is `Θ(|θ|)`, and the `k = 2`
+  remainder is `Θ(θ²)`); `esseen_split` needs its twin for that envelope, which is routine
+  since `∫ Env(ξ)/|ξ|` is still a Gaussian moment; and the window itself has to be *split*,
+  with the expansion on `|ξ| ≤ n^{a}` and something else above it. Amending the envelope alone
+  does **not** repair anything — that is the content of the outer-end refutation.
+
+* **NOTHING ELSE MOVED, AND ITEM 2 WAS NOT ATTEMPTED.** (U1), (U2), (U3), (A), (C), the
+  certificate and its `sorry` (B) are as wave 41 left them; `cornishFisher_studentized_quantile`
+  still compiles over this theorem. The six-step assembly was not attempted because its third
+  step is the statement refuted above. **This theorem is therefore still `sorry`, and the file
+  is at two `sorry`s — this one and (B) — not one.**
 
 **WAVE 40 — THE MOMENT HYPOTHESIS IS AMENDED FROM FOUR TO EIGHT, AND THIS IS A DEVIATION FROM
 THE CLASSICAL STATEMENT.** The classical studentized Edgeworth expansion (Hall, *The Bootstrap
