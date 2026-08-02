@@ -9234,6 +9234,66 @@ private lemma abs_integral_shift_vecTiltRemainder_localised_le
     have hfin := hfar a haabs hconst
     linarith
 
+/-- **The per-step ledger of the localised tail estimate (wave 40).** The pointwise bound of
+`abs_integral_shift_vecTiltRemainder_localised_le`, once averaged over `v`, produces the shell
+mass `8 C_k σ(R + s) + W` at the varying width, multiplied by
+`min (C_t s³) (2 + s + s²)` with `s = ‖w‖`. This lemma is the arithmetic that turns that
+product back into a pure *third* moment, at the price of the stated constants:
+
+  `(8 C_k σ(R+s) + W) · min (C_t s³, 2+s+s²) ≤ (64 C_k σ R + 4 W) · C_t s³`.
+
+Both branches of the `min` are used, and neither can be dropped: for `s ≤ 1` the quadratic
+branch has a *constant* term (which would integrate to a bare constant weight, outside brick
+L's allowed shape — wave 35's Correction 1), and for `s > 1` the cubic branch multiplied by the
+linear-in-`s` shell mass would be quartic (a fourth moment, unavailable). `1 ≤ C_t` is used
+only to report both branches with one constant. -/
+private lemma localised_step_weight_le {Ck Ct W R s σ : ℝ}
+    (hCk : 0 ≤ Ck) (hCt : 1 ≤ Ct) (hW : 0 ≤ W) (hR : 1 ≤ R)
+    (hs : 0 ≤ s) (hσ0 : 0 ≤ σ) :
+    (8 * Ck * (σ * (R + s)) + W) * min (Ct * s ^ 3) (2 + s + s ^ 2)
+      ≤ (64 * Ck * (σ * R) + 4 * W) * (Ct * s ^ 3) := by
+  have hw0 : (0 : ℝ) ≤ 8 * Ck * (σ * (R + s)) + W := by
+    have : (0 : ℝ) ≤ σ * (R + s) := by nlinarith
+    nlinarith
+  have hCt0 : (0 : ℝ) < Ct := by linarith
+  have hs3 : (0 : ℝ) ≤ s ^ 3 := by positivity
+  rcases le_or_gt s 1 with h1 | h1
+  · have hmin : min (Ct * s ^ 3) (2 + s + s ^ 2) ≤ Ct * s ^ 3 := min_le_left _ _
+    have hstep : (8 * Ck * (σ * (R + s)) + W) * min (Ct * s ^ 3) (2 + s + s ^ 2)
+        ≤ (8 * Ck * (σ * (R + s)) + W) * (Ct * s ^ 3) :=
+      mul_le_mul_of_nonneg_left hmin hw0
+    refine hstep.trans ?_
+    have hRs : σ * (R + s) ≤ 2 * (σ * R) := by nlinarith
+    have hfac : 8 * Ck * (σ * (R + s)) + W ≤ 64 * Ck * (σ * R) + 4 * W := by nlinarith
+    exact mul_le_mul_of_nonneg_right hfac (by positivity)
+  · have hs2 : (1 : ℝ) ≤ s := le_of_lt h1
+    have hmin : min (Ct * s ^ 3) (2 + s + s ^ 2) ≤ 2 + s + s ^ 2 := min_le_right _ _
+    have hq : 2 + s + s ^ 2 ≤ 4 * s ^ 2 := by nlinarith
+    have hstep : (8 * Ck * (σ * (R + s)) + W) * min (Ct * s ^ 3) (2 + s + s ^ 2)
+        ≤ (8 * Ck * (σ * (R + s)) + W) * (4 * s ^ 2) :=
+      mul_le_mul_of_nonneg_left (hmin.trans hq) hw0
+    refine hstep.trans ?_
+    have hRs : R + s ≤ 2 * (R * s) := by nlinarith
+    have hkey : (8 * Ck * (σ * (R + s)) + W) * (4 * s ^ 2)
+        ≤ 64 * Ck * (σ * R) * s ^ 3 + 4 * W * s ^ 3 := by
+      have hA : 8 * Ck * (σ * (R + s)) * (4 * s ^ 2) ≤ 64 * Ck * (σ * R) * s ^ 3 := by
+        have h2 : σ * (R + s) ≤ 2 * (σ * (R * s)) := by nlinarith
+        nlinarith [mul_nonneg hCk hσ0, sq_nonneg s, mul_nonneg (mul_nonneg hCk hσ0) hs3]
+      have hss : s ^ 2 ≤ s ^ 3 := by nlinarith
+      have hB : W * (4 * s ^ 2) ≤ 4 * W * s ^ 3 := by
+        nlinarith [mul_le_mul_of_nonneg_left hss hW]
+      linarith [hA, hB]
+    refine hkey.trans ?_
+    have hCt1 : s ^ 3 ≤ Ct * s ^ 3 := by nlinarith
+    have hnn : (0 : ℝ) ≤ 64 * Ck * (σ * R) := by
+      have h1' : (0 : ℝ) ≤ σ * R := by nlinarith
+      nlinarith [mul_nonneg hCk h1']
+    have hP1 : 64 * Ck * (σ * R) * s ^ 3 ≤ 64 * Ck * (σ * R) * (Ct * s ^ 3) :=
+      mul_le_mul_of_nonneg_left hCt1 hnn
+    have hP2 : 4 * W * s ^ 3 ≤ 4 * W * (Ct * s ^ 3) :=
+      mul_le_mul_of_nonneg_left hCt1 (by linarith)
+    nlinarith [hP1, hP2]
+
 set_option linter.unusedVariables false in
 -- the body is a named `sorry` brick: the hypotheses are the interface, see the docstring
 /-- **The per-step TAIL estimate (wave 38: STATED, NOT proved; wave 39: the WEIGHT is AMENDED
@@ -9360,9 +9420,70 @@ power** `logPow32 ε`. The consequences, each amended and re-proved this wave:
 `τ`-average (a Fubini over `hybridLaw`, with the measurability of `v ↦ τ(near set)` to supply,
 as on the head side), and the `‖w‖ ≤ 1` complement above, which wave 39 did not attempt either.
 The analytic *inputs* are now all present; what is missing is the same kind of bookkeeping the
-head brick needed in wave 38. -/
+head brick needed in wave 38.
+
+## Wave 40: the `‖w‖ ≤ 1` complement is DISCHARGED, and the CONSTANTS are amended again
+
+Every wave from 32 on recorded the shift-length restriction as an open input. It is now closed,
+and the pointwise engine of route (b) is proved with **no** restriction on `‖w‖`:
+
+* `abs_integral_shift_vecTiltRemainder_le_of_const_ball_any` — the far-in-`v` estimate at every
+  shift length. The point is that the tilt remainder must *not* be bounded in `L²` (its `L²`
+  norm grows like `e^{‖w‖²/2}`, which is exactly why the restriction was there). Split it:
+  the exponential half is a Gaussian **shift**, so the shift is absorbed by the constancy
+  *radius* `σ(M + ‖w‖)`; the polynomial half is a genuine polynomial, whose `L²` norm is
+  polynomial in `‖w‖` at every `‖w‖` (`integral_sq_vecTiltPoly_le`, dimension-free), and
+  Cauchy–Schwarz against the Gaussian tail finishes it;
+* `abs_integral_mul_vecTiltRemainder_le_crude` — a **quadratic** (not cubic) crude bound
+  `2 + ‖w‖ + ‖w‖²`, which is what keeps the product with the *linear-in-`‖w‖`* shell mass at
+  the varying width inside a third moment;
+* `abs_integral_shift_vecTiltRemainder_localised_le` — the two assembled into one pointwise
+  bound in `(v, w)`, with the same far constant `4 C_k C_t σ ‖w‖³` in both shift regimes
+  (`le_sqrt_tiltSqConst` is what merges them);
+* `localised_step_weight_le` — the per-step ledger:
+  `(8 C_k σ(R+s) + W) · min (C_t s³, 2+s+s²) ≤ (64 C_k σ R + 4 W) C_t s³`.
+
+**The constants the route actually delivers, and why they are not wave 39's.** Averaging the
+pointwise bound over `v ∼ τ` and then over `y ∼ ν` (resp. `ρ`) gives, with `R = gaussianTailRadius k σ`
+and `s = (c/σ)‖y‖`:
+
+* the shell term: `∫ τ(shell at 2σ(R+s)) · min(...) dν ≤ (64 C_k σ R + 4 W) C_t (c/σ)³ β_ν`
+  (`localised_step_weight_le` pointwise in `y`, then `hshell` at width `2σ(R+s)`);
+* the far term: `4 C_k C_t σ (c/σ)³ β_ν ≤ 4 C_k C_t σ R (c/σ)³ β_ν` (`R ≥ 1`).
+
+Total `(68 C_k σ R + 4 W) C_t (c/σ)³ (β_ν + β_ρ)`, which is the conclusion below — wave 39's
+`12` and `W` have become `68` and `4W`. The reason is structural, not bookkeeping: wave 39's
+sketch priced only the `‖w‖ ≤ 1` regime, where no crude branch and no varying shell width
+occur. The `8` is the shell doubling forced by `hshell` being stated at a single width; the
+`4` is `2 + s + s² ≤ 4s²` at `s = 1`; the `2` is `R + s ≤ 2Rs`. (A finer split at `s = 2`
+would give `36` and `2W`; the shape is unaffected, and the coarser constants are the ones that
+are machine-checked.)
+
+Two hypotheses are added, both free at the call site: `hk : 0 < k` (needed for
+`gaussianTailRadius`, and available in brick L) and `hCt1 : 1 ≤ C_t` (`C_t` may always be
+enlarged, and `hCt` and the conclusion are both monotone in it).
+
+**FLAG, not absorbed.** `localised_swap_bound_of_weighted_telescope`'s hypothesis `htel` still
+carries wave 39's `12 * gaussianShellConst k * Ct * …` and `3 * (W * Ct * X) / √J`. When this
+brick lands those must become `68 * …` and `12 * (W * Ct * X) / √J`, and
+`weighted_ledger_balance`'s constant `306 C₃ + 81 C_t` must be re-solved (the `C_t` half scales
+by at most `68/12 < 6`, so `459 C_t` certainly suffices; the `C₃` half is untouched, since the
+head brick is unchanged). Nothing in the *shape* moves, so the fixed point
+`le_of_selfImproving_induction_logPow32` and the headline `berryEsseen_convex_sharp` re-solve
+at the same `(1+log)^{3/2}` power with a larger absolute constant.
+
+**What is still open, precisely.** Only measure-theoretic bookkeeping, in three named pieces:
+(1) the tilt *representation* — factoring out of `abs_integral_gaussian_smoothed_sub_common_le`
+the identity `∫∫F(v+σz+cy) = (common polynomial) + ∫_y ∫_z F(v+σz) R_{(c/σ)y}(z)`, which its
+proof already establishes internally (`hsum` composed with `hQval`) but does not export;
+(2) the Fubini `∫_v ∫_y 1_{shell at 2σ(R+s)}(v) · min(...) dν dτ = ∫_y τ(shell) · min(...) dν`,
+which is `integral_far_shell_le` verbatim with a different bracket and the varying width
+`g(y) = 2σ(R + (c/σ)‖y‖)` (`measurableSet_wideShell_prod` already accepts any continuous
+nonnegative width); (3) the two-law triangle inequality. No analytic input is missing. -/
 private lemma abs_integral_gaussian_smoothed_swap_localised_le {Ct : ℝ}
     (hCt : ∀ s : ℝ, 0 ≤ s → (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ Ct * s ^ 3)
+    -- LEAN-ONLY (wave 40), free: `Ct` may always be enlarged
+    (hCt1 : 1 ≤ Ct) (hk : 0 < k)
     {ν ρ τ : Measure (EuclideanSpace ℝ (Fin k))}
     [IsProbabilityMeasure ν] [IsProbabilityMeasure ρ] [IsProbabilityMeasure τ]
     (hmeanν : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)
@@ -9392,7 +9513,7 @@ private lemma abs_integral_gaussian_smoothed_swap_localised_le {Ct : ℝ}
               ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ν)
           - (∫ y, (∫ z, F (v + σ • z + c • y)
               ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ρ)| ∂τ)
-      ≤ (12 * Ck * (σ * gaussianTailRadius k σ) + W)
+      ≤ (68 * Ck * (σ * gaussianTailRadius k σ) + 4 * W)
         * (Ct * (c / σ) ^ 3 * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ))) := by
   sorry
 
@@ -9722,7 +9843,21 @@ The two measure-theoretic hypotheses are used only for the two moment facts the 
 (`integral_norm_cube_gaussian_le`).
 
 The window `1 ≤ ε √n` is required, and is not a technicality: see the last paragraph of
-`weighted_ledger_balance`. -/
+`weighted_ledger_balance`.
+
+**WAVE-40 FLAG — this hypothesis is now out of step with the tail brick, deliberately.** `htel`
+below carries wave 39's per-step tail constants (`12 * gaussianShellConst k * Ct * …` and
+`3 * (W * Ct * X) / √J`). Wave 40 proved the pointwise engine of the tail brick at every shift
+length and re-derived its constants honestly:
+`abs_integral_gaussian_smoothed_swap_localised_le` now concludes with weight
+`68 C_k σ R + 4 W`, not `12 C_k σ R + W` (see its docstring for the derivation — the extra
+factors are the shell doubling `8`, the crude branch `2+s+s² ≤ 4s²`, and `R+s ≤ 2Rs`, none of
+which occur in the `‖w‖ ≤ 1` regime wave 39 priced). When the brick's remaining Fubini
+bookkeeping lands, `htel`'s two tail summands must become `68 * …` and `12 * (W * Ct * X) / √J`,
+and `weighted_ledger_balance`'s `81 * Ct` must be re-solved (`459 * Ct` certainly suffices; the
+`306 * C₃` head half is untouched). **No shape moves**, so the fixed point and
+`berryEsseen_convex_sharp` re-solve at the same `(1 + log(1+ε⁻¹))^{3/2}` power. The mismatch is
+left visible here rather than silently propagated, per the provable-constants rule. -/
 theorem localised_swap_bound_of_weighted_telescope (hk : 0 < k) {n : ℕ} (hn : 0 < n)
     {ν : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure ν]
     (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ)
