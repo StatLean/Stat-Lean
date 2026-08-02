@@ -1897,7 +1897,99 @@ the window constants `(A, η)` and the dyadic tail sequence `τ`.
 `hwin` is the *marginal* window bound, which costs nothing
 (`measure_Ioc_le_of_abs_cdf_sub_le` with `η = 2ε`), and `htail` is Chebyshev on the second
 coordinate of the bivariate root. Only `hcond` is missing, and it is missing for a reason: see
-the section note for the three candidate substitutes and why each fails. -/
+the section note for the three candidate substitutes and why each fails.
+
+---
+
+**WAVE 38 — A PRECISE ASSESSMENT OF THIS RESIDUE.** This is item **(U3)** of the wave-37 audit
+of `edgeworth_studentized_uniform`, the item that file's corollary has named since wave 17. No
+proof is attempted here; what follows fixes the statement, names the one decomposition that
+survives inspection, records the part of it that is now proved, and prices what is left.
+
+**(a) What is actually needed, with quantifiers.** The studentized chain does not consume
+`hcond` in the literal form above. It produces the per-stratum bound through
+`measure_pi_stratum_le`, whose single open hypothesis is `hslice`; and `hcond` follows from a
+family of `hslice`s by `sum_dyadic_strata_le`. Instantiated at the studentized route — sampling
+law `F`, `Y` the coordinate whose tail carries the Taylor remainder,
+`T = deltaSurrogate σ rₙ ∘ (the bivariate root of studentPair F)` with `rₙ = ((n+1))^{-1/2}` —
+the missing statement is
+
+> `∀ n : ℕ, 0 < n → ∀ (i : Fin (n + 1)) (y x : ℝ) {w : ℝ}, 0 ≤ w →`
+> `  ((Measure.pi fun _ : Fin n => F)`
+> `      {z : Fin n → ℝ |`
+> `        |deltaSurrogate σ rₙ`
+> `            ((Real.sqrt ((n : ℝ) + 1))⁻¹ • ∑ j, studentPair F ((i.insertNth y z) j))`
+> `          - x| ≤ w}).toReal`
+> `    ≤ 2 * (C * A) * w + 2 * η`
+
+with `A`, `η` the marginal window constants at size `n` (`η ≍ n⁻¹`), `C` absolute, and — this
+is the entire content — **no dependence of the right-hand side on the frozen value `y`, on the
+frozen index `i`, or on the window centre `x`**. It is a Lévy concentration-function bound for
+`Hₙ` at an `(n+1)`-sample bivariate root with one coordinate frozen, with modulus linear in the
+half-width `w` up to an additive `η`. `measure_pi_abs_root_insertNth_le` is exactly this
+statement for a *root*, and is free; the caveat recorded there since wave 21 is why it does not
+transfer.
+
+**(b) The decomposition that survives: monotonicity in the first standardized coordinate.** Of
+the three shapes one would try, two are dead on inspection in this file's terms:
+
+* *"the explicit quadratic-in-`u₀` structure of `Hₙ` at frozen `v`"* is not available. Freezing
+  coordinate `i` at `y` makes the first standardized coordinate `u` **linear** in `y` and the
+  second `v` **quadratic** in `y` (that is what `studentPair` is), so `Hₙ` is a degree-**five**
+  polynomial in the frozen value, not a quadratic — and the frozen value is not the variable
+  the window has to be anti-concentrated in anyway;
+* *Carbery–Wright* does not apply. It is an anti-concentration inequality for polynomials of a
+  **log-concave** measure, and the hypothesis of `edgeworth_studentized_uniform` is only
+  `hFac : F ≪ volume` — an arbitrary law with a density, whose `n`-fold root need not be
+  log-concave. It is also absent from Mathlib.
+
+What does survive is monotonicity, and it is stronger than one expects. With
+`Hₙ(u, v) = u − uvr/2 + u³r²/2 + 3uv²r²/8`,
+
+`∂Hₙ/∂u = (1 − vr/2 + 3(vr)²/8) + (3/2)u²r²`  and  `1 − x/2 + 3x²/8 = 5/6 + (3/8)(x − 2/3)²`,
+
+so `Hₙ` increases in `u` at rate at least `5/6` **globally**: for every `u`, every `v` and every
+`r`, with no window and no smallness restriction on `r`. The two lemmas the route needs at its
+deterministic end are therefore not conjectural — they are proved in this file, beside
+`deltaSurrogate`:
+
+* `surrogate_fst_increment_le {r v u₁ u₂ : ℝ} (h : u₁ ≤ u₂) :`
+  `  5 / 6 * (u₂ - u₁) ≤ Hₙ(u₂, v) - Hₙ(u₁, v)`
+* `abs_sub_le_of_surrogate_window {r v x w u₁ u₂ : ℝ}`
+  `  (h₁ : |Hₙ(u₁, v) - x| ≤ w) (h₂ : |Hₙ(u₂, v) - x| ≤ w) : |u₁ - u₂| ≤ 12 / 5 * w`
+
+(with `abs_sub_le_of_deltaSurrogate_window` transporting the second onto `deltaSurrogate`
+itself). Granted them, the window event on a slice is contained in a window **of the first
+coordinate alone**, of width `(12/5)σw`, centred at a point determined by the second:
+
+`{z | |Hₙ(u(z), v(z)) − x| ≤ w} ⊆ {z | |u(z) − m(v(z), x)| ≤ (6/5)w}`.
+
+So the monotonicity decomposition reduces (U3) from *anti-concentration of a degree-four
+polynomial of a bivariate root* to *anti-concentration of the **first** coordinate of that root
+about a centre measurable for the **second***. The degree-four structure is genuinely gone.
+What is **not** gone: this is not a corollary of `measure_abs_sub_le_of_affine`, which is
+uniform over *deterministic* centres, whereas `m(v(z), x)` is a random one measurable for the
+same `z`; and `u` and `v` are the two coordinate sums of `studentPair F`, which are **not**
+independent (`v` is built from the squares), so the marginal window bound cannot simply be
+integrated over the centre.
+
+**(c) What closing the reduced statement would consume from Mathlib.** One of two things, and
+neither is present as a usable brick:
+
+* a **disintegration** of `Measure.pi (fun _ : Fin n => F)` along `z ↦ v(z)`, together with a
+  Lévy-concentration bound for the conditional law of `u(z)`. The disintegration itself is
+  available — `MeasureTheory.Measure.condKernel` / the standard-Borel disintegration, and `ℝ`
+  qualifies — but the conditional law of one sum given another is *not* a law of a sum of
+  independent summands, so nothing in the library or in this file (Esseen's concentration
+  bound, `measure_pi_abs_root_insertNth_le`, `measure_abs_sub_le_of_affine`) applies to it;
+* or a **two-dimensional Lévy concentration bound for the bivariate root itself**, of the shape
+  `sup over slabs S of width w of P(root ∈ S) ≤ Cw + η`, which dominates the random-centre form
+  directly. Mathlib has no anti-concentration theory in any dimension, and this file's only
+  anti-concentration is the one-dimensional `measure_abs_sub_le_of_affine`.
+
+**Net price.** The reduction in (b) is free and is now in the file. What remains after it is a
+**new** analytic brick, one dimension smaller than the one wave 21 named, and it is still not
+bookkeeping. -/
 theorem abs_measure_le_sub_le_of_peel_window {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     [IsProbabilityMeasure P] {S T : Ω → ℝ} {δ A η : ℝ} (hδ : 0 < δ) (K : ℕ) (x : ℝ)
     (τ : ℕ → ℝ)
@@ -2807,6 +2899,76 @@ lemma measurable_deltaSurrogate (σ r : ℝ) : Measurable (deltaSurrogate σ r) 
   have h1 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 1 := by fun_prop
   unfold deltaSurrogate
   fun_prop
+
+/-! ### The surrogate is uniformly increasing in its first standardized coordinate
+
+The deterministic end of the route this file's wave-38 assessment of `hcond` recommends; see
+the assessment block on `abs_measure_le_sub_le_of_peel_window`. The point is a fact about
+`Hₙ(u, v) = u − uvr/2 + u³r²/2 + 3uv²r²/8` that is stronger than one expects and that has not
+been recorded before: since
+
+`∂Hₙ/∂u = (1 − vr/2 + 3(vr)²/8) + (3/2)u²r²` and `1 − x/2 + 3x²/8 = 5/6 + (3/8)(x − 2/3)²`,
+
+the surrogate increases in `u` at rate at least `5/6` **globally** — for every `u`, every `v`
+and every `r`, with no window and no smallness restriction. Consequently a window in `Hₙ` pulls
+back to a window in `u` alone, of width at most `(12/5)` times as large. Nothing measure-theoretic
+enters either lemma. -/
+
+/-- **The surrogate's first-coordinate increment, from below.** `Hₙ(u₂, v) − Hₙ(u₁, v) ≥
+(5/6)(u₂ − u₁)` whenever `u₁ ≤ u₂`, uniformly in `v` and in `r`. -/
+lemma surrogate_fst_increment_le {r v u₁ u₂ : ℝ} (h : u₁ ≤ u₂) :
+    5 / 6 * (u₂ - u₁)
+      ≤ (u₂ - u₂ * v * r / 2 + u₂ ^ 3 * r ^ 2 / 2 + 3 * u₂ * v ^ 2 * r ^ 2 / 8)
+        - (u₁ - u₁ * v * r / 2 + u₁ ^ 3 * r ^ 2 / 2 + 3 * u₁ * v ^ 2 * r ^ 2 / 8) := by
+  have hd : (0 : ℝ) ≤ u₂ - u₁ := by linarith
+  have hc : (5 : ℝ) / 6 ≤ 1 - v * r / 2 + 3 * (v * r) ^ 2 / 8 := by
+    nlinarith [sq_nonneg (v * r - 2 / 3)]
+  have hq : (0 : ℝ) ≤ u₂ ^ 2 + u₂ * u₁ + u₁ ^ 2 := by
+    nlinarith [sq_nonneg (u₁ + u₂), sq_nonneg (u₁ - u₂)]
+  have h1 : (u₂ - u₁) * (5 / 6) ≤ (u₂ - u₁) * (1 - v * r / 2 + 3 * (v * r) ^ 2 / 8) :=
+    mul_le_mul_of_nonneg_left hc hd
+  have h2 : (0 : ℝ) ≤ (u₂ - u₁) * (r ^ 2 / 2 * (u₂ ^ 2 + u₂ * u₁ + u₁ ^ 2)) :=
+    mul_nonneg hd (by positivity)
+  nlinarith [h1, h2]
+
+/-- **A window in the surrogate pulls back to a window in its first coordinate.** Two points
+that both land within `w` of `x` under `Hₙ(·, v)` are within `(12/5)w` of each other — so, at
+frozen `v`, the preimage of a window of half-width `w` is an interval of length at most
+`(12/5)w`. Uniform in `v`, `x` and `r`. -/
+lemma abs_sub_le_of_surrogate_window {r v x w u₁ u₂ : ℝ}
+    (h₁ : |(u₁ - u₁ * v * r / 2 + u₁ ^ 3 * r ^ 2 / 2 + 3 * u₁ * v ^ 2 * r ^ 2 / 8) - x| ≤ w)
+    (h₂ : |(u₂ - u₂ * v * r / 2 + u₂ ^ 3 * r ^ 2 / 2 + 3 * u₂ * v ^ 2 * r ^ 2 / 8) - x| ≤ w) :
+    |u₁ - u₂| ≤ 12 / 5 * w := by
+  rw [abs_le] at h₁ h₂
+  rw [abs_le]
+  rcases le_total u₁ u₂ with h | h
+  · have hm := surrogate_fst_increment_le (r := r) (v := v) h
+    exact ⟨by linarith [h₁.1, h₁.2, h₂.1, h₂.2], by linarith [h₁.1, h₁.2, h₂.1, h₂.2]⟩
+  · have hm := surrogate_fst_increment_le (r := r) (v := v) h
+    exact ⟨by linarith [h₁.1, h₁.2, h₂.1, h₂.2], by linarith [h₁.1, h₁.2, h₂.1, h₂.2]⟩
+
+/-- **The pullback, on `deltaSurrogate` itself.** The two standardized coordinates of
+`deltaSurrogate σ r` are `w 0 / σ` and `w 1 / σ²`, so the previous lemma reads: on the fibre
+`{w 1 = c}` the surrogate's window of half-width `w` has first-coordinate diameter at most
+`(12/5)σw`. -/
+lemma abs_sub_le_of_deltaSurrogate_window {σ r x w : ℝ} (hσ : 0 < σ)
+    {a b : EuclideanSpace ℝ (Fin 2)} (hv : a 1 = b 1)
+    (h₁ : |deltaSurrogate σ r a - x| ≤ w) (h₂ : |deltaSurrogate σ r b - x| ≤ w) :
+    |a 0 - b 0| ≤ 12 / 5 * σ * w := by
+  have hda : deltaSurrogate σ r a
+      = a 0 / σ - (a 0 / σ) * (a 1 / σ ^ 2) * r / 2 + (a 0 / σ) ^ 3 * r ^ 2 / 2
+        + 3 * (a 0 / σ) * (a 1 / σ ^ 2) ^ 2 * r ^ 2 / 8 := rfl
+  have hdb : deltaSurrogate σ r b
+      = b 0 / σ - (b 0 / σ) * (a 1 / σ ^ 2) * r / 2 + (b 0 / σ) ^ 3 * r ^ 2 / 2
+        + 3 * (b 0 / σ) * (a 1 / σ ^ 2) ^ 2 * r ^ 2 / 8 := by rw [hv]; rfl
+  rw [hda] at h₁
+  rw [hdb] at h₂
+  have hkey := abs_sub_le_of_surrogate_window (r := r) (v := a 1 / σ ^ 2) (x := x)
+    (u₁ := a 0 / σ) (u₂ := b 0 / σ) h₁ h₂
+  have hrw : |a 0 / σ - b 0 / σ| = |a 0 - b 0| / σ := by
+    rw [div_sub_div_same, abs_div, abs_of_pos hσ]
+  rw [hrw, div_le_iff₀ hσ] at hkey
+  linarith
 
 /-- **The exact studentized statistic, on the standardized scale.** The region of
 `studentizedRootCDF_eq_vecRootLaw` is cut out by `w₀/√(σ² + w₁r − w₀²r²)`, and that is exactly
