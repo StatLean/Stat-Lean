@@ -16938,7 +16938,90 @@ ONE `sorry`, AND IT IS THIS THEOREM. THE ASSEMBLY WAS ATTEMPTED AND IS NOT CLAIM
      `sum_dyadic_strata_le`, whose `hslice` and `hwin` waves 40 and 41 discharged).
 
   **This theorem is therefore still `sorry`, and wave 46 does not claim otherwise — but for the
-  first time since wave 30 the reason is not an open input.** -/
+  first time since wave 30 the reason is not an open input.**
+
+---
+
+**Status after wave 47. THE ANALYTIC ITEM IS BUILT AND ITEMS 2 AND 3 ARE DISCHARGED; ITEM 4 —
+THE PRODUCTION OF (U4′)'S EIGHT INPUTS FROM THE FOUR PROVED THEOREMS — IS NOT, AND THIS THEOREM
+IS STILL `sorry`. WAVE 47 DOES NOT CLAIM OTHERWISE.**
+
+* **THE LOW-RANGE WINDOW BOUND IS A THEOREM** — `exists_studentized_low_range_window_bound`,
+  named since wave 43 and built by no wave before this one.  At `θ = −2πξ` and `r = n^{-1/2}` it
+  is exactly `esseen_split_low`'s `hlow`:
+  `‖φ_{surrogate}(θ) − φ_{q_n}(θ)‖ ≤ Kw r²·windowEnvelope₁ ξ + Kr r³|ξ|³`, the two orders
+  `low_range_ledger_exponent` prices.  It rests on three new pieces and on the eight bounds its
+  hypotheses name.  Two things came out of building it that no earlier wave had recorded.
+
+  1. **The composition needs two comparisons that no statement of (U4′) has ever listed.**
+     `studentized_window_leading_identity` states the leading arithmetic against `e^{−θ²/2}`,
+     but `norm_multiCharFun_vecRootLaw_two_sub_damped_le` identifies the `k = 2` slot against
+     `κ₀₁φ(c)^{n−1} − κ₀κ₁φ(c)^{n−2}` — *the true transform's powers*, not the Gaussian.  So the
+     chain cannot close without `‖φ^{n−1} − e^{−θ²/2}‖` and `‖φ^{n−2} − e^{−θ²/2}‖`; those are
+     `hB5` and `hB6` of the statement.  They are not free and they are not hard: each is
+     `norm_charFun_smul_pow_sub_edgeworth_le` at `m = n − 3` and `m = n − 4` *plus* the Gaussian
+     mismatch `e^{−(n−1)vs²/2} = e^{−θ²/2}e^{θ²r²/2}`, which on the low range is `1 + O(n^{-2/3})`.
+     Their cost in the ledger is what fixes the envelope's top degree: they enter multiplied by
+     `|κ₀₁| = |γσ³|` and by `|κ₀κ₁| = θ²|γ|σ³`, and the second of those carries the total to
+     degree **seven**.
+  2. **The graded remainder contributes an undamped term of `θ`-degree two, not three.**
+     `surrogateRemGraded`'s second summand is `θ²/2·(r³·2PA + r⁴A²)`; wave 43's `Kr|ξ|³` is a
+     cubic and `windowEnvelope₁` is damped, so that term fits *neither* on its own.
+     `abs_pow_le_windowEnvelope₁_add_cube` is the repair and it is the one piece of the build
+     that is not bookkeeping: below `|ξ| = 1` the Gaussian factor of `windowEnvelope₁` is bounded
+     below by `e^{−π²/2}`, so an undamped monomial of degree `≥ 1` *is* dominated by the envelope
+     there, and above `|ξ| = 1` the cube dominates.  **Wave 43's shape therefore survives
+     unamended — but only for degrees `≥ 1`.**  A degree-zero undamped term would break it, and
+     there is none only because every slot of the expansion carries at least one power of `θ`.
+     This is worth recording as a constraint on any future amendment of `surrogateRemGraded`.
+
+* **ITEM 2 IS DISCHARGED, AND IT WAS ARITHMETIC AS WAVE 46 SAID.**  `band_kappa_ledger_general`
+  is the band ledger at an arbitrary target and `band_kappa_ledger_middle` is the twin at
+  `n^{−17/6}`; `middle_range_ledger_radius_two` is the check that the outer radius `ρ = n²`
+  closes the middle weight **exactly** at `n⁻¹`.  Nothing else in the middle range moved,
+  because nothing else was open: the four inputs
+  (`norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band`,
+  `exists_bulk_majorant_vecRootLaw_studentPair_truncAt`,
+  `exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt`,
+  `norm_charFunDensity_studentizedEdgeworthDensity_le`) are all proved.
+
+* **ITEM 3 IS DISCHARGED AND IT IS FREE, AS PRICED.**  `outer_range_tail_weight_eq` is the
+  weight identity at `δ = n⁻¹`, `ρ = n²`, and `studentized_outer_range_gap_le` is the constant:
+  `2 + 1030π³|γ|`, obtained from `‖charFun‖ ≤ 1` and `studentizedEdgeworthCharFun_tail_le` and
+  **using no property whatever of the surrogate**.  That is the point — it is why the radius can
+  be pushed out at all.
+
+* **WHAT ITEM 4 STILL OWES, AND IT IS EXACTLY EIGHT BOUNDS PLUS THE PEEL.**  The low-range
+  theorem's hypotheses are its interface, and each is the output of a *proved* theorem evaluated
+  at `a = (θ/σ)•e₀` on the law `vecRootLaw F (studentPair F ∘ truncAt) n`.  In order:
+  `hRg` from `norm_charFun_map_deltaSurrogate_sub_graded_le` (needs `∫ surrogateRemGraded` in
+  terms of the truncated pair's moments — the `r³` grading is already proved, what is missing is
+  the moment evaluation); `hB1` from `norm_charFun_smul_pow_sub_edgeworth_le` with
+  `v = σ²`, `m₃ = γσ³` and the damping `e^{−(n−2)vs²/4}` weakened to `e^{−π²ξ²/2}` exactly as
+  `exists_window_bound` does it; `hB2` from
+  `norm_multiCharFun_vecRootLaw_two_sub_damped_le` with `multiTwoRemConst` expanded into its four
+  moments; `hB5`, `hB6` as in item 1 above; `h3a`, `h3b`, `h4` from
+  `norm_multiCharFun_vecRootLaw_damped_le` at `k = 3, 3, 4` under the graded allowance `Q`.
+  **None of the eight is an open analytic question; all eight are moment bookkeeping on the
+  truncated pair, which is where the eight-moment hypothesis `hF8` is already spent.**  After
+  them the chain is `abs_studentizedRootCDF_sub_truncAt_le` at `τ = √n`,
+  `studentizedRootCDF_eq_vecRootLaw` with `abs_exactStudent_sub_deltaSurrogate_le`,
+  `esseen_split_low` at `δ = n⁻¹`, `ρ₁ = n^{1/6}`, `ρ = n²`, and the peeled window
+  (`abs_measure_le_sub_le_of_peel_strata` over `measure_pi_stratum_le` and
+  `sum_dyadic_strata_le`).
+
+* **AND THE OUTER RADIUS IS NOW A PARAMETER OF THE CHAIN, NOT AN INHERITANCE.**  Wave 46 found
+  that every restatement since wave 37 carried the mean's `ρ = c√n`, which the certificate's
+  polynomial `Γ` does not support.  The three lemmas of items 2 and 3 fix the studentized
+  chain's radius at `ρ = n²` and show both of its consumers — the middle weight and the tail
+  weight — close there at `n⁻¹`.  What that costs upstream is unchanged and is exactly wave 46's
+  finding: `N = 138` integrations by parts at the bulk radius `M = n^{23/24}`
+  (`leakage_ledger_radius_138_le`), against `N = 10` at `M = n^{5/8}` for the `n^{−3/2}` the file
+  currently proves.  **A `θ`-uniform geometrically small bound on the surrogate's transform past
+  `c√n` would keep `ρ = c√n` and leave `N = 10` alone; nothing here rules one out.**
+
+  **This theorem is therefore still `sorry`, the file is at one `sorry`, and the residue is one
+  item — item 4 — of which every piece is named above and none is an open analytic question.** -/
 
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
