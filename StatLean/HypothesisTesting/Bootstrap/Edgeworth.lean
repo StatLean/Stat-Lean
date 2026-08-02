@@ -11199,6 +11199,140 @@ lemma variance_map_eq (F : Measure ℝ) [IsProbabilityMeasure F] {f : ℝ → �
   simp only [sub_zero]
   rw [integral_map (f := fun t : ℝ => t ^ 2) hf.aemeasurable (by fun_prop)]
 
+/-- **(U3)'s window hypothesis, produced — wave 41, item 1d.**
+
+This is `hwin` of `measure_pi_abs_deltaSurrogate_insertNth_le` (and of
+`measure_pi_abs_slab_insertNth_le`, and of `measure_pi_vecRoot_slab_le_of_win`) with
+`A = Kb/s₀` and `η = C₀/n`: **one** pair of constants, valid at every slope `|κ| ≤ Kslope` and
+every `n`, with the additive term `O(n⁻¹)` — which is the accuracy the wave-39/40 ledger needs
+and which a Berry–Esseen bound cannot supply.
+
+The chain is short because everything under it is now available. `measure_pi_root_eq_meanRootCDF`
+identifies the root of `slabRoot` under `Measure.pi F` with the centred root of the projected law
+`F.map (slabRoot Z σ κ)`; `edgeworth_mean_uniform_of_bounds` expands that law's root to `O(n⁻¹)`
+with a constant that does not depend on `κ`; `edgeworthCDF_sub_le` supplies the Lipschitz modulus
+of the approximant, whose law-dependence is again killed by the skewness bound and the variance
+floor; and `measure_abs_sub_le_of_abs_cdf_sub_le` turns a uniform distribution-function estimate
+into a uniform window estimate. Nothing here is an estimate: the estimate is
+`edgeworth_mean_uniform_of_bounds`.
+
+The six slope-uniform hypotheses are stated as hypotheses rather than derived, and that is
+deliberate — they are moment arithmetic about `slabRoot (studentPair F) σ ·` under eight moments
+of `F`, verified in the section note above `slabRoot` (`abs_slabRoot_le` dominates the summand
+slope-uniformly, `integral_slabRoot_sq_ge` is the variance floor by perturbation, and
+`exists_bound_norm_charFun_map_slabRoot` is the one Cramér constant for all slopes), but the
+arithmetic itself is *not* discharged here and this wave does not claim it. See the status note
+on `edgeworth_studentized_uniform` for the exact remaining list. -/
+theorem exists_window_bound_slabRoot (F : Measure ℝ) [IsProbabilityMeasure F]
+    {Z : ℝ → EuclideanSpace ℝ (Fin 2)} (hZ : Measurable Z) (σ : ℝ)
+    {R B s₀ cr c Kslope : ℝ} (hR : 0 ≤ R) (hB : 0 ≤ B) (hs₀ : 0 < s₀)
+    (hcr0 : 0 ≤ cr) (hcr1 : cr < 1) (hc0 : 0 < c)
+    (hc2 : c ≤ 1 / (Real.pi * Real.sqrt 2))
+    (hc3 : c ≤ 3 * s₀ ^ 3 / (4 * Real.pi * (R + 1)))
+    -- the summand is centred, slope-uniformly
+    (hmean : ∀ κ : ℝ, |κ| ≤ Kslope → (∫ y, slabRoot Z σ κ y ∂F) = 0)
+    -- four moments of the summand, slope-uniformly (eight moments of `X`)
+    (hLp : ∀ κ : ℝ, |κ| ≤ Kslope → MemLp (slabRoot Z σ κ) 4 F)
+    (hmom3 : ∀ κ : ℝ, |κ| ≤ Kslope → (∫ y, |slabRoot Z σ κ y| ^ 3 ∂F) ≤ R)
+    (hmom4 : ∀ κ : ℝ, |κ| ≤ Kslope → (∫ y, slabRoot Z σ κ y ^ 4 ∂F) ≤ B)
+    -- the variance floor, by perturbation
+    (hfloor : ∀ κ : ℝ, |κ| ≤ Kslope → s₀ ^ 2 ≤ ∫ y, slabRoot Z σ κ y ^ 2 ∂F)
+    -- one Cramér constant for every slope
+    (hcrb : ∀ κ : ℝ, |κ| ≤ Kslope → ∀ s : ℝ,
+      2 * Real.pi * c / Real.sqrt (∫ y, slabRoot Z σ κ y ^ 2 ∂F) ≤ |s| →
+      ‖charFun (F.map (slabRoot Z σ κ)) s‖ ≤ cr) :
+    ∃ A η : ℝ, 0 ≤ A ∧ 0 < η ∧ ∀ n : ℕ, 0 < n → ∀ κ u w : ℝ, |κ| ≤ Kslope → 0 ≤ w →
+      ((Measure.pi fun _ : Fin n => F)
+          {z : Fin n → ℝ |
+            |(Real.sqrt (n : ℝ))⁻¹ * ∑ j, slabRoot Z σ κ (z j) - u| ≤ w}).toReal
+        ≤ 2 * A * w + 2 * (η / n) := by
+  obtain ⟨C₀, hC₀, hC⟩ := edgeworth_mean_uniform_of_bounds hR hB hs₀ hcr0 hcr1 hc0 hc2 hc3
+  set Kb : ℝ := (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * (R / s₀ ^ 3)) with hKbdef
+  have hKb0 : 0 < Kb := by
+    rw [hKbdef]
+    have h1 : (0 : ℝ) < (Real.sqrt (2 * Real.pi))⁻¹ := by positivity
+    have h2 : (0 : ℝ) ≤ R / s₀ ^ 3 := by positivity
+    have h3 : (0 : ℝ) < 1 + 66 * (R / s₀ ^ 3) := by linarith
+    exact mul_pos h1 h3
+  refine ⟨Kb / s₀, C₀, by positivity, hC₀, ?_⟩
+  intro n hn κ u w hκ hw
+  have hn1 : 1 ≤ n := hn
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  set f : ℝ → ℝ := slabRoot Z σ κ with hfdef
+  have hfm : Measurable f := measurable_slabRoot hZ σ κ
+  have hf0 : (∫ y, f y ∂F) = 0 := hmean κ hκ
+  haveI : IsProbabilityMeasure (F.map f) := Measure.isProbabilityMeasure_map hfm.aemeasurable
+  have hvarG : Var[fun t : ℝ => t; F.map f] = ∫ y, f y ^ 2 ∂F := variance_map_eq F hfm hf0
+  have hfl : s₀ ^ 2 ≤ ∫ y, f y ^ 2 ∂F := hfloor κ hκ
+  have hvarpos : 0 < Var[fun t : ℝ => t; F.map f] := by
+    rw [hvarG]; exact lt_of_lt_of_le (by positivity) hfl
+  have hs₀G : s₀ ≤ Real.sqrt Var[fun t : ℝ => t; F.map f] := by
+    rw [hvarG]
+    calc s₀ = Real.sqrt (s₀ ^ 2) := (Real.sqrt_sq hs₀.le).symm
+      _ ≤ Real.sqrt (∫ y, f y ^ 2 ∂F) := Real.sqrt_le_sqrt hfl
+  have hsG : 0 < Real.sqrt Var[fun t : ℝ => t; F.map f] := lt_of_lt_of_le hs₀ hs₀G
+  -- the class hypotheses, read through the pushforward
+  have hLpG : MemLp (fun t : ℝ => t) 4 (F.map f) := by
+    rw [memLp_map_measure_iff (by fun_prop) hfm.aemeasurable]
+    exact hLp κ hκ
+  have hcen : centredLaw (F.map f) = F.map f := by
+    refine centredLaw_eq_self _ ?_
+    rw [integral_map (f := fun t : ℝ => t) hfm.aemeasurable (by fun_prop)]
+    exact hf0
+  have h3G : (∫ x, |x| ^ 3 ∂(centredLaw (F.map f))) ≤ R := by
+    rw [integral_centredLaw_map_eq F hfm hf0 (g := fun x : ℝ => |x| ^ 3) (by fun_prop)]
+    exact hmom3 κ hκ
+  have h4G : (∫ x, x ^ 4 ∂(centredLaw (F.map f))) ≤ B := by
+    rw [integral_centredLaw_map_eq F hfm hf0 (g := fun x : ℝ => x ^ 4) (by fun_prop)]
+    exact hmom4 κ hκ
+  have hcrG : ∀ s : ℝ, 2 * Real.pi * c / Real.sqrt Var[fun t : ℝ => t; F.map f] ≤ |s| →
+      ‖charFun (centredLaw (F.map f)) s‖ ≤ cr := by
+    intro s hs
+    rw [hcen]
+    exact hcrb κ hκ s (by rwa [hvarG] at hs)
+  have hmain := hC (F.map f) inferInstance hLpG hvarpos h3G h4G hs₀G hcrG n hn
+  -- the approximant and its slope-free Lipschitz modulus
+  set Gap : ℝ → ℝ := fun x => edgeworthCDF (skewness (F.map f)) n
+      (x / Real.sqrt Var[fun t : ℝ => t; F.map f]) with hGapdef
+  have hgam : |skewness (F.map f)| ≤ R / s₀ ^ 3 :=
+    abs_skewness_le_of_bounds (F.map f) hvarpos hs₀ h3G hs₀G
+  have hKle : (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness (F.map f)|) ≤ Kb := by
+    rw [hKbdef]
+    refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+    linarith [mul_le_mul_of_nonneg_left hgam (by norm_num : (0 : ℝ) ≤ 66)]
+  have hAlip : ∀ a b : ℝ, a ≤ b → Gap b - Gap a ≤ Kb / s₀ * (b - a) := by
+    intro a b hab
+    have hab' : a / Real.sqrt Var[fun t : ℝ => t; F.map f]
+        ≤ b / Real.sqrt Var[fun t : ℝ => t; F.map f] := by gcongr
+    have h := edgeworthCDF_sub_le (skewness (F.map f)) hn1 hab'
+    have hdiff : b / Real.sqrt Var[fun t : ℝ => t; F.map f]
+        - a / Real.sqrt Var[fun t : ℝ => t; F.map f]
+        = (b - a) / Real.sqrt Var[fun t : ℝ => t; F.map f] := by ring
+    rw [hdiff] at h
+    have hquot : (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness (F.map f)|)
+        / Real.sqrt Var[fun t : ℝ => t; F.map f] ≤ Kb / s₀ :=
+      div_le_div₀ hKb0.le hKle hs₀ hs₀G
+    have hba : (0 : ℝ) ≤ b - a := by linarith
+    have hrw : (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness (F.map f)|)
+          * ((b - a) / Real.sqrt Var[fun t : ℝ => t; F.map f])
+        = (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness (F.map f)|)
+            / Real.sqrt Var[fun t : ℝ => t; F.map f] * (b - a) := by ring
+    rw [hrw] at h
+    exact h.trans (mul_le_mul_of_nonneg_right hquot hba)
+  have happrox : ∀ x : ℝ,
+      |((Measure.pi fun _ : Fin n => F)
+          {z : Fin n → ℝ | (Real.sqrt (n : ℝ))⁻¹ * ∑ j, f (z j) ≤ x}).toReal - Gap x|
+        ≤ C₀ / n := by
+    intro x
+    rw [measure_pi_root_eq_meanRootCDF F hfm hf0 hn x, hGapdef]
+    have h := hmain x
+    rwa [← edgeworthCDF_eq_approx (F.map f) hvarpos n x] at h
+  have hTm : Measurable fun z : Fin n → ℝ => (Real.sqrt (n : ℝ))⁻¹ * ∑ j, f (z j) := by
+    refine measurable_const.mul (Finset.measurable_sum _ fun j _ => ?_)
+    exact hfm.comp (measurable_pi_apply j)
+  exact measure_abs_sub_le_of_abs_cdf_sub_le (Measure.pi fun _ : Fin n => F) hTm
+    (by positivity : (0 : ℝ) ≤ Kb / s₀) hAlip happrox u hw
+
 /-- **One-term Edgeworth expansion for the studentized sample mean, uniform in the argument.**
 
 Under a finite fourth moment and absolute continuity of the sampling law, the sampling
