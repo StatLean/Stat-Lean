@@ -3815,6 +3815,271 @@ theorem measure_abs_gt_le_fourth_moment_of_integrable {Ω : Type*} [MeasurableSp
     simpa [measureReal_def] using hmk
   nlinarith [hmono, hmk', (by positivity : (0 : ℝ) < L ^ 4)]
 
+/-! ### The slab bound BY PROJECTION: a slab of the bivariate root is a one-dimensional root
+
+**WAVE 40, and this is the item that changes the shape of the residue.** The straightened slice
+bound above consumes `hslab`, a bound on the mass the bivariate root gives to the slab
+`{|u − κ'v − c'| ≤ w'}`, uniformly over the slopes `|κ'| ≤ surrogateSlopeBound = O(|x||r|)`. Wave
+39 called this "a direction-uniform slab bound … Mathlib has no anti-concentration theory in any
+dimension". **That framing is wrong, and the reason is one line of algebra**: the slab functional
+is *linear*, so
+
+`u(z) − κ'v(z) = n^{-1/2} ∑_j (Z(z_j)₀/σ − κ'·Z(z_j)₁/σ²) = n^{-1/2} ∑_j slabRoot Z σ κ' (z_j)`
+
+(`vecRoot_slab_eq`). A slab of the bivariate root **is** a window of the one-dimensional root of
+a real summand. No two-dimensional anti-concentration is required, no disintegration, and no
+local limit theorem in the plane: `measure_pi_vecRoot_slab_le_of_win` converts a
+*one-dimensional* window bound for the roots of the family `slabRoot Z σ κ'` into `hslab`
+verbatim. What was a missing analytic theory becomes a family of one-dimensional expansions.
+
+**The three inputs a one-dimensional `O(n⁻¹)` expansion needs, and where each stands.** For each
+fixed `κ'`, `edgeworth_mean_uniform` applied to the law `F.map (slabRoot (studentPair F) σ κ')`
+delivers exactly the required window bound through `measure_abs_sub_le_of_abs_cdf_sub_le`. Its
+hypotheses are:
+
+1. **Four moments of the summand.** `slabRoot` mixes `X − μ` with `(X − μ)² − σ²`, so four
+   moments of it are **eight** moments of `X` — the same eight that item 2's ledger spends, and
+   for a *different* reason. `abs_slabRoot_le` is the domination that makes the bound on those
+   moments uniform over the slope range: `|slabRoot| ≤ |Z₀|/σ + K|Z₁|/σ²` when `|κ'| ≤ K`.
+2. **Nondegeneracy, uniformly in the slope.** Free, and **not by the route the wave-39 note
+   suggested.** That note pointed at `integral_studentPair_dir_sq_pos` and, implicitly, at a
+   smallest-eigenvalue-over-the-sphere argument. No compactness is needed, because *the slope
+   range shrinks*: `slabRoot Z σ κ' = f − κ'g` with `f` the first standardized coordinate, so the
+   elementary pointwise bound `(a − b)² ≥ a²/2 − b²` gives
+   `∫(f − κ'g)² ≥ ½∫f² − κ'²∫g²` (`integral_sq_sub_smul_ge`, `integral_slabRoot_sq_ge`), and with
+   `∫f² = 1` this is `≥ 1/2 − κ'²∫g²`, bounded below by `1/4` for every `|κ'| ≤ (2√(∫g²))⁻¹`.
+   The floor is a *perturbation* statement, not a spectral one.
+3. **Cramér's condition, uniformly in the slope. This is proved here, and it is free.**
+   `cramerCondition_map_slabRoot` gives the condition for each `κ'`, because
+   `slabRoot (studentPair F) σ κ' = ⟪studentPair F ·, slabDir σ κ'⟫` with `slabDir σ κ' ≠ 0`
+   (`map_slabRoot_eq_projLaw`), and `cramerCondition_projLaw_studentPair` covers every nonzero
+   direction under `hFac` alone. More: `exists_bound_norm_charFun_map_slabRoot` produces **one**
+   constant `c < 1` with `‖φ_{slabRoot law}(s)‖ ≤ c` for all `ε ≤ |s|` and **all** `κ'` at once,
+   out of `exists_bound_lt_one_of_projLaw_cramer` plus `1/σ ≤ ‖slabDir σ κ'‖`. The Cramér
+   constant — the input one would expect to be the obstruction to uniformity — is uniform for
+   free.
+
+**What is left, priced honestly.** All three inputs are available and two of the three are
+available *uniformly in the slope*. What is not available is a **quantitative**
+`edgeworth_mean_uniform`: as stated it returns `∃ C`, with no exposed dependence on the law, so
+it cannot be applied to a κ'-indexed family and the resulting constants collected. The residue is
+therefore the restatement of that theorem with its constant exposed — and this is a checkable
+claim, not a hope, because its constant is *already* moment-explicit one level down:
+`exists_window_bound` obtains `K` from `exists_window_core ρ₃ β₄ |m₃| σ`, whose witness is
+
+`K = A² + B² + C + D + 1`,  `A = 4π³ρ₃/(3σ³)`, `B = 2π⁴`, `C = 8π⁵|m₃|/(3σ³)`,
+`D = 2π⁴β₄/(3σ⁴) + 2π⁴`,
+
+an explicit expression, increasing in `(ρ₃, β₄, |m₃|)` and decreasing in `σ`. Feed it the uniform
+moment bounds of (1), the uniform variance floor of (2) and the uniform Cramér constant of (3),
+and every constant in `edgeworth_mean_uniform`'s proof — including the geometric sums from
+`exists_pow_mul_geometric_le`, which are monotone in the ratio — becomes slope-uniform. **So the
+residue of (U3) is now bookkeeping: threading an existing proof's constants. It is not a missing
+analytic tool.** That is a strictly better verdict than wave 39's, and it is the one this wave
+is willing to defend; the threading itself is not done here and is not claimed.
+
+**One rate check, because it is the thing that would silently break.** The ledger needs
+`η₀ = O(n^{-2/3})`. A *Berry–Esseen* bound for the projected root gives only `O(n^{-1/2})` and is
+**not** enough — the reduction above is worth nothing without the `O(n⁻¹)` expansion behind it.
+That is why the route runs through `edgeworth_mean_uniform` and not through the (much cheaper)
+one-dimensional Berry–Esseen already in `ForMathlib`. -/
+
+/-- The **slab summand**: the real random variable whose one-dimensional root is the slab
+functional `u − κv` of the bivariate root. Written in coordinates rather than as an inner
+product, because the coordinates are what `deltaSurrogate` and `measure_abs_surrogate_window_slab_le`
+speak in. -/
+noncomputable def slabRoot (Z : ℝ → EuclideanSpace ℝ (Fin 2)) (σ κ : ℝ) (y : ℝ) : ℝ :=
+  Z y 0 / σ - κ * (Z y 1 / σ ^ 2)
+
+lemma measurable_slabRoot {Z : ℝ → EuclideanSpace ℝ (Fin 2)} (hZ : Measurable Z) (σ κ : ℝ) :
+    Measurable (slabRoot Z σ κ) := by
+  unfold slabRoot
+  have e0 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 0 := by fun_prop
+  have e1 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 1 := by fun_prop
+  have h0 : Measurable fun y : ℝ => Z y 0 := e0.comp hZ
+  have h1 : Measurable fun y : ℝ => Z y 1 := e1.comp hZ
+  fun_prop
+
+/-- **The moment domination that makes the slope range's moments uniform.** Every moment of
+`slabRoot Z σ κ` is controlled by the two coordinate moments of `Z`, with a coefficient depending
+on the slope only through its a-priori bound `K`. -/
+lemma abs_slabRoot_le {Z : ℝ → EuclideanSpace ℝ (Fin 2)} {σ κ K : ℝ} (hσ : 0 < σ)
+    (hκ : |κ| ≤ K) (y : ℝ) :
+    |slabRoot Z σ κ y| ≤ 1 / σ * |Z y 0| + K / σ ^ 2 * |Z y 1| := by
+  have hK : (0 : ℝ) ≤ K := (abs_nonneg κ).trans hκ
+  have e0 : |Z y 0 / σ| = 1 / σ * |Z y 0| := by
+    rw [abs_div, abs_of_pos hσ]; ring
+  have e1 : |κ * (Z y 1 / σ ^ 2)| = |κ| / σ ^ 2 * |Z y 1| := by
+    rw [abs_mul, abs_div, abs_of_pos (by positivity : (0:ℝ) < σ ^ 2)]; ring
+  have hσ2 : (0:ℝ) < σ ^ 2 := by positivity
+  have h1 : |κ| / σ ^ 2 ≤ K / σ ^ 2 := by gcongr
+  have h2 : |κ| / σ ^ 2 * |Z y 1| ≤ K / σ ^ 2 * |Z y 1| :=
+    mul_le_mul_of_nonneg_right h1 (abs_nonneg _)
+  calc |slabRoot Z σ κ y| ≤ |Z y 0 / σ| + |κ * (Z y 1 / σ ^ 2)| := abs_sub _ _
+    _ = 1 / σ * |Z y 0| + |κ| / σ ^ 2 * |Z y 1| := by rw [e0, e1]
+    _ ≤ 1 / σ * |Z y 0| + K / σ ^ 2 * |Z y 1| := by linarith
+
+/-- The sum of the slab summand over a sample is the slab functional of the coordinate sums. -/
+lemma sum_slabRoot {n : ℕ} (Z : ℝ → EuclideanSpace ℝ (Fin 2)) (σ κ : ℝ) (z : Fin n → ℝ) :
+    ∑ j, slabRoot Z σ κ (z j)
+      = (∑ j, Z (z j) 0) / σ - κ * ((∑ j, Z (z j) 1) / σ ^ 2) := by
+  unfold slabRoot
+  rw [Finset.sum_sub_distrib, ← Finset.sum_div, ← Finset.mul_sum, ← Finset.sum_div]
+
+/-- **THE PROJECTION IDENTITY.** The slab functional `u − κv` of the bivariate root is the
+one-dimensional root of `slabRoot Z σ κ`, with the *same* normalisation `n^{-1/2}`. This is the
+whole content of the reduction: it is linearity, and it is one `ring` after the coordinate
+extraction. -/
+lemma vecRoot_slab_eq {n : ℕ} (Z : ℝ → EuclideanSpace ℝ (Fin 2)) (σ κ : ℝ) (z : Fin n → ℝ) :
+    ((Real.sqrt (n : ℝ))⁻¹ • ∑ j, Z (z j)) 0 / σ
+        - κ * (((Real.sqrt (n : ℝ))⁻¹ • ∑ j, Z (z j)) 1 / σ ^ 2)
+      = (Real.sqrt (n : ℝ))⁻¹ * ∑ j, slabRoot Z σ κ (z j) := by
+  have h0 : ((Real.sqrt (n : ℝ))⁻¹ • ∑ j, Z (z j)) 0
+      = (Real.sqrt (n : ℝ))⁻¹ * ∑ j, Z (z j) 0 := by simp [Finset.sum_apply]
+  have h1 : ((Real.sqrt (n : ℝ))⁻¹ • ∑ j, Z (z j)) 1
+      = (Real.sqrt (n : ℝ))⁻¹ * ∑ j, Z (z j) 1 := by simp [Finset.sum_apply]
+  rw [h0, h1, sum_slabRoot]
+  ring
+
+/-- **The slab bound, reduced to one dimension.** A slope-uniform *one-dimensional* window bound
+for the roots of the family `slabRoot Z σ κ'` is exactly `hslab` of
+`measure_abs_deltaSurrogate_sub_le_of_slab`. Nothing is lost and nothing is assumed: the two
+events are the same set. -/
+theorem measure_pi_vecRoot_slab_le_of_win {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Z : ℝ → EuclideanSpace ℝ (Fin 2)} {σ A η K : ℝ}
+    (hwin : ∀ κ' u w : ℝ, |κ'| ≤ K → 0 ≤ w →
+      ((Measure.pi fun _ : Fin n => μ)
+          {z : Fin n → ℝ |
+            |(Real.sqrt (n : ℝ))⁻¹ * ∑ j, slabRoot Z σ κ' (z j) - u| ≤ w}).toReal
+        ≤ 2 * A * w + 2 * η) :
+    ∀ κ' c' w' : ℝ, |κ'| ≤ K → 0 ≤ w' →
+      ((Measure.pi fun _ : Fin n => μ)
+          {z : Fin n → ℝ |
+            |((Real.sqrt (n : ℝ))⁻¹ • ∑ j, Z (z j)) 0 / σ
+              - κ' * (((Real.sqrt (n : ℝ))⁻¹ • ∑ j, Z (z j)) 1 / σ ^ 2) - c'| ≤ w'}).toReal
+        ≤ 2 * A * w' + 2 * η := by
+  intro κ' c' w' hκ hw'
+  have hset : {z : Fin n → ℝ |
+      |((Real.sqrt (n : ℝ))⁻¹ • ∑ j, Z (z j)) 0 / σ
+        - κ' * (((Real.sqrt (n : ℝ))⁻¹ • ∑ j, Z (z j)) 1 / σ ^ 2) - c'| ≤ w'}
+      = {z : Fin n → ℝ |
+          |(Real.sqrt (n : ℝ))⁻¹ * ∑ j, slabRoot Z σ κ' (z j) - c'| ≤ w'} := by
+    ext z
+    simp only [Set.mem_setOf_eq, vecRoot_slab_eq]
+  rw [hset]
+  exact hwin κ' c' w' hκ hw'
+
+/-- **The variance floor as a perturbation, not a spectral bound.** `∫(f − κg)² ≥ ½∫f² − κ²∫g²`,
+from the pointwise `(a − b)² ≥ a²/2 − b²`. Applied along the shrinking slope family this bounds
+the variance of the slab summand away from zero uniformly, with no compactness argument and no
+smallest eigenvalue — see the section note. -/
+lemma integral_sq_sub_smul_ge {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) {f g : Ω → ℝ}
+    {κ : ℝ} (hf2 : Integrable (fun ω => f ω ^ 2) P) (hg2 : Integrable (fun ω => g ω ^ 2) P)
+    (hfg : Integrable (fun ω => (f ω - κ * g ω) ^ 2) P) :
+    1 / 2 * (∫ ω, f ω ^ 2 ∂P) - κ ^ 2 * (∫ ω, g ω ^ 2 ∂P)
+      ≤ ∫ ω, (f ω - κ * g ω) ^ 2 ∂P := by
+  have hpt : ∀ ω, 1 / 2 * f ω ^ 2 - κ ^ 2 * g ω ^ 2 ≤ (f ω - κ * g ω) ^ 2 := by
+    intro ω
+    nlinarith [sq_nonneg (f ω - 2 * (κ * g ω))]
+  have hint : Integrable (fun ω => 1 / 2 * f ω ^ 2 - κ ^ 2 * g ω ^ 2) P :=
+    (hf2.const_mul _).sub (hg2.const_mul _)
+  have hmono := integral_mono hint hfg hpt
+  have heq : ∫ ω, (1 / 2 * f ω ^ 2 - κ ^ 2 * g ω ^ 2) ∂P
+      = 1 / 2 * (∫ ω, f ω ^ 2 ∂P) - κ ^ 2 * (∫ ω, g ω ^ 2 ∂P) := by
+    rw [integral_sub (hf2.const_mul _) (hg2.const_mul _), integral_const_mul,
+      integral_const_mul]
+  linarith [heq ▸ hmono]
+
+/-- The variance floor, on the slab summand itself. With `∫(Z₀/σ)² = 1` — the standardization —
+the right-hand side is `1/2 − κ²∫(Z₁/σ²)²`, which stays above `1/4` on the whole slope range the
+level curve produces, since that range is `O(|x|n^{-1/2})`. -/
+lemma integral_slabRoot_sq_ge (F : Measure ℝ) {Z : ℝ → EuclideanSpace ℝ (Fin 2)} {σ κ : ℝ}
+    (h0 : Integrable (fun y => (Z y 0 / σ) ^ 2) F)
+    (h1 : Integrable (fun y => (Z y 1 / σ ^ 2) ^ 2) F)
+    (hfg : Integrable (fun y => slabRoot Z σ κ y ^ 2) F) :
+    1 / 2 * (∫ y, (Z y 0 / σ) ^ 2 ∂F) - κ ^ 2 * (∫ y, (Z y 1 / σ ^ 2) ^ 2 ∂F)
+      ≤ ∫ y, slabRoot Z σ κ y ^ 2 ∂F :=
+  integral_sq_sub_smul_ge F h0 h1 hfg
+
+/-- The direction of the slab, as a vector of the plane: `slabRoot (studentPair F) σ κ` is the
+projection of `studentPair F` on it. -/
+noncomputable def slabDir (σ κ : ℝ) : EuclideanSpace ℝ (Fin 2) :=
+  WithLp.toLp 2 ![1 / σ, -(κ / σ ^ 2)]
+
+lemma slabDir_zero (σ κ : ℝ) : slabDir σ κ 0 = 1 / σ := rfl
+
+lemma slabDir_one (σ κ : ℝ) : slabDir σ κ 1 = -(κ / σ ^ 2) := rfl
+
+/-- **The slab directions do not degenerate as the slope varies.** Their norms are bounded below
+by `1/σ`, uniformly in `κ`; this is what makes the Cramér constant slope-uniform. -/
+lemma inv_le_norm_slabDir {σ : ℝ} (hσ : 0 < σ) (κ : ℝ) : 1 / σ ≤ ‖slabDir σ κ‖ := by
+  have hn : ‖slabDir σ κ‖ = Real.sqrt ((1 / σ) ^ 2 + (-(κ / σ ^ 2)) ^ 2) := by
+    rw [EuclideanSpace.norm_eq, Fin.sum_univ_two]
+    congr 1
+    rw [slabDir_zero, slabDir_one, Real.norm_eq_abs, Real.norm_eq_abs, sq_abs, sq_abs]
+  rw [hn]
+  have h1 : (1 / σ) ^ 2 ≤ (1 / σ) ^ 2 + (-(κ / σ ^ 2)) ^ 2 :=
+    le_add_of_nonneg_right (sq_nonneg _)
+  calc 1 / σ = Real.sqrt ((1 / σ) ^ 2) := by
+        rw [Real.sqrt_sq (by positivity : (0:ℝ) ≤ 1 / σ)]
+    _ ≤ _ := Real.sqrt_le_sqrt h1
+
+lemma slabDir_ne_zero {σ : ℝ} (hσ : σ ≠ 0) (κ : ℝ) : slabDir σ κ ≠ 0 := by
+  intro h
+  have h0 : slabDir σ κ 0 = 0 := by rw [h]; rfl
+  rw [slabDir_zero] at h0
+  exact one_div_ne_zero hσ h0
+
+/-- **The slab summand is a projection of the studentizing pair**, so its law is a `projLaw` and
+everything proved about projected laws applies to it verbatim. -/
+lemma map_slabRoot_eq_projLaw (F : Measure ℝ) [IsProbabilityMeasure F] (σ κ : ℝ) :
+    F.map (slabRoot (studentPair F) σ κ) = projLaw (F.map (studentPair F)) (slabDir σ κ) := by
+  rw [projLaw,
+    Measure.map_map (measurable_inner_right (slabDir σ κ)) (measurable_studentPair F)]
+  congr 1
+  funext y
+  have hc0 : (studentPair F y) 0 = y - ∫ s, s ∂F := rfl
+  have hc1 : (studentPair F y) 1 = (y - ∫ s, s ∂F) ^ 2 - Var[fun s : ℝ => s; F] := rfl
+  simp only [Function.comp_apply, slabRoot, hc0, hc1]
+  rw [inner_studentPair, slabDir_zero, slabDir_one]
+  ring
+
+/-- **Cramér's condition for every slab summand, from `hFac` alone.** -/
+theorem cramerCondition_map_slabRoot (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hFac : F ≪ volume) {σ : ℝ} (hσ : σ ≠ 0) (κ : ℝ) :
+    CramerCondition (F.map (slabRoot (studentPair F) σ κ)) := by
+  rw [map_slabRoot_eq_projLaw]
+  exact cramerCondition_projLaw_studentPair F hFac (slabDir_ne_zero hσ κ)
+
+/-- **THE CRAMÉR CONSTANT IS SLOPE-UNIFORM, AND IT IS FREE.** One `c < 1` serves every slope at
+once: `‖φ_{slabRoot law}(s)‖ ≤ c` for all `ε ≤ |s|` and **all** `κ`.
+
+This is the input one would expect to obstruct a slope-uniform expansion, and it does not, for a
+structural reason: `exists_bound_lt_one_of_projLaw_cramer` already delivers a bound uniform over
+*directions* for the bivariate law, and the slab directions have norm at least `1/σ`
+(`inv_le_norm_slabDir`), so the ray `s ↦ s • slabDir σ κ` leaves every ball of radius `ε/σ` as
+soon as `|s| ≥ ε`. Nothing about the slope range being small is used — the statement holds for
+every real slope. -/
+theorem exists_bound_norm_charFun_map_slabRoot (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hFac : F ≪ volume) {σ : ℝ} (hσ : 0 < σ) {ε : ℝ} (hε : 0 < ε) :
+    ∃ c : ℝ, c < 1 ∧ ∀ κ s : ℝ, ε ≤ |s| →
+      ‖charFun (F.map (slabRoot (studentPair F) σ κ)) s‖ ≤ c := by
+  haveI : IsProbabilityMeasure (F.map (studentPair F)) :=
+    Measure.isProbabilityMeasure_map (measurable_studentPair F).aemeasurable
+  obtain ⟨c, hc, hcbd⟩ := exists_bound_lt_one_of_projLaw_cramer (F.map (studentPair F))
+    (vecCramerCondition_map_studentPair F hFac)
+    (fun t ht => cramerCondition_projLaw_studentPair F hFac ht)
+    (ε := ε / σ) (by positivity)
+  refine ⟨c, hc, fun κ s hs => ?_⟩
+  rw [map_slabRoot_eq_projLaw, ← charFun_smul_eq_charFun_map_inner]
+  refine hcbd _ ?_
+  rw [norm_smul, Real.norm_eq_abs]
+  have hd : 1 / σ ≤ ‖slabDir σ κ‖ := inv_le_norm_slabDir hσ κ
+  have hσ' : (0:ℝ) < 1 / σ := by positivity
+  calc ε / σ = ε * (1 / σ) := by ring
+    _ ≤ |s| * (1 / σ) := by nlinarith [hσ'.le, hs]
+    _ ≤ |s| * ‖slabDir σ κ‖ := mul_le_mul_of_nonneg_left hd (abs_nonneg s)
+
 /-! ### Nondegeneracy of the studentized pair from absolute continuity
 
 **WAVE 39.** Every route to a two-dimensional limit theorem for the bivariate root needs the
