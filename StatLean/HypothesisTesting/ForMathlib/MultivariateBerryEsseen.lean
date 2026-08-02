@@ -4094,6 +4094,70 @@ lemma stdGaussian_norm_ge_gaussianTailRadius_le (hk : 0 < k) {σ : ℝ}
         rw [← h2]; exact mul_le_mul_of_nonneg_left h1 (by positivity)
     _ = σ ^ 2 := by field_simp
 
+/-- **The dimension factor the amended ledger carries (wave 39).**
+`dimTailConst k = √(2k log 2k) + 2√k`. It is the `σ`-free envelope of `gaussianTailRadius`:
+`gaussianTailRadius k σ ≤ dimTailConst k · √(1 + log(1 + σ⁻¹))`
+(`gaussianTailRadius_le_dimTailConst`). Splitting the tail radius this way is what turns the
+ledger's harmonic sum into a `3/2` power of the logarithm times a pure dimension constant, and
+it is where the headline's `k`-dependence changes from `√k` (wave 32) to `√(k log k)`. -/
+noncomputable def dimTailConst (k : ℕ) : ℝ :=
+  Real.sqrt (2 * (k : ℝ) * Real.log (2 * (k : ℝ))) + 2 * Real.sqrt (k : ℝ)
+
+lemma one_le_dimTailConst {k : ℕ} (hk : 0 < k) : 1 ≤ dimTailConst k := by
+  have hk1 : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
+  have hs : Real.sqrt 1 ≤ Real.sqrt (k : ℝ) := Real.sqrt_le_sqrt hk1
+  rw [Real.sqrt_one] at hs
+  have h0 : 0 ≤ Real.sqrt (2 * (k : ℝ) * Real.log (2 * (k : ℝ))) := Real.sqrt_nonneg _
+  rw [dimTailConst]
+  linarith
+
+/-- The tail radius is at least `1` at every width — so the amended per-step weight
+`12 C_k σ · gaussianTailRadius k σ + W` really does dominate the wave-32 frozen weight
+`4 C_k σ + W`, and the `ε` of the near/far split is absorbed by `σ ≤ σ·R`. Numerically the
+bound is `√(2 log 2) ≈ 1.177` at `k = 1` and grows. -/
+lemma one_le_gaussianTailRadius {k : ℕ} (hk : 0 < k) (σ : ℝ) :
+    1 ≤ gaussianTailRadius k σ := by
+  have hk1 : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
+  have hlog2 : (0.6931471803 : ℝ) < Real.log 2 := Real.log_two_gt_d9
+  have hmono : Real.log 2 ≤ Real.log (2 * (k : ℝ)) :=
+    Real.log_le_log (by norm_num) (by linarith)
+  have hbig : (1 : ℝ) ≤ 2 * (k : ℝ) * Real.log (2 * (k : ℝ)) := by nlinarith
+  have h := Real.sqrt_le_sqrt hbig
+  rw [Real.sqrt_one] at h
+  have h2 : 0 ≤ 2 * Real.sqrt ((k : ℝ) * Real.log σ⁻¹) := by positivity
+  rw [gaussianTailRadius]
+  linarith
+
+/-- **The split that produces the `3/2` power (wave 39).** `log(1/ε) ≤ log(1 + ε⁻¹)`, so the
+`√log` half of the tail radius is at most `2√k · √(1 + log(1 + ε⁻¹))`, and the dimension half is
+at most itself times the same (`≥ 1`) factor. -/
+lemma gaussianTailRadius_le_dimTailConst {k : ℕ} (hk : 0 < k) {ε : ℝ} (hε : 0 < ε) :
+    gaussianTailRadius k ε ≤ dimTailConst k * Real.sqrt (1 + Real.log (1 + ε⁻¹)) := by
+  have hk0 : (0 : ℝ) ≤ (k : ℝ) := Nat.cast_nonneg k
+  have hεi : (0 : ℝ) < ε⁻¹ := by positivity
+  set N : ℝ := 1 + Real.log (1 + ε⁻¹) with hN
+  have hlog : Real.log ε⁻¹ ≤ N := by
+    have h1 : Real.log ε⁻¹ ≤ Real.log (1 + ε⁻¹) := Real.log_le_log hεi (by linarith)
+    rw [hN]; linarith
+  have hN1 : (1 : ℝ) ≤ N := by
+    have : 0 ≤ Real.log (1 + ε⁻¹) := Real.log_nonneg (by linarith)
+    rw [hN]; linarith
+  have hsN : (1 : ℝ) ≤ Real.sqrt N := by
+    have := Real.sqrt_le_sqrt hN1
+    rwa [Real.sqrt_one] at this
+  have h1 : Real.sqrt (2 * (k : ℝ) * Real.log (2 * (k : ℝ)))
+      ≤ Real.sqrt (2 * (k : ℝ) * Real.log (2 * (k : ℝ))) * Real.sqrt N := by
+    nlinarith [Real.sqrt_nonneg (2 * (k : ℝ) * Real.log (2 * (k : ℝ)))]
+  have h2 : 2 * Real.sqrt ((k : ℝ) * Real.log ε⁻¹) ≤ 2 * Real.sqrt (k : ℝ) * Real.sqrt N := by
+    have hstep : Real.sqrt ((k : ℝ) * Real.log ε⁻¹) ≤ Real.sqrt ((k : ℝ) * N) :=
+      Real.sqrt_le_sqrt (by nlinarith)
+    have hsplit : Real.sqrt ((k : ℝ) * N) = Real.sqrt (k : ℝ) * Real.sqrt N :=
+      Real.sqrt_mul hk0 N
+    rw [hsplit] at hstep
+    linarith
+  rw [gaussianTailRadius, dimTailConst]
+  nlinarith
+
 private lemma integrable_exp_inner_gauss (a : EuclideanSpace ℝ (Fin k)) :
     Integrable (fun z : EuclideanSpace ℝ (Fin k) => Real.exp ⟪a, z⟫_ℝ)
       (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
@@ -8527,6 +8591,9 @@ theorem exists_smooth_swap_bound_of_one_le_weight (k : ℕ) (hk : 0 < k) {C₃ :
 set_option maxHeartbeats 800000 in
 -- three `field_simp`-normalised term matchings against a common `δ P`/`δ Q` basis, each with
 -- its own `nlinarith`/`positivity` side goals, in one declaration
+set_option maxHeartbeats 1000000 in
+-- the amended ledger (wave 39) carries a square root in `Q`, which pushes the
+-- `positivity`/`nlinarith` calls of the four term-matchings past the default budget.
 /-- **The `ε`-balance of the weighted ledger, as pure arithmetic (wave 35, PROVED).**
 
 This is the second — and last — bookkeeping half of brick L, isolated from all measure theory
@@ -8580,18 +8647,22 @@ is only ever better than the Cameron–Martin one for `j ≲ ε² n < 1`, i.e. f
 Wave 32's ledger is silent about that regime; see the note on
 `localised_swap_bound_small_weight`. -/
 private lemma weighted_ledger_balance
-    {C₃ Ct Ck ε W β X D t Jr sn nr : ℝ}
+    {C₃ Ct Ck ε W β X D t Jr sn nr Lam Dk : ℝ}
     (hC₃ : 0 < C₃) (hCt : 0 < Ct) (hCk : 0 < Ck) (hε : 0 < ε) (hW : 0 ≤ W)
+    (hLam1 : 1 ≤ Lam) (hDk1 : 1 ≤ Dk)
+    (hLamD : Lam ≤ Dk * Real.sqrt (1 + Real.log (1 + ε⁻¹)))
     (hsn : 0 < sn) (hβ1 : 1 ≤ β) (hX0 : 0 ≤ X) (hX3 : X ≤ 3 * β)
     (hsn2 : sn ^ 2 = nr) (htdef : t = ε * sn) (hbig : 1 ≤ t)
     (hJlow : t ^ 2 ≤ Jr) (hJ3 : Jr ≤ 3 * t ^ 2)
     (hD : D ≤ Jr * (C₃ / ε ^ 3 / 6 / (nr * sn)) * X
               * (4 * Ck * (ε + Real.sqrt Jr / sn) + W)
           + Jr * (C₃ / (nr * sn)) * X * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3)
-          + 4 * Ck * Ct * X / sn * (1 + Real.log (max (nr / Jr) 1))
+          + 12 * Ck * Ct * X / sn * Lam * (1 + Real.log (max (nr / Jr) 1))
           + 3 * (W * Ct * X) / Real.sqrt Jr) :
-    D ≤ (306 * C₃ + 33 * Ct) * (β / sn)
-        * (ε⁻¹ * (W + Ck * ε) + Ck * (1 + Real.log (1 + ε⁻¹))) := by
+    D ≤ (306 * C₃ + 81 * Ct) * (β / sn)
+        * (ε⁻¹ * (W + Ck * ε)
+          + Ck * Dk * ((1 + Real.log (1 + ε⁻¹))
+            * Real.sqrt (1 + Real.log (1 + ε⁻¹)))) := by
   rw [← hsn2] at hD
   have htpos : (0 : ℝ) < t := by linarith
   have hJrpos : (0 : ℝ) < Jr := by nlinarith
@@ -8602,12 +8673,15 @@ private lemma weighted_ledger_balance
   set δ : ℝ := β / sn with hδdef
   have hδ0 : 0 < δ := by rw [hδdef]; positivity
   set P : ℝ := ε⁻¹ * (W + Ck * ε) with hPdef
-  set Q : ℝ := Ck * (1 + L) with hQdef
+  set Q : ℝ := Ck * Dk * ((1 + L) * Real.sqrt (1 + L)) with hQdef
   have hP0 : 0 < P := by rw [hPdef]; have : 0 < Ck * ε := mul_pos hCk hε; positivity
+  have hsL1 : (1 : ℝ) ≤ Real.sqrt (1 + L) := by
+    have h := Real.sqrt_le_sqrt (by linarith : (1 : ℝ) ≤ 1 + L)
+    rwa [Real.sqrt_one] at h
   have hQ0 : 0 < Q := by rw [hQdef]; positivity
   have hδP : δ * P = β * (W + Ck * ε) / t := by
     rw [hδdef, hPdef, htdef]; field_simp
-  have hδQ : δ * Q = β * (Ck * (1 + L)) / sn := by
+  have hδQ : δ * Q = β * (Ck * Dk * ((1 + L) * Real.sqrt (1 + L))) / sn := by
     rw [hδdef, hQdef]; field_simp
   -- ### the two square-root facts about the cut
   have hsqrtJ : t ≤ Real.sqrt Jr := by
@@ -8710,28 +8784,33 @@ private lemma weighted_ledger_balance
     push_cast at h
     rw [hLdef]
     exact h
-  have hT2 : 4 * Ck * Ct * X / sn * (1 + Real.log (max (sn ^ 2 / Jr) 1))
-      ≤ 24 * Ct * (δ * Q) := by
-    have h1 : 4 * Ck * Ct * X / sn ≤ 4 * Ck * Ct * (3 * β) / sn := by gcongr
+  have hT2 : 12 * Ck * Ct * X / sn * Lam * (1 + Real.log (max (sn ^ 2 / Jr) 1))
+      ≤ 72 * Ct * (δ * Q) := by
+    have h1 : 12 * Ck * Ct * X / sn ≤ 12 * Ck * Ct * (3 * β) / sn := by gcongr
+    have h1' : 12 * Ck * Ct * X / sn * Lam
+        ≤ 12 * Ck * Ct * (3 * β) / sn * (Dk * Real.sqrt (1 + L)) := by
+      refine mul_le_mul h1 hLamD (by linarith) (by positivity)
     have h2 : 1 + Real.log (max (sn ^ 2 / Jr) 1) ≤ 2 * (1 + L) := by linarith
     have h3 : (0 : ℝ) ≤ 1 + Real.log (max (sn ^ 2 / Jr) 1) := by
       have : (0 : ℝ) ≤ Real.log (max (sn ^ 2 / Jr) 1) :=
         Real.log_nonneg (le_max_right _ _)
       linarith
-    have h4 : (0 : ℝ) ≤ 4 * Ck * Ct * (3 * β) / sn := by positivity
-    have h5 : 4 * Ck * Ct * X / sn * (1 + Real.log (max (sn ^ 2 / Jr) 1))
-        ≤ 4 * Ck * Ct * (3 * β) / sn * (2 * (1 + L)) :=
-      mul_le_mul h1 h2 h3 h4
-    have h6 : 4 * Ck * Ct * (3 * β) / sn * (2 * (1 + L)) = 24 * Ct * (δ * Q) := by
+    have h4 : (0 : ℝ) ≤ 12 * Ck * Ct * (3 * β) / sn * (Dk * Real.sqrt (1 + L)) := by
+      positivity
+    have h5 : 12 * Ck * Ct * X / sn * Lam * (1 + Real.log (max (sn ^ 2 / Jr) 1))
+        ≤ 12 * Ck * Ct * (3 * β) / sn * (Dk * Real.sqrt (1 + L)) * (2 * (1 + L)) :=
+      mul_le_mul h1' h2 h3 h4
+    have h6 : 12 * Ck * Ct * (3 * β) / sn * (Dk * Real.sqrt (1 + L)) * (2 * (1 + L))
+        = 72 * Ct * (δ * Q) := by
       rw [hδQ]; field_simp; ring
     linarith
   -- ### assembling
-  have hsplit : (306 * C₃ + 33 * Ct) * δ * (P + Q)
-      = 306 * C₃ * (δ * P) + 33 * Ct * (δ * P) + 306 * C₃ * (δ * Q)
-        + 33 * Ct * (δ * Q) := by ring
+  have hsplit : (306 * C₃ + 81 * Ct) * δ * (P + Q)
+      = 306 * C₃ * (δ * P) + 81 * Ct * (δ * P) + 306 * C₃ * (δ * Q)
+        + 81 * Ct * (δ * Q) := by ring
   have hδP0 : (0 : ℝ) ≤ δ * P := by positivity
   have hδQ0 : (0 : ℝ) ≤ δ * Q := by positivity
-  have hrest : (0 : ℝ) ≤ 24 * Ct * (δ * P) + 306 * C₃ * (δ * Q) + 9 * Ct * (δ * Q) := by
+  have hrest : (0 : ℝ) ≤ 72 * Ct * (δ * P) + 306 * C₃ * (δ * Q) + 9 * Ct * (δ * Q) := by
     have h1 : (0 : ℝ) ≤ Ct * (δ * P) := mul_nonneg hCt.le hδP0
     have h2 : (0 : ℝ) ≤ C₃ * (δ * Q) := mul_nonneg hC₃.le hδQ0
     have h3 : (0 : ℝ) ≤ Ct * (δ * Q) := mul_nonneg hCt.le hδQ0
@@ -8775,17 +8854,19 @@ theorem localised_swap_bound_of_weighted_telescope (hk : 0 < k) {n : ℕ} (hn : 
               * ((∫ y, ‖y‖ ^ 3 ∂ν)
                 + ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
               * (32 * gaussianShellConst k / ε ^ 2 + 4 * W / ε ^ 3)
-          + 4 * gaussianShellConst k * Ct
+          + 12 * gaussianShellConst k * Ct
               * ((∫ y, ‖y‖ ^ 3 ∂ν)
                 + ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
-              / Real.sqrt (n : ℝ) * (1 + Real.log (max ((n : ℝ) / (J : ℝ)) 1))
+              / Real.sqrt (n : ℝ) * gaussianTailRadius k ε
+              * (1 + Real.log (max ((n : ℝ) / (J : ℝ)) 1))
           + 3 * (W * Ct
               * ((∫ y, ‖y‖ ^ 3 ∂ν)
                 + ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))))
               / Real.sqrt (J : ℝ)) :
-    D ≤ (306 * C₃ + 33 * Ct) * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
+    D ≤ (306 * C₃ + 81 * Ct) * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
         * (ε⁻¹ * (W + gaussianShellConst k * ε)
-          + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by
+          + gaussianShellConst k * dimTailConst k
+            * ((1 + Real.log (1 + ε⁻¹)) * Real.sqrt (1 + Real.log (1 + ε⁻¹)))) := by
   have hnr : (0 : ℝ) < n := by exact_mod_cast hn
   have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
   have hsn2 : Real.sqrt (n : ℝ) ^ 2 = (n : ℝ) := Real.sq_sqrt hnr.le
@@ -8834,8 +8915,9 @@ theorem localised_swap_bound_of_weighted_telescope (hk : 0 < k) {n : ℕ} (hn : 
     · rw [he]; linarith
     · rw [he]; linarith
   have hJ3 : (J : ℝ) ≤ 3 * t ^ 2 := by nlinarith [hJhigh, hbig, htpos]
-  exact weighted_ledger_balance hC₃ hCt hCk hε hW hsn hβ1 hX0 hX3 hsn2 htdef hbig hJlow hJ3
-    (htel J hJ2)
+  exact weighted_ledger_balance hC₃ hCt hCk hε hW (one_le_gaussianTailRadius hk ε)
+    (one_le_dimTailConst hk) (gaussianTailRadius_le_dimTailConst hk hε)
+    hsn hβ1 hX0 hX3 hsn2 htdef hbig hJlow hJ3 (htel J hJ2)
 
 /-- **Brick L below the Gaussian shell scale (stated, not proved; hypothesis AMENDED in
 wave 29).** *The hybrid telescope with every step estimated by the localised weighted swap
