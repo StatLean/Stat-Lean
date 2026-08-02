@@ -9389,6 +9389,156 @@ private lemma localised_step_weight_le {Ck Ct W R s σ : ℝ}
       mul_le_mul_of_nonneg_left hCt1 (by linarith)
     nlinarith [hP1, hP2]
 
+/-- **The Fubini step of the tail brick, at the VARYING shell width (wave 41).** The exact
+analogue of `integral_far_shell_le` on the head side, with three differences, each forced by
+what the tail route actually produces:
+
+* the width is `2σ(R + λ‖y‖)` — the constancy radius of
+  `abs_integral_shift_vecTiltRemainder_localised_le`, which grows with the shift length — and
+  not `2c‖u‖`. Joint measurability of `(v, y) ↦ 1_{shell at that width}(v)` is again
+  `measurableSet_wideShell_prod`, which accepts any continuous nonnegative width;
+* there is **no** near/far split in `‖y‖`: the whole `ν`-integral is exchanged, because the
+  width is bounded below by `2σR > 0` at every `y`, so `hshell` applies everywhere;
+* the bracket is `min (C_t (λ‖y‖)³) (2 + λ‖y‖ + (λ‖y‖)²)`, and the pricing is
+  `localised_step_weight_le` (both branches of the `min`), not `far_regime_pointwise_le`.
+
+The conclusion is a pure **third** moment, at the weight `64 C_k σR + 4W` of the wave-40
+ledger. As on the head side, the integrability of the outer integrand is returned alongside:
+the tail brick needs it to split the `τ`-integral of the two-law majorant. -/
+private lemma integral_localised_shell_le
+    {ν τ : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure ν] [IsProbabilityMeasure τ]
+    (hβν : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 3) ν)
+    {B : Set (EuclideanSpace ℝ (Fin k))}
+    {Ck Ct W R σ lam : ℝ} (hCk : 0 ≤ Ck) (hCt : 1 ≤ Ct) (hW : 0 ≤ W) (hR : 1 ≤ R)
+    (hσ : 0 < σ) (hlam : 0 ≤ lam)
+    (hshell : ∀ s : ℝ, 0 < s →
+      (τ (Metric.thickening s B \ erosion s B)).toReal ≤ 4 * Ck * s + W) :
+    Integrable (fun a : EuclideanSpace ℝ (Fin k) =>
+        ∫ y, (Metric.thickening (2 * (σ * (R + lam * ‖y‖))) B
+              \ erosion (2 * (σ * (R + lam * ‖y‖))) B).indicator (fun _ => (1 : ℝ)) a
+            * min (Ct * (lam * ‖y‖) ^ 3) (2 + lam * ‖y‖ + (lam * ‖y‖) ^ 2) ∂ν) τ
+      ∧ (∫ a, (∫ y, (Metric.thickening (2 * (σ * (R + lam * ‖y‖))) B
+              \ erosion (2 * (σ * (R + lam * ‖y‖))) B).indicator (fun _ => (1 : ℝ)) a
+            * min (Ct * (lam * ‖y‖) ^ 3) (2 + lam * ‖y‖ + (lam * ‖y‖) ^ 2) ∂ν) ∂τ)
+          ≤ (64 * Ck * (σ * R) + 4 * W) * (Ct * lam ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ν)) := by
+  classical
+  have hCt0 : (0 : ℝ) < Ct := lt_of_lt_of_le one_pos hCt
+  have hgpos : ∀ y : EuclideanSpace ℝ (Fin k), (0 : ℝ) < 2 * (σ * (R + lam * ‖y‖)) := by
+    intro y
+    have h0 : (0 : ℝ) ≤ lam * ‖y‖ := mul_nonneg hlam (norm_nonneg y)
+    have h1 : (0 : ℝ) < R + lam * ‖y‖ := by linarith
+    positivity
+  -- product measurability of the varying shell indicator
+  have hSm : MeasurableSet {p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) |
+      p.1 ∈ Metric.thickening (2 * (σ * (R + lam * ‖p.2‖))) B
+        \ erosion (2 * (σ * (R + lam * ‖p.2‖))) B} :=
+    measurableSet_wideShell_prod (g := fun y => 2 * (σ * (R + lam * ‖y‖))) (by fun_prop)
+      (fun y => (hgpos y).le)
+  have hΦm : Measurable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+      (Metric.thickening (2 * (σ * (R + lam * ‖p.2‖))) B
+          \ erosion (2 * (σ * (R + lam * ‖p.2‖))) B).indicator (fun _ => (1 : ℝ)) p.1
+        * min (Ct * (lam * ‖p.2‖) ^ 3) (2 + lam * ‖p.2‖ + (lam * ‖p.2‖) ^ 2)) := by
+    refine Measurable.mul ?_ (by fun_prop)
+    have hrw : (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        (Metric.thickening (2 * (σ * (R + lam * ‖p.2‖))) B
+            \ erosion (2 * (σ * (R + lam * ‖p.2‖))) B).indicator (fun _ => (1 : ℝ)) p.1)
+        = Set.indicator {p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) |
+            p.1 ∈ Metric.thickening (2 * (σ * (R + lam * ‖p.2‖))) B
+              \ erosion (2 * (σ * (R + lam * ‖p.2‖))) B} (fun _ => (1 : ℝ)) := by
+      funext p
+      simp only [Set.indicator_apply, Set.mem_setOf_eq]
+    rw [hrw]
+    exact measurable_const.indicator hSm
+  -- the dominating function: the quadratic branch of the `min`
+  have hlowint : Integrable (fun y : EuclideanSpace ℝ (Fin k) =>
+      2 + lam * ‖y‖ + (lam * ‖y‖) ^ 2) ν := by
+    have h1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) ν :=
+      integrable_norm_of_cube hβν
+    have h2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) ν :=
+      integrable_normSq_of_cube hβν
+    have h3 := ((integrable_const (2 : ℝ)).add (h1.const_mul lam)).add
+      (h2.const_mul (lam ^ 2))
+    refine h3.congr (Filter.Eventually.of_forall fun y => ?_)
+    simp only [Pi.add_apply]
+    ring
+  have hmin0 : ∀ y : EuclideanSpace ℝ (Fin k),
+      (0 : ℝ) ≤ min (Ct * (lam * ‖y‖) ^ 3) (2 + lam * ‖y‖ + (lam * ‖y‖) ^ 2) := by
+    intro y
+    have h1 : (0 : ℝ) ≤ lam * ‖y‖ := mul_nonneg hlam (norm_nonneg y)
+    exact le_min (by positivity) (by positivity)
+  have hdom : Integrable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+      2 + lam * ‖p.2‖ + (lam * ‖p.2‖) ^ 2) (τ.prod ν) := by
+    refine (integrable_prod_iff (by fun_prop)).2 ⟨?_, ?_⟩
+    · exact Filter.Eventually.of_forall fun a => hlowint
+    · exact integrable_const (∫ y : EuclideanSpace ℝ (Fin k),
+        ‖2 + lam * ‖y‖ + (lam * ‖y‖) ^ 2‖ ∂ν)
+  have hΦint : Integrable (Function.uncurry
+      (fun (a y : EuclideanSpace ℝ (Fin k)) =>
+        (Metric.thickening (2 * (σ * (R + lam * ‖y‖))) B
+            \ erosion (2 * (σ * (R + lam * ‖y‖))) B).indicator (fun _ => (1 : ℝ)) a
+          * min (Ct * (lam * ‖y‖) ^ 3) (2 + lam * ‖y‖ + (lam * ‖y‖) ^ 2)))
+      (τ.prod ν) := by
+    refine Integrable.mono' hdom hΦm.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun p => ?_)
+    rw [Function.uncurry_apply_pair, Real.norm_eq_abs, abs_mul,
+      abs_of_nonneg (hmin0 p.2), abs_of_nonneg (indicator_one_nonneg _ p.1)]
+    exact (mul_le_of_le_one_left (hmin0 p.2) (indicator_one_le_one _ p.1)).trans
+      (min_le_right _ _)
+  refine ⟨hΦint.integral_prod_left, ?_⟩
+  rw [integral_integral_swap hΦint]
+  -- the inner `τ`-integral is the shell mass at the varying width
+  have hinner : ∀ y : EuclideanSpace ℝ (Fin k),
+      (∫ a, (Metric.thickening (2 * (σ * (R + lam * ‖y‖))) B
+            \ erosion (2 * (σ * (R + lam * ‖y‖))) B).indicator (fun _ => (1 : ℝ)) a
+          * min (Ct * (lam * ‖y‖) ^ 3) (2 + lam * ‖y‖ + (lam * ‖y‖) ^ 2) ∂τ)
+        = (τ (Metric.thickening (2 * (σ * (R + lam * ‖y‖))) B
+              \ erosion (2 * (σ * (R + lam * ‖y‖))) B)).toReal
+          * min (Ct * (lam * ‖y‖) ^ 3) (2 + lam * ‖y‖ + (lam * ‖y‖) ^ 2) := by
+    intro y
+    rw [integral_mul_const]
+    congr 1
+    have hm : MeasurableSet (Metric.thickening (2 * (σ * (R + lam * ‖y‖))) B
+        \ erosion (2 * (σ * (R + lam * ‖y‖))) B) :=
+      (Metric.isOpen_thickening.measurableSet).diff (isOpen_erosion _ B).measurableSet
+    rw [integral_indicator_const (1 : ℝ) hm]
+    simp [Measure.real]
+  rw [integral_congr_ae (Filter.Eventually.of_forall hinner)]
+  -- price the shell mass by the per-step ledger
+  have hgint : Integrable (fun y : EuclideanSpace ℝ (Fin k) =>
+      (64 * Ck * (σ * R) + 4 * W) * (Ct * (lam * ‖y‖) ^ 3)) ν := by
+    have h3 := hβν.const_mul ((64 * Ck * (σ * R) + 4 * W) * (Ct * lam ^ 3))
+    refine h3.congr (Filter.Eventually.of_forall fun y => ?_)
+    ring
+  have hstep : (∫ y, (τ (Metric.thickening (2 * (σ * (R + lam * ‖y‖))) B
+          \ erosion (2 * (σ * (R + lam * ‖y‖))) B)).toReal
+        * min (Ct * (lam * ‖y‖) ^ 3) (2 + lam * ‖y‖ + (lam * ‖y‖) ^ 2) ∂ν)
+      ≤ ∫ y, (64 * Ck * (σ * R) + 4 * W) * (Ct * (lam * ‖y‖) ^ 3) ∂ν := by
+    refine integral_mono_of_nonneg
+      (Filter.Eventually.of_forall fun y => mul_nonneg ENNReal.toReal_nonneg (hmin0 y))
+      hgint (Filter.Eventually.of_forall fun y => ?_)
+    have hmass := hshell (2 * (σ * (R + lam * ‖y‖))) (hgpos y)
+    have hmass' : (τ (Metric.thickening (2 * (σ * (R + lam * ‖y‖))) B
+        \ erosion (2 * (σ * (R + lam * ‖y‖))) B)).toReal
+        ≤ 8 * Ck * (σ * (R + lam * ‖y‖)) + W := by linarith
+    calc (τ (Metric.thickening (2 * (σ * (R + lam * ‖y‖))) B
+            \ erosion (2 * (σ * (R + lam * ‖y‖))) B)).toReal
+          * min (Ct * (lam * ‖y‖) ^ 3) (2 + lam * ‖y‖ + (lam * ‖y‖) ^ 2)
+        ≤ (8 * Ck * (σ * (R + lam * ‖y‖)) + W)
+            * min (Ct * (lam * ‖y‖) ^ 3) (2 + lam * ‖y‖ + (lam * ‖y‖) ^ 2) :=
+          mul_le_mul_of_nonneg_right hmass' (hmin0 y)
+      _ ≤ (64 * Ck * (σ * R) + 4 * W) * (Ct * (lam * ‖y‖) ^ 3) :=
+          localised_step_weight_le hCk hCt hW hR (mul_nonneg hlam (norm_nonneg y)) hσ.le
+  refine hstep.trans ?_
+  have hrw : ∀ y : EuclideanSpace ℝ (Fin k),
+      (64 * Ck * (σ * R) + 4 * W) * (Ct * (lam * ‖y‖) ^ 3)
+        = ((64 * Ck * (σ * R) + 4 * W) * (Ct * lam ^ 3)) * ‖y‖ ^ 3 := fun y => by ring
+  simp_rw [hrw]
+  rw [integral_const_mul]
+  have hfin : (64 * Ck * (σ * R) + 4 * W) * (Ct * lam ^ 3) * (∫ y, ‖y‖ ^ 3 ∂ν)
+      = (64 * Ck * (σ * R) + 4 * W) * (Ct * lam ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ν)) := by ring
+  exact le_of_eq hfin
+
 set_option linter.unusedVariables false in
 -- the body is a named `sorry` brick: the hypotheses are the interface, see the docstring
 /-- **The per-step TAIL estimate (wave 38: STATED, NOT proved; wave 39: the WEIGHT is AMENDED
