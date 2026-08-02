@@ -110,6 +110,21 @@ proved:
   outer range is its band geometry (`R ≥ ε₀√n` against `R ≤ |θ|/(2σ)`) and not its ledger, and
   the Gaussian bulk bound `‖φ_{ρₙ}(t)‖ ≤ e^{−λ‖t‖²/4}` is what lets the band shrink to
   `K√(log n)`; the competing route through a coarser grading is refuted by the same arithmetic;
+* `norm_charFun_vecRootLaw_le_max_of_band`, `exp_neg_sq_band_radius_eq_rpow`,
+  `band_kappa_ledger`, `norm_charFun_map_sub_const`, `norm_charFun_vecRootLaw_sub_const`,
+  `norm_charFun_vecRootLaw_comp_le_exp_neg_sq` — the **two-regime `κ`** that widens the
+  certificate's band: the Gaussian bulk bound and the Cramér tail cover every frequency off a
+  ball of *any* radius, so `R = K√(log n)` is admissible and `κ = n^{−λK²/4}` is all the
+  transfer inequality ever needed; the majorant crosses the truncation for the price of a
+  constant, so it is only ever needed for the *untruncated* — and hence centred — pair;
+* `studentCov00`, `studentCov01`, `studentCov11`, `integral_inner_sq_map_studentPair`,
+  `exists_variance_floor_map_studentPair`, `integral_inner_sq_map_studentPair_le`,
+  `integral_inner_abs_cube_map_studentPair_le`, `exists_bulk_majorant_map_studentPair`,
+  `exists_bulk_majorant_vecRootLaw_studentPair_truncAt` — the **moment inputs** of that
+  majorant: the directional second moment *is* a binary quadratic form in the limit covariance
+  of `(X − μ, (X − μ)² − σ²)`, so the direction-uniform variance floor is positive-definiteness
+  of a `2 × 2` form and needs neither compactness nor continuity; the third absolute moment
+  costs six moments of `F`;
 * `windowEnvelope₁`, `windowDom₁`, `integrable_windowDom₁`, `esseen_split_low`,
   `low_range_ledger_exponent`, `low_range_ledger_gt` — the (U4′) **split window**: the
   degree-one envelope wave 42 prescribed, its three-regime Esseen split (envelope plus an
@@ -5845,22 +5860,118 @@ theorem norm_charFun_map_deltaSurrogate_le_of_bandCertificate (μ : Measure E₂
           (norm_integral_fourierSynth_le_of_band μ ha t₀ hκ hΓ htail hbd)
     _ = Γ * κ + ε + η := by ring
 
-/-- **The outer range of the Esseen chain, on the surrogate's law, from the root's Cramér tail
-and a band certificate.** The relocated-ball analogue of
-`norm_charFun_map_deltaSurrogate_vecRootLaw_le`; the hypothesis relating `R` to the Cramér radius
-is now the direct `ε₀√n ≤ R` instead of `ε₀√n ≤ ‖t₀‖ − R`. -/
+/-! ### The two-regime `κ`, and why the band no longer has to start at the Cramér radius
+
+**WAVE 44.** The consumer below asks for one thing off the band: a number `κ` with
+`‖φ_{ρₙ}(t)‖ ≤ κ` for every `‖t‖ ≥ R`. Wave 31 supplied it from the Cramér tail alone, `κ = cⁿ`,
+which is available only past `ε₀√n` and therefore forced `R ≥ ε₀√n` — and, through
+`band_radius_incompatible`, the whole certificate up to `|θ| ≍ √n`. Wave 43 identified that as
+the certificate's only obstruction and produced the missing ingredient
+(`norm_charFun_vecRootLaw_le_exp_neg_sq`): on the bulk `‖t‖ ≤ ε₁√n` the root's transform has
+Gaussian decay. The two together cover **every** `t` off a ball of radius `R ≥ 0`, at
+
+`κ = max(e^{−λR²/4}, cⁿ)`,
+
+which is `norm_charFun_vecRootLaw_le_max_of_band`. At `R = K√(log n)` the first entry is
+`n^{−λK²/4}` (`exp_neg_sq_band_radius_eq_rpow`), a negative power of `n` of any prescribed
+order — all the transfer inequality ever needed, since it prices the good frequencies by `Γκ`
+with `Γ` merely polynomial (`band_kappa_ledger`).
+
+The shift lemmas are here because the Gaussian majorant is a statement about a **centred** law
+and the truncated studentizing pair is not centred: truncation moves the mean by the mass it
+moves. Since `‖φ‖` does not see a translation, the majorant may be applied to `Z − a` for the
+mean vector `a` and read off for `Z`; that is `norm_charFun_vecRootLaw_sub_const`. No wave before
+this one noticed that the moment list of item (ii) has a fourth entry. -/
+
+section BandKappa
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+
+/-- **Translating the summand does not move `‖φ‖`.** -/
+lemma norm_charFun_map_sub_const (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E}
+    (hZ : Measurable Z) (a : E) (t : E) :
+    ‖charFun (F.map (fun y => Z y - a)) t‖ = ‖charFun (F.map Z) t‖ := by
+  have hrepr : ∀ (W : ℝ → E), Measurable W →
+      charFun (F.map W) t = ∫ x, Complex.exp (((⟪W x, t⟫ : ℝ) : ℂ) * Complex.I) ∂F := by
+    intro W hW
+    rw [charFun_apply, integral_map hW.aemeasurable (by fun_prop)]
+  rw [hrepr (fun y => Z y - a) (hZ.sub_const a), hrepr Z hZ]
+  have hpt : ∀ x : ℝ, Complex.exp (((⟪Z x - a, t⟫ : ℝ) : ℂ) * Complex.I)
+      = Complex.exp ((-(⟪a, t⟫ : ℝ) : ℝ) * Complex.I)
+        * Complex.exp (((⟪Z x, t⟫ : ℝ) : ℂ) * Complex.I) := by
+    intro x
+    rw [← Complex.exp_add]
+    congr 1
+    rw [inner_sub_left]
+    push_cast
+    ring
+  have hmul : (∫ x, Complex.exp ((-(⟪a, t⟫ : ℝ) : ℝ) * Complex.I)
+        * Complex.exp (((⟪Z x, t⟫ : ℝ) : ℂ) * Complex.I) ∂F)
+      = Complex.exp ((-(⟪a, t⟫ : ℝ) : ℝ) * Complex.I)
+        * ∫ x, Complex.exp (((⟪Z x, t⟫ : ℝ) : ℂ) * Complex.I) ∂F :=
+    MeasureTheory.integral_const_mul _ _
+  rw [integral_congr_ae (Filter.Eventually.of_forall hpt), hmul, norm_mul,
+    Complex.norm_exp_ofReal_mul_I, one_mul]
+
+/-- **Nor does it move the root's `‖φ‖`.** The root of the translated summand is the root
+translated by `√n a`, and `charFun_vecRootLaw` turns the statement into `n` copies of
+`norm_charFun_map_sub_const`. -/
+lemma norm_charFun_vecRootLaw_sub_const (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E}
+    (hZ : Measurable Z) (a : E) (n : ℕ) (t : E) :
+    ‖charFun (vecRootLaw F (fun y => Z y - a) n) t‖ = ‖charFun (vecRootLaw F Z n) t‖ := by
+  rw [charFun_vecRootLaw F (hZ.sub_const a) n, charFun_vecRootLaw F hZ n, norm_pow, norm_pow,
+    norm_charFun_map_sub_const F hZ a]
+
+/-- **The two-regime bound off a ball of radius `R`.** The Gaussian majorant on the bulk and the
+Cramér tail past `ε₁√n` meet with no gap, and the resulting `κ` is
+`max(B e^{−λR²/4}, cⁿ)` — finite at every `R ≥ 0`, in particular at radii far below `√n`.
+
+The constant `B` in the bulk hypothesis is not decoration: the majorant available for the
+*truncated* root carries one (`norm_charFun_vecRootLaw_comp_le_exp_neg_sq`), and it is harmless,
+since the transfer inequality prices `Γκ` with `Γ` polynomial and `ΓB` is polynomial too. -/
+theorem norm_charFun_vecRootLaw_le_max_of_band (F : Measure ℝ) [IsProbabilityMeasure F]
+    {Z : ℝ → E} {n : ℕ} {B c lam ε₁ R : ℝ} (hlam : 0 ≤ lam) (hR : 0 ≤ R) (hB : 0 ≤ B)
+    (hcram : ∀ t : E, ε₁ * Real.sqrt (n : ℝ) ≤ ‖t‖ →
+      ‖charFun (vecRootLaw F Z n) t‖ ≤ c ^ n)
+    (hbulk : ∀ t : E, ‖t‖ ≤ ε₁ * Real.sqrt (n : ℝ) →
+      ‖charFun (vecRootLaw F Z n) t‖ ≤ B * Real.exp (-(lam * ‖t‖ ^ 2 / 4)))
+    {t : E} (ht : R ≤ ‖t‖) :
+    ‖charFun (vecRootLaw F Z n) t‖ ≤ max (B * Real.exp (-(lam * R ^ 2 / 4))) (c ^ n) := by
+  rcases le_or_gt ‖t‖ (ε₁ * Real.sqrt (n : ℝ)) with h | h
+  · refine le_trans (hbulk t h) (le_max_of_le_left ?_)
+    refine mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 ?_) hB
+    have hsq : R ^ 2 ≤ ‖t‖ ^ 2 := by nlinarith
+    nlinarith
+  · exact le_trans (hcram t h.le) (le_max_right _ _)
+
+end BandKappa
+
+/-- **The outer *and middle* range of the Esseen chain, on the surrogate's law, from a band
+certificate and a two-regime bound on the root's transform.**
+
+**WAVE 44 AMENDS THE HYPOTHESIS, AND THIS IS WHAT WIDENS THE BAND.** The wave-31 form took the
+Cramér tail `cⁿ` and the constraint `ε₀√n ≤ R`, which `band_radius_incompatible` turns into
+`|θ| ≥ 2σε₀√n`. Here the root's transform is controlled in **both** regimes — Gaussian decay on
+`‖t‖ ≤ ε₁√n`, Cramér past it — so the band radius `R` is free (`0 ≤ R` is the only requirement)
+and the price is `κ = max(e^{−λR²/4}, cⁿ)` instead of `cⁿ`. At `R = K√(log n)` that is a
+negative power of `n` of order `λK²/4`, and the band condition of the certificate relaxes to
+`|θ| ≥ 2σK√(log n)`, below `n^{a}` for every `a > 0`. -/
 theorem norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band
     (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E₂} (hZ : Measurable Z)
-    {n : ℕ} {c ε₀ : ℝ} (hc : 0 ≤ c)
-    (hcram : ∀ t : E₂, ε₀ * Real.sqrt (n : ℝ) ≤ ‖t‖ →
+    {n : ℕ} {B c lam ε₁ : ℝ} (hlam : 0 ≤ lam) (hB : 0 ≤ B)
+    (hcram : ∀ t : E₂, ε₁ * Real.sqrt (n : ℝ) ≤ ‖t‖ →
       ‖charFun (vecRootLaw F Z n) t‖ ≤ c ^ n)
-    (σ r θ : ℝ) {t₀ : E₂} {R Γ ε η : ℝ}
-    (hR : ε₀ * Real.sqrt (n : ℝ) ≤ R)
+    (hbulk : ∀ t : E₂, ‖t‖ ≤ ε₁ * Real.sqrt (n : ℝ) →
+      ‖charFun (vecRootLaw F Z n) t‖ ≤ B * Real.exp (-(lam * ‖t‖ ^ 2 / 4)))
+    (σ r θ : ℝ) {t₀ : E₂} {R Γ ε η : ℝ} (hR : 0 ≤ R)
     (hcert : HasFourierCertificateOnBand (vecRootLaw F Z n) σ r θ t₀ R Γ ε η) :
-    ‖charFun ((vecRootLaw F Z n).map (deltaSurrogate σ r)) θ‖ ≤ Γ * c ^ n + ε + η := by
+    ‖charFun ((vecRootLaw F Z n).map (deltaSurrogate σ r)) θ‖
+      ≤ Γ * max (B * Real.exp (-(lam * R ^ 2 / 4))) (c ^ n) + ε + η := by
   haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
-  exact norm_charFun_map_deltaSurrogate_le_of_bandCertificate _ σ r θ (pow_nonneg hc n) hcert
-    (fun t ht => hcram t (le_trans hR ht))
+  refine norm_charFun_map_deltaSurrogate_le_of_bandCertificate _ σ r θ ?_ hcert
+    (fun t ht => norm_charFun_vecRootLaw_le_max_of_band F hlam hR hB hcram hbulk ht)
+  exact le_trans (by positivity) (le_max_left _ _)
 
 /-! ### The weight of a bulk multiplier: synthesis *is* Fourier inversion
 
@@ -6944,7 +7055,578 @@ theorem norm_charFun_vecRootLaw_le_exp_neg_sq (F : Measure ℝ) [IsProbabilityMe
         refine Real.exp_le_exp.2 ?_
         nlinarith [sq_nonneg ‖t‖, hvl]
 
+/-- **The bulk majorant survives truncation, and it survives it for free.**
+
+**WAVE 44 — THIS REPLACES ITEM (ii) OF WAVE 43'S REPAIR LIST BY SOMETHING STRICTLY SMALLER.**
+That list asked for the three direction-uniform moment hypotheses of
+`norm_charFun_vecRootLaw_le_exp_neg_sq` to be discharged *for the truncated pair*
+`studentPair F ∘ truncAt m √n`. They cannot be, as stated: the truncated pair is **not
+centred** — truncation moves the mean by the mass it moves — and the majorant is a statement
+about a centred law. (`norm_charFun_vecRootLaw_sub_const` repairs that much, at the cost of
+computing the truncated law's moments, all of which then depend on `n`.)
+
+None of that is necessary. The truncated and untruncated summands are images of the *same* `F`
+under maps differing only on `{T x ≠ x}`, so `norm_charFun_map_comp_sub_le` — the perturbation
+already used for the Cramér tail (`exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt`) —
+gives `‖φ_trunc‖ ≤ ‖φ_untrunc‖ + 2m` at every frequency. Raising to the `n`-th power costs only
+a **constant**: `(e^{−a} + 2m)ⁿ = e^{−na}(1 + 2m e^{a})ⁿ ≤ e^{−na} e^{2nm e^{a}}`, and `nm` is
+bounded on the whole bulk (`a ≤ λε₁²/4` there). So the majorant may be established on the
+**untruncated** pair, which *is* centred (`integral_inner_studentPair`) and whose directional
+moments are moments of `F` itself, and transferred with a constant prefactor.
+
+The residue of item (ii) is therefore the three direction-uniform moment bounds for
+`F.map (studentPair F)` alone, and no truncated moment appears anywhere. -/
+theorem norm_charFun_vecRootLaw_comp_le_exp_neg_sq
+    (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E} (hZ : Measurable Z)
+    {T : ℝ → ℝ} (hT : Measurable T) (hbad : MeasurableSet {x : ℝ | T x ≠ x})
+    {D lam ε₁ : ℝ} (hlam : 0 ≤ lam) (hε₁ : 0 ≤ ε₁)
+    {n : ℕ} (hn : 0 < n)
+    (hmass : (n : ℝ) * (F {x : ℝ | T x ≠ x}).toReal ≤ D)
+    (hmaj : ∀ u : E, ‖u‖ ≤ ε₁ → ‖charFun (F.map Z) u‖ ≤ Real.exp (-(lam * ‖u‖ ^ 2 / 4)))
+    {t : E} (ht : ‖t‖ ≤ ε₁ * Real.sqrt (n : ℝ)) :
+    ‖charFun (vecRootLaw F (fun y => Z (T y)) n) t‖
+      ≤ Real.exp (2 * D * Real.exp (lam * ε₁ ^ 2 / 4)) * Real.exp (-(lam * ‖t‖ ^ 2 / 4)) := by
+  have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hn0
+  set u : E := ((Real.sqrt (n : ℝ))⁻¹ : ℝ) • t with hudef
+  have hun : ‖u‖ = ‖t‖ / Real.sqrt (n : ℝ) := by
+    rw [hudef, norm_smul, norm_inv, Real.norm_eq_abs, abs_of_pos hsn, inv_mul_eq_div]
+  have huε : ‖u‖ ≤ ε₁ := by rw [hun, div_le_iff₀ hsn]; linarith
+  have hnu : (n : ℝ) * ‖u‖ ^ 2 = ‖t‖ ^ 2 := by
+    rw [hun, div_pow, Real.sq_sqrt hn0.le]
+    field_simp
+  set a : ℝ := lam * ‖u‖ ^ 2 / 4 with hadef
+  have ha0 : 0 ≤ a := by rw [hadef]; positivity
+  have haε : a ≤ lam * ε₁ ^ 2 / 4 := by
+    rw [hadef]
+    have hsq : ‖u‖ ^ 2 ≤ ε₁ ^ 2 := by nlinarith [norm_nonneg u]
+    nlinarith
+  set m : ℝ := (F {x : ℝ | T x ≠ x}).toReal with hmdef
+  have hm0 : 0 ≤ m := ENNReal.toReal_nonneg
+  have hstep : ‖charFun (F.map (fun y => Z (T y))) u‖ ≤ Real.exp (-a) + 2 * m := by
+    have hpert := norm_charFun_map_comp_sub_le F hZ hT hbad u
+    have hsub : ‖charFun (F.map (fun y => Z (T y))) u‖
+        ≤ ‖charFun (F.map Z) u‖ + 2 * m := by
+      have h := norm_sub_norm_le (charFun (F.map (fun y => Z (T y))) u)
+        (charFun (F.map Z) u)
+      rw [← hmdef] at hpert
+      linarith
+    have hmj := hmaj u huε
+    rw [← hadef] at hmj
+    linarith
+  have hexpa : Real.exp (-a) * Real.exp a = 1 := by
+    rw [← Real.exp_add, neg_add_cancel, Real.exp_zero]
+  have hfac : Real.exp (-a) + 2 * m = Real.exp (-a) * (1 + 2 * m * Real.exp a) := by
+    linear_combination (-(2 : ℝ) * m) * hexpa
+  have hpow : (Real.exp (-a) + 2 * m) ^ n
+      ≤ Real.exp (-((n : ℝ) * a)) * Real.exp ((n : ℝ) * (2 * m * Real.exp a)) := by
+    rw [hfac, mul_pow]
+    have h1 : (Real.exp (-a)) ^ n = Real.exp (-((n : ℝ) * a)) := by
+      rw [← Real.exp_nat_mul]
+      congr 1
+      ring
+    have h2 : (1 + 2 * m * Real.exp a) ^ n ≤ Real.exp ((n : ℝ) * (2 * m * Real.exp a)) := by
+      calc (1 + 2 * m * Real.exp a) ^ n
+          ≤ (Real.exp (2 * m * Real.exp a)) ^ n := by
+            refine pow_le_pow_left₀ (by positivity) ?_ n
+            linarith [Real.add_one_le_exp (2 * m * Real.exp a)]
+        _ = Real.exp ((n : ℝ) * (2 * m * Real.exp a)) := (Real.exp_nat_mul _ n).symm
+    rw [h1]
+    exact mul_le_mul_of_nonneg_left h2 (Real.exp_nonneg _)
+  have hna : (n : ℝ) * a = lam * ‖t‖ ^ 2 / 4 := by
+    rw [hadef, ← hnu]; ring
+  have hnm : (n : ℝ) * (2 * m * Real.exp a) ≤ 2 * D * Real.exp (lam * ε₁ ^ 2 / 4) := by
+    have h1 : Real.exp a ≤ Real.exp (lam * ε₁ ^ 2 / 4) := Real.exp_le_exp.2 haε
+    have h2 : (n : ℝ) * (2 * m * Real.exp a) = 2 * ((n : ℝ) * m) * Real.exp a := by ring
+    have h3 : (0 : ℝ) ≤ (n : ℝ) * m := by positivity
+    rw [h2]
+    calc 2 * ((n : ℝ) * m) * Real.exp a
+        ≤ 2 * ((n : ℝ) * m) * Real.exp (lam * ε₁ ^ 2 / 4) :=
+          mul_le_mul_of_nonneg_left h1 (by linarith)
+      _ ≤ 2 * D * Real.exp (lam * ε₁ ^ 2 / 4) := by
+          have hnn : (0 : ℝ) ≤ Real.exp (lam * ε₁ ^ 2 / 4) := Real.exp_nonneg _
+          nlinarith [hmass]
+  calc ‖charFun (vecRootLaw F (fun y => Z (T y)) n) t‖
+      = ‖charFun (F.map (fun y => Z (T y))) u‖ ^ n := by
+        rw [charFun_vecRootLaw F (Z := fun y => Z (T y)) (hZ.comp hT) n, norm_pow, ← hudef]
+    _ ≤ (Real.exp (-a) + 2 * m) ^ n := pow_le_pow_left₀ (norm_nonneg _) hstep n
+    _ ≤ Real.exp (-((n : ℝ) * a)) * Real.exp ((n : ℝ) * (2 * m * Real.exp a)) := hpow
+    _ ≤ Real.exp (2 * D * Real.exp (lam * ε₁ ^ 2 / 4)) * Real.exp (-(lam * ‖t‖ ^ 2 / 4)) := by
+        rw [hna, mul_comm]
+        exact mul_le_mul_of_nonneg_right (Real.exp_le_exp.2 hnm) (Real.exp_nonneg _)
+
 end MiddleRangeBulk
+
+/-! ### Item (ii) of the wave-43 repair list: the moment inputs of the bulk majorant
+
+**WAVE 44 — ITEM (ii) IS DISCHARGED, AND IT IS DISCHARGED FOR THE UNTRUNCATED PAIR.** Wave 43
+left the middle range covered by the certificate modulo two things: (i) restating input (B) at
+the repaired band, and (ii) supplying the three direction-uniform moment hypotheses of
+`norm_charFun_vecRootLaw_le_exp_neg_sq` for `studentPair F ∘ truncAt`. (i) is done above.
+(ii) is done here, and the shape of the answer differs from the wave-43 note in two places:
+
+* **the truncated pair never appears.** `norm_charFun_vecRootLaw_comp_le_exp_neg_sq` moves the
+  majorant across the truncation at the cost of a constant, so all that is needed is the
+  majorant for `F.map (studentPair F)` — which is centred, so the *fourth* hypothesis (a zero
+  mean, `integral_inner_studentPair`) is free rather than false;
+* **the second moment is a quadratic form, and that is the whole of the nondegeneracy
+  argument.** `integral_inner_sq_map_studentPair` identifies `∫⟪x,t⟫²` with
+  `A t₀² + 2B t₀t₁ + C t₁²` for the three entries `studentCov00/01/11` of the limit covariance
+  of `(X − μ, (X − μ)² − σ²)`. The floor `λ‖t‖² ≤ ∫⟪x,t⟫²` is then *pure algebra*: `A > 0` and
+  `C > 0` are the form at the two axes, `AC − B² > 0` is the form at `(B, −A)`
+  (`= A(AC − B²)`, and `A > 0`), and a positive-definite binary quadratic form dominates
+  `λ(t₀² + t₁²)` at `λ = min(A, C, (AC − B²)/(A + C))`. **No compactness of the sphere and no
+  continuity of `t ↦ ∫⟪x,t⟫²` are used** — the wave-43 note's "direction-uniform" is a
+  two-dimensional linear-algebra fact, not an analytic one. Positivity at each fixed direction
+  is `integral_studentPair_dir_sq_pos`, which is where `hFac` is spent and the only place.
+* **the moment cost is six, not four.** The variance floor and ceiling need four moments of `F`;
+  the third absolute moment of a *quadratic* in `X` needs **six**. `hF8` covers it, so nothing
+  downstream moves, but the wave-43 note's "available under `hFac`" understates what is spent.
+
+`exists_bulk_majorant_vecRootLaw_studentPair_truncAt` is the conclusion, in exactly the form
+`norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` consumes as `hbulk`. -/
+
+section StudentCovariance
+
+variable (F : Measure ℝ) [IsProbabilityMeasure F]
+
+lemma norm_sq_eq_coords (t : E₂) : ‖t‖ ^ 2 = (t 0) ^ 2 + (t 1) ^ 2 := by
+  rw [← real_inner_self_eq_norm_sq, PiLp.inner_apply, Fin.sum_univ_two]
+  simp
+
+lemma abs_coord_le_norm (t : E₂) : |t 0| ≤ ‖t‖ ∧ |t 1| ≤ ‖t‖ := by
+  have h := norm_sq_eq_coords t
+  have h0 : (0 : ℝ) ≤ ‖t‖ := norm_nonneg t
+  constructor
+  · nlinarith [abs_nonneg (t 0), sq_abs (t 0), sq_nonneg (t 1)]
+  · nlinarith [abs_nonneg (t 1), sq_abs (t 1), sq_nonneg (t 0)]
+
+noncomputable def studentCov00 (F : Measure ℝ) : ℝ := ∫ y, y ^ 2 ∂(centredLaw F)
+
+noncomputable def studentCov01 (F : Measure ℝ) : ℝ :=
+  ∫ y, y * (y ^ 2 - Var[fun s : ℝ => s; F]) ∂(centredLaw F)
+
+noncomputable def studentCov11 (F : Measure ℝ) : ℝ :=
+  ∫ y, (y ^ 2 - Var[fun s : ℝ => s; F]) ^ 2 ∂(centredLaw F)
+
+lemma integrable_cube_centredLaw (hF4 : MemLp (fun t : ℝ => t) 4 F) :
+    Integrable (fun y : ℝ => y ^ 3) (centredLaw F) := by
+  refine Integrable.mono' (integrable_abs_cube_centredLaw F hF4) (by fun_prop)
+    (Filter.Eventually.of_forall fun y => ?_)
+  rw [Real.norm_eq_abs, abs_pow]
+
+lemma integrable_cov01 (hF4 : MemLp (fun t : ℝ => t) 4 F) :
+    Integrable (fun y : ℝ => y * (y ^ 2 - Var[fun s : ℝ => s; F])) (centredLaw F) := by
+  have h := (integrable_cube_centredLaw F hF4).sub
+    ((integrable_id_centredLaw F hF4).const_mul Var[fun s : ℝ => s; F])
+  refine h.congr (Filter.Eventually.of_forall fun y => ?_)
+  simp only [Pi.sub_apply]
+  ring
+
+lemma integrable_cov11 (hF4 : MemLp (fun t : ℝ => t) 4 F) :
+    Integrable (fun y : ℝ => (y ^ 2 - Var[fun s : ℝ => s; F]) ^ 2) (centredLaw F) := by
+  have h := ((integrable_pow_four_centredLaw F hF4).sub
+    ((integrable_sq_centredLaw F hF4).const_mul (2 * Var[fun s : ℝ => s; F]))).add
+    (integrable_const (Var[fun s : ℝ => s; F] ^ 2))
+  refine h.congr (Filter.Eventually.of_forall fun y => ?_)
+  simp only [Pi.sub_apply, Pi.add_apply]
+  ring
+
+lemma integrable_dir_sq_centredLaw (hF4 : MemLp (fun t : ℝ => t) 4 F) (t₀ t₁ : ℝ) :
+    Integrable
+      (fun y : ℝ => (t₀ * y + t₁ * (y ^ 2 - Var[fun s : ℝ => s; F])) ^ 2) (centredLaw F) := by
+  have h1 := (integrable_sq_centredLaw F hF4).const_mul (t₀ ^ 2)
+  have h2 := (integrable_cov01 F hF4).const_mul (2 * t₀ * t₁)
+  have h3 := (integrable_cov11 F hF4).const_mul (t₁ ^ 2)
+  have h := (h1.add h2).add h3
+  refine h.congr (Filter.Eventually.of_forall fun y => ?_)
+  simp only [Pi.add_apply]
+  ring
+
+lemma integrable_dir_sq_self (hF4 : MemLp (fun t : ℝ => t) 4 F) (t₀ t₁ : ℝ) :
+    Integrable (fun y : ℝ => (t₀ * (y - ∫ s, s ∂F)
+      + t₁ * ((y - ∫ s, s ∂F) ^ 2 - Var[fun s : ℝ => s; F])) ^ 2) F := by
+  have h := integrable_dir_sq_centredLaw F hF4 t₀ t₁
+  rw [centredLaw, integrable_map_measure (by fun_prop) (by fun_prop)] at h
+  exact h
+
+lemma integral_dir_sq_eq_quadratic (hF4 : MemLp (fun t : ℝ => t) 4 F) (t₀ t₁ : ℝ) :
+    (∫ y, (t₀ * (y - ∫ s, s ∂F)
+        + t₁ * ((y - ∫ s, s ∂F) ^ 2 - Var[fun s : ℝ => s; F])) ^ 2 ∂F)
+      = studentCov00 F * t₀ ^ 2 + 2 * studentCov01 F * t₀ * t₁
+        + studentCov11 F * t₁ ^ 2 := by
+  set v : ℝ := Var[fun s : ℝ => s; F] with hv
+  have hc := integral_centredLaw F
+    (g := fun y : ℝ => (t₀ * y + t₁ * (y ^ 2 - v)) ^ 2) (by fun_prop)
+  rw [← hc]
+  have h1 : Integrable (fun y : ℝ => t₀ ^ 2 * y ^ 2) (centredLaw F) :=
+    (integrable_sq_centredLaw F hF4).const_mul _
+  have h2 : Integrable (fun y : ℝ => (2 * t₀ * t₁) * (y * (y ^ 2 - v))) (centredLaw F) :=
+    (integrable_cov01 F hF4).const_mul _
+  have h3 : Integrable (fun y : ℝ => t₁ ^ 2 * (y ^ 2 - v) ^ 2) (centredLaw F) :=
+    (integrable_cov11 F hF4).const_mul _
+  have h12 : Integrable
+      (fun y : ℝ => t₀ ^ 2 * y ^ 2 + (2 * t₀ * t₁) * (y * (y ^ 2 - v))) (centredLaw F) :=
+    h1.add h2
+  have hpt : ∀ y : ℝ, (t₀ * y + t₁ * (y ^ 2 - v)) ^ 2
+      = t₀ ^ 2 * y ^ 2 + (2 * t₀ * t₁) * (y * (y ^ 2 - v)) + t₁ ^ 2 * (y ^ 2 - v) ^ 2 := by
+    intro y; ring
+  have e1 : (∫ y, t₀ ^ 2 * y ^ 2 ∂(centredLaw F)) = t₀ ^ 2 * ∫ y, y ^ 2 ∂(centredLaw F) :=
+    MeasureTheory.integral_const_mul _ _
+  have e2 : (∫ y, (2 * t₀ * t₁) * (y * (y ^ 2 - v)) ∂(centredLaw F))
+      = (2 * t₀ * t₁) * ∫ y, y * (y ^ 2 - v) ∂(centredLaw F) :=
+    MeasureTheory.integral_const_mul _ _
+  have e3 : (∫ y, t₁ ^ 2 * (y ^ 2 - v) ^ 2 ∂(centredLaw F))
+      = t₁ ^ 2 * ∫ y, (y ^ 2 - v) ^ 2 ∂(centredLaw F) :=
+    MeasureTheory.integral_const_mul _ _
+  rw [integral_congr_ae (Filter.Eventually.of_forall hpt), integral_add h12 h3,
+    integral_add h1 h2, e1, e2, e3, studentCov00, studentCov01, studentCov11, ← hv]
+  ring
+
+lemma integral_inner_sq_map_studentPair (hF4 : MemLp (fun t : ℝ => t) 4 F) (t : E₂) :
+    (∫ x, (⟪x, t⟫ : ℝ) ^ 2 ∂(F.map (studentPair F)))
+      = studentCov00 F * (t 0) ^ 2 + 2 * studentCov01 F * (t 0) * (t 1)
+        + studentCov11 F * (t 1) ^ 2 := by
+  rw [integral_map (measurable_studentPair F).aemeasurable (by fun_prop)]
+  simp_rw [inner_studentPair F t]
+  exact integral_dir_sq_eq_quadratic F hF4 (t 0) (t 1)
+
+lemma studentCov_pos_of_ac (hFac : F ≪ volume) (hF4 : MemLp (fun t : ℝ => t) 4 F)
+    {t₀ t₁ : ℝ} (ht : t₀ ≠ 0 ∨ t₁ ≠ 0) :
+    0 < studentCov00 F * t₀ ^ 2 + 2 * studentCov01 F * t₀ * t₁
+      + studentCov11 F * t₁ ^ 2 := by
+  rw [← integral_dir_sq_eq_quadratic F hF4 t₀ t₁]
+  exact integral_studentPair_dir_sq_pos hFac ht (integrable_dir_sq_self F hF4 t₀ t₁)
+
+theorem exists_variance_floor_map_studentPair (hFac : F ≪ volume)
+    (hF4 : MemLp (fun t : ℝ => t) 4 F) :
+    ∃ lam : ℝ, 0 < lam ∧ ∀ t : E₂,
+      lam * ‖t‖ ^ 2 ≤ ∫ x, (⟪x, t⟫ : ℝ) ^ 2 ∂(F.map (studentPair F)) := by
+  set A : ℝ := studentCov00 F with hA
+  set B : ℝ := studentCov01 F with hB
+  set C : ℝ := studentCov11 F with hC
+  have hApos : 0 < A := by
+    have h := studentCov_pos_of_ac F hFac hF4 (t₀ := 1) (t₁ := 0) (Or.inl one_ne_zero)
+    nlinarith [h]
+  have hCpos : 0 < C := by
+    have h := studentCov_pos_of_ac F hFac hF4 (t₀ := 0) (t₁ := 1) (Or.inr one_ne_zero)
+    nlinarith [h]
+  have hdet : 0 < A * C - B ^ 2 := by
+    have h := studentCov_pos_of_ac F hFac hF4 (t₀ := B) (t₁ := -A)
+      (Or.inr (by simpa using hApos.ne'))
+    have heq : A * B ^ 2 + 2 * B * B * (-A) + C * (-A) ^ 2 = A * (A * C - B ^ 2) := by ring
+    rw [heq] at h
+    nlinarith [h, hApos]
+  have hACpos : 0 < A + C := by linarith
+  set lam : ℝ := min A (min C ((A * C - B ^ 2) / (A + C))) with hlam
+  have hlam0 : 0 < lam := by
+    refine lt_min hApos (lt_min hCpos ?_)
+    positivity
+  refine ⟨lam, hlam0, fun t => ?_⟩
+  rw [integral_inner_sq_map_studentPair F hF4 t, norm_sq_eq_coords t, ← hA, ← hB, ← hC]
+  set t₀ : ℝ := t 0
+  set t₁ : ℝ := t 1
+  have hlA : lam ≤ A := min_le_left _ _
+  have hlC : lam ≤ C := le_trans (min_le_right _ _) (min_le_left _ _)
+  have hlD : lam ≤ (A * C - B ^ 2) / (A + C) :=
+    le_trans (min_le_right _ _) (min_le_right _ _)
+  have hlD' : lam * (A + C) ≤ A * C - B ^ 2 := by
+    rw [le_div_iff₀ hACpos] at hlD
+    linarith
+  have hac : B ^ 2 ≤ (A - lam) * (C - lam) := by nlinarith [sq_nonneg lam]
+  have hkey : 0 ≤ (A - lam) * t₀ ^ 2 + 2 * B * t₀ * t₁ + (C - lam) * t₁ ^ 2 := by
+    rcases eq_or_lt_of_le (by linarith : (0 : ℝ) ≤ A - lam) with h | h
+    · have hB0 : B = 0 := by nlinarith [sq_nonneg B]
+      rw [hB0, ← h]
+      nlinarith [sq_nonneg t₁, sq_nonneg t₀]
+    · nlinarith [sq_nonneg ((A - lam) * t₀ + B * t₁),
+        mul_nonneg (by linarith : (0 : ℝ) ≤ (A - lam) * (C - lam) - B ^ 2) (sq_nonneg t₁)]
+  nlinarith [hkey]
+
+theorem integral_inner_sq_map_studentPair_le (hF4 : MemLp (fun t : ℝ => t) 4 F) (t : E₂) :
+    (∫ x, (⟪x, t⟫ : ℝ) ^ 2 ∂(F.map (studentPair F)))
+      ≤ (studentCov00 F + studentCov11 F + |studentCov01 F|) * ‖t‖ ^ 2 := by
+  have hA : 0 ≤ studentCov00 F := integral_nonneg fun y => by positivity
+  have hC : 0 ≤ studentCov11 F := integral_nonneg fun y => by positivity
+  rw [integral_inner_sq_map_studentPair F hF4 t, norm_sq_eq_coords t]
+  have h1 : 2 * studentCov01 F * (t 0) * (t 1)
+      ≤ |studentCov01 F| * ((t 0) ^ 2 + (t 1) ^ 2) := by
+    nlinarith [sq_nonneg (t 0 - t 1), sq_nonneg (t 0 + t 1), le_abs_self (studentCov01 F),
+      neg_abs_le (studentCov01 F)]
+  nlinarith [sq_nonneg (t 0), sq_nonneg (t 1), abs_nonneg (studentCov01 F)]
+
+lemma one_add_pow_six_le {u : ℝ} (hu : 0 ≤ u) : (1 + u) ^ 6 ≤ 64 * (1 + u ^ 6) := by
+  rcases le_total u 1 with h | h
+  · have h1 : (1 + u) ^ 6 ≤ 2 ^ 6 := pow_le_pow_left₀ (by linarith) (by linarith) 6
+    have h2 : (0 : ℝ) ≤ u ^ 6 := by positivity
+    norm_num at h1 ⊢
+    linarith
+  · have h1 : (1 + u) ^ 6 ≤ (2 * u) ^ 6 := pow_le_pow_left₀ (by linarith) (by linarith) 6
+    have h2 : (2 * u) ^ 6 = 64 * u ^ 6 := by ring
+    nlinarith [h1]
+
+lemma memLp_six_centredLaw (hF6 : MemLp (fun t : ℝ => t) 6 F) :
+    MemLp (fun x : ℝ => x) 6 (centredLaw F) := by
+  rw [centredLaw, memLp_map_measure_iff (by fun_prop) (by fun_prop)]
+  exact hF6.sub (memLp_const _)
+
+lemma integrable_abs_pow_six_centredLaw (hF6 : MemLp (fun t : ℝ => t) 6 F) :
+    Integrable (fun x : ℝ => |x| ^ 6) (centredLaw F) := by
+  have h6 : MemLp (fun x : ℝ => x) ((6 : ℕ) : ℝ≥0∞) (centredLaw F) := by
+    simpa using memLp_six_centredLaw F hF6
+  simpa [Real.norm_eq_abs] using h6.integrable_norm_pow'
+
+lemma integrable_one_add_abs_pow_six (hF6 : MemLp (fun t : ℝ => t) 6 F) :
+    Integrable (fun y : ℝ => (1 + |y|) ^ 6) (centredLaw F) := by
+  have h1 : Integrable (fun y : ℝ => 1 + |y| ^ 6) (centredLaw F) := by
+    have h := (integrable_const (1 : ℝ)).add (integrable_abs_pow_six_centredLaw F hF6)
+    refine h.congr (Filter.Eventually.of_forall fun y => ?_)
+    simp only [Pi.add_apply]
+  refine Integrable.mono' (h1.const_mul 64) (by fun_prop)
+    (Filter.Eventually.of_forall fun y => ?_)
+  rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+  exact one_add_pow_six_le (abs_nonneg y)
+
+/-- The pointwise bound behind the third absolute moment. -/
+lemma dir_abs_cube_le (t : E₂) (y : ℝ) :
+    |t 0 * y + t 1 * (y ^ 2 - Var[fun s : ℝ => s; F])| ^ 3
+      ≤ (‖t‖ ^ 3 * (2 + |Var[fun s : ℝ => s; F]|) ^ 3) * (1 + |y|) ^ 6 := by
+  set v : ℝ := Var[fun s : ℝ => s; F] with hv
+  have htn : (0 : ℝ) ≤ ‖t‖ := norm_nonneg t
+  obtain ⟨ht0, ht1⟩ := abs_coord_le_norm t
+  have hin : |t 0 * y + t 1 * (y ^ 2 - v)| ≤ ‖t‖ * ((2 + |v|) * (1 + |y|) ^ 2) := by
+    have h1 : |t 0 * y + t 1 * (y ^ 2 - v)| ≤ |t 0| * |y| + |t 1| * |y ^ 2 - v| := by
+      calc |t 0 * y + t 1 * (y ^ 2 - v)| ≤ |t 0 * y| + |t 1 * (y ^ 2 - v)| :=
+            abs_add_le _ _
+        _ = |t 0| * |y| + |t 1| * |y ^ 2 - v| := by rw [abs_mul, abs_mul]
+    have h2 : |y ^ 2 - v| ≤ |y| ^ 2 + |v| := by
+      calc |y ^ 2 - v| ≤ |y ^ 2| + |v| := abs_sub _ _
+        _ = |y| ^ 2 + |v| := by rw [abs_pow]
+    have h3 : |y| + (|y| ^ 2 + |v|) ≤ (2 + |v|) * (1 + |y|) ^ 2 := by
+      nlinarith [abs_nonneg y, abs_nonneg v, sq_nonneg (abs y)]
+    have h4 : |t 0| * |y| + |t 1| * |y ^ 2 - v| ≤ ‖t‖ * (|y| + (|y| ^ 2 + |v|)) := by
+      have e1 : |t 0| * |y| ≤ ‖t‖ * |y| :=
+        mul_le_mul_of_nonneg_right ht0 (abs_nonneg y)
+      have e2 : |t 1| * |y ^ 2 - v| ≤ ‖t‖ * (|y| ^ 2 + |v|) := by
+        calc |t 1| * |y ^ 2 - v| ≤ ‖t‖ * |y ^ 2 - v| :=
+              mul_le_mul_of_nonneg_right ht1 (abs_nonneg _)
+          _ ≤ ‖t‖ * (|y| ^ 2 + |v|) := mul_le_mul_of_nonneg_left h2 htn
+      linarith
+    have h5 : ‖t‖ * (|y| + (|y| ^ 2 + |v|)) ≤ ‖t‖ * ((2 + |v|) * (1 + |y|) ^ 2) :=
+      mul_le_mul_of_nonneg_left h3 htn
+    linarith
+  have hcube := pow_le_pow_left₀ (abs_nonneg _) hin 3
+  calc |t 0 * y + t 1 * (y ^ 2 - v)| ^ 3
+      ≤ (‖t‖ * ((2 + |v|) * (1 + |y|) ^ 2)) ^ 3 := hcube
+    _ = (‖t‖ ^ 3 * (2 + |v|) ^ 3) * (1 + |y|) ^ 6 := by ring
+
+lemma integrable_dir_abs_cube_centredLaw (hF6 : MemLp (fun t : ℝ => t) 6 F) (t : E₂) :
+    Integrable (fun y : ℝ =>
+      |t 0 * y + t 1 * (y ^ 2 - Var[fun s : ℝ => s; F])| ^ 3) (centredLaw F) := by
+  refine Integrable.mono' ((integrable_one_add_abs_pow_six F hF6).const_mul
+    (‖t‖ ^ 3 * (2 + |Var[fun s : ℝ => s; F]|) ^ 3)) (by fun_prop)
+    (Filter.Eventually.of_forall fun y => ?_)
+  rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+  exact dir_abs_cube_le F t y
+
+/-- The **third absolute moment**, direction-uniform, at the cost of six moments of `F`. -/
+theorem integral_inner_abs_cube_map_studentPair_le (hF6 : MemLp (fun t : ℝ => t) 6 F)
+    (t : E₂) :
+    (∫ x, |(⟪x, t⟫ : ℝ)| ^ 3 ∂(F.map (studentPair F)))
+      ≤ ((2 + |Var[fun s : ℝ => s; F]|) ^ 3
+          * ∫ y, (1 + |y|) ^ 6 ∂(centredLaw F)) * ‖t‖ ^ 3 := by
+  set v : ℝ := Var[fun s : ℝ => s; F] with hv
+  have hdom : Integrable
+      (fun y : ℝ => (‖t‖ ^ 3 * (2 + |v|) ^ 3) * (1 + |y|) ^ 6) (centredLaw F) :=
+    (integrable_one_add_abs_pow_six F hF6).const_mul _
+  have hint := integrable_dir_abs_cube_centredLaw F hF6 t
+  rw [← hv] at hint
+  have hmap : (∫ x, |(⟪x, t⟫ : ℝ)| ^ 3 ∂(F.map (studentPair F)))
+      = ∫ y, |t 0 * y + t 1 * (y ^ 2 - v)| ^ 3 ∂(centredLaw F) := by
+    rw [integral_map (measurable_studentPair F).aemeasurable (by fun_prop)]
+    simp_rw [inner_studentPair F t, ← hv]
+    exact (integral_centredLaw F
+      (g := fun y : ℝ => |t 0 * y + t 1 * (y ^ 2 - v)| ^ 3) (by fun_prop)).symm
+  rw [hmap]
+  have hptw : ∀ y : ℝ, |t 0 * y + t 1 * (y ^ 2 - v)| ^ 3
+      ≤ (‖t‖ ^ 3 * (2 + |v|) ^ 3) * (1 + |y|) ^ 6 := by
+    intro y
+    have h := dir_abs_cube_le F t y
+    rw [← hv] at h
+    exact h
+  have hmono := integral_mono hint hdom hptw
+  have hconst : (∫ y, (‖t‖ ^ 3 * (2 + |v|) ^ 3) * (1 + |y|) ^ 6 ∂(centredLaw F))
+      = (‖t‖ ^ 3 * (2 + |v|) ^ 3) * ∫ y, (1 + |y|) ^ 6 ∂(centredLaw F) :=
+    MeasureTheory.integral_const_mul _ _
+  rw [hconst] at hmono
+  calc (∫ y, |t 0 * y + t 1 * (y ^ 2 - v)| ^ 3 ∂(centredLaw F))
+      ≤ (‖t‖ ^ 3 * (2 + |v|) ^ 3) * ∫ y, (1 + |y|) ^ 6 ∂(centredLaw F) := hmono
+    _ = ((2 + |v|) ^ 3 * ∫ y, (1 + |y|) ^ 6 ∂(centredLaw F)) * ‖t‖ ^ 3 := by ring
+
+lemma integrable_dir_centredLaw (hF4 : MemLp (fun t : ℝ => t) 4 F) (t₀ t₁ : ℝ) :
+    Integrable (fun y : ℝ => t₀ * y + t₁ * (y ^ 2 - Var[fun s : ℝ => s; F]))
+      (centredLaw F) := by
+  have h1 := (integrable_id_centredLaw F hF4).const_mul t₀
+  have h2 := ((integrable_sq_centredLaw F hF4).sub
+    (integrable_const Var[fun s : ℝ => s; F])).const_mul t₁
+  have h := h1.add h2
+  refine h.congr (Filter.Eventually.of_forall fun y => ?_)
+  simp only [Pi.add_apply, Pi.sub_apply]
+
+lemma integrable_inner_map_studentPair (hF4 : MemLp (fun t : ℝ => t) 4 F) (t : E₂) :
+    Integrable (fun x : E₂ => (⟪x, t⟫ : ℝ)) (F.map (studentPair F)) := by
+  rw [integrable_map_measure (by fun_prop) (measurable_studentPair F).aemeasurable]
+  simp_rw [Function.comp_def, inner_studentPair F t]
+  have h := integrable_dir_centredLaw F hF4 (t 0) (t 1)
+  rw [centredLaw, integrable_map_measure (by fun_prop) (by fun_prop)] at h
+  exact h
+
+lemma integrable_inner_sq_map_studentPair (hF4 : MemLp (fun t : ℝ => t) 4 F) (t : E₂) :
+    Integrable (fun x : E₂ => (⟪x, t⟫ : ℝ) ^ 2) (F.map (studentPair F)) := by
+  rw [integrable_map_measure (by fun_prop) (measurable_studentPair F).aemeasurable]
+  simp_rw [Function.comp_def, inner_studentPair F t]
+  exact integrable_dir_sq_self F hF4 (t 0) (t 1)
+
+lemma integrable_inner_abs_cube_map_studentPair (hF6 : MemLp (fun t : ℝ => t) 6 F) (t : E₂) :
+    Integrable (fun x : E₂ => |(⟪x, t⟫ : ℝ)| ^ 3) (F.map (studentPair F)) := by
+  rw [integrable_map_measure (by fun_prop) (measurable_studentPair F).aemeasurable]
+  simp_rw [Function.comp_def, inner_studentPair F t]
+  have h := integrable_dir_abs_cube_centredLaw F hF6 t
+  rw [centredLaw, integrable_map_measure (by fun_prop) (by fun_prop)] at h
+  exact h
+
+theorem exists_bulk_majorant_map_studentPair (hFac : F ≪ volume)
+    (hF4 : MemLp (fun t : ℝ => t) 4 F) (hF6 : MemLp (fun t : ℝ => t) 6 F) :
+    ∃ lam ε₁ : ℝ, 0 < lam ∧ 0 < ε₁ ∧ ∀ u : E₂, ‖u‖ ≤ ε₁ →
+      ‖charFun (F.map (studentPair F)) u‖ ≤ Real.exp (-(lam * ‖u‖ ^ 2 / 4)) := by
+  obtain ⟨lam, hlam, hfloor⟩ := exists_variance_floor_map_studentPair F hFac hF4
+  set V : ℝ := studentCov00 F + studentCov11 F + |studentCov01 F| with hV
+  set R : ℝ := (2 + |Var[fun s : ℝ => s; F]|) ^ 3
+    * ∫ y, (1 + |y|) ^ 6 ∂(centredLaw F) with hR
+  have hVpos : 0 < V := by
+    have h := hfloor (coordDir 0)
+    have hn : ‖(coordDir 0 : E₂)‖ = 1 := by rw [coordDir]; simp
+    have hc := integral_inner_sq_map_studentPair_le F hF4 (coordDir 0)
+    rw [hn] at h hc
+    nlinarith [h, hc]
+  have hRpos : 0 < R := by
+    have hone : (1 : ℝ) ≤ ∫ y, (1 + |y|) ^ 6 ∂(centredLaw F) := by
+      have h := integral_mono (integrable_const (1 : ℝ))
+        (integrable_one_add_abs_pow_six F hF6)
+        (fun y => one_le_pow₀ (by linarith [abs_nonneg y]))
+      simpa using h
+    have h2 : (0 : ℝ) < (2 + |Var[fun s : ℝ => s; F]|) ^ 3 := by positivity
+    rw [hR]
+    nlinarith
+  set ε₁ : ℝ := min (Real.sqrt (2 / V)) (3 * lam / (2 * R)) with hε
+  have hε0 : 0 < ε₁ := by
+    refine lt_min ?_ (by positivity)
+    exact Real.sqrt_pos.2 (by positivity)
+  refine ⟨lam, ε₁, hlam, hε0, fun u hu => ?_⟩
+  have hwin2 : V * ε₁ ^ 2 ≤ 2 := by
+    have h1 : ε₁ ≤ Real.sqrt (2 / V) := min_le_left _ _
+    have h2 : ε₁ ^ 2 ≤ 2 / V := by
+      have := Real.sq_sqrt (by positivity : (0 : ℝ) ≤ 2 / V)
+      nlinarith [hε0.le, Real.sqrt_nonneg (2 / V)]
+    rw [le_div_iff₀ hVpos] at h2
+    linarith
+  have hwin3 : R * ε₁ ≤ 3 * lam / 2 := by
+    have h1 : ε₁ ≤ 3 * lam / (2 * R) := min_le_right _ _
+    have h2 : R * ε₁ ≤ R * (3 * lam / (2 * R)) := mul_le_mul_of_nonneg_left h1 hRpos.le
+    have h3 : R * (3 * lam / (2 * R)) = 3 * lam / 2 := by field_simp
+    linarith
+  have hmain := norm_charFun_vecRootLaw_le_exp_neg_sq F (measurable_studentPair F)
+    hlam hε0.le (integrable_inner_map_studentPair F hF4)
+    (integrable_inner_sq_map_studentPair F hF4)
+    (integrable_inner_abs_cube_map_studentPair F hF6)
+    (integral_inner_studentPair F hF4) hfloor
+    (integral_inner_sq_map_studentPair_le F hF4)
+    (integral_inner_abs_cube_map_studentPair_le F hF6) hwin2 hwin3
+    (n := 1) one_pos (t := u) (by simpa using hu)
+  rwa [vecRootLaw_one F (measurable_studentPair F)] at hmain
+
+theorem exists_bulk_majorant_vecRootLaw_studentPair_truncAt (hFac : F ≪ volume)
+    (hF4 : MemLp (fun t : ℝ => t) 4 F) (hF6 : MemLp (fun t : ℝ => t) 6 F)
+    (hF4int : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F) :
+    ∃ lam ε₁ B : ℝ, 0 < lam ∧ 0 < ε₁ ∧ 0 ≤ B ∧ ∀ n : ℕ, 0 < n → ∀ t : E₂,
+      ‖t‖ ≤ ε₁ * Real.sqrt (n : ℝ) →
+      ‖charFun (vecRootLaw F
+          (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n) t‖
+        ≤ B * Real.exp (-(lam * ‖t‖ ^ 2 / 4)) := by
+  obtain ⟨lam, ε₁, hlam, hε₁, hmaj⟩ := exists_bulk_majorant_map_studentPair F hFac hF4 hF6
+  set μ4 : ℝ := ∫ x, (x - ∫ s, s ∂F) ^ 4 ∂F with hμ4
+  have hμ40 : 0 ≤ μ4 := integral_nonneg fun x => by positivity
+  refine ⟨lam, ε₁, Real.exp (2 * μ4 * Real.exp (lam * ε₁ ^ 2 / 4)), hlam, hε₁,
+    Real.exp_nonneg _, fun n hn t ht => ?_⟩
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hnR
+  have hset := truncAt_ne_setOf (m := ∫ s, s ∂F) hsn.le
+  have hbad : MeasurableSet
+      {x : ℝ | truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) x ≠ x} := by
+    rw [hset]; exact measurableSet_lt measurable_const (by fun_prop)
+  have hmass : (n : ℝ)
+      * (F {x : ℝ | truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) x ≠ x}).toReal ≤ μ4 := by
+    rw [hset]
+    have h := measure_abs_gt_le_fourth_moment F (g := fun x : ℝ => x - ∫ s, s ∂F)
+      (by fun_prop) hF4int hsn
+    have hpow : Real.sqrt (n : ℝ) ^ 4 = (n : ℝ) ^ 2 := by
+      have hs : Real.sqrt (n : ℝ) ^ 2 = (n : ℝ) := Real.sq_sqrt hnR.le
+      calc Real.sqrt (n : ℝ) ^ 4 = (Real.sqrt (n : ℝ) ^ 2) ^ 2 := by ring
+        _ = (n : ℝ) ^ 2 := by rw [hs]
+    rw [hpow, ← hμ4] at h
+    have h2 : (n : ℝ) * (F {x : ℝ | Real.sqrt (n : ℝ) < |x - ∫ s, s ∂F|}).toReal
+        ≤ (n : ℝ) * (μ4 / (n : ℝ) ^ 2) := mul_le_mul_of_nonneg_left h hnR.le
+    have h3 : (n : ℝ) * (μ4 / (n : ℝ) ^ 2) = μ4 / (n : ℝ) := by
+      field_simp
+    have h4 : μ4 / (n : ℝ) ≤ μ4 := by
+      rw [div_le_iff₀ hnR]
+      nlinarith
+    linarith
+  exact norm_charFun_vecRootLaw_comp_le_exp_neg_sq F (measurable_studentPair F)
+    (measurable_truncAt _ _) hbad hlam.le hε₁.le hn hmass hmaj ht
+
+end StudentCovariance
+
+/-- **At the repaired band radius `R = K√(log n)` the Gaussian majorant is a negative power of
+`n`, of any prescribed order.** This is the whole arithmetic of the repair: `e^{−λR²/4}` becomes
+`n^{−λK²/4}`, and `K` is at the caller's disposal. -/
+lemma exp_neg_sq_band_radius_eq_rpow {lam K : ℝ} {n : ℕ} (hn : 1 ≤ n) :
+    Real.exp (-(lam * (K * Real.sqrt (Real.log (n : ℝ))) ^ 2 / 4))
+      = (n : ℝ) ^ (-(lam * K ^ 2 / 4)) := by
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hn0 : (0 : ℝ) < (n : ℝ) := lt_of_lt_of_le one_pos hn1
+  have hlog : 0 ≤ Real.log (n : ℝ) := Real.log_nonneg hn1
+  have hsq : (Real.sqrt (Real.log (n : ℝ))) ^ 2 = Real.log (n : ℝ) := Real.sq_sqrt hlog
+  rw [Real.rpow_def_of_pos hn0]
+  congr 1
+  rw [mul_pow, hsq]
+  ring
+
+/-- **A polynomial mass against a negative-power `κ` clears the ledger.** The transfer inequality
+`norm_integral_fourierSynth_le_of_band` prices the good frequencies by `Γκ`; since `Γ` is
+polynomial, any `κ ≤ n^{−q}` with `q ≥ p + 3/2` returns the required `O(n^{-3/2})`. This is why
+the exponentially strong `cⁿ` — the only bound wave 31 had, and the reason its band started at
+the Cramér radius — was overkill. -/
+lemma band_kappa_ledger {C Γ κ p q : ℝ} {n : ℕ} (hn : 1 ≤ n) (hC : 0 ≤ C)
+    (hΓ : Γ ≤ C * (n : ℝ) ^ p) (hΓ0 : 0 ≤ Γ) (hκ0 : 0 ≤ κ) (hκ : κ ≤ (n : ℝ) ^ (-q))
+    (hpq : p + 3 / 2 ≤ q) :
+    Γ * κ ≤ C / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hn0 : (0 : ℝ) < (n : ℝ) := lt_of_lt_of_le one_pos hn1
+  have hstep : Γ * κ ≤ (C * (n : ℝ) ^ p) * (n : ℝ) ^ (-q) :=
+    mul_le_mul hΓ hκ hκ0 (le_trans hΓ0 hΓ)
+  have hcomb : (C * (n : ℝ) ^ p) * (n : ℝ) ^ (-q) = C * (n : ℝ) ^ (p - q) := by
+    rw [mul_assoc, ← Real.rpow_add hn0]
+    ring_nf
+  have hval : (n : ℝ) ^ (-(3 : ℝ) / 2) = ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ := by
+    rw [inv_mul_sqrt_eq_rpow (n := n) (by omega)]
+  calc Γ * κ ≤ C * (n : ℝ) ^ (p - q) := by rw [← hcomb]; exact hstep
+    _ ≤ C * (n : ℝ) ^ (-(3 : ℝ) / 2) :=
+        mul_le_mul_of_nonneg_left
+          (Real.rpow_le_rpow_of_exponent_le hn1 (by linarith)) hC
+    _ = C / ((n : ℝ) * Real.sqrt (n : ℝ)) := by rw [hval, ← div_eq_mul_inv]
+
 /-! ### The certificate, split into its three quantitative inputs
 
 With the multiplier built, `hasFourierCertificateOnBand_of_bulkMultiplier` reduces
@@ -7901,41 +8583,64 @@ theorem norm_integral_expPhase_le_ibp {f : ℝ → ℂ} {Φ : ℝ → ℝ}
 
 /-- **(B) The non-stationary-phase estimate: the weight carries `O(n^{-3/2})` on the
 low-frequency ball** — the second input, the analytic heart of the certificate, and **still the
-only open analytic item of the certificate after wave 35**.
+only open analytic item of the certificate after wave 44**.
 
-On `‖t₀ + s‖ < c₀√n/(2σ)` the total phase `θHₙ − ⟪·, s⟫` has first `w₀`-derivative at least
-`(4/3)|θ|/σ` in modulus, everywhere and with no cut-off (`deltaSurrogate_slope_ge`), so five
-integrations by parts against `L f = ∂_{w₀}(f/(i∂_{w₀}Φ))` gain `O(n^{-7/8})` each; the ledger
-lemmas verify that this closes at `n^{-17/8}` (`leakage_ledger_five_le`) and that four would not
-(`leakage_ledger_four_gt`).
+**WAVE 44 RESTATES THIS AT THE REPAIRED BAND, AND THE RESTATEMENT IS THE POINT.** Wave 43 showed
+that what confined the certificate to `|θ| ≍ √n` was not this estimate's ledger but the band
+geometry it was stated at: the radius `R` had to be at least the Cramér radius `ε₀√n`, because
+`cⁿ` was the only bound on `‖φ_{ρₙ}‖` off a ball, and at most `|θ|/(2σ)`, whence
+`|θ| ≥ 2σε₀√n` (`band_radius_incompatible`). With the Gaussian bulk bound in hand
+(`norm_charFun_vecRootLaw_le_exp_neg_sq`, wave 43) and the two-regime `κ` assembled
+(`norm_charFun_vecRootLaw_le_max_of_band`, above), the radius may be taken to be `K√(log n)`,
+and the hypothesis on the frequency becomes
 
-**WHAT WAVE 35 ADDS, AND WHAT IS HONESTLY LEFT.** The *identity* half of the estimate is now
-proved rather than asserted: `integral_expPhase_ibp` is one integration by parts against a
+* a **constant** floor `c₀ ≤ |θ|` — the leakage ledger's `b = 0` (`leakage_ledger_ten_le`,
+  `bulk_gain_phase_le_band`), and it cannot be dropped: at `θ = 0` the multiplier is the bare
+  cut-off, whose transform puts mass `≍ M²R²` on the ball, so the statement is **false** without
+  it; and
+* the band condition `2σ·K√(log n) ≤ |θ|`, which is below `n^{a}` for every `a > 0`.
+
+Together these cover the whole middle range `n^{1/6} ≤ |θ|` that `esseen_split_low` leaves, as
+well as the outer range wave 31 had. **The price of the wider band is `N = 10` integrations by
+parts instead of `N = 5`** — the ledger returns `n^{9/4 − N(3/8 + b)}` at `|θ| ≍ n^{b}`
+(`leakage_ledger_band_exponent`), and `N ≥ (15/4)/(3/8 + b)` is `30/7` at `b = 1/2` and `10` at
+`b = 0`. The bulk radius does not move: input (C) fixes `M = n^{5/8}` with no `θ` in it.
+
+On the bad set `‖t₀ + s‖ < R` the total phase `Φ = θHₙ − ⟪·, s⟫` has first `w₀`-derivative at
+least `(4/3)|θ|/σ` in modulus, everywhere and with no cut-off (`deltaSurrogate_slope_ge`: the
+`(5/6)|θ|/σ` of the surrogate and the `|θ|/(2σ)` of the band *add*), so each of the ten
+applications of `L f = ∂_{w₀}(f/(i∂_{w₀}Φ))` gains
+`σ/(M|θ|) + (27/16)Mr²/(σ|θ|) = O(n^{-3/8})`.
+
+**WHAT WAVE 35 ADDS, AND WHAT IS HONESTLY LEFT.** The *identity* half of the estimate is proved
+rather than asserted: `integral_expPhase_ibp` is one integration by parts against a
 non-vanishing phase on the line, in the exact form the iteration needs, and `contDiff_ibpStep` /
-`hasCompactSupport_ibpStep` say that the transform `L` preserves the class, so the five-fold
+`hasCompactSupport_ibpStep` say that the transform `L` preserves the class, so the ten-fold
 iteration is legitimate as stated. `norm_integral_expPhase_le_ibp` is its norm form.
 
 What is **not** done, and it is the quantitative half — the part that actually carries the
 exponent:
 
-* the graded bound on `‖L^k f‖_{L¹(dw₀)}` for `k ≤ 5`, uniformly over the bad set. Each `L`
+* the graded bound on `‖L^k f‖_{L¹(dw₀)}` for `k ≤ 10`, uniformly over the bad set. Each `L`
   either differentiates the cut-off `χ(·/M)` (cost `M^{-1}`) or `1/∂_{w₀}Φ` (cost `∂²Φ/(∂Φ)²`),
   and it is the *second* branch that produces the `(27/16)Mr²/(σ|θ|)` half of
   `bulk_gain_phase_le`. Bounding it needs a derivative calculus with **negative** powers —
-  bounds on the derivatives of `1/∂_{w₀}Φ` from a lower bound on `|∂_{w₀}Φ|` — which the
+  bounds on the derivatives of `1/∂_{w₀}Φ` from the slope floor `(4/3)|θ|/σ` — which the
   graded calculus of input (A2) (`gradedBound_mul`, `gradedBound_add`) does not yet supply;
 * the reduction of `𝓕 g` to an iterated integral, so that the one-dimensional identity applies
   fibrewise in `w₀` at each frozen `w₁` (Fubini is harmless — the support is compact — but the
   measurable identification of `E₂` with `ℝ × ℝ` is not free);
 * the outer bookkeeping: the `w₁`-integration over a set of length `≍ M` and the `s`-integration
-  over the bad set of area `≍ n`, which is where `leakage_ledger_exponent` is consumed.
+  over the bad set, whose area is now `≍ log n` rather than `≍ n` — which only helps, since the
+  ledger above is run at the conservative `≍ n`.
 
 No obstruction to any of the three is known, and the arithmetic they have to reproduce is
 already verified in the file. This is a budget statement, not a verdict. -/
 theorem exists_integral_norm_fourierWeight_bulkMultiplier_band_le
-    {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) :
-    ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ * Real.sqrt (n : ℝ) ≤ |θ| →
-      (∫ s in {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < c₀ * Real.sqrt (n : ℝ) / (2 * σ)},
+    {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) {Kb : ℝ} (hKb : 0 ≤ Kb) :
+    ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ ≤ |θ| →
+      2 * σ * (Kb * Real.sqrt (Real.log (n : ℝ))) ≤ |θ| →
+      (∫ s in {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))},
           ‖fourierWeight (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) s‖)
         ≤ C / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
   sorry
@@ -8828,25 +9533,37 @@ analytic content of its own: `Γ n θ` is taken to be the (A)-bound itself, and 
 `C` of the signature is the maximum of the three. The residue is those three `sorry`s — two
 deterministic bounds on `𝓕 g` and one fourth moment of the truncated root — and the exponent
 ledger that ties them together is verified (`leakage_ledger_five_le`, `tail_ledger_exponent`),
-including the fact that `N = 5` is minimal (`leakage_ledger_four_gt`). -/
+including the fact that `N = 5` is minimal (`leakage_ledger_four_gt`).
+
+**WAVE 44: THE BAND IS WIDENED, AND WITH IT THE RANGE OF `θ` THE CERTIFICATE COVERS.** The
+radius is now `Kb√(log n)` and the frequency hypothesis is a constant floor `c₀ ≤ |θ|` together
+with the band condition `2σ·Kb√(log n) ≤ |θ|`, in place of the single `c₀√n ≤ |θ|`. Nothing in
+the assembly below changes — the widened band is entirely a property of input (B), and (A) and
+(C) never mention `θ` or `R` — but the consumer does: at radius `Kb√(log n)` the bound off the
+band is `κ = max(n^{−λKb²/4}, cⁿ)` (`norm_charFun_vecRootLaw_le_max_of_band`,
+`exp_neg_sq_band_radius_eq_rpow`), not `cⁿ`, and `band_kappa_ledger` is the check that a
+polynomial `Γ` against such a `κ` still clears `O(n^{-3/2})`. Since `√(log n) = o(n^{a})` for
+every `a > 0`, the certificate now reaches down into — and through — the middle range
+`n^{1/6} ≤ |θ| ≤ c√n` that `esseen_split_low` leaves open. -/
 theorem exists_fourierCertificate_deltaSurrogate
     -- USER-INPUT: finite fourth moment of the sampling law, which is what prices the bulk
     (F : Measure ℝ) [IsProbabilityMeasure F]
     (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F)
-    -- USER-INPUT: the scale of the surrogate, and the outer range
-    {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) :
+    -- USER-INPUT: the scale of the surrogate, the constant frequency floor, and the band
+    {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) {Kb : ℝ} (hKb : 0 ≤ Kb) :
     ∃ (Γ : ℕ → ℝ → ℝ) (C : ℝ) (K : ℕ), 0 < C ∧
       (∀ (n : ℕ) (θ : ℝ), Γ n θ ≤ C * (n : ℝ) ^ K * (1 + |θ|) ^ K) ∧
-      ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ * Real.sqrt (n : ℝ) ≤ |θ| →
+      ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ ≤ |θ| →
+        2 * σ * (Kb * Real.sqrt (Real.log (n : ℝ))) ≤ |θ| →
         HasFourierCertificateOnBand
           (vecRootLaw F
             (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n)
           σ ((Real.sqrt (n : ℝ))⁻¹) θ ((θ / σ) • coordDir 0)
-          (c₀ * Real.sqrt (n : ℝ) / (2 * σ))
+          (Kb * Real.sqrt (Real.log (n : ℝ)))
           (Γ n θ) (C / ((n : ℝ) * Real.sqrt (n : ℝ)))
           (C / ((n : ℝ) * Real.sqrt (n : ℝ))) := by
   obtain ⟨CA, K, hCA, hA⟩ := exists_integral_norm_fourier_bulkMultiplier_le hσ
-  obtain ⟨CB, hCB, hB⟩ := exists_integral_norm_fourierWeight_bulkMultiplier_band_le hσ hc₀
+  obtain ⟨CB, hCB, hB⟩ := exists_integral_norm_fourierWeight_bulkMultiplier_band_le hσ hc₀ hKb
   obtain ⟨CC, hCC, hC⟩ := exists_measure_norm_gt_bulkRadius_le F hF4
   refine ⟨fun n θ => CA * (n : ℝ) ^ K * (1 + |θ|) ^ K, max CA (max CB CC), K,
     lt_of_lt_of_le hCA (le_max_left _ _), ?_, ?_⟩
@@ -8855,7 +9572,7 @@ theorem exists_fourierCertificate_deltaSurrogate
     have h2 : (0 : ℝ) ≤ (n : ℝ) ^ K := by positivity
     have h3 : (0 : ℝ) ≤ (1 + |θ|) ^ K := by positivity
     exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right h1 h2) h3
-  · intro n hn θ hθ
+  · intro n hn θ hθ hband
     have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
     have hden : (0 : ℝ) < (n : ℝ) * Real.sqrt (n : ℝ) := by positivity
     have hM : 0 < bulkRadius n := bulkRadius_pos hn
@@ -8874,7 +9591,7 @@ theorem exists_fourierCertificate_deltaSurrogate
       (integrable_bulkMultiplier hM _ _ _) hAint hAmass ?_ hS
       (fun w hw => bulkMultiplier_eq_of_norm_le hM _ _ _ hw)
       (norm_bulkMultiplier_le_one _ _ _ _) ?_
-    · refine (hB n hn θ hθ).trans ?_
+    · refine (hB n hn θ hθ hband).trans ?_
       exact div_le_div_of_nonneg_right (le_trans (le_max_left _ _) (le_max_right CA _)) hden.le
     · rw [hcompl]
       refine (hC n hn).trans ?_
@@ -13734,6 +14451,73 @@ STILL `sorry` AND WAVE 43 DOES NOT CLAIM OTHERWISE.**
   wave that discharges the moment hypotheses. **The file is still at two `sorry`s — this one and
   (B) — and the residue of this one is now the two-item list in point 3, not the open middle
   range wave 42 recorded.**
+
+---
+
+**Status after wave 44. WAVE 43'S TWO-ITEM REPAIR LIST IS DOWN TO ZERO ITEMS: (i) THE
+RESTATEMENT IS DONE AND (ii) THE MOMENT INPUTS ARE PROVED. THE CERTIFICATE NOW *STATES* THE
+MIDDLE RANGE. THIS THEOREM IS STILL `sorry`, AND SO IS (B); WAVE 44 DOES NOT CLAIM
+OTHERWISE.**
+
+* **ITEM (i), THE RESTATEMENT (item 1 of the prompt).** `norm_charFun_vecRootLaw_le_max_of_band`
+  glues wave 43's Gaussian bulk bound to the Cramér tail: off a ball of **any** radius `R ≥ 0`,
+  `‖φ_{ρₙ}(t)‖ ≤ max(B e^{−λR²/4}, cⁿ)`. That is the ingredient wave 43 identified as missing,
+  and with it the squeeze of `band_radius_incompatible` is broken: the band radius is a free
+  parameter. `exp_neg_sq_band_radius_eq_rpow` turns `R = Kb√(log n)` into `κ = n^{−λKb²/4}` and
+  `band_kappa_ledger` is the check that a polynomial `Γ` against such a `κ` still clears
+  `O(n^{-3/2})` — the formal content of "`cⁿ` was exponential overkill".
+  `exists_integral_norm_fourierWeight_bulkMultiplier_band_le` (input (B)),
+  `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` and
+  `exists_fourierCertificate_deltaSurrogate` are restated at that band, at `N = 10`.
+* **ONE THING THE WAVE-43 NOTE DID NOT SAY, AND IT IS A HYPOTHESIS, NOT A CONSTANT.** The
+  restated (B) keeps a **constant** frequency floor `c₀ ≤ |θ|` alongside the band condition
+  `2σ·Kb√(log n) ≤ |θ|`, and it must: at `θ = 0` the bulk multiplier is the bare cut-off, whose
+  transform puts mass `≍ M²R²` on the low-frequency ball, so the statement without a floor is
+  **false**. This is exactly why the ledger is run at `b = 0` (`leakage_ledger_ten_le`) and not
+  below it, and it costs nothing — the middle range starts at `n^{1/6} ≥ 1`.
+* **ITEM (ii), THE MOMENT INPUTS — PROVED, AND ON A DIFFERENT LAW FROM THE ONE PRESCRIBED.**
+  Three corrections to the wave-43 list, in increasing order of consequence.
+  1. *The truncated pair is not centred*, so the Gaussian majorant cannot be applied to it as
+     wave 43 asked. `norm_charFun_vecRootLaw_sub_const` repairs that, but at the cost of the
+     truncated law's moments, every one of which moves with `n`.
+  2. *None of that is needed.* `norm_charFun_vecRootLaw_comp_le_exp_neg_sq` carries the majorant
+     across the truncation by the perturbation `norm_charFun_map_comp_sub_le` that the Cramér
+     brick already uses, and the `n`-th power costs a **constant**:
+     `(e^{−a} + 2m)ⁿ = e^{−na}(1 + 2m e^{a})ⁿ ≤ e^{−na}e^{2nm e^{a}}` with `nm` bounded on the
+     bulk. So the whole item is about `F.map (studentPair F)`, which **is** centred
+     (`integral_inner_studentPair`) — the fourth hypothesis is free rather than false.
+  3. *The nondegeneracy is linear algebra, not analysis.* `integral_inner_sq_map_studentPair`
+     identifies the directional second moment with the binary quadratic form
+     `A t₀² + 2B t₀t₁ + C t₁²` in the three entries of the limit covariance
+     (`studentCov00/01/11`). `A > 0` and `C > 0` are the form at the two axes; `AC − B² > 0` is
+     the form at `(B, −A)`, which *equals* `A(AC − B²)`; and a positive-definite binary form
+     dominates `λ(t₀² + t₁²)` at `λ = min(A, C, (AC − B²)/(A + C))`.
+     **`exists_variance_floor_map_studentPair` therefore uses no compactness of the sphere and
+     no continuity of `t ↦ ∫⟪x,t⟫²`** — wave 43's "direction-uniform" is a `2 × 2` fact.
+     `hFac` is spent exactly once, in `integral_studentPair_dir_sq_pos`.
+  The ceiling is the same identity (`integral_inner_sq_map_studentPair_le`), and
+  `exists_bulk_majorant_vecRootLaw_studentPair_truncAt` assembles the three into precisely the
+  `hbulk` the band consumer takes.
+* **AND THE MOMENT COST OF (ii) IS SIX, NOT FOUR.** Floor and ceiling are fourth moments of `F`;
+  the third *absolute* moment of a quadratic in `X` is a **sixth**
+  (`integral_inner_abs_cube_map_studentPair_le`, through `memLp_six_centredLaw`). `hF8` covers
+  it and nothing downstream moves, but the wave-43 note's "available under `hFac`" understates
+  what is spent, and a wave attempting the four-moment statement would have found this the hard
+  way.
+* **WHAT IS LEFT, AND IT IS ONE ITEM.** Input (B) — the non-stationary-phase estimate itself.
+  Its three quantitative pieces are unchanged in kind since wave 35 and are listed on the
+  theorem: the graded bound on `‖L^k f‖_{L¹(dw₀)}` for `k ≤ 10`, which needs a derivative
+  calculus with **negative** powers (the derivatives of `1/∂_{w₀}Φ` off the slope floor
+  `(4/3)|θ|/σ`) that the wave-34 graded calculus does not supply; the fibrewise reduction of
+  `𝓕 g` to iterated one-dimensional integrals; and the outer `w₁`/`s` bookkeeping, now against
+  a bad set of area `≍ log n` rather than `≍ n`. **None of the three was built this wave**, and
+  the negative-power calculus is the one with real content: an existential constant is useless
+  there, since the exponent (B) has to produce is carried by the explicit `L^{-(k+1)}`.
+* **ITEM 3 WAS NOT ATTEMPTED, AND THE REASON IS THE SAME AS WAVE 43'S.** The three-regime
+  assembly (`esseen_split_low` on `|ξ| ≤ n^{1/6}`, the certificate above it) now has a
+  *statement* for every regime, but the middle and outer regimes rest on (B), which is a
+  `sorry`. Assembling would produce a theorem whose only content is the `sorry` it already has.
+  **The file is still at two `sorry`s — this one and (B).**
 
 **WAVE 40 — THE MOMENT HYPOTHESIS IS AMENDED FROM FOUR TO EIGHT, AND THIS IS A DEVIATION FROM
 THE CLASSICAL STATEMENT.** The classical studentized Edgeworth expansion (Hall, *The Bootstrap
