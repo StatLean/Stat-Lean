@@ -13050,29 +13050,32 @@ private lemma exists_studentized_low_range_core
         Kc * r ^ 2 * (|ξ| ^ 4 + |ξ| ^ 8) * D
           + P₂ * |ξ| * r
               * (r * (q₁ * |ξ| + q₂ * |ξ| ^ 2 + q₃ * |ξ| ^ 3 + q₄ * |ξ| ^ 4) * D
-                + G₁ * (Kb * r * (|ξ| ^ 3 + |ξ| ^ 4) * D)
-                + G₂ * |ξ| ^ 2 * (Kb * r * (|ξ| ^ 3 + |ξ| ^ 4) * D))
+                + G₁ * (Kb * r * (|ξ| ^ 2 + |ξ| ^ 3 + |ξ| ^ 4) * D)
+                + G₂ * |ξ| ^ 2 * (Kb * r * (|ξ| ^ 2 + |ξ| ^ 3 + |ξ| ^ 4) * D))
           + P₃a * |ξ| * r ^ 2 * D + P₃b * |ξ| * r ^ 2 * D + P₄ * |ξ| ^ 2 * r ^ 2 * D
           + r ^ 3 * (C₃ * |ξ| ^ 3 + C₂ * |ξ| ^ 2)
         ≤ Kw * r ^ 2 * windowEnvelope₁ ξ + Kr * r ^ 3 * |ξ| ^ 3 := by
   obtain ⟨α₁, hα₁d⟩ : ∃ x : ℝ, x = P₃a + P₃b := ⟨_, rfl⟩
   obtain ⟨α₂, hα₂d⟩ : ∃ x : ℝ, x = P₄ + P₂ * q₁ := ⟨_, rfl⟩
-  obtain ⟨α₃, hα₃d⟩ : ∃ x : ℝ, x = P₂ * q₂ := ⟨_, rfl⟩
+  obtain ⟨α₃, hα₃d⟩ : ∃ x : ℝ, x = P₂ * q₂ + P₂ * (G₁ * Kb) := ⟨_, rfl⟩
   obtain ⟨α₄, hα₄d⟩ : ∃ x : ℝ, x = Kc + P₂ * q₃ + P₂ * (G₁ * Kb) := ⟨_, rfl⟩
-  obtain ⟨α₅, hα₅d⟩ : ∃ x : ℝ, x = P₂ * q₄ + P₂ * (G₁ * Kb) := ⟨_, rfl⟩
+  obtain ⟨α₅, hα₅d⟩ : ∃ x : ℝ, x = P₂ * q₄ + P₂ * (G₁ * Kb) + P₂ * (G₂ * Kb) := ⟨_, rfl⟩
   obtain ⟨α₆, hα₆d⟩ : ∃ x : ℝ, x = P₂ * (G₂ * Kb) := ⟨_, rfl⟩
   obtain ⟨α₇, hα₇d⟩ : ∃ x : ℝ, x = P₂ * (G₂ * Kb) := ⟨_, rfl⟩
   obtain ⟨α₈, hα₈d⟩ : ∃ x : ℝ, x = Kc := ⟨_, rfl⟩
   have hα₁ : 0 ≤ α₁ := by rw [hα₁d]; exact add_nonneg hP₃a hP₃b
   have hα₂ : 0 ≤ α₂ := by rw [hα₂d]; exact add_nonneg hP₄ (mul_nonneg hP₂ hq₁)
-  have hα₃ : 0 ≤ α₃ := by rw [hα₃d]; exact mul_nonneg hP₂ hq₂
+  have hα₃ : 0 ≤ α₃ := by
+    rw [hα₃d]
+    exact add_nonneg (mul_nonneg hP₂ hq₂) (mul_nonneg hP₂ (mul_nonneg hG₁ hKb))
   have hα₄ : 0 ≤ α₄ := by
     rw [hα₄d]
     exact add_nonneg (add_nonneg hKc (mul_nonneg hP₂ hq₃))
       (mul_nonneg hP₂ (mul_nonneg hG₁ hKb))
   have hα₅ : 0 ≤ α₅ := by
     rw [hα₅d]
-    exact add_nonneg (mul_nonneg hP₂ hq₄) (mul_nonneg hP₂ (mul_nonneg hG₁ hKb))
+    exact add_nonneg (add_nonneg (mul_nonneg hP₂ hq₄)
+      (mul_nonneg hP₂ (mul_nonneg hG₁ hKb))) (mul_nonneg hP₂ (mul_nonneg hG₂ hKb))
   have hα₆ : 0 ≤ α₆ := by rw [hα₆d]; exact mul_nonneg hP₂ (mul_nonneg hG₂ hKb)
   have hα₇ : 0 ≤ α₇ := by rw [hα₇d]; exact mul_nonneg hP₂ (mul_nonneg hG₂ hKb)
   have hα₈ : 0 ≤ α₈ := by rw [hα₈d]; exact hKc
@@ -13099,8 +13102,8 @@ private lemma exists_studentized_low_range_core
   have hform : Kc * r ^ 2 * (|ξ| ^ 4 + |ξ| ^ 8) * D
       + P₂ * |ξ| * r
           * (r * (q₁ * |ξ| + q₂ * |ξ| ^ 2 + q₃ * |ξ| ^ 3 + q₄ * |ξ| ^ 4) * D
-            + G₁ * (Kb * r * (|ξ| ^ 3 + |ξ| ^ 4) * D)
-            + G₂ * |ξ| ^ 2 * (Kb * r * (|ξ| ^ 3 + |ξ| ^ 4) * D))
+            + G₁ * (Kb * r * (|ξ| ^ 2 + |ξ| ^ 3 + |ξ| ^ 4) * D)
+            + G₂ * |ξ| ^ 2 * (Kb * r * (|ξ| ^ 2 + |ξ| ^ 3 + |ξ| ^ 4) * D))
       + P₃a * |ξ| * r ^ 2 * D + P₃b * |ξ| * r ^ 2 * D + P₄ * |ξ| ^ 2 * r ^ 2 * D
       + r ^ 3 * (C₃ * |ξ| ^ 3 + C₂ * |ξ| ^ 2)
       = (r ^ 2 * α₁ * |ξ| + r ^ 2 * α₂ * |ξ| ^ 2 + r ^ 2 * α₃ * |ξ| ^ 3
@@ -13241,7 +13244,14 @@ inputs and of the graded remainder, evaluated at `a = (θ/σ)•e₀`, in their 
 * `hB1` — `norm_charFun_smul_pow_sub_edgeworth_le`, damped, `r²(|ξ|⁴ + |ξ|⁸)`;
 * `hB2` — `norm_multiCharFun_vecRootLaw_two_sub_damped_le`, damped, `r` times a quartic;
 * `hB5`, `hB6` — the two comparisons of `φ^{n−1}` and `φ^{n−2}` with `e^{−θ²/2}` that the
-  composition needs and that no earlier statement of (U4′) lists;
+  composition needs and that no earlier statement of (U4′) lists.  **Their bracket starts at
+  `|ξ|²`, not at `|ξ|³` as wave 47 stated it, and that is forced** (wave 48): the Gaussian
+  mismatch `e^{−(n−1)vs²/2} = e^{−θ²/2}e^{θ²r²/2}` contributes `e^{−θ²/2}·θ²r²/2`, of `θ`-degree
+  **two** with coefficient `r²`, and `Kb·r(|ξ|³+|ξ|⁴)·D` cannot dominate `r²|ξ|²` as `ξ → 0` at
+  fixed `n` — the ratio is `≍ r/|ξ|`, unbounded.  The wave-47 shape was therefore satisfied by
+  nothing; `|ξ|²` in the bracket is the minimal repair and it is free in the ledger, since the
+  slot's own prefactor `θr/(2σ³)` carries the contribution to `r²|ξ|³·D`, degree `3 ≤ 8`
+  (`exists_studentized_low_range_core`'s `α₃` and `α₅` absorb it);
 * `h3a`, `h3b`, `h4` — `norm_multiCharFun_vecRootLaw_damped_le` at `k = 3, 3, 4`, damped and
   `O(1)`.
 
@@ -13270,9 +13280,9 @@ private lemma exists_studentized_low_range_window_bound {σ γ : ℝ} (hσ : 0 <
           ≤ (Real.sqrt (n : ℝ))⁻¹
               * (q₁ * |ξ| + q₂ * |ξ| ^ 2 + q₃ * |ξ| ^ 3 + q₄ * |ξ| ^ 4) * D →
         ‖P1 - ((Real.exp (-θ ^ 2 / 2) : ℝ) : ℂ)‖
-          ≤ Kb * (Real.sqrt (n : ℝ))⁻¹ * (|ξ| ^ 3 + |ξ| ^ 4) * D →
+          ≤ Kb * (Real.sqrt (n : ℝ))⁻¹ * (|ξ| ^ 2 + |ξ| ^ 3 + |ξ| ^ 4) * D →
         ‖P2 - ((Real.exp (-θ ^ 2 / 2) : ℝ) : ℂ)‖
-          ≤ Kb * (Real.sqrt (n : ℝ))⁻¹ * (|ξ| ^ 3 + |ξ| ^ 4) * D →
+          ≤ Kb * (Real.sqrt (n : ℝ))⁻¹ * (|ξ| ^ 2 + |ξ| ^ 3 + |ξ| ^ 4) * D →
         ‖S3a‖ ≤ e₃a * D → ‖S3b‖ ≤ e₃b * D → ‖S4‖ ≤ e₄ * D →
         ‖Φ - charFunDensity (studentizedEdgeworthDensity γ n) θ‖
           ≤ Kw * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 * windowEnvelope₁ ξ
@@ -13350,6 +13360,166 @@ private lemma exists_studentized_low_range_window_bound {σ γ : ℝ} (hσ : 0 <
   exact le_trans (le_of_eq (by ring))
     (hcore ((Real.sqrt (n : ℝ))⁻¹) ξ D hr0 hr1 hD0 hD)
 
+
+/-! ### Producing the eight: the damping ledger of the low range (wave 48)
+
+The eight hypotheses of `exists_studentized_low_range_window_bound` are its interface to the four
+proved damped inputs, and the wave-47 note calls their production "moment bookkeeping".  It is
+that on the measure side, but there is an arithmetic question underneath it that no wave had
+asked, and the three lemmas here answer it.
+
+Every damped input returns `‖φ(c)‖^{N−k}` as its damping, where `φ(c)` is the transform of the
+summand's law at `c = r(θ/σ)•e₀`, together with a factor that is **polynomial in the frequency**:
+`norm_multiCharFun_vecRootLaw_damped_le` returns `(k+1)k^k Q^k` and its `Q` must dominate
+`∫|⟪x,b_l⟫||⟪x,a⟫|`, which is proportional to `|θ|`.  The hypotheses `h3a`, `h3b`, `h4`, by
+contrast, ask for **constant** coefficients `e₃a`, `e₃b`, `e₄`.  Whether that is achievable at all
+is not obvious: the polynomial grows like `|ξ|^k` and the damping is only `e^{−π²ξ²(N−k)/N}`,
+which at the window's own rate `e^{−π²ξ²/2}` leaves nothing over.
+
+It **is** achievable, and the reason is that the window may be given the *whole* of its damping:
+`D` is only required to satisfy `D ≤ e^{−π²ξ²/2}`, so taking `D` to be that exact value leaves a
+residual factor `e^{−π²ξ²/4}` — provided `n ≥ 12`, which is `exp_damping_split` — and a fixed
+Gaussian beats a fixed polynomial, which is `exists_poly_mul_exp_neg_sq_le`.  Combining them is
+`exists_const_of_damped_poly`, and it is the statement that `h3a`, `h3b`, `h4` are satisfiable in
+the shape (U4′) asks for.
+
+The same residual `e^{−π²ξ²/4}` is what absorbs the mismatch between `‖φ(c)‖^{n−2}` and the
+window's damping in `hB1` and `hB2`, so the three lemmas serve all six damped hypotheses.  They
+do **not** rescue `hB5`/`hB6`: those fail for a reason that has nothing to do with damping (the
+mismatch term is of the wrong `θ`-degree), which is why the bracket there had to be widened
+instead. -/
+
+/-- **A polynomial in the frequency is beaten by any fixed Gaussian damping.**  The elementary
+fact under the constant coefficients of `h3a`, `h3b`, `h4`: `(1 + C|ξ|)^k e^{−π²ξ²/4}` is bounded
+on the whole line, by a constant depending only on `k` and `C`.  The proof is the two-regime
+split at `|ξ| = 1`, with `e^t ≥ (1 + t/k)^k ≥ (t/k)^k` supplying the decay above it. -/
+private lemma exists_poly_mul_exp_neg_sq_le (k : ℕ) {C : ℝ} (hC : 0 ≤ C) :
+    ∃ K : ℝ, 0 < K ∧ ∀ ξ : ℝ,
+      (1 + C * |ξ|) ^ k * Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 4)) ≤ K := by
+  have hπ : (0 : ℝ) < Real.pi ^ 2 := by positivity
+  refine ⟨(1 + C) ^ k + ((1 + C) * (4 * (k : ℝ)) / Real.pi ^ 2 + 1) ^ k, by positivity,
+    fun ξ => ?_⟩
+  set A : ℝ := (1 + C) * (4 * (k : ℝ)) / Real.pi ^ 2 + 1 with hA
+  have hA0 : (0 : ℝ) < A := by rw [hA]; positivity
+  set y : ℝ := |ξ| with hy
+  have hy0 : (0 : ℝ) ≤ y := abs_nonneg ξ
+  have hsq : ξ ^ 2 = y ^ 2 := (sq_abs ξ).symm
+  have hAnn : (0 : ℝ) ≤ A ^ k := by positivity
+  have hBnn : (0 : ℝ) ≤ (1 + C) ^ k := by positivity
+  have hEnn : (0 : ℝ) < Real.exp (-(Real.pi ^ 2 * y ^ 2 / 4)) := Real.exp_pos _
+  have hE1 : Real.exp (-(Real.pi ^ 2 * y ^ 2 / 4)) ≤ 1 := by
+    refine Real.exp_le_one_iff.2 ?_
+    have : (0 : ℝ) ≤ Real.pi ^ 2 * y ^ 2 / 4 := by positivity
+    linarith
+  rw [hsq]
+  rcases le_total y 1 with hle | hge
+  · have h1 : (1 + C * y) ^ k ≤ (1 + C) ^ k :=
+      pow_le_pow_left₀ (by nlinarith) (by nlinarith) k
+    have h3 : (1 + C * y) ^ k * Real.exp (-(Real.pi ^ 2 * y ^ 2 / 4)) ≤ (1 + C) ^ k * 1 :=
+      mul_le_mul h1 hE1 hEnn.le hBnn
+    nlinarith [h3]
+  · -- `y ≥ 1`: the damping beats the polynomial outright
+    have hy1 : (0 : ℝ) < y := lt_of_lt_of_le zero_lt_one hge
+    rcases Nat.eq_zero_or_pos k with hk | hk
+    · rw [hk, pow_zero, pow_zero, pow_zero, one_mul]
+      linarith
+    · have hkR : (0 : ℝ) < (k : ℝ) := by exact_mod_cast hk
+      set t : ℝ := Real.pi ^ 2 * y ^ 2 / (4 * (k : ℝ)) with ht
+      have ht0 : (0 : ℝ) < t := by rw [ht]; positivity
+      have hkt : (k : ℝ) * t = Real.pi ^ 2 * y ^ 2 / 4 := by rw [ht]; field_simp
+      -- `t^k ≤ exp(π²y²/4)`, from `1 + t ≤ exp t` raised to the `k`-th power
+      have hpow : t ^ k ≤ Real.exp (Real.pi ^ 2 * y ^ 2 / 4) := by
+        have h1 : t ^ k ≤ (Real.exp t) ^ k :=
+          pow_le_pow_left₀ ht0.le (by linarith [Real.add_one_le_exp t]) k
+        have h2 : (Real.exp t) ^ k = Real.exp ((k : ℝ) * t) := (Real.exp_nat_mul t k).symm
+        rw [h2, hkt] at h1
+        exact h1
+      -- `1 + Cy ≤ A t`, because `A t ≥ (1 + C) y²` and `y ≥ 1`
+      have hAt : 1 + C * y ≤ A * t := by
+        have hval : A * t = (1 + C) * y ^ 2 + Real.pi ^ 2 * y ^ 2 / (4 * (k : ℝ)) := by
+          rw [hA, ht]; field_simp
+        have hrest : (0 : ℝ) ≤ Real.pi ^ 2 * y ^ 2 / (4 * (k : ℝ)) := by positivity
+        nlinarith [hval.le, hval.ge, hrest, sq_nonneg (y - 1)]
+      have hnum : (1 + C * y) ^ k ≤ A ^ k * Real.exp (Real.pi ^ 2 * y ^ 2 / 4) := by
+        calc (1 + C * y) ^ k ≤ (A * t) ^ k := pow_le_pow_left₀ (by nlinarith) hAt k
+          _ = A ^ k * t ^ k := mul_pow _ _ _
+          _ ≤ A ^ k * Real.exp (Real.pi ^ 2 * y ^ 2 / 4) :=
+              mul_le_mul_of_nonneg_left hpow hAnn
+      have hcancel : Real.exp (Real.pi ^ 2 * y ^ 2 / 4)
+          * Real.exp (-(Real.pi ^ 2 * y ^ 2 / 4)) = 1 := by
+        rw [← Real.exp_add]; simp
+      have hmul := mul_le_mul_of_nonneg_right hnum hEnn.le
+      have hrw : A ^ k * Real.exp (Real.pi ^ 2 * y ^ 2 / 4)
+          * Real.exp (-(Real.pi ^ 2 * y ^ 2 / 4)) = A ^ k := by
+        rw [mul_assoc, hcancel, mul_one]
+      rw [hrw] at hmul
+      linarith
+
+/-- **The residual damping of the low range, and where `n ≥ 12` comes from.**  A slot's damping
+`e^{−(n−j)π²ξ²/n}` with `j ≤ 3` splits into the window's own `e^{−π²ξ²/2}` times a residual
+`e^{−π²ξ²/4}`, and the split needs exactly `(n − j)/n ≥ 3/4`, i.e. `n ≥ 4j`; at the largest slot
+`j = 3` that is `n ≥ 12`.  Smaller `n` is absorbed by the headline's constant, exactly as the
+`n ≥ 4` damping of `edgeworth_mean_uniform` is. -/
+private lemma exp_damping_split {n : ℕ} (hn : 12 ≤ n) {j : ℕ} (hj : j ≤ 3) (ξ : ℝ) :
+    Real.exp (-(((n : ℝ) - (j : ℝ)) * (Real.pi ^ 2 * ξ ^ 2) / (n : ℝ)))
+      ≤ Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) * Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 4)) := by
+  have hn12 : (12 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hn0 : (0 : ℝ) < (n : ℝ) := by linarith
+  have hj3 : (j : ℝ) ≤ 3 := by exact_mod_cast hj
+  have hj0 : (0 : ℝ) ≤ (j : ℝ) := Nat.cast_nonneg j
+  have hs : (0 : ℝ) ≤ Real.pi ^ 2 * ξ ^ 2 := by positivity
+  rw [← Real.exp_add]
+  refine Real.exp_le_exp.2 ?_
+  have hkey : Real.pi ^ 2 * ξ ^ 2 / 4 + Real.pi ^ 2 * ξ ^ 2 / 2
+      ≤ ((n : ℝ) - (j : ℝ)) * (Real.pi ^ 2 * ξ ^ 2) / (n : ℝ) := by
+    rw [le_div_iff₀ hn0]
+    nlinarith [hs, hn12, hj3, hj0]
+  linarith
+
+/-- **The damped slot bounds DO admit constant coefficients — `h3a`, `h3b`, `h4` are satisfiable
+in the shape (U4′) asks for.**  Whatever the slot `S`, if it is bounded by a polynomial in the
+frequency times the `(n − j)`-th power of a transform obeying the Cramér damping
+`‖φ(c)‖ ≤ e^{−π²ξ²/n}` — which is `norm_charFun_smul_le_exp_neg_sq` read at `c = r(θ/σ)•e₀`,
+`v = σ²`, `θ = −2πξ` — then `S ≤ e·e^{−π²ξ²/2}` with `e` **independent of `n` and of `ξ`**.
+
+This is the arithmetic half of the production of the eight; what is left on top of it is the
+measure-side bookkeeping that identifies the polynomial's coefficient `C` in terms of the pair's
+moments. -/
+private lemma exists_const_of_damped_poly (k : ℕ) {C : ℝ} (hC : 0 ≤ C) :
+    ∃ e : ℝ, 0 < e ∧ ∀ n j : ℕ, 12 ≤ n → j ≤ 3 → ∀ ξ S φ : ℝ,
+      0 ≤ φ → φ ≤ Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / (n : ℝ))) →
+      S ≤ (1 + C * |ξ|) ^ k * φ ^ (n - j) →
+      S ≤ e * Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) := by
+  obtain ⟨K, hK, hKle⟩ := exists_poly_mul_exp_neg_sq_le k hC
+  refine ⟨K, hK, fun n j hn hj ξ S φ hφ0 hφ hS => ?_⟩
+  have hjn : j ≤ n := le_trans hj (by omega)
+  have hn0 : (0 : ℝ) < (n : ℝ) := by
+    have : (12 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+    linarith
+  have hcast : ((n - j : ℕ) : ℝ) = (n : ℝ) - (j : ℝ) := Nat.cast_sub hjn
+  -- the pointwise Cramér damping, raised to the power the slot carries
+  have hpow : φ ^ (n - j)
+      ≤ Real.exp (-(((n : ℝ) - (j : ℝ)) * (Real.pi ^ 2 * ξ ^ 2) / (n : ℝ))) := by
+    refine le_trans (pow_le_pow_left₀ hφ0 hφ (n - j)) ?_
+    rw [← Real.exp_nat_mul, hcast]
+    refine Real.exp_le_exp.2 (le_of_eq ?_)
+    field_simp
+  have hsplit := exp_damping_split hn hj ξ
+  have hpoly : (0 : ℝ) ≤ (1 + C * |ξ|) ^ k := by positivity
+  have hstep : (1 + C * |ξ|) ^ k * φ ^ (n - j)
+      ≤ (1 + C * |ξ|) ^ k
+        * (Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) * Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 4))) :=
+    mul_le_mul_of_nonneg_left (le_trans hpow hsplit) hpoly
+  have hfin : (1 + C * |ξ|) ^ k
+      * (Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) * Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 4)))
+      ≤ K * Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) := by
+    have hre : (1 + C * |ξ|) ^ k
+        * (Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) * Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 4)))
+        = ((1 + C * |ξ|) ^ k * Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 4)))
+          * Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) := by ring
+    rw [hre]
+    exact mul_le_mul_of_nonneg_right (hKle ξ) (Real.exp_nonneg _)
+  linarith [hS, hstep, hfin]
 
 
 /-! ### The outer radius of the three-regime split, and what it costs (wave 46)
@@ -17021,7 +17191,85 @@ IS STILL `sorry`. WAVE 47 DOES NOT CLAIM OTHERWISE.**
   `c√n` would keep `ρ = c√n` and leave `N = 10` alone; nothing here rules one out.**
 
   **This theorem is therefore still `sorry`, the file is at one `sorry`, and the residue is one
-  item — item 4 — of which every piece is named above and none is an open analytic question.** -/
+  item — item 4 — of which every piece is named above and none is an open analytic question.**
+
+---
+
+**Status after wave 48. ITEM 4 IS NOT EIGHT BOOKKEEPING BOUNDS. TWO OF THE EIGHT WERE
+UNSATISFIABLE AS STATED, AND THE OTHER SIX CANNOT ALL BE PRODUCED AT ONE LAW. THIS THEOREM IS
+STILL `sorry` AND WAVE 48 DOES NOT CLAIM OTHERWISE.**
+
+Wave 47 left item 4 as "eight moment-bookkeeping bounds, none an open analytic question". Two of
+the three things wave 48 found are corrections to that; the third is a new item.
+
+* **`hB5`/`hB6` WERE UNSATISFIABLE, AND THE REPAIR IS IN.** Both compare a power of the summand's
+  transform with the Gaussian: `P1 = φ(c)^{n−1}`, `P2 = φ(c)^{n−2}` against `e^{−θ²/2}`. The
+  comparison runs through `norm_charFun_smul_pow_sub_edgeworth_le` at `m = n − 3`, `m = n − 4`,
+  whose own Gaussian is `e^{−(n−1)vs²/2} = e^{−θ²/2}e^{θ²r²/2}`, so the mismatch contributes
+  `e^{−θ²/2}·θ²r²/2` — **exactly, with a positive coefficient**, and of `θ`-degree **two**. Wave
+  47 priced it as a relative `1 + O(n^{−2/3})` and wrote the bracket `Kb·r(|ξ|³ + |ξ|⁴)·D`; no
+  constant `Kb` makes that true, because at fixed `n` and `ξ → 0` the ratio of the true term to
+  the stated bound is `≍ 2π²r/(Kb|ξ|)`, which is unbounded. The wave-47 shape was satisfied by
+  nothing. The bracket now starts at `|ξ|²`, which is the minimal repair and is **free in the
+  ledger**: the slot's own prefactor `θr/(2σ³)` turns the new term into `r²|ξ|³·D`, degree
+  `3 ≤ 8`, and inside `exists_studentized_low_range_core` only `α₃` and `α₅` move. Both lemmas
+  are re-proved at the amended shape and the conclusion is untouched.
+
+* **`h3a`/`h3b`/`h4` ARE SATISFIABLE WITH CONSTANTS, BUT NOT FOR THE REASON THE PHRASE "MOMENT
+  BOOKKEEPING" SUGGESTS.** `norm_multiCharFun_vecRootLaw_damped_le` returns
+  `(k+1)k^k Q^k·‖φ(c)‖^{N−k}`, and its `Q` must dominate `∫|⟪x,b_l⟫||⟪x,a⟫|`, which is
+  proportional to `|θ|`; the coefficient the hypothesis asks for is a *constant*. The polynomial
+  is beaten only because `D` is required merely to satisfy `D ≤ e^{−π²ξ²/2}`, so taking `D` to
+  **be** that value leaves a residual `e^{−π²ξ²/4}` — `exp_damping_split`, which is where the
+  threshold `n ≥ 12` comes from, the split needing `(n − j)/n ≥ 3/4` at the largest slot `j = 3`
+  — and a fixed Gaussian beats a fixed polynomial (`exists_poly_mul_exp_neg_sq_le`).
+  `exists_const_of_damped_poly` is the combination and is stated so that all six damped
+  hypotheses (`hB1`, `hB2`, `h3a`, `h3b`, `h4`, and the damped half of the two comparisons) draw
+  on it. **These three lemmas are proved.**
+
+* **THE NEW ITEM: NO SINGLE LAW SUPPORTS ALL EIGHT, AND THE TRUNCATED PAIR IS NOT CENTRED.**
+  Wave 47 says the eight are "moment bookkeeping on the truncated pair, which is where `hF8` is
+  already spent". They are not, and the two halves pull in opposite directions.
+
+  1. *`hB1`, `hB2` and the `k`-slot bounds need EXACT centring.* `hmean`, `hthird` of
+     `norm_charFun_smul_pow_sub_edgeworth_le` and `hm0`, `hm1`, `hcent` of the two multilinear
+     theorems are **equalities**, not estimates. On `F.map (studentPair F ∘ truncAt m √n)` the
+     first coordinate has mean `∫(T − m)dF = −∫_{|x−m|>√n}(x − m)dF ≠ 0`, and the second has
+     mean `∫(T − m)²dF − Var F ≠ 0`. The truncated pair is **not** centred, so none of these
+     theorems applies to it. On the untruncated `studentPair F` centring is exact and free —
+     that is `integral_inner_studentPair` — and `hF8` is exactly what buys the fourth directional
+     moment in the second coordinate.
+  2. *`hRg` needs boundedness, and far more than eight moments without it.* Its bound is
+     `∫ surrogateRemGraded θ (w₀/σ) (w₁/σ²) r`, and `surrogateRemGraded`'s first summand is a
+     **cube** of `r(|u||v|/2) + r²(|u|³/2 + 3|u||v|²/8)`; expanding it reaches `|u|⁹` and
+     `|u|³|v|⁶`. On the root of the untruncated pair that is a ninth moment of `X − m` and a
+     sixth of `(X − m)²` — twelve moments of `F` and more — so `hF8` does not make the integrand
+     integrable, let alone bound it. On the *truncated* pair every coordinate is bounded, the
+     integral exists outright, and Rosenthal at the truncation level `τ = √n` keeps its size
+     `n`-uniform, which is what `C₂`, `C₃` need.
+
+  So `hRg` forces truncation and `hB1`/`hB2`/`h3a`/`h3b`/`h4` forbid it, **as the pair is
+  currently defined**. The repair is not to weaken any of the five: it is to truncate and
+  **re-centre**, i.e. to run the whole low range on
+  `Zₙ(x) = (T x − mₙ, (T x − mₙ)² − vₙ)` with `mₙ = ∫T dF` and `vₙ = ∫(T − mₙ)²dF`, which is
+  bounded *and* exactly centred, and whose `σ`, `γ` are its own moments. What that costs is a
+  new, and genuinely small, item: `|mₙ − m| ≤ μ₄/n^{3/2}` and `|vₙ − Var F| ≤ μ₄/n` by
+  `abs_sub_truncAt_le`/`abs_sq_sub_sq_truncAt_le`, so the two studentizations differ at the CDF
+  level by a shift of order `n⁻¹` after scaling by `√n/σ` — which the peel already prices
+  (`hslice`, `hwin`, waves 40 and 41), and by `|γₙ − γ|`, which enters the Edgeworth term at
+  order `n^{-1/2}·n^{-1/2}`. **This is the fifth item of the residue and no wave has named it.**
+
+* **WHAT THE RESIDUE IS NOW.** Item 4 is *not* eight bounds. It is: (a) the re-centred truncated
+  pair `Zₙ` and the CDF-level comparison of its studentization with `studentizedRootCDF`
+  (the new item above); (b) the six damped bounds at `Zₙ`, whose arithmetic half is proved here
+  and whose remaining half is the identification of the polynomial coefficients in terms of
+  `Zₙ`'s moments — that half *is* bookkeeping; (c) `hRg`'s size estimate at `Zₙ`, which is a
+  Rosenthal bound at the truncation level and is the only one of the eight with any content
+  left; (d) the composition, unchanged from wave 47's list. Items 1, 2 and 3 of the wave-46
+  residue are closed and nothing found here touches them, the certificate, or (U1)–(U3).
+
+  **This theorem is therefore still `sorry`, the file is at one `sorry`, and Batch 12 is not
+  complete.** -/
 
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
@@ -17806,3 +18054,4 @@ theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
 end Edgeworth
 
 end StatLean.HypothesisTesting
+
