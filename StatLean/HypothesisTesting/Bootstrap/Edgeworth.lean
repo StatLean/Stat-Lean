@@ -8607,7 +8607,13 @@ the second is not, and the reason is the fixed point above: only **one** negativ
 ever appears (in `1/∂Φ` itself), because the graded induction reinvests the extra powers of `Λ`
 into `μ = εΛ` rather than letting them accumulate. The exponent is therefore carried explicitly
 by `μ^j` and `ε^N`, and the constant that is left is purely combinatorial — `8^N K²`-style
-bookkeeping depending on `N` alone. An existential constant is exactly the right shape. -/
+bookkeeping depending on `N` alone. An existential constant is exactly the right shape.
+
+Every bound is **local**: the slope floor, the higher-derivative bound and the amplitude grading
+are hypotheses on a set `S` (an interval `[-A, A]` in the headline), never on all of `ℝ`. That is
+not a refinement, it is a necessity — the surrogate phase is a *cubic* in `w₀`, so its second
+derivative is unbounded on the line and only the global non-vanishing of `∂Φ` survives off the
+cut-off's support. The whole induction is pointwise in `x`, so the localisation is free. -/
 
 /-! ## Elementary graded bookkeeping -/
 
@@ -8687,25 +8693,26 @@ The exponent is carried **explicitly**, by the `μ^j` and the single negative po
 the combinatorial constant `K` is existential. That is the shape the ten-fold iteration needs,
 and it is why an existential constant is harmless here. -/
 theorem exists_bound_iteratedDeriv_recipDeriv (N : ℕ) :
-    ∃ K : ℝ, 1 ≤ K ∧ ∀ (Φ : ℝ → ℝ) (Λ ε : ℝ), ContDiff ℝ (⊤ : ℕ∞) Φ → 0 < Λ → 1 ≤ ε * Λ →
-      (∀ x : ℝ, Λ ≤ |deriv Φ x|) →
-      (∀ j : ℕ, 1 ≤ j → j ≤ N → ∀ x : ℝ, |iteratedDeriv j (deriv Φ) x| ≤ ε * Λ ^ 2) →
-      ∀ j ≤ N, ∀ x : ℝ, Λ * |iteratedDeriv j (recipDeriv Φ) x| ≤ K * (ε * Λ) ^ j := by
+    ∃ K : ℝ, 1 ≤ K ∧ ∀ (Φ : ℝ → ℝ) (S : Set ℝ) (Λ ε : ℝ), ContDiff ℝ (⊤ : ℕ∞) Φ →
+      (∀ x : ℝ, deriv Φ x ≠ 0) → 0 < Λ → 1 ≤ ε * Λ →
+      (∀ x ∈ S, Λ ≤ |deriv Φ x|) →
+      (∀ j : ℕ, 1 ≤ j → j ≤ N → ∀ x ∈ S, |iteratedDeriv j (deriv Φ) x| ≤ ε * Λ ^ 2) →
+      ∀ j ≤ N, ∀ x ∈ S, Λ * |iteratedDeriv j (recipDeriv Φ) x| ≤ K * (ε * Λ) ^ j := by
   induction N with
   | zero =>
       refine ⟨1, le_refl 1, ?_⟩
-      intro Φ Λ ε _ hΛ _ hlow _ j hj x
+      intro Φ S Λ ε _ _ hΛ _ hlow _ j hj x hxS
       have hj0 : j = 0 := Nat.le_zero.mp hj
       subst hj0
       have hne : |deriv Φ x| ≠ 0 := by
-        have := hlow x; linarith
+        have := hlow x hxS; linarith
       simp only [iteratedDeriv_zero, recipDeriv, pow_zero, mul_one, abs_inv]
       rw [mul_inv_le_iff₀ (by positivity)]
-      simpa using hlow x
+      simpa using hlow x hxS
   | succ N ih =>
       obtain ⟨K, hK1, hK⟩ := ih
       refine ⟨max K (8 ^ N * K ^ 2), le_max_of_le_left hK1, ?_⟩
-      intro Φ Λ ε hΦ hΛ hμ hlow hhigh j hj x
+      intro Φ S Λ ε hΦ hΦ0 hΛ hμ hlow hhigh j hj x hxS
       have hμ0 : (0 : ℝ) < ε * Λ := lt_of_lt_of_le zero_lt_one hμ
       have hμnn : (0 : ℝ) ≤ ε * Λ := le_of_lt hμ0
       have hε0 : 0 < ε := by
@@ -8714,21 +8721,15 @@ theorem exists_bound_iteratedDeriv_recipDeriv (N : ℕ) :
         nlinarith
       have hK0 : (0 : ℝ) < K := lt_of_lt_of_le zero_lt_one hK1
       -- the inductive hypothesis, available at order `N`
-      have hlowN := hK Φ Λ ε hΦ hΛ hμ hlow
-        (fun j hj1 hjN x => hhigh j hj1 (le_trans hjN (Nat.le_succ N)) x)
+      have hlowN := hK Φ S Λ ε hΦ hΦ0 hΛ hμ hlow
+        (fun j hj1 hjN x hx => hhigh j hj1 (le_trans hjN (Nat.le_succ N)) x hx)
       rcases Nat.lt_or_ge j (N + 1) with hjlt | hjge
-      · refine le_trans (hlowN j (Nat.lt_succ_iff.mp hjlt) x) ?_
+      · refine le_trans (hlowN j (Nat.lt_succ_iff.mp hjlt) x hxS) ?_
         exact mul_le_mul_of_nonneg_right (le_max_left _ _) (pow_nonneg hμnn j)
       · -- the top order `j = N + 1`
         have hjeq : j = N + 1 := le_antisymm hj hjge
         subst hjeq
         have hΦ' : ContDiff ℝ (⊤ : ℕ∞) (deriv Φ) := (contDiff_infty_iff_deriv.mp hΦ).2
-        have hΦ0 : ∀ y : ℝ, deriv Φ y ≠ 0 := by
-          intro y hy
-          have := hlow y
-          rw [hy] at this
-          simp at this
-          linarith
         have hrc : ContDiff ℝ (⊤ : ℕ∞) (recipDeriv Φ) := contDiff_recipDeriv hΦ hΦ0
         have hΦ'' : ContDiff ℝ (⊤ : ℕ∞) (deriv (deriv Φ)) :=
           (contDiff_infty_iff_deriv.mp hΦ').2
@@ -8739,7 +8740,7 @@ theorem exists_bound_iteratedDeriv_recipDeriv (N : ℕ) :
           rw [div_mul_eq_mul_div, le_div_iff₀ hΛ]
           calc |iteratedDeriv p (recipDeriv Φ) x| * Λ
               = Λ * |iteratedDeriv p (recipDeriv Φ) x| := by ring
-            _ ≤ K * (ε * Λ) ^ p := hlowN p hp x
+            _ ≤ K * (ε * Λ) ^ p := hlowN p hp x hxS
         -- Leibniz for `(1/Φ')²`
         have hsq : ∀ m ≤ N, |iteratedDeriv m
             (fun y : ℝ => recipDeriv Φ y * recipDeriv Φ y) x|
@@ -8783,7 +8784,7 @@ theorem exists_bound_iteratedDeriv_recipDeriv (N : ℕ) :
                   = -iteratedDeriv i (deriv (deriv Φ)) x := iteratedDeriv_neg i _ x
               rw [hneg', abs_neg, ← iteratedDeriv_succ']
               exact hhigh (i + 1) (Nat.succ_le_succ (Nat.zero_le i))
-                (Nat.succ_le_succ (le_trans hi (le_refl N))) x
+                (Nat.succ_le_succ (le_trans hi (le_refl N))) x hxS
             have hpos : (0 : ℝ) ≤ ε * Λ ^ 2 := by positivity
             nlinarith
           · intro i hi
@@ -8883,27 +8884,22 @@ lemma norm_iteratedDeriv_ibpStep {Φ : ℝ → ℝ} {f : ℝ → ℂ} (hΦ : Con
 /-- **One integration by parts costs one factor `ε`** — the quantitative half of the leakage
 estimate, at a single order. -/
 theorem exists_bound_iteratedDeriv_ibpStep (N : ℕ) :
-    ∃ C : ℝ, 1 ≤ C ∧ ∀ (Φ : ℝ → ℝ) (f : ℝ → ℂ) (Λ ε P : ℝ),
-      ContDiff ℝ (⊤ : ℕ∞) Φ → ContDiff ℝ (⊤ : ℕ∞) f → 0 < Λ → 1 ≤ ε * Λ → 0 ≤ P →
-      (∀ x : ℝ, Λ ≤ |deriv Φ x|) →
-      (∀ j : ℕ, 1 ≤ j → j ≤ N → ∀ x : ℝ, |iteratedDeriv j (deriv Φ) x| ≤ ε * Λ ^ 2) →
+    ∃ C : ℝ, 1 ≤ C ∧ ∀ (Φ : ℝ → ℝ) (f : ℝ → ℂ) (S : Set ℝ) (Λ ε P : ℝ),
+      ContDiff ℝ (⊤ : ℕ∞) Φ → ContDiff ℝ (⊤ : ℕ∞) f → (∀ x : ℝ, deriv Φ x ≠ 0) →
+      0 < Λ → 1 ≤ ε * Λ → 0 ≤ P →
+      (∀ x ∈ S, Λ ≤ |deriv Φ x|) →
+      (∀ j : ℕ, 1 ≤ j → j ≤ N → ∀ x ∈ S, |iteratedDeriv j (deriv Φ) x| ≤ ε * Λ ^ 2) →
       ∀ m : ℕ, m + 1 ≤ N →
-      (∀ i ≤ m + 1, ∀ x : ℝ, ‖iteratedDeriv i f x‖ ≤ P * (ε * Λ) ^ i) →
-      ∀ x : ℝ, ‖iteratedDeriv m (ibpStep Φ f) x‖ ≤ (C * ε * P) * (ε * Λ) ^ m := by
+      (∀ i ≤ m + 1, ∀ x ∈ S, ‖iteratedDeriv i f x‖ ≤ P * (ε * Λ) ^ i) →
+      ∀ x ∈ S, ‖iteratedDeriv m (ibpStep Φ f) x‖ ≤ (C * ε * P) * (ε * Λ) ^ m := by
   obtain ⟨K, hK1, hK⟩ := exists_bound_iteratedDeriv_recipDeriv N
   refine ⟨2 ^ (N + 1) * K, ?_, ?_⟩
   · have : (1 : ℝ) ≤ 2 ^ (N + 1) := one_le_pow₀ (by norm_num)
     nlinarith
-  intro Φ f Λ ε P hΦ hf hΛ hμ hP hlow hhigh m hm hfg x
+  intro Φ f S Λ ε P hΦ hf hΦ0 hΛ hμ hP hlow hhigh m hm hfg x hxS
   have hμ0 : (0 : ℝ) < ε * Λ := lt_of_lt_of_le zero_lt_one hμ
   have hμnn : (0 : ℝ) ≤ ε * Λ := le_of_lt hμ0
   have hK0 : (0 : ℝ) < K := lt_of_lt_of_le zero_lt_one hK1
-  have hΦ0 : ∀ y : ℝ, deriv Φ y ≠ 0 := by
-    intro y hy
-    have := hlow y
-    rw [hy] at this
-    simp at this
-    linarith
   have hrc : ContDiff ℝ (⊤ : ℕ∞) (recipDeriv Φ) := contDiff_recipDeriv hΦ hΦ0
   have hrcC : ContDiff ℝ (⊤ : ℕ∞) fun y : ℝ => ((recipDeriv Φ y : ℝ) : ℂ) :=
     Complex.ofRealCLM.contDiff.comp hrc
@@ -8913,7 +8909,7 @@ theorem exists_bound_iteratedDeriv_ibpStep (N : ℕ) :
     rw [norm_iteratedDeriv_ofReal hrc, div_mul_eq_mul_div, le_div_iff₀ hΛ]
     calc |iteratedDeriv p (recipDeriv Φ) x| * Λ
         = Λ * |iteratedDeriv p (recipDeriv Φ) x| := by ring
-      _ ≤ K * (ε * Λ) ^ p := hK Φ Λ ε hΦ hΛ hμ hlow hhigh p hp x
+      _ ≤ K * (ε * Λ) ^ p := hK Φ S Λ ε hΦ hΦ0 hΛ hμ hlow hhigh p hp x hxS
   rw [norm_iteratedDeriv_ibpStep hΦ hΦ0 hf]
   refine (norm_iteratedDeriv_mul_le' (A := ℂ) hf hrcC (m + 1) x).trans ?_
   have hbs := binom_sum_le (n := m + 1)
@@ -8921,7 +8917,7 @@ theorem exists_bound_iteratedDeriv_ibpStep (N : ℕ) :
     (d := fun i => ‖iteratedDeriv i (fun y : ℝ => ((recipDeriv Φ y : ℝ) : ℂ)) x‖)
     (C := P) (D := K / Λ) (μ := ε * Λ) hμ
     (fun i => norm_nonneg _) (fun i => norm_nonneg _)
-    (fun i hi => hfg i hi x) (fun i hi => hrec i (le_trans hi hm))
+    (fun i hi => hfg i hi x hxS) (fun i hi => hrec i (le_trans hi hm))
   refine hbs.trans ?_
   have hpow : (ε * Λ) ^ (m + 1) = (ε * Λ) ^ m * (ε * Λ) := pow_succ _ _
   have h2 : (2 : ℝ) ^ (m + 1) ≤ 2 ^ (N + 1) :=
@@ -8942,37 +8938,32 @@ theorem exists_bound_iteratedDeriv_ibpStep (N : ℕ) :
 
 /-- **`k` integrations by parts cost `k` factors of `ε`.** -/
 theorem exists_bound_iterate_ibpStep (N : ℕ) :
-    ∃ C : ℝ, 1 ≤ C ∧ ∀ (Φ : ℝ → ℝ) (f : ℝ → ℂ) (Λ ε P : ℝ),
-      ContDiff ℝ (⊤ : ℕ∞) Φ → ContDiff ℝ (⊤ : ℕ∞) f → 0 < Λ → 1 ≤ ε * Λ → 0 ≤ P →
-      (∀ x : ℝ, Λ ≤ |deriv Φ x|) →
-      (∀ j : ℕ, 1 ≤ j → j ≤ N → ∀ x : ℝ, |iteratedDeriv j (deriv Φ) x| ≤ ε * Λ ^ 2) →
-      (∀ j ≤ N, ∀ x : ℝ, ‖iteratedDeriv j f x‖ ≤ P * (ε * Λ) ^ j) →
-      ∀ k j : ℕ, j + k ≤ N → ∀ x : ℝ,
+    ∃ C : ℝ, 1 ≤ C ∧ ∀ (Φ : ℝ → ℝ) (f : ℝ → ℂ) (S : Set ℝ) (Λ ε P : ℝ),
+      ContDiff ℝ (⊤ : ℕ∞) Φ → ContDiff ℝ (⊤ : ℕ∞) f → (∀ x : ℝ, deriv Φ x ≠ 0) →
+      0 < Λ → 1 ≤ ε * Λ → 0 ≤ P →
+      (∀ x ∈ S, Λ ≤ |deriv Φ x|) →
+      (∀ j : ℕ, 1 ≤ j → j ≤ N → ∀ x ∈ S, |iteratedDeriv j (deriv Φ) x| ≤ ε * Λ ^ 2) →
+      (∀ j ≤ N, ∀ x ∈ S, ‖iteratedDeriv j f x‖ ≤ P * (ε * Λ) ^ j) →
+      ∀ k j : ℕ, j + k ≤ N → ∀ x ∈ S,
         ‖iteratedDeriv j ((ibpStep Φ)^[k] f) x‖ ≤ (P * (C * ε) ^ k) * (ε * Λ) ^ j := by
   obtain ⟨C, hC1, hC⟩ := exists_bound_iteratedDeriv_ibpStep N
   refine ⟨C, hC1, ?_⟩
-  intro Φ f Λ ε P hΦ hf hΛ hμ hP hlow hhigh hfg k
+  intro Φ f S Λ ε P hΦ hf hΦ0 hΛ hμ hP hlow hhigh hfg k
   have hε0 : 0 < ε := by
     have hμ0 : (0 : ℝ) < ε * Λ := lt_of_lt_of_le zero_lt_one hμ
     by_contra hcon
     push_neg at hcon
     nlinarith
   have hC0 : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC1
-  have hΦ0 : ∀ y : ℝ, deriv Φ y ≠ 0 := by
-    intro y hy
-    have := hlow y
-    rw [hy] at this
-    simp at this
-    linarith
   induction k with
-  | zero => intro j hj x; simpa using hfg j (by omega) x
+  | zero => intro j hj x hxS; simpa using hfg j (by omega) x hxS
   | succ k ih =>
-      intro j hj x
+      intro j hj x hxS
       rw [Function.iterate_succ_apply']
       have hg := contDiff_iterate_ibpStep hΦ hΦ0 hf k
       have hPk : (0 : ℝ) ≤ P * (C * ε) ^ k := by positivity
-      have hbd := hC Φ ((ibpStep Φ)^[k] f) Λ ε (P * (C * ε) ^ k) hΦ hg hΛ hμ hPk hlow hhigh
-        j (by omega) (fun i hi y => ih i (by omega) y) x
+      have hbd := hC Φ ((ibpStep Φ)^[k] f) S Λ ε (P * (C * ε) ^ k) hΦ hg hΦ0 hΛ hμ hPk hlow hhigh
+        j (by omega) (fun i hi y hy => ih i (by omega) y hy) x hxS
       refine hbd.trans (le_of_eq ?_)
       ring
 
@@ -9023,27 +9014,23 @@ and whose higher derivatives are at most `εΛ²`, oscillates away all but `2A·
 mass — `C` depending only on the number `N` of integrations by parts. -/
 theorem norm_integral_expPhase_le_graded (N : ℕ) :
     ∃ C : ℝ, 1 ≤ C ∧ ∀ (Φ : ℝ → ℝ) (f : ℝ → ℂ) (Λ ε P A : ℝ),
-      ContDiff ℝ (⊤ : ℕ∞) Φ → ContDiff ℝ (⊤ : ℕ∞) f → 0 < Λ → 1 ≤ ε * Λ → 0 ≤ P → 0 ≤ A →
-      (∀ x : ℝ, Λ ≤ |deriv Φ x|) →
-      (∀ j : ℕ, 1 ≤ j → j ≤ N → ∀ x : ℝ, |iteratedDeriv j (deriv Φ) x| ≤ ε * Λ ^ 2) →
-      (∀ j ≤ N, ∀ x : ℝ, ‖iteratedDeriv j f x‖ ≤ P * (ε * Λ) ^ j) →
+      ContDiff ℝ (⊤ : ℕ∞) Φ → ContDiff ℝ (⊤ : ℕ∞) f → (∀ x : ℝ, deriv Φ x ≠ 0) →
+      0 < Λ → 1 ≤ ε * Λ → 0 ≤ P → 0 ≤ A →
+      (∀ x ∈ Set.Icc (-A) A, Λ ≤ |deriv Φ x|) →
+      (∀ j : ℕ, 1 ≤ j → j ≤ N → ∀ x ∈ Set.Icc (-A) A,
+        |iteratedDeriv j (deriv Φ) x| ≤ ε * Λ ^ 2) →
+      (∀ j ≤ N, ∀ x ∈ Set.Icc (-A) A, ‖iteratedDeriv j f x‖ ≤ P * (ε * Λ) ^ j) →
       (∀ x : ℝ, A < |x| → f x = 0) →
       ‖∫ x : ℝ, f x * Complex.exp (Complex.I * (Φ x : ℂ))‖ ≤ 2 * A * (P * (C * ε) ^ N) := by
   obtain ⟨C, hC1, hC⟩ := exists_bound_iterate_ibpStep N
   refine ⟨C, hC1, ?_⟩
-  intro Φ f Λ ε P A hΦ hf hΛ hμ hP hA hlow hhigh hfg hzero
+  intro Φ f Λ ε P A hΦ hf hΦ0 hΛ hμ hP hA hlow hhigh hfg hzero
   have hε0 : 0 < ε := by
     have hμ0 : (0 : ℝ) < ε * Λ := lt_of_lt_of_le zero_lt_one hμ
     by_contra hcon
     push_neg at hcon
     nlinarith
   have hC0 : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC1
-  have hΦ0 : ∀ y : ℝ, deriv Φ y ≠ 0 := by
-    intro y hy
-    have := hlow y
-    rw [hy] at this
-    simp at this
-    linarith
   have hout : ∀ x : ℝ, x ∉ Set.Icc (-A) A → f x = 0 := by
     intro x hx
     refine hzero x ?_
@@ -9058,9 +9045,11 @@ theorem norm_integral_expPhase_le_graded (N : ℕ) :
     intro x hx
     have : x ∉ tsupport g := fun hc => hx (hts (tsupport_iterate_ibpStep_subset Φ f N hc))
     rw [image_eq_zero_of_notMem_tsupport this, zero_mul]
-  have hgb : ∀ x : ℝ, ‖g x * Complex.exp (Complex.I * (Φ x : ℂ))‖ ≤ P * (C * ε) ^ N := by
-    intro x
-    have h1 := hC Φ f Λ ε P hΦ hf hΛ hμ hP hlow hhigh hfg N 0 (by omega) x
+  have hgb : ∀ x ∈ Set.Icc (-A) A,
+      ‖g x * Complex.exp (Complex.I * (Φ x : ℂ))‖ ≤ P * (C * ε) ^ N := by
+    intro x hxS
+    have h1 := hC Φ f (Set.Icc (-A) A) Λ ε P hΦ hf hΦ0 hΛ hμ hP hlow hhigh hfg N 0
+      (by omega) x hxS
     rw [norm_mul, Complex.norm_exp]
     simp only [Complex.mul_re, Complex.I_re, Complex.I_im, Complex.ofReal_re,
       Complex.ofReal_im]
@@ -9070,7 +9059,7 @@ theorem norm_integral_expPhase_le_graded (N : ℕ) :
     ring
   have hint : ‖∫ x : ℝ, g x * Complex.exp (Complex.I * (Φ x : ℂ))‖ ≤ 2 * A * (P * (C * ε) ^ N) := by
     rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hgz]
-    refine le_trans (norm_setIntegral_le_of_norm_le_const ?_ fun x _ => hgb x) ?_
+    refine le_trans (norm_setIntegral_le_of_norm_le_const ?_ fun x hx => hgb x hx) ?_
     · rw [Real.volume_Icc]; exact ENNReal.ofReal_lt_top
     · rw [hvol]; exact le_of_eq (by ring)
   rw [norm_integral_expPhase_eq_iterate hf hfs hΦ hΦ0 N]
