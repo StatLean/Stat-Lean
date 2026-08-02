@@ -3730,6 +3730,25 @@ private noncomputable def tiltSqConst : ℝ := 4 * (27 / 2 * Real.exp 1 + 1) ^ 2
 private lemma tiltSqConst_pos : 0 < tiltSqConst := by
   unfold tiltSqConst; positivity
 
+/-- `√tiltSqConst ≥ 53` (wave 40). An explicit lower bound, so that the crude constant `106`
+which the *large*-shift regime of the localised swap step pays is absorbed by the
+Cauchy–Schwarz constant `2√tiltSqConst` that the *short*-shift regime pays anyway — the two
+regimes can then be reported with a single constant. -/
+private lemma le_sqrt_tiltSqConst : (53 : ℝ) ≤ Real.sqrt tiltSqConst := by
+  have he : (2.7 : ℝ) < Real.exp 1 := by
+    have := Real.exp_one_gt_d9
+    linarith
+  have he8 : (1 : ℝ) ≤ Real.exp 8 := Real.one_le_exp (by norm_num)
+  have hbig : (53 : ℝ) ^ 2 ≤ tiltSqConst := by
+    have h1 : (37 : ℝ) ≤ 27 / 2 * Real.exp 1 + 1 := by linarith
+    have h2 : (37 : ℝ) ^ 2 ≤ (27 / 2 * Real.exp 1 + 1) ^ 2 := by nlinarith
+    have h3 : (0 : ℝ) ≤ (27 / 2 * Real.exp 1 + 1) ^ 2 := sq_nonneg _
+    rw [tiltSqConst]
+    nlinarith
+  rw [show (53 : ℝ) = Real.sqrt (53 ^ 2) by
+    rw [Real.sqrt_sq (by norm_num : (0 : ℝ) ≤ 53)]]
+  exact Real.sqrt_le_sqrt hbig
+
 private lemma integrable_sq_tiltRemainder {s : ℝ} (hs : 0 ≤ s) (hs1 : s ≤ 1) :
     Integrable (fun t => tiltRemainder s t ^ 2) (gaussianReal 0 1) := by
   refine Integrable.mono'
@@ -4864,6 +4883,84 @@ private lemma abs_integral_shift_vecTiltRemainder_le_of_const_ball_any
         + |∫ z, (F (v + σ • z) - a) * (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2)
           ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))| := abs_sub _ _
     _ ≤ _ := by linarith [hexpbd, hpolybd]
+
+/-- **The crude swap-step bound: at most QUADRATIC in the shift** (wave 40).
+`|∫ G R_w dγ| ≤ 2 + ‖w‖ + ‖w‖²` whenever `|G| ≤ 1`.
+
+The uniform bound `integral_abs_vecTiltRemainder_le` is *cubic* in `‖w‖`. That is the right
+shape when the step is priced by a *constant* weight, but the localised tail brick prices a step
+at a point `v` by the shell mass at the varying width `σ(R + ‖w‖)`, which is itself *linear* in
+`‖w‖`; against a cubic bound the product would be quartic and would need a fourth moment of the
+summand law, which is not available. Against this quadratic bound the product is cubic, i.e.
+exactly a third moment.
+
+Both halves are elementary: the exponential half is a Gaussian *shift* of a function bounded by
+`1`, hence bounded by `1`; the polynomial half is `integral_abs_vecTiltPoly_le`. -/
+private lemma abs_integral_mul_vecTiltRemainder_le_crude
+    {G : EuclideanSpace ℝ (Fin k) → ℝ} (hGc : Continuous G) (hG1 : ∀ z, |G z| ≤ 1)
+    (w : EuclideanSpace ℝ (Fin k)) :
+    |∫ z, G z * vecTiltRemainder w z ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+      ≤ 2 + ‖w‖ + ‖w‖ ^ 2 := by
+  have hEint := integrable_mul_exp_tilt_gauss hGc hG1 w
+  have hPint := integrable_mul_tiltPoly_gauss hGc hG1 w
+  have hsplit : (∫ z, G z * vecTiltRemainder w z
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      = (∫ z, G z * Real.exp (⟪w, z⟫_ℝ - ‖w‖ ^ 2 / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        - ∫ z, G z * (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    rw [← integral_sub hEint hPint]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun z => ?_)
+    simp only [vecTiltRemainder]
+    ring
+  have hshift := integral_gaussian_shift_eq_tilt hGc w
+  have hexp : |∫ z, G z * Real.exp (⟪w, z⟫_ℝ - ‖w‖ ^ 2 / 2)
+      ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))| ≤ 1 := by
+    rw [← hshift]
+    have hint : Integrable (fun z : EuclideanSpace ℝ (Fin k) => G (z + w))
+        (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+      refine Integrable.mono' (integrable_const (1 : ℝ)) (by fun_prop) ?_
+      filter_upwards with z
+      rw [Real.norm_eq_abs]
+      exact hG1 _
+    calc |∫ z, G (z + w) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+        ≤ ∫ z, |G (z + w)| ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+          abs_integral_le_integral_abs
+      _ ≤ ∫ _z : EuclideanSpace ℝ (Fin k), (1 : ℝ)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+          integral_mono hint.abs (integrable_const _) (fun z => hG1 _)
+      _ = 1 := by rw [integral_const]; simp
+  have hpoly : |∫ z, G z * (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2)
+      ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))| ≤ 1 + ‖w‖ + ‖w‖ ^ 2 := by
+    have habs : Integrable (fun z : EuclideanSpace ℝ (Fin k) =>
+        |1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2|)
+        (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+      have h := integrable_mul_tiltPoly_gauss
+        (G := fun _ : EuclideanSpace ℝ (Fin k) => (1 : ℝ)) continuous_const
+        (fun _ => by norm_num) w
+      refine (h.abs).congr (Filter.Eventually.of_forall fun z => ?_)
+      simp
+    calc |∫ z, G z * (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+        ≤ ∫ z, |G z * (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2)|
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := abs_integral_le_integral_abs
+      _ ≤ ∫ z, |1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2|
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+          refine integral_mono hPint.abs habs fun z => ?_
+          rw [abs_mul]
+          nlinarith [hG1 z, abs_nonneg (G z),
+            abs_nonneg (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2)]
+      _ ≤ 1 + ‖w‖ + ‖w‖ ^ 2 := integral_abs_vecTiltPoly_le w
+  rw [hsplit]
+  calc |(∫ z, G z * Real.exp (⟪w, z⟫_ℝ - ‖w‖ ^ 2 / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        - ∫ z, G z * (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+      ≤ |∫ z, G z * Real.exp (⟪w, z⟫_ℝ - ‖w‖ ^ 2 / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+        + |∫ z, G z * (1 + ⟪w, z⟫_ℝ + (⟪w, z⟫_ℝ ^ 2 - ‖w‖ ^ 2) / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))| := abs_sub _ _
+    _ ≤ 2 + ‖w‖ + ‖w‖ ^ 2 := by linarith
 
 /-- **The polynomial part of the tilt has the same integral for every centred,
 identity-covariance law.** This is the exact analogue of the vanishing of the linear term and
@@ -8971,6 +9068,172 @@ private lemma abs_integral_swap_step_localised_le
       = C₃ * c ^ 3 * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ))
         * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3) := by ring
   linarith
+/-- **The localised swap step at a single shift, at EVERY shift length (wave 40).**
+
+This is the pointwise-in-`(v, w)` engine of route (b) of the tail brick, and it is the first
+form of it that carries no restriction on `‖w‖`. Writing `R = gaussianTailRadius k σ` and
+`u = σ(R + ‖w‖)`:
+
+* if `v` lies in the two-sided shell at width `2u`, the step is bounded *unweighted*, by the
+  better of the cubic bound `Ct‖w‖³` (`integral_abs_vecTiltRemainder_le`) and the quadratic one
+  `2 + ‖w‖ + ‖w‖²` (`abs_integral_mul_vecTiltRemainder_le_crude`) — the `min` is genuinely
+  needed: the cubic branch is what prices short shifts, the quadratic branch is what keeps the
+  product with the (linear in `‖w‖`) shell mass inside a *third* moment;
+* otherwise `F` is constant on `closedBall v u`
+  (`const_on_closedBall_of_notMem_wideShell`), and the step costs only `4 C_k C_t σ ‖w‖³` — a
+  factor `σ` of gain, with no shell mass at all. For `‖w‖ ≤ 1` this is the wave-29 bound
+  `abs_integral_shift_vecTiltRemainder_le_of_const_ball` (Cauchy–Schwarz in `L²`), and for
+  `‖w‖ > 1` — the case every previous wave left open — it is the wave-40 bound
+  `abs_integral_shift_vecTiltRemainder_le_of_const_ball_any`, whose constant `106σ‖w‖³` is
+  absorbed into `4 C_k C_t σ ‖w‖³` by `le_sqrt_tiltSqConst` together with `hCw`.
+
+Both regimes therefore report the *same* far constant, and the shell width `2u` is the same in
+both, so no case split survives into the `τ`-average. -/
+private lemma abs_integral_shift_vecTiltRemainder_localised_le
+    {Ct : ℝ} (hCt : ∀ s : ℝ, 0 ≤ s →
+      (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ Ct * s ^ 3)
+    {B : Set (EuclideanSpace ℝ (Fin k))} {F : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hF : Continuous F) (hFb : ∀ x, |F x| ≤ 1)
+    {ε : ℝ}
+    (hone : ∀ x ∈ B, F x = 1) (hsupp : ∀ x, F x ≠ 0 → x ∈ Metric.thickening ε B)
+    {Ck : ℝ} (hCk : 0 < Ck) (hCw : Real.sqrt tiltSqConst ≤ 2 * Ck * Ct)
+    (hk : 0 < k) {σ : ℝ} (hσ : 0 < σ) (hσε : ε ≤ σ) (hσ1 : σ ≤ 1)
+    (v w : EuclideanSpace ℝ (Fin k)) :
+    |∫ z, F (v + σ • z) * vecTiltRemainder w z
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+      ≤ (Metric.thickening (2 * (σ * (gaussianTailRadius k σ + ‖w‖))) B
+            \ erosion (2 * (σ * (gaussianTailRadius k σ + ‖w‖))) B).indicator
+            (fun _ => (1 : ℝ)) v
+          * min (Ct * ‖w‖ ^ 3) (2 + ‖w‖ + ‖w‖ ^ 2)
+        + 4 * Ck * Ct * σ * ‖w‖ ^ 3 := by
+  classical
+  have hR1 : (1 : ℝ) ≤ gaussianTailRadius k σ := one_le_gaussianTailRadius hk σ
+  have hu0 : 0 < σ * (gaussianTailRadius k σ + ‖w‖) := by
+    have := norm_nonneg w
+    positivity
+  have hGc : Continuous (fun z : EuclideanSpace ℝ (Fin k) => F (v + σ • z)) := by fun_prop
+  have hCt0 : 0 < Ct := by
+    by_contra hcon
+    push_neg at hcon
+    have h1 : 2 * Ck * Ct ≤ 0 := by nlinarith [hCk, hcon]
+    linarith [le_sqrt_tiltSqConst, hCw]
+  have hfar : ∀ a : ℝ, |a| ≤ 1 →
+      (∀ x, ‖x - v‖ < σ * (gaussianTailRadius k σ + ‖w‖) → F x = a) →
+      |∫ z, F (v + σ • z) * vecTiltRemainder w z
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+        ≤ 4 * Ck * Ct * σ * ‖w‖ ^ 3 := by
+    intro a ha hconst
+    have htail : ((stdGaussian (EuclideanSpace ℝ (Fin k)))
+        {z | gaussianTailRadius k σ ≤ ‖z‖}).toReal ≤ σ ^ 2 := by
+      have h := stdGaussian_norm_ge_gaussianTailRadius_le (k := k) hk hσ hσ1
+      rwa [measureReal_def] at h
+    have hsqtail : Real.sqrt (((stdGaussian (EuclideanSpace ℝ (Fin k)))
+        {z | gaussianTailRadius k σ ≤ ‖z‖}).toReal) ≤ σ := by
+      have h1 := Real.sqrt_le_sqrt htail
+      rwa [Real.sqrt_sq hσ.le] at h1
+    rcases le_or_gt ‖w‖ 1 with hw1 | hw1
+    · have hconst' : ∀ x, ‖x - v‖ < σ * gaussianTailRadius k σ → F x = a := by
+        intro x hx
+        exact hconst x (by nlinarith [norm_nonneg w, hσ.le])
+      have h := abs_integral_shift_vecTiltRemainder_le_of_const_ball hF hFb v hσ
+        (by positivity : (0 : ℝ) < σ * gaussianTailRadius k σ) ha hconst' hw1
+      have hdiv : σ * gaussianTailRadius k σ / σ = gaussianTailRadius k σ := by
+        field_simp
+      rw [hdiv] at h
+      refine h.trans ?_
+      have h2 : 2 * Real.sqrt (((stdGaussian (EuclideanSpace ℝ (Fin k)))
+            {z | gaussianTailRadius k σ ≤ ‖z‖}).toReal)
+          ≤ 2 * σ := by linarith
+      have h3 : (0 : ℝ) ≤ Real.sqrt tiltSqConst * ‖w‖ ^ 3 := by positivity
+      calc 2 * Real.sqrt (((stdGaussian (EuclideanSpace ℝ (Fin k)))
+              {z | gaussianTailRadius k σ ≤ ‖z‖}).toReal)
+            * (Real.sqrt tiltSqConst * ‖w‖ ^ 3)
+          ≤ (2 * σ) * (Real.sqrt tiltSqConst * ‖w‖ ^ 3) :=
+            mul_le_mul_of_nonneg_right h2 h3
+        _ ≤ (2 * σ) * ((2 * Ck * Ct) * ‖w‖ ^ 3) := by
+            have hs2 : (0 : ℝ) ≤ 2 * σ := by linarith
+            have h4 : Real.sqrt tiltSqConst * ‖w‖ ^ 3 ≤ (2 * Ck * Ct) * ‖w‖ ^ 3 :=
+              mul_le_mul_of_nonneg_right hCw (by positivity)
+            exact mul_le_mul_of_nonneg_left h4 hs2
+        _ = 4 * Ck * Ct * σ * ‖w‖ ^ 3 := by ring
+    · have h := abs_integral_shift_vecTiltRemainder_le_of_const_ball_any hF hFb v hσ ha
+        (M := gaussianTailRadius k σ) hconst
+      refine h.trans ?_
+      have hw3 : (1 : ℝ) ≤ ‖w‖ ^ 3 := by nlinarith [hw1]
+      have hw23 : ‖w‖ ^ 2 ≤ ‖w‖ ^ 3 := by nlinarith [hw1, norm_nonneg w]
+      have hcrude : 2 * ((stdGaussian (EuclideanSpace ℝ (Fin k)))
+            {z | gaussianTailRadius k σ ≤ ‖z‖}).toReal
+          + 2 * Real.sqrt (((stdGaussian (EuclideanSpace ℝ (Fin k)))
+              {z | gaussianTailRadius k σ ≤ ‖z‖}).toReal) * (26 * (1 + ‖w‖ ^ 2))
+          ≤ 106 * σ * ‖w‖ ^ 3 := by
+        have hmass : ((stdGaussian (EuclideanSpace ℝ (Fin k)))
+            {z | gaussianTailRadius k σ ≤ ‖z‖}).toReal ≤ σ := by
+          nlinarith [htail, hσ.le, hσ1]
+        nlinarith [hmass, hsqtail, hw3, hw23, hσ.le, hσ1,
+          ENNReal.toReal_nonneg (a := (stdGaussian (EuclideanSpace ℝ (Fin k)))
+            {z | gaussianTailRadius k σ ≤ ‖z‖}),
+          Real.sqrt_nonneg (((stdGaussian (EuclideanSpace ℝ (Fin k)))
+            {z | gaussianTailRadius k σ ≤ ‖z‖}).toReal), sq_nonneg ‖w‖]
+      refine hcrude.trans ?_
+      have h53 : (106 : ℝ) ≤ 2 * (2 * Ck * Ct) := by
+        have := le_sqrt_tiltSqConst
+        linarith [hCw]
+      have h1 : (106 : ℝ) ≤ 4 * Ck * Ct := by linarith
+      have h2 : (0 : ℝ) ≤ σ * ‖w‖ ^ 3 := by positivity
+      linarith [mul_le_mul_of_nonneg_right h1 h2]
+  by_cases hv : v ∈ Metric.thickening (2 * (σ * (gaussianTailRadius k σ + ‖w‖))) B
+      \ erosion (2 * (σ * (gaussianTailRadius k σ + ‖w‖))) B
+  · rw [Set.indicator_of_mem hv, one_mul]
+    have h1 : |∫ z, F (v + σ • z) * vecTiltRemainder w z
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))| ≤ Ct * ‖w‖ ^ 3 := by
+      calc |∫ z, F (v + σ • z) * vecTiltRemainder w z
+              ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+          ≤ ∫ z, |F (v + σ • z) * vecTiltRemainder w z|
+              ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := abs_integral_le_integral_abs
+        _ ≤ ∫ z, |vecTiltRemainder w z| ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+            refine integral_mono ?_ (integrable_vecTiltRemainder w).abs fun z => ?_
+            · refine Integrable.mono' (integrable_vecTiltRemainder w).abs
+                ((hGc.mul (continuous_vecTiltRemainder w)).abs.aestronglyMeasurable)
+                (Filter.Eventually.of_forall fun z => ?_)
+              rw [Real.norm_eq_abs, abs_abs, abs_mul]
+              nlinarith [hFb (v + σ • z), abs_nonneg (vecTiltRemainder w z),
+                abs_nonneg (F (v + σ • z))]
+            · rw [abs_mul]
+              nlinarith [hFb (v + σ • z), abs_nonneg (vecTiltRemainder w z),
+                abs_nonneg (F (v + σ • z))]
+        _ ≤ Ct * ‖w‖ ^ 3 := integral_abs_vecTiltRemainder_le hCt w
+    have h2 : |∫ z, F (v + σ • z) * vecTiltRemainder w z
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))| ≤ 2 + ‖w‖ + ‖w‖ ^ 2 :=
+      abs_integral_mul_vecTiltRemainder_le_crude hGc (fun z => hFb _) w
+    have hnn : (0 : ℝ) ≤ 4 * Ck * Ct * σ * ‖w‖ ^ 3 := by positivity
+    linarith [le_min h1 h2]
+  · rw [Set.indicator_of_notMem hv]
+    have heros : ∀ {s t : ℝ}, s ≤ t → erosion t B ⊆ erosion s B := by
+      intro s t hst x hx y hy
+      exact hx (Metric.closedBall_subset_closedBall hst hy)
+    have hsub : Metric.thickening (ε + σ * (gaussianTailRadius k σ + ‖w‖)) B
+          \ erosion (σ * (gaussianTailRadius k σ + ‖w‖)) B
+        ⊆ Metric.thickening (2 * (σ * (gaussianTailRadius k σ + ‖w‖))) B
+          \ erosion (2 * (σ * (gaussianTailRadius k σ + ‖w‖))) B := by
+      have hle : ε + σ * (gaussianTailRadius k σ + ‖w‖)
+          ≤ 2 * (σ * (gaussianTailRadius k σ + ‖w‖)) := by
+        have h1 : σ ≤ σ * (gaussianTailRadius k σ + ‖w‖) := by
+          nlinarith [norm_nonneg w, hσ.le]
+        linarith
+      exact Set.diff_subset_diff (Metric.thickening_mono hle B) (heros (by linarith))
+    have hvnot : v ∉ Metric.thickening (ε + σ * (gaussianTailRadius k σ + ‖w‖)) B
+        \ erosion (σ * (gaussianTailRadius k σ + ‖w‖)) B := fun hmem => hv (hsub hmem)
+    obtain ⟨a, hCa⟩ := const_on_closedBall_of_notMem_wideShell hone hsupp hvnot
+    have hav : F v = a := hCa v (by simp [Metric.mem_closedBall, hu0.le])
+    have haabs : |a| ≤ 1 := by rw [← hav]; exact hFb v
+    have hconst : ∀ x, ‖x - v‖ < σ * (gaussianTailRadius k σ + ‖w‖) → F x = a := by
+      intro x hx
+      refine hCa x ?_
+      rw [Metric.mem_closedBall, dist_eq_norm]
+      linarith
+    have hfin := hfar a haabs hconst
+    linarith
+
 set_option linter.unusedVariables false in
 -- the body is a named `sorry` brick: the hypotheses are the interface, see the docstring
 /-- **The per-step TAIL estimate (wave 38: STATED, NOT proved; wave 39: the WEIGHT is AMENDED
