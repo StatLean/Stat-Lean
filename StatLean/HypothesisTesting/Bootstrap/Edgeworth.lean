@@ -7652,6 +7652,37 @@ lemma band_kappa_ledger {C Γ κ p q : ℝ} {n : ℕ} (hn : 1 ≤ n) (hC : 0 ≤
           (Real.rpow_le_rpow_of_exponent_le hn1 (by linarith)) hC
     _ = C / ((n : ℝ) * Real.sqrt (n : ℝ)) := by rw [hval, ← div_eq_mul_inv]
 
+/-- **The band ledger at a general target (wave 47).**  `band_kappa_ledger` is this statement at
+`target = −3/2`, which is the accuracy the *mean's* outer radius `ρ = c√n` dictates.  The
+studentized chain does not run at that radius — `Γ` is polynomial in `θ`, so the outer radius has
+to be pushed out to `ρ = n²` (see the section note above `middle_range_ledger_exponent`) — and
+the middle range then asks for `n^{−17/6}` instead.  Nothing about the ledger changes except the
+target, and the requirement on `q` moves from `p + 3/2` to `p + 17/6`. -/
+lemma band_kappa_ledger_general {C Γ κ p q target : ℝ} {n : ℕ} (hn : 1 ≤ n) (hC : 0 ≤ C)
+    (hΓ : Γ ≤ C * (n : ℝ) ^ p) (hΓ0 : 0 ≤ Γ) (hκ0 : 0 ≤ κ) (hκ : κ ≤ (n : ℝ) ^ (-q))
+    (hpq : p - q ≤ target) :
+    Γ * κ ≤ C * (n : ℝ) ^ target := by
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hn0 : (0 : ℝ) < (n : ℝ) := lt_of_lt_of_le one_pos hn1
+  have hstep : Γ * κ ≤ (C * (n : ℝ) ^ p) * (n : ℝ) ^ (-q) :=
+    mul_le_mul hΓ hκ hκ0 (le_trans hΓ0 hΓ)
+  have hcomb : (C * (n : ℝ) ^ p) * (n : ℝ) ^ (-q) = C * (n : ℝ) ^ (p - q) := by
+    rw [mul_assoc, ← Real.rpow_add hn0]
+    ring_nf
+  calc Γ * κ ≤ C * (n : ℝ) ^ (p - q) := by rw [← hcomb]; exact hstep
+    _ ≤ C * (n : ℝ) ^ target :=
+        mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_le hn1 hpq) hC
+
+/-- **The middle range's twin of `band_kappa_ledger`.**  This is the one arithmetic item wave 46
+recorded as still owed by the middle range: the certificate's polynomial mass against the
+band's `κ`, priced at the accuracy the outer radius `ρ = n²` dictates. -/
+lemma band_kappa_ledger_middle {C Γ κ p q : ℝ} {n : ℕ} (hn : 1 ≤ n) (hC : 0 ≤ C)
+    (hΓ : Γ ≤ C * (n : ℝ) ^ p) (hΓ0 : 0 ≤ Γ) (hκ0 : 0 ≤ κ) (hκ : κ ≤ (n : ℝ) ^ (-q))
+    (hpq : p + 17 / 6 ≤ q) :
+    Γ * κ ≤ C * (n : ℝ) ^ (-(17 : ℝ) / 6) :=
+  band_kappa_ledger_general hn hC hΓ hΓ0 hκ0 hκ (by linarith)
+
+
 /-! ### The certificate, split into its three quantitative inputs
 
 With the multiplier built, `hasFourierCertificateOnBand_of_bulkMultiplier` reduces
@@ -13379,6 +13410,53 @@ lemma outer_range_ledger_exponent (p : ℝ) {n : ℕ} (hn : 0 < n) :
   rw [← Real.rpow_neg_one (n : ℝ), ← Real.rpow_add h0, ← Real.rpow_neg h0.le]
   congr 1
   ring
+
+/-- **`p = 2` closes the middle range on the nose.**  The middle weight of `esseen_split_low` at
+`ρ₁ = n^{1/6}`, `ρ = n²` and `M₁ = n^{−17/6}` is exactly `n⁻¹` — the accuracy the headline asks
+for, with no slack.  This is `middle_range_ledger_exponent` read at the radius the outer range
+forces. -/
+lemma middle_range_ledger_radius_two {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) ^ (-(17 : ℝ) / 6) * ((n : ℝ) ^ (2 : ℝ) / (n : ℝ) ^ ((1 : ℝ) / 6))
+      = ((n : ℝ))⁻¹ := by
+  rw [middle_range_ledger_exponent _ hn, show (2 : ℝ) - 3 = -1 by norm_num,
+    Real.rpow_neg_one]
+
+/-- **The outer range's tail weight at `δ = n⁻¹` and `ρ = n²`.**  `2M/(δπ²ρ) = (2M/π²)·n⁻¹`: a
+*bare constant* `M` already delivers the headline accuracy there.  This is the whole of item 3
+of the wave-46 residue, and it is why the outer radius can be pushed out at all. -/
+lemma outer_range_tail_weight_eq (M : ℝ) {n : ℕ} (hn : 0 < n) :
+    2 * M / (((n : ℝ))⁻¹ * Real.pi ^ 2 * (n : ℝ) ^ 2) = 2 * M / Real.pi ^ 2 / (n : ℝ) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  field_simp
+
+/-- **And the constant is free.**  On `ρ ≤ |ξ|` the gap between *any* probability law's transform
+and the studentized comparison density's is at most `2 + 1030π³|γ|`, because both are bounded:
+the first by `1` and the second by `norm_charFunDensity_studentizedEdgeworthDensity_le` together
+with `studentizedEdgeworthCharFun_tail_le`.  No property of the surrogate is used — which is
+exactly wave 46's "free once `ρ` is chosen at `n²`". -/
+lemma studentized_outer_range_gap_le (γ : ℝ) {n : ℕ} (hn : 1 ≤ n) (μ : Measure ℝ)
+    [IsProbabilityMeasure μ] {ρ ξ : ℝ} (hρ : 0 ≤ ρ) (hξ : ρ ≤ |ξ|) :
+    ‖charFun μ (-(2 * Real.pi * ξ))
+        - charFunDensity (studentizedEdgeworthDensity γ n) (-(2 * Real.pi * ξ))‖
+      ≤ 2 + 1030 * Real.pi ^ 3 * |γ| := by
+  have h1 : ‖charFun μ (-(2 * Real.pi * ξ))‖ ≤ 1 := norm_charFun_le_one _
+  have h2 := norm_charFunDensity_studentizedEdgeworthDensity_le γ hn (-(2 * Real.pi * ξ))
+  have hs : (-(2 * Real.pi * ξ)) ^ 2 = (2 * Real.pi * ξ) ^ 2 := by ring
+  have habs : |-(2 * Real.pi * ξ)| = |2 * Real.pi * ξ| := abs_neg _
+  rw [hs, habs] at h2
+  have h3 := studentizedEdgeworthCharFun_tail_le γ hρ hξ
+  have hexp : Real.exp (-(Real.pi ^ 2 * ρ ^ 2)) ≤ 1 := by
+    refine Real.exp_le_one_iff.2 ?_
+    have : (0 : ℝ) ≤ Real.pi ^ 2 * ρ ^ 2 := by positivity
+    linarith
+  have hcoef : (0 : ℝ) ≤ 1 + 1030 * Real.pi ^ 3 * |γ| := by positivity
+  have h4 : (1 + 1030 * Real.pi ^ 3 * |γ|) * Real.exp (-(Real.pi ^ 2 * ρ ^ 2))
+      ≤ 1 + 1030 * Real.pi ^ 3 * |γ| := by
+    nlinarith [hcoef, hexp, Real.exp_pos (-(Real.pi ^ 2 * ρ ^ 2))]
+  have h5 := norm_sub_le (charFun μ (-(2 * Real.pi * ξ)))
+    (charFunDensity (studentizedEdgeworthDensity γ n) (-(2 * Real.pi * ξ)))
+  linarith
 
 
 /-! #### The cost of the wider outer radius, on input (C)
