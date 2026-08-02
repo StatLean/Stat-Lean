@@ -110,6 +110,21 @@ proved:
   outer range is its band geometry (`R ≥ ε₀√n` against `R ≤ |θ|/(2σ)`) and not its ledger, and
   the Gaussian bulk bound `‖φ_{ρₙ}(t)‖ ≤ e^{−λ‖t‖²/4}` is what lets the band shrink to
   `K√(log n)`; the competing route through a coarser grading is refuted by the same arithmetic;
+* `norm_charFun_vecRootLaw_le_max_of_band`, `exp_neg_sq_band_radius_eq_rpow`,
+  `band_kappa_ledger`, `norm_charFun_map_sub_const`, `norm_charFun_vecRootLaw_sub_const`,
+  `norm_charFun_vecRootLaw_comp_le_exp_neg_sq` — the **two-regime `κ`** that widens the
+  certificate's band: the Gaussian bulk bound and the Cramér tail cover every frequency off a
+  ball of *any* radius, so `R = K√(log n)` is admissible and `κ = n^{−λK²/4}` is all the
+  transfer inequality ever needed; the majorant crosses the truncation for the price of a
+  constant, so it is only ever needed for the *untruncated* — and hence centred — pair;
+* `studentCov00`, `studentCov01`, `studentCov11`, `integral_inner_sq_map_studentPair`,
+  `exists_variance_floor_map_studentPair`, `integral_inner_sq_map_studentPair_le`,
+  `integral_inner_abs_cube_map_studentPair_le`, `exists_bulk_majorant_map_studentPair`,
+  `exists_bulk_majorant_vecRootLaw_studentPair_truncAt` — the **moment inputs** of that
+  majorant: the directional second moment *is* a binary quadratic form in the limit covariance
+  of `(X − μ, (X − μ)² − σ²)`, so the direction-uniform variance floor is positive-definiteness
+  of a `2 × 2` form and needs neither compactness nor continuity; the third absolute moment
+  costs six moments of `F`;
 * `windowEnvelope₁`, `windowDom₁`, `integrable_windowDom₁`, `esseen_split_low`,
   `low_range_ledger_exponent`, `low_range_ledger_gt` — the (U4′) **split window**: the
   degree-one envelope wave 42 prescribed, its three-regime Esseen split (envelope plus an
@@ -14436,6 +14451,73 @@ STILL `sorry` AND WAVE 43 DOES NOT CLAIM OTHERWISE.**
   wave that discharges the moment hypotheses. **The file is still at two `sorry`s — this one and
   (B) — and the residue of this one is now the two-item list in point 3, not the open middle
   range wave 42 recorded.**
+
+---
+
+**Status after wave 44. WAVE 43'S TWO-ITEM REPAIR LIST IS DOWN TO ZERO ITEMS: (i) THE
+RESTATEMENT IS DONE AND (ii) THE MOMENT INPUTS ARE PROVED. THE CERTIFICATE NOW *STATES* THE
+MIDDLE RANGE. THIS THEOREM IS STILL `sorry`, AND SO IS (B); WAVE 44 DOES NOT CLAIM
+OTHERWISE.**
+
+* **ITEM (i), THE RESTATEMENT (item 1 of the prompt).** `norm_charFun_vecRootLaw_le_max_of_band`
+  glues wave 43's Gaussian bulk bound to the Cramér tail: off a ball of **any** radius `R ≥ 0`,
+  `‖φ_{ρₙ}(t)‖ ≤ max(B e^{−λR²/4}, cⁿ)`. That is the ingredient wave 43 identified as missing,
+  and with it the squeeze of `band_radius_incompatible` is broken: the band radius is a free
+  parameter. `exp_neg_sq_band_radius_eq_rpow` turns `R = Kb√(log n)` into `κ = n^{−λKb²/4}` and
+  `band_kappa_ledger` is the check that a polynomial `Γ` against such a `κ` still clears
+  `O(n^{-3/2})` — the formal content of "`cⁿ` was exponential overkill".
+  `exists_integral_norm_fourierWeight_bulkMultiplier_band_le` (input (B)),
+  `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` and
+  `exists_fourierCertificate_deltaSurrogate` are restated at that band, at `N = 10`.
+* **ONE THING THE WAVE-43 NOTE DID NOT SAY, AND IT IS A HYPOTHESIS, NOT A CONSTANT.** The
+  restated (B) keeps a **constant** frequency floor `c₀ ≤ |θ|` alongside the band condition
+  `2σ·Kb√(log n) ≤ |θ|`, and it must: at `θ = 0` the bulk multiplier is the bare cut-off, whose
+  transform puts mass `≍ M²R²` on the low-frequency ball, so the statement without a floor is
+  **false**. This is exactly why the ledger is run at `b = 0` (`leakage_ledger_ten_le`) and not
+  below it, and it costs nothing — the middle range starts at `n^{1/6} ≥ 1`.
+* **ITEM (ii), THE MOMENT INPUTS — PROVED, AND ON A DIFFERENT LAW FROM THE ONE PRESCRIBED.**
+  Three corrections to the wave-43 list, in increasing order of consequence.
+  1. *The truncated pair is not centred*, so the Gaussian majorant cannot be applied to it as
+     wave 43 asked. `norm_charFun_vecRootLaw_sub_const` repairs that, but at the cost of the
+     truncated law's moments, every one of which moves with `n`.
+  2. *None of that is needed.* `norm_charFun_vecRootLaw_comp_le_exp_neg_sq` carries the majorant
+     across the truncation by the perturbation `norm_charFun_map_comp_sub_le` that the Cramér
+     brick already uses, and the `n`-th power costs a **constant**:
+     `(e^{−a} + 2m)ⁿ = e^{−na}(1 + 2m e^{a})ⁿ ≤ e^{−na}e^{2nm e^{a}}` with `nm` bounded on the
+     bulk. So the whole item is about `F.map (studentPair F)`, which **is** centred
+     (`integral_inner_studentPair`) — the fourth hypothesis is free rather than false.
+  3. *The nondegeneracy is linear algebra, not analysis.* `integral_inner_sq_map_studentPair`
+     identifies the directional second moment with the binary quadratic form
+     `A t₀² + 2B t₀t₁ + C t₁²` in the three entries of the limit covariance
+     (`studentCov00/01/11`). `A > 0` and `C > 0` are the form at the two axes; `AC − B² > 0` is
+     the form at `(B, −A)`, which *equals* `A(AC − B²)`; and a positive-definite binary form
+     dominates `λ(t₀² + t₁²)` at `λ = min(A, C, (AC − B²)/(A + C))`.
+     **`exists_variance_floor_map_studentPair` therefore uses no compactness of the sphere and
+     no continuity of `t ↦ ∫⟪x,t⟫²`** — wave 43's "direction-uniform" is a `2 × 2` fact.
+     `hFac` is spent exactly once, in `integral_studentPair_dir_sq_pos`.
+  The ceiling is the same identity (`integral_inner_sq_map_studentPair_le`), and
+  `exists_bulk_majorant_vecRootLaw_studentPair_truncAt` assembles the three into precisely the
+  `hbulk` the band consumer takes.
+* **AND THE MOMENT COST OF (ii) IS SIX, NOT FOUR.** Floor and ceiling are fourth moments of `F`;
+  the third *absolute* moment of a quadratic in `X` is a **sixth**
+  (`integral_inner_abs_cube_map_studentPair_le`, through `memLp_six_centredLaw`). `hF8` covers
+  it and nothing downstream moves, but the wave-43 note's "available under `hFac`" understates
+  what is spent, and a wave attempting the four-moment statement would have found this the hard
+  way.
+* **WHAT IS LEFT, AND IT IS ONE ITEM.** Input (B) — the non-stationary-phase estimate itself.
+  Its three quantitative pieces are unchanged in kind since wave 35 and are listed on the
+  theorem: the graded bound on `‖L^k f‖_{L¹(dw₀)}` for `k ≤ 10`, which needs a derivative
+  calculus with **negative** powers (the derivatives of `1/∂_{w₀}Φ` off the slope floor
+  `(4/3)|θ|/σ`) that the wave-34 graded calculus does not supply; the fibrewise reduction of
+  `𝓕 g` to iterated one-dimensional integrals; and the outer `w₁`/`s` bookkeeping, now against
+  a bad set of area `≍ log n` rather than `≍ n`. **None of the three was built this wave**, and
+  the negative-power calculus is the one with real content: an existential constant is useless
+  there, since the exponent (B) has to produce is carried by the explicit `L^{-(k+1)}`.
+* **ITEM 3 WAS NOT ATTEMPTED, AND THE REASON IS THE SAME AS WAVE 43'S.** The three-regime
+  assembly (`esseen_split_low` on `|ξ| ≤ n^{1/6}`, the certificate above it) now has a
+  *statement* for every regime, but the middle and outer regimes rest on (B), which is a
+  `sorry`. Assembling would produce a theorem whose only content is the `sorry` it already has.
+  **The file is still at two `sorry`s — this one and (B).**
 
 **WAVE 40 — THE MOMENT HYPOTHESIS IS AMENDED FROM FOUR TO EIGHT, AND THIS IS A DEVIATION FROM
 THE CLASSICAL STATEMENT.** The classical studentized Edgeworth expansion (Hall, *The Bootstrap
