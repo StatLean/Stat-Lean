@@ -4664,6 +4664,155 @@ lemma norm_studentPair_truncAt_le (F : Measure ℝ) {τ : ℝ} (hτ : 0 ≤ τ) 
     linarith
   linarith
 
+/-! ### The Cramér tail on the truncated law
+
+**Wave 37: an unrecorded gap in the outer range of the studentized chain, and the brick that
+closes it.** `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` consumes a Cramér tail
+`hcram` and a certificate `hcert` **for the same law**, and
+`exists_fourierCertificate_deltaSurrogate` is stated — necessarily, since input (C) is a fourth
+moment of the *truncated* root — for `vecRootLaw F (studentPair F ∘ truncAt m √n) n`. But
+`exists_bound_norm_charFun_vecRootLaw_studentPair` is for the **untruncated** law, and its proof
+runs through `vecCramerCondition_map_studentPair`, which consumes `hFac : F ≪ volume`. **The
+truncated law is not absolutely continuous**: `truncAt m τ` collapses `{|x − m| > τ}` onto the
+single point `m`, so `F.map (studentPair F ∘ truncAt m τ)` carries an atom of mass
+`F{|x − m| > τ}` at `studentPair F m`. So the existing lemma does not apply, and neither does its
+proof.
+
+What repairs it is not a re-run of the Riemann–Lebesgue argument but a *perturbation*: the two
+laws are images of the **same** `F` under maps that differ only on the moved set, so their
+characteristic functions differ by at most twice its mass
+(`norm_charFun_map_comp_sub_le`), which at `τ = √n` is `2μ₄/n²`. The truncated law therefore
+satisfies the same off-the-origin bound with the constant degraded to `c + 2μ₄/n²`, and that is
+below `(1 + c)/2 < 1` for all `n` past an explicit threshold.
+
+**The shape of the conclusion differs from the untruncated one, and it has to.** The law depends
+on `n` (through the truncation level), so the constant does too, and no single `c` works at every
+`n`: the statement returns a pair `(c, N)` and holds for `n ≥ N`. The finitely many `n < N` are
+absorbed where the assembly absorbs its other small-`n` defects. -/
+
+/-- **A modification of the observation moves the characteristic function by at most twice the
+mass it moves.** -/
+lemma norm_charFun_map_comp_sub_le {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+    (F : Measure ℝ) [IsProbabilityMeasure F]
+    {Z : ℝ → E} (hZ : Measurable Z) {T : ℝ → ℝ} (hT : Measurable T)
+    (hbad : MeasurableSet {x : ℝ | T x ≠ x}) (t : E) :
+    ‖charFun (F.map (fun y => Z (T y))) t - charFun (F.map Z) t‖
+      ≤ 2 * (F {x : ℝ | T x ≠ x}).toReal := by
+  have hnorm1 : ∀ r : ℝ, ‖Complex.exp ((r : ℂ) * Complex.I)‖ = 1 := by
+    intro r; simp [Complex.norm_exp]
+  have hrepr : ∀ (W : ℝ → E), Measurable W →
+      charFun (F.map W) t = ∫ x, Complex.exp (((⟪W x, t⟫ : ℝ) : ℂ) * Complex.I) ∂F := by
+    intro W hW
+    rw [charFun_apply, integral_map hW.aemeasurable (by fun_prop)]
+  have hb : ∀ (W : ℝ → E), Measurable W →
+      Integrable (fun x => Complex.exp (((⟪W x, t⟫ : ℝ) : ℂ) * Complex.I)) F := by
+    intro W hW
+    refine Integrable.mono' (integrable_const (1 : ℝ)) ?_
+      (Filter.Eventually.of_forall fun x => le_of_eq (hnorm1 _))
+    exact (Complex.measurable_exp.comp (by fun_prop)).aestronglyMeasurable
+  rw [hrepr (fun y => Z (T y)) (hZ.comp hT), hrepr Z hZ,
+    ← integral_sub (hb (fun y => Z (T y)) (hZ.comp hT)) (hb Z hZ)]
+  have hptw : ∀ x : ℝ,
+      ‖Complex.exp (((⟪Z (T x), t⟫ : ℝ) : ℂ) * Complex.I)
+        - Complex.exp (((⟪Z x, t⟫ : ℝ) : ℂ) * Complex.I)‖
+      ≤ 2 * Set.indicator {x : ℝ | T x ≠ x} (fun _ => (1 : ℝ)) x := by
+    intro x
+    by_cases h : T x = x
+    · simp [h]
+    · rw [Set.indicator_of_mem (show x ∈ {x : ℝ | T x ≠ x} from h)]
+      calc ‖Complex.exp (((⟪Z (T x), t⟫ : ℝ) : ℂ) * Complex.I)
+            - Complex.exp (((⟪Z x, t⟫ : ℝ) : ℂ) * Complex.I)‖
+          ≤ ‖Complex.exp (((⟪Z (T x), t⟫ : ℝ) : ℂ) * Complex.I)‖
+            + ‖Complex.exp (((⟪Z x, t⟫ : ℝ) : ℂ) * Complex.I)‖ := norm_sub_le _ _
+        _ = 2 * 1 := by rw [hnorm1, hnorm1]; ring
+  have hind : Integrable
+      (fun x : ℝ => 2 * Set.indicator {x : ℝ | T x ≠ x} (fun _ => (1 : ℝ)) x) F := by
+    refine (Integrable.indicator (integrable_const (1 : ℝ)) hbad).const_mul 2
+  calc ‖∫ x, (Complex.exp (((⟪Z (T x), t⟫ : ℝ) : ℂ) * Complex.I)
+          - Complex.exp (((⟪Z x, t⟫ : ℝ) : ℂ) * Complex.I)) ∂F‖
+      ≤ ∫ x, ‖Complex.exp (((⟪Z (T x), t⟫ : ℝ) : ℂ) * Complex.I)
+          - Complex.exp (((⟪Z x, t⟫ : ℝ) : ℂ) * Complex.I)‖ ∂F :=
+        norm_integral_le_integral_norm _
+    _ ≤ ∫ x, 2 * Set.indicator {x : ℝ | T x ≠ x} (fun _ => (1 : ℝ)) x ∂F :=
+        integral_mono ((hb (fun y => Z (T y)) (hZ.comp hT)).sub (hb Z hZ)).norm hind hptw
+    _ = 2 * (F {x : ℝ | T x ≠ x}).toReal := by
+        rw [integral_const_mul, integral_indicator hbad, setIntegral_const, measureReal_def,
+          smul_eq_mul, mul_one]
+
+/-- **The Cramér tail for the TRUNCATED studentizing pair.** -/
+theorem exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt
+    (F : Measure ℝ) [IsProbabilityMeasure F] (hFac : F ≪ volume)
+    (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F)
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ (c : ℝ) (N : ℕ), c < 1 ∧ ∀ n : ℕ, N ≤ n → 0 < n →
+      ∀ t : EuclideanSpace ℝ (Fin 2), ε * Real.sqrt (n : ℝ) ≤ ‖t‖ →
+        ‖charFun (vecRootLaw F
+            (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n) t‖
+          ≤ c ^ n := by
+  haveI : IsProbabilityMeasure (F.map (studentPair F)) :=
+    Measure.isProbabilityMeasure_map (measurable_studentPair F).aemeasurable
+  obtain ⟨c₀, hc₀, hcbd⟩ := exists_bound_lt_one_of_projLaw_cramer (F.map (studentPair F))
+    (vecCramerCondition_map_studentPair F hFac)
+    (fun t ht => cramerCondition_projLaw_studentPair F hFac ht) hε
+  set c₁ : ℝ := max c₀ 0 with hc₁def
+  have hc₁0 : (0 : ℝ) ≤ c₁ := le_max_right _ _
+  have hc₁1 : c₁ < 1 := max_lt hc₀ one_pos
+  have hcbd₁ : ∀ t : EuclideanSpace ℝ (Fin 2), ε ≤ ‖t‖ →
+      ‖charFun (F.map (studentPair F)) t‖ ≤ c₁ :=
+    fun t ht => (hcbd t ht).trans (le_max_left _ _)
+  set μ4 : ℝ := ∫ x, (x - ∫ s, s ∂F) ^ 4 ∂F with hμ4def
+  have hμ40 : (0 : ℝ) ≤ μ4 := by
+    rw [hμ4def]; exact integral_nonneg fun x => by positivity
+  obtain ⟨N, hN⟩ := exists_nat_gt (4 * μ4 / (1 - c₁))
+  refine ⟨(1 + c₁) / 2, N + 1, by linarith, fun n hn hn0 t ht => ?_⟩
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn0
+  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hnR
+  have hNn : (4 : ℝ) * μ4 / (1 - c₁) ≤ (n : ℝ) := by
+    have : ((N : ℝ) + 1) ≤ (n : ℝ) := by exact_mod_cast hn
+    linarith
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn0
+  -- the mass that truncation moves
+  have hset := truncAt_ne_setOf (m := ∫ s, s ∂F) hsn.le
+  have hbad : MeasurableSet {x : ℝ | truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) x ≠ x} := by
+    rw [hset]; exact measurableSet_lt measurable_const (by fun_prop)
+  have hmass : (F {x : ℝ | truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) x ≠ x}).toReal
+      ≤ μ4 / (n : ℝ) ^ 2 := by
+    rw [hset]
+    have h := measure_abs_gt_le_fourth_moment F (g := fun x : ℝ => x - ∫ s, s ∂F)
+      (by fun_prop) hF4 hsn
+    have hpow : Real.sqrt (n : ℝ) ^ 4 = (n : ℝ) ^ 2 := by
+      have : Real.sqrt (n : ℝ) ^ 2 = (n : ℝ) := Real.sq_sqrt hnR.le
+      calc Real.sqrt (n : ℝ) ^ 4 = (Real.sqrt (n : ℝ) ^ 2) ^ 2 := by ring
+        _ = (n : ℝ) ^ 2 := by rw [this]
+    rwa [hpow] at h
+  have hkey : 2 * (μ4 / (n : ℝ) ^ 2) ≤ (1 - c₁) / 2 := by
+    have hn2 : (n : ℝ) ≤ (n : ℝ) ^ 2 := by nlinarith
+    have h4 : 4 * μ4 ≤ (1 - c₁) * (n : ℝ) := by
+      rw [div_le_iff₀ (by linarith)] at hNn; linarith
+    have h5 : 4 * μ4 ≤ (1 - c₁) * (n : ℝ) ^ 2 := by nlinarith
+    rw [mul_div_assoc', div_le_div_iff₀ (by positivity) (by norm_num)]
+    linarith
+  -- transfer the Cramér bound to the truncated law
+  have hZm : Measurable
+      (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) :=
+    (measurable_studentPair F).comp (measurable_truncAt _ _)
+  refine norm_charFun_vecRootLaw_le_pow F hZm hε (fun u hu => ?_) hn0 ht
+  have hpert := norm_charFun_map_comp_sub_le F (measurable_studentPair F)
+    (measurable_truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ))) hbad u
+  have hsub : ‖charFun (F.map
+        (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y))) u‖
+      ≤ ‖charFun (F.map (studentPair F)) u‖
+        + 2 * (F {x : ℝ | truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) x ≠ x}).toReal := by
+    have := norm_sub_norm_le
+      (charFun (F.map (fun y : ℝ => studentPair F
+        (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y))) u)
+      (charFun (F.map (studentPair F)) u)
+    linarith [hpert]
+  have h1 := hcbd₁ u hu
+  linarith [hmass, hkey, hsub]
+
+
 /-! ### The bulk multiplier, built; and the exponent ledger, verified
 
 Wave 30 reduced the certificate to "two bounds on `𝓕 g`" for `g = e^{iθ(Hₙ − w₀/σ)}χ(·/M)`, but
@@ -9451,7 +9600,77 @@ wave 31 and not attempted in wave 33**, and is not claimed.
 
 * **NOTHING ELSE MOVED.** (C), the ledger, the slope arithmetic and
   `exists_fourierCertificate_deltaSurrogate` are as wave 34 left them, and the assembly of this
-  theorem was again **not attempted**. -/
+  theorem was again **not attempted**.
+
+**Status after wave 37. THE ASSEMBLY WAS ATTEMPTED, AND THE PRESCRIBED CHAIN DOES NOT COMPOSE.**
+The corollary `cornishFisher_studentized_quantile` is closed (see there); this theorem is not,
+and the reason is not budget. The wave-35 chain description above — "no missing analytic tool is
+known; the assembly is bookkeeping" — is **overturned**. Every one of the six lemmas it names
+exists and is proved (`norm_multiCharFun_vecRootLaw_le` in `ForMathlib/BivariateEdgeworth.lean`
+and `abs_measure_Iic_sub_densityCDF_le_charFun` in `ForMathlib/EsseenSmoothing.lean`; the other
+four in this file), and their signatures are as described. But the chain needs four things it
+does not name, and three of them are still open.
+
+* **(U1) THERE IS NO COMPARISON DENSITY FOR THE STUDENTIZED APPROXIMANT.** Step 5 feeds
+  `abs_measure_Iic_sub_densityCDF_le_charFun`, which compares `P(-∞, x]` with `densityCDF q x`
+  for an `L¹` density `q`. The only `q` in the file is
+  `edgeworthDensity γ n u = φ(u)(1 + (γ/6)(u³ − 3u)n^{-1/2})`, whose `densityCDF` is
+  `edgeworthCDF γ n u = Φ(u) − (γ/6)φ(u)(u² − 1)n^{-1/2}` — the **mean** approximant, and the
+  one `edgeworth_mean_uniform` consumes. The approximant in *this* statement is
+  `Φ(t) + (γ/6)φ(t)(2t² + 1)n^{-1/2}`, whose density is
+  `φ(t)[1 + (γ/6)(3t − 2t³)n^{-1/2}]` — a different Hermite combination,
+  `3t − 2t³ = −2He₃(t) − 3He₁(t)` against `He₃` alone. Every lemma the mean assembly uses about
+  `edgeworthDensity` has to be re-proved for it: the FTC step (here the antiderivative is
+  `φ(u)(2u² + 1)` itself, which is the one convenience), `charFunDensity_...`,
+  `abs_...Density_le`, `setIntegral_abs_...Density_le`, `norm_charFunDensity_..._le`,
+  `...CharFun_tail_le` and `abs_...CDF_le`. The Gaussian Fourier moments they need
+  (`integral_hermite3_mul_cexp_mul_gaussian`, `integral_cexp_mul_gaussian`) are in
+  `ForMathlib/BerryEsseen.lean`, so no *tool* is missing — but a parallel apparatus of several
+  hundred lines is, and the chain description treats it as present.
+
+* **(U2) THE CRAMÉR TAIL WAS ON THE WRONG LAW — and this wave closes it.** Step 4's
+  `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` takes `hcram` and `hcert` for the
+  **same** law, and the certificate is necessarily on the *truncated* root law, while
+  `exists_bound_norm_charFun_vecRootLaw_studentPair` is on the untruncated one and its proof
+  consumes `hFac : F ≪ volume`, which truncation destroys. See the section note above
+  `norm_charFun_map_comp_sub_le`; the repair is
+  `exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt`, proved and axiom-clean, and its
+  conclusion returns a pair `(c, N)` rather than a single `c` because the law depends on `n`.
+
+* **(U3) THE PEELED WINDOW'S `hslice` IS STILL OPEN FOR THE SURROGATE, and the chain
+  description does not carry the file's own warning.** Step 6's `hstrat` is produced by
+  `measure_pi_stratum_le`, whose one open hypothesis is the frozen-coordinate window bound for
+  `T`, uniform in the frozen value. `measure_pi_stratum_root_le` discharges it *for free* when
+  `T` is a root — and the caveat recorded on `measure_pi_abs_root_insertNth_le` since wave 21
+  says in terms that **the studentized route's `T` is the surrogate `Hₙ`, a degree-four
+  polynomial in the bivariate mean, not a root**, so `measure_abs_sub_le_of_affine` does not
+  apply to it; and that `T` may not be traded back for the root `u`, since then
+  `|S − T| = O(r)` and the peeled sum is `n^{-1/2}`, a factor `√n` short. This is the *same*
+  item the corollary's docstring has named as the residue since wave 17 — the conditional
+  anti-concentration of the surrogate — and it is an analytic item, not bookkeeping.
+  `abs_measure_le_sub_le_of_peel_window` names it as a hypothesis (`hcond`) precisely because it
+  is not proved.
+
+* **(U4) STEP 3 PRODUCES A BOUND, AND THE WINDOW NEEDS AN EVALUATION.**
+  `norm_multiCharFun_vecRootLaw_le` is an `O(1)` **bound**, uniform in `k`, and wave 26 is right
+  that a bound is all `k = 3, 4` need. The window of the Esseen split needs the *leading-order*
+  behaviour of the whole of `norm_charFun_map_deltaSurrogate_sub_graded_le`'s right-hand side —
+  the `k = 2` slot (where `multiCharFun_vecRootLaw_two` and
+  `norm_multiCharFun_vecRootLaw_two_sub_le` do supply the evaluation) *and* the leading slot
+  `charFun μ ((θ/σ)e₀)`, an `n`-th power to be expanded by
+  `norm_charFun_smul_pow_sub_edgeworth_le` — assembled into
+  `‖φ_{surrogate}(θ) − φ_{q_n}(θ)‖ ≤ (K/n)·windowEnvelope`, the studentized analogue of
+  `exists_window_bound`. That assembly does not exist. It is not obstructed — all four inputs
+  are proved — but it is an estimate, not a rewriting.
+
+**Net.** The residue of this theorem is (U1) a construction, (U3) an analytic item that the file
+has named since wave 21 and that no soft substitute reaches under a fourth moment (see the
+section note above `abs_measure_le_sub_le_of_peel_window` for `min(P A, P B)` at `n^{-3/5}`,
+Cauchy–Schwarz at `n^{-1/2}`, and the Markov-inside-the-window dodges at six or eight moments),
+and (U4) one estimate. It is **not** bookkeeping, and it was not before wave 37 either; what
+wave 37 adds is that (U2) is closed and that the other three are now stated where the assembly
+would meet them. -/
+
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
@@ -9467,6 +9686,523 @@ theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
           (1 / 6) * skewness F * stdNormalPDF t * (2 * t ^ 2 + 1) * (Real.sqrt n)⁻¹)|
       ≤ C / n := by
   sorry
+
+/-! ### The Cornish–Fisher inversion
+
+The corollary below inverts the studentized expansion. Nothing here is specific to the
+studentized root: the content is that a *uniform* `O(n⁻¹)` expansion of a family of distribution
+functions inverts to a uniform `O(n⁻¹)` expansion of their generalized inverses, over levels
+bounded away from `0` and `1`. That is `cornishFisher_of_edgeworth`; the bricks above it are the
+elementary Gaussian estimates it consumes (`φ` is `1`-Lipschitz and bounded by `1/2`, `Φ` has the
+first-order Taylor bound `|Φ(b) − Φ(a) − φ(a)(b − a)| ≤ (b − a)²`), the sandwich characterisation
+of a generalized inverse, and `exists_cornishFisher_step`, which isolates the numerology as pure
+real arithmetic. -/
+
+/-- The standard normal density is positive. -/
+private lemma stdNormalPDF_pos (x : ℝ) : 0 < stdNormalPDF x := by
+  rw [stdNormalPDF]; positivity
+
+private lemma two_le_sqrt_two_pi : (2 : ℝ) ≤ Real.sqrt (2 * Real.pi) := by
+  have hnn : (0 : ℝ) ≤ 2 * Real.pi := by positivity
+  have h4 : (4 : ℝ) ≤ 2 * Real.pi := by linarith [Real.two_le_pi]
+  nlinarith [Real.sq_sqrt hnn, Real.sqrt_nonneg (2 * Real.pi)]
+
+private lemma sqrt_two_pi_pos : (0 : ℝ) < Real.sqrt (2 * Real.pi) :=
+  Real.sqrt_pos.2 (by positivity)
+
+/-- `φ ≤ 1/2`. -/
+private lemma stdNormalPDF_le_half (x : ℝ) : stdNormalPDF x ≤ 1 / 2 := by
+  have hexp : Real.exp (-x ^ 2 / 2) ≤ 1 := by
+    refine Real.exp_le_one_iff.2 ?_
+    have : (0 : ℝ) ≤ x ^ 2 / 2 := by positivity
+    rw [neg_div]; linarith
+  rw [stdNormalPDF, div_le_iff₀ sqrt_two_pi_pos]
+  linarith [two_le_sqrt_two_pi]
+
+/-- `|u| φ(u) ≤ 1`: the derivative of the standard normal density is bounded by `1`. -/
+private lemma abs_mul_stdNormalPDF_le_one (u : ℝ) : |u| * stdNormalPDF u ≤ 1 := by
+  have hkey : |u| * Real.exp (-u ^ 2 / 2) ≤ 1 := by
+    have h1 : u ^ 2 / 2 + 1 ≤ Real.exp (u ^ 2 / 2) := Real.add_one_le_exp _
+    have h2 : |u| ≤ u ^ 2 / 2 + 1 := by
+      nlinarith [sq_abs u, abs_nonneg u, sq_nonneg (|u| - 1)]
+    have h3 : Real.exp (-u ^ 2 / 2) = (Real.exp (u ^ 2 / 2))⁻¹ := by
+      rw [← Real.exp_neg]; ring_nf
+    have hepos : (0 : ℝ) < Real.exp (u ^ 2 / 2) := Real.exp_pos _
+    rw [h3, mul_inv_le_iff₀ hepos, one_mul]
+    linarith
+  rw [stdNormalPDF, mul_div_assoc', div_le_one sqrt_two_pi_pos]
+  linarith [two_le_sqrt_two_pi]
+
+/-- The standard normal density is `1`-Lipschitz. -/
+private lemma abs_stdNormalPDF_sub_le (a b : ℝ) : |stdNormalPDF b - stdNormalPDF a| ≤ |b - a| := by
+  have hconv : Convex ℝ (Set.univ : Set ℝ) := convex_univ
+  have hd : ∀ x ∈ (Set.univ : Set ℝ),
+      HasDerivWithinAt stdNormalPDF (-x * stdNormalPDF x) Set.univ x :=
+    fun x _ => (hasDerivAt_stdNormalPDF x).hasDerivWithinAt
+  have hb : ∀ x ∈ (Set.univ : Set ℝ), ‖-x * stdNormalPDF x‖ ≤ 1 := by
+    intro x _
+    rw [Real.norm_eq_abs, abs_mul, abs_neg]
+    exact abs_mul_stdNormalPDF_le_one x |>.trans_eq' (by
+      rw [abs_of_nonneg (stdNormalPDF_pos x).le])
+  have := hconv.norm_image_sub_le_of_norm_hasDerivWithin_le hd hb (Set.mem_univ a)
+    (Set.mem_univ b)
+  simpa [Real.norm_eq_abs] using this
+
+/-- `φ` is decreasing in `|x|`. -/
+private lemma stdNormalPDF_le_of_abs_le {B x : ℝ} (h : |x| ≤ B) :
+    stdNormalPDF B ≤ stdNormalPDF x := by
+  have hx2 : x ^ 2 ≤ B ^ 2 := by
+    have := abs_nonneg x
+    nlinarith [sq_abs x]
+  rw [stdNormalPDF, stdNormalPDF]
+  gcongr
+
+
+/-- `Φ(b) − Φ(a) = ∫_{(a,b]} φ`. -/
+private lemma stdNormalCDF_sub_eq_setIntegral {a b : ℝ} (hab : a ≤ b) :
+    stdNormalCDF b - stdNormalCDF a = ∫ y in Set.Ioc a b, stdNormalPDF y := by
+  have hsplit : (∫ y in Set.Iic b, stdNormalPDF y)
+      = (∫ y in Set.Iic a, stdNormalPDF y) + ∫ y in Set.Ioc a b, stdNormalPDF y := by
+    rw [← setIntegral_union (Set.Iic_disjoint_Ioc le_rfl) measurableSet_Ioc
+      integrable_stdNormalPDF.integrableOn integrable_stdNormalPDF.integrableOn,
+      Set.Iic_union_Ioc_eq_Iic hab]
+  rw [stdNormalCDF_eq_setIntegral, stdNormalCDF_eq_setIntegral, hsplit]
+  ring
+
+/-- **The first-order Taylor bound for `Φ`.** `|Φ(b) − Φ(a) − φ(a)(b − a)| ≤ (b − a)²`, from
+the `1`-Lipschitz bound on `φ`. -/
+private lemma abs_stdNormalCDF_sub_taylor_le (a b : ℝ) :
+    |stdNormalCDF b - stdNormalCDF a - stdNormalPDF a * (b - a)| ≤ (b - a) ^ 2 := by
+  have key : ∀ u v w : ℝ, u ≤ v → u ≤ w → w ≤ v →
+      |(∫ y in Set.Ioc u v, stdNormalPDF y) - stdNormalPDF w * (v - u)| ≤ (v - u) ^ 2 := by
+    intro u v w huv hwu hwv
+    have hconst : (∫ _y in Set.Ioc u v, stdNormalPDF w) = stdNormalPDF w * (v - u) := by
+      rw [setIntegral_const, measureReal_def, Real.volume_Ioc,
+        ENNReal.toReal_ofReal (by linarith), smul_eq_mul, mul_comm]
+    have hsub : (∫ y in Set.Ioc u v, stdNormalPDF y) - stdNormalPDF w * (v - u)
+        = ∫ y in Set.Ioc u v, (stdNormalPDF y - stdNormalPDF w) := by
+      rw [← hconst, ← integral_sub integrable_stdNormalPDF.integrableOn
+        (continuous_const.integrableOn_Ioc)]
+    rw [hsub]
+    have hbnd : ∀ y ∈ Set.Ioc u v, ‖stdNormalPDF y - stdNormalPDF w‖ ≤ v - u := by
+      intro y hy
+      rw [Real.norm_eq_abs]
+      refine (abs_stdNormalPDF_sub_le w y).trans ?_
+      rcases le_total w y with h | h
+      · rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ y - w)]; linarith [hy.2]
+      · rw [abs_of_nonpos (by linarith : y - w ≤ (0:ℝ))]; linarith [hy.1]
+    have hfin : volume (Set.Ioc u v) < ⊤ := by
+      rw [Real.volume_Ioc]; exact ENNReal.ofReal_lt_top
+    have hmain := norm_setIntegral_le_of_norm_le_const (μ := volume) hfin hbnd
+    simp only [Real.norm_eq_abs, measureReal_def, Real.volume_Ioc,
+      ENNReal.toReal_ofReal (show (0:ℝ) ≤ v - u by linarith)] at hmain
+    calc |∫ y in Set.Ioc u v, (stdNormalPDF y - stdNormalPDF w)|
+        ≤ (v - u) * (v - u) := hmain
+      _ = (v - u) ^ 2 := by ring
+  rcases le_total a b with hab | hba
+  · rw [stdNormalCDF_sub_eq_setIntegral hab]
+    exact key a b a hab le_rfl hab
+  · have h1 := key b a a hba hba le_rfl
+    have heq : stdNormalCDF b - stdNormalCDF a - stdNormalPDF a * (b - a)
+        = -((∫ y in Set.Ioc b a, stdNormalPDF y) - stdNormalPDF a * (a - b)) := by
+      rw [← stdNormalCDF_sub_eq_setIntegral hba]; ring
+    rw [heq, abs_neg]
+    refine h1.trans (le_of_eq ?_)
+    ring
+
+
+/-- **Sandwich for a generalized inverse.** If `f` is nondecreasing, `f a < p` and `p ≤ f b`,
+then `a ≤ f⁻¹(p) ≤ b`. -/
+private lemma abs_cdfPseudoInverse_sub_le {f : ℝ → ℝ} (hmono : Monotone f) {p x d : ℝ}
+    (ha : f (x - d) < p) (hb : p ≤ f (x + d)) :
+    |cdfPseudoInverse f p - x| ≤ d := by
+  set a := x - d
+  set b := x + d
+  have hlb : a ∈ lowerBounds {y : ℝ | p ≤ f y} := by
+    intro y hy
+    simp only [Set.mem_setOf_eq] at hy
+    by_contra h
+    push_neg at h
+    exact absurd (hmono h.le) (not_le.mpr (lt_of_lt_of_le ha hy))
+  have hmem : b ∈ {y : ℝ | p ≤ f y} := hb
+  have h1 : a ≤ cdfPseudoInverse f p := le_csInf ⟨b, hmem⟩ hlb
+  have h2 : cdfPseudoInverse f p ≤ b := csInf_le ⟨a, hlb⟩ hmem
+  rw [abs_le]
+  constructor
+  · simp only [a] at h1; linarith
+  · simp only [b] at h2; linarith
+
+/-- The generalized inverse is nondecreasing in the level. -/
+private lemma cdfPseudoInverse_mono_level {f : ℝ → ℝ} (hF : IsCDF f) {p q : ℝ} (hp : 0 < p)
+    (hpq : p ≤ q) (hq : q < 1) : cdfPseudoInverse f p ≤ cdfPseudoInverse f q :=
+  csInf_le_csInf (sublevel_bddBelow hF hp) (sublevel_nonempty hF hq)
+    (fun t ht => le_trans hpq ht)
+
+/-- The studentized sampling distribution function is a distribution function. -/
+private lemma isCDF_studentizedRootCDF_of_prob (P : Measure ℝ) [IsProbabilityMeasure P] (n : ℕ) :
+    IsCDF (studentizedRootCDF P n) := by
+  have hSmeas : Measurable (fun y : Fin n → ℝ =>
+      Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂P) / Real.sqrt (sampleVariance y)) := by
+    unfold sampleVariance; fun_prop
+  haveI : IsProbabilityMeasure
+      ((Measure.pi fun _ : Fin n => P).map
+        (fun y : Fin n → ℝ =>
+          Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂P) / Real.sqrt (sampleVariance y))) :=
+    Measure.isProbabilityMeasure_map hSmeas.aemeasurable
+  have heq : studentizedRootCDF P n = fun x =>
+      (((Measure.pi fun _ : Fin n => P).map
+        (fun y : Fin n → ℝ =>
+          Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂P) / Real.sqrt (sampleVariance y)))
+        (Set.Iic x)).toReal := by
+    funext x
+    rw [Measure.map_apply hSmeas measurableSet_Iic]
+    rfl
+  rw [heq]
+  exact isCDF_toReal_measure_Iic _
+
+/-- **The `z`-range is compact.** For levels in `[ε, 1 − ε]` the standard normal quantile is
+bounded; this is where `0 < ε < 1/2` is used. -/
+private lemma exists_bound_stdNormalQuantile {ε : ℝ} (hε : 0 < ε) (hε' : ε < 1 / 2) :
+    ∃ B : ℝ, 1 ≤ B ∧ ∀ p ∈ Set.Icc ε (1 - ε), |stdNormalQuantile p| ≤ B := by
+  obtain ⟨b₁, hb₁⟩ := (isCDF_stdNormalCDF.tendsto_atBot.eventually_lt_const hε).exists
+  obtain ⟨b₂, hb₂⟩ := (isCDF_stdNormalCDF.tendsto_atTop.eventually_const_lt
+    (show 1 - ε < 1 by linarith)).exists
+  refine ⟨max 1 (max |b₁| |b₂|), le_max_left _ _, fun p hp => ?_⟩
+  have hp0 : 0 < p := lt_of_lt_of_le hε hp.1
+  have hp1 : p < 1 := lt_of_le_of_lt hp.2 (by linarith)
+  have hz : stdNormalCDF (stdNormalQuantile p) = p :=
+    cdf_quantile_eq isCDF_stdNormalCDF continuous_stdNormalCDF hp0 hp1
+  set z := stdNormalQuantile p with hzdef
+  have hlo : b₁ < z := by
+    by_contra h
+    push_neg at h
+    have := isCDF_stdNormalCDF.mono h
+    rw [hz] at this
+    linarith [hp.1]
+  have hhi : z < b₂ := by
+    by_contra h
+    push_neg at h
+    have := isCDF_stdNormalCDF.mono h
+    rw [hz] at this
+    linarith [hp.2]
+  have h1 : -|b₁| ≤ b₁ := neg_abs_le b₁
+  have h2 : b₂ ≤ |b₂| := le_abs_self b₂
+  rw [abs_le]
+  constructor
+  · calc -(max 1 (max |b₁| |b₂|)) ≤ -|b₁| := by
+          simp only [neg_le_neg_iff]
+          exact le_trans (le_max_left _ _) (le_max_right _ _)
+      _ ≤ b₁ := h1
+      _ ≤ z := hlo.le
+  · calc z ≤ b₂ := hhi.le
+      _ ≤ |b₂| := h2
+      _ ≤ max 1 (max |b₁| |b₂|) := le_trans (le_max_right _ _) (le_max_right _ _)
+
+
+/-- **The Cornish–Fisher weight is Lipschitz on a compact range.** -/
+private lemma abs_qWeight_sub_le {B x y : ℝ} (hB : 1 ≤ B) (hx : |x| ≤ B) (hy : |y| ≤ B) :
+    |stdNormalPDF y * (2 * y ^ 2 + 1) - stdNormalPDF x * (2 * x ^ 2 + 1)|
+      ≤ (2 * B ^ 2 + 1 + 2 * B) * |y - x| := by
+  have h1 : |stdNormalPDF y - stdNormalPDF x| ≤ |y - x| := abs_stdNormalPDF_sub_le x y
+  have h2 : |(2 : ℝ) * y ^ 2 + 1| ≤ 2 * B ^ 2 + 1 := by
+    rw [abs_of_nonneg (by positivity)]
+    nlinarith [sq_abs y, abs_nonneg y]
+  have h3 : stdNormalPDF x ≤ 1 / 2 := stdNormalPDF_le_half x
+  have h3' : (0 : ℝ) < stdNormalPDF x := stdNormalPDF_pos x
+  have h4 : |y + x| ≤ 2 * B := (abs_add_le _ _).trans (by linarith)
+  have heq : stdNormalPDF y * (2 * y ^ 2 + 1) - stdNormalPDF x * (2 * x ^ 2 + 1)
+      = (stdNormalPDF y - stdNormalPDF x) * (2 * y ^ 2 + 1)
+        + stdNormalPDF x * (2 * ((y - x) * (y + x))) := by ring
+  have hb1 : |(stdNormalPDF y - stdNormalPDF x) * (2 * y ^ 2 + 1)| ≤ |y - x| * (2 * B ^ 2 + 1) := by
+    rw [abs_mul]
+    exact mul_le_mul h1 h2 (abs_nonneg _) (abs_nonneg _)
+  have hb2 : |stdNormalPDF x * (2 * ((y - x) * (y + x)))| ≤ |y - x| * (2 * B) := by
+    rw [abs_mul, abs_of_nonneg h3'.le, abs_mul, abs_mul]
+    have : |(2 : ℝ)| = 2 := by norm_num
+    rw [this]
+    have hpos : (0 : ℝ) ≤ |y - x| := abs_nonneg _
+    nlinarith [abs_nonneg (y + x), mul_nonneg hpos (abs_nonneg (y + x))]
+  calc |stdNormalPDF y * (2 * y ^ 2 + 1) - stdNormalPDF x * (2 * x ^ 2 + 1)|
+      = |(stdNormalPDF y - stdNormalPDF x) * (2 * y ^ 2 + 1)
+        + stdNormalPDF x * (2 * ((y - x) * (y + x)))| := by rw [heq]
+    _ ≤ |(stdNormalPDF y - stdNormalPDF x) * (2 * y ^ 2 + 1)|
+        + |stdNormalPDF x * (2 * ((y - x) * (y + x)))| := abs_add_le _ _
+    _ ≤ |y - x| * (2 * B ^ 2 + 1) + |y - x| * (2 * B) := add_le_add hb1 hb2
+    _ = (2 * B ^ 2 + 1 + 2 * B) * |y - x| := by ring
+
+
+/-- **The numerology of the Cornish–Fisher inversion**, isolated as pure real arithmetic: a step
+`K/n` and a window `s ≤ s₀` for which the linear gain `φ_min K s²` beats the quadratic remainder
+of the inversion by the prescribed margin `(C₀ + 1) s²`. -/
+private lemma exists_cornishFisher_step {C₀ φm cB L₂ g : ℝ} (hC₀ : 0 < C₀) (hφm : 0 < φm)
+    (hcB : 0 ≤ cB) (hL2 : 0 ≤ L₂) (hg : 0 ≤ g) :
+    ∃ K s₀ : ℝ, 0 < K ∧ 0 < s₀ ∧ s₀ ≤ 1 ∧ (cB + K) * s₀ ≤ 1 ∧
+      ∀ s : ℝ, 0 < s → s ≤ s₀ →
+        (C₀ + 1) * s ^ 2 + ((K * s ^ 2 + cB * s) ^ 2
+            + g * L₂ * s * (K * s ^ 2 + cB * s)) ≤ φm * K * s ^ 2 := by
+  set A₁ : ℝ := cB ^ 2 + g * L₂ * cB with hA1
+  have hA10 : (0 : ℝ) ≤ A₁ := by rw [hA1]; positivity
+  set K : ℝ := 2 * (C₀ + 1 + A₁) / φm with hKdef
+  have hKpos : (0 : ℝ) < K := by rw [hKdef]; positivity
+  have hKeq : φm * K = 2 * (C₀ + 1 + A₁) := by rw [hKdef]; field_simp
+  set D : ℝ := K ^ 2 + (2 * cB + g * L₂) * K + 1 with hDdef
+  have hDpos : (0 : ℝ) < D := by rw [hDdef]; positivity
+  refine ⟨K, min 1 (min ((C₀ + 1 + A₁) / D) (1 / (cB + K + 1))), hKpos,
+    lt_min one_pos (lt_min (by positivity) (by positivity)), min_le_left _ _, ?_, ?_⟩
+  · have h1 : min 1 (min ((C₀ + 1 + A₁) / D) (1 / (cB + K + 1))) ≤ 1 / (cB + K + 1) :=
+      le_trans (min_le_right _ _) (min_le_right _ _)
+    have hden : (0 : ℝ) < cB + K + 1 := by linarith
+    calc (cB + K) * min 1 (min ((C₀ + 1 + A₁) / D) (1 / (cB + K + 1)))
+        ≤ (cB + K) * (1 / (cB + K + 1)) := by
+          exact mul_le_mul_of_nonneg_left h1 (by linarith)
+      _ ≤ 1 := by rw [mul_one_div, div_le_one hden]; linarith
+  · intro s hs hle
+    have hs1 : s ≤ 1 := le_trans hle (min_le_left _ _)
+    have hsD : s ≤ (C₀ + 1 + A₁) / D :=
+      le_trans hle (le_trans (min_le_right _ _) (min_le_left _ _))
+    have hDs : D * s ≤ C₀ + 1 + A₁ := by
+      rw [le_div_iff₀ hDpos] at hsD; linarith
+    have hs2 : s ^ 2 ≤ s := by nlinarith
+    -- the remainder, divided by `s²`
+    have hrem : (K * s ^ 2 + cB * s) ^ 2 + g * L₂ * s * (K * s ^ 2 + cB * s)
+        ≤ (C₀ + 1 + 2 * A₁) * s ^ 2 := by
+      have hexp : (K * s ^ 2 + cB * s) ^ 2 + g * L₂ * s * (K * s ^ 2 + cB * s)
+          = (K ^ 2 * s ^ 2 + (2 * cB + g * L₂) * K * s + A₁) * s ^ 2 := by
+        rw [hA1]; ring
+      rw [hexp]
+      have hkey : K ^ 2 * s ^ 2 + (2 * cB + g * L₂) * K * s + A₁ ≤ C₀ + 1 + 2 * A₁ := by
+        have h1 : K ^ 2 * s ^ 2 ≤ K ^ 2 * s := by nlinarith [sq_nonneg K]
+        have h2 : K ^ 2 * s + (2 * cB + g * L₂) * K * s ≤ D * s := by
+          rw [hDdef]; nlinarith
+        linarith
+      nlinarith [sq_nonneg s]
+    nlinarith [sq_nonneg s, hKeq]
+
+/-- **Cornish–Fisher inversion, abstractly.** A uniform `O(n⁻¹)` Edgeworth expansion of a family
+of distribution functions inverts to a uniform `O(n⁻¹)` expansion of their quantiles, over levels
+bounded away from `0` and `1`. -/
+theorem cornishFisher_of_edgeworth {S : ℕ → ℝ → ℝ} {γ C₀ : ℝ} (hC₀ : 0 < C₀)
+    (hcdf : ∀ n : ℕ, 0 < n → IsCDF (S n))
+    (hexp : ∀ n : ℕ, 0 < n → ∀ t : ℝ,
+      |S n t - (stdNormalCDF t
+        + 1 / 6 * γ * stdNormalPDF t * (2 * t ^ 2 + 1) * (Real.sqrt n)⁻¹)| ≤ C₀ / n)
+    {ε : ℝ} (hε : 0 < ε) (hε' : ε < 1 / 2) :
+    ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ α ∈ Set.Icc ε (1 - ε),
+      |cdfPseudoInverse (S n) (1 - α)
+        - (stdNormalQuantile (1 - α)
+          - 1 / 6 * γ * (2 * stdNormalQuantile (1 - α) ^ 2 + 1) * (Real.sqrt n)⁻¹)| ≤ C / n := by
+  have habs : ∀ a b : ℝ, |a - b| ≤ |a| + |b| := fun a b => by
+    rw [sub_eq_add_neg]; exact (abs_add_le _ _).trans (by rw [abs_neg])
+  obtain ⟨B, hB1, hB⟩ := exists_bound_stdNormalQuantile hε hε'
+  -- the three law-dependent constants, made opaque
+  obtain ⟨cB, hcB0, hcB⟩ : ∃ cB : ℝ, 0 ≤ cB ∧
+      ∀ z : ℝ, |z| ≤ B → |1 / 6 * γ * (2 * z ^ 2 + 1)| ≤ cB := by
+    refine ⟨|γ| / 6 * (2 * B ^ 2 + 1), by positivity, fun z hz => ?_⟩
+    rw [abs_mul, abs_of_nonneg (show (0:ℝ) ≤ 2 * z ^ 2 + 1 by positivity)]
+    have h1 : |1 / 6 * γ| = |γ| / 6 := by
+      rw [abs_mul, abs_of_nonneg (show (0:ℝ) ≤ 1/6 by norm_num)]; ring
+    rw [h1]
+    have h2 : 2 * z ^ 2 + 1 ≤ 2 * B ^ 2 + 1 := by
+      nlinarith [sq_abs z, abs_nonneg z]
+    have h3 : (0:ℝ) ≤ |γ| / 6 := by positivity
+    exact mul_le_mul_of_nonneg_left h2 h3
+  obtain ⟨L₂, hL20, hL2⟩ : ∃ L₂ : ℝ, 0 ≤ L₂ ∧ ∀ x y : ℝ, |x| ≤ B + 1 → |y| ≤ B + 1 →
+      |stdNormalPDF y * (2 * y ^ 2 + 1) - stdNormalPDF x * (2 * x ^ 2 + 1)|
+        ≤ L₂ * |y - x| :=
+    ⟨2 * (B + 1) ^ 2 + 1 + 2 * (B + 1), by positivity,
+      fun x y hx hy => abs_qWeight_sub_le (by linarith) hx hy⟩
+  obtain ⟨φm, hφm0, hφm⟩ : ∃ φm : ℝ, 0 < φm ∧ ∀ z : ℝ, |z| ≤ B → φm ≤ stdNormalPDF z :=
+    ⟨stdNormalPDF B, stdNormalPDF_pos B, fun z hz => stdNormalPDF_le_of_abs_le hz⟩
+  obtain ⟨K, s₀, hKpos, hs0pos, hs0le1, hs0win, hstep⟩ :=
+    exists_cornishFisher_step (C₀ := C₀) (φm := φm) (cB := cB) (L₂ := L₂) (g := |γ| / 6)
+      hC₀ hφm0 hcB0 hL20 (by positivity)
+  set n₁ : ℕ := ⌈s₀⁻¹ ^ 2⌉₊ + 1 with hn1def
+  -- the small-`n` bound: for each `n` the quantile is bounded over the level range
+  have hsmall : ∀ n : ℕ, ∃ M : ℝ, 0 ≤ M ∧ (0 < n → ∀ α ∈ Set.Icc ε (1 - ε),
+      |cdfPseudoInverse (S n) (1 - α)
+        - (stdNormalQuantile (1 - α)
+          - 1 / 6 * γ * (2 * stdNormalQuantile (1 - α) ^ 2 + 1) * (Real.sqrt n)⁻¹)| ≤ M) := by
+    intro n
+    refine ⟨|cdfPseudoInverse (S n) ε| + |cdfPseudoInverse (S n) (1 - ε)| + B + cB,
+      by positivity, fun hn α hα => ?_⟩
+    have hcdfn := hcdf n hn
+    have hp0 : 0 < 1 - α := by linarith [hα.2, hε]
+    have hp1 : 1 - α < 1 := by linarith [hα.1]
+    have hlo : cdfPseudoInverse (S n) ε ≤ cdfPseudoInverse (S n) (1 - α) :=
+      cdfPseudoInverse_mono_level hcdfn hε (by linarith [hα.2]) hp1
+    have hhi : cdfPseudoInverse (S n) (1 - α) ≤ cdfPseudoInverse (S n) (1 - ε) :=
+      cdfPseudoInverse_mono_level hcdfn hp0 (by linarith [hα.1]) (by linarith)
+    have hQ : |cdfPseudoInverse (S n) (1 - α)|
+        ≤ |cdfPseudoInverse (S n) ε| + |cdfPseudoInverse (S n) (1 - ε)| := by
+      rw [abs_le]
+      refine ⟨?_, ?_⟩
+      · have h1 := neg_abs_le (cdfPseudoInverse (S n) ε)
+        have h2 : (0:ℝ) ≤ |cdfPseudoInverse (S n) (1 - ε)| := abs_nonneg _
+        linarith
+      · have h1 := le_abs_self (cdfPseudoInverse (S n) (1 - ε))
+        have h2 : (0:ℝ) ≤ |cdfPseudoInverse (S n) ε| := abs_nonneg _
+        linarith
+    have hzB : |stdNormalQuantile (1 - α)| ≤ B :=
+      hB _ ⟨by linarith [hα.2], by linarith [hα.1]⟩
+    have hsle : (Real.sqrt n)⁻¹ ≤ 1 := by
+      rw [inv_le_one_iff₀]
+      right
+      rw [show (1:ℝ) = Real.sqrt 1 by simp]
+      exact Real.sqrt_le_sqrt (by exact_mod_cast hn)
+    have hsnn : (0:ℝ) ≤ (Real.sqrt n)⁻¹ := by positivity
+    have hterm : |1 / 6 * γ * (2 * stdNormalQuantile (1 - α) ^ 2 + 1) * (Real.sqrt n)⁻¹| ≤ cB := by
+      rw [abs_mul, abs_of_nonneg hsnn]
+      have h1 := hcB _ hzB
+      nlinarith [abs_nonneg (1 / 6 * γ * (2 * stdNormalQuantile (1 - α) ^ 2 + 1))]
+    calc |cdfPseudoInverse (S n) (1 - α)
+            - (stdNormalQuantile (1 - α)
+              - 1 / 6 * γ * (2 * stdNormalQuantile (1 - α) ^ 2 + 1) * (Real.sqrt n)⁻¹)|
+        ≤ |cdfPseudoInverse (S n) (1 - α)|
+          + |stdNormalQuantile (1 - α)
+              - 1 / 6 * γ * (2 * stdNormalQuantile (1 - α) ^ 2 + 1) * (Real.sqrt n)⁻¹| :=
+          habs _ _
+      _ ≤ (|cdfPseudoInverse (S n) ε| + |cdfPseudoInverse (S n) (1 - ε)|) + (B + cB) :=
+          add_le_add hQ ((habs _ _).trans (add_le_add hzB hterm))
+      _ = |cdfPseudoInverse (S n) ε| + |cdfPseudoInverse (S n) (1 - ε)| + B + cB := by ring
+  choose M hM0 hM using hsmall
+  have hsum0 : (0:ℝ) ≤ ∑ i ∈ Finset.range n₁, (i : ℝ) * M i :=
+    Finset.sum_nonneg fun i _ => mul_nonneg (Nat.cast_nonneg i) (hM0 i)
+  refine ⟨K + 1 + ∑ i ∈ Finset.range n₁, (i : ℝ) * M i, by linarith, fun n hn α hα => ?_⟩
+  have hn0 : (0:ℝ) < n := by exact_mod_cast hn
+  rcases lt_or_ge n n₁ with hlt | hge
+  · -- finitely many small `n`, absorbed into the constant
+    have h1 := hM n hn α hα
+    have h2 : (n : ℝ) * M n ≤ ∑ i ∈ Finset.range n₁, (i : ℝ) * M i :=
+      Finset.single_le_sum (f := fun i : ℕ => (i : ℝ) * M i)
+        (fun i _ => mul_nonneg (Nat.cast_nonneg i) (hM0 i)) (Finset.mem_range.2 hlt)
+    rw [le_div_iff₀ hn0]
+    calc |cdfPseudoInverse (S n) (1 - α)
+            - (stdNormalQuantile (1 - α)
+              - 1 / 6 * γ * (2 * stdNormalQuantile (1 - α) ^ 2 + 1) * (Real.sqrt n)⁻¹)| * (n:ℝ)
+        ≤ M n * (n : ℝ) := mul_le_mul_of_nonneg_right h1 hn0.le
+      _ = (n : ℝ) * M n := by ring
+      _ ≤ ∑ i ∈ Finset.range n₁, (i : ℝ) * M i := h2
+      _ ≤ K + 1 + ∑ i ∈ Finset.range n₁, (i : ℝ) * M i := by linarith
+  · -- the asymptotic range: invert the expansion by a two-sided sandwich at step `K/n`
+    have hp0 : 0 < 1 - α := by linarith [hα.2, hε]
+    have hp1 : 1 - α < 1 := by linarith [hα.1]
+    have hpmem : (1 - α) ∈ Set.Icc ε (1 - ε) := ⟨by linarith [hα.2], by linarith [hα.1]⟩
+    have hsnpos : (0:ℝ) < Real.sqrt n := Real.sqrt_pos.2 hn0
+    obtain ⟨s, hsdef⟩ : ∃ s : ℝ, s = (Real.sqrt n)⁻¹ := ⟨_, rfl⟩
+    obtain ⟨z, hzdef⟩ : ∃ z : ℝ, z = stdNormalQuantile (1 - α) := ⟨_, rfl⟩
+    obtain ⟨c, hcdef⟩ : ∃ c : ℝ, c = 1 / 6 * γ * (2 * z ^ 2 + 1) := ⟨_, rfl⟩
+    obtain ⟨x, hxdef⟩ : ∃ x : ℝ, x = z - c * s := ⟨_, rfl⟩
+    have hzB : |z| ≤ B := by rw [hzdef]; exact hB _ hpmem
+    have hΦz : stdNormalCDF z = 1 - α := by
+      rw [hzdef]; exact cdf_quantile_eq isCDF_stdNormalCDF continuous_stdNormalCDF hp0 hp1
+    have hspos : (0:ℝ) < s := by rw [hsdef]; positivity
+    have hssq : s ^ 2 = ((n:ℝ))⁻¹ := by rw [hsdef, inv_pow, Real.sq_sqrt hn0.le]
+    have hceil : (s₀⁻¹) ^ 2 ≤ (n:ℝ) := by
+      have h1 : (s₀⁻¹) ^ 2 ≤ (⌈s₀⁻¹ ^ 2⌉₊ : ℝ) := Nat.le_ceil _
+      have h2 : (⌈s₀⁻¹ ^ 2⌉₊ : ℕ) ≤ n := by rw [hn1def] at hge; omega
+      have h3 : ((⌈s₀⁻¹ ^ 2⌉₊ : ℕ) : ℝ) ≤ (n : ℝ) := by exact_mod_cast h2
+      linarith
+    have hsle0 : s ≤ s₀ := by
+      have hsq : s₀⁻¹ ≤ Real.sqrt n := by
+        have h := Real.sqrt_le_sqrt hceil
+        rwa [Real.sqrt_sq (by positivity)] at h
+      rw [hsdef, inv_le_comm₀ hsnpos hs0pos]
+      exact hsq
+    have hs1 : s ≤ 1 := le_trans hsle0 hs0le1
+    have hcabs : |c| ≤ cB := by rw [hcdef]; exact hcB z hzB
+    have hd0 : (0:ℝ) ≤ K * s ^ 2 := by positivity
+    have hs2pos : (0:ℝ) < s ^ 2 := by positivity
+    have hwin : K * s ^ 2 + cB * s ≤ 1 := by
+      have hle : K * s ^ 2 + cB * s ≤ (cB + K) * s := by nlinarith [hKpos.le, hspos.le]
+      have hle2 : (cB + K) * s ≤ (cB + K) * s₀ :=
+        mul_le_mul_of_nonneg_left hsle0 (by linarith [hKpos.le])
+      linarith [hs0win]
+    have hxd : ∀ d : ℝ, |d| ≤ K * s ^ 2 → |x + d| ≤ B + 1 := by
+      intro d hd
+      have hrw : x + d = z + (-(c * s) + d) := by rw [hxdef]; ring
+      have hin : |-(c * s) + d| ≤ |c| * s + |d| := by
+        refine (abs_add_le _ _).trans ?_
+        rw [abs_neg, abs_mul, abs_of_nonneg hspos.le]
+      have h1 : |x + d| ≤ |z| + |-(c * s) + d| := by rw [hrw]; exact abs_add_le _ _
+      have h2 : |c| * s ≤ cB * s := mul_le_mul_of_nonneg_right hcabs hspos.le
+      linarith
+    -- the local expansion of the approximant around the target point
+    have hGest : ∀ d : ℝ, |d| ≤ K * s ^ 2 →
+        |(stdNormalCDF (x + d)
+            + 1 / 6 * γ * stdNormalPDF (x + d) * (2 * (x + d) ^ 2 + 1) * s) - (1 - α)
+          - stdNormalPDF z * d|
+          ≤ (K * s ^ 2 + cB * s) ^ 2 + |γ| / 6 * L₂ * s * (K * s ^ 2 + cB * s) := by
+      intro d hd
+      have hΔ : |x + d - z| ≤ K * s ^ 2 + cB * s := by
+        have hrw : x + d - z = d - c * s := by rw [hxdef]; ring
+        rw [hrw]
+        calc |d - c * s| ≤ |d| + |c * s| := habs _ _
+          _ = |d| + |c| * s := by rw [abs_mul, abs_of_nonneg hspos.le]
+          _ ≤ K * s ^ 2 + cB * s :=
+              add_le_add hd (mul_le_mul_of_nonneg_right hcabs hspos.le)
+      have h1 : |stdNormalCDF (x + d) - stdNormalCDF z - stdNormalPDF z * (x + d - z)|
+          ≤ (x + d - z) ^ 2 := abs_stdNormalCDF_sub_taylor_le z (x + d)
+      have h1' : (x + d - z) ^ 2 ≤ (K * s ^ 2 + cB * s) ^ 2 := by
+        rw [← sq_abs (x + d - z)]
+        exact pow_le_pow_left₀ (abs_nonneg _) hΔ 2
+      have h2 : |stdNormalPDF (x + d) * (2 * (x + d) ^ 2 + 1)
+            - stdNormalPDF z * (2 * z ^ 2 + 1)| ≤ L₂ * |x + d - z| :=
+        hL2 z (x + d) (le_trans hzB (by linarith)) (hxd d hd)
+      have h2' : |1 / 6 * γ * s * (stdNormalPDF (x + d) * (2 * (x + d) ^ 2 + 1)
+            - stdNormalPDF z * (2 * z ^ 2 + 1))|
+          ≤ |γ| / 6 * L₂ * s * (K * s ^ 2 + cB * s) := by
+        have hb : L₂ * |x + d - z| ≤ L₂ * (K * s ^ 2 + cB * s) :=
+          mul_le_mul_of_nonneg_left hΔ hL20
+        have hfac : |1 / 6 * γ * s| = |γ| / 6 * s := by
+          rw [abs_mul, abs_mul, abs_of_nonneg hspos.le,
+            abs_of_nonneg (show (0:ℝ) ≤ 1 / 6 by norm_num)]
+          ring
+        rw [abs_mul, hfac]
+        have hnn : (0:ℝ) ≤ |γ| / 6 * s := by positivity
+        calc |γ| / 6 * s * |stdNormalPDF (x + d) * (2 * (x + d) ^ 2 + 1)
+              - stdNormalPDF z * (2 * z ^ 2 + 1)|
+            ≤ |γ| / 6 * s * (L₂ * (K * s ^ 2 + cB * s)) :=
+              mul_le_mul_of_nonneg_left (h2.trans hb) hnn
+          _ = |γ| / 6 * L₂ * s * (K * s ^ 2 + cB * s) := by ring
+      have hdecomp : (stdNormalCDF (x + d)
+            + 1 / 6 * γ * stdNormalPDF (x + d) * (2 * (x + d) ^ 2 + 1) * s) - (1 - α)
+          - stdNormalPDF z * d
+          = (stdNormalCDF (x + d) - stdNormalCDF z - stdNormalPDF z * (x + d - z))
+            + 1 / 6 * γ * s * (stdNormalPDF (x + d) * (2 * (x + d) ^ 2 + 1)
+              - stdNormalPDF z * (2 * z ^ 2 + 1)) := by
+        rw [← hΦz, hxdef, hcdef]; ring
+      rw [hdecomp]
+      exact (abs_add_le _ _).trans (add_le_add (h1.trans h1') h2')
+    have hφz : φm ≤ stdNormalPDF z := hφm z hzB
+    have hmain := hstep s hspos hsle0
+    have hgain : φm * (K * s ^ 2) ≤ stdNormalPDF z * (K * s ^ 2) :=
+      mul_le_mul_of_nonneg_right hφz hd0
+    have hC0n : C₀ / (n:ℝ) = C₀ * s ^ 2 := by rw [hssq, div_eq_mul_inv]
+    have hSplus : (1 - α) ≤ S n (x + K * s ^ 2) := by
+      have hg := hGest (K * s ^ 2) (by rw [abs_of_nonneg hd0])
+      rw [abs_le] at hg
+      have he := hexp n hn (x + K * s ^ 2)
+      rw [← hsdef, hC0n, abs_le] at he
+      linarith [hg.1, he.1, hmain, hgain, hs2pos]
+    have hSminus : S n (x - K * s ^ 2) < 1 - α := by
+      have hg := hGest (-(K * s ^ 2)) (by rw [abs_neg, abs_of_nonneg hd0])
+      rw [abs_le] at hg
+      have hrw : x + -(K * s ^ 2) = x - K * s ^ 2 := by ring
+      rw [hrw] at hg
+      have he := hexp n hn (x - K * s ^ 2)
+      rw [← hsdef, hC0n, abs_le] at he
+      linarith [hg.2, he.2, hmain, hgain, hs2pos]
+    have hfin := abs_cdfPseudoInverse_sub_le (hcdf n hn).mono hSminus hSplus
+    have hgoal : stdNormalQuantile (1 - α)
+        - 1 / 6 * γ * (2 * stdNormalQuantile (1 - α) ^ 2 + 1) * (Real.sqrt n)⁻¹ = x := by
+      rw [hxdef, hcdef, hzdef, hsdef]
+    rw [hgoal]
+    calc |cdfPseudoInverse (S n) (1 - α) - x|
+        ≤ K * s ^ 2 := hfin
+      _ = K / (n : ℝ) := by rw [hssq, div_eq_mul_inv]
+      _ ≤ (K + 1 + ∑ i ∈ Finset.range n₁, (i : ℝ) * M i) / (n : ℝ) := by
+          gcongr
+          linarith
 
 /-- **Cornish–Fisher expansion of the studentized quantile, with `O(n^{-1})` accuracy.**
 
@@ -9645,7 +10381,41 @@ a mean term `8n⁴(E U)⁴` which only the fourth-moment tail bounds `|E T| ≤ 
 `|E T² − σ²| ≤ μ₄/τ²` bring back to `O(1)`. The residue over there is (A) and (B), two
 deterministic estimates on `𝓕 g`. See the wave-33 note on `edgeworth_studentized_uniform`.
 
-**The inversion step this corollary needs is unchanged and unattempted.** Granted
+**Status after wave 37. THIS COROLLARY IS PROVED.** It is no longer a `sorry`: it is a
+one-line instance of `cornishFisher_of_edgeworth` above, which is itself **axiom-clean**. The
+only debt it now carries is `edgeworth_studentized_uniform`'s, inherited transitively.
+
+* **The inversion is not an implicit-function-theorem invocation, and the note that called for
+  one is superseded.** All that is used is a *sandwich*: for a nondecreasing `f`, `f(x − d) < p`
+  and `p ≤ f(x + d)` give `|f⁻¹(p) − x| ≤ d` directly from the greatest-lower-bound property
+  (`abs_cdfPseudoInverse_sub_le`). With `x` the claimed Cornish–Fisher point and `d = K/n`, the
+  two test inequalities follow from the expansion plus a *first-order* Taylor bound for `Φ`,
+  `|Φ(b) − Φ(a) − φ(a)(b − a)| ≤ (b − a)²` (`abs_stdNormalCDF_sub_taylor_le`) — proved from the
+  integral form of `Φ` and the `1`-Lipschitz bound `|u|φ(u) ≤ 1`, with no derivative of `Φ`
+  needed anywhere. No differentiability of the *approximant*, and no monotonicity of it, is
+  required: only of the sampling distribution function, which is free
+  (`isCDF_studentizedRootCDF_of_prob`).
+
+* **The cancellation is the whole content, and it is exact.** Writing `Δ = x + d − z` with
+  `z = Φ⁻¹(p)` and `c = (γ/6)(2z² + 1)`, the two `n^{-1/2}` terms cancel identically —
+  `φ(z)Δ + (γ/6)n^{-1/2}φ(z)(2z² + 1) = φ(z)d` — so the approximant at `x + d` exceeds `p` by
+  `φ(z)d` up to a remainder of size `Δ² + (|γ|/6)L n^{-1/2}|Δ|`. Since `|Δ| ≍ d + |c|n^{-1/2}`,
+  that remainder carries an `n^{-1}` piece which **no choice of `K` removes**; what closes the
+  estimate is that the gain `φ(z)K/n` is linear in `K` while the obstruction
+  `2(c² + (|γ|L/6)|c|)/n` is not. This is `exists_cornishFisher_step`, and it is where
+  `0 < ε < 1/2` is spent: `φ(z) ≥ φ(B) > 0` needs the compact `z`-range
+  (`exists_bound_stdNormalQuantile`).
+
+* **The finitely many small `n` are absorbed, but not for free.** The sandwich needs
+  `n ≥ n₁(ε, γ, C₀)`, and below that threshold the expansion is vacuous (its bound exceeds `1`).
+  What replaces it is that for each fixed `n` the quantile is *bounded over the level range*,
+  by monotonicity of `p ↦ f⁻¹(p)` between `f⁻¹(ε)` and `f⁻¹(1 − ε)`; the finitely many bounds
+  are then absorbed into `C` by a `Finset.range n₁` sum rather than a supremum. This is the one
+  step the earlier notes did not price, and it is the reason the corollary needs
+  `IsCDF (studentizedRootCDF F n)` (for the tails that make `f⁻¹` finite) and not merely
+  monotonicity.
+
+**The inversion step, as recorded before wave 37.** Granted
 `edgeworth_studentized_uniform`, it is the implicit-function inversion of
 `x ↦ Φ(x) + (γ/6)φ(x)(2x² + 1)n^{-1/2}` on the compact `z`-range `[Φ⁻¹(ε), Φ⁻¹(1 − ε)]`, where
 `φ` is bounded below — that is what `0 < ε < 1/2` buys — together with the transfer of a uniform
@@ -9665,7 +10435,9 @@ theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
         (stdNormalQuantile (1 - α) -
           (1 / 6) * skewness F * (2 * stdNormalQuantile (1 - α) ^ 2 + 1) * (Real.sqrt n)⁻¹)|
       ≤ C / n := by
-  sorry
+  obtain ⟨C₀, hC₀, hexp⟩ := edgeworth_studentized_uniform (F := F) hF4 hFvar hFac
+  exact cornishFisher_of_edgeworth (S := fun n => studentizedRootCDF F n)
+    (γ := skewness F) hC₀ (fun n _ => isCDF_studentizedRootCDF_of_prob F n) hexp hε hε'
 
 end Edgeworth
 
