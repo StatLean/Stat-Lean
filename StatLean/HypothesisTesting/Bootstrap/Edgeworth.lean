@@ -9065,6 +9065,297 @@ theorem norm_integral_expPhase_le_graded (N : ℕ) :
   rw [norm_integral_expPhase_eq_iterate hf hfs hΦ hΦ0 N]
   exact hint
 
+/-! ### The fibre phase of the leakage estimate, and the fibre estimate itself
+
+The abstract estimate above is applied at a frozen second coordinate `w₁`. What follows
+identifies the object it is applied to: the total phase `θHₙ(·, w₁) − t₀·` of the leakage
+integral is, in `w₀`, an **explicit cubic** — `fibrePhase_apply` — so its whole derivative
+calculus is finite and exact, and the slope floor `|θ|/(3σ)` of `abs_deriv_fibrePhase_ge` holds
+at every `w₀` with no cut-off. The estimate then runs on the rescaled fibre `w₀ = Mx`, which is
+what turns the amplitude scale-free and the per-part cost into the `O(n^{-3/8})` of
+`bulk_gain_phase_le_band`. -/
+
+/-- The **cubic phase** `p u + q u³`. -/
+noncomputable def cubicPhase (p q : ℝ) : ℝ → ℝ := fun u => p * u + q * u ^ 3
+
+lemma contDiff_cubicPhase (p q : ℝ) : ContDiff ℝ (⊤ : ℕ∞) (cubicPhase p q) := by
+  unfold cubicPhase
+  fun_prop
+
+lemma hasDerivAt_cubicPhase (p q u : ℝ) :
+    HasDerivAt (cubicPhase p q) (p + 3 * q * u ^ 2) u := by
+  have h1 : HasDerivAt (fun x : ℝ => p * x) (p * 1) u := (hasDerivAt_id u).const_mul p
+  have h2 : HasDerivAt (fun x : ℝ => q * x ^ 3) (q * (3 * u ^ 2)) u := by
+    simpa using (hasDerivAt_pow 3 u).const_mul q
+  have h3 : HasDerivAt (fun x : ℝ => p * x + q * x ^ 3) (p * 1 + q * (3 * u ^ 2)) u := h1.add h2
+  have heq : p * 1 + q * (3 * u ^ 2) = p + 3 * q * u ^ 2 := by ring
+  rw [heq] at h3
+  exact h3
+
+lemma deriv_cubicPhase (p q : ℝ) :
+    deriv (cubicPhase p q) = fun u : ℝ => p + 3 * q * u ^ 2 := by
+  funext u
+  exact (hasDerivAt_cubicPhase p q u).deriv
+
+lemma deriv_deriv_cubicPhase (p q : ℝ) :
+    deriv (deriv (cubicPhase p q)) = fun u : ℝ => 6 * q * u := by
+  rw [deriv_cubicPhase]
+  funext u
+  have h2 : HasDerivAt (fun x : ℝ => 3 * q * x ^ 2) (3 * q * (2 * u)) u := by
+    simpa using (hasDerivAt_pow 2 u).const_mul (3 * q)
+  have h3 : HasDerivAt (fun x : ℝ => p + 3 * q * x ^ 2) (0 + 3 * q * (2 * u)) u :=
+    (hasDerivAt_const u p).add h2
+  have heq : (0 : ℝ) + 3 * q * (2 * u) = 6 * q * u := by ring
+  rw [heq] at h3
+  exact h3.deriv
+
+/-- Iterated derivatives of a constant function vanish. -/
+lemma iteratedDeriv_const_eq_zero (c : ℝ) :
+    ∀ k : ℕ, 1 ≤ k → iteratedDeriv k (fun _ : ℝ => c) = fun _ : ℝ => (0 : ℝ) := by
+  have hzero : ∀ k : ℕ, iteratedDeriv k (fun _ : ℝ => (0 : ℝ)) = fun _ : ℝ => (0 : ℝ) := by
+    intro k
+    induction k with
+    | zero => rfl
+    | succ k ih => rw [iteratedDeriv_succ, ih]; funext u; simp
+  intro k hk
+  obtain ⟨m, rfl⟩ : ∃ m, k = m + 1 := ⟨k - 1, by omega⟩
+  rw [iteratedDeriv_succ']
+  have : (deriv fun _ : ℝ => c) = fun _ : ℝ => (0 : ℝ) := by funext u; simp
+  rw [this, hzero]
+
+/-- **The exact derivative calculus of the cubic phase.** All derivatives of the slope past the
+second vanish, and the surviving ones are linear in `q` — this is why the graded hypotheses of
+`norm_integral_expPhase_le_graded` are checkable at every order at once. -/
+lemma abs_iteratedDeriv_deriv_cubicPhase_le (p q : ℝ) {A : ℝ} (hA : 0 ≤ A) :
+    ∀ j : ℕ, 1 ≤ j → ∀ u ∈ Set.Icc (-A) A,
+      |iteratedDeriv j (deriv (cubicPhase p q)) u| ≤ 6 * |q| * (1 + A) := by
+  intro j hj u hu
+  have huA : |u| ≤ A := abs_le.mpr ⟨(Set.mem_Icc.mp hu).1, (Set.mem_Icc.mp hu).2⟩
+  have hq : (0 : ℝ) ≤ |q| := abs_nonneg q
+  match j, hj with
+  | 1, _ =>
+      rw [iteratedDeriv_one, deriv_deriv_cubicPhase]
+      have : |6 * q * u| = 6 * |q| * |u| := by
+        rw [abs_mul, abs_mul]; norm_num
+      rw [this]
+      nlinarith
+  | 2, _ =>
+      rw [iteratedDeriv_succ', iteratedDeriv_one, deriv_deriv_cubicPhase]
+      have hd : (deriv fun x : ℝ => 6 * q * x) = fun _ : ℝ => 6 * q := by
+        funext x
+        simpa using ((hasDerivAt_id x).const_mul (6 * q)).deriv
+      rw [hd]
+      have : |6 * q| = 6 * |q| := by rw [abs_mul]; norm_num
+      rw [this]
+      nlinarith
+  | (k + 3), _ =>
+      have hstep : iteratedDeriv (k + 3) (deriv (cubicPhase p q))
+          = iteratedDeriv (k + 1) (deriv (deriv (deriv (cubicPhase p q)))) := by
+        rw [iteratedDeriv_succ', iteratedDeriv_succ' (n := k + 1)]
+      have hd3 : deriv (deriv (deriv (cubicPhase p q))) = fun _ : ℝ => 6 * q := by
+        rw [deriv_deriv_cubicPhase]
+        funext x
+        simpa using ((hasDerivAt_id x).const_mul (6 * q)).deriv
+      rw [hstep, hd3, iteratedDeriv_const_eq_zero (6 * q) (k + 1) (by omega)]
+      have hnn : (0 : ℝ) ≤ 6 * |q| * (1 + A) := mul_nonneg (by positivity) (by linarith)
+      simpa using hnn
+
+/-! ### The surrogate's fibre phase -/
+
+/-- The **fibre slope coefficient** of the surrogate: the bracket `1 − vr/2 + 3v²r²/8` that
+`deltaSurrogate_slope_ge` bounds below by `5/6`, at the frozen second coordinate. -/
+noncomputable def fibreSlopeCoeff (σ r w₁ : ℝ) : ℝ :=
+  1 - (w₁ / σ ^ 2) * r / 2 + 3 * (w₁ / σ ^ 2) ^ 2 * r ^ 2 / 8
+
+lemma fibreSlopeCoeff_ge (σ r w₁ : ℝ) : (5 : ℝ) / 6 ≤ fibreSlopeCoeff σ r w₁ := by
+  have h := deltaSurrogate_slope_ge ((w₁ / σ ^ 2) * r)
+  rw [fibreSlopeCoeff]
+  nlinarith [h]
+
+/-- The **fibre phase** `w₀ ↦ θHₙ(w₀, w₁) − t₀w₀` of the leakage estimate: a cubic in `w₀`. -/
+noncomputable def fibrePhase (σ r θ t₀ w₁ : ℝ) : ℝ → ℝ :=
+  cubicPhase (θ * fibreSlopeCoeff σ r w₁ / σ - t₀) (θ * r ^ 2 / (2 * σ ^ 3))
+
+/-- **The identification.** The total phase of the leakage estimate, restricted to a horizontal
+fibre, *is* the cubic phase — the whole content of the fibrewise reduction on the phase side. -/
+lemma fibrePhase_apply {σ : ℝ} (hσ : σ ≠ 0) (r θ t₀ : ℝ) (w : E₂) :
+    fibrePhase σ r θ t₀ (w 1) (w 0) = θ * deltaSurrogate σ r w - t₀ * w 0 := by
+  simp only [fibrePhase, cubicPhase, fibreSlopeCoeff, deltaSurrogate]
+  field_simp
+  ring
+
+/-- **The slope floor, globally in `w₀`.** Under the band condition `|t₀| ≤ |θ|/(2σ)` the fibre
+phase is non-stationary with floor `|θ|/(3σ)`: the surrogate's `5/6` and the band's `1/2`
+subtract, and `5/6 − 1/2 = 1/3`. The cubic term only helps, so the bound holds at *every* `w₀`,
+with no cut-off — which is what makes `1/∂Φ` globally smooth. -/
+lemma abs_deriv_fibrePhase_ge {σ : ℝ} (hσ : 0 < σ) {θ t₀ : ℝ} (r w₁ : ℝ)
+    (ht₀ : |t₀| ≤ |θ| / (2 * σ)) (u : ℝ) :
+    |θ| / (3 * σ) ≤ |deriv (fibrePhase σ r θ t₀ w₁) u| := by
+  have hderiv : deriv (fibrePhase σ r θ t₀ w₁) u
+      = θ * fibreSlopeCoeff σ r w₁ / σ - t₀ + 3 * (θ * r ^ 2 / (2 * σ ^ 3)) * u ^ 2 := by
+    rw [fibrePhase, deriv_cubicPhase]
+  rw [hderiv]
+  set S : ℝ := fibreSlopeCoeff σ r w₁ + 3 * r ^ 2 * u ^ 2 / (2 * σ ^ 2) with hS
+  have hval : θ * fibreSlopeCoeff σ r w₁ / σ - t₀ + 3 * (θ * r ^ 2 / (2 * σ ^ 3)) * u ^ 2
+      = θ * S / σ - t₀ := by
+    rw [hS]; field_simp; ring
+  rw [hval]
+  have hS56 : (5 : ℝ) / 6 ≤ S := by
+    have h1 := fibreSlopeCoeff_ge σ r w₁
+    have h2 : (0 : ℝ) ≤ 3 * r ^ 2 * u ^ 2 / (2 * σ ^ 2) := by positivity
+    rw [hS]; linarith
+  have habs : |θ| * S / σ ≤ |θ * S / σ| := by
+    rw [abs_div, abs_mul, abs_of_pos hσ, abs_of_nonneg (by linarith : (0:ℝ) ≤ S)]
+  have hlow : |θ| * (5 / 6) / σ ≤ |θ| * S / σ := by
+    have := abs_nonneg θ
+    gcongr
+  have htri : |θ * S / σ| - |t₀| ≤ |θ * S / σ - t₀| := by
+    have := abs_sub_abs_le_abs_sub (θ * S / σ) t₀
+    linarith
+  have hb : |t₀| ≤ |θ| / (2 * σ) := ht₀
+  have hσ' : (0 : ℝ) < σ := hσ
+  have hkey : |θ| / (3 * σ) = |θ| * (5 / 6) / σ - |θ| / (2 * σ) := by
+    field_simp
+    ring
+  linarith
+
+/-- The fibre phase's higher slope derivatives, on a window `|w₀| ≤ A`. -/
+lemma abs_iteratedDeriv_deriv_fibrePhase_le {σ : ℝ} (hσ : 0 < σ) (r θ t₀ w₁ : ℝ) {A : ℝ}
+    (hA : 0 ≤ A) :
+    ∀ j : ℕ, 1 ≤ j → ∀ u ∈ Set.Icc (-A) A,
+      |iteratedDeriv j (deriv (fibrePhase σ r θ t₀ w₁)) u|
+        ≤ 3 * |θ| * r ^ 2 * (1 + A) / σ ^ 3 := by
+  intro j hj u hu
+  refine (abs_iteratedDeriv_deriv_cubicPhase_le _ _ hA j hj u hu).trans (le_of_eq ?_)
+  have h : |θ * r ^ 2 / (2 * σ ^ 3)| = |θ| * r ^ 2 / (2 * σ ^ 3) := by
+    rw [abs_div, abs_mul, abs_of_nonneg (sq_nonneg r), abs_of_pos (by positivity : (0:ℝ) < 2*σ^3)]
+  rw [h]
+  field_simp
+  ring
+
+
+/-! ### The rescaled fibre phase, and the fibre estimate -/
+
+/-- The **rescaled fibre phase** `x ↦ Φ(Mx)`. Rescaling by the bulk radius is not cosmetic: it
+is what makes the estimate gain. Un-rescaled, the cut-off's derivatives are `O(M^{-j})` while the
+grading scale is `εΛ`, and the theorem throws that away, leaving a per-step cost `3σ/|θ| = O(1)`
+in the middle range. After `w₀ = Mx` the amplitude is scale-free and the per-step cost is
+`81Mr²/(σ|θ|) + 3σ/(M|θ|) = O(n^{-3/8})`. A cubic stays a cubic: `p ↦ pM`, `q ↦ qM³`. -/
+noncomputable def fibrePhaseScaled (σ r θ t₀ w₁ M : ℝ) : ℝ → ℝ :=
+  cubicPhase ((θ * fibreSlopeCoeff σ r w₁ / σ - t₀) * M) (θ * r ^ 2 / (2 * σ ^ 3) * M ^ 3)
+
+lemma fibrePhaseScaled_apply (σ r θ t₀ w₁ M x : ℝ) :
+    fibrePhaseScaled σ r θ t₀ w₁ M x = fibrePhase σ r θ t₀ w₁ (M * x) := by
+  simp only [fibrePhaseScaled, fibrePhase, cubicPhase]
+  ring
+
+lemma abs_deriv_fibrePhaseScaled_ge {σ : ℝ} (hσ : 0 < σ) {θ t₀ M : ℝ} (hM : 0 < M) (r w₁ : ℝ)
+    (ht₀ : |t₀| ≤ |θ| / (2 * σ)) (x : ℝ) :
+    M * |θ| / (3 * σ) ≤ |deriv (fibrePhaseScaled σ r θ t₀ w₁ M) x| := by
+  have e1 : deriv (fibrePhaseScaled σ r θ t₀ w₁ M) x
+      = (θ * fibreSlopeCoeff σ r w₁ / σ - t₀) * M
+        + 3 * (θ * r ^ 2 / (2 * σ ^ 3) * M ^ 3) * x ^ 2 := by
+    rw [fibrePhaseScaled, deriv_cubicPhase]
+  have e2 : deriv (fibrePhase σ r θ t₀ w₁) (M * x)
+      = θ * fibreSlopeCoeff σ r w₁ / σ - t₀
+        + 3 * (θ * r ^ 2 / (2 * σ ^ 3)) * (M * x) ^ 2 := by
+    rw [fibrePhase, deriv_cubicPhase]
+  have e3 : deriv (fibrePhaseScaled σ r θ t₀ w₁ M) x
+      = M * deriv (fibrePhase σ r θ t₀ w₁) (M * x) := by
+    rw [e1, e2]; ring
+  rw [e3, abs_mul, abs_of_pos hM]
+  have hb := abs_deriv_fibrePhase_ge hσ r w₁ ht₀ (M * x)
+  calc M * |θ| / (3 * σ) = M * (|θ| / (3 * σ)) := by ring
+    _ ≤ M * |deriv (fibrePhase σ r θ t₀ w₁) (M * x)| :=
+        mul_le_mul_of_nonneg_left hb hM.le
+
+lemma abs_iteratedDeriv_deriv_fibrePhaseScaled_le {σ : ℝ} (hσ : 0 < σ) (r θ t₀ w₁ : ℝ)
+    {M : ℝ} (hM : 0 ≤ M) :
+    ∀ j : ℕ, 1 ≤ j → ∀ x ∈ Set.Icc (-(2 : ℝ)) 2,
+      |iteratedDeriv j (deriv (fibrePhaseScaled σ r θ t₀ w₁ M)) x|
+        ≤ 9 * |θ| * r ^ 2 * M ^ 3 / σ ^ 3 := by
+  intro j hj x hx
+  refine (abs_iteratedDeriv_deriv_cubicPhase_le _ _ (by norm_num) j hj x hx).trans
+    (le_of_eq ?_)
+  have h : |θ * r ^ 2 / (2 * σ ^ 3) * M ^ 3| = |θ| * r ^ 2 * M ^ 3 / (2 * σ ^ 3) := by
+    rw [abs_mul, abs_div, abs_mul, abs_of_nonneg (sq_nonneg r),
+      abs_of_pos (by positivity : (0:ℝ) < 2 * σ ^ 3), abs_of_nonneg (by positivity : (0:ℝ) ≤ M ^ 3)]
+    ring
+  rw [h]
+  field_simp
+  ring
+
+/-- **THE FIBRE ESTIMATE — the whole of input (B)'s phase side, at one frozen `w₁`.**
+
+A scale-free amplitude supported in `|x| ≤ 2`, against the rescaled surrogate phase, integrates to
+`O(P·gain^N)` with
+
+`gain = 81Mr²/(σ|θ|) + 3σ/(M|θ|)`,
+
+which at `M = n^{5/8}`, `r² = n⁻¹` and `|θ| ≥ c₀` is `O(n^{-3/8}/|θ|)` — exactly the per-part gain
+`bulk_gain_phase_le_band` prices the leakage ledger with, and `leakage_ledger_ten_le` then closes
+it at `N = 10`. The two summands are the two branches of an integration by parts: differentiating
+the cut-off costs `1/(MΛ)`, differentiating `1/∂Φ` costs `∂²Φ/(∂Φ)²`. -/
+theorem norm_integral_fibrePhase_le (N : ℕ) :
+    ∃ C : ℝ, 1 ≤ C ∧ ∀ (σ r θ t₀ w₁ M P : ℝ) (f : ℝ → ℂ),
+      0 < σ → 0 < M → θ ≠ 0 → |t₀| ≤ |θ| / (2 * σ) →
+      ContDiff ℝ (⊤ : ℕ∞) f → 0 ≤ P →
+      (∀ j ≤ N, ∀ x : ℝ, ‖iteratedDeriv j f x‖ ≤ P) →
+      (∀ x : ℝ, 2 < |x| → f x = 0) →
+      ‖∫ x : ℝ, f x *
+          Complex.exp (Complex.I * ((fibrePhase σ r θ t₀ w₁ (M * x) : ℝ) : ℂ))‖
+        ≤ 4 * (P * (C * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N) := by
+  obtain ⟨C, hC1, hC⟩ := norm_integral_expPhase_le_graded N
+  refine ⟨C, hC1, ?_⟩
+  intro σ r θ t₀ w₁ M P f hσ hM hθ ht₀ hf hP hfg hzero
+  have hθ0 : 0 < |θ| := abs_pos.mpr hθ
+  obtain ⟨Λ, hΛdef⟩ : ∃ L : ℝ, L = M * |θ| / (3 * σ) := ⟨_, rfl⟩
+  obtain ⟨ε, hεdef⟩ : ∃ e : ℝ, e = 81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|) := ⟨_, rfl⟩
+  have hΛ : 0 < Λ := by rw [hΛdef]; positivity
+  have hE1 : (0 : ℝ) ≤ 81 * M * r ^ 2 / (σ * |θ|) := by positivity
+  have hE2 : (3 * σ / (M * |θ|)) * Λ = 1 := by
+    rw [hΛdef]; field_simp
+  have hεΛ : 1 ≤ ε * Λ := by
+    rw [hεdef, add_mul, hE2]
+    nlinarith [mul_nonneg hE1 hΛ.le]
+  have hslope : ∀ x ∈ Set.Icc (-(2:ℝ)) 2,
+      Λ ≤ |deriv (fibrePhaseScaled σ r θ t₀ w₁ M) x| := by
+    intro x _
+    rw [hΛdef]
+    exact abs_deriv_fibrePhaseScaled_ge hσ hM r w₁ ht₀ x
+  have hΦ0 : ∀ x : ℝ, deriv (fibrePhaseScaled σ r θ t₀ w₁ M) x ≠ 0 := by
+    intro x hx
+    have := abs_deriv_fibrePhaseScaled_ge hσ hM r w₁ ht₀ x
+    rw [hx, abs_zero] at this
+    have : (0 : ℝ) < M * |θ| / (3 * σ) := by positivity
+    linarith
+  have hhigh : ∀ j : ℕ, 1 ≤ j → j ≤ N → ∀ x ∈ Set.Icc (-(2:ℝ)) 2,
+      |iteratedDeriv j (deriv (fibrePhaseScaled σ r θ t₀ w₁ M)) x| ≤ ε * Λ ^ 2 := by
+    intro j hj _ x hx
+    refine (abs_iteratedDeriv_deriv_fibrePhaseScaled_le hσ r θ t₀ w₁ hM.le j hj x hx).trans ?_
+    have hid : 9 * |θ| * r ^ 2 * M ^ 3 / σ ^ 3 = (81 * M * r ^ 2 / (σ * |θ|)) * Λ ^ 2 := by
+      rw [hΛdef]
+      field_simp
+      ring
+    rw [hid, hεdef, add_mul]
+    have hnn : (0 : ℝ) ≤ (3 * σ / (M * |θ|)) * Λ ^ 2 :=
+      mul_nonneg (by positivity) (sq_nonneg Λ)
+    linarith
+  have hgrad : ∀ j ≤ N, ∀ x ∈ Set.Icc (-(2:ℝ)) 2,
+      ‖iteratedDeriv j f x‖ ≤ P * (ε * Λ) ^ j := by
+    intro j hj x _
+    refine (hfg j hj x).trans ?_
+    have h1 : (1 : ℝ) ≤ (ε * Λ) ^ j := one_le_pow₀ hεΛ
+    nlinarith
+  have hmain := hC (fibrePhaseScaled σ r θ t₀ w₁ M) f Λ ε P 2
+    (contDiff_cubicPhase _ _) hf hΦ0 hΛ hεΛ hP (by norm_num) hslope hhigh hgrad hzero
+  have hph : ∀ x : ℝ, fibrePhase σ r θ t₀ w₁ (M * x) = fibrePhaseScaled σ r θ t₀ w₁ M x :=
+    fun x => (fibrePhaseScaled_apply σ r θ t₀ w₁ M x).symm
+  simp only [hph]
+  rw [hεdef] at hmain
+  refine hmain.trans (le_of_eq ?_)
+  ring
+
 /-- **(B) The non-stationary-phase estimate: the weight carries `O(n^{-3/2})` on the
 low-frequency ball** — the second input, the analytic heart of the certificate, and **still the
 only open analytic item of the certificate after wave 44**.
