@@ -11233,12 +11233,46 @@ section notes above `exactStudent_eq`; the three things to carry here are:
   built, and the second is what admits the only route that reaches the ledger.
 
 Nothing else moved: (A), (B), (C), (U1), (U2), the quantitative half of (U4), the certificate
-and this theorem are as wave 38 left them, and the assembly was **not attempted**. -/
+and this theorem are as wave 38 left them, and the assembly was **not attempted**.
+
+---
+
+**WAVE 40 — THE MOMENT HYPOTHESIS IS AMENDED FROM FOUR TO EIGHT, AND THIS IS A DEVIATION FROM
+THE CLASSICAL STATEMENT.** The classical studentized Edgeworth expansion (Hall, *The Bootstrap
+and Edgeworth Expansion*, §2.4) is stated under a **fourth** moment of the sampling law. This
+statement now asks for an **eighth**, and the reason is `hF8`'s tag: it is the *straightening
+ledger* of wave 39, which is the only route in the file that reaches the accuracy
+`sum_dyadic_strata_le` consumes.
+
+The accounting, in one line. (U3)'s slice bound is produced by straightening the level curve of
+`Hₙ` at slope `κ` and applying a direction-uniform slab bound to the straightened strip
+(`measure_abs_surrogate_window_slab_le`). Its additive constant is
+
+`η₂ ≍ |x|·r²·L² + η₀ + P(|V − v₀| > L)`,  `r² = (n+1)⁻¹`,
+
+and `sum_dyadic_strata_le` needs `η₂ = O(n^{-2/3})`. Pricing the truncation tail by **Chebyshev
+at power four**, `P(|V − v₀| > L) ≤ E(V − v₀)⁴/L⁴`, balances the two `L`-dependent terms at
+`L⁶ = E(V − v₀)⁴·(n+1)/(c|x|)` (`ledger_optimum_cube`), where the common value `a·L²` satisfies
+`(a·L²)³ = a²·b ≍ |x|²n⁻²` — that is, `η₂ ≍ |x|^{2/3}n^{-2/3}`, which **meets the ledger
+exactly**. The fourth moment of the second standardized coordinate `V` is a fourth moment of
+`(X − μ)² − σ²`, i.e. an **eighth** moment of `X`; that is where `hF8` is spent and it is the
+only place.
+
+Under the frozen four moments the same optimisation is run with Chebyshev at power two and lands
+at `|x|^{1/2}n^{-1/2}` — short of `n^{-2/3}` by exactly `n^{-1/6}` — and wave 39 verified that no
+weaker device repairs it (the term to beat is a *displacement*, not a fluctuation). So the
+deviation is not a convenience: **under four moments this file has no route to the conclusion**,
+and the honest statement of what is proved carries eight. If a four-moment route is later found,
+this hypothesis is the thing to weaken, and nothing downstream of it depends on the exponent.
+
+Nothing else moved. -/
 
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
-    -- USER-INPUT: finite fourth moment of the sampling law
-    (hF4 : MemLp (fun t : ℝ => t) 4 F)
+    -- USER-INPUT: eight moments of the sampling law; the straightening ledger of the surrogate
+    -- window needs a fourth moment of the squared coordinate (wave 39/40); the classical
+    -- statement assumes four -- deviation documented in the docstring
+    (hF8 : MemLp (fun t : ℝ => t) 8 F)
     -- USER-INPUT: nonzero variance
     (hFvar : 0 < Var[fun t : ℝ => t; F])
     -- USER-INPUT: the sampling law is absolutely continuous; the smoothness requirement under
@@ -11983,10 +12017,20 @@ only debt it now carries is `edgeworth_studentized_uniform`'s, inherited transit
 `edgeworth_studentized_uniform`, it is the implicit-function inversion of
 `x ↦ Φ(x) + (γ/6)φ(x)(2x² + 1)n^{-1/2}` on the compact `z`-range `[Φ⁻¹(ε), Φ⁻¹(1 − ε)]`, where
 `φ` is bounded below — that is what `0 < ε < 1/2` buys — together with the transfer of a uniform
-CDF bound to `cdfPseudoInverse`. No analytic obstruction is known; it is deferred, not blocked. -/
+CDF bound to `cdfPseudoInverse`. No analytic obstruction is known; it is deferred, not blocked.
+
+**WAVE 40: the moment hypothesis is inherited, and it is now eight rather than four.** Nothing
+in the inversion needs it — `cornishFisher_of_edgeworth` is axiom-clean and moment-free — but
+this corollary consumes `edgeworth_studentized_uniform`, whose hypothesis was amended from a
+fourth to an eighth moment of the sampling law in wave 40. The reason is recorded in full on
+that theorem; the short form is that the straightening ledger of the (U3) slice bound prices its
+truncation by a *fourth* moment of the second standardized coordinate, which is an eighth moment
+of `X`. This is a deviation from the classical statement and it is inherited verbatim here. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
-    -- USER-INPUT: finite fourth moment of the sampling law
-    (hF4 : MemLp (fun t : ℝ => t) 4 F)
+    -- USER-INPUT: eight moments of the sampling law, inherited from
+    -- `edgeworth_studentized_uniform`; the classical statement assumes four -- deviation
+    -- documented in the docstring there
+    (hF8 : MemLp (fun t : ℝ => t) 8 F)
     -- USER-INPUT: nonzero variance
     (hFvar : 0 < Var[fun t : ℝ => t; F])
     -- USER-INPUT: absolute continuity of the sampling law
@@ -11999,7 +12043,7 @@ theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
         (stdNormalQuantile (1 - α) -
           (1 / 6) * skewness F * (2 * stdNormalQuantile (1 - α) ^ 2 + 1) * (Real.sqrt n)⁻¹)|
       ≤ C / n := by
-  obtain ⟨C₀, hC₀, hexp⟩ := edgeworth_studentized_uniform (F := F) hF4 hFvar hFac
+  obtain ⟨C₀, hC₀, hexp⟩ := edgeworth_studentized_uniform (F := F) hF8 hFvar hFac
   exact cornishFisher_of_edgeworth (S := fun n => studentizedRootCDF F n)
     (γ := skewness F) hC₀ (fun n _ => isCDF_studentizedRootCDF_of_prob F n) hexp hε hε'
 
