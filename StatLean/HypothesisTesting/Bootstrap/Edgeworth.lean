@@ -11045,6 +11045,79 @@ theorem meanRootCDF_sub_le [IsProbabilityMeasure F]
     linarith
   linarith [hAa, hAb, hlip, hmono, hcn]
 
+/-- **`meanRootCDF_sub_le` with the constant quantified outside the law — wave 41, item 1.**
+
+The anti-concentration companion of `edgeworth_mean_uniform_of_bounds`, in the same class form:
+one `C`, chosen from `(R, B, s₀, cr, c)` before the law, such that *every* law meeting the
+bounds has its centred root putting at most `C(b − a) + C/n` mass on `(a, b]`.
+
+This is the shape (U3) actually consumes — `measure_pi_abs_deltaSurrogate_insertNth_le`'s
+`hwin` asks for `2Aw + 2η` on a window of half-width `w`, which is this statement with
+`A = C`, `η = C/(2n)` — and it is the reason the previous theorem had to be proved at all: the
+Lipschitz modulus `(2π)^{-1/2}(1 + 66|γ|)/σ` of the approximant is itself law-dependent, and is
+bounded here by `(2π)^{-1/2}(1 + 66R/s₀³)/s₀` using the same skewness bound and the variance
+floor. `O(n⁻¹)` and not `O(n^{-1/2})` is the whole point; see `meanRootCDF_sub_le`. -/
+theorem meanRootCDF_sub_le_of_bounds {R B s₀ cr c : ℝ} (hR : 0 ≤ R) (hB : 0 ≤ B)
+    (hs₀ : 0 < s₀) (hcr0 : 0 ≤ cr) (hcr1 : cr < 1) (hc0 : 0 < c)
+    (hc2 : c ≤ 1 / (Real.pi * Real.sqrt 2))
+    (hc3 : c ≤ 3 * s₀ ^ 3 / (4 * Real.pi * (R + 1))) :
+    ∃ C : ℝ, 0 < C ∧ ∀ G : Measure ℝ, IsProbabilityMeasure G →
+      MemLp (fun t : ℝ => t) 4 G → 0 < Var[fun t : ℝ => t; G] →
+      (∫ x, |x| ^ 3 ∂(centredLaw G)) ≤ R → (∫ x, x ^ 4 ∂(centredLaw G)) ≤ B →
+      s₀ ≤ Real.sqrt Var[fun t : ℝ => t; G] →
+      (∀ s : ℝ, 2 * Real.pi * c / Real.sqrt Var[fun t : ℝ => t; G] ≤ |s| →
+        ‖charFun (centredLaw G) s‖ ≤ cr) →
+      ∀ n : ℕ, 0 < n → ∀ a b : ℝ, a ≤ b →
+        meanRootCDF G n b - meanRootCDF G n a ≤ C * (b - a) + C / n := by
+  obtain ⟨C₀, hC₀, hC⟩ := edgeworth_mean_uniform_of_bounds hR hB hs₀ hcr0 hcr1 hc0 hc2 hc3
+  -- the law-free Lipschitz modulus of the approximant
+  set Kb : ℝ := (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * (R / s₀ ^ 3)) with hKbdef
+  have hKb0 : 0 < Kb := by
+    rw [hKbdef]
+    have h1 : (0 : ℝ) < (Real.sqrt (2 * Real.pi))⁻¹ := by positivity
+    have h2 : (0 : ℝ) ≤ R / s₀ ^ 3 := by positivity
+    have h3 : (0 : ℝ) < 1 + 66 * (R / s₀ ^ 3) := by linarith
+    exact mul_pos h1 h3
+  refine ⟨Kb / s₀ + 2 * C₀, by positivity, ?_⟩
+  intro G hGp hF4 hFvar hRb hBb hsσ hcrb n hn a b hab
+  haveI := hGp
+  set σ : ℝ := Real.sqrt Var[fun t : ℝ => t; G] with hσdef
+  have hσ : 0 < σ := Real.sqrt_pos.2 hFvar
+  set K : ℝ := (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness G|) with hKdef
+  have hK0 : 0 < K := edgeworthTV_pos (skewness G)
+  have hgam : |skewness G| ≤ R / s₀ ^ 3 := abs_skewness_le_of_bounds G hFvar hs₀ hRb hsσ
+  have hKle : K ≤ Kb := by
+    rw [hKdef, hKbdef]
+    refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+    linarith [mul_le_mul_of_nonneg_left hgam (by norm_num : (0 : ℝ) ≤ 66)]
+  have hKsle : K / σ ≤ Kb / s₀ := by
+    refine div_le_div₀ hKb0.le hKle hs₀ hsσ
+  have hn1 : 1 ≤ n := hn
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have ha := hC G hGp hF4 hFvar hRb hBb hsσ hcrb n hn a
+  have hb := hC G hGp hF4 hFvar hRb hBb hsσ hcrb n hn b
+  rw [← edgeworthCDF_eq_approx G hFvar n a] at ha
+  rw [← edgeworthCDF_eq_approx G hFvar n b] at hb
+  have hAa := (abs_le.1 ha).1
+  have hAb := (abs_le.1 hb).2
+  have hlip : edgeworthCDF (skewness G) n (b / σ) - edgeworthCDF (skewness G) n (a / σ)
+      ≤ K * (b / σ - a / σ) :=
+    edgeworthCDF_sub_le (skewness G) hn1 (by gcongr)
+  have hdiff : b / σ - a / σ = (b - a) / σ := by ring
+  rw [hdiff] at hlip
+  have hdivle : K * ((b - a) / σ) = K / σ * (b - a) := by ring
+  rw [hdivle] at hlip
+  have hba : (0 : ℝ) ≤ b - a := by linarith
+  have hmono : K / σ * (b - a) ≤ (Kb / s₀ + 2 * C₀) * (b - a) := by
+    nlinarith [hba, hC₀, hKsle]
+  have hcn : 2 * (C₀ / (n : ℝ)) ≤ (Kb / s₀ + 2 * C₀) / (n : ℝ) := by
+    have h1 : 2 * (C₀ / (n : ℝ)) = 2 * C₀ / (n : ℝ) := by ring
+    have h2 : (0 : ℝ) < Kb / s₀ := by positivity
+    rw [h1]
+    gcongr
+    linarith
+  linarith [hAa, hAb, hlip, hmono, hcn]
+
 /-- **One-term Edgeworth expansion for the studentized sample mean, uniform in the argument.**
 
 Under a finite fourth moment and absolute continuity of the sampling law, the sampling
