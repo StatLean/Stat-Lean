@@ -103,6 +103,18 @@ proved:
   reduction consumes, and the verified exponent ledger (`leakage_ledger_exponent`,
   `leakage_ledger_five_le`, `tail_ledger_exponent`, `bulk_gain_phase_le`) — including
   `leakage_ledger_four_gt`, the witness that four integrations by parts do *not* suffice;
+* `leakage_ledger_band_exponent`, `leakage_ledger_ten_le`, `bulk_gain_phase_le_band`,
+  `band_radius_incompatible`, `graded_order_ledger`, `graded_order_four_gt`,
+  `norm_charFun_vecRootLaw_le_exp_neg_sq` — the **middle range** `n^{1/6} ≤ |θ| ≤ c₀√n`: the
+  leakage ledger survives the whole descent at `N = 10`, so what confines the certificate to the
+  outer range is its band geometry (`R ≥ ε₀√n` against `R ≤ |θ|/(2σ)`) and not its ledger, and
+  the Gaussian bulk bound `‖φ_{ρₙ}(t)‖ ≤ e^{−λ‖t‖²/4}` is what lets the band shrink to
+  `K√(log n)`; the competing route through a coarser grading is refuted by the same arithmetic;
+* `windowEnvelope₁`, `windowDom₁`, `integrable_windowDom₁`, `esseen_split_low`,
+  `low_range_ledger_exponent`, `low_range_ledger_gt` — the (U4′) **split window**: the
+  degree-one envelope wave 42 prescribed, its three-regime Esseen split (envelope plus an
+  undamped cubic on the low range, a constant on the middle range, the old tail) and the sharp
+  low-range exponent `a = 1/6`;
 * `surrogateSlopeBound`, `surrogateDefect`, `abs_sub_affine_centre_le'`,
   `measure_abs_surrogate_window_slab_le`, `measure_abs_deltaSurrogate_sub_le_of_slab`,
   `measure_abs_deltaSurrogate_sub_le_of_slab_unif`, `ledger_optimum_cube`,
@@ -6657,6 +6669,282 @@ lemma leakage_ledger_four_gt {n : ℕ} (hn : 2 ≤ n) :
   rw [leakage_ledger_exponent hn0, inv_mul_sqrt_eq_rpow hn0]
   exact Real.rpow_lt_rpow_of_exponent_lt h1 (by norm_num)
 
+
+/-! ### The middle range `n^{1/6} ≤ |θ| ≤ c₀√n`: which of the two routes survives
+
+**WAVE 43 — THE GAP WAVE 42 NAMED IS COVERED BY THE CERTIFICATE AND NOT BY THE EXPANSION, AND
+WHAT STOPS THE CERTIFICATE TODAY IS ITS *BAND GEOMETRY*, NOT ITS LEDGER.** Wave 42 left the
+range `n^{a} ≤ |θ| ≤ c₀√n` covered by nothing and offered two candidate routes. Both are run to
+the end here, on paper and in the arithmetic below. One survives.
+
+**Route (a) — extend the certificate's band downward. THE LEDGER SURVIVES; THE BAND DOES NOT.**
+
+* *The ledger, re-run at `|θ| ≍ n^{b}` for arbitrary `b ≥ 0`.* The gain of one integration by
+  parts is `σ/(M|θ|) + (27/16)Mr²/(σ|θ|)`, dominated by the second term; at `M = n^{5/8}`,
+  `r² = n⁻¹` and `|θ| ≥ c₀n^{b}` that is `O(n^{-3/8 − b})` (`bulk_gain_phase_le_band`, of which
+  `bulk_gain_phase_le` is the case `b = 1/2`). Against the prefactor `M² = n^{5/4}` and the
+  bad-set area — kept at the conservative `≍ n` of the current construction — the ledger returns
+  `n^{9/4 − N(3/8 + b)}` (`leakage_ledger_band_exponent`, of which `leakage_ledger_exponent` is
+  again `b = 1/2`). The requirement `≤ n^{-3/2}` is `N ≥ (15/4)/(3/8 + b)`: at `b = 1/2` that is
+  `30/7`, reproducing wave 31's `N = 5` and its minimality; at `b = 0` it is `10`. **So `N = 10`
+  clears the whole band at once**, at the same bulk radius, for every `b ≥ 0`
+  (`leakage_ledger_ten_le`). The bulk radius itself does not move: `tail_ledger_exponent` forces
+  `M ≥ n^{5/8}` from input (C) alone, which has no `θ` in it, and larger `M` only worsens the
+  gain. **The number of integrations by parts is therefore finite and explicit at every band
+  exponent, and the ledger is not what stops the descent.**
+* *What does stop it.* The band radius `R` is squeezed between two requirements:
+  1. `ε₀√n ≤ R` — the consumer `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` needs
+     `‖φ_{ρₙ}(t)‖ ≤ κ` for every `‖t‖ ≥ R`, and the only such bound in the file is `κ = cⁿ`
+     from `exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt` through
+     `norm_charFun_vecRootLaw_le_pow`, which starts at the Cramér radius `ε₀√n`;
+  2. `2σR ≤ |θ|` — on the bad set `‖t₀ + s‖ < R` with `t₀ = (θ/σ)e₀` the total phase's
+     derivative is at least `(5/6)|θ|/σ + |θ|/σ − R` (`deltaSurrogate_slope_ge` and the band),
+     and that is `≥ (4/3)|θ|/σ`, the figure the five — now ten — integrations by parts spend,
+     exactly when `R ≤ |θ|/(2σ)`.
+  Together they force `|θ| ≥ 2σε₀√n`: `band_radius_incompatible`. **The `c₀√n` in
+  `exists_fourierCertificate_deltaSurrogate` is therefore not a convenience and not an artefact
+  of the ledger — it is `2σε₀`, and the certificate as stated cannot be run anywhere below order
+  `√n`.** No wave before this one identified which of the certificate's two ingredients carries
+  the `√n`.
+* *The repair, and it is one named input rather than a theory.* Requirement 1 asks for far more
+  than the transfer inequality uses. `norm_integral_fourierSynth_le_of_band` prices the good
+  frequencies by `Γκ`, and `Γ` is polynomial in `n` and `|θ|`
+  (`exists_integral_norm_fourier_bulkMultiplier_le`), so **any** `κ` smaller than a fixed
+  negative power of `n` serves; `cⁿ` is exponential overkill. In the bulk `‖t‖ ≤ ε₁√n` the
+  root's transform has Gaussian decay, `‖φ_{ρₙ}(t)‖ ≤ e^{−λ‖t‖²/4}`, and that is
+  `norm_charFun_vecRootLaw_le_exp_neg_sq` below — proved from `charFun_vecRootLaw` and the
+  one-dimensional Gaussian majorant `norm_charFun_smul_le_exp_neg_sq` restricted to the ray
+  through `t`, with no two-dimensional argument anywhere, exactly as the wave-12 note predicted
+  for the bivariate expansion. Taking `R = K√(log n)` then gives
+  `κ = max(e^{−λK²(log n)/4}, cⁿ)`, a negative power of `n` of any prescribed order, while
+  requirement 2 relaxes to `|θ| ≥ 2σK√(log n)` — below `n^{a}` for **every** `a > 0`. The
+  bad-set area drops from `≍ n` to `≍ log n` at the same time, which only helps the ledger.
+* *What the repair costs, itemised.* (i) input (B) — the non-stationary-phase estimate, a
+  `sorry` in this file since wave 31 — has to be restated at `R = K√(log n)` and `N = 10`
+  instead of `ε₀√n/(2σ)` and `N = 5`; since it is a `sorry` either way this is a statement
+  amendment, and the ledger above is the check that the amended statement is the true one.
+  (ii) the direction-uniform moment hypotheses of `norm_charFun_vecRootLaw_le_exp_neg_sq` have
+  to be discharged for `studentPair F ∘ truncAt`; they are a variance floor `λ‖t‖² ≤ ∫⟪x,t⟫²`, a
+  variance ceiling and a third absolute moment, i.e. the nonsingular covariance of `(X, X²)`
+  that the wave-12 note already names, available under `hFac`. (iii) inputs (A) and (C) are
+  untouched — neither mentions `θ` or `R`. **No new analytic theory appears in that list.**
+
+**Route (b) — individual smallness. IT CANNOT REACH THE TOP OF THE MIDDLE RANGE, AND NO MOMENT
+HYPOTHESIS MAKES IT.**
+
+* The approximant half is free and should be recorded as such:
+  `φ_{q_n}(θ) = e^{−θ²/2}(1 + iγ(2θ³ − 3θ)r/6)` is smaller than any power of `n` once
+  `|θ| ≥ n^{a}`, since `|θ|³r ≤ c₀³n` on the whole middle range. So the middle range is a
+  statement about `‖φ_{ρₙ∘Hₙ⁻¹}(θ)‖` alone, with no comparison in it.
+* Grading the perturbation character to order `m` leaves
+  `‖φ‖ ≤ Σ_{k<m}(|θ|r)^k C_k‖φ(rθ/σ)‖^{n−2k} + (|θ|r)^m E|q|^m/m!`. The damped slots are
+  harmless throughout `|θ| ≥ n^{a}` — that is exactly what wave 42's two new damped inputs
+  (`norm_multiCharFun_vecRootLaw_damped_le`,
+  `norm_multiCharFun_vecRootLaw_two_sub_damped_le`) buy. The remainder is the undamped one
+  (wave 42's item 4, shown there not to be repairable at any truncation level) and equals
+  `n^{m(b − 1/2)}` at `|θ| ≍ n^{b}`, which meets `n⁻¹` exactly when `b ≤ 1/2 − 1/m`
+  (`graded_order_ledger`). Coarser grading — fewer terms, since only smallness is wanted here —
+  makes this **worse**, not better: `m` appears only in `1/2 − 1/m`.
+* The grading order is capped by the moment hypothesis. `E|q|^m` is an `m`-th moment of a
+  quadratic in the coordinates, so order `m` costs `2m` moments of `X`, and `hF8` admits
+  `m = 4`. At `m = 4` the reach is `b ≤ 1/4`, and `graded_order_four_gt` is the witness that
+  any `b > 1/4` overshoots at every `n ≥ 2`. **Route (b) covers `n^{1/6} ≤ |θ| ≤ n^{1/4}` and no
+  more**, leaving `n^{1/4} ≤ |θ| ≤ c₀√n` open. And since `1/2 − 1/m < 1/2` for every `m`, no
+  moment hypothesis whatsoever lets route (b) meet the certificate's band: the shortfall is not
+  a matter of assuming more.
+
+**Verdict: route (a), amended as above; route (b) is executed here only as far as the arithmetic
+that refutes it.** The residue of the middle range is therefore items (i) and (ii) of the repair
+list, and it is strictly smaller than the residue wave 42 recorded — the middle range is no
+longer covered by nothing. -/
+
+/-- **The leakage ledger at a general band exponent.** With `|θ| ≍ n^{b}` the gain per part is
+`n^{-3/8 − b}`; against the bad-set area `≍ n` and the prefactor `M² = n^{5/4}` the ledger
+returns `n^{9/4 − N(3/8 + b)}`. `leakage_ledger_exponent` is the case `b = 1/2`. -/
+lemma leakage_ledger_band_exponent {n : ℕ} (hn : 0 < n) (b : ℝ) (N : ℕ) :
+    (n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - b)) ^ N
+      = (n : ℝ) ^ ((9 : ℝ) / 4 - (3 / 8 + b) * N) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hp : bulkRadius n ^ 2 = (n : ℝ) ^ ((5 : ℝ) / 4) := by rw [bulkRadius_pow]; norm_num
+  have hq : ((n : ℝ) ^ (-(3 : ℝ) / 8 - b)) ^ N = (n : ℝ) ^ ((-(3 : ℝ) / 8 - b) * N) := by
+    rw [← Real.rpow_natCast ((n : ℝ) ^ (-(3 : ℝ) / 8 - b)) N, ← Real.rpow_mul h0.le]
+  calc (n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - b)) ^ N
+      = (n : ℝ) ^ (1 : ℝ) * (n : ℝ) ^ ((5 : ℝ) / 4) * (n : ℝ) ^ ((-(3 : ℝ) / 8 - b) * N) := by
+        rw [hp, hq, Real.rpow_one]
+    _ = (n : ℝ) ^ ((1 : ℝ) + (5 : ℝ) / 4 + (-(3 : ℝ) / 8 - b) * N) := by
+        rw [← Real.rpow_add h0, ← Real.rpow_add h0]
+    _ = (n : ℝ) ^ ((9 : ℝ) / 4 - (3 / 8 + b) * N) := by ring_nf
+
+/-- **Ten integrations by parts clear the leakage at every band exponent `b ≥ 0`**, at the same
+bulk radius `n^{5/8}` and with the bad-set area left at the conservative `≍ n`. The ledger is
+therefore not what confines the certificate to `|θ| ≍ √n`; see `band_radius_incompatible`. -/
+lemma leakage_ledger_ten_le {b : ℝ} (hb : 0 ≤ b) {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - b)) ^ 10
+      ≤ ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ := by
+  have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  rw [leakage_ledger_band_exponent hn b 10, inv_mul_sqrt_eq_rpow hn]
+  refine Real.rpow_le_rpow_of_exponent_le h1 ?_
+  push_cast
+  linarith
+
+/-- **The gain of one integration by parts on a general band.** `bulk_gain_phase_le` with
+`c₀√n` replaced by `c₀n^{b}`; the exponent `-7/8` becomes `-3/8 − b`. -/
+lemma bulk_gain_phase_le_band {n : ℕ} (hn : 0 < n) {c₀ b θ : ℝ} (hc₀ : 0 < c₀)
+    (hθ : c₀ * (n : ℝ) ^ b ≤ |θ|) :
+    bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / |θ| ≤ c₀⁻¹ * (n : ℝ) ^ (-(3 : ℝ) / 8 - b) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsq : ((Real.sqrt (n : ℝ))⁻¹) ^ 2 = ((n : ℝ))⁻¹ := by
+    rw [inv_pow, Real.sq_sqrt h0.le]
+  have hbpos : (0 : ℝ) < (n : ℝ) ^ b := Real.rpow_pos_of_pos h0 b
+  have hMnn : (0 : ℝ) ≤ bulkRadius n * ((n : ℝ))⁻¹ := by
+    have := bulkRadius_pos hn; positivity
+  have hkey : (n : ℝ) ^ ((5 : ℝ) / 8) * ((n : ℝ))⁻¹ / (n : ℝ) ^ b
+      = (n : ℝ) ^ (-(3 : ℝ) / 8 - b) := by
+    rw [← Real.rpow_neg_one (n : ℝ), ← Real.rpow_add h0, ← Real.rpow_sub h0]
+    norm_num
+  calc bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / |θ|
+      = bulkRadius n * ((n : ℝ))⁻¹ / |θ| := by rw [hsq]
+    _ ≤ bulkRadius n * ((n : ℝ))⁻¹ / (c₀ * (n : ℝ) ^ b) := by gcongr
+    _ = c₀⁻¹ * (n : ℝ) ^ (-(3 : ℝ) / 8 - b) := by
+        rw [bulkRadius, div_mul_eq_div_div_swap, hkey, div_eq_inv_mul]
+
+/-- **The certificate's band geometry, and why it carries the `√n`.** The band radius `R` must
+be at least the Cramér radius `ε₀√n` — that is where the only available bound on `‖φ_{ρₙ}‖` off
+the ball begins — and at most `|θ|/(2σ)`, or the total phase on the bad set is not non-stationary
+enough for the integrations by parts. The two are compatible only at `|θ| ≥ 2σε₀√n`. This, and
+not the exponent ledger, is what confines `exists_fourierCertificate_deltaSurrogate` to the
+outer range; see the section note for the repair. -/
+lemma band_radius_incompatible {ε₀ σ R θ : ℝ} (hσ : 0 < σ) (hε₀ : 0 < ε₀) {n : ℕ}
+    (hR : ε₀ * Real.sqrt (n : ℝ) ≤ R) (hband : 2 * σ * R ≤ |θ|)
+    (hθ : |θ| < 2 * σ * ε₀ * Real.sqrt (n : ℝ)) : False := by
+  have h1 : 2 * σ * (ε₀ * Real.sqrt (n : ℝ)) ≤ 2 * σ * R :=
+    mul_le_mul_of_nonneg_left hR (by positivity)
+  nlinarith
+
+/-- **Route (b)'s ledger.** The undamped graded remainder at grading order `m` is `(|θ|r)^m`,
+i.e. `n^{m(b − 1/2)}` on `|θ| ≤ n^{b}`; it meets the target `n⁻¹` exactly when
+`b ≤ 1/2 − 1/m`. -/
+lemma graded_order_ledger {m : ℕ} (hm : 0 < m) {n : ℕ} (hn : 0 < n) {b : ℝ}
+    (hb : b ≤ 1 / 2 - 1 / (m : ℝ)) :
+    ((n : ℝ) ^ (b - 1 / 2)) ^ m ≤ ((n : ℝ))⁻¹ := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hm0 : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hm
+  rw [← Real.rpow_natCast ((n : ℝ) ^ (b - 1 / 2)) m, ← Real.rpow_mul h0.le,
+    ← Real.rpow_neg_one (n : ℝ)]
+  refine Real.rpow_le_rpow_of_exponent_le h1 ?_
+  have hkey : (b - 1 / 2) * (m : ℝ) ≤ -1 := by
+    have h := mul_le_mul_of_nonneg_right hb hm0.le
+    have hcancel : (1 / 2 - 1 / (m : ℝ)) * (m : ℝ) = 1 / 2 * (m : ℝ) - 1 := by
+      field_simp
+    nlinarith [h, hcancel]
+  linarith
+
+/-- **And eight moments cap the grading at `m = 4`, hence route (b) at `b = 1/4`.** Any band
+exponent past `1/4` overshoots `n⁻¹` at every `n ≥ 2`, so route (b) leaves
+`n^{1/4} ≤ |θ| ≤ c₀√n` open however the constants are chosen. -/
+lemma graded_order_four_gt {b : ℝ} (hb : (1 : ℝ) / 4 < b) {n : ℕ} (hn : 2 ≤ n) :
+    ((n : ℝ))⁻¹ < ((n : ℝ) ^ (b - 1 / 2)) ^ 4 := by
+  have hn0 : 0 < n := lt_of_lt_of_le (by norm_num) hn
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn0
+  have h1 : (1 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_natCast ((n : ℝ) ^ (b - 1 / 2)) 4, ← Real.rpow_mul h0.le,
+    ← Real.rpow_neg_one (n : ℝ)]
+  refine Real.rpow_lt_rpow_of_exponent_lt h1 ?_
+  push_cast
+  linarith
+
+section MiddleRangeBulk
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+
+/-- **The vector root's transform decays like a Gaussian in the bulk.** For `‖t‖ ≤ ε₁√n`,
+`‖φ_{ρₙ}(t)‖ ≤ e^{−λ‖t‖²/4}` — the input requirement 1 of the certificate's band geometry
+really needs, in place of the exponentially stronger `cⁿ` that is available only past the
+Cramér radius `ε₀√n` and that is what forces the band down to the outer range.
+
+The proof is the wave-12 observation, used once more: the restriction of `φ` to the ray through
+`t` *is* the characteristic function of a one-dimensional projected law, so
+`norm_charFun_smul_le_exp_neg_sq` applies to it verbatim at the unit vector `e = t/‖t‖` and
+scale `s = ‖t‖/√n`, and `charFun_vecRootLaw` raises the result to the `n`-th power, where
+`n s² = ‖t‖²` collapses the `n`. **No two-dimensional argument occurs.**
+
+The three moment hypotheses are direction-uniform and are exactly the nondegeneracy the wave-12
+note records: a variance floor `λ‖t‖² ≤ ∫⟪x,t⟫²` (this is where a nonsingular covariance of
+`(X, X²)` is spent), a variance ceiling `V`, and a third absolute moment `R`. `ε₁` is any radius
+meeting the two window conditions of the majorant, `Vε₁² ≤ 2` and `Rε₁ ≤ 3λ/2`; discharging the
+three for `studentPair F ∘ truncAt` is item (ii) of the repair list in the section note and is
+not done here. -/
+theorem norm_charFun_vecRootLaw_le_exp_neg_sq (F : Measure ℝ) [IsProbabilityMeasure F]
+    {Z : ℝ → E} (hZ : Measurable Z) {lam V R ε₁ : ℝ} (hlam : 0 < lam) (hε₁ : 0 ≤ ε₁)
+    (hint1 : ∀ t : E, Integrable (fun x : E => ⟪x, t⟫) (F.map Z))
+    (hint2 : ∀ t : E, Integrable (fun x : E => ⟪x, t⟫ ^ 2) (F.map Z))
+    (hint3 : ∀ t : E, Integrable (fun x : E => |⟪x, t⟫| ^ 3) (F.map Z))
+    (hmean : ∀ t : E, ∫ x, ⟪x, t⟫ ∂(F.map Z) = 0)
+    (hvlow : ∀ t : E, lam * ‖t‖ ^ 2 ≤ ∫ x, ⟪x, t⟫ ^ 2 ∂(F.map Z))
+    (hvhigh : ∀ t : E, (∫ x, ⟪x, t⟫ ^ 2 ∂(F.map Z)) ≤ V * ‖t‖ ^ 2)
+    (hthird : ∀ t : E, (∫ x, |⟪x, t⟫| ^ 3 ∂(F.map Z)) ≤ R * ‖t‖ ^ 3)
+    (hwin2 : V * ε₁ ^ 2 ≤ 2) (hwin3 : R * ε₁ ≤ 3 * lam / 2)
+    {n : ℕ} (hn : 0 < n) {t : E} (ht : ‖t‖ ≤ ε₁ * Real.sqrt (n : ℝ)) :
+    ‖charFun (vecRootLaw F Z n) t‖ ≤ Real.exp (-(lam * ‖t‖ ^ 2 / 4)) := by
+  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
+  haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
+  have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hn0
+  rcases eq_or_ne t 0 with rfl | htne
+  · simp
+  have htp : (0 : ℝ) < ‖t‖ := norm_pos_iff.2 htne
+  set e : E := ‖t‖⁻¹ • t with hedef
+  set s : ℝ := ‖t‖ / Real.sqrt (n : ℝ) with hsdef
+  have hne : ‖e‖ = 1 := by
+    rw [hedef, norm_smul, norm_inv, Real.norm_eq_abs, abs_of_pos htp,
+      inv_mul_cancel₀ (ne_of_gt htp)]
+  have hsmul : s • e = ((Real.sqrt (n : ℝ))⁻¹ : ℝ) • t := by
+    rw [hedef, hsdef, smul_smul, div_mul_eq_mul_div, mul_inv_cancel₀ (ne_of_gt htp), one_div]
+  set v : ℝ := ∫ x, ⟪x, e⟫ ^ 2 ∂(F.map Z) with hvdef
+  have hvl : lam ≤ v := by
+    have := hvlow e; rw [hne] at this; simpa using this
+  have hvh : v ≤ V := by
+    have := hvhigh e; rw [hne] at this; simpa using this
+  have hsnn : 0 ≤ s := by rw [hsdef]; positivity
+  have hsle : s ≤ ε₁ := by rw [hsdef, div_le_iff₀ hsn]; linarith [ht]
+  have hVpos : 0 < V := lt_of_lt_of_le hlam (le_trans hvl hvh)
+  have hs2 : v * s ^ 2 ≤ 2 := by
+    have hsq : s ^ 2 ≤ ε₁ ^ 2 := by nlinarith [hsle, hsnn]
+    have h1 : v * s ^ 2 ≤ V * s ^ 2 := mul_le_mul_of_nonneg_right hvh (sq_nonneg s)
+    have h2 : V * s ^ 2 ≤ V * ε₁ ^ 2 := mul_le_mul_of_nonneg_left hsq hVpos.le
+    linarith
+  have hs3 : (∫ x, |⟪x, e⟫| ^ 3 ∂(F.map Z)) * |s| ≤ 3 * v / 2 := by
+    have h3 := hthird e
+    rw [hne] at h3
+    have hR3 : (∫ x, |⟪x, e⟫| ^ 3 ∂(F.map Z)) ≤ R := by simpa using h3
+    have habs : |s| = s := abs_of_nonneg hsnn
+    have hRnn : (0 : ℝ) ≤ R := le_trans (by positivity) hR3
+    calc (∫ x, |⟪x, e⟫| ^ 3 ∂(F.map Z)) * |s| ≤ R * s := by
+          rw [habs]; exact mul_le_mul_of_nonneg_right hR3 hsnn
+      _ ≤ R * ε₁ := mul_le_mul_of_nonneg_left hsle hRnn
+      _ ≤ 3 * lam / 2 := hwin3
+      _ ≤ 3 * v / 2 := by linarith
+  have hmaj := norm_charFun_smul_le_exp_neg_sq (F.map Z) (hint1 e) (hint2 e) (hint3 e)
+    (hmean e) hvdef.symm hs2 hs3
+  rw [hsmul] at hmaj
+  have hns : (n : ℝ) * s ^ 2 = ‖t‖ ^ 2 := by
+    rw [hsdef, div_pow, Real.sq_sqrt hn0.le]
+    field_simp
+  calc ‖charFun (vecRootLaw F Z n) t‖
+      = ‖charFun (F.map Z) (((Real.sqrt (n : ℝ))⁻¹ : ℝ) • t)‖ ^ n := by
+        rw [charFun_vecRootLaw F hZ, norm_pow]
+    _ ≤ (Real.exp (-(v * s ^ 2 / 4))) ^ n := pow_le_pow_left₀ (norm_nonneg _) hmaj n
+    _ = Real.exp (-(v * ‖t‖ ^ 2 / 4)) := by
+        rw [← Real.exp_nat_mul]
+        congr 1
+        rw [← hns]; ring
+    _ ≤ Real.exp (-(lam * ‖t‖ ^ 2 / 4)) := by
+        refine Real.exp_le_exp.2 ?_
+        nlinarith [sq_nonneg ‖t‖, hvl]
+
+end MiddleRangeBulk
 /-! ### The certificate, split into its three quantitative inputs
 
 With the multiplier built, `hasFourierCertificateOnBand_of_bulkMultiplier` reduces
@@ -10107,6 +10395,126 @@ private lemma exists_window_core (ρ β M σ : ℝ) (hρ : 0 ≤ ρ) (hβ : 0 �
 
 end WindowEnvelope
 
+/-! ## The window estimate: the degree-one envelope of (U4′)
+
+Wave 42 refuted the shape `≤ (K/n)·windowEnvelope ξ` at both ends of the window and recorded
+what has to replace it. Two things change, and they are independent of each other.
+
+* **The envelope starts at degree one, not four.** `windowEnvelope₁ ξ = e^{−π²ξ²/2}(|ξ| + |ξ|⁸)`.
+  The degree at the origin is forced by the inputs and not chosen: the `k = 3` slot's prefactor
+  `θr²/(2σ³)` multiplies an `O(1)` multilinear factor and is `Θ(|θ|)`, and the `k = 2` remainder
+  is `Θ(θ²)`; `not_exists_const_mul_windowEnvelope_ge` is the proof that degree four is too
+  small. The Gaussian factor is *not* cosmetic — it is `‖φ(rθ/σ)‖^{n−k}`, the damping wave 42
+  had to add to three of the four inputs, weakened to `e^{−π²ξ²/2}`.
+* **The window itself is split.** `esseen_split_low` replaces `esseen_split`: the envelope
+  governs `|ξ| ≤ ρ₁` only; an *undamped* monomial `Kr|ξ|³` is admitted there as well — that is
+  the graded remainder, which carries no damping and, by wave 42's item 4, cannot be given any;
+  and a bare constant `M₁` governs the middle range `ρ₁ ≤ |ξ| ≤ ρ`. The three contributions to
+  the Esseen integral are `Kw∫windowDom₁`, `2Krρ₁³/π` and `2M₁ρ/(πρ₁)`, plus the old tail
+  `2M/(δπ²ρ)`.
+
+**The exponent the split forces, and it is sharp.** At `ρ₁ = n^{a}` the graded remainder
+contributes `Kr = C r³ = C n^{-3/2}`, so its Esseen weight `2Krρ₁³/π` is `Θ(n^{3a − 3/2})`.
+Against the target `n⁻¹` that is `a ≤ 1/6`, with equality admissible:
+`low_range_ledger_exponent` is the identity `n^{-3/2}·(n^{1/6})³ = n⁻¹`, and
+`low_range_ledger_gt` is the witness that every `a > 1/6` overshoots at every `n ≥ 2`. So
+**`a = 1/6` is the honest low-range exponent and it is the largest one**, and the range the
+split leaves uncovered is `n^{1/6} ≤ |ξ| ≤ c√n` — the middle range wave 42 named. See the note
+above `norm_charFun_vecRootLaw_le_exp_neg_sq` for which of its two candidate routes survives.
+
+Note that `∫ windowDom₁ < ∞` is still a Gaussian moment (`integrable_windowDom₁`), so the
+degree-one envelope is admissible for the Esseen weight exactly as the degree-four one was. The
+failure wave 42 found at the *outer* end was never about the envelope, and lowering its degree
+does not repair it; only the split does. -/
+
+section WindowEnvelopeOne
+
+/-- The **degree-one envelope** of (U4′), `e^{−π²ξ²/2}(|ξ| + |ξ|⁸)`. It differs from
+`windowEnvelope` only at the origin, where it is of degree one instead of four — which is what
+`not_exists_const_mul_windowEnvelope_ge` shows is necessary. -/
+private noncomputable def windowEnvelope₁ (ξ : ℝ) : ℝ :=
+  Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) * (|ξ| + |ξ| ^ 8)
+
+/-- The degree-one envelope after the Esseen weight has been applied. -/
+private noncomputable def windowDom₁ (ξ : ℝ) : ℝ :=
+  Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) * (1 + |ξ| ^ 7) * (Real.pi)⁻¹
+
+private lemma windowEnvelope₁_nonneg (ξ : ℝ) : 0 ≤ windowEnvelope₁ ξ := by
+  unfold windowEnvelope₁; positivity
+
+private lemma windowDom₁_nonneg (ξ : ℝ) : 0 ≤ windowDom₁ ξ := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  unfold windowDom₁; positivity
+
+/-- The weighted envelope, as an **inequality** and not an identity. `windowEnvelope_mul_weight`
+is an equation because both of its sides vanish at `ξ = 0`; here the left-hand side still
+vanishes (`1/(π·0)` is `0` in Lean) but `windowDom₁ 0 = π⁻¹`, so the two sides differ at the
+single point `0`. The inequality is all `esseen_split_low` consumes. -/
+private lemma windowEnvelope₁_mul_weight_le (ξ : ℝ) :
+    windowEnvelope₁ ξ * (1 / (Real.pi * |ξ|)) ≤ windowDom₁ ξ := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have hπ' : Real.pi ≠ 0 := ne_of_gt hπ
+  rcases eq_or_ne ξ 0 with rfl | h
+  · have h0 : windowEnvelope₁ (0 : ℝ) = 0 := by simp [windowEnvelope₁]
+    rw [h0, zero_mul]
+    exact windowDom₁_nonneg 0
+  · have hx : |ξ| ≠ 0 := abs_ne_zero.2 h
+    have hsplit : |ξ| + |ξ| ^ 8 = (1 + |ξ| ^ 7) * |ξ| := by ring
+    have heq : windowEnvelope₁ ξ * (1 / (Real.pi * |ξ|)) = windowDom₁ ξ := by
+      unfold windowEnvelope₁ windowDom₁
+      rw [hsplit]
+      field_simp
+    exact le_of_eq heq
+
+/-- `∫ Env₁(ξ)/|ξ|` is a Gaussian moment, so the degree-one envelope is admissible for the
+Esseen weight — the requirement wave 42 identified as the one an envelope must meet. -/
+private lemma integrable_windowDom₁ : Integrable windowDom₁ := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have h0 : Integrable (fun ξ : ℝ => Real.exp (-(ξ ^ 2 / 2))) := by
+    simpa using integrable_abs_pow_mul_exp_neg_half_sq 0
+  have h7 := integrable_abs_pow_mul_exp_neg_half_sq 7
+  have hg : Integrable (fun ξ : ℝ =>
+      (Real.exp (-(ξ ^ 2 / 2)) + |ξ| ^ 7 * Real.exp (-(ξ ^ 2 / 2))) * (Real.pi)⁻¹) :=
+    (h0.add h7).mul_const _
+  refine Integrable.mono' hg (by unfold windowDom₁; fun_prop)
+    (Filter.Eventually.of_forall fun ξ => ?_)
+  rw [Real.norm_eq_abs, abs_of_nonneg (windowDom₁_nonneg ξ)]
+  have hexp : Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) ≤ Real.exp (-(ξ ^ 2 / 2)) := by
+    refine Real.exp_le_exp.2 ?_
+    have hpi2 : (4 : ℝ) ≤ Real.pi ^ 2 := by nlinarith [Real.two_le_pi, Real.pi_pos]
+    nlinarith [mul_nonneg (by linarith : (0 : ℝ) ≤ Real.pi ^ 2 - 4) (sq_nonneg ξ), sq_nonneg ξ]
+  have hnn : (0 : ℝ) ≤ 1 + |ξ| ^ 7 := by positivity
+  have hmul : Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) * (1 + |ξ| ^ 7)
+      ≤ Real.exp (-(ξ ^ 2 / 2)) + |ξ| ^ 7 * Real.exp (-(ξ ^ 2 / 2)) := by
+    nlinarith [mul_le_mul_of_nonneg_right hexp hnn]
+  unfold windowDom₁
+  exact mul_le_mul_of_nonneg_right hmul (by positivity)
+
+/-- **The low-range ledger, on the nose.** The undamped graded remainder contributes
+`r³ρ₁³ = n^{-3/2}·n^{3a}` after the Esseen weight; at `a = 1/6` that is exactly `n⁻¹`, the
+accuracy the statement asks for. -/
+lemma low_range_ledger_exponent {n : ℕ} (hn : 0 < n) :
+    ((n : ℝ) ^ (-(3 : ℝ) / 2)) * ((n : ℝ) ^ ((1 : ℝ) / 6)) ^ 3 = ((n : ℝ))⁻¹ := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_natCast ((n : ℝ) ^ ((1 : ℝ) / 6)) 3, ← Real.rpow_mul h0.le,
+    ← Real.rpow_add h0, ← Real.rpow_neg_one (n : ℝ)]
+  norm_num
+
+/-- **And `a = 1/6` is the largest exponent that works**, at every `n ≥ 2`. The low range of the
+split cannot be widened by adjusting constants; widening it is the middle-range problem. -/
+lemma low_range_ledger_gt {a : ℝ} (ha : (1 : ℝ) / 6 < a) {n : ℕ} (hn : 2 ≤ n) :
+    ((n : ℝ))⁻¹ < ((n : ℝ) ^ (-(3 : ℝ) / 2)) * ((n : ℝ) ^ a) ^ 3 := by
+  have hn0 : 0 < n := lt_of_lt_of_le (by norm_num) hn
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn0
+  have h1 : (1 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_natCast ((n : ℝ) ^ a) 3, ← Real.rpow_mul h0.le, ← Real.rpow_add h0,
+    ← Real.rpow_neg_one (n : ℝ)]
+  refine Real.rpow_lt_rpow_of_exponent_lt h1 ?_
+  push_cast
+  linarith
+
+end WindowEnvelopeOne
+
 /-! ## The window estimate: the geometry of the argument
 
 On the window the damped expansion `norm_charFun_pow_sub_edgeworth_le` is applied at
@@ -10597,6 +11005,199 @@ private lemma esseen_split (g : ℝ → ℝ) {δ ρ Kw M : ℝ}
           rwa [setIntegral_univ] at h
       _ = Kw * ∫ ξ : ℝ, windowDom ξ := MeasureTheory.integral_const_mul _ _
   have hsplit := integral_add_compl hAmeas hInt
+  linarith
+
+/-- **The Esseen integral, split at the low range *and* at the window edge — the (U4′) twin of
+`esseen_split`.** Three regimes instead of two. On `|ξ| ≤ ρ₁` the integrand is dominated by
+`Kw·windowEnvelope₁ ξ` **plus an undamped cubic** `Kr|ξ|³`: the envelope part is the damped
+expansion, the cubic is the graded remainder, which carries no `φ^{n−k}` factor and therefore
+cannot be folded into any envelope (wave 42's outer-end refutation). On `ρ₁ ≤ |ξ| ≤ ρ` only a
+constant `M₁` is asked for — that is the middle range, where nothing is expanded. On `ρ ≤ |ξ|`
+the old constant `M` and the old tail bound.
+
+The three window contributions are priced with the *crude* weight `1/(π|ξ|)`, which is the exact
+value of the Esseen weight throughout `|ξ| ≤ ρ` whenever `δρ ≤ π⁻¹` (the split is at `ρ = c√n`
+and `δ = n⁻¹`, so this is never binding): `Kw∫windowDom₁` for the envelope, `2Krρ₁³/π` for the
+cubic — this is the term `low_range_ledger_exponent` prices, and it is the reason `ρ₁` cannot
+exceed `n^{1/6}` — and `2M₁ρ/(πρ₁)` for the middle range, which is `M₁` against the *ratio* of
+the two radii and not against `log(ρ/ρ₁)`; the logarithm would be sharper and is not needed,
+since every candidate route for the middle range produces an `M₁` that is smaller than any
+power of `n`. -/
+private lemma esseen_split_low (g : ℝ → ℝ) {δ ρ₁ ρ Kw Kr M₁ M : ℝ}
+    (hδ : 0 < δ) (hρ₁ : 0 < ρ₁) (hρρ : ρ₁ ≤ ρ) (hKw : 0 ≤ Kw) (hKr : 0 ≤ Kr) (hM₁ : 0 ≤ M₁)
+    (hg0 : ∀ ξ, 0 ≤ g ξ) (hgm : AEStronglyMeasurable g volume)
+    (hlow : ∀ ξ, |ξ| ≤ ρ₁ → g ξ ≤ Kw * windowEnvelope₁ ξ + Kr * |ξ| ^ 3)
+    (hmid : ∀ ξ, ρ₁ ≤ |ξ| → |ξ| ≤ ρ → g ξ ≤ M₁)
+    (htail : ∀ ξ, ρ ≤ |ξ| → g ξ ≤ M) :
+    Integrable (fun ξ : ℝ =>
+        g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)))
+      ∧ (∫ ξ : ℝ, g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)))
+        ≤ Kw * (∫ ξ : ℝ, windowDom₁ ξ) + 2 * Kr * ρ₁ ^ 3 / Real.pi
+            + 2 * M₁ * ρ / (Real.pi * ρ₁) + 2 * M / (δ * Real.pi ^ 2 * ρ) := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have hρ : 0 < ρ := lt_of_lt_of_le hρ₁ hρρ
+  set W : ℝ → ℝ := fun ξ => min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)) with hWdef
+  have hWnn : ∀ ξ : ℝ, 0 ≤ W ξ := fun ξ =>
+    le_min (div_nonneg zero_le_one (by positivity))
+      (div_nonneg zero_le_one (mul_nonneg (mul_nonneg hδ.le (by positivity)) (sq_nonneg ξ)))
+  have hfnn : ∀ ξ : ℝ, 0 ≤ g ξ * W ξ := fun ξ => mul_nonneg (hg0 ξ) (hWnn ξ)
+  have hprodmeas : AEStronglyMeasurable (fun ξ : ℝ => g ξ * W ξ) volume :=
+    hgm.mul (by rw [hWdef]; fun_prop)
+  set A : Set ℝ := {ξ : ℝ | |ξ| ≤ ρ₁} with hAdef
+  set P : Set ℝ := {ξ : ℝ | |ξ| ≤ ρ} with hPdef
+  have hAm : MeasurableSet A := measurableSet_le (by fun_prop) measurable_const
+  have hPm : MeasurableSet P := measurableSet_le (by fun_prop) measurable_const
+  have hAP : A ⊆ P := fun ξ hξ => le_trans hξ hρρ
+  have hAeq : A = Set.Icc (-ρ₁) ρ₁ := by
+    ext ξ; simp [hAdef, abs_le, Set.mem_Icc, and_comm]
+  have hPeq : P = Set.Icc (-ρ) ρ := by
+    ext ξ; simp [hPdef, abs_le, Set.mem_Icc, and_comm]
+  have hvolA : volume A = ENNReal.ofReal (2 * ρ₁) := by
+    rw [hAeq, Real.volume_Icc]; congr 1; ring
+  have hvolP : volume P = ENNReal.ofReal (2 * ρ) := by
+    rw [hPeq, Real.volume_Icc]; congr 1; ring
+  have hvolAr : volume.real A = 2 * ρ₁ := by
+    rw [measureReal_def, hvolA, ENNReal.toReal_ofReal (by linarith)]
+  have hvolPr : volume.real P = 2 * ρ := by
+    rw [measureReal_def, hvolP, ENNReal.toReal_ofReal (by linarith)]
+  have hPtop : volume P ≠ ⊤ := by rw [hvolP]; exact ENNReal.ofReal_ne_top
+  have hAtop : volume A ≠ ⊤ := by rw [hvolA]; exact ENNReal.ofReal_ne_top
+  have hcube : ∀ ξ : ℝ, |ξ| ≤ ρ₁ → |ξ| ^ 3 * (1 / (Real.pi * |ξ|)) ≤ ρ₁ ^ 2 / Real.pi := by
+    intro ξ hξ
+    rcases eq_or_ne ξ 0 with rfl | h
+    · have hz : |(0 : ℝ)| ^ 3 * (1 / (Real.pi * |(0 : ℝ)|)) = 0 := by simp
+      rw [hz]; positivity
+    · have hx : (0 : ℝ) < |ξ| := abs_pos.2 h
+      have heq : |ξ| ^ 3 * (1 / (Real.pi * |ξ|)) = |ξ| ^ 2 / Real.pi := by
+        field_simp
+      rw [heq]
+      gcongr
+  have hptA : ∀ ξ ∈ A, g ξ * W ξ ≤ Kw * windowDom₁ ξ + Kr * ρ₁ ^ 2 / Real.pi := by
+    intro ξ hξ
+    have hξ' : |ξ| ≤ ρ₁ := hξ
+    have h1 : g ξ * W ξ ≤ (Kw * windowEnvelope₁ ξ + Kr * |ξ| ^ 3) * W ξ :=
+      mul_le_mul_of_nonneg_right (hlow ξ hξ') (hWnn ξ)
+    have hWle : W ξ ≤ 1 / (Real.pi * |ξ|) := min_le_left _ _
+    have h2 : (Kw * windowEnvelope₁ ξ + Kr * |ξ| ^ 3) * W ξ
+        ≤ (Kw * windowEnvelope₁ ξ + Kr * |ξ| ^ 3) * (1 / (Real.pi * |ξ|)) := by
+      refine mul_le_mul_of_nonneg_left hWle ?_
+      have := windowEnvelope₁_nonneg ξ
+      positivity
+    have h3 : Kw * windowEnvelope₁ ξ * (1 / (Real.pi * |ξ|)) ≤ Kw * windowDom₁ ξ := by
+      rw [mul_assoc]
+      exact mul_le_mul_of_nonneg_left (windowEnvelope₁_mul_weight_le ξ) hKw
+    have h4 : Kr * |ξ| ^ 3 * (1 / (Real.pi * |ξ|)) ≤ Kr * ρ₁ ^ 2 / Real.pi := by
+      have := mul_le_mul_of_nonneg_left (hcube ξ hξ') hKr
+      calc Kr * |ξ| ^ 3 * (1 / (Real.pi * |ξ|))
+          = Kr * (|ξ| ^ 3 * (1 / (Real.pi * |ξ|))) := by ring
+        _ ≤ Kr * (ρ₁ ^ 2 / Real.pi) := this
+        _ = Kr * ρ₁ ^ 2 / Real.pi := by ring
+    have hexp : (Kw * windowEnvelope₁ ξ + Kr * |ξ| ^ 3) * (1 / (Real.pi * |ξ|))
+        = Kw * windowEnvelope₁ ξ * (1 / (Real.pi * |ξ|))
+          + Kr * |ξ| ^ 3 * (1 / (Real.pi * |ξ|)) := by ring
+    linarith [h1, h2, h3, h4, hexp.le, hexp.ge]
+  have hptM : ∀ ξ ∈ P \ A, g ξ * W ξ ≤ M₁ / (Real.pi * ρ₁) := by
+    intro ξ hξ
+    obtain ⟨hξP, hξA⟩ := hξ
+    have h1 : ρ₁ ≤ |ξ| := le_of_lt (not_le.1 hξA)
+    have h2 : |ξ| ≤ ρ := hξP
+    have hx : (0 : ℝ) < |ξ| := lt_of_lt_of_le hρ₁ h1
+    have hWle : W ξ ≤ 1 / (Real.pi * |ξ|) := min_le_left _ _
+    have hwb : (1 : ℝ) / (Real.pi * |ξ|) ≤ 1 / (Real.pi * ρ₁) := by
+      apply one_div_le_one_div_of_le (by positivity)
+      gcongr
+    calc g ξ * W ξ ≤ M₁ * W ξ := mul_le_mul_of_nonneg_right (hmid ξ h1 h2) (hWnn ξ)
+      _ ≤ M₁ * (1 / (Real.pi * ρ₁)) := mul_le_mul_of_nonneg_left (le_trans hWle hwb) hM₁
+      _ = M₁ / (Real.pi * ρ₁) := by ring
+  have hptP : ∀ ξ ∈ P,
+      g ξ * W ξ ≤ Kw * windowDom₁ ξ + (Kr * ρ₁ ^ 2 / Real.pi + M₁ / (Real.pi * ρ₁)) := by
+    intro ξ hξ
+    by_cases h : |ξ| ≤ ρ₁
+    · have := hptA ξ h
+      have hnn : (0 : ℝ) ≤ M₁ / (Real.pi * ρ₁) := by positivity
+      linarith
+    · have := hptM ξ ⟨hξ, h⟩
+      have hnn1 : (0 : ℝ) ≤ Kw * windowDom₁ ξ := mul_nonneg hKw (windowDom₁_nonneg ξ)
+      have hnn2 : (0 : ℝ) ≤ Kr * ρ₁ ^ 2 / Real.pi := by positivity
+      linarith
+  have hdomP : IntegrableOn
+      (fun ξ : ℝ => Kw * windowDom₁ ξ + (Kr * ρ₁ ^ 2 / Real.pi + M₁ / (Real.pi * ρ₁))) P :=
+    (integrable_windowDom₁.const_mul Kw).integrableOn.add (integrableOn_const hPtop)
+  have hPint : IntegrableOn (fun ξ : ℝ => g ξ * W ξ) P := by
+    refine Integrable.mono' hdomP hprodmeas.restrict ?_
+    filter_upwards [ae_restrict_mem hPm] with ξ hξ
+    rw [Real.norm_eq_abs, abs_of_nonneg (hfnn ξ)]
+    exact hptP ξ hξ
+  have hTint : IntegrableOn (fun ξ : ℝ => g ξ * W ξ) {ξ : ℝ | ρ ≤ |ξ|} := by
+    refine Integrable.mono' ((integrableOn_esseenWeight_tail hδ hρ).const_mul M)
+      hprodmeas.restrict ?_
+    filter_upwards [ae_restrict_mem (measurableSet_le measurable_const (by fun_prop))] with ξ hξ
+    rw [Real.norm_eq_abs, abs_of_nonneg (hfnn ξ)]
+    exact mul_le_mul_of_nonneg_right (htail ξ hξ) (hWnn ξ)
+  have hcover : P ∪ {ξ : ℝ | ρ ≤ |ξ|} = Set.univ := by
+    ext ξ
+    simp only [hPdef, Set.mem_union, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    exact le_total |ξ| ρ
+  have hInt : Integrable (fun ξ : ℝ => g ξ * W ξ) := by
+    rw [← integrableOn_univ, ← hcover]
+    exact hPint.union hTint
+  refine ⟨hInt, ?_⟩
+  have hAint : IntegrableOn (fun ξ : ℝ => g ξ * W ξ) A := hPint.mono_set hAP
+  have hDint : IntegrableOn (fun ξ : ℝ => g ξ * W ξ) (P \ A) :=
+    hPint.mono_set Set.diff_subset
+  have hAdom : IntegrableOn (fun ξ : ℝ => Kw * windowDom₁ ξ + Kr * ρ₁ ^ 2 / Real.pi) A :=
+    (integrable_windowDom₁.const_mul Kw).integrableOn.add (integrableOn_const hAtop)
+  have hbA : (∫ ξ in A, g ξ * W ξ) ≤ Kw * (∫ ξ : ℝ, windowDom₁ ξ) + 2 * Kr * ρ₁ ^ 3 / Real.pi := by
+    have hstep : (∫ ξ in A, g ξ * W ξ)
+        ≤ ∫ ξ in A, (Kw * windowDom₁ ξ + Kr * ρ₁ ^ 2 / Real.pi) :=
+      setIntegral_mono_on hAint hAdom hAm hptA
+    have hsplit : (∫ ξ in A, (Kw * windowDom₁ ξ + Kr * ρ₁ ^ 2 / Real.pi))
+        = (∫ ξ in A, Kw * windowDom₁ ξ) + (volume.real A) * (Kr * ρ₁ ^ 2 / Real.pi) := by
+      rw [integral_add ((integrable_windowDom₁.const_mul Kw).integrableOn)
+        (integrableOn_const (C := Kr * ρ₁ ^ 2 / Real.pi) hAtop)]
+      congr 1
+      rw [setIntegral_const, smul_eq_mul]
+    have hb1 : (∫ ξ in A, Kw * windowDom₁ ξ) ≤ Kw * ∫ ξ : ℝ, windowDom₁ ξ := by
+      have h := setIntegral_mono_set (μ := volume) (f := fun ξ : ℝ => Kw * windowDom₁ ξ)
+        (integrable_windowDom₁.const_mul Kw).integrableOn
+        (Filter.Eventually.of_forall fun ξ => mul_nonneg hKw (windowDom₁_nonneg ξ))
+        (Set.subset_univ A).eventuallyLE
+      rw [setIntegral_univ] at h
+      calc (∫ ξ in A, Kw * windowDom₁ ξ) ≤ ∫ ξ : ℝ, Kw * windowDom₁ ξ := h
+        _ = Kw * ∫ ξ : ℝ, windowDom₁ ξ := MeasureTheory.integral_const_mul _ _
+    have hb2 : (volume.real A) * (Kr * ρ₁ ^ 2 / Real.pi) = 2 * Kr * ρ₁ ^ 3 / Real.pi := by
+      rw [hvolAr]; field_simp
+    linarith [hstep, hsplit.le, hsplit.ge, hb1, hb2.le, hb2.ge]
+  have hbD : (∫ ξ in P \ A, g ξ * W ξ) ≤ 2 * M₁ * ρ / (Real.pi * ρ₁) := by
+    have hDm : MeasurableSet (P \ A) := hPm.diff hAm
+    have hDtop : volume (P \ A) ≠ ⊤ :=
+      ne_top_of_le_ne_top hPtop (measure_mono Set.diff_subset)
+    have hstep : (∫ ξ in P \ A, g ξ * W ξ) ≤ ∫ _ξ in P \ A, M₁ / (Real.pi * ρ₁) :=
+      setIntegral_mono_on hDint (integrableOn_const hDtop) hDm hptM
+    have hconst : (∫ _ξ in P \ A, M₁ / (Real.pi * ρ₁))
+        = (volume.real (P \ A)) * (M₁ / (Real.pi * ρ₁)) := by
+      rw [setIntegral_const, smul_eq_mul]
+    have hmono : volume.real (P \ A) ≤ 2 * ρ := by
+      rw [← hvolPr]; exact measureReal_mono Set.diff_subset hPtop
+    have hnn : (0 : ℝ) ≤ M₁ / (Real.pi * ρ₁) := by positivity
+    have := mul_le_mul_of_nonneg_right hmono hnn
+    have heq : 2 * ρ * (M₁ / (Real.pi * ρ₁)) = 2 * M₁ * ρ / (Real.pi * ρ₁) := by ring
+    linarith [hstep, hconst.le, hconst.ge, heq.le, heq.ge]
+  have hbT : (∫ ξ in Pᶜ, g ξ * W ξ) ≤ 2 * M / (δ * Real.pi ^ 2 * ρ) := by
+    have hnnT : 0 ≤ᵐ[volume.restrict {ξ : ℝ | ρ ≤ |ξ|}] fun ξ : ℝ => g ξ * W ξ :=
+      Filter.Eventually.of_forall hfnn
+    have hcompl : Pᶜ ⊆ {ξ : ℝ | ρ ≤ |ξ|} := by
+      intro ξ hξ
+      simp only [hPdef, Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hξ
+      exact hξ.le
+    have h1 := setIntegral_mono_set hTint hnnT hcompl.eventuallyLE
+    have h2 := setIntegral_mul_esseenWeight_tail_le hδ hρ hgm hg0 htail
+    exact le_trans h1 h2
+  have hdecomp : (∫ ξ in A, g ξ * W ξ) + (∫ ξ in P \ A, g ξ * W ξ) = ∫ ξ in P, g ξ * W ξ := by
+    have h := MeasureTheory.integral_inter_add_diff (μ := volume) (f := fun ξ : ℝ => g ξ * W ξ)
+      hAm hPint
+    rwa [Set.inter_eq_right.2 hAP] at h
+  have hfull := integral_add_compl hPm hInt
   linarith
 
 /-- The approximant of the statement, on the standardized scale: `(t/σ)² = t²/Var`. -/
@@ -13054,6 +13655,85 @@ carried out that assembly attempt. It does not close, and the reason is not budg
   still compiles over this theorem. The six-step assembly was not attempted because its third
   step is the statement refuted above. **This theorem is therefore still `sorry`, and the file
   is at two `sorry`s — this one and (B) — not one.**
+
+---
+
+**Status after wave 43. THE (U4′) SPLIT IS BUILT AND ITS LOW-RANGE EXPONENT IS SHARP; THE
+MIDDLE RANGE IS NO LONGER COVERED BY NOTHING — IT IS COVERED BY THE CERTIFICATE, AND WHAT KEPT
+THE CERTIFICATE OUT OF IT IS ITS *BAND GEOMETRY*, NOT ITS EXPONENT LEDGER. THIS THEOREM IS
+STILL `sorry` AND WAVE 43 DOES NOT CLAIM OTHERWISE.**
+
+* **THE ENVELOPE AND THE SPLIT, BUILT (item 1).** `windowEnvelope₁ ξ = e^{−π²ξ²/2}(|ξ| + |ξ|⁸)`
+  is the degree-one envelope wave 42 prescribed, with its weighted twin `windowDom₁`, and
+  `integrable_windowDom₁` is the check wave 42 said was routine and it is:
+  `∫ Env₁(ξ)/|ξ|` is a Gaussian moment. One thing wave 42 did not foresee: the weighted identity
+  becomes an **inequality**, because `windowDom₁ 0 = π⁻¹ ≠ 0` while its degree-four predecessor
+  vanished at the origin; `windowEnvelope₁_mul_weight_le` is the corrected form, and it is all
+  the split consumes. `esseen_split_low` is the three-regime twin of `esseen_split`: the
+  envelope **plus an undamped cubic** on `|ξ| ≤ ρ₁`, a bare constant on `ρ₁ ≤ |ξ| ≤ ρ`, the old
+  constant on the tail. The cubic is not a blemish — it is the graded remainder, and admitting
+  it explicitly is what makes the split honest, since wave 42 proved no envelope can absorb it.
+
+* **THE LOW-RANGE EXPONENT IS `a = 1/6`, AND IT IS THE LARGEST ONE.** The prompt for this wave
+  asked for the honest exponent to be derived rather than guessed. It is: the cubic's Esseen
+  weight is `2Krρ₁³/π` with `Kr = Cr³ = Cn^{-3/2}`, so the low range contributes `Θ(n^{3a−3/2})`
+  against a target of `n⁻¹`. `low_range_ledger_exponent` is the identity at `a = 1/6` — it
+  closes on the nose, with no slack — and `low_range_ledger_gt` is the witness that every
+  `a > 1/6` overshoots at every `n ≥ 2`. The wave-42 note's "`a < 1/6`-ish" is therefore exactly
+  `a ≤ 1/6`, and the middle range the split leaves is `n^{1/6} ≤ |θ| ≤ c₀√n`.
+
+* **THE MIDDLE RANGE (item 2): ROUTE (a), AND THE OBSTRUCTION IS NOT WHERE THE PROMPT EXPECTED
+  IT.** Both candidate routes were run to the end; the accounting is the section note above
+  `leakage_ledger_band_exponent`. In summary:
+  1. *Route (a)'s ledger survives the whole descent.* Re-running the leakage arithmetic at
+     `|θ| ≍ n^{b}` gives a gain of `n^{-3/8−b}` per part (`bulk_gain_phase_le_band`) and a
+     ledger of `n^{9/4 − N(3/8+b)}` (`leakage_ledger_band_exponent`), so the requirement is
+     `N ≥ (15/4)/(3/8 + b)`: `N = 5` at `b = 1/2` — wave 31's numerology reproduced, including
+     its minimality — and `N = 10` at `b = 0`. **`N = 10` therefore clears the entire band at
+     once** (`leakage_ledger_ten_le`), at the same bulk radius `n^{5/8}`, which input (C) fixes
+     independently of `θ`. The prompt asked whether `N = 5` still clears; it does not below
+     `b = 3/8`, but a bounded `N` does, everywhere.
+  2. *What actually confines the certificate is its band geometry.* `R` must be at least the
+     Cramér radius `ε₀√n`, because `cⁿ` is the only bound the file has on `‖φ_{ρₙ}‖` off the
+     ball, and at most `|θ|/(2σ)`, or the total phase on the bad set is not non-stationary
+     enough. `band_radius_incompatible` is the two-line consequence: `|θ| ≥ 2σε₀√n`. **The
+     `c₀√n` of `exists_fourierCertificate_deltaSurrogate` is `2σε₀` and nothing else.** No
+     earlier wave identified which of the certificate's ingredients carries the `√n`, and it
+     matters, because the one that does is the one that is far too strong for what it is used
+     for.
+  3. *The repair is one named input, and this wave proves it.*
+     `norm_charFun_vecRootLaw_le_exp_neg_sq` gives `‖φ_{ρₙ}(t)‖ ≤ e^{−λ‖t‖²/4}` on the bulk
+     `‖t‖ ≤ ε₁√n`, by restricting to the ray through `t` and raising
+     `norm_charFun_smul_le_exp_neg_sq` to the `n`-th power — the wave-12 device again, no
+     two-dimensional argument. Since `norm_integral_fourierSynth_le_of_band` prices the good
+     frequencies by `Γκ` with `Γ` merely polynomial, any `κ` below a fixed negative power of `n`
+     serves, so `R = K√(log n)` suffices and the band condition relaxes to `|θ| ≥ 2σK√(log n)`,
+     which is below `n^{a}` for every `a > 0`. What is left is (i) restating input (B) — a
+     `sorry` since wave 31 — at `R = K√(log n)` and `N = 10`, and (ii) discharging the three
+     direction-uniform moment hypotheses of the new brick for `studentPair F ∘ truncAt`, which
+     is the nonsingular covariance of `(X, X²)` the wave-12 note already names. Inputs (A) and
+     (C) are untouched: neither mentions `θ` or `R`.
+  4. *Route (b) cannot reach the top of the middle range, and no moment hypothesis makes it.*
+     The approximant half is free (`φ_{q_n}` is smaller than any power of `n` past `n^{a}`), so
+     the range is a statement about `‖φ_{ρₙ∘Hₙ⁻¹}‖` alone; but grading the perturbation
+     character to order `m` leaves the undamped remainder `n^{m(b−1/2)}`, which meets `n⁻¹` only
+     for `b ≤ 1/2 − 1/m` (`graded_order_ledger`), and eight moments cap `m` at `4`, hence `b` at
+     `1/4` (`graded_order_four_gt`). The prompt's suggestion that a *coarser* grading might keep
+     the phase is refuted by the same arithmetic: `m` enters only through `1/2 − 1/m`, so fewer
+     terms is strictly worse. And `1/2 − 1/m < 1/2` for every `m`, so route (b) never meets the
+     certificate's band whatever is assumed.
+
+* **WHAT IS NOT DONE, AND WHY.** Item 1's second half — the studentized window bound on
+  `|ξ| ≤ n^{1/6}` assembled from the four damped inputs and
+  `studentized_window_leading_identity` — is **not** carried out, and neither is item 3's
+  six-step assembly. Both wait on the same thing: the assembly wants a single window statement,
+  and the split above says there are now three regimes, of which the middle one is still a
+  `sorry` in a different place (input (B), at a band this wave has not amended). Amending (B)'s
+  statement is cheap, but doing it without also discharging (ii) would replace one honest
+  `sorry` by one honest `sorry` with a wider statement and no new theorem, so it is left for the
+  wave that discharges the moment hypotheses. **The file is still at two `sorry`s — this one and
+  (B) — and the residue of this one is now the two-item list in point 3, not the open middle
+  range wave 42 recorded.**
 
 **WAVE 40 — THE MOMENT HYPOTHESIS IS AMENDED FROM FOUR TO EIGHT, AND THIS IS A DEVIATION FROM
 THE CLASSICAL STATEMENT.** The classical studentized Edgeworth expansion (Hall, *The Bootstrap
