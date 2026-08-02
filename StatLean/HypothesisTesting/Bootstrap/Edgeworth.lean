@@ -4080,6 +4080,195 @@ theorem exists_bound_norm_charFun_map_slabRoot (F : Measure ℝ) [IsProbabilityM
     _ ≤ |s| * (1 / σ) := by nlinarith [hσ'.le, hs]
     _ ≤ |s| * ‖slabDir σ κ‖ := mul_le_mul_of_nonneg_left hd (abs_nonneg s)
 
+/-! ### (U3) COMPOSED: `hslice` for the surrogate, out of a one-dimensional marginal bound
+
+**WAVE 40.** The two halves now meet. `measure_pi_abs_deltaSurrogate_insertNth_le` is the
+frozen-coordinate window bound for `T = deltaSurrogate σ r ∘ (bivariate root)` — the statement
+`measure_pi_stratum_le` calls `hslice` and the one this file has named as the residue of (U3)
+since wave 21 — proved from
+
+* the **marginal, slope-uniform, one-dimensional** window bound at size `n` (`hwin`), and
+* a **tail bound** for the second standardized coordinate (`htail`),
+
+and from nothing else. The route is: the slab functional of the frozen root is a one-dimensional
+root of `slabRoot` (`vecRoot_slab_eq` at size `n + 1`), so
+`measure_pi_abs_root_insertNth_le` — the wave-18 transfer that is *free*, uniform in the frozen
+value `y` and the frozen index `i`, at the cost of a single factor `√2` — applies to it
+(`measure_pi_abs_slab_insertNth_le`); and then the straightened slice bound converts a slab
+bound into a window bound for `Hₙ` (`measure_abs_deltaSurrogate_sub_le_of_slab`).
+
+**This is the wave-21 caveat discharged.** The note on `measure_pi_abs_root_insertNth_le` says,
+correctly, that the transfer "is not the statement the peeled assembly consumes", because `Hₙ` is
+a degree-four polynomial of the bivariate root and `measure_abs_sub_le_of_affine` does not apply
+to it. That is still true of `Hₙ`. What wave 40 supplies is the intermediate object for which it
+*is* true — the slab functional, which is affine — together with the two theorems that get from
+`Hₙ` down to it (monotonicity in the first coordinate, straightening of the level curve) and back
+up (the slab-to-window conversion). Neither wave 21 nor wave 38 had that object.
+
+**The `y`-uniformity, and how it is discharged.** `hslice` demands a constant free of `i` and
+`y`. Freezing coordinate `i` at `y` makes the second standardized coordinate
+`V(z) = a₁(y) + s_n·(retained root)`, so `v₀ := a₁(y)` is the only choice making `htail` free of
+`y` — and it then reappears in the constant, through `surrogateSlopeBound r x v₀` and
+`surrogateDefect r x v₀ K L`. `measure_abs_deltaSurrogate_sub_le_of_slab_unif` closes that loop:
+both are **monotone in `|v₀|`** (`surrogateSlopeBound_mono`, `surrogateDefect_mono`), so it
+suffices to bound `|a₁(y)|` by a single `v̄` and to ask for the slab bound on the correspondingly
+larger slope range `|κ'| ≤ K̄`. On the truncated law of the wave-37 step at `τ = √n` one has
+`|a₁(y)| ≤ (n + σ²)/(σ²√(n+1)) = O(√n)` and hence `|r|v̄ = O(1)`, which is exactly the size at
+which `surrogateSlopeBound = O(|x||r|)` and `surrogateDefect`'s leading term stays
+`O(|x|r²L²)`. So the truncation is not merely a moment device — wave 39's finding — and now the
+bookkeeping that spends it is in the file.
+
+**What the headline still needs, and it is two things, neither of them (U3)'s geometry.**
+
+1. *The quantitative `edgeworth_mean_uniform`* — see the section note above `slabRoot`. Until its
+   constant is exposed, `hwin` cannot be produced slope-uniformly, and `hwin` is the one
+   hypothesis of `measure_pi_abs_deltaSurrogate_insertNth_le` that is not discharged anywhere.
+2. *The quantitative half of (U4)* — unchanged since wave 38: the `k = 3, 4` and
+   graded-remainder terms of `norm_charFun_map_deltaSurrogate_sub_graded_le` priced against
+   `windowEnvelope`. Also unchanged: input (B), which the certificate rests on.
+
+`edgeworth_studentized_uniform` therefore remains `sorry`, and this wave does **not** claim
+otherwise. What changed is the character of its residue: after wave 39 it contained a missing
+analytic theory (two-dimensional anti-concentration); after wave 40 it does not. -/
+
+/-- `surrogateSlopeBound` is monotone in `|v₀|` — one of the two facts that make the slice
+constant uniform in the frozen value. -/
+lemma surrogateSlopeBound_mono {r x v₀ v₁ : ℝ} (hv : |v₀| ≤ |v₁|) :
+    surrogateSlopeBound r x v₀ ≤ surrogateSlopeBound r x v₁ := by
+  unfold surrogateSlopeBound
+  have h1 : 1 / 2 + 3 * |v₀| * |r| / 4 ≤ 1 / 2 + 3 * |v₁| * |r| / 4 := by
+    have h2 : 3 * |v₀| * |r| ≤ 3 * |v₁| * |r| :=
+      mul_le_mul_of_nonneg_right (by linarith) (abs_nonneg r)
+    linarith
+  have h0 : (0 : ℝ) ≤ 36 / 25 * |x| * |r| := by positivity
+  nlinarith [h0, h1]
+
+/-- `surrogateDefect` is monotone in the slope bound and in `|v₀|`; every monomial has
+nonnegative coefficient. -/
+lemma surrogateDefect_mono {r x v₀ v₁ K₀ K₁ L : ℝ} (hK : 0 ≤ K₀) (hL : 0 ≤ L)
+    (hKK : K₀ ≤ K₁) (hv : |v₀| ≤ |v₁|) :
+    surrogateDefect r x v₀ K₀ L ≤ surrogateDefect r x v₁ K₁ L := by
+  have hK1 : (0 : ℝ) ≤ K₁ := hK.trans hKK
+  have hKL : (0 : ℝ) ≤ K₀ * L := mul_nonneg hK hL
+  have hK1L : (0 : ℝ) ≤ K₁ * L := mul_nonneg hK1 hL
+  unfold surrogateDefect
+  gcongr <;>
+    first
+      | assumption
+      | positivity
+      | nlinarith [hKL, hK1L, sq_nonneg r, abs_nonneg r, abs_nonneg x, abs_nonneg v₁]
+
+/-- **The slice bound with the frozen value's contribution made uniform.** The slab bound is
+asked for on the larger slope range `|κ'| ≤ K̄` and the answer is expressed at the larger `v̄`, so
+neither side of the estimate mentions the actual `v₀` any more. This is what turns
+`measure_abs_deltaSurrogate_sub_le_of_slab` into a statement uniform in the frozen value. -/
+theorem measure_abs_deltaSurrogate_sub_le_of_slab_unif
+    {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsFiniteMeasure P]
+    {G : Ω → EuclideanSpace ℝ (Fin 2)} {σ r x w v₀ vbar Kbar L A η₀ ρ : ℝ}
+    (hw : 0 ≤ w) (hL : 0 ≤ L) (hA : 0 ≤ A)
+    (hv : |v₀| ≤ |vbar|) (hK : surrogateSlopeBound r x vbar ≤ Kbar)
+    (hslab : ∀ κ' c' w' : ℝ, |κ'| ≤ Kbar → 0 ≤ w' →
+      (P {ω | |G ω 0 / σ - κ' * (G ω 1 / σ ^ 2) - c'| ≤ w'}).toReal ≤ A * w' + η₀)
+    (htail : (P {ω | L < |G ω 1 / σ ^ 2 - v₀|}).toReal ≤ ρ) :
+    (P {ω | |deltaSurrogate σ r (G ω) - x| ≤ w}).toReal
+      ≤ A * (6 / 5 * w + 6 / 5 * surrogateDefect r x vbar Kbar L) + η₀ + ρ := by
+  have hK0 : (0 : ℝ) ≤ surrogateSlopeBound r x v₀ := by
+    unfold surrogateSlopeBound; positivity
+  have hstep := measure_abs_deltaSurrogate_sub_le_of_slab P hw hL hA
+    (fun κ' c' w' hκ hw' =>
+      hslab κ' c' w' (hκ.trans ((surrogateSlopeBound_mono hv).trans hK)) hw') htail
+  refine hstep.trans ?_
+  have hmono : surrogateDefect r x v₀ (surrogateSlopeBound r x v₀) L
+      ≤ surrogateDefect r x vbar Kbar L :=
+    surrogateDefect_mono hK0 hL ((surrogateSlopeBound_mono hv).trans hK) hv
+  have hsum : 6 / 5 * w + 6 / 5 * surrogateDefect r x v₀ (surrogateSlopeBound r x v₀) L
+      ≤ 6 / 5 * w + 6 / 5 * surrogateDefect r x vbar Kbar L := by linarith
+  have := mul_le_mul_of_nonneg_left hsum hA
+  linarith
+
+/-- **The slab bound on a frozen-coordinate root is free from the marginal one.** Because the
+slab functional is a one-dimensional root (`vecRoot_slab_eq`), freezing a coordinate is an
+affine change of variable in it, and `measure_pi_abs_root_insertNth_le` transfers the marginal
+window bound at size `n` with **no dependence on the frozen value `y` or the frozen index `i`**,
+losing only a factor `√2`. -/
+theorem measure_pi_abs_slab_insertNth_le {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Z : ℝ → EuclideanSpace ℝ (Fin 2)} {σ A η K : ℝ} (hA : 0 ≤ A) (hn : 0 < n)
+    (hwin : ∀ κ' u w : ℝ, |κ'| ≤ K → 0 ≤ w →
+      ((Measure.pi fun _ : Fin n => μ)
+          {z : Fin n → ℝ |
+            |(Real.sqrt (n : ℝ))⁻¹ * ∑ j, slabRoot Z σ κ' (z j) - u| ≤ w}).toReal
+        ≤ 2 * A * w + 2 * η)
+    (i : Fin (n + 1)) (y : ℝ) :
+    ∀ κ' c' w' : ℝ, |κ'| ≤ K → 0 ≤ w' →
+      ((Measure.pi fun _ : Fin n => μ)
+          {z : Fin n → ℝ |
+            |((Real.sqrt ((n : ℝ) + 1))⁻¹
+                  • ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)) 0 / σ
+              - κ' * (((Real.sqrt ((n : ℝ) + 1))⁻¹
+                  • ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)) 1 / σ ^ 2)
+              - c'| ≤ w'}).toReal
+        ≤ 2 * (Real.sqrt 2 * A) * w' + 2 * η := by
+  intro κ' c' w' hκ hw'
+  have hcast : ((n + 1 : ℕ) : ℝ) = (n : ℝ) + 1 := by push_cast; ring
+  have hkey : ∀ z : Fin n → ℝ,
+      ((Real.sqrt ((n : ℝ) + 1))⁻¹
+            • ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)) 0 / σ
+        - κ' * (((Real.sqrt ((n : ℝ) + 1))⁻¹
+            • ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)) 1 / σ ^ 2)
+        = (Real.sqrt ((n : ℝ) + 1))⁻¹
+            * ∑ j : Fin (n + 1), slabRoot Z σ κ' ((i.insertNth y z : Fin (n + 1) → ℝ) j) := by
+    intro z
+    have h := vecRoot_slab_eq (n := n + 1) Z σ κ' (i.insertNth y z)
+    rw [hcast] at h
+    exact h
+  have hset : {z : Fin n → ℝ |
+      |((Real.sqrt ((n : ℝ) + 1))⁻¹
+            • ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)) 0 / σ
+        - κ' * (((Real.sqrt ((n : ℝ) + 1))⁻¹
+            • ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)) 1 / σ ^ 2)
+        - c'| ≤ w'}
+      = {z : Fin n → ℝ |
+          |(Real.sqrt ((n : ℝ) + 1))⁻¹
+              * ∑ j : Fin (n + 1), slabRoot Z σ κ' ((i.insertNth y z : Fin (n + 1) → ℝ) j)
+            - c'| ≤ w'} := by
+    ext z
+    simp only [Set.mem_setOf_eq, hkey z]
+  rw [hset]
+  exact measure_pi_abs_root_insertNth_le (Z := slabRoot Z σ κ') μ hA hn i
+    (fun u w hw => hwin κ' u w hκ hw) y c' hw'
+
+/-- **(U3)'s `hslice`, for the surrogate.** The frozen-coordinate window bound for
+`deltaSurrogate σ r ∘ (bivariate root)`, out of the marginal slope-uniform one-dimensional
+window bound at size `n` and a tail bound for the second standardized coordinate. This is the
+statement `measure_pi_stratum_le` consumes and the one wave 21 named as the residue; see the
+section note for what discharging it does and does not settle. -/
+theorem measure_pi_abs_deltaSurrogate_insertNth_le {n : ℕ} (μ : Measure ℝ)
+    [IsProbabilityMeasure μ] {Z : ℝ → EuclideanSpace ℝ (Fin 2)}
+    {σ r x w v₀ L A η ρ : ℝ} (hA : 0 ≤ A) (hn : 0 < n) (hw : 0 ≤ w) (hL : 0 ≤ L)
+    (hwin : ∀ κ' u w : ℝ, |κ'| ≤ surrogateSlopeBound r x v₀ → 0 ≤ w →
+      ((Measure.pi fun _ : Fin n => μ)
+          {z : Fin n → ℝ |
+            |(Real.sqrt (n : ℝ))⁻¹ * ∑ j, slabRoot Z σ κ' (z j) - u| ≤ w}).toReal
+        ≤ 2 * A * w + 2 * η)
+    (i : Fin (n + 1)) (y : ℝ)
+    (htail : ((Measure.pi fun _ : Fin n => μ)
+        {z : Fin n → ℝ |
+          L < |((Real.sqrt ((n : ℝ) + 1))⁻¹
+              • ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)) 1 / σ ^ 2
+            - v₀|}).toReal ≤ ρ) :
+    ((Measure.pi fun _ : Fin n => μ)
+        {z : Fin n → ℝ |
+          |deltaSurrogate σ r ((Real.sqrt ((n : ℝ) + 1))⁻¹
+              • ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)) - x| ≤ w}).toReal
+      ≤ 2 * (Real.sqrt 2 * A)
+          * (6 / 5 * w + 6 / 5 * surrogateDefect r x v₀ (surrogateSlopeBound r x v₀) L)
+        + 2 * η + ρ := by
+  refine measure_abs_deltaSurrogate_sub_le_of_slab
+    (G := fun z : Fin n → ℝ => (Real.sqrt ((n : ℝ) + 1))⁻¹
+      • ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j))
+    _ hw hL (by positivity) ?_ htail
+  exact measure_pi_abs_slab_insertNth_le μ hA hn hwin i y
+
 /-! ### Nondegeneracy of the studentized pair from absolute continuity
 
 **WAVE 39.** Every route to a two-dimensional limit theorem for the bivariate root needs the
