@@ -103,12 +103,30 @@ proved:
   reduction consumes, and the verified exponent ledger (`leakage_ledger_exponent`,
   `leakage_ledger_five_le`, `tail_ledger_exponent`, `bulk_gain_phase_le`) — including
   `leakage_ledger_four_gt`, the witness that four integrations by parts do *not* suffice;
+* `surrogateSlopeBound`, `surrogateDefect`, `abs_sub_affine_centre_le'`,
+  `measure_abs_surrogate_window_slab_le`, `measure_abs_deltaSurrogate_sub_le_of_slab`,
+  `measure_abs_deltaSurrogate_sub_le_of_slab_unif`, `ledger_optimum_cube`,
+  `measure_abs_gt_le_fourth_moment_of_integrable` — the **straightened** slice bound: a slab
+  bound plus a fourth-moment tail give the window mass of `Hₙ`, with a penalty *quadratic* in the
+  truncation level, and the exact balance identity `(a·L²)³ = a²·b` that prices it at
+  `|x|^{2/3}n^{-2/3}` — the accuracy `sum_dyadic_strata_le` consumes;
+* `slabRoot`, `vecRoot_slab_eq`, `measure_pi_vecRoot_slab_le_of_win`, `slabDir`,
+  `map_slabRoot_eq_projLaw`, `cramerCondition_map_slabRoot`,
+  `exists_bound_norm_charFun_map_slabRoot`, `integral_sq_sub_smul_ge`,
+  `integral_slabRoot_sq_ge` — the **projection reduction**: a slab of the bivariate root is a
+  window of a *one-dimensional* root, so no two-dimensional anti-concentration is needed; with
+  the two uniformity inputs it makes free, a slope-uniform Cramér constant and a variance floor
+  by perturbation;
+* `measure_pi_abs_slab_insertNth_le`, `measure_pi_abs_deltaSurrogate_insertNth_le` — (U3)'s
+  `hslice` for the surrogate, out of the marginal one-dimensional window bound at size `n` and a
+  tail bound, uniformly in the frozen index and value;
 * `normalCDF_sub_le`, `stdNormalCDF_sub_le` — the Lipschitz modulus of the normal distribution
   function, the constant `A` that Esseen's smoothing inequality consumes;
 * `edgeworth_mean_uniform` — the expansion for the centred root, with a uniform `O(n^{-1})`
   remainder, under a finite fourth moment and Cramér's condition;
 * `edgeworth_studentized_uniform` — the expansion for the studentized root, uniform in the
-  argument, under a finite fourth moment and absolute continuity;
+  argument, under **eight** moments (a wave-40 deviation from the classical fourth-moment
+  statement, documented there) and absolute continuity;
 * `cornishFisher_studentized_quantile` — the attached expansion of the quantile function with
   its `O(n^{-1})` accuracy, uniform over levels bounded away from `0` and `1`.
 
@@ -2029,7 +2047,35 @@ it. See the section note on `measure_abs_surrogate_window_le`.
 frozen four moments of `X` (Chebyshev, `L^{-2}`) the optimum is `|x|^{1/2}n^{-1/2}` — short by
 `n^{-1/6}`. Under **eight** moments of `X` (`L^{-4}`) the optimum is `|x|^{2/3}n^{-2/3}` and the
 ledger closes. So (U3) is now a single, sharply specified missing brick, with a known moment
-gap; it is not attempted here and is not claimed. -/
+gap; it is not attempted here and is not claimed.
+
+---
+
+**WAVE 40 — (U3)'s `hslice` IS PROVED, AND "A NEW ANALYTIC BRICK" IS OVERTURNED.** Wave 38's
+"Net price" above concludes that what remains after its reduction "is a **new** analytic brick,
+one dimension smaller than the one wave 21 named, and it is still not bookkeeping". Wave 39
+sharpened that to "a direction-uniform slab bound". **Both are wrong about the character of the
+item, and the reason is one line**: the slab functional `u − κv` of a bivariate root is a linear
+functional of a sum, hence *is* a one-dimensional root
+(`vecRoot_slab_eq`, `measure_pi_vecRoot_slab_le_of_win`). There is no two-dimensional statement
+left. The chain now in the file is
+
+`marginal 1D window bound at size n`  →*(`measure_pi_abs_root_insertNth_le`, free, `y`- and
+`i`-uniform)*→  `slab bound on the frozen root` (`measure_pi_abs_slab_insertNth_le`)
+→*(straightening, `measure_abs_deltaSurrogate_sub_le_of_slab`)*→  `hslice for the surrogate`
+(`measure_pi_abs_deltaSurrogate_insertNth_le`),
+
+with the frozen value absorbed by monotonicity in `|v₀|`
+(`measure_abs_deltaSurrogate_sub_le_of_slab_unif`) and the truncation of wave 37 supplying the
+bound on it. Every step is proved and axiom-clean.
+
+What is left of (U3) is the *input* to that chain: the marginal one-dimensional window bound at
+accuracy `O(n^{-2/3})`, slope-uniform. Its three analytic ingredients — four moments of the
+summand (eight of `X`), nondegeneracy, Cramér — are all available, and two of them uniformly
+(see the section note above `slabRoot`, and `exists_bound_norm_charFun_map_slabRoot`, which
+supplies **one** Cramér constant for all slopes). The residue is that `edgeworth_mean_uniform`
+states an existential constant instead of exposing it. **That is bookkeeping**, and it is the
+first time in this item's history that the word is defensible; it is still not done. -/
 theorem abs_measure_le_sub_le_of_peel_window {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     [IsProbabilityMeasure P] {S T : Ω → ℝ} {δ A η : ℝ} (hδ : 0 < δ) (K : ℕ) (x : ℝ)
     (τ : ℕ → ℝ)
@@ -3241,6 +3287,18 @@ still leaves a factor `n^{-1/6}` under the four moments `edgeworth_studentized_u
 assumes.** Its nondegeneracy input is free (`integral_studentPair_dir_sq_pos`); Mathlib has no
 anti-concentration theory in any dimension; this file's only anti-concentration remains the
 one-dimensional `measure_abs_sub_le_of_affine`.
+
+**WAVE 40 CORRECTS THE LAST SENTENCE, AND IT IS THE ONLY THING IN THIS SECTION THAT NEEDED
+CORRECTING.** "Mathlib has no anti-concentration theory in any dimension" is true and irrelevant,
+because **no two-dimensional anti-concentration is needed**: the slab functional `u − κv` is
+*linear*, so a slab of the bivariate root is a *window* of a one-dimensional root
+(`vecRoot_slab_eq`), and `measure_abs_sub_le_of_affine` — "this file's only anti-concentration" —
+is exactly the right tool after all. See the section note above `slabRoot`. The rest of this
+section stands verbatim: the ledger arithmetic, the eight-moment threshold, the `n^{-1/6}` gap at
+four moments, and both corrections to wave 38 are unchanged, and `measure_abs_surrogate_window_slab_le`
+is the theorem they were describing. The one thing the wave-39 phrase "direction-uniform" got
+wrong in *degree* rather than in kind: only slopes `|κ| ≤ surrogateSlopeBound = O(|x||r|)` occur,
+a **shrinking** family, and that is what makes the uniformity attainable.
 
 **Correction 1 to wave 38.** The assessment wrote that a two-dimensional Lévy concentration
 bound "of the shape `sup over slabs S of width w of P(root ∈ S) ≤ Cw + η` … dominates the
@@ -11933,6 +11991,51 @@ Nothing else moved: (A), (B), (C), (U1), (U2), the quantitative half of (U4), th
 and this theorem are as wave 38 left them, and the assembly was **not attempted**.
 
 ---
+
+**Status after wave 40. (U3) IS NO LONGER AN ANALYTIC ITEM. Its `hslice` is PROVED; what is left
+of it is one existential constant that has to be exposed. Wave 38's and wave 39's assessments of
+it are both overturned, and the moment hypothesis of this theorem is amended.**
+
+* **(U3) — THE GEOMETRY IS CLOSED.** The chain
+  `measure_pi_abs_deltaSurrogate_insertNth_le` ← `measure_pi_abs_slab_insertNth_le` ←
+  `measure_pi_abs_root_insertNth_le` produces the frozen-coordinate window bound for
+  `deltaSurrogate σ r ∘ (bivariate root)` — the statement `measure_pi_stratum_le` calls `hslice`
+  and the residue this file has named since wave 21 — from the **marginal, one-dimensional,
+  slope-uniform** window bound at size `n` and a Chebyshev tail, and from nothing else. The
+  enabling observation is that the slab functional `u − κv` is *linear*, so a slab of the
+  bivariate root **is** a one-dimensional root (`vecRoot_slab_eq`); wave 38's "a new analytic
+  brick, one dimension smaller" and wave 39's "a direction-uniform slab bound … Mathlib has no
+  anti-concentration theory in any dimension" both misidentify the item. There is no
+  two-dimensional statement anywhere in the route. The two conversions between `Hₙ` and the slab
+  are `measure_abs_surrogate_window_slab_le` (straightening, wave 40) and the wave-39 centre
+  calculus it consumes.
+
+* **THE `y`-UNIFORMITY IS DISCHARGED, AND IT SPENDS THE WAVE-37 TRUNCATION.** `hslice` needs a
+  constant free of the frozen value; `htail` forces `v₀ = a₁(y)`; and `v₀` re-enters the constant
+  only through quantities monotone in `|v₀|` (`surrogateSlopeBound_mono`,
+  `surrogateDefect_mono`), so `measure_abs_deltaSurrogate_sub_le_of_slab_unif` absorbs it into a
+  single `v̄` with `|r|v̄ = O(1)` on the truncated law. Wave 39 identified this obligation; wave
+  40 discharges it.
+
+* **WHAT IS LEFT OF (U3), PRICED.** The marginal one-dimensional window bound has to hold at
+  accuracy `O(n^{-2/3})` uniformly over the slopes `|κ| ≤ O(|x|n^{-1/2})`. A Berry–Esseen
+  (`O(n^{-1/2})`) is **not** enough; `edgeworth_mean_uniform` applied to the projected law
+  `F.map (slabRoot (studentPair F) σ κ)` is, and all three of its hypotheses hold — four moments
+  of the summand (which is where this theorem's eight moments of `X` are also spent),
+  nondegeneracy uniformly by *perturbation* (`integral_slabRoot_sq_ge`; the slope range shrinks,
+  so no compactness and no smallest eigenvalue is involved), and Cramér uniformly and for free
+  (`exists_bound_norm_charFun_map_slabRoot` gives **one** `c < 1` for every slope). The obstacle
+  is that `edgeworth_mean_uniform` returns `∃ C` with no exposed dependence on the law, so it
+  cannot be applied to a slope-indexed family. Its constant is already moment-explicit one level
+  down — `exists_window_core` produces `K = A² + B² + C + D + 1` with `A = 4π³ρ₃/(3σ³)`,
+  `B = 2π⁴`, `C = 8π⁵|m₃|/(3σ³)`, `D = 2π⁴β₄/(3σ⁴) + 2π⁴`, increasing in the moments and
+  decreasing in `σ` — so the residue is threading an existing proof's constants. **Bookkeeping,
+  and not done here.**
+
+* **(U4) AND (B) ARE UNCHANGED.** The quantitative half of (U4) — the `k = 3, 4` and
+  graded-remainder terms priced against `windowEnvelope` — is as wave 38 left it, and input (B)
+  is as wave 35 left it. **This theorem is therefore still `sorry`, and wave 40 does not claim
+  otherwise.** What changed is that its residue no longer contains a missing analytic theory.
 
 **WAVE 40 — THE MOMENT HYPOTHESIS IS AMENDED FROM FOUR TO EIGHT, AND THIS IS A DEVIATION FROM
 THE CLASSICAL STATEMENT.** The classical studentized Edgeworth expansion (Hall, *The Bootstrap
