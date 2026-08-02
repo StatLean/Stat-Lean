@@ -13193,6 +13193,134 @@ lemma norm_surrogate_sub_studentizedEdgeworth_le
   linarith [n₁, n₂, n₃, n₄, n₅, n₆, hB1', hRg]
 
 
+set_option maxHeartbeats 1000000 in
+-- The final `ring` identifies a fifteen-variable degree-8 expression with the ledger's
+-- left-hand side; the default heartbeat budget is not enough.
+/-- **(U4′) — THE LOW-RANGE WINDOW BOUND.**  The studentized twin of `exists_window_bound`, in
+exactly the shape `esseen_split_low`'s `hlow` consumes:
+
+`‖φ_{surrogate}(θ) − φ_{q_n}(θ)‖ ≤ Kw r²·windowEnvelope₁ ξ + Kr r³|ξ|³`  at  `θ = −2πξ`,
+
+with `r = n^{-1/2}`, so `Kw r² = O(n⁻¹)` and `Kr r³ = O(n^{-3/2})` — the two orders
+`low_range_ledger_exponent` prices.  The eight hypotheses are the outputs of the four damped
+inputs and of the graded remainder, evaluated at `a = (θ/σ)•e₀`, in their monomial shapes:
+
+* `hRg` — `norm_charFun_map_deltaSurrogate_sub_graded_le`, whose `∫ surrogateRemGraded` is
+  `r³` times a quadratic *and* a cubic in `|θ|` and carries **no** damping;
+* `hB1` — `norm_charFun_smul_pow_sub_edgeworth_le`, damped, `r²(|ξ|⁴ + |ξ|⁸)`;
+* `hB2` — `norm_multiCharFun_vecRootLaw_two_sub_damped_le`, damped, `r` times a quartic;
+* `hB5`, `hB6` — the two comparisons of `φ^{n−1}` and `φ^{n−2}` with `e^{−θ²/2}` that the
+  composition needs and that no earlier statement of (U4′) lists;
+* `h3a`, `h3b`, `h4` — `norm_multiCharFun_vecRootLaw_damped_le` at `k = 3, 3, 4`, damped and
+  `O(1)`.
+
+Nothing in the conclusion is asymptotic and no constant is existential at the call site except
+the two the statement returns. -/
+private lemma exists_studentized_low_range_window_bound {σ γ : ℝ} (hσ : 0 < σ)
+    {Kc Kb q₁ q₂ q₃ q₄ e₃a e₃b e₄ C₂ C₃ : ℝ}
+    (hKc : 0 ≤ Kc) (hKb : 0 ≤ Kb) (hq₁ : 0 ≤ q₁) (hq₂ : 0 ≤ q₂) (hq₃ : 0 ≤ q₃)
+    (hq₄ : 0 ≤ q₄) (he₃a : 0 ≤ e₃a) (he₃b : 0 ≤ e₃b) (he₄ : 0 ≤ e₄)
+    (hC₂ : 0 ≤ C₂) (hC₃ : 0 ≤ C₃) :
+    ∃ Kw Kr : ℝ, 0 < Kw ∧ 0 < Kr ∧
+      ∀ n : ℕ, 0 < n → ∀ ξ θ D : ℝ, θ = -(2 * Real.pi * ξ) → 0 ≤ D →
+        D ≤ Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) →
+        ∀ Φ A S2 S3a S3b S4 P1 P2 : ℂ,
+        ‖Φ - (A - Complex.I * ((θ * (Real.sqrt n)⁻¹ / (2 * σ ^ 3) : ℝ) : ℂ) * S2
+              + Complex.I * ((θ * ((Real.sqrt n)⁻¹) ^ 2 / (2 * σ ^ 3) : ℝ) : ℂ) * S3a
+              + Complex.I * ((3 * θ * ((Real.sqrt n)⁻¹) ^ 2 / (8 * σ ^ 5) : ℝ) : ℂ) * S3b
+              - ((θ ^ 2 * ((Real.sqrt n)⁻¹) ^ 2 / (8 * σ ^ 6) : ℝ) : ℂ) * S4)‖
+          ≤ ((Real.sqrt (n : ℝ))⁻¹) ^ 3 * (C₃ * |ξ| ^ 3 + C₂ * |ξ| ^ 2) →
+        ‖A - ((Real.exp (-θ ^ 2 / 2) : ℝ) : ℂ)
+              * (1 - ((n : ℝ) : ℂ) * Complex.I * ((γ * σ ^ 3 : ℝ) : ℂ)
+                    * (((Real.sqrt n)⁻¹ * θ / σ : ℝ) : ℂ) ^ 3 / 6)‖
+          ≤ Kc * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 * (|ξ| ^ 4 + |ξ| ^ 8) * D →
+        ‖S2 - (((γ * σ ^ 3 : ℝ) : ℂ) * P1
+              - (((θ * σ) * (θ * γ * σ ^ 2) : ℝ) : ℂ) * P2)‖
+          ≤ (Real.sqrt (n : ℝ))⁻¹
+              * (q₁ * |ξ| + q₂ * |ξ| ^ 2 + q₃ * |ξ| ^ 3 + q₄ * |ξ| ^ 4) * D →
+        ‖P1 - ((Real.exp (-θ ^ 2 / 2) : ℝ) : ℂ)‖
+          ≤ Kb * (Real.sqrt (n : ℝ))⁻¹ * (|ξ| ^ 3 + |ξ| ^ 4) * D →
+        ‖P2 - ((Real.exp (-θ ^ 2 / 2) : ℝ) : ℂ)‖
+          ≤ Kb * (Real.sqrt (n : ℝ))⁻¹ * (|ξ| ^ 3 + |ξ| ^ 4) * D →
+        ‖S3a‖ ≤ e₃a * D → ‖S3b‖ ≤ e₃b * D → ‖S4‖ ≤ e₄ * D →
+        ‖Φ - charFunDensity (studentizedEdgeworthDensity γ n) θ‖
+          ≤ Kw * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 * windowEnvelope₁ ξ
+            + Kr * ((Real.sqrt (n : ℝ))⁻¹) ^ 3 * |ξ| ^ 3 := by
+  have hσ3 : (0 : ℝ) < σ ^ 3 := pow_pos hσ 3
+  have hσ5 : (0 : ℝ) < σ ^ 5 := pow_pos hσ 5
+  have hσ6 : (0 : ℝ) < σ ^ 6 := pow_pos hσ 6
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have hP₂ : (0 : ℝ) ≤ Real.pi / σ ^ 3 := (div_pos hπ hσ3).le
+  have hP₃b : (0 : ℝ) ≤ 3 * Real.pi / (4 * σ ^ 5) :=
+    (div_pos (by linarith) (by linarith)).le
+  have hP₄ : (0 : ℝ) ≤ Real.pi ^ 2 / (2 * σ ^ 6) :=
+    (div_pos (by positivity) (by linarith)).le
+  obtain ⟨Kw, Kr, hKw, hKr, hcore⟩ := exists_studentized_low_range_core
+    (Kc := Kc) (P₂ := Real.pi / σ ^ 3) (q₁ := q₁) (q₂ := q₂) (q₃ := q₃) (q₄ := q₄)
+    (G₁ := |γ * σ ^ 3|) (G₂ := 4 * Real.pi ^ 2 * |γ| * σ ^ 3) (Kb := Kb)
+    (P₃a := Real.pi / σ ^ 3 * e₃a) (P₃b := 3 * Real.pi / (4 * σ ^ 5) * e₃b)
+    (P₄ := Real.pi ^ 2 / (2 * σ ^ 6) * e₄) (C₂ := C₂) (C₃ := C₃)
+    hKc hP₂ hq₁ hq₂ hq₃ hq₄ (abs_nonneg _)
+    (mul_nonneg (mul_nonneg (by positivity) (abs_nonneg γ)) hσ3.le) hKb
+    (mul_nonneg hP₂ he₃a) (mul_nonneg hP₃b he₃b) (mul_nonneg hP₄ he₄) hC₂ hC₃
+  refine ⟨Kw, Kr, hKw, hKr, ?_⟩
+  intro n hn ξ θ D hθ hD0 hD Φ A S2 S3a S3b S4 P1 P2 hRg hB1 hB2 hB5 hB6 h3a h3b h4
+  have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hs : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hn0
+  have hr0 : (0 : ℝ) < (Real.sqrt (n : ℝ))⁻¹ := inv_pos.2 hs
+  have hr1 : (Real.sqrt (n : ℝ))⁻¹ ≤ 1 := by
+    refine inv_le_one_of_one_le₀ ?_
+    simpa using Real.sqrt_le_sqrt hn1
+  have hcomp := norm_surrogate_sub_studentizedEdgeworth_le hn hσ.ne' hRg hB1 hB2 hB5 hB6
+    h3a h3b h4
+  subst hθ
+  have eabs₂ : |-(2 * Real.pi * ξ) * (Real.sqrt (n : ℝ))⁻¹ / (2 * σ ^ 3)|
+      = Real.pi / σ ^ 3 * |ξ| * (Real.sqrt (n : ℝ))⁻¹ := by
+    have h : -(2 * Real.pi * ξ) * (Real.sqrt (n : ℝ))⁻¹ / (2 * σ ^ 3)
+        = -((Real.pi / σ ^ 3 * (Real.sqrt (n : ℝ))⁻¹) * ξ) := by
+      field_simp <;> ring
+    rw [h, abs_neg, abs_mul, abs_of_nonneg (mul_nonneg hP₂ hr0.le)]
+    ring
+  have eabs₃a : |-(2 * Real.pi * ξ) * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (2 * σ ^ 3)|
+      = Real.pi / σ ^ 3 * |ξ| * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 := by
+    have h : -(2 * Real.pi * ξ) * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (2 * σ ^ 3)
+        = -((Real.pi / σ ^ 3 * ((Real.sqrt (n : ℝ))⁻¹) ^ 2) * ξ) := by
+      field_simp <;> ring
+    rw [h, abs_neg, abs_mul,
+      abs_of_nonneg (mul_nonneg hP₂ (by positivity : (0 : ℝ) ≤ ((Real.sqrt (n : ℝ))⁻¹) ^ 2))]
+    ring
+  have eabs₃b : |3 * -(2 * Real.pi * ξ) * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (8 * σ ^ 5)|
+      = 3 * Real.pi / (4 * σ ^ 5) * |ξ| * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 := by
+    have h : 3 * -(2 * Real.pi * ξ) * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (8 * σ ^ 5)
+        = -((3 * Real.pi / (4 * σ ^ 5) * ((Real.sqrt (n : ℝ))⁻¹) ^ 2) * ξ) := by
+      field_simp <;> ring
+    rw [h, abs_neg, abs_mul,
+      abs_of_nonneg (mul_nonneg hP₃b (by positivity : (0 : ℝ) ≤ ((Real.sqrt (n : ℝ))⁻¹) ^ 2))]
+    ring
+  have eabs₄ : |(-(2 * Real.pi * ξ)) ^ 2 * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (8 * σ ^ 6)|
+      = Real.pi ^ 2 / (2 * σ ^ 6) * |ξ| ^ 2 * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 := by
+    have h : (-(2 * Real.pi * ξ)) ^ 2 * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (8 * σ ^ 6)
+        = (Real.pi ^ 2 / (2 * σ ^ 6) * ((Real.sqrt (n : ℝ))⁻¹) ^ 2) * ξ ^ 2 := by
+      field_simp <;> ring
+    rw [h, abs_mul,
+      abs_of_nonneg (mul_nonneg hP₄ (by positivity : (0 : ℝ) ≤ ((Real.sqrt (n : ℝ))⁻¹) ^ 2)),
+      abs_of_nonneg (sq_nonneg ξ), sq_abs]
+    ring
+  have eabsκ : |(-(2 * Real.pi * ξ) * σ) * (-(2 * Real.pi * ξ) * γ * σ ^ 2)|
+      = 4 * Real.pi ^ 2 * |γ| * σ ^ 3 * |ξ| ^ 2 := by
+    have h : (-(2 * Real.pi * ξ) * σ) * (-(2 * Real.pi * ξ) * γ * σ ^ 2)
+        = (4 * Real.pi ^ 2 * σ ^ 3 * ξ ^ 2) * γ := by ring
+    rw [h, abs_mul, abs_of_nonneg (mul_nonneg (mul_nonneg
+      (by positivity : (0 : ℝ) ≤ 4 * Real.pi ^ 2) hσ3.le) (sq_nonneg ξ)), ← sq_abs ξ]
+    ring
+  rw [eabs₂, eabs₃a, eabs₃b, eabs₄, eabsκ] at hcomp
+  refine hcomp.trans ?_
+  exact le_trans (le_of_eq (by ring))
+    (hcore ((Real.sqrt (n : ℝ))⁻¹) ξ D hr0 hr1 hD0 hD)
+
+
+
 /-! ### The outer radius of the three-regime split, and what it costs (wave 46)
 
 The mean's assembly runs `esseen_split` at `δ = n⁻¹` and `ρ = c√n`, and the tail term
