@@ -17191,7 +17191,85 @@ IS STILL `sorry`. WAVE 47 DOES NOT CLAIM OTHERWISE.**
   `c√n` would keep `ρ = c√n` and leave `N = 10` alone; nothing here rules one out.**
 
   **This theorem is therefore still `sorry`, the file is at one `sorry`, and the residue is one
-  item — item 4 — of which every piece is named above and none is an open analytic question.** -/
+  item — item 4 — of which every piece is named above and none is an open analytic question.**
+
+---
+
+**Status after wave 48. ITEM 4 IS NOT EIGHT BOOKKEEPING BOUNDS. TWO OF THE EIGHT WERE
+UNSATISFIABLE AS STATED, AND THE OTHER SIX CANNOT ALL BE PRODUCED AT ONE LAW. THIS THEOREM IS
+STILL `sorry` AND WAVE 48 DOES NOT CLAIM OTHERWISE.**
+
+Wave 47 left item 4 as "eight moment-bookkeeping bounds, none an open analytic question". Two of
+the three things wave 48 found are corrections to that; the third is a new item.
+
+* **`hB5`/`hB6` WERE UNSATISFIABLE, AND THE REPAIR IS IN.** Both compare a power of the summand's
+  transform with the Gaussian: `P1 = φ(c)^{n−1}`, `P2 = φ(c)^{n−2}` against `e^{−θ²/2}`. The
+  comparison runs through `norm_charFun_smul_pow_sub_edgeworth_le` at `m = n − 3`, `m = n − 4`,
+  whose own Gaussian is `e^{−(n−1)vs²/2} = e^{−θ²/2}e^{θ²r²/2}`, so the mismatch contributes
+  `e^{−θ²/2}·θ²r²/2` — **exactly, with a positive coefficient**, and of `θ`-degree **two**. Wave
+  47 priced it as a relative `1 + O(n^{−2/3})` and wrote the bracket `Kb·r(|ξ|³ + |ξ|⁴)·D`; no
+  constant `Kb` makes that true, because at fixed `n` and `ξ → 0` the ratio of the true term to
+  the stated bound is `≍ 2π²r/(Kb|ξ|)`, which is unbounded. The wave-47 shape was satisfied by
+  nothing. The bracket now starts at `|ξ|²`, which is the minimal repair and is **free in the
+  ledger**: the slot's own prefactor `θr/(2σ³)` turns the new term into `r²|ξ|³·D`, degree
+  `3 ≤ 8`, and inside `exists_studentized_low_range_core` only `α₃` and `α₅` move. Both lemmas
+  are re-proved at the amended shape and the conclusion is untouched.
+
+* **`h3a`/`h3b`/`h4` ARE SATISFIABLE WITH CONSTANTS, BUT NOT FOR THE REASON THE PHRASE "MOMENT
+  BOOKKEEPING" SUGGESTS.** `norm_multiCharFun_vecRootLaw_damped_le` returns
+  `(k+1)k^k Q^k·‖φ(c)‖^{N−k}`, and its `Q` must dominate `∫|⟪x,b_l⟫||⟪x,a⟫|`, which is
+  proportional to `|θ|`; the coefficient the hypothesis asks for is a *constant*. The polynomial
+  is beaten only because `D` is required merely to satisfy `D ≤ e^{−π²ξ²/2}`, so taking `D` to
+  **be** that value leaves a residual `e^{−π²ξ²/4}` — `exp_damping_split`, which is where the
+  threshold `n ≥ 12` comes from, the split needing `(n − j)/n ≥ 3/4` at the largest slot `j = 3`
+  — and a fixed Gaussian beats a fixed polynomial (`exists_poly_mul_exp_neg_sq_le`).
+  `exists_const_of_damped_poly` is the combination and is stated so that all six damped
+  hypotheses (`hB1`, `hB2`, `h3a`, `h3b`, `h4`, and the damped half of the two comparisons) draw
+  on it. **These three lemmas are proved.**
+
+* **THE NEW ITEM: NO SINGLE LAW SUPPORTS ALL EIGHT, AND THE TRUNCATED PAIR IS NOT CENTRED.**
+  Wave 47 says the eight are "moment bookkeeping on the truncated pair, which is where `hF8` is
+  already spent". They are not, and the two halves pull in opposite directions.
+
+  1. *`hB1`, `hB2` and the `k`-slot bounds need EXACT centring.* `hmean`, `hthird` of
+     `norm_charFun_smul_pow_sub_edgeworth_le` and `hm0`, `hm1`, `hcent` of the two multilinear
+     theorems are **equalities**, not estimates. On `F.map (studentPair F ∘ truncAt m √n)` the
+     first coordinate has mean `∫(T − m)dF = −∫_{|x−m|>√n}(x − m)dF ≠ 0`, and the second has
+     mean `∫(T − m)²dF − Var F ≠ 0`. The truncated pair is **not** centred, so none of these
+     theorems applies to it. On the untruncated `studentPair F` centring is exact and free —
+     that is `integral_inner_studentPair` — and `hF8` is exactly what buys the fourth directional
+     moment in the second coordinate.
+  2. *`hRg` needs boundedness, and far more than eight moments without it.* Its bound is
+     `∫ surrogateRemGraded θ (w₀/σ) (w₁/σ²) r`, and `surrogateRemGraded`'s first summand is a
+     **cube** of `r(|u||v|/2) + r²(|u|³/2 + 3|u||v|²/8)`; expanding it reaches `|u|⁹` and
+     `|u|³|v|⁶`. On the root of the untruncated pair that is a ninth moment of `X − m` and a
+     sixth of `(X − m)²` — twelve moments of `F` and more — so `hF8` does not make the integrand
+     integrable, let alone bound it. On the *truncated* pair every coordinate is bounded, the
+     integral exists outright, and Rosenthal at the truncation level `τ = √n` keeps its size
+     `n`-uniform, which is what `C₂`, `C₃` need.
+
+  So `hRg` forces truncation and `hB1`/`hB2`/`h3a`/`h3b`/`h4` forbid it, **as the pair is
+  currently defined**. The repair is not to weaken any of the five: it is to truncate and
+  **re-centre**, i.e. to run the whole low range on
+  `Zₙ(x) = (T x − mₙ, (T x − mₙ)² − vₙ)` with `mₙ = ∫T dF` and `vₙ = ∫(T − mₙ)²dF`, which is
+  bounded *and* exactly centred, and whose `σ`, `γ` are its own moments. What that costs is a
+  new, and genuinely small, item: `|mₙ − m| ≤ μ₄/n^{3/2}` and `|vₙ − Var F| ≤ μ₄/n` by
+  `abs_sub_truncAt_le`/`abs_sq_sub_sq_truncAt_le`, so the two studentizations differ at the CDF
+  level by a shift of order `n⁻¹` after scaling by `√n/σ` — which the peel already prices
+  (`hslice`, `hwin`, waves 40 and 41), and by `|γₙ − γ|`, which enters the Edgeworth term at
+  order `n^{-1/2}·n^{-1/2}`. **This is the fifth item of the residue and no wave has named it.**
+
+* **WHAT THE RESIDUE IS NOW.** Item 4 is *not* eight bounds. It is: (a) the re-centred truncated
+  pair `Zₙ` and the CDF-level comparison of its studentization with `studentizedRootCDF`
+  (the new item above); (b) the six damped bounds at `Zₙ`, whose arithmetic half is proved here
+  and whose remaining half is the identification of the polynomial coefficients in terms of
+  `Zₙ`'s moments — that half *is* bookkeeping; (c) `hRg`'s size estimate at `Zₙ`, which is a
+  Rosenthal bound at the truncation level and is the only one of the eight with any content
+  left; (d) the composition, unchanged from wave 47's list. Items 1, 2 and 3 of the wave-46
+  residue are closed and nothing found here touches them, the certificate, or (U1)–(U3).
+
+  **This theorem is therefore still `sorry`, the file is at one `sorry`, and Batch 12 is not
+  complete.** -/
 
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
