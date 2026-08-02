@@ -9594,6 +9594,131 @@ lemma fibre_gain_ledger_ten_le {n : ℕ} (hn : 0 < n) {c₀ b σ θ : ℝ}
     _ ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 * ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ :=
         mul_le_mul_of_nonneg_left hled hc10
 
+/-! ### The Fubini reduction: from the plane to horizontal fibres
+
+The last item of input (B), and the only one that is measure theory rather than analysis.  The
+plane carries the product structure of `ℝ × ℝ` only through a measurable identification, and
+`planeEquiv` is that identification: it is volume preserving (`measurePreserving_planeEquiv`)
+because it is the composite of the two volume-preserving equivalences Mathlib supplies, `ofLp`
+off `PiLp 2` and `finTwoArrow` off `Fin 2 → ℝ`.  With it in hand
+`integral_eq_integral_fibre` writes any integrable plane integral as an iterated integral over
+horizontal fibres, `fourierWeight_bulkMultiplier_eq` absorbs the frequency `s` into the phase so
+that the fibre estimate applies verbatim, and `norm_integral_fibre_shift_le` supplies the
+Jacobian `M` of the rescaling `w₀ = Mx`. -/
+
+/-- The measurable identification of the plane with `ℝ × ℝ`. -/
+noncomputable def planeEquiv : E₂ ≃ᵐ ℝ × ℝ :=
+  (MeasurableEquiv.toLp 2 (Fin 2 → ℝ)).symm.trans MeasurableEquiv.finTwoArrow
+
+lemma measurePreserving_planeEquiv :
+    MeasurePreserving planeEquiv (volume : Measure E₂) (volume : Measure (ℝ × ℝ)) :=
+  (volume_preserving_finTwoArrow ℝ).comp
+    (EuclideanSpace.volume_preserving_symm_measurableEquiv_toLp (ι := Fin 2))
+
+lemma planeEquiv_apply (w : E₂) : planeEquiv w = (w 0, w 1) := rfl
+
+lemma planeEquiv_symm_apply (p : ℝ × ℝ) : planeEquiv.symm p = fibreEmbed p.2 p.1 := by
+  have h : planeEquiv (fibreEmbed p.2 p.1) = p := by
+    rw [planeEquiv_apply, fibreEmbed_apply_zero, fibreEmbed_apply_one]
+  calc planeEquiv.symm p = planeEquiv.symm (planeEquiv (fibreEmbed p.2 p.1)) := by rw [h]
+    _ = fibreEmbed p.2 p.1 := planeEquiv.symm_apply_apply _
+
+lemma fibreEmbed_self (w : E₂) : fibreEmbed (w 1) (w 0) = w := by
+  ext i
+  fin_cases i <;> simp [fibreEmbed, coordDir, EuclideanSpace.single_apply]
+
+
+/-- **The Fubini reduction of a plane integral to iterated integrals over horizontal fibres.** -/
+lemma integral_eq_integral_fibre {f : E₂ → ℂ} (hf : Integrable f) :
+    ∫ w : E₂, f w = ∫ w₁ : ℝ, ∫ w₀ : ℝ, f (fibreEmbed w₁ w₀) := by
+  have hsymm : MeasurePreserving planeEquiv.symm
+      (volume : Measure (ℝ × ℝ)) (volume : Measure E₂) :=
+    (measurePreserving_planeEquiv).symm planeEquiv
+  have h1 : (∫ p : ℝ × ℝ, f (planeEquiv.symm p)) = ∫ w : E₂, f w :=
+    hsymm.integral_comp' f
+  have hI : Integrable (fun p : ℝ × ℝ => f (planeEquiv.symm p)) volume :=
+    (hsymm.integrable_comp_emb
+      (MeasurableEquiv.measurableEmbedding planeEquiv.symm)).2 hf
+  rw [← h1]
+  rw [Measure.volume_eq_prod] at hI ⊢
+  rw [integral_prod_symm _ hI]
+  simp only [planeEquiv_symm_apply]
+
+
+lemma inner_eq_coords (w s : E₂) : (⟪w, s⟫ : ℝ) = s 0 * w 0 + s 1 * w 1 := by
+  conv_lhs => rw [← fibreEmbed_self s]
+  rw [fibreEmbed, inner_add_right, real_inner_smul_right, real_inner_smul_right,
+    inner_coordDir, inner_coordDir]
+
+/-- **The Fourier weight of the bulk multiplier, with the frequency absorbed into the phase.** -/
+lemma fourierWeight_bulkMultiplier_eq (σ r θ M : ℝ) (s : E₂) :
+    fourierWeight (bulkMultiplier σ r θ M) s
+      = (((2 * Real.pi)⁻¹ ^ 2 : ℝ) : ℂ) * ∫ w : E₂, ((bulkCutoff (M⁻¹ • w) : ℝ) : ℂ) *
+          Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w
+            - (θ / σ + s 0) * w 0 - s 1 * w 1 : ℝ) : ℂ)) := by
+  have hpi : Real.pi ≠ 0 := Real.pi_ne_zero
+  rw [fourierWeight, Real.fourier_eq', Complex.real_smul]
+  congr 1
+  refine integral_congr_ae (Filter.Eventually.of_forall fun w => ?_)
+  have hin : (⟪w, ((2 * Real.pi)⁻¹ : ℝ) • s⟫ : ℝ) = (2 * Real.pi)⁻¹ * (⟪w, s⟫ : ℝ) :=
+    real_inner_smul_right _ _ _
+  have harg : (-2 * Real.pi * (⟪w, ((2 * Real.pi)⁻¹ : ℝ) • s⟫ : ℝ) : ℝ)
+      = -(s 0 * w 0 + s 1 * w 1) := by
+    rw [hin, inner_eq_coords]; field_simp
+  simp only [smul_eq_mul]
+  rw [harg, bulkMultiplier, ← mul_assoc,
+    mul_comm (Complex.exp (((-(s 0 * w 0 + s 1 * w 1) : ℝ) : ℂ) * Complex.I)) _, mul_assoc,
+    ← Complex.exp_add]
+  congr 2
+  push_cast
+  ring
+
+
+/-- **The fibre estimate with the full two-dimensional frequency.** The `w₁`-component of the
+carrier contributes a constant phase along the fibre, so it drops out in modulus; the rescaling
+`w₀ = Mx` produces the Jacobian `M`, the first of the two factors of the `M²` prefactor. -/
+theorem norm_integral_fibre_shift_le (N : ℕ) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (σ r θ a b w₁ M : ℝ), 0 < σ → 1 ≤ M → θ ≠ 0 →
+      |a| ≤ |θ| / (2 * σ) →
+      ‖∫ w₀ : ℝ, ((bulkCutoff (M⁻¹ • fibreEmbed w₁ w₀) : ℝ) : ℂ) *
+          Complex.exp (Complex.I * ((θ * deltaSurrogate σ r (fibreEmbed w₁ w₀)
+            - a * w₀ - b * w₁ : ℝ) : ℂ))‖
+        ≤ M * (C * (C * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N) := by
+  obtain ⟨C, hC0, hC⟩ := norm_integral_fibre_bulkMultiplier_le N
+  refine ⟨C, hC0, ?_⟩
+  intro σ r θ a b w₁ M hσ hM hθ ha
+  have hM0 : (0 : ℝ) < M := lt_of_lt_of_le zero_lt_one hM
+  set G : ℝ → ℂ := fun w₀ => ((bulkCutoff (M⁻¹ • fibreEmbed w₁ w₀) : ℝ) : ℂ) *
+      Complex.exp (Complex.I * ((θ * deltaSurrogate σ r (fibreEmbed w₁ w₀)
+        - a * w₀ : ℝ) : ℂ)) with hG
+  -- the frozen coordinate contributes a unimodular constant
+  have hsplit : ∀ w₀ : ℝ, ((bulkCutoff (M⁻¹ • fibreEmbed w₁ w₀) : ℝ) : ℂ) *
+      Complex.exp (Complex.I * ((θ * deltaSurrogate σ r (fibreEmbed w₁ w₀)
+        - a * w₀ - b * w₁ : ℝ) : ℂ))
+      = Complex.exp (Complex.I * ((-(b * w₁) : ℝ) : ℂ)) * G w₀ := by
+    intro w₀
+    rw [hG]
+    rw [← mul_assoc, mul_comm (Complex.exp (Complex.I * ((-(b * w₁) : ℝ) : ℂ))) _, mul_assoc,
+      ← Complex.exp_add]
+    congr 2
+    push_cast
+    ring
+  simp only [hsplit]
+  have hcm : (∫ w₀ : ℝ, Complex.exp (Complex.I * ((-(b * w₁) : ℝ) : ℂ)) * G w₀)
+      = Complex.exp (Complex.I * ((-(b * w₁) : ℝ) : ℂ)) * ∫ w₀ : ℝ, G w₀ :=
+    MeasureTheory.integral_const_mul _ _
+  rw [hcm, norm_mul, Complex.norm_exp_I_mul_ofReal, one_mul]
+  -- rescale the fibre
+  have habs : |M⁻¹| = M⁻¹ := abs_of_pos (inv_pos.mpr hM0)
+  have hres : (∫ x : ℝ, G (M * x)) = ((M⁻¹ : ℝ) : ℂ) * ∫ y : ℝ, G y := by
+    rw [Measure.integral_comp_mul_left G M, habs]
+    exact Complex.real_smul
+  have hGint : (∫ y : ℝ, G y) = ((M : ℝ) : ℂ) * ∫ x : ℝ, G (M * x) := by
+    rw [hres, ← mul_assoc, ← Complex.ofReal_mul, mul_inv_cancel₀ (ne_of_gt hM0)]
+    simp
+  rw [hGint, norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hM0]
+  exact mul_le_mul_of_nonneg_left (hC σ r θ a w₁ M hσ hM hθ ha) hM0.le
+
 /-- **(B) The non-stationary-phase estimate: the weight carries `O(n^{-3/2})` on the
 low-frequency ball** — the second input, the analytic heart of the certificate, and **still the
 only open analytic item of the certificate after wave 44**.
