@@ -3155,6 +3155,161 @@ theorem abs_sub_frozen_centre_le_of_surrogate_window {r x v v₀ w u m m₀ : �
     _ ≤ |u - m| + |m - m₀| := abs_add_le _ _
     _ ≤ _ := by linarith
 
+/-! ### The frozen-centre slice bound, and what it is worth against the ledger
+
+**WAVE 39, and this is the item to check.** `measure_abs_surrogate_window_le` is the honest
+probabilistic consequence of the centre calculus above: it is an *unconditional* bound on the
+window mass of `Hₙ` in terms of (i) the **marginal** window bound for the first standardized
+coordinate — which is free, `measure_pi_abs_root_insertNth_le` supplies it uniformly in the
+frozen value — and (ii) a **tail bound** for the second coordinate about an arbitrary frozen
+`v₀`. No conditional law, no disintegration and no two-dimensional anti-concentration enter.
+
+**The arithmetic, and it does not reach the ledger.** Instantiate at the studentized route:
+`A ≍ 1`, `η ≍ n⁻¹` (both free), `|r| = (n+1)^{-1/2}`, `|v₀| = O(√n)` (see the paragraph on
+`y`-uniformity below), and `ρ = P(|V − v₀| > L) ≤ κ/L²` by Chebyshev on the two moments of the
+second coordinate — the same Chebyshev the peel already uses for `τ_k`. The bound reads
+
+`(12/5)Aw + C·A·|x|·n^{-1/2}·L + 2η + κ/L²`,
+
+whose `w`-free part is minimised at `L ≍ (κ/(A|x|n^{-1/2}))^{1/3}`, giving an additive constant
+
+`η₂ ≍ (|x|·n^{-1/2})^{2/3}·κ^{1/3} ≍ |x|^{2/3}·n^{-1/3}.`
+
+`sum_dyadic_strata_le` consumes the additive constant as `η·B·∑_{k<K}q^k` with `B = B₀n^{-1/3}`
+and `∑_k q^k = O(1)`, so the peeled bound is `O(n⁻¹)` **iff `η₂ = O(n^{-2/3})`**. The route is
+therefore short by exactly a factor `n^{-1/3}` at bounded `x`, and by `n^{-1/2}` if `|x|` is
+allowed to run out to the `n^{1/4}` that a fourth moment forces. *This is a shortfall, not a
+closure, and it is recorded rather than forced.*
+
+**The shortfall is not an artefact of Chebyshev.** Replacing `κ/L²` by `κ/L⁴` — a fourth moment
+of the second coordinate, i.e. **eight** moments of `X` — moves the optimum to
+`(|x|n^{-1/2})^{4/5} ≍ n^{-2/5}`, still short; and even a sub-Gaussian second coordinate gives
+only `|x|n^{-1/2}√(log n)`, still short of `n^{-2/3}`. **No moment hypothesis on the second
+coordinate repairs the deterministic-centre route**, because the term it has to beat is the
+*displacement of the centre itself*, `A·Lip·L`, which is linear in the truncation level.
+
+**What the Lipschitz estimate is actually worth — the wave-39 number.** Granted a rectangle
+(equivalently: conditional) bound `P(U ∈ I, V ∈ J) ≤ (A|I| + η₀)·P(V ∈ J)` valid for `J` of
+length `h`, partitioning `v`-space into cells of width `h` and applying
+`abs_sub_frozen_centre_le_of_surrogate_window` on each cell gives
+
+`P(|Hₙ − x| ≤ w) ≤ A·((12/5)w + 2·Lip·h) + η₀`,  `Lip ≍ |x|·n^{-1/2}`,
+
+and the ledger closes iff `A·Lip·h = O(n^{-2/3})`, i.e. **iff the rectangle bound holds down to
+`h ≲ n^{-1/6}`**. A rectangle bound at scale `h = O(1)` — the strength of a two-dimensional
+Berry–Esseen at rectangles — is *not* enough; what is needed is a two-dimensional **local**
+limit theorem, resolving the second coordinate at scale `n^{-1/6}`. Wave 38 said "a
+two-dimensional Lévy concentration bound"; this is the same brick with its required strength
+priced. (Note that a *perfect* conditional bound makes the Lipschitz estimate unnecessary
+altogether: conditionally on `V`, the centre `m(V, x)` is deterministic. The Lipschitz estimate
+is exactly the device that converts the conditional statement into a rectangle statement at a
+finite scale, and `n^{-1/6}` is that scale.)
+
+**Uniformity in the frozen value, and why the wave-37 truncation is what makes it possible.**
+`measure_pi_stratum_le`'s `hslice` demands a bound uniform over the frozen value `y`. Freezing
+coordinate `i` at `y` makes the second standardized coordinate
+`V(z) = a₁(y) + s·(second-coordinate root of the retained block)` with
+`a₁(y) = ((Y(y) − μ)² − σ²)/(σ²√(n+1))`, so `v₀ := a₁(y)` is the **only** choice for which the
+tail hypothesis `htail` is uniform in `y` — the deviation `V − v₀` is `y`-free. But the bound
+above then carries `|v₀| = |a₁(y)|`, which is unbounded in `y`, and it stays `O(1)` after
+multiplication by `|r|` **exactly when `|Y(y) − μ| = O(√n)`**. That is precisely what
+`abs_studentizedRootCDF_sub_truncAt_le` at `τ = √n` supplies: on the truncated law
+`|a₁(y)| ≤ (n + σ²)/(σ²√(n+1)) = O(√n)`, hence `|r||v₀| = O(1)`. So the truncation step is not
+only the moment device wave 37 used it as — **it is what makes `hslice`'s uniformity in the
+frozen value achievable at all**, and any route that drops it loses the uniformity, not just
+the moments. This obstruction is not recorded anywhere before wave 39. -/
+
+/-- **The window mass of the surrogate, from a marginal window bound and a tail bound.**
+
+With `U`, `V` the two standardized coordinates, `m₀` the implicit centre at any frozen `v₀`
+(`exists_surrogate_centre`), and `L` a truncation level for `|V − v₀|`:
+
+`P(|Hₙ(U, V) − x| ≤ w) ≤ 2A·((6/5)w + (36/25)|x||r|L(1/2 + 3|r|(L + 2|v₀|)/8)) + 2η + ρ`.
+
+Everything on the right is either free (`hwin` is the *marginal* window bound, uniform in the
+location, which `measure_pi_abs_root_insertNth_le` supplies for a root) or a Chebyshev tail
+(`htail`). The point of the statement is that it contains **no conditional law**: the centre it
+uses is deterministic, and the price of that is the middle term. See the section note for the
+exact ledger arithmetic, which this bound does *not* meet. -/
+theorem measure_abs_surrogate_window_le
+    {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsFiniteMeasure P]
+    {U V : Ω → ℝ} {r x w v₀ L A η ρ : ℝ} (hw : 0 ≤ w) (hL : 0 ≤ L)
+    (hwin : ∀ u w' : ℝ, 0 ≤ w' → (P {ω | |U ω - u| ≤ w'}).toReal ≤ 2 * A * w' + 2 * η)
+    (htail : (P {ω | L < |V ω - v₀|}).toReal ≤ ρ) :
+    (P {ω | |(U ω - U ω * V ω * r / 2 + U ω ^ 3 * r ^ 2 / 2
+        + 3 * U ω * V ω ^ 2 * r ^ 2 / 8) - x| ≤ w}).toReal
+      ≤ 2 * A * (6 / 5 * w
+            + 36 / 25 * |x| * |r| * L * (1 / 2 + 3 * |r| * (L + 2 * |v₀|) / 8))
+          + 2 * η + ρ := by
+  obtain ⟨m₀, -, hm₀⟩ := exists_surrogate_centre r v₀ x
+  have hK : (0:ℝ) ≤ 36 / 25 * |x| * |r| := by positivity
+  have hc : (0:ℝ) ≤ 3 * |r| / 8 := by positivity
+  have hd : (0:ℝ) ≤ 2 * |v₀| := by positivity
+  have hmono : ∀ t : ℝ, 0 ≤ t → t ≤ L →
+      36 / 25 * |x| * |r| * t * (1 / 2 + 3 * |r| * (t + 2 * |v₀|) / 8)
+        ≤ 36 / 25 * |x| * |r| * L * (1 / 2 + 3 * |r| * (L + 2 * |v₀|) / 8) := by
+    intro t ht htL
+    have e1 : (0:ℝ) ≤ 3 * |r| / 8 * (L ^ 2 - t ^ 2) :=
+      mul_nonneg hc (by nlinarith [ht, htL])
+    have e2 : (0:ℝ) ≤ 3 * |r| / 8 * (2 * |v₀|) * (L - t) :=
+      mul_nonneg (mul_nonneg hc hd) (by linarith)
+    have h1 : t * (1 / 2 + 3 * |r| * (t + 2 * |v₀|) / 8)
+        ≤ L * (1 / 2 + 3 * |r| * (L + 2 * |v₀|) / 8) := by nlinarith [e1, e2, htL]
+    calc 36 / 25 * |x| * |r| * t * (1 / 2 + 3 * |r| * (t + 2 * |v₀|) / 8)
+        = (36 / 25 * |x| * |r|) * (t * (1 / 2 + 3 * |r| * (t + 2 * |v₀|) / 8)) := by ring
+      _ ≤ (36 / 25 * |x| * |r|) * (L * (1 / 2 + 3 * |r| * (L + 2 * |v₀|) / 8)) :=
+          mul_le_mul_of_nonneg_left h1 hK
+      _ = 36 / 25 * |x| * |r| * L * (1 / 2 + 3 * |r| * (L + 2 * |v₀|) / 8) := by ring
+  set W : ℝ := 6 / 5 * w
+      + 36 / 25 * |x| * |r| * L * (1 / 2 + 3 * |r| * (L + 2 * |v₀|) / 8) with hW
+  have hW0 : 0 ≤ W := by rw [hW]; positivity
+  have hsub : {ω | |(U ω - U ω * V ω * r / 2 + U ω ^ 3 * r ^ 2 / 2
+        + 3 * U ω * V ω ^ 2 * r ^ 2 / 8) - x| ≤ w}
+      ⊆ {ω | |U ω - m₀| ≤ W} ∪ {ω | L < |V ω - v₀|} := by
+    intro ω hω
+    by_cases hv : L < |V ω - v₀|
+    · exact Or.inr hv
+    · refine Or.inl ?_
+      push_neg at hv
+      obtain ⟨m, hmb, hm⟩ := exists_surrogate_centre r (V ω) x
+      have hkey := abs_sub_frozen_centre_le_of_surrogate_window (v₀ := v₀) (w := w)
+        (u := U ω) hm hmb hm₀ hω
+      refine hkey.trans ?_
+      rw [hW]
+      have := hmono |V ω - v₀| (abs_nonneg _) hv
+      linarith
+  have hfin : ∀ S : Set Ω, P S ≠ ⊤ := fun S => measure_ne_top P S
+  have h1 : P {ω | |(U ω - U ω * V ω * r / 2 + U ω ^ 3 * r ^ 2 / 2
+        + 3 * U ω * V ω ^ 2 * r ^ 2 / 8) - x| ≤ w}
+      ≤ P {ω | |U ω - m₀| ≤ W} + P {ω | L < |V ω - v₀|} :=
+    (measure_mono hsub).trans (measure_union_le _ _)
+  have h2 := ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨hfin _, hfin _⟩) h1
+  rw [ENNReal.toReal_add (hfin _) (hfin _)] at h2
+  have h3 := hwin m₀ W hW0
+  linarith
+
+/-- **The same bound, on `deltaSurrogate` itself.** The two standardized coordinates of
+`deltaSurrogate σ r` are `w₀/σ` and `w₁/σ²`, so the previous theorem applies verbatim to the
+window event of `deltaSurrogate σ r ∘ G` for any `ℝ²`-valued statistic `G`. This is the shape
+`measure_pi_stratum_le`'s `hslice` asks for, with `G` the frozen-coordinate bivariate root; see
+the section note for why the constants it produces do not yet meet the ledger. -/
+theorem measure_abs_deltaSurrogate_sub_le_of_window
+    {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsFiniteMeasure P]
+    {G : Ω → EuclideanSpace ℝ (Fin 2)} {σ r x w v₀ L A η ρ : ℝ} (hw : 0 ≤ w) (hL : 0 ≤ L)
+    (hwin : ∀ u w' : ℝ, 0 ≤ w' → (P {ω | |G ω 0 / σ - u| ≤ w'}).toReal ≤ 2 * A * w' + 2 * η)
+    (htail : (P {ω | L < |G ω 1 / σ ^ 2 - v₀|}).toReal ≤ ρ) :
+    (P {ω | |deltaSurrogate σ r (G ω) - x| ≤ w}).toReal
+      ≤ 2 * A * (6 / 5 * w
+            + 36 / 25 * |x| * |r| * L * (1 / 2 + 3 * |r| * (L + 2 * |v₀|) / 8))
+          + 2 * η + ρ := by
+  have hset : {ω | |deltaSurrogate σ r (G ω) - x| ≤ w}
+      = {ω | |((G ω 0 / σ) - (G ω 0 / σ) * (G ω 1 / σ ^ 2) * r / 2
+          + (G ω 0 / σ) ^ 3 * r ^ 2 / 2
+          + 3 * (G ω 0 / σ) * (G ω 1 / σ ^ 2) ^ 2 * r ^ 2 / 8) - x| ≤ w} := rfl
+  rw [hset]
+  exact measure_abs_surrogate_window_le P (U := fun ω => G ω 0 / σ)
+    (V := fun ω => G ω 1 / σ ^ 2) hw hL hwin htail
+
 /-- **The exact studentized statistic, on the standardized scale.** The region of
 `studentizedRootCDF_eq_vecRootLaw` is cut out by `w₀/√(σ² + w₁r − w₀²r²)`, and that is exactly
 `u(1 + (vr − u²r²))^{-1/2}` with `u = w₀/σ`, `v = w₁/σ²` — the argument of the Taylor core. The
