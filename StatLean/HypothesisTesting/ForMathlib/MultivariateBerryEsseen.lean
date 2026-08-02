@@ -5138,28 +5138,40 @@ private lemma tiltPoly_fubini {τ : Measure (EuclideanSpace ℝ (Fin k))}
     ring
   simpa using hinner
 
-/-- **The Gaussian-smoothed Lindeberg swap step.** If the test function is first mollified by a
-Gaussian of scale `σ > 0`, then replacing a summand of law `τ` (centred, identity covariance,
-finite third moment) by *any* other such law costs at most `C (c/σ)³ β_τ` — with **no third
-derivative of the test function**: the three derivatives are absorbed by the Gaussian kernel
-through the Cameron–Martin formula. This is the ingredient that replaces the factor `ε⁻³` of
-the mollifier route by `σ⁻³`, and hence improves the exponent of the elementary
-Berry–Esseen rate. -/
-private lemma abs_integral_gaussian_smoothed_sub_common_le {C : ℝ}
-    (hC : ∀ s : ℝ, 0 ≤ s → (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ C * s ^ 3)
+/-- **The tilt representation of the Gaussian-smoothed step (wave 41).** *Exact*, and with no
+moment hypothesis beyond the two the Cameron–Martin polynomial consumes.
+
+Averaging `F(v + σz + cy)` over `y ∼ τ` and `z ∼ γ` and subtracting the number
+`∫ F(v + σz)(1 + (c/σ)²(‖z‖² − k)/2) dγ` — which by `tiltPoly_fubini` depends on `τ` through
+its first two moments only, hence is the *same* for every centred, identity-covariance law —
+leaves exactly the `τ`-average of the Cameron–Martin **tilt remainder** at shift `(c/σ)y`.
+
+Waves 32–40 recorded this identity as "established inside
+`abs_integral_gaussian_smoothed_sub_common_le` but not exported"; it is the first of the three
+bookkeeping pieces the tail brick `abs_integral_gaussian_smoothed_swap_localised_le` needs, and
+it is what lets that brick apply the *localised* pointwise estimate
+`abs_integral_shift_vecTiltRemainder_localised_le` under the `τ`-average, rather than the
+unlocalised `L¹` bound. The integrability of the `y`-integrand is returned alongside, because
+every consumer needs it to move an absolute value or a sum through the `τ`-integral.
+
+`abs_integral_gaussian_smoothed_sub_common_le` is now a one-line corollary: bound the
+remainder by its `L¹` norm `C‖(c/σ)y‖³` and integrate. -/
+private lemma integral_gaussian_smoothed_sub_common_eq
     {τ : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure τ]
     (hmean : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂τ) = 0)
     (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂τ) = ⟪u, v⟫_ℝ)
     (hτ1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) τ)
     (hτ2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) τ)
-    (hτ3 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 3) τ)
     (hdim : (∫ y, ‖y‖ ^ 2 ∂τ) = (k : ℝ))
     {F : EuclideanSpace ℝ (Fin k) → ℝ} (hF : Continuous F) (hFb : ∀ x, |F x| ≤ 1)
     (v : EuclideanSpace ℝ (Fin k)) {σ c : ℝ} (hσ : 0 < σ) (hc : 0 ≤ c) :
-    |(∫ y, (∫ z, F (v + σ • z + c • y) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂τ)
-        - ∫ z, F (v + σ • z) * (1 + (c / σ) ^ 2 * (‖z‖ ^ 2 - (k : ℝ)) / 2)
-            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
-      ≤ C * (c / σ) ^ 3 * ∫ y, ‖y‖ ^ 3 ∂τ := by
+    Integrable (fun y => ∫ z, F (v + σ • z) * vecTiltRemainder ((c / σ) • y) z
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) τ
+      ∧ (∫ y, (∫ z, F (v + σ • z + c • y) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂τ)
+          - ∫ z, F (v + σ • z) * (1 + (c / σ) ^ 2 * (‖z‖ ^ 2 - (k : ℝ)) / 2)
+              ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))
+        = ∫ y, (∫ z, F (v + σ • z) * vecTiltRemainder ((c / σ) • y) z
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂τ := by
   classical
   set lam : ℝ := c / σ with hlamdef
   have hlam : (0 : ℝ) ≤ lam := div_nonneg hc hσ.le
@@ -5240,33 +5252,76 @@ private lemma abs_integral_gaussian_smoothed_sub_common_le {C : ℝ}
     refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
     dsimp only
     rw [hshift y, hsplit y]
-  rw [hsum, hQval, hGdef]
-  rw [add_sub_cancel_left]
+  refine ⟨by simpa only [hGdef] using hRint, ?_⟩
+  rw [hsum, hQval, hGdef, add_sub_cancel_left]
+
+/-- **The Gaussian-smoothed Lindeberg swap step.** If the test function is first mollified by a
+Gaussian of scale `σ > 0`, then replacing a summand of law `τ` (centred, identity covariance,
+finite third moment) by *any* other such law costs at most `C (c/σ)³ β_τ` — with **no third
+derivative of the test function**: the three derivatives are absorbed by the Gaussian kernel
+through the Cameron–Martin formula. This is the ingredient that replaces the factor `ε⁻³` of
+the mollifier route by `σ⁻³`, and hence improves the exponent of the elementary
+Berry–Esseen rate.
+
+Wave 41: the exact part of the argument is now
+`integral_gaussian_smoothed_sub_common_eq`, and what is left here is the third moment. -/
+private lemma abs_integral_gaussian_smoothed_sub_common_le {C : ℝ}
+    (hC : ∀ s : ℝ, 0 ≤ s → (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ C * s ^ 3)
+    {τ : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure τ]
+    (hmean : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂τ) = 0)
+    (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂τ) = ⟪u, v⟫_ℝ)
+    (hτ1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) τ)
+    (hτ2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) τ)
+    (hτ3 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 3) τ)
+    (hdim : (∫ y, ‖y‖ ^ 2 ∂τ) = (k : ℝ))
+    {F : EuclideanSpace ℝ (Fin k) → ℝ} (hF : Continuous F) (hFb : ∀ x, |F x| ≤ 1)
+    (v : EuclideanSpace ℝ (Fin k)) {σ c : ℝ} (hσ : 0 < σ) (hc : 0 ≤ c) :
+    |(∫ y, (∫ z, F (v + σ • z + c • y) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂τ)
+        - ∫ z, F (v + σ • z) * (1 + (c / σ) ^ 2 * (‖z‖ ^ 2 - (k : ℝ)) / 2)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+      ≤ C * (c / σ) ^ 3 * ∫ y, ‖y‖ ^ 3 ∂τ := by
+  classical
+  obtain ⟨hRint, heq⟩ := integral_gaussian_smoothed_sub_common_eq hmean hcov hτ1 hτ2 hdim
+    hF hFb v hσ hc
+  rw [heq]
+  have hlam : (0 : ℝ) ≤ c / σ := div_nonneg hc hσ.le
+  have hGcont : Continuous (fun z : EuclideanSpace ℝ (Fin k) => F (v + σ • z)) := by fun_prop
+  have hGb : ∀ x : EuclideanSpace ℝ (Fin k), |F (v + σ • x)| ≤ 1 := fun x => hFb _
+  have hGRint : ∀ a : EuclideanSpace ℝ (Fin k),
+      Integrable (fun z => F (v + σ • z) * vecTiltRemainder a z)
+        (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    intro a
+    refine ((integrable_mul_exp_tilt_gauss hGcont hGb a).sub
+      (integrable_mul_tiltPoly_gauss hGcont hGb a)).congr
+      (Filter.Eventually.of_forall fun z => ?_)
+    simp only [Pi.sub_apply, vecTiltRemainder]
+    ring
   -- the remainder bound
   have hbnd : ∀ y : EuclideanSpace ℝ (Fin k),
-      |∫ z, G z * vecTiltRemainder (lam • y) z
-          ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))| ≤ C * lam ^ 3 * ‖y‖ ^ 3 := by
+      |∫ z, F (v + σ • z) * vecTiltRemainder ((c / σ) • y) z
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))| ≤ C * (c / σ) ^ 3 * ‖y‖ ^ 3 := by
     intro y
-    calc |∫ z, G z * vecTiltRemainder (lam • y) z
+    calc |∫ z, F (v + σ • z) * vecTiltRemainder ((c / σ) • y) z
             ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
-        ≤ ∫ z, |G z * vecTiltRemainder (lam • y) z|
+        ≤ ∫ z, |F (v + σ • z) * vecTiltRemainder ((c / σ) • y) z|
             ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := abs_integral_le_integral_abs
-      _ ≤ ∫ z, |vecTiltRemainder (lam • y) z|
+      _ ≤ ∫ z, |vecTiltRemainder ((c / σ) • y) z|
             ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
           refine integral_mono (hGRint _).abs (integrable_vecTiltRemainder _).abs fun z => ?_
           rw [abs_mul]
-          nlinarith [hGb z, abs_nonneg (G z), abs_nonneg (vecTiltRemainder (lam • y) z)]
-      _ ≤ C * ‖lam • y‖ ^ 3 := integral_abs_vecTiltRemainder_le hC _
-      _ = C * lam ^ 3 * ‖y‖ ^ 3 := by
+          nlinarith [hGb z, abs_nonneg (F (v + σ • z)),
+            abs_nonneg (vecTiltRemainder ((c / σ) • y) z)]
+      _ ≤ C * ‖(c / σ) • y‖ ^ 3 := integral_abs_vecTiltRemainder_le hC _
+      _ = C * (c / σ) ^ 3 * ‖y‖ ^ 3 := by
           rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hlam, mul_pow]
           ring
-  calc |∫ y, (∫ z, G z * vecTiltRemainder (lam • y) z
+  calc |∫ y, (∫ z, F (v + σ • z) * vecTiltRemainder ((c / σ) • y) z
           ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂τ|
-      ≤ ∫ y, |∫ z, G z * vecTiltRemainder (lam • y) z
+      ≤ ∫ y, |∫ z, F (v + σ • z) * vecTiltRemainder ((c / σ) • y) z
           ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))| ∂τ := abs_integral_le_integral_abs
-    _ ≤ ∫ y, C * lam ^ 3 * ‖y‖ ^ 3 ∂τ :=
+    _ ≤ ∫ y, C * (c / σ) ^ 3 * ‖y‖ ^ 3 ∂τ :=
         integral_mono hRint.abs (hτ3.const_mul _) hbnd
-    _ = C * lam ^ 3 * ∫ y, ‖y‖ ^ 3 ∂τ := integral_const_mul _ _
+    _ = C * (c / σ) ^ 3 * ∫ y, ‖y‖ ^ 3 ∂τ := integral_const_mul _ _
 
 /-- **Two-law form of the Gaussian-smoothed swap.** Both laws are compared with the *same*
 number — the Cameron–Martin polynomial part, which by `tiltPoly_fubini` depends only on the
