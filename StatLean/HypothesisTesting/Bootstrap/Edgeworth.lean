@@ -6657,6 +6657,282 @@ lemma leakage_ledger_four_gt {n : ℕ} (hn : 2 ≤ n) :
   rw [leakage_ledger_exponent hn0, inv_mul_sqrt_eq_rpow hn0]
   exact Real.rpow_lt_rpow_of_exponent_lt h1 (by norm_num)
 
+
+/-! ### The middle range `n^{1/6} ≤ |θ| ≤ c₀√n`: which of the two routes survives
+
+**WAVE 43 — THE GAP WAVE 42 NAMED IS COVERED BY THE CERTIFICATE AND NOT BY THE EXPANSION, AND
+WHAT STOPS THE CERTIFICATE TODAY IS ITS *BAND GEOMETRY*, NOT ITS LEDGER.** Wave 42 left the
+range `n^{a} ≤ |θ| ≤ c₀√n` covered by nothing and offered two candidate routes. Both are run to
+the end here, on paper and in the arithmetic below. One survives.
+
+**Route (a) — extend the certificate's band downward. THE LEDGER SURVIVES; THE BAND DOES NOT.**
+
+* *The ledger, re-run at `|θ| ≍ n^{b}` for arbitrary `b ≥ 0`.* The gain of one integration by
+  parts is `σ/(M|θ|) + (27/16)Mr²/(σ|θ|)`, dominated by the second term; at `M = n^{5/8}`,
+  `r² = n⁻¹` and `|θ| ≥ c₀n^{b}` that is `O(n^{-3/8 − b})` (`bulk_gain_phase_le_band`, of which
+  `bulk_gain_phase_le` is the case `b = 1/2`). Against the prefactor `M² = n^{5/4}` and the
+  bad-set area — kept at the conservative `≍ n` of the current construction — the ledger returns
+  `n^{9/4 − N(3/8 + b)}` (`leakage_ledger_band_exponent`, of which `leakage_ledger_exponent` is
+  again `b = 1/2`). The requirement `≤ n^{-3/2}` is `N ≥ (15/4)/(3/8 + b)`: at `b = 1/2` that is
+  `30/7`, reproducing wave 31's `N = 5` and its minimality; at `b = 0` it is `10`. **So `N = 10`
+  clears the whole band at once**, at the same bulk radius, for every `b ≥ 0`
+  (`leakage_ledger_ten_le`). The bulk radius itself does not move: `tail_ledger_exponent` forces
+  `M ≥ n^{5/8}` from input (C) alone, which has no `θ` in it, and larger `M` only worsens the
+  gain. **The number of integrations by parts is therefore finite and explicit at every band
+  exponent, and the ledger is not what stops the descent.**
+* *What does stop it.* The band radius `R` is squeezed between two requirements:
+  1. `ε₀√n ≤ R` — the consumer `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` needs
+     `‖φ_{ρₙ}(t)‖ ≤ κ` for every `‖t‖ ≥ R`, and the only such bound in the file is `κ = cⁿ`
+     from `exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt` through
+     `norm_charFun_vecRootLaw_le_pow`, which starts at the Cramér radius `ε₀√n`;
+  2. `2σR ≤ |θ|` — on the bad set `‖t₀ + s‖ < R` with `t₀ = (θ/σ)e₀` the total phase's
+     derivative is at least `(5/6)|θ|/σ + |θ|/σ − R` (`deltaSurrogate_slope_ge` and the band),
+     and that is `≥ (4/3)|θ|/σ`, the figure the five — now ten — integrations by parts spend,
+     exactly when `R ≤ |θ|/(2σ)`.
+  Together they force `|θ| ≥ 2σε₀√n`: `band_radius_incompatible`. **The `c₀√n` in
+  `exists_fourierCertificate_deltaSurrogate` is therefore not a convenience and not an artefact
+  of the ledger — it is `2σε₀`, and the certificate as stated cannot be run anywhere below order
+  `√n`.** No wave before this one identified which of the certificate's two ingredients carries
+  the `√n`.
+* *The repair, and it is one named input rather than a theory.* Requirement 1 asks for far more
+  than the transfer inequality uses. `norm_integral_fourierSynth_le_of_band` prices the good
+  frequencies by `Γκ`, and `Γ` is polynomial in `n` and `|θ|`
+  (`exists_integral_norm_fourier_bulkMultiplier_le`), so **any** `κ` smaller than a fixed
+  negative power of `n` serves; `cⁿ` is exponential overkill. In the bulk `‖t‖ ≤ ε₁√n` the
+  root's transform has Gaussian decay, `‖φ_{ρₙ}(t)‖ ≤ e^{−λ‖t‖²/4}`, and that is
+  `norm_charFun_vecRootLaw_le_exp_neg_sq` below — proved from `charFun_vecRootLaw` and the
+  one-dimensional Gaussian majorant `norm_charFun_smul_le_exp_neg_sq` restricted to the ray
+  through `t`, with no two-dimensional argument anywhere, exactly as the wave-12 note predicted
+  for the bivariate expansion. Taking `R = K√(log n)` then gives
+  `κ = max(e^{−λK²(log n)/4}, cⁿ)`, a negative power of `n` of any prescribed order, while
+  requirement 2 relaxes to `|θ| ≥ 2σK√(log n)` — below `n^{a}` for **every** `a > 0`. The
+  bad-set area drops from `≍ n` to `≍ log n` at the same time, which only helps the ledger.
+* *What the repair costs, itemised.* (i) input (B) — the non-stationary-phase estimate, a
+  `sorry` in this file since wave 31 — has to be restated at `R = K√(log n)` and `N = 10`
+  instead of `ε₀√n/(2σ)` and `N = 5`; since it is a `sorry` either way this is a statement
+  amendment, and the ledger above is the check that the amended statement is the true one.
+  (ii) the direction-uniform moment hypotheses of `norm_charFun_vecRootLaw_le_exp_neg_sq` have
+  to be discharged for `studentPair F ∘ truncAt`; they are a variance floor `λ‖t‖² ≤ ∫⟪x,t⟫²`, a
+  variance ceiling and a third absolute moment, i.e. the nonsingular covariance of `(X, X²)`
+  that the wave-12 note already names, available under `hFac`. (iii) inputs (A) and (C) are
+  untouched — neither mentions `θ` or `R`. **No new analytic theory appears in that list.**
+
+**Route (b) — individual smallness. IT CANNOT REACH THE TOP OF THE MIDDLE RANGE, AND NO MOMENT
+HYPOTHESIS MAKES IT.**
+
+* The approximant half is free and should be recorded as such:
+  `φ_{q_n}(θ) = e^{−θ²/2}(1 + iγ(2θ³ − 3θ)r/6)` is smaller than any power of `n` once
+  `|θ| ≥ n^{a}`, since `|θ|³r ≤ c₀³n` on the whole middle range. So the middle range is a
+  statement about `‖φ_{ρₙ∘Hₙ⁻¹}(θ)‖` alone, with no comparison in it.
+* Grading the perturbation character to order `m` leaves
+  `‖φ‖ ≤ Σ_{k<m}(|θ|r)^k C_k‖φ(rθ/σ)‖^{n−2k} + (|θ|r)^m E|q|^m/m!`. The damped slots are
+  harmless throughout `|θ| ≥ n^{a}` — that is exactly what wave 42's two new damped inputs
+  (`norm_multiCharFun_vecRootLaw_damped_le`,
+  `norm_multiCharFun_vecRootLaw_two_sub_damped_le`) buy. The remainder is the undamped one
+  (wave 42's item 4, shown there not to be repairable at any truncation level) and equals
+  `n^{m(b − 1/2)}` at `|θ| ≍ n^{b}`, which meets `n⁻¹` exactly when `b ≤ 1/2 − 1/m`
+  (`graded_order_ledger`). Coarser grading — fewer terms, since only smallness is wanted here —
+  makes this **worse**, not better: `m` appears only in `1/2 − 1/m`.
+* The grading order is capped by the moment hypothesis. `E|q|^m` is an `m`-th moment of a
+  quadratic in the coordinates, so order `m` costs `2m` moments of `X`, and `hF8` admits
+  `m = 4`. At `m = 4` the reach is `b ≤ 1/4`, and `graded_order_four_gt` is the witness that
+  any `b > 1/4` overshoots at every `n ≥ 2`. **Route (b) covers `n^{1/6} ≤ |θ| ≤ n^{1/4}` and no
+  more**, leaving `n^{1/4} ≤ |θ| ≤ c₀√n` open. And since `1/2 − 1/m < 1/2` for every `m`, no
+  moment hypothesis whatsoever lets route (b) meet the certificate's band: the shortfall is not
+  a matter of assuming more.
+
+**Verdict: route (a), amended as above; route (b) is executed here only as far as the arithmetic
+that refutes it.** The residue of the middle range is therefore items (i) and (ii) of the repair
+list, and it is strictly smaller than the residue wave 42 recorded — the middle range is no
+longer covered by nothing. -/
+
+/-- **The leakage ledger at a general band exponent.** With `|θ| ≍ n^{b}` the gain per part is
+`n^{-3/8 − b}`; against the bad-set area `≍ n` and the prefactor `M² = n^{5/4}` the ledger
+returns `n^{9/4 − N(3/8 + b)}`. `leakage_ledger_exponent` is the case `b = 1/2`. -/
+lemma leakage_ledger_band_exponent {n : ℕ} (hn : 0 < n) (b : ℝ) (N : ℕ) :
+    (n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - b)) ^ N
+      = (n : ℝ) ^ ((9 : ℝ) / 4 - (3 / 8 + b) * N) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hp : bulkRadius n ^ 2 = (n : ℝ) ^ ((5 : ℝ) / 4) := by rw [bulkRadius_pow]; norm_num
+  have hq : ((n : ℝ) ^ (-(3 : ℝ) / 8 - b)) ^ N = (n : ℝ) ^ ((-(3 : ℝ) / 8 - b) * N) := by
+    rw [← Real.rpow_natCast ((n : ℝ) ^ (-(3 : ℝ) / 8 - b)) N, ← Real.rpow_mul h0.le]
+  calc (n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - b)) ^ N
+      = (n : ℝ) ^ (1 : ℝ) * (n : ℝ) ^ ((5 : ℝ) / 4) * (n : ℝ) ^ ((-(3 : ℝ) / 8 - b) * N) := by
+        rw [hp, hq, Real.rpow_one]
+    _ = (n : ℝ) ^ ((1 : ℝ) + (5 : ℝ) / 4 + (-(3 : ℝ) / 8 - b) * N) := by
+        rw [← Real.rpow_add h0, ← Real.rpow_add h0]
+    _ = (n : ℝ) ^ ((9 : ℝ) / 4 - (3 / 8 + b) * N) := by ring_nf
+
+/-- **Ten integrations by parts clear the leakage at every band exponent `b ≥ 0`**, at the same
+bulk radius `n^{5/8}` and with the bad-set area left at the conservative `≍ n`. The ledger is
+therefore not what confines the certificate to `|θ| ≍ √n`; see `band_radius_incompatible`. -/
+lemma leakage_ledger_ten_le {b : ℝ} (hb : 0 ≤ b) {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - b)) ^ 10
+      ≤ ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ := by
+  have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  rw [leakage_ledger_band_exponent hn b 10, inv_mul_sqrt_eq_rpow hn]
+  refine Real.rpow_le_rpow_of_exponent_le h1 ?_
+  push_cast
+  linarith
+
+/-- **The gain of one integration by parts on a general band.** `bulk_gain_phase_le` with
+`c₀√n` replaced by `c₀n^{b}`; the exponent `-7/8` becomes `-3/8 − b`. -/
+lemma bulk_gain_phase_le_band {n : ℕ} (hn : 0 < n) {c₀ b θ : ℝ} (hc₀ : 0 < c₀)
+    (hθ : c₀ * (n : ℝ) ^ b ≤ |θ|) :
+    bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / |θ| ≤ c₀⁻¹ * (n : ℝ) ^ (-(3 : ℝ) / 8 - b) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsq : ((Real.sqrt (n : ℝ))⁻¹) ^ 2 = ((n : ℝ))⁻¹ := by
+    rw [inv_pow, Real.sq_sqrt h0.le]
+  have hbpos : (0 : ℝ) < (n : ℝ) ^ b := Real.rpow_pos_of_pos h0 b
+  have hMnn : (0 : ℝ) ≤ bulkRadius n * ((n : ℝ))⁻¹ := by
+    have := bulkRadius_pos hn; positivity
+  have hkey : (n : ℝ) ^ ((5 : ℝ) / 8) * ((n : ℝ))⁻¹ / (n : ℝ) ^ b
+      = (n : ℝ) ^ (-(3 : ℝ) / 8 - b) := by
+    rw [← Real.rpow_neg_one (n : ℝ), ← Real.rpow_add h0, ← Real.rpow_sub h0]
+    norm_num
+  calc bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / |θ|
+      = bulkRadius n * ((n : ℝ))⁻¹ / |θ| := by rw [hsq]
+    _ ≤ bulkRadius n * ((n : ℝ))⁻¹ / (c₀ * (n : ℝ) ^ b) := by gcongr
+    _ = c₀⁻¹ * (n : ℝ) ^ (-(3 : ℝ) / 8 - b) := by
+        rw [bulkRadius, div_mul_eq_div_div_swap, hkey, div_eq_inv_mul]
+
+/-- **The certificate's band geometry, and why it carries the `√n`.** The band radius `R` must
+be at least the Cramér radius `ε₀√n` — that is where the only available bound on `‖φ_{ρₙ}‖` off
+the ball begins — and at most `|θ|/(2σ)`, or the total phase on the bad set is not non-stationary
+enough for the integrations by parts. The two are compatible only at `|θ| ≥ 2σε₀√n`. This, and
+not the exponent ledger, is what confines `exists_fourierCertificate_deltaSurrogate` to the
+outer range; see the section note for the repair. -/
+lemma band_radius_incompatible {ε₀ σ R θ : ℝ} (hσ : 0 < σ) (hε₀ : 0 < ε₀) {n : ℕ}
+    (hR : ε₀ * Real.sqrt (n : ℝ) ≤ R) (hband : 2 * σ * R ≤ |θ|)
+    (hθ : |θ| < 2 * σ * ε₀ * Real.sqrt (n : ℝ)) : False := by
+  have h1 : 2 * σ * (ε₀ * Real.sqrt (n : ℝ)) ≤ 2 * σ * R :=
+    mul_le_mul_of_nonneg_left hR (by positivity)
+  nlinarith
+
+/-- **Route (b)'s ledger.** The undamped graded remainder at grading order `m` is `(|θ|r)^m`,
+i.e. `n^{m(b − 1/2)}` on `|θ| ≤ n^{b}`; it meets the target `n⁻¹` exactly when
+`b ≤ 1/2 − 1/m`. -/
+lemma graded_order_ledger {m : ℕ} (hm : 0 < m) {n : ℕ} (hn : 0 < n) {b : ℝ}
+    (hb : b ≤ 1 / 2 - 1 / (m : ℝ)) :
+    ((n : ℝ) ^ (b - 1 / 2)) ^ m ≤ ((n : ℝ))⁻¹ := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hm0 : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hm
+  rw [← Real.rpow_natCast ((n : ℝ) ^ (b - 1 / 2)) m, ← Real.rpow_mul h0.le,
+    ← Real.rpow_neg_one (n : ℝ)]
+  refine Real.rpow_le_rpow_of_exponent_le h1 ?_
+  have hkey : (b - 1 / 2) * (m : ℝ) ≤ -1 := by
+    have h := mul_le_mul_of_nonneg_right hb hm0.le
+    have hcancel : (1 / 2 - 1 / (m : ℝ)) * (m : ℝ) = 1 / 2 * (m : ℝ) - 1 := by
+      field_simp
+    nlinarith [h, hcancel]
+  linarith
+
+/-- **And eight moments cap the grading at `m = 4`, hence route (b) at `b = 1/4`.** Any band
+exponent past `1/4` overshoots `n⁻¹` at every `n ≥ 2`, so route (b) leaves
+`n^{1/4} ≤ |θ| ≤ c₀√n` open however the constants are chosen. -/
+lemma graded_order_four_gt {b : ℝ} (hb : (1 : ℝ) / 4 < b) {n : ℕ} (hn : 2 ≤ n) :
+    ((n : ℝ))⁻¹ < ((n : ℝ) ^ (b - 1 / 2)) ^ 4 := by
+  have hn0 : 0 < n := lt_of_lt_of_le (by norm_num) hn
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn0
+  have h1 : (1 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_natCast ((n : ℝ) ^ (b - 1 / 2)) 4, ← Real.rpow_mul h0.le,
+    ← Real.rpow_neg_one (n : ℝ)]
+  refine Real.rpow_lt_rpow_of_exponent_lt h1 ?_
+  push_cast
+  linarith
+
+section MiddleRangeBulk
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+
+/-- **The vector root's transform decays like a Gaussian in the bulk.** For `‖t‖ ≤ ε₁√n`,
+`‖φ_{ρₙ}(t)‖ ≤ e^{−λ‖t‖²/4}` — the input requirement 1 of the certificate's band geometry
+really needs, in place of the exponentially stronger `cⁿ` that is available only past the
+Cramér radius `ε₀√n` and that is what forces the band down to the outer range.
+
+The proof is the wave-12 observation, used once more: the restriction of `φ` to the ray through
+`t` *is* the characteristic function of a one-dimensional projected law, so
+`norm_charFun_smul_le_exp_neg_sq` applies to it verbatim at the unit vector `e = t/‖t‖` and
+scale `s = ‖t‖/√n`, and `charFun_vecRootLaw` raises the result to the `n`-th power, where
+`n s² = ‖t‖²` collapses the `n`. **No two-dimensional argument occurs.**
+
+The three moment hypotheses are direction-uniform and are exactly the nondegeneracy the wave-12
+note records: a variance floor `λ‖t‖² ≤ ∫⟪x,t⟫²` (this is where a nonsingular covariance of
+`(X, X²)` is spent), a variance ceiling `V`, and a third absolute moment `R`. `ε₁` is any radius
+meeting the two window conditions of the majorant, `Vε₁² ≤ 2` and `Rε₁ ≤ 3λ/2`; discharging the
+three for `studentPair F ∘ truncAt` is item (ii) of the repair list in the section note and is
+not done here. -/
+theorem norm_charFun_vecRootLaw_le_exp_neg_sq (F : Measure ℝ) [IsProbabilityMeasure F]
+    {Z : ℝ → E} (hZ : Measurable Z) {lam V R ε₁ : ℝ} (hlam : 0 < lam) (hε₁ : 0 ≤ ε₁)
+    (hint1 : ∀ t : E, Integrable (fun x : E => ⟪x, t⟫) (F.map Z))
+    (hint2 : ∀ t : E, Integrable (fun x : E => ⟪x, t⟫ ^ 2) (F.map Z))
+    (hint3 : ∀ t : E, Integrable (fun x : E => |⟪x, t⟫| ^ 3) (F.map Z))
+    (hmean : ∀ t : E, ∫ x, ⟪x, t⟫ ∂(F.map Z) = 0)
+    (hvlow : ∀ t : E, lam * ‖t‖ ^ 2 ≤ ∫ x, ⟪x, t⟫ ^ 2 ∂(F.map Z))
+    (hvhigh : ∀ t : E, (∫ x, ⟪x, t⟫ ^ 2 ∂(F.map Z)) ≤ V * ‖t‖ ^ 2)
+    (hthird : ∀ t : E, (∫ x, |⟪x, t⟫| ^ 3 ∂(F.map Z)) ≤ R * ‖t‖ ^ 3)
+    (hwin2 : V * ε₁ ^ 2 ≤ 2) (hwin3 : R * ε₁ ≤ 3 * lam / 2)
+    {n : ℕ} (hn : 0 < n) {t : E} (ht : ‖t‖ ≤ ε₁ * Real.sqrt (n : ℝ)) :
+    ‖charFun (vecRootLaw F Z n) t‖ ≤ Real.exp (-(lam * ‖t‖ ^ 2 / 4)) := by
+  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
+  haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
+  have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hn0
+  rcases eq_or_ne t 0 with rfl | htne
+  · simp
+  have htp : (0 : ℝ) < ‖t‖ := norm_pos_iff.2 htne
+  set e : E := ‖t‖⁻¹ • t with hedef
+  set s : ℝ := ‖t‖ / Real.sqrt (n : ℝ) with hsdef
+  have hne : ‖e‖ = 1 := by
+    rw [hedef, norm_smul, norm_inv, Real.norm_eq_abs, abs_of_pos htp,
+      inv_mul_cancel₀ (ne_of_gt htp)]
+  have hsmul : s • e = ((Real.sqrt (n : ℝ))⁻¹ : ℝ) • t := by
+    rw [hedef, hsdef, smul_smul, div_mul_eq_mul_div, mul_inv_cancel₀ (ne_of_gt htp), one_div]
+  set v : ℝ := ∫ x, ⟪x, e⟫ ^ 2 ∂(F.map Z) with hvdef
+  have hvl : lam ≤ v := by
+    have := hvlow e; rw [hne] at this; simpa using this
+  have hvh : v ≤ V := by
+    have := hvhigh e; rw [hne] at this; simpa using this
+  have hsnn : 0 ≤ s := by rw [hsdef]; positivity
+  have hsle : s ≤ ε₁ := by rw [hsdef, div_le_iff₀ hsn]; linarith [ht]
+  have hVpos : 0 < V := lt_of_lt_of_le hlam (le_trans hvl hvh)
+  have hs2 : v * s ^ 2 ≤ 2 := by
+    have hsq : s ^ 2 ≤ ε₁ ^ 2 := by nlinarith [hsle, hsnn]
+    have h1 : v * s ^ 2 ≤ V * s ^ 2 := mul_le_mul_of_nonneg_right hvh (sq_nonneg s)
+    have h2 : V * s ^ 2 ≤ V * ε₁ ^ 2 := mul_le_mul_of_nonneg_left hsq hVpos.le
+    linarith
+  have hs3 : (∫ x, |⟪x, e⟫| ^ 3 ∂(F.map Z)) * |s| ≤ 3 * v / 2 := by
+    have h3 := hthird e
+    rw [hne] at h3
+    have hR3 : (∫ x, |⟪x, e⟫| ^ 3 ∂(F.map Z)) ≤ R := by simpa using h3
+    have habs : |s| = s := abs_of_nonneg hsnn
+    have hRnn : (0 : ℝ) ≤ R := le_trans (by positivity) hR3
+    calc (∫ x, |⟪x, e⟫| ^ 3 ∂(F.map Z)) * |s| ≤ R * s := by
+          rw [habs]; exact mul_le_mul_of_nonneg_right hR3 hsnn
+      _ ≤ R * ε₁ := mul_le_mul_of_nonneg_left hsle hRnn
+      _ ≤ 3 * lam / 2 := hwin3
+      _ ≤ 3 * v / 2 := by linarith
+  have hmaj := norm_charFun_smul_le_exp_neg_sq (F.map Z) (hint1 e) (hint2 e) (hint3 e)
+    (hmean e) hvdef.symm hs2 hs3
+  rw [hsmul] at hmaj
+  have hns : (n : ℝ) * s ^ 2 = ‖t‖ ^ 2 := by
+    rw [hsdef, div_pow, Real.sq_sqrt hn0.le]
+    field_simp
+  calc ‖charFun (vecRootLaw F Z n) t‖
+      = ‖charFun (F.map Z) (((Real.sqrt (n : ℝ))⁻¹ : ℝ) • t)‖ ^ n := by
+        rw [charFun_vecRootLaw F hZ, norm_pow]
+    _ ≤ (Real.exp (-(v * s ^ 2 / 4))) ^ n := pow_le_pow_left₀ (norm_nonneg _) hmaj n
+    _ = Real.exp (-(v * ‖t‖ ^ 2 / 4)) := by
+        rw [← Real.exp_nat_mul]
+        congr 1
+        rw [← hns]; ring
+    _ ≤ Real.exp (-(lam * ‖t‖ ^ 2 / 4)) := by
+        refine Real.exp_le_exp.2 ?_
+        nlinarith [sq_nonneg ‖t‖, hvl]
+
+end MiddleRangeBulk
 /-! ### The certificate, split into its three quantitative inputs
 
 With the multiplier built, `hasFourierCertificateOnBand_of_bulkMultiplier` reduces
