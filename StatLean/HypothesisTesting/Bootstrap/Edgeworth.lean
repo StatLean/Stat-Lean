@@ -12852,6 +12852,347 @@ lemma low_range_ledger_gt {a : ℝ} (ha : (1 : ℝ) / 6 < a) {n : ℕ} (hn : 2 �
   linarith
 
 
+
+/-! ### (U4′) — the low-range window bound
+
+Wave 46 recorded the residue of item 2 in four items and named this one as "the item with
+content, named since wave 43 and built by no wave".  It is built here, in three pieces, and the
+pieces are of three different kinds.
+
+* **Two envelope dominations.**  `abs_pow_mul_le_windowEnvelope₁` says a *damped* monomial of
+  degree `1 ≤ d ≤ 8` is at most `windowEnvelope₁`; `abs_pow_le_windowEnvelope₁_add_cube` says an
+  *undamped* one of degree `1 ≤ d ≤ 3` is at most a constant times `windowEnvelope₁` plus a bare
+  cube.  The second is the one that was not obvious in advance and it is what makes the shape
+  `esseen_split_low` takes achievable at all: the graded remainder of
+  `norm_charFun_map_deltaSurrogate_sub_graded_le` contributes a term of `θ`-degree **two**, not
+  three (`surrogateRemGraded`'s second summand is `θ²/2·(r³·2PA + r⁴A²)`), and it carries no
+  damping, so it fits neither the envelope nor the cube on its own.  It fits both together,
+  because below `|ξ| = 1` the Gaussian factor of `windowEnvelope₁` is bounded away from zero and
+  above `|ξ| = 1` the cube dominates.  Wave 43's shape therefore survives the extra term without
+  amendment — but only just, and only for degrees `≥ 1`: a degree-**zero** undamped term would
+  break it, and there is none only because every slot of the expansion carries at least one
+  power of `θ`.
+
+* **The ledger.**  `exists_studentized_low_range_core` is the arithmetic the wave-43 note calls
+  the whole point of the low range, carried out: the eight priced contributions of the five
+  slots sum to `Kw r²·windowEnvelope₁ ξ + Kr r³|ξ|³`.  What has to be checked, and is, is that
+  *every damped contribution carries `r²` and a monomial of degree between `1` and `8`* and
+  *every undamped one carries `r³` and degree `2` or `3`* — the degrees fit inside `|ξ| + |ξ|⁸`
+  and the `r`-powers are `n⁻¹` and `n^{-3/2}`, which is exactly what
+  `low_range_ledger_exponent` prices.  The degrees are not slack: the `k = 2` slot's own
+  remainder reaches degree `5` and the off-diagonal `κ₀κ₁` correction reaches degree `7`, so the
+  envelope's top degree `8` is used and cannot be lowered.
+
+* **The composition.**  `norm_surrogate_sub_studentizedEdgeworth_le` is the complex-level half:
+  the five slots of `norm_charFun_map_deltaSurrogate_sub_graded_le`, each replaced by what its
+  input proves about it, recombine into `charFunDensity (studentizedEdgeworthDensity γ n) θ`
+  *exactly*, through `studentized_window_leading_eq_charFunDensity`.  Two things are worth
+  recording.  First, the `k = 2` slot's evaluated form carries `φ^{n−1}` and `φ^{n−2}` and the
+  identity's carries `e^{−θ²/2}`, so the composition needs **two further comparisons** — the
+  hypotheses `hB5` and `hB6` — that no earlier statement of (U4′) lists; they are the price of
+  the identity being stated against the Gaussian and the input against the true transform.
+  Second, those two comparisons enter multiplied by `|κ₀₁| = |γσ³|` and by
+  `|κ₀κ₁| = θ²|γ|σ³`, so the second of them costs two extra degrees of `θ` — which is where the
+  ledger's degree `7` comes from.
+
+What is *not* here is the production of the eight bounds from the four inputs, which is
+per-input moment bookkeeping on `vecRootLaw F (studentPair F) n`; see the wave-47 block on
+`edgeworth_studentized_uniform`. -/
+
+/-- Every monomial of degree between `1` and `8` is dominated by `|ξ| + |ξ|⁸`. -/
+private lemma abs_pow_le_one_add_pow_eight {ξ : ℝ} {d : ℕ} (h1 : 1 ≤ d) (h8 : d ≤ 8) :
+    |ξ| ^ d ≤ |ξ| + |ξ| ^ 8 := by
+  have hx : (0 : ℝ) ≤ |ξ| := abs_nonneg ξ
+  rcases le_total |ξ| 1 with h | h
+  · have h' : |ξ| ^ d ≤ |ξ| ^ 1 := pow_le_pow_of_le_one hx h h1
+    rw [pow_one] at h'
+    have h8' : (0 : ℝ) ≤ |ξ| ^ 8 := by positivity
+    linarith
+  · have h' : |ξ| ^ d ≤ |ξ| ^ 8 := pow_le_pow_right₀ h h8
+    linarith
+
+/-- **A damped monomial of degree `1 ≤ d ≤ 8` is at most the degree-one envelope.** -/
+private lemma abs_pow_mul_le_windowEnvelope₁ {ξ D : ℝ} {d : ℕ} (h1 : 1 ≤ d) (h8 : d ≤ 8)
+    (hD0 : 0 ≤ D) (hD : D ≤ Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2))) :
+    |ξ| ^ d * D ≤ windowEnvelope₁ ξ := by
+  have hm := abs_pow_le_one_add_pow_eight (ξ := ξ) h1 h8
+  have hnn : (0 : ℝ) ≤ |ξ| + |ξ| ^ 8 := by positivity
+  calc |ξ| ^ d * D ≤ (|ξ| + |ξ| ^ 8) * D := mul_le_mul_of_nonneg_right hm hD0
+    _ ≤ (|ξ| + |ξ| ^ 8) * Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) :=
+        mul_le_mul_of_nonneg_left hD hnn
+    _ = windowEnvelope₁ ξ := by unfold windowEnvelope₁; ring
+
+/-- **An *undamped* monomial of degree `1 ≤ d ≤ 3` is dominated by the envelope plus a cube.** -/
+private lemma abs_pow_le_windowEnvelope₁_add_cube {ξ : ℝ} {d : ℕ} (h1 : 1 ≤ d) (h3 : d ≤ 3) :
+    |ξ| ^ d ≤ Real.exp (Real.pi ^ 2 / 2) * windowEnvelope₁ ξ + |ξ| ^ 3 := by
+  have hx : (0 : ℝ) ≤ |ξ| := abs_nonneg ξ
+  have hcube : (0 : ℝ) ≤ |ξ| ^ 3 := by positivity
+  have hEnn : (0 : ℝ) ≤ windowEnvelope₁ ξ := windowEnvelope₁_nonneg ξ
+  rcases le_total |ξ| 1 with h | h
+  · have hd : |ξ| ^ d ≤ |ξ| := by
+      have h' := pow_le_pow_of_le_one hx h h1
+      rwa [pow_one] at h'
+    have hsq : ξ ^ 2 ≤ 1 := by
+      have h2 : |ξ| ^ 2 ≤ 1 := by nlinarith
+      rwa [sq_abs] at h2
+    have hexp : Real.exp (-(Real.pi ^ 2 / 2)) ≤ Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) := by
+      refine Real.exp_le_exp.2 ?_
+      nlinarith [sq_nonneg Real.pi, Real.pi_pos]
+    have h8 : (0 : ℝ) ≤ |ξ| ^ 8 := by positivity
+    have hlow : Real.exp (-(Real.pi ^ 2 / 2)) * |ξ| ≤ windowEnvelope₁ ξ := by
+      unfold windowEnvelope₁
+      nlinarith [mul_le_mul_of_nonneg_right hexp hx,
+        mul_nonneg (Real.exp_pos (-(Real.pi ^ 2 * ξ ^ 2 / 2))).le h8]
+    have hmul := mul_le_mul_of_nonneg_left hlow (Real.exp_pos (Real.pi ^ 2 / 2)).le
+    have he : Real.exp (Real.pi ^ 2 / 2) * (Real.exp (-(Real.pi ^ 2 / 2)) * |ξ|) = |ξ| := by
+      rw [← mul_assoc, ← Real.exp_add]
+      simp
+    linarith [hmul, he.le, he.ge]
+  · have hd : |ξ| ^ d ≤ |ξ| ^ 3 := pow_le_pow_right₀ h h3
+    have hnn : (0 : ℝ) ≤ Real.exp (Real.pi ^ 2 / 2) * windowEnvelope₁ ξ := by positivity
+    linarith
+
+/-- **The ledger of the low range, as a domination of monomials.**  A damped polynomial of
+degrees `1` through `8` together with an *undamped* one of degrees `1` through `3` is dominated
+by the degree-one envelope plus a bare cube — the exact shape `esseen_split_low` consumes. -/
+private lemma windowEnvelope₁_monomial_ledger {a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ b₁ b₂ b₃ ξ D : ℝ}
+    (ha₁ : 0 ≤ a₁) (ha₂ : 0 ≤ a₂) (ha₃ : 0 ≤ a₃) (ha₄ : 0 ≤ a₄) (ha₅ : 0 ≤ a₅)
+    (ha₆ : 0 ≤ a₆) (ha₇ : 0 ≤ a₇) (ha₈ : 0 ≤ a₈)
+    (hb₁ : 0 ≤ b₁) (hb₂ : 0 ≤ b₂) (hb₃ : 0 ≤ b₃)
+    (hD0 : 0 ≤ D) (hD : D ≤ Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2))) :
+    (a₁ * |ξ| + a₂ * |ξ| ^ 2 + a₃ * |ξ| ^ 3 + a₄ * |ξ| ^ 4 + a₅ * |ξ| ^ 5 + a₆ * |ξ| ^ 6
+        + a₇ * |ξ| ^ 7 + a₈ * |ξ| ^ 8) * D
+      + (b₁ * |ξ| + b₂ * |ξ| ^ 2 + b₃ * |ξ| ^ 3)
+    ≤ ((a₁ + a₂ + a₃ + a₄ + a₅ + a₆ + a₇ + a₈)
+          + Real.exp (Real.pi ^ 2 / 2) * (b₁ + b₂ + b₃)) * windowEnvelope₁ ξ
+      + (b₁ + b₂ + b₃) * |ξ| ^ 3 := by
+  have hE := windowEnvelope₁_nonneg ξ
+  have k₁ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 1) (by norm_num) (by norm_num) hD0 hD
+  have k₂ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 2) (by norm_num) (by norm_num) hD0 hD
+  have k₃ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 3) (by norm_num) (by norm_num) hD0 hD
+  have k₄ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 4) (by norm_num) (by norm_num) hD0 hD
+  have k₅ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 5) (by norm_num) (by norm_num) hD0 hD
+  have k₆ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 6) (by norm_num) (by norm_num) hD0 hD
+  have k₇ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 7) (by norm_num) (by norm_num) hD0 hD
+  have k₈ := abs_pow_mul_le_windowEnvelope₁ (ξ := ξ) (D := D) (d := 8) (by norm_num) (by norm_num) hD0 hD
+  rw [pow_one] at k₁
+  have m₁ := abs_pow_le_windowEnvelope₁_add_cube (ξ := ξ) (d := 1) (by norm_num) (by norm_num)
+  have m₂ := abs_pow_le_windowEnvelope₁_add_cube (ξ := ξ) (d := 2) (by norm_num) (by norm_num)
+  have m₃ := abs_pow_le_windowEnvelope₁_add_cube (ξ := ξ) (d := 3) (by norm_num) (by norm_num)
+  rw [pow_one] at m₁
+  nlinarith [mul_le_mul_of_nonneg_left k₁ ha₁, mul_le_mul_of_nonneg_left k₂ ha₂,
+    mul_le_mul_of_nonneg_left k₃ ha₃, mul_le_mul_of_nonneg_left k₄ ha₄,
+    mul_le_mul_of_nonneg_left k₅ ha₅, mul_le_mul_of_nonneg_left k₆ ha₆,
+    mul_le_mul_of_nonneg_left k₇ ha₇, mul_le_mul_of_nonneg_left k₈ ha₈,
+    mul_le_mul_of_nonneg_left m₁ hb₁, mul_le_mul_of_nonneg_left m₂ hb₂,
+    mul_le_mul_of_nonneg_left m₃ hb₃]
+
+/-- The eight-fold triangle inequality, in the left-associated shape the decomposition below
+produces. -/
+lemma norm_add8_le {A : Type*} [SeminormedAddCommGroup A] (x₁ x₂ x₃ x₄ x₅ x₆ x₇ x₈ : A) :
+    ‖x₁ + x₂ + x₃ + x₄ + x₅ + x₆ + x₇ + x₈‖
+      ≤ ‖x₁‖ + ‖x₂‖ + ‖x₃‖ + ‖x₄‖ + ‖x₅‖ + ‖x₆‖ + ‖x₇‖ + ‖x₈‖ := by
+  have a₁ := norm_add_le (x₁ + x₂ + x₃ + x₄ + x₅ + x₆ + x₇) x₈
+  have a₂ := norm_add_le (x₁ + x₂ + x₃ + x₄ + x₅ + x₆) x₇
+  have a₃ := norm_add_le (x₁ + x₂ + x₃ + x₄ + x₅) x₆
+  have a₄ := norm_add_le (x₁ + x₂ + x₃ + x₄) x₅
+  have a₅ := norm_add_le (x₁ + x₂ + x₃) x₄
+  have a₆ := norm_add_le (x₁ + x₂) x₃
+  have a₇ := norm_add_le x₁ x₂
+  linarith
+
+set_option maxHeartbeats 1000000 in
+-- The `ring` normalisation below runs over a degree-8 polynomial in fifteen variables; the
+-- default heartbeat budget is not enough.
+/-- **(U4′) — the low-range ledger.**  The eight priced contributions of the five slots, in the
+shapes the four damped inputs and the graded remainder produce, sum to `Kw r²·Env₁ + Kr r³|ξ|³`.
+Every damped contribution carries `r²` and a monomial of degree between `1` and `8`; the two
+undamped ones carry `r³` and degrees `2` and `3`. -/
+private lemma exists_studentized_low_range_core
+    {Kc P₂ q₁ q₂ q₃ q₄ G₁ G₂ Kb P₃a P₃b P₄ C₂ C₃ : ℝ}
+    (hKc : 0 ≤ Kc) (hP₂ : 0 ≤ P₂) (hq₁ : 0 ≤ q₁) (hq₂ : 0 ≤ q₂) (hq₃ : 0 ≤ q₃)
+    (hq₄ : 0 ≤ q₄) (hG₁ : 0 ≤ G₁) (hG₂ : 0 ≤ G₂) (hKb : 0 ≤ Kb) (hP₃a : 0 ≤ P₃a)
+    (hP₃b : 0 ≤ P₃b) (hP₄ : 0 ≤ P₄) (hC₂ : 0 ≤ C₂) (hC₃ : 0 ≤ C₃) :
+    ∃ Kw Kr : ℝ, 0 < Kw ∧ 0 < Kr ∧
+      ∀ r ξ D : ℝ, 0 < r → r ≤ 1 → 0 ≤ D →
+        D ≤ Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) →
+        Kc * r ^ 2 * (|ξ| ^ 4 + |ξ| ^ 8) * D
+          + P₂ * |ξ| * r
+              * (r * (q₁ * |ξ| + q₂ * |ξ| ^ 2 + q₃ * |ξ| ^ 3 + q₄ * |ξ| ^ 4) * D
+                + G₁ * (Kb * r * (|ξ| ^ 3 + |ξ| ^ 4) * D)
+                + G₂ * |ξ| ^ 2 * (Kb * r * (|ξ| ^ 3 + |ξ| ^ 4) * D))
+          + P₃a * |ξ| * r ^ 2 * D + P₃b * |ξ| * r ^ 2 * D + P₄ * |ξ| ^ 2 * r ^ 2 * D
+          + r ^ 3 * (C₃ * |ξ| ^ 3 + C₂ * |ξ| ^ 2)
+        ≤ Kw * r ^ 2 * windowEnvelope₁ ξ + Kr * r ^ 3 * |ξ| ^ 3 := by
+  obtain ⟨α₁, hα₁d⟩ : ∃ x : ℝ, x = P₃a + P₃b := ⟨_, rfl⟩
+  obtain ⟨α₂, hα₂d⟩ : ∃ x : ℝ, x = P₄ + P₂ * q₁ := ⟨_, rfl⟩
+  obtain ⟨α₃, hα₃d⟩ : ∃ x : ℝ, x = P₂ * q₂ := ⟨_, rfl⟩
+  obtain ⟨α₄, hα₄d⟩ : ∃ x : ℝ, x = Kc + P₂ * q₃ + P₂ * (G₁ * Kb) := ⟨_, rfl⟩
+  obtain ⟨α₅, hα₅d⟩ : ∃ x : ℝ, x = P₂ * q₄ + P₂ * (G₁ * Kb) := ⟨_, rfl⟩
+  obtain ⟨α₆, hα₆d⟩ : ∃ x : ℝ, x = P₂ * (G₂ * Kb) := ⟨_, rfl⟩
+  obtain ⟨α₇, hα₇d⟩ : ∃ x : ℝ, x = P₂ * (G₂ * Kb) := ⟨_, rfl⟩
+  obtain ⟨α₈, hα₈d⟩ : ∃ x : ℝ, x = Kc := ⟨_, rfl⟩
+  have hα₁ : 0 ≤ α₁ := by rw [hα₁d]; exact add_nonneg hP₃a hP₃b
+  have hα₂ : 0 ≤ α₂ := by rw [hα₂d]; exact add_nonneg hP₄ (mul_nonneg hP₂ hq₁)
+  have hα₃ : 0 ≤ α₃ := by rw [hα₃d]; exact mul_nonneg hP₂ hq₂
+  have hα₄ : 0 ≤ α₄ := by
+    rw [hα₄d]
+    exact add_nonneg (add_nonneg hKc (mul_nonneg hP₂ hq₃))
+      (mul_nonneg hP₂ (mul_nonneg hG₁ hKb))
+  have hα₅ : 0 ≤ α₅ := by
+    rw [hα₅d]
+    exact add_nonneg (mul_nonneg hP₂ hq₄) (mul_nonneg hP₂ (mul_nonneg hG₁ hKb))
+  have hα₆ : 0 ≤ α₆ := by rw [hα₆d]; exact mul_nonneg hP₂ (mul_nonneg hG₂ hKb)
+  have hα₇ : 0 ≤ α₇ := by rw [hα₇d]; exact mul_nonneg hP₂ (mul_nonneg hG₂ hKb)
+  have hα₈ : 0 ≤ α₈ := by rw [hα₈d]; exact hKc
+  have hexp : (0 : ℝ) < Real.exp (Real.pi ^ 2 / 2) := Real.exp_pos _
+  have hCC : (0 : ℝ) ≤ Real.exp (Real.pi ^ 2 / 2) * (C₂ + C₃) :=
+    mul_nonneg hexp.le (by linarith)
+  refine ⟨α₁ + α₂ + α₃ + α₄ + α₅ + α₆ + α₇ + α₈
+      + Real.exp (Real.pi ^ 2 / 2) * (C₂ + C₃) + 1, C₂ + C₃ + 1, by linarith,
+    by linarith, ?_⟩
+  intro r ξ D hr hr1 hD0 hD
+  have hr2 : (0 : ℝ) < r ^ 2 := by positivity
+  have hr3 : (0 : ℝ) < r ^ 3 := by positivity
+  have hr32 : r ^ 3 ≤ r ^ 2 := by nlinarith
+  have hE := windowEnvelope₁_nonneg ξ
+  have hcube : (0 : ℝ) ≤ |ξ| ^ 3 := by positivity
+  have hled := windowEnvelope₁_monomial_ledger (ξ := ξ) (D := D)
+    (a₁ := r ^ 2 * α₁) (a₂ := r ^ 2 * α₂) (a₃ := r ^ 2 * α₃) (a₄ := r ^ 2 * α₄)
+    (a₅ := r ^ 2 * α₅) (a₆ := r ^ 2 * α₆) (a₇ := r ^ 2 * α₇) (a₈ := r ^ 2 * α₈)
+    (b₁ := 0) (b₂ := r ^ 3 * C₂) (b₃ := r ^ 3 * C₃)
+    (mul_nonneg hr2.le hα₁) (mul_nonneg hr2.le hα₂) (mul_nonneg hr2.le hα₃)
+    (mul_nonneg hr2.le hα₄) (mul_nonneg hr2.le hα₅) (mul_nonneg hr2.le hα₆)
+    (mul_nonneg hr2.le hα₇) (mul_nonneg hr2.le hα₈) le_rfl
+    (mul_nonneg hr3.le hC₂) (mul_nonneg hr3.le hC₃) hD0 hD
+  have hform : Kc * r ^ 2 * (|ξ| ^ 4 + |ξ| ^ 8) * D
+      + P₂ * |ξ| * r
+          * (r * (q₁ * |ξ| + q₂ * |ξ| ^ 2 + q₃ * |ξ| ^ 3 + q₄ * |ξ| ^ 4) * D
+            + G₁ * (Kb * r * (|ξ| ^ 3 + |ξ| ^ 4) * D)
+            + G₂ * |ξ| ^ 2 * (Kb * r * (|ξ| ^ 3 + |ξ| ^ 4) * D))
+      + P₃a * |ξ| * r ^ 2 * D + P₃b * |ξ| * r ^ 2 * D + P₄ * |ξ| ^ 2 * r ^ 2 * D
+      + r ^ 3 * (C₃ * |ξ| ^ 3 + C₂ * |ξ| ^ 2)
+      = (r ^ 2 * α₁ * |ξ| + r ^ 2 * α₂ * |ξ| ^ 2 + r ^ 2 * α₃ * |ξ| ^ 3
+          + r ^ 2 * α₄ * |ξ| ^ 4 + r ^ 2 * α₅ * |ξ| ^ 5 + r ^ 2 * α₆ * |ξ| ^ 6
+          + r ^ 2 * α₇ * |ξ| ^ 7 + r ^ 2 * α₈ * |ξ| ^ 8) * D
+        + (0 * |ξ| + r ^ 3 * C₂ * |ξ| ^ 2 + r ^ 3 * C₃ * |ξ| ^ 3) := by
+    rw [hα₁d, hα₂d, hα₃d, hα₄d, hα₅d, hα₆d, hα₇d, hα₈d]
+    ring
+  rw [hform]
+  refine hled.trans ?_
+  have hsum : r ^ 2 * α₁ + r ^ 2 * α₂ + r ^ 2 * α₃ + r ^ 2 * α₄ + r ^ 2 * α₅ + r ^ 2 * α₆
+        + r ^ 2 * α₇ + r ^ 2 * α₈
+        + Real.exp (Real.pi ^ 2 / 2) * (0 + r ^ 3 * C₂ + r ^ 3 * C₃)
+      ≤ (α₁ + α₂ + α₃ + α₄ + α₅ + α₆ + α₇ + α₈
+          + Real.exp (Real.pi ^ 2 / 2) * (C₂ + C₃) + 1) * r ^ 2 := by
+    have e₂ : (0 : ℝ) ≤ Real.exp (Real.pi ^ 2 / 2) * ((r ^ 2 - r ^ 3) * C₂) :=
+      mul_nonneg hexp.le (mul_nonneg (by linarith) hC₂)
+    have e₃ : (0 : ℝ) ≤ Real.exp (Real.pi ^ 2 / 2) * ((r ^ 2 - r ^ 3) * C₃) :=
+      mul_nonneg hexp.le (mul_nonneg (by linarith) hC₃)
+    nlinarith [e₂, e₃, hr2.le]
+  have hsum2 : (0 : ℝ) + r ^ 3 * C₂ + r ^ 3 * C₃ ≤ (C₂ + C₃ + 1) * r ^ 3 := by nlinarith
+  have h1 : (r ^ 2 * α₁ + r ^ 2 * α₂ + r ^ 2 * α₃ + r ^ 2 * α₄ + r ^ 2 * α₅ + r ^ 2 * α₆
+        + r ^ 2 * α₇ + r ^ 2 * α₈
+        + Real.exp (Real.pi ^ 2 / 2) * (0 + r ^ 3 * C₂ + r ^ 3 * C₃)) * windowEnvelope₁ ξ
+      ≤ ((α₁ + α₂ + α₃ + α₄ + α₅ + α₆ + α₇ + α₈
+          + Real.exp (Real.pi ^ 2 / 2) * (C₂ + C₃) + 1) * r ^ 2) * windowEnvelope₁ ξ :=
+    mul_le_mul_of_nonneg_right hsum hE
+  have h2 : ((0 : ℝ) + r ^ 3 * C₂ + r ^ 3 * C₃) * |ξ| ^ 3
+      ≤ ((C₂ + C₃ + 1) * r ^ 3) * |ξ| ^ 3 := mul_le_mul_of_nonneg_right hsum2 hcube
+  have hgoal : ((α₁ + α₂ + α₃ + α₄ + α₅ + α₆ + α₇ + α₈
+        + Real.exp (Real.pi ^ 2 / 2) * (C₂ + C₃) + 1) * r ^ 2) * windowEnvelope₁ ξ
+      = (α₁ + α₂ + α₃ + α₄ + α₅ + α₆ + α₇ + α₈
+        + Real.exp (Real.pi ^ 2 / 2) * (C₂ + C₃) + 1) * r ^ 2 * windowEnvelope₁ ξ := by ring
+  have hgoal2 : ((C₂ + C₃ + 1) * r ^ 3) * |ξ| ^ 3 = (C₂ + C₃ + 1) * r ^ 3 * |ξ| ^ 3 := by ring
+  linarith [h1, h2, hgoal.le, hgoal.ge, hgoal2.le, hgoal2.ge]
+
+/-! ### The complex-level composition of the five slots -/
+
+open Complex in
+/-- **(U4′) — the five slots compose to the studentized approximant.** -/
+lemma norm_surrogate_sub_studentizedEdgeworth_le
+    {σ γ θ : ℝ} {n : ℕ} (hn : 0 < n) (hσ : σ ≠ 0)
+    {Φ A S2 S3a S3b S4 P1 P2 : ℂ} {Rg B1 B2 B5 B6 D3a D3b D4 : ℝ}
+    (hRg : ‖Φ - (A - Complex.I * ((θ * (Real.sqrt n)⁻¹ / (2 * σ ^ 3) : ℝ) : ℂ) * S2
+              + Complex.I * ((θ * ((Real.sqrt n)⁻¹) ^ 2 / (2 * σ ^ 3) : ℝ) : ℂ) * S3a
+              + Complex.I * ((3 * θ * ((Real.sqrt n)⁻¹) ^ 2 / (8 * σ ^ 5) : ℝ) : ℂ) * S3b
+              - ((θ ^ 2 * ((Real.sqrt n)⁻¹) ^ 2 / (8 * σ ^ 6) : ℝ) : ℂ) * S4)‖ ≤ Rg)
+    (hB1 : ‖A - ((Real.exp (-θ ^ 2 / 2) : ℝ) : ℂ)
+              * (1 - ((n : ℝ) : ℂ) * Complex.I * ((γ * σ ^ 3 : ℝ) : ℂ)
+                    * (((Real.sqrt n)⁻¹ * θ / σ : ℝ) : ℂ) ^ 3 / 6)‖ ≤ B1)
+    (hB2 : ‖S2 - (((γ * σ ^ 3 : ℝ) : ℂ) * P1
+              - (((θ * σ) * (θ * γ * σ ^ 2) : ℝ) : ℂ) * P2)‖ ≤ B2)
+    (hB5 : ‖P1 - ((Real.exp (-θ ^ 2 / 2) : ℝ) : ℂ)‖ ≤ B5)
+    (hB6 : ‖P2 - ((Real.exp (-θ ^ 2 / 2) : ℝ) : ℂ)‖ ≤ B6)
+    (h3a : ‖S3a‖ ≤ D3a) (h3b : ‖S3b‖ ≤ D3b) (h4 : ‖S4‖ ≤ D4) :
+    ‖Φ - charFunDensity (studentizedEdgeworthDensity γ n) θ‖
+      ≤ Rg + B1
+        + |θ * (Real.sqrt n)⁻¹ / (2 * σ ^ 3)|
+            * (B2 + |γ * σ ^ 3| * B5 + |(θ * σ) * (θ * γ * σ ^ 2)| * B6)
+        + |θ * ((Real.sqrt n)⁻¹) ^ 2 / (2 * σ ^ 3)| * D3a
+        + |3 * θ * ((Real.sqrt n)⁻¹) ^ 2 / (8 * σ ^ 5)| * D3b
+        + |θ ^ 2 * ((Real.sqrt n)⁻¹) ^ 2 / (8 * σ ^ 6)| * D4 := by
+  set r : ℝ := (Real.sqrt (n : ℝ))⁻¹ with hrdef
+  set E : ℂ := ((Real.exp (-θ ^ 2 / 2) : ℝ) : ℂ) with hEdef
+  set c₂ : ℝ := θ * r / (2 * σ ^ 3) with hc₂
+  set c₃a : ℝ := θ * r ^ 2 / (2 * σ ^ 3) with hc₃a
+  set c₃b : ℝ := 3 * θ * r ^ 2 / (8 * σ ^ 5) with hc₃b
+  set c₄ : ℝ := θ ^ 2 * r ^ 2 / (8 * σ ^ 6) with hc₄
+  set L : ℂ := E * (1 - ((n : ℝ) : ℂ) * Complex.I * ((γ * σ ^ 3 : ℝ) : ℂ)
+      * ((r * θ / σ : ℝ) : ℂ) ^ 3 / 6) with hL
+  set κ₀₁ : ℝ := γ * σ ^ 3 with hκ₀₁
+  set κ : ℝ := (θ * σ) * (θ * γ * σ ^ 2) with hκ
+  set T : ℂ := charFunDensity (studentizedEdgeworthDensity γ n) θ with hT
+  have hid : L - Complex.I * ((c₂ : ℝ) : ℂ) * (((κ₀₁ : ℝ) : ℂ) - ((κ : ℝ) : ℂ)) * E = T := by
+    rw [hT, hL, hc₂, hκ₀₁, hκ, hEdef, hrdef]
+    have h := studentized_window_leading_eq_charFunDensity (γ := γ) (σ := σ) (θ := θ) hn hσ
+    rw [← h]
+    push_cast
+    ring
+  have hDec : Φ - T
+      = (Φ - (A - Complex.I * ((c₂ : ℝ) : ℂ) * S2 + Complex.I * ((c₃a : ℝ) : ℂ) * S3a
+              + Complex.I * ((c₃b : ℝ) : ℂ) * S3b - ((c₄ : ℝ) : ℂ) * S4))
+        + (A - L)
+        + (-(Complex.I * ((c₂ : ℝ) : ℂ)))
+            * (S2 - (((κ₀₁ : ℝ) : ℂ) * P1 - ((κ : ℝ) : ℂ) * P2))
+        + (-(Complex.I * ((c₂ : ℝ) : ℂ) * ((κ₀₁ : ℝ) : ℂ))) * (P1 - E)
+        + (Complex.I * ((c₂ : ℝ) : ℂ) * ((κ : ℝ) : ℂ)) * (P2 - E)
+        + (Complex.I * ((c₃a : ℝ) : ℂ)) * S3a
+        + (Complex.I * ((c₃b : ℝ) : ℂ)) * S3b
+        + (-(((c₄ : ℝ) : ℂ))) * S4 := by
+    rw [← hid]; ring
+  have hI : ‖Complex.I‖ = 1 := Complex.norm_I
+  have n₁ : ‖(-(Complex.I * ((c₂ : ℝ) : ℂ)))
+      * (S2 - (((κ₀₁ : ℝ) : ℂ) * P1 - ((κ : ℝ) : ℂ) * P2))‖ ≤ |c₂| * B2 := by
+    rw [norm_mul, norm_neg, norm_mul, hI, one_mul, Complex.norm_real, Real.norm_eq_abs]
+    exact mul_le_mul_of_nonneg_left hB2 (abs_nonneg _)
+  have n₂ : ‖(-(Complex.I * ((c₂ : ℝ) : ℂ) * ((κ₀₁ : ℝ) : ℂ))) * (P1 - E)‖
+      ≤ |c₂| * (|κ₀₁| * B5) := by
+    rw [norm_mul, norm_neg, norm_mul, norm_mul, hI, one_mul, Complex.norm_real,
+      Complex.norm_real, Real.norm_eq_abs, Real.norm_eq_abs, mul_assoc]
+    exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hB5 (abs_nonneg _))
+      (abs_nonneg _)
+  have n₃ : ‖(Complex.I * ((c₂ : ℝ) : ℂ) * ((κ : ℝ) : ℂ)) * (P2 - E)‖
+      ≤ |c₂| * (|κ| * B6) := by
+    rw [norm_mul, norm_mul, norm_mul, hI, one_mul, Complex.norm_real,
+      Complex.norm_real, Real.norm_eq_abs, Real.norm_eq_abs, mul_assoc]
+    exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hB6 (abs_nonneg _))
+      (abs_nonneg _)
+  have n₄ : ‖(Complex.I * ((c₃a : ℝ) : ℂ)) * S3a‖ ≤ |c₃a| * D3a := by
+    rw [norm_mul, norm_mul, hI, one_mul, Complex.norm_real, Real.norm_eq_abs]
+    exact mul_le_mul_of_nonneg_left h3a (abs_nonneg _)
+  have n₅ : ‖(Complex.I * ((c₃b : ℝ) : ℂ)) * S3b‖ ≤ |c₃b| * D3b := by
+    rw [norm_mul, norm_mul, hI, one_mul, Complex.norm_real, Real.norm_eq_abs]
+    exact mul_le_mul_of_nonneg_left h3b (abs_nonneg _)
+  have n₆ : ‖(-(((c₄ : ℝ) : ℂ))) * S4‖ ≤ |c₄| * D4 := by
+    rw [norm_mul, norm_neg, Complex.norm_real, Real.norm_eq_abs]
+    exact mul_le_mul_of_nonneg_left h4 (abs_nonneg _)
+  rw [hDec]
+  refine le_trans (norm_add8_le _ _ _ _ _ _ _ _) ?_
+  have hB1' : ‖A - L‖ ≤ B1 := hB1
+  linarith [n₁, n₂, n₃, n₄, n₅, n₆, hB1', hRg]
+
+
 /-! ### The outer radius of the three-regime split, and what it costs (wave 46)
 
 The mean's assembly runs `esseen_split` at `δ = n⁻¹` and `ρ = c√n`, and the tail term
