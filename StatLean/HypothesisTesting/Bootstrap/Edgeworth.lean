@@ -9356,6 +9356,91 @@ theorem norm_integral_fibrePhase_le (N : ℕ) :
   refine hmain.trans (le_of_eq ?_)
   ring
 
+/-! ### The wave-45 ledger: the fibre estimate meets the leakage ledger unamended -/
+
+/-- **The fibre estimate's gain is the ledger's gain.** The two branches of an integration by
+parts — `81Mr²/(σ|θ|)` from the phase's curvature and `3σ/(M|θ|)` from the cut-off — are both
+dominated by the single quantity `Mr²/|θ|` that `bulk_gain_phase_le_band` prices, because
+`M²r² = n^{1/4} ≥ 1` at the bulk radius. Nothing in the ledger has to move. -/
+lemma fibre_gain_le_bulk_gain {n : ℕ} (hn : 0 < n) {σ θ : ℝ} (hσ : 0 < σ) (hθ : 0 < |θ|) :
+    81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+        + 3 * σ / (bulkRadius n * |θ|)
+      ≤ (81 / σ + 3 * σ) * (bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / |θ|) := by
+  have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have h0 : (0 : ℝ) < (n : ℝ) := by linarith
+  have hM : 0 < bulkRadius n := bulkRadius_pos hn
+  have hp : bulkRadius n ^ 2 = (n : ℝ) ^ ((5 : ℝ) / 4) := by rw [bulkRadius_pow]; norm_num
+  have hq : ((Real.sqrt (n : ℝ))⁻¹) ^ 2 = ((n : ℝ))⁻¹ := by
+    rw [inv_pow, Real.sq_sqrt h0.le]
+  have hM2 : (1 : ℝ) ≤ bulkRadius n ^ 2 * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 := by
+    rw [hp, hq, ← Real.rpow_neg_one (n : ℝ), ← Real.rpow_add h0]
+    have : (n : ℝ) ^ (0 : ℝ) ≤ (n : ℝ) ^ ((5 : ℝ) / 4 + -1) :=
+      Real.rpow_le_rpow_of_exponent_le h1 (by norm_num)
+    simpa using this
+  -- the first branch is an identity
+  have hA : 81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+      = (81 / σ) * (bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / |θ|) := by
+    field_simp
+  -- the second branch is where `M²r² ≥ 1` is spent
+  have hB : 3 * σ / (bulkRadius n * |θ|)
+      ≤ (3 * σ) * (bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / |θ|) := by
+    rw [div_le_iff₀ (by positivity)]
+    have hkey : 3 * σ * (bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / |θ|)
+          * (bulkRadius n * |θ|)
+        = 3 * σ * (bulkRadius n ^ 2 * ((Real.sqrt (n : ℝ))⁻¹) ^ 2) := by
+      field_simp
+    rw [hkey]
+    nlinarith [hM2, hσ]
+  rw [hA, add_mul]
+  linarith
+
+/-- **THE WAVE-45 LEDGER.** Ten applications of `norm_integral_fibrePhase_le`, against the
+prefactor `M² = n^{5/4}` and a bad set of area `≤ n`, clear `O(n^{-3/2})` at every band exponent
+`b ≥ 0` — including `b = 0`, which is the constant floor `c₀ ≤ |θ|` the restated input (B) runs
+at. The `81/σ + 3σ` is the price of the fibre estimate's two branches; the shape is wave 43's,
+unamended. -/
+lemma fibre_gain_ledger_ten_le {n : ℕ} (hn : 0 < n) {c₀ b σ θ : ℝ}
+    (hσ : 0 < σ) (hc₀ : 0 < c₀) (hb : 0 ≤ b) (hθ : c₀ * (n : ℝ) ^ b ≤ |θ|) :
+    (n : ℝ) * bulkRadius n ^ 2
+        * (81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+            + 3 * σ / (bulkRadius n * |θ|)) ^ 10
+      ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 * ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hM : 0 < bulkRadius n := bulkRadius_pos hn
+  have hbpos : (0 : ℝ) < (n : ℝ) ^ b := Real.rpow_pos_of_pos h0 b
+  have hθ0 : 0 < |θ| := lt_of_lt_of_le (by positivity) hθ
+  have hg0 : (0 : ℝ) ≤ 81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+      + 3 * σ / (bulkRadius n * |θ|) := by positivity
+  have hstep := fibre_gain_le_bulk_gain hn hσ hθ0
+  have hbulk := bulk_gain_phase_le_band hn hc₀ hθ
+  have hcoef : (0 : ℝ) ≤ 81 / σ + 3 * σ := by positivity
+  -- the gain is at most `(81/σ + 3σ)c₀⁻¹ n^{-3/8-b}`
+  have hgain : 81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+      + 3 * σ / (bulkRadius n * |θ|)
+      ≤ ((81 / σ + 3 * σ) * c₀⁻¹) * (n : ℝ) ^ (-(3 : ℝ) / 8 - b) := by
+    refine hstep.trans ?_
+    calc (81 / σ + 3 * σ) * (bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / |θ|)
+        ≤ (81 / σ + 3 * σ) * (c₀⁻¹ * (n : ℝ) ^ (-(3 : ℝ) / 8 - b)) :=
+          mul_le_mul_of_nonneg_left hbulk hcoef
+      _ = ((81 / σ + 3 * σ) * c₀⁻¹) * (n : ℝ) ^ (-(3 : ℝ) / 8 - b) := by ring
+  have hpow : (81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+      + 3 * σ / (bulkRadius n * |θ|)) ^ 10
+      ≤ (((81 / σ + 3 * σ) * c₀⁻¹) * (n : ℝ) ^ (-(3 : ℝ) / 8 - b)) ^ 10 :=
+    pow_le_pow_left₀ hg0 hgain 10
+  have hpre : (0 : ℝ) ≤ (n : ℝ) * bulkRadius n ^ 2 := by positivity
+  refine le_trans (mul_le_mul_of_nonneg_left hpow hpre) ?_
+  have hexp : (((81 / σ + 3 * σ) * c₀⁻¹) * (n : ℝ) ^ (-(3 : ℝ) / 8 - b)) ^ 10
+      = ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - b)) ^ 10 := mul_pow _ _ 10
+  rw [hexp]
+  have hled := leakage_ledger_ten_le hb hn
+  have hc10 : (0 : ℝ) ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 := by positivity
+  calc (n : ℝ) * bulkRadius n ^ 2
+          * (((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - b)) ^ 10)
+      = ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10
+          * ((n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - b)) ^ 10) := by ring
+    _ ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 * ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ :=
+        mul_le_mul_of_nonneg_left hled hc10
+
 /-- **(B) The non-stationary-phase estimate: the weight carries `O(n^{-3/2})` on the
 low-frequency ball** — the second input, the analytic heart of the certificate, and **still the
 only open analytic item of the certificate after wave 44**.
