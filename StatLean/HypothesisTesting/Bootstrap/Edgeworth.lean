@@ -12911,6 +12911,85 @@ lemma outer_range_ledger_exponent (p : ℝ) {n : ℕ} (hn : 0 < n) :
   congr 1
   ring
 
+
+/-! #### The cost of the wider outer radius, on input (C)
+
+`exists_integral_norm_fourierWeight_bulkMultiplier_band_fourteen_le` gives the *leakage* half of
+the certificate at `n^{−17/6}`, but the certificate's `ε` and `η` are input (C)'s, and (C) is
+pinned: `tail_ledger_exponent` says `n/M⁴ = n^{−3/2}` **exactly** at the bulk radius
+`M = n^{5/8}`, which is why wave 30 chose it. Reaching `n^{−17/6}` therefore forces the bulk
+radius up, and the bulk radius is also the prefactor and the scale of the leakage estimate, so
+the requirement feeds back into `N`. The lemmas below run that loop once and it terminates.
+
+* `tail_ledger_radius_seventeen_sixths`: `a = 23/24` is the radius exponent at which Markov at
+  the fourth moment returns `n^{−17/6}` (`tail_ledger_exponent_general` is the identity at a
+  general `a`).
+* `leakage_ledger_general_radius`: at `M = n^{a}` the gain per part is `Mr²/|θ| ≍ n^{a−1}` on
+  the constant floor, so the ledger is `n^{1 + 2a + (a−1)N}`. At `a = 23/24` the gain per part
+  degrades from `n^{−3/8}` to `n^{−1/24}` — **this is the real price, and it is not the `N = 14`
+  of the leakage half alone.**
+* `leakage_ledger_radius_138_le` / `leakage_ledger_radius_137_gt`: `N = 138` closes `n^{−17/6}`
+  at that radius, **on the nose**, and `N = 137` does not.
+
+So the outer-radius route is bounded, not free: it is `N = 138` at `M = n^{23/24}`, against
+`N = 10` at `M = n^{5/8}` for the `n^{−3/2}` the file currently proves. Every ingredient is
+already stated at a general `N` and a general radius except `bulkRadius` itself, which is a
+`def`; a wave taking this route should parameterise it rather than re-derive the estimates.
+
+**The alternative remains open and is cheaper if it exists:** a `θ`-uniform, geometrically small
+bound on `‖φ_{ρₙ∘Hₙ}‖` on `|θ| ≥ c√n` would keep the mean's `ρ = c√n` and leave `N = 10` alone.
+Nothing in the file rules one out; what is recorded here is only that the *certificate* cannot
+supply it, its `Γ` being polynomial in `θ`. -/
+
+lemma tail_ledger_exponent_general (a : ℝ) {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) / ((n : ℝ) ^ a) ^ 4 = (n : ℝ) ^ (1 - 4 * a) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have h4 : ((n : ℝ) ^ a) ^ 4 = (n : ℝ) ^ (4 * a) := by
+    rw [← Real.rpow_natCast ((n : ℝ) ^ a) 4, ← Real.rpow_mul h0.le]
+    congr 1
+    push_cast
+    ring
+  rw [h4, Real.rpow_sub h0, Real.rpow_one]
+
+lemma tail_ledger_radius_seventeen_sixths {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) / ((n : ℝ) ^ ((23 : ℝ) / 24)) ^ 4 = (n : ℝ) ^ (-(17 : ℝ) / 6) := by
+  rw [tail_ledger_exponent_general _ hn]
+  congr 1
+  norm_num
+
+lemma leakage_ledger_general_radius (a : ℝ) (N : ℕ) {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) * ((n : ℝ) ^ a) ^ 2 * ((n : ℝ) ^ (a - 1)) ^ N
+      = (n : ℝ) ^ (1 + 2 * a + (a - 1) * N) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have h2 : ((n : ℝ) ^ a) ^ 2 = (n : ℝ) ^ (2 * a) := by
+    rw [← Real.rpow_natCast ((n : ℝ) ^ a) 2, ← Real.rpow_mul h0.le]
+    congr 1
+    push_cast
+    ring
+  have hN : ((n : ℝ) ^ (a - 1)) ^ N = (n : ℝ) ^ ((a - 1) * N) := by
+    rw [← Real.rpow_natCast ((n : ℝ) ^ (a - 1)) N, ← Real.rpow_mul h0.le]
+  rw [h2, hN, Real.rpow_add h0, Real.rpow_add h0, Real.rpow_one]
+
+lemma leakage_ledger_radius_138_le {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) * ((n : ℝ) ^ ((23 : ℝ) / 24)) ^ 2 * ((n : ℝ) ^ ((23 : ℝ) / 24 - 1)) ^ 138
+      ≤ (n : ℝ) ^ (-(17 : ℝ) / 6) := by
+  have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  rw [leakage_ledger_general_radius _ _ hn]
+  refine Real.rpow_le_rpow_of_exponent_le h1 ?_
+  push_cast
+  linarith
+
+lemma leakage_ledger_radius_137_gt {n : ℕ} (hn : 2 ≤ n) :
+    (n : ℝ) ^ (-(17 : ℝ) / 6)
+      < (n : ℝ) * ((n : ℝ) ^ ((23 : ℝ) / 24)) ^ 2 * ((n : ℝ) ^ ((23 : ℝ) / 24 - 1)) ^ 137 := by
+  have h2 : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have h1 : (1 : ℝ) < (n : ℝ) := by linarith
+  have hnpos : 0 < n := by omega
+  rw [leakage_ledger_general_radius _ _ hnpos]
+  refine Real.rpow_lt_rpow_of_exponent_lt h1 ?_
+  push_cast
+  linarith
+
 end WindowEnvelopeOne
 
 /-! ## The window estimate: the geometry of the argument
