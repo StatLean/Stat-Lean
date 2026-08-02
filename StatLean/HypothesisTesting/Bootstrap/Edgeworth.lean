@@ -9719,6 +9719,140 @@ theorem norm_integral_fibre_shift_le (N : ℕ) :
   rw [hGint, norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hM0]
   exact mul_le_mul_of_nonneg_left (hC σ r θ a w₁ M hσ hM hθ ha) hM0.le
 
+/-- The integrand of the Fourier weight is continuous with support in the ball of radius `2M`,
+so Fubini is available to it with nothing to check. -/
+lemma integrable_shiftedBulk {M : ℝ} (hM : 0 < M) (σ r θ a b : ℝ) :
+    Integrable (fun w : E₂ => ((bulkCutoff (M⁻¹ • w) : ℝ) : ℂ) *
+      Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w - a * w 0 - b * w 1 : ℝ) : ℂ))) := by
+  have hcont : Continuous fun w : E₂ => ((bulkCutoff (M⁻¹ • w) : ℝ) : ℂ) *
+      Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w - a * w 0 - b * w 1 : ℝ) : ℂ)) := by
+    have hc : Continuous fun w : E₂ => (bulkCutoff (M⁻¹ • w) : ℝ) :=
+      bulkCutoff.continuous.comp (continuous_const_smul _)
+    have h0 : Continuous fun w : E₂ => w 0 := by fun_prop
+    have h1 : Continuous fun w : E₂ => w 1 := by fun_prop
+    have hp : Continuous fun w : E₂ =>
+        (θ * deltaSurrogate σ r w - a * w 0 - b * w 1 : ℝ) :=
+      (((continuous_deltaSurrogate σ r).const_mul θ).sub (h0.const_mul a)).sub (h1.const_mul b)
+    exact (Complex.continuous_ofReal.comp hc).mul
+      (Complex.continuous_exp.comp ((Complex.continuous_ofReal.comp hp).const_mul Complex.I))
+  refine hcont.integrable_of_hasCompactSupport
+    (HasCompactSupport.intro (isCompact_closedBall (0 : E₂) (2 * M)) ?_)
+  intro w hw
+  have hnw : 2 * M < ‖w‖ := by simpa [Metric.mem_closedBall, not_le] using hw
+  have hzero : (bulkCutoff (M⁻¹ • w) : ℝ) = 0 := by
+    refine bulkCutoff.zero_of_le_dist ?_
+    have : (2 : ℝ) ≤ ‖M⁻¹ • w‖ := by
+      rw [norm_smul, norm_inv, Real.norm_eq_abs, abs_of_pos hM, ← div_eq_inv_mul,
+        le_div_iff₀ hM]
+      linarith
+    simpa [dist_eq_norm, bulkCutoff] using this
+  rw [hzero]
+  simp
+
+/-- **THE FOURIER WEIGHT OF THE BULK MULTIPLIER, POINTWISE IN THE FREQUENCY.** The Fubini
+reduction assembled: the plane integral becomes an iterated integral over horizontal fibres, the
+fibre estimate applies at each frozen `w₁` (a set of length `4M`, the second factor of the `M²`
+prefactor), and the frequency enters only through the shift `a = θ/σ + s₀` of the slope, which
+the band condition keeps inside the non-stationarity window. -/
+theorem norm_fourierWeight_bulkMultiplier_le (N : ℕ) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (σ r θ M : ℝ) (s : E₂), 0 < σ → 1 ≤ M → θ ≠ 0 →
+      |θ / σ + s 0| ≤ |θ| / (2 * σ) →
+      ‖fourierWeight (bulkMultiplier σ r θ M) s‖
+        ≤ C * M ^ 2 * (C * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N := by
+  obtain ⟨C, hC0, hC⟩ := norm_integral_fibre_shift_le N
+  refine ⟨4 * C, by positivity, ?_⟩
+  intro σ r θ M s hσ hM hθ ha
+  have hM0 : (0 : ℝ) < M := lt_of_lt_of_le zero_lt_one hM
+  have hθ0 : 0 < |θ| := abs_pos.mpr hθ
+  have hg0 : (0 : ℝ) ≤ 81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|) := by positivity
+  set a : ℝ := θ / σ + s 0 with hadef
+  set b : ℝ := s 1 with hbdef
+  set K : ℝ := M * (C * (C * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N) with hK
+  have hK0 : 0 ≤ K := by
+    rw [hK]; positivity
+  set f : E₂ → ℂ := fun w => ((bulkCutoff (M⁻¹ • w) : ℝ) : ℂ) *
+      Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w - a * w 0 - b * w 1 : ℝ) : ℂ)) with hf
+  -- each fibre integral, and its vanishing off the support
+  have hfib : ∀ w₁ : ℝ, ‖∫ w₀ : ℝ, f (fibreEmbed w₁ w₀)‖ ≤ K := by
+    intro w₁
+    have hshape : (fun w₀ : ℝ => f (fibreEmbed w₁ w₀))
+        = fun w₀ : ℝ => ((bulkCutoff (M⁻¹ • fibreEmbed w₁ w₀) : ℝ) : ℂ) *
+            Complex.exp (Complex.I * ((θ * deltaSurrogate σ r (fibreEmbed w₁ w₀)
+              - a * w₀ - b * w₁ : ℝ) : ℂ)) := by
+      funext w₀
+      rw [hf]
+      simp [fibreEmbed_apply_zero, fibreEmbed_apply_one]
+    rw [hshape]
+    exact hC σ r θ a b w₁ M hσ hM hθ ha
+  have hvanish : ∀ w₁ : ℝ, 2 * M < |w₁| → ∀ w₀ : ℝ, f (fibreEmbed w₁ w₀) = 0 := by
+    intro w₁ hw₁ w₀
+    have hnw : 2 * M < ‖fibreEmbed w₁ w₀‖ := by
+      refine lt_of_lt_of_le hw₁ ?_
+      have := (abs_coord_le_norm (fibreEmbed w₁ w₀)).2
+      rwa [fibreEmbed_apply_one] at this
+    have hzero : (bulkCutoff (M⁻¹ • fibreEmbed w₁ w₀) : ℝ) = 0 := by
+      refine bulkCutoff.zero_of_le_dist ?_
+      have : (2 : ℝ) ≤ ‖M⁻¹ • fibreEmbed w₁ w₀‖ := by
+        rw [norm_smul, norm_inv, Real.norm_eq_abs, abs_of_pos hM0, ← div_eq_inv_mul,
+          le_div_iff₀ hM0]
+        linarith
+      simpa [dist_eq_norm, bulkCutoff] using this
+    rw [hf]
+    simp only [hzero]
+    simp
+  -- the outer integration, against the indicator majorant
+  have houter : ‖∫ w₁ : ℝ, ∫ w₀ : ℝ, f (fibreEmbed w₁ w₀)‖ ≤ 4 * M * K := by
+    refine le_trans (norm_integral_le_integral_norm _) ?_
+    have hmaj : Integrable
+        (Set.indicator (Set.Icc (-(2 * M)) (2 * M)) (fun _ : ℝ => K)) volume :=
+      (integrable_indicator_iff measurableSet_Icc).2
+        (integrableOn_const (by simp [Real.volume_Icc]))
+    have hle : (fun w₁ : ℝ => ‖∫ w₀ : ℝ, f (fibreEmbed w₁ w₀)‖)
+        ≤ᵐ[volume] Set.indicator (Set.Icc (-(2 * M)) (2 * M)) (fun _ : ℝ => K) := by
+      filter_upwards with w₁
+      by_cases hmem : w₁ ∈ Set.Icc (-(2 * M)) (2 * M)
+      · rw [Set.indicator_of_mem hmem]
+        exact hfib w₁
+      · have habs : 2 * M < |w₁| := by
+          rcases abs_cases w₁ with ⟨he, _⟩ | ⟨he, _⟩ <;> rw [he] <;>
+            [skip; skip] <;>
+            · by_contra hcon
+              exact hmem (Set.mem_Icc.2 (by constructor <;> [linarith; linarith]))
+        rw [Set.indicator_of_notMem hmem]
+        have : (∫ w₀ : ℝ, f (fibreEmbed w₁ w₀)) = 0 := by
+          simp [hvanish w₁ habs]
+        rw [this]
+        simp
+    refine le_trans (integral_mono_of_nonneg (Filter.Eventually.of_forall fun _ => norm_nonneg _)
+      hmaj hle) (le_of_eq ?_)
+    rw [integral_indicator measurableSet_Icc, setIntegral_const, Real.volume_real_Icc]
+    rw [max_eq_left (by linarith : (0:ℝ) ≤ 2 * M - -(2 * M)), smul_eq_mul]
+    ring
+  -- assemble
+  rw [fourierWeight_bulkMultiplier_eq, norm_mul, Complex.norm_real, Real.norm_eq_abs]
+  have hfi : (∫ w : E₂, f w) = ∫ w₁ : ℝ, ∫ w₀ : ℝ, f (fibreEmbed w₁ w₀) :=
+    integral_eq_integral_fibre (integrable_shiftedBulk hM0 σ r θ a b)
+  have hcoe : |((2 * Real.pi)⁻¹ ^ 2 : ℝ)| ≤ 1 := by
+    rw [abs_of_nonneg (by positivity)]
+    have : (1 : ℝ) ≤ 2 * Real.pi := by nlinarith [Real.two_le_pi]
+    have h2 : (2 * Real.pi)⁻¹ ≤ 1 := by
+      rw [inv_le_one₀ (by positivity)]; exact this
+    nlinarith [inv_nonneg.mpr (by positivity : (0:ℝ) ≤ 2 * Real.pi)]
+  calc |((2 * Real.pi)⁻¹ ^ 2 : ℝ)| * ‖∫ w : E₂, f w‖
+      ≤ 1 * ‖∫ w : E₂, f w‖ := mul_le_mul_of_nonneg_right hcoe (norm_nonneg _)
+    _ = ‖∫ w₁ : ℝ, ∫ w₀ : ℝ, f (fibreEmbed w₁ w₀)‖ := by rw [one_mul, hfi]
+    _ ≤ 4 * M * K := houter
+    _ ≤ 4 * C * M ^ 2 * (4 * C * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N := by
+        rw [hK]
+        have hpow : (C * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N
+            ≤ (4 * C * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N := by
+          refine pow_le_pow_left₀ (by positivity) ?_ N
+          nlinarith [hg0, hC0.le]
+        have h4 : (0:ℝ) ≤ 4 * C * M ^ 2 := by positivity
+        nlinarith [hpow, hC0.le, hM0.le, sq_nonneg M,
+          pow_nonneg (by positivity : (0:ℝ) ≤ C * (81 * M * r ^ 2 / (σ * |θ|)
+            + 3 * σ / (M * |θ|))) N]
+
 /-- **(B) The non-stationary-phase estimate: the weight carries `O(n^{-3/2})` on the
 low-frequency ball** — the second input, the analytic heart of the certificate, and **still the
 only open analytic item of the certificate after wave 44**.
