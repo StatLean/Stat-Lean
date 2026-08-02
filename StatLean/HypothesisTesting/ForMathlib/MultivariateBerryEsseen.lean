@@ -397,6 +397,46 @@ intrinsic — it is the price of proving the norm tail by a union bound rather t
 `γ{‖z‖ ≥ M} ≤ exp(-(M − √k)²/2)` (Chernoff on `‖z‖² ∼ χ²_k`, or Borell–TIS, neither of which
 Mathlib has). Sharpening it would give `≍ √k` there and change nothing else.
 
+## Wave-40 amendment: the shift-length restriction is gone; the tail brick is bookkeeping only
+
+Every wave from 32 to 39 recorded the same open input of the tail brick
+`abs_integral_gaussian_smoothed_swap_localised_le`: the far-in-`v` localisation
+`abs_integral_shift_vecTiltRemainder_le_of_const_ball` needs `‖w‖ ≤ 1`, because it runs through
+the `L²` bound `integral_sq_vecTiltRemainder_le`, which is *false* for large tilts. At step `j`
+the shift is `w = (c/σ)y`, so the restriction is `‖y‖ ≤ √j`, and the complement is not
+priceable by a third moment alone (a bare constant in the per-step weight sums to `A δ ε⁻¹`,
+outside brick L's allowed shape). **That restriction is now removed**, and the removal needed
+no new concentration input:
+
+* do not bound the *remainder* in `L²`; bound its two halves separately. The exponential half
+  is a Gaussian **shift**, so a shift of length `‖w‖` is absorbed by enlarging the constancy
+  *radius* to `σ(M + ‖w‖)` — no norm bound at all. The polynomial half is a genuine polynomial,
+  and its `L²` norm is polynomial in `‖w‖` at *every* `‖w‖`;
+* the polynomial's `L²` and `L¹` sizes (`integral_sq_vecTiltPoly_le ≤ 640(1+‖w‖²)²`,
+  `integral_abs_vecTiltPoly_le ≤ 1 + ‖w‖ + ‖w‖²`) are proved by the same one-dimensional
+  marginal as everything else in the `MultivariateTilt` section, so the constants are again
+  **dimension-free**. The only new Gaussian fact needed is an explicit fourth moment of
+  `N(0,1)`, supplied by the exponential envelope `pow_four_le_cosh` (no Gamma apparatus);
+* `abs_integral_shift_vecTiltRemainder_le_of_const_ball_any` is the resulting far-in-`v`
+  estimate, and `abs_integral_shift_vecTiltRemainder_localised_le` assembles it with the
+  quadratic crude bound `abs_integral_mul_vecTiltRemainder_le_crude` into one pointwise bound
+  in `(v, w)`, with the *same* far constant in both shift regimes.
+
+**Constants, amended honestly.** The per-step ledger `localised_step_weight_le` turns the
+resulting product (shell mass at the varying width `2σ(R+‖w‖)`, times
+`min(C_t‖w‖³, 2+‖w‖+‖w‖²)`) back into a third moment, and the weight it delivers is
+`68 C_k σ R + 4 W`, not wave 39's `12 C_k σ R + W` — wave 39 priced only the `‖w‖ ≤ 1` regime.
+The tail brick's statement is amended accordingly; `localised_swap_bound_of_weighted_telescope`
+carries a flag recording the corresponding re-run of `htel` (`12 → 68`, `3 → 12`) and of
+`weighted_ledger_balance`'s `81 C_t`. **No shape moves**: the `(1 + log(1+ε⁻¹))^{3/2}` power,
+the fixed point, and `berryEsseen_convex_sharp` are unaffected up to an absolute constant.
+
+**What is left in the tail brick is measure-theoretic bookkeeping only**, in three named pieces
+(the tilt representation, already established inside
+`abs_integral_gaussian_smoothed_sub_common_le` but not exported; the Fubini at a varying width,
+which is `integral_far_shell_le` with a different bracket; and the two-law triangle
+inequality). No analytic input is missing — the first time that has been true of this brick.
+
 **Reference.** V. Bentkus, "On the dependence of the Berry–Esseen bound on dimension,\"
 *J. Statist. Plann. Inference* **113** (2003), 385–402. E. L. Lehmann and J. P. Romano,
 *Testing Statistical Hypotheses*, 4th ed., Springer, 2022, §16.4, Lemma 16.4.1.
