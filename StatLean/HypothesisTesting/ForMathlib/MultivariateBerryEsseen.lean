@@ -2090,6 +2090,37 @@ private lemma integral_pi_sum_peel {k m : ℕ}
           ∂(Measure.pi fun l : Fin m => κ (i.succAbove l)) :=
         integral_prod_symm _ hF
 
+/-- **Peeling one coordinate, at the level of measures (wave 42).** The law of the coordinate
+sum is the law of `u + ∑ₗ yₗ` with `u ∼ κ i` independent of the remaining coordinates.
+
+This is `integral_pi_sum_peel` with the bounded continuous test function stripped off, and it is
+what brick L needs: the transfer between the two localised per-step bricks and brick L's weight
+hypothesis is `wideShell_le_of_deconvolution`, whose hypothesis `hμ` is a statement about
+*measures* (`μ = (τ ⊗ η).map (+)`) and not about integrals of continuous functions — the shell
+indicator is not continuous, so the integral form cannot be used. The proof is the same
+`measurePreserving_piFinSuccAbove` transport, with `Fin.sum_univ_succAbove` splitting the sum. -/
+theorem map_pi_sum_peel {k m : ℕ}
+    (κ : Fin (m + 1) → Measure (EuclideanSpace ℝ (Fin k)))
+    [∀ i, IsProbabilityMeasure (κ i)] (i : Fin (m + 1)) :
+    ((Measure.pi κ).map fun x => ∑ l, x l)
+      = (((κ i).prod (Measure.pi fun l : Fin m => κ (i.succAbove l))).map
+          fun p => p.1 + ∑ l, p.2 l) := by
+  classical
+  set e : ((_ : Fin (m + 1)) → EuclideanSpace ℝ (Fin k))
+      ≃ᵐ EuclideanSpace ℝ (Fin k) × ((_ : Fin m) → EuclideanSpace ℝ (Fin k)) :=
+    MeasurableEquiv.piFinSuccAbove (fun _ : Fin (m + 1) => EuclideanSpace ℝ (Fin k)) i with he
+  have hmp : MeasurePreserving e (Measure.pi κ)
+      ((κ i).prod (Measure.pi fun l : Fin m => κ (i.succAbove l))) :=
+    measurePreserving_piFinSuccAbove κ i
+  have hcomp : (fun x : (_ : Fin (m + 1)) → EuclideanSpace ℝ (Fin k) => ∑ l, x l)
+      = (fun p : EuclideanSpace ℝ (Fin k) × ((_ : Fin m) → EuclideanSpace ℝ (Fin k)) =>
+          p.1 + ∑ l, p.2 l) ∘ e := by
+    funext x
+    have hx : e x = (x i, fun l => x (i.succAbove l)) := rfl
+    rw [Function.comp_apply, hx]
+    exact Fin.sum_univ_succAbove (fun l => x l) i
+  rw [hcomp, ← Measure.map_map (by fun_prop) e.measurable, hmp.map_eq]
+
 end SwapStep
 
 /-- **Lindeberg smooth-function comparison for the normalized sum.**
@@ -7939,6 +7970,34 @@ theorem integral_peel_eq_integral_hybridLaw {m j : ℕ} (hj : j < m + 1)
   rw [hν] at h
   exact h
 
+/-- **The hybrid law is a convolution, at the level of measures (wave 42).** `hybridLaw n j ν`
+is the law of `A + G` with `A` the (scaled) coordinate sum and `G` the smoothing Gaussian,
+independent.
+
+This is one of the two hypotheses `wideShell_le_of_deconvolution` asks for, and it is the *tail*
+side's: `abs_integral_gaussian_smoothed_swap_localised_le` evaluates its shell indicator at the
+base point **before** the smoothing, so its `τ` is the law of `A` alone (at the dirac cut
+`j + 1`) and the factor to be deconvolved away is the whole Gaussian of width `σ_{j+1}`, giving
+`hybridLaw n (j+1) ν`. Nothing is proved here beyond `Measure.map_prod_map` followed by
+`Measure.map_map`: `hybridLaw` is *already* defined as a map of a product, so the two scalings
+only have to be pushed onto the factors. (The head side additionally needs `map_pi_sum_peel`,
+and then an associativity of the two convolutions; that is the piece brick L still owes.) -/
+theorem hybridLaw_eq_map_add (n j : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
+    [IsProbabilityMeasure ν] :
+    hybridLaw n j ν
+      = ((((Measure.pi fun i : Fin n =>
+              if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν).map
+            fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i).prod
+          ((stdGaussian (EuclideanSpace ℝ (Fin k))).map
+            fun z => (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • z)).map
+        fun p => p.1 + p.2) := by
+  haveI : ∀ i : Fin n, IsProbabilityMeasure
+      (if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν) := by
+    intro i; split <;> infer_instance
+  rw [Measure.map_prod_map _ _ (by fun_prop) (by fun_prop),
+    Measure.map_map (by fun_prop) (by fun_prop), hybridLaw]
+  rfl
+
 /-- The characteristic function of the law of a sum of independent summands is the product of
 the characteristic functions. -/
 private lemma charFun_map_sum_pi {N : ℕ}
@@ -11133,11 +11192,14 @@ provable-constants rule asks for: a constant, at the smallest place, recorded.
 **What is left, after wave 42.** Three items, none analytic:
 
 1. *the two convolution identities*, which are what `wideShell_le_of_deconvolution`'s hypothesis
-   `hμ` asks for. (b) `hybridLaw n (j+1) ν = ((c ∑_{i ≥ j+1} Yᵢ) ⊗ (σ_{j+1} γ)).map (+)` is pure
-   `Measure.map_prod_map`, since `hybridLaw` is *already* defined as a map of a product;
-   (a) `hybridLaw n j ν = ((peeled, smoothed base) ⊗ (c ν)).map (+)` additionally needs the
-   coordinate split `measurePreserving_piFinSuccAbove`, i.e. the measure-level form of what
-   `integral_pi_sum_peel` does for integrals;
+   `hμ` asks for. The tail one, `hybridLaw n (j+1) ν = ((c ∑_{i ≥ j+1} Yᵢ) ⊗ (σ_{j+1} γ)).map(+)`,
+   **is done** — it is `hybridLaw_eq_map_add`, pure `Measure.map_prod_map`, since `hybridLaw` is
+   already defined as a map of a product. The head one,
+   `hybridLaw n j ν = ((peeled, smoothed base) ⊗ (c ν)).map (+)`, additionally needs the
+   coordinate split, whose measure-level form is `map_pi_sum_peel` (**also done**, the analogue
+   of `integral_pi_sum_peel` without the test function, which is necessary because a shell
+   indicator is not continuous); what is left there is the associativity of the two convolutions
+   that puts the `c ν` factor last;
 2. *the localised telescope*: `abs_integral_smooth_sub_gaussian_improved` re-run with the
    `v`-dependent `D` of `hstepfun` — `D v = ∫z |…| dγ` on the head side, `D v = |…|` on the tail
    side — summed by `sum_le_of_bounded_and_weighted_decay` instead of
