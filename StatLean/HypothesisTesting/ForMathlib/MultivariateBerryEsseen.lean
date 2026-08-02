@@ -5888,7 +5888,7 @@ hypothesis `hTdec`, i.e. the localised weighted swap at a single step — not th
 private lemma sum_le_of_bounded_and_weighted_decay {K₁ K₂ θ : ℝ}
     (hK₁ : 0 ≤ K₁) (hK₂ : 0 ≤ K₂) (hθ : 0 ≤ θ)
     {n J : ℕ} (hJ : 2 ≤ J) {T : ℕ → ℝ} (hTnn : ∀ j, 0 ≤ T j) (hTθ : ∀ j, T j ≤ θ)
-    (hTdec : ∀ j, 1 ≤ j → T j ≤ K₁ / (j : ℝ) + K₂ / ((j : ℝ) * Real.sqrt (j : ℝ))) :
+    (hTdec : ∀ j, J ≤ j → T j ≤ K₁ / (j : ℝ) + K₂ / ((j : ℝ) * Real.sqrt (j : ℝ))) :
     ∑ j ∈ Finset.range n, T j
       ≤ (J : ℝ) * θ + K₁ * (1 + Real.log (max ((n : ℝ) / (J : ℝ)) 1))
         + 3 * K₂ / Real.sqrt (J : ℝ) := by
@@ -5906,8 +5906,7 @@ private lemma sum_le_of_bounded_and_weighted_decay {K₁ K₂ θ : ℝ}
         ≤ ∑ j ∈ Finset.Ico J n,
             (K₁ / (j : ℝ) + K₂ / ((j : ℝ) * Real.sqrt (j : ℝ))) := by
       refine Finset.sum_le_sum fun j hjmem => ?_
-      have := (Finset.mem_Ico.1 hjmem).1
-      exact hTdec j (by omega)
+      exact hTdec j (Finset.mem_Ico.1 hjmem).1
     have hsp : ∑ j ∈ Finset.Ico J n,
           (K₁ / (j : ℝ) + K₂ / ((j : ℝ) * Real.sqrt (j : ℝ)))
         = K₁ * ∑ j ∈ Finset.Ico J n, (1 : ℝ) / (j : ℝ)
@@ -7177,11 +7176,11 @@ With those, the two cases close at `K = 20 A C` and `K = (40/3) A C` exactly as 
 constant is unchanged, whatever the forcing factor**. In particular the deviation wave 39 has to
 record in the headline is a change of the *log power* and of the dimension factor, and not of
 the recursion constant. As with `le_of_selfImproving_induction` no base case is needed. -/
-theorem le_of_selfImproving_induction_forcing {A C b : ℝ} {D : ℕ → ℝ} {G : ℝ → ℝ}
-    (hA : 0 < A) (hC : 0 < C) (hb : 0 < b) (hb1 : 1 ≤ 8 * A * b)
+theorem le_of_selfImproving_induction_forcing {A C b w : ℝ} {D : ℕ → ℝ} {G : ℝ → ℝ}
+    (hA : 0 < A) (hC : 0 < C) (hb : 0 < b) (hb1 : w ≤ 8 * A * b)
     (hG1 : ∀ x : ℝ, 0 < x → 1 ≤ G x)
     (hGanti : ∀ x y : ℝ, 0 < x → x ≤ y → G y ≤ G x)
-    (hrec : ∀ n : ℕ, 0 < n → ∀ ε : ℝ, 0 < ε → 1 ≤ ε * Real.sqrt (n : ℝ) → ∀ Y : ℝ,
+    (hrec : ∀ n : ℕ, 0 < n → ∀ ε : ℝ, 0 < ε → w ≤ ε * Real.sqrt (n : ℝ) → ∀ Y : ℝ,
       (∀ m : ℕ, n ≤ 2 * m → m ≤ n → D m ≤ Y) →
       D n ≤ A * (b / Real.sqrt n) * ε⁻¹ * (C * ε + 2 * Y)
         + A * (b / Real.sqrt n) * C * G ε
@@ -7245,7 +7244,7 @@ theorem le_of_selfImproving_induction_forcing {A C b : ℝ} {D : ℕ → ℝ} {G
     -- the induction only ever runs the recursion at the width `ε = 8 A δ`, and there
     -- `ε √n = 8 A b` does not depend on `n`; so the localisation window is a hypothesis
     -- on the *constants* alone (wave 36).
-    have hwin : 1 ≤ 8 * A * δ * Real.sqrt (n : ℝ) := by
+    have hwin : w ≤ 8 * A * δ * Real.sqrt (n : ℝ) := by
       have h : 8 * A * δ * Real.sqrt (n : ℝ) = 8 * A * b := by
         rw [hδdef]; field_simp
       rw [h]; exact hb1
@@ -7369,9 +7368,9 @@ This is the statement wave 39 had to check rather than assume: the amended tail 
 `3/2`, and it was not a priori clear that a `3/2` power still self-improves linearly. It does,
 and by `le_of_selfImproving_induction_forcing` the reason is structural: only `G ≥ 1` and
 antitonicity of `G` are used, both of which `logPow32` has. -/
-theorem le_of_selfImproving_induction_logPow32 {A C b : ℝ} {D : ℕ → ℝ}
-    (hA : 0 < A) (hC : 0 < C) (hb : 0 < b) (hb1 : 1 ≤ 8 * A * b)
-    (hrec : ∀ n : ℕ, 0 < n → ∀ ε : ℝ, 0 < ε → 1 ≤ ε * Real.sqrt (n : ℝ) → ∀ Y : ℝ,
+theorem le_of_selfImproving_induction_logPow32 {A C b w : ℝ} {D : ℕ → ℝ}
+    (hA : 0 < A) (hC : 0 < C) (hb : 0 < b) (hb1 : w ≤ 8 * A * b)
+    (hrec : ∀ n : ℕ, 0 < n → ∀ ε : ℝ, 0 < ε → w ≤ ε * Real.sqrt (n : ℝ) → ∀ Y : ℝ,
       (∀ m : ℕ, n ≤ 2 * m → m ≤ n → D m ≤ Y) →
       D n ≤ A * (b / Real.sqrt n) * ε⁻¹ * (C * ε + 2 * Y)
         + A * (b / Real.sqrt n) * C * logPow32 ε
@@ -10626,7 +10625,7 @@ theorem localised_swap_bound_of_weighted_telescope (hk : 0 < k) {n : ℕ} (hn : 
     (hβint : Integrable (fun y => ‖y‖ ^ 3) ν)
     {C₃ Ct ε W D : ℝ} (hC₃ : 0 < C₃) (hCt : 0 < Ct) (hε : 0 < ε) (hW : 0 ≤ W)
     (hbig : 1 ≤ ε * Real.sqrt (n : ℝ))
-    (htel : ∀ J : ℕ, 2 ≤ J →
+    (htel : ∀ J : ℕ, 2 ≤ J → ε ^ 2 * (n : ℝ) ≤ (J : ℝ) →
       D ≤ (J : ℝ) * (C₃ / ε ^ 3 / 6 / ((n : ℝ) * Real.sqrt (n : ℝ)))
               * ((∫ y, ‖y‖ ^ 3 ∂ν)
                 + ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
@@ -10699,7 +10698,7 @@ theorem localised_swap_bound_of_weighted_telescope (hk : 0 < k) {n : ℕ} (hn : 
   have hJ3 : (J : ℝ) ≤ 3 * t ^ 2 := by nlinarith [hJhigh, hbig, htpos]
   exact weighted_ledger_balance hC₃ hCt hCk hε hW (one_le_gaussianTailRadius hk ε)
     (one_le_dimTailConst hk) (gaussianTailRadius_le_dimTailConst hk hε)
-    hsn hβ1 hX0 hX3 hsn2 htdef hbig hJlow hJ3 (htel J hJ2)
+    hsn hβ1 hX0 hX3 hsn2 htdef hbig hJlow hJ3 (htel J hJ2 (by rw [← ht2]; exact hJlow))
 
 /-- **Brick L below the Gaussian shell scale (stated, not proved; hypothesis AMENDED in
 wave 29).** *The hybrid telescope with every step estimated by the localised weighted swap
@@ -11218,8 +11217,9 @@ theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (h
       Integrable (fun y => ‖y‖ ^ 3) ν →
       MeasurableSet B → Convex ℝ B → 0 < ε →
       -- LEAN-ONLY: the localisation window; discharged at the unique call site from
-      -- `k^{3/2} ≤ β`, see the note (wave 36, "Correction 2, RESOLVED").
-      1 ≤ ε * Real.sqrt (n : ℝ) →
+      -- `k^{3/2} ≤ β`, see the note (wave 36, "Correction 2, RESOLVED"; strengthened from
+      -- `1 ≤ ε √n` to `√k ≤ ε √n` in wave 43, for the deconvolution radius).
+      Real.sqrt (k : ℝ) ≤ ε * Real.sqrt (n : ℝ) →
       ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
       (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
       -- LEAN-ONLY: mollifier derivative bounds; supplied by
@@ -11310,8 +11310,9 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
       Integrable (fun y => ‖y‖ ^ 3) ν →
       MeasurableSet B → Convex ℝ B → 0 < ε →
       -- LEAN-ONLY: the localisation window; ignored by the large-weight branch, passed to
-      -- `localised_swap_bound_small_weight` by the small-weight one (wave 36).
-      1 ≤ ε * Real.sqrt (n : ℝ) →
+      -- `localised_swap_bound_small_weight` by the small-weight one (wave 36; strengthened to
+      -- `√k ≤ ε √n` in wave 43).
+      Real.sqrt (k : ℝ) ≤ ε * Real.sqrt (n : ℝ) →
       ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
       (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
       -- LEAN-ONLY: mollifier derivative bounds; supplied by
@@ -11416,8 +11417,9 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
       (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0) →
       (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
       Integrable (fun y => ‖y‖ ^ 3) ν → 0 < ε →
-      -- LEAN-ONLY: the localisation window brick L needs; free here, see the note (wave 36).
-      1 ≤ ε * Real.sqrt (n : ℝ) →
+      -- LEAN-ONLY: the localisation window brick L needs; free here, see the note (wave 36,
+      -- strengthened to `√k ≤ ε √n` in wave 43).
+      Real.sqrt (k : ℝ) ≤ ε * Real.sqrt (n : ℝ) →
       (∀ m : ℕ, n ≤ 2 * m → m ≤ n →
         convexDiscrepancy (sumLaw m ν) (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
           ≤ Y) →
@@ -11634,17 +11636,18 @@ theorem berryEsseen_convex_sharp {k : ℕ} (hk : 0 < k) :
   have hδpos : 0 < δ := by rw [hδdef]; positivity
   -- `β ≥ k^{3/2} ≥ 1`, which is what discharges brick L's localisation window: the induction
   -- runs the recursion only at `ε √m = 8 (A + 1) β ≥ 8` (wave 36).
-  have hβ1 : 1 ≤ β := by
-    have hk1 : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
-    have hs : 1 ≤ Real.sqrt (k : ℝ) := by
-      rw [show (1 : ℝ) = Real.sqrt 1 by simp]
-      exact Real.sqrt_le_sqrt hk1
-    have hlyap := sqrt_dim_mul_dim_le_integral_norm_cube hcov hβint
-    rw [← hβdef] at hlyap
-    nlinarith
+  have hk1 : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
+  have hsk1 : 1 ≤ Real.sqrt (k : ℝ) := by
+    rw [show (1 : ℝ) = Real.sqrt 1 by simp]
+    exact Real.sqrt_le_sqrt hk1
+  have hlyap := sqrt_dim_mul_dim_le_integral_norm_cube hcov hβint
+  rw [← hβdef] at hlyap
+  have hβ1 : 1 ≤ β := by nlinarith
+  -- wave 43: the window is `√k ≤ ε √m`, and `β ≥ k^{3/2} ≥ √k` still discharges it
+  have hβk : Real.sqrt (k : ℝ) ≤ β := by nlinarith
   -- the recursion, with `A` enlarged to `A + 1` so that `1 ≤ 8 (A + 1)` for `log_shift_le`
   have hADk : (1 : ℝ) ≤ (A + 1) * dimTailConst k := by nlinarith
-  have hbwin : (1 : ℝ) ≤ 8 * ((A + 1) * dimTailConst k) * β := by nlinarith
+  have hbwin : Real.sqrt (k : ℝ) ≤ 8 * ((A + 1) * dimTailConst k) * β := by nlinarith
   have hind := le_of_selfImproving_induction_logPow32 (A := (A + 1) * dimTailConst k)
     (C := 4 * gaussianShellConst k) (b := β)
     (D := fun m => convexDiscrepancy (sumLaw m ν) γ) (by positivity) (by positivity) hβpos
