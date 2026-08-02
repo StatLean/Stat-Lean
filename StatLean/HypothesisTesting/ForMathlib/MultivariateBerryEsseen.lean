@@ -6610,6 +6610,42 @@ theorem log_shift_le {A δ : ℝ} (hA : 1 ≤ A) (hδ : 0 < δ) :
       _ = 1 := Real.log_exp 1
   linarith
 
+/-- **`log_shift_le` for the `3/2` power (wave 39).** The headline records its logarithm as
+`1 + log(max δ⁻¹ e)`; the induction produces `logPow32 (8 A δ)`. Since `log_shift_le` turns the
+inner factor into `2 (1 + log(max δ⁻¹ e))`, the `3/2` power costs `2^{3/2} = 2√2 ≤ 3`. -/
+theorem logPow32_shift_le {A δ : ℝ} (hA : 1 ≤ A) (hδ : 0 < δ) :
+    logPow32 (A * δ) ≤ 3 * ((1 + Real.log (max δ⁻¹ (Real.exp 1)))
+      * Real.sqrt (1 + Real.log (max δ⁻¹ (Real.exp 1)))) := by
+  have hAδ : 0 < A * δ := by nlinarith
+  have hM := log_shift_le hA hδ
+  set N : ℝ := 1 + Real.log (max δ⁻¹ (Real.exp 1)) with hNdef
+  set M : ℝ := 1 + Real.log (1 + (A * δ)⁻¹) with hMdef
+  have hMi : (0 : ℝ) < (A * δ)⁻¹ := by positivity
+  have hM1 : 1 ≤ M := by
+    have h := Real.log_nonneg (by linarith : (1 : ℝ) ≤ 1 + (A * δ)⁻¹)
+    rw [hMdef]; linarith
+  have hN1 : 1 ≤ N := by
+    have hmax : Real.exp 1 ≤ max δ⁻¹ (Real.exp 1) := le_max_right _ _
+    have h : (1 : ℝ) ≤ Real.log (max δ⁻¹ (Real.exp 1)) := by
+      calc (1 : ℝ) = Real.log (Real.exp 1) := (Real.log_exp 1).symm
+        _ ≤ _ := Real.log_le_log (Real.exp_pos 1) hmax
+    rw [hNdef]; linarith
+  have hsqrt2 : Real.sqrt 2 ≤ 3 / 2 := by
+    have h := Real.sqrt_le_sqrt (by norm_num : (2 : ℝ) ≤ (3 / 2) ^ 2)
+    rwa [Real.sqrt_sq (by norm_num)] at h
+  have hsM : Real.sqrt M ≤ Real.sqrt 2 * Real.sqrt N := by
+    have h1 : Real.sqrt M ≤ Real.sqrt (2 * N) := Real.sqrt_le_sqrt (by linarith)
+    rwa [Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 2)] at h1
+  have hsN0 : (0 : ℝ) ≤ Real.sqrt N := Real.sqrt_nonneg N
+  have hlp : logPow32 (A * δ) = M * Real.sqrt M := by rw [hMdef, logPow32]
+  rw [hlp]
+  calc M * Real.sqrt M ≤ 2 * N * (Real.sqrt 2 * Real.sqrt N) :=
+        mul_le_mul hM hsM (Real.sqrt_nonneg _) (by linarith)
+    _ ≤ 2 * N * (3 / 2 * Real.sqrt N) := by
+        refine mul_le_mul_of_nonneg_left ?_ (by linarith)
+        nlinarith
+    _ = 3 * (N * Real.sqrt N) := by ring
+
 end SelfImprovingInduction
 
 section ConvexDiscrepancy
@@ -8400,9 +8436,9 @@ private lemma abs_integral_swap_step_localised_le
   linarith
 set_option linter.unusedVariables false in
 -- the body is a named `sorry` brick: the hypotheses are the interface, see the docstring
-/-- **The per-step TAIL estimate (wave 38: STATED, NOT proved — and the wave-32/35 account of
-what it needs is CORRECTED here).** *One tail step `j > J` of the hybrid telescope, localised,
-averaged against the step's own hybrid law.*
+/-- **The per-step TAIL estimate (wave 38: STATED, NOT proved; wave 39: the WEIGHT is AMENDED
+to what route (b) can actually deliver).** *One tail step `j > J` of the hybrid telescope,
+localised, averaged against the step's own hybrid law.*
 
 `τ` is `hybridLaw n j ν`, `σ = σⱼ = √(j/n)` is the step's Gaussian smoothing width and
 `c = n^{-1/2}` its scale, so the cost `Ct (c/σ)³ (β + β_G) = Ct (β + β_G)/(j√j)` is exactly the
@@ -8478,7 +8514,53 @@ shape precisely so that the discrepancy stays visible.
 **The `‖w‖ ≤ 1` restriction is still open too**, unchanged from wave 32: at step `j` the shift is
 `w = (c/σ)y`, so the wave-29 lemmas apply only on `{‖y‖ ≤ √j}`, and the complement needs the
 direct tilt identity described in the note on `localised_swap_bound_small_weight`. Wave 38 did
-not attempt it, because the obstruction above is upstream of it. -/
+not attempt it, because the obstruction above is upstream of it.
+
+## Wave 39: the missing ingredient is SUPPLIED, and the weight is AMENDED accordingly
+
+The sub-Gaussian norm tail wave 38 named is now proved — `stdGaussian_norm_ge_le_exp`, together
+with its inversion `gaussianTailRadius` / `stdGaussian_norm_ge_gaussianTailRadius_le`. With it,
+route (b) closes, and the weight it delivers is **not** the frozen `4 C_k σ + W`. The statement
+below has therefore been amended to the provable one; the deviation is recorded here rather than
+absorbed, per the provable-constants rule.
+
+**The amended weight, derived.** Take `r = σ · R` with `R = gaussianTailRadius k σ`, so that
+`γ{‖z‖ ≥ r/σ} = γ{‖z‖ ≥ R} ≤ σ²`.
+
+* *near*: `τ{v : dist(v, shell) ≤ r} ≤ 4 C_k (r + ε) + W` by the amended two-sided-shell
+  hypothesis at width `r + ε`, priced by the unweighted per-step bound `C_t (c/σ)³ X`;
+* *far*: `abs_integral_shift_vecTiltRemainder_le_of_const_ball` gives the weight
+  `2 √(γ{‖z‖ ≥ r/σ}) √tiltSqConst ≤ 2 σ √tiltSqConst`.
+
+Total: `[(4 C_k(σR + ε) + W) C_t + 2 σ √tiltSqConst] (c/σ)³ X`. Since `σ ≥ ε` on the tail range
+and `R ≥ 1` (`one_le_gaussianTailRadius`), both `ε` and the bare `σ` are absorbed into `σR`, and
+with the normalisation `√tiltSqConst ≤ 2 C_k C_t` (hypothesis `hCw`, free — `C_t` may always be
+enlarged and `C_k = 4e²√k ≥ 29`) the bracket is at most `C_t (12 C_k σ R + W)`. That is the
+conclusion below.
+
+**Why `12 C_k σ · R` and not `4 C_k σ`, in one line.** `R = √(2k log 2k) + 2√(k log(1/σ))` is
+unbounded as `σ ↓ 0`; there is no radius at which the Gaussian norm tail is `≲ σ²` with `r ≍ σ`,
+which is exactly what wave 38 showed. The factor `12` is bookkeeping; the factor `R` is not.
+
+**What it costs downstream, all of it machine-checked.** `R` is antitone in `σ` and
+`σⱼ ≥ σ_J ≥ ε` on the tail range, so `R(σⱼ) ≤ R(ε)` and the per-step bound is still of the
+shape `K₁/j + K₂/(j√j)` that `sum_le_of_bounded_and_weighted_decay` consumes — no new summation
+lemma is needed, only `K₁` acquires the constant factor `R(ε)`. Then
+`gaussianTailRadius_le_dimTailConst` splits `R(ε) ≤ dimTailConst k · √(1 + log(1 + ε⁻¹))`, and
+multiplying by the harmonic factor `1 + log(n/J) ≤ 2(1 + log(1 + ε⁻¹))` produces the **`3/2`
+power** `logPow32 ε`. The consequences, each amended and re-proved this wave:
+`weighted_ledger_balance` (constant `306 C₃ + 33 C_t → 306 C₃ + 81 C_t`),
+`localised_swap_bound_of_weighted_telescope`, `localised_swap_bound_small_weight`,
+`exists_localised_swap_bound`, `exists_convexDiscrepancy_recursion`,
+`le_of_selfImproving_induction_logPow32` (the fixed point re-solves at the *same* constant), and
+`berryEsseen_convex_sharp` (whose log power is now `3/2` and whose dimension factor is now
+`C_k · dimTailConst k ≍ k √(log k)`).
+
+**What is still open in THIS brick.** The assembly itself: the near/far split in `v` under the
+`τ`-average (a Fubini over `hybridLaw`, with the measurability of `v ↦ τ(near set)` to supply,
+as on the head side), and the `‖w‖ ≤ 1` complement above, which wave 39 did not attempt either.
+The analytic *inputs* are now all present; what is missing is the same kind of bookkeeping the
+head brick needed in wave 38. -/
 private lemma abs_integral_gaussian_smoothed_swap_localised_le {Ct : ℝ}
     (hCt : ∀ s : ℝ, 0 ≤ s → (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ Ct * s ^ 3)
     {ν ρ τ : Measure (EuclideanSpace ℝ (Fin k))}
@@ -8502,12 +8584,15 @@ private lemma abs_integral_gaussian_smoothed_swap_localised_le {Ct : ℝ}
     {Ck W : ℝ} (hCk : 0 < Ck) (hW : 0 ≤ W)
     (hshell : ∀ s : ℝ, 0 < s →
       (τ (Metric.thickening s B \ erosion s B)).toReal ≤ 4 * Ck * s + W)
-    {σ c : ℝ} (hσ : 0 < σ) (hσε : ε ≤ σ) (hc : 0 < c) :
+    {σ c : ℝ} (hσ : 0 < σ) (hσε : ε ≤ σ) (hσ1 : σ ≤ 1) (hc : 0 < c)
+    -- LEAN-ONLY (wave 39): the Cauchy–Schwarz constant of the far-in-`v` half is folded into
+    -- `Ct`. Free: `Ct` may always be enlarged, and `Ck = gaussianShellConst k = 4e²√k ≥ 29`.
+    (hCw : Real.sqrt tiltSqConst ≤ 2 * Ck * Ct) :
     (∫ v, |(∫ y, (∫ z, F (v + σ • z + c • y)
               ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ν)
           - (∫ y, (∫ z, F (v + σ • z + c • y)
               ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ρ)| ∂τ)
-      ≤ (4 * Ck * σ + W)
+      ≤ (12 * Ck * (σ * gaussianTailRadius k σ) + W)
         * (Ct * (c / σ) ^ 3 * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ))) := by
   sorry
 
@@ -9261,7 +9346,24 @@ upstream of the `‖w‖ ≤ 1` question. In brief (the full arithmetic is on th
 
 So this `sorry` now has exactly one open input on the head side (none) and one on the tail side
 (the brick above), and the tail's own residue is three items, ordered: the Gaussian norm tail,
-the near/far-in-`v` assembly, and the `‖w‖ ≤ 1` complement. -/
+the near/far-in-`v` assembly, and the `‖w‖ ≤ 1` complement.
+
+## Wave 39: the CONCLUSION is amended, and the ledger behind it is re-proved
+
+The first of those three items is discharged (`stdGaussian_norm_ge_le_exp`), and with it the
+amended tail weight `12 C_k σⱼ · gaussianTailRadius k σⱼ + W` is what the tail brick now states.
+The ledger consequence is **not** absorbable, so this statement's conclusion changes:
+
+  `A δ (ε⁻¹(W + C_k ε) + C_k · dimTailConst k · logPow32 ε)`,
+  `logPow32 ε = (1 + log(1 + ε⁻¹))^{3/2}`, `dimTailConst k = √(2k log 2k) + 2√k`,
+
+in place of wave 32's `A δ (ε⁻¹(W + C_k ε) + C_k (1 + log(1 + ε⁻¹)))`. Both new factors are
+`≥ 1`, so the amended conclusion is strictly weaker and every consumer still closes; and
+`localised_swap_bound_of_weighted_telescope` — the *proved* reduction of this brick to its
+per-step hypothesis `htel` — has been re-run at the amended shape and is green, with constant
+`306 C₃ + 81 C_t`. So the shape of the answer is settled in Lean, not on paper; what this
+`sorry` still owes is the analytic production of `htel`'s tail summand, i.e. the assembly of
+`abs_integral_gaussian_smoothed_swap_localised_le`. -/
 theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 1 ≤ C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
@@ -9290,7 +9392,7 @@ theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (h
           - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))|
         ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
             * (ε⁻¹ * (W + gaussianShellConst k * ε)
-              + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by
+              + gaussianShellConst k * dimTailConst k * logPow32 ε) := by
   -- Wave 35: the reduction to the weighted telescope is proved and axiom-clean, see
   -- `localised_swap_bound_of_weighted_telescope`; what is missing is its hypothesis `htel`,
   -- i.e. the two localised per-step swap estimates listed at the end of the note above.
@@ -9342,7 +9444,16 @@ summation ledger on `localised_swap_bound_small_weight` forces a logarithm, beca
 telescope's own smoothing widths `σⱼ = √(j/n)` sweep from `ε` to `1` while the test function has
 the single width `ε`. The large-weight half `exists_smooth_swap_bound_of_one_le_weight` is
 proved and is *unaffected*: its conclusion is the log-free one, which is smaller, so it still
-closes the amended goal. Only the small-weight half changes. -/
+closes the amended goal. Only the small-weight half changes.
+
+**Wave 39 amends that term again**, to `+ C_k · dimTailConst k · logPow32 ε`: the tail weight
+that the sub-Gaussian norm tail actually delivers carries the extra radius factor
+`gaussianTailRadius k σⱼ`, which raises the ledger's log power from `1` to `3/2` and multiplies
+the dimension constant by `dimTailConst k = √(2k log 2k) + 2√k`. See the tail brick
+`abs_integral_gaussian_smoothed_swap_localised_le` for the derivation and
+`weighted_ledger_balance` for the re-proved ledger. The large-weight half is again *unaffected*
+(both new factors are `≥ 1`, so the amended bracket is larger), and the proof here is unchanged
+apart from the substitution. -/
 theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 1 ≤ C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
@@ -9370,7 +9481,7 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
           - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))|
         ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
             * (ε⁻¹ * (W + gaussianShellConst k * ε)
-              + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by
+              + gaussianShellConst k * dimTailConst k * logPow32 ε) := by
   have hC₃pos : (0 : ℝ) < C₃ := lt_of_lt_of_le one_pos hC₃
   obtain ⟨A₁, hA₁, h₁⟩ := exists_smooth_swap_bound_of_one_le_weight k hk hC₃pos
   obtain ⟨A₂, hA₂, h₂⟩ := localised_swap_bound_small_weight k hk hC₃
@@ -9383,21 +9494,22 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
   have hβ0 : 0 < ∫ y, ‖y‖ ^ 3 ∂ν := integral_norm_cube_pos hk hcov hβint
   have hCk : 0 < gaussianShellConst k := gaussianShellConst_pos hk
   have hδ0 : 0 ≤ (∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ) := div_nonneg hβ0.le hsn.le
-  have hlog0 : 0 ≤ Real.log (1 + ε⁻¹) :=
-    Real.log_nonneg (by have : (0:ℝ) < ε⁻¹ := inv_pos.2 hε; linarith)
+  have hDk1 : (1 : ℝ) ≤ dimTailConst k := one_le_dimTailConst hk
+  have hLP1 : (1 : ℝ) ≤ logPow32 ε := one_le_logPow32 hε
+  have hlog0 : 0 ≤ dimTailConst k * logPow32 ε := by nlinarith
   have hbrk0 : 0 ≤ ε⁻¹ * (W + gaussianShellConst k * ε) := by
     have : (0:ℝ) < gaussianShellConst k * ε := mul_pos hCk hε
     exact mul_nonneg (inv_pos.2 hε).le (by linarith)
   have hbase : 0 ≤ (∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)
       * (ε⁻¹ * (W + gaussianShellConst k * ε)
-        + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by
+        + gaussianShellConst k * dimTailConst k * logPow32 ε) := by
     refine mul_nonneg hδ0 (by nlinarith [mul_nonneg hCk.le hlog0])
   have hexp : ∀ A : ℝ, A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
       * (ε⁻¹ * (W + gaussianShellConst k * ε)
-        + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹)))
+        + gaussianShellConst k * dimTailConst k * logPow32 ε)
       = A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)
         * (ε⁻¹ * (W + gaussianShellConst k * ε)
-          + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹)))) := fun A => by ring
+          + gaussianShellConst k * dimTailConst k * logPow32 ε)) := fun A => by ring
   rcases le_or_gt 1 (W + gaussianShellConst k * ε) with hge | hlt
   · -- the large-weight half is proved, and its (log-free) conclusion is smaller
     have h := h₁ n ν ε f (W + gaussianShellConst k * ε) hn hνp hmean hcov hβint hε hf hfb
@@ -9407,10 +9519,10 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
         * (W + gaussianShellConst k * ε)
         ≤ A₁ * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
           * (ε⁻¹ * (W + gaussianShellConst k * ε)
-            + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by
+            + gaussianShellConst k * dimTailConst k * logPow32 ε) := by
       have hA₁δ : 0 ≤ A₁ * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) :=
         mul_nonneg hA₁.le hδ0
-      have hextra : 0 ≤ gaussianShellConst k * (1 + Real.log (1 + ε⁻¹)) := by
+      have hextra : 0 ≤ gaussianShellConst k * dimTailConst k * logPow32 ε := by
         nlinarith [mul_nonneg hCk.le hlog0]
       nlinarith [mul_nonneg hA₁δ hextra]
     refine hsmall.trans ?_
@@ -9444,7 +9556,14 @@ Wave 32: brick L's *conclusion* now carries `+ C_k (1 + log(1 + ε⁻¹))`, forc
 ledger (see there), and that term is inherited here verbatim — it does not interact with the
 `W`-bookkeeping at all, since the sandwich only ever adds `|∫f dμ − ∫f dγ|` to Gaussian shell
 masses. The same doubling of `A` absorbs `C_k ≤ 8 C_k = 2·(4 C_k)` in the new term. Downstream,
-`le_of_selfImproving_induction` is replaced by `le_of_selfImproving_induction_log`. -/
+`le_of_selfImproving_induction` is replaced by `le_of_selfImproving_induction_log`.
+
+Wave 39: brick L's conclusion carries `+ C_k · dimTailConst k · logPow32 ε` instead, and that
+term is again inherited here verbatim — the `W`-bookkeeping is untouched, and the same doubling
+of `A` absorbs `C_k ≤ 8 C_k`. Downstream, `le_of_selfImproving_induction_log` is replaced by
+`le_of_selfImproving_induction_logPow32`, run with the forcing constant `C = 4 C_k` and the
+recursion constant enlarged from `A + 1` to `(A + 1) · dimTailConst k` (which is where the
+dimension factor lands in the headline). -/
 theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k))) (ε Y : ℝ),
       0 < n → IsProbabilityMeasure ν →
@@ -9461,7 +9580,7 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
         ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * ε⁻¹
             * (4 * gaussianShellConst k * ε + 2 * Y)
           + A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * (4 * gaussianShellConst k)
-            * (1 + Real.log (1 + ε⁻¹))
+            * (dimTailConst k * logPow32 ε)
           + 4 * gaussianShellConst k * ε := by
   obtain ⟨C₃, hC₃one, hC₃⟩ := exists_smoothed_convex_indicator k
   have hC₃pos : (0 : ℝ) < C₃ := lt_of_lt_of_le one_pos hC₃one
@@ -9483,10 +9602,11 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
   have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
   set δ : ℝ := β / Real.sqrt (n : ℝ) with hδdef
   have hδpos : 0 < δ := by rw [hδdef]; positivity
-  have hlog0 : 0 ≤ Real.log (1 + ε⁻¹) :=
-    Real.log_nonneg (by have : (0:ℝ) < ε⁻¹ := inv_pos.2 hε; linarith)
+  have hDk1 : (1 : ℝ) ≤ dimTailConst k := one_le_dimTailConst hk
+  have hLP1 : (1 : ℝ) ≤ logPow32 ε := one_le_logPow32 hε
+  have hlog0 : 0 ≤ dimTailConst k * logPow32 ε := by nlinarith
   set E : ℝ := 2 * A * δ * ε⁻¹ * (4 * gaussianShellConst k * ε + 2 * Y)
-    + 2 * A * δ * (4 * gaussianShellConst k) * (1 + Real.log (1 + ε⁻¹)) with hEdef
+    + 2 * A * δ * (4 * gaussianShellConst k) * (dimTailConst k * logPow32 ε) with hEdef
   -- the Lévy form, for an arbitrary measurable convex set
   have hlevy : ∀ S : Set (EuclideanSpace ℝ (Fin k)), MeasurableSet S → Convex ℝ S →
       (μ S).toReal ≤ (γ (Metric.thickening ε S)).toReal + E
@@ -9531,19 +9651,20 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
               mul_le_mul_of_nonneg_left (by nlinarith [mul_pos hCk hε]) hu
           _ = 2 * A * δ * ε⁻¹ * (4 * gaussianShellConst k * ε + 2 * Y) := by ring
       -- the new logarithmic term: `C_k ≤ 8 C_k`
-      have hpart2 : A * δ * (gaussianShellConst k * (1 + Real.log (1 + ε⁻¹)))
-          ≤ 2 * A * δ * (4 * gaussianShellConst k) * (1 + Real.log (1 + ε⁻¹)) := by
-        have h7 : 0 ≤ A * δ * (7 * gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by
-          have : 0 ≤ 7 * gaussianShellConst k * (1 + Real.log (1 + ε⁻¹)) := by
+      have hpart2 : A * δ * (gaussianShellConst k * dimTailConst k * logPow32 ε)
+          ≤ 2 * A * δ * (4 * gaussianShellConst k) * (dimTailConst k * logPow32 ε) := by
+        have h7 : 0 ≤ A * δ
+            * (7 * gaussianShellConst k * (dimTailConst k * logPow32 ε)) := by
+          have : 0 ≤ 7 * gaussianShellConst k * (dimTailConst k * logPow32 ε) := by
             nlinarith [mul_nonneg hCk.le hlog0]
           exact mul_nonneg hAδ this
         nlinarith [h7]
       have hsplit : A * δ * (ε⁻¹ * (4 * gaussianShellConst k * ε + 2 * Y
               + gaussianShellConst k * ε)
-            + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹)))
+            + gaussianShellConst k * dimTailConst k * logPow32 ε)
           = A * δ * ε⁻¹ * (4 * gaussianShellConst k * ε + 2 * Y
               + gaussianShellConst k * ε)
-            + A * δ * (gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by ring
+            + A * δ * (gaussianShellConst k * dimTailConst k * logPow32 ε) := by ring
       rw [hsplit]
       linarith
     have hthickm : MeasurableSet (Metric.thickening ε S) :=
@@ -9582,23 +9703,41 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
   · linarith
   · linarith
 
-/-- **The sharp convex Berry–Esseen bound, up to one logarithm** (conclusion AMENDED in
-wave 32). For every dimension `k > 0` there is a constant `C` with
+/-- **The sharp convex Berry–Esseen bound, up to a `3/2` power of one logarithm** (conclusion
+AMENDED in wave 32, and AMENDED AGAIN in wave 39). For every dimension `k > 0` there is a
+constant `C` with
 
-`|μₙ(B) − γ(B)| ≤ C (β/√n) (1 + log(max (√n/β) e))` for every measurable convex `B`,
+`|μₙ(B) − γ(B)| ≤ C (β/√n) (1 + log(max (√n/β) e))^{3/2}` for every measurable convex `B`,
 
-i.e. Bentkus's rate up to a single logarithmic factor, with the dimension entering only through
-`C = 40 ((A+1) (4 C_k)) = 160 (A+1) gaussianShellConst k`, `gaussianShellConst k = 4 e² √k`.
-This is strictly better than the *proved* `(β/√n)^{1/2}` of `berryEsseen_convex_improved`.
+i.e. Bentkus's rate up to `(log)^{3/2}`, with the dimension entering only through
+`C = 60 ((A+1) · dimTailConst k · (4 C_k))`, `gaussianShellConst k = 4 e² √k` and
+`dimTailConst k = √(2k log 2k) + 2√k`, so `C ≍ k √(log k)`. This is still strictly better than
+the *proved* `(β/√n)^{1/2}` of `berryEsseen_convex_improved`.
 
-This is `exists_convexDiscrepancy_recursion` fed to `le_of_selfImproving_induction_log`. It is
+**Wave 39's two deviations from the wave-32 form, both recorded rather than absorbed.** The
+localised tail swap can only be run at the radius at which the Gaussian *norm* tail is `≲ σ²`,
+and that radius is `σ · gaussianTailRadius k σ`, not `σ`; see
+`abs_integral_gaussian_smoothed_swap_localised_le`. Splitting the radius as
+`dimTailConst k · √(1 + log(1 + ε⁻¹))` and multiplying by the ledger's harmonic factor turns the
+forcing term `1 + log(1 + ε⁻¹)` into `logPow32 ε = (1 + log(1 + ε⁻¹))^{3/2}` and multiplies the
+constant by `dimTailConst k`. Both changes were checked, not assumed: the fixed point re-solves
+at the *same* constant `20 A C` (`le_of_selfImproving_induction_forcing`), and the ledger is
+re-proved at the amended shape (`weighted_ledger_balance`, constant `306 C₃ + 81 C_t`).
+Sharpening `stdGaussian_norm_ge_le_exp` from the coordinate union bound to the additive form
+`γ{‖z‖ ≥ M} ≤ exp(-(M − √k)²/2)` would replace `dimTailConst k ≍ √(k log k)` by `≍ √k` and
+nothing else; the `3/2` power is intrinsic to this route, not an artefact of that bound (a
+*fixed* Markov order gives a power of `ε⁻¹` instead, which is worse — wave 38).
+
+This is `exists_convexDiscrepancy_recursion` fed to `le_of_selfImproving_induction_logPow32`.
+It is
 **not** axiom-clean: it inherits exactly **one** stated-but-unproved brick,
 `localised_swap_bound_small_weight` — the small-weight half of brick L (brick H,
 `hybridLaw_shell_le` / `hybridLaw_wideShell_le`, is proved; the large-weight half of brick L,
 `exists_smooth_swap_bound_of_one_le_weight`, is proved; brick L's wave-20 form was false and is
 amended, see `exists_localised_swap_bound`).
 
-**Why the logarithm (wave 32: the amendment is EXECUTED).** Wave 29's docstring predicted it;
+**Why the logarithm (wave 32: the amendment is EXECUTED; wave 39: it is a `3/2` power).**
+Wave 29's docstring predicted it;
 wave 32 records the forcing ledger on `localised_swap_bound_small_weight` and carries the term
 through. The telescope smooths step `j` at width `σⱼ = √(j/n)`, and those widths sweep from `ε`
 to `1` while the test function has the single width `ε`; the per-step localisation weight is
@@ -9611,11 +9750,12 @@ The log-free form `|μₙ(B) − γ(B)| ≤ C β/√n` is **not** retracted — 
 theorem — it is simply not what this route proves, and the provable-constants rule forbids
 recording it here.
 
-Note the `k`-power: `gaussianShellConst k = 4 e² √k`, so this route gives `C ∼ k^{1/2}`, not
-Bentkus's `400 k^{1/4}`. Wave 22 removed the factor `k` that the coordinate-slice cover of
-`gaussian_thickening_le` used to contribute (see `gaussian_le_of_gaussian_shift_cover`); the
-remaining `√k` is the first absolute moment `E‖Z‖ ≤ √k` of the Gaussian shift, and closing the
-gap to `k^{1/4}` needs Ball's Gaussian-surface-area theorem. Nothing in the recursion changes.
+Note the `k`-power: `gaussianShellConst k = 4 e² √k` and `dimTailConst k ≍ √(k log k)`, so this
+route gives `C ∼ k √(log k)`, not Bentkus's `400 k^{1/4}`. Wave 22 removed the factor `k` that the
+coordinate-slice cover of `gaussian_thickening_le` used to contribute (see
+`gaussian_le_of_gaussian_shift_cover`); the remaining `√k` is the first absolute moment `E‖Z‖ ≤
+√k` of the Gaussian shift, and closing the gap to `k^{1/4}` needs Ball's Gaussian-surface-area
+theorem. Nothing in the recursion changes.
 Per the provable-constants rule the statement records `k^{1/2}`. -/
 theorem berryEsseen_convex_sharp {k : ℕ} (hk : 0 < k) :
     ∃ C : ℝ, 0 < C ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
@@ -9627,10 +9767,14 @@ theorem berryEsseen_convex_sharp {k : ℕ} (hk : 0 < k) :
       |((sumLaw n ν) B).toReal
           - ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) B).toReal|
         ≤ C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
-            * (1 + Real.log (max (Real.sqrt (n : ℝ) / (∫ y, ‖y‖ ^ 3 ∂ν)) (Real.exp 1))) := by
+            * ((1 + Real.log (max (Real.sqrt (n : ℝ) / (∫ y, ‖y‖ ^ 3 ∂ν)) (Real.exp 1)))
+              * Real.sqrt (1 + Real.log
+                (max (Real.sqrt (n : ℝ) / (∫ y, ‖y‖ ^ 3 ∂ν)) (Real.exp 1)))) := by
   obtain ⟨A, hApos, hA⟩ := exists_convexDiscrepancy_recursion k hk
   have hCk : 0 < gaussianShellConst k := gaussianShellConst_pos hk
-  refine ⟨40 * ((A + 1) * (4 * gaussianShellConst k)), by positivity, ?_⟩
+  have hDk1 : (1 : ℝ) ≤ dimTailConst k := one_le_dimTailConst hk
+  have hDk0 : (0 : ℝ) < dimTailConst k := by linarith
+  refine ⟨60 * ((A + 1) * dimTailConst k * (4 * gaussianShellConst k)), by positivity, ?_⟩
   intro n ν B hn hνp hmean hcov hβint hBm hBc
   haveI := hνp
   have hnr : (0 : ℝ) < n := by exact_mod_cast hn
@@ -9652,10 +9796,12 @@ theorem berryEsseen_convex_sharp {k : ℕ} (hk : 0 < k) :
     rw [← hβdef] at hlyap
     nlinarith
   -- the recursion, with `A` enlarged to `A + 1` so that `1 ≤ 8 (A + 1)` for `log_shift_le`
-  have hind := le_of_selfImproving_induction_log (A := A + 1)
+  have hADk : (1 : ℝ) ≤ (A + 1) * dimTailConst k := by nlinarith
+  have hbwin : (1 : ℝ) ≤ 8 * ((A + 1) * dimTailConst k) * β := by nlinarith
+  have hind := le_of_selfImproving_induction_logPow32 (A := (A + 1) * dimTailConst k)
     (C := 4 * gaussianShellConst k) (b := β)
-    (D := fun m => convexDiscrepancy (sumLaw m ν) γ) (by linarith) (by linarith) hβpos
-    (by nlinarith)
+    (D := fun m => convexDiscrepancy (sumLaw m ν) γ) (by positivity) (by positivity) hβpos
+    hbwin
     (fun m hm ε hε hwin Y hY => by
       have hY0 : 0 ≤ Y :=
         le_trans convexDiscrepancy_nonneg (hY m (by omega) le_rfl)
@@ -9666,32 +9812,47 @@ theorem berryEsseen_convex_sharp {k : ℕ} (hk : 0 < k) :
       have hmr : (0 : ℝ) < m := by exact_mod_cast hm
       have hsm : 0 < Real.sqrt (m : ℝ) := Real.sqrt_pos.mpr hmr
       have hd : (0 : ℝ) ≤ β / Real.sqrt (m : ℝ) := by positivity
-      have hlog0 : 0 ≤ Real.log (1 + ε⁻¹) :=
-        Real.log_nonneg (by have : (0:ℝ) < ε⁻¹ := inv_pos.2 hε; linarith)
+      have hLP1 : (1 : ℝ) ≤ logPow32 ε := one_le_logPow32 hε
+      have hLP0 : (0 : ℝ) ≤ logPow32 ε := by linarith
       have ht1 : 0 ≤ β / Real.sqrt (m : ℝ) * ε⁻¹
           * (4 * gaussianShellConst k * ε + 2 * Y) := by
         have : (0:ℝ) < 4 * gaussianShellConst k * ε := by positivity
         exact mul_nonneg (mul_nonneg hd (inv_pos.2 hε).le) (by linarith)
-      have ht2 : 0 ≤ β / Real.sqrt (m : ℝ) * (4 * gaussianShellConst k)
-          * (1 + Real.log (1 + ε⁻¹)) := by
-        have : (0:ℝ) ≤ 1 + Real.log (1 + ε⁻¹) := by linarith
-        exact mul_nonneg (mul_nonneg hd (by positivity)) this
-      nlinarith [ht1, ht2]) n hn
+      have hAle : A ≤ (A + 1) * dimTailConst k := by nlinarith
+      have e1 : A * (β / Real.sqrt (m : ℝ)) * ε⁻¹
+            * (4 * gaussianShellConst k * ε + 2 * Y)
+          ≤ (A + 1) * dimTailConst k * (β / Real.sqrt (m : ℝ)) * ε⁻¹
+            * (4 * gaussianShellConst k * ε + 2 * Y) := by
+        nlinarith [ht1, hAle]
+      have hprod : (0 : ℝ) ≤ dimTailConst k * (β / Real.sqrt (m : ℝ))
+          * (4 * gaussianShellConst k) * logPow32 ε :=
+        mul_nonneg (mul_nonneg (mul_nonneg (by linarith) hd) (by positivity)) hLP0
+      have e2 : A * (β / Real.sqrt (m : ℝ)) * (4 * gaussianShellConst k)
+            * (dimTailConst k * logPow32 ε)
+          ≤ (A + 1) * dimTailConst k * (β / Real.sqrt (m : ℝ))
+            * (4 * gaussianShellConst k) * logPow32 ε := by
+        nlinarith [hprod]
+      linarith) n hn
   -- convert the induction's own log factor into the headline's
-  have hlog := log_shift_le (A := 8 * (A + 1)) (δ := δ) (by linarith) hδpos
-  have hKpos : (0 : ℝ) ≤ 20 * ((A + 1) * (4 * gaussianShellConst k)) * δ := by
+  have hlog := logPow32_shift_le (A := 8 * ((A + 1) * dimTailConst k)) (δ := δ)
+    (by linarith) hδpos
+  have hKpos : (0 : ℝ)
+      ≤ 20 * ((A + 1) * dimTailConst k * (4 * gaussianShellConst k)) * δ := by
     rw [hδdef]; positivity
   have hinvδ : δ⁻¹ = Real.sqrt (n : ℝ) / β := by rw [hδdef, inv_div]
   rw [← hδdef] at hind
   rw [hinvδ] at hlog
   refine le_trans (le_convexDiscrepancy hBm hBc) (le_trans hind ?_)
-  calc 20 * ((A + 1) * (4 * gaussianShellConst k)) * δ
-          * (1 + Real.log (1 + (8 * (A + 1) * δ)⁻¹))
-      ≤ 20 * ((A + 1) * (4 * gaussianShellConst k)) * δ
-          * (2 * (1 + Real.log (max (Real.sqrt (n : ℝ) / β) (Real.exp 1)))) :=
+  calc 20 * ((A + 1) * dimTailConst k * (4 * gaussianShellConst k)) * δ
+          * logPow32 (8 * ((A + 1) * dimTailConst k) * δ)
+      ≤ 20 * ((A + 1) * dimTailConst k * (4 * gaussianShellConst k)) * δ
+          * (3 * ((1 + Real.log (max (Real.sqrt (n : ℝ) / β) (Real.exp 1)))
+            * Real.sqrt (1 + Real.log (max (Real.sqrt (n : ℝ) / β) (Real.exp 1))))) :=
         mul_le_mul_of_nonneg_left hlog hKpos
-    _ = 40 * ((A + 1) * (4 * gaussianShellConst k)) * δ
-          * (1 + Real.log (max (Real.sqrt (n : ℝ) / β) (Real.exp 1))) := by ring
+    _ = 60 * ((A + 1) * dimTailConst k * (4 * gaussianShellConst k)) * δ
+          * ((1 + Real.log (max (Real.sqrt (n : ℝ) / β) (Real.exp 1)))
+            * Real.sqrt (1 + Real.log
+              (max (Real.sqrt (n : ℝ) / β) (Real.exp 1)))) := by ring
 
 end ConvexDiscrepancy
 
