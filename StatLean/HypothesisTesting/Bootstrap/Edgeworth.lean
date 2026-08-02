@@ -8581,6 +8581,1019 @@ theorem norm_integral_expPhase_le_ibp {f : ℝ → ℂ} {Φ : ℝ → ℝ}
   refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
   simp [Complex.norm_exp]
 
+/-! ### The one-dimensional non-stationary-phase estimate: the quantitative half
+
+The identity half of the leakage estimate (`integral_expPhase_ibp` and its class-preservation
+lemmas, above) says the ten-fold iteration is *legitimate*. What follows is the half that
+carries the exponent: a self-contained, order-`N` non-stationary-phase estimate on the line,
+ending at `norm_integral_expPhase_le_graded`.
+
+The device is a **graded** calculus in which every family is measured against the single scale
+`μ = εΛ ≥ 1`, where `Λ` is the slope floor `|∂Φ| ≥ Λ` and `εΛ²` bounds *all* the higher
+derivatives of the slope. Two facts make it work and both are proved here:
+
+* the reciprocal slope `1/∂Φ` satisfies the Riccati identity `(1/∂Φ)' = -∂²Φ·(1/∂Φ)²`, so its
+  `j`-th derivative is `O(μ^j/Λ)` by a two-line induction — **no Faà di Bruno**, and no
+  enumeration of the partition lattice (`exists_bound_iteratedDeriv_recipDeriv`);
+* consequently one application of `L f = ∂(f/(i∂Φ))` maps a family graded by `μ` with size `P`
+  to a family graded by `μ` with size `Cε·P` — the scale `μ` is a **fixed point** of the
+  transform, which is exactly why `N` parts gain `ε^N` and not `(εμ)^N`
+  (`exists_bound_iteratedDeriv_ibpStep`, `exists_bound_iterate_ibpStep`).
+
+**This corrects wave 44's assessment of the residue.** That note recorded that the missing
+calculus needs *negative* powers and that "an existential constant is useless there, since the
+exponent (B) has to produce is carried by the explicit `L^{-(k+1)}`". The first half is right;
+the second is not, and the reason is the fixed point above: only **one** negative power of `Λ`
+ever appears (in `1/∂Φ` itself), because the graded induction reinvests the extra powers of `Λ`
+into `μ = εΛ` rather than letting them accumulate. The exponent is therefore carried explicitly
+by `μ^j` and `ε^N`, and the constant that is left is purely combinatorial — `8^N K²`-style
+bookkeeping depending on `N` alone. An existential constant is exactly the right shape.
+
+Every bound is **local**: the slope floor, the higher-derivative bound and the amplitude grading
+are hypotheses on a set `S` (an interval `[-A, A]` in the headline), never on all of `ℝ`. That is
+not a refinement, it is a necessity — the surrogate phase is a *cubic* in `w₀`, so its second
+derivative is unbounded on the line and only the global non-vanishing of `∂Φ` survives off the
+cut-off's support. The whole induction is pointwise in `x`, so the localisation is free. -/
+
+/-! ## Elementary graded bookkeeping -/
+
+/-- Leibniz for one-dimensional iterated derivatives, in norm form. -/
+lemma norm_iteratedDeriv_mul_le' {A : Type*} [NormedRing A] [NormedAlgebra ℝ A]
+    {f g : ℝ → A} (hf : ContDiff ℝ (⊤ : ℕ∞) f) (hg : ContDiff ℝ (⊤ : ℕ∞) g) (n : ℕ) (x : ℝ) :
+    ‖iteratedDeriv n (fun y => f y * g y) x‖
+      ≤ ∑ i ∈ Finset.range (n + 1),
+          (n.choose i : ℝ) * ‖iteratedDeriv i f x‖ * ‖iteratedDeriv (n - i) g x‖ := by
+  have h := norm_iteratedFDeriv_mul_le (𝕜 := ℝ) (A := A)
+    (N := ((⊤ : ℕ∞) : WithTop ℕ∞)) hf hg x (n := n) (mod_cast le_top)
+  simpa only [norm_iteratedFDeriv_eq_norm_iteratedDeriv] using h
+
+/-- The binomial-sum bound that every Leibniz step in the graded calculus consumes: two families
+graded by the same scale `μ ≥ 1` convolve to a family graded by `μ`, at the cost of `2 ^ n`. -/
+lemma binom_sum_le {n : ℕ} {c d : ℕ → ℝ} {C D μ : ℝ} (hμ : 1 ≤ μ)
+    (hcn : ∀ i, 0 ≤ c i) (hdn : ∀ i, 0 ≤ d i)
+    (hc : ∀ i ≤ n, c i ≤ C * μ ^ i) (hd : ∀ i ≤ n, d i ≤ D * μ ^ i) :
+    ∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) * c i * d (n - i)
+      ≤ 2 ^ n * (C * D * μ ^ n) := by
+  have hμ0 : (0 : ℝ) < μ := lt_of_lt_of_le zero_lt_one hμ
+  have hterm : ∀ i ∈ Finset.range (n + 1),
+      (n.choose i : ℝ) * c i * d (n - i) ≤ (n.choose i : ℝ) * (C * D * μ ^ n) := by
+    intro i hi
+    have hin : i ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
+    have h1 : c i * d (n - i) ≤ (C * μ ^ i) * (D * μ ^ (n - i)) :=
+      mul_le_mul (hc i hin) (hd (n - i) (Nat.sub_le n i)) (hdn _)
+        (le_trans (hcn i) (hc i hin))
+    have hpow : μ ^ i * μ ^ (n - i) = μ ^ n := by
+      rw [← pow_add, Nat.add_sub_cancel' hin]
+    calc (n.choose i : ℝ) * c i * d (n - i)
+        = (n.choose i : ℝ) * (c i * d (n - i)) := by ring
+      _ ≤ (n.choose i : ℝ) * ((C * μ ^ i) * (D * μ ^ (n - i))) :=
+          mul_le_mul_of_nonneg_left h1 (by positivity)
+      _ = (n.choose i : ℝ) * (C * D * μ ^ n) := by rw [← hpow]; ring
+  calc ∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) * c i * d (n - i)
+      ≤ ∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) * (C * D * μ ^ n) :=
+        Finset.sum_le_sum hterm
+    _ = (∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ)) * (C * D * μ ^ n) := by
+        rw [Finset.sum_mul]
+    _ = 2 ^ n * (C * D * μ ^ n) := by
+        rw [← Nat.cast_sum, Nat.sum_range_choose]; push_cast; ring
+
+/-! ## The reciprocal slope and its graded derivative calculus -/
+
+/-- The **reciprocal slope** `1/∂Φ` of a non-stationary phase. Its derivatives, graded by the
+scale `μ = εΛ`, are what an integration by parts against `e^{iΦ}` actually spends. -/
+noncomputable def recipDeriv (Φ : ℝ → ℝ) : ℝ → ℝ := fun y => (deriv Φ y)⁻¹
+
+lemma contDiff_recipDeriv {Φ : ℝ → ℝ} (hΦ : ContDiff ℝ (⊤ : ℕ∞) Φ)
+    (hΦ0 : ∀ x : ℝ, deriv Φ x ≠ 0) : ContDiff ℝ (⊤ : ℕ∞) (recipDeriv Φ) :=
+  ((contDiff_infty_iff_deriv.mp hΦ).2).inv hΦ0
+
+/-- **The Riccati identity for the reciprocal slope.** `(1/Φ')' = -Φ''·(1/Φ')²`; iterating it is
+what produces the graded bound below, with no Faà di Bruno bookkeeping. -/
+lemma deriv_recipDeriv {Φ : ℝ → ℝ} (hΦ : ContDiff ℝ (⊤ : ℕ∞) Φ)
+    (hΦ0 : ∀ x : ℝ, deriv Φ x ≠ 0) :
+    deriv (recipDeriv Φ)
+      = fun y : ℝ => -(deriv (deriv Φ) y) * (recipDeriv Φ y * recipDeriv Φ y) := by
+  have hΦ' : ContDiff ℝ (⊤ : ℕ∞) (deriv Φ) := (contDiff_infty_iff_deriv.mp hΦ).2
+  funext y
+  have hd : HasDerivAt (deriv Φ) (deriv (deriv Φ) y) y :=
+    (hΦ'.differentiable (by simp) y).hasDerivAt
+  have h : HasDerivAt (deriv Φ)⁻¹ (-(deriv (deriv Φ) y) / deriv Φ y ^ 2) y := hd.inv (hΦ0 y)
+  have hgoal : -(deriv (deriv Φ) y) * (recipDeriv Φ y * recipDeriv Φ y)
+      = -(deriv (deriv Φ) y) / deriv Φ y ^ 2 := by
+    simp only [recipDeriv, div_eq_mul_inv, sq, mul_inv]
+  rw [hgoal]
+  exact h.deriv
+
+/-- **The graded derivative calculus of the reciprocal slope — the "negative power" half of
+input (B).** With a slope floor `Λ` and *all* higher derivatives of the slope bounded by `εΛ²`,
+the `j`-th derivative of `1/∂Φ` is at most `K μ^{j}/Λ` with `μ = εΛ ≥ 1`, `K` depending only on
+the order `N`.
+
+The exponent is carried **explicitly**, by the `μ^j` and the single negative power `Λ^{-1}`; only
+the combinatorial constant `K` is existential. That is the shape the ten-fold iteration needs,
+and it is why an existential constant is harmless here. -/
+theorem exists_bound_iteratedDeriv_recipDeriv (N : ℕ) :
+    ∃ K : ℝ, 1 ≤ K ∧ ∀ (Φ : ℝ → ℝ) (S : Set ℝ) (Λ ε : ℝ), ContDiff ℝ (⊤ : ℕ∞) Φ →
+      (∀ x : ℝ, deriv Φ x ≠ 0) → 0 < Λ → 1 ≤ ε * Λ →
+      (∀ x ∈ S, Λ ≤ |deriv Φ x|) →
+      (∀ j : ℕ, 1 ≤ j → j ≤ N → ∀ x ∈ S, |iteratedDeriv j (deriv Φ) x| ≤ ε * Λ ^ 2) →
+      ∀ j ≤ N, ∀ x ∈ S, Λ * |iteratedDeriv j (recipDeriv Φ) x| ≤ K * (ε * Λ) ^ j := by
+  induction N with
+  | zero =>
+      refine ⟨1, le_refl 1, ?_⟩
+      intro Φ S Λ ε _ _ hΛ _ hlow _ j hj x hxS
+      have hj0 : j = 0 := Nat.le_zero.mp hj
+      subst hj0
+      have hne : |deriv Φ x| ≠ 0 := by
+        have := hlow x hxS; linarith
+      simp only [iteratedDeriv_zero, recipDeriv, pow_zero, mul_one, abs_inv]
+      rw [mul_inv_le_iff₀ (by positivity)]
+      simpa using hlow x hxS
+  | succ N ih =>
+      obtain ⟨K, hK1, hK⟩ := ih
+      refine ⟨max K (8 ^ N * K ^ 2), le_max_of_le_left hK1, ?_⟩
+      intro Φ S Λ ε hΦ hΦ0 hΛ hμ hlow hhigh j hj x hxS
+      have hμ0 : (0 : ℝ) < ε * Λ := lt_of_lt_of_le zero_lt_one hμ
+      have hμnn : (0 : ℝ) ≤ ε * Λ := le_of_lt hμ0
+      have hε0 : 0 < ε := by
+        by_contra hcon
+        push_neg at hcon
+        nlinarith
+      have hK0 : (0 : ℝ) < K := lt_of_lt_of_le zero_lt_one hK1
+      -- the inductive hypothesis, available at order `N`
+      have hlowN := hK Φ S Λ ε hΦ hΦ0 hΛ hμ hlow
+        (fun j hj1 hjN x hx => hhigh j hj1 (le_trans hjN (Nat.le_succ N)) x hx)
+      rcases Nat.lt_or_ge j (N + 1) with hjlt | hjge
+      · refine le_trans (hlowN j (Nat.lt_succ_iff.mp hjlt) x hxS) ?_
+        exact mul_le_mul_of_nonneg_right (le_max_left _ _) (pow_nonneg hμnn j)
+      · -- the top order `j = N + 1`
+        have hjeq : j = N + 1 := le_antisymm hj hjge
+        subst hjeq
+        have hΦ' : ContDiff ℝ (⊤ : ℕ∞) (deriv Φ) := (contDiff_infty_iff_deriv.mp hΦ).2
+        have hrc : ContDiff ℝ (⊤ : ℕ∞) (recipDeriv Φ) := contDiff_recipDeriv hΦ hΦ0
+        have hΦ'' : ContDiff ℝ (⊤ : ℕ∞) (deriv (deriv Φ)) :=
+          (contDiff_infty_iff_deriv.mp hΦ').2
+        have hneg : ContDiff ℝ (⊤ : ℕ∞) fun y : ℝ => -(deriv (deriv Φ) y) := hΦ''.neg
+        -- the derivative bounds of `recipDeriv Φ`, in the form `binom_sum_le` consumes
+        have hrec : ∀ p ≤ N, |iteratedDeriv p (recipDeriv Φ) x| ≤ (K / Λ) * (ε * Λ) ^ p := by
+          intro p hp
+          rw [div_mul_eq_mul_div, le_div_iff₀ hΛ]
+          calc |iteratedDeriv p (recipDeriv Φ) x| * Λ
+              = Λ * |iteratedDeriv p (recipDeriv Φ) x| := by ring
+            _ ≤ K * (ε * Λ) ^ p := hlowN p hp x hxS
+        -- Leibniz for `(1/Φ')²`
+        have hsq : ∀ m ≤ N, |iteratedDeriv m
+            (fun y : ℝ => recipDeriv Φ y * recipDeriv Φ y) x|
+              ≤ (2 ^ N * ((K / Λ) * (K / Λ))) * (ε * Λ) ^ m := by
+          intro m hm
+          have hL := norm_iteratedDeriv_mul_le' (A := ℝ) hrc hrc m x
+          simp only [Real.norm_eq_abs] at hL
+          refine hL.trans ?_
+          have hbs := binom_sum_le (n := m)
+            (c := fun i => |iteratedDeriv i (recipDeriv Φ) x|)
+            (d := fun i => |iteratedDeriv i (recipDeriv Φ) x|)
+            (C := K / Λ) (D := K / Λ) (μ := ε * Λ) hμ
+            (fun i => abs_nonneg _) (fun i => abs_nonneg _)
+            (fun i hi => hrec i (le_trans hi hm)) (fun i hi => hrec i (le_trans hi hm))
+          refine hbs.trans ?_
+          have h2 : (2 : ℝ) ^ m ≤ 2 ^ N := pow_le_pow_right₀ (by norm_num) hm
+          have hpos : (0 : ℝ) ≤ K / Λ * (K / Λ) * (ε * Λ) ^ m :=
+            mul_nonneg (mul_self_nonneg _) (pow_nonneg hμnn m)
+          calc (2 : ℝ) ^ m * (K / Λ * (K / Λ) * (ε * Λ) ^ m)
+              ≤ 2 ^ N * (K / Λ * (K / Λ) * (ε * Λ) ^ m) :=
+                mul_le_mul_of_nonneg_right h2 hpos
+            _ = 2 ^ N * (K / Λ * (K / Λ)) * (ε * Λ) ^ m := by ring
+        -- one more Leibniz, against the phase's higher derivatives
+        have hstep : |iteratedDeriv (N + 1) (recipDeriv Φ) x|
+            ≤ 2 ^ N * ((ε * Λ ^ 2) * (2 ^ N * ((K / Λ) * (K / Λ))) * (2 * (ε * Λ)) ^ N) := by
+          rw [iteratedDeriv_succ', deriv_recipDeriv hΦ hΦ0]
+          have hL := norm_iteratedDeriv_mul_le' (A := ℝ) hneg
+            (hrc.mul hrc) N x
+          simp only [Real.norm_eq_abs] at hL
+          refine hL.trans ?_
+          have h2μ : (1 : ℝ) ≤ 2 * (ε * Λ) := by linarith
+          refine binom_sum_le (n := N)
+            (c := fun i => |iteratedDeriv i (fun y : ℝ => -(deriv (deriv Φ) y)) x|)
+            (d := fun i => |iteratedDeriv i (fun y : ℝ => recipDeriv Φ y * recipDeriv Φ y) x|)
+            (C := ε * Λ ^ 2) (D := 2 ^ N * ((K / Λ) * (K / Λ))) (μ := 2 * (ε * Λ)) h2μ
+            (fun i => abs_nonneg _) (fun i => abs_nonneg _) ?_ ?_
+          · intro i hi
+            have hone : (1 : ℝ) ≤ (2 * (ε * Λ)) ^ i := one_le_pow₀ h2μ
+            have hb : |iteratedDeriv i (fun y : ℝ => -(deriv (deriv Φ) y)) x| ≤ ε * Λ ^ 2 := by
+              have hneg' : iteratedDeriv i (fun y : ℝ => -(deriv (deriv Φ) y)) x
+                  = -iteratedDeriv i (deriv (deriv Φ)) x := iteratedDeriv_neg i _ x
+              rw [hneg', abs_neg, ← iteratedDeriv_succ']
+              exact hhigh (i + 1) (Nat.succ_le_succ (Nat.zero_le i))
+                (Nat.succ_le_succ (le_trans hi (le_refl N))) x hxS
+            have hpos : (0 : ℝ) ≤ ε * Λ ^ 2 := by positivity
+            nlinarith
+          · intro i hi
+            refine (hsq i hi).trans ?_
+            have h1 : (ε * Λ) ^ i ≤ (2 * (ε * Λ)) ^ i := by
+              refine pow_le_pow_left₀ hμnn ?_ i
+              linarith
+            have hpos : (0 : ℝ) ≤ 2 ^ N * ((K / Λ) * (K / Λ)) :=
+              mul_nonneg (by positivity) (mul_self_nonneg _)
+            exact mul_le_mul_of_nonneg_left h1 hpos
+        -- assemble
+        have hkey : Λ * |iteratedDeriv (N + 1) (recipDeriv Φ) x|
+            ≤ (8 ^ N * K ^ 2) * (ε * Λ) ^ (N + 1) := by
+          have hmul := mul_le_mul_of_nonneg_left hstep (le_of_lt hΛ)
+          refine hmul.trans (le_of_eq ?_)
+          have hΛne : Λ ≠ 0 := ne_of_gt hΛ
+          have h8 : (8 : ℝ) ^ N = 2 ^ N * 2 ^ N * 2 ^ N := by
+            rw [show (8 : ℝ) = 2 * 2 * 2 by norm_num, mul_pow, mul_pow]
+          rw [h8, mul_pow, pow_succ]
+          field_simp
+          ring
+        exact hkey.trans (mul_le_mul_of_nonneg_right (le_max_right _ _) (pow_nonneg hμnn _))
+
+/-! ## The `L`-transform, its class and its graded bound -/
+
+/-- Iterated derivatives commute with the real-to-complex embedding. -/
+lemma iteratedDeriv_ofReal {g : ℝ → ℝ} (hg : ContDiff ℝ (⊤ : ℕ∞) g) (n : ℕ) (x : ℝ) :
+    iteratedDeriv n (fun y : ℝ => ((g y : ℝ) : ℂ)) x = ((iteratedDeriv n g x : ℝ) : ℂ) := by
+  induction n generalizing g x with
+  | zero => simp
+  | succ n ih =>
+      have hderiv : (deriv fun y : ℝ => ((g y : ℝ) : ℂ)) = fun y : ℝ => ((deriv g y : ℝ) : ℂ) := by
+        funext y
+        exact ((hg.differentiable (by simp) y).hasDerivAt.ofReal_comp).deriv
+      rw [iteratedDeriv_succ', hderiv, ih (contDiff_infty_iff_deriv.mp hg).2,
+        ← iteratedDeriv_succ']
+
+lemma norm_iteratedDeriv_ofReal {g : ℝ → ℝ} (hg : ContDiff ℝ (⊤ : ℕ∞) g) (n : ℕ) (x : ℝ) :
+    ‖iteratedDeriv n (fun y : ℝ => ((g y : ℝ) : ℂ)) x‖ = |iteratedDeriv n g x| := by
+  rw [iteratedDeriv_ofReal hg, Complex.norm_real, Real.norm_eq_abs]
+
+/-- The **`L`-transform** `L f = ∂(f/(i∂Φ))` attached to a phase `Φ`. -/
+noncomputable def ibpStep (Φ : ℝ → ℝ) (f : ℝ → ℂ) : ℝ → ℂ :=
+  deriv fun y : ℝ => f y / (Complex.I * ((deriv Φ y : ℝ) : ℂ))
+
+/-- The amplitude the `L`-transform differentiates, with the phase factor split off. -/
+lemma ibpStep_eq (Φ : ℝ → ℝ) (f : ℝ → ℂ) :
+    ibpStep Φ f
+      = fun x : ℝ => -Complex.I * deriv (fun y : ℝ => f y * ((recipDeriv Φ y : ℝ) : ℂ)) x := by
+  have hfun : (fun y : ℝ => f y / (Complex.I * ((deriv Φ y : ℝ) : ℂ)))
+      = fun y : ℝ => -Complex.I * (f y * ((recipDeriv Φ y : ℝ) : ℂ)) := by
+    funext y
+    rw [recipDeriv, Complex.ofReal_inv, div_eq_mul_inv, mul_inv, Complex.inv_I]
+    ring
+  rw [ibpStep, hfun]
+  funext x
+  exact deriv_const_mul_field _
+
+lemma contDiff_mulRecip {Φ : ℝ → ℝ} {f : ℝ → ℂ} (hΦ : ContDiff ℝ (⊤ : ℕ∞) Φ)
+    (hΦ0 : ∀ x : ℝ, deriv Φ x ≠ 0) (hf : ContDiff ℝ (⊤ : ℕ∞) f) :
+    ContDiff ℝ (⊤ : ℕ∞) fun y : ℝ => f y * ((recipDeriv Φ y : ℝ) : ℂ) :=
+  hf.mul (Complex.ofRealCLM.contDiff.comp (contDiff_recipDeriv hΦ hΦ0))
+
+lemma contDiff_ibpStep' {Φ : ℝ → ℝ} {f : ℝ → ℂ} (hΦ : ContDiff ℝ (⊤ : ℕ∞) Φ)
+    (hΦ0 : ∀ x : ℝ, deriv Φ x ≠ 0) (hf : ContDiff ℝ (⊤ : ℕ∞) f) :
+    ContDiff ℝ (⊤ : ℕ∞) (ibpStep Φ f) := by
+  rw [ibpStep_eq]
+  exact contDiff_const.mul (contDiff_infty_iff_deriv.mp (contDiff_mulRecip hΦ hΦ0 hf)).2
+
+lemma contDiff_iterate_ibpStep {Φ : ℝ → ℝ} {f : ℝ → ℂ} (hΦ : ContDiff ℝ (⊤ : ℕ∞) Φ)
+    (hΦ0 : ∀ x : ℝ, deriv Φ x ≠ 0) (hf : ContDiff ℝ (⊤ : ℕ∞) f) (k : ℕ) :
+    ContDiff ℝ (⊤ : ℕ∞) ((ibpStep Φ)^[k] f) := by
+  induction k generalizing f with
+  | zero => simpa using hf
+  | succ k ih =>
+      rw [Function.iterate_succ_apply]
+      exact ih (contDiff_ibpStep' hΦ hΦ0 hf)
+
+lemma norm_iteratedDeriv_ibpStep {Φ : ℝ → ℝ} {f : ℝ → ℂ} (hΦ : ContDiff ℝ (⊤ : ℕ∞) Φ)
+    (hΦ0 : ∀ x : ℝ, deriv Φ x ≠ 0) (hf : ContDiff ℝ (⊤ : ℕ∞) f) (m : ℕ) (x : ℝ) :
+    ‖iteratedDeriv m (ibpStep Φ f) x‖
+      = ‖iteratedDeriv (m + 1) (fun y : ℝ => f y * ((recipDeriv Φ y : ℝ) : ℂ)) x‖ := by
+  have hmr := contDiff_mulRecip hΦ hΦ0 hf
+  have hd : ContDiffAt ℝ (m : ℕ)
+      (deriv fun y : ℝ => f y * ((recipDeriv Φ y : ℝ) : ℂ)) x :=
+    ((contDiff_infty_iff_deriv.mp hmr).2).contDiffAt.of_le (mod_cast le_top)
+  have hcm := iteratedDeriv_const_mul (n := m) (-Complex.I) hd
+  rw [ibpStep_eq]
+  have h1 : ‖iteratedDeriv m (fun x : ℝ => -Complex.I *
+      deriv (fun y : ℝ => f y * ((recipDeriv Φ y : ℝ) : ℂ)) x) x‖
+      = ‖-Complex.I * iteratedDeriv m
+          (deriv fun y : ℝ => f y * ((recipDeriv Φ y : ℝ) : ℂ)) x‖ :=
+    congrArg (fun z : ℂ => ‖z‖) hcm
+  rw [h1, iteratedDeriv_succ', norm_mul]
+  simp
+
+/-- **One integration by parts costs one factor `ε`** — the quantitative half of the leakage
+estimate, at a single order. -/
+theorem exists_bound_iteratedDeriv_ibpStep (N : ℕ) :
+    ∃ C : ℝ, 1 ≤ C ∧ ∀ (Φ : ℝ → ℝ) (f : ℝ → ℂ) (S : Set ℝ) (Λ ε P : ℝ),
+      ContDiff ℝ (⊤ : ℕ∞) Φ → ContDiff ℝ (⊤ : ℕ∞) f → (∀ x : ℝ, deriv Φ x ≠ 0) →
+      0 < Λ → 1 ≤ ε * Λ → 0 ≤ P →
+      (∀ x ∈ S, Λ ≤ |deriv Φ x|) →
+      (∀ j : ℕ, 1 ≤ j → j ≤ N → ∀ x ∈ S, |iteratedDeriv j (deriv Φ) x| ≤ ε * Λ ^ 2) →
+      ∀ m : ℕ, m + 1 ≤ N →
+      (∀ i ≤ m + 1, ∀ x ∈ S, ‖iteratedDeriv i f x‖ ≤ P * (ε * Λ) ^ i) →
+      ∀ x ∈ S, ‖iteratedDeriv m (ibpStep Φ f) x‖ ≤ (C * ε * P) * (ε * Λ) ^ m := by
+  obtain ⟨K, hK1, hK⟩ := exists_bound_iteratedDeriv_recipDeriv N
+  refine ⟨2 ^ (N + 1) * K, ?_, ?_⟩
+  · have : (1 : ℝ) ≤ 2 ^ (N + 1) := one_le_pow₀ (by norm_num)
+    nlinarith
+  intro Φ f S Λ ε P hΦ hf hΦ0 hΛ hμ hP hlow hhigh m hm hfg x hxS
+  have hμ0 : (0 : ℝ) < ε * Λ := lt_of_lt_of_le zero_lt_one hμ
+  have hμnn : (0 : ℝ) ≤ ε * Λ := le_of_lt hμ0
+  have hK0 : (0 : ℝ) < K := lt_of_lt_of_le zero_lt_one hK1
+  have hrc : ContDiff ℝ (⊤ : ℕ∞) (recipDeriv Φ) := contDiff_recipDeriv hΦ hΦ0
+  have hrcC : ContDiff ℝ (⊤ : ℕ∞) fun y : ℝ => ((recipDeriv Φ y : ℝ) : ℂ) :=
+    Complex.ofRealCLM.contDiff.comp hrc
+  have hrec : ∀ p ≤ N, ‖iteratedDeriv p (fun y : ℝ => ((recipDeriv Φ y : ℝ) : ℂ)) x‖
+      ≤ (K / Λ) * (ε * Λ) ^ p := by
+    intro p hp
+    rw [norm_iteratedDeriv_ofReal hrc, div_mul_eq_mul_div, le_div_iff₀ hΛ]
+    calc |iteratedDeriv p (recipDeriv Φ) x| * Λ
+        = Λ * |iteratedDeriv p (recipDeriv Φ) x| := by ring
+      _ ≤ K * (ε * Λ) ^ p := hK Φ S Λ ε hΦ hΦ0 hΛ hμ hlow hhigh p hp x hxS
+  rw [norm_iteratedDeriv_ibpStep hΦ hΦ0 hf]
+  refine (norm_iteratedDeriv_mul_le' (A := ℂ) hf hrcC (m + 1) x).trans ?_
+  have hbs := binom_sum_le (n := m + 1)
+    (c := fun i => ‖iteratedDeriv i f x‖)
+    (d := fun i => ‖iteratedDeriv i (fun y : ℝ => ((recipDeriv Φ y : ℝ) : ℂ)) x‖)
+    (C := P) (D := K / Λ) (μ := ε * Λ) hμ
+    (fun i => norm_nonneg _) (fun i => norm_nonneg _)
+    (fun i hi => hfg i hi x hxS) (fun i hi => hrec i (le_trans hi hm))
+  refine hbs.trans ?_
+  have hpow : (ε * Λ) ^ (m + 1) = (ε * Λ) ^ m * (ε * Λ) := pow_succ _ _
+  have h2 : (2 : ℝ) ^ (m + 1) ≤ 2 ^ (N + 1) :=
+    pow_le_pow_right₀ (by norm_num) (Nat.succ_le_succ (le_trans (Nat.le_succ m) hm))
+  have hΛne : Λ ≠ 0 := ne_of_gt hΛ
+  have hval : P * (K / Λ) * (ε * Λ) ^ (m + 1) = (K * ε * P) * (ε * Λ) ^ m := by
+    rw [hpow]; field_simp
+  rw [hval]
+  have hnn : (0 : ℝ) ≤ (K * ε * P) * (ε * Λ) ^ m := by
+    have hε : 0 ≤ ε := by nlinarith
+    have : (0 : ℝ) ≤ K * ε * P := by positivity
+    exact mul_nonneg this (pow_nonneg hμnn m)
+  calc (2 : ℝ) ^ (m + 1) * ((K * ε * P) * (ε * Λ) ^ m)
+      ≤ 2 ^ (N + 1) * ((K * ε * P) * (ε * Λ) ^ m) := mul_le_mul_of_nonneg_right h2 hnn
+    _ = (2 ^ (N + 1) * K * ε * P) * (ε * Λ) ^ m := by ring
+
+/-! ## The iteration -/
+
+/-- **`k` integrations by parts cost `k` factors of `ε`.** -/
+theorem exists_bound_iterate_ibpStep (N : ℕ) :
+    ∃ C : ℝ, 1 ≤ C ∧ ∀ (Φ : ℝ → ℝ) (f : ℝ → ℂ) (S : Set ℝ) (Λ ε P : ℝ),
+      ContDiff ℝ (⊤ : ℕ∞) Φ → ContDiff ℝ (⊤ : ℕ∞) f → (∀ x : ℝ, deriv Φ x ≠ 0) →
+      0 < Λ → 1 ≤ ε * Λ → 0 ≤ P →
+      (∀ x ∈ S, Λ ≤ |deriv Φ x|) →
+      (∀ j : ℕ, 1 ≤ j → j ≤ N → ∀ x ∈ S, |iteratedDeriv j (deriv Φ) x| ≤ ε * Λ ^ 2) →
+      (∀ j ≤ N, ∀ x ∈ S, ‖iteratedDeriv j f x‖ ≤ P * (ε * Λ) ^ j) →
+      ∀ k j : ℕ, j + k ≤ N → ∀ x ∈ S,
+        ‖iteratedDeriv j ((ibpStep Φ)^[k] f) x‖ ≤ (P * (C * ε) ^ k) * (ε * Λ) ^ j := by
+  obtain ⟨C, hC1, hC⟩ := exists_bound_iteratedDeriv_ibpStep N
+  refine ⟨C, hC1, ?_⟩
+  intro Φ f S Λ ε P hΦ hf hΦ0 hΛ hμ hP hlow hhigh hfg k
+  have hε0 : 0 < ε := by
+    have hμ0 : (0 : ℝ) < ε * Λ := lt_of_lt_of_le zero_lt_one hμ
+    by_contra hcon
+    push_neg at hcon
+    nlinarith
+  have hC0 : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC1
+  induction k with
+  | zero => intro j hj x hxS; simpa using hfg j (by omega) x hxS
+  | succ k ih =>
+      intro j hj x hxS
+      rw [Function.iterate_succ_apply']
+      have hg := contDiff_iterate_ibpStep hΦ hΦ0 hf k
+      have hPk : (0 : ℝ) ≤ P * (C * ε) ^ k := by positivity
+      have hbd := hC Φ ((ibpStep Φ)^[k] f) S Λ ε (P * (C * ε) ^ k) hΦ hg hΦ0 hΛ hμ hPk hlow hhigh
+        j (by omega) (fun i hi y hy => ih i (by omega) y hy) x hxS
+      refine hbd.trans (le_of_eq ?_)
+      ring
+
+/-! ## Support, and the resulting integral bound -/
+
+lemma tsupport_ibpStep_subset (Φ : ℝ → ℝ) (f : ℝ → ℂ) :
+    tsupport (ibpStep Φ f) ⊆ tsupport f := by
+  refine closure_minimal ?_ (isClosed_tsupport f)
+  intro x hx
+  by_contra hxn
+  refine hx ?_
+  have hopen : IsOpen (tsupport f)ᶜ := (isClosed_tsupport f).isOpen_compl
+  have heq : (fun y : ℝ => f y / (Complex.I * ((deriv Φ y : ℝ) : ℂ)))
+      =ᶠ[nhds x] fun _ : ℝ => (0 : ℂ) := by
+    filter_upwards [hopen.mem_nhds hxn] with y hy
+    rw [image_eq_zero_of_notMem_tsupport hy, zero_div]
+  have : ibpStep Φ f x = deriv (fun _ : ℝ => (0 : ℂ)) x := heq.deriv_eq
+  rw [this]
+  simp
+
+lemma tsupport_iterate_ibpStep_subset (Φ : ℝ → ℝ) (f : ℝ → ℂ) (k : ℕ) :
+    tsupport ((ibpStep Φ)^[k] f) ⊆ tsupport f := by
+  induction k generalizing f with
+  | zero => simp
+  | succ k ih =>
+      rw [Function.iterate_succ_apply]
+      exact (ih (f := ibpStep Φ f)).trans (tsupport_ibpStep_subset Φ f)
+
+/-- **The `N`-fold integration by parts, as an identity of norms.** -/
+lemma norm_integral_expPhase_eq_iterate {f : ℝ → ℂ} {Φ : ℝ → ℝ}
+    (hf : ContDiff ℝ (⊤ : ℕ∞) f) (hfs : HasCompactSupport f)
+    (hΦ : ContDiff ℝ (⊤ : ℕ∞) Φ) (hΦ0 : ∀ x : ℝ, deriv Φ x ≠ 0) (N : ℕ) :
+    ‖∫ x : ℝ, f x * Complex.exp (Complex.I * (Φ x : ℂ))‖
+      = ‖∫ x : ℝ, ((ibpStep Φ)^[N] f) x * Complex.exp (Complex.I * (Φ x : ℂ))‖ := by
+  induction N generalizing f with
+  | zero => simp
+  | succ N ih =>
+      rw [Function.iterate_succ_apply]
+      have hstep : (∫ x : ℝ, f x * Complex.exp (Complex.I * (Φ x : ℂ)))
+          = -∫ x : ℝ, (ibpStep Φ f) x * Complex.exp (Complex.I * (Φ x : ℂ)) :=
+        integral_expPhase_ibp hf hfs hΦ hΦ0
+      rw [hstep, norm_neg]
+      exact ih (contDiff_ibpStep' hΦ hΦ0 hf) (hasCompactSupport_ibpStep hfs)
+
+/-- **THE NON-STATIONARY-PHASE ESTIMATE, IN THE FORM INPUT (B) CONSUMES.** A smooth amplitude
+supported in `[-A, A]`, graded by the scale `μ = εΛ`, against a phase whose slope is at least `Λ`
+and whose higher derivatives are at most `εΛ²`, oscillates away all but `2A·P·(Cε)^N` of its
+mass — `C` depending only on the number `N` of integrations by parts. -/
+theorem norm_integral_expPhase_le_graded (N : ℕ) :
+    ∃ C : ℝ, 1 ≤ C ∧ ∀ (Φ : ℝ → ℝ) (f : ℝ → ℂ) (Λ ε P A : ℝ),
+      ContDiff ℝ (⊤ : ℕ∞) Φ → ContDiff ℝ (⊤ : ℕ∞) f → (∀ x : ℝ, deriv Φ x ≠ 0) →
+      0 < Λ → 1 ≤ ε * Λ → 0 ≤ P → 0 ≤ A →
+      (∀ x ∈ Set.Icc (-A) A, Λ ≤ |deriv Φ x|) →
+      (∀ j : ℕ, 1 ≤ j → j ≤ N → ∀ x ∈ Set.Icc (-A) A,
+        |iteratedDeriv j (deriv Φ) x| ≤ ε * Λ ^ 2) →
+      (∀ j ≤ N, ∀ x ∈ Set.Icc (-A) A, ‖iteratedDeriv j f x‖ ≤ P * (ε * Λ) ^ j) →
+      (∀ x : ℝ, A < |x| → f x = 0) →
+      ‖∫ x : ℝ, f x * Complex.exp (Complex.I * (Φ x : ℂ))‖ ≤ 2 * A * (P * (C * ε) ^ N) := by
+  obtain ⟨C, hC1, hC⟩ := exists_bound_iterate_ibpStep N
+  refine ⟨C, hC1, ?_⟩
+  intro Φ f Λ ε P A hΦ hf hΦ0 hΛ hμ hP hA hlow hhigh hfg hzero
+  have hε0 : 0 < ε := by
+    have hμ0 : (0 : ℝ) < ε * Λ := lt_of_lt_of_le zero_lt_one hμ
+    by_contra hcon
+    push_neg at hcon
+    nlinarith
+  have hC0 : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC1
+  have hout : ∀ x : ℝ, x ∉ Set.Icc (-A) A → f x = 0 := by
+    intro x hx
+    refine hzero x ?_
+    rcases lt_or_ge A |x| with h | h
+    · exact h
+    · exact absurd (Set.mem_Icc.mpr (abs_le.mp h)) hx
+  have hfs : HasCompactSupport f := HasCompactSupport.intro isCompact_Icc hout
+  have hts : tsupport f ⊆ Set.Icc (-A) A :=
+    closure_minimal (Function.support_subset_iff'.mpr hout) isClosed_Icc
+  set g : ℝ → ℂ := (ibpStep Φ)^[N] f with hgdef
+  have hgz : ∀ x : ℝ, x ∉ Set.Icc (-A) A → g x * Complex.exp (Complex.I * (Φ x : ℂ)) = 0 := by
+    intro x hx
+    have : x ∉ tsupport g := fun hc => hx (hts (tsupport_iterate_ibpStep_subset Φ f N hc))
+    rw [image_eq_zero_of_notMem_tsupport this, zero_mul]
+  have hgb : ∀ x ∈ Set.Icc (-A) A,
+      ‖g x * Complex.exp (Complex.I * (Φ x : ℂ))‖ ≤ P * (C * ε) ^ N := by
+    intro x hxS
+    have h1 := hC Φ f (Set.Icc (-A) A) Λ ε P hΦ hf hΦ0 hΛ hμ hP hlow hhigh hfg N 0
+      (by omega) x hxS
+    rw [norm_mul, Complex.norm_exp]
+    simp only [Complex.mul_re, Complex.I_re, Complex.I_im, Complex.ofReal_re,
+      Complex.ofReal_im]
+    simpa using h1
+  have hvol : (volume : Measure ℝ).real (Set.Icc (-A) A) = 2 * A := by
+    rw [measureReal_def, Real.volume_Icc, ENNReal.toReal_ofReal (by linarith)]
+    ring
+  have hint : ‖∫ x : ℝ, g x * Complex.exp (Complex.I * (Φ x : ℂ))‖ ≤ 2 * A * (P * (C * ε) ^ N) := by
+    rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hgz]
+    refine le_trans (norm_setIntegral_le_of_norm_le_const ?_ fun x hx => hgb x hx) ?_
+    · rw [Real.volume_Icc]; exact ENNReal.ofReal_lt_top
+    · rw [hvol]; exact le_of_eq (by ring)
+  rw [norm_integral_expPhase_eq_iterate hf hfs hΦ hΦ0 N]
+  exact hint
+
+/-! ### The fibre phase of the leakage estimate, and the fibre estimate itself
+
+The abstract estimate above is applied at a frozen second coordinate `w₁`. What follows
+identifies the object it is applied to: the total phase `θHₙ(·, w₁) − t₀·` of the leakage
+integral is, in `w₀`, an **explicit cubic** — `fibrePhase_apply` — so its whole derivative
+calculus is finite and exact, and the slope floor `|θ|/(3σ)` of `abs_deriv_fibrePhase_ge` holds
+at every `w₀` with no cut-off. The estimate then runs on the rescaled fibre `w₀ = Mx`, which is
+what turns the amplitude scale-free and the per-part cost into the `O(n^{-3/8})` of
+`bulk_gain_phase_le_band`. -/
+
+/-- The **cubic phase** `p u + q u³`. -/
+noncomputable def cubicPhase (p q : ℝ) : ℝ → ℝ := fun u => p * u + q * u ^ 3
+
+lemma contDiff_cubicPhase (p q : ℝ) : ContDiff ℝ (⊤ : ℕ∞) (cubicPhase p q) := by
+  unfold cubicPhase
+  fun_prop
+
+lemma hasDerivAt_cubicPhase (p q u : ℝ) :
+    HasDerivAt (cubicPhase p q) (p + 3 * q * u ^ 2) u := by
+  have h1 : HasDerivAt (fun x : ℝ => p * x) (p * 1) u := (hasDerivAt_id u).const_mul p
+  have h2 : HasDerivAt (fun x : ℝ => q * x ^ 3) (q * (3 * u ^ 2)) u := by
+    simpa using (hasDerivAt_pow 3 u).const_mul q
+  have h3 : HasDerivAt (fun x : ℝ => p * x + q * x ^ 3) (p * 1 + q * (3 * u ^ 2)) u := h1.add h2
+  have heq : p * 1 + q * (3 * u ^ 2) = p + 3 * q * u ^ 2 := by ring
+  rw [heq] at h3
+  exact h3
+
+lemma deriv_cubicPhase (p q : ℝ) :
+    deriv (cubicPhase p q) = fun u : ℝ => p + 3 * q * u ^ 2 := by
+  funext u
+  exact (hasDerivAt_cubicPhase p q u).deriv
+
+lemma deriv_deriv_cubicPhase (p q : ℝ) :
+    deriv (deriv (cubicPhase p q)) = fun u : ℝ => 6 * q * u := by
+  rw [deriv_cubicPhase]
+  funext u
+  have h2 : HasDerivAt (fun x : ℝ => 3 * q * x ^ 2) (3 * q * (2 * u)) u := by
+    simpa using (hasDerivAt_pow 2 u).const_mul (3 * q)
+  have h3 : HasDerivAt (fun x : ℝ => p + 3 * q * x ^ 2) (0 + 3 * q * (2 * u)) u :=
+    (hasDerivAt_const u p).add h2
+  have heq : (0 : ℝ) + 3 * q * (2 * u) = 6 * q * u := by ring
+  rw [heq] at h3
+  exact h3.deriv
+
+/-- Iterated derivatives of a constant function vanish. -/
+lemma iteratedDeriv_const_eq_zero (c : ℝ) :
+    ∀ k : ℕ, 1 ≤ k → iteratedDeriv k (fun _ : ℝ => c) = fun _ : ℝ => (0 : ℝ) := by
+  have hzero : ∀ k : ℕ, iteratedDeriv k (fun _ : ℝ => (0 : ℝ)) = fun _ : ℝ => (0 : ℝ) := by
+    intro k
+    induction k with
+    | zero => rfl
+    | succ k ih => rw [iteratedDeriv_succ, ih]; funext u; simp
+  intro k hk
+  obtain ⟨m, rfl⟩ : ∃ m, k = m + 1 := ⟨k - 1, by omega⟩
+  rw [iteratedDeriv_succ']
+  have : (deriv fun _ : ℝ => c) = fun _ : ℝ => (0 : ℝ) := by funext u; simp
+  rw [this, hzero]
+
+/-- **The exact derivative calculus of the cubic phase.** All derivatives of the slope past the
+second vanish, and the surviving ones are linear in `q` — this is why the graded hypotheses of
+`norm_integral_expPhase_le_graded` are checkable at every order at once. -/
+lemma abs_iteratedDeriv_deriv_cubicPhase_le (p q : ℝ) {A : ℝ} (hA : 0 ≤ A) :
+    ∀ j : ℕ, 1 ≤ j → ∀ u ∈ Set.Icc (-A) A,
+      |iteratedDeriv j (deriv (cubicPhase p q)) u| ≤ 6 * |q| * (1 + A) := by
+  intro j hj u hu
+  have huA : |u| ≤ A := abs_le.mpr ⟨(Set.mem_Icc.mp hu).1, (Set.mem_Icc.mp hu).2⟩
+  have hq : (0 : ℝ) ≤ |q| := abs_nonneg q
+  match j, hj with
+  | 1, _ =>
+      rw [iteratedDeriv_one, deriv_deriv_cubicPhase]
+      have : |6 * q * u| = 6 * |q| * |u| := by
+        rw [abs_mul, abs_mul]; norm_num
+      rw [this]
+      nlinarith
+  | 2, _ =>
+      rw [iteratedDeriv_succ', iteratedDeriv_one, deriv_deriv_cubicPhase]
+      have hd : (deriv fun x : ℝ => 6 * q * x) = fun _ : ℝ => 6 * q := by
+        funext x
+        simpa using ((hasDerivAt_id x).const_mul (6 * q)).deriv
+      rw [hd]
+      have : |6 * q| = 6 * |q| := by rw [abs_mul]; norm_num
+      rw [this]
+      nlinarith
+  | (k + 3), _ =>
+      have hstep : iteratedDeriv (k + 3) (deriv (cubicPhase p q))
+          = iteratedDeriv (k + 1) (deriv (deriv (deriv (cubicPhase p q)))) := by
+        rw [iteratedDeriv_succ', iteratedDeriv_succ' (n := k + 1)]
+      have hd3 : deriv (deriv (deriv (cubicPhase p q))) = fun _ : ℝ => 6 * q := by
+        rw [deriv_deriv_cubicPhase]
+        funext x
+        simpa using ((hasDerivAt_id x).const_mul (6 * q)).deriv
+      rw [hstep, hd3, iteratedDeriv_const_eq_zero (6 * q) (k + 1) (by omega)]
+      have hnn : (0 : ℝ) ≤ 6 * |q| * (1 + A) := mul_nonneg (by positivity) (by linarith)
+      simpa using hnn
+
+/-! ### The surrogate's fibre phase -/
+
+/-- The **fibre slope coefficient** of the surrogate: the bracket `1 − vr/2 + 3v²r²/8` that
+`deltaSurrogate_slope_ge` bounds below by `5/6`, at the frozen second coordinate. -/
+noncomputable def fibreSlopeCoeff (σ r w₁ : ℝ) : ℝ :=
+  1 - (w₁ / σ ^ 2) * r / 2 + 3 * (w₁ / σ ^ 2) ^ 2 * r ^ 2 / 8
+
+lemma fibreSlopeCoeff_ge (σ r w₁ : ℝ) : (5 : ℝ) / 6 ≤ fibreSlopeCoeff σ r w₁ := by
+  have h := deltaSurrogate_slope_ge ((w₁ / σ ^ 2) * r)
+  rw [fibreSlopeCoeff]
+  nlinarith [h]
+
+/-- The **fibre phase** `w₀ ↦ θHₙ(w₀, w₁) − t₀w₀` of the leakage estimate: a cubic in `w₀`. -/
+noncomputable def fibrePhase (σ r θ t₀ w₁ : ℝ) : ℝ → ℝ :=
+  cubicPhase (θ * fibreSlopeCoeff σ r w₁ / σ - t₀) (θ * r ^ 2 / (2 * σ ^ 3))
+
+/-- **The identification.** The total phase of the leakage estimate, restricted to a horizontal
+fibre, *is* the cubic phase — the whole content of the fibrewise reduction on the phase side. -/
+lemma fibrePhase_apply {σ : ℝ} (hσ : σ ≠ 0) (r θ t₀ : ℝ) (w : E₂) :
+    fibrePhase σ r θ t₀ (w 1) (w 0) = θ * deltaSurrogate σ r w - t₀ * w 0 := by
+  simp only [fibrePhase, cubicPhase, fibreSlopeCoeff, deltaSurrogate]
+  field_simp
+  ring
+
+/-- **The slope floor, globally in `w₀`.** Under the band condition `|t₀| ≤ |θ|/(2σ)` the fibre
+phase is non-stationary with floor `|θ|/(3σ)`: the surrogate's `5/6` and the band's `1/2`
+subtract, and `5/6 − 1/2 = 1/3`. The cubic term only helps, so the bound holds at *every* `w₀`,
+with no cut-off — which is what makes `1/∂Φ` globally smooth. -/
+lemma abs_deriv_fibrePhase_ge {σ : ℝ} (hσ : 0 < σ) {θ t₀ : ℝ} (r w₁ : ℝ)
+    (ht₀ : |t₀| ≤ |θ| / (2 * σ)) (u : ℝ) :
+    |θ| / (3 * σ) ≤ |deriv (fibrePhase σ r θ t₀ w₁) u| := by
+  have hderiv : deriv (fibrePhase σ r θ t₀ w₁) u
+      = θ * fibreSlopeCoeff σ r w₁ / σ - t₀ + 3 * (θ * r ^ 2 / (2 * σ ^ 3)) * u ^ 2 := by
+    rw [fibrePhase, deriv_cubicPhase]
+  rw [hderiv]
+  set S : ℝ := fibreSlopeCoeff σ r w₁ + 3 * r ^ 2 * u ^ 2 / (2 * σ ^ 2) with hS
+  have hval : θ * fibreSlopeCoeff σ r w₁ / σ - t₀ + 3 * (θ * r ^ 2 / (2 * σ ^ 3)) * u ^ 2
+      = θ * S / σ - t₀ := by
+    rw [hS]; field_simp; ring
+  rw [hval]
+  have hS56 : (5 : ℝ) / 6 ≤ S := by
+    have h1 := fibreSlopeCoeff_ge σ r w₁
+    have h2 : (0 : ℝ) ≤ 3 * r ^ 2 * u ^ 2 / (2 * σ ^ 2) := by positivity
+    rw [hS]; linarith
+  have habs : |θ| * S / σ ≤ |θ * S / σ| := by
+    rw [abs_div, abs_mul, abs_of_pos hσ, abs_of_nonneg (by linarith : (0:ℝ) ≤ S)]
+  have hlow : |θ| * (5 / 6) / σ ≤ |θ| * S / σ := by
+    have := abs_nonneg θ
+    gcongr
+  have htri : |θ * S / σ| - |t₀| ≤ |θ * S / σ - t₀| := by
+    have := abs_sub_abs_le_abs_sub (θ * S / σ) t₀
+    linarith
+  have hb : |t₀| ≤ |θ| / (2 * σ) := ht₀
+  have hσ' : (0 : ℝ) < σ := hσ
+  have hkey : |θ| / (3 * σ) = |θ| * (5 / 6) / σ - |θ| / (2 * σ) := by
+    field_simp
+    ring
+  linarith
+
+/-- The fibre phase's higher slope derivatives, on a window `|w₀| ≤ A`. -/
+lemma abs_iteratedDeriv_deriv_fibrePhase_le {σ : ℝ} (hσ : 0 < σ) (r θ t₀ w₁ : ℝ) {A : ℝ}
+    (hA : 0 ≤ A) :
+    ∀ j : ℕ, 1 ≤ j → ∀ u ∈ Set.Icc (-A) A,
+      |iteratedDeriv j (deriv (fibrePhase σ r θ t₀ w₁)) u|
+        ≤ 3 * |θ| * r ^ 2 * (1 + A) / σ ^ 3 := by
+  intro j hj u hu
+  refine (abs_iteratedDeriv_deriv_cubicPhase_le _ _ hA j hj u hu).trans (le_of_eq ?_)
+  have h : |θ * r ^ 2 / (2 * σ ^ 3)| = |θ| * r ^ 2 / (2 * σ ^ 3) := by
+    rw [abs_div, abs_mul, abs_of_nonneg (sq_nonneg r), abs_of_pos (by positivity : (0:ℝ) < 2*σ^3)]
+  rw [h]
+  field_simp
+  ring
+
+
+/-! ### The rescaled fibre phase, and the fibre estimate -/
+
+/-- The **rescaled fibre phase** `x ↦ Φ(Mx)`. Rescaling by the bulk radius is not cosmetic: it
+is what makes the estimate gain. Un-rescaled, the cut-off's derivatives are `O(M^{-j})` while the
+grading scale is `εΛ`, and the theorem throws that away, leaving a per-step cost `3σ/|θ| = O(1)`
+in the middle range. After `w₀ = Mx` the amplitude is scale-free and the per-step cost is
+`81Mr²/(σ|θ|) + 3σ/(M|θ|) = O(n^{-3/8})`. A cubic stays a cubic: `p ↦ pM`, `q ↦ qM³`. -/
+noncomputable def fibrePhaseScaled (σ r θ t₀ w₁ M : ℝ) : ℝ → ℝ :=
+  cubicPhase ((θ * fibreSlopeCoeff σ r w₁ / σ - t₀) * M) (θ * r ^ 2 / (2 * σ ^ 3) * M ^ 3)
+
+lemma fibrePhaseScaled_apply (σ r θ t₀ w₁ M x : ℝ) :
+    fibrePhaseScaled σ r θ t₀ w₁ M x = fibrePhase σ r θ t₀ w₁ (M * x) := by
+  simp only [fibrePhaseScaled, fibrePhase, cubicPhase]
+  ring
+
+lemma abs_deriv_fibrePhaseScaled_ge {σ : ℝ} (hσ : 0 < σ) {θ t₀ M : ℝ} (hM : 0 < M) (r w₁ : ℝ)
+    (ht₀ : |t₀| ≤ |θ| / (2 * σ)) (x : ℝ) :
+    M * |θ| / (3 * σ) ≤ |deriv (fibrePhaseScaled σ r θ t₀ w₁ M) x| := by
+  have e1 : deriv (fibrePhaseScaled σ r θ t₀ w₁ M) x
+      = (θ * fibreSlopeCoeff σ r w₁ / σ - t₀) * M
+        + 3 * (θ * r ^ 2 / (2 * σ ^ 3) * M ^ 3) * x ^ 2 := by
+    rw [fibrePhaseScaled, deriv_cubicPhase]
+  have e2 : deriv (fibrePhase σ r θ t₀ w₁) (M * x)
+      = θ * fibreSlopeCoeff σ r w₁ / σ - t₀
+        + 3 * (θ * r ^ 2 / (2 * σ ^ 3)) * (M * x) ^ 2 := by
+    rw [fibrePhase, deriv_cubicPhase]
+  have e3 : deriv (fibrePhaseScaled σ r θ t₀ w₁ M) x
+      = M * deriv (fibrePhase σ r θ t₀ w₁) (M * x) := by
+    rw [e1, e2]; ring
+  rw [e3, abs_mul, abs_of_pos hM]
+  have hb := abs_deriv_fibrePhase_ge hσ r w₁ ht₀ (M * x)
+  calc M * |θ| / (3 * σ) = M * (|θ| / (3 * σ)) := by ring
+    _ ≤ M * |deriv (fibrePhase σ r θ t₀ w₁) (M * x)| :=
+        mul_le_mul_of_nonneg_left hb hM.le
+
+lemma abs_iteratedDeriv_deriv_fibrePhaseScaled_le {σ : ℝ} (hσ : 0 < σ) (r θ t₀ w₁ : ℝ)
+    {M : ℝ} (hM : 0 ≤ M) :
+    ∀ j : ℕ, 1 ≤ j → ∀ x ∈ Set.Icc (-(2 : ℝ)) 2,
+      |iteratedDeriv j (deriv (fibrePhaseScaled σ r θ t₀ w₁ M)) x|
+        ≤ 9 * |θ| * r ^ 2 * M ^ 3 / σ ^ 3 := by
+  intro j hj x hx
+  refine (abs_iteratedDeriv_deriv_cubicPhase_le _ _ (by norm_num) j hj x hx).trans
+    (le_of_eq ?_)
+  have h : |θ * r ^ 2 / (2 * σ ^ 3) * M ^ 3| = |θ| * r ^ 2 * M ^ 3 / (2 * σ ^ 3) := by
+    rw [abs_mul, abs_div, abs_mul, abs_of_nonneg (sq_nonneg r),
+      abs_of_pos (by positivity : (0:ℝ) < 2 * σ ^ 3), abs_of_nonneg (by positivity : (0:ℝ) ≤ M ^ 3)]
+    ring
+  rw [h]
+  field_simp
+  ring
+
+/-- **THE FIBRE ESTIMATE — the whole of input (B)'s phase side, at one frozen `w₁`.**
+
+A scale-free amplitude supported in `|x| ≤ 2`, against the rescaled surrogate phase, integrates to
+`O(P·gain^N)` with
+
+`gain = 81Mr²/(σ|θ|) + 3σ/(M|θ|)`,
+
+which at `M = n^{5/8}`, `r² = n⁻¹` and `|θ| ≥ c₀` is `O(n^{-3/8}/|θ|)` — exactly the per-part gain
+`bulk_gain_phase_le_band` prices the leakage ledger with, and `leakage_ledger_ten_le` then closes
+it at `N = 10`. The two summands are the two branches of an integration by parts: differentiating
+the cut-off costs `1/(MΛ)`, differentiating `1/∂Φ` costs `∂²Φ/(∂Φ)²`. -/
+theorem norm_integral_fibrePhase_le (N : ℕ) :
+    ∃ C : ℝ, 1 ≤ C ∧ ∀ (σ r θ t₀ w₁ M P : ℝ) (f : ℝ → ℂ),
+      0 < σ → 0 < M → θ ≠ 0 → |t₀| ≤ |θ| / (2 * σ) →
+      ContDiff ℝ (⊤ : ℕ∞) f → 0 ≤ P →
+      (∀ j ≤ N, ∀ x : ℝ, ‖iteratedDeriv j f x‖ ≤ P) →
+      (∀ x : ℝ, 2 < |x| → f x = 0) →
+      ‖∫ x : ℝ, f x *
+          Complex.exp (Complex.I * ((fibrePhase σ r θ t₀ w₁ (M * x) : ℝ) : ℂ))‖
+        ≤ 4 * (P * (C * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N) := by
+  obtain ⟨C, hC1, hC⟩ := norm_integral_expPhase_le_graded N
+  refine ⟨C, hC1, ?_⟩
+  intro σ r θ t₀ w₁ M P f hσ hM hθ ht₀ hf hP hfg hzero
+  have hθ0 : 0 < |θ| := abs_pos.mpr hθ
+  obtain ⟨Λ, hΛdef⟩ : ∃ L : ℝ, L = M * |θ| / (3 * σ) := ⟨_, rfl⟩
+  obtain ⟨ε, hεdef⟩ : ∃ e : ℝ, e = 81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|) := ⟨_, rfl⟩
+  have hΛ : 0 < Λ := by rw [hΛdef]; positivity
+  have hE1 : (0 : ℝ) ≤ 81 * M * r ^ 2 / (σ * |θ|) := by positivity
+  have hE2 : (3 * σ / (M * |θ|)) * Λ = 1 := by
+    rw [hΛdef]; field_simp
+  have hεΛ : 1 ≤ ε * Λ := by
+    rw [hεdef, add_mul, hE2]
+    nlinarith [mul_nonneg hE1 hΛ.le]
+  have hslope : ∀ x ∈ Set.Icc (-(2:ℝ)) 2,
+      Λ ≤ |deriv (fibrePhaseScaled σ r θ t₀ w₁ M) x| := by
+    intro x _
+    rw [hΛdef]
+    exact abs_deriv_fibrePhaseScaled_ge hσ hM r w₁ ht₀ x
+  have hΦ0 : ∀ x : ℝ, deriv (fibrePhaseScaled σ r θ t₀ w₁ M) x ≠ 0 := by
+    intro x hx
+    have := abs_deriv_fibrePhaseScaled_ge hσ hM r w₁ ht₀ x
+    rw [hx, abs_zero] at this
+    have : (0 : ℝ) < M * |θ| / (3 * σ) := by positivity
+    linarith
+  have hhigh : ∀ j : ℕ, 1 ≤ j → j ≤ N → ∀ x ∈ Set.Icc (-(2:ℝ)) 2,
+      |iteratedDeriv j (deriv (fibrePhaseScaled σ r θ t₀ w₁ M)) x| ≤ ε * Λ ^ 2 := by
+    intro j hj _ x hx
+    refine (abs_iteratedDeriv_deriv_fibrePhaseScaled_le hσ r θ t₀ w₁ hM.le j hj x hx).trans ?_
+    have hid : 9 * |θ| * r ^ 2 * M ^ 3 / σ ^ 3 = (81 * M * r ^ 2 / (σ * |θ|)) * Λ ^ 2 := by
+      rw [hΛdef]
+      field_simp
+      ring
+    rw [hid, hεdef, add_mul]
+    have hnn : (0 : ℝ) ≤ (3 * σ / (M * |θ|)) * Λ ^ 2 :=
+      mul_nonneg (by positivity) (sq_nonneg Λ)
+    linarith
+  have hgrad : ∀ j ≤ N, ∀ x ∈ Set.Icc (-(2:ℝ)) 2,
+      ‖iteratedDeriv j f x‖ ≤ P * (ε * Λ) ^ j := by
+    intro j hj x _
+    refine (hfg j hj x).trans ?_
+    have h1 : (1 : ℝ) ≤ (ε * Λ) ^ j := one_le_pow₀ hεΛ
+    nlinarith
+  have hmain := hC (fibrePhaseScaled σ r θ t₀ w₁ M) f Λ ε P 2
+    (contDiff_cubicPhase _ _) hf hΦ0 hΛ hεΛ hP (by norm_num) hslope hhigh hgrad hzero
+  have hph : ∀ x : ℝ, fibrePhase σ r θ t₀ w₁ (M * x) = fibrePhaseScaled σ r θ t₀ w₁ M x :=
+    fun x => (fibrePhaseScaled_apply σ r θ t₀ w₁ M x).symm
+  simp only [hph]
+  rw [hεdef] at hmain
+  refine hmain.trans (le_of_eq ?_)
+  ring
+
+/-! ### The fibre of the leakage integral: amplitude, and the estimate for the multiplier
+
+The last piece of the fibrewise reduction that is *analysis* rather than measure theory. The
+bulk cut-off restricted to a horizontal fibre and read in the rescaled variable `w₀ = Mx` is a
+**scale-free** amplitude: `norm_iteratedDeriv_fibreAmplitude_le` bounds all its derivatives by
+the cut-off's own, with no `M`, because the fibre embedding is affine with linear part of norm
+one (`norm_iteratedDeriv_comp_fibreEmbed_le`). Together with the fibre phase this gives
+`norm_integral_fibre_bulkMultiplier_le` — the leakage integral along one fibre, with the actual
+cut-off and the actual surrogate, priced at the ledger`s gain. -/
+
+/-- The affine embedding of a horizontal fibre into the plane. -/
+noncomputable def fibreEmbed (c : ℝ) : ℝ → E₂ := fun u => u • coordDir 0 + c • coordDir 1
+
+@[simp] lemma fibreEmbed_apply_zero (c u : ℝ) : fibreEmbed c u 0 = u := by
+  simp [fibreEmbed, coordDir, EuclideanSpace.single_apply]
+
+@[simp] lemma fibreEmbed_apply_one (c u : ℝ) : fibreEmbed c u 1 = c := by
+  simp [fibreEmbed, coordDir, EuclideanSpace.single_apply]
+
+/-- **The line-restriction bridge.** Derivatives along a horizontal fibre are bounded by the
+full two-dimensional iterated derivatives, because the fibre embedding is affine with linear part
+of norm one. This is what turns the file's `iteratedFDeriv` bounds for the bulk cut-off into the
+`iteratedDeriv` grading that `norm_integral_fibrePhase_le` consumes. -/
+lemma norm_iteratedDeriv_comp_fibreEmbed_le {g : E₂ → ℝ} (hg : ContDiff ℝ (⊤ : ℕ∞) g)
+    (c : ℝ) (j : ℕ) (x : ℝ) :
+    |iteratedDeriv j (fun u : ℝ => g (fibreEmbed c u)) x|
+      ≤ ‖iteratedFDeriv ℝ j g (fibreEmbed c x)‖ := by
+  have hAn : ‖ContinuousLinearMap.toSpanSingleton ℝ (coordDir 0)‖ = 1 := by
+    rw [ContinuousLinearMap.norm_toSpanSingleton, coordDir]
+    simp
+  have hcomp : (fun u : ℝ => g (fibreEmbed c u))
+      = (fun v : E₂ => g (v + c • coordDir 1))
+        ∘ (ContinuousLinearMap.toSpanSingleton ℝ (coordDir 0)) := by
+    funext u
+    simp [fibreEmbed, Function.comp_def, ContinuousLinearMap.toSpanSingleton_apply]
+  have hg' : ContDiff ℝ (⊤ : ℕ∞) fun v : E₂ => g (v + c • coordDir 1) :=
+    hg.comp (contDiff_id.add contDiff_const)
+  rw [← Real.norm_eq_abs, ← norm_iteratedFDeriv_eq_norm_iteratedDeriv, hcomp,
+    ContinuousLinearMap.iteratedFDeriv_comp_right _ hg' x (mod_cast le_top)]
+  refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
+  have hprod : (∏ _i : Fin j, ‖ContinuousLinearMap.toSpanSingleton ℝ (coordDir 0)‖) = 1 := by
+    simp [hAn]
+  rw [hprod, mul_one, iteratedFDeriv_comp_add_right]
+  have hpt : (ContinuousLinearMap.toSpanSingleton ℝ (coordDir 0)) x + c • coordDir 1
+      = fibreEmbed c x := by
+    simp [fibreEmbed, ContinuousLinearMap.toSpanSingleton_apply]
+  rw [hpt]
+
+
+lemma norm_fibreEmbed_ge (c x : ℝ) : |x| ≤ ‖fibreEmbed c x‖ := by
+  have h := abs_real_inner_le_norm (fibreEmbed c x) (coordDir 0)
+  rw [inner_coordDir 0 (fibreEmbed c x), fibreEmbed_apply_zero] at h
+  have hc : ‖coordDir (0 : Fin 2)‖ = 1 := by rw [coordDir]; simp
+  rw [hc, mul_one] at h
+  exact h
+
+lemma smul_fibreEmbed {M : ℝ} (hM : M ≠ 0) (w₁ x : ℝ) :
+    M⁻¹ • fibreEmbed w₁ (M * x) = fibreEmbed (w₁ / M) x := by
+  rw [fibreEmbed, fibreEmbed, smul_add, smul_smul, smul_smul]
+  rw [show M⁻¹ * (M * x) = x by field_simp, show M⁻¹ * w₁ = w₁ / M by rw [div_eq_inv_mul]]
+
+/-- The **rescaled fibre amplitude**: the bulk cut-off along a horizontal fibre, read in the
+rescaled variable `w₀ = Mx`. Rescaling turns the dilate `χ(·/M)` into a *scale-free* function of
+`x` — its derivatives are bounded by the cut-off's own, with no `M` in sight — which is exactly
+the amplitude hypothesis of `norm_integral_fibrePhase_le`. -/
+noncomputable def fibreAmplitude (M w₁ : ℝ) : ℝ → ℂ :=
+  fun x => ((bulkCutoff (fibreEmbed (w₁ / M) x) : ℝ) : ℂ)
+
+lemma fibreAmplitude_eq {M : ℝ} (hM : M ≠ 0) (w₁ x : ℝ) :
+    fibreAmplitude M w₁ x = ((bulkCutoff (M⁻¹ • fibreEmbed w₁ (M * x)) : ℝ) : ℂ) := by
+  rw [fibreAmplitude, smul_fibreEmbed hM]
+
+lemma contDiff_fibreEmbed (c : ℝ) : ContDiff ℝ (⊤ : ℕ∞) (fibreEmbed c) := by
+  unfold fibreEmbed
+  exact (contDiff_id.smul contDiff_const).add contDiff_const
+
+lemma contDiff_bulkCutoff_comp_fibreEmbed (c : ℝ) :
+    ContDiff ℝ (⊤ : ℕ∞) fun x : ℝ => (bulkCutoff (fibreEmbed c x) : ℝ) :=
+  (bulkCutoff.contDiff (n := (⊤ : ℕ∞))).comp (contDiff_fibreEmbed c)
+
+lemma contDiff_fibreAmplitude (M w₁ : ℝ) : ContDiff ℝ (⊤ : ℕ∞) (fibreAmplitude M w₁) :=
+  Complex.ofRealCLM.contDiff.comp (contDiff_bulkCutoff_comp_fibreEmbed (w₁ / M))
+
+lemma fibreAmplitude_eq_zero (M w₁ : ℝ) {x : ℝ} (hx : 2 < |x|) : fibreAmplitude M w₁ x = 0 := by
+  have h2 : (2 : ℝ) ≤ ‖fibreEmbed (w₁ / M) x‖ := le_trans hx.le (norm_fibreEmbed_ge _ _)
+  have hz : (bulkCutoff (fibreEmbed (w₁ / M) x) : ℝ) = 0 := by
+    refine bulkCutoff.zero_of_le_dist ?_
+    simpa [dist_eq_norm, bulkCutoff] using h2
+  rw [fibreAmplitude, hz]
+  simp
+
+/-- **The amplitude side of the fibrewise reduction.** The rescaled fibre amplitude is graded by
+the cut-off's own derivative bound, uniformly in `M`, `w₁` and `x`. -/
+lemma norm_iteratedDeriv_fibreAmplitude_le {B : ℝ} {m : ℕ}
+    (hB : ∀ i ≤ m, ∀ y : E₂, ‖iteratedFDeriv ℝ i (⇑bulkCutoff) y‖ ≤ B) (M w₁ : ℝ) :
+    ∀ j ≤ m, ∀ x : ℝ, ‖iteratedDeriv j (fibreAmplitude M w₁) x‖ ≤ B := by
+  intro j hj x
+  have heq : fibreAmplitude M w₁
+      = fun x : ℝ => (((fun y : ℝ => (bulkCutoff (fibreEmbed (w₁ / M) y) : ℝ)) x : ℝ) : ℂ) := rfl
+  rw [heq, norm_iteratedDeriv_ofReal (contDiff_bulkCutoff_comp_fibreEmbed (w₁ / M))]
+  refine le_trans ?_ (hB j hj (fibreEmbed (w₁ / M) x))
+  exact norm_iteratedDeriv_comp_fibreEmbed_le (bulkCutoff.contDiff (n := (⊤ : ℕ∞))) _ j x
+
+/-- **THE FIBRE ESTIMATE FOR THE BULK MULTIPLIER ITSELF.** One horizontal fibre of the leakage
+integral, with the actual cut-off and the actual surrogate phase, is `O(gain^N)` with
+`gain = 81Mr²/(σ|θ|) + 3σ/(M|θ|)` — the quantity `fibre_gain_ledger_ten_le` runs to `O(n^{-3/2})`
+at `N = 10`. Only the Fubini reduction of `𝓕 g` to iterated integrals, and the outer `w₁`/`s`
+bookkeeping, now stand between this and input (B). -/
+theorem norm_integral_fibre_bulkMultiplier_le (N : ℕ) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (σ r θ t₀ w₁ M : ℝ), 0 < σ → 1 ≤ M → θ ≠ 0 →
+      |t₀| ≤ |θ| / (2 * σ) →
+      ‖∫ x : ℝ, ((bulkCutoff (M⁻¹ • fibreEmbed w₁ (M * x)) : ℝ) : ℂ) *
+          Complex.exp (Complex.I * ((θ * deltaSurrogate σ r (fibreEmbed w₁ (M * x))
+            - t₀ * (M * x) : ℝ) : ℂ))‖
+        ≤ C * (C * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N := by
+  obtain ⟨C₀, hC₀1, hC₀⟩ := norm_integral_fibrePhase_le N
+  obtain ⟨B, hB0, hB⟩ := exists_bound_iteratedFDeriv_bulkCutoff N
+  refine ⟨max (4 * B) C₀, lt_of_lt_of_le (by positivity) (le_max_left _ _), ?_⟩
+  intro σ r θ t₀ w₁ M hσ hM hθ ht₀
+  have hM0 : (0 : ℝ) < M := lt_of_lt_of_le zero_lt_one hM
+  have hθ0 : 0 < |θ| := abs_pos.mpr hθ
+  have hg0 : (0 : ℝ) ≤ 81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|) := by positivity
+  -- the integrand is the fibre amplitude against the fibre phase
+  have hphase : ∀ x : ℝ, θ * deltaSurrogate σ r (fibreEmbed w₁ (M * x)) - t₀ * (M * x)
+      = fibrePhase σ r θ t₀ w₁ (M * x) := by
+    intro x
+    have h := fibrePhase_apply (ne_of_gt hσ) r θ t₀ (fibreEmbed w₁ (M * x))
+    rw [fibreEmbed_apply_zero, fibreEmbed_apply_one] at h
+    exact h.symm
+  have hamp : ∀ x : ℝ, ((bulkCutoff (M⁻¹ • fibreEmbed w₁ (M * x)) : ℝ) : ℂ)
+      = fibreAmplitude M w₁ x := fun x => (fibreAmplitude_eq (ne_of_gt hM0) w₁ x).symm
+  simp only [hphase, hamp]
+  have hmain := hC₀ σ r θ t₀ w₁ M B (fibreAmplitude M w₁) hσ hM0 hθ ht₀
+    (contDiff_fibreAmplitude M w₁) hB0.le
+    (norm_iteratedDeriv_fibreAmplitude_le hB M w₁)
+    (fun x hx => fibreAmplitude_eq_zero M w₁ hx)
+  refine hmain.trans ?_
+  have h1 : (C₀ * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N
+      ≤ (max (4 * B) C₀ * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N := by
+    refine pow_le_pow_left₀ (by positivity) ?_ N
+    exact mul_le_mul_of_nonneg_right (le_max_right _ _) hg0
+  have h2 : (0 : ℝ) ≤ (max (4 * B) C₀ * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N := by
+    have : (0 : ℝ) ≤ max (4 * B) C₀ := le_trans (by positivity) (le_max_left _ _)
+    exact pow_nonneg (mul_nonneg this hg0) N
+  calc 4 * (B * (C₀ * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N)
+      = (4 * B) * (C₀ * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N := by ring
+    _ ≤ (4 * B) * (max (4 * B) C₀
+          * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N :=
+        mul_le_mul_of_nonneg_left h1 (by positivity)
+    _ ≤ max (4 * B) C₀ * (max (4 * B) C₀
+          * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N :=
+        mul_le_mul_of_nonneg_right (le_max_left _ _) h2
+
+/-! ### The wave-45 ledger: the fibre estimate meets the leakage ledger unamended -/
+
+/-- **The fibre estimate's gain is the ledger's gain.** The two branches of an integration by
+parts — `81Mr²/(σ|θ|)` from the phase's curvature and `3σ/(M|θ|)` from the cut-off — are both
+dominated by the single quantity `Mr²/|θ|` that `bulk_gain_phase_le_band` prices, because
+`M²r² = n^{1/4} ≥ 1` at the bulk radius. Nothing in the ledger has to move. -/
+lemma fibre_gain_le_bulk_gain {n : ℕ} (hn : 0 < n) {σ θ : ℝ} (hσ : 0 < σ) (hθ : 0 < |θ|) :
+    81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+        + 3 * σ / (bulkRadius n * |θ|)
+      ≤ (81 / σ + 3 * σ) * (bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / |θ|) := by
+  have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have h0 : (0 : ℝ) < (n : ℝ) := by linarith
+  have hM : 0 < bulkRadius n := bulkRadius_pos hn
+  have hp : bulkRadius n ^ 2 = (n : ℝ) ^ ((5 : ℝ) / 4) := by rw [bulkRadius_pow]; norm_num
+  have hq : ((Real.sqrt (n : ℝ))⁻¹) ^ 2 = ((n : ℝ))⁻¹ := by
+    rw [inv_pow, Real.sq_sqrt h0.le]
+  have hM2 : (1 : ℝ) ≤ bulkRadius n ^ 2 * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 := by
+    rw [hp, hq, ← Real.rpow_neg_one (n : ℝ), ← Real.rpow_add h0]
+    have : (n : ℝ) ^ (0 : ℝ) ≤ (n : ℝ) ^ ((5 : ℝ) / 4 + -1) :=
+      Real.rpow_le_rpow_of_exponent_le h1 (by norm_num)
+    simpa using this
+  -- the first branch is an identity
+  have hA : 81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+      = (81 / σ) * (bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / |θ|) := by
+    field_simp
+  -- the second branch is where `M²r² ≥ 1` is spent
+  have hB : 3 * σ / (bulkRadius n * |θ|)
+      ≤ (3 * σ) * (bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / |θ|) := by
+    rw [div_le_iff₀ (by positivity)]
+    have hkey : 3 * σ * (bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / |θ|)
+          * (bulkRadius n * |θ|)
+        = 3 * σ * (bulkRadius n ^ 2 * ((Real.sqrt (n : ℝ))⁻¹) ^ 2) := by
+      field_simp
+    rw [hkey]
+    nlinarith [hM2, hσ]
+  rw [hA, add_mul]
+  linarith
+
+/-- **THE WAVE-45 LEDGER.** Ten applications of `norm_integral_fibrePhase_le`, against the
+prefactor `M² = n^{5/4}` and a bad set of area `≤ n`, clear `O(n^{-3/2})` at every band exponent
+`b ≥ 0` — including `b = 0`, which is the constant floor `c₀ ≤ |θ|` the restated input (B) runs
+at. The `81/σ + 3σ` is the price of the fibre estimate's two branches; the shape is wave 43's,
+unamended. -/
+lemma fibre_gain_ledger_ten_le {n : ℕ} (hn : 0 < n) {c₀ b σ θ : ℝ}
+    (hσ : 0 < σ) (hc₀ : 0 < c₀) (hb : 0 ≤ b) (hθ : c₀ * (n : ℝ) ^ b ≤ |θ|) :
+    (n : ℝ) * bulkRadius n ^ 2
+        * (81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+            + 3 * σ / (bulkRadius n * |θ|)) ^ 10
+      ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 * ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hM : 0 < bulkRadius n := bulkRadius_pos hn
+  have hbpos : (0 : ℝ) < (n : ℝ) ^ b := Real.rpow_pos_of_pos h0 b
+  have hθ0 : 0 < |θ| := lt_of_lt_of_le (by positivity) hθ
+  have hg0 : (0 : ℝ) ≤ 81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+      + 3 * σ / (bulkRadius n * |θ|) := by positivity
+  have hstep := fibre_gain_le_bulk_gain hn hσ hθ0
+  have hbulk := bulk_gain_phase_le_band hn hc₀ hθ
+  have hcoef : (0 : ℝ) ≤ 81 / σ + 3 * σ := by positivity
+  -- the gain is at most `(81/σ + 3σ)c₀⁻¹ n^{-3/8-b}`
+  have hgain : 81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+      + 3 * σ / (bulkRadius n * |θ|)
+      ≤ ((81 / σ + 3 * σ) * c₀⁻¹) * (n : ℝ) ^ (-(3 : ℝ) / 8 - b) := by
+    refine hstep.trans ?_
+    calc (81 / σ + 3 * σ) * (bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / |θ|)
+        ≤ (81 / σ + 3 * σ) * (c₀⁻¹ * (n : ℝ) ^ (-(3 : ℝ) / 8 - b)) :=
+          mul_le_mul_of_nonneg_left hbulk hcoef
+      _ = ((81 / σ + 3 * σ) * c₀⁻¹) * (n : ℝ) ^ (-(3 : ℝ) / 8 - b) := by ring
+  have hpow : (81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+      + 3 * σ / (bulkRadius n * |θ|)) ^ 10
+      ≤ (((81 / σ + 3 * σ) * c₀⁻¹) * (n : ℝ) ^ (-(3 : ℝ) / 8 - b)) ^ 10 :=
+    pow_le_pow_left₀ hg0 hgain 10
+  have hpre : (0 : ℝ) ≤ (n : ℝ) * bulkRadius n ^ 2 := by positivity
+  refine le_trans (mul_le_mul_of_nonneg_left hpow hpre) ?_
+  have hexp : (((81 / σ + 3 * σ) * c₀⁻¹) * (n : ℝ) ^ (-(3 : ℝ) / 8 - b)) ^ 10
+      = ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - b)) ^ 10 := mul_pow _ _ 10
+  rw [hexp]
+  have hled := leakage_ledger_ten_le hb hn
+  have hc10 : (0 : ℝ) ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 := by positivity
+  calc (n : ℝ) * bulkRadius n ^ 2
+          * (((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - b)) ^ 10)
+      = ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10
+          * ((n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - b)) ^ 10) := by ring
+    _ ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 * ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ :=
+        mul_le_mul_of_nonneg_left hled hc10
+
 /-- **(B) The non-stationary-phase estimate: the weight carries `O(n^{-3/2})` on the
 low-frequency ball** — the second input, the analytic heart of the certificate, and **still the
 only open analytic item of the certificate after wave 44**.
@@ -8612,30 +9625,58 @@ least `(4/3)|θ|/σ` in modulus, everywhere and with no cut-off (`deltaSurrogate
 applications of `L f = ∂_{w₀}(f/(i∂_{w₀}Φ))` gains
 `σ/(M|θ|) + (27/16)Mr²/(σ|θ|) = O(n^{-3/8})`.
 
-**WHAT WAVE 35 ADDS, AND WHAT IS HONESTLY LEFT.** The *identity* half of the estimate is proved
-rather than asserted: `integral_expPhase_ibp` is one integration by parts against a
-non-vanishing phase on the line, in the exact form the iteration needs, and `contDiff_ibpStep` /
-`hasCompactSupport_ibpStep` say that the transform `L` preserves the class, so the ten-fold
-iteration is legitimate as stated. `norm_integral_expPhase_le_ibp` is its norm form.
+**WHAT IS PROVED AFTER WAVE 45, AND WHAT IS HONESTLY LEFT.** Wave 35 supplied the *identity*
+half: `integral_expPhase_ibp` is one integration by parts against a non-vanishing phase on the
+line, in the exact form the iteration needs, and `contDiff_ibpStep` / `hasCompactSupport_ibpStep`
+say the transform `L` preserves the class, so the ten-fold iteration is legitimate as stated.
 
-What is **not** done, and it is the quantitative half — the part that actually carries the
-exponent:
+**Wave 45 supplies the quantitative half, and the phase side of the fibrewise reduction.** The
+first of the three items below — the one wave 44 called "the one with real content" — is now a
+theorem:
 
-* the graded bound on `‖L^k f‖_{L¹(dw₀)}` for `k ≤ 10`, uniformly over the bad set. Each `L`
-  either differentiates the cut-off `χ(·/M)` (cost `M^{-1}`) or `1/∂_{w₀}Φ` (cost `∂²Φ/(∂Φ)²`),
-  and it is the *second* branch that produces the `(27/16)Mr²/(σ|θ|)` half of
-  `bulk_gain_phase_le`. Bounding it needs a derivative calculus with **negative** powers —
-  bounds on the derivatives of `1/∂_{w₀}Φ` from the slope floor `(4/3)|θ|/σ` — which the
-  graded calculus of input (A2) (`gradedBound_mul`, `gradedBound_add`) does not yet supply;
-* the reduction of `𝓕 g` to an iterated integral, so that the one-dimensional identity applies
-  fibrewise in `w₀` at each frozen `w₁` (Fubini is harmless — the support is compact — but the
-  measurable identification of `E₂` with `ℝ × ℝ` is not free);
-* the outer bookkeeping: the `w₁`-integration over a set of length `≍ M` and the `s`-integration
-  over the bad set, whose area is now `≍ log n` rather than `≍ n` — which only helps, since the
-  ledger above is run at the conservative `≍ n`.
+* `norm_integral_expPhase_le_graded` (order `N`, on an interval): a smooth amplitude supported in
+  `[-A, A]` and graded by the single scale `μ = εΛ` oscillates away all but `2A·P·(Cε)^N` of its
+  mass. Its engine is `exists_bound_iteratedDeriv_recipDeriv` — the derivatives of `1/∂Φ` off the
+  slope floor, obtained from the Riccati identity `(1/∂Φ)' = −∂²Φ·(1/∂Φ)²` by a two-line
+  induction. **Wave 44's reading of this item is overturned**: it recorded that "an existential
+  constant is useless there, since the exponent (B) has to produce is carried by the explicit
+  `L^{-(k+1)}`". Only **one** negative power of `Λ` ever appears, because the graded induction
+  reinvests the surplus powers of `Λ` into `μ = εΛ`, which is a *fixed point* of `L`; the exponent
+  is carried explicitly by `μ^j` and `ε^N` and the residual constant is purely combinatorial.
+  A second correction: the estimate **must** be local. The surrogate phase is a cubic in `w₀`, so
+  `|∂²Φ|` is unbounded on the line and no global hypothesis of the form `|∂^jΦ| ≤ εΛ²` is true;
+  only the non-vanishing of `∂Φ` survives globally, and it does (`abs_deriv_fibrePhase_ge`).
+* `norm_integral_fibrePhase_le`: the estimate applied to the surrogate at a frozen `w₁`. The
+  total phase restricted to a horizontal fibre **is** an explicit cubic (`fibrePhase_apply`), its
+  slope floor is `|θ|/(3σ)` at *every* `w₀` with no cut-off (the surrogate's `5/6` and the band's
+  `1/2` subtract, and `5/6 − 1/2 = 1/3`), and all its slope derivatives past the second vanish.
+  Run on the rescaled fibre `w₀ = Mx` — which is not cosmetic, since un-rescaled the cut-off's
+  own scale is thrown away and the per-part cost degrades to `3σ/|θ| = O(1)` in the middle range —
+  the gain per part is `81Mr²/(σ|θ|) + 3σ/(M|θ|)`, the two branches of one integration by parts.
+  `norm_integral_fibre_bulkMultiplier_le` is this at the actual cut-off and the actual surrogate.
+* `fibre_gain_le_bulk_gain` / `fibre_gain_ledger_ten_le`: that gain is dominated by the single
+  quantity `Mr²/|θ|` that `bulk_gain_phase_le_band` prices (because `M²r² = n^{1/4} ≥ 1`), and ten
+  of them against the prefactor `M²` and a bad set of area `≤ n` land at `O(n^{-3/2})` at every
+  band exponent `b ≥ 0`, `b = 0` included. **The wave-43/44 numerology needs no amendment.**
 
-No obstruction to any of the three is known, and the arithmetic they have to reproduce is
-already verified in the file. This is a budget statement, not a verdict. -/
+* `norm_integral_fibre_bulkMultiplier_le`: the two previous items applied to the **actual**
+  integrand. The cut-off restricted to a fibre and rescaled is scale-free
+  (`norm_iteratedDeriv_fibreAmplitude_le`, over the norm-one embedding bridge
+  `norm_iteratedDeriv_comp_fibreEmbed_le`), so one horizontal fibre of the leakage integral,
+  with the actual `χ(·/M)` and the actual `θHₙ − t₀w₀`, is `O(gain^N)`.
+
+What is **still** not done is now **one** item, and it is measure theory rather than analysis:
+
+* the **reduction of `𝓕 g` to an iterated integral**, and the outer bookkeeping it feeds. Fubini
+  is harmless (the support is compact) but the measure-preserving identification of `E₂` with
+  `ℝ × ℝ` is not free; after it, `norm_integral_fibre_bulkMultiplier_le` is applied at each frozen
+  `w₁` (a set of length `≍ M`, contributing the second factor of the `M²` prefactor) and the
+  result integrated over the bad set in `s` (area `≍ log n`, against a ledger run at the
+  conservative `≍ n`, so with room to spare). Every constant that step has to produce is already
+  proved above; what it has to *do* is exchange two integrals.
+
+No obstruction is known, and the arithmetic is now *proved* in the file rather than merely
+checked. This is a budget statement, not a verdict. -/
 theorem exists_integral_norm_fourierWeight_bulkMultiplier_band_le
     {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) {Kb : ℝ} (hKb : 0 ≤ Kb) :
     ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ ≤ |θ| →
@@ -14547,7 +15588,27 @@ deviation is not a convenience: **under four moments this file has no route to t
 and the honest statement of what is proved carries eight. If a four-moment route is later found,
 this hypothesis is the thing to weaken, and nothing downstream of it depends on the exponent.
 
-Nothing else moved. -/
+Nothing else moved.
+
+**Status after wave 45. INPUT (B)'S ANALYTIC HEART IS PROVED; WHAT REMAINS OF (B) IS PLUMBING.
+THIS THEOREM IS STILL `sorry`, AND SO IS (B); WAVE 45 DOES NOT CLAIM OTHERWISE.**
+
+* **THE QUANTITATIVE HALF OF THE LEAKAGE ESTIMATE IS A THEOREM.**
+  `norm_integral_expPhase_le_graded` is a self-contained, order-`N`, *localised*
+  non-stationary-phase estimate on the line, and `norm_integral_fibrePhase_le` is it applied to
+  the surrogate at a frozen `w₁`, with gain `81Mr²/(σ|θ|) + 3σ/(M|θ|)` per part. See the note on
+  `exists_integral_norm_fourierWeight_bulkMultiplier_band_le` for what that discharges and for the
+  two wave-44 claims it overturns (the existential constant is fine; the estimate must be local).
+* **THE LEDGER DID NOT HAVE TO MOVE.** `fibre_gain_le_bulk_gain` shows the new gain is dominated
+  by the `Mr²/|θ|` of `bulk_gain_phase_le_band`, and `fibre_gain_ledger_ten_le` runs ten parts
+  against `M²` and a bad set of area `≤ n` to `O(n^{-3/2})` at every `b ≥ 0`. Three waves in a
+  row have now had to correct their predecessor's arithmetic; this one does not.
+* **ITEM 2 WAS NOT ATTEMPTED, AND THE REASON IS WAVE 43'S AND WAVE 44'S.** The three-regime
+  assembly has a statement for every regime, but the middle and outer regimes still rest on (B),
+  which is still a `sorry` — its one remaining item is the Fubini reduction of `𝓕 g` to iterated
+  integrals together with the outer `w₁`/`s` bookkeeping it feeds. Assembling now would produce a
+  theorem whose only content is the `sorry` it
+  already has. **The file is still at two `sorry`s — this one and (B).** -/
 
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
