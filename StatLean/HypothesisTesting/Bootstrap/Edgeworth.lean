@@ -103,6 +103,18 @@ proved:
   reduction consumes, and the verified exponent ledger (`leakage_ledger_exponent`,
   `leakage_ledger_five_le`, `tail_ledger_exponent`, `bulk_gain_phase_le`) — including
   `leakage_ledger_four_gt`, the witness that four integrations by parts do *not* suffice;
+* `leakage_ledger_band_exponent`, `leakage_ledger_ten_le`, `bulk_gain_phase_le_band`,
+  `band_radius_incompatible`, `graded_order_ledger`, `graded_order_four_gt`,
+  `norm_charFun_vecRootLaw_le_exp_neg_sq` — the **middle range** `n^{1/6} ≤ |θ| ≤ c₀√n`: the
+  leakage ledger survives the whole descent at `N = 10`, so what confines the certificate to the
+  outer range is its band geometry (`R ≥ ε₀√n` against `R ≤ |θ|/(2σ)`) and not its ledger, and
+  the Gaussian bulk bound `‖φ_{ρₙ}(t)‖ ≤ e^{−λ‖t‖²/4}` is what lets the band shrink to
+  `K√(log n)`; the competing route through a coarser grading is refuted by the same arithmetic;
+* `windowEnvelope₁`, `windowDom₁`, `integrable_windowDom₁`, `esseen_split_low`,
+  `low_range_ledger_exponent`, `low_range_ledger_gt` — the (U4′) **split window**: the
+  degree-one envelope wave 42 prescribed, its three-regime Esseen split (envelope plus an
+  undamped cubic on the low range, a constant on the middle range, the old tail) and the sharp
+  low-range exponent `a = 1/6`;
 * `surrogateSlopeBound`, `surrogateDefect`, `abs_sub_affine_centre_le'`,
   `measure_abs_surrogate_window_slab_le`, `measure_abs_deltaSurrogate_sub_le_of_slab`,
   `measure_abs_deltaSurrogate_sub_le_of_slab_unif`, `ledger_optimum_cube`,
@@ -13643,6 +13655,85 @@ carried out that assembly attempt. It does not close, and the reason is not budg
   still compiles over this theorem. The six-step assembly was not attempted because its third
   step is the statement refuted above. **This theorem is therefore still `sorry`, and the file
   is at two `sorry`s — this one and (B) — not one.**
+
+---
+
+**Status after wave 43. THE (U4′) SPLIT IS BUILT AND ITS LOW-RANGE EXPONENT IS SHARP; THE
+MIDDLE RANGE IS NO LONGER COVERED BY NOTHING — IT IS COVERED BY THE CERTIFICATE, AND WHAT KEPT
+THE CERTIFICATE OUT OF IT IS ITS *BAND GEOMETRY*, NOT ITS EXPONENT LEDGER. THIS THEOREM IS
+STILL `sorry` AND WAVE 43 DOES NOT CLAIM OTHERWISE.**
+
+* **THE ENVELOPE AND THE SPLIT, BUILT (item 1).** `windowEnvelope₁ ξ = e^{−π²ξ²/2}(|ξ| + |ξ|⁸)`
+  is the degree-one envelope wave 42 prescribed, with its weighted twin `windowDom₁`, and
+  `integrable_windowDom₁` is the check wave 42 said was routine and it is:
+  `∫ Env₁(ξ)/|ξ|` is a Gaussian moment. One thing wave 42 did not foresee: the weighted identity
+  becomes an **inequality**, because `windowDom₁ 0 = π⁻¹ ≠ 0` while its degree-four predecessor
+  vanished at the origin; `windowEnvelope₁_mul_weight_le` is the corrected form, and it is all
+  the split consumes. `esseen_split_low` is the three-regime twin of `esseen_split`: the
+  envelope **plus an undamped cubic** on `|ξ| ≤ ρ₁`, a bare constant on `ρ₁ ≤ |ξ| ≤ ρ`, the old
+  constant on the tail. The cubic is not a blemish — it is the graded remainder, and admitting
+  it explicitly is what makes the split honest, since wave 42 proved no envelope can absorb it.
+
+* **THE LOW-RANGE EXPONENT IS `a = 1/6`, AND IT IS THE LARGEST ONE.** The prompt for this wave
+  asked for the honest exponent to be derived rather than guessed. It is: the cubic's Esseen
+  weight is `2Krρ₁³/π` with `Kr = Cr³ = Cn^{-3/2}`, so the low range contributes `Θ(n^{3a−3/2})`
+  against a target of `n⁻¹`. `low_range_ledger_exponent` is the identity at `a = 1/6` — it
+  closes on the nose, with no slack — and `low_range_ledger_gt` is the witness that every
+  `a > 1/6` overshoots at every `n ≥ 2`. The wave-42 note's "`a < 1/6`-ish" is therefore exactly
+  `a ≤ 1/6`, and the middle range the split leaves is `n^{1/6} ≤ |θ| ≤ c₀√n`.
+
+* **THE MIDDLE RANGE (item 2): ROUTE (a), AND THE OBSTRUCTION IS NOT WHERE THE PROMPT EXPECTED
+  IT.** Both candidate routes were run to the end; the accounting is the section note above
+  `leakage_ledger_band_exponent`. In summary:
+  1. *Route (a)'s ledger survives the whole descent.* Re-running the leakage arithmetic at
+     `|θ| ≍ n^{b}` gives a gain of `n^{-3/8−b}` per part (`bulk_gain_phase_le_band`) and a
+     ledger of `n^{9/4 − N(3/8+b)}` (`leakage_ledger_band_exponent`), so the requirement is
+     `N ≥ (15/4)/(3/8 + b)`: `N = 5` at `b = 1/2` — wave 31's numerology reproduced, including
+     its minimality — and `N = 10` at `b = 0`. **`N = 10` therefore clears the entire band at
+     once** (`leakage_ledger_ten_le`), at the same bulk radius `n^{5/8}`, which input (C) fixes
+     independently of `θ`. The prompt asked whether `N = 5` still clears; it does not below
+     `b = 3/8`, but a bounded `N` does, everywhere.
+  2. *What actually confines the certificate is its band geometry.* `R` must be at least the
+     Cramér radius `ε₀√n`, because `cⁿ` is the only bound the file has on `‖φ_{ρₙ}‖` off the
+     ball, and at most `|θ|/(2σ)`, or the total phase on the bad set is not non-stationary
+     enough. `band_radius_incompatible` is the two-line consequence: `|θ| ≥ 2σε₀√n`. **The
+     `c₀√n` of `exists_fourierCertificate_deltaSurrogate` is `2σε₀` and nothing else.** No
+     earlier wave identified which of the certificate's ingredients carries the `√n`, and it
+     matters, because the one that does is the one that is far too strong for what it is used
+     for.
+  3. *The repair is one named input, and this wave proves it.*
+     `norm_charFun_vecRootLaw_le_exp_neg_sq` gives `‖φ_{ρₙ}(t)‖ ≤ e^{−λ‖t‖²/4}` on the bulk
+     `‖t‖ ≤ ε₁√n`, by restricting to the ray through `t` and raising
+     `norm_charFun_smul_le_exp_neg_sq` to the `n`-th power — the wave-12 device again, no
+     two-dimensional argument. Since `norm_integral_fourierSynth_le_of_band` prices the good
+     frequencies by `Γκ` with `Γ` merely polynomial, any `κ` below a fixed negative power of `n`
+     serves, so `R = K√(log n)` suffices and the band condition relaxes to `|θ| ≥ 2σK√(log n)`,
+     which is below `n^{a}` for every `a > 0`. What is left is (i) restating input (B) — a
+     `sorry` since wave 31 — at `R = K√(log n)` and `N = 10`, and (ii) discharging the three
+     direction-uniform moment hypotheses of the new brick for `studentPair F ∘ truncAt`, which
+     is the nonsingular covariance of `(X, X²)` the wave-12 note already names. Inputs (A) and
+     (C) are untouched: neither mentions `θ` or `R`.
+  4. *Route (b) cannot reach the top of the middle range, and no moment hypothesis makes it.*
+     The approximant half is free (`φ_{q_n}` is smaller than any power of `n` past `n^{a}`), so
+     the range is a statement about `‖φ_{ρₙ∘Hₙ⁻¹}‖` alone; but grading the perturbation
+     character to order `m` leaves the undamped remainder `n^{m(b−1/2)}`, which meets `n⁻¹` only
+     for `b ≤ 1/2 − 1/m` (`graded_order_ledger`), and eight moments cap `m` at `4`, hence `b` at
+     `1/4` (`graded_order_four_gt`). The prompt's suggestion that a *coarser* grading might keep
+     the phase is refuted by the same arithmetic: `m` enters only through `1/2 − 1/m`, so fewer
+     terms is strictly worse. And `1/2 − 1/m < 1/2` for every `m`, so route (b) never meets the
+     certificate's band whatever is assumed.
+
+* **WHAT IS NOT DONE, AND WHY.** Item 1's second half — the studentized window bound on
+  `|ξ| ≤ n^{1/6}` assembled from the four damped inputs and
+  `studentized_window_leading_identity` — is **not** carried out, and neither is item 3's
+  six-step assembly. Both wait on the same thing: the assembly wants a single window statement,
+  and the split above says there are now three regimes, of which the middle one is still a
+  `sorry` in a different place (input (B), at a band this wave has not amended). Amending (B)'s
+  statement is cheap, but doing it without also discharging (ii) would replace one honest
+  `sorry` by one honest `sorry` with a wider statement and no new theorem, so it is left for the
+  wave that discharges the moment hypotheses. **The file is still at two `sorry`s — this one and
+  (B) — and the residue of this one is now the two-item list in point 3, not the open middle
+  range wave 42 recorded.**
 
 **WAVE 40 — THE MOMENT HYPOTHESIS IS AMENDED FROM FOUR TO EIGHT, AND THIS IS A DEVIATION FROM
 THE CLASSICAL STATEMENT.** The classical studentized Edgeworth expansion (Hall, *The Bootstrap
