@@ -103,12 +103,30 @@ proved:
   reduction consumes, and the verified exponent ledger (`leakage_ledger_exponent`,
   `leakage_ledger_five_le`, `tail_ledger_exponent`, `bulk_gain_phase_le`) — including
   `leakage_ledger_four_gt`, the witness that four integrations by parts do *not* suffice;
+* `surrogateSlopeBound`, `surrogateDefect`, `abs_sub_affine_centre_le'`,
+  `measure_abs_surrogate_window_slab_le`, `measure_abs_deltaSurrogate_sub_le_of_slab`,
+  `measure_abs_deltaSurrogate_sub_le_of_slab_unif`, `ledger_optimum_cube`,
+  `measure_abs_gt_le_fourth_moment_of_integrable` — the **straightened** slice bound: a slab
+  bound plus a fourth-moment tail give the window mass of `Hₙ`, with a penalty *quadratic* in the
+  truncation level, and the exact balance identity `(a·L²)³ = a²·b` that prices it at
+  `|x|^{2/3}n^{-2/3}` — the accuracy `sum_dyadic_strata_le` consumes;
+* `slabRoot`, `vecRoot_slab_eq`, `measure_pi_vecRoot_slab_le_of_win`, `slabDir`,
+  `map_slabRoot_eq_projLaw`, `cramerCondition_map_slabRoot`,
+  `exists_bound_norm_charFun_map_slabRoot`, `integral_sq_sub_smul_ge`,
+  `integral_slabRoot_sq_ge` — the **projection reduction**: a slab of the bivariate root is a
+  window of a *one-dimensional* root, so no two-dimensional anti-concentration is needed; with
+  the two uniformity inputs it makes free, a slope-uniform Cramér constant and a variance floor
+  by perturbation;
+* `measure_pi_abs_slab_insertNth_le`, `measure_pi_abs_deltaSurrogate_insertNth_le` — (U3)'s
+  `hslice` for the surrogate, out of the marginal one-dimensional window bound at size `n` and a
+  tail bound, uniformly in the frozen index and value;
 * `normalCDF_sub_le`, `stdNormalCDF_sub_le` — the Lipschitz modulus of the normal distribution
   function, the constant `A` that Esseen's smoothing inequality consumes;
 * `edgeworth_mean_uniform` — the expansion for the centred root, with a uniform `O(n^{-1})`
   remainder, under a finite fourth moment and Cramér's condition;
 * `edgeworth_studentized_uniform` — the expansion for the studentized root, uniform in the
-  argument, under a finite fourth moment and absolute continuity;
+  argument, under **eight** moments (a wave-40 deviation from the classical fourth-moment
+  statement, documented there) and absolute continuity;
 * `cornishFisher_studentized_quantile` — the attached expansion of the quantile function with
   its `O(n^{-1})` accuracy, uniform over levels bounded away from `0` and `1`.
 
@@ -2029,7 +2047,35 @@ it. See the section note on `measure_abs_surrogate_window_le`.
 frozen four moments of `X` (Chebyshev, `L^{-2}`) the optimum is `|x|^{1/2}n^{-1/2}` — short by
 `n^{-1/6}`. Under **eight** moments of `X` (`L^{-4}`) the optimum is `|x|^{2/3}n^{-2/3}` and the
 ledger closes. So (U3) is now a single, sharply specified missing brick, with a known moment
-gap; it is not attempted here and is not claimed. -/
+gap; it is not attempted here and is not claimed.
+
+---
+
+**WAVE 40 — (U3)'s `hslice` IS PROVED, AND "A NEW ANALYTIC BRICK" IS OVERTURNED.** Wave 38's
+"Net price" above concludes that what remains after its reduction "is a **new** analytic brick,
+one dimension smaller than the one wave 21 named, and it is still not bookkeeping". Wave 39
+sharpened that to "a direction-uniform slab bound". **Both are wrong about the character of the
+item, and the reason is one line**: the slab functional `u − κv` of a bivariate root is a linear
+functional of a sum, hence *is* a one-dimensional root
+(`vecRoot_slab_eq`, `measure_pi_vecRoot_slab_le_of_win`). There is no two-dimensional statement
+left. The chain now in the file is
+
+`marginal 1D window bound at size n`  →*(`measure_pi_abs_root_insertNth_le`, free, `y`- and
+`i`-uniform)*→  `slab bound on the frozen root` (`measure_pi_abs_slab_insertNth_le`)
+→*(straightening, `measure_abs_deltaSurrogate_sub_le_of_slab`)*→  `hslice for the surrogate`
+(`measure_pi_abs_deltaSurrogate_insertNth_le`),
+
+with the frozen value absorbed by monotonicity in `|v₀|`
+(`measure_abs_deltaSurrogate_sub_le_of_slab_unif`) and the truncation of wave 37 supplying the
+bound on it. Every step is proved and axiom-clean.
+
+What is left of (U3) is the *input* to that chain: the marginal one-dimensional window bound at
+accuracy `O(n^{-2/3})`, slope-uniform. Its three analytic ingredients — four moments of the
+summand (eight of `X`), nondegeneracy, Cramér — are all available, and two of them uniformly
+(see the section note above `slabRoot`, and `exists_bound_norm_charFun_map_slabRoot`, which
+supplies **one** Cramér constant for all slopes). The residue is that `edgeworth_mean_uniform`
+states an existential constant instead of exposing it. **That is bookkeeping**, and it is the
+first time in this item's history that the word is defensible; it is still not done. -/
 theorem abs_measure_le_sub_le_of_peel_window {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     [IsProbabilityMeasure P] {S T : Ω → ℝ} {δ A η : ℝ} (hδ : 0 < δ) (K : ℕ) (x : ℝ)
     (τ : ℕ → ℝ)
@@ -3242,6 +3288,18 @@ assumes.** Its nondegeneracy input is free (`integral_studentPair_dir_sq_pos`); 
 anti-concentration theory in any dimension; this file's only anti-concentration remains the
 one-dimensional `measure_abs_sub_le_of_affine`.
 
+**WAVE 40 CORRECTS THE LAST SENTENCE, AND IT IS THE ONLY THING IN THIS SECTION THAT NEEDED
+CORRECTING.** "Mathlib has no anti-concentration theory in any dimension" is true and irrelevant,
+because **no two-dimensional anti-concentration is needed**: the slab functional `u − κv` is
+*linear*, so a slab of the bivariate root is a *window* of a one-dimensional root
+(`vecRoot_slab_eq`), and `measure_abs_sub_le_of_affine` — "this file's only anti-concentration" —
+is exactly the right tool after all. See the section note above `slabRoot`. The rest of this
+section stands verbatim: the ledger arithmetic, the eight-moment threshold, the `n^{-1/6}` gap at
+four moments, and both corrections to wave 38 are unchanged, and `measure_abs_surrogate_window_slab_le`
+is the theorem they were describing. The one thing the wave-39 phrase "direction-uniform" got
+wrong in *degree* rather than in kind: only slopes `|κ| ≤ surrogateSlopeBound = O(|x||r|)` occur,
+a **shrinking** family, and that is what makes the uniformity attainable.
+
 **Correction 1 to wave 38.** The assessment wrote that a two-dimensional Lévy concentration
 bound "of the shape `sup over slabs S of width w of P(root ∈ S) ≤ Cw + η` … dominates the
 random-centre form directly". **It does not.** The window event is the *curvilinear* strip
@@ -3571,6 +3629,703 @@ theorem measure_abs_deltaSurrogate_sub_le_of_window
   rw [hset]
   exact measure_abs_surrogate_window_le P (U := fun ω => G ω 0 / σ)
     (V := fun ω => G ω 1 / σ ^ 2) hw hL hwin htail
+
+/-! ### The STRAIGHTENED slice bound, and the ledger it meets
+
+**WAVE 40.** The section above prices the *frozen-centre* route and records that it is short of
+the ledger by `n^{-1/3}`, and the section before it proves that the level curve of `Hₙ` is
+straight to second order. What was missing was the theorem that spends the second fact: the
+straightened slice bound. This section is that theorem, together with the two pieces of pricing
+it consumes.
+
+**The statement.** `measure_abs_surrogate_window_slab_le` replaces the frozen-centre route's
+*marginal* window hypothesis by a **direction-uniform slab bound**
+
+`∀ κ' c' w', |κ'| ≤ K → 0 ≤ w' → P(|U − κ'V − c'| ≤ w') ≤ A·w' + η₀`,
+
+and returns the window mass of `Hₙ(U, V)` as
+
+`A·((6/5)w + (6/5)·surrogateDefect r x v₀ K L) + η₀ + P(|V − v₀| > L)`,  `K = surrogateSlopeBound`.
+
+The containment behind it is the wave-39 calculus, used exactly once each: the window pulls back
+to `|U − m(V, x)| ≤ (6/5)w` (`abs_sub_surrogate_centre_le`), the centre at `V` is within
+`(6/5)·surrogateDefect` of the *straight line* `m₀ + κ(V − v₀)` (`abs_sub_affine_centre_le`, with
+the slope of `exists_surrogate_slope` and the a-priori `|m₀| ≤ (6/5)|x|`), and the two add.
+`surrogateDefect` is the second-order bracket with `|κ|` replaced by its a-priori bound `K` and
+`|V − v₀|` by the truncation level `L`; `abs_sub_affine_centre_le'` is that monotonisation.
+
+**Why this is the shape that reaches the ledger, and the frozen-centre one is not.** Every term
+of `surrogateDefect` is at least **quadratic** in `L`; the leading one is `(3r²/8)(6/5)|x|L²`.
+The frozen-centre bound's middle term is `(36/25)|x||r|L(…)`, **linear** in `L`. That is the
+entire difference, and it is worth a factor `n^{-1/3}`: writing `a = (9/20)|x|r²` (the coefficient
+of `L²`) and `b = E(V − v₀)⁴` (Chebyshev at power four, `measure_abs_gt_le_fourth_moment_of_integrable`),
+the `w`-free part of the bound is `a·L² + b/L⁴` up to lower-order terms, and
+`ledger_optimum_cube` says that at `L⁶ = b/a` the two halves are **equal** and their common value
+`aL²` satisfies
+
+`(a·L²)³ = a²·b`.
+
+With `r² = (n+1)⁻¹` and `b = O(1)` — an eighth moment of `X` — this reads
+`(aL²)³ ≍ |x|²n⁻²`, i.e. `η₂ ≍ |x|^{2/3}n^{-2/3}`, and `sum_dyadic_strata_le` needs exactly
+`O(n^{-2/3})`. The identity `(aL²)³ = a²b` is stated in *cubed* form on purpose: it is an exact
+polynomial identity, so no real-power arithmetic enters the file and no constant is rounded.
+
+At the optimum `L² ≍ (b(n+1)/(c|x|))^{1/3} ≍ n^{1/3}`, hence `|r|L ≍ n^{-1/3} → 0` and `|κ|L ≍
+|x|n^{-1/2}·n^{1/6} → 0` for `|x| = o(n^{1/3})`: every term of `surrogateDefect` beyond the
+leading `(3r²/8)|m₀|L²` carries an extra `|κ|` or `|r|L` and is therefore lower order. The ledger
+is self-consistent, which is what wave 39 predicted and this section verifies at the level of the
+constants.
+
+**What is still an input, and it is one thing.** `hslab` is the direction-uniform slab bound for
+the bivariate root, at accuracy `η₀ = O(n^{-2/3})`. The next section reduces it, by projection,
+to a *one-dimensional* window bound for the root of `⟪studentPair F ·, θ⟫` — and records what
+remains after that reduction. Nothing else in this section is hypothetical. -/
+
+/-- The a-priori bound on the slope of the level curve, as a function of the window centre `x`
+and the frozen second coordinate `v₀`. This is `exists_surrogate_slope`'s bound with `|m₀|`
+replaced by its own a-priori bound `(6/5)|x|` from `exists_surrogate_centre`, so it depends only
+on data the caller has. It is `O(|x||r|)`, and on the studentized route `|r||v₀| = O(1)` by the
+wave-37 truncation, so it is `O(|x|n^{-1/2})`. -/
+noncomputable def surrogateSlopeBound (r x v₀ : ℝ) : ℝ :=
+  36 / 25 * |x| * |r| * (1 / 2 + 3 * |v₀| * |r| / 4)
+
+/-- The second-order defect of the level curve, monotonised: the bracket of
+`abs_sub_affine_centre_le` with `|κ| ≤ K`, `|h| ≤ L` and `|m₀| ≤ (6/5)|x|` substituted. **Every
+term is at least quadratic in `L`**, which is the whole difference between this route and the
+frozen-centre one. -/
+noncomputable def surrogateDefect (r x v₀ K L : ℝ) : ℝ :=
+  |r| / 2 * (K * L) * L + 3 * r ^ 2 / 2 * (6 / 5 * |x|) * (K * L) ^ 2
+    + r ^ 2 / 2 * (K * L) ^ 3 + 3 * r ^ 2 / 8 * (6 / 5 * |x|) * L ^ 2
+    + 3 * r ^ 2 / 4 * (K * L) * |v₀| * L + 3 * r ^ 2 / 8 * (K * L) * L ^ 2
+
+lemma surrogateDefect_nonneg (r x v₀ : ℝ) {K L : ℝ} (hK : 0 ≤ K) (hL : 0 ≤ L) :
+    0 ≤ surrogateDefect r x v₀ K L := by
+  unfold surrogateDefect; positivity
+
+/-- The slope bound of `exists_surrogate_slope` is dominated by the caller-visible
+`surrogateSlopeBound`, using only `|m₀| ≤ (6/5)|x|`. -/
+lemma abs_le_surrogateSlopeBound {r x v₀ m₀ κ : ℝ} (hm₀ : |m₀| ≤ 6 / 5 * |x|)
+    (hκ : |κ| ≤ 6 / 5 * |m₀| * |r| * (1 / 2 + 3 * |v₀| * |r| / 4)) :
+    |κ| ≤ surrogateSlopeBound r x v₀ := by
+  refine hκ.trans ?_
+  unfold surrogateSlopeBound
+  have h1 : (0 : ℝ) ≤ |r| * (1 / 2 + 3 * |v₀| * |r| / 4) := by positivity
+  nlinarith [h1, hm₀]
+
+/-- **The straightening estimate, monotonised in the truncation level.** `abs_sub_affine_centre_le`
+with `|κ|`, `|h|` and `|m₀|` replaced by the a-priori bounds `K`, `L` and `(6/5)|x|`. The
+substitution is legitimate termwise because every monomial of the bracket has nonnegative
+coefficient and positive degree in each of the three. -/
+lemma abs_sub_affine_centre_le' {r x v₀ h m₀ m κ K L : ℝ}
+    (hm₀b : |m₀| ≤ 6 / 5 * |x|) (hκb : |κ| ≤ K) (hhb : |h| ≤ L)
+    (hm0 : (m₀ - m₀ * v₀ * r / 2 + m₀ ^ 3 * r ^ 2 / 2 + 3 * m₀ * v₀ ^ 2 * r ^ 2 / 8) = x)
+    (hm : (m - m * (v₀ + h) * r / 2 + m ^ 3 * r ^ 2 / 2
+      + 3 * m * (v₀ + h) ^ 2 * r ^ 2 / 8) = x)
+    (hκ : (1 - v₀ * r / 2 + 3 * m₀ ^ 2 * r ^ 2 / 2 + 3 * v₀ ^ 2 * r ^ 2 / 8) * κ
+        + (-(m₀ * r / 2) + 3 * m₀ * v₀ * r ^ 2 / 4) = 0) :
+    |m - (m₀ + κ * h)| ≤ 6 / 5 * surrogateDefect r x v₀ K L := by
+  have hK : (0 : ℝ) ≤ K := (abs_nonneg κ).trans hκb
+  have hL : (0 : ℝ) ≤ L := (abs_nonneg h).trans hhb
+  refine (abs_sub_affine_centre_le hm0 hm hκ).trans ?_
+  have e1 : (κ * h) ^ 2 = (|κ| * |h|) ^ 2 := by rw [← abs_mul, sq_abs]
+  have e2 : h ^ 2 = |h| ^ 2 := (sq_abs h).symm
+  rw [e1, e2]
+  unfold surrogateDefect
+  gcongr <;> positivity
+
+/-- **THE STRAIGHTENED SLICE BOUND.** The window mass of the surrogate, out of a
+**direction-uniform slab bound** for the pair `(U, V)` and a tail bound for `V`:
+
+`P(|Hₙ(U, V) − x| ≤ w) ≤ A·((6/5)w + (6/5)·surrogateDefect r x v₀ K L) + η₀ + ρ`.
+
+The hypothesis `hslab` is uniform over all offsets `c'` and over the slopes `κ'` the level curve
+can actually produce, `|κ'| ≤ surrogateSlopeBound r x v₀ = O(|x||r|)`. **The restriction to a
+bounded — indeed shrinking — slope range is not a technicality; it is what makes the hypothesis
+attainable**, and it is a correction to the wave-39 phrasing "direction-uniform slab bound",
+which suggested a supremum over the whole circle of directions. Only directions within
+`O(|x|n^{-1/2})` of the first coordinate axis are ever used, and along that shrinking family the
+projected summand is a *perturbation* of the first standardized coordinate; see the section
+below on `slabRoot`.
+
+This is the wave-40 replacement for `measure_abs_surrogate_window_le`, and it differs from it in
+exactly one place: the deviation of the level curve from the frozen centre is paid at the
+*straight line* through it rather than at the centre itself, so the penalty is quadratic in the
+truncation level `L` rather than linear. See the section note for the ledger arithmetic. -/
+theorem measure_abs_surrogate_window_slab_le
+    {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsFiniteMeasure P]
+    {U V : Ω → ℝ} {r x w v₀ L A η₀ ρ : ℝ} (hw : 0 ≤ w) (hL : 0 ≤ L) (hA : 0 ≤ A)
+    (hslab : ∀ κ' c' w' : ℝ, |κ'| ≤ surrogateSlopeBound r x v₀ → 0 ≤ w' →
+      (P {ω | |U ω - κ' * V ω - c'| ≤ w'}).toReal ≤ A * w' + η₀)
+    (htail : (P {ω | L < |V ω - v₀|}).toReal ≤ ρ) :
+    (P {ω | |(U ω - U ω * V ω * r / 2 + U ω ^ 3 * r ^ 2 / 2
+        + 3 * U ω * V ω ^ 2 * r ^ 2 / 8) - x| ≤ w}).toReal
+      ≤ A * (6 / 5 * w + 6 / 5 * surrogateDefect r x v₀ (surrogateSlopeBound r x v₀) L)
+        + η₀ + ρ := by
+  obtain ⟨m₀, hm₀b, hm₀⟩ := exists_surrogate_centre r v₀ x
+  obtain ⟨κ, hκlin, hκb⟩ := exists_surrogate_slope r m₀ v₀
+  have hK0 : (0 : ℝ) ≤ surrogateSlopeBound r x v₀ := by
+    unfold surrogateSlopeBound; positivity
+  have hκK : |κ| ≤ surrogateSlopeBound r x v₀ := abs_le_surrogateSlopeBound hm₀b hκb
+  set W : ℝ := 6 / 5 * w + 6 / 5 * surrogateDefect r x v₀ (surrogateSlopeBound r x v₀) L
+    with hWdef
+  have hW0 : 0 ≤ W := by
+    rw [hWdef]
+    have := surrogateDefect_nonneg r x v₀ hK0 hL
+    linarith
+  have hsub : {ω | |(U ω - U ω * V ω * r / 2 + U ω ^ 3 * r ^ 2 / 2
+        + 3 * U ω * V ω ^ 2 * r ^ 2 / 8) - x| ≤ w}
+      ⊆ {ω | |U ω - κ * V ω - (m₀ - κ * v₀)| ≤ W} ∪ {ω | L < |V ω - v₀|} := by
+    intro ω hω
+    by_cases hv : L < |V ω - v₀|
+    · exact Or.inr hv
+    · refine Or.inl ?_
+      simp only [Set.mem_setOf_eq]
+      push_neg at hv
+      obtain ⟨m, -, hm⟩ := exists_surrogate_centre r (V ω) x
+      have hVeq : v₀ + (V ω - v₀) = V ω := by ring
+      have hm' : (m - m * (v₀ + (V ω - v₀)) * r / 2 + m ^ 3 * r ^ 2 / 2
+          + 3 * m * (v₀ + (V ω - v₀)) ^ 2 * r ^ 2 / 8) = x := by rw [hVeq]; exact hm
+      have h1 : |U ω - m| ≤ 6 / 5 * w := abs_sub_surrogate_centre_le hm hω
+      have h2 : |m - (m₀ + κ * (V ω - v₀))|
+          ≤ 6 / 5 * surrogateDefect r x v₀ (surrogateSlopeBound r x v₀) L :=
+        abs_sub_affine_centre_le' hm₀b hκK hv hm₀ hm' hκlin
+      have hid : U ω - κ * V ω - (m₀ - κ * v₀)
+          = (U ω - m) + (m - (m₀ + κ * (V ω - v₀))) := by ring
+      have htri : |U ω - κ * V ω - (m₀ - κ * v₀)|
+          ≤ |U ω - m| + |m - (m₀ + κ * (V ω - v₀))| := by
+        rw [hid]; exact abs_add_le _ _
+      rw [hWdef]
+      linarith
+  have hfin : ∀ S : Set Ω, P S ≠ ⊤ := fun S => measure_ne_top P S
+  have h1 : P {ω | |(U ω - U ω * V ω * r / 2 + U ω ^ 3 * r ^ 2 / 2
+        + 3 * U ω * V ω ^ 2 * r ^ 2 / 8) - x| ≤ w}
+      ≤ P {ω | |U ω - κ * V ω - (m₀ - κ * v₀)| ≤ W} + P {ω | L < |V ω - v₀|} :=
+    (measure_mono hsub).trans (measure_union_le _ _)
+  have h2 := ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨hfin _, hfin _⟩) h1
+  rw [ENNReal.toReal_add (hfin _) (hfin _)] at h2
+  have h3 := hslab κ (m₀ - κ * v₀) W hκK hW0
+  linarith
+
+/-- **The straightened slice bound on `deltaSurrogate` itself**, in the shape
+`measure_pi_stratum_le`'s `hslice` consumes. The two standardized coordinates are `w₀/σ` and
+`w₁/σ²`, so the previous theorem applies verbatim. -/
+theorem measure_abs_deltaSurrogate_sub_le_of_slab
+    {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsFiniteMeasure P]
+    {G : Ω → EuclideanSpace ℝ (Fin 2)} {σ r x w v₀ L A η₀ ρ : ℝ}
+    (hw : 0 ≤ w) (hL : 0 ≤ L) (hA : 0 ≤ A)
+    (hslab : ∀ κ' c' w' : ℝ, |κ'| ≤ surrogateSlopeBound r x v₀ → 0 ≤ w' →
+      (P {ω | |G ω 0 / σ - κ' * (G ω 1 / σ ^ 2) - c'| ≤ w'}).toReal ≤ A * w' + η₀)
+    (htail : (P {ω | L < |G ω 1 / σ ^ 2 - v₀|}).toReal ≤ ρ) :
+    (P {ω | |deltaSurrogate σ r (G ω) - x| ≤ w}).toReal
+      ≤ A * (6 / 5 * w + 6 / 5 * surrogateDefect r x v₀ (surrogateSlopeBound r x v₀) L)
+        + η₀ + ρ := by
+  have hset : {ω | |deltaSurrogate σ r (G ω) - x| ≤ w}
+      = {ω | |((G ω 0 / σ) - (G ω 0 / σ) * (G ω 1 / σ ^ 2) * r / 2
+          + (G ω 0 / σ) ^ 3 * r ^ 2 / 2
+          + 3 * (G ω 0 / σ) * (G ω 1 / σ ^ 2) ^ 2 * r ^ 2 / 8) - x| ≤ w} := rfl
+  rw [hset]
+  exact measure_abs_surrogate_window_slab_le P (U := fun ω => G ω 0 / σ)
+    (V := fun ω => G ω 1 / σ ^ 2) hw hL hA hslab htail
+
+/-- **The ledger, as an exact polynomial identity.** At the balance point `a·L⁶ = b` the two
+`L`-dependent halves of the slice bound's additive constant — the straightening penalty `a·L²`
+and the truncation tail `b/L⁴` — are **equal**, and their common value satisfies
+`(a·L²)³ = a²·b`.
+
+That cube is the whole ledger. On the studentized route `a ≍ |x|·r² = |x|/(n+1)` and `b` is the
+fourth moment of the second standardized coordinate, `O(1)` under eight moments of `X`; so
+`(a·L²)³ ≍ |x|²n⁻²` and the additive constant is `≍ |x|^{2/3}n^{-2/3}`, which is exactly what
+`sum_dyadic_strata_le` consumes. Stating it cubed keeps the file free of real powers: no
+`Real.rpow`, no rounded exponent, and the identity is checked by `ring`. -/
+lemma ledger_optimum_cube {a b L : ℝ} (hL : 0 < L) (hb : a * L ^ 6 = b) :
+    a * L ^ 2 + b / L ^ 4 = 2 * (a * L ^ 2) ∧ (a * L ^ 2) ^ 3 = a ^ 2 * b := by
+  have hL4 : (L : ℝ) ^ 4 ≠ 0 := by positivity
+  refine ⟨?_, ?_⟩
+  · rw [← hb]
+    field_simp
+    ring
+  · rw [← hb]; ring
+
+/-- **Chebyshev at power four, on an arbitrary probability space.** The device that prices the
+truncation of the second coordinate in the ledger above; `measure_abs_gt_le_fourth_moment` is the
+same statement for a one-dimensional sampling law, and this is the form the *root* needs, where
+the variable is a coordinate sum on `Measure.pi`. Its fourth moment is supplied by
+`integral_pi_sum_pow_four_le`. -/
+theorem measure_abs_gt_le_fourth_moment_of_integrable {Ω : Type*} [MeasurableSpace Ω]
+    (P : Measure Ω) [IsProbabilityMeasure P] {g : Ω → ℝ}
+    (hg4 : Integrable (fun ω => g ω ^ 4) P) {L : ℝ} (hL : 0 < L) :
+    (P {ω | L < |g ω|}).toReal ≤ (∫ ω, g ω ^ 4 ∂P) / L ^ 4 := by
+  have hmk := MeasureTheory.mul_meas_ge_le_integral_of_nonneg
+    (μ := P) (f := fun ω => g ω ^ 4) (Filter.Eventually.of_forall fun ω => by positivity)
+    hg4 (L ^ 4)
+  have hsub : {ω | L < |g ω|} ⊆ {ω | L ^ 4 ≤ g ω ^ 4} := by
+    intro ω hω
+    have hω' : L < |g ω| := hω
+    have hpow : L ^ 4 ≤ |g ω| ^ 4 := pow_le_pow_left₀ hL.le hω'.le 4
+    have habs : |g ω| ^ 4 = g ω ^ 4 := by
+      rw [← abs_pow, abs_of_nonneg (by positivity : (0 : ℝ) ≤ g ω ^ 4)]
+    rw [habs] at hpow
+    exact hpow
+  have hmono : (P {ω | L < |g ω|}).toReal ≤ (P {ω | L ^ 4 ≤ g ω ^ 4}).toReal :=
+    ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono hsub)
+  rw [le_div_iff₀ (by positivity : (0 : ℝ) < L ^ 4)]
+  have hmk' : L ^ 4 * (P {ω | L ^ 4 ≤ g ω ^ 4}).toReal ≤ ∫ ω, g ω ^ 4 ∂P := by
+    simpa [measureReal_def] using hmk
+  nlinarith [hmono, hmk', (by positivity : (0 : ℝ) < L ^ 4)]
+
+/-! ### The slab bound BY PROJECTION: a slab of the bivariate root is a one-dimensional root
+
+**WAVE 40, and this is the item that changes the shape of the residue.** The straightened slice
+bound above consumes `hslab`, a bound on the mass the bivariate root gives to the slab
+`{|u − κ'v − c'| ≤ w'}`, uniformly over the slopes `|κ'| ≤ surrogateSlopeBound = O(|x||r|)`. Wave
+39 called this "a direction-uniform slab bound … Mathlib has no anti-concentration theory in any
+dimension". **That framing is wrong, and the reason is one line of algebra**: the slab functional
+is *linear*, so
+
+`u(z) − κ'v(z) = n^{-1/2} ∑_j (Z(z_j)₀/σ − κ'·Z(z_j)₁/σ²) = n^{-1/2} ∑_j slabRoot Z σ κ' (z_j)`
+
+(`vecRoot_slab_eq`). A slab of the bivariate root **is** a window of the one-dimensional root of
+a real summand. No two-dimensional anti-concentration is required, no disintegration, and no
+local limit theorem in the plane: `measure_pi_vecRoot_slab_le_of_win` converts a
+*one-dimensional* window bound for the roots of the family `slabRoot Z σ κ'` into `hslab`
+verbatim. What was a missing analytic theory becomes a family of one-dimensional expansions.
+
+**The three inputs a one-dimensional `O(n⁻¹)` expansion needs, and where each stands.** For each
+fixed `κ'`, `edgeworth_mean_uniform` applied to the law `F.map (slabRoot (studentPair F) σ κ')`
+delivers exactly the required window bound through `measure_abs_sub_le_of_abs_cdf_sub_le`. Its
+hypotheses are:
+
+1. **Four moments of the summand.** `slabRoot` mixes `X − μ` with `(X − μ)² − σ²`, so four
+   moments of it are **eight** moments of `X` — the same eight that item 2's ledger spends, and
+   for a *different* reason. `abs_slabRoot_le` is the domination that makes the bound on those
+   moments uniform over the slope range: `|slabRoot| ≤ |Z₀|/σ + K|Z₁|/σ²` when `|κ'| ≤ K`.
+2. **Nondegeneracy, uniformly in the slope.** Free, and **not by the route the wave-39 note
+   suggested.** That note pointed at `integral_studentPair_dir_sq_pos` and, implicitly, at a
+   smallest-eigenvalue-over-the-sphere argument. No compactness is needed, because *the slope
+   range shrinks*: `slabRoot Z σ κ' = f − κ'g` with `f` the first standardized coordinate, so the
+   elementary pointwise bound `(a − b)² ≥ a²/2 − b²` gives
+   `∫(f − κ'g)² ≥ ½∫f² − κ'²∫g²` (`integral_sq_sub_smul_ge`, `integral_slabRoot_sq_ge`), and with
+   `∫f² = 1` this is `≥ 1/2 − κ'²∫g²`, bounded below by `1/4` for every `|κ'| ≤ (2√(∫g²))⁻¹`.
+   The floor is a *perturbation* statement, not a spectral one.
+3. **Cramér's condition, uniformly in the slope. This is proved here, and it is free.**
+   `cramerCondition_map_slabRoot` gives the condition for each `κ'`, because
+   `slabRoot (studentPair F) σ κ' = ⟪studentPair F ·, slabDir σ κ'⟫` with `slabDir σ κ' ≠ 0`
+   (`map_slabRoot_eq_projLaw`), and `cramerCondition_projLaw_studentPair` covers every nonzero
+   direction under `hFac` alone. More: `exists_bound_norm_charFun_map_slabRoot` produces **one**
+   constant `c < 1` with `‖φ_{slabRoot law}(s)‖ ≤ c` for all `ε ≤ |s|` and **all** `κ'` at once,
+   out of `exists_bound_lt_one_of_projLaw_cramer` plus `1/σ ≤ ‖slabDir σ κ'‖`. The Cramér
+   constant — the input one would expect to be the obstruction to uniformity — is uniform for
+   free.
+
+**What is left, priced honestly.** All three inputs are available and two of the three are
+available *uniformly in the slope*. What is not available is a **quantitative**
+`edgeworth_mean_uniform`: as stated it returns `∃ C`, with no exposed dependence on the law, so
+it cannot be applied to a κ'-indexed family and the resulting constants collected. The residue is
+therefore the restatement of that theorem with its constant exposed — and this is a checkable
+claim, not a hope, because its constant is *already* moment-explicit one level down:
+`exists_window_bound` obtains `K` from `exists_window_core ρ₃ β₄ |m₃| σ`, whose witness is
+
+`K = A² + B² + C + D + 1`,  `A = 4π³ρ₃/(3σ³)`, `B = 2π⁴`, `C = 8π⁵|m₃|/(3σ³)`,
+`D = 2π⁴β₄/(3σ⁴) + 2π⁴`,
+
+an explicit expression, increasing in `(ρ₃, β₄, |m₃|)` and decreasing in `σ`. Feed it the uniform
+moment bounds of (1), the uniform variance floor of (2) and the uniform Cramér constant of (3),
+and every constant in `edgeworth_mean_uniform`'s proof — including the geometric sums from
+`exists_pow_mul_geometric_le`, which are monotone in the ratio — becomes slope-uniform. **So the
+residue of (U3) is now bookkeeping: threading an existing proof's constants. It is not a missing
+analytic tool.** That is a strictly better verdict than wave 39's, and it is the one this wave
+is willing to defend; the threading itself is not done here and is not claimed.
+
+**One rate check, because it is the thing that would silently break.** The ledger needs
+`η₀ = O(n^{-2/3})`. A *Berry–Esseen* bound for the projected root gives only `O(n^{-1/2})` and is
+**not** enough — the reduction above is worth nothing without the `O(n⁻¹)` expansion behind it.
+That is why the route runs through `edgeworth_mean_uniform` and not through the (much cheaper)
+one-dimensional Berry–Esseen already in `ForMathlib`. -/
+
+/-- The **slab summand**: the real random variable whose one-dimensional root is the slab
+functional `u − κv` of the bivariate root. Written in coordinates rather than as an inner
+product, because the coordinates are what `deltaSurrogate` and `measure_abs_surrogate_window_slab_le`
+speak in. -/
+noncomputable def slabRoot (Z : ℝ → EuclideanSpace ℝ (Fin 2)) (σ κ : ℝ) (y : ℝ) : ℝ :=
+  Z y 0 / σ - κ * (Z y 1 / σ ^ 2)
+
+lemma measurable_slabRoot {Z : ℝ → EuclideanSpace ℝ (Fin 2)} (hZ : Measurable Z) (σ κ : ℝ) :
+    Measurable (slabRoot Z σ κ) := by
+  unfold slabRoot
+  have e0 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 0 := by fun_prop
+  have e1 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 1 := by fun_prop
+  have h0 : Measurable fun y : ℝ => Z y 0 := e0.comp hZ
+  have h1 : Measurable fun y : ℝ => Z y 1 := e1.comp hZ
+  fun_prop
+
+/-- **The moment domination that makes the slope range's moments uniform.** Every moment of
+`slabRoot Z σ κ` is controlled by the two coordinate moments of `Z`, with a coefficient depending
+on the slope only through its a-priori bound `K`. -/
+lemma abs_slabRoot_le {Z : ℝ → EuclideanSpace ℝ (Fin 2)} {σ κ K : ℝ} (hσ : 0 < σ)
+    (hκ : |κ| ≤ K) (y : ℝ) :
+    |slabRoot Z σ κ y| ≤ 1 / σ * |Z y 0| + K / σ ^ 2 * |Z y 1| := by
+  have hK : (0 : ℝ) ≤ K := (abs_nonneg κ).trans hκ
+  have e0 : |Z y 0 / σ| = 1 / σ * |Z y 0| := by
+    rw [abs_div, abs_of_pos hσ]; ring
+  have e1 : |κ * (Z y 1 / σ ^ 2)| = |κ| / σ ^ 2 * |Z y 1| := by
+    rw [abs_mul, abs_div, abs_of_pos (by positivity : (0:ℝ) < σ ^ 2)]; ring
+  have hσ2 : (0:ℝ) < σ ^ 2 := by positivity
+  have h1 : |κ| / σ ^ 2 ≤ K / σ ^ 2 := by gcongr
+  have h2 : |κ| / σ ^ 2 * |Z y 1| ≤ K / σ ^ 2 * |Z y 1| :=
+    mul_le_mul_of_nonneg_right h1 (abs_nonneg _)
+  calc |slabRoot Z σ κ y| ≤ |Z y 0 / σ| + |κ * (Z y 1 / σ ^ 2)| := abs_sub _ _
+    _ = 1 / σ * |Z y 0| + |κ| / σ ^ 2 * |Z y 1| := by rw [e0, e1]
+    _ ≤ 1 / σ * |Z y 0| + K / σ ^ 2 * |Z y 1| := by linarith
+
+/-- The sum of the slab summand over a sample is the slab functional of the coordinate sums. -/
+lemma sum_slabRoot {n : ℕ} (Z : ℝ → EuclideanSpace ℝ (Fin 2)) (σ κ : ℝ) (z : Fin n → ℝ) :
+    ∑ j, slabRoot Z σ κ (z j)
+      = (∑ j, Z (z j) 0) / σ - κ * ((∑ j, Z (z j) 1) / σ ^ 2) := by
+  unfold slabRoot
+  rw [Finset.sum_sub_distrib, ← Finset.sum_div, ← Finset.mul_sum, ← Finset.sum_div]
+
+/-- **THE PROJECTION IDENTITY.** The slab functional `u − κv` of the bivariate root is the
+one-dimensional root of `slabRoot Z σ κ`, with the *same* normalisation `n^{-1/2}`. This is the
+whole content of the reduction: it is linearity, and it is one `ring` after the coordinate
+extraction. -/
+lemma vecRoot_slab_eq {n : ℕ} (Z : ℝ → EuclideanSpace ℝ (Fin 2)) (σ κ : ℝ) (z : Fin n → ℝ) :
+    ((Real.sqrt (n : ℝ))⁻¹ • ∑ j, Z (z j)) 0 / σ
+        - κ * (((Real.sqrt (n : ℝ))⁻¹ • ∑ j, Z (z j)) 1 / σ ^ 2)
+      = (Real.sqrt (n : ℝ))⁻¹ * ∑ j, slabRoot Z σ κ (z j) := by
+  have h0 : ((Real.sqrt (n : ℝ))⁻¹ • ∑ j, Z (z j)) 0
+      = (Real.sqrt (n : ℝ))⁻¹ * ∑ j, Z (z j) 0 := by simp [Finset.sum_apply]
+  have h1 : ((Real.sqrt (n : ℝ))⁻¹ • ∑ j, Z (z j)) 1
+      = (Real.sqrt (n : ℝ))⁻¹ * ∑ j, Z (z j) 1 := by simp [Finset.sum_apply]
+  rw [h0, h1, sum_slabRoot]
+  ring
+
+/-- **The slab bound, reduced to one dimension.** A slope-uniform *one-dimensional* window bound
+for the roots of the family `slabRoot Z σ κ'` is exactly `hslab` of
+`measure_abs_deltaSurrogate_sub_le_of_slab`. Nothing is lost and nothing is assumed: the two
+events are the same set. -/
+theorem measure_pi_vecRoot_slab_le_of_win {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Z : ℝ → EuclideanSpace ℝ (Fin 2)} {σ A η K : ℝ}
+    (hwin : ∀ κ' u w : ℝ, |κ'| ≤ K → 0 ≤ w →
+      ((Measure.pi fun _ : Fin n => μ)
+          {z : Fin n → ℝ |
+            |(Real.sqrt (n : ℝ))⁻¹ * ∑ j, slabRoot Z σ κ' (z j) - u| ≤ w}).toReal
+        ≤ 2 * A * w + 2 * η) :
+    ∀ κ' c' w' : ℝ, |κ'| ≤ K → 0 ≤ w' →
+      ((Measure.pi fun _ : Fin n => μ)
+          {z : Fin n → ℝ |
+            |((Real.sqrt (n : ℝ))⁻¹ • ∑ j, Z (z j)) 0 / σ
+              - κ' * (((Real.sqrt (n : ℝ))⁻¹ • ∑ j, Z (z j)) 1 / σ ^ 2) - c'| ≤ w'}).toReal
+        ≤ 2 * A * w' + 2 * η := by
+  intro κ' c' w' hκ hw'
+  have hset : {z : Fin n → ℝ |
+      |((Real.sqrt (n : ℝ))⁻¹ • ∑ j, Z (z j)) 0 / σ
+        - κ' * (((Real.sqrt (n : ℝ))⁻¹ • ∑ j, Z (z j)) 1 / σ ^ 2) - c'| ≤ w'}
+      = {z : Fin n → ℝ |
+          |(Real.sqrt (n : ℝ))⁻¹ * ∑ j, slabRoot Z σ κ' (z j) - c'| ≤ w'} := by
+    ext z
+    simp only [Set.mem_setOf_eq, vecRoot_slab_eq]
+  rw [hset]
+  exact hwin κ' c' w' hκ hw'
+
+/-- **The variance floor as a perturbation, not a spectral bound.** `∫(f − κg)² ≥ ½∫f² − κ²∫g²`,
+from the pointwise `(a − b)² ≥ a²/2 − b²`. Applied along the shrinking slope family this bounds
+the variance of the slab summand away from zero uniformly, with no compactness argument and no
+smallest eigenvalue — see the section note. -/
+lemma integral_sq_sub_smul_ge {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) {f g : Ω → ℝ}
+    {κ : ℝ} (hf2 : Integrable (fun ω => f ω ^ 2) P) (hg2 : Integrable (fun ω => g ω ^ 2) P)
+    (hfg : Integrable (fun ω => (f ω - κ * g ω) ^ 2) P) :
+    1 / 2 * (∫ ω, f ω ^ 2 ∂P) - κ ^ 2 * (∫ ω, g ω ^ 2 ∂P)
+      ≤ ∫ ω, (f ω - κ * g ω) ^ 2 ∂P := by
+  have hpt : ∀ ω, 1 / 2 * f ω ^ 2 - κ ^ 2 * g ω ^ 2 ≤ (f ω - κ * g ω) ^ 2 := by
+    intro ω
+    nlinarith [sq_nonneg (f ω - 2 * (κ * g ω))]
+  have hint : Integrable (fun ω => 1 / 2 * f ω ^ 2 - κ ^ 2 * g ω ^ 2) P :=
+    (hf2.const_mul _).sub (hg2.const_mul _)
+  have hmono := integral_mono hint hfg hpt
+  have heq : ∫ ω, (1 / 2 * f ω ^ 2 - κ ^ 2 * g ω ^ 2) ∂P
+      = 1 / 2 * (∫ ω, f ω ^ 2 ∂P) - κ ^ 2 * (∫ ω, g ω ^ 2 ∂P) := by
+    rw [integral_sub (hf2.const_mul _) (hg2.const_mul _), integral_const_mul,
+      integral_const_mul]
+  linarith [heq ▸ hmono]
+
+/-- The variance floor, on the slab summand itself. With `∫(Z₀/σ)² = 1` — the standardization —
+the right-hand side is `1/2 − κ²∫(Z₁/σ²)²`, which stays above `1/4` on the whole slope range the
+level curve produces, since that range is `O(|x|n^{-1/2})`. -/
+lemma integral_slabRoot_sq_ge (F : Measure ℝ) {Z : ℝ → EuclideanSpace ℝ (Fin 2)} {σ κ : ℝ}
+    (h0 : Integrable (fun y => (Z y 0 / σ) ^ 2) F)
+    (h1 : Integrable (fun y => (Z y 1 / σ ^ 2) ^ 2) F)
+    (hfg : Integrable (fun y => slabRoot Z σ κ y ^ 2) F) :
+    1 / 2 * (∫ y, (Z y 0 / σ) ^ 2 ∂F) - κ ^ 2 * (∫ y, (Z y 1 / σ ^ 2) ^ 2 ∂F)
+      ≤ ∫ y, slabRoot Z σ κ y ^ 2 ∂F :=
+  integral_sq_sub_smul_ge F h0 h1 hfg
+
+/-- The direction of the slab, as a vector of the plane: `slabRoot (studentPair F) σ κ` is the
+projection of `studentPair F` on it. -/
+noncomputable def slabDir (σ κ : ℝ) : EuclideanSpace ℝ (Fin 2) :=
+  WithLp.toLp 2 ![1 / σ, -(κ / σ ^ 2)]
+
+lemma slabDir_zero (σ κ : ℝ) : slabDir σ κ 0 = 1 / σ := rfl
+
+lemma slabDir_one (σ κ : ℝ) : slabDir σ κ 1 = -(κ / σ ^ 2) := rfl
+
+/-- **The slab directions do not degenerate as the slope varies.** Their norms are bounded below
+by `1/σ`, uniformly in `κ`; this is what makes the Cramér constant slope-uniform. -/
+lemma inv_le_norm_slabDir {σ : ℝ} (hσ : 0 < σ) (κ : ℝ) : 1 / σ ≤ ‖slabDir σ κ‖ := by
+  have hn : ‖slabDir σ κ‖ = Real.sqrt ((1 / σ) ^ 2 + (-(κ / σ ^ 2)) ^ 2) := by
+    rw [EuclideanSpace.norm_eq, Fin.sum_univ_two]
+    congr 1
+    rw [slabDir_zero, slabDir_one, Real.norm_eq_abs, Real.norm_eq_abs, sq_abs, sq_abs]
+  rw [hn]
+  have h1 : (1 / σ) ^ 2 ≤ (1 / σ) ^ 2 + (-(κ / σ ^ 2)) ^ 2 :=
+    le_add_of_nonneg_right (sq_nonneg _)
+  calc 1 / σ = Real.sqrt ((1 / σ) ^ 2) := by
+        rw [Real.sqrt_sq (by positivity : (0:ℝ) ≤ 1 / σ)]
+    _ ≤ _ := Real.sqrt_le_sqrt h1
+
+lemma slabDir_ne_zero {σ : ℝ} (hσ : σ ≠ 0) (κ : ℝ) : slabDir σ κ ≠ 0 := by
+  intro h
+  have h0 : slabDir σ κ 0 = 0 := by rw [h]; rfl
+  rw [slabDir_zero] at h0
+  exact one_div_ne_zero hσ h0
+
+/-- **The slab summand is a projection of the studentizing pair**, so its law is a `projLaw` and
+everything proved about projected laws applies to it verbatim. -/
+lemma map_slabRoot_eq_projLaw (F : Measure ℝ) [IsProbabilityMeasure F] (σ κ : ℝ) :
+    F.map (slabRoot (studentPair F) σ κ) = projLaw (F.map (studentPair F)) (slabDir σ κ) := by
+  rw [projLaw,
+    Measure.map_map (measurable_inner_right (slabDir σ κ)) (measurable_studentPair F)]
+  congr 1
+  funext y
+  have hc0 : (studentPair F y) 0 = y - ∫ s, s ∂F := rfl
+  have hc1 : (studentPair F y) 1 = (y - ∫ s, s ∂F) ^ 2 - Var[fun s : ℝ => s; F] := rfl
+  simp only [Function.comp_apply, slabRoot, hc0, hc1]
+  rw [inner_studentPair, slabDir_zero, slabDir_one]
+  ring
+
+/-- **Cramér's condition for every slab summand, from `hFac` alone.** -/
+theorem cramerCondition_map_slabRoot (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hFac : F ≪ volume) {σ : ℝ} (hσ : σ ≠ 0) (κ : ℝ) :
+    CramerCondition (F.map (slabRoot (studentPair F) σ κ)) := by
+  rw [map_slabRoot_eq_projLaw]
+  exact cramerCondition_projLaw_studentPair F hFac (slabDir_ne_zero hσ κ)
+
+/-- **THE CRAMÉR CONSTANT IS SLOPE-UNIFORM, AND IT IS FREE.** One `c < 1` serves every slope at
+once: `‖φ_{slabRoot law}(s)‖ ≤ c` for all `ε ≤ |s|` and **all** `κ`.
+
+This is the input one would expect to obstruct a slope-uniform expansion, and it does not, for a
+structural reason: `exists_bound_lt_one_of_projLaw_cramer` already delivers a bound uniform over
+*directions* for the bivariate law, and the slab directions have norm at least `1/σ`
+(`inv_le_norm_slabDir`), so the ray `s ↦ s • slabDir σ κ` leaves every ball of radius `ε/σ` as
+soon as `|s| ≥ ε`. Nothing about the slope range being small is used — the statement holds for
+every real slope. -/
+theorem exists_bound_norm_charFun_map_slabRoot (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hFac : F ≪ volume) {σ : ℝ} (hσ : 0 < σ) {ε : ℝ} (hε : 0 < ε) :
+    ∃ c : ℝ, c < 1 ∧ ∀ κ s : ℝ, ε ≤ |s| →
+      ‖charFun (F.map (slabRoot (studentPair F) σ κ)) s‖ ≤ c := by
+  haveI : IsProbabilityMeasure (F.map (studentPair F)) :=
+    Measure.isProbabilityMeasure_map (measurable_studentPair F).aemeasurable
+  obtain ⟨c, hc, hcbd⟩ := exists_bound_lt_one_of_projLaw_cramer (F.map (studentPair F))
+    (vecCramerCondition_map_studentPair F hFac)
+    (fun t ht => cramerCondition_projLaw_studentPair F hFac ht)
+    (ε := ε / σ) (by positivity)
+  refine ⟨c, hc, fun κ s hs => ?_⟩
+  rw [map_slabRoot_eq_projLaw, ← charFun_smul_eq_charFun_map_inner]
+  refine hcbd _ ?_
+  rw [norm_smul, Real.norm_eq_abs]
+  have hd : 1 / σ ≤ ‖slabDir σ κ‖ := inv_le_norm_slabDir hσ κ
+  have hσ' : (0:ℝ) < 1 / σ := by positivity
+  calc ε / σ = ε * (1 / σ) := by ring
+    _ ≤ |s| * (1 / σ) := by nlinarith [hσ'.le, hs]
+    _ ≤ |s| * ‖slabDir σ κ‖ := mul_le_mul_of_nonneg_left hd (abs_nonneg s)
+
+/-! ### (U3) COMPOSED: `hslice` for the surrogate, out of a one-dimensional marginal bound
+
+**WAVE 40.** The two halves now meet. `measure_pi_abs_deltaSurrogate_insertNth_le` is the
+frozen-coordinate window bound for `T = deltaSurrogate σ r ∘ (bivariate root)` — the statement
+`measure_pi_stratum_le` calls `hslice` and the one this file has named as the residue of (U3)
+since wave 21 — proved from
+
+* the **marginal, slope-uniform, one-dimensional** window bound at size `n` (`hwin`), and
+* a **tail bound** for the second standardized coordinate (`htail`),
+
+and from nothing else. The route is: the slab functional of the frozen root is a one-dimensional
+root of `slabRoot` (`vecRoot_slab_eq` at size `n + 1`), so
+`measure_pi_abs_root_insertNth_le` — the wave-18 transfer that is *free*, uniform in the frozen
+value `y` and the frozen index `i`, at the cost of a single factor `√2` — applies to it
+(`measure_pi_abs_slab_insertNth_le`); and then the straightened slice bound converts a slab
+bound into a window bound for `Hₙ` (`measure_abs_deltaSurrogate_sub_le_of_slab`).
+
+**This is the wave-21 caveat discharged.** The note on `measure_pi_abs_root_insertNth_le` says,
+correctly, that the transfer "is not the statement the peeled assembly consumes", because `Hₙ` is
+a degree-four polynomial of the bivariate root and `measure_abs_sub_le_of_affine` does not apply
+to it. That is still true of `Hₙ`. What wave 40 supplies is the intermediate object for which it
+*is* true — the slab functional, which is affine — together with the two theorems that get from
+`Hₙ` down to it (monotonicity in the first coordinate, straightening of the level curve) and back
+up (the slab-to-window conversion). Neither wave 21 nor wave 38 had that object.
+
+**The `y`-uniformity, and how it is discharged.** `hslice` demands a constant free of `i` and
+`y`. Freezing coordinate `i` at `y` makes the second standardized coordinate
+`V(z) = a₁(y) + s_n·(retained root)`, so `v₀ := a₁(y)` is the only choice making `htail` free of
+`y` — and it then reappears in the constant, through `surrogateSlopeBound r x v₀` and
+`surrogateDefect r x v₀ K L`. `measure_abs_deltaSurrogate_sub_le_of_slab_unif` closes that loop:
+both are **monotone in `|v₀|`** (`surrogateSlopeBound_mono`, `surrogateDefect_mono`), so it
+suffices to bound `|a₁(y)|` by a single `v̄` and to ask for the slab bound on the correspondingly
+larger slope range `|κ'| ≤ K̄`. On the truncated law of the wave-37 step at `τ = √n` one has
+`|a₁(y)| ≤ (n + σ²)/(σ²√(n+1)) = O(√n)` and hence `|r|v̄ = O(1)`, which is exactly the size at
+which `surrogateSlopeBound = O(|x||r|)` and `surrogateDefect`'s leading term stays
+`O(|x|r²L²)`. So the truncation is not merely a moment device — wave 39's finding — and now the
+bookkeeping that spends it is in the file.
+
+**What the headline still needs, and it is two things, neither of them (U3)'s geometry.**
+
+1. *The quantitative `edgeworth_mean_uniform`* — see the section note above `slabRoot`. Until its
+   constant is exposed, `hwin` cannot be produced slope-uniformly, and `hwin` is the one
+   hypothesis of `measure_pi_abs_deltaSurrogate_insertNth_le` that is not discharged anywhere.
+2. *The quantitative half of (U4)* — unchanged since wave 38: the `k = 3, 4` and
+   graded-remainder terms of `norm_charFun_map_deltaSurrogate_sub_graded_le` priced against
+   `windowEnvelope`. Also unchanged: input (B), which the certificate rests on.
+
+`edgeworth_studentized_uniform` therefore remains `sorry`, and this wave does **not** claim
+otherwise. What changed is the character of its residue: after wave 39 it contained a missing
+analytic theory (two-dimensional anti-concentration); after wave 40 it does not. -/
+
+/-- `surrogateSlopeBound` is monotone in `|v₀|` — one of the two facts that make the slice
+constant uniform in the frozen value. -/
+lemma surrogateSlopeBound_mono {r x v₀ v₁ : ℝ} (hv : |v₀| ≤ |v₁|) :
+    surrogateSlopeBound r x v₀ ≤ surrogateSlopeBound r x v₁ := by
+  unfold surrogateSlopeBound
+  have h1 : 1 / 2 + 3 * |v₀| * |r| / 4 ≤ 1 / 2 + 3 * |v₁| * |r| / 4 := by
+    have h2 : 3 * |v₀| * |r| ≤ 3 * |v₁| * |r| :=
+      mul_le_mul_of_nonneg_right (by linarith) (abs_nonneg r)
+    linarith
+  have h0 : (0 : ℝ) ≤ 36 / 25 * |x| * |r| := by positivity
+  nlinarith [h0, h1]
+
+/-- `surrogateDefect` is monotone in the slope bound and in `|v₀|`; every monomial has
+nonnegative coefficient. -/
+lemma surrogateDefect_mono {r x v₀ v₁ K₀ K₁ L : ℝ} (hK : 0 ≤ K₀) (hL : 0 ≤ L)
+    (hKK : K₀ ≤ K₁) (hv : |v₀| ≤ |v₁|) :
+    surrogateDefect r x v₀ K₀ L ≤ surrogateDefect r x v₁ K₁ L := by
+  have hK1 : (0 : ℝ) ≤ K₁ := hK.trans hKK
+  have hKL : (0 : ℝ) ≤ K₀ * L := mul_nonneg hK hL
+  have hK1L : (0 : ℝ) ≤ K₁ * L := mul_nonneg hK1 hL
+  unfold surrogateDefect
+  gcongr <;>
+    first
+      | assumption
+      | positivity
+      | nlinarith [hKL, hK1L, sq_nonneg r, abs_nonneg r, abs_nonneg x, abs_nonneg v₁]
+
+/-- **The slice bound with the frozen value's contribution made uniform.** The slab bound is
+asked for on the larger slope range `|κ'| ≤ K̄` and the answer is expressed at the larger `v̄`, so
+neither side of the estimate mentions the actual `v₀` any more. This is what turns
+`measure_abs_deltaSurrogate_sub_le_of_slab` into a statement uniform in the frozen value. -/
+theorem measure_abs_deltaSurrogate_sub_le_of_slab_unif
+    {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsFiniteMeasure P]
+    {G : Ω → EuclideanSpace ℝ (Fin 2)} {σ r x w v₀ vbar Kbar L A η₀ ρ : ℝ}
+    (hw : 0 ≤ w) (hL : 0 ≤ L) (hA : 0 ≤ A)
+    (hv : |v₀| ≤ |vbar|) (hK : surrogateSlopeBound r x vbar ≤ Kbar)
+    (hslab : ∀ κ' c' w' : ℝ, |κ'| ≤ Kbar → 0 ≤ w' →
+      (P {ω | |G ω 0 / σ - κ' * (G ω 1 / σ ^ 2) - c'| ≤ w'}).toReal ≤ A * w' + η₀)
+    (htail : (P {ω | L < |G ω 1 / σ ^ 2 - v₀|}).toReal ≤ ρ) :
+    (P {ω | |deltaSurrogate σ r (G ω) - x| ≤ w}).toReal
+      ≤ A * (6 / 5 * w + 6 / 5 * surrogateDefect r x vbar Kbar L) + η₀ + ρ := by
+  have hK0 : (0 : ℝ) ≤ surrogateSlopeBound r x v₀ := by
+    unfold surrogateSlopeBound; positivity
+  have hstep := measure_abs_deltaSurrogate_sub_le_of_slab P hw hL hA
+    (fun κ' c' w' hκ hw' =>
+      hslab κ' c' w' (hκ.trans ((surrogateSlopeBound_mono hv).trans hK)) hw') htail
+  refine hstep.trans ?_
+  have hmono : surrogateDefect r x v₀ (surrogateSlopeBound r x v₀) L
+      ≤ surrogateDefect r x vbar Kbar L :=
+    surrogateDefect_mono hK0 hL ((surrogateSlopeBound_mono hv).trans hK) hv
+  have hsum : 6 / 5 * w + 6 / 5 * surrogateDefect r x v₀ (surrogateSlopeBound r x v₀) L
+      ≤ 6 / 5 * w + 6 / 5 * surrogateDefect r x vbar Kbar L := by linarith
+  have := mul_le_mul_of_nonneg_left hsum hA
+  linarith
+
+/-- **The slab bound on a frozen-coordinate root is free from the marginal one.** Because the
+slab functional is a one-dimensional root (`vecRoot_slab_eq`), freezing a coordinate is an
+affine change of variable in it, and `measure_pi_abs_root_insertNth_le` transfers the marginal
+window bound at size `n` with **no dependence on the frozen value `y` or the frozen index `i`**,
+losing only a factor `√2`. -/
+theorem measure_pi_abs_slab_insertNth_le {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Z : ℝ → EuclideanSpace ℝ (Fin 2)} {σ A η K : ℝ} (hA : 0 ≤ A) (hn : 0 < n)
+    (hwin : ∀ κ' u w : ℝ, |κ'| ≤ K → 0 ≤ w →
+      ((Measure.pi fun _ : Fin n => μ)
+          {z : Fin n → ℝ |
+            |(Real.sqrt (n : ℝ))⁻¹ * ∑ j, slabRoot Z σ κ' (z j) - u| ≤ w}).toReal
+        ≤ 2 * A * w + 2 * η)
+    (i : Fin (n + 1)) (y : ℝ) :
+    ∀ κ' c' w' : ℝ, |κ'| ≤ K → 0 ≤ w' →
+      ((Measure.pi fun _ : Fin n => μ)
+          {z : Fin n → ℝ |
+            |((Real.sqrt ((n : ℝ) + 1))⁻¹
+                  • ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)) 0 / σ
+              - κ' * (((Real.sqrt ((n : ℝ) + 1))⁻¹
+                  • ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)) 1 / σ ^ 2)
+              - c'| ≤ w'}).toReal
+        ≤ 2 * (Real.sqrt 2 * A) * w' + 2 * η := by
+  intro κ' c' w' hκ hw'
+  have hcast : ((n + 1 : ℕ) : ℝ) = (n : ℝ) + 1 := by push_cast; ring
+  have hkey : ∀ z : Fin n → ℝ,
+      ((Real.sqrt ((n : ℝ) + 1))⁻¹
+            • ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)) 0 / σ
+        - κ' * (((Real.sqrt ((n : ℝ) + 1))⁻¹
+            • ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)) 1 / σ ^ 2)
+        = (Real.sqrt ((n : ℝ) + 1))⁻¹
+            * ∑ j : Fin (n + 1), slabRoot Z σ κ' ((i.insertNth y z : Fin (n + 1) → ℝ) j) := by
+    intro z
+    have h := vecRoot_slab_eq (n := n + 1) Z σ κ' (i.insertNth y z)
+    rw [hcast] at h
+    exact h
+  have hset : {z : Fin n → ℝ |
+      |((Real.sqrt ((n : ℝ) + 1))⁻¹
+            • ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)) 0 / σ
+        - κ' * (((Real.sqrt ((n : ℝ) + 1))⁻¹
+            • ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)) 1 / σ ^ 2)
+        - c'| ≤ w'}
+      = {z : Fin n → ℝ |
+          |(Real.sqrt ((n : ℝ) + 1))⁻¹
+              * ∑ j : Fin (n + 1), slabRoot Z σ κ' ((i.insertNth y z : Fin (n + 1) → ℝ) j)
+            - c'| ≤ w'} := by
+    ext z
+    simp only [Set.mem_setOf_eq, hkey z]
+  rw [hset]
+  exact measure_pi_abs_root_insertNth_le (Z := slabRoot Z σ κ') μ hA hn i
+    (fun u w hw => hwin κ' u w hκ hw) y c' hw'
+
+/-- **(U3)'s `hslice`, for the surrogate.** The frozen-coordinate window bound for
+`deltaSurrogate σ r ∘ (bivariate root)`, out of the marginal slope-uniform one-dimensional
+window bound at size `n` and a tail bound for the second standardized coordinate. This is the
+statement `measure_pi_stratum_le` consumes and the one wave 21 named as the residue; see the
+section note for what discharging it does and does not settle. -/
+theorem measure_pi_abs_deltaSurrogate_insertNth_le {n : ℕ} (μ : Measure ℝ)
+    [IsProbabilityMeasure μ] {Z : ℝ → EuclideanSpace ℝ (Fin 2)}
+    {σ r x w v₀ L A η ρ : ℝ} (hA : 0 ≤ A) (hn : 0 < n) (hw : 0 ≤ w) (hL : 0 ≤ L)
+    (hwin : ∀ κ' u w : ℝ, |κ'| ≤ surrogateSlopeBound r x v₀ → 0 ≤ w →
+      ((Measure.pi fun _ : Fin n => μ)
+          {z : Fin n → ℝ |
+            |(Real.sqrt (n : ℝ))⁻¹ * ∑ j, slabRoot Z σ κ' (z j) - u| ≤ w}).toReal
+        ≤ 2 * A * w + 2 * η)
+    (i : Fin (n + 1)) (y : ℝ)
+    (htail : ((Measure.pi fun _ : Fin n => μ)
+        {z : Fin n → ℝ |
+          L < |((Real.sqrt ((n : ℝ) + 1))⁻¹
+              • ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)) 1 / σ ^ 2
+            - v₀|}).toReal ≤ ρ) :
+    ((Measure.pi fun _ : Fin n => μ)
+        {z : Fin n → ℝ |
+          |deltaSurrogate σ r ((Real.sqrt ((n : ℝ) + 1))⁻¹
+              • ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j)) - x| ≤ w}).toReal
+      ≤ 2 * (Real.sqrt 2 * A)
+          * (6 / 5 * w + 6 / 5 * surrogateDefect r x v₀ (surrogateSlopeBound r x v₀) L)
+        + 2 * η + ρ := by
+  refine measure_abs_deltaSurrogate_sub_le_of_slab
+    (G := fun z : Fin n → ℝ => (Real.sqrt ((n : ℝ) + 1))⁻¹
+      • ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j))
+    _ hw hL (by positivity) ?_ htail
+  exact measure_pi_abs_slab_insertNth_le μ hA hn hwin i y
 
 /-! ### Nondegeneracy of the studentized pair from absolute continuity
 
@@ -11233,12 +11988,91 @@ section notes above `exactStudent_eq`; the three things to carry here are:
   built, and the second is what admits the only route that reaches the ledger.
 
 Nothing else moved: (A), (B), (C), (U1), (U2), the quantitative half of (U4), the certificate
-and this theorem are as wave 38 left them, and the assembly was **not attempted**. -/
+and this theorem are as wave 38 left them, and the assembly was **not attempted**.
+
+---
+
+**Status after wave 40. (U3) IS NO LONGER AN ANALYTIC ITEM. Its `hslice` is PROVED; what is left
+of it is one existential constant that has to be exposed. Wave 38's and wave 39's assessments of
+it are both overturned, and the moment hypothesis of this theorem is amended.**
+
+* **(U3) — THE GEOMETRY IS CLOSED.** The chain
+  `measure_pi_abs_deltaSurrogate_insertNth_le` ← `measure_pi_abs_slab_insertNth_le` ←
+  `measure_pi_abs_root_insertNth_le` produces the frozen-coordinate window bound for
+  `deltaSurrogate σ r ∘ (bivariate root)` — the statement `measure_pi_stratum_le` calls `hslice`
+  and the residue this file has named since wave 21 — from the **marginal, one-dimensional,
+  slope-uniform** window bound at size `n` and a Chebyshev tail, and from nothing else. The
+  enabling observation is that the slab functional `u − κv` is *linear*, so a slab of the
+  bivariate root **is** a one-dimensional root (`vecRoot_slab_eq`); wave 38's "a new analytic
+  brick, one dimension smaller" and wave 39's "a direction-uniform slab bound … Mathlib has no
+  anti-concentration theory in any dimension" both misidentify the item. There is no
+  two-dimensional statement anywhere in the route. The two conversions between `Hₙ` and the slab
+  are `measure_abs_surrogate_window_slab_le` (straightening, wave 40) and the wave-39 centre
+  calculus it consumes.
+
+* **THE `y`-UNIFORMITY IS DISCHARGED, AND IT SPENDS THE WAVE-37 TRUNCATION.** `hslice` needs a
+  constant free of the frozen value; `htail` forces `v₀ = a₁(y)`; and `v₀` re-enters the constant
+  only through quantities monotone in `|v₀|` (`surrogateSlopeBound_mono`,
+  `surrogateDefect_mono`), so `measure_abs_deltaSurrogate_sub_le_of_slab_unif` absorbs it into a
+  single `v̄` with `|r|v̄ = O(1)` on the truncated law. Wave 39 identified this obligation; wave
+  40 discharges it.
+
+* **WHAT IS LEFT OF (U3), PRICED.** The marginal one-dimensional window bound has to hold at
+  accuracy `O(n^{-2/3})` uniformly over the slopes `|κ| ≤ O(|x|n^{-1/2})`. A Berry–Esseen
+  (`O(n^{-1/2})`) is **not** enough; `edgeworth_mean_uniform` applied to the projected law
+  `F.map (slabRoot (studentPair F) σ κ)` is, and all three of its hypotheses hold — four moments
+  of the summand (which is where this theorem's eight moments of `X` are also spent),
+  nondegeneracy uniformly by *perturbation* (`integral_slabRoot_sq_ge`; the slope range shrinks,
+  so no compactness and no smallest eigenvalue is involved), and Cramér uniformly and for free
+  (`exists_bound_norm_charFun_map_slabRoot` gives **one** `c < 1` for every slope). The obstacle
+  is that `edgeworth_mean_uniform` returns `∃ C` with no exposed dependence on the law, so it
+  cannot be applied to a slope-indexed family. Its constant is already moment-explicit one level
+  down — `exists_window_core` produces `K = A² + B² + C + D + 1` with `A = 4π³ρ₃/(3σ³)`,
+  `B = 2π⁴`, `C = 8π⁵|m₃|/(3σ³)`, `D = 2π⁴β₄/(3σ⁴) + 2π⁴`, increasing in the moments and
+  decreasing in `σ` — so the residue is threading an existing proof's constants. **Bookkeeping,
+  and not done here.**
+
+* **(U4) AND (B) ARE UNCHANGED.** The quantitative half of (U4) — the `k = 3, 4` and
+  graded-remainder terms priced against `windowEnvelope` — is as wave 38 left it, and input (B)
+  is as wave 35 left it. **This theorem is therefore still `sorry`, and wave 40 does not claim
+  otherwise.** What changed is that its residue no longer contains a missing analytic theory.
+
+**WAVE 40 — THE MOMENT HYPOTHESIS IS AMENDED FROM FOUR TO EIGHT, AND THIS IS A DEVIATION FROM
+THE CLASSICAL STATEMENT.** The classical studentized Edgeworth expansion (Hall, *The Bootstrap
+and Edgeworth Expansion*, §2.4) is stated under a **fourth** moment of the sampling law. This
+statement now asks for an **eighth**, and the reason is `hF8`'s tag: it is the *straightening
+ledger* of wave 39, which is the only route in the file that reaches the accuracy
+`sum_dyadic_strata_le` consumes.
+
+The accounting, in one line. (U3)'s slice bound is produced by straightening the level curve of
+`Hₙ` at slope `κ` and applying a direction-uniform slab bound to the straightened strip
+(`measure_abs_surrogate_window_slab_le`). Its additive constant is
+
+`η₂ ≍ |x|·r²·L² + η₀ + P(|V − v₀| > L)`,  `r² = (n+1)⁻¹`,
+
+and `sum_dyadic_strata_le` needs `η₂ = O(n^{-2/3})`. Pricing the truncation tail by **Chebyshev
+at power four**, `P(|V − v₀| > L) ≤ E(V − v₀)⁴/L⁴`, balances the two `L`-dependent terms at
+`L⁶ = E(V − v₀)⁴·(n+1)/(c|x|)` (`ledger_optimum_cube`), where the common value `a·L²` satisfies
+`(a·L²)³ = a²·b ≍ |x|²n⁻²` — that is, `η₂ ≍ |x|^{2/3}n^{-2/3}`, which **meets the ledger
+exactly**. The fourth moment of the second standardized coordinate `V` is a fourth moment of
+`(X − μ)² − σ²`, i.e. an **eighth** moment of `X`; that is where `hF8` is spent and it is the
+only place.
+
+Under the frozen four moments the same optimisation is run with Chebyshev at power two and lands
+at `|x|^{1/2}n^{-1/2}` — short of `n^{-2/3}` by exactly `n^{-1/6}` — and wave 39 verified that no
+weaker device repairs it (the term to beat is a *displacement*, not a fluctuation). So the
+deviation is not a convenience: **under four moments this file has no route to the conclusion**,
+and the honest statement of what is proved carries eight. If a four-moment route is later found,
+this hypothesis is the thing to weaken, and nothing downstream of it depends on the exponent.
+
+Nothing else moved. -/
 
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
-    -- USER-INPUT: finite fourth moment of the sampling law
-    (hF4 : MemLp (fun t : ℝ => t) 4 F)
+    -- USER-INPUT: eight moments of the sampling law; the straightening ledger of the surrogate
+    -- window needs a fourth moment of the squared coordinate (wave 39/40); the classical
+    -- statement assumes four -- deviation documented in the docstring
+    (hF8 : MemLp (fun t : ℝ => t) 8 F)
     -- USER-INPUT: nonzero variance
     (hFvar : 0 < Var[fun t : ℝ => t; F])
     -- USER-INPUT: the sampling law is absolutely continuous; the smoothness requirement under
@@ -11983,10 +12817,20 @@ only debt it now carries is `edgeworth_studentized_uniform`'s, inherited transit
 `edgeworth_studentized_uniform`, it is the implicit-function inversion of
 `x ↦ Φ(x) + (γ/6)φ(x)(2x² + 1)n^{-1/2}` on the compact `z`-range `[Φ⁻¹(ε), Φ⁻¹(1 − ε)]`, where
 `φ` is bounded below — that is what `0 < ε < 1/2` buys — together with the transfer of a uniform
-CDF bound to `cdfPseudoInverse`. No analytic obstruction is known; it is deferred, not blocked. -/
+CDF bound to `cdfPseudoInverse`. No analytic obstruction is known; it is deferred, not blocked.
+
+**WAVE 40: the moment hypothesis is inherited, and it is now eight rather than four.** Nothing
+in the inversion needs it — `cornishFisher_of_edgeworth` is axiom-clean and moment-free — but
+this corollary consumes `edgeworth_studentized_uniform`, whose hypothesis was amended from a
+fourth to an eighth moment of the sampling law in wave 40. The reason is recorded in full on
+that theorem; the short form is that the straightening ledger of the (U3) slice bound prices its
+truncation by a *fourth* moment of the second standardized coordinate, which is an eighth moment
+of `X`. This is a deviation from the classical statement and it is inherited verbatim here. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
-    -- USER-INPUT: finite fourth moment of the sampling law
-    (hF4 : MemLp (fun t : ℝ => t) 4 F)
+    -- USER-INPUT: eight moments of the sampling law, inherited from
+    -- `edgeworth_studentized_uniform`; the classical statement assumes four -- deviation
+    -- documented in the docstring there
+    (hF8 : MemLp (fun t : ℝ => t) 8 F)
     -- USER-INPUT: nonzero variance
     (hFvar : 0 < Var[fun t : ℝ => t; F])
     -- USER-INPUT: absolute continuity of the sampling law
@@ -11999,7 +12843,7 @@ theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
         (stdNormalQuantile (1 - α) -
           (1 / 6) * skewness F * (2 * stdNormalQuantile (1 - α) ^ 2 + 1) * (Real.sqrt n)⁻¹)|
       ≤ C / n := by
-  obtain ⟨C₀, hC₀, hexp⟩ := edgeworth_studentized_uniform (F := F) hF4 hFvar hFac
+  obtain ⟨C₀, hC₀, hexp⟩ := edgeworth_studentized_uniform (F := F) hF8 hFvar hFac
   exact cornishFisher_of_edgeworth (S := fun n => studentizedRootCDF F n)
     (γ := skewness F) hC₀ (fun n _ => isCDF_studentizedRootCDF_of_prob F n) hexp hε hε'
 
