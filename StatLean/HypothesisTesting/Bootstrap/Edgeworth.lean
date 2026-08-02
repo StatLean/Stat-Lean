@@ -11118,6 +11118,87 @@ theorem meanRootCDF_sub_le_of_bounds {R B s₀ cr c : ℝ} (hR : 0 ≤ R) (hB : 
     linarith
   linarith [hAa, hAb, hlip, hmono, hcn]
 
+/-! ### From the class statement to the slope family
+
+The two theorems above are stated for a *class* of laws; (U3) needs them for the specific,
+slope-indexed family `F.map (slabRoot (studentPair F) σ κ)`. Three small facts do the joining,
+and none of them is analytic.
+
+The first is the only one that is not bookkeeping about moments: `meanRootCDF` lives on
+`Measure.pi (fun _ => G)` while the window bound (U3) consumes lives on `Measure.pi (fun _ => F)`
+with the summand `slabRoot` applied coordinatewise. Those two are the same measure —
+`Measure.pi_map_pi` — and the two roots are the same function, because `√n·(n⁻¹ S) = (√n)⁻¹ S`.
+That is `measure_pi_root_eq_meanRootCDF`, and it is the reason no i.i.d. transfer is needed
+anywhere in this file: the pushforward of a product is the product of the pushforwards. -/
+
+/-- A law with mean zero is its own centring. Used to identify `centredLaw (F.map f)` with
+`F.map f` for a *centred* summand `f`, which is what makes the moment hypotheses of
+`edgeworth_mean_uniform_of_bounds` readable as moments of `f` under `F`. -/
+lemma centredLaw_eq_self (G : Measure ℝ) (h : (∫ s, s ∂G) = 0) : centredLaw G = G := by
+  unfold centredLaw
+  simp [h]
+
+/-- **The coordinatewise transfer.** The law of the root `(√n)⁻¹ ∑ f(zⱼ)` under
+`Measure.pi (fun _ => F)` is the law of the centred root under `Measure.pi (fun _ => F.map f)`,
+for a centred summand `f`. `Measure.pi_map_pi` — the pushforward of a product is the product of
+the pushforwards — is the whole content; the `√n` bookkeeping is `√n·n⁻¹ = (√n)⁻¹`. -/
+lemma measure_pi_root_eq_meanRootCDF (F : Measure ℝ) [IsProbabilityMeasure F] {f : ℝ → ℝ}
+    (hf : Measurable f) (hmean : (∫ y, f y ∂F) = 0) {n : ℕ} (hn : 0 < n) (x : ℝ) :
+    ((Measure.pi fun _ : Fin n => F)
+        {z : Fin n → ℝ | (Real.sqrt (n : ℝ))⁻¹ * ∑ j, f (z j) ≤ x}).toReal
+      = meanRootCDF (F.map f) n x := by
+  haveI : IsProbabilityMeasure (F.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hnR
+  have hmean' : (∫ t, t ∂(F.map f)) = 0 := by
+    rw [integral_map (f := fun t : ℝ => t) hf.aemeasurable (by fun_prop)]
+    exact hmean
+  have hpi : (Measure.pi fun _ : Fin n => F.map f)
+      = (Measure.pi fun _ : Fin n => F).map (fun z : Fin n → ℝ => fun i => f (z i)) :=
+    (Measure.pi_map_pi (fun _ => hf.aemeasurable)).symm
+  have hmeas : Measurable (fun z : Fin n → ℝ => fun i => f (z i)) :=
+    measurable_pi_lambda _ fun i => hf.comp (measurable_pi_apply i)
+  have hset : MeasurableSet
+      {y : Fin n → ℝ | Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂(F.map f)) ≤ x} := by
+    refine measurableSet_le ?_ measurable_const
+    fun_prop
+  -- `√n · n⁻¹ = (√n)⁻¹`
+  have hinv : Real.sqrt (n : ℝ) * ((n : ℝ))⁻¹ = (Real.sqrt (n : ℝ))⁻¹ := by
+    have hnn : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) := Real.mul_self_sqrt hnR.le
+    field_simp
+    linarith [hnn]
+  have hscale : ∀ S : ℝ, Real.sqrt (n : ℝ) * ((n : ℝ)⁻¹ * S) = (Real.sqrt (n : ℝ))⁻¹ * S := by
+    intro S
+    rw [← mul_assoc, hinv]
+  rw [meanRootCDF, hpi, Measure.map_apply hmeas hset]
+  congr 2
+  ext z
+  simp only [Set.mem_preimage, Set.mem_setOf_eq, hmean', sub_zero, hscale]
+
+/-- **The moments of the root's summand, read under `F`.** For a centred summand the three
+hypotheses `edgeworth_mean_uniform_of_bounds` places on `centredLaw G` are hypotheses on `f`
+under `F`, with no centring correction: this is `centredLaw_eq_self` plus `integral_map`. -/
+lemma integral_centredLaw_map_eq (F : Measure ℝ) [IsProbabilityMeasure F] {f : ℝ → ℝ}
+    (hf : Measurable f) (hmean : (∫ y, f y ∂F) = 0) {g : ℝ → ℝ} (hg : Measurable g) :
+    (∫ x, g x ∂(centredLaw (F.map f))) = ∫ y, g (f y) ∂F := by
+  haveI : IsProbabilityMeasure (F.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
+  have hmean' : (∫ t, t ∂(F.map f)) = 0 := by
+    rw [integral_map (f := fun t : ℝ => t) hf.aemeasurable (by fun_prop)]
+    exact hmean
+  rw [centredLaw_eq_self _ hmean', integral_map hf.aemeasurable hg.aestronglyMeasurable]
+
+/-- The variance of a centred pushforward is the second moment of the summand. -/
+lemma variance_map_eq (F : Measure ℝ) [IsProbabilityMeasure F] {f : ℝ → ℝ}
+    (hf : Measurable f) (hmean : (∫ y, f y ∂F) = 0) :
+    Var[fun t : ℝ => t; F.map f] = ∫ y, f y ^ 2 ∂F := by
+  haveI : IsProbabilityMeasure (F.map f) := Measure.isProbabilityMeasure_map hf.aemeasurable
+  have hmean' : (∫ t, t ∂(F.map f)) = 0 := by
+    rw [integral_map (f := fun t : ℝ => t) hf.aemeasurable (by fun_prop)]
+    exact hmean
+  rw [variance_eq_integral (by fun_prop), hmean']
+  simp only [sub_zero]
+  rw [integral_map (f := fun t : ℝ => t ^ 2) hf.aemeasurable (by fun_prop)]
+
 /-- **One-term Edgeworth expansion for the studentized sample mean, uniform in the argument.**
 
 Under a finite fourth moment and absolute continuity of the sampling law, the sampling
