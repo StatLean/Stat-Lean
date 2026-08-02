@@ -2970,6 +2970,191 @@ lemma abs_sub_le_of_deltaSurrogate_window {σ r x w : ℝ} (hσ : 0 < σ)
   rw [hrw, div_le_iff₀ hσ] at hkey
   linarith
 
+/-! ### The implicit centre of the surrogate window, and its Lipschitz dependence on `v`
+
+**WAVE 39.** The two lemmas above turn the window `{|Hₙ(u, v) − x| ≤ w}` into a window in the
+first coordinate alone, *at frozen `v`*; the wave-38 assessment of `hcond` (on
+`abs_measure_le_sub_le_of_peel_window`) then names the residue as anti-concentration of `u`
+about a centre `m(v, x)` that is measurable for `v`. This section builds that centre and
+records the one property of it the assessment did not use: **`m(v, x)` is Lipschitz in `v`,
+with constant `O(|x|·|r|)`.**
+
+Three facts, all algebraic, none of them needing an implicit function theorem:
+
+* `exists_surrogate_centre` — `u ↦ Hₙ(u, v)` is a homeomorphism of `ℝ` onto `ℝ` in the only
+  sense needed: it has slope at least `5/6` (`surrogate_fst_increment_le`) and vanishes at
+  `u = 0`, so `Hₙ(±(6/5)|x|, v)` straddles `x` and the intermediate value theorem produces a
+  root `m` with the *a-priori bound* `|m| ≤ (6/5)|x|`. The bound is free and is what keeps the
+  Lipschitz constant proportional to `|x|` rather than to an unknown.
+* `abs_sub_surrogate_centre_le` — the window pulls back to `|u − m| ≤ (6/5)w`, a factor two
+  better than `abs_sub_le_of_surrogate_window` because one of the two points is *exactly* on
+  the level set.
+* `abs_surrogate_centre_sub_le` — the Lipschitz estimate, and it is an identity plus one
+  application of the slope bound, not a mean value argument. If `Hₙ(m₁, v₁) = Hₙ(m₂, v₂) = x`
+  then comparing both centres **at the same second coordinate `v₂`** gives
+
+  `(5/6)|m₁ − m₂| ≤ |Hₙ(m₁, v₂) − Hₙ(m₁, v₁)| = |m₁ r (v₁ − v₂)(1/2 − 3r(v₁ + v₂)/8)|,`
+
+  because `Hₙ(·, v₂) − Hₙ(·, v₁)` is *exactly* `m₁r(v₁ − v₂)(1/2 − 3r(v₁+v₂)/8)` — the two
+  `v`-dependent monomials of `Hₙ` are `−uvr/2` and `3uv²r²/8` and nothing else. This is the
+  implicit-differentiation formula `∂m/∂v = −(∂Hₙ/∂v)/(∂Hₙ/∂u)` in finite-difference form, and
+  it needs no differentiability theory at all.
+
+`abs_sub_frozen_centre_le_of_surrogate_window` packages the three: the window event at a
+*varying* `v` sits inside a window about the **deterministic** centre `m(v₀, x)` of any frozen
+`v₀`, of half-width `(6/5)w + (36/25)|x||r||v − v₀|(1/2 + 3|r|(|v − v₀| + 2|v₀|)/8)`. -/
+
+/-- **The implicit centre exists, and is `O(|x|)`.** For every `r`, `v` and `x` there is an `m`
+with `Hₙ(m, v) = x` and `|m| ≤ (6/5)|x|`.
+
+Both halves come from `surrogate_fst_increment_le` alone: the slope bound gives
+`Hₙ((6/5)|x|, v) ≥ |x| ≥ x` and `Hₙ(−(6/5)|x|, v) ≤ −|x| ≤ x` (using `Hₙ(0, v) = 0`), and the
+intermediate value theorem on `[−(6/5)|x|, (6/5)|x|]` does the rest. Uniqueness is not asserted
+here because nothing downstream needs it — the slope bound gives every consumer what it wants
+directly. -/
+theorem exists_surrogate_centre (r v x : ℝ) :
+    ∃ m : ℝ, |m| ≤ 6 / 5 * |x| ∧
+      (m - m * v * r / 2 + m ^ 3 * r ^ 2 / 2 + 3 * m * v ^ 2 * r ^ 2 / 8) = x := by
+  set b : ℝ := 6 / 5 * |x| with hb
+  have hb0 : 0 ≤ b := by positivity
+  have hzero :
+      ((0:ℝ) - 0 * v * r / 2 + (0:ℝ) ^ 3 * r ^ 2 / 2 + 3 * 0 * v ^ 2 * r ^ 2 / 8) = 0 := by
+    ring
+  have hup : x ≤ (b - b * v * r / 2 + b ^ 3 * r ^ 2 / 2 + 3 * b * v ^ 2 * r ^ 2 / 8) := by
+    have h := surrogate_fst_increment_le (r := r) (v := v) hb0
+    rw [hzero] at h
+    have hx : x ≤ |x| := le_abs_self x
+    simp only [hb] at h ⊢
+    linarith
+  have hlo : ((-b) - (-b) * v * r / 2 + (-b) ^ 3 * r ^ 2 / 2
+      + 3 * (-b) * v ^ 2 * r ^ 2 / 8) ≤ x := by
+    have h := surrogate_fst_increment_le (r := r) (v := v) (u₁ := -b) (u₂ := 0) (by linarith)
+    rw [hzero] at h
+    have hx : -|x| ≤ x := neg_abs_le x
+    simp only [hb] at h ⊢
+    linarith
+  have hcont : Continuous fun u : ℝ =>
+      u - u * v * r / 2 + u ^ 3 * r ^ 2 / 2 + 3 * u * v ^ 2 * r ^ 2 / 8 := by fun_prop
+  have hmem : x ∈ Set.Icc ((-b) - (-b) * v * r / 2 + (-b) ^ 3 * r ^ 2 / 2
+      + 3 * (-b) * v ^ 2 * r ^ 2 / 8)
+      (b - b * v * r / 2 + b ^ 3 * r ^ 2 / 2 + 3 * b * v ^ 2 * r ^ 2 / 8) := ⟨hlo, hup⟩
+  have hIVT := intermediate_value_Icc (by linarith : (-b : ℝ) ≤ b) hcont.continuousOn
+  obtain ⟨m, hmI, hmeq⟩ := hIVT hmem
+  exact ⟨m, abs_le.2 ⟨hmI.1, hmI.2⟩, hmeq⟩
+
+/-- **The window pulls back to a window about the centre.** If `Hₙ(m, v) = x` then every `u`
+with `|Hₙ(u, v) − x| ≤ w` has `|u − m| ≤ (6/5)w`. Uniform in `v`, `x` and `r`. -/
+theorem abs_sub_surrogate_centre_le {r v x w u m : ℝ}
+    (hm : (m - m * v * r / 2 + m ^ 3 * r ^ 2 / 2 + 3 * m * v ^ 2 * r ^ 2 / 8) = x)
+    (hu : |(u - u * v * r / 2 + u ^ 3 * r ^ 2 / 2 + 3 * u * v ^ 2 * r ^ 2 / 8) - x| ≤ w) :
+    |u - m| ≤ 6 / 5 * w := by
+  rw [abs_le] at hu
+  rw [abs_le]
+  rcases le_total u m with h | h
+  · have hinc := surrogate_fst_increment_le (r := r) (v := v) h
+    rw [hm] at hinc
+    constructor <;> linarith [hu.1, hu.2]
+  · have hinc := surrogate_fst_increment_le (r := r) (v := v) h
+    rw [hm] at hinc
+    constructor <;> linarith [hu.1, hu.2]
+
+/-- **The centre is Lipschitz in the second coordinate, with constant `O(|m|·|r|)`.** Two level
+points of `Hₙ` at the *same* height `x` but different second coordinates satisfy
+
+`|m₁ − m₂| ≤ (6/5)|m₁||r||v₁ − v₂|(1/2 + 3|r||v₁ + v₂|/8)`.
+
+The proof is the exact identity
+`Hₙ(m₁, v₂) − Hₙ(m₁, v₁) = m₁r(v₁ − v₂)(1/2 − 3r(v₁ + v₂)/8)` — read off the only two
+`v`-dependent monomials of `Hₙ` — followed by `surrogate_fst_increment_le` at `v₂`. It is the
+finite-difference form of `∂m/∂v = −(∂Hₙ/∂v)/(∂Hₙ/∂u)` and uses no differentiability theory.
+
+The factor `|r|` is the whole point: at `r = n^{-1/2}` the centre moves by `O(n^{-1/2})` per
+unit of `v`, so on the scale on which `v` itself fluctuates the centre is *almost* frozen. See
+the wave-39 pricing note on `abs_measure_le_sub_le_of_peel_window` for what that does and does
+not buy. -/
+theorem abs_surrogate_centre_sub_le {r x v₁ v₂ m₁ m₂ : ℝ}
+    (h₁ : (m₁ - m₁ * v₁ * r / 2 + m₁ ^ 3 * r ^ 2 / 2 + 3 * m₁ * v₁ ^ 2 * r ^ 2 / 8) = x)
+    (h₂ : (m₂ - m₂ * v₂ * r / 2 + m₂ ^ 3 * r ^ 2 / 2 + 3 * m₂ * v₂ ^ 2 * r ^ 2 / 8) = x) :
+    |m₁ - m₂| ≤ 6 / 5 * |m₁| * |r| * |v₁ - v₂| * (1 / 2 + 3 * |r| * |v₁ + v₂| / 8) := by
+  -- the two centres are compared at the *same* second coordinate `v₂`
+  have hkey : 5 / 6 * |m₁ - m₂|
+      ≤ |(m₁ - m₁ * v₂ * r / 2 + m₁ ^ 3 * r ^ 2 / 2 + 3 * m₁ * v₂ ^ 2 * r ^ 2 / 8)
+          - (m₂ - m₂ * v₂ * r / 2 + m₂ ^ 3 * r ^ 2 / 2 + 3 * m₂ * v₂ ^ 2 * r ^ 2 / 8)| := by
+    rcases le_total m₁ m₂ with h | h
+    · have hinc := surrogate_fst_increment_le (r := r) (v := v₂) h
+      rw [abs_of_nonpos (by linarith : m₁ - m₂ ≤ 0), abs_of_nonpos (by linarith)]
+      linarith
+    · have hinc := surrogate_fst_increment_le (r := r) (v := v₂) h
+      rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ m₁ - m₂), abs_of_nonneg (by linarith)]
+      linarith
+  -- the right-hand side factorises exactly
+  have hfac : (m₁ - m₁ * v₂ * r / 2 + m₁ ^ 3 * r ^ 2 / 2 + 3 * m₁ * v₂ ^ 2 * r ^ 2 / 8)
+      - (m₂ - m₂ * v₂ * r / 2 + m₂ ^ 3 * r ^ 2 / 2 + 3 * m₂ * v₂ ^ 2 * r ^ 2 / 8)
+      = m₁ * r * (v₁ - v₂) * (1 / 2 - 3 * r * (v₁ + v₂) / 8) := by
+    rw [h₂, ← h₁]
+    ring
+  rw [hfac] at hkey
+  have hnorm : |m₁ * r * (v₁ - v₂) * (1 / 2 - 3 * r * (v₁ + v₂) / 8)|
+      ≤ |m₁| * |r| * |v₁ - v₂| * (1 / 2 + 3 * |r| * |v₁ + v₂| / 8) := by
+    rw [abs_mul, abs_mul, abs_mul]
+    refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+    have h1 : |3 * r * (v₁ + v₂) / 8| = 3 * |r| * |v₁ + v₂| / 8 := by
+      rw [abs_div, abs_mul, abs_mul]; norm_num
+    have hb := le_abs_self (3 * r * (v₁ + v₂) / 8)
+    have hb' := neg_abs_le (3 * r * (v₁ + v₂) / 8)
+    rw [h1] at hb hb'
+    rw [abs_le]
+    constructor <;> linarith
+  linarith [hkey.trans hnorm]
+
+/-- **The window at a varying `v`, measured from a frozen centre.** Combining the three previous
+lemmas: if `m` is a centre at the *actual* second coordinate `v` with `|m| ≤ (6/5)|x|` and `m₀`
+is a centre at an arbitrary frozen `v₀`, then the window event forces
+
+`|u − m₀| ≤ (6/5)w + (36/25)|x||r||v − v₀|(1/2 + 3|r|(|v − v₀| + 2|v₀|)/8)`,
+
+whose right-hand side depends on `v` only through `|v − v₀|`. This is the form
+`measure_abs_surrogate_window_le` integrates: `m₀` is deterministic, so the *marginal* window
+bound for the first coordinate applies to it verbatim. -/
+theorem abs_sub_frozen_centre_le_of_surrogate_window {r x v v₀ w u m m₀ : ℝ}
+    (hm : (m - m * v * r / 2 + m ^ 3 * r ^ 2 / 2 + 3 * m * v ^ 2 * r ^ 2 / 8) = x)
+    (hmb : |m| ≤ 6 / 5 * |x|)
+    (hm0 : (m₀ - m₀ * v₀ * r / 2 + m₀ ^ 3 * r ^ 2 / 2 + 3 * m₀ * v₀ ^ 2 * r ^ 2 / 8) = x)
+    (hu : |(u - u * v * r / 2 + u ^ 3 * r ^ 2 / 2 + 3 * u * v ^ 2 * r ^ 2 / 8) - x| ≤ w) :
+    |u - m₀|
+      ≤ 6 / 5 * w
+        + 36 / 25 * |x| * |r| * |v - v₀| * (1 / 2 + 3 * |r| * (|v - v₀| + 2 * |v₀|) / 8) := by
+  have h1 : |u - m| ≤ 6 / 5 * w := abs_sub_surrogate_centre_le hm hu
+  have h2 := abs_surrogate_centre_sub_le (r := r) (x := x) hm hm0
+  have hsum : |v + v₀| ≤ |v - v₀| + 2 * |v₀| := by
+    have hrw : v + v₀ = (v - v₀) + 2 * v₀ := by ring
+    rw [hrw]
+    calc |(v - v₀) + 2 * v₀| ≤ |v - v₀| + |2 * v₀| := abs_add_le _ _
+      _ = |v - v₀| + 2 * |v₀| := by rw [abs_mul]; norm_num
+  have hmono : |m| * |r| * |v - v₀| * (1 / 2 + 3 * |r| * |v + v₀| / 8)
+      ≤ (6 / 5 * |x|) * |r| * |v - v₀| * (1 / 2 + 3 * |r| * (|v - v₀| + 2 * |v₀|) / 8) := by
+    have hA : |m| * |r| * |v - v₀| ≤ (6 / 5 * |x|) * |r| * |v - v₀| :=
+      mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hmb (abs_nonneg r)) (abs_nonneg _)
+    have hB : (1 / 2 + 3 * |r| * |v + v₀| / 8)
+        ≤ (1 / 2 + 3 * |r| * (|v - v₀| + 2 * |v₀|) / 8) := by
+      have := mul_le_mul_of_nonneg_left hsum (abs_nonneg r)
+      linarith
+    have h0 : (0:ℝ) ≤ 1 / 2 + 3 * |r| * |v + v₀| / 8 := by positivity
+    have h0' : (0:ℝ) ≤ (6 / 5 * |x|) * |r| * |v - v₀| := by positivity
+    exact mul_le_mul hA hB h0 h0'
+  have h3 : |m - m₀| ≤ 36 / 25 * |x| * |r| * |v - v₀|
+      * (1 / 2 + 3 * |r| * (|v - v₀| + 2 * |v₀|) / 8) := by
+    refine h2.trans ?_
+    calc 6 / 5 * |m| * |r| * |v - v₀| * (1 / 2 + 3 * |r| * |v + v₀| / 8)
+        = 6 / 5 * (|m| * |r| * |v - v₀| * (1 / 2 + 3 * |r| * |v + v₀| / 8)) := by ring
+      _ ≤ 6 / 5 * ((6 / 5 * |x|) * |r| * |v - v₀|
+            * (1 / 2 + 3 * |r| * (|v - v₀| + 2 * |v₀|) / 8)) := by linarith
+      _ = 36 / 25 * |x| * |r| * |v - v₀|
+            * (1 / 2 + 3 * |r| * (|v - v₀| + 2 * |v₀|) / 8) := by ring
+  calc |u - m₀| = |(u - m) + (m - m₀)| := by rw [sub_add_sub_cancel]
+    _ ≤ |u - m| + |m - m₀| := abs_add_le _ _
+    _ ≤ _ := by linarith
+
 /-- **The exact studentized statistic, on the standardized scale.** The region of
 `studentizedRootCDF_eq_vecRootLaw` is cut out by `w₀/√(σ² + w₁r − w₀²r²)`, and that is exactly
 `u(1 + (vr − u²r²))^{-1/2}` with `u = w₀/σ`, `v = w₁/σ²` — the argument of the Taylor core. The
