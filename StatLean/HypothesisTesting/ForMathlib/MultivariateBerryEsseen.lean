@@ -7288,11 +7288,461 @@ private lemma setIntegral_norm_pow_tail_le {p q : ℕ} (hpq : p + q = 3) {R : �
         rw [div_eq_mul_inv, div_eq_mul_inv]
         exact mul_le_mul_of_nonneg_right h (by positivity)
 
-set_option linter.unusedVariables false in
--- the body is a named `sorry` brick: every hypothesis is part of the interface, none is used yet
-/-- **The per-step head estimate (wave 37: STATED, and this is brick L's whole residue on the
-head side).** *One head step of the hybrid telescope, localised, averaged against the step's own
-hybrid law.*
+/-- The erosion as a strict distance inequality. -/
+private lemma erosion_eq_ofReal_lt_infEdist {s : ℝ} (hs : 0 ≤ s)
+    (B : Set (EuclideanSpace ℝ (Fin k))) :
+    erosion s B
+      = {x | ENNReal.ofReal s < Metric.infEDist x (interior B)ᶜ} := by
+  ext x
+  simp only [erosion, Set.mem_setOf_eq]
+  constructor
+  · intro hx
+    rcases Set.eq_empty_or_nonempty ((interior B)ᶜ) with hK | hK
+    · rw [hK, Metric.infEDist_empty]
+      exact ENNReal.ofReal_lt_top
+    · obtain ⟨y, hyK, hy⟩ :=
+        (isOpen_interior.isClosed_compl).exists_infDist_eq_dist hK x
+      have hxy : s < dist x y := by
+        by_contra h
+        push_neg at h
+        exact hyK (hx (Metric.mem_closedBall.2 (by rwa [dist_comm])))
+      refine lt_of_lt_of_le
+        ((ENNReal.ofReal_lt_ofReal_iff_of_nonneg hs).2 hxy) ?_
+      rw [Metric.le_infEDist]
+      intro z hz
+      rw [edist_dist]
+      exact ENNReal.ofReal_le_ofReal (hy ▸ Metric.infDist_le_dist_of_mem hz)
+  · intro hx y hy
+    by_contra hyB
+    have h1 : Metric.infEDist x (interior B)ᶜ ≤ edist x y :=
+      Metric.infEDist_le_edist_of_mem hyB
+    rw [edist_dist] at h1
+    have h2 : dist x y ≤ s := by
+      rw [dist_comm]
+      exact Metric.mem_closedBall.1 hy
+    exact absurd (lt_of_lt_of_le hx h1) (not_lt.2 (ENNReal.ofReal_le_ofReal h2))
+
+/-- Product measurability of the two-sided shell at a continuous, nonnegative varying width. -/
+private lemma measurableSet_wideShell_prod {B : Set (EuclideanSpace ℝ (Fin k))}
+    {g : EuclideanSpace ℝ (Fin k) → ℝ} (hg : Continuous g) (hg0 : ∀ u, 0 ≤ g u) :
+    MeasurableSet {p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) |
+      p.1 ∈ Metric.thickening (g p.2) B \ erosion (g p.2) B} := by
+  have hm1 : Measurable fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+      Metric.infEDist p.1 B :=
+    (Metric.continuous_infEDist).measurable.comp measurable_fst
+  have hm2 : Measurable fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+      Metric.infEDist p.1 (interior B)ᶜ :=
+    (Metric.continuous_infEDist).measurable.comp measurable_fst
+  have hm3 : Measurable fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+      ENNReal.ofReal (g p.2) :=
+    (ENNReal.continuous_ofReal.comp hg).measurable.comp measurable_snd
+  have hset : {p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) |
+      p.1 ∈ Metric.thickening (g p.2) B \ erosion (g p.2) B}
+      = {p | Metric.infEDist p.1 B < ENNReal.ofReal (g p.2)}
+        ∩ {p | ENNReal.ofReal (g p.2) < Metric.infEDist p.1 (interior B)ᶜ}ᶜ := by
+    ext p
+    simp only [Set.mem_setOf_eq, Set.mem_diff, Set.mem_inter_iff, Set.mem_compl_iff,
+      Metric.mem_thickening_iff_infEDist_lt]
+    rw [erosion_eq_ofReal_lt_infEdist (hg0 p.2) B]
+    rfl
+  rw [hset]
+  exact (measurableSet_lt hm1 hm3).inter (measurableSet_lt hm3 hm2).compl
+
+private lemma indicator_one_nonneg {α : Type*} (s : Set α) (a : α) :
+    (0 : ℝ) ≤ s.indicator (fun _ => (1 : ℝ)) a :=
+  Set.indicator_nonneg (fun _ _ => zero_le_one) a
+
+private lemma indicator_one_le_one {α : Type*} (s : Set α) (a : α) :
+    s.indicator (fun _ => (1 : ℝ)) a ≤ 1 := by
+  by_cases hm : a ∈ s
+  · rw [Set.indicator_of_mem hm]
+  · rw [Set.indicator_of_notMem hm]; norm_num
+
+private lemma indicator_one_mono {α : Type*} {s t : Set α} (h : s ⊆ t) (a : α) :
+    s.indicator (fun _ => (1 : ℝ)) a ≤ t.indicator (fun _ => (1 : ℝ)) a := by
+  by_cases hm : a ∈ s
+  · rw [Set.indicator_of_mem hm, Set.indicator_of_mem (h hm)]
+  · rw [Set.indicator_of_notMem hm]
+    exact indicator_one_nonneg t a
+
+/-- **The near/far split of the localised remainder, at a fixed base point `a`.** -/
+private lemma integral_abs_remainder_split_le
+    {ν : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure ν]
+    (hβν : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 3) ν)
+    {B : Set (EuclideanSpace ℝ (Fin k))} {f : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hf : ContDiff ℝ 3 f) (hfb : ∀ x, |f x| ≤ 1)
+    {C₃ ε : ℝ} (hC₃ : 1 ≤ C₃) (hε : 0 < ε)
+    (hD3 : ∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3)
+    (hD1 : ∀ x, ‖iteratedFDeriv ℝ 1 f x‖ ≤ C₃ / ε)
+    (hD2 : ∀ x, ‖iteratedFDeriv ℝ 2 f x‖ ≤ C₃ / ε ^ 2)
+    (hone : ∀ x ∈ B, f x = 1) (hsupp : ∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B)
+    {c : ℝ} (hc : 0 < c) (a : EuclideanSpace ℝ (Fin k)) :
+    (∫ u, |f (a + c • u) - f a - fderiv ℝ f a (c • u)
+        - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => c • u)| ∂ν)
+      ≤ (Metric.thickening (2 * ε) B \ erosion (2 * ε) B).indicator (fun _ => (1 : ℝ)) a
+          * (C₃ / ε ^ 3 / 6 * c ^ 3 * ∫ y, ‖y‖ ^ 3 ∂ν)
+        + ∫ u in {u : EuclideanSpace ℝ (Fin k) | ε / c < ‖u‖},
+            (Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B).indicator
+                (fun _ => (1 : ℝ)) a
+              * (2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2) ∂ν := by
+  classical
+  have hC₃0 : (0 : ℝ) < C₃ := lt_of_lt_of_le one_pos hC₃
+  have hM0 : (0 : ℝ) ≤ C₃ / ε ^ 3 := by positivity
+  have hR : (0 : ℝ) < ε / c := div_pos hε hc
+  have hcR : c * (ε / c) = ε := by field_simp
+  -- the erosion is antitone in the width
+  have heros : ∀ {s t : ℝ}, s ≤ t → erosion t B ⊆ erosion s B := by
+    intro s t hst x hx
+    simp only [erosion, Set.mem_setOf_eq] at hx ⊢
+    exact (Metric.closedBall_subset_closedBall hst).trans hx
+  -- the integrand
+  have hglob : ∀ (a w : EuclideanSpace ℝ (Fin k)),
+      |f (a + w) - f a - fderiv ℝ f a w
+          - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => w)|
+        ≤ C₃ / ε ^ 3 / 6 * ‖w‖ ^ 3 := fun a w =>
+    norm_taylor_remainder_three_le hf hD3 a w
+  have hgcont : Continuous fun u : EuclideanSpace ℝ (Fin k) =>
+      |f (a + c • u) - f a - fderiv ℝ f a (c • u)
+        - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => c • u)| := by
+    refine continuous_abs.comp (((((hf.continuous.comp
+      (continuous_const.add (continuous_const_smul c))).sub continuous_const).sub
+        ((fderiv ℝ f a).continuous.comp (continuous_const_smul c))).sub ?_))
+    exact (continuous_const.mul
+      ((iteratedFDeriv ℝ 2 f a).cont.comp
+        (continuous_pi fun _ => continuous_const_smul c)))
+  have hgb : ∀ u : EuclideanSpace ℝ (Fin k),
+      |f (a + c • u) - f a - fderiv ℝ f a (c • u)
+        - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => c • u)|
+        ≤ C₃ / ε ^ 3 / 6 * c ^ 3 * ‖u‖ ^ 3 := by
+    intro u
+    have h := hglob a (c • u)
+    rwa [norm_smul, Real.norm_eq_abs, abs_of_pos hc, mul_pow, ← mul_assoc] at h
+  have hgint : Integrable (fun u : EuclideanSpace ℝ (Fin k) =>
+      |f (a + c • u) - f a - fderiv ℝ f a (c • u)
+        - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => c • u)|) ν := by
+    refine Integrable.mono' (hβν.const_mul (C₃ / ε ^ 3 / 6 * c ^ 3))
+      hgcont.aestronglyMeasurable (Filter.Eventually.of_forall fun u => ?_)
+    rw [Real.norm_eq_abs, abs_of_nonneg (abs_nonneg _)]
+    exact hgb u
+  -- the split at `‖u‖ = ε / c`
+  have hNm : MeasurableSet {u : EuclideanSpace ℝ (Fin k) | ‖u‖ ≤ ε / c} :=
+    measurableSet_le continuous_norm.measurable measurable_const
+  have hcompl : {u : EuclideanSpace ℝ (Fin k) | ‖u‖ ≤ ε / c}ᶜ
+      = {u : EuclideanSpace ℝ (Fin k) | ε / c < ‖u‖} := by
+    ext u; simp [not_le]
+  have hsplit := integral_add_compl hNm hgint
+  rw [hcompl] at hsplit
+  rw [← hsplit]
+  refine add_le_add ?_ ?_
+  · -- ### the near regime
+    have hptw : ∀ u ∈ {u : EuclideanSpace ℝ (Fin k) | ‖u‖ ≤ ε / c},
+        |f (a + c • u) - f a - fderiv ℝ f a (c • u)
+          - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => c • u)|
+          ≤ (Metric.thickening (2 * ε) B \ erosion (2 * ε) B).indicator
+              (fun _ => (1 : ℝ)) a * (C₃ / ε ^ 3 / 6 * c ^ 3) * ‖u‖ ^ 3 := by
+      intro u hu
+      have hu' : ‖u‖ ≤ ε / c := hu
+      rcases eq_or_ne u 0 with rfl | hu0
+      · have hz : ((iteratedFDeriv ℝ 2 f a) fun _ : Fin 2 =>
+            (0 : EuclideanSpace ℝ (Fin k))) = 0 := by
+          first
+          | exact ContinuousMultilinearMap.map_coord_zero _ (0 : Fin 2) rfl
+          | exact ContinuousMultilinearMap.map_zero _
+          | simp
+        simp [hz]
+      · have hw : c • u ≠ 0 := smul_ne_zero (ne_of_gt hc) hu0
+        have hnw : ‖c • u‖ = c * ‖u‖ := by
+          rw [norm_smul, Real.norm_eq_abs, abs_of_pos hc]
+        have hle : c * ‖u‖ ≤ ε := by
+          calc c * ‖u‖ ≤ c * (ε / c) := by nlinarith
+            _ = ε := hcR
+        have hsub : Metric.thickening (ε + c * ‖u‖) B \ erosion (c * ‖u‖) B
+            ⊆ Metric.thickening (2 * ε) B \ erosion (2 * ε) B :=
+          Set.diff_subset_diff (Metric.thickening_mono (by linarith) B)
+            (heros (by linarith))
+        have h := abs_taylor_remainder_localised_le hone hsupp hglob a (c • u) hw
+        refine h.trans ?_
+        rw [hnw, mul_pow]
+        have hind := indicator_one_mono hsub a
+        have hnn : (0 : ℝ) ≤ C₃ / ε ^ 3 / 6 * (c ^ 3 * ‖u‖ ^ 3) := by positivity
+        calc (Metric.thickening (ε + c * ‖u‖) B \ erosion (c * ‖u‖) B).indicator
+                (fun _ => (1 : ℝ)) a * (C₃ / ε ^ 3 / 6 * (c ^ 3 * ‖u‖ ^ 3))
+            ≤ (Metric.thickening (2 * ε) B \ erosion (2 * ε) B).indicator
+                (fun _ => (1 : ℝ)) a * (C₃ / ε ^ 3 / 6 * (c ^ 3 * ‖u‖ ^ 3)) :=
+              mul_le_mul_of_nonneg_right hind hnn
+          _ = _ := by ring
+    have hind0 : (0 : ℝ) ≤ (Metric.thickening (2 * ε) B \ erosion (2 * ε) B).indicator
+        (fun _ => (1 : ℝ)) a := indicator_one_nonneg _ a
+    calc (∫ u in {u : EuclideanSpace ℝ (Fin k) | ‖u‖ ≤ ε / c},
+            |f (a + c • u) - f a - fderiv ℝ f a (c • u)
+              - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => c • u)| ∂ν)
+        ≤ ∫ u in {u : EuclideanSpace ℝ (Fin k) | ‖u‖ ≤ ε / c},
+            (Metric.thickening (2 * ε) B \ erosion (2 * ε) B).indicator
+              (fun _ => (1 : ℝ)) a * (C₃ / ε ^ 3 / 6 * c ^ 3) * ‖u‖ ^ 3 ∂ν :=
+          setIntegral_mono_on hgint.integrableOn
+            ((hβν.const_mul _).integrableOn) hNm hptw
+      _ = (Metric.thickening (2 * ε) B \ erosion (2 * ε) B).indicator
+              (fun _ => (1 : ℝ)) a * (C₃ / ε ^ 3 / 6 * c ^ 3)
+            * ∫ u in {u : EuclideanSpace ℝ (Fin k) | ‖u‖ ≤ ε / c}, ‖u‖ ^ 3 ∂ν :=
+          integral_const_mul _ _
+      _ ≤ (Metric.thickening (2 * ε) B \ erosion (2 * ε) B).indicator
+              (fun _ => (1 : ℝ)) a * (C₃ / ε ^ 3 / 6 * c ^ 3)
+            * ∫ u, ‖u‖ ^ 3 ∂ν := by
+          refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+          exact setIntegral_le_integral hβν
+            (Filter.Eventually.of_forall fun u => by positivity)
+      _ = _ := by ring
+  · -- ### the far regime
+    have hFm : MeasurableSet {u : EuclideanSpace ℝ (Fin k) | ε / c < ‖u‖} :=
+      measurableSet_lt measurable_const continuous_norm.measurable
+    have hSm : MeasurableSet {p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) |
+        p.1 ∈ Metric.thickening (2 * (c * ‖p.2‖)) B \ erosion (2 * (c * ‖p.2‖)) B} :=
+      measurableSet_wideShell_prod (g := fun u => 2 * (c * ‖u‖)) (by fun_prop)
+        (fun u => by positivity)
+    have hsec : MeasurableSet {u : EuclideanSpace ℝ (Fin k) |
+        a ∈ Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B} :=
+      hSm.preimage (f := fun u : EuclideanSpace ℝ (Fin k) => (a, u)) (by fun_prop)
+    have hΨm : Measurable (fun u : EuclideanSpace ℝ (Fin k) =>
+        (Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B).indicator
+            (fun _ => (1 : ℝ)) a
+          * (2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2)) := by
+      refine Measurable.mul ?_ (by fun_prop)
+      have hrw : (fun u : EuclideanSpace ℝ (Fin k) =>
+          (Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B).indicator
+            (fun _ => (1 : ℝ)) a)
+          = Set.indicator {u : EuclideanSpace ℝ (Fin k) |
+              a ∈ Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B}
+            (fun _ => (1 : ℝ)) := by
+        funext u
+        simp only [Set.indicator_apply, Set.mem_setOf_eq]
+      rw [hrw]
+      exact measurable_const.indicator hsec
+    have hlowint : Integrable (fun u : EuclideanSpace ℝ (Fin k) =>
+        2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2) ν := by
+      have h1 : Integrable (fun u : EuclideanSpace ℝ (Fin k) => ‖u‖) ν :=
+        integrable_norm_of_cube hβν
+      have h2 : Integrable (fun u : EuclideanSpace ℝ (Fin k) => ‖u‖ ^ 2) ν :=
+        integrable_normSq_of_cube hβν
+      have h3 := ((integrable_const (2 : ℝ)).add (h1.const_mul (C₃ / ε * c))).add
+        (h2.const_mul (1 / 2 * (C₃ / ε ^ 2) * c ^ 2))
+      refine h3.congr (Filter.Eventually.of_forall fun u => ?_)
+      simp only [Pi.add_apply]
+      ring
+    have hΨint : Integrable (fun u : EuclideanSpace ℝ (Fin k) =>
+        (Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B).indicator
+            (fun _ => (1 : ℝ)) a
+          * (2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2)) ν := by
+      refine Integrable.mono' hlowint hΨm.aestronglyMeasurable
+        (Filter.Eventually.of_forall fun u => ?_)
+      have hb : (0 : ℝ) ≤ 2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2 := by
+        positivity
+      rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg hb,
+        abs_of_nonneg (indicator_one_nonneg _ a)]
+      exact mul_le_of_le_one_left hb (indicator_one_le_one _ a)
+    refine setIntegral_mono_on hgint.integrableOn hΨint.integrableOn hFm ?_
+    intro u hu
+    have hu' : ε / c < ‖u‖ := hu
+    have hu0 : u ≠ 0 := by
+      intro h
+      rw [h, norm_zero] at hu'
+      exact absurd hu' (not_lt.2 hR.le)
+    have hw : c • u ≠ 0 := smul_ne_zero (ne_of_gt hc) hu0
+    have hnw : ‖c • u‖ = c * ‖u‖ := by
+      rw [norm_smul, Real.norm_eq_abs, abs_of_pos hc]
+    have hge : ε ≤ c * ‖u‖ := by
+      have : c * (ε / c) ≤ c * ‖u‖ := by nlinarith
+      rwa [hcR] at this
+    have hsub : Metric.thickening (ε + ‖c • u‖) B \ erosion ‖c • u‖ B
+        ⊆ Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B := by
+      rw [hnw]
+      exact Set.diff_subset_diff (Metric.thickening_mono (by linarith) B)
+        (heros (by linarith))
+    have h := abs_taylor_remainder_localised_lower_le hone hsupp hfb a (c • u) hw
+    refine h.trans ?_
+    have hind := indicator_one_mono hsub a
+    have hbr : 2 + ‖iteratedFDeriv ℝ 1 f a‖ * ‖c • u‖
+          + 1 / 2 * ‖iteratedFDeriv ℝ 2 f a‖ * ‖c • u‖ ^ 2
+        ≤ 2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2 := by
+      rw [hnw]
+      have e1 := hD1 a
+      have e2 := hD2 a
+      have hcu : (0 : ℝ) ≤ c * ‖u‖ := by positivity
+      have hcu2 : (0 : ℝ) ≤ (c * ‖u‖) ^ 2 := by positivity
+      nlinarith
+    have hbr0 : (0 : ℝ) ≤ 2 + ‖iteratedFDeriv ℝ 1 f a‖ * ‖c • u‖
+        + 1 / 2 * ‖iteratedFDeriv ℝ 2 f a‖ * ‖c • u‖ ^ 2 := by positivity
+    exact mul_le_mul hind hbr hbr0 (indicator_one_nonneg _ a)
+
+/-- **The far regime priced, after the Fubini exchange.** -/
+private lemma integral_far_shell_le
+    {ν τ : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure ν] [IsProbabilityMeasure τ]
+    (hβν : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 3) ν)
+    {B : Set (EuclideanSpace ℝ (Fin k))}
+    {C₃ ε Ck W : ℝ} (hC₃ : 1 ≤ C₃) (hε : 0 < ε) (hCk : 0 ≤ Ck) (hW : 0 ≤ W)
+    (hshell : ∀ s : ℝ, 0 < s →
+      (τ (Metric.thickening s B \ erosion s B)).toReal ≤ 4 * Ck * s + W)
+    {c : ℝ} (hc : 0 < c) :
+    Integrable (fun a : EuclideanSpace ℝ (Fin k) =>
+        ∫ u in {u : EuclideanSpace ℝ (Fin k) | ε / c < ‖u‖},
+          (Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B).indicator
+              (fun _ => (1 : ℝ)) a
+            * (2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2) ∂ν) τ
+      ∧ (∫ a, (∫ u in {u : EuclideanSpace ℝ (Fin k) | ε / c < ‖u‖},
+            (Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B).indicator
+                (fun _ => (1 : ℝ)) a
+              * (2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2) ∂ν) ∂τ)
+          ≤ C₃ * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ν) * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3) := by
+  classical
+  have hC₃0 : (0 : ℝ) < C₃ := lt_of_lt_of_le one_pos hC₃
+  have hR : (0 : ℝ) < ε / c := div_pos hε hc
+  have hcR : c * (ε / c) = ε := by field_simp
+  have hFm : MeasurableSet {u : EuclideanSpace ℝ (Fin k) | ε / c < ‖u‖} :=
+    measurableSet_lt measurable_const continuous_norm.measurable
+  -- product measurability of the varying shell indicator
+  have hSm : MeasurableSet {p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) |
+      p.1 ∈ Metric.thickening (2 * (c * ‖p.2‖)) B \ erosion (2 * (c * ‖p.2‖)) B} :=
+    measurableSet_wideShell_prod (g := fun u => 2 * (c * ‖u‖)) (by fun_prop)
+      (fun u => by positivity)
+  have hΦm : Measurable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+      (Metric.thickening (2 * (c * ‖p.2‖)) B \ erosion (2 * (c * ‖p.2‖)) B).indicator
+          (fun _ => (1 : ℝ)) p.1
+        * (2 + C₃ / ε * (c * ‖p.2‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖p.2‖) ^ 2)) := by
+    refine Measurable.mul ?_ (by fun_prop)
+    have hrw : (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        (Metric.thickening (2 * (c * ‖p.2‖)) B \ erosion (2 * (c * ‖p.2‖)) B).indicator
+          (fun _ => (1 : ℝ)) p.1)
+        = Set.indicator {p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) |
+            p.1 ∈ Metric.thickening (2 * (c * ‖p.2‖)) B \ erosion (2 * (c * ‖p.2‖)) B}
+          (fun _ => (1 : ℝ)) := by
+      funext p
+      simp only [Set.indicator_apply, Set.mem_setOf_eq]
+    rw [hrw]
+    exact measurable_const.indicator hSm
+  -- the dominating function
+  have hlowint : Integrable (fun u : EuclideanSpace ℝ (Fin k) =>
+      2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2) ν := by
+    have h1 : Integrable (fun u : EuclideanSpace ℝ (Fin k) => ‖u‖) ν :=
+      integrable_norm_of_cube hβν
+    have h2 : Integrable (fun u : EuclideanSpace ℝ (Fin k) => ‖u‖ ^ 2) ν :=
+      integrable_normSq_of_cube hβν
+    have h3 := ((integrable_const (2 : ℝ)).add (h1.const_mul (C₃ / ε * c))).add
+      (h2.const_mul (1 / 2 * (C₃ / ε ^ 2) * c ^ 2))
+    refine h3.congr (Filter.Eventually.of_forall fun u => ?_)
+    simp only [Pi.add_apply]
+    ring
+  have hdom : Integrable (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+      2 + C₃ / ε * (c * ‖p.2‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖p.2‖) ^ 2)
+      (τ.prod (ν.restrict {u : EuclideanSpace ℝ (Fin k) | ε / c < ‖u‖})) := by
+    refine (integrable_prod_iff (by fun_prop)).2 ⟨?_, ?_⟩
+    · exact Filter.Eventually.of_forall fun a => hlowint.restrict
+    · exact integrable_const (∫ y : EuclideanSpace ℝ (Fin k),
+        ‖2 + C₃ / ε * (c * ‖y‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖y‖) ^ 2‖
+          ∂(ν.restrict {u : EuclideanSpace ℝ (Fin k) | ε / c < ‖u‖}))
+  have hΦint : Integrable (Function.uncurry
+      (fun (a u : EuclideanSpace ℝ (Fin k)) =>
+        (Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B).indicator
+            (fun _ => (1 : ℝ)) a
+          * (2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2)))
+      (τ.prod (ν.restrict {u : EuclideanSpace ℝ (Fin k) | ε / c < ‖u‖})) := by
+    refine Integrable.mono' hdom hΦm.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun p => ?_)
+    have hb : (0 : ℝ) ≤ 2 + C₃ / ε * (c * ‖p.2‖)
+        + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖p.2‖) ^ 2 := by positivity
+    rw [Function.uncurry_apply_pair, Real.norm_eq_abs, abs_mul, abs_of_nonneg hb,
+      abs_of_nonneg (indicator_one_nonneg _ p.1)]
+    exact mul_le_of_le_one_left hb (indicator_one_le_one _ p.1)
+  refine ⟨hΦint.integral_prod_left, ?_⟩
+  rw [integral_integral_swap hΦint]
+  -- the inner `τ`-integral is the shell mass
+  have hinner : ∀ u : EuclideanSpace ℝ (Fin k),
+      (∫ a, (Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B).indicator
+            (fun _ => (1 : ℝ)) a
+          * (2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2) ∂τ)
+        = (τ (Metric.thickening (2 * (c * ‖u‖)) B
+              \ erosion (2 * (c * ‖u‖)) B)).toReal
+          * (2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2) := by
+    intro u
+    rw [integral_mul_const]
+    congr 1
+    have hm : MeasurableSet (Metric.thickening (2 * (c * ‖u‖)) B
+        \ erosion (2 * (c * ‖u‖)) B) :=
+      (Metric.isOpen_thickening.measurableSet).diff (isOpen_erosion _ B).measurableSet
+    rw [integral_indicator_const (1 : ℝ) hm]
+    simp [Measure.real]
+  rw [integral_congr_ae (Filter.Eventually.of_forall hinner)]
+  -- price the shell mass and the lower-order bracket
+  have hg1 : Integrable (fun u : EuclideanSpace ℝ (Fin k) => ‖u‖ ^ 3)
+      (ν.restrict {u : EuclideanSpace ℝ (Fin k) | ε / c < ‖u‖}) := hβν.restrict
+  have hg2 : Integrable (fun u : EuclideanSpace ℝ (Fin k) => ‖u‖ ^ 2)
+      (ν.restrict {u : EuclideanSpace ℝ (Fin k) | ε / c < ‖u‖}) :=
+    (integrable_normSq_of_cube hβν).restrict
+  have hgint : Integrable (fun u : EuclideanSpace ℝ (Fin k) =>
+      32 * C₃ * Ck * (c * ‖u‖) ^ 3 / ε ^ 2 + 4 * C₃ * W * (c * ‖u‖) ^ 2 / ε ^ 2)
+      (ν.restrict {u : EuclideanSpace ℝ (Fin k) | ε / c < ‖u‖}) := by
+    have h3 := (hg1.const_mul (32 * C₃ * Ck * c ^ 3 / ε ^ 2)).add
+      (hg2.const_mul (4 * C₃ * W * c ^ 2 / ε ^ 2))
+    refine h3.congr (Filter.Eventually.of_forall fun u => ?_)
+    simp only [Pi.add_apply]
+    ring
+  have hstep : (∫ u in {u : EuclideanSpace ℝ (Fin k) | ε / c < ‖u‖},
+        (τ (Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B)).toReal
+          * (2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2) ∂ν)
+      ≤ ∫ u in {u : EuclideanSpace ℝ (Fin k) | ε / c < ‖u‖},
+        (32 * C₃ * Ck * (c * ‖u‖) ^ 3 / ε ^ 2 + 4 * C₃ * W * (c * ‖u‖) ^ 2 / ε ^ 2) ∂ν := by
+    refine integral_mono_of_nonneg ?_ hgint ?_
+    · refine (ae_restrict_iff' hFm).2 (Filter.Eventually.of_forall fun u _ => ?_)
+      have : (0 : ℝ) ≤ 2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2 := by
+        positivity
+      exact mul_nonneg ENNReal.toReal_nonneg this
+    · refine (ae_restrict_iff' hFm).2 (Filter.Eventually.of_forall fun u hu => ?_)
+      have hu' : ε / c < ‖u‖ := hu
+      have hge : ε ≤ c * ‖u‖ := by
+        have h := (mul_lt_mul_of_pos_left hu' hc).le
+        rwa [hcR] at h
+      have hmass := hshell (2 * (c * ‖u‖)) (by linarith)
+      have hbr0 : (0 : ℝ) ≤ 2 + C₃ / ε * (c * ‖u‖)
+          + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2 := by positivity
+      have hfar := far_regime_pointwise_le (C₃ := C₃) (Ck := Ck) (W := W) (ε := ε)
+        (t := c * ‖u‖) hε hge hC₃ hCk hW
+      have hmass' : (τ (Metric.thickening (2 * (c * ‖u‖)) B
+          \ erosion (2 * (c * ‖u‖)) B)).toReal ≤ 8 * Ck * (c * ‖u‖) + W := by
+        linarith
+      calc (τ (Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B)).toReal
+            * (2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2)
+          ≤ (8 * Ck * (c * ‖u‖) + W)
+              * (2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2) :=
+            mul_le_mul_of_nonneg_right hmass' hbr0
+        _ = (2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2)
+              * (8 * Ck * (c * ‖u‖) + W) := by ring
+        _ ≤ 32 * C₃ * Ck * (c * ‖u‖) ^ 3 / ε ^ 2
+              + 4 * C₃ * W * (c * ‖u‖) ^ 2 / ε ^ 2 := hfar
+  refine hstep.trans ?_
+  -- evaluate the two tail moments
+  have hrw : ∀ u : EuclideanSpace ℝ (Fin k),
+      32 * C₃ * Ck * (c * ‖u‖) ^ 3 / ε ^ 2 + 4 * C₃ * W * (c * ‖u‖) ^ 2 / ε ^ 2
+        = (32 * C₃ * Ck * c ^ 3 / ε ^ 2) * ‖u‖ ^ 3
+          + (4 * C₃ * W * c ^ 2 / ε ^ 2) * ‖u‖ ^ 2 := fun u => by ring
+  simp_rw [hrw]
+  rw [integral_add (hg1.const_mul _) (hg2.const_mul _), integral_const_mul,
+    integral_const_mul]
+  have ht3 := setIntegral_norm_pow_tail_le (p := 3) (q := 0) (by norm_num) hR hβν
+  have ht2 := setIntegral_norm_pow_tail_le (p := 2) (q := 1) (by norm_num) hR hβν
+  rw [pow_zero, div_one] at ht3
+  rw [pow_one] at ht2
+  have hβ0 : (0 : ℝ) ≤ ∫ y, ‖y‖ ^ 3 ∂ν := integral_nonneg fun y => by positivity
+  have hA : (0 : ℝ) ≤ 32 * C₃ * Ck * c ^ 3 / ε ^ 2 := by positivity
+  have hD : (0 : ℝ) ≤ 4 * C₃ * W * c ^ 2 / ε ^ 2 := by positivity
+  have h1 := mul_le_mul_of_nonneg_left ht3 hA
+  have h2 := mul_le_mul_of_nonneg_left ht2 hD
+  have hfin : 32 * C₃ * Ck * c ^ 3 / ε ^ 2 * (∫ y, ‖y‖ ^ 3 ∂ν)
+      + 4 * C₃ * W * c ^ 2 / ε ^ 2 * ((∫ y, ‖y‖ ^ 3 ∂ν) / (ε / c))
+      = C₃ * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ν) * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3) := by
+    field_simp
+  linarith
+
+/-- **The per-step head estimate (wave 37: stated; wave 38: PROVED).** *One head step of the
+hybrid telescope, localised, averaged against the step's own hybrid law.*
 
 `τ` is `hybridLaw n j ν` (wave 36's `integral_hybridLaw_eq` /
 `integral_peel_eq_integral_hybridLaw` identify the telescope's `j`-th test measure with it), `ν`
@@ -7323,8 +7773,27 @@ proved in this file; what is missing is only the assembly.
   `setIntegral_norm_pow_tail_le` (`p = 3` and `p = 2`, `q = 0` and `q = 1`) — a **third** moment
   and nothing more.
 
-The remaining Lean work is measurability of `u ↦ τ(shell at width c‖u‖)` (monotone in `‖u‖`,
-hence measurable) and the Fubini bookkeeping; no further analytic input is needed. -/
+**Wave 38: PROVED, and wave 37's description of the residual bookkeeping is corrected.** Wave 37
+wrote that what was left is "measurability of `u ↦ τ(shell at width c‖u‖)` (monotone in `‖u‖`,
+hence measurable)". Monotonicity does give measurability of that *scalar* function, but it is not
+what the Fubini step needs: `integral_integral_swap` needs the **jointly** measurable integrand
+`(a, u) ↦ 1_{shell at width 2c‖u‖}(a)`, and the section-wise monotone argument says nothing about
+the pair. The joint statement is `measurableSet_wideShell_prod`, and it rests on a fact that had
+not been recorded anywhere: the erosion is a *strict* distance inequality,
+
+`erosion s B = {x | ofReal s < infEDist x (interior B)ᶜ}`  (`erosion_eq_ofReal_lt_infEdist`),
+
+whose only non-formal ingredient is that in a proper space the distance to a nonempty closed set
+is attained (`IsClosed.exists_infDist_eq_dist`) — that is what upgrades the trivial `≥` to the
+`>` the open condition needs. With both sides of the shell written as strict inequalities between
+continuous functions of `(a, u)`, `measurableSet_lt` closes it.
+
+The rest is as the derivation above says. Two named lemmas carry it:
+`integral_abs_remainder_split_le` (the near/far split at a fixed base point `a`, entirely
+pointwise plus `setIntegral_mono_on`) and `integral_far_shell_le` (the Fubini exchange and the
+pricing of the far regime). Note the near regime needs **no** Fubini at all: at `c‖u‖ ≤ ε` the
+shell is contained in the *fixed* set `B^{2ε} \ B_{-2ε}`, so the `τ`- and `ν`-integrals separate.
+Only the far regime, where the width `2c‖u‖` genuinely varies with `u`, is exchanged. -/
 private lemma abs_integral_swap_step_localised_le
     {ν ρ τ : Measure (EuclideanSpace ℝ (Fin k))}
     [IsProbabilityMeasure ν] [IsProbabilityMeasure ρ] [IsProbabilityMeasure τ]
@@ -7350,8 +7819,208 @@ private lemma abs_integral_swap_step_localised_le
           * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ)) * (8 * Ck * ε + W)
         + C₃ * c ^ 3 * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ))
             * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3) := by
-  sorry
-
+  classical
+  have hC₃0 : (0 : ℝ) < C₃ := lt_of_lt_of_le one_pos hC₃
+  have hβν0 : (0 : ℝ) ≤ ∫ y, ‖y‖ ^ 3 ∂ν := integral_nonneg fun y => by positivity
+  have hβρ0 : (0 : ℝ) ≤ ∫ y, ‖y‖ ^ 3 ∂ρ := integral_nonneg fun y => by positivity
+  have hShNm : MeasurableSet (Metric.thickening (2 * ε) B \ erosion (2 * ε) B) :=
+    Metric.isOpen_thickening.measurableSet.diff (isOpen_erosion _ B).measurableSet
+  -- the common value of the second-order polynomial
+  obtain ⟨S, hS⟩ : ∃ S : EuclideanSpace ℝ (Fin k) → ℝ, ∀ a, S a
+      = ∑ r : Fin 2 → Fin k,
+          ⟪EuclideanSpace.basisFun (Fin k) ℝ (r 0),
+            EuclideanSpace.basisFun (Fin k) ℝ (r 1)⟫_ℝ
+            * iteratedFDeriv ℝ 2 f a fun i => EuclideanSpace.basisFun (Fin k) ℝ (r i) :=
+    ⟨_, fun a => rfl⟩
+  have hQrw : ∀ (a u : EuclideanSpace ℝ (Fin k)),
+      (iteratedFDeriv ℝ 2 f a) (fun _ => c • u)
+        = c ^ 2 * (iteratedFDeriv ℝ 2 f a) (fun _ => u) := by
+    intro a u
+    rw [show (fun _ : Fin 2 => c • u)
+        = fun i : Fin 2 => (fun _ : Fin 2 => c) i • (fun _ : Fin 2 => u) i from rfl,
+      ← ContinuousMultilinearMap.coe_coe,
+      ((iteratedFDeriv ℝ 2 f a).toMultilinearMap).map_smul_univ,
+      Finset.prod_const, Finset.card_univ, Fintype.card_fin,
+      ContinuousMultilinearMap.coe_coe, smul_eq_mul]
+  -- each law is compared with the same number `f a + (c²/2) S a`
+  have key : ∀ σ : Measure (EuclideanSpace ℝ (Fin k)), IsProbabilityMeasure σ →
+      (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂σ) = 0) →
+      (∀ u w : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪w, y⟫_ℝ ∂σ) = ⟪u, w⟫_ℝ) →
+      Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 3) σ →
+      ∀ a : EuclideanSpace ℝ (Fin k),
+        |(∫ u, f (a + c • u) ∂σ) - (f a + c ^ 2 / 2 * S a)|
+          ≤ ∫ u, |f (a + c • u) - f a - fderiv ℝ f a (c • u)
+              - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => c • u)| ∂σ := by
+    intro σ hσ hm hcv hβ a
+    haveI := hσ
+    have h1 : Integrable (fun u : EuclideanSpace ℝ (Fin k) => ‖u‖) σ :=
+      integrable_norm_of_cube hβ
+    have h2 : Integrable (fun u : EuclideanSpace ℝ (Fin k) => ‖u‖ ^ 2) σ :=
+      integrable_normSq_of_cube hβ
+    have hfint : Integrable (fun u : EuclideanSpace ℝ (Fin k) => f (a + c • u)) σ := by
+      refine Integrable.mono' (integrable_const (1 : ℝ))
+        (hf.continuous.comp (by fun_prop)).aestronglyMeasurable
+        (Filter.Eventually.of_forall fun u => ?_)
+      rw [Real.norm_eq_abs]
+      exact hfb _
+    have hLint : Integrable (fun u : EuclideanSpace ℝ (Fin k) =>
+        fderiv ℝ f a (c • u)) σ := by
+      refine ((integrable_clm_of_norm h1 (fderiv ℝ f a)).const_mul c).congr
+        (Filter.Eventually.of_forall fun u => ?_)
+      dsimp only
+      rw [map_smul, smul_eq_mul]
+    have hQint : Integrable (fun u : EuclideanSpace ℝ (Fin k) =>
+        (1 / 2 : ℝ) * iteratedFDeriv ℝ 2 f a (fun _ => c • u)) σ := by
+      refine ((integrable_bilin_of_normSq h2 (iteratedFDeriv ℝ 2 f a)).const_mul
+        (c ^ 2 / 2)).congr (Filter.Eventually.of_forall fun u => ?_)
+      dsimp only
+      rw [hQrw a u]
+      ring
+    have hLval : (∫ u, fderiv ℝ f a (c • u) ∂σ) = 0 := by
+      have hrw : ∀ u : EuclideanSpace ℝ (Fin k),
+          fderiv ℝ f a (c • u) = c * fderiv ℝ f a u := by
+        intro u; rw [map_smul, smul_eq_mul]
+      simp_rw [hrw]
+      rw [integral_const_mul, integral_clm_eq_zero_of_centred hm (fderiv ℝ f a),
+        mul_zero]
+    have hQval : (∫ u, (1 / 2 : ℝ) * iteratedFDeriv ℝ 2 f a (fun _ => c • u) ∂σ)
+        = c ^ 2 / 2 * S a := by
+      have hrw : ∀ u : EuclideanSpace ℝ (Fin k),
+          (1 / 2 : ℝ) * iteratedFDeriv ℝ 2 f a (fun _ => c • u)
+            = (c ^ 2 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => u) := by
+        intro u; rw [hQrw a u]; ring
+      simp_rw [hrw]
+      rw [integral_const_mul, integral_bilin_eq_basis_sum hcv h2 (iteratedFDeriv ℝ 2 f a),
+        ← hS a]
+    have hi1 : Integrable (fun u : EuclideanSpace ℝ (Fin k) =>
+        f (a + c • u) - f a) σ := hfint.sub (integrable_const _)
+    have hi2 : Integrable (fun u : EuclideanSpace ℝ (Fin k) =>
+        f (a + c • u) - f a - fderiv ℝ f a (c • u)) σ := hi1.sub hLint
+    have heq : (∫ u, (f (a + c • u) - f a - fderiv ℝ f a (c • u)
+          - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => c • u)) ∂σ)
+        = (∫ u, f (a + c • u) ∂σ) - (f a + c ^ 2 / 2 * S a) := by
+      rw [integral_sub hi2 hQint, integral_sub hi1 hLint,
+        integral_sub hfint (integrable_const _), integral_const, hLval, hQval]
+      simp
+      ring
+    calc |(∫ u, f (a + c • u) ∂σ) - (f a + c ^ 2 / 2 * S a)|
+        = |∫ u, (f (a + c • u) - f a - fderiv ℝ f a (c • u)
+            - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => c • u)) ∂σ| := by rw [heq]
+      _ ≤ _ := abs_integral_le_integral_abs
+  -- the pointwise bound on the `τ`-integrand
+  have hAν := fun a => integral_abs_remainder_split_le (ν := ν) hβν hf hfb hC₃ hε hD3 hD1
+    hD2 hone hsupp hc a
+  have hAρ := fun a => integral_abs_remainder_split_le (ν := ρ) hβρ hf hfb hC₃ hε hD3 hD1
+    hD2 hone hsupp hc a
+  have hptw : ∀ a : EuclideanSpace ℝ (Fin k),
+      |(∫ u, f (a + c • u) ∂ν) - (∫ u, f (a + c • u) ∂ρ)|
+        ≤ (Metric.thickening (2 * ε) B \ erosion (2 * ε) B).indicator (fun _ => (1 : ℝ)) a
+            * (C₃ / ε ^ 3 / 6 * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ν)
+              + C₃ / ε ^ 3 / 6 * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ρ))
+          + (∫ u in {u : EuclideanSpace ℝ (Fin k) | ε / c < ‖u‖},
+              (Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B).indicator
+                  (fun _ => (1 : ℝ)) a
+                * (2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2) ∂ν)
+          + ∫ u in {u : EuclideanSpace ℝ (Fin k) | ε / c < ‖u‖},
+              (Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B).indicator
+                  (fun _ => (1 : ℝ)) a
+                * (2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2) ∂ρ := by
+    intro a
+    have hkν := key ν ‹_› hmeanν hcovν hβν a
+    have hkρ := key ρ ‹_› hmeanρ hcovρ hβρ a
+    have htri : |(∫ u, f (a + c • u) ∂ν) - (∫ u, f (a + c • u) ∂ρ)|
+        ≤ |(∫ u, f (a + c • u) ∂ν) - (f a + c ^ 2 / 2 * S a)|
+          + |(∫ u, f (a + c • u) ∂ρ) - (f a + c ^ 2 / 2 * S a)| := by
+      calc |(∫ u, f (a + c • u) ∂ν) - (∫ u, f (a + c • u) ∂ρ)|
+          = |((∫ u, f (a + c • u) ∂ν) - (f a + c ^ 2 / 2 * S a))
+              - ((∫ u, f (a + c • u) ∂ρ) - (f a + c ^ 2 / 2 * S a))| := by ring_nf
+        _ ≤ _ := abs_sub _ _
+    have e1 := hAν a
+    have e2 := hAρ a
+    linarith
+  -- integrate the pointwise bound against `τ`
+  have hhcont : Continuous fun a : EuclideanSpace ℝ (Fin k) =>
+      (∫ u, f (a + c • u) ∂ν) - (∫ u, f (a + c • u) ∂ρ) :=
+    (continuous_integral_add_smul hf.continuous hfb c).sub
+      (continuous_integral_add_smul hf.continuous hfb c)
+  have hhint : Integrable (fun a : EuclideanSpace ℝ (Fin k) =>
+      |(∫ u, f (a + c • u) ∂ν) - (∫ u, f (a + c • u) ∂ρ)|) τ := by
+    refine Integrable.mono' (integrable_const (2 : ℝ)) hhcont.abs.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun a => ?_)
+    rw [Real.norm_eq_abs, abs_abs]
+    have h1 := abs_integral_le_one (σ := ν) (F := fun u => f (a + c • u))
+      (hf.continuous.comp (by fun_prop)) (fun x => hfb _)
+    have h2 := abs_integral_le_one (σ := ρ) (F := fun u => f (a + c • u))
+      (hf.continuous.comp (by fun_prop)) (fun x => hfb _)
+    have e1 := abs_le.1 h1
+    have e2 := abs_le.1 h2
+    rw [abs_le]
+    constructor <;> linarith [e1.1, e1.2, e2.1, e2.2]
+  obtain ⟨hFarνint, hFarν⟩ := integral_far_shell_le (ν := ν) (τ := τ) hβν hC₃ hε hCk.le
+    hW hshell hc
+  obtain ⟨hFarρint, hFarρ⟩ := integral_far_shell_le (ν := ρ) (τ := τ) hβρ hC₃ hε hCk.le
+    hW hshell hc
+  have hKt0 : (0 : ℝ) ≤ C₃ / ε ^ 3 / 6 * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ν)
+      + C₃ / ε ^ 3 / 6 * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ρ) := by positivity
+  have hIndint : Integrable (fun a : EuclideanSpace ℝ (Fin k) =>
+      (Metric.thickening (2 * ε) B \ erosion (2 * ε) B).indicator (fun _ => (1 : ℝ)) a
+        * (C₃ / ε ^ 3 / 6 * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ν)
+          + C₃ / ε ^ 3 / 6 * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ρ))) τ := by
+    refine Integrable.mono' (integrable_const (C₃ / ε ^ 3 / 6 * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ν)
+        + C₃ / ε ^ 3 / 6 * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ρ)))
+      ((measurable_const.indicator hShNm).mul_const _).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun a => ?_)
+    rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (indicator_one_nonneg _ a),
+      abs_of_nonneg hKt0]
+    exact mul_le_of_le_one_left hKt0 (indicator_one_le_one _ a)
+  have hsum1 : Integrable (fun a : EuclideanSpace ℝ (Fin k) =>
+      (Metric.thickening (2 * ε) B \ erosion (2 * ε) B).indicator (fun _ => (1 : ℝ)) a
+        * (C₃ / ε ^ 3 / 6 * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ν)
+          + C₃ / ε ^ 3 / 6 * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ρ))
+      + ∫ u in {u : EuclideanSpace ℝ (Fin k) | ε / c < ‖u‖},
+          (Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B).indicator
+              (fun _ => (1 : ℝ)) a
+            * (2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2) ∂ν) τ :=
+    hIndint.add hFarνint
+  have hsum2 : Integrable (fun a : EuclideanSpace ℝ (Fin k) =>
+      (Metric.thickening (2 * ε) B \ erosion (2 * ε) B).indicator (fun _ => (1 : ℝ)) a
+        * (C₃ / ε ^ 3 / 6 * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ν)
+          + C₃ / ε ^ 3 / 6 * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ρ))
+      + (∫ u in {u : EuclideanSpace ℝ (Fin k) | ε / c < ‖u‖},
+          (Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B).indicator
+              (fun _ => (1 : ℝ)) a
+            * (2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2) ∂ν)
+      + ∫ u in {u : EuclideanSpace ℝ (Fin k) | ε / c < ‖u‖},
+          (Metric.thickening (2 * (c * ‖u‖)) B \ erosion (2 * (c * ‖u‖)) B).indicator
+              (fun _ => (1 : ℝ)) a
+            * (2 + C₃ / ε * (c * ‖u‖) + 1 / 2 * (C₃ / ε ^ 2) * (c * ‖u‖) ^ 2) ∂ρ) τ :=
+    hsum1.add hFarρint
+  have hmono := integral_mono hhint hsum2 hptw
+  rw [integral_add hsum1 hFarρint, integral_add hIndint hFarνint] at hmono
+  have hindval : (∫ a, (Metric.thickening (2 * ε) B \ erosion (2 * ε) B).indicator
+        (fun _ => (1 : ℝ)) a
+        * (C₃ / ε ^ 3 / 6 * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ν)
+          + C₃ / ε ^ 3 / 6 * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ρ)) ∂τ)
+      = (τ (Metric.thickening (2 * ε) B \ erosion (2 * ε) B)).toReal
+        * (C₃ / ε ^ 3 / 6 * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ν)
+          + C₃ / ε ^ 3 / 6 * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ρ)) := by
+    rw [integral_mul_const, integral_indicator_const (1 : ℝ) hShNm]
+    simp [Measure.real]
+  rw [hindval] at hmono
+  have hmass : (τ (Metric.thickening (2 * ε) B \ erosion (2 * ε) B)).toReal
+      ≤ 8 * Ck * ε + W := by
+    have := hshell (2 * ε) (by positivity)
+    linarith
+  have hhead := mul_le_mul_of_nonneg_right hmass hKt0
+  have hE1 : (8 * Ck * ε + W) * (C₃ / ε ^ 3 / 6 * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ν)
+        + C₃ / ε ^ 3 / 6 * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ρ))
+      = C₃ / ε ^ 3 / 6 * c ^ 3 * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ))
+        * (8 * Ck * ε + W) := by ring
+  have hE2 : C₃ * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ν) * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3)
+      + C₃ * c ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ρ) * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3)
+      = C₃ * c ^ 3 * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ))
+        * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3) := by ring
+  linarith
 /-- **Brick L above the Gaussian shell scale (wave 24: PROVED, and no localisation needed).**
 As soon as the weight is at least `1`, the *unweighted* balanced telescope already gives the
 localised bound, with no reference to `B` at all: for `ε √n ≥ 1` it is
