@@ -5910,17 +5910,22 @@ lemma norm_charFun_vecRootLaw_sub_const (F : Measure ℝ) [IsProbabilityMeasure 
 
 /-- **The two-regime bound off a ball of radius `R`.** The Gaussian majorant on the bulk and the
 Cramér tail past `ε₁√n` meet with no gap, and the resulting `κ` is
-`max(e^{−λR²/4}, cⁿ)` — finite at every `R ≥ 0`, in particular at radii far below `√n`. -/
+`max(B e^{−λR²/4}, cⁿ)` — finite at every `R ≥ 0`, in particular at radii far below `√n`.
+
+The constant `B` in the bulk hypothesis is not decoration: the majorant available for the
+*truncated* root carries one (`norm_charFun_vecRootLaw_comp_le_exp_neg_sq`), and it is harmless,
+since the transfer inequality prices `Γκ` with `Γ` polynomial and `ΓB` is polynomial too. -/
 theorem norm_charFun_vecRootLaw_le_max_of_band (F : Measure ℝ) [IsProbabilityMeasure F]
-    {Z : ℝ → E} {n : ℕ} {c lam ε₁ R : ℝ} (hlam : 0 ≤ lam) (hR : 0 ≤ R)
+    {Z : ℝ → E} {n : ℕ} {B c lam ε₁ R : ℝ} (hlam : 0 ≤ lam) (hR : 0 ≤ R) (hB : 0 ≤ B)
     (hcram : ∀ t : E, ε₁ * Real.sqrt (n : ℝ) ≤ ‖t‖ →
       ‖charFun (vecRootLaw F Z n) t‖ ≤ c ^ n)
     (hbulk : ∀ t : E, ‖t‖ ≤ ε₁ * Real.sqrt (n : ℝ) →
-      ‖charFun (vecRootLaw F Z n) t‖ ≤ Real.exp (-(lam * ‖t‖ ^ 2 / 4)))
+      ‖charFun (vecRootLaw F Z n) t‖ ≤ B * Real.exp (-(lam * ‖t‖ ^ 2 / 4)))
     {t : E} (ht : R ≤ ‖t‖) :
-    ‖charFun (vecRootLaw F Z n) t‖ ≤ max (Real.exp (-(lam * R ^ 2 / 4))) (c ^ n) := by
+    ‖charFun (vecRootLaw F Z n) t‖ ≤ max (B * Real.exp (-(lam * R ^ 2 / 4))) (c ^ n) := by
   rcases le_or_gt ‖t‖ (ε₁ * Real.sqrt (n : ℝ)) with h | h
-  · refine le_trans (hbulk t h) (le_max_of_le_left (Real.exp_le_exp.2 ?_))
+  · refine le_trans (hbulk t h) (le_max_of_le_left ?_)
+    refine mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 ?_) hB
     have hsq : R ^ 2 ≤ ‖t‖ ^ 2 := by nlinarith
     nlinarith
   · exact le_trans (hcram t h.le) (le_max_right _ _)
@@ -5939,19 +5944,19 @@ negative power of `n` of order `λK²/4`, and the band condition of the certific
 `|θ| ≥ 2σK√(log n)`, below `n^{a}` for every `a > 0`. -/
 theorem norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band
     (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E₂} (hZ : Measurable Z)
-    {n : ℕ} {c lam ε₁ : ℝ} (hlam : 0 ≤ lam)
+    {n : ℕ} {B c lam ε₁ : ℝ} (hlam : 0 ≤ lam) (hB : 0 ≤ B)
     (hcram : ∀ t : E₂, ε₁ * Real.sqrt (n : ℝ) ≤ ‖t‖ →
       ‖charFun (vecRootLaw F Z n) t‖ ≤ c ^ n)
     (hbulk : ∀ t : E₂, ‖t‖ ≤ ε₁ * Real.sqrt (n : ℝ) →
-      ‖charFun (vecRootLaw F Z n) t‖ ≤ Real.exp (-(lam * ‖t‖ ^ 2 / 4)))
+      ‖charFun (vecRootLaw F Z n) t‖ ≤ B * Real.exp (-(lam * ‖t‖ ^ 2 / 4)))
     (σ r θ : ℝ) {t₀ : E₂} {R Γ ε η : ℝ} (hR : 0 ≤ R)
     (hcert : HasFourierCertificateOnBand (vecRootLaw F Z n) σ r θ t₀ R Γ ε η) :
     ‖charFun ((vecRootLaw F Z n).map (deltaSurrogate σ r)) θ‖
-      ≤ Γ * max (Real.exp (-(lam * R ^ 2 / 4))) (c ^ n) + ε + η := by
+      ≤ Γ * max (B * Real.exp (-(lam * R ^ 2 / 4))) (c ^ n) + ε + η := by
   haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZ n
   refine norm_charFun_map_deltaSurrogate_le_of_bandCertificate _ σ r θ ?_ hcert
-    (fun t ht => norm_charFun_vecRootLaw_le_max_of_band F hlam hR hcram hbulk ht)
-  exact le_trans (Real.exp_nonneg _) (le_max_left _ _)
+    (fun t ht => norm_charFun_vecRootLaw_le_max_of_band F hlam hR hB hcram hbulk ht)
+  exact le_trans (by positivity) (le_max_left _ _)
 
 /-! ### The weight of a bulk multiplier: synthesis *is* Fourier inversion
 
@@ -7034,6 +7039,106 @@ theorem norm_charFun_vecRootLaw_le_exp_neg_sq (F : Measure ℝ) [IsProbabilityMe
     _ ≤ Real.exp (-(lam * ‖t‖ ^ 2 / 4)) := by
         refine Real.exp_le_exp.2 ?_
         nlinarith [sq_nonneg ‖t‖, hvl]
+
+/-- **The bulk majorant survives truncation, and it survives it for free.**
+
+**WAVE 44 — THIS REPLACES ITEM (ii) OF WAVE 43'S REPAIR LIST BY SOMETHING STRICTLY SMALLER.**
+That list asked for the three direction-uniform moment hypotheses of
+`norm_charFun_vecRootLaw_le_exp_neg_sq` to be discharged *for the truncated pair*
+`studentPair F ∘ truncAt m √n`. They cannot be, as stated: the truncated pair is **not
+centred** — truncation moves the mean by the mass it moves — and the majorant is a statement
+about a centred law. (`norm_charFun_vecRootLaw_sub_const` repairs that much, at the cost of
+computing the truncated law's moments, all of which then depend on `n`.)
+
+None of that is necessary. The truncated and untruncated summands are images of the *same* `F`
+under maps differing only on `{T x ≠ x}`, so `norm_charFun_map_comp_sub_le` — the perturbation
+already used for the Cramér tail (`exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt`) —
+gives `‖φ_trunc‖ ≤ ‖φ_untrunc‖ + 2m` at every frequency. Raising to the `n`-th power costs only
+a **constant**: `(e^{−a} + 2m)ⁿ = e^{−na}(1 + 2m e^{a})ⁿ ≤ e^{−na} e^{2nm e^{a}}`, and `nm` is
+bounded on the whole bulk (`a ≤ λε₁²/4` there). So the majorant may be established on the
+**untruncated** pair, which *is* centred (`integral_inner_studentPair`) and whose directional
+moments are moments of `F` itself, and transferred with a constant prefactor.
+
+The residue of item (ii) is therefore the three direction-uniform moment bounds for
+`F.map (studentPair F)` alone, and no truncated moment appears anywhere. -/
+theorem norm_charFun_vecRootLaw_comp_le_exp_neg_sq
+    (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E} (hZ : Measurable Z)
+    {T : ℝ → ℝ} (hT : Measurable T) (hbad : MeasurableSet {x : ℝ | T x ≠ x})
+    {D lam ε₁ : ℝ} (hlam : 0 ≤ lam) (hε₁ : 0 ≤ ε₁)
+    {n : ℕ} (hn : 0 < n)
+    (hmass : (n : ℝ) * (F {x : ℝ | T x ≠ x}).toReal ≤ D)
+    (hmaj : ∀ u : E, ‖u‖ ≤ ε₁ → ‖charFun (F.map Z) u‖ ≤ Real.exp (-(lam * ‖u‖ ^ 2 / 4)))
+    {t : E} (ht : ‖t‖ ≤ ε₁ * Real.sqrt (n : ℝ)) :
+    ‖charFun (vecRootLaw F (fun y => Z (T y)) n) t‖
+      ≤ Real.exp (2 * D * Real.exp (lam * ε₁ ^ 2 / 4)) * Real.exp (-(lam * ‖t‖ ^ 2 / 4)) := by
+  have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hn0
+  set u : E := ((Real.sqrt (n : ℝ))⁻¹ : ℝ) • t with hudef
+  have hun : ‖u‖ = ‖t‖ / Real.sqrt (n : ℝ) := by
+    rw [hudef, norm_smul, norm_inv, Real.norm_eq_abs, abs_of_pos hsn, inv_mul_eq_div]
+  have huε : ‖u‖ ≤ ε₁ := by rw [hun, div_le_iff₀ hsn]; linarith
+  have hnu : (n : ℝ) * ‖u‖ ^ 2 = ‖t‖ ^ 2 := by
+    rw [hun, div_pow, Real.sq_sqrt hn0.le]
+    field_simp
+  set a : ℝ := lam * ‖u‖ ^ 2 / 4 with hadef
+  have ha0 : 0 ≤ a := by rw [hadef]; positivity
+  have haε : a ≤ lam * ε₁ ^ 2 / 4 := by
+    rw [hadef]
+    have hsq : ‖u‖ ^ 2 ≤ ε₁ ^ 2 := by nlinarith [norm_nonneg u]
+    nlinarith
+  set m : ℝ := (F {x : ℝ | T x ≠ x}).toReal with hmdef
+  have hm0 : 0 ≤ m := ENNReal.toReal_nonneg
+  have hstep : ‖charFun (F.map (fun y => Z (T y))) u‖ ≤ Real.exp (-a) + 2 * m := by
+    have hpert := norm_charFun_map_comp_sub_le F hZ hT hbad u
+    have hsub : ‖charFun (F.map (fun y => Z (T y))) u‖
+        ≤ ‖charFun (F.map Z) u‖ + 2 * m := by
+      have h := norm_sub_norm_le (charFun (F.map (fun y => Z (T y))) u)
+        (charFun (F.map Z) u)
+      rw [← hmdef] at hpert
+      linarith
+    have hmj := hmaj u huε
+    rw [← hadef] at hmj
+    linarith
+  have hexpa : Real.exp (-a) * Real.exp a = 1 := by
+    rw [← Real.exp_add, neg_add_cancel, Real.exp_zero]
+  have hfac : Real.exp (-a) + 2 * m = Real.exp (-a) * (1 + 2 * m * Real.exp a) := by
+    linear_combination (-(2 : ℝ) * m) * hexpa
+  have hpow : (Real.exp (-a) + 2 * m) ^ n
+      ≤ Real.exp (-((n : ℝ) * a)) * Real.exp ((n : ℝ) * (2 * m * Real.exp a)) := by
+    rw [hfac, mul_pow]
+    have h1 : (Real.exp (-a)) ^ n = Real.exp (-((n : ℝ) * a)) := by
+      rw [← Real.exp_nat_mul]
+      congr 1
+      ring
+    have h2 : (1 + 2 * m * Real.exp a) ^ n ≤ Real.exp ((n : ℝ) * (2 * m * Real.exp a)) := by
+      calc (1 + 2 * m * Real.exp a) ^ n
+          ≤ (Real.exp (2 * m * Real.exp a)) ^ n := by
+            refine pow_le_pow_left₀ (by positivity) ?_ n
+            linarith [Real.add_one_le_exp (2 * m * Real.exp a)]
+        _ = Real.exp ((n : ℝ) * (2 * m * Real.exp a)) := (Real.exp_nat_mul _ n).symm
+    rw [h1]
+    exact mul_le_mul_of_nonneg_left h2 (Real.exp_nonneg _)
+  have hna : (n : ℝ) * a = lam * ‖t‖ ^ 2 / 4 := by
+    rw [hadef, ← hnu]; ring
+  have hnm : (n : ℝ) * (2 * m * Real.exp a) ≤ 2 * D * Real.exp (lam * ε₁ ^ 2 / 4) := by
+    have h1 : Real.exp a ≤ Real.exp (lam * ε₁ ^ 2 / 4) := Real.exp_le_exp.2 haε
+    have h2 : (n : ℝ) * (2 * m * Real.exp a) = 2 * ((n : ℝ) * m) * Real.exp a := by ring
+    have h3 : (0 : ℝ) ≤ (n : ℝ) * m := by positivity
+    rw [h2]
+    calc 2 * ((n : ℝ) * m) * Real.exp a
+        ≤ 2 * ((n : ℝ) * m) * Real.exp (lam * ε₁ ^ 2 / 4) :=
+          mul_le_mul_of_nonneg_left h1 (by linarith)
+      _ ≤ 2 * D * Real.exp (lam * ε₁ ^ 2 / 4) := by
+          have hnn : (0 : ℝ) ≤ Real.exp (lam * ε₁ ^ 2 / 4) := Real.exp_nonneg _
+          nlinarith [hmass]
+  calc ‖charFun (vecRootLaw F (fun y => Z (T y)) n) t‖
+      = ‖charFun (F.map (fun y => Z (T y))) u‖ ^ n := by
+        rw [charFun_vecRootLaw F (Z := fun y => Z (T y)) (hZ.comp hT) n, norm_pow, ← hudef]
+    _ ≤ (Real.exp (-a) + 2 * m) ^ n := pow_le_pow_left₀ (norm_nonneg _) hstep n
+    _ ≤ Real.exp (-((n : ℝ) * a)) * Real.exp ((n : ℝ) * (2 * m * Real.exp a)) := hpow
+    _ ≤ Real.exp (2 * D * Real.exp (lam * ε₁ ^ 2 / 4)) * Real.exp (-(lam * ‖t‖ ^ 2 / 4)) := by
+        rw [hna, mul_comm]
+        exact mul_le_mul_of_nonneg_right (Real.exp_le_exp.2 hnm) (Real.exp_nonneg _)
 
 end MiddleRangeBulk
 
