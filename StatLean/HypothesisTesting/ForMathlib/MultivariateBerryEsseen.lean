@@ -462,15 +462,23 @@ Neither is a special case of the other: the peeled law is `hybridLaw` with the d
 `j + 1` but the smoothing still at `j`, and `hybridLaw n j ν = (peeled law) ∗ (c·ν)`, which is
 the wrong direction to deconvolve.
 
-**The repair is named and built, and it costs only a constant.** `mem_wideShell_shift` /
-`indicator_wideShell_le_shift`: `1_{shell at s}(a) ≤ 1_{shell at s+t}(a + w)` for `‖w‖ ≤ t`.
-Both bricks already price the shell at width `2c‖u‖` (far regime) or `2ε ≥ 2c‖u‖` (near
-regime), so the shift `c u` is absorbed by one further `c‖u‖`, i.e. by `2 → 3` in the width and
-`8 C_k → 12 C_k` in the far half. What remains for brick L is then exactly: re-run the two
-bricks with the indicator at the shifted point, and run the localised telescope (`hstepfun` with
-the `v`-dependent `D`, `integral_peel_eq_integral_hybridLaw`, and
-`sum_le_of_bounded_and_weighted_decay`) to produce `htel`. **No analytic input is missing on
-either side** — both per-step estimates are now theorems.
+## Wave-42 amendment: the transfer is deconvolution, and the window strengthens to `√k ≤ ε√n`
+
+**The repair is DECONVOLUTION, not shifting (wave 42).** Wave 41 proposed
+`indicator_wideShell_le_shift` (`1_{shell at s}(a) ≤ 1_{shell at s+t}(a+w)` for `‖w‖ ≤ t`) to
+move each brick's indicator to the shifted point. That fails: the width at which either brick
+consults its shell hypothesis is a function of the *same* variable as the shift, so what the
+move produces is the shell mass of a **translate** of the base law, which a constant-width
+hypothesis on the convolution does not bound (formalized witness in the wave-42 note of
+`localised_swap_bound_small_weight`). What does work is `wideShell_le_of_deconvolution`, proved
+in wave 42: `τ(shell s)·η(closedBall 0 t) ≤ (τ ∗ η)(shell (s+t))`, so a shell bound for the
+convolution *does* give one for the factor, at the price of `η`'s concentration radius. It costs
+`C_k → 3 C_k`, `W → 2W + 11 C_k t`, and a strengthening of the localisation window from
+`1 ≤ ε √n` to `√k ≤ ε √n` (free at the call site). What remains for brick L is then: the two
+convolution identities that `wideShell_le_of_deconvolution` consumes, and the localised
+telescope (`hstepfun` with the `v`-dependent `D` and `sum_le_of_bounded_and_weighted_decay`) to
+produce `htel`. **No analytic input is missing on either side** — both per-step estimates are
+now theorems.
 
 **Reference.** V. Bentkus, "On the dependence of the Berry–Esseen bound on dimension,\"
 *J. Statist. Plann. Inference* **113** (2003), 385–402. E. L. Lehmann and J. P. Romano,
@@ -2081,6 +2089,37 @@ private lemma integral_pi_sum_peel {k m : ℕ}
     _ = ∫ y, ∫ u, g (u + ∑ l, y l) ∂(κ i)
           ∂(Measure.pi fun l : Fin m => κ (i.succAbove l)) :=
         integral_prod_symm _ hF
+
+/-- **Peeling one coordinate, at the level of measures (wave 42).** The law of the coordinate
+sum is the law of `u + ∑ₗ yₗ` with `u ∼ κ i` independent of the remaining coordinates.
+
+This is `integral_pi_sum_peel` with the bounded continuous test function stripped off, and it is
+what brick L needs: the transfer between the two localised per-step bricks and brick L's weight
+hypothesis is `wideShell_le_of_deconvolution`, whose hypothesis `hμ` is a statement about
+*measures* (`μ = (τ ⊗ η).map (+)`) and not about integrals of continuous functions — the shell
+indicator is not continuous, so the integral form cannot be used. The proof is the same
+`measurePreserving_piFinSuccAbove` transport, with `Fin.sum_univ_succAbove` splitting the sum. -/
+theorem map_pi_sum_peel {k m : ℕ}
+    (κ : Fin (m + 1) → Measure (EuclideanSpace ℝ (Fin k)))
+    [∀ i, IsProbabilityMeasure (κ i)] (i : Fin (m + 1)) :
+    ((Measure.pi κ).map fun x => ∑ l, x l)
+      = (((κ i).prod (Measure.pi fun l : Fin m => κ (i.succAbove l))).map
+          fun p => p.1 + ∑ l, p.2 l) := by
+  classical
+  set e : ((_ : Fin (m + 1)) → EuclideanSpace ℝ (Fin k))
+      ≃ᵐ EuclideanSpace ℝ (Fin k) × ((_ : Fin m) → EuclideanSpace ℝ (Fin k)) :=
+    MeasurableEquiv.piFinSuccAbove (fun _ : Fin (m + 1) => EuclideanSpace ℝ (Fin k)) i with he
+  have hmp : MeasurePreserving e (Measure.pi κ)
+      ((κ i).prod (Measure.pi fun l : Fin m => κ (i.succAbove l))) :=
+    measurePreserving_piFinSuccAbove κ i
+  have hcomp : (fun x : (_ : Fin (m + 1)) → EuclideanSpace ℝ (Fin k) => ∑ l, x l)
+      = (fun p : EuclideanSpace ℝ (Fin k) × ((_ : Fin m) → EuclideanSpace ℝ (Fin k)) =>
+          p.1 + ∑ l, p.2 l) ∘ e := by
+    funext x
+    have hx : e x = (x i, fun l => x (i.succAbove l)) := rfl
+    rw [Function.comp_apply, hx]
+    exact Fin.sum_univ_succAbove (fun l => x l) i
+  rw [hcomp, ← Measure.map_map (by fun_prop) e.measurable, hmp.map_eq]
 
 end SwapStep
 
@@ -7931,6 +7970,34 @@ theorem integral_peel_eq_integral_hybridLaw {m j : ℕ} (hj : j < m + 1)
   rw [hν] at h
   exact h
 
+/-- **The hybrid law is a convolution, at the level of measures (wave 42).** `hybridLaw n j ν`
+is the law of `A + G` with `A` the (scaled) coordinate sum and `G` the smoothing Gaussian,
+independent.
+
+This is one of the two hypotheses `wideShell_le_of_deconvolution` asks for, and it is the *tail*
+side's: `abs_integral_gaussian_smoothed_swap_localised_le` evaluates its shell indicator at the
+base point **before** the smoothing, so its `τ` is the law of `A` alone (at the dirac cut
+`j + 1`) and the factor to be deconvolved away is the whole Gaussian of width `σ_{j+1}`, giving
+`hybridLaw n (j+1) ν`. Nothing is proved here beyond `Measure.map_prod_map` followed by
+`Measure.map_map`: `hybridLaw` is *already* defined as a map of a product, so the two scalings
+only have to be pushed onto the factors. (The head side additionally needs `map_pi_sum_peel`,
+and then an associativity of the two convolutions; that is the piece brick L still owes.) -/
+theorem hybridLaw_eq_map_add (n j : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
+    [IsProbabilityMeasure ν] :
+    hybridLaw n j ν
+      = ((((Measure.pi fun i : Fin n =>
+              if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν).map
+            fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i).prod
+          ((stdGaussian (EuclideanSpace ℝ (Fin k))).map
+            fun z => (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • z)).map
+        fun p => p.1 + p.2) := by
+  haveI : ∀ i : Fin n, IsProbabilityMeasure
+      (if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν) := by
+    intro i; split <;> infer_instance
+  rw [Measure.map_prod_map _ _ (by fun_prop) (by fun_prop),
+    Measure.map_map (by fun_prop) (by fun_prop), hybridLaw]
+  rfl
+
 /-- The characteristic function of the law of a sum of independent summands is the product of
 the characteristic functions. -/
 private lemma charFun_map_sum_pi {N : ℕ}
@@ -8545,15 +8612,14 @@ private lemma indicator_one_mono {α : Type*} {s t : Set α} (h : s ⊆ t) (a : 
 /-- **The two-sided shell moves with a shift, at the price of the shift length (wave 41).**
 `1_{shell at s}(a) ≤ 1_{shell at s + t}(a + w)` whenever `‖w‖ ≤ t`.
 
-This is the transfer wave 41 identified as the missing link between the two localised per-step
-bricks and the weight hypothesis of `localised_swap_bound_small_weight`; see the wave-41 section
-of that theorem's note. Both bricks price a shell mass at the base point `a` of the step, whose
-law is the telescope's *peeled* one (the `n − 1` unswapped coordinates, plus the smoothing) —
-whereas `hybridLaw n j ν`, which brick H bounds and which is what brick L's hypothesis speaks
-about, is the law of `a + c u` with `u ∼ ν` the swapped coordinate as well. This lemma converts
-between them: since the shell width in both bricks is already a multiple of `c‖u‖` (in the far
-regime) or of `ε ≥ c‖u‖` (in the near regime), the shift `c u` is absorbed by enlarging the
-width by one more `c‖u‖`, i.e. by the constant `2 → 3`.
+Wave 41 identified this as the missing link between the two localised per-step bricks and the
+weight hypothesis of `localised_swap_bound_small_weight`, by moving each brick's indicator to
+the shifted point. **Wave 42 overturned that use** — the shell width in both bricks is a
+function of the *same* variable as the shift, so the move produces the shell mass of a translate
+of the base law rather than of the convolution; see the wave-42 section of that theorem's note.
+What the lemma is actually used for is the *reverse* reading, inside
+`wideShell_le_of_deconvolution`: it says that the shell grows under a bounded shift, which is
+what makes `τ(shell s) · η(closedBall 0 t) ≤ (τ ∗ η)(shell (s + t))` true.
 
 Both halves are one-line set inclusions and neither needs the erosion's strict-distance
 description (`erosion_eq_ofReal_lt_infEdist`): the outer half is the triangle inequality for
@@ -8590,6 +8656,111 @@ private lemma indicator_wideShell_le_shift {B : Set (EuclideanSpace ℝ (Fin k))
   · rw [Set.indicator_of_mem ha, Set.indicator_of_mem (mem_wideShell_shift hw ha)]
   · rw [Set.indicator_of_notMem ha]
     exact indicator_one_nonneg _ _
+
+/-- **Deconvolution of a two-sided-shell bound (wave 42).** *A shell bound for a convolution
+`μ = τ ∗ η` gives one for the factor `τ`, at the price of the concentration radius of `η`.*
+
+This is the transfer brick L actually needs, and it is **not** `indicator_wideShell_le_shift`;
+see the wave-42 section of `localised_swap_bound_small_weight` for why that lemma cannot do the
+job. The mechanism here is the reverse one: `mem_wideShell_shift` says that the shell *grows*
+under a bounded shift, so
+
+`τ(shell s) · η(closedBall 0 t) = (τ ⊗ η)(shell s × closedBall 0 t) ≤ μ(shell (s + t))`,
+
+the middle step being exactly `mem_wideShell_shift` applied pointwise. Dividing by
+`q ≤ η(closedBall 0 t)` and using `t ≤ s` to absorb `4 C_k (s + t) ≤ 8 C_k s` gives the
+conclusion. Both hypotheses are of the right kind at the call site: `μ` is a hybrid law (whose
+shell bound brick L assumes at every width), `τ` is the *base* law of a telescope step, and `η`
+is the law of the extra summand — one `c`-scaled copy of `ν` on the head side, one `σ`-scaled
+Gaussian on the tail side — whose concentration radius `t` is `O(√k)` times its scale by
+`measureReal_closedBall_ge_of_normSq`.
+
+The restriction `t ≤ s` is what forces the localisation window of brick L to be strengthened
+from `1 ≤ ε √n` to `√k ≤ ε √n`: the widths at which the two per-step bricks consult their
+shell hypothesis are all `≥ 2ε`, and the head-side radius is `t = 2 c √k = 2√k/√n`. -/
+private lemma wideShell_le_of_deconvolution {B : Set (EuclideanSpace ℝ (Fin k))}
+    {τ η μ : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure τ] [IsProbabilityMeasure η]
+    (hμ : μ = (τ.prod η).map fun p => p.1 + p.2)
+    {Ck W : ℝ} (hCk : 0 ≤ Ck)
+    (hshell : ∀ s : ℝ, 0 < s →
+      (μ (Metric.thickening s B \ erosion s B)).toReal ≤ 4 * Ck * s + W)
+    {t q : ℝ} (ht : 0 < t) (hq0 : 0 < q)
+    (hq : q ≤ (η (Metric.closedBall 0 t)).toReal)
+    {s : ℝ} (hs : 0 < s) (hts : t ≤ s) :
+    (τ (Metric.thickening s B \ erosion s B)).toReal ≤ (8 * Ck * s + W) / q := by
+  haveI : IsProbabilityMeasure μ := by
+    rw [hμ]
+    exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+  have hSm : MeasurableSet (Metric.thickening (s + t) B \ erosion (s + t) B) :=
+    Metric.isOpen_thickening.measurableSet.diff (isOpen_erosion _ B).measurableSet
+  have hsub : (Metric.thickening s B \ erosion s B)
+        ×ˢ (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)
+      ⊆ (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) => p.1 + p.2) ⁻¹'
+        (Metric.thickening (s + t) B \ erosion (s + t) B) := by
+    rintro ⟨a, w⟩ ⟨ha, hw⟩
+    have hwn : ‖w‖ ≤ t := by
+      rwa [Metric.mem_closedBall, dist_zero_right] at hw
+    exact mem_wideShell_shift hwn ha
+  have hkey : τ (Metric.thickening s B \ erosion s B)
+      * η (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)
+      ≤ μ (Metric.thickening (s + t) B \ erosion (s + t) B) := by
+    rw [hμ, Measure.map_apply (by fun_prop) hSm]
+    calc τ (Metric.thickening s B \ erosion s B)
+          * η (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)
+        = (τ.prod η) ((Metric.thickening s B \ erosion s B) ×ˢ
+            (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)) :=
+          (Measure.prod_prod _ _).symm
+      _ ≤ _ := measure_mono hsub
+  have hreal : (τ (Metric.thickening s B \ erosion s B)).toReal
+      * (η (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)).toReal
+      ≤ (μ (Metric.thickening (s + t) B \ erosion (s + t) B)).toReal := by
+    rw [← ENNReal.toReal_mul]
+    exact ENNReal.toReal_mono (measure_ne_top _ _) hkey
+  have hτ0 : (0 : ℝ) ≤ (τ (Metric.thickening s B \ erosion s B)).toReal :=
+    ENNReal.toReal_nonneg
+  have hstep : (τ (Metric.thickening s B \ erosion s B)).toReal * q
+      ≤ 4 * Ck * (s + t) + W := by
+    refine le_trans (le_trans (mul_le_mul_of_nonneg_left hq hτ0) hreal) ?_
+    exact hshell (s + t) (by linarith)
+  rw [le_div_iff₀ hq0]
+  nlinarith [hstep, hCk, hts]
+
+/-- **The deconvolution radius, by Chebyshev (wave 42).** `η(closedBall 0 t) ≥ 1 − E‖y‖²/t²`,
+which at `t = 2 √(E‖y‖²)` gives the constant `q = 3/4` that
+`wideShell_le_of_deconvolution` consumes. Both laws that brick L has to deconvolve away have
+`E‖y‖² = k` times the square of their scale (`integral_normSq_eq_dim`), so the radius is
+`2 √k` times the scale in both cases. -/
+private lemma measureReal_closedBall_ge_of_normSq
+    {η : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure η]
+    (h2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) η)
+    {t : ℝ} (ht : 0 < t) :
+    1 - (∫ y, ‖y‖ ^ 2 ∂η) / t ^ 2
+      ≤ (η (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)).toReal := by
+  have hmk := mul_meas_ge_le_integral_of_nonneg
+    (μ := η) (f := fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2)
+    (Filter.Eventually.of_forall fun y => by positivity) h2 (t ^ 2)
+  have hsub : (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)ᶜ
+      ⊆ {y : EuclideanSpace ℝ (Fin k) | t ^ 2 ≤ ‖y‖ ^ 2} := by
+    intro y hy
+    simp only [Set.mem_compl_iff, Metric.mem_closedBall, dist_zero_right, not_le] at hy
+    exact pow_le_pow_left₀ ht.le hy.le 2
+  have hmono : (η (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)ᶜ).toReal
+      ≤ (η {y : EuclideanSpace ℝ (Fin k) | t ^ 2 ≤ ‖y‖ ^ 2}).toReal :=
+    ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono hsub)
+  have hcomp : (η (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)ᶜ).toReal
+      = 1 - (η (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)).toReal := by
+    rw [← measureReal_def, ← measureReal_def,
+      measureReal_compl (μ := η) measurableSet_closedBall]
+    simp
+  have hkey : (η {y : EuclideanSpace ℝ (Fin k) | t ^ 2 ≤ ‖y‖ ^ 2}).toReal
+      ≤ (∫ y, ‖y‖ ^ 2 ∂η) / t ^ 2 := by
+    rw [le_div_iff₀ (by positivity)]
+    have hm := hmk
+    rw [measureReal_def] at hm
+    nlinarith [hm]
+  rw [hcomp] at hmono
+  linarith [hmono, hkey]
 
 /-- **The near/far split of the localised remainder, at a fixed base point `a`.** -/
 private lemma integral_abs_remainder_split_le
@@ -8977,9 +9148,11 @@ Gaussian, and `c = n^{-1/2}` is the step's scale.
 `integral_hybridLaw_eq` / `integral_peel_eq_integral_hybridLaw` identify the telescope's `j`-th
 test measure with it)". It is not: the base point of step `j` is `c·(∑ of the coordinates other
 than `j`) + σⱼ z`, the swapped coordinate appearing only as the `c u` inside the absolute value,
-whereas `hybridLaw n j ν` is the law of that base point *plus* `c u`. The transfer between them
-is `indicator_wideShell_le_shift`, at the price of `2 → 3` in the shell width; see the wave-41
-section of `localised_swap_bound_small_weight`. The
+whereas `hybridLaw n j ν` is the law of that base point *plus* `c u`. Wave 41 proposed
+`indicator_wideShell_le_shift` as the transfer; wave 42 overturned that (the shell width here is
+a function of the shift variable) and replaced it by `wideShell_le_of_deconvolution`, which
+deconvolves the `c ν` factor away at the price of `C_k → 3 C_k`, `W → 2W + 22 C_k ε` and the
+window `√k ≤ ε √n`. See the wave-42 section of `localised_swap_bound_small_weight`. The
 right-hand side is *exactly* the pair of head summands that
 `localised_swap_bound_of_weighted_telescope` consumes, once summed over the `J` head steps.
 
@@ -9843,8 +10016,12 @@ then `hshell` at the varying width) and the far half `4 C_k C_t σ ≤ 4 C_k C_t
 carries the same erratum). The docstring above says "`τ` is `hybridLaw n j ν`". That is wrong,
 and it is now brick L's only remaining obstruction: `τ` is the law of the step's base point,
 which at step `j` *excludes* the swapped coordinate, while `hybridLaw n j ν` includes it.
-`indicator_wideShell_le_shift` is the transfer that repairs it, at the price of `2 → 3` in the
-shell width. See the wave-41 section of `localised_swap_bound_small_weight`. -/
+Wave 41 named `indicator_wideShell_le_shift` as the transfer; wave 42 overturned that and
+replaced it by `wideShell_le_of_deconvolution`. Note that this brick's `τ` is the base law
+**before** the smoothing (the indicator is evaluated at `v`, not at `v + σ z`), so what has to
+be deconvolved away here is the *whole* Gaussian of width `σ_{j+1}`, against
+`hybridLaw n (j+1) ν` — the index moves by one, unlike on the head side. See the wave-42 section
+of `localised_swap_bound_small_weight`. -/
 private lemma abs_integral_gaussian_smoothed_swap_localised_le {Ct : ℝ}
     (hCt : ∀ s : ℝ, 0 ≤ s → (∫ t, |tiltRemainder s t| ∂(gaussianReal 0 1)) ≤ Ct * s ^ 3)
     -- LEAN-ONLY (wave 40), free: `Ct` may always be enlarged
@@ -10934,7 +11111,103 @@ first time with no analytic component, is:
 3. feed `htel` to `localised_swap_bound_of_weighted_telescope`, which is proved and green at
    `306 C₃ + 444 C_t`.
 
-Step 3 is done, step 1's tool is built, and step 2 is the wiring wave 35 already described. -/
+Step 3 is done, step 1's tool is built, and step 2 is the wiring wave 35 already described.
+
+## Wave 42: step 1 is FALSE as stated, and the transfer is deconvolution, not shifting
+
+Wave 41's item 1 — "re-run the two bricks with the shell indicator at the shifted point, via
+`indicator_wideShell_le_shift`, so that both bricks' `τ` becomes `hybridLaw n j ν`" — does not
+close, and the reason is structural rather than a matter of constants.
+
+**Why shifting the indicator cannot work.** In both bricks the width at which the shell
+hypothesis is consulted is a function of the *same* variable as the shift: `2 c‖u‖` in the head's
+far regime (`integral_far_shell_le`) and `2σ(R + (c/σ)‖y‖)` in the tail's
+(`integral_localised_shell_le`), with `u`, `y` the swapped coordinate. After
+`indicator_wideShell_le_shift` one is therefore left with
+
+`∫dν(u) [ ∫dτ(a) 1_{shell(w(u))}(a + c u) ] · stuff(u)`,
+
+whose inner factor is the shell mass of a **translate** of `τ`, not of `τ ∗ (c ν) = hybridLaw`.
+A hypothesis about the convolution at each *fixed* width does not control it. Witness (`k = 1`,
+`B = (−∞, 0]`): let `τ = δ_{−c u₀}` and `ν = (1−p) δ₀ + (p/2)(δ_{u₀} + δ_{−u₀})`, with
+`c u₀ > ε`, so that `u = u₀` is in the far regime. The displayed quantity is `(p/2)·stuff(u₀)`,
+because the translate puts all of its mass at `0 ∈ shell(s)` for every `s > 0`; whereas the
+convolution `τ ∗ (cν)` charges the shell of width `s < c u₀` with mass exactly `p/2`, so the
+hypothesis `≤ 4 C_k s + W` is satisfied with `W = p/2` and the *target* bound is
+`(p/2)(12 C_k c u₀ + W)·stuff(u₀)`. The ratio is `1/(12 C_k c u₀ + W)`, which brick L's own
+normalisation `W + C_k ε ≤ 1` allows to be arbitrarily large. So a shell bound for a convolution
+genuinely does not give one for its factor by enlarging the width.
+
+**What does work: deconvolution, and it is now proved.** `wideShell_le_of_deconvolution` runs
+`mem_wideShell_shift` in the *other* direction — the shell grows under a bounded shift, so
+
+`τ(shell s) · η(closedBall 0 t) = (τ ⊗ η)(shell s × closedBall 0 t) ≤ (τ ∗ η)(shell (s + t))` —
+
+and therefore converts a shell bound for `μ = τ ∗ η` into one for `τ`, at the price of the
+concentration radius `t` of `η` and of the mass `q ≤ η(closedBall 0 t)` it carries.
+`measureReal_closedBall_ge_of_normSq` supplies `q = 3/4` at `t = 2√(E‖y‖²)` by Chebyshev. Run for
+`s ≥ t` and completed for `s < t` by monotonicity of the shell in its width, it gives the
+**uniform** form the two bricks consume verbatim:
+
+`∀ s > 0, τ(shell s) ≤ 4 C_k' s + W'`, `C_k' = 3 C_k`, `W' = 2 W + 11 C_k t`.
+
+**The two base laws, and what each has to be deconvolved by.** They are *different*, and neither
+is a hybrid law:
+
+* *head* (the elementary steps). Pulling the smoothing integral outside the modulus, as `hboundA`
+  already does, makes the head brick's base point `c ∑_{i ≥ j+1} Yᵢ + σⱼ Z`. Adding the swapped
+  coordinate gives `hybridLaw n j ν`, so `η = ν.map (c • ·)`, `E‖·‖² = c² k` and `t = 2 c √k`;
+* *tail* (the Cameron–Martin steps). `abs_integral_gaussian_smoothed_swap_localised_le` evaluates
+  its shell indicator at `v`, i.e. **before** the smoothing, so its base law is the unsmoothed
+  `c ∑_{i ≥ j+1} Yᵢ`. Convolving it with the whole smoothing Gaussian of width `σ_{j+1}` gives
+  `hybridLaw n (j+1) ν` — the index moves, which is why brick L's weight hypothesis has to be
+  assumed at every `j ≤ n`, as it already is. Here `η = γ.map (σ_{j+1} • ·)` and
+  `t = 2 √k σ_{j+1}`.
+
+**The window has to be strengthened, and it is free.** `wideShell_le_of_deconvolution` needs
+`t ≤ s`, and the smallest width either brick consults is `2ε`. On the head side that is
+`2 c √k ≤ 2ε`, i.e. **`√k ≤ ε √n`** in place of the present `1 ≤ ε √n`. It is free at the unique
+call site — `ε √n = 8 (A+1) β ≥ 8 k^{3/2} ≥ √k` by `sqrt_dim_mul_dim_le_integral_norm_cube`, the
+same computation that already discharges `1 ≤ ε √n` (wave 36, Correction 2) — but it has to be
+threaded through `exists_localised_swap_bound`, `exists_convexDiscrepancy_recursion` and the
+`hrec` window of `le_of_selfImproving_induction_logPow32`. On the tail side the requirement is
+`2 √k σ_{j+1} ≤ 2 σⱼ R(σⱼ)`, which is free from `gaussianTailRadius` itself:
+`R(σ) ≥ √(2k log 2k) ≥ √(2 log 2) √k ≥ 1.17 √k` and `σ_{j+1} ≤ √2 σⱼ` for `j ≥ 1`.
+
+**The amended constants FIT the frozen `htel`; no shape moves.** With `C_k' = 3 C_k` and
+`W' = 2W + 11 C_k t`:
+
+* head, first summand: `8 C_k' ε + W' = 46 C_k ε + 2W ≤ 12 (4 C_k ε + W)` (using `t ≤ 2ε`);
+* head, second summand: `32 C_k'/ε² + 4W'/ε³ = 184 C_k/ε² + 8W/ε³ ≤ 6 (32 C_k/ε² + 4W/ε³)`;
+* tail: `68 C_k' σⱼ R(σⱼ) + 4 W' = 204 C_k σⱼ R(σⱼ) + 8W + 88 C_k √k σ_{j+1}`, and the last term
+  is `≤ 88√2 C_k √k σⱼ ≤ 107 C_k σⱼ R(σⱼ)`, so the whole weight is
+  `≤ 5·(68 C_k σⱼ R(σⱼ)) + 2·(4W)`.
+
+So `localised_swap_bound_of_weighted_telescope` is to be instantiated at `C₃ := 12 C₃` and
+`Ct := 5 Ct` — its `C₃` and `Ct` are bare reals, used only inside `htel` — and its conclusion's
+constant becomes `3672 C₃ + 2220 Ct`, which brick L's existential `A` absorbs. **The `htel` shape,
+the ledger, the fixed point and the headline are all untouched.** This is the amendment the
+provable-constants rule asks for: a constant, at the smallest place, recorded.
+
+**What is left, after wave 42.** Three items, none analytic:
+
+1. *the two convolution identities*, which are what `wideShell_le_of_deconvolution`'s hypothesis
+   `hμ` asks for. The tail one, `hybridLaw n (j+1) ν = ((c ∑_{i ≥ j+1} Yᵢ) ⊗ (σ_{j+1} γ)).map(+)`,
+   **is done** — it is `hybridLaw_eq_map_add`, pure `Measure.map_prod_map`, since `hybridLaw` is
+   already defined as a map of a product. The head one,
+   `hybridLaw n j ν = ((peeled, smoothed base) ⊗ (c ν)).map (+)`, additionally needs the
+   coordinate split, whose measure-level form is `map_pi_sum_peel` (**also done**, the analogue
+   of `integral_pi_sum_peel` without the test function, which is necessary because a shell
+   indicator is not continuous); what is left there is the associativity of the two convolutions
+   that puts the `c ν` factor last;
+2. *the localised telescope*: `abs_integral_smooth_sub_gaussian_improved` re-run with the
+   `v`-dependent `D` of `hstepfun` — `D v = ∫z |…| dγ` on the head side, `D v = |…|` on the tail
+   side — summed by `sum_le_of_bounded_and_weighted_decay` instead of
+   `sum_le_of_bounded_and_decay_const`;
+3. the window amendment and the constants above.
+
+Wave 41's closing sentence, "what this `sorry` owes, in full and for the first time with no
+analytic component", survives; its item 1 does not. -/
 theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 1 ≤ C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
@@ -10964,11 +11237,13 @@ theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (h
         ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
             * (ε⁻¹ * (W + gaussianShellConst k * ε)
               + gaussianShellConst k * dimTailConst k * logPow32 ε) := by
-  -- Wave 35: the reduction to the weighted telescope is proved and axiom-clean, see
-  -- `localised_swap_bound_of_weighted_telescope`; what is missing is its hypothesis `htel`,
-  -- i.e. the two localised per-step swap estimates listed at the end of the note above.
-  -- Wave 36: the window `1 ≤ ε √n` (correction 2) is now the hypothesis `hwin` above and is
-  -- discharged at the call site, so the residue is exactly those two estimates.
+  -- Both per-step estimates are theorems (`abs_integral_swap_step_localised_le`, wave 38, and
+  -- `abs_integral_gaussian_smoothed_swap_localised_le`, wave 41), and so is the reduction to
+  -- `htel` (`localised_swap_bound_of_weighted_telescope`, wave 35). What is missing is the
+  -- transfer between the bricks' `τ` — the telescope's *base* law — and this theorem's
+  -- hypothesis, which speaks about `hybridLaw`; the transfer is deconvolution
+  -- (`wideShell_le_of_deconvolution`, wave 42), and the three items still owed, with their
+  -- constants and the amended window `√k ≤ ε √n`, are listed at the end of the note above.
   sorry
 
 /-- **Brick L (wave 24: AMENDED, and proved over `localised_swap_bound_small_weight`).** *The
