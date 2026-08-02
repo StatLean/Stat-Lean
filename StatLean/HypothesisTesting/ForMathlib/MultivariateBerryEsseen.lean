@@ -1065,6 +1065,77 @@ private lemma norm_iteratedFDeriv_three_convolution_le {k : ℕ}
   exact norm_convolution_le_of_bounded L₃ hnormL hbd
     (hφ3.continuous.integrable_of_hasCompactSupport hcs3) x
 
+set_option maxHeartbeats 1000000 in
+-- Same `precompR` defeq checks as the third-order bound, at one level.
+/-- The **first** derivative of a mollification is bounded by the `L¹`-norm of the first
+derivative of the kernel — the order-`1` case of the same convolution estimate that gives
+`norm_iteratedFDeriv_three_convolution_le` (wave 37). -/
+private lemma norm_iteratedFDeriv_one_convolution_le {k : ℕ}
+    {ind : EuclideanSpace ℝ (Fin k) → ℝ} (hind : LocallyIntegrable ind volume)
+    (hbd : ∀ t, |ind t| ≤ 1) (x : EuclideanSpace ℝ (Fin k)) :
+    ‖iteratedFDeriv ℝ 1 (ind ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] mbeMollifier k) x‖
+      ≤ ∫ t, ‖fderiv ℝ (mbeMollifier k) t‖ := by
+  set φ := mbeMollifier k with hφdef
+  have hφ : ContDiff ℝ (((4 : ℕ∞) : WithTop ℕ∞)) φ := mbeMollifier_contDiff k
+  have hcs : HasCompactSupport φ := mbeMollifier_hasCompactSupport k
+  set L₀ : ℝ →L[ℝ] ℝ →L[ℝ] ℝ := ContinuousLinearMap.lsmul ℝ ℝ with hL₀
+  set L₁ := L₀.precompR (EuclideanSpace ℝ (Fin k)) with hL₁
+  set φ₁ := fderiv ℝ φ with hφ₁
+  have hφ1 : ContDiff ℝ (((3 : ℕ∞) : WithTop ℕ∞)) φ₁ := hφ.fderiv_right (by norm_num)
+  have hcs1 : HasCompactSupport φ₁ := hcs.fderiv ℝ
+  have hd1 : fderiv ℝ (ind ⋆[L₀, volume] φ) = (ind ⋆[L₁, volume] φ₁) := by
+    funext y
+    exact (hcs.hasFDerivAt_convolution_right L₀ hind (hφ.of_le (by norm_num)) y).fderiv
+  have hkey : ‖iteratedFDeriv ℝ 1 (ind ⋆[L₀, volume] φ) x‖ = ‖(ind ⋆[L₁, volume] φ₁) x‖ := by
+    rw [show (1 : ℕ) = 0 + 1 from rfl, ← norm_iteratedFDeriv_fderiv, hd1]
+    simp [norm_iteratedFDeriv_zero]
+  rw [hkey]
+  have hnormL : ‖L₁‖ ≤ 1 := by
+    refine le_trans (ContinuousLinearMap.norm_precompR_le _ L₀) ?_
+    exact ContinuousLinearMap.opNorm_lsmul_le
+  exact norm_convolution_le_of_bounded L₁ hnormL hbd
+    (hφ1.continuous.integrable_of_hasCompactSupport hcs1) x
+
+set_option maxHeartbeats 1000000 in
+-- Same `precompR` defeq checks as the third-order bound, at two levels.
+/-- The **second** derivative of a mollification is bounded by the `L¹`-norm of the second
+derivative of the kernel — the order-`2` case of the same convolution estimate that gives
+`norm_iteratedFDeriv_three_convolution_le` (wave 37). -/
+private lemma norm_iteratedFDeriv_two_convolution_le {k : ℕ}
+    {ind : EuclideanSpace ℝ (Fin k) → ℝ} (hind : LocallyIntegrable ind volume)
+    (hbd : ∀ t, |ind t| ≤ 1) (x : EuclideanSpace ℝ (Fin k)) :
+    ‖iteratedFDeriv ℝ 2 (ind ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] mbeMollifier k) x‖
+      ≤ ∫ t, ‖fderiv ℝ (fderiv ℝ (mbeMollifier k)) t‖ := by
+  set φ := mbeMollifier k with hφdef
+  have hφ : ContDiff ℝ (((4 : ℕ∞) : WithTop ℕ∞)) φ := mbeMollifier_contDiff k
+  have hcs : HasCompactSupport φ := mbeMollifier_hasCompactSupport k
+  set L₀ : ℝ →L[ℝ] ℝ →L[ℝ] ℝ := ContinuousLinearMap.lsmul ℝ ℝ with hL₀
+  set L₁ := L₀.precompR (EuclideanSpace ℝ (Fin k)) with hL₁
+  set L₂ := L₁.precompR (EuclideanSpace ℝ (Fin k)) with hL₂
+  set φ₁ := fderiv ℝ φ with hφ₁
+  set φ₂ := fderiv ℝ φ₁ with hφ₂
+  have hφ1 : ContDiff ℝ (((3 : ℕ∞) : WithTop ℕ∞)) φ₁ := hφ.fderiv_right (by norm_num)
+  have hφ2 : ContDiff ℝ (((2 : ℕ∞) : WithTop ℕ∞)) φ₂ := hφ1.fderiv_right (by norm_num)
+  have hcs1 : HasCompactSupport φ₁ := hcs.fderiv ℝ
+  have hcs2 : HasCompactSupport φ₂ := hcs1.fderiv ℝ
+  have hd1 : fderiv ℝ (ind ⋆[L₀, volume] φ) = (ind ⋆[L₁, volume] φ₁) := by
+    funext y
+    exact (hcs.hasFDerivAt_convolution_right L₀ hind (hφ.of_le (by norm_num)) y).fderiv
+  have hd2 : fderiv ℝ (ind ⋆[L₁, volume] φ₁) = (ind ⋆[L₂, volume] φ₂) := by
+    funext y
+    exact (hcs1.hasFDerivAt_convolution_right L₁ hind (hφ1.of_le (by norm_num)) y).fderiv
+  have hkey : ‖iteratedFDeriv ℝ 2 (ind ⋆[L₀, volume] φ) x‖ = ‖(ind ⋆[L₂, volume] φ₂) x‖ := by
+    rw [show (2 : ℕ) = 1 + 1 from rfl, ← norm_iteratedFDeriv_fderiv, hd1,
+      show (1 : ℕ) = 0 + 1 from rfl, ← norm_iteratedFDeriv_fderiv, hd2]
+    simp [norm_iteratedFDeriv_zero]
+  rw [hkey]
+  have hnormL : ‖L₂‖ ≤ 1 := by
+    refine le_trans (ContinuousLinearMap.norm_precompR_le _ L₁) ?_
+    refine le_trans (ContinuousLinearMap.norm_precompR_le _ L₀) ?_
+    exact ContinuousLinearMap.opNorm_lsmul_le
+  exact norm_convolution_le_of_bounded L₂ hnormL hbd
+    (hφ2.continuous.integrable_of_hasCompactSupport hcs2) x
+
 /-- **Smoothed indicator at unit width, for an arbitrary set.** There is a constant `C₃`
 (depending only on the dimension `k`, and fixed *before* the set) such that every
 `B ⊆ ℝ^k` admits a `C³` function `f : ℝ^k → [0,1]` equal to `1` on `B`, supported inside the
@@ -1072,16 +1143,26 @@ unit thickening of `B`, with `‖D³f‖ ≤ C₃`.
 
 Take `f` to be the mollification of the indicator of `Metric.thickening (1/2) B` by
 `mbeMollifier k`. Note the empty set needs no special treatment: then `f = 0` and both the
-value and the support clause are vacuous. -/
+value and the support clause are vacuous.
+
+**Wave 37.** The conclusion now carries the first- and second-order bounds as well, produced by
+`norm_iteratedFDeriv_one_convolution_le` / `norm_iteratedFDeriv_two_convolution_le` — the same
+convolution estimate at one and two `precompR` levels instead of three. A *single* constant
+dominates all three orders (the `max` below), which is what the far-regime head estimate of
+brick L consumes; and it is `≥ 1` by construction, so `1 ≤ C₃` is free and is now part of the
+conclusion (wave 36 flagged this normalisation as the cheaper of its two options). -/
 private lemma exists_smoothed_indicator_unit (k : ℕ) :
-    ∃ C₃ : ℝ, 0 < C₃ ∧ ∀ B : Set (EuclideanSpace ℝ (Fin k)),
+    ∃ C₃ : ℝ, 1 ≤ C₃ ∧ ∀ B : Set (EuclideanSpace ℝ (Fin k)),
       ∃ f : EuclideanSpace ℝ (Fin k) → ℝ,
         ContDiff ℝ 3 f ∧ (∀ x, 0 ≤ f x) ∧ (∀ x, f x ≤ 1) ∧
         (∀ x ∈ B, f x = 1) ∧ (∀ x, f x ≠ 0 → x ∈ thickening 1 B) ∧
-        (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃) := by
+        (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃) ∧
+        (∀ x, ‖iteratedFDeriv ℝ 1 f x‖ ≤ C₃) ∧
+        (∀ x, ‖iteratedFDeriv ℝ 2 f x‖ ≤ C₃) := by
   set φ := mbeMollifier k with hφdef
-  refine ⟨max 1 (∫ t, ‖fderiv ℝ (fderiv ℝ (fderiv ℝ φ)) t‖),
-    lt_of_lt_of_le one_pos (le_max_left _ _), fun B => ?_⟩
+  refine ⟨max 1 (max (∫ t, ‖fderiv ℝ (fderiv ℝ (fderiv ℝ φ)) t‖)
+      (max (∫ t, ‖fderiv ℝ φ t‖) (∫ t, ‖fderiv ℝ (fderiv ℝ φ) t‖))),
+    le_max_left _ _, fun B => ?_⟩
   set A : Set (EuclideanSpace ℝ (Fin k)) := thickening (1 / 2) B with hAdef
   set ind : EuclideanSpace ℝ (Fin k) → ℝ := A.indicator (fun _ => (1 : ℝ)) with hinddef
   have hindmeas : Measurable ind := measurable_const.indicator isOpen_thickening.measurableSet
@@ -1105,7 +1186,7 @@ private lemma exists_smoothed_indicator_unit (k : ℕ) :
     have hmem : t ∈ Function.support φ := ht
     rw [hφdef, mbeMollifier_support] at hmem
     simpa [dist_zero_right] using hmem
-  refine ⟨ind ⋆[L₀, volume] φ, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨ind ⋆[L₀, volume] φ, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact (mbeMollifier_hasCompactSupport k).contDiff_convolution_right L₀ hind
       ((mbeMollifier_contDiff k).of_le (by norm_num))
   · intro x
@@ -1160,7 +1241,44 @@ private lemma exists_smoothed_indicator_unit (k : ℕ) :
     simp only [hpt]
     exact integral_zero _ _
   · intro x
-    exact le_trans (norm_iteratedFDeriv_three_convolution_le hind hindbd x) (le_max_right 1 _)
+    exact le_trans (norm_iteratedFDeriv_three_convolution_le hind hindbd x)
+      ((le_max_left _ _).trans (le_max_right 1 _))
+  · intro x
+    exact le_trans (norm_iteratedFDeriv_one_convolution_le hind hindbd x)
+      (((le_max_left _ _).trans (le_max_right _ _)).trans (le_max_right 1 _))
+  · intro x
+    exact le_trans (norm_iteratedFDeriv_two_convolution_le hind hindbd x)
+      (((le_max_right _ _).trans (le_max_right _ _)).trans (le_max_right 1 _))
+
+/-- **Scaling an iterated-derivative bound along a dilation.** If `‖Dⁱg‖ ≤ C` globally then the
+dilate `x ↦ g (ε⁻¹ • x)` satisfies `‖Dⁱ(g ∘ ε⁻¹)‖ ≤ C/εⁱ`, because
+`ContinuousLinearMap.iteratedFDeriv_comp_right` contributes exactly `‖L‖ⁱ ≤ ε^{-i}`. The bound
+`‖L‖ ≤ ε⁻¹` is used as an inequality rather than an equality, so the degenerate dimension
+`k = 0` (where `‖id‖ = 0`) is covered too. -/
+private lemma norm_iteratedFDeriv_comp_smul_le {k i : ℕ} {C ε : ℝ} (hε : 0 < ε) (hC : 0 ≤ C)
+    {g : EuclideanSpace ℝ (Fin k) → ℝ} (hgcd : ContDiff ℝ 3 g) (hi : i ≤ 3)
+    (hgD : ∀ y, ‖iteratedFDeriv ℝ i g y‖ ≤ C) (x : EuclideanSpace ℝ (Fin k)) :
+    ‖iteratedFDeriv ℝ i (fun x => g (ε⁻¹ • x)) x‖ ≤ C / ε ^ i := by
+  set L : EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin k) :=
+    ε⁻¹ • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin k)) with hLdef
+  have hLapp : ∀ x, L x = ε⁻¹ • x := by intro x; simp [hLdef]
+  have hLnorm : ‖L‖ ≤ ε⁻¹ := by
+    rw [hLdef, norm_smul, Real.norm_eq_abs, abs_of_pos (by positivity)]
+    have hid : ‖ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin k))‖ ≤ 1 :=
+      ContinuousLinearMap.norm_id_le
+    have hεinv : (0 : ℝ) ≤ ε⁻¹ := by positivity
+    nlinarith [hid, hεinv]
+  have hcomp : (fun x => g (ε⁻¹ • x)) = g ∘ L := by funext y; rw [Function.comp_apply, hLapp]
+  have hile : (i : WithTop ℕ∞) ≤ 3 := by exact_mod_cast hi
+  rw [hcomp, L.iteratedFDeriv_comp_right hgcd x hile]
+  refine le_trans (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _) ?_
+  have hprod : (∏ _j : Fin i, ‖L‖) = ‖L‖ ^ i := by
+    rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+  rw [hprod]
+  calc ‖iteratedFDeriv ℝ i g (L x)‖ * ‖L‖ ^ i ≤ C * ε⁻¹ ^ i := by
+        gcongr
+        exact hgD _
+    _ = C / ε ^ i := by rw [inv_pow]; ring
 
 /-- **Smoothed convex indicator with controlled third derivative.**
 In each dimension `k` there is a constant `C₃` (quantified *before* `B` and `ε`, so the bound
@@ -1175,26 +1293,30 @@ the continuous linear map `L : x ↦ ε⁻¹ • x`. Membership and support tran
 `‖L‖³ ≤ ε⁻³`. Note `‖L‖ ≤ ε⁻¹` is used as an inequality rather than an equality, so the
 degenerate dimension `k = 0` (where `‖id‖ = 0`) is covered too.
 
-Convexity of `B` is not used; it is kept only because the statement is frozen. -/
+Convexity of `B` is not used; it is kept only because the statement is frozen.
+
+**Wave 37.** The first- and second-order bounds `‖D¹f‖ ≤ C₃/ε`, `‖D²f‖ ≤ C₃/ε²` are now part
+of the conclusion, with the *same* constant `C₃ ≥ 1`: they are needed by the far regime of brick
+L's head estimate, which does not Taylor-expand and must bound the swap remainder by its
+lower-order terms. The scaling is the one already used for the third order, factored out as
+`norm_iteratedFDeriv_comp_smul_le`. -/
 private lemma exists_smoothed_convex_indicator (k : ℕ) :
-    ∃ C₃ : ℝ, 0 < C₃ ∧ ∀ B : Set (EuclideanSpace ℝ (Fin k)), Convex ℝ B → ∀ {ε : ℝ}, 0 < ε →
+    ∃ C₃ : ℝ, 1 ≤ C₃ ∧ ∀ B : Set (EuclideanSpace ℝ (Fin k)), Convex ℝ B → ∀ {ε : ℝ}, 0 < ε →
       ∃ f : EuclideanSpace ℝ (Fin k) → ℝ,
         ContDiff ℝ 3 f ∧ (∀ x, 0 ≤ f x) ∧ (∀ x, f x ≤ 1) ∧
         (∀ x ∈ B, f x = 1) ∧ (∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B) ∧
-        (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) := by
-  obtain ⟨C₃, hC₃pos, hC₃⟩ := exists_smoothed_indicator_unit k
-  refine ⟨C₃, hC₃pos, fun B _ ε hε => ?_⟩
-  obtain ⟨g, hgcd, hg0, hg1, hgB, hgsupp, hgD⟩ := hC₃ (ε⁻¹ • B)
+        (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) ∧
+        (∀ x, ‖iteratedFDeriv ℝ 1 f x‖ ≤ C₃ / ε) ∧
+        (∀ x, ‖iteratedFDeriv ℝ 2 f x‖ ≤ C₃ / ε ^ 2) := by
+  obtain ⟨C₃, hC₃one, hC₃⟩ := exists_smoothed_indicator_unit k
+  have hC₃pos : (0 : ℝ) < C₃ := lt_of_lt_of_le one_pos hC₃one
+  refine ⟨C₃, hC₃one, fun B _ ε hε => ?_⟩
+  obtain ⟨g, hgcd, hg0, hg1, hgB, hgsupp, hgD, hgD1, hgD2⟩ := hC₃ (ε⁻¹ • B)
   set L : EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin k) :=
     ε⁻¹ • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin k)) with hLdef
   have hLapp : ∀ x, L x = ε⁻¹ • x := by intro x; simp [hLdef]
-  have hLnorm : ‖L‖ ≤ ε⁻¹ := by
-    rw [hLdef, norm_smul, Real.norm_eq_abs, abs_of_pos (by positivity)]
-    have hid : ‖ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin k))‖ ≤ 1 :=
-      ContinuousLinearMap.norm_id_le
-    have hεinv : (0 : ℝ) ≤ ε⁻¹ := by positivity
-    nlinarith [hid, hεinv]
-  refine ⟨fun x => g (L x), hgcd.comp L.contDiff, fun x => hg0 _, fun x => hg1 _, ?_, ?_, ?_⟩
+  refine ⟨fun x => g (L x), hgcd.comp L.contDiff, fun x => hg0 _, fun x => hg1 _, ?_, ?_,
+    ?_, ?_, ?_⟩
   · intro x hx
     exact hgB _ (by rw [hLapp]; exact Set.smul_mem_smul_set hx)
   · intro x hx
@@ -1209,16 +1331,14 @@ private lemma exists_smoothed_convex_indicator (k : ℕ) :
     rw [inv_mul_lt_iff₀ hε] at hdz
     linarith
   · intro x
-    have hcomp : (fun x => g (L x)) = g ∘ L := rfl
-    rw [hcomp, L.iteratedFDeriv_comp_right hgcd x (le_refl _)]
-    refine le_trans (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _) ?_
-    have hprod : (∏ _i : Fin 3, ‖L‖) = ‖L‖ ^ 3 := by
-      rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
-    rw [hprod]
-    calc ‖iteratedFDeriv ℝ 3 g (L x)‖ * ‖L‖ ^ 3 ≤ C₃ * ε⁻¹ ^ 3 := by
-          gcongr
-          exact hgD _
-      _ = C₃ / ε ^ 3 := by rw [inv_pow]; ring
+    have h := norm_iteratedFDeriv_comp_smul_le (i := 3) hε hC₃pos.le hgcd le_rfl hgD x
+    simpa only [hLapp] using h
+  · intro x
+    have h := norm_iteratedFDeriv_comp_smul_le (i := 1) hε hC₃pos.le hgcd (by norm_num) hgD1 x
+    simpa only [hLapp, pow_one] using h
+  · intro x
+    have h := norm_iteratedFDeriv_comp_smul_le (i := 2) hε hC₃pos.le hgcd (by norm_num) hgD2 x
+    simpa only [hLapp] using h
 
 end ConvexSmoothing
 
@@ -2715,7 +2835,8 @@ theorem berryEsseen_convex_levy_elementary {k : ℕ} (hk : 0 < k) :
                 fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i)
                   (Metric.thickening ε B)).toReal
               + C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) / ε ^ 3) := by
-  obtain ⟨C₃, hC₃pos, hC₃⟩ := exists_smoothed_convex_indicator k
+  obtain ⟨C₃, hC₃one, hC₃⟩ := exists_smoothed_convex_indicator k
+  have hC₃pos : (0 : ℝ) < C₃ := lt_of_lt_of_le one_pos hC₃one
   refine ⟨C₃ / 2, by positivity, ?_⟩
   intro n ν B ε hn hε hνp hmean hcov hβint hBmeas hBconv
   haveI := hνp
@@ -2738,7 +2859,7 @@ theorem berryEsseen_convex_levy_elementary {k : ℕ} (hk : 0 < k) :
     rw [← hβdef] at h2
     linarith
   -- the smoothed indicator of `B` at width `ε`
-  obtain ⟨f, hfcd, hf0, hf1, hfB, hfsupp, hfD⟩ := hC₃ B hBconv hε
+  obtain ⟨f, hfcd, hf0, hf1, hfB, hfsupp, hfD, hfD1, hfD2⟩ := hC₃ B hBconv hε
   have hfbd : ∀ x, |f x| ≤ 1 := fun x => abs_le.2 ⟨by linarith [hf0 x], hf1 x⟩
   have hfint : ∀ ρ : Measure (EuclideanSpace ℝ (Fin k)), IsProbabilityMeasure ρ →
       Integrable f ρ := by
@@ -5388,7 +5509,8 @@ theorem berryEsseen_convex_levy_improved {k : ℕ} (hk : 0 < k) :
                 fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i)
                   (Metric.thickening ε B)).toReal
               + C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) / ε) := by
-  obtain ⟨C₃, hC₃pos, hC₃⟩ := exists_smoothed_convex_indicator k
+  obtain ⟨C₃, hC₃one, hC₃⟩ := exists_smoothed_convex_indicator k
+  have hC₃pos : (0 : ℝ) < C₃ := lt_of_lt_of_le one_pos hC₃one
   obtain ⟨Ct, hCtpos, hCt⟩ := exists_tiltRemainder_bound
   refine ⟨3 * C₃ / 2 + 9 * Ct + 2, by positivity, ?_⟩
   intro n ν B ε hn hε hνp hmean hcov hβint hBmeas hBconv
@@ -5447,7 +5569,7 @@ theorem berryEsseen_convex_levy_improved {k : ℕ} (hk : 0 < k) :
     exact ⟨by linarith [ENNReal.toReal_nonneg (a := γ (Metric.thickening ε B))],
       by linarith [ENNReal.toReal_nonneg (a := μ (Metric.thickening ε B))]⟩
   -- ### the main window `ε² n ≥ 1`
-  obtain ⟨f, hfcd, hf0, hf1, hfB, hfsupp, hfD⟩ := hC₃ B hBconv hε
+  obtain ⟨f, hfcd, hf0, hf1, hfB, hfsupp, hfD, hfD1, hfD2⟩ := hC₃ B hBconv hε
   have hfbd : ∀ x, |f x| ≤ 1 := fun x => abs_le.2 ⟨by linarith [hf0 x], hf1 x⟩
   have hfint : ∀ ρ : Measure (EuclideanSpace ℝ (Fin k)), IsProbabilityMeasure ρ →
       Integrable f ρ := by
@@ -6970,6 +7092,266 @@ theorem hybridLaw_wideShell_le (hk : 0 < k) {n j : ℕ} (hn : 0 < n) (hj : j ≤
     linarith
 
 
+/-! #### Localising the swap remainder (wave 37)
+
+The head steps of the weighted telescope need the elementary swap *localised*: its cost must be
+multiplied by the indicator of a two-sided shell, whose mass under `hybridLaw n j ν` is what the
+amended weight hypothesis bounds. Wave 36 identified the obstruction — the Lagrange remainder
+controls `D³f` along the whole segment `[a, a + w]`, so the shell width is `‖w‖`, which is
+unbounded in `w`. The three lemmas here supply the localisation *at that varying width*, which
+is exactly what the two-regime split of the head estimate consumes.
+
+The mechanism is elementary and needs no Taylor theory at all: off the two-sided shell at width
+`‖w‖`, the test function is **constant on the closed ball** `closedBall a ‖w‖` (equal to `1` if
+`a` is in the erosion, to `0` if `a` is outside the `(ε + ‖w‖)`-thickening), so the value, the
+first derivative and the second derivative at `a` all agree with those of a constant and the
+whole second-order remainder *vanishes identically*. -/
+
+/-- Off the two-sided shell at width `s`, a test function that is `1` on `B` and supported in
+the `ε`-thickening of `B` is constant on the closed `s`-ball about `a`. -/
+private lemma const_on_closedBall_of_notMem_wideShell {B : Set (EuclideanSpace ℝ (Fin k))}
+    {f : EuclideanSpace ℝ (Fin k) → ℝ} {ε s : ℝ}
+    (hone : ∀ x ∈ B, f x = 1) (hsupp : ∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B)
+    {a : EuclideanSpace ℝ (Fin k)}
+    (ha : a ∉ Metric.thickening (ε + s) B \ erosion s B) :
+    ∃ C : ℝ, ∀ y ∈ Metric.closedBall a s, f y = C := by
+  simp only [Set.mem_diff, not_and, not_not] at ha
+  by_cases hth : a ∈ Metric.thickening (ε + s) B
+  · have h : a ∈ erosion s B := ha hth
+    exact ⟨1, fun y hy => hone y (interior_subset (h hy))⟩
+  · refine ⟨0, fun y hy => ?_⟩
+    by_contra hfy
+    apply hth
+    obtain ⟨z, hz, hdz⟩ := Metric.mem_thickening_iff.1 (hsupp y hfy)
+    refine Metric.mem_thickening_iff.2 ⟨z, hz, ?_⟩
+    have h1 : dist a y ≤ s := by
+      rw [dist_comm]; simpa [Metric.mem_closedBall] using hy
+    have := dist_triangle a y z
+    linarith
+
+/-- If `f` is constant on `closedBall a s` with `0 < s` and `‖w‖ ≤ s`, the second-order Taylor
+remainder at `a` in the direction `w` is exactly `0`: the value at `a + w` equals the value at
+`a`, and both derivatives at `a` are those of a constant. -/
+private lemma taylor_remainder_eq_zero_of_const_on_closedBall
+    {f : EuclideanSpace ℝ (Fin k) → ℝ} {a w : EuclideanSpace ℝ (Fin k)} {s C : ℝ}
+    (hs : 0 < s) (hw : ‖w‖ ≤ s) (h : ∀ y ∈ Metric.closedBall a s, f y = C) :
+    f (a + w) - f a - fderiv ℝ f a w - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => w) = 0 := by
+  have hev : f =ᶠ[nhds a] fun _ => C := by
+    refine Filter.eventuallyEq_of_mem (Metric.ball_mem_nhds a hs) fun y hy => ?_
+    exact h y (Metric.ball_subset_closedBall hy)
+  have hd1 : fderiv ℝ f a = 0 := by
+    rw [hev.fderiv_eq]
+    simp
+  have hd2 : iteratedFDeriv ℝ 2 f a = 0 := by
+    rw [(Filter.EventuallyEq.iteratedFDeriv ℝ hev 2).eq_of_nhds,
+      iteratedFDeriv_const_of_ne (by norm_num : (2 : ℕ) ≠ 0)]
+    simp
+  have h1 : f (a + w) = C := by
+    refine h _ ?_
+    simpa [Metric.mem_closedBall, dist_eq_norm] using hw
+  have h2 : f a = C := h a (by simp [Metric.mem_closedBall, hs.le])
+  rw [h1, h2, hd1, hd2]
+  simp
+
+/-- **The localised third-order remainder bound (head, near regime).** The global Lagrange
+bound `M/6 ‖w‖³` may be multiplied by the indicator of the two-sided shell at width `‖w‖`. -/
+private lemma abs_taylor_remainder_localised_le {B : Set (EuclideanSpace ℝ (Fin k))}
+    {f : EuclideanSpace ℝ (Fin k) → ℝ} {ε M : ℝ}
+    (hone : ∀ x ∈ B, f x = 1) (hsupp : ∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B)
+    (hglob : ∀ a w : EuclideanSpace ℝ (Fin k),
+      |f (a + w) - f a - fderiv ℝ f a w - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => w)|
+        ≤ M / 6 * ‖w‖ ^ 3)
+    (a w : EuclideanSpace ℝ (Fin k)) (hw : w ≠ 0) :
+    |f (a + w) - f a - fderiv ℝ f a w - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => w)|
+      ≤ (Metric.thickening (ε + ‖w‖) B \ erosion ‖w‖ B).indicator (fun _ => (1 : ℝ)) a
+        * (M / 6 * ‖w‖ ^ 3) := by
+  have hwpos : 0 < ‖w‖ := norm_pos_iff.2 hw
+  by_cases ha : a ∈ Metric.thickening (ε + ‖w‖) B \ erosion ‖w‖ B
+  · rw [Set.indicator_of_mem ha, one_mul]
+    exact hglob a w
+  · obtain ⟨C, hC⟩ := const_on_closedBall_of_notMem_wideShell hone hsupp ha
+    rw [taylor_remainder_eq_zero_of_const_on_closedBall hwpos le_rfl hC,
+      Set.indicator_of_notMem ha]
+    simp
+
+/-- **The localised lower-order remainder bound (head, far regime).** For `‖w‖` large the
+third-order bound is worse than simply discarding the expansion: the remainder is at most
+`2 + ‖D¹f‖‖w‖ + ½‖D²f‖‖w‖²`, and this too carries the shell indicator at width `‖w‖`. Together
+with the mollifier bounds `‖D¹f‖ ≤ C₃/ε`, `‖D²f‖ ≤ C₃/ε²` of `exists_smoothed_convex_indicator`
+(wave 37, item 1) this is what prices the far regime with only a *third* moment of `ν`. -/
+private lemma abs_taylor_remainder_localised_lower_le {B : Set (EuclideanSpace ℝ (Fin k))}
+    {f : EuclideanSpace ℝ (Fin k) → ℝ} {ε : ℝ}
+    (hone : ∀ x ∈ B, f x = 1) (hsupp : ∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B)
+    (hfb : ∀ x, |f x| ≤ 1)
+    (a w : EuclideanSpace ℝ (Fin k)) (hw : w ≠ 0) :
+    |f (a + w) - f a - fderiv ℝ f a w - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => w)|
+      ≤ (Metric.thickening (ε + ‖w‖) B \ erosion ‖w‖ B).indicator (fun _ => (1 : ℝ)) a
+        * (2 + ‖iteratedFDeriv ℝ 1 f a‖ * ‖w‖
+            + 1 / 2 * ‖iteratedFDeriv ℝ 2 f a‖ * ‖w‖ ^ 2) := by
+  have hwpos : 0 < ‖w‖ := norm_pos_iff.2 hw
+  by_cases ha : a ∈ Metric.thickening (ε + ‖w‖) B \ erosion ‖w‖ B
+  · rw [Set.indicator_of_mem ha, one_mul]
+    have h0 : |f (a + w) - f a| ≤ 2 := by
+      have e1 := abs_le.1 (hfb (a + w))
+      have e2 := abs_le.1 (hfb a)
+      rw [abs_le]
+      constructor <;> linarith [e1.1, e1.2, e2.1, e2.2]
+    have h1 : |fderiv ℝ f a w| ≤ ‖iteratedFDeriv ℝ 1 f a‖ * ‖w‖ := by
+      rw [norm_iteratedFDeriv_one]
+      exact (fderiv ℝ f a).le_opNorm w
+    have h2 : |iteratedFDeriv ℝ 2 f a (fun _ => w)| ≤ ‖iteratedFDeriv ℝ 2 f a‖ * ‖w‖ ^ 2 := by
+      have hop := ContinuousMultilinearMap.le_opNorm (iteratedFDeriv ℝ 2 f a)
+        (fun _ : Fin 2 => w)
+      have hprod : (∏ _i : Fin 2, ‖w‖) = ‖w‖ ^ 2 := by
+        rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+      rw [hprod] at hop
+      rw [← Real.norm_eq_abs]
+      exact hop
+    calc |f (a + w) - f a - fderiv ℝ f a w
+            - (1 / 2) * iteratedFDeriv ℝ 2 f a (fun _ => w)|
+        ≤ |f (a + w) - f a| + |fderiv ℝ f a w|
+            + |(1 / 2) * iteratedFDeriv ℝ 2 f a fun _ => w| := by
+          have e1 := abs_sub (f (a + w) - f a) (fderiv ℝ f a w)
+          have e2 := abs_sub (f (a + w) - f a - fderiv ℝ f a w)
+            ((1 / 2) * iteratedFDeriv ℝ 2 f a fun _ => w)
+          linarith
+      _ ≤ 2 + ‖iteratedFDeriv ℝ 1 f a‖ * ‖w‖
+            + 1 / 2 * ‖iteratedFDeriv ℝ 2 f a‖ * ‖w‖ ^ 2 := by
+          rw [abs_mul]
+          have habs : |(1 : ℝ) / 2| = 1 / 2 := by norm_num
+          rw [habs]
+          nlinarith [h0, h1, h2, abs_nonneg (iteratedFDeriv ℝ 2 f a fun _ => w)]
+  · obtain ⟨C, hC⟩ := const_on_closedBall_of_notMem_wideShell hone hsupp ha
+    rw [taylor_remainder_eq_zero_of_const_on_closedBall hwpos le_rfl hC,
+      Set.indicator_of_notMem ha]
+    simp
+
+/-- **The far regime priced (wave 37, PROVED).** For a displacement `t = c‖u‖` beyond the
+mollification width `ε`, the lower-order remainder bound times the shell weight at width `t` is
+dominated by `t³` and `t²` terms with an `ε^{-2}` in front. This is the pointwise arithmetic of
+the far half of the head estimate; combined with `setIntegral_norm_pow_tail_le` it shows that
+the far regime costs only a **third** moment of `ν`, which is why the naive fourth-moment
+obstruction of wave 36 is not real. -/
+private lemma far_regime_pointwise_le {C₃ Ck W ε t : ℝ} (hε : 0 < ε) (ht : ε ≤ t)
+    (hC₃ : 1 ≤ C₃) (hCk : 0 ≤ Ck) (hW : 0 ≤ W) :
+    (2 + C₃ / ε * t + 1 / 2 * (C₃ / ε ^ 2) * t ^ 2) * (8 * Ck * t + W)
+      ≤ 32 * C₃ * Ck * t ^ 3 / ε ^ 2 + 4 * C₃ * W * t ^ 2 / ε ^ 2 := by
+  have htp : 0 < t := lt_of_lt_of_le hε ht
+  have hbr : 2 + C₃ / ε * t + 1 / 2 * (C₃ / ε ^ 2) * t ^ 2 ≤ 4 * C₃ * t ^ 2 / ε ^ 2 := by
+    have key : (2 + C₃ / ε * t + 1 / 2 * (C₃ / ε ^ 2) * t ^ 2) * ε ^ 2
+        ≤ 4 * C₃ * t ^ 2 := by
+      have e1 : C₃ / ε * t * ε ^ 2 = C₃ * t * ε := by field_simp
+      have e2 : 1 / 2 * (C₃ / ε ^ 2) * t ^ 2 * ε ^ 2 = 1 / 2 * (C₃ * t ^ 2) := by
+        field_simp
+      have hexp : (2 + C₃ / ε * t + 1 / 2 * (C₃ / ε ^ 2) * t ^ 2) * ε ^ 2
+          = 2 * ε ^ 2 + C₃ * t * ε + 1 / 2 * (C₃ * t ^ 2) := by
+        rw [add_mul, add_mul, e1, e2]
+      rw [hexp]
+      nlinarith [mul_le_mul_of_nonneg_left ht (le_of_lt htp)]
+    rw [le_div_iff₀ (by positivity : (0 : ℝ) < ε ^ 2)]
+    exact key
+  have hw : (0 : ℝ) ≤ 8 * Ck * t + W := by positivity
+  calc (2 + C₃ / ε * t + 1 / 2 * (C₃ / ε ^ 2) * t ^ 2) * (8 * Ck * t + W)
+      ≤ (4 * C₃ * t ^ 2 / ε ^ 2) * (8 * Ck * t + W) := mul_le_mul_of_nonneg_right hbr hw
+    _ = 32 * C₃ * Ck * t ^ 3 / ε ^ 2 + 4 * C₃ * W * t ^ 2 / ε ^ 2 := by ring
+
+/-- **The far tail of a third moment (wave 37, PROVED).** `∫_{‖u‖ > R} ‖u‖^p dν ≤ β / R^q` for
+`p + q = 3`. This is the only integrability input the far regime needs: no fourth moment, and no
+moment beyond the `hβint` the brick already carries. -/
+private lemma setIntegral_norm_pow_tail_le {p q : ℕ} (hpq : p + q = 3) {R : ℝ} (hR : 0 < R)
+    {ν : Measure (EuclideanSpace ℝ (Fin k))}
+    (hβ : Integrable (fun u : EuclideanSpace ℝ (Fin k) => ‖u‖ ^ 3) ν) :
+    ∫ u in {u : EuclideanSpace ℝ (Fin k) | R < ‖u‖}, ‖u‖ ^ p ∂ν
+      ≤ (∫ u, ‖u‖ ^ 3 ∂ν) / R ^ q := by
+  set S : Set (EuclideanSpace ℝ (Fin k)) := {u | R < ‖u‖} with hSdef
+  have hSm : MeasurableSet S := measurableSet_lt measurable_const continuous_norm.measurable
+  have hptw : ∀ u ∈ S, ‖u‖ ^ p ≤ ‖u‖ ^ 3 / R ^ q := by
+    intro u hu
+    have hu' : R < ‖u‖ := hu
+    have hRq : R ^ q ≤ ‖u‖ ^ q := pow_le_pow_left₀ hR.le hu'.le q
+    rw [le_div_iff₀ (by positivity)]
+    calc ‖u‖ ^ p * R ^ q ≤ ‖u‖ ^ p * ‖u‖ ^ q :=
+          mul_le_mul_of_nonneg_left hRq (by positivity)
+      _ = ‖u‖ ^ 3 := by rw [← pow_add, hpq]
+  have hint : IntegrableOn (fun u : EuclideanSpace ℝ (Fin k) => ‖u‖ ^ p) S ν := by
+    refine Integrable.mono' ((hβ.restrict (s := S)).div_const (R ^ q))
+      (continuous_norm.pow p).aestronglyMeasurable.restrict ?_
+    refine (ae_restrict_iff' hSm).2 (Filter.Eventually.of_forall fun u hu => ?_)
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+    exact hptw u hu
+  calc ∫ u in S, ‖u‖ ^ p ∂ν ≤ ∫ u in S, ‖u‖ ^ 3 / R ^ q ∂ν :=
+        setIntegral_mono_on hint ((hβ.restrict (s := S)).div_const _) hSm hptw
+    _ = (∫ u in S, ‖u‖ ^ 3 ∂ν) / R ^ q := by rw [integral_div]
+    _ ≤ (∫ u, ‖u‖ ^ 3 ∂ν) / R ^ q := by
+        have h : (∫ u in S, ‖u‖ ^ 3 ∂ν) ≤ ∫ u, ‖u‖ ^ 3 ∂ν :=
+          setIntegral_le_integral hβ (Filter.Eventually.of_forall fun u => by positivity)
+        rw [div_eq_mul_inv, div_eq_mul_inv]
+        exact mul_le_mul_of_nonneg_right h (by positivity)
+
+set_option linter.unusedVariables false in
+-- the body is a named `sorry` brick: every hypothesis is part of the interface, none is used yet
+/-- **The per-step head estimate (wave 37: STATED, and this is brick L's whole residue on the
+head side).** *One head step of the hybrid telescope, localised, averaged against the step's own
+hybrid law.*
+
+`τ` is `hybridLaw n j ν` (wave 36's `integral_hybridLaw_eq` /
+`integral_peel_eq_integral_hybridLaw` identify the telescope's `j`-th test measure with it), `ν`
+is the swapped-in law and `ρ` the standard Gaussian, and `c = n^{-1/2}` is the step's scale. The
+right-hand side is *exactly* the pair of head summands that
+`localised_swap_bound_of_weighted_telescope` consumes, once summed over the `J` head steps.
+
+**Why this is the right statement, and what is left.** Everything in the derivation below is
+proved in this file; what is missing is only the assembly.
+
+* Both integrals are compared with the *same* second-order polynomial
+  `P(w) = f a + D¹f(a)w + ½ D²f(a)(w,w)`, whose `ν`- and `ρ`-integrals agree because both laws
+  are centred with identity covariance — this is the argument of `abs_integral_swap_step_le`,
+  unchanged. So the left-hand side is at most `∫∫|R_a(c u)| dν + ∫∫|R_a(c u)| dρ` with `R_a` the
+  remainder.
+* Pointwise, `|R_a(c u)|` carries the indicator of the **two-sided shell at the varying width**
+  `‖c u‖`: `abs_taylor_remainder_localised_le` (with `M = C₃/ε³`) in the near regime and
+  `abs_taylor_remainder_localised_lower_le` in the far regime. Off that shell the remainder is
+  identically `0` — `f` is constant on `closedBall a ‖c u‖`, so the value and both derivatives
+  agree with a constant's.
+* The shell `thickening (ε + s) B \ erosion s B` is **monotone in `s`**, so at `c‖u‖ ≤ ε` it is
+  contained in `thickening 2ε B \ erosion 2ε B` (mass `≤ 8 C_k ε + W`) and at `c‖u‖ ≥ ε` in
+  `thickening (2c‖u‖) B \ erosion (2c‖u‖) B` (mass `≤ 8 C_k c‖u‖ + W`). That is the *only* place
+  the amended two-sided-shell hypothesis at **all** widths is used, and it is exactly why wave 29
+  had to amend it.
+* Fubini turns `∫_τ ∫_ν` into `∫_ν ∫_τ`, the inner `τ`-integral of the shell indicator is the
+  shell mass, and the split at `‖u‖ = R := ε/c = ε√n` is priced by `far_regime_pointwise_le` and
+  `setIntegral_norm_pow_tail_le` (`p = 3` and `p = 2`, `q = 0` and `q = 1`) — a **third** moment
+  and nothing more.
+
+The remaining Lean work is measurability of `u ↦ τ(shell at width c‖u‖)` (monotone in `‖u‖`,
+hence measurable) and the Fubini bookkeeping; no further analytic input is needed. -/
+private lemma abs_integral_swap_step_localised_le
+    {ν ρ τ : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure ν] [IsProbabilityMeasure ρ] [IsProbabilityMeasure τ]
+    (hmeanν : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)
+    (hcovν : ∀ u w : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪w, y⟫_ℝ ∂ν) = ⟪u, w⟫_ℝ)
+    (hβν : Integrable (fun y => ‖y‖ ^ 3) ν)
+    (hmeanρ : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ρ) = 0)
+    (hcovρ : ∀ u w : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪w, y⟫_ℝ ∂ρ) = ⟪u, w⟫_ℝ)
+    (hβρ : Integrable (fun y => ‖y‖ ^ 3) ρ)
+    {B : Set (EuclideanSpace ℝ (Fin k))} {f : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hf : ContDiff ℝ 3 f) (hfb : ∀ x, |f x| ≤ 1)
+    {C₃ ε : ℝ} (hC₃ : 1 ≤ C₃) (hε : 0 < ε)
+    (hD3 : ∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3)
+    (hD1 : ∀ x, ‖iteratedFDeriv ℝ 1 f x‖ ≤ C₃ / ε)
+    (hD2 : ∀ x, ‖iteratedFDeriv ℝ 2 f x‖ ≤ C₃ / ε ^ 2)
+    (hone : ∀ x ∈ B, f x = 1) (hsupp : ∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B)
+    {Ck W : ℝ} (hCk : 0 < Ck) (hW : 0 ≤ W)
+    (hshell : ∀ s : ℝ, 0 < s →
+      (τ (Metric.thickening s B \ erosion s B)).toReal ≤ 4 * Ck * s + W)
+    {c : ℝ} (hc : 0 < c) :
+    (∫ a, |(∫ u, f (a + c • u) ∂ν) - (∫ u, f (a + c • u) ∂ρ)| ∂τ)
+      ≤ C₃ / ε ^ 3 / 6 * c ^ 3
+          * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ)) * (8 * Ck * ε + W)
+        + C₃ * c ^ 3 * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ))
+            * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3) := by
+  sorry
+
 /-- **Brick L above the Gaussian shell scale (wave 24: PROVED, and no localisation needed).**
 As soon as the weight is at least `1`, the *unweighted* balanced telescope already gives the
 localised bound, with no reference to `B` at all: for `ε √n ≥ 1` it is
@@ -7057,15 +7439,30 @@ exactly as `sum_le_of_bounded_and_weighted_decay` isolates the first. Given the 
 *weighted* hybrid telescope at a cut `Jr`,
 
 `D ≤ Jr·(M/6)/(nr √nr)·X·(4 C_k (ε + √Jr/√nr) + W)`
+`  + Jr·C₃/(nr √nr)·X·(32 C_k/ε² + 4W/ε³)`
 `  + 4 C_k C_t X/√nr·(1 + log⁺(nr/Jr)) + 3 W C_t X/√Jr`,  `M = C₃/ε³`,
 
 with the cut in the window `t² ≤ Jr ≤ 3 t²`, `t = ε √nr ≥ 1` (which `Jr = max 2 ⌈ε² nr⌉`
 delivers), and with `X ≤ 3β`, `β ≥ 1`, the conclusion is brick L's right-hand side with the
-explicit constant `18 C₃ + 33 C_t`:
+explicit constant `306 C₃ + 33 C_t`:
 
-`D ≤ (18 C₃ + 33 C_t)·(β/√nr)·(ε⁻¹(W + C_k ε) + C_k (1 + log(1 + ε⁻¹)))`.
+`D ≤ (306 C₃ + 33 C_t)·(β/√nr)·(ε⁻¹(W + C_k ε) + C_k (1 + log(1 + ε⁻¹)))`.
 
-The three terms are matched separately: the weighted head against `18 C₃ δ ε⁻¹(W + C_k ε)`
+**Wave 37: the second summand is new, and it is not optional.** It is the *far* half of the
+head estimate — the head steps at which the swap displacement `c‖u‖` exceeds `ε`, where the
+third-order Taylor bound is discarded in favour of the lower-order terms
+`2 + ‖D¹f‖ c‖u‖ + ½‖D²f‖ c²‖u‖²` (see `abs_taylor_remainder_localised_lower_le`). Wave 36
+conjectured that this half is absorbed by the *first* summand as soon as `C₃ ≥ 1`. **That is
+false**: at `Jr ≍ ε² nr` the first summand is `≍ 4 C₃ C_k δ + C₃ W δ/(2ε)` while the far half is
+`≍ 288 C₃ C_k δ + 36 C₃ W δ/ε`, i.e. a *constant multiple* (≈ 25×) of it, not a smaller
+quantity. So the ledger takes wave 36's other branch: `htel` gains the summand, and the constant
+moves from `18 C₃` to `306 C₃ = (18 + 288) C₃`. (The normalisation `C₃ ≥ 1` of wave 37's item 1
+is still convenient — it lets the constant term `2` be compared with `C₃ c²‖u‖²/ε²` — but it is
+not what makes the far half fit, and the far half is priced by a *third* moment either way.)
+
+The four terms are matched separately: the weighted head against `18 C₃ δ ε⁻¹(W + C_k ε)`, its
+far half against `288 C₃ δ ε⁻¹(W + C_k ε)` (using `Jr ≤ 3ε²nr` and `X ≤ 3β`; the gap is
+`252 C₃ β W/t ≥ 0`)
 (using `Jr ≤ 3t²` twice — once for `Jr (M/6)/(nr√nr) ≤ C₃/(2t)`, once for
 `√Jr/√nr ≤ 2ε`, so that the head's own shell weight is at most `12 C_k ε + W`), the harmonic
 middle against `24 C_t δ C_k (1 + log(1 + ε⁻¹))` (using `nr/Jr ≤ ε⁻² ≤ (1 + ε⁻¹)²`, which is
@@ -7095,9 +7492,10 @@ private lemma weighted_ledger_balance
     (hJlow : t ^ 2 ≤ Jr) (hJ3 : Jr ≤ 3 * t ^ 2)
     (hD : D ≤ Jr * (C₃ / ε ^ 3 / 6 / (nr * sn)) * X
               * (4 * Ck * (ε + Real.sqrt Jr / sn) + W)
+          + Jr * (C₃ / (nr * sn)) * X * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3)
           + 4 * Ck * Ct * X / sn * (1 + Real.log (max (nr / Jr) 1))
           + 3 * (W * Ct * X) / Real.sqrt Jr) :
-    D ≤ (18 * C₃ + 33 * Ct) * (β / sn)
+    D ≤ (306 * C₃ + 33 * Ct) * (β / sn)
         * (ε⁻¹ * (W + Ck * ε) + Ck * (1 + Real.log (1 + ε⁻¹))) := by
   rw [← hsn2] at hD
   have htpos : (0 : ℝ) < t := by linarith
@@ -7161,6 +7559,34 @@ private lemma weighted_ledger_balance
       rw [hδP]; field_simp; ring
     have hgap0 : (0 : ℝ) ≤ 33 / 2 * (C₃ * β * W / t) := by positivity
     linarith
+  -- ### term 1b: the FAR half of the head (wave 37)
+  have hT4 : Jr * (C₃ / (sn ^ 2 * sn)) * X * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3)
+      ≤ 288 * C₃ * (δ * P) := by
+    have hfac0 : (0 : ℝ) ≤ 32 * Ck / ε ^ 2 + 4 * W / ε ^ 3 := by positivity
+    have hCd : (0 : ℝ) ≤ C₃ / (sn ^ 2 * sn) := by positivity
+    have ha : Jr ≤ 3 * ε ^ 2 * sn ^ 2 := by rw [htdef] at hJ3; nlinarith
+    have h1 : Jr * (C₃ / (sn ^ 2 * sn)) * X
+        ≤ 3 * ε ^ 2 * sn ^ 2 * (C₃ / (sn ^ 2 * sn)) * (3 * β) := by
+      have e1 : Jr * (C₃ / (sn ^ 2 * sn)) ≤ 3 * ε ^ 2 * sn ^ 2 * (C₃ / (sn ^ 2 * sn)) :=
+        mul_le_mul_of_nonneg_right ha hCd
+      have e2 : (0 : ℝ) ≤ 3 * ε ^ 2 * sn ^ 2 * (C₃ / (sn ^ 2 * sn)) := by positivity
+      calc Jr * (C₃ / (sn ^ 2 * sn)) * X
+          ≤ 3 * ε ^ 2 * sn ^ 2 * (C₃ / (sn ^ 2 * sn)) * X :=
+            mul_le_mul_of_nonneg_right e1 hX0
+        _ ≤ 3 * ε ^ 2 * sn ^ 2 * (C₃ / (sn ^ 2 * sn)) * (3 * β) :=
+            mul_le_mul_of_nonneg_left hX3 e2
+    have h2 : Jr * (C₃ / (sn ^ 2 * sn)) * X * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3)
+        ≤ 3 * ε ^ 2 * sn ^ 2 * (C₃ / (sn ^ 2 * sn)) * (3 * β)
+          * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3) :=
+      mul_le_mul_of_nonneg_right h1 hfac0
+    rw [hδP]
+    have hgap : 288 * C₃ * (β * (W + Ck * ε) / t)
+        - 3 * ε ^ 2 * sn ^ 2 * (C₃ / (sn ^ 2 * sn)) * (3 * β)
+          * (32 * Ck / ε ^ 2 + 4 * W / ε ^ 3)
+        = 252 * (C₃ * β * W / t) := by
+      rw [htdef]; field_simp; ring
+    have hgap0 : (0 : ℝ) ≤ 252 * (C₃ * β * W / t) := by positivity
+    linarith
   -- ### term 3: the summable tail
   have hT3 : 3 * (W * Ct * X) / Real.sqrt Jr ≤ 9 * Ct * (δ * P) := by
     have h1 : 3 * (W * Ct * X) / Real.sqrt Jr ≤ 3 * (W * Ct * (3 * β)) / Real.sqrt Jr := by
@@ -7205,12 +7631,12 @@ private lemma weighted_ledger_balance
       rw [hδQ]; field_simp; ring
     linarith
   -- ### assembling
-  have hsplit : (18 * C₃ + 33 * Ct) * δ * (P + Q)
-      = 18 * C₃ * (δ * P) + 33 * Ct * (δ * P) + 18 * C₃ * (δ * Q)
+  have hsplit : (306 * C₃ + 33 * Ct) * δ * (P + Q)
+      = 306 * C₃ * (δ * P) + 33 * Ct * (δ * P) + 306 * C₃ * (δ * Q)
         + 33 * Ct * (δ * Q) := by ring
   have hδP0 : (0 : ℝ) ≤ δ * P := by positivity
   have hδQ0 : (0 : ℝ) ≤ δ * Q := by positivity
-  have hrest : (0 : ℝ) ≤ 24 * Ct * (δ * P) + 18 * C₃ * (δ * Q) + 9 * Ct * (δ * Q) := by
+  have hrest : (0 : ℝ) ≤ 24 * Ct * (δ * P) + 306 * C₃ * (δ * Q) + 9 * Ct * (δ * Q) := by
     have h1 : (0 : ℝ) ≤ Ct * (δ * P) := mul_nonneg hCt.le hδP0
     have h2 : (0 : ℝ) ≤ C₃ * (δ * Q) := mul_nonneg hC₃.le hδQ0
     have h3 : (0 : ℝ) ≤ Ct * (δ * Q) := mul_nonneg hCt.le hδQ0
@@ -7221,9 +7647,10 @@ private lemma weighted_ledger_balance
 
 `localised_swap_bound_small_weight` *follows from the weighted hybrid telescope alone*: given
 the telescoped estimate at **every** cut `J ≥ 2` — head steps estimated by the localised
-elementary (third-order Taylor) swap at weight `4 C_k (ε + √J/√n) + W`, tail steps by the
-localised Cameron–Martin swap, summed by `sum_le_of_bounded_and_weighted_decay` — the brick's
-conclusion follows with the explicit constant `18 C₃ + 33 C_t`, by choosing the cut
+elementary (third-order Taylor) swap at weight `4 C_k (ε + √J/√n) + W` *plus* its far half at
+the varying width (wave 37, second summand), tail steps by the localised Cameron–Martin swap,
+summed by `sum_le_of_bounded_and_weighted_decay` — the brick's
+conclusion follows with the explicit constant `306 C₃ + 33 C_t`, by choosing the cut
 `J = max 2 ⌈ε² n⌉` and running `weighted_ledger_balance`. Nothing about `B`, `f`, or the shell
 hypothesis enters here: `D` is an arbitrary real, so this is *exactly* the reduction and no more.
 
@@ -7249,6 +7676,10 @@ theorem localised_swap_bound_of_weighted_telescope (hk : 0 < k) {n : ℕ} (hn : 
                 + ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
               * (4 * gaussianShellConst k
                   * (ε + Real.sqrt (J : ℝ) / Real.sqrt (n : ℝ)) + W)
+          + (J : ℝ) * (C₃ / ((n : ℝ) * Real.sqrt (n : ℝ)))
+              * ((∫ y, ‖y‖ ^ 3 ∂ν)
+                + ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+              * (32 * gaussianShellConst k / ε ^ 2 + 4 * W / ε ^ 3)
           + 4 * gaussianShellConst k * Ct
               * ((∫ y, ‖y‖ ^ 3 ∂ν)
                 + ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
@@ -7257,7 +7688,7 @@ theorem localised_swap_bound_of_weighted_telescope (hk : 0 < k) {n : ℕ} (hn : 
               * ((∫ y, ‖y‖ ^ 3 ∂ν)
                 + ∫ z, ‖z‖ ^ 3 ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))))
               / Real.sqrt (J : ℝ)) :
-    D ≤ (18 * C₃ + 33 * Ct) * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
+    D ≤ (306 * C₃ + 33 * Ct) * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
         * (ε⁻¹ * (W + gaussianShellConst k * ε)
           + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by
   have hnr : (0 : ℝ) < n := by exact_mod_cast hn
@@ -7567,8 +7998,61 @@ Two consequences, both of which wave 37 should treat as claims to check rather t
 
 **The arithmetic of this section was derived on paper this wave and is NOT machine-checked**,
 unlike the ledger of wave 32 and the reduction of wave 35. It is recorded here because it
-changes what the residue *is*, not because it is finished. -/
-theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 0 < C₃) :
+changes what the residue *is*, not because it is finished.
+
+## Wave 37: the head estimate's inputs are supplied, and consequence 2 is OVERTURNED
+
+Both of wave 36's flagged claims were checked. One survived, one did not.
+
+**Consequence 1 (the missing interface hypotheses): CONFIRMED, and supplied.** The far regime
+does need `‖D¹f‖ ≤ C₃/ε` and `‖D²f‖ ≤ C₃/ε²`, and nothing supplied them. They are free from the
+`ContDiffBump` construction, exactly as guessed: `norm_iteratedFDeriv_one_convolution_le` and
+`norm_iteratedFDeriv_two_convolution_le` are the same `precompR` convolution estimate at one and
+two levels instead of three, and `norm_iteratedFDeriv_comp_smul_le` (the dilation scaling,
+factored out of the old order-3 proof) transports all three orders at once. A *single* constant
+now dominates `‖Dⁱf‖ εⁱ` for `i = 1, 2, 3`, and `1 ≤ C₃` is free because the source constant was
+already a `max 1 …`. Both bounds are hypotheses of this theorem now (marked LEAN-ONLY) and are
+discharged at every call site.
+
+**Consequence 2 (`htel` needs one extra summand): the `C₃ ≥ 1` branch is FALSE.** Wave 36 wrote
+that the far regime "is absorbed by that term only if `C₃ ≥ 1`". It is not absorbed at any
+normalisation. At the cut `J ≍ ε² n` the frozen head term is `≍ 4 C₃ C_k δ + C₃ W δ/(2ε)` while
+the far regime contributes `≍ 288 C₃ C_k δ + 36 C₃ W δ/ε` — a *constant multiple*, ≈ 25×, of it.
+So the ledger takes the other branch: `htel` (and `weighted_ledger_balance`) now carry the
+summand `J·C₃/(n√n)·X·(32 C_k/ε² + 4W/ε³)`, and the reduction's constant moves from
+`18 C₃ + 33 C_t` to `306 C₃ + 33 C_t`. The normalisation `C₃ ≥ 1` is kept because it is free and
+because it lets the constant term `2` be compared with `C₃ c²‖u‖²/ε²`, but it is *not* what
+makes the far half fit.
+
+**The localisation mechanism, PROVED — and it needs no Taylor theory.** Wave 36 described the
+obstruction correctly (the Lagrange remainder controls `D³f` along the whole segment, so the
+shell width is `‖w‖`, unbounded) but the repair is cheaper than expected. Off the two-sided
+shell at width `‖w‖`, the test function is *constant on `closedBall a ‖w‖`* — equal to `1` if
+`a` is in the erosion, to `0` if `a` is outside the `(ε + ‖w‖)`-thickening
+(`const_on_closedBall_of_notMem_wideShell`) — so the value at `a + w` and *both* derivatives at
+`a` are those of a constant and the entire second-order remainder is identically `0`
+(`taylor_remainder_eq_zero_of_const_on_closedBall`). Hence the global Lagrange bound and the
+lower-order bound may each simply be multiplied by the shell indicator at width `‖w‖`
+(`abs_taylor_remainder_localised_le`, `abs_taylor_remainder_localised_lower_le`). Since
+`thickening (ε + s) B \ erosion s B` is **monotone in `s`**, the near regime (`c‖u‖ ≤ ε`) is
+dominated by the shell at width `2ε` and the far regime (`c‖u‖ ≥ ε`) by the shell at width
+`2c‖u‖` — which is precisely why wave 29 had to state the weight hypothesis at *all* widths.
+
+**The third-moment claim, CONFIRMED.** `far_regime_pointwise_le` and
+`setIntegral_norm_pow_tail_le` are proved: the far regime's integrand is at most
+`32 C₃ C_k t³/ε² + 4 C₃ W t²/ε²` at `t = c‖u‖ ≥ ε`, and `∫_{‖u‖>R} ‖u‖^p dν ≤ β/R^{3−p}` prices
+it with `β` alone. No fourth moment appears anywhere.
+
+**What is left.** The head side is now a single named statement,
+`abs_integral_swap_step_localised_le`, in exactly the shape the amended reduction consumes; its
+docstring records the whole derivation, and every analytic input it needs is proved above. What
+that `sorry` still owes is bookkeeping: measurability of `u ↦ τ(shell at width c‖u‖)` (monotone
+in `‖u‖`) and the Fubini exchange. The **tail** side (item 3) was not attempted this wave, and
+note that wave 37's localisation mechanism does *not* transfer to it: the tail's integrand is
+`f` smeared by a Gaussian of width `σⱼ`, which for `j > J` is `≥ ε` and near `j = n` is `≍ 1`, so
+`f` being locally constant near `a` says nothing about it. The tail still needs the wave-29
+constant-off/Gaussian-tail lemmas and the `‖w‖ ≤ 1` analysis recorded above, unchanged. -/
+theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 1 ≤ C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
       (f : EuclideanSpace ℝ (Fin k) → ℝ) (W : ℝ),
@@ -7582,6 +8066,10 @@ theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (h
       1 ≤ ε * Real.sqrt (n : ℝ) →
       ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
       (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
+      -- LEAN-ONLY: mollifier derivative bounds; supplied by
+      -- `exists_smoothed_convex_indicator` at every call site.
+      (∀ x, ‖iteratedFDeriv ℝ 1 f x‖ ≤ C₃ / ε) →
+      (∀ x, ‖iteratedFDeriv ℝ 2 f x‖ ≤ C₃ / ε ^ 2) →
       (∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B) → (∀ x ∈ B, f x = 1) →
       0 ≤ W →
       (∀ j : ℕ, j ≤ n → ∀ s : ℝ, 0 < s →
@@ -7645,7 +8133,7 @@ telescope's own smoothing widths `σⱼ = √(j/n)` sweep from `ε` to `1` while
 the single width `ε`. The large-weight half `exists_smooth_swap_bound_of_one_le_weight` is
 proved and is *unaffected*: its conclusion is the log-free one, which is smaller, so it still
 closes the amended goal. Only the small-weight half changes. -/
-theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 0 < C₃) :
+theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ : 1 ≤ C₃) :
     ∃ A : ℝ, 0 < A ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ)
       (f : EuclideanSpace ℝ (Fin k) → ℝ) (W : ℝ),
@@ -7659,6 +8147,10 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
       1 ≤ ε * Real.sqrt (n : ℝ) →
       ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
       (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
+      -- LEAN-ONLY: mollifier derivative bounds; supplied by
+      -- `exists_smoothed_convex_indicator` at every call site.
+      (∀ x, ‖iteratedFDeriv ℝ 1 f x‖ ≤ C₃ / ε) →
+      (∀ x, ‖iteratedFDeriv ℝ 2 f x‖ ≤ C₃ / ε ^ 2) →
       (∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B) → (∀ x ∈ B, f x = 1) →
       0 ≤ W →
       (∀ j : ℕ, j ≤ n → ∀ s : ℝ, 0 < s →
@@ -7669,10 +8161,12 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
         ≤ A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ))
             * (ε⁻¹ * (W + gaussianShellConst k * ε)
               + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by
-  obtain ⟨A₁, hA₁, h₁⟩ := exists_smooth_swap_bound_of_one_le_weight k hk hC₃
+  have hC₃pos : (0 : ℝ) < C₃ := lt_of_lt_of_le one_pos hC₃
+  obtain ⟨A₁, hA₁, h₁⟩ := exists_smooth_swap_bound_of_one_le_weight k hk hC₃pos
   obtain ⟨A₂, hA₂, h₂⟩ := localised_swap_bound_small_weight k hk hC₃
   refine ⟨A₁ + A₂, by linarith, ?_⟩
-  intro n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hwin hf hfb hD hsupp hone hW0 hW
+  intro n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hwin hf hfb hD hD1 hD2 hsupp hone
+    hW0 hW
   haveI := hνp
   have hnr : (0 : ℝ) < n := by exact_mod_cast hn
   have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
@@ -7712,8 +8206,8 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
     refine hsmall.trans ?_
     rw [hexp A₁, hexp (A₁ + A₂)]
     exact mul_le_mul_of_nonneg_right (by linarith) hbase
-  · have h := h₂ n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hwin hf hfb hD hsupp hone
-      hW0 hW hlt.le
+  · have h := h₂ n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hwin hf hfb hD hD1 hD2
+      hsupp hone hW0 hW hlt.le
     refine h.trans ?_
     rw [hexp A₂, hexp (A₁ + A₂)]
     exact mul_le_mul_of_nonneg_right (by linarith) hbase
@@ -7759,8 +8253,9 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
           + A * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) * (4 * gaussianShellConst k)
             * (1 + Real.log (1 + ε⁻¹))
           + 4 * gaussianShellConst k * ε := by
-  obtain ⟨C₃, hC₃pos, hC₃⟩ := exists_smoothed_convex_indicator k
-  obtain ⟨A, hApos, hA⟩ := exists_localised_swap_bound k hk hC₃pos
+  obtain ⟨C₃, hC₃one, hC₃⟩ := exists_smoothed_convex_indicator k
+  have hC₃pos : (0 : ℝ) < C₃ := lt_of_lt_of_le one_pos hC₃one
+  obtain ⟨A, hApos, hA⟩ := exists_localised_swap_bound k hk hC₃one
   refine ⟨2 * A, by linarith, ?_⟩
   intro n ν ε Y hn hνp hmean hcov hβint hε hwin hY
   haveI := hνp
@@ -7787,7 +8282,7 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
       (μ S).toReal ≤ (γ (Metric.thickening ε S)).toReal + E
         ∧ (γ S).toReal ≤ (μ (Metric.thickening ε S)).toReal + E := by
     intro S hSm hSc
-    obtain ⟨f, hfcd, hf0, hf1, hfS, hfsupp, hfD⟩ := hC₃ S hSc hε
+    obtain ⟨f, hfcd, hf0, hf1, hfS, hfsupp, hfD, hfD1, hfD2⟩ := hC₃ S hSc hε
     have hfbd : ∀ x, |f x| ≤ 1 := fun x => abs_le.2 ⟨by linarith [hf0 x], hf1 x⟩
     have hfint : ∀ ρ : Measure (EuclideanSpace ℝ (Fin k)), IsProbabilityMeasure ρ →
         Integrable f ρ := by
@@ -7810,7 +8305,7 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
     -- brick L
     have herr : |(∫ x, f x ∂μ) - (∫ x, f x ∂γ)| ≤ E := by
       have h := hA n ν S ε f (4 * gaussianShellConst k * ε + 2 * Y) hn hνp hmean hcov hβint
-        hSm hSc hε hwin hfcd hfbd hfD hfsupp hfS hW0 hW
+        hSm hSc hε hwin hfcd hfbd hfD hfD1 hfD2 hfsupp hfS hW0 hW
       rw [← hμdef, ← hβdef, ← hδdef] at h
       refine h.trans ?_
       rw [hEdef]
