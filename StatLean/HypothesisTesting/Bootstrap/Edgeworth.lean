@@ -13361,6 +13361,166 @@ private lemma exists_studentized_low_range_window_bound {σ γ : ℝ} (hσ : 0 <
     (hcore ((Real.sqrt (n : ℝ))⁻¹) ξ D hr0 hr1 hD0 hD)
 
 
+/-! ### Producing the eight: the damping ledger of the low range (wave 48)
+
+The eight hypotheses of `exists_studentized_low_range_window_bound` are its interface to the four
+proved damped inputs, and the wave-47 note calls their production "moment bookkeeping".  It is
+that on the measure side, but there is an arithmetic question underneath it that no wave had
+asked, and the three lemmas here answer it.
+
+Every damped input returns `‖φ(c)‖^{N−k}` as its damping, where `φ(c)` is the transform of the
+summand's law at `c = r(θ/σ)•e₀`, together with a factor that is **polynomial in the frequency**:
+`norm_multiCharFun_vecRootLaw_damped_le` returns `(k+1)k^k Q^k` and its `Q` must dominate
+`∫|⟪x,b_l⟫||⟪x,a⟫|`, which is proportional to `|θ|`.  The hypotheses `h3a`, `h3b`, `h4`, by
+contrast, ask for **constant** coefficients `e₃a`, `e₃b`, `e₄`.  Whether that is achievable at all
+is not obvious: the polynomial grows like `|ξ|^k` and the damping is only `e^{−π²ξ²(N−k)/N}`,
+which at the window's own rate `e^{−π²ξ²/2}` leaves nothing over.
+
+It **is** achievable, and the reason is that the window may be given the *whole* of its damping:
+`D` is only required to satisfy `D ≤ e^{−π²ξ²/2}`, so taking `D` to be that exact value leaves a
+residual factor `e^{−π²ξ²/4}` — provided `n ≥ 12`, which is `exp_damping_split` — and a fixed
+Gaussian beats a fixed polynomial, which is `exists_poly_mul_exp_neg_sq_le`.  Combining them is
+`exists_const_of_damped_poly`, and it is the statement that `h3a`, `h3b`, `h4` are satisfiable in
+the shape (U4′) asks for.
+
+The same residual `e^{−π²ξ²/4}` is what absorbs the mismatch between `‖φ(c)‖^{n−2}` and the
+window's damping in `hB1` and `hB2`, so the three lemmas serve all six damped hypotheses.  They
+do **not** rescue `hB5`/`hB6`: those fail for a reason that has nothing to do with damping (the
+mismatch term is of the wrong `θ`-degree), which is why the bracket there had to be widened
+instead. -/
+
+/-- **A polynomial in the frequency is beaten by any fixed Gaussian damping.**  The elementary
+fact under the constant coefficients of `h3a`, `h3b`, `h4`: `(1 + C|ξ|)^k e^{−π²ξ²/4}` is bounded
+on the whole line, by a constant depending only on `k` and `C`.  The proof is the two-regime
+split at `|ξ| = 1`, with `e^t ≥ (1 + t/k)^k ≥ (t/k)^k` supplying the decay above it. -/
+private lemma exists_poly_mul_exp_neg_sq_le (k : ℕ) {C : ℝ} (hC : 0 ≤ C) :
+    ∃ K : ℝ, 0 < K ∧ ∀ ξ : ℝ,
+      (1 + C * |ξ|) ^ k * Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 4)) ≤ K := by
+  have hπ : (0 : ℝ) < Real.pi ^ 2 := by positivity
+  refine ⟨(1 + C) ^ k + ((1 + C) * (4 * (k : ℝ)) / Real.pi ^ 2 + 1) ^ k, by positivity,
+    fun ξ => ?_⟩
+  set A : ℝ := (1 + C) * (4 * (k : ℝ)) / Real.pi ^ 2 + 1 with hA
+  have hA0 : (0 : ℝ) < A := by rw [hA]; positivity
+  set y : ℝ := |ξ| with hy
+  have hy0 : (0 : ℝ) ≤ y := abs_nonneg ξ
+  have hsq : ξ ^ 2 = y ^ 2 := (sq_abs ξ).symm
+  have hAnn : (0 : ℝ) ≤ A ^ k := by positivity
+  have hBnn : (0 : ℝ) ≤ (1 + C) ^ k := by positivity
+  have hEnn : (0 : ℝ) < Real.exp (-(Real.pi ^ 2 * y ^ 2 / 4)) := Real.exp_pos _
+  have hE1 : Real.exp (-(Real.pi ^ 2 * y ^ 2 / 4)) ≤ 1 := by
+    refine Real.exp_le_one_iff.2 ?_
+    have : (0 : ℝ) ≤ Real.pi ^ 2 * y ^ 2 / 4 := by positivity
+    linarith
+  rw [hsq]
+  rcases le_total y 1 with hle | hge
+  · have h1 : (1 + C * y) ^ k ≤ (1 + C) ^ k :=
+      pow_le_pow_left₀ (by nlinarith) (by nlinarith) k
+    have h3 : (1 + C * y) ^ k * Real.exp (-(Real.pi ^ 2 * y ^ 2 / 4)) ≤ (1 + C) ^ k * 1 :=
+      mul_le_mul h1 hE1 hEnn.le hBnn
+    nlinarith [h3]
+  · -- `y ≥ 1`: the damping beats the polynomial outright
+    have hy1 : (0 : ℝ) < y := lt_of_lt_of_le zero_lt_one hge
+    rcases Nat.eq_zero_or_pos k with hk | hk
+    · rw [hk, pow_zero, pow_zero, pow_zero, one_mul]
+      linarith
+    · have hkR : (0 : ℝ) < (k : ℝ) := by exact_mod_cast hk
+      set t : ℝ := Real.pi ^ 2 * y ^ 2 / (4 * (k : ℝ)) with ht
+      have ht0 : (0 : ℝ) < t := by rw [ht]; positivity
+      have hkt : (k : ℝ) * t = Real.pi ^ 2 * y ^ 2 / 4 := by rw [ht]; field_simp
+      -- `t^k ≤ exp(π²y²/4)`, from `1 + t ≤ exp t` raised to the `k`-th power
+      have hpow : t ^ k ≤ Real.exp (Real.pi ^ 2 * y ^ 2 / 4) := by
+        have h1 : t ^ k ≤ (Real.exp t) ^ k :=
+          pow_le_pow_left₀ ht0.le (by linarith [Real.add_one_le_exp t]) k
+        have h2 : (Real.exp t) ^ k = Real.exp ((k : ℝ) * t) := (Real.exp_nat_mul t k).symm
+        rw [h2, hkt] at h1
+        exact h1
+      -- `1 + Cy ≤ A t`, because `A t ≥ (1 + C) y²` and `y ≥ 1`
+      have hAt : 1 + C * y ≤ A * t := by
+        have hval : A * t = (1 + C) * y ^ 2 + Real.pi ^ 2 * y ^ 2 / (4 * (k : ℝ)) := by
+          rw [hA, ht]; field_simp
+        have hrest : (0 : ℝ) ≤ Real.pi ^ 2 * y ^ 2 / (4 * (k : ℝ)) := by positivity
+        nlinarith [hval.le, hval.ge, hrest, sq_nonneg (y - 1)]
+      have hnum : (1 + C * y) ^ k ≤ A ^ k * Real.exp (Real.pi ^ 2 * y ^ 2 / 4) := by
+        calc (1 + C * y) ^ k ≤ (A * t) ^ k := pow_le_pow_left₀ (by nlinarith) hAt k
+          _ = A ^ k * t ^ k := mul_pow _ _ _
+          _ ≤ A ^ k * Real.exp (Real.pi ^ 2 * y ^ 2 / 4) :=
+              mul_le_mul_of_nonneg_left hpow hAnn
+      have hcancel : Real.exp (Real.pi ^ 2 * y ^ 2 / 4)
+          * Real.exp (-(Real.pi ^ 2 * y ^ 2 / 4)) = 1 := by
+        rw [← Real.exp_add]; simp
+      have hmul := mul_le_mul_of_nonneg_right hnum hEnn.le
+      have hrw : A ^ k * Real.exp (Real.pi ^ 2 * y ^ 2 / 4)
+          * Real.exp (-(Real.pi ^ 2 * y ^ 2 / 4)) = A ^ k := by
+        rw [mul_assoc, hcancel, mul_one]
+      rw [hrw] at hmul
+      linarith
+
+/-- **The residual damping of the low range, and where `n ≥ 12` comes from.**  A slot's damping
+`e^{−(n−j)π²ξ²/n}` with `j ≤ 3` splits into the window's own `e^{−π²ξ²/2}` times a residual
+`e^{−π²ξ²/4}`, and the split needs exactly `(n − j)/n ≥ 3/4`, i.e. `n ≥ 4j`; at the largest slot
+`j = 3` that is `n ≥ 12`.  Smaller `n` is absorbed by the headline's constant, exactly as the
+`n ≥ 4` damping of `edgeworth_mean_uniform` is. -/
+private lemma exp_damping_split {n : ℕ} (hn : 12 ≤ n) {j : ℕ} (hj : j ≤ 3) (ξ : ℝ) :
+    Real.exp (-(((n : ℝ) - (j : ℝ)) * (Real.pi ^ 2 * ξ ^ 2) / (n : ℝ)))
+      ≤ Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) * Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 4)) := by
+  have hn12 : (12 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hn0 : (0 : ℝ) < (n : ℝ) := by linarith
+  have hj3 : (j : ℝ) ≤ 3 := by exact_mod_cast hj
+  have hj0 : (0 : ℝ) ≤ (j : ℝ) := Nat.cast_nonneg j
+  have hs : (0 : ℝ) ≤ Real.pi ^ 2 * ξ ^ 2 := by positivity
+  rw [← Real.exp_add]
+  refine Real.exp_le_exp.2 ?_
+  have hkey : Real.pi ^ 2 * ξ ^ 2 / 4 + Real.pi ^ 2 * ξ ^ 2 / 2
+      ≤ ((n : ℝ) - (j : ℝ)) * (Real.pi ^ 2 * ξ ^ 2) / (n : ℝ) := by
+    rw [le_div_iff₀ hn0]
+    nlinarith [hs, hn12, hj3, hj0]
+  linarith
+
+/-- **The damped slot bounds DO admit constant coefficients — `h3a`, `h3b`, `h4` are satisfiable
+in the shape (U4′) asks for.**  Whatever the slot `S`, if it is bounded by a polynomial in the
+frequency times the `(n − j)`-th power of a transform obeying the Cramér damping
+`‖φ(c)‖ ≤ e^{−π²ξ²/n}` — which is `norm_charFun_smul_le_exp_neg_sq` read at `c = r(θ/σ)•e₀`,
+`v = σ²`, `θ = −2πξ` — then `S ≤ e·e^{−π²ξ²/2}` with `e` **independent of `n` and of `ξ`**.
+
+This is the arithmetic half of the production of the eight; what is left on top of it is the
+measure-side bookkeeping that identifies the polynomial's coefficient `C` in terms of the pair's
+moments. -/
+private lemma exists_const_of_damped_poly (k : ℕ) {C : ℝ} (hC : 0 ≤ C) :
+    ∃ e : ℝ, 0 < e ∧ ∀ n j : ℕ, 12 ≤ n → j ≤ 3 → ∀ ξ S φ : ℝ,
+      0 ≤ φ → φ ≤ Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / (n : ℝ))) →
+      S ≤ (1 + C * |ξ|) ^ k * φ ^ (n - j) →
+      S ≤ e * Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) := by
+  obtain ⟨K, hK, hKle⟩ := exists_poly_mul_exp_neg_sq_le k hC
+  refine ⟨K, hK, fun n j hn hj ξ S φ hφ0 hφ hS => ?_⟩
+  have hjn : j ≤ n := le_trans hj (by omega)
+  have hn0 : (0 : ℝ) < (n : ℝ) := by
+    have : (12 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+    linarith
+  have hcast : ((n - j : ℕ) : ℝ) = (n : ℝ) - (j : ℝ) := Nat.cast_sub hjn
+  -- the pointwise Cramér damping, raised to the power the slot carries
+  have hpow : φ ^ (n - j)
+      ≤ Real.exp (-(((n : ℝ) - (j : ℝ)) * (Real.pi ^ 2 * ξ ^ 2) / (n : ℝ))) := by
+    refine le_trans (pow_le_pow_left₀ hφ0 hφ (n - j)) ?_
+    rw [← Real.exp_nat_mul, hcast]
+    refine Real.exp_le_exp.2 (le_of_eq ?_)
+    field_simp
+  have hsplit := exp_damping_split hn hj ξ
+  have hpoly : (0 : ℝ) ≤ (1 + C * |ξ|) ^ k := by positivity
+  have hstep : (1 + C * |ξ|) ^ k * φ ^ (n - j)
+      ≤ (1 + C * |ξ|) ^ k
+        * (Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) * Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 4))) :=
+    mul_le_mul_of_nonneg_left (le_trans hpow hsplit) hpoly
+  have hfin : (1 + C * |ξ|) ^ k
+      * (Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) * Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 4)))
+      ≤ K * Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) := by
+    have hre : (1 + C * |ξ|) ^ k
+        * (Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) * Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 4)))
+        = ((1 + C * |ξ|) ^ k * Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 4)))
+          * Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) := by ring
+    rw [hre]
+    exact mul_le_mul_of_nonneg_right (hKle ξ) (Real.exp_nonneg _)
+  linarith [hS, hstep, hfin]
+
 
 /-! ### The outer radius of the three-regime split, and what it costs (wave 46)
 
@@ -17817,4 +17977,3 @@ end Edgeworth
 
 end StatLean.HypothesisTesting
 
--- wave-48 build-time probe
