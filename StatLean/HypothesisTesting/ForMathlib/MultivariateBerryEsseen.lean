@@ -8591,6 +8591,111 @@ private lemma indicator_wideShell_le_shift {B : Set (EuclideanSpace ℝ (Fin k))
   · rw [Set.indicator_of_notMem ha]
     exact indicator_one_nonneg _ _
 
+/-- **Deconvolution of a two-sided-shell bound (wave 42).** *A shell bound for a convolution
+`μ = τ ∗ η` gives one for the factor `τ`, at the price of the concentration radius of `η`.*
+
+This is the transfer brick L actually needs, and it is **not** `indicator_wideShell_le_shift`;
+see the wave-42 section of `localised_swap_bound_small_weight` for why that lemma cannot do the
+job. The mechanism here is the reverse one: `mem_wideShell_shift` says that the shell *grows*
+under a bounded shift, so
+
+`τ(shell s) · η(closedBall 0 t) = (τ ⊗ η)(shell s × closedBall 0 t) ≤ μ(shell (s + t))`,
+
+the middle step being exactly `mem_wideShell_shift` applied pointwise. Dividing by
+`q ≤ η(closedBall 0 t)` and using `t ≤ s` to absorb `4 C_k (s + t) ≤ 8 C_k s` gives the
+conclusion. Both hypotheses are of the right kind at the call site: `μ` is a hybrid law (whose
+shell bound brick L assumes at every width), `τ` is the *base* law of a telescope step, and `η`
+is the law of the extra summand — one `c`-scaled copy of `ν` on the head side, one `σ`-scaled
+Gaussian on the tail side — whose concentration radius `t` is `O(√k)` times its scale by
+`measureReal_closedBall_ge_of_normSq`.
+
+The restriction `t ≤ s` is what forces the localisation window of brick L to be strengthened
+from `1 ≤ ε √n` to `√k ≤ ε √n`: the widths at which the two per-step bricks consult their
+shell hypothesis are all `≥ 2ε`, and the head-side radius is `t = 2 c √k = 2√k/√n`. -/
+private lemma wideShell_le_of_deconvolution {B : Set (EuclideanSpace ℝ (Fin k))}
+    {τ η μ : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure τ] [IsProbabilityMeasure η]
+    (hμ : μ = (τ.prod η).map fun p => p.1 + p.2)
+    {Ck W : ℝ} (hCk : 0 ≤ Ck)
+    (hshell : ∀ s : ℝ, 0 < s →
+      (μ (Metric.thickening s B \ erosion s B)).toReal ≤ 4 * Ck * s + W)
+    {t q : ℝ} (ht : 0 < t) (hq0 : 0 < q)
+    (hq : q ≤ (η (Metric.closedBall 0 t)).toReal)
+    {s : ℝ} (hs : 0 < s) (hts : t ≤ s) :
+    (τ (Metric.thickening s B \ erosion s B)).toReal ≤ (8 * Ck * s + W) / q := by
+  haveI : IsProbabilityMeasure μ := by
+    rw [hμ]
+    exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+  have hSm : MeasurableSet (Metric.thickening (s + t) B \ erosion (s + t) B) :=
+    Metric.isOpen_thickening.measurableSet.diff (isOpen_erosion _ B).measurableSet
+  have hsub : (Metric.thickening s B \ erosion s B)
+        ×ˢ (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)
+      ⊆ (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) => p.1 + p.2) ⁻¹'
+        (Metric.thickening (s + t) B \ erosion (s + t) B) := by
+    rintro ⟨a, w⟩ ⟨ha, hw⟩
+    have hwn : ‖w‖ ≤ t := by
+      rwa [Metric.mem_closedBall, dist_zero_right] at hw
+    exact mem_wideShell_shift hwn ha
+  have hkey : τ (Metric.thickening s B \ erosion s B)
+      * η (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)
+      ≤ μ (Metric.thickening (s + t) B \ erosion (s + t) B) := by
+    rw [hμ, Measure.map_apply (by fun_prop) hSm]
+    calc τ (Metric.thickening s B \ erosion s B)
+          * η (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)
+        = (τ.prod η) ((Metric.thickening s B \ erosion s B) ×ˢ
+            (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)) :=
+          (Measure.prod_prod _ _).symm
+      _ ≤ _ := measure_mono hsub
+  have hreal : (τ (Metric.thickening s B \ erosion s B)).toReal
+      * (η (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)).toReal
+      ≤ (μ (Metric.thickening (s + t) B \ erosion (s + t) B)).toReal := by
+    rw [← ENNReal.toReal_mul]
+    exact ENNReal.toReal_mono (measure_ne_top _ _) hkey
+  have hτ0 : (0 : ℝ) ≤ (τ (Metric.thickening s B \ erosion s B)).toReal :=
+    ENNReal.toReal_nonneg
+  have hstep : (τ (Metric.thickening s B \ erosion s B)).toReal * q
+      ≤ 4 * Ck * (s + t) + W := by
+    refine le_trans (le_trans (mul_le_mul_of_nonneg_left hq hτ0) hreal) ?_
+    exact hshell (s + t) (by linarith)
+  rw [le_div_iff₀ hq0]
+  nlinarith [hstep, hCk, hts]
+
+/-- **The deconvolution radius, by Chebyshev (wave 42).** `η(closedBall 0 t) ≥ 1 − E‖y‖²/t²`,
+which at `t = 2 √(E‖y‖²)` gives the constant `q = 3/4` that
+`wideShell_le_of_deconvolution` consumes. Both laws that brick L has to deconvolve away have
+`E‖y‖² = k` times the square of their scale (`integral_normSq_eq_dim`), so the radius is
+`2 √k` times the scale in both cases. -/
+private lemma measureReal_closedBall_ge_of_normSq
+    {η : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure η]
+    (h2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) η)
+    {t : ℝ} (ht : 0 < t) :
+    1 - (∫ y, ‖y‖ ^ 2 ∂η) / t ^ 2
+      ≤ (η (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)).toReal := by
+  have hmk := mul_meas_ge_le_integral_of_nonneg
+    (μ := η) (f := fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2)
+    (Filter.Eventually.of_forall fun y => by positivity) h2 (t ^ 2)
+  have hsub : (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)ᶜ
+      ⊆ {y : EuclideanSpace ℝ (Fin k) | t ^ 2 ≤ ‖y‖ ^ 2} := by
+    intro y hy
+    simp only [Set.mem_compl_iff, Metric.mem_closedBall, dist_zero_right, not_le] at hy
+    exact pow_le_pow_left₀ ht.le hy.le 2
+  have hmono : (η (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)ᶜ).toReal
+      ≤ (η {y : EuclideanSpace ℝ (Fin k) | t ^ 2 ≤ ‖y‖ ^ 2}).toReal :=
+    ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono hsub)
+  have hcomp : (η (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)ᶜ).toReal
+      = 1 - (η (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) t)).toReal := by
+    rw [← measureReal_def, ← measureReal_def,
+      measureReal_compl (μ := η) measurableSet_closedBall]
+    simp
+  have hkey : (η {y : EuclideanSpace ℝ (Fin k) | t ^ 2 ≤ ‖y‖ ^ 2}).toReal
+      ≤ (∫ y, ‖y‖ ^ 2 ∂η) / t ^ 2 := by
+    rw [le_div_iff₀ (by positivity)]
+    have hm := hmk
+    rw [measureReal_def] at hm
+    nlinarith [hm]
+  rw [hcomp] at hmono
+  linarith [hmono, hkey]
+
 /-- **The near/far split of the localised remainder, at a fixed base point `a`.** -/
 private lemma integral_abs_remainder_split_le
     {ν : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure ν]
