@@ -6292,39 +6292,35 @@ theorem le_of_selfImproving_induction {A C b : ℝ} {D : ℕ → ℝ}
       rw [hKdef]
       nlinarith [hA.le, hC.le, hδpos.le]
 
-/-- **The self-improving induction with the mollification logarithm** (wave 32).
+/-- **The self-improving induction with an ABSTRACT forcing factor (wave 39: PROVED).**
 
-The hybrid telescope smooths step `j` at width `σⱼ = √(j/n)`, sweeping from `ε` to `1`, while
-the test function has the *single* width `ε`. The localised swap therefore pays, at step `j`,
-the weight `C σⱼ + W` rather than `W`, and the balanced sum over the tail `j > J = ⌈ε²n⌉`
-contributes
+Wave 32 solved the fixed point with the specific forcing term `1 + log(1 + ε⁻¹)`
+(`le_of_selfImproving_induction_log`, now a corollary of this). Wave 39's amended ledger
+produces a *different* forcing term — the `3/2` power `(1 + log(1 + ε⁻¹))^{3/2}`, see
+`logPow32` and the note on `abs_integral_gaussian_smoothed_swap_localised_le` — so the question
+"does the fixed point still close, and at what constant?" had to be re-asked rather than
+assumed. The answer is that the wave-32 argument never used anything about the logarithm except
+two properties, which are exactly the hypotheses below:
 
-`∑_{J<j≤n} j^{-3/2}(C σⱼ + W) β/√n = δ (C ∑_{J<j≤n} j^{-1} + W J^{-1/2}) ≍ δ (2C log(1/ε) + W/ε)`
+* `1 ≤ G ε` — so the log-free term `9 A C δ` can be absorbed into `K δ G`;
+* `G` is **antitone** — so `G` propagates in the right direction along the neighbour range
+  `n/2 ≤ m ≤ n`, on which `δₘ ≥ δₙ` and hence `8 A δₘ ≥ 8 A δₙ`.
 
-— see the ledger on `localised_swap_bound_small_weight`. So the recursion this route produces
-carries an extra additive `A δ C (1 + log(1 + ε⁻¹))` on top of the `A δ ε⁻¹ (Cε + 2Y)` of
-`le_of_selfImproving_induction`, and the fixed point has to be re-solved with it.
-
-It re-solves *linearly*, at the price of one logarithm in the answer. Put
-`δₙ = b/√n` and `Mₙ = 1 + log(1 + (8Aδₙ)⁻¹)`. On the neighbour range `n/2 ≤ m ≤ n` one has both
-`δₘ ≤ 2δₙ` (as before) **and** `Mₘ ≤ Mₙ` — the log factor is monotone in the *right* direction,
-because `m ≤ n` gives `δₘ ≥ δₙ`. So `K δ M` self-propagates with `Y = 2 K δₙ Mₙ`, and at the
-same cut `ε = 8Aδₙ` the recursion reads `D n ≤ 9ACδ + Y/4 + ACδM`. Using `M ≥ 1` to absorb the
-log-free term, the two cases close at `K = 20 A C` and `K = (40/3) A C` respectively. As with
-`le_of_selfImproving_induction` no base case is needed.
-
-The `1 + ε⁻¹` inside the logarithm (rather than a bare `ε⁻¹`) is deliberate: it makes the extra
-term nonnegative for *every* `ε > 0`, so the amended recursion is unambiguously weaker than the
-frozen one and no `ε ≤ 1` side condition has to be threaded through the call sites. -/
-theorem le_of_selfImproving_induction_log {A C b : ℝ} {D : ℕ → ℝ}
+With those, the two cases close at `K = 20 A C` and `K = (40/3) A C` exactly as before: **the
+constant is unchanged, whatever the forcing factor**. In particular the deviation wave 39 has to
+record in the headline is a change of the *log power* and of the dimension factor, and not of
+the recursion constant. As with `le_of_selfImproving_induction` no base case is needed. -/
+theorem le_of_selfImproving_induction_forcing {A C b : ℝ} {D : ℕ → ℝ} {G : ℝ → ℝ}
     (hA : 0 < A) (hC : 0 < C) (hb : 0 < b) (hb1 : 1 ≤ 8 * A * b)
+    (hG1 : ∀ x : ℝ, 0 < x → 1 ≤ G x)
+    (hGanti : ∀ x y : ℝ, 0 < x → x ≤ y → G y ≤ G x)
     (hrec : ∀ n : ℕ, 0 < n → ∀ ε : ℝ, 0 < ε → 1 ≤ ε * Real.sqrt (n : ℝ) → ∀ Y : ℝ,
       (∀ m : ℕ, n ≤ 2 * m → m ≤ n → D m ≤ Y) →
       D n ≤ A * (b / Real.sqrt n) * ε⁻¹ * (C * ε + 2 * Y)
-        + A * (b / Real.sqrt n) * C * (1 + Real.log (1 + ε⁻¹))
+        + A * (b / Real.sqrt n) * C * G ε
         + C * ε) :
     ∀ n : ℕ, 0 < n → D n ≤ 20 * (A * C) * (b / Real.sqrt n)
-      * (1 + Real.log (1 + (8 * A * (b / Real.sqrt n))⁻¹)) := by
+      * G (8 * A * (b / Real.sqrt n)) := by
   intro n
   induction n using Nat.strong_induction_on with
   | _ n ih =>
@@ -6333,13 +6329,8 @@ theorem le_of_selfImproving_induction_log {A C b : ℝ} {D : ℕ → ℝ}
     have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
     set δ : ℝ := b / Real.sqrt (n : ℝ) with hδdef
     have hδpos : 0 < δ := by rw [hδdef]; positivity
-    set M : ℝ := 1 + Real.log (1 + (8 * A * δ)⁻¹) with hMdef
-    have hM1 : 1 ≤ M := by
-      have h : 0 ≤ Real.log (1 + (8 * A * δ)⁻¹) := by
-        refine Real.log_nonneg ?_
-        have : (0 : ℝ) < (8 * A * δ)⁻¹ := by positivity
-        linarith
-      rw [hMdef]; linarith
+    set M : ℝ := G (8 * A * δ) with hMdef
+    have hM1 : 1 ≤ M := hG1 _ (by positivity)
     set K : ℝ := 20 * (A * C) with hKdef
     have hKpos : 0 < K := by rw [hKdef]; positivity
     set Y : ℝ := max (2 * K * δ * M) (D n) with hYdef
@@ -6371,22 +6362,11 @@ theorem le_of_selfImproving_induction_log {A C b : ℝ} {D : ℕ → ℝ}
       have hδmge : δ ≤ δm := by
         rw [hδm, hδdef]
         exact div_le_div_of_nonneg_left hb.le hsm hsmn
-      set Mm : ℝ := 1 + Real.log (1 + (8 * A * δm)⁻¹) with hMm
+      set Mm : ℝ := G (8 * A * δm) with hMm
       have hMmle : Mm ≤ M := by
         rw [hMm, hMdef]
-        have h1 : (8 * A * δm)⁻¹ ≤ (8 * A * δ)⁻¹ := by
-          rw [inv_le_inv₀ (by positivity) (by positivity)]
-          nlinarith
-        have h2 : (0:ℝ) < 1 + (8 * A * δm)⁻¹ := by positivity
-        have := Real.log_le_log h2 (by linarith : (1 : ℝ) + (8 * A * δm)⁻¹
-          ≤ 1 + (8 * A * δ)⁻¹)
-        linarith
-      have hMm1 : 1 ≤ Mm := by
-        have h : 0 ≤ Real.log (1 + (8 * A * δm)⁻¹) := by
-          refine Real.log_nonneg ?_
-          have : (0 : ℝ) < (8 * A * δm)⁻¹ := by positivity
-          linarith
-        rw [hMm]; linarith
+        exact hGanti _ _ (by positivity) (by nlinarith)
+      have hMm1 : 1 ≤ Mm := hG1 _ (by positivity)
       refine le_trans (le_trans hstep ?_) (le_max_left _ _)
       have hKδm : 0 ≤ K * δm := by positivity
       have hM0 : (0 : ℝ) ≤ M := by linarith
@@ -6399,7 +6379,6 @@ theorem le_of_selfImproving_induction_log {A C b : ℝ} {D : ℕ → ℝ}
     -- `ε √n = 8 A b` does not depend on `n`; so the localisation window is a hypothesis
     -- on the *constants* alone (wave 36).
     have hwin : 1 ≤ 8 * A * δ * Real.sqrt (n : ℝ) := by
-      have hne : Real.sqrt (n : ℝ) ≠ 0 := hsn.ne'
       have h : 8 * A * δ * Real.sqrt (n : ℝ) = 8 * A * b := by
         rw [hδdef]; field_simp
       rw [h]; exact hb1
@@ -6423,6 +6402,117 @@ theorem le_of_selfImproving_induction_log {A C b : ℝ} {D : ℕ → ℝ}
       rw [hmax] at h
       rw [hKdef]
       nlinarith [hACδ, hM1]
+
+/-- **The self-improving induction with the mollification logarithm** (wave 32; wave 39: proof
+re-based on `le_of_selfImproving_induction_forcing`, statement unchanged).
+
+The hybrid telescope smooths step `j` at width `σⱼ = √(j/n)`, sweeping from `ε` to `1`, while
+the test function has the *single* width `ε`. The localised swap therefore pays, at step `j`,
+the weight `C σⱼ + W` rather than `W`, and the balanced sum over the tail `j > J = ⌈ε²n⌉`
+contributes
+
+`∑_{J<j≤n} j^{-3/2}(C σⱼ + W) β/√n = δ (C ∑_{J<j≤n} j^{-1} + W J^{-1/2}) ≍ δ (2C log(1/ε) + W/ε)`
+
+— see the ledger on `localised_swap_bound_small_weight`. So the recursion this route produces
+carries an extra additive `A δ C (1 + log(1 + ε⁻¹))` on top of the `A δ ε⁻¹ (Cε + 2Y)` of
+`le_of_selfImproving_induction`, and the fixed point has to be re-solved with it.
+
+It re-solves *linearly*, at the price of one logarithm in the answer. Put
+`δₙ = b/√n` and `Mₙ = 1 + log(1 + (8Aδₙ)⁻¹)`. On the neighbour range `n/2 ≤ m ≤ n` one has both
+`δₘ ≤ 2δₙ` (as before) **and** `Mₘ ≤ Mₙ` — the log factor is monotone in the *right* direction,
+because `m ≤ n` gives `δₘ ≥ δₙ`. So `K δ M` self-propagates with `Y = 2 K δₙ Mₙ`, and at the
+same cut `ε = 8Aδₙ` the recursion reads `D n ≤ 9ACδ + Y/4 + ACδM`. Using `M ≥ 1` to absorb the
+log-free term, the two cases close at `K = 20 A C` and `K = (40/3) A C` respectively.
+
+**Wave 39.** Those two italicised facts — `M ≥ 1` and antitonicity — are *all* the argument
+uses, so the whole proof has been moved to `le_of_selfImproving_induction_forcing` and this is
+now the instance `G ε = 1 + log(1 + ε⁻¹)`. The instance the amended ledger actually consumes is
+`le_of_selfImproving_induction_logPow32`.
+
+The `1 + ε⁻¹` inside the logarithm (rather than a bare `ε⁻¹`) is deliberate: it makes the extra
+term nonnegative for *every* `ε > 0`, so the amended recursion is unambiguously weaker than the
+frozen one and no `ε ≤ 1` side condition has to be threaded through the call sites. -/
+theorem le_of_selfImproving_induction_log {A C b : ℝ} {D : ℕ → ℝ}
+    (hA : 0 < A) (hC : 0 < C) (hb : 0 < b) (hb1 : 1 ≤ 8 * A * b)
+    (hrec : ∀ n : ℕ, 0 < n → ∀ ε : ℝ, 0 < ε → 1 ≤ ε * Real.sqrt (n : ℝ) → ∀ Y : ℝ,
+      (∀ m : ℕ, n ≤ 2 * m → m ≤ n → D m ≤ Y) →
+      D n ≤ A * (b / Real.sqrt n) * ε⁻¹ * (C * ε + 2 * Y)
+        + A * (b / Real.sqrt n) * C * (1 + Real.log (1 + ε⁻¹))
+        + C * ε) :
+    ∀ n : ℕ, 0 < n → D n ≤ 20 * (A * C) * (b / Real.sqrt n)
+      * (1 + Real.log (1 + (8 * A * (b / Real.sqrt n))⁻¹)) := by
+  refine le_of_selfImproving_induction_forcing (G := fun x => 1 + Real.log (1 + x⁻¹))
+    hA hC hb hb1 ?_ ?_ hrec
+  · intro x hx
+    have hxi : (0 : ℝ) < x⁻¹ := by positivity
+    have hl : 0 ≤ Real.log (1 + x⁻¹) := Real.log_nonneg (by linarith)
+    simp only
+    linarith
+  · intro x y hx hxy
+    have hy : 0 < y := lt_of_lt_of_le hx hxy
+    have hyi : (0 : ℝ) < y⁻¹ := by positivity
+    have hinv : y⁻¹ ≤ x⁻¹ := by rw [inv_le_inv₀ hy hx]; exact hxy
+    have h1 : (0 : ℝ) < 1 + y⁻¹ := by linarith
+    have := Real.log_le_log h1 (by linarith : (1 : ℝ) + y⁻¹ ≤ 1 + x⁻¹)
+    simp only
+    linarith
+
+/-- **The `3/2`-power forcing factor (wave 39).** `logPow32 ε = (1 + log(1 + ε⁻¹))^{3/2}`,
+written as a product rather than an `rpow` so that `positivity`/`nlinarith` can see it.
+
+This is the forcing term the *amended* ledger produces. Its source is the amended tail weight
+`4 C_k σⱼ · Λ(σⱼ) + W` of `abs_integral_gaussian_smoothed_swap_localised_le`, whose extra
+factor `Λ(σ) = gaussianTailRadius k σ` carries a `√(log(1/σ))`: summing
+`Λ(σⱼ) σⱼ / (j √j) = Λ(σⱼ)/(√n · j)` over the tail steps `J < j ≤ n` costs
+`√(log(1/ε)) · log(1/ε)` in place of the wave-32 `log(1/ε)`. See the ledger note on the tail
+brick for the derivation, and `le_of_selfImproving_induction_logPow32` for the fixed point. -/
+noncomputable def logPow32 (x : ℝ) : ℝ :=
+  (1 + Real.log (1 + x⁻¹)) * Real.sqrt (1 + Real.log (1 + x⁻¹))
+
+lemma one_le_logPow32 {x : ℝ} (hx : 0 < x) : 1 ≤ logPow32 x := by
+  have hxi : (0 : ℝ) < x⁻¹ := by positivity
+  have h : (1 : ℝ) ≤ 1 + Real.log (1 + x⁻¹) := by
+    have hl : 0 ≤ Real.log (1 + x⁻¹) := Real.log_nonneg (by linarith)
+    linarith
+  have hs0 : Real.sqrt 1 ≤ Real.sqrt (1 + Real.log (1 + x⁻¹)) := Real.sqrt_le_sqrt h
+  rw [Real.sqrt_one] at hs0
+  rw [logPow32]
+  nlinarith
+
+lemma logPow32_anti {x y : ℝ} (hx : 0 < x) (hxy : x ≤ y) : logPow32 y ≤ logPow32 x := by
+  have hy : 0 < y := lt_of_lt_of_le hx hxy
+  have hyi : (0 : ℝ) < y⁻¹ := by positivity
+  have hinv : y⁻¹ ≤ x⁻¹ := by rw [inv_le_inv₀ hy hx]; exact hxy
+  have hlog : 1 + Real.log (1 + y⁻¹) ≤ 1 + Real.log (1 + x⁻¹) := by
+    have h1 : (0 : ℝ) < 1 + y⁻¹ := by linarith
+    have := Real.log_le_log h1 (by linarith : (1 : ℝ) + y⁻¹ ≤ 1 + x⁻¹)
+    linarith
+  have h0 : (0 : ℝ) ≤ 1 + Real.log (1 + y⁻¹) := by
+    have hl : 0 ≤ Real.log (1 + y⁻¹) := Real.log_nonneg (by linarith)
+    linarith
+  rw [logPow32, logPow32]
+  exact mul_le_mul hlog (Real.sqrt_le_sqrt hlog) (Real.sqrt_nonneg _) (by linarith)
+
+/-- **The fixed point of the AMENDED ledger (wave 39: PROVED).** The recursion with forcing term
+`(1 + log(1 + ε⁻¹))^{3/2}` self-improves, at the *same* constant `20 A C` as the wave-32
+logarithmic one; only the factor carried into the answer changes.
+
+This is the statement wave 39 had to check rather than assume: the amended tail weight of
+`abs_integral_gaussian_smoothed_swap_localised_le` raises the ledger's log power from `1` to
+`3/2`, and it was not a priori clear that a `3/2` power still self-improves linearly. It does,
+and by `le_of_selfImproving_induction_forcing` the reason is structural: only `G ≥ 1` and
+antitonicity of `G` are used, both of which `logPow32` has. -/
+theorem le_of_selfImproving_induction_logPow32 {A C b : ℝ} {D : ℕ → ℝ}
+    (hA : 0 < A) (hC : 0 < C) (hb : 0 < b) (hb1 : 1 ≤ 8 * A * b)
+    (hrec : ∀ n : ℕ, 0 < n → ∀ ε : ℝ, 0 < ε → 1 ≤ ε * Real.sqrt (n : ℝ) → ∀ Y : ℝ,
+      (∀ m : ℕ, n ≤ 2 * m → m ≤ n → D m ≤ Y) →
+      D n ≤ A * (b / Real.sqrt n) * ε⁻¹ * (C * ε + 2 * Y)
+        + A * (b / Real.sqrt n) * C * logPow32 ε
+        + C * ε) :
+    ∀ n : ℕ, 0 < n → D n ≤ 20 * (A * C) * (b / Real.sqrt n)
+      * logPow32 (8 * A * (b / Real.sqrt n)) :=
+  le_of_selfImproving_induction_forcing (G := logPow32) hA hC hb hb1
+    (fun _ hx => one_le_logPow32 hx) (fun _ _ hx hxy => logPow32_anti hx hxy) hrec
 
 /-- The log factor the induction carries, `1 + log(1 + (Aδ)⁻¹)`, converted into the form the
 headline records, `1 + log(max δ⁻¹ e)`, at the cost of a factor `2`. (The `max … e` keeps the
