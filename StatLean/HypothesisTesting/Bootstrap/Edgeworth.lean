@@ -6898,6 +6898,31 @@ lemma leakage_ledger_ten_le {b : ℝ} (hb : 0 ≤ b) {n : ℕ} (hn : 0 < n) :
   push_cast
   linarith
 
+/-- **Fourteen parts, and why the studentized outer range wants them.** The `b = 0` ledger at
+`N = 14` returns `n^{-17/6}`, which is what `middle_range_ledger_exponent` shows the three-regime
+split needs at the outer radius `ρ = n²`; `leakage_ledger_thirteen_gt` is the witness that `13`
+does not reach it. Only the exponent moves — the gain per part and the bulk radius are the
+same. -/
+lemma leakage_ledger_fourteen_le {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - 0)) ^ 14
+      ≤ (n : ℝ) ^ (-(17 : ℝ) / 6) := by
+  have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  rw [leakage_ledger_band_exponent hn 0 14]
+  refine Real.rpow_le_rpow_of_exponent_le h1 ?_
+  push_cast
+  linarith
+
+lemma leakage_ledger_thirteen_gt {n : ℕ} (hn : 2 ≤ n) :
+    (n : ℝ) ^ (-(17 : ℝ) / 6)
+      < (n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - 0)) ^ 13 := by
+  have h2 : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have h1 : (1 : ℝ) < (n : ℝ) := by linarith
+  have hnpos : 0 < n := by omega
+  rw [leakage_ledger_band_exponent hnpos 0 13]
+  refine Real.rpow_lt_rpow_of_exponent_lt h1 ?_
+  push_cast
+  linarith
+
 /-- **The gain of one integration by parts on a general band.** `bulk_gain_phase_le` with
 `c₀√n` replaced by `c₀n^{b}`; the exponent `-7/8` becomes `-3/8 − b`. -/
 lemma bulk_gain_phase_le_band {n : ℕ} (hn : 0 < n) {c₀ b θ : ℝ} (hc₀ : 0 < c₀)
@@ -9594,6 +9619,47 @@ lemma fibre_gain_ledger_ten_le {n : ℕ} (hn : 0 < n) {c₀ b σ θ : ℝ}
     _ ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 * ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ :=
         mul_le_mul_of_nonneg_left hled hc10
 
+/-- **The wave-46 ledger at fourteen parts.** `fibre_gain_ledger_ten_le` at the constant floor
+`b = 0` and `N = 14`, landing at `n^{-17/6}` instead of `n^{-3/2}`. -/
+lemma fibre_gain_ledger_fourteen_le {n : ℕ} (hn : 0 < n) {c₀ σ θ : ℝ}
+    (hσ : 0 < σ) (hc₀ : 0 < c₀) (hθ : c₀ ≤ |θ|) :
+    (n : ℝ) * bulkRadius n ^ 2
+        * (81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+            + 3 * σ / (bulkRadius n * |θ|)) ^ 14
+      ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 14 * (n : ℝ) ^ (-(17 : ℝ) / 6) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hM : 0 < bulkRadius n := bulkRadius_pos hn
+  have hθ0 : 0 < |θ| := lt_of_lt_of_le hc₀ hθ
+  have hθ' : c₀ * (n : ℝ) ^ (0 : ℝ) ≤ |θ| := by rwa [Real.rpow_zero, mul_one]
+  have hg0 : (0 : ℝ) ≤ 81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+      + 3 * σ / (bulkRadius n * |θ|) := by positivity
+  have hstep := fibre_gain_le_bulk_gain hn hσ hθ0
+  have hbulk := bulk_gain_phase_le_band hn hc₀ hθ'
+  have hcoef : (0 : ℝ) ≤ 81 / σ + 3 * σ := by positivity
+  have hgain : 81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+      + 3 * σ / (bulkRadius n * |θ|)
+      ≤ ((81 / σ + 3 * σ) * c₀⁻¹) * (n : ℝ) ^ (-(3 : ℝ) / 8 - 0) := by
+    refine hstep.trans ?_
+    calc (81 / σ + 3 * σ) * (bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / |θ|)
+        ≤ (81 / σ + 3 * σ) * (c₀⁻¹ * (n : ℝ) ^ (-(3 : ℝ) / 8 - 0)) :=
+          mul_le_mul_of_nonneg_left hbulk hcoef
+      _ = ((81 / σ + 3 * σ) * c₀⁻¹) * (n : ℝ) ^ (-(3 : ℝ) / 8 - 0) := by ring
+  have hpow : (81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+      + 3 * σ / (bulkRadius n * |θ|)) ^ 14
+      ≤ (((81 / σ + 3 * σ) * c₀⁻¹) * (n : ℝ) ^ (-(3 : ℝ) / 8 - 0)) ^ 14 :=
+    pow_le_pow_left₀ hg0 hgain 14
+  have hpre : (0 : ℝ) ≤ (n : ℝ) * bulkRadius n ^ 2 := by positivity
+  refine le_trans (mul_le_mul_of_nonneg_left hpow hpre) ?_
+  rw [mul_pow]
+  have hled := leakage_ledger_fourteen_le hn
+  have hc14 : (0 : ℝ) ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 14 := by positivity
+  calc (n : ℝ) * bulkRadius n ^ 2
+          * (((81 / σ + 3 * σ) * c₀⁻¹) ^ 14 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - 0)) ^ 14)
+      = ((81 / σ + 3 * σ) * c₀⁻¹) ^ 14
+          * ((n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - 0)) ^ 14) := by ring
+    _ ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 14 * (n : ℝ) ^ (-(17 : ℝ) / 6) :=
+        mul_le_mul_of_nonneg_left hled hc14
+
 /-! ### The Fubini reduction: from the plane to horizontal fibres
 
 The last item of input (B), and the only one that is measure theory rather than analysis.  The
@@ -10094,6 +10160,111 @@ theorem exists_integral_norm_fourierWeight_bulkMultiplier_band_le
         have hl : (0 : ℝ) ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 := by positivity
         nlinarith [sq_nonneg Kb, pow_nonneg hC₁0.le 11]
 
+
+-- the fourteen-fold ledger arithmetic runs under a set integral
+set_option maxHeartbeats 1000000 in
+/-- **(B) AT FOURTEEN PARTS.** The same theorem as
+`exists_integral_norm_fourierWeight_bulkMultiplier_band_le`, at `N = 14` and hence at accuracy
+`n^{-17/6}` rather than `n^{-3/2}`. Nothing analytic changes: the fibre estimate, the band
+geometry, the bulk radius `n^{5/8}` and the gain per part are all independent of `N`, and the
+whole chain below this theorem is proved at a general `N`. What this supplies is the accuracy the
+studentized three-regime split needs at its outer radius — see the section note on
+`middle_range_ledger_exponent`. -/
+theorem exists_integral_norm_fourierWeight_bulkMultiplier_band_fourteen_le
+    {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) {Kb : ℝ} (hKb : 0 ≤ Kb) :
+    ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ ≤ |θ| →
+      2 * σ * (Kb * Real.sqrt (Real.log (n : ℝ))) ≤ |θ| →
+      (∫ s in {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))},
+          ‖fourierWeight (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) s‖)
+        ≤ C * (n : ℝ) ^ (-(17 : ℝ) / 6) := by
+  obtain ⟨C₁, hC₁0, hC₁⟩ := norm_fourierWeight_bulkMultiplier_le 14
+  refine ⟨4 * (Kb ^ 2 + 1) * C₁ ^ 15 * ((81 / σ + 3 * σ) * c₀⁻¹) ^ 14, by positivity, ?_⟩
+  intro n hn θ hθc hband
+  have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hM : (1 : ℝ) ≤ bulkRadius n := by
+    rw [bulkRadius]; exact Real.one_le_rpow hn1 (by norm_num)
+  have hM0 : (0 : ℝ) < bulkRadius n := lt_of_lt_of_le zero_lt_one hM
+  have hθ0 : 0 < |θ| := lt_of_lt_of_le hc₀ hθc
+  have hθne : θ ≠ 0 := fun h => by simp [h] at hθ0
+  have hR0 : (0 : ℝ) ≤ Kb * Real.sqrt (Real.log (n : ℝ)) :=
+    mul_nonneg hKb (Real.sqrt_nonneg _)
+  set G : ℝ := 81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+      + 3 * σ / (bulkRadius n * |θ|) with hGdef
+  have hG0 : (0 : ℝ) ≤ G := by rw [hGdef]; positivity
+  have hpt : ∀ s ∈ {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))},
+      ‖fourierWeight (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) s‖
+        ≤ C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 14 := by
+    intro s hs
+    refine hC₁ σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n) s hσ hM hθne ?_
+    have hco : |((θ / σ) • coordDir 0 + s) 0| ≤ ‖(θ / σ) • coordDir 0 + s‖ :=
+      (abs_coord_le_norm _).1
+    have hval : ((θ / σ) • coordDir 0 + s) 0 = θ / σ + s 0 := by simp [coordDir]
+    rw [hval] at hco
+    have hs' : ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ)) := hs
+    have hle : Kb * Real.sqrt (Real.log (n : ℝ)) ≤ |θ| / (2 * σ) := by
+      rw [le_div_iff₀ (by positivity)]
+      linarith [hband]
+    linarith
+  have hAmeas : MeasurableSet
+      {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))} :=
+    (isOpen_lt (by fun_prop) continuous_const).measurableSet
+  have harea := volume_band_le ((θ / σ) • coordDir 0) hR0
+  have hfin : volume {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}
+      ≠ ⊤ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top harea
+  have hareaR : (volume {s : E₂ |
+      ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}).toReal
+      ≤ 4 * (Kb * Real.sqrt (Real.log (n : ℝ))) ^ 2 := by
+    refine le_trans (ENNReal.toReal_mono ENNReal.ofReal_ne_top harea) ?_
+    rw [ENNReal.toReal_ofReal (by positivity)]
+  have hKbnd : (0 : ℝ) ≤ C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 14 := by positivity
+  have hsi : (∫ s in {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))},
+      ‖fourierWeight (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) s‖)
+      ≤ (C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 14)
+        * (volume {s : E₂ |
+            ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}).toReal := by
+    have h1 := integral_mono_of_nonneg
+      (μ := volume.restrict {s : E₂ |
+        ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))})
+      (f := fun s : E₂ =>
+        ‖fourierWeight (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) s‖)
+      (g := fun _ : E₂ => C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 14)
+      (Filter.Eventually.of_forall fun _ => norm_nonneg _)
+      (integrableOn_const hfin)
+      ((ae_restrict_iff' hAmeas).2 (Filter.Eventually.of_forall hpt))
+    refine le_trans h1 (le_of_eq ?_)
+    rw [setIntegral_const, smul_eq_mul, measureReal_def]
+    ring
+  have hled : (n : ℝ) * bulkRadius n ^ 2 * G ^ 14
+      ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 14 * (n : ℝ) ^ (-(17 : ℝ) / 6) := by
+    rw [hGdef]; exact fibre_gain_ledger_fourteen_le hn hσ hc₀ hθc
+  have hlog : Real.log (n : ℝ) ≤ (n : ℝ) := by
+    have := Real.log_le_sub_one_of_pos hn0; linarith
+  have hlog0 : (0 : ℝ) ≤ Real.log (n : ℝ) := Real.log_nonneg hn1
+  have hsq : (Kb * Real.sqrt (Real.log (n : ℝ))) ^ 2 = Kb ^ 2 * Real.log (n : ℝ) := by
+    rw [mul_pow, Real.sq_sqrt hlog0]
+  refine le_trans hsi ?_
+  calc (C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 14)
+        * (volume {s : E₂ |
+            ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}).toReal
+      ≤ (C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 14) * (4 * (Kb ^ 2 * (n : ℝ))) := by
+        refine mul_le_mul_of_nonneg_left ?_ hKbnd
+        have h2 : (volume {s : E₂ |
+            ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}).toReal
+            ≤ 4 * (Kb ^ 2 * Real.log (n : ℝ)) := by rw [← hsq]; exact hareaR
+        have h3 : Kb ^ 2 * Real.log (n : ℝ) ≤ Kb ^ 2 * (n : ℝ) :=
+          mul_le_mul_of_nonneg_left hlog (sq_nonneg Kb)
+        linarith
+    _ = (4 * Kb ^ 2 * C₁ ^ 15) * ((n : ℝ) * bulkRadius n ^ 2 * G ^ 14) := by
+        rw [mul_pow]; ring
+    _ ≤ (4 * Kb ^ 2 * C₁ ^ 15)
+          * (((81 / σ + 3 * σ) * c₀⁻¹) ^ 14 * (n : ℝ) ^ (-(17 : ℝ) / 6)) :=
+        mul_le_mul_of_nonneg_left hled (by positivity)
+    _ ≤ 4 * (Kb ^ 2 + 1) * C₁ ^ 15 * ((81 / σ + 3 * σ) * c₀⁻¹) ^ 14
+          * (n : ℝ) ^ (-(17 : ℝ) / 6) := by
+        have hinv : (0 : ℝ) ≤ (n : ℝ) ^ (-(17 : ℝ) / 6) := by positivity
+        have hl : (0 : ℝ) ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 14 := by positivity
+        nlinarith [sq_nonneg Kb, pow_nonneg hC₁0.le 15]
 
 /-- **Markov at the fourth moment, on the plane.** The vector analogue of
 `measure_abs_gt_le_fourth_moment`, and the whole of input (C) except the moment itself. -/
@@ -12739,26 +12910,6 @@ lemma outer_range_ledger_exponent (p : ℝ) {n : ℕ} (hn : 0 < n) :
   rw [← Real.rpow_neg_one (n : ℝ), ← Real.rpow_add h0, ← Real.rpow_neg h0.le]
   congr 1
   ring
-
-lemma leakage_ledger_fourteen_le {n : ℕ} (hn : 0 < n) :
-    (n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - 0)) ^ 14
-      ≤ (n : ℝ) ^ (-(17 : ℝ) / 6) := by
-  have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
-  rw [leakage_ledger_band_exponent hn 0 14]
-  refine Real.rpow_le_rpow_of_exponent_le h1 ?_
-  push_cast
-  linarith
-
-lemma leakage_ledger_thirteen_gt {n : ℕ} (hn : 2 ≤ n) :
-    (n : ℝ) ^ (-(17 : ℝ) / 6)
-      < (n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - 0)) ^ 13 := by
-  have h2 : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
-  have h1 : (1 : ℝ) < (n : ℝ) := by linarith
-  have hnpos : 0 < n := by omega
-  rw [leakage_ledger_band_exponent hnpos 0 13]
-  refine Real.rpow_lt_rpow_of_exponent_lt h1 ?_
-  push_cast
-  linarith
 
 end WindowEnvelopeOne
 
