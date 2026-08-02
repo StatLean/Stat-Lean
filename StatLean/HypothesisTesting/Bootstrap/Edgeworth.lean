@@ -13016,11 +13016,15 @@ carried out that assembly attempt. It does not close, and the reason is not budg
      wave 26 rounded those up to `1`). **Wave 26's "a bound is all `k = 3, 4` need" is
      overturned**: a bound is all they need at fixed `a`, and the window's `a = (θ/σ)•e₀` is
      not fixed.
-  2. `norm_multiCharFun_vecRootLaw_two_sub_le` (the `k = 2` remainder) — repairable the same
-     way and **not done here**. Its error terms multiply `φ^{N−1}` and `φ^{N−2}`, so the
-     conclusion should carry `‖φ(c)‖^{N−2}`; the proof has to be re-run keeping those powers.
-     This is bookkeeping, and it is named so a later wave does not have to rediscover it.
-  3. `norm_charFun_map_deltaSurrogate_sub_graded_le` (the graded remainder) — **not repairable
+  2. `norm_multiCharFun_vecRootLaw_two_sub_le` (the `k = 2` remainder) — **repaired.**
+     `norm_multiCharFun_vecRootLaw_two_sub_damped_le` carries `‖φ(c)‖^{N−2}`. Both error terms
+     of the decomposition multiply `φ^{N−1}` or `φ^{N−2}` — the assignment sum has nothing else
+     in it — so again the damping was free. Without it `multiTwoRemConst` at `a = (θ/σ)•e₀` is
+     an undamped polynomial in `|θ|` of degree four.
+  3. `norm_charFun_smul_pow_sub_edgeworth_le` (the leading `n`-th-power slot) — **damped
+     already**, by `e^{−(n−2)vs²/4}`; it is the one input of the four that was never the
+     problem, and it is where the mean assembly gets its whole envelope.
+  4. `norm_charFun_map_deltaSurrogate_sub_graded_le` (the graded remainder) — **not repairable
      at all**, and this is the item that blocks the window. It is a triangle inequality on
      `|e^{iθHₙ} − e^{iθu}(1 + …)|`, so the phase `e^{iθu}` — the *only* source of damping in
      the whole expansion — is discarded before the integral is taken, and no choice of
