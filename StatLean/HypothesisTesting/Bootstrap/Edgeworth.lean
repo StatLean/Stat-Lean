@@ -8123,6 +8123,106 @@ lemma studentizedEdgeworthTV_pos (γ : ℝ) :
   have hg : (0 : ℝ) ≤ |γ| := abs_nonneg γ
   positivity
 
+/-! ### The leading-order identity of the studentized window
+
+Item **(U4)** of the residue is the studentized analogue of `exists_window_bound`: the estimate
+`‖φ_{surrogate}(θ) − φ_{q_n}(θ)‖ ≤ (K/n)·windowEnvelope ξ` on the Esseen window. Its inputs are
+all proved (`norm_charFun_map_deltaSurrogate_sub_graded_le` for the graded comparison,
+`norm_charFun_smul_pow_sub_edgeworth_le` for the leading `n`-th-power slot,
+`multiCharFun_vecRootLaw_two` and `norm_multiCharFun_vecRootLaw_two_sub_le` for the `k = 2`
+slot, and the wave-26 `O(1)` bound for `k = 3, 4`), but the estimate is not a rewriting, and it
+has one part that is not an estimate at all and that no earlier wave has checked: whether the
+two leading slots, evaluated, actually **add up to** the studentized approximant's transform.
+
+They do, and `studentized_window_leading_identity` is that check, stated in the exact shape the
+two inputs produce. The bookkeeping behind it, for the record. Write `μ' = F ∘ Z⁻¹` for the law
+of the studentizing pair `Z = studentPair F` and `r = n^{-1/2}`. In
+`norm_charFun_map_deltaSurrogate_sub_graded_le` the `k = 3` and `k = 4` slots carry `r² = n⁻¹`
+in front of an `O(1)` multilinear factor and are therefore remainder; the two that survive at
+order `n^{-1/2}` are:
+
+* **the leading slot** `charFun μ ((θ/σ) • e₀)`, an `n`-th power at `s = rθ/σ` in the direction
+  `e₀`, expanded by `norm_charFun_smul_pow_sub_edgeworth_le` with `v = ∫⟪x,e₀⟫² = σ²` and
+  `m₃ = ∫⟪x,e₀⟫³ = γσ³`, giving `e^{−nvs²/2}(1 − n i m₃ s³/6) = e^{−θ²/2}(1 − iγθ³ r/6)`
+  (since `nvs² = θ²` and `n m₃ s³ = γθ³ r`);
+* **the `k = 2` slot** `−i(θr/2σ³)·multi_{ρ_n}(surrW2, (θ/σ)e₀)`, whose multilinear factor
+  `norm_multiCharFun_vecRootLaw_two_sub_le` evaluates as `κ₀₁ φ^{n−1} − κ₀κ₁ φ^{n−2}` up to
+  `O(n^{-1/2})`, with the three moments of `μ'` being
+  `κ₀₁ = ∫⟪x,e₀⟫⟪x,e₁⟫ = E[(X−m)((X−m)² − σ²)] = γσ³`,
+  `κ₀ = ∫⟪x,e₀⟫⟪x,(θ/σ)e₀⟫ = θσ` and `κ₁ = ∫⟪x,e₁⟫⟪x,(θ/σ)e₀⟫ = θγσ²`.
+
+The `−κ₀κ₁ φ^{n−2}` summand is the off-diagonal one wave 23 found cannot be dropped, and here is
+what it does: without it the bracket would be `γσ³` instead of `γσ³(1 − θ²)`, and the sum below
+would come out as `He₃` alone — the *mean* approximant — instead of the studentized one. So the
+identity is also a check on wave 23's finding. -/
+
+/-- **(U4) — the leading-order identity of the studentized window, in the shape the two inputs
+produce.** The `n`-th-power slot's Edgeworth correction plus the evaluated `k = 2` slot equals
+*exactly* the transform of the studentized comparison density: writing `E = e^{−θ²/2}` and
+assuming only `σ ≠ 0` and the normalisation `N r² = 1`,
+
+`E(1 − N i (γσ³)(rθ/σ)³/6) − i(θr/2σ³)(γσ³ − (θσ)(θγσ²))E = E(1 + iγ(2θ³ − 3θ)r/6)`.
+
+Nothing probabilistic enters; the point is that the arithmetic closes on the nose, with no
+leftover term to be absorbed and no constant to be adjusted. See
+`studentized_window_leading_eq_charFunDensity` for the same statement with the right-hand side
+identified as `charFunDensity (studentizedEdgeworthDensity γ n)`. -/
+theorem studentized_window_leading_identity {γ σ θ r N : ℝ} (hσ : σ ≠ 0)
+    (hr : N * r ^ 2 = 1) :
+    ((Real.exp (-θ ^ 2 / 2) : ℝ) : ℂ)
+        * (1 - (N : ℂ) * Complex.I * ((γ * σ ^ 3 : ℝ) : ℂ) * ((r * θ / σ : ℝ) : ℂ) ^ 3 / 6)
+      - Complex.I * ((θ * r / (2 * σ ^ 3) : ℝ) : ℂ)
+          * (((γ * σ ^ 3 : ℝ) : ℂ) - ((θ * σ : ℝ) : ℂ) * ((θ * γ * σ ^ 2 : ℝ) : ℂ))
+          * ((Real.exp (-θ ^ 2 / 2) : ℝ) : ℂ)
+      = ((Real.exp (-θ ^ 2 / 2) : ℝ) : ℂ)
+          * (1 + Complex.I * (γ : ℂ) * (2 * (θ : ℂ) ^ 3 - 3 * (θ : ℂ)) * (r : ℂ) / 6) := by
+  have hleadR : N * (γ * σ ^ 3) * (r * θ / σ) ^ 3 = γ * θ ^ 3 * r := by
+    have h : N * (γ * σ ^ 3) * (r * θ / σ) ^ 3 = γ * θ ^ 3 * r * (N * r ^ 2) := by
+      field_simp
+    rw [h, hr, mul_one]
+  have hk2R : θ * r / (2 * σ ^ 3) * (γ * σ ^ 3 - (θ * σ) * (θ * γ * σ ^ 2))
+      = θ * r * γ * (1 - θ ^ 2) / 2 := by
+    field_simp
+  have hleadC : (N : ℂ) * Complex.I * ((γ * σ ^ 3 : ℝ) : ℂ) * ((r * θ / σ : ℝ) : ℂ) ^ 3 / 6
+      = Complex.I * ((γ * θ ^ 3 * r : ℝ) : ℂ) / 6 := by
+    rw [← hleadR]
+    push_cast
+    ring
+  have hk2C : Complex.I * ((θ * r / (2 * σ ^ 3) : ℝ) : ℂ)
+        * (((γ * σ ^ 3 : ℝ) : ℂ) - ((θ * σ : ℝ) : ℂ) * ((θ * γ * σ ^ 2 : ℝ) : ℂ))
+      = Complex.I * ((θ * r * γ * (1 - θ ^ 2) / 2 : ℝ) : ℂ) := by
+    rw [← hk2R]
+    push_cast
+    ring
+  rw [hleadC, hk2C]
+  push_cast
+  ring
+
+/-- **(U4) — the same identity, with the right-hand side identified.** The two leading slots of
+`norm_charFun_map_deltaSurrogate_sub_graded_le`, once evaluated, sum to
+`charFunDensity (studentizedEdgeworthDensity γ n) θ` — the transform of the comparison density
+built in this section. This is the statement the window estimate has to be an estimate *of*. -/
+theorem studentized_window_leading_eq_charFunDensity {γ σ θ : ℝ} {n : ℕ} (hn : 0 < n)
+    (hσ : σ ≠ 0) :
+    ((Real.exp (-θ ^ 2 / 2) : ℝ) : ℂ)
+        * (1 - ((n : ℝ) : ℂ) * Complex.I * ((γ * σ ^ 3 : ℝ) : ℂ)
+              * (((Real.sqrt n)⁻¹ * θ / σ : ℝ) : ℂ) ^ 3 / 6)
+      - Complex.I * ((θ * (Real.sqrt n)⁻¹ / (2 * σ ^ 3) : ℝ) : ℂ)
+          * (((γ * σ ^ 3 : ℝ) : ℂ) - ((θ * σ : ℝ) : ℂ) * ((θ * γ * σ ^ 2 : ℝ) : ℂ))
+          * ((Real.exp (-θ ^ 2 / 2) : ℝ) : ℂ)
+      = charFunDensity (studentizedEdgeworthDensity γ n) θ := by
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hr : (n : ℝ) * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 = 1 := by
+    rw [inv_pow, Real.sq_sqrt hnR.le]
+    field_simp
+  have hexp : ((Real.exp (-θ ^ 2 / 2) : ℝ) : ℂ) = Complex.exp (-(θ : ℂ) ^ 2 / 2) := by
+    rw [Complex.ofReal_exp]
+    congr 1
+    push_cast
+    ring
+  rw [charFunDensity_studentizedEdgeworthDensity, ← hexp]
+  exact studentized_window_leading_identity hσ hr
+
 end Approximant
 
 /-! ## The window estimate: elementary envelopes
