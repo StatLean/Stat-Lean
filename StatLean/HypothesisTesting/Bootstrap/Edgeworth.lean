@@ -10719,6 +10719,199 @@ private lemma esseen_split (g : ℝ → ℝ) {δ ρ Kw M : ℝ}
   have hsplit := integral_add_compl hAmeas hInt
   linarith
 
+/-- **The Esseen integral, split at the low range *and* at the window edge — the (U4′) twin of
+`esseen_split`.** Three regimes instead of two. On `|ξ| ≤ ρ₁` the integrand is dominated by
+`Kw·windowEnvelope₁ ξ` **plus an undamped cubic** `Kr|ξ|³`: the envelope part is the damped
+expansion, the cubic is the graded remainder, which carries no `φ^{n−k}` factor and therefore
+cannot be folded into any envelope (wave 42's outer-end refutation). On `ρ₁ ≤ |ξ| ≤ ρ` only a
+constant `M₁` is asked for — that is the middle range, where nothing is expanded. On `ρ ≤ |ξ|`
+the old constant `M` and the old tail bound.
+
+The three window contributions are priced with the *crude* weight `1/(π|ξ|)`, which is the exact
+value of the Esseen weight throughout `|ξ| ≤ ρ` whenever `δρ ≤ π⁻¹` (the split is at `ρ = c√n`
+and `δ = n⁻¹`, so this is never binding): `Kw∫windowDom₁` for the envelope, `2Krρ₁³/π` for the
+cubic — this is the term `low_range_ledger_exponent` prices, and it is the reason `ρ₁` cannot
+exceed `n^{1/6}` — and `2M₁ρ/(πρ₁)` for the middle range, which is `M₁` against the *ratio* of
+the two radii and not against `log(ρ/ρ₁)`; the logarithm would be sharper and is not needed,
+since every candidate route for the middle range produces an `M₁` that is smaller than any
+power of `n`. -/
+private lemma esseen_split_low (g : ℝ → ℝ) {δ ρ₁ ρ Kw Kr M₁ M : ℝ}
+    (hδ : 0 < δ) (hρ₁ : 0 < ρ₁) (hρρ : ρ₁ ≤ ρ) (hKw : 0 ≤ Kw) (hKr : 0 ≤ Kr) (hM₁ : 0 ≤ M₁)
+    (hg0 : ∀ ξ, 0 ≤ g ξ) (hgm : AEStronglyMeasurable g volume)
+    (hlow : ∀ ξ, |ξ| ≤ ρ₁ → g ξ ≤ Kw * windowEnvelope₁ ξ + Kr * |ξ| ^ 3)
+    (hmid : ∀ ξ, ρ₁ ≤ |ξ| → |ξ| ≤ ρ → g ξ ≤ M₁)
+    (htail : ∀ ξ, ρ ≤ |ξ| → g ξ ≤ M) :
+    Integrable (fun ξ : ℝ =>
+        g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)))
+      ∧ (∫ ξ : ℝ, g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)))
+        ≤ Kw * (∫ ξ : ℝ, windowDom₁ ξ) + 2 * Kr * ρ₁ ^ 3 / Real.pi
+            + 2 * M₁ * ρ / (Real.pi * ρ₁) + 2 * M / (δ * Real.pi ^ 2 * ρ) := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have hρ : 0 < ρ := lt_of_lt_of_le hρ₁ hρρ
+  set W : ℝ → ℝ := fun ξ => min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)) with hWdef
+  have hWnn : ∀ ξ : ℝ, 0 ≤ W ξ := fun ξ =>
+    le_min (div_nonneg zero_le_one (by positivity))
+      (div_nonneg zero_le_one (mul_nonneg (mul_nonneg hδ.le (by positivity)) (sq_nonneg ξ)))
+  have hfnn : ∀ ξ : ℝ, 0 ≤ g ξ * W ξ := fun ξ => mul_nonneg (hg0 ξ) (hWnn ξ)
+  have hprodmeas : AEStronglyMeasurable (fun ξ : ℝ => g ξ * W ξ) volume :=
+    hgm.mul (by rw [hWdef]; fun_prop)
+  set A : Set ℝ := {ξ : ℝ | |ξ| ≤ ρ₁} with hAdef
+  set P : Set ℝ := {ξ : ℝ | |ξ| ≤ ρ} with hPdef
+  have hAm : MeasurableSet A := measurableSet_le (by fun_prop) measurable_const
+  have hPm : MeasurableSet P := measurableSet_le (by fun_prop) measurable_const
+  have hAP : A ⊆ P := fun ξ hξ => le_trans hξ hρρ
+  have hAeq : A = Set.Icc (-ρ₁) ρ₁ := by
+    ext ξ; simp [hAdef, abs_le, Set.mem_Icc, and_comm]
+  have hPeq : P = Set.Icc (-ρ) ρ := by
+    ext ξ; simp [hPdef, abs_le, Set.mem_Icc, and_comm]
+  have hvolA : volume A = ENNReal.ofReal (2 * ρ₁) := by
+    rw [hAeq, Real.volume_Icc]; congr 1; ring
+  have hvolP : volume P = ENNReal.ofReal (2 * ρ) := by
+    rw [hPeq, Real.volume_Icc]; congr 1; ring
+  have hvolAr : volume.real A = 2 * ρ₁ := by
+    rw [measureReal_def, hvolA, ENNReal.toReal_ofReal (by linarith)]
+  have hvolPr : volume.real P = 2 * ρ := by
+    rw [measureReal_def, hvolP, ENNReal.toReal_ofReal (by linarith)]
+  have hPtop : volume P ≠ ⊤ := by rw [hvolP]; exact ENNReal.ofReal_ne_top
+  have hAtop : volume A ≠ ⊤ := by rw [hvolA]; exact ENNReal.ofReal_ne_top
+  have hcube : ∀ ξ : ℝ, |ξ| ≤ ρ₁ → |ξ| ^ 3 * (1 / (Real.pi * |ξ|)) ≤ ρ₁ ^ 2 / Real.pi := by
+    intro ξ hξ
+    rcases eq_or_ne ξ 0 with rfl | h
+    · have hz : |(0 : ℝ)| ^ 3 * (1 / (Real.pi * |(0 : ℝ)|)) = 0 := by simp
+      rw [hz]; positivity
+    · have hx : (0 : ℝ) < |ξ| := abs_pos.2 h
+      have heq : |ξ| ^ 3 * (1 / (Real.pi * |ξ|)) = |ξ| ^ 2 / Real.pi := by
+        field_simp
+      rw [heq]
+      gcongr
+  have hptA : ∀ ξ ∈ A, g ξ * W ξ ≤ Kw * windowDom₁ ξ + Kr * ρ₁ ^ 2 / Real.pi := by
+    intro ξ hξ
+    have hξ' : |ξ| ≤ ρ₁ := hξ
+    have h1 : g ξ * W ξ ≤ (Kw * windowEnvelope₁ ξ + Kr * |ξ| ^ 3) * W ξ :=
+      mul_le_mul_of_nonneg_right (hlow ξ hξ') (hWnn ξ)
+    have hWle : W ξ ≤ 1 / (Real.pi * |ξ|) := min_le_left _ _
+    have h2 : (Kw * windowEnvelope₁ ξ + Kr * |ξ| ^ 3) * W ξ
+        ≤ (Kw * windowEnvelope₁ ξ + Kr * |ξ| ^ 3) * (1 / (Real.pi * |ξ|)) := by
+      refine mul_le_mul_of_nonneg_left hWle ?_
+      have := windowEnvelope₁_nonneg ξ
+      positivity
+    have h3 : Kw * windowEnvelope₁ ξ * (1 / (Real.pi * |ξ|)) ≤ Kw * windowDom₁ ξ := by
+      rw [mul_assoc]
+      exact mul_le_mul_of_nonneg_left (windowEnvelope₁_mul_weight_le ξ) hKw
+    have h4 : Kr * |ξ| ^ 3 * (1 / (Real.pi * |ξ|)) ≤ Kr * ρ₁ ^ 2 / Real.pi := by
+      have := mul_le_mul_of_nonneg_left (hcube ξ hξ') hKr
+      calc Kr * |ξ| ^ 3 * (1 / (Real.pi * |ξ|))
+          = Kr * (|ξ| ^ 3 * (1 / (Real.pi * |ξ|))) := by ring
+        _ ≤ Kr * (ρ₁ ^ 2 / Real.pi) := this
+        _ = Kr * ρ₁ ^ 2 / Real.pi := by ring
+    have hexp : (Kw * windowEnvelope₁ ξ + Kr * |ξ| ^ 3) * (1 / (Real.pi * |ξ|))
+        = Kw * windowEnvelope₁ ξ * (1 / (Real.pi * |ξ|))
+          + Kr * |ξ| ^ 3 * (1 / (Real.pi * |ξ|)) := by ring
+    linarith [h1, h2, h3, h4, hexp.le, hexp.ge]
+  have hptM : ∀ ξ ∈ P \ A, g ξ * W ξ ≤ M₁ / (Real.pi * ρ₁) := by
+    intro ξ hξ
+    obtain ⟨hξP, hξA⟩ := hξ
+    have h1 : ρ₁ ≤ |ξ| := le_of_lt (not_le.1 hξA)
+    have h2 : |ξ| ≤ ρ := hξP
+    have hx : (0 : ℝ) < |ξ| := lt_of_lt_of_le hρ₁ h1
+    have hWle : W ξ ≤ 1 / (Real.pi * |ξ|) := min_le_left _ _
+    have hwb : (1 : ℝ) / (Real.pi * |ξ|) ≤ 1 / (Real.pi * ρ₁) := by
+      apply one_div_le_one_div_of_le (by positivity)
+      gcongr
+    calc g ξ * W ξ ≤ M₁ * W ξ := mul_le_mul_of_nonneg_right (hmid ξ h1 h2) (hWnn ξ)
+      _ ≤ M₁ * (1 / (Real.pi * ρ₁)) := mul_le_mul_of_nonneg_left (le_trans hWle hwb) hM₁
+      _ = M₁ / (Real.pi * ρ₁) := by ring
+  have hptP : ∀ ξ ∈ P,
+      g ξ * W ξ ≤ Kw * windowDom₁ ξ + (Kr * ρ₁ ^ 2 / Real.pi + M₁ / (Real.pi * ρ₁)) := by
+    intro ξ hξ
+    by_cases h : |ξ| ≤ ρ₁
+    · have := hptA ξ h
+      have hnn : (0 : ℝ) ≤ M₁ / (Real.pi * ρ₁) := by positivity
+      linarith
+    · have := hptM ξ ⟨hξ, h⟩
+      have hnn1 : (0 : ℝ) ≤ Kw * windowDom₁ ξ := mul_nonneg hKw (windowDom₁_nonneg ξ)
+      have hnn2 : (0 : ℝ) ≤ Kr * ρ₁ ^ 2 / Real.pi := by positivity
+      linarith
+  have hdomP : IntegrableOn
+      (fun ξ : ℝ => Kw * windowDom₁ ξ + (Kr * ρ₁ ^ 2 / Real.pi + M₁ / (Real.pi * ρ₁))) P :=
+    (integrable_windowDom₁.const_mul Kw).integrableOn.add (integrableOn_const hPtop)
+  have hPint : IntegrableOn (fun ξ : ℝ => g ξ * W ξ) P := by
+    refine Integrable.mono' hdomP hprodmeas.restrict ?_
+    filter_upwards [ae_restrict_mem hPm] with ξ hξ
+    rw [Real.norm_eq_abs, abs_of_nonneg (hfnn ξ)]
+    exact hptP ξ hξ
+  have hTint : IntegrableOn (fun ξ : ℝ => g ξ * W ξ) {ξ : ℝ | ρ ≤ |ξ|} := by
+    refine Integrable.mono' ((integrableOn_esseenWeight_tail hδ hρ).const_mul M)
+      hprodmeas.restrict ?_
+    filter_upwards [ae_restrict_mem (measurableSet_le measurable_const (by fun_prop))] with ξ hξ
+    rw [Real.norm_eq_abs, abs_of_nonneg (hfnn ξ)]
+    exact mul_le_mul_of_nonneg_right (htail ξ hξ) (hWnn ξ)
+  have hcover : P ∪ {ξ : ℝ | ρ ≤ |ξ|} = Set.univ := by
+    ext ξ
+    simp only [hPdef, Set.mem_union, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    exact le_total |ξ| ρ
+  have hInt : Integrable (fun ξ : ℝ => g ξ * W ξ) := by
+    rw [← integrableOn_univ, ← hcover]
+    exact hPint.union hTint
+  refine ⟨hInt, ?_⟩
+  have hAint : IntegrableOn (fun ξ : ℝ => g ξ * W ξ) A := hPint.mono_set hAP
+  have hDint : IntegrableOn (fun ξ : ℝ => g ξ * W ξ) (P \ A) :=
+    hPint.mono_set Set.diff_subset
+  have hAdom : IntegrableOn (fun ξ : ℝ => Kw * windowDom₁ ξ + Kr * ρ₁ ^ 2 / Real.pi) A :=
+    (integrable_windowDom₁.const_mul Kw).integrableOn.add (integrableOn_const hAtop)
+  have hbA : (∫ ξ in A, g ξ * W ξ) ≤ Kw * (∫ ξ : ℝ, windowDom₁ ξ) + 2 * Kr * ρ₁ ^ 3 / Real.pi := by
+    have hstep : (∫ ξ in A, g ξ * W ξ)
+        ≤ ∫ ξ in A, (Kw * windowDom₁ ξ + Kr * ρ₁ ^ 2 / Real.pi) :=
+      setIntegral_mono_on hAint hAdom hAm hptA
+    have hsplit : (∫ ξ in A, (Kw * windowDom₁ ξ + Kr * ρ₁ ^ 2 / Real.pi))
+        = (∫ ξ in A, Kw * windowDom₁ ξ) + (volume.real A) * (Kr * ρ₁ ^ 2 / Real.pi) := by
+      rw [integral_add ((integrable_windowDom₁.const_mul Kw).integrableOn)
+        (integrableOn_const (C := Kr * ρ₁ ^ 2 / Real.pi) hAtop)]
+      congr 1
+      rw [setIntegral_const, smul_eq_mul]
+    have hb1 : (∫ ξ in A, Kw * windowDom₁ ξ) ≤ Kw * ∫ ξ : ℝ, windowDom₁ ξ := by
+      have h := setIntegral_mono_set (μ := volume) (f := fun ξ : ℝ => Kw * windowDom₁ ξ)
+        (integrable_windowDom₁.const_mul Kw).integrableOn
+        (Filter.Eventually.of_forall fun ξ => mul_nonneg hKw (windowDom₁_nonneg ξ))
+        (Set.subset_univ A).eventuallyLE
+      rw [setIntegral_univ] at h
+      calc (∫ ξ in A, Kw * windowDom₁ ξ) ≤ ∫ ξ : ℝ, Kw * windowDom₁ ξ := h
+        _ = Kw * ∫ ξ : ℝ, windowDom₁ ξ := MeasureTheory.integral_const_mul _ _
+    have hb2 : (volume.real A) * (Kr * ρ₁ ^ 2 / Real.pi) = 2 * Kr * ρ₁ ^ 3 / Real.pi := by
+      rw [hvolAr]; field_simp
+    linarith [hstep, hsplit.le, hsplit.ge, hb1, hb2.le, hb2.ge]
+  have hbD : (∫ ξ in P \ A, g ξ * W ξ) ≤ 2 * M₁ * ρ / (Real.pi * ρ₁) := by
+    have hDm : MeasurableSet (P \ A) := hPm.diff hAm
+    have hDtop : volume (P \ A) ≠ ⊤ :=
+      ne_top_of_le_ne_top hPtop (measure_mono Set.diff_subset)
+    have hstep : (∫ ξ in P \ A, g ξ * W ξ) ≤ ∫ _ξ in P \ A, M₁ / (Real.pi * ρ₁) :=
+      setIntegral_mono_on hDint (integrableOn_const hDtop) hDm hptM
+    have hconst : (∫ _ξ in P \ A, M₁ / (Real.pi * ρ₁))
+        = (volume.real (P \ A)) * (M₁ / (Real.pi * ρ₁)) := by
+      rw [setIntegral_const, smul_eq_mul]
+    have hmono : volume.real (P \ A) ≤ 2 * ρ := by
+      rw [← hvolPr]; exact measureReal_mono Set.diff_subset hPtop
+    have hnn : (0 : ℝ) ≤ M₁ / (Real.pi * ρ₁) := by positivity
+    have := mul_le_mul_of_nonneg_right hmono hnn
+    have heq : 2 * ρ * (M₁ / (Real.pi * ρ₁)) = 2 * M₁ * ρ / (Real.pi * ρ₁) := by ring
+    linarith [hstep, hconst.le, hconst.ge, heq.le, heq.ge]
+  have hbT : (∫ ξ in Pᶜ, g ξ * W ξ) ≤ 2 * M / (δ * Real.pi ^ 2 * ρ) := by
+    have hnnT : 0 ≤ᵐ[volume.restrict {ξ : ℝ | ρ ≤ |ξ|}] fun ξ : ℝ => g ξ * W ξ :=
+      Filter.Eventually.of_forall hfnn
+    have hcompl : Pᶜ ⊆ {ξ : ℝ | ρ ≤ |ξ|} := by
+      intro ξ hξ
+      simp only [hPdef, Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hξ
+      exact hξ.le
+    have h1 := setIntegral_mono_set hTint hnnT hcompl.eventuallyLE
+    have h2 := setIntegral_mul_esseenWeight_tail_le hδ hρ hgm hg0 htail
+    exact le_trans h1 h2
+  have hdecomp : (∫ ξ in A, g ξ * W ξ) + (∫ ξ in P \ A, g ξ * W ξ) = ∫ ξ in P, g ξ * W ξ := by
+    have h := MeasureTheory.integral_inter_add_diff (μ := volume) (f := fun ξ : ℝ => g ξ * W ξ)
+      hAm hPint
+    rwa [Set.inter_eq_right.2 hAP] at h
+  have hfull := integral_add_compl hPm hInt
+  linarith
+
 /-- The approximant of the statement, on the standardized scale: `(t/σ)² = t²/Var`. -/
 private lemma edgeworthCDF_eq_approx (F : Measure ℝ)
     (hFvar : 0 < Var[fun t : ℝ => t; F]) (n : ℕ) (t : ℝ) :
