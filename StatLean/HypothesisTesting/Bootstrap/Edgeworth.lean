@@ -9356,6 +9356,159 @@ theorem norm_integral_fibrePhase_le (N : ℕ) :
   refine hmain.trans (le_of_eq ?_)
   ring
 
+/-! ### The fibre of the leakage integral: amplitude, and the estimate for the multiplier
+
+The last piece of the fibrewise reduction that is *analysis* rather than measure theory. The
+bulk cut-off restricted to a horizontal fibre and read in the rescaled variable `w₀ = Mx` is a
+**scale-free** amplitude: `norm_iteratedDeriv_fibreAmplitude_le` bounds all its derivatives by
+the cut-off's own, with no `M`, because the fibre embedding is affine with linear part of norm
+one (`norm_iteratedDeriv_comp_fibreEmbed_le`). Together with the fibre phase this gives
+`norm_integral_fibre_bulkMultiplier_le` — the leakage integral along one fibre, with the actual
+cut-off and the actual surrogate, priced at the ledger`s gain. -/
+
+/-- The affine embedding of a horizontal fibre into the plane. -/
+noncomputable def fibreEmbed (c : ℝ) : ℝ → E₂ := fun u => u • coordDir 0 + c • coordDir 1
+
+@[simp] lemma fibreEmbed_apply_zero (c u : ℝ) : fibreEmbed c u 0 = u := by
+  simp [fibreEmbed, coordDir, EuclideanSpace.single_apply]
+
+@[simp] lemma fibreEmbed_apply_one (c u : ℝ) : fibreEmbed c u 1 = c := by
+  simp [fibreEmbed, coordDir, EuclideanSpace.single_apply]
+
+/-- **The line-restriction bridge.** Derivatives along a horizontal fibre are bounded by the
+full two-dimensional iterated derivatives, because the fibre embedding is affine with linear part
+of norm one. This is what turns the file's `iteratedFDeriv` bounds for the bulk cut-off into the
+`iteratedDeriv` grading that `norm_integral_fibrePhase_le` consumes. -/
+lemma norm_iteratedDeriv_comp_fibreEmbed_le {g : E₂ → ℝ} (hg : ContDiff ℝ (⊤ : ℕ∞) g)
+    (c : ℝ) (j : ℕ) (x : ℝ) :
+    |iteratedDeriv j (fun u : ℝ => g (fibreEmbed c u)) x|
+      ≤ ‖iteratedFDeriv ℝ j g (fibreEmbed c x)‖ := by
+  have hAn : ‖ContinuousLinearMap.toSpanSingleton ℝ (coordDir 0)‖ = 1 := by
+    rw [ContinuousLinearMap.norm_toSpanSingleton, coordDir]
+    simp
+  have hcomp : (fun u : ℝ => g (fibreEmbed c u))
+      = (fun v : E₂ => g (v + c • coordDir 1))
+        ∘ (ContinuousLinearMap.toSpanSingleton ℝ (coordDir 0)) := by
+    funext u
+    simp [fibreEmbed, Function.comp_def, ContinuousLinearMap.toSpanSingleton_apply]
+  have hg' : ContDiff ℝ (⊤ : ℕ∞) fun v : E₂ => g (v + c • coordDir 1) :=
+    hg.comp (contDiff_id.add contDiff_const)
+  rw [← Real.norm_eq_abs, ← norm_iteratedFDeriv_eq_norm_iteratedDeriv, hcomp,
+    ContinuousLinearMap.iteratedFDeriv_comp_right _ hg' x (mod_cast le_top)]
+  refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
+  have hprod : (∏ _i : Fin j, ‖ContinuousLinearMap.toSpanSingleton ℝ (coordDir 0)‖) = 1 := by
+    simp [hAn]
+  rw [hprod, mul_one, iteratedFDeriv_comp_add_right]
+  have hpt : (ContinuousLinearMap.toSpanSingleton ℝ (coordDir 0)) x + c • coordDir 1
+      = fibreEmbed c x := by
+    simp [fibreEmbed, ContinuousLinearMap.toSpanSingleton_apply]
+  rw [hpt]
+
+
+lemma norm_fibreEmbed_ge (c x : ℝ) : |x| ≤ ‖fibreEmbed c x‖ := by
+  have h := abs_real_inner_le_norm (fibreEmbed c x) (coordDir 0)
+  rw [inner_coordDir 0 (fibreEmbed c x), fibreEmbed_apply_zero] at h
+  have hc : ‖coordDir (0 : Fin 2)‖ = 1 := by rw [coordDir]; simp
+  rw [hc, mul_one] at h
+  exact h
+
+lemma smul_fibreEmbed {M : ℝ} (hM : M ≠ 0) (w₁ x : ℝ) :
+    M⁻¹ • fibreEmbed w₁ (M * x) = fibreEmbed (w₁ / M) x := by
+  rw [fibreEmbed, fibreEmbed, smul_add, smul_smul, smul_smul]
+  rw [show M⁻¹ * (M * x) = x by field_simp, show M⁻¹ * w₁ = w₁ / M by rw [div_eq_inv_mul]]
+
+/-- The **rescaled fibre amplitude**: the bulk cut-off along a horizontal fibre, read in the
+rescaled variable `w₀ = Mx`. Rescaling turns the dilate `χ(·/M)` into a *scale-free* function of
+`x` — its derivatives are bounded by the cut-off's own, with no `M` in sight — which is exactly
+the amplitude hypothesis of `norm_integral_fibrePhase_le`. -/
+noncomputable def fibreAmplitude (M w₁ : ℝ) : ℝ → ℂ :=
+  fun x => ((bulkCutoff (fibreEmbed (w₁ / M) x) : ℝ) : ℂ)
+
+lemma fibreAmplitude_eq {M : ℝ} (hM : M ≠ 0) (w₁ x : ℝ) :
+    fibreAmplitude M w₁ x = ((bulkCutoff (M⁻¹ • fibreEmbed w₁ (M * x)) : ℝ) : ℂ) := by
+  rw [fibreAmplitude, smul_fibreEmbed hM]
+
+lemma contDiff_fibreEmbed (c : ℝ) : ContDiff ℝ (⊤ : ℕ∞) (fibreEmbed c) := by
+  unfold fibreEmbed
+  exact (contDiff_id.smul contDiff_const).add contDiff_const
+
+lemma contDiff_bulkCutoff_comp_fibreEmbed (c : ℝ) :
+    ContDiff ℝ (⊤ : ℕ∞) fun x : ℝ => (bulkCutoff (fibreEmbed c x) : ℝ) :=
+  (bulkCutoff.contDiff (n := (⊤ : ℕ∞))).comp (contDiff_fibreEmbed c)
+
+lemma contDiff_fibreAmplitude (M w₁ : ℝ) : ContDiff ℝ (⊤ : ℕ∞) (fibreAmplitude M w₁) :=
+  Complex.ofRealCLM.contDiff.comp (contDiff_bulkCutoff_comp_fibreEmbed (w₁ / M))
+
+lemma fibreAmplitude_eq_zero (M w₁ : ℝ) {x : ℝ} (hx : 2 < |x|) : fibreAmplitude M w₁ x = 0 := by
+  have h2 : (2 : ℝ) ≤ ‖fibreEmbed (w₁ / M) x‖ := le_trans hx.le (norm_fibreEmbed_ge _ _)
+  have hz : (bulkCutoff (fibreEmbed (w₁ / M) x) : ℝ) = 0 := by
+    refine bulkCutoff.zero_of_le_dist ?_
+    simpa [dist_eq_norm, bulkCutoff] using h2
+  rw [fibreAmplitude, hz]
+  simp
+
+/-- **The amplitude side of the fibrewise reduction.** The rescaled fibre amplitude is graded by
+the cut-off's own derivative bound, uniformly in `M`, `w₁` and `x`. -/
+lemma norm_iteratedDeriv_fibreAmplitude_le {B : ℝ} {m : ℕ}
+    (hB : ∀ i ≤ m, ∀ y : E₂, ‖iteratedFDeriv ℝ i (⇑bulkCutoff) y‖ ≤ B) (M w₁ : ℝ) :
+    ∀ j ≤ m, ∀ x : ℝ, ‖iteratedDeriv j (fibreAmplitude M w₁) x‖ ≤ B := by
+  intro j hj x
+  have heq : fibreAmplitude M w₁
+      = fun x : ℝ => (((fun y : ℝ => (bulkCutoff (fibreEmbed (w₁ / M) y) : ℝ)) x : ℝ) : ℂ) := rfl
+  rw [heq, norm_iteratedDeriv_ofReal (contDiff_bulkCutoff_comp_fibreEmbed (w₁ / M))]
+  refine le_trans ?_ (hB j hj (fibreEmbed (w₁ / M) x))
+  exact norm_iteratedDeriv_comp_fibreEmbed_le (bulkCutoff.contDiff (n := (⊤ : ℕ∞))) _ j x
+
+/-- **THE FIBRE ESTIMATE FOR THE BULK MULTIPLIER ITSELF.** One horizontal fibre of the leakage
+integral, with the actual cut-off and the actual surrogate phase, is `O(gain^N)` with
+`gain = 81Mr²/(σ|θ|) + 3σ/(M|θ|)` — the quantity `fibre_gain_ledger_ten_le` runs to `O(n^{-3/2})`
+at `N = 10`. Only the Fubini reduction of `𝓕 g` to iterated integrals, and the outer `w₁`/`s`
+bookkeeping, now stand between this and input (B). -/
+theorem norm_integral_fibre_bulkMultiplier_le (N : ℕ) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (σ r θ t₀ w₁ M : ℝ), 0 < σ → 1 ≤ M → θ ≠ 0 →
+      |t₀| ≤ |θ| / (2 * σ) →
+      ‖∫ x : ℝ, ((bulkCutoff (M⁻¹ • fibreEmbed w₁ (M * x)) : ℝ) : ℂ) *
+          Complex.exp (Complex.I * ((θ * deltaSurrogate σ r (fibreEmbed w₁ (M * x))
+            - t₀ * (M * x) : ℝ) : ℂ))‖
+        ≤ C * (C * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N := by
+  obtain ⟨C₀, hC₀1, hC₀⟩ := norm_integral_fibrePhase_le N
+  obtain ⟨B, hB0, hB⟩ := exists_bound_iteratedFDeriv_bulkCutoff N
+  refine ⟨max (4 * B) C₀, lt_of_lt_of_le (by positivity) (le_max_left _ _), ?_⟩
+  intro σ r θ t₀ w₁ M hσ hM hθ ht₀
+  have hM0 : (0 : ℝ) < M := lt_of_lt_of_le zero_lt_one hM
+  have hθ0 : 0 < |θ| := abs_pos.mpr hθ
+  have hg0 : (0 : ℝ) ≤ 81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|) := by positivity
+  -- the integrand is the fibre amplitude against the fibre phase
+  have hphase : ∀ x : ℝ, θ * deltaSurrogate σ r (fibreEmbed w₁ (M * x)) - t₀ * (M * x)
+      = fibrePhase σ r θ t₀ w₁ (M * x) := by
+    intro x
+    have h := fibrePhase_apply (ne_of_gt hσ) r θ t₀ (fibreEmbed w₁ (M * x))
+    rw [fibreEmbed_apply_zero, fibreEmbed_apply_one] at h
+    exact h.symm
+  have hamp : ∀ x : ℝ, ((bulkCutoff (M⁻¹ • fibreEmbed w₁ (M * x)) : ℝ) : ℂ)
+      = fibreAmplitude M w₁ x := fun x => (fibreAmplitude_eq (ne_of_gt hM0) w₁ x).symm
+  simp only [hphase, hamp]
+  have hmain := hC₀ σ r θ t₀ w₁ M B (fibreAmplitude M w₁) hσ hM0 hθ ht₀
+    (contDiff_fibreAmplitude M w₁) hB0.le
+    (norm_iteratedDeriv_fibreAmplitude_le hB M w₁)
+    (fun x hx => fibreAmplitude_eq_zero M w₁ hx)
+  refine hmain.trans ?_
+  have h1 : (C₀ * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N
+      ≤ (max (4 * B) C₀ * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N := by
+    refine pow_le_pow_left₀ (by positivity) ?_ N
+    exact mul_le_mul_of_nonneg_right (le_max_right _ _) hg0
+  have h2 : (0 : ℝ) ≤ (max (4 * B) C₀ * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N := by
+    have : (0 : ℝ) ≤ max (4 * B) C₀ := le_trans (by positivity) (le_max_left _ _)
+    exact pow_nonneg (mul_nonneg this hg0) N
+  calc 4 * (B * (C₀ * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N)
+      = (4 * B) * (C₀ * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N := by ring
+    _ ≤ (4 * B) * (max (4 * B) C₀
+          * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N :=
+        mul_le_mul_of_nonneg_left h1 (by positivity)
+    _ ≤ max (4 * B) C₀ * (max (4 * B) C₀
+          * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N :=
+        mul_le_mul_of_nonneg_right (le_max_left _ _) h2
+
 /-! ### The wave-45 ledger: the fibre estimate meets the leakage ledger unamended -/
 
 /-- **The fibre estimate's gain is the ledger's gain.** The two branches of an integration by
@@ -9500,26 +9653,30 @@ theorem:
   Run on the rescaled fibre `w₀ = Mx` — which is not cosmetic, since un-rescaled the cut-off's
   own scale is thrown away and the per-part cost degrades to `3σ/|θ| = O(1)` in the middle range —
   the gain per part is `81Mr²/(σ|θ|) + 3σ/(M|θ|)`, the two branches of one integration by parts.
+  `norm_integral_fibre_bulkMultiplier_le` is this at the actual cut-off and the actual surrogate.
 * `fibre_gain_le_bulk_gain` / `fibre_gain_ledger_ten_le`: that gain is dominated by the single
   quantity `Mr²/|θ|` that `bulk_gain_phase_le_band` prices (because `M²r² = n^{1/4} ≥ 1`), and ten
   of them against the prefactor `M²` and a bad set of area `≤ n` land at `O(n^{-3/2})` at every
   band exponent `b ≥ 0`, `b = 0` included. **The wave-43/44 numerology needs no amendment.**
 
-What is **still** not done, and it is now two items, both plumbing rather than analysis:
+* `norm_integral_fibre_bulkMultiplier_le`: the two previous items applied to the **actual**
+  integrand. The cut-off restricted to a fibre and rescaled is scale-free
+  (`norm_iteratedDeriv_fibreAmplitude_le`, over the norm-one embedding bridge
+  `norm_iteratedDeriv_comp_fibreEmbed_le`), so one horizontal fibre of the leakage integral,
+  with the actual `χ(·/M)` and the actual `θHₙ − t₀w₀`, is `O(gain^N)`.
 
-* the **amplitude side** of the fibrewise reduction: `norm_integral_fibrePhase_le` wants
-  `‖∂^j_x f‖ ≤ P` for the rescaled cut-off `x ↦ χ((x, w₁/M))`, and the file has the two-dimensional
-  bound (`exists_bound_iteratedFDeriv_bulkCutoff`, `norm_iteratedFDeriv_bulkCutoff_dilate_le`) but
-  not the bridge from `iteratedFDeriv` on `E₂` to `iteratedDeriv` along a horizontal line. That
-  bridge is `ContinuousLinearMap.iteratedFDeriv_comp_right` at the norm-one embedding
-  `u ↦ u·e₀ + c·e₁`, composed with `iteratedFDeriv_comp_add_right`; it is a lemma, not a problem.
-* the **reduction of `𝓕 g` to an iterated integral** and the outer `w₁`/`s` bookkeeping: Fubini is
-  harmless (the support is compact) but the measure-preserving identification of `E₂` with `ℝ × ℝ`
-  is not free, and the `w₁`-integration over a set of length `≍ M` and the `s`-integration over the
-  bad set (area `≍ log n`, against a ledger run at the conservative `≍ n`) have to be assembled.
+What is **still** not done is now **one** item, and it is measure theory rather than analysis:
 
-No obstruction to either is known, and the arithmetic they have to reproduce is now *proved* in
-the file rather than merely checked. This is a budget statement, not a verdict. -/
+* the **reduction of `𝓕 g` to an iterated integral**, and the outer bookkeeping it feeds. Fubini
+  is harmless (the support is compact) but the measure-preserving identification of `E₂` with
+  `ℝ × ℝ` is not free; after it, `norm_integral_fibre_bulkMultiplier_le` is applied at each frozen
+  `w₁` (a set of length `≍ M`, contributing the second factor of the `M²` prefactor) and the
+  result integrated over the bad set in `s` (area `≍ log n`, against a ledger run at the
+  conservative `≍ n`, so with room to spare). Every constant that step has to produce is already
+  proved above; what it has to *do* is exchange two integrals.
+
+No obstruction is known, and the arithmetic is now *proved* in the file rather than merely
+checked. This is a budget statement, not a verdict. -/
 theorem exists_integral_norm_fourierWeight_bulkMultiplier_band_le
     {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) {Kb : ℝ} (hKb : 0 ≤ Kb) :
     ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ ≤ |θ| →
@@ -15448,9 +15605,9 @@ THIS THEOREM IS STILL `sorry`, AND SO IS (B); WAVE 45 DOES NOT CLAIM OTHERWISE.*
   row have now had to correct their predecessor's arithmetic; this one does not.
 * **ITEM 2 WAS NOT ATTEMPTED, AND THE REASON IS WAVE 43'S AND WAVE 44'S.** The three-regime
   assembly has a statement for every regime, but the middle and outer regimes still rest on (B),
-  which is still a `sorry` — its two remaining items are the `iteratedFDeriv`-on-`E₂` to
-  `iteratedDeriv`-on-a-line bridge for the cut-off, and the Fubini reduction plus outer `w₁`/`s`
-  bookkeeping. Assembling now would produce a theorem whose only content is the `sorry` it
+  which is still a `sorry` — its one remaining item is the Fubini reduction of `𝓕 g` to iterated
+  integrals together with the outer `w₁`/`s` bookkeeping it feeds. Assembling now would produce a
+  theorem whose only content is the `sorry` it
   already has. **The file is still at two `sorry`s — this one and (B).** -/
 
 
