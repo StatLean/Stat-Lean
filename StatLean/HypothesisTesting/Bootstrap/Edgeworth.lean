@@ -10107,6 +10107,126 @@ private lemma exists_window_core (ρ β M σ : ℝ) (hρ : 0 ≤ ρ) (hβ : 0 �
 
 end WindowEnvelope
 
+/-! ## The window estimate: the degree-one envelope of (U4′)
+
+Wave 42 refuted the shape `≤ (K/n)·windowEnvelope ξ` at both ends of the window and recorded
+what has to replace it. Two things change, and they are independent of each other.
+
+* **The envelope starts at degree one, not four.** `windowEnvelope₁ ξ = e^{−π²ξ²/2}(|ξ| + |ξ|⁸)`.
+  The degree at the origin is forced by the inputs and not chosen: the `k = 3` slot's prefactor
+  `θr²/(2σ³)` multiplies an `O(1)` multilinear factor and is `Θ(|θ|)`, and the `k = 2` remainder
+  is `Θ(θ²)`; `not_exists_const_mul_windowEnvelope_ge` is the proof that degree four is too
+  small. The Gaussian factor is *not* cosmetic — it is `‖φ(rθ/σ)‖^{n−k}`, the damping wave 42
+  had to add to three of the four inputs, weakened to `e^{−π²ξ²/2}`.
+* **The window itself is split.** `esseen_split_low` replaces `esseen_split`: the envelope
+  governs `|ξ| ≤ ρ₁` only; an *undamped* monomial `Kr|ξ|³` is admitted there as well — that is
+  the graded remainder, which carries no damping and, by wave 42's item 4, cannot be given any;
+  and a bare constant `M₁` governs the middle range `ρ₁ ≤ |ξ| ≤ ρ`. The three contributions to
+  the Esseen integral are `Kw∫windowDom₁`, `2Krρ₁³/π` and `2M₁ρ/(πρ₁)`, plus the old tail
+  `2M/(δπ²ρ)`.
+
+**The exponent the split forces, and it is sharp.** At `ρ₁ = n^{a}` the graded remainder
+contributes `Kr = C r³ = C n^{-3/2}`, so its Esseen weight `2Krρ₁³/π` is `Θ(n^{3a − 3/2})`.
+Against the target `n⁻¹` that is `a ≤ 1/6`, with equality admissible:
+`low_range_ledger_exponent` is the identity `n^{-3/2}·(n^{1/6})³ = n⁻¹`, and
+`low_range_ledger_gt` is the witness that every `a > 1/6` overshoots at every `n ≥ 2`. So
+**`a = 1/6` is the honest low-range exponent and it is the largest one**, and the range the
+split leaves uncovered is `n^{1/6} ≤ |ξ| ≤ c√n` — the middle range wave 42 named. See the note
+above `norm_charFun_vecRootLaw_le_exp_neg_sq` for which of its two candidate routes survives.
+
+Note that `∫ windowDom₁ < ∞` is still a Gaussian moment (`integrable_windowDom₁`), so the
+degree-one envelope is admissible for the Esseen weight exactly as the degree-four one was. The
+failure wave 42 found at the *outer* end was never about the envelope, and lowering its degree
+does not repair it; only the split does. -/
+
+section WindowEnvelopeOne
+
+/-- The **degree-one envelope** of (U4′), `e^{−π²ξ²/2}(|ξ| + |ξ|⁸)`. It differs from
+`windowEnvelope` only at the origin, where it is of degree one instead of four — which is what
+`not_exists_const_mul_windowEnvelope_ge` shows is necessary. -/
+private noncomputable def windowEnvelope₁ (ξ : ℝ) : ℝ :=
+  Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) * (|ξ| + |ξ| ^ 8)
+
+/-- The degree-one envelope after the Esseen weight has been applied. -/
+private noncomputable def windowDom₁ (ξ : ℝ) : ℝ :=
+  Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) * (1 + |ξ| ^ 7) * (Real.pi)⁻¹
+
+private lemma windowEnvelope₁_nonneg (ξ : ℝ) : 0 ≤ windowEnvelope₁ ξ := by
+  unfold windowEnvelope₁; positivity
+
+private lemma windowDom₁_nonneg (ξ : ℝ) : 0 ≤ windowDom₁ ξ := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  unfold windowDom₁; positivity
+
+/-- The weighted envelope, as an **inequality** and not an identity. `windowEnvelope_mul_weight`
+is an equation because both of its sides vanish at `ξ = 0`; here the left-hand side still
+vanishes (`1/(π·0)` is `0` in Lean) but `windowDom₁ 0 = π⁻¹`, so the two sides differ at the
+single point `0`. The inequality is all `esseen_split_low` consumes. -/
+private lemma windowEnvelope₁_mul_weight_le (ξ : ℝ) :
+    windowEnvelope₁ ξ * (1 / (Real.pi * |ξ|)) ≤ windowDom₁ ξ := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have hπ' : Real.pi ≠ 0 := ne_of_gt hπ
+  rcases eq_or_ne ξ 0 with rfl | h
+  · have h0 : windowEnvelope₁ (0 : ℝ) = 0 := by simp [windowEnvelope₁]
+    rw [h0, zero_mul]
+    exact windowDom₁_nonneg 0
+  · have hx : |ξ| ≠ 0 := abs_ne_zero.2 h
+    have hsplit : |ξ| + |ξ| ^ 8 = (1 + |ξ| ^ 7) * |ξ| := by ring
+    have heq : windowEnvelope₁ ξ * (1 / (Real.pi * |ξ|)) = windowDom₁ ξ := by
+      unfold windowEnvelope₁ windowDom₁
+      rw [hsplit]
+      field_simp
+    exact le_of_eq heq
+
+/-- `∫ Env₁(ξ)/|ξ|` is a Gaussian moment, so the degree-one envelope is admissible for the
+Esseen weight — the requirement wave 42 identified as the one an envelope must meet. -/
+private lemma integrable_windowDom₁ : Integrable windowDom₁ := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have h0 : Integrable (fun ξ : ℝ => Real.exp (-(ξ ^ 2 / 2))) := by
+    simpa using integrable_abs_pow_mul_exp_neg_half_sq 0
+  have h7 := integrable_abs_pow_mul_exp_neg_half_sq 7
+  have hg : Integrable (fun ξ : ℝ =>
+      (Real.exp (-(ξ ^ 2 / 2)) + |ξ| ^ 7 * Real.exp (-(ξ ^ 2 / 2))) * (Real.pi)⁻¹) :=
+    (h0.add h7).mul_const _
+  refine Integrable.mono' hg (by unfold windowDom₁; fun_prop)
+    (Filter.Eventually.of_forall fun ξ => ?_)
+  rw [Real.norm_eq_abs, abs_of_nonneg (windowDom₁_nonneg ξ)]
+  have hexp : Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) ≤ Real.exp (-(ξ ^ 2 / 2)) := by
+    refine Real.exp_le_exp.2 ?_
+    have hpi2 : (4 : ℝ) ≤ Real.pi ^ 2 := by nlinarith [Real.two_le_pi, Real.pi_pos]
+    nlinarith [mul_nonneg (by linarith : (0 : ℝ) ≤ Real.pi ^ 2 - 4) (sq_nonneg ξ), sq_nonneg ξ]
+  have hnn : (0 : ℝ) ≤ 1 + |ξ| ^ 7 := by positivity
+  have hmul : Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) * (1 + |ξ| ^ 7)
+      ≤ Real.exp (-(ξ ^ 2 / 2)) + |ξ| ^ 7 * Real.exp (-(ξ ^ 2 / 2)) := by
+    nlinarith [mul_le_mul_of_nonneg_right hexp hnn]
+  unfold windowDom₁
+  exact mul_le_mul_of_nonneg_right hmul (by positivity)
+
+/-- **The low-range ledger, on the nose.** The undamped graded remainder contributes
+`r³ρ₁³ = n^{-3/2}·n^{3a}` after the Esseen weight; at `a = 1/6` that is exactly `n⁻¹`, the
+accuracy the statement asks for. -/
+lemma low_range_ledger_exponent {n : ℕ} (hn : 0 < n) :
+    ((n : ℝ) ^ (-(3 : ℝ) / 2)) * ((n : ℝ) ^ ((1 : ℝ) / 6)) ^ 3 = ((n : ℝ))⁻¹ := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_natCast ((n : ℝ) ^ ((1 : ℝ) / 6)) 3, ← Real.rpow_mul h0.le,
+    ← Real.rpow_add h0, ← Real.rpow_neg_one (n : ℝ)]
+  norm_num
+
+/-- **And `a = 1/6` is the largest exponent that works**, at every `n ≥ 2`. The low range of the
+split cannot be widened by adjusting constants; widening it is the middle-range problem. -/
+lemma low_range_ledger_gt {a : ℝ} (ha : (1 : ℝ) / 6 < a) {n : ℕ} (hn : 2 ≤ n) :
+    ((n : ℝ))⁻¹ < ((n : ℝ) ^ (-(3 : ℝ) / 2)) * ((n : ℝ) ^ a) ^ 3 := by
+  have hn0 : 0 < n := lt_of_lt_of_le (by norm_num) hn
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn0
+  have h1 : (1 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_natCast ((n : ℝ) ^ a) 3, ← Real.rpow_mul h0.le, ← Real.rpow_add h0,
+    ← Real.rpow_neg_one (n : ℝ)]
+  refine Real.rpow_lt_rpow_of_exponent_lt h1 ?_
+  push_cast
+  linarith
+
+end WindowEnvelopeOne
+
 /-! ## The window estimate: the geometry of the argument
 
 On the window the damped expansion `norm_charFun_pow_sub_edgeworth_le` is applied at
