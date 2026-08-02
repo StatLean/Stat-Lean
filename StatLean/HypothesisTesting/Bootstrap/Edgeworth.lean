@@ -7452,6 +7452,515 @@ lemma edgeworthTV_pos (γ : ℝ) : 0 < (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 
   have hg : (0 : ℝ) ≤ |γ| := abs_nonneg γ
   positivity
 
+/-! ### The studentized approximant: the parallel density apparatus
+
+Item **(U1)** of the residue of `edgeworth_studentized_uniform`. The comparison object of the
+*studentized* expansion is not `edgeworthDensity`. The approximant appearing in that theorem is
+`Q_n(t) = Φ(t) + (γ/6)φ(t)(2t² + 1) n^{-1/2}`, whose density is
+`q_n(t) = φ(t)[1 + (γ/6)(3t − 2t³) n^{-1/2}]`; and `3t − 2t³ = −2He₃(t) − 3He₁(t)` is a
+*different* Hermite combination from the mean expansion's `He₃(u) = u³ − 3u`. Every datum
+`abs_measure_Iic_sub_densityCDF_le_charFun` consumes therefore has to be re-proved: the FTC
+step, the total-variation modulus, the Fourier transform, its Gaussian tail, and the uniform
+bound on the approximant itself. That is what this block is; it is the studentized twin of
+`section Approximant` above, lemma for lemma.
+
+Two things genuinely differ from the mean apparatus, and in both the studentized side is the
+easier one:
+
+* **The antiderivative is `+φ(t)(2t² + 1)`, which is the approximant's own correction term.**
+  `d/dt[φ(t)(2t² + 1)] = φ(t)(4t − t(2t² + 1)) = φ(t)(3t − 2t³)` — no sign flip, where the mean
+  side carries one (`hermiteAntideriv u = −φ(u)(u² − 1)`).
+* **The Fourier transform needs the `He₁` moment as well as the `He₃` one.**
+  `integral_hermite3_mul_cexp_mul_gaussian` alone does not suffice; the companion
+  `integral_linear_mul_cexp_mul_gaussian` (added to `ForMathlib/BerryEsseen.lean` for this
+  purpose) is what makes the `−3He₁` slot computable. The outcome,
+  `φ_{q_n}(θ) = e^{−θ²/2}(1 + iγ(2θ³ − 3θ)n^{-1/2}/6)`, has a `+` where the mean side
+  (`charFunDensity_edgeworthDensity`, `e^{−θ²/2}(1 − iγθ³n^{-1/2}/6)`) has a `−`, and carries a
+  linear term the mean side does not.
+
+Nothing else diverges. Every constant below is the mean constant recomputed with `u³ − 3u`
+replaced by `3u − 2u³` (so `1 + 66|γ|` becomes `1 + 130|γ|`, and `512π³` becomes `1030π³`), and
+the `n`-freedom of the total-variation constant — the property the de-smoothing loss `2Aδ` at
+`δ = n⁻¹` actually needs — survives for the same reason, `n^{-1/2} ≤ 1`. -/
+
+/-- **The `He₃`/`He₁` Gaussian Fourier combination.**
+`∫ (a He₃(u) + b u) e^{iθu} e^{−u²/2} du = (a(iθ)³ + b(iθ)) √(2π) e^{−θ²/2}`.
+
+The two-term brick behind `charFunDensity_studentizedEdgeworthDensity`: the studentized Hermite
+weight `3u − 2u³` is `a = −2`, `b = −3`, and the mean weight `u³ − 3u` is `a = 1`, `b = 0`. -/
+private lemma integral_hermiteCombo_cexp_mul_gaussian (θ : ℝ) (a b : ℂ) :
+    (∫ u : ℝ, (a * ((u : ℂ) ^ 3 - 3 * (u : ℂ)) + b * (u : ℂ)) *
+        (Complex.exp ((θ : ℂ) * (u : ℂ) * Complex.I) * Complex.exp (-(u : ℂ) ^ 2 / 2)))
+      = (a * ((θ : ℂ) * Complex.I) ^ 3 + b * ((θ : ℂ) * Complex.I))
+          * (((Real.sqrt (2 * Real.pi) : ℝ) : ℂ) * Complex.exp (-(θ : ℂ) ^ 2 / 2)) := by
+  have hintA : Integrable (fun u : ℝ => ((u : ℂ) ^ 3 - 3 * (u : ℂ)) *
+      (Complex.exp ((θ : ℂ) * (u : ℂ) * Complex.I) * Complex.exp (-(u : ℂ) ^ 2 / 2))) :=
+    (integrable_cubic_mul_cexp_mul_gaussian θ 1 0 (-3) 0).congr
+      (Filter.Eventually.of_forall fun u => by ring)
+  have hintB : Integrable (fun u : ℝ => (u : ℂ) *
+      (Complex.exp ((θ : ℂ) * (u : ℂ) * Complex.I) * Complex.exp (-(u : ℂ) ^ 2 / 2))) :=
+    (integrable_cubic_mul_cexp_mul_gaussian θ 0 0 1 0).congr
+      (Filter.Eventually.of_forall fun u => by ring)
+  have hA : (∫ u : ℝ, a * (((u : ℂ) ^ 3 - 3 * (u : ℂ)) *
+        (Complex.exp ((θ : ℂ) * (u : ℂ) * Complex.I) * Complex.exp (-(u : ℂ) ^ 2 / 2))))
+      = a * ∫ u : ℝ, ((u : ℂ) ^ 3 - 3 * (u : ℂ)) *
+        (Complex.exp ((θ : ℂ) * (u : ℂ) * Complex.I) * Complex.exp (-(u : ℂ) ^ 2 / 2)) :=
+    MeasureTheory.integral_const_mul _ _
+  have hB : (∫ u : ℝ, b * ((u : ℂ) *
+        (Complex.exp ((θ : ℂ) * (u : ℂ) * Complex.I) * Complex.exp (-(u : ℂ) ^ 2 / 2))))
+      = b * ∫ u : ℝ, (u : ℂ) *
+        (Complex.exp ((θ : ℂ) * (u : ℂ) * Complex.I) * Complex.exp (-(u : ℂ) ^ 2 / 2)) :=
+    MeasureTheory.integral_const_mul _ _
+  have hsum := integral_add (hintA.const_mul a) (hintB.const_mul b)
+  have hgoal : (∫ u : ℝ, (a * ((u : ℂ) ^ 3 - 3 * (u : ℂ)) + b * (u : ℂ)) *
+        (Complex.exp ((θ : ℂ) * (u : ℂ) * Complex.I) * Complex.exp (-(u : ℂ) ^ 2 / 2)))
+      = ∫ u : ℝ, (a * (((u : ℂ) ^ 3 - 3 * (u : ℂ)) *
+          (Complex.exp ((θ : ℂ) * (u : ℂ) * Complex.I) * Complex.exp (-(u : ℂ) ^ 2 / 2)))
+        + b * ((u : ℂ) *
+          (Complex.exp ((θ : ℂ) * (u : ℂ) * Complex.I) * Complex.exp (-(u : ℂ) ^ 2 / 2)))) :=
+    integral_congr_ae (Filter.Eventually.of_forall fun u => by ring)
+  rw [hgoal, hsum, hA, hB, integral_hermite3_mul_cexp_mul_gaussian,
+    integral_linear_mul_cexp_mul_gaussian]
+  ring
+
+/-- The **one-term studentized Edgeworth density**,
+`q_n(t) = φ(t)(1 + (γ/6)(3t − 2t³) n^{-1/2})`. Like `edgeworthDensity` it is a signed `L¹`
+density, not a probability density; its distribution function is `studentizedEdgeworthCDF`
+(`densityCDF_studentizedEdgeworthDensity`). -/
+noncomputable def studentizedEdgeworthDensity (γ : ℝ) (n : ℕ) (t : ℝ) : ℝ :=
+  stdNormalPDF t * (1 + γ / 6 * (3 * t - 2 * t ^ 3) * (Real.sqrt n)⁻¹)
+
+/-- The **one-term studentized Edgeworth approximant**,
+`Φ(t) + (γ/6)φ(t)(2t² + 1) n^{-1/2}`: the comparison distribution function of the studentized
+expansion, written exactly as `edgeworth_studentized_uniform` states it. -/
+noncomputable def studentizedEdgeworthCDF (γ : ℝ) (n : ℕ) (t : ℝ) : ℝ :=
+  stdNormalCDF t + 1 / 6 * γ * stdNormalPDF t * (2 * t ^ 2 + 1) * (Real.sqrt n)⁻¹
+
+/-- The **antiderivative of the studentized Hermite weight**, `φ(t)(2t² + 1)`, whose derivative
+is `φ(t)(3t − 2t³)` and whose limit at `−∞` is `0`. Unlike `hermiteAntideriv` it carries no
+sign: it *is* the correction term of `studentizedEdgeworthCDF`. -/
+noncomputable def studentizedAntideriv (t : ℝ) : ℝ := stdNormalPDF t * (2 * t ^ 2 + 1)
+
+/-- `d/dt[φ(t)(2t² + 1)] = φ(t)(3t − 2t³)`: the studentized antiderivative identity. -/
+lemma hasDerivAt_studentizedAntideriv (t : ℝ) :
+    HasDerivAt studentizedAntideriv (stdNormalPDF t * (3 * t - 2 * t ^ 3)) t := by
+  have h := (hasDerivAt_stdNormalPDF t).mul (((hasDerivAt_pow 2 t).const_mul 2).add_const 1)
+  change HasDerivAt (fun x : ℝ => stdNormalPDF x * (2 * x ^ 2 + 1)) _ t
+  convert h using 1
+  push_cast
+  ring
+
+/-- The studentized antiderivative vanishes at `−∞`. -/
+lemma tendsto_studentizedAntideriv_atBot :
+    Filter.Tendsto studentizedAntideriv Filter.atBot (𝓝 0) := by
+  have hw : Filter.Tendsto (fun t : ℝ => t ^ 2 / 2) Filter.atBot Filter.atTop := by
+    have h1 : Filter.Tendsto (fun t : ℝ => |t| ^ 2) Filter.atBot Filter.atTop :=
+      (tendsto_pow_atTop (n := 2) (by norm_num)).comp tendsto_abs_atBot_atTop
+    have h2 : Filter.Tendsto (fun t : ℝ => t ^ 2) Filter.atBot Filter.atTop := by
+      simpa [sq_abs] using h1
+    exact h2.atTop_div_const (by norm_num)
+  have h1 : Filter.Tendsto (fun w : ℝ => w ^ 1 * Real.exp (-w)) Filter.atTop (𝓝 0) :=
+    Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 1
+  have h2 : Filter.Tendsto (fun w : ℝ => Real.exp (-w)) Filter.atTop (𝓝 0) :=
+    Real.tendsto_exp_neg_atTop_nhds_zero
+  have h3 : Filter.Tendsto (fun w : ℝ => (4 * w + 1) * Real.exp (-w)) Filter.atTop (𝓝 0) := by
+    have h4 := (h1.const_mul (4 : ℝ)).add h2
+    rw [mul_zero, add_zero] at h4
+    exact h4.congr fun w => by ring
+  have hg : Filter.Tendsto
+      (fun w : ℝ => (4 * w + 1) * Real.exp (-w) / Real.sqrt (2 * Real.pi))
+      Filter.atTop (𝓝 0) := by
+    have := h3.div_const (Real.sqrt (2 * Real.pi))
+    rwa [zero_div] at this
+  refine (hg.comp hw).congr fun t => ?_
+  simp only [Function.comp_apply, studentizedAntideriv, stdNormalPDF]
+  rw [neg_div]
+  ring
+
+/-- `y ↦ φ(y)(3y − 2y³)` is integrable: the derivative appearing in the FTC step. -/
+lemma integrable_stdNormalPDF_mul_studentizedHermite :
+    Integrable (fun y : ℝ => stdNormalPDF y * (3 * y - 2 * y ^ 3)) := by
+  have h1 := (integrable_stdNormalPDF_mul_pow 1).const_mul (3 : ℝ)
+  have h3 := (integrable_stdNormalPDF_mul_pow 3).const_mul (2 : ℝ)
+  refine (h1.sub h3).congr (Filter.Eventually.of_forall fun y => ?_)
+  simp only [Pi.sub_apply]
+  ring
+
+/-- The studentized Edgeworth density is integrable. -/
+lemma integrable_studentizedEdgeworthDensity (γ : ℝ) (n : ℕ) :
+    Integrable (studentizedEdgeworthDensity γ n) := by
+  have hh :=
+    integrable_stdNormalPDF_mul_studentizedHermite.const_mul (γ / 6 * (Real.sqrt n)⁻¹)
+  refine (integrable_stdNormalPDF.fun_add hh).congr (Filter.Eventually.of_forall fun y => ?_)
+  rw [studentizedEdgeworthDensity]
+  ring
+
+/-- **The studentized FTC step.** `∫_{(-∞,t]} φ(y)(3y − 2y³) dy = φ(t)(2t² + 1)`. This is the
+"one convenience" of the studentized side: the antiderivative is the correction term itself. -/
+lemma setIntegral_Iic_stdNormalPDF_mul_studentizedHermite (t : ℝ) :
+    (∫ y in Set.Iic t, stdNormalPDF y * (3 * y - 2 * y ^ 3)) = studentizedAntideriv t := by
+  have h := integral_Iic_of_hasDerivAt_of_tendsto' (f := studentizedAntideriv)
+    (f' := fun y : ℝ => stdNormalPDF y * (3 * y - 2 * y ^ 3)) (a := t) (m := 0)
+    (fun x _ => hasDerivAt_studentizedAntideriv x)
+    integrable_stdNormalPDF_mul_studentizedHermite.integrableOn
+    tendsto_studentizedAntideriv_atBot
+  rw [h, sub_zero]
+
+/-- **(U1) — the studentized approximant is the distribution function of the studentized
+density.** `∫_{(-∞,t]} q_n = Φ(t) + (γ/6)φ(t)(2t² + 1) n^{-1/2}`. -/
+theorem densityCDF_studentizedEdgeworthDensity (γ : ℝ) (n : ℕ) (t : ℝ) :
+    densityCDF (studentizedEdgeworthDensity γ n) t = studentizedEdgeworthCDF γ n t := by
+  have hsplit : ∀ y : ℝ, studentizedEdgeworthDensity γ n y
+      = stdNormalPDF y
+        + (γ / 6 * (Real.sqrt n)⁻¹) * (stdNormalPDF y * (3 * y - 2 * y ^ 3)) := by
+    intro y
+    rw [studentizedEdgeworthDensity]
+    ring
+  rw [densityCDF, setIntegral_congr_fun measurableSet_Iic fun y _ => hsplit y,
+    integral_add integrable_stdNormalPDF.integrableOn
+      (integrable_stdNormalPDF_mul_studentizedHermite.const_mul _).integrableOn,
+    MeasureTheory.integral_const_mul, setIntegral_Iic_stdNormalPDF_mul_studentizedHermite,
+    ← stdNormalCDF_eq_setIntegral, studentizedAntideriv, studentizedEdgeworthCDF]
+  ring
+
+/-- **A uniform bound on the studentized Edgeworth density.** For every `n ≥ 1` and every `t`,
+`|q_n(t)| ≤ (2π)^{-1/2}(1 + 130|γ|)`. As on the mean side, the constant is *independent of
+`n`*, which is what the de-smoothing loss `2Aδ` needs at `δ = n⁻¹`. -/
+theorem abs_studentizedEdgeworthDensity_le (γ : ℝ) {n : ℕ} (hn : 1 ≤ n) (t : ℝ) :
+    |studentizedEdgeworthDensity γ n t| ≤ (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 130 * |γ|) := by
+  have hpdfnn : 0 ≤ stdNormalPDF t := by rw [stdNormalPDF]; positivity
+  have hsqrt0 : (0 : ℝ) ≤ (Real.sqrt n)⁻¹ := by positivity
+  have hsqrt : (Real.sqrt n)⁻¹ ≤ 1 := by
+    have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+    exact inv_le_one_of_one_le₀ (by simpa using Real.sqrt_le_sqrt h1)
+  have habs3 : |3 * t - 2 * t ^ 3| ≤ 3 * |t| + 2 * |t| ^ 3 := by
+    have h := abs_add_le (3 * t) (-(2 * t ^ 3))
+    rw [abs_neg] at h
+    calc |3 * t - 2 * t ^ 3| = |3 * t + -(2 * t ^ 3)| := by rw [sub_eq_add_neg]
+      _ ≤ |3 * t| + |2 * t ^ 3| := h
+      _ = 3 * |t| + 2 * |t| ^ 3 := by
+          rw [abs_mul, abs_mul, abs_pow, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 3),
+            abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 2)]
+  have hbracket : |1 + γ / 6 * (3 * t - 2 * t ^ 3) * (Real.sqrt n)⁻¹|
+      ≤ 1 + |γ| / 6 * (3 * |t| + 2 * |t| ^ 3) := by
+    have htri := abs_add_le (1 : ℝ) (γ / 6 * (3 * t - 2 * t ^ 3) * (Real.sqrt n)⁻¹)
+    rw [abs_one] at htri
+    have hval : |γ / 6 * (3 * t - 2 * t ^ 3) * (Real.sqrt n)⁻¹|
+        = |γ| / 6 * |3 * t - 2 * t ^ 3| * (Real.sqrt n)⁻¹ := by
+      rw [abs_mul, abs_mul, abs_div, abs_of_nonneg hsqrt0]
+      try norm_num
+    have hnn : (0 : ℝ) ≤ |γ| / 6 * |3 * t - 2 * t ^ 3| := by positivity
+    have hstep : |γ / 6 * (3 * t - 2 * t ^ 3) * (Real.sqrt n)⁻¹|
+        ≤ |γ| / 6 * (3 * |t| + 2 * |t| ^ 3) := by
+      rw [hval]
+      calc |γ| / 6 * |3 * t - 2 * t ^ 3| * (Real.sqrt n)⁻¹
+          ≤ |γ| / 6 * |3 * t - 2 * t ^ 3| * 1 := mul_le_mul_of_nonneg_left hsqrt hnn
+        _ = |γ| / 6 * |3 * t - 2 * t ^ 3| := mul_one _
+        _ ≤ |γ| / 6 * (3 * |t| + 2 * |t| ^ 3) :=
+            mul_le_mul_of_nonneg_left habs3 (by positivity)
+    linarith [htri, hstep]
+  have hkey : |studentizedEdgeworthDensity γ n t|
+      ≤ stdNormalPDF t * (1 + |γ| / 6 * (3 * |t| + 2 * |t| ^ 3)) := by
+    rw [studentizedEdgeworthDensity, abs_mul, abs_of_nonneg hpdfnn]
+    exact mul_le_mul_of_nonneg_left hbracket hpdfnn
+  have hb0 := stdNormalPDF_mul_abs_pow_le 0 (C := 1) (by norm_num) t
+  have hb1 := stdNormalPDF_mul_abs_pow_le 1 (C := 4) (by norm_num [Nat.factorial]) t
+  have hb3 := stdNormalPDF_mul_abs_pow_le 3 (C := 384) (by norm_num [Nat.factorial]) t
+  rw [pow_zero, mul_one, mul_one] at hb0
+  rw [pow_one] at hb1
+  have e1 := mul_le_mul_of_nonneg_left hb1 (by positivity : (0 : ℝ) ≤ |γ| / 2)
+  have e3 := mul_le_mul_of_nonneg_left hb3 (by positivity : (0 : ℝ) ≤ |γ| / 3)
+  have hexp : stdNormalPDF t * (1 + |γ| / 6 * (3 * |t| + 2 * |t| ^ 3))
+      = stdNormalPDF t + |γ| / 3 * (stdNormalPDF t * |t| ^ 3)
+        + |γ| / 2 * (stdNormalPDF t * |t|) := by ring
+  rw [hexp] at hkey
+  linarith [hkey, hb0, e1, e3]
+
+/-- **(U1) — the total-variation modulus of the studentized Edgeworth density**, with a constant
+independent of `n`. This is the hypothesis `hA` of
+`abs_measure_Iic_sub_densityCDF_le_charFun` for the studentized comparison object. -/
+theorem setIntegral_abs_studentizedEdgeworthDensity_le (γ : ℝ) {n : ℕ} (hn : 1 ≤ n) {a b : ℝ}
+    (hab : a ≤ b) :
+    (∫ y in Set.Ioc a b, |studentizedEdgeworthDensity γ n y|)
+      ≤ (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 130 * |γ|) * (b - a) := by
+  calc (∫ y in Set.Ioc a b, |studentizedEdgeworthDensity γ n y|)
+      ≤ ∫ _y in Set.Ioc a b, (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 130 * |γ|) :=
+        setIntegral_mono_on (integrable_studentizedEdgeworthDensity γ n).abs.integrableOn
+          (continuous_const.integrableOn_Ioc) measurableSet_Ioc
+          fun y _ => abs_studentizedEdgeworthDensity_le γ hn y
+    _ = (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 130 * |γ|) * (b - a) := by
+        rw [setIntegral_const, measureReal_def, Real.volume_Ioc,
+          ENNReal.toReal_ofReal (by linarith), smul_eq_mul, mul_comm]
+
+/-- **(U1) — the Fourier transform of the studentized Edgeworth density.**
+`∫ e^{iθy} q_n(y) dy = e^{−θ²/2}(1 + i γ (2θ³ − 3θ) n^{-1/2}/6)`.
+
+Both Gaussian Fourier moments are used: `−2He₃` supplies `2iθ³` and `−3He₁` supplies `−3iθ`.
+Compare `charFunDensity_edgeworthDensity`, which is `e^{−θ²/2}(1 − iγθ³n^{-1/2}/6)`: the
+studentized transform is not a rescaling of the mean one. -/
+theorem charFunDensity_studentizedEdgeworthDensity (γ : ℝ) (n : ℕ) (t : ℝ) :
+    charFunDensity (studentizedEdgeworthDensity γ n) t
+      = Complex.exp (-(t : ℂ) ^ 2 / 2)
+        * (1 + Complex.I * (γ : ℂ) * (2 * (t : ℂ) ^ 3 - 3 * (t : ℂ))
+            * (((Real.sqrt n)⁻¹ : ℝ) : ℂ) / 6) := by
+  have hint1 : Integrable (fun u : ℝ =>
+      Complex.exp ((t : ℂ) * (u : ℂ) * Complex.I) * Complex.exp (-(u : ℂ) ^ 2 / 2)) := by
+    refine (integrable_cubic_mul_cexp_mul_gaussian t 0 0 0 1).congr
+      (Filter.Eventually.of_forall fun u => by ring)
+  have hint2 : Integrable (fun u : ℝ =>
+      ((-2 : ℂ) * ((u : ℂ) ^ 3 - 3 * (u : ℂ)) + (-3 : ℂ) * (u : ℂ)) *
+        (Complex.exp ((t : ℂ) * (u : ℂ) * Complex.I) * Complex.exp (-(u : ℂ) ^ 2 / 2))) := by
+    refine (integrable_cubic_mul_cexp_mul_gaussian t (-2) 0 3 0).congr
+      (Filter.Eventually.of_forall fun u => by ring)
+  have hcong : ∀ y : ℝ,
+      Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I)
+          * ((studentizedEdgeworthDensity γ n y : ℝ) : ℂ)
+      = (((Real.sqrt (2 * Real.pi))⁻¹ : ℝ) : ℂ) *
+          ((((γ / 6 * (Real.sqrt n)⁻¹ : ℝ)) : ℂ) *
+              (((-2 : ℂ) * ((y : ℂ) ^ 3 - 3 * (y : ℂ)) + (-3 : ℂ) * (y : ℂ)) *
+                (Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I)
+                  * Complex.exp (-(y : ℂ) ^ 2 / 2)))
+            + Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I)
+                * Complex.exp (-(y : ℂ) ^ 2 / 2)) := by
+    intro y
+    simp only [studentizedEdgeworthDensity, stdNormalPDF]
+    push_cast
+    ring
+  have hpull1 : (∫ y : ℝ, (((Real.sqrt (2 * Real.pi))⁻¹ : ℝ) : ℂ) *
+        ((((γ / 6 * (Real.sqrt n)⁻¹ : ℝ)) : ℂ) *
+            (((-2 : ℂ) * ((y : ℂ) ^ 3 - 3 * (y : ℂ)) + (-3 : ℂ) * (y : ℂ)) *
+              (Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I)
+                * Complex.exp (-(y : ℂ) ^ 2 / 2)))
+          + Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I) * Complex.exp (-(y : ℂ) ^ 2 / 2)))
+      = (((Real.sqrt (2 * Real.pi))⁻¹ : ℝ) : ℂ) *
+        ∫ y : ℝ, ((((γ / 6 * (Real.sqrt n)⁻¹ : ℝ)) : ℂ) *
+            (((-2 : ℂ) * ((y : ℂ) ^ 3 - 3 * (y : ℂ)) + (-3 : ℂ) * (y : ℂ)) *
+              (Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I)
+                * Complex.exp (-(y : ℂ) ^ 2 / 2)))
+          + Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I) * Complex.exp (-(y : ℂ) ^ 2 / 2)) :=
+    MeasureTheory.integral_const_mul _ _
+  have hadd : (∫ y : ℝ, ((((γ / 6 * (Real.sqrt n)⁻¹ : ℝ)) : ℂ) *
+            (((-2 : ℂ) * ((y : ℂ) ^ 3 - 3 * (y : ℂ)) + (-3 : ℂ) * (y : ℂ)) *
+              (Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I)
+                * Complex.exp (-(y : ℂ) ^ 2 / 2)))
+          + Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I) * Complex.exp (-(y : ℂ) ^ 2 / 2)))
+      = (∫ y : ℝ, (((γ / 6 * (Real.sqrt n)⁻¹ : ℝ)) : ℂ) *
+            (((-2 : ℂ) * ((y : ℂ) ^ 3 - 3 * (y : ℂ)) + (-3 : ℂ) * (y : ℂ)) *
+              (Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I)
+                * Complex.exp (-(y : ℂ) ^ 2 / 2))))
+        + ∫ y : ℝ, Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I)
+            * Complex.exp (-(y : ℂ) ^ 2 / 2) :=
+    integral_add (hint2.const_mul _) hint1
+  have hpull2 : (∫ y : ℝ, (((γ / 6 * (Real.sqrt n)⁻¹ : ℝ)) : ℂ) *
+        (((-2 : ℂ) * ((y : ℂ) ^ 3 - 3 * (y : ℂ)) + (-3 : ℂ) * (y : ℂ)) *
+          (Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I) * Complex.exp (-(y : ℂ) ^ 2 / 2))))
+      = (((γ / 6 * (Real.sqrt n)⁻¹ : ℝ)) : ℂ) *
+        ∫ y : ℝ, ((-2 : ℂ) * ((y : ℂ) ^ 3 - 3 * (y : ℂ)) + (-3 : ℂ) * (y : ℂ)) *
+          (Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I) * Complex.exp (-(y : ℂ) ^ 2 / 2)) :=
+    MeasureTheory.integral_const_mul _ _
+  rw [charFunDensity, integral_congr_ae (Filter.Eventually.of_forall hcong), hpull1, hadd,
+    hpull2, integral_hermiteCombo_cexp_mul_gaussian, integral_cexp_mul_gaussian]
+  have hS : ((Real.sqrt (2 * Real.pi) : ℝ) : ℂ) ≠ 0 := by
+    have hpos : (0 : ℝ) < Real.sqrt (2 * Real.pi) := Real.sqrt_pos.2 (by positivity)
+    exact_mod_cast hpos.ne'
+  have hcube : ((t : ℂ) * Complex.I) ^ 3 = -(Complex.I * (t : ℂ) ^ 3) := by
+    have hI3 : (Complex.I) ^ 3 = -Complex.I := by
+      rw [pow_succ, Complex.I_sq]; ring
+    rw [mul_pow, hI3]; ring
+  rw [hcube]
+  push_cast
+  field_simp
+  ring
+
+/-- **(U1) — the Gaussian tail of the studentized Edgeworth characteristic function.**
+`‖φ_{q_n}(θ)‖ ≤ e^{−θ²/2}(1 + |γ|(2|θ|³ + 3|θ|)/6)`, uniformly in `n ≥ 1`. -/
+theorem norm_charFunDensity_studentizedEdgeworthDensity_le (γ : ℝ) {n : ℕ} (hn : 1 ≤ n)
+    (θ : ℝ) :
+    ‖charFunDensity (studentizedEdgeworthDensity γ n) θ‖
+      ≤ Real.exp (-θ ^ 2 / 2) * (1 + |γ| * (2 * |θ| ^ 3 + 3 * |θ|) / 6) := by
+  have hsqrt0 : (0 : ℝ) ≤ (Real.sqrt n)⁻¹ := by positivity
+  have hsqrt : (Real.sqrt n)⁻¹ ≤ 1 := by
+    have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+    exact inv_le_one_of_one_le₀ (by simpa using Real.sqrt_le_sqrt h1)
+  have hexp : Complex.exp (-(θ : ℂ) ^ 2 / 2) = ((Real.exp (-θ ^ 2 / 2) : ℝ) : ℂ) := by
+    rw [Complex.ofReal_exp]
+    congr 1
+    push_cast
+    ring
+  have hpoly : (2 * (θ : ℂ) ^ 3 - 3 * (θ : ℂ)) = ((2 * θ ^ 3 - 3 * θ : ℝ) : ℂ) := by
+    push_cast
+    ring
+  have hterm : ‖Complex.I * (γ : ℂ) * (2 * (θ : ℂ) ^ 3 - 3 * (θ : ℂ))
+        * (((Real.sqrt n)⁻¹ : ℝ) : ℂ) / 6‖
+      = |γ| * |2 * θ ^ 3 - 3 * θ| * (Real.sqrt n)⁻¹ / 6 := by
+    rw [hpoly]
+    simp only [norm_div, norm_mul, Complex.norm_I, Complex.norm_real, Real.norm_eq_abs,
+      one_mul]
+    rw [abs_of_nonneg hsqrt0]
+    norm_num
+  have habs : |2 * θ ^ 3 - 3 * θ| ≤ 2 * |θ| ^ 3 + 3 * |θ| := by
+    have h := abs_add_le (2 * θ ^ 3) (-(3 * θ))
+    rw [abs_neg] at h
+    calc |2 * θ ^ 3 - 3 * θ| = |2 * θ ^ 3 + -(3 * θ)| := by rw [sub_eq_add_neg]
+      _ ≤ |2 * θ ^ 3| + |3 * θ| := h
+      _ = 2 * |θ| ^ 3 + 3 * |θ| := by
+          rw [abs_mul, abs_mul, abs_pow, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 2),
+            abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 3)]
+  rw [charFunDensity_studentizedEdgeworthDensity, norm_mul, hexp, Complex.norm_real,
+    Real.norm_eq_abs, abs_of_nonneg (Real.exp_pos _).le]
+  refine mul_le_mul_of_nonneg_left ?_ (Real.exp_pos _).le
+  have hnn : (0 : ℝ) ≤ |γ| := abs_nonneg γ
+  have hmono : |γ| * |2 * θ ^ 3 - 3 * θ| ≤ |γ| * (2 * |θ| ^ 3 + 3 * |θ|) :=
+    mul_le_mul_of_nonneg_left habs hnn
+  have hprod : (0 : ℝ) ≤ |γ| * |2 * θ ^ 3 - 3 * θ| := by positivity
+  calc ‖1 + Complex.I * (γ : ℂ) * (2 * (θ : ℂ) ^ 3 - 3 * (θ : ℂ))
+          * (((Real.sqrt n)⁻¹ : ℝ) : ℂ) / 6‖
+      ≤ ‖(1 : ℂ)‖ + ‖Complex.I * (γ : ℂ) * (2 * (θ : ℂ) ^ 3 - 3 * (θ : ℂ))
+          * (((Real.sqrt n)⁻¹ : ℝ) : ℂ) / 6‖ := norm_add_le _ _
+    _ = 1 + |γ| * |2 * θ ^ 3 - 3 * θ| * (Real.sqrt n)⁻¹ / 6 := by rw [norm_one, hterm]
+    _ ≤ 1 + |γ| * (2 * |θ| ^ 3 + 3 * |θ|) / 6 := by nlinarith
+
+/-- **(U1) — the Gaussian tail of the studentized characteristic function, off a window.**
+On `ρ ≤ |ξ|` the bound of `norm_charFunDensity_studentizedEdgeworthDensity_le` at `θ = −2πξ` is
+at most `(1 + 1030π³|γ|) e^{−π²ρ²}`. The mean analogue is `edgeworthCharFun_tail_le` with
+`512π³`; the extra `He₁` term costs `4π|γ|`, absorbed into `6π³|γ|` by `4 ≤ 6π²`. -/
+private lemma studentizedEdgeworthCharFun_tail_le (γ : ℝ) {ρ ξ : ℝ} (hρ : 0 ≤ ρ)
+    (hξ : ρ ≤ |ξ|) :
+    Real.exp (-(2 * Real.pi * ξ) ^ 2 / 2)
+        * (1 + |γ| * (2 * |2 * Real.pi * ξ| ^ 3 + 3 * |2 * Real.pi * ξ|) / 6)
+      ≤ (1 + 1030 * Real.pi ^ 3 * |γ|) * Real.exp (-(Real.pi ^ 2 * ρ ^ 2)) := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have hpi2 : (4 : ℝ) ≤ Real.pi ^ 2 := by nlinarith [Real.two_le_pi]
+  have habs3 : |2 * Real.pi * ξ| ^ 3 = 8 * Real.pi ^ 3 * |ξ| ^ 3 := by
+    rw [abs_mul, abs_mul, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 2), abs_of_pos hπ]
+    ring
+  have habs1 : |2 * Real.pi * ξ| = 2 * Real.pi * |ξ| := by
+    rw [abs_mul, abs_mul, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 2), abs_of_pos hπ]
+  have hsplit : Real.exp (-(2 * Real.pi * ξ) ^ 2 / 2)
+      = Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) * Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) := by
+    rw [← Real.exp_add]
+    congr 1
+    ring
+  have hsq : ρ ^ 2 ≤ ξ ^ 2 := by
+    have h := sq_abs ξ
+    nlinarith [abs_nonneg ξ]
+  have h1 : Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) ≤ Real.exp (-(Real.pi ^ 2 * ρ ^ 2)) :=
+    Real.exp_le_exp.2 (by nlinarith)
+  have hmono : Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) ≤ Real.exp (-ξ ^ 2 / 2) := by
+    refine Real.exp_le_exp.2 ?_
+    nlinarith [sq_nonneg ξ]
+  have hcube : Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) * |ξ| ^ 3 ≤ 384 := by
+    have hstep := mul_le_mul_of_nonneg_right hmono (by positivity : (0 : ℝ) ≤ |ξ| ^ 3)
+    have hgauss := exp_neg_half_sq_mul_abs_pow_le 3 ξ
+    have hval : (4 : ℝ) ^ 3 * (Nat.factorial 3 : ℝ) = 384 := by norm_num [Nat.factorial]
+    rw [hval] at hgauss
+    linarith
+  have hlin : Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) * |ξ| ≤ 4 := by
+    have hstep := mul_le_mul_of_nonneg_right hmono (by positivity : (0 : ℝ) ≤ |ξ|)
+    have hgauss := exp_neg_half_sq_mul_abs_pow_le 1 ξ
+    have hval : (4 : ℝ) ^ 1 * (Nat.factorial 1 : ℝ) = 4 := by norm_num [Nat.factorial]
+    rw [hval, pow_one] at hgauss
+    linarith
+  have hone : Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) ≤ 1 :=
+    Real.exp_le_one_iff.2 (by nlinarith [sq_nonneg ξ])
+  have hgnn : (0 : ℝ) ≤ |γ| := abs_nonneg γ
+  have h2 : Real.exp (-(Real.pi ^ 2 * ξ ^ 2))
+        * (1 + |γ| * (2 * |2 * Real.pi * ξ| ^ 3 + 3 * |2 * Real.pi * ξ|) / 6)
+      ≤ 1 + 1030 * Real.pi ^ 3 * |γ| := by
+    rw [habs3, habs1]
+    have hexpand : Real.exp (-(Real.pi ^ 2 * ξ ^ 2))
+          * (1 + |γ| * (2 * (8 * Real.pi ^ 3 * |ξ| ^ 3) + 3 * (2 * Real.pi * |ξ|)) / 6)
+        = Real.exp (-(Real.pi ^ 2 * ξ ^ 2))
+          + (8 * Real.pi ^ 3 * |γ| / 3) * (Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) * |ξ| ^ 3)
+          + (Real.pi * |γ|) * (Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) * |ξ|) := by
+      ring
+    rw [hexpand]
+    have hc3 : (8 * Real.pi ^ 3 * |γ| / 3) * (Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) * |ξ| ^ 3)
+        ≤ (8 * Real.pi ^ 3 * |γ| / 3) * 384 :=
+      mul_le_mul_of_nonneg_left hcube (by positivity)
+    have hc1 : (Real.pi * |γ|) * (Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) * |ξ|)
+        ≤ (Real.pi * |γ|) * 4 :=
+      mul_le_mul_of_nonneg_left hlin (by positivity)
+    have hslack : 4 * Real.pi * |γ| ≤ 6 * Real.pi ^ 3 * |γ| := by
+      have hcube4 : 4 * Real.pi ≤ 6 * Real.pi ^ 3 := by
+        have hfac : (0 : ℝ) ≤ Real.pi * (Real.pi ^ 2 - 4) :=
+          mul_nonneg hπ.le (by linarith)
+        nlinarith [hfac, hπ]
+      exact mul_le_mul_of_nonneg_right hcube4 hgnn
+    linarith [hone, hc3, hc1, hslack]
+  calc Real.exp (-(2 * Real.pi * ξ) ^ 2 / 2)
+        * (1 + |γ| * (2 * |2 * Real.pi * ξ| ^ 3 + 3 * |2 * Real.pi * ξ|) / 6)
+      = Real.exp (-(Real.pi ^ 2 * ξ ^ 2))
+          * (Real.exp (-(Real.pi ^ 2 * ξ ^ 2))
+            * (1 + |γ| * (2 * |2 * Real.pi * ξ| ^ 3 + 3 * |2 * Real.pi * ξ|) / 6)) := by
+        rw [hsplit]; ring
+    _ ≤ Real.exp (-(Real.pi ^ 2 * ρ ^ 2)) * (1 + 1030 * Real.pi ^ 3 * |γ|) :=
+        mul_le_mul h1 h2 (by positivity) (Real.exp_pos _).le
+    _ = (1 + 1030 * Real.pi ^ 3 * |γ|) * Real.exp (-(Real.pi ^ 2 * ρ ^ 2)) := by ring
+
+/-- **A uniform bound on the studentized Edgeworth approximant**,
+`|Φ(t) + (γ/6)φ(t)(2t² + 1)n^{-1/2}| ≤ 1 + 6|γ|`, with an `n`-free constant. As on the mean
+side its only role is to absorb the finitely many small `n` at which the window damping is not
+yet available. -/
+theorem abs_studentizedEdgeworthCDF_le (γ : ℝ) {n : ℕ} (hn : 1 ≤ n) (t : ℝ) :
+    |studentizedEdgeworthCDF γ n t| ≤ 1 + 6 * |γ| := by
+  have hpdfnn : 0 ≤ stdNormalPDF t := by rw [stdNormalPDF]; positivity
+  have hsqrt0 : (0 : ℝ) ≤ (Real.sqrt n)⁻¹ := by positivity
+  have hsqrt : (Real.sqrt n)⁻¹ ≤ 1 := by
+    have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+    exact inv_le_one_of_one_le₀ (by simpa using Real.sqrt_le_sqrt h1)
+  have hb0 := stdNormalPDF_mul_abs_pow_le 0 (C := 1) (by norm_num) t
+  have hb2 := stdNormalPDF_mul_abs_pow_le 2 (C := 32) (by norm_num [Nat.factorial]) t
+  rw [pow_zero, mul_one, mul_one] at hb0
+  rw [sq_abs] at hb2
+  have hinv : (Real.sqrt (2 * Real.pi))⁻¹ ≤ 1 / 2 := by
+    have h2 : (2 : ℝ) ≤ Real.sqrt (2 * Real.pi) := by
+      have : Real.sqrt 4 ≤ Real.sqrt (2 * Real.pi) :=
+        Real.sqrt_le_sqrt (by nlinarith [Real.two_le_pi])
+      rwa [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)] at this
+    rw [inv_le_comm₀ (by positivity) (by norm_num)]
+    linarith
+  have hinvnn : (0 : ℝ) ≤ (Real.sqrt (2 * Real.pi))⁻¹ := by positivity
+  have hprod : |stdNormalPDF t * (2 * t ^ 2 + 1)| ≤ 65 * (Real.sqrt (2 * Real.pi))⁻¹ := by
+    have hexp : stdNormalPDF t * (2 * t ^ 2 + 1)
+        = 2 * (stdNormalPDF t * t ^ 2) + stdNormalPDF t := by ring
+    have hu2 : (0 : ℝ) ≤ stdNormalPDF t * t ^ 2 := by positivity
+    rw [hexp, abs_le]
+    exact ⟨by linarith, by linarith⟩
+  have hterm : |1 / 6 * γ * stdNormalPDF t * (2 * t ^ 2 + 1) * (Real.sqrt n)⁻¹| ≤ 6 * |γ| := by
+    have hrw : |1 / 6 * γ * stdNormalPDF t * (2 * t ^ 2 + 1) * (Real.sqrt n)⁻¹|
+        = |γ| / 6 * |stdNormalPDF t * (2 * t ^ 2 + 1)| * (Real.sqrt n)⁻¹ := by
+      rw [show 1 / 6 * γ * stdNormalPDF t * (2 * t ^ 2 + 1) * (Real.sqrt n)⁻¹
+            = (γ / 6) * (stdNormalPDF t * (2 * t ^ 2 + 1)) * (Real.sqrt n)⁻¹ from by ring,
+        abs_mul, abs_mul, abs_div, abs_of_nonneg hsqrt0]
+      norm_num
+    rw [hrw]
+    have hnn : (0 : ℝ) ≤ |γ| / 6 * |stdNormalPDF t * (2 * t ^ 2 + 1)| := by positivity
+    have hstep : |γ| / 6 * |stdNormalPDF t * (2 * t ^ 2 + 1)| * (Real.sqrt n)⁻¹
+        ≤ |γ| / 6 * (65 * (Real.sqrt (2 * Real.pi))⁻¹) := by
+      calc |γ| / 6 * |stdNormalPDF t * (2 * t ^ 2 + 1)| * (Real.sqrt n)⁻¹
+          ≤ |γ| / 6 * |stdNormalPDF t * (2 * t ^ 2 + 1)| * 1 :=
+            mul_le_mul_of_nonneg_left hsqrt hnn
+        _ = |γ| / 6 * |stdNormalPDF t * (2 * t ^ 2 + 1)| := mul_one _
+        _ ≤ |γ| / 6 * (65 * (Real.sqrt (2 * Real.pi))⁻¹) :=
+            mul_le_mul_of_nonneg_left hprod (by positivity)
+    have hgnn : (0 : ℝ) ≤ |γ| := abs_nonneg γ
+    have hkey := mul_le_mul_of_nonneg_left hinv (by positivity : (0 : ℝ) ≤ 65 * (|γ| / 6))
+    linarith
+  rw [studentizedEdgeworthCDF]
+  have htri : |stdNormalCDF t + 1 / 6 * γ * stdNormalPDF t * (2 * t ^ 2 + 1) * (Real.sqrt n)⁻¹|
+      ≤ |stdNormalCDF t|
+        + |1 / 6 * γ * stdNormalPDF t * (2 * t ^ 2 + 1) * (Real.sqrt n)⁻¹| :=
+    abs_add_le _ _
+  linarith [abs_stdNormalCDF_le_one t, htri, hterm]
+
+/-- The studentized Edgeworth total-variation constant is positive. -/
+lemma studentizedEdgeworthTV_pos (γ : ℝ) :
+    0 < (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 130 * |γ|) := by
+  have h : (0 : ℝ) < Real.sqrt (2 * Real.pi) := Real.sqrt_pos.2 (by positivity)
+  have hg : (0 : ℝ) ≤ |γ| := abs_nonneg γ
+  positivity
+
 end Approximant
 
 /-! ## The window estimate: elementary envelopes

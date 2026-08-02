@@ -1230,6 +1230,21 @@ theorem integral_sq_mul_cexp_mul_gaussian (θ : ℝ) :
   rw [← integral_pow2_cexpGauss θ]
   exact integral_congr_ae (Filter.Eventually.of_forall fun u => by simp only [cexpGauss_eq])
 
+/-- **The first Hermite Fourier identity.** `∫ u e^{iθu} e^{−u²/2} du = (iθ) √(2π) e^{−θ²/2}`.
+
+The `He₁` companion of `integral_hermite3_mul_cexp_mul_gaussian`. A one-term Edgeworth
+correction whose Hermite content is not `He₃` alone — the *studentized* correction
+`3t − 2t³ = −2He₃(t) − 3He₁(t)` is the case in point — needs this moment as well as the cubic
+one. -/
+theorem integral_linear_mul_cexp_mul_gaussian (θ : ℝ) :
+    (∫ u : ℝ, (u : ℂ)
+        * (Complex.exp ((θ : ℂ) * (u : ℂ) * I) * Complex.exp (-(u : ℂ) ^ 2 / 2)))
+      = ((θ : ℂ) * I)
+          * (((Real.sqrt (2 * π) : ℝ) : ℂ) * Complex.exp (-(θ : ℂ) ^ 2 / 2)) := by
+  rw [← integral_pow1_cexpGauss θ]
+  exact integral_congr_ae
+    (Filter.Eventually.of_forall fun u => by simp only [cexpGauss_eq, pow_one])
+
 /-- **A monomial is dominated by a Gaussian of half the rate.** `|u|ᵏ ≤ 4ᵏ k! e^{u²/4}`, with
 an explicit constant. This is the elementary envelope behind every Gaussian moment bound used
 by the Edgeworth assembly: multiplied by `e^{−u²/2}` it gives `|u|ᵏ e^{−u²/2} ≤ 4ᵏ k!`, a
