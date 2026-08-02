@@ -6898,6 +6898,31 @@ lemma leakage_ledger_ten_le {b : ℝ} (hb : 0 ≤ b) {n : ℕ} (hn : 0 < n) :
   push_cast
   linarith
 
+/-- **Fourteen parts, and why the studentized outer range wants them.** The `b = 0` ledger at
+`N = 14` returns `n^{-17/6}`, which is what `middle_range_ledger_exponent` shows the three-regime
+split needs at the outer radius `ρ = n²`; `leakage_ledger_thirteen_gt` is the witness that `13`
+does not reach it. Only the exponent moves — the gain per part and the bulk radius are the
+same. -/
+lemma leakage_ledger_fourteen_le {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - 0)) ^ 14
+      ≤ (n : ℝ) ^ (-(17 : ℝ) / 6) := by
+  have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  rw [leakage_ledger_band_exponent hn 0 14]
+  refine Real.rpow_le_rpow_of_exponent_le h1 ?_
+  push_cast
+  linarith
+
+lemma leakage_ledger_thirteen_gt {n : ℕ} (hn : 2 ≤ n) :
+    (n : ℝ) ^ (-(17 : ℝ) / 6)
+      < (n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - 0)) ^ 13 := by
+  have h2 : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have h1 : (1 : ℝ) < (n : ℝ) := by linarith
+  have hnpos : 0 < n := by omega
+  rw [leakage_ledger_band_exponent hnpos 0 13]
+  refine Real.rpow_lt_rpow_of_exponent_lt h1 ?_
+  push_cast
+  linarith
+
 /-- **The gain of one integration by parts on a general band.** `bulk_gain_phase_le` with
 `c₀√n` replaced by `c₀n^{b}`; the exponent `-7/8` becomes `-3/8 − b`. -/
 lemma bulk_gain_phase_le_band {n : ℕ} (hn : 0 < n) {c₀ b θ : ℝ} (hc₀ : 0 < c₀)
@@ -9594,6 +9619,338 @@ lemma fibre_gain_ledger_ten_le {n : ℕ} (hn : 0 < n) {c₀ b σ θ : ℝ}
     _ ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 * ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ :=
         mul_le_mul_of_nonneg_left hled hc10
 
+/-- **The wave-46 ledger at fourteen parts.** `fibre_gain_ledger_ten_le` at the constant floor
+`b = 0` and `N = 14`, landing at `n^{-17/6}` instead of `n^{-3/2}`. -/
+lemma fibre_gain_ledger_fourteen_le {n : ℕ} (hn : 0 < n) {c₀ σ θ : ℝ}
+    (hσ : 0 < σ) (hc₀ : 0 < c₀) (hθ : c₀ ≤ |θ|) :
+    (n : ℝ) * bulkRadius n ^ 2
+        * (81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+            + 3 * σ / (bulkRadius n * |θ|)) ^ 14
+      ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 14 * (n : ℝ) ^ (-(17 : ℝ) / 6) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hM : 0 < bulkRadius n := bulkRadius_pos hn
+  have hθ0 : 0 < |θ| := lt_of_lt_of_le hc₀ hθ
+  have hθ' : c₀ * (n : ℝ) ^ (0 : ℝ) ≤ |θ| := by rwa [Real.rpow_zero, mul_one]
+  have hg0 : (0 : ℝ) ≤ 81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+      + 3 * σ / (bulkRadius n * |θ|) := by positivity
+  have hstep := fibre_gain_le_bulk_gain hn hσ hθ0
+  have hbulk := bulk_gain_phase_le_band hn hc₀ hθ'
+  have hcoef : (0 : ℝ) ≤ 81 / σ + 3 * σ := by positivity
+  have hgain : 81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+      + 3 * σ / (bulkRadius n * |θ|)
+      ≤ ((81 / σ + 3 * σ) * c₀⁻¹) * (n : ℝ) ^ (-(3 : ℝ) / 8 - 0) := by
+    refine hstep.trans ?_
+    calc (81 / σ + 3 * σ) * (bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / |θ|)
+        ≤ (81 / σ + 3 * σ) * (c₀⁻¹ * (n : ℝ) ^ (-(3 : ℝ) / 8 - 0)) :=
+          mul_le_mul_of_nonneg_left hbulk hcoef
+      _ = ((81 / σ + 3 * σ) * c₀⁻¹) * (n : ℝ) ^ (-(3 : ℝ) / 8 - 0) := by ring
+  have hpow : (81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+      + 3 * σ / (bulkRadius n * |θ|)) ^ 14
+      ≤ (((81 / σ + 3 * σ) * c₀⁻¹) * (n : ℝ) ^ (-(3 : ℝ) / 8 - 0)) ^ 14 :=
+    pow_le_pow_left₀ hg0 hgain 14
+  have hpre : (0 : ℝ) ≤ (n : ℝ) * bulkRadius n ^ 2 := by positivity
+  refine le_trans (mul_le_mul_of_nonneg_left hpow hpre) ?_
+  rw [mul_pow]
+  have hled := leakage_ledger_fourteen_le hn
+  have hc14 : (0 : ℝ) ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 14 := by positivity
+  calc (n : ℝ) * bulkRadius n ^ 2
+          * (((81 / σ + 3 * σ) * c₀⁻¹) ^ 14 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - 0)) ^ 14)
+      = ((81 / σ + 3 * σ) * c₀⁻¹) ^ 14
+          * ((n : ℝ) * bulkRadius n ^ 2 * ((n : ℝ) ^ (-(3 : ℝ) / 8 - 0)) ^ 14) := by ring
+    _ ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 14 * (n : ℝ) ^ (-(17 : ℝ) / 6) :=
+        mul_le_mul_of_nonneg_left hled hc14
+
+/-! ### The Fubini reduction: from the plane to horizontal fibres
+
+The last item of input (B), and the only one that is measure theory rather than analysis.  The
+plane carries the product structure of `ℝ × ℝ` only through a measurable identification, and
+`planeEquiv` is that identification: it is volume preserving (`measurePreserving_planeEquiv`)
+because it is the composite of the two volume-preserving equivalences Mathlib supplies, `ofLp`
+off `PiLp 2` and `finTwoArrow` off `Fin 2 → ℝ`.  With it in hand
+`integral_eq_integral_fibre` writes any integrable plane integral as an iterated integral over
+horizontal fibres, `fourierWeight_bulkMultiplier_eq` absorbs the frequency `s` into the phase so
+that the fibre estimate applies verbatim, and `norm_integral_fibre_shift_le` supplies the
+Jacobian `M` of the rescaling `w₀ = Mx`. -/
+
+/-- The measurable identification of the plane with `ℝ × ℝ`. -/
+noncomputable def planeEquiv : E₂ ≃ᵐ ℝ × ℝ :=
+  (MeasurableEquiv.toLp 2 (Fin 2 → ℝ)).symm.trans MeasurableEquiv.finTwoArrow
+
+lemma measurePreserving_planeEquiv :
+    MeasurePreserving planeEquiv (volume : Measure E₂) (volume : Measure (ℝ × ℝ)) :=
+  (volume_preserving_finTwoArrow ℝ).comp
+    (EuclideanSpace.volume_preserving_symm_measurableEquiv_toLp (ι := Fin 2))
+
+lemma planeEquiv_apply (w : E₂) : planeEquiv w = (w 0, w 1) := rfl
+
+lemma planeEquiv_symm_apply (p : ℝ × ℝ) : planeEquiv.symm p = fibreEmbed p.2 p.1 := by
+  have h : planeEquiv (fibreEmbed p.2 p.1) = p := by
+    rw [planeEquiv_apply, fibreEmbed_apply_zero, fibreEmbed_apply_one]
+  calc planeEquiv.symm p = planeEquiv.symm (planeEquiv (fibreEmbed p.2 p.1)) := by rw [h]
+    _ = fibreEmbed p.2 p.1 := planeEquiv.symm_apply_apply _
+
+lemma fibreEmbed_self (w : E₂) : fibreEmbed (w 1) (w 0) = w := by
+  ext i
+  fin_cases i <;> simp [fibreEmbed, coordDir, EuclideanSpace.single_apply]
+
+
+/-- **The Fubini reduction of a plane integral to iterated integrals over horizontal fibres.** -/
+lemma integral_eq_integral_fibre {f : E₂ → ℂ} (hf : Integrable f) :
+    ∫ w : E₂, f w = ∫ w₁ : ℝ, ∫ w₀ : ℝ, f (fibreEmbed w₁ w₀) := by
+  have hsymm : MeasurePreserving planeEquiv.symm
+      (volume : Measure (ℝ × ℝ)) (volume : Measure E₂) :=
+    (measurePreserving_planeEquiv).symm planeEquiv
+  have h1 : (∫ p : ℝ × ℝ, f (planeEquiv.symm p)) = ∫ w : E₂, f w :=
+    hsymm.integral_comp' f
+  have hI : Integrable (fun p : ℝ × ℝ => f (planeEquiv.symm p)) volume :=
+    (hsymm.integrable_comp_emb
+      (MeasurableEquiv.measurableEmbedding planeEquiv.symm)).2 hf
+  rw [← h1]
+  rw [Measure.volume_eq_prod] at hI ⊢
+  rw [integral_prod_symm _ hI]
+  simp only [planeEquiv_symm_apply]
+
+
+lemma inner_eq_coords (w s : E₂) : (⟪w, s⟫ : ℝ) = s 0 * w 0 + s 1 * w 1 := by
+  conv_lhs => rw [← fibreEmbed_self s]
+  rw [fibreEmbed, inner_add_right, real_inner_smul_right, real_inner_smul_right,
+    inner_coordDir, inner_coordDir]
+
+/-- **The Fourier weight of the bulk multiplier, with the frequency absorbed into the phase.** -/
+lemma fourierWeight_bulkMultiplier_eq (σ r θ M : ℝ) (s : E₂) :
+    fourierWeight (bulkMultiplier σ r θ M) s
+      = (((2 * Real.pi)⁻¹ ^ 2 : ℝ) : ℂ) * ∫ w : E₂, ((bulkCutoff (M⁻¹ • w) : ℝ) : ℂ) *
+          Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w
+            - (θ / σ + s 0) * w 0 - s 1 * w 1 : ℝ) : ℂ)) := by
+  have hpi : Real.pi ≠ 0 := Real.pi_ne_zero
+  rw [fourierWeight, Real.fourier_eq', Complex.real_smul]
+  congr 1
+  refine integral_congr_ae (Filter.Eventually.of_forall fun w => ?_)
+  have hin : (⟪w, ((2 * Real.pi)⁻¹ : ℝ) • s⟫ : ℝ) = (2 * Real.pi)⁻¹ * (⟪w, s⟫ : ℝ) :=
+    real_inner_smul_right _ _ _
+  have harg : (-2 * Real.pi * (⟪w, ((2 * Real.pi)⁻¹ : ℝ) • s⟫ : ℝ) : ℝ)
+      = -(s 0 * w 0 + s 1 * w 1) := by
+    rw [hin, inner_eq_coords]; field_simp
+  simp only [smul_eq_mul]
+  rw [harg, bulkMultiplier, ← mul_assoc,
+    mul_comm (Complex.exp (((-(s 0 * w 0 + s 1 * w 1) : ℝ) : ℂ) * Complex.I)) _, mul_assoc,
+    ← Complex.exp_add]
+  congr 2
+  push_cast
+  ring
+
+
+/-- **The fibre estimate with the full two-dimensional frequency.** The `w₁`-component of the
+carrier contributes a constant phase along the fibre, so it drops out in modulus; the rescaling
+`w₀ = Mx` produces the Jacobian `M`, the first of the two factors of the `M²` prefactor. -/
+theorem norm_integral_fibre_shift_le (N : ℕ) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (σ r θ a b w₁ M : ℝ), 0 < σ → 1 ≤ M → θ ≠ 0 →
+      |a| ≤ |θ| / (2 * σ) →
+      ‖∫ w₀ : ℝ, ((bulkCutoff (M⁻¹ • fibreEmbed w₁ w₀) : ℝ) : ℂ) *
+          Complex.exp (Complex.I * ((θ * deltaSurrogate σ r (fibreEmbed w₁ w₀)
+            - a * w₀ - b * w₁ : ℝ) : ℂ))‖
+        ≤ M * (C * (C * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N) := by
+  obtain ⟨C, hC0, hC⟩ := norm_integral_fibre_bulkMultiplier_le N
+  refine ⟨C, hC0, ?_⟩
+  intro σ r θ a b w₁ M hσ hM hθ ha
+  have hM0 : (0 : ℝ) < M := lt_of_lt_of_le zero_lt_one hM
+  set G : ℝ → ℂ := fun w₀ => ((bulkCutoff (M⁻¹ • fibreEmbed w₁ w₀) : ℝ) : ℂ) *
+      Complex.exp (Complex.I * ((θ * deltaSurrogate σ r (fibreEmbed w₁ w₀)
+        - a * w₀ : ℝ) : ℂ)) with hG
+  -- the frozen coordinate contributes a unimodular constant
+  have hsplit : ∀ w₀ : ℝ, ((bulkCutoff (M⁻¹ • fibreEmbed w₁ w₀) : ℝ) : ℂ) *
+      Complex.exp (Complex.I * ((θ * deltaSurrogate σ r (fibreEmbed w₁ w₀)
+        - a * w₀ - b * w₁ : ℝ) : ℂ))
+      = Complex.exp (Complex.I * ((-(b * w₁) : ℝ) : ℂ)) * G w₀ := by
+    intro w₀
+    rw [hG]
+    rw [← mul_assoc, mul_comm (Complex.exp (Complex.I * ((-(b * w₁) : ℝ) : ℂ))) _, mul_assoc,
+      ← Complex.exp_add]
+    congr 2
+    push_cast
+    ring
+  simp only [hsplit]
+  have hcm : (∫ w₀ : ℝ, Complex.exp (Complex.I * ((-(b * w₁) : ℝ) : ℂ)) * G w₀)
+      = Complex.exp (Complex.I * ((-(b * w₁) : ℝ) : ℂ)) * ∫ w₀ : ℝ, G w₀ :=
+    MeasureTheory.integral_const_mul _ _
+  rw [hcm, norm_mul, Complex.norm_exp_I_mul_ofReal, one_mul]
+  -- rescale the fibre
+  have habs : |M⁻¹| = M⁻¹ := abs_of_pos (inv_pos.mpr hM0)
+  have hres : (∫ x : ℝ, G (M * x)) = ((M⁻¹ : ℝ) : ℂ) * ∫ y : ℝ, G y := by
+    rw [Measure.integral_comp_mul_left G M, habs]
+    exact Complex.real_smul
+  have hGint : (∫ y : ℝ, G y) = ((M : ℝ) : ℂ) * ∫ x : ℝ, G (M * x) := by
+    rw [hres, ← mul_assoc, ← Complex.ofReal_mul, mul_inv_cancel₀ (ne_of_gt hM0)]
+    simp
+  rw [hGint, norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hM0]
+  exact mul_le_mul_of_nonneg_left (hC σ r θ a w₁ M hσ hM hθ ha) hM0.le
+
+/-- The integrand of the Fourier weight is continuous with support in the ball of radius `2M`,
+so Fubini is available to it with nothing to check. -/
+lemma integrable_shiftedBulk {M : ℝ} (hM : 0 < M) (σ r θ a b : ℝ) :
+    Integrable (fun w : E₂ => ((bulkCutoff (M⁻¹ • w) : ℝ) : ℂ) *
+      Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w - a * w 0 - b * w 1 : ℝ) : ℂ))) := by
+  have hcont : Continuous fun w : E₂ => ((bulkCutoff (M⁻¹ • w) : ℝ) : ℂ) *
+      Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w - a * w 0 - b * w 1 : ℝ) : ℂ)) := by
+    have hc : Continuous fun w : E₂ => (bulkCutoff (M⁻¹ • w) : ℝ) :=
+      bulkCutoff.continuous.comp (continuous_const_smul _)
+    have h0 : Continuous fun w : E₂ => w 0 := by fun_prop
+    have h1 : Continuous fun w : E₂ => w 1 := by fun_prop
+    have hp : Continuous fun w : E₂ =>
+        (θ * deltaSurrogate σ r w - a * w 0 - b * w 1 : ℝ) :=
+      (((continuous_deltaSurrogate σ r).const_mul θ).sub (h0.const_mul a)).sub (h1.const_mul b)
+    exact (Complex.continuous_ofReal.comp hc).mul
+      (Complex.continuous_exp.comp ((Complex.continuous_ofReal.comp hp).const_mul Complex.I))
+  refine hcont.integrable_of_hasCompactSupport
+    (HasCompactSupport.intro (isCompact_closedBall (0 : E₂) (2 * M)) ?_)
+  intro w hw
+  have hnw : 2 * M < ‖w‖ := by simpa [Metric.mem_closedBall, not_le] using hw
+  have hzero : (bulkCutoff (M⁻¹ • w) : ℝ) = 0 := by
+    refine bulkCutoff.zero_of_le_dist ?_
+    have : (2 : ℝ) ≤ ‖M⁻¹ • w‖ := by
+      rw [norm_smul, norm_inv, Real.norm_eq_abs, abs_of_pos hM, ← div_eq_inv_mul,
+        le_div_iff₀ hM]
+      linarith
+    simpa [dist_eq_norm, bulkCutoff] using this
+  rw [hzero]
+  simp
+
+/-- **THE FOURIER WEIGHT OF THE BULK MULTIPLIER, POINTWISE IN THE FREQUENCY.** The Fubini
+reduction assembled: the plane integral becomes an iterated integral over horizontal fibres, the
+fibre estimate applies at each frozen `w₁` (a set of length `4M`, the second factor of the `M²`
+prefactor), and the frequency enters only through the shift `a = θ/σ + s₀` of the slope, which
+the band condition keeps inside the non-stationarity window. -/
+theorem norm_fourierWeight_bulkMultiplier_le (N : ℕ) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (σ r θ M : ℝ) (s : E₂), 0 < σ → 1 ≤ M → θ ≠ 0 →
+      |θ / σ + s 0| ≤ |θ| / (2 * σ) →
+      ‖fourierWeight (bulkMultiplier σ r θ M) s‖
+        ≤ C * M ^ 2 * (C * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N := by
+  obtain ⟨C, hC0, hC⟩ := norm_integral_fibre_shift_le N
+  refine ⟨4 * C, by positivity, ?_⟩
+  intro σ r θ M s hσ hM hθ ha
+  have hM0 : (0 : ℝ) < M := lt_of_lt_of_le zero_lt_one hM
+  have hθ0 : 0 < |θ| := abs_pos.mpr hθ
+  have hg0 : (0 : ℝ) ≤ 81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|) := by positivity
+  set a : ℝ := θ / σ + s 0 with hadef
+  set b : ℝ := s 1 with hbdef
+  set K : ℝ := M * (C * (C * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N) with hK
+  have hK0 : 0 ≤ K := by
+    rw [hK]; positivity
+  set f : E₂ → ℂ := fun w => ((bulkCutoff (M⁻¹ • w) : ℝ) : ℂ) *
+      Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w - a * w 0 - b * w 1 : ℝ) : ℂ)) with hf
+  -- each fibre integral, and its vanishing off the support
+  have hfib : ∀ w₁ : ℝ, ‖∫ w₀ : ℝ, f (fibreEmbed w₁ w₀)‖ ≤ K := by
+    intro w₁
+    have hshape : (fun w₀ : ℝ => f (fibreEmbed w₁ w₀))
+        = fun w₀ : ℝ => ((bulkCutoff (M⁻¹ • fibreEmbed w₁ w₀) : ℝ) : ℂ) *
+            Complex.exp (Complex.I * ((θ * deltaSurrogate σ r (fibreEmbed w₁ w₀)
+              - a * w₀ - b * w₁ : ℝ) : ℂ)) := by
+      funext w₀
+      rw [hf]
+      simp [fibreEmbed_apply_zero, fibreEmbed_apply_one]
+    rw [hshape]
+    exact hC σ r θ a b w₁ M hσ hM hθ ha
+  have hvanish : ∀ w₁ : ℝ, 2 * M < |w₁| → ∀ w₀ : ℝ, f (fibreEmbed w₁ w₀) = 0 := by
+    intro w₁ hw₁ w₀
+    have hnw : 2 * M < ‖fibreEmbed w₁ w₀‖ := by
+      refine lt_of_lt_of_le hw₁ ?_
+      have := (abs_coord_le_norm (fibreEmbed w₁ w₀)).2
+      rwa [fibreEmbed_apply_one] at this
+    have hzero : (bulkCutoff (M⁻¹ • fibreEmbed w₁ w₀) : ℝ) = 0 := by
+      refine bulkCutoff.zero_of_le_dist ?_
+      have : (2 : ℝ) ≤ ‖M⁻¹ • fibreEmbed w₁ w₀‖ := by
+        rw [norm_smul, norm_inv, Real.norm_eq_abs, abs_of_pos hM0, ← div_eq_inv_mul,
+          le_div_iff₀ hM0]
+        linarith
+      simpa [dist_eq_norm, bulkCutoff] using this
+    rw [hf]
+    simp only [hzero]
+    simp
+  -- the outer integration, against the indicator majorant
+  have houter : ‖∫ w₁ : ℝ, ∫ w₀ : ℝ, f (fibreEmbed w₁ w₀)‖ ≤ 4 * M * K := by
+    refine le_trans (norm_integral_le_integral_norm _) ?_
+    have hmaj : Integrable
+        (Set.indicator (Set.Icc (-(2 * M)) (2 * M)) (fun _ : ℝ => K)) volume :=
+      (integrable_indicator_iff measurableSet_Icc).2
+        (integrableOn_const (by simp [Real.volume_Icc]))
+    have hle : (fun w₁ : ℝ => ‖∫ w₀ : ℝ, f (fibreEmbed w₁ w₀)‖)
+        ≤ᵐ[volume] Set.indicator (Set.Icc (-(2 * M)) (2 * M)) (fun _ : ℝ => K) := by
+      filter_upwards with w₁
+      by_cases hmem : w₁ ∈ Set.Icc (-(2 * M)) (2 * M)
+      · rw [Set.indicator_of_mem hmem]
+        exact hfib w₁
+      · have habs : 2 * M < |w₁| := by
+          rcases abs_cases w₁ with ⟨he, _⟩ | ⟨he, _⟩ <;> rw [he] <;>
+            [skip; skip] <;>
+            · by_contra hcon
+              exact hmem (Set.mem_Icc.2 (by constructor <;> [linarith; linarith]))
+        rw [Set.indicator_of_notMem hmem]
+        have : (∫ w₀ : ℝ, f (fibreEmbed w₁ w₀)) = 0 := by
+          simp [hvanish w₁ habs]
+        rw [this]
+        simp
+    refine le_trans (integral_mono_of_nonneg (Filter.Eventually.of_forall fun _ => norm_nonneg _)
+      hmaj hle) (le_of_eq ?_)
+    rw [integral_indicator measurableSet_Icc, setIntegral_const, Real.volume_real_Icc]
+    rw [max_eq_left (by linarith : (0:ℝ) ≤ 2 * M - -(2 * M)), smul_eq_mul]
+    ring
+  -- assemble
+  rw [fourierWeight_bulkMultiplier_eq, norm_mul, Complex.norm_real, Real.norm_eq_abs]
+  have hfi : (∫ w : E₂, f w) = ∫ w₁ : ℝ, ∫ w₀ : ℝ, f (fibreEmbed w₁ w₀) :=
+    integral_eq_integral_fibre (integrable_shiftedBulk hM0 σ r θ a b)
+  have hcoe : |((2 * Real.pi)⁻¹ ^ 2 : ℝ)| ≤ 1 := by
+    rw [abs_of_nonneg (by positivity)]
+    have : (1 : ℝ) ≤ 2 * Real.pi := by nlinarith [Real.two_le_pi]
+    have h2 : (2 * Real.pi)⁻¹ ≤ 1 := by
+      rw [inv_le_one₀ (by positivity)]; exact this
+    nlinarith [inv_nonneg.mpr (by positivity : (0:ℝ) ≤ 2 * Real.pi)]
+  calc |((2 * Real.pi)⁻¹ ^ 2 : ℝ)| * ‖∫ w : E₂, f w‖
+      ≤ 1 * ‖∫ w : E₂, f w‖ := mul_le_mul_of_nonneg_right hcoe (norm_nonneg _)
+    _ = ‖∫ w₁ : ℝ, ∫ w₀ : ℝ, f (fibreEmbed w₁ w₀)‖ := by rw [one_mul, hfi]
+    _ ≤ 4 * M * K := houter
+    _ ≤ 4 * C * M ^ 2 * (4 * C * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N := by
+        rw [hK]
+        have hpow : (C * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N
+            ≤ (4 * C * (81 * M * r ^ 2 / (σ * |θ|) + 3 * σ / (M * |θ|))) ^ N := by
+          refine pow_le_pow_left₀ (by positivity) ?_ N
+          nlinarith [hg0, hC0.le]
+        have h4 : (0:ℝ) ≤ 4 * C * M ^ 2 := by positivity
+        nlinarith [hpow, hC0.le, hM0.le, sq_nonneg M,
+          pow_nonneg (by positivity : (0:ℝ) ≤ C * (81 * M * r ^ 2 / (σ * |θ|)
+            + 3 * σ / (M * |θ|))) N]
+
+/-- **The band has area at most `4R²`.** -/
+lemma volume_band_le (t : E₂) {R : ℝ} (hR : 0 ≤ R) :
+    volume {s : E₂ | ‖t + s‖ < R} ≤ ENNReal.ofReal (4 * R ^ 2) := by
+  have hsub : {s : E₂ | ‖t + s‖ < R}
+      ⊆ planeEquiv ⁻¹' (Set.Ioo (-(t 0) - R) (-(t 0) + R) ×ˢ
+          Set.Ioo (-(t 1) - R) (-(t 1) + R)) := by
+    intro s hs
+    have hs' : ‖t + s‖ < R := hs
+    have h0 : |t 0 + s 0| < R := by
+      refine lt_of_le_of_lt ?_ hs'
+      have := (abs_coord_le_norm (t + s)).1
+      simpa using this
+    have h1 : |t 1 + s 1| < R := by
+      refine lt_of_le_of_lt ?_ hs'
+      have := (abs_coord_le_norm (t + s)).2
+      simpa using this
+    rw [abs_lt] at h0 h1
+    refine Set.mem_preimage.2 ?_
+    rw [planeEquiv_apply]
+    exact ⟨⟨by linarith [h0.1], by linarith [h0.2]⟩, ⟨by linarith [h1.1], by linarith [h1.2]⟩⟩
+  refine le_trans (measure_mono hsub) (le_of_eq ?_)
+  rw [measurePreserving_planeEquiv.measure_preimage
+    ((measurableSet_Ioo.prod measurableSet_Ioo).nullMeasurableSet)]
+  rw [Measure.volume_eq_prod, Measure.prod_prod, Real.volume_Ioo, Real.volume_Ioo]
+  rw [show -(t 0) + R - (-(t 0) - R) = 2 * R by ring, show -(t 1) + R - (-(t 1) - R) = 2 * R by
+    ring]
+  rw [← ENNReal.ofReal_mul (by linarith)]
+  congr 1
+  ring
+
+-- the ten-fold ledger arithmetic runs under a set integral
+set_option maxHeartbeats 1000000 in
 /-- **(B) The non-stationary-phase estimate: the weight carries `O(n^{-3/2})` on the
 low-frequency ball** — the second input, the analytic heart of the certificate, and **still the
 only open analytic item of the certificate after wave 44**.
@@ -9665,18 +10022,38 @@ theorem:
   `norm_iteratedDeriv_comp_fibreEmbed_le`), so one horizontal fibre of the leakage integral,
   with the actual `χ(·/M)` and the actual `θHₙ − t₀w₀`, is `O(gain^N)`.
 
-What is **still** not done is now **one** item, and it is measure theory rather than analysis:
+**WAVE 46 CLOSES IT. THIS THEOREM IS NO LONGER A `sorry`.** The last item was the one wave 45
+named — the reduction of `𝓕 g` to an iterated integral, and the outer bookkeeping it feeds —
+and it went through exactly as budgeted, with no amendment to any constant proved above.
 
-* the **reduction of `𝓕 g` to an iterated integral**, and the outer bookkeeping it feeds. Fubini
-  is harmless (the support is compact) but the measure-preserving identification of `E₂` with
-  `ℝ × ℝ` is not free; after it, `norm_integral_fibre_bulkMultiplier_le` is applied at each frozen
-  `w₁` (a set of length `≍ M`, contributing the second factor of the `M²` prefactor) and the
-  result integrated over the bad set in `s` (area `≍ log n`, against a ledger run at the
-  conservative `≍ n`, so with room to spare). Every constant that step has to produce is already
-  proved above; what it has to *do* is exchange two integrals.
+* `planeEquiv` / `measurePreserving_planeEquiv` is the measure-preserving identification of `E₂`
+  with `ℝ × ℝ`; it is the composite of the two equivalences Mathlib already supplies, `ofLp` off
+  `PiLp 2` and `finTwoArrow` off `Fin 2 → ℝ`, and nothing about it is specific to this file.
+  `integral_eq_integral_fibre` is Fubini through it, with the fibre variable innermost.
+* `fourierWeight_bulkMultiplier_eq` absorbs the frequency into the phase. This is where the
+  dilation by `2π` is spent: at `v = (2π)^{-1}s` the character is `e^{-i⟪w,s⟫}`, so the total
+  phase is `θHₙ(w) − ⟪w, t₀ + s⟫` with `t₀ = (θ/σ)e₀`. Along a horizontal fibre its
+  `w₁`-component is a **constant**, and `norm_integral_fibre_shift_le` discards it in modulus;
+  what survives is a shift `a = θ/σ + s₀` of the slope, and the band condition `2σR ≤ |θ|`
+  together with `|v_i| ≤ ‖v‖` keeps `|a| ≤ |θ|/(2σ)` — which is precisely the non-stationarity
+  hypothesis of the wave-45 fibre estimate. **The band condition is not an extra assumption
+  here; it is the same inequality, read on the frequency side.**
+* `norm_fourierWeight_bulkMultiplier_le` runs the outer `w₁`-integration. The `M²` prefactor is
+  produced as two separate factors of `M`: the Jacobian of the rescaling `w₀ = Mx` inside each
+  fibre, and the length `4M` of the `w₁`-support of the cut-off. The integration is run against
+  an **indicator majorant** (`integral_mono_of_nonneg`), so the measurability of `w₁ ↦ ∫ …` is
+  never needed — the only thing that has to be proved about the fibre integral is that it
+  vanishes off `|w₁| ≤ 2M`, and that is the cut-off.
+* the `s`-integration is `volume_band_le` plus the same majorant device. The band is a ball, but
+  no ball-volume formula is used: transported through `planeEquiv` it sits inside a rectangle of
+  area `4R²`, which is all the ledger wants. `R² = Kb² log n` against the ledger's conservative
+  `n` needs only `log n ≤ n − 1`, so the `≍ log n` area is spent with room to spare, exactly as
+  wave 45 recorded.
+* the ledger is `fibre_gain_ledger_ten_le` at `b = 0`, **unamended**, and the resulting constant
+  is `4(Kb² + 1)C^{11}((81/σ + 3σ)/c₀)^{10}` with `C` the fibre estimate's.
 
-No obstruction is known, and the arithmetic is now *proved* in the file rather than merely
-checked. This is a budget statement, not a verdict. -/
+`exists_fourierCertificate_deltaSurrogate` is therefore proved outright and axiom-clean, and the
+certificate — open in this file since wave 30 — has no `sorry` under it. -/
 theorem exists_integral_norm_fourierWeight_bulkMultiplier_band_le
     {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) {Kb : ℝ} (hKb : 0 ≤ Kb) :
     ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ ≤ |θ| →
@@ -9684,7 +10061,210 @@ theorem exists_integral_norm_fourierWeight_bulkMultiplier_band_le
       (∫ s in {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))},
           ‖fourierWeight (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) s‖)
         ≤ C / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
-  sorry
+  obtain ⟨C₁, hC₁0, hC₁⟩ := norm_fourierWeight_bulkMultiplier_le 10
+  refine ⟨4 * (Kb ^ 2 + 1) * C₁ ^ 11 * ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10, by positivity, ?_⟩
+  intro n hn θ hθc hband
+  have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hM : (1 : ℝ) ≤ bulkRadius n := by
+    rw [bulkRadius]; exact Real.one_le_rpow hn1 (by norm_num)
+  have hM0 : (0 : ℝ) < bulkRadius n := lt_of_lt_of_le zero_lt_one hM
+  have hθ0 : 0 < |θ| := lt_of_lt_of_le hc₀ hθc
+  have hθne : θ ≠ 0 := fun h => by simp [h] at hθ0
+  have hR0 : (0 : ℝ) ≤ Kb * Real.sqrt (Real.log (n : ℝ)) :=
+    mul_nonneg hKb (Real.sqrt_nonneg _)
+  set G : ℝ := 81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+      + 3 * σ / (bulkRadius n * |θ|) with hGdef
+  have hG0 : (0 : ℝ) ≤ G := by rw [hGdef]; positivity
+  -- the pointwise bound on the band
+  have hpt : ∀ s ∈ {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))},
+      ‖fourierWeight (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) s‖
+        ≤ C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 10 := by
+    intro s hs
+    refine hC₁ σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n) s hσ hM hθne ?_
+    have hco : |((θ / σ) • coordDir 0 + s) 0| ≤ ‖(θ / σ) • coordDir 0 + s‖ :=
+      (abs_coord_le_norm _).1
+    have hval : ((θ / σ) • coordDir 0 + s) 0 = θ / σ + s 0 := by
+      simp [coordDir]
+    rw [hval] at hco
+    have hs' : ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ)) := hs
+    have hle : Kb * Real.sqrt (Real.log (n : ℝ)) ≤ |θ| / (2 * σ) := by
+      rw [le_div_iff₀ (by positivity)]
+      linarith [hband]
+    linarith
+  -- the area of the band
+  have hAmeas : MeasurableSet
+      {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))} :=
+    (isOpen_lt (by fun_prop) continuous_const).measurableSet
+  have harea := volume_band_le ((θ / σ) • coordDir 0) hR0
+  have hfin : volume {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}
+      ≠ ⊤ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top harea
+  have hareaR : (volume {s : E₂ |
+      ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}).toReal
+      ≤ 4 * (Kb * Real.sqrt (Real.log (n : ℝ))) ^ 2 := by
+    refine le_trans (ENNReal.toReal_mono ENNReal.ofReal_ne_top harea) ?_
+    rw [ENNReal.toReal_ofReal (by positivity)]
+  -- the set integral
+  have hKbnd : (0 : ℝ) ≤ C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 10 := by positivity
+  have hsi : (∫ s in {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))},
+      ‖fourierWeight (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) s‖)
+      ≤ (C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 10)
+        * (volume {s : E₂ |
+            ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}).toReal := by
+    have h1 := integral_mono_of_nonneg
+      (μ := volume.restrict {s : E₂ |
+        ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))})
+      (f := fun s : E₂ =>
+        ‖fourierWeight (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) s‖)
+      (g := fun _ : E₂ => C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 10)
+      (Filter.Eventually.of_forall fun _ => norm_nonneg _)
+      (integrableOn_const hfin)
+      ((ae_restrict_iff' hAmeas).2 (Filter.Eventually.of_forall hpt))
+    refine le_trans h1 (le_of_eq ?_)
+    rw [setIntegral_const, smul_eq_mul, measureReal_def]
+    ring
+  -- the ledger
+  have hled : (n : ℝ) * bulkRadius n ^ 2 * G ^ 10
+      ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 * ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ := by
+    rw [hGdef]
+    exact fibre_gain_ledger_ten_le hn hσ hc₀ (le_refl (0 : ℝ))
+      (by rwa [Real.rpow_zero, mul_one])
+  have hlog : Real.log (n : ℝ) ≤ (n : ℝ) := by
+    have := Real.log_le_sub_one_of_pos hn0
+    linarith
+  have hlog0 : (0 : ℝ) ≤ Real.log (n : ℝ) := Real.log_nonneg hn1
+  have hsq : (Kb * Real.sqrt (Real.log (n : ℝ))) ^ 2 = Kb ^ 2 * Real.log (n : ℝ) := by
+    rw [mul_pow, Real.sq_sqrt hlog0]
+  refine le_trans hsi ?_
+  rw [div_eq_mul_inv]
+  calc (C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 10)
+        * (volume {s : E₂ |
+            ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}).toReal
+      ≤ (C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 10) * (4 * (Kb ^ 2 * (n : ℝ))) := by
+        refine mul_le_mul_of_nonneg_left ?_ hKbnd
+        have h2 : (volume {s : E₂ |
+            ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}).toReal
+            ≤ 4 * (Kb ^ 2 * Real.log (n : ℝ)) := by
+          rw [← hsq]; exact hareaR
+        have h3 : Kb ^ 2 * Real.log (n : ℝ) ≤ Kb ^ 2 * (n : ℝ) :=
+          mul_le_mul_of_nonneg_left hlog (sq_nonneg Kb)
+        linarith
+    _ = (4 * Kb ^ 2 * C₁ ^ 11) * ((n : ℝ) * bulkRadius n ^ 2 * G ^ 10) := by
+        rw [mul_pow]; ring
+    _ ≤ (4 * Kb ^ 2 * C₁ ^ 11)
+          * (((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 * ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹) := by
+        refine mul_le_mul_of_nonneg_left hled (by positivity)
+    _ ≤ 4 * (Kb ^ 2 + 1) * C₁ ^ 11 * ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10
+          * ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ := by
+        have hinv : (0 : ℝ) ≤ ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹ := by positivity
+        have hl : (0 : ℝ) ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 10 := by positivity
+        nlinarith [sq_nonneg Kb, pow_nonneg hC₁0.le 11]
+
+
+-- the fourteen-fold ledger arithmetic runs under a set integral
+set_option maxHeartbeats 1000000 in
+/-- **(B) AT FOURTEEN PARTS.** The same theorem as
+`exists_integral_norm_fourierWeight_bulkMultiplier_band_le`, at `N = 14` and hence at accuracy
+`n^{-17/6}` rather than `n^{-3/2}`. Nothing analytic changes: the fibre estimate, the band
+geometry, the bulk radius `n^{5/8}` and the gain per part are all independent of `N`, and the
+whole chain below this theorem is proved at a general `N`. What this supplies is the accuracy the
+studentized three-regime split needs at its outer radius — see the section note on
+`middle_range_ledger_exponent`. -/
+theorem exists_integral_norm_fourierWeight_bulkMultiplier_band_fourteen_le
+    {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) {Kb : ℝ} (hKb : 0 ≤ Kb) :
+    ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ ≤ |θ| →
+      2 * σ * (Kb * Real.sqrt (Real.log (n : ℝ))) ≤ |θ| →
+      (∫ s in {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))},
+          ‖fourierWeight (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) s‖)
+        ≤ C * (n : ℝ) ^ (-(17 : ℝ) / 6) := by
+  obtain ⟨C₁, hC₁0, hC₁⟩ := norm_fourierWeight_bulkMultiplier_le 14
+  refine ⟨4 * (Kb ^ 2 + 1) * C₁ ^ 15 * ((81 / σ + 3 * σ) * c₀⁻¹) ^ 14, by positivity, ?_⟩
+  intro n hn θ hθc hband
+  have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hM : (1 : ℝ) ≤ bulkRadius n := by
+    rw [bulkRadius]; exact Real.one_le_rpow hn1 (by norm_num)
+  have hM0 : (0 : ℝ) < bulkRadius n := lt_of_lt_of_le zero_lt_one hM
+  have hθ0 : 0 < |θ| := lt_of_lt_of_le hc₀ hθc
+  have hθne : θ ≠ 0 := fun h => by simp [h] at hθ0
+  have hR0 : (0 : ℝ) ≤ Kb * Real.sqrt (Real.log (n : ℝ)) :=
+    mul_nonneg hKb (Real.sqrt_nonneg _)
+  set G : ℝ := 81 * bulkRadius n * ((Real.sqrt (n : ℝ))⁻¹) ^ 2 / (σ * |θ|)
+      + 3 * σ / (bulkRadius n * |θ|) with hGdef
+  have hG0 : (0 : ℝ) ≤ G := by rw [hGdef]; positivity
+  have hpt : ∀ s ∈ {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))},
+      ‖fourierWeight (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) s‖
+        ≤ C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 14 := by
+    intro s hs
+    refine hC₁ σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n) s hσ hM hθne ?_
+    have hco : |((θ / σ) • coordDir 0 + s) 0| ≤ ‖(θ / σ) • coordDir 0 + s‖ :=
+      (abs_coord_le_norm _).1
+    have hval : ((θ / σ) • coordDir 0 + s) 0 = θ / σ + s 0 := by simp [coordDir]
+    rw [hval] at hco
+    have hs' : ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ)) := hs
+    have hle : Kb * Real.sqrt (Real.log (n : ℝ)) ≤ |θ| / (2 * σ) := by
+      rw [le_div_iff₀ (by positivity)]
+      linarith [hband]
+    linarith
+  have hAmeas : MeasurableSet
+      {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))} :=
+    (isOpen_lt (by fun_prop) continuous_const).measurableSet
+  have harea := volume_band_le ((θ / σ) • coordDir 0) hR0
+  have hfin : volume {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}
+      ≠ ⊤ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top harea
+  have hareaR : (volume {s : E₂ |
+      ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}).toReal
+      ≤ 4 * (Kb * Real.sqrt (Real.log (n : ℝ))) ^ 2 := by
+    refine le_trans (ENNReal.toReal_mono ENNReal.ofReal_ne_top harea) ?_
+    rw [ENNReal.toReal_ofReal (by positivity)]
+  have hKbnd : (0 : ℝ) ≤ C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 14 := by positivity
+  have hsi : (∫ s in {s : E₂ | ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))},
+      ‖fourierWeight (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) s‖)
+      ≤ (C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 14)
+        * (volume {s : E₂ |
+            ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}).toReal := by
+    have h1 := integral_mono_of_nonneg
+      (μ := volume.restrict {s : E₂ |
+        ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))})
+      (f := fun s : E₂ =>
+        ‖fourierWeight (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) s‖)
+      (g := fun _ : E₂ => C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 14)
+      (Filter.Eventually.of_forall fun _ => norm_nonneg _)
+      (integrableOn_const hfin)
+      ((ae_restrict_iff' hAmeas).2 (Filter.Eventually.of_forall hpt))
+    refine le_trans h1 (le_of_eq ?_)
+    rw [setIntegral_const, smul_eq_mul, measureReal_def]
+    ring
+  have hled : (n : ℝ) * bulkRadius n ^ 2 * G ^ 14
+      ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 14 * (n : ℝ) ^ (-(17 : ℝ) / 6) := by
+    rw [hGdef]; exact fibre_gain_ledger_fourteen_le hn hσ hc₀ hθc
+  have hlog : Real.log (n : ℝ) ≤ (n : ℝ) := by
+    have := Real.log_le_sub_one_of_pos hn0; linarith
+  have hlog0 : (0 : ℝ) ≤ Real.log (n : ℝ) := Real.log_nonneg hn1
+  have hsq : (Kb * Real.sqrt (Real.log (n : ℝ))) ^ 2 = Kb ^ 2 * Real.log (n : ℝ) := by
+    rw [mul_pow, Real.sq_sqrt hlog0]
+  refine le_trans hsi ?_
+  calc (C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 14)
+        * (volume {s : E₂ |
+            ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}).toReal
+      ≤ (C₁ * bulkRadius n ^ 2 * (C₁ * G) ^ 14) * (4 * (Kb ^ 2 * (n : ℝ))) := by
+        refine mul_le_mul_of_nonneg_left ?_ hKbnd
+        have h2 : (volume {s : E₂ |
+            ‖(θ / σ) • coordDir 0 + s‖ < Kb * Real.sqrt (Real.log (n : ℝ))}).toReal
+            ≤ 4 * (Kb ^ 2 * Real.log (n : ℝ)) := by rw [← hsq]; exact hareaR
+        have h3 : Kb ^ 2 * Real.log (n : ℝ) ≤ Kb ^ 2 * (n : ℝ) :=
+          mul_le_mul_of_nonneg_left hlog (sq_nonneg Kb)
+        linarith
+    _ = (4 * Kb ^ 2 * C₁ ^ 15) * ((n : ℝ) * bulkRadius n ^ 2 * G ^ 14) := by
+        rw [mul_pow]; ring
+    _ ≤ (4 * Kb ^ 2 * C₁ ^ 15)
+          * (((81 / σ + 3 * σ) * c₀⁻¹) ^ 14 * (n : ℝ) ^ (-(17 : ℝ) / 6)) :=
+        mul_le_mul_of_nonneg_left hled (by positivity)
+    _ ≤ 4 * (Kb ^ 2 + 1) * C₁ ^ 15 * ((81 / σ + 3 * σ) * c₀⁻¹) ^ 14
+          * (n : ℝ) ^ (-(17 : ℝ) / 6) := by
+        have hinv : (0 : ℝ) ≤ (n : ℝ) ^ (-(17 : ℝ) / 6) := by positivity
+        have hl : (0 : ℝ) ≤ ((81 / σ + 3 * σ) * c₀⁻¹) ^ 14 := by positivity
+        nlinarith [sq_nonneg Kb, pow_nonneg hC₁0.le 15]
 
 /-- **Markov at the fourth moment, on the plane.** The vector analogue of
 `measure_abs_gt_le_fourth_moment`, and the whole of input (C) except the moment itself. -/
@@ -12267,6 +12847,145 @@ lemma low_range_ledger_gt {a : ℝ} (ha : (1 : ℝ) / 6 < a) {n : ℕ} (hn : 2 �
   have h1 : (1 : ℝ) < (n : ℝ) := by exact_mod_cast hn
   rw [← Real.rpow_natCast ((n : ℝ) ^ a) 3, ← Real.rpow_mul h0.le, ← Real.rpow_add h0,
     ← Real.rpow_neg_one (n : ℝ)]
+  refine Real.rpow_lt_rpow_of_exponent_lt h1 ?_
+  push_cast
+  linarith
+
+
+/-! ### The outer radius of the three-regime split, and what it costs (wave 46)
+
+The mean's assembly runs `esseen_split` at `δ = n⁻¹` and `ρ = c√n`, and the tail term
+`2M/(δπ²ρ) ≍ M√n` is `O(n⁻¹)` there **only because `M` is geometric in `n`**: on the tail the
+mean's gap is bounded by `crⁿ + ‖φ_{q_n}‖` (`edgeworthGap_tail_le`), and the Cramér half of that
+is uniform over the whole of `|ξ| ≥ ρ` (`norm_charFun_vecRootLaw_le_pow`).
+
+**The studentized surrogate has no such uniform tail bound in the file, and the reason is
+structural rather than incidental.** What replaces the Cramér tail there is the certificate,
+through `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band`, whose bound is
+`Γ(n, θ)·κ + ε + η`; and `Γ` is *polynomial in `θ`* — `exists_fourierCertificate_deltaSurrogate`
+delivers `Γ n θ ≤ C n^K (1 + |θ|)^K` and no better, because `Γ` is the `L¹` mass of `𝓕 g`, which
+grows with the frequency the multiplier is centred at. A bound that grows in `θ` cannot serve as
+the `M` of `htail`, which is quantified over all `ρ ≤ |ξ|`.
+
+Two ways out, and the lemmas below price them.
+
+1. *Produce a `θ`-uniform, geometrically small bound on `‖φ_{ρₙ∘Hₙ}(θ)‖` by other means.* Nothing
+   in the file does this, and the certificate cannot: it is the only device that reaches the
+   surrogate's transform at all, and its `Γ` is the obstruction.
+2. *Push the outer radius out until a **constant** `M` suffices.* `outer_range_ledger_exponent`
+   is the arithmetic: at `δ = n⁻¹` and `ρ = n^{p}` the tail weight is `n^{1−p}`, so `p ≥ 2`
+   makes a bare constant enough — and a bare constant is free, since both transforms are
+   bounded (`norm_charFunDensity_studentizedEdgeworthDensity_le` for the comparison density).
+   The price is paid in the middle range: `middle_range_ledger_exponent` says the middle weight
+   at `ρ₁ = n^{1/6}`, `ρ = n^{p}` and a middle bound `M₁ = n^{−17/6}` is exactly `n^{p−3}`, so
+   `p = 2` closes it **on the nose** and nothing weaker than `M₁ = n^{−17/6}` does.
+
+`n^{−17/6}` is not what the certificate is stated at. `exists_fourierCertificate_deltaSurrogate`
+runs the leakage ledger at `N = 10` and returns `O(n^{−3/2})`; `leakage_ledger_fourteen_le` and
+`leakage_ledger_thirteen_gt` locate the requirement exactly — **`N = 14` integrations by parts
+deliver `n^{−17/6}` at the band exponent `b = 0`, and `N = 13` does not.** Nothing else about
+input (B) moves: the gain per part, the bulk radius `n^{5/8}`, the fibre estimate and the band
+geometry are all independent of `N`, and `leakage_ledger_band_exponent` is already stated at a
+general `N`. What has to be restated at `N = 14` is the chain
+`norm_integral_fibre_bulkMultiplier_le` → `norm_fourierWeight_bulkMultiplier_le` →
+`exists_integral_norm_fourierWeight_bulkMultiplier_band_le`, all three of which are proved at a
+general `N` already and are specialised to `10` only at the last step.
+
+**This is a budget statement, not a verdict.** It is also the first wave to name the outer
+radius as a parameter of the studentized assembly at all: every restatement of the six-step
+chain since wave 37 has carried the mean's `ρ = c√n`, which the polynomial `Γ` does not
+support. -/
+
+lemma middle_range_ledger_exponent (p : ℝ) {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) ^ (-(17 : ℝ) / 6) * ((n : ℝ) ^ p / (n : ℝ) ^ ((1 : ℝ) / 6))
+      = (n : ℝ) ^ (p - 3) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_sub h0, ← Real.rpow_add h0]
+  congr 1
+  ring
+
+lemma outer_range_ledger_exponent (p : ℝ) {n : ℕ} (hn : 0 < n) :
+    (((n : ℝ))⁻¹ * (n : ℝ) ^ p)⁻¹ = (n : ℝ) ^ (1 - p) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_neg_one (n : ℝ), ← Real.rpow_add h0, ← Real.rpow_neg h0.le]
+  congr 1
+  ring
+
+
+/-! #### The cost of the wider outer radius, on input (C)
+
+`exists_integral_norm_fourierWeight_bulkMultiplier_band_fourteen_le` gives the *leakage* half of
+the certificate at `n^{−17/6}`, but the certificate's `ε` and `η` are input (C)'s, and (C) is
+pinned: `tail_ledger_exponent` says `n/M⁴ = n^{−3/2}` **exactly** at the bulk radius
+`M = n^{5/8}`, which is why wave 30 chose it. Reaching `n^{−17/6}` therefore forces the bulk
+radius up, and the bulk radius is also the prefactor and the scale of the leakage estimate, so
+the requirement feeds back into `N`. The lemmas below run that loop once and it terminates.
+
+* `tail_ledger_radius_seventeen_sixths`: `a = 23/24` is the radius exponent at which Markov at
+  the fourth moment returns `n^{−17/6}` (`tail_ledger_exponent_general` is the identity at a
+  general `a`).
+* `leakage_ledger_general_radius`: at `M = n^{a}` the gain per part is `Mr²/|θ| ≍ n^{a−1}` on
+  the constant floor, so the ledger is `n^{1 + 2a + (a−1)N}`. At `a = 23/24` the gain per part
+  degrades from `n^{−3/8}` to `n^{−1/24}` — **this is the real price, and it is not the `N = 14`
+  of the leakage half alone.**
+* `leakage_ledger_radius_138_le` / `leakage_ledger_radius_137_gt`: `N = 138` closes `n^{−17/6}`
+  at that radius, **on the nose**, and `N = 137` does not.
+
+So the outer-radius route is bounded, not free: it is `N = 138` at `M = n^{23/24}`, against
+`N = 10` at `M = n^{5/8}` for the `n^{−3/2}` the file currently proves. Every ingredient is
+already stated at a general `N` and a general radius except `bulkRadius` itself, which is a
+`def`; a wave taking this route should parameterise it rather than re-derive the estimates.
+
+**The alternative remains open and is cheaper if it exists:** a `θ`-uniform, geometrically small
+bound on `‖φ_{ρₙ∘Hₙ}‖` on `|θ| ≥ c√n` would keep the mean's `ρ = c√n` and leave `N = 10` alone.
+Nothing in the file rules one out; what is recorded here is only that the *certificate* cannot
+supply it, its `Γ` being polynomial in `θ`. -/
+
+lemma tail_ledger_exponent_general (a : ℝ) {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) / ((n : ℝ) ^ a) ^ 4 = (n : ℝ) ^ (1 - 4 * a) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have h4 : ((n : ℝ) ^ a) ^ 4 = (n : ℝ) ^ (4 * a) := by
+    rw [← Real.rpow_natCast ((n : ℝ) ^ a) 4, ← Real.rpow_mul h0.le]
+    congr 1
+    push_cast
+    ring
+  rw [h4, Real.rpow_sub h0, Real.rpow_one]
+
+lemma tail_ledger_radius_seventeen_sixths {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) / ((n : ℝ) ^ ((23 : ℝ) / 24)) ^ 4 = (n : ℝ) ^ (-(17 : ℝ) / 6) := by
+  rw [tail_ledger_exponent_general _ hn]
+  congr 1
+  norm_num
+
+lemma leakage_ledger_general_radius (a : ℝ) (N : ℕ) {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) * ((n : ℝ) ^ a) ^ 2 * ((n : ℝ) ^ (a - 1)) ^ N
+      = (n : ℝ) ^ (1 + 2 * a + (a - 1) * N) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have h2 : ((n : ℝ) ^ a) ^ 2 = (n : ℝ) ^ (2 * a) := by
+    rw [← Real.rpow_natCast ((n : ℝ) ^ a) 2, ← Real.rpow_mul h0.le]
+    congr 1
+    push_cast
+    ring
+  have hN : ((n : ℝ) ^ (a - 1)) ^ N = (n : ℝ) ^ ((a - 1) * N) := by
+    rw [← Real.rpow_natCast ((n : ℝ) ^ (a - 1)) N, ← Real.rpow_mul h0.le]
+  rw [h2, hN, Real.rpow_add h0, Real.rpow_add h0, Real.rpow_one]
+
+lemma leakage_ledger_radius_138_le {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) * ((n : ℝ) ^ ((23 : ℝ) / 24)) ^ 2 * ((n : ℝ) ^ ((23 : ℝ) / 24 - 1)) ^ 138
+      ≤ (n : ℝ) ^ (-(17 : ℝ) / 6) := by
+  have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  rw [leakage_ledger_general_radius _ _ hn]
+  refine Real.rpow_le_rpow_of_exponent_le h1 ?_
+  push_cast
+  linarith
+
+lemma leakage_ledger_radius_137_gt {n : ℕ} (hn : 2 ≤ n) :
+    (n : ℝ) ^ (-(17 : ℝ) / 6)
+      < (n : ℝ) * ((n : ℝ) ^ ((23 : ℝ) / 24)) ^ 2 * ((n : ℝ) ^ ((23 : ℝ) / 24 - 1)) ^ 137 := by
+  have h2 : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have h1 : (1 : ℝ) < (n : ℝ) := by linarith
+  have hnpos : 0 < n := by omega
+  rw [leakage_ledger_general_radius _ _ hnpos]
   refine Real.rpow_lt_rpow_of_exponent_lt h1 ?_
   push_cast
   linarith
@@ -15608,7 +16327,71 @@ THIS THEOREM IS STILL `sorry`, AND SO IS (B); WAVE 45 DOES NOT CLAIM OTHERWISE.*
   which is still a `sorry` — its one remaining item is the Fubini reduction of `𝓕 g` to iterated
   integrals together with the outer `w₁`/`s` bookkeeping it feeds. Assembling now would produce a
   theorem whose only content is the `sorry` it
-  already has. **The file is still at two `sorry`s — this one and (B).** -/
+  already has. **The file is still at two `sorry`s — this one and (B).**
+
+---
+
+**Status after wave 46. INPUT (B) IS PROVED AND THE CERTIFICATE IS AXIOM-CLEAN; THIS FILE IS AT
+ONE `sorry`, AND IT IS THIS THEOREM. THE ASSEMBLY WAS ATTEMPTED AND IS NOT CLAIMED.**
+
+* **(B) IS CLOSED** — `exists_integral_norm_fourierWeight_bulkMultiplier_band_le`, open since
+  wave 31. The residue wave 45 named was the Fubini reduction, and it went through at wave 45's
+  constants with no amendment anywhere: `planeEquiv` (the volume-preserving identification of
+  `E₂` with `ℝ × ℝ`, out of Mathlib's `ofLp` and `finTwoArrow`), `integral_eq_integral_fibre`,
+  `fourierWeight_bulkMultiplier_eq`, `norm_integral_fibre_shift_le`,
+  `norm_fourierWeight_bulkMultiplier_le`, `volume_band_le`. Two things are worth recording
+  because they were not obvious in advance. First, **the band condition is not an extra
+  hypothesis on the frequency side** — `2σR ≤ |θ|` together with `|v_i| ≤ ‖v‖` is *exactly* the
+  non-stationarity hypothesis `|a| ≤ |θ|/(2σ)` of the wave-45 fibre estimate, read at
+  `a = θ/σ + s₀`. Second, **no measurability of the fibre integral is ever needed**: both outer
+  integrations are run against majorants through `integral_mono_of_nonneg`, so the only thing
+  that has to be proved about `w₁ ↦ ∫ …` is that it vanishes off `|w₁| ≤ 2M`, which is the
+  cut-off. `exists_fourierCertificate_deltaSurrogate` is consequently proved outright and
+  depends on no `sorry`, direct or transitive.
+
+* **ITEM 2 WAS ATTEMPTED, AND THE FIRST THING IT HITS IS NOT A MISSING ESTIMATE.** It is a
+  *parameter* that no previous statement of the six-step chain has carried: the outer radius `ρ`
+  of the Esseen split. Every restatement since wave 37 has inherited the mean's `ρ = c√n`, and
+  the mean's tail term closes there only because its `M` is geometric in `n` *uniformly in the
+  frequency* — the Cramér bound `norm_charFun_vecRootLaw_le_pow` holds on all of `|ξ| ≥ ρ`. The
+  studentized surrogate has no such bound in the file: what reaches its transform is the
+  certificate, and the certificate's `Γ` is **polynomial in `θ`** by construction — it is the
+  `L¹` mass of `𝓕` of a multiplier centred at that frequency — so it cannot serve as the `M` of
+  `esseen_split_low`'s `htail`, which is quantified over the whole tail. The section note above
+  `middle_range_ledger_exponent` prices the way out and this wave supplies the leakage half of
+  it (`exists_integral_norm_fourierWeight_bulkMultiplier_band_fourteen_le`); the section note
+  above `tail_ledger_exponent_general` prices what it then costs on input (C), and the answer is
+  `N = 138` at `M = n^{23/24}` — bounded, closing on the nose, and much more than the `N = 14`
+  the leakage half alone suggests. **A `θ`-uniform geometrically small bound on the surrogate's
+  transform past `c√n` would keep `ρ = c√n` and leave `N = 10` alone; nothing here rules one
+  out, and only the *certificate* is shown unable to supply it.**
+
+* **WHAT ITEM 2 STILL OWES, IN FULL.** Four items, of which exactly one is analytic.
+  1. *The low-range window bound on `|ξ| ≤ n^{1/6}`* — the shape
+     `g ξ ≤ Kw·windowEnvelope₁ ξ + Kr|ξ|³` with `Kw = O(n⁻¹)`, `Kr = O(n^{-3/2})`, assembled from
+     the four damped inputs and `studentized_window_leading_identity`. **This is the item with
+     content, it has been named since wave 43 and no wave has built it**, and it is the
+     studentized analogue of `exists_window_bound` — the largest single brick under
+     `edgeworth_mean_uniform`. Nothing about it is blocked: all four inputs are proved
+     (`norm_multiCharFun_vecRootLaw_damped_le`,
+     `norm_multiCharFun_vecRootLaw_two_sub_damped_le`, `norm_charFun_smul_pow_sub_edgeworth_le`,
+     `norm_charFun_map_deltaSurrogate_sub_graded_le`) and the leading identity is exact.
+  2. *The middle range.* Every input now exists and is proved:
+     `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` fed by the certificate,
+     `exists_bulk_majorant_vecRootLaw_studentPair_truncAt` (the Gaussian bulk),
+     `exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt` (the Cramér tail),
+     `norm_charFunDensity_studentizedEdgeworthDensity_le` (the comparison density). The only
+     missing piece is arithmetic: `band_kappa_ledger` is stated against the target
+     `n^{-3/2}` and wants a twin at the target the chosen `ρ` dictates.
+  3. *The outer range* — free once `ρ` is chosen at `n²`, since both transforms are bounded.
+  4. *The composition* — `abs_studentizedRootCDF_sub_truncAt_le` at `τ = √n`,
+     `studentizedRootCDF_eq_vecRootLaw` with `abs_exactStudent_sub_deltaSurrogate_le`, the
+     Esseen chain at `δ = n⁻¹`, and the peeled window
+     (`abs_measure_le_sub_le_of_peel_strata` over `measure_pi_stratum_le` and
+     `sum_dyadic_strata_le`, whose `hslice` and `hwin` waves 40 and 41 discharged).
+
+  **This theorem is therefore still `sorry`, and wave 46 does not claim otherwise — but for the
+  first time since wave 30 the reason is not an open input.** -/
 
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
