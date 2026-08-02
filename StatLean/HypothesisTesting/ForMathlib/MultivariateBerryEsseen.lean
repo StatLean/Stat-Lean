@@ -9760,7 +9760,220 @@ private lemma abs_integral_gaussian_smoothed_swap_localised_le {Ct : ℝ}
               ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ρ)| ∂τ)
       ≤ (68 * Ck * (σ * gaussianTailRadius k σ) + 4 * W)
         * (Ct * (c / σ) ^ 3 * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ))) := by
-  sorry
+  classical
+  have hCt0 : (0 : ℝ) < Ct := lt_of_lt_of_le one_pos hCt1
+  have hlam : (0 : ℝ) ≤ c / σ := div_nonneg hc.le hσ.le
+  set R : ℝ := gaussianTailRadius k σ with hRdef
+  have hR1 : (1 : ℝ) ≤ R := one_le_gaussianTailRadius hk σ
+  have hβν0 : (0 : ℝ) ≤ ∫ y, ‖y‖ ^ 3 ∂ν := integral_nonneg fun y => by positivity
+  have hβρ0 : (0 : ℝ) ≤ ∫ y, ‖y‖ ^ 3 ∂ρ := integral_nonneg fun y => by positivity
+  have hnw : ∀ y : EuclideanSpace ℝ (Fin k), ‖(c / σ) • y‖ = c / σ * ‖y‖ := by
+    intro y
+    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hlam]
+  -- the varying-width shell, jointly measurable
+  have hRy : ∀ y : EuclideanSpace ℝ (Fin k), (0 : ℝ) ≤ c / σ * ‖y‖ :=
+    fun y => mul_nonneg hlam (norm_nonneg y)
+  have hgpos : ∀ y : EuclideanSpace ℝ (Fin k),
+      (0 : ℝ) < 2 * (σ * (R + c / σ * ‖y‖)) := by
+    intro y
+    have h1 : (0 : ℝ) < R + c / σ * ‖y‖ := by linarith [hRy y]
+    positivity
+  have hSm : MeasurableSet {p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) |
+      p.1 ∈ Metric.thickening (2 * (σ * (R + c / σ * ‖p.2‖))) B
+        \ erosion (2 * (σ * (R + c / σ * ‖p.2‖))) B} :=
+    measurableSet_wideShell_prod (g := fun y => 2 * (σ * (R + c / σ * ‖y‖))) (by fun_prop)
+      (fun y => (hgpos y).le)
+  have hsecm : ∀ v : EuclideanSpace ℝ (Fin k),
+      Measurable (fun y : EuclideanSpace ℝ (Fin k) =>
+        (Metric.thickening (2 * (σ * (R + c / σ * ‖y‖))) B
+          \ erosion (2 * (σ * (R + c / σ * ‖y‖))) B).indicator (fun _ => (1 : ℝ)) v) := by
+    intro v
+    have hrw : (fun y : EuclideanSpace ℝ (Fin k) =>
+        (Metric.thickening (2 * (σ * (R + c / σ * ‖y‖))) B
+          \ erosion (2 * (σ * (R + c / σ * ‖y‖))) B).indicator (fun _ => (1 : ℝ)) v)
+        = Set.indicator ((fun y : EuclideanSpace ℝ (Fin k) => (v, y)) ⁻¹'
+            {p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) |
+              p.1 ∈ Metric.thickening (2 * (σ * (R + c / σ * ‖p.2‖))) B
+                \ erosion (2 * (σ * (R + c / σ * ‖p.2‖))) B}) (fun _ => (1 : ℝ)) := by
+      funext y
+      simp only [Set.indicator_apply, Set.mem_preimage, Set.mem_setOf_eq]
+    rw [hrw]
+    exact measurable_const.indicator (hSm.preimage (by fun_prop))
+  have hmin0 : ∀ y : EuclideanSpace ℝ (Fin k),
+      (0 : ℝ) ≤ min (Ct * (c / σ * ‖y‖) ^ 3) (2 + c / σ * ‖y‖ + (c / σ * ‖y‖) ^ 2) := by
+    intro y
+    have h1 : (0 : ℝ) ≤ c / σ * ‖y‖ := hRy y
+    exact le_min (by positivity) (by positivity)
+  -- abbreviations
+  obtain ⟨Θ, hΘ⟩ : ∃ Θ : Measure (EuclideanSpace ℝ (Fin k)) →
+      EuclideanSpace ℝ (Fin k) → ℝ, ∀ μ v, Θ μ v
+        = ∫ y, (Metric.thickening (2 * (σ * (R + c / σ * ‖y‖))) B
+              \ erosion (2 * (σ * (R + c / σ * ‖y‖))) B).indicator (fun _ => (1 : ℝ)) v
+            * min (Ct * (c / σ * ‖y‖) ^ 3) (2 + c / σ * ‖y‖ + (c / σ * ‖y‖) ^ 2) ∂μ :=
+    ⟨_, fun _ _ => rfl⟩
+  obtain ⟨D, hD⟩ : ∃ D : EuclideanSpace ℝ (Fin k) → ℝ, ∀ v, D v
+      = ∫ z, F (v + σ • z) * (1 + (c / σ) ^ 2 * (‖z‖ ^ 2 - (k : ℝ)) / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := ⟨_, fun _ => rfl⟩
+  have hΘeq : ∀ μ : Measure (EuclideanSpace ℝ (Fin k)), Θ μ
+      = fun v => ∫ y, (Metric.thickening (2 * (σ * (R + c / σ * ‖y‖))) B
+              \ erosion (2 * (σ * (R + c / σ * ‖y‖))) B).indicator (fun _ => (1 : ℝ)) v
+            * min (Ct * (c / σ * ‖y‖) ^ 3) (2 + c / σ * ‖y‖ + (c / σ * ‖y‖) ^ 2) ∂μ :=
+    fun μ => funext (hΘ μ)
+  -- the per-law package
+  have key : ∀ μ : Measure (EuclideanSpace ℝ (Fin k)), IsProbabilityMeasure μ →
+      (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂μ) = 0) →
+      (∀ u w : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪w, y⟫_ℝ ∂μ) = ⟪u, w⟫_ℝ) →
+      Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) μ →
+      Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) μ →
+      Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 3) μ →
+      (∫ y, ‖y‖ ^ 2 ∂μ) = (k : ℝ) →
+      Integrable (Θ μ) τ
+        ∧ (∀ v : EuclideanSpace ℝ (Fin k),
+            |(∫ y, (∫ z, F (v + σ • z + c • y)
+                ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂μ) - D v|
+              ≤ Θ μ v + 4 * Ck * Ct * σ * ((c / σ) ^ 3 * (∫ y, ‖y‖ ^ 3 ∂μ)))
+        ∧ (∫ v, Θ μ v ∂τ)
+            ≤ (64 * Ck * (σ * R) + 4 * W) * (Ct * (c / σ) ^ 3 * (∫ y, ‖y‖ ^ 3 ∂μ)) := by
+    intro μ hμ hmean hcov h1 h2 h3 hdim
+    haveI := hμ
+    obtain ⟨hint, hbd⟩ := integral_localised_shell_le (ν := μ) (τ := τ) (B := B)
+      (Ck := Ck) (Ct := Ct) (W := W) (R := R) (σ := σ) (lam := c / σ)
+      h3 hCk.le hCt1 hW hR1 hσ hlam hshell
+    have hlowint : Integrable (fun y : EuclideanSpace ℝ (Fin k) =>
+        2 + c / σ * ‖y‖ + (c / σ * ‖y‖) ^ 2) μ := by
+      have h4 := ((integrable_const (2 : ℝ)).add (h1.const_mul (c / σ))).add
+        (h2.const_mul ((c / σ) ^ 2))
+      refine h4.congr (Filter.Eventually.of_forall fun y => ?_)
+      simp only [Pi.add_apply]
+      ring
+    have hsec : ∀ v : EuclideanSpace ℝ (Fin k),
+        Integrable (fun y : EuclideanSpace ℝ (Fin k) =>
+          (Metric.thickening (2 * (σ * (R + c / σ * ‖y‖))) B
+              \ erosion (2 * (σ * (R + c / σ * ‖y‖))) B).indicator (fun _ => (1 : ℝ)) v
+            * min (Ct * (c / σ * ‖y‖) ^ 3) (2 + c / σ * ‖y‖ + (c / σ * ‖y‖) ^ 2)) μ := by
+      intro v
+      refine Integrable.mono' hlowint
+        (((hsecm v).mul (by fun_prop)).aestronglyMeasurable)
+        (Filter.Eventually.of_forall fun y => ?_)
+      rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (hmin0 y),
+        abs_of_nonneg (indicator_one_nonneg _ v)]
+      exact (mul_le_of_le_one_left (hmin0 y) (indicator_one_le_one _ v)).trans
+        (min_le_right _ _)
+    refine ⟨by rw [hΘeq μ]; exact hint, fun v => ?_, by rw [hΘeq μ] at *; exact hbd⟩
+    have hrep := (integral_gaussian_smoothed_sub_common_eq (τ := μ) hmean hcov h1 h2 hdim
+      hF hFb v hσ hc.le).2
+    rw [← hD v] at hrep
+    rw [hrep, hΘ μ v]
+    have hptw : ∀ y : EuclideanSpace ℝ (Fin k),
+        |∫ z, F (v + σ • z) * vecTiltRemainder ((c / σ) • y) z
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+          ≤ (Metric.thickening (2 * (σ * (R + c / σ * ‖y‖))) B
+                \ erosion (2 * (σ * (R + c / σ * ‖y‖))) B).indicator (fun _ => (1 : ℝ)) v
+              * min (Ct * (c / σ * ‖y‖) ^ 3) (2 + c / σ * ‖y‖ + (c / σ * ‖y‖) ^ 2)
+            + 4 * Ck * Ct * σ * (c / σ * ‖y‖) ^ 3 := by
+      intro y
+      have h := abs_integral_shift_vecTiltRemainder_localised_le hCt hF hFb hone hsupp
+        hCk hCw hk hσ hσε hσ1 v ((c / σ) • y)
+      rwa [hnw y, ← hRdef] at h
+    have hRHSint : Integrable (fun y : EuclideanSpace ℝ (Fin k) =>
+        (Metric.thickening (2 * (σ * (R + c / σ * ‖y‖))) B
+              \ erosion (2 * (σ * (R + c / σ * ‖y‖))) B).indicator (fun _ => (1 : ℝ)) v
+            * min (Ct * (c / σ * ‖y‖) ^ 3) (2 + c / σ * ‖y‖ + (c / σ * ‖y‖) ^ 2)
+          + 4 * Ck * Ct * σ * (c / σ * ‖y‖) ^ 3) μ := by
+      refine (hsec v).add ?_
+      have h5 := h3.const_mul (4 * Ck * Ct * σ * (c / σ) ^ 3)
+      refine h5.congr (Filter.Eventually.of_forall fun y => ?_)
+      ring
+    calc |∫ y, (∫ z, F (v + σ • z) * vecTiltRemainder ((c / σ) • y) z
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂μ|
+        ≤ ∫ y, |∫ z, F (v + σ • z) * vecTiltRemainder ((c / σ) • y) z
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))| ∂μ := abs_integral_le_integral_abs
+      _ ≤ ∫ y, ((Metric.thickening (2 * (σ * (R + c / σ * ‖y‖))) B
+              \ erosion (2 * (σ * (R + c / σ * ‖y‖))) B).indicator (fun _ => (1 : ℝ)) v
+            * min (Ct * (c / σ * ‖y‖) ^ 3) (2 + c / σ * ‖y‖ + (c / σ * ‖y‖) ^ 2)
+          + 4 * Ck * Ct * σ * (c / σ * ‖y‖) ^ 3) ∂μ :=
+          integral_mono_of_nonneg
+            (Filter.Eventually.of_forall fun y => abs_nonneg _) hRHSint
+            (Filter.Eventually.of_forall hptw)
+      _ = (∫ y, (Metric.thickening (2 * (σ * (R + c / σ * ‖y‖))) B
+              \ erosion (2 * (σ * (R + c / σ * ‖y‖))) B).indicator (fun _ => (1 : ℝ)) v
+            * min (Ct * (c / σ * ‖y‖) ^ 3) (2 + c / σ * ‖y‖ + (c / σ * ‖y‖) ^ 2) ∂μ)
+          + 4 * Ck * Ct * σ * ((c / σ) ^ 3 * (∫ y, ‖y‖ ^ 3 ∂μ)) := by
+          have hsplit : Integrable (fun y : EuclideanSpace ℝ (Fin k) =>
+              4 * Ck * Ct * σ * (c / σ * ‖y‖) ^ 3) μ := by
+            have h5 := h3.const_mul (4 * Ck * Ct * σ * (c / σ) ^ 3)
+            refine h5.congr (Filter.Eventually.of_forall fun y => ?_)
+            ring
+          rw [integral_add (hsec v) hsplit]
+          congr 1
+          have hrw : ∀ y : EuclideanSpace ℝ (Fin k),
+              4 * Ck * Ct * σ * (c / σ * ‖y‖) ^ 3
+                = (4 * Ck * Ct * σ * (c / σ) ^ 3) * ‖y‖ ^ 3 := fun y => by ring
+          simp_rw [hrw]
+          rw [integral_const_mul]
+          ring
+  obtain ⟨hΘνint, hνptw, hΘνbd⟩ := key ν inferInstance hmeanν hcovν hν1 hν2 hν3 hνdim
+  obtain ⟨hΘρint, hρptw, hΘρbd⟩ := key ρ inferInstance hmeanρ hcovρ hρ1 hρ2 hρ3 hρdim
+  -- the two-law triangle inequality, pointwise
+  obtain ⟨Kv, hKv⟩ : ∃ K : ℝ, K
+      = 4 * Ck * Ct * σ * ((c / σ) ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ν))
+        + 4 * Ck * Ct * σ * ((c / σ) ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ρ)) := ⟨_, rfl⟩
+  have hmain : ∀ v : EuclideanSpace ℝ (Fin k),
+      |(∫ y, (∫ z, F (v + σ • z + c • y)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ν)
+        - (∫ y, (∫ z, F (v + σ • z + c • y)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ρ)|
+      ≤ (Θ ν v + Θ ρ v) + Kv := by
+    intro v
+    have htri : |(∫ y, (∫ z, F (v + σ • z + c • y)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ν)
+          - (∫ y, (∫ z, F (v + σ • z + c • y)
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ρ)|
+        ≤ |(∫ y, (∫ z, F (v + σ • z + c • y)
+              ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ν) - D v|
+          + |(∫ y, (∫ z, F (v + σ • z + c • y)
+              ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ρ) - D v| := by
+      have h := abs_sub ((∫ y, (∫ z, F (v + σ • z + c • y)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ν) - D v)
+        ((∫ y, (∫ z, F (v + σ • z + c • y)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ρ) - D v)
+      calc |(∫ y, (∫ z, F (v + σ • z + c • y)
+              ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ν)
+            - (∫ y, (∫ z, F (v + σ • z + c • y)
+              ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ρ)|
+          = |((∫ y, (∫ z, F (v + σ • z + c • y)
+                ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ν) - D v)
+              - ((∫ y, (∫ z, F (v + σ • z + c • y)
+                ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) ∂ρ) - D v)| := by ring_nf
+        _ ≤ _ := abs_sub _ _
+    linarith [hνptw v, hρptw v, hKv]
+  have hsum2 : Integrable (fun v => Θ ν v + Θ ρ v) τ := hΘνint.add hΘρint
+  have hmajint : Integrable (fun v => (Θ ν v + Θ ρ v) + Kv) τ :=
+    hsum2.add (integrable_const _)
+  refine (integral_mono_of_nonneg (Filter.Eventually.of_forall fun v => abs_nonneg _)
+    hmajint (Filter.Eventually.of_forall hmain)).trans ?_
+  have e1 : (∫ v, ((Θ ν v + Θ ρ v) + Kv) ∂τ)
+      = (∫ v, (Θ ν v + Θ ρ v) ∂τ) + ∫ _v : EuclideanSpace ℝ (Fin k), Kv ∂τ :=
+    integral_add hsum2 (integrable_const _)
+  have e2 : (∫ v, (Θ ν v + Θ ρ v) ∂τ) = (∫ v, Θ ν v ∂τ) + ∫ v, Θ ρ v ∂τ :=
+    integral_add hΘνint hΘρint
+  have e3 : (∫ _v : EuclideanSpace ℝ (Fin k), Kv ∂τ) = Kv := by
+    rw [integral_const]
+    simp
+  rw [e1, e2, e3]
+  have hextra : Kv ≤ 4 * Ck * (σ * R) * (Ct * (c / σ) ^ 3
+      * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ))) := by
+    have hP : (0 : ℝ) ≤ 4 * Ck * σ * Ct * ((c / σ) ^ 3
+        * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ))) := by positivity
+    have := mul_nonneg hP (by linarith : (0 : ℝ) ≤ R - 1)
+    nlinarith [hKv]
+  have hid : (64 * Ck * (σ * R) + 4 * W) * (Ct * (c / σ) ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ν))
+      + (64 * Ck * (σ * R) + 4 * W) * (Ct * (c / σ) ^ 3 * (∫ y, ‖y‖ ^ 3 ∂ρ))
+      + 4 * Ck * (σ * R) * (Ct * (c / σ) ^ 3
+          * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ)))
+      = (68 * Ck * (σ * R) + 4 * W) * (Ct * (c / σ) ^ 3
+          * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ))) := by ring
+  linarith [hΘνbd, hΘρbd, hextra, hid]
 
 /-- **Brick L above the Gaussian shell scale (wave 24: PROVED, and no localisation needed).**
 As soon as the weight is at least `1`, the *unweighted* balanced telescope already gives the
