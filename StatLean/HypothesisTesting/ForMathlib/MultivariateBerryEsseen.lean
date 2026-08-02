@@ -8507,6 +8507,55 @@ private lemma indicator_one_mono {α : Type*} {s t : Set α} (h : s ⊆ t) (a : 
   · rw [Set.indicator_of_notMem hm]
     exact indicator_one_nonneg t a
 
+/-- **The two-sided shell moves with a shift, at the price of the shift length (wave 41).**
+`1_{shell at s}(a) ≤ 1_{shell at s + t}(a + w)` whenever `‖w‖ ≤ t`.
+
+This is the transfer wave 41 identified as the missing link between the two localised per-step
+bricks and the weight hypothesis of `localised_swap_bound_small_weight`; see the wave-41 section
+of that theorem's note. Both bricks price a shell mass at the base point `a` of the step, whose
+law is the telescope's *peeled* one (the `n − 1` unswapped coordinates, plus the smoothing) —
+whereas `hybridLaw n j ν`, which brick H bounds and which is what brick L's hypothesis speaks
+about, is the law of `a + c u` with `u ∼ ν` the swapped coordinate as well. This lemma converts
+between them: since the shell width in both bricks is already a multiple of `c‖u‖` (in the far
+regime) or of `ε ≥ c‖u‖` (in the near regime), the shift `c u` is absorbed by enlarging the
+width by one more `c‖u‖`, i.e. by the constant `2 → 3`.
+
+Both halves are one-line set inclusions and neither needs the erosion's strict-distance
+description (`erosion_eq_ofReal_lt_infEdist`): the outer half is the triangle inequality for
+`Metric.mem_thickening_iff`, and the inner half is `closedBall a s ⊆ closedBall (a + w) (s + t)`,
+which turns a failure of the small ball to lie in `interior B` into a failure of the large one. -/
+private lemma mem_wideShell_shift {B : Set (EuclideanSpace ℝ (Fin k))} {s t : ℝ}
+    {a w : EuclideanSpace ℝ (Fin k)} (hw : ‖w‖ ≤ t)
+    (ha : a ∈ Metric.thickening s B \ erosion s B) :
+    a + w ∈ Metric.thickening (s + t) B \ erosion (s + t) B := by
+  obtain ⟨hin, hout⟩ := ha
+  have hdaw : dist (a + w) a = ‖w‖ := by
+    rw [dist_eq_norm, add_sub_cancel_left]
+  refine ⟨?_, ?_⟩
+  · rw [Metric.mem_thickening_iff] at hin ⊢
+    obtain ⟨z, hzB, hz⟩ := hin
+    refine ⟨z, hzB, ?_⟩
+    calc dist (a + w) z ≤ dist (a + w) a + dist a z := dist_triangle _ _ _
+      _ < t + s := by rw [hdaw]; linarith
+      _ = s + t := by ring
+  · intro hmem
+    refine hout fun x hx => hmem ?_
+    rw [Metric.mem_closedBall] at hx ⊢
+    have hdaw' : dist a (a + w) = ‖w‖ := by rw [dist_comm]; exact hdaw
+    calc dist x (a + w) ≤ dist x a + dist a (a + w) := dist_triangle _ _ _
+      _ ≤ s + t := by rw [hdaw']; linarith
+
+/-- The indicator form of `mem_wideShell_shift`, which is how the transfer is consumed. -/
+private lemma indicator_wideShell_le_shift {B : Set (EuclideanSpace ℝ (Fin k))} {s t : ℝ}
+    (a w : EuclideanSpace ℝ (Fin k)) (hw : ‖w‖ ≤ t) :
+    (Metric.thickening s B \ erosion s B).indicator (fun _ => (1 : ℝ)) a
+      ≤ (Metric.thickening (s + t) B \ erosion (s + t) B).indicator
+          (fun _ => (1 : ℝ)) (a + w) := by
+  by_cases ha : a ∈ Metric.thickening s B \ erosion s B
+  · rw [Set.indicator_of_mem ha, Set.indicator_of_mem (mem_wideShell_shift hw ha)]
+  · rw [Set.indicator_of_notMem ha]
+    exact indicator_one_nonneg _ _
+
 /-- **The near/far split of the localised remainder, at a fixed base point `a`.** -/
 private lemma integral_abs_remainder_split_le
     {ν : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure ν]
