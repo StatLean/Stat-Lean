@@ -15595,6 +15595,23 @@ lemma norm_pairAt_le (c v x : ℝ) :
     rw [abs_of_nonneg (by positivity : (0 : ℝ) ≤ (x - c) ^ 2)]
   linarith
 
+/-- **THE TWO CENTRINGS DIFFER BY AN INVERTIBLE AFFINE MAP** (first coordinate).  Writing
+`δ = c′ − c`, the pair at `(c, v)` is the pair at `(c′, v′)` composed with
+`L(a, b) = (a, b + 2δa)` and translated by `(δ, v′ + δ² − v)`.  `L` is linear, unipotent and
+therefore invertible, and `‖L − I‖ = 2|δ|`; this is the device by which a bound proved for one
+of the two truncated pairs transfers to the other, at the cost of `t ↦ Lᵀt` in the frequency and
+a unimodular factor.  See the wave-49 status note on `edgeworth_studentized_uniform`. -/
+lemma pairAt_zero_eq_affine (c v c' v' x : ℝ) :
+    (pairAt c v x) 0 = (pairAt c' v' x) 0 + (c' - c) := by
+  simp only [pairAt_zero]; ring
+
+/-- **THE TWO CENTRINGS DIFFER BY AN INVERTIBLE AFFINE MAP** (second coordinate). -/
+lemma pairAt_one_eq_affine (c v c' v' x : ℝ) :
+    (pairAt c v x) 1
+      = (pairAt c' v' x) 1 + 2 * (c' - c) * ((pairAt c' v' x) 0)
+        + (v' + (c' - c) ^ 2 - v) := by
+  simp only [pairAt_zero, pairAt_one]; ring
+
 /-- **Every moment of the truncated law is finite.**  `truncAt m τ` is bounded, so its
 pushforward has moments of every order — in particular the fourth moment
 `integral_inner_studentPair` consumes, with **no** hypothesis on `F` beyond finiteness. -/
@@ -17669,6 +17686,99 @@ the three things wave 48 found are corrections to that; the third is a new item.
   Rosenthal bound at the truncation level and is the only one of the eight with any content
   left; (d) the composition, unchanged from wave 47's list. Items 1, 2 and 3 of the wave-46
   residue are closed and nothing found here touches them, the certificate, or (U1)–(U3).
+
+  **This theorem is therefore still `sorry`, the file is at one `sorry`, and Batch 12 is not
+  complete.**
+
+---
+
+**Status after wave 49. ITEM (a) IS PROVED, ITEM (b) IS FREE, ITEM (c) IS REDUCED TO TWO NAMED
+MOMENT INTEGRALS — AND THE RE-CENTRING IS NOT CONFINED TO THE LOW RANGE, WHICH WAVE 48'S
+"(d) THE COMPOSITION, UNCHANGED" MISSES.  THIS THEOREM IS STILL `sorry` AND WAVE 49 DOES NOT
+CLAIM OTHERWISE.**
+
+* **(a) IS PROVED, AND `Zₙ` IS NOT A NEW OBJECT.**  `pairAt c v` is the studentizing pair at an
+  arbitrary centring and `studentPair G = pairAt (∫s∂G) Var[G]` *definitionally*, so the
+  re-centred truncated pair is `Zₙ = studentPair (F.map T) ∘ T` — the existing pair read on the
+  truncated **law** `G = F.map T`, not a new construction.  Nothing downstream of the pair has to
+  be redefined.  `abs_studentizedRootCDF_sub_recentred_le` is item (a): the studentized
+  distribution function and the mass the root law of `Zₙ` gives to the studentized region *of
+  `G`*, with the numerator shifted by `√n(mₙ − m)`, differ by `n·μ₄/τ⁴ = μ₄/n` at `τ = √n`.
+
+* **THE FIRST CORRECTION — THE VARIANCE DISCREPANCY COSTS NOTHING, AND THE CHANGE OF CENTRING IS
+  AN IDENTITY.**  Wave 48 prices the comparison by *two* defects, `|mₙ − m| ≤ μ₄/n^{3/2}` and
+  `|vₙ − Var F| ≤ μ₄/n`.  The second never enters.  The radicand of the studentized region is the
+  **sample** variance (`pairAt_root_radicand`), and the sample variance does not see the centring
+  at all; so re-centring moves the numerator and leaves the region's shape untouched.
+  `vecRootLaw_pairAt_region_eq` is therefore an *identity* with no error term — both preimages
+  are the single set `{y : √n(T̄ − c)/√(sampleVariance (T∘y)) ≤ z}` — and the entire cost of the
+  re-centring is the one numerator shift `√n(mₙ − m)`, `O(n⁻¹)` by `abs_integral_truncAt_sub_le`,
+  which is what the peel prices.  Wave 48's account is not wrong about the order; it is wrong
+  about there being two items, and the one that survives is exact.
+
+* **(b) IS FREE, AND IT DOES NOT SPEND `hF8`.**  `T` is bounded, so `G = F.map T` has moments of
+  every order (`memLp_id_map_truncAt`) with **no** hypothesis on `F` beyond finiteness; the
+  equalities `hmean`/`hthird`/`hm0`/`hm1`/`hcent` are then `integral_inner_studentPair` at `G`
+  (`integral_inner_studentPair_map_truncAt`), and boundedness of `Zₙ` is
+  `norm_studentPair_map_truncAt_le` — the truncation level widened by the bias `μ₄/τ³`.  Wave 47
+  says the eight are "moment bookkeeping on the truncated pair, which is where `hF8` is already
+  spent"; the centring half of that costs nothing at all, and `hF8` is spent entirely on the
+  sizes.
+
+* **(c) IS EXACTLY TWO MOMENT INTEGRALS, AND THE SECOND CORRECTION — THE CRUDE POINTWISE ROUTE
+  IS DEAD BY TWELVE POWERS.**  `integral_surrogateRemGraded_le` proves `hRg` outright, at
+  `C₃ = 4π³M₃/3` and `C₂ = 2π²M₂`, from `∫ surrGradedCube σ ≤ M₃` and `∫ surrGradedQuad σ ≤ M₂`
+  on the root's law: the transform disappears from the statement of (c) entirely and what is left
+  is a **ninth** and a **sixth** moment of a normalised sum of bounded, exactly centred summands.
+  Wave 48 offers "a crude `‖Zₙ‖ ≤ C√n` pointwise route if the ledger tolerates it".  It is wrong
+  twice.  `Zₙ`'s *second* coordinate is bounded by `τ² = n`, not by `τ = √n`, so the pointwise
+  bound on the summand is `O(n)` and on the root `O(n^{3/2})`; and against the `r³ = n^{-3/2}`
+  the shape carries, a degree-nine functional of that is `n^{12}`
+  (`crude_graded_ledger_exponent`), with the *graded* placement `r⁶ = n⁻³` still leaving
+  `n^{21/2}` (`crude_graded_ledger_exponent_graded`).  Lowering `τ` does not repair it either —
+  the change of law `n·μ₄/τ⁴` then exceeds `n⁻¹`.  **Rosenthal at orders `6` and `9`, and nothing
+  weaker, is what (c) owes.**
+
+* **THE THIRD CORRECTION, AND IT IS THE ONE THAT COSTS — THE RE-CENTRING IS GLOBAL.**  Wave 48
+  prescribes running "the whole low range" on `Zₙ` and calls the composition "unchanged".  It is
+  not: `esseen_split_low` is one split of **one** law, so if the low range is on the root law of
+  `Zₙ` then the middle and outer ranges are too — and all three of the middle range's
+  probabilistic inputs are stated at the *un-re-centred* pair:
+  `exists_fourierCertificate_deltaSurrogate`,
+  `exists_bulk_majorant_vecRootLaw_studentPair_truncAt` and
+  `exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt` all carry
+  `vecRootLaw F (studentPair F ∘ truncAt (∫s∂F) √n) n` in their conclusions.  (The fourth,
+  `norm_charFunDensity_studentizedEdgeworthDensity_le`, is about the comparison density and is
+  free.)  **This is a fourth item of the residue and no wave has named it.**
+
+  What repairs it is a transfer, not a re-proof, and the device is exact:
+  `pairAt_zero_eq_affine`/`pairAt_one_eq_affine` show
+
+  `studentPair F ∘ T = L ∘ Zₙ + c`,  `L(a, b) = (a, b + 2δa)`,  `δ = mₙ − m`,
+  `c = (δ, vₙ + δ² − σ²)`,
+
+  with `L` unipotent — hence invertible with `‖L − I‖ = 2|δ| = O(n^{-3/2})` — so on the roots
+  `w_F = L(w_Z) + √n c` and every transform bound transfers under `t ↦ Lᵀt` together with a
+  unimodular translation factor.  Both `‖L‖` and `‖L⁻¹‖` are `1 + O(n^{-3/2})`, so no radius,
+  band or ledger exponent moves.
+
+* **WHAT THE RESIDUE IS NOW.**  Five items.
+  1. *Rosenthal at orders `6` and `9`* for a normalised sum of bounded, exactly centred summands
+     — the remaining half of (c) and **the only analytic item**.  The file has the order-four
+     analogue (`integral_pi_sum_pow_four_le`) and nothing above it.
+  2. *The moment identification of the polynomial coefficients* in `hB1`, `hB2`, `h3a`, `h3b`,
+     `h4` at `Zₙ` — bookkeeping, over the arithmetic half wave 48 proved
+     (`exists_const_of_damped_poly`).
+  3. *The affine transfer of the middle- and outer-range inputs to `Zₙ`*, named above.
+  4. *The skewness comparison.*  The low range produces the approximant at `γₙ`, the skewness of
+     `G`; the headline is stated at `skewness F`.  Wave 48 names `|γₙ − γ|` in passing and prices
+     it at `n^{-1/2}·n^{-1/2}`; it is not proved and it is not part of items 1–3.
+  5. *The composition*, and with it the one thing waves 46 and 47 recorded as owed and no wave
+     has supplied: `exists_fourierCertificate_deltaSurrogate` is proved at `N = 10` and delivers
+     `O(n^{-3/2})`, while the middle range at `ρ = n²` needs `n^{−17/6}`, i.e. `N = 138` at
+     `M = n^{23/24}` (`leakage_ledger_radius_138_le`).  That is a budget statement wave 46 made
+     and wave 47 repeated; it is not a consequence of anything found here, but it is still owed
+     and the wave-48 phrase "(d) the composition, unchanged" does not name it.
 
   **This theorem is therefore still `sorry`, the file is at one `sorry`, and Batch 12 is not
   complete.** -/
