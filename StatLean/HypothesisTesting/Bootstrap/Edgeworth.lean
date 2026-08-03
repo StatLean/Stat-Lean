@@ -18344,7 +18344,70 @@ CLAIM OTHERWISE.**
      and the wave-48 phrase "(d) the composition, unchanged" does not name it.
 
   **This theorem is therefore still `sorry`, the file is at one `sorry`, and Batch 12 is not
-  complete.** -/
+  complete.**
+
+---
+
+**Status after wave 50. ITEM 1 WAS MIS-STATED: THE REDUCTION TO FOUR SCALAR MOMENTS IS LOSSY,
+AND THE LOSS IS THE `r²≤r` COLLAPSE WAVE 25 ALREADY PROVED FATAL.  THE MOMENT MACHINERY IS
+BUILT — ROSENTHAL AT ORDER SIX IS PROVED — AND ITEM 1 IS NOW A NAMED, FINITE LIST.**
+
+* **THE CORRECTION.**  `integral_surrogateRemGraded_le` proves `hRg` by passing through
+  `surrogateRemGraded_le`, i.e. by collapsing every power of `r` onto a single `r³`.  The
+  wave-25 note above `surrogateRemGraded` is a standing record that this collapse is not
+  harmless, and wave 49 performed it anyway.  Its consequence
+  `integral_surrogateRemGraded_le_of_moments` is a true lemma with an **unsatisfiable
+  hypothesis**: `h9` asks for an `n`-free bound on `E|w₀|⁹ + E|w₁|⁹`, and while three of the
+  wave-49 four are `O(1)`, `E|w₁|⁹` is not.  The second coordinate's root moments carry
+  `n^{p/2−3}` (`second_coord_root_moment_exponent`) — `O(1)` **exactly up to `p = 6`**
+  (`second_coord_root_sixth_moment_bounded`, which is the wave-49 arithmetic and is correct)
+  and `n^{3/2}` at `p = 9` (`second_coord_root_ninth_moment_exponent`).  Wave 49 checked the
+  ninth moment on the *first* coordinate and the sixth on the second, and never checked the one
+  that fails.  Nor is it repairable: lowering `τ` is blocked by the change of law from below,
+  and buying it with moments needs `E|η|⁶`, i.e. **twelve** moments of `F`
+  (`second_coord_ninth_moment_exponent_of_moments`, `second_coord_ninth_moment_threshold`),
+  against the `hF8` the headline carries.
+
+* **WHAT REPAIRS IT IS THE GRADING, AND THE MARGIN IS `n^{1/2}`.**  The offending monomial is
+  `|u|³|v|⁶`, the top of `A³`.  At the collapsed `r³` it costs `n^{−3/2}·n^{3/2} = O(1)` and
+  misses the required `O(n⁻¹)` by the full factor `n` (`collapsed_worst_monomial_ledger`); at
+  its own `r⁶` it costs `n^{−3}·n^{3/2} = n^{−3/2}` and clears with `n^{−1/2}` to spare
+  (`graded_worst_monomial_ledger`).  `integral_surrogateRemGraded_le_of_graded` is `hRg` proved
+  with the grading kept.  It delivers exactly the shape
+  `exists_studentized_low_range_window_bound` asks for — `r³` times a cubic-plus-quadratic in
+  `|θ|` — but the `n`-free quantity it demands is the *discounted combination*
+  `N₃ + 3rN₄ + 3r²N₅ + r³N₆` over the six block integrals of `P = |u||v|/2` and
+  `A = |u|³/2 + 3|u||v|²/8`, not `N₆` on its own.  `surrogateRemGraded_eq_blocks` is the exact
+  monomial identity underneath it.
+
+* **THE MOMENT MACHINERY, BUILT AT EVERY ORDER.**  Wave 49 said "what is missing is the
+  Rosenthal inequality itself, not the moments", and the file had the order-four analogue and
+  nothing above it.  It now has the general device: `integral_add_pow_of_bounded` (the binomial
+  theorem under the integral at every order) composed with the head/tail split
+  `integral_pi_succ_of_bounded` gives the **exact moment recursion of an iid sum**,
+  `M_p(n+1) = ∑_{k≤p} C(p,k)·m_k·M_{p−k}(n)` (`integral_pi_sum_pow_succ`).  The centring
+  `m₁ = 0` is what makes it close: at `p = 3` it leaves `M₃(n) = n·m₃` **exactly**
+  (`integral_pi_sum_pow_three`), and at `p = 6` it kills the `M₅` term outright, so the sixth
+  moment never needs the fifth.  `integral_pi_sum_pow_six_le` is the resulting four-term
+  Rosenthal bound `n·m₆ + 15n²m₂m₄ + 10n²m₃² + 15n³m₂³`, which is `O(n³)` against the
+  normalisation `n⁻³` on *both* coordinates at the truncation level `τ = √n` — the first with
+  `m₄ ≤ μ₄`, the second with `m₆ ≤ τ⁴m₄ ≲ n²μ₈` by `hF8`.
+
+* **WHAT ITEM 1 OWES NOW, AND IT IS A FINITE LIST.**  Under the graded interface every one of
+  the six blocks clears, and the arithmetic is: `N₃ = ∫P³` needs only `E X⁶, E Y⁶` and is
+  `O(1)` on the order-six bound alone; `Q₃ = ∫PA` and `Q₄ = ∫A²` are degree `≤ 6` and `O(1)` by
+  Hölder against `E X⁶, E X⁸, E Y⁶`; `N₄` (degree 7), `N₅` (degree 8) and `N₆` (degree 9) grow,
+  as `n^{1/7}`, `n^{5/8}` and `n` respectively, and are discounted by `r`, `r²`, `r³`.  So the
+  two things still owed are (i) the moment recursion run at orders `8` and `10` — the same
+  induction, with the odd order `9` following from `|s|⁹ ≤ s⁸ + s¹⁰` — and (ii) the Hölder
+  identification of the six mixed blocks in terms of the coordinate moments.  Neither is a new
+  device; both are the recursion above plus Cauchy–Schwarz.  Items 2–5 of the wave-49 residue
+  are untouched by this wave, and item 5's budget statement (`N = 138` at `M = n^{23/24}`)
+  still stands unsupplied.
+
+  **This theorem is therefore still `sorry`, the file is at one `sorry`, and Batch 12 is not
+  complete.  Wave 50 did not close the headline; it corrected item 1's statement, built the
+  moment machinery it needs, and closed its order-six half.** -/
 
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
