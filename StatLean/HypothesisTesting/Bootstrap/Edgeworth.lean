@@ -11599,21 +11599,24 @@ The interpolation has to be weighted; the sum is not enough. -/
 
 /-! ### The WEIGHTED sandwich: the unweighted one is lossy at the second coordinate -/
 
-private lemma two_mul_abs_pow_five_weighted (t s : ℝ) : 2 * t * |s ^ 5| ≤ t ^ 2 * s ^ 4 + s ^ 6 := by
+private lemma two_mul_abs_pow_five_weighted (t s : ℝ) :
+    2 * t * |s ^ 5| ≤ t ^ 2 * s ^ 4 + s ^ 6 := by
   have h : |s| ^ 2 = s ^ 2 := sq_abs s
   have e4 : s ^ 4 = (|s| ^ 2) ^ 2 := by rw [h]; ring
   have e6 : s ^ 6 = (|s| ^ 2) ^ 3 := by rw [h]; ring
   rw [abs_pow, e4, e6]
   nlinarith [sq_nonneg (t * |s| ^ 2 - |s| ^ 3)]
 
-private lemma two_mul_abs_pow_seven_weighted (t s : ℝ) : 2 * t * |s ^ 7| ≤ t ^ 2 * s ^ 6 + s ^ 8 := by
+private lemma two_mul_abs_pow_seven_weighted (t s : ℝ) :
+    2 * t * |s ^ 7| ≤ t ^ 2 * s ^ 6 + s ^ 8 := by
   have h : |s| ^ 2 = s ^ 2 := sq_abs s
   have e6 : s ^ 6 = (|s| ^ 2) ^ 3 := by rw [h]; ring
   have e8 : s ^ 8 = (|s| ^ 2) ^ 4 := by rw [h]; ring
   rw [abs_pow, e6, e8]
   nlinarith [sq_nonneg (t * |s| ^ 3 - |s| ^ 4)]
 
-private lemma two_mul_abs_pow_nine_weighted (t s : ℝ) : 2 * t * |s ^ 9| ≤ t ^ 2 * s ^ 8 + s ^ 10 := by
+private lemma two_mul_abs_pow_nine_weighted (t s : ℝ) :
+    2 * t * |s ^ 9| ≤ t ^ 2 * s ^ 8 + s ^ 10 := by
   have h : |s| ^ 2 = s ^ 2 := sq_abs s
   have e8 : s ^ 8 = (|s| ^ 2) ^ 4 := by rw [h]; ring
   have e10 : s ^ 10 = (|s| ^ 2) ^ 5 := by rw [h]; ring
@@ -17285,7 +17288,15 @@ deliver), the discounted combination reads, at `r = n^{-1/2}`,
 and `2Q₃ + rQ₄ ≲ 1 + n^{-1/2} = O(1)`.  Every one of the four graded slots is `O(1)` **and no
 two of them are of the same order** -- the combination is flat precisely because each block's
 growth is cancelled by its own power of `r`.  That is the whole content of the wave-50
-correction, now discharged. -/
+correction, now discharged.
+
+**The odd `S d` must come from the WEIGHTED sandwich.**  Three of the five scalar moments this
+theorem consumes are of odd order (`d = 5, 7, 9`), and the flatness above leaves *no* margin:
+`rN₄` and `r³N₆` are `Θ(1)`, not `o(1)`.  Supplying `S 7` and `S 9` from
+`integral_pi_sum_abs_pow_nine_le`, i.e. from `|s|⁹ ≤ s⁸ + s¹⁰`, loses a factor `n^{1/2}` in each
+and both slots fail; `integral_pi_sum_abs_pow_seven_le` and
+`integral_pi_sum_abs_pow_nine_weighted_le` at `t = √n` are what this theorem has to be fed.
+See the `WEIGHTED sandwich` section above. -/
 
 private lemma blocks_le_max {X Y : ℝ} (hX : 0 ≤ X) (hY : 0 ≤ Y) :
     X * Y / 2 ≤ (max X Y) ^ 2 / 2 ∧
@@ -19565,7 +19576,99 @@ BUILT — ROSENTHAL AT ORDER SIX IS PROVED — AND ITEM 1 IS NOW A NAMED, FINITE
 
   **This theorem is therefore still `sorry`, the file is at one `sorry`, and Batch 12 is not
   complete.  Wave 50 did not close the headline; it corrected item 1's statement, built the
-  moment machinery it needs, and closed its order-six half.** -/
+  moment machinery it needs, and closed its order-six half.**
+
+---
+
+**Status after wave 51.  ITEM 1 IS CLOSED — BOTH HALVES — AND THE PLAN'S OWN PRESCRIPTION FOR
+THE ODD ORDER NINE IS LOSSY.  ITEMS 2–5 OF THE WAVE-49 RESIDUE, THE COMPOSITION, ARE UNTOUCHED.
+THIS THEOREM IS STILL `sorry` AND WAVE 51 DOES NOT CLAIM OTHERWISE.**
+
+* **(i) ORDERS EIGHT AND TEN ARE PROVED, AND THEY ARE *NOT* "THE SAME INDUCTION".**  Wave 50
+  reads item 1(i) as the order-six proof run twice more ("Neither is a new device").  The
+  *recursion* is the same — `integral_pi_sum_pow_succ` — but the order-six **shape** does not
+  continue.  At `p = 8` the recursion needs `M₅` and at `p = 10` it needs `M₇`, both odd and
+  both signed, and the sharp four-term shape of `integral_pi_sum_pow_six_le` forces a
+  Cauchy–Schwarz on `m₃` (`m₃² ≤ m₂m₄`, and *not* `|m₃| ≤ m₂`, which fails at
+  `m₂ = n^{-4/3}, m₄ = m₂²`) inside an already-nonlinear step.  What makes the two orders go
+  through is a **change of shape**: everything is stated against the single scale
+  `A = 1 + ∫V² + ∫V⁴ ≥ 1` and the pointwise bound `B ≥ 1`, in the form
+
+  `M_p(n) ≤ K_p·A^{p/2}·(n^{p/2} + n·B^{p−4})`,  `K₈ = 2400`, `K₁₀ = 540000`.
+
+  This is deliberately **crude** — it is not Rosenthal's inequality, and it is off by powers of
+  `n` when `∫V²` is small — and it is **exactly sharp in the only regime the ledger reads**,
+  where `∫V²` and `∫V⁴` are `Θ(1)` and only the truncation level moves.  There it reproduces the
+  file's own exponent ledger at every order: `n^{-1}` on the first coordinate
+  (`first_coord_root_moment_exponent`, uniform in `p`) and `n^{p/2−3}` on the second
+  (`second_coord_root_moment_exponent`, wave 50's).  Both odd intermediates are then removed
+  before any arithmetic, by the pointwise AM-GM `2|s|^{2j+1} ≤ s^{2j} + s^{2j+2}`
+  (`abs_integral_odd_aux`), so the induction runs on even orders only.  The two steps are
+  isolated as pure real arithmetic (`step_eight`, `step_ten`) over a pure `(n, B)` ledger
+  (`step_eight_ledger`, `step_ten_ledger`); the measure theory is one expansion of the recursion.
+
+* **(ii) THE SIX BLOCKS ARE PROVED, AND IT IS NOT HÖLDER.**  Wave 50 calls item 1(ii) "the
+  Hölder identification of the six mixed blocks … Cauchy–Schwarz/Hölder + item 1's moment
+  bounds", and quotes per-block Hölder rates `n^{1/7}`, `n^{5/8}`, `n` for `N₄`, `N₅`, `N₆`.
+  Neither the tool nor the rates are what the proof uses.  `P ≤ M²/2` and `A ≤ (7/8)M³` at
+  `M = max X Y` (`blocks_le_max`), so each block is a *constant* times a power of `M`, and
+  `XⁱYʲ ≤ M^{i+j} ≤ X^{i+j} + Y^{i+j}` finishes it — the device already used for
+  `surrGradedCube_le_moments`, run block by block instead of on the collapsed cube.  The six
+  constants are exact: `1/8, 7/32, 49/128, 343/512, 7/16, 49/64` (`six_blocks_le_max`).
+  `integral_surrogateRemGraded_le_of_scalar_moments` is `hRg` with the grading kept and its
+  interface cut from six bivariate block integrals to **five scalar** ones,
+  `S d = ∫|w₀/σ|ᵈ + ∫|w₁/σ²|ᵈ`, `d = 5,…,9`.
+
+  The `max` device is *lossier per block* than Hölder — it prices `N₆` by `E|v|⁹` rather than by
+  `(E|v|⁹)^{2/3}(E|u|⁹)^{1/3}` — and it costs nothing, because the grading is what does the work:
+  at `r = n^{-1/2}`,
+
+  `N₃ ≍ 1`,  `rN₄ ≍ n^{-1/2}·n^{1/2}`,  `r²N₅ ≍ n^{-1}·n`,  `r³N₆ ≍ n^{-3/2}·n^{3/2}`,
+  `Q₃ ≍ 1`,  `rQ₄ ≍ n^{-1/2}`.
+
+  **Every slot is `Θ(1)`, four of them on the nose.**  That is the real content of the wave-50
+  correction and it is also a warning: the graded combination is flat, not decaying, so any
+  further loss of a power of `n` anywhere in the six breaks it.  Which is exactly what happens
+  next.
+
+* **THE CORRECTION, AND IT IS TO THE PLAN ITSELF: THE ODD ORDERS NEED A *WEIGHT*.**  Wave 50
+  prescribes "the odd order `9` following from `|s|⁹ ≤ s⁸ + s¹⁰`".  That inequality is true,
+  `integral_pi_sum_abs_pow_nine_le` proves it, and it is **lossy exactly where the ledger reads
+  it**.  On the second coordinate the two neighbouring even root moments are `E|w₁|⁸ ≍ n` and
+  `E|w₁|¹⁰ ≍ n²`; their *sum* is `n²`, against the `n^{3/2}` the slot needs, so
+  `r³N₆ = n^{-3/2}·n² = n^{1/2}` and the slot **fails**.  The same failure sits one order down:
+  `E|w₁|⁷` is wanted at `n^{1/2}` and the sum returns `n`, so `rN₄ = n^{1/2}` fails too.  Wave
+  50's own arithmetic is what makes this visible — `n^{p/2−3}` grows by a factor `n` every two
+  orders, so the sum of two neighbours is never the geometric mean.
+
+  The repair is Young's inequality with the weight kept: `2t|s|^{2j+1} ≤ t²s^{2j} + s^{2j+2}`,
+  the same square `(t|s|^j − |s|^{j+1})² ≥ 0`, valid for **every** real `t`
+  (`two_mul_abs_pow_{five,seven,nine}_weighted`, `integral_abs_pow_odd_weighted`, and the three
+  `Measure.pi` corollaries).  At `t = √n` it returns the *geometric* mean of the two even
+  moments — `n^{3/2}` and `n^{1/2}`, both on the nose (`weighted_sandwich_ledger`), and
+  `unweighted_sandwich_ledger_gt` is the witness that the unweighted sandwich is strictly worse
+  at every `n ≥ 2`.  **Item 1 closes with the weighted sandwich and does not close without it.**
+
+* **WHAT THE RESIDUE IS NOW.**  Item 1 of the wave-49 residue — the only analytic item, and the
+  one waves 49 and 50 each restated — is **closed**.  Items 2–5 are untouched by this wave and
+  stand exactly as wave 49 left them:
+
+  2. the moment identification of the polynomial coefficients in `hB1`, `hB2`, `h3a`, `h3b`,
+     `h4` at `Zₙ`, over the arithmetic half wave 48 proved (`exists_const_of_damped_poly`);
+  3. the affine transfer of the middle- and outer-range inputs to `Zₙ`, by
+     `pairAt_zero_eq_affine`/`pairAt_one_eq_affine` (`‖L − I‖ = O(n^{-3/2})`, so no radius or
+     band exponent moves);
+  4. the skewness comparison `|γₙ − γ|`, named by wave 48 and priced but never proved;
+  5. the composition, and with it the budget statement `N = 138` at `M = n^{23/24}`.  Its
+     *arithmetic* is proved and has been since wave 46 (`leakage_ledger_radius_138_le`,
+     `leakage_ledger_radius_137_gt`, `tail_ledger_radius_seventeen_sixths`); what is owed is the
+     certificate re-run at that `N` and that radius, which the note above
+     `tail_ledger_exponent_general` records as needing `bulkRadius` parameterised rather than
+     re-derived.  No wave has done that, and this one has not either.
+
+  **This theorem is therefore still `sorry`, the file is at one `sorry`, and Batch 12 is not
+  complete.  Wave 51 closed item 1 end to end and corrected the plan's own prescription for its
+  odd order; it did not attempt the composition.** -/
 
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
