@@ -12398,6 +12398,324 @@ theorem exists_fourierCertificate_deltaSurrogate
       refine (hC n hn).trans ?_
       exact div_le_div_of_nonneg_right (le_trans (le_max_right _ _) (le_max_right CA _)) hden.le
 
+
+/-! ### The middle range, from the certificate at `N = 10` (wave 53)
+
+With the logarithmic middle weight in hand the middle range is no longer a budget statement but
+a theorem, and it is the certificate the file already has that proves it.  Three elementary
+inputs are needed and none of them is analytic:
+
+* a geometric sequence beats every negative power of `n` (`exists_pow_le_rpow_neg`), which turns
+  the Cramér branch `cⁿ` of `κ` into `n^{−q}`;
+* `√(log n)` is below every positive power of `n` (`exists_const_mul_sqrt_log_le_rpow`, over
+  `log x ≤ x^b/b`), which is what lets the certificate's band condition `2σKb√(log n) ≤ |θ|` be
+  met by the middle range's own floor `n^{1/6}`;
+* the certificate's polynomial exponent `K` must be available *before* `Kb` is chosen, since
+  `Kb` has to beat it.  `K` comes from input (A), which never sees the band, so pulling it in
+  front is a restatement and not a new proof (`exists_fourierCertificate_deltaSurrogate_exponent`).
+
+Then `Kb` is fixed by `λKb²/4 = q + 1` at `q = 3K + 3/2`, `Γ ≤ C(1+4π)^K n^{3K}` on the whole
+middle range (`|θ| ≤ 4πn²`, which is `ρ = n²` in the Esseen variable), `κ ≤ n^{−q}`, and
+`band_kappa_ledger` returns `Γκ ≤ C'/(n√n)`.  Adding the certificate's own `ε + η = 2C/(n√n)`
+gives the middle constant `M₁ = (C(1+4π)^K + 2C)/(n√n)` — exactly the `O(n^{-3/2})` that
+`middle_range_log_ledger` prices at `O(n⁻¹)` against `log(ρ/ρ₁)`. -/
+
+/-- **A geometric sequence beats every negative power of `n`, eventually.** -/
+lemma exists_pow_le_rpow_neg {c r : ℝ} (hc0 : 0 ≤ c) (hc1 : c < 1) (hr : 0 ≤ r) :
+    ∃ N : ℕ, 0 < N ∧ ∀ n : ℕ, N ≤ n → c ^ n ≤ (n : ℝ) ^ (-r) := by
+  rcases eq_or_lt_of_le hc0 with hc | hcpos
+  · refine ⟨1, one_pos, fun n hn => ?_⟩
+    have hz : c ^ n = 0 := by rw [← hc]; exact zero_pow (by omega)
+    rw [hz]
+    positivity
+  · set L : ℝ := -Real.log c with hL
+    have hL0 : 0 < L := by
+      rw [hL, neg_pos]
+      exact Real.log_neg hcpos hc1
+    obtain ⟨N₀, hN₀⟩ := exists_nat_gt ((2 * r / L) ^ 2)
+    refine ⟨max 1 N₀, lt_of_lt_of_le one_pos (le_max_left _ _), fun n hn => ?_⟩
+    have hn1 : 1 ≤ n := le_trans (le_max_left _ _) hn
+    have hnN : N₀ ≤ n := le_trans (le_max_right _ _) hn
+    have hnR : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1
+    have hn0 : (0 : ℝ) < (n : ℝ) := by linarith
+    have hsq : ((2 * r / L) ^ 2 : ℝ) ≤ (n : ℝ) := by
+      have : ((N₀ : ℝ)) ≤ (n : ℝ) := by exact_mod_cast hnN
+      linarith
+    have hs : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) := Real.mul_self_sqrt hn0.le
+    have hs0 : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hn0
+    have hratio : 2 * r / L ≤ Real.sqrt (n : ℝ) := by
+      have h := Real.sqrt_le_sqrt hsq
+      rwa [Real.sqrt_sq (by positivity)] at h
+    have hlog : Real.log (n : ℝ) ≤ 2 * Real.sqrt (n : ℝ) := by
+      have h1 : Real.log (Real.sqrt (n : ℝ)) ≤ Real.sqrt (n : ℝ) - 1 :=
+        Real.log_le_sub_one_of_pos hs0
+      rw [Real.log_sqrt hn0.le] at h1
+      linarith
+    have hkey : r * Real.log (n : ℝ) ≤ L * (n : ℝ) := by
+      have h2 : 2 * r ≤ L * Real.sqrt (n : ℝ) := by
+        rw [div_le_iff₀ hL0] at hratio; linarith
+      nlinarith [hs, hs0.le, hr]
+    have hcn : c ^ n = Real.exp (Real.log c * (n : ℝ)) := by
+      rw [← Real.rpow_natCast c n, Real.rpow_def_of_pos hcpos]
+    have hnr : (n : ℝ) ^ (-r) = Real.exp (Real.log (n : ℝ) * (-r)) := by
+      rw [Real.rpow_def_of_pos hn0]
+    rw [hcn, hnr]
+    refine Real.exp_le_exp.2 ?_
+    have : Real.log c = -L := by rw [hL]; ring
+    rw [this]
+    nlinarith [hkey]
+
+/-- **The certificate with its polynomial exponent pulled in front of the band constant.**
+The exponent `K` is the one of input (A), which does not see the band at all, so it may be
+chosen before `Kb`.  This is what lets a consumer pick `Kb` large enough to beat `Γ`. -/
+theorem exists_fourierCertificate_deltaSurrogate_exponent
+    (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F)
+    {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) :
+    ∃ K : ℕ, ∀ Kb : ℝ, 0 ≤ Kb → ∃ (Γ : ℕ → ℝ → ℝ) (C : ℝ), 0 < C ∧
+      (∀ (n : ℕ) (θ : ℝ), 0 ≤ Γ n θ) ∧
+      (∀ (n : ℕ) (θ : ℝ), Γ n θ ≤ C * (n : ℝ) ^ K * (1 + |θ|) ^ K) ∧
+      ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ ≤ |θ| →
+        2 * σ * (Kb * Real.sqrt (Real.log (n : ℝ))) ≤ |θ| →
+        HasFourierCertificateOnBand
+          (vecRootLaw F
+            (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n)
+          σ ((Real.sqrt (n : ℝ))⁻¹) θ ((θ / σ) • coordDir 0)
+          (Kb * Real.sqrt (Real.log (n : ℝ)))
+          (Γ n θ) (C / ((n : ℝ) * Real.sqrt (n : ℝ)))
+          (C / ((n : ℝ) * Real.sqrt (n : ℝ))) := by
+  obtain ⟨CA, K, hCA, hA⟩ := exists_integral_norm_fourier_bulkMultiplier_le hσ
+  refine ⟨K, fun Kb hKb => ?_⟩
+  obtain ⟨CB, hCB, hB⟩ := exists_integral_norm_fourierWeight_bulkMultiplier_band_le hσ hc₀ hKb
+  obtain ⟨CC, hCC, hC⟩ := exists_measure_norm_gt_bulkRadius_le F hF4
+  refine ⟨fun n θ => CA * (n : ℝ) ^ K * (1 + |θ|) ^ K, max CA (max CB CC),
+    lt_of_lt_of_le hCA (le_max_left _ _), ?_, ?_, ?_⟩
+  · intro n θ; positivity
+  · intro n θ
+    have h1 : CA ≤ max CA (max CB CC) := le_max_left _ _
+    have h2 : (0 : ℝ) ≤ (n : ℝ) ^ K := by positivity
+    have h3 : (0 : ℝ) ≤ (1 + |θ|) ^ K := by positivity
+    exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right h1 h2) h3
+  · intro n hn θ hθ hband
+    have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hden : (0 : ℝ) < (n : ℝ) * Real.sqrt (n : ℝ) := by positivity
+    have hM : 0 < bulkRadius n := bulkRadius_pos hn
+    set Z : ℝ → E₂ :=
+      fun y => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y) with hZdef
+    have hZm : Measurable Z := (measurable_studentPair F).comp (measurable_truncAt _ _)
+    haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZm n
+    have hAmass := hA n hn θ
+    have hAint := integrable_fourier_bulkMultiplier hM σ ((Real.sqrt (n : ℝ))⁻¹) θ
+    have hS : MeasurableSet {w : E₂ | ‖w‖ ≤ bulkRadius n} :=
+      measurableSet_le continuous_norm.measurable measurable_const
+    have hcompl : ({w : E₂ | ‖w‖ ≤ bulkRadius n})ᶜ = {w : E₂ | bulkRadius n < ‖w‖} := by
+      ext w; simp [not_le]
+    refine hasFourierCertificateOnBand_of_bulkMultiplier (vecRootLaw F Z n) hσ
+      ((Real.sqrt (n : ℝ))⁻¹) θ (continuous_bulkMultiplier _ _ _ _)
+      (integrable_bulkMultiplier hM _ _ _) hAint hAmass ?_ hS
+      (fun w hw => bulkMultiplier_eq_of_norm_le hM _ _ _ hw)
+      (norm_bulkMultiplier_le_one _ _ _ _) ?_
+    · refine (hB n hn θ hθ hband).trans ?_
+      exact div_le_div_of_nonneg_right (le_trans (le_max_left _ _) (le_max_right CA _)) hden.le
+    · rw [hcompl]
+      refine (hC n hn).trans ?_
+      exact div_le_div_of_nonneg_right (le_trans (le_max_right _ _) (le_max_right CA _)) hden.le
+
+
+/-- `log x ≤ x^b / b` for every `b > 0`: the logarithm is below every positive power. -/
+lemma log_le_rpow_div {b : ℝ} (hb : 0 < b) {x : ℝ} (hx : 0 < x) :
+    Real.log x ≤ x ^ b / b := by
+  have h1 : Real.log (x ^ b) = b * Real.log x := Real.log_rpow hx b
+  have h2 : Real.log (x ^ b) ≤ x ^ b - 1 :=
+    Real.log_le_sub_one_of_pos (Real.rpow_pos_of_pos hx b)
+  rw [h1] at h2
+  rw [le_div_iff₀ hb]
+  linarith
+
+/-- **`√(log n)` is below every positive power of `n`, eventually.**  This is what lets the
+certificate's band condition `2σKb√(log n) ≤ |θ|` be met by the middle range's own floor
+`n^{1/6}`. -/
+lemma exists_const_mul_sqrt_log_le_rpow {M a : ℝ} (hM : 0 ≤ M) (ha : 0 < a) :
+    ∃ N : ℕ, 0 < N ∧ ∀ n : ℕ, N ≤ n → M * Real.sqrt (Real.log (n : ℝ)) ≤ (n : ℝ) ^ a := by
+  have hsa : 0 < Real.sqrt a := Real.sqrt_pos.2 ha
+  set A : ℝ := M / Real.sqrt a with hAdef
+  have hA0 : 0 ≤ A := by positivity
+  obtain ⟨N₀, hN₀⟩ := exists_nat_gt (A ^ (2 / a))
+  refine ⟨max 1 N₀, lt_of_lt_of_le one_pos (le_max_left _ _), fun n hn => ?_⟩
+  have hn1 : 1 ≤ n := le_trans (le_max_left _ _) hn
+  have hnN : N₀ ≤ n := le_trans (le_max_right _ _) hn
+  have hnR : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1
+  have hn0 : (0 : ℝ) < (n : ℝ) := by linarith
+  -- `√(log n) ≤ n^{a/2}/√a`
+  have hlog : Real.log (n : ℝ) ≤ (n : ℝ) ^ a / a := log_le_rpow_div ha hn0
+  have hlog0 : 0 ≤ Real.log (n : ℝ) := Real.log_nonneg hnR
+  have hsqrt : Real.sqrt (Real.log (n : ℝ)) ≤ (n : ℝ) ^ (a / 2) / Real.sqrt a := by
+    have h1 : Real.sqrt (Real.log (n : ℝ)) ≤ Real.sqrt ((n : ℝ) ^ a / a) :=
+      Real.sqrt_le_sqrt hlog
+    have hsq2 : ((n : ℝ) ^ (a / 2) / Real.sqrt a) ^ 2 = (n : ℝ) ^ a / a := by
+      rw [div_pow, Real.sq_sqrt ha.le, ← Real.rpow_natCast ((n : ℝ) ^ (a / 2)) 2,
+        ← Real.rpow_mul hn0.le]
+      norm_num
+    have h2 : Real.sqrt ((n : ℝ) ^ a / a) = (n : ℝ) ^ (a / 2) / Real.sqrt a := by
+      rw [← hsq2, Real.sqrt_sq (by positivity)]
+    rw [h2] at h1
+    exact h1
+  -- `A ≤ n^{a/2}`
+  have hAle : A ≤ (n : ℝ) ^ (a / 2) := by
+    have hstep : A ^ (2 / a) ≤ (n : ℝ) := by
+      have : ((N₀ : ℝ)) ≤ (n : ℝ) := by exact_mod_cast hnN
+      linarith
+    have h := Real.rpow_le_rpow (Real.rpow_nonneg hA0 _) hstep (le_of_lt (half_pos ha))
+    rwa [← Real.rpow_mul hA0, show (2 / a) * (a / 2) = 1 by field_simp, Real.rpow_one] at h
+  calc M * Real.sqrt (Real.log (n : ℝ))
+      ≤ M * ((n : ℝ) ^ (a / 2) / Real.sqrt a) := by
+        exact mul_le_mul_of_nonneg_left hsqrt hM
+    _ = A * (n : ℝ) ^ (a / 2) := by rw [hAdef]; ring
+    _ ≤ (n : ℝ) ^ (a / 2) * (n : ℝ) ^ (a / 2) :=
+        mul_le_mul_of_nonneg_right hAle (Real.rpow_nonneg hn0.le _)
+    _ = (n : ℝ) ^ a := by
+        rw [← Real.rpow_add hn0]; congr 1; ring
+
+
+/-- **THE MIDDLE RANGE, FROM THE CERTIFICATE AT `N = 10`.** -/
+theorem exists_studentized_middle_range_bound
+    (F : Measure ℝ) [IsProbabilityMeasure F] (hFac : F ≪ volume)
+    (hF4 : MemLp (fun t : ℝ => t) 4 F) (hF6 : MemLp (fun t : ℝ => t) 6 F)
+    (hF4int : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F)
+    {σ : ℝ} (hσ : 0 < σ) :
+    ∃ (C : ℝ) (N : ℕ), 0 < C ∧ 0 < N ∧ ∀ n : ℕ, N ≤ n → ∀ θ : ℝ,
+      (n : ℝ) ^ ((1 : ℝ) / 6) ≤ |θ| → |θ| ≤ 4 * Real.pi * (n : ℝ) ^ 2 →
+      ‖charFun ((vecRootLaw F
+          (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n).map
+          (deltaSurrogate σ ((Real.sqrt (n : ℝ))⁻¹))) θ‖
+        ≤ C / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
+  obtain ⟨lam, ε₁, B, hlam, hε₁, hB, hbulk⟩ :=
+    exists_bulk_majorant_vecRootLaw_studentPair_truncAt F hFac hF4 hF6 hF4int
+  obtain ⟨c, Nc, hc1, hcram⟩ :=
+    exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt F hFac hF4int hε₁
+  obtain ⟨K, hcertK⟩ :=
+    exists_fourierCertificate_deltaSurrogate_exponent F hF4int hσ (c₀ := 1) one_pos
+  have hZm : ∀ n : ℕ, Measurable
+      (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) :=
+    fun n => (measurable_studentPair F).comp (measurable_truncAt _ _)
+  -- the certificate's exponent fixes the band radius
+  set q : ℝ := 3 * (K : ℝ) + 3 / 2 with hqdef
+  have hq0 : 0 ≤ q := by positivity
+  set Kb : ℝ := Real.sqrt (4 * (q + 1) / lam) with hKbdef
+  have hKb0 : 0 ≤ Kb := Real.sqrt_nonneg _
+  have hKbsq : lam * Kb ^ 2 / 4 = q + 1 := by
+    rw [hKbdef, Real.sq_sqrt (by positivity)]
+    field_simp
+  obtain ⟨Γ, C, hC, hΓ0, hΓ, hcert⟩ := hcertK Kb hKb0
+  -- the Cramér base is nonnegative
+  have hc0 : 0 ≤ c := by
+    by_contra hneg
+    push_neg at hneg
+    have hm0 : 0 < 2 * Nc + 1 := by omega
+    have hmc : Nc ≤ 2 * Nc + 1 := by omega
+    have hcd : ‖(coordDir 0 : E₂)‖ = 1 := by
+      rw [coordDir, EuclideanSpace.norm_single]; simp
+    have hnt : ‖(ε₁ * Real.sqrt ((2 * Nc + 1 : ℕ) : ℝ)) • (coordDir 0 : E₂)‖
+        = ε₁ * Real.sqrt ((2 * Nc + 1 : ℕ) : ℝ) := by
+      rw [norm_smul, Real.norm_eq_abs, hcd, mul_one,
+        abs_of_nonneg (by positivity : (0 : ℝ) ≤ ε₁ * Real.sqrt ((2 * Nc + 1 : ℕ) : ℝ))]
+    have hbd := hcram (2 * Nc + 1) hmc hm0
+      ((ε₁ * Real.sqrt ((2 * Nc + 1 : ℕ) : ℝ)) • (coordDir 0 : E₂)) (le_of_eq hnt.symm)
+    have hodd : Odd (2 * Nc + 1) := by rw [Nat.odd_iff]; omega
+    have hlt : c ^ (2 * Nc + 1) < 0 := hodd.pow_neg hneg
+    have := norm_nonneg (charFun (vecRootLaw F
+      (fun y : ℝ => studentPair F
+        (truncAt (∫ s, s ∂F) (Real.sqrt ((2 * Nc + 1 : ℕ) : ℝ)) y)) (2 * Nc + 1))
+      ((ε₁ * Real.sqrt ((2 * Nc + 1 : ℕ) : ℝ)) • (coordDir 0 : E₂)))
+    linarith
+  obtain ⟨N₁, hN₁0, hN₁⟩ := exists_pow_le_rpow_neg hc0 hc1 hq0
+  obtain ⟨N₂, hN₂0, hN₂⟩ :=
+    exists_const_mul_sqrt_log_le_rpow (M := 2 * σ * Kb) (by positivity)
+      (by norm_num : (0 : ℝ) < 1 / 6)
+  obtain ⟨N₃, hN₃⟩ := exists_nat_gt B
+  refine ⟨C * (1 + 4 * Real.pi) ^ K + 2 * C, max (max Nc N₁) (max N₂ (max N₃ 1)),
+    by positivity, lt_of_lt_of_le one_pos (le_trans (le_max_right _ _)
+      (le_trans (le_max_right _ _) (le_max_right _ _))), ?_⟩
+  intro n hn θ hθlo hθhi
+  have hnc : Nc ≤ n := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hn
+  have hn₁ : N₁ ≤ n := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hn
+  have hn₂ : N₂ ≤ n := le_trans (le_trans (le_max_left _ _) (le_max_right _ _)) hn
+  have hn₃ : N₃ ≤ n := le_trans (le_trans (le_max_left _ _)
+    (le_trans (le_max_right _ _) (le_max_right _ _))) hn
+  have hn1 : 1 ≤ n := le_trans (le_trans (le_max_right _ _)
+    (le_trans (le_max_right _ _) (le_max_right _ _))) hn
+  have hn0 : 0 < n := hn1
+  have hnR : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1
+  have hn0R : (0 : ℝ) < (n : ℝ) := by linarith
+  have hBn : B ≤ (n : ℝ) := le_of_lt (lt_of_lt_of_le hN₃ (by exact_mod_cast hn₃))
+  -- the two hypotheses of the certificate at this frequency
+  have hone : (1 : ℝ) ≤ |θ| :=
+    le_trans (Real.one_le_rpow hnR (by norm_num)) hθlo
+  have hband : 2 * σ * (Kb * Real.sqrt (Real.log (n : ℝ))) ≤ |θ| := by
+    have h := hN₂ n hn₂
+    have heq : 2 * σ * Kb * Real.sqrt (Real.log (n : ℝ))
+        = 2 * σ * (Kb * Real.sqrt (Real.log (n : ℝ))) := by ring
+    rw [heq] at h
+    exact le_trans h hθlo
+  -- the two-regime bound and the band certificate
+  have hR0 : (0 : ℝ) ≤ Kb * Real.sqrt (Real.log (n : ℝ)) := by positivity
+  have hmain := norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band F (hZm n) hlam.le hB
+    (fun t ht => hcram n hnc hn0 t ht) (fun t ht => hbulk n hn0 t ht)
+    σ ((Real.sqrt (n : ℝ))⁻¹) θ hR0 (hcert n hn0 θ hone hband)
+  -- the band value of `κ`
+  set κ : ℝ := max (B * Real.exp (-(lam * (Kb * Real.sqrt (Real.log (n : ℝ))) ^ 2 / 4)))
+    (c ^ n) with hκdef
+  have hκ0 : 0 ≤ κ := le_trans (by positivity) (le_max_left _ _)
+  have hκ : κ ≤ (n : ℝ) ^ (-q) := by
+    refine max_le ?_ (hN₁ n hn₁)
+    rw [exp_neg_sq_band_radius_eq_rpow hn1, hKbsq]
+    have hsplit : (n : ℝ) ^ (-(q + 1)) = (n : ℝ) ^ (-q) * ((n : ℝ))⁻¹ := by
+      rw [← Real.rpow_neg_one (n : ℝ), ← Real.rpow_add hn0R]
+      congr 1
+      ring
+    rw [hsplit]
+    have hrp : (0 : ℝ) ≤ (n : ℝ) ^ (-q) := Real.rpow_nonneg hn0R.le _
+    have hBinv : B * ((n : ℝ))⁻¹ ≤ 1 := by
+      rw [mul_inv_le_iff₀ hn0R]; linarith
+    calc B * ((n : ℝ) ^ (-q) * ((n : ℝ))⁻¹) = (B * ((n : ℝ))⁻¹) * (n : ℝ) ^ (-q) := by ring
+      _ ≤ 1 * (n : ℝ) ^ (-q) := mul_le_mul_of_nonneg_right hBinv hrp
+      _ = (n : ℝ) ^ (-q) := one_mul _
+  -- the mass, polynomial in `n` on the whole middle range
+  have hΓle : Γ n θ ≤ (C * (1 + 4 * Real.pi) ^ K) * (n : ℝ) ^ (3 * (K : ℝ)) := by
+    refine (hΓ n θ).trans ?_
+    have hnsq : (1 : ℝ) ≤ (n : ℝ) ^ 2 := by nlinarith
+    have h1 : (1 : ℝ) + |θ| ≤ (1 + 4 * Real.pi) * (n : ℝ) ^ 2 := by
+      have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+      nlinarith
+    have h2 : (1 + |θ|) ^ K ≤ ((1 + 4 * Real.pi) * (n : ℝ) ^ 2) ^ K :=
+      pow_le_pow_left₀ (by positivity) h1 K
+    have h3 : ((1 + 4 * Real.pi) * (n : ℝ) ^ 2) ^ K
+        = (1 + 4 * Real.pi) ^ K * ((n : ℝ) ^ K) ^ 2 := by
+      rw [mul_pow, ← pow_mul, ← pow_mul, Nat.mul_comm]
+    have h4 : C * (n : ℝ) ^ K * (1 + |θ|) ^ K
+        ≤ C * (n : ℝ) ^ K * ((1 + 4 * Real.pi) ^ K * ((n : ℝ) ^ K) ^ 2) := by
+      rw [← h3]
+      exact mul_le_mul_of_nonneg_left h2 (by positivity)
+    refine h4.trans (le_of_eq ?_)
+    have hrp : (n : ℝ) ^ (3 * (K : ℝ)) = ((n : ℝ) ^ K) ^ 3 := by
+      rw [← Real.rpow_natCast ((n : ℝ) ^ K) 3, ← Real.rpow_natCast (n : ℝ) K,
+        ← Real.rpow_mul hn0R.le]
+      congr 1
+      push_cast
+      ring
+    rw [hrp]
+    ring
+  have hled := band_kappa_ledger (C := C * (1 + 4 * Real.pi) ^ K) (Γ := Γ n θ) (κ := κ)
+    (p := 3 * (K : ℝ)) (q := q) hn1 (by positivity) hΓle (hΓ0 n θ) hκ0 hκ (by rw [hqdef])
+  have hden : (0 : ℝ) < (n : ℝ) * Real.sqrt (n : ℝ) := by positivity
+  refine hmain.trans ?_
+  have : (C * (1 + 4 * Real.pi) ^ K) / ((n : ℝ) * Real.sqrt (n : ℝ))
+      + C / ((n : ℝ) * Real.sqrt (n : ℝ)) + C / ((n : ℝ) * Real.sqrt (n : ℝ))
+      = (C * (1 + 4 * Real.pi) ^ K + 2 * C) / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
+    field_simp
+    ring
+  linarith [hled]
+
 end StudentizedReduction
 
 /-! ## The Edgeworth approximant on the standardized scale
