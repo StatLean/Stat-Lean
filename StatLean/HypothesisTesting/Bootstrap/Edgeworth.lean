@@ -11577,6 +11577,197 @@ lemma integral_pi_sum_abs_pow_nine_le (F : Measure ℝ) [IsProbabilityMeasure F]
   linarith
 
 
+/-! #### The odd orders need the WEIGHTED sandwich, not `|s|⁹ ≤ s⁸ + s¹⁰`
+
+`integral_pi_sum_abs_pow_nine_le` above is true and it is **lossy where the ledger reads it.**
+On the second coordinate of `Zₙ` the two neighbouring even root moments are of orders
+`E|w₁|⁸ ≍ n` and `E|w₁|¹⁰ ≍ n²`, so their sum is `n²`, while the graded ledger needs
+`E|w₁|⁹ ≍ n^{3/2}` (`second_coord_root_moment_exponent` at `p = 9`).  The unweighted sandwich
+therefore misses by `n^{1/2}` and `r³N₆ = n^{-3/2}·n²= n^{1/2}` does **not** close.  The same
+happens one order down: `E|w₁|⁷` is wanted at `n^{1/2}` and the unweighted sandwich returns
+`(1 + n)/2 ≍ n`, against which `rN₄ = n^{-1/2}·n = n^{1/2}` also fails.
+
+What closes both is Young's inequality with a weight, `2t|s|^{2j+1} ≤ t²s^{2j} + s^{2j+2}`,
+which is the same square `(t|s|^j − |s|^{j+1})² ≥ 0` with the weight kept.  It is valid for
+**every** real `t`, and at `t = √n` it returns the *geometric* mean of the two even moments
+rather than their sum — which is `n^{3/2}` and `n^{1/2}` respectively, both on the nose
+(`weighted_sandwich_ledger`, and `unweighted_sandwich_ledger_gt` is the witness that the
+unweighted sandwich is strictly worse at every `n ≥ 2`).
+
+**This corrects the wave-50 plan**, which prescribed the odd order nine "via `|s|⁹ ≤ s⁸ + s¹⁰`".
+The interpolation has to be weighted; the sum is not enough. -/
+
+/-! ### The WEIGHTED sandwich: the unweighted one is lossy at the second coordinate -/
+
+private lemma two_mul_abs_pow_five_weighted (t s : ℝ) : 2 * t * |s ^ 5| ≤ t ^ 2 * s ^ 4 + s ^ 6 := by
+  have h : |s| ^ 2 = s ^ 2 := sq_abs s
+  have e4 : s ^ 4 = (|s| ^ 2) ^ 2 := by rw [h]; ring
+  have e6 : s ^ 6 = (|s| ^ 2) ^ 3 := by rw [h]; ring
+  rw [abs_pow, e4, e6]
+  nlinarith [sq_nonneg (t * |s| ^ 2 - |s| ^ 3)]
+
+private lemma two_mul_abs_pow_seven_weighted (t s : ℝ) : 2 * t * |s ^ 7| ≤ t ^ 2 * s ^ 6 + s ^ 8 := by
+  have h : |s| ^ 2 = s ^ 2 := sq_abs s
+  have e6 : s ^ 6 = (|s| ^ 2) ^ 3 := by rw [h]; ring
+  have e8 : s ^ 8 = (|s| ^ 2) ^ 4 := by rw [h]; ring
+  rw [abs_pow, e6, e8]
+  nlinarith [sq_nonneg (t * |s| ^ 3 - |s| ^ 4)]
+
+private lemma two_mul_abs_pow_nine_weighted (t s : ℝ) : 2 * t * |s ^ 9| ≤ t ^ 2 * s ^ 8 + s ^ 10 := by
+  have h : |s| ^ 2 = s ^ 2 := sq_abs s
+  have e8 : s ^ 8 = (|s| ^ 2) ^ 4 := by rw [h]; ring
+  have e10 : s ^ 10 = (|s| ^ 2) ^ 5 := by rw [h]; ring
+  rw [abs_pow, e8, e10]
+  nlinarith [sq_nonneg (t * |s| ^ 4 - |s| ^ 5)]
+
+/-- The weighted sandwich under the integral. -/
+lemma integral_abs_pow_odd_weighted {α : Type*} [MeasurableSpace α] (ν : Measure α)
+    [IsProbabilityMeasure ν] {S : α → ℝ} (hS : Measurable S) {D : ℝ} (hSb : ∀ z, |S z| ≤ D)
+    {j i k : ℕ} {t : ℝ} (ht : 0 < t)
+    (hpt : ∀ s : ℝ, 2 * t * |s ^ j| ≤ t ^ 2 * s ^ i + s ^ k) :
+    ∫ z, |S z| ^ j ∂ν ≤ (t * (∫ z, S z ^ i ∂ν) + (∫ z, S z ^ k ∂ν) / t) / 2 := by
+  have hI1 : Integrable (fun z => |S z| ^ j) ν := by
+    have h : (fun z => |S z| ^ j) = fun z => |S z ^ j| := by funext z; rw [abs_pow]
+    rw [h]; exact (integrable_pow_of_bounded ν hS hSb j).abs
+  have hIi := integrable_pow_of_bounded ν hS hSb i
+  have hIk := integrable_pow_of_bounded ν hS hSb k
+  have hI2 : Integrable (fun z => (t * S z ^ i + S z ^ k / t) / 2) ν :=
+    ((hIi.const_mul t).add (hIk.div_const t)).div_const 2
+  have h : ∫ z, |S z| ^ j ∂ν ≤ ∫ z, (t * S z ^ i + S z ^ k / t) / 2 ∂ν := by
+    refine integral_mono hI1 hI2 fun z => ?_
+    have hz := hpt (S z)
+    rw [abs_pow] at hz
+    have hkey : 2 * |S z| ^ j ≤ t * S z ^ i + S z ^ k / t := by
+      have h2 : (2 * |S z| ^ j) * t ≤ (t * S z ^ i + S z ^ k / t) * t := by
+        have e : (t * S z ^ i + S z ^ k / t) * t = t ^ 2 * S z ^ i + S z ^ k := by
+          field_simp
+        rw [e]; linarith [hz]
+      exact le_of_mul_le_mul_right h2 ht
+    linarith
+  have he : ∫ z, (t * S z ^ i + S z ^ k / t) / 2 ∂ν
+      = (t * (∫ z, S z ^ i ∂ν) + (∫ z, S z ^ k ∂ν) / t) / 2 := by
+    rw [integral_div, integral_add (hIi.const_mul t) (hIk.div_const t),
+      MeasureTheory.integral_const_mul, integral_div]
+  linarith [h, he]
+
+
+private lemma pi_sum_meas {V : ℝ → ℝ} (hV : Measurable V) (n : ℕ) :
+    Measurable fun z : Fin n → ℝ => ∑ i, V (z i) :=
+  Finset.measurable_sum _ fun i _ => hV.comp (measurable_pi_apply i)
+
+private lemma pi_sum_bdd {V : ℝ → ℝ} {B : ℝ} (hB : ∀ x, |V x| ≤ B) (n : ℕ) :
+    ∀ z : Fin n → ℝ, |∑ i, V (z i)| ≤ (n : ℝ) * B := by
+  intro z
+  calc |∑ i, V (z i)| ≤ ∑ _i : Fin n, B :=
+        (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => hB (z i))
+    _ = (n : ℝ) * B := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+
+/-- **The fifth absolute moment of the iid sum**, weighted between orders four and six. -/
+lemma integral_pi_sum_abs_pow_five_le (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
+    (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hB1 : 1 ≤ B)
+    (hV0 : ∫ x, V x ∂F = 0) {t : ℝ} (ht : 0 < t) (n : ℕ) :
+    ∫ y : Fin n → ℝ, |∑ i, V (y i)| ^ 5 ∂(Measure.pi fun _ : Fin n => F)
+      ≤ (t * (3 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) ^ 2 * ((n : ℝ) ^ 2 + (n : ℝ)))
+          + (40 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) ^ 3
+              * ((n : ℝ) ^ 3 + (n : ℝ) * B ^ 2)) / t) / 2 := by
+  have h := integral_abs_pow_odd_weighted (Measure.pi fun _ : Fin n => F)
+    (pi_sum_meas hV n) (pi_sum_bdd hB n) ht (two_mul_abs_pow_five_weighted t)
+  have h4 := integral_pi_sum_pow_four_A F hV hB hV0 n
+  have h6 := integral_pi_sum_pow_six_A F hV hB hB1 hV0 n
+  have hd : ∀ x y : ℝ, x ≤ y → x / t ≤ y / t := fun x y hxy => by
+    have h' := mul_le_mul_of_nonneg_right hxy (le_of_lt (inv_pos.2 ht))
+    simpa [div_eq_mul_inv] using h'
+  have := hd _ _ h6
+  nlinarith [h, h4, this, ht]
+
+/-- **The seventh absolute moment of the iid sum**, weighted between orders six and eight. -/
+lemma integral_pi_sum_abs_pow_seven_le (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
+    (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hB1 : 1 ≤ B)
+    (hV0 : ∫ x, V x ∂F = 0) {t : ℝ} (ht : 0 < t) (n : ℕ) :
+    ∫ y : Fin n → ℝ, |∑ i, V (y i)| ^ 7 ∂(Measure.pi fun _ : Fin n => F)
+      ≤ (t * (40 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) ^ 3
+              * ((n : ℝ) ^ 3 + (n : ℝ) * B ^ 2))
+          + (2400 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) ^ 4
+              * ((n : ℝ) ^ 4 + (n : ℝ) * B ^ 4)) / t) / 2 := by
+  have h := integral_abs_pow_odd_weighted (Measure.pi fun _ : Fin n => F)
+    (pi_sum_meas hV n) (pi_sum_bdd hB n) ht (two_mul_abs_pow_seven_weighted t)
+  have h6 := integral_pi_sum_pow_six_A F hV hB hB1 hV0 n
+  have h8 := integral_pi_sum_pow_eight_le F hV hB hB1 hV0 n
+  have hd : ∀ x y : ℝ, x ≤ y → x / t ≤ y / t := fun x y hxy => by
+    have h' := mul_le_mul_of_nonneg_right hxy (le_of_lt (inv_pos.2 ht))
+    simpa [div_eq_mul_inv] using h'
+  have := hd _ _ h8
+  nlinarith [h, h6, this, ht]
+
+/-- **The ninth absolute moment of the iid sum**, weighted between orders eight and ten.  The
+weight is essential: at the second coordinate of `Zₙ` the two neighbouring even moments are of
+orders `n` and `n²`, so the *unweighted* sandwich returns `n²` where the graded ledger needs
+`n^{3/2}`; the weight `t = √n` returns their geometric mean, which is `n^{3/2}` on the nose. -/
+lemma integral_pi_sum_abs_pow_nine_weighted_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    {V : ℝ → ℝ} (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hB1 : 1 ≤ B)
+    (hV0 : ∫ x, V x ∂F = 0) {t : ℝ} (ht : 0 < t) (n : ℕ) :
+    ∫ y : Fin n → ℝ, |∑ i, V (y i)| ^ 9 ∂(Measure.pi fun _ : Fin n => F)
+      ≤ (t * (2400 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) ^ 4
+              * ((n : ℝ) ^ 4 + (n : ℝ) * B ^ 4))
+          + (540000 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) ^ 5
+              * ((n : ℝ) ^ 5 + (n : ℝ) * B ^ 6)) / t) / 2 := by
+  have h := integral_abs_pow_odd_weighted (Measure.pi fun _ : Fin n => F)
+    (pi_sum_meas hV n) (pi_sum_bdd hB n) ht (two_mul_abs_pow_nine_weighted t)
+  have h8 := integral_pi_sum_pow_eight_le F hV hB hB1 hV0 n
+  have h10 := integral_pi_sum_pow_ten_le F hV hB hB1 hV0 n
+  have hd : ∀ x y : ℝ, x ≤ y → x / t ≤ y / t := fun x y hxy => by
+    have h' := mul_le_mul_of_nonneg_right hxy (le_of_lt (inv_pos.2 ht))
+    simpa [div_eq_mul_inv] using h'
+  have := hd _ _ h10
+  nlinarith [h, h8, this, ht]
+
+
+
+/-- **The first coordinate's single-summand term is `n⁻¹` at every order.**  With `|Z₀| ≤ τ = √n`
+the term `n^{1−p/2}·E|Z₀|^p` of the bound is `n^{1−p/2}·(√n)^{p−4}·E Z₀⁴`, and the exponent is
+`−1` independently of `p`: `E|w₀|^p = O(1)` at every order, with a whole power of `n` to spare.
+Compare `second_coord_root_moment_exponent`, where the exponent is `p/2 − 3` and grows. -/
+lemma first_coord_root_moment_exponent {n : ℕ} (hn : 0 < n) (p : ℝ) :
+    (n : ℝ) ^ (1 - p / 2) * ((n : ℝ) ^ ((1 : ℝ) / 2)) ^ (p - 4) = (n : ℝ) ^ (-1 : ℝ) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_mul h0.le, ← Real.rpow_add h0]
+  ring_nf
+
+private lemma rpow_three_halves {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) ^ ((3 : ℝ) / 2) = (n : ℝ) * Real.sqrt (n : ℝ) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have e : (3 : ℝ) / 2 = 1 + 1 / 2 := by norm_num
+  rw [e, Real.rpow_add h0, Real.rpow_one, ← Real.sqrt_eq_rpow]
+
+/-- **The weighted sandwich at `t = √n` returns the geometric mean of the two even moments.**
+With `E|w₁|⁸ ≍ n` and `E|w₁|¹⁰ ≍ n²` it returns `n^{3/2}`, which is exactly the order the graded
+ledger needs at `N₆`. -/
+lemma weighted_sandwich_ledger {n : ℕ} (hn : 0 < n) :
+    (Real.sqrt (n : ℝ) * (n : ℝ) + (n : ℝ) ^ 2 / Real.sqrt (n : ℝ)) / 2
+      = (n : ℝ) ^ ((3 : ℝ) / 2) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hs0 : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 h0
+  have hsq : Real.sqrt (n : ℝ) ^ 2 = (n : ℝ) := Real.sq_sqrt h0.le
+  rw [rpow_three_halves hn]
+  field_simp
+  nlinarith [hsq, hs0]
+
+/-- **And the unweighted sandwich is strictly worse, at every `n ≥ 2`.** -/
+lemma unweighted_sandwich_ledger_gt {n : ℕ} (hn : 2 ≤ n) :
+    (n : ℝ) ^ ((3 : ℝ) / 2) < ((n : ℝ) + (n : ℝ) ^ 2) / 2 := by
+  have h2 : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have h0 : (0 : ℝ) < (n : ℝ) := by linarith
+  have hnpos : 0 < n := by omega
+  have hs0 : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 h0
+  have hsq : Real.sqrt (n : ℝ) ^ 2 = (n : ℝ) := Real.sq_sqrt h0.le
+  have hs1 : 1 < Real.sqrt (n : ℝ) := by nlinarith [hsq, hs0]
+  rw [rpow_three_halves hnpos]
+  nlinarith [hsq, hs0, hs1, sq_nonneg (Real.sqrt (n : ℝ) - 1),
+    mul_pos (mul_pos hs0 hs0) (mul_pos (sub_pos.2 hs1) (sub_pos.2 hs1))]
+
+
+
 
 /-- `‖v‖⁴ ≤ 2(v₀⁴ + v₁⁴)` on the plane. -/
 lemma norm_pow_four_le_two_mul (v : E₂) :
