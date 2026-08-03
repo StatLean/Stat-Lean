@@ -376,4 +376,69 @@ lemma step_ten {n : ℕ} {Bd a b m3 m5 m6 m7 m8 m10 M4 M5 M6 M7 M8 M10 : ℝ}
   have hmul := mul_le_mul_of_nonneg_left hled hA50
   linarith [t1, t2, t3, t4, t5, t6, t7, t8, hM10, hmul]
 
+
+/-! ### WAVE 51, ITEM 1(ii): the six blocks against scalar moments -/
+
+lemma max_pow_le_add {X Y : ℝ} (hX : 0 ≤ X) (hY : 0 ≤ Y) (d : ℕ) :
+    (max X Y) ^ d ≤ X ^ d + Y ^ d := by
+  rcases le_total X Y with h | h
+  · rw [max_eq_right h]
+    have : (0 : ℝ) ≤ X ^ d := pow_nonneg hX d
+    linarith
+  · rw [max_eq_left h]
+    have : (0 : ℝ) ≤ Y ^ d := pow_nonneg hY d
+    linarith
+
+/-- `P = XY/2 ≤ M²/2` and `A = X³/2 + 3XY²/8 ≤ (7/8)M³` at `M = max X Y`. -/
+lemma blocks_le_max {X Y : ℝ} (hX : 0 ≤ X) (hY : 0 ≤ Y) :
+    X * Y / 2 ≤ (max X Y) ^ 2 / 2 ∧
+      X ^ 3 / 2 + 3 * X * Y ^ 2 / 8 ≤ 7 / 8 * (max X Y) ^ 3 := by
+  obtain ⟨M, hMdef⟩ : ∃ M : ℝ, M = max X Y := ⟨_, rfl⟩
+  rw [← hMdef]
+  have hXM : X ≤ M := by rw [hMdef]; exact le_max_left _ _
+  have hYM : Y ≤ M := by rw [hMdef]; exact le_max_right _ _
+  have hM0 : 0 ≤ M := le_trans hX hXM
+  have h2 : X * Y ≤ M ^ 2 := by nlinarith
+  have h3 : X ^ 3 ≤ M ^ 3 := pow_le_pow_left₀ hX hXM 3
+  have hy2 : Y ^ 2 ≤ M ^ 2 := pow_le_pow_left₀ hY hYM 2
+  have h3' : X * Y ^ 2 ≤ M ^ 3 := by nlinarith [pow_nonneg hY 2, pow_nonneg hM0 2]
+  constructor
+  · linarith
+  · linarith
+
+/-- Each of the six graded blocks is a constant times a power of `M = max X Y`. -/
+lemma six_blocks_le_max {X Y : ℝ} (hX : 0 ≤ X) (hY : 0 ≤ Y) :
+    (X * Y / 2) ^ 3 ≤ 1 / 8 * (max X Y) ^ 6 ∧
+    (X * Y / 2) ^ 2 * (X ^ 3 / 2 + 3 * X * Y ^ 2 / 8) ≤ 7 / 32 * (max X Y) ^ 7 ∧
+    (X * Y / 2) * (X ^ 3 / 2 + 3 * X * Y ^ 2 / 8) ^ 2 ≤ 49 / 128 * (max X Y) ^ 8 ∧
+    (X ^ 3 / 2 + 3 * X * Y ^ 2 / 8) ^ 3 ≤ 343 / 512 * (max X Y) ^ 9 ∧
+    (X * Y / 2) * (X ^ 3 / 2 + 3 * X * Y ^ 2 / 8) ≤ 7 / 16 * (max X Y) ^ 5 ∧
+    (X ^ 3 / 2 + 3 * X * Y ^ 2 / 8) ^ 2 ≤ 49 / 64 * (max X Y) ^ 6 := by
+  obtain ⟨hP, hA⟩ := blocks_le_max hX hY
+  obtain ⟨M, hMdef⟩ : ∃ M : ℝ, M = max X Y := ⟨_, rfl⟩
+  rw [← hMdef] at hP hA ⊢
+  have hM0 : 0 ≤ M := le_trans hX (by rw [hMdef]; exact le_max_left _ _)
+  obtain ⟨P, hPdef⟩ : ∃ P : ℝ, P = X * Y / 2 := ⟨_, rfl⟩
+  obtain ⟨A, hAdef⟩ : ∃ A : ℝ, A = X ^ 3 / 2 + 3 * X * Y ^ 2 / 8 := ⟨_, rfl⟩
+  rw [← hPdef] at hP
+  rw [← hAdef] at hA
+  rw [← hPdef, ← hAdef]
+  have hP0 : 0 ≤ P := by rw [hPdef]; positivity
+  have hA0 : 0 ≤ A := by rw [hAdef]; positivity
+  have hM2 : (0 : ℝ) ≤ M ^ 2 := by positivity
+  have hM3 : (0 : ℝ) ≤ M ^ 3 := by positivity
+  have hP2 : P ^ 2 ≤ (M ^ 2 / 2) ^ 2 := pow_le_pow_left₀ hP0 hP 2
+  have hP3 : P ^ 3 ≤ (M ^ 2 / 2) ^ 3 := pow_le_pow_left₀ hP0 hP 3
+  have hA2 : A ^ 2 ≤ (7 / 8 * M ^ 3) ^ 2 := pow_le_pow_left₀ hA0 hA 2
+  have hA3 : A ^ 3 ≤ (7 / 8 * M ^ 3) ^ 3 := pow_le_pow_left₀ hA0 hA 3
+  refine ⟨by nlinarith [hP3], ?_, ?_, by nlinarith [hA3], ?_, by nlinarith [hA2]⟩
+  · have h : P ^ 2 * A ≤ (M ^ 2 / 2) ^ 2 * (7 / 8 * M ^ 3) :=
+      mul_le_mul hP2 hA hA0 (by positivity)
+    nlinarith [h]
+  · have h : P * A ^ 2 ≤ (M ^ 2 / 2) * ((7 / 8 * M ^ 3) ^ 2) :=
+      mul_le_mul hP hA2 (by positivity) (by positivity)
+    nlinarith [h]
+  · have h : P * A ≤ (M ^ 2 / 2) * (7 / 8 * M ^ 3) := mul_le_mul hP hA hA0 (by positivity)
+    nlinarith [h]
+
 end A51
