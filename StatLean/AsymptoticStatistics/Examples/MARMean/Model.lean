@@ -4,8 +4,9 @@ import StatLean.AsymptoticStatistics.Core.MassMethod
 # The MAR observation type and the MAR-mean parameter functional
 
 This file is the model-setup half of the concrete-EIF verification template. It
-fixes the data model for a missing-at-random (MAR) problem and the target
-parameter whose efficient influence function is verified elsewhere.
+fixes the data model for a missing-at-random (MAR) problem, its target parameter,
+and the raw IPW, coarsening-score, and AIPW functions used to verify the efficient
+influence function elsewhere.
 
 A single unit is observed as the tuple $(X, R, RY)$, where $X$ is an
 always-observed covariate, $R \in \{0, 1\}$ is the response indicator (with
@@ -26,15 +27,19 @@ random). The $(X, \Delta, \Delta Y)$ observation tuple and the IPW mean
 estimand appear at Lemma 25.41 and Example 25.43 (vdV's $\Delta \in \{0, 1\}$ is
 the missingness indicator written here as $R$).
 
-**Proof formalization notes.** This module contributes only definitions, no
-theorems. The structure `MARObs X` carries the three fields `x`, `r`, `ry`; the
-helper `ind : Bool → ℝ` lifts the Boolean indicator `r` to the real weight used
-in the IPW formula (`ind true = 1`, `ind false = 0`); and `marMean_Ψ π` is the
-functional `Q ↦ ∫ (ind R · RY / π X) ∂Q`. The σ-algebra on `MARObs X` is the
-pullback of the product σ-algebra on `X × Bool × ℝ`, so the field accessors are
-measurable. The MAR identification $\Psi(Q) = E_Q[Y]$ is not assumed here: the
-IPW form is taken as the definition because it is well-posed for arbitrary `Q`,
-and the identification is supplied separately by the caller when needed.
+**Proof formalization notes.** The structure `MARObs X` carries the three fields
+`x`, `r`, `ry`; the helper `ind : Bool → ℝ` lifts the Boolean indicator `r` to the
+real weight used in the IPW formula (`ind true = 1`, `ind false = 0`); and
+`marMean_Ψ π` is the functional `Q ↦ ∫ (ind R · RY / π X) ∂Q`. The raw functions
+`marMean_ipwRep`, `marMean_coarseningScore`, and `marMean_eif` encode the IPW
+representer, MAR coarsening scores, and AIPW efficient influence function from
+Example 25.43. Two pointwise algebra lemmas express `marMean_eif` both as the IPW
+representer minus a coarsening score and as the centered IPW representer minus a
+coarsening score. The σ-algebra on `MARObs X` is the pullback of the product
+σ-algebra on `X × Bool × ℝ`, so the field accessors are measurable. The MAR
+identification $\Psi(Q) = E_Q[Y]$ is not assumed here: the IPW form is taken as
+the definition because it is well-posed for arbitrary `Q`, and the identification
+is supplied separately by the caller when needed.
 
 **Bibliographic comments.** The IPW estimand and its semiparametric efficiency
 theory originate with J. M. Robins, A. Rotnitzky and L. P. Zhao, "Estimation of
