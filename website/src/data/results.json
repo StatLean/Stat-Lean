@@ -666,6 +666,676 @@
     }
   },
   {
+    "id": "delta_method",
+    "category": "parametric",
+    "kind": "theorem",
+    "leanName": "delta_method",
+    "fullName": "AsymptoticStatistics.delta_method",
+    "title": "Delta Method",
+    "citation": "van der Vaart (1998), Thm 3.1",
+    "file": "StatLean/AsymptoticStatistics/ForMathlib/DeltaMethod.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/ForMathlib/DeltaMethod.html#AsymptoticStatistics.delta_method",
+    "informal": "If <span data-link=\"h4\">$s_n(T_n-\\theta_0)$ converges weakly to $\\nu$</span>, <span data-link=\"h3\">$s_n\\to\\infty$</span>, and $\\phi$ is <span data-link=\"h1\">Fréchet differentiable at $\\theta_0$</span>, with the needed <span data-link=\"h2\">measurability of $T_n$ and $\\phi(T_n)$</span>, then $s_n(\\phi(T_n)-\\phi(\\theta_0))\\rightsquigarrow\\nu\\circ(\\phi')^{-1}$ and the scaled Taylor remainder tends to zero in probability.",
+    "summary": "Weak convergence transports through a differentiable map, with a vanishing first-order Taylor remainder.",
+    "leanSignature": "theorem delta_method\n    {E F : Type*}\n    [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]\n      [SecondCountableTopology E] [CompleteSpace E]\n    [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace F] [BorelSpace F]\n      [SecondCountableTopology F] [Nonempty F]\n    {P : ∀ k, Measure (Ω k)} [∀ k, IsProbabilityMeasure (P k)]\n    {T : ∀ k, Ω k → E} (hT_meas : ∀ k, Measurable (T k))\n    {φ : E → F} {φ' : E →L[ℝ] F} {θ₀ : E}\n    (hφ : HasFDerivAt φ φ' θ₀)\n    (hφT_meas : ∀ k, AEMeasurable (fun ω => φ (T k ω)) (P k))\n    {sqn : ℕ → ℝ} (h_sqn : Tendsto sqn atTop atTop)\n    {ν : Measure E} [IsProbabilityMeasure ν]\n    (h_wc : WeakConverges (fun k => (P k).map (fun ω => sqn k • (T k ω - θ₀))) ν) :\n    WeakConverges (fun k => (P k).map (fun ω => sqn k • (φ (T k ω) - φ θ₀))) (ν.map φ')\n      ∧ TendstoInProbZero P\n          (fun k ω => sqn k • (φ (T k ω) - φ θ₀ - φ' (T k ω - θ₀)))",
+    "formalizationNotes": "Consistency and stochastic boundedness are derived internally from weak convergence; they are not hypotheses. The conclusion includes both weak convergence and the theorem's moreover remainder clause.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hφ",
+        "label": "Fréchet derivative",
+        "note": "φ has derivative φ' at θ₀."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hφT_meas",
+        "label": "measurability",
+        "note": "T is measurable and φ∘T is AE-measurable."
+      },
+      {
+        "id": "h3",
+        "leanToken": "h_sqn",
+        "label": "diverging scale",
+        "note": "The real scale tends to +∞."
+      },
+      {
+        "id": "h4",
+        "leanToken": "h_wc",
+        "label": "source weak limit",
+        "note": "The scaled centered statistic converges weakly to ν."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 3.1",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorem 3.1",
+      "keys": [
+        "vdv1998"
+      ]
+    }
+  },
+  {
+    "id": "method_of_moments_normality",
+    "category": "parametric",
+    "kind": "theorem",
+    "leanName": "method_of_moments_normality",
+    "fullName": "AsymptoticStatistics.MomentEstimator.method_of_moments_normality",
+    "title": "Method-of-Moments Normality",
+    "citation": "van der Vaart (1998), Thm 4.1",
+    "file": "StatLean/AsymptoticStatistics/MomentEstimator/MethodOfMoments.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/MomentEstimator/MethodOfMoments.html#AsymptoticStatistics.MomentEstimator.method_of_moments_normality",
+    "informal": "For <span data-link=\"h4\">iid observations with law $P$</span>, a <span data-link=\"h1\">measurable square-integrable moment function $f$</span>, and a moment map $e$ with <span data-link=\"h2\">invertible strict derivative at $\\theta_0$</span> satisfying <span data-link=\"h3\">$e(\\theta_0)=Pf$</span>, there exists a measurable moment estimator solving $e(\\hat\\theta_n)=P_nf$ with probability tending to one, with the usual inverse-derivative linear representation and Gaussian limit.",
+    "summary": "A measurable solution of the moment equation exists asymptotically and is asymptotically linear and Gaussian.",
+    "leanSignature": "theorem method_of_moments_normality {d : ℕ}\n    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]\n    {f : Ω → EuclideanSpace ℝ (Fin d)} (hf_meas : Measurable f) (hf_L2 : MemLp f 2 P)\n    {e : EuclideanSpace ℝ (Fin d) → EuclideanSpace ℝ (Fin d)}\n    {e' : EuclideanSpace ℝ (Fin d) ≃L[ℝ] EuclideanSpace ℝ (Fin d)}\n    {θ₀ : EuclideanSpace ℝ (Fin d)}\n    (he : HasStrictFDerivAt e (e' : _ →L[ℝ] _) θ₀)\n    (hμ : e θ₀ = ∫ x, f x ∂P)\n    {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]\n    {X : ℕ → Ξ → Ω} (hX_meas : ∀ i, Measurable (X i))\n    (hX_indep : iIndepFun X μ)\n    (hX_id : ∀ i, IdentDistrib (X i) (X 0) μ μ)\n    (hX_law : μ.map (X 0) = P) :\n    ∃ θhat : ℕ → Ξ → EuclideanSpace ℝ (Fin d),\n      (∀ n, Measurable (θhat n)) ∧\n      Tendsto (fun n => μ.real {ξ | e (θhat n ξ) = empiricalMoment f n X ξ}) atTop (𝓝 1) ∧\n      TendstoInProbZero (fun _ : ℕ => μ)\n        (fun n ξ => Real.sqrt n • (θhat n ξ - θ₀)\n          - (↑e'.symm : EuclideanSpace ℝ (Fin d) →L[ℝ] EuclideanSpace ℝ (Fin d))\n              (Real.sqrt n • (empiricalMoment f n X ξ - ∫ x, f x ∂P))) ∧\n      WeakConverges (fun n => μ.map (fun ξ => Real.sqrt n • (θhat n ξ - θ₀)))\n        (multivariateGaussian 0 (momentLimitCov P f e'))",
+    "formalizationNotes": "Estimator existence and measurability are conclusions. Consistency and tightness are derived from the empirical-moment CLT.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hf_L2",
+        "label": "L² moments",
+        "note": "f is measurable and in L²(P)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "he",
+        "label": "invertible derivative",
+        "note": "e has a strict Fréchet derivative given by a continuous linear equivalence."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hμ",
+        "label": "moment identity",
+        "note": "e θ₀ equals Pf."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hX_law",
+        "label": "iid P-sample",
+        "note": "Together with independence and identical distribution, the sample law is P."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 4.1",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorem 4.1",
+      "keys": [
+        "vdv1998"
+      ]
+    }
+  },
+  {
+    "id": "mEstimator_consistent",
+    "category": "parametric",
+    "kind": "theorem",
+    "leanName": "mEstimator_consistent",
+    "fullName": "AsymptoticStatistics.Consistency.mEstimator_consistent",
+    "title": "M-Estimator Consistency",
+    "citation": "van der Vaart (1998), Thm 5.7",
+    "file": "StatLean/AsymptoticStatistics/Consistency/UniformConsistency.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Consistency/UniformConsistency.html#AsymptoticStatistics.Consistency.mEstimator_consistent",
+    "informal": "If <span data-link=\"h1\">$M_n$ converges uniformly to $M$ through a measurable envelope</span>, $M$ has a <span data-link=\"h2\">well-separated maximum at $\\theta_0$</span>, and $\\hat\\theta_n$ <span data-link=\"h3\">near-maximizes $M_n$ with vanishing slack</span>, then $\\hat\\theta_n\\to_P\\theta_0$.",
+    "summary": "Uniform criterion convergence plus a separated population maximum makes every near-maximizer consistent.",
+    "leanSignature": "theorem mEstimator_consistent\n    {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}\n    {Θ : Type*} [MetricSpace Θ]\n    {Mn : ℕ → Ω → Θ → ℝ} {M : Θ → ℝ} {θ₀ : Θ} {θhat : ℕ → Ω → Θ}\n    {U R : ℕ → Ω → ℝ}\n    (hU_dom : ∀ n ω θ, |Mn n ω θ - M θ| ≤ U n ω)\n    (hU_conv : TendstoInMeasure P U atTop (fun _ => (0 : ℝ)))\n    (hsep : ∀ ε > (0 : ℝ), ∃ η > (0 : ℝ), ∀ θ, ε ≤ dist θ θ₀ → M θ ≤ M θ₀ - η)\n    (hnear : ∀ n ω, Mn n ω θ₀ - R n ω ≤ Mn n ω (θhat n ω))\n    (hR_conv : TendstoInMeasure P R atTop (fun _ => (0 : ℝ))) :\n    ∀ ε > (0 : ℝ), Tendsto (fun n => P {ω | ε ≤ dist (θhat n ω) θ₀}) atTop (𝓝 0)",
+    "formalizationNotes": "The envelope encodes the uniform error without requiring measurability of a supremum. Neither estimator measurability nor a probability-measure instance is required.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hU_conv",
+        "label": "uniform convergence envelope",
+        "note": "U dominates the criterion error and tends to zero in measure."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hsep",
+        "label": "separated maximum",
+        "note": "M falls by a positive margin outside every θ₀-ball."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hR_conv",
+        "label": "near maximization",
+        "note": "The maximizing slack R tends to zero in measure."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 5.7",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorem 5.7",
+      "keys": [
+        "vdv1998"
+      ]
+    }
+  },
+  {
+    "id": "zEstimator_consistent",
+    "category": "parametric",
+    "kind": "theorem",
+    "leanName": "zEstimator_consistent",
+    "fullName": "AsymptoticStatistics.Consistency.zEstimator_consistent",
+    "title": "Z-Estimator Consistency",
+    "citation": "van der Vaart (1998), Thm 5.9",
+    "file": "StatLean/AsymptoticStatistics/Consistency/UniformConsistency.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Consistency/UniformConsistency.html#AsymptoticStatistics.Consistency.zEstimator_consistent",
+    "informal": "If <span data-link=\"h1\">$\\Psi_n$ converges uniformly to $\\Psi$ through a vanishing envelope</span>, <span data-link=\"h2\">$\\Psi(\\theta_0)=0$ and is separated from zero away from $\\theta_0$</span>, and <span data-link=\"h3\">$\\|\\Psi_n(\\hat\\theta_n)\\|\\to_P0$</span>, then $\\hat\\theta_n\\to_P\\theta_0$.",
+    "summary": "Uniform estimating-equation convergence and zero separation imply consistency of near-roots.",
+    "leanSignature": "theorem zEstimator_consistent\n    {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}\n    {Θ : Type*} [MetricSpace Θ]\n    {F : Type*} [NormedAddCommGroup F]\n    {Ψn : ℕ → Ω → Θ → F} {Ψ : Θ → F} {θ₀ : Θ} {θhat : ℕ → Ω → Θ}\n    {U : ℕ → Ω → ℝ}\n    (hU_dom : ∀ n ω θ, ‖Ψn n ω θ - Ψ θ‖ ≤ U n ω)\n    (hU_conv : TendstoInMeasure P U atTop (fun _ => (0 : ℝ)))\n    (hΨ0 : Ψ θ₀ = 0)\n    (hsep : ∀ ε > (0 : ℝ), ∃ η > (0 : ℝ), ∀ θ, ε ≤ dist θ θ₀ → η ≤ ‖Ψ θ‖)\n    (hnear : TendstoInMeasure P (fun n ω => ‖Ψn n ω (θhat n ω)‖) atTop (fun _ => (0 : ℝ))) :\n    ∀ ε > (0 : ℝ), Tendsto (fun n => P {ω | ε ≤ dist (θhat n ω) θ₀}) atTop (𝓝 0)",
+    "formalizationNotes": "Reduced internally to M-estimator consistency with criterion −‖Ψ‖; no estimator measurability is assumed.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hU_conv",
+        "label": "uniform envelope",
+        "note": "U dominates Ψn−Ψ and vanishes in measure."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hsep",
+        "label": "identified zero",
+        "note": "Ψ is zero at θ₀ and bounded away from zero off each neighborhood."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hnear",
+        "label": "near-root",
+        "note": "The estimating equation at θhat tends to zero in measure."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 5.9",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorem 5.9",
+      "keys": [
+        "vdv1998"
+      ]
+    }
+  },
+  {
+    "id": "oneDim_monotone_zEstimator_consistent",
+    "category": "parametric",
+    "kind": "theorem",
+    "leanName": "oneDim_monotone_zEstimator_consistent",
+    "fullName": "AsymptoticStatistics.Consistency.oneDim_monotone_zEstimator_consistent",
+    "title": "Monotone One-Dimensional Z-Estimator Consistency",
+    "citation": "van der Vaart (1998), Lem 5.10",
+    "file": "StatLean/AsymptoticStatistics/Consistency/OneDimMonotoneConsistency.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Consistency/OneDimMonotoneConsistency.html#AsymptoticStatistics.Consistency.oneDim_monotone_zEstimator_consistent",
+    "informal": "On an <span data-link=\"h1\">order-connected subset of $\\mathbb R$</span>, if each $\\Psi_n$ is <span data-link=\"h2\">nondecreasing</span>, converges <span data-link=\"h3\">pointwise in probability to a strictly sign-changing limit</span>, and <span data-link=\"h4\">$\\Psi_n(\\hat\\theta_n)\\to_P0$</span>, then $\\hat\\theta_n$ is consistent.",
+    "summary": "Pointwise convergence and monotonicity turn a strict sign change into consistency of approximate roots.",
+    "leanSignature": "theorem oneDim_monotone_zEstimator_consistent\n    {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}\n    {Θ : Set ℝ} (hΘ : Θ.OrdConnected)\n    {Ψn : ℕ → Ω → ℝ → ℝ} {Ψ : ℝ → ℝ} {θ₀ : ℝ} {θhat : ℕ → Ω → ℝ}\n    (hθ₀ : θ₀ ∈ Θ)\n    (hθhat : ∀ n ω, θhat n ω ∈ Θ)\n    (hmono : ∀ n ω, MonotoneOn (Ψn n ω) Θ)\n    (hptwise : ∀ θ ∈ Θ, TendstoInMeasure P (fun n ω => Ψn n ω θ) atTop (fun _ => Ψ θ))\n    (hnear : TendstoInMeasure P (fun n ω => Ψn n ω (θhat n ω)) atTop (fun _ => (0 : ℝ)))\n    (hsign_lt : ∀ θ ∈ Θ, θ < θ₀ → Ψ θ < 0)\n    (hsign_gt : ∀ θ ∈ Θ, θ₀ < θ → 0 < Ψ θ) :\n    ∀ ε > (0 : ℝ), Tendsto (fun n => P {ω | ε ≤ |θhat n ω - θ₀|}) atTop (𝓝 0)",
+    "formalizationNotes": "Works for a general measure and needs no estimator measurability. Order-connectedness handles boundary cases without an interior-point assumption.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hΘ",
+        "label": "order-connected domain",
+        "note": "Θ is order-connected."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hmono",
+        "label": "monotonicity",
+        "note": "Each random estimating function is monotone on Θ."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hptwise",
+        "label": "pointwise convergence and signs",
+        "note": "The functions converge pointwise and the limit changes sign strictly at θ₀."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hnear",
+        "label": "near-root",
+        "note": "The estimating value at θhat tends to zero in measure."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Lem 5.10",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Lemma 5.10",
+      "keys": [
+        "vdv1998"
+      ]
+    }
+  },
+  {
+    "id": "oneDim_continuous_zEstimator_consistent",
+    "category": "parametric",
+    "kind": "theorem",
+    "leanName": "oneDim_continuous_zEstimator_consistent",
+    "fullName": "AsymptoticStatistics.Consistency.oneDim_continuous_zEstimator_consistent",
+    "title": "Continuous One-Dimensional Z-Estimator Consistency",
+    "citation": "van der Vaart (1998), Lem 5.10",
+    "file": "StatLean/AsymptoticStatistics/Consistency/OneDimContinuousConsistency.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/Consistency/OneDimContinuousConsistency.html#AsymptoticStatistics.Consistency.oneDim_continuous_zEstimator_consistent",
+    "informal": "If $\\theta_0$ is <span data-link=\"h1\">interior to $\\Theta$</span>, each $\\Psi_n$ is <span data-link=\"h2\">continuous on $\\Theta$ with a unique zero $\\hat\\theta_n$</span>, and $\\Psi_n$ converges <span data-link=\"h3\">pointwise in probability to a limit that changes sign strictly at $\\theta_0$</span>, then $\\hat\\theta_n$ is consistent.",
+    "summary": "Continuity, uniqueness, pointwise convergence, and a strict sign change imply consistency of the one-dimensional root.",
+    "leanSignature": "theorem oneDim_continuous_zEstimator_consistent\n    {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}\n    {Θ : Set ℝ}\n    {Ψn : ℕ → Ω → ℝ → ℝ} {Ψ : ℝ → ℝ} {θ₀ : ℝ} {θhat : ℕ → Ω → ℝ}\n    (hθ₀_int : Θ ∈ 𝓝 θ₀)\n    (hcont : ∀ n ω, ContinuousOn (Ψn n ω) Θ)\n    (hunique : ∀ n ω θ, θ ∈ Θ → Ψn n ω θ = 0 → θ = θhat n ω)\n    (hptwise : ∀ θ ∈ Θ, TendstoInMeasure P (fun n ω => Ψn n ω θ) atTop (fun _ => Ψ θ))\n    (hsign_lt : ∀ θ ∈ Θ, θ < θ₀ → Ψ θ < 0)\n    (hsign_gt : ∀ θ ∈ Θ, θ₀ < θ → 0 < Ψ θ) :\n    ∀ ε > (0 : ℝ), Tendsto (fun n => P {ω | ε ≤ |θhat n ω - θ₀|}) atTop (𝓝 0)",
+    "formalizationNotes": "Interiority is explicit and necessary for this continuous route. The theorem does not separately assume that θhat lies in Θ or is measurable.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hθ₀_int",
+        "label": "interior truth",
+        "note": "Θ is a neighborhood of θ₀."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hunique",
+        "label": "continuous unique zero",
+        "note": "Each Ψn is continuous and every zero in Θ equals θhat."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hptwise",
+        "label": "pointwise convergence and signs",
+        "note": "Pointwise convergence holds and Ψ changes sign strictly at θ₀."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Lem 5.10",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Lemma 5.10",
+      "keys": [
+        "vdv1998"
+      ]
+    }
+  },
+  {
+    "id": "zEstimator_asymptotic_normality",
+    "category": "parametric",
+    "kind": "theorem",
+    "leanName": "zEstimator_asymptotic_normality",
+    "fullName": "AsymptoticStatistics.EmpiricalProcess.zEstimator_asymptotic_normality",
+    "title": "Z-Estimator Asymptotic Normality",
+    "citation": "van der Vaart (1998), Thm 5.21",
+    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/ZEstimatorNormality.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/ZEstimatorNormality.html#AsymptoticStatistics.EmpiricalProcess.zEstimator_asymptotic_normality",
+    "informal": "For an <span data-link=\"h1\">$L^2(P)$-Lipschitz estimating class with measurable coordinates</span>, a <span data-link=\"h2\">nonsingular Fréchet derivative $V$ of $P\\psi_\\theta$ at its zero $\\theta_0$</span>, an <span data-link=\"h3\">iid $P$-sample and measurable consistent estimator</span>, and an <span data-link=\"h4\">$o_P(n^{-1/2})$ estimating equation</span>, $\\sqrt n(\\hat\\theta_n-\\theta_0)$ converges to the sandwich-covariance Gaussian law.",
+    "summary": "A consistent approximate Z-root is asymptotically Gaussian under local Lipschitz, differentiability, and L² conditions.",
+    "leanSignature": "theorem zEstimator_asymptotic_normality\n    {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]\n    (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))\n    (θ₀ : EuclideanSpace ℝ (Fin k)) (V : Matrix (Fin k) (Fin k) ℝ)\n    (hV : IsUnit V.det) (δcls : ℝ) (hδcls : 0 < δcls)\n    (m : Ω → ℝ) (hm : MemLp m 2 P) (hm_meas : Measurable m)\n    (hLip : ∀ θ₁ : EuclideanSpace ℝ (Fin k), ‖θ₁ - θ₀‖ < δcls →\n      ∀ θ₂ : EuclideanSpace ℝ (Fin k), ‖θ₂ - θ₀‖ < δcls →\n      ∀ (j : Fin k) (x : Ω), |ψ θ₁ j x - ψ θ₂ j x| ≤ m x * ‖θ₁ - θ₂‖)\n    (hψ_meas : ∀ (θ : EuclideanSpace ℝ (Fin k)) (j : Fin k), Measurable (ψ θ j))\n    (hPθ₀_zero : ∀ h, ∫ x, ψ θ₀ h x ∂P = 0)\n    (hfrechet : ∀ ε > 0, ∃ δ > 0, ∀ θ : EuclideanSpace ℝ (Fin k),\n        0 < ‖θ - θ₀‖ → ‖θ - θ₀‖ < δ →\n        (⨆ h, ENNReal.ofReal\n            |∫ x, ψ θ h x ∂P - ∫ x, ψ θ₀ h x ∂P - Vlin V (θ - θ₀) h|)\n          ≤ ENNReal.ofReal (ε * ‖θ - θ₀‖))\n    (hψ_L2 : MemLp (psiVec ψ θ₀) 2 P)\n    (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin k))\n    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]\n    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))\n    (hX_indep : ProbabilityTheory.iIndepFun X μ)\n    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)\n    (hX_law : μ.map (X 0) = P)\n    (hθhat_meas' : ∀ n, Measurable\n      (fun ξ : Ξ => θ_hat n (fun i : Fin n => X i.val ξ)))\n    (h_consist : ∀ ε : ℝ, 0 < ε → Tendsto (fun n =>\n      μ {ξ | ε < ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖}) atTop (𝓝 0))\n    (h_est_eq : TendstoZeroInOuterProbSup μ (fun n ξ h =>\n      Real.sqrt n * empiricalAvg (ψ (θ_hat n (fun i : Fin n => X i.val ξ)) h)\n        n (fun i : Fin n => X i.val ξ))) :\n    WeakConverges\n      (fun n => μ.map (fun ξ =>\n        Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)))\n      (multivariateGaussian 0 (V⁻¹ * psiCov P ψ θ₀ * (V⁻¹)ᵀ))",
+    "formalizationNotes": "The parametric Donsker and tightness inputs are derived internally. Estimator measurability is explicitly present as `hθhat_meas'`.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hLip",
+        "label": "L² Lipschitz class",
+        "note": "An L² envelope controls local changes in ψ."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hfrechet",
+        "label": "nonsingular derivative",
+        "note": "Pψ is Fréchet differentiable with invertible V."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hθhat_meas'",
+        "label": "measurable consistent estimator",
+        "note": "The sampled estimator is measurable and consistent."
+      },
+      {
+        "id": "h4",
+        "leanToken": "h_est_eq",
+        "label": "estimating equation",
+        "note": "The root residual is o_P(n⁻¹/²) in outer-sup form."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 5.21",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorem 5.21",
+      "keys": [
+        "vdv1998"
+      ]
+    }
+  },
+  {
+    "id": "m_estimator_normality",
+    "category": "parametric",
+    "kind": "theorem",
+    "leanName": "m_estimator_normality",
+    "fullName": "AsymptoticStatistics.MEstimator.m_estimator_normality",
+    "title": "M-Estimator Asymptotic Normality",
+    "citation": "van der Vaart (1998), Thm 5.23",
+    "file": "StatLean/AsymptoticStatistics/MEstimator/AsymptoticNormality.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/MEstimator/AsymptoticNormality.html#AsymptoticStatistics.MEstimator.m_estimator_normality",
+    "informal": "For a <span data-link=\"h1\">locally $L^2$-Lipschitz criterion with derivative $\\dot m$</span>, a <span data-link=\"h2\">strictly negative quadratic population expansion with matrix $V$</span>, and a <span data-link=\"h3\">measurable, consistent, sufficiently accurate near-maximizer</span> over a <span data-link=\"h4\">bounded-above empirical criterion</span>, the estimator has the $-V^{-1}\\mathbb G_n\\dot m$ linear representation and sandwich Gaussian limit.",
+    "summary": "A consistent near-maximizing M-estimator is asymptotically linear and Gaussian under a negative quadratic expansion.",
+    "leanSignature": "theorem m_estimator_normality\n    {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]\n    (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (mdot : Fin d → (Ω → ℝ))\n    (θ₀ : EuclideanSpace ℝ (Fin d)) (V : Matrix (Fin d) (Fin d) ℝ)\n    (hVsymm : V.IsHermitian)\n    {c : ℝ} (hc : 0 < c)\n    (hVneg : ∀ x : EuclideanSpace ℝ (Fin d),\n      ⟪x, Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) V x⟫ ≤ - c * ‖x‖ ^ 2)\n    (hm_meas : ∀ θ, Measurable (m θ)) (hmdot_meas : ∀ i, Measurable (mdot i))\n    (hderiv : ∀ᵐ ω ∂P, HasFDerivAt (fun θ => m θ ω)\n      (innerSL ℝ (psiVec (fun _ => mdot) θ₀ ω)) θ₀)\n    (menv : Ω → ℝ) (hmenv : MemLp menv 2 P) (hmenv_meas : Measurable menv)\n    (ρ : ℝ) (hρ : 0 < ρ)\n    (hLip : ∀ θ₁ ∈ Metric.closedBall θ₀ ρ, ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ ω,\n              |m θ₁ ω - m θ₂ ω| ≤ menv ω * ‖θ₁ - θ₂‖)\n    (hTaylor : Asymptotics.IsLittleO (𝓝 θ₀)\n      (fun θ => (∫ x, (m θ x - m θ₀ x) ∂P)\n        - (1 / 2) * ⟪θ - θ₀, Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) V (θ - θ₀)⟫)\n      (fun θ => ‖θ - θ₀‖ ^ 2))\n    (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d))\n    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]\n    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))\n    (hX_indep : ProbabilityTheory.iIndepFun X μ)\n    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)\n    (hX_law : μ.map (X 0) = P)\n    (hθhat_meas : ∀ n, Measurable\n      (fun ξ : Ξ => θ_hat n (fun i : Fin n => X i.val ξ)))\n    (hNearMax : TendstoInProbZero (fun _ : ℕ => μ) (fun n ξ =>\n      (n : ℝ) * max 0 ((⨆ θ : EuclideanSpace ℝ (Fin d),\n          empiricalAvg (m θ) n (fun i : Fin n => X i.val ξ))\n        - empiricalAvg (m (θ_hat n (fun i : Fin n => X i.val ξ))) n\n            (fun i : Fin n => X i.val ξ))))\n    (hConsistent : TendstoInProbZero (fun _ : ℕ => μ)\n      (fun n ξ => θ_hat n (fun i : Fin n => X i.val ξ) - θ₀))\n    -- Regularity companion ensuring the empirical `sup` is meaningful; genuine external\n    -- input, `vdv_book_reference.md` §A.3.\n    (hBdd : ∀ (n : ℕ) (ξ : Ξ), BddAbove (Set.range (fun θ : EuclideanSpace ℝ (Fin d) =>\n      empiricalAvg (m θ) n (fun i : Fin n => X i.val ξ)))) :\n    (TendstoInProbZero (fun _ : ℕ => μ) (fun n ξ =>\n        Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)\n          + Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) V⁻¹\n              (empiricalProcessVec P (fun _ => mdot) θ₀ n\n                (fun i : Fin n => X i.val ξ))))\n    ∧ WeakConverges\n        (fun n => μ.map (fun ξ =>\n          Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)))\n        (multivariateGaussian 0 (V⁻¹ * psiCov P (fun _ => mdot) θ₀ * (V⁻¹)ᵀ))",
+    "formalizationNotes": "The first-order mean-zero condition, derivative L² membership, and nonsingularity of V are derived internally. `hBdd` is the explicit regularity companion for the empirical supremum.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hLip",
+        "label": "local L² Lipschitz",
+        "note": "The criterion has an L² envelope and pointwise derivative."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hVneg",
+        "label": "negative quadratic curvature",
+        "note": "V is Hermitian and uniformly negative definite."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hNearMax",
+        "label": "measurable consistent near-maximizer",
+        "note": "The estimator is measurable, consistent, and near-maximizes at o_P(n⁻¹)."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hBdd",
+        "label": "bounded empirical supremum",
+        "note": "Each empirical criterion range is bounded above."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 5.23",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorem 5.23",
+      "keys": [
+        "vdv1998"
+      ]
+    }
+  },
+  {
+    "id": "zEstimator_nuisance_linear_representation",
+    "category": "parametric",
+    "kind": "theorem",
+    "leanName": "zEstimator_nuisance_linear_representation",
+    "fullName": "AsymptoticStatistics.EmpiricalProcess.zEstimator_nuisance_linear_representation",
+    "title": "Z-Estimator Representation with Estimated Nuisance",
+    "citation": "van der Vaart (1998), Thm 5.31",
+    "file": "StatLean/AsymptoticStatistics/EmpiricalProcess/ZEstimatorNuisance.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/EmpiricalProcess/ZEstimatorNuisance.html#AsymptoticStatistics.EmpiricalProcess.zEstimator_nuisance_linear_representation",
+    "informal": "For a <span data-link=\"h1\">Donsker pair class with $L^2$ continuity</span>, a <span data-link=\"h2\">uniformly differentiable population estimating equation with invertible $V_{\\eta_0}$</span>, <span data-link=\"h3\">consistent target and nuisance estimators</span>, and an <span data-link=\"h4\">$o_P(n^{-1/2})$ estimating equation</span>, the weighted target error equals the inverse-$V$ empirical-process term plus the nuisance drift, up to $o_P(1)$.",
+    "summary": "A Z-estimator with an estimated nuisance has the weighted linear representation including the nuisance drift term.",
+    "leanSignature": "theorem zEstimator_nuisance_linear_representation\n    {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]\n    {H : Type*} [MetricSpace H]\n    (ψ : EuclideanSpace ℝ (Fin k) → H → Fin k → (Ω → ℝ))\n    (θ₀ : EuclideanSpace ℝ (Fin k)) (η₀ : H)\n    (V : H → Matrix (Fin k) (Fin k) ℝ)\n    (hV : IsUnit (V η₀).det) (hV_cont : ContinuousAt V η₀)\n    (δcls : ℝ) (hδcls : 0 < δcls)\n    (hDonsker : IsPDonsker (pairClass ψ (Metric.ball θ₀ δcls ×ˢ Metric.ball η₀ δcls)) P)\n    (hL2_cont : ∀ ε : ℝ, 0 < ε → ∃ δ : ℝ, 0 < δ ∧ ∀ (θ : EuclideanSpace ℝ (Fin k)) (η : H),\n        ‖θ - θ₀‖ < δ → dist η η₀ < δ →\n        ∑ j, ∫ x, (ψ θ η j x - ψ θ₀ η₀ j x)^2 ∂P < ε)\n    (hPθ₀_zero : ∀ h, ∫ x, ψ θ₀ η₀ h x ∂P = 0)\n    (hfrechet_unif : ∀ ε : ℝ, 0 < ε → ∃ δ : ℝ, 0 < δ ∧ ∀ (η : H), dist η η₀ < δ →\n        ∀ θ : EuclideanSpace ℝ (Fin k), 0 < ‖θ - θ₀‖ → ‖θ - θ₀‖ < δ →\n        (⨆ h, ENNReal.ofReal\n            |∫ x, ψ θ η h x ∂P - ∫ x, ψ θ₀ η h x ∂P - Vlin (V η) (θ - θ₀) h|)\n          ≤ ENNReal.ofReal (ε * ‖θ - θ₀‖))\n    (hψ_meas : ∀ (θ : EuclideanSpace ℝ (Fin k)) (η : H) (j : Fin k), Measurable (ψ θ η j))\n    (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin k))\n    (eta_hat : ∀ n, (Fin n → Ω) → H)\n    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]\n    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))\n    (hX_indep : ProbabilityTheory.iIndepFun X μ)\n    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)\n    (hX_law : μ.map (X 0) = P)\n    (h_consist_θ : ∀ ε : ℝ, 0 < ε → Tendsto (fun n =>\n      μ {ξ | ε < ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖}) atTop (𝓝 0))\n    (h_consist_η : ∀ ε : ℝ, 0 < ε → Tendsto (fun n =>\n      μ {ξ | ε < dist (eta_hat n (fun i : Fin n => X i.val ξ)) η₀}) atTop (𝓝 0))\n    (h_est_eq : TendstoZeroInOuterProbSup μ (fun n ξ h =>\n      Real.sqrt n * empiricalAvg (ψ (θ_hat n (fun i : Fin n => X i.val ξ))\n        (eta_hat n (fun i : Fin n => X i.val ξ)) h) n (fun i : Fin n => X i.val ξ))) :\n    TendstoInProbZero (fun _ : ℕ => μ) (fun n ξ =>\n      (1 + Real.sqrt n * ‖driftVec P ψ θ₀ (eta_hat n (fun i : Fin n => X i.val ξ))‖)⁻¹ •\n        (Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)\n          + Matrix.toEuclideanCLM (𝕜 := ℝ) (V η₀)⁻¹\n              (Real.sqrt n • driftVec P ψ θ₀ (eta_hat n (fun i : Fin n => X i.val ξ)))\n          + Matrix.toEuclideanCLM (𝕜 := ℝ) (V η₀)⁻¹\n              (empiricalProcessVec P (fun θ h => ψ θ η₀ h) θ₀ n\n                (fun i : Fin n => X i.val ξ))))",
+    "formalizationNotes": "The theorem concludes only a linear representation, not asymptotic normality. It assumes measurability of ψ and the sample coordinates, but has no `hθhat_meas` or `heta_hat_meas` hypothesis; its consistency/event interfaces use total measure expressions and the estimating equation uses outer probability.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hDonsker",
+        "label": "Donsker pair class",
+        "note": "The local θ–η class is P-Donsker and L²-continuous."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hfrechet_unif",
+        "label": "uniform derivative",
+        "note": "The population equation is uniformly Fréchet differentiable in η with invertible V at η₀."
+      },
+      {
+        "id": "h3",
+        "leanToken": "h_consist_η",
+        "label": "pair consistency",
+        "note": "Both θhat and eta_hat are consistent."
+      },
+      {
+        "id": "h4",
+        "leanToken": "h_est_eq",
+        "label": "estimating equation",
+        "note": "The estimated equation is o_P(n⁻¹/²) in outer-sup form."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 5.31",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorem 5.31",
+      "keys": [
+        "vdv1998"
+      ]
+    }
+  },
+  {
+    "id": "mle_consistentInProb_of_kl_identifiable",
+    "category": "parametric",
+    "kind": "theorem",
+    "leanName": "mle_consistentInProb_of_kl_identifiable",
+    "fullName": "AsymptoticStatistics.MaximumLikelihood.mle_consistentInProb_of_kl_identifiable",
+    "title": "MLE Consistency from KL Identifiability",
+    "citation": "van der Vaart (1998), Thm 5.7 consistency route",
+    "file": "StatLean/AsymptoticStatistics/MaximumLikelihood/Consistency.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/MaximumLikelihood/Consistency.html#AsymptoticStatistics.MaximumLikelihood.mle_consistentInProb_of_kl_identifiable",
+    "informal": "For a <span data-link=\"h1\">genuine identifiable density model</span> whose stabilized population log criterion is <span data-link=\"h2\">upper semicontinuous with a compact superlevel set</span>, if a <span data-link=\"h3\">measurable envelope gives uniform convergence</span> and $\\hat\\theta_n$ is an <span data-link=\"h4\">exact maximum-likelihood estimator</span>, then $\\hat\\theta_n\\to_P\\theta_0$.",
+    "summary": "KL identifiability, compact separation, uniform convergence, and exact likelihood maximization imply MLE consistency.",
+    "leanSignature": "theorem mle_consistentInProb_of_kl_identifiable\n    {d : ℕ} {X : Type*} [MeasurableSpace X]\n    (M : ParametricFamily X (EuclideanSpace ℝ (Fin d))) (μ : Measure X)\n    (θ₀ : EuclideanSpace ℝ (Fin d))\n    -- The model consists of probability densities.\n    (hPDF : IsPDFOf M μ)\n    -- Identifiable parametrization at the truth.\n    (hident : ∀ θ, parametricMeasure M μ θ = parametricMeasure M μ θ₀ → θ = θ₀)\n    -- Upper semicontinuity used to derive T4 separation.\n    (husc : UpperSemicontinuous (stabilizedPopulationCriterion M μ θ₀))\n    -- One fixed compact superlevel below the maximum.\n    (hcompact : ∃ c : ℝ,\n      c < stabilizedPopulationCriterion M μ θ₀ θ₀ ∧\n        IsCompact {θ | c ≤ stabilizedPopulationCriterion M μ θ₀ θ})\n    (θhat : ∀ n, (Fin n → X) → EuclideanSpace ℝ (Fin d))\n    {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)\n    (Xs : ℕ → Ω → X) (U : ℕ → Ω → ℝ)\n    -- Measurable-envelope form of T4 uniform convergence.\n    (hU_dom : ∀ n ω θ,\n      |empiricalAvg (stabilizedLogCriterion M θ₀ θ) n\n          (fun i : Fin n => Xs i.val ω) -\n        stabilizedPopulationCriterion M μ θ₀ θ| ≤ U n ω)\n    -- Convergence of the measurable T4 envelope.\n    (hU_conv : TendstoInMeasure P U atTop (fun _ => (0 : ℝ)))\n    -- Measurability of the sample coordinates.\n    (hXs_meas : ∀ i, Measurable (Xs i))\n    -- Identical-distribution component of the sample encoding.\n    (hXs_id : ∀ i, ProbabilityTheory.IdentDistrib (Xs i) (Xs 0) P P)\n    -- Identifies the common observation law with the true model law.\n    (hXs_law : P.map (Xs 0) =\n      μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x))\n    -- Exact product-likelihood maximization.\n    (hMLE : IsMaximumLikelihoodEstimator M θhat) :\n    TendstoInProbZero (fun _ : ℕ => P)\n      (fun n ω => θhat n (fun i : Fin n => Xs i.val ω) - θ₀)",
+    "formalizationNotes": "Product maximization internally supplies the near-maximization input for Theorem 5.7. This theorem has no estimator-measurability hypothesis and does not require sample independence beyond the stated identical-law encoding used by the comparison route.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hident",
+        "label": "identifiable density model",
+        "note": "The densities normalize and the parametrization is identifiable at θ₀."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hcompact",
+        "label": "compact separation",
+        "note": "The population criterion is upper semicontinuous with a compact superlevel below its maximum."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hU_conv",
+        "label": "uniform criterion convergence",
+        "note": "A measurable envelope dominates the empirical-population criterion error and vanishes."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hMLE",
+        "label": "exact MLE",
+        "note": "θhat maximizes the product likelihood."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 5.7 consistency route",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorem 5.7 (consistency route)",
+      "keys": [
+        "vdv1998"
+      ]
+    }
+  },
+  {
+    "id": "mle_asymptotic_normality",
+    "category": "parametric",
+    "kind": "theorem",
+    "leanName": "mle_asymptotic_normality",
+    "fullName": "AsymptoticStatistics.MaximumLikelihood.mle_asymptotic_normality",
+    "title": "Maximum-Likelihood Asymptotic Normality",
+    "citation": "van der Vaart (1998), Thm 5.39",
+    "file": "StatLean/AsymptoticStatistics/MaximumLikelihood/AsymptoticNormality.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/MaximumLikelihood/AsymptoticNormality.html#AsymptoticStatistics.MaximumLikelihood.mle_asymptotic_normality",
+    "informal": "For an <span data-link=\"h1\">identifiable DQM density model</span> with <span data-link=\"h2\">compactly separated population likelihood</span>, a <span data-link=\"h3\">local square-integrable log-Lipschitz envelope and positive-definite Fisher information</span>, and a <span data-link=\"h4\">measurable exact MLE from an iid sample</span>, the MLE has the inverse-Fisher linear representation and converges to $N(0,I_{\\theta_0}^{-1})$.",
+    "summary": "A regular exact MLE is asymptotically linear with inverse Fisher covariance and asymptotically Gaussian.",
+    "leanSignature": "theorem mle_asymptotic_normality\n    {d : ℕ} {Ω : Type*} [MeasurableSpace Ω]\n    (M : ParametricFamily Ω (EuclideanSpace ℝ (Fin d))) (μ : Measure Ω)\n    (θ₀ : EuclideanSpace ℝ (Fin d))\n    -- The model consists of probability densities.\n    (hPDF : IsPDFOf M μ)\n    -- Identifiable parametrization at the truth.\n    (hident : ∀ θ,\n      parametricMeasure M μ θ = parametricMeasure M μ θ₀ → θ = θ₀)\n    -- Upper semicontinuity used in the consistency argument.\n    (husc : UpperSemicontinuous (stabilizedPopulationCriterion M μ θ₀))\n    -- One compact superlevel below the maximum used to derive consistency.\n    (hcompact : ∃ c : ℝ,\n      c < stabilizedPopulationCriterion M μ θ₀ θ₀ ∧\n        IsCompact {θ | c ≤ stabilizedPopulationCriterion M μ θ₀ θ})\n    (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d))\n    {Ξ : Type} [MeasurableSpace Ξ] (ν : Measure Ξ) [IsProbabilityMeasure ν]\n    (X : ℕ → Ξ → Ω) (U : ℕ → Ξ → ℝ)\n    -- Measurable-envelope form of T4 uniform convergence.\n    (hU_dom : ∀ n ξ θ,\n      |empiricalAvg (stabilizedLogCriterion M θ₀ θ) n\n          (fun i : Fin n => X i.val ξ) -\n        stabilizedPopulationCriterion M μ θ₀ θ| ≤ U n ξ)\n    -- Convergence of the measurable T4 envelope.\n    (hU_conv : TendstoInMeasure ν U atTop (fun _ => (0 : ℝ)))\n    (ℓ : Ω → EuclideanSpace ℝ (Fin d))\n    -- Measurability of the vector-valued DQM score encoding.\n    (hℓ : Measurable ℓ)\n    -- Differentiability in quadratic mean at `θ₀`.\n    (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)\n    (menv : Ω → ℝ)\n    -- vdV's local envelope is square-integrable under `P₀`.\n    (hmenv : MemLp menv 2\n      (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)))\n    -- A measurable representative for the envelope.\n    (hmenv_meas : Measurable menv)\n    (ρ : ℝ)\n    -- The Lipschitz neighborhood is nontrivial.\n    (hρ : 0 < ρ)\n    -- vdV's pairwise local log-likelihood Lipschitz condition.\n    (hLip : ∀ θ₁ ∈ Metric.closedBall θ₀ ρ,\n      ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ x,\n        |M.logDensity θ₁ x - M.logDensity θ₂ x| ≤\n          menv x * ‖θ₁ - θ₂‖)\n    -- Nonsingular Fisher information, encoded equivalently as positive definiteness.\n    (hI : (fisherInformationMatrix M μ θ₀ ℓ).PosDef)\n    -- Measurable sample-map encoding of the iid experiment.\n    (hX_meas : ∀ i, Measurable (X i))\n    -- Independence component of the iid sample encoding.\n    (hX_indep : ProbabilityTheory.iIndepFun X ν)\n    -- Identical-distribution component of the iid sample encoding.\n    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) ν ν)\n    -- Identifies the common sample law with the true model law.\n    (hX_law : ν.map (X 0) =\n      μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x))\n    -- Estimator measurability needed for pushforward laws and rate events.\n    (hθhat_meas : ∀ n, Measurable\n      (fun ξ : Ξ => θ_hat n (fun i : Fin n => X i.val ξ)))\n    -- Exact product-likelihood maximum-likelihood property.\n    (hMLE : IsMaximumLikelihoodEstimator M θ_hat) :\n    TendstoInProbZero (fun _ : ℕ => ν) (fun n ξ =>\n        Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀) -\n          Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d)\n            (fisherInformationMatrix M μ θ₀ ℓ)⁻¹\n            (empiricalProcessVec\n              (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x))\n              (fun _ i x => ℓ x i) θ₀ n\n              (fun i : Fin n => X i.val ξ))) ∧\n      WeakConverges\n        (fun n => ν.map (fun ξ =>\n          Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)))\n        (multivariateGaussian 0\n          (fisherInformationMatrix M μ θ₀ ℓ)⁻¹)",
+    "formalizationNotes": "Consistency is derived internally through the KL/T4 consistency theorem; there is no consistency binder. Estimator measurability is explicit as `hθhat_meas`. Score, Fisher, and Taylor adapters are also derived rather than provider hypotheses.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hDQM",
+        "label": "identifiable DQM model",
+        "note": "The model is a genuine identifiable density family and DQM at θ₀."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hcompact",
+        "label": "compact separation",
+        "note": "The stabilized population criterion is upper semicontinuous with a compact superlevel."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hI",
+        "label": "local envelope and Fisher information",
+        "note": "The log-density has an L² Lipschitz envelope and Fisher information is positive definite."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hθhat_meas",
+        "label": "measurable exact iid MLE",
+        "note": "The sampled estimator is measurable and exactly maximizes likelihood; X is iid with the true law."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 5.39",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorem 5.39",
+      "keys": [
+        "vdv1998"
+      ]
+    }
+  },
+  {
+    "id": "classical_zEstimator_normality",
+    "category": "parametric",
+    "kind": "theorem",
+    "leanName": "classical_zEstimator_normality",
+    "fullName": "AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_normality",
+    "title": "Classical Z-Estimator Normality",
+    "citation": "van der Vaart (1998), Thm 5.41",
+    "file": "StatLean/AsymptoticStatistics/ClassicalZEstimator/AsymptoticNormality.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/ClassicalZEstimator/AsymptoticNormality.html#AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_normality",
+    "informal": "Under <span data-link=\"h1\">twice-continuous differentiability with an integrable second-derivative envelope</span>, <span data-link=\"h2\">zero mean, finite second moment, and nonsingular mean derivative $V$</span>, every <span data-link=\"h3\">measurable consistent estimator</span> whose <span data-link=\"h4\">exact-root event has inner probability tending to one</span> has the classical linear representation and sandwich Gaussian weak limit.",
+    "summary": "A measurable consistent classical Z-root is asymptotically linear and Gaussian under smoothness and domination.",
+    "leanSignature": "theorem classical_zEstimator_normality\n    {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]\n    (Θ : Set (EuclideanSpace ℝ (Fin k))) (hΘ_open : IsOpen Θ)\n    (ψ : EuclideanSpace ℝ (Fin k) → Fin k → Ω → ℝ)\n    (θ₀ : EuclideanSpace ℝ (Fin k)) (hθ₀ : θ₀ ∈ Θ)\n    (hψ_meas : ∀ θ j, Measurable (ψ θ j))\n    (hC2 : ∀ (j : Fin k) (x : Ω), ContDiffOn ℝ 2 (fun θ => ψ θ j x) Θ)\n    (hPθ₀_zero : ∀ j, ∫ x, ψ θ₀ j x ∂P = 0)\n    (hψ_L2 : MemLp (psiVec ψ θ₀) 2 P)\n    (hVint : ∀ j i, Integrable (fun x => psiDot ψ θ₀ x j i) P)\n    (hV : IsUnit (Vmat P ψ θ₀).det)\n    (ψddot : Ω → ℝ) (hψddot_meas : Measurable ψddot) (hψddot_int : Integrable ψddot P)\n    {ρ : ℝ} (hρ : 0 < ρ) (hball : Metric.closedBall θ₀ ρ ⊆ Θ)\n    (hdom : ∀ θ ∈ Metric.closedBall θ₀ ρ, ∀ (j : Fin k) (x : Ω),\n      ‖iteratedFDeriv ℝ 2 (fun θ' => ψ θ' j x) θ‖ ≤ ψddot x)\n    (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin k))\n    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]\n    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))\n    (hX_indep : ProbabilityTheory.iIndepFun X μ)\n    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)\n    (hX_law : μ.map (X 0) = P)\n    (hθhat_meas : ∀ n, Measurable (fun ξ : Ξ => θ_hat n (fun i : Fin n => X i.val ξ)))\n    (hroot : TendstoInnerProbOne μ (fun n => {ξ | ∀ j,\n      empiricalAvg (ψ (θ_hat n (fun i : Fin n => X i.val ξ)) j) n\n        (fun i : Fin n => X i.val ξ) = 0}))\n    (hcons : TendstoInProbZero (fun _ : ℕ => μ)\n      (fun n ξ => θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)) :\n    TendstoInProbZero (fun _ : ℕ => μ) (fun n ξ =>\n        Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)\n          + Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) (Vmat P ψ θ₀)⁻¹\n              (empiricalProcessVec P ψ θ₀ n (fun i : Fin n => X i.val ξ)))\n    ∧ WeakConverges\n        (fun n => μ.map (fun ξ => Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)))\n        (multivariateGaussian 0 ((Vmat P ψ θ₀)⁻¹ * psiCov P ψ θ₀ * ((Vmat P ψ θ₀)⁻¹)ᵀ))",
+    "formalizationNotes": "This ordinary weak-convergence theorem explicitly includes estimator measurability `hθhat_meas`. Root validity is allowed on events whose inner probability tends to one.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hdom",
+        "label": "smooth dominated class",
+        "note": "ψ is C² locally and second derivatives are dominated by an integrable envelope."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hV",
+        "label": "nonsingular mean derivative",
+        "note": "Pψθ₀=0, ψθ₀∈L², the derivative is integrable, and V is nonsingular."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hθhat_meas",
+        "label": "measurable consistent estimator",
+        "note": "The sampled estimator is measurable and consistent."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hroot",
+        "label": "asymptotic exact root",
+        "note": "The exact-root event has inner probability tending to one."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 5.41",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorem 5.41",
+      "keys": [
+        "vdv1998"
+      ]
+    }
+  },
+  {
+    "id": "classical_zEstimator_root_exists_consistent",
+    "category": "parametric",
+    "kind": "theorem",
+    "leanName": "classical_zEstimator_root_exists_consistent",
+    "fullName": "AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent",
+    "title": "Classical Z-Root Existence and Consistency",
+    "citation": "van der Vaart (1998), Thm 5.42 (i)–(ii)",
+    "file": "StatLean/AsymptoticStatistics/ClassicalZEstimator/RootExistence.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/ClassicalZEstimator/RootExistence.html#AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_root_exists_consistent",
+    "informal": "Under the <span data-link=\"h1\">classical C² smoothness and dominated-second-derivative conditions</span> with <span data-link=\"h2\">zero mean, finite variance, and nonsingular derivative</span>, the <span data-link=\"h3\">iid sample</span> has, with inner probability tending to one, at least one estimating-equation root in $\\Theta$; moreover there exists a root sequence consistent for $\\theta_0$.",
+    "summary": "Classical smooth estimating equations have a consistent root with inner probability tending to one.",
+    "leanSignature": "theorem classical_zEstimator_root_exists_consistent\n    {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]\n    (Θ : Set (EuclideanSpace ℝ (Fin k))) (hΘ_open : IsOpen Θ)\n    (ψ : EuclideanSpace ℝ (Fin k) → Fin k → Ω → ℝ)\n    (θ₀ : EuclideanSpace ℝ (Fin k)) (hθ₀ : θ₀ ∈ Θ)\n    (hψ_meas : ∀ θ j, Measurable (ψ θ j))\n    (hC2 : ∀ (j : Fin k) (x : Ω), ContDiffOn ℝ 2 (fun θ => ψ θ j x) Θ)\n    (hPθ₀_zero : ∀ j, ∫ x, ψ θ₀ j x ∂P = 0)\n    (hψ_L2 : MemLp (psiVec ψ θ₀) 2 P)\n    (hVint : ∀ j i, Integrable (fun x => psiDot ψ θ₀ x j i) P)\n    (hV : IsUnit (Vmat P ψ θ₀).det)\n    (ψddot : Ω → ℝ) (hψddot_meas : Measurable ψddot) (hψddot_int : Integrable ψddot P)\n    {ρ : ℝ} (hρ : 0 < ρ) (hball : Metric.closedBall θ₀ ρ ⊆ Θ)\n    (hdom : ∀ θ ∈ Metric.closedBall θ₀ ρ, ∀ (j : Fin k) (x : Ω),\n      ‖iteratedFDeriv ℝ 2 (fun θ' => ψ θ' j x) θ‖ ≤ ψddot x)\n    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]\n    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))\n    (hX_indep : ProbabilityTheory.iIndepFun X μ)\n    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)\n    (hX_law : μ.map (X 0) = P) :\n    TendstoInnerProbOne μ (fun n => {ξ | ∃ θ ∈ Θ, ∀ j,\n        empiricalAvg (ψ θ j) n (fun i : Fin n => X i.val ξ) = 0})\n    ∧ ∃ θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin k),\n        TendstoInnerProbOne μ (fun n => {ξ | ∀ j,\n            empiricalAvg (ψ (θ_hat n (fun i : Fin n => X i.val ξ)) j) n\n              (fun i : Fin n => X i.val ξ) = 0})\n        ∧ TendstoInProbZero (fun _ : ℕ => μ)\n            (fun n ξ => θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)",
+    "formalizationNotes": "Existence is an inner-probability statement. The selected root sequence is existential and has no measurability claim, matching the measurable-selection caveat.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hdom",
+        "label": "classical smooth domination",
+        "note": "ψ is C² on Θ with integrably dominated second derivatives."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hV",
+        "label": "identified nonsingular zero",
+        "note": "The mean equation is zero at θ₀ with L² score and nonsingular mean derivative."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hX_law",
+        "label": "iid sample",
+        "note": "The sample coordinates are measurable, independent, identically distributed with law P."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 5.42 (i)–(ii)",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorem 5.42 (i)–(ii)",
+      "keys": [
+        "vdv1998"
+      ]
+    }
+  },
+  {
+    "id": "classical_zEstimator_exists_normal_root",
+    "category": "parametric",
+    "kind": "theorem",
+    "leanName": "classical_zEstimator_exists_normal_root",
+    "fullName": "AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_exists_normal_root",
+    "title": "Existence of a Normal Classical Z-Root",
+    "citation": "van der Vaart (1998), Thm 5.42 + Thm 5.41",
+    "file": "StatLean/AsymptoticStatistics/ClassicalZEstimator/ExistenceAndNormality.lean",
+    "docGenUrl": "../docs/StatLean/AsymptoticStatistics/ClassicalZEstimator/ExistenceAndNormality.html#AsymptoticStatistics.ClassicalZEstimator.classical_zEstimator_exists_normal_root",
+    "informal": "Under <span data-link=\"h1\">the classical smoothness and domination hypotheses</span>, <span data-link=\"h2\">the nonsingular centered estimating equation</span>, and an <span data-link=\"h3\">iid sample</span>, roots exist with inner probability tending to one and one can select a consistent root sequence satisfying the linear representation and an <em>outer</em> Gaussian weak limit.",
+    "summary": "A consistent classical Z-root exists asymptotically and enjoys the linear representation and outer Gaussian limit without a measurable selection.",
+    "leanSignature": "theorem classical_zEstimator_exists_normal_root\n    {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]\n    (Θ : Set (EuclideanSpace ℝ (Fin k))) (hΘ_open : IsOpen Θ)\n    (ψ : EuclideanSpace ℝ (Fin k) → Fin k → Ω → ℝ)\n    (θ₀ : EuclideanSpace ℝ (Fin k)) (hθ₀ : θ₀ ∈ Θ)\n    (hψ_meas : ∀ θ j, Measurable (ψ θ j))\n    (hC2 : ∀ (j : Fin k) (x : Ω), ContDiffOn ℝ 2 (fun θ => ψ θ j x) Θ)\n    (hPθ₀_zero : ∀ j, ∫ x, ψ θ₀ j x ∂P = 0)\n    (hψ_L2 : MemLp (psiVec ψ θ₀) 2 P)\n    (hVint : ∀ j i, Integrable (fun x => psiDot ψ θ₀ x j i) P)\n    (hV : IsUnit (Vmat P ψ θ₀).det)\n    (ψddot : Ω → ℝ) (hψddot_meas : Measurable ψddot) (hψddot_int : Integrable ψddot P)\n    {ρ : ℝ} (hρ : 0 < ρ) (hball : Metric.closedBall θ₀ ρ ⊆ Θ)\n    (hdom : ∀ θ ∈ Metric.closedBall θ₀ ρ, ∀ (j : Fin k) (x : Ω),\n      ‖iteratedFDeriv ℝ 2 (fun θ' => ψ θ' j x) θ‖ ≤ ψddot x)\n    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]\n    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))\n    (hX_indep : ProbabilityTheory.iIndepFun X μ)\n    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)\n    (hX_law : μ.map (X 0) = P) :\n    TendstoInnerProbOne μ (fun n => {ξ | ∃ θ ∈ Θ, ∀ j,\n        empiricalAvg (ψ θ j) n (fun i : Fin n => X i.val ξ) = 0})\n    ∧ ∃ θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin k),\n        TendstoInnerProbOne μ (fun n => {ξ | ∀ j,\n            empiricalAvg (ψ (θ_hat n (fun i : Fin n => X i.val ξ)) j) n\n              (fun i : Fin n => X i.val ξ) = 0})\n        ∧ TendstoInProbZero (fun _ : ℕ => μ)\n            (fun n ξ => θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)\n        ∧ TendstoInProbZero (fun _ : ℕ => μ) (fun n ξ =>\n            Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀)\n              + Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k) (Vmat P ψ θ₀)⁻¹\n                  (empiricalProcessVec P ψ θ₀ n (fun i : Fin n => X i.val ξ)))\n        ∧ WeakConvergesOuter (fun _ : ℕ => μ)\n            (fun n ξ => Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀))\n            (multivariateGaussian 0\n              ((Vmat P ψ θ₀)⁻¹ * psiCov P ψ θ₀ * ((Vmat P ψ θ₀)⁻¹)ᵀ))",
+    "formalizationNotes": "No estimator-measurability hypothesis or conclusion is present. Accordingly, existence/root events use inner probability and asymptotic normality is `WeakConvergesOuter`, not ordinary mapped-measure weak convergence.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hdom",
+        "label": "classical smooth domination",
+        "note": "ψ is C² with an integrable second-derivative envelope."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hV",
+        "label": "nonsingular centered equation",
+        "note": "The equation is centered at θ₀, square-integrable, and has nonsingular derivative."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hX_law",
+        "label": "iid sample",
+        "note": "The sample is measurable iid with marginal P."
+      }
+    ],
+    "hasGraph": true,
+    "shortRef": "van der Vaart (1998), Thm 5.42 + Thm 5.41",
+    "reference": {
+      "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
+      "pointer": "Theorems 5.41–5.42",
+      "keys": [
+        "vdv1998"
+      ]
+    }
+  },
+  {
     "id": "TangentSpec",
     "category": "semiparametric",
     "kind": "definition",

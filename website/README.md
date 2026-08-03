@@ -73,9 +73,8 @@ Results are organized into ten categories (defined in `src/lib/categories.ts`):
 
 ## Deployment
 
-`.github/workflows/docs.yml` builds the doc-gen4 API docs (only when Lean
-sources change), runs `lake exe deps`, builds this site, and serves everything
-under one GitHub Pages artifact:
-`…/` (landing) · `…/docs/` (API) · `…/website/` (this site).
-
-Website-only pushes skip the 45-minute Lean build entirely.
+Website and doc-gen4 builds and deployments live in the external
+[`StatLean/statlean.github.io`](https://github.com/StatLean/statlean.github.io)
+repository's workflows, not in this repository's local `.github/` directory.
+Those workflows publish the landing page, API docs, and this site at `…/`,
+`…/docs/`, and `…/website/`, respectively.
