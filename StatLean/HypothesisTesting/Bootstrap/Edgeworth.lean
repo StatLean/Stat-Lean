@@ -15768,6 +15768,183 @@ theorem integral_surrogateRemGraded_le (μ : Measure (EuclideanSpace ℝ (Fin 2)
     nlinarith [h1, h2']
   exact mul_le_mul_of_nonneg_left hkey (by positivity)
 
+/-! ### (c), sharpened: the two functionals are four scalar absolute moments
+
+`surrGradedCube` and `surrGradedQuad` are bivariate; what a moment inequality for a normalised
+sum delivers is a *scalar* absolute moment of one coordinate at a time.  The two lemmas below
+close that gap with no loss of order: every monomial of the two functionals has total degree
+`≤ 9` (resp. `≤ 6`), and a monomial `X^i Y^j` with `i + j = d` is at most `max(X,Y)^d ≤ X^d + Y^d`.
+So item 1 of the residue is, in its final form, **four scalar moments of the two coordinate roots
+of `Zₙ`** — `E|w₀|⁶, E|w₀|⁹, E|w₁|⁶, E|w₁|⁹` — and `integral_surrogateRemGraded_le_of_moments`
+is `hRg` stated directly on them. -/
+
+private lemma pow_le_one_add_pow {M : ℝ} (hM : 0 ≤ M) {a b : ℕ} (hab : a ≤ b) :
+    M ^ a ≤ 1 + M ^ b := by
+  rcases le_or_gt M 1 with h | h
+  · have h1 : M ^ a ≤ 1 := pow_le_one₀ hM h
+    have h2 : (0 : ℝ) ≤ M ^ b := pow_nonneg hM b
+    linarith
+  · have h1 : M ^ a ≤ M ^ b := pow_le_pow_right₀ h.le hab
+    have h2 : (0 : ℝ) ≤ M ^ b := pow_nonneg hM b
+    linarith
+
+private lemma max_pow_le_add {X Y : ℝ} (hX : 0 ≤ X) (hY : 0 ≤ Y) (d : ℕ) :
+    (max X Y) ^ d ≤ X ^ d + Y ^ d := by
+  rcases le_total X Y with h | h
+  · rw [max_eq_right h]
+    have : (0 : ℝ) ≤ X ^ d := pow_nonneg hX d
+    linarith
+  · rw [max_eq_left h]
+    have : (0 : ℝ) ≤ Y ^ d := pow_nonneg hY d
+    linarith
+
+/-- The cubic functional is dominated by ninth absolute moments of the two coordinates. -/
+lemma surrGradedCube_le_moments (σ : ℝ) (w : EuclideanSpace ℝ (Fin 2)) :
+    surrGradedCube σ w ≤ 19 * (1 + |w 0 / σ| ^ 9 + |w 1 / σ ^ 2| ^ 9) := by
+  set X : ℝ := |w 0 / σ| with hX
+  set Y : ℝ := |w 1 / σ ^ 2| with hY
+  have hX0 : 0 ≤ X := abs_nonneg _
+  have hY0 : 0 ≤ Y := abs_nonneg _
+  set M : ℝ := max X Y with hM
+  have hM0 : 0 ≤ M := le_trans hX0 (le_max_left _ _)
+  have hXM : X ≤ M := le_max_left _ _
+  have hYM : Y ≤ M := le_max_right _ _
+  have h2 : X * Y ≤ M ^ 2 := by
+    calc X * Y ≤ M * M := mul_le_mul hXM hYM hY0 hM0
+      _ = M ^ 2 := by ring
+  have h3 : X ^ 3 ≤ M ^ 3 := pow_le_pow_left₀ hX0 hXM 3
+  have h3' : X * Y ^ 2 ≤ M ^ 3 := by
+    have hy2 : Y ^ 2 ≤ M ^ 2 := pow_le_pow_left₀ hY0 hYM 2
+    calc X * Y ^ 2 ≤ M * M ^ 2 := mul_le_mul hXM hy2 (by positivity) hM0
+      _ = M ^ 3 := by ring
+  have hM23 : M ^ 2 ≤ 1 + M ^ 3 := pow_le_one_add_pow hM0 (by norm_num)
+  have hbase : X * Y / 2 + (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8) ≤ 11 / 8 * (1 + M ^ 3) := by
+    nlinarith [h2, h3, h3', hM23]
+  have hbase0 : (0 : ℝ) ≤ X * Y / 2 + (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8) := by positivity
+  have hcube : (X * Y / 2 + (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8)) ^ 3
+      ≤ (11 / 8 * (1 + M ^ 3)) ^ 3 := pow_le_pow_left₀ hbase0 hbase 3
+  have hM36 : M ^ 3 ≤ 1 + M ^ 9 := pow_le_one_add_pow hM0 (by norm_num)
+  have hM69 : M ^ 6 ≤ 1 + M ^ 9 := pow_le_one_add_pow hM0 (by norm_num)
+  have hM9 : M ^ 9 ≤ X ^ 9 + Y ^ 9 := max_pow_le_add hX0 hY0 9
+  have hexp : (11 / 8 * (1 + M ^ 3)) ^ 3
+      = 1331 / 512 * (1 + 3 * M ^ 3 + 3 * M ^ 6 + M ^ 9) := by ring
+  have hinner : 1 + 3 * M ^ 3 + 3 * M ^ 6 + M ^ 9 ≤ 7 * (1 + X ^ 9 + Y ^ 9) := by
+    nlinarith [hM36, hM69, hM9, pow_nonneg hX0 9, pow_nonneg hY0 9]
+  have hfin : (11 / 8 * (1 + M ^ 3)) ^ 3 ≤ 19 * (1 + X ^ 9 + Y ^ 9) := by
+    rw [hexp]
+    nlinarith [hinner, pow_nonneg hX0 9, pow_nonneg hY0 9]
+  have hgoal : surrGradedCube σ w
+      = (X * Y / 2 + (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8)) ^ 3 := by
+    rw [surrGradedCube, hX, hY]; ring
+  rw [hgoal]
+  linarith [hcube, hfin]
+
+/-- The quadratic functional is dominated by sixth absolute moments of the two coordinates. -/
+lemma surrGradedQuad_le_moments (σ : ℝ) (w : EuclideanSpace ℝ (Fin 2)) :
+    surrGradedQuad σ w ≤ 2 * (1 + |w 0 / σ| ^ 6 + |w 1 / σ ^ 2| ^ 6) := by
+  set X : ℝ := |w 0 / σ| with hX
+  set Y : ℝ := |w 1 / σ ^ 2| with hY
+  have hX0 : 0 ≤ X := abs_nonneg _
+  have hY0 : 0 ≤ Y := abs_nonneg _
+  set M : ℝ := max X Y with hM
+  have hM0 : 0 ≤ M := le_trans hX0 (le_max_left _ _)
+  have hXM : X ≤ M := le_max_left _ _
+  have hYM : Y ≤ M := le_max_right _ _
+  have hA : X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8 ≤ 7 / 8 * M ^ 3 := by
+    have h3 : X ^ 3 ≤ M ^ 3 := pow_le_pow_left₀ hX0 hXM 3
+    have h3' : X * Y ^ 2 ≤ M ^ 3 := by
+      have hy2 : Y ^ 2 ≤ M ^ 2 := pow_le_pow_left₀ hY0 hYM 2
+      calc X * Y ^ 2 ≤ M * M ^ 2 := mul_le_mul hXM hy2 (by positivity) hM0
+        _ = M ^ 3 := by ring
+    linarith
+  have hA0 : (0 : ℝ) ≤ X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8 := by positivity
+  have hP : X * Y ≤ M ^ 2 := by
+    calc X * Y ≤ M * M := mul_le_mul hXM hYM hY0 hM0
+      _ = M ^ 2 := by ring
+  have hPA : X * Y * (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8) ≤ 7 / 8 * M ^ 5 := by
+    calc X * Y * (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8)
+        ≤ M ^ 2 * (7 / 8 * M ^ 3) :=
+          mul_le_mul hP hA hA0 (pow_nonneg hM0 2)
+      _ = 7 / 8 * M ^ 5 := by ring
+  have hAsq : (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8) ^ 2 ≤ 49 / 64 * M ^ 6 := by
+    calc (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8) ^ 2 ≤ (7 / 8 * M ^ 3) ^ 2 :=
+          pow_le_pow_left₀ hA0 hA 2
+      _ = 49 / 64 * M ^ 6 := by ring
+  have hM56 : M ^ 5 ≤ 1 + M ^ 6 := pow_le_one_add_pow hM0 (by norm_num)
+  have hM6 : M ^ 6 ≤ X ^ 6 + Y ^ 6 := max_pow_le_add hX0 hY0 6
+  have hgoal : surrGradedQuad σ w
+      = X * Y * (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8)
+        + (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8) ^ 2 := by
+    rw [surrGradedQuad, hX, hY]; ring
+  rw [hgoal]
+  nlinarith [hPA, hAsq, hM56, hM6, pow_nonneg hX0 6, pow_nonneg hY0 6]
+
+/-- **`hRg` AT `Zₙ`, IN FOUR SCALAR MOMENTS.** -/
+theorem integral_surrogateRemGraded_le_of_moments (μ : Measure (EuclideanSpace ℝ (Fin 2)))
+    [IsProbabilityMeasure μ] {σ r : ℝ} (hr : 0 ≤ r) (hr1 : r ≤ 1) (ξ : ℝ) {M₆ M₉ : ℝ}
+    (hi9a : Integrable (fun w : EuclideanSpace ℝ (Fin 2) => |w 0 / σ| ^ 9) μ)
+    (hi9b : Integrable (fun w : EuclideanSpace ℝ (Fin 2) => |w 1 / σ ^ 2| ^ 9) μ)
+    (hi6a : Integrable (fun w : EuclideanSpace ℝ (Fin 2) => |w 0 / σ| ^ 6) μ)
+    (hi6b : Integrable (fun w : EuclideanSpace ℝ (Fin 2) => |w 1 / σ ^ 2| ^ 6) μ)
+    (h9 : (∫ w, |w 0 / σ| ^ 9 ∂μ) + ∫ w, |w 1 / σ ^ 2| ^ 9 ∂μ ≤ M₉)
+    (h6 : (∫ w, |w 0 / σ| ^ 6 ∂μ) + ∫ w, |w 1 / σ ^ 2| ^ 6 ∂μ ≤ M₆) :
+    ∫ w, surrogateRemGraded (-(2 * Real.pi * ξ)) (w 0 / σ) (w 1 / σ ^ 2) r ∂μ
+      ≤ r ^ 3 * (4 * Real.pi ^ 3 * (19 * (1 + M₉)) / 3 * |ξ| ^ 3
+          + 2 * Real.pi ^ 2 * (2 * (1 + M₆)) * |ξ| ^ 2) := by
+  have hmc : Measurable (surrGradedCube σ) := by
+    unfold surrGradedCube; fun_prop
+  have hmq : Measurable (surrGradedQuad σ) := by
+    unfold surrGradedQuad; fun_prop
+  have maj9 : Integrable
+      (fun w : EuclideanSpace ℝ (Fin 2) => 19 * (1 + |w 0 / σ| ^ 9 + |w 1 / σ ^ 2| ^ 9)) μ :=
+    (((integrable_const (1 : ℝ)).add hi9a).add hi9b).const_mul 19
+  have maj6 : Integrable
+      (fun w : EuclideanSpace ℝ (Fin 2) => 2 * (1 + |w 0 / σ| ^ 6 + |w 1 / σ ^ 2| ^ 6)) μ :=
+    (((integrable_const (1 : ℝ)).add hi6a).add hi6b).const_mul 2
+  have hic : Integrable (surrGradedCube σ) μ := by
+    refine Integrable.mono' maj9 hmc.aestronglyMeasurable ?_
+    filter_upwards with w
+    rw [Real.norm_eq_abs, abs_of_nonneg (surrGradedCube_nonneg σ w)]
+    exact surrGradedCube_le_moments σ w
+  have hiq : Integrable (surrGradedQuad σ) μ := by
+    refine Integrable.mono' maj6 hmq.aestronglyMeasurable ?_
+    filter_upwards with w
+    rw [Real.norm_eq_abs, abs_of_nonneg (surrGradedQuad_nonneg σ w)]
+    exact surrGradedQuad_le_moments σ w
+  have hint9 : (∫ w, 19 * (1 + |w 0 / σ| ^ 9 + |w 1 / σ ^ 2| ^ 9) ∂μ)
+      = 19 * (1 + (∫ w, |w 0 / σ| ^ 9 ∂μ) + ∫ w, |w 1 / σ ^ 2| ^ 9 ∂μ) := by
+    have e1 : (∫ w : EuclideanSpace ℝ (Fin 2), ((1 : ℝ) + |w 0 / σ| ^ 9 + |w 1 / σ ^ 2| ^ 9) ∂μ)
+        = (∫ w : EuclideanSpace ℝ (Fin 2), ((1 : ℝ) + |w 0 / σ| ^ 9) ∂μ)
+          + ∫ w : EuclideanSpace ℝ (Fin 2), |w 1 / σ ^ 2| ^ 9 ∂μ :=
+      integral_add ((integrable_const (1 : ℝ)).add hi9a) hi9b
+    have e2 : (∫ w : EuclideanSpace ℝ (Fin 2), ((1 : ℝ) + |w 0 / σ| ^ 9) ∂μ)
+        = 1 + ∫ w : EuclideanSpace ℝ (Fin 2), |w 0 / σ| ^ 9 ∂μ := by
+      have := integral_add (μ := μ) (integrable_const (1 : ℝ)) hi9a
+      rw [this, integral_const]
+      simp
+    rw [MeasureTheory.integral_const_mul, e1, e2]
+  have hint6 : (∫ w, 2 * (1 + |w 0 / σ| ^ 6 + |w 1 / σ ^ 2| ^ 6) ∂μ)
+      = 2 * (1 + (∫ w, |w 0 / σ| ^ 6 ∂μ) + ∫ w, |w 1 / σ ^ 2| ^ 6 ∂μ) := by
+    have e1 : (∫ w : EuclideanSpace ℝ (Fin 2), ((1 : ℝ) + |w 0 / σ| ^ 6 + |w 1 / σ ^ 2| ^ 6) ∂μ)
+        = (∫ w : EuclideanSpace ℝ (Fin 2), ((1 : ℝ) + |w 0 / σ| ^ 6) ∂μ)
+          + ∫ w : EuclideanSpace ℝ (Fin 2), |w 1 / σ ^ 2| ^ 6 ∂μ :=
+      integral_add ((integrable_const (1 : ℝ)).add hi6a) hi6b
+    have e2 : (∫ w : EuclideanSpace ℝ (Fin 2), ((1 : ℝ) + |w 0 / σ| ^ 6) ∂μ)
+        = 1 + ∫ w : EuclideanSpace ℝ (Fin 2), |w 0 / σ| ^ 6 ∂μ := by
+      have := integral_add (μ := μ) (integrable_const (1 : ℝ)) hi6a
+      rw [this, integral_const]
+      simp
+    rw [MeasureTheory.integral_const_mul, e1, e2]
+  have h3 : (∫ w, surrGradedCube σ w ∂μ) ≤ 19 * (1 + M₉) := by
+    refine (integral_mono hic maj9 (fun w => surrGradedCube_le_moments σ w)).trans ?_
+    rw [hint9]
+    linarith
+  have h2 : (∫ w, surrGradedQuad σ w ∂μ) ≤ 2 * (1 + M₆) := by
+    refine (integral_mono hiq maj6 (fun w => surrGradedQuad_le_moments σ w)).trans ?_
+    rw [hint6]
+    linarith
+  exact integral_surrogateRemGraded_le μ hr hr1 ξ hic hiq h3 h2
+
 /-- **The crude pointwise route to (c) misses by twelve powers.**  The pointwise bound on the
 root of `Zₙ` is `n^{3/2}` (the second coordinate of the summand is bounded by `τ² = n`, not by
 `τ`), `surrGradedCube` is of degree nine, and the shape carries `r³ = n^{-3/2}`; the product is
@@ -17764,8 +17941,14 @@ CLAIM OTHERWISE.**
 
 * **WHAT THE RESIDUE IS NOW.**  Five items.
   1. *Rosenthal at orders `6` and `9`* for a normalised sum of bounded, exactly centred summands
-     — the remaining half of (c) and **the only analytic item**.  The file has the order-four
-     analogue (`integral_pi_sum_pow_four_le`) and nothing above it.
+     — the remaining half of (c) and **the only analytic item**.  Its interface is now four
+     **scalar** absolute moments of the two coordinate roots of `Zₙ`, `E|w₀|⁶`, `E|w₀|⁹`,
+     `E|w₁|⁶`, `E|w₁|⁹` (`integral_surrogateRemGraded_le_of_moments`), and the arithmetic that
+     makes them `O(1)` is: on the first coordinate `|Z₀| ≤ τ = √n` so `E|Z₀|⁹ ≤ τ·μ₈ = √n·μ₈`
+     and `n^{1−9/2}·√n·μ₈ = n^{−3}μ₈`; on the second `|Z₁| ≲ τ² = n` so `E|Z₁|⁶ ≲ τ⁴μ₈ = n²μ₈`
+     and `n^{1−3}·n²μ₈ = μ₈`.  Both are `O(1)`, with room; what is missing is the inequality, not
+     the moments.  The file has the order-four analogue (`integral_pi_sum_pow_four_le`) and
+     nothing above it.
   2. *The moment identification of the polynomial coefficients* in `hB1`, `hB2`, `h3a`, `h3b`,
      `h4` at `Zₙ` — bookkeeping, over the arithmetic half wave 48 proved
      (`exists_const_of_damped_poly`).
