@@ -15369,6 +15369,212 @@ theorem exists_window_bound_slabRoot (F : Measure ℝ) [IsProbabilityMeasure F]
   exact measure_abs_sub_le_of_abs_cdf_sub_le (Measure.pi fun _ : Fin n => F) hTm
     (by positivity : (0 : ℝ) ≤ Kb / s₀) hAlip happrox u hw
 
+/-! ### The re-centred truncated pair `Zₙ`, and the CDF-level comparison (wave 49)
+
+Wave 48 found that no single law supports all eight hypotheses of
+`exists_studentized_low_range_window_bound`: `hB1`, `hB2` and the `k`-slot bounds need the
+summand to be **exactly** centred, while `hRg` needs it **bounded**, and
+`studentPair F ∘ truncAt m √n` — the pair every statement of the chain since wave 37 has carried
+— is bounded but *not* centred, because truncation moves the mean.  The repair wave 48
+prescribed is to truncate **and re-centre**, i.e. to run the low range on
+
+`Zₙ(x) = (T x − mₙ, (T x − mₙ)² − vₙ)`,  `T = truncAt m √n`, `mₙ = ∫T dF`, `vₙ = ∫(T − mₙ)² dF`.
+
+**`Zₙ` is not a new object.**  `pairAt c v` below is the studentizing pair at an arbitrary
+centring, `studentPair G = pairAt (∫s∂G) Var[G]` definitionally, and therefore
+
+`Zₙ = studentPair (F.map T) ∘ T`.
+
+So the re-centred low range is the *existing* apparatus read on the truncated **law**
+`G = F.map T` rather than on the original `F`: `G` is a probability measure whose mean is `mₙ`
+and whose variance is `vₙ`, every moment hypothesis of the eight is a moment hypothesis on `G`,
+and the exact centring `∫⟪Zₙ, t⟫ = 0` is `integral_inner_studentPair` **at `G`** — free, not an
+estimate.  Nothing about the pair has to be redefined and nothing downstream of it has to be
+restated.
+
+**What the change of centring costs is exactly one shift, and it is computed here, not
+estimated.**  `vecRootLaw_pairAt_region_eq` is an *identity*: the studentized region of the
+truncated sample, read in the coordinates of the re-centred root, is the same region with the
+numerator shifted by `√n(mₙ − m)` and the radicand **unchanged**.  The radicand is unchanged
+because it is the sample variance (`pairAt_root_radicand`), which does not see the centring at
+all; that is the whole reason the re-centring is affordable.  The shift is bounded by
+`√n·μ₄/τ³ = μ₄/n` at `τ = √n` (`abs_integral_truncAt_sub_le`), so it is of the target order and
+what removes it is the peel, exactly as for the other perturbations of the region.
+
+`abs_studentizedRootCDF_sub_recentred_le` is the composition of that identity with wave 37's
+`abs_studentizedRootCDF_sub_truncAt_le`: it is item (a) of the wave-48 residue. -/
+
+/-- The **studentizing pair at an arbitrary centring** `(c, v)`: `x ↦ (x − c, (x − c)² − v)`.
+`studentPair G` is `pairAt (∫s∂G) Var[G]`, definitionally, and the re-centred truncated pair
+`Zₙ` of the wave-48 residue is `pairAt mₙ vₙ ∘ truncAt m √n = studentPair (F.map T) ∘ T`. -/
+noncomputable def pairAt (c v : ℝ) : ℝ → EuclideanSpace ℝ (Fin 2) := fun x =>
+  WithLp.toLp 2 ![x - c, (x - c) ^ 2 - v]
+
+lemma pairAt_zero (c v x : ℝ) : (pairAt c v x) 0 = x - c := rfl
+
+lemma pairAt_one (c v x : ℝ) : (pairAt c v x) 1 = (x - c) ^ 2 - v := rfl
+
+/-- `studentPair` **is** `pairAt` at the law's own mean and variance — definitionally. -/
+lemma studentPair_eq_pairAt (F : Measure ℝ) :
+    studentPair F = pairAt (∫ s, s ∂F) Var[fun t : ℝ => t; F] := rfl
+
+lemma measurable_pairAt (c v : ℝ) : Measurable (pairAt c v) := by
+  have hvec : Measurable fun x : ℝ => (![x - c, (x - c) ^ 2 - v] : Fin 2 → ℝ) := by
+    refine measurable_pi_lambda _ fun i => ?_
+    fin_cases i
+    · change Measurable fun x : ℝ => x - c
+      fun_prop
+    · change Measurable fun x : ℝ => (x - c) ^ 2 - v
+      fun_prop
+  have htoLp : Measurable
+      (WithLp.toLp 2 : (Fin 2 → ℝ) → EuclideanSpace ℝ (Fin 2)) := by fun_prop
+  exact htoLp.comp hvec
+
+/-- The first coordinate of the vector root of `pairAt c v` is the scaled centred sample mean,
+at the centring `c`. -/
+lemma pairAt_root_zero {n : ℕ} (hn : 0 < n) (c v : ℝ) (a : Fin n → ℝ) :
+    (((Real.sqrt n)⁻¹ • ∑ j, pairAt c v (a j) : EuclideanSpace ℝ (Fin 2))) 0
+      = Real.sqrt n * ((n : ℝ)⁻¹ * ∑ j, a j - c) := by
+  have hcoord : (((Real.sqrt n)⁻¹ • ∑ j, pairAt c v (a j) : EuclideanSpace ℝ (Fin 2))) 0
+      = (Real.sqrt n)⁻¹ * ∑ j, (pairAt c v (a j)) 0 := by
+    simp [Finset.sum_apply]
+  rw [hcoord]
+  simp_rw [pairAt_zero]
+  rw [← sqrt_mul_sub_mean_eq hn c a]
+
+/-- **The radicand of the studentized region is the sample variance, at every centring.**  This
+is why the re-centring of the truncated pair is affordable: it moves the numerator of the
+studentized root and leaves its denominator alone. -/
+lemma pairAt_root_radicand {n : ℕ} (hn : 0 < n) (c v : ℝ) (a : Fin n → ℝ) :
+    v + (((Real.sqrt n)⁻¹ • ∑ j, pairAt c v (a j) : EuclideanSpace ℝ (Fin 2))) 1
+          * (Real.sqrt n)⁻¹
+        - ((((Real.sqrt n)⁻¹ • ∑ j, pairAt c v (a j) : EuclideanSpace ℝ (Fin 2))) 0) ^ 2
+          * (n : ℝ)⁻¹
+      = sampleVariance a := by
+  have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
+  have hnn : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) := Real.mul_self_sqrt hn0.le
+  have hcoord1 : (((Real.sqrt n)⁻¹ • ∑ j, pairAt c v (a j) : EuclideanSpace ℝ (Fin 2))) 1
+      = (Real.sqrt n)⁻¹ * ∑ j, ((a j - c) ^ 2 - v) := by
+    have h : (((Real.sqrt n)⁻¹ • ∑ j, pairAt c v (a j) : EuclideanSpace ℝ (Fin 2))) 1
+        = (Real.sqrt n)⁻¹ * ∑ j, (pairAt c v (a j)) 1 := by
+      simp [Finset.sum_apply]
+    rw [h]
+    simp_rw [pairAt_one]
+  rw [hcoord1, pairAt_root_zero hn c v a]
+  have hinv : (Real.sqrt (n : ℝ))⁻¹ * (Real.sqrt (n : ℝ))⁻¹ = (n : ℝ)⁻¹ := by
+    rw [← mul_inv, hnn]
+  have e1 : ∀ X : ℝ, ((Real.sqrt (n : ℝ))⁻¹ * X) * (Real.sqrt (n : ℝ))⁻¹
+      = (n : ℝ)⁻¹ * X := fun X => by rw [← hinv]; ring
+  have e2 : ∀ B : ℝ, (Real.sqrt (n : ℝ) * B) ^ 2 = (n : ℝ) * B ^ 2 := fun B => by
+    rw [mul_pow, sq, hnn]
+  have hsum : ∑ j, ((a j - c) ^ 2 - v) = (∑ j, (a j - c) ^ 2) - (n : ℝ) * v := by
+    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      nsmul_eq_mul]
+  rw [sampleVariance_eq_sub hn c a, hsum, e1, e2]
+  field_simp
+  ring
+
+/-- **THE EXACT CHANGE OF CENTRING FOR THE STUDENTIZED REGION.**  For any measurable
+modification `T` of the observation and any two centrings `(c, v)`, `(c′, v′)`, the mass the
+root law of `pairAt c v ∘ T` gives to the studentized region at `(c, v)` equals the mass the
+root law of `pairAt c′ v′ ∘ T` gives to the *same* region with the numerator shifted by
+`√n(c′ − c)`.  There is no error term: both preimages are the single set
+`{y : √n(T̄ − c)/√(sampleVariance (T∘y)) ≤ z}`. -/
+theorem vecRootLaw_pairAt_region_eq (F : Measure ℝ) [IsProbabilityMeasure F] {n : ℕ}
+    (hn : 0 < n) {T : ℝ → ℝ} (hT : Measurable T) (c v c' v' z : ℝ) :
+    vecRootLaw F (fun y => pairAt c v (T y)) n
+        {w : EuclideanSpace ℝ (Fin 2) |
+          w 0 / Real.sqrt (v + w 1 * (Real.sqrt n)⁻¹ - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z}
+      = vecRootLaw F (fun y => pairAt c' v' (T y)) n
+        {w : EuclideanSpace ℝ (Fin 2) | (w 0 + Real.sqrt n * (c' - c))
+            / Real.sqrt (v' + w 1 * (Real.sqrt n)⁻¹ - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z} := by
+  have hm0 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 0 := by fun_prop
+  have hm1 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 1 := by fun_prop
+  have hR : MeasurableSet {w : EuclideanSpace ℝ (Fin 2) |
+      w 0 / Real.sqrt (v + w 1 * (Real.sqrt n)⁻¹ - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z} := by
+    refine measurableSet_le (hm0.div ?_) measurable_const
+    exact (((hm1.mul_const ((Real.sqrt n)⁻¹)).const_add v).sub
+      ((hm0.pow_const 2).mul_const ((n : ℝ)⁻¹))).sqrt
+  have hR' : MeasurableSet {w : EuclideanSpace ℝ (Fin 2) | (w 0 + Real.sqrt n * (c' - c))
+      / Real.sqrt (v' + w 1 * (Real.sqrt n)⁻¹ - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z} := by
+    refine measurableSet_le ((hm0.add_const _).div ?_) measurable_const
+    exact (((hm1.mul_const ((Real.sqrt n)⁻¹)).const_add v').sub
+      ((hm0.pow_const 2).mul_const ((n : ℝ)⁻¹))).sqrt
+  have hZ : Measurable fun y : ℝ => pairAt c v (T y) := (measurable_pairAt c v).comp hT
+  have hZ' : Measurable fun y : ℝ => pairAt c' v' (T y) := (measurable_pairAt c' v').comp hT
+  rw [vecRootLaw, vecRootLaw, Measure.map_apply (measurable_vecRoot hZ n) hR,
+    Measure.map_apply (measurable_vecRoot hZ' n) hR']
+  congr 1
+  ext y
+  simp only [Set.mem_preimage, Set.mem_setOf_eq]
+  rw [pairAt_root_radicand hn c v (fun j => T (y j)),
+    pairAt_root_radicand hn c' v' (fun j => T (y j)),
+    pairAt_root_zero hn c v (fun j => T (y j)),
+    pairAt_root_zero hn c' v' (fun j => T (y j))]
+  have harith : Real.sqrt n * ((n : ℝ)⁻¹ * ∑ j, T (y j) - c')
+      + Real.sqrt n * (c' - c) = Real.sqrt n * ((n : ℝ)⁻¹ * ∑ j, T (y j) - c) := by ring
+  rw [harith]
+
+/-- **The truncation moves the mean by at most `μ₄/τ³`.**  At `τ = √n` this is `μ₄/n^{3/2}`, so
+the shift `√n(mₙ − m)` that `vecRootLaw_pairAt_region_eq` introduces is `O(n⁻¹)` — the target
+order of the whole expansion. -/
+lemma abs_integral_truncAt_sub_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF1 : Integrable (fun x : ℝ => x) F)
+    (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F)
+    {τ : ℝ} (hτ : 0 < τ) :
+    |(∫ s, s ∂(F.map (truncAt (∫ s, s ∂F) τ))) - ∫ s, s ∂F|
+      ≤ (∫ x, (x - ∫ s, s ∂F) ^ 4 ∂F) / τ ^ 3 := by
+  set m : ℝ := ∫ s, s ∂F with hm
+  have hTm : Measurable (truncAt m τ) := measurable_truncAt m τ
+  have hbdd : ∀ x : ℝ, |truncAt m τ x| ≤ |m| + τ := by
+    intro x
+    have h := abs_truncAt_sub_le hτ.le (m := m) x
+    calc |truncAt m τ x| = |m + (truncAt m τ x - m)| := by ring_nf
+      _ ≤ |m| + |truncAt m τ x - m| := abs_add_le _ _
+      _ ≤ |m| + τ := by linarith
+  have hTi : Integrable (truncAt m τ) F := by
+    refine Integrable.mono' (integrable_const (|m| + τ)) hTm.aestronglyMeasurable ?_
+    exact Filter.Eventually.of_forall fun x => by simpa using hbdd x
+  have hmap : (∫ s, s ∂(F.map (truncAt m τ))) = ∫ x, truncAt m τ x ∂F :=
+    integral_map hTm.aemeasurable (by fun_prop)
+  rw [hmap, ← integral_sub hTi hF1]
+  refine (abs_integral_le_integral_abs).trans ?_
+  refine (integral_mono (hTi.sub hF1).abs (hF4.div_const (τ ^ 3)) ?_).trans_eq ?_
+  · intro x
+    have h := abs_sub_truncAt_le hτ (m := m) x
+    calc |truncAt m τ x - x| = |x - truncAt m τ x| := abs_sub_comm _ _
+      _ ≤ (x - m) ^ 4 / τ ^ 3 := h
+  · rw [integral_div]
+
+/-- **(a) OF THE WAVE-48 RESIDUE — THE RE-CENTRED TRUNCATED PAIR AND ITS CDF-LEVEL
+COMPARISON.**  The studentized distribution function of the sample and the mass the root law of
+the **re-centred** truncated pair `Zₙ = studentPair (F.map T) ∘ T` gives to the studentized
+region *of the truncated law*, with the numerator shifted by `√n(mₙ − m)`, differ by at most
+`n·μ₄/τ⁴` — at `τ = √n`, by `μ₄/n`.
+
+Both defects are of the target order and neither is an estimate on the pair: the first is the
+change of law (wave 37, `abs_studentizedRootCDF_sub_truncAt_le`) and the second is the exact
+identity `vecRootLaw_pairAt_region_eq`.  What the shift then costs is priced by
+`abs_integral_truncAt_sub_le` and removed by the peel. -/
+theorem abs_studentizedRootCDF_sub_recentred_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F)
+    {n : ℕ} (hn : 0 < n) {τ : ℝ} (hτ : 0 < τ) (z : ℝ) :
+    |studentizedRootCDF F n z
+        - (vecRootLaw F (fun y => studentPair (F.map (truncAt (∫ s, s ∂F) τ))
+              (truncAt (∫ s, s ∂F) τ y)) n
+            {w : EuclideanSpace ℝ (Fin 2) | (w 0 + Real.sqrt n
+                  * ((∫ s, s ∂(F.map (truncAt (∫ s, s ∂F) τ))) - ∫ s, s ∂F))
+                / Real.sqrt (Var[fun t : ℝ => t; F.map (truncAt (∫ s, s ∂F) τ)]
+                    + w 1 * (Real.sqrt n)⁻¹ - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z}).toReal|
+      ≤ (n : ℝ) * ((∫ x, (x - ∫ s, s ∂F) ^ 4 ∂F) / τ ^ 4) := by
+  have h := abs_studentizedRootCDF_sub_truncAt_le F hF4 hn hτ z
+  rwa [studentPair_eq_pairAt F,
+    vecRootLaw_pairAt_region_eq F hn (measurable_truncAt (∫ s, s ∂F) τ)
+      (∫ s, s ∂F) Var[fun t : ℝ => t; F]
+      (∫ s, s ∂(F.map (truncAt (∫ s, s ∂F) τ)))
+      Var[fun t : ℝ => t; F.map (truncAt (∫ s, s ∂F) τ)] z,
+    ← studentPair_eq_pairAt (F.map (truncAt (∫ s, s ∂F) τ))] at h
+
 /-- **One-term Edgeworth expansion for the studentized sample mean, uniform in the argument.**
 
 Under a finite fourth moment and absolute continuity of the sampling law, the sampling
