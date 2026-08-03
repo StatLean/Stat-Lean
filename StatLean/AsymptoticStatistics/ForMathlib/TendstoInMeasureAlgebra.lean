@@ -11,7 +11,7 @@ the zero function. We package those here for real-valued sequences.
 Headline declarations: `TendstoInMeasure.neg_zero`, `TendstoInMeasure.const_mul_zero`,
 `TendstoInMeasure.add_zero`, `TendstoInMeasure.sub_zero`.
 
-These should eventually upstream to Mathlib.
+The declarations below provide this zero-limit algebra for real-valued sequences.
 -/
 
 namespace MeasureTheory

@@ -45,18 +45,11 @@ densities `p, q`:
 3. Bernoulli inequality `1 - A^n ≤ n · (1 - A)` for `0 ≤ A ≤ 1` (Cauchy-Schwarz).
 4. Combining gives the squared `L²`-form, and `√n` after square-rooting.
 
-## Discipline note
-
-This file is upstream of the equivalence theorem `isRegularEstimator_narrow_iff_broad`
-(E2 → E4 of the 25.20 follow-up). It is theorem-agnostic and self-contained —
-candidate for upstream to Mathlib.
-
-The deepest analytic step — the affinity multiplicativity for iid product
-densities — is lifted to a named lemma `hellinger_affinity_pi_eq_pow` (currently
-shipped with a single named proof gap on a Cauchy-Schwarz step that needs the
-`L²(μ)` instance of `ENNReal.lintegral_mul_le_Lp_mul_Lq`). The product
-*inequality* itself is shipped as the headline theorem
-`hellinger_product_eLpNorm_sq_le_nsmul`.
+The analytic core is product-affinity multiplicativity, expressed below in
+`lintegral` and Bochner-integral forms. Together with the one-sample Hellinger
+identity and Bernoulli's inequality, it yields the squared residual bound and
+the headline square-root estimate
+`hellinger_product_eLpNorm_le_sqrt_n_per_sample`.
 -/
 
 open MeasureTheory Filter Topology

@@ -48,8 +48,8 @@ the measurable equivalence `MeasurableEquiv.toLp 2 (ℝ × ℝ)` and applying
 `Measure.ext_of_charFun` on `WithLp 2 (ℝ × ℝ)` (a complete inner product
 space) closes.
 
-The strategy parrots Phase 3 of `JointMGFAnalyticClosure.joint_mgf_to_charFn_factorisation`,
-hoisted to a generic two-measure setting.
+This is the generic two-measure form of the analytic MGF-to-characteristic-function
+factorisation used by `JointMGFAnalyticClosure.joint_mgf_to_charFn_factorisation`.
 
 ## Public API
 
