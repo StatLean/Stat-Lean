@@ -15369,6 +15369,602 @@ theorem exists_window_bound_slabRoot (F : Measure ℝ) [IsProbabilityMeasure F]
   exact measure_abs_sub_le_of_abs_cdf_sub_le (Measure.pi fun _ : Fin n => F) hTm
     (by positivity : (0 : ℝ) ≤ Kb / s₀) hAlip happrox u hw
 
+/-! ### The re-centred truncated pair `Zₙ`, and the CDF-level comparison (wave 49)
+
+Wave 48 found that no single law supports all eight hypotheses of
+`exists_studentized_low_range_window_bound`: `hB1`, `hB2` and the `k`-slot bounds need the
+summand to be **exactly** centred, while `hRg` needs it **bounded**, and
+`studentPair F ∘ truncAt m √n` — the pair every statement of the chain since wave 37 has carried
+— is bounded but *not* centred, because truncation moves the mean.  The repair wave 48
+prescribed is to truncate **and re-centre**, i.e. to run the low range on
+
+`Zₙ(x) = (T x − mₙ, (T x − mₙ)² − vₙ)`,  `T = truncAt m √n`, `mₙ = ∫T dF`, `vₙ = ∫(T − mₙ)² dF`.
+
+**`Zₙ` is not a new object.**  `pairAt c v` below is the studentizing pair at an arbitrary
+centring, `studentPair G = pairAt (∫s∂G) Var[G]` definitionally, and therefore
+
+`Zₙ = studentPair (F.map T) ∘ T`.
+
+So the re-centred low range is the *existing* apparatus read on the truncated **law**
+`G = F.map T` rather than on the original `F`: `G` is a probability measure whose mean is `mₙ`
+and whose variance is `vₙ`, every moment hypothesis of the eight is a moment hypothesis on `G`,
+and the exact centring `∫⟪Zₙ, t⟫ = 0` is `integral_inner_studentPair` **at `G`** — free, not an
+estimate.  Nothing about the pair has to be redefined and nothing downstream of it has to be
+restated.
+
+**What the change of centring costs is exactly one shift, and it is computed here, not
+estimated.**  `vecRootLaw_pairAt_region_eq` is an *identity*: the studentized region of the
+truncated sample, read in the coordinates of the re-centred root, is the same region with the
+numerator shifted by `√n(mₙ − m)` and the radicand **unchanged**.  The radicand is unchanged
+because it is the sample variance (`pairAt_root_radicand`), which does not see the centring at
+all; that is the whole reason the re-centring is affordable.  The shift is bounded by
+`√n·μ₄/τ³ = μ₄/n` at `τ = √n` (`abs_integral_truncAt_sub_le`), so it is of the target order and
+what removes it is the peel, exactly as for the other perturbations of the region.
+
+`abs_studentizedRootCDF_sub_recentred_le` is the composition of that identity with wave 37's
+`abs_studentizedRootCDF_sub_truncAt_le`: it is item (a) of the wave-48 residue. -/
+
+/-- The **studentizing pair at an arbitrary centring** `(c, v)`: `x ↦ (x − c, (x − c)² − v)`.
+`studentPair G` is `pairAt (∫s∂G) Var[G]`, definitionally, and the re-centred truncated pair
+`Zₙ` of the wave-48 residue is `pairAt mₙ vₙ ∘ truncAt m √n = studentPair (F.map T) ∘ T`. -/
+noncomputable def pairAt (c v : ℝ) : ℝ → EuclideanSpace ℝ (Fin 2) := fun x =>
+  WithLp.toLp 2 ![x - c, (x - c) ^ 2 - v]
+
+lemma pairAt_zero (c v x : ℝ) : (pairAt c v x) 0 = x - c := rfl
+
+lemma pairAt_one (c v x : ℝ) : (pairAt c v x) 1 = (x - c) ^ 2 - v := rfl
+
+/-- `studentPair` **is** `pairAt` at the law's own mean and variance — definitionally. -/
+lemma studentPair_eq_pairAt (F : Measure ℝ) :
+    studentPair F = pairAt (∫ s, s ∂F) Var[fun t : ℝ => t; F] := rfl
+
+lemma measurable_pairAt (c v : ℝ) : Measurable (pairAt c v) := by
+  have hvec : Measurable fun x : ℝ => (![x - c, (x - c) ^ 2 - v] : Fin 2 → ℝ) := by
+    refine measurable_pi_lambda _ fun i => ?_
+    fin_cases i
+    · change Measurable fun x : ℝ => x - c
+      fun_prop
+    · change Measurable fun x : ℝ => (x - c) ^ 2 - v
+      fun_prop
+  have htoLp : Measurable
+      (WithLp.toLp 2 : (Fin 2 → ℝ) → EuclideanSpace ℝ (Fin 2)) := by fun_prop
+  exact htoLp.comp hvec
+
+/-- The first coordinate of the vector root of `pairAt c v` is the scaled centred sample mean,
+at the centring `c`. -/
+lemma pairAt_root_zero {n : ℕ} (hn : 0 < n) (c v : ℝ) (a : Fin n → ℝ) :
+    (((Real.sqrt n)⁻¹ • ∑ j, pairAt c v (a j) : EuclideanSpace ℝ (Fin 2))) 0
+      = Real.sqrt n * ((n : ℝ)⁻¹ * ∑ j, a j - c) := by
+  have hcoord : (((Real.sqrt n)⁻¹ • ∑ j, pairAt c v (a j) : EuclideanSpace ℝ (Fin 2))) 0
+      = (Real.sqrt n)⁻¹ * ∑ j, (pairAt c v (a j)) 0 := by
+    simp [Finset.sum_apply]
+  rw [hcoord]
+  simp_rw [pairAt_zero]
+  rw [← sqrt_mul_sub_mean_eq hn c a]
+
+/-- **The radicand of the studentized region is the sample variance, at every centring.**  This
+is why the re-centring of the truncated pair is affordable: it moves the numerator of the
+studentized root and leaves its denominator alone. -/
+lemma pairAt_root_radicand {n : ℕ} (hn : 0 < n) (c v : ℝ) (a : Fin n → ℝ) :
+    v + (((Real.sqrt n)⁻¹ • ∑ j, pairAt c v (a j) : EuclideanSpace ℝ (Fin 2))) 1
+          * (Real.sqrt n)⁻¹
+        - ((((Real.sqrt n)⁻¹ • ∑ j, pairAt c v (a j) : EuclideanSpace ℝ (Fin 2))) 0) ^ 2
+          * (n : ℝ)⁻¹
+      = sampleVariance a := by
+  have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
+  have hnn : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) := Real.mul_self_sqrt hn0.le
+  have hcoord1 : (((Real.sqrt n)⁻¹ • ∑ j, pairAt c v (a j) : EuclideanSpace ℝ (Fin 2))) 1
+      = (Real.sqrt n)⁻¹ * ∑ j, ((a j - c) ^ 2 - v) := by
+    have h : (((Real.sqrt n)⁻¹ • ∑ j, pairAt c v (a j) : EuclideanSpace ℝ (Fin 2))) 1
+        = (Real.sqrt n)⁻¹ * ∑ j, (pairAt c v (a j)) 1 := by
+      simp [Finset.sum_apply]
+    rw [h]
+    simp_rw [pairAt_one]
+  rw [hcoord1, pairAt_root_zero hn c v a]
+  have hinv : (Real.sqrt (n : ℝ))⁻¹ * (Real.sqrt (n : ℝ))⁻¹ = (n : ℝ)⁻¹ := by
+    rw [← mul_inv, hnn]
+  have e1 : ∀ X : ℝ, ((Real.sqrt (n : ℝ))⁻¹ * X) * (Real.sqrt (n : ℝ))⁻¹
+      = (n : ℝ)⁻¹ * X := fun X => by rw [← hinv]; ring
+  have e2 : ∀ B : ℝ, (Real.sqrt (n : ℝ) * B) ^ 2 = (n : ℝ) * B ^ 2 := fun B => by
+    rw [mul_pow, sq, hnn]
+  have hsum : ∑ j, ((a j - c) ^ 2 - v) = (∑ j, (a j - c) ^ 2) - (n : ℝ) * v := by
+    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      nsmul_eq_mul]
+  rw [sampleVariance_eq_sub hn c a, hsum, e1, e2]
+  field_simp
+  ring
+
+/-- **THE EXACT CHANGE OF CENTRING FOR THE STUDENTIZED REGION.**  For any measurable
+modification `T` of the observation and any two centrings `(c, v)`, `(c′, v′)`, the mass the
+root law of `pairAt c v ∘ T` gives to the studentized region at `(c, v)` equals the mass the
+root law of `pairAt c′ v′ ∘ T` gives to the *same* region with the numerator shifted by
+`√n(c′ − c)`.  There is no error term: both preimages are the single set
+`{y : √n(T̄ − c)/√(sampleVariance (T∘y)) ≤ z}`. -/
+theorem vecRootLaw_pairAt_region_eq (F : Measure ℝ) [IsProbabilityMeasure F] {n : ℕ}
+    (hn : 0 < n) {T : ℝ → ℝ} (hT : Measurable T) (c v c' v' z : ℝ) :
+    vecRootLaw F (fun y => pairAt c v (T y)) n
+        {w : EuclideanSpace ℝ (Fin 2) |
+          w 0 / Real.sqrt (v + w 1 * (Real.sqrt n)⁻¹ - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z}
+      = vecRootLaw F (fun y => pairAt c' v' (T y)) n
+        {w : EuclideanSpace ℝ (Fin 2) | (w 0 + Real.sqrt n * (c' - c))
+            / Real.sqrt (v' + w 1 * (Real.sqrt n)⁻¹ - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z} := by
+  have hm0 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 0 := by fun_prop
+  have hm1 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 1 := by fun_prop
+  have hR : MeasurableSet {w : EuclideanSpace ℝ (Fin 2) |
+      w 0 / Real.sqrt (v + w 1 * (Real.sqrt n)⁻¹ - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z} := by
+    refine measurableSet_le (hm0.div ?_) measurable_const
+    exact (((hm1.mul_const ((Real.sqrt n)⁻¹)).const_add v).sub
+      ((hm0.pow_const 2).mul_const ((n : ℝ)⁻¹))).sqrt
+  have hR' : MeasurableSet {w : EuclideanSpace ℝ (Fin 2) | (w 0 + Real.sqrt n * (c' - c))
+      / Real.sqrt (v' + w 1 * (Real.sqrt n)⁻¹ - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z} := by
+    refine measurableSet_le ((hm0.add_const _).div ?_) measurable_const
+    exact (((hm1.mul_const ((Real.sqrt n)⁻¹)).const_add v').sub
+      ((hm0.pow_const 2).mul_const ((n : ℝ)⁻¹))).sqrt
+  have hZ : Measurable fun y : ℝ => pairAt c v (T y) := (measurable_pairAt c v).comp hT
+  have hZ' : Measurable fun y : ℝ => pairAt c' v' (T y) := (measurable_pairAt c' v').comp hT
+  rw [vecRootLaw, vecRootLaw, Measure.map_apply (measurable_vecRoot hZ n) hR,
+    Measure.map_apply (measurable_vecRoot hZ' n) hR']
+  congr 1
+  ext y
+  simp only [Set.mem_preimage, Set.mem_setOf_eq]
+  rw [pairAt_root_radicand hn c v (fun j => T (y j)),
+    pairAt_root_radicand hn c' v' (fun j => T (y j)),
+    pairAt_root_zero hn c v (fun j => T (y j)),
+    pairAt_root_zero hn c' v' (fun j => T (y j))]
+  have harith : Real.sqrt n * ((n : ℝ)⁻¹ * ∑ j, T (y j) - c')
+      + Real.sqrt n * (c' - c) = Real.sqrt n * ((n : ℝ)⁻¹ * ∑ j, T (y j) - c) := by ring
+  rw [harith]
+
+/-- **The truncation moves the mean by at most `μ₄/τ³`.**  At `τ = √n` this is `μ₄/n^{3/2}`, so
+the shift `√n(mₙ − m)` that `vecRootLaw_pairAt_region_eq` introduces is `O(n⁻¹)` — the target
+order of the whole expansion. -/
+lemma abs_integral_truncAt_sub_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF1 : Integrable (fun x : ℝ => x) F)
+    (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F)
+    {τ : ℝ} (hτ : 0 < τ) :
+    |(∫ s, s ∂(F.map (truncAt (∫ s, s ∂F) τ))) - ∫ s, s ∂F|
+      ≤ (∫ x, (x - ∫ s, s ∂F) ^ 4 ∂F) / τ ^ 3 := by
+  set m : ℝ := ∫ s, s ∂F with hm
+  have hTm : Measurable (truncAt m τ) := measurable_truncAt m τ
+  have hbdd : ∀ x : ℝ, |truncAt m τ x| ≤ |m| + τ := by
+    intro x
+    have h := abs_truncAt_sub_le hτ.le (m := m) x
+    calc |truncAt m τ x| = |m + (truncAt m τ x - m)| := by ring_nf
+      _ ≤ |m| + |truncAt m τ x - m| := abs_add_le _ _
+      _ ≤ |m| + τ := by linarith
+  have hTi : Integrable (truncAt m τ) F := by
+    refine Integrable.mono' (integrable_const (|m| + τ)) hTm.aestronglyMeasurable ?_
+    exact Filter.Eventually.of_forall fun x => by simpa using hbdd x
+  have hmap : (∫ s, s ∂(F.map (truncAt m τ))) = ∫ x, truncAt m τ x ∂F :=
+    integral_map hTm.aemeasurable (by fun_prop)
+  rw [hmap, ← integral_sub hTi hF1]
+  refine (abs_integral_le_integral_abs).trans ?_
+  refine (integral_mono (hTi.sub hF1).abs (hF4.div_const (τ ^ 3)) ?_).trans_eq ?_
+  · intro x
+    have h := abs_sub_truncAt_le hτ (m := m) x
+    calc |truncAt m τ x - x| = |x - truncAt m τ x| := abs_sub_comm _ _
+      _ ≤ (x - m) ^ 4 / τ ^ 3 := h
+  · rw [integral_div]
+
+/-- **(a) OF THE WAVE-48 RESIDUE — THE RE-CENTRED TRUNCATED PAIR AND ITS CDF-LEVEL
+COMPARISON.**  The studentized distribution function of the sample and the mass the root law of
+the **re-centred** truncated pair `Zₙ = studentPair (F.map T) ∘ T` gives to the studentized
+region *of the truncated law*, with the numerator shifted by `√n(mₙ − m)`, differ by at most
+`n·μ₄/τ⁴` — at `τ = √n`, by `μ₄/n`.
+
+Both defects are of the target order and neither is an estimate on the pair: the first is the
+change of law (wave 37, `abs_studentizedRootCDF_sub_truncAt_le`) and the second is the exact
+identity `vecRootLaw_pairAt_region_eq`.  What the shift then costs is priced by
+`abs_integral_truncAt_sub_le` and removed by the peel. -/
+theorem abs_studentizedRootCDF_sub_recentred_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F)
+    {n : ℕ} (hn : 0 < n) {τ : ℝ} (hτ : 0 < τ) (z : ℝ) :
+    |studentizedRootCDF F n z
+        - (vecRootLaw F (fun y => studentPair (F.map (truncAt (∫ s, s ∂F) τ))
+              (truncAt (∫ s, s ∂F) τ y)) n
+            {w : EuclideanSpace ℝ (Fin 2) | (w 0 + Real.sqrt n
+                  * ((∫ s, s ∂(F.map (truncAt (∫ s, s ∂F) τ))) - ∫ s, s ∂F))
+                / Real.sqrt (Var[fun t : ℝ => t; F.map (truncAt (∫ s, s ∂F) τ)]
+                    + w 1 * (Real.sqrt n)⁻¹ - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z}).toReal|
+      ≤ (n : ℝ) * ((∫ x, (x - ∫ s, s ∂F) ^ 4 ∂F) / τ ^ 4) := by
+  have h := abs_studentizedRootCDF_sub_truncAt_le F hF4 hn hτ z
+  rwa [studentPair_eq_pairAt F,
+    vecRootLaw_pairAt_region_eq F hn (measurable_truncAt (∫ s, s ∂F) τ)
+      (∫ s, s ∂F) Var[fun t : ℝ => t; F]
+      (∫ s, s ∂(F.map (truncAt (∫ s, s ∂F) τ)))
+      Var[fun t : ℝ => t; F.map (truncAt (∫ s, s ∂F) τ)] z,
+    ← studentPair_eq_pairAt (F.map (truncAt (∫ s, s ∂F) τ))] at h
+
+/-! ### (b) the moment side of the six damped bounds, at the truncated law
+
+The equalities `hmean`/`hthird` of `norm_charFun_smul_pow_sub_edgeworth_le` and `hm0`/`hm1`/
+`hcent` of the two multilinear theorems are what wave 48 found the truncated pair could not
+supply.  At `Zₙ` they are supplied by *construction* and by nothing else: `Zₙ = studentPair G ∘ T`
+with `G = F.map T`, `G` is a probability measure all of whose moments are finite because `T` is
+bounded (`memLp_id_map_truncAt`), and `integral_inner_studentPair` at `G` is then free — it needs
+no hypothesis on `F` at all.  `hF8` is *not* spent here; it is spent on the sizes, which is where
+wave 47's account of the eight put it and where it belongs. -/
+
+/-- The pair at an arbitrary centring is bounded by its coordinates. -/
+lemma norm_pairAt_le (c v x : ℝ) :
+    ‖pairAt c v x‖ ≤ |x - c| + ((x - c) ^ 2 + |v|) := by
+  refine (norm_le_abs_add_abs (pairAt c v x)).trans ?_
+  rw [pairAt_zero, pairAt_one]
+  have h : |(x - c) ^ 2 - v| ≤ (x - c) ^ 2 + |v| := by
+    refine (abs_sub _ _).trans ?_
+    rw [abs_of_nonneg (by positivity : (0 : ℝ) ≤ (x - c) ^ 2)]
+  linarith
+
+/-- **THE TWO CENTRINGS DIFFER BY AN INVERTIBLE AFFINE MAP** (first coordinate).  Writing
+`δ = c′ − c`, the pair at `(c, v)` is the pair at `(c′, v′)` composed with
+`L(a, b) = (a, b + 2δa)` and translated by `(δ, v′ + δ² − v)`.  `L` is linear, unipotent and
+therefore invertible, and `‖L − I‖ = 2|δ|`; this is the device by which a bound proved for one
+of the two truncated pairs transfers to the other, at the cost of `t ↦ Lᵀt` in the frequency and
+a unimodular factor.  See the wave-49 status note on `edgeworth_studentized_uniform`. -/
+lemma pairAt_zero_eq_affine (c v c' v' x : ℝ) :
+    (pairAt c v x) 0 = (pairAt c' v' x) 0 + (c' - c) := by
+  simp only [pairAt_zero]; ring
+
+/-- **THE TWO CENTRINGS DIFFER BY AN INVERTIBLE AFFINE MAP** (second coordinate). -/
+lemma pairAt_one_eq_affine (c v c' v' x : ℝ) :
+    (pairAt c v x) 1
+      = (pairAt c' v' x) 1 + 2 * (c' - c) * ((pairAt c' v' x) 0)
+        + (v' + (c' - c) ^ 2 - v) := by
+  simp only [pairAt_zero, pairAt_one]; ring
+
+/-- **Every moment of the truncated law is finite.**  `truncAt m τ` is bounded, so its
+pushforward has moments of every order — in particular the fourth moment
+`integral_inner_studentPair` consumes, with **no** hypothesis on `F` beyond finiteness. -/
+lemma memLp_id_map_truncAt (F : Measure ℝ) [IsProbabilityMeasure F] (m : ℝ) {τ : ℝ}
+    (hτ : 0 ≤ τ) (p : ℝ≥0∞) :
+    MemLp (fun s : ℝ => s) p (F.map (truncAt m τ)) := by
+  have hTm : Measurable (truncAt m τ) := measurable_truncAt m τ
+  rw [memLp_map_measure_iff (by fun_prop) hTm.aemeasurable]
+  refine MemLp.of_bound (by fun_prop) (|m| + τ) ?_
+  filter_upwards with x
+  have h := abs_truncAt_sub_le hτ (m := m) x
+  have hb : |truncAt m τ x| ≤ |m| + |truncAt m τ x - m| := by
+    calc |truncAt m τ x| = |m + (truncAt m τ x - m)| := by ring_nf
+      _ ≤ |m| + |truncAt m τ x - m| := abs_add_le _ _
+  simpa using hb.trans (by linarith)
+
+/-- **(b) THE RE-CENTRED TRUNCATED PAIR IS EXACTLY CENTRED, IN EVERY DIRECTION.**  The equality
+`hmean` of `norm_charFun_smul_pow_sub_edgeworth_le` and `hm0`, `hm1`, `hcent` of the two
+multilinear theorems hold for `Zₙ` **by construction**, with no moment hypothesis on `F`
+whatever. -/
+lemma integral_inner_studentPair_map_truncAt (F : Measure ℝ) [IsProbabilityMeasure F]
+    (m : ℝ) {τ : ℝ} (hτ : 0 ≤ τ) (t : EuclideanSpace ℝ (Fin 2)) :
+    ∫ w, (⟪w, t⟫ : ℝ)
+        ∂((F.map (truncAt m τ)).map (studentPair (F.map (truncAt m τ)))) = 0 := by
+  haveI : IsProbabilityMeasure (F.map (truncAt m τ)) :=
+    Measure.isProbabilityMeasure_map (measurable_truncAt m τ).aemeasurable
+  exact integral_inner_studentPair _ (memLp_id_map_truncAt F m hτ 4) t
+
+/-- **The re-centred truncated pair is bounded, at every point** — the hypothesis `hRg` needs
+and the untruncated pair cannot give.  The bound is the truncation level widened by the bias
+`μ₄/τ³`, which at `τ = √n` costs `O(n⁻¹)` and nothing else. -/
+lemma norm_studentPair_map_truncAt_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF1 : Integrable (fun x : ℝ => x) F)
+    (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F) {τ : ℝ} (hτ : 0 < τ) (x : ℝ) :
+    ‖studentPair (F.map (truncAt (∫ s, s ∂F) τ)) (truncAt (∫ s, s ∂F) τ x)‖
+      ≤ (τ + (∫ x, (x - ∫ s, s ∂F) ^ 4 ∂F) / τ ^ 3)
+        + ((τ + (∫ x, (x - ∫ s, s ∂F) ^ 4 ∂F) / τ ^ 3) ^ 2
+            + |Var[fun t : ℝ => t; F.map (truncAt (∫ s, s ∂F) τ)]|) := by
+  set m : ℝ := ∫ s, s ∂F with hm
+  set d : ℝ := (∫ x, (x - m) ^ 4 ∂F) / τ ^ 3 with hd
+  set mn : ℝ := ∫ s, s ∂(F.map (truncAt m τ)) with hmn
+  have hshift : |mn - m| ≤ d := abs_integral_truncAt_sub_le F hF1 hF4 hτ
+  have hb : |truncAt m τ x - mn| ≤ τ + d := by
+    calc |truncAt m τ x - mn| = |(truncAt m τ x - m) + (m - mn)| := by ring_nf
+      _ ≤ |truncAt m τ x - m| + |m - mn| := abs_add_le _ _
+      _ ≤ τ + d := by
+          have h1 := abs_truncAt_sub_le hτ.le (m := m) x
+          have h2 : |m - mn| = |mn - m| := abs_sub_comm _ _
+          linarith [hshift, h2.ge, h2.le]
+  have hsq : (truncAt m τ x - mn) ^ 2 ≤ (τ + d) ^ 2 := by
+    rw [← sq_abs]
+    exact pow_le_pow_left₀ (abs_nonneg _) hb 2
+  rw [studentPair_eq_pairAt]
+  refine (norm_pairAt_le _ _ _).trans ?_
+  have hle : |truncAt m τ x - mn| ≤ τ + d := hb
+  gcongr
+
+/-! ### (c) what `hRg` owes at `Zₙ`, named exactly: two moment integrals of the bounded root
+
+Wave 48 calls (c) "a Rosenthal-type bound at the truncation level … the only one of the eight
+with any content left".  `integral_surrogateRemGraded_le` below is the reduction that says what
+that bound has to be, and it removes every transform from the statement: `hRg` holds, at the
+constants `C₃ = 4π³M₃/3` and `C₂ = 2π²M₂`, as soon as
+
+`∫ surrGradedCube σ dρₙ ≤ M₃`  and  `∫ surrGradedQuad σ dρₙ ≤ M₂`
+
+hold with `M₂, M₃` free of `n`, where `ρₙ` is the law of the root of `Zₙ`.  Those two integrands
+are polynomials in `|w₀|, |w₁|` of degree **nine** and **six**, so what (c) owes is a ninth and a
+sixth moment of a normalised sum of bounded, exactly centred summands — Rosenthal, and nothing
+weaker.
+
+**AND THE CRUDE POINTWISE ROUTE IS DEAD, WHICH WAVE 48 LEFT OPEN.**  Wave 48 offers "a crude
+`‖Zₙ‖ ≤ C√n` pointwise route if the ledger tolerates it".  It does not, and the margin is not
+close.  `Zₙ`'s *second* coordinate is bounded by `τ² = n`, not by `τ = √n`, so the pointwise
+bound on the summand is `‖Zₙ‖ = O(n)` and on the root `‖w‖ = O(√n · n) = O(n^{3/2})` — hence
+`surrGradedCube ≤ O(n^{27/2})`, and against the `r³ = n^{-3/2}` the shape carries that is
+`n^{12}`, twelve powers the wrong way (`crude_graded_ledger_exponent`).  Even the *graded*
+placement of the `r`'s, which puts `r⁶ = n⁻³` on the worst monomial, leaves `n^{21/2}`.  There is
+no truncation level that repairs it either: lowering `τ` lowers the pointwise bound but the
+change of law `n·μ₄/τ⁴` then exceeds `n⁻¹`.  The moment expansion is the only route. -/
+
+/-- The **cubic** moment functional the graded remainder integrates: `(P + A)³` in the notation
+of `surrogateRemPoly`, a polynomial of degree nine in the root's coordinates. -/
+noncomputable def surrGradedCube (σ : ℝ) (w : EuclideanSpace ℝ (Fin 2)) : ℝ :=
+  (|w 0 / σ| * |w 1 / σ ^ 2| / 2
+    + (|w 0 / σ| ^ 3 / 2 + 3 * |w 0 / σ| * |w 1 / σ ^ 2| ^ 2 / 8)) ^ 3
+
+/-- The **quadratic** moment functional the graded remainder integrates: `2PA + A²`, a
+polynomial of degree six in the root's coordinates. -/
+noncomputable def surrGradedQuad (σ : ℝ) (w : EuclideanSpace ℝ (Fin 2)) : ℝ :=
+  |w 0 / σ| * |w 1 / σ ^ 2| * (|w 0 / σ| ^ 3 / 2 + 3 * |w 0 / σ| * |w 1 / σ ^ 2| ^ 2 / 8)
+    + (|w 0 / σ| ^ 3 / 2 + 3 * |w 0 / σ| * |w 1 / σ ^ 2| ^ 2 / 8) ^ 2
+
+lemma surrGradedCube_nonneg (σ : ℝ) (w : EuclideanSpace ℝ (Fin 2)) :
+    0 ≤ surrGradedCube σ w := by
+  rw [surrGradedCube]; positivity
+
+lemma surrGradedQuad_nonneg (σ : ℝ) (w : EuclideanSpace ℝ (Fin 2)) :
+    0 ≤ surrGradedQuad σ w := by
+  rw [surrGradedQuad]; positivity
+
+lemma surrogateRemPoly_eq_graded (σ θ : ℝ) (w : EuclideanSpace ℝ (Fin 2)) :
+    surrogateRemPoly θ (w 0 / σ) (w 1 / σ ^ 2)
+      = |θ| ^ 3 / 6 * surrGradedCube σ w + θ ^ 2 / 2 * surrGradedQuad σ w := by
+  rw [surrogateRemPoly, surrGradedCube, surrGradedQuad]
+  ring
+
+/-- **`hRg` AT `Zₙ`, REDUCED TO TWO MOMENT INTEGRALS.**  The graded remainder integrates to
+exactly the shape `exists_studentized_low_range_window_bound`'s `hRg` asks for — `r³` times a
+quadratic *and* a cubic in `|ξ|` with **`n`-free** coefficients — as soon as the two moment
+functionals `surrGradedCube`, `surrGradedQuad` of the root's law are bounded uniformly in `n`.
+That is the whole of item (c) of the wave-48 residue, and this lemma is what turns it from an
+estimate on a transform into two named integrals of a bounded random vector. -/
+theorem integral_surrogateRemGraded_le (μ : Measure (EuclideanSpace ℝ (Fin 2))) {σ r : ℝ}
+    (hr : 0 ≤ r) (hr1 : r ≤ 1) (ξ : ℝ) {M₂ M₃ : ℝ}
+    (hi3 : Integrable (surrGradedCube σ) μ) (hi2 : Integrable (surrGradedQuad σ) μ)
+    (h3 : ∫ w, surrGradedCube σ w ∂μ ≤ M₃)
+    (h2 : ∫ w, surrGradedQuad σ w ∂μ ≤ M₂) :
+    ∫ w, surrogateRemGraded (-(2 * Real.pi * ξ)) (w 0 / σ) (w 1 / σ ^ 2) r ∂μ
+      ≤ r ^ 3 * (4 * Real.pi ^ 3 * M₃ / 3 * |ξ| ^ 3 + 2 * Real.pi ^ 2 * M₂ * |ξ| ^ 2) := by
+  set θ : ℝ := -(2 * Real.pi * ξ) with hθ
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have habs : |θ| = 2 * Real.pi * |ξ| := by
+    rw [hθ, abs_neg, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ 2 * Real.pi)]
+  have hsq : θ ^ 2 = 4 * Real.pi ^ 2 * |ξ| ^ 2 := by
+    rw [← sq_abs θ, habs]; ring
+  have hmaj : Integrable (fun w : EuclideanSpace ℝ (Fin 2) =>
+      r ^ 3 * (|θ| ^ 3 / 6 * surrGradedCube σ w + θ ^ 2 / 2 * surrGradedQuad σ w)) μ :=
+    ((hi3.const_mul (|θ| ^ 3 / 6)).add (hi2.const_mul (θ ^ 2 / 2))).const_mul (r ^ 3)
+  have hstep : ∫ w, surrogateRemGraded θ (w 0 / σ) (w 1 / σ ^ 2) r ∂μ
+      ≤ ∫ w, r ^ 3 * (|θ| ^ 3 / 6 * surrGradedCube σ w
+          + θ ^ 2 / 2 * surrGradedQuad σ w) ∂μ := by
+    refine integral_mono_of_nonneg (Filter.Eventually.of_forall fun w => ?_) hmaj
+      (Filter.Eventually.of_forall fun w => ?_)
+    · exact surrogateRemGraded_nonneg _ _ _ hr
+    · have h := surrogateRemGraded_le θ (w 0 / σ) (w 1 / σ ^ 2) hr hr1
+      rwa [surrogateRemPoly_eq_graded] at h
+  refine hstep.trans ?_
+  rw [MeasureTheory.integral_const_mul,
+    integral_add (hi3.const_mul (|θ| ^ 3 / 6)) (hi2.const_mul (θ ^ 2 / 2)),
+    MeasureTheory.integral_const_mul, MeasureTheory.integral_const_mul]
+  have hkey : |θ| ^ 3 / 6 * (∫ w, surrGradedCube σ w ∂μ)
+        + θ ^ 2 / 2 * (∫ w, surrGradedQuad σ w ∂μ)
+      ≤ 4 * Real.pi ^ 3 * M₃ / 3 * |ξ| ^ 3 + 2 * Real.pi ^ 2 * M₂ * |ξ| ^ 2 := by
+    have e3 : |θ| ^ 3 / 6 = 4 * Real.pi ^ 3 / 3 * |ξ| ^ 3 := by rw [habs]; ring
+    have e2 : θ ^ 2 / 2 = 2 * Real.pi ^ 2 * |ξ| ^ 2 := by rw [hsq]; ring
+    rw [e3, e2]
+    have h1 : 4 * Real.pi ^ 3 / 3 * |ξ| ^ 3 * (∫ w, surrGradedCube σ w ∂μ)
+        ≤ 4 * Real.pi ^ 3 / 3 * |ξ| ^ 3 * M₃ :=
+      mul_le_mul_of_nonneg_left h3 (by positivity)
+    have h2' : 2 * Real.pi ^ 2 * |ξ| ^ 2 * (∫ w, surrGradedQuad σ w ∂μ)
+        ≤ 2 * Real.pi ^ 2 * |ξ| ^ 2 * M₂ :=
+      mul_le_mul_of_nonneg_left h2 (by positivity)
+    nlinarith [h1, h2']
+  exact mul_le_mul_of_nonneg_left hkey (by positivity)
+
+/-! ### (c), sharpened: the two functionals are four scalar absolute moments
+
+`surrGradedCube` and `surrGradedQuad` are bivariate; what a moment inequality for a normalised
+sum delivers is a *scalar* absolute moment of one coordinate at a time.  The two lemmas below
+close that gap with no loss of order: every monomial of the two functionals has total degree
+`≤ 9` (resp. `≤ 6`), and a monomial `X^i Y^j` with `i + j = d` is at most `max(X,Y)^d ≤ X^d + Y^d`.
+So item 1 of the residue is, in its final form, **four scalar moments of the two coordinate roots
+of `Zₙ`** — `E|w₀|⁶, E|w₀|⁹, E|w₁|⁶, E|w₁|⁹` — and `integral_surrogateRemGraded_le_of_moments`
+is `hRg` stated directly on them. -/
+
+private lemma pow_le_one_add_pow {M : ℝ} (hM : 0 ≤ M) {a b : ℕ} (hab : a ≤ b) :
+    M ^ a ≤ 1 + M ^ b := by
+  rcases le_or_gt M 1 with h | h
+  · have h1 : M ^ a ≤ 1 := pow_le_one₀ hM h
+    have h2 : (0 : ℝ) ≤ M ^ b := pow_nonneg hM b
+    linarith
+  · have h1 : M ^ a ≤ M ^ b := pow_le_pow_right₀ h.le hab
+    have h2 : (0 : ℝ) ≤ M ^ b := pow_nonneg hM b
+    linarith
+
+private lemma max_pow_le_add {X Y : ℝ} (hX : 0 ≤ X) (hY : 0 ≤ Y) (d : ℕ) :
+    (max X Y) ^ d ≤ X ^ d + Y ^ d := by
+  rcases le_total X Y with h | h
+  · rw [max_eq_right h]
+    have : (0 : ℝ) ≤ X ^ d := pow_nonneg hX d
+    linarith
+  · rw [max_eq_left h]
+    have : (0 : ℝ) ≤ Y ^ d := pow_nonneg hY d
+    linarith
+
+/-- The cubic functional is dominated by ninth absolute moments of the two coordinates. -/
+lemma surrGradedCube_le_moments (σ : ℝ) (w : EuclideanSpace ℝ (Fin 2)) :
+    surrGradedCube σ w ≤ 19 * (1 + |w 0 / σ| ^ 9 + |w 1 / σ ^ 2| ^ 9) := by
+  set X : ℝ := |w 0 / σ| with hX
+  set Y : ℝ := |w 1 / σ ^ 2| with hY
+  have hX0 : 0 ≤ X := abs_nonneg _
+  have hY0 : 0 ≤ Y := abs_nonneg _
+  set M : ℝ := max X Y with hM
+  have hM0 : 0 ≤ M := le_trans hX0 (le_max_left _ _)
+  have hXM : X ≤ M := le_max_left _ _
+  have hYM : Y ≤ M := le_max_right _ _
+  have h2 : X * Y ≤ M ^ 2 := by
+    calc X * Y ≤ M * M := mul_le_mul hXM hYM hY0 hM0
+      _ = M ^ 2 := by ring
+  have h3 : X ^ 3 ≤ M ^ 3 := pow_le_pow_left₀ hX0 hXM 3
+  have h3' : X * Y ^ 2 ≤ M ^ 3 := by
+    have hy2 : Y ^ 2 ≤ M ^ 2 := pow_le_pow_left₀ hY0 hYM 2
+    calc X * Y ^ 2 ≤ M * M ^ 2 := mul_le_mul hXM hy2 (by positivity) hM0
+      _ = M ^ 3 := by ring
+  have hM23 : M ^ 2 ≤ 1 + M ^ 3 := pow_le_one_add_pow hM0 (by norm_num)
+  have hbase : X * Y / 2 + (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8) ≤ 11 / 8 * (1 + M ^ 3) := by
+    nlinarith [h2, h3, h3', hM23]
+  have hbase0 : (0 : ℝ) ≤ X * Y / 2 + (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8) := by positivity
+  have hcube : (X * Y / 2 + (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8)) ^ 3
+      ≤ (11 / 8 * (1 + M ^ 3)) ^ 3 := pow_le_pow_left₀ hbase0 hbase 3
+  have hM36 : M ^ 3 ≤ 1 + M ^ 9 := pow_le_one_add_pow hM0 (by norm_num)
+  have hM69 : M ^ 6 ≤ 1 + M ^ 9 := pow_le_one_add_pow hM0 (by norm_num)
+  have hM9 : M ^ 9 ≤ X ^ 9 + Y ^ 9 := max_pow_le_add hX0 hY0 9
+  have hexp : (11 / 8 * (1 + M ^ 3)) ^ 3
+      = 1331 / 512 * (1 + 3 * M ^ 3 + 3 * M ^ 6 + M ^ 9) := by ring
+  have hinner : 1 + 3 * M ^ 3 + 3 * M ^ 6 + M ^ 9 ≤ 7 * (1 + X ^ 9 + Y ^ 9) := by
+    nlinarith [hM36, hM69, hM9, pow_nonneg hX0 9, pow_nonneg hY0 9]
+  have hfin : (11 / 8 * (1 + M ^ 3)) ^ 3 ≤ 19 * (1 + X ^ 9 + Y ^ 9) := by
+    rw [hexp]
+    nlinarith [hinner, pow_nonneg hX0 9, pow_nonneg hY0 9]
+  have hgoal : surrGradedCube σ w
+      = (X * Y / 2 + (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8)) ^ 3 := by
+    rw [surrGradedCube, hX, hY]; ring
+  rw [hgoal]
+  linarith [hcube, hfin]
+
+/-- The quadratic functional is dominated by sixth absolute moments of the two coordinates. -/
+lemma surrGradedQuad_le_moments (σ : ℝ) (w : EuclideanSpace ℝ (Fin 2)) :
+    surrGradedQuad σ w ≤ 2 * (1 + |w 0 / σ| ^ 6 + |w 1 / σ ^ 2| ^ 6) := by
+  set X : ℝ := |w 0 / σ| with hX
+  set Y : ℝ := |w 1 / σ ^ 2| with hY
+  have hX0 : 0 ≤ X := abs_nonneg _
+  have hY0 : 0 ≤ Y := abs_nonneg _
+  set M : ℝ := max X Y with hM
+  have hM0 : 0 ≤ M := le_trans hX0 (le_max_left _ _)
+  have hXM : X ≤ M := le_max_left _ _
+  have hYM : Y ≤ M := le_max_right _ _
+  have hA : X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8 ≤ 7 / 8 * M ^ 3 := by
+    have h3 : X ^ 3 ≤ M ^ 3 := pow_le_pow_left₀ hX0 hXM 3
+    have h3' : X * Y ^ 2 ≤ M ^ 3 := by
+      have hy2 : Y ^ 2 ≤ M ^ 2 := pow_le_pow_left₀ hY0 hYM 2
+      calc X * Y ^ 2 ≤ M * M ^ 2 := mul_le_mul hXM hy2 (by positivity) hM0
+        _ = M ^ 3 := by ring
+    linarith
+  have hA0 : (0 : ℝ) ≤ X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8 := by positivity
+  have hP : X * Y ≤ M ^ 2 := by
+    calc X * Y ≤ M * M := mul_le_mul hXM hYM hY0 hM0
+      _ = M ^ 2 := by ring
+  have hPA : X * Y * (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8) ≤ 7 / 8 * M ^ 5 := by
+    calc X * Y * (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8)
+        ≤ M ^ 2 * (7 / 8 * M ^ 3) :=
+          mul_le_mul hP hA hA0 (pow_nonneg hM0 2)
+      _ = 7 / 8 * M ^ 5 := by ring
+  have hAsq : (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8) ^ 2 ≤ 49 / 64 * M ^ 6 := by
+    calc (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8) ^ 2 ≤ (7 / 8 * M ^ 3) ^ 2 :=
+          pow_le_pow_left₀ hA0 hA 2
+      _ = 49 / 64 * M ^ 6 := by ring
+  have hM56 : M ^ 5 ≤ 1 + M ^ 6 := pow_le_one_add_pow hM0 (by norm_num)
+  have hM6 : M ^ 6 ≤ X ^ 6 + Y ^ 6 := max_pow_le_add hX0 hY0 6
+  have hgoal : surrGradedQuad σ w
+      = X * Y * (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8)
+        + (X ^ 3 / 2 + 3 * (X * Y ^ 2) / 8) ^ 2 := by
+    rw [surrGradedQuad, hX, hY]; ring
+  rw [hgoal]
+  nlinarith [hPA, hAsq, hM56, hM6, pow_nonneg hX0 6, pow_nonneg hY0 6]
+
+/-- **`hRg` AT `Zₙ`, IN FOUR SCALAR MOMENTS.** -/
+theorem integral_surrogateRemGraded_le_of_moments (μ : Measure (EuclideanSpace ℝ (Fin 2)))
+    [IsProbabilityMeasure μ] {σ r : ℝ} (hr : 0 ≤ r) (hr1 : r ≤ 1) (ξ : ℝ) {M₆ M₉ : ℝ}
+    (hi9a : Integrable (fun w : EuclideanSpace ℝ (Fin 2) => |w 0 / σ| ^ 9) μ)
+    (hi9b : Integrable (fun w : EuclideanSpace ℝ (Fin 2) => |w 1 / σ ^ 2| ^ 9) μ)
+    (hi6a : Integrable (fun w : EuclideanSpace ℝ (Fin 2) => |w 0 / σ| ^ 6) μ)
+    (hi6b : Integrable (fun w : EuclideanSpace ℝ (Fin 2) => |w 1 / σ ^ 2| ^ 6) μ)
+    (h9 : (∫ w, |w 0 / σ| ^ 9 ∂μ) + ∫ w, |w 1 / σ ^ 2| ^ 9 ∂μ ≤ M₉)
+    (h6 : (∫ w, |w 0 / σ| ^ 6 ∂μ) + ∫ w, |w 1 / σ ^ 2| ^ 6 ∂μ ≤ M₆) :
+    ∫ w, surrogateRemGraded (-(2 * Real.pi * ξ)) (w 0 / σ) (w 1 / σ ^ 2) r ∂μ
+      ≤ r ^ 3 * (4 * Real.pi ^ 3 * (19 * (1 + M₉)) / 3 * |ξ| ^ 3
+          + 2 * Real.pi ^ 2 * (2 * (1 + M₆)) * |ξ| ^ 2) := by
+  have hmc : Measurable (surrGradedCube σ) := by
+    unfold surrGradedCube; fun_prop
+  have hmq : Measurable (surrGradedQuad σ) := by
+    unfold surrGradedQuad; fun_prop
+  have maj9 : Integrable
+      (fun w : EuclideanSpace ℝ (Fin 2) => 19 * (1 + |w 0 / σ| ^ 9 + |w 1 / σ ^ 2| ^ 9)) μ :=
+    (((integrable_const (1 : ℝ)).add hi9a).add hi9b).const_mul 19
+  have maj6 : Integrable
+      (fun w : EuclideanSpace ℝ (Fin 2) => 2 * (1 + |w 0 / σ| ^ 6 + |w 1 / σ ^ 2| ^ 6)) μ :=
+    (((integrable_const (1 : ℝ)).add hi6a).add hi6b).const_mul 2
+  have hic : Integrable (surrGradedCube σ) μ := by
+    refine Integrable.mono' maj9 hmc.aestronglyMeasurable ?_
+    filter_upwards with w
+    rw [Real.norm_eq_abs, abs_of_nonneg (surrGradedCube_nonneg σ w)]
+    exact surrGradedCube_le_moments σ w
+  have hiq : Integrable (surrGradedQuad σ) μ := by
+    refine Integrable.mono' maj6 hmq.aestronglyMeasurable ?_
+    filter_upwards with w
+    rw [Real.norm_eq_abs, abs_of_nonneg (surrGradedQuad_nonneg σ w)]
+    exact surrGradedQuad_le_moments σ w
+  have hint9 : (∫ w, 19 * (1 + |w 0 / σ| ^ 9 + |w 1 / σ ^ 2| ^ 9) ∂μ)
+      = 19 * (1 + (∫ w, |w 0 / σ| ^ 9 ∂μ) + ∫ w, |w 1 / σ ^ 2| ^ 9 ∂μ) := by
+    have e1 : (∫ w : EuclideanSpace ℝ (Fin 2), ((1 : ℝ) + |w 0 / σ| ^ 9 + |w 1 / σ ^ 2| ^ 9) ∂μ)
+        = (∫ w : EuclideanSpace ℝ (Fin 2), ((1 : ℝ) + |w 0 / σ| ^ 9) ∂μ)
+          + ∫ w : EuclideanSpace ℝ (Fin 2), |w 1 / σ ^ 2| ^ 9 ∂μ :=
+      integral_add ((integrable_const (1 : ℝ)).add hi9a) hi9b
+    have e2 : (∫ w : EuclideanSpace ℝ (Fin 2), ((1 : ℝ) + |w 0 / σ| ^ 9) ∂μ)
+        = 1 + ∫ w : EuclideanSpace ℝ (Fin 2), |w 0 / σ| ^ 9 ∂μ := by
+      have := integral_add (μ := μ) (integrable_const (1 : ℝ)) hi9a
+      rw [this, integral_const]
+      simp
+    rw [MeasureTheory.integral_const_mul, e1, e2]
+  have hint6 : (∫ w, 2 * (1 + |w 0 / σ| ^ 6 + |w 1 / σ ^ 2| ^ 6) ∂μ)
+      = 2 * (1 + (∫ w, |w 0 / σ| ^ 6 ∂μ) + ∫ w, |w 1 / σ ^ 2| ^ 6 ∂μ) := by
+    have e1 : (∫ w : EuclideanSpace ℝ (Fin 2), ((1 : ℝ) + |w 0 / σ| ^ 6 + |w 1 / σ ^ 2| ^ 6) ∂μ)
+        = (∫ w : EuclideanSpace ℝ (Fin 2), ((1 : ℝ) + |w 0 / σ| ^ 6) ∂μ)
+          + ∫ w : EuclideanSpace ℝ (Fin 2), |w 1 / σ ^ 2| ^ 6 ∂μ :=
+      integral_add ((integrable_const (1 : ℝ)).add hi6a) hi6b
+    have e2 : (∫ w : EuclideanSpace ℝ (Fin 2), ((1 : ℝ) + |w 0 / σ| ^ 6) ∂μ)
+        = 1 + ∫ w : EuclideanSpace ℝ (Fin 2), |w 0 / σ| ^ 6 ∂μ := by
+      have := integral_add (μ := μ) (integrable_const (1 : ℝ)) hi6a
+      rw [this, integral_const]
+      simp
+    rw [MeasureTheory.integral_const_mul, e1, e2]
+  have h3 : (∫ w, surrGradedCube σ w ∂μ) ≤ 19 * (1 + M₉) := by
+    refine (integral_mono hic maj9 (fun w => surrGradedCube_le_moments σ w)).trans ?_
+    rw [hint9]
+    linarith
+  have h2 : (∫ w, surrGradedQuad σ w ∂μ) ≤ 2 * (1 + M₆) := by
+    refine (integral_mono hiq maj6 (fun w => surrGradedQuad_le_moments σ w)).trans ?_
+    rw [hint6]
+    linarith
+  exact integral_surrogateRemGraded_le μ hr hr1 ξ hic hiq h3 h2
+
+/-- **The crude pointwise route to (c) misses by twelve powers.**  The pointwise bound on the
+root of `Zₙ` is `n^{3/2}` (the second coordinate of the summand is bounded by `τ² = n`, not by
+`τ`), `surrGradedCube` is of degree nine, and the shape carries `r³ = n^{-3/2}`; the product is
+`n^{12}`, not `O(1)`. -/
+lemma crude_graded_ledger_exponent {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) ^ (-(3 : ℝ) / 2) * ((n : ℝ) ^ ((3 : ℝ) / 2)) ^ (9 : ℕ) = (n : ℝ) ^ (12 : ℝ) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_natCast ((n : ℝ) ^ ((3 : ℝ) / 2)) 9, ← Real.rpow_mul h0.le,
+    ← Real.rpow_add h0]
+  norm_num
+
+/-- The same ledger with the *graded* placement of the powers of `r`: the worst monomial carries
+`r⁶ = n⁻³`, and `n^{21/2}` is still not `O(1)`. -/
+lemma crude_graded_ledger_exponent_graded {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) ^ (-(3 : ℝ)) * ((n : ℝ) ^ ((3 : ℝ) / 2)) ^ (9 : ℕ) = (n : ℝ) ^ ((21 : ℝ) / 2) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_natCast ((n : ℝ) ^ ((3 : ℝ) / 2)) 9, ← Real.rpow_mul h0.le,
+    ← Real.rpow_add h0]
+  norm_num
+
 /-- **One-term Edgeworth expansion for the studentized sample mean, uniform in the argument.**
 
 Under a finite fourth moment and absolute continuity of the sampling law, the sampling
@@ -17267,6 +17863,105 @@ the three things wave 48 found are corrections to that; the third is a new item.
   Rosenthal bound at the truncation level and is the only one of the eight with any content
   left; (d) the composition, unchanged from wave 47's list. Items 1, 2 and 3 of the wave-46
   residue are closed and nothing found here touches them, the certificate, or (U1)–(U3).
+
+  **This theorem is therefore still `sorry`, the file is at one `sorry`, and Batch 12 is not
+  complete.**
+
+---
+
+**Status after wave 49. ITEM (a) IS PROVED, ITEM (b) IS FREE, ITEM (c) IS REDUCED TO TWO NAMED
+MOMENT INTEGRALS — AND THE RE-CENTRING IS NOT CONFINED TO THE LOW RANGE, WHICH WAVE 48'S
+"(d) THE COMPOSITION, UNCHANGED" MISSES.  THIS THEOREM IS STILL `sorry` AND WAVE 49 DOES NOT
+CLAIM OTHERWISE.**
+
+* **(a) IS PROVED, AND `Zₙ` IS NOT A NEW OBJECT.**  `pairAt c v` is the studentizing pair at an
+  arbitrary centring and `studentPair G = pairAt (∫s∂G) Var[G]` *definitionally*, so the
+  re-centred truncated pair is `Zₙ = studentPair (F.map T) ∘ T` — the existing pair read on the
+  truncated **law** `G = F.map T`, not a new construction.  Nothing downstream of the pair has to
+  be redefined.  `abs_studentizedRootCDF_sub_recentred_le` is item (a): the studentized
+  distribution function and the mass the root law of `Zₙ` gives to the studentized region *of
+  `G`*, with the numerator shifted by `√n(mₙ − m)`, differ by `n·μ₄/τ⁴ = μ₄/n` at `τ = √n`.
+
+* **THE FIRST CORRECTION — THE VARIANCE DISCREPANCY COSTS NOTHING, AND THE CHANGE OF CENTRING IS
+  AN IDENTITY.**  Wave 48 prices the comparison by *two* defects, `|mₙ − m| ≤ μ₄/n^{3/2}` and
+  `|vₙ − Var F| ≤ μ₄/n`.  The second never enters.  The radicand of the studentized region is the
+  **sample** variance (`pairAt_root_radicand`), and the sample variance does not see the centring
+  at all; so re-centring moves the numerator and leaves the region's shape untouched.
+  `vecRootLaw_pairAt_region_eq` is therefore an *identity* with no error term — both preimages
+  are the single set `{y : √n(T̄ − c)/√(sampleVariance (T∘y)) ≤ z}` — and the entire cost of the
+  re-centring is the one numerator shift `√n(mₙ − m)`, `O(n⁻¹)` by `abs_integral_truncAt_sub_le`,
+  which is what the peel prices.  Wave 48's account is not wrong about the order; it is wrong
+  about there being two items, and the one that survives is exact.
+
+* **(b) IS FREE, AND IT DOES NOT SPEND `hF8`.**  `T` is bounded, so `G = F.map T` has moments of
+  every order (`memLp_id_map_truncAt`) with **no** hypothesis on `F` beyond finiteness; the
+  equalities `hmean`/`hthird`/`hm0`/`hm1`/`hcent` are then `integral_inner_studentPair` at `G`
+  (`integral_inner_studentPair_map_truncAt`), and boundedness of `Zₙ` is
+  `norm_studentPair_map_truncAt_le` — the truncation level widened by the bias `μ₄/τ³`.  Wave 47
+  says the eight are "moment bookkeeping on the truncated pair, which is where `hF8` is already
+  spent"; the centring half of that costs nothing at all, and `hF8` is spent entirely on the
+  sizes.
+
+* **(c) IS EXACTLY TWO MOMENT INTEGRALS, AND THE SECOND CORRECTION — THE CRUDE POINTWISE ROUTE
+  IS DEAD BY TWELVE POWERS.**  `integral_surrogateRemGraded_le` proves `hRg` outright, at
+  `C₃ = 4π³M₃/3` and `C₂ = 2π²M₂`, from `∫ surrGradedCube σ ≤ M₃` and `∫ surrGradedQuad σ ≤ M₂`
+  on the root's law: the transform disappears from the statement of (c) entirely and what is left
+  is a **ninth** and a **sixth** moment of a normalised sum of bounded, exactly centred summands.
+  Wave 48 offers "a crude `‖Zₙ‖ ≤ C√n` pointwise route if the ledger tolerates it".  It is wrong
+  twice.  `Zₙ`'s *second* coordinate is bounded by `τ² = n`, not by `τ = √n`, so the pointwise
+  bound on the summand is `O(n)` and on the root `O(n^{3/2})`; and against the `r³ = n^{-3/2}`
+  the shape carries, a degree-nine functional of that is `n^{12}`
+  (`crude_graded_ledger_exponent`), with the *graded* placement `r⁶ = n⁻³` still leaving
+  `n^{21/2}` (`crude_graded_ledger_exponent_graded`).  Lowering `τ` does not repair it either —
+  the change of law `n·μ₄/τ⁴` then exceeds `n⁻¹`.  **Rosenthal at orders `6` and `9`, and nothing
+  weaker, is what (c) owes.**
+
+* **THE THIRD CORRECTION, AND IT IS THE ONE THAT COSTS — THE RE-CENTRING IS GLOBAL.**  Wave 48
+  prescribes running "the whole low range" on `Zₙ` and calls the composition "unchanged".  It is
+  not: `esseen_split_low` is one split of **one** law, so if the low range is on the root law of
+  `Zₙ` then the middle and outer ranges are too — and all three of the middle range's
+  probabilistic inputs are stated at the *un-re-centred* pair:
+  `exists_fourierCertificate_deltaSurrogate`,
+  `exists_bulk_majorant_vecRootLaw_studentPair_truncAt` and
+  `exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt` all carry
+  `vecRootLaw F (studentPair F ∘ truncAt (∫s∂F) √n) n` in their conclusions.  (The fourth,
+  `norm_charFunDensity_studentizedEdgeworthDensity_le`, is about the comparison density and is
+  free.)  **This is a fourth item of the residue and no wave has named it.**
+
+  What repairs it is a transfer, not a re-proof, and the device is exact:
+  `pairAt_zero_eq_affine`/`pairAt_one_eq_affine` show
+
+  `studentPair F ∘ T = L ∘ Zₙ + c`,  `L(a, b) = (a, b + 2δa)`,  `δ = mₙ − m`,
+  `c = (δ, vₙ + δ² − σ²)`,
+
+  with `L` unipotent — hence invertible with `‖L − I‖ = 2|δ| = O(n^{-3/2})` — so on the roots
+  `w_F = L(w_Z) + √n c` and every transform bound transfers under `t ↦ Lᵀt` together with a
+  unimodular translation factor.  Both `‖L‖` and `‖L⁻¹‖` are `1 + O(n^{-3/2})`, so no radius,
+  band or ledger exponent moves.
+
+* **WHAT THE RESIDUE IS NOW.**  Five items.
+  1. *Rosenthal at orders `6` and `9`* for a normalised sum of bounded, exactly centred summands
+     — the remaining half of (c) and **the only analytic item**.  Its interface is now four
+     **scalar** absolute moments of the two coordinate roots of `Zₙ`, `E|w₀|⁶`, `E|w₀|⁹`,
+     `E|w₁|⁶`, `E|w₁|⁹` (`integral_surrogateRemGraded_le_of_moments`), and the arithmetic that
+     makes them `O(1)` is: on the first coordinate `|Z₀| ≤ τ = √n` so `E|Z₀|⁹ ≤ τ·μ₈ = √n·μ₈`
+     and `n^{1−9/2}·√n·μ₈ = n^{−3}μ₈`; on the second `|Z₁| ≲ τ² = n` so `E|Z₁|⁶ ≲ τ⁴μ₈ = n²μ₈`
+     and `n^{1−3}·n²μ₈ = μ₈`.  Both are `O(1)`, with room; what is missing is the inequality, not
+     the moments.  The file has the order-four analogue (`integral_pi_sum_pow_four_le`) and
+     nothing above it.
+  2. *The moment identification of the polynomial coefficients* in `hB1`, `hB2`, `h3a`, `h3b`,
+     `h4` at `Zₙ` — bookkeeping, over the arithmetic half wave 48 proved
+     (`exists_const_of_damped_poly`).
+  3. *The affine transfer of the middle- and outer-range inputs to `Zₙ`*, named above.
+  4. *The skewness comparison.*  The low range produces the approximant at `γₙ`, the skewness of
+     `G`; the headline is stated at `skewness F`.  Wave 48 names `|γₙ − γ|` in passing and prices
+     it at `n^{-1/2}·n^{-1/2}`; it is not proved and it is not part of items 1–3.
+  5. *The composition*, and with it the one thing waves 46 and 47 recorded as owed and no wave
+     has supplied: `exists_fourierCertificate_deltaSurrogate` is proved at `N = 10` and delivers
+     `O(n^{-3/2})`, while the middle range at `ρ = n²` needs `n^{−17/6}`, i.e. `N = 138` at
+     `M = n^{23/24}` (`leakage_ledger_radius_138_le`).  That is a budget statement wave 46 made
+     and wave 47 repeated; it is not a consequence of anything found here, but it is still owed
+     and the wave-48 phrase "(d) the composition, unchanged" does not name it.
 
   **This theorem is therefore still `sorry`, the file is at one `sorry`, and Batch 12 is not
   complete.** -/
