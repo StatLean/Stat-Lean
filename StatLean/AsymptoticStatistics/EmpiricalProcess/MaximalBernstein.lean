@@ -443,14 +443,9 @@ private lemma bernstein_mgf_centered_bound
     have h_div_le : (2 * M * t) ^ (j + 2) / ((j + 2).factorial : ℝ)
         ≤ (2 * M * t) ^ (j + 2) / 2 := by
       apply div_le_div_of_nonneg_left (by positivity) (by norm_num) hfact_ge_2
-    -- And (2Mt)^(j+2) / 2 = (2Mt)^j · (2Mt)^2 / 2 ≤ (2Mt)^j · (2M)^2 · t^2 / 2 ... but
-    -- (2Mt)^2 = (2M)^2 · t^2 = 4 M² t² and we want σ² · t² · (2Mt)^j / 2.
-    -- Need σ² ≥ ... Wait — we don't have σ² ≥ (2M)². The book bound uses σ² (the variance)
-    -- and (2M)^(k-2). The bound on |a k| from `ha_abs_bdd` was via the *crude* dominator
-    -- (2Mt)^k / k!. We instead need to use the *true* moment bound _hY_mom for k ≥ 2.
-    -- Re-derive the tighter tail bound directly from hY_mom.
-    -- Tighter bound: |a (j+2)| ≤ |t^(j+2) / (j+2)!| · |∫ Y^(j+2)| ≤ t^(j+2)/(j+2)! · σ² · (2M)^j.
-    -- Then (j+2)! ≥ 2 gives ≤ t^(j+2) · σ² · (2M)^j / 2 = σ² · t² · (2Mt)^j / 2 = b j.
+    -- Apply the centered-moment bound directly:
+    -- `|a (j+2)| ≤ t^(j+2)/(j+2)! · σ² · (2M)^j`.
+    -- Since `(j+2)! ≥ 2` and `t^(j+2) · (2M)^j = t² · (2Mt)^j`, this is at most `b j`.
     have h_a_bound : |a (j + 2)|
         ≤ t ^ (j + 2) / ((j + 2).factorial : ℝ) * (σ ^ 2 * (2 * M) ^ j) := by
       rw [ha_def]
@@ -964,8 +959,9 @@ private lemma bernstein_one_sided
 /-! ### Step 5: assembly — two-sided Bernstein from one-sided. -/
 
 /-- Bernstein's inequality assembled from `bernstein_one_sided` + `empiricalProcess_neg`.
-This is the body of `bernstein_inequality` (which lives in `Maximal.lean` for import
-DAG reasons but is unfolded here). -/
+The analytic proof lives in this lower-level module, which `Maximal.lean` imports;
+the public `bernstein_inequality` wrapper is grouped there with the finite-class and
+bracketing maximal inequalities and delegates to `bernstein_inequality_aux` below. -/
 private lemma bernstein_two_sided
     (P : Measure Ω) [IsProbabilityMeasure P]
     (f : Ω → ℝ) (hf_meas : Measurable f)

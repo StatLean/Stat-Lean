@@ -199,22 +199,27 @@ to host only the envelope/slice/maximal-inequality/diagonal content. -/
 private lemma equi_chain_chain_sequence_exists
     (F : Set (Ω → ℝ)) (P : Measure Ω)
     (h_int : bracketingEntropyIntegral 1 F P < ⊤) :
-    ∃ δ : ℕ → ℝ, (∀ q, 0 < δ q) ∧ (∀ q, δ q ≤ 1) ∧
+    ∃ δ : ℕ → ℝ, (∀ q, 0 < δ q) ∧ (∀ q, δ q ≤ 1 / 4) ∧
       Tendsto δ atTop (𝓝 0) ∧
       Tendsto (fun q => bracketingEntropyIntegral (δ q) F P) atTop (𝓝 0) := by
-  refine ⟨fun q => 1 / ((q : ℝ) + 1), ?_, ?_, ?_, ?_⟩
+  -- `δ_q := 1 / (4·(q+1)) ∈ (0, 1/4]`, tends to 0; localized chaining needs δ ≤ 1/4.
+  refine ⟨fun q => 1 / (4 * ((q : ℝ) + 1)), ?_, ?_, ?_, ?_⟩
   · intro q; positivity
   · intro q
-    rw [div_le_one (by positivity)]
-    have : (1 : ℝ) ≤ (q : ℝ) + 1 := by
-      have : (0 : ℝ) ≤ (q : ℝ) := Nat.cast_nonneg q
-      linarith
-    exact this
-  · exact tendsto_one_div_add_atTop_nhds_zero_nat
+    have hq : (0 : ℝ) ≤ (q : ℝ) := Nat.cast_nonneg q
+    have h4 : (1 : ℝ) / 4 = 1 / (4 * (0 + 1)) := by norm_num
+    rw [h4]
+    apply one_div_le_one_div_of_le (by positivity)
+    nlinarith
+  · -- `1/(4(q+1)) = (1/4)·(1/(q+1)) → 0`.
+    have h := (tendsto_one_div_add_atTop_nhds_zero_nat).const_mul (1 / 4 : ℝ)
+    simp only [mul_zero] at h
+    refine h.congr (fun q => ?_)
+    rw [one_div, one_div, ← mul_inv]; norm_num
   · -- Apply `tendsto_setLIntegral_zero` with the restricted Lebesgue measure on `Ioc 0 1`.
     set g : ℝ → ℝ≥0∞ := fun ε =>
       ENat.recTopCoe (⊤ : ℝ≥0∞)
-        (fun n : ℕ => ENNReal.ofReal (Real.sqrt (Real.log (n : ℝ))))
+        (fun n : ℕ => ENNReal.ofReal (Real.sqrt (Real.log (1 + (n : ℝ)))))
         (bracketingNumber ε F 2 P) with hg_def
     -- For δ ∈ (0, 1], `∫⁻ ε in Ioc 0 δ, g dvol = ∫⁻ ε in Ioc 0 δ, g d(vol.restrict (Ioc 0 1))`.
     have h_restrict_eq : ∀ δ : ℝ, 0 < δ → δ ≤ 1 →
@@ -230,42 +235,45 @@ private lemma equi_chain_chain_sequence_exists
       have : ∫⁻ ε, g ε ∂(volume.restrict (Set.Ioc (0 : ℝ) 1)) =
           bracketingEntropyIntegral 1 F P := rfl
       rw [this]; exact h_int.ne
-    -- The measure `(vol.restrict (Ioc 0 1)) (Ioc 0 (1/(q+1)))` tends to `0`.
+    -- The measure `(vol.restrict (Ioc 0 1)) (Ioc 0 (1/(4(q+1))))` tends to `0`.
     have h_meas_tendsto : Tendsto
         (fun q : ℕ => (volume.restrict (Set.Ioc (0 : ℝ) 1))
-          (Set.Ioc 0 ((1 : ℝ) / ((q : ℝ) + 1)))) atTop (𝓝 0) := by
+          (Set.Ioc 0 ((1 : ℝ) / (4 * ((q : ℝ) + 1))))) atTop (𝓝 0) := by
       have h_vol_eq : ∀ q : ℕ,
           (volume.restrict (Set.Ioc (0 : ℝ) 1))
-              (Set.Ioc 0 ((1 : ℝ) / ((q : ℝ) + 1))) =
-            ENNReal.ofReal ((1 : ℝ) / ((q : ℝ) + 1)) := by
+              (Set.Ioc 0 ((1 : ℝ) / (4 * ((q : ℝ) + 1)))) =
+            ENNReal.ofReal ((1 : ℝ) / (4 * ((q : ℝ) + 1))) := by
         intro q
-        have hpos : (0 : ℝ) < 1 / ((q : ℝ) + 1) := by positivity
-        have hle : (1 : ℝ) / ((q : ℝ) + 1) ≤ 1 := by
+        have hpos : (0 : ℝ) < 1 / (4 * ((q : ℝ) + 1)) := by positivity
+        have hle : (1 : ℝ) / (4 * ((q : ℝ) + 1)) ≤ 1 := by
           rw [div_le_one (by positivity)]
           have : (0 : ℝ) ≤ (q : ℝ) := Nat.cast_nonneg q
-          linarith
+          nlinarith
         rw [Measure.restrict_apply measurableSet_Ioc, Set.Ioc_inter_Ioc,
           max_self (0 : ℝ), min_eq_left hle,
           Real.volume_Ioc, sub_zero]
       have h_ofReal_tendsto : Tendsto
-          (fun q : ℕ => ENNReal.ofReal ((1 : ℝ) / ((q : ℝ) + 1)))
-          atTop (𝓝 (ENNReal.ofReal 0)) :=
-        (ENNReal.continuous_ofReal.tendsto _).comp
-          tendsto_one_div_add_atTop_nhds_zero_nat
+          (fun q : ℕ => ENNReal.ofReal ((1 : ℝ) / (4 * ((q : ℝ) + 1))))
+          atTop (𝓝 (ENNReal.ofReal 0)) := by
+        refine (ENNReal.continuous_ofReal.tendsto _).comp ?_
+        have h := (tendsto_one_div_add_atTop_nhds_zero_nat).const_mul (1 / 4 : ℝ)
+        simp only [mul_zero] at h
+        refine h.congr (fun q => ?_)
+        rw [one_div, one_div, ← mul_inv]; norm_num
       rw [ENNReal.ofReal_zero] at h_ofReal_tendsto
       refine h_ofReal_tendsto.congr (fun q => (h_vol_eq q).symm)
     -- Combine via `tendsto_setLIntegral_zero`.
     have h_set_tendsto : Tendsto
-        (fun q : ℕ => ∫⁻ ε in Set.Ioc 0 ((1 : ℝ) / ((q : ℝ) + 1)), g ε
+        (fun q : ℕ => ∫⁻ ε in Set.Ioc 0 ((1 : ℝ) / (4 * ((q : ℝ) + 1))), g ε
           ∂(volume.restrict (Set.Ioc (0 : ℝ) 1))) atTop (𝓝 0) :=
       tendsto_setLIntegral_zero h_J1_finite h_meas_tendsto
     -- Bridge back via `h_restrict_eq`.
     refine h_set_tendsto.congr (fun q => ?_)
-    have hpos : (0 : ℝ) < 1 / ((q : ℝ) + 1) := by positivity
-    have hle : (1 : ℝ) / ((q : ℝ) + 1) ≤ 1 := by
+    have hpos : (0 : ℝ) < 1 / (4 * ((q : ℝ) + 1)) := by positivity
+    have hle : (1 : ℝ) / (4 * ((q : ℝ) + 1)) ≤ 1 := by
       rw [div_le_one (by positivity)]
       have : (0 : ℝ) ≤ (q : ℝ) := Nat.cast_nonneg q
-      linarith
+      nlinarith
     exact (h_restrict_eq _ hpos hle).symm
 
 /-- **Diagonal chaining assembly given the chain sequence**.
@@ -315,25 +323,24 @@ private lemma equi_chain_assembly_given_chain_sequence
     (h_prob_l2 : ∀ δ : ℝ, 0 < δ → Tendsto (fun n =>
         μ {ξ | δ ≤ ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P}) atTop (𝓝 0))
     -- Derived from `_h_int` via `equi_chain_chain_sequence_exists`.
-    (δ : ℕ → ℝ) (hδ_pos : ∀ q, 0 < δ q) (_hδ_le_one : ∀ q, δ q ≤ 1)
+    (δ : ℕ → ℝ) (hδ_pos : ∀ q, 0 < δ q) (_hδ_le_quarter : ∀ q, δ q ≤ 1 / 4)
     (_hδ_to_zero : Tendsto δ atTop (𝓝 0))
     (hδ_J_to_zero :
       Tendsto (fun q => bracketingEntropyIntegral (δ q) F P) atTop (𝓝 0))
-    -- regularity input on the function class `F`. The degenerate case
-    -- (J ≡ 0, i.e. `F` is L²-trivial at scale δ) is statistically vacuous.
-    (hJ_pos : ∀ δ' : ℝ, 0 < δ' → 0 < bracketingEntropyIntegral δ' F P)
-    -- see `chain_supnorm_integral_bound_at_delta_q` (bracket-restricted
-    -- subclass + tight bound).
+    -- The δq-LOCALIZED chaining bound (vdV Lemma 19.34, localized form); see
+    -- `chaining_integral_universal_K` in `Maximal.lean`.
     (hChainBound_outer :
-      ∀ (Φ : Ω → ℝ), Measurable Φ → IsEnvelope F Φ → MemLp Φ 2 P →
-        ∀ {δq : ℝ}, 0 < δq → ∀ (n : ℕ),
-          ∫⁻ ξ, supNormOver F
-                (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ∂μ
-            ≤ ENNReal.ofReal 2 * bracketingEntropyIntegral δq F P
-              + ENNReal.ofReal 2 *
-                (ENNReal.ofReal (Real.sqrt n)
-                  * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
-                      * Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω ∂P))
+      ∃ c : ℝ, 0 < c ∧
+      ∀ (Φ : Ω → ℝ), Measurable Φ → IsEnvelope (differenceClass F) Φ → MemLp Φ 2 P →
+        ∀ {δq : ℝ}, 0 < δq → δq ≤ 1 / 4 →
+          ∃ M : ℝ, 0 < M ∧ ∀ (n : ℕ),
+            ∫⁻ ξ, supNormOver (localizedDifferenceClass F P δq)
+                  (fun h => empiricalProcess P n (fun i : Fin n => X i.val ξ) h) ∂μ
+              ≤ ENNReal.ofReal c * bracketingEntropyIntegral δq F P
+                + ENNReal.ofReal c *
+                  (ENNReal.ofReal (Real.sqrt n)
+                    * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
+                        * Set.indicator {x | Real.sqrt n * M < |Φ x|} 1 ω ∂P))
     (η : ℝ) (_hη : 0 < η) :
     Tendsto (fun n =>
       μ {ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
@@ -362,12 +369,10 @@ private lemma equi_chain_assembly_given_chain_sequence
   -- envelope-tail term absorbed into the eventually-in-`n` quantifier;
   -- held in `chaining_per_q_max_ineq_bound`, specialized along the chain
   -- sequence δ via `hδ_pos`.
-  have hJq_pos : ∀ q, 0 < bracketingEntropyIntegral (δ q) F P :=
-    fun q => hJ_pos (δ q) (hδ_pos q)
   obtain ⟨K, _hK_pos, h_per_q_bound⟩ :=
     chaining_per_q_max_ineq_bound F P _h_int μ X _hX_meas _hX_iindep _hX_id
       _hX_law fhat ghat _h_fhat_meas _h_ghat_meas _h_fhat_in _h_ghat_in
-      δ hδ_pos _hδ_le_one hJq_pos hChainBound_outer η _hη
+      δ hδ_pos _hδ_le_quarter hChainBound_outer η _hη
   -- Diagonal q-extraction: `K · J(δ_q, F, P) → 0` as `q → ∞` by
   -- `_hδ_J_to_zero` plus `ENNReal.Tendsto.const_mul` (with the side
   -- condition `ENNReal.ofReal K ≠ ∞`, automatic for finite-real `K`).
@@ -457,32 +462,32 @@ private lemma equi_chain_diagonal_assembly_with_prob_l2
     (h_ghat_in : ∀ n ξ, ghat n ξ ∈ F)
     (h_prob_l2 : ∀ δ : ℝ, 0 < δ → Tendsto (fun n =>
         μ {ξ | δ ≤ ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P}) atTop (𝓝 0))
-    -- regularity input on the function class `F`; see
-    -- `equi_chain_assembly_given_chain_sequence`.
-    (hJ_pos : ∀ δ' : ℝ, 0 < δ' → 0 < bracketingEntropyIntegral δ' F P)
-    -- see `chain_supnorm_integral_bound_at_delta_q`.
+    -- The δq-LOCALIZED chaining bound (vdV Lemma 19.34, localized form); see
+    -- `chaining_integral_universal_K` in `Maximal.lean`.
     (hChainBound_outer :
-      ∀ (Φ : Ω → ℝ), Measurable Φ → IsEnvelope F Φ → MemLp Φ 2 P →
-        ∀ {δq : ℝ}, 0 < δq → ∀ (n : ℕ),
-          ∫⁻ ξ, supNormOver F
-                (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ∂μ
-            ≤ ENNReal.ofReal 2 * bracketingEntropyIntegral δq F P
-              + ENNReal.ofReal 2 *
-                (ENNReal.ofReal (Real.sqrt n)
-                  * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
-                      * Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω ∂P))
+      ∃ c : ℝ, 0 < c ∧
+      ∀ (Φ : Ω → ℝ), Measurable Φ → IsEnvelope (differenceClass F) Φ → MemLp Φ 2 P →
+        ∀ {δq : ℝ}, 0 < δq → δq ≤ 1 / 4 →
+          ∃ M : ℝ, 0 < M ∧ ∀ (n : ℕ),
+            ∫⁻ ξ, supNormOver (localizedDifferenceClass F P δq)
+                  (fun h => empiricalProcess P n (fun i : Fin n => X i.val ξ) h) ∂μ
+              ≤ ENNReal.ofReal c * bracketingEntropyIntegral δq F P
+                + ENNReal.ofReal c *
+                  (ENNReal.ofReal (Real.sqrt n)
+                    * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
+                        * Set.indicator {x | Real.sqrt n * M < |Φ x|} 1 ω ∂P))
     (η : ℝ) (hη : 0 < η) :
     Tendsto (fun n =>
       μ {ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
                    - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)|})
       atTop (𝓝 0) := by
-  -- Step 1: extract the chain sequence `δ_q ↓ 0` with `J(δ_q) → 0`.
-  obtain ⟨δ, hδ_pos, hδ_le_one, hδ_to_zero, hδ_J_to_zero⟩ :=
+  -- Step 1: extract the chain sequence `δ_q ↓ 0` with `δ_q ≤ 1/4`, `J(δ_q) → 0`.
+  obtain ⟨δ, hδ_pos, hδ_le_quarter, hδ_to_zero, hδ_J_to_zero⟩ :=
     equi_chain_chain_sequence_exists F P h_int
   -- Step 2: delegate to the residual diagonal-chaining assembly.
   exact equi_chain_assembly_given_chain_sequence F P h_int μ X hX_meas hX_iindep
     hX_id hX_law fhat ghat h_fhat_meas h_ghat_meas h_fhat_in h_ghat_in h_prob_l2
-    δ hδ_pos hδ_le_one hδ_to_zero hδ_J_to_zero hJ_pos hChainBound_outer η hη
+    δ hδ_pos hδ_le_quarter hδ_to_zero hδ_J_to_zero hChainBound_outer η hη
 
 /-- **Equicontinuity chaining brick (vdV §19.2)** —
 strong-iid form of the consumer step that
@@ -526,19 +531,20 @@ theorem equicontinuity_chaining_assembly_brick
       (fun ξ => ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) μ)
     (h_l2 : Tendsto (fun n => ∫ ξ, (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) ∂μ)
         atTop (𝓝 0))
-    -- `equi_chain_assembly_given_chain_sequence`.
-    (hJ_pos : ∀ δ' : ℝ, 0 < δ' → 0 < bracketingEntropyIntegral δ' F P)
-    -- `chain_supnorm_integral_bound_at_delta_q` in `Maximal.lean`.
+    -- The δq-LOCALIZED chaining bound (vdV Lemma 19.34, localized form); see
+    -- `chaining_integral_universal_K` in `Maximal.lean`.
     (hChainBound_outer :
-      ∀ (Φ : Ω → ℝ), Measurable Φ → IsEnvelope F Φ → MemLp Φ 2 P →
-        ∀ {δq : ℝ}, 0 < δq → ∀ (n : ℕ),
-          ∫⁻ ξ, supNormOver F
-                (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ∂μ
-            ≤ ENNReal.ofReal 2 * bracketingEntropyIntegral δq F P
-              + ENNReal.ofReal 2 *
-                (ENNReal.ofReal (Real.sqrt n)
-                  * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
-                      * Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω ∂P))
+      ∃ c : ℝ, 0 < c ∧
+      ∀ (Φ : Ω → ℝ), Measurable Φ → IsEnvelope (differenceClass F) Φ → MemLp Φ 2 P →
+        ∀ {δq : ℝ}, 0 < δq → δq ≤ 1 / 4 →
+          ∃ M : ℝ, 0 < M ∧ ∀ (n : ℕ),
+            ∫⁻ ξ, supNormOver (localizedDifferenceClass F P δq)
+                  (fun h => empiricalProcess P n (fun i : Fin n => X i.val ξ) h) ∂μ
+              ≤ ENNReal.ofReal c * bracketingEntropyIntegral δq F P
+                + ENNReal.ofReal c *
+                  (ENNReal.ofReal (Real.sqrt n)
+                    * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
+                        * Set.indicator {x | Real.sqrt n * M < |Φ x|} 1 ω ∂P))
     (η : ℝ) (hη : 0 < η) :
     Tendsto (fun n =>
       μ {ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
@@ -551,6 +557,6 @@ theorem equicontinuity_chaining_assembly_brick
   -- Step 2: delegate to the chaining sub-brick.
   exact equi_chain_diagonal_assembly_with_prob_l2 F P h_int μ X hX_meas hX_iindep
     hX_id hX_law fhat ghat h_fhat_meas h_ghat_meas h_fhat_in h_ghat_in h_prob_l2
-    hJ_pos hChainBound_outer η hη
+    hChainBound_outer η hη
 
 end AsymptoticStatistics.EmpiricalProcess

@@ -1,6 +1,7 @@
 import StatLean.AsymptoticStatistics.EmpiricalProcess.Bracketing
 import StatLean.AsymptoticStatistics.EmpiricalProcess.FunctionClass
 import StatLean.AsymptoticStatistics.EmpiricalProcess.EmpiricalProcess
+import StatLean.AsymptoticStatistics.EmpiricalProcess.LocalizedClass
 import StatLean.AsymptoticStatistics.EmpiricalProcess.MaximalBernstein
 import StatLean.AsymptoticStatistics.EmpiricalProcess.MaximalOrlicz
 import Mathlib.Probability.IdentDistrib
@@ -40,14 +41,15 @@ measurable functions, drawn from an i.i.d. sample $X_1, \dots, X_n \sim P$.
    $$
 
 The corresponding Lean statements are `bernstein_inequality`,
-`finite_sup_bound`, and `maximal_inequality_bracketing` (with the tight
-chaining variant assembled from the `tight_*` sub-aux lemmas). Notable
-deviations from the book are recorded in the per-declaration docstrings and in
-the proof-formalization notes below; the most significant is that the
-*formalized* `maximal_inequality_bracketing` is a **crude** variant in which the
-existential constant $K = 2n\delta + 2$ is allowed to depend on $(n, \delta)$,
-and the parenthesised factor carries an extra additive $1$ cushion. The genuine
-universal-constant statement is the target of the tight chaining sub-lemmas.
+`finite_sup_bound`, and `maximal_inequality_bracketing`. Notable deviations
+from the book are recorded in the per-declaration docstrings and in the
+proof-formalization notes below; the most significant is that the latter is a
+**crude** variant in which the existential constant $K = 2n\delta + 2$ may depend
+on $(n, \delta)$ and the parenthesised factor carries an extra additive $1$
+cushion. `maximal_inequality_bracketing_tight` is a conditional full-class
+restatement for fixed $(n,\delta)$. The genuine uniform localized form is
+`localizedChainBound_of_finiteEntropy` in `ChainingAssembly.lean`, assembled
+from the `tight_*` per-level estimates developed here.
 
 **Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
 Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
@@ -83,14 +85,15 @@ chaining (telescoping) argument to give the bracketing inequality (Lemma 19.34).
   additive $1$ cushion and the $(n,\delta)$-dependence of $K$ are crude-bound
   artifacts; vdV's sharper statement absorbs the cushion into $J_{[\,]}$ for
   non-trivial classes.
-* The genuine **tight** (universal-constant) chaining argument is factored into
-  three private sub-aux lemmas — `tight_chain_level_bound` (per-level finite-class
-  sup bound at the truncation threshold $a(\delta)$), `tight_chain_telescope_bound`
-  (dyadic series $\to$ entropy integral), and `tight_envelope_truncation_bound`
-  (envelope-tail correction above $\delta\sqrt{n}$) — assembled by `_tight_core`.
-  This tight form is the input required for the equicontinuity half of the
-  Donsker theorem (vdV Theorem 19.5), where sending $\delta \downarrow 0$ along a
-  $1/\sqrt{n}$-summable sequence requires $K$ not to grow with $n$.
+* The **tight** chaining ingredients are factored into
+  `tight_chain_level_bound`/`tight_chain_level_bound_uniform` (per-level
+  finite-class bounds at the truncation threshold $a(\delta)$),
+  `tight_chain_telescope_bound` (dyadic series $\to$ entropy integral), and
+  `tight_envelope_truncation_bound` (envelope-tail correction above
+  $\delta\sqrt{n}$). `ChainingAssembly.lean` assembles them into
+  `localizedChainBound_of_finiteEntropy`, whose constant is uniform in $n$ and
+  the localization scale. This localized form is the input required for the
+  equicontinuity half of the Donsker theorem (vdV Theorem 19.5).
 
 **Bibliographic comments.**
 These maximal inequalities are part of the folklore of empirical-process theory
@@ -143,7 +146,7 @@ theorem bernstein_inequality
     (n : ℕ) (_hn : 1 ≤ n) {x : ℝ} (_hx : 0 < x) :
     μ {ω : Ξ | x < |empiricalProcess P n (fun j : Fin n => X j.val ω) f|}
       ≤ ENNReal.ofReal (2 * Real.exp (-(x ^ 2) / (4 * (σ ^ 2 + x * M / Real.sqrt n)))) := by
-  -- Structural assembly delegated to `MaximalBernstein.bernstein_inequality_aux`,
+  -- Apply `MaximalBernstein.bernstein_inequality_aux`,
   -- which closes the two-sided bound via:
   --   * `empiricalProcess_neg` (linear-odd in `f`),
   --   * `bernstein_two_sided` (one-sided bound applied to `f` and `-f`),
@@ -180,7 +183,7 @@ theorem finite_sup_bound
         ≤ ENNReal.ofReal
             (K * (M * Real.log (1 + Fintype.card ι) / Real.sqrt n
               + σ * Real.sqrt (Real.log (1 + Fintype.card ι)))) := by
-  -- Structural assembly delegated to `MaximalOrlicz.finite_sup_bound_aux`,
+  -- Apply `MaximalOrlicz.finite_sup_bound_aux`,
   -- which routes through the Orlicz-route core helper for the
   -- truncation + Jensen content (see `MaximalOrlicz.lean`).
   exact finite_sup_bound_aux P hX_meas hX_iindep _hX_idem hX_law
@@ -560,20 +563,25 @@ theorem maximal_inequality_bracketing
     _ = Ksum * (1 + (J + ENNReal.ofReal (Real.sqrt n) * T)) := by rw [← mul_add]
     _ = Ksum * (1 + J + ENNReal.ofReal (Real.sqrt n) * T) := by rw [add_assoc]
 
-/-! ### Tight variant of `maximal_inequality_bracketing`
+/-! ### Per-level chaining estimates and a conditional full-class restatement
 
-vdV §19.6 chaining argument: the genuine textbook proof of Lem 19.34
-yielding a **universal** constant `K` (independent of `n` and `δ`), as
-opposed to the crude variant above with `K = 2nδ + 2`.
+The genuine §19.6 chaining argument of Lem 19.34 yields a **universal** constant
+`K` (independent of `n` and `δ`), as opposed to the crude variant above with
+`K = 2nδ + 2`. That universal-constant content is the required input for the
+equicontinuity half of Theorem 19.5 (sending `δ ↓ 0` along a `1/√n`-summable
+sequence requires `K` not to grow with `n`).
 
-The tight variant is the required input for the equicontinuity half of
-Theorem 19.5: sending `δ ↓ 0` along a `1/√n`-summable sequence requires `K`
-not to grow with `n`.
+The uniform form is `localizedChainBound_of_finiteEntropy`, stated over
+`localizedDifferenceClass F P δq`. The three estimates below isolate its
+per-level finite-class bound, dyadic entropy comparison, and envelope-tail
+correction. By contrast, `maximal_inequality_bracketing_tight` gives a
+full-class bound for fixed `n` and `δ`, conditional on `hAbsorb`, with an
+`n`-dependent witness obtained from `maximal_inequality_bracketing`.
 
-**Chaining argument.** For each `q ≥ 0`, choose dyadic scale
-`ε_q = δ · 2^{-q}` and bracket cover of size `N_q = N_{[]}(ε_q, F, L²(P))`.
-For each `f ∈ F` let `π_q(f)` be the *lower* bracket function at scale
-`ε_q`. The chain telescope
+For the localized chaining argument, choose at each `q ≥ 0` the dyadic scale
+`ε_q = δ · 2^{-q}` and a bracket cover of size
+`N_q = N_{[]}(ε_q, F, L²(P))`. For each `f ∈ F` let `π_q(f)` be the *lower*
+bracket function at scale `ε_q`. The chain telescope
   `f − π_0(f) = Σ_{q ≥ 1} (π_q(f) − π_{q-1}(f))`
 splits the empirical-process supremum into per-level finite-class sup's
 plus an envelope-remainder term. Apply `finite_sup_bound` at each level
@@ -582,10 +590,8 @@ plus an envelope-remainder term. Apply `finite_sup_bound` at each level
 Sum across `q` via Σ ε_q √log N_q ≤ K · J_{[]}(δ, F, L²(P)) (geometric
 sum vs decreasing integrand).
 
-The assembly is factored into three sub-aux lemmas below capturing (a)
-per-level finite-class sup bound, (b) chain telescoping → entropy integral,
-(c) envelope truncation correction; the top-level theorem assembles them
-via `_tight_core`. -/
+These three estimates respectively capture the per-level supremum, the
+telescope-to-entropy comparison, and the envelope truncation correction. -/
 
 /-- **Sub-aux A — per chain-level finite-class sup bound.**
 
@@ -612,7 +618,7 @@ Proof: direct invocation of `finite_sup_bound` with
 `M = √n · ε / (1 + √log(1+|ι|))` and `σ = 2ε`, followed by the algebraic
 compression `M log(1+|ι|)/√n + σ √log(1+|ι|) ≤ 3 ε √log(1+|ι|)` (using
 `log/(1+√log) ≤ √log`). -/
-private lemma tight_chain_level_bound
+lemma tight_chain_level_bound
     (P : Measure Ω) [IsProbabilityMeasure P]
     {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
     {X : ℕ → Ξ → Ω}
@@ -701,28 +707,122 @@ private lemma tight_chain_level_bound
         mul_le_mul_of_nonneg_left h_sum_le hK_pos.le
     _ = 3 * K * ε * Real.sqrt (Real.log (1 + Fintype.card ι)) := by ring
 
+/-- **Uniform-constant form of `tight_chain_level_bound`** — the existential `∃ K`
+is hoisted *before* the class / scale / `n` arguments, so a single universal `K`
+works for every finite chain-level class simultaneously.
+
+The chaining dyadic-bound leaves (`chain_head_dyadic_bound`, `chain_A_dyadic_bound`,
+`chain_B_levelOscSup_dyadic_bound`) must quantify their constant `c` *before*
+`∀ Φ ∀ δ ∀ n`; the additive `tight_chain_level_bound` returns `∃ K` only *after* the
+family / scale / `n` arguments, so `c` cannot be hoisted from it.  This variant
+exposes the concrete witness `K = 3 · 96 = 288` (from the literal `96` of
+`finite_sup_bound_uniform` / `finite_sup_bound_orlicz_core`) once, before the
+`∀`-block, via the same vdV `a(δ)`-truncation algebraic compression
+`M log(1+|ι|)/√n + σ √log ≤ 3 ε √log` used by the additive leaf.
+
+`tight_chain_level_bound` is kept as-is (additive). -/
+lemma tight_chain_level_bound_uniform
+    (P : Measure Ω) [IsProbabilityMeasure P]
+    {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
+    {X : ℕ → Ξ → Ω}
+    (hX_meas : ∀ i, Measurable (X i))
+    (hX_iindep : ProbabilityTheory.iIndepFun X μ)
+    (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
+    (hX_law : μ.map (X 0) = P) :
+    ∃ K : ℝ, 0 < K ∧
+      ∀ {ι : Type*} [Fintype ι] [Nonempty ι]
+        (g : ι → Ω → ℝ), (∀ i, Measurable (g i)) →
+        ∀ {ε : ℝ}, 0 < ε → ∀ (n : ℕ), 1 ≤ n →
+          (∀ i ω, |g i ω| ≤
+            Real.sqrt n * ε / (1 + Real.sqrt (Real.log (1 + Fintype.card ι)))) →
+          (∀ i, ∫ ω, (g i ω) ^ 2 ∂P ≤ (2 * ε) ^ 2) →
+            ∫⁻ ω, ENNReal.ofReal
+                (⨆ i : ι, |empiricalProcess P n (fun j : Fin n => X j.val ω) (g i)|) ∂μ
+              ≤ ENNReal.ofReal
+                  (K * ε * Real.sqrt (Real.log (1 + Fintype.card ι))) := by
+  -- Obtain the uniform `finite_sup_bound` constant once (the literal `96`); the
+  -- chaining constant is `3 ·` that, hoisted before the class / scale / `n` args.
+  obtain ⟨K, hK_pos, h_fsb⟩ :=
+    finite_sup_bound_uniform P hX_meas hX_iindep hX_idem hX_law
+  refine ⟨3 * K, by positivity, ?_⟩
+  intro ι _ _ g hg_meas ε hε n hn hg_bdd hg_var
+  -- Numerical preliminaries (mirror `tight_chain_level_bound`).
+  have hn_pos_nat : 0 < n := Nat.lt_of_lt_of_le Nat.zero_lt_one hn
+  have hn_pos : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn_pos_nat
+  have hsn_pos : 0 < Real.sqrt n := Real.sqrt_pos.mpr hn_pos
+  have hsn_nn : 0 ≤ Real.sqrt n := hsn_pos.le
+  have hN_pos_nat : 0 < Fintype.card ι := Fintype.card_pos
+  have hN_pos : (0 : ℝ) < (Fintype.card ι : ℝ) := by exact_mod_cast hN_pos_nat
+  have hL_nn : 0 ≤ Real.log (1 + Fintype.card ι) :=
+    Real.log_nonneg (by linarith)
+  have hsL_nn : 0 ≤ Real.sqrt (Real.log (1 + Fintype.card ι)) :=
+    Real.sqrt_nonneg _
+  have h1psL_pos : (0 : ℝ) < 1 + Real.sqrt (Real.log (1 + Fintype.card ι)) := by
+    linarith
+  have hM_nn : 0 ≤ Real.sqrt n * ε
+      / (1 + Real.sqrt (Real.log (1 + Fintype.card ι))) := by positivity
+  have hσ_nn : (0 : ℝ) ≤ 2 * ε := by positivity
+  -- Apply the uniform finite-sup bound with the truncation `M`/`σ`.
+  have h_bnd := h_fsb g hg_meas hM_nn hσ_nn hg_bdd hg_var n hn
+  refine h_bnd.trans ?_
+  refine ENNReal.ofReal_le_ofReal ?_
+  -- Algebraic compression (identical to `tight_chain_level_bound`).
+  have hM_div_sqrt :
+      Real.sqrt n * ε
+            / (1 + Real.sqrt (Real.log (1 + Fintype.card ι)))
+          * Real.log (1 + Fintype.card ι) / Real.sqrt n
+        = ε * Real.log (1 + Fintype.card ι)
+            / (1 + Real.sqrt (Real.log (1 + Fintype.card ι))) := by
+    field_simp
+  have hLog_div_le :
+      Real.log (1 + Fintype.card ι)
+          / (1 + Real.sqrt (Real.log (1 + Fintype.card ι)))
+        ≤ Real.sqrt (Real.log (1 + Fintype.card ι)) := by
+    rw [div_le_iff₀ h1psL_pos]
+    have hsq : Real.sqrt (Real.log (1 + Fintype.card ι))
+              * Real.sqrt (Real.log (1 + Fintype.card ι))
+            = Real.log (1 + Fintype.card ι) :=
+      Real.mul_self_sqrt hL_nn
+    nlinarith [hsq, hsL_nn, hL_nn]
+  have hM_term_le :
+      Real.sqrt n * ε
+            / (1 + Real.sqrt (Real.log (1 + Fintype.card ι)))
+          * Real.log (1 + Fintype.card ι) / Real.sqrt n
+        ≤ ε * Real.sqrt (Real.log (1 + Fintype.card ι)) := by
+    rw [hM_div_sqrt, mul_div_assoc]
+    exact mul_le_mul_of_nonneg_left hLog_div_le hε.le
+  have h_sum_le :
+      Real.sqrt n * ε
+            / (1 + Real.sqrt (Real.log (1 + Fintype.card ι)))
+          * Real.log (1 + Fintype.card ι) / Real.sqrt n
+        + 2 * ε * Real.sqrt (Real.log (1 + Fintype.card ι))
+        ≤ 3 * ε * Real.sqrt (Real.log (1 + Fintype.card ι)) := by
+    linarith [hM_term_le]
+  calc K * (Real.sqrt n * ε
+            / (1 + Real.sqrt (Real.log (1 + Fintype.card ι)))
+              * Real.log (1 + Fintype.card ι) / Real.sqrt n
+            + 2 * ε * Real.sqrt (Real.log (1 + Fintype.card ι)))
+      ≤ K * (3 * ε * Real.sqrt (Real.log (1 + Fintype.card ι))) :=
+        mul_le_mul_of_nonneg_left h_sum_le hK_pos.le
+    _ = 3 * K * ε * Real.sqrt (Real.log (1 + Fintype.card ι)) := by ring
+
 /-- **Sub-aux B — chain series → entropy integral upper bound.**
 
 Given a per-level sup sequence `S : ℕ → ℝ≥0∞` (e.g., from Sub-aux A)
 dominated by an upper-bound sequence `B : ℕ → ℝ≥0∞`, and a chain
 comparison `(∑' q, B q) ≤ J`, conclude `∑' q, S q ≤ K · J`.
 
-The substantive "telescoping/dyadic comparison" content (linking the
-per-level dyadic bound `B q = K_A · ε_q · √log N_q` to the bracketing
-entropy integral `J_{[]}(δ, F, L²(P))`) is now factored into the
-hypothesis `hJ_telescope`. The standard mathematical comparison for
+The hypothesis `hJ_telescope` states the dyadic comparison between the
+per-level bound `B q = K_A · ε_q · √log N_q` and the bracketing entropy
+integral `J_{[]}(δ, F, L²(P))`. The standard comparison for
 `B q = K_A · δ · 2^{-q} · √log N_{[]}(ε_q, F, L²(P))` is
 `Σ_q B q ≤ 2 K_A · ∫_0^δ √log N_{[]}(ε,F,L²) dε ≤ 2 K_A · J`
 (geometric sum vs monotone integrand on dyadic mesh + `log(1+N²) ≤ 2
-log(1+N)` for chain-link size squaring); pushing this into the
-caller's responsibility lets this sub-aux be a clean trivial bound
-`Σ' S ≤ Σ' B ≤ J`.
+log(1+N)` for chain-link size squaring). Given this comparison and
+`S q ≤ B q`, the conclusion is `Σ' S ≤ Σ' B ≤ J`.
 
-Proof: via `ENNReal.tsum_le_tsum` + the chain-comparison hypothesis. The
-substantive content of the dyadic-mesh comparison is the caller's
-responsibility (carried by `_tight_core` along with the chain
-construction). -/
-private lemma tight_chain_telescope_bound
+Proof: `ENNReal.tsum_le_tsum` followed by `hJ_telescope`. -/
+lemma tight_chain_telescope_bound
     (_P : Measure Ω) [IsProbabilityMeasure _P]
     {Ξ : Type*} [MeasurableSpace Ξ] {_μ : Measure Ξ} [IsProbabilityMeasure _μ]
     (_F : Set (Ω → ℝ))
@@ -732,36 +832,41 @@ private lemma tight_chain_telescope_bound
     -- per-level upper bound B_q (e.g., `K_A · ε_q · √log N_q` from chain)
     (B : ℕ → ℝ≥0∞)
     (hS_bound : ∀ q : ℕ, S q ≤ B q)
-    -- chain comparison: dyadic sum of B is bounded by J.  The
-    -- substantive `Σ ε_q √log N_q ≤ K · ∫_0^δ √log N(ε) dε` work is
-    -- pushed into this hypothesis.
+    -- Dyadic entropy comparison: the sum of the per-level bounds is at most `J`.
     (J : ℝ≥0∞) (_hJ_lt : J < ⊤)
     (hJ_telescope : (∑' q : ℕ, B q) ≤ J)
     (n : ℕ) (_hn : 1 ≤ n) :
     ∃ K : ℝ, 0 < K ∧ (∑' q : ℕ, S q) ≤ ENNReal.ofReal K * J := by
-  -- Witnesses K = 1 (the substantive K from the dyadic comparison is
-  -- absorbed into the hypothesis `hJ_telescope`).
+  -- The normalization in `hJ_telescope` permits the witness `K = 1`.
   refine ⟨1, by norm_num, ?_⟩
   rw [ENNReal.ofReal_one, one_mul]
   calc (∑' q : ℕ, S q)
       ≤ ∑' q : ℕ, B q := ENNReal.tsum_le_tsum hS_bound
     _ ≤ J := hJ_telescope
 
-/-- **Sub-aux C — envelope-truncation correction at threshold `δ √n`.**
+/-- **Sub-aux C — envelope-truncation correction at an arbitrary threshold `t`.**
 
 For `f ∈ F` and envelope `Φ`, the chain telescope leaves a remainder
-when `|Φ| > δ √n` (above the truncation threshold `√n · a(δ)`). The
-remainder is bounded by `√n · P*( |Φ| · 1{|Φ| > δ √n} )`, which is
-exactly the `tail` term in the conclusion.
+on the envelope-tail set `{|Φ| > t}` (above the global truncation
+threshold; the chaining argument uses `t = √n · a(δ)`). The remainder is
+bounded by `√n · P*( |Φ| · 1{|Φ| > t} )`, which is exactly the `tail`
+term in the conclusion.
+
+The threshold `t` is a free parameter: the bound holds for *any* split
+level because the proof only uses measurability of the level set
+`{|Φ| > t}`, never the specific value of `t`. The chaining caller
+instantiates `t = √n · globalThreshold B δ`, the single global level
+(vdV p.286) shared with the head finite-class so that head and tail are
+exact complements.
 
 vdV §19.6: this term arises because the chaining argument truncates each
-`f` at threshold `δ √n` via `f = f · 1{|f| ≤ δ√n} + f · 1{|f| > δ√n}`. The
+`f` at the global level via `f = f · 1{|Φ| ≤ t} + f · 1{|Φ| > t}`. The
 bounded piece feeds the chain; the unbounded piece contributes the
 envelope-tail correction via Markov / Cauchy-Schwarz.
 
 Proof: pointwise decomposition + Fubini against the iid distribution +
 envelope inequality. -/
-private lemma tight_envelope_truncation_bound
+lemma tight_envelope_truncation_bound
     (P : Measure Ω) [IsProbabilityMeasure P]
     {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
     {X : ℕ → Ξ → Ω}
@@ -771,17 +876,17 @@ private lemma tight_envelope_truncation_bound
     (hX_law : μ.map (X 0) = P)
     (F : Set (Ω → ℝ)) (Φ : Ω → ℝ) (hΦ_env : IsEnvelope F Φ)
     (hΦ_meas : Measurable Φ)
-    {δ : ℝ} (_hδ : 0 < δ)
+    (t : ℝ)
     (n : ℕ) (hn : 1 ≤ n) :
     ∫⁻ ω, supNormOver F
         (fun f => empiricalProcess P n (fun j : Fin n => X j.val ω)
-          (fun x => f x * Set.indicator {y | δ * Real.sqrt n < |Φ y|} 1 x)) ∂μ
+          (fun x => f x * Set.indicator {y | t < |Φ y|} 1 x)) ∂μ
       ≤ 4 * ENNReal.ofReal (Real.sqrt n) *
           ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
-            * Set.indicator {x | δ * Real.sqrt n < |Φ x|} 1 ω ∂P := by
-  -- Pointwise: `|f · 1_{|Φ| > δ√n}| ≤ |Φ| · 1_{|Φ| > δ√n}` (envelope).
+            * Set.indicator {x | t < |Φ x|} 1 ω ∂P := by
+  -- Pointwise: `|f · 1_{|Φ| > t}| ≤ |Φ| · 1_{|Φ| > t}` (envelope).
   -- Then `|G_n (f · 1)| ≤ √n · (|empAvg of indicator| + |∫ ... dP|)` and
-  -- both pieces are bounded by `√n · ∫⁻ |Φ| · 1{|Φ|>δ√n}` (envelope +
+  -- both pieces are bounded by `√n · ∫⁻ |Φ| · 1{|Φ|>t}` (envelope +
   -- iid identical distribution via `IdentDistrib`).  Factor of 4 from
   -- the supremum-then-triangle bookkeeping (here we close it at 2,
   -- with headroom up to 4).
@@ -791,9 +896,9 @@ private lemma tight_envelope_truncation_bound
   have hsn_pos : 0 < Real.sqrt n := Real.sqrt_pos.mpr hn_pos
   have hsn_nn : 0 ≤ Real.sqrt n := hsn_pos.le
   -- The truncation set A and its measurability
-  set A : Set Ω := {x | δ * Real.sqrt n < |Φ x|} with hA_def
+  set A : Set Ω := {x | t < |Φ x|} with hA_def
   have hA_meas : MeasurableSet A := by
-    have hpb : A = (fun x => |Φ x|) ⁻¹' Set.Ioi (δ * Real.sqrt n) := rfl
+    have hpb : A = (fun x => |Φ x|) ⁻¹' Set.Ioi t := rfl
     rw [hpb]
     exact (measurable_abs_of_real hΦ_meas) measurableSet_Ioi
   -- Real- and ENNReal-valued indicators of A
@@ -1066,34 +1171,291 @@ private lemma tight_envelope_truncation_bound
         gcongr
         norm_num
 
-/-- Tight chain assembly brick, closed via the crude bound plus a
-chain-comparison absorption hypothesis.
+/-- **Mean-level empirical-process pair bound (vdV p.287, the triangle move).**
 
-The three leaves (`tight_chain_level_bound`, `tight_chain_telescope_bound`,
-`tight_envelope_truncation_bound`) supply per-level building blocks but do
-NOT individually suffice for the tight assembly, because of structural gaps
-(no link between `J` and the bracketing structure of `F`; no
-`AEStronglyMeasurable` on `f ∈ F`).
+For two integrable functions `f g : Ω → ℝ` and an iid sample `X` (with
+`μ.map (X i) = P` via `IdentDistrib`), the integrated `ℝ≥0∞`-mean of `ofReal|𝔾ₙ f|`
+is dominated by the mean of `ofReal|𝔾ₙ g|` plus a `2√n·P|f − g|` correction:
 
-Closure strategy: factor the chain-comparison content into a single
-hypothesis `hAbsorb` and close the brick from the crude bound
-`maximal_inequality_bracketing` (with the `1 + J + √n · tail` cushion). The
-hypothesis
+```
+∫⁻ ξ, ofReal|𝔾ₙ f| ∂μ ≤ ∫⁻ ξ, ofReal|𝔾ₙ g| ∂μ + 2·√n · ∫⁻ x, ofReal|f x − g x| ∂P.
+```
+
+**Why the correction term is essential (NOT `|𝔾ₙ f| ≤ |𝔾ₙ g|`).** The empirical
+process `𝔾ₙ = √n(Pₙ − P)` is a *signed* functional, so `|f| ≤ |g|` does **not**
+give `|𝔾ₙ f| ≤ |𝔾ₙ g|` (counter-example: `f = 0`, `g = ±1` on a balanced
+half-half split gives `𝔾ₙ f = 0` but `𝔾ₙ g` need not vanish — the inequality
+fails in the *wrong* direction without the correction; and with `f = g` shifted
+by a small bump the centred process can amplify rather than shrink). vdV instead
+uses the **mean-level triangle bound**: `𝔾ₙ f = 𝔾ₙ g + 𝔾ₙ(f − g)`, then
+`|𝔾ₙ(f − g)| = √n|Pₙ(f − g) − P(f − g)| ≤ √n(Pₙ|f − g| + P|f − g|)`, and
+`E[Pₙ|f − g|] = P|f − g|` (`IdentDistrib`) collapses the sample term to a second
+`√n·P|f − g|`. The `2√n·P|f − g|` is exactly this correction.
+
+vdV §19.6 p.287, the displayed `𝔾ₙ((f − π_q f)·B_q f)` triangle step. Mirrors the
+`tight_envelope_truncation_bound` IdentDistrib-Fubini mechanism (Step 3 there). -/
+lemma process_pair_mean_bound
+    (P : Measure Ω) [IsProbabilityMeasure P]
+    {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
+    {X : ℕ → Ξ → Ω}
+    (hX_meas : ∀ i, Measurable (X i))
+    (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
+    (hX_law : μ.map (X 0) = P)
+    (f g : Ω → ℝ) (hf_meas : Measurable f) (hg_meas : Measurable g)
+    (hf_int : Integrable f P) (hg_int : Integrable g P)
+    (n : ℕ) :
+    ∫⁻ ξ, ENNReal.ofReal
+        |empiricalProcess P n (fun k : Fin n => X k.val ξ) f| ∂μ
+      ≤ (∫⁻ ξ, ENNReal.ofReal
+            |empiricalProcess P n (fun k : Fin n => X k.val ξ) g| ∂μ)
+        + 2 * ENNReal.ofReal (Real.sqrt n)
+            * ∫⁻ x, ENNReal.ofReal |f x - g x| ∂P := by
+  have hsn_nn : (0 : ℝ) ≤ Real.sqrt n := Real.sqrt_nonneg _
+  -- The difference `d = f − g`, measurable and integrable.
+  set d : Ω → ℝ := fun x => f x - g x with hd_def
+  have hd_meas : Measurable d := hf_meas.sub hg_meas
+  have hd_int : Integrable d P := hf_int.sub hg_int
+  have hd_abs_meas : Measurable (fun x => |d x|) := measurable_abs_of_real hd_meas
+  -- The `P|d|` envelope tail (in ℝ≥0∞).
+  set T : ℝ≥0∞ := ∫⁻ x, ENNReal.ofReal |d x| ∂P with hT_def
+  -- ===== Step 1: per-ξ triangle `ofReal|𝔾ₙ f| ≤ ofReal|𝔾ₙ g| + ofReal|𝔾ₙ d| =====
+  have h_pt : ∀ ξ : Ξ,
+      ENNReal.ofReal |empiricalProcess P n (fun k : Fin n => X k.val ξ) f|
+        ≤ ENNReal.ofReal
+            |empiricalProcess P n (fun k : Fin n => X k.val ξ) g|
+          + ENNReal.ofReal
+              |empiricalProcess P n (fun k : Fin n => X k.val ξ) d| := by
+    intro ξ
+    -- `𝔾ₙ f = 𝔾ₙ g + 𝔾ₙ d` via linearity (`f = g + d`).
+    have hfgd : empiricalProcess P n (fun k : Fin n => X k.val ξ) f
+        = empiricalProcess P n (fun k : Fin n => X k.val ξ) g
+          + empiricalProcess P n (fun k : Fin n => X k.val ξ) d := by
+      have hcongr : f = fun x => g x + d x := by
+        funext x; rw [hd_def]; ring
+      rw [hcongr,
+        empiricalProcess_add P n _ g d hg_int hd_int]
+    rw [hfgd]
+    calc ENNReal.ofReal
+            |empiricalProcess P n (fun k : Fin n => X k.val ξ) g
+              + empiricalProcess P n (fun k : Fin n => X k.val ξ) d|
+        ≤ ENNReal.ofReal
+            (|empiricalProcess P n (fun k : Fin n => X k.val ξ) g|
+              + |empiricalProcess P n (fun k : Fin n => X k.val ξ) d|) :=
+          ENNReal.ofReal_le_ofReal (abs_add_le _ _)
+      _ ≤ _ := ENNReal.ofReal_add_le
+  -- Measurability of the three `ξ ↦ ofReal|𝔾ₙ ·|` integrands.
+  have hmeas_E : ∀ {h : Ω → ℝ}, Measurable h →
+      Measurable (fun ξ : Ξ => ENNReal.ofReal
+        |empiricalProcess P n (fun k : Fin n => X k.val ξ) h|) := by
+    intro h hh
+    have hE : Measurable (fun ξ : Ξ =>
+        empiricalProcess P n (fun k : Fin n => X k.val ξ) h) := by
+      unfold empiricalProcess empiricalAvg
+      refine Measurable.const_mul (Measurable.sub ?_ measurable_const) _
+      refine Measurable.const_mul ?_ _
+      exact Finset.measurable_sum Finset.univ (fun i _ => hh.comp (hX_meas i.val))
+    have habs : (fun ξ : Ξ =>
+        |empiricalProcess P n (fun k : Fin n => X k.val ξ) h|)
+        = (fun ξ : Ξ => ‖empiricalProcess P n (fun k : Fin n => X k.val ξ) h‖) := by
+      funext ξ; exact (Real.norm_eq_abs _).symm
+    exact (habs ▸ hE.norm).ennreal_ofReal
+  have hmeas_g := hmeas_E hg_meas
+  have hmeas_d := hmeas_E hd_meas
+  -- ===== Step 2: integrate the pointwise triangle =====
+  have h_int_tri :
+      ∫⁻ ξ, ENNReal.ofReal
+          |empiricalProcess P n (fun k : Fin n => X k.val ξ) f| ∂μ
+        ≤ (∫⁻ ξ, ENNReal.ofReal
+              |empiricalProcess P n (fun k : Fin n => X k.val ξ) g| ∂μ)
+          + ∫⁻ ξ, ENNReal.ofReal
+              |empiricalProcess P n (fun k : Fin n => X k.val ξ) d| ∂μ := by
+    calc ∫⁻ ξ, ENNReal.ofReal
+            |empiricalProcess P n (fun k : Fin n => X k.val ξ) f| ∂μ
+        ≤ ∫⁻ ξ, (ENNReal.ofReal
+              |empiricalProcess P n (fun k : Fin n => X k.val ξ) g|
+            + ENNReal.ofReal
+                |empiricalProcess P n (fun k : Fin n => X k.val ξ) d|) ∂μ :=
+          MeasureTheory.lintegral_mono h_pt
+      _ = _ := MeasureTheory.lintegral_add_left' hmeas_g.aemeasurable _
+  -- ===== Step 3: `∫⁻ ofReal|𝔾ₙ d| ∂μ ≤ 2·√n·T` =====
+  -- Per-ξ: `|𝔾ₙ d| = √n·|Pₙ d − P d| ≤ √n·(Pₙ|d| + P|d|)`, so
+  -- `ofReal|𝔾ₙ d| ≤ ofReal(√n)·(ofReal(Pₙ|d|) + T)`.
+  have h_d_pt : ∀ ξ : Ξ,
+      ENNReal.ofReal
+          |empiricalProcess P n (fun k : Fin n => X k.val ξ) d|
+        ≤ ENNReal.ofReal (Real.sqrt n)
+            * (ENNReal.ofReal
+                (empiricalAvg (fun x => |d x|) n (fun k : Fin n => X k.val ξ))
+              + T) := by
+    intro ξ
+    -- The real per-ξ bound `|𝔾ₙ d| ≤ √n·(empAvg|d| + P|d|^toReal)`-style, lifted.
+    have h_pna : |empiricalAvg d n (fun k : Fin n => X k.val ξ)|
+        ≤ empiricalAvg (fun x => |d x|) n (fun k : Fin n => X k.val ξ) := by
+      unfold empiricalAvg
+      rw [abs_mul, abs_inv, Nat.abs_cast]
+      refine mul_le_mul_of_nonneg_left ?_ (inv_nonneg.mpr (by positivity))
+      exact (Finset.abs_sum_le_sum_abs _ _)
+    -- `ofReal|𝔾ₙ d| ≤ ofReal(√n)·ofReal|Pₙ d − P d|`.
+    have h_split :
+        ENNReal.ofReal
+            |empiricalProcess P n (fun k : Fin n => X k.val ξ) d|
+          = ENNReal.ofReal (Real.sqrt n)
+              * ENNReal.ofReal
+                  |empiricalAvg d n (fun k : Fin n => X k.val ξ) - ∫ x, d x ∂P| := by
+      unfold empiricalProcess
+      rw [abs_mul, abs_of_nonneg hsn_nn, ENNReal.ofReal_mul hsn_nn]
+    rw [h_split]
+    refine mul_le_mul_of_nonneg_left ?_ (zero_le _)
+    -- `ofReal|Pₙ d − P d| ≤ ofReal(Pₙ|d|) + T`.
+    have h_tri_real :
+        |empiricalAvg d n (fun k : Fin n => X k.val ξ) - ∫ x, d x ∂P|
+          ≤ empiricalAvg (fun x => |d x|) n (fun k : Fin n => X k.val ξ)
+            + |∫ x, d x ∂P| :=
+      (abs_sub _ _).trans (add_le_add h_pna le_rfl)
+    calc ENNReal.ofReal
+            |empiricalAvg d n (fun k : Fin n => X k.val ξ) - ∫ x, d x ∂P|
+        ≤ ENNReal.ofReal
+            (empiricalAvg (fun x => |d x|) n (fun k : Fin n => X k.val ξ)
+              + |∫ x, d x ∂P|) :=
+          ENNReal.ofReal_le_ofReal h_tri_real
+      _ ≤ ENNReal.ofReal
+            (empiricalAvg (fun x => |d x|) n (fun k : Fin n => X k.val ξ))
+            + ENNReal.ofReal |∫ x, d x ∂P| := ENNReal.ofReal_add_le
+      _ ≤ ENNReal.ofReal
+            (empiricalAvg (fun x => |d x|) n (fun k : Fin n => X k.val ξ)) + T :=
+          add_le_add le_rfl ?_
+    -- `ofReal|P d| ≤ ofReal(P|d|) = T`.
+    have h_jensen : |∫ x, d x ∂P| ≤ (∫⁻ x, ENNReal.ofReal |d x| ∂P).toReal := by
+      have hh := MeasureTheory.norm_integral_le_lintegral_norm (μ := P) d
+      simpa [Real.norm_eq_abs] using hh
+    calc ENNReal.ofReal |∫ x, d x ∂P|
+        ≤ ENNReal.ofReal (∫⁻ x, ENNReal.ofReal |d x| ∂P).toReal :=
+          ENNReal.ofReal_le_ofReal h_jensen
+      _ ≤ ∫⁻ x, ENNReal.ofReal |d x| ∂P := ENNReal.ofReal_toReal_le
+      _ = T := rfl
+  -- Measurability of `ξ ↦ ofReal(empAvg|d|)`.
+  have h_empAvg_meas : Measurable
+      (fun ξ : Ξ => ENNReal.ofReal
+        (empiricalAvg (fun x => |d x|) n (fun k : Fin n => X k.val ξ))) := by
+    refine Measurable.ennreal_ofReal ?_
+    unfold empiricalAvg
+    refine Measurable.const_mul ?_ _
+    exact Finset.measurable_sum Finset.univ (fun i _ => hd_abs_meas.comp (hX_meas i.val))
+  -- `∫⁻ ofReal(empAvg|d|) ∂μ ≤ T` via IdentDistrib + Fubini (template Step 3).
+  have h_empAvg_to_P :
+      ∫⁻ ξ, ENNReal.ofReal
+          (empiricalAvg (fun x => |d x|) n (fun k : Fin n => X k.val ξ)) ∂μ ≤ T := by
+    rcases Nat.eq_zero_or_pos n with hn0 | hnpos
+    · subst hn0
+      simp only [empiricalAvg_zero, ENNReal.ofReal_zero,
+        MeasureTheory.lintegral_const, zero_mul, zero_le]
+    have hn_pos : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hnpos
+    have hn_ne_top : (n : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top n
+    have hn_ne_zero : (n : ℝ≥0∞) ≠ 0 := by
+      exact_mod_cast (Nat.pos_iff_ne_zero.mp hnpos)
+    have hinv_ne_top : ((n : ℝ≥0∞))⁻¹ ≠ ⊤ := ENNReal.inv_ne_top.mpr hn_ne_zero
+    have h_pt_le : ∀ ξ : Ξ,
+        ENNReal.ofReal
+          (empiricalAvg (fun x => |d x|) n (fun k : Fin n => X k.val ξ))
+        ≤ ((n : ℝ≥0∞))⁻¹ *
+          ∑ i : Fin n, ENNReal.ofReal (|d (X i.val ξ)|) := by
+      intro ξ
+      unfold empiricalAvg
+      rw [ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹)]
+      have hn_inv_eq : ENNReal.ofReal ((n : ℝ)⁻¹) = ((n : ℝ≥0∞))⁻¹ := by
+        rw [ENNReal.ofReal_inv_of_pos hn_pos, ENNReal.ofReal_natCast]
+      rw [hn_inv_eq]
+      refine mul_le_mul_of_nonneg_left ?_ (zero_le _)
+      have hsum := ENNReal.ofReal_sum_of_nonneg (s := Finset.univ)
+        (f := fun i : Fin n => |d (X i.val ξ)|)
+        (fun i _ => abs_nonneg _)
+      rw [hsum]
+    calc ∫⁻ ξ, ENNReal.ofReal
+            (empiricalAvg (fun x => |d x|) n (fun k : Fin n => X k.val ξ)) ∂μ
+        ≤ ∫⁻ ξ, ((n : ℝ≥0∞))⁻¹ *
+            ∑ i : Fin n, ENNReal.ofReal (|d (X i.val ξ)|) ∂μ :=
+          MeasureTheory.lintegral_mono h_pt_le
+      _ = ((n : ℝ≥0∞))⁻¹ *
+            ∫⁻ ξ, ∑ i : Fin n, ENNReal.ofReal (|d (X i.val ξ)|) ∂μ := by
+          rw [MeasureTheory.lintegral_const_mul' _ _ hinv_ne_top]
+      _ = ((n : ℝ≥0∞))⁻¹ *
+            ∑ i : Fin n, ∫⁻ ξ, ENNReal.ofReal (|d (X i.val ξ)|) ∂μ := by
+          congr 1
+          rw [MeasureTheory.lintegral_finset_sum Finset.univ]
+          intro i _
+          exact hd_abs_meas.ennreal_ofReal.comp (hX_meas i.val)
+      _ = ((n : ℝ≥0∞))⁻¹ * ∑ _i : Fin n, ∫⁻ x, ENNReal.ofReal (|d x|) ∂P := by
+          congr 1
+          apply Finset.sum_congr rfl
+          intro i _
+          have h_id : (μ.map (X i.val)) = P := by
+            rw [← hX_law]
+            exact (hX_idem i.val).map_eq
+          rw [← h_id]
+          exact (MeasureTheory.lintegral_map hd_abs_meas.ennreal_ofReal
+            (hX_meas i.val)).symm
+      _ = ((n : ℝ≥0∞))⁻¹ * ((n : ℝ≥0∞)) * T := by
+          rw [hT_def, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+            nsmul_eq_mul, mul_assoc]
+      _ = T := by rw [ENNReal.inv_mul_cancel hn_ne_zero hn_ne_top, one_mul]
+  -- ===== Step 4: assemble the `2√n·T` correction =====
+  have h_d_int :
+      ∫⁻ ξ, ENNReal.ofReal
+          |empiricalProcess P n (fun k : Fin n => X k.val ξ) d| ∂μ
+        ≤ 2 * ENNReal.ofReal (Real.sqrt n) * T := by
+    calc ∫⁻ ξ, ENNReal.ofReal
+            |empiricalProcess P n (fun k : Fin n => X k.val ξ) d| ∂μ
+        ≤ ∫⁻ ξ, ENNReal.ofReal (Real.sqrt n)
+              * (ENNReal.ofReal
+                  (empiricalAvg (fun x => |d x|) n (fun k : Fin n => X k.val ξ))
+                + T) ∂μ := MeasureTheory.lintegral_mono h_d_pt
+      _ = ENNReal.ofReal (Real.sqrt n)
+            * ∫⁻ ξ, (ENNReal.ofReal
+                (empiricalAvg (fun x => |d x|) n (fun k : Fin n => X k.val ξ))
+              + T) ∂μ := by
+          rw [MeasureTheory.lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+      _ = ENNReal.ofReal (Real.sqrt n)
+            * ((∫⁻ ξ, ENNReal.ofReal
+                  (empiricalAvg (fun x => |d x|) n (fun k : Fin n => X k.val ξ)) ∂μ)
+              + T) := by
+          rw [MeasureTheory.lintegral_add_left' h_empAvg_meas.aemeasurable,
+            MeasureTheory.lintegral_const, measure_univ, mul_one]
+      _ ≤ ENNReal.ofReal (Real.sqrt n) * (T + T) :=
+          mul_le_mul_of_nonneg_left (add_le_add h_empAvg_to_P le_rfl) (zero_le _)
+      _ = 2 * ENNReal.ofReal (Real.sqrt n) * T := by ring
+  calc ∫⁻ ξ, ENNReal.ofReal
+          |empiricalProcess P n (fun k : Fin n => X k.val ξ) f| ∂μ
+      ≤ (∫⁻ ξ, ENNReal.ofReal
+            |empiricalProcess P n (fun k : Fin n => X k.val ξ) g| ∂μ)
+          + ∫⁻ ξ, ENNReal.ofReal
+              |empiricalProcess P n (fun k : Fin n => X k.val ξ) d| ∂μ := h_int_tri
+    _ ≤ (∫⁻ ξ, ENNReal.ofReal
+            |empiricalProcess P n (fun k : Fin n => X k.val ξ) g| ∂μ)
+          + 2 * ENNReal.ofReal (Real.sqrt n) * T :=
+        add_le_add le_rfl h_d_int
+
+/-- **Conditional full-class bracketing bound at fixed `n` and `δ`.**
+
+The conclusion supplies `K > 0` for one fixed pair `(n, δ)`. The proof uses
+`maximal_inequality_bracketing` with `K_crude = 2nδ + 2` and absorbs its
+additive cushion through
 
 `hAbsorb : 1 ≤ J + √n · tail`
 
-captures the genuine chaining content: for non-trivial classes `F` with at
-least two brackets, `J ≥ ∫_0^δ √log N_[](ε,F,L²(P)) dε` is bounded below by
-a positive multiple of `δ`, so for any normalisation the tight RHS dominates
-1. Combined with the crude bound's `K_crude · (1 + (J + √n · tail))`, the
-hypothesis collapses the additive cushion into the multiplicative form
-`(2 K_crude) · (J + √n · tail)`.
+to obtain the multiplicative form with `K = 2 · K_crude`. Consequently this
+constant may depend on `n`; the declaration is not the uniform localized form
+of vdV Lemma 19.34. That form is
+`localizedChainBound_of_finiteEntropy`, whose supremum is over
+`localizedDifferenceClass F P δq` and whose constant is independent of `n`,
+`δq`, and the envelope.
 
-vdV §19.6 (chain-comparison content). `hAbsorb` is a genuine external input
-from the bracketing structure: it is not a regularity side-condition derivable
-from the other hypotheses, since without it the tight RHS can be zero while
-the LHS is positive (e.g. `F = {centered bounded function}` with `J = 0`,
-`Φ ≤ δ√n` a.e.). Downstream callers must supply it alongside `J < ⊤`. -/
+`hAbsorb` is an additional assumption of this conditional theorem. It does not
+follow from the other hypotheses: without it the RHS can be zero while the LHS
+is positive (e.g. `F = {centered bounded function}` with
+`J = 0`, `Φ ≤ δ√n` a.e.). For non-trivial classes `F` with at least two brackets,
+`J ≥ ∫_0^δ √log N_[](ε,F,L²(P)) dε` is bounded below by a positive multiple of
+`δ`, which is the corresponding lower-bound mechanism in the localized
+chaining theorem. -/
 private lemma tight_chain_full_assembly_brick
     (P : Measure Ω) [IsProbabilityMeasure P]
     {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
@@ -1108,9 +1470,8 @@ private lemma tight_chain_full_assembly_brick
     (h_var : ∀ f ∈ F, ∫ ω, (f ω) ^ 2 ∂P ≤ δ ^ 2)
     (J : ℝ≥0∞) (hJ_lt : J < ⊤)
     (n : ℕ) (hn : 1 ≤ n)
-    -- the tight RHS dominates 1. This is the content that the chaining
-    -- construction (or downstream `J → cover sequence` lemma) would
-    -- supply; without it the conclusion is genuinely false in the
+    -- Absorption condition for the additive constant in the crude bound;
+    -- without it the conclusion is false in the
     -- degenerate case `J = 0`, `Φ ≤ δ√n` a.e. with `F` containing a
     -- non-zero centered bounded function.
     (hAbsorb : (1 : ℝ≥0∞) ≤
@@ -1159,31 +1520,13 @@ private lemma tight_chain_full_assembly_brick
     _ = ENNReal.ofReal (2 * K_crude) * (J + tail) := by
         rw [← mul_assoc, h_K_mul]
 
-/-- Tight assembly aux: wraps the chain content of
-`tight_chain_full_assembly_brick` into the form consumed by the public
-theorem `maximal_inequality_bracketing_tight`.
+/-- Packages `tight_chain_full_assembly_brick` in the signature used by
+`maximal_inequality_bracketing_tight`.
 
-Mirrors `bernstein_inequality → bernstein_inequality_aux` and
-`finite_sup_bound → finite_sup_bound_aux`: the public theorem is a
-one-liner; the chaining content lives in the sub-aux
-`tight_chain_full_assembly_brick`, whose docstring documents the structural
-gaps that prevent further factoring through the three leaves.
-
-**Chain content (vdV §19.6).** Outline carried by the brick:
-1. Fix the dyadic chain `ε_q = δ · 2^{-q}`.
-2. For each `f ∈ F`, decompose `f = f · 1_{|Φ| ≤ δ√n} + f · 1_{|Φ| > δ√n}`.
-3. The bounded piece feeds the chain telescope (`f_b = π_0 + Σ_q
-   (π_q − π_{q-1})`); apply `tight_chain_level_bound` at each level
-   + `tight_chain_telescope_bound` to sum.
-4. The unbounded piece is controlled by `tight_envelope_truncation_bound`.
-5. Triangle inequality assembles the two pieces; the universal `K` is
-   the max of constants from A, B, C.
-
-**Existential `K`.** The constants `K_A` (from `tight_chain_level_bound`,
-itself existential because `finite_sup_bound`'s witness is existential)
-and `K_B` (from `tight_chain_telescope_bound`) propagate up; the
-assembly's `K` is `max (K_A · K_B) (4 · K_C)` (or any common upper
-bound). -/
+For fixed `n` and `δ`, this conditional full-class bound uses `hAbsorb` and the
+`n`-dependent witness inherited from `maximal_inequality_bracketing`. The
+uniform localized theorem with an `n`-independent constant is
+`localizedChainBound_of_finiteEntropy`. -/
 private lemma maximal_inequality_bracketing_tight_core
     (P : Measure Ω) [IsProbabilityMeasure P]
     {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
@@ -1198,7 +1541,7 @@ private lemma maximal_inequality_bracketing_tight_core
     (h_var : ∀ f ∈ F, ∫ ω, (f ω) ^ 2 ∂P ≤ δ ^ 2)
     (J : ℝ≥0∞) (hJ_lt : J < ⊤)
     (n : ℕ) (hn : 1 ≤ n)
-    -- chain-comparison content; see `tight_chain_full_assembly_brick`.
+    -- Absorption condition; see `tight_chain_full_assembly_brick`.
     (hAbsorb : (1 : ℝ≥0∞) ≤
       J + ENNReal.ofReal (Real.sqrt n) *
         ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
@@ -1210,35 +1553,26 @@ private lemma maximal_inequality_bracketing_tight_core
             (J + ENNReal.ofReal (Real.sqrt n)
               * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
                   * Set.indicator {x | δ * Real.sqrt n < |Φ x|} 1 ω ∂P) := by
-  -- Wrap the brick `tight_chain_full_assembly_brick`
-  -- (closed via crude bound + `hAbsorb`).
+  -- Apply the conditional full-class bound.
   exact tight_chain_full_assembly_brick P hX_meas hX_iindep hX_idem hX_law
     F Φ hΦ_env hΦ_meas hΦ_memLp hδ h_var J hJ_lt n hn hAbsorb
 
-/-- **Lemma 19.34 (Bracketing maximal inequality — tight variant)**.
+/-- **Conditional full-class bracketing maximal inequality.**
 
-vdV §19.6, the genuine chaining argument. For a class `F` of measurable
-functions with `Pf² ≤ δ²` for every `f ∈ F`, envelope `Φ ∈ L²(P)`, and
-bracketing entropy integral upper bound `J < ⊤`, there exists a
-**universal** constant `K` (independent of `n` and `δ`) such that
+For a class `F` with `Pf² ≤ δ²`, an `L²(P)` envelope `Φ`, and an entropy bound
+`J < ⊤`, this theorem supplies a positive constant for one fixed `(n, δ)`.
+The witness is `2 · (2nδ + 2)`, obtained from
+`maximal_inequality_bracketing`, so the statement does not assert a constant
+uniform in `n`. The uniform localized form of vdV Lemma 19.34 is
+`localizedChainBound_of_finiteEntropy`; it bounds the supremum over
+`localizedDifferenceClass F P δq` with a constant independent of `n`, `δq`,
+and the envelope.
 
-`E* ‖G_n‖F ≤ K · ( J_{[]}(δ, F, L²(P)) + √n · P*( |Φ| · 1{|Φ| > √n · δ} ) )`
-
-In contrast to `maximal_inequality_bracketing` (crude variant above) which
-yields `K = 2nδ + 2` and an extra `+1` cushion, this statement holds with
-`K` universal and no cushion. The tight `K` is the prerequisite for the
-equicontinuity half of Theorem 19.5: sending `δ ↓ 0` along a `1/√n`-summable
-sequence requires `K` not to grow with `n`.
-
-The proof routes through `tight_chain_full_assembly_brick`, which closes the
-bound via the crude bound `maximal_inequality_bracketing` combined with the
-chain-comparison absorption hypothesis `hAbsorb`. The hypothesis
-`hAbsorb : 1 ≤ J + √n · tail` captures the genuine chain-comparison content
-(`J ≥ ∫_0^δ √log N_[](ε,F,L²(P)) dε` bounded below by a positive multiple of
-`δ` for non-trivial F); without it the conclusion is false in the degenerate
-case `J = 0`, `Φ ≤ δ√n` a.e. with `F` containing a non-zero centered bounded
-function. Downstream consumers must supply `hAbsorb` from their
-bracketing-structure context. -/
+The proof applies `tight_chain_full_assembly_brick`. The hypothesis
+`hAbsorb : 1 ≤ J + √n · tail` is needed to absorb the crude bound's additive
+`+1` cushion into the multiplicative form; without it the conclusion is false
+in the degenerate case `J = 0`, `Φ ≤ δ√n` a.e. with `F` containing a non-zero
+centered bounded function. -/
 theorem maximal_inequality_bracketing_tight
     (P : Measure Ω) [IsProbabilityMeasure P]
     {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
@@ -1342,7 +1676,7 @@ private theorem chaining_envelope_from_bracket
     unfold bracketingEntropyIntegral
     have h_eq : Set.EqOn
         (fun ε => ENat.recTopCoe (⊤ : ℝ≥0∞)
-          (fun n : ℕ => ENNReal.ofReal (Real.sqrt (Real.log (n : ℝ))))
+          (fun n : ℕ => ENNReal.ofReal (Real.sqrt (Real.log (1 + (n : ℝ)))))
           (bracketingNumber ε F 2 P))
         (fun _ => (⊤ : ℝ≥0∞))
         (Set.Ioc (0 : ℝ) 1) := by
@@ -1390,106 +1724,373 @@ private theorem chaining_envelope_from_bracket
     exact (MemLp.abs (hbracket i).memLp_lower).add
       (MemLp.abs (hbracket i).memLp_upper)
 
-/-- Sub-Lemma C-max: integral of `supNormOver F G_n` at scale `δq`, the
-tight (uniform-in-`n`) chaining bound feeding the chain assembly in
-`chaining_integral_universal_K`. Stated with universal coefficient `2`.
+/-- **Bracket-extraction (C2 helper)**: from a finite bracketing-entropy integral
+at scale 1, extract a single scale `ε ∈ (0, 1]` with a finite ε-bracketing cover.
 
-Neither off-the-shelf tool closes this directly:
-* `maximal_inequality_bracketing` (crude) yields `K = 2nδ+2`, which is
-  `n`-dependent. No relaxation of the RHS coefficients absorbs the `n`
-  factor: `2nδq → ∞` while the target `K·J(δq)` is fixed.
-* `maximal_inequality_bracketing_tight` yields universal `K` but requires
-  `h_var : ∀ f ∈ F, ‖f‖²_L² ≤ δq²`, which is false for the full F at scale δq.
+Contrapositive: if `bracketingNumber ε F 2 P = ⊤` for every `ε ∈ (0, 1]`, then the
+`bracketingEntropyIntegral` integrand is `⊤` on `(0, 1]`, so the lintegral is
+`⊤ · volume((0,1]) = ⊤`, contradicting `h_int`. Mirrors the (private) extraction
+in `DonskerBracketing.lean`, lifted here so `memLp_of_mem_of_finiteBracketing`
+(consumed by the localized chaining rewrite) is self-contained. -/
+private lemma exists_finite_bracketingNumber_of_integral_lt_top'
+    {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
+    (h_int : bracketingEntropyIntegral 1 F P < ⊤) :
+    ∃ ε : ℝ, ε ∈ Set.Ioc (0 : ℝ) 1 ∧ bracketingNumber ε F 2 P < ⊤ := by
+  by_contra h_no
+  push Not at h_no
+  have h_int_top : bracketingEntropyIntegral 1 F P = ⊤ := by
+    unfold bracketingEntropyIntegral
+    rw [setLIntegral_congr_fun (μ := volume) (s := Set.Ioc (0:ℝ) 1)
+        (g := fun _ => (⊤ : ℝ≥0∞)) measurableSet_Ioc (by
+          intro ε hε
+          have h_top : bracketingNumber ε F 2 P = ⊤ := top_unique (h_no ε hε)
+          simp [h_top])]
+    rw [setLIntegral_const, Real.volume_Ioc]
+    simp
+  rw [h_int_top] at h_int
+  exact (lt_irrefl _ h_int).elim
 
-**Closure plan (vdV §19.6).**
-1. Bracket-restricted subclass at scale δq. Use `chaining_envelope_from_bracket`
-   to extract a finite bracket cover of F at scale `δq` (or at the closest
-   dyadic level); the subclass of bracket midpoints `F_δq ⊆ F` satisfies
-   `h_var : ∀ f ∈ F_δq, ‖f‖²_L² ≤ δq²` by construction.
-2. Apply `maximal_inequality_bracketing_tight` to `F_δq` with envelope `Φ`,
-   yielding `∫⁻ supNormOver F_δq G_n ∂μ ≤ K · (J(δq) + √n·T)` with universal `K`.
-3. Lift the subclass bound to all of F via the bracket cover: for each
-   `f ∈ F`, pick its bracket midpoint `π_δq(f) ∈ F_δq`; pointwise
-   `|G_n f| ≤ |G_n π_δq(f)| + |G_n (f − π_δq(f))|`. The first term feeds
-   step 2; the second is controlled by `tight_envelope_truncation_bound`
-   since `|f − π_δq(f)| ≤ 2Φ` and the L² norm is ≤ δq.
-4. Combine via `lintegral_mono` + linearity. The universal coefficient `2`
-   absorbs the F-F-to-F factor and the bracket-projection bookkeeping.
+/-- **`MemLp` from class membership and finite bracketing entropy**.
 
-The bound is purely at scale `δq`; finiteness of
-`bracketingEntropyIntegral δq F P` is *not* required for the inequality (if
-it is `⊤`, both sides are `⊤` and the inequality holds trivially). -/
-private theorem chain_supnorm_integral_bound_at_delta_q
-    (P : Measure Ω) [IsProbabilityMeasure P]
-    {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
-    (X : ℕ → Ξ → Ω) (_hX_meas : ∀ i, Measurable (X i))
-    (_hX_iindep : ProbabilityTheory.iIndepFun X μ)
-    (_hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
-    (_hX_law : μ.map (X 0) = P)
-    (F : Set (Ω → ℝ)) (Φ : Ω → ℝ)
-    (_hΦ_meas : Measurable Φ) (_hΦ_env : IsEnvelope F Φ) (_hΦ_L2 : MemLp Φ 2 P)
-    {δq : ℝ} (_hδq_pos : 0 < δq) (n : ℕ)
-    -- content at scale `δq` (bracket-restricted subclass + tight bound on the
-    -- subclass + envelope-tail truncation); closure plan in the docstring above.
-    -- Consumers supply via cascade up to public entry points; see
-    -- `chaining_integral_universal_K`, `chaining_per_q_integral_bound_aux`,
-    -- `chaining_per_q_max_ineq_bound`.
-    (hChainBound :
-      ∫⁻ ξ, supNormOver F
-            (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ∂μ
-        ≤ ENNReal.ofReal 2 * bracketingEntropyIntegral δq F P
-          + ENNReal.ofReal 2 *
-            (ENNReal.ofReal (Real.sqrt n)
-              * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
-                  * Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω ∂P)) :
-    ∫⁻ ξ, supNormOver F
-          (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ∂μ
-      ≤ ENNReal.ofReal 2 * bracketingEntropyIntegral δq F P
-        + ENNReal.ofReal 2 *
-          (ENNReal.ofReal (Real.sqrt n)
-            * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
-                * Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω ∂P) :=
-  hChainBound
+If `F` has a finite bracketing-entropy integral at scale 1 and `f ∈ F` is
+AE-strongly-measurable, then `MemLp f 2 P`. Lifted from the inline argument in
+`DonskerBracketing.marginalCLT_of_finite_bracketing_entropy_integral_aux`: extract
+a finite bracket cover at some scale `ε`, find a bracket `[l, u]` containing `f`,
+bound `|f x| ≤ |l x| + |u x|` pointwise, and conclude via `MemLp.of_le_mul` from
+`MemLp (l) 2 P`, `MemLp (u) 2 P`.
 
-/-- Sub-Lemma C: chain integral assembly orchestrating Sub-Lemmas A/B and the
-three leaves (`tight_chain_level_bound`, `tight_chain_telescope_bound`,
-`tight_envelope_truncation_bound`).
+Consumed by the localized chaining rewrite to feed `MemLp (f̂ − ĝ) 2 P` (via
+`MemLp.sub`) into `mem_localizedDifferenceClass_of_integral_sq`. -/
+lemma memLp_of_mem_of_finiteBracketing
+    {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
+    (h_int : bracketingEntropyIntegral 1 F P < ⊤)
+    {f : Ω → ℝ} (hf : f ∈ F) (hf_meas : AEStronglyMeasurable f P) :
+    MemLp f 2 P := by
+  obtain ⟨ε, _hε, hN⟩ := exists_finite_bracketingNumber_of_integral_lt_top' h_int
+  obtain ⟨k, l, u, hbr, hcov⟩ := bracketingNumber_lt_top_iff_HasFiniteBracketingCover.mp hN
+  obtain ⟨i, hi⟩ := hcov f hf
+  have hl_mem : MemLp (l i) 2 P := (hbr i).memLp_lower
+  have hu_mem : MemLp (u i) 2 P := (hbr i).memLp_upper
+  refine MemLp.of_le_mul (c := 1) (hl_mem.abs.add hu_mem.abs) hf_meas ?_
+  refine Filter.Eventually.of_forall (fun x => ?_)
+  have h_nn : 0 ≤ |l i x| + |u i x| := by positivity
+  change ‖f x‖ ≤ 1 * ‖|l i x| + |u i x|‖
+  rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg h_nn, one_mul]
+  obtain ⟨h1, h2⟩ := hi x
+  rcases le_or_gt 0 (f x) with hf_pos | hf_neg
+  · calc |f x|
+        = f x := abs_of_nonneg hf_pos
+      _ ≤ u i x := h2
+      _ ≤ |u i x| := le_abs_self _
+      _ ≤ |l i x| + |u i x| := by linarith [abs_nonneg (l i x)]
+  · calc |f x|
+        = -f x := abs_of_neg hf_neg
+      _ ≤ -l i x := by linarith
+      _ ≤ |l i x| := neg_le_abs _
+      _ ≤ |l i x| + |u i x| := by linarith [abs_nonneg (u i x)]
 
-1. Extract envelope Φ via `chaining_envelope_from_bracket _h_int`.
-2. For each dyadic level k, apply `tight_chain_level_bound` at scale `2^{-k} δq`.
-3. Apply `tight_chain_telescope_bound` to sum levels into `J(δq, F, P)`.
-4. Apply `tight_envelope_truncation_bound` for tail at `δq √n`.
-5. Choose `N_chain` so that `√n · envelope_tail(n) ≤ J(δq)` via DCT.
-6. Universal `K_chain := 8 · K_level`. -/
+/-- **Envelope-tail DCT at a fixed positive threshold scale `a`**.
+
+For `Φ ∈ L²(P)` and a fixed `a > 0`, the truncated envelope tail
+`√n · ∫⁻ ω, |Φ ω| · 1_{a·√n < |Φ ω|} dP` tends to `0` as `n → ∞`.
+
+The threshold scale `a` is any fixed positive constant, so the result applies
+at the localized chaining truncation scale (in particular, `a = M`). The proof
+is the standard L¹ envelope-tail DCT: dominator
+`|Φ|²/a` (on `{a·√n < |Φ|}`, `√n ≤ |Φ|/a`, so `√n·|Φ| ≤ |Φ|²/a`); pointwise
+limit `0` (eventually `a·√n > |Φ ω|`, indicator vanishes); `|Φ|² ∈ L¹` from
+`MemLp Φ 2 P`.
+
+Together with the `ENNReal.tendsto_atTop_zero` extraction, this yields, for any
+positive target `J > 0`, an `N` past which the tail is `≤ J`. -/
+lemma tendsto_envelope_tail_const_threshold
+    (P : Measure Ω) [IsProbabilityMeasure P] {Φ : Ω → ℝ}
+    (hΦ_meas : Measurable Φ) (hΦ_L2 : MemLp Φ 2 P) {a : ℝ} (ha : 0 < a) :
+    Filter.Tendsto
+      (fun n : ℕ => ENNReal.ofReal (Real.sqrt n)
+        * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
+            * Set.indicator {x | a * Real.sqrt n < |Φ x|} 1 ω ∂P)
+      Filter.atTop (𝓝 0) := by
+  have ha_ofReal_pos : (0 : ℝ≥0∞) < ENNReal.ofReal a := ENNReal.ofReal_pos.mpr ha
+  have ha_inv_ne_top : (ENNReal.ofReal a)⁻¹ ≠ ∞ :=
+    ENNReal.inv_ne_top.mpr ha_ofReal_pos.ne'
+  set T : ℕ → ℝ≥0∞ := fun n =>
+    ENNReal.ofReal (Real.sqrt n)
+      * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
+          * Set.indicator {x | a * Real.sqrt n < |Φ x|} 1 ω ∂P with hT_def
+  set Fn : ℕ → Ω → ℝ≥0∞ := fun n ω =>
+    ENNReal.ofReal (Real.sqrt n) * (ENNReal.ofReal (|Φ ω|) *
+      Set.indicator {x | a * Real.sqrt n < |Φ x|} 1 ω) with hFn_def
+  set g : Ω → ℝ≥0∞ := fun ω =>
+    (ENNReal.ofReal a)⁻¹ * ENNReal.ofReal (Φ ω ^ 2) with hg_def
+  -- Step A: T n = ∫⁻ Fn n.
+  have hT_eq : ∀ n, T n = ∫⁻ ω, Fn n ω ∂P := by
+    intro n
+    simp only [hT_def, hFn_def]
+    rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  -- Step B: each Fn n is measurable.
+  have hΦ_abs_meas : Measurable (fun ω => |Φ ω|) :=
+    _root_.continuous_abs.measurable.comp hΦ_meas
+  have hFn_meas : ∀ n, Measurable (Fn n) := by
+    intro n
+    refine measurable_const.mul ?_
+    refine hΦ_abs_meas.ennreal_ofReal.mul ?_
+    exact Measurable.indicator measurable_const
+      (measurableSet_lt measurable_const hΦ_abs_meas)
+  -- Step C: pointwise bound Fn n ω ≤ g ω.
+  have h_bound : ∀ n ω, Fn n ω ≤ g ω := by
+    intro n ω
+    simp only [hFn_def, hg_def]
+    by_cases hω : ω ∈ {x | a * Real.sqrt n < |Φ x|}
+    · rw [Set.indicator_of_mem hω, Pi.one_apply, mul_one]
+      rw [← ENNReal.ofReal_mul (Real.sqrt_nonneg _)]
+      have hω' : a * Real.sqrt n < |Φ ω| := hω
+      have h_sqrt_le : Real.sqrt n ≤ |Φ ω| / a := by
+        rw [le_div_iff₀ ha]; linarith
+      have h_phi_nn : 0 ≤ |Φ ω| := abs_nonneg _
+      have h_step : Real.sqrt n * |Φ ω| ≤ Φ ω ^ 2 / a := by
+        calc Real.sqrt n * |Φ ω|
+            ≤ (|Φ ω| / a) * |Φ ω| :=
+              mul_le_mul_of_nonneg_right h_sqrt_le h_phi_nn
+          _ = (|Φ ω| * |Φ ω|) / a := by rw [div_mul_eq_mul_div]
+          _ = Φ ω ^ 2 / a := by rw [← sq, sq_abs]
+      calc ENNReal.ofReal (Real.sqrt n * |Φ ω|)
+          ≤ ENNReal.ofReal (Φ ω ^ 2 / a) := ENNReal.ofReal_le_ofReal h_step
+        _ = (ENNReal.ofReal a)⁻¹ * ENNReal.ofReal (Φ ω ^ 2) := by
+            rw [ENNReal.ofReal_div_of_pos ha, ENNReal.div_eq_inv_mul]
+    · rw [Set.indicator_of_notMem hω]
+      simp
+  -- Step D: pointwise limit Fn n ω → 0 for every ω.
+  have h_lim : ∀ ω, Filter.Tendsto (fun n => Fn n ω) Filter.atTop (𝓝 0) := by
+    intro ω
+    have h_sqrt_tendsto :
+        Filter.Tendsto (fun n : ℕ => a * Real.sqrt n) Filter.atTop Filter.atTop := by
+      refine Filter.Tendsto.const_mul_atTop ha ?_
+      exact Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
+    have h_ev : ∀ᶠ n in Filter.atTop, Fn n ω = 0 := by
+      filter_upwards [h_sqrt_tendsto.eventually_gt_atTop (|Φ ω|)] with n hn
+      simp only [hFn_def]
+      have h_not : ω ∉ {x | a * Real.sqrt n < |Φ x|} := by
+        intro h
+        exact lt_asymm (a := |Φ ω|) (b := a * Real.sqrt n) hn h
+      rw [Set.indicator_of_notMem h_not]
+      simp
+    have h_evEq : (fun n => Fn n ω) =ᶠ[Filter.atTop] (fun _ => (0 : ℝ≥0∞)) := h_ev
+    exact Filter.Tendsto.congr' h_evEq.symm tendsto_const_nhds
+  -- Step E: integrability of |Φ|² (from MemLp Φ 2 P).
+  have h_phi_sq_int : ∫⁻ ω, ENNReal.ofReal (Φ ω ^ 2) ∂P ≠ ∞ := by
+    have h_eLp : eLpNorm Φ 2 P < ∞ := hΦ_L2.eLpNorm_lt_top
+    have h_rpow := lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top
+      (μ := P) (f := Φ) (p := (2 : ℝ≥0∞))
+      (by norm_num : (2 : ℝ≥0∞) ≠ 0) (by norm_num : (2 : ℝ≥0∞) ≠ ∞) h_eLp
+    have h_two_toReal : (2 : ℝ≥0∞).toReal = (2 : ℕ) := by norm_num
+    rw [h_two_toReal] at h_rpow
+    have h_int_eq : ∫⁻ ω, ENNReal.ofReal (Φ ω ^ 2) ∂P
+                   = ∫⁻ a, ‖Φ a‖ₑ ^ ((2 : ℕ) : ℝ) ∂P := by
+      refine lintegral_congr fun ω => ?_
+      rw [ENNReal.rpow_natCast, Real.enorm_eq_ofReal_abs,
+          ← ENNReal.ofReal_pow (abs_nonneg _), sq_abs]
+    rw [h_int_eq]; exact h_rpow.ne
+  -- Step F: integrability of g.
+  have h_g_int : ∫⁻ ω, g ω ∂P ≠ ∞ := by
+    simp only [hg_def]
+    rw [lintegral_const_mul' _ _ ha_inv_ne_top]
+    exact ENNReal.mul_ne_top ha_inv_ne_top h_phi_sq_int
+  -- Step G: assemble via DCT.
+  have h_dct :=
+    MeasureTheory.tendsto_lintegral_of_dominated_convergence
+      (μ := P) (F := Fn) (f := fun _ => (0 : ℝ≥0∞)) g hFn_meas
+      (fun n => Filter.Eventually.of_forall (h_bound n)) h_g_int
+      (Filter.Eventually.of_forall h_lim)
+  simp only [lintegral_zero] at h_dct
+  exact (Filter.tendsto_congr hT_eq).mpr h_dct
+
+/-- **Eventual envelope-tail absorption into a positive target.**
+
+For `Φ ∈ L²(P)`, fixed `a > 0`, and any positive target `J`, there is `N`
+beyond which `√n · ∫⁻ |Φ| · 1_{a·√n < |Φ|} ≤ J`. Direct from
+`tendsto_envelope_tail_const_threshold` + `ENNReal.tendsto_atTop_zero`. This is
+the localized-consumer's tail-absorption step at the truncation scale `a`. -/
+lemma exists_envelope_tail_le_const_threshold
+    (P : Measure Ω) [IsProbabilityMeasure P] {Φ : Ω → ℝ}
+    (hΦ_meas : Measurable Φ) (hΦ_L2 : MemLp Φ 2 P) {a : ℝ} (ha : 0 < a)
+    {J : ℝ≥0∞} (hJ : 0 < J) :
+    ∃ N : ℕ, ∀ n ≥ N,
+      ENNReal.ofReal (Real.sqrt n)
+        * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
+            * Set.indicator {x | a * Real.sqrt n < |Φ x|} 1 ω ∂P ≤ J :=
+  ENNReal.tendsto_atTop_zero.mp
+    (tendsto_envelope_tail_const_threshold P hΦ_meas hΦ_L2 ha) _ hJ
+
+/-- **Envelope-tail DCT at the construction's `n·M` threshold**.
+
+The localized chaining constructor (`localized_core_construction`,
+`ChainingAssembly.lean`) produces its envelope tail at the truncation level
+`√n · M_old` with `M_old = √n · chainThreshold / 2`, i.e. at the **`n`-scaled**
+threshold `{(n:ℝ) · M < |Φ|}` for the `n`-independent positive constant
+`M := chainThreshold B δq q₀ / 2`. This variant of
+`tendsto_envelope_tail_const_threshold` runs the same envelope-tail DCT at that
+`(n:ℝ)·M` threshold (a strictly faster-growing cutoff than `a·√n`, so the tail
+vanishes a fortiori), so the localized consumer can absorb it into `K·J(δq)`.
+
+This is the envelope-tail result the localized chaining consumer needs once the
+`localizedChainBound_of_finiteEntropy` exposes a *uniform* positive `M`
+(outside `∀ n`) with the `(n:ℝ)·M` threshold — the form the construction
+actually delivers. Domination on `{n·M < |Φ|}`: there `n·M < |Φ|` gives
+`√n ≤ n ≤ |Φ|/M` (for `n ≥ 1`), so `√n·|Φ| ≤ |Φ|²/M ∈ L¹`. -/
+lemma tendsto_envelope_tail_natMul_threshold
+    (P : Measure Ω) [IsProbabilityMeasure P] {Φ : Ω → ℝ}
+    (hΦ_meas : Measurable Φ) (hΦ_L2 : MemLp Φ 2 P) {M : ℝ} (hM : 0 < M) :
+    Filter.Tendsto
+      (fun n : ℕ => ENNReal.ofReal (Real.sqrt n)
+        * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
+            * Set.indicator {x | (n : ℝ) * M < |Φ x|} 1 ω ∂P)
+      Filter.atTop (𝓝 0) := by
+  have hM_ofReal_pos : (0 : ℝ≥0∞) < ENNReal.ofReal M := ENNReal.ofReal_pos.mpr hM
+  have hM_inv_ne_top : (ENNReal.ofReal M)⁻¹ ≠ ∞ :=
+    ENNReal.inv_ne_top.mpr hM_ofReal_pos.ne'
+  set T : ℕ → ℝ≥0∞ := fun n =>
+    ENNReal.ofReal (Real.sqrt n)
+      * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
+          * Set.indicator {x | (n : ℝ) * M < |Φ x|} 1 ω ∂P with hT_def
+  set Fn : ℕ → Ω → ℝ≥0∞ := fun n ω =>
+    ENNReal.ofReal (Real.sqrt n) * (ENNReal.ofReal (|Φ ω|) *
+      Set.indicator {x | (n : ℝ) * M < |Φ x|} 1 ω) with hFn_def
+  set g : Ω → ℝ≥0∞ := fun ω =>
+    (ENNReal.ofReal M)⁻¹ * ENNReal.ofReal (Φ ω ^ 2) with hg_def
+  have hT_eq : ∀ n, T n = ∫⁻ ω, Fn n ω ∂P := by
+    intro n
+    simp only [hT_def, hFn_def]
+    rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  have hΦ_abs_meas : Measurable (fun ω => |Φ ω|) :=
+    _root_.continuous_abs.measurable.comp hΦ_meas
+  have hFn_meas : ∀ n, Measurable (Fn n) := by
+    intro n
+    refine measurable_const.mul ?_
+    refine hΦ_abs_meas.ennreal_ofReal.mul ?_
+    exact Measurable.indicator measurable_const
+      (measurableSet_lt measurable_const hΦ_abs_meas)
+  have h_bound : ∀ n ω, Fn n ω ≤ g ω := by
+    intro n ω
+    simp only [hFn_def, hg_def]
+    by_cases hω : ω ∈ {x | (n : ℝ) * M < |Φ x|}
+    · rw [Set.indicator_of_mem hω, Pi.one_apply, mul_one]
+      rw [← ENNReal.ofReal_mul (Real.sqrt_nonneg _)]
+      have hω' : (n : ℝ) * M < |Φ ω| := hω
+      have h_phi_nn : 0 ≤ |Φ ω| := abs_nonneg _
+      -- `√n ≤ n ≤ |Φ|/M`, hence `√n·|Φ| ≤ |Φ|²/M`.
+      have h_sqrt_le_n : Real.sqrt n ≤ (n : ℝ) := by
+        rcases Nat.eq_zero_or_pos n with hn0 | hn1
+        · simp [hn0]
+        · have hn1' : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1
+          calc Real.sqrt n ≤ Real.sqrt ((n : ℝ) ^ 2) := by
+                apply Real.sqrt_le_sqrt; nlinarith
+            _ = (n : ℝ) := by rw [Real.sqrt_sq (by positivity)]
+      have h_n_le : (n : ℝ) ≤ |Φ ω| / M := by
+        rw [le_div_iff₀ hM]; linarith
+      have h_sqrt_le : Real.sqrt n ≤ |Φ ω| / M := le_trans h_sqrt_le_n h_n_le
+      have h_step : Real.sqrt n * |Φ ω| ≤ Φ ω ^ 2 / M := by
+        calc Real.sqrt n * |Φ ω|
+            ≤ (|Φ ω| / M) * |Φ ω| :=
+              mul_le_mul_of_nonneg_right h_sqrt_le h_phi_nn
+          _ = (|Φ ω| * |Φ ω|) / M := by rw [div_mul_eq_mul_div]
+          _ = Φ ω ^ 2 / M := by rw [← sq, sq_abs]
+      calc ENNReal.ofReal (Real.sqrt n * |Φ ω|)
+          ≤ ENNReal.ofReal (Φ ω ^ 2 / M) := ENNReal.ofReal_le_ofReal h_step
+        _ = (ENNReal.ofReal M)⁻¹ * ENNReal.ofReal (Φ ω ^ 2) := by
+            rw [ENNReal.ofReal_div_of_pos hM, ENNReal.div_eq_inv_mul]
+    · rw [Set.indicator_of_notMem hω]
+      simp
+  have h_lim : ∀ ω, Filter.Tendsto (fun n => Fn n ω) Filter.atTop (𝓝 0) := by
+    intro ω
+    have h_nat_tendsto :
+        Filter.Tendsto (fun n : ℕ => (n : ℝ) * M) Filter.atTop Filter.atTop := by
+      refine Filter.Tendsto.atTop_mul_const hM ?_
+      exact tendsto_natCast_atTop_atTop
+    have h_ev : ∀ᶠ n in Filter.atTop, Fn n ω = 0 := by
+      filter_upwards [h_nat_tendsto.eventually_gt_atTop (|Φ ω|)] with n hn
+      simp only [hFn_def]
+      have h_not : ω ∉ {x | (n : ℝ) * M < |Φ x|} := by
+        intro h
+        exact lt_asymm (a := |Φ ω|) (b := (n : ℝ) * M) hn h
+      rw [Set.indicator_of_notMem h_not]
+      simp
+    have h_evEq : (fun n => Fn n ω) =ᶠ[Filter.atTop] (fun _ => (0 : ℝ≥0∞)) := h_ev
+    exact Filter.Tendsto.congr' h_evEq.symm tendsto_const_nhds
+  have h_phi_sq_int : ∫⁻ ω, ENNReal.ofReal (Φ ω ^ 2) ∂P ≠ ∞ := by
+    have h_eLp : eLpNorm Φ 2 P < ∞ := hΦ_L2.eLpNorm_lt_top
+    have h_rpow := lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top
+      (μ := P) (f := Φ) (p := (2 : ℝ≥0∞))
+      (by norm_num : (2 : ℝ≥0∞) ≠ 0) (by norm_num : (2 : ℝ≥0∞) ≠ ∞) h_eLp
+    have h_two_toReal : (2 : ℝ≥0∞).toReal = (2 : ℕ) := by norm_num
+    rw [h_two_toReal] at h_rpow
+    have h_int_eq : ∫⁻ ω, ENNReal.ofReal (Φ ω ^ 2) ∂P
+                   = ∫⁻ a, ‖Φ a‖ₑ ^ ((2 : ℕ) : ℝ) ∂P := by
+      refine lintegral_congr fun ω => ?_
+      rw [ENNReal.rpow_natCast, Real.enorm_eq_ofReal_abs,
+          ← ENNReal.ofReal_pow (abs_nonneg _), sq_abs]
+    rw [h_int_eq]; exact h_rpow.ne
+  have h_g_int : ∫⁻ ω, g ω ∂P ≠ ∞ := by
+    simp only [hg_def]
+    rw [lintegral_const_mul' _ _ hM_inv_ne_top]
+    exact ENNReal.mul_ne_top hM_inv_ne_top h_phi_sq_int
+  have h_dct :=
+    MeasureTheory.tendsto_lintegral_of_dominated_convergence
+      (μ := P) (F := Fn) (f := fun _ => (0 : ℝ≥0∞)) g hFn_meas
+      (fun n => Filter.Eventually.of_forall (h_bound n)) h_g_int
+      (Filter.Eventually.of_forall h_lim)
+  simp only [lintegral_zero] at h_dct
+  exact (Filter.tendsto_congr hT_eq).mpr h_dct
+
+/-- Sub-Lemma C: chain integral assembly orchestrating the localized chaining
+engine (`localizedChainBound_of_finiteEntropy`, supplied as `hChainBound_outer`)
+and the envelope-tail DCT (`tendsto_envelope_tail_const_threshold`).
+
+vdV §19.2 **localized** equicontinuity. On the `L²`-good event
+`{∫(f̂−ĝ)² < δq²}`, the random difference `f̂(ξ) − ĝ(ξ)` lands in the
+δq-LOCALIZED difference class `localizedDifferenceClass F P δq` (whose sup DOES
+vanish, unlike the full-`F` sup), so the per-ξ integrand is bounded by the
+localized-class sup — NOT by `2·supNormOver F`. The engine's
+`∫⁻ supNormOver (localized) 𝔾ₙ ≤ c·J(δq) + c·√n·tail(√n·M)` then bounds the slice
+integral, and the tail at threshold `√n·M` (uniform positive `M`, outside `∀n`)
+is absorbed into `J(δq)` via the envelope-tail DCT at `a = M > 0`.
+
+The engine requires `δq ≤ 1/4`; the conclusion carries that constraint.
+Universal `K_chain := 2·c` (one envelope-tail factor; the localized route has no
+F−F→F doubling — the localized class already IS the difference slice). -/
 private theorem chaining_integral_universal_K
     (F : Set (Ω → ℝ)) (P : Measure Ω) [IsProbabilityMeasure P]
     (h_int : bracketingEntropyIntegral 1 F P < ⊤)
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
-    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
-    (hX_iindep : ProbabilityTheory.iIndepFun X μ)
-    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
-    (hX_law : μ.map (X 0) = P)
+    (X : ℕ → Ξ → Ω) (_hX_meas : ∀ i, Measurable (X i))
+    (_hX_iindep : ProbabilityTheory.iIndepFun X μ)
+    (_hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
+    (_hX_law : μ.map (X 0) = P)
     (fhat ghat : ℕ → Ξ → (Ω → ℝ))
     (_h_fhat_meas : ∀ n, Measurable (Function.uncurry (fhat n)))
     (_h_ghat_meas : ∀ n, Measurable (Function.uncurry (ghat n)))
     (h_fhat_in : ∀ n ξ, fhat n ξ ∈ F)
     (h_ghat_in : ∀ n ξ, ghat n ξ ∈ F)
-    -- `∫⁻ supNormOver F G_n ∂μ` at every scale `δq > 0`, parameterized over
-    -- envelopes `Φ` of `F`. Consumed below to discharge the corresponding
-    -- input on `chain_supnorm_integral_bound_at_delta_q`.
+    -- The δq-LOCALIZED chaining bound (vdV Lemma 19.34, localized form):
+    -- `∫⁻ supNormOver (localizedDifferenceClass F P δq) 𝔾ₙ ≤ c·J(δq) + c·√n·tail`
+    -- with a uniform positive truncation level `M` (outside `∀ n`) at threshold
+    -- `√n·M`. The headline obtains this bound from
+    -- `localizedChainBound_of_finiteEntropy`. The class-`F` envelope `Φ` is
+    -- upgraded to the difference-class envelope `2Φ` (`isEnvelope_differenceClass_two`).
     (hChainBound_outer :
-      ∀ (Φ : Ω → ℝ), Measurable Φ → IsEnvelope F Φ → MemLp Φ 2 P →
-        ∀ {δq : ℝ}, 0 < δq → ∀ (n : ℕ),
-          ∫⁻ ξ, supNormOver F
-                (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ∂μ
-            ≤ ENNReal.ofReal 2 * bracketingEntropyIntegral δq F P
-              + ENNReal.ofReal 2 *
-                (ENNReal.ofReal (Real.sqrt n)
-                  * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
-                      * Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω ∂P)) :
+      ∃ c : ℝ, 0 < c ∧
+      ∀ (Φ : Ω → ℝ), Measurable Φ → IsEnvelope (differenceClass F) Φ → MemLp Φ 2 P →
+        ∀ {δq : ℝ}, 0 < δq → δq ≤ 1 / 4 →
+          ∃ M : ℝ, 0 < M ∧ ∀ (n : ℕ),
+            ∫⁻ ξ, supNormOver (localizedDifferenceClass F P δq)
+                  (fun h => empiricalProcess P n (fun i : Fin n => X i.val ξ) h) ∂μ
+              ≤ ENNReal.ofReal c * bracketingEntropyIntegral δq F P
+                + ENNReal.ofReal c *
+                  (ENNReal.ofReal (Real.sqrt n)
+                    * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
+                        * Set.indicator {x | Real.sqrt n * M < |Φ x|} 1 ω ∂P)) :
     ∃ K_chain : ℝ, 0 < K_chain ∧
-      ∀ q : ℕ, ∀ (δq : ℝ), 0 < δq → δq ≤ 1 →
-        0 < bracketingEntropyIntegral δq F P →
+      ∀ q : ℕ, ∀ (δq : ℝ), 0 < δq → δq ≤ 1 / 4 →
         ∃ N_chain : ℕ, ∀ n ≥ N_chain,
           ∫⁻ ξ, ENNReal.ofReal
                 |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
@@ -1498,170 +2099,61 @@ private theorem chaining_integral_universal_K
                   {ξ : Ξ | ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P < δq ^ 2}
                   (fun _ => (1 : ℝ≥0∞)) ξ ∂μ
             ≤ ENNReal.ofReal K_chain * bracketingEntropyIntegral δq F P := by
-  -- Step 1: Extract envelope Φ from Sub-Lemma B (chaining_envelope_from_bracket).
-  -- Φ is measurable, an envelope for F, and in MemLp Φ 2 P. These three facts
-  -- are exactly what the three closed leaves require.
+  -- Step 0: destructure the existential universal chaining constant `c`.
+  obtain ⟨c, hc_pos, hChainBound_outer⟩ := hChainBound_outer
+  -- Step 1: Extract the class-`F` envelope Φ; upgrade to the difference-class
+  -- envelope `Φ₂ := 2Φ` (`isEnvelope_differenceClass_two`), which the engine
+  -- consumes (the localized class ⊆ differenceClass F).
   obtain ⟨Φ, hΦ_meas, hΦ_env, hΦ_L2⟩ := chaining_envelope_from_bracket F P h_int
-  -- Step 2: Universal K_chain = 8 absorbs all chain bookkeeping:
-  --   F-F-to-F factor (×2) · DCT envelope-tail factor (×4) ·
-  --   tight_chain_level_bound K_level · tight_chain_telescope_bound K_tel.
-  -- The 8 here is the post-compression bookkeeping constant; the substantive
-  -- inequalities K_level, K_tel, K_trunc are absorbed inside the chain
-  refine ⟨8, by norm_num, ?_⟩
-  intro q δq hδq_pos hδq_le_one hJ_pos
-  -- Step 3: Pick N_chain via DCT on the envelope tail.
-  -- For Φ ∈ L²(P), the tail integral
-  --   √n · ∫⁻ ω, |Φ ω| · 1_{|Φ ω| > δq · √n} dP
-  -- tends to 0 as n → ∞ by dominated convergence (the integrand vanishes
-  -- pointwise and is dominated by |Φ|·1_{Ω} which is L¹ since Φ ∈ L²).
-  -- Hence we can choose N_chain so that for all n ≥ N_chain, this tail
-  -- is dominated by bracketingEntropyIntegral δq F P (when J(δq) > 0)
-  -- or vacuously bounded (when J(δq) = 0 the function class is degenerate).
-  -- √n · envelope_tail(n, δq, Φ) ≤ bracketingEntropyIntegral δq F P for
-  -- all n ≥ N_chain. Uses MemLp Φ 2 P → integrability of |Φ| under P
-  -- (Hölder with the constant 1) and the standard L¹ envelope-tail DCT.
+  set Φ₂ : Ω → ℝ := fun x => 2 * Φ x with hΦ₂_def
+  have hΦ₂_meas : Measurable Φ₂ := measurable_const.mul hΦ_meas
+  have hΦ₂_env : IsEnvelope (differenceClass F) Φ₂ := isEnvelope_differenceClass_two hΦ_env
+  have hΦ₂_L2 : MemLp Φ₂ 2 P := hΦ_L2.const_mul 2
+  -- `F` is nonempty (it contains every `fhat n ξ`), which implies positivity
+  -- of `J(δq)`.
+  obtain ⟨ξ₀⟩ := nonempty_of_isProbabilityMeasure μ
+  have hF_ne : F.Nonempty := ⟨fhat 0 ξ₀, h_fhat_in 0 ξ₀⟩
+  -- Step 2: Universal K_chain = 2·c (one envelope-tail bookkeeping factor; the
+  -- localized route has NO F−F→F doubling — the localized class IS the slice).
+  refine ⟨2 * c, by positivity, ?_⟩
+  intro q δq hδq_pos hδq_le_quarter
+  -- `0 < J(δq)` follows from `F.Nonempty` (the entropy integrand
+  -- `√(log (1 + N))` is `≥ √(log 2) > 0` pointwise).
+  have hJ_pos : 0 < bracketingEntropyIntegral δq F P :=
+    bracketingEntropyIntegral_pos_of_nonempty hF_ne hδq_pos
+  -- Obtain the uniform positive truncation level `M` and the per-`n` localized
+  -- chaining bound at scale δq from the engine.
+  obtain ⟨M, hM_pos, hMbound⟩ :=
+    hChainBound_outer Φ₂ hΦ₂_meas hΦ₂_env hΦ₂_L2 hδq_pos hδq_le_quarter
+  -- Step 3: Pick `N_chain` via the envelope-tail DCT at the FIXED positive
+  -- threshold scale `a = M` (`tendsto_envelope_tail_const_threshold`):
+  -- `√n · ∫⁻ |Φ₂| · 1_{M·√n < |Φ₂|} dP → 0`, hence eventually `≤ J(δq)` (J>0).
   have h_N_chain : ∃ N_chain : ℕ, ∀ n ≥ N_chain,
       ENNReal.ofReal (Real.sqrt n)
-        * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
-            * Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω ∂P
+        * ∫⁻ ω, ENNReal.ofReal (|Φ₂ ω|)
+            * Set.indicator {x | Real.sqrt n * M < |Φ₂ x|} 1 ω ∂P
         ≤ bracketingEntropyIntegral δq F P := by
-    -- J(δq)>0 is a hypothesis (`hJ_pos`); the J=0 branch is a regularity
-    -- input supplied by the caller. Only the substantive DCT branch remains.
-    set T : ℕ → ℝ≥0∞ := fun n =>
-      ENNReal.ofReal (Real.sqrt n)
-        * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
-            * Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω ∂P
-      with hT_def
-    have h_tendsto : Filter.Tendsto T Filter.atTop (𝓝 0) := by
-      -- Close `√n · ∫⁻ |Φ| · 1_{|Φ|>δq·√n} dP → 0` directly via
-      -- `MeasureTheory.tendsto_lintegral_of_dominated_convergence`:
-      --   F n ω := ENNReal.ofReal(√n) · ENNReal.ofReal(|Φ ω|) · 1_{δq√n<|Φ ω|}(ω)
-      --   g ω   := (ENNReal.ofReal δq)⁻¹ · ENNReal.ofReal(Φ ω ^ 2)
-      -- T n = ∫⁻ F n  (pull √n inside via `lintegral_const_mul'`)
-      -- bound: on {δq√n<|Φ ω|}, √n ≤ |Φ ω|/δq, so √n·|Φ ω| ≤ |Φ ω|²/δq.
-      -- limit: for every ω, eventually δq√n > |Φ ω|, indicator = 0, F n ω = 0.
-      -- integrability of g: from `hΦ_L2 : MemLp Φ 2 P` via
-      --   `lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top`.
-      have hδq_ofReal_pos : (0 : ℝ≥0∞) < ENNReal.ofReal δq :=
-        ENNReal.ofReal_pos.mpr hδq_pos
-      have hδq_inv_ne_top : (ENNReal.ofReal δq)⁻¹ ≠ ∞ :=
-        ENNReal.inv_ne_top.mpr hδq_ofReal_pos.ne'
-      -- F n ω
-      set F : ℕ → Ω → ℝ≥0∞ := fun n ω =>
-        ENNReal.ofReal (Real.sqrt n) * (ENNReal.ofReal (|Φ ω|) *
-          Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω)
-        with hF_def
-      -- g ω : the n-uniform dominator.
-      set g : Ω → ℝ≥0∞ := fun ω =>
-        (ENNReal.ofReal δq)⁻¹ * ENNReal.ofReal (Φ ω ^ 2) with hg_def
-      -- Step A: T n = ∫⁻ F n.
-      have hT_eq : ∀ n, T n = ∫⁻ ω, F n ω ∂P := by
-        intro n
-        simp only [hT_def, hF_def]
-        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-      -- Step B: each F n is measurable.
-      have hΦ_abs_meas : Measurable (fun ω => |Φ ω|) :=
-        _root_.continuous_abs.measurable.comp hΦ_meas
-      have hF_meas : ∀ n, Measurable (F n) := by
-        intro n
-        refine measurable_const.mul ?_
-        refine hΦ_abs_meas.ennreal_ofReal.mul ?_
-        exact Measurable.indicator measurable_const
-          (measurableSet_lt measurable_const hΦ_abs_meas)
-      -- Step C: pointwise bound F n ω ≤ g ω.
-      have h_bound : ∀ n ω, F n ω ≤ g ω := by
-        intro n ω
-        simp only [hF_def, hg_def]
-        by_cases hω : ω ∈ {x | δq * Real.sqrt n < |Φ x|}
-        · rw [Set.indicator_of_mem hω, Pi.one_apply, mul_one]
-          rw [← ENNReal.ofReal_mul (Real.sqrt_nonneg _)]
-          have hω' : δq * Real.sqrt n < |Φ ω| := hω
-          have h_sqrt_le : Real.sqrt n ≤ |Φ ω| / δq := by
-            rw [le_div_iff₀ hδq_pos]; linarith
-          have h_phi_nn : 0 ≤ |Φ ω| := abs_nonneg _
-          have h_step : Real.sqrt n * |Φ ω| ≤ Φ ω ^ 2 / δq := by
-            calc Real.sqrt n * |Φ ω|
-                ≤ (|Φ ω| / δq) * |Φ ω| :=
-                  mul_le_mul_of_nonneg_right h_sqrt_le h_phi_nn
-              _ = (|Φ ω| * |Φ ω|) / δq := by rw [div_mul_eq_mul_div]
-              _ = Φ ω ^ 2 / δq := by rw [← sq, sq_abs]
-          calc ENNReal.ofReal (Real.sqrt n * |Φ ω|)
-              ≤ ENNReal.ofReal (Φ ω ^ 2 / δq) :=
-                ENNReal.ofReal_le_ofReal h_step
-            _ = (ENNReal.ofReal δq)⁻¹ * ENNReal.ofReal (Φ ω ^ 2) := by
-                rw [ENNReal.ofReal_div_of_pos hδq_pos, ENNReal.div_eq_inv_mul]
-        · rw [Set.indicator_of_notMem hω]
-          simp
-      -- Step D: pointwise limit F n ω → 0 for every ω.
-      have h_lim : ∀ ω, Filter.Tendsto (fun n => F n ω) Filter.atTop (𝓝 0) := by
-        intro ω
-        have h_sqrt_tendsto :
-            Filter.Tendsto (fun n : ℕ => δq * Real.sqrt n) Filter.atTop Filter.atTop := by
-          refine Filter.Tendsto.const_mul_atTop hδq_pos ?_
-          exact Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
-        have h_ev : ∀ᶠ n in Filter.atTop, F n ω = 0 := by
-          filter_upwards [h_sqrt_tendsto.eventually_gt_atTop (|Φ ω|)] with n hn
-          simp only [hF_def]
-          have h_not : ω ∉ {x | δq * Real.sqrt n < |Φ x|} := by
-            intro h
-            exact lt_asymm (a := |Φ ω|) (b := δq * Real.sqrt n) hn h
-          rw [Set.indicator_of_notMem h_not]
-          simp
-        have h_evEq : (fun n => F n ω) =ᶠ[Filter.atTop] (fun _ => (0 : ℝ≥0∞)) := h_ev
-        exact Filter.Tendsto.congr' h_evEq.symm tendsto_const_nhds
-      -- Step E: integrability of |Φ|² (from MemLp Φ 2 P).
-      have h_phi_sq_int : ∫⁻ ω, ENNReal.ofReal (Φ ω ^ 2) ∂P ≠ ∞ := by
-        have h_eLp : eLpNorm Φ 2 P < ∞ := hΦ_L2.eLpNorm_lt_top
-        have h_rpow := lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top
-          (μ := P) (f := Φ) (p := (2 : ℝ≥0∞))
-          (by norm_num : (2 : ℝ≥0∞) ≠ 0) (by norm_num : (2 : ℝ≥0∞) ≠ ∞) h_eLp
-        -- Convert ‖Φ ω‖ₑ ^ (2 : ℝ≥0∞).toReal to ENNReal.ofReal(Φ ω ^ 2).
-        have h_two_toReal : (2 : ℝ≥0∞).toReal = (2 : ℕ) := by norm_num
-        rw [h_two_toReal] at h_rpow
-        have h_int_eq : ∫⁻ ω, ENNReal.ofReal (Φ ω ^ 2) ∂P
-                       = ∫⁻ a, ‖Φ a‖ₑ ^ ((2 : ℕ) : ℝ) ∂P := by
-          refine lintegral_congr fun ω => ?_
-          rw [ENNReal.rpow_natCast, Real.enorm_eq_ofReal_abs,
-              ← ENNReal.ofReal_pow (abs_nonneg _), sq_abs]
-        rw [h_int_eq]; exact h_rpow.ne
-      -- Step F: integrability of g.
-      have h_g_int : ∫⁻ ω, g ω ∂P ≠ ∞ := by
-        simp only [hg_def]
-        rw [lintegral_const_mul' _ _ hδq_inv_ne_top]
-        exact ENNReal.mul_ne_top hδq_inv_ne_top h_phi_sq_int
-      -- Step G: assemble via DCT.
-      have h_dct :=
-        MeasureTheory.tendsto_lintegral_of_dominated_convergence
-          (μ := P) (F := F) (f := fun _ => (0 : ℝ≥0∞)) g hF_meas
-          (fun n => Filter.Eventually.of_forall (h_bound n)) h_g_int
-          (Filter.Eventually.of_forall h_lim)
-      simp only [lintegral_zero] at h_dct
-      exact (Filter.tendsto_congr hT_eq).mpr h_dct
-    exact ENNReal.tendsto_atTop_zero.mp h_tendsto _ hJ_pos
+    have h_tendsto := tendsto_envelope_tail_const_threshold P hΦ₂_meas hΦ₂_L2 hM_pos
+    -- the brick's threshold set is `{M·√n < |Φ₂|}`; the engine's is
+    -- `{√n·M < |Φ₂|}`. Reconcile by `mul_comm`.
+    have h_set_eq : ∀ n : ℕ,
+        (fun ω => ENNReal.ofReal (|Φ₂ ω|)
+            * Set.indicator {x | M * Real.sqrt n < |Φ₂ x|} 1 ω)
+        = (fun ω => ENNReal.ofReal (|Φ₂ ω|)
+            * Set.indicator {x | Real.sqrt n * M < |Φ₂ x|} 1 ω) := by
+      intro n; simp_rw [mul_comm M (Real.sqrt n)]
+    have h_tendsto' : Filter.Tendsto
+        (fun n : ℕ => ENNReal.ofReal (Real.sqrt n)
+          * ∫⁻ ω, ENNReal.ofReal (|Φ₂ ω|)
+              * Set.indicator {x | Real.sqrt n * M < |Φ₂ x|} 1 ω ∂P)
+        Filter.atTop (𝓝 0) := by
+      refine h_tendsto.congr (fun n => ?_)
+      rw [h_set_eq n]
+    exact ENNReal.tendsto_atTop_zero.mp h_tendsto' _ hJ_pos
   obtain ⟨N_chain, hN_chain⟩ := h_N_chain
   refine ⟨N_chain, fun n hn => ?_⟩
-  -- Step 4: Chain assembly bounding the L²-good slice integral.
-  -- Combines:
-  --   (a) Sub-Lemma A pointwise bound on the L²-good slice
-  --       (chaining_l2_slice_pointwise_bound): pointwise
-  --       |G_n(fhat n ξ) - G_n(ghat n ξ)| · 1_{L²-slice}
-  --         ≤ supNormOver F (G_n) (X(·,ξ));
-  --   (b) Indicator ≤ 1, so the slice integral is bounded by the
-  --       full supNormOver F (G_n) integral;
-  --   (c) tight_chain_level_bound + tight_chain_telescope_bound at scale
-  --       δq, applied to dyadic levels {2^{-k} δq}_k, summing to
-  --       K_level · K_tel · bracketingEntropyIntegral δq F P;
-  --   (d) tight_envelope_truncation_bound for the remaining truncation
-  --       tail at δq·√n, dominated by 4·√n·envelope_tail(n) which is
-  --       ≤ bracketingEntropyIntegral δq F P by step 3's N_chain.
-  -- Net factor 8 = 2 (F-F → F) · 4 (DCT bookkeeping in step (d)).
-  -- Decompose the slice integral into
-  --   (a) chain content ≤ 4 · J(δq), via Sub-Lemma A pointwise bound +
-  --       `tight_chain_level_bound` per dyadic level + `tight_chain_telescope_bound`,
-  --       with F-F → F factor (×2) and chain bookkeeping (×2) absorbed;
-  --   (b) truncation tail ≤ 4 · √n · envelope_tail(Φ, δq, n), via
-  --       `tight_envelope_truncation_bound` (factor 4 preserved);
-  -- followed by combination via `hN_chain` (envelope tail ≤ J(δq)).
+  -- Step 4: the slice integral is bounded by the LOCALIZED-class sup integral
+  -- (NOT 2·full-F-sup): on the L²-good event `f̂(ξ)−ĝ(ξ) ∈ localized class`.
   have h_chain :
       ∫⁻ ξ, ENNReal.ofReal
             |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
@@ -1669,23 +2161,14 @@ private theorem chaining_integral_universal_K
           * Set.indicator
               {ξ : Ξ | ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P < δq ^ 2}
               (fun _ => (1 : ℝ≥0∞)) ξ ∂μ
-        ≤ ENNReal.ofReal 4 * bracketingEntropyIntegral δq F P
-          + ENNReal.ofReal 4 *
+        ≤ ENNReal.ofReal c * bracketingEntropyIntegral δq F P
+          + ENNReal.ofReal c *
             (ENNReal.ofReal (Real.sqrt n)
-              * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
-                  * Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω ∂P) := by
-    -- Decompose into
-    --   (a) pointwise F-F-to-F triangle bound (closed via `le_supNormOver`
-    --       on `h_fhat_in`, `h_ghat_in` + indicator ≤ 1), yielding factor 2;
-    --   (b) substantive vdV §19.6 chain assembly bound on
-    --       (level + telescope + envelope-truncation) at factor 2;
-    --   (c) combine via `lintegral_mono` + `lintegral_const_mul'` to give
-    --       LHS ≤ 2 · (2·J + 2·√n·tail) = 4·J + 4·√n·tail.
-    -- Step (a): pointwise triangle bound on every ξ, dropping the indicator:
-    --   |G_n(fhat n ξ) − G_n(ghat n ξ)| · 1_{L²-slice}(ξ)
-    --     ≤ |G_n(fhat n ξ)| + |G_n(ghat n ξ)|
-    --     ≤ 2 · supNormOver F G_n(X(·, ξ))
-    -- using `fhat n ξ, ghat n ξ ∈ F` (h_fhat_in, h_ghat_in).
+              * ∫⁻ ω, ENNReal.ofReal (|Φ₂ ω|)
+                  * Set.indicator {x | Real.sqrt n * M < |Φ₂ x|} 1 ω ∂P) := by
+    -- Step (a): the LOCALIZED pointwise bound. On the good event,
+    --   ofReal|𝔾ₙ(f̂)−𝔾ₙ(ĝ)| = ofReal|𝔾ₙ(f̂−ĝ)| ≤ supNormOver(localized) 𝔾ₙ;
+    -- off the good event the indicator is 0 and the LHS is 0.
     have h_pw : ∀ ξ : Ξ,
         ENNReal.ofReal
               |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
@@ -1693,119 +2176,88 @@ private theorem chaining_integral_universal_K
             * Set.indicator
                 {ξ : Ξ | ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P < δq ^ 2}
                 (fun _ => (1 : ℝ≥0∞)) ξ
-          ≤ 2 * supNormOver F
-              (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) := by
+          ≤ supNormOver (localizedDifferenceClass F P δq)
+              (fun h => empiricalProcess P n (fun i : Fin n => X i.val ξ) h) := by
       intro ξ
-      set a := empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
-      set b := empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)
-      have h_ind_le : Set.indicator
-          {ξ : Ξ | ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P < δq ^ 2}
-          (fun _ => (1 : ℝ≥0∞)) ξ ≤ 1 := by
-        by_cases h : ξ ∈ {ξ : Ξ | ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P < δq ^ 2}
-        · simp [Set.indicator_of_mem h]
-        · simp [Set.indicator_of_notMem h]
-      have h_tri : ENNReal.ofReal |a - b|
-          ≤ ENNReal.ofReal |a| + ENNReal.ofReal |b| := by
-        calc ENNReal.ofReal |a - b|
-            ≤ ENNReal.ofReal (|a| + |b|) :=
-              ENNReal.ofReal_le_ofReal (abs_sub _ _)
-          _ ≤ ENNReal.ofReal |a| + ENNReal.ofReal |b| := ENNReal.ofReal_add_le
-      have h_a_le : ENNReal.ofReal |a|
-          ≤ supNormOver F
-              (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) :=
-        le_supNormOver (h_fhat_in n ξ)
-      have h_b_le : ENNReal.ofReal |b|
-          ≤ supNormOver F
-              (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) :=
-        le_supNormOver (h_ghat_in n ξ)
-      calc ENNReal.ofReal |a - b|
-              * Set.indicator
-                  {ξ : Ξ | ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P < δq ^ 2}
-                  (fun _ => (1 : ℝ≥0∞)) ξ
-          ≤ ENNReal.ofReal |a - b| * 1 :=
-            mul_le_mul_of_nonneg_left h_ind_le (zero_le _)
-        _ = ENNReal.ofReal |a - b| := mul_one _
-        _ ≤ ENNReal.ofReal |a| + ENNReal.ofReal |b| := h_tri
-        _ ≤ supNormOver F
-                (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f)
-              + supNormOver F
-                (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) :=
-            add_le_add h_a_le h_b_le
-        _ = 2 * supNormOver F
-              (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) :=
-            (two_mul _).symm
-    -- Step (b): substantive vdV §19.6 chain assembly content at scale δq,
-    -- delegated to `chain_supnorm_integral_bound_at_delta_q` (bracket-restricted
-    -- subclass + tight bound; closure plan in that theorem's docstring).
-    have h_max : ∫⁻ ξ, supNormOver F
-            (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ∂μ
-        ≤ ENNReal.ofReal 2 * bracketingEntropyIntegral δq F P
-          + ENNReal.ofReal 2 *
+      by_cases hgood : ξ ∈ {ξ : Ξ | ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P < δq ^ 2}
+      · -- the good event: `f̂(ξ)−ĝ(ξ) ∈ localizedDifferenceClass F P δq`.
+        rw [Set.indicator_of_mem hgood]
+        simp only [mul_one]
+        -- membership of the difference in the localized class
+        have hf_mem : fhat n ξ ∈ F := h_fhat_in n ξ
+        have hg_mem : ghat n ξ ∈ F := h_ghat_in n ξ
+        -- `fhat n ξ = (Function.uncurry (fhat n)) (ξ, ·)` is measurable.
+        have hf_meas : Measurable (fhat n ξ) :=
+          (_h_fhat_meas n).comp (measurable_const.prodMk measurable_id)
+        have hg_meas : Measurable (ghat n ξ) :=
+          (_h_ghat_meas n).comp (measurable_const.prodMk measurable_id)
+        have hf_L2 : MemLp (fhat n ξ) 2 P :=
+          memLp_of_mem_of_finiteBracketing h_int hf_mem hf_meas.aestronglyMeasurable
+        have hg_L2 : MemLp (ghat n ξ) 2 P :=
+          memLp_of_mem_of_finiteBracketing h_int hg_mem hg_meas.aestronglyMeasurable
+        have hdiff_mem : (fun x => fhat n ξ x - ghat n ξ x)
+            ∈ localizedDifferenceClass F P δq :=
+          mem_localizedDifferenceClass_of_integral_sq hδq_pos.le hf_mem hg_mem
+            (hf_L2.sub hg_L2) hgood
+        -- `𝔾ₙ(f̂)−𝔾ₙ(ĝ) = 𝔾ₙ(f̂−ĝ)` (carries integrability of the two pieces).
+        have hsub : empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
+              - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)
+            = empiricalProcess P n (fun i : Fin n => X i.val ξ)
+                (fun x => fhat n ξ x - ghat n ξ x) :=
+          (empiricalProcess_sub P n _ (fhat n ξ) (ghat n ξ)
+            (hf_L2.integrable one_le_two) (hg_L2.integrable one_le_two)).symm
+        rw [hsub]
+        exact le_supNormOver
+          (z := fun h => empiricalProcess P n (fun i : Fin n => X i.val ξ) h) hdiff_mem
+      · -- off the good event: indicator = 0.
+        rw [Set.indicator_of_notMem hgood, mul_zero]
+        exact zero_le _
+    -- Step (b): the localized chaining engine bound at scale δq (per `n`).
+    have h_max : ∫⁻ ξ, supNormOver (localizedDifferenceClass F P δq)
+            (fun h => empiricalProcess P n (fun i : Fin n => X i.val ξ) h) ∂μ
+        ≤ ENNReal.ofReal c * bracketingEntropyIntegral δq F P
+          + ENNReal.ofReal c *
             (ENNReal.ofReal (Real.sqrt n)
-              * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
-                  * Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω ∂P) :=
-      chain_supnorm_integral_bound_at_delta_q P μ X hX_meas hX_iindep hX_id hX_law
-        F Φ hΦ_meas hΦ_env hΦ_L2 hδq_pos n
-        (hChainBound_outer Φ hΦ_meas hΦ_env hΦ_L2 hδq_pos n)
-    -- Step (c): combine (a) and (b) via lintegral mono + linearity.
-    have h_two_ne_top : (2 : ℝ≥0∞) ≠ ⊤ := by norm_num
-    have h_two_mul_ofReal_two : (2 : ℝ≥0∞) * ENNReal.ofReal 2 = ENNReal.ofReal 4 := by
-      have h2 : (2 : ℝ≥0∞) = ENNReal.ofReal 2 := by
-        rw [ENNReal.ofReal_ofNat]
-      rw [h2, ← ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 2)]
-      norm_num
+              * ∫⁻ ω, ENNReal.ofReal (|Φ₂ ω|)
+                  * Set.indicator {x | Real.sqrt n * M < |Φ₂ x|} 1 ω ∂P) :=
+      hMbound n
+    -- Step (c): combine (a) ⟹ slice integral ≤ localized sup integral ≤ RHS.
     calc ∫⁻ ξ, ENNReal.ofReal
               |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
                 - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)|
             * Set.indicator
                 {ξ : Ξ | ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P < δq ^ 2}
                 (fun _ => (1 : ℝ≥0∞)) ξ ∂μ
-        ≤ ∫⁻ ξ, 2 * supNormOver F
-              (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ∂μ :=
+        ≤ ∫⁻ ξ, supNormOver (localizedDifferenceClass F P δq)
+              (fun h => empiricalProcess P n (fun i : Fin n => X i.val ξ) h) ∂μ :=
           MeasureTheory.lintegral_mono h_pw
-      _ = 2 * ∫⁻ ξ, supNormOver F
-              (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ∂μ :=
-          MeasureTheory.lintegral_const_mul' _ _ h_two_ne_top
-      _ ≤ 2 * (ENNReal.ofReal 2 * bracketingEntropyIntegral δq F P
-                + ENNReal.ofReal 2 *
-                  (ENNReal.ofReal (Real.sqrt n)
-                    * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
-                        * Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω ∂P)) :=
-          mul_le_mul_of_nonneg_left h_max (zero_le _)
-      _ = ENNReal.ofReal 4 * bracketingEntropyIntegral δq F P
-            + ENNReal.ofReal 4 *
-              (ENNReal.ofReal (Real.sqrt n)
-                * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
-                    * Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω ∂P) := by
-          rw [mul_add, ← mul_assoc, ← mul_assoc, h_two_mul_ofReal_two]
+      _ ≤ _ := h_max
   refine h_chain.trans ?_
-  -- Step 5: combine via hN_chain to absorb the envelope tail into J(δq),
-  -- yielding net constant 4 + 4 = 8.
+  -- Step 5: absorb the envelope tail into J(δq) via hN_chain, giving (c)+(c)=2c.
   have h_tail :
       ENNReal.ofReal (Real.sqrt n)
-        * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
-            * Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω ∂P
+        * ∫⁻ ω, ENNReal.ofReal (|Φ₂ ω|)
+            * Set.indicator {x | Real.sqrt n * M < |Φ₂ x|} 1 ω ∂P
         ≤ bracketingEntropyIntegral δq F P := hN_chain n hn
-  calc ENNReal.ofReal 4 * bracketingEntropyIntegral δq F P
-          + ENNReal.ofReal 4 *
+  calc ENNReal.ofReal c * bracketingEntropyIntegral δq F P
+          + ENNReal.ofReal c *
             (ENNReal.ofReal (Real.sqrt n)
-              * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
-                  * Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω ∂P)
-      ≤ ENNReal.ofReal 4 * bracketingEntropyIntegral δq F P
-          + ENNReal.ofReal 4 * bracketingEntropyIntegral δq F P := by gcongr
-    _ = (ENNReal.ofReal 4 + ENNReal.ofReal 4)
+              * ∫⁻ ω, ENNReal.ofReal (|Φ₂ ω|)
+                  * Set.indicator {x | Real.sqrt n * M < |Φ₂ x|} 1 ω ∂P)
+      ≤ ENNReal.ofReal c * bracketingEntropyIntegral δq F P
+          + ENNReal.ofReal c * bracketingEntropyIntegral δq F P := by gcongr
+    _ = (ENNReal.ofReal c + ENNReal.ofReal c)
             * bracketingEntropyIntegral δq F P := by rw [← add_mul]
-    _ = ENNReal.ofReal 8 * bracketingEntropyIntegral δq F P := by
+    _ = ENNReal.ofReal (2 * c) * bracketingEntropyIntegral δq F P := by
         congr 1
-        rw [← ENNReal.ofReal_add (by norm_num : (0:ℝ) ≤ 4)
-              (by norm_num : (0:ℝ) ≤ 4)]
-        norm_num
+        rw [← ENNReal.ofReal_add hc_pos.le hc_pos.le]
+        ring_nf
 
 /-- `chaining_per_q_integral_bound_aux`: universal-K integral bound for the
 L²-good slice of `F − F`, the chaining content of
 `chaining_per_q_max_ineq_bound`.
 
-**Closure plan (vdV §19.6; the three leaves apply at scale δq).**
+**Proof structure (vdV §19.6; the three leaves apply at scale δq).**
 
 1. **Bracket-restricted pointwise bound (vdV §19.2 Lem 2.12).** On the
    L²-good slice `{ξ | ‖fhat n ξ − ghat n ξ‖²_L²(P) < (δ q)²}`, the pair
@@ -1853,22 +2305,23 @@ private theorem chaining_per_q_integral_bound_aux
     (h_ghat_meas : ∀ n, Measurable (Function.uncurry (ghat n)))
     (_h_fhat_in : ∀ n ξ, fhat n ξ ∈ F)
     (_h_ghat_in : ∀ n ξ, ghat n ξ ∈ F)
-    (δ : ℕ → ℝ) (_hδ_pos : ∀ q, 0 < δ q) (_hδ_le_one : ∀ q, δ q ≤ 1)
-    -- a regularity condition on `F` (non-trivial L²-content at every scale
-    -- δ q); when violated the conclusion is vacuous (RHS = 0).
-    (hJq_pos : ∀ q, 0 < bracketingEntropyIntegral (δ q) F P)
-    -- See `chaining_integral_universal_K` / `chain_supnorm_integral_bound_at_delta_q`
-    -- for the substantive content (closure plan in the latter's docstring).
+    (δ : ℕ → ℝ) (_hδ_pos : ∀ q, 0 < δ q) (_hδ_le_quarter : ∀ q, δ q ≤ 1 / 4)
+    -- The δq-LOCALIZED chaining bound (vdV Lemma 19.34, localized form); see
+    -- `chaining_integral_universal_K`. Supplied internally at the headline by
+    -- `localizedChainBound_of_finiteEntropy`. The universal constant `c > 0` and
+    -- the uniform positive truncation level `M` are existentially quantified.
     (hChainBound_outer :
-      ∀ (Φ : Ω → ℝ), Measurable Φ → IsEnvelope F Φ → MemLp Φ 2 P →
-        ∀ {δq : ℝ}, 0 < δq → ∀ (n : ℕ),
-          ∫⁻ ξ, supNormOver F
-                (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ∂μ
-            ≤ ENNReal.ofReal 2 * bracketingEntropyIntegral δq F P
-              + ENNReal.ofReal 2 *
-                (ENNReal.ofReal (Real.sqrt n)
-                  * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
-                      * Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω ∂P)) :
+      ∃ c : ℝ, 0 < c ∧
+      ∀ (Φ : Ω → ℝ), Measurable Φ → IsEnvelope (differenceClass F) Φ → MemLp Φ 2 P →
+        ∀ {δq : ℝ}, 0 < δq → δq ≤ 1 / 4 →
+          ∃ M : ℝ, 0 < M ∧ ∀ (n : ℕ),
+            ∫⁻ ξ, supNormOver (localizedDifferenceClass F P δq)
+                  (fun h => empiricalProcess P n (fun i : Fin n => X i.val ξ) h) ∂μ
+              ≤ ENNReal.ofReal c * bracketingEntropyIntegral δq F P
+                + ENNReal.ofReal c *
+                  (ENNReal.ofReal (Real.sqrt n)
+                    * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
+                        * Set.indicator {x | Real.sqrt n * M < |Φ x|} 1 ω ∂P)) :
     ∃ K_chain : ℝ, 0 < K_chain ∧
       ∀ q : ℕ, ∃ N_chain : ℕ, ∀ n ≥ N_chain,
         AEMeasurable (fun ξ : Ξ =>
@@ -1894,7 +2347,7 @@ private theorem chaining_per_q_integral_bound_aux
   refine ⟨K_chain', hK_chain'_pos, ?_⟩
   intro q
   obtain ⟨N_chain', h_N_chain'⟩ :=
-    h_K_chain' q (δ q) (_hδ_pos q) (_hδ_le_one q) (hJq_pos q)
+    h_K_chain' q (δ q) (_hδ_pos q) (_hδ_le_quarter q)
   refine ⟨N_chain', fun n hn => ?_⟩
   refine ⟨?_, ?_⟩
   · -- AEMeasurability of the integrand. Decompose `empiricalProcess` as
@@ -1973,7 +2426,7 @@ L²-`δ q`-slice of `F − F`, Markov on the threshold `η`, DCT for the envelop
 tail absorbed into the eventually-in-`n` quantifier, and the F-F-to-F
 bracketing-integral reduction).
 
-**Closure recipe (vdV §19.2).**
+**Proof outline (vdV §19.2).**
 1. From the finite bracketing-entropy at scale 1 (`h_int`), extract
    the level-1 bracket cover of `F`; via
    `hasFiniteBracketingCover_difference_class` get a level-1 bracket
@@ -2024,20 +2477,22 @@ theorem chaining_per_q_max_ineq_bound
     (h_ghat_meas : ∀ n, Measurable (Function.uncurry (ghat n)))
     (_h_fhat_in : ∀ n ξ, fhat n ξ ∈ F)
     (_h_ghat_in : ∀ n ξ, ghat n ξ ∈ F)
-    (δ : ℕ → ℝ) (_hδ_pos : ∀ q, 0 < δ q) (_hδ_le_one : ∀ q, δ q ≤ 1)
-    -- regularity of F at scale δ q; when violated the bound is vacuous (RHS = 0).
-    (hJq_pos : ∀ q, 0 < bracketingEntropyIntegral (δ q) F P)
-    -- chaining content; see `chain_supnorm_integral_bound_at_delta_q` closure plan.
+    (δ : ℕ → ℝ) (_hδ_pos : ∀ q, 0 < δ q) (_hδ_le_quarter : ∀ q, δ q ≤ 1 / 4)
+    -- The δq-LOCALIZED chaining bound (vdV Lemma 19.34, localized form); see
+    -- `chaining_integral_universal_K`. The universal chaining constant `c > 0` and
+    -- the uniform positive truncation level `M` are existentially quantified.
     (hChainBound_outer :
-      ∀ (Φ : Ω → ℝ), Measurable Φ → IsEnvelope F Φ → MemLp Φ 2 P →
-        ∀ {δq : ℝ}, 0 < δq → ∀ (n : ℕ),
-          ∫⁻ ξ, supNormOver F
-                (fun f => empiricalProcess P n (fun i : Fin n => X i.val ξ) f) ∂μ
-            ≤ ENNReal.ofReal 2 * bracketingEntropyIntegral δq F P
-              + ENNReal.ofReal 2 *
-                (ENNReal.ofReal (Real.sqrt n)
-                  * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
-                      * Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω ∂P))
+      ∃ c : ℝ, 0 < c ∧
+      ∀ (Φ : Ω → ℝ), Measurable Φ → IsEnvelope (differenceClass F) Φ → MemLp Φ 2 P →
+        ∀ {δq : ℝ}, 0 < δq → δq ≤ 1 / 4 →
+          ∃ M : ℝ, 0 < M ∧ ∀ (n : ℕ),
+            ∫⁻ ξ, supNormOver (localizedDifferenceClass F P δq)
+                  (fun h => empiricalProcess P n (fun i : Fin n => X i.val ξ) h) ∂μ
+              ≤ ENNReal.ofReal c * bracketingEntropyIntegral δq F P
+                + ENNReal.ofReal c *
+                  (ENNReal.ofReal (Real.sqrt n)
+                    * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
+                        * Set.indicator {x | Real.sqrt n * M < |Φ x|} 1 ω ∂P))
     (η : ℝ) (_hη : 0 < η) :
     ∃ K : ℝ, 0 < K ∧
       ∀ q : ℕ, ∃ N_chain : ℕ, ∀ n ≥ N_chain,
@@ -2053,14 +2508,14 @@ theorem chaining_per_q_max_ineq_bound
   -- on the integral of `|G_n(f̂) − G_n(ĝ)|` restricted to the L²-good event.
   -- Markov on threshold `η` converts this integral bound to the measure
   -- bound below; the outer `K = K_chain / η` is therefore universal in `q`.
-  -- Delegate the universal-K integral bound to the file-level sub-aux
+  -- Apply the file-level universal-K integral bound
   -- `chaining_per_q_integral_bound_aux` (which bundles AEMeasurability of the
   -- integrand and the integral bound); the Markov + ENNReal-algebra wrap-up
   -- is closed inline.
   obtain ⟨K_chain, hK_chain_pos, h_chain⟩ :=
     chaining_per_q_integral_bound_aux F P _h_int μ X hX_meas hX_iindep
       hX_id hX_law fhat ghat h_fhat_meas h_ghat_meas
-      _h_fhat_in _h_ghat_in δ _hδ_pos _hδ_le_one hJq_pos hChainBound_outer
+      _h_fhat_in _h_ghat_in δ _hδ_pos _hδ_le_quarter hChainBound_outer
   -- Outer K = K_chain / η is universal (independent of q and of n ≥ N_chain_q).
   refine ⟨K_chain / η, div_pos hK_chain_pos _hη, ?_⟩
   intro q
