@@ -350,9 +350,7 @@ representative of `L` in `EuclideanSpace ℝ (Fin k)`.
 covarianceBilinDual μ L L`. By `toDual_symm_apply`, `L u = ⟨v, u⟩` where
 `v := (toDual ℝ E).symm L`. So `Var(L; μ) = Var(⟨v, ·⟩; μ) = covarianceBilin μ v v`
 by `covarianceBilin_self`. Finally `covarianceBilin (mvg m S) v v = v.ofLp ⬝ S v.ofLp`
-by `covarianceBilin_multivariateGaussian`.
-
-ForMathlib candidate. -/
+by `covarianceBilin_multivariateGaussian`. -/
 lemma variance_dual_multivariateGaussian
     (m : EuclideanSpace ℝ (Fin k)) {S : Matrix (Fin k) (Fin k) ℝ}
     (hS : S.PosSemidef) (L : StrongDual ℝ (EuclideanSpace ℝ (Fin k))) :
@@ -374,7 +372,7 @@ lemma variance_dual_multivariateGaussian
 representative of `K.comp T` is the adjoint of `T` applied to the Riesz
 representative of `K`.
 
-ForMathlib candidate. Proof via `ext_inner_left` + `real_inner_comm` +
+The proof uses `ext_inner_left` + `real_inner_comm` +
 `adjoint_inner_left` + `toDual_symm_apply`. -/
 private lemma toDual_symm_comp {E F : Type*}
     [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]

@@ -642,13 +642,10 @@ lemma hasUniformRealization {α : Type*} [MeasurableSpace α] {d : ℕ}
 
 /-! ## Step 5 — Uniform splitting (only for vdV-original corollary)
 
-The construction below is *not* on the critical path for the multi-d
-realization (Step 4): that theorem takes `d` uniforms up-front. The
-splitting `ℝ ≃ᵐ ℝ × ℝ` is only used by
-`kernel_realization_of_joint_distribution` to match vdV's strict
-"one `U`" form of Lemma 7.11 (the variant taking a single uniform
-instead of `d` uniforms). It rests on binary-digit independence, a
-standalone measure-theoretic construction.
+The multi-dimensional realization uses `d` uniforms directly. The splitting
+`ℝ ≃ᵐ ℝ × ℝ` supplies `kernel_realization_of_joint_distribution`, the
+single-uniform form of vdV Lemma 7.11. It rests on binary-digit independence,
+a standalone measure-theoretic construction.
 
 The measure-preservation property is essential: any `ℝ ≃ᵐ ℝ × ℝ` (e.g.
 via `PolishSpace.measurableEquivOfNotCountable`) is easy to write, but a

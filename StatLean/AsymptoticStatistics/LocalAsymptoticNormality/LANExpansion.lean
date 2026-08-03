@@ -1,6 +1,7 @@
 import StatLean.AsymptoticStatistics.ParametricFamily.Defs
 import StatLean.AsymptoticStatistics.ParametricFamily.Score
 import StatLean.AsymptoticStatistics.ParametricFamily.FisherInformation
+import StatLean.AsymptoticStatistics.ParametricFamily.SqrtDensityRatio
 import StatLean.AsymptoticStatistics.DQM.Defs
 import StatLean.AsymptoticStatistics.DQM.Properties
 import StatLean.AsymptoticStatistics.ForMathlib.MeanVarConvergence
@@ -123,9 +124,8 @@ lemma score_mean_zero
     (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
     (u : Θ) :
     ∫ x, ⟪u, ℓ x⟫ * M.density θ₀ x ∂μ = 0 :=
-  -- Both `h_Fisher` and `h_fminus_memLp` are now derived from DQM in
-  -- `AsymptoticStatistics/DQM.lean`.  `score_mean_zero` no longer takes any
-  -- auxiliary hypotheses beyond DQM and the integrability of densities.
+  -- Supply `Score.score_mean_zero`'s Fisher-integrability and residual-`MemLp`
+  -- inputs using `dqm_fisher_integrable` and `dqm_residual_eventually_memLp`.
   Score.score_mean_zero M μ θ₀ ℓ hℓ h_one hint h_one_perturb hint_perturb hDQM
     (dqm_fisher_integrable M μ θ₀ ℓ hint hDQM u (fun t => hint_perturb t u))
     (dqm_residual_eventually_memLp M μ θ₀ ℓ hDQM u)
@@ -587,8 +587,8 @@ gives `P_{θ₀} ⟨h, ℓ⟩ = 0`, this is the `(⋆)` clause of the informal o
 
   `∑_i W_{n,i} = (1/√n) ∑_i g(X_i) − ¼ P g² + o_P(1)`.
 
-Proof plan (deferred): apply `tendstoInMeasure_of_tendsto_mean_of_tendsto_variance`
-with the centred sum as `Y_n`, using
+The proof applies `tendstoInMeasure_of_tendsto_mean_of_tendsto_variance`
+to the centred sum `Y_n`, using
   * `E_{P}[Y_n] = n · ∫ W_n · p dμ − √n · ∫ ⟨h, ℓ⟩ · p dμ → −¼ · I(h, h)`
     (Step 2 `sum_expect_W_tendsto` + Step 1 `score_mean_zero`),
   * `Var_{P}[Y_n] = n · Var[W_n(X_0) − (1/√n) g(X_0)]
@@ -1051,14 +1051,10 @@ lemma sum_W_decomp
 /-! ## Step 5 — Taylor expansion of `log` (existence wrapper)
 
 For all `x > -1`, `log(1+x) = x − ½ x² + x² R(2x)` with one **global** `R` that
-satisfies `R(u) → 0` as `u → 0`. The concrete `R = ForMathlib.logTaylorRemainder`
-is constructed in `ForMathlib/LogTaylor.lean`; this lemma is just an existence
-wrapper. Step 6 will use the concrete `logTaylorRemainder` directly.
-
-(The original `∃ R, ... ∀ x, ...` statement here had `R` quantified inside `∀ x`,
-which gives a *different* `R` for each `x` — too weak to drive the Step 6
-"`max|W_{ni}| → 0 ⇒ max|R(W_{ni})| → 0`" argument. The signature below is the
-intended one.) -/
+satisfies `R(u) → 0` as `u → 0`. This quantifier order supplies a single remainder
+function valid simultaneously for every `x`. The concrete choice
+`R = ForMathlib.logTaylorRemainder` is constructed in `ForMathlib/LogTaylor.lean`,
+and this lemma packages its existential interface. -/
 lemma log_one_add_taylor :
     ∃ R : ℝ → ℝ, Filter.Tendsto R (𝓝 0) (𝓝 0) ∧
       ∀ x : ℝ, -1 < x →
@@ -1069,10 +1065,9 @@ lemma log_one_add_taylor :
 
 /-! ## Step-3 L¹ corollary — `∫ |n·W_n² − g²| · p dμ → 0`
 
-This corollary of `variance_tendsto_zero` supplies the two Δ-hypotheses
-currently taken as inputs by `max_abs_W_tendsto_zero` (Step 6b's analytic
-core) and is the primary ingredient for the Markov step of Step 6a. The
-core argument is Cauchy–Schwarz on the factorisation
+This corollary of `variance_tendsto_zero` supplies the two Δ-hypotheses of
+`max_abs_W_tendsto_zero` and controls the quadratic error used below. The
+argument is Cauchy–Schwarz on the factorisation
 
   `|n · W_n² − g²| = |√n · W_n − g| · |√n · W_n + g|`
 
@@ -1547,14 +1542,14 @@ sample `X : ℕ → Ω → 𝓧` with law `P_{θ₀} = μ.withDensity p_{θ₀}`
 
   `∑_{i < n} W_n(X_i ω)² →ₚ P_{θ₀} g² = fisherInformation M μ θ₀ ℓ h h`.
 
-Proof plan (deferred): write `Σ W_n² = (1/n) (Σ g²(X_i) + Σ Δ_{n,i})`
+The proof writes `Σ W_n² = (1/n) (Σ g²(X_i) + Σ Δ_{n,i})`
 where `Δ_{n,i} := n · W_n(X_i)² − g(X_i)²`. Then:
   * `(1/n) Σ g²(X_i) →ₚ P g²` by the strong law of large numbers applied
     to the iid sequence `g² ∘ X_i` (in-probability follows from a.s.),
     using `dqm_fisher_integrable` for `g² · p ∈ L¹(μ) ⇒ g² ∘ X_i ∈ L¹(ℙ)`.
-  * `(1/n) Σ Δ_{n,i} →ₚ 0` by Markov, via
-    `E|Δ_{n,1}| = ∫ |n · W_n² − g²| · p dμ → 0` (a Step-3 corollary, proved
-    by Cauchy–Schwarz on `|n W_n² − g²| ≤ |√n W_n − g| · |√n W_n + g|`). -/
+  * `(1/n) Σ Δ_{n,i} →ₚ 0` from the `L¹` bound supplied by `delta_l1_tendsto`
+    and `tendstoInMeasure_of_tendsto_eLpNorm` at exponent `1`.
+The two convergences are combined by an `ε/2` estimate. -/
 lemma sum_W_sq_tendsto_to_Pg_sq
     {Ω : Type*} {mΩ : MeasurableSpace Ω} (P : Measure Ω) [IsProbabilityMeasure P]
     (M : ParametricFamily 𝓧 Θ) (μ : Measure 𝓧) [SigmaFinite μ]
@@ -2151,47 +2146,7 @@ lemma log_density_ratio_taylor
         - auxStatistic M θ₀ h_n n x ^ 2 / 4
         + auxStatistic M θ₀ h_n n x ^ 2 / 2
           * ForMathlib.logTaylorRemainder (auxStatistic M θ₀ h_n n x) := by
-  set pn := M.density (θ₀ + (Real.sqrt n)⁻¹ • h_n n) x with hpn_def
-  set p := M.density θ₀ x with hp_def
-  have hpn_nn : 0 ≤ pn := M.density_nonneg _ _
-  have hp_nn : 0 ≤ p := M.density_nonneg _ _
-  have h_ratio_nn : 0 ≤ pn / p := div_nonneg hpn_nn hp_nn
-  set y : ℝ := Real.sqrt (pn / p) with hy_def
-  have hy_nn : 0 ≤ y := Real.sqrt_nonneg _
-  -- `auxStatistic` definitionally equals `2 * (y - 1)`.
-  have hW_eq : auxStatistic M θ₀ h_n n x = 2 * (y - 1) := rfl
-  have hy_sq : y ^ 2 = pn / p := by
-    rw [hy_def, sq, Real.mul_self_sqrt h_ratio_nn]
-  rcases hy_nn.lt_or_eq with hy_pos | hy_zero
-  swap
-  · -- Boundary case: `y = 0`, i.e. `pn/p = 0`. Both sides equal `0` under
-    -- Lean's `log 0 = 0` convention plus direct evaluation of `R(-2) = 3/2`.
-    have hy_eq : y = 0 := hy_zero.symm
-    have h_ratio_zero : pn / p = 0 := by rw [← hy_sq, hy_eq]; ring
-    -- LHS: `log 0 = 0`.
-    have h_LHS : Real.log (pn / p) = 0 := by rw [h_ratio_zero]; exact Real.log_zero
-    -- RHS at `W = -2`: compute `R(-2) = 3/2` from the definition.
-    have hW_neg_two : auxStatistic M θ₀ h_n n x = -2 := by rw [hW_eq, hy_eq]; ring
-    have hR_neg_two : ForMathlib.logTaylorRemainder (-2) = 3 / 2 := by
-      unfold ForMathlib.logTaylorRemainder
-      rw [if_neg (by norm_num : (-2 : ℝ) ≠ 0)]
-      rw [show ((-2 : ℝ) / 2) = -1 from by norm_num,
-        show ((1 : ℝ) + -1) = 0 from by norm_num, Real.log_zero]
-      norm_num
-    rw [h_LHS, hW_neg_two, hR_neg_two]
-    norm_num
-  · -- Interior case: `y > 0`, i.e. `pn/p > 0`. Standard Taylor expansion.
-    have h2_log : Real.log (pn / p) = 2 * Real.log y := by
-      rw [← hy_sq, Real.log_pow]; ring
-    have hx_gt : -1 < y - 1 := by linarith
-    have h_taylor : Real.log (1 + (y - 1))
-        = (y - 1) - (1 / 2) * (y - 1) ^ 2
-          + (y - 1) ^ 2 * ForMathlib.logTaylorRemainder (2 * (y - 1)) :=
-      ForMathlib.log_one_add_eq_taylor hx_gt
-    have h_1y : (1 : ℝ) + (y - 1) = y := by ring
-    rw [h_1y] at h_taylor
-    rw [h2_log, h_taylor, hW_eq]
-    ring
+  exact M.log_density_ratio_taylor θ₀ (θ₀ + (Real.sqrt n)⁻¹ • h_n n) x
 
 /-! ## LAN expansion clause (iii) — the full assembly
 

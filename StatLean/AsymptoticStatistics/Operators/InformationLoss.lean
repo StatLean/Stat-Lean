@@ -69,4 +69,211 @@ open AsymptoticStatistics.ForMathlib.CondExpL2
 
 variable {Ω_full Ω_obs : Type*}
   [MeasurableSpace Ω_full] [MeasurableSpace Ω_obs]
+
+/-! ## Integral characterization of `L²₀` membership
+
+`integralL2 P` is the inner product against the constant `1`, hence equals the
+integral; `L2ZeroMean P` is therefore the set of `Lp` functions with vanishing
+integral. -/
+
+/-- The integral functional on `Lp ℝ 2 P` is genuinely the Bochner integral. -/
+theorem integralL2_apply
+    {Ω : Type*} [MeasurableSpace Ω]
+    (P : Measure Ω) [IsFiniteMeasure P] (x : Lp ℝ 2 P) :
+    integralL2 P x = ∫ a, x a ∂P := by
+  unfold integralL2 oneL2
+  rw [innerSL_apply_apply, L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [(memLp_const (1 : ℝ)).coeFn_toLp] with a ha
+  rw [ha]
+  change (x : Ω → ℝ) a * 1 = (x : Ω → ℝ) a
+  ring
+
+/-- Membership in `L²₀(P)` is exactly vanishing of the Bochner integral. -/
+theorem mem_L2ZeroMean_iff
+    {Ω : Type*} [MeasurableSpace Ω]
+    (P : Measure Ω) [IsFiniteMeasure P] (x : Lp ℝ 2 P) :
+    x ∈ L2ZeroMean P ↔ ∫ a, x a ∂P = 0 := by
+  rw [L2ZeroMean, LinearMap.mem_ker]
+  rw [show (integralL2 P).toLinearMap x = integralL2 P x from rfl, integralL2_apply]
+
+/-- `L²₀(P)` is closed in the complete space `Lp ℝ 2 P`, hence has an orthogonal
+projection. -/
+instance L2ZeroMean_hasOrthogonalProjection
+    {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsFiniteMeasure P] :
+    (L2ZeroMean P).HasOrthogonalProjection :=
+  haveI : CompleteSpace ↥(L2ZeroMean P) :=
+    haveI := L2ZeroMean_isClosed P
+    IsClosed.completeSpace_coe
+  inferInstance
+
+/-! ## The information-loss operator on the full `L²` spaces -/
+
+/-- *Raw information-loss operator*, `Lp ℝ 2 P_full →L[ℝ] Lp ℝ 2 (P_full.map M)`:
+conditional expectation under the coarsening σ-algebra `M⁻¹(σ_obs)`, transported
+to `Lp ℝ 2 (P_full.map M)` by the Doob isometry. vdV §25.6. -/
+noncomputable def informationLossRaw
+    {M : Ω_full → Ω_obs} (hM : Measurable M)
+    (P_full : Measure Ω_full) [IsProbabilityMeasure P_full] :
+    Lp ℝ 2 P_full →L[ℝ] Lp ℝ 2 (P_full.map M) :=
+  (doobL2Equiv hM).toContinuousLinearEquiv.toContinuousLinearMap.comp
+    (condExpL2 ℝ ℝ hM.comap_le)
+
+/-- *Action of the raw operator*: it is the Doob image of the conditional
+expectation. -/
+theorem informationLossRaw_apply
+    {M : Ω_full → Ω_obs} (hM : Measurable M)
+    (P_full : Measure Ω_full) [IsProbabilityMeasure P_full]
+    (x : Lp ℝ 2 P_full) :
+    informationLossRaw hM P_full x
+      = doobL2Equiv hM (condExpL2 ℝ ℝ hM.comap_le x) := rfl
+
+/-- *Adjoint / tower identity for the raw operator.* For a full-data score
+`x : Lp ℝ 2 P_full` and an observed-data test function `t : Lp ℝ 2 (P_full.map M)`,
+the inner product against the information-loss image equals the inner product of
+`x` against the Doob pullback of `t` (a `M`-measurable full-data function). This
+is the conditional-expectation self-adjointness `inner_condExpL2_eq_inner_fun`,
+transported by the inner-product-preserving Doob isometry. It is the form the
+observed-tangent decomposition (vdV §25.6) consumes; taking `t = oneL2` recovers
+mean-zero preservation (modulo the Doob behavioral identity). -/
+theorem inner_informationLossRaw
+    {M : Ω_full → Ω_obs} (hM : Measurable M)
+    (P_full : Measure Ω_full) [IsProbabilityMeasure P_full]
+    (x : Lp ℝ 2 P_full) (t : Lp ℝ 2 (P_full.map M)) :
+    ⟪(informationLossRaw hM P_full x : Lp ℝ 2 (P_full.map M)), t⟫_ℝ
+      = ⟪x, (((doobL2Equiv hM).symm t : lpMeas ℝ ℝ
+            (MeasurableSpace.comap M ‹MeasurableSpace Ω_obs›) 2 P_full) :
+            Lp ℝ 2 P_full)⟫_ℝ := by
+  rw [informationLossRaw_apply hM P_full x]
+  -- Move `t` across the Doob isometry (preserves the inner product).
+  have hiso :
+      ⟪doobL2Equiv hM (condExpL2 ℝ ℝ hM.comap_le x), t⟫_ℝ
+        = ⟪(condExpL2 ℝ ℝ hM.comap_le x),
+            (doobL2Equiv hM).symm t⟫_ℝ := by
+    conv_lhs => rw [← (doobL2Equiv hM).apply_symm_apply t]
+    rw [(doobL2Equiv hM).inner_map_map]
+  rw [hiso, Submodule.coe_inner]
+  -- Self-adjointness of `condExpL2` against the `M`-measurable pullback.
+  exact inner_condExpL2_eq_inner_fun hM.comap_le x _
+    (mem_lpMeas_iff_aestronglyMeasurable.mp ((doobL2Equiv hM).symm t).2)
+
+/-! ## The information-loss operator on the mean-zero subspaces
+
+The raw operator already lands a.e. in the mean-zero subspace (conditional
+expectation preserves the integral and the Doob isometry is
+measure-preserving), so composing it with the orthogonal projection onto
+`L²₀(P_full.map M)` is the *identity correction*: it does not change the
+value, but it lets Lean see the codomain membership via the Doob behavioral
+identity `doobL2Equiv_comp_apply`. The clean identity
+`↑(Π s) = doobL2Equiv (condExpL2 … s)` is recorded separately in
+`informationLossOperator_coe_eq`. -/
+
+/-- The information-loss operator `Π : L²₀(P_full) →L L²₀(P_obs)`, the conditional
+expectation of a full-data (mean-zero) score under the coarsening σ-algebra
+`M⁻¹(σ_obs)`, transported to `Lp ℝ 2 (P_obs = P_full.map M)` by the Doob isometry
+and projected onto the mean-zero subspace (a no-op on the already-mean-zero
+image). vdV §25.6. -/
+noncomputable def informationLossOperator
+    {M : Ω_full → Ω_obs} (hM : Measurable M)
+    (P_full : Measure Ω_full) [IsProbabilityMeasure P_full] :
+    ↥(L2ZeroMean P_full) →L[ℝ] ↥(L2ZeroMean (P_full.map M)) :=
+  (L2ZeroMean (P_full.map M)).orthogonalProjection.comp
+    ((informationLossRaw hM P_full).comp (L2ZeroMean P_full).subtypeL)
+
+/-- *Defining action of `Π`* at the `Lp ℝ 2 (P_full.map M)` level: it is the
+orthogonal projection (onto the mean-zero subspace) of the Doob image of the
+conditional expectation of the underlying full-data score. -/
+theorem informationLossOperator_apply
+    {M : Ω_full → Ω_obs} (hM : Measurable M)
+    (P_full : Measure Ω_full) [IsProbabilityMeasure P_full]
+    (s : ↥(L2ZeroMean P_full)) :
+    (informationLossOperator hM P_full s : Lp ℝ 2 (P_full.map M))
+      = (L2ZeroMean (P_full.map M)).starProjection
+          (doobL2Equiv hM (condExpL2 ℝ ℝ hM.comap_le (s : Lp ℝ 2 P_full))) := rfl
+
+/-- *Integral preservation through the raw operator.* Conditional expectation
+preserves the total integral, and the Doob isometry is measure-preserving, so
+the raw operator preserves the Bochner integral.
+
+The proof pushes the integral back along `M` (`integral_map`), applies the Doob
+behavioral identity `doobL2Equiv_comp_apply` (`(doobL2Equiv hM g) ∘ M =ᵐ[P] g`,
+exposed publicly in `ForMathlib/CondExpL2.lean`), and finishes with
+`integral_condExpL2_eq` over `Set.univ` (`∫ condExpL2 x = ∫ x`). -/
+theorem integral_informationLossRaw
+    {M : Ω_full → Ω_obs} (hM : Measurable M)
+    (P_full : Measure Ω_full) [IsProbabilityMeasure P_full]
+    (x : Lp ℝ 2 P_full) :
+    ∫ y, (informationLossRaw hM P_full x) y ∂(P_full.map M)
+      = ∫ a, x a ∂P_full := by
+  rw [informationLossRaw_apply hM P_full x]
+  -- Push the integral over `P_full.map M` back along `M`.
+  rw [integral_map hM.aemeasurable (Lp.aestronglyMeasurable _)]
+  -- Doob behavioral identity: `(doobL2Equiv …) ∘ M =ᵐ[P_full] condExpL2 … x`.
+  rw [integral_congr_ae (doobL2Equiv_comp_apply hM (condExpL2 ℝ ℝ hM.comap_le x))]
+  -- Conditional expectation preserves the total integral.
+  simpa using integral_condExpL2_eq hM.comap_le x MeasurableSet.univ
+    (measure_ne_top P_full Set.univ)
+
+/-- *The raw operator preserves mean-zero* (depends on the Doob behavioral
+identity via `integral_informationLossRaw`). -/
+theorem informationLossRaw_mem_L2ZeroMean
+    {M : Ω_full → Ω_obs} (hM : Measurable M)
+    (P_full : Measure Ω_full) [IsProbabilityMeasure P_full]
+    {x : Lp ℝ 2 P_full} (hx : x ∈ L2ZeroMean P_full) :
+    informationLossRaw hM P_full x ∈ L2ZeroMean (P_full.map M) := by
+  haveI : IsProbabilityMeasure (P_full.map M) :=
+    Measure.isProbabilityMeasure_map hM.aemeasurable
+  rw [mem_L2ZeroMean_iff, integral_informationLossRaw hM P_full x,
+    ← mem_L2ZeroMean_iff]
+  exact hx
+
+/-- *Clean defining action of `Π`*: the projection in `informationLossOperator`
+is a no-op because the raw Doob image is already mean-zero, so `Π s` is exactly
+the Doob image of the conditional expectation. Depends on
+`informationLossRaw_mem_L2ZeroMean` (hence on the private Doob behavioral
+identity). -/
+theorem informationLossOperator_coe_eq
+    {M : Ω_full → Ω_obs} (hM : Measurable M)
+    (P_full : Measure Ω_full) [IsProbabilityMeasure P_full]
+    (s : ↥(L2ZeroMean P_full)) :
+    (informationLossOperator hM P_full s : Lp ℝ 2 (P_full.map M))
+      = doobL2Equiv hM (condExpL2 ℝ ℝ hM.comap_le (s : Lp ℝ 2 P_full)) := by
+  rw [informationLossOperator_apply hM P_full s]
+  -- The Doob image is the raw operator applied to `↑s`, which is mean-zero.
+  have hmem : informationLossRaw hM P_full (s : Lp ℝ 2 P_full)
+      ∈ L2ZeroMean (P_full.map M) :=
+    informationLossRaw_mem_L2ZeroMean hM P_full s.2
+  exact (L2ZeroMean (P_full.map M)).starProjection_eq_self_iff.mpr hmem
+
+/-- *Pointwise norm bound*: `‖Π s‖ ≤ ‖s‖`. The projection is norm-nonincreasing,
+`condExpL2` is an orthogonal projection (norm-nonincreasing), and the Doob map is
+an isometry. The proof uses only the projection bound, not the behavioral
+identity. -/
+theorem norm_informationLossOperator_apply_le
+    {M : Ω_full → Ω_obs} (hM : Measurable M)
+    (P_full : Measure Ω_full) [IsProbabilityMeasure P_full]
+    (s : ↥(L2ZeroMean P_full)) :
+    ‖informationLossOperator hM P_full s‖ ≤ ‖s‖ := by
+  -- Pass to the underlying `Lp` representatives.
+  rw [show ‖informationLossOperator hM P_full s‖
+        = ‖(informationLossOperator hM P_full s : Lp ℝ 2 (P_full.map M))‖ from rfl,
+    show ‖s‖ = ‖(s : Lp ℝ 2 P_full)‖ from rfl,
+    informationLossOperator_apply hM P_full s]
+  -- The projection is norm-nonincreasing.
+  refine le_trans
+    ((L2ZeroMean (P_full.map M)).norm_starProjection_apply_le _) ?_
+  -- Doob is an isometry; condExpL2 is norm-nonincreasing.
+  rw [(doobL2Equiv hM).norm_map]
+  exact norm_condExpL2_le hM.comap_le (s : Lp ℝ 2 P_full)
+
+/-- *Operator-norm bound*: `‖Π‖ ≤ 1`. `condExpL2` is an orthogonal projection
+(norm ≤ 1) and the Doob map is an isometry; restricting to subspaces does not
+increase the norm. (The norm is the `ContinuousLinearMap` operator norm.) -/
+theorem norm_informationLossOperator_le_one
+    {M : Ω_full → Ω_obs} (hM : Measurable M)
+    (P_full : Measure Ω_full) [IsProbabilityMeasure P_full] :
+    @norm _ ContinuousLinearMap.hasOpNorm (informationLossOperator hM P_full) ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one
+    (fun s => by simpa using norm_informationLossOperator_apply_le hM P_full s)
+
 end AsymptoticStatistics.Operators.InformationLoss

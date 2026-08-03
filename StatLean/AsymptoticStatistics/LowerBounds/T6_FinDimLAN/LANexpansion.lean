@@ -526,10 +526,8 @@ theorem lanExpansion_at_basis_and_h
           (MeasureTheory.Measure.pi (fun _ : Fin n => P))
             {X : Fin n → Ω | ε ≤ |R_lan n X|})
           atTop (𝓝 (0 : ℝ≥0∞)) := by
-  -- Hypotheses `h_orth, T_set, hg_in_tangent` are not consumed by the
-  -- bridging lemma (they're carried in the signature for future
-  -- compatibility with refinements that use orthonormality / tangent-set
-  -- membership directly). Suppress unused-variable lint:
+  -- These hypotheses are retained to match the finite-dimensional LAN interface;
+  -- the bridge itself uses only `hγ_score`. Suppress unused-variable lint:
   let _ := h_orth; let _ := T_set; let _ := hg_in_tangent
   refine ⟨lanRemainder g_P γ h, ?_⟩
   exact lanExpansion1D_to_PnProb_bridge g_P γ hγ_score h
