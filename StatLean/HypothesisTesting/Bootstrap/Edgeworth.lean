@@ -15965,6 +15965,154 @@ lemma crude_graded_ledger_exponent_graded {n : ℕ} (hn : 0 < n) :
     ← Real.rpow_add h0]
   norm_num
 
+/-! ### WAVE 50, THE FIRST CORRECTION: the reduction of (c) to four scalar moments is LOSSY,
+and the loss is exactly the `r²≤r` collapse wave 25 already proved fatal
+
+`integral_surrogateRemGraded_le` proves `hRg` by passing through `surrogateRemGraded_le`, i.e.
+by **collapsing** every power of `r` onto a single `r³`.  The wave-25 note above
+(`surrogateRemGraded`) is a formal record that this collapse is not harmless: the worst monomial
+of the cubic block is `|u|³|v|⁶`, it carries `r⁶` in the graded envelope and `r³` in the
+collapsed one, and the two ledgers differ by `r³ = n^{-3/2}`.
+
+Wave 49 read that difference as absorbed, and reduced `hRg` to four scalar moments of the root
+of `Zₙ`, `E|w₀|⁶, E|w₀|⁹, E|w₁|⁶, E|w₁|⁹`, asserting all four `O(1)`.  **Three of the four are;
+the fourth is not, and no moment hypothesis available to the headline makes it so.**  Write
+`η = ξ² − σ²` for the second summand and `η̃` for its truncation at `τ² = n`.  `hF8` gives
+`E η̃⁴ ≲ μ₈ = O(1)` — this is the wave-49 improvement over wave 25, which had only `Eη² = O(1)`,
+and it is what makes `E|w₁|⁶ = O(1)` (`second_coord_root_moment_exponent` at `p = 6`).  But the
+same ledger at `p = 9` reads
+
+`E|w₁|⁹ ≲ n^{1−9/2}·E|η̃|⁹ ≤ n^{−7/2}·(τ²)⁵·E η̃⁴ = n^{−7/2}·n⁵ = n^{3/2}`,
+
+`n^{3/2}`, not `O(1)` (`second_coord_root_moment_exponent`).  The exponent is `p/2 − 3`, so the
+second coordinate's root moments are `O(1)` **exactly up to `p = 6`** and grow beyond it; `p = 9`
+is past the edge by `n^{3/2}`.  Nor can more truncation repair it — the change of law needs
+`τ ≥ √n` — and buying it with moments costs `E|η|⁶`, i.e. **twelve** moments of `F`
+(`second_coord_ninth_moment_needs_twelve`), against the `hF8` the headline carries.
+
+So `integral_surrogateRemGraded_le_of_moments` is a true lemma with an **unsatisfiable
+hypothesis**: there is no `n`-free `M₉`.  What repairs it is not a bigger `M₉` but keeping the
+grading, and the arithmetic is exact: the offending monomial `|u|³|v|⁶` at its own `r⁶` costs
+`n^{−3}·n^{3/2} = n^{−3/2}`, inside `O(n⁻¹)` with `n^{-1/2}` to spare
+(`graded_worst_monomial_ledger`), while at the collapsed `r³` it costs
+`n^{−3/2}·n^{3/2} = O(1)` and misses by the full factor `n`
+(`collapsed_worst_monomial_ledger`).
+
+`integral_surrogateRemGraded_le_of_graded` below is `hRg` proved with the grading kept.  Its
+interface is **six** integrals of the two basic blocks `P = |u||v|/2` and
+`A = |u|³/2 + 3|u||v|²/8` rather than four scalar moments, and — this is the whole point — the
+`n`-free quantity it asks for is not `N₆ = ∫A³` but the *combination*
+`N₃ + 3rN₄ + 3r²N₅ + r³N₆`, in which `N₆` is discounted by `r³ = n^{-3/2}`.  Three of the six
+blocks (`N₃`, `Q₃`, `Q₄`) are below the edge and `O(1)` outright; the two that are not (`N₅`,
+`N₆`) are exactly the ones the grading discounts.  This is the corrected form of item 1 of the
+residue, and it is what a Rosenthal bound now has to feed. -/
+
+/-- The **linear** block of the graded envelope, `P = |u||v|/2`, read at the root's coordinates. -/
+noncomputable def surrGradedLin (σ : ℝ) (w : EuclideanSpace ℝ (Fin 2)) : ℝ :=
+  |w 0 / σ| * |w 1 / σ ^ 2| / 2
+
+/-- The **cubic** block of the graded envelope, `A = |u|³/2 + 3|u||v|²/8`, at the root's
+coordinates.  `surrGradedCube σ = (P + A)³` and `surrGradedQuad σ = 2PA + A²`. -/
+noncomputable def surrGradedBlk (σ : ℝ) (w : EuclideanSpace ℝ (Fin 2)) : ℝ :=
+  |w 0 / σ| ^ 3 / 2 + 3 * |w 0 / σ| * |w 1 / σ ^ 2| ^ 2 / 8
+
+lemma surrGradedLin_nonneg (σ : ℝ) (w : EuclideanSpace ℝ (Fin 2)) : 0 ≤ surrGradedLin σ w := by
+  rw [surrGradedLin]; positivity
+
+lemma surrGradedBlk_nonneg (σ : ℝ) (w : EuclideanSpace ℝ (Fin 2)) : 0 ≤ surrGradedBlk σ w := by
+  rw [surrGradedBlk]; positivity
+
+/-- **The graded envelope, monomial by monomial.**  An EXACT identity — the `r`'s stay where the
+expansion put them, and the four cubic monomials carry `r³, r⁴, r⁵, r⁶` respectively.  Compare
+`surrogateRemGraded_le`, which throws all four onto `r³`. -/
+lemma surrogateRemGraded_eq_blocks (σ θ r : ℝ) (w : EuclideanSpace ℝ (Fin 2)) :
+    surrogateRemGraded θ (w 0 / σ) (w 1 / σ ^ 2) r
+      = |θ| ^ 3 / 6 * r ^ 3 * surrGradedLin σ w ^ 3
+        + |θ| ^ 3 / 6 * (3 * r ^ 4) * (surrGradedLin σ w ^ 2 * surrGradedBlk σ w)
+        + |θ| ^ 3 / 6 * (3 * r ^ 5) * (surrGradedLin σ w * surrGradedBlk σ w ^ 2)
+        + |θ| ^ 3 / 6 * r ^ 6 * surrGradedBlk σ w ^ 3
+        + θ ^ 2 / 2 * (2 * r ^ 3) * (surrGradedLin σ w * surrGradedBlk σ w)
+        + θ ^ 2 / 2 * r ^ 4 * surrGradedBlk σ w ^ 2 := by
+  rw [surrogateRemGraded, surrGradedLin, surrGradedBlk]
+  ring
+
+private lemma integral_lin6 {α : Type*} [MeasurableSpace α] (μ : Measure α)
+    {f₁ f₂ f₃ f₄ f₅ f₆ : α → ℝ} (h₁ : Integrable f₁ μ) (h₂ : Integrable f₂ μ)
+    (h₃ : Integrable f₃ μ) (h₄ : Integrable f₄ μ) (h₅ : Integrable f₅ μ)
+    (h₆ : Integrable f₆ μ) (c₁ c₂ c₃ c₄ c₅ c₆ : ℝ) :
+    ∫ w, (c₁ * f₁ w + c₂ * f₂ w + c₃ * f₃ w + c₄ * f₄ w + c₅ * f₅ w + c₆ * f₆ w) ∂μ
+      = c₁ * (∫ w, f₁ w ∂μ) + c₂ * (∫ w, f₂ w ∂μ) + c₃ * (∫ w, f₃ w ∂μ)
+        + c₄ * (∫ w, f₄ w ∂μ) + c₅ * (∫ w, f₅ w ∂μ) + c₆ * (∫ w, f₆ w ∂μ) := by
+  have i₁ := h₁.const_mul c₁
+  have i₂ := h₂.const_mul c₂
+  have i₃ := h₃.const_mul c₃
+  have i₄ := h₄.const_mul c₄
+  have i₅ := h₅.const_mul c₅
+  have i₆ := h₆.const_mul c₆
+  have e₅ : ∫ w, (c₁ * f₁ w + c₂ * f₂ w + c₃ * f₃ w + c₄ * f₄ w + c₅ * f₅ w + c₆ * f₆ w) ∂μ
+      = (∫ w, (c₁ * f₁ w + c₂ * f₂ w + c₃ * f₃ w + c₄ * f₄ w + c₅ * f₅ w) ∂μ)
+        + ∫ w, c₆ * f₆ w ∂μ :=
+    integral_add ((((i₁.add i₂).add i₃).add i₄).add i₅) i₆
+  have e₄ : ∫ w, (c₁ * f₁ w + c₂ * f₂ w + c₃ * f₃ w + c₄ * f₄ w + c₅ * f₅ w) ∂μ
+      = (∫ w, (c₁ * f₁ w + c₂ * f₂ w + c₃ * f₃ w + c₄ * f₄ w) ∂μ) + ∫ w, c₅ * f₅ w ∂μ :=
+    integral_add (((i₁.add i₂).add i₃).add i₄) i₅
+  have e₃ : ∫ w, (c₁ * f₁ w + c₂ * f₂ w + c₃ * f₃ w + c₄ * f₄ w) ∂μ
+      = (∫ w, (c₁ * f₁ w + c₂ * f₂ w + c₃ * f₃ w) ∂μ) + ∫ w, c₄ * f₄ w ∂μ :=
+    integral_add ((i₁.add i₂).add i₃) i₄
+  have e₂ : ∫ w, (c₁ * f₁ w + c₂ * f₂ w + c₃ * f₃ w) ∂μ
+      = (∫ w, (c₁ * f₁ w + c₂ * f₂ w) ∂μ) + ∫ w, c₃ * f₃ w ∂μ :=
+    integral_add (i₁.add i₂) i₃
+  have e₁ : ∫ w, (c₁ * f₁ w + c₂ * f₂ w) ∂μ
+      = (∫ w, c₁ * f₁ w ∂μ) + ∫ w, c₂ * f₂ w ∂μ :=
+    integral_add i₁ i₂
+  rw [e₅, e₄, e₃, e₂, e₁, integral_const_mul, integral_const_mul, integral_const_mul,
+    integral_const_mul, integral_const_mul, integral_const_mul]
+
+/-- **`hRg` AT `Zₙ`, WITH THE GRADING KEPT — the corrected form of item (c).**
+
+The conclusion has exactly the shape `exists_studentized_low_range_window_bound` asks for, `r³`
+times a cubic-plus-quadratic in `|θ|` with `n`-free coefficients, but the `n`-free quantity it
+demands is the *discounted combination* `N₃ + 3rN₄ + 3r²N₅ + r³N₆`, not `N₆` on its own.  That
+is the whole difference from `integral_surrogateRemGraded_le`, and it is the difference between
+a satisfiable and an unsatisfiable hypothesis: `N₆ = ∫A³` contains the monomial `|u|³|v|⁶`,
+which is `n^{3/2}` and not `O(1)`, while `r³N₆` is `n^{-3/2}·n^{3/2} = O(1)`. -/
+theorem integral_surrogateRemGraded_le_of_graded (μ : Measure (EuclideanSpace ℝ (Fin 2)))
+    {σ r : ℝ} (hr : 0 ≤ r) (θ : ℝ) {N₃ N₄ N₅ N₆ Q₃ Q₄ : ℝ}
+    (hi₃ : Integrable (fun w => surrGradedLin σ w ^ 3) μ)
+    (hi₄ : Integrable (fun w => surrGradedLin σ w ^ 2 * surrGradedBlk σ w) μ)
+    (hi₅ : Integrable (fun w => surrGradedLin σ w * surrGradedBlk σ w ^ 2) μ)
+    (hi₆ : Integrable (fun w => surrGradedBlk σ w ^ 3) μ)
+    (hq₃ : Integrable (fun w => surrGradedLin σ w * surrGradedBlk σ w) μ)
+    (hq₄ : Integrable (fun w => surrGradedBlk σ w ^ 2) μ)
+    (h₃ : (∫ w, surrGradedLin σ w ^ 3 ∂μ) ≤ N₃)
+    (h₄ : (∫ w, surrGradedLin σ w ^ 2 * surrGradedBlk σ w ∂μ) ≤ N₄)
+    (h₅ : (∫ w, surrGradedLin σ w * surrGradedBlk σ w ^ 2 ∂μ) ≤ N₅)
+    (h₆ : (∫ w, surrGradedBlk σ w ^ 3 ∂μ) ≤ N₆)
+    (hQ₃ : (∫ w, surrGradedLin σ w * surrGradedBlk σ w ∂μ) ≤ Q₃)
+    (hQ₄ : (∫ w, surrGradedBlk σ w ^ 2 ∂μ) ≤ Q₄) :
+    ∫ w, surrogateRemGraded θ (w 0 / σ) (w 1 / σ ^ 2) r ∂μ
+      ≤ r ^ 3 * (|θ| ^ 3 / 6 * (N₃ + 3 * r * N₄ + 3 * r ^ 2 * N₅ + r ^ 3 * N₆)
+          + θ ^ 2 / 2 * (2 * Q₃ + r * Q₄)) := by
+  have hcongr : ∫ w, surrogateRemGraded θ (w 0 / σ) (w 1 / σ ^ 2) r ∂μ
+      = ∫ w, (|θ| ^ 3 / 6 * r ^ 3 * surrGradedLin σ w ^ 3
+          + |θ| ^ 3 / 6 * (3 * r ^ 4) * (surrGradedLin σ w ^ 2 * surrGradedBlk σ w)
+          + |θ| ^ 3 / 6 * (3 * r ^ 5) * (surrGradedLin σ w * surrGradedBlk σ w ^ 2)
+          + |θ| ^ 3 / 6 * r ^ 6 * surrGradedBlk σ w ^ 3
+          + θ ^ 2 / 2 * (2 * r ^ 3) * (surrGradedLin σ w * surrGradedBlk σ w)
+          + θ ^ 2 / 2 * r ^ 4 * surrGradedBlk σ w ^ 2) ∂μ :=
+    integral_congr_ae (Filter.Eventually.of_forall fun w =>
+      surrogateRemGraded_eq_blocks σ θ r w)
+  rw [hcongr, integral_lin6 μ hi₃ hi₄ hi₅ hi₆ hq₃ hq₄]
+  have c₁ : (0 : ℝ) ≤ |θ| ^ 3 / 6 * r ^ 3 := by positivity
+  have c₂ : (0 : ℝ) ≤ |θ| ^ 3 / 6 * (3 * r ^ 4) := by positivity
+  have c₃ : (0 : ℝ) ≤ |θ| ^ 3 / 6 * (3 * r ^ 5) := by positivity
+  have c₄ : (0 : ℝ) ≤ |θ| ^ 3 / 6 * r ^ 6 := by positivity
+  have c₅ : (0 : ℝ) ≤ θ ^ 2 / 2 * (2 * r ^ 3) := by positivity
+  have c₆ : (0 : ℝ) ≤ θ ^ 2 / 2 * r ^ 4 := by positivity
+  nlinarith [mul_le_mul_of_nonneg_left h₃ c₁, mul_le_mul_of_nonneg_left h₄ c₂,
+    mul_le_mul_of_nonneg_left h₅ c₃, mul_le_mul_of_nonneg_left h₆ c₄,
+    mul_le_mul_of_nonneg_left hQ₃ c₅, mul_le_mul_of_nonneg_left hQ₄ c₆]
+
 /-- **One-term Edgeworth expansion for the studentized sample mean, uniform in the argument.**
 
 Under a finite fourth moment and absolute continuity of the sampling law, the sampling
