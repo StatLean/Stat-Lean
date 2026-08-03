@@ -10623,6 +10623,167 @@ lemma integral_pi_sum_pow_four_le (F : Measure ℝ) [IsProbabilityMeasure F] {U 
   have hn0 : (0 : ℝ) ≤ (n : ℝ) := by positivity
   nlinarith [hmono, h4, hp, hq2, hn0, sq_nonneg ((n : ℝ) * c)]
 
+
+/-! ### WAVE 50, ITEM 1: the moment recursion at every order, and Rosenthal at order six
+
+The file has the order-four analogue (`integral_pi_sum_moments`, `integral_pi_sum_pow_four_le`)
+and nothing above it.  What follows is the general device and the two orders the graded ledger
+actually consumes.
+
+`integral_add_pow_of_bounded` is the binomial theorem under the integral at every order (the
+degree-four ad-hoc chain `integral_poly_four_of_bounded`/`integral_add_pow_four_of_bounded` is
+what it replaces), and `integral_pi_sum_pow_succ` composes it with the head/tail split
+`integral_pi_succ_of_bounded` into the **exact moment recursion of an iid sum**:
+
+`M_p(n+1) = ∑_{k≤p} C(p,k)·m_k·M_{p−k}(n)`,   `m_k = ∫Vᵏ dF`,  `M_p(n) = ∫(∑V)ᵖ dπ`.
+
+Everything below is arithmetic on that recursion, and the centring `m₁ = 0` is what makes it
+close: at `p = 3` it kills the only term that could grow, leaving `M₃(n) = n·m₃` **exactly**
+(`integral_pi_sum_pow_three`); at `p = 6` it kills the `M₅` term outright, so the sixth moment
+never needs the fifth.  The recursion at `p = 6` is therefore
+
+`M₆(n+1) = M₆(n) + 15·m₂·M₄(n) + 20·n·m₃² + 15·n·m₂·m₄ + m₆`,
+
+and feeding `M₄(n) ≤ n·m₄ + 3n²m₂²` into it and summing gives the four-term bound
+`integral_pi_sum_pow_six_le`.  That bound is Rosenthal's at order six in the form the ledger
+wants — `n·m₆` (the single large summand) and `n³m₂³` (the Gaussian term), with the two
+intermediate terms `n²m₂m₄` and `n²m₃²` left explicit rather than absorbed, because at the
+truncation level `τ = √n` they are what the ledger reads directly.
+
+**Where it lands.**  On the first coordinate (`|Ṽ| ≤ τ = √n`, `m₄ ≤ μ₄`), all four terms are
+`O(n³)` against the normalisation `n⁻³`, so `E|w₀|⁶ = O(1)`.  On the second
+(`|Ṽ| ≤ τ² = n`, `m₄ ≲ μ₈` by `hF8`), `m₆ ≤ τ⁴m₄ ≲ n²μ₈` and again every term is `O(n³)`, so
+`E|w₁|⁶ = O(1)` — this is the wave-49 arithmetic, and it is correct at order six.  It is order
+*nine* on the second coordinate that is not, which is what the section above corrects. -/
+
+private lemma integrable_pow_of_bounded {α : Type*} [MeasurableSpace α] (ν : Measure α)
+    [IsProbabilityMeasure ν] {W : α → ℝ} (hW : Measurable W) {D : ℝ} (hWb : ∀ z, |W z| ≤ D)
+    (k : ℕ) : Integrable (fun z => W z ^ k) ν := by
+  refine integrable_of_ae_abs_le (hW.pow_const k).aestronglyMeasurable (C := D ^ k) ?_
+  filter_upwards with z
+  rw [abs_pow]
+  exact pow_le_pow_left₀ (abs_nonneg _) (hWb z) k
+
+/-- **The binomial expansion under the integral, at every order.** -/
+lemma integral_add_pow_of_bounded {α : Type*} [MeasurableSpace α] (ν : Measure α)
+    [IsProbabilityMeasure ν] {W : α → ℝ} (hW : Measurable W) {D : ℝ} (hWb : ∀ z, |W z| ≤ D)
+    (a : ℝ) (p : ℕ) :
+    ∫ z, (a + W z) ^ p ∂ν
+      = ∑ k ∈ Finset.range (p + 1), a ^ k * (p.choose k : ℝ) * ∫ z, W z ^ (p - k) ∂ν := by
+  have hexp : ∀ z, (a + W z) ^ p
+      = ∑ k ∈ Finset.range (p + 1), a ^ k * (p.choose k : ℝ) * W z ^ (p - k) := by
+    intro z
+    rw [add_pow]
+    exact Finset.sum_congr rfl fun k _ => by ring
+  simp only [hexp]
+  rw [integral_finset_sum _ (fun k _ =>
+    (integrable_pow_of_bounded ν hW hWb (p - k)).const_mul (a ^ k * (p.choose k : ℝ)))]
+  exact Finset.sum_congr rfl fun k _ => integral_const_mul _ _
+
+/-- **The moment recursion of an iid sum, at every order.** -/
+lemma integral_pi_sum_pow_succ (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
+    (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (n p : ℕ) :
+    ∫ y : Fin (n + 1) → ℝ, (∑ i, V (y i)) ^ p ∂(Measure.pi fun _ : Fin (n + 1) => F)
+      = ∑ k ∈ Finset.range (p + 1), (p.choose k : ℝ) * (∫ x, V x ^ k ∂F)
+          * ∫ z : Fin n → ℝ, (∑ i, V (z i)) ^ (p - k) ∂(Measure.pi fun _ : Fin n => F) := by
+  have hB0 : (0 : ℝ) ≤ B := le_trans (abs_nonneg _) (hB 0)
+  have hsumm : ∀ m : ℕ, Measurable fun z : Fin m → ℝ => ∑ i, V (z i) := fun m =>
+    Finset.measurable_sum _ fun i _ => hV.comp (measurable_pi_apply i)
+  have hsumb : ∀ m : ℕ, ∀ z : Fin m → ℝ, |∑ i, V (z i)| ≤ (m : ℝ) * B := by
+    intro m z
+    calc |∑ i, V (z i)| ≤ ∑ _i : Fin m, B :=
+          (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => hB (z i))
+      _ = (m : ℝ) * B := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  have hfm : Measurable fun y : Fin (n + 1) → ℝ => (∑ i, V (y i)) ^ p :=
+    (hsumm (n + 1)).pow_const p
+  have hfb : ∀ y : Fin (n + 1) → ℝ, |(∑ i, V (y i)) ^ p| ≤ (((n : ℝ) + 1) * B) ^ p := by
+    intro y
+    rw [abs_pow]
+    refine pow_le_pow_left₀ (abs_nonneg _) ?_ p
+    have := hsumb (n + 1) y
+    push_cast at this
+    exact this
+  rw [integral_pi_succ_of_bounded F hfm hfb]
+  have hcons : ∀ (x : ℝ) (z : Fin n → ℝ),
+      (∑ i, V ((Fin.cons x z : Fin (n + 1) → ℝ) i)) ^ p = (V x + ∑ i, V (z i)) ^ p := by
+    intro x z
+    congr 1
+    simp [Fin.sum_univ_succ]
+  have hinner : ∀ x : ℝ,
+      (∫ z : Fin n → ℝ, (∑ i, V ((Fin.cons x z : Fin (n + 1) → ℝ) i)) ^ p
+          ∂(Measure.pi fun _ : Fin n => F))
+        = ∑ k ∈ Finset.range (p + 1), V x ^ k * ((p.choose k : ℝ)
+            * ∫ z : Fin n → ℝ, (∑ i, V (z i)) ^ (p - k)
+                ∂(Measure.pi fun _ : Fin n => F)) := by
+    intro x
+    simp only [hcons]
+    rw [integral_add_pow_of_bounded _ (hsumm n) (hsumb n) (V x) p]
+    exact Finset.sum_congr rfl fun k _ => by ring
+  simp only [hinner]
+  rw [integral_finset_sum _ (fun k _ =>
+    (integrable_pow_of_bounded F hV hB k).mul_const _)]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [MeasureTheory.integral_mul_const]
+  ring
+
+lemma integral_pi_sum_pow_three (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
+    (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hV0 : ∫ x, V x ∂F = 0) (n : ℕ) :
+    ∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 3 ∂(Measure.pi fun _ : Fin n => F)
+      = (n : ℝ) * ∫ x, V x ^ 3 ∂F := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [integral_pi_sum_pow_succ F hV hB n 3]
+    obtain ⟨h1, -, -⟩ := integral_pi_sum_moments F hV hB hV0 n
+    have hm0 : (∫ x, V x ^ 0 ∂F) = 1 := by simp
+    have hm1 : (∫ x, V x ^ 1 ∂F) = 0 := by simpa using hV0
+    have hM0 : (∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 0
+        ∂(Measure.pi fun _ : Fin n => F)) = 1 := by simp
+    have hM1 : (∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 1
+        ∂(Measure.pi fun _ : Fin n => F)) = 0 := by simpa using h1
+    rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
+      Finset.sum_range_succ, Finset.sum_range_zero]
+    norm_num [Nat.choose, hm0, hm1, hM0, hM1, hV0, h1, ih]
+    ring
+
+lemma integral_pi_sum_pow_six_le (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
+    (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hV0 : ∫ x, V x ∂F = 0) (n : ℕ) :
+    ∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 6 ∂(Measure.pi fun _ : Fin n => F)
+      ≤ (n : ℝ) * (∫ x, V x ^ 6 ∂F)
+        + 15 * (n : ℝ) ^ 2 * (∫ x, V x ^ 2 ∂F) * (∫ x, V x ^ 4 ∂F)
+        + 10 * (n : ℝ) ^ 2 * (∫ x, V x ^ 3 ∂F) ^ 2
+        + 15 * (n : ℝ) ^ 3 * (∫ x, V x ^ 2 ∂F) ^ 3 := by
+  have hm2n : (0 : ℝ) ≤ ∫ x, V x ^ 2 ∂F :=
+    integral_nonneg fun x => by positivity
+  have hm4n : (0 : ℝ) ≤ ∫ x, V x ^ 4 ∂F :=
+    integral_nonneg fun x => by positivity
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [integral_pi_sum_pow_succ F hV hB n 6]
+    obtain ⟨h1, h2, h4⟩ := integral_pi_sum_moments F hV hB hV0 n
+    have h3 := integral_pi_sum_pow_three F hV hB hV0 n
+    have hm0 : (∫ x, V x ^ 0 ∂F) = 1 := by simp
+    have hm1 : (∫ x, V x ^ 1 ∂F) = 0 := by simpa using hV0
+    have hM0 : (∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 0
+        ∂(Measure.pi fun _ : Fin n => F)) = 1 := by simp
+    have hM1 : (∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 1
+        ∂(Measure.pi fun _ : Fin n => F)) = 0 := by simpa using h1
+    rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
+      Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
+      Finset.sum_range_succ, Finset.sum_range_zero]
+    have key : 15 * (∫ x, V x ^ 2 ∂F)
+        * (∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 4 ∂(Measure.pi fun _ : Fin n => F))
+        ≤ 15 * (∫ x, V x ^ 2 ∂F)
+          * ((n : ℝ) * (∫ x, V x ^ 4 ∂F) + 3 * (n : ℝ) ^ 2 * (∫ x, V x ^ 2 ∂F) ^ 2) :=
+      mul_le_mul_of_nonneg_left h4 (by linarith)
+    have hn0 : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+    norm_num [Nat.choose, hm0, hm1, hM0, hM1, hV0, h1, h2, h3]
+    nlinarith [ih, key, hm2n, hm4n, hn0, sq_nonneg (∫ x, V x ^ 3 ∂F),
+      mul_nonneg hm2n hm4n, mul_nonneg (mul_nonneg hm2n hm2n) hm2n,
+      mul_nonneg hn0 (mul_nonneg (mul_nonneg hm2n hm2n) hm2n)]
+
 /-- `‖v‖⁴ ≤ 2(v₀⁴ + v₁⁴)` on the plane. -/
 lemma norm_pow_four_le_two_mul (v : E₂) :
     ‖v‖ ^ 4 ≤ 2 * ((v 0) ^ 4 + (v 1) ^ 4) := by
@@ -15965,6 +16126,225 @@ lemma crude_graded_ledger_exponent_graded {n : ℕ} (hn : 0 < n) :
     ← Real.rpow_add h0]
   norm_num
 
+/-! ### WAVE 50, THE FIRST CORRECTION: the reduction of (c) to four scalar moments is LOSSY,
+and the loss is exactly the `r²≤r` collapse wave 25 already proved fatal
+
+`integral_surrogateRemGraded_le` proves `hRg` by passing through `surrogateRemGraded_le`, i.e.
+by **collapsing** every power of `r` onto a single `r³`.  The wave-25 note above
+(`surrogateRemGraded`) is a formal record that this collapse is not harmless: the worst monomial
+of the cubic block is `|u|³|v|⁶`, it carries `r⁶` in the graded envelope and `r³` in the
+collapsed one, and the two ledgers differ by `r³ = n^{-3/2}`.
+
+Wave 49 read that difference as absorbed, and reduced `hRg` to four scalar moments of the root
+of `Zₙ`, `E|w₀|⁶, E|w₀|⁹, E|w₁|⁶, E|w₁|⁹`, asserting all four `O(1)`.  **Three of the four are;
+the fourth is not, and no moment hypothesis available to the headline makes it so.**  Write
+`η = ξ² − σ²` for the second summand and `η̃` for its truncation at `τ² = n`.  `hF8` gives
+`E η̃⁴ ≲ μ₈ = O(1)` — this is the wave-49 improvement over wave 25, which had only `Eη² = O(1)`,
+and it is what makes `E|w₁|⁶ = O(1)` (`second_coord_root_moment_exponent` at `p = 6`).  But the
+same ledger at `p = 9` reads
+
+`E|w₁|⁹ ≲ n^{1−9/2}·E|η̃|⁹ ≤ n^{−7/2}·(τ²)⁵·E η̃⁴ = n^{−7/2}·n⁵ = n^{3/2}`,
+
+`n^{3/2}`, not `O(1)` (`second_coord_root_moment_exponent`).  The exponent is `p/2 − 3`, so the
+second coordinate's root moments are `O(1)` **exactly up to `p = 6`** and grow beyond it; `p = 9`
+is past the edge by `n^{3/2}`.  Nor can more truncation repair it — the change of law needs
+`τ ≥ √n` — and buying it with moments costs `E|η|⁶`, i.e. **twelve** moments of `F`
+(`second_coord_ninth_moment_needs_twelve`), against the `hF8` the headline carries.
+
+So `integral_surrogateRemGraded_le_of_moments` is a true lemma with an **unsatisfiable
+hypothesis**: there is no `n`-free `M₉`.  What repairs it is not a bigger `M₉` but keeping the
+grading, and the arithmetic is exact: the offending monomial `|u|³|v|⁶` at its own `r⁶` costs
+`n^{−3}·n^{3/2} = n^{−3/2}`, inside `O(n⁻¹)` with `n^{-1/2}` to spare
+(`graded_worst_monomial_ledger`), while at the collapsed `r³` it costs
+`n^{−3/2}·n^{3/2} = O(1)` and misses by the full factor `n`
+(`collapsed_worst_monomial_ledger`).
+
+`integral_surrogateRemGraded_le_of_graded` below is `hRg` proved with the grading kept.  Its
+interface is **six** integrals of the two basic blocks `P = |u||v|/2` and
+`A = |u|³/2 + 3|u||v|²/8` rather than four scalar moments, and — this is the whole point — the
+`n`-free quantity it asks for is not `N₆ = ∫A³` but the *combination*
+`N₃ + 3rN₄ + 3r²N₅ + r³N₆`, in which `N₆` is discounted by `r³ = n^{-3/2}`.  Three of the six
+blocks (`N₃`, `Q₃`, `Q₄`) are below the edge and `O(1)` outright; the two that are not (`N₅`,
+`N₆`) are exactly the ones the grading discounts.  This is the corrected form of item 1 of the
+residue, and it is what a Rosenthal bound now has to feed. -/
+
+/-- The **linear** block of the graded envelope, `P = |u||v|/2`, read at the root's coordinates. -/
+noncomputable def surrGradedLin (σ : ℝ) (w : EuclideanSpace ℝ (Fin 2)) : ℝ :=
+  |w 0 / σ| * |w 1 / σ ^ 2| / 2
+
+/-- The **cubic** block of the graded envelope, `A = |u|³/2 + 3|u||v|²/8`, at the root's
+coordinates.  `surrGradedCube σ = (P + A)³` and `surrGradedQuad σ = 2PA + A²`. -/
+noncomputable def surrGradedBlk (σ : ℝ) (w : EuclideanSpace ℝ (Fin 2)) : ℝ :=
+  |w 0 / σ| ^ 3 / 2 + 3 * |w 0 / σ| * |w 1 / σ ^ 2| ^ 2 / 8
+
+lemma surrGradedLin_nonneg (σ : ℝ) (w : EuclideanSpace ℝ (Fin 2)) : 0 ≤ surrGradedLin σ w := by
+  rw [surrGradedLin]; positivity
+
+lemma surrGradedBlk_nonneg (σ : ℝ) (w : EuclideanSpace ℝ (Fin 2)) : 0 ≤ surrGradedBlk σ w := by
+  rw [surrGradedBlk]; positivity
+
+/-- **The graded envelope, monomial by monomial.**  An EXACT identity — the `r`'s stay where the
+expansion put them, and the four cubic monomials carry `r³, r⁴, r⁵, r⁶` respectively.  Compare
+`surrogateRemGraded_le`, which throws all four onto `r³`. -/
+lemma surrogateRemGraded_eq_blocks (σ θ r : ℝ) (w : EuclideanSpace ℝ (Fin 2)) :
+    surrogateRemGraded θ (w 0 / σ) (w 1 / σ ^ 2) r
+      = |θ| ^ 3 / 6 * r ^ 3 * surrGradedLin σ w ^ 3
+        + |θ| ^ 3 / 6 * (3 * r ^ 4) * (surrGradedLin σ w ^ 2 * surrGradedBlk σ w)
+        + |θ| ^ 3 / 6 * (3 * r ^ 5) * (surrGradedLin σ w * surrGradedBlk σ w ^ 2)
+        + |θ| ^ 3 / 6 * r ^ 6 * surrGradedBlk σ w ^ 3
+        + θ ^ 2 / 2 * (2 * r ^ 3) * (surrGradedLin σ w * surrGradedBlk σ w)
+        + θ ^ 2 / 2 * r ^ 4 * surrGradedBlk σ w ^ 2 := by
+  rw [surrogateRemGraded, surrGradedLin, surrGradedBlk]
+  ring
+
+private lemma integral_lin6 {α : Type*} [MeasurableSpace α] (μ : Measure α)
+    {f₁ f₂ f₃ f₄ f₅ f₆ : α → ℝ} (h₁ : Integrable f₁ μ) (h₂ : Integrable f₂ μ)
+    (h₃ : Integrable f₃ μ) (h₄ : Integrable f₄ μ) (h₅ : Integrable f₅ μ)
+    (h₆ : Integrable f₆ μ) (c₁ c₂ c₃ c₄ c₅ c₆ : ℝ) :
+    ∫ w, (c₁ * f₁ w + c₂ * f₂ w + c₃ * f₃ w + c₄ * f₄ w + c₅ * f₅ w + c₆ * f₆ w) ∂μ
+      = c₁ * (∫ w, f₁ w ∂μ) + c₂ * (∫ w, f₂ w ∂μ) + c₃ * (∫ w, f₃ w ∂μ)
+        + c₄ * (∫ w, f₄ w ∂μ) + c₅ * (∫ w, f₅ w ∂μ) + c₆ * (∫ w, f₆ w ∂μ) := by
+  have i₁ := h₁.const_mul c₁
+  have i₂ := h₂.const_mul c₂
+  have i₃ := h₃.const_mul c₃
+  have i₄ := h₄.const_mul c₄
+  have i₅ := h₅.const_mul c₅
+  have i₆ := h₆.const_mul c₆
+  have e₅ : ∫ w, (c₁ * f₁ w + c₂ * f₂ w + c₃ * f₃ w + c₄ * f₄ w + c₅ * f₅ w + c₆ * f₆ w) ∂μ
+      = (∫ w, (c₁ * f₁ w + c₂ * f₂ w + c₃ * f₃ w + c₄ * f₄ w + c₅ * f₅ w) ∂μ)
+        + ∫ w, c₆ * f₆ w ∂μ :=
+    integral_add ((((i₁.add i₂).add i₃).add i₄).add i₅) i₆
+  have e₄ : ∫ w, (c₁ * f₁ w + c₂ * f₂ w + c₃ * f₃ w + c₄ * f₄ w + c₅ * f₅ w) ∂μ
+      = (∫ w, (c₁ * f₁ w + c₂ * f₂ w + c₃ * f₃ w + c₄ * f₄ w) ∂μ) + ∫ w, c₅ * f₅ w ∂μ :=
+    integral_add (((i₁.add i₂).add i₃).add i₄) i₅
+  have e₃ : ∫ w, (c₁ * f₁ w + c₂ * f₂ w + c₃ * f₃ w + c₄ * f₄ w) ∂μ
+      = (∫ w, (c₁ * f₁ w + c₂ * f₂ w + c₃ * f₃ w) ∂μ) + ∫ w, c₄ * f₄ w ∂μ :=
+    integral_add ((i₁.add i₂).add i₃) i₄
+  have e₂ : ∫ w, (c₁ * f₁ w + c₂ * f₂ w + c₃ * f₃ w) ∂μ
+      = (∫ w, (c₁ * f₁ w + c₂ * f₂ w) ∂μ) + ∫ w, c₃ * f₃ w ∂μ :=
+    integral_add (i₁.add i₂) i₃
+  have e₁ : ∫ w, (c₁ * f₁ w + c₂ * f₂ w) ∂μ
+      = (∫ w, c₁ * f₁ w ∂μ) + ∫ w, c₂ * f₂ w ∂μ :=
+    integral_add i₁ i₂
+  rw [e₅, e₄, e₃, e₂, e₁, integral_const_mul, integral_const_mul, integral_const_mul,
+    integral_const_mul, integral_const_mul, integral_const_mul]
+
+/-- **`hRg` AT `Zₙ`, WITH THE GRADING KEPT — the corrected form of item (c).**
+
+The conclusion has exactly the shape `exists_studentized_low_range_window_bound` asks for, `r³`
+times a cubic-plus-quadratic in `|θ|` with `n`-free coefficients, but the `n`-free quantity it
+demands is the *discounted combination* `N₃ + 3rN₄ + 3r²N₅ + r³N₆`, not `N₆` on its own.  That
+is the whole difference from `integral_surrogateRemGraded_le`, and it is the difference between
+a satisfiable and an unsatisfiable hypothesis: `N₆ = ∫A³` contains the monomial `|u|³|v|⁶`,
+which is `n^{3/2}` and not `O(1)`, while `r³N₆` is `n^{-3/2}·n^{3/2} = O(1)`. -/
+theorem integral_surrogateRemGraded_le_of_graded (μ : Measure (EuclideanSpace ℝ (Fin 2)))
+    {σ r : ℝ} (hr : 0 ≤ r) (θ : ℝ) {N₃ N₄ N₅ N₆ Q₃ Q₄ : ℝ}
+    (hi₃ : Integrable (fun w => surrGradedLin σ w ^ 3) μ)
+    (hi₄ : Integrable (fun w => surrGradedLin σ w ^ 2 * surrGradedBlk σ w) μ)
+    (hi₅ : Integrable (fun w => surrGradedLin σ w * surrGradedBlk σ w ^ 2) μ)
+    (hi₆ : Integrable (fun w => surrGradedBlk σ w ^ 3) μ)
+    (hq₃ : Integrable (fun w => surrGradedLin σ w * surrGradedBlk σ w) μ)
+    (hq₄ : Integrable (fun w => surrGradedBlk σ w ^ 2) μ)
+    (h₃ : (∫ w, surrGradedLin σ w ^ 3 ∂μ) ≤ N₃)
+    (h₄ : (∫ w, surrGradedLin σ w ^ 2 * surrGradedBlk σ w ∂μ) ≤ N₄)
+    (h₅ : (∫ w, surrGradedLin σ w * surrGradedBlk σ w ^ 2 ∂μ) ≤ N₅)
+    (h₆ : (∫ w, surrGradedBlk σ w ^ 3 ∂μ) ≤ N₆)
+    (hQ₃ : (∫ w, surrGradedLin σ w * surrGradedBlk σ w ∂μ) ≤ Q₃)
+    (hQ₄ : (∫ w, surrGradedBlk σ w ^ 2 ∂μ) ≤ Q₄) :
+    ∫ w, surrogateRemGraded θ (w 0 / σ) (w 1 / σ ^ 2) r ∂μ
+      ≤ r ^ 3 * (|θ| ^ 3 / 6 * (N₃ + 3 * r * N₄ + 3 * r ^ 2 * N₅ + r ^ 3 * N₆)
+          + θ ^ 2 / 2 * (2 * Q₃ + r * Q₄)) := by
+  have hcongr : ∫ w, surrogateRemGraded θ (w 0 / σ) (w 1 / σ ^ 2) r ∂μ
+      = ∫ w, (|θ| ^ 3 / 6 * r ^ 3 * surrGradedLin σ w ^ 3
+          + |θ| ^ 3 / 6 * (3 * r ^ 4) * (surrGradedLin σ w ^ 2 * surrGradedBlk σ w)
+          + |θ| ^ 3 / 6 * (3 * r ^ 5) * (surrGradedLin σ w * surrGradedBlk σ w ^ 2)
+          + |θ| ^ 3 / 6 * r ^ 6 * surrGradedBlk σ w ^ 3
+          + θ ^ 2 / 2 * (2 * r ^ 3) * (surrGradedLin σ w * surrGradedBlk σ w)
+          + θ ^ 2 / 2 * r ^ 4 * surrGradedBlk σ w ^ 2) ∂μ :=
+    integral_congr_ae (Filter.Eventually.of_forall fun w =>
+      surrogateRemGraded_eq_blocks σ θ r w)
+  rw [hcongr, integral_lin6 μ hi₃ hi₄ hi₅ hi₆ hq₃ hq₄]
+  have c₁ : (0 : ℝ) ≤ |θ| ^ 3 / 6 * r ^ 3 := by positivity
+  have c₂ : (0 : ℝ) ≤ |θ| ^ 3 / 6 * (3 * r ^ 4) := by positivity
+  have c₃ : (0 : ℝ) ≤ |θ| ^ 3 / 6 * (3 * r ^ 5) := by positivity
+  have c₄ : (0 : ℝ) ≤ |θ| ^ 3 / 6 * r ^ 6 := by positivity
+  have c₅ : (0 : ℝ) ≤ θ ^ 2 / 2 * (2 * r ^ 3) := by positivity
+  have c₆ : (0 : ℝ) ≤ θ ^ 2 / 2 * r ^ 4 := by positivity
+  nlinarith [mul_le_mul_of_nonneg_left h₃ c₁, mul_le_mul_of_nonneg_left h₄ c₂,
+    mul_le_mul_of_nonneg_left h₅ c₃, mul_le_mul_of_nonneg_left h₆ c₄,
+    mul_le_mul_of_nonneg_left hQ₃ c₅, mul_le_mul_of_nonneg_left hQ₄ c₆]
+
+/-! #### The ledger of the correction, as arithmetic
+
+The four lemmas below are the exponents the paragraph above quotes.  They are stated on `rpow`
+so that nothing is hidden in a cast, in the style of `crude_graded_ledger_exponent`. -/
+
+/-- **The second coordinate's root moments, at every order.**  The single-large-summand term of
+a Rosenthal bound for the second coordinate contributes `n^{1−p/2}·E|η̃|^p`, and with
+`|η̃| ≤ τ² = n` and `E η̃⁴ = O(1)` (which is what `hF8` buys) that is `n^{1−p/2}·n^{p−4}`.  The
+exponent is `p/2 − 3`: the second coordinate's root moments are `O(1)` **exactly up to `p = 6`**
+and grow past it. -/
+lemma second_coord_root_moment_exponent {n : ℕ} (hn : 0 < n) (p : ℝ) :
+    (n : ℝ) ^ (1 - p / 2) * (n : ℝ) ^ (p - 4) = (n : ℝ) ^ (p / 2 - 3) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_add h0]
+  ring_nf
+
+/-- At `p = 6` the exponent is `0`: `E|w₁|⁶ = O(1)`, which is the wave-49 arithmetic and is
+correct. -/
+lemma second_coord_root_sixth_moment_bounded {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) ^ (1 - (6 : ℝ) / 2) * (n : ℝ) ^ ((6 : ℝ) - 4) = 1 := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_add h0]
+  norm_num
+
+/-- At `p = 9` the exponent is `3/2`: `E|w₁|⁹ ≍ n^{3/2}`, **not** `O(1)`.  This is the wave-49
+claim that fails, and with it the hypothesis `h9` of
+`integral_surrogateRemGraded_le_of_moments`. -/
+lemma second_coord_root_ninth_moment_exponent {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) ^ (1 - (9 : ℝ) / 2) * (n : ℝ) ^ ((9 : ℝ) - 4) = (n : ℝ) ^ ((3 : ℝ) / 2) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_add h0]
+  norm_num
+
+/-- **The collapsed ledger at the worst monomial misses by exactly one power of `n`.**  At `r³`
+the monomial `|u|³|v|⁶` costs `n^{−3/2}·n^{3/2} = 1`, against a required `n⁻¹`. -/
+lemma collapsed_worst_monomial_ledger {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) ^ (-(3 : ℝ) / 2) * (n : ℝ) ^ ((3 : ℝ) / 2) = 1 := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_add h0]
+  norm_num
+
+/-- **The graded ledger at the same monomial clears with `n^{-1/2}` to spare.**  At its own `r⁶`
+the monomial costs `n^{−3}·n^{3/2} = n^{−3/2}`. -/
+lemma graded_worst_monomial_ledger {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) ^ (-(3 : ℝ)) * (n : ℝ) ^ ((3 : ℝ) / 2) = (n : ℝ) ^ (-(3 : ℝ) / 2) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_add h0]
+  norm_num
+
+/-- **Buying the ninth moment with moments instead costs twelve.**  With `E|η|^q = O(1)` the
+truncation bound reads `E|η̃|⁹ ≤ (τ²)^{9−q}E|η|^q = n^{9−q}`, so the ninth root moment carries
+`n^{11/2−q}`. -/
+lemma second_coord_ninth_moment_exponent_of_moments {n : ℕ} (hn : 0 < n) (q : ℝ) :
+    (n : ℝ) ^ (1 - (9 : ℝ) / 2) * (n : ℝ) ^ ((9 : ℝ) - q) = (n : ℝ) ^ ((11 : ℝ) / 2 - q) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_add h0]
+  ring_nf
+
+/-- …and that exponent is `≤ 0` exactly from `q = 6` on.  Six moments of `η = ξ² − σ²` is
+**twelve** moments of `F`, against the eight the headline carries. -/
+lemma second_coord_ninth_moment_threshold (q : ℕ) :
+    (11 : ℝ) / 2 - (q : ℝ) ≤ 0 ↔ 6 ≤ q := by
+  constructor
+  · intro h
+    by_contra hc
+    push_neg at hc
+    interval_cases q <;> norm_num at h
+  · intro h
+    have : (6 : ℝ) ≤ (q : ℝ) := by exact_mod_cast h
+    linarith
+
 /-- **One-term Edgeworth expansion for the studentized sample mean, uniform in the argument.**
 
 Under a finite fourth moment and absolute continuity of the sampling law, the sampling
@@ -17964,7 +18344,70 @@ CLAIM OTHERWISE.**
      and the wave-48 phrase "(d) the composition, unchanged" does not name it.
 
   **This theorem is therefore still `sorry`, the file is at one `sorry`, and Batch 12 is not
-  complete.** -/
+  complete.**
+
+---
+
+**Status after wave 50. ITEM 1 WAS MIS-STATED: THE REDUCTION TO FOUR SCALAR MOMENTS IS LOSSY,
+AND THE LOSS IS THE `r²≤r` COLLAPSE WAVE 25 ALREADY PROVED FATAL.  THE MOMENT MACHINERY IS
+BUILT — ROSENTHAL AT ORDER SIX IS PROVED — AND ITEM 1 IS NOW A NAMED, FINITE LIST.**
+
+* **THE CORRECTION.**  `integral_surrogateRemGraded_le` proves `hRg` by passing through
+  `surrogateRemGraded_le`, i.e. by collapsing every power of `r` onto a single `r³`.  The
+  wave-25 note above `surrogateRemGraded` is a standing record that this collapse is not
+  harmless, and wave 49 performed it anyway.  Its consequence
+  `integral_surrogateRemGraded_le_of_moments` is a true lemma with an **unsatisfiable
+  hypothesis**: `h9` asks for an `n`-free bound on `E|w₀|⁹ + E|w₁|⁹`, and while three of the
+  wave-49 four are `O(1)`, `E|w₁|⁹` is not.  The second coordinate's root moments carry
+  `n^{p/2−3}` (`second_coord_root_moment_exponent`) — `O(1)` **exactly up to `p = 6`**
+  (`second_coord_root_sixth_moment_bounded`, which is the wave-49 arithmetic and is correct)
+  and `n^{3/2}` at `p = 9` (`second_coord_root_ninth_moment_exponent`).  Wave 49 checked the
+  ninth moment on the *first* coordinate and the sixth on the second, and never checked the one
+  that fails.  Nor is it repairable: lowering `τ` is blocked by the change of law from below,
+  and buying it with moments needs `E|η|⁶`, i.e. **twelve** moments of `F`
+  (`second_coord_ninth_moment_exponent_of_moments`, `second_coord_ninth_moment_threshold`),
+  against the `hF8` the headline carries.
+
+* **WHAT REPAIRS IT IS THE GRADING, AND THE MARGIN IS `n^{1/2}`.**  The offending monomial is
+  `|u|³|v|⁶`, the top of `A³`.  At the collapsed `r³` it costs `n^{−3/2}·n^{3/2} = O(1)` and
+  misses the required `O(n⁻¹)` by the full factor `n` (`collapsed_worst_monomial_ledger`); at
+  its own `r⁶` it costs `n^{−3}·n^{3/2} = n^{−3/2}` and clears with `n^{−1/2}` to spare
+  (`graded_worst_monomial_ledger`).  `integral_surrogateRemGraded_le_of_graded` is `hRg` proved
+  with the grading kept.  It delivers exactly the shape
+  `exists_studentized_low_range_window_bound` asks for — `r³` times a cubic-plus-quadratic in
+  `|θ|` — but the `n`-free quantity it demands is the *discounted combination*
+  `N₃ + 3rN₄ + 3r²N₅ + r³N₆` over the six block integrals of `P = |u||v|/2` and
+  `A = |u|³/2 + 3|u||v|²/8`, not `N₆` on its own.  `surrogateRemGraded_eq_blocks` is the exact
+  monomial identity underneath it.
+
+* **THE MOMENT MACHINERY, BUILT AT EVERY ORDER.**  Wave 49 said "what is missing is the
+  Rosenthal inequality itself, not the moments", and the file had the order-four analogue and
+  nothing above it.  It now has the general device: `integral_add_pow_of_bounded` (the binomial
+  theorem under the integral at every order) composed with the head/tail split
+  `integral_pi_succ_of_bounded` gives the **exact moment recursion of an iid sum**,
+  `M_p(n+1) = ∑_{k≤p} C(p,k)·m_k·M_{p−k}(n)` (`integral_pi_sum_pow_succ`).  The centring
+  `m₁ = 0` is what makes it close: at `p = 3` it leaves `M₃(n) = n·m₃` **exactly**
+  (`integral_pi_sum_pow_three`), and at `p = 6` it kills the `M₅` term outright, so the sixth
+  moment never needs the fifth.  `integral_pi_sum_pow_six_le` is the resulting four-term
+  Rosenthal bound `n·m₆ + 15n²m₂m₄ + 10n²m₃² + 15n³m₂³`, which is `O(n³)` against the
+  normalisation `n⁻³` on *both* coordinates at the truncation level `τ = √n` — the first with
+  `m₄ ≤ μ₄`, the second with `m₆ ≤ τ⁴m₄ ≲ n²μ₈` by `hF8`.
+
+* **WHAT ITEM 1 OWES NOW, AND IT IS A FINITE LIST.**  Under the graded interface every one of
+  the six blocks clears, and the arithmetic is: `N₃ = ∫P³` needs only `E X⁶, E Y⁶` and is
+  `O(1)` on the order-six bound alone; `Q₃ = ∫PA` and `Q₄ = ∫A²` are degree `≤ 6` and `O(1)` by
+  Hölder against `E X⁶, E X⁸, E Y⁶`; `N₄` (degree 7), `N₅` (degree 8) and `N₆` (degree 9) grow,
+  as `n^{1/7}`, `n^{5/8}` and `n` respectively, and are discounted by `r`, `r²`, `r³`.  So the
+  two things still owed are (i) the moment recursion run at orders `8` and `10` — the same
+  induction, with the odd order `9` following from `|s|⁹ ≤ s⁸ + s¹⁰` — and (ii) the Hölder
+  identification of the six mixed blocks in terms of the coordinate moments.  Neither is a new
+  device; both are the recursion above plus Cauchy–Schwarz.  Items 2–5 of the wave-49 residue
+  are untouched by this wave, and item 5's budget statement (`N = 138` at `M = n^{23/24}`)
+  still stands unsupplied.
+
+  **This theorem is therefore still `sorry`, the file is at one `sorry`, and Batch 12 is not
+  complete.  Wave 50 did not close the headline; it corrected item 1's statement, built the
+  moment machinery it needs, and closed its order-six half.** -/
 
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
