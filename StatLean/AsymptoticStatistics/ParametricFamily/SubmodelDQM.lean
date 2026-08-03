@@ -10,7 +10,8 @@ Differentiability-in-quadratic-mean (DQM), Fisher information, and mutual
 absolute continuity for the multi-dim parametric submodel `paramSubmodel`
 constructed in `Parametric/SubmodelFromScores.lean`.
 
-This is Slice II-β of Phase II / Track B in milestone 11.
+These results supply the analytic submodel ingredients used by finite-dimensional
+lower-bound arguments.
 
 ## Contents
 
