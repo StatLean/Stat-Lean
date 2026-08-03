@@ -21117,8 +21117,11 @@ DOES NOT EXIST.  ITEM 2 AND THE ASSEMBLY ARE UNTOUCHED.  THIS THEOREM IS STILL `
      `sum_dyadic_strata_le`), the affine transport of §item 3, and
      `exists_abs_skewness_map_truncAt_sqrt_sub_le` to move `γₙ` to `γ`.  Every one of the four
      Esseen slots is now `O(n⁻¹)`: `Kw∫windowDom₁ = O(n⁻¹)`, `2Krρ₁³/π = O(n⁻¹)`
-     (`low_range_ledger_exponent`), `2M₁log(ρ/ρ₁)/π = O(n⁻¹)` (`middle_range_log_ledger`) and
-     `2M/(δπ²ρ) = O(n⁻¹)` (`outer_range_tail_weight_eq`).
+     (`low_range_ledger_exponent`, `rpow_sixth_cube`), `2M₁log(ρ/ρ₁)/π = O(n⁻¹)`
+     (`middle_range_log_ledger`) and `2M/(δπ²ρ) = O(n⁻¹)` (`outer_range_tail_weight_eq`), and
+     the four together are `studentized_esseen_ledger` — three of them *exact* identities, with
+     slack only in the middle one.  So the assembly's arithmetic is verified rather than
+     asserted, which no previous restatement of the chain could say.
 
   **This theorem is therefore still `sorry`, the file is at one `sorry`, and Batch 12 is not
   complete.  Wave 53 landed item 3, removed the `N = 138` requirement by correcting the split
