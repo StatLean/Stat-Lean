@@ -15141,6 +15141,56 @@ lemma studentized_outer_range_gap_le (γ : ℝ) {n : ℕ} (hn : 1 ≤ n) (μ : M
   linarith
 
 
+lemma rpow_sixth_cube {n : ℕ} (hn : 1 ≤ n) :
+    ((n : ℝ) ^ ((1 : ℝ) / 6)) ^ 3 = Real.sqrt (n : ℝ) := by
+  have hnR : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hn0 : (0 : ℝ) < (n : ℝ) := by linarith
+  rw [← Real.rpow_natCast ((n : ℝ) ^ ((1 : ℝ) / 6)) 3, ← Real.rpow_mul hn0.le,
+    Real.sqrt_eq_rpow]
+  norm_num
+
+/-- **THE FOUR SLOTS OF THE STUDENTIZED ESSEEN SPLIT, EACH `O(n⁻¹)` — THE COMPOSITION'S LEDGER.**
+This is `esseen_split_low`'s conclusion read at the chain's own parameters: `δ = n⁻¹`,
+`ρ₁ = n^{1/6}`, `ρ = n²`, envelope constant `Kw n⁻¹`, cubic constant `Kr n^{-3/2}` (the two
+orders (U4′) returns), middle constant `M₁ = C₁/(n√n)` (the certificate's, via
+`exists_studentized_middle_range_gap_bound`) and a bare tail constant `M` (via
+`studentized_outer_range_gap_le`).  Three of the four slots are *exact* identities and only the
+middle one is an inequality:
+
+`Kw n⁻¹·I`, `2Kr n^{-3/2}·(n^{1/6})³/π = 2Kr/(πn)`, `2M₁log(ρ/ρ₁)/π ≤ 22C₁/(3πn)`,
+`2M/(δπ²ρ) = 2M/(π²n)`.
+
+**Every slot is `O(n⁻¹)` on the nose and there is no slack anywhere except in the middle one,
+where the logarithm leaves `n^{-1/2}log n`.**  What the assembly still owes is `hlow` — item 2 of
+the residue — and the peeled window; the ledger itself is verified here. -/
+lemma studentized_esseen_ledger {Kw Kr C₁ M I : ℝ} (hC₁ : 0 ≤ C₁) {n : ℕ} (hn : 1 ≤ n) :
+    Kw * ((n : ℝ))⁻¹ * I
+        + 2 * (Kr * ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹) * ((n : ℝ) ^ ((1 : ℝ) / 6)) ^ 3 / Real.pi
+        + 2 * (C₁ / ((n : ℝ) * Real.sqrt (n : ℝ)))
+            * Real.log ((n : ℝ) ^ (2 : ℝ) / (n : ℝ) ^ ((1 : ℝ) / 6)) / Real.pi
+        + 2 * M / (((n : ℝ))⁻¹ * Real.pi ^ 2 * (n : ℝ) ^ 2)
+      ≤ (Kw * I + 2 * Kr / Real.pi + 22 * C₁ / (3 * Real.pi) + 2 * M / Real.pi ^ 2)
+          / (n : ℝ) := by
+  have hnR : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hn0 : (0 : ℝ) < (n : ℝ) := by linarith
+  have hn0' : 0 < n := hn
+  have hs : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hn0
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have s1 : Kw * ((n : ℝ))⁻¹ * I = Kw * I / (n : ℝ) := by field_simp
+  have s2 : 2 * (Kr * ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹) * ((n : ℝ) ^ ((1 : ℝ) / 6)) ^ 3 / Real.pi
+      = 2 * Kr / Real.pi / (n : ℝ) := by
+    rw [rpow_sixth_cube hn]
+    field_simp
+  have s3 := middle_range_log_ledger hC₁ hn
+  have s4 := outer_range_tail_weight_eq M hn0'
+  have hsum : Kw * I / (n : ℝ) + 2 * Kr / Real.pi / (n : ℝ) + 22 * C₁ / (3 * Real.pi) / (n : ℝ)
+      + 2 * M / Real.pi ^ 2 / (n : ℝ)
+      = (Kw * I + 2 * Kr / Real.pi + 22 * C₁ / (3 * Real.pi) + 2 * M / Real.pi ^ 2)
+          / (n : ℝ) := by
+    field_simp
+  linarith
+
+
 /-! #### The middle range in the shape `esseen_split_low`'s `hmid` consumes (wave 53)
 
 `exists_studentized_middle_range_bound` bounds the surrogate's transform; `hmid` asks for the
