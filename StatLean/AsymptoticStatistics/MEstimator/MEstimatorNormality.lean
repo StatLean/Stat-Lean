@@ -543,7 +543,7 @@ theorem mEstimator_normality_of_expansion
 
 The book-faithful headline `m_estimator_normality` (which reduces to
 `mEstimator_normality_of_expansion` above) has **moved** to
-`AsymptoticStatistics/MEstimator/AsymptoticNormality.lean`. It must consume both
+`StatLean/AsymptoticStatistics/MEstimator/AsymptoticNormality.lean`. It must consume both
 `Rate.mEstimator_sqrtn_rate` (§D) and `LinearizationEquicontinuity` (§C); since
 `MEstimator/Rate.lean` imports *this* file, the headline cannot live here without an
 import cycle. The new file imports `Rate` + `LinearizationEquicontinuity` + this file

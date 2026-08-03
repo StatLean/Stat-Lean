@@ -20,7 +20,7 @@ for any `λ ∈ [0, 1]`.
 
 The imported API does not package the Brunn-Minkowski inequality. This
 file proves the one-dimensional case as a `ForMathlib` brick, used by
-`AsymptoticStatistics/ForMathlib/PrekopaLeindler.lean`.
+`StatLean/AsymptoticStatistics/ForMathlib/PrekopaLeindler.lean`.
 
 Strategy: prove the **compact** case directly via the standard "shift by
 sup/inf" trick (`A` shifted into `(-∞, 0]` and `B` shifted into

@@ -1,7 +1,7 @@
 # Concrete-model EIF template
 
 This guide describes the standard layout for a concrete efficient influence
-function (EIF) example under `AsymptoticStatistics/Examples/`. The library
+function (EIF) example under `StatLean/AsymptoticStatistics/Examples/`. The library
 supports both verification of a supplied candidate and derivation by
 efficient-score or nuisance-space projection.
 
@@ -10,8 +10,8 @@ efficient-score or nuisance-space projection.
 Create two modules:
 
 ```text
-AsymptoticStatistics/Examples/<ModelName>/Model.lean
-AsymptoticStatistics/Examples/<ModelName>/EIF.lean
+StatLean/AsymptoticStatistics/Examples/<ModelName>/Model.lean
+StatLean/AsymptoticStatistics/Examples/<ModelName>/EIF.lean
 ```
 
 Put the observation type, measurable-space instance, model helpers, and
@@ -68,11 +68,11 @@ import StatLean.AsymptoticStatistics.Core.MassMethod
 Build it by its library name:
 
 ```bash
-lake build AsymptoticStatistics.Examples.<ModelName>.EIF
+lake build StatLean.AsymptoticStatistics.Examples.<ModelName>.EIF
 ```
 
 If the module belongs in the aggregate public import, add it to
-`AsymptoticStatistics.lean`. Check the headline with a small Lean file:
+`StatLean/AsymptoticStatistics.lean`. Check the headline with a small Lean file:
 
 ```lean
 import StatLean.AsymptoticStatistics.Examples.<ModelName>.EIF

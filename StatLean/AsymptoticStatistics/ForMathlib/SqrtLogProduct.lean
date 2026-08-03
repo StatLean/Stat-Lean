@@ -28,8 +28,8 @@ through two moves:
    constant `2` is exact (equality on a point mass `a = δ_{p₀}`).
 
 These sit between `NestedBracketPartition.card_le`
-(`AsymptoticStatistics/EmpiricalProcess/NestedPartition.lean`) and the dyadic
-entropy series of `AsymptoticStatistics/EmpiricalProcess/Bracketing.lean`.
+(`StatLean/AsymptoticStatistics/EmpiricalProcess/NestedPartition.lean`) and the dyadic
+entropy series of `StatLean/AsymptoticStatistics/EmpiricalProcess/Bracketing.lean`.
 
 Reference: vdV §19.6 p.286-287.
 -/
