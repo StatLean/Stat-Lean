@@ -20975,7 +20975,105 @@ THIS THEOREM IS STILL `sorry` AND WAVE 51 DOES NOT CLAIM OTHERWISE.**
 
   **This theorem is therefore still `sorry`, the file is at one `sorry`, and Batch 12 is not
   complete.  Wave 51 closed item 1 end to end and corrected the plan's own prescription for its
-  odd order; it did not attempt the composition.** -/
+  odd order; it did not attempt the composition.**
+
+---
+
+**Status after wave 53.  ITEMS 3 AND 5's BUDGET HALF ARE CLOSED, THE MIDDLE RANGE IS NOW A
+THEOREM RATHER THAN A BUDGET STATEMENT, AND THE `N = 138` REQUIREMENT THAT FIVE WAVES CARRIED
+DOES NOT EXIST.  ITEM 2 AND THE ASSEMBLY ARE UNTOUCHED.  THIS THEOREM IS STILL `sorry` AND WAVE
+53 DOES NOT CLAIM OTHERWISE.**
+
+* **ITEM 3 IS IN THE FILE.**  Wave 52 proved it in a scratch file and was killed by cluster
+  maintenance before moving it in; the scratch file was then dropped.  It is recovered and landed
+  as the section above `centringMap`.  What item 3 owed was never the pointwise identity —
+  `pairAt_zero_eq_affine`/`pairAt_one_eq_affine` have been in the file since wave 49 — but its
+  consequence for the transform of the *root*, and that consequence is an **equality**:
+  `‖φ(t)‖ = ‖φ′(Lᵀt)‖` exactly (`norm_charFun_vecRootLaw_pairAt_transfer`), because the
+  translation contributes a unimodular exponential which the modulus discards.  The only
+  quantitative content is the frequency distortion `‖Lᵀt‖ ≤ (1 + 2|δ|)‖t‖`, and at `τ = √n` that
+  is `1 + O(n^{-3/2})` (`norm_centringAdj_recentred_le`).  Wave 49 priced the transfer as if it
+  might lose something; it loses nothing.
+
+* **THE CORRECTION, AND IT IS TO A CLAIM FIVE WAVES REPEATED: THE MIDDLE RANGE COSTS A
+  LOGARITHM.**  `esseen_split_low` priced its middle range with the crude Esseen branch
+  `1/(π|ξ|)` evaluated at the *inner edge*, giving `2M₁ρ/(πρ₁)` — `M₁` against the **ratio** of
+  the radii.  Wave 43's docstring names the sharper price and declines it: *"the logarithm would
+  be sharper and is not needed, since every candidate route for the middle range produces an `M₁`
+  that is smaller than any power of `n`."*  **That justification is false.**  The route the file
+  actually has is the certificate, and it produces `M₁ = C/(n√n)` — not smaller than any power of
+  `n`.  At `ρ₁ = n^{1/6}`, `ρ = n²`:
+
+  `ratio:      M₁·ρ/ρ₁ = n^{-3/2}·n^{11/6} = n^{1/3}`   — fails, and forces `M₁ ≤ n^{−17/6}`;
+  `logarithm:  M₁·log(ρ/ρ₁) = (11/6)n^{-3/2}log n`      — clears, with `n^{-1/2}log n` to spare.
+
+  The logarithm is elementary (the annulus is two intervals, `∫x⁻¹ = log`), and
+  `esseen_split_low` now carries it (`middle_annulus_bound`, `setIntegral_inv_abs_annulus`).
+  `middle_range_log_ledger` is the reading: `2·(C/(n√n))·log(n²/n^{1/6})/π ≤ 22C/(3π)·n⁻¹`.
+
+  **Consequence: the entire `N = 138` at `M = n^{23/24}` budget item of item 5 — stated by wave
+  46, repeated by waves 47, 49, 50 and 51, and never supplied — prices a requirement that does
+  not exist.**  `leakage_ledger_radius_138_le`, `leakage_ledger_radius_137_gt`,
+  `tail_ledger_radius_seventeen_sixths`, `tail_ledger_exponent_general`,
+  `leakage_ledger_general_radius` and the note that `bulkRadius` must be parameterised are all
+  true arithmetic and are kept, marked SUPERSEDED; **nothing in the composition calls them.**
+  `N = 10` at `M = n^{5/8}`, which `exists_fourierCertificate_deltaSurrogate` already proves, is
+  enough.
+
+* **AND THE MIDDLE RANGE IS NOW PROVED, NOT MERELY AFFORDABLE.**
+  `exists_studentized_middle_range_gap_bound` is exactly `esseen_split_low`'s `hmid` at
+  `ρ₁ = n^{1/6}`, `ρ = n²`:
+
+  `‖φ_{surrogate}(−2πξ) − 𝓕q_n(−2πξ)‖ ≤ C/(n√n)`  for  `n^{1/6} ≤ |ξ| ≤ n²`, `n ≥ N`,
+
+  over `exists_studentized_middle_range_bound` (the surrogate half) and
+  `exists_exp_neg_pi_sq_sixth_le` (the comparison density's, which is `e^{−π²n^{1/3}}` there).
+  Three elementary inputs were needed and one of them is a real ordering constraint:
+
+  - `exists_pow_le_rpow_neg` — a geometric `cⁿ` beats every negative power of `n`;
+  - `exists_const_mul_sqrt_log_le_rpow` — `√(log n)` is below every positive power of `n`, which
+    is how the certificate's band condition `2σKb√(log n) ≤ |θ|` is met by the middle range's own
+    floor `n^{1/6}`;
+  - **`exists_fourierCertificate_deltaSurrogate_exponent`.**  The consumer must choose `Kb` large
+    enough that `n^{−λKb²/4}` beats the polynomial mass `Γ`, whose degree is `K`; but
+    `exists_fourierCertificate_deltaSurrogate` takes `Kb` as *input* and returns `K`, so `K` is
+    not available when `Kb` is chosen and the composition as stated is **circular**.  `K` comes
+    from input (A), which never mentions the band, so it can be pulled in front — the restatement
+    is the same proof with the (A)-`obtain` moved above the `Kb` binder.  No wave had noticed the
+    ordering.
+
+  Also proved on the way: the Cramér base returned by
+  `exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt` is nonnegative.  Its statement only
+  says `c < 1`; `cⁿ` at an *odd* `n ≥ N` is a norm, hence `≥ 0`, and `c < 0` is refuted.
+
+* **WHAT THE RESIDUE IS NOW.**  Of the wave-49 list, items 1 (wave 51), 3 (wave 52/53) and 4
+  (wave 52) are closed, and item 5's budget half is closed by the correction above.  What remains
+  is exactly two things:
+
+  2. **the eight moment identifications of the low range at `Zₙ`** — `hRg`, `hB1`, `hB2`, `hB5`,
+     `hB6`, `h3a`, `h3b`, `h4` of `exists_studentized_low_range_window_bound`, produced at the
+     re-centred truncated pair over the arithmetic half wave 48 proved
+     (`exists_const_of_damped_poly`) and the graded remainder wave 51 closed
+     (`integral_surrogateRemGraded_le_of_scalar_moments`).  This is the only remaining item with
+     measure theory in it;
+  5. **the assembly**, which is now a chain of statements that all exist:
+     `abs_studentizedRootCDF_sub_truncAt_le` at `τ = √n` (error `μ₄/n`),
+     `studentizedRootCDF_eq_vecRootLaw` with `abs_exactStudent_sub_deltaSurrogate_le`,
+     `esseen_split_low` at `δ = n⁻¹`, `ρ₁ = n^{1/6}`, `ρ = n²` — whose `hlow` is
+     `exists_studentized_low_range_window_bound`, whose `hmid` is
+     `exists_studentized_middle_range_gap_bound` and whose `htail` is
+     `studentized_outer_range_gap_le` — `abs_measure_Iic_sub_densityCDF_le_charFun`, the peeled
+     window (`abs_measure_le_sub_le_of_peel_strata` over `measure_pi_stratum_le` and
+     `sum_dyadic_strata_le`), the affine transport of §item 3, and
+     `exists_abs_skewness_map_truncAt_sqrt_sub_le` to move `γₙ` to `γ`.  Every one of the four
+     Esseen slots is now `O(n⁻¹)`: `Kw∫windowDom₁ = O(n⁻¹)`, `2Krρ₁³/π = O(n⁻¹)`
+     (`low_range_ledger_exponent`), `2M₁log(ρ/ρ₁)/π = O(n⁻¹)` (`middle_range_log_ledger`) and
+     `2M/(δπ²ρ) = O(n⁻¹)` (`outer_range_tail_weight_eq`).
+
+  **This theorem is therefore still `sorry`, the file is at one `sorry`, and Batch 12 is not
+  complete.  Wave 53 landed item 3, removed the `N = 138` requirement by correcting the split
+  that created it, and turned the middle range from a budget statement into a theorem; it did not
+  attempt item 2 or the assembly.** -/
 
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
