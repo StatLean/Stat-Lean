@@ -87,7 +87,7 @@ export interface ResultEntry {
   shortRef?: string;
   /** Full reference block shown above the formalization notes. */
   reference?: ReferenceBlock;
-  /** source module path, e.g. "AsymptoticStatistics/Core/EIF.lean" */
+  /** source module path, e.g. "StatLean/AsymptoticStatistics/Core/EIF.lean" */
   file: string;
   /** relative doc-gen4 URL */
   docGenUrl: string;
