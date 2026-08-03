@@ -10784,6 +10784,994 @@ lemma integral_pi_sum_pow_six_le (F : Measure ℝ) [IsProbabilityMeasure F] {V :
       mul_nonneg hm2n hm4n, mul_nonneg (mul_nonneg hm2n hm2n) hm2n,
       mul_nonneg hn0 (mul_nonneg (mul_nonneg hm2n hm2n) hm2n)]
 
+/-! ### WAVE 51, ITEM 1(i): the moment recursion at orders eight and ten
+
+Wave 50 ran the recursion `integral_pi_sum_pow_succ` at orders three and six and left orders
+eight and ten -- the two the *graded* interface `integral_surrogateRemGraded_le_of_graded`
+consumes -- open.  What follows closes them, and with them the odd order nine, by
+`|s|⁹ ≤ (s⁸ + s¹⁰)/2`.
+
+**The shape, and why it is not the order-six shape.**  Order six is stated with its four
+moments explicit (`n·m₆ + 15n²m₂m₄ + 10n²m₃² + 15n³m₂³`).  Above order six that bookkeeping
+stops paying: the recursion at `p = 8` needs `M₅` and at `p = 10` needs `M₇`, both *odd* and
+both signed, and the sharp Rosenthal constants for them cost Cauchy--Schwarz on `m₃` in a form
+no `nlinarith` will find.  The bound below is stated instead against the single scale
+
+`A = 1 + ∫V² + ∫V⁴ ≥ 1`,  `B ≥ 1` the pointwise bound,
+
+in the shape `M_p(n) ≤ K_p·A^{p/2}·(n^{p/2} + n·B^{p-4})`.  This is deliberately crude in the
+regime where `∫V²` is small -- it is not Rosenthal's sharp inequality -- and it is *exactly*
+sharp in the regime the ledger uses, where `∫V²` and `∫V⁴` are `Θ(1)` and only `B` moves:
+
+* first coordinate, `B = τ = √n`:  `n^{p/2} + n·n^{(p-4)/2} = O(n^{p/2})`, so `E|w₀|^p = O(1)`;
+* second coordinate, `B = τ² = n`: `n^{p/2} + n·n^{p-4} = O(n^{p-3})`, so
+  `E|w₁|^p = O(n^{p/2-3})` -- which is `second_coord_root_moment_exponent` *exactly*, at every
+  order, and in particular `O(1)` at `p = 6` and `n^{3/2}` at `p = 9`.
+
+Both odd moments are removed the same way, by the pointwise AM-GM `2|s|^{2j+1} ≤ s^{2j}+s^{2j+2}`
+(`abs_integral_odd_aux`), so the whole development runs on even orders only.  The two induction
+steps are isolated as pure real arithmetic (`step_eight`, `step_ten`) over a pure `(n, B)` ledger
+(`step_eight_ledger`, `step_ten_ledger`); the measure theory is then a single expansion of the
+recursion. -/
+
+private lemma nat_pow_mono {n : ℕ} {i j : ℕ} (hi : 1 ≤ i) (hij : i ≤ j) :
+    (n : ℝ) ^ i ≤ (n : ℝ) ^ j := by
+  rcases Nat.eq_zero_or_pos n with h | h
+  · subst h
+    norm_num [zero_pow (show i ≠ 0 by omega), zero_pow (show j ≠ 0 by omega)]
+  · have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast h
+    exact pow_le_pow_right₀ h1 hij
+
+private lemma nB2_le8 {n : ℕ} {Bd : ℝ} : (n : ℝ) * Bd ^ 2 ≤ (n : ℝ) ^ 3 + Bd ^ 4 := by
+  have hn : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+  rcases le_or_gt ((n : ℝ)) (Bd ^ 2) with h | h
+  · nlinarith [pow_nonneg hn 3, sq_nonneg Bd]
+  · have h23 : (n : ℝ) ^ 2 ≤ (n : ℝ) ^ 3 := nat_pow_mono (by norm_num) (by norm_num)
+    nlinarith [sq_nonneg Bd]
+
+private lemma nB_le8 {n : ℕ} {Bd : ℝ} (hB : 1 ≤ Bd) : (n : ℝ) * Bd ≤ (n : ℝ) ^ 3 + Bd ^ 4 := by
+  have hn : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+  have h : (n : ℝ) * Bd ≤ (n : ℝ) * Bd ^ 2 := by
+    nlinarith [mul_nonneg (mul_nonneg hn (le_trans zero_le_one hB)) (sub_nonneg.2 hB)]
+  exact h.trans nB2_le8
+
+private lemma nB4_le10 {n : ℕ} {Bd : ℝ} : (n : ℝ) * Bd ^ 4 ≤ (n : ℝ) ^ 4 + Bd ^ 6 := by
+  have hn : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+  rcases le_or_gt ((n : ℝ)) (Bd ^ 2) with h | h
+  · nlinarith [pow_nonneg hn 4, pow_nonneg (sq_nonneg Bd) 2, sq_nonneg Bd,
+      pow_nonneg (sq_nonneg Bd) 3]
+  · have h34 : (n : ℝ) ^ 3 ≤ (n : ℝ) ^ 4 := nat_pow_mono (by norm_num) (by norm_num)
+    have hb4 : Bd ^ 4 ≤ (n : ℝ) ^ 2 := by nlinarith [sq_nonneg Bd]
+    nlinarith [pow_nonneg (sq_nonneg Bd) 3]
+
+private lemma nB3_le10 {n : ℕ} {Bd : ℝ} (hB : 1 ≤ Bd) :
+    (n : ℝ) * Bd ^ 3 ≤ (n : ℝ) ^ 4 + Bd ^ 6 := by
+  have hn : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+  have h : (n : ℝ) * Bd ^ 3 ≤ (n : ℝ) * Bd ^ 4 := by
+    nlinarith [mul_nonneg hn (pow_nonneg (le_trans zero_le_one hB) 3), sub_nonneg.2 hB]
+  exact h.trans nB4_le10
+
+private lemma nB2_le10 {n : ℕ} {Bd : ℝ} (hB : 1 ≤ Bd) :
+    (n : ℝ) * Bd ^ 2 ≤ (n : ℝ) ^ 4 + Bd ^ 6 := by
+  have hn : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+  have h : (n : ℝ) * Bd ^ 2 ≤ (n : ℝ) * Bd ^ 3 := by
+    nlinarith [mul_nonneg hn (sq_nonneg Bd), sub_nonneg.2 hB]
+  exact h.trans (nB3_le10 hB)
+
+private lemma Bn3_le10 {n : ℕ} {Bd : ℝ} (hB : 1 ≤ Bd) :
+    Bd * (n : ℝ) ^ 3 ≤ (n : ℝ) ^ 4 + Bd ^ 6 := by
+  have hn : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+  rcases le_or_gt Bd ((n : ℝ)) with h | h
+  · nlinarith [pow_nonneg hn 3, pow_nonneg (sq_nonneg Bd) 3]
+  · have hB0 : (0 : ℝ) ≤ Bd := le_trans zero_le_one hB
+    have hb : Bd ^ 4 ≤ Bd ^ 6 := pow_le_pow_right₀ hB (by norm_num)
+    have hn3 : (n : ℝ) ^ 3 ≤ Bd ^ 3 := pow_le_pow_left₀ hn h.le 3
+    have : Bd * (n : ℝ) ^ 3 ≤ Bd * Bd ^ 3 := by nlinarith
+    nlinarith [pow_nonneg hn 4]
+
+private lemma Bn2_le10 {n : ℕ} {Bd : ℝ} (hB : 1 ≤ Bd) :
+    Bd * (n : ℝ) ^ 2 ≤ (n : ℝ) ^ 4 + Bd ^ 6 := by
+  have h23 : (n : ℝ) ^ 2 ≤ (n : ℝ) ^ 3 := nat_pow_mono (by norm_num) (by norm_num)
+  have h : Bd * (n : ℝ) ^ 2 ≤ Bd * (n : ℝ) ^ 3 := by
+    nlinarith [le_trans zero_le_one hB]
+  exact h.trans (Bn3_le10 hB)
+
+private lemma Bn_le10 {n : ℕ} {Bd : ℝ} (hB : 1 ≤ Bd) : Bd * (n : ℝ) ≤ (n : ℝ) ^ 4 + Bd ^ 6 := by
+  have h12 : (n : ℝ) ^ 1 ≤ (n : ℝ) ^ 2 := nat_pow_mono (by norm_num) (by norm_num)
+  rw [pow_one] at h12
+  have h : Bd * (n : ℝ) ≤ Bd * (n : ℝ) ^ 2 := by nlinarith [le_trans zero_le_one hB]
+  exact h.trans (Bn2_le10 hB)
+
+private lemma B2n2_le10 {n : ℕ} {Bd : ℝ} : Bd ^ 2 * (n : ℝ) ^ 2 ≤ (n : ℝ) ^ 4 + Bd ^ 6 := by
+  have hn : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+  rcases le_or_gt ((n : ℝ)) (Bd ^ 2) with h | h
+  · have hn2 : (n : ℝ) ^ 2 ≤ (Bd ^ 2) ^ 2 := pow_le_pow_left₀ hn h 2
+    have : Bd ^ 2 * (n : ℝ) ^ 2 ≤ Bd ^ 2 * (Bd ^ 2) ^ 2 := by nlinarith [sq_nonneg Bd]
+    nlinarith [pow_nonneg hn 4]
+  · have h34 : (n : ℝ) ^ 3 ≤ (n : ℝ) ^ 4 := nat_pow_mono (by norm_num) (by norm_num)
+    have : Bd ^ 2 * (n : ℝ) ^ 2 ≤ (n : ℝ) * (n : ℝ) ^ 2 := by nlinarith [sq_nonneg (n : ℝ)]
+    nlinarith [pow_nonneg (sq_nonneg Bd) 3]
+
+private lemma B2n_le10 {n : ℕ} {Bd : ℝ} : Bd ^ 2 * (n : ℝ) ≤ (n : ℝ) ^ 4 + Bd ^ 6 := by
+  have h12 : (n : ℝ) ^ 1 ≤ (n : ℝ) ^ 2 := nat_pow_mono (by norm_num) (by norm_num)
+  rw [pow_one] at h12
+  have h : Bd ^ 2 * (n : ℝ) ≤ Bd ^ 2 * (n : ℝ) ^ 2 := by nlinarith [sq_nonneg Bd]
+  exact h.trans B2n2_le10
+
+private lemma n_le_n3 {n : ℕ} : (n : ℝ) ≤ (n : ℝ) ^ 3 := by
+  have := nat_pow_mono (n := n) (i := 1) (j := 3) (by norm_num) (by norm_num)
+  simpa using this
+
+private lemma n_le_n4 {n : ℕ} : (n : ℝ) ≤ (n : ℝ) ^ 4 := by
+  have := nat_pow_mono (n := n) (i := 1) (j := 4) (by norm_num) (by norm_num)
+  simpa using this
+
+private lemma n2_le_n3 {n : ℕ} : (n : ℝ) ^ 2 ≤ (n : ℝ) ^ 3 :=
+  nat_pow_mono (by norm_num) (by norm_num)
+
+private lemma n2_le_n4 {n : ℕ} : (n : ℝ) ^ 2 ≤ (n : ℝ) ^ 4 :=
+  nat_pow_mono (by norm_num) (by norm_num)
+
+private lemma n3_le_n4 {n : ℕ} : (n : ℝ) ^ 3 ≤ (n : ℝ) ^ 4 :=
+  nat_pow_mono (by norm_num) (by norm_num)
+
+/-- The pure `(n, B)` ledger of the order-eight step. -/
+private lemma step_eight_ledger {n : ℕ} {Bd : ℝ} (hB : 1 ≤ Bd) :
+    1120 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2) + 84 * ((n : ℝ) ^ 2 + (n : ℝ))
+        + 1120 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2) + 210 * ((n : ℝ) ^ 2 + (n : ℝ))
+        + 56 * ((n : ℝ) * Bd) + 28 * ((n : ℝ) * Bd ^ 2) + Bd ^ 4
+      ≤ 2400 * (4 * (n : ℝ) ^ 3 + 6 * (n : ℝ) ^ 2 + 4 * (n : ℝ) + 1 + Bd ^ 4) := by
+  have e1 : (n : ℝ) * Bd ^ 2 ≤ (n : ℝ) ^ 3 + Bd ^ 4 := nB2_le8
+  have e2 : (n : ℝ) * Bd ≤ (n : ℝ) ^ 3 + Bd ^ 4 := nB_le8 hB
+  have e3 : (n : ℝ) ^ 2 ≤ (n : ℝ) ^ 3 := n2_le_n3
+  have e4 : (n : ℝ) ≤ (n : ℝ) ^ 3 := n_le_n3
+  have e5 : (0 : ℝ) ≤ (n : ℝ) ^ 3 := pow_nonneg (Nat.cast_nonneg n) 3
+  have e6 : (0 : ℝ) ≤ Bd ^ 4 := by positivity
+  have e7 : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+  have e8 : (0 : ℝ) ≤ (n : ℝ) ^ 2 := sq_nonneg _
+  linarith
+
+set_option maxHeartbeats 1000000 in
+/-- **The order-eight induction step, as pure arithmetic.** -/
+private lemma step_eight {n : ℕ} {Bd a b m3 m5 m6 m8 M4 M5 M6 M8 : ℝ}
+    (hB : 1 ≤ Bd) (ha : 0 ≤ a) (hb : 0 ≤ b)
+    (hM4 : M4 ≤ 3 * (1 + a + b) ^ 2 * ((n : ℝ) ^ 2 + (n : ℝ))) (hM4n : 0 ≤ M4)
+    (hM6 : M6 ≤ 40 * (1 + a + b) ^ 3 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2)) (hM6n : 0 ≤ M6)
+    (hM5 : |M5| ≤ (M4 + M6) / 2)
+    (hm3 : |m3| ≤ 1 + a + b) (hm5 : |m5| ≤ Bd * (1 + a + b))
+    (hm6 : |m6| ≤ Bd ^ 2 * (1 + a + b)) (hm8 : |m8| ≤ Bd ^ 4 * (1 + a + b))
+    (hM8 : M8 ≤ 2400 * (1 + a + b) ^ 4 * ((n : ℝ) ^ 4 + (n : ℝ) * Bd ^ 4)) :
+    M8 + 28 * a * M6 + 56 * m3 * M5 + 70 * b * M4 + 56 * (n : ℝ) * m5 * m3
+        + 28 * (n : ℝ) * m6 * a + m8
+      ≤ 2400 * (1 + a + b) ^ 4 * (((n : ℝ) + 1) ^ 4 + ((n : ℝ) + 1) * Bd ^ 4) := by
+  obtain ⟨A, hAdef⟩ : ∃ A : ℝ, A = 1 + a + b := ⟨_, rfl⟩
+  rw [← hAdef] at hM4 hM6 hm3 hm5 hm6 hm8 hM8 ⊢
+  have hA1 : (1 : ℝ) ≤ A := by rw [hAdef]; linarith
+  have hA0 : (0 : ℝ) ≤ A := by linarith
+  have haA : a ≤ A := by rw [hAdef]; linarith
+  have hbA : b ≤ A := by rw [hAdef]; linarith
+  have hB0 : (0 : ℝ) ≤ Bd := le_trans zero_le_one hB
+  have hn0 : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+  have hP2 : (0 : ℝ) ≤ (n : ℝ) ^ 2 + (n : ℝ) := by positivity
+  have hP3 : (0 : ℝ) ≤ (n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2 := by positivity
+  have hA34 : A ^ 3 ≤ A ^ 4 := pow_le_pow_right₀ hA1 (by norm_num)
+  have hA24 : A ^ 2 ≤ A ^ 4 := pow_le_pow_right₀ hA1 (by norm_num)
+  have hA14 : A ≤ A ^ 4 := by
+    have := pow_le_pow_right₀ hA1 (show 1 ≤ 4 by norm_num); simpa using this
+  have hA40 : (0 : ℝ) ≤ A ^ 4 := by positivity
+  have g34 : A ^ 3 * ((n : ℝ) ^ 2 + (n : ℝ)) ≤ A ^ 4 * ((n : ℝ) ^ 2 + (n : ℝ)) :=
+    mul_le_mul_of_nonneg_right hA34 hP2
+  have g24 : A ^ 2 * ((n : ℝ) * Bd) ≤ A ^ 4 * ((n : ℝ) * Bd) :=
+    mul_le_mul_of_nonneg_right hA24 (mul_nonneg hn0 hB0)
+  have g24' : A ^ 2 * ((n : ℝ) * Bd ^ 2) ≤ A ^ 4 * ((n : ℝ) * Bd ^ 2) :=
+    mul_le_mul_of_nonneg_right hA24 (mul_nonneg hn0 (sq_nonneg Bd))
+  have g14 : A * Bd ^ 4 ≤ A ^ 4 * Bd ^ 4 :=
+    mul_le_mul_of_nonneg_right hA14 (by positivity)
+  -- term 1
+  have t1 : 28 * a * M6 ≤ 1120 * A ^ 4 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2) := by
+    have h : a * M6 ≤ A * (40 * A ^ 3 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2)) :=
+      mul_le_mul haA hM6 hM6n hA0
+    have e : A * (40 * A ^ 3 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2))
+        = 40 * A ^ 4 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2) := by ring
+    rw [e] at h; linarith
+  -- term 2
+  have t2 : 56 * m3 * M5
+      ≤ 84 * A ^ 4 * ((n : ℝ) ^ 2 + (n : ℝ))
+        + 1120 * A ^ 4 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2) := by
+    have h1 : m3 * M5 ≤ |m3| * |M5| := by
+      calc m3 * M5 ≤ |m3 * M5| := le_abs_self _
+        _ = |m3| * |M5| := abs_mul _ _
+    have h2 : |m3| * |M5| ≤ A * ((M4 + M6) / 2) := mul_le_mul hm3 hM5 (abs_nonneg _) hA0
+    have h3 : M4 + M6 ≤ 3 * A ^ 2 * ((n : ℝ) ^ 2 + (n : ℝ))
+        + 40 * A ^ 3 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2) := by linarith
+    have h4 : A * ((M4 + M6) / 2)
+        ≤ A * ((3 * A ^ 2 * ((n : ℝ) ^ 2 + (n : ℝ))
+            + 40 * A ^ 3 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2)) / 2) := by
+      have := mul_le_mul_of_nonneg_left h3 hA0
+      linarith
+    have h5 : A * ((3 * A ^ 2 * ((n : ℝ) ^ 2 + (n : ℝ))
+            + 40 * A ^ 3 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2)) / 2)
+        = (3 / 2) * (A ^ 3 * ((n : ℝ) ^ 2 + (n : ℝ)))
+          + 20 * (A ^ 4 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2)) := by ring
+    rw [h5] at h4
+    linarith
+  -- term 3
+  have t3 : 70 * b * M4 ≤ 210 * A ^ 4 * ((n : ℝ) ^ 2 + (n : ℝ)) := by
+    have h : b * M4 ≤ A * (3 * A ^ 2 * ((n : ℝ) ^ 2 + (n : ℝ))) :=
+      mul_le_mul hbA hM4 hM4n hA0
+    have e : A * (3 * A ^ 2 * ((n : ℝ) ^ 2 + (n : ℝ)))
+        = 3 * (A ^ 3 * ((n : ℝ) ^ 2 + (n : ℝ))) := by ring
+    rw [e] at h; linarith
+  -- term 4
+  have t4 : 56 * (n : ℝ) * m5 * m3 ≤ 56 * (A ^ 4 * ((n : ℝ) * Bd)) := by
+    have h1 : m5 * m3 ≤ |m5| * |m3| := by
+      calc m5 * m3 ≤ |m5 * m3| := le_abs_self _
+        _ = |m5| * |m3| := abs_mul _ _
+    have h2 : |m5| * |m3| ≤ (Bd * A) * A := mul_le_mul hm5 hm3 (abs_nonneg _) (by positivity)
+    have h3 : (n : ℝ) * (m5 * m3) ≤ (n : ℝ) * ((Bd * A) * A) :=
+      mul_le_mul_of_nonneg_left (h1.trans h2) hn0
+    nlinarith [h3, g24]
+  -- term 5
+  have t5 : 28 * (n : ℝ) * m6 * a ≤ 28 * (A ^ 4 * ((n : ℝ) * Bd ^ 2)) := by
+    have h1 : m6 * a ≤ |m6| * a := by
+      have h := le_abs_self m6
+      exact mul_le_mul_of_nonneg_right h ha
+    have h2 : |m6| * a ≤ (Bd ^ 2 * A) * A := mul_le_mul hm6 haA ha (by positivity)
+    have h3 : (n : ℝ) * (m6 * a) ≤ (n : ℝ) * ((Bd ^ 2 * A) * A) :=
+      mul_le_mul_of_nonneg_left (h1.trans h2) hn0
+    nlinarith [h3, g24']
+  -- term 6
+  have t6 : m8 ≤ A ^ 4 * Bd ^ 4 := by
+    have h : m8 ≤ Bd ^ 4 * A := le_trans (le_abs_self _) hm8
+    linarith [g14]
+  -- assemble
+  have hled := step_eight_ledger (n := n) hB
+  have hmul := mul_le_mul_of_nonneg_left hled hA40
+  linarith [t1, t2, t3, t4, t5, t6, hM8, hmul]
+
+/-- The pure `(n, B)` ledger of the order-ten step. -/
+private lemma step_ten_ledger {n : ℕ} {Bd : ℝ} (hB : 1 ≤ Bd) :
+    108000 * ((n : ℝ) ^ 4 + (n : ℝ) * Bd ^ 4) + 2400 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2)
+        + 144000 * ((n : ℝ) ^ 4 + (n : ℝ) * Bd ^ 4)
+        + 8400 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2)
+        + 378 * (Bd * ((n : ℝ) ^ 2 + (n : ℝ)))
+        + 5040 * (Bd * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2))
+        + 630 * (Bd ^ 2 * ((n : ℝ) ^ 2 + (n : ℝ)))
+        + 120 * ((n : ℝ) * Bd ^ 3) + 45 * ((n : ℝ) * Bd ^ 4) + Bd ^ 6
+      ≤ 540000 * (5 * (n : ℝ) ^ 4 + 10 * (n : ℝ) ^ 3 + 10 * (n : ℝ) ^ 2 + 5 * (n : ℝ)
+          + 1 + Bd ^ 6) := by
+  have e1 : (n : ℝ) * Bd ^ 4 ≤ (n : ℝ) ^ 4 + Bd ^ 6 := nB4_le10
+  have e2 : (n : ℝ) * Bd ^ 2 ≤ (n : ℝ) ^ 4 + Bd ^ 6 := nB2_le10 hB
+  have e3 : (n : ℝ) * Bd ^ 3 ≤ (n : ℝ) ^ 4 + Bd ^ 6 := nB3_le10 hB
+  have e4 : Bd * (n : ℝ) ^ 3 ≤ (n : ℝ) ^ 4 + Bd ^ 6 := Bn3_le10 hB
+  have e5 : Bd * (n : ℝ) ^ 2 ≤ (n : ℝ) ^ 4 + Bd ^ 6 := Bn2_le10 hB
+  have e6 : Bd * (n : ℝ) ≤ (n : ℝ) ^ 4 + Bd ^ 6 := Bn_le10 hB
+  have e7 : Bd ^ 2 * (n : ℝ) ^ 2 ≤ (n : ℝ) ^ 4 + Bd ^ 6 := B2n2_le10
+  have e8 : Bd ^ 2 * (n : ℝ) ≤ (n : ℝ) ^ 4 + Bd ^ 6 := B2n_le10
+  have e9 : (n : ℝ) ^ 3 ≤ (n : ℝ) ^ 4 := n3_le_n4
+  have e10 : (n : ℝ) ^ 2 ≤ (n : ℝ) ^ 4 := n2_le_n4
+  have e11 : (n : ℝ) ≤ (n : ℝ) ^ 4 := n_le_n4
+  have e12 : (0 : ℝ) ≤ (n : ℝ) ^ 4 := pow_nonneg (Nat.cast_nonneg n) 4
+  have e13 : (0 : ℝ) ≤ Bd ^ 6 := by positivity
+  have e14 : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+  have e15 : (0 : ℝ) ≤ (n : ℝ) ^ 2 := sq_nonneg _
+  have e16 : (0 : ℝ) ≤ (n : ℝ) ^ 3 := pow_nonneg (Nat.cast_nonneg n) 3
+  nlinarith [e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14, e15, e16]
+
+set_option maxHeartbeats 2000000 in
+/-- **The order-ten induction step, as pure arithmetic.** -/
+private lemma step_ten {n : ℕ} {Bd a b m3 m5 m6 m7 m8 m10 M4 M5 M6 M7 M8 M10 : ℝ}
+    (hB : 1 ≤ Bd) (ha : 0 ≤ a) (hb : 0 ≤ b)
+    (hM4 : M4 ≤ 3 * (1 + a + b) ^ 2 * ((n : ℝ) ^ 2 + (n : ℝ))) (hM4n : 0 ≤ M4)
+    (hM6 : M6 ≤ 40 * (1 + a + b) ^ 3 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2)) (hM6n : 0 ≤ M6)
+    (hM8 : M8 ≤ 2400 * (1 + a + b) ^ 4 * ((n : ℝ) ^ 4 + (n : ℝ) * Bd ^ 4)) (hM8n : 0 ≤ M8)
+    (hM5 : |M5| ≤ (M4 + M6) / 2) (hM7 : |M7| ≤ (M6 + M8) / 2)
+    (hm3 : |m3| ≤ 1 + a + b) (hm5 : |m5| ≤ Bd * (1 + a + b))
+    (hm6 : |m6| ≤ Bd ^ 2 * (1 + a + b)) (hm7 : |m7| ≤ Bd ^ 3 * (1 + a + b))
+    (hm8 : |m8| ≤ Bd ^ 4 * (1 + a + b)) (hm10 : |m10| ≤ Bd ^ 6 * (1 + a + b))
+    (hM10 : M10 ≤ 540000 * (1 + a + b) ^ 5 * ((n : ℝ) ^ 5 + (n : ℝ) * Bd ^ 6)) :
+    M10 + 45 * a * M8 + 120 * m3 * M7 + 210 * b * M6 + 252 * m5 * M5 + 210 * m6 * M4
+        + 120 * (n : ℝ) * m7 * m3 + 45 * (n : ℝ) * m8 * a + m10
+      ≤ 540000 * (1 + a + b) ^ 5 * (((n : ℝ) + 1) ^ 5 + ((n : ℝ) + 1) * Bd ^ 6) := by
+  obtain ⟨A, hAdef⟩ : ∃ A : ℝ, A = 1 + a + b := ⟨_, rfl⟩
+  rw [← hAdef] at hM4 hM6 hM8 hm3 hm5 hm6 hm7 hm8 hm10 hM10 ⊢
+  have hA1 : (1 : ℝ) ≤ A := by rw [hAdef]; linarith
+  have hA0 : (0 : ℝ) ≤ A := by linarith
+  have haA : a ≤ A := by rw [hAdef]; linarith
+  have hbA : b ≤ A := by rw [hAdef]; linarith
+  have hB0 : (0 : ℝ) ≤ Bd := le_trans zero_le_one hB
+  have hn0 : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+  have hP2 : (0 : ℝ) ≤ (n : ℝ) ^ 2 + (n : ℝ) := by positivity
+  have hP3 : (0 : ℝ) ≤ (n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2 := by positivity
+  have hA45 : A ^ 4 ≤ A ^ 5 := pow_le_pow_right₀ hA1 (by norm_num)
+  have hA35 : A ^ 3 ≤ A ^ 5 := pow_le_pow_right₀ hA1 (by norm_num)
+  have hA25 : A ^ 2 ≤ A ^ 5 := pow_le_pow_right₀ hA1 (by norm_num)
+  have hA15 : A ≤ A ^ 5 := by
+    have := pow_le_pow_right₀ hA1 (show 1 ≤ 5 by norm_num); simpa using this
+  have hA50 : (0 : ℝ) ≤ A ^ 5 := by positivity
+  have g45 : A ^ 4 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2)
+      ≤ A ^ 5 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2) := mul_le_mul_of_nonneg_right hA45 hP3
+  have g35 : A ^ 3 * (Bd * ((n : ℝ) ^ 2 + (n : ℝ)))
+      ≤ A ^ 5 * (Bd * ((n : ℝ) ^ 2 + (n : ℝ))) :=
+    mul_le_mul_of_nonneg_right hA35 (mul_nonneg hB0 hP2)
+  have g45' : A ^ 4 * (Bd * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2))
+      ≤ A ^ 5 * (Bd * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2)) :=
+    mul_le_mul_of_nonneg_right hA45 (mul_nonneg hB0 hP3)
+  have g35' : A ^ 3 * (Bd ^ 2 * ((n : ℝ) ^ 2 + (n : ℝ)))
+      ≤ A ^ 5 * (Bd ^ 2 * ((n : ℝ) ^ 2 + (n : ℝ))) :=
+    mul_le_mul_of_nonneg_right hA35 (mul_nonneg (sq_nonneg Bd) hP2)
+  have g25 : A ^ 2 * ((n : ℝ) * Bd ^ 3) ≤ A ^ 5 * ((n : ℝ) * Bd ^ 3) :=
+    mul_le_mul_of_nonneg_right hA25 (by positivity)
+  have g25' : A ^ 2 * ((n : ℝ) * Bd ^ 4) ≤ A ^ 5 * ((n : ℝ) * Bd ^ 4) :=
+    mul_le_mul_of_nonneg_right hA25 (by positivity)
+  have g15 : A * Bd ^ 6 ≤ A ^ 5 * Bd ^ 6 := mul_le_mul_of_nonneg_right hA15 (by positivity)
+  -- term 1
+  have t1 : 45 * a * M8 ≤ 108000 * (A ^ 5 * ((n : ℝ) ^ 4 + (n : ℝ) * Bd ^ 4)) := by
+    have h : a * M8 ≤ A * (2400 * A ^ 4 * ((n : ℝ) ^ 4 + (n : ℝ) * Bd ^ 4)) :=
+      mul_le_mul haA hM8 hM8n hA0
+    have e : A * (2400 * A ^ 4 * ((n : ℝ) ^ 4 + (n : ℝ) * Bd ^ 4))
+        = 2400 * (A ^ 5 * ((n : ℝ) ^ 4 + (n : ℝ) * Bd ^ 4)) := by ring
+    rw [e] at h; linarith
+  -- term 2
+  have t2 : 120 * m3 * M7 ≤ 2400 * (A ^ 5 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2))
+      + 144000 * (A ^ 5 * ((n : ℝ) ^ 4 + (n : ℝ) * Bd ^ 4)) := by
+    have h1 : m3 * M7 ≤ |m3| * |M7| := by
+      calc m3 * M7 ≤ |m3 * M7| := le_abs_self _
+        _ = |m3| * |M7| := abs_mul _ _
+    have h2 : |m3| * |M7| ≤ A * ((M6 + M8) / 2) := mul_le_mul hm3 hM7 (abs_nonneg _) hA0
+    have h3 : M6 + M8 ≤ 40 * A ^ 3 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2)
+        + 2400 * A ^ 4 * ((n : ℝ) ^ 4 + (n : ℝ) * Bd ^ 4) := by linarith
+    have h4 := mul_le_mul_of_nonneg_left h3 hA0
+    have h5 : A * (40 * A ^ 3 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2)
+        + 2400 * A ^ 4 * ((n : ℝ) ^ 4 + (n : ℝ) * Bd ^ 4))
+        = 40 * (A ^ 4 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2))
+          + 2400 * (A ^ 5 * ((n : ℝ) ^ 4 + (n : ℝ) * Bd ^ 4)) := by ring
+    rw [h5] at h4
+    linarith
+  -- term 3
+  have t3 : 210 * b * M6 ≤ 8400 * (A ^ 5 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2)) := by
+    have h : b * M6 ≤ A * (40 * A ^ 3 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2)) :=
+      mul_le_mul hbA hM6 hM6n hA0
+    have e : A * (40 * A ^ 3 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2))
+        = 40 * (A ^ 4 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2)) := by ring
+    rw [e] at h; linarith
+  -- term 4
+  have t4 : 252 * m5 * M5 ≤ 378 * (A ^ 5 * (Bd * ((n : ℝ) ^ 2 + (n : ℝ))))
+      + 5040 * (A ^ 5 * (Bd * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2))) := by
+    have h1 : m5 * M5 ≤ |m5| * |M5| := by
+      calc m5 * M5 ≤ |m5 * M5| := le_abs_self _
+        _ = |m5| * |M5| := abs_mul _ _
+    have h2 : |m5| * |M5| ≤ (Bd * A) * ((M4 + M6) / 2) :=
+      mul_le_mul hm5 hM5 (abs_nonneg _) (by positivity)
+    have h3 : M4 + M6 ≤ 3 * A ^ 2 * ((n : ℝ) ^ 2 + (n : ℝ))
+        + 40 * A ^ 3 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2) := by linarith
+    have h4 := mul_le_mul_of_nonneg_left h3 (show (0 : ℝ) ≤ Bd * A by positivity)
+    have h5 : Bd * A * (3 * A ^ 2 * ((n : ℝ) ^ 2 + (n : ℝ))
+        + 40 * A ^ 3 * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2))
+        = 3 * (A ^ 3 * (Bd * ((n : ℝ) ^ 2 + (n : ℝ))))
+          + 40 * (A ^ 4 * (Bd * ((n : ℝ) ^ 3 + (n : ℝ) * Bd ^ 2))) := by ring
+    rw [h5] at h4
+    linarith
+  -- term 5
+  have t5 : 210 * m6 * M4 ≤ 630 * (A ^ 5 * (Bd ^ 2 * ((n : ℝ) ^ 2 + (n : ℝ)))) := by
+    have h1 : m6 * M4 ≤ |m6| * M4 := mul_le_mul_of_nonneg_right (le_abs_self _) hM4n
+    have h2 : |m6| * M4 ≤ (Bd ^ 2 * A) * (3 * A ^ 2 * ((n : ℝ) ^ 2 + (n : ℝ))) :=
+      mul_le_mul hm6 hM4 hM4n (by positivity)
+    have e : (Bd ^ 2 * A) * (3 * A ^ 2 * ((n : ℝ) ^ 2 + (n : ℝ)))
+        = 3 * (A ^ 3 * (Bd ^ 2 * ((n : ℝ) ^ 2 + (n : ℝ)))) := by ring
+    rw [e] at h2
+    linarith
+  -- term 6
+  have t6 : 120 * (n : ℝ) * m7 * m3 ≤ 120 * (A ^ 5 * ((n : ℝ) * Bd ^ 3)) := by
+    have h1 : m7 * m3 ≤ |m7| * |m3| := by
+      calc m7 * m3 ≤ |m7 * m3| := le_abs_self _
+        _ = |m7| * |m3| := abs_mul _ _
+    have h2 : |m7| * |m3| ≤ (Bd ^ 3 * A) * A := mul_le_mul hm7 hm3 (abs_nonneg _) (by positivity)
+    have h3 : (n : ℝ) * (m7 * m3) ≤ (n : ℝ) * ((Bd ^ 3 * A) * A) :=
+      mul_le_mul_of_nonneg_left (h1.trans h2) hn0
+    have e : (n : ℝ) * ((Bd ^ 3 * A) * A) = A ^ 2 * ((n : ℝ) * Bd ^ 3) := by ring
+    rw [e] at h3
+    linarith
+  -- term 7
+  have t7 : 45 * (n : ℝ) * m8 * a ≤ 45 * (A ^ 5 * ((n : ℝ) * Bd ^ 4)) := by
+    have h1 : m8 * a ≤ |m8| * a := mul_le_mul_of_nonneg_right (le_abs_self _) ha
+    have h2 : |m8| * a ≤ (Bd ^ 4 * A) * A := mul_le_mul hm8 haA ha (by positivity)
+    have h3 : (n : ℝ) * (m8 * a) ≤ (n : ℝ) * ((Bd ^ 4 * A) * A) :=
+      mul_le_mul_of_nonneg_left (h1.trans h2) hn0
+    have e : (n : ℝ) * ((Bd ^ 4 * A) * A) = A ^ 2 * ((n : ℝ) * Bd ^ 4) := by ring
+    rw [e] at h3
+    linarith
+  -- term 8
+  have t8 : m10 ≤ A ^ 5 * Bd ^ 6 := by
+    have h : m10 ≤ Bd ^ 6 * A := le_trans (le_abs_self _) hm10
+    linarith [g15]
+  have hled := step_ten_ledger (n := n) hB
+  have hmul := mul_le_mul_of_nonneg_left hled hA50
+  linarith [t1, t2, t3, t4, t5, t6, t7, t8, hM10, hmul]
+
+
+/-! ### Pointwise AM-GM for the odd powers -/
+
+private lemma two_mul_abs_pow_three_le (s : ℝ) : 2 * |s ^ 3| ≤ s ^ 2 + s ^ 4 := by
+  have h : |s| ^ 2 = s ^ 2 := sq_abs s
+  have e2 : s ^ 2 = |s| ^ 2 := h.symm
+  have e4 : s ^ 4 = (|s| ^ 2) ^ 2 := by rw [h]; ring
+  rw [abs_pow, e2, e4]
+  nlinarith [sq_nonneg (|s| - |s| ^ 2), abs_nonneg s]
+
+private lemma two_mul_abs_pow_five_le (s : ℝ) : 2 * |s ^ 5| ≤ s ^ 4 + s ^ 6 := by
+  have h : |s| ^ 2 = s ^ 2 := sq_abs s
+  have e4 : s ^ 4 = (|s| ^ 2) ^ 2 := by rw [h]; ring
+  have e6 : s ^ 6 = (|s| ^ 2) ^ 3 := by rw [h]; ring
+  rw [abs_pow, e4, e6]
+  nlinarith [sq_nonneg (|s| ^ 2 - |s| ^ 3), abs_nonneg s]
+
+private lemma two_mul_abs_pow_seven_le (s : ℝ) : 2 * |s ^ 7| ≤ s ^ 6 + s ^ 8 := by
+  have h : |s| ^ 2 = s ^ 2 := sq_abs s
+  have e6 : s ^ 6 = (|s| ^ 2) ^ 3 := by rw [h]; ring
+  have e8 : s ^ 8 = (|s| ^ 2) ^ 4 := by rw [h]; ring
+  rw [abs_pow, e6, e8]
+  nlinarith [sq_nonneg (|s| ^ 3 - |s| ^ 4), abs_nonneg s]
+
+private lemma two_mul_abs_pow_nine_le (s : ℝ) : 2 * |s ^ 9| ≤ s ^ 8 + s ^ 10 := by
+  have h : |s| ^ 2 = s ^ 2 := sq_abs s
+  have e8 : s ^ 8 = (|s| ^ 2) ^ 4 := by rw [h]; ring
+  have e10 : s ^ 10 = (|s| ^ 2) ^ 5 := by rw [h]; ring
+  rw [abs_pow, e8, e10]
+  nlinarith [sq_nonneg (|s| ^ 4 - |s| ^ 5), abs_nonneg s]
+
+/-! ### The absolute moments of the summand -/
+
+/-- `|∫ Vᵏ| ≤ B^{k−4} ∫ V⁴` for `k ≥ 4`: the truncation level pays for every power above the
+fourth. -/
+lemma abs_integral_pow_le_of_bounded (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
+    (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) {k : ℕ} (hk : 4 ≤ k) :
+    |∫ x, V x ^ k ∂F| ≤ B ^ (k - 4) * ∫ x, V x ^ 4 ∂F := by
+  have hB0 : (0 : ℝ) ≤ B := le_trans (abs_nonneg _) (hB 0)
+  have hpt : ∀ x, |V x ^ k| ≤ B ^ (k - 4) * V x ^ 4 := by
+    intro x
+    have hsplit : |V x| ^ k = |V x| ^ (k - 4) * |V x| ^ 4 := by
+      rw [← pow_add]; congr 1; omega
+    have h1 : |V x| ^ (k - 4) ≤ B ^ (k - 4) := pow_le_pow_left₀ (abs_nonneg _) (hB x) _
+    have h2 : |V x| ^ 4 = V x ^ 4 := by
+      rw [← abs_pow, abs_of_nonneg (by positivity)]
+    rw [abs_pow, hsplit, h2]
+    exact mul_le_mul_of_nonneg_right h1 (by positivity)
+  have hI1 : Integrable (fun x => |V x ^ k|) F := (integrable_pow_of_bounded F hV hB k).abs
+  have hI2 : Integrable (fun x => B ^ (k - 4) * V x ^ 4) F :=
+    (integrable_pow_of_bounded F hV hB 4).const_mul _
+  calc |∫ x, V x ^ k ∂F| ≤ ∫ x, |V x ^ k| ∂F := abs_integral_le_integral_abs
+    _ ≤ ∫ x, B ^ (k - 4) * V x ^ 4 ∂F := integral_mono hI1 hI2 hpt
+    _ = B ^ (k - 4) * ∫ x, V x ^ 4 ∂F := integral_const_mul _ _
+
+/-- `|∫ V³| ≤ (∫ V² + ∫ V⁴)/2` — the third moment costs no power of the truncation level. -/
+lemma abs_integral_pow_three_le (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
+    (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) :
+    |∫ x, V x ^ 3 ∂F| ≤ ((∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) / 2 := by
+  have hI1 : Integrable (fun x => |V x ^ 3|) F := (integrable_pow_of_bounded F hV hB 3).abs
+  have hI2 : Integrable (fun x => (V x ^ 2 + V x ^ 4) / 2) F :=
+    (((integrable_pow_of_bounded F hV hB 2).add
+      (integrable_pow_of_bounded F hV hB 4))).div_const 2
+  have h : ∫ x, |V x ^ 3| ∂F ≤ ∫ x, (V x ^ 2 + V x ^ 4) / 2 ∂F :=
+    integral_mono hI1 hI2 fun x => by linarith [two_mul_abs_pow_three_le (V x)]
+  have he : ∫ x, (V x ^ 2 + V x ^ 4) / 2 ∂F = ((∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) / 2 := by
+    rw [integral_div, integral_add (integrable_pow_of_bounded F hV hB 2)
+      (integrable_pow_of_bounded F hV hB 4)]
+  calc |∫ x, V x ^ 3 ∂F| ≤ ∫ x, |V x ^ 3| ∂F := abs_integral_le_integral_abs
+    _ ≤ _ := h
+    _ = _ := he
+
+
+/-! ### The odd moments of the sum, sandwiched between the neighbouring even ones -/
+
+lemma abs_integral_odd_aux {α : Type*} [MeasurableSpace α] (ν : Measure α)
+    [IsProbabilityMeasure ν] {S : α → ℝ} (hS : Measurable S) {D : ℝ} (hSb : ∀ z, |S z| ≤ D)
+    {j i k : ℕ} (hpt : ∀ s : ℝ, 2 * |s ^ j| ≤ s ^ i + s ^ k) :
+    |∫ z, S z ^ j ∂ν| ≤ ((∫ z, S z ^ i ∂ν) + ∫ z, S z ^ k ∂ν) / 2 := by
+  have hI1 : Integrable (fun z => |S z ^ j|) ν := (integrable_pow_of_bounded ν hS hSb j).abs
+  have hIi := integrable_pow_of_bounded ν hS hSb i
+  have hIk := integrable_pow_of_bounded ν hS hSb k
+  have hI2 : Integrable (fun z => (S z ^ i + S z ^ k) / 2) ν := (hIi.add hIk).div_const 2
+  have h : ∫ z, |S z ^ j| ∂ν ≤ ∫ z, (S z ^ i + S z ^ k) / 2 ∂ν :=
+    integral_mono hI1 hI2 fun z => by linarith [hpt (S z)]
+  have he : ∫ z, (S z ^ i + S z ^ k) / 2 ∂ν = ((∫ z, S z ^ i ∂ν) + ∫ z, S z ^ k ∂ν) / 2 := by
+    rw [integral_div, integral_add hIi hIk]
+  calc |∫ z, S z ^ j ∂ν| ≤ ∫ z, |S z ^ j| ∂ν := abs_integral_le_integral_abs
+    _ ≤ _ := h
+    _ = _ := he
+
+/-! ### The order-four and order-six bounds in the graded shape -/
+
+lemma integral_pi_sum_pow_four_A (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
+    (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hV0 : ∫ x, V x ∂F = 0) (n : ℕ) :
+    ∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 4 ∂(Measure.pi fun _ : Fin n => F)
+      ≤ 3 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) ^ 2 * ((n : ℝ) ^ 2 + (n : ℝ)) := by
+  obtain ⟨-, -, h4⟩ := integral_pi_sum_moments F hV hB hV0 n
+  have ha : (0 : ℝ) ≤ ∫ x, V x ^ 2 ∂F := integral_nonneg fun x => by positivity
+  have hb : (0 : ℝ) ≤ ∫ x, V x ^ 4 ∂F := integral_nonneg fun x => by positivity
+  have hn : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+  obtain ⟨a, hadef⟩ : ∃ a : ℝ, a = ∫ x, V x ^ 2 ∂F := ⟨_, rfl⟩
+  obtain ⟨b, hbdef⟩ : ∃ b : ℝ, b = ∫ x, V x ^ 4 ∂F := ⟨_, rfl⟩
+  rw [← hadef, ← hbdef] at h4 ⊢
+  rw [← hadef] at ha
+  rw [← hbdef] at hb
+  have h1 : a ^ 2 ≤ (1 + a + b) ^ 2 := by nlinarith
+  have h2 : b ≤ (1 + a + b) ^ 2 := by nlinarith
+  nlinarith [mul_le_mul_of_nonneg_left h1 (show (0 : ℝ) ≤ 3 * (n : ℝ) ^ 2 by positivity),
+    mul_le_mul_of_nonneg_left h2 hn, sq_nonneg (1 + a + b)]
+
+lemma integral_pi_sum_pow_six_A (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
+    (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hB1 : 1 ≤ B) (hV0 : ∫ x, V x ∂F = 0)
+    (n : ℕ) :
+    ∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 6 ∂(Measure.pi fun _ : Fin n => F)
+      ≤ 40 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) ^ 3
+          * ((n : ℝ) ^ 3 + (n : ℝ) * B ^ 2) := by
+  have h6 := integral_pi_sum_pow_six_le F hV hB hV0 n
+  have hm6 : |∫ x, V x ^ 6 ∂F| ≤ B ^ 2 * ∫ x, V x ^ 4 ∂F := by
+    have := abs_integral_pow_le_of_bounded F hV hB (k := 6) (by norm_num)
+    simpa using this
+  have hm3 := abs_integral_pow_three_le F hV hB
+  have ha : (0 : ℝ) ≤ ∫ x, V x ^ 2 ∂F := integral_nonneg fun x => by positivity
+  have hb : (0 : ℝ) ≤ ∫ x, V x ^ 4 ∂F := integral_nonneg fun x => by positivity
+  have hn : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+  have hn23 : (n : ℝ) ^ 2 ≤ (n : ℝ) ^ 3 := n2_le_n3
+  have hB0 : (0 : ℝ) ≤ B := le_trans zero_le_one hB1
+  obtain ⟨a, hadef⟩ : ∃ a : ℝ, a = ∫ x, V x ^ 2 ∂F := ⟨_, rfl⟩
+  obtain ⟨b, hbdef⟩ : ∃ b : ℝ, b = ∫ x, V x ^ 4 ∂F := ⟨_, rfl⟩
+  obtain ⟨c, hcdef⟩ : ∃ c : ℝ, c = ∫ x, V x ^ 3 ∂F := ⟨_, rfl⟩
+  obtain ⟨d, hddef⟩ : ∃ d : ℝ, d = ∫ x, V x ^ 6 ∂F := ⟨_, rfl⟩
+  rw [← hadef, ← hbdef, ← hcdef, ← hddef] at h6
+  rw [← hddef, ← hbdef] at hm6
+  rw [← hcdef, ← hadef, ← hbdef] at hm3
+  rw [← hadef] at ha
+  rw [← hbdef] at hb
+  rw [← hadef, ← hbdef]
+  obtain ⟨A, hAdef⟩ : ∃ A : ℝ, A = 1 + a + b := ⟨_, rfl⟩
+  rw [← hAdef]
+  have hA1 : (1 : ℝ) ≤ A := by rw [hAdef]; linarith
+  have hA0 : (0 : ℝ) ≤ A := by linarith
+  have haA : a ≤ A := by rw [hAdef]; linarith
+  have hbA : b ≤ A := by rw [hAdef]; linarith
+  have hA23 : A ^ 2 ≤ A ^ 3 := pow_le_pow_right₀ hA1 (by norm_num)
+  have hA13 : A ≤ A ^ 3 := by
+    have := pow_le_pow_right₀ hA1 (show 1 ≤ 3 by norm_num); simpa using this
+  have hA30 : (0 : ℝ) ≤ A ^ 3 := by positivity
+  -- the four terms
+  have t1 : (n : ℝ) * d ≤ A ^ 3 * ((n : ℝ) * B ^ 2) := by
+    have hd : d ≤ B ^ 2 * b := le_trans (le_abs_self _) hm6
+    have h1 : (n : ℝ) * d ≤ (n : ℝ) * (B ^ 2 * b) := mul_le_mul_of_nonneg_left hd hn
+    have h2 : (n : ℝ) * (B ^ 2 * b) ≤ (n : ℝ) * (B ^ 2 * A) := by
+      have : B ^ 2 * b ≤ B ^ 2 * A := mul_le_mul_of_nonneg_left hbA (sq_nonneg B)
+      exact mul_le_mul_of_nonneg_left this hn
+    have h3 : (n : ℝ) * (B ^ 2 * A) ≤ A ^ 3 * ((n : ℝ) * B ^ 2) := by
+      have : A * ((n : ℝ) * B ^ 2) ≤ A ^ 3 * ((n : ℝ) * B ^ 2) :=
+        mul_le_mul_of_nonneg_right hA13 (by positivity)
+      linarith
+    linarith
+  have t2 : 15 * (n : ℝ) ^ 2 * a * b ≤ 15 * (A ^ 3 * (n : ℝ) ^ 3) := by
+    have h1 : a * b ≤ A * A := mul_le_mul haA hbA hb hA0
+    have h2 : (n : ℝ) ^ 2 * (a * b) ≤ (n : ℝ) ^ 2 * (A * A) :=
+      mul_le_mul_of_nonneg_left h1 (sq_nonneg _)
+    have h3 : A ^ 2 * (n : ℝ) ^ 2 ≤ A ^ 3 * (n : ℝ) ^ 3 := by
+      have e1 : A ^ 2 * (n : ℝ) ^ 2 ≤ A ^ 3 * (n : ℝ) ^ 2 :=
+        mul_le_mul_of_nonneg_right hA23 (sq_nonneg _)
+      have e2 : A ^ 3 * (n : ℝ) ^ 2 ≤ A ^ 3 * (n : ℝ) ^ 3 :=
+        mul_le_mul_of_nonneg_left hn23 hA30
+      linarith
+    nlinarith [h2, h3]
+  have t3 : 10 * (n : ℝ) ^ 2 * c ^ 2 ≤ 10 * (A ^ 3 * (n : ℝ) ^ 3) := by
+    have hc : |c| ≤ A := by rw [hAdef]; linarith [abs_nonneg c]
+    have h1 : c ^ 2 ≤ A ^ 2 := by
+      have := sq_abs c
+      nlinarith [abs_nonneg c, hc]
+    have h2 : (n : ℝ) ^ 2 * c ^ 2 ≤ (n : ℝ) ^ 2 * A ^ 2 :=
+      mul_le_mul_of_nonneg_left h1 (sq_nonneg _)
+    have h3 : A ^ 2 * (n : ℝ) ^ 2 ≤ A ^ 3 * (n : ℝ) ^ 3 := by
+      have e1 : A ^ 2 * (n : ℝ) ^ 2 ≤ A ^ 3 * (n : ℝ) ^ 2 :=
+        mul_le_mul_of_nonneg_right hA23 (sq_nonneg _)
+      have e2 : A ^ 3 * (n : ℝ) ^ 2 ≤ A ^ 3 * (n : ℝ) ^ 3 :=
+        mul_le_mul_of_nonneg_left hn23 hA30
+      linarith
+    nlinarith [h2, h3]
+  have t4 : 15 * (n : ℝ) ^ 3 * a ^ 3 ≤ 15 * (A ^ 3 * (n : ℝ) ^ 3) := by
+    have h1 : a ^ 3 ≤ A ^ 3 := pow_le_pow_left₀ ha haA 3
+    nlinarith [mul_le_mul_of_nonneg_left h1 (show (0:ℝ) ≤ 15 * (n:ℝ)^3 by positivity)]
+  have hfin : (0 : ℝ) ≤ A ^ 3 * ((n : ℝ) * B ^ 2) := by positivity
+  nlinarith [h6, t1, t2, t3, t4, hfin]
+
+
+set_option maxHeartbeats 1000000 in
+lemma integral_pi_sum_pow_eight_le (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
+    (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hB1 : 1 ≤ B)
+    (hV0 : ∫ x, V x ∂F = 0) (n : ℕ) :
+    ∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 8 ∂(Measure.pi fun _ : Fin n => F)
+      ≤ 2400 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) ^ 4
+          * ((n : ℝ) ^ 4 + (n : ℝ) * B ^ 4) := by
+  have ha : (0 : ℝ) ≤ ∫ x, V x ^ 2 ∂F := integral_nonneg fun x => by positivity
+  have hb : (0 : ℝ) ≤ ∫ x, V x ^ 4 ∂F := integral_nonneg fun x => by positivity
+  have hB0 : (0 : ℝ) ≤ B := le_trans zero_le_one hB1
+  have hm3' : |∫ x, V x ^ 3 ∂F| ≤ 1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F := by
+    have := abs_integral_pow_three_le F hV hB
+    linarith
+  have hm5' : |∫ x, V x ^ 5 ∂F| ≤ B * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) := by
+    have h := abs_integral_pow_le_of_bounded F hV hB (k := 5) (by norm_num)
+    have hB1' : B ^ (5 - 4) = B := by norm_num
+    rw [hB1'] at h
+    nlinarith [h, hB0, ha]
+  have hm6' : |∫ x, V x ^ 6 ∂F| ≤ B ^ 2 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) := by
+    have h := abs_integral_pow_le_of_bounded F hV hB (k := 6) (by norm_num)
+    have hB2' : B ^ (6 - 4) = B ^ 2 := by norm_num
+    rw [hB2'] at h
+    nlinarith [h, sq_nonneg B, ha]
+  have hm8' : |∫ x, V x ^ 8 ∂F| ≤ B ^ 4 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) := by
+    have h := abs_integral_pow_le_of_bounded F hV hB (k := 8) (by norm_num)
+    have hB4' : B ^ (8 - 4) = B ^ 4 := by norm_num
+    rw [hB4'] at h
+    nlinarith [h, pow_nonneg hB0 4, ha]
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have hsumm : Measurable fun z : Fin n → ℝ => ∑ i, V (z i) :=
+      Finset.measurable_sum _ fun i _ => hV.comp (measurable_pi_apply i)
+    have hsumb : ∀ z : Fin n → ℝ, |∑ i, V (z i)| ≤ (n : ℝ) * B := by
+      intro z
+      calc |∑ i, V (z i)| ≤ ∑ _i : Fin n, B :=
+            (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => hB (z i))
+        _ = (n : ℝ) * B := by
+            rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    obtain ⟨h1, h2, -⟩ := integral_pi_sum_moments F hV hB hV0 n
+    have h3 := integral_pi_sum_pow_three F hV hB hV0 n
+    have hM4 := integral_pi_sum_pow_four_A F hV hB hV0 n
+    have hM6 := integral_pi_sum_pow_six_A F hV hB hB1 hV0 n
+    have hM4n : (0 : ℝ) ≤ ∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 4
+        ∂(Measure.pi fun _ : Fin n => F) := integral_nonneg fun y => by positivity
+    have hM6n : (0 : ℝ) ≤ ∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 6
+        ∂(Measure.pi fun _ : Fin n => F) := integral_nonneg fun y => by positivity
+    have hM5 := abs_integral_odd_aux (Measure.pi fun _ : Fin n => F) hsumm hsumb
+      two_mul_abs_pow_five_le
+    have hm0 : (∫ x, V x ^ 0 ∂F) = 1 := by simp
+    have hm1 : (∫ x, V x ^ 1 ∂F) = 0 := by simpa using hV0
+    have hM0 : (∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 0
+        ∂(Measure.pi fun _ : Fin n => F)) = 1 := by simp
+    have hM1 : (∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 1
+        ∂(Measure.pi fun _ : Fin n => F)) = 0 := by simpa using h1
+    have hstep := step_eight (n := n) (Bd := B) (a := ∫ x, V x ^ 2 ∂F)
+      (b := ∫ x, V x ^ 4 ∂F) (m3 := ∫ x, V x ^ 3 ∂F) (m5 := ∫ x, V x ^ 5 ∂F)
+      (m6 := ∫ x, V x ^ 6 ∂F) (m8 := ∫ x, V x ^ 8 ∂F)
+      hB1 ha hb hM4 hM4n hM6 hM6n hM5 hm3' hm5' hm6' hm8' ih
+    rw [integral_pi_sum_pow_succ F hV hB n 8]
+    rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
+      Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
+      Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
+      Finset.sum_range_zero]
+    norm_num [Nat.choose, hm0, hm1, hM0, hM1, hV0, h1, h2, h3]
+    linarith [hstep]
+
+
+set_option maxHeartbeats 2000000 in
+lemma integral_pi_sum_pow_ten_le (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
+    (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hB1 : 1 ≤ B)
+    (hV0 : ∫ x, V x ∂F = 0) (n : ℕ) :
+    ∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 10 ∂(Measure.pi fun _ : Fin n => F)
+      ≤ 540000 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) ^ 5
+          * ((n : ℝ) ^ 5 + (n : ℝ) * B ^ 6) := by
+  have ha : (0 : ℝ) ≤ ∫ x, V x ^ 2 ∂F := integral_nonneg fun x => by positivity
+  have hb : (0 : ℝ) ≤ ∫ x, V x ^ 4 ∂F := integral_nonneg fun x => by positivity
+  have hB0 : (0 : ℝ) ≤ B := le_trans zero_le_one hB1
+  have hm3' : |∫ x, V x ^ 3 ∂F| ≤ 1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F := by
+    have := abs_integral_pow_three_le F hV hB
+    linarith
+  have hm5' : |∫ x, V x ^ 5 ∂F| ≤ B * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) := by
+    have h := abs_integral_pow_le_of_bounded F hV hB (k := 5) (by norm_num)
+    have hB1' : B ^ (5 - 4) = B := by norm_num
+    rw [hB1'] at h
+    nlinarith [h, hB0, ha]
+  have hm6' : |∫ x, V x ^ 6 ∂F| ≤ B ^ 2 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) := by
+    have h := abs_integral_pow_le_of_bounded F hV hB (k := 6) (by norm_num)
+    have hB2' : B ^ (6 - 4) = B ^ 2 := by norm_num
+    rw [hB2'] at h
+    nlinarith [h, sq_nonneg B, ha]
+  have hm7' : |∫ x, V x ^ 7 ∂F| ≤ B ^ 3 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) := by
+    have h := abs_integral_pow_le_of_bounded F hV hB (k := 7) (by norm_num)
+    have hB3' : B ^ (7 - 4) = B ^ 3 := by norm_num
+    rw [hB3'] at h
+    nlinarith [h, pow_nonneg hB0 3, ha]
+  have hm8' : |∫ x, V x ^ 8 ∂F| ≤ B ^ 4 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) := by
+    have h := abs_integral_pow_le_of_bounded F hV hB (k := 8) (by norm_num)
+    have hB4' : B ^ (8 - 4) = B ^ 4 := by norm_num
+    rw [hB4'] at h
+    nlinarith [h, pow_nonneg hB0 4, ha]
+  have hm10' : |∫ x, V x ^ 10 ∂F| ≤ B ^ 6 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) := by
+    have h := abs_integral_pow_le_of_bounded F hV hB (k := 10) (by norm_num)
+    have hB6' : B ^ (10 - 4) = B ^ 6 := by norm_num
+    rw [hB6'] at h
+    nlinarith [h, pow_nonneg hB0 6, ha]
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have hsumm : Measurable fun z : Fin n → ℝ => ∑ i, V (z i) :=
+      Finset.measurable_sum _ fun i _ => hV.comp (measurable_pi_apply i)
+    have hsumb : ∀ z : Fin n → ℝ, |∑ i, V (z i)| ≤ (n : ℝ) * B := by
+      intro z
+      calc |∑ i, V (z i)| ≤ ∑ _i : Fin n, B :=
+            (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => hB (z i))
+        _ = (n : ℝ) * B := by
+            rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    obtain ⟨h1, h2, -⟩ := integral_pi_sum_moments F hV hB hV0 n
+    have h3 := integral_pi_sum_pow_three F hV hB hV0 n
+    have hM4 := integral_pi_sum_pow_four_A F hV hB hV0 n
+    have hM6 := integral_pi_sum_pow_six_A F hV hB hB1 hV0 n
+    have hM8 := integral_pi_sum_pow_eight_le F hV hB hB1 hV0 n
+    have hM4n : (0 : ℝ) ≤ ∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 4
+        ∂(Measure.pi fun _ : Fin n => F) := integral_nonneg fun y => by positivity
+    have hM6n : (0 : ℝ) ≤ ∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 6
+        ∂(Measure.pi fun _ : Fin n => F) := integral_nonneg fun y => by positivity
+    have hM8n : (0 : ℝ) ≤ ∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 8
+        ∂(Measure.pi fun _ : Fin n => F) := integral_nonneg fun y => by positivity
+    have hM5 := abs_integral_odd_aux (Measure.pi fun _ : Fin n => F) hsumm hsumb
+      two_mul_abs_pow_five_le
+    have hM7 := abs_integral_odd_aux (Measure.pi fun _ : Fin n => F) hsumm hsumb
+      two_mul_abs_pow_seven_le
+    have hm0 : (∫ x, V x ^ 0 ∂F) = 1 := by simp
+    have hm1 : (∫ x, V x ^ 1 ∂F) = 0 := by simpa using hV0
+    have hM0 : (∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 0
+        ∂(Measure.pi fun _ : Fin n => F)) = 1 := by simp
+    have hM1 : (∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 1
+        ∂(Measure.pi fun _ : Fin n => F)) = 0 := by simpa using h1
+    have hstep := step_ten (n := n) (Bd := B) (a := ∫ x, V x ^ 2 ∂F)
+      (b := ∫ x, V x ^ 4 ∂F) (m3 := ∫ x, V x ^ 3 ∂F) (m5 := ∫ x, V x ^ 5 ∂F)
+      (m6 := ∫ x, V x ^ 6 ∂F) (m7 := ∫ x, V x ^ 7 ∂F) (m8 := ∫ x, V x ^ 8 ∂F)
+      (m10 := ∫ x, V x ^ 10 ∂F)
+      hB1 ha hb hM4 hM4n hM6 hM6n hM8 hM8n hM5 hM7 hm3' hm5' hm6' hm7' hm8' hm10' ih
+    rw [integral_pi_sum_pow_succ F hV hB n 10]
+    rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
+      Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
+      Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
+      Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_zero]
+    norm_num [Nat.choose, hm0, hm1, hM0, hM1, hV0, h1, h2, h3]
+    linarith [hstep]
+
+
+/-- The same sandwich, for the *absolute* odd moment of the sum. -/
+lemma integral_abs_pow_odd_le {α : Type*} [MeasurableSpace α] (ν : Measure α)
+    [IsProbabilityMeasure ν] {S : α → ℝ} (hS : Measurable S) {D : ℝ} (hSb : ∀ z, |S z| ≤ D)
+    {j i k : ℕ} (hpt : ∀ s : ℝ, 2 * |s ^ j| ≤ s ^ i + s ^ k) :
+    ∫ z, |S z| ^ j ∂ν ≤ ((∫ z, S z ^ i ∂ν) + ∫ z, S z ^ k ∂ν) / 2 := by
+  have hI1 : Integrable (fun z => |S z| ^ j) ν := by
+    have h : (fun z => |S z| ^ j) = fun z => |S z ^ j| := by
+      funext z; rw [abs_pow]
+    rw [h]
+    exact (integrable_pow_of_bounded ν hS hSb j).abs
+  have hIi := integrable_pow_of_bounded ν hS hSb i
+  have hIk := integrable_pow_of_bounded ν hS hSb k
+  have hI2 : Integrable (fun z => (S z ^ i + S z ^ k) / 2) ν := (hIi.add hIk).div_const 2
+  have h : ∫ z, |S z| ^ j ∂ν ≤ ∫ z, (S z ^ i + S z ^ k) / 2 ∂ν := by
+    refine integral_mono hI1 hI2 fun z => ?_
+    have := hpt (S z)
+    rw [abs_pow] at this
+    linarith
+  have he : ∫ z, (S z ^ i + S z ^ k) / 2 ∂ν = ((∫ z, S z ^ i ∂ν) + ∫ z, S z ^ k ∂ν) / 2 := by
+    rw [integral_div, integral_add hIi hIk]
+  linarith [h, he]
+
+/-- **The ninth absolute moment of the iid sum**, from orders eight and ten. -/
+lemma integral_pi_sum_abs_pow_nine_le (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
+    (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hB1 : 1 ≤ B)
+    (hV0 : ∫ x, V x ∂F = 0) (n : ℕ) :
+    ∫ y : Fin n → ℝ, |∑ i, V (y i)| ^ 9 ∂(Measure.pi fun _ : Fin n => F)
+      ≤ 1200 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) ^ 4 * ((n : ℝ) ^ 4 + (n : ℝ) * B ^ 4)
+        + 270000 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) ^ 5
+            * ((n : ℝ) ^ 5 + (n : ℝ) * B ^ 6) := by
+  have hsumm : Measurable fun z : Fin n → ℝ => ∑ i, V (z i) :=
+    Finset.measurable_sum _ fun i _ => hV.comp (measurable_pi_apply i)
+  have hsumb : ∀ z : Fin n → ℝ, |∑ i, V (z i)| ≤ (n : ℝ) * B := by
+    intro z
+    calc |∑ i, V (z i)| ≤ ∑ _i : Fin n, B :=
+          (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => hB (z i))
+      _ = (n : ℝ) * B := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  have h := integral_abs_pow_odd_le (Measure.pi fun _ : Fin n => F) hsumm hsumb
+    two_mul_abs_pow_nine_le
+  have h8 := integral_pi_sum_pow_eight_le F hV hB hB1 hV0 n
+  have h10 := integral_pi_sum_pow_ten_le F hV hB hB1 hV0 n
+  linarith
+
+
+/-! #### The odd orders need the WEIGHTED sandwich, not `|s|⁹ ≤ s⁸ + s¹⁰`
+
+`integral_pi_sum_abs_pow_nine_le` above is true and it is **lossy where the ledger reads it.**
+On the second coordinate of `Zₙ` the two neighbouring even root moments are of orders
+`E|w₁|⁸ ≍ n` and `E|w₁|¹⁰ ≍ n²`, so their sum is `n²`, while the graded ledger needs
+`E|w₁|⁹ ≍ n^{3/2}` (`second_coord_root_moment_exponent` at `p = 9`).  The unweighted sandwich
+therefore misses by `n^{1/2}` and `r³N₆ = n^{-3/2}·n²= n^{1/2}` does **not** close.  The same
+happens one order down: `E|w₁|⁷` is wanted at `n^{1/2}` and the unweighted sandwich returns
+`(1 + n)/2 ≍ n`, against which `rN₄ = n^{-1/2}·n = n^{1/2}` also fails.
+
+What closes both is Young's inequality with a weight, `2t|s|^{2j+1} ≤ t²s^{2j} + s^{2j+2}`,
+which is the same square `(t|s|^j − |s|^{j+1})² ≥ 0` with the weight kept.  It is valid for
+**every** real `t`, and at `t = √n` it returns the *geometric* mean of the two even moments
+rather than their sum — which is `n^{3/2}` and `n^{1/2}` respectively, both on the nose
+(`weighted_sandwich_ledger`, and `unweighted_sandwich_ledger_gt` is the witness that the
+unweighted sandwich is strictly worse at every `n ≥ 2`).
+
+**This corrects the wave-50 plan**, which prescribed the odd order nine "via `|s|⁹ ≤ s⁸ + s¹⁰`".
+The interpolation has to be weighted; the sum is not enough. -/
+
+/-! ### The WEIGHTED sandwich: the unweighted one is lossy at the second coordinate -/
+
+private lemma two_mul_abs_pow_five_weighted (t s : ℝ) :
+    2 * t * |s ^ 5| ≤ t ^ 2 * s ^ 4 + s ^ 6 := by
+  have h : |s| ^ 2 = s ^ 2 := sq_abs s
+  have e4 : s ^ 4 = (|s| ^ 2) ^ 2 := by rw [h]; ring
+  have e6 : s ^ 6 = (|s| ^ 2) ^ 3 := by rw [h]; ring
+  rw [abs_pow, e4, e6]
+  nlinarith [sq_nonneg (t * |s| ^ 2 - |s| ^ 3)]
+
+private lemma two_mul_abs_pow_seven_weighted (t s : ℝ) :
+    2 * t * |s ^ 7| ≤ t ^ 2 * s ^ 6 + s ^ 8 := by
+  have h : |s| ^ 2 = s ^ 2 := sq_abs s
+  have e6 : s ^ 6 = (|s| ^ 2) ^ 3 := by rw [h]; ring
+  have e8 : s ^ 8 = (|s| ^ 2) ^ 4 := by rw [h]; ring
+  rw [abs_pow, e6, e8]
+  nlinarith [sq_nonneg (t * |s| ^ 3 - |s| ^ 4)]
+
+private lemma two_mul_abs_pow_nine_weighted (t s : ℝ) :
+    2 * t * |s ^ 9| ≤ t ^ 2 * s ^ 8 + s ^ 10 := by
+  have h : |s| ^ 2 = s ^ 2 := sq_abs s
+  have e8 : s ^ 8 = (|s| ^ 2) ^ 4 := by rw [h]; ring
+  have e10 : s ^ 10 = (|s| ^ 2) ^ 5 := by rw [h]; ring
+  rw [abs_pow, e8, e10]
+  nlinarith [sq_nonneg (t * |s| ^ 4 - |s| ^ 5)]
+
+/-- The weighted sandwich under the integral. -/
+lemma integral_abs_pow_odd_weighted {α : Type*} [MeasurableSpace α] (ν : Measure α)
+    [IsProbabilityMeasure ν] {S : α → ℝ} (hS : Measurable S) {D : ℝ} (hSb : ∀ z, |S z| ≤ D)
+    {j i k : ℕ} {t : ℝ} (ht : 0 < t)
+    (hpt : ∀ s : ℝ, 2 * t * |s ^ j| ≤ t ^ 2 * s ^ i + s ^ k) :
+    ∫ z, |S z| ^ j ∂ν ≤ (t * (∫ z, S z ^ i ∂ν) + (∫ z, S z ^ k ∂ν) / t) / 2 := by
+  have hI1 : Integrable (fun z => |S z| ^ j) ν := by
+    have h : (fun z => |S z| ^ j) = fun z => |S z ^ j| := by funext z; rw [abs_pow]
+    rw [h]; exact (integrable_pow_of_bounded ν hS hSb j).abs
+  have hIi := integrable_pow_of_bounded ν hS hSb i
+  have hIk := integrable_pow_of_bounded ν hS hSb k
+  have hI2 : Integrable (fun z => (t * S z ^ i + S z ^ k / t) / 2) ν :=
+    ((hIi.const_mul t).add (hIk.div_const t)).div_const 2
+  have h : ∫ z, |S z| ^ j ∂ν ≤ ∫ z, (t * S z ^ i + S z ^ k / t) / 2 ∂ν := by
+    refine integral_mono hI1 hI2 fun z => ?_
+    have hz := hpt (S z)
+    rw [abs_pow] at hz
+    have hkey : 2 * |S z| ^ j ≤ t * S z ^ i + S z ^ k / t := by
+      have h2 : (2 * |S z| ^ j) * t ≤ (t * S z ^ i + S z ^ k / t) * t := by
+        have e : (t * S z ^ i + S z ^ k / t) * t = t ^ 2 * S z ^ i + S z ^ k := by
+          field_simp
+        rw [e]; linarith [hz]
+      exact le_of_mul_le_mul_right h2 ht
+    linarith
+  have he : ∫ z, (t * S z ^ i + S z ^ k / t) / 2 ∂ν
+      = (t * (∫ z, S z ^ i ∂ν) + (∫ z, S z ^ k ∂ν) / t) / 2 := by
+    rw [integral_div, integral_add (hIi.const_mul t) (hIk.div_const t),
+      MeasureTheory.integral_const_mul, integral_div]
+  linarith [h, he]
+
+
+private lemma pi_sum_meas {V : ℝ → ℝ} (hV : Measurable V) (n : ℕ) :
+    Measurable fun z : Fin n → ℝ => ∑ i, V (z i) :=
+  Finset.measurable_sum _ fun i _ => hV.comp (measurable_pi_apply i)
+
+private lemma pi_sum_bdd {V : ℝ → ℝ} {B : ℝ} (hB : ∀ x, |V x| ≤ B) (n : ℕ) :
+    ∀ z : Fin n → ℝ, |∑ i, V (z i)| ≤ (n : ℝ) * B := by
+  intro z
+  calc |∑ i, V (z i)| ≤ ∑ _i : Fin n, B :=
+        (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => hB (z i))
+    _ = (n : ℝ) * B := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+
+/-- **The fifth absolute moment of the iid sum**, weighted between orders four and six. -/
+lemma integral_pi_sum_abs_pow_five_le (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
+    (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hB1 : 1 ≤ B)
+    (hV0 : ∫ x, V x ∂F = 0) {t : ℝ} (ht : 0 < t) (n : ℕ) :
+    ∫ y : Fin n → ℝ, |∑ i, V (y i)| ^ 5 ∂(Measure.pi fun _ : Fin n => F)
+      ≤ (t * (3 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) ^ 2 * ((n : ℝ) ^ 2 + (n : ℝ)))
+          + (40 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) ^ 3
+              * ((n : ℝ) ^ 3 + (n : ℝ) * B ^ 2)) / t) / 2 := by
+  have h := integral_abs_pow_odd_weighted (Measure.pi fun _ : Fin n => F)
+    (pi_sum_meas hV n) (pi_sum_bdd hB n) ht (two_mul_abs_pow_five_weighted t)
+  have h4 := integral_pi_sum_pow_four_A F hV hB hV0 n
+  have h6 := integral_pi_sum_pow_six_A F hV hB hB1 hV0 n
+  have hd : ∀ x y : ℝ, x ≤ y → x / t ≤ y / t := fun x y hxy => by
+    have h' := mul_le_mul_of_nonneg_right hxy (le_of_lt (inv_pos.2 ht))
+    simpa [div_eq_mul_inv] using h'
+  have := hd _ _ h6
+  nlinarith [h, h4, this, ht]
+
+/-- **The seventh absolute moment of the iid sum**, weighted between orders six and eight. -/
+lemma integral_pi_sum_abs_pow_seven_le (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
+    (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hB1 : 1 ≤ B)
+    (hV0 : ∫ x, V x ∂F = 0) {t : ℝ} (ht : 0 < t) (n : ℕ) :
+    ∫ y : Fin n → ℝ, |∑ i, V (y i)| ^ 7 ∂(Measure.pi fun _ : Fin n => F)
+      ≤ (t * (40 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) ^ 3
+              * ((n : ℝ) ^ 3 + (n : ℝ) * B ^ 2))
+          + (2400 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) ^ 4
+              * ((n : ℝ) ^ 4 + (n : ℝ) * B ^ 4)) / t) / 2 := by
+  have h := integral_abs_pow_odd_weighted (Measure.pi fun _ : Fin n => F)
+    (pi_sum_meas hV n) (pi_sum_bdd hB n) ht (two_mul_abs_pow_seven_weighted t)
+  have h6 := integral_pi_sum_pow_six_A F hV hB hB1 hV0 n
+  have h8 := integral_pi_sum_pow_eight_le F hV hB hB1 hV0 n
+  have hd : ∀ x y : ℝ, x ≤ y → x / t ≤ y / t := fun x y hxy => by
+    have h' := mul_le_mul_of_nonneg_right hxy (le_of_lt (inv_pos.2 ht))
+    simpa [div_eq_mul_inv] using h'
+  have := hd _ _ h8
+  nlinarith [h, h6, this, ht]
+
+/-- **The ninth absolute moment of the iid sum**, weighted between orders eight and ten.  The
+weight is essential: at the second coordinate of `Zₙ` the two neighbouring even moments are of
+orders `n` and `n²`, so the *unweighted* sandwich returns `n²` where the graded ledger needs
+`n^{3/2}`; the weight `t = √n` returns their geometric mean, which is `n^{3/2}` on the nose. -/
+lemma integral_pi_sum_abs_pow_nine_weighted_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    {V : ℝ → ℝ} (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hB1 : 1 ≤ B)
+    (hV0 : ∫ x, V x ∂F = 0) {t : ℝ} (ht : 0 < t) (n : ℕ) :
+    ∫ y : Fin n → ℝ, |∑ i, V (y i)| ^ 9 ∂(Measure.pi fun _ : Fin n => F)
+      ≤ (t * (2400 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) ^ 4
+              * ((n : ℝ) ^ 4 + (n : ℝ) * B ^ 4))
+          + (540000 * (1 + (∫ x, V x ^ 2 ∂F) + ∫ x, V x ^ 4 ∂F) ^ 5
+              * ((n : ℝ) ^ 5 + (n : ℝ) * B ^ 6)) / t) / 2 := by
+  have h := integral_abs_pow_odd_weighted (Measure.pi fun _ : Fin n => F)
+    (pi_sum_meas hV n) (pi_sum_bdd hB n) ht (two_mul_abs_pow_nine_weighted t)
+  have h8 := integral_pi_sum_pow_eight_le F hV hB hB1 hV0 n
+  have h10 := integral_pi_sum_pow_ten_le F hV hB hB1 hV0 n
+  have hd : ∀ x y : ℝ, x ≤ y → x / t ≤ y / t := fun x y hxy => by
+    have h' := mul_le_mul_of_nonneg_right hxy (le_of_lt (inv_pos.2 ht))
+    simpa [div_eq_mul_inv] using h'
+  have := hd _ _ h10
+  nlinarith [h, h8, this, ht]
+
+
+
+/-- **The first coordinate's single-summand term is `n⁻¹` at every order.**  With `|Z₀| ≤ τ = √n`
+the term `n^{1−p/2}·E|Z₀|^p` of the bound is `n^{1−p/2}·(√n)^{p−4}·E Z₀⁴`, and the exponent is
+`−1` independently of `p`: `E|w₀|^p = O(1)` at every order, with a whole power of `n` to spare.
+Compare `second_coord_root_moment_exponent`, where the exponent is `p/2 − 3` and grows. -/
+lemma first_coord_root_moment_exponent {n : ℕ} (hn : 0 < n) (p : ℝ) :
+    (n : ℝ) ^ (1 - p / 2) * ((n : ℝ) ^ ((1 : ℝ) / 2)) ^ (p - 4) = (n : ℝ) ^ (-1 : ℝ) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_mul h0.le, ← Real.rpow_add h0]
+  ring_nf
+
+private lemma rpow_three_halves {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) ^ ((3 : ℝ) / 2) = (n : ℝ) * Real.sqrt (n : ℝ) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have e : (3 : ℝ) / 2 = 1 + 1 / 2 := by norm_num
+  rw [e, Real.rpow_add h0, Real.rpow_one, ← Real.sqrt_eq_rpow]
+
+/-- **The weighted sandwich at `t = √n` returns the geometric mean of the two even moments.**
+With `E|w₁|⁸ ≍ n` and `E|w₁|¹⁰ ≍ n²` it returns `n^{3/2}`, which is exactly the order the graded
+ledger needs at `N₆`. -/
+lemma weighted_sandwich_ledger {n : ℕ} (hn : 0 < n) :
+    (Real.sqrt (n : ℝ) * (n : ℝ) + (n : ℝ) ^ 2 / Real.sqrt (n : ℝ)) / 2
+      = (n : ℝ) ^ ((3 : ℝ) / 2) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hs0 : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 h0
+  have hsq : Real.sqrt (n : ℝ) ^ 2 = (n : ℝ) := Real.sq_sqrt h0.le
+  rw [rpow_three_halves hn]
+  field_simp
+  nlinarith [hsq, hs0]
+
+/-- **And the unweighted sandwich is strictly worse, at every `n ≥ 2`.** -/
+lemma unweighted_sandwich_ledger_gt {n : ℕ} (hn : 2 ≤ n) :
+    (n : ℝ) ^ ((3 : ℝ) / 2) < ((n : ℝ) + (n : ℝ) ^ 2) / 2 := by
+  have h2 : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have h0 : (0 : ℝ) < (n : ℝ) := by linarith
+  have hnpos : 0 < n := by omega
+  have hs0 : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 h0
+  have hsq : Real.sqrt (n : ℝ) ^ 2 = (n : ℝ) := Real.sq_sqrt h0.le
+  have hs1 : 1 < Real.sqrt (n : ℝ) := by nlinarith [hsq, hs0]
+  rw [rpow_three_halves hnpos]
+  nlinarith [hsq, hs0, hs1, sq_nonneg (Real.sqrt (n : ℝ) - 1),
+    mul_pos (mul_pos hs0 hs0) (mul_pos (sub_pos.2 hs1) (sub_pos.2 hs1))]
+
+
+
+
 /-- `‖v‖⁴ ≤ 2(v₀⁴ + v₁⁴)` on the plane. -/
 lemma norm_pow_four_le_two_mul (v : E₂) :
     ‖v‖ ^ 4 ≤ 2 * ((v 0) ^ 4 + (v 1) ^ 4) := by
@@ -16274,6 +17262,187 @@ theorem integral_surrogateRemGraded_le_of_graded (μ : Measure (EuclideanSpace �
     mul_le_mul_of_nonneg_left h₅ c₃, mul_le_mul_of_nonneg_left h₆ c₄,
     mul_le_mul_of_nonneg_left hQ₃ c₅, mul_le_mul_of_nonneg_left hQ₄ c₆]
 
+/-! ### WAVE 51, ITEM 1(ii): the six blocks in five scalar absolute moments
+
+`integral_surrogateRemGraded_le_of_graded` asks for six *bivariate* block integrals.  What a
+moment inequality for a normalised sum delivers is a scalar absolute moment of one coordinate at
+a time, so the six have to be identified against those -- item 1(ii) of the wave-50 residue.
+
+Wave 50 called this "the Hölder identification"; it does not need Hölder.  Every monomial of
+every block has a total degree (`6, 7, 8, 9, 5, 6` for `N₃, N₄, N₅, N₆, Q₃, Q₄`), and the whole
+identification is `XⁱYʲ ≤ Mᵈ ≤ Xᵈ + Yᵈ` at `M = max X Y`, `d = i + j` -- the device already used
+for `surrGradedCube_le_moments`, run block by block instead of on the collapsed cube.  Because
+`P ≤ M²/2` and `A ≤ (7/8)M³` (`blocks_le_max`), the six constants are exact powers of those two:
+
+`N₃ ≤ M⁶/8`, `N₄ ≤ (7/32)M⁷`, `N₅ ≤ (49/128)M⁸`, `N₆ ≤ (343/512)M⁹`,
+`Q₃ ≤ (7/16)M⁵`, `Q₄ ≤ (49/64)M⁶`.
+
+**The ledger, and why the crude `max` costs nothing.**  Replacing `XⁱYʲ` by `Xᵈ + Yᵈ` throws away
+the split between the coordinates -- `N₆`'s worst monomial is `|u|³|v|⁶`, and the bound uses
+`E|v|⁹` -- but the grading absorbs it: with `E|w₀|^p = O(1)` and `E|w₁|^p = O(n^{p/2−3})`
+(`second_coord_root_moment_exponent`, which is exactly what the orders eight and ten above
+deliver), the discounted combination reads, at `r = n^{-1/2}`,
+
+`N₃ + 3rN₄ + 3r²N₅ + r³N₆ ≲ 1 + n^{-1/2}·n^{1/2} + n^{-1}·n + n^{-3/2}·n^{3/2} = O(1)`,
+
+and `2Q₃ + rQ₄ ≲ 1 + n^{-1/2} = O(1)`.  Every one of the four graded slots is `O(1)` **and no
+two of them are of the same order** -- the combination is flat precisely because each block's
+growth is cancelled by its own power of `r`.  That is the whole content of the wave-50
+correction, now discharged.
+
+**The odd `S d` must come from the WEIGHTED sandwich.**  Three of the five scalar moments this
+theorem consumes are of odd order (`d = 5, 7, 9`), and the flatness above leaves *no* margin:
+`rN₄` and `r³N₆` are `Θ(1)`, not `o(1)`.  Supplying `S 7` and `S 9` from
+`integral_pi_sum_abs_pow_nine_le`, i.e. from `|s|⁹ ≤ s⁸ + s¹⁰`, loses a factor `n^{1/2}` in each
+and both slots fail; `integral_pi_sum_abs_pow_seven_le` and
+`integral_pi_sum_abs_pow_nine_weighted_le` at `t = √n` are what this theorem has to be fed.
+See the `WEIGHTED sandwich` section above. -/
+
+private lemma blocks_le_max {X Y : ℝ} (hX : 0 ≤ X) (hY : 0 ≤ Y) :
+    X * Y / 2 ≤ (max X Y) ^ 2 / 2 ∧
+      X ^ 3 / 2 + 3 * X * Y ^ 2 / 8 ≤ 7 / 8 * (max X Y) ^ 3 := by
+  obtain ⟨M, hMdef⟩ : ∃ M : ℝ, M = max X Y := ⟨_, rfl⟩
+  rw [← hMdef]
+  have hXM : X ≤ M := by rw [hMdef]; exact le_max_left _ _
+  have hYM : Y ≤ M := by rw [hMdef]; exact le_max_right _ _
+  have hM0 : 0 ≤ M := le_trans hX hXM
+  have h2 : X * Y ≤ M ^ 2 := by nlinarith
+  have h3 : X ^ 3 ≤ M ^ 3 := pow_le_pow_left₀ hX hXM 3
+  have hy2 : Y ^ 2 ≤ M ^ 2 := pow_le_pow_left₀ hY hYM 2
+  have h3' : X * Y ^ 2 ≤ M ^ 3 := by nlinarith [pow_nonneg hY 2, pow_nonneg hM0 2]
+  constructor
+  · linarith
+  · linarith
+
+/-- Each of the six graded blocks is a constant times a power of `M = max X Y`. -/
+private lemma six_blocks_le_max {X Y : ℝ} (hX : 0 ≤ X) (hY : 0 ≤ Y) :
+    (X * Y / 2) ^ 3 ≤ 1 / 8 * (max X Y) ^ 6 ∧
+    (X * Y / 2) ^ 2 * (X ^ 3 / 2 + 3 * X * Y ^ 2 / 8) ≤ 7 / 32 * (max X Y) ^ 7 ∧
+    (X * Y / 2) * (X ^ 3 / 2 + 3 * X * Y ^ 2 / 8) ^ 2 ≤ 49 / 128 * (max X Y) ^ 8 ∧
+    (X ^ 3 / 2 + 3 * X * Y ^ 2 / 8) ^ 3 ≤ 343 / 512 * (max X Y) ^ 9 ∧
+    (X * Y / 2) * (X ^ 3 / 2 + 3 * X * Y ^ 2 / 8) ≤ 7 / 16 * (max X Y) ^ 5 ∧
+    (X ^ 3 / 2 + 3 * X * Y ^ 2 / 8) ^ 2 ≤ 49 / 64 * (max X Y) ^ 6 := by
+  obtain ⟨hP, hA⟩ := blocks_le_max hX hY
+  obtain ⟨M, hMdef⟩ : ∃ M : ℝ, M = max X Y := ⟨_, rfl⟩
+  rw [← hMdef] at hP hA ⊢
+  have hM0 : 0 ≤ M := le_trans hX (by rw [hMdef]; exact le_max_left _ _)
+  obtain ⟨P, hPdef⟩ : ∃ P : ℝ, P = X * Y / 2 := ⟨_, rfl⟩
+  obtain ⟨A, hAdef⟩ : ∃ A : ℝ, A = X ^ 3 / 2 + 3 * X * Y ^ 2 / 8 := ⟨_, rfl⟩
+  rw [← hPdef] at hP
+  rw [← hAdef] at hA
+  rw [← hPdef, ← hAdef]
+  have hP0 : 0 ≤ P := by rw [hPdef]; positivity
+  have hA0 : 0 ≤ A := by rw [hAdef]; positivity
+  have hM2 : (0 : ℝ) ≤ M ^ 2 := by positivity
+  have hM3 : (0 : ℝ) ≤ M ^ 3 := by positivity
+  have hP2 : P ^ 2 ≤ (M ^ 2 / 2) ^ 2 := pow_le_pow_left₀ hP0 hP 2
+  have hP3 : P ^ 3 ≤ (M ^ 2 / 2) ^ 3 := pow_le_pow_left₀ hP0 hP 3
+  have hA2 : A ^ 2 ≤ (7 / 8 * M ^ 3) ^ 2 := pow_le_pow_left₀ hA0 hA 2
+  have hA3 : A ^ 3 ≤ (7 / 8 * M ^ 3) ^ 3 := pow_le_pow_left₀ hA0 hA 3
+  refine ⟨by nlinarith [hP3], ?_, ?_, by nlinarith [hA3], ?_, by nlinarith [hA2]⟩
+  · have h : P ^ 2 * A ≤ (M ^ 2 / 2) ^ 2 * (7 / 8 * M ^ 3) :=
+      mul_le_mul hP2 hA hA0 (by positivity)
+    nlinarith [h]
+  · have h : P * A ^ 2 ≤ (M ^ 2 / 2) * ((7 / 8 * M ^ 3) ^ 2) :=
+      mul_le_mul hP hA2 (by positivity) (by positivity)
+    nlinarith [h]
+  · have h : P * A ≤ (M ^ 2 / 2) * (7 / 8 * M ^ 3) := mul_le_mul hP hA hA0 (by positivity)
+    nlinarith [h]
+
+
+/-! ### The six blocks against the scalar absolute moments of the two coordinates -/
+
+private lemma measurable_surrGradedLin (σ : ℝ) : Measurable (surrGradedLin σ) := by
+  unfold surrGradedLin; fun_prop
+
+private lemma measurable_surrGradedBlk (σ : ℝ) : Measurable (surrGradedBlk σ) := by
+  unfold surrGradedBlk; fun_prop
+
+lemma surrGraded_six_blocks_le (σ : ℝ) (w : EuclideanSpace ℝ (Fin 2)) :
+    surrGradedLin σ w ^ 3 ≤ 1 / 8 * (|w 0 / σ| ^ 6 + |w 1 / σ ^ 2| ^ 6) ∧
+    surrGradedLin σ w ^ 2 * surrGradedBlk σ w
+      ≤ 7 / 32 * (|w 0 / σ| ^ 7 + |w 1 / σ ^ 2| ^ 7) ∧
+    surrGradedLin σ w * surrGradedBlk σ w ^ 2
+      ≤ 49 / 128 * (|w 0 / σ| ^ 8 + |w 1 / σ ^ 2| ^ 8) ∧
+    surrGradedBlk σ w ^ 3 ≤ 343 / 512 * (|w 0 / σ| ^ 9 + |w 1 / σ ^ 2| ^ 9) ∧
+    surrGradedLin σ w * surrGradedBlk σ w
+      ≤ 7 / 16 * (|w 0 / σ| ^ 5 + |w 1 / σ ^ 2| ^ 5) ∧
+    surrGradedBlk σ w ^ 2 ≤ 49 / 64 * (|w 0 / σ| ^ 6 + |w 1 / σ ^ 2| ^ 6) := by
+  have hX : (0 : ℝ) ≤ |w 0 / σ| := abs_nonneg _
+  have hY : (0 : ℝ) ≤ |w 1 / σ ^ 2| := abs_nonneg _
+  obtain ⟨b3, b4, b5, b6, q3, q4⟩ := six_blocks_le_max hX hY
+  have m5 := max_pow_le_add hX hY 5
+  have m6 := max_pow_le_add hX hY 6
+  have m7 := max_pow_le_add hX hY 7
+  have m8 := max_pow_le_add hX hY 8
+  have m9 := max_pow_le_add hX hY 9
+  rw [surrGradedLin, surrGradedBlk]
+  exact ⟨by linarith, by linarith, by linarith, by linarith, by linarith, by linarith⟩
+
+/-- The pattern each block runs through: a pointwise domination by `c(Xᵈ + Yᵈ)` gives both
+integrability and the integral bound. -/
+private lemma block_integrable_and_le (μ : Measure (EuclideanSpace ℝ (Fin 2))) {σ : ℝ}
+    {f : EuclideanSpace ℝ (Fin 2) → ℝ} (hfm : Measurable f) (hf0 : ∀ w, 0 ≤ f w)
+    {c : ℝ} (hc : 0 ≤ c) {d : ℕ} {Sd : ℝ}
+    (hle : ∀ w, f w ≤ c * (|w 0 / σ| ^ d + |w 1 / σ ^ 2| ^ d))
+    (hia : Integrable (fun w : EuclideanSpace ℝ (Fin 2) => |w 0 / σ| ^ d) μ)
+    (hib : Integrable (fun w : EuclideanSpace ℝ (Fin 2) => |w 1 / σ ^ 2| ^ d) μ)
+    (hSd : (∫ w, |w 0 / σ| ^ d ∂μ) + ∫ w, |w 1 / σ ^ 2| ^ d ∂μ ≤ Sd) :
+    Integrable f μ ∧ (∫ w, f w ∂μ) ≤ c * Sd := by
+  have maj : Integrable
+      (fun w : EuclideanSpace ℝ (Fin 2) => c * (|w 0 / σ| ^ d + |w 1 / σ ^ 2| ^ d)) μ :=
+    (hia.add hib).const_mul c
+  have hI : Integrable f μ := by
+    refine Integrable.mono' maj hfm.aestronglyMeasurable ?_
+    filter_upwards with w
+    rw [Real.norm_eq_abs, abs_of_nonneg (hf0 w)]
+    exact hle w
+  refine ⟨hI, ?_⟩
+  have h1 : (∫ w, f w ∂μ)
+      ≤ ∫ w, c * (|w 0 / σ| ^ d + |w 1 / σ ^ 2| ^ d) ∂μ := integral_mono hI maj hle
+  have h2 : (∫ w : EuclideanSpace ℝ (Fin 2), c * (|w 0 / σ| ^ d + |w 1 / σ ^ 2| ^ d) ∂μ)
+      = c * ((∫ w, |w 0 / σ| ^ d ∂μ) + ∫ w, |w 1 / σ ^ 2| ^ d ∂μ) := by
+    rw [MeasureTheory.integral_const_mul, integral_add hia hib]
+  rw [h2] at h1
+  exact h1.trans (mul_le_mul_of_nonneg_left hSd hc)
+
+/-- **`hRg` AT `Zₙ`, IN FIVE SCALAR ABSOLUTE MOMENTS, WITH THE GRADING KEPT.** -/
+theorem integral_surrogateRemGraded_le_of_scalar_moments
+    (μ : Measure (EuclideanSpace ℝ (Fin 2))) {σ r : ℝ} (hr : 0 ≤ r) (θ : ℝ) {S : ℕ → ℝ}
+    (hia : ∀ d : ℕ, Integrable (fun w : EuclideanSpace ℝ (Fin 2) => |w 0 / σ| ^ d) μ)
+    (hib : ∀ d : ℕ, Integrable (fun w : EuclideanSpace ℝ (Fin 2) => |w 1 / σ ^ 2| ^ d) μ)
+    (hS : ∀ d : ℕ, (∫ w, |w 0 / σ| ^ d ∂μ) + ∫ w, |w 1 / σ ^ 2| ^ d ∂μ ≤ S d) :
+    ∫ w, surrogateRemGraded θ (w 0 / σ) (w 1 / σ ^ 2) r ∂μ
+      ≤ r ^ 3 * (|θ| ^ 3 / 6 * (1 / 8 * S 6 + 3 * r * (7 / 32 * S 7)
+            + 3 * r ^ 2 * (49 / 128 * S 8) + r ^ 3 * (343 / 512 * S 9))
+          + θ ^ 2 / 2 * (2 * (7 / 16 * S 5) + r * (49 / 64 * S 6))) := by
+  have hmL := measurable_surrGradedLin σ
+  have hmB := measurable_surrGradedBlk σ
+  have hL0 := surrGradedLin_nonneg σ
+  have hB0 := surrGradedBlk_nonneg σ
+  obtain ⟨i₃, h₃⟩ := block_integrable_and_le μ (hmL.pow_const 3)
+    (fun w => pow_nonneg (hL0 w) 3) (by norm_num : (0 : ℝ) ≤ 1 / 8)
+    (fun w => (surrGraded_six_blocks_le σ w).1) (hia 6) (hib 6) (hS 6)
+  obtain ⟨i₄, h₄⟩ := block_integrable_and_le μ ((hmL.pow_const 2).mul hmB)
+    (fun w => mul_nonneg (pow_nonneg (hL0 w) 2) (hB0 w)) (by norm_num : (0 : ℝ) ≤ 7 / 32)
+    (fun w => (surrGraded_six_blocks_le σ w).2.1) (hia 7) (hib 7) (hS 7)
+  obtain ⟨i₅, h₅⟩ := block_integrable_and_le μ (hmL.mul (hmB.pow_const 2))
+    (fun w => mul_nonneg (hL0 w) (pow_nonneg (hB0 w) 2)) (by norm_num : (0 : ℝ) ≤ 49 / 128)
+    (fun w => (surrGraded_six_blocks_le σ w).2.2.1) (hia 8) (hib 8) (hS 8)
+  obtain ⟨i₆, h₆⟩ := block_integrable_and_le μ (hmB.pow_const 3)
+    (fun w => pow_nonneg (hB0 w) 3) (by norm_num : (0 : ℝ) ≤ 343 / 512)
+    (fun w => (surrGraded_six_blocks_le σ w).2.2.2.1) (hia 9) (hib 9) (hS 9)
+  obtain ⟨iq₃, hq₃⟩ := block_integrable_and_le μ (hmL.mul hmB)
+    (fun w => mul_nonneg (hL0 w) (hB0 w)) (by norm_num : (0 : ℝ) ≤ 7 / 16)
+    (fun w => (surrGraded_six_blocks_le σ w).2.2.2.2.1) (hia 5) (hib 5) (hS 5)
+  obtain ⟨iq₄, hq₄⟩ := block_integrable_and_le μ (hmB.pow_const 2)
+    (fun w => pow_nonneg (hB0 w) 2) (by norm_num : (0 : ℝ) ≤ 49 / 64)
+    (fun w => (surrGraded_six_blocks_le σ w).2.2.2.2.2) (hia 6) (hib 6) (hS 6)
+  exact integral_surrogateRemGraded_le_of_graded μ hr θ i₃ i₄ i₅ i₆ iq₃ iq₄
+    h₃ h₄ h₅ h₆ hq₃ hq₄
+
+
+
 /-! #### The ledger of the correction, as arithmetic
 
 The four lemmas below are the exponents the paragraph above quotes.  They are stated on `rpow`
@@ -18407,7 +19576,99 @@ BUILT — ROSENTHAL AT ORDER SIX IS PROVED — AND ITEM 1 IS NOW A NAMED, FINITE
 
   **This theorem is therefore still `sorry`, the file is at one `sorry`, and Batch 12 is not
   complete.  Wave 50 did not close the headline; it corrected item 1's statement, built the
-  moment machinery it needs, and closed its order-six half.** -/
+  moment machinery it needs, and closed its order-six half.**
+
+---
+
+**Status after wave 51.  ITEM 1 IS CLOSED — BOTH HALVES — AND THE PLAN'S OWN PRESCRIPTION FOR
+THE ODD ORDER NINE IS LOSSY.  ITEMS 2–5 OF THE WAVE-49 RESIDUE, THE COMPOSITION, ARE UNTOUCHED.
+THIS THEOREM IS STILL `sorry` AND WAVE 51 DOES NOT CLAIM OTHERWISE.**
+
+* **(i) ORDERS EIGHT AND TEN ARE PROVED, AND THEY ARE *NOT* "THE SAME INDUCTION".**  Wave 50
+  reads item 1(i) as the order-six proof run twice more ("Neither is a new device").  The
+  *recursion* is the same — `integral_pi_sum_pow_succ` — but the order-six **shape** does not
+  continue.  At `p = 8` the recursion needs `M₅` and at `p = 10` it needs `M₇`, both odd and
+  both signed, and the sharp four-term shape of `integral_pi_sum_pow_six_le` forces a
+  Cauchy–Schwarz on `m₃` (`m₃² ≤ m₂m₄`, and *not* `|m₃| ≤ m₂`, which fails at
+  `m₂ = n^{-4/3}, m₄ = m₂²`) inside an already-nonlinear step.  What makes the two orders go
+  through is a **change of shape**: everything is stated against the single scale
+  `A = 1 + ∫V² + ∫V⁴ ≥ 1` and the pointwise bound `B ≥ 1`, in the form
+
+  `M_p(n) ≤ K_p·A^{p/2}·(n^{p/2} + n·B^{p−4})`,  `K₈ = 2400`, `K₁₀ = 540000`.
+
+  This is deliberately **crude** — it is not Rosenthal's inequality, and it is off by powers of
+  `n` when `∫V²` is small — and it is **exactly sharp in the only regime the ledger reads**,
+  where `∫V²` and `∫V⁴` are `Θ(1)` and only the truncation level moves.  There it reproduces the
+  file's own exponent ledger at every order: `n^{-1}` on the first coordinate
+  (`first_coord_root_moment_exponent`, uniform in `p`) and `n^{p/2−3}` on the second
+  (`second_coord_root_moment_exponent`, wave 50's).  Both odd intermediates are then removed
+  before any arithmetic, by the pointwise AM-GM `2|s|^{2j+1} ≤ s^{2j} + s^{2j+2}`
+  (`abs_integral_odd_aux`), so the induction runs on even orders only.  The two steps are
+  isolated as pure real arithmetic (`step_eight`, `step_ten`) over a pure `(n, B)` ledger
+  (`step_eight_ledger`, `step_ten_ledger`); the measure theory is one expansion of the recursion.
+
+* **(ii) THE SIX BLOCKS ARE PROVED, AND IT IS NOT HÖLDER.**  Wave 50 calls item 1(ii) "the
+  Hölder identification of the six mixed blocks … Cauchy–Schwarz/Hölder + item 1's moment
+  bounds", and quotes per-block Hölder rates `n^{1/7}`, `n^{5/8}`, `n` for `N₄`, `N₅`, `N₆`.
+  Neither the tool nor the rates are what the proof uses.  `P ≤ M²/2` and `A ≤ (7/8)M³` at
+  `M = max X Y` (`blocks_le_max`), so each block is a *constant* times a power of `M`, and
+  `XⁱYʲ ≤ M^{i+j} ≤ X^{i+j} + Y^{i+j}` finishes it — the device already used for
+  `surrGradedCube_le_moments`, run block by block instead of on the collapsed cube.  The six
+  constants are exact: `1/8, 7/32, 49/128, 343/512, 7/16, 49/64` (`six_blocks_le_max`).
+  `integral_surrogateRemGraded_le_of_scalar_moments` is `hRg` with the grading kept and its
+  interface cut from six bivariate block integrals to **five scalar** ones,
+  `S d = ∫|w₀/σ|ᵈ + ∫|w₁/σ²|ᵈ`, `d = 5,…,9`.
+
+  The `max` device is *lossier per block* than Hölder — it prices `N₆` by `E|v|⁹` rather than by
+  `(E|v|⁹)^{2/3}(E|u|⁹)^{1/3}` — and it costs nothing, because the grading is what does the work:
+  at `r = n^{-1/2}`,
+
+  `N₃ ≍ 1`,  `rN₄ ≍ n^{-1/2}·n^{1/2}`,  `r²N₅ ≍ n^{-1}·n`,  `r³N₆ ≍ n^{-3/2}·n^{3/2}`,
+  `Q₃ ≍ 1`,  `rQ₄ ≍ n^{-1/2}`.
+
+  **Every slot is `Θ(1)`, four of them on the nose.**  That is the real content of the wave-50
+  correction and it is also a warning: the graded combination is flat, not decaying, so any
+  further loss of a power of `n` anywhere in the six breaks it.  Which is exactly what happens
+  next.
+
+* **THE CORRECTION, AND IT IS TO THE PLAN ITSELF: THE ODD ORDERS NEED A *WEIGHT*.**  Wave 50
+  prescribes "the odd order `9` following from `|s|⁹ ≤ s⁸ + s¹⁰`".  That inequality is true,
+  `integral_pi_sum_abs_pow_nine_le` proves it, and it is **lossy exactly where the ledger reads
+  it**.  On the second coordinate the two neighbouring even root moments are `E|w₁|⁸ ≍ n` and
+  `E|w₁|¹⁰ ≍ n²`; their *sum* is `n²`, against the `n^{3/2}` the slot needs, so
+  `r³N₆ = n^{-3/2}·n² = n^{1/2}` and the slot **fails**.  The same failure sits one order down:
+  `E|w₁|⁷` is wanted at `n^{1/2}` and the sum returns `n`, so `rN₄ = n^{1/2}` fails too.  Wave
+  50's own arithmetic is what makes this visible — `n^{p/2−3}` grows by a factor `n` every two
+  orders, so the sum of two neighbours is never the geometric mean.
+
+  The repair is Young's inequality with the weight kept: `2t|s|^{2j+1} ≤ t²s^{2j} + s^{2j+2}`,
+  the same square `(t|s|^j − |s|^{j+1})² ≥ 0`, valid for **every** real `t`
+  (`two_mul_abs_pow_{five,seven,nine}_weighted`, `integral_abs_pow_odd_weighted`, and the three
+  `Measure.pi` corollaries).  At `t = √n` it returns the *geometric* mean of the two even
+  moments — `n^{3/2}` and `n^{1/2}`, both on the nose (`weighted_sandwich_ledger`), and
+  `unweighted_sandwich_ledger_gt` is the witness that the unweighted sandwich is strictly worse
+  at every `n ≥ 2`.  **Item 1 closes with the weighted sandwich and does not close without it.**
+
+* **WHAT THE RESIDUE IS NOW.**  Item 1 of the wave-49 residue — the only analytic item, and the
+  one waves 49 and 50 each restated — is **closed**.  Items 2–5 are untouched by this wave and
+  stand exactly as wave 49 left them:
+
+  2. the moment identification of the polynomial coefficients in `hB1`, `hB2`, `h3a`, `h3b`,
+     `h4` at `Zₙ`, over the arithmetic half wave 48 proved (`exists_const_of_damped_poly`);
+  3. the affine transfer of the middle- and outer-range inputs to `Zₙ`, by
+     `pairAt_zero_eq_affine`/`pairAt_one_eq_affine` (`‖L − I‖ = O(n^{-3/2})`, so no radius or
+     band exponent moves);
+  4. the skewness comparison `|γₙ − γ|`, named by wave 48 and priced but never proved;
+  5. the composition, and with it the budget statement `N = 138` at `M = n^{23/24}`.  Its
+     *arithmetic* is proved and has been since wave 46 (`leakage_ledger_radius_138_le`,
+     `leakage_ledger_radius_137_gt`, `tail_ledger_radius_seventeen_sixths`); what is owed is the
+     certificate re-run at that `N` and that radius, which the note above
+     `tail_ledger_exponent_general` records as needing `bulkRadius` parameterised rather than
+     re-derived.  No wave has done that, and this one has not either.
+
+  **This theorem is therefore still `sorry`, the file is at one `sorry`, and Batch 12 is not
+  complete.  Wave 51 closed item 1 end to end and corrected the plan's own prescription for its
+  odd order; it did not attempt the composition.** -/
 
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
