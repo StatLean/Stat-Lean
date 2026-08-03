@@ -14,9 +14,8 @@ bias term explicitly:
               + √n · P_{θ̂_n, η} ℓ̃_{θ̂_n, η̂_n} + o_P(1).
 ```
 
-The discharge of vdV thm:25.54 (`zEstimator_asympLinear_of_taylor`) does
-not consume the no-bias field along the Taylor critical path, so the
-no-bias-free part lives as `ZEstimatorTaylorCore`. This file ships the
+The discharge of vdV thm:25.54 (`zEstimator_asympLinear_of_taylor`) takes
+`ZEstimatorTaylorCore`, whose interface omits the no-bias field. This file gives the
 discharge of thm:25.59 as a thin wrapper around the `Core`-based AL
 theorem, proving `AsymptoticallyLinearWithBiasAt` with
 `bias = (fun _ _ => 0)` (vdV's bias term `√n P ℓ̃` is absorbed by the
@@ -121,14 +120,13 @@ theorem zEstimator_biasResidual_asympLinear_of_taylor
         score_l_dot θ₀ := h
   exact ZEstimatorTaylorCore.zEstimator_asympLinear_of_taylor hCore
 
-/-- *Adapter: thm:25.59 bundle → bundled interface.*
+/-- **Zero-residual Taylor assumptions as a bias-residual bundle.**
 
-Promotes a `ZEstimatorBiasResidualTaylorHyp` plus the EIF-construction
-inputs (`h_mem`, `h_dψ`) into an `EfficientScoreEqBiasResidualAssumptions`
-with `bias := (fun _ _ => 0)`, by filling `asympLinear_25_59` from
-`zEstimator_biasResidual_asympLinear_of_taylor`. Lets concrete consumers
-plug a Taylor-route bundle into the existing bundled interface
-`zEstimator_biasResidual_expansion` without modifying that file.
+Constructs `EfficientScoreEqBiasResidualAssumptions` from
+`ZEstimatorBiasResidualTaylorHyp` and the EIF-construction inputs `h_mem` and `h_dψ`,
+with residual `(fun _ _ => 0)`. Positivity of the efficient information is inherited
+from the underlying `ZEstimatorTaylorCore`, and `asympLinear_25_59` is supplied by
+`zEstimator_biasResidual_asympLinear_of_taylor`.
 
 Mirrors `ZEstimatorTaylorCore.toEfficientScoreEqAssumptions` for thm:25.54.
 
