@@ -15141,6 +15141,110 @@ lemma studentized_outer_range_gap_le (γ : ℝ) {n : ℕ} (hn : 1 ≤ n) (μ : M
   linarith
 
 
+/-! #### The middle range in the shape `esseen_split_low`'s `hmid` consumes (wave 53)
+
+`exists_studentized_middle_range_bound` bounds the surrogate's transform; `hmid` asks for the
+*gap* to the comparison density's transform.  The second half is free: past `ρ₁ = n^{1/6}` the
+Edgeworth transform carries `e^{−π²ρ₁²} = e^{−π²n^{1/3}}`, which beats `n^{-3/2}` as soon as
+`n^{1/6} ≥ 9/4` — `log n ≤ 6n^{1/6}` against `π² ≥ 4` (`exists_exp_neg_pi_sq_sixth_le`).  The
+threshold is genuine and small; `π² ≥ 4` is all the file has (`Real.pi_gt_three` is not in the
+imported part of Mathlib), and with it the comparison is `9n^{1/6} ≤ 4n^{1/3}`. -/
+
+/-- **The comparison density's own transform is superpolynomially small past `n^{1/6}`.** -/
+lemma exists_exp_neg_pi_sq_sixth_le :
+    ∃ N : ℕ, 0 < N ∧ ∀ n : ℕ, N ≤ n →
+      Real.exp (-(Real.pi ^ 2 * ((n : ℝ) ^ ((1 : ℝ) / 6)) ^ 2))
+        ≤ 1 / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
+  obtain ⟨N₀, hN₀⟩ := exists_nat_gt ((9 / 4 : ℝ) ^ (6 : ℕ))
+  refine ⟨max N₀ 1, lt_of_lt_of_le one_pos (le_max_right _ _), fun n hn => ?_⟩
+  have hn₀ : N₀ ≤ n := le_trans (le_max_left _ _) hn
+  have hn1 : 1 ≤ n := le_trans (le_max_right _ _) hn
+  have hnR : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1
+  have hn0 : (0 : ℝ) < (n : ℝ) := by linarith
+  have hπ : (2 : ℝ) ≤ Real.pi := Real.two_le_pi
+  have hπsq : (4 : ℝ) ≤ Real.pi ^ 2 := by nlinarith [Real.pi_pos]
+  set u : ℝ := (n : ℝ) ^ ((1 : ℝ) / 6) with hudef
+  have hu0 : (0 : ℝ) ≤ u := Real.rpow_nonneg hn0.le _
+  have hbig : (9 / 4 : ℝ) ≤ u := by
+    have hstep : ((9 / 4 : ℝ) ^ (6 : ℕ)) ≤ (n : ℝ) := by
+      have : ((N₀ : ℝ)) ≤ (n : ℝ) := by exact_mod_cast hn₀
+      linarith
+    have h := Real.rpow_le_rpow (by positivity) hstep (by norm_num : (0 : ℝ) ≤ (1 : ℝ) / 6)
+    rwa [← Real.rpow_natCast (9 / 4 : ℝ) 6, ← Real.rpow_mul (by norm_num),
+      show ((6 : ℕ) : ℝ) * ((1 : ℝ) / 6) = 1 by norm_num, Real.rpow_one] at h
+  have hlog : Real.log (n : ℝ) ≤ u / ((1 : ℝ) / 6) := log_le_rpow_div (by norm_num) hn0
+  have hinv : 1 / ((n : ℝ) * Real.sqrt (n : ℝ))
+      = Real.exp (Real.log (n : ℝ) * (-(3 : ℝ) / 2)) := by
+    rw [one_div, inv_mul_sqrt_eq_rpow hn1, Real.rpow_def_of_pos hn0]
+  rw [hinv]
+  refine Real.exp_le_exp.2 ?_
+  nlinarith [hlog, hu0, hbig, hπsq]
+
+/-- **THE MIDDLE RANGE IN THE SHAPE `esseen_split_low`'s `hmid` CONSUMES.** -/
+theorem exists_studentized_middle_range_gap_bound
+    (F : Measure ℝ) [IsProbabilityMeasure F] (hFac : F ≪ volume)
+    (hF4 : MemLp (fun t : ℝ => t) 4 F) (hF6 : MemLp (fun t : ℝ => t) 6 F)
+    (hF4int : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F)
+    {σ : ℝ} (hσ : 0 < σ) (γ : ℝ) :
+    ∃ (C : ℝ) (N : ℕ), 0 < C ∧ 0 < N ∧ ∀ n : ℕ, N ≤ n → ∀ ξ : ℝ,
+      (n : ℝ) ^ ((1 : ℝ) / 6) ≤ |ξ| → |ξ| ≤ (n : ℝ) ^ 2 →
+      ‖charFun ((vecRootLaw F
+          (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n).map
+          (deltaSurrogate σ ((Real.sqrt (n : ℝ))⁻¹))) (-(2 * Real.pi * ξ))
+        - charFunDensity (studentizedEdgeworthDensity γ n) (-(2 * Real.pi * ξ))‖
+        ≤ C / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
+  obtain ⟨C₁, N₁, hC₁, hN₁0, hmid⟩ :=
+    exists_studentized_middle_range_bound F hFac hF4 hF6 hF4int hσ
+  obtain ⟨N₆, hN₆0, hexp6⟩ := exists_exp_neg_pi_sq_sixth_le
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  refine ⟨C₁ + (1 + 1030 * Real.pi ^ 3 * |γ|), max (max N₁ N₆) 1, by positivity,
+    lt_of_lt_of_le one_pos (le_max_right _ _), ?_⟩
+  intro n hn ξ hlo hhi
+  have hn₁ : N₁ ≤ n := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hn
+  have hn₆ : N₆ ≤ n := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hn
+  have hn1 : 1 ≤ n := le_trans (le_max_right _ _) hn
+  have hnR : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1
+  have hn0 : (0 : ℝ) < (n : ℝ) := by linarith
+  have hden : (0 : ℝ) < (n : ℝ) * Real.sqrt (n : ℝ) := by positivity
+  have habs : |-(2 * Real.pi * ξ)| = 2 * Real.pi * |ξ| := by
+    rw [abs_neg, abs_mul, abs_mul, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 2), abs_of_pos hπ]
+  have hξ0 : (0 : ℝ) ≤ |ξ| := abs_nonneg ξ
+  have hlo0 : (0 : ℝ) ≤ (n : ℝ) ^ ((1 : ℝ) / 6) := Real.rpow_nonneg hn0.le _
+  -- the surrogate's transform
+  have hA : ‖charFun ((vecRootLaw F
+      (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n).map
+      (deltaSurrogate σ ((Real.sqrt (n : ℝ))⁻¹))) (-(2 * Real.pi * ξ))‖
+      ≤ C₁ / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
+    refine hmid n hn₁ (-(2 * Real.pi * ξ)) ?_ ?_
+    · rw [habs]; nlinarith [Real.two_le_pi]
+    · rw [habs]; nlinarith
+  -- the comparison density's transform
+  have hB : ‖charFunDensity (studentizedEdgeworthDensity γ n) (-(2 * Real.pi * ξ))‖
+      ≤ (1 + 1030 * Real.pi ^ 3 * |γ|) / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
+    have h2 := norm_charFunDensity_studentizedEdgeworthDensity_le γ hn1 (-(2 * Real.pi * ξ))
+    have h3 := studentizedEdgeworthCharFun_tail_le γ hlo0 hlo
+    have h4 := hexp6 n hn₆
+    have hc0 : (0 : ℝ) ≤ 1 + 1030 * Real.pi ^ 3 * |γ| := by positivity
+    have h5 : (1 + 1030 * Real.pi ^ 3 * |γ|)
+        * Real.exp (-(Real.pi ^ 2 * ((n : ℝ) ^ ((1 : ℝ) / 6)) ^ 2))
+        ≤ (1 + 1030 * Real.pi ^ 3 * |γ|) * (1 / ((n : ℝ) * Real.sqrt (n : ℝ))) :=
+      mul_le_mul_of_nonneg_left h4 hc0
+    have h6 : (1 + 1030 * Real.pi ^ 3 * |γ|) * (1 / ((n : ℝ) * Real.sqrt (n : ℝ)))
+        = (1 + 1030 * Real.pi ^ 3 * |γ|) / ((n : ℝ) * Real.sqrt (n : ℝ)) := by ring
+    have hs : (-(2 * Real.pi * ξ)) ^ 2 = (2 * Real.pi * ξ) ^ 2 := by ring
+    rw [hs, abs_neg] at h2
+    linarith
+  have hsplit := norm_sub_le
+    (charFun ((vecRootLaw F
+      (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n).map
+      (deltaSurrogate σ ((Real.sqrt (n : ℝ))⁻¹))) (-(2 * Real.pi * ξ)))
+    (charFunDensity (studentizedEdgeworthDensity γ n) (-(2 * Real.pi * ξ)))
+  have hsum : C₁ / ((n : ℝ) * Real.sqrt (n : ℝ))
+      + (1 + 1030 * Real.pi ^ 3 * |γ|) / ((n : ℝ) * Real.sqrt (n : ℝ))
+      = (C₁ + (1 + 1030 * Real.pi ^ 3 * |γ|)) / ((n : ℝ) * Real.sqrt (n : ℝ)) := by ring
+  linarith
+
+
 /-! #### The cost of the wider outer radius, on input (C) — SUPERSEDED BY WAVE 53
 
 **THE REQUIREMENT THIS SUBSECTION PRICES DOES NOT EXIST.**  It is the cost of reaching
