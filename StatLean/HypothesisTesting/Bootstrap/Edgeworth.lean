@@ -10623,6 +10623,167 @@ lemma integral_pi_sum_pow_four_le (F : Measure ℝ) [IsProbabilityMeasure F] {U 
   have hn0 : (0 : ℝ) ≤ (n : ℝ) := by positivity
   nlinarith [hmono, h4, hp, hq2, hn0, sq_nonneg ((n : ℝ) * c)]
 
+
+/-! ### WAVE 50, ITEM 1: the moment recursion at every order, and Rosenthal at order six
+
+The file has the order-four analogue (`integral_pi_sum_moments`, `integral_pi_sum_pow_four_le`)
+and nothing above it.  What follows is the general device and the two orders the graded ledger
+actually consumes.
+
+`integral_add_pow_of_bounded` is the binomial theorem under the integral at every order (the
+degree-four ad-hoc chain `integral_poly_four_of_bounded`/`integral_add_pow_four_of_bounded` is
+what it replaces), and `integral_pi_sum_pow_succ` composes it with the head/tail split
+`integral_pi_succ_of_bounded` into the **exact moment recursion of an iid sum**:
+
+`M_p(n+1) = ∑_{k≤p} C(p,k)·m_k·M_{p−k}(n)`,   `m_k = ∫Vᵏ dF`,  `M_p(n) = ∫(∑V)ᵖ dπ`.
+
+Everything below is arithmetic on that recursion, and the centring `m₁ = 0` is what makes it
+close: at `p = 3` it kills the only term that could grow, leaving `M₃(n) = n·m₃` **exactly**
+(`integral_pi_sum_pow_three`); at `p = 6` it kills the `M₅` term outright, so the sixth moment
+never needs the fifth.  The recursion at `p = 6` is therefore
+
+`M₆(n+1) = M₆(n) + 15·m₂·M₄(n) + 20·n·m₃² + 15·n·m₂·m₄ + m₆`,
+
+and feeding `M₄(n) ≤ n·m₄ + 3n²m₂²` into it and summing gives the four-term bound
+`integral_pi_sum_pow_six_le`.  That bound is Rosenthal's at order six in the form the ledger
+wants — `n·m₆` (the single large summand) and `n³m₂³` (the Gaussian term), with the two
+intermediate terms `n²m₂m₄` and `n²m₃²` left explicit rather than absorbed, because at the
+truncation level `τ = √n` they are what the ledger reads directly.
+
+**Where it lands.**  On the first coordinate (`|Ṽ| ≤ τ = √n`, `m₄ ≤ μ₄`), all four terms are
+`O(n³)` against the normalisation `n⁻³`, so `E|w₀|⁶ = O(1)`.  On the second
+(`|Ṽ| ≤ τ² = n`, `m₄ ≲ μ₈` by `hF8`), `m₆ ≤ τ⁴m₄ ≲ n²μ₈` and again every term is `O(n³)`, so
+`E|w₁|⁶ = O(1)` — this is the wave-49 arithmetic, and it is correct at order six.  It is order
+*nine* on the second coordinate that is not, which is what the section above corrects. -/
+
+private lemma integrable_pow_of_bounded {α : Type*} [MeasurableSpace α] (ν : Measure α)
+    [IsProbabilityMeasure ν] {W : α → ℝ} (hW : Measurable W) {D : ℝ} (hWb : ∀ z, |W z| ≤ D)
+    (k : ℕ) : Integrable (fun z => W z ^ k) ν := by
+  refine integrable_of_ae_abs_le (hW.pow_const k).aestronglyMeasurable (C := D ^ k) ?_
+  filter_upwards with z
+  rw [abs_pow]
+  exact pow_le_pow_left₀ (abs_nonneg _) (hWb z) k
+
+/-- **The binomial expansion under the integral, at every order.** -/
+lemma integral_add_pow_of_bounded {α : Type*} [MeasurableSpace α] (ν : Measure α)
+    [IsProbabilityMeasure ν] {W : α → ℝ} (hW : Measurable W) {D : ℝ} (hWb : ∀ z, |W z| ≤ D)
+    (a : ℝ) (p : ℕ) :
+    ∫ z, (a + W z) ^ p ∂ν
+      = ∑ k ∈ Finset.range (p + 1), a ^ k * (p.choose k : ℝ) * ∫ z, W z ^ (p - k) ∂ν := by
+  have hexp : ∀ z, (a + W z) ^ p
+      = ∑ k ∈ Finset.range (p + 1), a ^ k * (p.choose k : ℝ) * W z ^ (p - k) := by
+    intro z
+    rw [add_pow]
+    exact Finset.sum_congr rfl fun k _ => by ring
+  simp only [hexp]
+  rw [integral_finset_sum _ (fun k _ =>
+    (integrable_pow_of_bounded ν hW hWb (p - k)).const_mul (a ^ k * (p.choose k : ℝ)))]
+  exact Finset.sum_congr rfl fun k _ => integral_const_mul _ _
+
+/-- **The moment recursion of an iid sum, at every order.** -/
+lemma integral_pi_sum_pow_succ (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
+    (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (n p : ℕ) :
+    ∫ y : Fin (n + 1) → ℝ, (∑ i, V (y i)) ^ p ∂(Measure.pi fun _ : Fin (n + 1) => F)
+      = ∑ k ∈ Finset.range (p + 1), (p.choose k : ℝ) * (∫ x, V x ^ k ∂F)
+          * ∫ z : Fin n → ℝ, (∑ i, V (z i)) ^ (p - k) ∂(Measure.pi fun _ : Fin n => F) := by
+  have hB0 : (0 : ℝ) ≤ B := le_trans (abs_nonneg _) (hB 0)
+  have hsumm : ∀ m : ℕ, Measurable fun z : Fin m → ℝ => ∑ i, V (z i) := fun m =>
+    Finset.measurable_sum _ fun i _ => hV.comp (measurable_pi_apply i)
+  have hsumb : ∀ m : ℕ, ∀ z : Fin m → ℝ, |∑ i, V (z i)| ≤ (m : ℝ) * B := by
+    intro m z
+    calc |∑ i, V (z i)| ≤ ∑ _i : Fin m, B :=
+          (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => hB (z i))
+      _ = (m : ℝ) * B := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  have hfm : Measurable fun y : Fin (n + 1) → ℝ => (∑ i, V (y i)) ^ p :=
+    (hsumm (n + 1)).pow_const p
+  have hfb : ∀ y : Fin (n + 1) → ℝ, |(∑ i, V (y i)) ^ p| ≤ (((n : ℝ) + 1) * B) ^ p := by
+    intro y
+    rw [abs_pow]
+    refine pow_le_pow_left₀ (abs_nonneg _) ?_ p
+    have := hsumb (n + 1) y
+    push_cast at this
+    exact this
+  rw [integral_pi_succ_of_bounded F hfm hfb]
+  have hcons : ∀ (x : ℝ) (z : Fin n → ℝ),
+      (∑ i, V ((Fin.cons x z : Fin (n + 1) → ℝ) i)) ^ p = (V x + ∑ i, V (z i)) ^ p := by
+    intro x z
+    congr 1
+    simp [Fin.sum_univ_succ]
+  have hinner : ∀ x : ℝ,
+      (∫ z : Fin n → ℝ, (∑ i, V ((Fin.cons x z : Fin (n + 1) → ℝ) i)) ^ p
+          ∂(Measure.pi fun _ : Fin n => F))
+        = ∑ k ∈ Finset.range (p + 1), V x ^ k * ((p.choose k : ℝ)
+            * ∫ z : Fin n → ℝ, (∑ i, V (z i)) ^ (p - k)
+                ∂(Measure.pi fun _ : Fin n => F)) := by
+    intro x
+    simp only [hcons]
+    rw [integral_add_pow_of_bounded _ (hsumm n) (hsumb n) (V x) p]
+    exact Finset.sum_congr rfl fun k _ => by ring
+  simp only [hinner]
+  rw [integral_finset_sum _ (fun k _ =>
+    (integrable_pow_of_bounded F hV hB k).mul_const _)]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [MeasureTheory.integral_mul_const]
+  ring
+
+lemma integral_pi_sum_pow_three (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
+    (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hV0 : ∫ x, V x ∂F = 0) (n : ℕ) :
+    ∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 3 ∂(Measure.pi fun _ : Fin n => F)
+      = (n : ℝ) * ∫ x, V x ^ 3 ∂F := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [integral_pi_sum_pow_succ F hV hB n 3]
+    obtain ⟨h1, -, -⟩ := integral_pi_sum_moments F hV hB hV0 n
+    have hm0 : (∫ x, V x ^ 0 ∂F) = 1 := by simp
+    have hm1 : (∫ x, V x ^ 1 ∂F) = 0 := by simpa using hV0
+    have hM0 : (∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 0
+        ∂(Measure.pi fun _ : Fin n => F)) = 1 := by simp
+    have hM1 : (∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 1
+        ∂(Measure.pi fun _ : Fin n => F)) = 0 := by simpa using h1
+    rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
+      Finset.sum_range_succ, Finset.sum_range_zero]
+    norm_num [Nat.choose, hm0, hm1, hM0, hM1, hV0, h1, ih]
+    ring
+
+lemma integral_pi_sum_pow_six_le (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
+    (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hV0 : ∫ x, V x ∂F = 0) (n : ℕ) :
+    ∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 6 ∂(Measure.pi fun _ : Fin n => F)
+      ≤ (n : ℝ) * (∫ x, V x ^ 6 ∂F)
+        + 15 * (n : ℝ) ^ 2 * (∫ x, V x ^ 2 ∂F) * (∫ x, V x ^ 4 ∂F)
+        + 10 * (n : ℝ) ^ 2 * (∫ x, V x ^ 3 ∂F) ^ 2
+        + 15 * (n : ℝ) ^ 3 * (∫ x, V x ^ 2 ∂F) ^ 3 := by
+  have hm2n : (0 : ℝ) ≤ ∫ x, V x ^ 2 ∂F :=
+    integral_nonneg fun x => by positivity
+  have hm4n : (0 : ℝ) ≤ ∫ x, V x ^ 4 ∂F :=
+    integral_nonneg fun x => by positivity
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [integral_pi_sum_pow_succ F hV hB n 6]
+    obtain ⟨h1, h2, h4⟩ := integral_pi_sum_moments F hV hB hV0 n
+    have h3 := integral_pi_sum_pow_three F hV hB hV0 n
+    have hm0 : (∫ x, V x ^ 0 ∂F) = 1 := by simp
+    have hm1 : (∫ x, V x ^ 1 ∂F) = 0 := by simpa using hV0
+    have hM0 : (∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 0
+        ∂(Measure.pi fun _ : Fin n => F)) = 1 := by simp
+    have hM1 : (∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 1
+        ∂(Measure.pi fun _ : Fin n => F)) = 0 := by simpa using h1
+    rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
+      Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ,
+      Finset.sum_range_succ, Finset.sum_range_zero]
+    have key : 15 * (∫ x, V x ^ 2 ∂F)
+        * (∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 4 ∂(Measure.pi fun _ : Fin n => F))
+        ≤ 15 * (∫ x, V x ^ 2 ∂F)
+          * ((n : ℝ) * (∫ x, V x ^ 4 ∂F) + 3 * (n : ℝ) ^ 2 * (∫ x, V x ^ 2 ∂F) ^ 2) :=
+      mul_le_mul_of_nonneg_left h4 (by linarith)
+    have hn0 : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+    norm_num [Nat.choose, hm0, hm1, hM0, hM1, hV0, h1, h2, h3]
+    nlinarith [ih, key, hm2n, hm4n, hn0, sq_nonneg (∫ x, V x ^ 3 ∂F),
+      mul_nonneg hm2n hm4n, mul_nonneg (mul_nonneg hm2n hm2n) hm2n,
+      mul_nonneg hn0 (mul_nonneg (mul_nonneg hm2n hm2n) hm2n)]
+
 /-- `‖v‖⁴ ≤ 2(v₀⁴ + v₁⁴)` on the plane. -/
 lemma norm_pow_four_le_two_mul (v : E₂) :
     ‖v‖ ^ 4 ≤ 2 * ((v 0) ^ 4 + (v 1) ^ 4) := by
@@ -16112,6 +16273,77 @@ theorem integral_surrogateRemGraded_le_of_graded (μ : Measure (EuclideanSpace �
   nlinarith [mul_le_mul_of_nonneg_left h₃ c₁, mul_le_mul_of_nonneg_left h₄ c₂,
     mul_le_mul_of_nonneg_left h₅ c₃, mul_le_mul_of_nonneg_left h₆ c₄,
     mul_le_mul_of_nonneg_left hQ₃ c₅, mul_le_mul_of_nonneg_left hQ₄ c₆]
+
+/-! #### The ledger of the correction, as arithmetic
+
+The four lemmas below are the exponents the paragraph above quotes.  They are stated on `rpow`
+so that nothing is hidden in a cast, in the style of `crude_graded_ledger_exponent`. -/
+
+/-- **The second coordinate's root moments, at every order.**  The single-large-summand term of
+a Rosenthal bound for the second coordinate contributes `n^{1−p/2}·E|η̃|^p`, and with
+`|η̃| ≤ τ² = n` and `E η̃⁴ = O(1)` (which is what `hF8` buys) that is `n^{1−p/2}·n^{p−4}`.  The
+exponent is `p/2 − 3`: the second coordinate's root moments are `O(1)` **exactly up to `p = 6`**
+and grow past it. -/
+lemma second_coord_root_moment_exponent {n : ℕ} (hn : 0 < n) (p : ℝ) :
+    (n : ℝ) ^ (1 - p / 2) * (n : ℝ) ^ (p - 4) = (n : ℝ) ^ (p / 2 - 3) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_add h0]
+  ring_nf
+
+/-- At `p = 6` the exponent is `0`: `E|w₁|⁶ = O(1)`, which is the wave-49 arithmetic and is
+correct. -/
+lemma second_coord_root_sixth_moment_bounded {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) ^ (1 - (6 : ℝ) / 2) * (n : ℝ) ^ ((6 : ℝ) - 4) = 1 := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_add h0]
+  norm_num
+
+/-- At `p = 9` the exponent is `3/2`: `E|w₁|⁹ ≍ n^{3/2}`, **not** `O(1)`.  This is the wave-49
+claim that fails, and with it the hypothesis `h9` of
+`integral_surrogateRemGraded_le_of_moments`. -/
+lemma second_coord_root_ninth_moment_exponent {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) ^ (1 - (9 : ℝ) / 2) * (n : ℝ) ^ ((9 : ℝ) - 4) = (n : ℝ) ^ ((3 : ℝ) / 2) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_add h0]
+  norm_num
+
+/-- **The collapsed ledger at the worst monomial misses by exactly one power of `n`.**  At `r³`
+the monomial `|u|³|v|⁶` costs `n^{−3/2}·n^{3/2} = 1`, against a required `n⁻¹`. -/
+lemma collapsed_worst_monomial_ledger {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) ^ (-(3 : ℝ) / 2) * (n : ℝ) ^ ((3 : ℝ) / 2) = 1 := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_add h0]
+  norm_num
+
+/-- **The graded ledger at the same monomial clears with `n^{-1/2}` to spare.**  At its own `r⁶`
+the monomial costs `n^{−3}·n^{3/2} = n^{−3/2}`. -/
+lemma graded_worst_monomial_ledger {n : ℕ} (hn : 0 < n) :
+    (n : ℝ) ^ (-(3 : ℝ)) * (n : ℝ) ^ ((3 : ℝ) / 2) = (n : ℝ) ^ (-(3 : ℝ) / 2) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_add h0]
+  norm_num
+
+/-- **Buying the ninth moment with moments instead costs twelve.**  With `E|η|^q = O(1)` the
+truncation bound reads `E|η̃|⁹ ≤ (τ²)^{9−q}E|η|^q = n^{9−q}`, so the ninth root moment carries
+`n^{11/2−q}`. -/
+lemma second_coord_ninth_moment_exponent_of_moments {n : ℕ} (hn : 0 < n) (q : ℝ) :
+    (n : ℝ) ^ (1 - (9 : ℝ) / 2) * (n : ℝ) ^ ((9 : ℝ) - q) = (n : ℝ) ^ ((11 : ℝ) / 2 - q) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_add h0]
+  ring_nf
+
+/-- …and that exponent is `≤ 0` exactly from `q = 6` on.  Six moments of `η = ξ² − σ²` is
+**twelve** moments of `F`, against the eight the headline carries. -/
+lemma second_coord_ninth_moment_threshold (q : ℕ) :
+    (11 : ℝ) / 2 - (q : ℝ) ≤ 0 ↔ 6 ≤ q := by
+  constructor
+  · intro h
+    by_contra hc
+    push_neg at hc
+    interval_cases q <;> norm_num at h
+  · intro h
+    have : (6 : ℝ) ≤ (q : ℝ) := by exact_mod_cast h
+    linarith
 
 /-- **One-term Edgeworth expansion for the studentized sample mean, uniform in the argument.**
 
