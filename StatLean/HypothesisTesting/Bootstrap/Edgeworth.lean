@@ -14740,6 +14740,51 @@ lemma middle_range_ledger_radius_two {n : ℕ} (hn : 0 < n) :
   rw [middle_range_ledger_exponent _ hn, show (2 : ℝ) - 3 = -1 by norm_num,
     Real.rpow_neg_one]
 
+/-! #### The same middle range, at the price `esseen_split_low` actually charges (wave 53)
+
+`middle_range_ledger_radius_two` reads the middle range at the *ratio* `ρ/ρ₁`, which is what
+wave 43's form of `esseen_split_low` charged and what forced `M₁ = n^{−17/6}`.  The split now
+charges `log(ρ/ρ₁)`, and the three lemmas below are the whole of the consequence: at
+`ρ₁ = n^{1/6}`, `ρ = n²` the logarithm is `(11/6)log n`, and `log n ≤ 2√n`, so the certificate's
+own `M₁ = C/(n√n)` delivers `22C/(3π)·n⁻¹` — the headline accuracy, with `n^{-1/2}log n` of
+slack.  **`N = 10` at `M = n^{5/8}` is enough; the `N = 138` route below is not needed.** -/
+
+lemma log_le_two_sqrt {x : ℝ} (hx : 0 < x) : Real.log x ≤ 2 * Real.sqrt x := by
+  have hs : 0 < Real.sqrt x := Real.sqrt_pos.2 hx
+  have h1 : Real.log (Real.sqrt x) ≤ Real.sqrt x - 1 := Real.log_le_sub_one_of_pos hs
+  rw [Real.log_sqrt hx.le] at h1
+  linarith
+
+lemma middle_range_log_ratio_eq {n : ℕ} (hn : 1 ≤ n) :
+    Real.log ((n : ℝ) ^ (2 : ℝ) / (n : ℝ) ^ ((1 : ℝ) / 6)) = 11 / 6 * Real.log (n : ℝ) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_sub h0, Real.log_rpow h0]
+  ring
+
+/-- **THE MIDDLE RANGE CLEARS AT THE CERTIFICATE'S OWN ACCURACY.**  The middle term of
+`esseen_split_low` at `ρ₁ = n^{1/6}`, `ρ = n²` and the certificate's `M₁ = C/(n√n)` is at most
+`22C/(3π)·n⁻¹`.  This is the lemma that removes the `N = 138` budget item. -/
+lemma middle_range_log_ledger {C : ℝ} (hC : 0 ≤ C) {n : ℕ} (hn : 1 ≤ n) :
+    2 * (C / ((n : ℝ) * Real.sqrt (n : ℝ)))
+        * Real.log ((n : ℝ) ^ (2 : ℝ) / (n : ℝ) ^ ((1 : ℝ) / 6)) / Real.pi
+      ≤ 22 * C / (3 * Real.pi) / (n : ℝ) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hs : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 h0
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  rw [middle_range_log_ratio_eq hn]
+  have hlog : Real.log (n : ℝ) ≤ 2 * Real.sqrt (n : ℝ) := log_le_two_sqrt h0
+  have hlog0 : (0 : ℝ) ≤ Real.log (n : ℝ) := Real.log_nonneg (by exact_mod_cast hn)
+  have hkey : 2 * (C / ((n : ℝ) * Real.sqrt (n : ℝ))) * (11 / 6 * Real.log (n : ℝ)) / Real.pi
+      ≤ 2 * (C / ((n : ℝ) * Real.sqrt (n : ℝ))) * (11 / 6 * (2 * Real.sqrt (n : ℝ)))
+          / Real.pi := by
+    have hpre : (0 : ℝ) ≤ 2 * (C / ((n : ℝ) * Real.sqrt (n : ℝ))) := by positivity
+    have := mul_le_mul_of_nonneg_left (by linarith : 11 / 6 * Real.log (n : ℝ)
+      ≤ 11 / 6 * (2 * Real.sqrt (n : ℝ))) hpre
+    exact div_le_div_of_nonneg_right this hπ.le
+  refine hkey.trans (le_of_eq ?_)
+  field_simp
+  ring
+
 /-- **The outer range's tail weight at `δ = n⁻¹` and `ρ = n²`.**  `2M/(δπ²ρ) = (2M/π²)·n⁻¹`: a
 *bare constant* `M` already delivers the headline accuracy there.  This is the whole of item 3
 of the wave-46 residue, and it is why the outer radius can be pushed out at all. -/
@@ -14778,7 +14823,15 @@ lemma studentized_outer_range_gap_le (γ : ℝ) {n : ℕ} (hn : 1 ≤ n) (μ : M
   linarith
 
 
-/-! #### The cost of the wider outer radius, on input (C)
+/-! #### The cost of the wider outer radius, on input (C) — SUPERSEDED BY WAVE 53
+
+**THE REQUIREMENT THIS SUBSECTION PRICES DOES NOT EXIST.**  It is the cost of reaching
+`M₁ = n^{−17/6}` in the middle range, and `M₁ = n^{−17/6}` was forced only by wave 43's crude
+form of `esseen_split_low`, which charged the middle range the *ratio* `ρ/ρ₁` instead of
+`log(ρ/ρ₁)`.  With the logarithm — see `middle_range_log_ledger` above and the section note over
+`esseen_split_low` — the certificate's own `M₁ = C/(n√n)` at `N = 10`, `M = n^{5/8}` clears the
+middle range with `n^{-1/2}log n` to spare.  The lemmas below are true arithmetic and are kept as
+the record of the route not taken; **nothing in the composition calls them.**
 
 `exists_integral_norm_fourierWeight_bulkMultiplier_band_fourteen_le` gives the *leakage* half of
 the certificate at `n^{−17/6}`, but the certificate's `ε` and `η` are input (C)'s, and (C) is
@@ -15350,6 +15403,144 @@ private lemma esseen_split (g : ℝ → ℝ) {δ ρ Kw M : ℝ}
   have hsplit := integral_add_compl hAmeas hInt
   linarith
 
+/-! #### The middle range costs a LOGARITHM, and wave 43's reason for not saying so is false
+
+`esseen_split_low` prices its middle range with the crude weight `1/(π|ξ|)`, and wave 43 bounded
+that weight by its value at the inner edge, `1/(πρ₁)`, giving `2M₁ρ/(πρ₁)` — the middle constant
+against the **ratio** of the two radii.  The docstring of that wave records the sharper price and
+declines it: *"the logarithm would be sharper and is not needed, since every candidate route for
+the middle range produces an `M₁` that is smaller than any power of `n`."*
+
+**That justification is false, and it is the sole source of the `N = 138` budget item.**  The
+route the file actually has for the middle range is the certificate, and
+`exists_fourierCertificate_deltaSurrogate` produces `M₁ = O(n^{-3/2})`, which is emphatically
+*not* smaller than any power of `n`.  Read at `ρ₁ = n^{1/6}`, `ρ = n²` the two prices are
+
+`ratio:      M₁·ρ/ρ₁ = n^{-3/2}·n^{11/6} = n^{1/3}`  — fails, and forces `M₁ ≤ n^{-17/6}`;
+`logarithm:  M₁·log(ρ/ρ₁) = n^{-3/2}·(11/6)log n = o(n⁻¹)`  — clears, with `n^{-1/2}log n` to
+spare.
+
+So the whole of `#### The cost of the wider outer radius, on input (C)` — `N = 138` integrations
+by parts at the bulk radius `n^{23/24}`, `leakage_ledger_radius_138_le`,
+`tail_ledger_radius_seventeen_sixths`, and the note that `bulkRadius` must be parameterised —
+prices a requirement that does not exist.  Those lemmas remain true arithmetic and are left in
+place as the record of the route not taken; what changes is that **nothing in the composition
+asks for them.**  `N = 10` at `M = n^{5/8}`, which the certificate already proves, is enough.
+
+The logarithm itself is elementary: the annulus `{ρ₁ ≤ |ξ| ≤ ρ}` is two closed intervals, the
+Esseen weight's crude branch is `|ξ|⁻¹` on each, and `∫ x in a..b, x⁻¹ = log(b/a)`.  The negative
+half is the positive half reflected (`intervalIntegral.integral_comp_neg`), so the total is
+`2log(ρ/ρ₁)`. -/
+
+private lemma annulus_eq {ρ₁ ρ : ℝ} (hρ₁ : 0 < ρ₁) :
+    {ξ : ℝ | ρ₁ ≤ |ξ| ∧ |ξ| ≤ ρ} = Set.Icc (-ρ) (-ρ₁) ∪ Set.Icc ρ₁ ρ := by
+  ext ξ
+  simp only [Set.mem_setOf_eq, Set.mem_union, Set.mem_Icc]
+  rcases le_or_gt 0 ξ with h | h
+  · rw [abs_of_nonneg h]
+    constructor
+    · rintro ⟨h1, h2⟩; exact Or.inr ⟨h1, h2⟩
+    · rintro (⟨h1, h2⟩ | ⟨h1, h2⟩)
+      · exact absurd (lt_of_le_of_lt h2 (by linarith)) (not_lt.2 h)
+      · exact ⟨h1, h2⟩
+  · rw [abs_of_neg h]
+    constructor
+    · rintro ⟨h1, h2⟩; exact Or.inl ⟨by linarith, by linarith⟩
+    · rintro (⟨h1, h2⟩ | ⟨h1, h2⟩)
+      · exact ⟨by linarith, by linarith⟩
+      · linarith
+
+private lemma annulus_disjoint {ρ₁ ρ : ℝ} (hρ₁ : 0 < ρ₁) :
+    Disjoint (Set.Icc (-ρ) (-ρ₁)) (Set.Icc ρ₁ ρ) := by
+  rw [Set.disjoint_left]
+  rintro x ⟨_, hx2⟩ ⟨hx3, _⟩
+  linarith
+
+private lemma integrableOn_inv_abs_Icc {a b : ℝ} (ha : 0 < a) :
+    IntegrableOn (fun ξ : ℝ => |ξ|⁻¹) (Set.Icc a b) := by
+  refine ContinuousOn.integrableOn_compact isCompact_Icc ?_
+  intro x hx
+  have hx0 : x ≠ 0 := by have := hx.1; intro h; rw [h] at this; linarith
+  exact ((continuous_abs.continuousAt).inv₀ (by simpa using hx0)).continuousWithinAt
+
+private lemma integrableOn_inv_abs_Icc_neg {a b : ℝ} (hb : b < 0) :
+    IntegrableOn (fun ξ : ℝ => |ξ|⁻¹) (Set.Icc a b) := by
+  refine ContinuousOn.integrableOn_compact isCompact_Icc ?_
+  intro x hx
+  have hx0 : x ≠ 0 := by have := hx.2; intro h; rw [h] at this; linarith
+  exact ((continuous_abs.continuousAt).inv₀ (by simpa using hx0)).continuousWithinAt
+
+/-- **The Esseen weight's crude branch over an annulus is a logarithm.** -/
+private lemma setIntegral_inv_abs_annulus {ρ₁ ρ : ℝ} (hρ₁ : 0 < ρ₁) (hρρ : ρ₁ ≤ ρ) :
+    (∫ ξ in {ξ : ℝ | ρ₁ ≤ |ξ| ∧ |ξ| ≤ ρ}, |ξ|⁻¹) = 2 * Real.log (ρ / ρ₁) := by
+  have hρ : 0 < ρ := lt_of_lt_of_le hρ₁ hρρ
+  have hpos : IntegrableOn (fun ξ : ℝ => |ξ|⁻¹) (Set.Icc ρ₁ ρ) := integrableOn_inv_abs_Icc hρ₁
+  have hneg : IntegrableOn (fun ξ : ℝ => |ξ|⁻¹) (Set.Icc (-ρ) (-ρ₁)) :=
+    integrableOn_inv_abs_Icc_neg (by linarith)
+  rw [annulus_eq hρ₁,
+    MeasureTheory.setIntegral_union (annulus_disjoint hρ₁) measurableSet_Icc hneg hpos]
+  have hP : (∫ ξ in Set.Icc ρ₁ ρ, |ξ|⁻¹) = Real.log (ρ / ρ₁) := by
+    rw [MeasureTheory.integral_Icc_eq_integral_Ioc,
+      ← intervalIntegral.integral_of_le hρρ]
+    rw [show (∫ x in ρ₁..ρ, |x|⁻¹) = ∫ x in ρ₁..ρ, x⁻¹ from ?_]
+    · exact integral_inv_of_pos hρ₁ hρ
+    · refine intervalIntegral.integral_congr ?_
+      intro x hx
+      rw [Set.uIcc_of_le hρρ] at hx
+      change |x|⁻¹ = x⁻¹
+      rw [abs_of_pos (lt_of_lt_of_le hρ₁ hx.1)]
+  have hN : (∫ ξ in Set.Icc (-ρ) (-ρ₁), |ξ|⁻¹) = Real.log (ρ / ρ₁) := by
+    rw [MeasureTheory.integral_Icc_eq_integral_Ioc,
+      ← intervalIntegral.integral_of_le (by linarith : (-ρ : ℝ) ≤ -ρ₁)]
+    rw [show (∫ x in (-ρ)..(-ρ₁), |x|⁻¹) = ∫ x in ρ₁..ρ, |(-x)|⁻¹ from ?_]
+    · rw [show (∫ x in ρ₁..ρ, |(-x)|⁻¹) = ∫ x in ρ₁..ρ, x⁻¹ from ?_]
+      · exact integral_inv_of_pos hρ₁ hρ
+      · refine intervalIntegral.integral_congr ?_
+        intro x hx
+        rw [Set.uIcc_of_le hρρ] at hx
+        change |(-x)|⁻¹ = x⁻¹
+        rw [abs_neg, abs_of_pos (lt_of_lt_of_le hρ₁ hx.1)]
+    · rw [intervalIntegral.integral_comp_neg (fun x : ℝ => |x|⁻¹)]
+  rw [hP, hN]
+  ring
+
+private lemma integrableOn_inv_abs_annulus {ρ₁ ρ : ℝ} (hρ₁ : 0 < ρ₁) :
+    IntegrableOn (fun ξ : ℝ => |ξ|⁻¹) {ξ : ℝ | ρ₁ ≤ |ξ| ∧ |ξ| ≤ ρ} := by
+  rw [annulus_eq hρ₁]
+  exact (integrableOn_inv_abs_Icc_neg (by linarith : -ρ₁ < (0 : ℝ))).union
+    (integrableOn_inv_abs_Icc hρ₁)
+
+/-- **The middle range of the Esseen split costs a logarithm of the ratio of the two radii, not
+the ratio itself.**  This is the whole of the wave-53 correction; everything downstream of it is
+bookkeeping. -/
+private lemma middle_annulus_bound {f : ℝ → ℝ} {M₁ ρ₁ ρ : ℝ} (hρ₁ : 0 < ρ₁) (hρρ : ρ₁ ≤ ρ)
+    (hM₁ : 0 ≤ M₁)
+    (hDint : IntegrableOn f ({ξ : ℝ | |ξ| ≤ ρ} \ {ξ : ℝ | |ξ| ≤ ρ₁}))
+    (hpt : ∀ ξ ∈ ({ξ : ℝ | |ξ| ≤ ρ} \ {ξ : ℝ | |ξ| ≤ ρ₁}), f ξ ≤ M₁ / Real.pi * |ξ|⁻¹) :
+    (∫ ξ in ({ξ : ℝ | |ξ| ≤ ρ} \ {ξ : ℝ | |ξ| ≤ ρ₁}), f ξ)
+      ≤ 2 * M₁ * Real.log (ρ / ρ₁) / Real.pi := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  set S : Set ℝ := {ξ : ℝ | ρ₁ ≤ |ξ| ∧ |ξ| ≤ ρ} with hSdef
+  set D : Set ℝ := {ξ : ℝ | |ξ| ≤ ρ} \ {ξ : ℝ | |ξ| ≤ ρ₁} with hDdef
+  have hDm : MeasurableSet D :=
+    (measurableSet_le (by fun_prop) measurable_const).diff
+      (measurableSet_le (by fun_prop) measurable_const)
+  have hDsub : D ⊆ S := by
+    rintro ξ ⟨h1, h2⟩
+    exact ⟨le_of_lt (not_le.1 h2), h1⟩
+  have hSint : IntegrableOn (fun ξ : ℝ => M₁ / Real.pi * |ξ|⁻¹) S :=
+    (integrableOn_inv_abs_annulus hρ₁).const_mul _
+  have hstep : (∫ ξ in D, f ξ) ≤ ∫ ξ in D, M₁ / Real.pi * |ξ|⁻¹ :=
+    setIntegral_mono_on hDint (hSint.mono_set hDsub) hDm hpt
+  have hmono : (∫ ξ in D, M₁ / Real.pi * |ξ|⁻¹) ≤ ∫ ξ in S, M₁ / Real.pi * |ξ|⁻¹ := by
+    refine setIntegral_mono_set hSint (Filter.Eventually.of_forall fun ξ => ?_) hDsub.eventuallyLE
+    have h : (0 : ℝ) ≤ |ξ|⁻¹ := by positivity
+    positivity
+  have hval : (∫ ξ in S, M₁ / Real.pi * |ξ|⁻¹) = 2 * M₁ * Real.log (ρ / ρ₁) / Real.pi := by
+    rw [MeasureTheory.integral_const_mul, hSdef, setIntegral_inv_abs_annulus hρ₁ hρρ]
+    ring
+  linarith
+
 /-- **The Esseen integral, split at the low range *and* at the window edge — the (U4′) twin of
 `esseen_split`.** Three regimes instead of two. On `|ξ| ≤ ρ₁` the integrand is dominated by
 `Kw·windowEnvelope₁ ξ` **plus an undamped cubic** `Kr|ξ|³`: the envelope part is the damped
@@ -15359,13 +15550,15 @@ constant `M₁` is asked for — that is the middle range, where nothing is expa
 the old constant `M` and the old tail bound.
 
 The three window contributions are priced with the *crude* weight `1/(π|ξ|)`, which is the exact
-value of the Esseen weight throughout `|ξ| ≤ ρ` whenever `δρ ≤ π⁻¹` (the split is at `ρ = c√n`
-and `δ = n⁻¹`, so this is never binding): `Kw∫windowDom₁` for the envelope, `2Krρ₁³/π` for the
-cubic — this is the term `low_range_ledger_exponent` prices, and it is the reason `ρ₁` cannot
-exceed `n^{1/6}` — and `2M₁ρ/(πρ₁)` for the middle range, which is `M₁` against the *ratio* of
-the two radii and not against `log(ρ/ρ₁)`; the logarithm would be sharper and is not needed,
-since every candidate route for the middle range produces an `M₁` that is smaller than any
-power of `n`. -/
+value of the Esseen weight throughout `|ξ| ≤ ρ` whenever `δρ ≤ π⁻¹`: `Kw∫windowDom₁` for the
+envelope, `2Krρ₁³/π` for the cubic — this is the term `low_range_ledger_exponent` prices, and it
+is the reason `ρ₁` cannot exceed `n^{1/6}` — and `2M₁log(ρ/ρ₁)/π` for the middle range.
+
+**WAVE 53: the middle term is the LOGARITHM of the ratio of the two radii, not the ratio.**
+Wave 43 stated it as `2M₁ρ/(πρ₁)` and its docstring declined the logarithm as "sharper and not
+needed"; see the section note above.  That is the difference between `n^{1/3}` and `n^{-3/2}log n`
+at `ρ₁ = n^{1/6}`, `ρ = n²`, `M₁ = n^{-3/2}`, and therefore between a middle range that the
+certificate cannot cover and one it covers with `n^{-1/2}log n` to spare. -/
 private lemma esseen_split_low (g : ℝ → ℝ) {δ ρ₁ ρ Kw Kr M₁ M : ℝ}
     (hδ : 0 < δ) (hρ₁ : 0 < ρ₁) (hρρ : ρ₁ ≤ ρ) (hKw : 0 ≤ Kw) (hKr : 0 ≤ Kr) (hM₁ : 0 ≤ M₁)
     (hg0 : ∀ ξ, 0 ≤ g ξ) (hgm : AEStronglyMeasurable g volume)
@@ -15376,7 +15569,7 @@ private lemma esseen_split_low (g : ℝ → ℝ) {δ ρ₁ ρ Kw Kr M₁ M : ℝ
         g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)))
       ∧ (∫ ξ : ℝ, g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)))
         ≤ Kw * (∫ ξ : ℝ, windowDom₁ ξ) + 2 * Kr * ρ₁ ^ 3 / Real.pi
-            + 2 * M₁ * ρ / (Real.pi * ρ₁) + 2 * M / (δ * Real.pi ^ 2 * ρ) := by
+            + 2 * M₁ * Real.log (ρ / ρ₁) / Real.pi + 2 * M / (δ * Real.pi ^ 2 * ρ) := by
   have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
   have hρ : 0 < ρ := lt_of_lt_of_le hρ₁ hρρ
   set W : ℝ → ℝ := fun ξ => min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)) with hWdef
@@ -15511,21 +15704,20 @@ private lemma esseen_split_low (g : ℝ → ℝ) {δ ρ₁ ρ Kw Kr M₁ M : ℝ
     have hb2 : (volume.real A) * (Kr * ρ₁ ^ 2 / Real.pi) = 2 * Kr * ρ₁ ^ 3 / Real.pi := by
       rw [hvolAr]; field_simp
     linarith [hstep, hsplit.le, hsplit.ge, hb1, hb2.le, hb2.ge]
-  have hbD : (∫ ξ in P \ A, g ξ * W ξ) ≤ 2 * M₁ * ρ / (Real.pi * ρ₁) := by
-    have hDm : MeasurableSet (P \ A) := hPm.diff hAm
-    have hDtop : volume (P \ A) ≠ ⊤ :=
-      ne_top_of_le_ne_top hPtop (measure_mono Set.diff_subset)
-    have hstep : (∫ ξ in P \ A, g ξ * W ξ) ≤ ∫ _ξ in P \ A, M₁ / (Real.pi * ρ₁) :=
-      setIntegral_mono_on hDint (integrableOn_const hDtop) hDm hptM
-    have hconst : (∫ _ξ in P \ A, M₁ / (Real.pi * ρ₁))
-        = (volume.real (P \ A)) * (M₁ / (Real.pi * ρ₁)) := by
-      rw [setIntegral_const, smul_eq_mul]
-    have hmono : volume.real (P \ A) ≤ 2 * ρ := by
-      rw [← hvolPr]; exact measureReal_mono Set.diff_subset hPtop
-    have hnn : (0 : ℝ) ≤ M₁ / (Real.pi * ρ₁) := by positivity
-    have := mul_le_mul_of_nonneg_right hmono hnn
-    have heq : 2 * ρ * (M₁ / (Real.pi * ρ₁)) = 2 * M₁ * ρ / (Real.pi * ρ₁) := by ring
-    linarith [hstep, hconst.le, hconst.ge, heq.le, heq.ge]
+  have hptM' : ∀ ξ ∈ P \ A, g ξ * W ξ ≤ M₁ / Real.pi * |ξ|⁻¹ := by
+    intro ξ hξ
+    obtain ⟨hξP, hξA⟩ := hξ
+    have h1 : ρ₁ ≤ |ξ| := le_of_lt (not_le.1 hξA)
+    have h2 : |ξ| ≤ ρ := hξP
+    have hx : (0 : ℝ) < |ξ| := lt_of_lt_of_le hρ₁ h1
+    have hWle : W ξ ≤ 1 / (Real.pi * |ξ|) := min_le_left _ _
+    have heq : M₁ * (1 / (Real.pi * |ξ|)) = M₁ / Real.pi * |ξ|⁻¹ := by
+      field_simp
+    calc g ξ * W ξ ≤ M₁ * W ξ := mul_le_mul_of_nonneg_right (hmid ξ h1 h2) (hWnn ξ)
+      _ ≤ M₁ * (1 / (Real.pi * |ξ|)) := mul_le_mul_of_nonneg_left hWle hM₁
+      _ = M₁ / Real.pi * |ξ|⁻¹ := heq
+  have hbD : (∫ ξ in P \ A, g ξ * W ξ) ≤ 2 * M₁ * Real.log (ρ / ρ₁) / Real.pi :=
+    middle_annulus_bound hρ₁ hρρ hM₁ hDint hptM'
   have hbT : (∫ ξ in Pᶜ, g ξ * W ξ) ≤ 2 * M / (δ * Real.pi ^ 2 * ρ) := by
     have hnnT : 0 ≤ᵐ[volume.restrict {ξ : ℝ | ρ ≤ |ξ|}] fun ξ : ℝ => g ξ * W ξ :=
       Filter.Eventually.of_forall hfnn
