@@ -74,7 +74,59 @@ does not state; needed to speak of *the* spectral distribution.) -/
 theorem ext_of_measureFourierCoeff (F G : Measure (AddCircle (2 * π)))
     [IsFiniteMeasure F] [IsFiniteMeasure G]
     (h : ∀ n, measureFourierCoeff F n = measureFourierCoeff G n) : F = G := by
-  sorry
+  haveI : Fact (0 < 2 * π) := ⟨by positivity⟩
+  -- every continuous function on the (compact) circle is bounded, and bounded continuous
+  -- functions are integrable against a finite measure
+  have hmk : ∀ φ : C(AddCircle (2 * π), ℂ),
+      BoundedContinuousFunction.toContinuousMapStarₐ ℂ
+        (BoundedContinuousFunction.mkOfCompact φ) = φ := by
+    intro φ; ext x; rfl
+  have hintF : ∀ φ : C(AddCircle (2 * π), ℂ), Integrable (fun z => φ z) F := fun φ =>
+    (BoundedContinuousFunction.mkOfCompact φ).integrable F
+  have hintG : ∀ φ : C(AddCircle (2 * π), ℂ), Integrable (fun z => φ z) G := fun φ =>
+    (BoundedContinuousFunction.mkOfCompact φ).integrable G
+  -- the hypothesis propagates from the monomials `fourier n` to their linear span, by
+  -- linearity of the integral
+  have key : ∀ φ ∈ Submodule.span ℂ (Set.range (fourier (T := 2 * π))),
+      ∫ z, φ z ∂F = ∫ z, φ z ∂G := by
+    intro φ hφ
+    induction hφ using Submodule.span_induction with
+    | mem x hx => obtain ⟨n, rfl⟩ := hx; exact h n
+    | zero => simp
+    | add x y _ _ hx hy =>
+        have e1 : ∫ z, (x + y) z ∂F = (∫ z, x z ∂F) + ∫ z, y z ∂F := by
+          simp only [ContinuousMap.add_apply]; exact integral_add (hintF x) (hintF y)
+        have e2 : ∫ z, (x + y) z ∂G = (∫ z, x z ∂G) + ∫ z, y z ∂G := by
+          simp only [ContinuousMap.add_apply]; exact integral_add (hintG x) (hintG y)
+        rw [e1, e2, hx, hy]
+    | smul c x _ hx =>
+        have e1 : ∫ z, (c • x) z ∂F = c • ∫ z, x z ∂F := by
+          simp only [ContinuousMap.smul_apply]; exact integral_smul c _
+        have e2 : ∫ z, (c • x) z ∂G = c • ∫ z, x z ∂G := by
+          simp only [ContinuousMap.smul_apply]; exact integral_smul c _
+        rw [e1, e2, hx]
+  -- transport Mathlib's `fourierSubalgebra` (which separates points, Stone–Weierstrass) to a
+  -- star subalgebra of the *bounded* continuous functions, as the extensionality engine wants
+  set A : StarSubalgebra ℂ (BoundedContinuousFunction (AddCircle (2 * π)) ℂ) :=
+    (fourierSubalgebra (T := 2 * π)).comap
+      (BoundedContinuousFunction.toContinuousMapStarₐ ℂ) with hAdef
+  have hmemA : ∀ φ : C(AddCircle (2 * π), ℂ), φ ∈ fourierSubalgebra (T := 2 * π) →
+      φ ∈ A.map (BoundedContinuousFunction.toContinuousMapStarₐ ℂ) := fun φ hφ =>
+    ⟨BoundedContinuousFunction.mkOfCompact φ, by simpa [hAdef, hmk φ] using hφ, hmk φ⟩
+  have hsep : (A.map (BoundedContinuousFunction.toContinuousMapStarₐ ℂ)).SeparatesPoints := by
+    intro x y hxy
+    obtain ⟨f, hf, hfxy⟩ := fourierSubalgebra_separatesPoints (T := 2 * π) hxy
+    obtain ⟨φ, hφ, rfl⟩ := hf
+    exact ⟨_, ⟨φ, hmemA φ hφ, rfl⟩, hfxy⟩
+  refine ext_of_forall_mem_subalgebra_integral_eq_of_polish hsep ?_
+  intro g hg
+  have hgmem : BoundedContinuousFunction.toContinuousMapStarₐ ℂ g
+      ∈ fourierSubalgebra (T := 2 * π) := hg
+  have hspan : (BoundedContinuousFunction.toContinuousMapStarₐ ℂ g)
+      ∈ Submodule.span ℂ (Set.range (fourier (T := 2 * π))) := by
+    rw [← fourierSubalgebra_coe]
+    exact hgmem
+  exact key _ hspan
 
 /-- **Helly–Bray step**: Fourier coefficients pass to weak limits of probability
 measures on the circle. -/
