@@ -32,9 +32,24 @@ precise.
 -/
 
 open MeasureTheory ProbabilityTheory Matrix
-open scoped ENNReal
+open scoped ENNReal InnerProductSpace
 
 namespace StatLean.StatisticalModels
+
+section BlockAlgebra
+
+variable {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
+
+/-- LEAN-ONLY: the quadratic form of a block matrix splits into its four block terms. -/
+private theorem dotProduct_fromBlocks_mulVec (A : Matrix ι₁ ι₁ ℝ) (B : Matrix ι₁ ι₂ ℝ)
+    (C : Matrix ι₂ ι₁ ℝ) (D : Matrix ι₂ ι₂ ℝ) (x : ι₁ ⊕ ι₂ → ℝ) :
+    x ⬝ᵥ (Matrix.fromBlocks A B C D) *ᵥ x
+      = ((x ∘ Sum.inl) ⬝ᵥ A *ᵥ (x ∘ Sum.inl) + (x ∘ Sum.inl) ⬝ᵥ B *ᵥ (x ∘ Sum.inr))
+        + ((x ∘ Sum.inr) ⬝ᵥ C *ᵥ (x ∘ Sum.inl) + (x ∘ Sum.inr) ⬝ᵥ D *ᵥ (x ∘ Sum.inr)) := by
+  rw [Matrix.fromBlocks_mulVec]
+  simp [dotProduct, Fintype.sum_sum_type, Finset.sum_add_distrib, mul_add]
+
+end BlockAlgebra
 
 variable {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂] [DecidableEq ι₁] [DecidableEq ι₂]
   (m₁ : EuclideanSpace ℝ ι₁) (m₂ : EuclideanSpace ℝ ι₂)
@@ -48,7 +63,31 @@ theorem multivariateGaussian_map_blockFst
     (multivariateGaussian (blockPair m₁ m₂) (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map
         (blockFst (ι₁ := ι₁) (ι₂ := ι₂))
       = multivariateGaussian m₁ S₁₁ := by
-  sorry
+  have hsub : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).submatrix Sum.inl Sum.inl = S₁₁ := by
+    ext i j; simp
+  have hS₁₁ : S₁₁.PosSemidef := hsub ▸ hJ.submatrix (Sum.inl : ι₁ → ι₁ ⊕ ι₂)
+  haveI : IsProbabilityMeasure
+      ((multivariateGaussian (blockPair m₁ m₂) (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map
+        ⇑(blockFst (ι₁ := ι₁) (ι₂ := ι₂))) :=
+    Measure.isProbabilityMeasure_map blockFst.continuous.measurable.aemeasurable
+  refine Measure.ext_of_charFun (funext fun t => ?_)
+  have hL : charFun ((multivariateGaussian (blockPair m₁ m₂)
+        (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map ⇑(blockFst (ι₁ := ι₁) (ι₂ := ι₂))) t
+      = charFun (multivariateGaussian (blockPair m₁ m₂)
+          (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)) (blockPair t 0) := by
+    rw [charFun_apply, charFun_apply,
+      integral_map blockFst.continuous.measurable.aemeasurable
+        (Continuous.aestronglyMeasurable (by fun_prop))]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    simp [inner_sum_split x (blockPair t 0)]
+  have hinner : ⟪blockPair t (0 : EuclideanSpace ℝ ι₂), blockPair m₁ m₂⟫_ℝ = ⟪t, m₁⟫_ℝ := by
+    rw [inner_sum_split]; simp
+  have hquad : (blockPair t (0 : EuclideanSpace ℝ ι₂)).ofLp ⬝ᵥ
+        (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) *ᵥ (blockPair t (0 : EuclideanSpace ℝ ι₂)).ofLp
+      = t.ofLp ⬝ᵥ S₁₁ *ᵥ t.ofLp := by
+    rw [dotProduct_fromBlocks_mulVec]
+    simp [blockPair]
+  rw [hL, charFun_multivariateGaussian hJ, charFun_multivariateGaussian hS₁₁, hinner, hquad]
 
 /-- **Second block marginal** (`And58 §2.4`). -/
 theorem multivariateGaussian_map_blockSnd
@@ -57,7 +96,31 @@ theorem multivariateGaussian_map_blockSnd
     (multivariateGaussian (blockPair m₁ m₂) (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map
         (blockSnd (ι₁ := ι₁) (ι₂ := ι₂))
       = multivariateGaussian m₂ S₂₂ := by
-  sorry
+  have hsub : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).submatrix Sum.inr Sum.inr = S₂₂ := by
+    ext i j; simp
+  have hS₂₂ : S₂₂.PosSemidef := hsub ▸ hJ.submatrix (Sum.inr : ι₂ → ι₁ ⊕ ι₂)
+  haveI : IsProbabilityMeasure
+      ((multivariateGaussian (blockPair m₁ m₂) (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map
+        ⇑(blockSnd (ι₁ := ι₁) (ι₂ := ι₂))) :=
+    Measure.isProbabilityMeasure_map blockSnd.continuous.measurable.aemeasurable
+  refine Measure.ext_of_charFun (funext fun t => ?_)
+  have hL : charFun ((multivariateGaussian (blockPair m₁ m₂)
+        (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map ⇑(blockSnd (ι₁ := ι₁) (ι₂ := ι₂))) t
+      = charFun (multivariateGaussian (blockPair m₁ m₂)
+          (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)) (blockPair 0 t) := by
+    rw [charFun_apply, charFun_apply,
+      integral_map blockSnd.continuous.measurable.aemeasurable
+        (Continuous.aestronglyMeasurable (by fun_prop))]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    simp [inner_sum_split x (blockPair 0 t)]
+  have hinner : ⟪blockPair (0 : EuclideanSpace ℝ ι₁) t, blockPair m₁ m₂⟫_ℝ = ⟪t, m₂⟫_ℝ := by
+    rw [inner_sum_split]; simp
+  have hquad : (blockPair (0 : EuclideanSpace ℝ ι₁) t).ofLp ⬝ᵥ
+        (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) *ᵥ (blockPair (0 : EuclideanSpace ℝ ι₁) t).ofLp
+      = t.ofLp ⬝ᵥ S₂₂ *ᵥ t.ofLp := by
+    rw [dotProduct_fromBlocks_mulVec]
+    simp [blockPair]
+  rw [hL, charFun_multivariateGaussian hJ, charFun_multivariateGaussian hS₂₂, hinner, hquad]
 
 /-- **G2.9, independent blocks** (`And58 §2.5`): with vanishing cross-covariance, the joint
 block Gaussian transported to the product space is the product of its block marginals —
