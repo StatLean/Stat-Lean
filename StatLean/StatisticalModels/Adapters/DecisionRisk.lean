@@ -52,21 +52,25 @@ theorem riskRand_coe (K : Kernel Θ 𝓧) [IsMarkovKernel K] (L : Θ → D → �
 
 /-- Mathlib's average risk is the prior-average of the bare-family randomized risk. -/
 theorem avgRisk_eq_lintegral_riskRand (K : Kernel Θ 𝓧) [IsMarkovKernel K]
-    (L : Θ → D → ℝ≥0∞) (κ : Kernel 𝓧 D) [IsMarkovKernel κ] (π : Measure Θ) :
+    (L : Θ → D → ℝ≥0∞) (κ : Kernel 𝓧 D) [IsMarkovKernel κ] (π : Measure Θ)
+    -- LEAN-ONLY: measurability of the loss sections (riskRand_coe unfolding)
+    (hL : ∀ θ, Measurable (L θ)) :
     avgRisk L K κ π = ∫⁻ θ, riskRand ⇑K L κ θ ∂π := by
   simp only [avgRisk]
-  exact lintegral_congr fun θ => (riskRand_coe K L κ θ).symm
+  exact lintegral_congr fun θ => (riskRand_coe K L κ θ (hL θ)).symm
 
 /-- Mathlib's minimax risk is the inf–sup of the bare-family randomized risk over Markov
 estimators. Every Minimaxity-area lower bound thereby applies to bare families presented
 through `toKernel`. -/
-theorem minimaxRisk_eq (K : Kernel Θ 𝓧) [IsMarkovKernel K] (L : Θ → D → ℝ≥0∞) :
+theorem minimaxRisk_eq (K : Kernel Θ 𝓧) [IsMarkovKernel K] (L : Θ → D → ℝ≥0∞)
+    -- LEAN-ONLY: measurability of the loss sections (riskRand_coe unfolding)
+    (hL : ∀ θ, Measurable (L θ)) :
     minimaxRisk (𝓨 := D) L K
       = ⨅ (κ : Kernel 𝓧 D) (_ : IsMarkovKernel κ), ⨆ θ, riskRand ⇑K L κ θ := by
   simp only [minimaxRisk]
   refine iInf_congr fun κ => iInf_congr fun hκ => iSup_congr fun θ => ?_
   have : IsMarkovKernel κ := hκ
-  exact (riskRand_coe K L κ θ).symm
+  exact (riskRand_coe K L κ θ (hL θ)).symm
 
 omit [MeasurableSpace Θ] in
 /-- Randomized risk at a deterministic estimator is the nonrandomized risk (Wald §1.4:
