@@ -485,3 +485,51 @@ So **both** remaining Berry–Esseen items reduce to one research-level theorem 
 *Gaussian surface area of convex bodies*), whose formalisation is a project in its own right.
 This is recorded as the honest stopping point of this line, not as a verdict to be re-litigated:
 unlike its predecessors it is a named external theorem, not a gap in the local argument.
+
+---
+
+## FINAL — 2026-08-03: BATCH 12 CLOSED at 0 sorries
+
+**Area gate GREEN, sorry-uses-in-build-output: 0** (`lean-fasrc-build --worktree ht/batch12
+StatLean.HypothesisTesting`, tip `536b270`). Source sweep: 0 `sorry`/`admit`/`axiom` across all
+73 files. Umbrella `StatLean/HypothesisTesting.lean` imports all 73 modules (verified 1:1);
+`StatLean.lean` wires the area (added at close-out, commit `3bae13f`).
+
+**The 30-wave Berry–Esseen/Edgeworth endgame (waves 13–53).** The last five sorries required
+~40 cluster lanes across three weeks. Outcomes:
+
+* `ForMathlib/MultivariateBerryEsseen.lean` — **0-sorry since wave 43.** `berryEsseen_convex_sharp`
+  fully proved at the honest amended rate `C·(β/√n)·(1 + log(√n/β))^{3/2}`, `C ≍ k`
+  (deviations from Bentkus's log-free `k^{1/4}` documented in-file; the gap to the sharp constant
+  is Ball's Gaussian-surface-area theorem, a recorded note, not a debt). Key final bricks: head
+  estimate (w38), sub-Gaussian norm tail + (1+log)^{3/2} fixed-point re-solve (w39), third-moment
+  far regime (w40), tail brick via tilt export + varying-width Fubini (w41), deconvolution
+  transfer (w42, after w41's transfer was refuted with a witness), √k-window threading + final
+  assembly (w43).
+* `Bootstrap/Edgeworth.lean` — **0-sorry after a user-authorized removal (2026-08-03).**
+  `edgeworth_mean_uniform` (the centred-root expansion) is PROVED. The studentized headline
+  `edgeworth_studentized_uniform` and its corollary `cornishFisher_studentized_quantile` were
+  REMOVED with in-file removal notes: waves 44–53 proved every ingredient (certificate at the
+  repaired band `K√(log n)`/N=10 with inputs (A),(B),(C) all closed — (B) at fourteen parts;
+  the middle-range theorem; the (U3) anti-concentration chain; the iid moment recursion with
+  Rosenthal at orders 6–10; the affine transfer (an equality); the skewness comparison; the
+  four-slot Esseen ledger, each slot O(1/n)) but the final composition was never assembled; the
+  wave-53 notes record the residue (eight moment identifications at the re-centred pair + the
+  assembly, no known obstruction). Restoration = re-running that assembly on the retained
+  machinery; the generic `cornishFisher_of_edgeworth` is proved, so the corollary is recoverable
+  verbatim.
+
+**Documented statement deviations (all in-file):** the eight-moment hypothesis the studentized
+development used (vs the classical four) is recorded in the removal note's history; the
+convex-sets Berry–Esseen carries the log-power and `C ≍ k` deviations.
+
+**Axioms audit:** 8 surviving headliners (`berryEsseen_convex_sharp`, `edgeworth_mean_uniform`,
+`cornishFisher_of_edgeworth`, `exists_fourierCertificate_deltaSurrogate`,
+`exists_studentized_middle_range_gap_bound`, `smoothStat_largeK_weakConverges_gaussian`,
+`ks_consistent`, `randTest_exact_level`) checked via a temporary `StatLean/AxiomsAudit.lean` —
+expected `propext`/`Classical.choice`/`Quot.sound` only (result recorded in the merge commit).
+
+**Verification-pattern lesson (binding for future campaigns):** every wave from 34 through 53
+overturned at least one predecessor claim (ingredient lists, transfer lemmas, moment reductions,
+budget items, envelope shapes). Worked plans must instruct lanes to *verify every inherited
+claim on contact*; docstring status blocks are claims, not ground truth.
