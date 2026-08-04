@@ -1,5 +1,5 @@
 import StatLean.StatisticalModels.Survival.CumulativeHazard
-import Mathlib.MeasureTheory.Constructions.Prod.Basic
+import Mathlib.MeasureTheory.Measure.Prod
 
 /-!
 # Right censoring — the random censorship model and crude = net hazard
