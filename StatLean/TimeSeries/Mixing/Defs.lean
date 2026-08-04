@@ -8,7 +8,7 @@ The five classical measures of dependence between two sub-σ-algebras `m₁, m�
 probability space, and their process-level specializations along the past/future
 σ-algebras `σ{X_s : s ≤ 0}` and `σ{X_s : s ≥ n}` (FY §2.6.1, eq. (2.57), for strictly
 stationary processes — the book's standing convention, which anchors the past at time
-`0`). A process is α-/β-/ρ-/φ-/ψ-mixing when the corresponding coefficient sequence
+`0`). A process is α-, β-, ρ-, φ- or ψ-mixing when the corresponding coefficient sequence
 tends to `0` (FY Definition 2.11). α-mixing = *strong mixing*; β-mixing = *absolute
 regularity*.
 
