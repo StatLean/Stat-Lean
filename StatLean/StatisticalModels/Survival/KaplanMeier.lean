@@ -43,7 +43,7 @@ the KM–NA jump relation are Nelson69/Aalen78, unified by the counting-process 
 ABGK.
 -/
 
-open Finset
+open MeasureTheory Finset
 open scoped ENNReal
 
 namespace StatLean.StatisticalModels.Survival
@@ -51,15 +51,15 @@ namespace StatLean.StatisticalModels.Survival
 variable {n : ℕ}
 
 /-- The **risk-set size** `Y(t) = #{i : t ≤ T̃ᵢ}` (ABGK §IV.1). -/
-def atRisk (d : Fin n → ℝ × Bool) (t : ℝ) : ℕ :=
+noncomputable def atRisk (d : Fin n → ℝ × Bool) (t : ℝ) : ℕ :=
   (univ.filter fun i => t ≤ (d i).1).card
 
 /-- The **event multiplicity** `ΔN(t) = #{i : T̃ᵢ = t, Δᵢ = 1}`. -/
-def eventCount (d : Fin n → ℝ × Bool) (t : ℝ) : ℕ :=
+noncomputable def eventCount (d : Fin n → ℝ × Bool) (t : ℝ) : ℕ :=
   (univ.filter fun i => (d i).1 = t ∧ (d i).2 = true).card
 
 /-- The (finite) set of observed **event times**. -/
-def eventTimes (d : Fin n → ℝ × Bool) : Finset ℝ :=
+noncomputable def eventTimes (d : Fin n → ℝ × Bool) : Finset ℝ :=
   (univ.filter fun i => (d i).2 = true).image fun i => (d i).1
 
 /-- The **Nelson–Aalen increment** `ΔN(s)/Y(s)` (junk `0/0 = 0` off the event times). -/
@@ -125,7 +125,7 @@ theorem kaplanMeier_eventually_constant_right (d : Fin n → ℝ × Bool) (t : �
 
 /-- Kaplan–Meier as a Stieltjes function: `t ↦ 1 − Ŝ(t)` (monotone by
 `antitone_kaplanMeier`, right-continuous by piecewise constancy). -/
-noncomputable def kaplanMeierSF (d : Fin n → ℝ × Bool) : StieltjesFunction :=
+noncomputable def kaplanMeierSF (d : Fin n → ℝ × Bool) : StieltjesFunction ℝ :=
   sorry
 
 @[simp]
