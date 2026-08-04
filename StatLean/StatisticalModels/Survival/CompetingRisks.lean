@@ -51,6 +51,11 @@ namespace StatLean.StatisticalModels.Survival
 
 variable {k : ℕ}
 
+/-- The mark space carries the discrete σ-algebra (LEAN-ONLY: the pin has no
+`MeasurableSpace (Option _)` instance; on a finite type `⊤` is the correct one — it is
+exactly what `Bool` carries on the censoring carrier). -/
+instance : MeasurableSpace (Option (Fin k)) := ⊤
+
 /-- The observed-time law of a marked observation. -/
 noncomputable def observedTimeLawCR (P : Measure (ℝ × Option (Fin k))) : Measure ℝ :=
   P.map Prod.fst
