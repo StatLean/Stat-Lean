@@ -54,7 +54,11 @@ noncomputable def censorObserve : ℝ × ℝ → ℝ × Bool :=
 
 /-- The coarsening map is measurable (LEAN-ONLY plumbing). -/
 theorem measurable_censorObserve : Measurable censorObserve := by
-  sorry
+  refine (measurable_fst.min measurable_snd).prodMk (measurable_to_bool ?_)
+  have hset : (fun p : ℝ × ℝ => decide (p.1 ≤ p.2)) ⁻¹' {true} = {p : ℝ × ℝ | p.1 ≤ p.2} := by
+    ext p; simp
+  rw [hset]
+  exact measurableSet_le measurable_fst measurable_snd
 
 /-- The **random censorship model**: the observed-data law under independent censoring —
 the product joint `(T, C) ∼ μT ⊗ μC` pushed through `censorObserve` (ABGK §III.2;
