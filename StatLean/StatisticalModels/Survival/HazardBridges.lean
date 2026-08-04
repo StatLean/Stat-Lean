@@ -179,7 +179,56 @@ theorem cumHazard_Ioc_eq_neg_log (μ : Measure ℝ)
     -- USER-INPUT: inside the support (positive survival); ABGK §II.1
     (ht : survival μ t ≠ 0) :
     (cumHazard μ (Ioc 0 t)).toReal = -Real.log (survivalReal μ t) := by
-  sorry
+  haveI := hev.1
+  have hmono : Monotone (fun x => ProbabilityTheory.cdf μ x) := ProbabilityTheory.monotone_cdf μ
+  have hFmeas : Measurable (fun x => ProbabilityTheory.cdf μ x) := hmono.measurable
+  have hSR : survivalReal μ t = 1 - ProbabilityTheory.cdf μ t := survivalReal_eq_one_sub_cdf t
+  have hSRpos : 0 < survivalReal μ t := ENNReal.toReal_pos ht (measure_ne_top _ _)
+  have hFt1 : ProbabilityTheory.cdf μ t < 1 := by rw [hSR] at hSRpos; linarith
+  have hFt0 : 0 ≤ ProbabilityTheory.cdf μ t := ProbabilityTheory.cdf_nonneg μ t
+  -- the hazard density in CDF form
+  have hIci : ∀ s : ℝ, μ (Ici s) = ENNReal.ofReal (1 - ProbabilityTheory.cdf μ s) := by
+    intro s
+    rw [← measure_congr (Ioi_ae_eq_Ici (μ := μ) (a := s)), ← survivalReal_eq_one_sub_cdf (μ := μ) s]
+    exact (ENNReal.ofReal_toReal (measure_ne_top μ (Ioi s))).symm
+  -- the integration region transported through the CDF
+  have hIic0 : μ (Iic (0 : ℝ)) = 0 := by
+    rw [← Iio_union_right]
+    exact measure_union_null hev.2 (measure_singleton 0)
+  have haeset : Ioc (0 : ℝ) t
+      =ᵐ[μ] (fun x => ProbabilityTheory.cdf μ x) ⁻¹' Ioc 0 (ProbabilityTheory.cdf μ t) := by
+    rw [ae_eq_set]
+    constructor
+    · refine measure_mono_null (fun x hx => ?_) (measure_preimage_cdf_singleton μ 0)
+      have hxt : ProbabilityTheory.cdf μ x ≤ ProbabilityTheory.cdf μ t := hmono hx.1.2
+      have hle : ProbabilityTheory.cdf μ x ≤ 0 := by
+        by_contra hcon
+        exact hx.2 ⟨lt_of_not_ge hcon, hxt⟩
+      exact le_antisymm hle (ProbabilityTheory.cdf_nonneg μ x)
+    · refine measure_mono_null (fun x hx => ?_)
+        (measure_union_null (measure_preimage_cdf_singleton μ (ProbabilityTheory.cdf μ t)) hIic0)
+      rcases le_or_gt x 0 with hle | hgt
+      · exact Or.inr hle
+      · have hxt : t < x := by
+          by_contra hcon
+          exact hx.2 ⟨hgt, not_lt.1 hcon⟩
+        exact Or.inl (le_antisymm hx.1.2 (hmono hxt.le))
+  have hgmeas : Measurable fun u : ℝ => (ENNReal.ofReal (1 - u))⁻¹ :=
+    (ENNReal.measurable_ofReal.comp (measurable_const.sub measurable_id)).inv
+  have hmain : cumHazard μ (Ioc 0 t)
+      = ENNReal.ofReal (-Real.log (1 - ProbabilityTheory.cdf μ t)) := by
+    rw [cumHazard_apply μ measurableSet_Ioc]
+    have h1 : ∫⁻ s in Ioc (0 : ℝ) t, (μ (Ici s))⁻¹ ∂μ
+        = ∫⁻ s in (fun x => ProbabilityTheory.cdf μ x) ⁻¹' Ioc 0 (ProbabilityTheory.cdf μ t),
+            (ENNReal.ofReal (1 - ProbabilityTheory.cdf μ s))⁻¹ ∂μ := by
+      simp_rw [hIci]
+      rw [Measure.restrict_congr_set haeset]
+    rw [h1, ← setLIntegral_map measurableSet_Ioc hgmeas hFmeas, map_cdf_of_noAtoms μ,
+      Measure.restrict_restrict measurableSet_Ioc,
+      inter_eq_self_of_subset_left (Ioc_subset_Ioc_right hFt1.le),
+      lintegral_inv_one_sub hFt0 hFt1]
+  rw [hmain, ENNReal.toReal_ofReal (neg_nonneg.2 (Real.log_nonpos (by linarith) (by linarith))),
+    hSR]
 
 /-- **S4.1', exponential form**: `S(t) = e^{−Λ(0,t]}` under the same hypotheses. -/
 theorem survivalReal_eq_exp_neg_cumHazard (μ : Measure ℝ)
