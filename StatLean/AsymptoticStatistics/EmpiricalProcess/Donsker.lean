@@ -47,20 +47,22 @@ Vaart and J. A. Wellner, *Weak Convergence and Empirical Processes*, Springer,
 1996, §2.1 (random-pair workaround), §2.3 (admissibility), §2.10.1 (measurable
 selection). Headline declarations: `IsPDonsker`, `IsPDonsker.union`.
 
-**Proof formalization notes.** The random-pair workaround for asymptotic
-equicontinuity is the standard formulation in Vaart–Wellner §2.1; the textbook
-$(\varepsilon,\eta,\delta,N)$ quadruple-quantifier form is replaced by its direct
-downstream consumer form (see `IsAsymptoticallyEquicontinuous`), equivalent under
-the modified-random-function trick. The $\Xi$ sample-space universe is fixed at
-`Type 0`. The union-closure proof partitions the deviation event into an
-`F`-pure piece, a `G`-pure piece, and a mixed straddling piece: the two pure
-pieces are handled by `union_aux_FF` / `union_aux_GG` via the measurable
-surrogate construction (collapse to a fixed measurable representative off the
-membership event; Vaart–Wellner Thm 2.10.1), and the mixed piece by
-`union_aux_mix` via Markov's inequality on the $L^2$-distance together with the
-$L^2(P)$-separation hypothesis `hFG_sep`. The outer integrability of the squared
-$L^2$-distance is bundled into the predicate body (Vaart–Wellner §2.3
-admissibility) so producers receive it for free.
+**Proof formalization notes.** `IsAsymptoticallyEquicontinuous` is stated in
+the vdV Theorem 18.14(ii) outer-sup form: for every `ε, η > 0` there is a
+`δ > 0` with
+`limsup_n μ.outerMeasureStar {sup over pairs with distL2 < δ of the oscillation
+exceeds ε} ≤ ofReal η`. (An earlier release of this file used the weaker
+per-random-pair "consumer" form of Vaart–Wellner §2.1; that form is recovered
+from the present one by the bridge lemma `osc_modulus_to_random_pair`, so
+downstream consumers were unaffected by the strengthening.) The $\Xi$
+sample-space universe is fixed at `Type 0`. The union-closure proof
+(`isAsymptoticallyEquicontinuous_union`) splits the outer-sup event over
+`F ∪ G` by subadditivity (`outerMeasureStar_union_le`) into an `F`-pure piece,
+a `G`-pure piece, and a mixed straddling piece; the mixed piece is controlled
+by a Markov bound on the $L^2$-distance tail (`markov_distL2_tail`,
+`le_distL2_of_integral_sq_ge`) together with the bulk-oscillation membership
+lemma `bulk_osc_mem` and the `limsup` composition lemmas
+(`limsup_add_tendsto_zero_le`, `limsup_add_le_of_le`).
 
 **Bibliographic comments.** The notion that the empirical process indexed by a
 class of functions converges weakly to a Gaussian process — and the term
@@ -883,7 +885,7 @@ lemma isAsymptoticallyEquicontinuous_union {F G : Set (Ω → ℝ)} {P : Measure
     -- admissibility hypotheses for F and G
     -- (Vaart–Wellner Thm 2.10.1 / vdV §19.4).
     -- (selection / nonempty admissibility — unused under the outer-sup form, but
-    -- part of the locked vaart–Wellner §2.10.1 signature; underscored to silence
+    -- part of the locked Vaart–Wellner §2.10.1 signature; underscored to silence
     -- the unused-variable linter without dropping them.)
     (_hF_sel : ForMathlib.MeasurableSelection.MeasurablySelectsRandomFunctions F)
     (_hG_sel : ForMathlib.MeasurableSelection.MeasurablySelectsRandomFunctions G)

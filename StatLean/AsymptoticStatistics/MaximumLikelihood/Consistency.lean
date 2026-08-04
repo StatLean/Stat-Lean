@@ -512,34 +512,38 @@ theorem mle_consistentInProb_of_kl_identifiable
     {d : ℕ} {X : Type*} [MeasurableSpace X]
     (M : ParametricFamily X (EuclideanSpace ℝ (Fin d))) (μ : Measure X)
     (θ₀ : EuclideanSpace ℝ (Fin d))
-    -- The model consists of probability densities.
+    -- USER-INPUT: the model is a family of probability densities w.r.t. μ; vdV §5.5
     (hPDF : IsPDFOf M μ)
-    -- Identifiable parametrization at the truth.
+    -- USER-INPUT: identifiability, P_θ = P_{θ₀} → θ = θ₀; vdV Lem 5.35
     (hident : ∀ θ, parametricMeasure M μ θ = parametricMeasure M μ θ₀ → θ = θ₀)
-    -- Upper semicontinuity used to derive T4 separation.
+    -- USER-INPUT: upper semicontinuity of the population criterion (Wald-type
+    -- regularity used to derive the well-separated maximum); vdV Thm 5.7 route, §5.2
     (husc : UpperSemicontinuous (stabilizedPopulationCriterion M μ θ₀))
-    -- One fixed compact superlevel below the maximum.
+    -- USER-INPUT: a compact superlevel set below the maximum (vdV's compactness
+    -- caveat for the argmax argument); vdV §5.2
     (hcompact : ∃ c : ℝ,
       c < stabilizedPopulationCriterion M μ θ₀ θ₀ ∧
         IsCompact {θ | c ≤ stabilizedPopulationCriterion M μ θ₀ θ})
     (θhat : ∀ n, (Fin n → X) → EuclideanSpace ℝ (Fin d))
     {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
     (Xs : ℕ → Ω → X) (U : ℕ → Ω → ℝ)
-    -- Measurable-envelope form of T4 uniform convergence.
+    -- USER-INPUT (hU_dom, hU_conv): uniform convergence of the empirical criterion,
+    -- phrased through a measurable envelope U; vdV Thm 5.7
     (hU_dom : ∀ n ω θ,
       |empiricalAvg (stabilizedLogCriterion M θ₀ θ) n
           (fun i : Fin n => Xs i.val ω) -
         stabilizedPopulationCriterion M μ θ₀ θ| ≤ U n ω)
-    -- Convergence of the measurable T4 envelope.
+    -- (second half of the envelope input above)
     (hU_conv : TendstoInMeasure P U atTop (fun _ => (0 : ℝ)))
-    -- Measurability of the sample coordinates.
+    -- LEAN-ONLY: measurability of the sample coordinates; no scope change.
     (hXs_meas : ∀ i, Measurable (Xs i))
-    -- Identical-distribution component of the sample encoding.
+    -- USER-INPUT (hXs_id, hXs_law): identically distributed observations drawn from
+    -- the true model law P_{θ₀}; vdV §5.2
     (hXs_id : ∀ i, ProbabilityTheory.IdentDistrib (Xs i) (Xs 0) P P)
-    -- Identifies the common observation law with the true model law.
+    -- (second half of the sample-law input above)
     (hXs_law : P.map (Xs 0) =
       μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x))
-    -- Exact product-likelihood maximization.
+    -- USER-INPUT: θ̂ₙ maximizes the product likelihood (exact MLE); vdV §5.5
     (hMLE : IsMaximumLikelihoodEstimator M θhat) :
     TendstoInProbZero (fun _ : ℕ => P)
       (fun n ω => θhat n (fun i : Fin n => Xs i.val ω) - θ₀) := by

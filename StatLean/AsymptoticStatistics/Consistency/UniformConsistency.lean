@@ -46,9 +46,15 @@ theorem mEstimator_consistent
     {Θ : Type*} [MetricSpace Θ]
     {Mn : ℕ → Ω → Θ → ℝ} {M : Θ → ℝ} {θ₀ : Θ} {θhat : ℕ → Ω → Θ}
     {U R : ℕ → Ω → ℝ}
+    -- USER-INPUT (hU_dom, hU_conv): sup_θ |Mₙ(θ) − M(θ)| → 0 in probability, phrased
+    -- through a measurable envelope U (the envelope replaces the book's outer
+    -- probability of the possibly non-measurable sup); vdV Thm 5.7
     (hU_dom : ∀ n ω θ, |Mn n ω θ - M θ| ≤ U n ω)
     (hU_conv : TendstoInMeasure P U atTop (fun _ => (0 : ℝ)))
+    -- USER-INPUT: M has a well-separated maximum at θ₀; vdV Thm 5.7
     (hsep : ∀ ε > (0 : ℝ), ∃ η > (0 : ℝ), ∀ θ, ε ≤ dist θ θ₀ → M θ ≤ M θ₀ - η)
+    -- USER-INPUT (hnear, hR_conv): θ̂ₙ near-maximizes Mₙ up to a vanishing slack,
+    -- Mₙ(θ̂ₙ) ≥ Mₙ(θ₀) − o_P(1); vdV Thm 5.7
     (hnear : ∀ n ω, Mn n ω θ₀ - R n ω ≤ Mn n ω (θhat n ω))
     (hR_conv : TendstoInMeasure P R atTop (fun _ => (0 : ℝ))) :
     ∀ ε > (0 : ℝ), Tendsto (fun n => P {ω | ε ≤ dist (θhat n ω) θ₀}) atTop (𝓝 0) := by
@@ -141,10 +147,17 @@ theorem zEstimator_consistent
     {F : Type*} [NormedAddCommGroup F]
     {Ψn : ℕ → Ω → Θ → F} {Ψ : Θ → F} {θ₀ : Θ} {θhat : ℕ → Ω → Θ}
     {U : ℕ → Ω → ℝ}
+    -- USER-INPUT (hU_dom, hU_conv): sup_θ ‖Ψₙ(θ) − Ψ(θ)‖ → 0 in probability, phrased
+    -- through a measurable envelope U (replaces the book's outer probability of the
+    -- possibly non-measurable sup); vdV Thm 5.9
     (hU_dom : ∀ n ω θ, ‖Ψn n ω θ - Ψ θ‖ ≤ U n ω)
     (hU_conv : TendstoInMeasure P U atTop (fun _ => (0 : ℝ)))
+    -- USER-INPUT: θ₀ is a zero of Ψ (implicit in the book's "well-separated zero");
+    -- vdV Thm 5.9
     (hΨ0 : Ψ θ₀ = 0)
+    -- USER-INPUT: the zero is well separated, inf_{d(θ,θ₀) ≥ ε} ‖Ψ(θ)‖ > 0; vdV Thm 5.9
     (hsep : ∀ ε > (0 : ℝ), ∃ η > (0 : ℝ), ∀ θ, ε ≤ dist θ θ₀ → η ≤ ‖Ψ θ‖)
+    -- USER-INPUT: θ̂ₙ is a near-zero of Ψₙ, ‖Ψₙ(θ̂ₙ)‖ = o_P(1); vdV Thm 5.9
     (hnear : TendstoInMeasure P (fun n ω => ‖Ψn n ω (θhat n ω)‖) atTop (fun _ => (0 : ℝ))) :
     ∀ ε > (0 : ℝ), Tendsto (fun n => P {ω | ε ≤ dist (θhat n ω) θ₀}) atTop (𝓝 0) := by
   apply mEstimator_consistent (Mn := fun n ω θ => -‖Ψn n ω θ‖) (M := fun θ => -‖Ψ θ‖)

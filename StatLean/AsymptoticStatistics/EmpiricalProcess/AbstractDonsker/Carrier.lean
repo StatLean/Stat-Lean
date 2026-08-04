@@ -60,11 +60,16 @@ abbrev LinfF (F : Set (Ω → ℝ)) : Type _ := lp (fun _ : ↥F => ℝ) ∞
 
 /-- Borel `σ`-algebra on the carrier `ℓ∞(F)`, induced by its sup-norm topology.
 `lp` does not auto-carry a `MeasurableSpace`, so we install the Borel one (the
-standard choice for weak-convergence statements). -/
-noncomputable instance instMeasurableSpaceLinfF (F : Set (Ω → ℝ)) :
+standard choice for weak-convergence statements).
+
+`scoped` (active inside `AsymptoticStatistics.EmpiricalProcess`) rather than
+global: `LinfF` is reducibly a Mathlib `lp` type, and a global instance on a
+Mathlib type would leak to every importer and clash if Mathlib ever installs
+its own `MeasurableSpace` on `lp`. -/
+noncomputable scoped instance instMeasurableSpaceLinfF (F : Set (Ω → ℝ)) :
     MeasurableSpace (LinfF F) := borel _
 
-instance instBorelSpaceLinfF (F : Set (Ω → ℝ)) :
+scoped instance instBorelSpaceLinfF (F : Set (Ω → ℝ)) :
     BorelSpace (LinfF F) := ⟨rfl⟩
 
 /-- **Uniform `ℓ∞`-boundedness of the empirical process.** When `F` has an

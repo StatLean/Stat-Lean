@@ -34,61 +34,70 @@ theorem mle_asymptotic_normality
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω]
     (M : ParametricFamily Ω (EuclideanSpace ℝ (Fin d))) (μ : Measure Ω)
     (θ₀ : EuclideanSpace ℝ (Fin d))
-    -- The model consists of probability densities.
+    -- USER-INPUT: the model is a family of probability densities w.r.t. μ; vdV §5.5
     (hPDF : IsPDFOf M μ)
-    -- Identifiable parametrization at the truth.
+    -- USER-INPUT: identifiability, P_θ = P_{θ₀} → θ = θ₀; vdV Lem 5.35 (used to
+    -- derive the consistency required by Thm 5.39)
     (hident : ∀ θ,
       parametricMeasure M μ θ = parametricMeasure M μ θ₀ → θ = θ₀)
-    -- Upper semicontinuity used in the consistency argument.
+    -- USER-INPUT: upper semicontinuity of the population criterion (Wald-type
+    -- regularity for the internal consistency step); vdV §5.2
     (husc : UpperSemicontinuous (stabilizedPopulationCriterion M μ θ₀))
-    -- One compact superlevel below the maximum used to derive consistency.
+    -- USER-INPUT: a compact superlevel set below the maximum (compactness caveat
+    -- for the internal consistency step); vdV §5.2
     (hcompact : ∃ c : ℝ,
       c < stabilizedPopulationCriterion M μ θ₀ θ₀ ∧
         IsCompact {θ | c ≤ stabilizedPopulationCriterion M μ θ₀ θ})
     (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d))
     {Ξ : Type} [MeasurableSpace Ξ] (ν : Measure Ξ) [IsProbabilityMeasure ν]
     (X : ℕ → Ξ → Ω) (U : ℕ → Ξ → ℝ)
-    -- Measurable-envelope form of T4 uniform convergence.
+    -- USER-INPUT (hU_dom, hU_conv): uniform convergence of the empirical criterion,
+    -- phrased through a measurable envelope U (input to the internal consistency
+    -- step); vdV Thm 5.7 route
     (hU_dom : ∀ n ξ θ,
       |empiricalAvg (stabilizedLogCriterion M θ₀ θ) n
           (fun i : Fin n => X i.val ξ) -
         stabilizedPopulationCriterion M μ θ₀ θ| ≤ U n ξ)
-    -- Convergence of the measurable T4 envelope.
+    -- (second half of the envelope input above)
     (hU_conv : TendstoInMeasure ν U atTop (fun _ => (0 : ℝ)))
     (ℓ : Ω → EuclideanSpace ℝ (Fin d))
-    -- Measurability of the vector-valued DQM score encoding.
+    -- LEAN-ONLY: a measurable representative of the score; no scope change.
     (hℓ : Measurable ℓ)
-    -- Differentiability in quadratic mean at `θ₀`.
+    -- USER-INPUT: the model is differentiable in quadratic mean at θ₀ with score ℓ;
+    -- vdV Thm 5.39
     (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
     (menv : Ω → ℝ)
-    -- vdV's local envelope is square-integrable under `P₀`.
+    -- USER-INPUT (menv, hmenv, ρ, hρ, hLip): local log-likelihood Lipschitz envelope
+    -- with P_{θ₀} ṁ² < ∞ on a ball around θ₀; vdV Thm 5.39
     (hmenv : MemLp menv 2
       (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)))
-    -- A measurable representative for the envelope.
+    -- LEAN-ONLY: a measurable representative for the envelope; no scope change.
     (hmenv_meas : Measurable menv)
     (ρ : ℝ)
-    -- The Lipschitz neighborhood is nontrivial.
+    -- (radius of the Lipschitz neighbourhood; part of the envelope input above)
     (hρ : 0 < ρ)
-    -- vdV's pairwise local log-likelihood Lipschitz condition.
+    -- (the Lipschitz condition itself; part of the envelope input above)
     (hLip : ∀ θ₁ ∈ Metric.closedBall θ₀ ρ,
       ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ x,
         |M.logDensity θ₁ x - M.logDensity θ₂ x| ≤
           menv x * ‖θ₁ - θ₂‖)
-    -- Nonsingular Fisher information, encoded equivalently as positive definiteness.
+    -- USER-INPUT: nonsingular Fisher information at θ₀ (positive definiteness);
+    -- vdV Thm 5.39
     (hI : (fisherInformationMatrix M μ θ₀ ℓ).PosDef)
-    -- Measurable sample-map encoding of the iid experiment.
+    -- LEAN-ONLY: measurability of the sample coordinates; no scope change.
     (hX_meas : ∀ i, Measurable (X i))
-    -- Independence component of the iid sample encoding.
+    -- USER-INPUT (hX_indep, hX_id, hX_law): X₁, X₂, … iid with the true model law
+    -- P_{θ₀}; vdV §5.5
     (hX_indep : ProbabilityTheory.iIndepFun X ν)
-    -- Identical-distribution component of the iid sample encoding.
+    -- (second component of the iid input above)
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) ν ν)
-    -- Identifies the common sample law with the true model law.
+    -- (third component of the iid input above)
     (hX_law : ν.map (X 0) =
       μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x))
-    -- Estimator measurability needed for pushforward laws and rate events.
+    -- LEAN-ONLY: estimator measurability for pushforward laws; no scope change.
     (hθhat_meas : ∀ n, Measurable
       (fun ξ : Ξ => θ_hat n (fun i : Fin n => X i.val ξ)))
-    -- Exact product-likelihood maximum-likelihood property.
+    -- USER-INPUT: θ̂ₙ maximizes the product likelihood (exact MLE); vdV §5.5
     (hMLE : IsMaximumLikelihoodEstimator M θ_hat) :
     TendstoInProbZero (fun _ : ℕ => ν) (fun n ξ =>
         Real.sqrt n • (θ_hat n (fun i : Fin n => X i.val ξ) - θ₀) -

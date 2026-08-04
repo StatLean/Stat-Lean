@@ -294,6 +294,14 @@ this convention `J_{[]}(δ, F, L_2(P)) = ⊤` whenever `bracketingNumber`
 fails to be finite on a positive-measure subset of `(0, δ]`, faithfully
 reflecting the textbook content.
 
+**Change note (definition strengthened in place).** An earlier release used
+the integrand `√(log N)` without the `1 +` regularizer. The present
+`√(log (1 + N))` form dominates the old one (pointwise larger integrand), so
+every finiteness hypothesis `J_{[]} < ⊤` stated against this definition is at
+least as strong as before; downstream statements in `Maximal.lean`,
+`EquicontinuityChaining.lean`, and `DonskerBracketing.lean` were restated
+against this integrand.
+
 vdV §19.2. -/
 noncomputable def bracketingEntropyIntegral
     (δ : ℝ) (F : Set (Ω → ℝ)) (P : Measure Ω) : ℝ≥0∞ :=

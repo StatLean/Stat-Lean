@@ -1029,30 +1029,47 @@ theorem zEstimator_nuisance_linear_representation
     (ψ : EuclideanSpace ℝ (Fin k) → H → Fin k → (Ω → ℝ))
     (θ₀ : EuclideanSpace ℝ (Fin k)) (η₀ : H)
     (V : H → Matrix (Fin k) (Fin k) ℝ)
+    -- USER-INPUT (hV, hV_cont): the derivative matrix V_η is nonsingular at η₀ and
+    -- continuous in the nuisance parameter there; vdV Thm 5.31
     (hV : IsUnit (V η₀).det) (hV_cont : ContinuousAt V η₀)
+    -- USER-INPUT: radius of the (θ, η)-neighbourhood carrying the Donsker and
+    -- continuity conditions; vdV Thm 5.31
     (δcls : ℝ) (hδcls : 0 < δcls)
+    -- USER-INPUT: the class {ψ_{θ,η} : (θ, η) near (θ₀, η₀)} is P-Donsker; vdV Thm 5.31
     (hDonsker : IsPDonsker (pairClass ψ (Metric.ball θ₀ δcls ×ˢ Metric.ball η₀ δcls)) P)
+    -- USER-INPUT: L²(P)-continuity, P(ψ_{θ,η} − ψ_{θ₀,η₀})² → 0 as (θ, η) → (θ₀, η₀);
+    -- vdV Thm 5.31
     (hL2_cont : ∀ ε : ℝ, 0 < ε → ∃ δ : ℝ, 0 < δ ∧ ∀ (θ : EuclideanSpace ℝ (Fin k)) (η : H),
         ‖θ - θ₀‖ < δ → dist η η₀ < δ →
         ∑ j, ∫ x, (ψ θ η j x - ψ θ₀ η₀ j x)^2 ∂P < ε)
+    -- USER-INPUT: the population equation Pψ_{θ₀,η₀} = 0; vdV Thm 5.31
     (hPθ₀_zero : ∀ h, ∫ x, ψ θ₀ η₀ h x ∂P = 0)
+    -- USER-INPUT: θ ↦ Pψ_{θ,η} is differentiable at θ₀ with derivative V_η, uniformly
+    -- in η near η₀; vdV Thm 5.31
     (hfrechet_unif : ∀ ε : ℝ, 0 < ε → ∃ δ : ℝ, 0 < δ ∧ ∀ (η : H), dist η η₀ < δ →
         ∀ θ : EuclideanSpace ℝ (Fin k), 0 < ‖θ - θ₀‖ → ‖θ - θ₀‖ < δ →
         (⨆ h, ENNReal.ofReal
             |∫ x, ψ θ η h x ∂P - ∫ x, ψ θ₀ η h x ∂P - Vlin (V η) (θ - θ₀) h|)
           ≤ ENNReal.ofReal (ε * ‖θ - θ₀‖))
+    -- LEAN-ONLY: measurability of the criterion functions; no scope change.
     (hψ_meas : ∀ (θ : EuclideanSpace ℝ (Fin k)) (η : H) (j : Fin k), Measurable (ψ θ η j))
     (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin k))
     (eta_hat : ∀ n, (Fin n → Ω) → H)
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
+    -- USER-INPUT (hX_indep, hX_id, hX_law): X₁, X₂, … iid with law P; vdV §5.3.
+    -- (hX_meas is LEAN-ONLY measurability.)
     (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
     (hX_indep : ProbabilityTheory.iIndepFun X μ)
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P)
+    -- USER-INPUT (h_consist_θ, h_consist_η): both θ̂ₙ and the nuisance estimator η̂ₙ
+    -- are consistent; vdV Thm 5.31
     (h_consist_θ : ∀ ε : ℝ, 0 < ε → Tendsto (fun n =>
       μ {ξ | ε < ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖}) atTop (𝓝 0))
     (h_consist_η : ∀ ε : ℝ, 0 < ε → Tendsto (fun n =>
       μ {ξ | ε < dist (eta_hat n (fun i : Fin n => X i.val ξ)) η₀}) atTop (𝓝 0))
+    -- USER-INPUT: (θ̂ₙ, η̂ₙ) nearly solves the empirical equation,
+    -- √n·𝔓ₙψ_{θ̂ₙ,η̂ₙ} = o_P*(1) uniformly in the coordinate; vdV Thm 5.31
     (h_est_eq : TendstoZeroInOuterProbSup μ (fun n ξ h =>
       Real.sqrt n * empiricalAvg (ψ (θ_hat n (fun i : Fin n => X i.val ξ))
         (eta_hat n (fun i : Fin n => X i.val ξ)) h) n (fun i : Fin n => X i.val ξ))) :

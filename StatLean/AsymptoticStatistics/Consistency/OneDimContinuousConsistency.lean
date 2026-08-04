@@ -57,10 +57,16 @@ theorem oneDim_continuous_zEstimator_consistent
     {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
     {Θ : Set ℝ}
     {Ψn : ℕ → Ω → ℝ → ℝ} {Ψ : ℝ → ℝ} {θ₀ : ℝ} {θhat : ℕ → Ω → ℝ}
+    -- USER-INPUT: the domain is a neighbourhood of θ₀; vdV Lem 5.10
     (hθ₀_int : Θ ∈ 𝓝 θ₀)
+    -- USER-INPUT: each sample criterion θ ↦ Ψₙ(θ) is continuous on the domain; vdV Lem 5.10
     (hcont : ∀ n ω, ContinuousOn (Ψn n ω) Θ)
+    -- USER-INPUT: θ̂ₙ is the unique zero of Ψₙ on the domain ("has exactly one zero");
+    -- vdV Lem 5.10
     (hunique : ∀ n ω θ, θ ∈ Θ → Ψn n ω θ = 0 → θ = θhat n ω)
+    -- USER-INPUT: pointwise convergence in probability Ψₙ(θ) → Ψ(θ); vdV Lem 5.10
     (hptwise : ∀ θ ∈ Θ, TendstoInMeasure P (fun n ω => Ψn n ω θ) atTop (fun _ => Ψ θ))
+    -- USER-INPUT (hsign_lt, hsign_gt): strict sign change of Ψ at θ₀; vdV Lem 5.10
     (hsign_lt : ∀ θ ∈ Θ, θ < θ₀ → Ψ θ < 0)
     (hsign_gt : ∀ θ ∈ Θ, θ₀ < θ → 0 < Ψ θ) :
     ∀ ε > (0 : ℝ), Tendsto (fun n => P {ω | ε ≤ |θhat n ω - θ₀|}) atTop (𝓝 0) := by

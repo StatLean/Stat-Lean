@@ -1,13 +1,21 @@
 import StatLean.AsymptoticStatistics.Asymptotics.Discharge.LeastFavorable
+import StatLean.AsymptoticStatistics.Asymptotics.Discharge.LeastFavorableVec
 import StatLean.AsymptoticStatistics.Asymptotics.Discharge.OneStep
+import StatLean.AsymptoticStatistics.Asymptotics.Discharge.OneStepVec
 import StatLean.AsymptoticStatistics.Asymptotics.Discharge.ZEstimator
 import StatLean.AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorBiasResidual
 import StatLean.AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorBiasResidualExplicit
 import StatLean.AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorBiasResidualVdVFaithful
+import StatLean.AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorBiasResidualVec
+import StatLean.AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorVec
+import StatLean.AsymptoticStatistics.Asymptotics.Discharge.ZEstimatorVecNative
 import StatLean.AsymptoticStatistics.Asymptotics.LAN.BayesLanLimit.PosteriorWeights
 import StatLean.AsymptoticStatistics.Asymptotics.LeastFavorable
+import StatLean.AsymptoticStatistics.Asymptotics.LeastFavorableVec
 import StatLean.AsymptoticStatistics.Asymptotics.OneStep
+import StatLean.AsymptoticStatistics.Asymptotics.OneStepVec
 import StatLean.AsymptoticStatistics.Asymptotics.ZEstimator
+import StatLean.AsymptoticStatistics.Asymptotics.ZEstimatorVec
 import StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation
 import StatLean.AsymptoticStatistics.LocalAsymptoticNormality.LANExpansion
 import StatLean.AsymptoticStatistics.Efficiency.LocalAsymptoticMinimax
@@ -18,6 +26,7 @@ import StatLean.AsymptoticStatistics.Core.CandidateIF
 import StatLean.AsymptoticStatistics.Core.EIF
 import StatLean.AsymptoticStatistics.Core.EIFVec
 import StatLean.AsymptoticStatistics.Core.EfficiencyOperational
+import StatLean.AsymptoticStatistics.Core.EfficiencyOperationalVec
 import StatLean.AsymptoticStatistics.Core.Hilbert
 import StatLean.AsymptoticStatistics.Core.MassMethod
 import StatLean.AsymptoticStatistics.Core.Pathwise
@@ -37,6 +46,15 @@ import StatLean.AsymptoticStatistics.ClassicalZEstimator.ExistenceAndNormality
 import StatLean.AsymptoticStatistics.ClassicalZEstimator.GradientLocalMax
 import StatLean.AsymptoticStatistics.Consistency.OneDimMonotoneConsistency
 import StatLean.AsymptoticStatistics.Consistency.OneDimContinuousConsistency
+import StatLean.AsymptoticStatistics.EmpiricalProcess.AbstractDonsker.BracketingDonsker
+import StatLean.AsymptoticStatistics.EmpiricalProcess.AbstractDonsker.BrownianBridge
+import StatLean.AsymptoticStatistics.EmpiricalProcess.AbstractDonsker.Characterization
+import StatLean.AsymptoticStatistics.EmpiricalProcess.AbstractDonsker.EquicontTightness
+import StatLean.AsymptoticStatistics.EmpiricalProcess.AbstractDonsker.GPNet
+import StatLean.AsymptoticStatistics.EmpiricalProcess.AbstractDonsker.GPProcess
+import StatLean.AsymptoticStatistics.EmpiricalProcess.AbstractDonsker.NecessityTightness
+import StatLean.AsymptoticStatistics.EmpiricalProcess.AbstractDonsker.PBridgeTight
+import StatLean.AsymptoticStatistics.EmpiricalProcess.AbstractDonsker.SufficiencyDiscretization
 import StatLean.AsymptoticStatistics.EmpiricalProcess.Bracketing
 import StatLean.AsymptoticStatistics.EmpiricalProcess.ChainingAssembly
 import StatLean.AsymptoticStatistics.EmpiricalProcess.Donsker
@@ -58,6 +76,7 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.SupMeasurability
 import StatLean.AsymptoticStatistics.EmpiricalProcess.UniformRandomFunctions
 import StatLean.AsymptoticStatistics.EmpiricalProcess.ZEstimatorNuisance
 import StatLean.AsymptoticStatistics.Examples.MARMean.Model
+import StatLean.AsymptoticStatistics.Examples.MARMean.EIF
 import StatLean.AsymptoticStatistics.Examples.SymmetricLocation.Model
 import StatLean.AsymptoticStatistics.Examples.SymmetricLocation.EIF
 import StatLean.AsymptoticStatistics.Examples.Regression.Model
@@ -107,6 +126,7 @@ import StatLean.AsymptoticStatistics.ForMathlib.Markov
 import StatLean.AsymptoticStatistics.ForMathlib.MarkovKernelProhorov
 import StatLean.AsymptoticStatistics.ForMathlib.MassMethodUtilities
 import StatLean.AsymptoticStatistics.ForMathlib.MeanVarConvergence
+import StatLean.AsymptoticStatistics.ForMathlib.MeasurableSelection
 import StatLean.AsymptoticStatistics.ForMathlib.MeasurableSelectionRandomFunctions
 import StatLean.AsymptoticStatistics.ForMathlib.MultivariateCLT
 import StatLean.AsymptoticStatistics.ForMathlib.MultivariateComplexMGF
@@ -119,6 +139,10 @@ import StatLean.AsymptoticStatistics.ForMathlib.PiWithDensity
 import StatLean.AsymptoticStatistics.ForMathlib.PortmanteauLscBridge
 import StatLean.AsymptoticStatistics.ForMathlib.PosDefCoercivity
 import StatLean.AsymptoticStatistics.ForMathlib.PrekopaLeindler
+import StatLean.AsymptoticStatistics.ForMathlib.Probability.GaussianChaining
+import StatLean.AsymptoticStatistics.ForMathlib.Probability.GaussianMaximal
+import StatLean.AsymptoticStatistics.ForMathlib.Probability.IsonormalProcess
+import StatLean.AsymptoticStatistics.ForMathlib.Probability.SubgaussianGaussian
 import StatLean.AsymptoticStatistics.ForMathlib.Prohorov
 import StatLean.AsymptoticStatistics.ForMathlib.QMDAnalytic
 import StatLean.AsymptoticStatistics.ForMathlib.RnDerivSqrt
@@ -151,6 +175,7 @@ import StatLean.AsymptoticStatistics.LowerBounds.ParametricBridge
 import StatLean.AsymptoticStatistics.LowerBounds.ProjSeqToEif
 import StatLean.AsymptoticStatistics.LowerBounds.RegularEstimator
 import StatLean.AsymptoticStatistics.LowerBounds.RegularEstimatorDerivations
+import StatLean.AsymptoticStatistics.LowerBounds.RegularEstimatorNarrowLinear
 import StatLean.AsymptoticStatistics.LowerBounds.RegularEstimatorVec
 import StatLean.AsymptoticStatistics.LowerBounds.RegularEstimatorVecReverse
 import StatLean.AsymptoticStatistics.LowerBounds.SubconvexApprox
@@ -187,3 +212,6 @@ import StatLean.AsymptoticStatistics.ParametricFamily.SubmodelDQM
 import StatLean.AsymptoticStatistics.ParametricFamily.SubmodelFromScores
 import StatLean.AsymptoticStatistics.Probability.ScoreCLT
 import StatLean.AsymptoticStatistics.StrictModel.EfficientScore
+import StatLean.AsymptoticStatistics.StrictModel.EfficientScoreVec
+import StatLean.AsymptoticStatistics.StrictModel.MatrixBartlett
+import StatLean.AsymptoticStatistics.StrictModel.MatrixInfluenceEIF

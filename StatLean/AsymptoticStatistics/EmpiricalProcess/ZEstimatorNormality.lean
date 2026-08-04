@@ -742,29 +742,45 @@ theorem zEstimator_asymptotic_normality
     {k : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (ψ : EuclideanSpace ℝ (Fin k) → Fin k → (Ω → ℝ))
     (θ₀ : EuclideanSpace ℝ (Fin k)) (V : Matrix (Fin k) (Fin k) ℝ)
+    -- USER-INPUT (hV): the derivative matrix V_{θ₀} is nonsingular; vdV Thm 5.21
+    -- USER-INPUT (δcls, hδcls): radius of the neighbourhood carrying the local
+    -- Lipschitz condition; vdV Thm 5.21
     (hV : IsUnit V.det) (δcls : ℝ) (hδcls : 0 < δcls)
+    -- USER-INPUT (m, hm, hLip): local Lipschitz envelope |ψ_{θ₁} − ψ_{θ₂}| ≤ m·‖θ₁ − θ₂‖
+    -- near θ₀ with P m² < ∞; vdV Thm 5.21. (hm_meas is LEAN-ONLY measurability.)
     (m : Ω → ℝ) (hm : MemLp m 2 P) (hm_meas : Measurable m)
     (hLip : ∀ θ₁ : EuclideanSpace ℝ (Fin k), ‖θ₁ - θ₀‖ < δcls →
       ∀ θ₂ : EuclideanSpace ℝ (Fin k), ‖θ₂ - θ₀‖ < δcls →
       ∀ (j : Fin k) (x : Ω), |ψ θ₁ j x - ψ θ₂ j x| ≤ m x * ‖θ₁ - θ₂‖)
+    -- LEAN-ONLY: measurability of the criterion functions; no scope change.
     (hψ_meas : ∀ (θ : EuclideanSpace ℝ (Fin k)) (j : Fin k), Measurable (ψ θ j))
+    -- USER-INPUT: the population equation Pψ_{θ₀} = 0; vdV Thm 5.21
     (hPθ₀_zero : ∀ h, ∫ x, ψ θ₀ h x ∂P = 0)
+    -- USER-INPUT: θ ↦ Pψ_θ is differentiable at θ₀ with derivative V (sup-over-
+    -- coordinates ε-δ form of the Fréchet expansion); vdV Thm 5.21
     (hfrechet : ∀ ε > 0, ∃ δ > 0, ∀ θ : EuclideanSpace ℝ (Fin k),
         0 < ‖θ - θ₀‖ → ‖θ - θ₀‖ < δ →
         (⨆ h, ENNReal.ofReal
             |∫ x, ψ θ h x ∂P - ∫ x, ψ θ₀ h x ∂P - Vlin V (θ - θ₀) h|)
           ≤ ENNReal.ofReal (ε * ‖θ - θ₀‖))
+    -- USER-INPUT: P‖ψ_{θ₀}‖² < ∞; vdV Thm 5.21
     (hψ_L2 : MemLp (psiVec ψ θ₀) 2 P)
     (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin k))
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
+    -- USER-INPUT (hX_indep, hX_id, hX_law): X₁, X₂, … iid with law P; vdV §5.3.
+    -- (hX_meas is LEAN-ONLY measurability.)
     (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
     (hX_indep : ProbabilityTheory.iIndepFun X μ)
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P)
+    -- LEAN-ONLY: measurability of the estimator sequence; no scope change.
     (hθhat_meas' : ∀ n, Measurable
       (fun ξ : Ξ => θ_hat n (fun i : Fin n => X i.val ξ)))
+    -- USER-INPUT: θ̂ₙ is consistent for θ₀; vdV Thm 5.21
     (h_consist : ∀ ε : ℝ, 0 < ε → Tendsto (fun n =>
       μ {ξ | ε < ‖θ_hat n (fun i : Fin n => X i.val ξ) - θ₀‖}) atTop (𝓝 0))
+    -- USER-INPUT: θ̂ₙ nearly solves the empirical equation, √n·𝔓ₙψ_{θ̂ₙ} = o_P*(1)
+    -- uniformly in the coordinate; vdV Thm 5.21
     (h_est_eq : TendstoZeroInOuterProbSup μ (fun n ξ h =>
       Real.sqrt n * empiricalAvg (ψ (θ_hat n (fun i : Fin n => X i.val ξ)) h)
         n (fun i : Fin n => X i.val ξ))) :

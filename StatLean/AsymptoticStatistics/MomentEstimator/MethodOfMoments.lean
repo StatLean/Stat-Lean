@@ -401,14 +401,22 @@ linearisation + `momentGaussian_map_eq` for the limit law + `WeakConverges` Slut
 absorbing the vanishing-mass discrepancy between `θhatₙ` and `φ(ℙₙ f)`. -/
 theorem method_of_moments_normality {d : ℕ}
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
+    -- LEAN-ONLY (hf_meas): measurability of the moment map; no scope change.
+    -- USER-INPUT (hf_L2): P‖f‖² < ∞; vdV Thm 4.1
     {f : Ω → EuclideanSpace ℝ (Fin d)} (hf_meas : Measurable f) (hf_L2 : MemLp f 2 P)
     {e : EuclideanSpace ℝ (Fin d) → EuclideanSpace ℝ (Fin d)}
     {e' : EuclideanSpace ℝ (Fin d) ≃L[ℝ] EuclideanSpace ℝ (Fin d)}
     {θ₀ : EuclideanSpace ℝ (Fin d)}
+    -- USER-INPUT: e is differentiable at θ₀ with nonsingular derivative (bundled as
+    -- the continuous linear equivalence e'); strict differentiability encodes vdV's
+    -- "continuously differentiable" locally; vdV Thm 4.1
     (he : HasStrictFDerivAt e (e' : _ →L[ℝ] _) θ₀)
+    -- USER-INPUT: θ₀ solves the population moment equation e(θ₀) = Pf; vdV §4.1
     (hμ : e θ₀ = ∫ x, f x ∂P)
     {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
+    -- LEAN-ONLY: measurability of the observations; no scope change.
     {X : ℕ → Ξ → Ω} (hX_meas : ∀ i, Measurable (X i))
+    -- USER-INPUT (hX_indep, hX_id, hX_law): X₁, X₂, … iid with law P; vdV §4.1
     (hX_indep : iIndepFun X μ)
     (hX_id : ∀ i, IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P) :

@@ -22,6 +22,18 @@ yields `√(2 c log card)`.  The absolute-value form follows by indexing the
 doubled family `Z` and `-Z` over `ι ⊕ ι` (`|Z i| = max (Z i) (-Z i)`).
 
 This is a `ForMathlib/` theorem-agnostic primitive.
+
+**Relation to `StatLean.ConcentrationInequalities`.** The library's
+concentration area proves the closely related
+`StatLean.ConcentrationInequalities.expectation_max_le`
+(`ConcentrationInequalities/Maximal/FiniteMaximal.lean`): a `Fin d`-indexed,
+`IsSubGaussian`-phrased `E[max] ≤ √(2σ² log d)`. The two cannot share a home
+today because cross-area imports are restricted to `ForMathlib/` layers and
+that lemma lives in a concept layer; this generic-`Fintype`,
+`HasSubgaussianMGF`-phrased version is the **promotion candidate** — when the
+concentration area is next touched, `expectation_max_le` should be re-derived
+from this file and the shared statement promoted to a common `ForMathlib`
+home (tracked in the PR notes; do not add a third copy).
 -/
 
 open MeasureTheory Real Finset

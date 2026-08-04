@@ -584,38 +584,55 @@ theorem m_estimator_normality
     {d : ℕ} {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (m : EuclideanSpace ℝ (Fin d) → Ω → ℝ) (mdot : Fin d → (Ω → ℝ))
     (θ₀ : EuclideanSpace ℝ (Fin d)) (V : Matrix (Fin d) (Fin d) ℝ)
+    -- USER-INPUT (hVsymm, hc, hVneg): the second-derivative matrix V of the population
+    -- criterion is symmetric and negative definite (θ₀ an interior maximum); vdV Thm 5.23
     (hVsymm : V.IsHermitian)
     {c : ℝ} (hc : 0 < c)
     (hVneg : ∀ x : EuclideanSpace ℝ (Fin d),
       ⟪x, Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) V x⟫ ≤ - c * ‖x‖ ^ 2)
+    -- LEAN-ONLY: measurability of the criterion and its derivative; no scope change.
     (hm_meas : ∀ θ, Measurable (m θ)) (hmdot_meas : ∀ i, Measurable (mdot i))
+    -- USER-INPUT: for P-almost every x, θ ↦ m_θ(x) is differentiable at θ₀ with
+    -- gradient ṁ_{θ₀}(x); vdV Thm 5.23
     (hderiv : ∀ᵐ ω ∂P, HasFDerivAt (fun θ => m θ ω)
       (innerSL ℝ (psiVec (fun _ => mdot) θ₀ ω)) θ₀)
+    -- USER-INPUT (menv, hmenv, ρ, hρ, hLip): local Lipschitz condition
+    -- |m_{θ₁} − m_{θ₂}| ≤ ṁ·‖θ₁ − θ₂‖ on a ball around θ₀ with P ṁ² < ∞;
+    -- vdV Thm 5.23. (hmenv_meas is LEAN-ONLY measurability.)
     (menv : Ω → ℝ) (hmenv : MemLp menv 2 P) (hmenv_meas : Measurable menv)
     (ρ : ℝ) (hρ : 0 < ρ)
     (hLip : ∀ θ₁ ∈ Metric.closedBall θ₀ ρ, ∀ θ₂ ∈ Metric.closedBall θ₀ ρ, ∀ ω,
               |m θ₁ ω - m θ₂ ω| ≤ menv ω * ‖θ₁ - θ₂‖)
+    -- USER-INPUT: second-order Taylor expansion of the population criterion,
+    -- P(m_θ − m_{θ₀}) = ½⟨θ − θ₀, V(θ − θ₀)⟩ + o(‖θ − θ₀‖²); vdV Thm 5.23
     (hTaylor : Asymptotics.IsLittleO (𝓝 θ₀)
       (fun θ => (∫ x, (m θ x - m θ₀ x) ∂P)
         - (1 / 2) * ⟪θ - θ₀, Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin d) V (θ - θ₀)⟫)
       (fun θ => ‖θ - θ₀‖ ^ 2))
     (θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin d))
     {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
+    -- USER-INPUT (hX_indep, hX_id, hX_law): X₁, X₂, … iid with law P; vdV §5.3.
+    -- (hX_meas is LEAN-ONLY measurability.)
     (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
     (hX_indep : ProbabilityTheory.iIndepFun X μ)
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P)
+    -- LEAN-ONLY: measurability of the estimator sequence; no scope change.
     (hθhat_meas : ∀ n, Measurable
       (fun ξ : Ξ => θ_hat n (fun i : Fin n => X i.val ξ)))
+    -- USER-INPUT: θ̂ₙ near-maximizes the empirical criterion at rate o_P(n⁻¹),
+    -- 𝔓ₙ m_{θ̂ₙ} ≥ sup_θ 𝔓ₙ m_θ − o_P(n⁻¹); vdV Thm 5.23
     (hNearMax : TendstoInProbZero (fun _ : ℕ => μ) (fun n ξ =>
       (n : ℝ) * max 0 ((⨆ θ : EuclideanSpace ℝ (Fin d),
           empiricalAvg (m θ) n (fun i : Fin n => X i.val ξ))
         - empiricalAvg (m (θ_hat n (fun i : Fin n => X i.val ξ))) n
             (fun i : Fin n => X i.val ξ))))
+    -- USER-INPUT: θ̂ₙ is consistent for θ₀; vdV Thm 5.23
     (hConsistent : TendstoInProbZero (fun _ : ℕ => μ)
       (fun n ξ => θ_hat n (fun i : Fin n => X i.val ξ) - θ₀))
-    -- This regularity condition ensures that the empirical supremum in `hNearMax` is
-    -- meaningful.
+    -- LEAN-ONLY: the empirical criterion's supremum over θ is finite for each sample,
+    -- so the supremum in `hNearMax` is meaningful; no scope change (implicit in the
+    -- book's use of sup_θ 𝕄ₙ(θ)).
     (hBdd : ∀ (n : ℕ) (ξ : Ξ), BddAbove (Set.range (fun θ : EuclideanSpace ℝ (Fin d) =>
       empiricalAvg (m θ) n (fun i : Fin n => X i.val ξ)))) :
     (TendstoInProbZero (fun _ : ℕ => μ) (fun n ξ =>

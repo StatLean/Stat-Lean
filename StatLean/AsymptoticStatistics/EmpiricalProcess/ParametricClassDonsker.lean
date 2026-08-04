@@ -1,4 +1,5 @@
 import StatLean.AsymptoticStatistics.EmpiricalProcess.DonskerBracketing
+import StatLean.AsymptoticStatistics.ForMathlib.SqrtLogProduct
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Topology.MetricSpace.CoveringNumbers
@@ -275,16 +276,6 @@ theorem bracketingNumber_le_of_lipschitz {k : ℕ} {Ω : Type*} [MeasurableSpace
     have h := abs_le.mp habs
     exact ⟨by linarith [h.1], by linarith [h.2]⟩
 
-/-- Subadditivity of the square root: `√(a + b) ≤ √a + √b` for `a, b ≥ 0`.
-(Mathlib has no packaged `Real.sqrt_add_le`; prove via `(√a + √b)² ≥ a + b`.) -/
-private lemma sqrt_add_le (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) :
-    Real.sqrt (a + b) ≤ Real.sqrt a + Real.sqrt b := by
-  rw [show a + b = Real.sqrt a ^ 2 + Real.sqrt b ^ 2 by rw [Real.sq_sqrt ha, Real.sq_sqrt hb]]
-  calc Real.sqrt (Real.sqrt a ^ 2 + Real.sqrt b ^ 2)
-      ≤ Real.sqrt ((Real.sqrt a + Real.sqrt b) ^ 2) := by
-        apply Real.sqrt_le_sqrt; nlinarith [Real.sqrt_nonneg a, Real.sqrt_nonneg b]
-    _ = Real.sqrt a + Real.sqrt b := Real.sqrt_sq (by positivity)
-
 /-- **Finite bracketing entropy integral for the Lipschitz class.**
 
 Combining the polynomial `ε`-net bound and the induced bracket construction with
@@ -374,7 +365,7 @@ theorem parametricClass_bracketingEntropyIntegral_lt_top {k : ℕ} {Ω : Type*}
       calc Real.sqrt (Real.log (1 + (k : ℝ) * (C' / s) ^ k))
           ≤ Real.sqrt (A + (k : ℝ) * (1 / s)) := Real.sqrt_le_sqrt hlog1
         _ ≤ Real.sqrt A + Real.sqrt ((k : ℝ) * (1 / s)) :=
-            sqrt_add_le A ((k : ℝ) * (1 / s)) hAnn (by positivity)
+            ForMathlib.Real.sqrt_add_le hAnn (by positivity)
         _ = Real.sqrt A + Real.sqrt (k : ℝ) / Real.sqrt s := by
             rw [Real.sqrt_mul (Nat.cast_nonneg k), one_div, Real.sqrt_inv]; ring
         _ ≤ Real.sqrt A / Real.sqrt s + Real.sqrt (k : ℝ) / Real.sqrt s := by

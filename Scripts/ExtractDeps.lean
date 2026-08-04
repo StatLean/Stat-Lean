@@ -9,9 +9,6 @@ graph per target at `website/src/data/graphs/<id>.json`.
 Run (after `lake build`):  `lake exe deps`
 -/
 import Lean
-import StatLean.AsymptoticStatistics.MomentEstimator.MethodOfMoments
-import StatLean.AsymptoticStatistics.Consistency.OneDimMonotoneConsistency
-import StatLean.AsymptoticStatistics.Consistency.OneDimContinuousConsistency
 
 open Lean
 
@@ -194,12 +191,7 @@ def isUrlSafeId (id : String) : Bool :=
 def main : IO Unit := do
   initSearchPath (← findSysroot)
   IO.println "Importing StatLean environment…"
-  let env ← importModules #[
-    { module := `StatLean },
-    { module := `StatLean.AsymptoticStatistics.MomentEstimator.MethodOfMoments },
-    { module := `StatLean.AsymptoticStatistics.Consistency.OneDimMonotoneConsistency },
-    { module := `StatLean.AsymptoticStatistics.Consistency.OneDimContinuousConsistency }
-  ] {} (trustLevel := 1024)
+  let env ← importModules #[{ module := `StatLean }] {} (trustLevel := 1024)
   let targetsFile := "website/targets.txt"
   let content ← IO.FS.readFile targetsFile
   let mut targets : Array (String × Name) := #[]

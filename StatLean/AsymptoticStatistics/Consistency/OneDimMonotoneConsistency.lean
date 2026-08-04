@@ -39,13 +39,20 @@ changes sign strictly across `θ₀` (`Ψ θ < 0` for `θ ∈ Θ`, `θ < θ₀`;
 `θ ∈ Θ`, `θ₀ < θ`), then the estimator sequence `θ̂ₙ` is consistent for `θ₀`. -/
 theorem oneDim_monotone_zEstimator_consistent
     {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    -- USER-INPUT: the parameter domain is an interval (order-connected); vdV Lem 5.10
     {Θ : Set ℝ} (hΘ : Θ.OrdConnected)
     {Ψn : ℕ → Ω → ℝ → ℝ} {Ψ : ℝ → ℝ} {θ₀ : ℝ} {θhat : ℕ → Ω → ℝ}
+    -- USER-INPUT (hθ₀, hθhat): θ₀ and the estimators take values in the domain; vdV Lem 5.10
     (hθ₀ : θ₀ ∈ Θ)
     (hθhat : ∀ n ω, θhat n ω ∈ Θ)
+    -- USER-INPUT: each sample criterion θ ↦ Ψₙ(θ) is monotone; vdV Lem 5.10
     (hmono : ∀ n ω, MonotoneOn (Ψn n ω) Θ)
+    -- USER-INPUT: pointwise convergence in probability Ψₙ(θ) → Ψ(θ); vdV Lem 5.10
     (hptwise : ∀ θ ∈ Θ, TendstoInMeasure P (fun n ω => Ψn n ω θ) atTop (fun _ => Ψ θ))
+    -- USER-INPUT: θ̂ₙ is a near-zero, Ψₙ(θ̂ₙ) = o_P(1); vdV Lem 5.10
     (hnear : TendstoInMeasure P (fun n ω => Ψn n ω (θhat n ω)) atTop (fun _ => (0 : ℝ)))
+    -- USER-INPUT (hsign_lt, hsign_gt): strict sign change of Ψ at θ₀,
+    -- Ψ < 0 left of θ₀ and Ψ > 0 right of θ₀; vdV Lem 5.10
     (hsign_lt : ∀ θ ∈ Θ, θ < θ₀ → Ψ θ < 0)
     (hsign_gt : ∀ θ ∈ Θ, θ₀ < θ → 0 < Ψ θ) :
     ∀ ε > (0 : ℝ), Tendsto (fun n => P {ω | ε ≤ |θhat n ω - θ₀|}) atTop (𝓝 0) := by
