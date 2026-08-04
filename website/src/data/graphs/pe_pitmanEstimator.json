@@ -1,0 +1,24 @@
+{
+  "root": "StatLean.PointEstimation.pitmanEstimator",
+  "nodes": [
+    {"id":"StatLean.PointEstimation.pitmanEstimator","label":"pitmanEstimator","full":"StatLean.PointEstimation.pitmanEstimator","kind":"root","decl":"def","module":"StatLean.PointEstimation.Equivariance.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"MeasureTheory.integral","label":"integral","full":"MeasureTheory.integral","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
+    {"id":"Real.normedAddCommGroup","label":"normedAddCommGroup","full":"Real.normedAddCommGroup","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Real"},
+    {"id":"NormedAddCommGroup.toSeminormedAddCommGroup","label":"toSeminormedAddCommGroup","full":"NormedAddCommGroup.toSeminormedAddCommGroup","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Defs"},
+    {"id":"RCLike.toInnerProductSpaceReal","label":"toInnerProductSpaceReal","full":"RCLike.toInnerProductSpaceReal","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
+    {"id":"Real.measureSpace","label":"measureSpace","full":"Real.measureSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.Haar.OfBasis"},
+    {"id":"Function.hasSMul","label":"hasSMul","full":"Function.hasSMul","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Group.Action.Pi"},
+    {"id":"Algebra.id","label":"id","full":"Algebra.id","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Algebra.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.PointEstimation.pitmanEstimator","target":"Real"},
+    {"source":"StatLean.PointEstimation.pitmanEstimator","target":"MeasureTheory.integral"},
+    {"source":"StatLean.PointEstimation.pitmanEstimator","target":"Real.normedAddCommGroup"},
+    {"source":"StatLean.PointEstimation.pitmanEstimator","target":"NormedAddCommGroup.toSeminormedAddCommGroup"},
+    {"source":"StatLean.PointEstimation.pitmanEstimator","target":"RCLike.toInnerProductSpaceReal"},
+    {"source":"StatLean.PointEstimation.pitmanEstimator","target":"Real.measureSpace"},
+    {"source":"StatLean.PointEstimation.pitmanEstimator","target":"Function.hasSMul"},
+    {"source":"StatLean.PointEstimation.pitmanEstimator","target":"Algebra.id"}
+  ]
+}

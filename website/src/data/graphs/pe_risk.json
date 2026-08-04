@@ -1,0 +1,21 @@
+{
+  "root": "StatLean.PointEstimation.risk",
+  "nodes": [
+    {"id":"StatLean.PointEstimation.risk","label":"risk","full":"StatLean.PointEstimation.risk","kind":"root","decl":"def","module":"StatLean.PointEstimation.Model.Defs"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"StatLean.PointEstimation.crossRisk","label":"crossRisk","full":"StatLean.PointEstimation.crossRisk","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Model.Defs"},
+    {"id":"MeasureTheory.lintegral","label":"lintegral","full":"MeasureTheory.lintegral","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.PointEstimation.risk","target":"MeasurableSpace"},
+    {"source":"StatLean.PointEstimation.risk","target":"MeasureTheory.Measure"},
+    {"source":"StatLean.PointEstimation.risk","target":"ENNReal"},
+    {"source":"StatLean.PointEstimation.risk","target":"StatLean.PointEstimation.crossRisk"},
+    {"source":"StatLean.PointEstimation.crossRisk","target":"MeasurableSpace"},
+    {"source":"StatLean.PointEstimation.crossRisk","target":"MeasureTheory.Measure"},
+    {"source":"StatLean.PointEstimation.crossRisk","target":"ENNReal"},
+    {"source":"StatLean.PointEstimation.crossRisk","target":"MeasureTheory.lintegral"}
+  ]
+}

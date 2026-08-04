@@ -1,0 +1,41 @@
+{
+  "root": "StatLean.HypothesisTesting.steinSolution",
+  "nodes": [
+    {"id":"StatLean.HypothesisTesting.steinSolution","label":"steinSolution","full":"StatLean.HypothesisTesting.steinSolution","kind":"root","decl":"def","module":"StatLean.HypothesisTesting.ForMathlib.SteinMethod"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Real.exp","label":"exp","full":"Real.exp","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Complex.Exponential"},
+    {"id":"Monoid.toPow","label":"toPow","full":"Monoid.toPow","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"MeasureTheory.integral","label":"integral","full":"MeasureTheory.integral","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
+    {"id":"Real.normedAddCommGroup","label":"normedAddCommGroup","full":"Real.normedAddCommGroup","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Real"},
+    {"id":"NormedAddCommGroup.toSeminormedAddCommGroup","label":"toSeminormedAddCommGroup","full":"NormedAddCommGroup.toSeminormedAddCommGroup","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Defs"},
+    {"id":"RCLike.toInnerProductSpaceReal","label":"toInnerProductSpaceReal","full":"RCLike.toInnerProductSpaceReal","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
+    {"id":"Real.measureSpace","label":"measureSpace","full":"Real.measureSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.Haar.OfBasis"},
+    {"id":"MeasureTheory.Measure.restrict","label":"restrict","full":"MeasureTheory.Measure.restrict","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.Restrict"},
+    {"id":"Set.Iic","label":"Iic","full":"Set.Iic","kind":"mathlib","decl":"def","module":"Mathlib.Order.Interval.Set.Defs"},
+    {"id":"StatLean.HypothesisTesting.stdGaussianExpect","label":"stdGaussianExpect","full":"StatLean.HypothesisTesting.stdGaussianExpect","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.ForMathlib.SteinMethod"},
+    {"id":"Real.measurableSpace","label":"measurableSpace","full":"Real.measurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"ProbabilityTheory.gaussianReal","label":"gaussianReal","full":"ProbabilityTheory.gaussianReal","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Distributions.Gaussian.Real"},
+    {"id":"NNReal","label":"NNReal","full":"NNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.NNReal.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.HypothesisTesting.steinSolution","target":"Real"},
+    {"source":"StatLean.HypothesisTesting.steinSolution","target":"Real.exp"},
+    {"source":"StatLean.HypothesisTesting.steinSolution","target":"Monoid.toPow"},
+    {"source":"StatLean.HypothesisTesting.steinSolution","target":"MeasureTheory.integral"},
+    {"source":"StatLean.HypothesisTesting.steinSolution","target":"Real.normedAddCommGroup"},
+    {"source":"StatLean.HypothesisTesting.steinSolution","target":"NormedAddCommGroup.toSeminormedAddCommGroup"},
+    {"source":"StatLean.HypothesisTesting.steinSolution","target":"RCLike.toInnerProductSpaceReal"},
+    {"source":"StatLean.HypothesisTesting.steinSolution","target":"Real.measureSpace"},
+    {"source":"StatLean.HypothesisTesting.steinSolution","target":"MeasureTheory.Measure.restrict"},
+    {"source":"StatLean.HypothesisTesting.steinSolution","target":"Set.Iic"},
+    {"source":"StatLean.HypothesisTesting.steinSolution","target":"StatLean.HypothesisTesting.stdGaussianExpect"},
+    {"source":"StatLean.HypothesisTesting.stdGaussianExpect","target":"Real"},
+    {"source":"StatLean.HypothesisTesting.stdGaussianExpect","target":"MeasureTheory.integral"},
+    {"source":"StatLean.HypothesisTesting.stdGaussianExpect","target":"Real.normedAddCommGroup"},
+    {"source":"StatLean.HypothesisTesting.stdGaussianExpect","target":"NormedAddCommGroup.toSeminormedAddCommGroup"},
+    {"source":"StatLean.HypothesisTesting.stdGaussianExpect","target":"RCLike.toInnerProductSpaceReal"},
+    {"source":"StatLean.HypothesisTesting.stdGaussianExpect","target":"Real.measurableSpace"},
+    {"source":"StatLean.HypothesisTesting.stdGaussianExpect","target":"ProbabilityTheory.gaussianReal"},
+    {"source":"StatLean.HypothesisTesting.stdGaussianExpect","target":"NNReal"}
+  ]
+}

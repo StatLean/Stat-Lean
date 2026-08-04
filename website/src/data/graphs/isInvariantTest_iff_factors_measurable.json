@@ -1,0 +1,28 @@
+{
+  "root": "StatLean.HypothesisTesting.isInvariantTest_iff_factors_measurable",
+  "nodes": [
+    {"id":"StatLean.HypothesisTesting.isInvariantTest_iff_factors_measurable","label":"isInvariantTest_iff_factors_measurable","full":"StatLean.HypothesisTesting.isInvariantTest_iff_factors_measurable","kind":"root","decl":"thm","module":"StatLean.HypothesisTesting.Invariance.MaximalInvariant"},
+    {"id":"StatLean.HypothesisTesting.IsMaximalInvariant","label":"IsMaximalInvariant","full":"StatLean.HypothesisTesting.IsMaximalInvariant","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Invariance.Defs"},
+    {"id":"StatLean.HypothesisTesting.IsInvariantTest","label":"IsInvariantTest","full":"StatLean.HypothesisTesting.IsInvariantTest","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Invariance.Defs"},
+    {"id":"Measurable.comp","label":"comp","full":"Measurable.comp","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"measurable_fst","label":"measurable_fst","full":"measurable_fst","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
+    {"id":"Set.ext","label":"ext","full":"Set.ext","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Set.Defs"},
+    {"id":"Set.mem_preimage","label":"mem_preimage","full":"Set.mem_preimage","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Set.Operations"},
+    {"id":"MeasurableEmbedding.measurableSet_image","label":"measurableSet_image","full":"MeasurableEmbedding.measurableSet_image","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Embedding"},
+    {"id":"Measurable.prodMk","label":"prodMk","full":"Measurable.prodMk","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
+    {"id":"measurable_id","label":"measurable_id","full":"measurable_id","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"measurable_const","label":"measurable_const","full":"measurable_const","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.HypothesisTesting.isInvariantTest_iff_factors_measurable","target":"StatLean.HypothesisTesting.IsMaximalInvariant"},
+    {"source":"StatLean.HypothesisTesting.isInvariantTest_iff_factors_measurable","target":"StatLean.HypothesisTesting.IsInvariantTest"},
+    {"source":"StatLean.HypothesisTesting.isInvariantTest_iff_factors_measurable","target":"Measurable.comp"},
+    {"source":"StatLean.HypothesisTesting.isInvariantTest_iff_factors_measurable","target":"measurable_fst"},
+    {"source":"StatLean.HypothesisTesting.isInvariantTest_iff_factors_measurable","target":"Set.ext"},
+    {"source":"StatLean.HypothesisTesting.isInvariantTest_iff_factors_measurable","target":"Set.mem_preimage"},
+    {"source":"StatLean.HypothesisTesting.isInvariantTest_iff_factors_measurable","target":"MeasurableEmbedding.measurableSet_image"},
+    {"source":"StatLean.HypothesisTesting.isInvariantTest_iff_factors_measurable","target":"Measurable.prodMk"},
+    {"source":"StatLean.HypothesisTesting.isInvariantTest_iff_factors_measurable","target":"measurable_id"},
+    {"source":"StatLean.HypothesisTesting.isInvariantTest_iff_factors_measurable","target":"measurable_const"}
+  ]
+}
