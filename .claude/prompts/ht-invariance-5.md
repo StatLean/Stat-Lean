@@ -1,0 +1,34 @@
+# Close Invariance/{UMPInvariantFinite,MaximalInvariant}.lean — every diagnosed hypothesis has now been added
+
+Lean 4 / Mathlib proof engineer on `StatLean`. Pin `v4.29.1`. (Note: the repo `CLAUDE.md` is gitignored and is NOT present in this worktree — everything you need is below. Project rules: never `lake update`; `sorry` is planned debt tied to a named lemma; do not launder unproven content into hypotheses.)
+
+**CRITICAL — how to build.** Run `lake build <module>` as an ordinary FOREGROUND command and read its output in the same step. It returns in well under a minute per module. Do **not** background it, do **not** wait for a "build notification", do **not** say you will continue once a build finishes — there is no notification channel and you will stall and lose the session. One session on this exact item was already lost that way.
+
+## Hard constraints
+
+- **Only edit** `StatLean/HypothesisTesting/Invariance/UMPInvariantFinite.lean` and `.../MaximalInvariant.lean`. Nothing else.
+- **Signatures are FROZEN** (they were just corrected — see below). You may add `import Mathlib.*`, import closed modules, and add `private` helpers. Lines ≤ 100 chars.
+- Goal: **0 sorries, 0 errors** in `UMPInvariantFinite`; in `MaximalInvariant` close everything except the one genuine obstruction named below.
+- **Do not weaken any statement.** If something is still under-hypothesized, STOP and report precisely what is missing. Your predecessor's reports have been acted on twice now — that loop works.
+- Commit after each lemma compiles.
+
+## Your predecessor's diagnoses were correct and have ALL been applied
+
+- `orbitAverage_eq_avg_translated_density` now carries **`[SigmaFinite μ]`**, so the density-uniqueness bridge (`withDensity_eq_iff_of_sigmaFinite`) is available to get a.e. equality of the density *functions* from equality of the `withDensity` *measures*.
+- `isUMPInvariant_of_orbitAverage_ratio` and `exists_isUMPInvariant_of_finite_transitive` now carry **`(hμinv : ∀ g : G, μ.map (fun x => g • x) = μ)`** — invariance of the dominating measure. You showed the first is *false* without it (ℤ/2 reflection on ℝ, symmetric `P θ`, asymmetric `μ = N(1,10)`), and that the proof sketch had silently assumed it. It is now a real hypothesis: **use it**.
+- `[MeasurableSMul G 𝓧]` and the `[MeasurableSpace G]` scaffolding are in place.
+
+**Close all three `UMPInvariantFinite` theorems.** For `exists_isUMPInvariant_of_finite_transitive` the route you identified is right: form the orbit-averaged probability measures at the class representatives, apply `NeymanPearson.Lemma.exists_mostPowerful` (closed, axiom-clean) for an exact-size test, note that `npTest` of invariant orbit-averages is invariant via `isInvariantTest_orbitAverage` (closed), and finish through the same `∫ ψ · orbitAverage(p θᵢ) dμ = power P ψ θᵢ` bridge as the previous theorem — which `hμinv` now licenses.
+
+## `MaximalInvariant`
+
+- `InducesOn.mul` needs `Measurable ⇑g'` and `InducesOn.inv` needs `Measurable ⇑g` — you diagnosed both. Those hypotheses are **not** in the frozen signatures, so if they are still unavailable, leave those two sorried and say so; do not invent them. (Their content is already discharged inline in `PreservesFamily.mul`, where `g'` is bimeasurable.)
+- `isInvariantTest_iff_factors_measurable` (⇒) is a **genuine obstruction** — measurable uniformization (Jankov–von Neumann); the projection is analytic, not measurable. **Do not attempt it.** Leave it with its note.
+
+## Already closed, axiom-clean — black boxes
+
+`NeymanPearson.Lemma.{exists_mostPowerful, isMostPowerful_npTest}`; `ForMathlib.{GroupAverageMeasure, CriticalFunction, QuantileFunction, HypergeometricMoments}`; `Randomization.{ExactLevel, OrbitConditional}`; `Tests.{PValue, Confidence}`; `Invariance.MaximalInvariant.{isInvariantTest_orbitAverage, map_maximalInvariant_eq_of_orbit}`.
+
+## Report
+
+Final `lake build` status per module, per-file sorry counts, `#print axioms exists_isUMPInvariant_of_finite_transitive`, and for anything left open the precise obstruction.

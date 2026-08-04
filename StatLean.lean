@@ -6,6 +6,8 @@ import StatLean.MultipleTesting
 import StatLean.Minimaxity
 import StatLean.Bayesian
 import StatLean.NonparametricStatistics
+import StatLean.PointEstimation
+import StatLean.HypothesisTesting
 
 /-!
 # StatLean
@@ -37,6 +39,12 @@ theory, organized into per-area sublibraries.
   polynomial regression (pointwise/L²/sup-norm rates over Hölder classes), and
   projection estimators on the trigonometric basis (exact MISE decomposition and
   Sobolev-ellipsoid rates).
+* `StatLean.PointEstimation` — point estimation: exponential families (natural
+  parameters, differentiability of the log-partition function), sufficiency,
+  minimal sufficiency and completeness, unbiased estimation and UMVU
+  (Rao–Blackwell, Lehmann–Scheffé), the information inequality (Fisher
+  information, Cramér–Rao), equivariance (location and scale minimum-risk
+  equivariant estimators, Pitman's estimator), and normal linear models.
 
 Per-area umbrellas are imported above as each area lands.
 -/
