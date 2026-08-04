@@ -1,5 +1,5 @@
 import StatLean.StatisticalModels.Survival.Cox.Defs
-import StatLean.StatisticalModels.Survival.HazardBridges
+import StatLean.StatisticalModels.Survival.CumulativeHazard
 
 /-!
 # The canonical Cox law — construction and realization

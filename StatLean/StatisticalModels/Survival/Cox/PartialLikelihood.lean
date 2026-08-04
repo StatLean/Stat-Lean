@@ -52,7 +52,7 @@ variable {p n : ℕ}
 
 /-- The **risk set** at time `t`: subjects still under observation, `R(t) = {j : t ≤ T̃ⱼ}`
 (`Cox72 §5`). -/
-def coxRiskSet (dz : Fin n → (ℝ × Bool) × EuclideanSpace ℝ (Fin p)) (t : ℝ) :
+noncomputable def coxRiskSet (dz : Fin n → (ℝ × Bool) × EuclideanSpace ℝ (Fin p)) (t : ℝ) :
     Finset (Fin n) :=
   univ.filter fun j => t ≤ (dz j).1.1
 
