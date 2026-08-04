@@ -1,5 +1,7 @@
 import StatLean.StatisticalModels.Coarsening.Defs
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
+import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 
 /-!
 # Coarsening basics — Bool integration bricks, MCAR ⇒ MAR, propensity range
@@ -30,38 +32,47 @@ variable {𝓧 : Type*} [MeasurableSpace 𝓧]
 /-- Two-point lower integral over `Bool`. -/
 theorem lintegral_bool (ν : Measure Bool) (f : Bool → ℝ≥0∞) :
     ∫⁻ b, f b ∂ν = f true * ν {true} + f false * ν {false} := by
-  sorry
+  rw [lintegral_fintype, Fintype.sum_bool]
 
 /-- Two-point Bochner integral over `Bool`. -/
 theorem integral_bool (ν : Measure Bool) [IsFiniteMeasure ν] (f : Bool → ℝ) :
     ∫ b, f b ∂ν = (ν {true}).toReal * f true + (ν {false}).toReal * f false := by
-  sorry
+  rw [integral_fintype Integrable.of_finite, Fintype.sum_bool]
+  simp [measureReal_def, smul_eq_mul]
 
 /-- The coarsening map is measurable. -/
 theorem measurable_missingObserve :
     Measurable (missingObserve (𝓧 := 𝓧)) := by
-  sorry
+  refine measurable_fst.prodMk (measurable_snd.snd.prodMk ?_)
+  exact Measurable.ite (measurable_snd.snd (measurableSet_singleton true))
+    measurable_snd.fst measurable_const
 
 /-- **MCAR ⇒ MAR** (Rubin76 §2): a data-free mechanism trivially factors through the
 covariate. -/
 theorem IsMCAR.isMAR {ρ : Kernel (𝓧 × ℝ) Bool} (h : IsMCAR ρ) : IsMAR ρ := by
-  sorry
+  obtain ⟨ν, rfl⟩ := h
+  exact ⟨Kernel.const 𝓧 ν, Kernel.ext fun a => by simp⟩
 
 /-- The propensity is nonnegative. -/
-theorem propensity_nonneg (ρ' : Kernel 𝓧 Bool) (x : 𝓧) : 0 ≤ propensity ρ' x := by
-  sorry
+theorem propensity_nonneg (ρ' : Kernel 𝓧 Bool) (x : 𝓧) : 0 ≤ propensity ρ' x :=
+  ENNReal.toReal_nonneg
 
 /-- The propensity of a Markov mechanism is at most one. -/
 theorem propensity_le_one (ρ' : Kernel 𝓧 Bool) [IsMarkovKernel ρ'] (x : 𝓧) :
     propensity ρ' x ≤ 1 := by
-  sorry
+  simpa [propensity] using ENNReal.toReal_mono ENNReal.one_ne_top (prob_le_one (μ := ρ' x))
+
+/-- The full-data reassociation `((x, y), r) ↦ (x, y, r)` is measurable. -/
+private theorem measurable_fullAssoc :
+    Measurable fun p : (𝓧 × ℝ) × Bool => (p.1.1, p.1.2, p.2) :=
+  measurable_fst.fst.prodMk (measurable_fst.snd.prodMk measurable_snd)
 
 instance (Q : Measure (𝓧 × ℝ)) (ρ : Kernel (𝓧 × ℝ) Bool)
     [IsProbabilityMeasure Q] [IsMarkovKernel ρ] : IsProbabilityMeasure (fullLaw Q ρ) := by
-  sorry
+  exact Measure.isProbabilityMeasure_map measurable_fullAssoc.aemeasurable
 
 instance (Q : Measure (𝓧 × ℝ)) (ρ : Kernel (𝓧 × ℝ) Bool)
     [IsProbabilityMeasure Q] [IsMarkovKernel ρ] : IsProbabilityMeasure (observedLaw Q ρ) := by
-  sorry
+  exact Measure.isProbabilityMeasure_map measurable_missingObserve.aemeasurable
 
 end StatLean.StatisticalModels.Coarsening
