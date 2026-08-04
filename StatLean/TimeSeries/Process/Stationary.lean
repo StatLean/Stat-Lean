@@ -109,6 +109,15 @@ theorem IsStrictlyStationary.isStationary [IsProbabilityMeasure μ]
   simp only [Pi.mul_apply]
   rw [hprod, (hid (t + k) k).integral_eq, (hid t 0).integral_eq]
 
+/-- Pushing a joint law forward along a coordinate-selection map `p ↦ (p ∘ σ)`: the law of
+a sub-tuple of a window is the image of the window law. The selection map need not be
+injective (repeated times in the tuple select the same window coordinate). -/
+private lemma map_select_comp {n N : ℕ} (F : Ω → Fin N → ℝ) (hF : Measurable F)
+    (σ : Fin n → Fin N) :
+    (μ.map F).map (fun p : Fin N → ℝ => fun i : Fin n => p (σ i))
+      = μ.map fun ω (i : Fin n) => F ω (σ i) :=
+  Measure.map_map (measurable_pi_lambda _ fun i => measurable_pi_apply (σ i)) hF
+
 /-- The general-tuple formulation of strict stationarity coincides with FY Definition
 2.2's consecutive-window form `(X_1, …, X_n) ≐ (X_{1+k}, …, X_{n+k})`. -/
 theorem isStrictlyStationary_iff_window
@@ -118,6 +127,50 @@ theorem isStrictlyStationary_iff_window
       ∀ (n : ℕ) (k : ℤ),
         (μ.map fun ω (i : Fin n) => X ((i : ℕ) + 1 + k) ω)
           = μ.map fun ω (i : Fin n) => X ((i : ℕ) + 1) ω := by
-  sorry
+  constructor
+  · intro hs n k
+    exact hs n (fun i : Fin n => (i : ℕ) + 1) k
+  · intro hw n t k
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · congr 1
+      funext ω i
+      exact i.elim0
+    haveI : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
+    -- A window `[lo, hi]` containing the range of `t`; the tuple is the sub-tuple of that
+    -- window selected by `σ i = t i − lo`, and the same `σ` selects `t + k` out of the
+    -- window shifted by `k`.
+    obtain ⟨lo, hlo⟩ : ∃ lo : ℤ, ∀ i, lo ≤ t i :=
+      ⟨Finset.univ.inf' Finset.univ_nonempty t, fun i => Finset.inf'_le t (Finset.mem_univ i)⟩
+    obtain ⟨hi, hhi⟩ : ∃ hi : ℤ, ∀ i, t i ≤ hi :=
+      ⟨Finset.univ.sup' Finset.univ_nonempty t, fun i => Finset.le_sup' t (Finset.mem_univ i)⟩
+    obtain ⟨N, hbound⟩ : ∃ N : ℕ, ∀ i, (t i - lo).toNat < N :=
+      ⟨(hi - lo + 1).toNat, fun i => by have := hlo i; have := hhi i; omega⟩
+    obtain ⟨σ, hσ⟩ : ∃ σ : Fin n → Fin N, ∀ i, ((σ i : ℕ) : ℤ) = t i - lo := by
+      refine ⟨fun i => ⟨(t i - lo).toNat, hbound i⟩, fun i => ?_⟩
+      change ((t i - lo).toNat : ℤ) = t i - lo
+      have := hlo i
+      omega
+    have hW : ∀ c : ℤ, Measurable fun ω (j : Fin N) => X ((j : ℕ) + 1 + c) ω :=
+      fun c => measurable_pi_lambda _ fun _ => hmeas _
+    -- The `c`-shifted tuple is the `(lo − 1 + c)`-shifted window, selected by `σ`.
+    have step : ∀ c : ℤ, (μ.map fun ω (i : Fin n) => X (t i + c) ω)
+        = (μ.map fun ω (j : Fin N) => X ((j : ℕ) + 1 + (lo - 1 + c)) ω).map
+            (fun p : Fin N → ℝ => fun i : Fin n => p (σ i)) := by
+      intro c
+      rw [map_select_comp _ (hW (lo - 1 + c)) σ]
+      congr 1
+      funext ω i
+      congr 1
+      have := hσ i
+      omega
+    calc (μ.map fun ω (i : Fin n) => X (t i + k) ω)
+        = (μ.map fun ω (j : Fin N) => X ((j : ℕ) + 1 + (lo - 1 + k)) ω).map
+            (fun p : Fin N → ℝ => fun i : Fin n => p (σ i)) := step k
+      _ = (μ.map fun ω (j : Fin N) => X ((j : ℕ) + 1) ω).map
+            (fun p : Fin N → ℝ => fun i : Fin n => p (σ i)) := by rw [hw N (lo - 1 + k)]
+      _ = (μ.map fun ω (j : Fin N) => X ((j : ℕ) + 1 + (lo - 1 + 0)) ω).map
+            (fun p : Fin N → ℝ => fun i : Fin n => p (σ i)) := by rw [hw N (lo - 1 + 0)]
+      _ = μ.map fun ω (i : Fin n) => X (t i + 0) ω := (step 0).symm
+      _ = μ.map fun ω (i : Fin n) => X (t i) ω := by simp
 
 end StatLean.TimeSeries
