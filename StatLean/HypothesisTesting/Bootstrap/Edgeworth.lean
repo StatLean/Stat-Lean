@@ -12398,6 +12398,324 @@ theorem exists_fourierCertificate_deltaSurrogate
       refine (hC n hn).trans ?_
       exact div_le_div_of_nonneg_right (le_trans (le_max_right _ _) (le_max_right CA _)) hden.le
 
+
+/-! ### The middle range, from the certificate at `N = 10` (wave 53)
+
+With the logarithmic middle weight in hand the middle range is no longer a budget statement but
+a theorem, and it is the certificate the file already has that proves it.  Three elementary
+inputs are needed and none of them is analytic:
+
+* a geometric sequence beats every negative power of `n` (`exists_pow_le_rpow_neg`), which turns
+  the Cramér branch `cⁿ` of `κ` into `n^{−q}`;
+* `√(log n)` is below every positive power of `n` (`exists_const_mul_sqrt_log_le_rpow`, over
+  `log x ≤ x^b/b`), which is what lets the certificate's band condition `2σKb√(log n) ≤ |θ|` be
+  met by the middle range's own floor `n^{1/6}`;
+* the certificate's polynomial exponent `K` must be available *before* `Kb` is chosen, since
+  `Kb` has to beat it.  `K` comes from input (A), which never sees the band, so pulling it in
+  front is a restatement and not a new proof (`exists_fourierCertificate_deltaSurrogate_exponent`).
+
+Then `Kb` is fixed by `λKb²/4 = q + 1` at `q = 3K + 3/2`, `Γ ≤ C(1+4π)^K n^{3K}` on the whole
+middle range (`|θ| ≤ 4πn²`, which is `ρ = n²` in the Esseen variable), `κ ≤ n^{−q}`, and
+`band_kappa_ledger` returns `Γκ ≤ C'/(n√n)`.  Adding the certificate's own `ε + η = 2C/(n√n)`
+gives the middle constant `M₁ = (C(1+4π)^K + 2C)/(n√n)` — exactly the `O(n^{-3/2})` that
+`middle_range_log_ledger` prices at `O(n⁻¹)` against `log(ρ/ρ₁)`. -/
+
+/-- **A geometric sequence beats every negative power of `n`, eventually.** -/
+lemma exists_pow_le_rpow_neg {c r : ℝ} (hc0 : 0 ≤ c) (hc1 : c < 1) (hr : 0 ≤ r) :
+    ∃ N : ℕ, 0 < N ∧ ∀ n : ℕ, N ≤ n → c ^ n ≤ (n : ℝ) ^ (-r) := by
+  rcases eq_or_lt_of_le hc0 with hc | hcpos
+  · refine ⟨1, one_pos, fun n hn => ?_⟩
+    have hz : c ^ n = 0 := by rw [← hc]; exact zero_pow (by omega)
+    rw [hz]
+    positivity
+  · set L : ℝ := -Real.log c with hL
+    have hL0 : 0 < L := by
+      rw [hL, neg_pos]
+      exact Real.log_neg hcpos hc1
+    obtain ⟨N₀, hN₀⟩ := exists_nat_gt ((2 * r / L) ^ 2)
+    refine ⟨max 1 N₀, lt_of_lt_of_le one_pos (le_max_left _ _), fun n hn => ?_⟩
+    have hn1 : 1 ≤ n := le_trans (le_max_left _ _) hn
+    have hnN : N₀ ≤ n := le_trans (le_max_right _ _) hn
+    have hnR : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1
+    have hn0 : (0 : ℝ) < (n : ℝ) := by linarith
+    have hsq : ((2 * r / L) ^ 2 : ℝ) ≤ (n : ℝ) := by
+      have : ((N₀ : ℝ)) ≤ (n : ℝ) := by exact_mod_cast hnN
+      linarith
+    have hs : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) := Real.mul_self_sqrt hn0.le
+    have hs0 : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hn0
+    have hratio : 2 * r / L ≤ Real.sqrt (n : ℝ) := by
+      have h := Real.sqrt_le_sqrt hsq
+      rwa [Real.sqrt_sq (by positivity)] at h
+    have hlog : Real.log (n : ℝ) ≤ 2 * Real.sqrt (n : ℝ) := by
+      have h1 : Real.log (Real.sqrt (n : ℝ)) ≤ Real.sqrt (n : ℝ) - 1 :=
+        Real.log_le_sub_one_of_pos hs0
+      rw [Real.log_sqrt hn0.le] at h1
+      linarith
+    have hkey : r * Real.log (n : ℝ) ≤ L * (n : ℝ) := by
+      have h2 : 2 * r ≤ L * Real.sqrt (n : ℝ) := by
+        rw [div_le_iff₀ hL0] at hratio; linarith
+      nlinarith [hs, hs0.le, hr]
+    have hcn : c ^ n = Real.exp (Real.log c * (n : ℝ)) := by
+      rw [← Real.rpow_natCast c n, Real.rpow_def_of_pos hcpos]
+    have hnr : (n : ℝ) ^ (-r) = Real.exp (Real.log (n : ℝ) * (-r)) := by
+      rw [Real.rpow_def_of_pos hn0]
+    rw [hcn, hnr]
+    refine Real.exp_le_exp.2 ?_
+    have : Real.log c = -L := by rw [hL]; ring
+    rw [this]
+    nlinarith [hkey]
+
+/-- **The certificate with its polynomial exponent pulled in front of the band constant.**
+The exponent `K` is the one of input (A), which does not see the band at all, so it may be
+chosen before `Kb`.  This is what lets a consumer pick `Kb` large enough to beat `Γ`. -/
+theorem exists_fourierCertificate_deltaSurrogate_exponent
+    (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F)
+    {σ : ℝ} (hσ : 0 < σ) {c₀ : ℝ} (hc₀ : 0 < c₀) :
+    ∃ K : ℕ, ∀ Kb : ℝ, 0 ≤ Kb → ∃ (Γ : ℕ → ℝ → ℝ) (C : ℝ), 0 < C ∧
+      (∀ (n : ℕ) (θ : ℝ), 0 ≤ Γ n θ) ∧
+      (∀ (n : ℕ) (θ : ℝ), Γ n θ ≤ C * (n : ℝ) ^ K * (1 + |θ|) ^ K) ∧
+      ∀ n : ℕ, 0 < n → ∀ θ : ℝ, c₀ ≤ |θ| →
+        2 * σ * (Kb * Real.sqrt (Real.log (n : ℝ))) ≤ |θ| →
+        HasFourierCertificateOnBand
+          (vecRootLaw F
+            (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n)
+          σ ((Real.sqrt (n : ℝ))⁻¹) θ ((θ / σ) • coordDir 0)
+          (Kb * Real.sqrt (Real.log (n : ℝ)))
+          (Γ n θ) (C / ((n : ℝ) * Real.sqrt (n : ℝ)))
+          (C / ((n : ℝ) * Real.sqrt (n : ℝ))) := by
+  obtain ⟨CA, K, hCA, hA⟩ := exists_integral_norm_fourier_bulkMultiplier_le hσ
+  refine ⟨K, fun Kb hKb => ?_⟩
+  obtain ⟨CB, hCB, hB⟩ := exists_integral_norm_fourierWeight_bulkMultiplier_band_le hσ hc₀ hKb
+  obtain ⟨CC, hCC, hC⟩ := exists_measure_norm_gt_bulkRadius_le F hF4
+  refine ⟨fun n θ => CA * (n : ℝ) ^ K * (1 + |θ|) ^ K, max CA (max CB CC),
+    lt_of_lt_of_le hCA (le_max_left _ _), ?_, ?_, ?_⟩
+  · intro n θ; positivity
+  · intro n θ
+    have h1 : CA ≤ max CA (max CB CC) := le_max_left _ _
+    have h2 : (0 : ℝ) ≤ (n : ℝ) ^ K := by positivity
+    have h3 : (0 : ℝ) ≤ (1 + |θ|) ^ K := by positivity
+    exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right h1 h2) h3
+  · intro n hn θ hθ hband
+    have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hden : (0 : ℝ) < (n : ℝ) * Real.sqrt (n : ℝ) := by positivity
+    have hM : 0 < bulkRadius n := bulkRadius_pos hn
+    set Z : ℝ → E₂ :=
+      fun y => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y) with hZdef
+    have hZm : Measurable Z := (measurable_studentPair F).comp (measurable_truncAt _ _)
+    haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZm n
+    have hAmass := hA n hn θ
+    have hAint := integrable_fourier_bulkMultiplier hM σ ((Real.sqrt (n : ℝ))⁻¹) θ
+    have hS : MeasurableSet {w : E₂ | ‖w‖ ≤ bulkRadius n} :=
+      measurableSet_le continuous_norm.measurable measurable_const
+    have hcompl : ({w : E₂ | ‖w‖ ≤ bulkRadius n})ᶜ = {w : E₂ | bulkRadius n < ‖w‖} := by
+      ext w; simp [not_le]
+    refine hasFourierCertificateOnBand_of_bulkMultiplier (vecRootLaw F Z n) hσ
+      ((Real.sqrt (n : ℝ))⁻¹) θ (continuous_bulkMultiplier _ _ _ _)
+      (integrable_bulkMultiplier hM _ _ _) hAint hAmass ?_ hS
+      (fun w hw => bulkMultiplier_eq_of_norm_le hM _ _ _ hw)
+      (norm_bulkMultiplier_le_one _ _ _ _) ?_
+    · refine (hB n hn θ hθ hband).trans ?_
+      exact div_le_div_of_nonneg_right (le_trans (le_max_left _ _) (le_max_right CA _)) hden.le
+    · rw [hcompl]
+      refine (hC n hn).trans ?_
+      exact div_le_div_of_nonneg_right (le_trans (le_max_right _ _) (le_max_right CA _)) hden.le
+
+
+/-- `log x ≤ x^b / b` for every `b > 0`: the logarithm is below every positive power. -/
+lemma log_le_rpow_div {b : ℝ} (hb : 0 < b) {x : ℝ} (hx : 0 < x) :
+    Real.log x ≤ x ^ b / b := by
+  have h1 : Real.log (x ^ b) = b * Real.log x := Real.log_rpow hx b
+  have h2 : Real.log (x ^ b) ≤ x ^ b - 1 :=
+    Real.log_le_sub_one_of_pos (Real.rpow_pos_of_pos hx b)
+  rw [h1] at h2
+  rw [le_div_iff₀ hb]
+  linarith
+
+/-- **`√(log n)` is below every positive power of `n`, eventually.**  This is what lets the
+certificate's band condition `2σKb√(log n) ≤ |θ|` be met by the middle range's own floor
+`n^{1/6}`. -/
+lemma exists_const_mul_sqrt_log_le_rpow {M a : ℝ} (hM : 0 ≤ M) (ha : 0 < a) :
+    ∃ N : ℕ, 0 < N ∧ ∀ n : ℕ, N ≤ n → M * Real.sqrt (Real.log (n : ℝ)) ≤ (n : ℝ) ^ a := by
+  have hsa : 0 < Real.sqrt a := Real.sqrt_pos.2 ha
+  set A : ℝ := M / Real.sqrt a with hAdef
+  have hA0 : 0 ≤ A := by positivity
+  obtain ⟨N₀, hN₀⟩ := exists_nat_gt (A ^ (2 / a))
+  refine ⟨max 1 N₀, lt_of_lt_of_le one_pos (le_max_left _ _), fun n hn => ?_⟩
+  have hn1 : 1 ≤ n := le_trans (le_max_left _ _) hn
+  have hnN : N₀ ≤ n := le_trans (le_max_right _ _) hn
+  have hnR : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1
+  have hn0 : (0 : ℝ) < (n : ℝ) := by linarith
+  -- `√(log n) ≤ n^{a/2}/√a`
+  have hlog : Real.log (n : ℝ) ≤ (n : ℝ) ^ a / a := log_le_rpow_div ha hn0
+  have hlog0 : 0 ≤ Real.log (n : ℝ) := Real.log_nonneg hnR
+  have hsqrt : Real.sqrt (Real.log (n : ℝ)) ≤ (n : ℝ) ^ (a / 2) / Real.sqrt a := by
+    have h1 : Real.sqrt (Real.log (n : ℝ)) ≤ Real.sqrt ((n : ℝ) ^ a / a) :=
+      Real.sqrt_le_sqrt hlog
+    have hsq2 : ((n : ℝ) ^ (a / 2) / Real.sqrt a) ^ 2 = (n : ℝ) ^ a / a := by
+      rw [div_pow, Real.sq_sqrt ha.le, ← Real.rpow_natCast ((n : ℝ) ^ (a / 2)) 2,
+        ← Real.rpow_mul hn0.le]
+      norm_num
+    have h2 : Real.sqrt ((n : ℝ) ^ a / a) = (n : ℝ) ^ (a / 2) / Real.sqrt a := by
+      rw [← hsq2, Real.sqrt_sq (by positivity)]
+    rw [h2] at h1
+    exact h1
+  -- `A ≤ n^{a/2}`
+  have hAle : A ≤ (n : ℝ) ^ (a / 2) := by
+    have hstep : A ^ (2 / a) ≤ (n : ℝ) := by
+      have : ((N₀ : ℝ)) ≤ (n : ℝ) := by exact_mod_cast hnN
+      linarith
+    have h := Real.rpow_le_rpow (Real.rpow_nonneg hA0 _) hstep (le_of_lt (half_pos ha))
+    rwa [← Real.rpow_mul hA0, show (2 / a) * (a / 2) = 1 by field_simp, Real.rpow_one] at h
+  calc M * Real.sqrt (Real.log (n : ℝ))
+      ≤ M * ((n : ℝ) ^ (a / 2) / Real.sqrt a) := by
+        exact mul_le_mul_of_nonneg_left hsqrt hM
+    _ = A * (n : ℝ) ^ (a / 2) := by rw [hAdef]; ring
+    _ ≤ (n : ℝ) ^ (a / 2) * (n : ℝ) ^ (a / 2) :=
+        mul_le_mul_of_nonneg_right hAle (Real.rpow_nonneg hn0.le _)
+    _ = (n : ℝ) ^ a := by
+        rw [← Real.rpow_add hn0]; congr 1; ring
+
+
+/-- **THE MIDDLE RANGE, FROM THE CERTIFICATE AT `N = 10`.** -/
+theorem exists_studentized_middle_range_bound
+    (F : Measure ℝ) [IsProbabilityMeasure F] (hFac : F ≪ volume)
+    (hF4 : MemLp (fun t : ℝ => t) 4 F) (hF6 : MemLp (fun t : ℝ => t) 6 F)
+    (hF4int : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F)
+    {σ : ℝ} (hσ : 0 < σ) :
+    ∃ (C : ℝ) (N : ℕ), 0 < C ∧ 0 < N ∧ ∀ n : ℕ, N ≤ n → ∀ θ : ℝ,
+      (n : ℝ) ^ ((1 : ℝ) / 6) ≤ |θ| → |θ| ≤ 4 * Real.pi * (n : ℝ) ^ 2 →
+      ‖charFun ((vecRootLaw F
+          (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n).map
+          (deltaSurrogate σ ((Real.sqrt (n : ℝ))⁻¹))) θ‖
+        ≤ C / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
+  obtain ⟨lam, ε₁, B, hlam, hε₁, hB, hbulk⟩ :=
+    exists_bulk_majorant_vecRootLaw_studentPair_truncAt F hFac hF4 hF6 hF4int
+  obtain ⟨c, Nc, hc1, hcram⟩ :=
+    exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt F hFac hF4int hε₁
+  obtain ⟨K, hcertK⟩ :=
+    exists_fourierCertificate_deltaSurrogate_exponent F hF4int hσ (c₀ := 1) one_pos
+  have hZm : ∀ n : ℕ, Measurable
+      (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) :=
+    fun n => (measurable_studentPair F).comp (measurable_truncAt _ _)
+  -- the certificate's exponent fixes the band radius
+  set q : ℝ := 3 * (K : ℝ) + 3 / 2 with hqdef
+  have hq0 : 0 ≤ q := by positivity
+  set Kb : ℝ := Real.sqrt (4 * (q + 1) / lam) with hKbdef
+  have hKb0 : 0 ≤ Kb := Real.sqrt_nonneg _
+  have hKbsq : lam * Kb ^ 2 / 4 = q + 1 := by
+    rw [hKbdef, Real.sq_sqrt (by positivity)]
+    field_simp
+  obtain ⟨Γ, C, hC, hΓ0, hΓ, hcert⟩ := hcertK Kb hKb0
+  -- the Cramér base is nonnegative
+  have hc0 : 0 ≤ c := by
+    by_contra hneg
+    push_neg at hneg
+    have hm0 : 0 < 2 * Nc + 1 := by omega
+    have hmc : Nc ≤ 2 * Nc + 1 := by omega
+    have hcd : ‖(coordDir 0 : E₂)‖ = 1 := by
+      rw [coordDir, EuclideanSpace.norm_single]; simp
+    have hnt : ‖(ε₁ * Real.sqrt ((2 * Nc + 1 : ℕ) : ℝ)) • (coordDir 0 : E₂)‖
+        = ε₁ * Real.sqrt ((2 * Nc + 1 : ℕ) : ℝ) := by
+      rw [norm_smul, Real.norm_eq_abs, hcd, mul_one,
+        abs_of_nonneg (by positivity : (0 : ℝ) ≤ ε₁ * Real.sqrt ((2 * Nc + 1 : ℕ) : ℝ))]
+    have hbd := hcram (2 * Nc + 1) hmc hm0
+      ((ε₁ * Real.sqrt ((2 * Nc + 1 : ℕ) : ℝ)) • (coordDir 0 : E₂)) (le_of_eq hnt.symm)
+    have hodd : Odd (2 * Nc + 1) := by rw [Nat.odd_iff]; omega
+    have hlt : c ^ (2 * Nc + 1) < 0 := hodd.pow_neg hneg
+    have := norm_nonneg (charFun (vecRootLaw F
+      (fun y : ℝ => studentPair F
+        (truncAt (∫ s, s ∂F) (Real.sqrt ((2 * Nc + 1 : ℕ) : ℝ)) y)) (2 * Nc + 1))
+      ((ε₁ * Real.sqrt ((2 * Nc + 1 : ℕ) : ℝ)) • (coordDir 0 : E₂)))
+    linarith
+  obtain ⟨N₁, hN₁0, hN₁⟩ := exists_pow_le_rpow_neg hc0 hc1 hq0
+  obtain ⟨N₂, hN₂0, hN₂⟩ :=
+    exists_const_mul_sqrt_log_le_rpow (M := 2 * σ * Kb) (by positivity)
+      (by norm_num : (0 : ℝ) < 1 / 6)
+  obtain ⟨N₃, hN₃⟩ := exists_nat_gt B
+  refine ⟨C * (1 + 4 * Real.pi) ^ K + 2 * C, max (max Nc N₁) (max N₂ (max N₃ 1)),
+    by positivity, lt_of_lt_of_le one_pos (le_trans (le_max_right _ _)
+      (le_trans (le_max_right _ _) (le_max_right _ _))), ?_⟩
+  intro n hn θ hθlo hθhi
+  have hnc : Nc ≤ n := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hn
+  have hn₁ : N₁ ≤ n := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hn
+  have hn₂ : N₂ ≤ n := le_trans (le_trans (le_max_left _ _) (le_max_right _ _)) hn
+  have hn₃ : N₃ ≤ n := le_trans (le_trans (le_max_left _ _)
+    (le_trans (le_max_right _ _) (le_max_right _ _))) hn
+  have hn1 : 1 ≤ n := le_trans (le_trans (le_max_right _ _)
+    (le_trans (le_max_right _ _) (le_max_right _ _))) hn
+  have hn0 : 0 < n := hn1
+  have hnR : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1
+  have hn0R : (0 : ℝ) < (n : ℝ) := by linarith
+  have hBn : B ≤ (n : ℝ) := le_of_lt (lt_of_lt_of_le hN₃ (by exact_mod_cast hn₃))
+  -- the two hypotheses of the certificate at this frequency
+  have hone : (1 : ℝ) ≤ |θ| :=
+    le_trans (Real.one_le_rpow hnR (by norm_num)) hθlo
+  have hband : 2 * σ * (Kb * Real.sqrt (Real.log (n : ℝ))) ≤ |θ| := by
+    have h := hN₂ n hn₂
+    have heq : 2 * σ * Kb * Real.sqrt (Real.log (n : ℝ))
+        = 2 * σ * (Kb * Real.sqrt (Real.log (n : ℝ))) := by ring
+    rw [heq] at h
+    exact le_trans h hθlo
+  -- the two-regime bound and the band certificate
+  have hR0 : (0 : ℝ) ≤ Kb * Real.sqrt (Real.log (n : ℝ)) := by positivity
+  have hmain := norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band F (hZm n) hlam.le hB
+    (fun t ht => hcram n hnc hn0 t ht) (fun t ht => hbulk n hn0 t ht)
+    σ ((Real.sqrt (n : ℝ))⁻¹) θ hR0 (hcert n hn0 θ hone hband)
+  -- the band value of `κ`
+  set κ : ℝ := max (B * Real.exp (-(lam * (Kb * Real.sqrt (Real.log (n : ℝ))) ^ 2 / 4)))
+    (c ^ n) with hκdef
+  have hκ0 : 0 ≤ κ := le_trans (by positivity) (le_max_left _ _)
+  have hκ : κ ≤ (n : ℝ) ^ (-q) := by
+    refine max_le ?_ (hN₁ n hn₁)
+    rw [exp_neg_sq_band_radius_eq_rpow hn1, hKbsq]
+    have hsplit : (n : ℝ) ^ (-(q + 1)) = (n : ℝ) ^ (-q) * ((n : ℝ))⁻¹ := by
+      rw [← Real.rpow_neg_one (n : ℝ), ← Real.rpow_add hn0R]
+      congr 1
+      ring
+    rw [hsplit]
+    have hrp : (0 : ℝ) ≤ (n : ℝ) ^ (-q) := Real.rpow_nonneg hn0R.le _
+    have hBinv : B * ((n : ℝ))⁻¹ ≤ 1 := by
+      rw [mul_inv_le_iff₀ hn0R]; linarith
+    calc B * ((n : ℝ) ^ (-q) * ((n : ℝ))⁻¹) = (B * ((n : ℝ))⁻¹) * (n : ℝ) ^ (-q) := by ring
+      _ ≤ 1 * (n : ℝ) ^ (-q) := mul_le_mul_of_nonneg_right hBinv hrp
+      _ = (n : ℝ) ^ (-q) := one_mul _
+  -- the mass, polynomial in `n` on the whole middle range
+  have hΓle : Γ n θ ≤ (C * (1 + 4 * Real.pi) ^ K) * (n : ℝ) ^ (3 * (K : ℝ)) := by
+    refine (hΓ n θ).trans ?_
+    have hnsq : (1 : ℝ) ≤ (n : ℝ) ^ 2 := by nlinarith
+    have h1 : (1 : ℝ) + |θ| ≤ (1 + 4 * Real.pi) * (n : ℝ) ^ 2 := by
+      have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+      nlinarith
+    have h2 : (1 + |θ|) ^ K ≤ ((1 + 4 * Real.pi) * (n : ℝ) ^ 2) ^ K :=
+      pow_le_pow_left₀ (by positivity) h1 K
+    have h3 : ((1 + 4 * Real.pi) * (n : ℝ) ^ 2) ^ K
+        = (1 + 4 * Real.pi) ^ K * ((n : ℝ) ^ K) ^ 2 := by
+      rw [mul_pow, ← pow_mul, ← pow_mul, Nat.mul_comm]
+    have h4 : C * (n : ℝ) ^ K * (1 + |θ|) ^ K
+        ≤ C * (n : ℝ) ^ K * ((1 + 4 * Real.pi) ^ K * ((n : ℝ) ^ K) ^ 2) := by
+      rw [← h3]
+      exact mul_le_mul_of_nonneg_left h2 (by positivity)
+    refine h4.trans (le_of_eq ?_)
+    have hrp : (n : ℝ) ^ (3 * (K : ℝ)) = ((n : ℝ) ^ K) ^ 3 := by
+      rw [← Real.rpow_natCast ((n : ℝ) ^ K) 3, ← Real.rpow_natCast (n : ℝ) K,
+        ← Real.rpow_mul hn0R.le]
+      congr 1
+      push_cast
+      ring
+    rw [hrp]
+    ring
+  have hled := band_kappa_ledger (C := C * (1 + 4 * Real.pi) ^ K) (Γ := Γ n θ) (κ := κ)
+    (p := 3 * (K : ℝ)) (q := q) hn1 (by positivity) hΓle (hΓ0 n θ) hκ0 hκ (by rw [hqdef])
+  have hden : (0 : ℝ) < (n : ℝ) * Real.sqrt (n : ℝ) := by positivity
+  refine hmain.trans ?_
+  have : (C * (1 + 4 * Real.pi) ^ K) / ((n : ℝ) * Real.sqrt (n : ℝ))
+      + C / ((n : ℝ) * Real.sqrt (n : ℝ)) + C / ((n : ℝ) * Real.sqrt (n : ℝ))
+      = (C * (1 + 4 * Real.pi) ^ K + 2 * C) / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
+    field_simp
+    ring
+  linarith [hled]
+
 end StudentizedReduction
 
 /-! ## The Edgeworth approximant on the standardized scale
@@ -14740,6 +15058,51 @@ lemma middle_range_ledger_radius_two {n : ℕ} (hn : 0 < n) :
   rw [middle_range_ledger_exponent _ hn, show (2 : ℝ) - 3 = -1 by norm_num,
     Real.rpow_neg_one]
 
+/-! #### The same middle range, at the price `esseen_split_low` actually charges (wave 53)
+
+`middle_range_ledger_radius_two` reads the middle range at the *ratio* `ρ/ρ₁`, which is what
+wave 43's form of `esseen_split_low` charged and what forced `M₁ = n^{−17/6}`.  The split now
+charges `log(ρ/ρ₁)`, and the three lemmas below are the whole of the consequence: at
+`ρ₁ = n^{1/6}`, `ρ = n²` the logarithm is `(11/6)log n`, and `log n ≤ 2√n`, so the certificate's
+own `M₁ = C/(n√n)` delivers `22C/(3π)·n⁻¹` — the headline accuracy, with `n^{-1/2}log n` of
+slack.  **`N = 10` at `M = n^{5/8}` is enough; the `N = 138` route below is not needed.** -/
+
+lemma log_le_two_sqrt {x : ℝ} (hx : 0 < x) : Real.log x ≤ 2 * Real.sqrt x := by
+  have hs : 0 < Real.sqrt x := Real.sqrt_pos.2 hx
+  have h1 : Real.log (Real.sqrt x) ≤ Real.sqrt x - 1 := Real.log_le_sub_one_of_pos hs
+  rw [Real.log_sqrt hx.le] at h1
+  linarith
+
+lemma middle_range_log_ratio_eq {n : ℕ} (hn : 1 ≤ n) :
+    Real.log ((n : ℝ) ^ (2 : ℝ) / (n : ℝ) ^ ((1 : ℝ) / 6)) = 11 / 6 * Real.log (n : ℝ) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rw [← Real.rpow_sub h0, Real.log_rpow h0]
+  ring
+
+/-- **THE MIDDLE RANGE CLEARS AT THE CERTIFICATE'S OWN ACCURACY.**  The middle term of
+`esseen_split_low` at `ρ₁ = n^{1/6}`, `ρ = n²` and the certificate's `M₁ = C/(n√n)` is at most
+`22C/(3π)·n⁻¹`.  This is the lemma that removes the `N = 138` budget item. -/
+lemma middle_range_log_ledger {C : ℝ} (hC : 0 ≤ C) {n : ℕ} (hn : 1 ≤ n) :
+    2 * (C / ((n : ℝ) * Real.sqrt (n : ℝ)))
+        * Real.log ((n : ℝ) ^ (2 : ℝ) / (n : ℝ) ^ ((1 : ℝ) / 6)) / Real.pi
+      ≤ 22 * C / (3 * Real.pi) / (n : ℝ) := by
+  have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hs : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 h0
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  rw [middle_range_log_ratio_eq hn]
+  have hlog : Real.log (n : ℝ) ≤ 2 * Real.sqrt (n : ℝ) := log_le_two_sqrt h0
+  have hlog0 : (0 : ℝ) ≤ Real.log (n : ℝ) := Real.log_nonneg (by exact_mod_cast hn)
+  have hkey : 2 * (C / ((n : ℝ) * Real.sqrt (n : ℝ))) * (11 / 6 * Real.log (n : ℝ)) / Real.pi
+      ≤ 2 * (C / ((n : ℝ) * Real.sqrt (n : ℝ))) * (11 / 6 * (2 * Real.sqrt (n : ℝ)))
+          / Real.pi := by
+    have hpre : (0 : ℝ) ≤ 2 * (C / ((n : ℝ) * Real.sqrt (n : ℝ))) := by positivity
+    have := mul_le_mul_of_nonneg_left (by linarith : 11 / 6 * Real.log (n : ℝ)
+      ≤ 11 / 6 * (2 * Real.sqrt (n : ℝ))) hpre
+    exact div_le_div_of_nonneg_right this hπ.le
+  refine hkey.trans (le_of_eq ?_)
+  field_simp
+  ring
+
 /-- **The outer range's tail weight at `δ = n⁻¹` and `ρ = n²`.**  `2M/(δπ²ρ) = (2M/π²)·n⁻¹`: a
 *bare constant* `M` already delivers the headline accuracy there.  This is the whole of item 3
 of the wave-46 residue, and it is why the outer radius can be pushed out at all. -/
@@ -14778,7 +15141,169 @@ lemma studentized_outer_range_gap_le (γ : ℝ) {n : ℕ} (hn : 1 ≤ n) (μ : M
   linarith
 
 
-/-! #### The cost of the wider outer radius, on input (C)
+lemma rpow_sixth_cube {n : ℕ} (hn : 1 ≤ n) :
+    ((n : ℝ) ^ ((1 : ℝ) / 6)) ^ 3 = Real.sqrt (n : ℝ) := by
+  have hnR : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hn0 : (0 : ℝ) < (n : ℝ) := by linarith
+  rw [← Real.rpow_natCast ((n : ℝ) ^ ((1 : ℝ) / 6)) 3, ← Real.rpow_mul hn0.le,
+    Real.sqrt_eq_rpow]
+  norm_num
+
+/-- **THE FOUR SLOTS OF THE STUDENTIZED ESSEEN SPLIT, EACH `O(n⁻¹)` — THE COMPOSITION'S LEDGER.**
+This is `esseen_split_low`'s conclusion read at the chain's own parameters: `δ = n⁻¹`,
+`ρ₁ = n^{1/6}`, `ρ = n²`, envelope constant `Kw n⁻¹`, cubic constant `Kr n^{-3/2}` (the two
+orders (U4′) returns), middle constant `M₁ = C₁/(n√n)` (the certificate's, via
+`exists_studentized_middle_range_gap_bound`) and a bare tail constant `M` (via
+`studentized_outer_range_gap_le`).  Three of the four slots are *exact* identities and only the
+middle one is an inequality:
+
+`Kw n⁻¹·I`, `2Kr n^{-3/2}·(n^{1/6})³/π = 2Kr/(πn)`, `2M₁log(ρ/ρ₁)/π ≤ 22C₁/(3πn)`,
+`2M/(δπ²ρ) = 2M/(π²n)`.
+
+**Every slot is `O(n⁻¹)` on the nose and there is no slack anywhere except in the middle one,
+where the logarithm leaves `n^{-1/2}log n`.**  What the assembly still owes is `hlow` — item 2 of
+the residue — and the peeled window; the ledger itself is verified here. -/
+lemma studentized_esseen_ledger {Kw Kr C₁ M I : ℝ} (hC₁ : 0 ≤ C₁) {n : ℕ} (hn : 1 ≤ n) :
+    Kw * ((n : ℝ))⁻¹ * I
+        + 2 * (Kr * ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹) * ((n : ℝ) ^ ((1 : ℝ) / 6)) ^ 3 / Real.pi
+        + 2 * (C₁ / ((n : ℝ) * Real.sqrt (n : ℝ)))
+            * Real.log ((n : ℝ) ^ (2 : ℝ) / (n : ℝ) ^ ((1 : ℝ) / 6)) / Real.pi
+        + 2 * M / (((n : ℝ))⁻¹ * Real.pi ^ 2 * (n : ℝ) ^ 2)
+      ≤ (Kw * I + 2 * Kr / Real.pi + 22 * C₁ / (3 * Real.pi) + 2 * M / Real.pi ^ 2)
+          / (n : ℝ) := by
+  have hnR : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hn0 : (0 : ℝ) < (n : ℝ) := by linarith
+  have hn0' : 0 < n := hn
+  have hs : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hn0
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have s1 : Kw * ((n : ℝ))⁻¹ * I = Kw * I / (n : ℝ) := by field_simp
+  have s2 : 2 * (Kr * ((n : ℝ) * Real.sqrt (n : ℝ))⁻¹) * ((n : ℝ) ^ ((1 : ℝ) / 6)) ^ 3 / Real.pi
+      = 2 * Kr / Real.pi / (n : ℝ) := by
+    rw [rpow_sixth_cube hn]
+    field_simp
+  have s3 := middle_range_log_ledger hC₁ hn
+  have s4 := outer_range_tail_weight_eq M hn0'
+  have hsum : Kw * I / (n : ℝ) + 2 * Kr / Real.pi / (n : ℝ) + 22 * C₁ / (3 * Real.pi) / (n : ℝ)
+      + 2 * M / Real.pi ^ 2 / (n : ℝ)
+      = (Kw * I + 2 * Kr / Real.pi + 22 * C₁ / (3 * Real.pi) + 2 * M / Real.pi ^ 2)
+          / (n : ℝ) := by
+    field_simp
+  linarith
+
+
+/-! #### The middle range in the shape `esseen_split_low`'s `hmid` consumes (wave 53)
+
+`exists_studentized_middle_range_bound` bounds the surrogate's transform; `hmid` asks for the
+*gap* to the comparison density's transform.  The second half is free: past `ρ₁ = n^{1/6}` the
+Edgeworth transform carries `e^{−π²ρ₁²} = e^{−π²n^{1/3}}`, which beats `n^{-3/2}` as soon as
+`n^{1/6} ≥ 9/4` — `log n ≤ 6n^{1/6}` against `π² ≥ 4` (`exists_exp_neg_pi_sq_sixth_le`).  The
+threshold is genuine and small; `π² ≥ 4` is all the file has (`Real.pi_gt_three` is not in the
+imported part of Mathlib), and with it the comparison is `9n^{1/6} ≤ 4n^{1/3}`. -/
+
+/-- **The comparison density's own transform is superpolynomially small past `n^{1/6}`.** -/
+lemma exists_exp_neg_pi_sq_sixth_le :
+    ∃ N : ℕ, 0 < N ∧ ∀ n : ℕ, N ≤ n →
+      Real.exp (-(Real.pi ^ 2 * ((n : ℝ) ^ ((1 : ℝ) / 6)) ^ 2))
+        ≤ 1 / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
+  obtain ⟨N₀, hN₀⟩ := exists_nat_gt ((9 / 4 : ℝ) ^ (6 : ℕ))
+  refine ⟨max N₀ 1, lt_of_lt_of_le one_pos (le_max_right _ _), fun n hn => ?_⟩
+  have hn₀ : N₀ ≤ n := le_trans (le_max_left _ _) hn
+  have hn1 : 1 ≤ n := le_trans (le_max_right _ _) hn
+  have hnR : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1
+  have hn0 : (0 : ℝ) < (n : ℝ) := by linarith
+  have hπ : (2 : ℝ) ≤ Real.pi := Real.two_le_pi
+  have hπsq : (4 : ℝ) ≤ Real.pi ^ 2 := by nlinarith [Real.pi_pos]
+  set u : ℝ := (n : ℝ) ^ ((1 : ℝ) / 6) with hudef
+  have hu0 : (0 : ℝ) ≤ u := Real.rpow_nonneg hn0.le _
+  have hbig : (9 / 4 : ℝ) ≤ u := by
+    have hstep : ((9 / 4 : ℝ) ^ (6 : ℕ)) ≤ (n : ℝ) := by
+      have : ((N₀ : ℝ)) ≤ (n : ℝ) := by exact_mod_cast hn₀
+      linarith
+    have h := Real.rpow_le_rpow (by positivity) hstep (by norm_num : (0 : ℝ) ≤ (1 : ℝ) / 6)
+    rwa [← Real.rpow_natCast (9 / 4 : ℝ) 6, ← Real.rpow_mul (by norm_num),
+      show ((6 : ℕ) : ℝ) * ((1 : ℝ) / 6) = 1 by norm_num, Real.rpow_one] at h
+  have hlog : Real.log (n : ℝ) ≤ u / ((1 : ℝ) / 6) := log_le_rpow_div (by norm_num) hn0
+  have hinv : 1 / ((n : ℝ) * Real.sqrt (n : ℝ))
+      = Real.exp (Real.log (n : ℝ) * (-(3 : ℝ) / 2)) := by
+    rw [one_div, inv_mul_sqrt_eq_rpow hn1, Real.rpow_def_of_pos hn0]
+  rw [hinv]
+  refine Real.exp_le_exp.2 ?_
+  nlinarith [hlog, hu0, hbig, hπsq]
+
+/-- **THE MIDDLE RANGE IN THE SHAPE `esseen_split_low`'s `hmid` CONSUMES.** -/
+theorem exists_studentized_middle_range_gap_bound
+    (F : Measure ℝ) [IsProbabilityMeasure F] (hFac : F ≪ volume)
+    (hF4 : MemLp (fun t : ℝ => t) 4 F) (hF6 : MemLp (fun t : ℝ => t) 6 F)
+    (hF4int : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F)
+    {σ : ℝ} (hσ : 0 < σ) (γ : ℝ) :
+    ∃ (C : ℝ) (N : ℕ), 0 < C ∧ 0 < N ∧ ∀ n : ℕ, N ≤ n → ∀ ξ : ℝ,
+      (n : ℝ) ^ ((1 : ℝ) / 6) ≤ |ξ| → |ξ| ≤ (n : ℝ) ^ 2 →
+      ‖charFun ((vecRootLaw F
+          (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n).map
+          (deltaSurrogate σ ((Real.sqrt (n : ℝ))⁻¹))) (-(2 * Real.pi * ξ))
+        - charFunDensity (studentizedEdgeworthDensity γ n) (-(2 * Real.pi * ξ))‖
+        ≤ C / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
+  obtain ⟨C₁, N₁, hC₁, hN₁0, hmid⟩ :=
+    exists_studentized_middle_range_bound F hFac hF4 hF6 hF4int hσ
+  obtain ⟨N₆, hN₆0, hexp6⟩ := exists_exp_neg_pi_sq_sixth_le
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  refine ⟨C₁ + (1 + 1030 * Real.pi ^ 3 * |γ|), max (max N₁ N₆) 1, by positivity,
+    lt_of_lt_of_le one_pos (le_max_right _ _), ?_⟩
+  intro n hn ξ hlo hhi
+  have hn₁ : N₁ ≤ n := le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hn
+  have hn₆ : N₆ ≤ n := le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hn
+  have hn1 : 1 ≤ n := le_trans (le_max_right _ _) hn
+  have hnR : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1
+  have hn0 : (0 : ℝ) < (n : ℝ) := by linarith
+  have hden : (0 : ℝ) < (n : ℝ) * Real.sqrt (n : ℝ) := by positivity
+  have habs : |-(2 * Real.pi * ξ)| = 2 * Real.pi * |ξ| := by
+    rw [abs_neg, abs_mul, abs_mul, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 2), abs_of_pos hπ]
+  have hξ0 : (0 : ℝ) ≤ |ξ| := abs_nonneg ξ
+  have hlo0 : (0 : ℝ) ≤ (n : ℝ) ^ ((1 : ℝ) / 6) := Real.rpow_nonneg hn0.le _
+  -- the surrogate's transform
+  have hA : ‖charFun ((vecRootLaw F
+      (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n).map
+      (deltaSurrogate σ ((Real.sqrt (n : ℝ))⁻¹))) (-(2 * Real.pi * ξ))‖
+      ≤ C₁ / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
+    refine hmid n hn₁ (-(2 * Real.pi * ξ)) ?_ ?_
+    · rw [habs]; nlinarith [Real.two_le_pi]
+    · rw [habs]; nlinarith
+  -- the comparison density's transform
+  have hB : ‖charFunDensity (studentizedEdgeworthDensity γ n) (-(2 * Real.pi * ξ))‖
+      ≤ (1 + 1030 * Real.pi ^ 3 * |γ|) / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
+    have h2 := norm_charFunDensity_studentizedEdgeworthDensity_le γ hn1 (-(2 * Real.pi * ξ))
+    have h3 := studentizedEdgeworthCharFun_tail_le γ hlo0 hlo
+    have h4 := hexp6 n hn₆
+    have hc0 : (0 : ℝ) ≤ 1 + 1030 * Real.pi ^ 3 * |γ| := by positivity
+    have h5 : (1 + 1030 * Real.pi ^ 3 * |γ|)
+        * Real.exp (-(Real.pi ^ 2 * ((n : ℝ) ^ ((1 : ℝ) / 6)) ^ 2))
+        ≤ (1 + 1030 * Real.pi ^ 3 * |γ|) * (1 / ((n : ℝ) * Real.sqrt (n : ℝ))) :=
+      mul_le_mul_of_nonneg_left h4 hc0
+    have h6 : (1 + 1030 * Real.pi ^ 3 * |γ|) * (1 / ((n : ℝ) * Real.sqrt (n : ℝ)))
+        = (1 + 1030 * Real.pi ^ 3 * |γ|) / ((n : ℝ) * Real.sqrt (n : ℝ)) := by ring
+    have hs : (-(2 * Real.pi * ξ)) ^ 2 = (2 * Real.pi * ξ) ^ 2 := by ring
+    rw [hs, abs_neg] at h2
+    linarith
+  have hsplit := norm_sub_le
+    (charFun ((vecRootLaw F
+      (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n).map
+      (deltaSurrogate σ ((Real.sqrt (n : ℝ))⁻¹))) (-(2 * Real.pi * ξ)))
+    (charFunDensity (studentizedEdgeworthDensity γ n) (-(2 * Real.pi * ξ)))
+  have hsum : C₁ / ((n : ℝ) * Real.sqrt (n : ℝ))
+      + (1 + 1030 * Real.pi ^ 3 * |γ|) / ((n : ℝ) * Real.sqrt (n : ℝ))
+      = (C₁ + (1 + 1030 * Real.pi ^ 3 * |γ|)) / ((n : ℝ) * Real.sqrt (n : ℝ)) := by ring
+  linarith
+
+
+/-! #### The cost of the wider outer radius, on input (C) — SUPERSEDED BY WAVE 53
+
+**THE REQUIREMENT THIS SUBSECTION PRICES DOES NOT EXIST.**  It is the cost of reaching
+`M₁ = n^{−17/6}` in the middle range, and `M₁ = n^{−17/6}` was forced only by wave 43's crude
+form of `esseen_split_low`, which charged the middle range the *ratio* `ρ/ρ₁` instead of
+`log(ρ/ρ₁)`.  With the logarithm — see `middle_range_log_ledger` above and the section note over
+`esseen_split_low` — the certificate's own `M₁ = C/(n√n)` at `N = 10`, `M = n^{5/8}` clears the
+middle range with `n^{-1/2}log n` to spare.  The lemmas below are true arithmetic and are kept as
+the record of the route not taken; **nothing in the composition calls them.**
 
 `exists_integral_norm_fourierWeight_bulkMultiplier_band_fourteen_le` gives the *leakage* half of
 the certificate at `n^{−17/6}`, but the certificate's `ε` and `η` are input (C)'s, and (C) is
@@ -15350,6 +15875,144 @@ private lemma esseen_split (g : ℝ → ℝ) {δ ρ Kw M : ℝ}
   have hsplit := integral_add_compl hAmeas hInt
   linarith
 
+/-! #### The middle range costs a LOGARITHM, and wave 43's reason for not saying so is false
+
+`esseen_split_low` prices its middle range with the crude weight `1/(π|ξ|)`, and wave 43 bounded
+that weight by its value at the inner edge, `1/(πρ₁)`, giving `2M₁ρ/(πρ₁)` — the middle constant
+against the **ratio** of the two radii.  The docstring of that wave records the sharper price and
+declines it: *"the logarithm would be sharper and is not needed, since every candidate route for
+the middle range produces an `M₁` that is smaller than any power of `n`."*
+
+**That justification is false, and it is the sole source of the `N = 138` budget item.**  The
+route the file actually has for the middle range is the certificate, and
+`exists_fourierCertificate_deltaSurrogate` produces `M₁ = O(n^{-3/2})`, which is emphatically
+*not* smaller than any power of `n`.  Read at `ρ₁ = n^{1/6}`, `ρ = n²` the two prices are
+
+`ratio:      M₁·ρ/ρ₁ = n^{-3/2}·n^{11/6} = n^{1/3}`  — fails, and forces `M₁ ≤ n^{-17/6}`;
+`logarithm:  M₁·log(ρ/ρ₁) = n^{-3/2}·(11/6)log n = o(n⁻¹)`  — clears, with `n^{-1/2}log n` to
+spare.
+
+So the whole of `#### The cost of the wider outer radius, on input (C)` — `N = 138` integrations
+by parts at the bulk radius `n^{23/24}`, `leakage_ledger_radius_138_le`,
+`tail_ledger_radius_seventeen_sixths`, and the note that `bulkRadius` must be parameterised —
+prices a requirement that does not exist.  Those lemmas remain true arithmetic and are left in
+place as the record of the route not taken; what changes is that **nothing in the composition
+asks for them.**  `N = 10` at `M = n^{5/8}`, which the certificate already proves, is enough.
+
+The logarithm itself is elementary: the annulus `{ρ₁ ≤ |ξ| ≤ ρ}` is two closed intervals, the
+Esseen weight's crude branch is `|ξ|⁻¹` on each, and `∫ x in a..b, x⁻¹ = log(b/a)`.  The negative
+half is the positive half reflected (`intervalIntegral.integral_comp_neg`), so the total is
+`2log(ρ/ρ₁)`. -/
+
+private lemma annulus_eq {ρ₁ ρ : ℝ} (hρ₁ : 0 < ρ₁) :
+    {ξ : ℝ | ρ₁ ≤ |ξ| ∧ |ξ| ≤ ρ} = Set.Icc (-ρ) (-ρ₁) ∪ Set.Icc ρ₁ ρ := by
+  ext ξ
+  simp only [Set.mem_setOf_eq, Set.mem_union, Set.mem_Icc]
+  rcases le_or_gt 0 ξ with h | h
+  · rw [abs_of_nonneg h]
+    constructor
+    · rintro ⟨h1, h2⟩; exact Or.inr ⟨h1, h2⟩
+    · rintro (⟨h1, h2⟩ | ⟨h1, h2⟩)
+      · exact absurd (lt_of_le_of_lt h2 (by linarith)) (not_lt.2 h)
+      · exact ⟨h1, h2⟩
+  · rw [abs_of_neg h]
+    constructor
+    · rintro ⟨h1, h2⟩; exact Or.inl ⟨by linarith, by linarith⟩
+    · rintro (⟨h1, h2⟩ | ⟨h1, h2⟩)
+      · exact ⟨by linarith, by linarith⟩
+      · linarith
+
+private lemma annulus_disjoint {ρ₁ ρ : ℝ} (hρ₁ : 0 < ρ₁) :
+    Disjoint (Set.Icc (-ρ) (-ρ₁)) (Set.Icc ρ₁ ρ) := by
+  rw [Set.disjoint_left]
+  rintro x ⟨_, hx2⟩ ⟨hx3, _⟩
+  linarith
+
+private lemma integrableOn_inv_abs_Icc {a b : ℝ} (ha : 0 < a) :
+    IntegrableOn (fun ξ : ℝ => |ξ|⁻¹) (Set.Icc a b) := by
+  refine ContinuousOn.integrableOn_compact isCompact_Icc ?_
+  intro x hx
+  have hx0 : x ≠ 0 := by have := hx.1; intro h; rw [h] at this; linarith
+  exact ((continuous_abs.continuousAt).inv₀ (by simpa using hx0)).continuousWithinAt
+
+private lemma integrableOn_inv_abs_Icc_neg {a b : ℝ} (hb : b < 0) :
+    IntegrableOn (fun ξ : ℝ => |ξ|⁻¹) (Set.Icc a b) := by
+  refine ContinuousOn.integrableOn_compact isCompact_Icc ?_
+  intro x hx
+  have hx0 : x ≠ 0 := by have := hx.2; intro h; rw [h] at this; linarith
+  exact ((continuous_abs.continuousAt).inv₀ (by simpa using hx0)).continuousWithinAt
+
+/-- **The Esseen weight's crude branch over an annulus is a logarithm.** -/
+private lemma setIntegral_inv_abs_annulus {ρ₁ ρ : ℝ} (hρ₁ : 0 < ρ₁) (hρρ : ρ₁ ≤ ρ) :
+    (∫ ξ in {ξ : ℝ | ρ₁ ≤ |ξ| ∧ |ξ| ≤ ρ}, |ξ|⁻¹) = 2 * Real.log (ρ / ρ₁) := by
+  have hρ : 0 < ρ := lt_of_lt_of_le hρ₁ hρρ
+  have hpos : IntegrableOn (fun ξ : ℝ => |ξ|⁻¹) (Set.Icc ρ₁ ρ) := integrableOn_inv_abs_Icc hρ₁
+  have hneg : IntegrableOn (fun ξ : ℝ => |ξ|⁻¹) (Set.Icc (-ρ) (-ρ₁)) :=
+    integrableOn_inv_abs_Icc_neg (by linarith)
+  rw [annulus_eq hρ₁,
+    MeasureTheory.setIntegral_union (annulus_disjoint hρ₁) measurableSet_Icc hneg hpos]
+  have hP : (∫ ξ in Set.Icc ρ₁ ρ, |ξ|⁻¹) = Real.log (ρ / ρ₁) := by
+    rw [MeasureTheory.integral_Icc_eq_integral_Ioc,
+      ← intervalIntegral.integral_of_le hρρ]
+    rw [show (∫ x in ρ₁..ρ, |x|⁻¹) = ∫ x in ρ₁..ρ, x⁻¹ from ?_]
+    · exact integral_inv_of_pos hρ₁ hρ
+    · refine intervalIntegral.integral_congr ?_
+      intro x hx
+      rw [Set.uIcc_of_le hρρ] at hx
+      change |x|⁻¹ = x⁻¹
+      rw [abs_of_pos (lt_of_lt_of_le hρ₁ hx.1)]
+  have hN : (∫ ξ in Set.Icc (-ρ) (-ρ₁), |ξ|⁻¹) = Real.log (ρ / ρ₁) := by
+    rw [MeasureTheory.integral_Icc_eq_integral_Ioc,
+      ← intervalIntegral.integral_of_le (by linarith : (-ρ : ℝ) ≤ -ρ₁)]
+    rw [show (∫ x in (-ρ)..(-ρ₁), |x|⁻¹) = ∫ x in ρ₁..ρ, |(-x)|⁻¹ from ?_]
+    · rw [show (∫ x in ρ₁..ρ, |(-x)|⁻¹) = ∫ x in ρ₁..ρ, x⁻¹ from ?_]
+      · exact integral_inv_of_pos hρ₁ hρ
+      · refine intervalIntegral.integral_congr ?_
+        intro x hx
+        rw [Set.uIcc_of_le hρρ] at hx
+        change |(-x)|⁻¹ = x⁻¹
+        rw [abs_neg, abs_of_pos (lt_of_lt_of_le hρ₁ hx.1)]
+    · rw [intervalIntegral.integral_comp_neg (fun x : ℝ => |x|⁻¹)]
+  rw [hP, hN]
+  ring
+
+private lemma integrableOn_inv_abs_annulus {ρ₁ ρ : ℝ} (hρ₁ : 0 < ρ₁) :
+    IntegrableOn (fun ξ : ℝ => |ξ|⁻¹) {ξ : ℝ | ρ₁ ≤ |ξ| ∧ |ξ| ≤ ρ} := by
+  rw [annulus_eq hρ₁]
+  exact (integrableOn_inv_abs_Icc_neg (by linarith : -ρ₁ < (0 : ℝ))).union
+    (integrableOn_inv_abs_Icc hρ₁)
+
+/-- **The middle range of the Esseen split costs a logarithm of the ratio of the two radii, not
+the ratio itself.**  This is the whole of the wave-53 correction; everything downstream of it is
+bookkeeping. -/
+private lemma middle_annulus_bound {f : ℝ → ℝ} {M₁ ρ₁ ρ : ℝ} (hρ₁ : 0 < ρ₁) (hρρ : ρ₁ ≤ ρ)
+    (hM₁ : 0 ≤ M₁)
+    (hDint : IntegrableOn f ({ξ : ℝ | |ξ| ≤ ρ} \ {ξ : ℝ | |ξ| ≤ ρ₁}))
+    (hpt : ∀ ξ ∈ ({ξ : ℝ | |ξ| ≤ ρ} \ {ξ : ℝ | |ξ| ≤ ρ₁}), f ξ ≤ M₁ / Real.pi * |ξ|⁻¹) :
+    (∫ ξ in ({ξ : ℝ | |ξ| ≤ ρ} \ {ξ : ℝ | |ξ| ≤ ρ₁}), f ξ)
+      ≤ 2 * M₁ * Real.log (ρ / ρ₁) / Real.pi := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  set S : Set ℝ := {ξ : ℝ | ρ₁ ≤ |ξ| ∧ |ξ| ≤ ρ} with hSdef
+  set D : Set ℝ := {ξ : ℝ | |ξ| ≤ ρ} \ {ξ : ℝ | |ξ| ≤ ρ₁} with hDdef
+  have hDm : MeasurableSet D :=
+    (measurableSet_le (by fun_prop) measurable_const).diff
+      (measurableSet_le (by fun_prop) measurable_const)
+  have hDsub : D ⊆ S := by
+    rintro ξ ⟨h1, h2⟩
+    exact ⟨le_of_lt (not_le.1 h2), h1⟩
+  have hSint : IntegrableOn (fun ξ : ℝ => M₁ / Real.pi * |ξ|⁻¹) S :=
+    (integrableOn_inv_abs_annulus hρ₁).const_mul _
+  have hstep : (∫ ξ in D, f ξ) ≤ ∫ ξ in D, M₁ / Real.pi * |ξ|⁻¹ :=
+    setIntegral_mono_on hDint (hSint.mono_set hDsub) hDm hpt
+  have hmono : (∫ ξ in D, M₁ / Real.pi * |ξ|⁻¹) ≤ ∫ ξ in S, M₁ / Real.pi * |ξ|⁻¹ := by
+    refine setIntegral_mono_set hSint (Filter.Eventually.of_forall fun ξ => ?_) hDsub.eventuallyLE
+    have h : (0 : ℝ) ≤ |ξ|⁻¹ := by positivity
+    positivity
+  have hval : (∫ ξ in S, M₁ / Real.pi * |ξ|⁻¹) = 2 * M₁ * Real.log (ρ / ρ₁) / Real.pi := by
+    rw [MeasureTheory.integral_const_mul, hSdef, setIntegral_inv_abs_annulus hρ₁ hρρ]
+    ring
+  linarith
+
 /-- **The Esseen integral, split at the low range *and* at the window edge — the (U4′) twin of
 `esseen_split`.** Three regimes instead of two. On `|ξ| ≤ ρ₁` the integrand is dominated by
 `Kw·windowEnvelope₁ ξ` **plus an undamped cubic** `Kr|ξ|³`: the envelope part is the damped
@@ -15359,13 +16022,15 @@ constant `M₁` is asked for — that is the middle range, where nothing is expa
 the old constant `M` and the old tail bound.
 
 The three window contributions are priced with the *crude* weight `1/(π|ξ|)`, which is the exact
-value of the Esseen weight throughout `|ξ| ≤ ρ` whenever `δρ ≤ π⁻¹` (the split is at `ρ = c√n`
-and `δ = n⁻¹`, so this is never binding): `Kw∫windowDom₁` for the envelope, `2Krρ₁³/π` for the
-cubic — this is the term `low_range_ledger_exponent` prices, and it is the reason `ρ₁` cannot
-exceed `n^{1/6}` — and `2M₁ρ/(πρ₁)` for the middle range, which is `M₁` against the *ratio* of
-the two radii and not against `log(ρ/ρ₁)`; the logarithm would be sharper and is not needed,
-since every candidate route for the middle range produces an `M₁` that is smaller than any
-power of `n`. -/
+value of the Esseen weight throughout `|ξ| ≤ ρ` whenever `δρ ≤ π⁻¹`: `Kw∫windowDom₁` for the
+envelope, `2Krρ₁³/π` for the cubic — this is the term `low_range_ledger_exponent` prices, and it
+is the reason `ρ₁` cannot exceed `n^{1/6}` — and `2M₁log(ρ/ρ₁)/π` for the middle range.
+
+**WAVE 53: the middle term is the LOGARITHM of the ratio of the two radii, not the ratio.**
+Wave 43 stated it as `2M₁ρ/(πρ₁)` and its docstring declined the logarithm as "sharper and not
+needed"; see the section note above.  That is the difference between `n^{1/3}` and `n^{-3/2}log n`
+at `ρ₁ = n^{1/6}`, `ρ = n²`, `M₁ = n^{-3/2}`, and therefore between a middle range that the
+certificate cannot cover and one it covers with `n^{-1/2}log n` to spare. -/
 private lemma esseen_split_low (g : ℝ → ℝ) {δ ρ₁ ρ Kw Kr M₁ M : ℝ}
     (hδ : 0 < δ) (hρ₁ : 0 < ρ₁) (hρρ : ρ₁ ≤ ρ) (hKw : 0 ≤ Kw) (hKr : 0 ≤ Kr) (hM₁ : 0 ≤ M₁)
     (hg0 : ∀ ξ, 0 ≤ g ξ) (hgm : AEStronglyMeasurable g volume)
@@ -15376,7 +16041,7 @@ private lemma esseen_split_low (g : ℝ → ℝ) {δ ρ₁ ρ Kw Kr M₁ M : ℝ
         g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)))
       ∧ (∫ ξ : ℝ, g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)))
         ≤ Kw * (∫ ξ : ℝ, windowDom₁ ξ) + 2 * Kr * ρ₁ ^ 3 / Real.pi
-            + 2 * M₁ * ρ / (Real.pi * ρ₁) + 2 * M / (δ * Real.pi ^ 2 * ρ) := by
+            + 2 * M₁ * Real.log (ρ / ρ₁) / Real.pi + 2 * M / (δ * Real.pi ^ 2 * ρ) := by
   have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
   have hρ : 0 < ρ := lt_of_lt_of_le hρ₁ hρρ
   set W : ℝ → ℝ := fun ξ => min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)) with hWdef
@@ -15511,21 +16176,20 @@ private lemma esseen_split_low (g : ℝ → ℝ) {δ ρ₁ ρ Kw Kr M₁ M : ℝ
     have hb2 : (volume.real A) * (Kr * ρ₁ ^ 2 / Real.pi) = 2 * Kr * ρ₁ ^ 3 / Real.pi := by
       rw [hvolAr]; field_simp
     linarith [hstep, hsplit.le, hsplit.ge, hb1, hb2.le, hb2.ge]
-  have hbD : (∫ ξ in P \ A, g ξ * W ξ) ≤ 2 * M₁ * ρ / (Real.pi * ρ₁) := by
-    have hDm : MeasurableSet (P \ A) := hPm.diff hAm
-    have hDtop : volume (P \ A) ≠ ⊤ :=
-      ne_top_of_le_ne_top hPtop (measure_mono Set.diff_subset)
-    have hstep : (∫ ξ in P \ A, g ξ * W ξ) ≤ ∫ _ξ in P \ A, M₁ / (Real.pi * ρ₁) :=
-      setIntegral_mono_on hDint (integrableOn_const hDtop) hDm hptM
-    have hconst : (∫ _ξ in P \ A, M₁ / (Real.pi * ρ₁))
-        = (volume.real (P \ A)) * (M₁ / (Real.pi * ρ₁)) := by
-      rw [setIntegral_const, smul_eq_mul]
-    have hmono : volume.real (P \ A) ≤ 2 * ρ := by
-      rw [← hvolPr]; exact measureReal_mono Set.diff_subset hPtop
-    have hnn : (0 : ℝ) ≤ M₁ / (Real.pi * ρ₁) := by positivity
-    have := mul_le_mul_of_nonneg_right hmono hnn
-    have heq : 2 * ρ * (M₁ / (Real.pi * ρ₁)) = 2 * M₁ * ρ / (Real.pi * ρ₁) := by ring
-    linarith [hstep, hconst.le, hconst.ge, heq.le, heq.ge]
+  have hptM' : ∀ ξ ∈ P \ A, g ξ * W ξ ≤ M₁ / Real.pi * |ξ|⁻¹ := by
+    intro ξ hξ
+    obtain ⟨hξP, hξA⟩ := hξ
+    have h1 : ρ₁ ≤ |ξ| := le_of_lt (not_le.1 hξA)
+    have h2 : |ξ| ≤ ρ := hξP
+    have hx : (0 : ℝ) < |ξ| := lt_of_lt_of_le hρ₁ h1
+    have hWle : W ξ ≤ 1 / (Real.pi * |ξ|) := min_le_left _ _
+    have heq : M₁ * (1 / (Real.pi * |ξ|)) = M₁ / Real.pi * |ξ|⁻¹ := by
+      field_simp
+    calc g ξ * W ξ ≤ M₁ * W ξ := mul_le_mul_of_nonneg_right (hmid ξ h1 h2) (hWnn ξ)
+      _ ≤ M₁ * (1 / (Real.pi * |ξ|)) := mul_le_mul_of_nonneg_left hWle hM₁
+      _ = M₁ / Real.pi * |ξ|⁻¹ := heq
+  have hbD : (∫ ξ in P \ A, g ξ * W ξ) ≤ 2 * M₁ * Real.log (ρ / ρ₁) / Real.pi :=
+    middle_annulus_bound hρ₁ hρρ hM₁ hDint hptM'
   have hbT : (∫ ξ in Pᶜ, g ξ * W ξ) ≤ 2 * M / (δ * Real.pi ^ 2 * ρ) := by
     have hnnT : 0 ≤ᵐ[volume.restrict {ξ : ℝ | ρ ≤ |ξ|}] fun ξ : ℝ => g ξ * W ξ :=
       Filter.Eventually.of_forall hfnn
@@ -17990,6 +18654,223 @@ theorem exists_abs_skewness_map_truncAt_sqrt_sub_le (F : Measure ℝ) [IsProbabi
   exact hcore.trans (skewness_ledger hμ₄nn hμ₈nn hFvar hs3 hs5 hnR)
 
 
+/-! ### Item 3 of the wave-49 residue: the affine transfer of the middle and outer ranges
+
+`pairAt_zero_eq_affine`/`pairAt_one_eq_affine` record that the two centrings differ by the
+unipotent affine map `L(a,b) = (a, b + 2δa)` plus a translation.  What the composition needs is
+not the pointwise identity but its consequence *for the transform of the root*, and that is
+proved here in one line of measure theory and one of algebra:
+
+* the root at one centring is the `L`-image of the root at the other, translated by `√n·κ`
+  (`vecRoot_pairAt_eq`, `vecRootLaw_pairAt_map`) — the translation picks up the factor `√n`
+  because `κ` is added once per summand and the root divides by `√n`;
+* therefore `‖φ(t)‖ = ‖φ′(Lᵀt)‖` **exactly** (`norm_charFun_vecRootLaw_pairAt_transfer`): the
+  translation contributes only a unimodular exponential, which the modulus discards.  There is
+  no loss at all in the transfer — wave 49 priced it as if there might be.
+
+The only quantitative content is the distortion of the frequency, and `Lᵀ = centringAdj δ` is
+`t ↦ t + 2δt₁·e₀`, so `‖Lᵀt‖ ≤ (1 + 2|δ|)‖t‖` and `‖t‖ ≤ (1 + 2|δ|)‖Lᵀt‖`
+(`norm_centringAdj_le`, `norm_le_norm_centringAdj`).  At the chain's own truncation level
+`τ = √n` the shift is `|δ| ≤ μ₄/τ³ = O(n^{-3/2})` (`norm_centringAdj_recentred_le`), so every
+band, radius and ledger exponent of the middle and outer ranges is preserved to within a factor
+`1 + O(n^{-3/2})` — no exponent moves. -/
+
+-- `section Edgeworth` is outside `section StudentizedReduction`, where the abbreviation was
+-- introduced, so it has to be reintroduced here.
+local notation "E₂" => EuclideanSpace ℝ (Fin 2)
+
+/-- The linear part of the change of centring, on the sample side. -/
+noncomputable def centringMap (δ : ℝ) (w : E₂) : E₂ := WithLp.toLp 2 ![w 0, w 1 + 2 * δ * w 0]
+
+/-- The transpose of `centringMap`, on the frequency side. -/
+noncomputable def centringAdj (δ : ℝ) (t : E₂) : E₂ := WithLp.toLp 2 ![t 0 + 2 * δ * t 1, t 1]
+
+lemma centringMap_zero (δ : ℝ) (w : E₂) : centringMap δ w 0 = w 0 := rfl
+lemma centringMap_one (δ : ℝ) (w : E₂) : centringMap δ w 1 = w 1 + 2 * δ * w 0 := rfl
+lemma centringAdj_zero (δ : ℝ) (t : E₂) : centringAdj δ t 0 = t 0 + 2 * δ * t 1 := rfl
+lemma centringAdj_one (δ : ℝ) (t : E₂) : centringAdj δ t 1 = t 1 := rfl
+
+lemma inner_two (w t : E₂) : (⟪w, t⟫ : ℝ) = w 0 * t 0 + w 1 * t 1 := by
+  rw [PiLp.inner_apply, Fin.sum_univ_two]
+  change t 0 * w 0 + t 1 * w 1 = w 0 * t 0 + w 1 * t 1
+  ring
+
+/-- **`centringAdj` is the transpose of `centringMap`.** -/
+lemma inner_centringMap (δ : ℝ) (w t : E₂) :
+    (⟪centringMap δ w, t⟫ : ℝ) = ⟪w, centringAdj δ t⟫ := by
+  rw [inner_two, inner_two, centringMap_zero, centringMap_one, centringAdj_zero,
+    centringAdj_one]
+  ring
+
+lemma measurable_centringMap (δ : ℝ) : Measurable (centringMap δ) := by
+  have hvec : Measurable fun w : E₂ => (![w 0, w 1 + 2 * δ * w 0] : Fin 2 → ℝ) := by
+    refine measurable_pi_lambda _ fun i => ?_
+    fin_cases i
+    · change Measurable fun w : E₂ => w 0
+      fun_prop
+    · change Measurable fun w : E₂ => w 1 + 2 * δ * w 0
+      fun_prop
+  have htoLp : Measurable (WithLp.toLp 2 : (Fin 2 → ℝ) → E₂) := by fun_prop
+  exact htoLp.comp hvec
+
+lemma centringMap_smul (δ r : ℝ) (w : E₂) : centringMap δ (r • w) = r • centringMap δ w := by
+  ext i
+  fin_cases i <;> simp [centringMap_zero, centringMap_one] <;> ring
+
+lemma centringMap_sum {ι : Type*} (δ : ℝ) (s : Finset ι) (f : ι → E₂) :
+    centringMap δ (∑ i ∈ s, f i) = ∑ i ∈ s, centringMap δ (f i) := by
+  classical
+  induction s using Finset.induction with
+  | empty => ext i; fin_cases i <;> simp [centringMap_zero, centringMap_one]
+  | insert a s ha ih =>
+      rw [Finset.sum_insert ha, Finset.sum_insert ha, ← ih]
+      ext i
+      fin_cases i <;> simp [centringMap_zero, centringMap_one] <;> ring
+
+/-- **The change of centring is an affine map of the pair, with unipotent linear part.**  This is
+`pairAt_zero_eq_affine`/`pairAt_one_eq_affine` packaged as one identity of vectors. -/
+lemma pairAt_eq_centringMap (c v c' v' x : ℝ) :
+    pairAt c v x
+      = centringMap (c' - c) (pairAt c' v' x)
+        + (WithLp.toLp 2 ![c' - c, v' + (c' - c) ^ 2 - v] : E₂) := by
+  ext i
+  fin_cases i <;>
+    simp [pairAt_zero, pairAt_one, centringMap_zero, centringMap_one] <;> ring
+
+private lemma inv_sqrt_mul_natCast (n : ℕ) :
+    (Real.sqrt (n : ℝ))⁻¹ * (n : ℝ) = Real.sqrt (n : ℝ) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp
+  · have h0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hs : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 h0
+    have key : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) := Real.mul_self_sqrt h0.le
+    field_simp
+    linarith [key]
+
+/-- **The two roots differ by the same affine map, with the translation scaled by `√n`.** -/
+lemma vecRoot_pairAt_eq (c v c' v' : ℝ) (g : ℝ → ℝ) {n : ℕ} (y : Fin n → ℝ) :
+    ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, pairAt c v (g (y i)) : E₂)
+      = centringMap (c' - c) ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, pairAt c' v' (g (y i)))
+        + Real.sqrt (n : ℝ) • (WithLp.toLp 2 ![c' - c, v' + (c' - c) ^ 2 - v] : E₂) := by
+  set κ : E₂ := WithLp.toLp 2 ![c' - c, v' + (c' - c) ^ 2 - v] with hκ
+  have hpt : ∀ i : Fin n,
+      pairAt c v (g (y i)) = centringMap (c' - c) (pairAt c' v' (g (y i))) + κ :=
+    fun i => pairAt_eq_centringMap c v c' v' (g (y i))
+  have hs : (∑ i, pairAt c v (g (y i)) : E₂)
+      = (∑ i, centringMap (c' - c) (pairAt c' v' (g (y i)))) + (n : ℕ) • κ := by
+    simp only [hpt]
+    rw [Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin]
+  rw [hs, ← centringMap_sum, smul_add, centringMap_smul]
+  congr 1
+  rw [← Nat.cast_smul_eq_nsmul ℝ n κ, smul_smul, inv_sqrt_mul_natCast]
+
+/-- **The law of the root at one centring is the affine image of the law at the other.** -/
+lemma vecRootLaw_pairAt_map (F : Measure ℝ) (g : ℝ → ℝ) (hg : Measurable g)
+    (c v c' v' : ℝ) (n : ℕ) :
+    vecRootLaw F (fun x => pairAt c v (g x)) n
+      = (vecRootLaw F (fun x => pairAt c' v' (g x)) n).map
+          (fun w : E₂ => centringMap (c' - c) w
+            + Real.sqrt (n : ℝ) • (WithLp.toLp 2 ![c' - c, v' + (c' - c) ^ 2 - v] : E₂)) := by
+  have hZ' : Measurable fun x : ℝ => pairAt c' v' (g x) := (measurable_pairAt c' v').comp hg
+  have haff : Measurable fun w : E₂ => centringMap (c' - c) w
+      + Real.sqrt (n : ℝ) • (WithLp.toLp 2 ![c' - c, v' + (c' - c) ^ 2 - v] : E₂) :=
+    (measurable_centringMap _).add_const _
+  rw [vecRootLaw, vecRootLaw, Measure.map_map haff (measurable_vecRoot hZ' n)]
+  congr 1
+  funext y
+  exact vecRoot_pairAt_eq c v c' v' g y
+
+/-- **ITEM 3 OF THE WAVE-49 RESIDUE — THE AFFINE TRANSFER.**  A bound on the modulus of the
+transform of the root at one centring is a bound at the other, at the transposed frequency and
+with no loss whatever: the translation contributes a unimodular factor. -/
+theorem norm_charFun_vecRootLaw_pairAt_transfer (F : Measure ℝ) [IsProbabilityMeasure F]
+    (g : ℝ → ℝ) (hg : Measurable g) (c v c' v' : ℝ) (n : ℕ) (t : E₂) :
+    ‖charFun (vecRootLaw F (fun x => pairAt c v (g x)) n) t‖
+      = ‖charFun (vecRootLaw F (fun x => pairAt c' v' (g x)) n) (centringAdj (c' - c) t)‖ := by
+  set κ : E₂ := WithLp.toLp 2 ![c' - c, v' + (c' - c) ^ 2 - v] with hκ
+  set a : E₂ := Real.sqrt (n : ℝ) • κ with ha
+  have hZ' : Measurable fun x : ℝ => pairAt c' v' (g x) := (measurable_pairAt c' v').comp hg
+  have haff : Measurable fun w : E₂ => centringMap (c' - c) w + a :=
+    (measurable_centringMap _).add_const _
+  rw [vecRootLaw_pairAt_map F g hg c v c' v' n, ← ha, charFun_apply, charFun_apply,
+    integral_map haff.aemeasurable (by fun_prop)]
+  have hpt : ∀ w : E₂,
+      Complex.exp (((⟪centringMap (c' - c) w + a, t⟫ : ℝ) : ℂ) * Complex.I)
+        = Complex.exp (((⟪a, t⟫ : ℝ) : ℂ) * Complex.I)
+          * Complex.exp (((⟪w, centringAdj (c' - c) t⟫ : ℝ) : ℂ) * Complex.I) := by
+    intro w
+    rw [← Complex.exp_add, inner_add_left, inner_centringMap]
+    congr 1
+    push_cast
+    ring
+  simp only [hpt]
+  have hout : (∫ w : E₂, Complex.exp (((⟪a, t⟫ : ℝ) : ℂ) * Complex.I)
+        * Complex.exp (((⟪w, centringAdj (c' - c) t⟫ : ℝ) : ℂ) * Complex.I)
+        ∂(vecRootLaw F (fun x => pairAt c' v' (g x)) n))
+      = Complex.exp (((⟪a, t⟫ : ℝ) : ℂ) * Complex.I)
+        * ∫ w : E₂, Complex.exp (((⟪w, centringAdj (c' - c) t⟫ : ℝ) : ℂ) * Complex.I)
+          ∂(vecRootLaw F (fun x => pairAt c' v' (g x)) n) :=
+    integral_const_mul _ _
+  rw [hout, norm_mul, Complex.norm_exp_ofReal_mul_I, one_mul]
+
+lemma centringAdj_eq_add (δ : ℝ) (t : E₂) :
+    centringAdj δ t = t + (2 * δ * t 1) • coordDir 0 := by
+  ext i
+  fin_cases i <;> simp [centringAdj_zero, centringAdj_one, coordDir]
+
+lemma centringAdj_centringAdj (δ : ℝ) (t : E₂) : centringAdj (-δ) (centringAdj δ t) = t := by
+  ext i
+  fin_cases i <;> simp [centringAdj_zero, centringAdj_one]
+
+/-- **The change of centring distorts no radius by more than `1 + 2|δ|`.** -/
+lemma norm_centringAdj_le (δ : ℝ) (t : E₂) : ‖centringAdj δ t‖ ≤ (1 + 2 * |δ|) * ‖t‖ := by
+  have hcd : ‖(coordDir 0 : E₂)‖ = 1 := by
+    rw [coordDir, EuclideanSpace.norm_single]
+    simp
+  rw [centringAdj_eq_add]
+  refine (norm_add_le _ _).trans ?_
+  have h1 : ‖(2 * δ * t 1) • (coordDir 0 : E₂)‖ = 2 * |δ| * |t 1| := by
+    rw [norm_smul, Real.norm_eq_abs, hcd, mul_one, abs_mul, abs_mul]
+    norm_num
+  have h2 : |t 1| ≤ ‖t‖ := (abs_coord_le_norm t).2
+  rw [h1]
+  nlinarith [abs_nonneg δ, norm_nonneg t]
+
+/-- The inverse distortion, by the same constant. -/
+lemma norm_le_norm_centringAdj (δ : ℝ) (t : E₂) :
+    ‖t‖ ≤ (1 + 2 * |δ|) * ‖centringAdj δ t‖ := by
+  have h := norm_centringAdj_le (-δ) (centringAdj δ t)
+  rwa [centringAdj_centringAdj, abs_neg] at h
+
+/-- **ITEM 3 OF THE WAVE-49 RESIDUE, AT THE TWO CONCRETE PAIRS.**  Every transform bound on the
+root of the *un*-re-centred truncated pair `studentPair F ∘ T` — the certificate, the Gaussian
+bulk majorant and the Cramér tail all carry that law — is a transform bound on the root of the
+re-centred pair `Zₙ = studentPair (F.map T) ∘ T`, at the transposed frequency. -/
+theorem norm_charFun_vecRootLaw_recentred_transfer (F : Measure ℝ) [IsProbabilityMeasure F]
+    (τ : ℝ) (n : ℕ) (t : E₂) :
+    ‖charFun (vecRootLaw F
+        (fun y => studentPair F (truncAt (∫ s, s ∂F) τ y)) n) t‖
+      = ‖charFun (vecRootLaw F
+          (fun y => studentPair (F.map (truncAt (∫ s, s ∂F) τ))
+            (truncAt (∫ s, s ∂F) τ y)) n)
+          (centringAdj ((∫ s, s ∂(F.map (truncAt (∫ s, s ∂F) τ))) - ∫ s, s ∂F) t)‖ := by
+  simp only [studentPair_eq_pairAt]
+  exact norm_charFun_vecRootLaw_pairAt_transfer F (truncAt (∫ s, s ∂F) τ)
+    (measurable_truncAt _ _) _ _ _ _ n t
+
+/-- **The distortion of the transfer is `1 + O(n^{-3/2})` at `τ = √n`,** so no radius, band or
+ledger exponent of the chain moves.  This is the quantitative half of item 3. -/
+theorem norm_centringAdj_recentred_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF1 : Integrable (fun x : ℝ => x) F)
+    (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4 ) F) {τ : ℝ} (hτ : 0 < τ) (t : E₂) :
+    ‖centringAdj ((∫ s, s ∂(F.map (truncAt (∫ s, s ∂F) τ))) - ∫ s, s ∂F) t‖
+      ≤ (1 + 2 * ((∫ x, (x - ∫ s, s ∂F) ^ 4 ∂F) / τ ^ 3)) * ‖t‖ := by
+  refine (norm_centringAdj_le _ t).trans ?_
+  have h := abs_integral_truncAt_sub_le F hF1 hF4 hτ
+  have h0 : (0 : ℝ) ≤ ‖t‖ := norm_nonneg t
+  nlinarith [h, h0]
+
+
 /-- **One-term Edgeworth expansion for the studentized sample mean, uniform in the argument.**
 
 Under a finite fourth moment and absolute continuity of the sampling law, the sampling
@@ -20144,7 +21025,108 @@ THIS THEOREM IS STILL `sorry` AND WAVE 51 DOES NOT CLAIM OTHERWISE.**
 
   **This theorem is therefore still `sorry`, the file is at one `sorry`, and Batch 12 is not
   complete.  Wave 51 closed item 1 end to end and corrected the plan's own prescription for its
-  odd order; it did not attempt the composition.** -/
+  odd order; it did not attempt the composition.**
+
+---
+
+**Status after wave 53.  ITEMS 3 AND 5's BUDGET HALF ARE CLOSED, THE MIDDLE RANGE IS NOW A
+THEOREM RATHER THAN A BUDGET STATEMENT, AND THE `N = 138` REQUIREMENT THAT FIVE WAVES CARRIED
+DOES NOT EXIST.  ITEM 2 AND THE ASSEMBLY ARE UNTOUCHED.  THIS THEOREM IS STILL `sorry` AND WAVE
+53 DOES NOT CLAIM OTHERWISE.**
+
+* **ITEM 3 IS IN THE FILE.**  Wave 52 proved it in a scratch file and was killed by cluster
+  maintenance before moving it in; the scratch file was then dropped.  It is recovered and landed
+  as the section above `centringMap`.  What item 3 owed was never the pointwise identity —
+  `pairAt_zero_eq_affine`/`pairAt_one_eq_affine` have been in the file since wave 49 — but its
+  consequence for the transform of the *root*, and that consequence is an **equality**:
+  `‖φ(t)‖ = ‖φ′(Lᵀt)‖` exactly (`norm_charFun_vecRootLaw_pairAt_transfer`), because the
+  translation contributes a unimodular exponential which the modulus discards.  The only
+  quantitative content is the frequency distortion `‖Lᵀt‖ ≤ (1 + 2|δ|)‖t‖`, and at `τ = √n` that
+  is `1 + O(n^{-3/2})` (`norm_centringAdj_recentred_le`).  Wave 49 priced the transfer as if it
+  might lose something; it loses nothing.
+
+* **THE CORRECTION, AND IT IS TO A CLAIM FIVE WAVES REPEATED: THE MIDDLE RANGE COSTS A
+  LOGARITHM.**  `esseen_split_low` priced its middle range with the crude Esseen branch
+  `1/(π|ξ|)` evaluated at the *inner edge*, giving `2M₁ρ/(πρ₁)` — `M₁` against the **ratio** of
+  the radii.  Wave 43's docstring names the sharper price and declines it: *"the logarithm would
+  be sharper and is not needed, since every candidate route for the middle range produces an `M₁`
+  that is smaller than any power of `n`."*  **That justification is false.**  The route the file
+  actually has is the certificate, and it produces `M₁ = C/(n√n)` — not smaller than any power of
+  `n`.  At `ρ₁ = n^{1/6}`, `ρ = n²`:
+
+  `ratio:      M₁·ρ/ρ₁ = n^{-3/2}·n^{11/6} = n^{1/3}`   — fails, and forces `M₁ ≤ n^{−17/6}`;
+  `logarithm:  M₁·log(ρ/ρ₁) = (11/6)n^{-3/2}log n`      — clears, with `n^{-1/2}log n` to spare.
+
+  The logarithm is elementary (the annulus is two intervals, `∫x⁻¹ = log`), and
+  `esseen_split_low` now carries it (`middle_annulus_bound`, `setIntegral_inv_abs_annulus`).
+  `middle_range_log_ledger` is the reading: `2·(C/(n√n))·log(n²/n^{1/6})/π ≤ 22C/(3π)·n⁻¹`.
+
+  **Consequence: the entire `N = 138` at `M = n^{23/24}` budget item of item 5 — stated by wave
+  46, repeated by waves 47, 49, 50 and 51, and never supplied — prices a requirement that does
+  not exist.**  `leakage_ledger_radius_138_le`, `leakage_ledger_radius_137_gt`,
+  `tail_ledger_radius_seventeen_sixths`, `tail_ledger_exponent_general`,
+  `leakage_ledger_general_radius` and the note that `bulkRadius` must be parameterised are all
+  true arithmetic and are kept, marked SUPERSEDED; **nothing in the composition calls them.**
+  `N = 10` at `M = n^{5/8}`, which `exists_fourierCertificate_deltaSurrogate` already proves, is
+  enough.
+
+* **AND THE MIDDLE RANGE IS NOW PROVED, NOT MERELY AFFORDABLE.**
+  `exists_studentized_middle_range_gap_bound` is exactly `esseen_split_low`'s `hmid` at
+  `ρ₁ = n^{1/6}`, `ρ = n²`:
+
+  `‖φ_{surrogate}(−2πξ) − 𝓕q_n(−2πξ)‖ ≤ C/(n√n)`  for  `n^{1/6} ≤ |ξ| ≤ n²`, `n ≥ N`,
+
+  over `exists_studentized_middle_range_bound` (the surrogate half) and
+  `exists_exp_neg_pi_sq_sixth_le` (the comparison density's, which is `e^{−π²n^{1/3}}` there).
+  Three elementary inputs were needed and one of them is a real ordering constraint:
+
+  - `exists_pow_le_rpow_neg` — a geometric `cⁿ` beats every negative power of `n`;
+  - `exists_const_mul_sqrt_log_le_rpow` — `√(log n)` is below every positive power of `n`, which
+    is how the certificate's band condition `2σKb√(log n) ≤ |θ|` is met by the middle range's own
+    floor `n^{1/6}`;
+  - **`exists_fourierCertificate_deltaSurrogate_exponent`.**  The consumer must choose `Kb` large
+    enough that `n^{−λKb²/4}` beats the polynomial mass `Γ`, whose degree is `K`; but
+    `exists_fourierCertificate_deltaSurrogate` takes `Kb` as *input* and returns `K`, so `K` is
+    not available when `Kb` is chosen and the composition as stated is **circular**.  `K` comes
+    from input (A), which never mentions the band, so it can be pulled in front — the restatement
+    is the same proof with the (A)-`obtain` moved above the `Kb` binder.  No wave had noticed the
+    ordering.
+
+  Also proved on the way: the Cramér base returned by
+  `exists_bound_norm_charFun_vecRootLaw_studentPair_truncAt` is nonnegative.  Its statement only
+  says `c < 1`; `cⁿ` at an *odd* `n ≥ N` is a norm, hence `≥ 0`, and `c < 0` is refuted.
+
+* **WHAT THE RESIDUE IS NOW.**  Of the wave-49 list, items 1 (wave 51), 3 (wave 52/53) and 4
+  (wave 52) are closed, and item 5's budget half is closed by the correction above.  What remains
+  is exactly two things:
+
+  2. **the eight moment identifications of the low range at `Zₙ`** — `hRg`, `hB1`, `hB2`, `hB5`,
+     `hB6`, `h3a`, `h3b`, `h4` of `exists_studentized_low_range_window_bound`, produced at the
+     re-centred truncated pair over the arithmetic half wave 48 proved
+     (`exists_const_of_damped_poly`) and the graded remainder wave 51 closed
+     (`integral_surrogateRemGraded_le_of_scalar_moments`).  This is the only remaining item with
+     measure theory in it;
+  5. **the assembly**, which is now a chain of statements that all exist:
+     `abs_studentizedRootCDF_sub_truncAt_le` at `τ = √n` (error `μ₄/n`),
+     `studentizedRootCDF_eq_vecRootLaw` with `abs_exactStudent_sub_deltaSurrogate_le`,
+     `esseen_split_low` at `δ = n⁻¹`, `ρ₁ = n^{1/6}`, `ρ = n²` — whose `hlow` is
+     `exists_studentized_low_range_window_bound`, whose `hmid` is
+     `exists_studentized_middle_range_gap_bound` and whose `htail` is
+     `studentized_outer_range_gap_le` — `abs_measure_Iic_sub_densityCDF_le_charFun`, the peeled
+     window (`abs_measure_le_sub_le_of_peel_strata` over `measure_pi_stratum_le` and
+     `sum_dyadic_strata_le`), the affine transport of §item 3, and
+     `exists_abs_skewness_map_truncAt_sqrt_sub_le` to move `γₙ` to `γ`.  Every one of the four
+     Esseen slots is now `O(n⁻¹)`: `Kw∫windowDom₁ = O(n⁻¹)`, `2Krρ₁³/π = O(n⁻¹)`
+     (`low_range_ledger_exponent`, `rpow_sixth_cube`), `2M₁log(ρ/ρ₁)/π = O(n⁻¹)`
+     (`middle_range_log_ledger`) and `2M/(δπ²ρ) = O(n⁻¹)` (`outer_range_tail_weight_eq`), and
+     the four together are `studentized_esseen_ledger` — three of them *exact* identities, with
+     slack only in the middle one.  So the assembly's arithmetic is verified rather than
+     asserted, which no previous restatement of the chain could say.
+
+  **This theorem is therefore still `sorry`, the file is at one `sorry`, and Batch 12 is not
+  complete.  Wave 53 landed item 3, removed the `N = 138` requirement by correcting the split
+  that created it, and turned the middle range from a budget statement into a theorem; it did not
+  attempt item 2 or the assembly.** -/
 
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
