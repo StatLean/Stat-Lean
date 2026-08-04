@@ -183,13 +183,73 @@ theorem integral_exp_int_mul_I_eq_zero {m : ℤ} (hm : m ≠ 0) :
     rw [hsplit, Complex.exp_add, Complex.exp_int_mul_two_pi_mul_I, mul_one]
   rw [hper, sub_self, zero_div]
 
+/-- Term-by-term integration of the weighted Fejér sum against `e^{ijω}`: only the
+`m = j` slot survives the orthogonality `∫_{−π}^{π} e^{iω(j−m)} dω = 0`. -/
+private lemma integral_fejerSum_mul_exp (γ : ℤ → ℝ) (n : ℕ) (j : ℤ) :
+    ∫ ω in (-π : ℝ)..π,
+        fejerSum γ n ω * Complex.exp (Complex.I * (ω : ℂ) * (j : ℂ))
+      = ∑ m ∈ Finset.Icc (-(n : ℤ) + 1) ((n : ℤ) - 1),
+          (if m = j then
+            (((2 * π * n)⁻¹ : ℝ) : ℂ) * ((((n : ℤ) - |m|) : ℤ) : ℂ) * (γ m : ℂ) *
+              ((2 * π : ℝ) : ℂ)
+          else 0) := by
+  have hint : ∀ ω : ℝ, fejerSum γ n ω * Complex.exp (Complex.I * (ω : ℂ) * (j : ℂ))
+      = ∑ m ∈ Finset.Icc (-(n : ℤ) + 1) ((n : ℤ) - 1),
+          ((((2 * π * n)⁻¹ : ℝ) : ℂ) * ((((n : ℤ) - |m|) : ℤ) : ℂ) * (γ m : ℂ)) *
+            Complex.exp (Complex.I * (ω : ℂ) * (((j - m : ℤ) : ℤ) : ℂ)) := by
+    intro ω
+    rw [fejerSum_eq_weighted, Finset.mul_sum, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun m _ => ?_
+    have hexp : Complex.exp (-(Complex.I * (ω : ℂ) * (m : ℂ))) *
+          Complex.exp (Complex.I * (ω : ℂ) * (j : ℂ))
+        = Complex.exp (Complex.I * (ω : ℂ) * (((j - m : ℤ) : ℤ) : ℂ)) := by
+      rw [← Complex.exp_add]
+      congr 1
+      push_cast
+      ring
+    rw [← hexp]
+    ring
+  simp_rw [hint]
+  rw [intervalIntegral.integral_finset_sum
+    (fun m _ => (Continuous.intervalIntegrable (by fun_prop) _ _))]
+  refine Finset.sum_congr rfl fun m _ => ?_
+  have hcm : ∀ (r : ℂ) (m' : ℤ),
+      (∫ ω in (-π : ℝ)..π, r * Complex.exp (Complex.I * (ω : ℂ) * (m' : ℂ)))
+        = r * ∫ ω in (-π : ℝ)..π, Complex.exp (Complex.I * (ω : ℂ) * (m' : ℂ)) :=
+    fun r m' => intervalIntegral.integral_const_mul r _
+  rw [hcm]
+  by_cases h : m = j
+  · subst h
+    have hconst : (∫ _ω in (-π : ℝ)..π,
+          Complex.exp (Complex.I * ((_ω : ℝ) : ℂ) * (((m - m : ℤ) : ℤ) : ℂ)))
+        = ((2 * π : ℝ) : ℂ) := by
+      simp only [sub_self, Int.cast_zero, mul_zero, Complex.exp_zero]
+      rw [show (1 : ℂ) = ((1 : ℝ) : ℂ) from by norm_num, intervalIntegral.integral_ofReal,
+        intervalIntegral.integral_const, smul_eq_mul]
+      push_cast
+      ring
+    rw [if_pos rfl, hconst]
+  · rw [if_neg h,
+      integral_exp_int_mul_I_eq_zero (sub_ne_zero.mpr fun hc => h hc.symm), mul_zero]
+
 /-- Trigonometric moments of the Fejér sum, in-range case (FY eq. (2.71)):
 `∫_{−π}^{π} e^{ijω} fejerSum γ n ω dω = ((n − |j|)/n) γ(j)` for `|j| < n`. -/
 theorem integral_fejerSum_mul_exp_of_lt (γ : ℤ → ℝ) {n : ℕ} {j : ℤ} (hj : |j| < (n : ℤ)) :
     ∫ ω in (-π : ℝ)..π,
         fejerSum γ n ω * Complex.exp (Complex.I * (ω : ℂ) * (j : ℂ))
       = (((((n : ℤ) - |j|) : ℤ) : ℂ) / (n : ℂ)) * (γ j : ℂ) := by
-  sorry
+  obtain ⟨hj1, hj2⟩ := abs_lt.mp hj
+  have hn0 : n ≠ 0 := by omega
+  have hnC : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hn0
+  have hπC : ((π : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr Real.pi_ne_zero
+  rw [integral_fejerSum_mul_exp, Finset.sum_eq_single j]
+  · rw [if_pos rfl]
+    push_cast
+    field_simp
+  · intro m _ hm
+    rw [if_neg hm]
+  · intro hmem
+    exact absurd (Finset.mem_Icc.mpr ⟨by omega, by omega⟩) hmem
 
 /-- Trigonometric moments of the Fejér sum, out-of-range case (FY eq. (2.71)):
 the integral vanishes for `|j| ≥ n`. -/
@@ -197,6 +257,11 @@ theorem integral_fejerSum_mul_exp_of_le (γ : ℤ → ℝ) {n : ℕ} {j : ℤ}
     (hj : (n : ℤ) ≤ |j|) :
     ∫ ω in (-π : ℝ)..π,
         fejerSum γ n ω * Complex.exp (Complex.I * (ω : ℂ) * (j : ℂ)) = 0 := by
-  sorry
+  rw [integral_fejerSum_mul_exp]
+  refine Finset.sum_eq_zero fun m hm => ?_
+  simp only [Finset.mem_Icc] at hm
+  have hne : m ≠ j := by
+    rcases abs_cases j with ⟨he, _⟩ | ⟨he, _⟩ <;> rw [he] at hj <;> omega
+  rw [if_neg hne]
 
 end StatLean.TimeSeries
