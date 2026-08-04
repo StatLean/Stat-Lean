@@ -29,23 +29,29 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : ℤ → Ω →
 
 /-- Marginals of a weakly stationary process are integrable (on a probability space). -/
 theorem IsStationary.integrable [IsProbabilityMeasure μ] (h : IsStationary X μ)
-    (t : ℤ) : Integrable (X t) μ := by
-  sorry
+    (t : ℤ) : Integrable (X t) μ :=
+  memLp_one_iff_integrable.mp ((h.memLp t).mono_exponent one_le_two)
 
 /-- Anchor-freeness (FY §2.2.1): for a weakly stationary process,
 `Cov(X_s, X_t) = γ(s − t)`. -/
 theorem IsStationary.cov_eq_acvf (h : IsStationary X μ) (s t : ℤ) :
     cov[X s, X t; μ] = acvf X μ (s - t) := by
-  sorry
+  have ht : t + (s - t) = s := by ring
+  have := h.cov_shift t (s - t)
+  rw [ht] at this
+  exact this
 
 /-- The lag-`0` autocovariance is the (time-constant) variance. -/
 theorem IsStationary.acvf_zero_eq_variance (h : IsStationary X μ) (t : ℤ) :
     acvf X μ 0 = variance (X t) μ := by
-  sorry
+  have h1 := h.cov_eq_acvf t t
+  rw [sub_self] at h1
+  rw [← h1, covariance_self (h.memLp t).aestronglyMeasurable.aemeasurable]
 
 /-- `γ(0) ≥ 0`. -/
 theorem IsStationary.acvf_zero_nonneg (h : IsStationary X μ) :
     0 ≤ acvf X μ 0 := by
-  sorry
+  rw [h.acvf_zero_eq_variance 0]
+  exact variance_nonneg _ _
 
 end StatLean.TimeSeries
