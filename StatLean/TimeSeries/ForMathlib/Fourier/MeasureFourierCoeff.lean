@@ -51,12 +51,22 @@ noncomputable def measureFourierCoeff (F : Measure (AddCircle (2 * π))) (n : �
 /-- The zeroth coefficient is the total mass. -/
 theorem measureFourierCoeff_zero (F : Measure (AddCircle (2 * π))) [IsFiniteMeasure F] :
     measureFourierCoeff F 0 = ((F Set.univ).toReal : ℂ) := by
-  sorry
+  have h1 : ∀ z : AddCircle (2 * π), fourier (T := 2 * π) 0 z = ((1 : ℝ) : ℂ) := by
+    intro z; rw [fourier_zero]; norm_num
+  rw [measureFourierCoeff, integral_congr_ae (Filter.Eventually.of_forall h1),
+    integral_complex_ofReal, integral_const, smul_eq_mul, mul_one]
+  rfl
 
 /-- Coefficients are bounded by the total mass (`‖fourier n z‖ = 1`). -/
 theorem norm_measureFourierCoeff_le (F : Measure (AddCircle (2 * π))) [IsFiniteMeasure F]
     (n : ℤ) : ‖measureFourierCoeff F n‖ ≤ (F Set.univ).toReal := by
-  sorry
+  have hnorm : ∀ z : AddCircle (2 * π), ‖fourier (T := 2 * π) n z‖ = 1 := by
+    intro z; rw [fourier_apply]; exact Circle.norm_coe _
+  calc ‖measureFourierCoeff F n‖ ≤ ∫ z, ‖fourier (T := 2 * π) n z‖ ∂F :=
+        norm_integral_le_integral_norm _
+    _ = ∫ _z : AddCircle (2 * π), (1 : ℝ) ∂F :=
+        integral_congr_ae (Filter.Eventually.of_forall hnorm)
+    _ = (F Set.univ).toReal := by rw [integral_const, smul_eq_mul, mul_one]; rfl
 
 /-- **Uniqueness**: a finite measure on the circle is determined by its Fourier
 coefficients. (The uniqueness half of the Herglotz correspondence, which FY Theorem 2.10
@@ -74,7 +84,9 @@ theorem tendsto_measureFourierCoeff_of_tendsto
     (h : Tendsto Fs atTop (𝓝 F)) (n : ℤ) :
     Tendsto (fun k => measureFourierCoeff (Fs k : Measure (AddCircle (2 * π))) n) atTop
       (𝓝 (measureFourierCoeff (F : Measure (AddCircle (2 * π))) n)) := by
-  sorry
+  haveI : Fact (0 < 2 * π) := ⟨by positivity⟩
+  exact (ProbabilityMeasure.tendsto_iff_forall_integral_rclike_tendsto ℂ).mp h
+    (BoundedContinuousFunction.mkOfCompact (fourier (T := 2 * π) n))
 
 /-- A measure on the circle is **negation-invariant** ("symmetric" in FY Theorem 2.10's
 sense) when it is preserved by `z ↦ −z`. -/
@@ -85,12 +97,26 @@ def NegInvariant (F : Measure (AddCircle (2 * π))) : Prop :=
 theorem measureFourierCoeff_neg (F : Measure (AddCircle (2 * π))) [IsFiniteMeasure F]
     (hF : NegInvariant F) (n : ℤ) :
     measureFourierCoeff F (-n) = measureFourierCoeff F n := by
-  sorry
+  have hpt : ∀ z : AddCircle (2 * π),
+      fourier (T := 2 * π) (-n) z = fourier (T := 2 * π) n (-z) := by
+    intro z
+    rw [fourier_apply, fourier_apply, neg_zsmul, zsmul_neg]
+  rw [measureFourierCoeff, measureFourierCoeff]
+  conv_rhs => rw [← hF]
+  rw [integral_map (measurable_neg.aemeasurable)
+    ((map_continuous (fourier (T := 2 * π) n)).aestronglyMeasurable)]
+  exact integral_congr_ae (Filter.Eventually.of_forall hpt)
 
 /-- For a negation-invariant finite measure the Fourier coefficients are real. -/
 theorem measureFourierCoeff_im (F : Measure (AddCircle (2 * π))) [IsFiniteMeasure F]
     (hF : NegInvariant F) (n : ℤ) :
     (measureFourierCoeff F n).im = 0 := by
-  sorry
+  refine Complex.conj_eq_iff_im.mp ?_
+  have hconj : (starRingEnd ℂ) (measureFourierCoeff F n) = measureFourierCoeff F (-n) := by
+    have h1 : (starRingEnd ℂ) (∫ z, fourier (T := 2 * π) n z ∂F)
+        = ∫ z, (starRingEnd ℂ) (fourier (T := 2 * π) n z) ∂F := integral_conj.symm
+    rw [measureFourierCoeff, measureFourierCoeff, h1]
+    exact (integral_congr_ae (Filter.Eventually.of_forall fun z => fourier_neg)).symm
+  rw [hconj, measureFourierCoeff_neg F hF n]
 
 end StatLean.TimeSeries
