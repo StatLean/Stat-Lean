@@ -61,25 +61,23 @@ noncomputable def experimentOf (P : Θ → Measure 𝓧) (hP : Measurable P)
 prior (Robert §1.4 (b)). -/
 theorem predictive_experimentOf (P : Θ → Measure 𝓧) (hP : Measurable P)
     [∀ θ, IsProbabilityMeasure (P θ)] (π : Measure Θ) [IsProbabilityMeasure π] :
-    (experimentOf P hP π).predictive = (toKernel P hP) ∘ₘ π := by
-  sorry
+    (experimentOf P hP π).predictive = (toKernel P hP) ∘ₘ π := rfl
 
 /-- The area's `iid` agrees with the Bayesian `iidKernel` on kernel models. -/
 theorem iid_coe (κ : Kernel Θ 𝓧) [IsMarkovKernel κ] (n : ℕ) :
-    iid ⇑κ n = ⇑(Bayesian.iidKernel κ n) := by
-  sorry
+    iid ⇑κ n = ⇑(Bayesian.iidKernel κ n) := rfl
 
 /-- **Latent marginalization agreement**: the hierarchical prior predictive is the hyperprior
 bound through the observation of the prior kernel by the likelihood (Gelman §5.2). -/
 theorem dataMarginal_eq_bind_observe {Λ : Type*} [MeasurableSpace Λ]
     (H : HierBayesExperiment Λ Θ 𝓧) :
     H.dataMarginal = Measure.bind H.hyperPrior (observe ⇑H.priorKernel H.likelihood) := by
-  sorry
+  rw [observe_coe]
+  rfl
 
 /-- The area's `iidSeq` agrees with the Bayesian `iidSeqKernel` on kernel models
 (definitional through `iidSeqKernel_apply`). -/
 theorem iidSeq_coe (κ : Kernel Θ 𝓧) [IsMarkovKernel κ] :
-    iidSeq ⇑κ = ⇑(Bayesian.iidSeqKernel κ) := by
-  sorry
+    iidSeq ⇑κ = ⇑(Bayesian.iidSeqKernel κ) := rfl
 
 end StatLean.StatisticalModels
