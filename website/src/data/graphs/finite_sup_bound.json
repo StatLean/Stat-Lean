@@ -4,7 +4,7 @@
     {"id":"AsymptoticStatistics.EmpiricalProcess.finite_sup_bound","label":"finite_sup_bound","full":"AsymptoticStatistics.EmpiricalProcess.finite_sup_bound","kind":"root","decl":"thm","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.Maximal"},
     {"id":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess","label":"empiricalProcess","full":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.EmpiricalProcess"},
     {"id":"AsymptoticStatistics.EmpiricalProcess.finite_sup_bound_aux","label":"finite_sup_bound_aux","full":"AsymptoticStatistics.EmpiricalProcess.finite_sup_bound_aux","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.MaximalOrlicz"},
-    {"id":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","label":"empiricalAvg","full":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.EmpiricalMeasure"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","label":"empiricalAvg","full":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ForMathlib.EmpiricalAverage"},
     {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"}
   ],

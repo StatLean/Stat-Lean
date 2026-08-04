@@ -21,6 +21,7 @@ for eventual upstreaming.
 
 open MeasureTheory Filter Topology
 open scoped RealInnerProductSpace
+open scoped ENNReal
 
 namespace AsymptoticStatistics
 namespace L2Utils
@@ -202,6 +203,51 @@ lemma tendsto_integral_sq_of_tendsto_integral_diff_sq
     ((h_diff_tendsto.add (h_cross_tendsto.const_mul 2)).add tendsto_const_nhds)
   simp only [zero_add, mul_zero] at h_combined
   exact h_combined.congr' (h_int_eq.mono (fun n hn => hn.symm))
+
+/-- **Converse of `.toReal²/t² → 0` ⇒ `ℝ≥0∞`-quotient → 0**.
+If each `F t` is eventually in `L²(μ)` near `0` and
+`(eLpNorm (F t) 2 μ).toReal² / t² → 0`, then the `ℝ≥0∞`-quotient
+`eLpNorm (F t) 2 μ / ENNReal.ofReal |t| → 0`. This is the converse direction of
+`Core/QMDPath.QMDPath.qmd_limit_toReal_sq`, used to repackage the coarsened QMD
+residual bound into the `ℝ≥0∞`-form `qmd_limit` field. -/
+theorem tendsto_eLpNorm_div_ofReal_of_toReal_sq
+    {μ : Measure 𝓧} {F : ℝ → 𝓧 → ℝ}
+    (h_mem : ∀ᶠ t in 𝓝[≠] (0 : ℝ), MemLp (F t) 2 μ)
+    (h_sq : Tendsto (fun t => (eLpNorm (F t) 2 μ).toReal ^ 2 / t ^ 2)
+      (𝓝[≠] 0) (𝓝 0)) :
+    Tendsto (fun t => eLpNorm (F t) 2 μ / ENNReal.ofReal |t|)
+      (𝓝[≠] 0) (𝓝 (0 : ℝ≥0∞)) := by
+  -- Step 1: the ℝ-valued quotient `(eLpNorm).toReal / |t| → 0`.
+  -- From `h_sq`, `((eLpNorm).toReal / |t|)² → 0` (since `t² = |t|²`); take
+  -- `Real.sqrt` (continuous) and use `√(x²) = x` for the nonneg quotient.
+  have h_q : Tendsto (fun t => (eLpNorm (F t) 2 μ).toReal / |t|)
+      (𝓝[≠] 0) (𝓝 (0 : ℝ)) := by
+    have h_sq' : Tendsto (fun t => ((eLpNorm (F t) 2 μ).toReal / |t|) ^ 2)
+        (𝓝[≠] 0) (𝓝 0) := by
+      have h_eq : (fun t => (eLpNorm (F t) 2 μ).toReal ^ 2 / t ^ 2)
+          = (fun t => ((eLpNorm (F t) 2 μ).toReal / |t|) ^ 2) := by
+        funext t; rw [div_pow, sq_abs]
+      rwa [h_eq] at h_sq
+    have hcont := (Real.continuous_sqrt.tendsto (0 : ℝ)).comp h_sq'
+    rw [Real.sqrt_zero] at hcont
+    refine hcont.congr (fun t => ?_)
+    exact Real.sqrt_sq (div_nonneg ENNReal.toReal_nonneg (abs_nonneg t))
+  -- Step 2: push through `ENNReal.ofReal` (continuous at `0`).
+  have h_ofReal :
+      Tendsto (fun t => ENNReal.ofReal ((eLpNorm (F t) 2 μ).toReal / |t|))
+        (𝓝[≠] 0) (𝓝 (0 : ℝ≥0∞)) := by
+    have := (ENNReal.continuous_ofReal.tendsto (0 : ℝ)).comp h_q
+    rwa [ENNReal.ofReal_zero] at this
+  -- Step 3: eventual equality with the `ℝ≥0∞`-quotient (finiteness + `|t|>0`).
+  have h_eq_ev :
+      (fun t => ENNReal.ofReal ((eLpNorm (F t) 2 μ).toReal / |t|))
+        =ᶠ[𝓝[≠] (0 : ℝ)] (fun t => eLpNorm (F t) 2 μ / ENNReal.ofReal |t|) := by
+    have h_self_ne : {x : ℝ | x ≠ 0} ∈ 𝓝[≠] (0 : ℝ) := self_mem_nhdsWithin
+    filter_upwards [h_mem, h_self_ne] with t ht_mem ht_ne
+    have habs : 0 < |t| := abs_pos.mpr ht_ne
+    rw [ENNReal.ofReal_div_of_pos habs,
+      ENNReal.ofReal_toReal ht_mem.eLpNorm_ne_top]
+  exact h_ofReal.congr' h_eq_ev
 
 end L2Utils
 end AsymptoticStatistics

@@ -18,10 +18,9 @@ Mathlib has neither Prékopa-Leindler nor Brunn-Minkowski directly. We build
 the 1D form first, then n-dim by induction over Fubini (each marginal is
 log-concave by 1D PL applied fibre-wise).
 
-This file is statement-first for the substantive content (1D Brunn-Minkowski
-remains the keystone gap). The proof of `prekopaLeindler_1d` itself is
-assembled from named sub-helpers, so closing those helpers closes the
-top-level theorem mechanically.
+The proof of `prekopaLeindler_1d` is organized through named lemmas for the
+level-set inclusion, the one-dimensional Brunn-Minkowski inequality, the
+resulting level-measure bound, and the layer-cake integral assembly.
 -/
 
 open MeasureTheory Set
@@ -31,16 +30,17 @@ namespace AsymptoticStatistics
 
 /-! ## 1D Prékopa-Leindler — sub-helpers
 
-The 1D PL proof factors as four steps, exposed as named sub-helpers so each
-gap is locally identifiable:
+The 1D PL proof factors as four named steps:
 
 1. **Level-set inclusion** (`prekopaLeindler_1d_levelInclusion`): for `α > 0`,
    `t • {f > α} + (1-t) • {g > α} ⊆ {h > α}`, via the pointwise hypothesis
    on `h` and the trivial identity `α^t · α^(1-t) = α`.
 
-2. **1D Brunn-Minkowski** (`oneDim_brunn_minkowski_le`, ⬜ keystone gap): for
+2. **1D Brunn-Minkowski** (`oneDim_brunn_minkowski_le`): for
    nonempty measurable `A, B ⊆ ℝ` with `A + B ⊆ C` measurable,
-   `volume A + volume B ≤ volume C`. The Mathlib gap.
+   `volume A + volume B ≤ volume C`. The proof first treats compact sets and
+   then passes to measurable sets by inner regularity, separately handling
+   zero and infinite measure.
 
 3. **Level-measure bound** (`prekopaLeindler_1d_levelMeasureBound`):
    combines (1) + (2) + smul-set scaling
@@ -363,10 +363,11 @@ Combines `prekopaLeindler_1d_levelInclusion` (set inclusion) +
 `Measure.addHaar_smul_of_nonneg` (smul scaling: `vol(c • s) = ofReal(c) * vol(s)`
 for `c ≥ 0` since `finrank ℝ ℝ = 1`).
 
-Note: requires both level sets nonempty (positive measure). The case where
-one is empty (i.e., `α ≥ ess-sup` of one of `f, g`) is handled by reduction
-to `ess-sup f = ess-sup g` via prior rescaling of `f, g, h` — currently
-folded into the assembly's general edge-case bookkeeping. -/
+Note: this lemma assumes both level sets are nonempty. In the ess-sup-aligned
+assembly, for `α` below the common essential supremum both level sets have
+positive measure and hence are nonempty, so this lemma applies. At or above the
+common essential supremum, both level-set measures are zero (although the sets
+need not be empty), so their contribution to the pointwise bound vanishes. -/
 private theorem prekopaLeindler_1d_levelMeasureBound
     {f g h : ℝ → ℝ≥0∞}
     (hf_meas : Measurable f) (hg_meas : Measurable g) (hh_meas : Measurable h)
@@ -848,20 +849,15 @@ type synonym chosen *not* to inherit the Pi measure to avoid ambiguity with
 Haar measure). For the `anderson_lemma_set` application, transfer via
 `PiLp.volume_preserving_toLp` / `EuclideanSpace.equiv`.
 
-**Proof sketch (deferred)**: induction on `Fintype.card ι`.
-* Base (`card ι = 0`): `ι → ℝ` is a singleton (`dirac`), both sides reduce to
-  evaluation at the unique point; the PL hypothesis at that point is the
-  conclusion.
-* Step: pick an element `i : ι` (possible since induction is on cardinality),
-  split `(ι → ℝ) ≃ᵐ ℝ × ((ι \ {i}) → ℝ)` via `MeasurableEquiv.piSplitAt` or
-  `MeasurableEquiv.piFinSuccAbove`. By Fubini, rewrite each integral as a
-  double integral: outer over the `i`-th coordinate, inner over the remaining
-  `card ι - 1` coordinates. Apply the inductive (smaller-dim) PL to the
-  inner integrals fibre-wise (for fixed first-coordinate values `(u, v)`, the
-  functions `f(u, ·), g(v, ·), h((tu + (1-t)v), ·)` satisfy the PL hypothesis
-  with parameter `t`); the marginalised integrals are log-concave in the
-  outer variable by exactly this inductive step. Close with 1D PL on the outer
-  variable.
+**Proof.** Use `Fintype.induction_empty_option`, transporting the inequality and
+product volume along equivalences of finite index types. For the empty type,
+product volume is a Dirac measure at the unique function, so the conclusion is
+the pointwise hypothesis at that function. In the `Option α` step,
+`MeasurableEquiv.piOptionEquivProd` splits a function into its `α` coordinates
+and its `none` coordinate. Fubini expresses each integral as an outer integral
+over `ℝ` of an inner integral over `α → ℝ`; the induction hypothesis applied to
+the inner fibres gives the Prékopa-Leindler hypothesis for these three marginal
+functions on `ℝ`, and `prekopaLeindler_1d` completes the step.
 
 This is the form directly consumed by `anderson_lemma_set` in
 `ForMathlib/Anderson.lean`: apply with `f(x) := ρ(x) · 𝟙_{C-y}(x)`,

@@ -10,7 +10,7 @@ const MATHLIB_DOCS_BASE = "https://leanprover-community.github.io/mathlib4_docs/
 
 /** Absolute doc-gen4 URL for a result (robust in dev and prod). */
 export function docUrl(r: ResultEntry): string {
-  // stored as "../docs/AsymptoticStatistics/<path>.html#<fullName>"
+  // stored as "../docs/StatLean/AsymptoticStatistics/<path>.html#<fullName>"
   const tail = r.docGenUrl.replace(/^(\.\.\/)?docs\//, "");
   return DOCS_BASE + tail;
 }

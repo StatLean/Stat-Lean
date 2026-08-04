@@ -7,11 +7,10 @@ import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 Asymptotic Statistics — Cramér–Wold device for joint weak convergence on
 `ℝ × EuclideanSpace ℝ (Fin m)`.
 
-This file ships a single theorem that closes a Mathlib gap exposed in
-milestone 11 (Phase XI / XI.A): *joint* weak convergence on a finite-dim
-inner-product product space is determined by per-direction (linear)
-projections. The statement is exactly the form needed downstream (a real
-coordinate `t · p.1` plus a Euclidean coordinate `⟪h, p.2⟫_ℝ`).
+This file ships a single theorem closing a Mathlib gap: *joint* weak convergence
+on a finite-dimensional inner-product product space is determined by
+per-direction linear projections. The statement uses the form needed downstream:
+a real coordinate `t · p.1` plus a Euclidean coordinate `⟪h, p.2⟫_ℝ`.
 
 ## Strategy
 

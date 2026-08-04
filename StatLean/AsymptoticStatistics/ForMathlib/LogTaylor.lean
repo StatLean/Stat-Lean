@@ -67,6 +67,37 @@ lemma log_one_add_eq_taylor {x : ℝ} (hx : -1 < x) :
       ring
     linarith [h_rhs]
 
+/-- Taylor identity for the logarithm of a nonnegative ratio, written through
+the square-root ratio `w = 2 * (√(a / b) - 1)`.  Mathlib's totalized division
+and convention `Real.log 0 = 0` make the identity valid also when `a / b = 0`;
+then `w = -2` and the explicit remainder supplies the boundary value. -/
+lemma log_div_nonneg_eq_sqrt_taylor {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
+    let w := 2 * (Real.sqrt (a / b) - 1)
+    Real.log (a / b) = w - w ^ 2 / 4 + w ^ 2 / 2 * logTaylorRemainder w := by
+  dsimp only
+  have hratio : 0 ≤ a / b := div_nonneg ha hb
+  let y := Real.sqrt (a / b)
+  have hy : 0 ≤ y := Real.sqrt_nonneg _
+  have hy_sq : y ^ 2 = a / b := by
+    rw [show y = Real.sqrt (a / b) by rfl, Real.sq_sqrt hratio]
+  rcases hy.lt_or_eq with hy_pos | hy_zero
+  · have hlog : Real.log (a / b) = 2 * Real.log y := by
+      rw [← hy_sq, Real.log_pow]
+      ring
+    have htaylor := log_one_add_eq_taylor (show -1 < y - 1 by linarith)
+    have hone : (1 : ℝ) + (y - 1) = y := by ring
+    rw [hone] at htaylor
+    rw [hlog, htaylor]
+    ring
+  · have hy_eq : y = 0 := hy_zero.symm
+    have hratio_zero : a / b = 0 := by rw [← hy_sq, hy_eq]; ring
+    have hrem : logTaylorRemainder (-2) = 3 / 2 := by
+      unfold logTaylorRemainder
+      rw [if_neg (by norm_num : (-2 : ℝ) ≠ 0)]
+      norm_num [Real.log_zero]
+    rw [hratio_zero, Real.log_zero, show Real.sqrt 0 = 0 by simp]
+    norm_num [hrem]
+
 /-- **Remainder rate.** `logTaylorRemainder u → 0` as `u → 0`.
 
 Proof uses `Real.abs_log_sub_add_sum_range_le` with `n = 2` and substitution

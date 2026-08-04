@@ -177,32 +177,62 @@ def graphJson (root : Name) (nodes : Array Node) (edges : Array (Name × Name)) 
   "  \"nodes\": [\n" ++ ns ++ "\n  ],\n" ++
   "  \"edges\": [\n" ++ es ++ "\n  ]\n}\n"
 
+/-- Website result IDs are also graph filenames, so accept exactly the
+URL/path-safe grammar enforced by `website/scripts/validate-data.mjs`. -/
+def isUrlSafeId (id : String) : Bool :=
+  let isAsciiAlphaNum := fun c =>
+    ('A' ≤ c && c ≤ 'Z') || ('a' ≤ c && c ≤ 'z') || ('0' ≤ c && c ≤ '9')
+  match id.toList with
+  | [] => false
+  | first :: rest =>
+      isAsciiAlphaNum first &&
+        rest.all (fun c => isAsciiAlphaNum c || c == '_' || c == '-')
+
 def main : IO Unit := do
   initSearchPath (← findSysroot)
   IO.println "Importing StatLean environment…"
   let env ← importModules #[{ module := `StatLean }] {} (trustLevel := 1024)
   let targetsFile := "website/targets.txt"
   let content ← IO.FS.readFile targetsFile
+  let mut targets : Array (String × Name) := #[]
+  let mut lineNo := 0
+  for rawLine in content.splitOn "\n" do
+    lineNo := lineNo + 1
+    let line := rawLine.trim
+    if line.isEmpty then continue
+    let parts := rawLine.splitOn "\t"
+    if parts.length != 2 then
+      throw <| IO.userError
+        s!"Malformed {targetsFile}:{lineNo}: expected exactly <id>\\t<fullName>"
+    let id := parts[0]!.trim
+    let fullText := parts[1]!.trim
+    if id.isEmpty || fullText.isEmpty then
+      throw <| IO.userError
+        s!"Malformed {targetsFile}:{lineNo}: id and fullName must both be nonempty"
+    if !isUrlSafeId id then
+      throw <| IO.userError
+        s!"Malformed {targetsFile}:{lineNo}: id must match [A-Za-z0-9][A-Za-z0-9_-]*"
+    let full := fullText.toName
+    if targets.any (fun target => target.1 == id) then
+      throw <| IO.userError s!"Malformed {targetsFile}:{lineNo}: duplicate id {id}"
+    if targets.any (fun target => target.2 == full) then
+      throw <| IO.userError s!"Malformed {targetsFile}:{lineNo}: duplicate fullName {full}"
+    targets := targets.push (id, full)
+
+  let missing := targets.filter (fun target => (env.find? target.2).isNone)
+  if !missing.isEmpty then
+    let rendered := String.intercalate ", " <|
+      missing.toList.map (fun target => s!"{target.1} ({target.2})")
+    throw <| IO.userError
+      s!"{missing.size} target(s) not found in the imported environment: {rendered}"
+
   let outDir : System.FilePath := "website/src/data/graphs"
   IO.FS.createDirAll outDir
   let mut ok := 0
-  let mut missing : Array String := #[]
-  for line in content.splitOn "\n" do
-    let line := line.trim
-    if line.isEmpty then continue
-    let parts := line.splitOn "\t"
-    if parts.length < 2 then continue
-    let id := parts[0]!.trim
-    let full := parts[1]!.trim.toName
-    if (env.find? full).isNone then
-      missing := missing.push s!"{id} ({full})"
-      continue
+  for (id, full) in targets do
     let (nodes, edges) := buildGraph env full
     let json := graphJson full nodes edges
     IO.FS.writeFile (outDir / s!"{id}.json") json
     ok := ok + 1
     IO.println s!"  ✓ {id}: {nodes.size} nodes, {edges.size} edges"
   IO.println s!"\nWrote {ok} graphs to {outDir}."
-  if !missing.isEmpty then
-    IO.println s!"⚠ {missing.size} targets not found in environment:"
-    for m in missing do IO.println s!"    {m}"

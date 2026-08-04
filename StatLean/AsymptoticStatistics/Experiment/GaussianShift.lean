@@ -84,8 +84,8 @@ A utility used to pre-compose kernels with "multiply by `J`" in Theorem 7.10. It
 continuous (hence measurable) because linear maps between finite-dimensional normed
 spaces are continuous, and `EuclideanSpace.equiv` is a continuous linear equivalence.
 
-Lives here rather than in `ForMathlib/` because its only current consumer is the Gaussian
-shift family; promote to `ForMathlib` if a second consumer appears. -/
+This action is part of the Gaussian-shift API because it converts covariance-scale
+draws into the information-scale coordinates used by the experiment. -/
 
 noncomputable def matrixAction
     (J : Matrix (Fin k) (Fin k) ℝ) (x : EuclideanSpace ℝ (Fin k)) :
@@ -164,11 +164,10 @@ exactly the Gaussian-specific fact consumed by Theorem 7.10's `gaussianShift_bin
 (Step 7). Pairs with the measure-theoretic bridges `Measure.bind_map_eq_bind_comap` and
 `Measure.withDensity_bind_condDistrib` to close Step 7.
 
-Formally an assumption at this stage (Mathlib lacks multivariate Gaussian density and
-linear-pushforward lemmas); once they land, this predicate becomes a theorem derivable
-from `IsGaussian ν`, `ν` having mean 0 and covariance `J`, plus the tight-integrability
-machinery. The design mirrors `HasGaussianShiftLogLikelihoodRatio` — a `Prop` predicate
-threaded as a hypothesis and discharged at the call site. -/
+The predicate separates this Gaussian-specific transport identity from the general
+measure-theoretic bridges that consume it. For the canonical reference measure,
+`hasTiltedLinearPushforward_of_isGaussianShift` derives the predicate from
+`IsGaussianShift`. The interface parallels `HasGaussianShiftLogLikelihoodRatio`. -/
 def HasTiltedLinearPushforward
     (family : EuclideanSpace ℝ (Fin k) → Measure (EuclideanSpace ℝ (Fin k)))
     (ν : Measure (EuclideanSpace ℝ (Fin k)))
@@ -291,11 +290,8 @@ theorem isGaussianShift_multivariateGaussian
 /-- **Existence of a Gaussian shift family** with covariance `C` for every positive-definite
 `C`. Realised by Mathlib's `ProbabilityTheory.multivariateGaussian h C`.
 
-The closed-form log-likelihood ratio (`HasGaussianShiftLogLikelihoodRatio`) is *not*
-bundled into this existence statement because it is not consumed downstream and its
-derivation requires an explicit multivariate Gaussian density, which Mathlib does not
-yet expose. If it becomes needed we will add a separate existence lemma that tightens
-this one. -/
+This theorem asserts only `IsGaussianShift`; the closed-form likelihood-ratio
+property is a separate interface, `HasGaussianShiftLogLikelihoodRatio`. -/
 theorem exists_gaussianShift
     (C : Matrix (Fin k) (Fin k) ℝ) (hC : Matrix.PosDef C) :
     ∃ family : EuclideanSpace ℝ (Fin k) → Measure (EuclideanSpace ℝ (Fin k)),

@@ -1446,33 +1446,23 @@ theorem hCovBlockPSDAll_of_isRegular
     varL (IF_eff : ↥(L2ZeroMean P)) (fun i => (g_P i : ↥(L2ZeroMean P)))
     h_orth hVarBound
 
-/-! ### (d) `hBayesLowerBound_of_isRegular`: derive the per-(M, σ) Bayes lower bound
+/-! ### (d) `hBayesLowerBound_of_isRegular`: per-(M, σ) Bayes-bound adapter
 
-Strategy: combine `IsRegularEstimator` with the basis-selection
-bridge to the abstract Gaussian-shift Bayes-risk minimax theorem
-(`Parametric.GaussianShiftMinimax.gaussianShift_bayes_risk_sup_eq_target`).
+This conditional adapter accepts the per-`(M, σ)` Bayes lower bound in exactly
+the form consumed by `semiparametric_local_asymptotic_minimax_theorem` and
+returns that bound unchanged. The finite-tangent-set, truncated-loss, and
+Gaussian-variance restrictions remain part of the supplied `hBayes`; they are
+not consequences established here from `IsRegularEstimator`. -/
 
-We expose the per-(M, σ) Bayes lower bound
-as a hypothesis consumed by this deriver — the same hypothesis shape
-as `semiparametric_local_asymptotic_minimax_theorem`'s `_hBayesLowerBound` —
-and document the derivation strategy. The deriver itself is a thin
-forwarder registering the intended adapter pattern. -/
+/-- *Conditional adapter for the per-(M, σ) Bayes lower bound consumed by
+`semiparametric_local_asymptotic_minimax_theorem`.*
 
-/-- *Derive the per-(M, σ) Bayes lower bound consumed by
-`semiparametric_local_asymptotic_minimax_theorem` from `IsRegularEstimator`.*
-
-The intended derivation chain: apply
-`IsRegularEstimator.hajek_shift_form` per direction `g` to identify
-the per-`g` shifted weak limit; pass through `bayes_risk_lower_bound`
-(Lemma 3) per finite `I_0` to identify the limit-experiment Bayes
-risk against the Gaussian-shift density; apply
-`gaussianShift_bayes_risk_sup_eq_target` (Lemma 4) to
-identify it with the target Gaussian integral.
-
-The full closure (the Anderson-dependent basis-selection + Riesz-pair +
-ι-cone-restriction bridge) is the remaining residual. This deriver
-forwards the same hypothesis shape, completing the API surface for
-the future closure work without introducing a circular dependency.
+The caller supplies `hBayes` for every truncation level `M` and Gaussian
+variance `σ_m_sq`. Its statement retains the supremum over finite subsets of
+the tangent carrier, the liminf over sample size, and truncation of `ℓ`; this
+theorem transports that assumption verbatim. The accompanying regularity,
+path, and score arguments record the caller context but do not derive
+`hBayes`.
 
 Reference: vdV §25.3 Lemmas 3+4 (`bayes_risk_lower_bound`,
 `gaussianShift_minimax`). -/
@@ -1491,10 +1481,8 @@ theorem hBayesLowerBound_of_isRegular
     (_hγ_score : ∀ g, (g : ↥(L2ZeroMean P)) ∈ T_set.carrier →
       (γ g).score = g)
     (ℓ : ℝ → ℝ≥0∞)
-    -- the per-(M, σ) Bayes lower bound (vdV §25.3 Lemmas 3+4 plus the
-    -- basis-selection bridge). The full Anderson-dependent closure is
-    -- forwarded here so the API surface for the future closure work is
-    -- in place. See file docstring above.
+    -- Caller-supplied per-(M, σ) Bayes lower bound, including its finite-set,
+    -- truncated-loss, and Gaussian-variance restrictions.
     (hBayes :
       ∀ (M : ℕ) (σ_m_sq : ℝ≥0),
         ⨆ I : { S : Finset ↥(L2ZeroMean P) //

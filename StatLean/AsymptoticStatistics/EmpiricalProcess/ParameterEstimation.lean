@@ -239,7 +239,7 @@ private theorem empiricalProcess_param_estimation_pointwise_aux
   set g : Ω → ℝ := fun x => f x - Pf - dPθ f * ψ x with hg_def
   set σ_sq : ℝ := ∫ x, (g x) ^ 2 ∂(P_θ θ₀) with hσ_def
   -- Step 1: L²-membership.
-  have hf_L2 : MemLp f 2 (P_θ θ₀) := _h.donsker.marginalCLT f _hf
+  have hf_L2 : MemLp f 2 (P_θ θ₀) := _h.donsker.marginalCLT.memLp f _hf
   have hψ_L2 : MemLp ψ 2 (P_θ θ₀) := Lp.memLp _
   have hf_aem : AEStronglyMeasurable f (P_θ θ₀) := hf_L2.aestronglyMeasurable
   have hψ_aem : AEStronglyMeasurable ψ (P_θ θ₀) := hψ_L2.aestronglyMeasurable
