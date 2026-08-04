@@ -67,8 +67,8 @@ noncomputable def censoredLaw (μT μC : Measure ℝ) : Measure (ℝ × Bool) :=
   (μT.prod μC).map censorObserve
 
 instance (μT μC : Measure ℝ) [IsProbabilityMeasure μT] [IsProbabilityMeasure μC] :
-    IsProbabilityMeasure (censoredLaw μT μC) := by
-  sorry
+    IsProbabilityMeasure (censoredLaw μT μC) :=
+  Measure.isProbabilityMeasure_map measurable_censorObserve.aemeasurable
 
 /-- The law of the observed time `T̃` of an observed-data law. -/
 noncomputable def observedTimeLaw (P : Measure (ℝ × Bool)) : Measure ℝ :=
@@ -83,18 +83,33 @@ over the at-risk probability `P(T̃ ≥ t)` (ABGK §III.2). -/
 noncomputable def crudeCumHazard (P : Measure (ℝ × Bool)) : Measure ℝ :=
   (uncensoredSubLaw P).withDensity fun t => (observedTimeLaw P (Ici t))⁻¹
 
+/-- LEAN-ONLY: the observed time is the pushforward of the joint law under `min`
+(`Prod.fst ∘ censorObserve = min`, collapsed by `Measure.map_map`). -/
+private theorem observedTimeLaw_censoredLaw_eq (μT μC : Measure ℝ) :
+    observedTimeLaw (censoredLaw μT μC) = (μT.prod μC).map fun p => min p.1 p.2 := by
+  rw [observedTimeLaw, censoredLaw, Measure.map_map measurable_fst measurable_censorObserve]
+  rfl
+
 /-- **S2.1 (observed survival factorizes, `Ioi` form)**: under independent censoring
 `P(T̃ > t) = S_T(t) · S_C(t)` (ABGK §III.2). -/
 theorem observedTimeLaw_censoredLaw_Ioi (μT μC : Measure ℝ) [IsProbabilityMeasure μT]
     [IsProbabilityMeasure μC] (t : ℝ) :
     observedTimeLaw (censoredLaw μT μC) (Ioi t) = μT (Ioi t) * μC (Ioi t) := by
-  sorry
+  rw [observedTimeLaw_censoredLaw_eq,
+    Measure.map_apply (measurable_fst.min measurable_snd) measurableSet_Ioi]
+  have hpre : (fun p : ℝ × ℝ => min p.1 p.2) ⁻¹' Ioi t = Ioi t ×ˢ Ioi t := by
+    ext p; simp
+  rw [hpre, Measure.prod_prod]
 
 /-- **S2.1 (`Ici` form)**: `P(T̃ ≥ t) = S_T(t^-) · S_C(t^-)`. -/
 theorem observedTimeLaw_censoredLaw_Ici (μT μC : Measure ℝ) [IsProbabilityMeasure μT]
     [IsProbabilityMeasure μC] (t : ℝ) :
     observedTimeLaw (censoredLaw μT μC) (Ici t) = μT (Ici t) * μC (Ici t) := by
-  sorry
+  rw [observedTimeLaw_censoredLaw_eq,
+    Measure.map_apply (measurable_fst.min measurable_snd) measurableSet_Ici]
+  have hpre : (fun p : ℝ × ℝ => min p.1 p.2) ⁻¹' Ici t = Ici t ×ˢ Ici t := by
+    ext p; simp [Prod.le_def]
+  rw [hpre, Measure.prod_prod]
 
 /-- **S2.2 (sub-distribution formula, fully general)**: under independent censoring,
 `P(T̃ ∈ dt, Δ = 1) = S_C(t^-)\,dF_T(t)` — exactly, for arbitrary (atomic or not) laws
@@ -118,6 +133,8 @@ theorem crudeCumHazard_censoredLaw (μT μC : Measure ℝ) [IsProbabilityMeasure
 restrict-monotonicity workhorse for S2.3). -/
 theorem uncensoredSubLaw_le (P : Measure (ℝ × Bool)) {A : Set ℝ} (hA : MeasurableSet A) :
     uncensoredSubLaw P A ≤ observedTimeLaw P A := by
-  sorry
+  rw [uncensoredSubLaw, observedTimeLaw, Measure.map_apply measurable_fst hA,
+    Measure.map_apply measurable_fst hA, Measure.restrict_apply (measurable_fst hA)]
+  exact measure_mono inter_subset_left
 
 end StatLean.StatisticalModels.Survival
