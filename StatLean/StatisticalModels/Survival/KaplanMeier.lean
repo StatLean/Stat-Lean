@@ -298,7 +298,23 @@ theorem isSubEventTimeLaw_kaplanMeierMeasure (d : Fin n → ℝ × Bool)
     -- USER-INPUT: observation times are nonnegative; KM58 §1
     (hd : ∀ i, 0 ≤ (d i).1) :
     IsSubEventTimeLaw (kaplanMeierMeasure d) := by
-  sorry
+  have hEvent : ∀ s ∈ eventTimes d, 0 ≤ s := by
+    intro s hs
+    obtain ⟨i, hval, -⟩ := exists_of_mem_eventTimes hs
+    exact hval ▸ hd i
+  constructor
+  · rw [kaplanMeierMeasure,
+      StieltjesFunction.measure_univ _ (tendsto_kaplanMeierSF_atBot d)
+        (tendsto_kaplanMeierSF_atTop d)]
+    refine ENNReal.ofReal_le_one.2 ?_
+    have := (prod_one_sub_naJump_mem_Icc d (eventTimes d)).1
+    simp only [kmLimit] at *
+    linarith
+  · rw [kaplanMeierMeasure,
+      StieltjesFunction.measure_Iio _ (tendsto_kaplanMeierSF_atBot d) 0,
+      leftLim_kaplanMeierSF d 0]
+    rw [Finset.filter_eq_empty_iff.2 fun v hv => not_lt.2 (hEvent v hv)]
+    simp
 
 /-- **No-censoring reduction** (`KM58 §1`): with every observation an event, Kaplan–Meier is
 the empirical survival function `#{i : t < T̃ᵢ}/n`. -/
