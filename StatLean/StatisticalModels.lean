@@ -16,6 +16,7 @@ import StatLean.StatisticalModels.Survival.Survival
 import StatLean.StatisticalModels.Survival.CumulativeHazard
 import StatLean.StatisticalModels.Survival.Censoring
 import StatLean.StatisticalModels.Survival.KaplanMeier
+import StatLean.StatisticalModels.Survival.HazardBridges
 import StatLean.StatisticalModels.Coarsening.Defs
 import StatLean.StatisticalModels.Coarsening.Basic
 import StatLean.StatisticalModels.Coarsening.IPW
