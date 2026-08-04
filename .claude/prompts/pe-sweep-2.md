@@ -1,0 +1,46 @@
+# Sweep the remaining PointEstimation debts: LinearModel/{LeastSquares,Equivariant,RandomDesign}, Equivariance/{Pitman,LocationExamples,LocationMRE}
+
+Lean 4 / Mathlib proof engineer on `StatLean`. Pin `v4.29.1`. (Note: the repo `CLAUDE.md` is gitignored and is NOT present in this worktree — everything you need is below. Project rules that matter here: never `lake update`; `sorry` is planned debt tied to a named lemma; do not launder unproven content into hypotheses.)
+
+**CRITICAL — how to build.** Run `lake build <module>` as an ordinary FOREGROUND command and read its output in the same step. It returns in well under a minute per module. Do **not** background it, do **not** wait for a "build notification", do **not** say you will continue once a build finishes — there is no notification channel and you will stall and lose the session.
+
+## Hard constraints
+
+- **Only edit** `StatLean/PointEstimation/LinearModel/{LeastSquares,Equivariant,RandomDesign}.lean` and `.../Equivariance/{Pitman,LocationExamples,LocationMRE}.lean`. Nothing else — no `Defs.lean`, and NOT the already-closed `Canonical.lean` or `GaussMarkov.lean`.
+- **Signatures, hypothesis tags, docstrings FROZEN.** You may add `import Mathlib.*`, import closed project modules, and add `private` helpers. Lines ≤ 100 characters.
+- Goal: **0 sorries, 0 errors**. Escape hatch: at most one lifted `private` sorry per file with a precise `-- TODO:`; report each.
+- **Do not weaken any statement.** If one looks false or under-hypothesized, STOP, leave it sorried, and report *precisely* what is missing. Several such reports have already been acted on this campaign — that is the desired outcome.
+- Commit after each lemma compiles.
+- After green: `#print axioms isUMVU_lse_functional`, `#print axioms pitmanEstimator_isLocMRE` — expect only `propext, Classical.choice, Quot.sound`.
+
+## Progress since the previous pass
+
+`RandomDesign.{isUMVU_regression_coeff, covariance_regression_coeff}` are now **closed**, so
+`RandomDesign` has only the sanctioned deferral left. The rest of your touch-set is unchanged:
+`LeastSquares` (3 — the Gaussian isometry-invariance transport), `Equivariant` (4 — the MRE
+clauses), `Pitman` (4), `LocationExamples` (2), `LocationMRE` (2). Focus on **`Pitman` first**:
+`ForMathlib.CondDistribDensity` is closed, so `pitmanEstimator_eq_sub_condMean` is now a genuine
+reduction (normalized-slice identification + a det-1 shear change of variables), and closing it
+cascades into `LocationExamples.isLocMRE_mean_gaussian` via Basu.
+
+## Newly available (closed, axiom-clean) — this is what unblocks the sweep
+
+- **`LinearModel.Canonical` is entirely closed**, including `canonicalStat_isCompleteStat`, `canonicalStat_hasSufficientKernel`, and the UMVU trio `isUMVU_coord` / `isUMVU_linear_combination` / `isUMVU_residual_variance`.
+- `LinearModel.GaussMarkov` is entirely closed.
+- `LeastSquares.isUMVU_linear_functional_of_mean` is closed (the reduction to `isUMVU_lse_functional`).
+- `ForMathlib.CondDistribDensity` is closed — the normalized-slice identification of `condDistrib`. **This is what `Pitman.pitmanEstimator_eq_sub_condMean` was waiting for.**
+- `Equivariance.{LocationStructure, ConditionalRiskEngine, RiskUnbiased}` and `LocationMRE.{isLocMRE_of_conditional_min, isLocMRE_sq_of_condMean}` are closed.
+- `Completeness.Basu.indepFun_of_boundedlyComplete_sufficient` is closed.
+
+## Per-file notes
+
+- **`LeastSquares` (3)**: the orthonormal-basis transport `linearModelFull → canonicalModel`. The previous session flagged the remaining gap as *Gaussian isometry-invariance* — i.e. that pushing `gaussianVector` through a linear isometry of `EuclideanSpace` preserves the law. `stdGaussian_eq_map_pi_orthonormalBasis` plus `MeasurePreserving` of the isometry is the intended route; build the isometry-invariance as a `private` helper.
+- **`Pitman` (4)**: `pitmanEstimator_eq_sub_condMean` via `CondDistribDensity` (now closed) plus a **det-1 shear** change of variables (`x ↦ (diffs x, xₙ)` is Lebesgue-measure preserving); then `isLocMRE_sq_of_condMean` gives `pitmanEstimator_isLocMRE`.
+- **`LocationExamples` (2)**: with `Pitman` closed, `isLocMRE_mean_gaussian` follows by Basu — `X̄` complete sufficient, `diffs` ancillary, so they are independent, the conditional mean is a.e. constant, and the Pitman estimator collapses to `X̄`. Do **not** attempt the Kagan–Linnik–Rao converse (out of scope).
+- **`LocationMRE` (2)**: Cor 1.11 (existence under convexity) and Cor 1.14 (bounded loss) — use `ForMathlib.MeasurableArgmin.exists_measurable_argmin` and `ForMathlib.ConvexMinimizers.*`, both closed.
+- **`Equivariant` (4)** and **`RandomDesign` (3)**: `residualScaleConst_one` is closed; the rest are the MRE clauses and the Gaussian covariance of linear functionals. `RandomDesign.not_exists_blue_of_known_design_moment` is a **sanctioned deferral** — it carries a nondegeneracy hypothesis because the printed universal form is false for an a.s. constant design; leave it if it resists.
+- **`ScaleMRE`**: NOT in your touch-set. `isScaleMRE_of_conditional_min` there is **known false as stated** (the conditional-minimality hypothesis ranges only over positive `w` and so cannot dominate opposite-sign competitors) and is awaiting a statement decision.
+
+## Report
+
+Final `lake build` status per module, per-file sorry counts, both `#print axioms` outputs, and for every statement you leave open, the precise missing hypothesis or obstruction.
