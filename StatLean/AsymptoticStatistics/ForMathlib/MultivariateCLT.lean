@@ -24,9 +24,8 @@ multivariate characteristic functions of the standardised sample mean.
 Lévy's continuity theorem
 (`ProbabilityMeasure.tendsto_iff_tendsto_charFun`) closes the argument.
 
-This file plays a structural role for Milestone 11 (Phase C lower bounds), where
-the multivariate CLT is invoked to upgrade per-coordinate score CLTs into a
-joint weak-convergence statement on `EuclideanSpace ℝ (Fin m)`.
+The multivariate CLT upgrades per-coordinate score CLTs into a joint
+weak-convergence statement on `EuclideanSpace ℝ (Fin m)`.
 
 ## Main result
 

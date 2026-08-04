@@ -35,7 +35,7 @@ For every direction `u : Θ`, the function
 
 belongs to `L²(μ)` for every `t` in some punctured neighbourhood of `0`.
 
-Discharges the `h_fminus_memLp` hypothesis previously assumed in
+This theorem supplies the `h_fminus_memLp` input used by
 `LANExpansion.score_mean_zero` and `LANExpansion.LAN_expansion_score_fisher_part`.
 
 **Proof.** From `hDQM.mem`, the unrescaled DQM residual

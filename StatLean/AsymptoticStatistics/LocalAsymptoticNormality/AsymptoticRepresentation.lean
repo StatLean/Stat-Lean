@@ -2021,8 +2021,8 @@ theorem limit_law_under_h
         WeakConverges
           (fun n => (productMeasure M μ θ₀ n).map (logLikelihood M θ₀ _h n))
           (ProbabilityTheory.gaussianReal (-(vLog : ℝ) / 2) vLog))
-    -- Gaussian MGF at `_h` via the tilted joint law.  These package the multivariate
-    -- Gaussian-MGF identities that Mathlib currently lacks (`π.map snd ~ N(0, J)` + MGF).
+    -- Gaussian MGF at `_h` via the tilted joint law. These hypotheses provide the
+    -- multivariate Gaussian-MGF identities not supplied by the imported API.
     (h_exp_int_πtilt :
         Integrable (fun q : 𝓨 d × ℝ => Real.exp q.2)
           (π.map (fun p : 𝓨 d × Θ k =>
@@ -2525,8 +2525,7 @@ theorem LAN_representation
     (GaussianShift.isGaussianShift_multivariateGaussian J⁻¹ hJ_pd.inv)
     hPDF
 
-/-- Compatibility alias for older downstream files. The vdV-literal theorem is now
-named `LAN_representation`, matching the paper statement. -/
+/-- Compatibility alias for `LAN_representation`. -/
 theorem LAN_representation_vdV
     (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧) [SigmaFinite μ]
     (θ₀ : Θ k) (ℓ : 𝓧 → Θ k) (hℓ : Measurable ℓ)

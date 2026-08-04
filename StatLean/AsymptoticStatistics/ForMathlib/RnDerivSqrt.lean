@@ -13,8 +13,7 @@ When `ν ≪ μ` with `μ` σ-finite, the Radon–Nikodym derivative
 `∫ g dν = ∫ g · p dμ`, is what `Core/QMDPath.score_in_L2ZeroMean` needs
 to lift its bare-function score to `↥(L2ZeroMean P)`.
 
-These lemmas are theorem-agnostic infrastructure and live in `ForMathlib/`
-because they are not specific to any one statistical theorem.
+These theorem-agnostic lemmas belong to the `ForMathlib` layer.
 -/
 
 open MeasureTheory Filter Topology
@@ -84,5 +83,16 @@ lemma integral_eq_integral_mul_rnDeriv_of_ac
   rw [← MeasureTheory.integral_rnDeriv_smul h_ac]
   refine integral_congr_ae (Filter.Eventually.of_forall (fun ω => ?_))
   simp [smul_eq_mul, mul_comm]
+
+/-- Set-form of `integral_eq_integral_mul_rnDeriv_of_ac`: `∫_G g dP = ∫_G g·(dP/dμ) dμ`
+for any measurable `G`. Obtained by applying the `univ`-form to `Set.indicator G g`. -/
+lemma setIntegral_eq_setIntegral_mul_rnDeriv_of_ac
+    {P μ : Measure Ω} [IsFiniteMeasure P] [SigmaFinite μ] (h_ac : P ≪ μ)
+    (g : Ω → ℝ) {G : Set Ω} (hG : MeasurableSet G) :
+    ∫ ω in G, g ω ∂P = ∫ ω in G, g ω * (P.rnDeriv μ ω).toReal ∂μ := by
+  rw [← integral_indicator hG,
+      integral_eq_integral_mul_rnDeriv_of_ac h_ac (G.indicator g),
+      ← integral_indicator hG]
+  simp only [Set.indicator_mul_left]
 
 end AsymptoticStatistics.ForMathlib.RnDerivSqrt

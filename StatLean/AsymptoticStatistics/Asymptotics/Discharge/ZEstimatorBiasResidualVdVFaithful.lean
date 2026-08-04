@@ -58,9 +58,8 @@ noncomputable def vdV_bias_term
 
 Extends `ZEstimatorTaylorCoreBase` with three vdV-faithful fields: the
 submodel-at-truth identity, the literal bias-shifted estimating equation,
-and the √n-consistency hypothesis. The bias is no longer an opaque
-parameter: it's the derived `vdV_bias_term` integrated against the
-supplied `submodel`.
+and the √n-consistency hypothesis. The bias is the derived
+`vdV_bias_term` integrated against the supplied `submodel`.
 
 Concrete consumers supply:
 - `submodel : ℝ → Measure Ω` — the 1D θ-only path through truth in the
@@ -187,13 +186,15 @@ theorem zEstimator_biasResidual_asympLinear_of_taylor_vdV_faithful
       ZEstimatorBiasResidualExplicitTaylorHyp.zEstimator_biasResidual_asympLinear_of_taylor_explicit
     h_explicit
 
-/-- *Adapter: vdV-faithful bundle → bundled interface.*
+/-- **vdV-faithful Taylor assumptions as a bias-residual bundle.**
 
-Promotes a `ZEstimatorBiasResidualVdVFaithfulHyp` plus the EIF-
-construction inputs (`h_mem`, `h_dψ`) into an
-`EfficientScoreEqBiasResidualAssumptions` with the explicit
-literal bias `(fun n X => -(1/Ĩ) * vdV_bias_term submodel … n X)`.
-Plumbs into the bundled interface `zEstimator_biasResidual_expansion`.
+Constructs `EfficientScoreEqBiasResidualAssumptions` from
+`ZEstimatorBiasResidualVdVFaithfulHyp` and the EIF-construction inputs `h_mem` and
+`h_dψ`, with residual
+`(fun n X => -(1 / efficientInformation S_θ T_nuis v) *
+  vdV_bias_term submodel estimator θ₀ score_func_seq n X)`. Positivity of the efficient
+information is inherited from `h.hI_pos`, and `asympLinear_25_59` is supplied by
+`zEstimator_biasResidual_asympLinear_of_taylor_vdV_faithful`.
 
 Reference: vdV §25.8 (Efficient Score Equations), thm:25.59. -/
 def toEfficientScoreEqBiasResidualAssumptions_vdV_faithful

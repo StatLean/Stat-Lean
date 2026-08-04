@@ -11,7 +11,12 @@
     {"id":"TopologicalSpace.IsCompletelyMetrizableSpace.of_completeSpace_metrizable","label":"of_completeSpace_metrizable","full":"TopologicalSpace.IsCompletelyMetrizableSpace.of_completeSpace_metrizable","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.CompletelyMetrizable"},
     {"id":"PiLp.completeSpace","label":"completeSpace","full":"PiLp.completeSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.PiLp"},
     {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"T4Space.of_paracompactSpace_t2Space","label":"of_paracompactSpace_t2Space","full":"T4Space.of_paracompactSpace_t2Space","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Compactness.Paracompact"},
+    {"id":"TopologicalSpace.t2Space_of_metrizableSpace","label":"t2Space_of_metrizableSpace","full":"TopologicalSpace.t2Space_of_metrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Basic"},
     {"id":"EMetricSpace.metrizableSpace","label":"metrizableSpace","full":"EMetricSpace.metrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Uniformity"},
+    {"id":"paracompact_of_locallyCompact_sigmaCompact","label":"paracompact_of_locallyCompact_sigmaCompact","full":"paracompact_of_locallyCompact_sigmaCompact","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Compactness.Paracompact"},
+    {"id":"locallyCompact_of_proper","label":"locallyCompact_of_proper","full":"locallyCompact_of_proper","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.ProperSpace"},
+    {"id":"SeparableWeaklyLocallyCompactAddGroup.sigmaCompactSpace","label":"sigmaCompactSpace","full":"SeparableWeaklyLocallyCompactAddGroup.sigmaCompactSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Group.Basic"},
     {"id":"StatLean.Bayesian.dlPrior","label":"dlPrior","full":"StatLean.Bayesian.dlPrior","kind":"repo","decl":"def","module":"StatLean.Bayesian.DirichletLaplace.Defs"},
     {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
     {"id":"StatLean.Bayesian.isProbabilityMeasure_dlPrior","label":"isProbabilityMeasure_dlPrior","full":"StatLean.Bayesian.isProbabilityMeasure_dlPrior","kind":"repo","decl":"thm","module":"StatLean.Bayesian.DirichletLaplace.Defs"},
@@ -41,12 +46,7 @@
     {"id":"div_lt_one","label":"div_lt_one","full":"div_lt_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Field.Basic"},
     {"id":"lt_of_le_of_lt","label":"lt_of_le_of_lt","full":"lt_of_le_of_lt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
     {"id":"Finset.eq_univ_of_forall","label":"eq_univ_of_forall","full":"Finset.eq_univ_of_forall","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Defs"},
-    {"id":"Finset.card_univ","label":"card_univ","full":"Finset.card_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
-    {"id":"Fintype.card_pos","label":"card_pos","full":"Fintype.card_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
-    {"id":"lt_of_lt_of_le","label":"lt_of_lt_of_le","full":"lt_of_lt_of_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
-    {"id":"one_div","label":"one_div","full":"one_div","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
-    {"id":"Real.log_inv","label":"log_inv","full":"Real.log_inv","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Log.Basic"},
-    {"id":"Real.log_le_log","label":"log_le_log","full":"Real.log_le_log","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Log.Basic"}
+    {"id":"Finset.card_univ","label":"card_univ","full":"Finset.card_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"}
   ],
   "edges": [
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"StatLean.Bayesian.gaussShiftKernel"},
@@ -58,7 +58,12 @@
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"TopologicalSpace.IsCompletelyMetrizableSpace.of_completeSpace_metrizable"},
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"PiLp.completeSpace"},
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"fact_one_le_two_ennreal"},
+    {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"T4Space.of_paracompactSpace_t2Space"},
+    {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"TopologicalSpace.t2Space_of_metrizableSpace"},
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"EMetricSpace.metrizableSpace"},
+    {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"paracompact_of_locallyCompact_sigmaCompact"},
+    {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"locallyCompact_of_proper"},
+    {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"SeparableWeaklyLocallyCompactAddGroup.sigmaCompactSpace"},
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"StatLean.Bayesian.dlPrior"},
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"StatLean.Bayesian.isProbabilityMeasure_dlPrior"},
@@ -88,11 +93,6 @@
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"div_lt_one"},
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"lt_of_le_of_lt"},
     {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"Finset.eq_univ_of_forall"},
-    {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"Finset.card_univ"},
-    {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"Fintype.card_pos"},
-    {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"lt_of_lt_of_le"},
-    {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"one_div"},
-    {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"Real.log_inv"},
-    {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"Real.log_le_log"}
+    {"source":"StatLean.Bayesian.dl_theorem34_beta","target":"Finset.card_univ"}
   ]
 }

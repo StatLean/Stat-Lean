@@ -31,6 +31,8 @@ export function chapterWord(key: string): string {
 const CHAPTER_TITLES: Record<string, Record<number, string>> = {
   vdv1998: {
     2: "Stochastic Convergence",
+    3: "Delta Method",
+    4: "Moment Estimators",
     5: "M- and Z-Estimators",
     6: "Contiguity",
     7: "Local Asymptotic Normality",

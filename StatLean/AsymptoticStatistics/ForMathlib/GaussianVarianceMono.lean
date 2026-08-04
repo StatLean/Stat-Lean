@@ -28,7 +28,7 @@ exploit the scalar nature of the LAM problem and the change-of-variables
   `v₁ ≤ v₂ ⇒ ∫⁻ ℓ dN(0, v₁) ≤ ∫⁻ ℓ dN(0, v₂)`.
 
 This is the analytic engine of vdV §25.3 (b)'s "PSD-monotone Anderson"
-reduction in the scalar LAM lower bound (`AsymptoticStatistics/LowerBounds/LAM.lean`).
+reduction in the scalar LAM lower bound (`StatLean/AsymptoticStatistics/LowerBounds/LAM.lean`).
 -/
 
 open MeasureTheory ProbabilityTheory Filter
