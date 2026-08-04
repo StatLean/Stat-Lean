@@ -38,12 +38,24 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : ℤ → Ω →
 /-- Evenness of the autocovariance (FY §2.2.1): `γ(−k) = γ(k)`. -/
 theorem IsStationary.acvf_even (h : IsStationary X μ) (k : ℤ) :
     acvf X μ (-k) = acvf X μ k := by
-  sorry
+  have hcomm : acvf X μ (-k) = cov[X 0, X (-k); μ] := covariance_comm _ _
+  rw [hcomm, h.cov_eq_acvf 0 (-k)]
+  norm_num
 
 /-- `|γ(k)| ≤ γ(0)` (Cauchy–Schwarz; FY §2.2.1). -/
 theorem IsStationary.abs_acvf_le [IsProbabilityMeasure μ] (h : IsStationary X μ)
     (k : ℤ) : |acvf X μ k| ≤ acvf X μ 0 := by
-  sorry
+  -- The `2 × 2` quadratic forms with coefficients `(1, -1)` and `(1, 1)`:
+  -- `0 ≤ Var(X_k ∓ X_0) = 2γ(0) ∓ 2γ(k)`.
+  have hk : Var[X k; μ] = acvf X μ 0 := (h.acvf_zero_eq_variance k).symm
+  have h0 : Var[X 0; μ] = acvf X μ 0 := (h.acvf_zero_eq_variance 0).symm
+  have hcov : cov[X k, X 0; μ] = acvf X μ k := rfl
+  have hsub := variance_sub (μ := μ) (h.memLp k) (h.memLp 0)
+  have hadd := variance_add (μ := μ) (h.memLp k) (h.memLp 0)
+  rw [hk, h0, hcov] at hsub hadd
+  have hsub0 : (0 : ℝ) ≤ acvf X μ 0 - 2 * acvf X μ k + acvf X μ 0 := hsub ▸ variance_nonneg _ _
+  have hadd0 : (0 : ℝ) ≤ acvf X μ 0 + 2 * acvf X μ k + acvf X μ 0 := hadd ▸ variance_nonneg _ _
+  exact abs_le.mpr ⟨by linarith, by linarith⟩
 
 /-- **FY Theorem 2.7, necessity**: the autocovariance function of a weakly stationary
 process is positive semidefinite (`Σᵢⱼ aᵢaⱼ γ(tᵢ − tⱼ) = Var(Σᵢ aᵢ X_{tᵢ}) ≥ 0`,
@@ -52,7 +64,18 @@ theorem IsStationary.acvf_posSemidef [IsProbabilityMeasure μ] (h : IsStationary
     -- LEAN-ONLY: coordinate random variables are measurable; implicit in FY
     (hmeas : ∀ t, Measurable (X t)) :
     IsPosSemidefSeq (acvf X μ) := by
-  sorry
+  intro n t a
+  -- `Σᵢⱼ aᵢaⱼ γ(tᵢ − tⱼ) = Var(Σᵢ aᵢ X_{tᵢ}) ≥ 0` (FY eq. (2.17)).
+  have hmem : ∀ i : Fin n, MemLp (a i • X (t i)) 2 μ := fun i => (h.memLp (t i)).const_smul (a i)
+  have hcov : ∀ i j : Fin n,
+      cov[a i • X (t i), a j • X (t j); μ] = a i * a j * acvf X μ (t i - t j) := by
+    intro i j
+    rw [covariance_smul_left, covariance_smul_right, h.cov_eq_acvf (t i) (t j), mul_assoc]
+  calc (0 : ℝ)
+      ≤ Var[∑ i, a i • X (t i); μ] := variance_nonneg _ _
+    _ = ∑ i, ∑ j, cov[a i • X (t i), a j • X (t j); μ] := variance_sum hmem
+    _ = ∑ i, ∑ j, a i * a j * acvf X μ (t i - t j) :=
+        Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => hcov i j
 
 /-- **FY Theorem 2.7, sufficiency — DEBT** (proof scheduled for the Gaussian batch:
 construct a stationary Gaussian process with the prescribed covariance via Kolmogorov
@@ -70,12 +93,18 @@ theorem exists_stationary_of_isPosSemidefSeq (γ : ℤ → ℝ)
 
 /-- `ρ(0) = 1` when `γ(0) ≠ 0`. -/
 theorem IsStationary.acf_zero (h : IsStationary X μ) (h0 : acvf X μ 0 ≠ 0) :
-    acf X μ 0 = 1 := by
-  sorry
+    acf X μ 0 = 1 :=
+  div_self h0
 
 /-- `|ρ(k)| ≤ 1` (FY §2.2.1). -/
 theorem IsStationary.abs_acf_le_one [IsProbabilityMeasure μ] (h : IsStationary X μ)
     (k : ℤ) : |acf X μ k| ≤ 1 := by
-  sorry
+  rcases eq_or_lt_of_le h.acvf_zero_nonneg with h0 | h0
+  · -- Degenerate case `γ(0) = 0`: `ρ(k) = γ(k)/0 = 0` by Lean's division convention.
+    have : acf X μ k = 0 := by rw [acf, ← h0, div_zero]
+    rw [this, abs_zero]
+    norm_num
+  · rw [acf, abs_div, abs_of_pos h0, div_le_one h0]
+    exact h.abs_acvf_le k
 
 end StatLean.TimeSeries
