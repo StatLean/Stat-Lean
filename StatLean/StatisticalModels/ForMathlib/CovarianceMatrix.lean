@@ -136,6 +136,27 @@ theorem covMatrix_multivariateGaussian [DecidableEq ι] (m : EuclideanSpace ℝ 
   ext i j
   exact covariance_eval_multivariateGaussian hS i j
 
+/-- The matrix action on Euclidean space as a continuous linear map (finite dimension). -/
+private noncomputable def matrixCLM [DecidableEq ι₁] (A : Matrix ι₂ ι₁ ℝ) :
+    EuclideanSpace ℝ ι₁ →L[ℝ] EuclideanSpace ℝ ι₂ :=
+  LinearMap.toContinuousLinearMap (Matrix.toEuclideanLin (𝕜 := ℝ) A)
+
+private theorem matrixCLM_apply [DecidableEq ι₁] (A : Matrix ι₂ ι₁ ℝ)
+    (x : EuclideanSpace ℝ ι₁) :
+    matrixCLM A x = Matrix.toEuclideanLin (𝕜 := ℝ) A x := rfl
+
+/-- Coordinates of the matrix action are the row sums. -/
+private theorem toEuclideanLin_coord [DecidableEq ι₁] (A : Matrix ι₂ ι₁ ℝ)
+    (x : EuclideanSpace ℝ ι₁) (k : ι₂) :
+    (Matrix.toEuclideanLin (𝕜 := ℝ) A x) k = ∑ l, A k l * x l := by
+  simp [Matrix.toEuclideanLin_apply, Matrix.mulVec, dotProduct]
+
+/-- Coordinate evaluation on the target of a measurable map is a.e.-strongly measurable. -/
+private theorem aesm_eval {α : Type*} [MeasurableSpace α] {ν : Measure α}
+    {F : α → EuclideanSpace ℝ ι} (k : ι) :
+    AEStronglyMeasurable (fun y : EuclideanSpace ℝ ι => y k) (ν.map F) :=
+  (EuclideanSpace.proj (𝕜 := ℝ) k).continuous.aestronglyMeasurable
+
 /-- **Mean of an affine pushforward**: `E[A x + b] = A (E x) + b` (And58 Ch. 2). -/
 theorem meanVec_map_affine [DecidableEq ι₁] (μ : Measure (EuclideanSpace ℝ ι₁))
     [IsProbabilityMeasure μ]
@@ -144,7 +165,20 @@ theorem meanVec_map_affine [DecidableEq ι₁] (μ : Measure (EuclideanSpace ℝ
     (h1 : Integrable id μ) :
     meanVec (μ.map fun x => Matrix.toEuclideanLin (𝕜 := ℝ) A x + b)
       = Matrix.toEuclideanLin (𝕜 := ℝ) A (meanVec μ) + b := by
-  sorry
+  have hAint : Integrable (fun x => matrixCLM A x) μ :=
+    (matrixCLM A).integrable_comp h1
+  have hmap : ∫ y : EuclideanSpace ℝ ι₂, y
+        ∂(μ.map fun x => Matrix.toEuclideanLin (𝕜 := ℝ) A x + b)
+      = ∫ x, (Matrix.toEuclideanLin (𝕜 := ℝ) A x + b) ∂μ :=
+    integral_map (by fun_prop) (by fun_prop)
+  have hsplit : ∫ x, (Matrix.toEuclideanLin (𝕜 := ℝ) A x + b) ∂μ
+      = (∫ x, matrixCLM A x ∂μ) + ∫ _x : EuclideanSpace ℝ ι₁, b ∂μ :=
+    integral_add hAint (integrable_const b)
+  have h1' : Integrable (fun x : EuclideanSpace ℝ ι₁ => x) μ := h1
+  have hcomm : ∫ x, matrixCLM A x ∂μ = matrixCLM A (∫ x, x ∂μ) :=
+    (matrixCLM A).integral_comp_comm h1'
+  rw [meanVec, hmap, hsplit, hcomm, integral_const]
+  simp [meanVec, matrixCLM_apply]
 
 /-- **Covariance of an affine pushforward**: `Cov(A x + b) = A Σ Aᵀ` (And58 Ch. 2). -/
 theorem covMatrix_map_affine [DecidableEq ι₁] (μ : Measure (EuclideanSpace ℝ ι₁))
@@ -154,7 +188,19 @@ theorem covMatrix_map_affine [DecidableEq ι₁] (μ : Measure (EuclideanSpace �
     (hL2 : MemLp id 2 μ) :
     covMatrix (μ.map fun x => Matrix.toEuclideanLin (𝕜 := ℝ) A x + b)
       = A * covMatrix μ * Aᵀ := by
-  sorry
+  have hmem : ∀ (k : ι₂) (l : ι₁), MemLp (fun x : EuclideanSpace ℝ ι₁ => A k l * x l) 2 μ :=
+    fun k l => (memLp_eval hL2 l).const_mul (A k l)
+  have hrow : ∀ k : ι₂, Integrable (fun x : EuclideanSpace ℝ ι₁ => ∑ l, A k l * x l) μ :=
+    fun k => (memLp_finset_sum Finset.univ fun l _ => hmem k l).integrable (by norm_num)
+  ext i j
+  rw [covMatrix_apply, covariance_map_fun (aesm_eval i) (aesm_eval j) (by fun_prop)]
+  simp only [PiLp.add_apply, toEuclideanLin_coord]
+  rw [covariance_add_const_left (hrow i), covariance_add_const_right (hrow j),
+    covariance_fun_sum_fun_sum (fun l => hmem i l) (fun l => hmem j l)]
+  simp only [covariance_const_mul_left, covariance_const_mul_right, ← covMatrix_apply,
+    Matrix.mul_apply, Matrix.transpose_apply, Finset.sum_mul]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun k _ => Finset.sum_congr rfl fun l _ => by ring
 
 /-- **Additivity under independence (product form)**: the covariance of a sum of linear images
 of the two independent coordinates of a product law is the sum of the transported covariances
