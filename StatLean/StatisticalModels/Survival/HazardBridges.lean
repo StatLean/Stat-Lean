@@ -40,16 +40,88 @@ mathematics; its measure-hazard formulation and the warning that it FAILS with a
 (whence the product integral) is emphasized by Gill–Johansen (1990) and ABGK §II.6.
 -/
 
-open MeasureTheory Set
+open MeasureTheory Set Filter Topology
 open scoped ENNReal
 
 namespace StatLean.StatisticalModels.Survival
+
+open ProbabilityTheory in
+/-- Left-continuity of the CDF of an atomless law: the left limit is the value. -/
+private lemma leftLim_cdf_eq (μ : Measure ℝ) [IsProbabilityMeasure μ] [NoAtoms μ] (a : ℝ) :
+    Function.leftLim (cdf μ) a = cdf μ a := by
+  have h := (cdf μ).measure_singleton a
+  rw [measure_cdf μ, MeasureTheory.measure_singleton] at h
+  have h1 : cdf μ a - Function.leftLim (cdf μ) a ≤ 0 := ENNReal.ofReal_eq_zero.1 h.symm
+  have h2 : Function.leftLim (cdf μ) a ≤ cdf μ a := (monotone_cdf μ).leftLim_le le_rfl
+  linarith
 
 /-- **Probability integral transform** (reusable brick): an atomless probability law on ℝ
 pushed through its own CDF is uniform on `(0, 1]`. -/
 theorem map_cdf_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasure μ] [NoAtoms μ] :
     μ.map (fun t => ProbabilityTheory.cdf μ t) = volume.restrict (Ioc (0 : ℝ) 1) := by
-  sorry
+  have hmono := ProbabilityTheory.monotone_cdf μ
+  have hmeas : Measurable (fun t => ProbabilityTheory.cdf μ t) := hmono.measurable
+  haveI : IsProbabilityMeasure (μ.map (fun t => ProbabilityTheory.cdf μ t)) :=
+    Measure.isProbabilityMeasure_map hmeas.aemeasurable
+  refine Measure.ext_of_Iic _ _ fun u => ?_
+  have hRHS : (volume.restrict (Ioc (0 : ℝ) 1)) (Iic u) = ENNReal.ofReal (min u 1) := by
+    rw [Measure.restrict_apply measurableSet_Iic]
+    have hset : Iic u ∩ Ioc (0 : ℝ) 1 = Ioc 0 (min u 1) := by
+      ext x
+      simp only [mem_inter_iff, mem_Iic, mem_Ioc, le_min_iff]
+      tauto
+    rw [hset, Real.volume_Ioc, sub_zero]
+  rw [hRHS, Measure.map_apply hmeas measurableSet_Iic]
+  set A : Set ℝ := (fun t => ProbabilityTheory.cdf μ t) ⁻¹' Iic u with hAdef
+  have hmemA : ∀ x, x ∈ A ↔ ProbabilityTheory.cdf μ x ≤ u := fun _ => Iff.rfl
+  rcases le_or_gt 1 u with hu1 | hu1
+  · have hAu : A = univ :=
+      eq_univ_of_forall fun x => (hmemA x).2 ((ProbabilityTheory.cdf_le_one μ x).trans hu1)
+    rw [hAu, measure_univ, min_eq_right hu1, ENNReal.ofReal_one]
+  rcases lt_or_ge u 0 with hu0 | hu0
+  · have hAe : A = ∅ :=
+      eq_empty_of_forall_notMem fun x hx =>
+        absurd ((hmemA x).1 hx) (not_le.2 (hu0.trans_le (ProbabilityTheory.cdf_nonneg μ x)))
+    rw [hAe, measure_empty, min_eq_left hu1.le, ENNReal.ofReal_eq_zero.2 hu0.le]
+  rw [min_eq_left hu1.le]
+  rcases eq_empty_or_nonempty A with hAe | hAne
+  · have hu' : u ≤ 0 := by
+      by_contra hcon
+      push_neg at hcon
+      obtain ⟨x, hx⟩ :=
+        ((ProbabilityTheory.tendsto_cdf_atBot μ).eventually (eventually_lt_nhds hcon)).exists
+      have hxA : x ∈ A := (hmemA x).2 hx.le
+      rw [hAe] at hxA
+      exact hxA
+    rw [hAe, measure_empty, le_antisymm hu' hu0, ENNReal.ofReal_zero]
+  obtain ⟨x₀, hx₀⟩ :=
+    ((ProbabilityTheory.tendsto_cdf_atTop μ).eventually (eventually_gt_nhds hu1)).exists
+  have hbdd : BddAbove A := by
+    refine ⟨x₀, fun x hx => ?_⟩
+    by_contra hcon
+    push_neg at hcon
+    exact absurd ((hmemA x).1 hx) (not_le.2 (hx₀.trans_le (hmono hcon.le)))
+  set a := sSup A with hadef
+  have hIio : Iio a ⊆ A := by
+    intro x hx
+    obtain ⟨y, hy, hxy⟩ := exists_lt_of_lt_csSup hAne hx
+    exact (hmemA x).2 ((hmono hxy.le).trans ((hmemA y).1 hy))
+  have hAmeas : μ A = μ (Iic a) := by
+    refine le_antisymm (measure_mono fun x hx => le_csSup hbdd hx) ?_
+    calc μ (Iic a) = μ (Iio a) := (measure_congr Iio_ae_eq_Iic).symm
+      _ ≤ μ A := measure_mono hIio
+  have hcdfa : ProbabilityTheory.cdf μ a = u := by
+    refine le_antisymm ?_ ?_
+    · rw [← leftLim_cdf_eq μ a]
+      refine le_of_tendsto (hmono.tendsto_leftLim a) ?_
+      filter_upwards [self_mem_nhdsWithin] with x hx using (hmemA x).1 (hIio hx)
+    · refine ge_of_tendsto (((ProbabilityTheory.cdf μ).right_continuous a).mono
+        Ioi_subset_Ici_self) ?_
+      filter_upwards [self_mem_nhdsWithin] with x hx
+      by_contra hcon
+      push_neg at hcon
+      exact absurd (le_csSup hbdd ((hmemA x).2 hcon.le)) (not_le.2 hx)
+  rw [hAmeas, ← ProbabilityTheory.ofReal_cdf μ a, hcdfa]
 
 /-- **S4.1, continuous bridge**: for an atomless event-time law, where survival is positive,
 `Λ(0, t] = −log S(t)` (ABGK §II.1; Kalbfleisch–Prentice §1.2). -/
@@ -72,7 +144,10 @@ theorem survivalReal_eq_exp_neg_cumHazard (μ : Measure ℝ)
     -- USER-INPUT: positive survival; ABGK §II.1
     (ht : survival μ t ≠ 0) :
     survivalReal μ t = Real.exp (-(cumHazard μ (Ioc 0 t)).toReal) := by
-  sorry
+  haveI := hev.1
+  have hpos : 0 < survivalReal μ t :=
+    ENNReal.toReal_pos ht (measure_ne_top _ _)
+  rw [cumHazard_Ioc_eq_neg_log μ hev ht, neg_neg, Real.exp_log hpos]
 
 /-- The cumulative hazard of an atomless law is finite up to any time with positive
 survival (the `toReal` in S4.1 is honest). -/
@@ -84,7 +159,11 @@ theorem cumHazard_Ioc_lt_top (μ : Measure ℝ)
     -- USER-INPUT: positive survival; ABGK §II.1
     (ht : survival μ t ≠ 0) :
     cumHazard μ (Ioc 0 t) < ⊤ := by
-  sorry
+  haveI := hev.1
+  have hIci : μ (Ici t) ≠ 0 := fun h => ht (measure_mono_null Ioi_subset_Ici_self h)
+  calc cumHazard μ (Ioc 0 t) ≤ cumHazard μ (Iic t) := measure_mono Ioc_subset_Iic_self
+    _ ≤ (μ (Ici t))⁻¹ := cumHazard_Iic_le μ t
+    _ < ⊤ := ENNReal.inv_lt_top.2 (pos_iff_ne_zero.2 hIci)
 
 /-- **S4.2, discrete bridge**: for an event-time law whose mass below `t` sits on the finite
 set `E`, the survival function is the product of one-minus-hazard-jumps —
