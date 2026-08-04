@@ -16,6 +16,8 @@ import StatLean.StatisticalModels.Coarsening.Defs
 import StatLean.StatisticalModels.Coarsening.Basic
 import StatLean.StatisticalModels.Coarsening.IPW
 import StatLean.StatisticalModels.Coarsening.Attenuation
+import StatLean.StatisticalModels.Coarsening.Ignorability
+import StatLean.StatisticalModels.Coarsening.CARBridge
 import StatLean.StatisticalModels.Longitudinal.Defs
 import StatLean.StatisticalModels.Longitudinal.GEE
 import StatLean.StatisticalModels.Adapters.ParametricFamily
