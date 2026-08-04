@@ -307,8 +307,7 @@ theorem isSubEventTimeLaw_kaplanMeierMeasure (d : Fin n → ℝ × Bool)
       StieltjesFunction.measure_univ _ (tendsto_kaplanMeierSF_atBot d)
         (tendsto_kaplanMeierSF_atTop d)]
     refine ENNReal.ofReal_le_one.2 ?_
-    have := (prod_one_sub_naJump_mem_Icc d (eventTimes d)).1
-    simp only [kmLimit] at *
+    have hlim : (0 : ℝ) ≤ kmLimit d := (prod_one_sub_naJump_mem_Icc d (eventTimes d)).1
     linarith
   · rw [kaplanMeierMeasure,
       StieltjesFunction.measure_Iio _ (tendsto_kaplanMeierSF_atBot d) 0,
