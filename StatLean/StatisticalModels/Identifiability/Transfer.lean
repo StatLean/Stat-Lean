@@ -52,69 +52,68 @@ variable {Θ Φ Γ : Type*} {𝓧 𝓨 : Type*} [MeasurableSpace 𝓧] [Measurab
 identification harder; a target identified after processing was identified before. -/
 theorem identifiesTarget_of_comp {P : Θ → Measure 𝓧} {ψ : Θ → Γ}
     (F : Measure 𝓧 → Measure 𝓨) (h : IdentifiesTarget (fun θ => F (P θ)) ψ) :
-    IdentifiesTarget P ψ := by
-  sorry
+    IdentifiesTarget P ψ :=
+  fun _ _ hEq => h (congrArg F hEq)
 
 /-- The law functional represents the estimand on the model range. -/
 theorem lawFunctional_comp {P : Θ → Measure 𝓧} {ψ : Θ → Γ} [Nonempty Γ]
     (h : IdentifiesTarget P ψ) (θ : Θ) :
-    lawFunctional P ψ (P θ) = ψ θ := by
-  sorry
+    lawFunctional P ψ (P θ) = ψ θ :=
+  Function.FactorsThrough.extend_apply h _ θ
 
 /-- Conversely, any representation of the estimand as a functional of the law certifies
 target identifiability. -/
 theorem identifiesTarget_of_rep {P : Θ → Measure 𝓧} {ψ : Θ → Γ} (Ψ : Measure 𝓧 → Γ)
-    (h : ∀ θ, Ψ (P θ) = ψ θ) : IdentifiesTarget P ψ := by
-  sorry
+    (h : ∀ θ, Ψ (P θ) = ψ θ) : IdentifiesTarget P ψ :=
+  fun θ₁ θ₂ hEq => by rw [← h θ₁, ← h θ₂, hEq]
 
 /-- Model identifiability is target identifiability of the identity estimand. -/
 theorem identifiable_iff_identifiesTarget_id {P : Θ → Measure 𝓧} :
-    Identifiable P ↔ IdentifiesTarget P id := by
-  sorry
+    Identifiable P ↔ IdentifiesTarget P id := Iff.rfl
 
 /-! ## Reparameterization and restriction (forward only) -/
 
 /-- Identified targets pull back along any reparameterization. The converse is false: a
 submodel can identify a target the full model does not. -/
 theorem identifiesTarget_comp {P : Θ → Measure 𝓧} {ψ : Θ → Γ} (g : Φ → Θ)
-    (h : IdentifiesTarget P ψ) : IdentifiesTarget (P ∘ g) (ψ ∘ g) := by
-  sorry
+    (h : IdentifiesTarget P ψ) : IdentifiesTarget (P ∘ g) (ψ ∘ g) :=
+  fun _ _ hEq => h hEq
 
 /-- Identifiability pulls back along injective reparameterizations (in particular along
 `Subtype.val`, i.e. restriction to a submodel). -/
 theorem identifiable_comp_of_injective {P : Θ → Measure 𝓧} {g : Φ → Θ}
-    (hg : Function.Injective g) (h : Identifiable P) : Identifiable (P ∘ g) := by
-  sorry
+    (hg : Function.Injective g) (h : Identifiable P) : Identifiable (P ∘ g) :=
+  fun _ _ hEq => hg (h hEq)
 
 /-- **Semiparametric section**: a target identified on `Θ = Ψ × Η` stays identified on every
 nuisance section `η ↦ P (ψ₀, η)` (instance of `identifiesTarget_comp` at `g = (ψ₀, ·)`). -/
 theorem identifiesTarget_section {Ψ' Η : Type*} {P : Ψ' × Η → Measure 𝓧} {ψ : Ψ' × Η → Γ}
     (h : IdentifiesTarget P ψ) (ψ₀ : Ψ') :
-    IdentifiesTarget (fun η => P (ψ₀, η)) (fun η => ψ (ψ₀, η)) := by
-  sorry
+    IdentifiesTarget (fun η => P (ψ₀, η)) (fun η => ψ (ψ₀, η)) :=
+  fun _ _ hEq => h hEq
 
 /-! ## Coarsening destroys, never creates -/
 
 /-- A target identified from the law of a statistic was identified from the full data. -/
 theorem identifiesTarget_of_pushforward {P : Θ → Measure 𝓧} {ψ : Θ → Γ} (T : 𝓧 → 𝓨)
-    (h : IdentifiesTarget (pushforward P T) ψ) : IdentifiesTarget P ψ := by
-  sorry
+    (h : IdentifiesTarget (pushforward P T) ψ) : IdentifiesTarget P ψ :=
+  identifiesTarget_of_comp (fun Q => Q.map T) h
 
 /-- A target identified from data observed through a mechanism `κ` was identified from the
 full data. -/
 theorem identifiesTarget_of_observe {P : Θ → Measure 𝓧} {ψ : Θ → Γ} (κ : Kernel 𝓧 𝓨)
-    (h : IdentifiesTarget (observe P κ) ψ) : IdentifiesTarget P ψ := by
-  sorry
+    (h : IdentifiesTarget (observe P κ) ψ) : IdentifiesTarget P ψ :=
+  identifiesTarget_of_comp (fun Q => κ ∘ₘ Q) h
 
 /-- Identifiability from the coarsened model implies identifiability from the full model. -/
 theorem identifiable_of_pushforward {P : Θ → Measure 𝓧} (T : 𝓧 → 𝓨)
-    (h : Identifiable (pushforward P T)) : Identifiable P := by
-  sorry
+    (h : Identifiable (pushforward P T)) : Identifiable P :=
+  identifiesTarget_of_comp (fun Q => Q.map T) h
 
 /-- Identifiability from the observed model implies identifiability from the full model. -/
 theorem identifiable_of_observe {P : Θ → Measure 𝓧} (κ : Kernel 𝓧 𝓨)
-    (h : Identifiable (observe P κ)) : Identifiable P := by
-  sorry
+    (h : Identifiable (observe P κ)) : Identifiable P :=
+  identifiesTarget_of_comp (fun Q => κ ∘ₘ Q) h
 
 /-! ## Replication is lossless -/
 
@@ -124,7 +123,9 @@ theorem identifiable_iid_iff {P : Θ → Measure 𝓧} [∀ θ, IsProbabilityMea
     -- one-point law and the forward direction is false; TPE2 §1.1
     (hn : n ≠ 0) :
     Identifiable (iid P n) ↔ Identifiable P := by
-  sorry
+  refine ⟨identifiesTarget_of_comp (fun Q => Measure.pi fun _ : Fin n => Q), fun h θ₁ θ₂ hEq => ?_⟩
+  have key := congrFun (pushforward_iid_eval P (⟨0, Nat.pos_of_ne_zero hn⟩ : Fin n))
+  exact h ((key θ₁).symm.trans (by rw [pushforward, hEq]; exact key θ₂))
 
 /-- Target version of `identifiable_iid_iff`. -/
 theorem identifiesTarget_iid_iff {P : Θ → Measure 𝓧} {ψ : Θ → Γ}
@@ -132,12 +133,17 @@ theorem identifiesTarget_iid_iff {P : Θ → Measure 𝓧} {ψ : Θ → Γ}
     -- USER-INPUT: at least one observation; TPE2 §1.1
     (hn : n ≠ 0) :
     IdentifiesTarget (iid P n) ψ ↔ IdentifiesTarget P ψ := by
-  sorry
+  refine ⟨identifiesTarget_of_comp (fun Q => Measure.pi fun _ : Fin n => Q), fun h θ₁ θ₂ hEq => ?_⟩
+  have key := congrFun (pushforward_iid_eval P (⟨0, Nat.pos_of_ne_zero hn⟩ : Fin n))
+  exact h ((key θ₁).symm.trans (by rw [pushforward, hEq]; exact key θ₂))
 
 /-- The infinite-sequence model preserves identifiability — an iff. -/
 theorem identifiable_iidSeq_iff {P : Θ → Measure 𝓧} [∀ θ, IsProbabilityMeasure (P θ)] :
     Identifiable (iidSeq P) ↔ Identifiable P := by
-  sorry
+  refine ⟨identifiesTarget_of_comp (fun Q => Measure.infinitePi fun _ : ℕ => Q),
+    fun h θ₁ θ₂ hEq => ?_⟩
+  have key := congrFun (pushforward_iidSeq_eval P 0)
+  exact h ((key θ₁).symm.trans (by rw [pushforward, hEq]; exact key θ₂))
 
 /-! ## Constraint models -/
 
@@ -145,18 +151,22 @@ theorem identifiable_iidSeq_iff {P : Θ → Measure 𝓧} [∀ θ, IsProbability
 identifiability. -/
 theorem separatesTarget_singletonFibers {P : Θ → Measure 𝓧} {ψ : Θ → Γ} :
     SeparatesTarget (singletonFibers P) ψ ↔ IdentifiesTarget P ψ := by
-  sorry
+  constructor
+  · exact fun h _ _ hEq => h ⟨_, rfl, hEq⟩
+  · rintro h θ₁ θ₂ ⟨Q, hQ₁, hQ₂⟩
+    exact h (hQ₁.symm.trans hQ₂)
 
 /-- Singleton fibers are feasible. -/
 theorem fibersNonempty_singletonFibers (P : Θ → Measure 𝓧) :
-    FibersNonempty (singletonFibers P) := by
-  sorry
+    FibersNonempty (singletonFibers P) :=
+  fun θ => ⟨P θ, rfl⟩
 
 /-- Separation transfers back from the observed constraint model (image fibers under a
 θ-free observation mechanism). -/
 theorem separatesTarget_of_observe {C : Θ → Set (Measure 𝓧)} {ψ : Θ → Γ} (κ : Kernel 𝓧 𝓨)
     (h : SeparatesTarget (fun θ => (fun Q => κ ∘ₘ Q) '' C θ) ψ) :
     SeparatesTarget C ψ := by
-  sorry
+  rintro θ₁ θ₂ ⟨Q, hQ₁, hQ₂⟩
+  exact h ⟨κ ∘ₘ Q, ⟨Q, hQ₁, rfl⟩, ⟨Q, hQ₂, rfl⟩⟩
 
 end StatLean.StatisticalModels
