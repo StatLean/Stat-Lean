@@ -155,7 +155,41 @@ theorem causeSubLaw_le (P : Measure (ℝ × Option (Fin k))) (j : Fin k) {A : Se
 cumulative hazards sum to the all-cause crude hazard. -/
 theorem sum_causeSpecificCumHazard (P : Measure (ℝ × Option (Fin k))) [IsFiniteMeasure P] :
     ∑ j : Fin k, causeSpecificCumHazard P j = allCauseCumHazard P := by
-  sorry
+  -- The cause slices are disjoint and exhaust `{κ ≠ none}`, so the sub-laws add up.
+  have hsub : ∑ j : Fin k, causeSubLaw P j = allCauseSubLaw P := by
+    refine Measure.ext fun A hA => ?_
+    have hAm : MeasurableSet ((Prod.fst : ℝ × Option (Fin k) → ℝ) ⁻¹' A) := measurable_fst hA
+    have hSm : ∀ j : Fin k,
+        MeasurableSet (Prod.fst ⁻¹' A ∩ {p : ℝ × Option (Fin k) | p.2 = some j}) := fun j =>
+      hAm.inter (measurable_snd (measurableSet_mark {some j}))
+    have hunion : ⋃ j ∈ (Finset.univ : Finset (Fin k)),
+        (Prod.fst ⁻¹' A ∩ {p : ℝ × Option (Fin k) | p.2 = some j})
+        = Prod.fst ⁻¹' A ∩ {p : ℝ × Option (Fin k) | p.2 ≠ none} := by
+      ext p
+      simp only [mem_iUnion, Finset.mem_univ, iUnion_true, mem_inter_iff, mem_setOf_eq,
+        Set.mem_preimage]
+      exact ⟨fun ⟨j, h1, h2⟩ => ⟨h1, by simp [h2]⟩,
+        fun ⟨h1, h2⟩ => by obtain ⟨j, hj⟩ := Option.ne_none_iff_exists'.1 h2; exact ⟨j, h1, hj⟩⟩
+    have hdisj : Set.PairwiseDisjoint (↑(Finset.univ : Finset (Fin k)) : Set (Fin k))
+        fun j => Prod.fst ⁻¹' A ∩ {p : ℝ × Option (Fin k) | p.2 = some j} := by
+      intro i _ j _ hij
+      refine Set.disjoint_left.2 fun p hp hq => hij ?_
+      have : (some i : Option (Fin k)) = some j := hp.2 ▸ hq.2
+      exact Option.some_injective _ this
+    rw [Measure.finset_sum_apply, allCauseSubLaw, Measure.map_apply measurable_fst hA,
+      Measure.restrict_apply hAm, ← hunion, measure_biUnion_finset hdisj fun j _ => hSm j]
+    exact Finset.sum_congr rfl fun j _ => by
+      rw [causeSubLaw, Measure.map_apply measurable_fst hA, Measure.restrict_apply hAm]
+  -- `withDensity` is additive in the base measure; the density is the same for every cause.
+  have hwd : ∀ (s : Finset (Fin k)) (f : ℝ → ℝ≥0∞),
+      (∑ j ∈ s, causeSubLaw P j).withDensity f = ∑ j ∈ s, (causeSubLaw P j).withDensity f := by
+    intro s f
+    induction s using Finset.induction with
+    | empty => simp
+    | insert i s hi ih =>
+      rw [Finset.sum_insert hi, Finset.sum_insert hi, withDensity_add_measure, ih]
+  rw [allCauseCumHazard, ← hsub, hwd]
+  rfl
 
 /-- **S6.2, the exact CIF identity** `F_j(dt) = S(t^-) Λ_j(dt)` in measure form
 (ABGK §IV.4): recovering the sub-distribution from its cause-specific hazard. -/
