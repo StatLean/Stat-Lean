@@ -70,16 +70,29 @@ theorem crossCovMatrix_apply (μ : Measure Ω) (f : Ω → EuclideanSpace ℝ ι
     (g : Ω → EuclideanSpace ℝ ι₂) (i : ι₁) (j : ι₂) :
     crossCovMatrix μ f g i j = cov[fun ω => f ω i, fun ω => g ω j; μ] := rfl
 
+/-- Coordinate evaluations inherit the second moment of the identity: `fun x ↦ x i` is the
+coordinate functional applied to `id`. -/
+private theorem memLp_eval {μ : Measure (EuclideanSpace ℝ ι)} (hL2 : MemLp id 2 μ) (i : ι) :
+    MemLp (fun x : EuclideanSpace ℝ ι => x i) 2 μ :=
+  (EuclideanSpace.proj (𝕜 := ℝ) i).comp_memLp' hL2
+
+private theorem integrable_eval {μ : Measure (EuclideanSpace ℝ ι)} [IsFiniteMeasure μ]
+    (hL2 : MemLp id 2 μ) (i : ι) :
+    Integrable (fun x : EuclideanSpace ℝ ι => x i) μ :=
+  (memLp_eval hL2 i).integrable (by norm_num)
+
 /-- The covariance matrix is symmetric. -/
 theorem covMatrix_transpose (μ : Measure (EuclideanSpace ℝ ι)) :
     (covMatrix μ)ᵀ = covMatrix μ := by
-  sorry
+  ext i j
+  exact covariance_comm _ _
 
 /-- Cross-covariance transposes to the swapped cross-covariance. -/
 theorem crossCovMatrix_transpose (μ : Measure Ω) (f : Ω → EuclideanSpace ℝ ι₁)
     (g : Ω → EuclideanSpace ℝ ι₂) :
     (crossCovMatrix μ f g)ᵀ = crossCovMatrix μ g f := by
-  sorry
+  ext i j
+  exact covariance_comm _ _
 
 /-- **Positive semidefiniteness** of the covariance matrix (And58 Ch. 2): the quadratic form
 `uᵀ Σ u` is the variance of `⟪u, x⟫`. -/
@@ -87,15 +100,32 @@ theorem posSemidef_covMatrix (μ : Measure (EuclideanSpace ℝ ι)) [IsFiniteMea
     -- USER-INPUT: second moments; And58 Ch. 2
     (hL2 : MemLp id 2 μ) :
     (covMatrix μ).PosSemidef := by
-  sorry
+  refine Matrix.posSemidef_iff_dotProduct_mulVec.mpr ⟨?_, fun u => ?_⟩
+  · ext i j
+    simpa only [Matrix.conjTranspose_apply, star_trivial, covMatrix_apply] using
+      covariance_comm (fun x : EuclideanSpace ℝ ι => x j) (fun x : EuclideanSpace ℝ ι => x i)
+  · have hmem : ∀ i, MemLp (fun x : EuclideanSpace ℝ ι => u i * x i) 2 μ := fun i =>
+      (memLp_eval hL2 i).const_mul (u i)
+    have key : star u ⬝ᵥ (covMatrix μ *ᵥ u)
+        = cov[fun x : EuclideanSpace ℝ ι => ∑ i, u i * x i,
+              fun x : EuclideanSpace ℝ ι => ∑ j, u j * x j; μ] := by
+      rw [covariance_fun_sum_fun_sum hmem hmem]
+      simp only [dotProduct, Matrix.mulVec, Pi.star_apply, star_trivial,
+        covariance_const_mul_left, covariance_const_mul_right, covMatrix_apply,
+        Finset.mul_sum]
+      exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+    rw [key, covariance_self]
+    · exact variance_nonneg _ _
+    · exact (memLp_finset_sum Finset.univ fun i _ =>
+        hmem i).aestronglyMeasurable.aemeasurable
 
 /-- Mean vector of the multivariate Gaussian. -/
 theorem meanVec_multivariateGaussian [DecidableEq ι] (m : EuclideanSpace ℝ ι)
     (S : Matrix ι ι ℝ)
     -- USER-INPUT: a genuine covariance parameter; And58 Ch. 2
     (hS : S.PosSemidef) :
-    meanVec (multivariateGaussian m S) = m := by
-  sorry
+    meanVec (multivariateGaussian m S) = m :=
+  integral_id_multivariateGaussian
 
 /-- Covariance matrix of the multivariate Gaussian. -/
 theorem covMatrix_multivariateGaussian [DecidableEq ι] (m : EuclideanSpace ℝ ι)
@@ -103,7 +133,8 @@ theorem covMatrix_multivariateGaussian [DecidableEq ι] (m : EuclideanSpace ℝ 
     -- USER-INPUT: a genuine covariance parameter; And58 Ch. 2
     (hS : S.PosSemidef) :
     covMatrix (multivariateGaussian m S) = S := by
-  sorry
+  ext i j
+  exact covariance_eval_multivariateGaussian hS i j
 
 /-- **Mean of an affine pushforward**: `E[A x + b] = A (E x) + b` (And58 Ch. 2). -/
 theorem meanVec_map_affine [DecidableEq ι₁] (μ : Measure (EuclideanSpace ℝ ι₁))
