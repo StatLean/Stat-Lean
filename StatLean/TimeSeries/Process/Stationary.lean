@@ -38,12 +38,34 @@ theorem IsStrictlyStationary.identDistrib (h : IsStrictlyStationary X μ)
     -- LEAN-ONLY: coordinate random variables are measurable; implicit in FY
     (hmeas : ∀ t, Measurable (X t)) (s t : ℤ) :
     IdentDistrib (X s) (X t) μ μ := by
-  sorry
+  -- The `n = 1` instance of the definition, pushed forward along evaluation at `0`.
+  have key := h 1 (fun _ => s) (t - s)
+  have hst : s + (t - s) = t := by ring
+  simp only [hst] at key
+  have he : Measurable fun f : Fin 1 → ℝ => f 0 := measurable_pi_apply 0
+  have hFt : Measurable fun ω (_ : Fin 1) => X t ω := measurable_pi_lambda _ fun _ => hmeas t
+  have hFs : Measurable fun ω (_ : Fin 1) => X s ω := measurable_pi_lambda _ fun _ => hmeas s
+  have hmap : μ.map (X t) = μ.map (X s) := by
+    have := congrArg (fun ν : Measure (Fin 1 → ℝ) => ν.map fun f : Fin 1 → ℝ => f 0) key
+    simpa [Measure.map_map he hFt, Measure.map_map he hFs, Function.comp_def] using this
+  exact ⟨(hmeas s).aemeasurable, (hmeas t).aemeasurable, hmap.symm⟩
 
 /-- Strict stationarity is preserved by time shifts. -/
 theorem IsStrictlyStationary.shift (h : IsStrictlyStationary X μ) (k : ℤ) :
     IsStrictlyStationary (shift X k) μ := by
-  sorry
+  intro n t k'
+  have key := h n (fun i => t i + k) k'
+  -- `shift X k t = X (t + k)` is definitional, so the goal is the `h`-instance at the
+  -- shifted tuple `t + k` up to reassociating the two displacements.
+  change (μ.map fun ω (i : Fin n) => X (t i + k' + k) ω)
+      = μ.map fun ω (i : Fin n) => X (t i + k) ω
+  have e : (fun ω (i : Fin n) => X (t i + k' + k) ω)
+      = fun ω (i : Fin n) => X (t i + k + k') ω := by
+    funext ω i
+    congr 1
+    ring
+  rw [e]
+  exact key
 
 /-- **Strict + L² ⇒ weak** (FY §2.1.1, p. 30): a strictly stationary process with a
 square-integrable marginal is (weakly) stationary. -/
