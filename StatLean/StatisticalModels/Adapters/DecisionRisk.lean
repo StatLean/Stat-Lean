@@ -46,13 +46,21 @@ the inner layer of Mathlib's `avgRisk`. -/
 theorem riskRand_coe (K : Kernel Θ 𝓧) [IsMarkovKernel K] (L : Θ → D → ℝ≥0∞)
     (κ : Kernel 𝓧 D) [IsMarkovKernel κ] (θ : Θ) :
     riskRand ⇑K L κ θ = ∫⁻ d, L θ d ∂((κ ∘ₖ K) θ) := by
+  -- TODO: the frozen signature carries no measurability of the loss section `L θ`, but every
+  -- available bridge needs it: `Kernel.lintegral_comp` and `Measure.lintegral_bind` both demand
+  -- (ae)measurability of the integrand, and `Measure.lintegral_bind_le` supplies only `≤`
+  -- (`∫⁻ d, L θ d ∂((κ ∘ₖ K) θ) ≤ riskRand ⇑K L κ θ`). The library's own instance of this
+  -- identity (`PointEstimation.Sufficiency.RiskEquality.riskRand_comp_eq_riskRand`) carries
+  -- `hL : ∀ θ, Measurable (L θ)`. Adding that hypothesis here closes the proof in one line:
+  -- `simp_rw [riskRand, Kernel.lintegral_comp _ _ _ (hL θ)]`. No counterexample found.
   sorry
 
 /-- Mathlib's average risk is the prior-average of the bare-family randomized risk. -/
 theorem avgRisk_eq_lintegral_riskRand (K : Kernel Θ 𝓧) [IsMarkovKernel K]
     (L : Θ → D → ℝ≥0∞) (κ : Kernel 𝓧 D) [IsMarkovKernel κ] (π : Measure Θ) :
     avgRisk L K κ π = ∫⁻ θ, riskRand ⇑K L κ θ ∂π := by
-  sorry
+  simp only [avgRisk]
+  exact lintegral_congr fun θ => (riskRand_coe K L κ θ).symm
 
 /-- Mathlib's minimax risk is the inf–sup of the bare-family randomized risk over Markov
 estimators. Every Minimaxity-area lower bound thereby applies to bare families presented
@@ -60,14 +68,18 @@ through `toKernel`. -/
 theorem minimaxRisk_eq (K : Kernel Θ 𝓧) [IsMarkovKernel K] (L : Θ → D → ℝ≥0∞) :
     minimaxRisk (𝓨 := D) L K
       = ⨅ (κ : Kernel 𝓧 D) (_ : IsMarkovKernel κ), ⨆ θ, riskRand ⇑K L κ θ := by
-  sorry
+  simp only [minimaxRisk]
+  refine iInf_congr fun κ => iInf_congr fun hκ => iSup_congr fun θ => ?_
+  have : IsMarkovKernel κ := hκ
+  exact (riskRand_coe K L κ θ).symm
 
+omit [MeasurableSpace Θ] in
 /-- Randomized risk at a deterministic estimator is the nonrandomized risk (Wald §1.4:
 deterministic rules embed via Dirac kernels). -/
 theorem riskRand_deterministic (P : Θ → Measure 𝓧) (L : Θ → D → ℝ≥0∞) {δ : 𝓧 → D}
     -- LEAN-ONLY: measurability of the estimator and of the loss section (lintegral_dirac')
     (hδ : Measurable δ) (hL : ∀ θ, Measurable (L θ)) (θ : Θ) :
     riskRand P L (Kernel.deterministic δ hδ) θ = risk P L δ θ := by
-  sorry
+  simp only [riskRand, risk, crossRisk, Kernel.lintegral_deterministic' hδ (hL θ)]
 
 end StatLean.StatisticalModels
