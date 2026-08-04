@@ -1,5 +1,6 @@
 import StatLean.StatisticalModels.Gaussian.Marginal
 import Mathlib.Probability.Kernel.Disintegration.StandardBorel
+import Mathlib.Probability.Kernel.Disintegration.Unique
 
 /-!
 # Gaussian conditioning — the block conditional law
