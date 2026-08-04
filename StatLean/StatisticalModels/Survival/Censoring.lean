@@ -158,7 +158,28 @@ region where `Tsiatis75` nonidentifiability cannot bite). -/
 theorem crudeCumHazard_censoredLaw (μT μC : Measure ℝ) [IsProbabilityMeasure μT]
     [IsProbabilityMeasure μC] :
     crudeCumHazard (censoredLaw μT μC) = (cumHazard μT).restrict {t | 0 < μC (Ici t)} := by
-  sorry
+  have hmC : Measurable fun t : ℝ => μC (Ici t) :=
+    Antitone.measurable fun _ _ hab => measure_mono (Ici_subset_Ici.2 hab)
+  have hmT : Measurable fun t : ℝ => μT (Ici t) :=
+    Antitone.measurable fun _ _ hab => measure_mono (Ici_subset_Ici.2 hab)
+  have hS : MeasurableSet {t : ℝ | 0 < μC (Ici t)} := hmC measurableSet_Ioi
+  -- Right-hand side: restrict-of-`withDensity` is `withDensity` of the indicator density.
+  rw [cumHazard, restrict_withDensity hS, ← withDensity_indicator hS]
+  -- Left-hand side: S2.2 for the sub-law, S2.1 (`Ici`) for the at-risk denominator, then
+  -- merge the two `withDensity` layers.
+  rw [crudeCumHazard]
+  simp only [observedTimeLaw_censoredLaw_Ici]
+  rw [uncensoredSubLaw_censoredLaw, ← withDensity_mul _ hmC (hmT.mul hmC).inv]
+  congr 1
+  funext t
+  -- Pointwise: `a · (b·a)⁻¹ = b⁻¹` when `a ≠ 0`, and `= 0` when `a = 0` (`0 · ∞ = 0`).
+  rcases eq_or_ne (μC (Ici t)) 0 with h0 | h0
+  · rw [Pi.mul_apply, h0, zero_mul, indicator_of_notMem]
+    simp [h0]
+  · have htop : μC (Ici t) ≠ ⊤ := measure_ne_top μC _
+    rw [Pi.mul_apply, indicator_of_mem (by exact pos_iff_ne_zero.2 h0),
+      ENNReal.mul_inv (Or.inr htop) (Or.inr h0), ← mul_assoc, mul_comm (μC (Ici t)),
+      mul_assoc, ENNReal.mul_inv_cancel h0 htop, mul_one]
 
 /-- The uncensored sub-law is dominated by the observed-time law (LEAN-ONLY; the
 restrict-monotonicity workhorse for S2.3). -/
