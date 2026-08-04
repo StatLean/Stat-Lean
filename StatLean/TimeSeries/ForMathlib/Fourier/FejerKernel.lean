@@ -1,6 +1,7 @@
 import StatLean.TimeSeries.ForMathlib.PosSemidefSequence
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # Fejér–Cesàro sums of a sequence
@@ -57,23 +58,85 @@ theorem fejerSum_eq_weighted (γ : ℤ → ℝ) (n : ℕ) (ω : ℝ) :
           Complex.exp (-(Complex.I * (ω : ℂ) * (m : ℂ))) := by
   sorry
 
+/-- The Fejér double sum *is* the Hermitian quadratic form of `γ` at the time points
+`t j = j` with the coefficient vector `c j = e^{−iωj}` — the algebraic content of the
+book's variance computation. -/
+private theorem fejerSum_eq_hermitian (γ : ℤ → ℝ) (n : ℕ) (ω : ℝ) :
+    fejerSum γ n ω = (((2 * π * n)⁻¹ : ℝ) : ℂ) *
+      ∑ i : Fin n, ∑ j : Fin n,
+        Complex.exp (-(Complex.I * (ω : ℂ) * ((i : ℕ) : ℂ))) *
+            (starRingEnd ℂ) (Complex.exp (-(Complex.I * (ω : ℂ) * ((j : ℕ) : ℂ)))) *
+          (γ (((i : ℕ) : ℤ) - ((j : ℕ) : ℤ)) : ℂ) := by
+  rw [fejerSum]
+  congr 1
+  simp only [Finset.sum_range]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  have hconj : (starRingEnd ℂ) (Complex.exp (-(Complex.I * (ω : ℂ) * ((j : ℕ) : ℂ))))
+      = Complex.exp (Complex.I * (ω : ℂ) * ((j : ℕ) : ℂ)) := by
+    rw [← Complex.exp_conj]
+    congr 1
+    simp [Complex.conj_ofReal]
+  rw [hconj, ← Complex.exp_add]
+  have hexp : Complex.exp (-(Complex.I * (ω : ℂ) * ((((i : ℕ) : ℤ) - ((j : ℕ) : ℤ) : ℤ) : ℂ)))
+      = Complex.exp (-(Complex.I * (ω : ℂ) * ((i : ℕ) : ℂ)) + Complex.I * (ω : ℂ) * ((j : ℕ) : ℂ))
+      := by
+    congr 1
+    push_cast
+    ring
+  rw [hexp]
+  ring
+
 /-- For even `γ` the Fejér sum is real. -/
 theorem fejerSum_im (γ : ℤ → ℝ) (heven : ∀ k, γ (-k) = γ k) (n : ℕ) (ω : ℝ) :
     (fejerSum γ n ω).im = 0 := by
-  sorry
+  rw [fejerSum, Complex.im_ofReal_mul]
+  -- the double sum is fixed by conjugation: conjugating swaps `j` and `k`, and evenness
+  -- of `γ` together with `e^{iωm} = conj (e^{−iωm})` restores the summand
+  have hstar : (starRingEnd ℂ) (∑ j ∈ range n, ∑ k ∈ range n,
+        (γ ((j : ℤ) - (k : ℤ)) : ℂ) *
+          Complex.exp (-(Complex.I * (ω : ℂ) * (((j : ℤ) - (k : ℤ) : ℤ) : ℂ))))
+      = ∑ j ∈ range n, ∑ k ∈ range n,
+        (γ ((j : ℤ) - (k : ℤ)) : ℂ) *
+          Complex.exp (-(Complex.I * (ω : ℂ) * (((j : ℤ) - (k : ℤ) : ℤ) : ℂ))) := by
+    simp only [map_sum, map_mul, Complex.conj_ofReal, ← Complex.exp_conj]
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun k _ => ?_
+    have hsym : γ ((k : ℤ) - (j : ℤ)) = γ ((j : ℤ) - (k : ℤ)) := by rw [← neg_sub, heven]
+    rw [hsym]
+    congr 1
+    push_cast
+    simp only [map_neg, map_mul, map_sub, map_natCast, Complex.conj_I, Complex.conj_ofReal]
+    ring_nf
+  rw [Complex.conj_eq_iff_im.mp hstar, mul_zero]
 
 /-- **Fejér positivity**: for an even positive semidefinite `γ`, the Fejér sum is
 nonnegative (FY §2.7.4: `f_n(ω) = Var(ξ) ≥ 0`). -/
 theorem fejerSum_re_nonneg (γ : ℤ → ℝ) (h : IsPosSemidefSeq γ)
     (heven : ∀ k, γ (-k) = γ k) (n : ℕ) (ω : ℝ) :
     0 ≤ (fejerSum γ n ω).re := by
-  sorry
+  rw [fejerSum_eq_hermitian, Complex.re_ofReal_mul]
+  refine mul_nonneg (by positivity) ?_
+  exact h.complex_sum_re_nonneg heven (fun i => ((i : ℕ) : ℤ))
+    (fun i => Complex.exp (-(Complex.I * (ω : ℂ) * ((i : ℕ) : ℂ))))
 
 /-- Basic orthogonality on `[−π, π]`: `∫_{−π}^{π} e^{imω} dω = 0` for a nonzero integer
 `m` (the engine of FY eq. (2.71) and of the inversion computations of §2.3.2). -/
 theorem integral_exp_int_mul_I_eq_zero {m : ℤ} (hm : m ≠ 0) :
     ∫ ω in (-π : ℝ)..π, Complex.exp (Complex.I * (ω : ℂ) * (m : ℂ)) = 0 := by
-  sorry
+  have hmC : (m : ℂ) ≠ 0 := Int.cast_ne_zero.mpr hm
+  have hc : Complex.I * (m : ℂ) ≠ 0 := mul_ne_zero Complex.I_ne_zero hmC
+  have hrw : ∀ ω : ℝ, Complex.exp (Complex.I * (ω : ℂ) * (m : ℂ))
+      = Complex.exp (Complex.I * (m : ℂ) * (ω : ℂ)) := by
+    intro ω; ring_nf
+  simp_rw [hrw]
+  rw [integral_exp_mul_complex hc]
+  have hper : Complex.exp (Complex.I * (m : ℂ) * ((π : ℝ) : ℂ))
+      = Complex.exp (Complex.I * (m : ℂ) * (((-π : ℝ)) : ℂ)) := by
+    have hsplit : Complex.I * (m : ℂ) * ((π : ℝ) : ℂ)
+        = Complex.I * (m : ℂ) * (((-π : ℝ)) : ℂ) + (m : ℂ) * (2 * (π : ℝ) * Complex.I) := by
+      push_cast; ring
+    rw [hsplit, Complex.exp_add, Complex.exp_int_mul_two_pi_mul_I, mul_one]
+  rw [hper, sub_self, zero_div]
 
 /-- Trigonometric moments of the Fejér sum, in-range case (FY eq. (2.71)):
 `∫_{−π}^{π} e^{ijω} fejerSum γ n ω dω = ((n − |j|)/n) γ(j)` for `|j| < n`. -/
