@@ -8,6 +8,7 @@ import StatLean.Bayesian
 import StatLean.NonparametricStatistics
 import StatLean.PointEstimation
 import StatLean.HypothesisTesting
+import StatLean.StatisticalModels
 
 /-!
 # StatLean
@@ -34,6 +35,13 @@ theory, organized into per-area sublibraries.
   model choice, MCMC correctness, decision theory / minimax bridge, hierarchical +
   empirical Bayes (Robert, *The Bayesian Choice*; Gelman et al., *Bayesian Data
   Analysis*, 3rd ed.).
+* `StatLean.StatisticalModels` — statistical models as compositional structures:
+  the model calculus (observation/coarsening, latent marginalization, replication)
+  over bare families of laws, identifiability transfer, survival / event-history
+  (censoring, crude-vs-net hazards, Kaplan–Meier, Cox), Gaussian substrate
+  (covariance calculus, block conditioning), mixed effects, longitudinal / GEE,
+  and missing data (MAR, IPW, ignorability) with adapters to the other areas
+  (Andersen–Borgan–Gill–Keiding; Liang–Zeger; Rubin; Anderson).
 * `StatLean.NonparametricStatistics` — nonparametric estimation: kernel density
   estimation (pointwise and integrated risk, exact asymptotic MISE), local
   polynomial regression (pointwise/L²/sup-norm rates over Hölder classes), and

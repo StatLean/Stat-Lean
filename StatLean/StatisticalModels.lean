@@ -1,3 +1,4 @@
+import StatLean.StatisticalModels.ForMathlib.CovarianceMatrix
 import StatLean.StatisticalModels.Model.Defs
 import StatLean.StatisticalModels.Model.KernelAgreement
 import StatLean.StatisticalModels.Calculus.Defs
@@ -6,6 +7,17 @@ import StatLean.StatisticalModels.Calculus.Marginal
 import StatLean.StatisticalModels.Identifiability.Defs
 import StatLean.StatisticalModels.Identifiability.Transfer
 import StatLean.StatisticalModels.Constraint.Defs
+import StatLean.StatisticalModels.Gaussian.BlockIndex
+import StatLean.StatisticalModels.Survival.Defs
+import StatLean.StatisticalModels.Survival.Survival
+import StatLean.StatisticalModels.Survival.CumulativeHazard
+import StatLean.StatisticalModels.Survival.Censoring
+import StatLean.StatisticalModels.Coarsening.Defs
+import StatLean.StatisticalModels.Coarsening.Basic
+import StatLean.StatisticalModels.Coarsening.IPW
+import StatLean.StatisticalModels.Coarsening.Attenuation
+import StatLean.StatisticalModels.Longitudinal.Defs
+import StatLean.StatisticalModels.Longitudinal.GEE
 import StatLean.StatisticalModels.Adapters.ParametricFamily
 import StatLean.StatisticalModels.Adapters.Bayes
 import StatLean.StatisticalModels.Adapters.DecisionRisk
