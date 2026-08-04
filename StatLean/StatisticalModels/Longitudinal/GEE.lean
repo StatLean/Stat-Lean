@@ -132,7 +132,27 @@ theorem gee_unbiased (Q : Measure (LongitudinalRecord p m)) [IsProbabilityMeasur
       S.geeWeight β₀ tx.1 tx.2 k j)
     (k : Fin q) :
     ∫ r, S.geeScore β₀ r k ∂Q = 0 := by
-  sorry
+  have hm := covariateSigma_le p m
+  have hres : ∀ j, MemLp (fun r : LongitudinalRecord p m => S.geeResidual β₀ r j) 2 Q :=
+    fun j => (hY j).sub (hμ j)
+  have hint : ∀ j : Fin m, Integrable (fun r : LongitudinalRecord p m =>
+      S.geeWeight β₀ r.times r.x k j * S.geeResidual β₀ r j) Q :=
+    fun j => (hW k j).integrable_mul (hres j)
+  have hterm : ∀ j : Fin m,
+      ∫ r, S.geeWeight β₀ r.times r.x k j * S.geeResidual β₀ r j ∂Q = 0 := fun j =>
+    integral_mul_eq_zero_of_condExp_eq_zero hm
+      (covariateSigma_measurable_comp (hWmeas k j)).stronglyMeasurable
+      ((hres j).integrable one_le_two) (hint j)
+      (condExp_geeResidual_eq_zero Q S β₀ hmean (fun j => (hY j).integrable one_le_two)
+        (fun j => (hμ j).integrable one_le_two) j)
+  have hsum : ∀ r : LongitudinalRecord p m, S.geeScore β₀ r k
+      = ∑ j, S.geeWeight β₀ r.times r.x k j * S.geeResidual β₀ r j := fun _ => rfl
+  calc ∫ r, S.geeScore β₀ r k ∂Q
+      = ∫ r, ∑ j, S.geeWeight β₀ r.times r.x k j * S.geeResidual β₀ r j ∂Q := by
+        simp_rw [hsum]
+    _ = ∑ j, ∫ r, S.geeWeight β₀ r.times r.x k j * S.geeResidual β₀ r j ∂Q :=
+        integral_finset_sum _ fun j _ => hint j
+    _ = 0 := by simp [hterm]
 
 /-- **L1', the bounded-weights corollary** (hypotheses in the books' phrasing: bounded
 weights, integrable data), via `condExp` pull-out for bounded factors. -/
