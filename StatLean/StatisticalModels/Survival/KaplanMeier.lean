@@ -316,6 +316,102 @@ theorem isSubEventTimeLaw_kaplanMeierMeasure (d : Fin n → ℝ × Bool)
     rw [Finset.filter_eq_empty_iff.2 fun v hv => not_lt.2 (hEvent v hv)]
     simp
 
+/-- Under no censoring the risk set at `s` splits into the events at `s` and the strict
+future of `s`. -/
+private lemma atRisk_eq_add_of_no_censoring {d : Fin n → ℝ × Bool}
+    (hall : ∀ i, (d i).2 = true) (s : ℝ) :
+    atRisk d s = eventCount d s + (univ.filter fun i => s < (d i).1).card := by
+  rw [atRisk, eventCount]
+  rw [← Finset.card_union_of_disjoint]
+  · congr 1
+    ext i
+    simp only [Finset.mem_union, Finset.mem_filter, Finset.mem_univ, true_and, hall i,
+      and_true]
+    exact ⟨fun h => (lt_or_eq_of_le h).symm.imp Eq.symm id, fun h => h.elim (fun h => h.ge)
+      le_of_lt⟩
+  · refine Finset.disjoint_left.2 fun i hi hi' => ?_
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi hi'
+    exact absurd hi.1 (ne_of_gt hi')
+
+/-- **Telescoping** (`KM58 §1`): under no censoring, the product of Kaplan–Meier factors over
+any down-closed set `F` of event times is `#{i : T̃ᵢ ∉ F}/n`. -/
+private lemma prod_one_sub_naJump_of_no_censoring {d : Fin n → ℝ × Bool}
+    (hall : ∀ i, (d i).2 = true) (hn : n ≠ 0) :
+    ∀ (k : ℕ) (F : Finset ℝ), F.card = k → F ⊆ eventTimes d →
+      (∀ u ∈ eventTimes d, ∀ v ∈ F, u ≤ v → u ∈ F) →
+      ∏ s ∈ F, (1 - naJump d s) = ((univ.filter fun i => (d i).1 ∉ F).card : ℝ) / n := by
+  have hmemE : ∀ i, (d i).1 ∈ eventTimes d := fun i =>
+    Finset.mem_image.2 ⟨i, Finset.mem_filter.2 ⟨Finset.mem_univ i, hall i⟩, rfl⟩
+  have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn
+  intro k
+  induction k with
+  | zero =>
+    intro F hcard _ _
+    rw [Finset.card_eq_zero] at hcard
+    subst hcard
+    rw [Finset.prod_empty, Finset.filter_true_of_mem (fun i _ => Finset.notMem_empty _),
+      Finset.card_univ, Fintype.card_fin]
+    field_simp
+  | succ k ih =>
+    intro F hcard hsub hdc
+    have hne : F.Nonempty := Finset.card_pos.1 (by omega)
+    set s := F.max' hne with hs
+    have hsF : s ∈ F := F.max'_mem hne
+    have hsE : s ∈ eventTimes d := hsub hsF
+    -- the erased set is again down-closed, with one element fewer
+    have hcard' : (F.erase s).card = k := by
+      rw [Finset.card_erase_of_mem hsF, hcard]; rfl
+    have hsub' : F.erase s ⊆ eventTimes d := (Finset.erase_subset _ _).trans hsub
+    have hdc' : ∀ u ∈ eventTimes d, ∀ v ∈ F.erase s, u ≤ v → u ∈ F.erase s := by
+      intro u hu v hv huv
+      have hvF : v ∈ F := Finset.mem_of_mem_erase hv
+      have hvs : v < s := lt_of_le_of_ne (F.le_max' v hvF) (Finset.ne_of_mem_erase hv)
+      exact Finset.mem_erase.2 ⟨ne_of_lt (huv.trans_lt hvs), hdc u hu v hvF huv⟩
+    -- membership in `F` / `F.erase s` is the position relative to `s`
+    have hnotF : ∀ i, ((d i).1 ∉ F ↔ s < (d i).1) := by
+      intro i
+      constructor
+      · intro h
+        by_contra hc
+        exact h (hdc _ (hmemE i) s hsF (not_lt.1 hc))
+      · intro h hmem
+        exact absurd (F.le_max' _ hmem) (not_le.2 h)
+    have hnotF' : ∀ i, ((d i).1 ∉ F.erase s ↔ s ≤ (d i).1) := by
+      intro i
+      rw [Finset.mem_erase, not_and_or, not_not]
+      constructor
+      · rintro (h | h)
+        · exact h.ge
+        · exact ((hnotF i).1 h).le
+      · intro h
+        rcases eq_or_lt_of_le h with h' | h'
+        · exact Or.inl h'.symm
+        · exact Or.inr ((hnotF i).2 h')
+    -- the two counts, in terms of the risk set and the event multiplicity at `s`
+    have hcount' : (univ.filter fun i => (d i).1 ∉ F.erase s).card = atRisk d s := by
+      rw [atRisk]
+      congr 1
+      ext i
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+      exact hnotF' i
+    have hcount : (univ.filter fun i => (d i).1 ∉ F).card
+        = atRisk d s - eventCount d s := by
+      have hrw : (univ.filter fun i => (d i).1 ∉ F).card
+          = (univ.filter fun i => s < (d i).1).card := by
+        congr 1
+        ext i
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+        exact hnotF i
+      rw [hrw, atRisk_eq_add_of_no_censoring hall s]
+      omega
+    -- telescope
+    have hY : (0 : ℝ) < (atRisk d s : ℝ) := by
+      exact_mod_cast atRisk_pos_of_mem_eventTimes hsE
+    have hNY : eventCount d s ≤ atRisk d s := eventCount_le_atRisk d s
+    rw [← Finset.prod_erase_mul F _ hsF, ih _ hcard' hsub' hdc', hcount, hcount',
+      naJump, Nat.cast_sub hNY]
+    field_simp
+
 /-- **No-censoring reduction** (`KM58 §1`): with every observation an event, Kaplan–Meier is
 the empirical survival function `#{i : t < T̃ᵢ}/n`. -/
 theorem kaplanMeier_of_no_censoring {d : Fin n → ℝ × Bool}
@@ -324,7 +420,19 @@ theorem kaplanMeier_of_no_censoring {d : Fin n → ℝ × Bool}
     -- LEAN-ONLY: nonempty dataset (0/0 junk breaks the n = 0 corner)
     (hn : n ≠ 0) (t : ℝ) :
     kaplanMeier d t = ((univ.filter fun i => t < (d i).1).card : ℝ) / n := by
-  sorry
+  have hmemE : ∀ i, (d i).1 ∈ eventTimes d := fun i =>
+    Finset.mem_image.2 ⟨i, Finset.mem_filter.2 ⟨Finset.mem_univ i, hall i⟩, rfl⟩
+  have hkey := prod_one_sub_naJump_of_no_censoring hall hn
+    ((eventTimes d).filter (· ≤ t)).card ((eventTimes d).filter (· ≤ t)) rfl
+    (Finset.filter_subset _ _)
+    (fun u hu v hv huv => Finset.mem_filter.2 ⟨hu, huv.trans (Finset.mem_filter.1 hv).2⟩)
+  have hcard : (univ.filter fun i => (d i).1 ∉ (eventTimes d).filter (· ≤ t)).card
+      = (univ.filter fun i => t < (d i).1).card := by
+    congr 1
+    ext i
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_and, not_le]
+    exact ⟨fun h => h (hmemE i), fun h _ => h⟩
+  rw [kaplanMeier, hkey, hcard]
 
 /-- **Self-consistency** (ABGK §IV.3 (verify §)): the hazard jump of the Kaplan–Meier law at
 an event time inside its support is the Nelson–Aalen increment — the estimator solves the
