@@ -1,6 +1,6 @@
 import StatLean.StatisticalModels.Model.Defs
 import StatLean.PointEstimation.Model.Defs
-import Mathlib.MeasureTheory.Measure.Decomposition.Lebesgue
+import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 
 /-!
 # Adapter: dominated families ↔ the density carrier `ParametricFamily`
@@ -51,20 +51,26 @@ theorem isProbabilityMeasure_toMeasure (M : AsymptoticStatistics.ParametricFamil
     -- USER-INPUT: the densities are μ-PDFs (normalized, integrable); TPE2 §1.4
     (hPDF : AsymptoticStatistics.IsPDFOf M μ) (θ : Θ) :
     IsProbabilityMeasure (M.toMeasure μ θ) := by
-  sorry
+  constructor
+  have hmass : M.toMeasure μ θ Set.univ = ∫⁻ x, ENNReal.ofReal (M.density θ x) ∂μ := by
+    rw [AsymptoticStatistics.ParametricFamily.toMeasure, withDensity_apply _ MeasurableSet.univ,
+      Measure.restrict_univ]
+  rw [hmass, ← ofReal_integral_eq_lintegral_ofReal (hPDF.density_integrable θ)
+      (Filter.Eventually.of_forall fun x => M.density_nonneg θ x),
+    hPDF.density_integral_eq_one θ, ENNReal.ofReal_one]
 
 /-- The measure family of a density family is dominated by the reference measure. -/
 theorem isDominatedFamily_toMeasure (M : AsymptoticStatistics.ParametricFamily 𝓧 Θ)
-    (μ : Measure 𝓧) : IsDominatedFamily (M.toMeasure μ) μ := by
-  sorry
+    (μ : Measure 𝓧) : IsDominatedFamily (M.toMeasure μ) μ :=
+  fun _ => withDensity_absolutelyContinuous _ _
 
 /-- Recover a density carrier from a dominated family via Radon–Nikodym derivatives:
 `density θ = (∂(P θ)/∂μ).toReal`. -/
 noncomputable def ofDominated (P : Θ → Measure 𝓧) (μ : Measure 𝓧) :
     AsymptoticStatistics.ParametricFamily 𝓧 Θ where
   density θ x := ((P θ).rnDeriv μ x).toReal
-  density_meas θ := by sorry
-  density_nonneg θ x := by sorry
+  density_meas _ := (Measure.measurable_rnDeriv _ _).ennreal_toReal
+  density_nonneg _ _ := ENNReal.toReal_nonneg
 
 /-- Round trip: for a dominated family of σ-finite members over a σ-finite reference
 measure, rebuilding the measures from the Radon–Nikodym densities recovers the family. -/
@@ -74,6 +80,11 @@ theorem toMeasure_ofDominated (P : Θ → Measure 𝓧) (μ : Measure 𝓧)
     -- LEAN-ONLY: σ-finiteness for Radon–Nikodym; standard regularity
     [SigmaFinite μ] [∀ θ, SigmaFinite (P θ)] (θ : Θ) :
     (ofDominated P μ).toMeasure μ θ = P θ := by
-  sorry
+  have hae : (fun x => ENNReal.ofReal (((P θ).rnDeriv μ x).toReal)) =ᵐ[μ] (P θ).rnDeriv μ := by
+    filter_upwards [Measure.rnDeriv_lt_top (P θ) μ] with x hx
+    rw [ENNReal.ofReal_toReal hx.ne]
+  calc (ofDominated P μ).toMeasure μ θ = μ.withDensity ((P θ).rnDeriv μ) :=
+        withDensity_congr_ae hae
+    _ = P θ := Measure.withDensity_rnDeriv_eq _ _ (h θ)
 
 end StatLean.StatisticalModels
