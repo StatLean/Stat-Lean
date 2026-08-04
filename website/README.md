@@ -10,9 +10,17 @@ statistical theory. Deployed to GitHub Pages at
 ```bash
 cd website
 npm install
-npm run dev        # http://localhost:5173/website/
-npm run build      # type-check + production build into dist/
+npm run dev            # http://localhost:5173/website/
+npm run validate:data  # strict data validation (results/references/graphs/targets)
+npm run build          # validate + type-check + production build into dist/
 ```
+
+`validate:data` runs automatically as the first step of `npm run build`. It
+checks the entire data layer: results.json schema and KaTeX-parseability,
+hypothesis-token allocation against each Lean signature, docGenUrl derivation,
+`file`/`leanName` existence against the Lean sources, references.json keys,
+targets.txt ordering, and per-graph structural invariants. Run it from the
+`website/` directory of a full repo checkout (it reads `../StatLean/**.lean`).
 
 ## How it works
 
