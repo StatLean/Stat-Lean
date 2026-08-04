@@ -28,7 +28,7 @@ with `G t = Λ₀(Ioc 0 t]` — shared machinery with `HazardBridges` (S4.1's Ro
 (actuarial); Cox (1972) §2 uses it implicitly; ABGK III.1.2 states it in measure form.
 -/
 
-open MeasureTheory Set Filter
+open MeasureTheory Set Filter Topology
 open scoped ENNReal InnerProductSpace
 
 namespace StatLean.StatisticalModels.Survival
@@ -54,7 +54,7 @@ theorem coxSurvival_mem_Ioc
 Packaged as a sorried Stieltjes construction with its spec lemma; the closure builds the
 monotone/right-continuous structure from `antitone_coxSurvival` + continuity of `Λ₀`. -/
 noncomputable def coxSF
-    (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] : StieltjesFunction :=
+    (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] : StieltjesFunction ℝ :=
   sorry
 
 @[simp]
