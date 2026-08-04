@@ -111,6 +111,27 @@ noncomputable def coxMeasure (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure 
     Measure ℝ :=
   (coxSF β Λ₀ z hfin).measure
 
+/-- `coxSF` vanishes identically on the non-positive axis, hence tends to `0` at `-∞`. -/
+private theorem tendsto_coxSF_atBot (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
+    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] :
+    Tendsto (coxSF β Λ₀ z hfin) atBot (𝓝 0) := by
+  refine Tendsto.congr' ?_ tendsto_const_nhds
+  filter_upwards [eventually_le_atBot (0 : ℝ)] with t ht
+  rw [coxSF_apply, coxSurvival, baselineToReal_of_nonpos Λ₀ ht]
+  simp
+
+/-- The Cox law puts no mass strictly below the origin. -/
+private theorem coxMeasure_Iio_zero (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
+    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] :
+    coxMeasure β Λ₀ z hfin (Iio 0) = 0 := by
+  have hle : coxMeasure β Λ₀ z hfin (Iio 0) ≤ (coxSF β Λ₀ z hfin).measure (Iic 0) :=
+    measure_mono Iio_subset_Iic_self
+  rw [(coxSF β Λ₀ z hfin).measure_Iic (tendsto_coxSF_atBot β Λ₀ z hfin) 0] at hle
+  have h0 : coxSF β Λ₀ z hfin 0 = 0 := by
+    rw [coxSF_apply, coxSurvival, baselineToReal_of_nonpos Λ₀ le_rfl]; simp
+  rw [h0] at hle
+  simpa using hle
+
 /-- The Cox law is a (possibly defective) event-time law: mass on `[0, ∞)`, total at most
 one; it is a probability law **iff** the total baseline hazard diverges (else the defect is
 the cure fraction — documented, ABGK §II.1 defective case). -/
@@ -120,7 +141,17 @@ theorem isSubEventTimeLaw_coxMeasure (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : 
     (hΛ0 : Λ₀ (Iic 0) = 0)
     (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] :
     IsSubEventTimeLaw (coxMeasure β Λ₀ z hfin) := by
-  sorry
+  refine ⟨?_, coxMeasure_Iio_zero β Λ₀ z hfin⟩
+  have hle : ∀ t, coxSF β Λ₀ z hfin t ≤ 1 := fun t => by
+    rw [coxSF_apply]
+    have := (coxSurvival_mem_Ioc β Λ₀ z hfin t).1
+    linarith
+  have hbdd : BddAbove (Set.range (coxSF β Λ₀ z hfin)) := ⟨1, by rintro y ⟨t, rfl⟩; exact hle t⟩
+  have htop := tendsto_atTop_ciSup (coxSF β Λ₀ z hfin).mono hbdd
+  rw [coxMeasure, (coxSF β Λ₀ z hfin).measure_univ (tendsto_coxSF_atBot β Λ₀ z hfin) htop]
+  refine ENNReal.ofReal_le_one.2 ?_
+  have : ⨆ t, coxSF β Λ₀ z hfin t ≤ 1 := ciSup_le hle
+  linarith
 
 /-- Probability (no cure) under diverging total baseline hazard. -/
 theorem isEventTimeLaw_coxMeasure (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
@@ -131,7 +162,22 @@ theorem isEventTimeLaw_coxMeasure (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Mea
     -- USER-INPUT: infinite total baseline hazard (no cure mass); ABGK §II.1
     (htot : Tendsto (fun t => Λ₀ (Ioc 0 t)) atTop (𝓝 ⊤)) :
     IsEventTimeLaw (coxMeasure β Λ₀ z hfin) := by
-  sorry
+  -- the real-valued baseline hazard diverges, so the survival function collapses to `0`
+  have hG : Tendsto (fun t => (Λ₀ (Ioc 0 t)).toReal) atTop atTop := by
+    refine tendsto_atTop.2 fun b => ?_
+    filter_upwards [ENNReal.tendsto_nhds_top_iff_nnreal.1 htot b.toNNReal] with t ht
+    have h2 : ((b.toNNReal : ℝ≥0∞)).toReal ≤ (Λ₀ (Ioc 0 t)).toReal :=
+      (ENNReal.toReal_le_toReal (by simp) (hfin t)).2 ht.le
+    simp only [ENNReal.coe_toReal, Real.coe_toNNReal'] at h2
+    exact (le_max_left b 0).trans h2
+  have hS : Tendsto (coxSurvival β Λ₀ z) atTop (𝓝 0) :=
+    Real.tendsto_exp_atBot.comp
+      (tendsto_neg_atTop_atBot.comp (Filter.Tendsto.const_mul_atTop (Real.exp_pos _) hG))
+  have htop : Tendsto (coxSF β Λ₀ z hfin) atTop (𝓝 1) := by
+    simpa using hS.const_sub (1 : ℝ)
+  refine ⟨⟨?_⟩, coxMeasure_Iio_zero β Λ₀ z hfin⟩
+  rw [coxMeasure, (coxSF β Λ₀ z hfin).measure_univ (tendsto_coxSF_atBot β Λ₀ z hfin) htop]
+  simp
 
 /-- **S5.2, the realization theorem** (`Cox72 §2`; ABGK §III.1.2): the constructed Cox law
 has exactly the proportional-hazards structure — its cumulative-hazard measure is
@@ -143,6 +189,10 @@ theorem cumHazard_coxMeasure (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure 
     (hΛ0 : Λ₀ (Iic 0) = 0)
     (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] :
     cumHazard (coxMeasure β Λ₀ z hfin) = ENNReal.ofReal (Real.exp ⟪β, z⟫_ℝ) • Λ₀ := by
+  -- TODO (S5.2, designated carry): rides the S-B4 analytic bricks of
+  -- `Survival.HazardBridges`, which are not on this branch yet. Per evaluation set the
+  -- goal reduces to the Stieltjes-FTC identity
+  -- `∫_{(a,b]} c·e^{−c·G t} dΛ₀ t = e^{−c·G a} − e^{−c·G b}` with `G t = Λ₀ (Ioc 0 t)`.
   sorry
 
 end StatLean.StatisticalModels.Survival
