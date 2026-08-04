@@ -1,4 +1,6 @@
 import Mathlib.Analysis.Fourier.AddCircle
+import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+import Mathlib.MeasureTheory.Measure.FiniteMeasureExt
 
 /-!
 # Fourier coefficients of finite measures on the circle `AddCircle (2π)`
