@@ -49,6 +49,22 @@ variable {Θ : Type*} {𝓧 S : Type*} [MeasurableSpace 𝓧] [MeasurableSpace S
 theorem pushforward_eq_statLaw (P : Θ → Measure 𝓧) (T : 𝓧 → S) :
     pushforward P T = statLaw P T := rfl
 
+-- **Batch-0 finding: the two `iff`s below are FALSE as frozen** (no `Measurable T`).
+-- `HasSufficientKernel P T` is *vacuously* satisfiable by a statistic that is nowhere
+-- a.e.-measurable: then `(P θ).map (fun x => (T x, x)) = 0` and `statLaw P T θ = 0`
+-- (`Measure.map_of_not_aemeasurable`), so the graph identity reads `0 = 0 ⊗ₘ Q = 0`
+-- (`Measure.compProd_zero_left`) for *any* Markov `Q`. Concretely: `𝓧 = S = ℝ`,
+-- `Θ = Bool`, `P` two distinct probability laws equivalent to Lebesgue on `[0,1]`,
+-- `T = Set.indicator V 1` for a non-Lebesgue-measurable `V ⊆ [0,1]`, and
+-- `Q = Kernel.const S (P false)`.
+-- Then `HasSufficientKernel P T` holds, `Identifiable P` holds, but
+-- `pushforward P T = fun _ => 0` is constant, so `Identifiable (pushforward P T)` fails —
+-- the `iff` is `False ↔ True`. (Both halves of this were machine-checked.)
+-- The `←`/destroy direction is the generic transfer theorem and is proved below; the `→`
+-- direction is exactly the `Measure.snd` reconstruction, which needs
+-- `AEMeasurable (fun x => (T x, x)) (P θ)` for `Measure.map_map`. Adding
+-- `(hT : Measurable T)` to both signatures repairs them and closes both proofs.
+
 /-- **Sufficiency is lossless coarsening**: for a statistic with a sufficient kernel, the
 reduced model is identifiable iff the full model is (TPE2 §1.6; Halmos–Savage 1949). -/
 theorem identifiable_pushforward_iff_of_hasSufficientKernel {P : Θ → Measure 𝓧} {T : 𝓧 → S}
@@ -58,6 +74,10 @@ theorem identifiable_pushforward_iff_of_hasSufficientKernel {P : Θ → Measure 
     -- USER-INPUT: probability family; TPE2 §1.1
     [∀ θ, IsProbabilityMeasure (P θ)] :
     Identifiable (pushforward P T) ↔ Identifiable P := by
+  refine ⟨identifiable_of_pushforward T, fun hP θ₁ θ₂ hEq => ?_⟩
+  -- TODO: FALSE as frozen (see the note above); needs `(hT : Measurable T)` in the signature,
+  -- after which: `obtain ⟨Q, _, hQ⟩ := hT'`, rewrite `hEq` into the graph identity and take
+  -- `Measure.snd` of both sides (`Measure.snd_compProd`, `Measure.map_map`).
   sorry
 
 /-- Target version: sufficiency preserves target identifiability in both directions. -/
@@ -68,6 +88,9 @@ theorem identifiesTarget_pushforward_iff_of_hasSufficientKernel {Γ : Type*}
     -- USER-INPUT: probability family; TPE2 §1.1
     [∀ θ, IsProbabilityMeasure (P θ)] :
     IdentifiesTarget (pushforward P T) ψ ↔ IdentifiesTarget P ψ := by
+  refine ⟨identifiesTarget_of_pushforward T, fun hP θ₁ θ₂ hEq => ?_⟩
+  -- TODO: FALSE as frozen (see the note above); same repair as
+  -- `identifiable_pushforward_iff_of_hasSufficientKernel`.
   sorry
 
 end StatLean.StatisticalModels
