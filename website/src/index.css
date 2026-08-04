@@ -23,6 +23,8 @@
   --c-bayes: 88 80 200;    /* indigo — Bayesian */
   --c-nonparam: 8 138 158; /* petrol cyan — Nonparametric */
   --c-prob: 90 92 130;     /* slate indigo — Miscellaneous */
+  --c-htest: 190 96 30;    /* burnt orange — Hypothesis Tests */
+  --c-pest: 64 104 92;     /* deep sage — Point Estimation */
   --c-ext: 214 178 38;     /* yellow — Mathlib / external */
 
   --grain-opacity: 0.04;
@@ -48,6 +50,8 @@
   --c-bayes: 160 150 240;
   --c-nonparam: 92 202 220;
   --c-prob: 162 164 208;
+  --c-htest: 240 158 96;
+  --c-pest: 130 190 172;
   --c-ext: 232 206 96;     /* yellow — Mathlib / external */
 
   --grain-opacity: 0.05;
@@ -97,6 +101,8 @@ body::before {
 [data-cat="bayesian"] { --accent: var(--c-bayes); }
 [data-cat="nonparametric"] { --accent: var(--c-nonparam); }
 [data-cat="probability"] { --accent: var(--c-prob); }
+[data-cat="hypothesistesting"] { --accent: var(--c-htest); }
+[data-cat="pointestimation"] { --accent: var(--c-pest); }
 
 /* bare `accent` className = active-accent text color (not a Tailwind utility) */
 .accent { color: rgb(var(--accent)); }

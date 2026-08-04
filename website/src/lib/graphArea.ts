@@ -15,6 +15,8 @@ export const AREA_VAR: Record<Area, string> = {
   bayesian: "--c-bayes",
   nonparametric: "--c-nonparam",
   probability: "--c-prob",
+  hypothesistesting: "--c-htest",
+  pointestimation: "--c-pest",
   external: "--c-ext",
 };
 
@@ -29,6 +31,8 @@ export const AREA_LABEL: Record<Area, string> = {
   bayesian: "Bayesian",
   nonparametric: "Nonparametric",
   probability: "Miscellaneous",
+  hypothesistesting: "Hypothesis Tests",
+  pointestimation: "Point Estimation",
   external: "Mathlib / external",
 };
 
@@ -44,6 +48,8 @@ export const AREAS: Area[] = [
   "bayesian",
   "nonparametric",
   "probability",
+  "hypothesistesting",
+  "pointestimation",
   "external",
 ];
 
@@ -61,6 +67,8 @@ const DIR_AREA: Partial<Record<string, CategoryId>> = {
   MultipleTesting: "multipletesting",
   Minimaxity: "minimaxity",
   Optimization: "optimization",
+  HypothesisTesting: "hypothesistesting",
+  PointEstimation: "pointestimation",
 };
 
 /** Drop an optional leading `StatLean.` / `StatLean/` root segment. */
