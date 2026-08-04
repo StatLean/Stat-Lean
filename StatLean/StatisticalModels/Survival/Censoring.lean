@@ -117,7 +117,38 @@ theorem observedTimeLaw_censoredLaw_Ici (μT μC : Measure ℝ) [IsProbabilityMe
 theorem uncensoredSubLaw_censoredLaw (μT μC : Measure ℝ) [IsProbabilityMeasure μT]
     [IsProbabilityMeasure μC] :
     uncensoredSubLaw (censoredLaw μT μC) = μT.withDensity fun t => μC (Ici t) := by
-  sorry
+  refine Measure.ext fun A hA => ?_
+  have hE : MeasurableSet {p : ℝ × Bool | p.2 = true} :=
+    measurable_snd (measurableSet_singleton true)
+  have hle : MeasurableSet {p : ℝ × ℝ | p.1 ≤ p.2} :=
+    measurableSet_le measurable_fst measurable_snd
+  have hS : MeasurableSet (Prod.fst ⁻¹' A ∩ {p : ℝ × ℝ | p.1 ≤ p.2}) :=
+    (measurable_fst hA).inter hle
+  -- The `Δ = 1` event pulls back to `{p | p.1 ∈ A ∧ p.1 ≤ p.2}`, where `min p.1 p.2 = p.1`.
+  have hpre : censorObserve ⁻¹' (Prod.fst ⁻¹' A ∩ {p : ℝ × Bool | p.2 = true})
+      = Prod.fst ⁻¹' A ∩ {p : ℝ × ℝ | p.1 ≤ p.2} := by
+    ext p
+    simp only [censorObserve, mem_preimage, mem_inter_iff, mem_setOf_eq, decide_eq_true_eq]
+    constructor
+    · exact fun ⟨h1, h2⟩ => ⟨by rwa [min_eq_left h2] at h1, h2⟩
+    · exact fun ⟨h1, h2⟩ => ⟨by rwa [min_eq_left h2], h2⟩
+  rw [uncensoredSubLaw, Measure.map_apply measurable_fst hA,
+    Measure.restrict_apply (measurable_fst hA), censoredLaw,
+    Measure.map_apply measurable_censorObserve ((measurable_fst hA).inter hE), hpre,
+    Measure.prod_apply hS, withDensity_apply _ hA]
+  -- Fubini section: `{c | t ≤ c} = Ici t` on `A`, empty off `A`.
+  have hsec : ∀ x : ℝ, μC (Prod.mk x ⁻¹' (Prod.fst ⁻¹' A ∩ {p : ℝ × ℝ | p.1 ≤ p.2}))
+      = A.indicator (fun t => μC (Ici t)) x := by
+    intro x
+    by_cases hx : x ∈ A
+    · have : Prod.mk x ⁻¹' (Prod.fst ⁻¹' A ∩ {p : ℝ × ℝ | p.1 ≤ p.2}) = Ici x := by
+        ext y; simp [hx]
+      rw [this, indicator_of_mem hx]
+    · have : Prod.mk x ⁻¹' (Prod.fst ⁻¹' A ∩ {p : ℝ × ℝ | p.1 ≤ p.2}) = (∅ : Set ℝ) := by
+        ext y; simp [hx]
+      rw [this, indicator_of_notMem hx, measure_empty]
+  simp_rw [hsec]
+  rw [lintegral_indicator hA]
 
 /-- **S2.3, HEADLINE (crude = net hazard)**: under independent censoring the crude cumulative
 hazard of the observed data equals the net cumulative hazard of the event-time law, restricted
