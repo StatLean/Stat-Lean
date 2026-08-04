@@ -38,7 +38,7 @@ variable {S : Type*} [MeasurableSpace S]
 /-- The **`n`-step marginal** of the chain with transition kernel `κ` started at `μ₀`
 (FY eq. (2.9)'s `F_n`, as a measure-valued map). -/
 noncomputable def nstep (κ : Kernel S S) (μ0 : Measure S) (n : ℕ) : Measure S :=
-  μ0.bind (κ ^ n)
+  μ0.bind (κ ^ n : Kernel S S)
 
 /-- Zero steps: the initial law (for an s-finite initial law). -/
 theorem nstep_zero (κ : Kernel S S) (μ0 : Measure S) [SFinite μ0] :

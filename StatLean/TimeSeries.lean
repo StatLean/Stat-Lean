@@ -1,13 +1,17 @@
 import StatLean.TimeSeries.ForMathlib.PosSemidefSequence
 import StatLean.TimeSeries.ForMathlib.Fourier.FejerKernel
 import StatLean.TimeSeries.ForMathlib.Fourier.MeasureFourierCoeff
+import StatLean.TimeSeries.ForMathlib.Fourier.HerglotzBochner
 import StatLean.TimeSeries.ForMathlib.Markov.Chain
 import StatLean.TimeSeries.ForMathlib.Markov.GeometricErgodicity
 import StatLean.TimeSeries.Process.Defs
 import StatLean.TimeSeries.Process.Stationary
 import StatLean.TimeSeries.Process.SecondOrder
 import StatLean.TimeSeries.Process.Autocovariance
+import StatLean.TimeSeries.Process.LinearProcess
 import StatLean.TimeSeries.Models.Defs
+import StatLean.TimeSeries.Models.WhiteNoise
+import StatLean.TimeSeries.Models.Linear
 import StatLean.TimeSeries.Mixing.Defs
 
 /-!
