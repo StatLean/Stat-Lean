@@ -265,7 +265,7 @@
     "informal": "If $\\theta_0$ is <span data-link=\"h1\">interior to $\\Theta$</span>, each $\\Psi_n$ is <span data-link=\"h2\">continuous on $\\Theta$ with a unique zero $\\hat\\theta_n$</span>, and $\\Psi_n$ converges <span data-link=\"h3\">pointwise in probability to a limit that changes sign strictly at $\\theta_0$</span>, then $\\hat\\theta_n$ is consistent.",
     "summary": "Continuity, uniqueness, pointwise convergence, and a strict sign change imply consistency of the one-dimensional root.",
     "leanSignature": "theorem oneDim_continuous_zEstimator_consistent\n    {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}\n    {Θ : Set ℝ}\n    {Ψn : ℕ → Ω → ℝ → ℝ} {Ψ : ℝ → ℝ} {θ₀ : ℝ} {θhat : ℕ → Ω → ℝ}\n    (hθ₀_int : Θ ∈ 𝓝 θ₀)\n    (hcont : ∀ n ω, ContinuousOn (Ψn n ω) Θ)\n    (hunique : ∀ n ω θ, θ ∈ Θ → Ψn n ω θ = 0 → θ = θhat n ω)\n    (hptwise : ∀ θ ∈ Θ, TendstoInMeasure P (fun n ω => Ψn n ω θ) atTop (fun _ => Ψ θ))\n    (hsign_lt : ∀ θ ∈ Θ, θ < θ₀ → Ψ θ < 0)\n    (hsign_gt : ∀ θ ∈ Θ, θ₀ < θ → 0 < Ψ θ) :\n    ∀ ε > (0 : ℝ), Tendsto (fun n => P {ω | ε ≤ |θhat n ω - θ₀|}) atTop (𝓝 0)",
-    "formalizationNotes": "Interiority is explicit and necessary for this continuous route. The theorem does not separately assume that θhat lies in Θ or is measurable.",
+    "formalizationNotes": "Interiority is explicit and necessary for this continuous route. The theorem does not separately assume that $\\hat\\theta_n$ lies in Θ or is measurable.",
     "hypotheses": [
       {
         "id": "h1",
