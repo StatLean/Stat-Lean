@@ -197,7 +197,22 @@ theorem causeSubLaw_eq_withDensity (P : Measure (ℝ × Option (Fin k))) [IsFini
     (j : Fin k) :
     causeSubLaw P j
       = (causeSpecificCumHazard P j).withDensity fun t => observedTimeLawCR P (Ici t) := by
-  sorry
+  have hm : Measurable fun t : ℝ => observedTimeLawCR P (Ici t) :=
+    Antitone.measurable fun _ _ hab => measure_mono (Ici_subset_Ici.2 hab)
+  haveI : IsFiniteMeasure (observedTimeLawCR P) :=
+    Measure.isFiniteMeasure_map P Prod.fst
+  -- The at-risk denominator is `causeSubLaw`-a.e. nonzero (hygiene lemma via domination).
+  have hnull : causeSubLaw P j {t : ℝ | observedTimeLawCR P (Ici t) = 0} = 0 :=
+    le_antisymm ((causeSubLaw_le P j (hm (measurableSet_singleton 0))).trans_eq
+      (measure_survivalLeft_zero _)) (zero_le _)
+  have hae : ∀ᵐ t ∂causeSubLaw P j, observedTimeLawCR P (Ici t) ≠ 0 := by
+    rw [ae_iff]
+    simpa using hnull
+  -- Merge the two `withDensity` layers; the merged density is a.e. `1`.
+  rw [causeSpecificCumHazard, ← withDensity_mul _ hm.inv hm]
+  refine (Eq.trans (withDensity_congr_ae ?_) withDensity_one).symm
+  filter_upwards [hae] with t ht
+  simpa using ENNReal.inv_mul_cancel ht (measure_ne_top _ _)
 
 /-- Two independent latent cause times observed as (first failure, cause); ties to cause 0
 (*Book vs Lean* note in module docstring). -/
