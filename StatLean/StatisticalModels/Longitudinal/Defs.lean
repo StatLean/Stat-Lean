@@ -1,5 +1,7 @@
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
-import Mathlib.MeasureTheory.Measure.Lebesgue.EuclideanSpace
+import Mathlib.MeasureTheory.Constructions.Pi
+import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 
 /-!
 # Longitudinal data — subject records, marginal mean models, GEE
