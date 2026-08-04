@@ -38,13 +38,12 @@ independence-vanishing lemma for `covariance` under `Measure.prod` coordinates.
 its systematic matrix form is Anderson (1958). Nothing here is original.
 -/
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory ProbabilityTheory Matrix
 open scoped ENNReal
 
 namespace StatLean.StatisticalModels
 
 variable {ι ι₁ ι₂ : Type*} [Fintype ι] [Fintype ι₁] [Fintype ι₂]
-  [DecidableEq ι] [DecidableEq ι₁] [DecidableEq ι₂]
   {Ω : Type*} [MeasurableSpace Ω]
 
 /-- The **mean vector** `∫ x ∂μ` of a law on Euclidean space (And58 Ch. 2). -/
@@ -91,21 +90,24 @@ theorem posSemidef_covMatrix (μ : Measure (EuclideanSpace ℝ ι)) [IsFiniteMea
   sorry
 
 /-- Mean vector of the multivariate Gaussian. -/
-theorem meanVec_multivariateGaussian (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ)
+theorem meanVec_multivariateGaussian [DecidableEq ι] (m : EuclideanSpace ℝ ι)
+    (S : Matrix ι ι ℝ)
     -- USER-INPUT: a genuine covariance parameter; And58 Ch. 2
     (hS : S.PosSemidef) :
     meanVec (multivariateGaussian m S) = m := by
   sorry
 
 /-- Covariance matrix of the multivariate Gaussian. -/
-theorem covMatrix_multivariateGaussian (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ)
+theorem covMatrix_multivariateGaussian [DecidableEq ι] (m : EuclideanSpace ℝ ι)
+    (S : Matrix ι ι ℝ)
     -- USER-INPUT: a genuine covariance parameter; And58 Ch. 2
     (hS : S.PosSemidef) :
     covMatrix (multivariateGaussian m S) = S := by
   sorry
 
 /-- **Mean of an affine pushforward**: `E[A x + b] = A (E x) + b` (And58 Ch. 2). -/
-theorem meanVec_map_affine (μ : Measure (EuclideanSpace ℝ ι₁)) [IsProbabilityMeasure μ]
+theorem meanVec_map_affine [DecidableEq ι₁] (μ : Measure (EuclideanSpace ℝ ι₁))
+    [IsProbabilityMeasure μ]
     (A : Matrix ι₂ ι₁ ℝ) (b : EuclideanSpace ℝ ι₂)
     -- USER-INPUT: first moments; And58 Ch. 2
     (h1 : Integrable id μ) :
@@ -114,7 +116,8 @@ theorem meanVec_map_affine (μ : Measure (EuclideanSpace ℝ ι₁)) [IsProbabil
   sorry
 
 /-- **Covariance of an affine pushforward**: `Cov(A x + b) = A Σ Aᵀ` (And58 Ch. 2). -/
-theorem covMatrix_map_affine (μ : Measure (EuclideanSpace ℝ ι₁)) [IsProbabilityMeasure μ]
+theorem covMatrix_map_affine [DecidableEq ι₁] (μ : Measure (EuclideanSpace ℝ ι₁))
+    [IsProbabilityMeasure μ]
     (A : Matrix ι₂ ι₁ ℝ) (b : EuclideanSpace ℝ ι₂)
     -- USER-INPUT: second moments; And58 Ch. 2
     (hL2 : MemLp id 2 μ) :
@@ -125,9 +128,10 @@ theorem covMatrix_map_affine (μ : Measure (EuclideanSpace ℝ ι₁)) [IsProbab
 /-- **Additivity under independence (product form)**: the covariance of a sum of linear images
 of the two independent coordinates of a product law is the sum of the transported covariances
 — cross terms vanish (And58 Ch. 2). -/
-theorem covMatrix_map_add_prod (μ : Measure (EuclideanSpace ℝ ι₁))
+theorem covMatrix_map_add_prod [DecidableEq ι₁] [DecidableEq ι₂]
+    (μ : Measure (EuclideanSpace ℝ ι₁))
     (ν : Measure (EuclideanSpace ℝ ι₂)) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
-    {ι₃ : Type*} [Fintype ι₃] [DecidableEq ι₃]
+    {ι₃ : Type*} [Fintype ι₃]
     (A : Matrix ι₃ ι₁ ℝ) (B : Matrix ι₃ ι₂ ℝ)
     -- USER-INPUT: second moments of both factors; And58 Ch. 2
     (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) :
@@ -138,9 +142,10 @@ theorem covMatrix_map_add_prod (μ : Measure (EuclideanSpace ℝ ι₁))
 
 /-- **Additivity under independence (finite-product form)**: covariance of a sum of linear
 images of independent coordinates under `Measure.pi` (the L2/M1 workhorse). -/
-theorem covMatrix_map_sum_pi {N : ℕ} (μs : Fin N → Measure (EuclideanSpace ℝ ι₁))
+theorem covMatrix_map_sum_pi [DecidableEq ι₁] {N : ℕ}
+    (μs : Fin N → Measure (EuclideanSpace ℝ ι₁))
     [∀ k, IsProbabilityMeasure (μs k)]
-    {ι₃ : Type*} [Fintype ι₃] [DecidableEq ι₃] (A : Fin N → Matrix ι₃ ι₁ ℝ)
+    {ι₃ : Type*} [Fintype ι₃] (A : Fin N → Matrix ι₃ ι₁ ℝ)
     -- USER-INPUT: second moments of every factor; And58 Ch. 2
     (hL2 : ∀ k, MemLp id 2 (μs k)) :
     covMatrix ((Measure.pi μs).map fun x =>

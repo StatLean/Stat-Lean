@@ -39,7 +39,7 @@ open scoped InnerProductSpace
 
 namespace StatLean.StatisticalModels
 
-variable {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂] [DecidableEq ι₁] [DecidableEq ι₂]
+variable {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
 
 /-- Block projection onto the first (`Sum.inl`) coordinates, as a continuous linear map. -/
 noncomputable def blockFst :
