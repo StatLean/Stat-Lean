@@ -80,17 +80,12 @@ theorem pushforward_iid_eval (P : Θ → Measure 𝓧)
   funext θ
   exact (measurePreserving_eval (fun _ : Fin n => P θ) i).map_eq
 
-/-- Coordinatewise pushforward of a finite product, at the s-finite level.
-
-Mathlib's `Measure.pi` API is σ-finite throughout (`Measure.pi_pi`, `Measure.pi_eq` and
-`Measure.pi_map_pi` all demand `SigmaFinite`), and `SFinite μ` does not supply
-`SigmaFinite (μ.map T)`; only the inequality `≤` is free (the preimage of a `𝓨`-box is a
-`𝓧`-box of the same price, so every `𝓨`-cover converts, but not conversely). -/
-private theorem pi_map_pi_of_sFinite (μ : Measure 𝓧) [SFinite μ] {T : 𝓧 → 𝓨}
-    (hT : Measurable T) (n : ℕ) :
-    Measure.pi (fun _ : Fin n => μ.map T)
-      = (Measure.pi fun _ : Fin n => μ).map (fun x => T ∘ x) := by
-  sorry
+-- **Batch-0 finding: the probability hypothesis is not decorative.** Mathlib's `Measure.pi`
+-- API is σ-finite throughout (`Measure.pi_pi`, `Measure.pi_eq` and `Measure.pi_map_pi` all
+-- demand `SigmaFinite`), and `SFinite μ` does not supply `SigmaFinite (μ.map T)`; at the
+-- s-finite level only the inequality `≤` is free (the preimage of a `𝓨`-box is a `𝓧`-box of
+-- the same price, so every `𝓨`-cover converts, but not conversely). Probability members make
+-- `(P θ).map T` a probability measure, which discharges `Measure.pi_map_pi`'s side condition.
 
 /-- Replication commutes with per-coordinate transformation: the iid model of the pushforward
 is the coordinatewise pushforward of the iid model. -/
@@ -100,7 +95,8 @@ theorem iid_pushforward (P : Θ → Measure 𝓧) {T : 𝓧 → 𝓨}
     (hT : Measurable T) [∀ θ, IsProbabilityMeasure (P θ)] (n : ℕ) :
     iid (pushforward P T) n = pushforward (iid P n) (fun x => T ∘ x) := by
   funext θ
-  exact pi_map_pi_of_sFinite (P θ) hT n
+  have : IsProbabilityMeasure ((P θ).map T) := Measure.isProbabilityMeasure_map hT.aemeasurable
+  exact (Measure.pi_map_pi (fun _ : Fin n => hT.aemeasurable)).symm
 
 /-- Single-coordinate marginal of the infinite iid sequence model recovers the base model. -/
 theorem pushforward_iidSeq_eval (P : Θ → Measure 𝓧)
