@@ -263,6 +263,19 @@ the all-cause at-risk mass, so the Gray hazard is dominated by the cause-specifi
 theorem graySubCumHazard_le (P : Measure (ℝ × Option (Fin k))) [IsProbabilityMeasure P]
     (j : Fin k) {A : Set ℝ} (hA : MeasurableSet A) :
     graySubCumHazard P j A ≤ causeSpecificCumHazard P j A := by
-  sorry
+  haveI : IsFiniteMeasure (observedTimeLawCR P) := Measure.isFiniteMeasure_map P Prod.fst
+  have huniv : observedTimeLawCR P univ = P univ := by
+    rw [observedTimeLawCR, Measure.map_apply measurable_fst MeasurableSet.univ, preimage_univ]
+  rw [graySubCumHazard, causeSpecificCumHazard, withDensity_apply _ hA, withDensity_apply _ hA]
+  refine lintegral_mono fun t => ENNReal.inv_le_inv.2 ?_
+  -- The subdistribution at-risk mass dominates the all-cause at-risk mass.
+  have h1 : causeSubLaw P j (Iio t) ≤ observedTimeLawCR P (Iio t) :=
+    causeSubLaw_le P j measurableSet_Iio
+  have h2 : observedTimeLawCR P (Iio t) + observedTimeLawCR P (Ici t) = P univ := by
+    rw [← huniv, ← compl_Iio (a := t)]
+    exact measure_add_measure_compl measurableSet_Iio
+  have h3 : observedTimeLawCR P (Ici t) = P univ - observedTimeLawCR P (Iio t) :=
+    ENNReal.eq_sub_of_add_eq (measure_ne_top _ _) (by rw [add_comm]; exact h2)
+  exact h3.trans_le (tsub_le_tsub_left h1 _)
 
 end StatLean.StatisticalModels.Survival
