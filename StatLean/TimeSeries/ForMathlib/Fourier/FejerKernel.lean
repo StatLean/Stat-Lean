@@ -1,6 +1,6 @@
 import StatLean.TimeSeries.ForMathlib.PosSemidefSequence
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
-import Mathlib.MeasureTheory.Integral.IntervalIntegral
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
 # Fejér–Cesàro sums of a sequence
