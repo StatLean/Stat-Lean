@@ -67,6 +67,25 @@ theorem IsStrictlyStationary.shift (h : IsStrictlyStationary X μ) (k : ℤ) :
   rw [e]
   exact key
 
+/-- Two pairs of random variables with the same joint law on `Fin 2 → ℝ` have the same
+product integral (the product is a fixed measurable functional of the pair). This is the
+step that turns an `n = 2` instance of strict stationarity into an equality of
+covariances. -/
+private lemma integral_mul_of_map_pair_eq {Y Z : Fin 2 → Ω → ℝ}
+    (hY : ∀ i, Measurable (Y i)) (hZ : ∀ i, Measurable (Z i))
+    (hmap : (μ.map fun ω i => Y i ω) = μ.map fun ω i => Z i ω) :
+    ∫ ω, Y 0 ω * Y 1 ω ∂μ = ∫ ω, Z 0 ω * Z 1 ω ∂μ := by
+  have hg : Measurable fun p : Fin 2 → ℝ => p 0 * p 1 :=
+    (measurable_pi_apply 0).mul (measurable_pi_apply 1)
+  have hFY : Measurable fun ω (i : Fin 2) => Y i ω := measurable_pi_lambda _ hY
+  have hFZ : Measurable fun ω (i : Fin 2) => Z i ω := measurable_pi_lambda _ hZ
+  have eY := integral_map (μ := μ) (φ := fun ω (i : Fin 2) => Y i ω)
+    (f := fun p : Fin 2 → ℝ => p 0 * p 1) hFY.aemeasurable hg.aestronglyMeasurable
+  have eZ := integral_map (μ := μ) (φ := fun ω (i : Fin 2) => Z i ω)
+    (f := fun p : Fin 2 → ℝ => p 0 * p 1) hFZ.aemeasurable hg.aestronglyMeasurable
+  rw [hmap] at eY
+  exact eY.symm.trans eZ
+
 /-- **Strict + L² ⇒ weak** (FY §2.1.1, p. 30): a strictly stationary process with a
 square-integrable marginal is (weakly) stationary. -/
 theorem IsStrictlyStationary.isStationary [IsProbabilityMeasure μ]
@@ -76,7 +95,19 @@ theorem IsStrictlyStationary.isStationary [IsProbabilityMeasure μ]
     -- USER-INPUT: finite second moment (at one time; propagates); FY §2.1.1 p. 30
     (hL2 : MemLp (X 0) 2 μ) :
     IsStationary X μ := by
-  sorry
+  have hid : ∀ s t : ℤ, IdentDistrib (X s) (X t) μ μ := h.identDistrib hmeas
+  have hmem : ∀ t : ℤ, MemLp (X t) 2 μ := fun t => (hid 0 t).memLp_snd hL2
+  refine ⟨hmem, fun s t => (hid s t).integral_eq, fun t k => ?_⟩
+  -- The pair `(X_{t+k}, X_t)` is the tuple `(k, 0)` shifted by `t`, so it has the same
+  -- joint law as `(X_k, X_0)`; the covariance is a functional of that joint law.
+  have hprod : ∫ ω, X (t + k) ω * X t ω ∂μ = ∫ ω, X k ω * X 0 ω ∂μ := by
+    have hpair := integral_mul_of_map_pair_eq (μ := μ)
+      (Y := fun i => X (![k, 0] i + t)) (Z := fun i => X (![k, 0] i))
+      (fun _ => hmeas _) (fun _ => hmeas _) (h 2 ![k, 0] t)
+    simpa [add_comm k t] using hpair
+  rw [covariance_eq_sub (hmem (t + k)) (hmem t), covariance_eq_sub (hmem k) (hmem 0)]
+  simp only [Pi.mul_apply]
+  rw [hprod, (hid (t + k) k).integral_eq, (hid t 0).integral_eq]
 
 /-- The general-tuple formulation of strict stationarity coincides with FY Definition
 2.2's consecutive-window form `(X_1, …, X_n) ≐ (X_{1+k}, …, X_{n+k})`. -/
