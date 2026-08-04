@@ -1138,5 +1138,15 @@
     "key": "pollard1985",
     "sortKey": "Pollard",
     "html": "D. Pollard, \"New ways to prove central limit theorems,\" *Econometric Theory* **1**(3), 1985, pp. 295–313."
+  },
+  {
+    "key": "lehmann-romano2022",
+    "sortKey": "Lehmann",
+    "html": "E. L. Lehmann and J. P. Romano, *Testing Statistical Hypotheses*, 4th ed., Springer Texts in Statistics, Springer Nature Switzerland AG, 2022."
+  },
+  {
+    "key": "lehmann-casella1998",
+    "sortKey": "Lehmann",
+    "html": "E. L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed., Springer Texts in Statistics, Springer-Verlag New York, 1998."
   }
 ]

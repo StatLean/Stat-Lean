@@ -1,5 +1,7 @@
 export type CategoryId =
   | "parametric"
+  | "hypothesistesting"
+  | "pointestimation"
   | "semiparametric"
   | "concentration"
   | "highdim"

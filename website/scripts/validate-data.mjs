@@ -12,6 +12,8 @@ const graphsDir = path.join(websiteDir, "src/data/graphs");
 
 const categories = new Set([
   "parametric",
+  "hypothesistesting",
+  "pointestimation",
   "semiparametric",
   "concentration",
   "highdim",
