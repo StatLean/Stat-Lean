@@ -1,5 +1,6 @@
 import StatLean.StatisticalModels.Model.Defs
 import StatLean.PointEstimation.Model.Defs
+import Mathlib.MeasureTheory.Measure.Decomposition.Lebesgue
 
 /-!
 # Adapter: dominated families ↔ the density carrier `ParametricFamily`
