@@ -94,19 +94,62 @@ noncomputable def graySubCumHazard (P : Measure (ℝ × Option (Fin k))) (j : Fi
 def toBoolObs : ℝ × Option (Fin 1) → ℝ × Bool :=
   fun p => (p.1, p.2.isSome)
 
+/-- LEAN-ONLY: every subset of the mark space is measurable (the `⊤` instance above). -/
+private theorem measurableSet_mark (s : Set (Option (Fin k))) : MeasurableSet s := trivial
+
+/-- LEAN-ONLY: every map out of the mark space is measurable (the `⊤` instance above). -/
+private theorem measurable_mark {α : Type*} [MeasurableSpace α] (g : Option (Fin k) → α) :
+    Measurable g := fun _ _ => trivial
+
+/-- LEAN-ONLY: the mark-collapsing map `(t, κ) ↦ (t, g κ)` onto the censoring carrier;
+`toBoolObs` is the instance `g = Option.isSome`. -/
+private def markObs (g : Option (Fin k) → Bool) : ℝ × Option (Fin k) → ℝ × Bool :=
+  fun p => (p.1, g p.2)
+
+/-- LEAN-ONLY: the mark-collapsing map is measurable. -/
+private theorem measurable_markObs (g : Option (Fin k) → Bool) : Measurable (markObs g) :=
+  measurable_fst.prodMk ((measurable_mark g).comp measurable_snd)
+
+/-- LEAN-ONLY: collapsing the mark does not change the observed-time law. -/
+private theorem observedTimeLawCR_markObs (P : Measure (ℝ × Option (Fin k)))
+    (g : Option (Fin k) → Bool) :
+    observedTimeLawCR P = observedTimeLaw (P.map (markObs g)) := by
+  rw [observedTimeLaw, Measure.map_map measurable_fst (measurable_markObs g)]
+  rfl
+
+/-- LEAN-ONLY: if `g` is the indicator of the mark `some j`, the cause-`j` sub-law is the
+uncensored sub-law of the collapsed observation. -/
+private theorem causeSubLaw_markObs (P : Measure (ℝ × Option (Fin k))) (j : Fin k)
+    (g : Option (Fin k) → Bool) (hg : ∀ x, g x = true ↔ x = some j) :
+    causeSubLaw P j = uncensoredSubLaw (P.map (markObs g)) := by
+  have hE : MeasurableSet {q : ℝ × Bool | q.2 = true} :=
+    measurable_snd (measurableSet_singleton true)
+  have hpre : markObs g ⁻¹' {q : ℝ × Bool | q.2 = true}
+      = {p : ℝ × Option (Fin k) | p.2 = some j} := by
+    ext p
+    simpa [markObs] using hg p.2
+  rw [uncensoredSubLaw, Measure.restrict_map (measurable_markObs g) hE, hpre,
+    Measure.map_map measurable_fst (measurable_markObs g)]
+  rfl
+
 /-- Bridge: the single-cause sub-law is the uncensored sub-law of the collapsed
 observation. -/
 theorem causeSubLaw_eq_uncensoredSubLaw (P : Measure (ℝ × Option (Fin 1)))
     [IsFiniteMeasure P] (j : Fin 1) :
     causeSubLaw P j = uncensoredSubLaw (P.map toBoolObs) := by
-  sorry
+  refine causeSubLaw_markObs P j Option.isSome fun x => ?_
+  cases x with
+  | none => simp
+  | some i => simp [Subsingleton.elim i j]
 
 /-- Sub-laws are dominated by the observed-time law (the restrict-monotonicity
 workhorse). -/
 theorem causeSubLaw_le (P : Measure (ℝ × Option (Fin k))) (j : Fin k) {A : Set ℝ}
     (hA : MeasurableSet A) :
     causeSubLaw P j A ≤ observedTimeLawCR P A := by
-  sorry
+  rw [causeSubLaw, observedTimeLawCR, Measure.map_apply measurable_fst hA,
+    Measure.map_apply measurable_fst hA, Measure.restrict_apply (measurable_fst hA)]
+  exact measure_mono inter_subset_left
 
 /-- **S6.1, hazard additivity** (Prentice et al. 1978; ABGK §IV.4): the cause-specific
 cumulative hazards sum to the all-cause crude hazard. -/
