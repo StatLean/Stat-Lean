@@ -41,77 +41,95 @@ namespace StatLean.StatisticalModels
 
 variable {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
 
+/-- The `Sum.inl`-block projection as a bare linear map; addition and scalar multiplication on
+the `PiLp` carrier are coordinatewise, so both structure fields are `rfl`. -/
+private noncomputable def blockFstₗ :
+    EuclideanSpace ℝ (ι₁ ⊕ ι₂) →ₗ[ℝ] EuclideanSpace ℝ ι₁ where
+  toFun x := WithLp.toLp 2 fun i => x (Sum.inl i)
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+/-- The `Sum.inr`-block projection as a bare linear map. -/
+private noncomputable def blockSndₗ :
+    EuclideanSpace ℝ (ι₁ ⊕ ι₂) →ₗ[ℝ] EuclideanSpace ℝ ι₂ where
+  toFun x := WithLp.toLp 2 fun j => x (Sum.inr j)
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
 /-- Block projection onto the first (`Sum.inl`) coordinates, as a continuous linear map. -/
 noncomputable def blockFst :
     EuclideanSpace ℝ (ι₁ ⊕ ι₂) →L[ℝ] EuclideanSpace ℝ ι₁ :=
-  sorry
+  LinearMap.toContinuousLinearMap blockFstₗ
 
 /-- Block projection onto the second (`Sum.inr`) coordinates, as a continuous linear map. -/
 noncomputable def blockSnd :
     EuclideanSpace ℝ (ι₁ ⊕ ι₂) →L[ℝ] EuclideanSpace ℝ ι₂ :=
-  sorry
+  LinearMap.toContinuousLinearMap blockSndₗ
 
 /-- Block assembly: build a sum-index vector from its two blocks. -/
 noncomputable def blockPair (x₁ : EuclideanSpace ℝ ι₁) (x₂ : EuclideanSpace ℝ ι₂) :
     EuclideanSpace ℝ (ι₁ ⊕ ι₂) :=
-  sorry
+  WithLp.toLp 2 (Sum.elim (WithLp.ofLp x₁) (WithLp.ofLp x₂))
 
 @[simp]
 theorem blockFst_apply (x : EuclideanSpace ℝ (ι₁ ⊕ ι₂)) (i : ι₁) :
-    blockFst x i = x (Sum.inl i) := by
-  sorry
+    blockFst x i = x (Sum.inl i) := rfl
 
 @[simp]
 theorem blockSnd_apply (x : EuclideanSpace ℝ (ι₁ ⊕ ι₂)) (j : ι₂) :
-    blockSnd x j = x (Sum.inr j) := by
-  sorry
+    blockSnd x j = x (Sum.inr j) := rfl
 
 @[simp]
 theorem blockPair_inl (x₁ : EuclideanSpace ℝ ι₁) (x₂ : EuclideanSpace ℝ ι₂) (i : ι₁) :
-    blockPair x₁ x₂ (Sum.inl i) = x₁ i := by
-  sorry
+    blockPair x₁ x₂ (Sum.inl i) = x₁ i := rfl
 
 @[simp]
 theorem blockPair_inr (x₁ : EuclideanSpace ℝ ι₁) (x₂ : EuclideanSpace ℝ ι₂) (j : ι₂) :
-    blockPair x₁ x₂ (Sum.inr j) = x₂ j := by
-  sorry
+    blockPair x₁ x₂ (Sum.inr j) = x₂ j := rfl
 
 @[simp]
 theorem blockFst_blockPair (x₁ : EuclideanSpace ℝ ι₁) (x₂ : EuclideanSpace ℝ ι₂) :
-    blockFst (blockPair x₁ x₂) = x₁ := by
-  sorry
+    blockFst (blockPair x₁ x₂) = x₁ := rfl
 
 @[simp]
 theorem blockSnd_blockPair (x₁ : EuclideanSpace ℝ ι₁) (x₂ : EuclideanSpace ℝ ι₂) :
-    blockSnd (blockPair x₁ x₂) = x₂ := by
-  sorry
+    blockSnd (blockPair x₁ x₂) = x₂ := rfl
 
 @[simp]
 theorem blockPair_blockFst_blockSnd (x : EuclideanSpace ℝ (ι₁ ⊕ ι₂)) :
     blockPair (blockFst x) (blockSnd x) = x := by
-  sorry
+  ext k
+  cases k <;> rfl
 
 /-- **The inner product splits over the blocks** — the charFun workhorse:
 `⟪t, x⟫ = ⟪t₁, x₁⟫ + ⟪t₂, x₂⟫`. -/
 theorem inner_sum_split (t x : EuclideanSpace ℝ (ι₁ ⊕ ι₂)) :
     ⟪t, x⟫_ℝ = ⟪blockFst t, blockFst x⟫_ℝ + ⟪blockSnd t, blockSnd x⟫_ℝ := by
-  sorry
+  simp [PiLp.inner_apply, Fintype.sum_sum_type]
 
 /-- The measurable equivalence between the sum-index Euclidean space and the product of the
 block spaces. -/
 noncomputable def sumMeasEquivProd :
-    EuclideanSpace ℝ (ι₁ ⊕ ι₂) ≃ᵐ EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ :=
-  sorry
+    EuclideanSpace ℝ (ι₁ ⊕ ι₂) ≃ᵐ EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ where
+  toFun x := (blockFst x, blockSnd x)
+  invFun p := blockPair p.1 p.2
+  left_inv _ := blockPair_blockFst_blockSnd _
+  right_inv p := Prod.ext (blockFst_blockPair _ _) (blockSnd_blockPair _ _)
+  measurable_toFun :=
+    (blockFst.continuous.measurable).prodMk (blockSnd.continuous.measurable)
+  measurable_invFun := by
+    have : Continuous fun p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ =>
+        blockPair p.1 p.2 :=
+      (EuclideanSpace.sumEquivProd (𝕜 := ℝ) (ι := ι₁) (κ := ι₂)).symm.continuous
+    exact this.measurable
 
 @[simp]
 theorem sumMeasEquivProd_apply (x : EuclideanSpace ℝ (ι₁ ⊕ ι₂)) :
-    sumMeasEquivProd x = (blockFst x, blockSnd x) := by
-  sorry
+    sumMeasEquivProd x = (blockFst x, blockSnd x) := rfl
 
 @[simp]
 theorem sumMeasEquivProd_symm_apply (p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂) :
-    sumMeasEquivProd.symm p = blockPair p.1 p.2 := by
-  sorry
+    sumMeasEquivProd.symm p = blockPair p.1 p.2 := rfl
 
 /-- Pushforward along the block equivalence is injective on measures: charFun-uniqueness
 arguments on the sum space transport to product-space statements. -/
@@ -119,7 +137,7 @@ theorem ext_of_map_sumMeasEquivProd
     {μ ν : Measure (EuclideanSpace ℝ (ι₁ ⊕ ι₂))}
     (h : μ.map (sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂))
         = ν.map (sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂))) :
-    μ = ν := by
-  sorry
+    μ = ν :=
+  MeasurableEquiv.map_measurableEquiv_injective _ h
 
 end StatLean.StatisticalModels
