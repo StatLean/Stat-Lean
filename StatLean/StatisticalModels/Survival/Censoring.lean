@@ -49,7 +49,7 @@ namespace StatLean.StatisticalModels.Survival
 
 /-- The right-censoring coarsening map `(t, c) ↦ (t ∧ c, 1{t ≤ c})`
 (tie convention: ties are events; KM58 §2). -/
-def censorObserve : ℝ × ℝ → ℝ × Bool :=
+noncomputable def censorObserve : ℝ × ℝ → ℝ × Bool :=
   fun p => (min p.1 p.2, decide (p.1 ≤ p.2))
 
 /-- The coarsening map is measurable (LEAN-ONLY plumbing). -/
