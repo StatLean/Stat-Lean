@@ -6,9 +6,9 @@ import StatLean.StatisticalModels.ForMathlib.CovarianceMatrix
 
 The conditional-on-design (fixed-matrix) GEE layer: `N` independent subjects with fixed
 per-subject Jacobians `D i`, working covariances `V i`, and response laws `Qs i` (true
-covariances `Σs i`, unknown). Everything here is **exact at finite `N`** — zero asymptotics:
+covariances `Covs i`, unknown). Everything here is **exact at finite `N`** — zero asymptotics:
 
-* `geeBread D V = ∑ Dᵢᵀ Vᵢ⁻¹ Dᵢ` and `geeMeat D V Σs = ∑ Dᵢᵀ Vᵢ⁻¹ Σᵢ Vᵢ⁻¹ Dᵢ`;
+* `geeBread D V = ∑ Dᵢᵀ Vᵢ⁻¹ Dᵢ` and `geeMeat D V Covs = ∑ Dᵢᵀ Vᵢ⁻¹ Σᵢ Vᵢ⁻¹ Dᵢ`;
 * `geeScoreTotal` — the centered total estimating function; `geeEstimatorMap` — the linear
   GEE/WLS estimator `B⁻¹ ∑ Dᵢᵀ Vᵢ⁻¹ yᵢ`;
 * `geeEstimatorMap_eq_add` — the linearization `β̂ = β₀ + B⁻¹ U(β₀)` (the workhorse);
@@ -53,8 +53,8 @@ noncomputable def geeBread (D : Fin N → Matrix (Fin m) (Fin q) ℝ)
 
 /-- The **meat** `M = ∑ Dᵢᵀ Vᵢ⁻¹ Σᵢ Vᵢ⁻¹ Dᵢ` (`LZ86 §3` Eq. (13)). -/
 noncomputable def geeMeat (D : Fin N → Matrix (Fin m) (Fin q) ℝ)
-    (V Σs : Fin N → Matrix (Fin m) (Fin m) ℝ) : Matrix (Fin q) (Fin q) ℝ :=
-  ∑ i, (D i)ᵀ * (V i)⁻¹ * Σs i * (V i)⁻¹ * D i
+    (V Covs : Fin N → Matrix (Fin m) (Fin m) ℝ) : Matrix (Fin q) (Fin q) ℝ :=
+  ∑ i, (D i)ᵀ * (V i)⁻¹ * Covs i * (V i)⁻¹ * D i
 
 /-- The centered total estimating function `U(β₀)(y) = ∑ Dᵢᵀ Vᵢ⁻¹ (yᵢ − Dᵢ β₀)`. -/
 noncomputable def geeScoreTotal (D : Fin N → Matrix (Fin m) (Fin q) ℝ)
@@ -109,32 +109,32 @@ theorem meanVec_geeEstimator (D : Fin N → Matrix (Fin m) (Fin q) ℝ)
 /-- **The meat** (exact): the covariance of the total estimating function is
 `∑ Dᵢᵀ Vᵢ⁻¹ Σᵢ Vᵢ⁻¹ Dᵢ` (`LZ86 §3` Eq. (13), finite-sample form). -/
 theorem covMatrix_geeScoreTotal (D : Fin N → Matrix (Fin m) (Fin q) ℝ)
-    (V Σs : Fin N → Matrix (Fin m) (Fin m) ℝ) (β₀ : EuclideanSpace ℝ (Fin q))
+    (V Covs : Fin N → Matrix (Fin m) (Fin m) ℝ) (β₀ : EuclideanSpace ℝ (Fin q))
     (Qs : Fin N → Measure (EuclideanSpace ℝ (Fin m)))
     [∀ i, IsProbabilityMeasure (Qs i)]
     -- USER-INPUT: true response covariances; LZ86 §3
-    (hcov : ∀ i, covMatrix (Qs i) = Σs i)
+    (hcov : ∀ i, covMatrix (Qs i) = Covs i)
     -- USER-INPUT: second moments; LZ86 §3
     (hL2 : ∀ i, MemLp id 2 (Qs i))
     -- USER-INPUT: symmetric working covariances; LZ86 §2
     (hVsymm : ∀ i, (V i)ᵀ = V i) :
-    covMatrix ((Measure.pi Qs).map (geeScoreTotal D V β₀)) = geeMeat D V Σs := by
+    covMatrix ((Measure.pi Qs).map (geeScoreTotal D V β₀)) = geeMeat D V Covs := by
   sorry
 
 /-- **The exact sandwich** `Cov(β̂) = B⁻¹ M B⁻¹` (`LZ86 §3` Eq. (13), exact at finite `N`). -/
 theorem covMatrix_geeEstimator (D : Fin N → Matrix (Fin m) (Fin q) ℝ)
-    (V Σs : Fin N → Matrix (Fin m) (Fin m) ℝ) (β₀ : EuclideanSpace ℝ (Fin q))
+    (V Covs : Fin N → Matrix (Fin m) (Fin m) ℝ) (β₀ : EuclideanSpace ℝ (Fin q))
     (Qs : Fin N → Measure (EuclideanSpace ℝ (Fin m)))
     [∀ i, IsProbabilityMeasure (Qs i)]
     -- USER-INPUT: correct means, true covariances, second moments; LZ86 §2–3
     (hmean : ∀ i, meanVec (Qs i) = Matrix.toEuclideanLin (𝕜 := ℝ) (D i) β₀)
-    (hcov : ∀ i, covMatrix (Qs i) = Σs i) (hL2 : ∀ i, MemLp id 2 (Qs i))
+    (hcov : ∀ i, covMatrix (Qs i) = Covs i) (hL2 : ∀ i, MemLp id 2 (Qs i))
     -- USER-INPUT: symmetric working covariances; LZ86 §2
     (hVsymm : ∀ i, (V i)ᵀ = V i)
     -- USER-INPUT: invertible bread; LZ86 §2
     (hB : IsUnit (geeBread D V).det) :
     covMatrix ((Measure.pi Qs).map (geeEstimatorMap D V))
-      = (geeBread D V)⁻¹ * geeMeat D V Σs * (geeBread D V)⁻¹ := by
+      = (geeBread D V)⁻¹ * geeMeat D V Covs * (geeBread D V)⁻¹ := by
   sorry
 
 end StatLean.StatisticalModels.Longitudinal

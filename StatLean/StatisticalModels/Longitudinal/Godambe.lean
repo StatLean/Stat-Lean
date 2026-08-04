@@ -44,45 +44,45 @@ variable {N m q : ℕ}
 /-- The **Godambe information** `K = ∑ Dᵢᵀ Σᵢ⁻¹ Dᵢ` — the bread at the true covariance
 (`God60`). -/
 noncomputable def godambeInfo (D : Fin N → Matrix (Fin m) (Fin q) ℝ)
-    (Σs : Fin N → Matrix (Fin m) (Fin m) ℝ) : Matrix (Fin q) (Fin q) ℝ :=
-  ∑ i, (D i)ᵀ * (Σs i)⁻¹ * D i
+    (Covs : Fin N → Matrix (Fin m) (Fin m) ℝ) : Matrix (Fin q) (Fin q) ℝ :=
+  ∑ i, (D i)ᵀ * (Covs i)⁻¹ * D i
 
 /-- The stacked-score covariance block matrix is PSD — the matricial form of
 "`Cov (U, U*)` is a covariance" with the cross-block `B` (the Godambe cancellation). -/
 theorem posSemidef_fromBlocks_meat_bread (D : Fin N → Matrix (Fin m) (Fin q) ℝ)
-    (V Σs : Fin N → Matrix (Fin m) (Fin m) ℝ)
+    (V Covs : Fin N → Matrix (Fin m) (Fin m) ℝ)
     -- USER-INPUT: true covariances positive definite; God60
-    (hΣ : ∀ i, (Σs i).PosDef)
+    (hΣ : ∀ i, (Covs i).PosDef)
     -- USER-INPUT: symmetric working covariances; LZ86 §2
     (hVsymm : ∀ i, (V i)ᵀ = V i) :
-    (Matrix.fromBlocks (geeMeat D V Σs) (geeBread D V)
-      (geeBread D V)ᵀ (godambeInfo D Σs)).PosSemidef := by
+    (Matrix.fromBlocks (geeMeat D V Covs) (geeBread D V)
+      (geeBread D V)ᵀ (godambeInfo D Covs)).PosSemidef := by
   sorry
 
 /-- **L3, Godambe optimality** (`God60`; `LZ86` remark after Thm 2): the exact sandwich
 dominates the inverse Godambe information in the Loewner order — no working covariance
 beats the truth. -/
 theorem godambe_optimality (D : Fin N → Matrix (Fin m) (Fin q) ℝ)
-    (V Σs : Fin N → Matrix (Fin m) (Fin m) ℝ)
+    (V Covs : Fin N → Matrix (Fin m) (Fin m) ℝ)
     -- USER-INPUT: true covariances positive definite; God60
-    (hΣ : ∀ i, (Σs i).PosDef)
+    (hΣ : ∀ i, (Covs i).PosDef)
     -- USER-INPUT: symmetric working covariances; LZ86 §2
     (hVsymm : ∀ i, (V i)ᵀ = V i)
     -- USER-INPUT: identified designs — Godambe information and bread invertible; God60
-    (hK : (godambeInfo D Σs).PosDef) (hB : IsUnit (geeBread D V).det) :
-    ((geeBread D V)⁻¹ * geeMeat D V Σs * (geeBread D V)⁻¹
-      - (godambeInfo D Σs)⁻¹).PosSemidef := by
+    (hK : (godambeInfo D Covs).PosDef) (hB : IsUnit (geeBread D V).det) :
+    ((geeBread D V)⁻¹ * geeMeat D V Covs * (geeBread D V)⁻¹
+      - (godambeInfo D Covs)⁻¹).PosSemidef := by
   sorry
 
 /-- **Equality at the truth**: with `V = Σ` the sandwich collapses to `K⁻¹`. -/
 theorem sandwich_eq_inv_godambeInfo_of_true (D : Fin N → Matrix (Fin m) (Fin q) ℝ)
-    (Σs : Fin N → Matrix (Fin m) (Fin m) ℝ)
+    (Covs : Fin N → Matrix (Fin m) (Fin m) ℝ)
     -- USER-INPUT: identified design at the truth; God60
-    (hK : IsUnit (godambeInfo D Σs).det)
+    (hK : IsUnit (godambeInfo D Covs).det)
     -- USER-INPUT: symmetric true covariances; LZ86 §2
-    (hΣsymm : ∀ i, (Σs i)ᵀ = Σs i) :
-    (geeBread D Σs)⁻¹ * geeMeat D Σs Σs * (geeBread D Σs)⁻¹
-      = (godambeInfo D Σs)⁻¹ := by
+    (hCovsymm : ∀ i, (Covs i)ᵀ = Covs i) :
+    (geeBread D Covs)⁻¹ * geeMeat D Covs Covs * (geeBread D Covs)⁻¹
+      = (godambeInfo D Covs)⁻¹ := by
   sorry
 
 end StatLean.StatisticalModels.Longitudinal
