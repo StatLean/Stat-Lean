@@ -41,6 +41,7 @@ ABGK synthesis.
 -/
 
 open MeasureTheory Set
+open scoped ENNReal
 
 namespace StatLean.StatisticalModels.Survival
 
