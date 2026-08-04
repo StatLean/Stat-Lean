@@ -223,6 +223,27 @@ noncomputable def crObserve₂ : ℝ × ℝ → ℝ × Option (Fin 2) :=
 noncomputable def crLaw₂ (μ₁ μ₂ : Measure ℝ) : Measure (ℝ × Option (Fin 2)) :=
   (μ₁.prod μ₂).map crObserve₂
 
+/-- LEAN-ONLY: the two-cause observation map is measurable. -/
+private theorem measurable_crObserve₂ : Measurable crObserve₂ :=
+  (measurable_fst.min measurable_snd).prodMk
+    (Measurable.ite (measurableSet_le measurable_fst measurable_snd) measurable_const
+      measurable_const)
+
+/-- LEAN-ONLY: collapsing the mark to `κ = 0` turns the two-cause observation into the
+right-censoring observation — ties go to cause `0` on the left and to `Δ = 1` on the right,
+so the two tie conventions agree. -/
+private theorem markObs_comp_crObserve₂ :
+    markObs (fun x : Option (Fin 2) => decide (x = some 0)) ∘ crObserve₂ = censorObserve := by
+  funext p
+  by_cases h : p.1 ≤ p.2 <;> simp [markObs, crObserve₂, censorObserve, h]
+
+/-- LEAN-ONLY: the collapsed two-cause law is the random-censorship law. -/
+private theorem map_crLaw₂ (μ₁ μ₂ : Measure ℝ) :
+    (crLaw₂ μ₁ μ₂).map (markObs fun x : Option (Fin 2) => decide (x = some 0))
+      = censoredLaw μ₁ μ₂ := by
+  rw [crLaw₂, Measure.map_map (measurable_markObs _) measurable_crObserve₂,
+    markObs_comp_crObserve₂, censoredLaw]
+
 /-- **S6.3, crude = net for independent competing risks** (`Tsiatis75` positively resolved
 on the identifiable region; the S2.3 mirror): the crude cause-0 hazard is the net hazard of
 `T₁` where `T₂` survives. -/
@@ -230,7 +251,12 @@ theorem causeSpecificCumHazard_crLaw₂ (μ₁ μ₂ : Measure ℝ) [IsProbabili
     [IsProbabilityMeasure μ₂] :
     causeSpecificCumHazard (crLaw₂ μ₁ μ₂) 0
       = (cumHazard μ₁).restrict {t | 0 < μ₂ (Ici t)} := by
-  sorry
+  have hg : ∀ x : Option (Fin 2), decide (x = some 0) = true ↔ x = some 0 := by
+    intro x; simp
+  rw [causeSpecificCumHazard, causeSubLaw_markObs _ 0 _ hg,
+    observedTimeLawCR_markObs _ (fun x : Option (Fin 2) => decide (x = some 0)),
+    map_crLaw₂]
+  exact crudeCumHazard_censoredLaw μ₁ μ₂
 
 /-- **S6.4, Gray vs cause-specific** (`Gray88`): the subdistribution at-risk mass dominates
 the all-cause at-risk mass, so the Gray hazard is dominated by the cause-specific hazard. -/
