@@ -434,6 +434,56 @@ theorem kaplanMeier_of_no_censoring {d : Fin n → ℝ × Bool}
     exact ⟨fun h => h (hmemE i), fun h _ => h⟩
   rw [kaplanMeier, hkey, hcard]
 
+/-- The atom of the Kaplan–Meier law: `μ{s} = Ŝ(s−) − Ŝ(s)`. -/
+private lemma kaplanMeierMeasure_singleton (d : Fin n → ℝ × Bool) (s : ℝ) :
+    kaplanMeierMeasure d {s}
+      = ENNReal.ofReal ((∏ u ∈ (eventTimes d).filter (· < s), (1 - naJump d u))
+          - kaplanMeier d s) := by
+  rw [kaplanMeierMeasure, StieltjesFunction.measure_singleton, leftLim_kaplanMeierSF,
+    kaplanMeierSF_apply]
+  congr 1
+  ring
+
+/-- The upper tail of the Kaplan–Meier law: `μ[s, ∞) = Ŝ(s−) − Ŝ(∞)` — note the **defect**
+`Ŝ(∞) = kmLimit d`, which is `0` exactly when the largest observation is an event. -/
+private lemma kaplanMeierMeasure_Ici (d : Fin n → ℝ × Bool) (s : ℝ) :
+    kaplanMeierMeasure d (Set.Ici s)
+      = ENNReal.ofReal ((∏ u ∈ (eventTimes d).filter (· < s), (1 - naJump d u))
+          - kmLimit d) := by
+  rw [kaplanMeierMeasure, StieltjesFunction.measure_Ici _ (tendsto_kaplanMeierSF_atTop d),
+    leftLim_kaplanMeierSF]
+  congr 1
+  ring
+
+/-- Kaplan–Meier peels its top factor at an event time. -/
+private lemma kaplanMeier_eq_prod_lt_mul {d : Fin n → ℝ × Bool} {s : ℝ}
+    (hs : s ∈ eventTimes d) :
+    kaplanMeier d s
+      = (∏ u ∈ (eventTimes d).filter (· < s), (1 - naJump d u)) * (1 - naJump d s) := by
+  rw [kaplanMeier, filter_le_eq_insert hs, Finset.prod_insert (by simp), mul_comm]
+
+/-- **Self-consistency, repaired** (ABGK §IV.3 (verify §)): the hazard jump of the
+Kaplan–Meier law at an event time inside its support is the Nelson–Aalen increment — provided
+the law is **not defective** (`kmLimit d = 0`, i.e. the largest observation is an event).
+Without that hypothesis the identity is false: see `cex_cumHazardJump_ne` below. -/
+private lemma cumHazardJump_kaplanMeierMeasure_of_kmLimit_zero {d : Fin n → ℝ × Bool} {s : ℝ}
+    (hs : s ∈ eventTimes d)
+    (hpos : 0 < ∏ u ∈ (eventTimes d).filter (· < s), (1 - naJump d u))
+    (hdefect : kmLimit d = 0) :
+    cumHazardJump (kaplanMeierMeasure d) s = ENNReal.ofReal (naJump d s) := by
+  set P := ∏ u ∈ (eventTimes d).filter (· < s), (1 - naJump d u) with hP
+  have hIci : kaplanMeierMeasure d (Set.Ici s) = ENNReal.ofReal P := by
+    rw [kaplanMeierMeasure_Ici, hdefect, sub_zero]
+  have hpt : kaplanMeierMeasure d {s} = ENNReal.ofReal (P * naJump d s) := by
+    rw [kaplanMeierMeasure_singleton, kaplanMeier_eq_prod_lt_mul hs]
+    congr 1
+    ring
+  have hPne : ENNReal.ofReal P ≠ 0 := by
+    simpa using hpos
+  rw [cumHazardJump_eq _ (hIci ▸ hPne), hpt, hIci, ← ENNReal.ofReal_div_of_pos hpos]
+  congr 1
+  field_simp
+
 /-- **Self-consistency** (ABGK §IV.3 (verify §)): the hazard jump of the Kaplan–Meier law at
 an event time inside its support is the Nelson–Aalen increment — the estimator solves the
 model's own hazard identity. -/
@@ -442,6 +492,87 @@ theorem cumHazardJump_kaplanMeierMeasure {d : Fin n → ℝ × Bool} {s : ℝ}
     -- USER-INPUT: the left limit of KM at s is positive (inside the support); ABGK §IV.3
     (hpos : 0 < ∏ u ∈ (eventTimes d).filter (· < s), (1 - naJump d u)) :
     cumHazardJump (kaplanMeierMeasure d) s = ENNReal.ofReal (naJump d s) := by
+  -- FALSE AS FROZEN. The slice's `cumHazard` divides by `μ [s, ∞)`, which for a *defective*
+  -- Kaplan–Meier law is `Ŝ(s−) − Ŝ(∞)`, strictly below the `Ŝ(s−)` of the classical
+  -- identity. Machine-checked counterexample: `cex_cumHazardJump_ne` (data `T̃ = (1, 2)`,
+  -- `Δ = (1, 0)`: hypotheses hold at `s = 1`, but `ΔΛ = 1 ≠ 1/2 = ΔN(1)/Y(1)`).
+  -- TODO: the statement needs `kmLimit d = 0` (largest observation an event), under which it
+  -- is PROVED as `cumHazardJump_kaplanMeierMeasure_of_kmLimit_zero` above; unfreezing the
+  -- signature to add that hypothesis discharges this `sorry` outright.
   sorry
+
+/-! ### A counterexample to `cumHazardJump_kaplanMeierMeasure` as frozen
+
+The dataset `T̃ = (1, 2)`, `Δ = (1, 0)` — one event at `1`, one observation censored at `2`.
+Here `Y(1) = 2`, `ΔN(1) = 1`, so `ΔN(1)/Y(1) = 1/2`, and `Ŝ(1−) = 1 > 0` (so the frozen
+hypothesis `hpos` holds), while `Ŝ(∞) = 1/2`: the Kaplan–Meier law is **defective**, with
+total mass `1/2`, all of it the atom at `1`. Hence `μ{1} = μ[1, ∞) = 1/2` and
+`ΔΛ(1) = μ{1}/μ[1,∞) = 1 ≠ 1/2 = ΔN(1)/Y(1)`.
+
+The frozen statement is therefore true only when `kmLimit d = 0`, i.e. when the largest
+observation is an event; the slice's `cumHazard` divides by `μ[s, ∞)`, which under a defect
+is **strictly smaller** than the survival value `Ŝ(s−)` that the classical identity uses. -/
+
+private noncomputable def cexData : Fin 2 → ℝ × Bool := ![(1, true), (2, false)]
+
+private lemma cex_eventTimes : eventTimes cexData = {1} := by
+  ext x
+  simp only [eventTimes, Finset.mem_image, Finset.mem_filter, Finset.mem_univ, true_and,
+    Finset.mem_singleton]
+  constructor
+  · rintro ⟨i, hi, rfl⟩
+    fin_cases i <;> simp_all [cexData]
+  · rintro rfl
+    exact ⟨0, by simp [cexData], by simp [cexData]⟩
+
+private lemma cex_atRisk : atRisk cexData 1 = 2 := by
+  rw [atRisk, Finset.filter_true_of_mem fun i _ => by fin_cases i <;> norm_num [cexData],
+    Finset.card_univ, Fintype.card_fin]
+
+private lemma cex_eventCount : eventCount cexData 1 = 1 := by
+  rw [eventCount, show (univ.filter fun i => (cexData i).1 = (1 : ℝ) ∧ (cexData i).2 = true)
+    = {0} from by ext i; fin_cases i <;> simp [cexData]]
+  rfl
+
+private lemma cex_naJump : naJump cexData 1 = 1 / 2 := by
+  rw [naJump, cex_atRisk, cex_eventCount]
+  norm_num
+
+private lemma cex_prod_lt : ∏ u ∈ (eventTimes cexData).filter (· < 1), (1 - naJump cexData u)
+    = 1 := by
+  rw [cex_eventTimes, Finset.filter_singleton, if_neg (lt_irrefl (1 : ℝ)), Finset.prod_empty]
+
+private lemma cex_kaplanMeier : kaplanMeier cexData 1 = 1 / 2 := by
+  rw [kaplanMeier, cex_eventTimes, Finset.filter_singleton, if_pos le_rfl,
+    Finset.prod_singleton, cex_naJump]
+  norm_num
+
+private lemma cex_kmLimit : kmLimit cexData = 1 / 2 := by
+  rw [kmLimit, cex_eventTimes, Finset.prod_singleton, cex_naJump]
+  norm_num
+
+/-- **The frozen `cumHazardJump_kaplanMeierMeasure` is FALSE**: on `cexData` its hypotheses
+hold at `s = 1` but its conclusion fails (`1 ≠ 1/2`). -/
+private theorem cex_cumHazardJump_ne :
+    (1 : ℝ) ∈ eventTimes cexData ∧
+      0 < ∏ u ∈ (eventTimes cexData).filter (· < (1 : ℝ)), (1 - naJump cexData u) ∧
+      cumHazardJump (kaplanMeierMeasure cexData) 1
+        ≠ ENNReal.ofReal (naJump cexData 1) := by
+  have hIci : kaplanMeierMeasure cexData (Set.Ici 1) = ENNReal.ofReal (1 / 2) := by
+    rw [kaplanMeierMeasure_Ici, cex_prod_lt, cex_kmLimit]
+    norm_num
+  have hpt : kaplanMeierMeasure cexData {(1 : ℝ)} = ENNReal.ofReal (1 / 2) := by
+    rw [kaplanMeierMeasure_singleton, cex_prod_lt, cex_kaplanMeier]
+    norm_num
+  have hne : ENNReal.ofReal (1 / 2 : ℝ) ≠ 0 := by simp
+  have hjump : cumHazardJump (kaplanMeierMeasure cexData) 1 = 1 := by
+    rw [cumHazardJump_eq _ (hIci ▸ hne), hpt, hIci,
+      ENNReal.div_self hne (by simp)]
+  refine ⟨by simp [cex_eventTimes], by rw [cex_prod_lt]; norm_num, ?_⟩
+  rw [hjump, cex_naJump]
+  intro h
+  rw [show (1 : ℝ≥0∞) = ENNReal.ofReal 1 by simp] at h
+  have := (ENNReal.ofReal_eq_ofReal_iff (by norm_num) (by norm_num)).1 h
+  norm_num at this
 
 end StatLean.StatisticalModels.Survival
