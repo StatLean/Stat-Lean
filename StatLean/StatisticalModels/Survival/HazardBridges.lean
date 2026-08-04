@@ -1,5 +1,6 @@
 import StatLean.StatisticalModels.Survival.CumulativeHazard
 import Mathlib.MeasureTheory.Integral.Bochner.FundThmCalculus
+import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 
 /-!
 # Classical hazard bridges: `Λ = −log S` and the discrete product formula
