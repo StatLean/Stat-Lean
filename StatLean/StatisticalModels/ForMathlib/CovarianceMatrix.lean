@@ -76,11 +76,6 @@ private theorem memLp_eval {μ : Measure (EuclideanSpace ℝ ι)} (hL2 : MemLp i
     MemLp (fun x : EuclideanSpace ℝ ι => x i) 2 μ :=
   (EuclideanSpace.proj (𝕜 := ℝ) i).comp_memLp' hL2
 
-private theorem integrable_eval {μ : Measure (EuclideanSpace ℝ ι)} [IsFiniteMeasure μ]
-    (hL2 : MemLp id 2 μ) (i : ι) :
-    Integrable (fun x : EuclideanSpace ℝ ι => x i) μ :=
-  (memLp_eval hL2 i).integrable (by norm_num)
-
 /-- The covariance matrix is symmetric. -/
 theorem covMatrix_transpose (μ : Measure (EuclideanSpace ℝ ι)) :
     (covMatrix μ)ᵀ = covMatrix μ := by
@@ -149,7 +144,7 @@ private theorem matrixCLM_apply [DecidableEq ι₁] (A : Matrix ι₂ ι₁ ℝ)
 private theorem toEuclideanLin_coord [DecidableEq ι₁] (A : Matrix ι₂ ι₁ ℝ)
     (x : EuclideanSpace ℝ ι₁) (k : ι₂) :
     (Matrix.toEuclideanLin (𝕜 := ℝ) A x) k = ∑ l, A k l * x l := by
-  simp [Matrix.toEuclideanLin_apply, Matrix.mulVec, dotProduct]
+  simp [Matrix.toLpLin_apply, Matrix.mulVec, dotProduct]
 
 /-- Coordinate evaluation on the target of a measurable map is a.e.-strongly measurable. -/
 private theorem aesm_eval {α : Type*} [MeasurableSpace α] {ν : Measure α}
@@ -298,13 +293,68 @@ theorem covMatrix_map_sum_pi [DecidableEq ι₁] {N : ℕ}
     covMatrix ((Measure.pi μs).map fun x =>
         ∑ k, Matrix.toEuclideanLin (𝕜 := ℝ) (A k) (x k))
       = ∑ k, A k * covMatrix (μs k) * (A k)ᵀ := by
-  sorry
+  -- the `k`-th block of the `i`-th coordinate, on the factor and on the product
+  have hg : ∀ (k : Fin N) (i : ι₃),
+      MemLp (fun y : EuclideanSpace ℝ ι₁ => ∑ l, A k i l * y l) 2 (μs k) :=
+    fun k i => memLp_finset_sum _ fun l _ => (memLp_eval (hL2 k) l).const_mul (A k i l)
+  have hgp : ∀ (k : Fin N) (i : ι₃),
+      MemLp (fun x : ∀ _ : Fin N, EuclideanSpace ℝ ι₁ => ∑ l, A k i l * x k l) 2
+        (Measure.pi μs) := by
+    intro k i
+    simpa [Function.comp_def] using
+      (hg k i).comp_measurePreserving (measurePreserving_eval μs k)
+  -- distinct blocks are independent, so their covariance vanishes
+  have hindep : ∀ (k k' : Fin N), k ≠ k' → ∀ i j : ι₃,
+      cov[fun x : ∀ _ : Fin N, EuclideanSpace ℝ ι₁ => ∑ l, A k i l * x k l,
+          fun x : ∀ _ : Fin N, EuclideanSpace ℝ ι₁ => ∑ l, A k' j l * x k' l;
+        Measure.pi μs] = 0 := by
+    intro k k' hkk' i j
+    have hiid : iIndepFun (fun (k : Fin N) (x : ∀ _ : Fin N, EuclideanSpace ℝ ι₁) => x k)
+        (Measure.pi μs) := iIndepFun_pi (X := fun _ => id) fun _ => aemeasurable_id
+    have h2 := (hiid.indepFun hkk').comp
+      (φ := fun y : EuclideanSpace ℝ ι₁ => ∑ l, A k i l * y l)
+      (ψ := fun y : EuclideanSpace ℝ ι₁ => ∑ l, A k' j l * y l) (by fun_prop) (by fun_prop)
+    exact h2.covariance_eq_zero (hgp k i) (hgp k' j)
+  -- a single block reduces to its own factor
+  have hdiag : ∀ (k : Fin N) (i j : ι₃),
+      cov[fun x : ∀ _ : Fin N, EuclideanSpace ℝ ι₁ => ∑ l, A k i l * x k l,
+          fun x : ∀ _ : Fin N, EuclideanSpace ℝ ι₁ => ∑ l, A k j l * x k l; Measure.pi μs]
+        = (A k * covMatrix (μs k) * (A k)ᵀ) i j := by
+    intro k i j
+    have hm : (Measure.pi μs).map (Function.eval k) = μs k :=
+      (measurePreserving_eval μs k).map_eq
+    have h := covariance_map_fun (μ := Measure.pi μs) (Z := Function.eval k)
+      (X := fun y : EuclideanSpace ℝ ι₁ => ∑ l, A k i l * y l)
+      (Y := fun y : EuclideanSpace ℝ ι₁ => ∑ l, A k j l * y l)
+      (by rw [hm]; exact (hg k i).aestronglyMeasurable)
+      (by rw [hm]; exact (hg k j).aestronglyMeasurable) (measurable_pi_apply k).aemeasurable
+    rw [hm] at h
+    exact h.symm.trans (covariance_rows (hL2 k) (A k) (A k) i j)
+  have hcoord : ∀ (i : ι₃) (x : ∀ _ : Fin N, EuclideanSpace ℝ ι₁),
+      (∑ k, Matrix.toEuclideanLin (𝕜 := ℝ) (A k) (x k)) i = ∑ k, ∑ l, A k i l * x k l := by
+    intro i x
+    simp [WithLp.ofLp_sum, Finset.sum_apply, Matrix.mulVec, dotProduct]
+  have hcont : ∀ k : Fin N, Continuous fun x : ∀ _ : Fin N, EuclideanSpace ℝ ι₁ =>
+      Matrix.toEuclideanLin (𝕜 := ℝ) (A k) (x k) :=
+    fun k => (matrixCLM (A k)).continuous.comp (continuous_apply k)
+  have hmeas : AEMeasurable (fun x : ∀ _ : Fin N, EuclideanSpace ℝ ι₁ =>
+      ∑ k, Matrix.toEuclideanLin (𝕜 := ℝ) (A k) (x k)) (Measure.pi μs) :=
+    (continuous_finset_sum Finset.univ fun k _ => hcont k).aemeasurable
+  ext i j
+  rw [covMatrix_apply, covariance_map_fun (aesm_eval i) (aesm_eval j) hmeas]
+  simp only [hcoord]
+  rw [covariance_fun_sum_fun_sum (fun k => hgp k i) (fun k => hgp k j), Matrix.sum_apply]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [Finset.sum_eq_single k (fun k' _ hne => hindep k k' (Ne.symm hne) i j)
+    fun h => absurd (Finset.mem_univ k) h]
+  exact hdiag k i j
 
 /-- Cross-covariance of a statistic with itself under the image law. -/
 theorem crossCovMatrix_self (μ : Measure Ω) {f : Ω → EuclideanSpace ℝ ι₁}
     -- LEAN-ONLY: measurability for the image-law rewrite
     (hf : AEMeasurable f μ) :
     crossCovMatrix μ f f = covMatrix (μ.map f) := by
-  sorry
+  ext i j
+  exact (covariance_map_fun (aesm_eval i) (aesm_eval j) hf).symm
 
 end StatLean.StatisticalModels
