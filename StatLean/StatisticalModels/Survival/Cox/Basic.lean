@@ -33,18 +33,19 @@ open scoped ENNReal InnerProductSpace
 
 namespace StatLean.StatisticalModels.Survival
 
-variable {p : ℕ} (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
-  (z : EuclideanSpace ℝ (Fin p))
+variable {p : ℕ}
 
 /-- The Cox survival function is antitone (given a locally finite baseline). -/
-theorem antitone_coxSurvival
+theorem antitone_coxSurvival (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
+    (z : EuclideanSpace ℝ (Fin p))
     -- USER-INPUT: locally finite baseline hazard (Λ₀(0,t] < ∞); Cox72 §2
     (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) :
     Antitone (coxSurvival β Λ₀ z) := by
   sorry
 
 /-- The Cox survival function takes values in `(0, 1]` for finite baseline hazard. -/
-theorem coxSurvival_mem_Ioc
+theorem coxSurvival_mem_Ioc (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
+    (z : EuclideanSpace ℝ (Fin p))
     -- USER-INPUT: locally finite baseline; Cox72 §2
     (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) (t : ℝ) :
     coxSurvival β Λ₀ z t ∈ Ioc (0 : ℝ) 1 := by
@@ -53,23 +54,28 @@ theorem coxSurvival_mem_Ioc
 /-- The **canonical Cox law**: the Stieltjes measure of `1 − coxSurvival` (`Cox72 §2`).
 Packaged as a sorried Stieltjes construction with its spec lemma; the closure builds the
 monotone/right-continuous structure from `antitone_coxSurvival` + continuity of `Λ₀`. -/
-noncomputable def coxSF
-    (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] : StieltjesFunction ℝ :=
+noncomputable def coxSF (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
+    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] :
+    StieltjesFunction ℝ :=
   sorry
 
 @[simp]
-theorem coxSF_apply (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] (t : ℝ) :
+theorem coxSF_apply (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
+    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] (t : ℝ) :
     coxSF β Λ₀ z hfin t = 1 - coxSurvival β Λ₀ z t := by
   sorry
 
 /-- The canonical Cox event-time law. -/
-noncomputable def coxMeasure (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] : Measure ℝ :=
+noncomputable def coxMeasure (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
+    (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] :
+    Measure ℝ :=
   (coxSF β Λ₀ z hfin).measure
 
 /-- The Cox law is a (possibly defective) event-time law: mass on `[0, ∞)`, total at most
 one; it is a probability law **iff** the total baseline hazard diverges (else the defect is
 the cure fraction — documented, ABGK §II.1 defective case). -/
-theorem isSubEventTimeLaw_coxMeasure
+theorem isSubEventTimeLaw_coxMeasure (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
+    (z : EuclideanSpace ℝ (Fin p))
     -- USER-INPUT: baseline concentrated on the positive axis; Cox72 §2
     (hΛ0 : Λ₀ (Iic 0) = 0)
     (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] :
@@ -77,7 +83,8 @@ theorem isSubEventTimeLaw_coxMeasure
   sorry
 
 /-- Probability (no cure) under diverging total baseline hazard. -/
-theorem isEventTimeLaw_coxMeasure
+theorem isEventTimeLaw_coxMeasure (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
+    (z : EuclideanSpace ℝ (Fin p))
     -- USER-INPUT: baseline concentrated on the positive axis; Cox72 §2
     (hΛ0 : Λ₀ (Iic 0) = 0)
     (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀]
@@ -90,7 +97,8 @@ theorem isEventTimeLaw_coxMeasure
 has exactly the proportional-hazards structure — its cumulative-hazard measure is
 `e^{⟪β,z⟫} • Λ₀` (restricted to the positive axis carrying the baseline). Designated hard
 theorem of this batch (rides the S-B4 bricks; the single allowed carry). -/
-theorem cumHazard_coxMeasure
+theorem cumHazard_coxMeasure (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
+    (z : EuclideanSpace ℝ (Fin p))
     -- USER-INPUT: baseline concentrated on the positive axis; Cox72 §2
     (hΛ0 : Λ₀ (Iic 0) = 0)
     (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] :
