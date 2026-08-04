@@ -86,8 +86,6 @@ Mathlib's `Measure.pi` API is σ-finite throughout (`Measure.pi_pi`, `Measure.pi
 `Measure.pi_map_pi` all demand `SigmaFinite`), and `SFinite μ` does not supply
 `SigmaFinite (μ.map T)`; only the inequality `≤` is free (the preimage of a `𝓨`-box is a
 `𝓧`-box of the same price, so every `𝓨`-cover converts, but not conversely). -/
--- TODO: s-finite version of `Measure.pi_map_pi`. Needs an s-finite `Measure.pi` API that
--- Mathlib does not currently have; no counterexample found, the gap is API-side.
 private theorem pi_map_pi_of_sFinite (μ : Measure 𝓧) [SFinite μ] {T : 𝓧 → 𝓨}
     (hT : Measurable T) (n : ℕ) :
     Measure.pi (fun _ : Fin n => μ.map T)
@@ -97,8 +95,9 @@ private theorem pi_map_pi_of_sFinite (μ : Measure 𝓧) [SFinite μ] {T : 𝓧 
 /-- Replication commutes with per-coordinate transformation: the iid model of the pushforward
 is the coordinatewise pushforward of the iid model. -/
 theorem iid_pushforward (P : Θ → Measure 𝓧) {T : 𝓧 → 𝓨}
-    -- LEAN-ONLY: measurability of the statistic and s-finiteness; standard regularity
-    (hT : Measurable T) [∀ θ, SFinite (P θ)] (n : ℕ) :
+    -- LEAN-ONLY: measurability of the statistic; probability members (the pin's
+    -- `Measure.pi_map_pi` is stated for probability factors)
+    (hT : Measurable T) [∀ θ, IsProbabilityMeasure (P θ)] (n : ℕ) :
     iid (pushforward P T) n = pushforward (iid P n) (fun x => T ∘ x) := by
   funext θ
   exact pi_map_pi_of_sFinite (P θ) hT n

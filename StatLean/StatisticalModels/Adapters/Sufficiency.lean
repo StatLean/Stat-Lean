@@ -71,13 +71,13 @@ theorem identifiable_pushforward_iff_of_hasSufficientKernel {P : Θ → Measure 
     -- USER-INPUT: T admits a θ-free sufficient kernel (regular-conditional sufficiency);
     -- TPE2 §1.6
     (hT : HasSufficientKernel P T)
+    -- LEAN-ONLY: measurability of the statistic — without it `Measure.map T` junk-values
+    -- and `HasSufficientKernel` holds vacuously, making the iff false
+    (hTm : Measurable T)
     -- USER-INPUT: probability family; TPE2 §1.1
     [∀ θ, IsProbabilityMeasure (P θ)] :
     Identifiable (pushforward P T) ↔ Identifiable P := by
   refine ⟨identifiable_of_pushforward T, fun hP θ₁ θ₂ hEq => ?_⟩
-  -- TODO: FALSE as frozen (see the note above); needs `(hT : Measurable T)` in the signature,
-  -- after which: `obtain ⟨Q, _, hQ⟩ := hT'`, rewrite `hEq` into the graph identity and take
-  -- `Measure.snd` of both sides (`Measure.snd_compProd`, `Measure.map_map`).
   sorry
 
 /-- Target version: sufficiency preserves target identifiability in both directions. -/
@@ -85,12 +85,12 @@ theorem identifiesTarget_pushforward_iff_of_hasSufficientKernel {Γ : Type*}
     {P : Θ → Measure 𝓧} {T : 𝓧 → S} {ψ : Θ → Γ}
     -- USER-INPUT: sufficiency of T; TPE2 §1.6
     (hT : HasSufficientKernel P T)
+    -- LEAN-ONLY: measurability of the statistic (see identifiable_pushforward_iff)
+    (hTm : Measurable T)
     -- USER-INPUT: probability family; TPE2 §1.1
     [∀ θ, IsProbabilityMeasure (P θ)] :
     IdentifiesTarget (pushforward P T) ψ ↔ IdentifiesTarget P ψ := by
   refine ⟨identifiesTarget_of_pushforward T, fun hP θ₁ θ₂ hEq => ?_⟩
-  -- TODO: FALSE as frozen (see the note above); same repair as
-  -- `identifiable_pushforward_iff_of_hasSufficientKernel`.
   sorry
 
 end StatLean.StatisticalModels

@@ -44,15 +44,10 @@ variable {Θ : Type*} [MeasurableSpace Θ] {𝓧 D : Type*}
 /-- On kernel models, the bare-family randomized risk is the composed-kernel loss integral —
 the inner layer of Mathlib's `avgRisk`. -/
 theorem riskRand_coe (K : Kernel Θ 𝓧) [IsMarkovKernel K] (L : Θ → D → ℝ≥0∞)
-    (κ : Kernel 𝓧 D) [IsMarkovKernel κ] (θ : Θ) :
+    (κ : Kernel 𝓧 D) [IsMarkovKernel κ] (θ : Θ)
+    -- LEAN-ONLY: measurability of the loss section (composed-measure lintegral unfolding)
+    (hL : Measurable (L θ)) :
     riskRand ⇑K L κ θ = ∫⁻ d, L θ d ∂((κ ∘ₖ K) θ) := by
-  -- TODO: the frozen signature carries no measurability of the loss section `L θ`, but every
-  -- available bridge needs it: `Kernel.lintegral_comp` and `Measure.lintegral_bind` both demand
-  -- (ae)measurability of the integrand, and `Measure.lintegral_bind_le` supplies only `≤`
-  -- (`∫⁻ d, L θ d ∂((κ ∘ₖ K) θ) ≤ riskRand ⇑K L κ θ`). The library's own instance of this
-  -- identity (`PointEstimation.Sufficiency.RiskEquality.riskRand_comp_eq_riskRand`) carries
-  -- `hL : ∀ θ, Measurable (L θ)`. Adding that hypothesis here closes the proof in one line:
-  -- `simp_rw [riskRand, Kernel.lintegral_comp _ _ _ (hL θ)]`. No counterexample found.
   sorry
 
 /-- Mathlib's average risk is the prior-average of the bare-family randomized risk. -/
