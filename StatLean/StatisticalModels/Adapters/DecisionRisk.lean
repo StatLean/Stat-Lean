@@ -47,8 +47,8 @@ theorem riskRand_coe (K : Kernel Θ 𝓧) [IsMarkovKernel K] (L : Θ → D → �
     (κ : Kernel 𝓧 D) [IsMarkovKernel κ] (θ : Θ)
     -- LEAN-ONLY: measurability of the loss section (composed-measure lintegral unfolding)
     (hL : Measurable (L θ)) :
-    riskRand ⇑K L κ θ = ∫⁻ d, L θ d ∂((κ ∘ₖ K) θ) := by
-  sorry
+    riskRand ⇑K L κ θ = ∫⁻ d, L θ d ∂((κ ∘ₖ K) θ) :=
+  (Kernel.lintegral_comp κ K θ hL).symm
 
 /-- Mathlib's average risk is the prior-average of the bare-family randomized risk. -/
 theorem avgRisk_eq_lintegral_riskRand (K : Kernel Θ 𝓧) [IsMarkovKernel K]
