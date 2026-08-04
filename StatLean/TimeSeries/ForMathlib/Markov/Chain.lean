@@ -43,22 +43,27 @@ noncomputable def nstep (κ : Kernel S S) (μ0 : Measure S) (n : ℕ) : Measure 
 /-- Zero steps: the initial law (for an s-finite initial law). -/
 theorem nstep_zero (κ : Kernel S S) (μ0 : Measure S) [SFinite μ0] :
     nstep κ μ0 0 = μ0 := by
-  sorry
+  rw [nstep, pow_zero]
+  exact Measure.id_comp
 
 /-- One step of Chapman–Kolmogorov: `nstep (n+1) = (nstep n).bind κ`. -/
 theorem nstep_succ (κ : Kernel S S) [IsSFiniteKernel κ] (μ0 : Measure S) [SFinite μ0]
     (n : ℕ) : nstep κ μ0 (n + 1) = (nstep κ μ0 n).bind κ := by
-  sorry
+  rw [nstep, nstep, pow_succ']
+  exact (Measure.comp_assoc (μ := μ0) (κ := (κ ^ n : Kernel S S)) (η := κ)).symm
 
 /-- Invariance propagates to kernel powers. -/
 theorem invariant_pow {κ : Kernel S S} [IsSFiniteKernel κ] {μ : Measure S} [SFinite μ]
     (h : κ.Invariant μ) (n : ℕ) : (κ ^ n).Invariant μ := by
-  sorry
+  induction n with
+  | zero => rw [pow_zero]; exact Measure.id_comp
+  | succ n ih => rw [pow_succ]; exact ih.comp h
 
 /-- A chain started at an invariant law has all `n`-step marginals equal to it
 (the marginal core of FY Theorem 2.2). -/
 theorem invariant_nstep_eq {κ : Kernel S S} [IsSFiniteKernel κ] {μ : Measure S}
     [SFinite μ] (h : κ.Invariant μ) (n : ℕ) : nstep κ μ n = μ := by
-  sorry
+  rw [nstep]
+  exact (invariant_pow h n).def
 
 end StatLean.TimeSeries
