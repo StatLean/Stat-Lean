@@ -51,19 +51,27 @@ variable {p m q : ℕ} {Θβ : Type*}
 structural fact used by every conditioning step). -/
 theorem covariateSigma_le (p m : ℕ) :
     covariateSigma p m ≤ (inferInstance : MeasurableSpace (LongitudinalRecord p m)) := by
-  sorry
+  rintro s ⟨t, ht, rfl⟩
+  exact ⟨{u | (u.1, u.2.1) ∈ t},
+    (measurable_fst.prodMk (measurable_fst.comp measurable_snd)) ht, rfl⟩
+
+/-- The record-to-triple map is measurable for the record σ-algebra (LEAN-ONLY plumbing). -/
+private theorem measurable_record_triple :
+    Measurable fun r : LongitudinalRecord p m => (r.times, r.x, r.y) :=
+  Measurable.of_comap_le le_rfl
 
 /-- Record accessors are measurable (LEAN-ONLY plumbing). -/
 theorem measurable_record_y (j : Fin m) :
-    Measurable fun r : LongitudinalRecord p m => r.y j := by
-  sorry
+    Measurable fun r : LongitudinalRecord p m => r.y j :=
+  ((measurable_pi_apply j).comp ((WithLp.measurable_ofLp 2 _).comp
+    (measurable_snd.comp measurable_snd))).comp measurable_record_triple
 
 /-- Covariate functionals are `covariateSigma`-measurable (LEAN-ONLY plumbing): any
 measurable function of `(times, x)` is measurable for the covariate σ-algebra. -/
 theorem covariateSigma_measurable_comp
     {g : (Fin m → ℝ) × (Fin m → EuclideanSpace ℝ (Fin p)) → ℝ} (hg : Measurable g) :
-    Measurable[covariateSigma p m] fun r : LongitudinalRecord p m => g (r.times, r.x) := by
-  sorry
+    Measurable[covariateSigma p m] fun r : LongitudinalRecord p m => g (r.times, r.x) :=
+  hg.comp (Measurable.of_comap_le le_rfl)
 
 /-- **L1, GEE unbiasedness (L² route)** (`LZ86 §2`, remark below Eq. (6)): under the marginal
 mean model, every coordinate of the GEE estimating function integrates to zero — whatever the
