@@ -260,6 +260,79 @@ theorem cumHazard_Ioc_lt_top (μ : Measure ℝ)
     _ ≤ (μ (Ici t))⁻¹ := cumHazard_Iic_le μ t
     _ < ⊤ := ENNReal.inv_lt_top.2 (pos_iff_ne_zero.2 hIci)
 
+/-- The product-limit telescope, peeling the smallest atom: if all the mass of `(a, t]` sits on
+the finite set `G ⊆ (a, t]`, then `S(a) ∏_{s ∈ G} (1 − ΔΛ(s)) = S(t)`. Each factor is
+`S(s)/S(s−)`, and the consecutive `S(s−)` cancel against the previous `S(s)` because there is no
+mass strictly between consecutive atoms. -/
+private lemma prod_one_sub_jump_aux (μ : Measure ℝ) [IsProbabilityMeasure μ] (G : Finset ℝ) :
+    ∀ a t : ℝ, a ≤ t → (∀ s ∈ G, a < s ∧ s ≤ t) → μ (Ioc a t \ (G : Set ℝ)) = 0 →
+      (μ (Ioi a)).toReal * ∏ s ∈ G, (1 - (cumHazardJump μ s).toReal) = (μ (Ioi t)).toReal := by
+  classical
+  induction G using Finset.strongInductionOn with
+  | _ G ih =>
+    intro a t hat hG hnull
+    rcases G.eq_empty_or_nonempty with rfl | hne
+    · have hOc : μ (Ioc a t) = 0 := by
+        refine measure_mono_null ?_ hnull
+        intro x hx
+        exact ⟨hx, by simp⟩
+      have hcover : Ioi a ⊆ Ioc a t ∪ Ioi t := by
+        intro x hx
+        rcases le_or_gt x t with h | h
+        exacts [Or.inl ⟨hx, h⟩, Or.inr h]
+      have hle : μ (Ioi a) ≤ μ (Ioi t) := by
+        calc μ (Ioi a) ≤ μ (Ioc a t ∪ Ioi t) := measure_mono hcover
+          _ ≤ μ (Ioc a t) + μ (Ioi t) := measure_union_le _ _
+          _ = μ (Ioi t) := by rw [hOc, zero_add]
+      have := le_antisymm hle (measure_mono (Ioi_subset_Ioi hat))
+      simp [this]
+    · obtain ⟨s₀, hs₀G, hmin⟩ : ∃ s₀ ∈ G, ∀ s ∈ G, s₀ ≤ s :=
+        ⟨G.min' hne, G.min'_mem hne, fun s hs => G.min'_le s hs⟩
+      obtain ⟨has₀, hs₀t⟩ := hG s₀ hs₀G
+      -- no mass strictly between `a` and the smallest atom
+      have hIoia : μ (Ioi a) = μ (Ici s₀) := by
+        have hOo : μ (Ioo a s₀) = 0 := by
+          refine measure_mono_null ?_ hnull
+          intro x hx
+          exact ⟨⟨hx.1, hx.2.le.trans hs₀t⟩, fun hxG => absurd (hmin x hxG) (not_le.2 hx.2)⟩
+        refine le_antisymm ?_ (measure_mono (Ici_subset_Ioi.2 has₀))
+        have hcover : Ioi a ⊆ Ioo a s₀ ∪ Ici s₀ := by
+          intro x hx
+          rcases lt_or_ge x s₀ with h | h
+          exacts [Or.inl ⟨hx, h⟩, Or.inr h]
+        calc μ (Ioi a) ≤ μ (Ioo a s₀ ∪ Ici s₀) := measure_mono hcover
+          _ ≤ μ (Ioo a s₀) + μ (Ici s₀) := measure_union_le _ _
+          _ = μ (Ici s₀) := by rw [hOo, zero_add]
+      -- the induction hypothesis for the remaining atoms, restarted at `s₀`
+      have hIH : (μ (Ioi s₀)).toReal * ∏ s ∈ G.erase s₀, (1 - (cumHazardJump μ s).toReal)
+          = (μ (Ioi t)).toReal := by
+        refine ih _ (Finset.erase_ssubset hs₀G) s₀ t hs₀t (fun s hs => ?_) ?_
+        · exact ⟨lt_of_le_of_ne (hmin s (Finset.mem_of_mem_erase hs))
+            (Ne.symm (Finset.ne_of_mem_erase hs)), (hG s (Finset.mem_of_mem_erase hs)).2⟩
+        · refine measure_mono_null ?_ hnull
+          intro x hx
+          exact ⟨⟨has₀.trans hx.1.1, hx.1.2⟩,
+            fun hxG => hx.2 (Finset.mem_erase.2 ⟨ne_of_gt hx.1.1, hxG⟩)⟩
+      rw [← Finset.mul_prod_erase G _ hs₀G, ← mul_assoc, ← hIH]
+      congr 1
+      rcases eq_or_ne (μ (Ici s₀)) 0 with h0 | h0
+      · have hzero : μ (Ioi s₀) = 0 :=
+          measure_mono_null Ioi_subset_Ici_self h0
+        rw [hIoia, h0, hzero]
+        simp
+      · have hR : (0 : ℝ) < (μ (Ici s₀)).toReal :=
+          ENNReal.toReal_pos h0 (measure_ne_top _ _)
+        have hsplit : (μ (Ici s₀)).toReal = (μ (Ioi s₀)).toReal + (μ {s₀}).toReal := by
+          rw [show μ (Ici s₀) = μ (Ioi s₀) + μ {s₀} from survivalLeft_sub_survival μ s₀,
+            ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)]
+        have hjump : (1 : ℝ) - (cumHazardJump μ s₀).toReal
+            = (μ (Ioi s₀)).toReal / (μ (Ici s₀)).toReal := by
+          rw [cumHazardJump_eq μ h0, ENNReal.toReal_div]
+          field_simp
+          linarith
+        rw [hIoia, hjump]
+        field_simp
+
 /-- **S4.2, discrete bridge**: for an event-time law whose mass below `t` sits on the finite
 set `E`, the survival function is the product of one-minus-hazard-jumps —
 `S(t) = ∏_{s ∈ E, s ≤ t} (1 − ΔΛ(s))` (ABGK §II.1 discrete case; the population identity
@@ -270,6 +343,32 @@ theorem survivalReal_eq_prod_one_sub_jump (μ : Measure ℝ)
     -- USER-INPUT: finitely supported below t — all mass in `Iic t` sits on E; ABGK §II.1
     (hsupp : μ (Iic t \ (E.filter (· ≤ t) : Finset ℝ)) = 0) :
     survivalReal μ t = ∏ s ∈ E.filter (· ≤ t), (1 - (cumHazardJump μ s).toReal) := by
-  sorry
+  classical
+  haveI := hev.1
+  set G := E.filter (· ≤ t) with hGdef
+  set M := insert t (insert (0 : ℝ) G) with hMdef
+  have hM : M.Nonempty := ⟨t, Finset.mem_insert_self _ _⟩
+  set a := M.min' hM - 1 with hadef
+  have hmin' : ∀ x ∈ M, a < x := fun x hx => by
+    have := M.min'_le x hx
+    simp only [hadef]
+    linarith
+  have ha0 : a < 0 := hmin' 0 (Finset.mem_insert_of_mem (Finset.mem_insert_self _ _))
+  have hat : a ≤ t := (hmin' t (Finset.mem_insert_self _ _)).le
+  have haG : ∀ s ∈ G, a < s := fun s hs =>
+    hmin' s (Finset.mem_insert_of_mem (Finset.mem_insert_of_mem hs))
+  have hIic : μ (Iic a) = 0 := measure_mono_null (fun x hx => lt_of_le_of_lt hx ha0) hev.2
+  have hIoi : (μ (Ioi a)).toReal = 1 := by
+    have h := prob_compl_eq_one_sub (μ := μ) (s := Iic a) measurableSet_Iic
+    rw [compl_Iic, hIic, tsub_zero] at h
+    rw [h, ENNReal.toReal_one]
+  have hnull : μ (Ioc a t \ (G : Set ℝ)) = 0 := by
+    refine measure_mono_null ?_ hsupp
+    intro x hx
+    exact ⟨hx.1.2, hx.2⟩
+  have hkey := prod_one_sub_jump_aux μ G a t hat
+    (fun s hs => ⟨haG s hs, (Finset.mem_filter.1 hs).2⟩) hnull
+  rw [hIoi, one_mul] at hkey
+  exact hkey.symm
 
 end StatLean.StatisticalModels.Survival
