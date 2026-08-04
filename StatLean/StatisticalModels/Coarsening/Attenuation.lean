@@ -44,7 +44,14 @@ theorem covariance_response_error (X U ε : Ω → ℝ) (α β : ℝ) [IsProbabi
     -- USER-INPUT: pairwise independence of the structural components; Fuller §1.1
     (hXU : IndepFun X U μ) (hεU : IndepFun ε U μ) :
     cov[fun ω => α + β * X ω + ε ω, U; μ] = 0 := by
-  sorry
+  have hβX : MemLp (fun ω => β * X ω) 2 μ := hX.const_mul β
+  have hβXi : Integrable (fun ω => β * X ω) μ := hβX.integrable one_le_two
+  have h1 : MemLp (fun ω => α + β * X ω) 2 μ := (memLp_const α).add hβX
+  rw [show (fun ω => α + β * X ω + ε ω) = (fun ω => α + β * X ω) + ε from rfl,
+    covariance_add_left h1 hε hU, covariance_const_add_left hβXi α,
+    covariance_const_mul_left, hXU.covariance_eq_zero hX hU,
+    hεU.covariance_eq_zero hε hU]
+  ring
 
 /-- Covariance of the response with the mismeasured covariate: `cov(Y, W) = β·Var X`
 (Fuller §1.1). -/
@@ -54,7 +61,21 @@ theorem covariance_response_observed (X U ε : Ω → ℝ) (α β : ℝ) [IsProb
     -- USER-INPUT: pairwise independence; Fuller §1.1
     (hXU : IndepFun X U μ) (hεX : IndepFun ε X μ) (hεU : IndepFun ε U μ) :
     cov[fun ω => α + β * X ω + ε ω, fun ω => X ω + U ω; μ] = β * Var[X; μ] := by
-  sorry
+  have hβX : MemLp (fun ω => β * X ω) 2 μ := hX.const_mul β
+  have hβXi : Integrable (fun ω => β * X ω) μ := hβX.integrable one_le_two
+  have h1 : MemLp (fun ω => α + β * X ω) 2 μ := (memLp_const α).add hβX
+  have e1 : cov[fun ω => α + β * X ω, X; μ] = β * Var[X; μ] := by
+    rw [covariance_const_add_left hβXi α, covariance_const_mul_left,
+      covariance_self hX.aestronglyMeasurable.aemeasurable]
+  have e2 : cov[fun ω => α + β * X ω, U; μ] = 0 := by
+    rw [covariance_const_add_left hβXi α, covariance_const_mul_left,
+      hXU.covariance_eq_zero hX hU, mul_zero]
+  rw [show (fun ω => α + β * X ω + ε ω) = (fun ω => α + β * X ω) + ε from rfl,
+    show (fun ω => X ω + U ω) = X + U from rfl,
+    covariance_add_left h1 hε (hX.add hU), covariance_add_right h1 hX hU,
+    covariance_add_right hε hX hU, e1, e2, hεX.covariance_eq_zero hε hX,
+    hεU.covariance_eq_zero hε hU]
+  ring
 
 /-- Variance of the mismeasured covariate: `Var W = Var X + Var U` (Fuller §1.1). -/
 theorem variance_observed (X U : Ω → ℝ) [IsProbabilityMeasure μ]
@@ -62,9 +83,13 @@ theorem variance_observed (X U : Ω → ℝ) [IsProbabilityMeasure μ]
     (hX : MemLp X 2 μ) (hU : MemLp U 2 μ)
     -- USER-INPUT: independence of covariate and measurement error; Fuller §1.1
     (hXU : IndepFun X U μ) :
-    Var[fun ω => X ω + U ω; μ] = Var[X; μ] + Var[U; μ] := by
-  sorry
+    Var[fun ω => X ω + U ω; μ] = Var[X; μ] + Var[U; μ] :=
+  hXU.variance_fun_add hX hU
 
+-- `hV` (nondegeneracy) turns out to be unnecessary: Mathlib's division junk-values to `0`, so
+-- both sides collapse to `0` in the degenerate case. The hypothesis is kept as stated (Fuller
+-- §1.1 assumes it); the proof simply does not consume it.
+set_option linter.unusedVariables false in
 /-- **C7, slope attenuation** (`Fuller §1.1`; Spearman 1904): the population regression slope
 of `Y` on the mismeasured `W` is the true slope times the reliability ratio. -/
 theorem attenuation (X U ε : Ω → ℝ) (α β : ℝ) [IsProbabilityMeasure μ]
@@ -77,6 +102,7 @@ theorem attenuation (X U ε : Ω → ℝ) (α β : ℝ) [IsProbabilityMeasure μ
     cov[fun ω => α + β * X ω + ε ω, fun ω => X ω + U ω; μ]
         / Var[fun ω => X ω + U ω; μ]
       = β * (Var[X; μ] / (Var[X; μ] + Var[U; μ])) := by
-  sorry
+  rw [covariance_response_observed X U ε α β hX hU hε hXU hεX hεU,
+    variance_observed X U hX hU hXU, mul_div_assoc]
 
 end StatLean.StatisticalModels.Coarsening
