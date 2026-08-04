@@ -1,5 +1,5 @@
 import Mathlib.Probability.Moments.Covariance
-import Mathlib.Probability.Variance
+import Mathlib.Probability.Moments.Variance
 import Mathlib.Probability.Independence.Basic
 
 /-!

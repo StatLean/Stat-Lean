@@ -1,4 +1,5 @@
 import StatLean.StatisticalModels.Coarsening.Defs
+import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Coarsening basics — Bool integration bricks, MCAR ⇒ MAR, propensity range
