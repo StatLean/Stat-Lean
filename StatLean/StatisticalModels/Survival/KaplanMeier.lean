@@ -79,26 +79,71 @@ noncomputable def kaplanMeier (d : Fin n → ℝ × Bool) (t : ℝ) : ℝ :=
 
 /-- Risk sets shrink in time. -/
 theorem atRisk_antitone (d : Fin n → ℝ × Bool) : Antitone fun t => atRisk d t := by
-  sorry
+  intro a b hab
+  refine Finset.card_le_card fun i hi => ?_
+  simp only [mem_filter, mem_univ, true_and] at hi ⊢
+  exact hab.trans hi
 
 /-- Events at `s` are at risk at `s`. -/
 theorem eventCount_le_atRisk (d : Fin n → ℝ × Bool) (s : ℝ) :
     eventCount d s ≤ atRisk d s := by
-  sorry
+  refine Finset.card_le_card fun i hi => ?_
+  simp only [mem_filter, mem_univ, true_and] at hi ⊢
+  exact hi.1.ge
+
+/-- Membership in `eventTimes` unpacks to an observation which is an event at that time. -/
+private lemma exists_of_mem_eventTimes {d : Fin n → ℝ × Bool} {s : ℝ}
+    (hs : s ∈ eventTimes d) : ∃ i, (d i).1 = s ∧ (d i).2 = true := by
+  rw [eventTimes, Finset.mem_image] at hs
+  obtain ⟨i, hi, hval⟩ := hs
+  exact ⟨i, hval, (Finset.mem_filter.1 hi).2⟩
 
 /-- At an event time the risk set is nonempty. -/
 theorem atRisk_pos_of_mem_eventTimes {d : Fin n → ℝ × Bool} {s : ℝ}
     (hs : s ∈ eventTimes d) : 0 < atRisk d s := by
-  sorry
+  obtain ⟨i, hval, -⟩ := exists_of_mem_eventTimes hs
+  exact Finset.card_pos.2 ⟨i, by simp [hval]⟩
 
 /-- At an event time there is at least one event. -/
 theorem eventCount_pos_of_mem_eventTimes {d : Fin n → ℝ × Bool} {s : ℝ}
     (hs : s ∈ eventTimes d) : 0 < eventCount d s := by
-  sorry
+  obtain ⟨i, hval, hdel⟩ := exists_of_mem_eventTimes hs
+  exact Finset.card_pos.2 ⟨i, by simp [hval, hdel]⟩
 
 /-- The Nelson–Aalen increment lies in `[0, 1]`. -/
 theorem naJump_mem_Icc (d : Fin n → ℝ × Bool) (s : ℝ) : naJump d s ∈ Set.Icc 0 1 := by
-  sorry
+  rcases Nat.eq_zero_or_pos (atRisk d s) with h0 | hpos
+  · simp [naJump, h0]
+  · refine Set.mem_Icc.2 ⟨div_nonneg (Nat.cast_nonneg _) (Nat.cast_nonneg _), ?_⟩
+    rw [naJump, div_le_one (by exact_mod_cast hpos : (0 : ℝ) < (atRisk d s : ℝ))]
+    exact_mod_cast eventCount_le_atRisk d s
+
+/-- The Kaplan–Meier factors lie in `[0, 1]`. -/
+private lemma one_sub_naJump_mem_Icc (d : Fin n → ℝ × Bool) (s : ℝ) :
+    0 ≤ 1 - naJump d s ∧ 1 - naJump d s ≤ 1 := by
+  obtain ⟨h0, h1⟩ := Set.mem_Icc.1 (naJump_mem_Icc d s)
+  constructor <;> linarith
+
+/-- Any product of Kaplan–Meier factors lies in `[0, 1]`. -/
+private lemma prod_one_sub_naJump_mem_Icc (d : Fin n → ℝ × Bool) (F : Finset ℝ) :
+    0 ≤ ∏ s ∈ F, (1 - naJump d s) ∧ ∏ s ∈ F, (1 - naJump d s) ≤ 1 :=
+  ⟨Finset.prod_nonneg fun s _ => (one_sub_naJump_mem_Icc d s).1,
+    Finset.prod_le_one (fun s _ => (one_sub_naJump_mem_Icc d s).1)
+      fun s _ => (one_sub_naJump_mem_Icc d s).2⟩
+
+/-- At an event time the truncated set of event times splits off its top point. -/
+private lemma filter_le_eq_insert {d : Fin n → ℝ × Bool} {s : ℝ} (hs : s ∈ eventTimes d) :
+    (eventTimes d).filter (· ≤ s) = insert s ((eventTimes d).filter (· < s)) := by
+  ext u
+  simp only [Finset.mem_insert, Finset.mem_filter]
+  constructor
+  · rintro ⟨hu, hle⟩
+    rcases lt_or_eq_of_le hle with h | h
+    · exact Or.inr ⟨hu, h⟩
+    · exact Or.inl h
+  · rintro (rfl | ⟨hu, hlt⟩)
+    · exact ⟨hs, le_rfl⟩
+    · exact ⟨hu, hlt.le⟩
 
 /-- **`naJump` is the genuine jump of `nelsonAalen`** at an event time: the estimator at `s`
 is its strict-past partial sum plus the increment (the content behind `KM = ∏(1 − ΔNA)`;
@@ -106,22 +151,56 @@ ABGK §IV.1 vs §IV.3). -/
 theorem nelsonAalen_eq_partial_add_jump {d : Fin n → ℝ × Bool} {s : ℝ}
     (hs : s ∈ eventTimes d) :
     nelsonAalen d s = (∑ u ∈ (eventTimes d).filter (· < s), naJump d u) + naJump d s := by
-  sorry
+  rw [nelsonAalen, filter_le_eq_insert hs,
+    Finset.sum_insert (by simp), add_comm]
 
 /-- Kaplan–Meier takes values in `[0, 1]` (`KM58`). -/
 theorem kaplanMeier_mem_Icc (d : Fin n → ℝ × Bool) (t : ℝ) :
-    kaplanMeier d t ∈ Set.Icc 0 1 := by
-  sorry
+    kaplanMeier d t ∈ Set.Icc 0 1 :=
+  Set.mem_Icc.2 (prod_one_sub_naJump_mem_Icc d _)
 
 /-- Kaplan–Meier is antitone (`KM58`). -/
 theorem antitone_kaplanMeier (d : Fin n → ℝ × Bool) : Antitone (kaplanMeier d) := by
-  sorry
+  intro a b hab
+  have hsub : (eventTimes d).filter (· ≤ a) ⊆ (eventTimes d).filter (· ≤ b) := by
+    intro u hu
+    simp only [Finset.mem_filter] at hu ⊢
+    exact ⟨hu.1, hu.2.trans hab⟩
+  have h := Finset.prod_sdiff (f := fun s => 1 - naJump d s) hsub
+  simp only [kaplanMeier]
+  rw [← h]
+  exact mul_le_of_le_one_left (prod_one_sub_naJump_mem_Icc d _).1
+    (prod_one_sub_naJump_mem_Icc d _).2
+
+/-- Kaplan–Meier only sees the event times through the truncation `{s ∈ eventTimes | s ≤ ·}`. -/
+private lemma kaplanMeier_eq_prod_of_filter_eq {d : Fin n → ℝ × Bool} {u : ℝ} {F : Finset ℝ}
+    (h : (eventTimes d).filter (· ≤ u) = F) :
+    kaplanMeier d u = ∏ s ∈ F, (1 - naJump d s) := by
+  simp only [kaplanMeier, h]
 
 /-- Kaplan–Meier is right-locally constant (piecewise constancy between event times; whence
 right-continuity without any filter bookkeeping). -/
 theorem kaplanMeier_eventually_constant_right (d : Fin n → ℝ × Bool) (t : ℝ) :
     ∃ ε > 0, ∀ u ∈ Set.Ico t (t + ε), kaplanMeier d u = kaplanMeier d t := by
-  sorry
+  have key : ∀ (ε : ℝ), 0 < ε → (∀ v ∈ eventTimes d, t < v → t + ε ≤ v) →
+      ∀ u ∈ Set.Ico t (t + ε), kaplanMeier d u = kaplanMeier d t := by
+    intro ε _ hgap u hu
+    refine kaplanMeier_eq_prod_of_filter_eq (F := (eventTimes d).filter (· ≤ t)) ?_
+    ext v
+    simp only [Finset.mem_filter, and_congr_right_iff]
+    intro hv
+    refine ⟨fun hvu => ?_, fun hvt => hvt.trans hu.1⟩
+    by_contra hc
+    exact absurd (hvu.trans_lt hu.2) (not_lt.2 (hgap v hv (not_le.1 hc)))
+  rcases ((eventTimes d).filter (t < ·)).eq_empty_or_nonempty with hemp | hne
+  · refine ⟨1, one_pos, key 1 one_pos fun v hv hvt => ?_⟩
+    exact absurd (Finset.mem_filter.2 ⟨hv, hvt⟩) (by simp [hemp])
+  · have hmem := Finset.min'_mem _ hne
+    have hmt : t < ((eventTimes d).filter (t < ·)).min' hne := (Finset.mem_filter.1 hmem).2
+    refine ⟨((eventTimes d).filter (t < ·)).min' hne - t, by linarith,
+      key _ (by linarith) fun v hv hvt => ?_⟩
+    have := Finset.min'_le _ v (Finset.mem_filter.2 ⟨hv, hvt⟩)
+    linarith
 
 /-- Kaplan–Meier as a Stieltjes function: `t ↦ 1 − Ŝ(t)` (monotone by
 `antitone_kaplanMeier`, right-continuous by piecewise constancy). -/
