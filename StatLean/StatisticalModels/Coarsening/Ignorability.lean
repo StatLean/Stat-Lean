@@ -128,7 +128,11 @@ theorem observedLaw_eq_restrict_add (Q : Measure (𝓧 × ℝ)) [IsProbabilityMe
     observedLaw Q ρ
       = (observedLaw Q ρ).restrict {o | o.2.1 = true}
           + (observedLaw Q ρ).restrict {o | o.2.1 = false} := by
-  sorry
+  have hS : MeasurableSet {o : 𝓧 × Bool × ℝ | o.2.1 = true} :=
+    measurable_snd.fst (measurableSet_singleton true)
+  have hcompl : {o : 𝓧 × Bool × ℝ | o.2.1 = true}ᶜ = {o : 𝓧 × Bool × ℝ | o.2.1 = false} := by
+    ext o; simp [Bool.not_eq_true]
+  rw [← hcompl, Measure.restrict_add_restrict_compl hS]
 
 /-- **C5', the dominated corollary (Rubin's observed-data likelihood factor)**: when the
 outcome law is dominated, `Q = ν.withDensity f`, the complete-case slice carries the density
@@ -143,6 +147,9 @@ theorem observedLaw_restrict_true_withDensity (ν : Measure (𝓧 × ℝ)) [Sigm
         {o | o.2.1 = true}
       = (ν.withDensity fun p => f p * ρ' p.1 {true}).map
           (fun p : 𝓧 × ℝ => (p.1, true, p.2)) := by
-  sorry
+  have hd : Measurable fun p : 𝓧 × ℝ => ρ' p.1 {true} :=
+    (Kernel.measurable_coe ρ' (measurableSet_singleton true)).comp measurable_fst
+  rw [observedLaw_restrict_true _ ρ', ← withDensity_mul _ hf hd]
+  rfl
 
 end StatLean.StatisticalModels.Coarsening
