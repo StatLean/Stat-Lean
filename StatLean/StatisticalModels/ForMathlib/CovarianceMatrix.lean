@@ -157,6 +157,20 @@ private theorem aesm_eval {α : Type*} [MeasurableSpace α] {ν : Measure α}
     AEStronglyMeasurable (fun y : EuclideanSpace ℝ ι => y k) (ν.map F) :=
   (EuclideanSpace.proj (𝕜 := ℝ) k).continuous.aestronglyMeasurable
 
+/-- The core bilinear computation: the covariance of two matrix rows evaluated against a law
+with second moments is the corresponding entry of `A Σ Bᵀ`. -/
+private theorem covariance_rows {ι₃ : Type*} [Fintype ι₃]
+    {μ : Measure (EuclideanSpace ℝ ι₁)} [IsFiniteMeasure μ] (hL2 : MemLp id 2 μ)
+    (A B : Matrix ι₃ ι₁ ℝ) (i j : ι₃) :
+    cov[fun x : EuclideanSpace ℝ ι₁ => ∑ k, A i k * x k,
+        fun x : EuclideanSpace ℝ ι₁ => ∑ l, B j l * x l; μ] = (A * covMatrix μ * Bᵀ) i j := by
+  rw [covariance_fun_sum_fun_sum (fun k => (memLp_eval hL2 k).const_mul (A i k))
+    (fun l => (memLp_eval hL2 l).const_mul (B j l))]
+  simp only [covariance_const_mul_left, covariance_const_mul_right, ← covMatrix_apply,
+    Matrix.mul_apply, Matrix.transpose_apply, Finset.sum_mul]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun k _ => Finset.sum_congr rfl fun l _ => by ring
+
 /-- **Mean of an affine pushforward**: `E[A x + b] = A (E x) + b` (And58 Ch. 2). -/
 theorem meanVec_map_affine [DecidableEq ι₁] (μ : Measure (EuclideanSpace ℝ ι₁))
     [IsProbabilityMeasure μ]
@@ -195,12 +209,30 @@ theorem covMatrix_map_affine [DecidableEq ι₁] (μ : Measure (EuclideanSpace �
   ext i j
   rw [covMatrix_apply, covariance_map_fun (aesm_eval i) (aesm_eval j) (by fun_prop)]
   simp only [PiLp.add_apply, toEuclideanLin_coord]
-  rw [covariance_add_const_left (hrow i), covariance_add_const_right (hrow j),
-    covariance_fun_sum_fun_sum (fun l => hmem i l) (fun l => hmem j l)]
-  simp only [covariance_const_mul_left, covariance_const_mul_right, ← covMatrix_apply,
-    Matrix.mul_apply, Matrix.transpose_apply, Finset.sum_mul]
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun k _ => Finset.sum_congr rfl fun l _ => by ring
+  rw [covariance_add_const_left (hrow i), covariance_add_const_right (hrow j)]
+  exact covariance_rows hL2 A A i j
+
+/-- Covariance of two statistics of the first factor is computed on that factor's marginal. -/
+private theorem covariance_comp_fst {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    {μ : Measure α} {ν : Measure β} [SFinite μ] [IsProbabilityMeasure ν] {X Y : α → ℝ}
+    (hX : AEStronglyMeasurable X μ) (hY : AEStronglyMeasurable Y μ) :
+    cov[fun p : α × β => X p.1, fun p : α × β => Y p.1; μ.prod ν] = cov[X, Y; μ] := by
+  have hm : (μ.prod ν).map Prod.fst = μ := Measure.fst_prod
+  have h := covariance_map_fun (X := X) (Y := Y) (Z := Prod.fst) (μ := μ.prod ν)
+    (by rw [hm]; exact hX) (by rw [hm]; exact hY) measurable_fst.aemeasurable
+  rw [hm] at h
+  exact h.symm
+
+/-- Covariance of two statistics of the second factor is computed on that factor's marginal. -/
+private theorem covariance_comp_snd {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    {μ : Measure α} {ν : Measure β} [IsProbabilityMeasure μ] [SFinite ν] {X Y : β → ℝ}
+    (hX : AEStronglyMeasurable X ν) (hY : AEStronglyMeasurable Y ν) :
+    cov[fun p : α × β => X p.2, fun p : α × β => Y p.2; μ.prod ν] = cov[X, Y; ν] := by
+  have hm : (μ.prod ν).map Prod.snd = ν := Measure.snd_prod
+  have h := covariance_map_fun (X := X) (Y := Y) (Z := Prod.snd) (μ := μ.prod ν)
+    (by rw [hm]; exact hX) (by rw [hm]; exact hY) measurable_snd.aemeasurable
+  rw [hm] at h
+  exact h.symm
 
 /-- **Additivity under independence (product form)**: the covariance of a sum of linear images
 of the two independent coordinates of a product law is the sum of the transported covariances
@@ -215,7 +247,45 @@ theorem covMatrix_map_add_prod [DecidableEq ι₁] [DecidableEq ι₂]
     covMatrix ((μ.prod ν).map fun p =>
         Matrix.toEuclideanLin (𝕜 := ℝ) A p.1 + Matrix.toEuclideanLin (𝕜 := ℝ) B p.2)
       = A * covMatrix μ * Aᵀ + B * covMatrix ν * Bᵀ := by
-  sorry
+  have hmemμ : ∀ k : ι₃, MemLp (fun x : EuclideanSpace ℝ ι₁ => ∑ l, A k l * x l) 2 μ :=
+    fun k => memLp_finset_sum _ fun l _ => (memLp_eval hμ l).const_mul (A k l)
+  have hmemν : ∀ k : ι₃, MemLp (fun y : EuclideanSpace ℝ ι₂ => ∑ m, B k m * y m) 2 ν :=
+    fun k => memLp_finset_sum _ fun m _ => (memLp_eval hν m).const_mul (B k m)
+  have hPμ : ∀ k : ι₃, MemLp (fun p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ =>
+      ∑ l, A k l * p.1 l) 2 (μ.prod ν) := fun k => (hmemμ k).comp_fst ν
+  have hPν : ∀ k : ι₃, MemLp (fun p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ =>
+      ∑ m, B k m * p.2 m) 2 (μ.prod ν) := fun k => (hmemν k).comp_snd μ
+  have hsplit : ∀ k : ι₃,
+      (fun p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ =>
+        (Matrix.toEuclideanLin (𝕜 := ℝ) A p.1 + Matrix.toEuclideanLin (𝕜 := ℝ) B p.2) k)
+        = (fun p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ => ∑ l, A k l * p.1 l)
+          + fun p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ => ∑ m, B k m * p.2 m := by
+    intro k
+    funext p
+    simp [toEuclideanLin_coord]
+  ext i j
+  rw [covMatrix_apply, covariance_map_fun (aesm_eval i) (aesm_eval j) (by fun_prop)]
+  have h11 : cov[fun p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ => ∑ l, A i l * p.1 l,
+      fun p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ => ∑ l, A j l * p.1 l; μ.prod ν]
+      = (A * covMatrix μ * Aᵀ) i j := by
+    rw [covariance_comp_fst (hmemμ i).aestronglyMeasurable (hmemμ j).aestronglyMeasurable]
+    exact covariance_rows hμ A A i j
+  have h22 : cov[fun p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ => ∑ m, B i m * p.2 m,
+      fun p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ => ∑ m, B j m * p.2 m; μ.prod ν]
+      = (B * covMatrix ν * Bᵀ) i j := by
+    rw [covariance_comp_snd (hmemν i).aestronglyMeasurable (hmemν j).aestronglyMeasurable]
+    exact covariance_rows hν B B i j
+  have h12 : cov[fun p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ => ∑ l, A i l * p.1 l,
+      fun p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ => ∑ m, B j m * p.2 m; μ.prod ν] = 0 :=
+    covariance_fst_snd_prod (hmemμ i) (hmemν j)
+  have h21 : cov[fun p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ => ∑ m, B i m * p.2 m,
+      fun p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ => ∑ l, A j l * p.1 l; μ.prod ν] = 0 := by
+    rw [covariance_comm _ _]
+    exact covariance_fst_snd_prod (hmemμ j) (hmemν i)
+  rw [hsplit i, hsplit j, covariance_add_left (hPμ i) (hPν i) ((hPμ j).add (hPν j)),
+    covariance_add_right (hPμ i) (hPμ j) (hPν j),
+    covariance_add_right (hPν i) (hPμ j) (hPν j), h11, h12, h21, h22, Matrix.add_apply]
+  ring
 
 /-- **Additivity under independence (finite-product form)**: covariance of a sum of linear
 images of independent coordinates under `Measure.pi` (the L2/M1 workhorse). -/
