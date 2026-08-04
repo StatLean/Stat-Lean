@@ -49,6 +49,48 @@ noncomputable def fejerSum (γ : ℤ → ℝ) (n : ℕ) (ω : ℝ) : ℂ :=
     (γ ((j : ℤ) - (k : ℤ)) : ℂ) *
       Complex.exp (-(Complex.I * (ω : ℂ) * (((j : ℤ) - (k : ℤ) : ℤ) : ℂ)))
 
+/-- The diagonal `{(j, k) ∈ [0,n)² : j − k = m}` is parametrized by `i ↦ (i + a, i + b)`
+where `(a, b)` is `(m, 0)` for `m ≥ 0` and `(0, −m)` for `m ≤ 0`; it therefore has
+`n − (a + b) = n − |m|` elements. -/
+private lemma card_fiber_sub (n a b : ℕ) (m : ℤ) (hab : a = 0 ∨ b = 0)
+    (hm : (a : ℤ) - (b : ℤ) = m) :
+    #({p ∈ Finset.range n ×ˢ Finset.range n | (p.1 : ℤ) - (p.2 : ℤ) = m}) = n - (a + b) := by
+  rw [show n - (a + b) = #(Finset.range (n - (a + b))) from (Finset.card_range _).symm]
+  refine Finset.card_nbij' (fun p => p.1 - a) (fun i => (i + a, i + b)) ?_ ?_ ?_ ?_ <;>
+    intro p hp <;>
+    simp only [Finset.coe_filter, Set.mem_setOf_eq, Finset.mem_product,
+      Finset.mem_range, Finset.coe_range, Set.mem_Iio, Prod.ext_iff] at hp ⊢ <;>
+    omega
+
+/-- Diagonal collection for an arbitrary summand: `Σ_{j,k<n} F(j−k) = Σ_{|m|<n} (n−|m|) F(m)`. -/
+private lemma sum_range_sub_eq_weighted (F : ℤ → ℂ) (n : ℕ) :
+    ∑ j ∈ range n, ∑ k ∈ range n, F ((j : ℤ) - (k : ℤ))
+      = ∑ m ∈ Finset.Icc (-(n : ℤ) + 1) ((n : ℤ) - 1), ((((n : ℤ) - |m|) : ℤ) : ℂ) * F m := by
+  have hmaps : ∀ p ∈ Finset.range n ×ˢ Finset.range n,
+      ((p.1 : ℤ) - (p.2 : ℤ)) ∈ Finset.Icc (-(n : ℤ) + 1) ((n : ℤ) - 1) := by
+    intro p hp
+    simp only [Finset.mem_product, Finset.mem_range] at hp
+    simp only [Finset.mem_Icc]
+    omega
+  rw [← Finset.sum_product', ← Finset.sum_fiberwise_of_maps_to' hmaps F]
+  refine Finset.sum_congr rfl fun m hm => ?_
+  simp only [Finset.mem_Icc] at hm
+  rw [Finset.sum_const, nsmul_eq_mul]
+  congr 1
+  by_cases h0 : 0 ≤ m
+  · obtain ⟨c, rfl⟩ : ∃ c : ℕ, m = (c : ℤ) := ⟨m.toNat, (Int.toNat_of_nonneg h0).symm⟩
+    have hcn : c ≤ n := by omega
+    rw [card_fiber_sub n c 0 _ (Or.inr rfl) (by push_cast; ring), add_zero,
+      Nat.cast_sub hcn, abs_of_nonneg (by positivity : (0 : ℤ) ≤ (c : ℤ))]
+    push_cast
+    ring
+  · obtain ⟨c, rfl⟩ : ∃ c : ℕ, m = -(c : ℤ) := ⟨(-m).toNat, by omega⟩
+    have hcn : c ≤ n := by omega
+    rw [card_fiber_sub n 0 c _ (Or.inl rfl) (by push_cast; ring), zero_add,
+      Nat.cast_sub hcn, abs_of_nonpos (by omega : -(c : ℤ) ≤ 0)]
+    push_cast
+    ring
+
 /-- Diagonal collection: the Fejér double sum equals the weighted single sum
 `(2πn)⁻¹ Σ_{|m|<n} (n − |m|) γ(m) e^{−iωm}` (the display below FY eq. (2.71)). -/
 theorem fejerSum_eq_weighted (γ : ℤ → ℝ) (n : ℕ) (ω : ℝ) :
@@ -56,7 +98,10 @@ theorem fejerSum_eq_weighted (γ : ℤ → ℝ) (n : ℕ) (ω : ℝ) :
       ∑ m ∈ Finset.Icc (-(n : ℤ) + 1) ((n : ℤ) - 1),
         ((((n : ℤ) - |m|) : ℤ) : ℂ) * (γ m : ℂ) *
           Complex.exp (-(Complex.I * (ω : ℂ) * (m : ℂ))) := by
-  sorry
+  rw [fejerSum, sum_range_sub_eq_weighted
+    (fun m => (γ m : ℂ) * Complex.exp (-(Complex.I * (ω : ℂ) * (m : ℂ)))) n]
+  congr 1
+  exact Finset.sum_congr rfl fun m _ => (mul_assoc _ _ _).symm
 
 /-- The Fejér double sum *is* the Hermitian quadratic form of `γ` at the time points
 `t j = j` with the coefficient vector `c j = e^{−iωj}` — the algebraic content of the
