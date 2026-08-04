@@ -60,7 +60,7 @@ with hypotheses that match what the call site has on hand:
 
 It is a thin adapter on top of the project's underlying iid multivariate CLT brick
 `ProbabilityTheory.tendstoInDistribution_multivariate_clt` (in
-`AsymptoticStatistics/ForMathlib/MultivariateCLT.lean`). The underlying `MultivariateCLT`
+`StatLean/AsymptoticStatistics/ForMathlib/MultivariateCLT.lean`). The underlying `MultivariateCLT`
 brick is stated more generically (with witness `Y' : Ω' → ℝ^k` and an arbitrary `P'`); this
 adapter specialises to the `Y' := id`, `P' := multivariateGaussian 0 J` case and converts
 `MeasureTheory.TendstoInDistribution` into our test-function-based `WeakConverges`. The

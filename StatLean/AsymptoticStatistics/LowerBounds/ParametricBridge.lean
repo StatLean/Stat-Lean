@@ -597,11 +597,12 @@ theorem covBlockPSDAll
 
 /-! ## §25.20 closure bridges
 
-The two bridges below feed `AsymptoticRepresentation.LAN_representation`'s `hT_weak`
+The bridges below feed `AsymptoticRepresentation.LAN_representation`'s `hT_weak`
 hypothesis from `IsRegularEstimator.shift`-style QMDPath weak limits
-(the `paramSubmodelQMDPath` curve raised to the n-fold product) and
-bridge the orthonormal-to-bounded approximation gap via the existing
-`IsTangentBoundedDense` regularity hypothesis. -/
+(the `paramSubmodelQMDPath` curve raised to the n-fold product).
+`IsTangentBoundedDense` supplies bounded approximants to tangent vectors; the
+finite-family construction later in this section orthonormalizes those
+approximants while retaining boundedness, so they can be used in `paramSubmodel`. -/
 
 open AsymptoticStatistics.LowerBounds.RegularEstimator
   (paramSubmodelQMDPath paramSubmodelQMDPath_curve_eq_paramSubmodel_density

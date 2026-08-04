@@ -20,7 +20,7 @@
     {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"neg_neg_of_pos","label":"neg_neg_of_pos","full":"neg_neg_of_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Defs"},
     {"id":"Measurable.ennreal_ofReal","label":"ennreal_ofReal","full":"Measurable.ennreal_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Real"},
-    {"id":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","label":"empiricalAvg","full":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.EmpiricalMeasure"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","label":"empiricalAvg","full":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ForMathlib.EmpiricalAverage"},
     {"id":"iSup₂_le","label":"iSup₂_le","full":"iSup₂_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.CompleteLattice.Basic"},
     {"id":"abs_mul","label":"abs_mul","full":"abs_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Abs"},
     {"id":"abs_inv","label":"abs_inv","full":"abs_inv","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Field.Basic"},

@@ -133,7 +133,11 @@ theorem donsker_random_function_consistency
     intro _
     exact hf₀_meas.comp measurable_snd
   have hghat_range : ∀ (n : ℕ) (ξ : Ξ), ghat n ξ ∈ F := fun _ _ => _hf₀_in_F
-  exact h_donsker.asymptoticallyEquicontinuous μ X hX_meas hX_iindep hX_idem hX_law
+  -- The Donsker class is asymptotically equicontinuous in the vdV 18.14(ii)
+  -- outer-sup modulus form; the bridge `osc_modulus_to_random_pair` reads off the
+  -- per-pair consequence at the concrete pair `(f_hat, const f₀)`.
+  exact osc_modulus_to_random_pair h_donsker.asymptoticallyEquicontinuous
+    μ X hX_meas hX_iindep hX_idem hX_law
     f_hat ghat h_fhat_meas hghat_meas h_range hghat_range
     h_l2_int h_l2_consistent η hη
 

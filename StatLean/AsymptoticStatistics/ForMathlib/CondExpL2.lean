@@ -249,4 +249,43 @@ private theorem lpTrimComapToMapTrim_aux_comp_apply
           (α' := α') (β' := β') (m0 := m0) (mβ := mβ)
           (μ' := μ') (f' := f') hf' u) hfmp)
   exact (ae_eq_of_ae_eq_trim htrim).symm
+
+/-- *Doob behavioral identity.* Applying the Doob L² isometry `doobL2Equiv`
+to a `(σ_β.comap f)`-measurable element `g` of `Lp ℝ 2 μ`, then composing the
+resulting function on `β` with `f`, recovers `g` `μ`-a.e.
+
+This is the public form of the trim-side behavioral identity
+`lpTrimComapToMapTrim_aux_comp_apply`, lifted through the
+`lpMeasToLpTrimLie`/`lpTrimComapToLpMap` chain that defines `doobL2Equiv`.
+Downstream consumers (information-loss operator, vdV §25.6) use it for
+integral preservation along the coarsening map. -/
+theorem doobL2Equiv_comp_apply
+    (g : lpMeas ℝ ℝ (MeasurableSpace.comap f ‹MeasurableSpace β›) 2 μ) :
+    (fun a => (doobL2Equiv hf g : Lp ℝ 2 (μ.map f)) (f a))
+      =ᵐ[μ] ((g : Lp ℝ 2 μ) : α → ℝ) := by
+  haveI : Fact ((1 : ℝ≥0∞) ≤ (2 : ℝ≥0∞)) := ⟨one_le_two⟩
+  -- Name the intermediate trim-side element.
+  set t : Lp ℝ 2 (μ.trim hf.comap_le) :=
+    lpMeasToLpTrimLie ℝ ℝ 2 μ hf.comap_le g with ht_def
+  -- The trim-side behavioral identity: `(e1 t) ∘ f =ᵐ[μ] t`, where
+  -- `e1 t = lpTrimComapToLpMap_e1 hf t` by definition.
+  have he1 :
+      (fun a => (lpTrimComapToLpMap_e1 hf t) (f a)) =ᵐ[μ] (t : α → ℝ) :=
+    lpTrimComapToMapTrim_aux_comp_apply hf t
+  -- `e2` does not change the underlying function.
+  have he2 :
+      ((lpTrimComapToLpMap_e2 hf (lpTrimComapToLpMap_e1 hf t) :
+          Lp ℝ 2 (μ.map f)) : β → ℝ)
+        = ((lpTrimComapToLpMap_e1 hf t : _) : β → ℝ) :=
+    lpTrimComapToLpMap_e2_coeFn hf _
+  -- `t = lpMeasToLpTrimLie … g`, whose coercion is `g` `μ`-a.e.
+  have ht_ae : (t : α → ℝ) =ᵐ[μ] ((g : Lp ℝ 2 μ) : α → ℝ) := by
+    simpa [ht_def] using lpMeasToLpTrim_ae_eq hf.comap_le g
+  -- Assemble: `doobL2Equiv hf g = e2 (e1 t)` definitionally.
+  have hstep : (fun a => (doobL2Equiv hf g : Lp ℝ 2 (μ.map f)) (f a))
+      = (fun a => (lpTrimComapToLpMap_e1 hf t) (f a)) := by
+    funext a
+    exact congrArg (fun h : β → ℝ => h (f a)) he2
+  rw [hstep]
+  exact he1.trans ht_ae
 end AsymptoticStatistics.ForMathlib.CondExpL2

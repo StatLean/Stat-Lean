@@ -89,10 +89,10 @@ measure `P`: a curve `t ↦ curve t : ℝ → Measure Ω` through `P` (at
 function `score : ↥(L2ZeroMean P)` whose half is the L²(dominating)
 derivative of the square-root density.
 
-Reference: vdV §25.3, `eq:25.13`. We formalize the dominated
-specialisation (vdV §25.3 footnote authorizes taking the model dominated
-"for simplicity"); the canonical nondominated form of `eq:25.13` (which
-uses formal `dP^{1/2}` symbols) is deferred. -/
+Reference: vdV §25.3, `eq:25.13`. This structure is the dominated
+specialisation authorized by vdV's "for simplicity" footnote. The canonical
+nondominated form, expressed with formal `dP^{1/2}` symbols, lies outside the
+scope of this density-based API. -/
 structure QMDPath (P : Measure Ω) [IsProbabilityMeasure P] where
   /-- vdV §25.3, eq:25.13: the curve in the space of measures. -/
   curve : ℝ → Measure Ω
@@ -429,8 +429,8 @@ product integrals.
 
 Formalizes the integrand `∏ⱼ (dQ_{tₙ}/dμ)(Xⱼ)` from vdV §25.6 (LAN
 expansion) at the QMD-induced perturbation `tₙ := (√n)⁻¹`. The product
-is taken over `Fin n`; positivity and the LAN logarithmic expansion are
-deferred to downstream consumers. -/
+is taken over `Fin n`; downstream LAN results establish the required
+positivity and logarithmic expansion. -/
 noncomputable def lr_n (γ : QMDPath P) (n : ℕ) :
     (Fin n → Ω) → ℝ≥0∞ :=
   fun X => ∏ j : Fin n, (γ.curve ((Real.sqrt n)⁻¹)).rnDeriv γ.dominating (X j)

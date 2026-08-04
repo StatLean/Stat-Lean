@@ -161,7 +161,7 @@ Browse the library by area on the [website](https://statlean.github.io/website/)
 - **[Miscellaneous Results](https://statlean.github.io/website/#/category/probability)** — load-bearing probability and analysis: optional stopping, order statistics, divergences and entropy, packing bounds, and classical limit theorems.
 - **[Multiple Testing](https://statlean.github.io/website/#/category/multipletesting)** — Benjamini–Hochberg FDR control, Holm/Bonferroni FWER control, the knockoff filter, e-values, conformal coverage, and goodness-of-fit tests.
 - **[Optimization](https://statlean.github.io/website/#/category/optimization)** — convexity and smoothness primitives, and the convergence rates of gradient descent, Frank–Wolfe, proximal, and Nesterov-accelerated methods.
-- **[Parametric Statistics](https://statlean.github.io/website/#/category/parametric)** — differentiability in quadratic mean, the LAN expansion, and the Hájek–Le Cam convolution and local asymptotic minimax bounds.
+- **[Parametric Statistics](https://statlean.github.io/website/#/category/parametric)** — the delta method; moment, M-, Z-, and maximum-likelihood estimation; differentiability in quadratic mean; the LAN expansion; and the Hájek–Le Cam convolution and local asymptotic minimax bounds.
 - **[Semiparametric Statistics](https://statlean.github.io/website/#/category/semiparametric)** — tangent spaces, efficient influence functions, score operators, and the semiparametric convolution and minimax bounds.
 
 Each topic page aligns every result's informal statement with its Lean 4 signature, alongside a reference block and an interactive dependency graph.

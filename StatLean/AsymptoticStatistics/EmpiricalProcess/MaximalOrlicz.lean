@@ -184,10 +184,10 @@ lemma psi_2_nonneg_of_nonneg {x : ℝ} (_hx : 0 ≤ x) : 0 ≤ psi_2 x := by
 
 The lemmas below restate vdV's Pisier ψ_p-max maximal inequality
 (Lem 8.4 in the Pisier formulation; used in the proof of Lem 19.33 in
-vdV §19.6) in terms of the underlying *tail bound*
-on each `Z_i`, rather than the Orlicz norm `‖Z_i‖_{ψ_p}` directly.
-This sidesteps the (currently missing) Mathlib infrastructure for
-Orlicz norms.
+vdV §19.6) in terms of the underlying *tail bound* on each `Z_i`, rather
+than the Orlicz norm `‖Z_i‖_{ψ_p}` directly.  The imported Mathlib API does
+not supply the required Orlicz-norm interface, so the needed tail and calculus
+estimates are provided here.
 
 Each top-level Pisier lemma (`orlicz_psi2_max_l1_bound`,
 `orlicz_psi1_max_l1_bound`) chains via `le_trans` through two named, more
@@ -1449,6 +1449,39 @@ lemma finite_sup_bound_aux
             (K * (M * Real.log (1 + Fintype.card ι) / Real.sqrt n
               + σ * Real.sqrt (Real.log (1 + Fintype.card ι)))) := by
   refine ⟨96, by norm_num, ?_⟩
+  exact finite_sup_bound_orlicz_core P hX_meas hX_iindep hX_idem hX_law
+    g hg_meas hM hσ hg_bdd hg_var n hn
+
+/-- **Uniform-constant form of `finite_sup_bound`** — the existential `∃ K` is
+hoisted *before* the family / class / scale / `n` arguments, so a single universal
+`K` works for all finite classes simultaneously.  This is the shape needed by the
+chaining leaves, which must quantify their constant `c` before `∀ Φ ∀ δ ∀ n`.
+
+The witness is the concrete numeral `96` exposed by `finite_sup_bound_orlicz_core`
+(the Orlicz-route core proves the bound with the *literal* `96`, no existential),
+so no information is lost relative to `finite_sup_bound`. -/
+lemma finite_sup_bound_uniform
+    (P : Measure Ω) [IsProbabilityMeasure P]
+    {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
+    {X : ℕ → Ξ → Ω}
+    (hX_meas : ∀ i, Measurable (X i))
+    (hX_iindep : ProbabilityTheory.iIndepFun X μ)
+    (hX_idem : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
+    (hX_law : μ.map (X 0) = P) :
+    ∃ K : ℝ, 0 < K ∧
+      ∀ {ι : Type*} [Fintype ι] (g : ι → Ω → ℝ),
+        (∀ i, Measurable (g i)) →
+        ∀ {M σ : ℝ}, 0 ≤ M → 0 ≤ σ →
+          (∀ i ω, |g i ω| ≤ M) →
+          (∀ i, ∫ ω, (g i ω) ^ 2 ∂P ≤ σ ^ 2) →
+          ∀ (n : ℕ), 1 ≤ n →
+            ∫⁻ ω, ENNReal.ofReal
+                (⨆ i : ι, |empiricalProcess P n (fun j : Fin n => X j.val ω) (g i)|) ∂μ
+              ≤ ENNReal.ofReal
+                  (K * (M * Real.log (1 + Fintype.card ι) / Real.sqrt n
+                    + σ * Real.sqrt (Real.log (1 + Fintype.card ι)))) := by
+  refine ⟨96, by norm_num, ?_⟩
+  intro ι _ g hg_meas M σ hM hσ hg_bdd hg_var n hn
   exact finite_sup_bound_orlicz_core P hX_meas hX_iindep hX_idem hX_law
     g hg_meas hM hσ hg_bdd hg_var n hn
 

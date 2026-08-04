@@ -96,4 +96,17 @@ lemma empiricalProcess_smul (P : Measure Ω) (n : ℕ) (X : Fin n → Ω)
   rw [empiricalAvg_smul, integral_const_mul]
   ring
 
+lemma empiricalProcess_sub (P : Measure Ω) (n : ℕ) (X : Fin n → Ω)
+    (f g : Ω → ℝ) (hf : Integrable f P) (hg : Integrable g P) :
+    empiricalProcess P n X (fun x => f x - g x) =
+      empiricalProcess P n X f - empiricalProcess P n X g := by
+  have havg : empiricalAvg (fun x => f x - g x) n X
+      = empiricalAvg f n X - empiricalAvg g n X := by
+    have : (fun x => f x - g x) = (fun x => f x + (-1 : ℝ) * g x) := by
+      funext x; ring
+    rw [this, empiricalAvg_add, empiricalAvg_smul]; ring
+  unfold empiricalProcess
+  rw [havg, integral_sub hf hg]
+  ring
+
 end AsymptoticStatistics.EmpiricalProcess

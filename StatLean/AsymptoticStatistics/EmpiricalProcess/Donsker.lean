@@ -1,8 +1,13 @@
 import StatLean.AsymptoticStatistics.EmpiricalProcess.FunctionClass
 import StatLean.AsymptoticStatistics.EmpiricalProcess.EmpiricalProcess
+import StatLean.AsymptoticStatistics.EmpiricalProcess.AbstractDonsker.Carrier
+import StatLean.AsymptoticStatistics.ForMathlib.OuterIntegration.OuterExpectation
 import StatLean.AsymptoticStatistics.ForMathlib.MeasurableSelectionRandomFunctions
+import StatLean.AsymptoticStatistics.ForMathlib.MultivariateCLT
 import Mathlib.MeasureTheory.Function.LpSpace.Basic
+import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.Probability.IdentDistrib
+import Mathlib.Probability.Moments.Variance
 
 /-!
 # Donsker classes via the Theorem 18.14 characterization
@@ -42,20 +47,22 @@ Vaart and J. A. Wellner, *Weak Convergence and Empirical Processes*, Springer,
 1996, §2.1 (random-pair workaround), §2.3 (admissibility), §2.10.1 (measurable
 selection). Headline declarations: `IsPDonsker`, `IsPDonsker.union`.
 
-**Proof formalization notes.** The random-pair workaround for asymptotic
-equicontinuity is the standard formulation in Vaart–Wellner §2.1; the textbook
-$(\varepsilon,\eta,\delta,N)$ quadruple-quantifier form is replaced by its direct
-downstream consumer form (see `IsAsymptoticallyEquicontinuous`), equivalent under
-the modified-random-function trick. The $\Xi$ sample-space universe is fixed at
-`Type 0`. The union-closure proof partitions the deviation event into an
-`F`-pure piece, a `G`-pure piece, and a mixed straddling piece: the two pure
-pieces are handled by `union_aux_FF` / `union_aux_GG` via the measurable
-surrogate construction (collapse to a fixed measurable representative off the
-membership event; Vaart–Wellner Thm 2.10.1), and the mixed piece by
-`union_aux_mix` via Markov's inequality on the $L^2$-distance together with the
-$L^2(P)$-separation hypothesis `hFG_sep`. The outer integrability of the squared
-$L^2$-distance is bundled into the predicate body (Vaart–Wellner §2.3
-admissibility) so producers receive it for free.
+**Proof formalization notes.** `IsAsymptoticallyEquicontinuous` is stated in
+the vdV Theorem 18.14(ii) outer-sup form: for every `ε, η > 0` there is a
+`δ > 0` with
+`limsup_n μ.outerMeasureStar {sup over pairs with distL2 < δ of the oscillation
+exceeds ε} ≤ ofReal η`. (An earlier release of this file used the weaker
+per-random-pair "consumer" form of Vaart–Wellner §2.1; that form is recovered
+from the present one by the bridge lemma `osc_modulus_to_random_pair`, so
+downstream consumers were unaffected by the strengthening.) The $\Xi$
+sample-space universe is fixed at `Type 0`. The union-closure proof
+(`isAsymptoticallyEquicontinuous_union`) splits the outer-sup event over
+`F ∪ G` by subadditivity (`outerMeasureStar_union_le`) into an `F`-pure piece,
+a `G`-pure piece, and a mixed straddling piece; the mixed piece is controlled
+by a Markov bound on the $L^2$-distance tail (`markov_distL2_tail`,
+`le_distL2_of_integral_sq_ge`) together with the bulk-oscillation membership
+lemma `bulk_osc_mem` and the `limsup` composition lemmas
+(`limsup_add_tendsto_zero_le`, `limsup_add_le_of_le`).
 
 **Bibliographic comments.** The notion that the empirical process indexed by a
 class of functions converges weakly to a Gaussian process — and the term
@@ -77,55 +84,375 @@ that theory.
 
 namespace AsymptoticStatistics.EmpiricalProcess
 
-open MeasureTheory ENNReal Filter
-open scoped ENNReal Topology
+open MeasureTheory ENNReal Filter ProbabilityTheory Matrix
+open scoped ENNReal Topology RealInnerProductSpace Matrix
 
 variable {Ω : Type*} [MeasurableSpace Ω]
 
+/-- **Marginal covariance entry** of a finite tuple of functions under `P`:
+`marginalCovEntry P f i j = P(fᵢ fⱼ) − (P fᵢ)(P fⱼ)`.
+
+This is the `(i,j)` entry of the limiting Gaussian covariance in the
+Theorem-18.14(a) marginal CLT: the empirical process `(𝔾ₙ fᵢ)ᵢ` of a P-Donsker
+class converges to a centred Gaussian with this covariance (vdV §19.2,
+book p.269). -/
+noncomputable def marginalCovEntry
+    {k : ℕ} (P : Measure Ω) (f : Fin k → (Ω → ℝ)) (i j : Fin k) : ℝ :=
+  (∫ x, f i x * f j x ∂P) - (∫ x, f i x ∂P) * (∫ x, f j x ∂P)
+
+/-- **Marginal covariance matrix** of a finite tuple of functions under `P`.
+Entry `(i,j)` is `P(fᵢfⱼ) − (Pfᵢ)(Pfⱼ)` (vdV §19.2, book p.269). -/
+noncomputable def marginalCovMatrix
+    {k : ℕ} (P : Measure Ω) (f : Fin k → (Ω → ℝ)) : Matrix (Fin k) (Fin k) ℝ :=
+  fun i j => marginalCovEntry P f i j
+
+/-- **Coordinate vector** of a finite tuple `f : Fin k → (Ω → ℝ)` at a point
+`ω : Ω`, as an element of `EuclideanSpace ℝ (Fin k)`: the `i`-th coordinate is
+`f i ω`. Used to phrase the marginal CLT through the multivariate CLT brick. -/
+noncomputable def tupleVec
+    {k : ℕ} (f : Fin k → (Ω → ℝ)) (ω : Ω) : EuclideanSpace ℝ (Fin k) :=
+  (WithLp.equiv 2 _).symm (fun i => f i ω)
+
 /-- **Marginal CLT** — Theorem 18.14(a) form: every finite tuple of
-functions from `F` has joint √n-CLT under iid sampling from `P`, with
-the Gaussian limit's covariance matrix given by `(Pf_i f_j − Pf_i · Pf_j)_{ij}`.
+functions from `F` has a joint `√n`-CLT under iid sampling from `P`, with the
+Gaussian limit's covariance matrix given by `(Pfᵢfⱼ − Pfᵢ·Pfⱼ)ᵢⱼ`
+(`marginalCovMatrix`).
 
-This Prop encodes the necessary `L²(P)` integrability of every `f ∈ F` (without
-which the covariance is undefined).
+Two conjuncts:
 
-vdV §19.2 + classical multivariate CLT: finite-dim joint convergence in
-distribution. -/
+* **`memLp`** — every `f ∈ F` is square-integrable (`MemLp f 2 P`), without
+  which the limiting covariance is undefined. This is the old (weaker)
+  content; it is recovered as the trivial projection `IsMarginalCLT.memLp`,
+  so consumers that only used L²-membership keep working unchanged.
+* **`fdd`** — genuine finite-dimensional (marginal) convergence in
+  distribution. For every finite tuple `f : Fin k → (Ω → ℝ)` valued in `F` and
+  every iid sample `X : ℕ → Ξ → Ω` with law `P`, the empirical-process random
+  vector `n ↦ (𝔾ₙ(f₀), …, 𝔾ₙ(f_{k-1}))` (built coordinatewise as the
+  standardised sum `(√n)⁻¹ • ∑_{i<n} (tupleVec f (Xᵢ ξ) − E[tupleVec f (X₀)])`)
+  converges in distribution to the centred multivariate Gaussian
+  `multivariateGaussian 0 (marginalCovMatrix P f)`.
+
+vdV §19.2 + Theorem 18.14(a) (book p.269): finite-dim joint convergence in
+distribution to a tight Gaussian limit. -/
 def IsMarginalCLT (F : Set (Ω → ℝ)) (P : Measure Ω) : Prop :=
-  ∀ f ∈ F, MemLp f 2 P
+  (∀ f ∈ F, MemLp f 2 P) ∧
+  (∀ {Ξ : Type} [_inst : MeasurableSpace Ξ] (μ : Measure Ξ)
+      [_inst2 : IsProbabilityMeasure μ] (X : ℕ → Ξ → Ω),
+      (∀ i, Measurable (X i)) →
+      ProbabilityTheory.iIndepFun X μ →
+      (∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ) →
+      μ.map (X 0) = P →
+      ∀ {k : ℕ} (f : Fin k → (Ω → ℝ)), (∀ i, f i ∈ F) →
+        ∃ Y : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k),
+          ProbabilityTheory.HasLaw Y
+            (multivariateGaussian 0 (marginalCovMatrix P f))
+            (multivariateGaussian 0 (marginalCovMatrix P f)) ∧
+          MeasureTheory.TendstoInDistribution
+            (fun (n : ℕ) ξ =>
+              (Real.sqrt n)⁻¹ • (∑ i ∈ Finset.range n, tupleVec f (X i ξ)
+                - n • μ[fun ξ => tupleVec f (X 0 ξ)]))
+            atTop Y (fun _ => μ) (multivariateGaussian 0 (marginalCovMatrix P f)))
 
-/-- **Asymptotic equicontinuity** — Theorem 18.14(b) form via the
-Vaart–Wellner random-pair workaround, in **consumer form**.
+/-- **iid-encoding adapter for the marginal CLT (`fdd` clause).**
 
-For every `η > 0` and every iid sample `X : ℕ → Ξ → Ω` on a probability
-space `(Ξ, μ)` with law `P`, every pair of jointly measurable random
-functions `fhat, ghat : Ξ → (Ω → ℝ)` taking values in `F` such that
-`∫ ‖fhat(ξ) − ghat(ξ)‖²_{L²(P)} dμ → 0` (L²-consistency in probability)
-satisfies `μ {ξ | η < |G_n(fhat(ξ)) − G_n(ghat(ξ))|} → 0`.
+From iid sampling `X : ℕ → Ξ → Ω` with law `P` and a finite tuple
+`f : Fin k → (Ω → ℝ)` of square-integrable functions, the empirical-process
+random vector converges in distribution to the centred Gaussian with covariance
+`marginalCovMatrix P f`.
 
-**Why this form.** The textbook formulation has an `(ε, η, δ, N)`
-quadruple-quantifier with a uniform `δ`-radius bound on `(fhat, ghat)`.
-The consumer form here is the direct downstream consequence. Equivalent to the
-textbook form under the modified-random-function trick (split `Ξ` by
-`{‖fhat − ghat‖ < δ}` and apply textbook equicontinuity to the
-modified pair on the small-mass complement). Baking the consumer form
-into the predicate avoids re-doing that trick at every use site.
+This is the genuine multivariate-CLT content of Theorem 18.14(a). It is the
+adapter between the empirical-process encoding (a tuple of functions evaluated
+along an iid sample) and the project's multivariate-CLT brick
+`ProbabilityTheory.tendstoInDistribution_multivariate_clt` /
+`ParametricFamily.ScoreCLT.clt_finDim`: it builds the coordinate vector
+`Y i ξ := tupleVec f (X i ξ)`, transports iid / `MemLp 2` from `X` and `f`,
+identifies the inner-product variance `Var[⟪t, Y 0⟫]` with the quadratic form of
+`marginalCovMatrix P f` (which is positive semidefinite, being a covariance
+Gram matrix), and applies the brick.
+
+vdV §19.2 + Theorem 18.14(a) (book p.269: the empirical process of a Donsker
+class has Gaussian finite-dimensional marginals with covariance
+`Pfᵢfⱼ − Pfᵢ·Pfⱼ`). -/
+lemma marginalCLT_fdd_of_iid
+    {F : Set (Ω → ℝ)} {P : Measure Ω}
+    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
+    (X : ℕ → Ξ → Ω)
+    (_hX_meas : ∀ i, Measurable (X i))
+    (_hX_iindep : ProbabilityTheory.iIndepFun X μ)
+    (_hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
+    (_hX_law : μ.map (X 0) = P)
+    {k : ℕ} (f : Fin k → (Ω → ℝ)) (_hf_memLp : ∀ i, MemLp (f i) 2 P) :
+    ∃ Y : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k),
+      ProbabilityTheory.HasLaw Y
+        (multivariateGaussian 0 (marginalCovMatrix P f))
+        (multivariateGaussian 0 (marginalCovMatrix P f)) ∧
+      MeasureTheory.TendstoInDistribution
+        (fun (n : ℕ) ξ =>
+          (Real.sqrt n)⁻¹ • (∑ i ∈ Finset.range n, tupleVec f (X i ξ)
+            - n • μ[fun ξ => tupleVec f (X 0 ξ)]))
+        atTop Y (fun _ => μ) (multivariateGaussian 0 (marginalCovMatrix P f)) := by
+  classical
+  -- The witness for the Gaussian limit is `id`, with law `multivariateGaussian 0 …`.
+  refine ⟨id, HasLaw.id, ?_⟩
+  -- `μ.map (X j) = P` for every index, via `IdentDistrib` and `_hX_law`.
+  have hmap : ∀ j, μ.map (X j) = P := by
+    intro j
+    rw [(_hX_id j).map_eq, _hX_law]
+  -- `P` is a probability measure (pushforward of `μ` by the measurable `X 0`).
+  haveI hP_prob : IsProbabilityMeasure P := by
+    rw [← _hX_law]; exact Measure.isProbabilityMeasure_map (_hX_meas 0).aemeasurable
+  -- Measurable representatives `f' i =ᵐ[P] f i` of the L²(P) tuple entries.
+  set f' : Fin k → (Ω → ℝ) := fun i => (_hf_memLp i).aestronglyMeasurable.mk (f i) with hf'_def
+  have hf'_meas : ∀ i, Measurable (f' i) := fun i =>
+    (_hf_memLp i).aestronglyMeasurable.measurable_mk
+  have hff' : ∀ i, f i =ᵐ[P] f' i := fun i => (_hf_memLp i).aestronglyMeasurable.ae_eq_mk
+  have hf'_memLp : ∀ i, MemLp (f' i) 2 P := fun i =>
+    (_hf_memLp i).ae_eq (hff' i)
+  -- The coordinate map `tupleVec f'` is measurable (each coordinate is).
+  have htv_meas : Measurable (tupleVec f') := by
+    have hpi : Measurable (fun ω => (fun i => f' i ω) : Ω → (Fin k → ℝ)) :=
+      measurable_pi_iff.mpr (fun i => hf'_meas i)
+    exact (EuclideanSpace.equiv (Fin k) ℝ).symm.continuous.measurable.comp hpi
+  -- The (measurable-representative) coordinate iid sequence `Y i ξ = tupleVec f' (X i ξ)`.
+  set Y : ℕ → Ξ → EuclideanSpace ℝ (Fin k) := fun i ξ => tupleVec f' (X i ξ) with hY_def
+  have hY_meas : ∀ i, Measurable (Y i) := fun i => htv_meas.comp (_hX_meas i)
+  have hY_iid : ProbabilityTheory.iIndepFun Y μ :=
+    _hX_iindep.comp (fun _ => tupleVec f') (fun _ => htv_meas)
+  have hY_id : ∀ i, ProbabilityTheory.IdentDistrib (Y i) (Y 0) μ μ := fun i =>
+    (_hX_id i).comp htv_meas
+  -- `tupleVec f' = tupleVec f` along the sample, μ-a.e.: each coordinate agrees `P`-a.e.,
+  -- pulled back through `X i` (whose law is `P`).
+  have hYY' : ∀ i, (fun ξ => tupleVec f (X i ξ)) =ᵐ[μ] Y i := by
+    intro i
+    have hcoord : ∀ j, (fun ξ => f j (X i ξ)) =ᵐ[μ] (fun ξ => f' j (X i ξ)) := by
+      intro j
+      exact ae_eq_comp (_hX_meas i).aemeasurable (by rw [hmap i]; exact hff' j)
+    -- combine the finitely-many coordinate a.e. equalities
+    have hall : ∀ᵐ ξ ∂μ, ∀ j, f j (X i ξ) = f' j (X i ξ) :=
+      (ae_all_iff.mpr fun j => hcoord j)
+    filter_upwards [hall] with ξ hξ
+    change tupleVec f (X i ξ) = tupleVec f' (X i ξ)
+    unfold tupleVec
+    congr 1
+    funext j
+    exact hξ j
+  -- `MemLp (tupleVec f') 2 P`: every coordinate is in L²(P).
+  have htv_memLp : MemLp (tupleVec f') 2 P := by
+    refine memLp_piLp_iff.mpr (fun i => ?_)
+    have : (fun ω => tupleVec f' ω i) = f' i := rfl
+    rw [this]; exact hf'_memLp i
+  -- `MemLp (Y 0) 2 μ` by transporting `htv_memLp` along `X 0` (law `P`).
+  have hY0_memLp : MemLp (Y 0) 2 μ := by
+    have hmp : MemLp (tupleVec f') 2 (μ.map (X 0)) := by rw [hmap 0]; exact htv_memLp
+    exact (memLp_map_measure_iff htv_meas.aestronglyMeasurable
+      (_hX_meas 0).aemeasurable).1 hmp
+  -- The covariance matrix is insensitive to the a.e.-replacement `f ↦ f'`.
+  have hcov_eq : marginalCovMatrix P f' = marginalCovMatrix P f := by
+    funext i j
+    simp only [marginalCovMatrix, marginalCovEntry]
+    have h1 : ∫ x, f' i x * f' j x ∂P = ∫ x, f i x * f j x ∂P :=
+      integral_congr_ae (by filter_upwards [hff' i, hff' j] with x hi hj; rw [hi, hj])
+    have h2 : ∫ x, f' i x ∂P = ∫ x, f i x ∂P :=
+      integral_congr_ae ((hff' i).symm)
+    have h3 : ∫ x, f' j x ∂P = ∫ x, f j x ∂P :=
+      integral_congr_ae ((hff' j).symm)
+    rw [h1, h2, h3]
+  -- Pointwise inner-product expansion: `⟪t, tupleVec f' ω⟫ = ∑ i, t i * f' i ω`.
+  have hinner_eq : ∀ (t : EuclideanSpace ℝ (Fin k)) (ω : Ω),
+      ⟪t, tupleVec f' ω⟫ = ∑ i, t i * f' i ω := by
+    intro t ω
+    rw [PiLp.inner_apply]
+    refine Finset.sum_congr rfl (fun i _ => ?_)
+    change (f' i ω * t i : ℝ) = t i * f' i ω
+    ring
+  -- L¹-integrability of products `f' i · f' j` under `P` (Hölder for L²×L²).
+  have hf'_int : ∀ i, Integrable (f' i) P := fun i =>
+    (hf'_memLp i).integrable (by norm_num : (1 : ℝ≥0∞) ≤ 2)
+  have hf'_mul_int : ∀ i j, Integrable (fun x => f' i x * f' j x) P := fun i j =>
+    (hf'_memLp i).integrable_mul (hf'_memLp j)
+  -- Variance identity: `Var[⟪t, Y 0⟫; μ] = t ⬝ᵥ marginalCovMatrix P f *ᵥ t`.
+  have hvar : ∀ t : EuclideanSpace ℝ (Fin k),
+      Var[fun ξ => ⟪t, Y 0 ξ⟫; μ] = t ⬝ᵥ marginalCovMatrix P f *ᵥ t := by
+    intro t
+    -- `Z ξ = gt (X 0 ξ)` where `gt ω = ∑ i, t i * f' i ω`.
+    set gt : Ω → ℝ := fun ω => ∑ i, t i * f' i ω with hgt_def
+    have hgt_meas : Measurable gt :=
+      Finset.measurable_sum _ (fun i _ => (measurable_const.mul (hf'_meas i)))
+    have hZ_eq : (fun ξ => ⟪t, Y 0 ξ⟫) = (fun ξ => gt (X 0 ξ)) := by
+      funext ξ; exact hinner_eq t (X 0 ξ)
+    -- `gt` and `gt²` are integrable under `P`.
+    have hgt_int : Integrable gt P := by
+      rw [hgt_def]
+      exact integrable_finset_sum _ (fun i _ => (hf'_int i).const_mul _)
+    have hgt_sq_int : Integrable (fun x => gt x ^ 2) P := by
+      have hexpand : (fun x => gt x ^ 2)
+          = fun x => ∑ i, ∑ j, (t i * t j) * (f' i x * f' j x) := by
+        funext x
+        rw [hgt_def]
+        simp only [sq, Finset.sum_mul, Finset.mul_sum]
+        refine Finset.sum_congr rfl (fun i _ => Finset.sum_congr rfl (fun j _ => ?_))
+        ring
+      rw [hexpand]
+      exact integrable_finset_sum _ (fun i _ => integrable_finset_sum _
+        (fun j _ => ((hf'_mul_int i j).const_mul _)))
+    have hgt_memLp : MemLp gt 2 P :=
+      (memLp_two_iff_integrable_sq hgt_meas.aestronglyMeasurable).mpr hgt_sq_int
+    have hZ_memLp : MemLp (fun ξ => ⟪t, Y 0 ξ⟫) 2 μ := by
+      rw [hZ_eq]
+      have hmp : MemLp gt 2 (μ.map (X 0)) := by rw [hmap 0]; exact hgt_memLp
+      exact (memLp_map_measure_iff hgt_meas.aestronglyMeasurable
+        (_hX_meas 0).aemeasurable).1 hmp
+    -- Push the mean and second moment to integrals under `P`.
+    have hmean : μ[fun ξ => ⟪t, Y 0 ξ⟫] = ∫ x, gt x ∂P := by
+      rw [hZ_eq, ← hmap 0,
+        integral_map (_hX_meas 0).aemeasurable hgt_meas.aestronglyMeasurable]
+    have hsq : μ[fun ξ => ⟪t, Y 0 ξ⟫ ^ 2] = ∫ x, gt x ^ 2 ∂P := by
+      have hZ_eq_sq : (fun ξ => ⟪t, Y 0 ξ⟫ ^ 2) = (fun ξ => gt (X 0 ξ) ^ 2) := by
+        funext ξ; rw [congrFun hZ_eq ξ]
+      rw [hZ_eq_sq, ← hmap 0,
+        integral_map (_hX_meas 0).aemeasurable
+          (hgt_meas.pow_const 2).aestronglyMeasurable]
+    -- Expand the two integrals over `P`.
+    have hmean_exp : ∫ x, gt x ∂P = ∑ i, t i * ∫ x, f' i x ∂P := by
+      rw [hgt_def]
+      rw [integral_finset_sum _ (fun i _ => (hf'_int i).const_mul _)]
+      exact Finset.sum_congr rfl (fun i _ => integral_const_mul _ _)
+    have hsq_exp : ∫ x, gt x ^ 2 ∂P
+        = ∑ i, ∑ j, (t i * t j) * ∫ x, f' i x * f' j x ∂P := by
+      have hexpand : (fun x => gt x ^ 2)
+          = fun x => ∑ i, ∑ j, (t i * t j) * (f' i x * f' j x) := by
+        funext x
+        rw [hgt_def]
+        simp only [sq, Finset.sum_mul, Finset.mul_sum]
+        refine Finset.sum_congr rfl (fun i _ => Finset.sum_congr rfl (fun j _ => ?_))
+        ring
+      rw [hexpand,
+        integral_finset_sum _ (fun i _ => integrable_finset_sum _
+          (fun j _ => (hf'_mul_int i j).const_mul _))]
+      refine Finset.sum_congr rfl (fun i _ => ?_)
+      rw [integral_finset_sum _ (fun j _ => (hf'_mul_int i j).const_mul _)]
+      exact Finset.sum_congr rfl (fun j _ => integral_const_mul _ _)
+    -- Assemble: `Var = E[Z²] − (E Z)²`.
+    rw [variance_eq_sub hZ_memLp]
+    simp only [Pi.pow_apply]
+    rw [hmean, hsq, hmean_exp, hsq_exp]
+    -- RHS as a double sum over `marginalCovEntry P f`.
+    have hrhs : t ⬝ᵥ marginalCovMatrix P f *ᵥ t
+        = ∑ i, ∑ j, (t i * t j) * marginalCovEntry P f i j := by
+      simp only [dotProduct, Matrix.mulVec, marginalCovMatrix]
+      refine Finset.sum_congr rfl (fun i _ => ?_)
+      rw [Finset.mul_sum]
+      refine Finset.sum_congr rfl (fun j _ => ?_)
+      ring
+    rw [hrhs]
+    -- Expand `(∑ i, t i * ∫ f' i)²` into a double sum.
+    rw [sq, Finset.sum_mul_sum]
+    -- Merge the two double sums termwise.
+    rw [← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl (fun i _ => ?_)
+    rw [← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl (fun j _ => ?_)
+    simp only [marginalCovEntry]
+    -- `f'`-integrals equal `f`-integrals (a.e.), so substitute.
+    have e1 : ∫ x, f' i x * f' j x ∂P = ∫ x, f i x * f j x ∂P :=
+      integral_congr_ae (by filter_upwards [hff' i, hff' j] with x hi hj; rw [hi, hj])
+    have e2 : ∫ x, f' i x ∂P = ∫ x, f i x ∂P := integral_congr_ae ((hff' i).symm)
+    have e3 : ∫ x, f' j x ∂P = ∫ x, f j x ∂P := integral_congr_ae ((hff' j).symm)
+    rw [e1, e2, e3]
+    ring
+  -- Positive-semidefiniteness of the covariance matrix (via the variance form).
+  have hpsd : (marginalCovMatrix P f).PosSemidef := by
+    refine Matrix.PosSemidef.of_dotProduct_mulVec_nonneg ?_ (fun x => ?_)
+    · -- Hermitian: symmetric real matrix.
+      ext i j
+      simp only [marginalCovMatrix, marginalCovEntry,
+        Matrix.conjTranspose_apply, star_trivial]
+      rw [mul_comm (∫ x, f j x ∂P)]
+      congr 1
+      exact integral_congr_ae (Filter.Eventually.of_forall (fun x => mul_comm _ _))
+    · -- Nonneg quadratic form = variance ≥ 0.
+      have hx : (star x : Fin k → ℝ) = (x : Fin k → ℝ) := by
+        funext i; exact star_trivial _
+      rw [hx]
+      have hxv : x ⬝ᵥ marginalCovMatrix P f *ᵥ x
+          = Var[fun ξ => ⟪((WithLp.equiv 2 (Fin k → ℝ)).symm x), Y 0 ξ⟫; μ] :=
+        (hvar ((WithLp.equiv 2 (Fin k → ℝ)).symm x)).symm
+      rw [hxv]
+      exact variance_nonneg _ _
+  -- Apply the project's multivariate iid CLT brick (witness `id`).
+  have hYid : ProbabilityTheory.HasLaw
+      (id : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k))
+      (multivariateGaussian 0 (marginalCovMatrix P f))
+      (multivariateGaussian 0 (marginalCovMatrix P f)) := ProbabilityTheory.HasLaw.id
+  have hTID :
+      MeasureTheory.TendstoInDistribution
+        (fun (n : ℕ) ξ =>
+          (Real.sqrt n)⁻¹ • (∑ i ∈ Finset.range n, Y i ξ - n • μ[fun ξ => Y 0 ξ]))
+        atTop (id : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k))
+        (fun _ => μ) (multivariateGaussian 0 (marginalCovMatrix P f)) :=
+    ProbabilityTheory.tendstoInDistribution_multivariate_clt
+      (P := μ) (P' := multivariateGaussian 0 (marginalCovMatrix P f))
+      (X := Y) (Y := id) (S := marginalCovMatrix P f) hpsd hvar hYid hY0_memLp hY_iid hY_id
+  -- Transfer to the original (un-modified) `f` via μ-a.e. equality of the random vectors.
+  refine hTID.congr ?_ (Filter.EventuallyEq.refl _ _)
+  intro n
+  -- `μ[fun ξ => Y 0 ξ] = μ[fun ξ => tupleVec f (X 0 ξ)]` since the integrands are a.e. equal.
+  have hcenter : μ[fun ξ => Y 0 ξ] = μ[fun ξ => tupleVec f (X 0 ξ)] :=
+    integral_congr_ae (hYY' 0).symm
+  rw [hcenter]
+  -- Pointwise: the standardised sums agree μ-a.e. (each summand agrees a.e.).
+  have hsum : ∀ᵐ ξ ∂μ, ∀ i ∈ Finset.range n, tupleVec f (X i ξ) = Y i ξ :=
+    (ae_ball_iff (Finset.range n).countable_toSet).mpr
+      (fun i _ => hYY' i)
+  filter_upwards [hsum] with ξ hξ
+  congr 1
+  congr 1
+  exact Finset.sum_congr rfl (fun i hi => (hξ i hi).symm)
+
+/-- **Marginal-CLT predicate from tuple-wise L²-membership.** Assembles
+`IsMarginalCLT F P` from `∀ f ∈ F, MemLp f 2 P`: the `memLp` conjunct is the
+hypothesis itself; the `fdd` conjunct delegates, per finite tuple, to
+`marginalCLT_fdd_of_iid` (each tuple entry inherits `MemLp 2` from membership in
+`F`). Shared by both producers of `IsPDonsker`. -/
+lemma isMarginalCLT_of_memLp {F : Set (Ω → ℝ)} {P : Measure Ω}
+    (hmem : ∀ f ∈ F, MemLp f 2 P) : IsMarginalCLT F P := by
+  refine ⟨hmem, ?_⟩
+  intro Ξ _ μ _ X hX_meas hX_iindep hX_id hX_law k f hf_in
+  exact marginalCLT_fdd_of_iid (F := F) μ X hX_meas hX_iindep hX_id hX_law f
+    (fun i => hmem (f i) (hf_in i))
+
+/-- **Asymptotic equicontinuity** — van der Vaart Theorem 18.14(ii), the
+**outer-probability modulus-of-continuity** form.
+
+For every iid sample `X : ℕ → Ξ → Ω` on a probability space `(Ξ, μ)` with law
+`P` and every pair of levels `ε, η > 0` there is a `distL2`-radius `δ > 0` such
+that the `limsup` (over `n`) of the **outer** probability that the empirical
+process `G_n` oscillates by more than `ε` across some `distL2`-close pair
+`(s, t)` (`distL2 P s t < δ`) is at most `ENNReal.ofReal η`:
+
+`∀ ε η > 0, ∃ δ > 0, limsupₙ μ* {ξ | ∃ s t : ↥F, distL2 P s t < δ ∧
+    ε < |G_n(s)(ξ) − G_n(t)(ξ)|} ≤ ofReal η`.
+
+This is exactly the conclusion shape that
+`outerMeasure_modulusComplement_le` in `NecessityTightness.lean` produces from
+asymptotic tightness of `G_n`, and that the C2 sufficiency discretization
+consumes — so the Theorem-18.14 necessity bridge becomes the identity. The
+**three parameters are distinct**: `ε` is the oscillation threshold, `η` the
+outer-mass bound, `δ` the `distL2`-radius (vdV p.261).
+
+The older **consumer (per-pair) form** — "for any measurable random pair
+`(fhat, ghat)` in `F` with `∫ ‖fhat − ghat‖²_{L²(P)} dμ → 0`,
+`μ {ξ | ε < |G_n(fhat) − G_n(ghat)|} → 0`" — is recovered for any concrete
+pair through the bridge lemma `osc_modulus_to_random_pair`
+(`NecessityTightness.lean`, the Markov-tail + bulk split).
 
 **Universe of `Ξ`.** Fixed at `Type 0` (`Type`). All standard
-measure-theoretic sample spaces live at universe 0; downstream
-consumers requiring a higher universe can introduce an isomorphism
-to a `Type 0` representative.
+measure-theoretic sample spaces live at universe 0; downstream consumers
+requiring a higher universe introduce an isomorphism to a `Type 0`
+representative.
 
-**L²-distance integrability.** Alongside the
-`Tendsto (∫ ξ, ‖fhat − ghat‖² ∂μ) → 0` consumer-form hypothesis the body takes
-`(∀ n, Integrable (fun ξ => ∫ x, (fhat − ghat)² ∂P) μ)` as an explicit input.
-This matches the Vaart–Wellner §2.3 admissibility content (every `L²(P)`-bounded
-random function class has integrable `L²`-distance pairs) and is the strict
-prerequisite for the surrogate `L²`-vanishing transport used in `union_aux_FF` /
-`union_aux_GG`.
-
-vdV §19.2 + Theorem 18.14, Vaart–Wellner §2.1: the tightness side of weak
-convergence in `ℓ^∞(F)`. -/
+vdV Theorem 18.14(ii) (book p.261), §19.2, Vaart–Wellner §2.1: the tightness
+side of weak convergence in `ℓ^∞(F)`. -/
 def IsAsymptoticallyEquicontinuous (F : Set (Ω → ℝ)) (P : Measure Ω) : Prop :=
   ∀ {Ξ : Type} [_inst : MeasurableSpace Ξ] (μ : Measure Ξ)
     [_inst2 : IsProbabilityMeasure μ] (X : ℕ → Ξ → Ω),
@@ -133,22 +460,12 @@ def IsAsymptoticallyEquicontinuous (F : Set (Ω → ℝ)) (P : Measure Ω) : Pro
     ProbabilityTheory.iIndepFun X μ →
     (∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ) →
     μ.map (X 0) = P →
-    ∀ fhat ghat : ℕ → Ξ → (Ω → ℝ),
-      (∀ n, Measurable (Function.uncurry (fhat n))) →
-      (∀ n, Measurable (Function.uncurry (ghat n))) →
-      (∀ n ξ, fhat n ξ ∈ F) → (∀ n ξ, ghat n ξ ∈ F) →
-      -- Standard random-function-class regularity (Vaart–Wellner §2.3 admissibility);
-      -- baked into the predicate so producers (union-closure, bracketing-entropy
-      -- assembly) can rely on it when invoking the conclusion.
-      (∀ n, MeasureTheory.Integrable
-        (fun ξ => ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) μ) →
-      Tendsto (fun n => ∫ ξ, (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) ∂μ)
-        atTop (𝓝 0) →
-      ∀ η : ℝ, 0 < η →
-        Tendsto (fun n =>
-          μ {ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
-                       - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)|})
-          atTop (𝓝 0)
+    ∀ ε η : ℝ, 0 < ε → 0 < η →
+      ∃ δ : ℝ, 0 < δ ∧ limsup (fun n => μ.outerMeasureStar
+        {ξ | ∃ s t : ↥F, distL2 P (s : Ω → ℝ) (t : Ω → ℝ) < δ ∧
+          ε < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (s : Ω → ℝ)
+                - empiricalProcess P n (fun i : Fin n => X i.val ξ) (t : Ω → ℝ)|}) atTop
+        ≤ ENNReal.ofReal η
 
 /-- **P-Donsker class**.
 
@@ -163,6 +480,12 @@ vdV §19.2 + Theorem 18.14: `F` is `P`-Donsker. -/
 def IsPDonsker (F : Set (Ω → ℝ)) (P : Measure Ω) : Prop :=
   IsMarginalCLT F P ∧ IsAsymptoticallyEquicontinuous F P
 
+/-- **L²-membership projection of the marginal CLT.** Recovers the old
+(weaker) `IsMarginalCLT` content as a trivial conjunct accessor: every
+`f ∈ F` is square-integrable. -/
+lemma IsMarginalCLT.memLp {F : Set (Ω → ℝ)} {P : Measure Ω}
+    (h : IsMarginalCLT F P) : ∀ f ∈ F, MemLp f 2 P := h.1
+
 namespace IsPDonsker
 
 variable {F : Set (Ω → ℝ)} {P : Measure Ω}
@@ -174,603 +497,484 @@ lemma asymptoticallyEquicontinuous (h : IsPDonsker F P) :
 
 end IsPDonsker
 
-/-- **F-side restriction of the union decomposition**.
+/-! ### Outer-measure helpers + the per-pair consumer bridge
 
-The F-restricted piece of the union deviation event has μ-measure
-tending to zero. On the membership event
-`S_FF n := {ξ | fhat n ξ ∈ F ∧ ghat n ξ ∈ F}` both random functions
-lie in `F`; the deviation event intersected with `S_FF n` behaves
-like the all-F case to which `hF` directly applies, via the
-**measurable surrogate** construction in
-`AsymptoticStatistics.ForMathlib.MeasurableSelection`.
+The new `IsAsymptoticallyEquicontinuous` predicate is the vdV 18.14(ii) outer-sup
+modulus. Consumers that want the older **per-pair** consequence
+("`μ {ξ | ε < |G_n(fhat) − G_n(ghat)|} → 0` for a concrete measurable pair") go
+through `osc_modulus_to_random_pair` below (the Markov-tail + bulk split). The
+small outer-measure and `distL2`-tail bricks it needs are `distL2`-only /
+`outerMeasureStar`-only (no `gaussianPBridge` machinery), so they live here at the
+predicate layer and are reused by `NecessityTightness.lean`. -/
 
-Proof outline:
+/-- **Monotonicity of the outer measure `P*`.** `A ⊆ B ⟹ P*(A) ≤ P*(B)`
+(the indicators satisfy `1_A ≤ 1_B`, and `E*` is monotone). -/
+theorem outerMeasureStar_mono {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ)
+    {A B : Set Ξ} (hAB : A ⊆ B) :
+    μ.outerMeasureStar A ≤ μ.outerMeasureStar B := by
+  refine outerExpectation_mono fun ω => ?_
+  by_cases hω : ω ∈ A
+  · simp only [Set.indicator_of_mem hω, Set.indicator_of_mem (hAB hω), le_refl]
+  · simp only [Set.indicator_of_notMem hω, Pi.zero_apply, zero_le]
 
-1. Pick `f₀ ∈ F` with `Measurable f₀` (admissibility, Vaart–Wellner §2.3).
-2. Apply `exists_measurable_surrogate` with hypothesis
-   `MeasurablySelectsRandomFunctions F` (Vaart–Wellner Thm 2.10.1,
-   vdV §19.4) to lift `fhat` and `ghat` to surrogates
-   `fhat_F`, `ghat_F` taking values everywhere in `F`, agreeing with
-   the originals on the membership event `{ξ | fhat ξ ∈ F}`.
-3. The L²-vanishing hypothesis transfers to the surrogate pair on
-   `S_FF n` (where both surrogates equal the originals); off the
-   event, both surrogates collapse to `f₀`, contributing zero
-   L²-distance, so the surrogate L²-integral is bounded by the
-   original.
-4. Apply `hF` to the surrogate pair (now valued everywhere in `F`)
-   to get `Tendsto` of the surrogate deviation event's μ-measure
-   to zero.
-5. On `S_FF n` the surrogate and original deviation events coincide,
-   so the **intersection** of the original deviation event with
-   `S_FF n` has μ-measure bounded by the surrogate deviation event,
-   forcing it to zero.
+/-- **`μ`-measure is dominated by the outer measure `P*`.** `μ A ≤ P*(A)`: every
+measurable majorant `U ≥ 1_A` has `μ A = ∫⁻ 1_A ≤ ∫⁻ U`, so `μ A` is below the
+infimum defining `outerExpectation μ (1_A) = P*(A)`. -/
+theorem measure_le_outerMeasureStar {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ)
+    (A : Set Ξ) : μ A ≤ μ.outerMeasureStar A := by
+  rw [Measure.outerMeasureStar, outerExpectation]
+  refine le_iInf fun U => ?_
+  -- `μ A = ∫⁻_{A} 1 ≤ ∫⁻_{A} U ≤ ∫⁻ U` (on `A`, `U ≥ 1_A = 1`).
+  calc μ A = ∫⁻ _ω in A, (1 : ℝ≥0∞) ∂μ := by rw [setLIntegral_one]
+      _ ≤ ∫⁻ ω in A, (U : Ξ → ℝ≥0∞) ω ∂μ := by
+          refine setLIntegral_mono U.2.1 (fun ω hω => ?_)
+          have := U.2.2 ω
+          simpa [Set.indicator_of_mem hω] using this
+      _ ≤ ∫⁻ ω, (U : Ξ → ℝ≥0∞) ω ∂μ := setLIntegral_le_lintegral A _
 
-Hypotheses:
-* `hF_sel` — `MeasurablySelectsRandomFunctions F` (vdV §19.4 / Vaart–Wellner
-  Thm 2.10.1: every admissible class measurably selects).
-* `hF_nonempty` — `∃ f₀ ∈ F, Measurable f₀` (Vaart–Wellner §2.3
-  admissibility: the surrogate collapse target).
-* `h_l2_int` — outer integrability of the squared L²-distance; bundled
-  into `IsAsymptoticallyEquicontinuous`'s body so consumers (here)
-  receive it for free in the post-intro context. -/
-private lemma union_aux_FF
-    {F G : Set (Ω → ℝ)} {P : Measure Ω}
-    (hF : IsAsymptoticallyEquicontinuous F P)
-    -- (Vaart–Wellner Thm 2.10.1; vdV §19.4).
-    (hF_sel : ForMathlib.MeasurableSelection.MeasurablySelectsRandomFunctions F)
-    -- (Vaart–Wellner §2.3 admissibility / Donsker-class regularity).
-    (hF_nonempty : ∃ f₀ ∈ F, Measurable f₀)
-    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ)
-    [IsProbabilityMeasure μ] (X : ℕ → Ξ → Ω)
-    (hX_meas : ∀ i, Measurable (X i))
-    (hX_iindep : ProbabilityTheory.iIndepFun X μ)
+/-- **`distL2`-tail to integral-tail.** If `distL2 P f g` has positive value
+`δ`-or-more, then `f − g` is `2`-`MemLp` (else `distL2 = 0 < δ`), so
+`δ² ≤ distL2² = ∫ (f − g)² ∂P`. Used to feed Markov on the integral. -/
+theorem distL2_ge_imp_integral_ge {P : Measure Ω} [IsProbabilityMeasure P]
+    {f g : Ω → ℝ} (hf : AEStronglyMeasurable f P) (hg : AEStronglyMeasurable g P)
+    {δ : ℝ} (hδ : 0 < δ) (hge : δ ≤ distL2 P f g) :
+    δ ^ 2 ≤ ∫ x, (f x - g x) ^ 2 ∂P := by
+  -- `distL2 P f g = (eLpNorm (f - g) 2 P).toReal`; positivity forces `eLpNorm < ⊤`.
+  have hpos : 0 < distL2 P f g := lt_of_lt_of_le hδ hge
+  have hne_top : eLpNorm (f - g) 2 P ≠ ⊤ := by
+    intro htop
+    rw [distL2, htop, ENNReal.toReal_top] at hpos
+    exact lt_irrefl 0 hpos
+  have hmeas : AEStronglyMeasurable (f - g) P := hf.sub hg
+  have hmemLp : MemLp (f - g) 2 P := ⟨hmeas, lt_of_le_of_ne le_top hne_top⟩
+  -- `distL2² = ((∫ ‖(f-g)‖²)^(2⁻¹))² = ∫ ‖(f-g) x‖² = ∫ (f x - g x)²`.
+  have hint_nonneg : (0 : ℝ) ≤ ∫ x, ‖(f - g) x‖ ^ (2 : ℝ≥0∞).toReal ∂P :=
+    integral_nonneg (fun x => by positivity)
+  have hsq : distL2 P f g ^ 2 = ∫ x, (f x - g x) ^ 2 ∂P := by
+    rw [distL2, hmemLp.eLpNorm_eq_integral_rpow_norm (by norm_num) (by norm_num),
+      ENNReal.toReal_ofReal (Real.rpow_nonneg hint_nonneg _)]
+    rw [← Real.rpow_natCast _ 2, ← Real.rpow_mul hint_nonneg]
+    simp only [ENNReal.toReal_ofNat, Nat.cast_ofNat]
+    rw [inv_mul_cancel₀ (by norm_num : (2 : ℝ) ≠ 0), Real.rpow_one]
+    refine integral_congr_ae (Eventually.of_forall fun x => ?_)
+    change ‖(f - g) x‖ ^ (2 : ℝ) = (f x - g x) ^ 2
+    rw [Pi.sub_apply, Real.norm_eq_abs,
+      show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num, Real.rpow_natCast]
+    exact sq_abs (f x - g x)
+  calc δ ^ 2 ≤ distL2 P f g ^ 2 := by
+        apply pow_le_pow_left₀ (le_of_lt hδ) hge
+    _ = ∫ x, (f x - g x) ^ 2 ∂P := hsq
+
+/-- **Markov vanishing of the `distL2`-tail.** Under the L²-consistency
+hypotheses (joint measurability of `fhat`/`ghat`, integrability and `μ`-integral
+vanishing of the squared `L²`-distance), the `μ`-mass of the complement event
+`{ξ | δ ≤ distL2 P (fhat n ξ) (ghat n ξ)}` tends to `0`. Proof:
+`distL2_ge_imp_integral_ge` lands the tail event inside
+`{ξ | δ² ≤ ∫ (fhat − ghat)²}`, Markov bounds its real mass by
+`(∫ξ ∫x (fhat − ghat)²)/δ²`, which `→ 0`. -/
+theorem markov_distL2_tail {F : Set (Ω → ℝ)} {P : Measure Ω} [IsProbabilityMeasure P]
+    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
+    (fhat ghat : ℕ → Ξ → (Ω → ℝ))
+    (hfm : ∀ n, Measurable (Function.uncurry (fhat n)))
+    (hgm : ∀ n, Measurable (Function.uncurry (ghat n)))
+    (hint : ∀ n, MeasureTheory.Integrable
+      (fun ξ => ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) μ)
+    (htend : Tendsto (fun n => ∫ ξ, (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) ∂μ)
+      atTop (𝓝 0))
+    {δ : ℝ} (hδ : 0 < δ) :
+    Tendsto (fun n => μ {ξ | δ ≤ distL2 P (fhat n ξ) (ghat n ξ)}) atTop (𝓝 0) := by
+  -- Per-section measurability of `fhat n ξ` / `ghat n ξ` from the joint measurability.
+  have hf_sec : ∀ n ξ, Measurable (fhat n ξ) := fun n ξ =>
+    (hfm n).comp measurable_prodMk_left
+  have hg_sec : ∀ n ξ, Measurable (ghat n ξ) := fun n ξ =>
+    (hgm n).comp measurable_prodMk_left
+  -- `I n = ∫ξ ∫x (fhat − ghat)²`; nonneg, integrable per `hint`.
+  set I : ℕ → ℝ := fun n => ∫ ξ, (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) ∂μ with hI
+  -- Real-valued tail mass bound `μ.real {δ ≤ distL2} ≤ I n / δ²`.
+  have hbound : ∀ n, μ.real {ξ | δ ≤ distL2 P (fhat n ξ) (ghat n ξ)} ≤ I n / δ ^ 2 := by
+    intro n
+    -- subset into the integral-tail event.
+    have hsub : {ξ | δ ≤ distL2 P (fhat n ξ) (ghat n ξ)}
+        ⊆ {ξ | δ ^ 2 ≤ ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P} := by
+      intro ξ hξ
+      exact distL2_ge_imp_integral_ge (hf_sec n ξ).aestronglyMeasurable
+        (hg_sec n ξ).aestronglyMeasurable hδ hξ
+    -- Markov on the nonneg integrable `ξ ↦ ∫ (fhat − ghat)²`.
+    have hmark := mul_meas_ge_le_integral_of_nonneg
+      (μ := μ) (f := fun ξ => ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P)
+      (Eventually.of_forall fun ξ => integral_nonneg fun x => by positivity)
+      (hint n) (δ ^ 2)
+    -- transport the Markov bound across the subset and divide by `δ²`.
+    have hmono : μ.real {ξ | δ ≤ distL2 P (fhat n ξ) (ghat n ξ)}
+        ≤ μ.real {ξ | δ ^ 2 ≤ ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P} :=
+      ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono hsub)
+    have hδ2 : (0 : ℝ) < δ ^ 2 := by positivity
+    rw [le_div_iff₀ hδ2, mul_comm]
+    exact le_trans (by nlinarith [hmono, hδ2]) hmark
+  -- `I n / δ² → 0`, squeeze the nonneg real tail mass.
+  have htendReal : Tendsto (fun n => I n / δ ^ 2) atTop (𝓝 0) := by
+    have : Tendsto (fun n => I n) atTop (𝓝 0) := htend
+    simpa using this.div_const (δ ^ 2)
+  -- real tail mass `→ 0`.
+  have htailReal : Tendsto (fun n => μ.real {ξ | δ ≤ distL2 P (fhat n ξ) (ghat n ξ)})
+      atTop (𝓝 0) := by
+    refine squeeze_zero (fun n => ENNReal.toReal_nonneg) hbound htendReal
+  -- lift to `ℝ≥0∞` via `ofReal` of the real mass (finite measure).
+  have : Tendsto (fun n => ENNReal.ofReal
+      (μ.real {ξ | δ ≤ distL2 P (fhat n ξ) (ghat n ξ)})) atTop (𝓝 0) := by
+    rw [show (0 : ℝ≥0∞) = ENNReal.ofReal 0 by simp]
+    exact (ENNReal.continuous_ofReal.tendsto 0).comp htailReal
+  refine this.congr (fun n => ?_)
+  rw [Measure.real, ENNReal.ofReal_toReal (measure_ne_top _ _)]
+
+/-- **Bulk inclusion (pointwise).** If the random pair `(fhat, ghat)` at a point
+is a close pair (`distL2 < δ`) with oscillation `η < |G_n fhat − G_n ghat|`, then
+the existential close-pair predicate of the modulus holds at that point (take
+`f := ⟨fhat, _⟩`, `g := ⟨ghat, _⟩`). -/
+theorem bulk_osc_mem {F : Set (Ω → ℝ)} {P : Measure Ω} {n : ℕ}
+    {fhat ghat : Ω → ℝ} (hf : fhat ∈ F) (hg : ghat ∈ F)
+    {X : Fin n → Ω} {δ η : ℝ}
+    (hclose : distL2 P fhat ghat < δ)
+    (hosc : η < |empiricalProcess P n X fhat - empiricalProcess P n X ghat|) :
+    ∃ f g : ↥F, distL2 P (f : Ω → ℝ) (g : Ω → ℝ) < δ ∧
+      η < |empiricalProcess P n X (f : Ω → ℝ)
+            - empiricalProcess P n X (g : Ω → ℝ)| :=
+  ⟨⟨fhat, hf⟩, ⟨ghat, hg⟩, hclose, hosc⟩
+
+set_option maxHeartbeats 800000 in
+-- The generic `limsup_add_le` unfolds prohibitively on `ℝ≥0∞` over `atTop`.
+-- This direct `Vf → 0` specialization still needs extra budget for the order arithmetic.
+/-- **`limsup (Uf + Vf) ≤ a` when `limsup Uf ≤ a` and `Vf → 0`** (over `atTop`,
+`ℝ≥0∞`). For every `b > a` the `limsup`-characterization needs `Uf n + Vf n < b`
+eventually: pick `c` with `limsup Uf < c < b`, so eventually `Uf n < c` and (from
+`Vf → 0`) `Vf n < b − c`, whence `Uf n + Vf n < c + (b − c) = b`. -/
+theorem limsup_add_tendsto_zero_le (Uf Vf : ℕ → ℝ≥0∞) (a : ℝ≥0∞)
+    (hU : limsup Uf atTop ≤ a) (hV : Tendsto Vf atTop (𝓝 0)) :
+    limsup (fun n => Uf n + Vf n) atTop ≤ a := by
+  rw [limsup_le_iff isCobounded_le_of_bot (isBoundedUnder_of ⟨⊤, fun _ => le_top⟩)]
+  intro b hb
+  obtain ⟨c, hac, hcb⟩ := exists_between (lt_of_le_of_lt hU hb)
+  have hUev : ∀ᶠ n in atTop, Uf n < c := eventually_lt_of_limsup_lt hac
+  have hbc : (0 : ℝ≥0∞) < b - c := tsub_pos_of_lt hcb
+  have hVev : ∀ᶠ n in atTop, Vf n < b - c := hV (Iio_mem_nhds hbc)
+  filter_upwards [hUev, hVev] with n hUn hVn
+  calc Uf n + Vf n < c + (b - c) := ENNReal.add_lt_add hUn hVn
+    _ = b := add_tsub_cancel_of_le (le_of_lt hcb)
+
+/-- **`limsup (Uf + Vf) ≤ a + b` from `limsup Uf ≤ a`, `limsup Vf ≤ b`** (over
+`atTop`, `ℝ≥0∞`, both bounds `≠ ⊤`). The `CountableInterFilter`-free analogue of
+`ENNReal.limsup_add_le` for the non-countably-complete filter `atTop`. For every
+`d > a + b` pick the slack `c := d − (a + b) > 0`; since `a, b ≠ ⊤` we have
+`a < a + c/2` and `b < b + c/2`, so eventually `Uf n < a + c/2`, `Vf n < b + c/2`,
+whence `Uf n + Vf n < (a + c/2) + (b + c/2) = a + b + c = d`. -/
+theorem limsup_add_le_of_le (Uf Vf : ℕ → ℝ≥0∞) (a b : ℝ≥0∞)
+    (ha : a ≠ ⊤) (hb : b ≠ ⊤) (hU : limsup Uf atTop ≤ a) (hV : limsup Vf atTop ≤ b) :
+    limsup (fun n => Uf n + Vf n) atTop ≤ a + b := by
+  rw [limsup_le_iff isCobounded_le_of_bot (isBoundedUnder_of ⟨⊤, fun _ => le_top⟩)]
+  intro d hd
+  -- Slack `c := d − (a + b) > 0`; the two half-slack thresholds beat `a`, `b`.
+  set c : ℝ≥0∞ := d - (a + b) with hc
+  have hc_pos : 0 < c := tsub_pos_of_lt hd
+  have hc2_pos : 0 < c / 2 := ENNReal.div_pos (ne_of_gt hc_pos) (by norm_num)
+  have ha' : a < a + c / 2 := ENNReal.lt_add_right ha (ne_of_gt hc2_pos)
+  have hb' : b < b + c / 2 := ENNReal.lt_add_right hb (ne_of_gt hc2_pos)
+  have hUev : ∀ᶠ n in atTop, Uf n < a + c / 2 :=
+    eventually_lt_of_limsup_lt (lt_of_le_of_lt hU ha')
+  have hVev : ∀ᶠ n in atTop, Vf n < b + c / 2 :=
+    eventually_lt_of_limsup_lt (lt_of_le_of_lt hV hb')
+  -- `(a + c/2) + (b + c/2) = a + b + c = d`.
+  have hsum : (a + c / 2) + (b + c / 2) = d := by
+    rw [show (a + c / 2) + (b + c / 2) = (a + b) + (c / 2 + c / 2) by ring,
+      ENNReal.add_halves, hc, add_tsub_cancel_of_le (le_of_lt hd)]
+  filter_upwards [hUev, hVev] with n hUn hVn
+  calc Uf n + Vf n < (a + c / 2) + (b + c / 2) := ENNReal.add_lt_add hUn hVn
+    _ = d := hsum
+
+set_option maxHeartbeats 1000000 in
+-- The bulk/tail `limsup` split unfolds a large empirical-process payload.
+-- `clear_value` keeps it opaque, but the remaining `limsup`/`Tendsto` arithmetic
+-- still exceeds the default heartbeat budget.
+/-- **Outer-sup modulus implies per-pair consistency.** From
+`IsAsymptoticallyEquicontinuous` (the vdV 18.14(ii) outer-sup modulus)
+and a concrete jointly-measurable random pair `(fhat, ghat)` valued in `F` whose
+mean squared `L²(P)`-distance tends to `0`, conclude that for every `ε > 0` the
+`μ`-probability of an `ε`-oscillation `μ {ξ | ε < |G_n(fhat) − G_n(ghat)|}` tends
+to `0`, giving the per-pair consequence of the outer-sup formulation.
+
+Fix `ε`; for the `limsup ≤ ofReal ε'` reduction take `η' := min ε ε'` and apply
+the modulus at oscillation `η'`, mass `η'`. Split `Ξ` on `{distL2 < δ}`: the bulk
+lands in the modulus event (`bulk_osc_mem`), the `distL2`-tail mass vanishes by
+Markov (`markov_distL2_tail`); the two `limsup`s combine via
+`limsup_add_tendsto_zero_le`.
+
+vdV p.261 (⟹): the modified-random-function trick (split by `{‖fhat − ghat‖ < δ}`
+and apply textbook equicontinuity to the modified pair on the small-mass
+complement). -/
+theorem osc_modulus_to_random_pair {F : Set (Ω → ℝ)} {P : Measure Ω}
+    [IsProbabilityMeasure P]
+    (h_eq : IsAsymptoticallyEquicontinuous F P)
+    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ) [IsProbabilityMeasure μ]
+    (X : ℕ → Ξ → Ω) (hX_meas : ∀ i, Measurable (X i))
+    (hX_indep : ProbabilityTheory.iIndepFun X μ)
     (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
     (hX_law : μ.map (X 0) = P)
     (fhat ghat : ℕ → Ξ → (Ω → ℝ))
-    (h_fhat_meas : ∀ n, Measurable (Function.uncurry (fhat n)))
-    (h_ghat_meas : ∀ n, Measurable (Function.uncurry (ghat n)))
-    (_h_fhat_in : ∀ n ξ, fhat n ξ ∈ F ∪ G)
-    (_h_ghat_in : ∀ n ξ, ghat n ξ ∈ F ∪ G)
-    (h_l2_int : ∀ n, MeasureTheory.Integrable
+    (hfm : ∀ n, Measurable (Function.uncurry (fhat n)))
+    (hgm : ∀ n, Measurable (Function.uncurry (ghat n)))
+    (hf_in : ∀ n ξ, fhat n ξ ∈ F) (hg_in : ∀ n ξ, ghat n ξ ∈ F)
+    (hint : ∀ n, MeasureTheory.Integrable
       (fun ξ => ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) μ)
-    (h_l2 : Tendsto (fun n => ∫ ξ, (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) ∂μ)
-        atTop (𝓝 0))
-    (η : ℝ) (hη : 0 < η) :
-    Tendsto (fun n =>
-      μ ({ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
-                   - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)|}
-          ∩ {ξ | fhat n ξ ∈ F ∧ ghat n ξ ∈ F}))
-      atTop (𝓝 0) := by
-  classical
-  obtain ⟨f₀, hf₀_F, hf₀_meas⟩ := hF_nonempty
-  -- Joint membership event "both fhat and ghat in F at index n"
-  have h_SFF_meas : ∀ n, MeasurableSet {ξ | fhat n ξ ∈ F ∧ ghat n ξ ∈ F} := by
-    intro n
-    exact (hF_sel _ (h_fhat_meas n)).inter (hF_sel _ (h_ghat_meas n))
-  -- Joint surrogate: collapse to f₀ off the joint membership event
-  let fhat_F : ℕ → Ξ → (Ω → ℝ) := fun n ξ ω =>
-    if fhat n ξ ∈ F ∧ ghat n ξ ∈ F then fhat n ξ ω else f₀ ω
-  let ghat_F : ℕ → Ξ → (Ω → ℝ) := fun n ξ ω =>
-    if fhat n ξ ∈ F ∧ ghat n ξ ∈ F then ghat n ξ ω else f₀ ω
-  -- Joint measurability of the surrogates (if-piecewise of two measurable branches)
-  have h_uc_meas : ∀ n,
-      MeasurableSet {p : Ξ × Ω | fhat n p.1 ∈ F ∧ ghat n p.1 ∈ F} := by
-    intro n
-    have h_prod : MeasurableSet ({ξ | fhat n ξ ∈ F ∧ ghat n ξ ∈ F}
-        ×ˢ (Set.univ : Set Ω)) := (h_SFF_meas n).prod MeasurableSet.univ
-    have h_eq : {p : Ξ × Ω | fhat n p.1 ∈ F ∧ ghat n p.1 ∈ F}
-        = {ξ | fhat n ξ ∈ F ∧ ghat n ξ ∈ F} ×ˢ (Set.univ : Set Ω) := by
-      ext p; simp
-    rw [h_eq]; exact h_prod
-  have h_fhat_F_meas : ∀ n, Measurable (Function.uncurry (fhat_F n)) := by
-    intro n
-    exact Measurable.ite (h_uc_meas n) (h_fhat_meas n)
-      (hf₀_meas.comp measurable_snd)
-  have h_ghat_F_meas : ∀ n, Measurable (Function.uncurry (ghat_F n)) := by
-    intro n
-    exact Measurable.ite (h_uc_meas n) (h_ghat_meas n)
-      (hf₀_meas.comp measurable_snd)
-  -- On the joint-membership event surrogate = original; off the event surrogate = f₀
-  have h_fhat_F_on : ∀ n ξ, (fhat n ξ ∈ F ∧ ghat n ξ ∈ F) → fhat_F n ξ = fhat n ξ := by
-    intro n ξ hξ
-    funext ω
-    change (if fhat n ξ ∈ F ∧ ghat n ξ ∈ F then fhat n ξ ω else f₀ ω) = fhat n ξ ω
-    rw [if_pos hξ]
-  have h_ghat_F_on : ∀ n ξ, (fhat n ξ ∈ F ∧ ghat n ξ ∈ F) → ghat_F n ξ = ghat n ξ := by
-    intro n ξ hξ
-    funext ω
-    change (if fhat n ξ ∈ F ∧ ghat n ξ ∈ F then ghat n ξ ω else f₀ ω) = ghat n ξ ω
-    rw [if_pos hξ]
-  have h_fhat_F_off : ∀ n ξ, ¬ (fhat n ξ ∈ F ∧ ghat n ξ ∈ F) → fhat_F n ξ = f₀ := by
-    intro n ξ hξ
-    funext ω
-    change (if fhat n ξ ∈ F ∧ ghat n ξ ∈ F then fhat n ξ ω else f₀ ω) = f₀ ω
-    rw [if_neg hξ]
-  have h_ghat_F_off : ∀ n ξ, ¬ (fhat n ξ ∈ F ∧ ghat n ξ ∈ F) → ghat_F n ξ = f₀ := by
-    intro n ξ hξ
-    funext ω
-    change (if fhat n ξ ∈ F ∧ ghat n ξ ∈ F then ghat n ξ ω else f₀ ω) = f₀ ω
-    rw [if_neg hξ]
-  -- Surrogate values are in F everywhere
-  have h_fhat_F_in : ∀ n ξ, fhat_F n ξ ∈ F := by
-    intro n ξ
-    by_cases hξ : fhat n ξ ∈ F ∧ ghat n ξ ∈ F
-    · rw [h_fhat_F_on n ξ hξ]; exact hξ.1
-    · rw [h_fhat_F_off n ξ hξ]; exact hf₀_F
-  have h_ghat_F_in : ∀ n ξ, ghat_F n ξ ∈ F := by
-    intro n ξ
-    by_cases hξ : fhat n ξ ∈ F ∧ ghat n ξ ∈ F
-    · rw [h_ghat_F_on n ξ hξ]; exact hξ.2
-    · rw [h_ghat_F_off n ξ hξ]; exact hf₀_F
-  -- Pointwise: surrogate L² distance = indicator of joint-membership event × original
-  have h_surr_l2_eq : ∀ n ξ,
-      (∫ x, (fhat_F n ξ x - ghat_F n ξ x) ^ 2 ∂P) =
-      {ξ | fhat n ξ ∈ F ∧ ghat n ξ ∈ F}.indicator
-        (fun ξ' => ∫ x, (fhat n ξ' x - ghat n ξ' x) ^ 2 ∂P) ξ := by
-    intro n ξ
-    by_cases hξ : ξ ∈ {ξ | fhat n ξ ∈ F ∧ ghat n ξ ∈ F}
-    · rw [Set.indicator_of_mem hξ, h_fhat_F_on n ξ hξ, h_ghat_F_on n ξ hξ]
-    · rw [Set.indicator_of_notMem hξ, h_fhat_F_off n ξ hξ, h_ghat_F_off n ξ hξ]
-      simp
-  have h_orig_nonneg : ∀ n ξ, 0 ≤ ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P :=
-    fun _ _ => integral_nonneg (fun _ => sq_nonneg _)
-  -- Pointwise surrogate ≤ original
-  have h_surr_le_orig : ∀ n ξ,
-      (∫ x, (fhat_F n ξ x - ghat_F n ξ x) ^ 2 ∂P)
-        ≤ (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) := by
-    intro n ξ
-    rw [h_surr_l2_eq n ξ]
-    by_cases hξ : ξ ∈ {ξ | fhat n ξ ∈ F ∧ ghat n ξ ∈ F}
-    · rw [Set.indicator_of_mem hξ]
-    · rw [Set.indicator_of_notMem hξ]; exact h_orig_nonneg n ξ
-  -- Integrability of surrogate L² distance (indicator of integrable is integrable)
-  have h_surr_l2_int : ∀ n, MeasureTheory.Integrable
-      (fun ξ => ∫ x, (fhat_F n ξ x - ghat_F n ξ x) ^ 2 ∂P) μ := by
-    intro n
-    have h_funext : (fun ξ => ∫ x, (fhat_F n ξ x - ghat_F n ξ x) ^ 2 ∂P) =
-        {ξ | fhat n ξ ∈ F ∧ ghat n ξ ∈ F}.indicator
-          (fun ξ' => ∫ x, (fhat n ξ' x - ghat n ξ' x) ^ 2 ∂P) := by
-      funext ξ; exact h_surr_l2_eq n ξ
-    rw [h_funext]
-    exact (h_l2_int n).indicator (h_SFF_meas n)
-  -- Surrogate L²-vanishing via squeeze (0 ≤ surrogate ≤ original → 0)
-  have h_surr_l2 :
-      Tendsto (fun n => ∫ ξ, (∫ x, (fhat_F n ξ x - ghat_F n ξ x) ^ 2 ∂P) ∂μ)
-        atTop (𝓝 0) := by
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_l2 ?_ ?_
-    · refine Eventually.of_forall fun n => integral_nonneg fun ξ => ?_
-      rw [h_surr_l2_eq n ξ]
-      exact Set.indicator_apply_nonneg fun _ => h_orig_nonneg n ξ
-    · exact Eventually.of_forall fun n =>
-        integral_mono (h_surr_l2_int n) (h_l2_int n) (h_surr_le_orig n)
-  -- Apply hF to the surrogate pair
-  have h_dev_surr := hF μ X hX_meas hX_iindep hX_id hX_law fhat_F ghat_F
-    h_fhat_F_meas h_ghat_F_meas h_fhat_F_in h_ghat_F_in h_surr_l2_int h_surr_l2 η hη
-  -- Bound: original deviation event ∩ joint-membership ⊆ surrogate deviation event
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_dev_surr
-    (Eventually.of_forall fun _ => zero_le _) ?_
-  refine Eventually.of_forall fun n => measure_mono ?_
-  rintro ξ ⟨hdev, hSFF⟩
-  change η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat_F n ξ)
-             - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat_F n ξ)|
-  rw [h_fhat_F_on n ξ hSFF, h_ghat_F_on n ξ hSFF]
-  exact hdev
-
-/-- **G-side restriction of the union decomposition**.
-
-Symmetric to `union_aux_FF`. The G-restricted piece of the union
-deviation event has μ-measure tending to zero; proof is
-mutatis mutandis with `hG`, `hG_sel`, `hG_nonempty`. -/
-private lemma union_aux_GG
-    {F G : Set (Ω → ℝ)} {P : Measure Ω}
-    (hG : IsAsymptoticallyEquicontinuous G P)
-    -- (Vaart–Wellner Thm 2.10.1; vdV §19.4).
-    (hG_sel : ForMathlib.MeasurableSelection.MeasurablySelectsRandomFunctions G)
-    -- (Vaart–Wellner §2.3 admissibility / Donsker-class regularity).
-    (hG_nonempty : ∃ g₀ ∈ G, Measurable g₀)
-    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ)
-    [IsProbabilityMeasure μ] (X : ℕ → Ξ → Ω)
-    (hX_meas : ∀ i, Measurable (X i))
-    (hX_iindep : ProbabilityTheory.iIndepFun X μ)
-    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
-    (hX_law : μ.map (X 0) = P)
-    (fhat ghat : ℕ → Ξ → (Ω → ℝ))
-    (h_fhat_meas : ∀ n, Measurable (Function.uncurry (fhat n)))
-    (h_ghat_meas : ∀ n, Measurable (Function.uncurry (ghat n)))
-    (_h_fhat_in : ∀ n ξ, fhat n ξ ∈ F ∪ G)
-    (_h_ghat_in : ∀ n ξ, ghat n ξ ∈ F ∪ G)
-    (h_l2_int : ∀ n, MeasureTheory.Integrable
-      (fun ξ => ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) μ)
-    (h_l2 : Tendsto (fun n => ∫ ξ, (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) ∂μ)
-        atTop (𝓝 0))
-    (η : ℝ) (hη : 0 < η) :
-    Tendsto (fun n =>
-      μ ({ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
-                   - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)|}
-          ∩ {ξ | fhat n ξ ∈ G ∧ ghat n ξ ∈ G}))
-      atTop (𝓝 0) := by
-  classical
-  obtain ⟨g₀, hg₀_G, hg₀_meas⟩ := hG_nonempty
-  have h_SGG_meas : ∀ n, MeasurableSet {ξ | fhat n ξ ∈ G ∧ ghat n ξ ∈ G} := by
-    intro n
-    exact (hG_sel _ (h_fhat_meas n)).inter (hG_sel _ (h_ghat_meas n))
-  let fhat_G : ℕ → Ξ → (Ω → ℝ) := fun n ξ ω =>
-    if fhat n ξ ∈ G ∧ ghat n ξ ∈ G then fhat n ξ ω else g₀ ω
-  let ghat_G : ℕ → Ξ → (Ω → ℝ) := fun n ξ ω =>
-    if fhat n ξ ∈ G ∧ ghat n ξ ∈ G then ghat n ξ ω else g₀ ω
-  have h_uc_meas : ∀ n,
-      MeasurableSet {p : Ξ × Ω | fhat n p.1 ∈ G ∧ ghat n p.1 ∈ G} := by
-    intro n
-    have h_prod : MeasurableSet ({ξ | fhat n ξ ∈ G ∧ ghat n ξ ∈ G}
-        ×ˢ (Set.univ : Set Ω)) := (h_SGG_meas n).prod MeasurableSet.univ
-    have h_eq : {p : Ξ × Ω | fhat n p.1 ∈ G ∧ ghat n p.1 ∈ G}
-        = {ξ | fhat n ξ ∈ G ∧ ghat n ξ ∈ G} ×ˢ (Set.univ : Set Ω) := by
-      ext p; simp
-    rw [h_eq]; exact h_prod
-  have h_fhat_G_meas : ∀ n, Measurable (Function.uncurry (fhat_G n)) := by
-    intro n
-    exact Measurable.ite (h_uc_meas n) (h_fhat_meas n)
-      (hg₀_meas.comp measurable_snd)
-  have h_ghat_G_meas : ∀ n, Measurable (Function.uncurry (ghat_G n)) := by
-    intro n
-    exact Measurable.ite (h_uc_meas n) (h_ghat_meas n)
-      (hg₀_meas.comp measurable_snd)
-  have h_fhat_G_on : ∀ n ξ, (fhat n ξ ∈ G ∧ ghat n ξ ∈ G) → fhat_G n ξ = fhat n ξ := by
-    intro n ξ hξ
-    funext ω
-    change (if fhat n ξ ∈ G ∧ ghat n ξ ∈ G then fhat n ξ ω else g₀ ω) = fhat n ξ ω
-    rw [if_pos hξ]
-  have h_ghat_G_on : ∀ n ξ, (fhat n ξ ∈ G ∧ ghat n ξ ∈ G) → ghat_G n ξ = ghat n ξ := by
-    intro n ξ hξ
-    funext ω
-    change (if fhat n ξ ∈ G ∧ ghat n ξ ∈ G then ghat n ξ ω else g₀ ω) = ghat n ξ ω
-    rw [if_pos hξ]
-  have h_fhat_G_off : ∀ n ξ, ¬ (fhat n ξ ∈ G ∧ ghat n ξ ∈ G) → fhat_G n ξ = g₀ := by
-    intro n ξ hξ
-    funext ω
-    change (if fhat n ξ ∈ G ∧ ghat n ξ ∈ G then fhat n ξ ω else g₀ ω) = g₀ ω
-    rw [if_neg hξ]
-  have h_ghat_G_off : ∀ n ξ, ¬ (fhat n ξ ∈ G ∧ ghat n ξ ∈ G) → ghat_G n ξ = g₀ := by
-    intro n ξ hξ
-    funext ω
-    change (if fhat n ξ ∈ G ∧ ghat n ξ ∈ G then ghat n ξ ω else g₀ ω) = g₀ ω
-    rw [if_neg hξ]
-  have h_fhat_G_in : ∀ n ξ, fhat_G n ξ ∈ G := by
-    intro n ξ
-    by_cases hξ : fhat n ξ ∈ G ∧ ghat n ξ ∈ G
-    · rw [h_fhat_G_on n ξ hξ]; exact hξ.1
-    · rw [h_fhat_G_off n ξ hξ]; exact hg₀_G
-  have h_ghat_G_in : ∀ n ξ, ghat_G n ξ ∈ G := by
-    intro n ξ
-    by_cases hξ : fhat n ξ ∈ G ∧ ghat n ξ ∈ G
-    · rw [h_ghat_G_on n ξ hξ]; exact hξ.2
-    · rw [h_ghat_G_off n ξ hξ]; exact hg₀_G
-  have h_surr_l2_eq : ∀ n ξ,
-      (∫ x, (fhat_G n ξ x - ghat_G n ξ x) ^ 2 ∂P) =
-      {ξ | fhat n ξ ∈ G ∧ ghat n ξ ∈ G}.indicator
-        (fun ξ' => ∫ x, (fhat n ξ' x - ghat n ξ' x) ^ 2 ∂P) ξ := by
-    intro n ξ
-    by_cases hξ : ξ ∈ {ξ | fhat n ξ ∈ G ∧ ghat n ξ ∈ G}
-    · rw [Set.indicator_of_mem hξ, h_fhat_G_on n ξ hξ, h_ghat_G_on n ξ hξ]
-    · rw [Set.indicator_of_notMem hξ, h_fhat_G_off n ξ hξ, h_ghat_G_off n ξ hξ]
-      simp
-  have h_orig_nonneg : ∀ n ξ, 0 ≤ ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P :=
-    fun _ _ => integral_nonneg (fun _ => sq_nonneg _)
-  have h_surr_le_orig : ∀ n ξ,
-      (∫ x, (fhat_G n ξ x - ghat_G n ξ x) ^ 2 ∂P)
-        ≤ (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) := by
-    intro n ξ
-    rw [h_surr_l2_eq n ξ]
-    by_cases hξ : ξ ∈ {ξ | fhat n ξ ∈ G ∧ ghat n ξ ∈ G}
-    · rw [Set.indicator_of_mem hξ]
-    · rw [Set.indicator_of_notMem hξ]; exact h_orig_nonneg n ξ
-  have h_surr_l2_int : ∀ n, MeasureTheory.Integrable
-      (fun ξ => ∫ x, (fhat_G n ξ x - ghat_G n ξ x) ^ 2 ∂P) μ := by
-    intro n
-    have h_funext : (fun ξ => ∫ x, (fhat_G n ξ x - ghat_G n ξ x) ^ 2 ∂P) =
-        {ξ | fhat n ξ ∈ G ∧ ghat n ξ ∈ G}.indicator
-          (fun ξ' => ∫ x, (fhat n ξ' x - ghat n ξ' x) ^ 2 ∂P) := by
-      funext ξ; exact h_surr_l2_eq n ξ
-    rw [h_funext]
-    exact (h_l2_int n).indicator (h_SGG_meas n)
-  have h_surr_l2 :
-      Tendsto (fun n => ∫ ξ, (∫ x, (fhat_G n ξ x - ghat_G n ξ x) ^ 2 ∂P) ∂μ)
-        atTop (𝓝 0) := by
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_l2 ?_ ?_
-    · refine Eventually.of_forall fun n => integral_nonneg fun ξ => ?_
-      rw [h_surr_l2_eq n ξ]
-      exact Set.indicator_apply_nonneg fun _ => h_orig_nonneg n ξ
-    · exact Eventually.of_forall fun n =>
-        integral_mono (h_surr_l2_int n) (h_l2_int n) (h_surr_le_orig n)
-  have h_dev_surr := hG μ X hX_meas hX_iindep hX_id hX_law fhat_G ghat_G
-    h_fhat_G_meas h_ghat_G_meas h_fhat_G_in h_ghat_G_in h_surr_l2_int h_surr_l2 η hη
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_dev_surr
-    (Eventually.of_forall fun _ => zero_le _) ?_
-  refine Eventually.of_forall fun n => measure_mono ?_
-  rintro ξ ⟨hdev, hSGG⟩
-  change η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat_G n ξ)
-             - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat_G n ξ)|
-  rw [h_fhat_G_on n ξ hSGG, h_ghat_G_on n ξ hSGG]
-  exact hdev
-
-/-- **Mixed-piece bound of the union decomposition**.
-
-The "mixed" piece, `S_mix n := (S_FF n ∪ S_GG n)ᶜ`, where at least
-one of `fhat n ξ`, `ghat n ξ` falls outside its sibling's class, has
-μ-measure tending to zero, driven entirely by the L²-vanishing
-hypothesis `h_l2`. No `hF` / `hG` invocation is needed here.
-
-Proof outline: on the mixed event, by `h_fhat_in`, `h_ghat_in` both functions
-lie in `F ∪ G`, but one is in `F \ G` and the other in `G \ F`
-(otherwise we'd be in `S_FF n` or `S_GG n`). By Vaart–Wellner
-§2.10.1 the L²-distance between such straddling pairs is bounded
-below by a positive constant `c(F, G) > 0`: the L²-separation of
-`F \ G` and `G \ F` modulo `F ∩ G` (Vaart–Wellner §2.3 supplies the
-admissibility refinement when the separation vanishes).
-
-Markov's inequality + the L²-vanishing hypothesis forces
-`μ {ξ | c(F, G)² ≤ ‖fhat n ξ − ghat n ξ‖²_{L²(P)}} → 0`, and the
-mixed event lies inside this Markov-bound event. The deviation
-event in the intersection is bounded by the same μ-mass.
-
-Hypotheses:
-* `hFG_sep` — L²-separation between `F` and `G` on the symmetric
-  difference (Vaart–Wellner §2.10.1, §2.3 admissibility refinement).
-* `h_l2_int` — outer integrability of squared L²-distance (bundled
-  into `IsAsymptoticallyEquicontinuous`'s body). -/
-private lemma union_aux_mix
-    {F G : Set (Ω → ℝ)} {P : Measure Ω}
-    -- by a positive constant (Vaart–Wellner §2.10.1, §2.3).
-    (hFG_sep : ∃ c > 0, ∀ f ∈ F ∪ G, ∀ g ∈ F ∪ G,
-      ¬ (f ∈ F ∧ g ∈ F) → ¬ (f ∈ G ∧ g ∈ G) →
-      c ^ 2 ≤ ∫ x, (f x - g x) ^ 2 ∂P)
-    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ)
-    [IsProbabilityMeasure μ] (X : ℕ → Ξ → Ω)
-    (_hX_meas : ∀ i, Measurable (X i))
-    (_hX_iindep : ProbabilityTheory.iIndepFun X μ)
-    (_hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
-    (_hX_law : μ.map (X 0) = P)
-    (fhat ghat : ℕ → Ξ → (Ω → ℝ))
-    (_h_fhat_meas : ∀ n, Measurable (Function.uncurry (fhat n)))
-    (_h_ghat_meas : ∀ n, Measurable (Function.uncurry (ghat n)))
-    (h_fhat_in : ∀ n ξ, fhat n ξ ∈ F ∪ G)
-    (h_ghat_in : ∀ n ξ, ghat n ξ ∈ F ∪ G)
-    (h_l2_int : ∀ n, MeasureTheory.Integrable
-      (fun ξ => ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) μ)
-    (h_l2 : Tendsto (fun n => ∫ ξ, (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) ∂μ)
-        atTop (𝓝 0))
-    (η : ℝ) (_hη : 0 < η) :
-    Tendsto (fun n =>
-      μ ({ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
-                   - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)|}
-          ∩ ({ξ | fhat n ξ ∈ F ∧ ghat n ξ ∈ F}
-              ∪ {ξ | fhat n ξ ∈ G ∧ ghat n ξ ∈ G})ᶜ))
-      atTop (𝓝 0) := by
-  obtain ⟨c, hc_pos, hsep⟩ := hFG_sep
-  have hc2_pos : (0 : ℝ) < c ^ 2 := pow_pos hc_pos 2
-  have h_orig_nonneg : ∀ n ξ, 0 ≤ ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P :=
-    fun _ _ => integral_nonneg (fun _ => sq_nonneg _)
-  -- The deviation∩mixed event is contained in {ξ | c² ≤ L²-distance} via separation.
-  have h_mix_sub : ∀ n,
-      ({ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
-                  - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)|}
-        ∩ ({ξ | fhat n ξ ∈ F ∧ ghat n ξ ∈ F}
-            ∪ {ξ | fhat n ξ ∈ G ∧ ghat n ξ ∈ G})ᶜ) ⊆
-      {ξ | c ^ 2 ≤ ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P} := by
-    intro n ξ hξ
-    have hmix := hξ.2
-    have hFF_neg : ¬ (fhat n ξ ∈ F ∧ ghat n ξ ∈ F) := fun h =>
-      hmix (Set.mem_union_left _ h)
-    have hGG_neg : ¬ (fhat n ξ ∈ G ∧ ghat n ξ ∈ G) := fun h =>
-      hmix (Set.mem_union_right _ h)
-    exact hsep (fhat n ξ) (h_fhat_in n ξ) (ghat n ξ) (h_ghat_in n ξ) hFF_neg hGG_neg
-  -- Markov via ENNReal lintegral with division.
-  have hc2_ennreal_ne_zero : ENNReal.ofReal (c ^ 2) ≠ 0 := by
-    rw [Ne, ENNReal.ofReal_eq_zero, not_le]; exact hc2_pos
-  have hc2_ennreal_ne_top : ENNReal.ofReal (c ^ 2) ≠ ⊤ := ENNReal.ofReal_ne_top
-  have h_markov : ∀ n,
-      μ {ξ | c ^ 2 ≤ ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P}
-      ≤ ENNReal.ofReal ((∫ ξ, (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) ∂μ) / c ^ 2) := by
-    intro n
-    have h_aem : AEMeasurable
-        (fun ξ => ENNReal.ofReal (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P)) μ :=
-      ENNReal.measurable_ofReal.comp_aemeasurable
-        (h_l2_int n).aestronglyMeasurable.aemeasurable
-    have h_set_eq :
-        {ξ | c ^ 2 ≤ ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P}
-        = {ξ | ENNReal.ofReal (c ^ 2)
-            ≤ ENNReal.ofReal (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P)} := by
-      ext ξ
-      rw [Set.mem_setOf_eq, Set.mem_setOf_eq,
-        ENNReal.ofReal_le_ofReal_iff (h_orig_nonneg n ξ)]
-    rw [h_set_eq]
-    have h_markov_raw :=
-      MeasureTheory.meas_ge_le_lintegral_div h_aem hc2_ennreal_ne_zero hc2_ennreal_ne_top
-    have h_lint_eq :
-        ∫⁻ ξ, ENNReal.ofReal (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) ∂μ
-          = ENNReal.ofReal (∫ ξ, (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) ∂μ) :=
-      (MeasureTheory.ofReal_integral_eq_lintegral_ofReal (h_l2_int n)
-        (Filter.Eventually.of_forall fun ξ => h_orig_nonneg n ξ)).symm
-    rw [h_lint_eq] at h_markov_raw
-    have h_div :
-        ENNReal.ofReal (∫ ξ, (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) ∂μ)
-          / ENNReal.ofReal (c ^ 2)
-        = ENNReal.ofReal ((∫ ξ, (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) ∂μ) / c ^ 2) :=
-      (ENNReal.ofReal_div_of_pos hc2_pos).symm
-    rw [h_div] at h_markov_raw
-    exact h_markov_raw
-  -- The Markov bound tends to 0 in ℝ≥0∞.
-  have h_bound_tendsto :
-      Tendsto
-        (fun n => ENNReal.ofReal
-          ((∫ ξ, (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) ∂μ) / c ^ 2))
-        atTop (𝓝 0) := by
-    have h_real : Tendsto
-        (fun n => (∫ ξ, (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) ∂μ) / c ^ 2)
-        atTop (𝓝 0) := by
-      have := h_l2.div_const (c ^ 2)
-      simpa using this
-    have := (ENNReal.continuous_ofReal.tendsto 0).comp h_real
-    simpa using this
-  -- Squeeze: 0 ≤ μ(...) ≤ Markov-bound → 0.
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_bound_tendsto
-    (Eventually.of_forall fun _ => zero_le _) ?_
-  refine Eventually.of_forall fun n => ?_
-  exact (measure_mono (h_mix_sub n)).trans (h_markov n)
-
-/-- **Auxiliary measurable-selection step for `isAsymptoticallyEquicontinuous_union`**.
-
-Given an iid sample `X : ℕ → Ξ → Ω` and a jointly-measurable random pair
-`(fhat n, ghat n)` valued in `F ∪ G` with L²-consistency
-`∫ ‖fhat − ghat‖²_{L²(P)} dμ → 0`, this lemma asserts that for every
-`η > 0` the deviation event splits into three measure-going-to-zero
-pieces: the `F`-pure piece, the `G`-pure piece, and a "mixed" piece
-where `(fhat n ξ, ghat n ξ)` straddles `F` and `G`.
-
-It sets up the partition
-
-* `S_FF n := {ξ | fhat n ξ ∈ F ∧ ghat n ξ ∈ F}`,
-* `S_GG n := {ξ | fhat n ξ ∈ G ∧ ghat n ξ ∈ G}`,
-* `S_mix n := (S_FF n ∪ S_GG n)ᶜ`,
-
-derives the elementary subset bound
-
-`A n ⊆ (A n ∩ S_FF n) ∪ (A n ∩ S_GG n) ∪ (A n ∩ S_mix n)`
-
-(where `A n` is the deviation event), monotonicity + two applications
-of `measure_union_le` give the three-summand μ-bound, and a
-`Tendsto.add` sum-to-zero squeeze closes the goal. The mathematical
-content lives in three named sub-auxes:
-
-* `union_aux_FF` — F-side via `hF` + measurable surrogate
-  (Vaart–Wellner Thm 2.10.1).
-* `union_aux_GG` — symmetric.
-* `union_aux_mix` — mixed-piece via `h_l2` + Markov + L²-separation.
-
-The prerequisite `AsymptoticStatistics/ForMathlib/MeasurableSelection.lean`
-provides the surrogate construction the sub-auxes consume. -/
-private lemma isAsymptoticallyEquicontinuous_union_aux
-    {F G : Set (Ω → ℝ)} {P : Measure Ω}
-    (hF : IsAsymptoticallyEquicontinuous F P)
-    (hG : IsAsymptoticallyEquicontinuous G P)
-    -- F, G measurably select random functions
-    -- (Vaart–Wellner Thm 2.10.1 / vdV §19.4).
-    (hF_sel : ForMathlib.MeasurableSelection.MeasurablySelectsRandomFunctions F)
-    (hG_sel : ForMathlib.MeasurableSelection.MeasurablySelectsRandomFunctions G)
-    -- F, G nonempty with measurable representatives
-    -- (Vaart–Wellner §2.3 admissibility).
-    (hF_nonempty : ∃ f₀ ∈ F, Measurable f₀)
-    (hG_nonempty : ∃ g₀ ∈ G, Measurable g₀)
-    -- by a positive constant (Vaart–Wellner §2.10.1, §2.3).
-    (hFG_sep : ∃ c > 0, ∀ f ∈ F ∪ G, ∀ g ∈ F ∪ G,
-      ¬ (f ∈ F ∧ g ∈ F) → ¬ (f ∈ G ∧ g ∈ G) →
-      c ^ 2 ≤ ∫ x, (f x - g x) ^ 2 ∂P)
-    {Ξ : Type} [MeasurableSpace Ξ] (μ : Measure Ξ)
-    [IsProbabilityMeasure μ] (X : ℕ → Ξ → Ω)
-    (hX_meas : ∀ i, Measurable (X i))
-    (hX_iindep : ProbabilityTheory.iIndepFun X μ)
-    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
-    (hX_law : μ.map (X 0) = P)
-    (fhat ghat : ℕ → Ξ → (Ω → ℝ))
-    (h_fhat_meas : ∀ n, Measurable (Function.uncurry (fhat n)))
-    (h_ghat_meas : ∀ n, Measurable (Function.uncurry (ghat n)))
-    (h_fhat_in : ∀ n ξ, fhat n ξ ∈ F ∪ G)
-    (h_ghat_in : ∀ n ξ, ghat n ξ ∈ F ∪ G)
-    (h_l2_int : ∀ n, MeasureTheory.Integrable
-      (fun ξ => ∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) μ)
-    (h_l2 : Tendsto (fun n => ∫ ξ, (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) ∂μ)
-        atTop (𝓝 0))
+    (htend : Tendsto (fun n => ∫ ξ, (∫ x, (fhat n ξ x - ghat n ξ x) ^ 2 ∂P) ∂μ)
+      atTop (𝓝 0))
     (η : ℝ) (hη : 0 < η) :
     Tendsto (fun n =>
       μ {ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
                    - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)|})
       atTop (𝓝 0) := by
-  have h_FF := union_aux_FF (G := G) hF hF_sel hF_nonempty μ X
-    hX_meas hX_iindep hX_id hX_law fhat ghat h_fhat_meas h_ghat_meas
-    h_fhat_in h_ghat_in h_l2_int h_l2 η hη
-  have h_GG := union_aux_GG (F := F) hG hG_sel hG_nonempty μ X
-    hX_meas hX_iindep hX_id hX_law fhat ghat h_fhat_meas h_ghat_meas
-    h_fhat_in h_ghat_in h_l2_int h_l2 η hη
-  have h_mix := union_aux_mix (F := F) (G := G) (P := P) hFG_sep μ X
-    hX_meas hX_iindep hX_id hX_law fhat ghat h_fhat_meas h_ghat_meas
-    h_fhat_in h_ghat_in h_l2_int h_l2 η hη
-  have h_bound : ∀ n,
-      μ {ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
-                  - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)|}
-      ≤ μ ({ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
-                     - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)|}
-            ∩ {ξ | fhat n ξ ∈ F ∧ ghat n ξ ∈ F})
-        + μ ({ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
-                       - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)|}
-              ∩ {ξ | fhat n ξ ∈ G ∧ ghat n ξ ∈ G})
-        + μ ({ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
-                       - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)|}
-              ∩ ({ξ | fhat n ξ ∈ F ∧ ghat n ξ ∈ F}
-                  ∪ {ξ | fhat n ξ ∈ G ∧ ghat n ξ ∈ G})ᶜ) := by
+  -- Abbreviate the oscillation deviation event.
+  set osc : ℕ → Ξ → ℝ := fun n ξ =>
+    |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
+      - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)| with hosc
+  set u : ℕ → ℝ≥0∞ := fun n => μ {ξ | η < osc n ξ} with hu
+  -- Reduce `Tendsto u → 0` to `∀ ε > 0, limsup u ≤ ofReal ε`.
+  suffices hlimsup : ∀ ε : ℝ, 0 < ε → limsup u atTop ≤ ENNReal.ofReal ε by
+    have hsup0 : limsup u atTop ≤ 0 := by
+      refine ENNReal.le_of_forall_pos_le_add fun ε hεpos _ => ?_
+      rw [zero_add]
+      have := hlimsup (ε : ℝ) (by exact_mod_cast hεpos)
+      rwa [ENNReal.ofReal_coe_nnreal] at this
+    have hsup0' : limsup u atTop = 0 := le_antisymm hsup0 bot_le
+    refine tendsto_of_le_liminf_of_limsup_le bot_le hsup0'.le ?_ ?_
+    · exact isBoundedUnder_of ⟨⊤, fun _ => le_top⟩
+    · exact isBoundedUnder_of ⟨0, fun _ => bot_le⟩
+  -- Fix `ε > 0`; let `η' := min η ε` (the threshold/mass for the modulus).
+  intro ε hε
+  set η' : ℝ := min η ε with hη'
+  have hη'pos : 0 < η' := lt_min hη hε
+  have hη'_le_η : η' ≤ η := min_le_left _ _
+  have hη'_le_ε : η' ≤ ε := min_le_right _ _
+  -- The modulus at oscillation `η'`, mass `η'`: the close-pair radius `δ` and bound.
+  obtain ⟨δ, hδpos, hBlimsup⟩ :=
+    h_eq μ X hX_meas hX_indep hX_id hX_law η' η' hη'pos hη'pos
+  -- The `distL2`-tail event mass vanishes (Markov).
+  have htail := markov_distL2_tail (F := F) μ fhat ghat hfm hgm
+    hint htend hδpos
+  -- Abbreviate the modulus existential close-pair event and the `distL2`-tail event.
+  set Bev : ℕ → Set Ξ := fun n =>
+    {ξ | ∃ f g : ↥F, distL2 P (f : Ω → ℝ) (g : Ω → ℝ) < δ ∧
+      η' < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (f : Ω → ℝ)
+            - empiricalProcess P n (fun i : Fin n => X i.val ξ) (g : Ω → ℝ)|} with hBev
+  set Tev : ℕ → Set Ξ := fun n => {ξ | δ ≤ distL2 P (fhat n ξ) (ghat n ξ)} with hTev
+  -- Make the giant empirical-process payload opaque so the `limsup` machinery
+  -- below does not `whnf`-explode on it; unfold via `hBev`/`hTev` where needed.
+  clear_value Bev Tev
+  -- Set-level decomposition: `{η < osc} ⊆ Bev n ∪ Tev n`.
+  have hsplit : ∀ n, {ξ | η < osc n ξ} ⊆ Bev n ∪ Tev n := by
+    intro n ξ hξ
+    rw [hBev, hTev]
+    by_cases hcl : distL2 P (fhat n ξ) (ghat n ξ) < δ
+    · exact Or.inl (bulk_osc_mem (hf_in n ξ) (hg_in n ξ) hcl (lt_of_le_of_lt hη'_le_η hξ))
+    · exact Or.inr (le_of_not_gt hcl)
+  -- Opaque envelopes `Uf = μ* ∘ Bev`, `Vf = μ ∘ Tev`; fold `hBlimsup`/`htail`/`u`.
+  set Uf : ℕ → ℝ≥0∞ := fun n => μ.outerMeasureStar (Bev n) with hUf
+  set Vf : ℕ → ℝ≥0∞ := fun n => μ (Tev n) with hVf
+  -- `u n ≤ Uf n + Vf n`.
+  have hbound : ∀ n, u n ≤ Uf n + Vf n := by
     intro n
-    set A : Set Ξ :=
-      {ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
-                - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)|}
-    set SFF : Set Ξ := {ξ | fhat n ξ ∈ F ∧ ghat n ξ ∈ F}
-    set SGG : Set Ξ := {ξ | fhat n ξ ∈ G ∧ ghat n ξ ∈ G}
-    have h_sub : A ⊆ (A ∩ SFF) ∪ (A ∩ SGG) ∪ (A ∩ (SFF ∪ SGG)ᶜ) := by
-      intro ξ hξ
-      by_cases hFF : ξ ∈ SFF
-      · exact Or.inl (Or.inl ⟨hξ, hFF⟩)
-      · by_cases hGG : ξ ∈ SGG
-        · exact Or.inl (Or.inr ⟨hξ, hGG⟩)
-        · exact Or.inr ⟨hξ, fun h => h.elim hFF hGG⟩
-    calc μ A
-        ≤ μ ((A ∩ SFF) ∪ (A ∩ SGG) ∪ (A ∩ (SFF ∪ SGG)ᶜ)) := measure_mono h_sub
-      _ ≤ μ ((A ∩ SFF) ∪ (A ∩ SGG)) + μ (A ∩ (SFF ∪ SGG)ᶜ) := measure_union_le _ _
-      _ ≤ μ (A ∩ SFF) + μ (A ∩ SGG) + μ (A ∩ (SFF ∪ SGG)ᶜ) :=
-          add_le_add (measure_union_le _ _) le_rfl
-  have h_sum :
-      Tendsto (fun n =>
-        μ ({ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
-                     - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)|}
-            ∩ {ξ | fhat n ξ ∈ F ∧ ghat n ξ ∈ F})
-        + μ ({ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
-                       - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)|}
-              ∩ {ξ | fhat n ξ ∈ G ∧ ghat n ξ ∈ G})
-        + μ ({ξ | η < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (fhat n ξ)
-                       - empiricalProcess P n (fun i : Fin n => X i.val ξ) (ghat n ξ)|}
-              ∩ ({ξ | fhat n ξ ∈ F ∧ ghat n ξ ∈ F}
-                  ∪ {ξ | fhat n ξ ∈ G ∧ ghat n ξ ∈ G})ᶜ))
-        atTop (𝓝 0) := by
-    simpa using (h_FF.add h_GG).add h_mix
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h_sum
-    (Eventually.of_forall fun _ => zero_le _)
-    (Eventually.of_forall h_bound)
+    rw [hUf, hVf]
+    calc u n ≤ μ (Bev n ∪ Tev n) := measure_mono (hsplit n)
+      _ ≤ μ (Bev n) + μ (Tev n) := measure_union_le _ _
+      _ ≤ μ.outerMeasureStar (Bev n) + μ (Tev n) := by
+          gcongr
+          exact measure_le_outerMeasureStar μ (Bev n)
+  -- `Vf → 0`, `limsup Uf ≤ ofReal η'`.
+  have htail' : Tendsto Vf atTop (𝓝 0) := by
+    rw [hVf]; simpa only [hTev] using htail
+  have hBlimsup' : limsup Uf atTop ≤ ENNReal.ofReal η' := by
+    rw [hUf]; simp only [hBev]; exact hBlimsup
+  -- Everything below treats `u`, `Uf`, `Vf` as opaque (no `whnf` on the payload).
+  clear_value u osc Uf Vf
+  -- `limsup u ≤ limsup (Uf + Vf) ≤ ofReal η' ≤ ofReal ε`.
+  have hstep1 : limsup u atTop ≤ limsup (fun n => Uf n + Vf n) atTop :=
+    limsup_le_limsup (Eventually.of_forall hbound)
+      isCobounded_le_of_bot (isBoundedUnder_of ⟨⊤, fun _ => le_top⟩)
+  calc limsup u atTop
+      ≤ limsup (fun n => Uf n + Vf n) atTop := hstep1
+    _ ≤ ENNReal.ofReal η' := limsup_add_tendsto_zero_le Uf Vf _ hBlimsup' htail'
+    _ ≤ ENNReal.ofReal ε := ENNReal.ofReal_le_ofReal hη'_le_ε
+
+/-- **Binary subadditivity of the outer measure `P*`.**
+`P*(A ∪ B) ≤ P*(A) + P*(B)`. Pointwise `1_{A∪B} ≤ 1_A + 1_B`, then monotonicity of
+`E*` (`outerExpectation_mono`) and binary subadditivity (`outerExpectation_add_le`)
+of outer expectation close it. -/
+theorem outerMeasureStar_union_le {Ξ : Type*} [MeasurableSpace Ξ] (μ : Measure Ξ)
+    (A B : Set Ξ) :
+    μ.outerMeasureStar (A ∪ B) ≤ μ.outerMeasureStar A + μ.outerMeasureStar B := by
+  refine le_trans (outerExpectation_mono (μ := μ) (X := (A ∪ B).indicator 1)
+    (Y := A.indicator 1 + B.indicator 1) (fun ω => ?_)) (outerExpectation_add_le _ _)
+  refine Set.indicator_apply_le (fun hω => ?_)
+  rw [Pi.add_apply, Pi.one_apply]
+  rcases hω with hA | hB
+  · rw [Set.indicator_of_mem hA, Pi.one_apply]
+    exact le_self_add
+  · rw [Set.indicator_of_mem hB, Pi.one_apply]
+    exact le_add_self
+
+/-- **Integral-squared lower bound ⟹ `distL2` lower bound** (no measurability /
+finiteness hypotheses). If `c² ≤ ∫ (f − g)² ∂P`, then `c ≤ distL2 P f g`. This is
+the converse direction of `distL2_ge_imp_integral_ge`, used in the union closure
+to make separated cross-pairs `distL2`-far apart. The proof routes through the
+universally-true inequality `∫ (f − g)² ≤ (∫⁻ ‖(f − g)·‖ₑ² ∂P).toReal` (Jensen /
+`norm_integral_le_lintegral_norm`) together with the identity
+`distL2² = (∫⁻ ‖(f − g)·‖ₑ² ∂P).toReal` — valid even when the lintegral is `⊤`
+(both sides are then `0`), so neither `MemLp` nor measurability is needed. -/
+theorem le_distL2_of_integral_sq_ge {P : Measure Ω} {f g : Ω → ℝ}
+    {c : ℝ} (hge : c ^ 2 ≤ ∫ x, (f x - g x) ^ 2 ∂P) :
+    c ≤ distL2 P f g := by
+  -- `L = ∫⁻ ‖(f − g) x‖ₑ² ∂P` (Nat power); the squared distance equals `L.toReal`.
+  set L : ℝ≥0∞ := ∫⁻ x, ‖(f - g) x‖ₑ ^ 2 ∂P with hL
+  -- Pointwise: `‖(f − g) x‖ₑ ^ (2:ℝ) = ‖(f − g) x‖ₑ ^ (2:ℕ)`.
+  have hpow : ∀ x, ‖(f - g) x‖ₑ ^ (2 : ℝ≥0∞).toReal = ‖(f - g) x‖ₑ ^ 2 := by
+    intro x; rw [ENNReal.toReal_ofNat, ← ENNReal.rpow_natCast _ 2, Nat.cast_ofNat]
+  -- `distL2² = L.toReal`.
+  have hdist_sq : distL2 P f g ^ 2 = L.toReal := by
+    rw [distL2, eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)]
+    rw [← ENNReal.toReal_rpow, ← Real.rpow_natCast _ 2, ← Real.rpow_mul ENNReal.toReal_nonneg]
+    rw [show ((1 : ℝ) / (2 : ℝ≥0∞).toReal) * ((2 : ℕ) : ℝ) = 1 by norm_num, Real.rpow_one]
+    rw [hL]; congr 1; exact lintegral_congr hpow
+  -- `∫ (f − g)² ≤ L.toReal` (Jensen, no measurability needed).
+  have hbound : ∫ x, (f x - g x) ^ 2 ∂P ≤ L.toReal := by
+    have hnn : (0 : ℝ) ≤ ∫ x, (f x - g x) ^ 2 ∂P :=
+      integral_nonneg (fun x => by positivity)
+    calc ∫ x, (f x - g x) ^ 2 ∂P
+        = ‖∫ x, (f x - g x) ^ 2 ∂P‖ := (Real.norm_of_nonneg hnn).symm
+      _ ≤ (∫⁻ x, ENNReal.ofReal ‖(f x - g x) ^ 2‖ ∂P).toReal :=
+          norm_integral_le_lintegral_norm _
+      _ = L.toReal := by
+          rw [hL]
+          congr 1
+          refine lintegral_congr (fun x => ?_)
+          rw [Pi.sub_apply, Real.norm_of_nonneg (by positivity),
+            Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_pow (abs_nonneg _), sq_abs]
+  -- Chain: `c² ≤ ∫ (f − g)² ≤ L.toReal = distL2²`, then take roots.
+  have hsq : c ^ 2 ≤ distL2 P f g ^ 2 := by rw [hdist_sq]; exact hge.trans hbound
+  have hd_nonneg : 0 ≤ distL2 P f g := ENNReal.toReal_nonneg
+  nlinarith [hsq, hd_nonneg, sq_nonneg (c - distL2 P f g), sq_nonneg (c + distL2 P f g)]
 
 /-- **Union closure of asymptotic equicontinuity**.
 
-vdV §19.4 (used inside the proof of Theorem 19.23): "The union
-of two Donsker classes is Donsker." For the marginal-CLT half this is
-trivial; for the equicontinuity half (this lemma) the proof reduces by
-direct application of the predicate's universal hypotheses to the
-auxiliary `isAsymptoticallyEquicontinuous_union_aux`, which carries
-the full Vaart–Wellner Thm 2.10.1 measurable-selection content. -/
+vdV §19.4 (used inside the proof of Theorem 19.23): "The union of two Donsker
+classes is Donsker." For the marginal-CLT half this is trivial; the
+equicontinuity half is this lemma.
+
+In the outer-sup formulation of `IsAsymptoticallyEquicontinuous`, apply `hF`/`hG` at the
+same iid sample with the halved mass `η/2`, yielding radii `δ_F`, `δ_G`; pick the
+union radius `δ := min (min δ_F δ_G) c` where `c` is the `L²`-separation constant.
+The `L²`-separation `hFG_sep` forces every cross-pair (`s ∈ F`, `t ∈ G`, or vice
+versa) to satisfy `c ≤ distL2 P s t` (`le_distL2_of_integral_sq_ge`), so a
+`distL2`-close pair (`distL2 < δ ≤ c`) is never a cross-pair: both lie in `F` or
+both in `G`. Hence the `F ∪ G` close-pair event is contained in the union of the
+`F`-event and the `G`-event, and `μ*`-subadditivity (`outerMeasureStar_union_le`)
+plus monotonicity (`outerMeasureStar_mono`, since `δ ≤ δ_F, δ_G`) bound its limsup
+by `ofReal (η/2) + ofReal (η/2) = ofReal η`. The selection/nonempty admissibility
+hypotheses are unused under the outer-sup form; measurable selection is not
+needed for this argument. -/
 lemma isAsymptoticallyEquicontinuous_union {F G : Set (Ω → ℝ)} {P : Measure Ω}
     (hF : IsAsymptoticallyEquicontinuous F P)
     (hG : IsAsymptoticallyEquicontinuous G P)
     -- admissibility hypotheses for F and G
     -- (Vaart–Wellner Thm 2.10.1 / vdV §19.4).
-    (hF_sel : ForMathlib.MeasurableSelection.MeasurablySelectsRandomFunctions F)
-    (hG_sel : ForMathlib.MeasurableSelection.MeasurablySelectsRandomFunctions G)
-    (hF_nonempty : ∃ f₀ ∈ F, Measurable f₀)
-    (hG_nonempty : ∃ g₀ ∈ G, Measurable g₀)
+    -- (selection / nonempty admissibility — unused under the outer-sup form, but
+    -- part of the locked Vaart–Wellner §2.10.1 signature; underscored to silence
+    -- the unused-variable linter without dropping them.)
+    (_hF_sel : ForMathlib.MeasurableSelection.MeasurablySelectsRandomFunctions F)
+    (_hG_sel : ForMathlib.MeasurableSelection.MeasurablySelectsRandomFunctions G)
+    (_hF_nonempty : ∃ f₀ ∈ F, Measurable f₀)
+    (_hG_nonempty : ∃ g₀ ∈ G, Measurable g₀)
     -- (Vaart–Wellner §2.10.1, §2.3).
     (hFG_sep : ∃ c > 0, ∀ f ∈ F ∪ G, ∀ g ∈ F ∪ G,
       ¬ (f ∈ F ∧ g ∈ F) → ¬ (f ∈ G ∧ g ∈ G) →
       c ^ 2 ≤ ∫ x, (f x - g x) ^ 2 ∂P) :
     IsAsymptoticallyEquicontinuous (F ∪ G) P := by
-  intro Ξ _inst μ _inst2 X hX_meas hX_iindep hX_id hX_law
-        fhat ghat h_fhat_meas h_ghat_meas h_fhat_in h_ghat_in h_l2_int h_l2 η hη
-  exact isAsymptoticallyEquicontinuous_union_aux hF hG hF_sel hG_sel
-    hF_nonempty hG_nonempty hFG_sep μ X
-    hX_meas hX_iindep hX_id hX_law fhat ghat h_fhat_meas h_ghat_meas
-    h_fhat_in h_ghat_in h_l2_int h_l2 η hη
+  -- Unfold the outer-sup modulus for `F ∪ G`; introduce the iid sample + levels.
+  intro Ξ _inst μ _inst2 X hX_meas hX_indep hX_id hX_law ε η hε hη
+  -- Apply `hF`/`hG` at the SAME sample with halved mass `η/2`.
+  have hη2 : (0 : ℝ) < η / 2 := by positivity
+  obtain ⟨δF, hδF, hFlim⟩ := hF μ X hX_meas hX_indep hX_id hX_law ε (η / 2) hε hη2
+  obtain ⟨δG, hδG, hGlim⟩ := hG μ X hX_meas hX_indep hX_id hX_law ε (η / 2) hε hη2
+  -- The `L²`-separation constant `c`.
+  obtain ⟨c, hc_pos, hsep⟩ := hFG_sep
+  -- Union radius: small enough to beat both modulus radii and the separation.
+  refine ⟨min (min δF δG) c, lt_min (lt_min hδF hδG) hc_pos, ?_⟩
+  set δ : ℝ := min (min δF δG) c with hδ
+  have hδ_le_F : δ ≤ δF := le_trans (min_le_left _ _) (min_le_left _ _)
+  have hδ_le_G : δ ≤ δG := le_trans (min_le_left _ _) (min_le_right _ _)
+  have hδ_le_c : δ ≤ c := min_le_right _ _
+  -- The three close-pair events (`F∪G` at `δ`, `F` at `δF`, `G` at `δG`), `n`-indexed.
+  set Aev : ℕ → Set Ξ := fun n => {ξ | ∃ s t : ↥(F ∪ G),
+      distL2 P (s : Ω → ℝ) (t : Ω → ℝ) < δ ∧
+      ε < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (s : Ω → ℝ)
+            - empiricalProcess P n (fun i : Fin n => X i.val ξ) (t : Ω → ℝ)|} with hAev
+  set AF : ℕ → Set Ξ := fun n => {ξ | ∃ s t : ↥F,
+      distL2 P (s : Ω → ℝ) (t : Ω → ℝ) < δF ∧
+      ε < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (s : Ω → ℝ)
+            - empiricalProcess P n (fun i : Fin n => X i.val ξ) (t : Ω → ℝ)|} with hAF
+  set AG : ℕ → Set Ξ := fun n => {ξ | ∃ s t : ↥G,
+      distL2 P (s : Ω → ℝ) (t : Ω → ℝ) < δG ∧
+      ε < |empiricalProcess P n (fun i : Fin n => X i.val ξ) (s : Ω → ℝ)
+            - empiricalProcess P n (fun i : Fin n => X i.val ξ) (t : Ω → ℝ)|} with hAG
+  -- Fold goal + `hF`/`hG` outputs into the abbreviations (definitional, `Aev`/`AF`/`AG`
+  -- are still transparent here so the `change`/coercion goes through by defeq).
+  change limsup (fun n => μ.outerMeasureStar (Aev n)) atTop ≤ ENNReal.ofReal η
+  replace hFlim : limsup (fun n => μ.outerMeasureStar (AF n)) atTop
+      ≤ ENNReal.ofReal (η / 2) := hFlim
+  replace hGlim : limsup (fun n => μ.outerMeasureStar (AG n)) atTop
+      ≤ ENNReal.ofReal (η / 2) := hGlim
+  -- **Separation kills cross-pairs.** A `distL2`-close pair (`< δ ≤ c`) is never a
+  -- cross-pair, so `Aev n ⊆ AF n ∪ AG n`.
+  have hsubset : ∀ n, Aev n ⊆ AF n ∪ AG n := by
+    intro n ξ hξ
+    simp only [hAev, Set.mem_setOf_eq] at hξ
+    obtain ⟨s, t, hst_close, hst_osc⟩ := hξ
+    -- `s`, `t` lie in `F ∪ G`.
+    have hs : (s : Ω → ℝ) ∈ F ∪ G := s.2
+    have ht : (t : Ω → ℝ) ∈ F ∪ G := t.2
+    -- Rule out the cross-pair case: else `c ≤ distL2`, contradicting `distL2 < δ ≤ c`.
+    have hnot_cross : ((s : Ω → ℝ) ∈ F ∧ (t : Ω → ℝ) ∈ F) ∨
+        ((s : Ω → ℝ) ∈ G ∧ (t : Ω → ℝ) ∈ G) := by
+      by_contra hcross
+      rw [not_or] at hcross
+      have hsep' := hsep _ hs _ ht hcross.1 hcross.2
+      have hc_le : c ≤ distL2 P (s : Ω → ℝ) (t : Ω → ℝ) :=
+        le_distL2_of_integral_sq_ge hsep'
+      exact absurd (lt_of_lt_of_le hst_close hδ_le_c) (not_lt.mpr hc_le)
+    -- Lift the close pair into the appropriate single-class event.
+    rcases hnot_cross with ⟨hsF, htF⟩ | ⟨hsG, htG⟩
+    · refine Or.inl ?_
+      simp only [hAF, Set.mem_setOf_eq]
+      exact ⟨⟨(s : Ω → ℝ), hsF⟩, ⟨(t : Ω → ℝ), htF⟩,
+        lt_of_lt_of_le hst_close hδ_le_F, hst_osc⟩
+    · refine Or.inr ?_
+      simp only [hAG, Set.mem_setOf_eq]
+      exact ⟨⟨(s : Ω → ℝ), hsG⟩, ⟨(t : Ω → ℝ), htG⟩,
+        lt_of_lt_of_le hst_close hδ_le_G, hst_osc⟩
+  -- Make the giant empirical-process payload opaque for the `limsup` arithmetic.
+  clear_value Aev AF AG
+  -- Per-`n` outer-measure bound: `μ*(Aev n) ≤ μ*(AF n) + μ*(AG n)`.
+  have hμbound : ∀ n, μ.outerMeasureStar (Aev n)
+      ≤ μ.outerMeasureStar (AF n) + μ.outerMeasureStar (AG n) := fun n =>
+    le_trans (outerMeasureStar_mono μ (hsubset n)) (outerMeasureStar_union_le μ _ _)
+  -- Chain the `limsup`s: `limsup μ*(Aev) ≤ limsup(μ*(AF)+μ*(AG)) ≤ ofReal η/2 + ofReal η/2`.
+  calc limsup (fun n => μ.outerMeasureStar (Aev n)) atTop
+      ≤ limsup (fun n => μ.outerMeasureStar (AF n)
+          + μ.outerMeasureStar (AG n)) atTop :=
+        limsup_le_limsup (Eventually.of_forall hμbound)
+          isCobounded_le_of_bot (isBoundedUnder_of ⟨⊤, fun _ => le_top⟩)
+    _ ≤ ENNReal.ofReal (η / 2) + ENNReal.ofReal (η / 2) :=
+        limsup_add_le_of_le _ _ _ _ ENNReal.ofReal_ne_top ENNReal.ofReal_ne_top
+          hFlim hGlim
+    _ = ENNReal.ofReal η := by
+        rw [← ENNReal.ofReal_add hη2.le hη2.le]; congr 1; ring
 
 /-- Closure under finite union: the union of two Donsker classes is
 Donsker.
@@ -794,10 +998,11 @@ lemma IsPDonsker.union {F G : Set (Ω → ℝ)} {P : Measure Ω}
       c ^ 2 ≤ ∫ x, (f x - g x) ^ 2 ∂P) :
     IsPDonsker (F ∪ G) P := by
   refine ⟨?_, ?_⟩
-  · intro f hf
+  · refine isMarginalCLT_of_memLp ?_
+    intro f hf
     cases hf with
-    | inl h => exact hF.marginalCLT f h
-    | inr h => exact hG.marginalCLT f h
+    | inl h => exact hF.marginalCLT.memLp f h
+    | inr h => exact hG.marginalCLT.memLp f h
   · exact isAsymptoticallyEquicontinuous_union hF.asymptoticallyEquicontinuous
       hG.asymptoticallyEquicontinuous hF_sel hG_sel hF_nonempty hG_nonempty hFG_sep
 

@@ -257,15 +257,14 @@ lemma localAsymptoticRisk_ge_avg_lower_bound
       (fun I' : Finset (Θ k) => Filter.liminf (fun n : ℕ => ⨆ h ∈ I', x n h) atTop) I
   exact h_liminf.trans h_iSup
 
-/-! ## LAN Bayes-risk plumbing — bridge from Step A to Mathlib `bayesRisk` framework
+/-! ## LAN Bayes-risk encoding in Mathlib's `bayesRisk` framework
 
 These definitions wrap the LAN experiment data into Mathlib's `bayesRisk` /
-`avgRisk` API. They turn the discrete-prior averaged-risk inequality of Step A
-into a `bayesRisk`-form lower bound, which is the natural input for the
-substantive Step B (LAN-Bayes limit). The kernel construction itself
-(`P_n h := productMeasure M μ (θ₀ + (√n)⁻¹ • h) n` measurable in `h`) is
-parametrized in by the caller — joint measurability of `(h, x) ↦ density (...) x`
-is not provided by `ParametricFamily`, so kernel construction is deferred. -/
+`avgRisk` API, converting the discrete-prior averaged-risk inequality into a
+`bayesRisk`-form lower bound. The caller supplies the kernel
+`P_n h := productMeasure M μ (θ₀ + (√n)⁻¹ • h) n`: `ParametricFamily` provides
+measurability in the sample coordinate for each parameter, but not the joint
+parameter/sample measurability needed to construct this kernel. -/
 
 /-- LAN-experiment loss: rescaled discrepancy `√n • (y - ψ(θ₀ + h/√n))`. -/
 noncomputable def lanLoss (θ₀ : Θ k) (ψ : Θ k → 𝓨 d) (L : 𝓨 d → ℝ≥0∞) (n : ℕ) :
@@ -294,10 +293,10 @@ support `I` of the discrete prior, the average risk under the deterministic
 estimator `Kernel.deterministic (T n)` equals the discrete sum
 `∑_{h ∈ I} π(h) · ∫⁻ ω, L(√n • (T_n ω - ψ(θ₀+h/√n))) dP_{n,h}(ω)`.
 
-The hypothesis `h_meas_int` is the measurability of the integrand against the
-prior coordinate — required for the `lintegral_dirac` step. In practice, this
-follows from joint measurability of the integrand-in-`(θ, ω)`, which depends on
-how `P_n` is constructed (deferred). -/
+The caller also supplies `h_meas_int`, measurability of the integrand in the
+prior coordinate, as required by `lintegral_dirac`. This property depends on
+the joint parameter/sample measurability used in the caller's construction of
+`P_n`, which is not part of `ParametricFamily`. -/
 lemma avgRisk_lan_discretePrior_eq_sum
     (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧)
     (θ₀ : Θ k) (T : ∀ n, (Fin n → 𝓧) → 𝓨 d) (hT_meas : ∀ n, Measurable (T n))
@@ -408,7 +407,7 @@ lemma lanLossLimit_measurable_right
 noncomputable def gaussianTauPrior (k : ℕ) (τ : ℝ) : Measure (Θ k) :=
   multivariateGaussian 0 ((τ^2) • (1 : Matrix (Fin k) (Fin k) ℝ))
 
-/-- ## **Step C, easy direction — `bayesRisk_∞ π_τ ≤ bayesRiskAtTau`**.
+/-- **Gaussian-shift Bayes risk is at most `bayesRiskAtTau`.**
 
 There exists a Markov estimator (the posterior-mean kernel) whose `avgRisk`
 under the Gaussian shift τ-prior equals `bayesRiskAtTau J ψDotMat L τ`. By
@@ -425,13 +424,11 @@ under the Gaussian shift τ-prior equals `bayesRiskAtTau J ψDotMat L τ`. By
 3. **avgRisk computation**: Under joint `(h ~ π_τ, X | h ~ N(h, J⁻¹))`, the residual
    `h - posteriorMean(X)` has marginal `N(0, posteriorCov)` (conditional Gaussian's
    marginal property). So `ψDot · (h - posteriorMean(X)) ~ N(0, ψDotMat · posteriorCov · ψDotMatᵀ)`.
-   Apply `lintegral_map` to identify
+   Apply `gaussianShift_innovations_repr`, `multivariateGaussian_map_rectangular`,
+   and probability-measure collapse to identify
    `avgRisk lanLossLimit Plim κ_⋆ π_τ = ∫⁻ y, L y ∂N(0, ψDotMat · posteriorCov · ψDotMatᵀ)
     = bayesRiskAtTau J ψDotMat L τ`.
-
-**Mathlib gaps**: Conditional Gaussian (Bayes posterior of joint Gaussian) is not
-in Mathlib. The marginal-of-conditional argument requires Fubini-style integration
-against the joint kernel. -/
+-/
 lemma bayesRisk_gaussianShift_le_bayesRiskAtTau
     {J : Matrix (Fin k) (Fin k) ℝ} (hJ : J.PosDef)
     (ψDot : Θ k → 𝓨 d) (hψDot_meas : Measurable ψDot)
@@ -545,41 +542,33 @@ lemma bayesRisk_gaussianShift_le_bayesRiskAtTau
         rw [h_neg_cov]
     _ = GaussianShiftMinimax.bayesRiskAtTau J ψDotMat L τ := rfl
 
-/-- ## **Step C, hard direction — substantive per-estimator inequality.**
+/-- **Per-estimator Gaussian-shift Bayes lower bound.**
 
-**Black-box gap (substantive content of Step C HARD).** For ANY Markov estimator
-`κ : Kernel (Θ k) (𝓨 d)`, its average risk under the Gaussian-shift τ-prior
-dominates `bayesRiskAtTau`:
+For ANY Markov estimator `κ : Kernel (Θ k) (𝓨 d)`, its average risk under the
+Gaussian-shift τ-prior dominates `bayesRiskAtTau`:
 `bayesRiskAtTau J ψDotMat L τ ≤ avgRisk (lanLossLimit ψDot L) Plim κ π_τ`.
 
-This is the **substantive Bayesian-decision-theoretic content** of Step C HARD;
-the wrapping `bayesRiskAtTau_le_bayesRisk_gaussianShift` then closes by
-`bayesRisk = ⨅ κ markov, avgRisk` and `le_iInf₂`.
+**Proof.**
 
-**Mathematical proof** (Bayesian-Gaussian infrastructure not in Mathlib):
-
-1. **Innovations representation** (the load-bearing Mathlib gap). Under joint
+1. **Innovations representation.** Under joint
    `(h, X) ~ π_τ ⊗ Plim`, the random variable `g := h - posteriorCov · J · X`
    has marginal `N(0, posteriorCov)` AND is **independent of X**. The marginal
    of `X` is `π_X := N(0, J⁻¹ + τ²·I)`. Hence
    `∫⁻ h ∂π_τ ∫⁻ x ∂Plim(h) F(h,x) = ∫⁻ x ∂π_X ∫⁻ g ∂N(0, posteriorCov)
-       F(g + posteriorCov·J·x, x)`
-   for measurable `F`. **Requires** Mathlib infrastructure for joint Gaussian
-   conjugation / Bayes posterior identification, which does not exist.
+       F(g + posteriorCov·J·x, x)`.
 2. **Linear pushforward of Gaussian** (rectangular case). For S PSD on `Θ k`
    and `ψDotMat : Matrix d k`,
    `∫⁻ g, L(c - ψDotMat g) ∂N(0, S) = ∫⁻ z, L(c - z) ∂N(0, ψDotMat · S · ψDotMatᵀ)`.
-   Mathlib has the square version
-   (`multivariateGaussian_map_toEuclideanCLM` in `ForMathlib/GaussianMGF.lean`);
-   the rectangular version is a parallel ~50-100 line proof via `IsGaussian.ext`.
-3. **Anderson loss form** (`anderson_lemma_loss`, ✅ closed): for any shift `c`,
+   This is `multivariateGaussian_map_rectangular` followed by `lintegral_map`.
+3. **Anderson loss comparison** (`anderson_lemma_loss`): for any shift `c`,
    `∫⁻ z, L z ∂N(0, S) ≤ ∫⁻ z, L(z + c) ∂N(0, S)`. Combined with bowl-shape
    symmetry `L(c - z) = L(z - c)` and the c → -c substitution, gives
    `bayesRiskAtTau ≤ ∫⁻ z, L(c - z) ∂N(0, ψDotMat · posteriorCov · ψDotMatᵀ)`.
 4. **Outer collapse**. Both `κ` Markov and `π_X` probability measure, so
    `∫⁻ x ∂π_X, ∫⁻ y ∂κ(x), bayesRiskAtTau = bayesRiskAtTau · 1 · 1`.
 
-Together: `avgRisk = (1) ≥ (3) = ∫…∫ bayesRiskAtTau = (4) bayesRiskAtTau`. -/
+Together, innovations, Anderson comparison, rectangular pushforward, and
+probability collapse give the asserted lower bound. -/
 private lemma avgRisk_gaussianShift_ge_bayesRiskAtTau
     {J : Matrix (Fin k) (Fin k) ℝ} (hJ : J.PosDef)
     (ψDot : Θ k → 𝓨 d) (hψDot_meas : Measurable ψDot)
@@ -1747,8 +1736,8 @@ theorem representation_kernel_identifies_le_cam_3_limit
       (Measure.map Prod.fst (π.withDensity (fun p => ENNReal.ofReal
         (Real.exp (⟪h, p.2⟫ - c))))) :=
     MeasureTheory.Measure.isProbabilityMeasure_map measurable_fst.aemeasurable
-  -- Apply the closed brick `gaussianShift_bind_eq_limit` with `L_h := target` and
-  -- `_hL_h_formula := rfl`. Conclusion is the target equality.
+  -- Apply `gaussianShift_bind_eq_limit` to the tilted marginal, with its defining
+  -- formula supplied by reflexivity.
   exact AsymptoticRepresentation.gaussianShift_bind_eq_limit J hJ gauss hGauss π h
     (Measure.map Prod.fst (π.withDensity (fun p => ENNReal.ofReal
       (Real.exp (⟪h, p.2⟫ - c))))) hTilt_π rfl

@@ -1382,37 +1382,14 @@ theorem LAN_representation_kernel
 
 /-! ## Subseq-form variant: `LAN_representation_along_subseq`
 
-Generalises `AsymptoticRepresentation.LAN_representation`'s **deterministic-T** body to
-accept a joint weak-convergence input **along an arbitrary strictly-monotone
-subsequence** `φ : ℕ → ℕ`, rather than full-sequence weak-conv of `(T n).map
-(P^n_h)`. The conclusion is the per-`h` weak conv along the same `φ` with
-limit `(multivariateGaussian h J⁻¹).bind (representationKernel J π)`.
+This is the subsequence form of `AsymptoticRepresentation.LAN_representation`.
+It accepts joint weak convergence along an arbitrary strictly monotone subsequence
+`φ : ℕ → ℕ` and concludes the corresponding per-`h` weak convergence along the
+same subsequence, with limit
+`(multivariateGaussian h J⁻¹).bind (representationKernel J π)`.
 
-This eliminates the need to inline-mirror Steps 3–5 of
-`AsymptoticRepresentation.LAN_representation`'s body in chapter files when a joint subseq
-weak-conv input is already in hand (e.g. Theorem 8.11's
-`lhs_bound_for_rational_h_via_joint_subseq`, future Hájek 9.3,
-admissibility-by-Bayes-limit).
-
-**Proof architecture** (mirrors `le_cam_3_per_rational_h_weak_conv` +
-`representation_kernel_identifies_le_cam_3_limit` in `Ch8/LocalAsymptoticMinimax.lean`):
-
-1. Score CLT under `P^n_{θ₀}` (`scoreSum_weakly_converges`).
-2. `vLog` + marginal log-likelihood CLT
-   (`multivariateGaussian_map_inner_eq_gaussianReal` + Slutsky on LAN residual).
-3. Identify `π.map snd = multivariateGaussian 0 J`
-   (`WeakConverges.snd_eq` + score CLT pulled along `φ`).
-4. Step 3 (Slutsky bridge) along `φ` via `slutsky_bridge_of_lanResidual`
-   + `lanResidual_tendsto_productMeasure.comp φ`.
-5. Step 3' (joint weak with log-likelihood) along `φ` via
-   `joint_weak_with_logLikelihood`.
-6. Step 5 (Le Cam 3) along `φ` via `weak_limit_under_Q_of_lecam_third`
-   + `uniform_integrability_exp_L` specialised to `φ` (`StrictMono.id_le`).
-7. Step 7 (Gaussian shift) via `gaussianShift_bind_eq_limit` with `gauss h
-   := multivariateGaussian h J⁻¹` and `hTilt_π` from
-   `hasTiltedLinearPushforward_of_isGaussianShift`.
-
-Hypotheses match `AsymptoticRepresentation.LAN_representation`. -/
+The formulation is reusable when joint convergence is known only along a
+subsequence. Its hypotheses otherwise match `AsymptoticRepresentation.LAN_representation`. -/
 theorem LAN_representation_along_subseq
     (M : ParametricFamily 𝓧 (AsymptoticRepresentation.Θ k)) (μ : Measure 𝓧) [SigmaFinite μ]
     (θ₀ : AsymptoticRepresentation.Θ k) (ℓ : 𝓧 → AsymptoticRepresentation.Θ k) (hℓ : Measurable ℓ)

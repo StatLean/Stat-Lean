@@ -1,28 +1,3 @@
-/-
-Asymptotic Statistics — Weak limits of multivariate Gaussians.
-
-Two genuine measure-theoretic facts not yet in Mathlib, isolated here as named
-gaps so the Anderson chain (`ForMathlib/Anderson.lean`) can keep its public
-interface in vdV-canonical `S.PosSemidef` form (instead of strengthening to
-`S.PosDef`):
-
-* `multivariateGaussian_weakly_tendsto_of_psd_perturb` — weak convergence under
-  PSD perturbation `S → S + ε•I` as `ε → 0⁺`, via Lévy's continuity theorem
-  (Mathlib has the sequential form, plus first-countability bridges arbitrary
-  index filters).
-
-* `multivariateGaussian_frontier_eq_zero_of_convex` — convex Borel sets are
-  continuity sets for any PSD multivariate Gaussian. Two cases:
-    - `S.PosDef`: Gaussian is AC w.r.t. Lebesgue (volume), and `Convex.addHaar_frontier`
-      gives `volume (frontier C) = 0` ⇒ Gaussian-null by AC.
-    - `S.PosSemidef` singular: Gaussian is supported on `range (sqrt S)`; the
-      boundary intersects this lower-dim subspace in a convex-set boundary,
-      null in the intrinsic Lebesgue. (Subtler — left as the harder follow-up.)
-
-The wrapper `multivariateGaussian_tendsto_at_convex` (consumed by
-`anderson_lemma_set`) is proved from these two via Mathlib's Portmanteau
-theorem `ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto'`.
--/
 import StatLean.AsymptoticStatistics.ForMathlib.PiGaussian
 import StatLean.AsymptoticStatistics.ForMathlib.PortmanteauLscBridge
 import Mathlib.Probability.Distributions.Gaussian.Multivariate
@@ -37,6 +12,34 @@ import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 import Mathlib.Analysis.Matrix.Order
 import Mathlib.Topology.Algebra.Module.Equiv
 import Mathlib.Analysis.LocallyConvex.Separation
+
+/-!
+Asymptotic Statistics — Weak limits of multivariate Gaussians.
+
+Two measure-theoretic facts not supplied by the imported API are proved here as
+named theorems, allowing the Anderson chain (`ForMathlib/Anderson.lean`) to keep its public
+interface in vdV-canonical `S.PosSemidef` form (instead of strengthening to
+`S.PosDef`):
+
+* `multivariateGaussian_weakly_tendsto_of_psd_perturb` — weak convergence under
+  PSD perturbation `S → S + ε•I` as `ε → 0⁺`, via Lévy's continuity theorem
+  (Mathlib has the sequential form, plus first-countability bridges arbitrary
+  index filters).
+
+* `multivariateGaussian_frontier_eq_zero_of_convex` — convex Borel sets
+  containing `0` in their interior are continuity sets for any PSD
+  multivariate Gaussian. Two cases:
+    - `S.PosDef`: Gaussian is AC w.r.t. Lebesgue (volume), and `Convex.addHaar_frontier`
+      gives `volume (frontier C) = 0` ⇒ Gaussian-null by AC.
+    - `S.PosSemidef` singular: Gaussian is supported on `range (sqrt S)`; the
+      boundary intersects this lower-dim subspace in a convex-set boundary,
+      null in intrinsic Lebesgue measure after passing to orthonormal coordinates
+      on the support subspace.
+
+The wrapper `multivariateGaussian_tendsto_at_convex` (consumed by
+`anderson_lemma_set`) is proved from these two via Mathlib's Portmanteau
+theorem `ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto'`.
+-/
 
 open MeasureTheory ProbabilityTheory Filter
 open scoped Topology ENNReal MatrixOrder
@@ -59,8 +62,7 @@ noncomputable def multivariateGaussianPM (μ : EuclideanSpace ℝ ι) (S : Matri
     (multivariateGaussianPM μ S : Measure (EuclideanSpace ℝ ι))
       = multivariateGaussian μ S := rfl
 
-/-- **Weak continuity of `multivariateGaussian` under PSD perturbation**
-(Mathlib gap — Lévy continuity in covariance).
+/-- **Weak continuity of `multivariateGaussian` under PSD perturbation.**
 
 For `S.PosSemidef`, the family `ε ↦ multivariateGaussian 0 (S + ε•I)` weakly
 converges to `multivariateGaussian 0 S` as `ε → 0⁺`.
@@ -375,8 +377,7 @@ lemma multivariateGaussian_absolutelyContinuous_volume_of_posDef
   rw [h_mvg]
   exact (stdGaussian_absolutelyContinuous_volume.map h_T_meas).trans h_volmap_ac
 
-/-- **Convex sets are continuity sets for PosDef multivariate Gaussians**
-(easy half of Mathlib gap (ii)).
+/-- **Convex sets are continuity sets for positive-definite multivariate Gaussians.**
 
 For `S.PosDef` and convex `C`, the boundary `frontier C` has zero
 `multivariateGaussian 0 S`-measure.
@@ -518,17 +519,15 @@ private lemma _convex_subspace_frontier_pullback_subset
     have h_zero_v := h_g_zero_on_V v
     linarith
 
-/-- **Subspace AC chain for singular PSD multivariate Gaussians** (Mathlib gap —
-sole remaining gap on the convex-frontier-null path at PSD-singular covariance).
+/-- **Subspace absolute-continuity argument for singular PSD multivariate Gaussians.**
 
 For `S.PosSemidef` with `S ≠ 0` and `D ⊆ ↥V` convex (where `V := range(sqrt S)`),
 `multivariateGaussian 0 S` evaluated on the V-image of `frontier_↥V D` is zero.
 
-**Why this is the only gap** (after `_convex_subspace_frontier_pullback_subset`):
-the geometric `frontier C ∩ V ⊆ V.subtypeL '' frontier_↥V (V.subtypeL ⁻¹' C)`
-inclusion (which depends on `0 ∈ interior C`) is closed; this lemma is the
-remaining V-intrinsic Lebesgue null + AC-pushforward content, *independent* of
-any `0 ∈ interior C`-style hypothesis on the underlying convex set in `E`.
+This is the intrinsic measure-theoretic component of the singular-covariance
+argument. It is independent of the geometric inclusion
+`frontier C ∩ V ⊆ V.subtypeL '' frontier_↥V (V.subtypeL ⁻¹' C)` and of any
+`0 ∈ interior C` hypothesis on the ambient convex set.
 
 **Proof.**
 
@@ -822,7 +821,7 @@ private lemma _multivariateGaussian_singular_image_subspaceL_frontier_eq_zero
     (Convex.addHaar_frontier _ h_image_conv)
 
 /-- **Convex sets with `0 ∈ interior C` are continuity sets for singular PSD
-multivariate Gaussians** (hard half of Mathlib gap (ii)).
+multivariate Gaussians.**
 
 For `S.PosSemidef` that is *not* `PosDef` (singular PSD), and convex
 measurable `C` with `0 ∈ interior C`, the boundary `frontier C` has zero
@@ -839,39 +838,19 @@ exactly this kind of degeneracy: it forces `0 ∉ frontier C` (since
 `0 ∈ relInterior_V (C ∩ V)` for `V = range (sqrt S)`, which is what the
 intrinsic-Lebesgue argument needs.
 
-**Proof status**:
+**Proof.** If `S = 0`, the Gaussian is `Dirac 0`, while `0 ∈ interior C`
+places `0` outside `frontier C`. If `S ≠ 0`, the Gaussian is supported on
+`V := range (sqrt S)`, so it suffices to consider `frontier C ∩ V`. Convexity
+and the interior hypothesis put this set inside the image of the intrinsic
+frontier of the pullback of `C` to `V`.
 
-* Case 1 (`S = 0`): ✅ closed. `multivariateGaussian 0 0 = Dirac 0` (via
-  `CFC.sqrt 0 = 0` + `Measure.map_const`), and `0 ∈ interior C` implies
-  `0 ∉ frontier C` (`disjoint_interior_frontier`), so `Dirac 0 (frontier C) = 0`.
-
-* Case 2 (`S ≠ 0` singular PSD): partially reduced. The measure is supported
-  on `V := range (sqrt S)`, a proper linear subspace of `EuclideanSpace ℝ ι`.
-  Argument:
-  1. ✅ `μ_S(frontier C) = μ_S(frontier C ∩ V)` since `μ_S` is supported on
-     `V` (closed via `multivariateGaussian_apply_compl_range` +
-     `measure_inter_add_diff`).
-  2. ⬜ `μ_S(frontier C ∩ V) = 0` — the V-intrinsic argument:
-     - `0 ∈ interior C ∩ V = relInterior_V (C ∩ V)` (since `interior C` is
-       open and contains a ball around 0, intersecting `V` in a
-       relatively-open set).
-     - `C ∩ V` is convex in `V`. With `0 ∈ relInterior_V (C ∩ V)`, the
-       intrinsic-frontier `frontier_V (C ∩ V)` doesn't contain 0 and is
-       intrinsic-Lebesgue null by `Convex.addHaar_frontier` in V.
-     - The pushforward of `μ_S` to `V` (via the V-isomorphism) is
-       non-degenerate, hence AC w.r.t. V's intrinsic Lebesgue.
-     - Pull back via AC.
-
-  **Remaining estimate**: ~80-150 lines (just Step 2). The technical
-  bottleneck is Mathlib's lack of intrinsic-Lebesgue / Haar helpers for
-  affine subspaces under matrix-image constraints:
-  - No `IsAddHaarMeasure (volume.restrict V)` for affine subspace `V`.
-  - No clean "subspace Gaussian" or "rank-deficient pushforward" lemma.
-
-  Plausible Lean path: pick `OrthonormalBasis (Fin r) ℝ V` (with
-  `r := finrank ℝ V`), use the resulting `V ≃ₗᵢ EuclideanSpace ℝ (Fin r)`
-  to bridge to a non-degenerate r-dim Gaussian on `EuclideanSpace ℝ (Fin r)`,
-  apply `multivariateGaussian_absolutelyContinuous_volume_of_posDef` there. -/
+Choose orthonormal coordinates on `V`, with dimension `finrank ℝ V`. In these
+coordinates the induced Gaussian has positive-definite covariance: its defining
+map is surjective, hence its adjoint is injective. Identifying this pushforward
+with the corresponding non-degenerate multivariate Gaussian makes it absolutely
+continuous with respect to Euclidean volume. The intrinsic convex frontier is
+volume-null by `Convex.addHaar_frontier`, so its image, and therefore
+`frontier C ∩ V`, has zero Gaussian measure. -/
 lemma multivariateGaussian_frontier_eq_zero_of_convex_singularPsd
     {S : Matrix ι ι ℝ} (hS : S.PosSemidef) (hS_not_posDef : ¬ S.PosDef)
     {C : Set (EuclideanSpace ℝ ι)}
@@ -897,10 +876,10 @@ lemma multivariateGaussian_frontier_eq_zero_of_convex_singularPsd
     --      (`multivariateGaussian_apply_compl_range`).
     --   2. `frontier C ∩ V ⊆ V.subtypeL '' frontier_↥V (V.subtypeL ⁻¹' C)` —
     --      geometric Hahn-Banach (`_convex_subspace_frontier_pullback_subset`,
-    --      this file). ✅ closed.
+    --      this file).
     --   3. `μ_S(V.subtypeL '' frontier_↥V (V.subtypeL ⁻¹' C)) = 0` — V-intrinsic
-    --      Lebesgue-null + pushforward AC. Sole remaining gap (Mathlib subspace
-    --      Haar / rank-deficient Gaussian).
+    --      Lebesgue-nullity and pushforward absolute continuity, supplied by
+    --      the preceding intrinsic-subspace lemma.
     set T := Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)
     set V : Submodule ℝ (EuclideanSpace ℝ ι) := LinearMap.range T.toLinearMap with hV_def
     have hV_meas : MeasurableSet (V : Set (EuclideanSpace ℝ ι)) :=
@@ -941,8 +920,7 @@ lemma multivariateGaussian_frontier_eq_zero_of_convex_singularPsd
     exact le_antisymm
       ((measure_mono h_image_subset).trans h_image_eq_zero.le) (zero_le _)
 
-/-- **Convex sets are continuity sets for PSD multivariate Gaussians**
-(Mathlib gap — null boundary on convex Borel sets).
+/-- **Convex sets are continuity sets for PSD multivariate Gaussians.**
 
 For `S.PosSemidef` and convex `C ⊂ EuclideanSpace ℝ ι` (measurable), the
 boundary `frontier C` has zero `multivariateGaussian 0 S`-measure, **provided

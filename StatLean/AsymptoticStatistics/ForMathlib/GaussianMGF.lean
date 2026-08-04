@@ -289,10 +289,9 @@ For `A : Matrix (Fin d) (Fin k) ℝ`, the linear map
 becomes a continuous linear map via `LinearMap.toContinuousLinearMap` (the source
 is finite-dim).
 
-Companion to `Matrix.toEuclideanCLM` (which is a star-algebra equiv only available
-for square matrices); this rectangular version is what Step C HARD's substantive
-close (`avgRisk_gaussianShift_ge_bayesRiskAtTau` in `LocalAsymptoticMinimax.lean`) needs to
-push the loss `L(c - ψDotMat g)` through `ψDotMat : Matrix d k ℝ`. -/
+Companion to `Matrix.toEuclideanCLM` (which is a star-algebra equivalence only
+available for square matrices); this rectangular version supports transporting
+Gaussian laws and losses through matrices of shape `d × k`. -/
 noncomputable def matrixToEuclideanCLMRect
     {d k : ℕ} (A : Matrix (Fin d) (Fin k) ℝ) :
     EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin d) :=
@@ -336,9 +335,8 @@ For a rectangular matrix `A : Matrix (Fin d) (Fin k) ℝ`, the push-forward of
 `multivariateGaussian (matrixToEuclideanCLMRect A μ) (A * S * Aᵀ)` on
 `EuclideanSpace ℝ (Fin d)`.
 
-Companion to `multivariateGaussian_map_toEuclideanCLM` (square case), consumed
-by Step C HARD's substantive close (`avgRisk_gaussianShift_ge_bayesRiskAtTau` in
-`LocalAsymptoticMinimax.lean`) for the loss-pushforward
+Companion to `multivariateGaussian_map_toEuclideanCLM` (square case). It gives
+the Gaussian pushforward used to transport loss integrals through a `d × k` matrix:
 `∫⁻ g, L(c - ψDotMat g) ∂N(0, S) = ∫⁻ z, L(c - z) ∂N(0, ψDotMat S ψDotMatᵀ)`.
 
 **Proof structure** parallel to the square case (`multivariateGaussian_map_toEuclideanCLM`):

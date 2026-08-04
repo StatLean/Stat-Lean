@@ -12,13 +12,11 @@ bias residual `bias : ∀ n, (Fin n → Ω) → ℝ`, the Lean analog of vdV's
 `√n · P_{θ̂_n,η} ℓ̃_{θ̂_n,η̂_n}` (modulo the truth-P vs P_{θ̂_n,η} measure shift,
 discussed in the main theorem's docstring).
 
-Under `ZEstimatorTaylorCore` (which retains `score_eq` = `√n 𝕡_n ℓ̃ →_P 0`), the
-Taylor route's algebra absorbs vdV's bias term into the o_P(1) residual, forcing
-the AL-with-bias form to have `bias = 0`. To exhibit a non-trivial bias, the
-hypothesis bundle must permit `√n 𝕡_n ℓ̃` to be non-trivial, encoded here as
-`score_eq_with_bias : √n 𝕡_n ℓ̃ − bias →_P 0`. The √n-consistency hypothesis
-previously bootstrapped from `score_eq` no longer follows, so it is supplied
-directly.
+The bias version replaces `ZEstimatorTaylorCore`'s equation
+`score_eq : √n 𝕡_n ℓ̃ →_P 0` with
+`score_eq_with_bias : √n 𝕡_n ℓ̃ − bias →_P 0`, allowing a nonzero bias term in
+the asymptotic-linear expansion. Root-`n` consistency is an independent
+hypothesis of this version and is supplied directly by the caller.
 
 Headline declaration: `zEstimator_biasResidual_asympLinear_of_taylor_explicit`.
 
@@ -46,8 +44,8 @@ new fields encoding the bias-residual setup of Theorem 25.59:
 - `score_eq_with_bias`: the bias-shifted estimating-equation
   `√n · 𝕡_n ℓ̃_{θ̂_n,η̂_n} − bias_n →_P 0` under `Pⁿ`. Replaces `score_eq` from
   the bias=0 bundle (which forced `bias = o_P(1)`).
-- `sqrt_n_consistency`: `√n · (θ̂_n − θ₀) = O_P(1)`. The bootstrap from
-  `score_eq` no longer applies, so concrete consumers supply this directly.
+- `sqrt_n_consistency`: `√n · (θ̂_n − θ₀) = O_P(1)`, supplied directly as
+  an independent hypothesis of the explicit-bias interface.
 
 Reference: vdV §25.8, Theorem 25.59. -/
 structure ZEstimatorBiasResidualExplicitTaylorHyp
@@ -494,16 +492,14 @@ theorem zEstimator_biasResidual_asympLinear_of_taylor_explicit
     ring
   exact congrArg (fun x : ℝ => ε ≤ |x|) h_inner_eq
 
-/-- *Adapter: Theorem 25.59 explicit-bias bundle → bundled interface.*
+/-- **Explicit-bias Taylor assumptions as a bias-residual bundle.**
 
-Promotes a `ZEstimatorBiasResidualExplicitTaylorHyp` plus the EIF-
-construction inputs (`h_mem`, `h_dψ`) into an
-`EfficientScoreEqBiasResidualAssumptions` with the explicit bias
-`(fun n X => -(1/Ĩ) * bias n X)`. Plumbs into the bundled
-interface `zEstimator_biasResidual_expansion`.
-
-Mirrors `ZEstimatorBiasResidualTaylorHyp.toEfficientScoreEqBiasResidualAssumptions`
-for the bias=0 case.
+Constructs `EfficientScoreEqBiasResidualAssumptions` from
+`ZEstimatorBiasResidualExplicitTaylorHyp` and the EIF-construction inputs `h_mem` and
+`h_dψ`, with residual
+`(fun n X => -(1 / efficientInformation S_θ T_nuis v) * bias n X)`. Positivity of the
+efficient information is inherited from `h.hI_pos`, and `asympLinear_25_59` is supplied
+by `zEstimator_biasResidual_asympLinear_of_taylor_explicit`.
 
 Reference: vdV §25.8, Theorem 25.59. -/
 def toEfficientScoreEqBiasResidualAssumptions_explicit

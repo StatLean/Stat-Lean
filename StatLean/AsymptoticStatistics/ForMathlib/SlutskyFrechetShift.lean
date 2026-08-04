@@ -26,9 +26,8 @@ The mathematics is two-piece:
    `X` (≡ unshifted pushforward translated by `· - ψDot h`) to the law of `Y`
    (the shifted pushforward).
 
-Originally a private helper in `Ch8/LocalAsymptoticMinimax.lean` (used by N9, the
-"slutsky_frechet_shift_translation_per_h" wrapper of Theorem 8.11); promoted
-here as a theorem-agnostic brick.
+The theorem packages the Fréchet-shift form of Slutsky's theorem independently
+of any particular consumer.
 -/
 
 open MeasureTheory Filter Topology
