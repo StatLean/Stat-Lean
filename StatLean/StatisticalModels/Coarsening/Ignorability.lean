@@ -100,7 +100,27 @@ theorem observedLaw_restrict_false (Q : Measure (𝓧 × ℝ)) [IsProbabilityMea
     (observedLaw Q (ρ'.comap Prod.fst measurable_fst)).restrict {o | o.2.1 = false}
       = ((Q.map Prod.fst).withDensity fun x => ρ' x {false}).map
           (fun x : 𝓧 => (x, false, 0)) := by
-  sorry
+  have hk : Measurable (fun x : 𝓧 => (x, false, (0 : ℝ))) :=
+    measurable_id.prodMk (measurable_const.prodMk measurable_const)
+  have hS : MeasurableSet {o : 𝓧 × Bool × ℝ | o.2.1 = false} :=
+    measurable_snd.fst (measurableSet_singleton false)
+  have hd : Measurable fun x : 𝓧 => ρ' x {false} :=
+    Kernel.measurable_coe ρ' (measurableSet_singleton false)
+  ext A hA
+  rw [Measure.restrict_apply hA, observedLaw_eq_map,
+    Measure.map_apply measurable_obsComp (hA.inter hS),
+    Measure.compProd_apply (measurable_obsComp (hA.inter hS)),
+    Measure.map_apply hk hA, withDensity_apply _ (hk hA),
+    ← lintegral_indicator (hk hA), lintegral_map (hd.indicator (hk hA)) measurable_fst]
+  refine lintegral_congr fun q => ?_
+  rw [Kernel.comap_apply]
+  by_cases hq : q.1 ∈ (fun x : 𝓧 => (x, false, (0 : ℝ))) ⁻¹' A
+  · rw [Set.indicator_of_mem hq]
+    congr 1
+    ext r; cases r <;> simp_all [Set.mem_preimage]
+  · rw [Set.indicator_of_notMem hq, ← measure_empty (μ := ρ' q.1)]
+    congr 1
+    ext r; cases r <;> simp_all [Set.mem_preimage]
 
 /-- The two slices reassemble the observed law (the factorization is exhaustive). -/
 theorem observedLaw_eq_restrict_add (Q : Measure (𝓧 × ℝ)) [IsProbabilityMeasure Q]
