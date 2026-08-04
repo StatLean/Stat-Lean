@@ -8,6 +8,9 @@ import StatLean.StatisticalModels.Identifiability.Defs
 import StatLean.StatisticalModels.Identifiability.Transfer
 import StatLean.StatisticalModels.Constraint.Defs
 import StatLean.StatisticalModels.Gaussian.BlockIndex
+import StatLean.StatisticalModels.Gaussian.Affine
+import StatLean.StatisticalModels.Gaussian.Marginal
+import StatLean.StatisticalModels.Gaussian.FinCorridor
 import StatLean.StatisticalModels.Survival.Defs
 import StatLean.StatisticalModels.Survival.Survival
 import StatLean.StatisticalModels.Survival.CumulativeHazard
