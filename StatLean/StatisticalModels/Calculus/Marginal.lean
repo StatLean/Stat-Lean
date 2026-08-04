@@ -50,7 +50,8 @@ theorem pushforward_condProd_fst (P : Θ → Measure 𝓧) (K : Θ → Kernel �
     -- Markov response kernels are USER-INPUT: the model supplies genuine conditional laws
     [∀ θ, SFinite (P θ)] [∀ θ, IsMarkovKernel (K θ)] :
     pushforward (condProd P K) Prod.fst = P := by
-  sorry
+  funext θ
+  exact Measure.fst_compProd (P θ) (K θ)
 
 /-- **Regression ↔ latent marginalization**: the response (second) marginal of the regression
 joint law is the latent marginalization `mix P K`. This is the hinge identifying mixture /
@@ -59,14 +60,16 @@ theorem pushforward_condProd_snd (P : Θ → Measure 𝓧) (K : Θ → Kernel �
     -- LEAN-ONLY: s-finiteness of the covariate law (satisfied by probability models)
     [∀ θ, SFinite (P θ)] [∀ θ, IsSFiniteKernel (K θ)] :
     pushforward (condProd P K) Prod.snd = mix P K := by
-  sorry
+  funext θ
+  exact Measure.snd_compProd (P θ) (K θ)
 
 /-- A covariate-free (constant) response kernel makes the regression joint the independent
 product of the two models. -/
 theorem condProd_const (P : Θ → Measure 𝓧) (Q : Θ → Measure 𝓨)
     [∀ θ, SFinite (P θ)] [∀ θ, SFinite (Q θ)] :
     condProd P (fun θ => Kernel.const 𝓧 (Q θ)) = fun θ => (P θ).prod (Q θ) := by
-  sorry
+  funext θ
+  exact Measure.compProd_const
 
 /-- Single-coordinate marginal of the `n`-fold iid model recovers the base model. -/
 theorem pushforward_iid_eval (P : Θ → Measure 𝓧)
@@ -74,6 +77,21 @@ theorem pushforward_iid_eval (P : Θ → Measure 𝓧)
     -- must carry total mass one); TPE2 §1.1
     [∀ θ, IsProbabilityMeasure (P θ)] {n : ℕ} (i : Fin n) :
     pushforward (iid P n) (Function.eval i) = P := by
+  funext θ
+  exact (measurePreserving_eval (fun _ : Fin n => P θ) i).map_eq
+
+/-- Coordinatewise pushforward of a finite product, at the s-finite level.
+
+Mathlib's `Measure.pi` API is σ-finite throughout (`Measure.pi_pi`, `Measure.pi_eq` and
+`Measure.pi_map_pi` all demand `SigmaFinite`), and `SFinite μ` does not supply
+`SigmaFinite (μ.map T)`; only the inequality `≤` is free (the preimage of a `𝓨`-box is a
+`𝓧`-box of the same price, so every `𝓨`-cover converts, but not conversely). -/
+-- TODO: s-finite version of `Measure.pi_map_pi`. Needs an s-finite `Measure.pi` API that
+-- Mathlib does not currently have; no counterexample found, the gap is API-side.
+private theorem pi_map_pi_of_sFinite (μ : Measure 𝓧) [SFinite μ] {T : 𝓧 → 𝓨}
+    (hT : Measurable T) (n : ℕ) :
+    Measure.pi (fun _ : Fin n => μ.map T)
+      = (Measure.pi fun _ : Fin n => μ).map (fun x => T ∘ x) := by
   sorry
 
 /-- Replication commutes with per-coordinate transformation: the iid model of the pushforward
@@ -82,21 +100,38 @@ theorem iid_pushforward (P : Θ → Measure 𝓧) {T : 𝓧 → 𝓨}
     -- LEAN-ONLY: measurability of the statistic and s-finiteness; standard regularity
     (hT : Measurable T) [∀ θ, SFinite (P θ)] (n : ℕ) :
     iid (pushforward P T) n = pushforward (iid P n) (fun x => T ∘ x) := by
-  sorry
+  funext θ
+  exact pi_map_pi_of_sFinite (P θ) hT n
 
 /-- Single-coordinate marginal of the infinite iid sequence model recovers the base model. -/
 theorem pushforward_iidSeq_eval (P : Θ → Measure 𝓧)
     -- USER-INPUT: probability family; TPE2 §1.1
     [∀ θ, IsProbabilityMeasure (P θ)] (i : ℕ) :
     pushforward (iidSeq P) (Function.eval i) = P := by
-  sorry
+  funext θ
+  exact Measure.infinitePi_map_eval (fun _ : ℕ => P θ) i
 
 /-- Finite windows of the infinite iid sequence model are the `n`-fold iid model. -/
 theorem pushforward_iidSeq_window (P : Θ → Measure 𝓧)
     -- USER-INPUT: probability family; TPE2 §1.1
     [∀ θ, IsProbabilityMeasure (P θ)] (n : ℕ) :
     pushforward (iidSeq P) (fun x (i : Fin n) => x i) = iid P n := by
-  sorry
+  classical
+  funext θ
+  simp only [pushforward, iidSeq, iid]
+  refine (Measure.pi_eq fun s hs => ?_).symm
+  have hpre : (fun (x : ℕ → 𝓧) (i : Fin n) => x i) ⁻¹' Set.univ.pi s
+      = Set.pi ↑(Finset.range n) fun j => if h : j < n then s ⟨j, h⟩ else Set.univ := by
+    ext x
+    simp only [Set.mem_preimage, Set.mem_pi, Set.mem_univ, forall_const, Finset.coe_range,
+      Set.mem_Iio]
+    refine ⟨fun h j hj => by rw [dif_pos hj]; exact h ⟨j, hj⟩, fun h i => ?_⟩
+    have := h i.1 i.2
+    rwa [dif_pos i.2, Fin.eta] at this
+  rw [Measure.map_apply (by fun_prop) (MeasurableSet.univ_pi hs), hpre,
+    Measure.infinitePi_pi _ (fun j _ => by split_ifs with h; exacts [hs _, .univ]),
+    ← Fin.prod_univ_eq_prod_range]
+  exact Finset.prod_congr rfl fun i _ => by rw [dif_pos i.2, Fin.eta]
 
 /-- iid replication is the constant case of independent replication (definitional). -/
 theorem iid_indepProd (P : Θ → Measure 𝓧) (n : ℕ) :
