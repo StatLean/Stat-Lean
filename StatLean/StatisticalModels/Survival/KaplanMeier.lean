@@ -204,13 +204,18 @@ theorem kaplanMeier_eventually_constant_right (d : Fin n → ℝ × Bool) (t : �
 
 /-- Kaplan–Meier as a Stieltjes function: `t ↦ 1 − Ŝ(t)` (monotone by
 `antitone_kaplanMeier`, right-continuous by piecewise constancy). -/
-noncomputable def kaplanMeierSF (d : Fin n → ℝ × Bool) : StieltjesFunction ℝ :=
-  sorry
+noncomputable def kaplanMeierSF (d : Fin n → ℝ × Bool) : StieltjesFunction ℝ where
+  toFun t := 1 - kaplanMeier d t
+  mono' a b hab := by have := antitone_kaplanMeier d hab; linarith
+  right_continuous' t := by
+    obtain ⟨ε, hε, hcon⟩ := kaplanMeier_eventually_constant_right d t
+    refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
+    filter_upwards [Ico_mem_nhdsGE (show t < t + ε by linarith)] with u hu
+    rw [hcon u hu]
 
 @[simp]
 theorem kaplanMeierSF_apply (d : Fin n → ℝ × Bool) (t : ℝ) :
-    kaplanMeierSF d t = 1 - kaplanMeier d t := by
-  sorry
+    kaplanMeierSF d t = 1 - kaplanMeier d t := rfl
 
 /-- **Kaplan–Meier as a law**: the Stieltjes measure of `1 − Ŝ` (`KM58` — the product-limit
 estimate *is* a distribution, possibly defective). -/
