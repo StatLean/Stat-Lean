@@ -65,6 +65,22 @@ theorem pushforward_eq_statLaw (P : Θ → Measure 𝓧) (T : 𝓧 → S) :
 -- `AEMeasurable (fun x => (T x, x)) (P θ)` for `Measure.map_map`. Adding
 -- `(hT : Measurable T)` to both signatures repairs them and closes both proofs.
 
+/-- **Reconstruction from the statistic**: marginalizing the graph disintegration recovers
+each model member from the law of `T` through the θ-free kernel, `P θ = Q ∘ₘ statLaw P T θ`.
+Taking `Measure.snd` of the graph identity: on the left `Prod.snd ∘ (T, id) = id`
+(`Measure.map_map`, whence the measurability of `T`), on the right `Measure.snd_compProd`. -/
+private theorem eq_comp_statLaw_of_graph {P : Θ → Measure 𝓧} {T : 𝓧 → S} {Q : Kernel S 𝓧}
+    [IsMarkovKernel Q] [∀ θ, IsProbabilityMeasure (P θ)] (hTm : Measurable T)
+    (hgraph : ∀ θ, (P θ).map (fun x => (T x, x)) = statLaw P T θ ⊗ₘ Q) (θ : Θ) :
+    P θ = Q ∘ₘ statLaw P T θ := by
+  have hst : IsProbabilityMeasure (statLaw P T θ) := by
+    rw [statLaw]; exact Measure.isProbabilityMeasure_map hTm.aemeasurable
+  have hgm : Measurable fun x => (T x, x) := by fun_prop
+  have h := congrArg Measure.snd (hgraph θ)
+  rw [Measure.snd, Measure.snd, Measure.map_map measurable_snd hgm] at h
+  simp only [Function.comp_def, Measure.map_id'] at h
+  rw [h, ← Measure.snd, Measure.snd_compProd]
+
 /-- **Sufficiency is lossless coarsening**: for a statistic with a sufficient kernel, the
 reduced model is identifiable iff the full model is (TPE2 §1.6; Halmos–Savage 1949). -/
 theorem identifiable_pushforward_iff_of_hasSufficientKernel {P : Θ → Measure 𝓧} {T : 𝓧 → S}
@@ -78,7 +94,10 @@ theorem identifiable_pushforward_iff_of_hasSufficientKernel {P : Θ → Measure 
     [∀ θ, IsProbabilityMeasure (P θ)] :
     Identifiable (pushforward P T) ↔ Identifiable P := by
   refine ⟨identifiable_of_pushforward T, fun hP θ₁ θ₂ hEq => ?_⟩
-  sorry
+  obtain ⟨Q, _, hgraph⟩ := hT
+  have hst : statLaw P T θ₁ = statLaw P T θ₂ := hEq
+  exact hP (by rw [eq_comp_statLaw_of_graph hTm hgraph θ₁,
+    eq_comp_statLaw_of_graph hTm hgraph θ₂, hst])
 
 /-- Target version: sufficiency preserves target identifiability in both directions. -/
 theorem identifiesTarget_pushforward_iff_of_hasSufficientKernel {Γ : Type*}
@@ -91,6 +110,9 @@ theorem identifiesTarget_pushforward_iff_of_hasSufficientKernel {Γ : Type*}
     [∀ θ, IsProbabilityMeasure (P θ)] :
     IdentifiesTarget (pushforward P T) ψ ↔ IdentifiesTarget P ψ := by
   refine ⟨identifiesTarget_of_pushforward T, fun hP θ₁ θ₂ hEq => ?_⟩
-  sorry
+  obtain ⟨Q, _, hgraph⟩ := hT
+  have hst : statLaw P T θ₁ = statLaw P T θ₂ := hEq
+  exact hP (by rw [eq_comp_statLaw_of_graph hTm hgraph θ₁,
+    eq_comp_statLaw_of_graph hTm hgraph θ₂, hst])
 
 end StatLean.StatisticalModels
