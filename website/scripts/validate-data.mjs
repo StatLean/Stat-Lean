@@ -329,6 +329,9 @@ for (let index = 0; index < results.length; index += 1) {
     if (hypothesisIds.has(hypothesis.id)) fail(`${hypothesisLocation}.id`, `duplicate hypothesis id ${JSON.stringify(hypothesis.id)}`);
     hypothesisIds.add(hypothesis.id);
   }
+  if (typeof result.leanSignature === "string") {
+    validateTokenAllocation(result.leanSignature, hypotheses, `${location}.hypotheses`);
+  }
   if (typeof result.informal === "string") validateDataLinks(result.informal, hypotheses, `${location}.informal`);
 
   if (typeof result.file === "string") {

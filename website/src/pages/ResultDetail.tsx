@@ -136,9 +136,12 @@ export function ResultDetail() {
         {/* hypothesis legend */}
         {r.hypotheses.length > 0 && (
           <div className="mt-6 rounded-2xl border hairline bg-parchment-panel p-6">
-            <h3 className="font-sans text-xs uppercase tracking-widest text-ink-faint mb-4">
-              Hypothesis correspondence · hover to cross-highlight
+            <h3 className="font-sans text-xs uppercase tracking-widest text-ink-faint mb-1.5">
+              Key hypothesis correspondence · hover to cross-highlight
             </h3>
+            <p className="font-serif text-sm text-ink-soft mb-4">
+              Selected mathematical hypothesis bundles are shown here; the Lean signature above is complete.
+            </p>
             <div className="grid gap-3 sm:grid-cols-2">
               {r.hypotheses.map((h) => (
                 <div
