@@ -1,6 +1,8 @@
 import StatLean.StatisticalModels.Survival.CumulativeHazard
 import Mathlib.MeasureTheory.Integral.Bochner.FundThmCalculus
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Classical hazard bridges: `Λ = −log S` and the discrete product formula
@@ -122,6 +124,50 @@ theorem map_cdf_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasure μ] [NoAtoms
       push_neg at hcon
       exact absurd (le_csSup hbdd ((hmemA x).2 hcon.le)) (not_le.2 hx)
   rw [hAmeas, ← ProbabilityTheory.ofReal_cdf μ a, hcdfa]
+
+open ProbabilityTheory in
+/-- A CDF level set is null for the law itself (immediate from the PIT). -/
+private lemma measure_preimage_cdf_singleton (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    [NoAtoms μ] (c : ℝ) : μ ((fun x => cdf μ x) ⁻¹' {c}) = 0 := by
+  have hmeas : Measurable (fun x => cdf μ x) := (monotone_cdf μ).measurable
+  rw [← Measure.map_apply hmeas (measurableSet_singleton c), map_cdf_of_noAtoms μ,
+    Measure.restrict_apply (measurableSet_singleton c)]
+  exact measure_mono_null inter_subset_left (measure_singleton c)
+
+/-- The explicit one-dimensional hazard integral `∫₀^c (1 − u)⁻¹ du = −log (1 − c)`. -/
+private lemma lintegral_inv_one_sub {c : ℝ} (hc0 : 0 ≤ c) (hc1 : c < 1) :
+    ∫⁻ u in Ioc (0 : ℝ) c, (ENNReal.ofReal (1 - u))⁻¹ = ENNReal.ofReal (-Real.log (1 - c)) := by
+  have hpos : ∀ u ∈ Icc (0 : ℝ) c, (0 : ℝ) < 1 - u := by
+    intro u hu
+    have := hu.2
+    linarith
+  have hcont : ContinuousOn (fun u : ℝ => (1 - u)⁻¹) (Icc 0 c) :=
+    ContinuousOn.inv₀ ((continuous_const.sub continuous_id).continuousOn)
+      fun u hu => ne_of_gt (hpos u hu)
+  have hint : IntegrableOn (fun u : ℝ => (1 - u)⁻¹) (Ioc 0 c) volume :=
+    (hcont.integrableOn_Icc).mono_set Ioc_subset_Icc_self
+  have hnn : 0 ≤ᵐ[volume.restrict (Ioc (0 : ℝ) c)] fun u : ℝ => (1 - u)⁻¹ := by
+    filter_upwards [ae_restrict_mem measurableSet_Ioc] with u hu
+    exact le_of_lt (inv_pos.2 (hpos u ⟨hu.1.le, hu.2⟩))
+  have hIeq : ∫⁻ u in Ioc (0 : ℝ) c, (ENNReal.ofReal (1 - u))⁻¹
+      = ∫⁻ u in Ioc (0 : ℝ) c, ENNReal.ofReal ((1 - u)⁻¹) :=
+    setLIntegral_congr_fun measurableSet_Ioc fun u hu =>
+      (ENNReal.ofReal_inv_of_pos (hpos u ⟨hu.1.le, hu.2⟩)).symm
+  rw [hIeq, ← ofReal_integral_eq_lintegral_ofReal hint hnn]
+  congr 1
+  rw [← intervalIntegral.integral_of_le hc0]
+  have hcont' : ContinuousOn (fun u : ℝ => (1 - u)⁻¹) (uIcc 0 c) := by
+    rwa [uIcc_of_le hc0]
+  have hderiv : ∀ u ∈ uIcc (0 : ℝ) c,
+      HasDerivAt (fun y : ℝ => -Real.log (1 - y)) ((1 - u)⁻¹) u := by
+    intro u hu
+    rw [uIcc_of_le hc0] at hu
+    have hne : (1 : ℝ) - u ≠ 0 := ne_of_gt (hpos u hu)
+    have hd : HasDerivAt (fun y : ℝ => 1 - y) (-1) u := by
+      simpa using (hasDerivAt_id u).const_sub 1
+    simpa using ((Real.hasDerivAt_log hne).comp u hd).neg
+  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hcont'.intervalIntegrable]
+  simp
 
 /-- **S4.1, continuous bridge**: for an atomless event-time law, where survival is positive,
 `Λ(0, t] = −log S(t)` (ABGK §II.1; Kalbfleisch–Prentice §1.2). -/
