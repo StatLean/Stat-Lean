@@ -258,8 +258,10 @@ private lemma kaplanMeier_eq_one_of_lt {d : Fin n → ℝ × Bool} {t : ℝ}
   rw [kaplanMeier_eq_prod_of_filter_eq (F := ∅) ?_, Finset.prod_empty]
   exact Finset.filter_eq_empty_iff.2 fun v hv => not_le.2 (h v hv)
 
-/-- The full product of Kaplan–Meier factors — the terminal value `Ŝ(∞)`. -/
-private noncomputable def kmLimit (d : Fin n → ℝ × Bool) : ℝ :=
+/-- The full product of Kaplan–Meier factors — the terminal value `Ŝ(∞)`; the Kaplan–Meier
+law is defective (carries cure mass) exactly when this is positive, which happens exactly
+when the largest observation is censored (`KM58 §1`). -/
+noncomputable def kmLimit (d : Fin n → ℝ × Bool) : ℝ :=
   ∏ s ∈ eventTimes d, (1 - naJump d s)
 
 private lemma tendsto_kaplanMeierSF_atBot (d : Fin n → ℝ × Bool) :
@@ -489,16 +491,13 @@ model's own hazard identity. -/
 theorem cumHazardJump_kaplanMeierMeasure {d : Fin n → ℝ × Bool} {s : ℝ}
     (hs : s ∈ eventTimes d)
     -- USER-INPUT: the left limit of KM at s is positive (inside the support); ABGK §IV.3
-    (hpos : 0 < ∏ u ∈ (eventTimes d).filter (· < s), (1 - naJump d u)) :
-    cumHazardJump (kaplanMeierMeasure d) s = ENNReal.ofReal (naJump d s) := by
-  -- FALSE AS FROZEN. The slice's `cumHazard` divides by `μ [s, ∞)`, which for a *defective*
-  -- Kaplan–Meier law is `Ŝ(s−) − Ŝ(∞)`, strictly below the `Ŝ(s−)` of the classical
-  -- identity. Machine-checked counterexample: `cex_cumHazardJump_ne` (data `T̃ = (1, 2)`,
-  -- `Δ = (1, 0)`: hypotheses hold at `s = 1`, but `ΔΛ = 1 ≠ 1/2 = ΔN(1)/Y(1)`).
-  -- TODO: the statement needs `kmLimit d = 0` (largest observation an event), under which it
-  -- is PROVED as `cumHazardJump_kaplanMeierMeasure_of_kmLimit_zero` above; unfreezing the
-  -- signature to add that hypothesis discharges this `sorry` outright.
-  sorry
+    (hpos : 0 < ∏ u ∈ (eventTimes d).filter (· < s), (1 - naJump d u))
+    -- USER-INPUT: non-defective Kaplan–Meier (largest observation an event — no cure mass;
+    -- required: the defective case is FALSE, machine-checked in `cex_cumHazardJump_ne`);
+    -- KM58 §1, ABGK §IV.3
+    (hdefect : kmLimit d = 0) :
+    cumHazardJump (kaplanMeierMeasure d) s = ENNReal.ofReal (naJump d s) :=
+  cumHazardJump_kaplanMeierMeasure_of_kmLimit_zero hs hpos hdefect
 
 /-! ### A counterexample to `cumHazardJump_kaplanMeierMeasure` as frozen
 
