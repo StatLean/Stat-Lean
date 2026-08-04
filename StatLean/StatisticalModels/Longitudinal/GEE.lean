@@ -1,6 +1,7 @@
 import StatLean.StatisticalModels.Longitudinal.Defs
 import StatLean.AsymptoticStatistics.ForMathlib.CondExpL2
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 
 /-!
 # GEE unbiasedness — the estimating function is centered at the truth
@@ -72,6 +73,45 @@ theorem covariateSigma_measurable_comp
     {g : (Fin m → ℝ) × (Fin m → EuclideanSpace ℝ (Fin p)) → ℝ} (hg : Measurable g) :
     Measurable[covariateSigma p m] fun r : LongitudinalRecord p m => g (r.times, r.x) :=
   hg.comp (Measurable.of_comap_le le_rfl)
+
+/-- Orthogonality: a `m`-measurable factor integrates to zero against a conditionally
+centered one. The pull-out property plus `integral_condExp` (LEAN-ONLY packaging of the
+step shared by both routes). -/
+private theorem integral_mul_eq_zero_of_condExp_eq_zero {Ω : Type*} {m mΩ : MeasurableSpace Ω}
+    (hm : m ≤ mΩ) {μ : Measure Ω} [IsFiniteMeasure μ] {f g : Ω → ℝ}
+    (hf : StronglyMeasurable[m] f) (hg : Integrable g μ) (hfg : Integrable (f * g) μ)
+    (hg0 : μ[g|m] =ᵐ[μ] 0) :
+    ∫ ω, f ω * g ω ∂μ = 0 := by
+  have key : μ[f * g|m] =ᵐ[μ] 0 := by
+    filter_upwards [condExp_mul_of_stronglyMeasurable_left hf hfg hg, hg0] with ω h h'
+    rw [h]
+    simp [h']
+  have h0 : ∫ ω, (f * g) ω ∂μ = ∫ ω, (μ[f * g|m]) ω ∂μ :=
+    (integral_condExp (μ := μ) (f := f * g) hm).symm
+  have h3 : ∫ ω, (μ[f * g|m]) ω ∂μ = 0 := by rw [integral_congr_ae key]; simp
+  simpa using h0.trans h3
+
+/-- The residual of the marginal mean model is conditionally centered given the covariates
+(LEAN-ONLY packaging: the mean-model hypothesis in the form both routes consume). -/
+private theorem condExp_geeResidual_eq_zero (Q : Measure (LongitudinalRecord p m))
+    [IsFiniteMeasure Q] (S : GEESpec p m q Θβ) (β₀ : Θβ)
+    (hmean : IsMarginalMeanModel Q S.μfun β₀)
+    (hY : ∀ j, Integrable (fun r : LongitudinalRecord p m => r.y j) Q)
+    (hμ : ∀ j, Integrable (fun r : LongitudinalRecord p m =>
+      S.μfun β₀ (r.times j, r.x j)) Q) (j : Fin m) :
+    Q[fun r => S.geeResidual β₀ r j|covariateSigma p m] =ᵐ[Q] 0 := by
+  have h1 : Q[fun r => S.geeResidual β₀ r j|covariateSigma p m]
+      =ᵐ[Q] Q[fun r : LongitudinalRecord p m => r.y j|covariateSigma p m]
+        - Q[fun r : LongitudinalRecord p m =>
+            S.μfun β₀ (r.times j, r.x j)|covariateSigma p m] :=
+    condExp_sub (hY j) (hμ j) _
+  have h2 : Q[fun r : LongitudinalRecord p m =>
+        S.μfun β₀ (r.times j, r.x j)|covariateSigma p m]
+      =ᵐ[Q] Q[fun r : LongitudinalRecord p m => r.y j|covariateSigma p m] :=
+    (condExp_congr_ae (hmean j).symm).trans
+      (condExp_condExp_of_le le_rfl (covariateSigma_le p m))
+  filter_upwards [h1, h2] with r e1 e2
+  simp [e1, e2]
 
 /-- **L1, GEE unbiasedness (L² route)** (`LZ86 §2`, remark below Eq. (6)): under the marginal
 mean model, every coordinate of the GEE estimating function integrates to zero — whatever the
