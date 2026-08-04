@@ -110,7 +110,7 @@ theorem cond_single_failure (R : Finset (Fin n)) (z : Fin n → EuclideanSpace �
     (hlt : ∀ j ∈ R, (prob j : ℝ) < 1)
     {i : Fin n} (hi : i ∈ R) :
     (Measure.pi fun j => (PMF.bernoulli (prob j) (h1 j)).toMeasure)[|{ω |
-        (R.filter fun j => ω j = true) = {i}}] {ω | ω i = true}
+        (R.filter fun j => ω j = true).card = 1}] {ω | ω i = true}
       = ENNReal.ofReal
           (Real.exp ⟪β, z i⟫_ℝ / ∑ j ∈ R, Real.exp ⟪β, z j⟫_ℝ) := by
   sorry
