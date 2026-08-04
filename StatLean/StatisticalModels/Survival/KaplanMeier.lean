@@ -217,6 +217,76 @@ noncomputable def kaplanMeierSF (d : Fin n → ℝ × Bool) : StieltjesFunction 
 theorem kaplanMeierSF_apply (d : Fin n → ℝ × Bool) (t : ℝ) :
     kaplanMeierSF d t = 1 - kaplanMeier d t := rfl
 
+/-- Kaplan–Meier is left-locally constant, with the strict-past product as its value. -/
+private lemma kaplanMeier_eventually_constant_left (d : Fin n → ℝ × Bool) (t : ℝ) :
+    ∃ ε > 0, ∀ u ∈ Set.Ioo (t - ε) t,
+      kaplanMeier d u = ∏ s ∈ (eventTimes d).filter (· < t), (1 - naJump d s) := by
+  have key : ∀ ε : ℝ, 0 < ε → (∀ v ∈ eventTimes d, v < t → v ≤ t - ε) →
+      ∀ u ∈ Set.Ioo (t - ε) t,
+        kaplanMeier d u = ∏ s ∈ (eventTimes d).filter (· < t), (1 - naJump d s) := by
+    intro ε _ hgap u hu
+    refine kaplanMeier_eq_prod_of_filter_eq ?_
+    ext v
+    simp only [Finset.mem_filter, and_congr_right_iff]
+    intro hv
+    exact ⟨fun hvu => hvu.trans_lt hu.2, fun hvt => (hgap v hv hvt).trans hu.1.le⟩
+  rcases ((eventTimes d).filter (· < t)).eq_empty_or_nonempty with hemp | hne
+  · refine ⟨1, one_pos, key 1 one_pos fun v hv hvt => ?_⟩
+    exact absurd (Finset.mem_filter.2 ⟨hv, hvt⟩ :
+      v ∈ (eventTimes d).filter (· < t)) (by simp [hemp])
+  · have hmem := Finset.max'_mem _ hne
+    have hMt : ((eventTimes d).filter (· < t)).max' hne < t := (Finset.mem_filter.1 hmem).2
+    refine ⟨t - ((eventTimes d).filter (· < t)).max' hne, by linarith,
+      key _ (by linarith) fun v hv hvt => ?_⟩
+    have := Finset.le_max' _ v (Finset.mem_filter.2 ⟨hv, hvt⟩ :
+      v ∈ (eventTimes d).filter (· < t))
+    linarith
+
+/-- The left limit of the Kaplan–Meier Stieltjes function is `1 − Ŝ(t−)`. -/
+private lemma leftLim_kaplanMeierSF (d : Fin n → ℝ × Bool) (t : ℝ) :
+    Function.leftLim (kaplanMeierSF d) t
+      = 1 - ∏ s ∈ (eventTimes d).filter (· < t), (1 - naJump d s) := by
+  obtain ⟨ε, hε, hcon⟩ := kaplanMeier_eventually_constant_left d t
+  refine leftLim_eq_of_tendsto (nhdsLT_neBot t).ne ?_
+  refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
+  filter_upwards [Ioo_mem_nhdsLT (show t - ε < t by linarith)] with u hu
+  rw [kaplanMeierSF_apply, hcon u hu]
+
+/-- Below every event time Kaplan–Meier is still one. -/
+private lemma kaplanMeier_eq_one_of_lt {d : Fin n → ℝ × Bool} {t : ℝ}
+    (h : ∀ s ∈ eventTimes d, t < s) : kaplanMeier d t = 1 := by
+  rw [kaplanMeier_eq_prod_of_filter_eq (F := ∅) ?_, Finset.prod_empty]
+  exact Finset.filter_eq_empty_iff.2 fun v hv => not_le.2 (h v hv)
+
+/-- The full product of Kaplan–Meier factors — the terminal value `Ŝ(∞)`. -/
+private noncomputable def kmLimit (d : Fin n → ℝ × Bool) : ℝ :=
+  ∏ s ∈ eventTimes d, (1 - naJump d s)
+
+private lemma tendsto_kaplanMeierSF_atBot (d : Fin n → ℝ × Bool) :
+    Filter.Tendsto (kaplanMeierSF d) Filter.atBot (nhds 0) := by
+  obtain ⟨a, ha⟩ : ∃ a : ℝ, ∀ s ∈ eventTimes d, a < s := by
+    rcases (eventTimes d).eq_empty_or_nonempty with h | h
+    · exact ⟨0, by simp [h]⟩
+    · exact ⟨(eventTimes d).min' h - 1, fun s hs => by
+        have := (eventTimes d).min'_le s hs; linarith⟩
+  refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
+  filter_upwards [Filter.eventually_le_atBot a] with t ht
+  rw [kaplanMeierSF_apply, kaplanMeier_eq_one_of_lt fun s hs => lt_of_le_of_lt ht (ha s hs),
+    sub_self]
+
+private lemma tendsto_kaplanMeierSF_atTop (d : Fin n → ℝ × Bool) :
+    Filter.Tendsto (kaplanMeierSF d) Filter.atTop (nhds (1 - kmLimit d)) := by
+  obtain ⟨b, hb⟩ : ∃ b : ℝ, ∀ s ∈ eventTimes d, s ≤ b := by
+    rcases (eventTimes d).eq_empty_or_nonempty with h | h
+    · exact ⟨0, by simp [h]⟩
+    · exact ⟨(eventTimes d).max' h, fun s hs => (eventTimes d).le_max' s hs⟩
+  refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
+  filter_upwards [Filter.eventually_ge_atTop b] with t ht
+  rw [kaplanMeierSF_apply,
+    kaplanMeier_eq_prod_of_filter_eq (F := eventTimes d)
+      (Finset.filter_true_of_mem fun v hv => (hb v hv).trans ht)]
+  rfl
+
 /-- **Kaplan–Meier as a law**: the Stieltjes measure of `1 − Ŝ` (`KM58` — the product-limit
 estimate *is* a distribution, possibly defective). -/
 noncomputable def kaplanMeierMeasure (d : Fin n → ℝ × Bool) : Measure ℝ :=
