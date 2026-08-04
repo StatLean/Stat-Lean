@@ -1,5 +1,5 @@
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
-import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.MeasureTheory.Measure.Lebesgue.EuclideanSpace
 
 /-!
 # Longitudinal data — subject records, marginal mean models, GEE
@@ -41,7 +41,7 @@ GEE unbiased (`Longitudinal.GEE`).
 covariance vocabulary is theirs. The marginal-vs-mixed model distinction: FLW Ch. 13.
 -/
 
-open MeasureTheory
+open MeasureTheory Matrix
 
 namespace StatLean.StatisticalModels.Longitudinal
 
