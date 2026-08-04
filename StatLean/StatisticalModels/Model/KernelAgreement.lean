@@ -46,38 +46,48 @@ variable {Θ : Type*} [MeasurableSpace Θ] {𝓧 𝓨 : Type*}
 
 /-- The bundled family is a Markov kernel iff every member is a probability measure. -/
 theorem isMarkovKernel_toKernel_iff (P : Θ → Measure 𝓧) (hP : Measurable P) :
-    IsMarkovKernel (toKernel P hP) ↔ ∀ θ, IsProbabilityMeasure (P θ) := by
-  sorry
+    IsMarkovKernel (toKernel P hP) ↔ ∀ θ, IsProbabilityMeasure (P θ) :=
+  ⟨fun h θ => h.isProbabilityMeasure θ, fun h => ⟨h⟩⟩
 
 /-- **Observation is kernel composition**: on kernel models, `observe` is `∘ₖ`. -/
 theorem observe_coe (K : Kernel Θ 𝓧) (κ : Kernel 𝓧 𝓨) :
     observe ⇑K κ = ⇑(κ ∘ₖ K) := by
-  sorry
+  funext θ
+  exact (Kernel.comp_apply κ K θ).symm
 
 /-- **Pushforward is kernel map**: on kernel models, `pushforward` is `Kernel.map`. -/
 theorem pushforward_coe (K : Kernel Θ 𝓧) {T : 𝓧 → 𝓨}
     -- LEAN-ONLY: measurability of the statistic (Kernel.map_apply needs it)
     (hT : Measurable T) :
     pushforward ⇑K T = ⇑(K.map T) := by
-  sorry
+  funext θ
+  exact (Kernel.map_apply K hT θ).symm
 
 /-- The regression joint with a θ-free response kernel is Mathlib's kernel `compProd`
 against the `prodMkLeft` lift. Named Batch-0 spelling-verification item. -/
 theorem condProd_coe_const (K : Kernel Θ 𝓧) (η : Kernel 𝓧 𝓨)
     [IsSFiniteKernel K] [IsSFiniteKernel η] :
     condProd ⇑K (fun _ => η) = ⇑(K ⊗ₖ Kernel.prodMkLeft Θ η) := by
-  sorry
+  funext θ
+  ext s hs
+  rw [Kernel.compProd_apply hs]
+  simp only [Kernel.prodMkLeft_apply]
+  exact Measure.compProd_apply hs
 
 /-- `observe` preserves measurable parameterization. -/
 theorem measurable_observe {P : Θ → Measure 𝓧} (hP : Measurable P) (κ : Kernel 𝓧 𝓨) :
     Measurable (observe P κ) := by
-  sorry
+  have h : observe P κ = ⇑(κ ∘ₖ toKernel P hP) := observe_coe (toKernel P hP) κ
+  rw [h]
+  exact Kernel.measurable _
 
 /-- `pushforward` preserves measurable parameterization. -/
 theorem measurable_pushforward {P : Θ → Measure 𝓧} (hP : Measurable P) {T : 𝓧 → 𝓨}
     -- LEAN-ONLY: measurability of the statistic
     (hT : Measurable T) :
     Measurable (pushforward P T) := by
-  sorry
+  have h : pushforward P T = ⇑((toKernel P hP).map T) := pushforward_coe (toKernel P hP) hT
+  rw [h]
+  exact Kernel.measurable _
 
 end StatLean.StatisticalModels
