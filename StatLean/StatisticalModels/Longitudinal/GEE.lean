@@ -80,7 +80,7 @@ step shared by both routes). -/
 private theorem integral_mul_eq_zero_of_condExp_eq_zero {Ω : Type*} {m mΩ : MeasurableSpace Ω}
     (hm : m ≤ mΩ) {μ : Measure Ω} [IsFiniteMeasure μ] {f g : Ω → ℝ}
     (hf : StronglyMeasurable[m] f) (hg : Integrable g μ) (hfg : Integrable (f * g) μ)
-    (hg0 : μ[g|m] =ᵐ[μ] 0) :
+    (hg0 : μ[g | m] =ᵐ[μ] 0) :
     ∫ ω, f ω * g ω ∂μ = 0 := by
   have key : μ[f * g|m] =ᵐ[μ] 0 := by
     filter_upwards [condExp_mul_of_stronglyMeasurable_left hf hfg hg, hg0] with ω h h'
@@ -172,6 +172,28 @@ theorem gee_unbiased_of_bounded (Q : Measure (LongitudinalRecord p m))
       S.geeWeight β₀ tx.1 tx.2 k j)
     (k : Fin q) :
     ∫ r, S.geeScore β₀ r k ∂Q = 0 := by
-  sorry
+  have hm := covariateSigma_le p m
+  have hWsm : ∀ j : Fin m, StronglyMeasurable[covariateSigma p m]
+      fun r : LongitudinalRecord p m => S.geeWeight β₀ r.times r.x k j :=
+    fun j => (covariateSigma_measurable_comp (hWmeas k j)).stronglyMeasurable
+  have hbd : ∀ j : Fin m, ∀ᵐ r ∂Q, ‖S.geeWeight β₀ r.times r.x k j‖ ≤ C := fun j =>
+    Filter.Eventually.of_forall fun r => (Real.norm_eq_abs _).le.trans (hC k j r)
+  have hres : ∀ j, Integrable (fun r : LongitudinalRecord p m =>
+      S.geeResidual β₀ r j) Q := fun j => (hY j).sub (hμ j)
+  have hint : ∀ j : Fin m, Integrable (fun r : LongitudinalRecord p m =>
+      S.geeWeight β₀ r.times r.x k j * S.geeResidual β₀ r j) Q := fun j =>
+    (hres j).bdd_mul (((hWsm j).mono hm).aestronglyMeasurable) (hbd j)
+  have hterm : ∀ j : Fin m,
+      ∫ r, S.geeWeight β₀ r.times r.x k j * S.geeResidual β₀ r j ∂Q = 0 := fun j =>
+    integral_mul_eq_zero_of_condExp_eq_zero hm (hWsm j) (hres j) (hint j)
+      (condExp_geeResidual_eq_zero Q S β₀ hmean hY hμ j)
+  have hsum : ∀ r : LongitudinalRecord p m, S.geeScore β₀ r k
+      = ∑ j, S.geeWeight β₀ r.times r.x k j * S.geeResidual β₀ r j := fun _ => rfl
+  calc ∫ r, S.geeScore β₀ r k ∂Q
+      = ∫ r, ∑ j, S.geeWeight β₀ r.times r.x k j * S.geeResidual β₀ r j ∂Q := by
+        simp_rw [hsum]
+    _ = ∑ j, ∫ r, S.geeWeight β₀ r.times r.x k j * S.geeResidual β₀ r j ∂Q :=
+        integral_finset_sum _ fun j _ => hint j
+    _ = 0 := by simp [hterm]
 
 end StatLean.StatisticalModels.Longitudinal
