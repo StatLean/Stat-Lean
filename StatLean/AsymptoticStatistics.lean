@@ -126,7 +126,12 @@ import StatLean.AsymptoticStatistics.ForMathlib.Markov
 import StatLean.AsymptoticStatistics.ForMathlib.MarkovKernelProhorov
 import StatLean.AsymptoticStatistics.ForMathlib.MassMethodUtilities
 import StatLean.AsymptoticStatistics.ForMathlib.MeanVarConvergence
-import StatLean.AsymptoticStatistics.ForMathlib.MeasurableSelection
+-- NOT imported: StatLean.AsymptoticStatistics.ForMathlib.MeasurableSelection.
+-- Pre-existing stranded debt (predates this area's release): it consumes
+-- `MeasureTheory.AnalyticSet.nullMeasurableSet`, whose intended home
+-- `ForMathlib/AnalyticSetCapacitability.lean` contains only private sub-lemmas
+-- and never assembled that public capstone, so the file does not compile.
+-- Wire it back once the capacitability capstone is proved.
 import StatLean.AsymptoticStatistics.ForMathlib.MeasurableSelectionRandomFunctions
 import StatLean.AsymptoticStatistics.ForMathlib.MultivariateCLT
 import StatLean.AsymptoticStatistics.ForMathlib.MultivariateComplexMGF
