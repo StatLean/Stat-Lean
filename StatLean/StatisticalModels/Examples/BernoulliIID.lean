@@ -39,23 +39,26 @@ instance (p : {p : ℝ≥0 // p ≤ 1}) : IsProbabilityMeasure (bernoulliFam p) 
 /-- Point evaluation of the Bernoulli law at the success event. -/
 theorem bernoulliFam_apply_true (p : {p : ℝ≥0 // p ≤ 1}) :
     bernoulliFam p {true} = (p.1 : ℝ≥0∞) := by
-  sorry
+  simp [bernoulliFam]
 
 /-- The Bernoulli model is identifiable: the success probability is read off the law. -/
 theorem identifiable_bernoulliFam : Identifiable bernoulliFam := by
-  sorry
+  intro p q hpq
+  have h := congrArg (fun ν : Measure Bool => ν {true}) hpq
+  simp only [bernoulliFam_apply_true] at h
+  exact Subtype.ext (ENNReal.coe_inj.mp h)
 
 /-- The success probability is an identified target of the Bernoulli model. -/
 theorem identifiesTarget_bernoulliFam_val :
-    IdentifiesTarget bernoulliFam (fun p => (p.1 : ℝ≥0)) := by
-  sorry
+    IdentifiesTarget bernoulliFam (fun p => (p.1 : ℝ≥0)) :=
+  fun _ _ h => congrArg Subtype.val (identifiable_bernoulliFam h)
 
 /-- The `n`-flip iid Bernoulli model is identifiable for `n ≠ 0` — a pure application of the
 replication transfer theorem. -/
 theorem identifiable_iid_bernoulliFam {n : ℕ}
     -- USER-INPUT: at least one observation; TPE2 §1.1
     (hn : n ≠ 0) :
-    Identifiable (iid bernoulliFam n) := by
-  sorry
+    Identifiable (iid bernoulliFam n) :=
+  (identifiable_iid_iff hn).mpr identifiable_bernoulliFam
 
 end StatLean.StatisticalModels
