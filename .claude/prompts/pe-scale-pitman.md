@@ -1,0 +1,32 @@
+# Close the sorries in PointEstimation/Equivariance/{ScaleStructure,ScaleMRE,Pitman,LocationExamples}.lean
+
+Lean 4 / Mathlib proof engineer on `StatLean`. Pin `v4.29.1`. (Note: the repo `CLAUDE.md` is gitignored and is NOT present in this worktree — everything you need is below. Project rules that matter here: never `lake update`; `sorry` is planned debt tied to a named lemma; do not launder unproven content into hypotheses.)
+
+You are ON the cluster. Iterate with plain foreground `lake build StatLean.PointEstimation.Equivariance.ScaleStructure`, then `.ScaleMRE`, `.Pitman`, `.LocationExamples`. **Never** background a build, never nest `srun`/`sbatch`, never poll with `until pgrep`.
+
+## Hard constraints
+
+- **Only edit** those four files under `StatLean/PointEstimation/Equivariance/`. Touch nothing else — in particular NOT `Equivariance/Defs.lean` (frozen, laptop-only).
+- **Signatures, hypothesis tags, docstrings FROZEN.** You may add `import Mathlib.*`, import already-closed project modules, and add `private` helpers. Lines ≤ 100 characters.
+- Goal: **0 sorries, 0 errors**. Escape hatch: at most one lifted `private` sorry per file with a precise `-- TODO:`; report each.
+- **Do not weaken any statement.** If one looks false, STOP, leave it sorried, report the counterexample.
+- Commit after each lemma compiles.
+- After green: `#print axioms isScaleMRE_of_conditional_min`, `#print axioms pitmanEstimator_isLocMRE` — expect only `propext, Classical.choice, Quot.sound`.
+
+## Already closed, treat as black boxes (import them)
+
+- **`Equivariance.ConditionalRiskEngine`** — the shared machine (`orbitCondKernel`, `lintegral_eq_lintegral_condDistrib`, `measurable_integral_orbitCondKernel`, `lintegral_le_of_condMinimizer`). **Scale and location-scale are instantiations of this engine, not fresh arguments** — that is the whole point of the file. Instantiate with `F w x = δ₀ x / w` and `Z = scaleZ`.
+- `Equivariance.LocationStructure.*` (all closed), `Equivariance.LocationMRE.{isLocMRE_of_conditional_min, isLocMRE_sq_of_condMean}` (closed), `Equivariance.RiskUnbiased.*` (closed), `Equivariance.General.*` (closed).
+- `ForMathlib.ConvexMinimizers.*`, `ForMathlib.MeasurableArgmin.exists_measurable_argmin`, `ForMathlib.CondDistribDensity.*`.
+- `Completeness.Basu.indepFun_of_boundedlyComplete_sufficient` (closed) — the intended route for the Gaussian `X̄`-is-MRE example.
+
+## Notes on specific targets
+
+- **`ScaleStructure`** (Thm 3.1, Thm 3.17): `isScaleEquivariant_iff_div_invariant` mirrors the location structure result with division in place of subtraction. Note the frozen statements restrict the factorization equivalences to `{xₙ ≠ 0}` **on both sides** — restricting only the right-hand side would make the equivalence false. Because Lean's `x/0 = 0` makes `scaleZ` scale-invariant everywhere, the constructed estimators are equivariant unrestricted; the null-set hypothesis is needed only for the minimality half. Don't "simplify" that asymmetry away.
+- **`ScaleMRE`** (Thm 3.3, Cors 3.4/3.8): instantiate the engine. Two loss forms are stated and both are source content — **Stein's loss** `γ(v) = v − log v − 1`, whose minimizer is `δ₀ / E₁[δ₀ | z]`, and the **standardized squared-error** form, whose minimizer is `δ₀ · E₁[δ₀|z] / E₁[δ₀²|z]`. Prove both; they are different theorems, not alternatives.
+- **`Pitman`** (Thm 1.20): `pitmanEstimator f x = (∫ u, u · f (x − u•1)) / (∫ u, f (x − u•1))` equals the squared-error MRE `δ₀ − E₀[δ₀ | diffs]`. Route: `pitmanEstimator_eq_sub_condMean` is the bridge — use `ForMathlib.CondDistribDensity` to identify the conditional law given `diffs` as the normalized slice, then a det-1 shear change of variables on `ℝⁿ` turns the slice integral into the displayed ratio. Then `isLocMRE_sq_of_condMean` (closed) finishes.
+- **`LocationExamples`**: `isLocMRE_mean_gaussian` — the sample mean is MRE for the Gaussian location family under squared error. Cleanest route: `X̄` is equivariant, and `X̄ − δ₀` is a function of `diffs`; Basu gives independence of `X̄` from the ancillary `diffs`, so the conditional mean is constant and the Pitman estimator collapses to `X̄`. `risk_le_gaussian_of_unitVariance` is **Thm 1.17 as the source actually states it** — a short comparison: `X̄` is equivariant with risk `1/n` for every unit-variance member, so the MRE risk is `≤ 1/n`, attained at the normal. The Kagan–Linnik–Rao uniqueness is *quoted, not proved* in the source and is **out of scope** — do not attempt it.
+
+## Report
+
+Final `lake build` status per module, per-file sorry counts, both `#print axioms` outputs, and any statement you believe is false (with the counterexample).

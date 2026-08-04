@@ -1,0 +1,374 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1.15in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{microtype}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\theoremstyle{definition}
+\newtheorem{claim}[theorem]{Printed statement}
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\X}{\mathcal{X}}
+\newcommand{\Pt}{P_\theta}
+\newcommand{\score}{\dot\ell_\theta}
+
+\title{Two defective statements in \textsc{StatLean/PointEstimation}\\
+\large The final two open goals of Batch 11 are not formalization gaps}
+\author{StatLean formalization notes}
+\date{26 July 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The \textsc{PointEstimation} area (Lehmann--Casella, \emph{Theory of Point Estimation},
+2nd ed.) is closed except for two goals. Neither is a missing proof: in both cases the
+statement as transcribed from the source is \emph{defective}, and we verified this rather
+than assumed it. The first, the converse half of the attainment characterisation
+(TPE2~\S2.5, Thm.~5.12), is \textbf{false as written}; we give an explicit counterexample
+and isolate the missing hypothesis. The second, the nonexistence of a best linear unbiased
+estimator under a random design (Shaffer's phenomenon, TPE2~\S3.4), is \textbf{vacuously
+unprovable as written} because its hypothesis is strictly too weak; we give a
+counterexample to the printed form and state the corrected hypothesis. Closing either
+goal is therefore a decision about what to state, not an exercise in proving what is
+stated.
+\end{abstract}
+
+\section{Attainment of the information bound forces an exponential family}
+
+\subsection{The printed statement}
+
+Let $\{\Pt\}_{\theta\in\R}$ be a family of probability measures on a measurable space
+$\X$ with densities $p_\theta$ with respect to a common dominating measure $\mu$, all with
+the same support. Write
+\[
+  \score(x) \;=\; \frac{\partial}{\partial\theta}\log p_\theta(x),
+  \qquad
+  I(\theta) \;=\; \E_\theta\!\left[\score(X)^2\right]
+\]
+for the score and the Fisher information, and let $\delta:\X\to\R$ be a square-integrable
+statistic estimating
+\[
+  g(\theta) \;=\; \E_\theta\,\delta(X), \qquad g'(\theta) \;=\; \frac{d}{d\theta}\,g(\theta).
+\]
+The information inequality states $\Var_\theta(\delta)\ \ge\ g'(\theta)^2/I(\theta)$.
+
+\begin{claim}[TPE2 \S2.5, Thm.~5.12, converse half]\label{claim:attain}
+Suppose $I(\theta)>0$ and $\E_\theta\,\score = 0$ for every $\theta$, and suppose the bound
+is attained at \emph{every} parameter value:
+\begin{equation}\label{eq:attain}
+  \Var_\theta(\delta) \;=\; \frac{g'(\theta)^2}{I(\theta)}
+  \qquad\text{for all }\theta .
+\end{equation}
+Then $\{\Pt\}$ is a one-parameter exponential family with $\delta$ as its natural
+statistic: there exist $\eta\in C^1(\R)$, $B:\R\to\R$ and a measurable $h\ge 0$ with
+\begin{equation}\label{eq:expform}
+  p_\theta(x) \;=\; \exp\!\bigl(\eta(\theta)\,\delta(x) - B(\theta)\bigr)\,h(x)
+  \qquad \text{for } \mu\text{-a.e. } x,\ \text{every }\theta .
+\end{equation}
+\end{claim}
+
+(Our transcription additionally carries regularity --- joint measurability of
+$(\theta,x)\mapsto p_\theta(x)$, $C^1$ dependence on $\theta$ for a.e.\ $x$, and continuity
+of $I$ and of $g'$ --- which only strengthens the hypotheses and so is irrelevant to the
+refutation below.)
+
+\subsection{The counterexample}
+
+\begin{proposition}\label{prop:attain-false}
+Claim~\ref{claim:attain} is false. There is a family satisfying every hypothesis, including
+\eqref{eq:attain} at every $\theta$, for which no representation \eqref{eq:expform} exists.
+\end{proposition}
+
+\begin{proof}
+Take $\X=\R$, $\mu$ Lebesgue measure, the standard Gaussian location family
+\[
+  p_\theta(x) \;=\; \varphi(x-\theta) \;=\; \frac{1}{\sqrt{2\pi}}\,e^{-(x-\theta)^2/2},
+\]
+and the estimator
+\[
+  \delta \;\equiv\; 0 .
+\]
+
+\emph{All hypotheses hold.} The densities are strictly positive, so the common-support
+condition is satisfied, and $(\theta,x)\mapsto\varphi(x-\theta)$ is jointly measurable and
+$C^\infty$ in $\theta$. The score is
+\[
+  \score(x) \;=\; \frac{\partial}{\partial\theta}\left(-\tfrac{1}{2}(x-\theta)^2\right)
+  \;=\; x-\theta,
+\]
+whence $\E_\theta\,\score = 0$ and $I(\theta)=\E_\theta (X-\theta)^2 = 1 > 0$; both are
+continuous in $\theta$. The statistic $\delta\equiv 0$ is square-integrable, and
+\[
+  g(\theta) \;=\; \E_\theta\,\delta \;=\; 0 \quad\text{for all }\theta,
+  \qquad\text{so}\qquad g'(\theta)\;=\;0,
+\]
+which is continuous. Finally $\Var_\theta(\delta)=0$, so the attainment identity
+\eqref{eq:attain} reads
+\[
+  0 \;=\; \frac{0^2}{1} \;=\; 0 ,
+\]
+and holds at every $\theta$.
+
+\emph{The conclusion fails.} Suppose \eqref{eq:expform} held. Since $\delta\equiv 0$ the
+exponential factor does not depend on $x$, so for every $\theta$ there is a constant
+$c(\theta) = e^{-B(\theta)}$ with
+\[
+  \varphi(x-\theta) \;=\; c(\theta)\,h(x) \qquad\text{for Lebesgue-a.e.\ }x .
+\]
+Comparing $\theta=1$ with $\theta=0$ and dividing (legitimate, as $\varphi>0$ forces
+$h>0$ a.e.) gives
+\[
+  \frac{\varphi(x-1)}{\varphi(x)} \;=\; \frac{c(1)}{c(0)}
+  \qquad\text{for a.e.\ }x .
+\]
+But the left-hand side is
+\[
+  \frac{\varphi(x-1)}{\varphi(x)}
+  \;=\; \exp\!\left(-\tfrac{(x-1)^2}{2}+\tfrac{x^2}{2}\right)
+  \;=\; e^{\,x-\frac12},
+\]
+which is strictly increasing and therefore not a.e.\ equal to any constant. Contradiction.
+
+A finite counterexample is available with the same $\delta\equiv 0$: take
+$\X=\{0,1\}$ with the Bernoulli family $p_\theta$, where the same computation applies.
+\end{proof}
+
+\subsection{Diagnosis: the attainment hypothesis is vacuous at stationary points}
+
+The information inequality is Cauchy--Schwarz applied to $\delta-\E_\theta\delta$ and
+$\score$:
+\begin{equation}\label{eq:cs}
+  \Cov_\theta(\delta,\score)^2 \;\le\; \Var_\theta(\delta)\; I(\theta),
+\end{equation}
+combined with the identity $\Cov_\theta(\delta,\score)=g'(\theta)$, which is where
+differentiation under the integral sign enters. Equality in \eqref{eq:cs} holds if and only
+if $\delta-\E_\theta\delta$ and $\score$ are almost surely proportional --- and it is
+\emph{that} proportionality, not the numerical identity \eqref{eq:attain}, which drives the
+classical proof: it makes $\score$ an affine function of $\delta$, and integrating in
+$\theta$ produces \eqref{eq:expform}.
+
+The defect is that \eqref{eq:attain} degenerates precisely when
+\[
+  g'(\theta)=0 \quad\text{and}\quad \Var_\theta(\delta)=0 .
+\]
+Then \eqref{eq:attain} reads $0=0$; the Cauchy--Schwarz equality case is attained
+trivially, with $\delta$ almost surely constant, and it constrains the score \emph{not at
+all}. The hypothesis is satisfied by every family whatsoever, paired with a constant
+$\delta$ --- which is exactly what the counterexample exploits.
+
+The classical statement is about an estimator of an estimand that genuinely moves. Lehmann
+and Casella state Thm.~5.12 alongside the companion identities
+\[
+  \delta \;=\; \frac{g'(\theta)}{I(\theta)}\,\score + g(\theta),
+  \qquad
+  I(\theta) \;=\; \eta'(\theta)\,g'(\theta),
+\]
+the second of which is meaningless unless $g'(\theta)\neq 0$; the nondegeneracy is carried
+implicitly by the surrounding text rather than by the displayed hypotheses. Our
+transcription kept the displayed hypotheses and lost the implicit one.
+
+\subsection{The repair}
+
+Add the nondegeneracy hypothesis
+\[
+  g'(\theta) \;\neq\; 0 \qquad\text{for every }\theta .
+\]
+With it, the equality case of \eqref{eq:cs} is no longer vacuous and the classical route
+runs. Two of its three steps are already formalized in the area:
+
+\begin{enumerate}
+\item \emph{From attainment to Cauchy--Schwarz equality.} This requires
+  $\Cov_\theta(\delta,\score)=g'(\theta)$, i.e.\ the interchange
+  $\frac{d}{d\theta}\int \delta\,p_\theta \,d\mu = \int \delta\,\partial_\theta p_\theta\,d\mu$.
+  This is \emph{not} implied by the present hypotheses, which give only the value of the
+  derivative of $\theta\mapsto\E_\theta\delta$, not the interchange; without it one obtains
+  only $\Cov^2\le g'^2$. A domination hypothesis must be supplied.
+\item \emph{From equality to proportionality.} Formalized: given the interchange and
+  $g'(\theta)\ne 0$ one has $\Var_\theta\bigl(\delta - c\,\score\bigr)=0$ with
+  $c=g'(\theta)/I(\theta)$, hence
+  $\score = \frac{I(\theta)}{g'(\theta)}\bigl(\delta-\E_\theta\delta\bigr)$ almost surely.
+\item \emph{Integration in the parameter, uniformly in $x$.} For a.e.\ $x$ the map
+  $\theta\mapsto\log p_\theta(x)$ is $C^1$ with derivative $\eta'(\theta)\delta(x)-B'(\theta)$;
+  the fundamental theorem of calculus then yields \eqref{eq:expform}. No library lemma
+  packages this uniform-in-$x$ integration at the current Mathlib pin.
+\end{enumerate}
+
+Consequently the goal is left open deliberately, with the falsity of the printed form
+recorded at the statement. Repairing it is a signature change, and a decision for the
+library, not a proof obligation.
+
+\section{Nonexistence of a BLUE under a random design}
+
+\subsection{The setting and the printed statement}
+
+Let the design be a random element $a$ of $(\R^{s})^{n}$, written as a matrix
+$A=A(a)\in\R^{s\times n}$, with law $Q$ free of the parameter. Given the design, the
+response $Y\in\R^{n}$ has
+\[
+  \E\bigl[Y \mid a\bigr] \;=\; A^{\!\top}\theta,
+  \qquad
+  \Cov\bigl[Y \mid a\bigr] \;=\; \sigma^{2} I_n ,
+\]
+with unknown parameter $p=(\theta,\sigma^{2})\in\R^{s}\times(0,\infty)$; the joint law is
+$P_p = Q\otimes K_p$. A \emph{linear} estimator is one of the form
+\[
+  \delta(a,y) \;=\; \langle c(a),\,y\rangle ,
+\]
+its coefficient vector allowed to depend on the observed design. Fix $c\in\R^{s}$,
+$c\ne 0$, and estimate the functional $c^{\!\top}\theta$. A \emph{best linear unbiased
+estimator} (BLUE) is a linear unbiased square-integrable $\delta$ whose variance is minimal,
+at \emph{every} parameter value, among all linear unbiased square-integrable competitors.
+
+\begin{claim}[TPE2 \S3.4, Shaffer's phenomenon]\label{claim:blue}
+If the design law $Q$ is not a point mass, then no best linear unbiased estimator of
+$c^{\!\top}\theta$ exists.
+\end{claim}
+
+\subsection{The variance decomposition}
+
+Write $A=A(a)$ and put
+\[
+  v(a) \;:=\; A(a)\,c(a) \in \R^{s},
+  \qquad
+  i(a) \;:=\; c^{\!\top}\bigl(A(a)A(a)^{\!\top}\bigr)^{-1}c ,
+\]
+so that $i(a)$ is the \emph{design information for the functional $c$} (the reciprocal of
+the conditional least-squares variance, up to $\sigma^2$). Conditionally on the design,
+$\E[\delta\mid a]=\langle c(a), A^{\!\top}\theta\rangle = \theta^{\!\top}v(a)$, so
+unbiasedness for $c^{\!\top}\theta$ at every $\theta$ is
+\begin{equation}\label{eq:unb}
+  \E_Q\,v \;=\; c .
+\end{equation}
+By the law of total variance,
+\begin{equation}\label{eq:ltv}
+  \Var(\delta)
+  \;=\; \sigma^{2}\,\E_Q\bigl\|c(a)\bigr\|^{2}
+      \;+\; \Var_Q\bigl(\theta^{\!\top}v(a)\bigr) .
+\end{equation}
+For fixed $v(a)$, minimising $\|c(a)\|^{2}$ subject to $A(a)c(a)=v(a)$ gives
+$\|c(a)\|^{2}\ \ge\ v(a)^{\!\top}(AA^{\!\top})^{-1}v(a)$, with equality for the conditional
+least-squares choice. Hence, writing $v=\lambda c$ in the scalar case $s=1$,
+\begin{equation}\label{eq:lb}
+  \Var(\delta)
+  \;\ge\; \sigma^{2}\,\E_Q\bigl[\lambda^{2}\, i\bigr]
+      \;+\; \theta^{2}\,\Var_Q(\lambda),
+  \qquad \E_Q\lambda = 1 .
+\end{equation}
+
+Shaffer's phenomenon is the observation that the two terms of \eqref{eq:lb} are minimised by
+\emph{different} weightings:
+\[
+  \min \E_Q[\lambda^{2} i] \text{ subject to } \E_Q\lambda=1
+  \ \Longrightarrow\ \lambda \propto 1/i,
+  \qquad
+  \min \Var_Q(\lambda) \text{ subject to } \E_Q\lambda=1
+  \ \Longrightarrow\ \lambda \equiv 1 .
+\]
+These two prescriptions coincide if and only if $i$ is $Q$-almost surely constant. When $i$
+genuinely varies, no single linear unbiased estimator minimises the variance at all
+$(\theta,\sigma^{2})$ simultaneously, and no BLUE exists.
+
+\subsection{The counterexample to the printed hypothesis}
+
+\begin{proposition}\label{prop:blue-false}
+Claim~\ref{claim:blue} is false: ``$Q$ is not a point mass'' does not imply nonexistence.
+\end{proposition}
+
+\begin{proof}
+Take $s=1$, $n=2$, $c=1$, fix $a\in\R^{2}\setminus\{0\}$ and let
+\[
+  Q \;=\; \tfrac12\,\delta_{a} \;+\; \tfrac12\,\delta_{-a},
+  \qquad
+  K_p(a) \;=\; \mathcal{N}\bigl(\theta a,\ \sigma^{2}I_2\bigr).
+\]
+Then $Q$ is not a point mass, so the printed hypothesis holds.
+
+The two designs $a$ and $-a$ have the same norm, hence the same information
+\[
+  i(a) \;=\; i(-a) \;=\; \frac{1}{\|a\|^{2}} .
+\]
+So the lower bound \eqref{eq:lb} becomes
+\[
+  \Var(\delta)
+  \;\ge\; \frac{\sigma^{2}}{2\|a\|^{2}}\Bigl(\lambda(a)^{2}+\lambda(-a)^{2}\Bigr)
+      \;+\; \theta^{2}\,\Var_Q(\lambda),
+  \qquad
+  \frac{\lambda(a)+\lambda(-a)}{2}=1 .
+\]
+Subject to that constraint, the first term is minimised at
+$\lambda(a)=\lambda(-a)=1$ (the constrained minimum of a sum of squares with equal weights),
+and the second term $\Var_Q(\lambda)$ is minimised, with value $0$, at the same point.
+\emph{Both terms are therefore minimised simultaneously}, and the conditional least-squares
+estimator --- $\lambda\equiv 1$, i.e.\ $c(a)=a/\|a\|^{2}$, that is
+$\delta(a,y)=\langle a,y\rangle/\|a\|^{2}$ --- attains the minimum variance at every
+$(\theta,\sigma^{2})$. It is linear, unbiased and square-integrable, hence a BLUE. The
+printed negation fails.
+\end{proof}
+
+\begin{remark}
+The example is not pathological: it is the generic situation for any design law that is
+non-degenerate but \emph{informationally homogeneous}. The printed hypothesis measures the
+wrong thing --- variability of the design --- where the argument needs variability of the
+information the design carries about $c^{\!\top}\theta$.
+\end{remark}
+
+\subsection{The repair}
+
+Replace the printed hypothesis by the substantive one that the argument actually uses:
+\[
+  \boxed{\ \text{the design information } a\ \mapsto\ c^{\!\top}\bigl(A(a)A(a)^{\!\top}\bigr)^{-1}c
+  \ \text{ is not } Q\text{-almost surely constant.}\ }
+\]
+This is strictly stronger than the printed condition --- a point mass has constant
+information, so the new hypothesis implies the old --- and it is exactly the dichotomy
+exposed by \eqref{eq:lb}. A regularity companion is also required, namely that almost every
+realised design have full row rank $s$, so that $(AA^{\!\top})^{-1}$ is the genuine Gram
+inverse.
+
+With the amended hypothesis the statement is believed true, and the classical route is:
+if $\delta$ is a BLUE and $d$ is linear and unbiased for $0$ at every parameter, then
+$t\mapsto\Var(\delta+t\,d)$ is a nonnegative quadratic minimised at $t=0$, so
+$\Cov(\delta,d)=0$ at every parameter. Choosing
+$d(a,y)=\psi(a)\,\langle A^{\!\top}(AA^{\!\top})^{-1}c,\ y\rangle$ for bounded $\psi$ with
+$\E_Q\psi=0$ and splitting the covariance into its $\sigma^{2}$- and $\theta^{2}$-parts
+forces first $v=c$ almost surely, and then $i$ to be almost surely constant --- contradicting
+the amended hypothesis. Discharging this in the library additionally requires a measurability
+conjunct on the coefficient map $a\mapsto c(a)$, which the definition of a linear estimator
+does not currently carry.
+
+\section{Summary}
+
+\begin{center}
+\begin{tabular}{@{}p{0.30\textwidth}p{0.62\textwidth}@{}}
+\hline
+\textbf{Goal} & \textbf{Status} \\
+\hline
+Attainment $\Rightarrow$ exponential family (\S2.5, Thm.~5.12) &
+\textbf{False as written.} The attainment identity is vacuous where $g'(\theta)=0$ and
+$\Var_\theta(\delta)=0$; the Gaussian location family with $\delta\equiv 0$ satisfies every
+hypothesis and is not exponential in $\delta$. Repair: assume $g'\ne 0$ throughout. One
+analytic ingredient (uniform-in-$x$ parametric integration) would still be needed. \\[1.2ex]
+Nonexistence of a BLUE, random design (\S3.4) &
+\textbf{Hypothesis too weak.} ``$Q$ not a point mass'' admits informationally homogeneous
+designs such as $\tfrac12\delta_a+\tfrac12\delta_{-a}$, for which conditional least squares
+\emph{is} a BLUE. Repair: assume the design information $c^{\!\top}(AA^{\!\top})^{-1}c$ is
+not a.s.\ constant. \\
+\hline
+\end{tabular}
+\end{center}
+
+\noindent
+Every other result of the area is proved and the area builds green. In both cases above the
+remaining work is to decide the corrected statement --- an editorial act on the
+formalization's contract with the source --- after which the mathematics is routine in the
+first case and classical in the second.
+
+\end{document}
