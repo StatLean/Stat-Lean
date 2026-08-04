@@ -49,6 +49,22 @@ namespace StatLean.StatisticalModels.Coarsening
 
 variable {𝓧 : Type*} [MeasurableSpace 𝓧]
 
+/-- The full-data reassociation `((x, y), r) ↦ (x, y, r)` is measurable. -/
+private theorem measurable_fullAssoc' :
+    Measurable fun p : (𝓧 × ℝ) × Bool => (p.1.1, p.1.2, p.2) :=
+  measurable_fst.fst.prodMk (measurable_fst.snd.prodMk measurable_snd)
+
+/-- The composite `missingObserve ∘ reassociation`, read off the `compProd` carrier. -/
+private theorem measurable_obsComp :
+    Measurable fun p : (𝓧 × ℝ) × Bool => (p.1.1, p.2, if p.2 then p.1.2 else 0) :=
+  measurable_missingObserve.comp measurable_fullAssoc'
+
+/-- `observedLaw` as a single pushforward of the `compProd` measure (map/map fusion). -/
+private theorem observedLaw_eq_map (Q : Measure (𝓧 × ℝ)) (ρ : Kernel (𝓧 × ℝ) Bool) :
+    observedLaw Q ρ = (Q ⊗ₘ ρ).map fun p => (p.1.1, p.2, if p.2 then p.1.2 else 0) := by
+  rw [observedLaw, fullLaw, Measure.map_map measurable_missingObserve measurable_fullAssoc']
+  rfl
+
 /-- **C5a, complete-case slice** (`Rubin76 §2–3`): under MAR, the observed law restricted to
 `{r = true}` is the propensity-reweighted outcome law, transported to the observed carrier. -/
 theorem observedLaw_restrict_true (Q : Measure (𝓧 × ℝ)) [IsProbabilityMeasure Q]
@@ -56,7 +72,25 @@ theorem observedLaw_restrict_true (Q : Measure (𝓧 × ℝ)) [IsProbabilityMeas
     (observedLaw Q (ρ'.comap Prod.fst measurable_fst)).restrict {o | o.2.1 = true}
       = (Q.withDensity fun p => ρ' p.1 {true}).map
           (fun p : 𝓧 × ℝ => (p.1, true, p.2)) := by
-  sorry
+  have hh : Measurable (fun p : 𝓧 × ℝ => (p.1, true, p.2)) :=
+    measurable_fst.prodMk (measurable_const.prodMk measurable_snd)
+  have hS : MeasurableSet {o : 𝓧 × Bool × ℝ | o.2.1 = true} :=
+    measurable_snd.fst (measurableSet_singleton true)
+  ext A hA
+  rw [Measure.restrict_apply hA, observedLaw_eq_map,
+    Measure.map_apply measurable_obsComp (hA.inter hS),
+    Measure.compProd_apply (measurable_obsComp (hA.inter hS)),
+    Measure.map_apply hh hA, withDensity_apply _ (hh hA),
+    ← lintegral_indicator (hh hA)]
+  refine lintegral_congr fun q => ?_
+  rw [Kernel.comap_apply]
+  by_cases hq : q ∈ (fun p : 𝓧 × ℝ => (p.1, true, p.2)) ⁻¹' A
+  · rw [Set.indicator_of_mem hq]
+    congr 1
+    ext r; cases r <;> simp_all [Set.mem_preimage]
+  · rw [Set.indicator_of_notMem hq, ← measure_empty (μ := ρ' q.1)]
+    congr 1
+    ext r; cases r <;> simp_all [Set.mem_preimage]
 
 /-- **C5b, incomplete slice** (`Rubin76 §2–3`): under MAR, the observed law restricted to
 `{r = false}` is the `(1−π)`-reweighted covariate marginal, carried to the observed carrier
