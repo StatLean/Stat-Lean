@@ -131,6 +131,65 @@ theorem multivariateGaussian_fromBlocks_prod
     (multivariateGaussian (blockPair m₁ m₂) (Matrix.fromBlocks S₁₁ 0 0 S₂₂)).map
         (sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂))
       = (multivariateGaussian m₁ S₁₁).prod (multivariateGaussian m₂ S₂₂) := by
-  sorry
+  have hJ : (Matrix.fromBlocks S₁₁ (0 : Matrix ι₁ ι₂ ℝ) (0 : Matrix ι₂ ι₁ ℝ) S₂₂).PosSemidef := by
+    rw [Matrix.posSemidef_iff_dotProduct_mulVec]
+    refine ⟨h₁.1.fromBlocks (by simp) h₂.1, fun x => ?_⟩
+    have e₁ := (Matrix.posSemidef_iff_dotProduct_mulVec.mp h₁).2 (x ∘ Sum.inl)
+    have e₂ := (Matrix.posSemidef_iff_dotProduct_mulVec.mp h₂).2 (x ∘ Sum.inr)
+    simp only [star_trivial] at e₁ e₂ ⊢
+    rw [dotProduct_fromBlocks_mulVec]
+    simp only [Matrix.zero_mulVec, dotProduct_zero, add_zero, zero_add]
+    linarith
+  have hmeas : Measurable ⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).symm :=
+    (sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).symm.measurable
+  have key : multivariateGaussian (blockPair m₁ m₂) (Matrix.fromBlocks S₁₁ 0 0 S₂₂)
+      = ((multivariateGaussian m₁ S₁₁).prod (multivariateGaussian m₂ S₂₂)).map
+          ⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).symm := by
+    haveI : IsProbabilityMeasure (((multivariateGaussian m₁ S₁₁).prod
+        (multivariateGaussian m₂ S₂₂)).map ⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).symm) :=
+      Measure.isProbabilityMeasure_map hmeas.aemeasurable
+    refine Measure.ext_of_charFun (funext fun t => ?_)
+    have hsplit : ∀ p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂,
+        Complex.exp (↑⟪(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).symm p, t⟫_ℝ * Complex.I)
+          = Complex.exp (↑⟪p.1, blockFst t⟫_ℝ * Complex.I)
+            * Complex.exp (↑⟪p.2, blockSnd t⟫_ℝ * Complex.I) := by
+      intro p
+      rw [← Complex.exp_add]
+      congr 1
+      simp only [sumMeasEquivProd_symm_apply, inner_sum_split (blockPair p.1 p.2) t,
+        blockFst_blockPair, blockSnd_blockPair]
+      push_cast
+      ring
+    have hR : charFun (((multivariateGaussian m₁ S₁₁).prod
+          (multivariateGaussian m₂ S₂₂)).map ⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).symm) t
+        = charFun (multivariateGaussian m₁ S₁₁) (blockFst t)
+          * charFun (multivariateGaussian m₂ S₂₂) (blockSnd t) := by
+      rw [charFun_apply, integral_map hmeas.aemeasurable
+        (Continuous.aestronglyMeasurable (by fun_prop))]
+      simp_rw [hsplit]
+      rw [charFun_apply, charFun_apply]
+      exact integral_prod_mul (μ := multivariateGaussian m₁ S₁₁)
+        (ν := multivariateGaussian m₂ S₂₂)
+        (fun x => Complex.exp ((⟪x, blockFst t⟫_ℝ : ℂ) * Complex.I))
+        (fun y => Complex.exp ((⟪y, blockSnd t⟫_ℝ : ℂ) * Complex.I))
+    have hinner : ⟪t, blockPair m₁ m₂⟫_ℝ
+        = ⟪blockFst t, m₁⟫_ℝ + ⟪blockSnd t, m₂⟫_ℝ := by
+      simp [inner_sum_split t (blockPair m₁ m₂)]
+    have hquad : t.ofLp ⬝ᵥ (Matrix.fromBlocks S₁₁ (0 : Matrix ι₁ ι₂ ℝ)
+          (0 : Matrix ι₂ ι₁ ℝ) S₂₂) *ᵥ t.ofLp
+        = (blockFst t).ofLp ⬝ᵥ S₁₁ *ᵥ (blockFst t).ofLp
+          + (blockSnd t).ofLp ⬝ᵥ S₂₂ *ᵥ (blockSnd t).ofLp := by
+      rw [dotProduct_fromBlocks_mulVec]
+      simp only [Matrix.zero_mulVec, dotProduct_zero, add_zero, zero_add]
+      rfl
+    rw [hR, charFun_multivariateGaussian hJ, charFun_multivariateGaussian h₁,
+      charFun_multivariateGaussian h₂, ← Complex.exp_add, hinner, hquad]
+    push_cast
+    ring_nf
+  rw [key, Measure.map_map (sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).measurable hmeas,
+    show (⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂))
+        ∘ ⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).symm) = id from
+      funext fun p => (sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).apply_symm_apply p]
+  exact Measure.map_id
 
 end StatLean.StatisticalModels
