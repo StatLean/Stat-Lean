@@ -84,7 +84,8 @@ theorem isProbabilityMeasure_pushforward (P : Θ → Measure 𝓧) {T : 𝓧 →
     -- LEAN-ONLY: measurability of the statistic; standard regularity
     (hT : Measurable T) (θ : Θ) :
     IsProbabilityMeasure (pushforward P T θ) := by
-  sorry
+  unfold pushforward
+  exact Measure.isProbabilityMeasure_map hT.aemeasurable
 
 /-! ## Composition laws -/
 
@@ -92,7 +93,8 @@ theorem isProbabilityMeasure_pushforward (P : Θ → Measure 𝓧) {T : 𝓧 →
 by the composed mechanism `η ∘ₖ κ`. -/
 theorem observe_observe (P : Θ → Measure 𝓧) (κ : Kernel 𝓧 𝓨) (η : Kernel 𝓨 𝓩) :
     observe (observe P κ) η = observe P (η ∘ₖ κ) := by
-  sorry
+  funext θ
+  exact Measure.comp_assoc
 
 /-- **Deterministic observation is pushforward**: coarsening through the deterministic kernel
 of a measurable map `T` is the model for the statistic `T`. -/
@@ -100,29 +102,35 @@ theorem observe_deterministic (P : Θ → Measure 𝓧) {T : 𝓧 → 𝓨}
     -- LEAN-ONLY: measurability of the coarsening map; standard regularity
     (hT : Measurable T) :
     observe P (Kernel.deterministic T hT) = pushforward P T := by
-  sorry
+  funext θ
+  exact Measure.deterministic_comp_eq_map hT
 
 /-- Observing through the identity mechanism returns the model. -/
 theorem observe_id (P : Θ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P θ)] :
     observe P (Kernel.deterministic id measurable_id) = P := by
-  sorry
+  rw [observe_deterministic P measurable_id]
+  funext θ
+  exact Measure.map_id
 
 /-- Functoriality of `pushforward`. -/
 theorem pushforward_pushforward (P : Θ → Measure 𝓧) {T : 𝓧 → 𝓨} {S : 𝓨 → 𝓩}
     -- LEAN-ONLY: measurability of the two statistics; standard regularity
     (hT : Measurable T) (hS : Measurable S) :
     pushforward (pushforward P T) S = pushforward P (S ∘ T) := by
-  sorry
+  funext θ
+  exact Measure.map_map hS hT
 
 @[simp]
 theorem pushforward_id (P : Θ → Measure 𝓧) : pushforward P id = P := by
-  sorry
+  funext θ
+  exact Measure.map_id
 
 /-- Observation after latent marginalization is latent marginalization with the composed
 conditional kernels. -/
 theorem observe_mix (P : Θ → Measure 𝓧) (K : Θ → Kernel 𝓧 𝓨) (η : Kernel 𝓨 𝓩) :
     observe (mix P K) η = mix P (fun θ => η ∘ₖ K θ) := by
-  sorry
+  funext θ
+  exact Measure.comp_assoc
 
 /-- θ-free observation is the constant case of latent marginalization (definitional). -/
 theorem observe_eq_mix_const (P : Θ → Measure 𝓧) (κ : Kernel 𝓧 𝓨) :
@@ -133,7 +141,8 @@ theorem mix_deterministic (P : Θ → Measure 𝓧) {T : Θ → 𝓧 → 𝓨}
     -- LEAN-ONLY: measurability of each map; standard regularity
     (hT : ∀ θ, Measurable (T θ)) :
     mix P (fun θ => Kernel.deterministic (T θ) (hT θ)) = fun θ => (P θ).map (T θ) := by
-  sorry
+  funext θ
+  exact Measure.deterministic_comp_eq_map (hT θ)
 
 /-- The calculus commutes with reparameterization (definitional): observing a reparameterized
 model is the reparameterized observed model. -/
