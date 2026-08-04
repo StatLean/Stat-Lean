@@ -52,7 +52,7 @@ noncomputable def godambeInfo (D : Fin N → Matrix (Fin m) (Fin q) ℝ)
 theorem posSemidef_fromBlocks_meat_bread (D : Fin N → Matrix (Fin m) (Fin q) ℝ)
     (V Covs : Fin N → Matrix (Fin m) (Fin m) ℝ)
     -- USER-INPUT: true covariances positive definite; God60
-    (hΣ : ∀ i, (Covs i).PosDef)
+    (hCov : ∀ i, (Covs i).PosDef)
     -- USER-INPUT: symmetric working covariances; LZ86 §2
     (hVsymm : ∀ i, (V i)ᵀ = V i) :
     (Matrix.fromBlocks (geeMeat D V Covs) (geeBread D V)
@@ -65,7 +65,7 @@ beats the truth. -/
 theorem godambe_optimality (D : Fin N → Matrix (Fin m) (Fin q) ℝ)
     (V Covs : Fin N → Matrix (Fin m) (Fin m) ℝ)
     -- USER-INPUT: true covariances positive definite; God60
-    (hΣ : ∀ i, (Covs i).PosDef)
+    (hCov : ∀ i, (Covs i).PosDef)
     -- USER-INPUT: symmetric working covariances; LZ86 §2
     (hVsymm : ∀ i, (V i)ᵀ = V i)
     -- USER-INPUT: identified designs — Godambe information and bread invertible; God60
