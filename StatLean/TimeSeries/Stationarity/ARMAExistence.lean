@@ -48,7 +48,7 @@ Yule–Walker equations: G. U. Yule (1927), G. T. Walker (1931).
 -/
 
 open MeasureTheory ProbabilityTheory Filter
-open scoped ProbabilityTheory
+open scoped ProbabilityTheory Topology
 
 namespace StatLean.TimeSeries
 
@@ -393,6 +393,142 @@ theorem summable_abs_armaPsi {p q : ℕ} {b : Fin p → ℝ} (a : Fin q → ℝ)
     ((summable_geometric_of_lt_one hr0 hr1).mul_left C)
 
 
+section Aux
+
+variable {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
+
+/-- `inner ℝ` on the reals is multiplication. -/
+private lemma real_inner_mul (x y : ℝ) : inner ℝ x y = x * y := by
+  rw [real_inner_eq_re_inner ℝ, RCLike.inner_apply]
+  simp [mul_comm]
+
+/-- The `L²` inner product of two classes is the integral of the product. -/
+private lemma inner_toLp {f g : Ω → ℝ} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    inner ℝ (hf.toLp f) (hg.toLp g) = ∫ ω, f ω * g ω ∂μ := by
+  rw [L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [hf.coeFn_toLp, hg.coeFn_toLp] with ω h1 h2
+  rw [real_inner_mul, h1, h2]
+
+/-- Cauchy–Schwarz for the `L²` pairing. -/
+private lemma abs_integral_mul_le {f g : Ω → ℝ} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    |∫ ω, f ω * g ω ∂μ| ≤ (eLpNorm f 2 μ).toReal * (eLpNorm g 2 μ).toReal := by
+  rw [← inner_toLp hf hg]
+  calc |(inner ℝ (hf.toLp f) (hg.toLp g) : ℝ)| ≤ ‖hf.toLp f‖ * ‖hg.toLp g‖ :=
+        abs_real_inner_le_norm _ _
+    _ = (eLpNorm f 2 μ).toReal * (eLpNorm g 2 μ).toReal := by rw [Lp.norm_toLp, Lp.norm_toLp]
+
+/-- Distinct white-noise times have vanishing mixed moment. -/
+private lemma integral_noise_mul_eq_zero [IsProbabilityMeasure μ] (hε : IsWhiteNoise ε σ2 μ)
+    {s t : ℤ} (hst : s ≠ t) : ∫ ω, ε s ω * ε t ω ∂μ = 0 := by
+  have h := covariance_eq_sub (hε.memLp s) (hε.memLp t)
+  rw [hε.integral_eq_zero s, zero_mul, sub_zero, hε.uncorrelated s t hst] at h
+  have h2 : μ[ε s * ε t] = ∫ ω, ε s ω * ε t ω ∂μ := by simp [Pi.mul_apply]
+  rw [h2] at h
+  exact h.symm
+
+/-- The `L²` norm of the noise is the same at every time. -/
+private lemma eLpNorm_noise_eq [IsProbabilityMeasure μ] (hε : IsWhiteNoise ε σ2 μ) (t : ℤ) :
+    eLpNorm (ε t) 2 μ = ENNReal.ofReal (Real.sqrt σ2) := by
+  have hsq : ‖(hε.memLp t).toLp (ε t)‖ ^ 2 = σ2 := by
+    rw [← real_inner_self_eq_norm_sq, inner_toLp]
+    have h := covariance_eq_sub (hε.memLp t) (hε.memLp t)
+    rw [hε.integral_eq_zero t, zero_mul, sub_zero,
+      covariance_self (hε.memLp t).aestronglyMeasurable.aemeasurable, hε.variance_eq t] at h
+    have h2 : μ[ε t * ε t] = ∫ ω, ε t ω * ε t ω ∂μ := by simp [Pi.mul_apply]
+    rw [h2] at h
+    exact h.symm
+  have hnorm : ‖(hε.memLp t).toLp (ε t)‖ = Real.sqrt σ2 := by
+    have := Real.sqrt_sq (norm_nonneg ((hε.memLp t).toLp (ε t)))
+    rw [hsq] at this
+    exact this.symm
+  rw [Lp.norm_toLp] at hnorm
+  rw [← hnorm, ENNReal.ofReal_toReal (hε.memLp t).2.ne]
+
+/-- The `L²` norm of a finite noise combination. -/
+private lemma eLpNorm_noise_comb_le [IsProbabilityMeasure μ] (hε : IsWhiteNoise ε σ2 μ)
+    {ι : Type*} (s : Finset ι) (c : ι → ℝ) (u : ι → ℤ) :
+    eLpNorm (fun ω => ∑ i ∈ s, c i * ε (u i) ω) 2 μ
+      ≤ ENNReal.ofReal (∑ i ∈ s, |c i|) * ENNReal.ofReal (Real.sqrt σ2) := by
+  have hfun : (fun ω => ∑ i ∈ s, c i * ε (u i) ω) = ∑ i ∈ s, fun ω => c i * ε (u i) ω := by
+    funext ω; simp
+  rw [hfun]
+  refine (eLpNorm_sum_le (fun i _ => ((hε.measurable (u i)).const_mul (c i)).aestronglyMeasurable)
+    one_le_two).trans ?_
+  have hterm : ∀ i, eLpNorm (fun ω => c i * ε (u i) ω) 2 μ
+      = ENNReal.ofReal |c i| * ENNReal.ofReal (Real.sqrt σ2) := by
+    intro i
+    have : (fun ω => c i * ε (u i) ω) = c i • (ε (u i)) := by funext ω; simp
+    rw [this, eLpNorm_const_smul, eLpNorm_noise_eq hε]
+    congr 1
+    simp [Real.enorm_eq_ofReal_abs]
+  simp_rw [hterm]
+  rw [← Finset.sum_mul, ← ENNReal.ofReal_sum_of_nonneg (fun i _ => abs_nonneg _)]
+
+end Aux
+
+private lemma cov_noise_lin_eq_zero [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
+    (hX : IsLinearProcessOf ψ X ε μ) (hε : IsWhiteNoise ε σ2 μ) (hmX : ∀ t, MemLp (X t) 2 μ)
+    {u : ℤ} (hu : 0 < u) : cov[ε u, X 0; μ] = 0 := by
+  have hcov : cov[ε u, X 0; μ] = ∫ ω, ε u ω * X 0 ω ∂μ := by
+    have h := covariance_eq_sub (hε.memLp u) (hmX 0)
+    rw [hε.integral_eq_zero u, zero_mul, sub_zero] at h
+    have h2 : μ[ε u * X 0] = ∫ ω, ε u ω * X 0 ω ∂μ := by simp [Pi.mul_apply]
+    rw [h2] at h
+    exact h
+  rw [hcov]
+  -- the partial sums pair to zero
+  have hmemP : ∀ N : ℕ, MemLp (fun ω => ∑ j ∈ Finset.range N, ψ j * ε (0 - (j : ℕ)) ω) 2 μ :=
+    fun N => memLp_finset_sum _ fun j _ => (hε.memLp _).const_mul _
+  have hzero : ∀ N : ℕ,
+      ∫ ω, ε u ω * (∑ j ∈ Finset.range N, ψ j * ε (0 - (j : ℕ)) ω) ∂μ = 0 := by
+    intro N
+    have hexp : ∀ ω, ε u ω * (∑ j ∈ Finset.range N, ψ j * ε (0 - (j : ℕ)) ω)
+        = ∑ j ∈ Finset.range N, ψ j * (ε u ω * ε (0 - (j : ℕ)) ω) := by
+      intro ω; rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun j _ => by ring
+    have hint : ∀ j : ℕ, Integrable (fun ω => ψ j * (ε u ω * ε (0 - (j : ℕ)) ω)) μ := fun j =>
+      ((hε.memLp u).integrable_mul (hε.memLp (0 - (j : ℕ)))).const_mul (ψ j)
+    simp_rw [hexp]
+    rw [integral_finset_sum _ fun j _ => hint j]
+    refine Finset.sum_eq_zero fun j _ => ?_
+    rw [integral_const_mul, integral_noise_mul_eq_zero hε (by omega), mul_zero]
+  -- the pairing with the defect tends to zero
+  have hsplit : ∀ N : ℕ, ∫ ω, ε u ω * X 0 ω ∂μ
+      = ∫ ω, ε u ω * (X 0 ω - ∑ j ∈ Finset.range N, ψ j * ε (0 - (j : ℕ)) ω) ∂μ := by
+    intro N
+    have hint1 : Integrable (fun ω => ε u ω * X 0 ω) μ := (hε.memLp u).integrable_mul (hmX 0)
+    have hint2 : Integrable
+        (fun ω => ε u ω * (∑ j ∈ Finset.range N, ψ j * ε (0 - (j : ℕ)) ω)) μ :=
+      (hε.memLp u).integrable_mul (hmemP N)
+    have : ∫ ω, ε u ω * X 0 ω ∂μ
+        - ∫ ω, ε u ω * (∑ j ∈ Finset.range N, ψ j * ε (0 - (j : ℕ)) ω) ∂μ
+        = ∫ ω, ε u ω * (X 0 ω - ∑ j ∈ Finset.range N, ψ j * ε (0 - (j : ℕ)) ω) ∂μ := by
+      rw [← integral_sub hint1 hint2]
+      exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
+    rw [← this, hzero N, sub_zero]
+  have hbd : ∀ N : ℕ, |∫ ω, ε u ω * X 0 ω ∂μ|
+      ≤ (eLpNorm (ε u) 2 μ).toReal
+        * (eLpNorm (fun ω => X 0 ω - ∑ j ∈ Finset.range N, ψ j * ε (0 - (j : ℕ)) ω) 2 μ).toReal := by
+    intro N
+    rw [hsplit N]
+    exact abs_integral_mul_le (hε.memLp u) ((hmX 0).sub (hmemP N))
+  have hlim : Tendsto (fun N : ℕ => (eLpNorm (ε u) 2 μ).toReal
+      * (eLpNorm (fun ω => X 0 ω - ∑ j ∈ Finset.range N, ψ j * ε (0 - (j : ℕ)) ω) 2 μ).toReal)
+      atTop (𝓝 0) := by
+    have h := (ENNReal.continuousAt_toReal (by simp)).tendsto.comp (hX 0)
+    simpa using h.const_mul ((eLpNorm (ε u) 2 μ).toReal)
+  have habs : |∫ ω, ε u ω * X 0 ω ∂μ| ≤ 0 := by
+    refine le_of_tendsto_of_tendsto' tendsto_const_nhds hlim hbd
+  exact abs_eq_zero.1 (le_antisymm habs (abs_nonneg _))
+
+/-- Covariance only sees the a.e. class of each argument. -/
+private lemma covariance_congr_ae {X X' Y Y' : Ω → ℝ} (hX : X =ᵐ[μ] X') (hY : Y =ᵐ[μ] Y') :
+    cov[X, Y; μ] = cov[X', Y'; μ] := by
+  have hIX : ∫ x, X x ∂μ = ∫ x, X' x ∂μ := integral_congr_ae hX
+  have hIY : ∫ x, Y x ∂μ = ∫ x, Y' x ∂μ := integral_congr_ae hY
+  simp only [covariance, hIX, hIY]
+  exact integral_congr_ae (by filter_upwards [hX, hY] with ω h1 h2 using by rw [h1, h2])
+
 /-- **Causality** (FY §2.1.2, Definition 2.3): `X` is a causal function of the noise `ε`
 when it is an MA(∞) over `ε` with absolutely summable coefficients. -/
 def IsCausalFor (X ε : ℤ → Ω → ℝ) (μ : Measure Ω) : Prop :=
@@ -424,7 +560,37 @@ theorem IsARMA.acvf_yule_walker [IsProbabilityMeasure μ] {p q : ℕ} {b : Fin p
     -- USER-INPUT: lag beyond the MA order; FY eq. (2.21)
     (hk : (q : ℤ) < k) :
     acvf X μ k = ∑ i : Fin p, b i * acvf X μ (k - 1 - (i : ℕ)) := by
-  sorry
+  have hψ := summable_abs_armaPsi a hb
+  have hmX : ∀ t, MemLp (X t) 2 μ := hcausal.memLp hψ h.whiteNoise h.measurableX
+  have hmε : ∀ t, MemLp (ε t) 2 μ := h.whiteNoise.memLp
+  have hcovε : ∀ u : ℤ, 0 < u → cov[ε u, X 0; μ] = 0 :=
+    fun u hu => cov_noise_lin_eq_zero hcausal h.whiteNoise hmX hu
+  have hmem1 : MemLp (fun ω => ∑ i, b i * X (k - 1 - (i : ℕ)) ω) 2 μ :=
+    memLp_finset_sum _ fun i _ => (hmX _).const_mul _
+  have hmem3 : MemLp (fun ω => ∑ j, a j * ε (k - 1 - (j : ℕ)) ω) 2 μ :=
+    memLp_finset_sum _ fun j _ => (hmε _).const_mul _
+  have hstep : cov[X k, X 0; μ]
+      = cov[fun ω => ∑ i, b i * X (k - 1 - (i : ℕ)) ω, X 0; μ] + cov[ε k, X 0; μ]
+        + cov[fun ω => ∑ j, a j * ε (k - 1 - (j : ℕ)) ω, X 0; μ] := by
+    rw [covariance_congr_ae (h.recurrence k) (EventuallyEq.refl _ (X 0))]
+    have hfun : (fun ω => (∑ i, b i * X (k - 1 - (i : ℕ)) ω) + ε k ω
+        + ∑ j, a j * ε (k - 1 - (j : ℕ)) ω)
+        = ((fun ω => ∑ i, b i * X (k - 1 - (i : ℕ)) ω) + ε k)
+          + (fun ω => ∑ j, a j * ε (k - 1 - (j : ℕ)) ω) := rfl
+    rw [hfun, covariance_add_left (hmem1.add (hmε k)) hmem3 (hmX 0),
+      covariance_add_left hmem1 (hmε k) (hmX 0)]
+  have hz1 : cov[ε k, X 0; μ] = 0 := hcovε k (by omega)
+  have hz2 : cov[fun ω => ∑ j, a j * ε (k - 1 - (j : ℕ)) ω, X 0; μ] = 0 := by
+    rw [covariance_fun_sum_left (fun j => (hmε _).const_mul _) (hmX 0)]
+    refine Finset.sum_eq_zero fun j _ => ?_
+    rw [covariance_const_mul_left, hcovε _ (by have := j.isLt; omega), mul_zero]
+  have hb1 : cov[fun ω => ∑ i, b i * X (k - 1 - (i : ℕ)) ω, X 0; μ]
+      = ∑ i : Fin p, b i * acvf X μ (k - 1 - (i : ℕ)) := by
+    rw [covariance_fun_sum_left (fun i => (hmX _).const_mul _) (hmX 0)]
+    exact Finset.sum_congr rfl fun i _ => by rw [covariance_const_mul_left]; rfl
+  rw [show acvf X μ k = cov[X k, X 0; μ] from rfl, hstep, hz1, hz2, hb1]
+  ring
+
 
 /-- **Proposition 2.2(i)** (FY §2.2.1): the ACVF of a causal stationary ARMA process
 decays exponentially. (Proved from the geometric `ψ`-bound — no distinct-roots caveat.) -/
