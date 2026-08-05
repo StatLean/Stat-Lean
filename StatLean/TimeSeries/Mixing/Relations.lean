@@ -146,24 +146,290 @@ section TwoAlgebras2
 
 variable {Ω : Type*}
 
-/-- `2α ≤ β` (four-set partitions witness the α events). -/
-theorem two_mul_alphaMixCoeff_le_betaMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
-    {μ : Measure Ω} [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ) :
-    2 * alphaMixCoeff μ m₁ m₂ ≤ betaMixCoeff μ m₁ m₂ := by
-  sorry
+private lemma toReal_inter_le {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbabilityMeasure μ]
+    (A B : Set Ω) : (μ (A ∩ B)).toReal ≤ (μ A).toReal :=
+  ENNReal.toReal_mono (measure_ne_top μ A) (measure_mono Set.inter_subset_left)
 
-/-- `α ≤ φ`. -/
+/-- Finite measurable partitions split any measurable set additively. -/
+private lemma sum_toReal_inter {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {J : ℕ} {B : Fin J → Set Ω} (hB : ∀ j, MeasurableSet (B j))
+    (hd : Pairwise fun j j' => Disjoint (B j) (B j')) (hcov : (⋃ j, B j) = Set.univ)
+    {S : Set Ω} (hS : MeasurableSet S) :
+    ∑ j, (μ (S ∩ B j)).toReal = (μ S).toReal := by
+  have hmeas : μ S = ∑ j, μ (S ∩ B j) := by
+    calc μ S = μ (⋃ j, S ∩ B j) := by rw [← Set.inter_iUnion, hcov, Set.inter_univ]
+      _ = ∑' j, μ (S ∩ B j) :=
+          measure_iUnion (fun j j' hjj' =>
+            (hd hjj').mono Set.inter_subset_right Set.inter_subset_right)
+            (fun j => hS.inter (hB j))
+      _ = ∑ j, μ (S ∩ B j) := tsum_fintype _
+  rw [hmeas, ENNReal.toReal_sum (fun j _ => measure_ne_top μ _)]
+
+/-- The φ description set contains `0` (take `A = univ`, `B = ∅`). -/
+private lemma phiMixCoeff_set_nonempty {m₁ m₂ mΩ : MeasurableSpace Ω} (μ : Measure Ω)
+    [IsProbabilityMeasure μ] :
+    (0 : ℝ) ∈ {r : ℝ | ∃ A B : Set Ω, MeasurableSet[m₁] A ∧ MeasurableSet[m₂] B ∧
+      0 < (μ A).toReal ∧
+      r = |(μ B).toReal - (μ (A ∩ B)).toReal / (μ A).toReal|} :=
+  ⟨Set.univ, ∅, @MeasurableSet.univ Ω m₁, @MeasurableSet.empty Ω m₂, by simp, by simp⟩
+
+private lemma abs_phi_term_le_one {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] {A B : Set Ω} (hA : 0 < (μ A).toReal) :
+    |(μ B).toReal - (μ (A ∩ B)).toReal / (μ A).toReal| ≤ 1 := by
+  have h1 : (0 : ℝ) ≤ (μ (A ∩ B)).toReal / (μ A).toReal :=
+    div_nonneg ENNReal.toReal_nonneg hA.le
+  have h2 : (μ (A ∩ B)).toReal / (μ A).toReal ≤ 1 :=
+    (div_le_one hA).2 (toReal_inter_le A B)
+  have h3 := toReal_le_one (μ := μ) B
+  have h4 : (0 : ℝ) ≤ (μ B).toReal := ENNReal.toReal_nonneg
+  rw [abs_le]; constructor <;> linarith
+
+private lemma phiMixCoeff_set_bddAbove {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] :
+    BddAbove {r : ℝ | ∃ A B : Set Ω, MeasurableSet[m₁] A ∧ MeasurableSet[m₂] B ∧
+      0 < (μ A).toReal ∧
+      r = |(μ B).toReal - (μ (A ∩ B)).toReal / (μ A).toReal|} := by
+  refine ⟨1, ?_⟩
+  rintro r ⟨A, B, -, -, hA, rfl⟩
+  exact abs_phi_term_le_one hA
+
+private lemma phiMixCoeff_nonneg {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] : 0 ≤ phiMixCoeff μ m₁ m₂ :=
+  le_csSup (phiMixCoeff_set_bddAbove (mΩ := mΩ)) (phiMixCoeff_set_nonempty (mΩ := mΩ) μ)
+
+/-- The core estimate behind both `α ≤ φ` and `β ≤ φ`. -/
+private lemma abs_alpha_term_le_mul_phi {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] {A B : Set Ω} (hA : MeasurableSet[m₁] A)
+    (hB : MeasurableSet[m₂] B) :
+    |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal|
+      ≤ (μ A).toReal * phiMixCoeff μ m₁ m₂ := by
+  rcases eq_or_lt_of_le (ENNReal.toReal_nonneg : (0:ℝ) ≤ (μ A).toReal) with h0 | hpos
+  · have hA0 : μ A = 0 := by
+      have := (ENNReal.toReal_eq_zero_iff (μ A)).1 h0.symm
+      exact this.resolve_right (measure_ne_top μ A)
+    have hAB : μ (A ∩ B) = 0 := measure_mono_null Set.inter_subset_left hA0
+    simp [hAB, hA0]
+  · have key : |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal|
+        = (μ A).toReal * |(μ B).toReal - (μ (A ∩ B)).toReal / (μ A).toReal| := by
+      have hne : (μ A).toReal ≠ 0 := ne_of_gt hpos
+      have e1 : (μ A).toReal * ((μ B).toReal - (μ (A ∩ B)).toReal / (μ A).toReal)
+          = -((μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal) := by
+        field_simp
+        ring
+      have e2 : |(μ A).toReal| * |(μ B).toReal - (μ (A ∩ B)).toReal / (μ A).toReal|
+          = |(μ A).toReal * ((μ B).toReal - (μ (A ∩ B)).toReal / (μ A).toReal)| :=
+        (abs_mul _ _).symm
+      rw [abs_of_pos hpos] at e2
+      rw [e2, e1, abs_neg]
+    rw [key]
+    refine mul_le_mul_of_nonneg_left ?_ hpos.le
+    exact le_csSup (phiMixCoeff_set_bddAbove (mΩ := mΩ)) ⟨A, B, hA, hB, hpos, rfl⟩
+
+/-- Splitting a set along a sub-family of a finite disjoint measurable family. -/
+private lemma toReal_inter_biUnion {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] {J : ℕ} {B : Fin J → Set Ω} (hB : ∀ j, MeasurableSet (B j))
+    (hd : Pairwise fun j j' => Disjoint (B j) (B j')) (S : Finset (Fin J))
+    {T : Set Ω} (hT : MeasurableSet T) :
+    (μ (T ∩ ⋃ j ∈ S, B j)).toReal = ∑ j ∈ S, (μ (T ∩ B j)).toReal := by
+  have hset : T ∩ (⋃ j ∈ S, B j) = ⋃ j ∈ S, (T ∩ B j) := by
+    simp [Set.inter_iUnion]
+  rw [hset, measure_biUnion_finset
+      (fun j _ j' _ hjj' => (hd hjj').mono Set.inter_subset_right Set.inter_subset_right)
+      (fun j _ => hT.inter (hB j)),
+    ENNReal.toReal_sum (fun j _ => measure_ne_top μ _)]
+
+/-- The partition sum defining `β` is at most `2φ`; the engine behind `β ≤ φ`. -/
+private lemma beta_sum_le_two_mul_phi {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ)
+    {I J : ℕ} {A : Fin I → Set Ω} {B : Fin J → Set Ω}
+    (hA : ∀ i, MeasurableSet[m₁] (A i)) (hB : ∀ j, MeasurableSet[m₂] (B j))
+    (hdA : Pairwise fun i i' => Disjoint (A i) (A i'))
+    (hcA : (⋃ i, A i) = Set.univ)
+    (hdB : Pairwise fun j j' => Disjoint (B j) (B j')) :
+    ∑ i, ∑ j, |(μ (A i ∩ B j)).toReal - (μ (A i)).toReal * (μ (B j)).toReal|
+      ≤ 2 * phiMixCoeff μ m₁ m₂ := by
+  have hBm : ∀ j, MeasurableSet (B j) := fun j => h₂ _ (hB j)
+  have hAm : ∀ i, MeasurableSet (A i) := fun i => h₁ _ (hA i)
+  -- Row bound: each `i`-row is at most `2 P(A i) φ`, by splitting the `j`'s by sign.
+  have hrow : ∀ i, ∑ j, |(μ (A i ∩ B j)).toReal - (μ (A i)).toReal * (μ (B j)).toReal|
+      ≤ 2 * ((μ (A i)).toReal * phiMixCoeff μ m₁ m₂) := by
+    intro i
+    set d : Fin J → ℝ := fun j =>
+      (μ (A i ∩ B j)).toReal - (μ (A i)).toReal * (μ (B j)).toReal with hd
+    -- The signed groups, each a single `m₂`-event.
+    have hgroup : ∀ S : Finset (Fin J), ∑ j ∈ S, d j
+        = (μ (A i ∩ ⋃ j ∈ S, B j)).toReal
+          - (μ (A i)).toReal * (μ (⋃ j ∈ S, B j)).toReal := by
+      intro S
+      have h1 := toReal_inter_biUnion (μ := μ) hBm hdB S (hAm i)
+      have huniv : MeasurableSet (Set.univ : Set Ω) := MeasurableSet.univ
+      have h2 := toReal_inter_biUnion (μ := μ) hBm hdB S huniv
+      simp only [Set.univ_inter] at h2
+      rw [h1, h2, Finset.mul_sum, ← Finset.sum_sub_distrib]
+    have habs : ∀ S : Finset (Fin J), |∑ j ∈ S, d j|
+        ≤ (μ (A i)).toReal * phiMixCoeff μ m₁ m₂ := by
+      intro S
+      rw [hgroup S]
+      have hUm : MeasurableSet[m₂] (⋃ j ∈ S, B j) :=
+        Finset.measurableSet_biUnion S (fun j _ => hB j)
+      exact abs_alpha_term_le_mul_phi (hA i) hUm
+    set P : Fin J → Prop := fun j => 0 ≤ d j with hP
+    classical
+    have hsplit : ∑ j, |d j|
+        = (∑ j ∈ Finset.univ.filter P, d j)
+          + (-∑ j ∈ Finset.univ.filter (fun j => ¬ P j), d j) := by
+      rw [← Finset.sum_filter_add_sum_filter_not Finset.univ P (fun j => |d j|),
+        ← Finset.sum_neg_distrib]
+      congr 1
+      · exact Finset.sum_congr rfl fun j hj => abs_of_nonneg (Finset.mem_filter.1 hj).2
+      · exact Finset.sum_congr rfl fun j hj =>
+          abs_of_neg (lt_of_not_ge (Finset.mem_filter.1 hj).2)
+    rw [hsplit]
+    have e1 := (le_abs_self _).trans (habs (Finset.univ.filter P))
+    have e2 := (neg_le_abs _).trans (habs (Finset.univ.filter (fun j => ¬ P j)))
+    linarith
+  calc ∑ i, ∑ j, |(μ (A i ∩ B j)).toReal - (μ (A i)).toReal * (μ (B j)).toReal|
+      ≤ ∑ i, 2 * ((μ (A i)).toReal * phiMixCoeff μ m₁ m₂) :=
+        Finset.sum_le_sum fun i _ => hrow i
+    _ = 2 * phiMixCoeff μ m₁ m₂ * ∑ i, (μ (A i)).toReal := by
+        rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun i _ => by ring
+    _ = 2 * phiMixCoeff μ m₁ m₂ := by
+        have : ∑ i, (μ (A i)).toReal = 1 := by
+          have huniv : MeasurableSet (Set.univ : Set Ω) := MeasurableSet.univ
+          have := sum_toReal_inter (μ := μ) hAm hdA hcA huniv
+          simpa using this
+        rw [this, mul_one]
+
+/-- The β description set contains `0` (the trivial one-cell partitions). -/
+private lemma betaMixCoeff_set_nonempty {m₁ m₂ mΩ : MeasurableSpace Ω} (μ : Measure Ω)
+    [IsProbabilityMeasure μ] :
+    (0 : ℝ) ∈ {r : ℝ | ∃ (I J : ℕ) (A : Fin I → Set Ω) (B : Fin J → Set Ω),
+      (∀ i, MeasurableSet[m₁] (A i)) ∧ (∀ j, MeasurableSet[m₂] (B j)) ∧
+      (Pairwise fun i i' => Disjoint (A i) (A i')) ∧
+      (Pairwise fun j j' => Disjoint (B j) (B j')) ∧
+      (⋃ i, A i) = Set.univ ∧ (⋃ j, B j) = Set.univ ∧
+      r = (1 / 2) * ∑ i, ∑ j,
+        |(μ (A i ∩ B j)).toReal - (μ (A i)).toReal * (μ (B j)).toReal|} := by
+  refine ⟨1, 1, fun _ => Set.univ, fun _ => Set.univ, fun _ => MeasurableSet.univ,
+    fun _ => MeasurableSet.univ, fun i i' h => absurd (Subsingleton.elim i i') h,
+    fun j j' h => absurd (Subsingleton.elim j j') h,
+    Set.univ_subset_iff.mp (Set.subset_iUnion (fun _ : Fin 1 => (Set.univ : Set Ω)) 0),
+    Set.univ_subset_iff.mp (Set.subset_iUnion (fun _ : Fin 1 => (Set.univ : Set Ω)) 0), ?_⟩
+  simp
+
+private lemma betaMixCoeff_set_bddAbove {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ) :
+    BddAbove {r : ℝ | ∃ (I J : ℕ) (A : Fin I → Set Ω) (B : Fin J → Set Ω),
+      (∀ i, MeasurableSet[m₁] (A i)) ∧ (∀ j, MeasurableSet[m₂] (B j)) ∧
+      (Pairwise fun i i' => Disjoint (A i) (A i')) ∧
+      (Pairwise fun j j' => Disjoint (B j) (B j')) ∧
+      (⋃ i, A i) = Set.univ ∧ (⋃ j, B j) = Set.univ ∧
+      r = (1 / 2) * ∑ i, ∑ j,
+        |(μ (A i ∩ B j)).toReal - (μ (A i)).toReal * (μ (B j)).toReal|} := by
+  refine ⟨phiMixCoeff μ m₁ m₂, ?_⟩
+  rintro r ⟨I, J, A, B, hA, hB, hdA, hdB, hcA, hcB, rfl⟩
+  have := beta_sum_le_two_mul_phi (μ := μ) h₁ h₂ hA hB hdA hcA hdB
+  linarith
+
+private lemma betaMixCoeff_nonneg {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ) : 0 ≤ betaMixCoeff μ m₁ m₂ :=
+  le_csSup (betaMixCoeff_set_bddAbove h₁ h₂) (betaMixCoeff_set_nonempty (mΩ := mΩ) μ)
+
 theorem alphaMixCoeff_le_phiMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
     {μ : Measure Ω} [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ) :
     alphaMixCoeff μ m₁ m₂ ≤ phiMixCoeff μ m₁ m₂ := by
-  sorry
+  refine Real.sSup_le ?_ (phiMixCoeff_nonneg (mΩ := mΩ) (μ := μ) (m₁ := m₁) (m₂ := m₂))
+  rintro r ⟨A, B, hA, hB, rfl⟩
+  refine (abs_alpha_term_le_mul_phi hA hB).trans ?_
+  have h1 := toReal_le_one (μ := μ) A
+  have h2 : (0 : ℝ) ≤ phiMixCoeff μ m₁ m₂ :=
+    phiMixCoeff_nonneg (mΩ := mΩ) (μ := μ) (m₁ := m₁) (m₂ := m₂)
+  nlinarith
 
-/-- `β ≤ φ` (partition sums against a fixed past cell are conditional-probability
-discrepancies). -/
 theorem betaMixCoeff_le_phiMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
     {μ : Measure Ω} [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ) :
     betaMixCoeff μ m₁ m₂ ≤ phiMixCoeff μ m₁ m₂ := by
-  sorry
+  refine Real.sSup_le ?_ (phiMixCoeff_nonneg (mΩ := mΩ) (μ := μ) (m₁ := m₁) (m₂ := m₂))
+  rintro r ⟨I, J, A, B, hA, hB, hdA, hdB, hcA, hcB, rfl⟩
+  have := beta_sum_le_two_mul_phi (μ := μ) h₁ h₂ hA hB hdA hcA hdB
+  linarith
+
+/-- `μ (A ∩ Bᶜ) = μ A − μ (A ∩ B)` after `toReal`. -/
+private lemma toReal_inter_compl {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] (A : Set Ω) {B : Set Ω} (hB : MeasurableSet B) :
+    (μ (A ∩ Bᶜ)).toReal = (μ A).toReal - (μ (A ∩ B)).toReal := by
+  have h := measure_inter_add_diff (μ := μ) A hB
+  have h2 : (μ (A ∩ B)).toReal + (μ (A \ B)).toReal = (μ A).toReal := by
+    rw [← ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _), h]
+  rw [Set.diff_eq] at h2
+  linarith
+
+theorem two_mul_alphaMixCoeff_le_betaMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ) :
+    2 * alphaMixCoeff μ m₁ m₂ ≤ betaMixCoeff μ m₁ m₂ := by
+  have hβ0 : 0 ≤ betaMixCoeff μ m₁ m₂ := betaMixCoeff_nonneg h₁ h₂
+  have key : alphaMixCoeff μ m₁ m₂ ≤ betaMixCoeff μ m₁ m₂ / 2 := by
+    refine Real.sSup_le ?_ (by linarith)
+    rintro r ⟨A, B, hA, hB, rfl⟩
+    have hAm : MeasurableSet A := h₁ _ hA
+    have hBm : MeasurableSet B := h₂ _ hB
+    -- The four cells of `{A, Aᶜ} × {B, Bᶜ}` all have the same discrepancy.
+    have eAc : (μ Aᶜ).toReal = 1 - (μ A).toReal := by
+      have := toReal_inter_compl (μ := μ) Set.univ hAm
+      simpa using this
+    have eBc : (μ Bᶜ).toReal = 1 - (μ B).toReal := by
+      have := toReal_inter_compl (μ := μ) Set.univ hBm
+      simpa using this
+    have e01 : (μ (A ∩ Bᶜ)).toReal = (μ A).toReal - (μ (A ∩ B)).toReal :=
+      toReal_inter_compl (μ := μ) A hBm
+    have e10 : (μ (Aᶜ ∩ B)).toReal = (μ B).toReal - (μ (A ∩ B)).toReal := by
+      have := toReal_inter_compl (μ := μ) B hAm
+      rwa [Set.inter_comm B Aᶜ, Set.inter_comm B A] at this
+    have e11 : (μ (Aᶜ ∩ Bᶜ)).toReal = (μ Aᶜ).toReal - (μ (Aᶜ ∩ B)).toReal :=
+      toReal_inter_compl (μ := μ) Aᶜ hBm
+    set A' : Fin 2 → Set Ω := ![A, Aᶜ] with hA'
+    set B' : Fin 2 → Set Ω := ![B, Bᶜ] with hB'
+    have hmem : 2 * |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal|
+        ∈ {r : ℝ | ∃ (I J : ℕ) (A : Fin I → Set Ω) (B : Fin J → Set Ω),
+          (∀ i, MeasurableSet[m₁] (A i)) ∧ (∀ j, MeasurableSet[m₂] (B j)) ∧
+          (Pairwise fun i i' => Disjoint (A i) (A i')) ∧
+          (Pairwise fun j j' => Disjoint (B j) (B j')) ∧
+          (⋃ i, A i) = Set.univ ∧ (⋃ j, B j) = Set.univ ∧
+          r = (1 / 2) * ∑ i, ∑ j,
+            |(μ (A i ∩ B j)).toReal - (μ (A i)).toReal * (μ (B j)).toReal|} := by
+      refine ⟨2, 2, A', B', ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · intro i; fin_cases i <;> simp [hA', hA, hA.compl]
+      · intro j; fin_cases j <;> simp [hB', hB, hB.compl]
+      · intro i i' h; fin_cases i <;> fin_cases i' <;>
+          simp_all [disjoint_compl_right, disjoint_compl_left]
+      · intro j j' h; fin_cases j <;> fin_cases j' <;>
+          simp_all [disjoint_compl_right, disjoint_compl_left]
+      · refine Set.univ_subset_iff.mp fun x _ => ?_
+        by_cases hx : x ∈ A
+        · exact Set.mem_iUnion.2 ⟨0, by simpa [hA'] using hx⟩
+        · exact Set.mem_iUnion.2 ⟨1, by simpa [hA'] using hx⟩
+      · refine Set.univ_subset_iff.mp fun x _ => ?_
+        by_cases hx : x ∈ B
+        · exact Set.mem_iUnion.2 ⟨0, by simpa [hB'] using hx⟩
+        · exact Set.mem_iUnion.2 ⟨1, by simpa [hB'] using hx⟩
+      · rw [Fin.sum_univ_two, Fin.sum_univ_two, Fin.sum_univ_two]
+        simp only [hA', hB', Matrix.cons_val_zero, Matrix.cons_val_one]
+        rw [e01, e11, e10, eAc, eBc]
+        have t2 : (μ A).toReal - (μ (A ∩ B)).toReal
+            - (μ A).toReal * (1 - (μ B).toReal)
+            = -((μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal) := by ring
+        have t3 : (μ B).toReal - (μ (A ∩ B)).toReal
+            - (1 - (μ A).toReal) * (μ B).toReal
+            = -((μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal) := by ring
+        have t4 : 1 - (μ A).toReal - ((μ B).toReal - (μ (A ∩ B)).toReal)
+            - (1 - (μ A).toReal) * (1 - (μ B).toReal)
+            = (μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal := by ring
+        rw [t2, t3, t4, abs_neg]
+        ring
+    have hcs : 2 * |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal|
+        ≤ betaMixCoeff μ m₁ m₂ := le_csSup (betaMixCoeff_set_bddAbove h₁ h₂) hmem
+    linarith
+  linarith
 
 /-- `φ ≤ ψ` in the calibrated form `|P(B) − P(B|A)| = P(B)|1 − P(B|A)/P(B)|`
 (the `P(B) = 0` cell contributes `0` on both sides). -/
