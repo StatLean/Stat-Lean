@@ -352,33 +352,30 @@ private theorem isMaxMarginHyperplane_of_min_norm_of_ne_zero [CompleteSpace E]
 
 /-- **The minimal-norm solution is a maximal margin hyperplane**: an offset `c` for the
 minimal-norm feasible `w` realizes the maximal margin among all separating hyperplanes,
-with margin `1/‖w‖`. -/
--- OBSTRUCTION (np/rkhs-ml): FALSE as frozen — the hypotheses do not rule out `w = 0`.
--- Counterexample (each step below was compiled against this file): `E = ℝ`, `n = 1`,
--- `x 0 = 0`, `lab 0 = 1`.  Then `marginFeasible x lab = Set.univ` (the constraint
--- `1 ≤ 1 * (0 - c)` holds for every `c ≤ -1`), so the minimal-norm feasible vector is
--- `w = 0`, satisfying `hw` and `hmin`; `hn` and `hlab` hold.  But for every `c`,
--- `hyperplane (0 : ℝ) c` is `∅` (`c ≠ 0`) or `Set.univ` (`c = 0`), so
--- `dataMargin x 0 c = 0` (`dataMargin_zero_left` above), while `(v', c') = (1, -1)`
--- separates the data with `dataMargin x 1 (-1) = |0 - (-1)| / ‖1‖ = 1 > 0`.  Hence the
--- required `dataMargin x v' c' ≤ dataMargin x w c` fails.
--- ROOT CAUSE: with only one label sign present, `0` is always feasible, so the
--- minimal-norm solution degenerates.  FIX (deferred, needs a statement change): add the
--- USER-INPUT hypothesis that both classes are nonempty — the same input already carried
--- by `SeparatesData.ne_zero` — i.e. `(hPos : 0 < lab iPos) (hNeg : lab iNeg < 0)`.  That
--- forces `w ≠ 0` (if `w = 0` the two constraints give `c ≤ -1` and `1 ≤ c`), after which
--- `isMaxMarginHyperplane_of_min_norm_of_ne_zero` above closes the goal outright.
+with margin `1/‖w‖`.  Both classes must be nonempty: with a single label sign, `0` is
+feasible and the minimal-norm solution degenerates (see the nondegenerate core above). -/
 theorem isMaxMarginHyperplane_of_min_norm [CompleteSpace E] {x : Fin n → E}
     {lab : Fin n → ℝ} {w : E}
     -- LEAN-ONLY: at least one data point; the margin is an infimum over the data
     (hn : 0 < n)
     -- USER-INPUT: binary `±1` labels
     (hlab : ∀ i, lab i = 1 ∨ lab i = -1)
+    -- USER-INPUT: both classes are nonempty (a positive and a negative label occur)
+    {iPos iNeg : Fin n} (hPos : lab iPos = 1) (hNeg : lab iNeg = -1)
     (hw : w ∈ marginFeasible x lab)
     (hmin : ∀ v ∈ marginFeasible x lab, ‖w‖ ≤ ‖v‖) :
     ∃ c : ℝ, (∀ i, 1 ≤ lab i * (⟪x i, w⟫ - c)) ∧
       IsMaxMarginHyperplane w c x lab := by
-  sorry
+  have hw0 : w ≠ 0 := by
+    rintro rfl
+    obtain ⟨c, hc⟩ := hw
+    have h1 := hc iPos
+    have h2 := hc iNeg
+    rw [hPos] at h1
+    rw [hNeg] at h2
+    simp only [inner_zero_right, one_mul, neg_one_mul, zero_sub, neg_neg] at h1 h2
+    linarith
+  exact isMaxMarginHyperplane_of_min_norm_of_ne_zero hn hlab hw hmin hw0
 
 /-- Quadratic-form reduction: for `v = ∑ αⱼ x ⱼ` in the span of the data, the objective
 `‖v‖²` is the Gram quadratic form `∑ᵢⱼ αᵢ αⱼ ⟪x ⱼ, x ᵢ⟫` — the optimization only needs
