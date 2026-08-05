@@ -66,13 +66,35 @@ noncomputable def condCovMatrix (S₁₁ : Matrix ι₁ ι₁ ℝ) (S₁₂ : Ma
     (S₂₂ : Matrix ι₂ ι₂ ℝ) : Matrix ι₂ ι₂ ℝ :=
   S₂₂ - S₁₂ᵀ * S₁₁⁻¹ * S₁₂
 
+omit [DecidableEq ι₂] in
+/-- LEAN-ONLY: a matrix acts measurably on Euclidean space (linear on a
+finite-dimensional space, hence continuous). -/
+private theorem measurable_toEuclideanLin (A : Matrix ι₂ ι₁ ℝ) :
+    Measurable fun x : EuclideanSpace ℝ ι₁ => Matrix.toEuclideanLin (𝕜 := ℝ) A x :=
+  ((Matrix.toEuclideanLin (𝕜 := ℝ) A).continuous_of_finiteDimensional).measurable
+
+omit [Fintype ι₁] [DecidableEq ι₁] in
+/-- LEAN-ONLY: translation of `multivariateGaussian` with **no** PSD side condition — the
+degenerate-parameter fallback is a Dirac mass, which translates as well. -/
+private theorem multivariateGaussian_map_add_left (m : EuclideanSpace ℝ ι₂)
+    (S : Matrix ι₂ ι₂ ℝ) (c : EuclideanSpace ℝ ι₂) :
+    (multivariateGaussian m S).map (fun x => c + x) = multivariateGaussian (c + m) S := by
+  by_cases hS : S.PosSemidef
+  · exact multivariateGaussian_map_const_add m S hS c
+  · rw [multivariateGaussian_of_not_posSemidef _ hS,
+      multivariateGaussian_of_not_posSemidef _ hS]
+    exact Measure.map_dirac' (measurable_const_add c) m
+
 /-- The **Gaussian conditional kernel**
 `x ↦ N(m₂ + S₂₁S₁₁⁻¹(x − m₁), S₂₂ − S₂₁S₁₁⁻¹S₁₂)` (And58 Thm 2.5.1). Constructed
 compositionally (the `@[simp]` spec below is the frozen contract). -/
 noncomputable def gaussianCondKernel (m₁ : EuclideanSpace ℝ ι₁) (m₂ : EuclideanSpace ℝ ι₂)
     (S₁₁ : Matrix ι₁ ι₁ ℝ) (S₁₂ : Matrix ι₁ ι₂ ℝ) (S₂₂ : Matrix ι₂ ι₂ ℝ) :
     Kernel (EuclideanSpace ℝ ι₁) (EuclideanSpace ℝ ι₂) :=
-  sorry
+  affineNoiseKernel (multivariateGaussian 0 (condCovMatrix S₁₁ S₁₂ S₂₂))
+    (fun x => Matrix.toEuclideanLin (𝕜 := ℝ) (condMeanMatrix S₁₁ S₁₂) x)
+    (measurable_toEuclideanLin _)
+    (m₂ - Matrix.toEuclideanLin (𝕜 := ℝ) (condMeanMatrix S₁₁ S₁₂) m₁)
 
 @[simp]
 theorem gaussianCondKernel_apply (m₁ : EuclideanSpace ℝ ι₁) (m₂ : EuclideanSpace ℝ ι₂)
@@ -82,12 +104,15 @@ theorem gaussianCondKernel_apply (m₁ : EuclideanSpace ℝ ι₁) (m₂ : Eucli
       = multivariateGaussian
           (m₂ + Matrix.toEuclideanLin (𝕜 := ℝ) (condMeanMatrix S₁₁ S₁₂) (x - m₁))
           (condCovMatrix S₁₁ S₁₂ S₂₂) := by
-  sorry
+  rw [gaussianCondKernel, affineNoiseKernel_apply, multivariateGaussian_map_add_left]
+  congr 1
+  rw [add_zero, map_sub]
+  abel
 
 instance (m₁ : EuclideanSpace ℝ ι₁) (m₂ : EuclideanSpace ℝ ι₂) (S₁₁ : Matrix ι₁ ι₁ ℝ)
     (S₁₂ : Matrix ι₁ ι₂ ℝ) (S₂₂ : Matrix ι₂ ι₂ ℝ) :
     IsMarkovKernel (gaussianCondKernel m₁ m₂ S₁₁ S₁₂ S₂₂) := by
-  sorry
+  rw [gaussianCondKernel]; infer_instance
 
 /-- **G3.1, the Schur complement is PSD** (Schur 1917; And58 Thm 2.5.1): under a genuine
 joint covariance with nondegenerate conditioning block, the conditional covariance is a
@@ -99,7 +124,10 @@ theorem posSemidef_condCovMatrix {S₁₁ : Matrix ι₁ ι₁ ℝ} {S₁₂ : M
     -- USER-INPUT: nondegenerate conditioning block; And58 Thm 2.5.1
     (h₁₁ : S₁₁.PosDef) :
     (condCovMatrix S₁₁ S₁₂ S₂₂).PosSemidef := by
-  sorry
+  haveI : Invertible S₁₁ := h₁₁.isUnit.invertible
+  have hconj : S₁₂ᴴ = S₁₂ᵀ := Matrix.conjTranspose_eq_transpose_of_trivial S₁₂
+  have h := (Matrix.PosDef.fromBlocks₁₁ (A := S₁₁) S₁₂ S₂₂ h₁₁).mp (by rwa [hconj])
+  rwa [hconj] at h
 
 /-- **G3.2, completing the square** — the block quadratic form splits into the marginal
 form at the shifted argument plus the Schur form (the charFun engine). -/
@@ -110,7 +138,14 @@ theorem dotProduct_fromBlocks_split (S₁₁ : Matrix ι₁ ι₁ ℝ) (S₁₂ 
     Sum.elim t₁ t₂ ⬝ᵥ (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) *ᵥ Sum.elim t₁ t₂
       = (t₁ + (S₁₁⁻¹ * S₁₂) *ᵥ t₂) ⬝ᵥ S₁₁ *ᵥ (t₁ + (S₁₁⁻¹ * S₁₂) *ᵥ t₂)
           + t₂ ⬝ᵥ (condCovMatrix S₁₁ S₁₂ S₂₂) *ᵥ t₂ := by
-  sorry
+  haveI : Invertible S₁₁ := h₁₁.isUnit.invertible
+  have hconj : S₁₂ᴴ = S₁₂ᵀ := Matrix.conjTranspose_eq_transpose_of_trivial S₁₂
+  have h := Matrix.schur_complement_eq₁₁ (A := S₁₁) S₁₂ S₂₂ t₁ t₂ h₁₁.isHermitian
+  rw [hconj] at h
+  simp only [star_trivial] at h
+  rw [Matrix.dotProduct_mulVec, Matrix.dotProduct_mulVec, Matrix.dotProduct_mulVec,
+    condCovMatrix]
+  exact h
 
 /-- **G3.4, HEADLINE — Gaussian conditioning as exact disintegration** (And58 Thm 2.5.1;
 Eaton Prop. 3.13): the first block marginal composed with the Gaussian conditional kernel
