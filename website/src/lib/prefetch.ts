@@ -1,5 +1,4 @@
-// Warm the heavy graph chunks (Cytoscape and the merged graph) before they're
-// navigated to,
+// Warm the heavy graph chunks (Cytoscape + fcose) before they're navigated to,
 // so opening the Dependencies / graph pages feels instant.
 export const prefetchDependencies = () => import("../pages/Dependencies");
 export const prefetchGraphView = () => import("../pages/GraphView");

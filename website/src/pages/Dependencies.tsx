@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import cytoscape from "cytoscape";
-import { loadGlobalGraph, type GlobalGraph } from "../lib/globalGraph";
+import fcose from "cytoscape-fcose";
+import { getGlobalGraph } from "../lib/globalGraph";
 import { RESULTS } from "../lib/data";
 import { CATEGORIES } from "../lib/categories";
 import {
@@ -17,6 +18,8 @@ import { triplet, rgb, rgba, areaTriplets } from "../lib/cyStyle";
 import { docUrlForNode } from "../lib/site";
 import type { CategoryId } from "../lib/types";
 
+cytoscape.use(fcose);
+
 const FULL_TO_ID = new Map(RESULTS.map((r) => [r.fullName, r.id]));
 
 type DeclFilter = "thm" | "def";
@@ -24,24 +27,12 @@ type DeclFilter = "thm" | "def";
 export function Dependencies() {
   const elRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<cytoscape.Core | null>(null);
-  const runLayoutRef = useRef<
-    ((eles: cytoscape.Collection, useFull: boolean) => void) | null
-  >(null);
+  const runLayoutRef = useRef<((eles: cytoscape.Collection) => void) | null>(null);
   const extElsRef = useRef<any[]>([]); // Mathlib elements, added to cy on demand
   const extAddedRef = useRef(false);
   const navigate = useNavigate();
 
-  // The global graph is fetched on demand (its own chunk) rather than bundled.
-  const [graph, setGraph] = useState<GlobalGraph | null>(null);
-  useEffect(() => {
-    let alive = true;
-    loadGlobalGraph().then((g) => {
-      if (alive) setGraph(g);
-    });
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const graph = useMemo(() => getGlobalGraph(), []);
   const [topics, setTopics] = useState<Set<CategoryId>>(
     () => new Set(CATEGORIES.map((c) => c.id)),
   );
@@ -52,7 +43,7 @@ export function Dependencies() {
 
   // ---- build the graph once ----
   useEffect(() => {
-    if (!elRef.current || !graph) return;
+    if (!elRef.current) return;
     const ats = areaTriplets();
     const ink = triplet("--ink");
 
@@ -198,17 +189,8 @@ export function Dependencies() {
         });
       });
     };
-    // Above this many visible nodes the per-frame reposition costs more than the
-    // motion conveys — the Mathlib view is a dense enough hairball that the drift
-    // is not legible anyway.
-    const DRIFT_NODE_LIMIT = 2000;
-
     const startDrift = () => {
       drift.nodes = cy.nodes(":visible");
-      if (drift.nodes.length > DRIFT_NODE_LIMIT) {
-        drift.active = false;
-        return;
-      }
       drift.anchors = new Map();
       drift.vel = new Map();
       drift.nodes.forEach((n) => {
@@ -219,24 +201,29 @@ export function Dependencies() {
       drift.active = true;
     };
 
-    // explode-from-center + organic settle, then hand off to the drift loop.
-    // The destination is the layout computed at build time, so this is a linear
-    // placement plus an animation rather than a force simulation.
-    const runLayout = (eles: cytoscape.Collection, useFull: boolean) => {
+    // explode-from-center + organic settle, then hand off to the drift loop
+    const runLayout = (eles: cytoscape.Collection) => {
       drift.active = false;
-      const pos = useFull ? graph.positions.full : graph.positions.repo;
       eles.nodes().positions(() => ({
         x: (Math.random() - 0.5) * 40,
         y: (Math.random() - 0.5) * 40,
       }));
       const l = eles.layout({
-        name: "preset",
-        positions: (n: any) => pos.get(n.id()) ?? graph.positions.full.get(n.id()) ?? { x: 0, y: 0 },
+        name: "fcose",
+        quality: "default",
         animate: true,
         animationDuration: 1100,
         animationEasing: "ease-out-cubic",
+        randomize: false, // start from the central cluster → explode outward
         fit: true,
         padding: 50,
+        packComponents: false,
+        nodeSeparation: 60,
+        idealEdgeLength: 42,
+        nodeRepulsion: 7000,
+        gravity: 0.4,
+        gravityRange: 3,
+        numIter: 600,
       } as any);
       l.one("layoutstop", startDrift);
       l.run();
@@ -276,10 +263,9 @@ export function Dependencies() {
 
     const visible = cy.nodes(":visible");
     if (visible.length === 0) return;
-    // defer one frame so the canvas paints before the layout is applied
+    // defer one frame so the canvas paints before the (blocking) layout runs
     const raf = requestAnimationFrame(() => {
-      if (cyRef.current === cy)
-        runLayoutRef.current?.(visible.closedNeighborhood(), showMathlib);
+      if (cyRef.current === cy) runLayoutRef.current?.(visible.closedNeighborhood());
     });
     return () => cancelAnimationFrame(raf);
   }, [topics, decls, showMathlib]);
@@ -328,13 +314,7 @@ export function Dependencies() {
         </div>
       </div>
 
-      <div ref={elRef} className="relative flex-1 min-h-0 bg-parchment-sunk">
-        {!graph && (
-          <div className="absolute inset-0 grid place-items-center font-sans text-sm text-ink-faint">
-            Loading dependency graph…
-          </div>
-        )}
-      </div>
+      <div ref={elRef} className="relative flex-1 min-h-0 bg-parchment-sunk" />
 
       {/* legend */}
       <div className="shrink-0 border-t hairline px-5 sm:px-7 py-2.5 flex flex-wrap gap-x-5 gap-y-1.5 text-xs font-sans text-ink-soft">
