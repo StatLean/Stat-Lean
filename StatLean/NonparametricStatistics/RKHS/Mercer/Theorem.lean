@@ -261,32 +261,41 @@ private theorem exists_eigen_data {E : Type*} [NormedAddCommGroup E] [InnerProdu
 
 /-- **Mercer's theorem, existence of the eigensystem**: every Mercer kernel against a
 finite Borel measure of full support admits a Mercer eigensystem. -/
--- OPEN.  All three operator inputs are now available: `isCompactOperator_mercerCLM`
--- (Mercer/Compact), `isPositive_mercerCLM` (Mercer/Basic, hence `IsSymmetric` via
--- `ContinuousLinearMap.IsPositive.1`), and `continuous_integralOp_of_continuous`
--- (Mercer/Basic) for the continuous representative of an eigenfunction
--- (`e = λ⁻¹ • T_K e`, upgraded from a.e. to everywhere by `μ.IsOpenPosMeasure`).
--- Missing ingredients, in order of difficulty:
--- (a) *countability of the nonzero spectrum*: for a compact self-adjoint `T` and each
---     `k : ℕ` the set of eigenvalues with `|λ| > 1/k` carries only finitely many
---     mutually orthogonal eigenvectors (else `‖T eₙ − T eₘ‖² = λₙ² + λₘ² ≥ 2/k²`
---     contradicts total boundedness of the image of the unit ball).  Mathlib's
---     `Mathlib/Analysis/InnerProductSpace/Spectrum.lean` has
---     `ContinuousLinearMap.orthogonalComplement_iSup_eigenspaces_eq_bot` and
---     finite-dimensionality of the nonzero eigenspaces, but no countability statement;
---     it has to be built here from `IsCompactOperator.isCompact_closure_image_ball`.
--- (b) the index type of `MercerEigensystem` lives in `Type` (universe 0), so the
---     `Σ (λ : nonzero eigenvalues), Fin (dim (eigenspace λ))` bookkeeping needs an
---     explicit encoding into `ℕ × ℕ`-style data, not just a sigma type over the
---     (large) eigenvalue set.
--- (c) `opExpansion` needs a Hilbert basis of `L²` refining the eigenspaces
---     (eigenvectors over `ι` together with any ONB of `ker T_K`), obtained from (a)
---     plus `HilbertBasis.hasSum_repr` and `ContinuousLinearMap.hasSum`.
 theorem exists_mercerEigensystem {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K)
     -- USER-INPUT: the measure has full support
     [μ.IsOpenPosMeasure] :
     Nonempty (MercerEigensystem μ K hK.continuous) := by
-  sorry
+  haveI := separableSpace_Lp 𝕜 μ
+  obtain ⟨ι, v, lam, hcount, hpos, hON, heig, hexp⟩ :=
+    exists_eigen_data (mercerCLM μ hK.continuous) (isCompactOperator_mercerCLM hK)
+      (isPositive_mercerCLM hK)
+  have hlne : ∀ n, ((lam n : ℝ) : 𝕜) ≠ 0 := fun n => RCLike.ofReal_ne_zero.mpr (hpos n).ne'
+  -- the continuous representative `λ⁻¹ T_K eₙ` of the eigenvector `eₙ`
+  set F : ι → C(X, 𝕜) := fun n =>
+    ⟨fun x => ((lam n : ℝ) : 𝕜)⁻¹ * integralOp μ K (v n) x,
+      continuous_const.mul (continuous_integralOp_of_continuous hK.continuous (v n))⟩ with hF
+  have htoLp : ∀ n, ContinuousMap.toLp 2 μ 𝕜 (F n) = v n := by
+    intro n
+    have h4 : ((mercerCLM μ hK.continuous (v n) : Lp 𝕜 2 μ) : X → 𝕜)
+        =ᵐ[μ] ((((lam n : ℝ) : 𝕜) • v n : Lp 𝕜 2 μ) : X → 𝕜) := by rw [heig n]
+    refine Lp.ext ?_
+    filter_upwards [ContinuousMap.coeFn_toLp (E := 𝕜) (p := 2) (μ := μ) (𝕜 := 𝕜) (F n),
+      mercerCLM_coeFn_ae hK.continuous (v n), h4,
+      Lp.coeFn_smul (((lam n : ℝ) : 𝕜)) (v n)] with x h1 h2 h3 h5
+    rw [h1]
+    change ((lam n : ℝ) : 𝕜)⁻¹ * integralOp μ K (v n) x = _
+    rw [← h2, h3, h5]
+    change ((lam n : ℝ) : 𝕜)⁻¹ * (((lam n : ℝ) : 𝕜) * ((v n : X → 𝕜) x)) = _
+    rw [inv_mul_cancel_left₀ (hlne n)]
+  have hfun : (fun n => ContinuousMap.toLp 2 μ 𝕜 (F n)) = v := funext htoLp
+  refine ⟨⟨ι, hcount, F, lam, hpos, by rw [hfun]; exact hON, ?_, ?_⟩⟩
+  · intro n x
+    rw [htoLp n]
+    change _ = ((lam n : ℝ) : 𝕜) * (((lam n : ℝ) : 𝕜)⁻¹ * integralOp μ K (v n) x)
+    rw [mul_inv_cancel_left₀ (hlne n)]
+  · intro g
+    simp only [htoLp]
+    exact hexp g
 
 /-- **Mercer's theorem, kernel expansion**: `K(x, y) = ∑ₙ λₙ eₙ(x) conj (eₙ(y))`
 pointwise (unordered absolute convergence). -/
