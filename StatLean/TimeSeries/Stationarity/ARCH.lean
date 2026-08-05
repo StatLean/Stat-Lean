@@ -32,8 +32,14 @@ Giraitis–Kokoszka–Leipus 2000 without in-book proofs).
   the infinite product law (pinned `Probability/ProductMeasure` +
   `iIndepFun` infinite-product characterization).
 * Uniqueness iterates FY eq. (2.68) and uses the model's `indep_past` field (the implicit
-  semantics FY's proof uses, surfaced in `IsARCHInf`), Markov's inequality and
-  Borel–Cantelli.
+  semantics FY's proof uses, surfaced in `IsARCHInf`). Because every term is nonnegative,
+  the iteration is used in the *sharper* form: dropping the (nonnegative) depth-`k`
+  remainder shows every solution dominates the whole Volterra series, while one single
+  application of `indep_past` pins each integrable stationary solution's mean to
+  `a/(1 − Σ_j b_j)`; a nonnegative difference of integral zero is a.e. zero. This replaces
+  FY's Markov/Borel–Cantelli tail argument, which would need `ξ_t` to be independent of the
+  *join* of the two solutions' pasts with the noise's own past — strictly more than the
+  frozen `IsARCHInf.indep_past` supplies.
 
 **Bibliographic comments.** L. Giraitis, P. Kokoszka and R. Leipus, "Stationary ARCH
 models: dependence structure and central limit theorem", *Econometric Theory* **16**
@@ -447,6 +453,257 @@ theorem exists_stationary_archInf [IsProbabilityMeasure μ]
       recurrence := hrec },
     hstat, hintY, hmeanY⟩
 
+/-! ### Uniqueness (FY §2.7.1)
+
+The route is the nonnegative one FY's iteration (eq. (2.68)) makes available: iterating the
+recurrence `k` times shows that *every* solution dominates the depth-`k` Volterra partial
+sum, hence the whole Volterra series; and one single application of the model's
+`indep_past` pins the mean of every integrable stationary solution to `a/(1 − Σ_j b_j)`,
+the mean of the Volterra series itself. A nonnegative difference with vanishing integral is
+a.e. zero. (Iterating `indep_past` past the first level is *not* available from the frozen
+data model — after one step the conditioning σ-algebra is the join of the solution's past
+with the noise's past, and `IsARCHInf` only supplies independence from the former.) -/
+
+private lemma archNoise_of_archInf {a : ℝ} {bc : ℕ → ℝ} {Y ξ : ℤ → Ω → ℝ}
+    (h : IsARCHInf a bc Y ξ μ) : IsARCHNoise ξ μ :=
+  ⟨h.measurableXi, h.xi_nonneg, h.iIndep, h.identDistrib, h.integrable_xi, h.integral_xi⟩
+
+omit [MeasurableSpace Ω] in
+private lemma archS_lt_one {bc : ℕ → ℝ} (hbc : ∀ j, 0 ≤ bc j) (hsum : Summable bc)
+    (hlt : ∑' j, bc j < 1) : archS bc < 1 := by
+  rw [archS_eq hbc hsum]; exact ENNReal.ofReal_lt_one.2 hlt
+
+omit [MeasurableSpace Ω] in
+private lemma archS_ne_top {bc : ℕ → ℝ} (hbc : ∀ j, 0 ≤ bc j) (hsum : Summable bc) :
+    archS bc ≠ ∞ := by rw [archS_eq hbc hsum]; exact ENNReal.ofReal_ne_top
+
+omit [MeasurableSpace Ω] in
+private lemma archS_inv_ne_top {bc : ℕ → ℝ} (hbc : ∀ j, 0 ≤ bc j) (hsum : Summable bc)
+    (hlt : ∑' j, bc j < 1) : (1 - archS bc)⁻¹ ≠ ∞ :=
+  ENNReal.inv_ne_top.2 (tsub_pos_of_lt (archS_lt_one hbc hsum hlt)).ne'
+
+omit [MeasurableSpace Ω] in
+private lemma toReal_one_sub_archS {bc : ℕ → ℝ} (hbc : ∀ j, 0 ≤ bc j) (hsum : Summable bc)
+    (hlt : ∑' j, bc j < 1) : (1 - archS bc).toReal = 1 - ∑' j, bc j := by
+  rw [ENNReal.toReal_sub_of_le (archS_lt_one hbc hsum hlt).le ENNReal.one_ne_top,
+    ENNReal.toReal_one, archS_eq hbc hsum, ENNReal.toReal_ofReal (tsum_nonneg hbc)]
+
+private lemma archZ_ae_lt_top [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ} {ξ : ℤ → Ω → ℝ}
+    (hbc : ∀ j, 0 ≤ bc j) (hsum : Summable bc) (hlt : ∑' j, bc j < 1)
+    (hξ : IsARCHNoise ξ μ) (t : ℤ) : ∀ᵐ ω ∂μ, archZ a bc ξ t ω < ∞ := by
+  refine ae_lt_top (measurable_archZ hξ.measurable t) ?_
+  rw [lintegral_archZ hξ.measurable hξ.iIndep hξ.nonneg hξ.identDistrib hξ.integrable
+    hξ.integral_eq_one t]
+  exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top (archS_inv_ne_top hbc hsum hlt)
+
+private lemma integrable_archSol [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ} {ξ : ℤ → Ω → ℝ}
+    (hbc : ∀ j, 0 ≤ bc j) (hsum : Summable bc) (hlt : ∑' j, bc j < 1)
+    (hξ : IsARCHNoise ξ μ) (t : ℤ) : Integrable (archSol a bc ξ t) μ := by
+  refine ⟨(measurable_archSol hξ.measurable a bc t).aestronglyMeasurable, ?_⟩
+  have hcong : ∫⁻ ω, ‖archSol a bc ξ t ω‖ₑ ∂μ = ∫⁻ ω, archZ a bc ξ t ω ∂μ := by
+    refine lintegral_congr_ae ?_
+    filter_upwards [archZ_ae_lt_top hbc hsum hlt hξ t] with ω hω
+    rw [archSol_eq_toReal, Real.enorm_eq_ofReal ENNReal.toReal_nonneg,
+      ENNReal.ofReal_toReal hω.ne]
+  change ∫⁻ ω, ‖archSol a bc ξ t ω‖ₑ ∂μ < ∞
+  rw [hcong, lintegral_archZ hξ.measurable hξ.iIndep hξ.nonneg hξ.identDistrib
+    hξ.integrable hξ.integral_eq_one t]
+  exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top
+    (lt_top_iff_ne_top.2 (archS_inv_ne_top hbc hsum hlt))
+
+private lemma integral_archSol [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ} {ξ : ℤ → Ω → ℝ}
+    (ha : 0 ≤ a) (hbc : ∀ j, 0 ≤ bc j) (hsum : Summable bc) (hlt : ∑' j, bc j < 1)
+    (hξ : IsARCHNoise ξ μ) (t : ℤ) :
+    ∫ ω, archSol a bc ξ t ω ∂μ = a / (1 - ∑' j, bc j) := by
+  have h1 : ∫ ω, archSol a bc ξ t ω ∂μ = (∫⁻ ω, archZ a bc ξ t ω ∂μ).toReal := by
+    simp only [archSol_eq_toReal]
+    exact integral_toReal (measurable_archZ hξ.measurable t).aemeasurable
+      (archZ_ae_lt_top hbc hsum hlt hξ t)
+  rw [h1, lintegral_archZ hξ.measurable hξ.iIndep hξ.nonneg hξ.identDistrib hξ.integrable
+      hξ.integral_eq_one t,
+    ENNReal.toReal_mul, ENNReal.toReal_ofReal ha, ENNReal.toReal_inv,
+    toReal_one_sub_archS hbc hsum hlt]
+  ring
+
+/-- Every integrable strictly stationary solution has a time-independent `ℝ≥0∞`-mean. -/
+private lemma lintegral_ofReal_sol [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
+    {Y ξ : ℤ → Ω → ℝ} (h : IsARCHInf a bc Y ξ μ) (hint : ∀ t, Integrable (Y t) μ)
+    (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
+    ∫⁻ ω, ENNReal.ofReal (Y t ω) ∂μ = ENNReal.ofReal (∫ ω, Y 0 ω ∂μ) := by
+  rw [← ofReal_integral_eq_lintegral_ofReal (hint t) (h.Y_nonneg t),
+    (hstat.identDistrib h.measurableY t 0).integral_eq]
+
+/-- The driving series `Σ_j b_j Y_{t−1−j}` is a.e. finite for any integrable stationary
+solution — the summability side condition the real-valued recurrence needs. -/
+private lemma archInf_tsum_ae_lt_top [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
+    {Y ξ : ℤ → Ω → ℝ} (hsum : Summable bc) (h : IsARCHInf a bc Y ξ μ)
+    (hint : ∀ t, Integrable (Y t) μ) (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
+    ∀ᵐ ω ∂μ, (∑' j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω)) < ∞ := by
+  refine ae_lt_top (Measurable.ennreal_tsum fun j =>
+    measurable_const.mul ((h.measurableY _).ennreal_ofReal)) ?_
+  have hterm : ∀ j : ℕ, ∫⁻ ω, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω) ∂μ
+      = ENNReal.ofReal (bc j) * ENNReal.ofReal (∫ ω, Y 0 ω ∂μ) := fun j => by
+    rw [lintegral_const_mul _ ((h.measurableY _).ennreal_ofReal),
+      lintegral_ofReal_sol h hint hstat]
+  rw [lintegral_tsum fun j =>
+    (measurable_const.mul ((h.measurableY (t - 1 - (j : ℕ))).ennreal_ofReal)).aemeasurable]
+  simp only [hterm]
+  rw [ENNReal.tsum_mul_right]
+  exact ENNReal.mul_ne_top (archS_ne_top h.bc_nonneg hsum) ENNReal.ofReal_ne_top
+
+/-- The ARCH(∞) recurrence in `ℝ≥0∞`, for an arbitrary integrable stationary solution. -/
+private lemma archInf_ofReal_recurrence [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
+    {Y ξ : ℤ → Ω → ℝ} (hsum : Summable bc) (h : IsARCHInf a bc Y ξ μ)
+    (hint : ∀ t, Integrable (Y t) μ) (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
+    ∀ᵐ ω ∂μ, ENNReal.ofReal (Y t ω) = ENNReal.ofReal (ξ t ω)
+      * (ENNReal.ofReal a
+        + ∑' j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω)) := by
+  filter_upwards [h.recurrence t, h.xi_nonneg t,
+    ae_all_iff.2 fun j : ℕ => h.Y_nonneg (t - 1 - (j : ℕ)),
+    archInf_tsum_ae_lt_top hsum h hint hstat t] with ω hrec hξω hYω hTω
+  have hnn : ∀ j : ℕ, 0 ≤ bc j * Y (t - 1 - (j : ℕ)) ω :=
+    fun j => mul_nonneg (h.bc_nonneg j) (hYω j)
+  have hsumω : Summable fun j : ℕ => bc j * Y (t - 1 - (j : ℕ)) ω :=
+    (ENNReal.summable_toReal hTω.ne).congr fun j => by
+      rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (h.bc_nonneg j),
+        ENNReal.toReal_ofReal (hYω j)]
+  have hTnn : (0 : ℝ) ≤ ∑' j : ℕ, bc j * Y (t - 1 - (j : ℕ)) ω := tsum_nonneg hnn
+  have hcv : ∀ j : ℕ, ENNReal.ofReal (bc j * Y (t - 1 - (j : ℕ)) ω)
+      = ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω) :=
+    fun j => ENNReal.ofReal_mul (h.bc_nonneg j)
+  rw [hrec, ENNReal.ofReal_mul (add_nonneg h.a_nonneg hTnn),
+    ENNReal.ofReal_add h.a_nonneg hTnn, ENNReal.ofReal_tsum_of_nonneg hnn hsumω]
+  simp only [hcv]
+  ring
+
+omit [MeasurableSpace Ω] in
+/-- Peeling the empty layer off a Volterra *partial* sum. -/
+private lemma archLayer_partial_succ (bc : ℕ → ℝ) (ξ : ℤ → Ω → ℝ) (k : ℕ) (t : ℤ) (ω : Ω) :
+    ∑ i ∈ Finset.range (k + 1), archLayer bc i (archPath ξ t ω)
+      = 1 + ∑' j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (ξ (t - 1 - (j : ℕ)) ω)
+          * ∑ i ∈ Finset.range k, archLayer bc i (archPath ξ (t - 1 - (j : ℕ)) ω) := by
+  have h0 : archLayer bc 0 (archPath ξ t ω) = 1 := rfl
+  rw [Finset.sum_range_succ', h0, add_comm]
+  congr 1
+  simp only [archLayer_succ_path]
+  rw [← Summable.tsum_finsetSum fun i _ => ENNReal.summable]
+  exact tsum_congr fun j => (Finset.mul_sum _ _ _).symm
+
+/-- **Every solution dominates the Volterra partial sums** (FY eq. (2.68) iterated): the
+`k`-fold iteration of the recurrence, with the nonnegative remainder dropped. -/
+private lemma archZ_partial_le [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
+    {Y ξ : ℤ → Ω → ℝ} (hsum : Summable bc) (h : IsARCHInf a bc Y ξ μ)
+    (hint : ∀ t, Integrable (Y t) μ) (hstat : IsStrictlyStationary Y μ) (k : ℕ) :
+    ∀ t : ℤ, ∀ᵐ ω ∂μ, ENNReal.ofReal a * ENNReal.ofReal (ξ t ω)
+        * ∑ i ∈ Finset.range k, archLayer bc i (archPath ξ t ω)
+      ≤ ENNReal.ofReal (Y t ω) := by
+  induction k with
+  | zero => intro t; filter_upwards with ω; simp
+  | succ k ih =>
+    intro t
+    filter_upwards [archInf_ofReal_recurrence hsum h hint hstat t,
+      ae_all_iff.2 fun j : ℕ => ih (t - 1 - (j : ℕ))] with ω hrec hih
+    have hstep : ∀ j : ℕ, ENNReal.ofReal (bc j) * (ENNReal.ofReal a
+          * ENNReal.ofReal (ξ (t - 1 - (j : ℕ)) ω)
+          * ∑ i ∈ Finset.range k, archLayer bc i (archPath ξ (t - 1 - (j : ℕ)) ω))
+        = ENNReal.ofReal a * (ENNReal.ofReal (bc j) * ENNReal.ofReal (ξ (t - 1 - (j : ℕ)) ω)
+          * ∑ i ∈ Finset.range k, archLayer bc i (archPath ξ (t - 1 - (j : ℕ)) ω)) :=
+      fun j => by ring
+    have hL : ENNReal.ofReal a * ENNReal.ofReal (ξ t ω)
+          * ∑ i ∈ Finset.range (k + 1), archLayer bc i (archPath ξ t ω)
+        = ENNReal.ofReal (ξ t ω) * (ENNReal.ofReal a
+            + ∑' j : ℕ, ENNReal.ofReal (bc j) * (ENNReal.ofReal a
+                * ENNReal.ofReal (ξ (t - 1 - (j : ℕ)) ω)
+                * ∑ i ∈ Finset.range k, archLayer bc i (archPath ξ (t - 1 - (j : ℕ)) ω))) := by
+      rw [archLayer_partial_succ, tsum_congr hstep, ENNReal.tsum_mul_left]
+      ring
+    rw [hL, hrec]
+    gcongr with j
+    exact hih j
+
+/-- **Every solution equals the Volterra series** (FY §2.7.1): it dominates it and has the
+same (finite) mean. -/
+private lemma archInf_eq_archSol [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
+    {Y ξ : ℤ → Ω → ℝ} (hsum : Summable bc) (hlt : ∑' j, bc j < 1)
+    (h : IsARCHInf a bc Y ξ μ) (hint : ∀ t, Integrable (Y t) μ)
+    (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
+    Y t =ᵐ[μ] archSol a bc ξ t := by
+  have hξ : IsARCHNoise ξ μ := archNoise_of_archInf h
+  -- domination
+  have hdom : ∀ᵐ ω ∂μ, archSol a bc ξ t ω ≤ Y t ω := by
+    filter_upwards [ae_all_iff.2 fun k : ℕ => archZ_partial_le hsum h hint hstat k t,
+      h.Y_nonneg t] with ω hk hYω
+    have hle : archZ a bc ξ t ω ≤ ENNReal.ofReal (Y t ω) := by
+      rw [archZ, ENNReal.tsum_eq_iSup_nat, ENNReal.mul_iSup]
+      exact iSup_le hk
+    rw [archSol_eq_toReal]
+    calc (archZ a bc ξ t ω).toReal
+        ≤ (ENNReal.ofReal (Y t ω)).toReal := ENNReal.toReal_mono ENNReal.ofReal_ne_top hle
+      _ = Y t ω := ENNReal.toReal_ofReal hYω
+  -- equal means
+  have hmeanY : ∫ ω, Y t ω ∂μ = a / (1 - ∑' j, bc j) := by
+    have hm := lintegral_ofReal_sol h hint hstat t
+    have hGm : Measurable[sigmaLT Y t] fun ω => ENNReal.ofReal a
+        + ∑' j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω) := by
+      refine measurable_const.add (Measurable.ennreal_tsum fun j => measurable_const.mul ?_)
+      have hlt' : t - 1 - (j : ℕ) < t := by
+        have : (0 : ℤ) ≤ (j : ℤ) := Int.natCast_nonneg j
+        omega
+      exact ((Measurable.of_comap_le
+        (le_refl (MeasurableSpace.comap (Y (t - 1 - (j : ℕ))) inferInstance))).mono
+          (comap_le_sigmaLT hlt') le_rfl).ennreal_ofReal
+    have hterm : ∀ j : ℕ, ∫⁻ ω, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω) ∂μ
+        = ENNReal.ofReal (bc j) * ENNReal.ofReal (∫ ω, Y 0 ω ∂μ) := fun j => by
+      rw [lintegral_const_mul _ ((h.measurableY _).ennreal_ofReal),
+        lintegral_ofReal_sol h hint hstat]
+    have hG : ∫⁻ ω, (ENNReal.ofReal a
+        + ∑' j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω)) ∂μ
+        = ENNReal.ofReal a + archS bc * ENNReal.ofReal (∫ ω, Y 0 ω ∂μ) := by
+      rw [lintegral_add_left measurable_const, lintegral_const, measure_univ, mul_one,
+        lintegral_tsum fun j =>
+          (measurable_const.mul ((h.measurableY (t - 1 - (j : ℕ))).ennreal_ofReal)).aemeasurable]
+      simp only [hterm]
+      rw [ENNReal.tsum_mul_right]
+      rfl
+    have hfix : ENNReal.ofReal (∫ ω, Y 0 ω ∂μ)
+        = ENNReal.ofReal a + archS bc * ENNReal.ofReal (∫ ω, Y 0 ω ∂μ) :=
+      calc ENNReal.ofReal (∫ ω, Y 0 ω ∂μ)
+          = ∫⁻ ω, ENNReal.ofReal (Y t ω) ∂μ := hm.symm
+        _ = ∫⁻ ω, ENNReal.ofReal (ξ t ω) * (ENNReal.ofReal a
+              + ∑' j : ℕ, ENNReal.ofReal (bc j)
+                * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω)) ∂μ :=
+            lintegral_congr_ae (archInf_ofReal_recurrence hsum h hint hstat t)
+        _ = (∫⁻ ω, ENNReal.ofReal (ξ t ω) ∂μ) * ∫⁻ ω, (ENNReal.ofReal a
+              + ∑' j : ℕ, ENNReal.ofReal (bc j)
+                * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω)) ∂μ :=
+            lintegral_mul_eq_lintegral_mul_lintegral_of_independent_measurableSpace
+              (h.measurableXi t).comap_le (sigmaLT_le h.measurableY t) (h.indep_past t)
+              (Measurable.of_comap_le le_rfl).ennreal_ofReal hGm
+        _ = ENNReal.ofReal a + archS bc * ENNReal.ofReal (∫ ω, Y 0 ω ∂μ) := by
+            rw [lintegral_ofReal_xi h.xi_nonneg h.identDistrib h.integrable_xi h.integral_xi,
+              one_mul, hG]
+    have hY0 : (0 : ℝ) ≤ ∫ ω, Y 0 ω ∂μ := integral_nonneg_of_ae (h.Y_nonneg 0)
+    have hreal := congrArg ENNReal.toReal hfix
+    rw [ENNReal.toReal_add ENNReal.ofReal_ne_top
+        (ENNReal.mul_ne_top (archS_ne_top h.bc_nonneg hsum) ENNReal.ofReal_ne_top),
+      ENNReal.toReal_mul, ENNReal.toReal_ofReal h.a_nonneg, ENNReal.toReal_ofReal hY0,
+      archS_eq h.bc_nonneg hsum, ENNReal.toReal_ofReal (tsum_nonneg h.bc_nonneg)] at hreal
+    have hne : (1 : ℝ) - ∑' j, bc j ≠ 0 := by linarith
+    rw [(hstat.identDistrib h.measurableY t 0).integral_eq, eq_div_iff hne]
+    linear_combination hreal
+  -- a nonnegative difference with zero integral
+  have hdiff : Integrable (fun ω => Y t ω - archSol a bc ξ t ω) μ :=
+    (hint t).sub (integrable_archSol h.bc_nonneg hsum hlt hξ t)
+  have hzero : ∫ ω, (Y t ω - archSol a bc ξ t ω) ∂μ = 0 := by
+    rw [integral_sub (hint t) (integrable_archSol h.bc_nonneg hsum hlt hξ t), hmeanY,
+      integral_archSol h.a_nonneg h.bc_nonneg hsum hlt hξ t, sub_self]
+  have hnn' : 0 ≤ᵐ[μ] fun ω => Y t ω - archSol a bc ξ t ω := by
+    filter_upwards [hdom] with ω hω
+    simpa using hω
+  filter_upwards [(integral_eq_zero_iff_of_nonneg_ae hnn' hdiff).1 hzero] with ω hω
+  have h2 : Y t ω - archSol a bc ξ t ω = 0 := hω
+  linarith
+
 /-- **FY Theorem 2.5(i), uniqueness** (§2.7.1): two integrable solutions of the ARCH(∞)
 equation over the same noise agree a.e. at every time. -/
 theorem archInf_unique [IsProbabilityMeasure μ]
@@ -458,8 +715,9 @@ theorem archInf_unique [IsProbabilityMeasure μ]
     (hstat : IsStrictlyStationary Y μ)
     (h' : IsARCHInf a bc Y' ξ μ) (hint' : ∀ t, Integrable (Y' t) μ)
     (hstat' : IsStrictlyStationary Y' μ) (t : ℤ) :
-    Y t =ᵐ[μ] Y' t := by
-  sorry
+    Y t =ᵐ[μ] Y' t :=
+  (archInf_eq_archSol hsum hlt h hint hstat t).trans
+    (archInf_eq_archSol hsum hlt h' hint' hstat' t).symm
 
 /-- **FY Theorem 2.5(i), degenerate case**: if `a = 0`, every integrable strictly
 stationary solution is a.e. zero. -/
@@ -469,7 +727,12 @@ theorem archInf_eq_zero_of_a_eq_zero [IsProbabilityMeasure μ]
     (h : IsARCHInf 0 bc Y ξ μ) (hint : ∀ t, Integrable (Y t) μ)
     (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
     Y t =ᵐ[μ] 0 := by
-  sorry
+  -- With `a = 0` the Volterra series vanishes identically, so the domination step is
+  -- unnecessary: the common mean `a/(1 − Σ_j b_j)` is `0`, and `Y_t ≥ 0`.
+  have h0 : archSol 0 bc ξ t =ᵐ[μ] 0 := by
+    filter_upwards with ω
+    simp [archSol, archFun]
+  exact (archInf_eq_archSol hsum hlt h hint hstat t).trans h0
 
 /-- **FY Theorem 2.5(ii) — DEBT** (Giraitis–Kokoszka–Leipus 2000; not proved in FY):
 under the second-moment contraction (FY eq. (2.16)) the stationary solution has a finite
