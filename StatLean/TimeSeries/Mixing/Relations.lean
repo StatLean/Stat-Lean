@@ -601,6 +601,17 @@ section Process2
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
+/-- The process past σ-algebra sits inside the ambient one once the coordinates are
+measurable. -/
+private lemma sigmaLE_le_ambient {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t)) (n : ℤ) :
+    sigmaLE X n ≤ (inferInstance : MeasurableSpace Ω) :=
+  iSup₂_le fun s _ => (hmeas s).comap_le
+
+/-- The process future σ-algebra sits inside the ambient one. -/
+private lemma sigmaGE_le_ambient {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t)) (n : ℤ) :
+    sigmaGE X n ≤ (inferInstance : MeasurableSpace Ω) :=
+  iSup₂_le fun s _ => (hmeas s).comap_le
+
 /-- ψ-mixing ⇒ φ-mixing. -/
 theorem IsPsiMixing.isPhiMixing [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     (hmeas : ∀ t, Measurable (X t)) (h : IsPsiMixing X μ) : IsPhiMixing X μ := by
@@ -608,18 +619,35 @@ theorem IsPsiMixing.isPhiMixing [IsProbabilityMeasure μ] {X : ℤ → Ω → �
 
 /-- φ-mixing ⇒ β-mixing. -/
 theorem IsPhiMixing.isBetaMixing [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
-    (hmeas : ∀ t, Measurable (X t)) (h : IsPhiMixing X μ) : IsBetaMixing X μ := by
-  sorry
+    (hmeas : ∀ t, Measurable (X t)) (h : IsPhiMixing X μ) : IsBetaMixing X μ :=
+  squeeze_zero
+    (fun n => betaMixCoeff_nonneg (sigmaLE_le_ambient hmeas 0) (sigmaGE_le_ambient hmeas n))
+    (fun n => betaMixCoeff_le_phiMixCoeff (sigmaLE_le_ambient hmeas 0)
+      (sigmaGE_le_ambient hmeas n)) h
 
 /-- β-mixing ⇒ α-mixing. -/
 theorem IsBetaMixing.isAlphaMixing [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     (hmeas : ∀ t, Measurable (X t)) (h : IsBetaMixing X μ) : IsAlphaMixing X μ := by
-  sorry
+  have hg : Tendsto (fun n : ℕ => 1 / 2 * betaCoeff X μ n) atTop (𝓝 0) := by
+    have := h.const_mul (1 / 2 : ℝ)
+    simpa using this
+  refine squeeze_zero (fun n => alphaMixCoeff_nonneg (μ := μ)) (fun n => ?_) hg
+  have := two_mul_alphaMixCoeff_le_betaMixCoeff (μ := μ)
+    (sigmaLE_le_ambient hmeas 0) (sigmaGE_le_ambient hmeas n)
+  unfold alphaCoeff betaCoeff
+  linarith
 
 /-- ρ-mixing ⇒ α-mixing. -/
 theorem IsRhoMixing.isAlphaMixing [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     (hmeas : ∀ t, Measurable (X t)) (h : IsRhoMixing X μ) : IsAlphaMixing X μ := by
-  sorry
+  have hg : Tendsto (fun n : ℕ => 1 / 4 * rhoCoeff X μ n) atTop (𝓝 0) := by
+    have := h.const_mul (1 / 4 : ℝ)
+    simpa using this
+  refine squeeze_zero (fun n => alphaMixCoeff_nonneg (μ := μ)) (fun n => ?_) hg
+  show alphaCoeff X μ n ≤ 1 / 4 * rhoCoeff X μ n
+  unfold alphaCoeff rhoCoeff
+  exact alphaMixCoeff_le_quarter_mul_rhoMixCoeff (μ := μ)
+    (sigmaLE_le_ambient hmeas 0) (sigmaGE_le_ambient hmeas n)
 
 /-! ### Heredity and the shift lemma -/
 
@@ -630,7 +658,18 @@ is inherited. (The same argument applies verbatim to β, ρ, φ, ψ via
 theorem IsAlphaMixing.comp [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     (h : IsAlphaMixing X μ) {g : ℝ → ℝ} (hg : Measurable g) :
     IsAlphaMixing (fun t ω => g (X t ω)) μ := by
-  sorry
+  -- `σ(g ∘ X_s) = comap (X s) (comap g Borel) ≤ σ(X_s)`, so both flanking σ-algebras shrink.
+  have hcomap : ∀ s : ℤ,
+      MeasurableSpace.comap (fun ω => g (X s ω)) inferInstance
+        ≤ MeasurableSpace.comap (X s) inferInstance := by
+    intro s
+    have he : MeasurableSpace.comap (fun ω => g (X s ω)) (inferInstance : MeasurableSpace ℝ)
+        = MeasurableSpace.comap (X s) (MeasurableSpace.comap g inferInstance) :=
+      (MeasurableSpace.comap_comp).symm
+    rw [he]
+    exact MeasurableSpace.comap_mono hg.comap_le
+  refine squeeze_zero (fun n => alphaMixCoeff_nonneg (μ := μ)) (fun n => ?_) h
+  exact alphaMixCoeff_mono (iSup₂_mono fun s _ => hcomap s) (iSup₂_mono fun s _ => hcomap s)
 
 /-- **Shift lemma** (used silently by every FY block argument): under strict
 stationarity, the α-coefficient between the past up to `k` and the future from `k + n`
