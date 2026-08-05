@@ -60,9 +60,7 @@ theorem IsStationary.abs_acvf_le [IsProbabilityMeasure μ] (h : IsStationary X �
 /-- **FY Theorem 2.7, necessity**: the autocovariance function of a weakly stationary
 process is positive semidefinite (`Σᵢⱼ aᵢaⱼ γ(tᵢ − tⱼ) = Var(Σᵢ aᵢ X_{tᵢ}) ≥ 0`,
 eq. (2.17)). -/
-theorem IsStationary.acvf_posSemidef [IsProbabilityMeasure μ] (h : IsStationary X μ)
-    -- LEAN-ONLY: coordinate random variables are measurable; implicit in FY
-    (hmeas : ∀ t, Measurable (X t)) :
+theorem IsStationary.acvf_posSemidef [IsProbabilityMeasure μ] (h : IsStationary X μ) :
     IsPosSemidefSeq (acvf X μ) := by
   intro n t a
   -- `Σᵢⱼ aᵢaⱼ γ(tᵢ − tⱼ) = Var(Σᵢ aᵢ X_{tᵢ}) ≥ 0` (FY eq. (2.17)).
@@ -91,9 +89,8 @@ theorem exists_stationary_of_isPosSemidefSeq (γ : ℤ → ℝ)
         acvf X' μ' = γ := by
   sorry
 
-/-- `ρ(0) = 1` when `γ(0) ≠ 0`. -/
-theorem IsStationary.acf_zero (h : IsStationary X μ) (h0 : acvf X μ 0 ≠ 0) :
-    acf X μ 0 = 1 :=
+/-- `ρ(0) = 1` when `γ(0) ≠ 0` (no stationarity needed: this is `div_self`). -/
+theorem acf_zero (h0 : acvf X μ 0 ≠ 0) : acf X μ 0 = 1 :=
   div_self h0
 
 /-- `|ρ(k)| ≤ 1` (FY §2.2.1). -/

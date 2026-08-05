@@ -8,6 +8,7 @@ import StatLean.Bayesian
 import StatLean.NonparametricStatistics
 import StatLean.PointEstimation
 import StatLean.HypothesisTesting
+import StatLean.TimeSeries
 
 /-!
 # StatLean
