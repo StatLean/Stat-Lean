@@ -218,6 +218,33 @@ theorem abs_covariance_le_of_bounded {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : 
   calc |μ[f * g] - μ[f] * μ[g]| ≤ 2 * C₂ * (2 * C₁ * α) := hstepB
     _ = 4 * α * C₁ * C₂ := by ring
 
+/-- Billingsley's inequality in the `E[fg] − Ef·Eg` form (the shape the complex and
+Volkonskii–Rozanov arguments consume). -/
+private lemma abs_integral_mul_sub_mul_le_of_bounded {m₁ m₂ mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ)
+    {f g : Ω → ℝ} (hf : Measurable[m₁] f) (hg : Measurable[m₂] g) {C₁ C₂ : ℝ}
+    (hfC : ∀ᵐ ω ∂μ, |f ω| ≤ C₁) (hgC : ∀ᵐ ω ∂μ, |g ω| ≤ C₂) :
+    |(∫ ω, f ω * g ω ∂μ) - (∫ ω, f ω ∂μ) * ∫ ω, g ω ∂μ|
+      ≤ 4 * alphaMixCoeff μ m₁ m₂ * C₁ * C₂ := by
+  have hfn : ∀ᵐ ω ∂μ, ‖f ω‖ ≤ C₁ := by simpa [Real.norm_eq_abs] using hfC
+  have hgn : ∀ᵐ ω ∂μ, ‖g ω‖ ≤ C₂ := by simpa [Real.norm_eq_abs] using hgC
+  have hfLp : MemLp f 2 μ :=
+    (memLp_top_of_bound ((hf.stronglyMeasurable.mono h₁)).aestronglyMeasurable C₁ hfn).mono_exponent
+      le_top
+  have hgLp : MemLp g 2 μ :=
+    (memLp_top_of_bound ((hg.stronglyMeasurable.mono h₂)).aestronglyMeasurable C₂ hgn).mono_exponent
+      le_top
+  have h := abs_covariance_le_of_bounded h₁ h₂ hf hg hfC hgC
+  rwa [covariance_eq_sub hfLp hgLp] at h
+
+private lemma abs_comb_le {x y z w K : ℝ} (hx : |x| ≤ K) (hy : |y| ≤ K) (hz : |z| ≤ K)
+    (hw : |w| ≤ K) : |x - y| + |z + w| ≤ 4 * K := by
+  have h1 : |x - y| ≤ |x| + |y| := by
+    have h := abs_add_le x (-y)
+    rwa [abs_neg, ← sub_eq_add_neg] at h
+  have h2 : |z + w| ≤ |z| + |w| := abs_add_le z w
+  linarith
+
 /-- **Complex Billingsley** (FY §2.6.2, constant 16): unit-modulus-bounded complex
 factors. Stated with the real-bilinear covariance
 `E[f·g] − E[f]·E[g]` in `ℂ`. -/
@@ -229,7 +256,90 @@ theorem norm_covariance_le_of_bounded_complex {m₁ m₂ mΩ : MeasurableSpace �
     (hfC : ∀ᵐ ω ∂μ, ‖f ω‖ ≤ C₁) (hgC : ∀ᵐ ω ∂μ, ‖g ω‖ ≤ C₂) :
     ‖(∫ ω, f ω * g ω ∂μ) - (∫ ω, f ω ∂μ) * ∫ ω, g ω ∂μ‖
       ≤ 16 * alphaMixCoeff μ m₁ m₂ * C₁ * C₂ := by
-  sorry
+  have hre : Measurable (Complex.re) := Complex.continuous_re.measurable
+  have him : Measurable (Complex.im) := Complex.continuous_im.measurable
+  have hf₁ : Measurable[m₁] fun ω => (f ω).re := hre.comp hf
+  have hf₂ : Measurable[m₁] fun ω => (f ω).im := him.comp hf
+  have hg₁ : Measurable[m₂] fun ω => (g ω).re := hre.comp hg
+  have hg₂ : Measurable[m₂] fun ω => (g ω).im := him.comp hg
+  have hf₁C : ∀ᵐ ω ∂μ, |(f ω).re| ≤ C₁ := by
+    filter_upwards [hfC] with ω hω using (Complex.abs_re_le_norm _).trans hω
+  have hf₂C : ∀ᵐ ω ∂μ, |(f ω).im| ≤ C₁ := by
+    filter_upwards [hfC] with ω hω using (Complex.abs_im_le_norm _).trans hω
+  have hg₁C : ∀ᵐ ω ∂μ, |(g ω).re| ≤ C₂ := by
+    filter_upwards [hgC] with ω hω using (Complex.abs_re_le_norm _).trans hω
+  have hg₂C : ∀ᵐ ω ∂μ, |(g ω).im| ≤ C₂ := by
+    filter_upwards [hgC] with ω hω using (Complex.abs_im_le_norm _).trans hω
+  -- integrability
+  have hfsm : StronglyMeasurable f := (hf.mono h₁ le_rfl).stronglyMeasurable
+  have hf₁' : StronglyMeasurable fun ω => (f ω).re := (hf₁.mono h₁ le_rfl).stronglyMeasurable
+  have hf₂' : StronglyMeasurable fun ω => (f ω).im := (hf₂.mono h₁ le_rfl).stronglyMeasurable
+  have hg₁' : StronglyMeasurable fun ω => (g ω).re := (hg₁.mono h₂ le_rfl).stronglyMeasurable
+  have hg₂' : StronglyMeasurable fun ω => (g ω).im := (hg₂.mono h₂ le_rfl).stronglyMeasurable
+  have hgsm : StronglyMeasurable g := (hg.mono h₂ le_rfl).stronglyMeasurable
+  have hfint : Integrable f μ :=
+    (memLp_top_of_bound hfsm.aestronglyMeasurable C₁ hfC).integrable le_top
+  have hgint : Integrable g μ :=
+    (memLp_top_of_bound hgsm.aestronglyMeasurable C₂ hgC).integrable le_top
+  have hfgint : Integrable (fun ω => f ω * g ω) μ :=
+    hgint.bdd_mul hfsm.aestronglyMeasurable hfC
+  have hcre : ∀ {F : Ω → ℂ}, Integrable F μ → (∫ ω, F ω ∂μ).re = ∫ ω, (F ω).re ∂μ := by
+    intro F hF
+    simpa using (integral_re hF).symm
+  have hcim : ∀ {F : Ω → ℂ}, Integrable F μ → (∫ ω, F ω ∂μ).im = ∫ ω, (F ω).im ∂μ := by
+    intro F hF
+    simpa using (integral_im hF).symm
+  have hint₁ : Integrable (fun ω => (f ω).re) μ :=
+    (memLp_top_of_bound (hf₁').aestronglyMeasurable C₁
+      (by simpa [Real.norm_eq_abs] using hf₁C)).integrable le_top
+  have hint₂ : Integrable (fun ω => (f ω).im) μ :=
+    (memLp_top_of_bound (hf₂').aestronglyMeasurable C₁
+      (by simpa [Real.norm_eq_abs] using hf₂C)).integrable le_top
+  have hint₃ : Integrable (fun ω => (g ω).re) μ :=
+    (memLp_top_of_bound (hg₁').aestronglyMeasurable C₂
+      (by simpa [Real.norm_eq_abs] using hg₁C)).integrable le_top
+  have hint₄ : Integrable (fun ω => (g ω).im) μ :=
+    (memLp_top_of_bound (hg₂').aestronglyMeasurable C₂
+      (by simpa [Real.norm_eq_abs] using hg₂C)).integrable le_top
+  have hprod : ∀ {u v : Ω → ℝ} {D : ℝ}, StronglyMeasurable u → Integrable v μ →
+      (∀ᵐ ω ∂μ, |u ω| ≤ D) → Integrable (fun ω => u ω * v ω) μ := by
+    intro u v D hu hv hb
+    exact hv.bdd_mul hu.aestronglyMeasurable (by simpa [Real.norm_eq_abs] using hb)
+  have e11 : Integrable (fun ω => (f ω).re * (g ω).re) μ := hprod hf₁' hint₃ hf₁C
+  have e22 : Integrable (fun ω => (f ω).im * (g ω).im) μ := hprod hf₂' hint₄ hf₂C
+  have e12 : Integrable (fun ω => (f ω).re * (g ω).im) μ := hprod hf₁' hint₄ hf₁C
+  have e21 : Integrable (fun ω => (f ω).im * (g ω).re) μ := hprod hf₂' hint₃ hf₂C
+  -- real and imaginary parts of the complex covariance
+  have hRe : ((∫ ω, f ω * g ω ∂μ) - (∫ ω, f ω ∂μ) * ∫ ω, g ω ∂μ).re
+      = ((∫ ω, (f ω).re * (g ω).re ∂μ) - (∫ ω, (f ω).re ∂μ) * ∫ ω, (g ω).re ∂μ)
+        - ((∫ ω, (f ω).im * (g ω).im ∂μ) - (∫ ω, (f ω).im ∂μ) * ∫ ω, (g ω).im ∂μ) := by
+    rw [Complex.sub_re, Complex.mul_re, hcre hfgint, hcre hfint, hcre hgint, hcim hfint,
+      hcim hgint]
+    have : ∀ ω, (f ω * g ω).re = (f ω).re * (g ω).re - (f ω).im * (g ω).im := by
+      intro ω; rw [Complex.mul_re]
+    simp_rw [this]
+    rw [integral_sub e11 e22]
+    ring
+  have hIm : ((∫ ω, f ω * g ω ∂μ) - (∫ ω, f ω ∂μ) * ∫ ω, g ω ∂μ).im
+      = ((∫ ω, (f ω).re * (g ω).im ∂μ) - (∫ ω, (f ω).re ∂μ) * ∫ ω, (g ω).im ∂μ)
+        + ((∫ ω, (f ω).im * (g ω).re ∂μ) - (∫ ω, (f ω).im ∂μ) * ∫ ω, (g ω).re ∂μ) := by
+    rw [Complex.sub_im, Complex.mul_im, hcim hfgint, hcre hfint, hcre hgint, hcim hfint,
+      hcim hgint]
+    have : ∀ ω, (f ω * g ω).im = (f ω).re * (g ω).im + (f ω).im * (g ω).re := by
+      intro ω; rw [Complex.mul_im]
+    simp_rw [this]
+    rw [integral_add e12 e21]
+    ring
+  have b11 := abs_integral_mul_sub_mul_le_of_bounded (mΩ := mΩ) h₁ h₂ hf₁ hg₁ hf₁C hg₁C
+  have b22 := abs_integral_mul_sub_mul_le_of_bounded (mΩ := mΩ) h₁ h₂ hf₂ hg₂ hf₂C hg₂C
+  have b12 := abs_integral_mul_sub_mul_le_of_bounded (mΩ := mΩ) h₁ h₂ hf₁ hg₂ hf₁C hg₂C
+  have b21 := abs_integral_mul_sub_mul_le_of_bounded (mΩ := mΩ) h₁ h₂ hf₂ hg₁ hf₂C hg₁C
+  refine (Complex.norm_le_abs_re_add_abs_im _).trans ?_
+  rw [hRe, hIm]
+  refine (abs_comb_le b11 b22 b12 b21).trans ?_
+  ring_nf
+  rfl
+
 
 /-! ### Proposition 2.5(i): the Davydov covariance inequality -/
 
