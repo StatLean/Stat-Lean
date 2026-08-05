@@ -438,11 +438,152 @@ theorem phiMixCoeff_le_psiMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
     phiMixCoeff μ m₁ m₂ ≤ psiMixCoeff μ m₁ m₂ := by
   sorry
 
+/-- Cauchy–Schwarz for real `L²` integrals. -/
+private lemma abs_integral_mul_le {mΩ : MeasurableSpace Ω} {μ : Measure Ω} {f g : Ω → ℝ}
+    (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    |∫ ω, f ω * g ω ∂μ| ≤ Real.sqrt (∫ ω, f ω ^ 2 ∂μ) * Real.sqrt (∫ ω, g ω ^ 2 ∂μ) := by
+  set F : Lp ℝ 2 μ := hf.toLp f with hFdef
+  set G : Lp ℝ 2 μ := hg.toLp g with hGdef
+  have hFae : (F : Ω → ℝ) =ᵐ[μ] f := MemLp.coeFn_toLp hf
+  have hGae : (G : Ω → ℝ) =ᵐ[μ] g := MemLp.coeFn_toLp hg
+  have hFG : (inner ℝ F G : ℝ) = ∫ ω, f ω * g ω ∂μ := by
+    rw [MeasureTheory.L2.inner_def F G]
+    refine integral_congr_ae ?_
+    filter_upwards [hFae, hGae] with ω h1 h2
+    rw [show (inner ℝ (F ω) (G ω) : ℝ) = G ω * F ω from rfl, h1, h2, mul_comm]
+  have hFF : (‖F‖ : ℝ) = Real.sqrt (∫ ω, f ω ^ 2 ∂μ) := by
+    have h : (‖F‖ : ℝ) ^ 2 = ∫ ω, f ω ^ 2 ∂μ := by
+      rw [← real_inner_self_eq_norm_sq, MeasureTheory.L2.inner_def F F]
+      refine integral_congr_ae ?_
+      filter_upwards [hFae] with ω h1
+      rw [show (inner ℝ (F ω) (F ω) : ℝ) = F ω * F ω from rfl, h1, sq]
+    rw [← h, Real.sqrt_sq (norm_nonneg _)]
+  have hGG : (‖G‖ : ℝ) = Real.sqrt (∫ ω, g ω ^ 2 ∂μ) := by
+    have h : (‖G‖ : ℝ) ^ 2 = ∫ ω, g ω ^ 2 ∂μ := by
+      rw [← real_inner_self_eq_norm_sq, MeasureTheory.L2.inner_def G G]
+      refine integral_congr_ae ?_
+      filter_upwards [hGae] with ω h1
+      rw [show (inner ℝ (G ω) (G ω) : ℝ) = G ω * G ω from rfl, h1, sq]
+    rw [← h, Real.sqrt_sq (norm_nonneg _)]
+  rw [← hFG, ← hFF, ← hGG]
+  exact abs_real_inner_le_norm _ _
+
+/-- Cauchy–Schwarz for the covariance. -/
+private lemma abs_covariance_le_sqrt_mul {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] {f g : Ω → ℝ} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    |cov[f, g; μ]| ≤ Real.sqrt (variance f μ) * Real.sqrt (variance g μ) := by
+  have hF : MemLp (fun ω => f ω - μ[f]) 2 μ := hf.sub (memLp_const _)
+  have hG : MemLp (fun ω => g ω - μ[g]) 2 μ := hg.sub (memLp_const _)
+  have hcov : cov[f, g; μ] = ∫ ω, (f ω - μ[f]) * (g ω - μ[g]) ∂μ := rfl
+  rw [hcov, variance_eq_integral hf.aestronglyMeasurable.aemeasurable,
+    variance_eq_integral hg.aestronglyMeasurable.aemeasurable]
+  exact abs_integral_mul_le hF hG
+
+/-- The ρ description set contains `0` (take `f = g = 0`). -/
+private lemma rhoMixCoeff_set_nonempty {m₁ m₂ mΩ : MeasurableSpace Ω} (μ : Measure Ω)
+    [IsProbabilityMeasure μ] :
+    (0 : ℝ) ∈ {r : ℝ | ∃ f g : Ω → ℝ, Measurable[m₁] f ∧ Measurable[m₂] g ∧
+      MemLp f 2 μ ∧ MemLp g 2 μ ∧
+      r = |cov[f, g; μ]| / (Real.sqrt (variance f μ) * Real.sqrt (variance g μ))} := by
+  refine ⟨fun _ => 0, fun _ => 0, measurable_const, measurable_const,
+    memLp_const 0, memLp_const 0, ?_⟩
+  simp [covariance]
+
+private lemma rhoMixCoeff_set_bddAbove {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] :
+    BddAbove {r : ℝ | ∃ f g : Ω → ℝ, Measurable[m₁] f ∧ Measurable[m₂] g ∧
+      MemLp f 2 μ ∧ MemLp g 2 μ ∧
+      r = |cov[f, g; μ]| / (Real.sqrt (variance f μ) * Real.sqrt (variance g μ))} := by
+  refine ⟨1, ?_⟩
+  rintro r ⟨f, g, -, -, hf, hg, rfl⟩
+  exact div_le_one_of_le₀ (abs_covariance_le_sqrt_mul hf hg)
+    (mul_nonneg (Real.sqrt_nonneg _) (Real.sqrt_nonneg _))
+
+private lemma rhoMixCoeff_nonneg {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] : 0 ≤ rhoMixCoeff μ m₁ m₂ :=
+  le_csSup (rhoMixCoeff_set_bddAbove (mΩ := mΩ)) (rhoMixCoeff_set_nonempty (mΩ := mΩ) μ)
+
 /-- **FY's display** `α ≤ ¼ρ` (centered indicators; `Var 1_A ≤ ¼`). -/
 theorem alphaMixCoeff_le_quarter_mul_rhoMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
     {μ : Measure Ω} [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ) :
     alphaMixCoeff μ m₁ m₂ ≤ (1 / 4) * rhoMixCoeff μ m₁ m₂ := by
-  sorry
+  have hρ0 : 0 ≤ rhoMixCoeff μ m₁ m₂ := rhoMixCoeff_nonneg (mΩ := mΩ) (μ := μ)
+  refine Real.sSup_le ?_ (by linarith)
+  rintro r ⟨A, B, hA, hB, rfl⟩
+  have hAm : MeasurableSet A := h₁ _ hA
+  have hBm : MeasurableSet B := h₂ _ hB
+  set f : Ω → ℝ := A.indicator (fun _ => (1 : ℝ)) with hfdef
+  set g : Ω → ℝ := B.indicator (fun _ => (1 : ℝ)) with hgdef
+  have hfmeas : Measurable[m₁] f := Measurable.indicator measurable_const hA
+  have hgmeas : Measurable[m₂] g := Measurable.indicator measurable_const hB
+  have hfL : MemLp f 2 μ := MemLp.indicator hAm (memLp_const 1)
+  have hgL : MemLp g 2 μ := MemLp.indicator hBm (memLp_const 1)
+  have hfint : ∫ ω, f ω ∂μ = (μ A).toReal := by
+    rw [hfdef]
+    simpa using integral_indicator_const (μ := μ) (1 : ℝ) hAm
+  have hgint : ∫ ω, g ω ∂μ = (μ B).toReal := by
+    rw [hgdef]
+    simpa using integral_indicator_const (μ := μ) (1 : ℝ) hBm
+  have hmulint : ∫ ω, f ω * g ω ∂μ = (μ (A ∩ B)).toReal := by
+    have he : (fun ω => f ω * g ω) = (A ∩ B).indicator (fun _ => (1 : ℝ)) := by
+      funext ω
+      simpa [hfdef, hgdef] using (Set.inter_indicator_mul (fun _ => (1:ℝ)) (fun _ => (1:ℝ)) ω).symm
+    rw [he]
+    simpa using integral_indicator_const (μ := μ) (1 : ℝ) (hAm.inter hBm)
+  have hcov : cov[f, g; μ] = (μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal := by
+    rw [covariance_eq_sub hfL hgL]
+    have : μ[f * g] = ∫ ω, f ω * g ω ∂μ := by simp [Pi.mul_apply]
+    rw [this, hmulint, hfint, hgint]
+  -- `Var 1_A = P(A)(1 − P(A)) ≤ ¼`.
+  have hsqf : (fun ω => f ω ^ 2) = f := by
+    funext ω
+    by_cases hx : ω ∈ A <;>
+      simp [hfdef, Set.indicator_of_mem, Set.indicator_of_notMem, hx]
+  have hsqg : (fun ω => g ω ^ 2) = g := by
+    funext ω
+    by_cases hx : ω ∈ B <;>
+      simp [hgdef, Set.indicator_of_mem, Set.indicator_of_notMem, hx]
+  have hvarf : variance f μ = (μ A).toReal - (μ A).toReal ^ 2 := by
+    rw [variance_eq_sub hfL]
+    have : μ[f ^ 2] = ∫ ω, f ω ^ 2 ∂μ := by simp [Pi.pow_apply]
+    rw [this, hsqf, hfint]
+  have hvarg : variance g μ = (μ B).toReal - (μ B).toReal ^ 2 := by
+    rw [variance_eq_sub hgL]
+    have : μ[g ^ 2] = ∫ ω, g ω ^ 2 ∂μ := by simp [Pi.pow_apply]
+    rw [this, hsqg, hgint]
+  have hsf : Real.sqrt (variance f μ) ≤ 1 / 2 := by
+    have h1 := toReal_le_one (μ := μ) A
+    have h0 : (0:ℝ) ≤ (μ A).toReal := ENNReal.toReal_nonneg
+    have hb : variance f μ ≤ (1 / 2) ^ 2 := by
+      rw [hvarf]; nlinarith [sq_nonneg ((μ A).toReal - 1 / 2)]
+    calc Real.sqrt (variance f μ) ≤ Real.sqrt ((1/2 : ℝ) ^ 2) := Real.sqrt_le_sqrt hb
+      _ = 1 / 2 := Real.sqrt_sq (by norm_num)
+  have hsg : Real.sqrt (variance g μ) ≤ 1 / 2 := by
+    have h1 := toReal_le_one (μ := μ) B
+    have h0 : (0:ℝ) ≤ (μ B).toReal := ENNReal.toReal_nonneg
+    have hb : variance g μ ≤ (1 / 2) ^ 2 := by
+      rw [hvarg]; nlinarith [sq_nonneg ((μ B).toReal - 1 / 2)]
+    calc Real.sqrt (variance g μ) ≤ Real.sqrt ((1/2 : ℝ) ^ 2) := Real.sqrt_le_sqrt hb
+      _ = 1 / 2 := Real.sqrt_sq (by norm_num)
+  set D : ℝ := Real.sqrt (variance f μ) * Real.sqrt (variance g μ) with hD
+  have hD0 : 0 ≤ D := mul_nonneg (Real.sqrt_nonneg _) (Real.sqrt_nonneg _)
+  have hD4 : D ≤ 1 / 4 := by
+    have := mul_le_mul hsf hsg (Real.sqrt_nonneg _) (by norm_num)
+    calc D ≤ (1/2 : ℝ) * (1/2) := this
+      _ = 1 / 4 := by norm_num
+  rcases eq_or_lt_of_le hD0 with hD0' | hDpos
+  · -- degenerate: Cauchy–Schwarz forces a vanishing covariance
+    have := abs_covariance_le_sqrt_mul hfL hgL
+    rw [← hD, ← hD0'] at this
+    rw [← hcov]
+    linarith [abs_nonneg (cov[f, g; μ])]
+  · have hmem : |cov[f, g; μ]| / D ≤ rhoMixCoeff μ m₁ m₂ :=
+      le_csSup (rhoMixCoeff_set_bddAbove (mΩ := mΩ)) ⟨f, g, hfmeas, hgmeas, hfL, hgL, rfl⟩
+    have hkey : |cov[f, g; μ]| = (|cov[f, g; μ]| / D) * D := by
+      field_simp
+    rw [← hcov, hkey]
+    have h1 : 0 ≤ |cov[f, g; μ]| / D := div_nonneg (abs_nonneg _) hD0
+    nlinarith
 
 /-- **DEBT (Bradley/Peligrad; FY §2.6.1 display `¼ρ ≤ ½√φ`)**: the square-root
 relation `ρ ≤ 2√φ`. Literature-level; the proof needs the L²-duality description of
