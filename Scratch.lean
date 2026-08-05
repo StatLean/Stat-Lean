@@ -1,0 +1,7 @@
+import StatLean.StatisticalModels.Gaussian.Conditioning
+
+#print axioms StatLean.StatisticalModels.compProd_gaussianCondKernel
+#print axioms StatLean.StatisticalModels.condKernel_ae_eq_gaussianCondKernel
+#print axioms StatLean.StatisticalModels.posSemidef_condCovMatrix
+#print axioms StatLean.StatisticalModels.dotProduct_fromBlocks_split
+#print axioms StatLean.StatisticalModels.gaussianCondKernel_apply
