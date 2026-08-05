@@ -6,13 +6,24 @@ import StatLean.AsymptoticStatistics.Operators.CAR
 
 **C6.** The model-level missingness mechanism of this slice satisfies the semiparametric
 layer's coarsening-at-random predicate: for a MAR mechanism, the full-data law disintegrates
-over the observed data through a θ-free reconstruction kernel concentrated on the coarsening
-fibres —
+over the observed data through an explicit reconstruction kernel concentrated on the
+coarsening fibres —
 `IsMAR ρ → IsCoarseningAtRandom missingObserve (fullLaw Q ρ)`
 (`AsymptoticStatistics.Operators.CAR.IsCoarseningAtRandom`, imported — never redefined).
 This is the bridge that lets the missing-data *models* of this slice consume the
 semiparametric observed-data theory (observed tangent spaces, information-loss operator,
 influence-function lifts) of vdV §25.6.
+
+**Scope honesty.** `IsCoarseningAtRandom` is a *single-measure* predicate, and on standard
+Borel carriers a single-measure CAR disintegration exists for essentially any mechanism (see
+the remark in `Operators/CAR.lean`) — so the Prop alone does not isolate MAR. Moreover the
+kernel built here (`carKernel Q`) depends on the outcome law `Q` through `Q.condKernel`, so
+it is *not* θ-free in a parametric reading. The value of this theorem is the explicit,
+slice-wise reconstruction kernel — deterministic recovery on complete cases, a `Y ∣ X`
+redraw on incomplete ones — whose correctness on the incomplete slice is exactly what MAR
+buys. The substantive family-level bridge (one θ-free reconstruction kernel serving every
+outcome law simultaneously, the form the semiparametric theory actually consumes) is a named
+future debt (`D-C1`).
 
 This file deliberately imports another area's concept layer (`Operators.CAR`) — the
 sanctioned adapter exception, same pattern as `Adapters/`.
@@ -26,8 +37,8 @@ characterization); vdV §25.6.
 **Proof formalization notes.** The reconstruction kernel is glued by `Kernel.piecewise` on
 the clopen observed event `{o | o.2.1 = true}`: on the complete-case slice the full datum is
 recovered deterministically (`(x, r, ry) ↦ (x, ry, true)`); on the incomplete slice the
-outcome is redrawn from the conditional law of `Y` given `X` under `Q` (`condDistrib`, whence
-the `StandardBorelSpace`/`Nonempty` instance hypotheses) — MAR is exactly what makes the
+outcome is redrawn from the conditional law of `Y` given `X` under `Q` (`Q.condKernel`,
+disintegrating over the standard Borel factor `ℝ`) — MAR is exactly what makes the
 `Y ∣ X, R = 0` conditional equal the `Y ∣ X` conditional. The bind identity is verified
 slice-by-slice against `Ignorability.observedLaw_restrict_true/false`; the fibre condition is
 definitional on the deterministic slice and holds by construction on the other. Designated
@@ -117,8 +128,10 @@ private theorem bool_measure_split (ν : Measure Bool) (S : Set Bool) :
 /-- **C6, the CAR bridge** (`HR91`; Gill–van der Laan–Robins 1997; vdV §25.6): a MAR
 missingness mechanism makes the coarsening map `missingObserve` coarsening-at-random for the
 full-data law — the model-level missing-data slice plugs into the semiparametric
-observed-data theory. Designated XL; the batch's single allowed carry. -/
-theorem isCoarseningAtRandom_of_isMAR [StandardBorelSpace 𝓧] [Nonempty 𝓧]
+observed-data theory. Single-measure instance witnessed by the explicit slice-wise kernel
+`carKernel Q`; see the module docstring's scope-honesty note (family-level θ-free bridge =
+debt `D-C1`). -/
+theorem isCoarseningAtRandom_of_isMAR
     (Q : Measure (𝓧 × ℝ)) [IsProbabilityMeasure Q] {ρ : Kernel (𝓧 × ℝ) Bool}
     [IsMarkovKernel ρ]
     -- USER-INPUT: missing at random; Rubin76 §2, HR91

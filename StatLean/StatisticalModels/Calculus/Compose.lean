@@ -106,7 +106,7 @@ theorem observe_deterministic (P : Θ → Measure 𝓧) {T : 𝓧 → 𝓨}
   exact Measure.deterministic_comp_eq_map hT
 
 /-- Observing through the identity mechanism returns the model. -/
-theorem observe_id (P : Θ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P θ)] :
+theorem observe_id (P : Θ → Measure 𝓧) :
     observe P (Kernel.deterministic id measurable_id) = P := by
   rw [observe_deterministic P measurable_id]
   funext θ

@@ -59,11 +59,15 @@ noncomputable def experimentOf (P : Θ → Measure 𝓧) (hP : Measurable P)
 
 /-- The prior predictive of `experimentOf` is the model-side mixture of the model over the
 prior (Robert §1.4 (b)). -/
+-- LEAN-ONLY: measurability in θ of the family; kernel-side plumbing
 theorem predictive_experimentOf (P : Θ → Measure 𝓧) (hP : Measurable P)
+    -- USER-INPUT: the model members are probability laws and the prior is a probability
+    -- distribution (constitutive, Robert Def 1.2.1)
     [∀ θ, IsProbabilityMeasure (P θ)] (π : Measure Θ) [IsProbabilityMeasure π] :
     (experimentOf P hP π).predictive = (toKernel P hP) ∘ₘ π := rfl
 
 /-- The area's `iid` agrees with the Bayesian `iidKernel` on kernel models. -/
+-- LEAN-ONLY: Markov-kernel instance needed to elaborate iidKernel; no scope change
 theorem iid_coe (κ : Kernel Θ 𝓧) [IsMarkovKernel κ] (n : ℕ) :
     iid ⇑κ n = ⇑(Bayesian.iidKernel κ n) := rfl
 
@@ -77,6 +81,7 @@ theorem dataMarginal_eq_bind_observe {Λ : Type*} [MeasurableSpace Λ]
 
 /-- The area's `iidSeq` agrees with the Bayesian `iidSeqKernel` on kernel models
 (definitional through `iidSeqKernel_apply`). -/
+-- LEAN-ONLY: Markov-kernel instance needed to elaborate iidKernel; no scope change
 theorem iidSeq_coe (κ : Kernel Θ 𝓧) [IsMarkovKernel κ] :
     iidSeq ⇑κ = ⇑(Bayesian.iidSeqKernel κ) := rfl
 

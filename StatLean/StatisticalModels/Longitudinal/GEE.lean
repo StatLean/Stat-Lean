@@ -70,6 +70,7 @@ theorem measurable_record_y (j : Fin m) :
 /-- Covariate functionals are `covariateSigma`-measurable (LEAN-ONLY plumbing): any
 measurable function of `(times, x)` is measurable for the covariate σ-algebra. -/
 theorem covariateSigma_measurable_comp
+    -- LEAN-ONLY: measurability of the covariate functional; plumbing
     {g : (Fin m → ℝ) × (Fin m → EuclideanSpace ℝ (Fin p)) → ℝ} (hg : Measurable g) :
     Measurable[covariateSigma p m] fun r : LongitudinalRecord p m => g (r.times, r.x) :=
   hg.comp (Measurable.of_comap_le le_rfl)

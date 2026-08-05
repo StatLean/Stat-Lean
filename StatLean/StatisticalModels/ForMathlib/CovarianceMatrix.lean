@@ -114,11 +114,11 @@ theorem posSemidef_covMatrix (μ : Measure (EuclideanSpace ℝ ι)) [IsFiniteMea
     · exact (memLp_finset_sum Finset.univ fun i _ =>
         hmem i).aestronglyMeasurable.aemeasurable
 
-/-- Mean vector of the multivariate Gaussian. -/
+/-- Mean vector of the multivariate Gaussian. Unconditional in `S`: the pin's
+`multivariateGaussian` has mean `m` in its degenerate/junk regime as well, so no
+positive-semidefiniteness hypothesis is needed (contrast `covMatrix_multivariateGaussian`). -/
 theorem meanVec_multivariateGaussian [DecidableEq ι] (m : EuclideanSpace ℝ ι)
-    (S : Matrix ι ι ℝ)
-    -- USER-INPUT: a genuine covariance parameter; And58 Ch. 2
-    (hS : S.PosSemidef) :
+    (S : Matrix ι ι ℝ) :
     meanVec (multivariateGaussian m S) = m :=
   integral_id_multivariateGaussian
 

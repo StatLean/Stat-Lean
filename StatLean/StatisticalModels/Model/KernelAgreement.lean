@@ -45,6 +45,7 @@ variable {Θ : Type*} [MeasurableSpace Θ] {𝓧 𝓨 : Type*}
   [MeasurableSpace 𝓧] [MeasurableSpace 𝓨]
 
 /-- The bundled family is a Markov kernel iff every member is a probability measure. -/
+-- LEAN-ONLY: measurability in θ of the family; kernel-side plumbing
 theorem isMarkovKernel_toKernel_iff (P : Θ → Measure 𝓧) (hP : Measurable P) :
     IsMarkovKernel (toKernel P hP) ↔ ∀ θ, IsProbabilityMeasure (P θ) :=
   ⟨fun h θ => h.isProbabilityMeasure θ, fun h => ⟨h⟩⟩
@@ -75,6 +76,7 @@ theorem condProd_coe_const (K : Kernel Θ 𝓧) (η : Kernel 𝓧 𝓨)
   exact Measure.compProd_apply hs
 
 /-- `observe` preserves measurable parameterization. -/
+-- LEAN-ONLY: measurability in θ of the family; kernel-side plumbing
 theorem measurable_observe {P : Θ → Measure 𝓧} (hP : Measurable P) (κ : Kernel 𝓧 𝓨) :
     Measurable (observe P κ) := by
   have h : observe P κ = ⇑(κ ∘ₖ toKernel P hP) := observe_coe (toKernel P hP) κ
@@ -82,6 +84,7 @@ theorem measurable_observe {P : Θ → Measure 𝓧} (hP : Measurable P) (κ : K
   exact Kernel.measurable _
 
 /-- `pushforward` preserves measurable parameterization. -/
+-- LEAN-ONLY: measurability in θ of the family; kernel-side plumbing
 theorem measurable_pushforward {P : Θ → Measure 𝓧} (hP : Measurable P) {T : 𝓧 → 𝓨}
     -- LEAN-ONLY: measurability of the statistic
     (hT : Measurable T) :

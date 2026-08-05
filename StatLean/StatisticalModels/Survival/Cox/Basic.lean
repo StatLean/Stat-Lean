@@ -70,8 +70,8 @@ theorem coxSurvival_mem_Ioc (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure �
   exact mul_nonneg (Real.exp_pos _).le ENNReal.toReal_nonneg
 
 /-- The **canonical Cox law**: the Stieltjes measure of `1 − coxSurvival` (`Cox72 §2`).
-Packaged as a sorried Stieltjes construction with its spec lemma; the closure builds the
-monotone/right-continuous structure from `antitone_coxSurvival` + continuity of `Λ₀`. -/
+The monotone/right-continuous Stieltjes structure is built from `antitone_coxSurvival` +
+continuity of `t ↦ Λ₀ (Ioc 0 t)` (which needs `[NoAtoms Λ₀]` and local finiteness `hfin`). -/
 noncomputable def coxSF (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ)
     (z : EuclideanSpace ℝ (Fin p)) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] :
     StieltjesFunction ℝ where
@@ -208,6 +208,7 @@ theorem isSubEventTimeLaw_coxMeasure (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : 
     (z : EuclideanSpace ℝ (Fin p))
     -- USER-INPUT: baseline concentrated on the positive axis; Cox72 §2
     (hΛ0 : Λ₀ (Iic 0) = 0)
+    -- USER-INPUT: locally finite baseline hazard (Λ₀(0,t] < ∞); Cox72 §2
     (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] :
     IsSubEventTimeLaw (coxMeasure β Λ₀ z hfin) := by
   refine ⟨?_, coxMeasure_Iio_zero β Λ₀ z hfin⟩
@@ -227,6 +228,7 @@ theorem isEventTimeLaw_coxMeasure (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Mea
     (z : EuclideanSpace ℝ (Fin p))
     -- USER-INPUT: baseline concentrated on the positive axis; Cox72 §2
     (hΛ0 : Λ₀ (Iic 0) = 0)
+    -- USER-INPUT: locally finite baseline hazard (Λ₀(0,t] < ∞); Cox72 §2
     (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀]
     -- USER-INPUT: infinite total baseline hazard (no cure mass); ABGK §II.1
     (htot : Tendsto (fun t => Λ₀ (Ioc 0 t)) atTop (𝓝 ⊤)) :
@@ -249,6 +251,7 @@ theorem cumHazard_coxMeasure_of_tendsto_top (β : EuclideanSpace ℝ (Fin p)) (�
     (z : EuclideanSpace ℝ (Fin p))
     -- USER-INPUT: baseline concentrated on the positive axis; Cox72 §2
     (hΛ0 : Λ₀ (Iic 0) = 0)
+    -- USER-INPUT: locally finite baseline hazard (Λ₀(0,t] < ∞); Cox72 §2
     (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀]
     -- USER-INPUT: infinite total baseline hazard (no cure mass); ABGK §II.1
     (htot : Tendsto (fun t => Λ₀ (Ioc 0 t)) atTop (𝓝 ⊤)) :
@@ -331,6 +334,7 @@ theorem cumHazard_coxMeasure (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure 
     (z : EuclideanSpace ℝ (Fin p))
     -- USER-INPUT: baseline concentrated on the positive axis; Cox72 §2
     (hΛ0 : Λ₀ (Iic 0) = 0)
+    -- USER-INPUT: locally finite baseline hazard (Λ₀(0,t] < ∞); Cox72 §2
     (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀]
     -- USER-INPUT: infinite total baseline hazard (no cure mass) — REQUIRED: without it the
     -- statement is false, machine-checked in `not_forall_cumHazard_coxMeasure` below (the
@@ -351,6 +355,7 @@ denominator, which strictly inflates the cumulative hazard above `e^{⟪β,z⟫}
 
 /-- The cumulative-hazard measure is invariant under positive rescaling of the law
 (LEAN-ONLY; the hazard density is a ratio, so the scale cancels). -/
+-- LEAN-ONLY: nonzero finite scalar; ENNReal smul algebra
 theorem cumHazard_smul (μ : Measure ℝ) {k : ℝ≥0∞} (hk0 : k ≠ 0) (hktop : k ≠ ⊤) :
     cumHazard (k • μ) = cumHazard μ := by
   ext s hs

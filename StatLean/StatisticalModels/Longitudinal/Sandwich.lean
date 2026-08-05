@@ -298,18 +298,19 @@ theorem covMatrix_geeScoreTotal (D : Fin N → Matrix (Fin m) (Fin q) ℝ)
   rw [hcov, Matrix.transpose_mul, Matrix.transpose_nonsing_inv, hVsymm,
     Matrix.transpose_transpose, ← Matrix.mul_assoc]
 
-/-- **The exact sandwich** `Cov(β̂) = B⁻¹ M B⁻¹` (`LZ86 §3` Eq. (13), exact at finite `N`). -/
+/-- **The exact sandwich** `Cov(β̂) = B⁻¹ M B⁻¹` (`LZ86 §3` Eq. (13), exact at finite `N`).
+The book's mean-correctness and bread-invertibility assumptions are not hypotheses here:
+`covMatrix` is translation-invariant, and `(A⁻¹)ᵀ = (Aᵀ)⁻¹` holds unconditionally for
+`Matrix.inv` — so the identity is exact for arbitrary means and (junk-coherently) for
+singular bread. -/
 theorem covMatrix_geeEstimator (D : Fin N → Matrix (Fin m) (Fin q) ℝ)
-    (V Covs : Fin N → Matrix (Fin m) (Fin m) ℝ) (β₀ : EuclideanSpace ℝ (Fin q))
+    (V Covs : Fin N → Matrix (Fin m) (Fin m) ℝ)
     (Qs : Fin N → Measure (EuclideanSpace ℝ (Fin m)))
     [∀ i, IsProbabilityMeasure (Qs i)]
-    -- USER-INPUT: correct means, true covariances, second moments; LZ86 §2–3
-    (hmean : ∀ i, meanVec (Qs i) = Matrix.toEuclideanLin (𝕜 := ℝ) (D i) β₀)
+    -- USER-INPUT: true covariances, second moments; LZ86 §2–3
     (hcov : ∀ i, covMatrix (Qs i) = Covs i) (hL2 : ∀ i, MemLp id 2 (Qs i))
     -- USER-INPUT: symmetric working covariances; LZ86 §2
-    (hVsymm : ∀ i, (V i)ᵀ = V i)
-    -- USER-INPUT: invertible bread; LZ86 §2
-    (hB : IsUnit (geeBread D V).det) :
+    (hVsymm : ∀ i, (V i)ᵀ = V i) :
     covMatrix ((Measure.pi Qs).map (geeEstimatorMap D V))
       = (geeBread D V)⁻¹ * geeMeat D V Covs * (geeBread D V)⁻¹ := by
   have hBt : ((geeBread D V)⁻¹)ᵀ = (geeBread D V)⁻¹ := by
