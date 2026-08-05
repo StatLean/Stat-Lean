@@ -331,20 +331,13 @@ theorem cumHazard_coxMeasure (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure 
     (z : EuclideanSpace ℝ (Fin p))
     -- USER-INPUT: baseline concentrated on the positive axis; Cox72 §2
     (hΛ0 : Λ₀ (Iic 0) = 0)
-    (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] :
-    cumHazard (coxMeasure β Λ₀ z hfin) = ENNReal.ofReal (Real.exp ⟪β, z⟫_ℝ) • Λ₀ := by
-  -- TODO (S5.2, the single carry): this statement is **FALSE as frozen** — it is not merely
-  -- unproved. `not_forall_cumHazard_coxMeasure` (below, machine-checked) exhibits a baseline
-  -- meeting every hypothesis here — `Λ₀ = volume.restrict (Ioc 0 1)`, atomless, carried by
-  -- `(0, ∞)`, locally finite — whose Cox law violates the conclusion: the total baseline
-  -- hazard is `1 < ∞`, so the constructed law is defective (cure fraction `e^{-1}`) and its
-  -- hazard denominator is the *defective* survival `S(t) − e^{-1}`, not `S(t)`, which
-  -- strictly inflates `Λ` above `e^{⟪β,z⟫} Λ₀`.
-  -- The missing hypothesis is exactly `Tendsto (fun t => Λ₀ (Ioc 0 t)) atTop (𝓝 ⊤)` (no cure
-  -- mass, ABGK §II.1) — the same one `isEventTimeLaw_coxMeasure` already carries. With it
-  -- supplied, S5.2 is PROVED, axiom-clean, as `cumHazard_coxMeasure_of_tendsto_top` above.
-  -- Unfreezing this signature to add `htot` retires the carry with no further work.
-  sorry
+    (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀]
+    -- USER-INPUT: infinite total baseline hazard (no cure mass) — REQUIRED: without it the
+    -- statement is false, machine-checked in `not_forall_cumHazard_coxMeasure` below (the
+    -- cure defect inflates the hazard denominator); ABGK §II.1, Cox72 §2
+    (htot : Tendsto (fun t => Λ₀ (Ioc 0 t)) atTop (𝓝 ⊤)) :
+    cumHazard (coxMeasure β Λ₀ z hfin) = ENNReal.ofReal (Real.exp ⟪β, z⟫_ℝ) • Λ₀ :=
+  cumHazard_coxMeasure_of_tendsto_top β Λ₀ z hΛ0 hfin htot
 
 /-! ### The cure-defect witness: S5.2 is false without a no-cure hypothesis
 
