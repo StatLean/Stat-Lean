@@ -725,6 +725,77 @@ theorem pacf_eq_last_arCoeff [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
   rw [hpacf, hbeq]
   exact hblast.symm
 
+/-! ### Causality and the Yule–Walker equations
+
+For Proposition 2.3(ii) the only analytic input is that an innovation is uncorrelated with
+the strict past of the process it drives; that is the `L²`-continuity argument applied to
+the MA(∞) representation, and it turns the AR(p) recurrence into the Yule–Walker equations
+at every lag. -/
+
+section Causality
+
+/-- `inner ℝ` on the reals is multiplication. -/
+private lemma real_inner_mul' (x y : ℝ) : inner ℝ x y = x * y := by
+  rw [real_inner_eq_re_inner ℝ, RCLike.inner_apply]
+  simp [mul_comm]
+
+/-- The `L²` inner product of two classes is the integral of the product. -/
+private lemma inner_toLp' {f g : Ω → ℝ} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    inner ℝ (hf.toLp f) (hg.toLp g) = ∫ ω, f ω * g ω ∂μ := by
+  rw [L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [hf.coeFn_toLp, hg.coeFn_toLp] with ω h1 h2
+  rw [real_inner_mul', h1, h2]
+
+/-- **Causality**: an innovation is uncorrelated with the strict past of the linear process
+it drives. The finite partial sums of the MA(∞) representation are exactly orthogonal to
+`ε_t`, and they converge to `X_s` in `L²`. -/
+private lemma cov_eq_zero_of_lt [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ2 : ℝ}
+    {X ε : ℤ → Ω → ℝ} (hlin : IsLinearProcessOf ψ X ε μ) (hε : IsWhiteNoise ε σ2 μ)
+    {s t : ℤ} (hX : MemLp (X s) 2 μ) (hst : s < t) :
+    cov[X s, ε t; μ] = 0 := by
+  have hSm : ∀ N : ℕ,
+      MemLp (fun ω => ∑ j ∈ Finset.range N, ψ j * ε (s - (j : ℕ)) ω) 2 μ := fun N =>
+    memLp_finset_sum _ fun j _ => (hε.memLp (s - (j : ℕ))).const_mul (ψ j)
+  -- the partial sums are exactly orthogonal to the future innovation
+  have hSc : ∀ N : ℕ,
+      cov[fun ω => ∑ j ∈ Finset.range N, ψ j * ε (s - (j : ℕ)) ω, ε t; μ] = 0 := by
+    intro N
+    rw [covariance_fun_sum_left'
+      (fun j _ => (hε.memLp (s - (j : ℕ))).const_mul (ψ j)) (hε.memLp t)]
+    refine Finset.sum_eq_zero fun j _ => ?_
+    rw [covariance_const_mul_left, hε.uncorrelated _ _ (by omega), mul_zero]
+  -- so the covariance is that of the (vanishing) `L²` remainder
+  have hbound : ∀ N : ℕ, |cov[X s, ε t; μ]|
+      ≤ (eLpNorm (fun ω => X s ω - ∑ j ∈ Finset.range N, ψ j * ε (s - (j : ℕ)) ω) 2 μ).toReal
+        * ‖(hε.memLp t).toLp (ε t)‖ := by
+    intro N
+    have hDm : MemLp
+        (fun ω => X s ω - ∑ j ∈ Finset.range N, ψ j * ε (s - (j : ℕ)) ω) 2 μ :=
+      hX.sub (hSm N)
+    have hD : cov[X s, ε t; μ]
+        = cov[fun ω => X s ω - ∑ j ∈ Finset.range N, ψ j * ε (s - (j : ℕ)) ω, ε t; μ] := by
+      rw [covariance_fun_sub_left hX (hSm N) (hε.memLp t), hSc N, sub_zero]
+    have hcv : cov[fun ω => X s ω - ∑ j ∈ Finset.range N, ψ j * ε (s - (j : ℕ)) ω, ε t; μ]
+        = inner ℝ (hDm.toLp _) ((hε.memLp t).toLp (ε t)) := by
+      rw [inner_toLp' hDm (hε.memLp t), covariance_eq_sub hDm (hε.memLp t),
+        hε.integral_eq_zero t, mul_zero, sub_zero]
+      simp [Pi.mul_apply]
+    rw [hD, hcv, ← Lp.norm_toLp _ hDm]
+    exact abs_real_inner_le_norm _ _
+  have h0 : Tendsto (fun N : ℕ =>
+      (eLpNorm (fun ω => X s ω - ∑ j ∈ Finset.range N, ψ j * ε (s - (j : ℕ)) ω) 2 μ).toReal)
+      atTop (𝓝 0) := by
+    simpa using (ENNReal.continuousAt_toReal (by simp)).tendsto.comp (hlin s)
+  have hlim : Tendsto (fun N : ℕ =>
+      (eLpNorm (fun ω => X s ω - ∑ j ∈ Finset.range N, ψ j * ε (s - (j : ℕ)) ω) 2 μ).toReal
+        * ‖(hε.memLp t).toLp (ε t)‖) atTop (𝓝 0) := by
+    simpa using h0.mul_const ‖(hε.memLp t).toLp (ε t)‖
+  exact abs_eq_zero.mp (le_antisymm
+    (le_of_tendsto_of_tendsto' tendsto_const_nhds hlim hbound) (abs_nonneg _))
+
+end Causality
+
 /-- **Proposition 2.3(ii)**: the PACF of a causal AR(p) process vanishes beyond lag
 `p` (from Theorem 2.9 and the Yule–Walker structure: the best AR(k) predictor for
 `k > p` uses only the first `p` coefficients). -/
@@ -740,6 +811,67 @@ theorem pacf_eq_zero_of_isAR [IsProbabilityMeasure μ] {p : ℕ} {b : Fin p → 
     (hpos : 0 < variance (linRegResidual X μ 1
       (fun i : Fin (k - 1) => ((i : ℕ) + 2 : ℤ))) μ) :
     pacf X μ k = 0 := by
-  sorry
+  classical
+  rw [pacf_eq_last_arCoeff hstat (by omega) hinv hpos]
+  set v : Fin k → ℤ := fun i => (k : ℤ) - 1 - ((i : ℕ) : ℤ) with hv
+  have hinvv : IsUnit (Matrix.of fun i j : Fin k => cov[X (v i), X (v j); μ]).det := by
+    have he : (Matrix.of fun i j : Fin k => cov[X (v i), X (v j); μ])
+        = (acvfToeplitz X μ k)ᵀ := by
+      ext i j
+      simp only [Matrix.of_apply, Matrix.transpose_apply, acvfToeplitz_apply]
+      rw [hstat.cov_eq_acvf]
+      congr 1
+      simp only [hv]
+      ring
+    rw [he, Matrix.det_transpose]; exact hinv
+  -- the AR coefficient vector padded with zeros
+  set c : Fin k → ℝ := fun j => if hj : (j : ℕ) < p then b ⟨j, hj⟩ else 0 with hc
+  have hpad : ∀ ω, ∑ j, c j * X (v j) ω
+      = ∑ i : Fin p, b i * X ((k : ℤ) - 1 - ((i : ℕ) : ℤ)) ω := by
+    intro ω
+    have hg : ∑ j, c j * X (v j) ω
+        = ∑ j ∈ Finset.range k,
+            (if hj : j < p then b ⟨j, hj⟩ else 0) * X ((k : ℤ) - 1 - (j : ℤ)) ω :=
+      Fin.sum_univ_eq_sum_range
+        (fun j => (if hj : j < p then b ⟨j, hj⟩ else 0) * X ((k : ℤ) - 1 - (j : ℤ)) ω) k
+    have hres : ∑ j ∈ Finset.range k,
+          (if hj : j < p then b ⟨j, hj⟩ else 0) * X ((k : ℤ) - 1 - (j : ℤ)) ω
+        = ∑ j ∈ Finset.range p,
+            (if hj : j < p then b ⟨j, hj⟩ else 0) * X ((k : ℤ) - 1 - (j : ℤ)) ω := by
+      refine (Finset.sum_subset
+        (fun x hx => Finset.mem_range.2 ((Finset.mem_range.1 hx).trans hk))
+        fun j hj hjn => ?_).symm
+      rw [Finset.mem_range] at hjn
+      rw [dif_neg hjn, zero_mul]
+    rw [hg, hres, ← Fin.sum_univ_eq_sum_range
+      (fun j => (if hj : j < p then b ⟨j, hj⟩ else 0) * X ((k : ℤ) - 1 - (j : ℤ)) ω) p]
+    exact Finset.sum_congr rfl fun i _ => by rw [dif_pos i.isLt]
+  -- the candidate's prediction error is the innovation
+  have hresid : (fun ω => X (k : ℤ) ω - ∑ j, c j * X (v j) ω) =ᵐ[μ] ε (k : ℤ) := by
+    filter_upwards [h.recurrence (k : ℤ)] with ω hω
+    rw [hpad ω, hω]
+    simp
+  -- hence the Yule–Walker equations hold at every lag `1 ≤ i ≤ k`
+  have hbeq : linRegCoeffs X μ (k : ℤ) v = c := by
+    refine linRegCoeffs_eq_of_normalEq _ _ hinvv c fun l => ?_
+    have hsum : ∑ j, cov[X (v l), X (v j); μ] * c j
+        = cov[X (v l), fun ω => ∑ j, c j * X (v j) ω; μ] := by
+      rw [covariance_fun_sum_right (fun j => (hstat.memLp (v j)).const_mul (c j))
+        (hstat.memLp (v l))]
+      exact Finset.sum_congr rfl fun j _ => by rw [covariance_const_mul_right]; ring
+    have hexp : cov[X (v l), fun ω => X (k : ℤ) ω - ∑ j, c j * X (v j) ω; μ]
+        = cov[X (v l), X (k : ℤ); μ]
+          - cov[X (v l), fun ω => ∑ j, c j * X (v j) ω; μ] :=
+      covariance_fun_sub_right (hstat.memLp (v l)) (hstat.memLp _) (memLp_window hstat v c)
+    have hkey : cov[X (v l), fun ω => X (k : ℤ) ω - ∑ j, c j * X (v j) ω; μ] = 0 := by
+      rw [covariance_congr_ae (EventuallyEq.refl _ (X (v l))) hresid]
+      refine cov_eq_zero_of_lt hlin h.whiteNoise (hstat.memLp (v l)) ?_
+      simp only [hv]
+      omega
+    rw [hsum, covariance_comm (X (k : ℤ)) (X (v l))]
+    linarith [hexp, hkey]
+  rw [hbeq]
+  simp only [hc]
+  exact dif_neg (by omega)
 
 end StatLean.TimeSeries
