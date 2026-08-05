@@ -51,6 +51,10 @@ noncomputable def sobolevOne : Lp ℝ 2 sobolevMeasure :=
 noncomputable def sobolevInd (x : ℝ) : Lp ℝ 2 sobolevMeasure :=
   indicatorConstLp 2 (measurableSet_Icc (a := (0 : ℝ)) (b := x)) (measure_ne_top _ _) (1 : ℝ)
 
+instance : IsClosed (((ℝ ∙ sobolevOne)ᗮ : Submodule ℝ (Lp ℝ 2 sobolevMeasure)) :
+    Set (Lp ℝ 2 sobolevMeasure)) :=
+  Submodule.isClosed_orthogonal _
+
 /-- **The Dirichlet–Sobolev space `H₀¹[0,1]`**, modeled as the mean-zero subspace of
 `L²[0,1]` carrying the derivative representative of each function; the boundary
 conditions `f(0) = f(1) = 0` correspond to the mean-zero constraint. -/

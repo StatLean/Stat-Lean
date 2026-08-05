@@ -40,7 +40,8 @@ theorem isCompactOperator_mercerCLM_finiteRank {ι : Type*} (s : Finset ι)
     (f g : ι → C(X, 𝕜))
     -- LEAN-ONLY: continuity of the finite-rank symbol; derivable, kept to name the operator
     (hc : Continuous fun p : X × X => ∑ i ∈ s, f i p.1 * conj (g i p.2)) :
-    IsCompactOperator (mercerCLM μ hc) := by
+    IsCompactOperator
+      (mercerCLM (K := fun x y => ∑ i ∈ s, f i x * conj (g i y)) μ hc) := by
   sorry
 
 /-- **The Mercer integral operator is compact.** -/

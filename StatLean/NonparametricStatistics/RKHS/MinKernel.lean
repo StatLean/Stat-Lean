@@ -27,7 +27,7 @@ M. Loève and E. Parzen, *Statistical inference on time series by Hilbert space 
 -/
 
 open ComplexConjugate MeasureTheory
-open scoped InnerProductSpace
+open scoped InnerProductSpace ComplexOrder
 
 namespace StatLean.NonparametricStatistics
 

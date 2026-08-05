@@ -39,8 +39,8 @@ noncomputable def rangeSpaceCarrier (S : X → Y → 𝕜) (hS : IsL2Symbol μ S
   (Submodule.span 𝕜 (Set.range (symbolConjLp μ S hS))).topologicalClosure
 
 instance (S : X → Y → 𝕜) (hS : IsL2Symbol μ S) :
-    CompleteSpace (rangeSpaceCarrier μ S hS) :=
-  (Submodule.isClosed_topologicalClosure _).completeSpace_coe
+    IsClosed ((rangeSpaceCarrier μ S hS : Submodule 𝕜 (Lp 𝕜 2 μ)) : Set (Lp 𝕜 2 μ)) :=
+  Submodule.isClosed_topologicalClosure _
 
 variable (μ) in
 /-- The RKHS structure of the range of an integral operator: an element `g` of the

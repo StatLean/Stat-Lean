@@ -1,4 +1,5 @@
 import StatLean.NonparametricStatistics.RKHS.Basic
+import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # The representer theorem
@@ -40,11 +41,8 @@ instance (x : Fin n → X) : FiniteDimensional 𝕜 (dataSpan (H := H) x) := by
   unfold dataSpan
   exact FiniteDimensional.span_of_finite 𝕜 (Set.finite_range fun i => kernelFun H (x i))
 
-instance (x : Fin n → X) : CompleteSpace (dataSpan (H := H) x) :=
-  FiniteDimensional.complete 𝕜 _
-
-instance (x : Fin n → X) : (dataSpan (H := H) x).HasOrthogonalProjection :=
-  Submodule.HasOrthogonalProjection.ofCompleteSpace _
+instance (x : Fin n → X) : IsClosed ((dataSpan (H := H) x : Submodule 𝕜 H) : Set H) :=
+  Submodule.closed_of_finiteDimensional _
 
 /-- Functions orthogonal to the data span vanish at the data points. -/
 theorem apply_eq_zero_of_mem_dataSpan_orthogonal {x : Fin n → X} {h : H}
