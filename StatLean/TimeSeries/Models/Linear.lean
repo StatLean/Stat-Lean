@@ -39,6 +39,63 @@ namespace StatLean.TimeSeries
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
+/-- Covariance only sees the a.e. class of each argument. -/
+private lemma covariance_congr_ae {X X' Y Y' : Ω → ℝ} (hX : X =ᵐ[μ] X') (hY : Y =ᵐ[μ] Y') :
+    cov[X, Y; μ] = cov[X', Y'; μ] := by
+  have hIX : ∫ x, X x ∂μ = ∫ x, X' x ∂μ := integral_congr_ae hX
+  have hIY : ∫ x, Y x ∂μ = ∫ x, Y' x ∂μ := integral_congr_ae hY
+  simp only [covariance, hIX, hIY]
+  exact integral_congr_ae (by filter_upwards [hX, hY] with ω h1 h2 using by rw [h1, h2])
+
+/-- Two finite linear combinations of white-noise coordinates taken over *disjoint* index
+sets are uncorrelated. -/
+private lemma cov_noise_combination_eq_zero [IsProbabilityMeasure μ] {ε : ℤ → Ω → ℝ} {σ2 : ℝ}
+    (hw : IsWhiteNoise ε σ2 μ) {n m : ℕ} (c : Fin n → ℝ) (d : Fin m → ℝ)
+    (u : Fin n → ℤ) (v : Fin m → ℤ) (huv : ∀ i j, u i ≠ v j) :
+    cov[fun ω => ∑ i, c i * ε (u i) ω, fun ω => ∑ j, d j * ε (v j) ω; μ] = 0 := by
+  rw [covariance_fun_sum_fun_sum (X := fun i ω => c i * ε (u i) ω)
+      (Y := fun j ω => d j * ε (v j) ω)
+      (fun i => (hw.memLp (u i)).const_mul (c i))
+      (fun j => (hw.memLp (v j)).const_mul (d j))]
+  refine Finset.sum_eq_zero fun i _ => Finset.sum_eq_zero fun j _ => ?_
+  rw [covariance_const_mul_left, covariance_const_mul_right, hw.uncorrelated _ _ (huv i j)]
+  ring
+
+/-- The one-sided half of `IsMA.cov_eq_zero`: the MA(q) covariance vanishes once the
+later time exceeds the earlier one by more than the order. -/
+private lemma IsMA.cov_eq_zero_of_lt [IsProbabilityMeasure μ] {q : ℕ} {a : Fin q → ℝ}
+    {σ2 : ℝ} {X ε : ℤ → Ω → ℝ} (h : IsMA a σ2 X ε μ) {s t : ℤ} (hgap : t + q < s) :
+    cov[X s, X t; μ] = 0 := by
+  -- the MA coefficient vector `(1, a₁, …, a_q)` and the lag map `u ↦ (u, u-1, …, u-q)`
+  obtain ⟨c, hc0, hcs⟩ : ∃ c : Fin (q + 1) → ℝ, c 0 = 1 ∧ ∀ i : Fin q, c i.succ = a i :=
+    ⟨Fin.cases 1 a, rfl, fun _ => rfl⟩
+  obtain ⟨L, hL0, hLs⟩ : ∃ L : ℤ → Fin (q + 1) → ℤ,
+      (∀ u, L u 0 = u) ∧ ∀ (u : ℤ) (i : Fin q), L u i.succ = u - 1 - (i : ℕ) :=
+    ⟨fun u => Fin.cases u fun i => u - 1 - (i : ℕ), fun _ => rfl, fun _ _ => rfl⟩
+  -- the MA(q) recurrence, packaged as a single sum
+  have hrec : ∀ u : ℤ, X u =ᵐ[μ] fun ω => ∑ i, c i * ε (L u i) ω := by
+    intro u
+    filter_upwards [h.recurrence u] with ω hω
+    rw [hω, Fin.sum_univ_succ, hc0, hL0]
+    simp only [hcs, hLs]
+    simp
+  -- the two lag windows `[s-q, s]` and `[t-q, t]` are disjoint
+  have hge : ∀ i : Fin (q + 1), s - q ≤ L s i := by
+    intro i
+    refine Fin.cases ?_ (fun k => ?_) i
+    · rw [hL0]; omega
+    · rw [hLs]; have := k.isLt; omega
+  have hle : ∀ j : Fin (q + 1), L t j ≤ t := by
+    intro j
+    refine Fin.cases ?_ (fun k => ?_) j
+    · rw [hL0]
+    · rw [hLs]; have := k.isLt; omega
+  rw [covariance_congr_ae (hrec s) (hrec t)]
+  refine cov_noise_combination_eq_zero h.whiteNoise c c (L s) (L t) fun i j => ?_
+  have h1 := hge i
+  have h2 := hle j
+  omega
+
 /-- **MA(q) is q-dependent** (FY §1.3.3): observations more than `q` apart are
 uncorrelated. -/
 theorem IsMA.cov_eq_zero [IsProbabilityMeasure μ] {q : ℕ} {a : Fin q → ℝ} {σ2 : ℝ}
@@ -46,7 +103,9 @@ theorem IsMA.cov_eq_zero [IsProbabilityMeasure μ] {q : ℕ} {a : Fin q → ℝ}
     -- USER-INPUT: the lag exceeds the MA order; FY §1.3.3
     (hgap : (q : ℤ) < |s - t|) :
     cov[X s, X t; μ] = 0 := by
-  sorry
+  rcases lt_abs.mp hgap with hc | hc
+  · exact h.cov_eq_zero_of_lt (by omega)
+  · rw [covariance_comm]; exact h.cov_eq_zero_of_lt (by omega)
 
 /-- **MA(1) inversion** (FY §1.3.3): for an MA(1) with `|a₁| < 1`, the alternating
 geometric partial sums of lagged observations recover the innovation in probability:
