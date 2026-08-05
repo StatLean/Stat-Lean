@@ -58,15 +58,20 @@ open scoped ProbabilityTheory Topology ENNReal
 
 namespace StatLean.TimeSeries
 
-variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-variable {m₁ m₂ : MeasurableSpace Ω}
+/-! ### Proposition 2.5(ii): the bounded (Billingsley) covariance inequality
 
-/-! ### Proposition 2.5(ii): the bounded (Billingsley) covariance inequality -/
+Two-σ-algebra statements follow the Mathlib `condExp` binder convention (ambient `mΩ`
+as a plain implicit bound after the sub-σ-algebras, before `μ`) — see
+`Mixing/Relations.lean`. -/
+
+section TwoAlgebras
+
+variable {Ω : Type*}
 
 /-- **FY Proposition 2.5(ii) (Billingsley)**: `m₁`/`m₂`-measurable bounded factors have
 covariance at most `4 α C₁ C₂`. -/
-theorem abs_covariance_le_of_bounded [IsProbabilityMeasure μ]
-    (h₁ : m₁ ≤ ‹MeasurableSpace Ω›) (h₂ : m₂ ≤ ‹MeasurableSpace Ω›)
+theorem abs_covariance_le_of_bounded {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ)
     {f g : Ω → ℝ} (hf : Measurable[m₁] f) (hg : Measurable[m₂] g)
     {C₁ C₂ : ℝ}
     -- USER-INPUT: uniform bounds; FY Prop 2.5(ii)
@@ -77,8 +82,8 @@ theorem abs_covariance_le_of_bounded [IsProbabilityMeasure μ]
 /-- **Complex Billingsley** (FY §2.6.2, constant 16): unit-modulus-bounded complex
 factors. Stated with the real-bilinear covariance
 `E[f·g] − E[f]·E[g]` in `ℂ`. -/
-theorem norm_covariance_le_of_bounded_complex [IsProbabilityMeasure μ]
-    (h₁ : m₁ ≤ ‹MeasurableSpace Ω›) (h₂ : m₂ ≤ ‹MeasurableSpace Ω›)
+theorem norm_covariance_le_of_bounded_complex {m₁ m₂ mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ)
     {f g : Ω → ℂ} (hf : Measurable[m₁] f) (hg : Measurable[m₂] g)
     {C₁ C₂ : ℝ}
     -- USER-INPUT: uniform bounds; FY §2.6.2 complex remark
@@ -92,8 +97,8 @@ theorem norm_covariance_le_of_bounded_complex [IsProbabilityMeasure μ]
 /-- **FY Proposition 2.5(i) (Davydov)**: for `p, q > 1` with `1/p + 1/q < 1`,
 `|Cov(f, g)| ≤ 8 α^{1 − 1/p − 1/q} ‖f‖_p ‖g‖_q`. Built in full (truncation against the
 bounded case; FY cites Doukhan §1.2.2). -/
-theorem abs_covariance_le_davydov [IsProbabilityMeasure μ]
-    (h₁ : m₁ ≤ ‹MeasurableSpace Ω›) (h₂ : m₂ ≤ ‹MeasurableSpace Ω›)
+theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ)
     {f g : Ω → ℝ} (hf : Measurable[m₁] f) (hg : Measurable[m₂] g)
     {p q : ℝ}
     -- USER-INPUT: integrability exponents; FY Prop 2.5(i)
@@ -113,9 +118,9 @@ The gap hypothesis is abstract: the α-coefficient between the cumulative past
 `⨆_{j ≤ l} m j` and the next block `m (l+1)` is at most `a` — process-level
 applications supply it via `IsStrictlyStationary.alphaMixCoeff_shift` and
 monotonicity. -/
-theorem norm_integral_prod_sub_prod_integral_le [IsProbabilityMeasure μ]
-    {k : ℕ} (m : Fin k → MeasurableSpace Ω)
-    (hle : ∀ l, m l ≤ ‹MeasurableSpace Ω›)
+theorem norm_integral_prod_sub_prod_integral_le {k : ℕ}
+    {m : Fin k → MeasurableSpace Ω} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] (hle : ∀ l, m l ≤ mΩ)
     (ξ : Fin k → Ω → ℂ) (hmeas : ∀ l, Measurable[m l] (ξ l))
     -- USER-INPUT: unit modulus bound; FY Prop 2.6
     (hbdd : ∀ l, ∀ᵐ ω ∂μ, ‖ξ l ω‖ ≤ 1)
@@ -127,7 +132,13 @@ theorem norm_integral_prod_sub_prod_integral_le [IsProbabilityMeasure μ]
       ≤ 16 * ((k : ℝ) - 1) * a := by
   sorry
 
+end TwoAlgebras
+
 /-! ### The fourth-moment bound (FY Proposition 2.7(ii) at `q = 4`) -/
+
+section Process
+
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
 /-- **FY Proposition 2.7(ii), `q = 4` instance** (the one the Bernstein-block CLT
 consumes): a bounded zero-mean strictly stationary α-mixing process with
@@ -189,5 +200,7 @@ theorem bosq_cramer_debt [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
         + 11 * n * (1 + 5 * ε⁻¹ * (∫ ω, |X 0 ω| ^ k ∂μ) ^ ((1 : ℝ) / (2 * k + 1)))
           * alphaCoeff X μ (n / (qb + 1)) ^ ((2 * k : ℝ) / (2 * k + 1)) := by
   sorry
+
+end Process
 
 end StatLean.TimeSeries

@@ -56,39 +56,53 @@ open scoped ProbabilityTheory Topology
 
 namespace StatLean.TimeSeries
 
-variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-variable {m₁ m₂ m₁' m₂' : MeasurableSpace Ω}
+/-! ### Set-level basics
 
-/-! ### Set-level basics -/
+Two-σ-algebra statements follow the Mathlib `condExp` binder convention: the ambient
+σ-algebra `mΩ` is a plain implicit bound *after* the sub-σ-algebras and immediately
+before `μ`, so that local-instance resolution and unification agree (an
+instance-implicit ambient would be shadowed by the sub-σ-algebra binders). -/
+
+section TwoAlgebras
+
+variable {Ω : Type*}
 
 /-- The α description set contains `0` (take `A = ∅`). -/
-theorem alphaMixCoeff_set_nonempty (μ : Measure Ω) (m₁ m₂ : MeasurableSpace Ω) :
+theorem alphaMixCoeff_set_nonempty {m₁ m₂ mΩ : MeasurableSpace Ω} (μ : Measure Ω) :
     (0 : ℝ) ∈ {r : ℝ | ∃ A B : Set Ω, MeasurableSet[m₁] A ∧ MeasurableSet[m₂] B ∧
       r = |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal|} := by
   sorry
 
 /-- On a probability space the α description set is bounded above by `1`. -/
-theorem alphaMixCoeff_set_bddAbove [IsProbabilityMeasure μ]
-    (m₁ m₂ : MeasurableSpace Ω) :
+theorem alphaMixCoeff_set_bddAbove {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] :
     BddAbove {r : ℝ | ∃ A B : Set Ω, MeasurableSet[m₁] A ∧ MeasurableSet[m₂] B ∧
       r = |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal|} := by
   sorry
 
 /-- `0 ≤ α`. -/
-theorem alphaMixCoeff_nonneg [IsProbabilityMeasure μ] (m₁ m₂ : MeasurableSpace Ω) :
+theorem alphaMixCoeff_nonneg {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] :
     0 ≤ alphaMixCoeff μ m₁ m₂ := by
   sorry
 
 /-- `α ≤ 1` (indeed `α ≤ ¼`, but FY only uses boundedness). -/
-theorem alphaMixCoeff_le_one [IsProbabilityMeasure μ] (m₁ m₂ : MeasurableSpace Ω) :
+theorem alphaMixCoeff_le_one {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] :
     alphaMixCoeff μ m₁ m₂ ≤ 1 := by
   sorry
 
 /-- α is monotone in both σ-algebra arguments. -/
-theorem alphaMixCoeff_mono [IsProbabilityMeasure μ]
-    (h₁ : m₁' ≤ m₁) (h₂ : m₂' ≤ m₂) :
+theorem alphaMixCoeff_mono {m₁ m₂ m₁' m₂' mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] (h₁ : m₁' ≤ m₁) (h₂ : m₂' ≤ m₂) :
     alphaMixCoeff μ m₁' m₂' ≤ alphaMixCoeff μ m₁ m₂ := by
   sorry
+
+end TwoAlgebras
+
+section Process
+
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
 /-- The process α-coefficient is antitone in the lag (FY: "monotone nonincreasing",
 used silently; from `sigmaGE X (n+1) ≤ sigmaGE X n`). -/
@@ -96,55 +110,61 @@ theorem alphaCoeff_antitone [IsProbabilityMeasure μ] (X : ℤ → Ω → ℝ) :
     Antitone fun n : ℕ => alphaCoeff X μ n := by
   sorry
 
+end Process
+
 /-! ### Provable coefficient inequalities (FY §2.6.1 basic facts) -/
 
+section TwoAlgebras2
+
+variable {Ω : Type*}
+
 /-- `2α ≤ β` (four-set partitions witness the α events). -/
-theorem two_mul_alphaMixCoeff_le_betaMixCoeff [IsProbabilityMeasure μ]
-    (m₁ m₂ : MeasurableSpace Ω) (h₁ : m₁ ≤ ‹MeasurableSpace Ω›)
-    (h₂ : m₂ ≤ ‹MeasurableSpace Ω›) :
+theorem two_mul_alphaMixCoeff_le_betaMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ) :
     2 * alphaMixCoeff μ m₁ m₂ ≤ betaMixCoeff μ m₁ m₂ := by
   sorry
 
 /-- `α ≤ φ`. -/
-theorem alphaMixCoeff_le_phiMixCoeff [IsProbabilityMeasure μ]
-    (m₁ m₂ : MeasurableSpace Ω) (h₁ : m₁ ≤ ‹MeasurableSpace Ω›)
-    (h₂ : m₂ ≤ ‹MeasurableSpace Ω›) :
+theorem alphaMixCoeff_le_phiMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ) :
     alphaMixCoeff μ m₁ m₂ ≤ phiMixCoeff μ m₁ m₂ := by
   sorry
 
 /-- `β ≤ φ` (partition sums against a fixed past cell are conditional-probability
 discrepancies). -/
-theorem betaMixCoeff_le_phiMixCoeff [IsProbabilityMeasure μ]
-    (m₁ m₂ : MeasurableSpace Ω) (h₁ : m₁ ≤ ‹MeasurableSpace Ω›)
-    (h₂ : m₂ ≤ ‹MeasurableSpace Ω›) :
+theorem betaMixCoeff_le_phiMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ) :
     betaMixCoeff μ m₁ m₂ ≤ phiMixCoeff μ m₁ m₂ := by
   sorry
 
 /-- `φ ≤ ψ` in the calibrated form `|P(B) − P(B|A)| = P(B)|1 − P(B|A)/P(B)|`
 (the `P(B) = 0` cell contributes `0` on both sides). -/
-theorem phiMixCoeff_le_psiMixCoeff [IsProbabilityMeasure μ]
-    (m₁ m₂ : MeasurableSpace Ω) (h₁ : m₁ ≤ ‹MeasurableSpace Ω›)
-    (h₂ : m₂ ≤ ‹MeasurableSpace Ω›) :
+theorem phiMixCoeff_le_psiMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ) :
     phiMixCoeff μ m₁ m₂ ≤ psiMixCoeff μ m₁ m₂ := by
   sorry
 
 /-- **FY's display** `α ≤ ¼ρ` (centered indicators; `Var 1_A ≤ ¼`). -/
-theorem alphaMixCoeff_le_quarter_mul_rhoMixCoeff [IsProbabilityMeasure μ]
-    (m₁ m₂ : MeasurableSpace Ω) (h₁ : m₁ ≤ ‹MeasurableSpace Ω›)
-    (h₂ : m₂ ≤ ‹MeasurableSpace Ω›) :
+theorem alphaMixCoeff_le_quarter_mul_rhoMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ) :
     alphaMixCoeff μ m₁ m₂ ≤ (1 / 4) * rhoMixCoeff μ m₁ m₂ := by
   sorry
 
 /-- **DEBT (Bradley/Peligrad; FY §2.6.1 display `¼ρ ≤ ½√φ`)**: the square-root
 relation `ρ ≤ 2√φ`. Literature-level; the proof needs the L²-duality description of
 `ρ` and a two-sided conditional Cauchy–Schwarz argument. -/
-theorem rhoMixCoeff_le_two_mul_sqrt_phiMixCoeff_debt [IsProbabilityMeasure μ]
-    (m₁ m₂ : MeasurableSpace Ω) (h₁ : m₁ ≤ ‹MeasurableSpace Ω›)
-    (h₂ : m₂ ≤ ‹MeasurableSpace Ω›) :
+theorem rhoMixCoeff_le_two_mul_sqrt_phiMixCoeff_debt {m₁ m₂ mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ) :
     rhoMixCoeff μ m₁ m₂ ≤ 2 * Real.sqrt (phiMixCoeff μ m₁ m₂) := by
   sorry
 
+end TwoAlgebras2
+
 /-! ### Mixing-class implications (FY Definition 2.11 chain) -/
+
+section Process2
+
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
 /-- ψ-mixing ⇒ φ-mixing. -/
 theorem IsPsiMixing.isPhiMixing [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
@@ -257,5 +277,7 @@ theorem gaussian_rho_le_alpha_debt [IsProbabilityMeasure μ] {X : ℤ → Ω →
     (hgauss : ProbabilityTheory.IsGaussianProcess X μ) (n : ℕ) :
     rhoCoeff X μ n ≤ 2 * Real.pi * alphaCoeff X μ n := by
   sorry
+
+end Process2
 
 end StatLean.TimeSeries
