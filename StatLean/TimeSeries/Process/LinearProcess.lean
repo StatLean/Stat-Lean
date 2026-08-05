@@ -161,7 +161,14 @@ theorem IsLinearProcessOf.memLp [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ
     (hψ : Summable fun j => |ψ j|) (hε : IsWhiteNoise ε σ2 μ)
     -- LEAN-ONLY: measurability of the limits; supplied by `exists_isLinearProcessOf`
     (hmeas : ∀ t, Measurable (X t)) (t : ℤ) : MemLp (X t) 2 μ := by
-  sorry
+  obtain ⟨N, hN⟩ := ((hX t).eventually (gt_mem_nhds (show (0 : ℝ≥0∞) < 1 by norm_num))).exists
+  have hdiff : MemLp (fun ω => X t ω - psum ψ ε t N ω) 2 μ :=
+    ⟨(hmeas t).aestronglyMeasurable.sub (memLp_psum hε t N).aestronglyMeasurable,
+      lt_of_lt_of_le hN (by norm_num)⟩
+  have hsum := hdiff.add (memLp_psum (ψ := ψ) hε t N)
+  have hfun : ((fun ω => X t ω - psum ψ ε t N ω) + psum ψ ε t N) = X t := by
+    funext ω; simp
+  rwa [hfun] at hsum
 
 /-- **Stationarity + the ACVF formula** (FY §2.1.2, eq. (2.2)): a linear process over
 white noise is weakly stationary with `γ(k) = σ² Σ_{j≥0} ψ_j ψ_{j+|k|}`. -/
