@@ -352,6 +352,36 @@ theorem norm_integral_exp_rowSum_sub_prod_le [IsProbabilityMeasure μ]
       ≤ ∑ i, (u ^ 2 * ∫ ω, X n i ω ^ 2 * Set.indicator {x : Ω | ε ≤ |X n i x|}
             (fun _ => (1 : ℝ)) ω ∂μ)
         + ∑ i, (|u| ^ 3 * ε * ∫ ω, X n i ω ^ 2 ∂μ) := by
+  -- DEBT (wave 2, reported loudly): NOT provable as frozen — the frozen right-hand
+  -- side accounts for only one of the three terms the telescope produces.
+  --
+  -- Write `φ_i ω = e^{iuX_{n,i}ω}` (modulus 1, `𝓕_{n,i+1}`-measurable) and
+  -- `ψ_i = 1 - u²/2 · E[X_{n,i}²|𝓕_{n,i}]` (`𝓕_{n,i}`-measurable).  Any telescoping
+  -- of `∏φ - ∏ψ` has summands `Φ_j (φ_j - ψ_j) Λ_j` with `Φ_j = ∏_{i<j}φ_i` and
+  -- `Λ_j = ∏_{i>j}ψ_i`, and
+  --   `φ_j - ψ_j = T_j + iuX_j + (u²/2)(v_j - X_j²)`,  `‖T_j‖ ≤ min(|uX_j|³/6, u²X_j²)`.
+  -- The frozen RHS is exactly `Σ_j E‖T_j‖` bounded through `norm_condexp_exp_sub_one_sub_le`.
+  -- The other two summands are killed only if `Λ_j` is `𝓕_{n,j}`-measurable, i.e. only
+  -- if the FUTURE conditional variances `E[X_{n,i}²|𝓕_{n,i}]`, `i > j`, are already
+  -- known at time `j` (e.g. deterministic).  They are `𝓕_{n,i}`-measurable, never
+  -- `𝓕_{n,j}`-measurable, so:
+  --   * peeling from the right (`Q_j = E[(∏_{i<j}φ_i)(∏_{i≥j}ψ_i)]`) works only at the
+  --     last index and breaks at the second step;
+  --   * peeling from the left, and the nested forms `E[∏_{i≥j}φ_i|𝓕_j]` vs
+  --     `E[∏_{i≥j}ψ_i|𝓕_j]`, break at the same place;
+  --   * the "bounded `𝓕_j`-measurable multiplier" induction breaks there too.
+  -- This is not a proof-search failure but a missing hypothesis: the interaction terms
+  -- are precisely what Brown's `V_n →p σ²` (constant) or Hall–Heyde's nesting condition
+  -- `𝓕_{n,i} ⊆ 𝓕_{n+1,i}` controls.  Without one of them the conclusion is false:
+  -- taking `ε = ε_n → 0` along a conditional-Lindeberg array would force
+  -- `E[e^{iuS_n}] - E[e^{-u²V_n/2}] → 0` for every MDS array, contradicting the standard
+  -- examples (Hall–Heyde §3.3) where `V_n →p η²` random, nesting fails, and `S_n` does
+  -- not converge to the variance mixture.  A quantitative version of the same obstruction:
+  -- with `v_i` a slowly-varying function of the past sum, `Σ_j E[Φ_j(iuX_j)Λ_j]` adds
+  -- coherently and grows like `√(k n)` relative to the frozen RHS.
+  --
+  -- REPAIR: add `V_n →p σ²` (or nesting) to the statement, or state the bound for the
+  -- special case of predictable-at-time-0 conditional variances.
   sorry
 
 /-- **Product comparison**: if the conditional variance process converges to `σ²` in
@@ -375,6 +405,29 @@ theorem tendsto_integral_prod_one_sub_condVar [IsProbabilityMeasure μ]
     Tendsto (fun n => ∫ ω, ∏ i, (1 - (u ^ 2 / 2 : ℂ) *
         (μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℝ)) ∂μ) atTop
       (𝓝 (Complex.exp (-(u ^ 2 * σ2 / 2 : ℝ)))) := by
+  -- DEBT (wave 2, reported loudly): FALSE as frozen, with an explicit witness.
+  -- `hbdd` (an L¹ bound on `V_n`) does not rule out mass escape, because the factors
+  -- `1 - u²v/2` are NOT bounded by 1: a single index with `v ≈ 1/p` on an event of
+  -- probability `p` contributes `p · u²/(2p) = u²/2` to the integral while carrying
+  -- `L¹`-mass 1 and vanishing in probability.
+  --
+  -- WITNESS.  `Ω = [0,1) × {-1,1}`, `μ = volume × uniform`, `ξ ω = ω.2`,
+  -- `p_n = 1/(n+2)`, `A_n = [0,p_n) × {-1,1}`; `k n = 2`,
+  -- `F n 0 = ⊥`, `F n 1 = σ(A_n)`, `F n 2 = ⊤`, and
+  --   `X n 0 = (1 - p_n)·1_{A_n} - p_n·1_{A_nᶜ}`,  `X n 1 = p_n^{-1/2}·ξ·1_{A_n}`.
+  -- This is an `IsMDSArray` (`E[X n 0] = 0`; `E[X n 1|F n 1] = 0` since `ξ ⟂ A_n`), with
+  --   `v_{n,0} = p_n(1-p_n)`,  `v_{n,1} = p_n^{-1}·1_{A_n}`,  `V_n = p_n(1-p_n) + p_n^{-1}1_{A_n}`.
+  -- Then `∫V_n = p_n(1-p_n) + 1 ≤ 2` (`hbdd`, B = 2); `V_n →p 0` (`hvar`, σ² = 0, since
+  -- `μ(A_n) = p_n → 0`); `μ{∃i, δ ≤ v_{n,i}} ≤ p_n + [p_n(1-p_n) ≥ δ] → 0` (`hunif`).
+  -- But
+  --   `∫ ∏_i (1 - u²v_{n,i}/2) = (1 - u²p_n(1-p_n)/2)·(1 - (u²/(2p_n))·μ(A_n))`
+  --                            = `(1 - u²p_n(1-p_n)/2)(1 - u²/2) → 1 - u²/2`,
+  -- whereas the claimed limit is `exp(-u²·0/2) = 1`.  These differ for every `u ≠ 0`.
+  --
+  -- REPAIR: the product must be clamped/stopped before the limit is taken — e.g. assume
+  -- an a.s. bound `u²·v_{n,i} ≤ 1` (all factors in `[1/2,1]`, so `‖∏‖ ≤ 1`), or replace
+  -- the product by the variance-stopped one `∏_i (if partial-V at i ≤ σ²+1 then factor
+  -- else 1)`, which agrees with it on the good event and is uniformly bounded.
   sorry
 
 end Arrays
