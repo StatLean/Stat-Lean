@@ -61,7 +61,7 @@ private theorem toCLMMatrix_isHermitian_iff (K : X → X → 𝕜) :
     exact smul_one_inj h1
   · intro h
     refine Matrix.ext fun x y => ?_
-    show star (toCLMMatrix 𝕜 K y x) = toCLMMatrix 𝕜 K x y
+    change star (toCLMMatrix 𝕜 K y x) = toCLMMatrix 𝕜 K x y
     rw [show toCLMMatrix 𝕜 K y x = K y x • (1 : 𝕜 →L[𝕜] 𝕜) from rfl, star_smul_one, h]
     rfl
 
@@ -174,7 +174,7 @@ theorem isKernelFun_iff_posSemidef_toCLMMatrix (K : X → X → 𝕜) :
     have houter : (vv.sum fun x w => vv.sum fun x' w' => ⟪toCLMMatrix 𝕜 K x' x w, w'⟫_𝕜)
         = ∑ y ∈ t, ∑ y' ∈ t, ⟪toCLMMatrix 𝕜 K y' y (b y), b y'⟫_𝕜 := by
       rw [Finsupp.sum_of_support_subset vv hsupp _ fun i _ => by
-        simp only [map_zero, inner_zero_left, Finsupp.sum_zero]]
+        simp only [map_zero, inner_zero_left, Finsupp.sum_fun_zero]]
       exact Finset.sum_congr rfl fun y _ => by rw [hvv]; exact hinner y (b y)
     have hpos' := hpos vv
     rw [houter] at hpos'

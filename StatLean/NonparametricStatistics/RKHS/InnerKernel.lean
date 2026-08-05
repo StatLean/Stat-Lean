@@ -51,7 +51,7 @@ theorem dualRKHS_scalarKernel (x y : L) :
     letI := dualRKHS 𝕜 L
     scalarKernel L x y = ⟪x, y⟫_𝕜 := by
   letI := dualRKHS 𝕜 L
-  show (kernelFun L y) x = ⟪x, y⟫_𝕜
+  change (kernelFun L y) x = ⟪x, y⟫_𝕜
   rw [dualRKHS_kernelFun]
   rfl
 
@@ -77,7 +77,7 @@ private theorem dualRKHS_range_coe_false :
   have hmem : (fun v : ℂ => conj v) ∈ Set.range (fun w : ℂ => (w : ℂ → ℂ)) := by
     refine ⟨1, ?_⟩
     funext v
-    show ⟪v, (1 : ℂ)⟫_ℂ = conj v
+    change ⟪v, (1 : ℂ)⟫_ℂ = conj v
     rw [RCLike.inner_apply, one_mul]
   rw [h] at hmem
   obtain ⟨T, hT⟩ := hmem
