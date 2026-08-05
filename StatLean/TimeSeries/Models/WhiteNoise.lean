@@ -36,17 +36,31 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {ε : ℤ → Ω �
 /-- **IID ⊆ WN** (FY §1.3.1, "easy to see"): i.i.d. noise is white noise. -/
 theorem IsIIDNoise.isWhiteNoise [IsProbabilityMeasure μ] (h : IsIIDNoise ε σ2 μ) :
     IsWhiteNoise ε σ2 μ := by
-  sorry
+  have hmemLp : ∀ t, MemLp (ε t) 2 μ := fun t => (h.identDistrib 0 t).memLp_snd h.memLp
+  refine ⟨h.measurable, hmemLp, fun t => ?_, fun t => ?_, fun s t hst => ?_⟩
+  · rw [← (h.identDistrib 0 t).integral_eq]; exact h.integral_eq_zero
+  · rw [← (h.identDistrib 0 t).variance_eq]; exact h.variance_eq
+  · exact (h.iIndep.indepFun hst).covariance_eq_zero (hmemLp s) (hmemLp t)
 
 /-- White noise is weakly stationary. -/
 theorem IsWhiteNoise.isStationary [IsProbabilityMeasure μ] (h : IsWhiteNoise ε σ2 μ) :
     IsStationary ε μ := by
-  sorry
+  refine ⟨h.memLp, fun s t => by rw [h.integral_eq_zero s, h.integral_eq_zero t],
+    fun t k => ?_⟩
+  rcases eq_or_ne k 0 with rfl | hk
+  · rw [add_zero,
+      covariance_self (h.memLp t).aestronglyMeasurable.aemeasurable,
+      covariance_self (h.memLp 0).aestronglyMeasurable.aemeasurable,
+      h.variance_eq t, h.variance_eq 0]
+  · rw [h.uncorrelated (t + k) t (by omega), h.uncorrelated k 0 hk]
 
 /-- The autocovariance of white noise: `γ(k) = σ² δ_{k0}`. -/
 theorem IsWhiteNoise.acvf_eq [IsProbabilityMeasure μ] (h : IsWhiteNoise ε σ2 μ)
     (k : ℤ) : acvf ε μ k = if k = 0 then σ2 else 0 := by
-  sorry
+  rcases eq_or_ne k 0 with rfl | hk
+  · rw [if_pos rfl, acvf,
+      covariance_self (h.memLp 0).aestronglyMeasurable.aemeasurable, h.variance_eq 0]
+  · rw [if_neg hk, acvf, h.uncorrelated k 0 hk]
 
 /-- **Characterization** (FY §2.2.1, p. 40): a zero-mean stationary process is white
 noise (with its own variance) iff all nonzero-lag autocovariances vanish. -/
@@ -57,6 +71,10 @@ theorem isWhiteNoise_iff_acvf [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     -- USER-INPUT: zero mean (implicit in FY's WN comparison); FY §2.2.1 p. 40
     (hmean : ∀ t, ∫ ω, X t ω ∂μ = 0) :
     IsWhiteNoise X (acvf X μ 0) μ ↔ ∀ k : ℤ, k ≠ 0 → acvf X μ k = 0 := by
-  sorry
+  refine ⟨fun hw k hk => by rw [hw.acvf_eq k, if_neg hk], fun hk => ?_⟩
+  refine ⟨hmeas, hstat.memLp, hmean, fun t => (hstat.acvf_zero_eq_variance t).symm,
+    fun s t hst => ?_⟩
+  rw [hstat.cov_eq_acvf s t]
+  exact hk _ (sub_ne_zero.mpr hst)
 
 end StatLean.TimeSeries
