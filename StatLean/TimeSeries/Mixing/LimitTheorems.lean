@@ -20,13 +20,15 @@ import Mathlib.Analysis.Normed.Group.Tannery
   distributed*, so the factorized characteristic function is the single power
   `(φ_n)^{k_n}` — no independent-copy triangular array (and hence no appeal to the
   Lindeberg double-array CLT) is needed.
-  **STATUS: incomplete.** Steps (a) small-block negligibility and (b) the
-  Volkonskii–Rozanov factorization are proved; the closing scalar limit
-  `(φ_n)^{k_n} → e^{−σ²u²/2}` is left as an in-proof `sorry` (see the comment at the end
-  of the proof for the exact residue). The proof additionally rests on the named private
-  debt `lindeberg_blocks_debt` (Ibragimov–Linnik Thm 18.5.3): under `Σ α(j) < ∞` alone,
-  the fourth-moment route of `Mixing/Inequalities.moment4_partial_sum_le` is *not*
-  available — Yokoyama's `E S_l⁴ = O(l²)` needs `Σ_j (j+1) α(j) < ∞`.
+  **STATUS.** The proof has no `sorry` of its own: (a) small-block negligibility, (b) the
+  Volkonskii–Rozanov factorization and (c) the closing scalar limit
+  `(φ_n)^{k_n} → e^{−σ²u²/2}` are all proved. (c) runs through the block expansion
+  `E e^{i v B} − 1 = −(v²/2) E B² + R` (`charFun_block_expand`) and the Lindeberg split
+  of `R` at an arbitrary level (`norm_integral_remainder_le`). It rests on the single
+  named private debt `lindeberg_blocks_debt` (Ibragimov–Linnik Thm 18.5.3), whose
+  docstring records both the exact obstruction and a concrete route that would remove it
+  (a `E S_l⁴ = o(l³)` bound — which `Σ α(j) < ∞` *does* buy — together with an
+  adaptively chosen big-block length `l_n = ⌈√n a_n⌉`).
 * **Theorem 2.20(i)/2.21(i)** — the `δ`-moment versions (cited Bosq / Peligrad):
   literature DEBTS.
 * **Proposition 2.8 (SLLN)** — α-mixing + `E|X| < ∞` ⇒ `S_n/n → EX` a.s.: literature
@@ -1027,11 +1029,44 @@ Under `|X| ≤ C`, strict stationarity, zero mean and `Σ α(j) < ∞`, the norm
 sums `S_l²/l` are **uniformly integrable**, so the Lindeberg mass at a level `ε√n` with
 `l_n/n → 0` vanishes.
 
-**This is the single unproved brick of `clt_of_bounded_alphaMixing`.** It is *not*
-derivable from the ambient hypotheses by the fourth-moment route: Yokoyama's bound
-`E S_l⁴ = O(l²)` needs `Σ_j (j+1) α(j) < ∞`, strictly stronger than `Σ_j α(j) < ∞`, so
-`Mixing/Inequalities.moment4_partial_sum_le` (which assumes `α(n) ≤ K n⁻²`) does not
-apply. The statement below is the weakest true form that closes the Bernstein scheme. -/
+**This is the single unproved brick of `clt_of_bounded_alphaMixing`** (everything else in
+Theorems 2.20(ii) and 2.21(ii) is now proved; `summable_acvf_and_var_rate_of_bounded` is
+axiom-clean and `clt_of_bounded_alphaMixing` reaches `sorryAx` only through this lemma).
+
+**Why the second-moment toolbox cannot close it.** The two facts this file supplies about
+one big block are `E S_l² ≤ Λ l` (`integral_sq_partialSum_le`) and `|S_l| ≤ C l` a.s.
+Every interpolation they support has the shape
+`∫_{|S_l| ≥ T} S_l² ≤ (C l)^γ · E S_l² / T^γ`, i.e. after dividing by `l` and taking
+`T = ε√n`, the bound `Λ · (C l_n / (ε √n))^γ` — which vanishes only when `l_n = o(√n)`.
+But the Bernstein constraints *force* `l_n ≫ √n` at **every** admissible scheme: the
+Volkonskii–Rozanov budget needs `k_n ≤ s_n` (all `Σ α < ∞` gives is `m α(m) → 0`, see
+`tendsto_mul_alphaCoeff`), the small blocks must be negligible so `s_n = o(l_n)`, and
+`k_n ≍ n / l_n`; together `n / l_n ≲ s_n = o(l_n)`, i.e. `l_n² ≫ n`. So no choice of
+block lengths makes the Lindeberg event empty or Chebyshev-negligible.
+
+**The route that does close it** (checked by hand; not formalized here). Do *not* split
+the remainder at a Lindeberg level at all — use the global cubic half of
+`norm_expI_taylor` directly. With `v_n = u n^{-1/2}` and `k_n ≍ n / l_n`,
+`k_n ‖R n‖ ≤ 4 |u|³ · E|S_{l_n}|³ / (l_n √n)`, so it suffices that
+`E|S_l|³ = o(l √n)`; Cauchy–Schwarz turns this into `E S_l⁴ = o(l n)`. And
+`E S_l⁴ = o(l³)` **is** available from `Σ α < ∞` alone: splitting a sorted 4-tuple at its
+largest gap `G` gives `E S_l⁴ ≤ 12 C⁴ l Σ_{G ≤ l} (G+1)² α(G) + l (Σ_d |γ(d)|)²`, and
+`Σ_{G ≤ l} (G+1)² α(G) = Σ_{G ≤ l} (G+1) · ((G+1) α(G)) = o(l²)` by Cesàro from
+`tendsto_mul_alphaCoeff`. Writing `E S_l⁴ = l³ η_l` with `η_l → 0`, the requirement
+`E S_l⁴ = o(l n)` reads `l_n² η_{l_n} = o(n)`, which holds for an **adaptively** chosen
+`l_n = ⌈√n · a_n⌉` with `a_n → ∞` slowly enough that `a_n² η_{l_n} → 0` (and then
+`s_n ≍ k_n ≍ √n / a_n` keeps `k_n ≤ s_n`, `k_n s_n ≍ n / a_n² = o(n)`, `k_n l_n / n → 1`).
+
+Two consequences worth recording. (i) The previous verdict in this docstring — "the
+fourth-moment route needs `Σ_j (j+1) α(j) < ∞`" — is **too pessimistic**: that hypothesis
+buys the *rate* `E S_l⁴ = O(l²)` (Yokoyama), but only `o(l³)` is needed, and `o(l³)`
+follows from `Σ α < ∞`. (ii) Removing this debt therefore costs a 4-fold sorted-tuple
+moment expansion inside this file (the combinatorial half that
+`Mixing/Inequalities.moment4_partial_sum_le` also leaves open) *plus* a diagonal rebuild
+of `exists_block_scheme` with an `α`-dependent `l_n`; both are out of this lane's budget.
+
+The statement below is the weakest form that closes the Bernstein scheme as currently
+assembled. -/
 private theorem lindeberg_blocks_debt [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     (hmeas : ∀ t, Measurable (X t)) (hstat : IsStrictlyStationary X μ) {C : ℝ}
     -- USER-INPUT: uniform bound; FY Thm 2.21(ii)
