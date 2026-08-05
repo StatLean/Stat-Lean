@@ -63,17 +63,60 @@ noncomputable def armaPsi {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (n
 def NoRootClosedDisc {p : ℕ} (b : Fin p → ℝ) : Prop :=
   ∀ z : ℂ, ‖z‖ ≤ 1 → Polynomial.aeval z (arPoly b) ≠ 0
 
+section Coeff
+
+/-- The coefficients of the AR polynomial `b(z) = 1 - b₁z - ⋯ - b_pz^p`. -/
+private lemma coeff_arPoly {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
+    (arPoly b).coeff m
+      = (if m = 0 then (1 : ℝ) else 0) - ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
+  simp [arPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+    Polynomial.coeff_X_pow, mul_ite]
+
+private lemma coeff_arPoly_zero {p : ℕ} (b : Fin p → ℝ) : (arPoly b).coeff 0 = 1 := by
+  rw [coeff_arPoly]; simp
+
+/-- The coefficients of the MA polynomial `a(z) = 1 + a₁z + ⋯ + a_qz^q`. -/
+private lemma coeff_maPoly {q : ℕ} (a : Fin q → ℝ) (m : ℕ) :
+    (maPoly a).coeff m
+      = (if m = 0 then (1 : ℝ) else 0) + ∑ j : Fin q, if m = (j : ℕ) + 1 then a j else 0 := by
+  simp [maPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+    Polynomial.coeff_X_pow, mul_ite]
+
+private lemma coeff_maPoly_zero {q : ℕ} (a : Fin q → ℝ) : (maPoly a).coeff 0 = 1 := by
+  rw [coeff_maPoly]; simp
+
+/-- The constant coefficient of `arPoly b` as a power series is `1`, hence nonzero: this is
+what makes the formal inverse in `ℝ⟦X⟧` available. -/
+private lemma constantCoeff_arPoly_ne_zero {p : ℕ} (b : Fin p → ℝ) :
+    PowerSeries.constantCoeff (((arPoly b : Polynomial ℝ) : PowerSeries ℝ)) ≠ 0 := by
+  rw [Polynomial.constantCoeff_coe, coeff_arPoly_zero]
+  exact one_ne_zero
+
+end Coeff
+
 /-- `ψ_0 = 1` (both polynomials have constant coefficient `1`). -/
 theorem armaPsi_zero {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) :
     armaPsi b a 0 = 1 := by
-  sorry
+  rw [armaPsi, PowerSeries.coeff_zero_eq_constantCoeff, map_mul, PowerSeries.constantCoeff_inv,
+    Polynomial.constantCoeff_coe, Polynomial.constantCoeff_coe, coeff_arPoly_zero,
+    coeff_maPoly_zero, inv_one, mul_one]
 
 /-- The defining convolution identity `b ∗ ψ = a` (FY eq. (2.5) read coefficientwise):
 `Σ_{k≤n} (arPoly b).coeff k · ψ_{n−k} = (maPoly a).coeff n`. -/
 theorem arPoly_conv_armaPsi {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (n : ℕ) :
     ∑ k ∈ Finset.range (n + 1), (arPoly b).coeff k * armaPsi b a (n - k)
       = (maPoly a).coeff n := by
-  sorry
+  have key : (((arPoly b : Polynomial ℝ) : PowerSeries ℝ)) *
+      ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) *
+        (((arPoly b : Polynomial ℝ) : PowerSeries ℝ))⁻¹)
+      = (((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) := by
+    rw [← mul_assoc, mul_comm (((arPoly b : Polynomial ℝ) : PowerSeries ℝ)),
+      mul_assoc, PowerSeries.mul_inv_cancel _ (constantCoeff_arPoly_ne_zero b), mul_one]
+  have hcoeff := congrArg (PowerSeries.coeff n) key
+  rw [PowerSeries.coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk,
+    Polynomial.coeff_coe] at hcoeff
+  rw [← hcoeff]
+  exact Finset.sum_congr rfl fun k _ => by rw [Polynomial.coeff_coe]; rfl
 
 /-- **Geometric decay of the transfer coefficients** (the analytic core of FY Theorem
 2.1): with no roots of `b` in the closed unit disc, `|ψ_n| ≤ C rⁿ` for some `r < 1`. -/
