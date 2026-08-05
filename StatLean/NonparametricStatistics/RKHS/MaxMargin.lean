@@ -49,7 +49,12 @@ def IsMaxMarginHyperplane (v : E) (c : ℝ) (x : Fin n → E) (lab : Fin n → �
 /-- The feasible set is convex. -/
 theorem convex_marginFeasible (x : Fin n → E) (lab : Fin n → ℝ) :
     Convex ℝ (marginFeasible x lab) := by
-  sorry
+  rintro v₁ ⟨c₁, h₁⟩ v₂ ⟨c₂, h₂⟩ s t hs ht hst
+  refine ⟨s * c₁ + t * c₂, fun i => ?_⟩
+  have e : ⟪x i, s • v₁ + t • v₂⟫ = s * ⟪x i, v₁⟫ + t * ⟪x i, v₂⟫ := by
+    rw [inner_add_right, real_inner_smul_right, real_inner_smul_right]
+  rw [e]
+  nlinarith [mul_le_mul_of_nonneg_left (h₁ i) hs, mul_le_mul_of_nonneg_left (h₂ i) ht]
 
 /-- The feasible set is closed. -/
 theorem isClosed_marginFeasible (x : Fin n → E) (lab : Fin n → ℝ) :
@@ -62,7 +67,25 @@ theorem marginFeasible_nonempty {x : Fin n → E} {lab : Fin n → ℝ}
     -- USER-INPUT: the data is linearly separable
     (hsep : LinearlySeparable x lab) :
     (marginFeasible x lab).Nonempty := by
-  sorry
+  obtain ⟨v, c, h⟩ := hsep
+  rcases Nat.eq_zero_or_pos n with hn | hn
+  · subst hn
+    exact ⟨0, 0, fun i => i.elim0⟩
+  · have hne : (Finset.univ : Finset (Fin n)).Nonempty :=
+      Finset.univ_nonempty_iff.mpr (Fin.pos_iff_nonempty.mp hn)
+    set δ := Finset.univ.inf' hne (fun i => lab i * (⟪x i, v⟫ - c)) with hδ
+    have hδpos : 0 < δ := by
+      rw [hδ, Finset.lt_inf'_iff]
+      exact fun i _ => h i
+    refine ⟨δ⁻¹ • v, δ⁻¹ * c, fun i => ?_⟩
+    have hle : δ ≤ lab i * (⟪x i, v⟫ - c) := Finset.inf'_le _ (Finset.mem_univ i)
+    rw [real_inner_smul_right]
+    have hrw : lab i * (δ⁻¹ * ⟪x i, v⟫ - δ⁻¹ * c)
+        = δ⁻¹ * (lab i * (⟪x i, v⟫ - c)) := by ring
+    rw [hrw]
+    calc (1 : ℝ) = δ⁻¹ * δ := by field_simp
+      _ ≤ δ⁻¹ * (lab i * (⟪x i, v⟫ - c)) :=
+          mul_le_mul_of_nonneg_left hle (le_of_lt (inv_pos.mpr hδpos))
 
 /-- **Existence and uniqueness of the maximal margin normal vector**: the feasible set of
 separable data contains a unique element of minimal norm. -/
@@ -102,6 +125,11 @@ theorem isMaxMarginHyperplane_of_min_norm [CompleteSpace E] {x : Fin n → E}
 the pairwise inner products of the data. -/
 theorem norm_sq_eq_gram_quadForm (x : Fin n → E) (α : Fin n → ℝ) :
     ‖∑ j, α j • x j‖ ^ 2 = ∑ i, ∑ j, α i * α j * ⟪x j, x i⟫ := by
-  sorry
+  rw [← real_inner_self_eq_norm_sq, sum_inner]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [real_inner_smul_left, inner_sum, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [real_inner_smul_right, real_inner_comm]
+  ring
 
 end StatLean.NonparametricStatistics
