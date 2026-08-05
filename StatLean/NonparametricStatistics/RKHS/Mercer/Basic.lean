@@ -39,21 +39,52 @@ variable [RKHS 𝕜 H X 𝕜]
 
 section NormComparison
 
+omit [MetricSpace X] [CompactSpace X] [MeasurableSpace X] [BorelSpace X] in
+/-- The norm of a kernel function is the square root of the kernel diagonal. -/
+private theorem norm_kernelFun_eq_sqrt (x : X) :
+    ‖kernelFun H x‖ = Real.sqrt (RCLike.re (scalarKernel H x x)) := by
+  rw [scalarKernel_eq_inner, ← norm_sq_eq_re_inner (𝕜 := 𝕜), Real.sqrt_sq (norm_nonneg _)]
+
+omit [MeasurableSpace X] [BorelSpace X] in
+/-- The diagonal of a continuous kernel on a compact space is bounded above. -/
+private theorem bddAbove_re_diag {K : X → X → 𝕜}
+    (hKc : Continuous fun p : X × X => K p.1 p.2) :
+    BddAbove (Set.range fun t : X => RCLike.re (K t t)) := by
+  have hc : Continuous fun t : X => RCLike.re (K t t) :=
+    RCLike.continuous_re.comp' (hKc.comp' (continuous_id.prodMk continuous_id))
+  simpa [Set.image_univ] using isCompact_univ.bddAbove_image hc.continuousOn
+
+omit [MeasurableSpace X] [BorelSpace X] in
 /-- Pointwise bound over the kernel diagonal supremum: for `f` in the RKHS of a Mercer
 kernel, `‖f x‖ ≤ √(sup_t K(t,t)) · ‖f‖`. -/
 theorem norm_apply_le_sSup {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K)
     -- USER-INPUT: `H` has reproducing kernel `K`
     (hKH : scalarKernel H = K) (f : H) (x : X) :
     ‖f x‖ ≤ Real.sqrt (⨆ t : X, RCLike.re (K t t)) * ‖f‖ := by
-  sorry
+  refine le_trans (norm_apply_le f x) (mul_le_mul_of_nonneg_right ?_ (norm_nonneg f))
+  rw [norm_kernelFun_eq_sqrt (𝕜 := 𝕜) (H := H) x, hKH]
+  exact Real.sqrt_le_sqrt (le_ciSup (bddAbove_re_diag hK.continuous) x)
 
+omit [BorelSpace X] in
 /-- The `L²(μ)` norm of an RKHS member is controlled by its sup norm:
 `∫ ‖f x‖² dμ ≤ μ(X) · (sup_x ‖f x‖)²` — the members of a Mercer RKHS embed in `L²`. -/
 theorem integral_normSq_le {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K)
     -- USER-INPUT: `H` has reproducing kernel `K`
     (hKH : scalarKernel H = K) (f : H) :
     ∫ x, ‖f x‖ ^ 2 ∂μ ≤ (μ Set.univ).toReal * (⨆ x : X, ‖f x‖) ^ 2 := by
-  sorry
+  have hfc : Continuous (f : X → 𝕜) :=
+    continuous_coe_of_continuous_scalarKernel (by rw [hKH]; exact hK.continuous) f
+  have hbdd : BddAbove (Set.range fun x : X => ‖f x‖) := by
+    simpa [Set.image_univ] using isCompact_univ.bddAbove_image hfc.norm.continuousOn
+  have hle : ∀ x : X, ‖f x‖ ^ 2 ≤ (⨆ x : X, ‖f x‖) ^ 2 := fun x => by
+    have h := le_ciSup hbdd x
+    have : (0 : ℝ) ≤ ‖f x‖ := norm_nonneg _
+    nlinarith
+  calc ∫ x, ‖f x‖ ^ 2 ∂μ ≤ ∫ _x : X, (⨆ x : X, ‖f x‖) ^ 2 ∂μ :=
+        integral_mono_of_nonneg (Filter.Eventually.of_forall fun x => by positivity)
+          (integrable_const _) (Filter.Eventually.of_forall hle)
+    _ = (μ Set.univ).toReal * (⨆ x : X, ‖f x‖) ^ 2 := by
+        rw [integral_const, smul_eq_mul, measureReal_def]
 
 end NormComparison
 
@@ -91,13 +122,22 @@ theorem tendstoUniformly_scalarKernel {K : X → X → 𝕜} (hK : IsMercerKerne
       (fun p => K p.1 p.2) Filter.atTop := by
   sorry
 
+omit [MetricSpace X] [CompactSpace X] [MeasurableSpace X] [BorelSpace X] in
 /-- Tail bound by Cauchy–Schwarz: partial sums of the expansion off the diagonal are
 dominated through the diagonal tails,
 `‖∑_{i ∈ s} conj (eᵢ y) eᵢ x‖² ≤ (∑_{i ∈ s} ‖eᵢ x‖²) (∑_{i ∈ s} ‖eᵢ y‖²)`. -/
 theorem sq_norm_sum_le {ι : Type*} (e : HilbertBasis ι 𝕜 H) (s : Finset ι) (x y : X) :
     ‖∑ i ∈ s, conj ((e i : H) y) * (e i : H) x‖ ^ 2
       ≤ (∑ i ∈ s, ‖(e i : H) x‖ ^ 2) * (∑ i ∈ s, ‖(e i : H) y‖ ^ 2) := by
-  sorry
+  have h1 : ‖∑ i ∈ s, conj ((e i : H) y) * (e i : H) x‖
+      ≤ ∑ i ∈ s, ‖(e i : H) x‖ * ‖(e i : H) y‖ := by
+    refine le_trans (norm_sum_le _ _) (Finset.sum_le_sum fun i _ => ?_)
+    rw [norm_mul, RCLike.norm_conj, mul_comm]
+  have h2 : (∑ i ∈ s, ‖(e i : H) x‖ * ‖(e i : H) y‖) ^ 2
+      ≤ (∑ i ∈ s, ‖(e i : H) x‖ ^ 2) * (∑ i ∈ s, ‖(e i : H) y‖ ^ 2) :=
+    Finset.sum_mul_sq_le_sq_mul_sq s _ _
+  refine le_trans ?_ h2
+  gcongr
 
 end UniformConvergence
 
