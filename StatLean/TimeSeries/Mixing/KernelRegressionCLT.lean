@@ -58,13 +58,24 @@ full: the four analytic bricks (`integral_dilate_translate`,
 `tendsto_localized_second_moment_of_bounded`, the small-lag bound (2.76)
 `small_lag_covariance_bound`, the large-lag Davydov bound (2.75)
 `large_lag_covariance_bound`, the pair-σ-algebra transport, and the `pairAlphaCoeff`
-basics. Open, as named debts: `tendsto_localized_second_moment_debt` (2.73),
+basics; and, under the authorized (C1) repair, the diagonal (2.73) itself
+(`tendsto_localized_second_moment_debt`, with `nonneg_of_continuousAt_of_ae_nonneg`).
+Open, as named debts:
 `var_localized_sum` (the (a) headline), `tendsto_blockCount_mul_pairAlpha` (2.78),
 `tendsto_smallBlock_variance` (2.79)–(2.81), `charFun_locSum_sub_locTruncSum_le`
 (2.82)–(2.83), `tendsto_charFun_locTruncSum` ((b) + (d) at fixed `L`, and (2.84)).
 
-**FALSE AS FROZEN (verified).** FY (2.73) — hence Theorem 2.22 itself — does not follow
-from (C1)–(C5) *as formalized here*. The diagonal term equals, identically,
+**FALSE AS FROZEN (verified) — REPAIR APPLIED.** FY (2.73) — hence Theorem 2.22 itself —
+does not follow from (C1)–(C5) *as formalized here*. The counterexample below stands; the
+laptop-authorized amendment of (C1) has been applied to `kernel_localized_clt`,
+`tendsto_localized_second_moment_debt`, `var_localized_sum` and
+`tendsto_charFun_locTruncSum`, in the form of the two extra hypotheses
+`(hσm : Measurable σsq)` and `(hσpb : ∃ C, ∀ v, σsq v * p v ≤ C)`. Under them the
+diagonal (2.73) is now **proved** (`tendsto_localized_second_moment_debt`); note that only
+the *upper* half of the bound is assumed — the lower half is derived from `σ²` being a
+conditional second moment. The record of the failure as frozen:
+
+The diagonal term equals, identically,
 `∫ (σ²·p)(x + h u) W²(u) du` (this identity is proved, inside
 `tendsto_localized_second_moment_of_bounded`), and its convergence to `σ²(x)p(x)∫W²`
 needs control of the range `|u| > M`, which continuity of `σ²·p` **at `x`** does not
@@ -394,12 +405,43 @@ private theorem small_lag_covariance_bound {X e : ℤ → Ω → ℝ} {W : ℝ �
   rw [hprod, hone]
   ring
 
-/-- **FY (2.73), diagonal term — DEBT, and FALSE as frozen.**
+/-- **Continuity at a point upgrades an a.e. lower bound to a pointwise one.** If `g` is
+continuous at `x` and `0 ≤ g` Lebesgue-a.e., then `0 ≤ g x`: otherwise `g < 0` on a whole
+ball around `x`, which has positive Lebesgue measure. Used to evaluate the repaired
+diagonal limit at the point `x` itself, where `σ²` is *not* pinned down by `hcv` (which
+constrains it only `μ.map (X 0)`-a.e.). -/
+private theorem nonneg_of_continuousAt_of_ae_nonneg {g : ℝ → ℝ} {x : ℝ}
+    (hgc : ContinuousAt g x)
+    (hae : ∀ᵐ v ∂(MeasureTheory.volume : Measure ℝ), 0 ≤ g v) : 0 ≤ g x := by
+  by_contra hx
+  push_neg at hx
+  have hlt : ∀ᶠ v in 𝓝 x, g v < 0 := hgc (Iio_mem_nhds hx)
+  obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff_ball.1 hlt
+  have hsub : Metric.ball x ε ⊆ {v : ℝ | 0 ≤ g v}ᶜ := fun v hv => not_le.2 (hball v hv)
+  exact (Metric.measure_ball_pos MeasureTheory.volume x hε).ne'
+    (measure_mono_null hsub (mem_ae_iff.1 hae))
+
+/-- **FY (2.73), diagonal term — REPAIRED AND PROVED.**
 `h⁻¹ E[e_0² W²((X_0 − x)/h)] = ∫ (σ²·p)(x + h u) W²(u) du` (an *identity*, proved
 inside `tendsto_localized_second_moment_of_bounded`), and FY asserts the limit
 `σ²(x) p(x) ∫ W²`.
 
-**Status.** The limit needs more than the formalized (C1)–(C5) supply. Continuity of
+**Status: PROVED, under the authorized repair** — the two hypotheses `hσm`/`hσpb` below
+are the laptop-authorized amendment of (C1) (the textbook's silent reading; see the
+module docstring's FALSE-AS-FROZEN section). The record of *why* the amendment is
+necessary is kept verbatim below.
+
+Note that `hσpb` is only a **one-sided** (upper) bound: the matching lower bound is not
+assumed but *derived*, since `σ²` is a conditional second moment, hence `≥ 0` a.e. for
+the law of `X_0`, hence `σ²·p ≥ 0` Lebesgue-a.e. (this is where `hσm` is spent — it makes
+`{v | 0 ≤ σ²(v)}` measurable, so the a.e. statement transports through
+`ae_map_iff`/`ae_withDensity_iff`). The proof then runs
+`tendsto_localized_second_moment_of_bounded` on the clipped `max σ² 0`, which agrees with
+`σ²` a.e.-`μ` under the conditional expectation, and agrees with it *at the point* `x` by
+`nonneg_of_continuousAt_of_ae_nonneg`.
+
+**Why the repair is needed.** The limit needs more than the formalized (C1)–(C5) supply
+(this was verified in the previous wave). Continuity of
 `σ²·p` at `x` controls the window `|u| ≤ M` (there `|h u| ≤ M h → 0`), but the tail
 `|u| > M` is left uncontrolled: `(C2)` forces only `σ·p` to be bounded (take
 `g = g₁ ⊗ g₂` in (C2) and let `g` concentrate), **not** `σ²·p`, and `σ²·p ∈ L¹` alone
@@ -411,16 +453,16 @@ unbounded, and choosing `W² = 1` on intervals `J_k ≈ 2^k` of length `2^{-k}`
 stay continuous at `x`. Sparsifying the spike sequence keeps `h_n → 0` compatible with
 `n h_n³ → ∞`, so (C5) does not rescue it.
 
-**Repair.** Either strengthen (C4) to compactly supported `W` (then continuity at `x`
-suffices and this lemma is `tendsto_localized_second_moment_of_bounded`'s window
+**Repair (APPLIED).** Either strengthen (C4) to compactly supported `W` (then continuity
+at `x` suffices and this lemma is `tendsto_localized_second_moment_of_bounded`'s window
 argument), or strengthen (C1) to `σ²·p` bounded — which is what the textbook's
-"(C1) with `σ²` and `p` bounded" silently supplies. `tendsto_localized_second_moment_of_bounded`
-is the repaired statement, and it is **proved**.
-
-Note also that the frozen (C1) carries no measurability hypothesis on `σsq`; only
-`hcv` constrains it, and only `μ.map (X 0)`-a.e. -/
+"(C1) with `σ²` and `p` bounded" silently supplies. The second route is the one taken:
+`hσpb` below, together with the measurability `hσm` that the frozen (C1) also omitted
+(only `hcv` constrains `σsq`, and only `μ.map (X 0)`-a.e.). -/
 private theorem tendsto_localized_second_moment_debt [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hX : Measurable (X 0)) {σsq p : ℝ → ℝ}
+    -- USER-INPUT: σ² measurable (the frozen (C1) omits it); FY §2.6.4
+    (hσm : Measurable σsq)
     (hmp : Measurable p) (hp0 : ∀ v, 0 ≤ p v)
     (hpd : μ.map (X 0) = MeasureTheory.volume.withDensity fun v => ENNReal.ofReal (p v))
     {x : ℝ}
@@ -428,13 +470,61 @@ private theorem tendsto_localized_second_moment_debt [IsProbabilityMeasure μ]
       =ᵐ[μ] fun ω => σsq (X 0 ω))
     (he2 : Integrable (fun ω => e 0 ω ^ 2) μ)
     (hσc : ContinuousAt σsq x) (hpc : ContinuousAt p x)
+    -- USER-INPUT: σ²·p bounded (the textbook's silent reading of (C1)); FY §2.6.4
+    (hσpb : ∃ C : ℝ, ∀ v : ℝ, σsq v * p v ≤ C)
     {W : ℝ → ℝ} {CW : ℝ} (hWm : Measurable W) (hWb : ∀ v, |W v| ≤ CW)
     (hW2 : Integrable (fun v => W v ^ 2) MeasureTheory.volume)
     {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n) (hh : Tendsto h atTop (𝓝 0)) :
     Tendsto (fun n : ℕ =>
         (h n)⁻¹ * ∫ ω, e 0 ω ^ 2 * W ((X 0 ω - x) / h n) ^ 2 ∂μ) atTop
       (𝓝 (σsq x * p x * ∫ v, W v ^ 2)) := by
-  sorry
+  obtain ⟨C, hC⟩ := hσpb
+  -- (1) `σ²` is a conditional second moment, hence `≥ 0` a.e.-`μ` along `X 0`.
+  have hcond0 : (0 : Ω → ℝ)
+      ≤ᵐ[μ] μ[fun ω => e 0 ω ^ 2 | MeasurableSpace.comap (X 0) inferInstance] :=
+    condExp_nonneg (Eventually.of_forall fun ω => sq_nonneg _)
+  have hσ0 : ∀ᵐ ω ∂μ, 0 ≤ σsq (X 0 ω) := by
+    filter_upwards [hcond0, hcv] with ω h1 h2
+    simpa [h2] using h1
+  -- (2) hence `σ²·p ≥ 0` Lebesgue-a.e. (transport through the density of `X 0`).
+  have hlaw : ∀ᵐ v ∂(μ.map (X 0)), 0 ≤ σsq v := by
+    rw [ae_map_iff hX.aemeasurable (measurableSet_le measurable_const hσm)]
+    exact hσ0
+  rw [hpd, ae_withDensity_iff (by fun_prop)] at hlaw
+  have hae : ∀ᵐ v ∂(MeasureTheory.volume : Measure ℝ), 0 ≤ σsq v * p v := by
+    filter_upwards [hlaw] with v hv
+    rcases (hp0 v).eq_or_lt with hz | hz
+    · rw [← hz, mul_zero]
+    · exact mul_nonneg (hv (ENNReal.ofReal_pos.2 hz).ne') (hp0 v)
+  -- (3) the clipped `max σ² 0` satisfies the *two-sided* bound of the proved brick,
+  -- and agrees with `σ²` both a.e.-`μ` (under `hcv`) and at the point `x`.
+  have hcv' : μ[fun ω => e 0 ω ^ 2 | MeasurableSpace.comap (X 0) inferInstance]
+      =ᵐ[μ] fun ω => max (σsq (X 0 ω)) 0 := by
+    filter_upwards [hcv, hσ0] with ω h1 h2
+    rw [h1, max_eq_left h2]
+  have hbound : ∀ v : ℝ, |max (σsq v) 0 * p v| ≤ max C 0 := by
+    intro v
+    rw [abs_of_nonneg (mul_nonneg (le_max_right _ _) (hp0 v))]
+    rcases le_or_gt 0 (σsq v) with hs | hs
+    · rw [max_eq_left hs]; exact (hC v).trans (le_max_left _ _)
+    · rw [max_eq_right hs.le, zero_mul]; exact le_max_right _ _
+  have hend : max (σsq x) 0 * p x = σsq x * p x := by
+    rcases le_or_gt 0 (σsq x) with hs | hs
+    · rw [max_eq_left hs]
+    · have hgx : 0 ≤ σsq x * p x :=
+        nonneg_of_continuousAt_of_ae_nonneg (g := fun v => σsq v * p v)
+          (hσc.mul hpc) hae
+      have hpx0 : p x = 0 := by
+        rcases (hp0 x).eq_or_lt with hz | hz
+        · exact hz.symm
+        · nlinarith
+      rw [hpx0, mul_zero, mul_zero]
+  have hmain := tendsto_localized_second_moment_of_bounded (X := X) (e := e) hX
+    (σsq := fun v => max (σsq v) 0) (p := p) (hσm.max measurable_const) hmp hp0 hpd
+    (x := x) hcv' he2 ((hσc.max continuousAt_const).mul hpc) (M := max C 0) hbound
+    hWm hWb hW2 hh0 hh
+  rw [hend] at hmain
+  exact hmain
 
 /-- **FY (2.75), large-lag covariance bound — PROVED.** Davydov
 (`abs_covariance_le_davydov` at `p = q = δ`, so the exponent is `1 − 2/δ`) against the
@@ -503,9 +593,13 @@ private theorem var_localized_sum [IsProbabilityMeasure μ]
     (hcv : μ[fun ω => e 0 ω ^ 2 | MeasurableSpace.comap (X 0) inferInstance]
       =ᵐ[μ] fun ω => σsq (X 0 ω))
     (hδ : 2 < δ) (heLδ : MemLp (e 0) (ENNReal.ofReal δ) μ)
+    -- USER-INPUT (authorized (C1) repair): σ² measurable; FY §2.6.4
+    (hσm : Measurable σsq)
     (hmp : Measurable p) (hp0 : ∀ v, 0 ≤ p v)
     (hpd : μ.map (X 0) = MeasureTheory.volume.withDensity fun v => ENNReal.ofReal (p v))
     (hσc : ContinuousAt σsq x) (hpc : ContinuousAt p x) (hpx : 0 < p x)
+    -- USER-INPUT: σ²·p bounded (the textbook's silent reading of (C1)); FY §2.6.4
+    (hσpb : ∃ C : ℝ, ∀ v : ℝ, σsq v * p v ≤ C)
     (hC2 : ∃ B : ℝ, 0 ≤ B ∧ ∀ j : ℤ, j ≠ 0 → ∀ g : ℝ × ℝ → ℝ, Measurable g →
       (∀ v, 0 ≤ g v) →
       ∫ ω, |e 0 ω * e j ω| * g (X 0 ω, X j ω) ∂μ
@@ -625,9 +719,13 @@ private theorem tendsto_charFun_locTruncSum [IsProbabilityMeasure μ]
     (hcv : μ[fun ω => e 0 ω ^ 2 | MeasurableSpace.comap (X 0) inferInstance]
       =ᵐ[μ] fun ω => σsq (X 0 ω))
     (hδ : 2 < δ) (heLδ : MemLp (e 0) (ENNReal.ofReal δ) μ)
+    -- USER-INPUT (authorized (C1) repair): σ² measurable; FY §2.6.4
+    (hσm : Measurable σsq)
     (hmp : Measurable p) (hp0 : ∀ v, 0 ≤ p v)
     (hpd : μ.map (X 0) = MeasureTheory.volume.withDensity fun v => ENNReal.ofReal (p v))
     (hσc : ContinuousAt σsq x) (hpc : ContinuousAt p x) (hpx : 0 < p x)
+    -- USER-INPUT: σ²·p bounded (the textbook's silent reading of (C1)); FY §2.6.4
+    (hσpb : ∃ C : ℝ, ∀ v : ℝ, σsq v * p v ≤ C)
     (hC2 : ∃ B : ℝ, 0 ≤ B ∧ ∀ j : ℤ, j ≠ 0 → ∀ g : ℝ × ℝ → ℝ, Measurable g →
       (∀ v, 0 ≤ g v) →
       ∫ ω, |e 0 ω * e j ω| * g (X 0 ω, X j ω) ∂μ
@@ -666,11 +764,15 @@ theorem kernel_localized_clt [IsProbabilityMeasure μ]
       =ᵐ[μ] fun ω => σsq (X 0 ω))
     -- (C1) USER-INPUT: δ-moment of the errors, δ > 2; FY (C1)
     (hδ : 2 < δ) (heLδ : MemLp (e 0) (ENNReal.ofReal δ) μ)
+    -- (C1) USER-INPUT: σ² measurable (the frozen (C1) omits it); FY (C1)
+    (hσm : Measurable σsq)
     -- (C1) USER-INPUT: X₁ has Lebesgue density p; FY (C1)
     (hmp : Measurable p) (hp0 : ∀ v, 0 ≤ p v)
     (hpd : μ.map (X 0) = MeasureTheory.volume.withDensity fun v => ENNReal.ofReal (p v))
     -- (C1) USER-INPUT: continuity at x and positivity; FY (C1)
     (hσc : ContinuousAt σsq x) (hpc : ContinuousAt p x) (hpx : 0 < p x)
+    -- USER-INPUT: σ²·p bounded (the textbook's silent reading of (C1)); FY §2.6.4
+    (hσpb : ∃ C : ℝ, ∀ v : ℝ, σsq v * p v ≤ C)
     -- (C2) USER-INPUT: operative integrated form of the bounded conditional density
     -- of (X₁, X_j) given the errors; FY (C2), see the module docstring
     (hC2 : ∃ B : ℝ, 0 ≤ B ∧ ∀ j : ℤ, j ≠ 0 → ∀ g : ℝ × ℝ → ℝ, Measurable g →
@@ -705,7 +807,7 @@ theorem kernel_localized_clt [IsProbabilityMeasure μ]
   -- (2.77)–(2.81), and their `L → ∞` limit is the variance continuity (2.84).
   obtain ⟨vT, hvT1, hvT2⟩ :=
     tendsto_charFun_locTruncSum hmeasX hmeasE hstat (σsq := σsq) (p := p) hce hcv hδ heLδ
-      hmp hp0 hpd hσc hpc hpx hC2 hlam hα hWm hWb hW1 hW2 hh0 hh hnh u
+      hσm hmp hp0 hpd hσc hpc hpx hσpb hC2 hlam hα hWm hWb hW1 hW2 hh0 hh hnh u
   exact tendsto_of_uniform_approx
     (charFun_locSum_sub_locTruncSum_le hmeasX hmeasE hδ heLδ hWm hWb hW1 hW2
       (x := x) hh0 hh hnh u)
