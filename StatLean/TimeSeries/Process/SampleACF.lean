@@ -50,12 +50,180 @@ namespace StatLean.TimeSeries
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
+/-! ### Positive semidefiniteness of the divisor-`T` sample ACVF
+
+The mechanism: write `y` for the mean-corrected data zero-padded to all of `ℤ`
+(`padData`). The divisor-`T` sample ACVF is exactly the (un-normalized) autocorrelation
+of this compactly supported sequence, `T·γ̂(k) = Σ_s y_s y_{s+k}` at *every* lag `k ∈ ℤ`
+(`sum_padData_eq_rawACVF`) — this is where the divisor `T` rather than `T − k` is used,
+and where the `1/(T−k)` estimator fails. The quadratic form then collapses to a sum of
+squares, `Σ_{ij} a_i a_j γ̂(t_i − t_j) = T⁻¹ Σ_s (Σ_i a_i y_{s+t_i})² ≥ 0`. -/
+
+/-- The mean-corrected data vector as a function on `ℕ`, junk `0` outside the window. -/
+private noncomputable def padNat {T : ℕ} (x : Fin T → ℝ) (n : ℕ) : ℝ :=
+  if h : n < T then x ⟨n, h⟩ - sampleMean x else 0
+
+/-- The mean-corrected data vector, zero-padded to all of `ℤ`. -/
+private noncomputable def padData {T : ℕ} (x : Fin T → ℝ) (s : ℤ) : ℝ :=
+  if h : 0 ≤ s ∧ s.toNat < T then x ⟨s.toNat, h.2⟩ - sampleMean x else 0
+
+/-- The un-normalized (divisor-free) sample ACVF: the inner sum of `sampleACVF`. -/
+private noncomputable def rawACVF {T : ℕ} (x : Fin T → ℝ) (k : ℕ) : ℝ :=
+  ∑ t : Fin T, if h : (t : ℕ) + k < T then
+    (x t - sampleMean x) * (x ⟨(t : ℕ) + k, h⟩ - sampleMean x) else 0
+
+private lemma sampleACVF_eq_raw {T : ℕ} (x : Fin T → ℝ) (k : ℕ) :
+    sampleACVF x k = (T : ℝ)⁻¹ * rawACVF x k := rfl
+
+/-- `padData` is supported in the data window `[0, T)`. -/
+private lemma padData_eq_zero {T : ℕ} (x : Fin T → ℝ) {s : ℤ}
+    (hs : s ∉ Finset.Ico (0 : ℤ) (T : ℤ)) : padData x s = 0 := by
+  rw [padData, dif_neg]
+  simp only [Finset.mem_Ico, not_and, not_lt] at hs
+  rintro ⟨h1, h2⟩
+  have := hs h1
+  omega
+
+private lemma padData_of_nonneg {T : ℕ} (x : Fin T → ℝ) {s : ℤ} (hs : 0 ≤ s) :
+    padData x s = padNat x s.toNat := by
+  rw [padData, padNat]
+  by_cases h : s.toNat < T
+  · rw [dif_pos ⟨hs, h⟩, dif_pos h]
+  · rw [dif_neg (fun hc => h hc.2), dif_neg h]
+
+private lemma rawACVF_eq_range {T : ℕ} (x : Fin T → ℝ) (m : ℕ) :
+    rawACVF x m = ∑ n ∈ Finset.range T, padNat x n * padNat x (n + m) := by
+  rw [rawACVF, ← Fin.sum_univ_eq_sum_range (fun n => padNat x n * padNat x (n + m)) T]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  have h1 : padNat x (i : ℕ) = x i - sampleMean x := by
+    rw [padNat, dif_pos i.isLt]
+  rw [h1, padNat]
+  by_cases h2 : (i : ℕ) + m < T
+  · rw [dif_pos h2, dif_pos h2]
+  · rw [dif_neg h2, dif_neg h2, mul_zero]
+
+/-- At a nonnegative lag the window sum over `[0, T)` is the raw sample ACVF. -/
+private lemma sum_padData_ico {T : ℕ} (x : Fin T → ℝ) (m : ℕ) :
+    ∑ s ∈ Finset.Ico (0 : ℤ) (T : ℤ), padData x s * padData x (s + (m : ℤ))
+      = rawACVF x m := by
+  rw [rawACVF_eq_range]
+  refine Finset.sum_nbij' (fun s => s.toNat) (fun n => (n : ℤ)) ?_ ?_ ?_ ?_ ?_
+  · intro s hs; simp only [Finset.mem_Ico] at hs; simp only [Finset.mem_range]; omega
+  · intro n hn; simp only [Finset.mem_range] at hn; simp only [Finset.mem_Ico]; omega
+  · intro s hs; simp only [Finset.mem_Ico] at hs; dsimp only; omega
+  · intro n hn; simp only [Finset.mem_range] at hn; dsimp only; omega
+  · intro s hs
+    simp only [Finset.mem_Ico] at hs
+    dsimp only
+    rw [padData_of_nonneg x (by omega), padData_of_nonneg x (by omega)]
+    congr 2
+    omega
+
+/-- The window may be enlarged freely: the padding kills every extra term. -/
+private lemma sum_padData_window {T : ℕ} (x : Fin T → ℝ) (k : ℤ) {S : Finset ℤ}
+    (hS : Finset.Ico (0 : ℤ) (T : ℤ) ⊆ S) :
+    ∑ s ∈ S, padData x s * padData x (s + k)
+      = ∑ s ∈ Finset.Ico (0 : ℤ) (T : ℤ), padData x s * padData x (s + k) :=
+  (Finset.sum_subset hS fun s _ hs => by rw [padData_eq_zero x hs, zero_mul]).symm
+
+/-- The window sum is even in the lag (reindex by the lag, on a window large enough to
+absorb the shift). -/
+private lemma sum_padData_symm {T : ℕ} (x : Fin T → ℝ) (k : ℤ) :
+    ∑ s ∈ Finset.Ico (0 : ℤ) (T : ℤ), padData x s * padData x (s + k)
+      = ∑ s ∈ Finset.Ico (0 : ℤ) (T : ℤ), padData x s * padData x (s + -k) := by
+  obtain ⟨K, hK1, hK2⟩ : ∃ K : ℤ, -K ≤ k ∧ k ≤ K := ⟨|k|, neg_abs_le k, le_abs_self k⟩
+  have hsub1 : Finset.Ico (0 : ℤ) (T : ℤ) ⊆ Finset.Ico (-K) ((T : ℤ) + K) := by
+    intro s hs; simp only [Finset.mem_Ico] at *; omega
+  have hsub2 : Finset.Ico (0 : ℤ) (T : ℤ) ⊆ Finset.Ico (-K + k) ((T : ℤ) + K + k) := by
+    intro s hs; simp only [Finset.mem_Ico] at *; omega
+  rw [← sum_padData_window x k hsub1, ← sum_padData_window x (-k) hsub2]
+  refine Finset.sum_nbij' (fun s => s + k) (fun u => u - k) ?_ ?_ ?_ ?_ ?_
+  · intro s hs; simp only [Finset.mem_Ico] at *; omega
+  · intro u hu; simp only [Finset.mem_Ico] at *; omega
+  · intro s _; ring
+  · intro u _; ring
+  · intro s _; rw [show s + k + -k = s from by ring, mul_comm]
+
+/-- **The key deterministic identity**: at *every* integer lag, the raw divisor-`T`
+sample ACVF is the window sum `Σ_s y_s y_{s+k}` of the zero-padded mean-corrected data. -/
+private lemma sum_padData_eq_rawACVF {T : ℕ} (x : Fin T → ℝ) (k : ℤ) {S : Finset ℤ}
+    (hS : Finset.Ico (0 : ℤ) (T : ℤ) ⊆ S) :
+    ∑ s ∈ S, padData x s * padData x (s + k) = rawACVF x k.natAbs := by
+  rw [sum_padData_window x k hS]
+  by_cases hk : 0 ≤ k
+  · obtain ⟨m, rfl⟩ : ∃ m : ℕ, k = (m : ℤ) := ⟨k.toNat, by omega⟩
+    rw [show ((m : ℤ)).natAbs = m from by omega]
+    exact sum_padData_ico x m
+  · rw [sum_padData_symm x k]
+    obtain ⟨m, hm⟩ : ∃ m : ℕ, -k = (m : ℤ) := ⟨(-k).toNat, by omega⟩
+    rw [hm, show k.natAbs = m from by omega]
+    exact sum_padData_ico x m
+
+/-- The shifted form of `sum_padData_eq_rawACVF`, on an explicit integer window. -/
+private lemma sum_padData_shift {T : ℕ} (x : Fin T → ℝ) (b k A B : ℤ)
+    (hA : A + b ≤ 0) (hB : (T : ℤ) ≤ B + b) :
+    ∑ s ∈ Finset.Ico A B, padData x (s + b) * padData x (s + b + k) = rawACVF x k.natAbs := by
+  rw [← sum_padData_eq_rawACVF x k (S := Finset.Ico (A + b) (B + b))
+      (by intro s hs; simp only [Finset.mem_Ico] at *; omega)]
+  refine Finset.sum_nbij' (fun s => s + b) (fun u => u - b) ?_ ?_ ?_ ?_ ?_
+  · intro s hs; simp only [Finset.mem_Ico] at *; omega
+  · intro u hu; simp only [Finset.mem_Ico] at *; omega
+  · intro s _; ring
+  · intro u _; ring
+  · intro s _; rfl
+
 /-- **FY §2.2.2 (eq. (2.23) claim)**: the divisor-`T` sample ACVF, extended evenly to
 `ℤ` (it vanishes at lags `≥ T`), is a positive semidefinite sequence — the property
 that fails for the `1/(T−k)` divisor. Deterministic. -/
 theorem isPosSemidefSeq_sampleACVF {T : ℕ} (x : Fin T → ℝ) :
     IsPosSemidefSeq fun k : ℤ => sampleACVF x k.natAbs := by
-  sorry
+  intro n t a
+  -- a bound on the time points, giving one window `[−M, T+M)` that carries every shift
+  obtain ⟨M, hM⟩ : ∃ M : ℤ, ∀ i, -M ≤ t i ∧ t i ≤ M := by
+    refine ⟨∑ i, |t i|, fun i => ?_⟩
+    have h1 : |t i| ≤ ∑ i, |t i| :=
+      Finset.single_le_sum (f := fun i => |t i|) (fun j _ => abs_nonneg (t j)) (Finset.mem_univ i)
+    have h2 := neg_abs_le (t i)
+    have h3 := le_abs_self (t i)
+    omega
+  -- each entry of the quadratic form is a window sum of the padded data
+  have key : ∀ i j : Fin n,
+      sampleACVF x (t i - t j).natAbs
+        = (T : ℝ)⁻¹ * ∑ s ∈ Finset.Ico (-M) ((T : ℤ) + M),
+            padData x (s + t i) * padData x (s + t j) := by
+    intro i j
+    rw [sampleACVF_eq_raw]
+    congr 1
+    rw [← sum_padData_shift x (t j) (t i - t j) (-M) ((T : ℤ) + M)
+      (by have := hM j; omega) (by have := hM j; omega)]
+    refine Finset.sum_congr rfl fun s _ => ?_
+    rw [show s + t j + (t i - t j) = s + t i from by ring, mul_comm]
+  -- the quadratic form is a sum of squares
+  have main : (T : ℝ)⁻¹ * ∑ s ∈ Finset.Ico (-M) ((T : ℤ) + M),
+        (∑ i, a i * padData x (s + t i)) ^ 2
+      = ∑ i, ∑ j, a i * a j * sampleACVF x (t i - t j).natAbs := by
+    have e1 : ∀ s : ℤ, (∑ i, a i * padData x (s + t i)) ^ 2
+        = ∑ i, ∑ j, (a i * padData x (s + t i)) * (a j * padData x (s + t j)) := by
+      intro s; rw [sq, Fintype.sum_mul_sum]
+    calc (T : ℝ)⁻¹ * ∑ s ∈ Finset.Ico (-M) ((T : ℤ) + M),
+            (∑ i, a i * padData x (s + t i)) ^ 2
+        = (T : ℝ)⁻¹ * ∑ s ∈ Finset.Ico (-M) ((T : ℤ) + M), ∑ i, ∑ j,
+            (a i * padData x (s + t i)) * (a j * padData x (s + t j)) := by
+          rw [Finset.sum_congr rfl (fun s _ => e1 s)]
+      _ = (T : ℝ)⁻¹ * ∑ i, ∑ j, ∑ s ∈ Finset.Ico (-M) ((T : ℤ) + M),
+            (a i * padData x (s + t i)) * (a j * padData x (s + t j)) := by
+          congr 1
+          rw [Finset.sum_comm]
+          exact Finset.sum_congr rfl fun i _ => Finset.sum_comm
+      _ = ∑ i, ∑ j, a i * a j * sampleACVF x (t i - t j).natAbs := by
+          rw [Finset.mul_sum]
+          refine Finset.sum_congr rfl fun i _ => ?_
+          rw [Finset.mul_sum]
+          refine Finset.sum_congr rfl fun j _ => ?_
+          rw [key i j, Finset.mul_sum, Finset.mul_sum, Finset.mul_sum]
+          exact Finset.sum_congr rfl fun s _ => by ring
+  rw [← main]
+  exact mul_nonneg (by positivity) (Finset.sum_nonneg fun s _ => sq_nonneg _)
 
 /-! ### The MA(q) second-order structure
 
