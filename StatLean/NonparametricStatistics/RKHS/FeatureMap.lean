@@ -35,13 +35,16 @@ theorem featureKernel_self (φ : X → L) (x : X) :
     featureKernel 𝕜 φ x x = ((‖φ x‖ : 𝕜)) ^ 2 := by
   simp [featureKernel, inner_self_eq_norm_sq_to_K]
 
+universe uK uX in
 /-- **Every kernel function is a feature-map kernel**: by Moore's theorem, a kernel
-function `K` is the Gram function of the kernel-function embedding of its RKHS. -/
-theorem IsKernelFun.exists_featureMap {K : X → X → 𝕜} (hK : IsKernelFun K) :
-    ∃ (L' : Type _) (_ : NormedAddCommGroup L') (_ : InnerProductSpace 𝕜 L')
-      (φ : X → L'), K = featureKernel 𝕜 φ := by
+function `K` is the Gram function of the kernel-function embedding of its RKHS (the
+feature space lives in `Type (max uK uX)`, the universe of the Moore completion). -/
+theorem IsKernelFun.exists_featureMap {k : Type uK} [RCLike k] {Y : Type uX}
+    {K : Y → Y → k} (hK : IsKernelFun K) :
+    ∃ (L' : Type (max uK uX)) (_ : NormedAddCommGroup L') (_ : InnerProductSpace k L')
+      (φ : Y → L'), K = featureKernel k φ := by
   obtain ⟨H, _, _, _, _, hHK⟩ := hK.exists_rkhs
-  exact ⟨H, ‹_›, ‹_›, kernelFun (X := X) H, by
+  exact ⟨H, ‹_›, ‹_›, kernelFun (X := Y) H, by
     rw [← hHK, scalarKernel_eq_featureKernel]⟩
 
 variable (𝕜) in
