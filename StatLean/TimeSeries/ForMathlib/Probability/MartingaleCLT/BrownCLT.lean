@@ -1,4 +1,5 @@
 import StatLean.TimeSeries.ForMathlib.Probability.MartingaleCLT.CondCharFun
+import Mathlib.Probability.Distributions.Gaussian.Real
 
 /-!
 # The Brown/Hall–Heyde martingale central limit theorem
