@@ -1,4 +1,5 @@
 import StatLean.TimeSeries.Models.WhiteNoise
+import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
 
 /-!
 # Linear (MA(∞)) processes (FY §2.1.2, eq. (2.1))
@@ -205,6 +206,157 @@ private lemma summable_shift (hψ : Summable fun j => |ψ j|) (m : ℕ) :
   rw [abs_mul]
   exact mul_le_mul_of_nonneg_right (abs_psi_le hψ (m + l)) (abs_nonneg _)
 
+/-- **Shift invariance of finite i.i.d. blocks**: for any finite family of times `u` and
+any shift `k`, the joint law of `(ε_{u a + k})_a` is that of `(ε_{u a})_a`. Repetitions in
+`u` are allowed: the block factors through the (injective) enumeration of the range, on
+which the product-law characterization of independence applies. -/
+private lemma map_noise_block [IsProbabilityMeasure μ] {A : Type*} [Fintype A]
+    (hε : IsIIDNoise ε σ2 μ) (u : A → ℤ) (k : ℤ) :
+    μ.map (fun ω a => ε (u a + k) ω) = μ.map (fun ω a => ε (u a) ω) := by
+  classical
+  set S : Finset ℤ := Finset.image u Finset.univ with hS
+  set ρ : A → {x // x ∈ S} :=
+    fun a => ⟨u a, Finset.mem_image_of_mem u (Finset.mem_univ a)⟩ with hρ
+  -- the block indexed by the (distinct) times in the range of `u`
+  have hlaw : ∀ c : ℤ, μ.map (fun ω (b : {x // x ∈ S}) => ε ((b : ℤ) + c) ω)
+      = Measure.pi (fun _ : {x // x ∈ S} => μ.map (ε 0)) := by
+    intro c
+    have hinj : Function.Injective (fun b : {x // x ∈ S} => (b : ℤ) + c) := by
+      intro b1 b2 h
+      exact Subtype.ext (by simpa using h)
+    have hindep : iIndepFun (fun b : {x // x ∈ S} => ε ((b : ℤ) + c)) μ :=
+      hε.iIndep.precomp hinj
+    rw [(iIndepFun_iff_map_fun_eq_pi_map fun b => (hε.measurable _).aemeasurable).1 hindep]
+    exact congrArg Measure.pi (funext fun b => (hε.identDistrib _ 0).map_eq)
+  -- the general block is the range block precomposed with `ρ`
+  have hmb : ∀ c : ℤ, Measurable (fun ω (b : {x // x ∈ S}) => ε ((b : ℤ) + c) ω) :=
+    fun c => measurable_pi_lambda _ fun b => hε.measurable _
+  have hcomp : Measurable (fun v : {x // x ∈ S} → ℝ => v ∘ ρ) :=
+    measurable_pi_lambda _ fun a => measurable_pi_apply (ρ a)
+  have hfac : ∀ c : ℤ, (fun ω a => ε (u a + c) ω)
+      = (fun v : {x // x ∈ S} → ℝ => v ∘ ρ) ∘ (fun ω (b : {x // x ∈ S}) => ε ((b : ℤ) + c) ω) :=
+    fun c => rfl
+  have hzero : (fun ω a => ε (u a) ω)
+      = (fun v : {x // x ∈ S} → ℝ => v ∘ ρ) ∘ (fun ω (b : {x // x ∈ S}) => ε ((b : ℤ) + 0) ω) := by
+    funext ω a
+    simp only [Function.comp_apply, add_zero, hρ]
+  rw [hfac k, hzero, ← Measure.map_map hcomp (hmb k), ← Measure.map_map hcomp (hmb 0),
+    hlaw k, hlaw 0]
+
+/-- Windows of partial sums are shift-invariant in law: each is one fixed measurable
+function of the corresponding i.i.d. noise block. -/
+private lemma map_psum_vec [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ)
+    (ψ : ℕ → ℝ) {n : ℕ} (t : Fin n → ℤ) (N : ℕ) (k : ℤ) :
+    μ.map (fun ω (i : Fin n) => psum ψ ε (t i + k) N ω)
+      = μ.map (fun ω (i : Fin n) => psum ψ ε (t i) N ω) := by
+  classical
+  set u : Fin n × Fin N → ℤ := fun p => t p.1 - (p.2 : ℕ) with hu
+  set G : (Fin n × Fin N → ℝ) → (Fin n → ℝ) :=
+    fun v i => ∑ j : Fin N, ψ j * v (i, j) with hG
+  have hGm : Measurable G :=
+    measurable_pi_lambda _ fun i => Finset.measurable_sum _ fun j _ => by fun_prop
+  have hbm : ∀ c : ℤ, Measurable (fun ω (a : Fin n × Fin N) => ε (u a + c) ω) :=
+    fun c => measurable_pi_lambda _ fun a => hε.measurable _
+  have hbm0 : Measurable (fun ω (a : Fin n × Fin N) => ε (u a) ω) :=
+    measurable_pi_lambda _ fun a => hε.measurable _
+  have hfac : (fun ω (i : Fin n) => psum ψ ε (t i + k) N ω)
+      = G ∘ (fun ω (a : Fin n × Fin N) => ε (u a + k) ω) := by
+    funext ω i
+    simp only [Function.comp_apply, hG, psum, hu]
+    rw [← Fin.sum_univ_eq_sum_range (fun j => ψ j * ε (t i + k - (j : ℕ)) ω) N]
+    exact Finset.sum_congr rfl fun j _ => by congr 2; ring
+  have h0 : (fun ω (i : Fin n) => psum ψ ε (t i) N ω)
+      = G ∘ (fun ω (a : Fin n × Fin N) => ε (u a) ω) := by
+    funext ω i
+    simp only [Function.comp_apply, hG, psum, hu]
+    rw [← Fin.sum_univ_eq_sum_range (fun j => ψ j * ε (t i - (j : ℕ)) ω) N]
+  rw [hfac, h0, ← Measure.map_map hGm (hbm k), ← Measure.map_map hGm hbm0,
+    map_noise_block hε u k]
+
+private lemma measurable_psum (hmε : ∀ s, Measurable (ε s)) (ψ : ℕ → ℝ) (s : ℤ) (N : ℕ) :
+    Measurable (psum ψ ε s N) :=
+  Finset.measurable_sum _ fun j _ => (hmε _).const_mul _
+
+/-- The total defect of a `k`-shifted and an unshifted window of partial sums at stage
+`N`: one scalar sequence dominating every coordinate of both. -/
+private noncomputable def windowDefect (ψ : ℕ → ℝ) (X ε : ℤ → Ω → ℝ) {n : ℕ}
+    (t : Fin n → ℤ) (k : ℤ) (N : ℕ) : Ω → ℝ := fun ω =>
+  (∑ i : Fin n, ‖X (t i + k) ω - psum ψ ε (t i + k) N ω‖)
+    + ∑ i : Fin n, ‖X (t i + 0) ω - psum ψ ε (t i + 0) N ω‖
+
+private lemma measurable_windowDefect {X : ℤ → Ω → ℝ} {n : ℕ} (hmε : ∀ s, Measurable (ε s))
+    (hmX : ∀ s, Measurable (X s)) (ψ : ℕ → ℝ) (t : Fin n → ℤ) (k : ℤ) (N : ℕ) :
+    Measurable (windowDefect ψ X ε t k N) :=
+  (Finset.measurable_sum _ fun i _ => ((hmX _).sub (measurable_psum hmε ψ _ _)).norm).add
+    (Finset.measurable_sum _ fun i _ => ((hmX _).sub (measurable_psum hmε ψ _ _)).norm)
+
+/-- The total defect vanishes in `L²`. -/
+private lemma tendsto_windowDefect [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ} {n : ℕ}
+    (hX : IsLinearProcessOf ψ X ε μ) (hmε : ∀ s, Measurable (ε s))
+    (hmX : ∀ s, Measurable (X s)) (t : Fin n → ℤ) (k : ℤ) :
+    Tendsto (fun N => eLpNorm (windowDefect ψ X ε t k N) 2 μ) atTop (𝓝 0) := by
+  have hsplit : ∀ (c : ℤ) (N : ℕ),
+      eLpNorm (fun ω => ∑ i : Fin n, ‖X (t i + c) ω - psum ψ ε (t i + c) N ω‖) 2 μ
+        ≤ ∑ i : Fin n, eLpNorm (fun ω => X (t i + c) ω - psum ψ ε (t i + c) N ω) 2 μ := by
+    intro c N
+    have hfun : (fun ω => ∑ i : Fin n, ‖X (t i + c) ω - psum ψ ε (t i + c) N ω‖)
+        = ∑ i : Fin n, fun ω => ‖X (t i + c) ω - psum ψ ε (t i + c) N ω‖ := by
+      funext ω; simp
+    rw [hfun]
+    refine (eLpNorm_sum_le (fun i _ => ?_) one_le_two).trans_eq ?_
+    · exact (((hmX _).sub (measurable_psum hmε ψ _ _)).norm).aestronglyMeasurable
+    · exact Finset.sum_congr rfl fun i _ => eLpNorm_norm _
+  have hbound : ∀ N : ℕ, eLpNorm (windowDefect ψ X ε t k N) 2 μ
+      ≤ (∑ i : Fin n, eLpNorm (fun ω => X (t i + k) ω - psum ψ ε (t i + k) N ω) 2 μ)
+        + ∑ i : Fin n, eLpNorm (fun ω => X (t i + 0) ω - psum ψ ε (t i + 0) N ω) 2 μ := by
+    intro N
+    refine le_trans (eLpNorm_add_le ?_ ?_ one_le_two) (add_le_add (hsplit k N) (hsplit 0 N))
+    · exact (Finset.measurable_sum _ fun i _ =>
+        ((hmX _).sub (measurable_psum hmε ψ _ _)).norm).aestronglyMeasurable
+    · exact (Finset.measurable_sum _ fun i _ =>
+        ((hmX _).sub (measurable_psum hmε ψ _ _)).norm).aestronglyMeasurable
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_
+    (fun N => zero_le _) hbound
+  have hsum : ∀ c : ℤ, Tendsto (fun N =>
+      ∑ i : Fin n, eLpNorm (fun ω => X (t i + c) ω - psum ψ ε (t i + c) N ω) 2 μ)
+      atTop (𝓝 0) := by
+    intro c
+    simpa using tendsto_finset_sum (Finset.univ : Finset (Fin n)) fun i _ => hX (t i + c)
+  simpa using (hsum k).add (hsum 0)
+
+/-- Along a subsequence, both windows of partial sums converge a.e. to the corresponding
+windows of the process. -/
+private lemma exists_subseq_window [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ} {n : ℕ}
+    (hX : IsLinearProcessOf ψ X ε μ) (hmε : ∀ s, Measurable (ε s))
+    (hmX : ∀ s, Measurable (X s)) (t : Fin n → ℤ) (k : ℤ) :
+    ∃ ns : ℕ → ℕ, ∀ c : ℤ, (c = k ∨ c = 0) → ∀ᵐ ω ∂μ,
+      Tendsto (fun j => (fun i => psum ψ ε (t i + c) (ns j) ω : Fin n → ℝ)) atTop
+        (𝓝 fun i => X (t i + c) ω) := by
+  obtain ⟨ns, -, hns⟩ :=
+    (tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num)
+      (fun N => (measurable_windowDefect hmε hmX ψ t k N).aestronglyMeasurable)
+      aestronglyMeasurable_zero
+      (by simpa using tendsto_windowDefect hX hmε hmX t k)).exists_seq_tendsto_ae
+  refine ⟨ns, fun c hc => ?_⟩
+  filter_upwards [hns] with ω hω
+  rw [tendsto_pi_nhds]
+  intro i
+  have hmem : ∀ (c' : ℤ) (j : ℕ), ‖X (t i + c') ω - psum ψ ε (t i + c') (ns j) ω‖
+      ≤ ∑ i' : Fin n, ‖X (t i' + c') ω - psum ψ ε (t i' + c') (ns j) ω‖ := fun c' j =>
+    Finset.single_le_sum (f := fun i' : Fin n =>
+      ‖X (t i' + c') ω - psum ψ ε (t i' + c') (ns j) ω‖)
+      (fun i' _ => norm_nonneg _) (Finset.mem_univ i)
+  have hbound : ∀ j : ℕ, ‖X (t i + c) ω - psum ψ ε (t i + c) (ns j) ω‖
+      ≤ windowDefect ψ X ε t k (ns j) ω := by
+    intro j
+    rcases hc with rfl | rfl
+    · exact le_add_of_le_of_nonneg (hmem _ j) (Finset.sum_nonneg fun i' _ => norm_nonneg _)
+    · exact le_add_of_nonneg_of_le (Finset.sum_nonneg fun i' _ => norm_nonneg _) (hmem _ j)
+  have hzero : Tendsto (fun j => ‖X (t i + c) ω - psum ψ ε (t i + c) (ns j) ω‖) atTop (𝓝 0) :=
+    squeeze_zero (fun j => norm_nonneg _) hbound (by simpa using hω)
+  rw [tendsto_iff_dist_tendsto_zero]
+  simpa [dist_eq_norm, norm_sub_rev] using hzero
+
 end Aux
 
 /-- **Existence** (FY §2.1.2): over white noise, absolutely summable coefficients define
@@ -333,7 +485,45 @@ theorem IsLinearProcessOf.isStrictlyStationary [IsProbabilityMeasure μ] {ψ : �
     (hψ : Summable fun j => |ψ j|) (hε : IsIIDNoise ε σ2 μ)
     (hmeas : ∀ t, Measurable (X t)) :
     IsStrictlyStationary X μ := by
-  sorry
+  intro n t k
+  have hvm : ∀ (c : ℤ) (N : ℕ), Measurable fun ω (i : Fin n) => psum ψ ε (t i + c) N ω :=
+    fun c N => measurable_pi_lambda _ fun i => measurable_psum hε.measurable ψ _ _
+  have hXm : ∀ c : ℤ, Measurable fun ω (i : Fin n) => X (t i + c) ω :=
+    fun c => measurable_pi_lambda _ fun i => hmeas _
+  obtain ⟨ns, hns⟩ := exists_subseq_window hX hε.measurable hmeas t k
+  haveI : IsProbabilityMeasure (μ.map fun ω (i : Fin n) => X (t i + k) ω) :=
+    Measure.isProbabilityMeasure_map (hXm k).aemeasurable
+  haveI : IsProbabilityMeasure (μ.map fun ω (i : Fin n) => X (t i + 0) ω) :=
+    Measure.isProbabilityMeasure_map (hXm 0).aemeasurable
+  have hgoal : (μ.map fun ω (i : Fin n) => X (t i + k) ω)
+      = μ.map fun ω (i : Fin n) => X (t i + 0) ω := by
+    refine MeasureTheory.ext_of_forall_integral_eq_of_IsFiniteMeasure fun f => ?_
+    -- dominated convergence along the subsequence
+    have hlim : ∀ c : ℤ, (c = k ∨ c = 0) →
+        Tendsto (fun j => ∫ ω, f (fun i => psum ψ ε (t i + c) (ns j) ω) ∂μ) atTop
+          (𝓝 (∫ ω, f (fun i => X (t i + c) ω) ∂μ)) := by
+      intro c hc
+      refine tendsto_integral_of_dominated_convergence (fun _ => ‖f‖)
+        (fun j => (f.continuous.measurable.comp (hvm c (ns j))).aestronglyMeasurable)
+        (integrable_const _) (fun j => Eventually.of_forall fun ω => f.norm_coe_le_norm _) ?_
+      filter_upwards [hns c hc] with ω hω using (f.continuous.tendsto _).comp hω
+    -- at every stage the two windows of partial sums have the same law
+    have hstep : ∀ N : ℕ, ∫ ω, f (fun i => psum ψ ε (t i + k) N ω) ∂μ
+        = ∫ ω, f (fun i => psum ψ ε (t i + 0) N ω) ∂μ := by
+      intro N
+      have h1 : ∀ c : ℤ, ∫ ω, f (fun i => psum ψ ε (t i + c) N ω) ∂μ
+          = ∫ y, f y ∂(μ.map fun ω (i : Fin n) => psum ψ ε (t i + c) N ω) := fun c =>
+        (integral_map (hvm c N).aemeasurable f.continuous.aestronglyMeasurable).symm
+      rw [h1 k, h1 0]
+      congr 1
+      have h2 : (μ.map fun ω (i : Fin n) => psum ψ ε (t i + 0) N ω)
+          = μ.map fun ω (i : Fin n) => psum ψ ε (t i) N ω := by simp
+      rw [h2, map_psum_vec hε ψ t N k]
+    rw [integral_map (hXm k).aemeasurable f.continuous.aestronglyMeasurable,
+      integral_map (hXm 0).aemeasurable f.continuous.aestronglyMeasurable]
+    refine tendsto_nhds_unique (hlim k (Or.inl rfl)) ?_
+    simpa only [hstep] using hlim 0 (Or.inr rfl)
+  simpa using hgoal
 
 /-- **Almost-sure convergence under independence** — ALLOWED DEBT in wave A2 (FY cites
 Chow & Teicher 1997, Cor. 3 p. 117; route: Kolmogorov maximal inequality / martingale
