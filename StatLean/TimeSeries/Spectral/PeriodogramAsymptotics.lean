@@ -548,7 +548,7 @@ private lemma tendsto_charFun_weighted_iid [IsProbabilityMeasure μ]
           rw [← abs_mul]; simpa only [hXdef] using hω
         have h3 : ε ≤ (ε / K) * |Y (↑i : ℕ) ω| :=
           le_trans h1 (mul_le_mul_of_nonneg_right (haik i) (abs_nonneg _))
-        show (K : ℝ) ≤ |Y (↑i : ℕ) ω|
+        change (K : ℝ) ≤ |Y (↑i : ℕ) ω|
         by_contra hcon
         have hle : (ε / K) * |Y (↑i : ℕ) ω| < (ε / K) * K :=
           mul_lt_mul_of_pos_left (not_le.1 hcon) (by positivity)
@@ -643,6 +643,278 @@ theorem dftNoiseXi_clt [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : ℤ → Ω �
       (fun t : ℕ => xiCombWeight c κsel σ2 T t * ε ((t : ℤ) + 1) ω) T]
   exact Finset.sum_congr rfl fun t _ => by rw [hYi (t : ℕ)]
 
+/-! ### The periodogram as a squared DFT modulus (FY §2.7.6)
+
+The identification half of Theorem 2.14(ii) is deterministic: the periodogram ordinate is
+`‖α_k‖²`, the `χ²₂`-type quantity `2π g(ω_k)(ξ_{2k−1}² + ξ_{2k}²)/2` is
+`‖Γ(ω_k)‖² ‖α_{k,ε}‖²`, and the two differ only through the edge effect
+`α_k − Γ(ω_k) α_{k,ε}`. -/
+
+/-- The DFT of the observed window `t = 1, …, T` of a process. -/
+private noncomputable def dftSample (Z : ℤ → Ω → ℝ) (T : ℕ) (k : ℕ) (ω : Ω) : ℂ :=
+  dft (fun t : Fin T => Z (((t : ℕ) : ℤ) + 1) ω) (k : ℤ)
+
+omit [MeasurableSpace Ω] in
+private lemma exp_neg_I_ofReal (r : ℝ) :
+    Complex.exp (-(Complex.I * (r : ℂ)))
+      = (Real.cos r : ℂ) - (Real.sin r : ℂ) * Complex.I := by
+  have h := exp_I_ofReal (-r)
+  rw [Real.cos_neg, Real.sin_neg] at h
+  rw [show -(Complex.I * (r : ℂ)) = Complex.I * ((-r : ℝ) : ℂ) by push_cast; ring, h]
+  push_cast; ring
+
+omit [MeasurableSpace Ω] in
+/-- The DFT window split into its cosine and sine real parts. -/
+private lemma dftSample_eq (Z : ℤ → Ω → ℝ) (T : ℕ) (k : ℕ) (ω : Ω) :
+    dftSample Z T k ω
+      = ((Real.sqrt T)⁻¹ : ℝ) *
+        (((∑ t ∈ Finset.range T,
+              Z ((t : ℤ) + 1) ω * Real.cos (((t : ℝ) + 1) * fourierFreq T k) : ℝ) : ℂ)
+          - ((∑ t ∈ Finset.range T,
+              Z ((t : ℤ) + 1) ω * Real.sin (((t : ℝ) + 1) * fourierFreq T k) : ℝ) : ℂ)
+            * Complex.I) := by
+  rw [dftSample, dft]
+  congr 1
+  rw [Complex.ofReal_sum, Complex.ofReal_sum, Finset.sum_mul, ← Finset.sum_sub_distrib,
+    ← Fin.sum_univ_eq_sum_range
+      (fun t : ℕ => ((Z ((t : ℤ) + 1) ω * Real.cos (((t : ℝ) + 1) * fourierFreq T k) : ℝ) : ℂ)
+        - ((Z ((t : ℤ) + 1) ω * Real.sin (((t : ℝ) + 1) * fourierFreq T k) : ℝ) : ℂ)
+          * Complex.I) T]
+  refine Finset.sum_congr rfl fun t _ => ?_
+  have hcast : -(Complex.I * ((((t : ℕ) + 1 : ℕ) : ℂ)) * ((fourierFreq T (k : ℤ) : ℝ) : ℂ))
+      = -(Complex.I * (((((t : ℕ) : ℝ) + 1) * fourierFreq T (k : ℤ) : ℝ) : ℂ)) := by
+    push_cast; ring
+  rw [hcast, exp_neg_I_ofReal]
+  push_cast
+  ring
+
+omit [MeasurableSpace Ω] in
+/-- `‖α_k‖²` in terms of the cosine and sine sums. -/
+private lemma normSq_dftSample (Z : ℤ → Ω → ℝ) {T : ℕ} (hT : 0 < T) (k : ℕ) (ω : Ω) :
+    ‖dftSample Z T k ω‖ ^ 2
+      = (T : ℝ)⁻¹ *
+        ((∑ t ∈ Finset.range T,
+            Z ((t : ℤ) + 1) ω * Real.cos (((t : ℝ) + 1) * fourierFreq T k)) ^ 2
+          + (∑ t ∈ Finset.range T,
+            Z ((t : ℤ) + 1) ω * Real.sin (((t : ℝ) + 1) * fourierFreq T k)) ^ 2) := by
+  have hTR : (0 : ℝ) < (T : ℝ) := by exact_mod_cast hT
+  rw [dftSample_eq, norm_mul, mul_pow, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_nonneg (by positivity : (0:ℝ) ≤ (Real.sqrt T)⁻¹)]
+  congr 1
+  · rw [inv_pow, Real.sq_sqrt hTR.le]
+  · rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
+    simp only [Complex.sub_re, Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im,
+      Complex.mul_re, Complex.mul_im, Complex.I_re, Complex.I_im, mul_zero, mul_one,
+      sub_zero, zero_sub, add_zero]
+    ring
+
+omit [MeasurableSpace Ω] in
+/-- `‖α_{k,ε}‖² = (σ²/2)(ξ_{2k−1}² + ξ_{2k}²)`: the `χ²₂` normalisation of FY §2.7.6. -/
+private lemma normSq_dftSample_noise (ε : ℤ → Ω → ℝ) {σ2 : ℝ} (hσ : 0 < σ2) {T : ℕ}
+    (hT : 0 < T) (k : ℕ) (ω : Ω) :
+    ‖dftSample ε T k ω‖ ^ 2
+      = σ2 / 2 * ((dftNoiseCos ε σ2 T k ω) ^ 2 + (dftNoiseSin ε σ2 T k ω) ^ 2) := by
+  have hTR : (0 : ℝ) < (T : ℝ) := by exact_mod_cast hT
+  have h2T : (0 : ℝ) < 2 / (T : ℝ) := by positivity
+  have hA2 : (Real.sqrt (2 / T) / Real.sqrt σ2) ^ 2 = 2 / ((T : ℝ) * σ2) := by
+    rw [div_pow, Real.sq_sqrt h2T.le, Real.sq_sqrt hσ.le, div_div]
+  obtain ⟨C, hC⟩ : ∃ C : ℝ, C = ∑ t ∈ Finset.range T,
+      ε ((t : ℤ) + 1) ω * Real.cos (((t : ℝ) + 1) * fourierFreq T k) := ⟨_, rfl⟩
+  obtain ⟨S, hS⟩ : ∃ S : ℝ, S = ∑ t ∈ Finset.range T,
+      ε ((t : ℤ) + 1) ω * Real.sin (((t : ℝ) + 1) * fourierFreq T k) := ⟨_, rfl⟩
+  rw [normSq_dftSample ε hT k ω, dftNoiseCos, dftNoiseSin, ← hC, ← hS, mul_pow, mul_pow, hA2]
+  field_simp
+
+/-- **White-noise spectral density** `g_ε ≡ σ²/(2π)` (FY §2.3.2), reproved here to keep
+this file off the ARMA layer. -/
+private lemma spectralDensityOf_whiteNoise [IsProbabilityMeasure μ] {σ2 : ℝ}
+    {ε : ℤ → Ω → ℝ} (hε : IsWhiteNoise ε σ2 μ) (l : AddCircle (2 * π)) :
+    spectralDensityOf ε μ l = σ2 / (2 * π) := by
+  rw [spectralDensityOf,
+    tsum_eq_single 0 (fun k hk => by rw [hε.acvf_eq k, if_neg hk, zero_mul]),
+    hε.acvf_eq 0, if_pos rfl, fourier_zero, Complex.one_re, mul_one]
+  ring
+
+/-- White noise has an absolutely summable ACVF (it is finitely supported). -/
+private lemma hasSummableACVF_whiteNoise [IsProbabilityMeasure μ] {σ2 : ℝ}
+    {ε : ℤ → Ω → ℝ} (hε : IsWhiteNoise ε σ2 μ) : HasSummableACVF ε μ :=
+  summable_of_ne_finset_zero (s := {0}) fun k hk => by
+    rw [hε.acvf_eq k, if_neg (by simpa using hk), abs_zero]
+
+/-- **The spectral identification** `2π g_X(λ) = σ² ‖Γ(λ)‖²` for the filtered process. -/
+private lemma two_pi_spectralDensityOf_eq [IsProbabilityMeasure μ] {σ2 : ℝ} {a : ℤ → ℝ}
+    {X ε : ℤ → Ω → ℝ} (hε : IsIIDNoise ε σ2 μ) (ha : Summable fun j : ℤ => |a j|)
+    (hmeas : ∀ t, Measurable (X t)) (hfil : IsFilteredBy X ε a μ)
+    (l : AddCircle (2 * π)) :
+    2 * π * spectralDensityOf X μ l = σ2 * ‖transferFun a l‖ ^ 2 := by
+  have hwn := hε.isWhiteNoise
+  rw [hfil.spectralDensityOf_eq ha hwn.isStationary (hasSummableACVF_whiteNoise hwn)
+      hε.measurable hmeas l, spectralDensityOf_whiteNoise hwn l]
+  have hπ : (π : ℝ) ≠ 0 := Real.pi_ne_zero
+  field_simp
+
+/-- The second moment of a weighted noise sum: `E(Σ w_t ε_{t+1})² = σ² Σ w_t²`. -/
+private lemma integral_sq_weighted_noise [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
+    (hε : IsIIDNoise ε σ2 μ) (T : ℕ) (w : ℕ → ℝ) :
+    ∫ ω, (∑ t ∈ Finset.range T, w t * ε ((t : ℤ) + 1) ω) ^ 2 ∂μ
+      = σ2 * ∑ t ∈ Finset.range T, (w t) ^ 2 := by
+  have hwn := hε.isWhiteNoise
+  have hmemLp : ∀ t : ℤ, MemLp (ε t) 2 μ := hwn.memLp
+  have hmemW : ∀ s : ℕ, MemLp (fun ω => w s * ε ((s : ℤ) + 1) ω) 2 μ :=
+    fun s => (hmemLp ((s : ℤ) + 1)).const_mul (w s)
+  have hint : ∀ s t : ℕ,
+      Integrable (fun ω => (w s * ε ((s : ℤ) + 1) ω) * (w t * ε ((t : ℤ) + 1) ω)) μ :=
+    fun s t => (hmemW s).integrable_mul (hmemW t)
+  -- The Gram matrix of the innovations.
+  have hcross : ∀ s t : ℕ,
+      ∫ ω, (w s * ε ((s : ℤ) + 1) ω) * (w t * ε ((t : ℤ) + 1) ω) ∂μ
+        = if s = t then σ2 * (w s) ^ 2 else 0 := by
+    intro s t
+    have hprodint : ∫ ω, (w s * ε ((s : ℤ) + 1) ω) * (w t * ε ((t : ℤ) + 1) ω) ∂μ
+        = (w s * w t) * ∫ ω, ε ((s : ℤ) + 1) ω * ε ((t : ℤ) + 1) ω ∂μ := by
+      rw [← integral_const_mul]
+      refine integral_congr_ae (Eventually.of_forall fun ω => by ring)
+    have hmul : ∫ ω, ε ((s : ℤ) + 1) ω * ε ((t : ℤ) + 1) ω ∂μ
+        = cov[ε ((s : ℤ) + 1), ε ((t : ℤ) + 1); μ] := by
+      rw [covariance_eq_sub (hmemLp _) (hmemLp _), hwn.integral_eq_zero, hwn.integral_eq_zero]
+      simp [Pi.mul_apply]
+    rw [hprodint, hmul]
+    by_cases hst : s = t
+    · subst hst
+      rw [if_pos rfl, covariance_self (hmemLp _).aestronglyMeasurable.aemeasurable,
+        hwn.variance_eq]
+      ring
+    · rw [if_neg hst, hwn.uncorrelated _ _ (by
+        simp only [ne_eq, add_left_inj, Nat.cast_inj]; exact hst), mul_zero]
+  -- Expand the square and integrate term by term.
+  have hexp : ∀ ω : Ω, (∑ t ∈ Finset.range T, w t * ε ((t : ℤ) + 1) ω) ^ 2
+      = ∑ s ∈ Finset.range T, ∑ t ∈ Finset.range T,
+          (w s * ε ((s : ℤ) + 1) ω) * (w t * ε ((t : ℤ) + 1) ω) := by
+    intro ω; rw [sq, Finset.sum_mul_sum]
+  rw [integral_congr_ae (Eventually.of_forall hexp),
+    integral_finset_sum _ (fun s _ => integrable_finset_sum _ (fun t _ => hint s t))]
+  rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun s hs => ?_
+  rw [integral_finset_sum _ (fun t _ => hint s t),
+    Finset.sum_congr rfl (fun t _ => hcross s t), Finset.sum_ite_eq, if_pos hs]
+
+/-- The second moment of the noise DFT ordinate is exactly `σ²` on the window
+`1 ≤ k ≤ [(T−1)/2]` (the discrete Pythagoras `Σ cos² = Σ sin² = T/2`). -/
+private lemma integral_normSq_dftSample_noise [IsProbabilityMeasure μ] {σ2 : ℝ}
+    {ε : ℤ → Ω → ℝ} (hε : IsIIDNoise ε σ2 μ) {T k : ℕ} (hk : 1 ≤ k) (hkT : k + k < T) :
+    ∫ ω, ‖dftSample ε T k ω‖ ^ 2 ∂μ = σ2 := by
+  have hT : 0 < T := by omega
+  have hTR : (0 : ℝ) < (T : ℝ) := by exact_mod_cast hT
+  have hcos := sum_cos_mul_cos hT hk hk hkT
+  have hsin := sum_sin_mul_sin hT hk hk hkT
+  rw [if_pos rfl] at hcos hsin
+  have hsq : ∀ (f : ℕ → ℝ), (∑ t ∈ Finset.range T, f t * f t) = ∑ t ∈ Finset.range T, (f t) ^ 2 :=
+    fun f => Finset.sum_congr rfl fun t _ => (sq (f t)).symm
+  rw [hsq] at hcos hsin
+  have hpt : ∀ ω : Ω, ‖dftSample ε T k ω‖ ^ 2
+      = (T : ℝ)⁻¹ * (∑ t ∈ Finset.range T,
+            ε ((t : ℤ) + 1) ω * Real.cos (((t : ℝ) + 1) * fourierFreq T k)) ^ 2
+        + (T : ℝ)⁻¹ * (∑ t ∈ Finset.range T,
+            ε ((t : ℤ) + 1) ω * Real.sin (((t : ℝ) + 1) * fourierFreq T k)) ^ 2 := by
+    intro ω; rw [normSq_dftSample ε hT k ω]; ring
+  have hcomm : ∀ (g : ℕ → ℝ) (ω : Ω), (∑ t ∈ Finset.range T, ε ((t : ℤ) + 1) ω * g t)
+      = ∑ t ∈ Finset.range T, g t * ε ((t : ℤ) + 1) ω :=
+    fun g ω => Finset.sum_congr rfl fun t _ => mul_comm _ _
+  simp only [hpt, hcomm]
+  have hIc : Integrable (fun ω => (∑ t ∈ Finset.range T,
+      Real.cos (((t : ℝ) + 1) * fourierFreq T k) * ε ((t : ℤ) + 1) ω) ^ 2) μ := by
+    have hm : MemLp (fun ω => ∑ t ∈ Finset.range T,
+        Real.cos (((t : ℝ) + 1) * fourierFreq T k) * ε ((t : ℤ) + 1) ω) 2 μ :=
+      memLp_finset_sum _ (fun t _ => (hε.isWhiteNoise.memLp _).const_mul _)
+    exact hm.integrable_sq
+  have hIs : Integrable (fun ω => (∑ t ∈ Finset.range T,
+      Real.sin (((t : ℝ) + 1) * fourierFreq T k) * ε ((t : ℤ) + 1) ω) ^ 2) μ := by
+    have hm : MemLp (fun ω => ∑ t ∈ Finset.range T,
+        Real.sin (((t : ℝ) + 1) * fourierFreq T k) * ε ((t : ℤ) + 1) ω) 2 μ :=
+      memLp_finset_sum _ (fun t _ => (hε.isWhiteNoise.memLp _).const_mul _)
+    exact hm.integrable_sq
+  rw [integral_add (hIc.const_mul _) (hIs.const_mul _), integral_const_mul, integral_const_mul,
+    integral_sq_weighted_noise hε T (fun t => Real.cos (((t : ℝ) + 1) * fourierFreq T k)),
+    integral_sq_weighted_noise hε T (fun t => Real.sin (((t : ℝ) + 1) * fourierFreq T k)),
+    hcos, hsin]
+  field_simp
+  ring
+
+private instance : Fact (0 < 2 * π) := ⟨by positivity⟩
+
+omit [MeasurableSpace Ω] in
+/-- The transfer function is bounded by the `ℓ¹` norm of the filter, uniformly in the
+frequency. -/
+private lemma norm_transferFun_le (a : ℤ → ℝ) (ha : Summable fun j : ℤ => |a j|)
+    (l : AddCircle (2 * π)) : ‖transferFun a l‖ ≤ ∑' j : ℤ, |a j| := by
+  have hnorm : ∀ j : ℤ, ‖(a j : ℂ) * fourier (T := 2 * π) (-j) l‖ = |a j| := by
+    intro j
+    rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, fourier_apply, Circle.norm_coe, mul_one]
+  have hsum : Summable fun j : ℤ => ‖(a j : ℂ) * fourier (T := 2 * π) (-j) l‖ := by
+    simpa only [hnorm] using ha
+  rw [transferFun]
+  refine (norm_tsum_le_tsum_norm hsum).trans (le_of_eq ?_)
+  exact tsum_congr hnorm
+
+/-- Square-integrability of the noise DFT ordinate. -/
+private lemma integrable_normSq_dftSample_noise [IsProbabilityMeasure μ] {σ2 : ℝ}
+    {ε : ℤ → Ω → ℝ} (hε : IsIIDNoise ε σ2 μ) {T : ℕ} (hT : 0 < T) (k : ℕ) :
+    Integrable (fun ω => ‖dftSample ε T k ω‖ ^ 2) μ := by
+  have hpt : ∀ ω : Ω, ‖dftSample ε T k ω‖ ^ 2
+      = (T : ℝ)⁻¹ * (∑ t ∈ Finset.range T,
+            Real.cos (((t : ℝ) + 1) * fourierFreq T k) * ε ((t : ℤ) + 1) ω) ^ 2
+        + (T : ℝ)⁻¹ * (∑ t ∈ Finset.range T,
+            Real.sin (((t : ℝ) + 1) * fourierFreq T k) * ε ((t : ℤ) + 1) ω) ^ 2 := by
+    intro ω
+    have hc : (∑ t ∈ Finset.range T,
+          ε ((t : ℤ) + 1) ω * Real.cos (((t : ℝ) + 1) * fourierFreq T k))
+        = ∑ t ∈ Finset.range T,
+          Real.cos (((t : ℝ) + 1) * fourierFreq T k) * ε ((t : ℤ) + 1) ω :=
+      Finset.sum_congr rfl fun t _ => mul_comm _ _
+    have hs : (∑ t ∈ Finset.range T,
+          ε ((t : ℤ) + 1) ω * Real.sin (((t : ℝ) + 1) * fourierFreq T k))
+        = ∑ t ∈ Finset.range T,
+          Real.sin (((t : ℝ) + 1) * fourierFreq T k) * ε ((t : ℤ) + 1) ω :=
+      Finset.sum_congr rfl fun t _ => mul_comm _ _
+    rw [normSq_dftSample ε hT k ω, hc, hs]
+    ring
+  have hIc : Integrable (fun ω => (∑ t ∈ Finset.range T,
+      Real.cos (((t : ℝ) + 1) * fourierFreq T k) * ε ((t : ℤ) + 1) ω) ^ 2) μ :=
+    (memLp_finset_sum _ (fun t _ => (hε.isWhiteNoise.memLp _).const_mul _)).integrable_sq
+  have hIs : Integrable (fun ω => (∑ t ∈ Finset.range T,
+      Real.sin (((t : ℝ) + 1) * fourierFreq T k) * ε ((t : ℤ) + 1) ω) ^ 2) μ :=
+    (memLp_finset_sum _ (fun t _ => (hε.isWhiteNoise.memLp _).const_mul _)).integrable_sq
+  exact ((hIc.const_mul _).add (hIs.const_mul _)).congr
+    (Filter.Eventually.of_forall fun ω => (hpt ω).symm)
+
+/-- **THE EDGE-EFFECT CORE (FY eq. (2.72)) — the single open debt of this file.**
+
+`α_k = Γ(ω_k) α_{k,ε} + Y_T(ω_k)` where the edge term `Y_T` collects, for each lag `j`,
+the at most `2 min(|j|, T)` innovations that the window `t = 1, …, T` shifts in or out:
+`Y_T(ω_k) = T^{-1/2} Σ_j a_j e^{-ijω_k} (Σ_{s ∈ W_j} ε_s e^{-isω_k})` with `#W_j ≤
+2 min(|j|,T)`. Independence gives `‖Y_T(ω_k)‖_{L²} ≤ σ (2/T)^{1/2} Σ_j |a_j| min(|j|,T)^{1/2}`,
+uniformly in `k`, and the right side tends to `0` by dominated convergence on the `ℓ¹`
+weight (split at `|j| ≤ T^{1/2}`).
+
+Formalizing it needs the `L²` interchange of the (infinite) filter sum with the (finite)
+DFT sum through `IsFilteredBy`, which is the piece this wave did not reach. Everything
+downstream of it — the spectral identification `2π g = σ²‖Γ‖²`, the `χ²₂` normalisation
+`‖α_{k,ε}‖² = (σ²/2)(ξ_{2k−1}² + ξ_{2k}²)`, the exact second moment `E‖α_{k,ε}‖² = σ²`
+and the `L¹` assembly — is proved. -/
+private lemma exists_dft_edge_L2_bound [IsProbabilityMeasure μ] {σ2 : ℝ} {a : ℤ → ℝ}
+    {X ε : ℤ → Ω → ℝ} (hε : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
+    (ha : Summable fun j : ℤ => |a j|)
+    (hmeas : ∀ t, Measurable (X t)) (hfil : IsFilteredBy X ε a μ) :
+    ∃ e : ℕ → ℝ, (∀ T, 0 ≤ e T) ∧ Tendsto e atTop (𝓝 0) ∧
+      ∀ T k : ℕ, 1 ≤ k → k + k < T →
+        Integrable (fun ω => ‖dftSample X T k ω
+            - transferFun a ((fourierFreq T k : ℝ) : AddCircle (2 * π))
+              * dftSample ε T k ω‖ ^ 2) μ ∧
+        ∫ ω, ‖dftSample X T k ω
+            - transferFun a ((fourierFreq T k : ℝ) : AddCircle (2 * π))
+              * dftSample ε T k ω‖ ^ 2 ∂μ ≤ e T := by
+  sorry
+
 /-- **FY Theorem 2.14(ii)**: for the two-sided linear process, uniformly over the
 Fourier frequencies `1 ≤ k ≤ [(T−1)/2]`, the periodogram ordinate is the rescaled
 χ²₂-type quadratic form of the noise trigonometric sums up to an `L¹`-negligible
@@ -664,6 +936,130 @@ theorem periodogram_eq_scaled_chi2_approx [IsProbabilityMeasure μ] {σ2 : ℝ} 
             - 2 * π * spectralDensityOf X μ ((fourierFreq T k : ℝ) : AddCircle (2 * π))
               * ((dftNoiseCos ε σ2 T k ω) ^ 2 + (dftNoiseSin ε σ2 T k ω) ^ 2) / 2|
           ∂μ ≤ b T := by
-  sorry
+  obtain ⟨e, hena, he0, hedge⟩ := exists_dft_edge_L2_bound hε hσ ha hmeas hfil
+  obtain ⟨Ca, hCadef⟩ : ∃ Ca : ℝ, Ca = ∑' j : ℤ, |a j| := ⟨_, rfl⟩
+  have hCa0 : 0 ≤ Ca := by rw [hCadef]; exact tsum_nonneg fun j => abs_nonneg _
+  obtain ⟨δ, hδdef⟩ : ∃ δ : ℕ → ℝ,
+      δ = fun T : ℕ => Real.sqrt (e T + 1 / ((T : ℝ) + 1)) := ⟨_, rfl⟩
+  have hinv : ∀ T : ℕ, (0 : ℝ) < 1 / ((T : ℝ) + 1) := by
+    intro T; positivity
+  have hδpos : ∀ T, 0 < δ T := by
+    intro T
+    rw [hδdef]
+    exact Real.sqrt_pos.2 (by linarith [hena T, hinv T])
+  have hδsq : ∀ T, e T ≤ (δ T) ^ 2 := by
+    intro T
+    rw [hδdef, Real.sq_sqrt (by linarith [hena T, hinv T])]
+    linarith [hinv T]
+  have hδ0 : Tendsto δ atTop (𝓝 0) := by
+    have h2 : Tendsto (fun T : ℕ => 1 / ((T : ℝ) + 1)) atTop (𝓝 0) :=
+      tendsto_one_div_add_atTop_nhds_zero_nat
+    have h1 : Tendsto (fun T : ℕ => e T + 1 / ((T : ℝ) + 1)) atTop (𝓝 0) := by
+      simpa using he0.add h2
+    rw [hδdef]
+    simpa using (Real.continuous_sqrt.tendsto 0).comp h1
+  refine ⟨fun T => δ T * (Ca ^ 2 * σ2) + e T + δ T, ?_, ?_⟩
+  · have := ((hδ0.mul_const (Ca ^ 2 * σ2)).add he0).add hδ0
+    simpa using this
+  intro T k hk1 hk2
+  have hkT : k + k < T := by omega
+  have hT : 0 < T := by omega
+  obtain ⟨Γ, hΓ⟩ : ∃ Γ : ℂ,
+      Γ = transferFun a ((fourierFreq T k : ℝ) : AddCircle (2 * π)) := ⟨_, rfl⟩
+  obtain ⟨hDint, hDbd⟩ := hedge T k hk1 hkT
+  rw [← hΓ] at hDint hDbd
+  -- The observed and the noise-driven ordinates.
+  have hΓle : ‖Γ‖ ≤ Ca := by
+    rw [hΓ, hCadef]; exact norm_transferFun_le a ha _
+  have hInoise := integrable_normSq_dftSample_noise hε hT k
+  have hCint : Integrable (fun ω => ‖Γ * dftSample ε T k ω‖ ^ 2) μ := by
+    have : ∀ ω : Ω, ‖Γ * dftSample ε T k ω‖ ^ 2 = ‖Γ‖ ^ 2 * ‖dftSample ε T k ω‖ ^ 2 := by
+      intro ω; rw [norm_mul, mul_pow]
+    exact (hInoise.const_mul (‖Γ‖ ^ 2)).congr (Eventually.of_forall fun ω => (this ω).symm)
+  have hCval : ∫ ω, ‖Γ * dftSample ε T k ω‖ ^ 2 ∂μ = ‖Γ‖ ^ 2 * σ2 := by
+    have hpt : ∀ ω : Ω, ‖Γ * dftSample ε T k ω‖ ^ 2
+        = ‖Γ‖ ^ 2 * ‖dftSample ε T k ω‖ ^ 2 := fun ω => by rw [norm_mul, mul_pow]
+    rw [integral_congr_ae (Eventually.of_forall hpt), integral_const_mul,
+      integral_normSq_dftSample_noise hε hk1 hkT]
+  -- Rewrite the integrand as the difference of squared moduli.
+  have hpt : ∀ ω : Ω, |periodogram (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) k
+        - 2 * π * spectralDensityOf X μ ((fourierFreq T k : ℝ) : AddCircle (2 * π))
+          * ((dftNoiseCos ε σ2 T k ω) ^ 2 + (dftNoiseSin ε σ2 T k ω) ^ 2) / 2|
+      = |‖dftSample X T k ω‖ ^ 2 - ‖Γ * dftSample ε T k ω‖ ^ 2| := by
+    intro ω
+    congr 1
+    simp only [periodogram, dftSample]
+    rw [two_pi_spectralDensityOf_eq hε ha hmeas hfil, ← hΓ, norm_mul, mul_pow]
+    rw [show ‖dft (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) (k : ℤ)‖ ^ 2
+        = σ2 / 2 * ((dftNoiseCos ε σ2 T k ω) ^ 2 + (dftNoiseSin ε σ2 T k ω) ^ 2) from
+      normSq_dftSample_noise ε hσ hT k ω]
+    ring
+  simp only [hpt]
+  -- Pointwise: `|‖A‖² − ‖C‖²| ≤ δ‖C‖² + (1 + δ⁻¹)‖D‖²`.
+  have hbound : ∀ ω : Ω, |‖dftSample X T k ω‖ ^ 2 - ‖Γ * dftSample ε T k ω‖ ^ 2|
+      ≤ δ T * ‖Γ * dftSample ε T k ω‖ ^ 2
+        + (1 + (δ T)⁻¹) * ‖dftSample X T k ω - Γ * dftSample ε T k ω‖ ^ 2 := by
+    intro ω
+    obtain ⟨A, hAe⟩ : ∃ A : ℝ, A = ‖dftSample X T k ω‖ := ⟨_, rfl⟩
+    obtain ⟨C, hCe⟩ : ∃ C : ℝ, C = ‖Γ * dftSample ε T k ω‖ := ⟨_, rfl⟩
+    obtain ⟨D, hDe⟩ : ∃ D : ℝ, D = ‖dftSample X T k ω - Γ * dftSample ε T k ω‖ := ⟨_, rfl⟩
+    rw [← hAe, ← hCe, ← hDe]
+    have hA0 : 0 ≤ A := by rw [hAe]; exact norm_nonneg _
+    have hC0 : 0 ≤ C := by rw [hCe]; exact norm_nonneg _
+    have hD0 : 0 ≤ D := by rw [hDe]; exact norm_nonneg _
+    have hdiff : |A - C| ≤ D := by
+      rw [hAe, hCe, hDe]; exact abs_norm_sub_norm_le _ _
+    have hAle : A ≤ C + D := by
+      have := abs_le.1 hdiff; linarith [this.2]
+    have hkey : |A ^ 2 - C ^ 2| ≤ D * (2 * C + D) := by
+      have h1 : A ^ 2 - C ^ 2 = (A - C) * (A + C) := by ring
+      rw [h1, abs_mul]
+      have h2 : |A + C| = A + C := abs_of_nonneg (by linarith)
+      rw [h2]
+      have h3 : A + C ≤ 2 * C + D := by linarith
+      exact mul_le_mul hdiff h3 (by linarith) hD0
+    have hamgm : 2 * C * D ≤ δ T * C ^ 2 + (δ T)⁻¹ * D ^ 2 := by
+      have hδ := hδpos T
+      have hkeyid : δ T * (δ T * C ^ 2 + (δ T)⁻¹ * D ^ 2 - 2 * C * D)
+          = (δ T * C - D) ^ 2 := by field_simp; ring
+      have hZ : 0 ≤ δ T * (δ T * C ^ 2 + (δ T)⁻¹ * D ^ 2 - 2 * C * D) := by
+        rw [hkeyid]; exact sq_nonneg _
+      nlinarith [hZ, hδ]
+    calc |A ^ 2 - C ^ 2| ≤ D * (2 * C + D) := hkey
+      _ = 2 * C * D + D ^ 2 := by ring
+      _ ≤ (δ T * C ^ 2 + (δ T)⁻¹ * D ^ 2) + D ^ 2 := by linarith [hamgm]
+      _ = δ T * C ^ 2 + (1 + (δ T)⁻¹) * D ^ 2 := by ring
+    -- (the `calc` closes the goal after unfolding the abbreviations)
+  have hgint : Integrable (fun ω => δ T * ‖Γ * dftSample ε T k ω‖ ^ 2
+      + (1 + (δ T)⁻¹) * ‖dftSample X T k ω - Γ * dftSample ε T k ω‖ ^ 2) μ :=
+    (hCint.const_mul (δ T)).add (hDint.const_mul (1 + (δ T)⁻¹))
+  have hmono := integral_mono_of_nonneg
+    (Eventually.of_forall fun ω => abs_nonneg
+      (‖dftSample X T k ω‖ ^ 2 - ‖Γ * dftSample ε T k ω‖ ^ 2))
+    hgint (Eventually.of_forall hbound)
+  refine hmono.trans ?_
+  rw [integral_add (hCint.const_mul (δ T)) (hDint.const_mul (1 + (δ T)⁻¹)),
+    integral_const_mul, integral_const_mul, hCval]
+  have hδ := hδpos T
+  have h1 : δ T * (‖Γ‖ ^ 2 * σ2) ≤ δ T * (Ca ^ 2 * σ2) := by
+    have hΓ2 : ‖Γ‖ ^ 2 ≤ Ca ^ 2 := by
+      have := norm_nonneg Γ
+      nlinarith [hΓle]
+    have : ‖Γ‖ ^ 2 * σ2 ≤ Ca ^ 2 * σ2 := by nlinarith [hσ.le]
+    exact mul_le_mul_of_nonneg_left this hδ.le
+  have h2 : (1 + (δ T)⁻¹) * (∫ ω, ‖dftSample X T k ω - Γ * dftSample ε T k ω‖ ^ 2 ∂μ)
+      ≤ e T + δ T := by
+    have hDnn : 0 ≤ ∫ ω, ‖dftSample X T k ω - Γ * dftSample ε T k ω‖ ^ 2 ∂μ :=
+      integral_nonneg fun ω => by positivity
+    have hstep : (1 + (δ T)⁻¹)
+        * (∫ ω, ‖dftSample X T k ω - Γ * dftSample ε T k ω‖ ^ 2 ∂μ)
+        ≤ (1 + (δ T)⁻¹) * e T :=
+      mul_le_mul_of_nonneg_left hDbd (by positivity)
+    have hlast : (δ T)⁻¹ * e T ≤ δ T := by
+      rw [inv_mul_le_iff₀ hδ]
+      calc e T ≤ (δ T) ^ 2 := hδsq T
+        _ = δ T * δ T := sq (δ T)
+    nlinarith [hstep, hlast, hena T]
+  linarith [h1, h2]
 
 end StatLean.TimeSeries
