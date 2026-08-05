@@ -365,6 +365,34 @@ theorem IsFilteredBy.isStationary [IsProbabilityMeasure μ] {X Y : ℤ → Ω �
   · change cov[X k, X 0; μ] = _
     rw [hcov k 0, sub_zero]
 
+/-- The shear `(k, j, l) ↦ (k − j + l, j, l)` of `ℤ³`, which turns the convolution
+weight `|γ(k + j − l)|` into the free weight `|γ(k)|`. -/
+private def shearEquiv : ℤ × ℤ × ℤ ≃ ℤ × ℤ × ℤ where
+  toFun q := (q.1 - q.2.1 + q.2.2, q.2.1, q.2.2)
+  invFun q := (q.1 + q.2.1 - q.2.2, q.2.1, q.2.2)
+  left_inv q := by
+    show (q.1 - q.2.1 + q.2.2 + q.2.1 - q.2.2, q.2.1, q.2.2) = q
+    rw [show q.1 - q.2.1 + q.2.2 + q.2.1 - q.2.2 = q.1 by ring]
+  right_inv q := by
+    show (q.1 + q.2.1 - q.2.2 - q.2.1 + q.2.2, q.2.1, q.2.2) = q
+    rw [show q.1 + q.2.1 - q.2.2 - q.2.1 + q.2.2 = q.1 by ring]
+
+/-- The `ℓ¹ ∗ ℓ¹ ∗ ℓ¹` majorant of the output ACVF, summable on `ℤ × (ℤ × ℤ)`. -/
+private lemma summable_convMajorant {Y : ℤ → Ω → ℝ} {φ : ℤ → ℝ}
+    (hφ : Summable fun k => |φ k|) (hYsum : HasSummableACVF Y μ) :
+    Summable fun q : ℤ × ℤ × ℤ =>
+      |φ q.2.1| * |φ q.2.2| * |acvf Y μ (q.1 + q.2.1 - q.2.2)| := by
+  have hφ2 : Summable fun p : ℤ × ℤ => |φ p.1| * |φ p.2| :=
+    hφ.mul_of_nonneg hφ (fun i => abs_nonneg (φ i)) (fun i => abs_nonneg (φ i))
+  have hbase : Summable fun q : ℤ × ℤ × ℤ => |φ q.2.1| * |φ q.2.2| * |acvf Y μ q.1| := by
+    have h1 : Summable fun q : ℤ × ℤ × ℤ => |acvf Y μ q.1| * (|φ q.2.1| * |φ q.2.2|) :=
+      hYsum.mul_of_nonneg hφ2 (fun i => abs_nonneg _) (fun p => by positivity)
+    exact h1.congr fun q => mul_comm _ _
+  refine (Equiv.summable_iff shearEquiv).mp (hbase.congr fun q => ?_)
+  show |φ q.2.1| * |φ q.2.2| * |acvf Y μ q.1|
+      = |φ q.2.1| * |φ q.2.2| * |acvf Y μ (q.1 - q.2.1 + q.2.2 + q.2.1 - q.2.2)|
+  rw [show q.1 - q.2.1 + q.2.2 + q.2.1 - q.2.2 = q.1 by ring]
+
 /-- Summability of the output ACVF (derived; FY assumes it): `ℓ¹ ∗ ℓ¹ ∗ ℓ¹`. -/
 theorem IsFilteredBy.hasSummableACVF [IsProbabilityMeasure μ] {X Y : ℤ → Ω → ℝ}
     {φ : ℤ → ℝ} (h : IsFilteredBy X Y φ μ)
@@ -372,7 +400,25 @@ theorem IsFilteredBy.hasSummableACVF [IsProbabilityMeasure μ] {X Y : ℤ → Ω
     (hYsum : HasSummableACVF Y μ)
     (hmeasY : ∀ t, Measurable (Y t)) (hmeasX : ∀ t, Measurable (X t)) :
     HasSummableACVF X μ := by
-  sorry
+  have hgnn : (0 : ℤ × ℤ × ℤ → ℝ)
+      ≤ fun q => |φ q.2.1| * |φ q.2.2| * |acvf Y μ (q.1 + q.2.1 - q.2.2)| :=
+    fun q => by positivity
+  obtain ⟨hslice, hout⟩ :=
+    (summable_prod_of_nonneg hgnn).mp (summable_convMajorant hφ hYsum)
+  refine Summable.of_nonneg_of_le (fun k => abs_nonneg _) (fun k => ?_) hout
+  have hform := (h.isStationary hφ hY hmeasY hmeasX).2 k
+  rw [← (summable_convProd hY hφ k).tsum_prod] at hform
+  rw [hform]
+  have hnormsum : Summable fun p : ℤ × ℤ =>
+      ‖φ p.1 * φ p.2 * acvf Y μ (k + p.1 - p.2)‖ := by
+    refine (hslice k).congr fun p => ?_
+    simp only [Real.norm_eq_abs, abs_mul]
+  calc |∑' p : ℤ × ℤ, φ p.1 * φ p.2 * acvf Y μ (k + p.1 - p.2)|
+      ≤ ∑' p : ℤ × ℤ, ‖φ p.1 * φ p.2 * acvf Y μ (k + p.1 - p.2)‖ := by
+        rw [← Real.norm_eq_abs]
+        exact norm_tsum_le_tsum_norm hnormsum
+    _ = ∑' p : ℤ × ℤ, |φ p.1| * |φ p.2| * |acvf Y μ (k + p.1 - p.2)| :=
+        tsum_congr fun p => by simp only [Real.norm_eq_abs, abs_mul]
 
 /-- **FY Theorem 2.12 (spectral form)**: `g_X(λ) = |Γ(λ)|² · g_Y(λ)`. -/
 theorem IsFilteredBy.spectralDensityOf_eq [IsProbabilityMeasure μ] {X Y : ℤ → Ω → ℝ}
