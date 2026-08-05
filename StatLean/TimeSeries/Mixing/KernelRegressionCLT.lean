@@ -62,11 +62,14 @@ basics; and, under the authorized (C1) repair, the diagonal (2.73) itself
 (`tendsto_localized_second_moment_debt`, with `nonneg_of_continuousAt_of_ae_nonneg`).
 and the Volkonskii–Rozanov rate (2.78) `tendsto_blockCount_mul_pairAlpha`, with its
 (C3) input `tendsto_weighted_antitone_of_summable`.
-Open, as named debts:
-`var_localized_sum` (the (a) headline — see its docstring for this wave's sharp
-obstruction: FY's route needs `E|ξ_0|^δ = O(h)`, a *third* silent reading of (C1)),
-`tendsto_smallBlock_variance` (2.79)–(2.81), `charFun_locSum_sub_locTruncSum_le`
-(2.82)–(2.83), `tendsto_charFun_locTruncSum` ((b) + (d) at fixed `L`, and (2.84)).
+Open, as named debts, each with an audit verdict in its own docstring:
+`var_localized_sum` (the (a) headline — BLOCKED as frozen: FY's route needs
+`E|ξ_0|^δ = O(h)`, a *third* silent reading of (C1)), `tendsto_smallBlock_variance`
+(2.79)–(2.81) — **FALSE as frozen**: the statement carries no hypotheses at all;
+`charFun_locSum_sub_locTruncSum_le` (2.82)–(2.83) — **FALSE as frozen**: no stationarity,
+and `heLδ` constrains only `e 0`; `tendsto_charFun_locTruncSum` ((b) + (d) at fixed `L`,
+and (2.84)) — statement intact, blocked on the two items above plus the open
+`norm_integral_prod_sub_prod_integral_le` in `Mixing/Inequalities.lean`.
 
 **FALSE AS FROZEN (verified) — REPAIR APPLIED.** FY (2.73) — hence Theorem 2.22 itself —
 does not follow from (C1)–(C5) *as formalized here*. The counterexample below stands; the
@@ -846,10 +849,27 @@ private theorem tendsto_blockCount_mul_pairAlpha [IsProbabilityMeasure μ]
       exact ht
     exact hcont.comp hcomp
 
-/-- **FY (2.79)–(2.81) — DEBT.** The small blocks (and the terminal remainder) are
-`L²`-negligible: their contribution to `locTruncSum` has variance `→ 0`. Proved from
-ledger (a) applied to the small-block index sets, whose total length is
-`k_n s_n / n → 0` by the choice of `l_n`, `s_n`. -/
+/-- **FY (2.79)–(2.81) — DEBT, and FALSE AS FROZEN (this wave's finding).** The small
+blocks (and the terminal remainder) are `L²`-negligible: their contribution to
+`locTruncSum` has variance `→ 0`. The intended proof is ledger (a) applied to the
+small-block index sets, whose total length is `k_n s_n / n → 0` by the choice of `l_n`,
+`s_n` (that ratio is `s_n/(l_n+s_n) → 0`, which is exactly (C5)).
+
+**The statement as frozen carries no hypotheses at all** — `X`, `e`, `W`, `x`, `δ`, `lam`,
+`h`, `L` are all free — so it is false, and not for a pathological reason: without
+independence/mixing the small-block sum grows *quadratically* in its length instead of
+linearly. Witness: `X ≡ 0` (so `σ(X_t)` is trivial), `e_t ≡ ξ` for a single Rademacher
+`ξ`, `W ≡ 1`, `h ≡ 1`, `L ≥ 1`, `δ = 3`, `lam = 1`. Then
+`truncErr = clamp_L ξ − E[clamp_L ξ] = ξ`, the double sum is `N_n · ξ` with
+`N_n = k_n s_n`, the integral is `N_n²`, and the displayed quantity is `N_n²/n`. Here
+`l_n = ⌈√n/log n⌉`, `s_n = ⌈(√n log n)^{1/6}⌉`, `k_n ≍ √n log n`, so
+`N_n ≍ n^{7/12+o(1)}` and `N_n²/n ≍ n^{1/6} → ∞`.
+
+**Repair.** Thread the whole (C1)–(C5) package (`hstat`, `hce`, `hcv`, `hδ`/`heLδ`,
+`hC2`, `hlam`/`hα`, `hWm`/`hWb`, `hh0`/`hh`/`hnh`) into this statement, exactly as
+`var_localized_sum` carries it: with mixing the variance is `≍ N_n/n → 0`. Not done here
+— the statement freeze is lifted this wave only for the two (C1) hypotheses listed in the
+module docstring. -/
 private theorem tendsto_smallBlock_variance [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} {W : ℝ → ℝ} {x : ℝ} {δ lam : ℝ} {h : ℕ → ℝ} {L : ℝ} :
     Tendsto (fun n : ℕ =>
@@ -897,7 +917,25 @@ private theorem tendsto_of_uniform_approx {f : ℕ → ℂ} {g : ℝ → ℕ →
 localized sum is within `ε` of the charFun of its truncated companion once the
 truncation level `L` is large. Proof: `|e^{iuS} − e^{iuS^L}| ≤ |u| E|S − S^L|`, and the
 variance of `S − S^L` obeys the ledger-(a) bound with the factor `E[e²1_{|e|>L}]`,
-which vanishes as `L → ∞` by `δ`-moment uniform integrability (`heLδ`, `δ > 2`). -/
+which vanishes as `L → ∞` by `δ`-moment uniform integrability (`heLδ`, `δ > 2`).
+
+**FALSE AS FROZEN (this wave's finding).** The hypotheses below omit (C1)'s stationarity
+and *every* moment condition beyond time `0`: `heLδ` constrains `e 0` only, and there is
+no `hstat`, `hce`, `hcv`, `hC2` or `hα`. Witness: `x = 0`, `X ≡ 0`, `W = 1_{[0,1]}` (so
+`W((X_t − x)/h_n) ≡ W 0 = 1`, and `W` is bounded, integrable and square-integrable as
+(C4) demands), `h_n = n^{−1/4}` (so `h_n → 0` and `n h_n³ = n^{1/4} → ∞`, as (C5)
+demands), `e_0 = 0` (so `heLδ` holds for every `δ`) and `e_t = t·ζ` for `t ≥ 1` with
+`ζ ~ N(0,1)`. Then `locSum = n^{−3/8}·(n(n+1)/2)·ζ`, whose charFun `→ 0`; whereas
+`clamp_L(tζ) → L·sign ζ` pointwise as `t → ∞`, so
+`locTruncSum = n^{5/8} L · sign ζ + o(1)` a.s. and its charFun is
+`cos(u n^{5/8} L) + o(1)`. The steps of `n ↦ u n^{5/8} L` tend to `0` while the sequence
+diverges, so its residues mod `2π` are dense: `|cos| ≥ 1/2` for infinitely many `n`, at
+**every** fixed `L`. So `ε = 1/4` admits no `L` at all.
+
+**Repair.** Thread (C1)'s `hstat` (which forces `e_t ≡ e_0` in law, hence a uniform
+`δ`-moment) together with `hce`, `hcv`, `hC2`, `hlam`/`hα` — i.e. the same package
+`var_localized_sum` carries — after which the `L¹` route above applies. That route is in
+any case downstream of ledger (a), which is itself blocked (see `var_localized_sum`). -/
 private theorem charFun_locSum_sub_locTruncSum_le [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     {δ : ℝ} (hδ : 2 < δ) (heLδ : MemLp (e 0) (ENNReal.ofReal δ) μ)
@@ -922,7 +960,16 @@ factorize up to `16 (k_n − 1) α_pair(s_n) → 0` by Volkonskii–Rozanov
 and the resulting product of block charFuns converges by the degenerate-Lindeberg
 corollary `tendsto_charFun_rowSum_gaussian_of_uniformly_small` — applicable because the
 truncated block summands carry the envelope `l_n L CW / √(n h_n) → 0`, which is exactly
-why `l_n = [√(n h_n)/log n]` is chosen. The block-variance input is ledger (a). -/
+why `l_n = [√(n h_n)/log n]` is chosen. The block-variance input is ledger (a).
+
+**Status.** This is the one remaining item whose *statement* survives this wave's audit
+intact (it carries the full (C1)–(C5) package). It is blocked on three inputs, none of
+which is a defect of this statement: (i) ledger (a) `var_localized_sum`, blocked on the
+missing conditional δ-moment (see there); (ii) `tendsto_smallBlock_variance`, whose
+frozen statement is false for want of hypotheses (see there); (iii) the
+Volkonskii–Rozanov factorization `norm_integral_prod_sub_prod_integral_le`, which is
+itself an open `sorry` in `Mixing/Inequalities.lean` — outside this wave's touch-set. Its
+*rate* input (2.78) is now proved (`tendsto_blockCount_mul_pairAlpha`). -/
 private theorem tendsto_charFun_locTruncSum [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
