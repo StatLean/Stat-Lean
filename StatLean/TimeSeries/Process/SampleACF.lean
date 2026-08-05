@@ -454,6 +454,173 @@ theorem IsMA.sampleACF_clt [IsProbabilityMeasure μ] {q : ℕ} {a : Fin q → �
       atTop
       (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
         (1 + 2 * ∑ t ∈ Finset.Icc 1 q, acf X μ (t : ℤ) ^ 2))) u)) := by
-  sorry
+  classical
+  -- ## The MA(q) second-order data feeding the Bartlett statement
+  have hstat : IsStationary X μ := h.isStationary hmeas
+  have hacvf0 : 0 < acvf X μ 0 := by
+    rw [h.acvf_zero_eq]
+    have : (0 : ℝ) ≤ ∑ i, a i ^ 2 := Finset.sum_nonneg fun i _ => sq_nonneg _
+    nlinarith
+  have hacf0 : acf X μ 0 = 1 := acf_zero (ne_of_gt hacvf0)
+  have hacfeven : ∀ m : ℤ, acf X μ (-m) = acf X μ m := fun m => by
+    rw [acf, acf, hstat.acvf_even]
+  -- the MA(q) ACF cutoff: `ρ(m) = 0` beyond lag `q`
+  have hcut : ∀ m : ℤ, ((q : ℤ) < m ∨ m < -(q : ℤ)) → acf X μ m = 0 := by
+    intro m hm
+    have habs : (q : ℤ) < |m| := by
+      rcases hm with hm | hm
+      · rw [abs_of_pos (by omega)]; omega
+      · rw [abs_of_neg (by omega)]; omega
+    have hz : acvf X μ m = 0 := h.cov_eq_zero (by simpa using habs)
+    rw [acf, hz, zero_div]
+  have hρj : acf X μ (j : ℤ) = 0 := hcut _ (Or.inl (by omega))
+  -- ## The Cramér–Wold selector `c` and the two-sided coefficient sequence `a'`
+  obtain ⟨i₀, hi₀⟩ : ∃ i₀ : Fin j, (i₀ : ℕ) + 1 = j :=
+    ⟨⟨j - 1, by omega⟩, show j - 1 + 1 = j from by omega⟩
+  obtain ⟨c, hcval⟩ : ∃ c : Fin j → ℝ, ∀ i, c i = if (i : ℕ) + 1 = j then 1 else 0 :=
+    ⟨_, fun _ => rfl⟩
+  have hci₀ : c i₀ = 1 := by rw [hcval, if_pos hi₀]
+  have hcne : ∀ i : Fin j, i ≠ i₀ → c i = 0 := by
+    intro i hne
+    refine (hcval i).trans (if_neg fun hc' => hne (Fin.ext ?_))
+    omega
+  obtain ⟨a', ha'val, ha'zero⟩ : ∃ a' : ℤ → ℝ,
+      (∀ i : Fin (q + 1), a' ((i : ℕ) : ℤ) = maCoeff a i) ∧
+      (∀ k : ℤ, k ∉ Finset.Icc (0 : ℤ) (q : ℤ) → a' k = 0) := by
+    refine ⟨fun k => if hk : 0 ≤ k ∧ k.toNat < q + 1 then maCoeff a ⟨k.toNat, hk.2⟩ else 0,
+      fun i => ?_, fun k hk => ?_⟩
+    · have hk : (0 : ℤ) ≤ ((i : ℕ) : ℤ) ∧ (((i : ℕ) : ℤ)).toNat < q + 1 :=
+        ⟨Int.natCast_nonneg _, by simpa using i.isLt⟩
+      dsimp only
+      rw [dif_pos hk]
+      exact congrArg (maCoeff a) (Fin.ext (by simp))
+    · simp only [Finset.mem_Icc, not_and, not_le] at hk
+      dsimp only
+      refine dif_neg fun hc' => ?_
+      have := hk hc'.1
+      omega
+  have ha'sum : Summable fun k : ℤ => |a' k| :=
+    summable_of_ne_finset_zero (s := Finset.Icc (0 : ℤ) (q : ℤ))
+      fun k hk => by rw [ha'zero k hk, abs_zero]
+  -- ## `X` is the (finitely supported) two-sided linear filter of `ε` with weights `a'`
+  have hpartial : ∀ (t : ℤ) (N : ℕ), q ≤ N → ∀ ω,
+      ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a' k * ε (t - k) ω
+        = ∑ i : Fin (q + 1), maCoeff a i * ε (t - ((i : ℕ) : ℤ)) ω := by
+    intro t N hN ω
+    have hsub : Finset.Icc (0 : ℤ) (q : ℤ) ⊆ Finset.Icc (-(N : ℤ)) (N : ℤ) := by
+      intro k hk; simp only [Finset.mem_Icc] at *; omega
+    rw [← Finset.sum_subset hsub (fun k _ hk => by rw [ha'zero k hk, zero_mul])]
+    have hr : ∑ k ∈ Finset.Icc (0 : ℤ) (q : ℤ), a' k * ε (t - k) ω
+        = ∑ n ∈ Finset.range (q + 1), a' ((n : ℕ) : ℤ) * ε (t - ((n : ℕ) : ℤ)) ω := by
+      refine Finset.sum_nbij' (fun k => k.toNat) (fun n => (n : ℤ)) ?_ ?_ ?_ ?_ ?_
+      · intro k hk; simp only [Finset.mem_Icc] at hk; simp only [Finset.mem_range]; omega
+      · intro n hn; simp only [Finset.mem_range] at hn; simp only [Finset.mem_Icc]; omega
+      · intro k hk; simp only [Finset.mem_Icc] at hk; dsimp only; omega
+      · intro n hn; simp only [Finset.mem_range] at hn; dsimp only; omega
+      · intro k hk
+        simp only [Finset.mem_Icc] at hk
+        dsimp only
+        rw [show ((k.toNat : ℕ) : ℤ) = k from by omega]
+    rw [hr, ← Fin.sum_univ_eq_sum_range
+      (fun n => a' ((n : ℕ) : ℤ) * ε (t - ((n : ℕ) : ℤ)) ω) (q + 1)]
+    exact Finset.sum_congr rfl fun i _ => by rw [ha'val i]
+  have hfil : ∀ t : ℤ, Tendsto (fun N : ℕ =>
+      eLpNorm (fun ω => X t ω -
+        ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a' k * ε (t - k) ω) 2 μ) atTop (𝓝 0) := by
+    intro t
+    refine Tendsto.congr' ?_ (tendsto_const_nhds (x := (0 : ENNReal)))
+    filter_upwards [eventually_ge_atTop q] with N hN
+    have hzero : (fun ω => X t ω -
+        ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a' k * ε (t - k) ω) =ᵐ[μ] 0 := by
+      filter_upwards [h.rec_sum t] with ω hω
+      rw [Pi.zero_apply, hω, hpartial t N hN ω, sub_self]
+    rw [eLpNorm_congr_ae hzero, eLpNorm_zero]
+  -- ## The Bartlett statement, instantiated at the single lag `j`
+  have hbart := sampleACF_bartlett_clt_debt (μ := μ) (a := a') (σ2 := σ2) (X := X) (ε := ε)
+    (M := j) hiid hσ hε4 ha'sum hmeas hfil c u
+  -- ## `w_{jj}` collapses to `Σ_{|m| ≤ q} ρ(m)² = 1 + 2 Σ_{t=1}^q ρ(t)²`
+  have hIcc : ∑ t ∈ Finset.Icc 1 q, acf X μ (t : ℤ) ^ 2
+      = ∑ i ∈ Finset.range q, acf X μ ((i : ℤ) + 1) ^ 2 := by
+    rw [← Finset.Ico_add_one_right_eq_Icc, Finset.sum_Ico_eq_sum_range,
+      show q + 1 - 1 = q from by omega]
+    exact Finset.sum_congr rfl fun i _ =>
+      by rw [show (((1 + i : ℕ)) : ℤ) = (i : ℤ) + 1 from by push_cast; ring]
+  have hbw : bartlettW X μ j j = 1 + 2 * ∑ t ∈ Finset.Icc 1 q, acf X μ (t : ℤ) ^ 2 := by
+    -- only the `ρ(k+1−j)` slot survives the cutoff
+    have hterm : ∀ k : ℕ,
+        (acf X μ ((k : ℤ) + 1 + (j : ℤ)) + acf X μ ((k : ℤ) + 1 - (j : ℤ))
+            - 2 * acf X μ (j : ℤ) * acf X μ ((k : ℤ) + 1)) *
+          (acf X μ ((k : ℤ) + 1 + (j : ℤ)) + acf X μ ((k : ℤ) + 1 - (j : ℤ))
+            - 2 * acf X μ (j : ℤ) * acf X μ ((k : ℤ) + 1))
+          = acf X μ ((k : ℤ) + 1 - (j : ℤ)) ^ 2 := by
+      intro k
+      rw [hcut ((k : ℤ) + 1 + (j : ℤ)) (Or.inl (by omega)), hρj]
+      ring
+    -- the survivor is supported on the window `k ∈ [j−1−q, j−1+q]`
+    obtain ⟨d, hd⟩ : ∃ d : ℕ, d = j - 1 - q := ⟨_, rfl⟩
+    have hsupp : ∀ k : ℕ, k ∉ Finset.Ico d (d + (2 * q + 1)) →
+        acf X μ ((k : ℤ) + 1 - (j : ℤ)) ^ 2 = 0 := by
+      intro k hk
+      simp only [Finset.mem_Ico, not_and, not_lt] at hk
+      have hcase : k < d ∨ d + (2 * q + 1) ≤ k := by
+        by_cases hkd : d ≤ k
+        · exact Or.inr (hk hkd)
+        · exact Or.inl (by omega)
+      have : acf X μ ((k : ℤ) + 1 - (j : ℤ)) = 0 := by
+        refine hcut _ ?_
+        rcases hcase with hc | hc
+        · exact Or.inr (by omega)
+        · exact Or.inl (by omega)
+      rw [this]; ring
+    rw [bartlettW, tsum_congr hterm,
+      tsum_eq_sum (s := Finset.Ico d (d + (2 * q + 1))) hsupp,
+      Finset.sum_Ico_eq_sum_range, Nat.add_sub_cancel_left]
+    have hre : ∀ i ∈ Finset.range (2 * q + 1),
+        acf X μ ((((d + i : ℕ)) : ℤ) + 1 - (j : ℤ)) ^ 2 = acf X μ ((i : ℤ) - (q : ℤ)) ^ 2 := by
+      intro i _
+      rw [show (((d + i : ℕ)) : ℤ) + 1 - (j : ℤ) = (i : ℤ) - (q : ℤ) from by omega]
+    rw [Finset.sum_congr rfl hre]
+    -- split the symmetric window `[−q, q]` at its centre and fold by evenness
+    have hlow : ∑ i ∈ Finset.range q, acf X μ ((i : ℤ) - (q : ℤ)) ^ 2
+        = ∑ i ∈ Finset.range q, acf X μ ((i : ℤ) + 1) ^ 2 := by
+      rw [← Finset.sum_range_reflect (fun i => acf X μ ((i : ℤ) - (q : ℤ)) ^ 2) q]
+      refine Finset.sum_congr rfl fun i hi => ?_
+      simp only [Finset.mem_range] at hi
+      rw [show (((q - 1 - i : ℕ)) : ℤ) - (q : ℤ) = -((i : ℤ) + 1) from by omega, hacfeven]
+    have hhigh : ∑ i ∈ Finset.Ico (q + 1) (2 * q + 1), acf X μ ((i : ℤ) - (q : ℤ)) ^ 2
+        = ∑ i ∈ Finset.range q, acf X μ ((i : ℤ) + 1) ^ 2 := by
+      rw [Finset.sum_Ico_eq_sum_range, show 2 * q + 1 - (q + 1) = q from by omega]
+      exact Finset.sum_congr rfl fun i _ =>
+        by rw [show (((q + 1 + i : ℕ)) : ℤ) - (q : ℤ) = (i : ℤ) + 1 from by push_cast; ring]
+    have hmid : acf X μ (((q : ℕ) : ℤ) - (q : ℤ)) ^ 2 = 1 := by
+      rw [sub_self, hacf0]; norm_num
+    rw [← Finset.sum_range_add_sum_Ico (fun i => acf X μ ((i : ℤ) - (q : ℤ)) ^ 2)
+      (show q + 1 ≤ 2 * q + 1 from by omega), Finset.sum_range_succ, hlow, hhigh, hmid, hIcc]
+    ring
+  -- ## The `c`-collapse of the statement and of Bartlett's variance
+  have hvar : (∑ i : Fin j, ∑ i' : Fin j,
+        c i * c i' * bartlettW X μ ((i : ℕ) + 1) ((i' : ℕ) + 1))
+      = 1 + 2 * ∑ t ∈ Finset.Icc 1 q, acf X μ (t : ℤ) ^ 2 := by
+    have hinner : ∀ i : Fin j,
+        (∑ i' : Fin j, c i * c i' * bartlettW X μ ((i : ℕ) + 1) ((i' : ℕ) + 1))
+          = c i * bartlettW X μ ((i : ℕ) + 1) j := by
+      intro i
+      rw [Finset.sum_eq_single i₀ (fun i' _ hne => by rw [hcne i' hne]; ring) (by simp),
+        hci₀, hi₀]
+      ring
+    rw [Finset.sum_congr rfl (fun i _ => hinner i),
+      Finset.sum_eq_single i₀ (fun i _ hne => by rw [hcne i hne]; ring) (by simp),
+      hci₀, hi₀, one_mul, hbw]
+  have hmapeq : ∀ (T : ℕ) (ω : Ω),
+      Real.sqrt T * ∑ i : Fin j, c i *
+          (sampleACF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ((i : ℕ) + 1)
+            - acf X μ (((i : ℕ) : ℤ) + 1))
+        = Real.sqrt T * sampleACF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) j := by
+    intro T ω
+    congr 1
+    rw [Finset.sum_eq_single i₀ (fun i _ hne => by rw [hcne i hne]; ring) (by simp), hci₀,
+      one_mul, hi₀, show (((i₀ : ℕ) : ℤ) + 1) = (j : ℤ) from by omega, hρj, sub_zero]
+  rw [← hvar]
+  exact Tendsto.congr (fun T => by rw [funext (hmapeq T)]) hbart
 
 end StatLean.TimeSeries
