@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "vite",
     "validate:data": "node scripts/validate-data.mjs",
-    "build": "npm run validate:data && tsc -b && vite build",
-    "preview": "vite preview"
+    "build": "npm run validate:data && npm run build:graph && tsc -b && vite build",
+    "preview": "vite preview",
+    "build:graph": "node scripts/build-global-graph.mjs"
   },
   "dependencies": {
     "cytoscape": "^3.30.2",
