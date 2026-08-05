@@ -63,17 +63,38 @@ theorem rangeSpace_apply (S : X → Y → 𝕜) (hS : IsL2Symbol μ S)
     f x = integralOp μ S (f : Lp 𝕜 2 μ) x := by
   sorry
 
+variable (μ) in
+/-- Completeness of the range-space carrier, as an explicit term (closed subspace of the
+complete space `L²`). -/
+noncomputable def rangeSpaceCompleteSpace (S : X → Y → 𝕜) (hS : IsL2Symbol μ S) :
+    CompleteSpace (rangeSpaceCarrier μ S hS) :=
+  (Submodule.isClosed_topologicalClosure _).completeSpace_coe
+
+variable (μ) in
+/-- The kernel function of the range space (definitionally
+`kernelFun (rangeSpaceCarrier μ S hS)`; the instances are passed explicitly). -/
+noncomputable def rangeSpaceKernelFun (S : X → Y → 𝕜) (hS : IsL2Symbol μ S) (x : X) :
+    rangeSpaceCarrier μ S hS :=
+  @kernelFun 𝕜 _ X (rangeSpaceCarrier μ S hS) _ _ (rangeSpaceCompleteSpace μ S hS)
+    (rangeSpaceRKHS μ S hS) x
+
+variable (μ) in
+/-- The reproducing kernel of the range space (definitionally
+`scalarKernel (rangeSpaceCarrier μ S hS)`). -/
+noncomputable def rangeSpaceScalarKernel (S : X → Y → 𝕜) (hS : IsL2Symbol μ S)
+    (x z : X) : 𝕜 :=
+  @scalarKernel 𝕜 _ X (rangeSpaceCarrier μ S hS) _ _ (rangeSpaceCompleteSpace μ S hS)
+    (rangeSpaceRKHS μ S hS) x z
+
 /-- The kernel function of the range space at `x` is the conjugated section
 `conj S(x,·)`. -/
 theorem rangeSpace_kernelFun (S : X → Y → 𝕜) (hS : IsL2Symbol μ S) (x : X) :
-    letI := rangeSpaceRKHS μ S hS
-    (kernelFun (rangeSpaceCarrier μ S hS) x : Lp 𝕜 2 μ) = symbolConjLp μ S hS x := by
+    (rangeSpaceKernelFun μ S hS x : Lp 𝕜 2 μ) = symbolConjLp μ S hS x := by
   sorry
 
 /-- **The kernel of the range space is the box product** `S □ S*`. -/
 theorem rangeSpace_scalarKernel (S : X → Y → 𝕜) (hS : IsL2Symbol μ S) (x z : X) :
-    letI := rangeSpaceRKHS μ S hS
-    scalarKernel (rangeSpaceCarrier μ S hS) x z = boxProd μ S (symbolAdjoint S) x z := by
+    rangeSpaceScalarKernel μ S hS x z = boxProd μ S (symbolAdjoint S) x z := by
   sorry
 
 /-- **The range of the integral operator equals the range space**: every `T_S g` is

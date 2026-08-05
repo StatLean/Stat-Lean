@@ -87,18 +87,33 @@ theorem sobolevH01_apply_one (f : SobolevH01) :
     f (⟨1, by norm_num⟩ : unitInterval01) = 0 := by
   sorry
 
+/-- Completeness of the Sobolev carrier, as an explicit term (the orthogonal complement
+of a subspace of the complete space `L²` is complete). -/
+noncomputable def sobolevH01CompleteSpace : CompleteSpace SobolevH01 :=
+  Submodule.instOrthogonalCompleteSpace
+
+/-- The kernel function of the Sobolev space at `x` (the completeness instance is passed
+explicitly; definitionally `kernelFun SobolevH01 x`). -/
+noncomputable def sobolevKernelFun (x : unitInterval01) : SobolevH01 :=
+  @kernelFun ℝ _ unitInterval01 SobolevH01 _ _ sobolevH01CompleteSpace _ x
+
+/-- The reproducing kernel of the Sobolev space (definitionally
+`scalarKernel SobolevH01`). -/
+noncomputable def sobolevScalarKernel (x y : unitInterval01) : ℝ :=
+  @scalarKernel ℝ _ unitInterval01 SobolevH01 _ _ sobolevH01CompleteSpace _ x y
+
 /-- The kernel function of the point `x` has derivative representative
 `𝟙_{[0,x]} − x·𝟙` (the formal solution of the Dirichlet boundary-value problem
 `−k'' = δₓ`). -/
 theorem sobolevH01_kernelFun (x : unitInterval01) :
-    (kernelFun SobolevH01 x : Lp ℝ 2 sobolevMeasure)
+    (sobolevKernelFun x : Lp ℝ 2 sobolevMeasure)
       = sobolevInd x.1 - (x : ℝ) • sobolevOne := by
   sorry
 
 /-- **The reproducing kernel of `H₀¹[0,1]` is the Dirichlet Green's function**:
 `K(x, y) = min x y − x y`. -/
 theorem sobolevH01_scalarKernel (x y : unitInterval01) :
-    scalarKernel SobolevH01 x y = min (x : ℝ) y - (x : ℝ) * y := by
+    sobolevScalarKernel x y = min (x : ℝ) y - (x : ℝ) * y := by
   sorry
 
 /-- The Green's function in case-split form: `(1−y)x` for `x ≤ y`, `(1−x)y` otherwise. -/
@@ -108,7 +123,7 @@ theorem min_sub_mul_eq_ite (x y : ℝ) :
 
 /-- The exact norm of evaluation on the Sobolev space: `‖E_x‖² = ‖k_x‖² = x(1−x)`. -/
 theorem sobolevH01_norm_kernelFun_sq (x : unitInterval01) :
-    ‖kernelFun SobolevH01 x‖ ^ 2 = (x : ℝ) * (1 - (x : ℝ)) := by
+    ‖sobolevKernelFun x‖ ^ 2 = (x : ℝ) * (1 - (x : ℝ)) := by
   sorry
 
 /-- The sharp evaluation bound on the Sobolev space:
