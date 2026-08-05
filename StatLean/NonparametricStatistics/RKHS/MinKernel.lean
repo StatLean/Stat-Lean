@@ -89,7 +89,7 @@ theorem eigenvalue_allOnesMatrix (n : ℕ) (μ : 𝕜)
   · left
     obtain ⟨i, hi⟩ : ∃ i, v i ≠ 0 := by
       by_contra h
-      push_neg at h
+      push Not at h
       exact hv0 (funext h)
     have h := key i
     rw [hS] at h
@@ -159,6 +159,27 @@ theorem min_eq_integral_indicator (x y : ℝ)
   rw [hfun, MeasureTheory.integral_indicator_const _ measurableSet_Icc,
     volume_real_Icc_zero _ (le_min hx hy), smul_eq_mul, mul_one]
 
+/-- A real Gram function is a kernel function: the quadratic form is `‖∑ᵢ aᵢ φ(xᵢ)‖² ≥ 0`.
+(A self-contained copy of `isKernelFun_featureKernel` over `ℝ`, so that `isKernelFun_min`
+does not inherit that file's `sorry`.) -/
+private theorem isKernelFun_featureKernel_real {X : Type*} {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] (φ : X → E) : IsKernelFun (featureKernel ℝ φ) where
+  conj_symm x y := by
+    simp only [featureKernel, starRingEnd_apply, star_trivial]
+    exact real_inner_comm _ _
+  re_sum_nonneg n x a := by
+    have hquad : ∑ i, ∑ j, conj (a i) * a j * featureKernel ℝ φ (x i) (x j)
+        = ⟪∑ i, a i • φ (x i), ∑ j, a j • φ (x j)⟫_ℝ := by
+      rw [sum_inner]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      rw [real_inner_smul_left, inner_sum, Finset.mul_sum]
+      refine Finset.sum_congr rfl fun j _ => ?_
+      rw [real_inner_smul_right]
+      simp only [featureKernel, starRingEnd_apply, star_trivial]
+      ring
+    rw [hquad]
+    simp
+
 /-- **The min kernel is a kernel function** on `[0, ∞)`. -/
 theorem isKernelFun_min :
     IsKernelFun fun x y : Set.Ici (0 : ℝ) => min x.1 y.1 := by
@@ -182,7 +203,7 @@ theorem isKernelFun_min :
     funext x y
     exact key x y
   rw [hcast]
-  exact isKernelFun_featureKernel _
+  exact isKernelFun_featureKernel_real _
 
 end MinKernel
 
