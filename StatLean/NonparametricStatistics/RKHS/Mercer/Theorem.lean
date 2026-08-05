@@ -473,6 +473,57 @@ private theorem eig_diag_bound (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure
   rw [h2] at h1
   linarith
 
+/-- Finite Cauchy–Schwarz for the eigen-expansion. -/
+private theorem sq_norm_sum_eig_le (d : MercerEigensystem μ K hKc) (t : Finset d.ι) (x y : X) :
+    ‖∑ n ∈ t, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y))‖ ^ 2
+      ≤ (∑ n ∈ t, d.eigval n * ‖d.eigfun n x‖ ^ 2) *
+        (∑ n ∈ t, d.eigval n * ‖d.eigfun n y‖ ^ 2) := by
+  have hsq : ∀ n : d.ι, ∀ z : X,
+      (Real.sqrt (d.eigval n) * ‖d.eigfun n z‖) ^ 2 = d.eigval n * ‖d.eigfun n z‖ ^ 2 := by
+    intro n z
+    rw [mul_pow, Real.sq_sqrt (d.eigval_pos n).le]
+  have h1 : ‖∑ n ∈ t, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y))‖
+      ≤ ∑ n ∈ t, (Real.sqrt (d.eigval n) * ‖d.eigfun n x‖) *
+          (Real.sqrt (d.eigval n) * ‖d.eigfun n y‖) := by
+    refine le_trans (norm_sum_le _ _) (Finset.sum_le_sum fun n _ => ?_)
+    rw [norm_mul, norm_mul, RCLike.norm_conj, RCLike.norm_ofReal,
+      abs_of_pos (d.eigval_pos n)]
+    have hs : Real.sqrt (d.eigval n) * Real.sqrt (d.eigval n) = d.eigval n :=
+      Real.mul_self_sqrt (d.eigval_pos n).le
+    have he : Real.sqrt (d.eigval n) * ‖d.eigfun n x‖ *
+        (Real.sqrt (d.eigval n) * ‖d.eigfun n y‖)
+        = d.eigval n * (‖d.eigfun n x‖ * ‖d.eigfun n y‖) := by
+      rw [show Real.sqrt (d.eigval n) * ‖d.eigfun n x‖ *
+        (Real.sqrt (d.eigval n) * ‖d.eigfun n y‖)
+        = (Real.sqrt (d.eigval n) * Real.sqrt (d.eigval n)) *
+          (‖d.eigfun n x‖ * ‖d.eigfun n y‖) from by ring, hs]
+    exact le_of_eq he.symm
+  have h2 := Finset.sum_mul_sq_le_sq_mul_sq t
+      (fun n => Real.sqrt (d.eigval n) * ‖d.eigfun n x‖)
+      (fun n => Real.sqrt (d.eigval n) * ‖d.eigfun n y‖)
+  simp only [hsq] at h2
+  have h0 : (0 : ℝ) ≤ ∑ n ∈ t, (Real.sqrt (d.eigval n) * ‖d.eigfun n x‖) *
+      (Real.sqrt (d.eigval n) * ‖d.eigfun n y‖) :=
+    Finset.sum_nonneg fun n _ => by positivity
+  nlinarith [norm_nonneg (∑ n ∈ t, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y)))]
+
+/-- The diagonal series of a Mercer eigensystem is summable. -/
+private theorem summable_eig_diag (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure]
+    (d : MercerEigensystem μ K hKc) (x : X) :
+    Summable fun n => d.eigval n * ‖d.eigfun n x‖ ^ 2 :=
+  summable_of_sum_le (fun n => mul_nonneg (d.eigval_pos n).le (sq_nonneg _))
+    (fun s => eig_diag_bound hK d s x)
+
+/-- The off-diagonal series of a Mercer eigensystem is summable. -/
+private theorem summable_eig_prod (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure]
+    (d : MercerEigensystem μ K hKc) (x y : X) :
+    Summable fun n => (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y)) := by
+  refine Summable.of_norm_bounded
+    (((summable_eig_diag hK d x).add (summable_eig_diag hK d y)).div_const 2) fun n => ?_
+  rw [norm_mul, norm_mul, RCLike.norm_conj, RCLike.norm_ofReal, abs_of_pos (d.eigval_pos n)]
+  nlinarith [sq_nonneg (‖d.eigfun n x‖ - ‖d.eigfun n y‖), (d.eigval_pos n).le,
+    norm_nonneg (d.eigfun n x), norm_nonneg (d.eigfun n y)]
+
 end Residual
 
 /-- **Mercer's theorem, kernel expansion**: `K(x, y) = ∑ₙ λₙ eₙ(x) conj (eₙ(y))`
