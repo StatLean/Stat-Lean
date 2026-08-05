@@ -221,6 +221,68 @@ theorem spectralDensityOf_nonneg [IsProbabilityMeasure μ] {X : ℤ → Ω → �
     rw [hconv]
     exact mul_nonneg (by positivity) hS
 
+/-- Orthogonality against normalized Haar: `∫ e^{ikλ} d(haar) = δ_{k0}`. -/
+private lemma integral_fourier_haar (k : ℤ) :
+    ∫ z : AddCircle (2 * π), fourier k z ∂AddCircle.haarAddCircle
+      = if k = 0 then (1 : ℂ) else 0 := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · have h1 : ∀ z : AddCircle (2 * π), fourier (T := 2 * π) 0 z = (1 : ℂ) := fun _ =>
+      fourier_zero
+    rw [if_pos rfl, integral_congr_ae (Filter.Eventually.of_forall h1), integral_const]
+    simp
+  · rw [if_neg hk]
+    exact MeasureTheory.integral_eq_zero_of_add_right_eq_neg
+      (μ := (AddCircle.haarAddCircle : Measure (AddCircle (2 * π))))
+      (g := ((2 * π / 2 / k : ℝ) : AddCircle (2 * π)))
+      fun x => fourier_add_half_inv_index hk (by positivity) x
+
+/-- Coefficients of the pushforward under negation. -/
+private lemma measureFourierCoeff_map_neg' (F : Measure (AddCircle (2 * π)))
+    [IsFiniteMeasure F] (m : ℤ) :
+    measureFourierCoeff (F.map (fun z => -z)) m = measureFourierCoeff F (-m) := by
+  rw [measureFourierCoeff, measureFourierCoeff,
+    integral_map measurable_neg.aemeasurable
+      ((map_continuous (fourier (T := 2 * π) m)).aestronglyMeasurable)]
+  have hpt : ∀ z : AddCircle (2 * π),
+      fourier (T := 2 * π) (-m) z = fourier (T := 2 * π) m (-z) := by
+    intro z
+    rw [fourier_apply, fourier_apply, neg_zsmul, zsmul_neg]
+  exact integral_congr_ae (Filter.Eventually.of_forall fun z => (hpt z).symm)
+
+/-- The imaginary parts of an even-weighted character series cancel (`j ↦ −j` is an
+odd involution of the summands). -/
+private lemma tsum_mul_im_eq_zero {γ : ℤ → ℝ} (heven : ∀ k, γ (-k) = γ k)
+    (z : AddCircle (2 * π)) :
+    ∑' j : ℤ, γ j * (fourier (T := 2 * π) j z).im = 0 := by
+  have hodd : ∀ j : ℤ, γ (-j) * (fourier (T := 2 * π) (-j) z).im
+      = -(γ j * (fourier (T := 2 * π) j z).im) := by
+    intro j
+    rw [heven, fourier_neg, Complex.conj_im]
+    ring
+  have h1 : ∑' j : ℤ, γ (-j) * (fourier (T := 2 * π) (-j) z).im
+      = ∑' j : ℤ, γ j * (fourier (T := 2 * π) j z).im :=
+    (Equiv.neg ℤ).tsum_eq fun j => γ j * (fourier (T := 2 * π) j z).im
+  rw [tsum_congr hodd, tsum_neg] at h1
+  linarith
+
+/-- For an even `ℓ¹` sequence the character series is real, with value the cosine
+series that defines `spectralDensityOf`. -/
+private lemma tsum_fourier_ofReal {γ : ℤ → ℝ} (heven : ∀ k, γ (-k) = γ k)
+    (hsum : Summable fun k => |γ k|) (z : AddCircle (2 * π)) :
+    ∑' j : ℤ, (γ j : ℂ) * fourier (T := 2 * π) j z
+      = (((∑' j : ℤ, γ j * (fourier (T := 2 * π) j z).re : ℝ)) : ℂ) := by
+  have hnorm : ∀ j : ℤ, ‖(γ j : ℂ) * fourier (T := 2 * π) j z‖ = |γ j| := by
+    intro j
+    rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, norm_fourier_eq_one, mul_one]
+  have hFsum : Summable fun j : ℤ => (γ j : ℂ) * fourier (T := 2 * π) j z :=
+    Summable.of_norm (by simpa only [hnorm] using hsum)
+  refine Complex.ext ?_ ?_
+  · rw [Complex.ofReal_re, Complex.re_tsum hFsum]
+    exact tsum_congr fun j => Complex.re_ofReal_mul _ _
+  · rw [Complex.ofReal_im, Complex.im_tsum hFsum,
+      tsum_congr fun j => Complex.im_ofReal_mul (γ j) (fourier (T := 2 * π) j z)]
+    exact tsum_mul_im_eq_zero heven z
+
 /-- **FY Theorem 2.11**: under stationarity and summable ACVF, the measure with density
 `spectralDensityOf` against the mass-`2π` Haar measure is the spectral measure of the
 process (existence-with-density form; inversion `γ(k) = ∫ e^{ikλ} g dλ` is the
@@ -231,7 +293,123 @@ theorem isSpectralMeasure_withDensity [IsProbabilityMeasure μ] {X : ℤ → Ω 
       ((ENNReal.ofReal (2 * π) •
           (AddCircle.haarAddCircle : Measure (AddCircle (2 * π)))).withDensity
         fun l => ENNReal.ofReal (spectralDensityOf X μ l)) := by
-  sorry
+  have hgcont : Continuous (spectralDensityOf X μ) := continuous_spectralDensityOf hsum
+  have hgnn : ∀ l, 0 ≤ spectralDensityOf X μ l := fun l =>
+    spectralDensityOf_nonneg hstat hsum l
+  have hgmeas : Measurable fun l : AddCircle (2 * π) =>
+      ENNReal.ofReal (spectralDensityOf X μ l) :=
+    ENNReal.measurable_ofReal.comp hgcont.measurable
+  obtain ⟨C, hC⟩ :=
+    (isCompact_univ : IsCompact (Set.univ : Set (AddCircle (2 * π)))).exists_bound_of_continuousOn
+      hgcont.continuousOn
+  have hCle : ∀ l, spectralDensityOf X μ l ≤ C := by
+    intro l
+    have h := hC l (Set.mem_univ l)
+    rw [Real.norm_eq_abs] at h
+    exact le_trans (le_abs_self _) h
+  -- finiteness: a bounded density against a finite measure
+  haveI hfin : IsFiniteMeasure
+      ((ENNReal.ofReal (2 * π) •
+          (AddCircle.haarAddCircle : Measure (AddCircle (2 * π)))).withDensity
+        fun l => ENNReal.ofReal (spectralDensityOf X μ l)) := by
+    constructor
+    rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
+    calc ∫⁻ l, ENNReal.ofReal (spectralDensityOf X μ l)
+            ∂(ENNReal.ofReal (2 * π) •
+              (AddCircle.haarAddCircle : Measure (AddCircle (2 * π))))
+        ≤ ∫⁻ _l : AddCircle (2 * π), ENNReal.ofReal C
+            ∂(ENNReal.ofReal (2 * π) •
+              (AddCircle.haarAddCircle : Measure (AddCircle (2 * π)))) :=
+          lintegral_mono fun l => ENNReal.ofReal_le_ofReal (hCle l)
+      _ = ENNReal.ofReal C * (ENNReal.ofReal (2 * π) •
+              (AddCircle.haarAddCircle : Measure (AddCircle (2 * π)))) Set.univ :=
+          lintegral_const _
+      _ < ⊤ := by
+          rw [Measure.smul_apply, smul_eq_mul, measure_univ, mul_one]
+          exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top ENNReal.ofReal_lt_top
+  -- the coefficient identity: orthogonality kills all but the `−k` slot
+  have hcoef : ∀ k : ℤ, measureFourierCoeff
+      ((ENNReal.ofReal (2 * π) •
+          (AddCircle.haarAddCircle : Measure (AddCircle (2 * π)))).withDensity
+        fun l => ENNReal.ofReal (spectralDensityOf X μ l)) k = (acvf X μ k : ℂ) := by
+    intro k
+    have hpt : ∀ z : AddCircle (2 * π),
+        (ENNReal.ofReal (spectralDensityOf X μ z)).toReal • fourier (T := 2 * π) k z
+          = (((2 * π)⁻¹ : ℝ) : ℂ) * ∑' j : ℤ,
+              ((acvf X μ j : ℂ) * fourier (T := 2 * π) (j + k) z) := by
+      intro z
+      rw [ENNReal.toReal_ofReal (hgnn z), Complex.real_smul, spectralDensityOf,
+        Complex.ofReal_mul, ← tsum_fourier_ofReal hstat.acvf_even hsum z, mul_assoc]
+      congr 1
+      rw [← tsum_mul_right]
+      exact tsum_congr fun j => by rw [mul_assoc, ← fourier_add]
+    have hFint : ∀ j : ℤ, Integrable
+        (fun z : AddCircle (2 * π) => (acvf X μ j : ℂ) * fourier (T := 2 * π) (j + k) z)
+        AddCircle.haarAddCircle := fun j =>
+      ((BoundedContinuousFunction.mkOfCompact
+        (fourier (T := 2 * π) (j + k))).integrable _).const_mul _
+    have hnormint : ∀ j : ℤ, ∫ z : AddCircle (2 * π),
+        ‖(acvf X μ j : ℂ) * fourier (T := 2 * π) (j + k) z‖ ∂AddCircle.haarAddCircle
+        = |acvf X μ j| := by
+      intro j
+      have hn : ∀ z : AddCircle (2 * π),
+          ‖(acvf X μ j : ℂ) * fourier (T := 2 * π) (j + k) z‖ = |acvf X μ j| := by
+        intro z
+        rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, norm_fourier_eq_one, mul_one]
+      rw [integral_congr_ae (Filter.Eventually.of_forall hn), integral_const]
+      simp
+    have hFnorm : Summable fun j : ℤ => ∫ z : AddCircle (2 * π),
+        ‖(acvf X μ j : ℂ) * fourier (T := 2 * π) (j + k) z‖ ∂AddCircle.haarAddCircle := by
+      simp only [hnormint]
+      exact hsum
+    have hswap : ∫ z : AddCircle (2 * π), ∑' j : ℤ,
+          ((acvf X μ j : ℂ) * fourier (T := 2 * π) (j + k) z) ∂AddCircle.haarAddCircle
+        = ∑' j : ℤ, ∫ z : AddCircle (2 * π),
+            ((acvf X μ j : ℂ) * fourier (T := 2 * π) (j + k) z) ∂AddCircle.haarAddCircle :=
+      (hasSum_integral_of_summable_integral_norm hFint hFnorm).tsum_eq.symm
+    have hterm : ∀ j : ℤ, ∫ z : AddCircle (2 * π),
+        ((acvf X μ j : ℂ) * fourier (T := 2 * π) (j + k) z) ∂AddCircle.haarAddCircle
+        = (acvf X μ j : ℂ) * (if j + k = 0 then (1 : ℂ) else 0) := by
+      intro j
+      refine Eq.trans (MeasureTheory.integral_const_mul _ _) ?_
+      congr 1
+      exact integral_fourier_haar (j + k)
+    have hsingle : (∑' j : ℤ, (acvf X μ j : ℂ) * (if j + k = 0 then (1 : ℂ) else 0))
+        = (acvf X μ (-k) : ℂ) := by
+      rw [tsum_eq_single (-k)
+        (fun j hj => by rw [if_neg (fun h => hj (by omega)), mul_zero]),
+        if_pos (by ring), mul_one]
+    have hcmul : ∫ z : AddCircle (2 * π), (((2 * π)⁻¹ : ℝ) : ℂ) * ∑' j : ℤ,
+          ((acvf X μ j : ℂ) * fourier (T := 2 * π) (j + k) z) ∂AddCircle.haarAddCircle
+        = (((2 * π)⁻¹ : ℝ) : ℂ) * ∫ z : AddCircle (2 * π), ∑' j : ℤ,
+            ((acvf X μ j : ℂ) * fourier (T := 2 * π) (j + k) z) ∂AddCircle.haarAddCircle :=
+      MeasureTheory.integral_const_mul _ _
+    have hinner : ∫ z : AddCircle (2 * π), (((2 * π)⁻¹ : ℝ) : ℂ) * ∑' j : ℤ,
+          ((acvf X μ j : ℂ) * fourier (T := 2 * π) (j + k) z) ∂AddCircle.haarAddCircle
+        = (((2 * π)⁻¹ : ℝ) : ℂ) * (acvf X μ k : ℂ) := by
+      rw [hcmul, hswap, tsum_congr hterm, hsingle, hstat.acvf_even]
+    have hmain : ∫ z : AddCircle (2 * π), (((2 * π)⁻¹ : ℝ) : ℂ) * ∑' j : ℤ,
+          ((acvf X μ j : ℂ) * fourier (T := 2 * π) (j + k) z)
+          ∂(ENNReal.ofReal (2 * π) •
+            (AddCircle.haarAddCircle : Measure (AddCircle (2 * π))))
+        = (acvf X μ k : ℂ) := by
+      rw [integral_smul_measure, ENNReal.toReal_ofReal (by positivity : (0 : ℝ) ≤ 2 * π),
+        hinner]
+      refine Eq.trans Complex.real_smul ?_
+      rw [← mul_assoc, ← Complex.ofReal_mul,
+        mul_inv_cancel₀ (by positivity : (2 * π : ℝ) ≠ 0), Complex.ofReal_one, one_mul]
+    rw [measureFourierCoeff,
+      integral_withDensity_eq_integral_toReal_smul hgmeas
+        (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+    exact Eq.trans (integral_congr_ae (Filter.Eventually.of_forall hpt)) hmain
+  refine ⟨hfin, ?_, hcoef⟩
+  haveI : IsFiniteMeasure
+      (((ENNReal.ofReal (2 * π) •
+          (AddCircle.haarAddCircle : Measure (AddCircle (2 * π)))).withDensity
+        fun l => ENNReal.ofReal (spectralDensityOf X μ l)).map (fun z => -z)) :=
+    Measure.isFiniteMeasure_map _ _
+  refine ext_of_measureFourierCoeff _ _ fun m => ?_
+  rw [measureFourierCoeff_map_neg', hcoef (-m), hcoef m, hstat.acvf_even]
 
 /-- Causal stationary ARMA processes satisfy the summable-ACVF hypothesis
 (FY Prop 2.2(i) feeding §2.3; exponential decay ⇒ `ℓ¹`). -/
