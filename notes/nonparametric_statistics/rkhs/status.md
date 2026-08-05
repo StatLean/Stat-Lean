@@ -20,13 +20,13 @@ book↔Lean dictionary and lane plan.
 
 | Lane | Branch | Files | State |
 |---|---|---|---|
-| core | `np/rkhs-core` | Basic, KernelFunction, OrthonormalExpansion, Subspace, Continuity | stubs |
-| frames | `np/rkhs-frames` | ParsevalFrame, Papadakis | stubs |
-| sobolev | `np/rkhs-sobolev` | MinKernel, Sobolev | stubs |
-| moore | `np/rkhs-moore` | Moore, Uniqueness, RankOne, InnerKernel | stubs |
-| ml | `np/rkhs-ml` | FeatureMap, Separation, MaxMargin, Representer | stubs |
-| integral | `np/rkhs-integral` | IntegralOperator, RangeSpace, Mercer/Defs, Mercer/OperatorLemmas | stubs |
-| mercer | `np/rkhs-mercer` | Mercer/Basic, Mercer/Compact, Mercer/Theorem, Mercer/SquareRoot | stubs |
+| core | `np/rkhs-core` | Basic, KernelFunction, OrthonormalExpansion, Subspace, Continuity | MERGED 0-sorry |
+| frames | `np/rkhs-frames` | ParsevalFrame, Papadakis | MERGED 0-sorry |
+| sobolev | `np/rkhs-sobolev` | MinKernel, Sobolev | MERGED 0-sorry |
+| moore | `np/rkhs-moore` | Moore, Uniqueness, RankOne, InnerKernel | MERGED; exists_rkhs repaired+proved on laptop; dualRKHS_range_coe restated (conj-linear), 1 sorry to residual pass |
+| ml | `np/rkhs-ml` | FeatureMap, Separation, MaxMargin, Representer | RUNNING |
+| integral | `np/rkhs-integral` | IntegralOperator, RangeSpace, Mercer/Defs, Mercer/OperatorLemmas | RUNNING |
+| mercer | `np/rkhs-mercer` | Mercer/Basic, Mercer/Compact, Mercer/Theorem, Mercer/SquareRoot | queued (wave 3) |
 
 ## Known design decisions / deviations (documented in file docstrings)
 
@@ -44,6 +44,17 @@ book↔Lean dictionary and lane plan.
   `ContinuousMap.toLp` argument order, `Submodule.starProjection` instance resolution,
   `LinearMap.mkContinuousOfExistsBound` field names, FunLike coercion `(f : X → 𝕜)`.
 
+## Statement renegotiations (lane findings, laptop-adjudicated)
+
+- `SeparatesData.ne_zero` (pre-fan-out): false without both label signs; inputs
+  `0 < lab iPos`, `lab iNeg < 0` added.
+- `IsKernelFun.exists_rkhs`: `∃ H : Type _` auto-bound an independent universe — false
+  (lane counterexample: discrete kernel on large `X`); pinned to `Type (max uK uX)` and
+  proved on the laptop from `scalarKernel_ofScalarKernel`.
+- `dualRKHS_range_coe`: 𝕜-linear-functional form FALSE over ℂ (lane machine-checked
+  counterexample `dualRKHS_range_coe_false`, kept in-file); restated with `L →L⋆[𝕜] 𝕜`
+  (Riesz–Fréchet for conjugate-linear functionals).  Proof deferred to residual pass.
+
 ## Debts
 
-(to be filled at lane harvest; target 0-sorry at close)
+- `dualRKHS_range_coe` (restated) — 1 sorry, residual pass.
