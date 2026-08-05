@@ -182,34 +182,92 @@ noncomputable def sobolevKernelFun (x : unitInterval01) : SobolevH01 :=
 noncomputable def sobolevScalarKernel (x y : unitInterval01) : ℝ :=
   @scalarKernel ℝ _ unitInterval01 SobolevH01 _ _ sobolevH01CompleteSpace _ x y
 
+/-- The reproducing identity for the Sobolev kernel functions, obtained directly from
+Mathlib's `RKHS.kerFun_inner` (so it does not depend on `RKHS/Basic.lean`). -/
+private theorem inner_sobolevKernelFun (x : unitInterval01) (f : SobolevH01) :
+    ⟪sobolevKernelFun x, f⟫_ℝ = f x := by
+  have h := @RKHS.kerFun_inner ℝ _ unitInterval01 ℝ _ _ SobolevH01 _ _ _
+    sobolevH01CompleteSpace _ x (1 : ℝ) f
+  have hone : ⟪(1 : ℝ), (1 : ℝ)⟫_ℝ = 1 := by
+    rw [real_inner_self_eq_norm_sq]; norm_num
+  rw [show ⟪(1 : ℝ), f x⟫_ℝ = f x from by
+    calc ⟪(1 : ℝ), f x⟫_ℝ = ⟪(1 : ℝ), (f x) • (1 : ℝ)⟫_ℝ := by rw [smul_eq_mul, mul_one]
+      _ = f x * ⟪(1 : ℝ), (1 : ℝ)⟫_ℝ := real_inner_smul_right _ _ _
+      _ = f x := by rw [hone, mul_one]] at h
+  exact h
+
+/-- The candidate kernel representative `𝟙_{[0,x]} − x·𝟙` is mean zero. -/
+private theorem sobolevCandidate_mem (x : unitInterval01) :
+    sobolevInd (x : ℝ) - (x : ℝ) • sobolevOne ∈ (ℝ ∙ sobolevOne)ᗮ := by
+  rw [Submodule.mem_orthogonal_singleton_iff_inner_right, inner_sub_right,
+    real_inner_smul_right, inner_sobolevOne_sobolevInd x.2.1 x.2.2, inner_sobolevOne_sobolevOne]
+  ring
+
 /-- The kernel function of the point `x` has derivative representative
 `𝟙_{[0,x]} − x·𝟙` (the formal solution of the Dirichlet boundary-value problem
 `−k'' = δₓ`). -/
 theorem sobolevH01_kernelFun (x : unitInterval01) :
     (sobolevKernelFun x : Lp ℝ 2 sobolevMeasure)
       = sobolevInd x.1 - (x : ℝ) • sobolevOne := by
-  sorry
+  set k : SobolevH01 :=
+    ⟨sobolevInd (x : ℝ) - (x : ℝ) • sobolevOne, sobolevCandidate_mem x⟩ with hk
+  have hrep : ∀ f : SobolevH01, ⟪k, f⟫_ℝ = f x := by
+    intro f
+    have hexp : ⟪k, f⟫_ℝ
+        = ⟪sobolevInd (x : ℝ), (f : Lp ℝ 2 sobolevMeasure)⟫_ℝ
+          - (x : ℝ) * ⟪sobolevOne, (f : Lp ℝ 2 sobolevMeasure)⟫_ℝ := by
+      rw [hk]
+      change ⟪sobolevInd (x : ℝ) - (x : ℝ) • sobolevOne,
+        (f : Lp ℝ 2 sobolevMeasure)⟫_ℝ = _
+      rw [inner_sub_left, real_inner_smul_left]
+    rw [hexp, Submodule.mem_orthogonal_singleton_iff_inner_right.mp f.2, sobolevH01_coe_apply]
+    ring
+  have hzero : ∀ f : SobolevH01, ⟪k - sobolevKernelFun x, f⟫_ℝ = 0 := by
+    intro f
+    rw [inner_sub_left, hrep, inner_sobolevKernelFun, sub_self]
+  have hkeq : k = sobolevKernelFun x := sub_eq_zero.mp (inner_self_eq_zero.mp
+    (hzero (k - sobolevKernelFun x)))
+  rw [← hkeq, hk]
 
 /-- **The reproducing kernel of `H₀¹[0,1]` is the Dirichlet Green's function**:
 `K(x, y) = min x y − x y`. -/
 theorem sobolevH01_scalarKernel (x y : unitInterval01) :
     sobolevScalarKernel x y = min (x : ℝ) y - (x : ℝ) * y := by
-  sorry
+  have hgram : sobolevScalarKernel x y = ⟪sobolevKernelFun x, sobolevKernelFun y⟫_ℝ :=
+    (inner_sobolevKernelFun x (sobolevKernelFun y)).symm
+  rw [hgram]
+  change ⟪(sobolevKernelFun x : Lp ℝ 2 sobolevMeasure),
+    (sobolevKernelFun y : Lp ℝ 2 sobolevMeasure)⟫_ℝ = _
+  rw [sobolevH01_kernelFun, sobolevH01_kernelFun, inner_sub_left, inner_sub_right,
+    inner_sub_right, real_inner_smul_left, real_inner_smul_left, real_inner_smul_right,
+    real_inner_smul_right, inner_sobolevInd_sobolevInd x.2.1 x.2.2 y.2.1,
+    inner_sobolevInd_sobolevOne x.2.1 x.2.2, inner_sobolevOne_sobolevInd y.2.1 y.2.2,
+    inner_sobolevOne_sobolevOne]
+  ring
 
 /-- The Green's function in case-split form: `(1−y)x` for `x ≤ y`, `(1−x)y` otherwise. -/
 theorem min_sub_mul_eq_ite (x y : ℝ) :
     min x y - x * y = if x ≤ y then (1 - y) * x else (1 - x) * y := by
-  sorry
+  rcases le_or_gt x y with h | h
+  · rw [if_pos h, min_eq_left h]; ring
+  · rw [if_neg (not_le.mpr h), min_eq_right h.le]; ring
 
 /-- The exact norm of evaluation on the Sobolev space: `‖E_x‖² = ‖k_x‖² = x(1−x)`. -/
 theorem sobolevH01_norm_kernelFun_sq (x : unitInterval01) :
     ‖sobolevKernelFun x‖ ^ 2 = (x : ℝ) * (1 - (x : ℝ)) := by
-  sorry
+  have hgram : sobolevScalarKernel x x = ⟪sobolevKernelFun x, sobolevKernelFun x⟫_ℝ :=
+    (inner_sobolevKernelFun x (sobolevKernelFun x)).symm
+  have hd := sobolevH01_scalarKernel x x
+  rw [min_self, hgram, real_inner_self_eq_norm_sq] at hd
+  rw [hd]; ring
 
 /-- The sharp evaluation bound on the Sobolev space:
 `|f(x)| ≤ √(x(1−x)) · ‖f‖` — improving the naive Cauchy–Schwarz bound `√x · ‖f‖`. -/
 theorem sobolevH01_norm_apply_le (f : SobolevH01) (x : unitInterval01) :
     ‖f x‖ ≤ Real.sqrt ((x : ℝ) * (1 - (x : ℝ))) * ‖f‖ := by
-  sorry
+  have hnorm : Real.sqrt ((x : ℝ) * (1 - (x : ℝ))) = ‖sobolevKernelFun x‖ := by
+    rw [← sobolevH01_norm_kernelFun_sq, Real.sqrt_sq (norm_nonneg _)]
+  rw [hnorm, ← inner_sobolevKernelFun x f]
+  exact norm_inner_le_norm _ _
 
 end StatLean.NonparametricStatistics
