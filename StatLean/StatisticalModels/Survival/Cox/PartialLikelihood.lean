@@ -200,6 +200,7 @@ theorem cond_single_failure (R : Finset (Fin n)) (z : Fin n → EuclideanSpace �
     (hodds : ∀ j ∈ R, (prob j : ℝ) / (1 - (prob j : ℝ)) = θ₀ * Real.exp ⟪β, z j⟫_ℝ)
     -- USER-INPUT: no sure failures (odds finite); Cox72 §6
     (hlt : ∀ j ∈ R, (prob j : ℝ) < 1)
+    -- USER-INPUT: the queried subject belongs to the risk set; Cox72 §6
     {i : Fin n} (hi : i ∈ R) :
     (Measure.pi fun j => (PMF.bernoulli (prob j) (h1 j)).toMeasure)[|{ω |
         (R.filter fun j => ω j = true).card = 1}] {ω | ω i = true}

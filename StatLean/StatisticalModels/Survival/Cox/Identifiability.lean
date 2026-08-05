@@ -36,8 +36,10 @@ variable {p : ℕ}
 
 /-- Scalar extraction brick: equal positive scalings of a nonzero σ-finite measure have
 equal scales. -/
+-- LEAN-ONLY: nonzero measure to cancel; brick hypothesis
 theorem smul_measure_cancel {Λ : Measure ℝ} [SigmaFinite Λ] (hΛ : Λ ≠ 0) {c c' : ℝ≥0∞}
     -- LEAN-ONLY: finite nonzero scales (the Cox coefficients e^{⟪β,z⟫} are such)
+    -- LEAN-ONLY: smul equation being cancelled; antecedent
     (hc : c ≠ 0) (hc' : c ≠ ⊤) (h : c • Λ = c' • Λ) : c = c' := by
   -- σ-finiteness supplies a spanning set of finite mass; nonvanishing of `Λ` puts positive
   -- mass on one of them, giving a witness `A` with `0 < Λ A < ∞` to cancel against.

@@ -49,6 +49,7 @@ theorem measurable_missingObserve :
 
 /-- **MCAR ⇒ MAR** (Rubin76 §2): a data-free mechanism trivially factors through the
 covariate. -/
+-- LEAN-ONLY: MCAR antecedent; no scope change
 theorem IsMCAR.isMAR {ρ : Kernel (𝓧 × ℝ) Bool} (h : IsMCAR ρ) : IsMAR ρ := by
   obtain ⟨ν, rfl⟩ := h
   exact ⟨Kernel.const 𝓧 ν, Kernel.ext fun a => by simp⟩

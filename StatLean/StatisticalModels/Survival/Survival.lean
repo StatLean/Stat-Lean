@@ -74,6 +74,7 @@ theorem tendsto_survival_atTop (μ : Measure ℝ) [IsFiniteMeasure μ] :
 /-- An event-time law has full survival on the negative half-line. -/
 theorem survival_of_neg
     -- USER-INPUT: event-time law (probability, supported on [0, ∞)); ABGK §II.1
+    -- LEAN-ONLY: statement scoping (negative time); no scope change
     (h : IsEventTimeLaw μ) {t : ℝ} (ht : t < 0) :
     survival μ t = 1 := by
   haveI := h.1

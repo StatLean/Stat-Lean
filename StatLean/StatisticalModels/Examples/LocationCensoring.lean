@@ -97,6 +97,7 @@ instance (ν : Measure ℝ) [IsProbabilityMeasure ν] : IsMarkovKernel (rightCen
 destroy-direction transfer theorem, instantiated. -/
 theorem identifiable_of_rightCensored (μ₀ : Measure ℝ) (ν : Measure ℝ)
     [IsProbabilityMeasure ν]
+    -- LEAN-ONLY: identifiability certificate being transferred; antecedent, no scope change
     (h : Identifiable (observe (locationFam μ₀) (rightCensorKernel ν))) :
     Identifiable (locationFam μ₀) :=
   identifiable_of_observe _ h

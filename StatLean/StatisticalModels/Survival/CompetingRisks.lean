@@ -145,6 +145,7 @@ theorem causeSubLaw_eq_uncensoredSubLaw (P : Measure (ℝ × Option (Fin 1)))
 /-- Sub-laws are dominated by the observed-time law (the restrict-monotonicity
 workhorse). -/
 theorem causeSubLaw_le (P : Measure (ℝ × Option (Fin k))) (j : Fin k) {A : Set ℝ}
+    -- LEAN-ONLY: measurability of the event; standard regularity
     (hA : MeasurableSet A) :
     causeSubLaw P j A ≤ observedTimeLawCR P A := by
   rw [causeSubLaw, observedTimeLawCR, Measure.map_apply measurable_fst hA,
@@ -261,6 +262,7 @@ theorem causeSpecificCumHazard_crLaw₂ (μ₁ μ₂ : Measure ℝ) [IsProbabili
 /-- **S6.4, Gray vs cause-specific** (`Gray88`): the subdistribution at-risk mass dominates
 the all-cause at-risk mass, so the Gray hazard is dominated by the cause-specific hazard. -/
 theorem graySubCumHazard_le (P : Measure (ℝ × Option (Fin k))) [IsProbabilityMeasure P]
+    -- LEAN-ONLY: measurability of the event; standard regularity
     (j : Fin k) {A : Set ℝ} (hA : MeasurableSet A) :
     graySubCumHazard P j A ≤ causeSpecificCumHazard P j A := by
   haveI : IsFiniteMeasure (observedTimeLawCR P) := Measure.isFiniteMeasure_map P Prod.fst

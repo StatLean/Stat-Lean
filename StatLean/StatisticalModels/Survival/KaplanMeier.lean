@@ -100,12 +100,14 @@ private lemma exists_of_mem_eventTimes {d : Fin n → ℝ × Bool} {s : ℝ}
 
 /-- At an event time the risk set is nonempty. -/
 theorem atRisk_pos_of_mem_eventTimes {d : Fin n → ℝ × Bool} {s : ℝ}
+    -- LEAN-ONLY: statement scoping (s is an observed event time); no scope change
     (hs : s ∈ eventTimes d) : 0 < atRisk d s := by
   obtain ⟨i, hval, -⟩ := exists_of_mem_eventTimes hs
   exact Finset.card_pos.2 ⟨i, by simp [hval]⟩
 
 /-- At an event time there is at least one event. -/
 theorem eventCount_pos_of_mem_eventTimes {d : Fin n → ℝ × Bool} {s : ℝ}
+    -- LEAN-ONLY: statement scoping (s is an observed event time); no scope change
     (hs : s ∈ eventTimes d) : 0 < eventCount d s := by
   obtain ⟨i, hval, hdel⟩ := exists_of_mem_eventTimes hs
   exact Finset.card_pos.2 ⟨i, by simp [hval, hdel]⟩
@@ -149,6 +151,7 @@ private lemma filter_le_eq_insert {d : Fin n → ℝ × Bool} {s : ℝ} (hs : s 
 is its strict-past partial sum plus the increment (the content behind `KM = ∏(1 − ΔNA)`;
 ABGK §IV.1 vs §IV.3). -/
 theorem nelsonAalen_eq_partial_add_jump {d : Fin n → ℝ × Bool} {s : ℝ}
+    -- LEAN-ONLY: statement scoping (s is an observed event time); no scope change
     (hs : s ∈ eventTimes d) :
     nelsonAalen d s = (∑ u ∈ (eventTimes d).filter (· < s), naJump d u) + naJump d s := by
   rw [nelsonAalen, filter_le_eq_insert hs,
@@ -489,6 +492,7 @@ private lemma cumHazardJump_kaplanMeierMeasure_of_kmLimit_zero {d : Fin n → �
 an event time inside its support is the Nelson–Aalen increment — the estimator solves the
 model's own hazard identity. -/
 theorem cumHazardJump_kaplanMeierMeasure {d : Fin n → ℝ × Bool} {s : ℝ}
+    -- LEAN-ONLY: statement scoping (s is an observed event time); no scope change
     (hs : s ∈ eventTimes d)
     -- USER-INPUT: the left limit of KM at s is positive (inside the support); ABGK §IV.3
     (hpos : 0 < ∏ u ∈ (eventTimes d).filter (· < s), (1 - naJump d u))

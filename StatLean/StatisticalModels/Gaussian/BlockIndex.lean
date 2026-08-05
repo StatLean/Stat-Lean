@@ -135,6 +135,7 @@ theorem sumMeasEquivProd_symm_apply (p : EuclideanSpace ℝ ι₁ × EuclideanSp
 arguments on the sum space transport to product-space statements. -/
 theorem ext_of_map_sumMeasEquivProd
     {μ ν : Measure (EuclideanSpace ℝ (ι₁ ⊕ ι₂))}
+    -- LEAN-ONLY: equality of the transported measures; antecedent
     (h : μ.map (sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂))
         = ν.map (sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂))) :
     μ = ν :=
