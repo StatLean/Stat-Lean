@@ -26,9 +26,42 @@ interface Group {
 
 const collator = new Intl.Collator("en", { sensitivity: "base", numeric: true });
 
-/** Leading word of a term, used to build the indented sub-entry groups. */
-function headWord(term: string): string {
-  return term.split(/\s+/)[0]!.toLowerCase().replace(/[.,;:]$/, "");
+/**
+ * Grouping key: the leading word, normalised for case and for the possessive so
+ * that "Bayes estimator" and "Bayes' theorem" land in the same group. Used only
+ * for grouping — never displayed, so proper names keep their capitalisation.
+ */
+function groupKey(term: string): string {
+  return term
+    .split(/\s+/)[0]!
+    .toLowerCase()
+    .replace(/[.,;:]$/, "")
+    .replace(/['\u2019]s?$/, "");
+}
+
+/** Words of a term, for computing the shared head of a group. */
+function words(term: string): string[] {
+  return term.split(/\s+/);
+}
+
+/**
+ * The head actually printed above an indented group: the longest leading run of
+ * words the group's terms share, in the original casing. For "Le Cam's first
+ * lemma" / "Le Cam's method" this is "Le Cam's" rather than just "Le", so the
+ * name is not split across the head and its sub-entries.
+ */
+function sharedHead(terms: string[]): string {
+  const first = words(terms[0]!);
+  let n = 1;
+  outer: for (; n < first.length; n += 1) {
+    for (const t of terms) {
+      const w = words(t);
+      if (w.length <= n || w[n]!.toLowerCase() !== first[n]!.toLowerCase()) break outer;
+    }
+  }
+  // never let the head swallow a whole term
+  while (n > 1 && terms.some((t) => words(t).length <= n)) n -= 1;
+  return first.slice(0, n).join(" ");
 }
 
 /** First letter used for the A-Z rail; everything non-alphabetic files under "#". */
@@ -73,11 +106,13 @@ export default function IndexPage() {
     // Collapse runs of terms sharing a leading word into one indented group.
     const out: Group[] = [];
     for (const t of terms) {
-      const head = headWord(t.term);
+      const key = groupKey(t.term);
       const last = out.length > 0 ? out[out.length - 1] : undefined;
-      if (last && headWord(last.terms[0]!.term) === head) last.terms.push(t);
-      else out.push({ head, terms: [t] });
+      if (last && groupKey(last.terms[0]!.term) === key) last.terms.push(t);
+      else out.push({ head: t.term, terms: [t] });
     }
+    // Print the shared leading words, in their original casing.
+    for (const g of out) g.head = sharedHead(g.terms.map((t) => t.term));
     return out;
   }, [query]);
 
@@ -88,9 +123,11 @@ export default function IndexPage() {
     return [...seen].sort();
   }, [groups]);
 
-  /** Sub-entry text: the remainder after the shared head word. */
-  const remainder = (term: string) =>
-    term.slice(term.split(/\s+/)[0]!.length).trim();
+  /** Sub-entry text: the remainder of the term after the group's shared head. */
+  const remainder = (term: string, head: string) => {
+    const rest = words(term).slice(words(head).length).join(" ").trim();
+    return rest.length > 0 ? rest : term;
+  };
 
   const renderResults = (t: Term) => (
     <ul className="mt-2 ml-1 space-y-1.5 border-l hairline pl-4">
@@ -111,11 +148,11 @@ export default function IndexPage() {
     </ul>
   );
 
-  const termRow = (t: Term, indented: boolean) => {
+  const termRow = (t: Term, head: string | null) => {
     const isOpen = open.has(t.term);
-    const label = indented ? remainder(t.term) : t.term;
+    const label = head === null ? t.term : remainder(t.term, head);
     return (
-      <li key={t.term} className={indented ? "ml-6" : ""}>
+      <li key={t.term} className={head === null ? "" : "ml-6"}>
         <button
           type="button"
           onClick={() => toggle(t.term)}
@@ -200,11 +237,11 @@ export default function IndexPage() {
                     </h2>
                   )}
                   {g.terms.length === 1 ? (
-                    <ul>{termRow(first, false)}</ul>
+                    <ul>{termRow(first, null)}</ul>
                   ) : (
                     <>
                       <p className="font-serif text-[1.02rem] text-ink">{g.head}</p>
-                      <ul>{g.terms.map((t) => termRow(t, true))}</ul>
+                      <ul>{g.terms.map((t) => termRow(t, g.head))}</ul>
                     </>
                   )}
                 </li>
