@@ -953,6 +953,14 @@ private theorem boxProd_sqrtSymbol (x z : X) :
     inner_sqrtSectionLp d hK x z]
   exact hK.isKernelFun.conj_symm z x
 
+include hK in
+-- The range space of the square-root symbol has reproducing kernel `K`.
+private theorem rangeSpaceScalarKernel_sqrt :
+    rangeSpaceScalarKernel μ (sqrtSymbol d) (isL2Symbol_sqrtSymbol d hK) = K := by
+  funext x z
+  rw [rangeSpace_scalarKernel]
+  exact boxProd_sqrtSymbol d hK x z
+
 /-- **`range T_S = H(K)`**: the square-root operator maps `L²(X, μ)` onto exactly the
 functions of the (measure-independent!) RKHS of `K`. -/
 theorem range_integralOp_sqrtSymbol_eq
@@ -987,7 +995,78 @@ theorem sqrtCLM_isometry_on_ker_orthogonal
   -- Route (TRUE after the `L²`-limit redefinition, this revision): same route as
   -- `range_integralOp_sqrtSymbol_eq`, plus the fact that the range space's norm agrees
   -- with `‖g‖` on `(ker T_S)ᗮ = (ker T_K)ᗮ` (`rangeSpace_*`).
-  sorry
+  have hK : IsMercerKernel 𝕜 K := ⟨hKc, by rw [← hKH]; exact isKernelFun_scalarKernel (H := H)⟩
+  have hker : rangeSpaceScalarKernel μ (sqrtSymbol d) (isL2Symbol_sqrtSymbol d hK)
+      = scalarKernel (X := X) H := by
+    rw [hKH]
+    exact rangeSpaceScalarKernel_sqrt d hK
+  -- `ker T_K = (ker T_S) = (rangeSpaceCarrier)ᗮ`
+  have hzero : ∀ g₀ : Lp 𝕜 2 μ,
+      sqrtCLM d hK g₀ = 0 ↔ ∀ x, integralOp μ (sqrtSymbol d) g₀ x = 0 := by
+    intro g₀
+    constructor
+    · intro h0 x
+      have hae : integralOp μ (sqrtSymbol d) g₀ =ᵐ[μ] fun _ : X => (0 : 𝕜) := by
+        filter_upwards [(sqrtCLM_coeFn_ae d hK g₀).symm,
+          Lp.coeFn_zero (E := 𝕜) (p := 2) (μ := μ)] with a ha hb
+        rw [ha, h0, hb]
+        rfl
+      exact congrFun ((Continuous.ae_eq_iff_eq (μ := μ)
+        (continuous_integralOp_sqrtSymbol d hK g₀) continuous_const).mp hae) x
+    · intro h0
+      refine Lp.ext ?_
+      filter_upwards [sqrtCLM_coeFn_ae d hK g₀, Lp.coeFn_zero (E := 𝕜) (p := 2) (μ := μ)]
+        with a ha hb
+      rw [ha, hb, h0 a]
+      rfl
+  have hkerEq : LinearMap.ker (mercerCLM μ hKc).toLinearMap
+      = (rangeSpaceCarrier μ (sqrtSymbol d) (isL2Symbol_sqrtSymbol d hK))ᗮ := by
+    have hstep : ∀ g₀ : Lp 𝕜 2 μ, mercerCLM μ hKc g₀ = 0 ↔ sqrtCLM d hK g₀ = 0 := by
+      intro g₀
+      constructor
+      · intro h0
+        have hsym := (sqrtCLM_isPositive d hK).1 g₀ (sqrtCLM d hK g₀)
+        simp only [ContinuousLinearMap.coe_coe] at hsym
+        have h2 : sqrtCLM d hK (sqrtCLM d hK g₀) = mercerCLM μ hKc g₀ := by
+          rw [← ContinuousLinearMap.comp_apply, sqrtCLM_comp_self]
+        have h1 : ⟪sqrtCLM d hK g₀, sqrtCLM d hK g₀⟫_𝕜 = 0 := by
+          rw [hsym, h2, h0, inner_zero_right]
+        exact inner_self_eq_zero.mp h1
+      · intro h0
+        rw [← sqrtCLM_comp_self d hK, ContinuousLinearMap.comp_apply, h0, map_zero]
+    ext g₀
+    rw [LinearMap.mem_ker]
+    change (mercerCLM μ hKc).toLinearMap g₀ = 0 ↔ _
+    rw [show (mercerCLM μ hKc).toLinearMap g₀ = mercerCLM μ hKc g₀ from rfl, hstep g₀,
+      hzero g₀, Submodule.mem_orthogonal]
+    constructor
+    · intro h0 u hu
+      have hle : rangeSpaceCarrier μ (sqrtSymbol d) (isL2Symbol_sqrtSymbol d hK)
+          ≤ (𝕜 ∙ g₀)ᗮ := by
+        refine Submodule.topologicalClosure_minimal _ ?_ (Submodule.isClosed_orthogonal _)
+        rw [Submodule.span_le]
+        rintro _ ⟨x, rfl⟩
+        refine Submodule.mem_orthogonal_singleton_iff_inner_left.mpr ?_
+        rw [← integralOp_eq_inner (sqrtSymbol d) (isL2Symbol_sqrtSymbol d hK) g₀ x]
+        exact h0 x
+      exact Submodule.mem_orthogonal_singleton_iff_inner_left.mp (hle hu)
+    · intro h0 x
+      rw [integralOp_eq_inner (sqrtSymbol d) (isL2Symbol_sqrtSymbol d hK) g₀ x]
+      refine h0 _ ?_
+      have := (rangeSpaceKernelFun μ (sqrtSymbol d) (isL2Symbol_sqrtSymbol d hK) x).2
+      rwa [rangeSpace_kernelFun] at this
+  have hgmem : g ∈ rangeSpaceCarrier μ (sqrtSymbol d) (isL2Symbol_sqrtSymbol d hK) := by
+    rw [hkerEq, Submodule.orthogonal_orthogonal_eq_closure] at hg
+    exact Submodule.topologicalClosure_minimal _ le_rfl
+      (Submodule.isClosed_topologicalClosure _) hg
+  obtain ⟨e, he⟩ := @exists_isometryEquiv_of_scalarKernel_eq 𝕜 _ X
+    (rangeSpaceCarrier μ (sqrtSymbol d) (isL2Symbol_sqrtSymbol d hK)) _ _
+    (rangeSpaceCompleteSpace μ (sqrtSymbol d) (isL2Symbol_sqrtSymbol d hK)) H _ _ _
+    (rangeSpaceRKHS μ (sqrtSymbol d) (isL2Symbol_sqrtSymbol d hK)) _ hker
+  refine ⟨e ⟨g, hgmem⟩, funext fun x => ?_, ?_⟩
+  · rw [he ⟨g, hgmem⟩ x]
+    exact rangeSpace_apply (sqrtSymbol d) (isL2Symbol_sqrtSymbol d hK) ⟨g, hgmem⟩ x
+  · exact e.norm_map ⟨g, hgmem⟩
 
 /-- **`{√λₙ eₙ}` is an orthonormal basis of `H(K)`**: the rescaled eigenfunctions are
 realized in `H`, are orthonormal there, and their span is dense. -/
