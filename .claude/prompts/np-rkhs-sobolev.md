@@ -85,3 +85,13 @@ Model recap: `sobolevMeasure = volume.restrict (Icc 0 1)`;
 - `sobolevH01_norm_kernelFun_sq`: `‖k_x‖² = re ⟪k_x,k_x⟫ = K(x,x) = x − x² = x(1−x)`.
 - `sobolevH01_norm_apply_le`: `norm_apply_le` (Basic.lean) + the norm value +
   `Real.sqrt_sq`-style rewriting.
+
+## Note on `sobolevKernelFun` / `sobolevScalarKernel`
+
+These wrappers pass the carrier's `CompleteSpace` instance explicitly
+(`sobolevH01CompleteSpace`), because bare TC synthesis records a different (defeq but
+not instance-transparent) uniformity than `kernelFun`'s slot expects.  They are
+definitionally `kernelFun SobolevH01 x` / `scalarKernel SobolevH01 x y`.  Work with
+them by `unfold sobolevKernelFun sobolevScalarKernel` (or `show`/`change`) and then use
+the generic `RKHS/Basic.lean` lemmas (`inner_kernelFun` etc.) — they apply to any
+instance form once the goal is stated with the explicit instance.

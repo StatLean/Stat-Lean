@@ -76,3 +76,14 @@ and `scalarKernel H x y = (kernelFun H y) x`.
   directly `(continuous_iff_continuousAt).2` + squeeze.  Then
   `continuous_coe_of_continuous_scalarKernel`: `|f y − f y₀| ≤ ‖f‖·‖k_y − k_{y₀}‖`
   via `inner_kernelFun` + Cauchy–Schwarz, compose with `continuous_kernelFun`.
+
+## Note on the `@`-application forms in Subspace.lean
+
+`CompleteSpace ↥H₀` synthesized bare does NOT match the norm-chain uniformity form that
+`kernelFun`'s instance argument records (Lean unifies them only at default
+transparency).  That is why `kernelFun_submodule` / `scalarKernel_submodule*` are stated
+with `@kernelFun 𝕜 _ X (↥H₀) _ _ hc _ x` — the explicit `hc` bridges the forms.  Inside
+proofs, `show`/`change` and `simp only [kernelFun, scalarKernel]`-style unfolding work
+normally; do NOT try to restate them with implicit instances (it will not elaborate).
+The same applies to any helper you add about `↥H₀`-valued kernel functions: pass the
+`CompleteSpace` instance explicitly.

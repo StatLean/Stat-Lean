@@ -144,3 +144,11 @@ definition `mercerCLM`).  Statements are frozen (see header rule 5).
   `hP.isSelfAdjoint` rewrites; conclude `k = 0` (or `‖P‖ = 0` degenerate case) and
   `c = ‖P‖` from `‖P h‖ = ‖P‖` (`‖Ph‖² = ‖c‖²`… with `k = 0`, `‖c‖ = ‖P‖` and `c`
   real nonneg ⇒ `c = ‖P‖`).
+
+## Note on `rangeSpaceKernelFun` / `rangeSpaceScalarKernel`
+
+These wrappers (in RangeSpace.lean) pass the carrier's `CompleteSpace` instance
+explicitly (`rangeSpaceCompleteSpace`) because bare TC synthesis records a different
+(defeq but not instance-transparent) uniformity than `kernelFun`'s slot expects.  They
+are definitionally `kernelFun (rangeSpaceCarrier μ S hS) x` etc.; unfold them and use
+the generic `RKHS/Basic.lean` lemmas with the explicit instance.
