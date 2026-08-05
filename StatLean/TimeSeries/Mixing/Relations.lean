@@ -436,6 +436,24 @@ theorem two_mul_alphaMixCoeff_le_betaMixCoeff {m₁ m₂ mΩ : MeasurableSpace �
 theorem phiMixCoeff_le_psiMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
     {μ : Measure Ω} [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ) :
     phiMixCoeff μ m₁ m₂ ≤ psiMixCoeff μ m₁ m₂ := by
+  -- **FALSE AS FROZEN — unplanned debt (formally verified counterexample).**
+  -- The ψ description set `{|1 − P(A∩B)/(P(A)P(B))| : P(A)P(B) > 0}` is *unbounded above*
+  -- in general (the classical ψ-coefficient may be `+∞`; Bradley, *Introduction to Strong
+  -- Mixing Conditions*), and Lean's `Real.sSup` junk convention then returns `0`
+  -- (`Real.sSup_of_not_bddAbove`), so `psiMixCoeff μ m₁ m₂ = 0` while `φ` stays positive.
+  --
+  -- Witness (checked in Lean, 0 sorries, against these very definitions):
+  --   `μ₀ := volume.restrict (Set.Icc (0:ℝ) 1)` on `Ω = ℝ`, `m₁ = m₂ = mΩ = Borel ℝ`.
+  --   * `A = B = Set.Icc 0 (1/(n+2))` gives the ψ-value `|1 − a/(a·a)| = n + 1` for every
+  --     `n : ℕ`, so the ψ set is not `BddAbove` and `psiMixCoeff μ₀ = 0`;
+  --   * `A = B = Set.Icc 0 (1/2)` gives the φ-value `|1/2 − (1/2)/(1/2)| = 1/2`, and the
+  --     φ set *is* bounded by `1`, so `phiMixCoeff μ₀ ≥ 1/2 > 0 = psiMixCoeff μ₀`.
+  --
+  -- REPAIR (statement-level, for a future frozen-statement revision): either add the
+  -- hypothesis `BddAbove {r | …ψ description set…}` (equivalently "ψ is finite"), or state
+  -- the inequality in the `ℝ≥0∞`-valued form of ψ. Under either repair the intended proof
+  -- goes through verbatim: for a φ-witness `(A, B)` with `P(A) > 0`, either `P(B) = 0`
+  -- (both sides `0`) or `|P(B) − P(A∩B)/P(A)| = P(B)·|1 − P(A∩B)/(P(A)P(B))| ≤ ψ`.
   sorry
 
 /-- Cauchy–Schwarz for real `L²` integrals. -/
@@ -615,6 +633,15 @@ private lemma sigmaGE_le_ambient {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measur
 /-- ψ-mixing ⇒ φ-mixing. -/
 theorem IsPsiMixing.isPhiMixing [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     (hmeas : ∀ t, Measurable (X t)) (h : IsPsiMixing X μ) : IsPhiMixing X μ := by
+  -- **FALSE AS FROZEN — unplanned debt (formally verified counterexample).** The process
+  -- shadow of `phiMixCoeff_le_psiMixCoeff`'s falsity: with `μ₀ = volume.restrict (Icc 0 1)`
+  -- on `Ω = ℝ` and the constant-in-time process `X t ω = ω`, both flanking σ-algebras are
+  -- the full Borel σ-algebra (`sigmaLE X c = sigmaGE X c = Borel ℝ`), so
+  -- `psiCoeff X μ₀ n = 0` for every `n` (junk value of an unbounded `Real.sSup`) — hence
+  -- `IsPsiMixing X μ₀` holds — while `phiCoeff X μ₀ n ≥ 1/2` for every `n`, so
+  -- `IsPhiMixing X μ₀` fails. Checked in Lean with 0 sorries.
+  -- The repair is the one recorded on `phiMixCoeff_le_psiMixCoeff`: once ψ is finite
+  -- (or `ℝ≥0∞`-valued), `φ(n) ≤ ψ(n)` and the squeeze against `0 ≤ φ(n)` closes this.
   sorry
 
 /-- φ-mixing ⇒ β-mixing. -/
