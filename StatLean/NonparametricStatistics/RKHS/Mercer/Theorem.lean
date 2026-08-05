@@ -790,6 +790,76 @@ theorem MercerEigensystem.hasSum_kernel {K : X → X → 𝕜}
   rw [← hxy]
   exact (summable_eig_prod hK d x y).hasSum
 
+
+section Trace
+
+variable {K : X → X → 𝕜} {hKc : Continuous fun p : X × X => K p.1 p.2}
+
+/-- Diagonal case of the kernel expansion, in real form. -/
+private theorem hasSum_diag_eig (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure]
+    (d : MercerEigensystem μ K hKc) (x : X) :
+    HasSum (fun n => d.eigval n * ‖d.eigfun n x‖ ^ 2) (RCLike.re (K x x)) := by
+  refine ((d.hasSum_kernel hK x x).map
+    (RCLike.reCLM (K := 𝕜)).toLinearMap.toAddMonoidHom RCLike.reCLM.continuous).congr_fun
+    fun n => ?_
+  show d.eigval n * ‖d.eigfun n x‖ ^ 2
+      = RCLike.re ((d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n x)))
+  rw [RCLike.mul_conj, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul, RCLike.ofReal_re]
+
+/-- Dini: the diagonal partial sums converge uniformly. -/
+private theorem tendstoUniformly_diag_eig (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure]
+    (d : MercerEigensystem μ K hKc) :
+    TendstoUniformly
+      (fun s : Finset d.ι => fun x : X => ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2)
+      (fun x => RCLike.re (K x x)) Filter.atTop := by
+  refine Monotone.tendstoUniformly_of_forall_tendsto ?_ ?_ ?_ ?_
+  · exact fun s => continuous_finset_sum s fun n _ =>
+      continuous_const.mul (((d.eigfun n).continuous.norm).pow 2)
+  · exact fun s t hst x => Finset.sum_le_sum_of_subset_of_nonneg hst
+      fun n _ _ => mul_nonneg (d.eigval_pos n).le (sq_nonneg _)
+  · exact (RCLike.continuous_re (K := 𝕜)).comp'
+      (hK.continuous.comp' (continuous_id.prodMk continuous_id))
+  · exact fun x => hasSum_diag_eig hK d x
+
+/-- Continuous real functions on the compact base space are integrable. -/
+private theorem integrable_of_cont' {f : X → ℝ} (hf : Continuous f) : Integrable f μ := by
+  obtain ⟨M, hM⟩ := isCompact_univ.exists_bound_of_continuousOn hf.continuousOn
+  exact memLp_one_iff_integrable.mp
+    (MemLp.of_bound hf.aestronglyMeasurable M
+      (Filter.Eventually.of_forall fun z => hM z (Set.mem_univ _)))
+
+/-- The eigenfunctions have unit `L²` mass. -/
+private theorem integral_normSq_eigfun (d : MercerEigensystem μ K hKc) (n : d.ι) :
+    ∫ z, ‖d.eigfun n z‖ ^ 2 ∂μ = 1 := by
+  have h1 : ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n),
+      ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)⟫_𝕜 = 1 := by
+    rw [inner_self_eq_norm_sq_to_K, d.orthonormal.1 n]
+    norm_num
+  rw [L2.inner_def] at h1
+  have h2 : ((∫ z, ‖d.eigfun n z‖ ^ 2 ∂μ : ℝ) : 𝕜) = 1 := by
+    rw [← h1, ← integral_ofReal]
+    refine integral_congr_ae ?_
+    filter_upwards [ContinuousMap.coeFn_toLp (E := 𝕜) (p := 2) (μ := μ) (𝕜 := 𝕜)
+      (d.eigfun n)] with z hz
+    rw [hz, RCLike.inner_apply, RCLike.mul_conj, ← RCLike.ofReal_pow]
+  exact_mod_cast h2
+
+/-- The truncated eigenvalue sum is the integral of the truncated diagonal expansion. -/
+private theorem sum_eigval_eq_integral (d : MercerEigensystem μ K hKc) (s : Finset d.ι) :
+    (∑ n ∈ s, d.eigval n) = ∫ x, ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2 ∂μ := by
+  rw [integral_finset_sum s fun n _ =>
+    (integrable_of_cont' (((d.eigfun n).continuous.norm).pow 2)).const_mul _]
+  refine Finset.sum_congr rfl fun n _ => ?_
+  rw [integral_const_mul, integral_normSq_eigfun d n, mul_one]
+
+/-- Continuity of the truncated diagonal expansion. -/
+private theorem continuous_diag_partial (d : MercerEigensystem μ K hKc) (s : Finset d.ι) :
+    Continuous fun x : X => ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2 :=
+  continuous_finset_sum s fun n _ =>
+    continuous_const.mul (((d.eigfun n).continuous.norm).pow 2)
+
+end Trace
+
 /-- **Mercer's theorem, uniform convergence**: the finite partial sums of the
 eigen-expansion converge to `K` uniformly on `X × X`. -/
 theorem MercerEigensystem.tendstoUniformly_kernel {K : X → X → 𝕜}
@@ -801,13 +871,62 @@ theorem MercerEigensystem.tendstoUniformly_kernel {K : X → X → 𝕜}
       (fun s : Finset d.ι => fun p : X × X =>
         ∑ n ∈ s, (d.eigval n : 𝕜) * (d.eigfun n p.1 * conj (d.eigfun n p.2)))
       (fun p => K p.1 p.2) Filter.atTop := by
-  -- OPEN.  Given `hasSum_kernel`, this is the same Dini-plus-Cauchy–Schwarz pattern as
-  -- `tendstoUniformly_scalarKernel` (Mercer/Basic, PROVED): the diagonal partial sums
-  -- `∑_{n ∈ s} λₙ ‖eₙ x‖²` are continuous, monotone in `s`, and converge pointwise to the
-  -- continuous limit `re K(x,x)`, so `Monotone.tendstoUniformly_of_forall_tendsto`
-  -- applies; the off-diagonal is then controlled by `sq_norm_sum_le` applied to the
-  -- family `√λₙ eₙ`.
-  sorry
+  classical
+  rw [Metric.tendstoUniformly_iff]
+  intro ε hε
+  have hδ0 : (0 : ℝ) < ε / 2 := by positivity
+  have hdiag := (Metric.tendstoUniformly_iff.mp (tendstoUniformly_diag_eig hK d)) _ hδ0
+  obtain ⟨s₀, hs₀⟩ := Filter.eventually_atTop.mp hdiag
+  refine Filter.eventually_atTop.mpr ⟨s₀, fun s hs p => ?_⟩
+  obtain ⟨x, y⟩ := p
+  have hpart : ∀ (z : X) (u : Finset d.ι),
+      ∑ n ∈ u, d.eigval n * ‖d.eigfun n z‖ ^ 2 ≤ RCLike.re (K z z) := fun z u =>
+    sum_le_hasSum u (fun n _ => mul_nonneg (d.eigval_pos n).le (sq_nonneg _))
+      (hasSum_diag_eig hK d z)
+  have htail : ∀ (z : X) (u : Finset d.ι), s ⊆ u →
+      ∑ n ∈ u \ s, d.eigval n * ‖d.eigfun n z‖ ^ 2 ≤ ε / 2 := by
+    intro z u hsu
+    have h1 : (∑ n ∈ u \ s, d.eigval n * ‖d.eigfun n z‖ ^ 2)
+        + ∑ n ∈ s, d.eigval n * ‖d.eigfun n z‖ ^ 2
+        = ∑ n ∈ u, d.eigval n * ‖d.eigfun n z‖ ^ 2 := Finset.sum_sdiff hsu
+    have h2 := hpart z u
+    have h3 := hs₀ s hs z
+    rw [Real.dist_eq] at h3
+    have h4 := abs_lt.mp h3
+    linarith [h4.1, h4.2]
+  have hkey : ∀ u : Finset d.ι, s ⊆ u →
+      ‖(∑ n ∈ u, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y)))
+        - ∑ n ∈ s, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y))‖ ≤ ε / 2 := by
+    intro u hsu
+    have hsplit : (∑ n ∈ u, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y)))
+        - ∑ n ∈ s, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y))
+        = ∑ n ∈ u \ s, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y)) := by
+      rw [← Finset.sum_sdiff hsu]; ring
+    rw [hsplit]
+    have hcs := sq_norm_sum_eig_le d (u \ s) x y
+    have hx := htail x u hsu
+    have hy := htail y u hsu
+    have hnx : (0 : ℝ) ≤ ∑ n ∈ u \ s, d.eigval n * ‖d.eigfun n x‖ ^ 2 :=
+      Finset.sum_nonneg fun n _ => mul_nonneg (d.eigval_pos n).le (sq_nonneg _)
+    have hny : (0 : ℝ) ≤ ∑ n ∈ u \ s, d.eigval n * ‖d.eigfun n y‖ ^ 2 :=
+      Finset.sum_nonneg fun n _ => mul_nonneg (d.eigval_pos n).le (sq_nonneg _)
+    nlinarith [norm_nonneg (∑ n ∈ u \ s,
+      (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y)))]
+  have hlim : Filter.Tendsto
+      (fun u : Finset d.ι => ‖(∑ n ∈ u, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y)))
+        - ∑ n ∈ s, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y))‖)
+      Filter.atTop
+      (nhds ‖K x y - ∑ n ∈ s, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y))‖) := by
+    have hT : Filter.Tendsto
+        (fun u : Finset d.ι =>
+          ∑ n ∈ u, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y)))
+        Filter.atTop (nhds (K x y)) := d.hasSum_kernel hK x y
+    exact (hT.sub tendsto_const_nhds).norm
+  have hfin : ‖K x y - ∑ n ∈ s, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y))‖
+      ≤ ε / 2 :=
+    le_of_tendsto hlim (Filter.eventually_atTop.mpr ⟨s, fun u hsu => hkey u hsu⟩)
+  rw [dist_eq_norm]
+  linarith
 
 /-- The eigenvalues of a Mercer eigensystem are square-summable (they are dominated by
 the trace `∫ K(x,x) dμ`; in fact they are summable). -/
@@ -817,10 +936,14 @@ theorem MercerEigensystem.summable_eigval {K : X → X → 𝕜}
     [μ.IsOpenPosMeasure]
     (d : MercerEigensystem μ K hKc) :
     Summable d.eigval := by
-  -- OPEN.  Follows from `hasSum_eigval` below (or directly from the residual positivity
-  -- of `hasSum_kernel`: `∑_{n ∈ s} λₙ ‖eₙ x‖² ≤ re K(x,x)`, integrated over `x` with
-  -- `‖eₙ‖_{L²} = 1`, bounds the partial sums by `∫ re K(x,x) dμ`).
-  sorry
+  have hcontK : Continuous fun x : X => RCLike.re (K x x) :=
+    (RCLike.continuous_re (K := 𝕜)).comp'
+      (hK.continuous.comp' (continuous_id.prodMk continuous_id))
+  refine summable_of_sum_le (fun n => (d.eigval_pos n).le)
+    (c := ∫ x, RCLike.re (K x x) ∂μ) fun s => ?_
+  rw [sum_eigval_eq_integral d s]
+  exact integral_mono (integrable_of_cont' (continuous_diag_partial d s))
+    (integrable_of_cont' hcontK) fun x => eig_diag_bound hK d s x
 
 /-- The trace formula: `∑ₙ λₙ = ∫ K(x, x) dμ(x)`. -/
 theorem MercerEigensystem.hasSum_eigval {K : X → X → 𝕜}
@@ -829,9 +952,27 @@ theorem MercerEigensystem.hasSum_eigval {K : X → X → 𝕜}
     [μ.IsOpenPosMeasure]
     (d : MercerEigensystem μ K hKc) :
     HasSum d.eigval (∫ x, RCLike.re (K x x) ∂μ) := by
-  -- OPEN.  Integrate the uniform diagonal expansion of `tendstoUniformly_kernel` over
-  -- `x`, swapping the integral with the uniform limit (`TendstoUniformlyOn` on the
-  -- finite-measure space `X`), and use `∫ ‖eₙ‖² dμ = 1` from `d.orthonormal`.
-  sorry
+  have hcontK : Continuous fun x : X => RCLike.re (K x x) :=
+    (RCLike.continuous_re (K := 𝕜)).comp'
+      (hK.continuous.comp' (continuous_id.prodMk continuous_id))
+  rw [HasSum, Metric.tendsto_nhds]
+  intro ε hε
+  have hmu : (0 : ℝ) ≤ μ.real Set.univ := ENNReal.toReal_nonneg
+  have hε' : (0 : ℝ) < ε / (μ.real Set.univ + 1) := by positivity
+  have hdiag := (Metric.tendstoUniformly_iff.mp (tendstoUniformly_diag_eig hK d)) _ hε'
+  filter_upwards [hdiag] with s hs
+  rw [sum_eigval_eq_integral d s, dist_eq_norm,
+    ← integral_sub (integrable_of_cont' (continuous_diag_partial d s))
+    (integrable_of_cont' hcontK)]
+  have hbd : ‖∫ x, ((∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2) - RCLike.re (K x x)) ∂μ‖
+      ≤ (ε / (μ.real Set.univ + 1)) * μ.real Set.univ := by
+    refine norm_integral_le_of_norm_le_const (Filter.Eventually.of_forall fun x => ?_)
+    have := hs x
+    rw [Real.dist_eq, abs_sub_comm] at this
+    rw [Real.norm_eq_abs]
+    exact this.le
+  refine lt_of_le_of_lt hbd ?_
+  rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
+  nlinarith [hmu, hε]
 
 end StatLean.NonparametricStatistics
