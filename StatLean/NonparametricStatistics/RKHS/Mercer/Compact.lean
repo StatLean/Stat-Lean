@@ -32,7 +32,33 @@ theorem norm_mercerCLM_le_of_bounded {S : X → X → 𝕜}
     -- USER-INPUT: uniform bound on the symbol
     (hC : ∀ x y, ‖S x y‖ ≤ C) :
     ‖mercerCLM μ hSc‖ ≤ (μ Set.univ).toReal * C := by
-  sorry
+  have hμ0 : (0 : ℝ) ≤ (μ Set.univ).toReal := ENNReal.toReal_nonneg
+  have hprod : (0 : ℝ) ≤ (μ Set.univ).toReal * C := by
+    rcases isEmpty_or_nonempty X with hX | hX
+    · rw [Set.univ_eq_empty_iff.mpr hX, measure_empty]
+      simp
+    · exact mul_nonneg hμ0 (le_trans (norm_nonneg _) (hC hX.some hX.some))
+  refine le_trans (norm_mercerCLM_le hSc) ?_
+  have hin : ∀ x : X, ∫ y, ‖S x y‖ ^ 2 ∂μ ≤ (μ Set.univ).toReal * C ^ 2 := by
+    intro x
+    calc ∫ y, ‖S x y‖ ^ 2 ∂μ ≤ ∫ _y : X, C ^ 2 ∂μ :=
+          integral_mono_of_nonneg (Filter.Eventually.of_forall fun y => by positivity)
+            (integrable_const _)
+            (Filter.Eventually.of_forall fun y => pow_le_pow_left₀ (norm_nonneg _) (hC x y) 2)
+      _ = (μ Set.univ).toReal * C ^ 2 := by
+          rw [integral_const, smul_eq_mul, measureReal_def]
+  have hout : ∫ x, ∫ y, ‖S x y‖ ^ 2 ∂μ ∂μ ≤ ((μ Set.univ).toReal * C) ^ 2 := by
+    calc ∫ x, ∫ y, ‖S x y‖ ^ 2 ∂μ ∂μ
+        ≤ ∫ _x : X, (μ Set.univ).toReal * C ^ 2 ∂μ :=
+          integral_mono_of_nonneg
+            (Filter.Eventually.of_forall fun x => integral_nonneg fun y => by positivity)
+            (integrable_const _) (Filter.Eventually.of_forall hin)
+      _ = (μ Set.univ).toReal * ((μ Set.univ).toReal * C ^ 2) := by
+          rw [integral_const, smul_eq_mul, measureReal_def]
+      _ = ((μ Set.univ).toReal * C) ^ 2 := by ring
+  calc Real.sqrt (∫ x, ∫ y, ‖S x y‖ ^ 2 ∂μ ∂μ)
+      ≤ Real.sqrt (((μ Set.univ).toReal * C) ^ 2) := Real.sqrt_le_sqrt hout
+    _ = (μ Set.univ).toReal * C := Real.sqrt_sq hprod
 
 /-- The integral operator of a finite-rank symbol `∑_{i ∈ s} fᵢ(x) conj (gᵢ(y))` has
 finite-dimensional range, hence is a compact operator. -/
