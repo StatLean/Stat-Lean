@@ -420,7 +420,24 @@ theorem range_mercerCLM_subset
   -- `f := ∫ y, g y • kernelFun H y ∂μ : H` satisfies
   -- `f x = ⟪kernelFun H x, f⟫ = ∫ y, g y * K x y ∂μ = integralOp μ K g x`
   -- by `inner_kernelFun` and `integral_inner`.
-  sorry
+  haveI : NormedSpace ℝ H := NormedSpace.restrictScalars ℝ 𝕜 H
+  have hKsc : Continuous fun p : X × X => scalarKernel H p.1 p.2 := by
+    simp only [hKH]; exact hKc
+  have hkf : Continuous fun y : X => kernelFun (𝕜 := 𝕜) H y := continuous_kernelFun H hKsc
+  obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn hkf.continuousOn
+  have hgi : Integrable (fun y => (g : X → 𝕜) y) μ := (Lp.memLp g).integrable (by norm_num)
+  have hint : Integrable (fun y => (g : X → 𝕜) y • kernelFun (𝕜 := 𝕜) H y) μ := by
+    refine Integrable.mono' (hgi.norm.mul_const C) ?_ ?_
+    · exact (Lp.aestronglyMeasurable g).smul hkf.aestronglyMeasurable
+    · filter_upwards with y
+      rw [norm_smul]
+      exact mul_le_mul_of_nonneg_left (hC y (Set.mem_univ _)) (norm_nonneg _)
+  refine ⟨∫ y, (g : X → 𝕜) y • kernelFun (𝕜 := 𝕜) H y ∂μ, funext fun x => ?_⟩
+  rw [← inner_kernelFun x, ← integral_inner hint, integralOp]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
+  change ⟪kernelFun (𝕜 := 𝕜) H x, (g : X → 𝕜) y • kernelFun (𝕜 := 𝕜) H y⟫_𝕜
+      = K x y * (g : X → 𝕜) y
+  rw [inner_smul_right, ← scalarKernel_eq_inner, hKH, mul_comm]
 
 
 end SquareRoot
