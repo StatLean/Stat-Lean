@@ -29,23 +29,31 @@ variable [RKHS 𝕜 H X 𝕜]
 conjugated point values: `k_y = ∑ᵢ conj (e_i y) • e_i` (norm convergence, unordered). -/
 theorem hasSum_kernelFun (e : HilbertBasis ι 𝕜 H) (y : X) :
     HasSum (fun i => conj ((e i : H) y) • (e i : H)) (kernelFun H y) := by
-  sorry
+  have h := e.hasSum_repr (kernelFun H y)
+  refine h.congr_fun fun i => ?_
+  rw [HilbertBasis.repr_apply_apply, inner_kernelFun_right]
 
 /-- **Pointwise expansion of the kernel along a Hilbert basis**:
 `K(x, y) = ∑ᵢ conj (e_i y) · e_i x` as an unordered pointwise sum. -/
 theorem hasSum_scalarKernel (e : HilbertBasis ι 𝕜 H) (x y : X) :
     HasSum (fun i => conj ((e i : H) y) * (e i : H) x) (scalarKernel H x y) := by
-  sorry
+  have h := (hasSum_kernelFun e y).mapL (evalCLM 𝕜 H x)
+  refine h.congr_fun ?_
+  intro i
+  rw [evalCLM_apply, RKHS.coe_smul]
+  rfl
 
 /-- Diagonal (Parseval) form of the kernel expansion: `K(x, x) = ∑ᵢ ‖e_i x‖²`. -/
 theorem hasSum_scalarKernel_self (e : HilbertBasis ι 𝕜 H) (x : X) :
     HasSum (fun i => ‖(e i : H) x‖ ^ 2) (RCLike.re (scalarKernel H x x)) := by
-  sorry
+  have h := (hasSum_scalarKernel e x x).mapL (RCLike.reCLM (K := 𝕜))
+  refine h.congr_fun fun i => ?_
+  rw [RCLike.reCLM_apply, RCLike.conj_mul, ← RCLike.ofReal_pow, RCLike.ofReal_re]
 
 /-- The point values of a Hilbert basis of an RKHS are square-summable, with sum bounded
 by the kernel diagonal. -/
 theorem summable_normSq_apply (e : HilbertBasis ι 𝕜 H) (x : X) :
-    Summable fun i => ‖(e i : H) x‖ ^ 2 := by
-  sorry
+    Summable fun i => ‖(e i : H) x‖ ^ 2 :=
+  (hasSum_scalarKernel_self e x).summable
 
 end StatLean.NonparametricStatistics
