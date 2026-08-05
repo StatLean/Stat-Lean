@@ -271,6 +271,112 @@ only meaningful up to a.e.-equivalence; all statements below access it through
 `integralOp` and `L²` pairings, which see only the class. -/
 noncomputable def sqrtSymbol : X → X → 𝕜 := fun x => sqrtSectionLp d x
 
+-- Conjugation of an eigenfunction conjugates its `L²` inner products.
+private theorem inner_toLp_star (n m : d.ι) :
+    ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n)),
+        ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun m))⟫_𝕜
+      = conj ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n),
+          ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m)⟫_𝕜 := by
+  rw [L2.inner_def, L2.inner_def, ← integral_conj]
+  refine integral_congr_ae ?_
+  filter_upwards
+    [ContinuousMap.coeFn_toLp (E := 𝕜) (p := 2) (μ := μ) (𝕜 := 𝕜) (star (d.eigfun n)),
+      ContinuousMap.coeFn_toLp (E := 𝕜) (p := 2) (μ := μ) (𝕜 := 𝕜) (star (d.eigfun m)),
+      ContinuousMap.coeFn_toLp (E := 𝕜) (p := 2) (μ := μ) (𝕜 := 𝕜) (d.eigfun n),
+      ContinuousMap.coeFn_toLp (E := 𝕜) (p := 2) (μ := μ) (𝕜 := 𝕜) (d.eigfun m)]
+    with a h1 h2 h3 h4
+  rw [h1, h2, h3, h4, RCLike.inner_apply, RCLike.inner_apply]
+  simp [RCLike.star_def]
+
+-- The conjugated eigenfunctions are again orthonormal in `L²(X, μ)`.
+private theorem orthonormal_toLp_star :
+    Orthonormal 𝕜 fun n : d.ι => ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n)) := by
+  constructor
+  · intro n
+    have h1 : ((‖ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n))‖ : 𝕜)) ^ 2 = 1 := by
+      rw [← inner_self_eq_norm_sq_to_K, inner_toLp_star d n n, inner_self_eq_norm_sq_to_K,
+        d.orthonormal.1 n]
+      norm_num
+    have h2 : ‖ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n))‖ ^ 2 = 1 :=
+      RCLike.ofReal_inj.mp (by push_cast; exact h1)
+    nlinarith [norm_nonneg (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n)))]
+  · intro n m hnm
+    rw [inner_toLp_star d n m, d.orthonormal.2 hnm, map_zero]
+
+-- The diagonal of the (proved) Mercer expansion, in real form.
+private theorem hasSum_diag (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure] (x : X) :
+    HasSum (fun n => d.eigval n * ‖d.eigfun n x‖ ^ 2) (RCLike.re (K x x)) := by
+  refine ((d.hasSum_kernel hK x x).map
+    (RCLike.reCLM (K := 𝕜)).toLinearMap.toAddMonoidHom RCLike.reCLM.continuous).congr_fun
+    fun n => ?_
+  change d.eigval n * ‖d.eigfun n x‖ ^ 2
+      = RCLike.re ((d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n x)))
+  rw [RCLike.mul_conj, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul, RCLike.ofReal_re]
+
+-- The squared modulus of the `n`-th coefficient of the section at `x`.
+private theorem norm_sq_sqrtCoeff (n : d.ι) (x : X) :
+    ‖((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x‖ ^ 2
+      = d.eigval n * ‖d.eigfun n x‖ ^ 2 := by
+  rw [norm_mul, RCLike.norm_ofReal, abs_of_nonneg (Real.sqrt_nonneg _), mul_pow,
+    Real.sq_sqrt (d.eigval_pos n).le]
+
+-- The defining series of `sqrtSectionLp` really converges (orthogonal family with
+-- square-summable coefficients).
+private theorem hasSum_sqrtSectionLp (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure] (x : X) :
+    HasSum (fun n => (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x) •
+      ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n))) (sqrtSectionLp d x) := by
+  have hon := (orthonormal_toLp_star d).orthogonalFamily
+  have hiff := hon.summable_iff_norm_sq_summable
+    (fun n => ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x)
+  simp only [LinearIsometry.toSpanSingleton_apply] at hiff
+  refine Summable.hasSum (hiff.mpr ?_)
+  exact ((hasSum_diag d hK x).summable).congr fun n => (norm_sq_sqrtCoeff d n x).symm
+
+-- The `n`-th coefficient is recovered by pairing with the `n`-th conjugated eigenfunction.
+private theorem inner_toLp_star_sqrtSectionLp (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure]
+    (x : X) (n : d.ι) :
+    ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n)), sqrtSectionLp d x⟫_𝕜
+      = ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x := by
+  classical
+  have h := (hasSum_sqrtSectionLp d hK x).mapL
+    (innerSL 𝕜 (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n))))
+  refine h.unique ?_
+  have hfun : ∀ m : d.ι,
+      ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n)),
+        (((Real.sqrt (d.eigval m) : ℝ) : 𝕜) * d.eigfun m x) •
+          ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun m))⟫_𝕜
+      = if m = n then ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x else 0 := by
+    intro m
+    have hself : ∀ k : d.ι, ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun k)),
+        ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun k))⟫_𝕜 = 1 := by
+      intro k
+      rw [inner_self_eq_norm_sq_to_K, (orthonormal_toLp_star d).1 k]
+      norm_num
+    rw [inner_smul_right]
+    by_cases hmn : m = n
+    · subst hmn
+      rw [if_pos rfl, hself m, mul_one]
+    · rw [if_neg hmn, (orthonormal_toLp_star d).2 (Ne.symm hmn), mul_zero]
+  exact (hasSum_ite_eq n (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x)).congr_fun
+    fun m => hfun m
+
+-- The `L²` norm of the section is the kernel diagonal.
+private theorem norm_sq_sqrtSectionLp (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure] (x : X) :
+    ‖sqrtSectionLp d x‖ ^ 2 = RCLike.re (K x x) := by
+  have h := (hasSum_sqrtSectionLp d hK x).mapL (innerSL 𝕜 (sqrtSectionLp d x))
+  have hre := h.map (RCLike.reCLM (K := 𝕜)).toLinearMap.toAddMonoidHom RCLike.reCLM.continuous
+  have hval : ∀ n : d.ι,
+      RCLike.re (⟪sqrtSectionLp d x, (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x) •
+        ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n))⟫_𝕜)
+      = d.eigval n * ‖d.eigfun n x‖ ^ 2 := by
+    intro n
+    rw [inner_smul_right, ← inner_conj_symm, inner_toLp_star_sqrtSectionLp d hK x n,
+      RCLike.mul_conj, ← RCLike.ofReal_pow, RCLike.ofReal_re]
+    exact norm_sq_sqrtCoeff d n x
+  have h2 : RCLike.re (K x x) = RCLike.re (⟪sqrtSectionLp d x, sqrtSectionLp d x⟫_𝕜) :=
+    (hasSum_diag d hK x).unique (hre.congr_fun fun n => (hval n).symm)
+  rw [h2, ← norm_sq_eq_re_inner (𝕜 := 𝕜)]
+
 /-- The square-root symbol has square-integrable sections:
 `∫ ‖S(x,y)‖² dμ(y) = ∑ₙ λₙ ‖eₙ(x)‖² = K(x,x)`. -/
 -- With the `L²`-limit definition of `sqrtSymbol` (this revision) the sections are `Lp`
