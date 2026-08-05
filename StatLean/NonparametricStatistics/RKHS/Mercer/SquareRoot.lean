@@ -891,7 +891,43 @@ theorem sqrtCLM_comp_self : (sqrtCLM d hK).comp (sqrtCLM d hK) = mercerCLM μ hK
   -- Route (TRUE after the `L²`-limit redefinition, this revision): the proof is
   -- `sqrtCLM_hasSum` twice plus `d.opExpansion`: both sides send `g` to
   -- `∑ₙ λₙ ⟪eₙ, g⟫ eₙ`, and `HasSum.unique` in `L²` plus orthonormality closes it.
-  sorry
+  classical
+  have hone : ∀ m : d.ι, ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m),
+      ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m)⟫_𝕜 = 1 := by
+    intro m
+    rw [inner_self_eq_norm_sq_to_K, d.orthonormal.1 m]
+    norm_num
+  refine ContinuousLinearMap.ext fun g => ?_
+  have hinner : ∀ n : d.ι, ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), sqrtCLM d hK g⟫_𝕜
+      = ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+        ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜 := by
+    intro n
+    have h := (sqrtCLM_hasSum d hK g).mapL
+      (innerSL 𝕜 (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)))
+    have hite : HasSum (fun m : d.ι => ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n),
+        ((Real.sqrt (d.eigval m) : ℝ) : 𝕜) •
+          (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m), g⟫_𝕜 •
+            ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m))⟫_𝕜)
+        (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+          ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜) := by
+      refine (hasSum_ite_eq n (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+        ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜)).congr_fun fun m => ?_
+      rw [inner_smul_right, inner_smul_right]
+      by_cases hmn : m = n
+      · subst hmn
+        rw [if_pos rfl, hone m, mul_one]
+      · rw [if_neg hmn, d.orthonormal.2 (Ne.symm hmn), mul_zero, mul_zero]
+    exact h.unique hite
+  have h2 : HasSum (fun n : d.ι => (d.eigval n : 𝕜) •
+      (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜 •
+        ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)))
+      (sqrtCLM d hK (sqrtCLM d hK g)) := by
+    refine (sqrtCLM_hasSum d hK (sqrtCLM d hK g)).congr_fun fun n => ?_
+    rw [hinner n, smul_smul, smul_smul]
+    congr 1
+    rw [← mul_assoc, ← RCLike.ofReal_mul, Real.mul_self_sqrt (d.eigval_pos n).le]
+  rw [ContinuousLinearMap.comp_apply]
+  exact h2.unique (d.opExpansion g)
 
 /-- **`range T_S = H(K)`**: the square-root operator maps `L²(X, μ)` onto exactly the
 functions of the (measure-independent!) RKHS of `K`. -/
