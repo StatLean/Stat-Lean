@@ -427,14 +427,29 @@ theorem range_mercerCLM_subset
     -- USER-INPUT: `H` has reproducing kernel `K`
     (hKH : scalarKernel H = K) (g : Lp 𝕜 2 μ) :
     ∃ f : H, (f : X → 𝕜) = integralOp μ K g := by
-  -- OPEN.  Statement TRUE.  The `sqrtCLM_comp_self` route is dead (that theorem is false
-  -- as frozen — see the WARNING on `sqrtSymbol`).  Two live routes remain:
-  -- (a) spectral: `MercerEigensystem.hasSum_kernel` (PROVED) makes `{√λₙ eₙ}` a Parseval
-  --     frame of `H(K)`, and `integralOp μ K g x = ∑ₙ (√λₙ ⟪eₙ,g⟫) · (√λₙ eₙ(x))` with
-  --     `∑ₙ ‖√λₙ ⟪eₙ,g⟫‖² = ∑ₙ λₙ ‖⟪eₙ,g⟫‖² < ∞`, which is membership in the range space;
-  -- (b) measure-free: `isMercerKernel_trace_smul_sub_boxProd` (PROVED above) plus the
-  --     Aronszajn domination criterion `K □ K ⪯ (∫ K(t,t) dμ) · K`.
+  -- OPEN.  Statement TRUE for a *continuous* `K`, but as frozen the theorem does not have
+  -- access to any continuity or measurability hypothesis: its statement mentions only
+  -- `H`, `K`, `μ`, `hKH` and `g`, so the section variables `hKc`, `hK` and `d` are NOT
+  -- auto-included and are unavailable inside the proof (verified: both `hKc` and `hK` are
+  -- `Unknown identifier` here).  Every route needs one of them:
+  -- (a) the Bochner-integral route, which is otherwise completely elementary and was
+  --     written out in full in this session: with `hKsc : Continuous (scalarKernel H)`
+  --     one gets `hker := continuous_kernelFun H hKsc`, a uniform bound `C` on
+  --     `‖kernelFun H y‖` from compactness, integrability of `y ↦ g y • kernelFun H y`
+  --     by `Integrable.mono'` against `‖g ·‖ * C`, and then
+  --     `f := ∫ y, g y • kernelFun H y ∂μ : H` satisfies
+  --     `f x = ⟪kernelFun H x, f⟫ = ∫ y, g y * K x y ∂μ = integralOp μ K g x`
+  --     by `inner_kernelFun` and `integral_inner`;
+  -- (b) the spectral route through `MercerEigensystem.hasSum_kernel` (now PROVED) needs
+  --     `d`;
+  -- (c) the measure-free route through `isMercerKernel_trace_smul_sub_boxProd` needs
+  --     `hK`, and in addition an Aronszajn domination theorem (`c • K − L` PSD implies
+  --     `H(L) ⊆ H(K)`), which is not present anywhere in `StatLean/.../RKHS/`.
+  -- The fix is one line at the declaration site — `include hKc in` before the theorem, or
+  -- a `(hKc : Continuous fun p : X × X => K p.1 p.2)` binder — but that changes the
+  -- frozen signature, so under Rule 5 it is left here as a documented obstruction.
   sorry
+
 
 end SquareRoot
 
