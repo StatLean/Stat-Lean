@@ -11,6 +11,7 @@ import StatLean.StatisticalModels.Gaussian.BlockIndex
 import StatLean.StatisticalModels.Gaussian.Affine
 import StatLean.StatisticalModels.Gaussian.Marginal
 import StatLean.StatisticalModels.Gaussian.FinCorridor
+import StatLean.StatisticalModels.Gaussian.Conditioning
 import StatLean.StatisticalModels.Survival.Defs
 import StatLean.StatisticalModels.Survival.Survival
 import StatLean.StatisticalModels.Survival.CumulativeHazard
