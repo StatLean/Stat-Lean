@@ -587,6 +587,55 @@ private theorem norm_tsum_sub_sum_le (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosM
   gcongr
 
 
+/-- The eigen-expansion converges uniformly in the second variable. -/
+private theorem tendstoUniformly_eig (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure]
+    (d : MercerEigensystem μ K hKc) (x : X) :
+    TendstoUniformly
+      (fun t : Finset d.ι => fun y =>
+        ∑ n ∈ t, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y)))
+      (fun y => ∑' n, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y)))
+      Filter.atTop := by
+  obtain ⟨M, hM0, hM⟩ := exists_diag_bound (K := K) hKc
+  rw [Metric.tendstoUniformly_iff]
+  intro ε hε
+  have hsx := summable_eig_diag hK d x
+  have hMs : (0 : ℝ) < Real.sqrt M + 1 := by positivity
+  have hq0 : (0 : ℝ) ≤ ε / (Real.sqrt M + 1) := by positivity
+  have hδ0 : (0 : ℝ) < (ε / (Real.sqrt M + 1)) ^ 2 := by positivity
+  have htend : Filter.Tendsto
+      (fun t : Finset d.ι => (∑' n, d.eigval n * ‖d.eigfun n x‖ ^ 2)
+        - ∑ n ∈ t, d.eigval n * ‖d.eigfun n x‖ ^ 2) Filter.atTop (nhds 0) := by
+    have h := (tendsto_const_nhds (x := ∑' n, d.eigval n * ‖d.eigfun n x‖ ^ 2)
+      (f := Filter.atTop (α := Finset d.ι))).sub hsx.hasSum
+    rwa [sub_self] at h
+  filter_upwards [htend.eventually_lt_const hδ0] with t ht
+  intro y
+  rw [dist_eq_norm]
+  refine lt_of_le_of_lt (norm_tsum_sub_sum_le hK d x y t) ?_
+  have h1 : Real.sqrt ((∑' n, d.eigval n * ‖d.eigfun n x‖ ^ 2)
+      - ∑ n ∈ t, d.eigval n * ‖d.eigfun n x‖ ^ 2) ≤ ε / (Real.sqrt M + 1) := by
+    have := Real.sqrt_le_sqrt ht.le
+    rwa [Real.sqrt_sq hq0] at this
+  have h2 : Real.sqrt (RCLike.re (K y y)) ≤ Real.sqrt M := Real.sqrt_le_sqrt (hM y)
+  have h3 : Real.sqrt ((∑' n, d.eigval n * ‖d.eigfun n x‖ ^ 2)
+      - ∑ n ∈ t, d.eigval n * ‖d.eigfun n x‖ ^ 2) * Real.sqrt (RCLike.re (K y y))
+      ≤ (ε / (Real.sqrt M + 1)) * Real.sqrt M := by
+    refine mul_le_mul h1 h2 (Real.sqrt_nonneg _) hq0
+  refine lt_of_le_of_lt h3 ?_
+  rw [div_mul_eq_mul_div, div_lt_iff₀ hMs]
+  nlinarith [Real.sqrt_nonneg M, hε]
+
+/-- The limit of the eigen-expansion is continuous in the second variable. -/
+private theorem continuous_eig_tsum (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure]
+    (d : MercerEigensystem μ K hKc) (x : X) :
+    Continuous fun y => ∑' n, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y)) :=
+  (tendstoUniformly_eig hK d x).continuous
+    (Filter.Eventually.frequently (Filter.Eventually.of_forall fun t =>
+      continuous_finset_sum t fun n _ =>
+        continuous_const.mul (continuous_const.mul
+          (RCLike.continuous_conj.comp' (d.eigfun n).continuous))))
+
+
 end Residual
 
 /-- **Mercer's theorem, kernel expansion**: `K(x, y) = ∑ₙ λₙ eₙ(x) conj (eₙ(y))`
