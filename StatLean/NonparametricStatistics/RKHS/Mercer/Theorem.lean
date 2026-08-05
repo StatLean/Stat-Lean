@@ -30,7 +30,7 @@ Ch. 7, and H. König, *Eigenvalue Distribution of Compact Operators* (Birkhäuse
 -/
 
 open RKHS ComplexConjugate MeasureTheory
-open scoped InnerProductSpace ENNReal
+open scoped InnerProductSpace ENNReal Topology
 
 namespace StatLean.NonparametricStatistics
 
@@ -523,6 +523,69 @@ private theorem summable_eig_prod (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeas
   rw [norm_mul, norm_mul, RCLike.norm_conj, RCLike.norm_ofReal, abs_of_pos (d.eigval_pos n)]
   nlinarith [sq_nonneg (‖d.eigfun n x‖ - ‖d.eigfun n y‖), (d.eigval_pos n).le,
     norm_nonneg (d.eigfun n x), norm_nonneg (d.eigfun n y)]
+
+/-- The kernel diagonal is bounded on the compact base space. -/
+private theorem exists_diag_bound (hKc : Continuous fun p : X × X => K p.1 p.2) :
+    ∃ M : ℝ, 0 ≤ M ∧ ∀ y : X, RCLike.re (K y y) ≤ M := by
+  obtain ⟨M, hM⟩ := isCompact_univ.exists_bound_of_continuousOn
+    (f := fun y : X => RCLike.re (K y y))
+    ((RCLike.reCLM (K := 𝕜)).continuous.comp'
+      (hKc.comp' (continuous_id.prodMk continuous_id))).continuousOn
+  refine ⟨max M 0, le_max_right _ _, fun y => ?_⟩
+  exact le_trans (le_trans (le_abs_self _) (hM y (Set.mem_univ _))) (le_max_left _ _)
+
+/-- Tail estimate for the eigen-expansion, uniform in the second variable. -/
+private theorem norm_tsum_sub_sum_le (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure]
+    (d : MercerEigensystem μ K hKc) (x y : X) (t : Finset d.ι) :
+    ‖(∑' n, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y)))
+        - ∑ n ∈ t, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y))‖
+      ≤ Real.sqrt ((∑' n, d.eigval n * ‖d.eigfun n x‖ ^ 2)
+            - ∑ n ∈ t, d.eigval n * ‖d.eigfun n x‖ ^ 2) *
+          Real.sqrt (RCLike.re (K y y)) := by
+  classical
+  have hsx := summable_eig_diag hK d x
+  have hf := (summable_eig_prod hK d x y).hasSum
+  have hlim : Filter.Tendsto
+      (fun u : Finset d.ι =>
+        ‖(∑ n ∈ u, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y)))
+          - ∑ n ∈ t, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y))‖)
+      Filter.atTop
+      (𝓝 ‖(∑' n, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y)))
+          - ∑ n ∈ t, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y))‖) :=
+    (continuous_norm.tendsto _).comp (hf.sub_const _)
+  refine le_of_tendsto hlim ?_
+  filter_upwards [Filter.eventually_ge_atTop t] with u hu
+  have hsplit : (∑ n ∈ u, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y)))
+      - ∑ n ∈ t, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y))
+      = ∑ n ∈ u \ t, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y)) := by
+    rw [← Finset.sum_sdiff hu]
+    ring
+  rw [hsplit]
+  have hcs := sq_norm_sum_eig_le d (u \ t) x y
+  have hAx : (∑ n ∈ u \ t, d.eigval n * ‖d.eigfun n x‖ ^ 2)
+      ≤ (∑' n, d.eigval n * ‖d.eigfun n x‖ ^ 2)
+        - ∑ n ∈ t, d.eigval n * ‖d.eigfun n x‖ ^ 2 := by
+    have h1 : (∑ n ∈ u \ t, d.eigval n * ‖d.eigfun n x‖ ^ 2)
+        + ∑ n ∈ t, d.eigval n * ‖d.eigfun n x‖ ^ 2
+        = ∑ n ∈ u, d.eigval n * ‖d.eigfun n x‖ ^ 2 := Finset.sum_sdiff hu
+    have h2 : (∑ n ∈ u, d.eigval n * ‖d.eigfun n x‖ ^ 2)
+        ≤ ∑' n, d.eigval n * ‖d.eigfun n x‖ ^ 2 :=
+      Summable.sum_le_tsum u (fun n _ => mul_nonneg (d.eigval_pos n).le (sq_nonneg _)) hsx
+    linarith
+  have hAy : (∑ n ∈ u \ t, d.eigval n * ‖d.eigfun n y‖ ^ 2) ≤ RCLike.re (K y y) :=
+    eig_diag_bound hK d (u \ t) y
+  have hAx0 : (0 : ℝ) ≤ ∑ n ∈ u \ t, d.eigval n * ‖d.eigfun n x‖ ^ 2 :=
+    Finset.sum_nonneg fun n _ => mul_nonneg (d.eigval_pos n).le (sq_nonneg _)
+  have hAy0 : (0 : ℝ) ≤ ∑ n ∈ u \ t, d.eigval n * ‖d.eigfun n y‖ ^ 2 :=
+    Finset.sum_nonneg fun n _ => mul_nonneg (d.eigval_pos n).le (sq_nonneg _)
+  have hstep : ‖∑ n ∈ u \ t, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y))‖
+      ≤ Real.sqrt (∑ n ∈ u \ t, d.eigval n * ‖d.eigfun n x‖ ^ 2) *
+        Real.sqrt (∑ n ∈ u \ t, d.eigval n * ‖d.eigfun n y‖ ^ 2) := by
+    have h := Real.sqrt_le_sqrt hcs
+    rwa [Real.sqrt_sq (norm_nonneg _), Real.sqrt_mul hAx0] at h
+  refine le_trans hstep ?_
+  gcongr
+
 
 end Residual
 
