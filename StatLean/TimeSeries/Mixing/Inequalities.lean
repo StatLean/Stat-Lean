@@ -997,6 +997,23 @@ theorem moment4_partial_sum_le [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ
     (hα : ∀ n : ℕ, 1 ≤ n → alphaCoeff X μ n ≤ K / (n : ℝ) ^ 2) :
     ∃ C' : ℝ, 0 ≤ C' ∧ ∀ n : ℕ,
       ∫ ω, (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) ^ 4 ∂μ ≤ C' * (n : ℝ) ^ 2 := by
+  -- NOT ATTEMPTED in this wave (the other four targets of the batch are closed). Route,
+  -- with the ledger checked by hand:
+  -- (1) `E ∏ X_{t_i}` for a *sorted* tuple `t₁ ≤ t₂ ≤ t₃ ≤ t₄` with gaps `g₁, g₂, g₃`
+  --     obeys `|E ∏| ≤ 4 C⁴ α(max g) + 16 C⁴ α(g₁) α(g₃)`: split at the largest gap with
+  --     `abs_covariance_le_of_bounded` (blocks are `sigmaLE`/`sigmaGE`-measurable, each
+  --     bounded by `C²`, and `IsStrictlyStationary.alphaMixCoeff_shift` turns the
+  --     coefficient into `alphaCoeff`); at the outer splits the product term vanishes
+  --     because `E X_t = 0` (transported off `hmean` by `hstat.identDistrib`), at the
+  --     middle split it is `|E X_{t₁}X_{t₂}| |E X_{t₃}X_{t₄}| ≤ 16 C⁴ α(g₁) α(g₃)`.
+  -- (2) `Σ_{sorted} α(max g) ≤ n Σ_{m ≤ n} 3 (m+1)² K/m² = O(n²)` and
+  --     `Σ_{sorted} α(g₁)α(g₃) ≤ n · n · (Σ_m α m)² = O(n²)` (the second sum converges by
+  --     `α(m) ≤ K/m²`); both need `α ≤ 1` at `m = 0`.
+  -- (3) The unsorted 4-fold expansion of `(Σ X)⁴` reduces to the sorted one by the
+  --     fibrewise bound `#{p | sort p = q} ≤ 4⁴` (`Tuple.sort`, `Fintype.prod_equiv`);
+  --     the constant is irrelevant since `C'` is existential.
+  -- Step (1) is the probabilistic content and is cheap given the bricks above; steps
+  -- (2)–(3) are the combinatorics and are what remains.
   sorry
 
 /-! ### Theorems 2.18/2.19: Bosq exponential inequalities (literature DEBTS) -/
