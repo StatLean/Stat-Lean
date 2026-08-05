@@ -1,6 +1,7 @@
 import StatLean.NonparametricStatistics.RKHS.Mercer.Defs
 import StatLean.NonparametricStatistics.RKHS.OrthonormalExpansion
 import StatLean.NonparametricStatistics.RKHS.Continuity
+import StatLean.NonparametricStatistics.RKHS.Moore
 import Mathlib.Topology.UniformSpace.Dini
 
 /-!
@@ -409,6 +410,67 @@ private theorem norm_mercerCLM_sub_apply_le {K₁ K₂ : X → X → 𝕜}
     _ ≤ Real.sqrt (((μ Set.univ).toReal * η * ‖g‖) ^ 2) := Real.sqrt_le_sqrt hsq
     _ = (μ Set.univ).toReal * η * ‖g‖ :=
         Real.sqrt_sq (mul_nonneg (mul_nonneg hμ0 hη0) (norm_nonneg _))
+
+/-- The inner product against a finite-rank Mercer operator, computed coefficientwise. -/
+private theorem inner_mercerCLM_finset {ι : Type*} (φ : ι → C(X, 𝕜)) (s : Finset ι)
+    (hc : Continuous fun p : X × X => ∑ i ∈ s, conj (φ i p.2) * φ i p.1)
+    (h g : Lp 𝕜 2 μ) :
+    ⟪h, mercerCLM (K := fun x y => ∑ i ∈ s, conj ((φ i) y) * (φ i) x) μ hc g⟫_𝕜
+      = ∑ i ∈ s, ⟪h, ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i)⟫_𝕜 *
+          ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i), g⟫_𝕜 := by
+  have hψ : ∀ i : ι, ((ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i) : Lp 𝕜 2 μ) : X → 𝕜)
+      =ᵐ[μ] fun x => φ i x := fun i => ContinuousMap.coeFn_toLp (E := 𝕜) (p := 2) (𝕜 := 𝕜) μ (φ i)
+  have hmem : ∀ i : ι, MemLp (fun x => (φ i) x) 2 μ := fun i =>
+    (Lp.memLp (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i))).ae_eq (hψ i)
+  have hmemc : ∀ i : ι, MemLp (fun y => conj ((φ i) y)) 2 μ := fun i => (hmem i).star
+  -- coefficients
+  have hcoef : ∀ i : ι, ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i), g⟫_𝕜
+      = ∫ y, conj ((φ i) y) * (g : X → 𝕜) y ∂μ := by
+    intro i
+    rw [L2.inner_def]
+    refine integral_congr_ae ?_
+    filter_upwards [hψ i] with y hy
+    rw [RCLike.inner_apply, hy]
+    ring
+  have hinner : ∀ i : ι, ⟪h, ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i)⟫_𝕜
+      = ∫ x, conj ((h : X → 𝕜) x) * (φ i) x ∂μ := by
+    intro i
+    rw [L2.inner_def]
+    refine integral_congr_ae ?_
+    filter_upwards [hψ i] with x hx
+    rw [RCLike.inner_apply, hx]
+    ring
+  -- the inner integral separates
+  have hin : ∀ x : X, integralOp μ (fun x y => ∑ i ∈ s, conj ((φ i) y) * (φ i) x) g x
+      = ∑ i ∈ s, (φ i) x * ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i), g⟫_𝕜 := by
+    intro x
+    have hre : ∀ y : X, (∑ i ∈ s, conj ((φ i) y) * (φ i) x) * (g : X → 𝕜) y
+        = ∑ i ∈ s, (φ i) x * (conj ((φ i) y) * (g : X → 𝕜) y) := by
+      intro y
+      rw [Finset.sum_mul]
+      exact Finset.sum_congr rfl fun i _ => by ring
+    have hintg : ∀ i ∈ s,
+        Integrable (fun y => (φ i) x * (conj ((φ i) y) * (g : X → 𝕜) y)) μ := fun i _ =>
+      ((hmemc i).integrable_mul (Lp.memLp g)).const_mul ((φ i) x)
+    rw [integralOp, integral_congr_ae (Filter.Eventually.of_forall hre),
+      integral_finset_sum s hintg]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [integral_const_mul, hcoef]
+  rw [inner_mercerCLM]
+  simp_rw [hin]
+  have hre2 : ∀ x : X, conj ((h : X → 𝕜) x) *
+      (∑ i ∈ s, (φ i) x * ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i), g⟫_𝕜)
+      = ∑ i ∈ s, (conj ((h : X → 𝕜) x) * (φ i) x) *
+          ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i), g⟫_𝕜 := by
+    intro x
+    rw [Finset.mul_sum]
+    exact Finset.sum_congr rfl fun i _ => by ring
+  have hintg2 : ∀ i ∈ s, Integrable (fun x => (conj ((h : X → 𝕜) x) * (φ i) x) *
+      ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i), g⟫_𝕜) μ := fun i _ =>
+    (((Lp.memLp h).star).integrable_mul (hmem i)).mul_const _
+  rw [integral_congr_ae (Filter.Eventually.of_forall hre2),
+    integral_finset_sum s hintg2]
+  exact Finset.sum_congr rfl fun i _ => by rw [integral_mul_const, hinner]
 
 /-- **`T_K` is a positive operator** when `K` is a Mercer kernel. -/
 theorem isPositive_mercerCLM {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K) :
