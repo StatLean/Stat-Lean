@@ -843,7 +843,48 @@ theorem sqrtCLM_isPositive : (sqrtCLM d hK).IsPositive := by
   -- operator is `0`).  With the `L²`-limit repair of `sqrtSymbol` it is immediate from
   -- `sqrtCLM_hasSum`: `⟪g, T_S g⟫ = ∑ₙ √λₙ ‖⟪eₙ, g⟫‖² ≥ 0`, and symmetry by the same
   -- uniqueness-of-sums argument used in `isPositive_mercerCLM`.
-  sorry
+  have key : ∀ h g : Lp 𝕜 2 μ,
+      HasSum (fun n : d.ι => ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+        (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜 *
+          ⟪h, ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)⟫_𝕜))
+        ⟪h, sqrtCLM d hK g⟫_𝕜 := by
+    intro h g
+    refine ((sqrtCLM_hasSum d hK g).mapL (innerSL 𝕜 h)).congr_fun fun n => ?_
+    change _ = ⟪h, ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) •
+      (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜 •
+        ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n))⟫_𝕜
+    rw [inner_smul_right, inner_smul_right]
+  refine ⟨fun h g => ?_, fun g => ?_⟩
+  · simp only [ContinuousLinearMap.coe_coe]
+    have h1 := key h g
+    have h2 : HasSum (fun n : d.ι => ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+        (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜 *
+          ⟪h, ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)⟫_𝕜))
+        (conj ⟪g, sqrtCLM d hK h⟫_𝕜) := by
+      refine ((key g h).map ((starRingEnd 𝕜).toAddMonoidHom)
+        RCLike.continuous_conj).congr_fun fun n => ?_
+      change _ = conj (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+        (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), h⟫_𝕜 *
+          ⟪g, ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)⟫_𝕜))
+      rw [map_mul, map_mul, RCLike.conj_ofReal, inner_conj_symm, inner_conj_symm]
+      ring
+    rw [h1.unique h2, inner_conj_symm]
+  · have h2 : HasSum (fun n : d.ι => Real.sqrt (d.eigval n) *
+        ‖⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜‖ ^ 2)
+        (RCLike.re ⟪g, sqrtCLM d hK g⟫_𝕜) := by
+      refine ((key g g).map (RCLike.reCLM (K := 𝕜)).toLinearMap.toAddMonoidHom
+        RCLike.reCLM.continuous).congr_fun fun n => ?_
+      change _ = RCLike.re (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+        (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜 *
+          ⟪g, ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)⟫_𝕜))
+      rw [← inner_conj_symm g (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)),
+        RCLike.mul_conj, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul, RCLike.ofReal_re]
+    have h3 : (0 : ℝ) ≤ RCLike.re ⟪g, sqrtCLM d hK g⟫_𝕜 := by
+      have hs := sum_le_hasSum (∅ : Finset d.ι)
+        (fun n _ => mul_nonneg (Real.sqrt_nonneg _) (sq_nonneg _)) h2
+      simpa using hs
+    rw [ContinuousLinearMap.reApplyInnerSelf_apply, inner_re_symm]
+    exact h3
 
 /-- **`T_S` squares to `T_K`**: `T_S ∘ T_S = T_K`. -/
 theorem sqrtCLM_comp_self : (sqrtCLM d hK).comp (sqrtCLM d hK) = mercerCLM μ hKc := by
