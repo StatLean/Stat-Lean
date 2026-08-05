@@ -50,17 +50,59 @@ support, hence always `ℓ¹`. -/
 noncomputable def polyFilterCoeffs (P : Polynomial ℝ) : ℤ → ℝ := fun k =>
   if 0 ≤ k then P.coeff k.toNat else 0
 
+/-- The polynomial-filter coefficients vanish off `[0, deg P]`. -/
+private theorem polyFilterCoeffs_eq_zero (P : Polynomial ℝ) {k : ℤ}
+    (hk : k < 0 ∨ (P.natDegree : ℤ) < k) : polyFilterCoeffs P k = 0 := by
+  rw [polyFilterCoeffs]
+  by_cases h : 0 ≤ k
+  · exact if_pos h ▸ Polynomial.coeff_eq_zero_of_natDegree_lt (by omega)
+  · exact if_neg h
+
+/-- The index set `{0, 1, …, deg P} ⊆ ℤ` carrying the polynomial filter, as the image of
+`Finset.range (deg P + 1)` under `Nat.cast`. -/
+private def polyFilterSupport (P : Polynomial ℝ) : Finset ℤ :=
+  (Finset.range (P.natDegree + 1)).map ⟨Nat.cast, Nat.cast_injective⟩
+
+private theorem polyFilterCoeffs_eq_zero_of_notMem (P : Polynomial ℝ) {k : ℤ}
+    (hk : k ∉ polyFilterSupport P) : polyFilterCoeffs P k = 0 := by
+  simp only [polyFilterSupport, Finset.mem_map, Finset.mem_range,
+    Function.Embedding.coeFn_mk, not_exists, not_and] at hk
+  refine polyFilterCoeffs_eq_zero P ?_
+  rcases lt_or_ge k 0 with h | h
+  · exact Or.inl h
+  · refine Or.inr ?_
+    by_contra hle
+    exact absurd (by omega : ((k.toNat : ℕ) : ℤ) = k) (hk k.toNat (by omega))
+
 /-- A polynomial filter has finitely many nonzero coefficients, hence is `ℓ¹`. -/
 theorem summable_abs_polyFilterCoeffs (P : Polynomial ℝ) :
     Summable fun k : ℤ => |polyFilterCoeffs P k| := by
-  sorry
+  apply summable_of_ne_finset_zero (s := Finset.Icc (0 : ℤ) (P.natDegree : ℤ))
+  intro k hk
+  simp only [Finset.mem_Icc, not_and, not_le] at hk
+  rw [polyFilterCoeffs_eq_zero P (by omega), abs_zero]
+
+/-- `e^{−inω} = (e^{−iω})ⁿ` for `n ≥ 0`. -/
+private theorem fourier_neg_natCast (n : ℕ) (l : AddCircle (2 * π)) :
+    (fourier (-(n : ℤ)) l : ℂ) = (fourier (-1) l : ℂ) ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+      have h : (-((n + 1 : ℕ) : ℤ)) = (-(n : ℤ)) + (-1) := by push_cast; ring
+      rw [h, fourier_add, ih, pow_succ]
 
 /-- The transfer function of a polynomial filter is the polynomial evaluated at
 `e^{−iω}`: `Γ(ω) = Σ_{k≥0} coeff_k P · e^{−ikω} = P(e^{−iω})` (FY §2.3.3, the
 computation behind eq. (2.46)). -/
 theorem transferFun_polyFilterCoeffs (P : Polynomial ℝ) (l : AddCircle (2 * π)) :
     transferFun (polyFilterCoeffs P) l = Polynomial.aeval ((fourier (-1) l : ℂ)) P := by
-  sorry
+  rw [transferFun, tsum_eq_sum (s := polyFilterSupport P)
+    fun k hk => by rw [polyFilterCoeffs_eq_zero_of_notMem P hk]; simp]
+  rw [polyFilterSupport, Finset.sum_map, Polynomial.aeval_eq_sum_range]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  simp only [Function.Embedding.coeFn_mk]
+  rw [polyFilterCoeffs, if_pos (Int.natCast_nonneg i), Int.toNat_natCast,
+    fourier_neg_natCast, Complex.real_smul]
 
 /-- An exact a.e. finite-sum representation realizes the polynomial filter in the `L²`
 sense of `IsFilteredBy` (the partial sums are eventually exact). -/
@@ -68,20 +110,48 @@ theorem isFilteredBy_of_ae_eq_polySum {X Y : ℤ → Ω → ℝ} {P : Polynomial
     (h : ∀ t : ℤ, X t =ᵐ[μ] fun ω =>
       ∑ k ∈ Finset.range (P.natDegree + 1), P.coeff k * Y (t - (k : ℕ)) ω) :
     IsFilteredBy X Y (polyFilterCoeffs P) μ := by
-  sorry
+  intro t
+  have key : ∀ N : ℕ, P.natDegree ≤ N →
+      (0 : ℝ≥0∞) = eLpNorm (fun ω => X t ω -
+        ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), polyFilterCoeffs P k * Y (t - k) ω) 2 μ := by
+    intro N hN
+    have hsub : polyFilterSupport P ⊆ Finset.Icc (-(N : ℤ)) (N : ℤ) := by
+      intro x hx
+      simp only [polyFilterSupport, Finset.mem_map, Finset.mem_range,
+        Function.Embedding.coeFn_mk] at hx
+      obtain ⟨n, hn, rfl⟩ := hx
+      simp only [Finset.mem_Icc]
+      omega
+    have hae : (fun ω => X t ω -
+        ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), polyFilterCoeffs P k * Y (t - k) ω) =ᵐ[μ] 0 := by
+      filter_upwards [h t] with ω hω
+      simp only [Pi.zero_apply, sub_eq_zero, hω]
+      rw [← Finset.sum_subset hsub
+        fun x _ hxn => by rw [polyFilterCoeffs_eq_zero_of_notMem P hxn, zero_mul],
+        polyFilterSupport, Finset.sum_map]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      simp only [Function.Embedding.coeFn_mk]
+      rw [polyFilterCoeffs, if_pos (Int.natCast_nonneg i), Int.toNat_natCast]
+    rw [eLpNorm_congr_ae hae, eLpNorm_zero]
+  refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
+  filter_upwards [eventually_ge_atTop P.natDegree] with N hN using key N hN
 
 /-- White noise has (trivially) absolutely summable ACVF. -/
 theorem IsWhiteNoise.hasSummableACVF [IsProbabilityMeasure μ] {σ2 : ℝ}
     {ε : ℤ → Ω → ℝ} (hε : IsWhiteNoise ε σ2 μ) :
     HasSummableACVF ε μ := by
-  sorry
+  apply summable_of_ne_finset_zero (s := {0})
+  intro k hk
+  rw [hε.acvf_eq k, if_neg (by simpa using hk), abs_zero]
 
 /-- **White-noise spectral density** (FY §2.3.2, p. 53): `g_ε(ω) ≡ σ²/(2π)` — the flat
 spectrum ("white light"). -/
 theorem IsWhiteNoise.spectralDensityOf_eq [IsProbabilityMeasure μ] {σ2 : ℝ}
     {ε : ℤ → Ω → ℝ} (hε : IsWhiteNoise ε σ2 μ) (l : AddCircle (2 * π)) :
     spectralDensityOf ε μ l = σ2 / (2 * π) := by
-  sorry
+  rw [spectralDensityOf, tsum_eq_single 0 (fun k hk => by rw [hε.acvf_eq k, if_neg hk, zero_mul]),
+    hε.acvf_eq 0, if_pos rfl, fourier_zero, Complex.one_re, mul_one]
+  ring
 
 /-- **FY Proposition 2.4 (eq. (2.46))**: the spectral density of a stationary causal
 ARMA(p, q) process with `b(z) ≠ 0` on the closed unit disc is
