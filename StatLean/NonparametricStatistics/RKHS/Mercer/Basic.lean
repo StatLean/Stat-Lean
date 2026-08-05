@@ -376,7 +376,67 @@ theorem equicontinuous_integralOp {K : X → X → 𝕜}
     (hKc : Continuous fun p : X × X => K p.1 p.2) :
     Equicontinuous fun g : Metric.closedBall (0 : Lp 𝕜 2 μ) 1 =>
       integralOp μ K (g : Lp 𝕜 2 μ) := by
-  sorry
+  have hL2 := isL2Symbol_of_continuous (μ := μ) hKc
+  intro x₀
+  rw [Metric.equicontinuousAt_iff]
+  intro ε hε
+  have hC0 : (0 : ℝ) ≤ Real.sqrt ((μ Set.univ).toReal) := Real.sqrt_nonneg _
+  have hη0 : (0 : ℝ) < ε / (Real.sqrt ((μ Set.univ).toReal) + 1) := by positivity
+  have huc : UniformContinuous fun p : X × X => K p.1 p.2 :=
+    CompactSpace.uniformContinuous_of_continuous hKc
+  obtain ⟨δ, hδ0, hδ⟩ := Metric.uniformContinuous_iff.mp huc _ hη0
+  refine ⟨δ, hδ0, fun x hx g => ?_⟩
+  set η := ε / (Real.sqrt ((μ Set.univ).toReal) + 1) with hηdef
+  -- the sections differ by less than `η` uniformly in `y`
+  have hpt : ∀ y : X, ‖K x₀ y - K x y‖ ≤ η := by
+    intro y
+    have hd : dist ((x₀, y) : X × X) (x, y) < δ := by
+      rw [Prod.dist_eq]
+      simpa [dist_comm] using hx
+    have := hδ hd
+    rw [dist_eq_norm] at this
+    exact this.le
+  have hFm : MemLp (fun y => K x₀ y - K x y) 2 μ := (hL2 x₀).sub (hL2 x)
+  have hgle : ‖(g : Lp 𝕜 2 μ)‖ ≤ 1 := by
+    have := g.2
+    rw [Metric.mem_closedBall, dist_zero_right] at this
+    exact this
+  -- the difference of the two values is a single integral pairing
+  have hsub : integralOp μ K (g : Lp 𝕜 2 μ) x₀ - integralOp μ K (g : Lp 𝕜 2 μ) x
+      = ∫ y, (K x₀ y - K x y) * ((g : Lp 𝕜 2 μ) : X → 𝕜) y ∂μ := by
+    have h₀ : Integrable (fun y => K x₀ y * ((g : Lp 𝕜 2 μ) : X → 𝕜) y) μ :=
+      (hL2 x₀).integrable_mul (Lp.memLp _)
+    have h₁ : Integrable (fun y => K x y * ((g : Lp 𝕜 2 μ) : X → 𝕜) y) μ :=
+      (hL2 x).integrable_mul (Lp.memLp _)
+    rw [integralOp, integralOp, ← integral_sub h₀ h₁]
+    exact integral_congr_ae (Filter.Eventually.of_forall fun y => by ring)
+  -- Cauchy–Schwarz plus the uniform bound on the sections
+  have hnormle : ‖∫ y, (K x₀ y - K x y) * ((g : Lp 𝕜 2 μ) : X → 𝕜) y ∂μ‖
+      ≤ Real.sqrt ((μ Set.univ).toReal) * η := by
+    refine le_trans (norm_integral_mul_le hFm _) ?_
+    have hb : ∫ y, ‖K x₀ y - K x y‖ ^ 2 ∂μ ≤ (μ Set.univ).toReal * η ^ 2 := by
+      calc ∫ y, ‖K x₀ y - K x y‖ ^ 2 ∂μ ≤ ∫ _y : X, η ^ 2 ∂μ :=
+            integral_mono_of_nonneg (Filter.Eventually.of_forall fun y => by positivity)
+              (integrable_const _)
+              (Filter.Eventually.of_forall fun y =>
+                pow_le_pow_left₀ (norm_nonneg _) (hpt y) 2)
+        _ = (μ Set.univ).toReal * η ^ 2 := by
+            rw [integral_const, smul_eq_mul, measureReal_def]
+    have h1 : Real.sqrt (∫ y, ‖K x₀ y - K x y‖ ^ 2 ∂μ)
+        ≤ Real.sqrt ((μ Set.univ).toReal * η ^ 2) := Real.sqrt_le_sqrt hb
+    have h2 : Real.sqrt ((μ Set.univ).toReal * η ^ 2)
+        = Real.sqrt ((μ Set.univ).toReal) * η := by
+      rw [Real.sqrt_mul ENNReal.toReal_nonneg, Real.sqrt_sq hη0.le]
+    nlinarith [Real.sqrt_nonneg (∫ y, ‖K x₀ y - K x y‖ ^ 2 ∂μ), norm_nonneg (g : Lp 𝕜 2 μ)]
+  have hfin : dist (integralOp μ K (g : Lp 𝕜 2 μ) x₀) (integralOp μ K (g : Lp 𝕜 2 μ) x)
+      ≤ Real.sqrt ((μ Set.univ).toReal) * η := by
+    rw [dist_eq_norm, hsub]
+    exact hnormle
+  refine lt_of_le_of_lt hfin ?_
+  rw [hηdef]
+  rw [mul_div_assoc']
+  rw [div_lt_iff₀ (by positivity)]
+  nlinarith [hε, hC0]
 
 /-- Pointwise boundedness of the image of the unit ball:
 `‖T_K g (x)‖ ≤ √(∫ ‖K(x,y)‖² dμ(y))` for `‖g‖ ≤ 1`. -/
