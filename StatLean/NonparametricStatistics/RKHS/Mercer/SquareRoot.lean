@@ -1,5 +1,6 @@
 import StatLean.NonparametricStatistics.RKHS.Mercer.Theorem
 import StatLean.NonparametricStatistics.RKHS.RangeSpace
+import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
 # The square root of a Mercer operator and the RKHS `H(K)`
@@ -69,7 +70,45 @@ theorem mercerCLM_comp_self {K : X → X → 𝕜}
     (hKc : Continuous fun p : X × X => K p.1 p.2) :
     (mercerCLM μ hKc).comp (mercerCLM μ hKc)
       = mercerCLM (K := boxProd μ K K) μ (continuous_boxProd (μ := μ) hKc) := by
-  sorry
+  obtain ⟨M, hM0, hM⟩ := exists_bnd hKc
+  refine ContinuousLinearMap.ext fun g => ?_
+  refine Lp.ext ?_
+  filter_upwards [mercerCLM_coeFn_ae hKc (mercerCLM μ hKc g),
+    mercerCLM_coeFn_ae (K := boxProd μ K K) (continuous_boxProd (μ := μ) hKc) g] with x h1 h2
+  rw [ContinuousLinearMap.comp_apply, h1, h2]
+  have hg1 : Integrable (fun z => (g : X → 𝕜) z) μ := (Lp.memLp g).integrable (by norm_num)
+  have hstep1 : integralOp μ K (mercerCLM μ hKc g) x
+      = ∫ y, K x y * (∫ z, K y z * (g : X → 𝕜) z ∂μ) ∂μ := by
+    rw [integralOp]
+    refine integral_congr_ae ?_
+    filter_upwards [mercerCLM_coeFn_ae hKc g] with y hy
+    rw [hy, integralOp]
+  have hint : Integrable (Function.uncurry fun y z => K x y * K y z * (g : X → 𝕜) z)
+      (μ.prod μ) := by
+    have hg2 : Integrable (fun p : X × X => (g : X → 𝕜) p.2) (μ.prod μ) :=
+      MeasureTheory.Integrable.comp_snd hg1 μ
+    refine hg2.bdd_mul (c := M * M) ?_ ?_
+    · exact ((hKc.comp' (continuous_const.prodMk continuous_fst)).mul
+        (hKc.comp' (continuous_fst.prodMk continuous_snd))).aestronglyMeasurable
+    · filter_upwards with p
+      rw [norm_mul]
+      exact mul_le_mul (hM _ _) (hM _ _) (norm_nonneg _) hM0
+  have hswap : ∫ y, K x y * (∫ z, K y z * (g : X → 𝕜) z ∂μ) ∂μ
+      = ∫ z, (∫ y, K x y * K y z ∂μ) * (g : X → 𝕜) z ∂μ := by
+    have h1' : ∫ y, K x y * (∫ z, K y z * (g : X → 𝕜) z ∂μ) ∂μ
+        = ∫ y, ∫ z, K x y * K y z * (g : X → 𝕜) z ∂μ ∂μ := by
+      refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
+      have e := integral_const_mul (μ := μ) (K x y) (fun z => K y z * (g : X → 𝕜) z)
+      change K x y * (∫ z, K y z * (g : X → 𝕜) z ∂μ) = ∫ z, K x y * K y z * (g : X → 𝕜) z ∂μ
+      rw [← e]
+      exact integral_congr_ae (Filter.Eventually.of_forall fun z => by ring)
+    rw [h1', integral_integral_swap hint]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun z => ?_)
+    have e := integral_mul_const (μ := μ) ((g : X → 𝕜) z) (fun y => K x y * K y z)
+    change (∫ y, K x y * K y z * (g : X → 𝕜) z ∂μ) = (∫ y, K x y * K y z ∂μ) * (g : X → 𝕜) z
+    rw [← e]
+  rw [hstep1, hswap, integralOp]
+  rfl
 
 /-- A continuous function on a compact space is integrable against a finite measure. -/
 private theorem integrable_of_cont {f : X → 𝕜} (hf : Continuous f) : Integrable f μ := by
