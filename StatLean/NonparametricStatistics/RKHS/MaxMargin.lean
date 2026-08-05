@@ -187,7 +187,36 @@ theorem existsUnique_min_norm_marginFeasible [CompleteSpace E] {x : Fin n → E}
     (hsep : LinearlySeparable x lab) :
     ∃! w : E, w ∈ marginFeasible x lab ∧
       ∀ v ∈ marginFeasible x lab, ‖w‖ ≤ ‖v‖ := by
-  sorry
+  have hne := marginFeasible_nonempty hsep
+  have hconv := convex_marginFeasible x lab
+  have hcomplete : IsComplete (marginFeasible x lab) :=
+    (isClosed_marginFeasible x lab).isComplete
+  obtain ⟨w, hwK, hweq⟩ := exists_norm_eq_iInf_of_complete_convex hne hcomplete hconv 0
+  have hbdd : BddBelow (Set.range fun z : marginFeasible x lab => ‖(0 : E) - z‖) :=
+    ⟨0, Set.forall_mem_range.2 fun _ => norm_nonneg _⟩
+  have hmin : ∀ v ∈ marginFeasible x lab, ‖w‖ ≤ ‖v‖ := by
+    intro v hv
+    have h := ciInf_le hbdd (⟨v, hv⟩ : marginFeasible x lab)
+    rw [← hweq] at h
+    simpa using h
+  refine ⟨w, ⟨hwK, hmin⟩, ?_⟩
+  rintro y ⟨hyK, hymin⟩
+  have hnorm : ‖y‖ = ‖w‖ := le_antisymm (hymin w hwK) (hmin y hyK)
+  have hm : (1 / 2 : ℝ) • y + (1 / 2 : ℝ) • w ∈ marginFeasible x lab :=
+    hconv hyK hwK (by norm_num) (by norm_num) (by norm_num)
+  have hhalf : ‖(1 / 2 : ℝ) • y + (1 / 2 : ℝ) • w‖ = ‖y + w‖ / 2 := by
+    rw [← smul_add, norm_smul, Real.norm_eq_abs,
+      abs_of_pos (by norm_num : (0 : ℝ) < 1 / 2)]
+    ring
+  have hge : ‖w‖ ≤ ‖(1 / 2 : ℝ) • y + (1 / 2 : ℝ) • w‖ := hmin _ hm
+  rw [hhalf] at hge
+  have h2w : 2 * ‖w‖ ≤ ‖y + w‖ := by linarith
+  have hsq : 2 * ‖w‖ * (2 * ‖w‖) ≤ ‖y + w‖ * ‖y + w‖ :=
+    mul_self_le_mul_self (by positivity) h2w
+  have hpar := parallelogram_law_with_norm ℝ y w
+  rw [hnorm] at hpar
+  have hzero : ‖y - w‖ = 0 := by nlinarith [norm_nonneg (y - w)]
+  exact sub_eq_zero.mp (norm_eq_zero.mp hzero)
 
 /-- The minimal-norm feasible vector lies in the span of the data. -/
 theorem min_norm_marginFeasible_mem_span [CompleteSpace E] {x : Fin n → E}
@@ -195,7 +224,18 @@ theorem min_norm_marginFeasible_mem_span [CompleteSpace E] {x : Fin n → E}
     (hw : w ∈ marginFeasible x lab)
     (hmin : ∀ v ∈ marginFeasible x lab, ‖w‖ ≤ ‖v‖) :
     w ∈ Submodule.span ℝ (Set.range x) := by
-  sorry
+  haveI : FiniteDimensional ℝ (Submodule.span ℝ (Set.range x)) :=
+    FiniteDimensional.span_of_finite ℝ (Set.finite_range x)
+  set M : Submodule ℝ E := Submodule.span ℝ (Set.range x) with hM
+  have hxM : ∀ i, x i ∈ M := fun i => Submodule.subset_span ⟨i, rfl⟩
+  obtain ⟨c, hc⟩ := hw
+  have hPfeas : M.starProjection w ∈ marginFeasible x lab := by
+    refine ⟨c, fun i => ?_⟩
+    rw [inner_starProjection_of_mem (hxM i) w]
+    exact hc i
+  have h1 : ‖w‖ ≤ ‖M.starProjection w‖ := hmin _ hPfeas
+  have h2 : ‖M.starProjection w‖ ≤ ‖w‖ := M.norm_starProjection_apply_le w
+  exact (M.mem_iff_norm_starProjection w).mpr (le_antisymm h2 h1)
 
 /-- **The minimal-norm solution is a maximal margin hyperplane**: an offset `c` for the
 minimal-norm feasible `w` realizes the maximal margin among all separating hyperplanes,
