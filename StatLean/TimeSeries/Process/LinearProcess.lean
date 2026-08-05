@@ -8,8 +8,8 @@ The one-sided linear process `X_t = Σ_{j≥0} ψ_j ε_{t−j}` with absolutely 
 coefficients over white noise: well-definedness (`L²` convergence of the partial sums),
 existence, stationarity with the autocovariance formula
 `γ(k) = σ² Σ_{j≥0} ψ_j ψ_{j+|k|}` (FY eq. (2.2)), strict stationarity under i.i.d.
-innovations, and (as an allowed debt in this wave) almost-sure convergence under
-independence (FY cites Chow & Teicher 1997, Cor. 3 p. 117).
+innovations, and almost-sure convergence of the defining series under i.i.d.
+innovations (FY cites Chow & Teicher 1997, Cor. 3 p. 117).
 
 `IsLinearProcessOf ψ X ε μ` says the partial sums converge to `X t` in `L²`
 (`eLpNorm … 2 μ → 0`) at every time — the convergence mode FY works with. (The
@@ -24,7 +24,8 @@ limit, chosen measurably per `t`. The ACVF formula interchanges `cov` with the `
 limits (continuity of the inner product) and collapses the double series by
 uncorrelatedness. Strict stationarity under i.i.d. innovations transports the
 finite-dimensional laws of the partial sums (each a fixed measurable function of a
-shift of the i.i.d. family) to the a.e./in-measure limit.
+shift of the i.i.d. family) to the a.e./in-measure limit. The a.e. convergence uses
+absolute (Tonelli) summability, which the `ℓ¹` coefficient hypothesis supplies.
 
 **Bibliographic comments.** Infinite moving averages originate with E. Slutsky (1927)
 and H. Wold (1938); the `L²` theory is the Wiener–Kolmogorov era's; the almost-sure
@@ -358,6 +359,27 @@ private lemma exists_subseq_window [IsProbabilityMeasure μ] {X : ℤ → Ω →
   rw [tendsto_iff_dist_tendsto_zero]
   simpa [dist_eq_norm, norm_sub_rev] using hzero
 
+/-- The `L²` convergence of the partial sums, in `psum` form. -/
+private lemma tendsto_eLpNorm_psum {X : ℤ → Ω → ℝ} (hX : IsLinearProcessOf ψ X ε μ) (t : ℤ) :
+    Tendsto (fun N => eLpNorm (psum ψ ε t N - X t) 2 μ) atTop (𝓝 0) := by
+  refine (hX t).congr fun N => ?_
+  have h1 : (fun ω => X t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω)
+      = (X t - psum ψ ε t N) := rfl
+  rw [h1, eLpNorm_sub_comm]
+
+/-- A real series with `ℓ¹` `ℝ≥0∞`-norms is summable. -/
+private lemma summable_of_tsum_enorm_ne_top {f : ℕ → ℝ} (h : (∑' j : ℕ, ‖f j‖ₑ) ≠ ∞) :
+    Summable f :=
+  Summable.of_nnnorm (ENNReal.tsum_coe_ne_top_iff_summable.1
+    (by simpa only [enorm_eq_nnnorm] using h))
+
+/-- Absolute summability gives finiteness of the `ℝ≥0∞`-norm series. -/
+private lemma tsum_enorm_ne_top_of_summable {f : ℕ → ℝ} (h : Summable fun j => |f j|) :
+    (∑' j : ℕ, ‖f j‖ₑ) ≠ ∞ := by
+  have h1 : Summable fun j => ‖f j‖₊ :=
+    NNReal.summable_coe.1 (by simpa only [coe_nnnorm, Real.norm_eq_abs] using h)
+  simpa only [enorm_eq_nnnorm] using ENNReal.tsum_coe_ne_top_iff_summable.2 h1
+
 end Aux
 
 /-- **Existence** (FY §2.1.2): over white noise, absolutely summable coefficients define
@@ -526,15 +548,51 @@ theorem IsLinearProcessOf.isStrictlyStationary [IsProbabilityMeasure μ] {ψ : �
     simpa only [hstep] using hlim 0 (Or.inr rfl)
   simpa using hgoal
 
-/-- **Almost-sure convergence under independence** — ALLOWED DEBT in wave A2 (FY cites
-Chow & Teicher 1997, Cor. 3 p. 117; route: Kolmogorov maximal inequality / martingale
-convergence on the partial sums). -/
+/-- **Almost-sure convergence under independence** (FY cites Chow & Teicher 1997, Cor. 3
+p. 117). With `ℓ¹` coefficients the general Kolmogorov series theorem is not needed: the
+series converges *absolutely* a.e., because `E Σ_j |ψ_j ε_{t−j}| = (Σ_j |ψ_j|) E|ε_0|`
+is finite; an `L²`-convergent subsequence identifies the a.e. limit with `X_t`. -/
 theorem IsLinearProcessOf.ae_tendsto [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ2 : ℝ}
     {X ε : ℤ → Ω → ℝ} (hX : IsLinearProcessOf ψ X ε μ)
     (hψ : Summable fun j => |ψ j|) (hε : IsIIDNoise ε σ2 μ)
     (hmeas : ∀ t, Measurable (X t)) (t : ℤ) :
     ∀ᵐ ω ∂μ, Tendsto
       (fun N => ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) atTop (𝓝 (X t ω)) := by
-  sorry
+  -- the noise has one common finite first absolute moment
+  have hC : eLpNorm (ε 0) 1 μ ≠ ∞ := (hε.memLp.mono_exponent one_le_two).2.ne
+  have hnorm : ∀ s : ℤ, ∫⁻ ω, ‖ε s ω‖ₑ ∂μ = eLpNorm (ε 0) 1 μ := by
+    intro s
+    rw [← eLpNorm_one_eq_lintegral_enorm]
+    exact (hε.identDistrib s 0).eLpNorm_eq 1
+  -- the coefficients are `ℓ¹`, so the series converges absolutely in `L¹`
+  have hcoef : (∑' j : ℕ, ‖ψ j‖ₑ) ≠ ∞ := tsum_enorm_ne_top_of_summable hψ
+  have hlint : ∫⁻ ω, ∑' j : ℕ, ‖ψ j * ε (t - (j : ℕ)) ω‖ₑ ∂μ
+      = (∑' j : ℕ, ‖ψ j‖ₑ) * eLpNorm (ε 0) 1 μ := by
+    rw [lintegral_tsum fun j => ((hε.measurable (t - (j : ℕ))).const_mul (ψ j)).enorm.aemeasurable,
+      ← ENNReal.tsum_mul_right]
+    refine tsum_congr fun j => ?_
+    simp_rw [enorm_mul]
+    rw [lintegral_const_mul _ (hε.measurable (t - (j : ℕ))).enorm, hnorm]
+  -- hence it converges absolutely almost everywhere
+  have hfin : ∀ᵐ ω ∂μ, (∑' j : ℕ, ‖ψ j * ε (t - (j : ℕ)) ω‖ₑ) ≠ ∞ := by
+    refine (ae_lt_top' ?_ ?_).mono fun ω hω => hω.ne
+    · exact AEMeasurable.ennreal_tsum fun j =>
+        ((hε.measurable (t - (j : ℕ))).const_mul (ψ j)).enorm.aemeasurable
+    · rw [hlint]
+      exact ENNReal.mul_ne_top hcoef hC
+  -- an `L²`-convergent subsequence pins the a.e. limit down to `X t`
+  obtain ⟨ns, hmono, hns⟩ :=
+    (tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num)
+      (fun N => (measurable_psum hε.measurable ψ t N).aestronglyMeasurable)
+      (hmeas t).aestronglyMeasurable
+      (tendsto_eLpNorm_psum hX t)).exists_seq_tendsto_ae
+  filter_upwards [hfin, hns] with ω hω hωns
+  have hsummable : Summable fun j : ℕ => ψ j * ε (t - (j : ℕ)) ω :=
+    summable_of_tsum_enorm_ne_top hω
+  have hfull : Tendsto (fun N => ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) atTop
+      (𝓝 (∑' j : ℕ, ψ j * ε (t - (j : ℕ)) ω)) := hsummable.hasSum.tendsto_sum_nat
+  have hlimeq : (∑' j : ℕ, ψ j * ε (t - (j : ℕ)) ω) = X t ω :=
+    tendsto_nhds_unique (hfull.comp hmono.tendsto_atTop) hωns
+  rwa [hlimeq] at hfull
 
 end StatLean.TimeSeries
