@@ -102,31 +102,11 @@ end Separability
 
 section UniformConvergence
 
-/-- Dini upgrade on the diagonal: the partial sums of `∑ᵢ ‖eᵢ x‖²` converge to the
-continuous limit `re K(x,x)` uniformly on the compact space `X`. -/
-theorem tendstoUniformly_diag {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K)
-    -- USER-INPUT: `H` has reproducing kernel `K`
-    (hKH : scalarKernel H = K) {ι : Type*} (e : HilbertBasis ι 𝕜 H) :
-    TendstoUniformly
-      (fun s : Finset ι => fun x : X => ∑ i ∈ s, ‖(e i : H) x‖ ^ 2)
-      (fun x => RCLike.re (K x x)) Filter.atTop := by
-  sorry
-
-/-- **Uniform absolute convergence of the basis expansion of a Mercer kernel**: the
-partial sums of `∑ᵢ conj (eᵢ y) eᵢ x` converge to `K` uniformly on `X × X`. -/
-theorem tendstoUniformly_scalarKernel {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K)
-    -- USER-INPUT: `H` has reproducing kernel `K`
-    (hKH : scalarKernel H = K) {ι : Type*} (e : HilbertBasis ι 𝕜 H) :
-    TendstoUniformly
-      (fun s : Finset ι => fun p : X × X => ∑ i ∈ s, conj ((e i : H) p.2) * (e i : H) p.1)
-      (fun p => K p.1 p.2) Filter.atTop := by
-  sorry
-
 omit [MetricSpace X] [CompactSpace X] [MeasurableSpace X] [BorelSpace X] in
-/-- Tail bound by Cauchy–Schwarz: partial sums of the expansion off the diagonal are
-dominated through the diagonal tails,
-`‖∑_{i ∈ s} conj (eᵢ y) eᵢ x‖² ≤ (∑_{i ∈ s} ‖eᵢ x‖²) (∑_{i ∈ s} ‖eᵢ y‖²)`. -/
-theorem sq_norm_sum_le {ι : Type*} (e : HilbertBasis ι 𝕜 H) (s : Finset ι) (x y : X) :
+/-- Finite Cauchy–Schwarz for the off-diagonal partial sums; stated publicly below as
+`sq_norm_sum_le`, but needed already for `tendstoUniformly_scalarKernel`. -/
+private theorem sq_norm_sum_le_aux {ι : Type*} (e : HilbertBasis ι 𝕜 H) (s : Finset ι)
+    (x y : X) :
     ‖∑ i ∈ s, conj ((e i : H) y) * (e i : H) x‖ ^ 2
       ≤ (∑ i ∈ s, ‖(e i : H) x‖ ^ 2) * (∑ i ∈ s, ‖(e i : H) y‖ ^ 2) := by
   have h1 : ‖∑ i ∈ s, conj ((e i : H) y) * (e i : H) x‖
@@ -138,6 +118,109 @@ theorem sq_norm_sum_le {ι : Type*} (e : HilbertBasis ι 𝕜 H) (s : Finset ι)
     Finset.sum_mul_sq_le_sq_mul_sq s _ _
   refine le_trans ?_ h2
   gcongr
+
+omit [MeasurableSpace X] [BorelSpace X] in
+/-- Dini upgrade on the diagonal: the partial sums of `∑ᵢ ‖eᵢ x‖²` converge to the
+continuous limit `re K(x,x)` uniformly on the compact space `X`. -/
+theorem tendstoUniformly_diag {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K)
+    -- USER-INPUT: `H` has reproducing kernel `K`
+    (hKH : scalarKernel H = K) {ι : Type*} (e : HilbertBasis ι 𝕜 H) :
+    TendstoUniformly
+      (fun s : Finset ι => fun x : X => ∑ i ∈ s, ‖(e i : H) x‖ ^ 2)
+      (fun x => RCLike.re (K x x)) Filter.atTop := by
+  have hKsc : Continuous fun p : X × X => scalarKernel H p.1 p.2 := by
+    rw [hKH]; exact hK.continuous
+  have hcont : ∀ i : ι, Continuous ((e i : H) : X → 𝕜) := fun i =>
+    continuous_coe_of_continuous_scalarKernel hKsc _
+  refine Monotone.tendstoUniformly_of_forall_tendsto ?_ ?_ ?_ ?_
+  · exact fun s => continuous_finset_sum s fun i _ => ((hcont i).norm).pow 2
+  · exact fun s t hst x =>
+      Finset.sum_le_sum_of_subset_of_nonneg hst fun i _ _ => by positivity
+  · exact RCLike.continuous_re.comp'
+      (hK.continuous.comp' (continuous_id.prodMk continuous_id))
+  · intro x
+    have h := hasSum_scalarKernel_self e x
+    rw [hKH] at h
+    exact h
+
+omit [MeasurableSpace X] [BorelSpace X] in
+/-- **Uniform absolute convergence of the basis expansion of a Mercer kernel**: the
+partial sums of `∑ᵢ conj (eᵢ y) eᵢ x` converge to `K` uniformly on `X × X`. -/
+theorem tendstoUniformly_scalarKernel {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K)
+    -- USER-INPUT: `H` has reproducing kernel `K`
+    (hKH : scalarKernel H = K) {ι : Type*} (e : HilbertBasis ι 𝕜 H) :
+    TendstoUniformly
+      (fun s : Finset ι => fun p : X × X => ∑ i ∈ s, conj ((e i : H) p.2) * (e i : H) p.1)
+      (fun p => K p.1 p.2) Filter.atTop := by
+  classical
+  have hpart : ∀ (z : X) (u : Finset ι),
+      ∑ i ∈ u, ‖(e i : H) z‖ ^ 2 ≤ RCLike.re (K z z) := by
+    intro z u
+    have h := hasSum_scalarKernel_self e z
+    rw [hKH] at h
+    exact sum_le_hasSum u (fun i _ => by positivity) h
+  rw [Metric.tendstoUniformly_iff]
+  intro ε hε
+  have hδ0 : (0 : ℝ) < ε / 2 := by positivity
+  have hdiag := (Metric.tendstoUniformly_iff.mp (tendstoUniformly_diag hK hKH e)) _ hδ0
+  obtain ⟨s₀, hs₀⟩ := Filter.eventually_atTop.mp hdiag
+  refine Filter.eventually_atTop.mpr ⟨s₀, fun s hs p => ?_⟩
+  obtain ⟨x, y⟩ := p
+  have hsum : HasSum (fun i => conj ((e i : H) y) * (e i : H) x) (K x y) := by
+    have h := hasSum_scalarKernel e x y
+    rw [hKH] at h
+    exact h
+  -- uniform tail bound on the diagonal partial sums, from Dini and monotonicity
+  have htail : ∀ (z : X) (t : Finset ι), s ⊆ t →
+      ∑ i ∈ t \ s, ‖(e i : H) z‖ ^ 2 ≤ ε / 2 := by
+    intro z t hst
+    have h1 : ∑ i ∈ t \ s, ‖(e i : H) z‖ ^ 2 + ∑ i ∈ s, ‖(e i : H) z‖ ^ 2
+        = ∑ i ∈ t, ‖(e i : H) z‖ ^ 2 := Finset.sum_sdiff hst
+    have h2 := hpart z t
+    have h3 := hs₀ s hs z
+    rw [Real.dist_eq] at h3
+    have h4 := abs_lt.mp h3
+    linarith [h4.1, h4.2]
+  -- Cauchy–Schwarz turns it into a tail bound for the off-diagonal partial sums
+  have hkey : ∀ t : Finset ι, s ⊆ t →
+      ‖(∑ i ∈ t, conj ((e i : H) y) * (e i : H) x)
+        - ∑ i ∈ s, conj ((e i : H) y) * (e i : H) x‖ ≤ ε / 2 := by
+    intro t hst
+    have hsplit : (∑ i ∈ t, conj ((e i : H) y) * (e i : H) x)
+        - ∑ i ∈ s, conj ((e i : H) y) * (e i : H) x
+        = ∑ i ∈ t \ s, conj ((e i : H) y) * (e i : H) x := by
+      rw [← Finset.sum_sdiff hst]; ring
+    rw [hsplit]
+    have hcs := sq_norm_sum_le_aux e (t \ s) x y
+    have hx := htail x t hst
+    have hy := htail y t hst
+    have hnx : (0 : ℝ) ≤ ∑ i ∈ t \ s, ‖(e i : H) x‖ ^ 2 :=
+      Finset.sum_nonneg fun i _ => by positivity
+    have hny : (0 : ℝ) ≤ ∑ i ∈ t \ s, ‖(e i : H) y‖ ^ 2 :=
+      Finset.sum_nonneg fun i _ => by positivity
+    nlinarith [norm_nonneg (∑ i ∈ t \ s, conj ((e i : H) y) * (e i : H) x)]
+  have ht : Filter.Tendsto
+      (fun t : Finset ι => ∑ i ∈ t, conj ((e i : H) y) * (e i : H) x)
+      Filter.atTop (nhds (K x y)) := hsum
+  have hlim : Filter.Tendsto
+      (fun t : Finset ι => ‖(∑ i ∈ t, conj ((e i : H) y) * (e i : H) x)
+        - ∑ i ∈ s, conj ((e i : H) y) * (e i : H) x‖)
+      Filter.atTop
+      (nhds ‖K x y - ∑ i ∈ s, conj ((e i : H) y) * (e i : H) x‖) :=
+    (ht.sub tendsto_const_nhds).norm
+  have hfin : ‖K x y - ∑ i ∈ s, conj ((e i : H) y) * (e i : H) x‖ ≤ ε / 2 :=
+    le_of_tendsto hlim (Filter.eventually_atTop.mpr ⟨s, fun t hst => hkey t hst⟩)
+  rw [dist_eq_norm]
+  linarith
+
+omit [MetricSpace X] [CompactSpace X] [MeasurableSpace X] [BorelSpace X] in
+/-- Tail bound by Cauchy–Schwarz: partial sums of the expansion off the diagonal are
+dominated through the diagonal tails,
+`‖∑_{i ∈ s} conj (eᵢ y) eᵢ x‖² ≤ (∑_{i ∈ s} ‖eᵢ x‖²) (∑_{i ∈ s} ‖eᵢ y‖²)`. -/
+theorem sq_norm_sum_le {ι : Type*} (e : HilbertBasis ι 𝕜 H) (s : Finset ι) (x y : X) :
+    ‖∑ i ∈ s, conj ((e i : H) y) * (e i : H) x‖ ^ 2
+      ≤ (∑ i ∈ s, ‖(e i : H) x‖ ^ 2) * (∑ i ∈ s, ‖(e i : H) y‖ ^ 2) :=
+  sq_norm_sum_le_aux e s x y
 
 end UniformConvergence
 
