@@ -464,13 +464,39 @@ private theorem inner_sqrtSectionLp (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMe
       _ = _ := by ring
   exact (((d.hasSum_kernel hK x' x).congr_fun fun n => (hval n).symm).unique h).symm
 
+-- The `L²`-section map is continuous (same proof shape as `continuous_kernelFun`: the
+-- squared increment is the four-term kernel combination).
+private theorem continuous_sqrtSectionLp (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure] :
+    Continuous fun x : X => sqrtSectionLp d x := by
+  rw [continuous_iff_continuousAt]
+  intro x₀
+  have heq : (fun x : X => ‖sqrtSectionLp d x - sqrtSectionLp d x₀‖)
+      = fun x : X => Real.sqrt (RCLike.re (K x x - K x₀ x - K x x₀ + K x₀ x₀)) := by
+    funext x
+    rw [← Real.sqrt_sq (norm_nonneg (sqrtSectionLp d x - sqrtSectionLp d x₀))]
+    congr 1
+    rw [norm_sq_eq_re_inner (𝕜 := 𝕜), inner_sub_sub_self, inner_sqrtSectionLp d hK x x,
+      inner_sqrtSectionLp d hK x x₀, inner_sqrtSectionLp d hK x₀ x,
+      inner_sqrtSectionLp d hK x₀ x₀]
+  have hcont : Continuous fun x : X => RCLike.re (K x x - K x₀ x - K x x₀ + K x₀ x₀) :=
+    RCLike.continuous_re.comp'
+      ((((hKc.comp' (continuous_id.prodMk continuous_id)).sub
+        (hKc.comp' (continuous_const.prodMk continuous_id))).sub
+        (hKc.comp' (continuous_id.prodMk continuous_const))).add continuous_const)
+  show Filter.Tendsto (fun x : X => sqrtSectionLp d x) (nhds x₀) (nhds (sqrtSectionLp d x₀))
+  rw [tendsto_iff_norm_sub_tendsto_zero, heq]
+  have hct : Filter.Tendsto
+      (fun x : X => Real.sqrt (RCLike.re (K x x - K x₀ x - K x x₀ + K x₀ x₀))) (nhds x₀)
+      (nhds (Real.sqrt (RCLike.re (K x₀ x₀ - K x₀ x₀ - K x₀ x₀ + K x₀ x₀)))) :=
+    (Real.continuous_sqrt.comp' hcont).continuousAt
+  simpa using hct
+
 /-- The square-root symbol has square-integrable sections:
 `∫ ‖S(x,y)‖² dμ(y) = ∑ₙ λₙ ‖eₙ(x)‖² = K(x,x)`. -/
 -- With the `L²`-limit definition of `sqrtSymbol` (this revision) the sections are `Lp`
 -- representatives by construction: `Lp.memLp (sqrtSectionLp d x)`.
 theorem isL2Symbol_sqrtSymbol (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure] :
-    IsL2Symbol μ (sqrtSymbol d) := by
-  sorry
+    IsL2Symbol μ (sqrtSymbol d) := fun x => Lp.memLp (sqrtSectionLp d x)
 
 /-- The image of the square-root operator is square-integrable. -/
 theorem memLp_integralOp_sqrtSymbol (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure]
@@ -480,7 +506,28 @@ theorem memLp_integralOp_sqrtSymbol (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMe
   -- `memLp_integralOp_of_continuous` (Mercer/Defs); the pointwise bound
   -- `‖sqrtSectionLp d x‖ ≤ √(re K(x,x))` comes from the orthogonal series
   -- (`∑ₙ λₙ ‖eₙ(x)‖² ≤ re K(x,x)`, the diagonal of the PROVED `hasSum_kernel`).
-  sorry
+  obtain ⟨M, hM0, hM⟩ := exists_bnd (K := K) hKc
+  have hrepr : integralOp μ (sqrtSymbol d) g = fun x => pairAdd μ g (sqrtSectionLp d x) := by
+    funext x
+    rw [pairAdd_apply]
+    rfl
+  have hcont : Continuous (integralOp μ (sqrtSymbol d) g) := by
+    rw [hrepr]
+    exact (continuous_pairAdd g).comp (continuous_sqrtSectionLp d hK)
+  refine MemLp.of_bound hcont.aestronglyMeasurable (Real.sqrt M * ‖starLp g‖) ?_
+  filter_upwards with x
+  have h1 : ‖integralOp μ (sqrtSymbol d) g x‖ ≤ ‖sqrtSectionLp d x‖ * ‖starLp g‖ := by
+    have h0 : integralOp μ (sqrtSymbol d) g x = conj ⟪sqrtSectionLp d x, starLp g⟫_𝕜 :=
+      congrFun hrepr x
+    rw [h0, RCLike.norm_conj]
+    exact norm_inner_le_norm _ _
+  refine h1.trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
+  have h2 : ‖sqrtSectionLp d x‖ ^ 2 ≤ M := by
+    rw [norm_sq_sqrtSectionLp d hK x]
+    exact le_trans (RCLike.re_le_norm _) (hM x x)
+  calc ‖sqrtSectionLp d x‖ = Real.sqrt (‖sqrtSectionLp d x‖ ^ 2) :=
+        (Real.sqrt_sq (norm_nonneg _)).symm
+    _ ≤ Real.sqrt M := Real.sqrt_le_sqrt h2
 
 variable (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure]
 
