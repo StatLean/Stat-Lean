@@ -1,7 +1,11 @@
 import StatLean.TimeSeries.Mixing.Inequalities
+import StatLean.TimeSeries.Mixing.Relations
 import StatLean.TimeSeries.ForMathlib.Probability.TriangularCLT
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 
 /-!
 # CLT for kernel-localized sums under α-mixing (FY §2.6.4, Theorem 2.22)
@@ -69,6 +73,175 @@ noncomputable def pairAlphaCoeff (X e : ℤ → Ω → ℝ) (μ : Measure Ω) (n
     (⨆ s ∈ Set.Ici (n : ℤ),
       MeasurableSpace.comap (X s) inferInstance ⊔
         MeasurableSpace.comap (e s) inferInstance)
+
+/-! ### Elementary properties of `pairAlphaCoeff`
+
+Transported from the `alphaMixCoeff` lemmas of `Mixing/Relations.lean`; the pair
+σ-algebras are `⨆`-sups, so `iSup_le`/`le_iSup` do the monotonicity transport. -/
+
+section PairAlpha
+
+variable {X e : ℤ → Ω → ℝ}
+
+/-- `pairAlphaCoeff` is nonnegative (FY §2.6.4). -/
+theorem pairAlphaCoeff_nonneg [IsProbabilityMeasure μ] (X e : ℤ → Ω → ℝ) (n : ℕ) :
+    0 ≤ pairAlphaCoeff X e μ n :=
+  alphaMixCoeff_nonneg (mΩ := inferInstance)
+
+/-- `pairAlphaCoeff ≤ 1` (FY §2.6.4). -/
+theorem pairAlphaCoeff_le_one [IsProbabilityMeasure μ] (X e : ℤ → Ω → ℝ) (n : ℕ) :
+    pairAlphaCoeff X e μ n ≤ 1 :=
+  alphaMixCoeff_le_one (mΩ := inferInstance)
+
+/-- `pairAlphaCoeff` is antitone in the lag: the future σ-algebra shrinks as the gap
+grows, so the sup defining `α` is taken over a smaller set. -/
+theorem pairAlphaCoeff_antitone [IsProbabilityMeasure μ] (X e : ℤ → Ω → ℝ) :
+    Antitone (pairAlphaCoeff X e μ) := by
+  intro m n hmn
+  refine alphaMixCoeff_mono (mΩ := inferInstance) le_rfl ?_
+  refine iSup₂_le fun s hs => le_iSup₂_of_le s ?_ le_rfl
+  simp only [Set.mem_Ici] at hs ⊢
+  exact le_trans (by exact_mod_cast hmn) hs
+
+end PairAlpha
+
+/-! ### Analytic bricks for the variance asymptotics (a)
+
+Four reusable identities/limits behind FY (2.73): the affine change of variables
+`v = x + h u`, the substitution of the `X`-marginal density `p`, the conditional
+(tower) elimination of the errors against a bounded `X`-measurable weight, and the
+dominated-convergence localization. All four are **proved**. -/
+
+section Bricks
+
+/-- **Affine change of variables** `v = x + h u` on Lebesgue measure:
+`∫ F(u) g(x + h u) du = h⁻¹ ∫ F((v − x)/h) g(v) dv` for `h > 0`.
+(Both sides use Mathlib's junk value `0` for non-integrable integrands, and the
+identity holds regardless — `Measure.integral_comp_mul_left` is unconditional.) -/
+theorem integral_dilate_translate (F g : ℝ → ℝ) (x : ℝ) {h : ℝ} (hh : 0 < h) :
+    ∫ u, F u * g (x + h * u) = h⁻¹ * ∫ v, F ((v - x) / h) * g v := by
+  set G : ℝ → ℝ := fun v => F ((v - x) / h) * g v with hG
+  have h1 : ∫ u, G (x + h * u) = |h⁻¹| • ∫ w, G (x + w) :=
+    MeasureTheory.Measure.integral_comp_mul_left (fun w => G (x + w)) h
+  have h2 : ∫ w, G (x + w) = ∫ v, G v := integral_add_left_eq_self G x
+  have h3 : ∀ u : ℝ, G (x + h * u) = F u * g (x + h * u) := by
+    intro u
+    simp [hG, add_sub_cancel_left, mul_div_cancel_left₀ _ hh.ne']
+  calc ∫ u, F u * g (x + h * u) = ∫ u, G (x + h * u) := by simp_rw [h3]
+    _ = |h⁻¹| • ∫ w, G (x + w) := h1
+    _ = h⁻¹ * ∫ v, G v := by rw [h2, abs_of_pos (by positivity), smul_eq_mul]
+
+/-- **Density substitution for the `X`-marginal** (FY (C1)): if `X` has Lebesgue
+density `p`, then `E[F(X)] = ∫ p(v) F(v) dv`. -/
+theorem integral_comp_eq_integral_density {Y : Ω → ℝ} (hY : Measurable Y)
+    {p : ℝ → ℝ} (hmp : Measurable p) (hp0 : ∀ v, 0 ≤ p v)
+    (hpd : μ.map Y = MeasureTheory.volume.withDensity fun v => ENNReal.ofReal (p v))
+    (F : ℝ → ℝ) (hF : Measurable F) :
+    ∫ ω, F (Y ω) ∂μ = ∫ v, p v * F v := by
+  rw [← integral_map hY.aemeasurable hF.aestronglyMeasurable, hpd,
+    integral_withDensity_eq_integral_toReal_smul (by fun_prop)
+      (Eventually.of_forall fun v => ENNReal.ofReal_lt_top)]
+  refine integral_congr_ae (Eventually.of_forall fun v => ?_)
+  simp only [smul_eq_mul, ENNReal.toReal_ofReal (hp0 v)]
+
+/-- **Tower elimination against a bounded `σ(Y)`-measurable weight**: if
+`μ[ζ | σ(Y)] =ᵐ Z` and `G` is bounded measurable, then `E[G(Y) ζ] = E[G(Y) Z]`.
+Used twice: with `ζ = e₀` (giving mean zero of each localized summand, FY (C1)
+`E(e|X) = 0`) and with `ζ = e₀²` (giving the `σ²(X)` form of the diagonal term). -/
+theorem integral_bdd_comp_mul_eq_of_condExp [IsProbabilityMeasure μ]
+    {Y : Ω → ℝ} (hY : Measurable Y) {Z ζ : Ω → ℝ} (hζ : Integrable ζ μ)
+    (hce : μ[ζ | MeasurableSpace.comap Y inferInstance] =ᵐ[μ] Z)
+    (G : ℝ → ℝ) (hG : Measurable G) {C : ℝ} (hGb : ∀ v, |G v| ≤ C) :
+    ∫ ω, G (Y ω) * ζ ω ∂μ = ∫ ω, G (Y ω) * Z ω ∂μ := by
+  have hmle : MeasurableSpace.comap Y inferInstance ≤ ‹MeasurableSpace Ω› := hY.comap_le
+  have hYm : Measurable[MeasurableSpace.comap Y inferInstance] Y :=
+    Measurable.of_comap_le le_rfl
+  have hf : StronglyMeasurable[MeasurableSpace.comap Y inferInstance] (fun ω => G (Y ω)) :=
+    (hG.comp hYm).stronglyMeasurable
+  have hpull := condExp_stronglyMeasurable_mul_of_bound (μ := μ)
+    (m := MeasurableSpace.comap Y inferInstance) hmle hf hζ C
+    (Eventually.of_forall fun ω => by simpa [Real.norm_eq_abs] using hGb (Y ω))
+  have h1 : ∫ ω, G (Y ω) * ζ ω ∂μ
+      = ∫ ω, (μ[(fun ω => G (Y ω)) * ζ | MeasurableSpace.comap Y inferInstance]) ω ∂μ :=
+    (integral_condExp hmle).symm
+  rw [h1]
+  refine integral_congr_ae ?_
+  filter_upwards [hpull, hce] with ω h1 h2
+  simp only [Pi.mul_apply] at h1 ⊢
+  rw [h1, h2]
+
+/-- **Dominated-convergence localization**: for `g` measurable, globally bounded and
+continuous at `x`, and a nonnegative integrable weight `Φ`,
+`∫ g(x + h_n u) Φ(u) du → g(x) ∫ Φ` whenever `h_n → 0`.
+This is the analytic core of FY (2.73). -/
+theorem tendsto_integral_dilate_of_bounded {g : ℝ → ℝ} (hg : Measurable g) {x : ℝ}
+    (hgc : ContinuousAt g x) {M : ℝ} (hgM : ∀ v, |g v| ≤ M)
+    {Φ : ℝ → ℝ} (hΦm : Measurable Φ) (hΦ0 : ∀ u, 0 ≤ Φ u)
+    (hΦ : Integrable Φ MeasureTheory.volume)
+    {h : ℕ → ℝ} (hh : Tendsto h atTop (𝓝 0)) :
+    Tendsto (fun n => ∫ u, g (x + h n * u) * Φ u) atTop (𝓝 (g x * ∫ u, Φ u)) := by
+  have hlim : ∫ u, g x * Φ u = g x * ∫ u, Φ u := integral_const_mul _ _
+  rw [← hlim]
+  refine tendsto_integral_of_dominated_convergence (fun u => M * Φ u)
+    (fun n => ((hg.comp (by fun_prop)).mul hΦm).aestronglyMeasurable)
+    (hΦ.const_mul M) (fun n => Eventually.of_forall fun u => ?_)
+    (Eventually.of_forall fun u => ?_)
+  · rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (hΦ0 u)]
+    exact mul_le_mul_of_nonneg_right (hgM _) (hΦ0 u)
+  · exact ((hgc.tendsto.comp (by simpa using (hh.mul_const u).const_add x)).mul
+      tendsto_const_nhds)
+
+/-- **FY (2.73), diagonal term — the TRUE form.** Under a *global bound* on `σ² · p`
+(which FY's (C1) implicitly carries, and which the formalized (C1)–(C5) do **not**
+supply — see `tendsto_localized_second_moment_debt`),
+`h⁻¹ E[e₀² W²((X₀ − x)/h)] → σ²(x) p(x) ∫ W²`. -/
+theorem tendsto_localized_second_moment_of_bounded [IsProbabilityMeasure μ]
+    {X e : ℤ → Ω → ℝ} (hX : Measurable (X 0))
+    {σsq p : ℝ → ℝ} (hmσ : Measurable σsq) (hmp : Measurable p) (hp0 : ∀ v, 0 ≤ p v)
+    (hpd : μ.map (X 0) = MeasureTheory.volume.withDensity fun v => ENNReal.ofReal (p v))
+    {x : ℝ}
+    (hcv : μ[fun ω => e 0 ω ^ 2 | MeasurableSpace.comap (X 0) inferInstance]
+      =ᵐ[μ] fun ω => σsq (X 0 ω))
+    (he2 : Integrable (fun ω => e 0 ω ^ 2) μ)
+    (hgc : ContinuousAt (fun v => σsq v * p v) x)
+    {M : ℝ} (hgM : ∀ v, |σsq v * p v| ≤ M)
+    {W : ℝ → ℝ} {CW : ℝ} (hWm : Measurable W) (hWb : ∀ v, |W v| ≤ CW)
+    (hW2 : Integrable (fun v => W v ^ 2) MeasureTheory.volume)
+    {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n) (hh : Tendsto h atTop (𝓝 0)) :
+    Tendsto (fun n : ℕ =>
+        (h n)⁻¹ * ∫ ω, e 0 ω ^ 2 * W ((X 0 ω - x) / h n) ^ 2 ∂μ) atTop
+      (𝓝 (σsq x * p x * ∫ v, W v ^ 2)) := by
+  -- The `n`-th term equals `∫ (σ²·p)(x + h u) W²(u) du`.
+  have hkey : ∀ n : ℕ, (h n)⁻¹ * ∫ ω, e 0 ω ^ 2 * W ((X 0 ω - x) / h n) ^ 2 ∂μ
+      = ∫ u, (fun v => σsq v * p v) (x + h n * u) * W u ^ 2 := by
+    intro n
+    -- (i) tower: replace `e₀²` by `σ²(X₀)`.
+    have hstep1 : ∫ ω, e 0 ω ^ 2 * W ((X 0 ω - x) / h n) ^ 2 ∂μ
+        = ∫ ω, (fun v => W ((v - x) / h n) ^ 2) (X 0 ω) * σsq (X 0 ω) ∂μ := by
+      rw [← integral_bdd_comp_mul_eq_of_condExp hX he2 hcv
+        (fun v => W ((v - x) / h n) ^ 2) (by fun_prop) (C := CW ^ 2)
+        (fun v => by
+          have hb := hWb ((v - x) / h n)
+          rw [abs_pow]
+          nlinarith [abs_nonneg (W ((v - x) / h n))])]
+      exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
+    -- (ii) density substitution.
+    have hstep2 : ∫ ω, (fun v => W ((v - x) / h n) ^ 2) (X 0 ω) * σsq (X 0 ω) ∂μ
+        = ∫ v, W ((v - x) / h n) ^ 2 * (σsq v * p v) := by
+      rw [integral_comp_eq_integral_density hX hmp hp0 hpd
+        (fun v => W ((v - x) / h n) ^ 2 * σsq v) (by fun_prop)]
+      exact integral_congr_ae (Eventually.of_forall fun v => by ring)
+    -- (iii) affine change of variables.
+    have hstep3 := integral_dilate_translate (fun u => W u ^ 2)
+      (fun v => σsq v * p v) x (hh0 n)
+    rw [hstep1, hstep2, ← hstep3]
+    exact integral_congr_ae (Eventually.of_forall fun u => by ring)
+  simp only [hkey]
+  have := tendsto_integral_dilate_of_bounded (g := fun v => σsq v * p v) (by fun_prop) hgc hgM
+    (Φ := fun u => W u ^ 2) (by fun_prop) (fun u => sq_nonneg _) hW2 hh
+  simpa [mul_assoc] using this
+
+end Bricks
 
 /-- **FY Theorem 2.22** (charFun form): under (C1)–(C5),
 `(n h_n)^{-1/2} Σ_{t=1}^n e_t W((X_t − x)/h_n) →d N(0, σ²(x) p(x) ∫ W²)`. -/
