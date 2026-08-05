@@ -504,6 +504,40 @@ theorem pacf_eq_matrix_formula [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ
     rw [h3, hstat.acvf_even]
     ring
 
+/-! ### Theorem 2.9
+
+Instead of Rao's partitioned inverse we verify the partitioned solution directly: the
+vector whose last entry is `π(k)` and whose remaining entries are the inner-window
+coefficients corrected by the residual projection solves the `k × k` normal equations, and
+under invertibility the solution is unique. This is the Frisch–Waugh–Lovell step of
+FY §2.7.3, carried out in covariance language. -/
+
+section LastCoeff
+
+variable {X : ℤ → Ω → ℝ}
+
+/-- Entrywise form of the Toeplitz autocovariance matrix. -/
+private lemma acvfToeplitz_apply (X : ℤ → Ω → ℝ) (μ : Measure Ω) (n : ℕ) (i j : Fin n) :
+    acvfToeplitz X μ n i j = acvf X μ (((i : ℕ) : ℤ) - ((j : ℕ) : ℤ)) := rfl
+
+/-- `pacf` in residual form, indexed so that the inner window has length `m`. -/
+private lemma pacf_succ_eq_cov_div_variance [IsProbabilityMeasure μ]
+    (hstat : IsStationary X μ) {m : ℕ}
+    (hinv : IsUnit (Matrix.of fun i j : Fin m =>
+      cov[X (((i : ℕ) : ℤ) + 2), X (((j : ℕ) : ℤ) + 2); μ]).det)
+    (hpos : 0 < variance (linRegResidual X μ 1
+      (fun i : Fin m => ((i : ℕ) : ℤ) + 2)) μ) :
+    pacf X μ (m + 1) =
+      cov[linRegResidual X μ 1 (fun i : Fin m => ((i : ℕ) : ℤ) + 2),
+          linRegResidual X μ ((m : ℤ) + 2)
+            (fun i : Fin m => ((i : ℕ) : ℤ) + 2); μ] /
+        variance (linRegResidual X μ 1 (fun i : Fin m => ((i : ℕ) : ℤ) + 2)) μ := by
+  have h := pacf_eq_cov_div_variance hstat (k := m + 1) (by omega) hinv hpos
+  rw [show ((m + 1 : ℕ) : ℤ) + 1 = (m : ℤ) + 2 by push_cast; ring] at h
+  exact h
+
+end LastCoeff
+
 /-- **Theorem 2.9** (FY §2.2.3; proof §2.7.3, partitioned inverse): `π(k)` equals the
 last coefficient of the best linear AR(k) predictor of `X_t` from
 `(X_{t−1}, …, X_{t−k})`. -/
@@ -514,7 +548,182 @@ theorem pacf_eq_last_arCoeff [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
       (fun i : Fin (k - 1) => ((i : ℕ) + 2 : ℤ))) μ) :
     pacf X μ k = linRegCoeffs X μ (k : ℤ)
       (fun i : Fin k => (k : ℤ) - 1 - (i : ℕ)) ⟨k - 1, by omega⟩ := by
-  sorry
+  obtain ⟨m, rfl⟩ : ∃ m, k = m + 1 := ⟨k - 1, by omega⟩
+  rw [show (fun i : Fin (m + 1) => ((m + 1 : ℕ) : ℤ) - 1 - ((i : ℕ) : ℤ))
+      = (fun i : Fin (m + 1) => (m : ℤ) - ((i : ℕ) : ℤ)) from by funext i; push_cast; ring,
+    show ((m + 1 : ℕ) : ℤ) = (m : ℤ) + 1 from by push_cast; ring]
+  -- the outer window `(X_m, …, X_0)`, its head `(X_m, …, X_1)`, and the PACF window
+  set v : Fin (m + 1) → ℤ := fun i => (m : ℤ) - ((i : ℕ) : ℤ) with hv
+  set q : Fin m → ℤ := fun i => (m : ℤ) - ((i : ℕ) : ℤ) with hq
+  set w : Fin m → ℤ := fun i => ((i : ℕ) : ℤ) + 2 with hw
+  -- nonsingularity of the three window covariance matrices
+  have hinvT : IsUnit (acvfToeplitz X μ m).det := isUnit_det_acvfToeplitz_of_succ hstat hinv
+  have hinvv : IsUnit (Matrix.of fun i j : Fin (m + 1) => cov[X (v i), X (v j); μ]).det := by
+    have he : (Matrix.of fun i j : Fin (m + 1) => cov[X (v i), X (v j); μ])
+        = (acvfToeplitz X μ (m + 1))ᵀ := by
+      ext i j
+      simp only [Matrix.of_apply, Matrix.transpose_apply, acvfToeplitz_apply]
+      rw [hstat.cov_eq_acvf]
+      congr 1
+      simp only [hv]
+      ring
+    rw [he, Matrix.det_transpose]; exact hinv
+  have hinvq : IsUnit (Matrix.of fun i j : Fin m => cov[X (q i), X (q j); μ]).det := by
+    have he : (Matrix.of fun i j : Fin m => cov[X (q i), X (q j); μ])
+        = (acvfToeplitz X μ m)ᵀ := by
+      ext i j
+      simp only [Matrix.of_apply, Matrix.transpose_apply, acvfToeplitz_apply]
+      rw [hstat.cov_eq_acvf]
+      congr 1
+      simp only [hq]
+      ring
+    rw [he, Matrix.det_transpose]; exact hinvT
+  have hinvw : IsUnit (Matrix.of fun i j : Fin m => cov[X (w i), X (w j); μ]).det := by
+    have he : (Matrix.of fun i j : Fin m => cov[X (w i), X (w j); μ])
+        = acvfToeplitz X μ m := by
+      ext i j
+      simp only [Matrix.of_apply, acvfToeplitz_apply]
+      rw [hstat.cov_eq_acvf]
+      congr 1
+      simp only [hw]
+      ring
+    rw [he]; exact hinvT
+  -- the PACF window is the reversed head window, shifted one step forward
+  have hqw : (fun i : Fin m => q (Fin.revPerm i) + 1) = w := by
+    funext i
+    simp only [hq, hw, Fin.revPerm_apply, Fin.val_rev]
+    have := i.isLt
+    omega
+  have hα : linRegCoeffs X μ 1 w
+      = fun i => linRegCoeffs X μ 0 q (Fin.revPerm i) := by
+    have h := linRegCoeffs_reindex_shift hstat 0 1 q Fin.revPerm hinvq
+    rw [hqw, zero_add] at h
+    exact h
+  have hβ : linRegCoeffs X μ ((m : ℤ) + 2) w
+      = fun i => linRegCoeffs X μ ((m : ℤ) + 1) q (Fin.revPerm i) := by
+    have h := linRegCoeffs_reindex_shift hstat ((m : ℤ) + 1) 1 q Fin.revPerm hinvq
+    rw [hqw] at h
+    rw [show (m : ℤ) + 2 = ((m : ℤ) + 1) + 1 from by ring]
+    exact h
+  -- transfer of the two residual second moments to the head window
+  have hcov12 : cov[linRegResidual X μ 1 w, linRegResidual X μ ((m : ℤ) + 2) w; μ]
+      = cov[linRegResidual X μ 0 q, linRegResidual X μ ((m : ℤ) + 1) q; μ] := by
+    rw [cov_linRegResidual_residual_acvf hstat 1 ((m : ℤ) + 2) w hinvw,
+      cov_linRegResidual_residual_acvf hstat 0 ((m : ℤ) + 1) q hinvq]
+    simp only [hα]
+    have h1 : acvf X μ ((1 : ℤ) - ((m : ℤ) + 2)) = acvf X μ ((0 : ℤ) - ((m : ℤ) + 1)) := by
+      rw [show (1 : ℤ) - ((m : ℤ) + 2) = (0 : ℤ) - ((m : ℤ) + 1) from by ring]
+    have h2 : ∑ i, linRegCoeffs X μ 0 q (Fin.revPerm i) * acvf X μ (w i - ((m : ℤ) + 2))
+        = ∑ i, linRegCoeffs X μ 0 q i * acvf X μ (q i - ((m : ℤ) + 1)) := by
+      rw [show ∑ i, linRegCoeffs X μ 0 q i * acvf X μ (q i - ((m : ℤ) + 1))
+          = ∑ i, linRegCoeffs X μ 0 q (Fin.revPerm i)
+              * acvf X μ (q (Fin.revPerm i) - ((m : ℤ) + 1)) from
+        (Equiv.sum_comp Fin.revPerm _).symm]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      have harg : w i - ((m : ℤ) + 2) = q (Fin.revPerm i) - ((m : ℤ) + 1) := by
+        simp only [hw, hq, Fin.revPerm_apply, Fin.val_rev]
+        have := i.isLt
+        omega
+      rw [harg]
+    rw [h1, h2]
+  have hvar1 : variance (linRegResidual X μ 1 w) μ
+      = variance (linRegResidual X μ 0 q) μ := by
+    rw [variance_linRegResidual hstat 1 w hinvw, variance_linRegResidual hstat 0 q hinvq]
+    simp only [hα]
+    have h2 : ∑ i, linRegCoeffs X μ 0 q (Fin.revPerm i) * acvf X μ (w i - 1)
+        = ∑ i, linRegCoeffs X μ 0 q i * acvf X μ (q i - 0) := by
+      rw [show ∑ i, linRegCoeffs X μ 0 q i * acvf X μ (q i - 0)
+          = ∑ i, linRegCoeffs X μ 0 q (Fin.revPerm i)
+              * acvf X μ (q (Fin.revPerm i) - 0) from (Equiv.sum_comp Fin.revPerm _).symm]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      have harg : w i - (1 : ℤ) = q (Fin.revPerm i) - 0 := by
+        simp only [hw, hq, Fin.revPerm_apply, Fin.val_rev]
+        have := i.isLt
+        omega
+      rw [harg]
+    rw [h2]
+  -- the last coefficient: FY's `π(k) = Cov(R_Y, R_W)/Var R_W`
+  set θ : ℝ := cov[linRegResidual X μ ((m : ℤ) + 1) q, linRegResidual X μ 0 q; μ]
+    / variance (linRegResidual X μ 0 q) μ with hθdef
+  have hvarne : variance (linRegResidual X μ 0 q) μ ≠ 0 := by
+    rw [← hvar1]; exact ne_of_gt hpos
+  have hpacf : pacf X μ (m + 1) = θ := by
+    rw [pacf_succ_eq_cov_div_variance hstat hinvw hpos, hcov12, hvar1, hθdef,
+      covariance_comm (linRegResidual X μ 0 q)]
+  -- the two identities that make the last normal equation hold
+  have hRYX0 : cov[linRegResidual X μ ((m : ℤ) + 1) q, X 0; μ]
+      = cov[linRegResidual X μ ((m : ℤ) + 1) q, linRegResidual X μ 0 q; μ] := by
+    rw [cov_linRegResidual_left hstat ((m : ℤ) + 1) q (hstat.memLp 0),
+      cov_linRegResidual_residual hstat ((m : ℤ) + 1) 0 q hinvq]
+  have hRWX0 : cov[linRegResidual X μ 0 q, X 0; μ]
+      = variance (linRegResidual X μ 0 q) μ := by
+    rw [cov_linRegResidual_left hstat 0 q (hstat.memLp 0),
+      ← covariance_self (memLp_linRegResidual hstat 0 q).aestronglyMeasurable.aemeasurable,
+      cov_linRegResidual_residual hstat 0 0 q hinvq]
+  -- the partitioned candidate solution
+  set b : Fin (m + 1) → ℝ := fun j =>
+    if h : (j : ℕ) < m then
+      linRegCoeffs X μ ((m : ℤ) + 1) q ⟨j, h⟩ - θ * linRegCoeffs X μ 0 q ⟨j, h⟩
+    else θ with hbdef
+  have hbcast : ∀ i : Fin m, b i.castSucc
+      = linRegCoeffs X μ ((m : ℤ) + 1) q i - θ * linRegCoeffs X μ 0 q i := by
+    intro i
+    simp [hbdef, i.isLt]
+  have hblast : b (Fin.last m) = θ := by simp [hbdef]
+  have hvcast : ∀ i : Fin m, v i.castSucc = q i := by
+    intro i; simp only [hv, hq, Fin.val_castSucc]
+  have hvlast : v (Fin.last m) = 0 := by simp [hv]
+  -- the candidate's prediction error is `R_Y − θ R_W`
+  have hT : (fun ω => X ((m : ℤ) + 1) ω - ∑ j, b j * X (v j) ω)
+      = fun ω => linRegResidual X μ ((m : ℤ) + 1) q ω
+          - θ * linRegResidual X μ 0 q ω := by
+    funext ω
+    have hsplit : ∑ j, b j * X (v j) ω
+        = (∑ i : Fin m, (linRegCoeffs X μ ((m : ℤ) + 1) q i
+              - θ * linRegCoeffs X μ 0 q i) * X (q i) ω) + θ * X 0 ω := by
+      rw [Fin.sum_univ_castSucc, hblast, hvlast]
+      exact congrArg (· + θ * X 0 ω)
+        (Finset.sum_congr rfl fun i _ => by rw [hbcast, hvcast])
+    have hd : ∑ i : Fin m, (linRegCoeffs X μ ((m : ℤ) + 1) q i
+            - θ * linRegCoeffs X μ 0 q i) * X (q i) ω
+        = (∑ i, linRegCoeffs X μ ((m : ℤ) + 1) q i * X (q i) ω)
+          - ∑ i, θ * (linRegCoeffs X μ 0 q i * X (q i) ω) := by
+      rw [← Finset.sum_sub_distrib]
+      exact Finset.sum_congr rfl fun i _ => by ring
+    have he : ∑ i : Fin m, θ * (linRegCoeffs X μ 0 q i * X (q i) ω)
+        = θ * ∑ i, linRegCoeffs X μ 0 q i * X (q i) ω := by rw [Finset.mul_sum]
+    rw [hsplit, hd, he, linRegResidual_eq, linRegResidual_eq]
+    ring
+  -- the candidate satisfies the `k × k` normal equations
+  have hbeq : linRegCoeffs X μ ((m : ℤ) + 1) v = b := by
+    refine linRegCoeffs_eq_of_normalEq _ _ hinvv b fun l => ?_
+    have hsum : ∑ j, cov[X (v l), X (v j); μ] * b j
+        = cov[X (v l), fun ω => ∑ j, b j * X (v j) ω; μ] := by
+      rw [covariance_fun_sum_right (fun j => (hstat.memLp (v j)).const_mul (b j))
+        (hstat.memLp (v l))]
+      exact Finset.sum_congr rfl fun j _ => by rw [covariance_const_mul_right]; ring
+    have hexp : cov[X (v l), fun ω => X ((m : ℤ) + 1) ω - ∑ j, b j * X (v j) ω; μ]
+        = cov[X (v l), X ((m : ℤ) + 1); μ]
+          - cov[X (v l), fun ω => ∑ j, b j * X (v j) ω; μ] :=
+      covariance_fun_sub_right (hstat.memLp (v l)) (hstat.memLp _) (memLp_window hstat v b)
+    have hkey : cov[X (v l), fun ω => X ((m : ℤ) + 1) ω - ∑ j, b j * X (v j) ω; μ] = 0 := by
+      rw [hT, covariance_fun_sub_right (hstat.memLp (v l))
+          (memLp_linRegResidual hstat ((m : ℤ) + 1) q)
+          ((memLp_linRegResidual hstat 0 q).const_mul θ),
+        covariance_const_mul_right]
+      refine Fin.lastCases ?_ ?_ l
+      · rw [hvlast, covariance_comm (X 0), covariance_comm (X 0), hRYX0, hRWX0, hθdef]
+        field_simp
+        ring
+      · intro i
+        rw [hvcast, covariance_comm (X (q i)), covariance_comm (X (q i)),
+          cov_linRegResidual_window hstat ((m : ℤ) + 1) q hinvq i,
+          cov_linRegResidual_window hstat 0 q hinvq i]
+        ring
+    rw [hsum, covariance_comm (X ((m : ℤ) + 1)) (X (v l))]
+    linarith [hexp, hkey]
+  rw [hpacf, hbeq]
+  exact hblast.symm
 
 /-- **Proposition 2.3(ii)**: the PACF of a causal AR(p) process vanishes beyond lag
 `p` (from Theorem 2.9 and the Yule–Walker structure: the best AR(k) predictor for
