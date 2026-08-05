@@ -1,6 +1,7 @@
 import StatLean.TimeSeries.ForMathlib.Probability.MartingaleCLT.Defs
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.CondJensen
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 
 /-!
 # Conditional characteristic-function calculus for MDS arrays
@@ -333,6 +334,54 @@ theorem norm_condexp_exp_sub_one_sub_le {m mΩ : MeasurableSpace Ω} {μ : Measu
   rw [hEq, ← h2]
   exact h1
 
+open Complex in
+/-- The `ℂ`-valued conditional characteristic function is the pair of the two real
+conditional expectations that `norm_condexp_exp_sub_one_sub_le` is stated with. -/
+private lemma condExp_cexp_eq_pair {m mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] {Y : Ω → ℝ} (hY : Measurable Y) (u : ℝ) :
+    ∀ᵐ ω ∂μ, μ[fun ω' => Complex.exp (I * ((u * Y ω' : ℝ) : ℂ)) | m] ω
+      = (⟨μ[fun ω' => Real.cos (u * Y ω') | m] ω,
+          μ[fun ω' => Real.sin (u * Y ω') | m] ω⟩ : ℂ) := by
+  have hmeas : Measurable fun ω => Complex.exp (I * ((u * Y ω : ℝ) : ℂ)) :=
+    Complex.measurable_exp.comp
+      ((Complex.measurable_ofReal.comp (measurable_const.mul hY)).const_mul I)
+  have hZint : Integrable (fun ω => Complex.exp (I * ((u * Y ω : ℝ) : ℂ))) μ := by
+    refine (integrable_const (1 : ℝ)).mono' hmeas.aestronglyMeasurable (ae_of_all _ fun ω => ?_)
+    simp [Complex.norm_exp]
+  have hre := Complex.reCLM.comp_condExp_comm (m := m) hZint
+  have him := Complex.imCLM.comp_condExp_comm (m := m) hZint
+  have hcompre : (⇑Complex.reCLM ∘ fun ω => Complex.exp (I * ((u * Y ω : ℝ) : ℂ)))
+      = fun ω => Real.cos (u * Y ω) := by
+    funext ω
+    simp only [Function.comp_apply, Complex.reCLM_apply]
+    rw [mul_comm, Complex.exp_ofReal_mul_I_re]
+  have hcompim : (⇑Complex.imCLM ∘ fun ω => Complex.exp (I * ((u * Y ω : ℝ) : ℂ)))
+      = fun ω => Real.sin (u * Y ω) := by
+    funext ω
+    simp only [Function.comp_apply, Complex.imCLM_apply]
+    rw [mul_comm, Complex.exp_ofReal_mul_I_im]
+  rw [hcompre] at hre
+  rw [hcompim] at him
+  filter_upwards [hre, him] with ω h1 h2
+  exact Complex.ext (by simpa using h1) (by simpa using h2)
+
+open Complex in
+/-- **Conditional Taylor estimate, `ℂ`-valued form.** Same content as
+`norm_condexp_exp_sub_one_sub_le`, phrased with the conditional expectation of the complex
+exponential itself — the form the tower peel consumes. -/
+theorem norm_condexp_cexp_sub_taylor_le {m mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] (hm : m ≤ mΩ) {Y : Ω → ℝ} (hY : Measurable Y) (hL2 : MemLp Y 2 μ)
+    (hcond : μ[Y | m] =ᵐ[μ] 0) (u : ℝ) {ε : ℝ} (hε : 0 < ε) :
+    ∀ᵐ ω ∂μ, ‖μ[fun ω' => Complex.exp (I * ((u * Y ω' : ℝ) : ℂ)) | m] ω
+        - (1 - u ^ 2 / 2 * μ[fun ω' => Y ω' ^ 2 | m] ω)‖
+      ≤ u ^ 2 * μ[fun ω' => Y ω' ^ 2 * Set.indicator {x : Ω | ε ≤ |Y x|}
+            (fun _ => (1 : ℝ)) ω' | m] ω
+        + |u| ^ 3 * ε * μ[fun ω' => Y ω' ^ 2 | m] ω := by
+  filter_upwards [condExp_cexp_eq_pair (m := m) (μ := μ) hY u,
+    norm_condexp_exp_sub_one_sub_le hm hY hL2 hcond u hε] with ω h1 h2
+  rw [h1]
+  exact h2
+
 end CondTaylor
 
 section ProductEstimates
@@ -490,11 +539,432 @@ private lemma abs_prod_one_sub_sub_exp_le {m : ℕ} {v : Fin m → ℝ} {u σ2 �
         rw [hstep2] at hstep1 ⊢
         linarith [hstep1.trans hquad, hstep3]
 
+/-- `(1 − a)⁻¹ ≤ e^{2a}` for `a ∈ [0, 1/2]`. -/
+private lemma inv_one_sub_le_exp_two_mul {a : ℝ} (ha : 0 ≤ a) (ha2 : a ≤ 1 / 2) :
+    (1 - a)⁻¹ ≤ Real.exp (2 * a) := by
+  have hpos : (0:ℝ) < 1 - a := by linarith
+  have hE : 1 + 2 * a ≤ Real.exp (2 * a) := by
+    have := Real.add_one_le_exp (2 * a); linarith
+  have h1 : 1 ≤ Real.exp (2 * a) * (1 - a) := by nlinarith
+  rw [inv_eq_one_div, div_le_iff₀ hpos]
+  exact h1
+
+/-- The **inverse** Taylor product is bounded by `e^{u²c}` on any index subset, as soon as
+each `u²vᵢ/2 ≤ 1/2` and the variance process is bounded by `c`.  This is the domination that
+makes the nesting-free (multiplicative) telescope work. -/
+private lemma prod_inv_one_sub_le_exp {m : ℕ} {v : Fin m → ℝ} {u c : ℝ}
+    (hv0 : ∀ i, 0 ≤ v i) (hvd : ∀ i, u ^ 2 / 2 * v i ≤ 1 / 2) (hsum : (∑ i, v i) ≤ c)
+    (s : Finset (Fin m)) :
+    ∏ i ∈ s, (1 - u ^ 2 / 2 * v i)⁻¹ ≤ Real.exp (u ^ 2 * c) := by
+  have ha0 : ∀ i, 0 ≤ u ^ 2 / 2 * v i := fun i => mul_nonneg (by positivity) (hv0 i)
+  have hu : (0:ℝ) ≤ u ^ 2 := sq_nonneg u
+  calc ∏ i ∈ s, (1 - u ^ 2 / 2 * v i)⁻¹
+      ≤ ∏ i ∈ s, Real.exp (2 * (u ^ 2 / 2 * v i)) :=
+        Finset.prod_le_prod (fun i _ => inv_nonneg.2 (by linarith [ha0 i, hvd i]))
+          (fun i _ => inv_one_sub_le_exp_two_mul (ha0 i) (hvd i))
+    _ = Real.exp (∑ i ∈ s, 2 * (u ^ 2 / 2 * v i)) := (Real.exp_sum _ _).symm
+    _ ≤ Real.exp (u ^ 2 * c) := by
+        refine Real.exp_le_exp.2 ?_
+        have hsub : (∑ i ∈ s, v i) ≤ ∑ i, v i :=
+          Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ _) fun j _ _ => hv0 j
+        have hrw : (∑ i ∈ s, 2 * (u ^ 2 / 2 * v i)) = u ^ 2 * ∑ i ∈ s, v i := by
+          rw [Finset.mul_sum]
+          exact Finset.sum_congr rfl fun i _ => by ring
+        rw [hrw]
+        nlinarith
+
 end ProductEstimates
 
 section Arrays
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+
+open Complex in
+/-- **One tower peel** — the reusable core of every telescope in this file.
+
+If the multiplier `Y` is `𝓕_{n,i}`-measurable (i.e. *known at time `i`*) and bounded by
+`B`, then replacing `e^{iuX_{n,i}}` by its conditional Taylor polynomial
+`1 − u²/2·E[X_{n,i}²|𝓕_{n,i}]` under the integral costs at most `B` times the `i`-th
+conditional Taylor error.  Only the tower property and the pull-out property are used.
+
+The hypothesis `hYm` is the crux of the whole method: the multiplier must be measurable
+**at time `i`**, never later.  It is exactly what the frozen
+`norm_integral_exp_rowSum_sub_prod_le` cannot arrange for the future ψ-factors, and what
+`norm_integral_exp_rowSum_mul_invProd_sub_one_le` arranges by keeping the ψ-factors in the
+*past* product. -/
+theorem norm_integral_mul_cexp_sub_taylor_le [IsProbabilityMeasure μ]
+    {k : ℕ → ℕ} {X : (n : ℕ) → Fin (k n) → Ω → ℝ}
+    {F : (n : ℕ) → Fin (k n + 1) → MeasurableSpace Ω}
+    (h : IsMDSArray k X F μ) (n : ℕ) (i : Fin (k n)) (u : ℝ) {ε : ℝ} (hε : 0 < ε)
+    {Y : Ω → ℂ} (hYm : StronglyMeasurable[F n i.castSucc] Y) {B : ℝ}
+    (hYb : ∀ᵐ ω ∂μ, ‖Y ω‖ ≤ B) :
+    ‖∫ ω, Y ω * (Complex.exp (I * ((u * X n i ω : ℝ) : ℂ))
+        - (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)) ∂μ‖
+      ≤ B * (u ^ 2 * ∫ ω, X n i ω ^ 2 * Set.indicator {x : Ω | ε ≤ |X n i x|}
+              (fun _ => (1 : ℝ)) ω ∂μ + |u| ^ 3 * ε * ∫ ω, X n i ω ^ 2 ∂μ) := by
+  classical
+  have hm : F n i.castSucc ≤ ‹MeasurableSpace Ω› := h.le_ambient n i.castSucc
+  have hXm : Measurable (X n i) := (h.adapted n i).mono (h.le_ambient n _) le_rfl
+  have hXsq : Integrable (fun ω => X n i ω ^ 2) μ := (h.memLp n i).integrable_sq
+  have hSm : MeasurableSet {x : Ω | ε ≤ |X n i x|} :=
+    measurableSet_le measurable_const (continuous_abs.measurable.comp hXm)
+  have hindint : Integrable (fun ω => X n i ω ^ 2 * Set.indicator {x : Ω | ε ≤ |X n i x|}
+      (fun _ => (1 : ℝ)) ω) μ := by
+    have heq : (fun ω => X n i ω ^ 2 * Set.indicator {x : Ω | ε ≤ |X n i x|}
+        (fun _ => (1 : ℝ)) ω)
+        = Set.indicator {x : Ω | ε ≤ |X n i x|} (fun ω => X n i ω ^ 2) := by
+      funext ω; by_cases hω : ω ∈ {x : Ω | ε ≤ |X n i x|} <;> simp [hω]
+    rw [heq]; exact hXsq.indicator hSm
+  -- the exponential, its conditional expectation, and the Taylor polynomial
+  have hZm : Measurable fun ω => Complex.exp (I * ((u * X n i ω : ℝ) : ℂ)) :=
+    Complex.measurable_exp.comp
+      ((Complex.measurable_ofReal.comp (measurable_const.mul hXm)).const_mul I)
+  have hZ1 : ∀ ω, ‖Complex.exp (I * ((u * X n i ω : ℝ) : ℂ))‖ = 1 := fun ω => by
+    rw [Complex.norm_exp]; simp
+  have hZint : Integrable (fun ω => Complex.exp (I * ((u * X n i ω : ℝ) : ℂ))) μ :=
+    (integrable_const (1 : ℝ)).mono' hZm.aestronglyMeasurable
+      (ae_of_all _ fun ω => by rw [hZ1 ω])
+  have hYmeas : Measurable Y := hYm.measurable.mono hm le_rfl
+  have hYas : AEStronglyMeasurable Y μ := hYmeas.aestronglyMeasurable
+  have hvint : Integrable (μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc]) μ := integrable_condExp
+  have hΨint : Integrable (fun ω =>
+      (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℂ)) μ := by
+    have h1 : Integrable
+        (fun ω => ((μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℝ) : ℂ)) μ := by
+      simpa using Complex.ofRealCLM.integrable_comp hvint
+    simpa using (integrable_const (1 : ℂ)).sub (h1.const_mul ((u : ℂ) ^ 2 / 2))
+  have hCEint : Integrable (μ[fun ω' => Complex.exp (I * ((u * X n i ω' : ℝ) : ℂ))
+      | F n i.castSucc]) μ := integrable_condExp
+  -- the tower step
+  have hYZint : Integrable (fun ω => Y ω * Complex.exp (I * ((u * X n i ω : ℝ) : ℂ))) μ :=
+    hZint.bdd_mul hYas hYb
+  have hYΨint : Integrable (fun ω => Y ω * (1 - u ^ 2 / 2 *
+      μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℂ)) μ := hΨint.bdd_mul hYas hYb
+  have hYCEint : Integrable (fun ω => Y ω *
+      μ[fun ω' => Complex.exp (I * ((u * X n i ω' : ℝ) : ℂ)) | F n i.castSucc] ω) μ :=
+    hCEint.bdd_mul hYas hYb
+  have hpull : μ[fun ω => Y ω * Complex.exp (I * ((u * X n i ω : ℝ) : ℂ)) | F n i.castSucc]
+      =ᵐ[μ] fun ω => Y ω * μ[fun ω' => Complex.exp (I * ((u * X n i ω' : ℝ) : ℂ))
+        | F n i.castSucc] ω := by
+    have := condExp_bilin_of_stronglyMeasurable_left (ContinuousLinearMap.mul ℝ ℂ)
+      (m := F n i.castSucc) (μ := μ) hYm (by simpa using hYZint) hZint
+    simpa using this
+  have hkey : (∫ ω, Y ω * Complex.exp (I * ((u * X n i ω : ℝ) : ℂ)) ∂μ)
+      = ∫ ω, Y ω * μ[fun ω' => Complex.exp (I * ((u * X n i ω' : ℝ) : ℂ))
+        | F n i.castSucc] ω ∂μ := by
+    calc (∫ ω, Y ω * Complex.exp (I * ((u * X n i ω : ℝ) : ℂ)) ∂μ)
+        = ∫ ω, μ[fun ω => Y ω * Complex.exp (I * ((u * X n i ω : ℝ) : ℂ))
+            | F n i.castSucc] ω ∂μ := (integral_condExp hm).symm
+      _ = _ := integral_congr_ae hpull
+  have hrewrite : (∫ ω, Y ω * (Complex.exp (I * ((u * X n i ω : ℝ) : ℂ))
+      - (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)) ∂μ)
+      = ∫ ω, Y ω * (μ[fun ω' => Complex.exp (I * ((u * X n i ω' : ℝ) : ℂ))
+          | F n i.castSucc] ω
+        - (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)) ∂μ := by
+    have hL : (∫ ω, Y ω * (Complex.exp (I * ((u * X n i ω : ℝ) : ℂ))
+        - (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)) ∂μ)
+        = (∫ ω, Y ω * Complex.exp (I * ((u * X n i ω : ℝ) : ℂ)) ∂μ)
+          - ∫ ω, Y ω * (1 - u ^ 2 / 2 *
+            μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℂ) ∂μ := by
+      have hfun : (fun ω => Y ω * (Complex.exp (I * ((u * X n i ω : ℝ) : ℂ))
+          - (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)))
+          = fun ω => Y ω * Complex.exp (I * ((u * X n i ω : ℝ) : ℂ))
+            - Y ω * (1 - u ^ 2 / 2 *
+              μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℂ) := by
+        funext ω; ring
+      rw [hfun]
+      exact integral_sub hYZint hYΨint
+    have hR : (∫ ω, Y ω * (μ[fun ω' => Complex.exp (I * ((u * X n i ω' : ℝ) : ℂ))
+          | F n i.castSucc] ω
+        - (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)) ∂μ)
+        = (∫ ω, Y ω * μ[fun ω' => Complex.exp (I * ((u * X n i ω' : ℝ) : ℂ))
+            | F n i.castSucc] ω ∂μ)
+          - ∫ ω, Y ω * (1 - u ^ 2 / 2 *
+            μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℂ) ∂μ := by
+      have hfun : (fun ω => Y ω *
+          (μ[fun ω' => Complex.exp (I * ((u * X n i ω' : ℝ) : ℂ)) | F n i.castSucc] ω
+            - (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)))
+          = fun ω => Y ω *
+              μ[fun ω' => Complex.exp (I * ((u * X n i ω' : ℝ) : ℂ)) | F n i.castSucc] ω
+            - Y ω * (1 - u ^ 2 / 2 *
+              μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℂ) := by
+        funext ω; ring
+      rw [hfun]
+      exact integral_sub hYCEint hYΨint
+    rw [hL, hR, hkey]
+  rw [hrewrite]
+  refine le_trans (norm_integral_le_integral_norm _) ?_
+  have hCE := norm_condexp_cexp_sub_taylor_le hm hXm (h.memLp n i) (h.condexp_zero n i) u hε
+  have hdiffint : Integrable (fun ω => Y ω *
+      (μ[fun ω' => Complex.exp (I * ((u * X n i ω' : ℝ) : ℂ)) | F n i.castSucc] ω
+        - (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω))) μ := by
+    have hfun : (fun ω => Y ω *
+        (μ[fun ω' => Complex.exp (I * ((u * X n i ω' : ℝ) : ℂ)) | F n i.castSucc] ω
+          - (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)))
+        = fun ω => Y ω *
+            μ[fun ω' => Complex.exp (I * ((u * X n i ω' : ℝ) : ℂ)) | F n i.castSucc] ω
+          - Y ω * (1 - u ^ 2 / 2 *
+            μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℂ) := by
+      funext ω; ring
+    rw [hfun]
+    exact hYCEint.sub hYΨint
+  have hmajint : Integrable (fun ω => B * (u ^ 2 *
+      μ[fun ω' => X n i ω' ^ 2 * Set.indicator {x : Ω | ε ≤ |X n i x|}
+        (fun _ => (1 : ℝ)) ω' | F n i.castSucc] ω
+      + |u| ^ 3 * ε * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)) μ :=
+    ((integrable_condExp.const_mul _).add (integrable_condExp.const_mul _)).const_mul _
+  have hbound : ∀ᵐ ω ∂μ, ‖Y ω *
+      (μ[fun ω' => Complex.exp (I * ((u * X n i ω' : ℝ) : ℂ)) | F n i.castSucc] ω
+        - (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω))‖
+      ≤ B * (u ^ 2 * μ[fun ω' => X n i ω' ^ 2 * Set.indicator {x : Ω | ε ≤ |X n i x|}
+          (fun _ => (1 : ℝ)) ω' | F n i.castSucc] ω
+        + |u| ^ 3 * ε * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω) := by
+    filter_upwards [hYb, hCE] with ω h1 h2
+    rw [norm_mul]
+    exact mul_le_mul h1 h2 (norm_nonneg _) (le_trans (norm_nonneg _) h1)
+  refine le_trans (integral_mono_ae hdiffint.norm hmajint hbound) (le_of_eq ?_)
+  rw [integral_const_mul, integral_add (integrable_condExp.const_mul _)
+    (integrable_condExp.const_mul _), integral_const_mul, integral_const_mul,
+    integral_condExp hm, integral_condExp hm]
+
+open Complex in
+/-- **Nesting-free tower telescope** (the route `mds_clt` actually uses).
+
+Reweighting `e^{iuS_n}` by the *inverse* Taylor product `∏ᵢ ψᵢ⁻¹`,
+`ψᵢ = 1 − u²/2·E[X_{n,i}²|𝓕_{n,i}]`, turns Brown's comparison into a genuine martingale
+telescope: peeling the factor at index `i` leaves the multiplier
+`(∏_{j<i} e^{iuX_j}ψⱼ⁻¹)·ψᵢ⁻¹`, which is `𝓕_{n,i}`-measurable — the *past* product.  No
+nesting or predictability of the conditional variances is needed, unlike for the
+unweighted comparison `E e^{iuS_n}` vs `E ∏ᵢψᵢ` (see the obstruction on
+`norm_integral_exp_rowSum_sub_prod_le`).
+
+The price is the two clamps: `hd` (each conditional variance `≤ d` with `u²d ≤ 1`, so
+`ψᵢ ∈ [1/2, 1]` and the inverses exist) and `hc` (the variance process `≤ c`, so the
+inverse product is bounded by `e^{u²c}`).  Both are supplied by the doubly truncated
+Hall–Heyde array in `MartingaleCLT/BrownCLT.lean`. -/
+theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ]
+    {k : ℕ → ℕ} {X : (n : ℕ) → Fin (k n) → Ω → ℝ}
+    {F : (n : ℕ) → Fin (k n + 1) → MeasurableSpace Ω}
+    (h : IsMDSArray k X F μ) (n : ℕ) (u : ℝ) {ε : ℝ} (hε : 0 < ε) {c d : ℝ}
+    -- LEAN-ONLY: per-index clamp making every Taylor factor lie in `[1/2, 1]`
+    (hd : ∀ i, ∀ᵐ ω ∂μ, μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω ≤ d)
+    (hdu : u ^ 2 * d ≤ 1)
+    -- LEAN-ONLY: clamp on the conditional variance process
+    (hc : ∀ᵐ ω ∂μ, mdsCondVariance k X F μ n ω ≤ c) :
+    ‖(∫ ω, Complex.exp (I * ((u * mdsRowSum k X n ω : ℝ) : ℂ))
+        * ∏ i, (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)⁻¹ ∂μ) - 1‖
+      ≤ 2 * Real.exp (u ^ 2 * c)
+        * (∑ i, (u ^ 2 * ∫ ω, X n i ω ^ 2 * Set.indicator {x : Ω | ε ≤ |X n i x|}
+              (fun _ => (1 : ℝ)) ω ∂μ) + ∑ i, (|u| ^ 3 * ε * ∫ ω, X n i ω ^ 2 ∂μ)) := by
+  classical
+  have hu2 : (0:ℝ) ≤ u ^ 2 := sq_nonneg u
+  -- (0) pointwise control of the Taylor factors
+  have hae : ∀ᵐ ω ∂μ, (∀ i : Fin (k n),
+        0 ≤ μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω
+          ∧ u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω ≤ 1 / 2)
+      ∧ mdsCondVariance k X F μ n ω ≤ c := by
+    have h1 : ∀ᵐ ω ∂μ, ∀ i : Fin (k n),
+        0 ≤ μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω :=
+      ae_all_iff.2 fun i => condExp_nonneg (ae_of_all _ fun _ => sq_nonneg _)
+    have h2 : ∀ᵐ ω ∂μ, ∀ i : Fin (k n),
+        μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω ≤ d := ae_all_iff.2 hd
+    filter_upwards [h1, h2, hc] with ω e1 e2 e3
+    refine ⟨fun i => ⟨e1 i, ?_⟩, e3⟩
+    have := mul_le_mul_of_nonneg_left (e2 i) (by positivity : (0:ℝ) ≤ u ^ 2 / 2)
+    nlinarith [e1 i]
+  -- (1) the cumulative index sets
+  obtain ⟨S, hS⟩ : ∃ S : ℕ → Finset (Fin (k n)),
+      ∀ m, S m = Finset.univ.filter (fun i : Fin (k n) => (i : ℕ) < m) := ⟨_, fun _ => rfl⟩
+  have hS0 : S 0 = ∅ := by rw [hS]; ext j; simp
+  have hSfull : S (k n) = Finset.univ := by rw [hS]; ext j; simpa using j.isLt
+  have hSins : ∀ (m : ℕ) (hm : m < k n),
+      S (m + 1) = insert (⟨m, hm⟩ : Fin (k n)) (S m) := by
+    intro m hm
+    rw [hS, hS]
+    ext j
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert]
+    constructor
+    · intro hj
+      rcases Nat.lt_succ_iff_lt_or_eq.1 hj with hj' | hj'
+      · exact Or.inr hj'
+      · exact Or.inl (Fin.ext hj')
+    · rintro (rfl | hj)
+      · simp
+      · omega
+  have hSnotmem : ∀ (m : ℕ) (hm : m < k n), (⟨m, hm⟩ : Fin (k n)) ∉ S m := by
+    intro m hm
+    rw [hS]; simp
+  -- (2) the cumulative reweighted product
+  obtain ⟨P, hP⟩ : ∃ P : ℕ → Ω → ℂ, ∀ m ω, P m ω =
+      ∏ j ∈ S m, (Complex.exp (I * ((u * X n j ω : ℝ) : ℂ))
+        * (1 - u ^ 2 / 2 * μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc] ω)⁻¹) :=
+    ⟨_, fun _ _ => rfl⟩
+  have hψcast : ∀ (j : Fin (k n)) (ω : Ω),
+      (1 - u ^ 2 / 2 * μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc] ω : ℂ)
+        = ((1 - u ^ 2 / 2 * μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc] ω : ℝ) : ℂ) := by
+    intro j ω; push_cast; ring
+  have hnormP : ∀ᵐ ω ∂μ, ∀ m : ℕ, ‖P m ω‖ ≤ Real.exp (u ^ 2 * c) := by
+    filter_upwards [hae] with ω hω m
+    obtain ⟨hfac, hsum⟩ := hω
+    rw [hP m ω, norm_prod]
+    have hstep : ∀ j ∈ S m, ‖Complex.exp (I * ((u * X n j ω : ℝ) : ℂ))
+        * (1 - u ^ 2 / 2 * μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc] ω)⁻¹‖
+        = (1 - u ^ 2 / 2 * μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc] ω : ℝ)⁻¹ := by
+      intro j _
+      rw [norm_mul, Complex.norm_exp]
+      have h1 : (I * ((u * X n j ω : ℝ) : ℂ)).re = 0 := by simp
+      rw [h1, Real.exp_zero, one_mul, hψcast j ω, norm_inv, Complex.norm_real,
+        Real.norm_eq_abs, abs_of_pos (by linarith [(hfac j).2] : (0:ℝ) <
+          1 - u ^ 2 / 2 * μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc] ω)]
+    rw [Finset.prod_congr rfl hstep]
+    exact prod_inv_one_sub_le_exp (fun j => (hfac j).1) (fun j => (hfac j).2) hsum (S m)
+  have hPmeas : ∀ (m : ℕ) (hm : m < k n),
+      Measurable[F n (⟨m, hm⟩ : Fin (k n)).castSucc] (P m) := by
+    intro m hm
+    have he : P m = fun ω => ∏ j ∈ S m, (Complex.exp (I * ((u * X n j ω : ℝ) : ℂ))
+        * (1 - u ^ 2 / 2 * μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc] ω)⁻¹) := funext (hP m)
+    rw [he]
+    refine Finset.measurable_prod _ fun j hj => ?_
+    have hjm : (j : ℕ) < m := by rw [hS] at hj; simpa using hj
+    have hle1 : F n j.succ ≤ F n (⟨m, hm⟩ : Fin (k n)).castSucc :=
+      h.mono n (by rw [Fin.le_def]; simp [Fin.val_succ]; omega)
+    have hle2 : F n j.castSucc ≤ F n (⟨m, hm⟩ : Fin (k n)).castSucc :=
+      h.mono n (by rw [Fin.le_def]; simp; omega)
+    have hXj : Measurable[F n (⟨m, hm⟩ : Fin (k n)).castSucc] (X n j) :=
+      (h.adapted n j).mono hle1 le_rfl
+    have hvj : Measurable[F n (⟨m, hm⟩ : Fin (k n)).castSucc]
+        (μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc]) :=
+      (stronglyMeasurable_condExp.measurable).mono hle2 le_rfl
+    exact (Complex.measurable_exp.comp
+      ((Complex.measurable_ofReal.comp (measurable_const.mul hXj)).const_mul I)).mul
+      ((measurable_const.sub ((Complex.measurable_ofReal.comp hvj).const_mul _)).inv)
+  -- (3) integrability of the cumulative products
+  have hPint : ∀ m : ℕ, Integrable (P m) μ := by
+    intro m
+    have hmeas : Measurable (P m) := by
+      have he : P m = fun ω => ∏ j ∈ S m, (Complex.exp (I * ((u * X n j ω : ℝ) : ℂ))
+          * (1 - u ^ 2 / 2 * μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc] ω)⁻¹) := funext (hP m)
+      rw [he]
+      refine Finset.measurable_prod _ fun j _ => ?_
+      have hXj : Measurable (X n j) := (h.adapted n j).mono (h.le_ambient n _) le_rfl
+      have hvj : Measurable (μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc]) :=
+        (stronglyMeasurable_condExp.measurable).mono (h.le_ambient n _) le_rfl
+      exact (Complex.measurable_exp.comp
+        ((Complex.measurable_ofReal.comp (measurable_const.mul hXj)).const_mul I)).mul
+        ((measurable_const.sub ((Complex.measurable_ofReal.comp hvj).const_mul _)).inv)
+    refine Integrable.mono' (integrable_const (Real.exp (u ^ 2 * c)))
+      hmeas.aestronglyMeasurable ?_
+    filter_upwards [hnormP] with ω hω
+    exact (hω m).trans (le_abs_self _)
+  -- (4) one telescope step
+  have hstep : ∀ (m : ℕ) (hm : m < k n),
+      ‖(∫ ω, P (m + 1) ω ∂μ) - ∫ ω, P m ω ∂μ‖
+        ≤ 2 * Real.exp (u ^ 2 * c)
+          * (u ^ 2 * ∫ ω, X n (⟨m, hm⟩ : Fin (k n)) ω ^ 2 *
+              Set.indicator {x : Ω | ε ≤ |X n (⟨m, hm⟩ : Fin (k n)) x|}
+                (fun _ => (1 : ℝ)) ω ∂μ
+            + |u| ^ 3 * ε * ∫ ω, X n (⟨m, hm⟩ : Fin (k n)) ω ^ 2 ∂μ) := by
+    intro m hm
+    set i : Fin (k n) := ⟨m, hm⟩ with hidef
+    obtain ⟨Y, hY⟩ : ∃ Y : Ω → ℂ, ∀ ω, Y ω = P m ω *
+        (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)⁻¹ := ⟨_, fun _ => rfl⟩
+    have hYm : StronglyMeasurable[F n i.castSucc] Y := by
+      have he : Y = fun ω => P m ω *
+          (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)⁻¹ := funext hY
+      rw [he]
+      refine Measurable.stronglyMeasurable ?_
+      exact (hPmeas m hm).mul
+        ((measurable_const.sub ((Complex.measurable_ofReal.comp
+          (stronglyMeasurable_condExp.measurable)).const_mul _)).inv)
+    have hYb : ∀ᵐ ω ∂μ, ‖Y ω‖ ≤ 2 * Real.exp (u ^ 2 * c) := by
+      filter_upwards [hae, hnormP] with ω hω hnp
+      obtain ⟨hfac, -⟩ := hω
+      rw [hY ω, norm_mul, hψcast i ω, norm_inv, Complex.norm_real, Real.norm_eq_abs,
+        abs_of_pos (by linarith [(hfac i).2] : (0:ℝ) <
+          1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)]
+      have hinv : (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℝ)⁻¹ ≤ 2 := by
+        rw [inv_eq_one_div, div_le_iff₀ (by linarith [(hfac i).2])]
+        linarith [(hfac i).1, (hfac i).2, mul_nonneg (by positivity : (0:ℝ) ≤ u ^ 2 / 2)
+          (hfac i).1]
+      have h0 : (0:ℝ) ≤ Real.exp (u ^ 2 * c) := (Real.exp_pos _).le
+      have hPn := hnp m
+      nlinarith [norm_nonneg (P m ω), inv_nonneg.2 (le_of_lt (by linarith [(hfac i).2] :
+        (0:ℝ) < 1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω))]
+    have hdiff : ∀ᵐ ω ∂μ, P (m + 1) ω - P m ω
+        = Y ω * (Complex.exp (I * ((u * X n i ω : ℝ) : ℂ))
+          - (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)) := by
+      filter_upwards [hae] with ω hω
+      obtain ⟨hfac, -⟩ := hω
+      have hne : (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℂ) ≠ 0 := by
+        rw [hψcast i ω, Ne, Complex.ofReal_eq_zero]
+        linarith [(hfac i).2]
+      rw [hP (m + 1) ω, hSins m hm, Finset.prod_insert (hSnotmem m hm), ← hP m ω, hY ω]
+      field_simp
+      ring
+    have hint : (∫ ω, P (m + 1) ω ∂μ) - ∫ ω, P m ω ∂μ
+        = ∫ ω, Y ω * (Complex.exp (I * ((u * X n i ω : ℝ) : ℂ))
+          - (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)) ∂μ := by
+      rw [← integral_sub (hPint (m + 1)) (hPint m)]
+      exact integral_congr_ae hdiff
+    rw [hint]
+    exact norm_integral_mul_cexp_sub_taylor_le h n i u hε hYm hYb
+  -- (5) telescope
+  have htel : ∀ m : ℕ, m ≤ k n →
+      ‖(∫ ω, P m ω ∂μ) - 1‖ ≤ ∑ j ∈ Finset.range m, (if hj : j < k n then
+        2 * Real.exp (u ^ 2 * c)
+          * (u ^ 2 * ∫ ω, X n (⟨j, hj⟩ : Fin (k n)) ω ^ 2 *
+              Set.indicator {x : Ω | ε ≤ |X n (⟨j, hj⟩ : Fin (k n)) x|}
+                (fun _ => (1 : ℝ)) ω ∂μ
+            + |u| ^ 3 * ε * ∫ ω, X n (⟨j, hj⟩ : Fin (k n)) ω ^ 2 ∂μ) else 0) := by
+    intro m
+    induction m with
+    | zero =>
+      intro _
+      have h0 : (∫ ω, P 0 ω ∂μ) = 1 := by
+        have he : ∀ ω, P 0 ω = 1 := fun ω => by rw [hP 0 ω, hS0, Finset.prod_empty]
+        rw [integral_congr_ae (ae_of_all _ he)]
+        simp
+      simp [h0]
+    | succ m ih =>
+      intro hm
+      have hm' : m < k n := hm
+      have hmle : m ≤ k n := le_of_lt hm'
+      have h1 := ih hmle
+      have h2 := hstep m hm'
+      rw [Finset.sum_range_succ]
+      have hsplit : (∫ ω, P (m + 1) ω ∂μ) - 1
+          = ((∫ ω, P (m + 1) ω ∂μ) - ∫ ω, P m ω ∂μ) + ((∫ ω, P m ω ∂μ) - 1) := by ring
+      rw [hsplit]
+      refine (norm_add_le _ _).trans ?_
+      rw [dif_pos hm']
+      linarith
+  -- (6) identify the endpoint
+  have hend : ∀ ω, P (k n) ω = Complex.exp (I * ((u * mdsRowSum k X n ω : ℝ) : ℂ))
+      * ∏ i, (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)⁻¹ := by
+    intro ω
+    rw [hP (k n) ω, hSfull, Finset.prod_mul_distrib]
+    congr 1
+    rw [← Complex.exp_sum]
+    congr 1
+    rw [mdsRowSum]
+    push_cast
+    rw [Finset.mul_sum]
+    exact Finset.sum_congr rfl fun j _ => by ring
+  have hfinal := htel (k n) le_rfl
+  rw [integral_congr_ae (ae_of_all _ hend)] at hfinal
+  refine hfinal.trans (le_of_eq ?_)
+  rw [Finset.mul_add, Finset.mul_sum, Finset.mul_sum]
+  rw [← Fin.sum_univ_eq_sum_range (fun j => (if hj : j < k n then
+    2 * Real.exp (u ^ 2 * c)
+      * (u ^ 2 * ∫ ω, X n (⟨j, hj⟩ : Fin (k n)) ω ^ 2 *
+          Set.indicator {x : Ω | ε ≤ |X n (⟨j, hj⟩ : Fin (k n)) x|}
+            (fun _ => (1 : ℝ)) ω ∂μ
+        + |u| ^ 3 * ε * ∫ ω, X n (⟨j, hj⟩ : Fin (k n)) ω ^ 2 ∂μ) else 0)) (k n)]
+  rw [← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [dif_pos i.isLt]
+  simp only [Fin.eta]
+  ring
 
 /-- **Tower telescope** (the heart of Brown's proof): for an MDS row, peeling the
 factors of `e^{iuS}` from the right against the filtration replaces each by its
