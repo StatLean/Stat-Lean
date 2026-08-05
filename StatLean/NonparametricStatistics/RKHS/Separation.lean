@@ -38,9 +38,12 @@ def SeparatesData {ι : Type*} (v : E) (c : ℝ) (x : ι → E) (lab : ι → �
 def LinearlySeparable {ι : Type*} (x : ι → E) (lab : ι → ℝ) : Prop :=
   ∃ (v : E) (c : ℝ), SeparatesData v c x lab
 
-/-- A separating normal vector is necessarily nonzero (given at least one data point). -/
-theorem SeparatesData.ne_zero {ι : Type*} [Nonempty ι] {v : E} {c : ℝ} {x : ι → E}
-    {lab : ι → ℝ} (h : SeparatesData v c x lab) : v ≠ 0 := by
+/-- A normal vector separating two *nonempty* classes is necessarily nonzero.  (With
+only one label sign present, `v = 0` with a suitable offset vacuously "separates".) -/
+theorem SeparatesData.ne_zero {ι : Type*} {v : E} {c : ℝ} {x : ι → E}
+    {lab : ι → ℝ} (h : SeparatesData v c x lab) {i₊ i₋ : ι}
+    -- USER-INPUT: both classes are nonempty (a positive and a negative label occur)
+    (h₊ : 0 < lab i₊) (h₋ : lab i₋ < 0) : v ≠ 0 := by
   sorry
 
 /-- **Distance to an affine hyperplane**: for `v ≠ 0`,

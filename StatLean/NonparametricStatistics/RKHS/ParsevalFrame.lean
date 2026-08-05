@@ -84,7 +84,7 @@ theorem IsParsevalFrame.hasSum_inner [CompleteSpace E] {f : ι → E}
 /-- **Dilation (Han–Larson)**: every Parseval frame for `E` is the compression of the
 canonical orthonormal basis of `ℓ²(ι)`: there is a linear isometry `V : E → ℓ²(ι)`
 whose adjoint maps the canonical basis vectors to the frame vectors. -/
-theorem IsParsevalFrame.exists_dilation [CompleteSpace E] {f : ι → E}
+theorem IsParsevalFrame.exists_dilation [CompleteSpace E] [DecidableEq ι] {f : ι → E}
     (hf : IsParsevalFrame 𝕜 f) :
     ∃ V : E →ₗᵢ[𝕜] lp (fun _ : ι => 𝕜) 2,
       ∀ i, V.toContinuousLinearMap.adjoint (lp.single 2 i (1 : 𝕜)) = f i := by

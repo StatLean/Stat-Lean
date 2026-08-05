@@ -26,7 +26,7 @@ E. H. Moore (1935, under the name "positive Hermitian matrices") and J. Mercer,
 -/
 
 open ComplexConjugate
-open scoped InnerProductSpace
+open scoped InnerProductSpace ComplexOrder
 
 namespace StatLean.NonparametricStatistics
 

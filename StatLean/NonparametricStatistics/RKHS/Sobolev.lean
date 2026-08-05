@@ -1,5 +1,6 @@
 import StatLean.NonparametricStatistics.RKHS.Basic
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-!

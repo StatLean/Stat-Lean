@@ -1,5 +1,5 @@
 import StatLean.NonparametricStatistics.RKHS.Mercer.Basic
-import Mathlib.Analysis.LocallyConvex.CompactOperator
+import Mathlib.Analysis.Normed.Operator.Compact
 
 /-!
 # Compactness of the Mercer integral operator
