@@ -48,12 +48,15 @@ structure IsKernelFun (K : X → X → 𝕜) : Prop where
 theorem IsKernelFun.im_sum_eq_zero {K : X → X → 𝕜} (hK : IsKernelFun K)
     (n : ℕ) (x : Fin n → X) (a : Fin n → 𝕜) :
     RCLike.im (∑ i, ∑ j, conj (a i) * a j * K (x i) (x j)) = 0 := by
-  sorry
+  refine RCLike.conj_eq_iff_im.mp ?_
+  simp only [map_sum, map_mul, RCLike.conj_conj, hK.conj_symm]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
 
 /-- The diagonal of a kernel function is real with nonnegative real part. -/
 theorem IsKernelFun.re_apply_self_nonneg {K : X → X → 𝕜} (hK : IsKernelFun K) (x : X) :
     0 ≤ RCLike.re (K x x) := by
-  sorry
+  simpa using hK.re_sum_nonneg 1 (fun _ => x) (fun _ => 1)
 
 /-- Conical combination: `p₁ K₁ + p₂ K₂` is a kernel function for `p₁, p₂ ≥ 0`. -/
 theorem IsKernelFun.add_smul {K₁ K₂ : X → X → 𝕜} (h₁ : IsKernelFun K₁)
@@ -61,13 +64,34 @@ theorem IsKernelFun.add_smul {K₁ K₂ : X → X → 𝕜} (h₁ : IsKernelFun 
     (hp₁ : 0 ≤ p₁)  -- USER-INPUT: nonnegative weight
     (hp₂ : 0 ≤ p₂) :  -- USER-INPUT: nonnegative weight
     IsKernelFun (fun x y => (p₁ : 𝕜) * K₁ x y + (p₂ : 𝕜) * K₂ x y) := by
-  sorry
+  refine ⟨fun x y => ?_, fun n x a => ?_⟩
+  · simp only [map_add, map_mul, RCLike.conj_ofReal, h₁.conj_symm, h₂.conj_symm]
+  · have key : (∑ i, ∑ j, conj (a i) * a j *
+          ((p₁ : 𝕜) * K₁ (x i) (x j) + (p₂ : 𝕜) * K₂ (x i) (x j)))
+        = (p₁ : 𝕜) * (∑ i, ∑ j, conj (a i) * a j * K₁ (x i) (x j))
+          + (p₂ : 𝕜) * (∑ i, ∑ j, conj (a i) * a j * K₂ (x i) (x j)) := by
+      rw [Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      rw [Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
+      exact Finset.sum_congr rfl fun j _ => by ring
+    rw [key, map_add, RCLike.re_ofReal_mul, RCLike.re_ofReal_mul]
+    exact add_nonneg (mul_nonneg hp₁ (h₁.re_sum_nonneg n x a))
+      (mul_nonneg hp₂ (h₂.re_sum_nonneg n x a))
 
 /-- Conjugation by a scalar function: `(x, y) ↦ conj (g x) * K x y * g y` is a kernel
 function whenever `K` is. -/
 theorem IsKernelFun.conj_mul {K : X → X → 𝕜} (hK : IsKernelFun K) (g : X → 𝕜) :
     IsKernelFun (fun x y => conj (g x) * K x y * g y) := by
-  sorry
+  refine ⟨fun x y => ?_, fun n x a => ?_⟩
+  · simp only [map_mul, RCLike.conj_conj, hK.conj_symm]
+    ring
+  · have key : (∑ i, ∑ j, conj (a i) * a j * (conj (g (x i)) * K (x i) (x j) * g (x j)))
+        = ∑ i, ∑ j, conj (a i * g (x i)) * (a j * g (x j)) * K (x i) (x j) := by
+      refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+      rw [map_mul]
+      ring
+    rw [key]
+    exact hK.re_sum_nonneg n x (fun i => a i * g (x i))
 
 section FeatureKernel
 
@@ -81,7 +105,16 @@ noncomputable def featureKernel (φ : X → E) : X → X → 𝕜 := fun x y => 
 /-- A Gram function of an arbitrary family of vectors is a kernel function:
 the quadratic form is `‖∑ᵢ aᵢ φ(xᵢ)‖² ≥ 0`. -/
 theorem isKernelFun_featureKernel (φ : X → E) : IsKernelFun (featureKernel 𝕜 φ) := by
-  sorry
+  refine ⟨fun x y => inner_conj_symm _ _, fun n x a => ?_⟩
+  simp only [featureKernel]
+  have key : (∑ i, ∑ j, conj (a i) * a j * ⟪φ (x i), φ (x j)⟫_𝕜)
+      = ⟪∑ i, a i • φ (x i), ∑ j, a j • φ (x j)⟫_𝕜 := by
+    rw [sum_inner]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [inner_smul_left, inner_sum, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun j _ => by rw [inner_smul_right]; ring
+  rw [key]
+  exact inner_self_nonneg
 
 end FeatureKernel
 
@@ -95,12 +128,14 @@ variable (H) in
 `scalarKernel H = featureKernel 𝕜 (kernelFun H)`. -/
 theorem scalarKernel_eq_featureKernel :
     scalarKernel H = featureKernel 𝕜 (kernelFun (X := X) H) := by
-  sorry
+  funext x y
+  rw [scalarKernel_eq_inner, featureKernel]
 
 variable (H) in
 /-- The reproducing kernel of an RKHS is a kernel function. -/
 theorem isKernelFun_scalarKernel : IsKernelFun (scalarKernel (X := X) H) := by
-  sorry
+  rw [scalarKernel_eq_featureKernel]
+  exact isKernelFun_featureKernel _
 
 end RKHSKernel
 
@@ -114,14 +149,45 @@ variable (𝕜) in
 noncomputable def gramian {n : ℕ} (h : Fin n → E) : Matrix (Fin n) (Fin n) 𝕜 :=
   Matrix.of fun i j => ⟪h i, h j⟫_𝕜
 
+-- The Grammian quadratic form is the inner product of the corresponding linear
+-- combination with itself.
+private theorem gramian_quadratic {n : ℕ} (h : Fin n → E) (x : Fin n →₀ 𝕜) :
+    (x.sum fun i xi => x.sum fun j xj => star xi * gramian 𝕜 h i j * xj)
+      = ⟪Finsupp.linearCombination 𝕜 h x, Finsupp.linearCombination 𝕜 h x⟫_𝕜 := by
+  rw [Finsupp.linearCombination_apply, Finsupp.sum_inner]
+  refine Finsupp.sum_congr fun i _ => ?_
+  rw [Finsupp.inner_sum]
+  refine Finsupp.sum_congr fun j _ => ?_
+  rw [inner_smul_left, inner_smul_right]
+  simp only [gramian, Matrix.of_apply, RCLike.star_def]
+  ring
+
 /-- The Grammian of any finite family is positive semidefinite. -/
 theorem gramian_posSemidef {n : ℕ} (h : Fin n → E) : (gramian 𝕜 h).PosSemidef := by
-  sorry
+  refine ⟨?_, fun x => ?_⟩
+  · ext i j
+    simp only [Matrix.conjTranspose_apply, gramian, Matrix.of_apply, RCLike.star_def,
+      inner_conj_symm]
+  · rw [gramian_quadratic, RCLike.nonneg_iff]
+    exact ⟨inner_self_nonneg, inner_self_im _⟩
 
 /-- The Grammian is positive definite iff the family is linearly independent. -/
 theorem gramian_posDef_iff_linearIndependent {n : ℕ} (h : Fin n → E) :
     (gramian 𝕜 h).PosDef ↔ LinearIndependent 𝕜 h := by
-  sorry
+  rw [linearIndependent_iff]
+  constructor
+  · intro hpd l hl
+    by_contra hne
+    have hpos := hpd.2 hne
+    rw [gramian_quadratic, hl, inner_zero_left] at hpos
+    exact lt_irrefl (0 : 𝕜) hpos
+  · intro hli
+    refine ⟨(gramian_posSemidef h).1, fun x hx => ?_⟩
+    rw [gramian_quadratic]
+    have hv : Finsupp.linearCombination 𝕜 h x ≠ 0 := fun hv => hx (hli x hv)
+    refine lt_of_le_of_ne ?_ (fun hcon => hv (inner_self_eq_zero.mp hcon.symm))
+    rw [RCLike.nonneg_iff]
+    exact ⟨inner_self_nonneg, inner_self_im _⟩
 
 end Gramian
 
