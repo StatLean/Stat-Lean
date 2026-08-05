@@ -384,6 +384,20 @@ private theorem coeFn_starLp (g : Lp 𝕜 2 μ) :
     (starLp g : X → 𝕜) =ᵐ[μ] fun y => conj ((g : X → 𝕜) y) :=
   MemLp.coeFn_toLp _
 
+private theorem norm_starLp (f : Lp 𝕜 2 μ) : ‖starLp f‖ = ‖f‖ := by
+  rw [starLp, Lp.norm_toLp, Lp.norm_def]
+  congr 1
+  exact eLpNorm_congr_norm_ae (Filter.Eventually.of_forall fun y => by simp)
+
+private theorem norm_sq_eq_integral (u : Lp 𝕜 2 μ) :
+    ‖u‖ ^ 2 = ∫ x, ‖(u : X → 𝕜) x‖ ^ 2 ∂μ := by
+  have h1 : ⟪u, u⟫_𝕜 = ((∫ x, ‖(u : X → 𝕜) x‖ ^ 2 ∂μ : ℝ) : 𝕜) := by
+    rw [L2.inner_def, ← integral_ofReal]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    change ⟪(u : X → 𝕜) x, (u : X → 𝕜) x⟫_𝕜 = ((‖(u : X → 𝕜) x‖ ^ 2 : ℝ) : 𝕜)
+    rw [RCLike.inner_apply, RCLike.mul_conj, ← RCLike.ofReal_pow]
+  rw [norm_sq_eq_re_inner (𝕜 := 𝕜), h1, RCLike.ofReal_re]
+
 variable (μ) in
 /-- The **bilinear** `L²` pairing `f ↦ ∫ f y · g y dμ` (no conjugation), packaged as a
 continuous additive map — this is the functional through which `integralOp` reads a
@@ -498,6 +512,35 @@ private theorem continuous_sqrtSectionLp (hK : IsMercerKernel 𝕜 K) [μ.IsOpen
 theorem isL2Symbol_sqrtSymbol (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure] :
     IsL2Symbol μ (sqrtSymbol d) := fun x => Lp.memLp (sqrtSectionLp d x)
 
+-- `T_S g` is a continuous function of `x` (the section map is continuous and the pairing
+-- against `g` is a continuous functional).
+private theorem integralOp_sqrtSymbol_eq (g : Lp 𝕜 2 μ) :
+    integralOp μ (sqrtSymbol d) g = fun x => pairAdd μ g (sqrtSectionLp d x) := by
+  funext x
+  rw [pairAdd_apply]
+  rfl
+
+private theorem continuous_integralOp_sqrtSymbol (hK : IsMercerKernel 𝕜 K)
+    [μ.IsOpenPosMeasure] (g : Lp 𝕜 2 μ) : Continuous (integralOp μ (sqrtSymbol d) g) := by
+  rw [integralOp_sqrtSymbol_eq d g]
+  exact (continuous_pairAdd g).comp (continuous_sqrtSectionLp d hK)
+
+private theorem norm_integralOp_sqrtSymbol_le (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure]
+    {M : ℝ} (hM : ∀ x y : X, ‖K x y‖ ≤ M) (g : Lp 𝕜 2 μ) (x : X) :
+    ‖integralOp μ (sqrtSymbol d) g x‖ ≤ Real.sqrt M * ‖g‖ := by
+  have h1 : ‖integralOp μ (sqrtSymbol d) g x‖ ≤ ‖sqrtSectionLp d x‖ * ‖g‖ := by
+    have h0 : integralOp μ (sqrtSymbol d) g x = conj ⟪sqrtSectionLp d x, starLp g⟫_𝕜 :=
+      congrFun (integralOp_sqrtSymbol_eq d g) x
+    rw [h0, RCLike.norm_conj, ← norm_starLp g]
+    exact norm_inner_le_norm _ _
+  refine h1.trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
+  have h2 : ‖sqrtSectionLp d x‖ ^ 2 ≤ M := by
+    rw [norm_sq_sqrtSectionLp d hK x]
+    exact le_trans (RCLike.re_le_norm _) (hM x x)
+  calc ‖sqrtSectionLp d x‖ = Real.sqrt (‖sqrtSectionLp d x‖ ^ 2) :=
+        (Real.sqrt_sq (norm_nonneg _)).symm
+    _ ≤ Real.sqrt M := Real.sqrt_le_sqrt h2
+
 /-- The image of the square-root operator is square-integrable. -/
 theorem memLp_integralOp_sqrtSymbol (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure]
     (g : Lp 𝕜 2 μ) :
@@ -507,27 +550,9 @@ theorem memLp_integralOp_sqrtSymbol (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMe
   -- `‖sqrtSectionLp d x‖ ≤ √(re K(x,x))` comes from the orthogonal series
   -- (`∑ₙ λₙ ‖eₙ(x)‖² ≤ re K(x,x)`, the diagonal of the PROVED `hasSum_kernel`).
   obtain ⟨M, hM0, hM⟩ := exists_bnd (K := K) hKc
-  have hrepr : integralOp μ (sqrtSymbol d) g = fun x => pairAdd μ g (sqrtSectionLp d x) := by
-    funext x
-    rw [pairAdd_apply]
-    rfl
-  have hcont : Continuous (integralOp μ (sqrtSymbol d) g) := by
-    rw [hrepr]
-    exact (continuous_pairAdd g).comp (continuous_sqrtSectionLp d hK)
-  refine MemLp.of_bound hcont.aestronglyMeasurable (Real.sqrt M * ‖starLp g‖) ?_
-  filter_upwards with x
-  have h1 : ‖integralOp μ (sqrtSymbol d) g x‖ ≤ ‖sqrtSectionLp d x‖ * ‖starLp g‖ := by
-    have h0 : integralOp μ (sqrtSymbol d) g x = conj ⟪sqrtSectionLp d x, starLp g⟫_𝕜 :=
-      congrFun hrepr x
-    rw [h0, RCLike.norm_conj]
-    exact norm_inner_le_norm _ _
-  refine h1.trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
-  have h2 : ‖sqrtSectionLp d x‖ ^ 2 ≤ M := by
-    rw [norm_sq_sqrtSectionLp d hK x]
-    exact le_trans (RCLike.re_le_norm _) (hM x x)
-  calc ‖sqrtSectionLp d x‖ = Real.sqrt (‖sqrtSectionLp d x‖ ^ 2) :=
-        (Real.sqrt_sq (norm_nonneg _)).symm
-    _ ≤ Real.sqrt M := Real.sqrt_le_sqrt h2
+  exact MemLp.of_bound (continuous_integralOp_sqrtSymbol d hK g).aestronglyMeasurable
+    (Real.sqrt M * ‖g‖)
+    (Filter.Eventually.of_forall fun x => norm_integralOp_sqrtSymbol_le d hK hM g x)
 
 variable (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure]
 
@@ -539,9 +564,35 @@ noncomputable def sqrtCLM : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 2 μ :=
       -- Route: linearity via `integralOp_eq_inner` plus `inner_add_right`/
       -- `inner_smul_right` verbatim as in `mercerCLM` (Mercer/Defs); the bound is
       -- `‖T_S g‖ ≤ √(sup_x re K(x,x)) · √μ(X) · ‖g‖`.
-      map_add' := by sorry
-      map_smul' := by sorry }
-    (by sorry)
+      map_add' := by
+        intro g h
+        rw [← MemLp.toLp_add]
+        refine (MemLp.toLp_eq_toLp_iff _ _).2 (Filter.Eventually.of_forall fun x => ?_)
+        change integralOp μ (sqrtSymbol d) (g + h) x
+            = integralOp μ (sqrtSymbol d) g x + integralOp μ (sqrtSymbol d) h x
+        rw [integralOp_eq_inner _ (isL2Symbol_sqrtSymbol d hK),
+          integralOp_eq_inner _ (isL2Symbol_sqrtSymbol d hK),
+          integralOp_eq_inner _ (isL2Symbol_sqrtSymbol d hK), inner_add_right]
+      map_smul' := by
+        intro c g
+        change (memLp_integralOp_sqrtSymbol d hK (c • g)).toLp _
+          = c • (memLp_integralOp_sqrtSymbol d hK g).toLp _
+        rw [← MemLp.toLp_const_smul]
+        refine (MemLp.toLp_eq_toLp_iff _ _).2 (Filter.Eventually.of_forall fun x => ?_)
+        change integralOp μ (sqrtSymbol d) (c • g) x = c • integralOp μ (sqrtSymbol d) g x
+        rw [integralOp_eq_inner _ (isL2Symbol_sqrtSymbol d hK),
+          integralOp_eq_inner _ (isL2Symbol_sqrtSymbol d hK), inner_smul_right, smul_eq_mul] }
+    (by
+      obtain ⟨M, hM0, hM⟩ := exists_bnd (K := K) hKc
+      refine ⟨(measureUnivNNReal μ : ℝ) ^ ((2 : ENNReal).toReal)⁻¹ * Real.sqrt M, fun g => ?_⟩
+      rw [mul_assoc]
+      refine Lp.norm_le_of_ae_bound (by positivity) ?_
+      filter_upwards [MemLp.coeFn_toLp (μ := μ) (p := 2)
+        (memLp_integralOp_sqrtSymbol d hK g)] with x hx
+      change ‖(((memLp_integralOp_sqrtSymbol d hK g).toLp (integralOp μ (sqrtSymbol d) g) :
+        Lp 𝕜 2 μ) : X → 𝕜) x‖ ≤ _
+      rw [hx]
+      exact norm_integralOp_sqrtSymbol_le d hK hM g x)
 
 /-- Diagonalization of the square root: `T_S g = ∑ₙ √λₙ ⟪eₙ, g⟫ eₙ`. -/
 theorem sqrtCLM_hasSum (g : Lp 𝕜 2 μ) :
