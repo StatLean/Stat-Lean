@@ -3,6 +3,7 @@ import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 
 /-!
 # The Sobolev space `H₀¹[0,1]` as a reproducing kernel Hilbert space
@@ -54,20 +55,6 @@ noncomputable def sobolevInd (x : ℝ) : Lp ℝ 2 sobolevMeasure :=
 instance : IsClosed (((ℝ ∙ sobolevOne)ᗮ : Submodule ℝ (Lp ℝ 2 sobolevMeasure)) :
     Set (Lp ℝ 2 sobolevMeasure)) :=
   Submodule.isClosed_orthogonal _
-
-/-- **The Dirichlet–Sobolev space `H₀¹[0,1]`**, modeled as the mean-zero subspace of
-`L²[0,1]` carrying the derivative representative of each function; the boundary
-conditions `f(0) = f(1) = 0` correspond to the mean-zero constraint. -/
-noncomputable abbrev SobolevH01 : Type _ := ↥((ℝ ∙ sobolevOne)ᗮ)
-
-/-- The Sobolev space is an RKHS on `[0,1]`: the element with derivative representative
-`g` acts as the function `x ↦ ∫₀ˣ g = ⟪𝟙_{[0,x]}, g⟫`. -/
-noncomputable instance : RKHS ℝ SobolevH01 unitInterval01 ℝ where
-  coeCLM :=
-    (ContinuousLinearMap.pi fun x : unitInterval01 => innerSL ℝ (sobolevInd x.1)).comp
-      (Submodule.subtypeL _)
-  coeCLM_injective := by
-    sorry
 
 section Aux
 
@@ -130,16 +117,118 @@ private theorem inner_sobolevOne_eq_integral (g : Lp ℝ 2 sobolevMeasure) :
   exact MeasureTheory.L2.inner_indicatorConstLp_one (𝕜 := ℝ) (μ := sobolevMeasure)
     MeasurableSet.univ (measure_ne_top _ _) g
 
-/-- Unfolding of the RKHS action of the Sobolev space. -/
-private theorem sobolevH01_coe_apply (f : SobolevH01) (x : unitInterval01) :
-    f x = ⟪sobolevInd (x : ℝ), (f : Lp ℝ 2 sobolevMeasure)⟫_ℝ := rfl
-
 /-- The `[0,1]`-indicator and the constant `1` have the same action on `L²[0,1]`. -/
 private theorem inner_sobolevInd_one_eq (g : Lp ℝ 2 sobolevMeasure) :
     ⟪sobolevInd (1 : ℝ), g⟫_ℝ = ⟪sobolevOne, g⟫_ℝ := by
   rw [inner_sobolevInd_eq_setIntegral, inner_sobolevOne_eq_integral, sobolevMeasure_restrict_Icc]
 
 end Aux
+
+/-- **The Dirichlet–Sobolev space `H₀¹[0,1]`**, modeled as the mean-zero subspace of
+`L²[0,1]` carrying the derivative representative of each function; the boundary
+conditions `f(0) = f(1) = 0` correspond to the mean-zero constraint. -/
+noncomputable abbrev SobolevH01 : Type _ := ↥((ℝ ∙ sobolevOne)ᗮ)
+
+section Injectivity
+
+/-- The left-infinite rational rays form a π-system generating the Borel σ-algebra of `ℝ`. -/
+private theorem isPiSystem_Iic_rat : IsPiSystem (⋃ a : ℚ, {Set.Iic (a : ℝ)}) := by
+  rintro s hs t ht -
+  simp only [Set.mem_iUnion, Set.mem_singleton_iff] at hs ht
+  obtain ⟨p, rfl⟩ := hs
+  obtain ⟨q, rfl⟩ := ht
+  refine Set.mem_iUnion.mpr ⟨min p q, ?_⟩
+  rw [Set.mem_singleton_iff, Set.Iic_inter_Iic]
+  norm_cast
+
+/-- **Uniqueness of the primitive**: an `L²[0,1]` function whose integral over every initial
+segment `[0,x]`, `x ∈ [0,1]`, vanishes is the zero element.  Proved by promoting the
+hypothesis from the π-system of left-infinite rays to all Borel sets. -/
+private theorem lp_eq_zero_of_setIntegral_Icc_eq_zero (g : Lp ℝ 2 sobolevMeasure)
+    (h : ∀ x ∈ unitInterval01,
+      ∫ t in Set.Icc 0 x, (g : ℝ → ℝ) t ∂sobolevMeasure = 0) : g = 0 := by
+  have hint : Integrable (g : ℝ → ℝ) sobolevMeasure := by
+    rw [← integrableOn_univ]
+    exact integrableOn_Lp_of_measure_ne_top g fact_one_le_two_ennreal.elim (measure_ne_top _ _)
+  have hUniv : ∫ t, (g : ℝ → ℝ) t ∂sobolevMeasure = 0 := by
+    have h1 := h 1 (Set.mem_Icc.mpr ⟨zero_le_one, le_refl 1⟩)
+    rwa [sobolevMeasure_restrict_Icc] at h1
+  have hIic : ∀ a : ℝ, ∫ t in Set.Iic a, (g : ℝ → ℝ) t ∂sobolevMeasure = 0 := by
+    intro a
+    rcases lt_or_ge a 0 with ha | ha
+    · refine setIntegral_measure_zero _ ?_
+      change (volume.restrict (Set.Icc (0 : ℝ) 1)) (Set.Iic a) = 0
+      rw [Measure.restrict_apply measurableSet_Iic,
+        show Set.Iic a ∩ Set.Icc (0 : ℝ) 1 = ∅ by
+          refine Set.eq_empty_iff_forall_notMem.mpr ?_
+          rintro t ⟨hta, h0, -⟩
+          exact absurd (le_trans h0 hta) (not_le.mpr ha)]
+      exact measure_empty
+    · have hres : sobolevMeasure.restrict (Set.Iic a)
+          = sobolevMeasure.restrict (Set.Icc 0 (min a 1)) := by
+        change (volume.restrict (Set.Icc (0 : ℝ) 1)).restrict (Set.Iic a)
+          = (volume.restrict (Set.Icc (0 : ℝ) 1)).restrict (Set.Icc 0 (min a 1))
+        rw [Measure.restrict_restrict measurableSet_Iic,
+          Measure.restrict_restrict measurableSet_Icc]
+        congr 1
+        ext t
+        simp only [Set.mem_inter_iff, Set.mem_Iic, Set.mem_Icc, le_min_iff]
+        tauto
+      rw [hres]
+      exact h (min a 1) (Set.mem_Icc.mpr ⟨le_min ha zero_le_one, min_le_right _ _⟩)
+  have key : ∀ u : Set ℝ, MeasurableSet u →
+      ∫ t in u, (g : ℝ → ℝ) t ∂sobolevMeasure = 0 := by
+    refine MeasurableSpace.induction_on_inter
+      (C := fun u _ => ∫ t in u, (g : ℝ → ℝ) t ∂sobolevMeasure = 0)
+      (s := ⋃ a : ℚ, {Set.Iic (a : ℝ)})
+      (BorelSpace.measurable_eq.trans Real.borel_eq_generateFrom_Iic_rat)
+      isPiSystem_Iic_rat (by simp) ?_ ?_ ?_
+    · rintro u hu
+      simp only [Set.mem_iUnion, Set.mem_singleton_iff] at hu
+      obtain ⟨q, rfl⟩ := hu
+      exact hIic _
+    · intro u hu hu0
+      have hadd := integral_add_compl hu hint
+      rw [hu0, zero_add] at hadd
+      rw [hadd]
+      exact hUniv
+    · intro fseq hdisj hmeas hf0
+      rw [integral_iUnion hmeas hdisj hint.integrableOn]
+      simp [hf0]
+  exact Lp.eq_zero_iff_ae_eq_zero.mpr
+    (MeasureTheory.Integrable.ae_eq_zero_of_forall_setIntegral_eq_zero hint
+      fun s hs _ => key s hs)
+
+/-- Injectivity of the action of `H₀¹[0,1]` on `[0,1]`. -/
+private theorem sobolevCoe_injective :
+    Function.Injective
+      (⇑((ContinuousLinearMap.pi fun x : unitInterval01 => innerSL ℝ (sobolevInd x.1)).comp
+        (Submodule.subtypeL ((ℝ ∙ sobolevOne)ᗮ))) : SobolevH01 → unitInterval01 → ℝ) := by
+  intro f₁ f₂ hf
+  have hzero : (f₁ : Lp ℝ 2 sobolevMeasure) - (f₂ : Lp ℝ 2 sobolevMeasure) = 0 := by
+    refine lp_eq_zero_of_setIntegral_Icc_eq_zero _ ?_
+    intro x hx
+    rw [← inner_sobolevInd_eq_setIntegral, inner_sub_right]
+    have hval : ⟪sobolevInd x, (f₁ : Lp ℝ 2 sobolevMeasure)⟫_ℝ
+        = ⟪sobolevInd x, (f₂ : Lp ℝ 2 sobolevMeasure)⟫_ℝ := congrFun hf ⟨x, hx⟩
+    rw [hval, sub_self]
+  exact Subtype.ext (sub_eq_zero.mp hzero)
+
+end Injectivity
+
+/-- The Sobolev space is an RKHS on `[0,1]`: the element with derivative representative
+`g` acts as the function `x ↦ ∫₀ˣ g = ⟪𝟙_{[0,x]}, g⟫`. -/
+noncomputable instance : RKHS ℝ SobolevH01 unitInterval01 ℝ where
+  coeCLM :=
+    (ContinuousLinearMap.pi fun x : unitInterval01 => innerSL ℝ (sobolevInd x.1)).comp
+      (Submodule.subtypeL _)
+  coeCLM_injective := by
+    exact sobolevCoe_injective
+
+/-- Unfolding of the RKHS action of the Sobolev space. -/
+private theorem sobolevH01_coe_apply (f : SobolevH01) (x : unitInterval01) :
+    f x = ⟪sobolevInd (x : ℝ), (f : Lp ℝ 2 sobolevMeasure)⟫_ℝ := rfl
+
 
 /-- Interpretation of the action: `f x = ∫_{[0,x]} g` where `g` is the derivative
 representative of `f`. -/
