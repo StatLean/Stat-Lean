@@ -99,11 +99,11 @@ theorem posSemidef_fromBlocks_meat_bread (D : Fin N → Matrix (Fin m) (Fin q) �
       rw [Matrix.transpose_mul, Matrix.transpose_nonsing_inv, hVsymm, Matrix.transpose_transpose]
     have h2 : ((D i)ᵀ * (Covs i)⁻¹)ᵀ = (Covs i)⁻¹ * D i := by
       rw [Matrix.transpose_mul, Matrix.transpose_nonsing_inv, hCovT, Matrix.transpose_transpose]
-    show Matrix.fromRows ((D i)ᵀ * (V i)⁻¹) ((D i)ᵀ * (Covs i)⁻¹) * Covs i
+    change Matrix.fromRows ((D i)ᵀ * (V i)⁻¹) ((D i)ᵀ * (Covs i)⁻¹) * Covs i
         * (Matrix.fromRows ((D i)ᵀ * (V i)⁻¹) ((D i)ᵀ * (Covs i)⁻¹))ᵀ = _
     rw [Matrix.fromRows_mul, Matrix.transpose_fromRows, Matrix.fromRows_mul_fromCols, h1, h2]
-    simp only [Matrix.mul_assoc, Matrix.mul_nonsing_inv_cancel_left _ (hCovU i),
-      Matrix.nonsing_inv_mul_cancel_left _ (hCovU i)]
+    simp only [Matrix.mul_assoc, Matrix.mul_nonsing_inv_cancel_left _ _ (hCovU i),
+      Matrix.nonsing_inv_mul_cancel_left _ _ (hCovU i)]
   have key : ∑ i, W i * Covs i * (W i)ᵀ
       = Matrix.fromBlocks (geeMeat D V Covs) (geeBread D V) (geeBread D V)ᵀ
           (godambeInfo D Covs) := by
@@ -136,7 +136,7 @@ theorem godambe_optimality (D : Fin N → Matrix (Fin m) (Fin q) ℝ)
     rw [Matrix.transpose_nonsing_inv, hBt]
   have hpsd := posSemidef_fromBlocks_meat_bread D V Covs hCov hVsymm
   rw [← Matrix.conjTranspose_eq_transpose_of_trivial] at hpsd
-  have hschur := (Matrix.PosSemidef.fromBlocks₂₂ (geeMeat D V Covs) (geeBread D V) hK).mp hpsd
+  have hschur := (Matrix.PosDef.fromBlocks₂₂ (geeMeat D V Covs) (geeBread D V) hK).mp hpsd
   rw [Matrix.conjTranspose_eq_transpose_of_trivial, hBt] at hschur
   have hcong := hschur.mul_mul_conjTranspose_same ((geeBread D V)⁻¹)
   rw [Matrix.conjTranspose_eq_transpose_of_trivial, hBinvT] at hcong
@@ -147,7 +147,7 @@ theorem godambe_optimality (D : Fin N → Matrix (Fin m) (Fin q) ℝ)
     rw [Matrix.mul_sub, Matrix.sub_mul]
     congr 1
     simp only [Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hB, Matrix.mul_one,
-      Matrix.nonsing_inv_mul_cancel_left _ hB]
+      Matrix.nonsing_inv_mul_cancel_left _ _ hB]
   rw [← hexp]
   exact hcong
 
@@ -164,7 +164,7 @@ theorem sandwich_eq_inv_godambeInfo_of_true (D : Fin N → Matrix (Fin m) (Fin q
   have hmeat : geeMeat D Covs Covs = godambeInfo D Covs := by
     refine Finset.sum_congr rfl fun i _ => ?_
     by_cases h : IsUnit (Covs i).det
-    · simp only [Matrix.mul_assoc, Matrix.nonsing_inv_mul_cancel_left _ h]
+    · simp only [Matrix.mul_assoc, Matrix.nonsing_inv_mul_cancel_left _ _ h]
     · rw [Matrix.nonsing_inv_apply_not_isUnit _ h]
       simp
   rw [hbread, hmeat, Matrix.nonsing_inv_mul _ hK, Matrix.one_mul]
