@@ -1,5 +1,6 @@
 import StatLean.TimeSeries.Mixing.Inequalities
 import StatLean.TimeSeries.ForMathlib.Probability.TriangularCLT
+import Mathlib.Analysis.Normed.Group.Tannery
 
 /-!
 # Limit theorems for α-mixing processes (FY §2.6.3, pp. 74–76)
@@ -295,7 +296,6 @@ private lemma sum_sub_double_eq (f : ℤ → ℝ) : ∀ n : ℕ,
           rw [this]; ring
       rw [← hshrink, ← Finset.sum_add_distrib]
       refine Finset.sum_congr rfl fun k _ => ?_
-      push_cast
       ring
     rw [hL, ih]
     push_cast
@@ -321,7 +321,93 @@ theorem summable_acvf_and_var_rate_of_bounded [IsProbabilityMeasure μ]
       Tendsto (fun n : ℕ => (n : ℝ)⁻¹ *
           variance (fun ω => ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) μ) atTop
         (𝓝 (acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1))) := by
-  sorry
+  classical
+  have hws : IsStationary X μ := hstat.isStationary hmeas (memLp_of_bdd hmeas hbdd 0 2)
+  have hsum : Summable fun k : ℤ => |acvf X μ k| := summable_abs_acvf' hmeas hstat hbdd hα
+  refine ⟨hsum, ?_⟩
+  have hsumZ : Summable fun k : ℤ => acvf X μ k := hsum.of_abs
+  have hsumN : Summable fun n : ℕ => acvf X μ (n : ℤ) := hsumZ.comp_injective Nat.cast_injective
+  have hsumN1 : Summable fun n : ℕ => acvf X μ ((n : ℤ) + 1) := by
+    have h := (summable_nat_add_iff 1).mpr hsumN
+    refine h.congr fun n => ?_
+    have e : ((n + 1 : ℕ) : ℤ) = (n : ℤ) + 1 := by push_cast; ring
+    rw [e]
+  -- (a) the `ℤ`-series of the ACVF is the book's `σ² = γ(0) + 2 Σ_{j≥1} γ(j)`
+  have hσeq : (∑' k : ℤ, acvf X μ k)
+      = acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) := by
+    have hneg : Summable fun n : ℕ => acvf X μ (-((n : ℤ) + 1)) := by
+      simpa only [acvf_neg hws] using hsumN1
+    have hnegeq : (∑' n : ℕ, acvf X μ (-((n : ℤ) + 1))) = ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) :=
+      tsum_congr fun n => acvf_neg hws _
+    have hshift : (∑' n : ℕ, acvf X μ ((n + 1 : ℕ) : ℤ))
+        = ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) :=
+      tsum_congr fun n => by
+        rw [show ((n + 1 : ℕ) : ℤ) = (n : ℤ) + 1 by push_cast; ring]
+    have hpos : (∑' n : ℕ, acvf X μ (n : ℤ))
+        = acvf X μ 0 + ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) := by
+      rw [hsumN.tsum_eq_zero_add, hshift]
+      norm_num
+    rw [tsum_of_nat_of_neg_add_one hsumN hneg, hnegeq, hpos]
+    ring
+  -- (b) the exact triangular-weight expansion of `Var S_n`
+  have hvar : ∀ n : ℕ, variance (fun ω => ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) μ
+      = ∑ k ∈ Finset.Ioo (-(n : ℤ)) (n : ℤ), ((n : ℝ) - |(k : ℝ)|) * acvf X μ k := by
+    intro n
+    have h1 : ∑ s ∈ Finset.range n, ∑ t ∈ Finset.range n,
+          cov[X ((s : ℤ) + 1), X ((t : ℤ) + 1); μ]
+        = ∑ s ∈ Finset.range n, ∑ t ∈ Finset.range n, acvf X μ ((s : ℤ) - (t : ℤ)) :=
+      Finset.sum_congr rfl fun s _ => Finset.sum_congr rfl fun t _ => cov_shift_pair hws s t
+    have h0 := variance_fun_sum' (μ := μ) (X := fun t : ℕ => X ((t : ℤ) + 1))
+      (s := Finset.range n) (fun t _ => memLp_of_bdd hmeas hbdd ((t : ℤ) + 1) 2)
+    rw [h0, h1, sum_sub_double_eq]
+  -- (c) the Fejér-weighted family, extended by zero to all of `ℤ`
+  set g : ℕ → ℤ → ℝ := fun n k =>
+    if k ∈ Finset.Ioo (-(n : ℤ)) (n : ℤ) then (1 - |(k : ℝ)| / (n : ℝ)) * acvf X μ k else 0
+    with hgdef
+  have hns : ∀ n : ℕ, (n : ℝ)⁻¹ * variance (fun ω => ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) μ
+      = ∑' k : ℤ, g n k := by
+    intro n
+    have hz : ∑' k : ℤ, g n k = ∑ k ∈ Finset.Ioo (-(n : ℤ)) (n : ℤ), g n k :=
+      tsum_eq_sum fun k hk => by simp only [hgdef, if_neg hk]
+    rw [hvar n, hz]
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · simp
+    · rw [Finset.mul_sum]
+      refine Finset.sum_congr rfl fun k hk => ?_
+      have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
+      simp only [hgdef, if_pos hk]
+      field_simp
+  -- (d) Tannery / dominated convergence for series: the Fejér weights tend to `1`
+  have hdom : Tendsto (fun n : ℕ => ∑' k : ℤ, g n k) atTop (𝓝 (∑' k : ℤ, acvf X μ k)) := by
+    refine tendsto_tsum_of_dominated_convergence hsum (fun k => ?_) (Eventually.of_forall ?_)
+    · have hk : ∀ᶠ n : ℕ in atTop, g n k = (1 - |(k : ℝ)| / (n : ℝ)) * acvf X μ k := by
+        filter_upwards [eventually_ge_atTop (k.natAbs + 1)] with n hn
+        have hmem : k ∈ Finset.Ioo (-(n : ℤ)) (n : ℤ) := by
+          simp only [Finset.mem_Ioo]
+          have : (k.natAbs : ℤ) + 1 ≤ (n : ℤ) := by exact_mod_cast hn
+          omega
+        simp only [hgdef, if_pos hmem]
+      refine Tendsto.congr' (hk.mono fun n h => h.symm) ?_
+      have h1 : Tendsto (fun n : ℕ => (1 : ℝ) - |(k : ℝ)| / (n : ℝ)) atTop (𝓝 1) := by
+        simpa using tendsto_const_nhds.sub (tendsto_const_div_atTop_nhds_zero_nat |(k : ℝ)|)
+      simpa using h1.mul_const (acvf X μ k)
+    · intro n k
+      by_cases hk : k ∈ Finset.Ioo (-(n : ℤ)) (n : ℤ)
+      · simp only [hgdef, if_pos hk, Real.norm_eq_abs, abs_mul]
+        refine mul_le_of_le_one_left (abs_nonneg _) ?_
+        simp only [Finset.mem_Ioo] at hk
+        have hklt : |(k : ℝ)| < (n : ℝ) := by
+          rw [abs_lt]
+          exact ⟨by exact_mod_cast hk.1, by exact_mod_cast hk.2⟩
+        have hnpos : (0 : ℝ) < (n : ℝ) := lt_of_le_of_lt (abs_nonneg _) hklt
+        have hd0 : 0 ≤ |(k : ℝ)| / (n : ℝ) := div_nonneg (abs_nonneg _) hnpos.le
+        have hd1 : |(k : ℝ)| / (n : ℝ) < 1 := (div_lt_one hnpos).mpr hklt
+        rw [abs_le]
+        constructor <;> linarith
+      · simp only [hgdef, if_neg hk, norm_zero]
+        exact abs_nonneg _
+  rw [← hσeq]
+  exact (Tendsto.congr (fun n => (hns n).symm) hdom)
 
 /-- **FY Theorem 2.21(ii)** (full in-text proof, Bernstein blocks): bounded zero-mean
 strictly stationary, summable α, positive long-run variance ⇒ `S_n/√n →d N(0, σ²)`
