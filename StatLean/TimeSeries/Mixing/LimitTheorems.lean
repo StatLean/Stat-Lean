@@ -702,6 +702,45 @@ private lemma norm_expI_sub_one_le (x : ℝ) :
     rw [hx, hx2]
   nlinarith [hT, h2, sq_nonneg x]
 
+/-- **Product-to-exponential comparison.** If `a_n = 1 + z_n` has modulus at most one,
+`Re z_n ≤ 0`, `z_n → 0`, `k_n z_n → w` and `k_n ‖z_n‖² → 0`, then `a_n^{k_n} → e^w`. This
+is the scalar limit that replaces the independent-copy array in the Bernstein scheme:
+stationarity makes all big blocks identically distributed, so the factorized
+characteristic function is a single power. -/
+private lemma tendsto_pow_of_tendsto_mul {k : ℕ → ℕ} {z : ℕ → ℂ} {w : ℂ}
+    (hz1 : ∀ n, ‖1 + z n‖ ≤ 1) (hzre : ∀ n, (z n).re ≤ 0)
+    (hz0 : Tendsto z atTop (𝓝 0))
+    (hkz : Tendsto (fun n => (k n : ℂ) * z n) atTop (𝓝 w))
+    (hkb : Tendsto (fun n => (k n : ℝ) * ‖z n‖ ^ 2) atTop (𝓝 0)) :
+    Tendsto (fun n => (1 + z n) ^ k n) atTop (𝓝 (Complex.exp w)) := by
+  have hexpre : ∀ n, ‖Complex.exp (z n)‖ ≤ 1 := by
+    intro n
+    rw [Complex.norm_exp]
+    exact Real.exp_le_one_iff.mpr (hzre n)
+  have hgap : Tendsto (fun n => (1 + z n) ^ k n - Complex.exp ((k n : ℂ) * z n))
+      atTop (𝓝 0) := by
+    refine squeeze_zero_norm' ?_ hkb
+    have hz0' : ∀ᶠ n in atTop, ‖z n‖ ≤ 1 := by
+      have := hz0.norm
+      simp only [norm_zero] at this
+      filter_upwards [this.eventually_le_const (by norm_num : (0:ℝ) < 1)] with n hn using hn
+    filter_upwards [hz0'] with n hn
+    have hpow : Complex.exp ((k n : ℂ) * z n) = Complex.exp (z n) ^ k n := by
+      rw [Complex.exp_nat_mul]
+    rw [hpow]
+    refine (norm_pow_sub_pow_le_of_norm_le_one (hz1 n) (hexpre n) (k n)).trans ?_
+    have hstep : ‖(1 + z n) - Complex.exp (z n)‖ ≤ ‖z n‖ ^ 2 := by
+      have h := Complex.norm_exp_sub_one_sub_id_le (x := z n) hn
+      rw [← norm_neg]
+      have he : -((1 + z n) - Complex.exp (z n)) = Complex.exp (z n) - 1 - z n := by ring
+      rw [he]
+      exact h
+    exact mul_le_mul_of_nonneg_left hstep (Nat.cast_nonneg _)
+  have hexp : Tendsto (fun n => Complex.exp ((k n : ℂ) * z n)) atTop (𝓝 (Complex.exp w)) :=
+    (Complex.continuous_exp.tendsto w).comp hkz
+  have := hgap.add hexp
+  simpa using this
+
 /-- Strict stationarity transports the law of a length-`m` window: any measurable
 functional of a shifted block sum has the anchored expectation. -/
 private lemma integral_comp_window_eq [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
@@ -730,6 +769,87 @@ private lemma integral_comp_window_eq [IsProbabilityMeasure μ] {X : ℤ → Ω 
     fun ω => (Fin.sum_univ_eq_sum_range (fun j : ℕ => X ((j : ℤ) + 1) ω) m).symm
   simp only [conv1, conv2]
   exact h
+
+omit [MeasurableSpace Ω] in
+private lemma sigmaLE_mono (X : ℤ → Ω → ℝ) {a b : ℤ} (h : a ≤ b) :
+    sigmaLE X a ≤ sigmaLE X b :=
+  iSup₂_le fun _ hs => comap_le_sigmaLE X (le_trans hs h)
+
+omit [MeasurableSpace Ω] in
+private lemma sigmaGE_mono (X : ℤ → Ω → ℝ) {a b : ℤ} (h : a ≤ b) :
+    sigmaGE X b ≤ sigmaGE X a :=
+  iSup₂_le fun _ hs => comap_le_sigmaGE X (le_trans h hs)
+
+/-- **Volkonskii–Rozanov for the Bernstein big blocks.** The `j`-th big block occupies
+the time window `[j(l+s)+1, j(l+s)+l]`, so its σ-algebra sits inside
+`σ{X_t : t ≤ j(l+s)+l} ⊓ σ{X_t : t ≥ j(l+s)+1}`; consecutive cumulative pasts and blocks
+are separated by the small block of length `s`, and the shift lemma identifies the gap
+coefficient as `α(s+1) ≤ α(s)`. -/
+private lemma norm_integral_prod_blocks_sub_prod_le [IsProbabilityMeasure μ]
+    {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t)) (hstat : IsStrictlyStationary X μ)
+    (l s k : ℕ) (v : ℝ) :
+    ‖(∫ ω, ∏ j : Fin k, Complex.exp (((v * ∑ i ∈ Finset.range l,
+            X ((i : ℤ) + 1 + ((j : ℕ) * (l + s) : ℕ)) ω : ℝ) : ℂ) * Complex.I) ∂μ)
+        - ∏ j : Fin k, ∫ ω, Complex.exp (((v * ∑ i ∈ Finset.range l,
+            X ((i : ℤ) + 1 + ((j : ℕ) * (l + s) : ℕ)) ω : ℝ) : ℂ) * Complex.I) ∂μ‖
+      ≤ 16 * ((k : ℝ) - 1) * alphaCoeff X μ s := by
+  classical
+  set m : Fin k → MeasurableSpace Ω := fun j =>
+    sigmaLE X (((j : ℕ) * (l + s) : ℕ) + l) ⊓ sigmaGE X (((j : ℕ) * (l + s) : ℕ) + 1) with hm
+  have hle : ∀ j, m j ≤ (inferInstance : MeasurableSpace Ω) := fun j =>
+    le_trans inf_le_left (sigmaLE_le hmeas _)
+  -- each block variable is measurable for the block σ-algebra
+  have hcomap : ∀ (j : Fin k) (i : ℕ), i < l →
+      MeasurableSpace.comap (X ((i : ℤ) + 1 + (((j : ℕ) * (l + s) : ℕ) : ℤ))) inferInstance
+        ≤ m j := by
+    intro j i hi
+    refine le_inf (comap_le_sigmaLE X ?_) (comap_le_sigmaGE X ?_)
+    · have : (i : ℤ) + 1 ≤ (l : ℤ) := by exact_mod_cast hi
+      push_cast
+      omega
+    · push_cast
+      omega
+  have hmeasξ : ∀ j : Fin k, Measurable[m j] fun ω =>
+      Complex.exp (((v * ∑ i ∈ Finset.range l,
+        X ((i : ℤ) + 1 + ((j : ℕ) * (l + s) : ℕ)) ω : ℝ) : ℂ) * Complex.I) := by
+    intro j
+    have hsum : Measurable[m j] fun ω => ∑ i ∈ Finset.range l,
+        X ((i : ℤ) + 1 + (((j : ℕ) * (l + s) : ℕ) : ℤ)) ω :=
+      Finset.measurable_sum _ fun i hi =>
+        (measurable_comap_self X _).mono (hcomap j i (Finset.mem_range.mp hi)) le_rfl
+    exact (Complex.measurable_exp.comp
+      (((Complex.measurable_ofReal.comp (measurable_const.mul hsum))).mul measurable_const))
+  have hbddξ : ∀ j : Fin k, ∀ᵐ ω ∂μ, ‖Complex.exp (((v * ∑ i ∈ Finset.range l,
+      X ((i : ℤ) + 1 + ((j : ℕ) * (l + s) : ℕ)) ω : ℝ) : ℂ) * Complex.I)‖ ≤ 1 := by
+    intro j
+    filter_upwards with ω
+    rw [Complex.norm_exp_ofReal_mul_I]
+  refine norm_integral_prod_sub_prod_integral_le hle _ hmeasξ hbddξ ?_
+  intro j hj
+  -- cumulative past ≤ `σ{X_t : t ≤ j(l+s)+l}`, next block ≤ `σ{X_t : t ≥ j(l+s)+l+s+1}`
+  have hpast : (⨆ j' : Fin k, ⨆ _ : (j' : ℕ) ≤ (j : ℕ), m j')
+      ≤ sigmaLE X (((j : ℕ) * (l + s) : ℕ) + l) := by
+    refine iSup₂_le fun j' hj' => le_trans inf_le_left (sigmaLE_mono X ?_)
+    have : ((j' : ℕ) : ℤ) ≤ ((j : ℕ) : ℤ) := by exact_mod_cast hj'
+    have hmul : ((j' : ℕ) * (l + s) : ℕ) ≤ ((j : ℕ) * (l + s) : ℕ) :=
+      Nat.mul_le_mul_right _ hj'
+    have : (((j' : ℕ) * (l + s) : ℕ) : ℤ) ≤ (((j : ℕ) * (l + s) : ℕ) : ℤ) := by
+      exact_mod_cast hmul
+    omega
+  have hfut : m ⟨(j : ℕ) + 1, hj⟩
+      ≤ sigmaGE X ((((j : ℕ) * (l + s) : ℕ) + l : ℤ) + ((s : ℤ) + 1)) := by
+    refine le_trans inf_le_right (sigmaGE_mono X ?_)
+    have hmul : (((j : ℕ) + 1) * (l + s) : ℕ) = ((j : ℕ) * (l + s) : ℕ) + (l + s) := by ring
+    push_cast [hmul]
+    omega
+  calc alphaMixCoeff μ (⨆ j' : Fin k, ⨆ _ : (j' : ℕ) ≤ (j : ℕ), m j') (m ⟨(j : ℕ) + 1, hj⟩)
+      ≤ alphaMixCoeff μ (sigmaLE X (((j : ℕ) * (l + s) : ℕ) + l))
+          (sigmaGE X ((((j : ℕ) * (l + s) : ℕ) + l : ℤ) + ((s : ℤ) + 1))) :=
+        alphaMixCoeff_mono hpast hfut
+    _ = alphaCoeff X μ (s + 1) := by
+        have := hstat.alphaMixCoeff_shift hmeas ((((j : ℕ) * (l + s) : ℕ) + l : ℤ)) (s + 1)
+        simpa using this
+    _ ≤ alphaCoeff X μ s := alphaCoeff_antitone X (Nat.le_succ s)
 
 /-- **NAMED PRIVATE DEBT** (Ibragimov–Linnik, *Independent and Stationary Sequences of
 Random Variables*, 1971, Theorem 18.5.3; the technical lemma behind FY Theorem 2.21(ii)).
