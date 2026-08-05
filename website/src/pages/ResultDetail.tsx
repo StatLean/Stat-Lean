@@ -153,11 +153,15 @@ export function ResultDetail() {
                     {h.leanToken}
                   </code>
                   <div className="min-w-0">
-                    <div className="font-sans text-sm font-medium">{h.label}</div>
+                    <MathText
+                      html={h.label}
+                      className="font-sans text-sm font-medium"
+                    />
                     {h.note && (
-                      <div className="font-serif text-sm text-ink-soft leading-snug">
-                        {h.note}
-                      </div>
+                      <MathText
+                        html={h.note}
+                        className="font-serif text-sm text-ink-soft leading-snug"
+                      />
                     )}
                   </div>
                 </div>
