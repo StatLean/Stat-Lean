@@ -48,7 +48,7 @@ Yule–Walker equations: G. U. Yule (1927), G. T. Walker (1931).
 -/
 
 open MeasureTheory ProbabilityTheory Filter
-open scoped ProbabilityTheory Topology
+open scoped ProbabilityTheory Topology ENNReal
 
 namespace StatLean.TimeSeries
 
@@ -529,6 +529,175 @@ private lemma covariance_congr_ae {X X' Y Y' : Ω → ℝ} (hX : X =ᵐ[μ] X') 
   simp only [covariance, hIX, hIY]
   exact integral_congr_ae (by filter_upwards [hX, hY] with ω h1 h2 using by rw [h1, h2])
 
+private lemma coeff_arPoly_succ {p : ℕ} (b : Fin p → ℝ) (i : Fin p) :
+    (arPoly b).coeff ((i : ℕ) + 1) = -(b i) := by
+  rw [coeff_arPoly]
+  simp [Fin.val_eq_val, Finset.sum_ite_eq]
+
+private lemma coeff_maPoly_succ {q : ℕ} (a : Fin q → ℝ) (j : Fin q) :
+    (maPoly a).coeff ((j : ℕ) + 1) = a j := by
+  rw [coeff_maPoly]
+  simp [Fin.val_eq_val, Finset.sum_ite_eq]
+
+private lemma coeff_maPoly_eq_zero {q : ℕ} (a : Fin q → ℝ) {m : ℕ} (hm : q < m) :
+    (maPoly a).coeff m = 0 := by
+  rw [coeff_maPoly, if_neg (by omega), zero_add]
+  exact Finset.sum_eq_zero fun j _ => if_neg (by have := j.isLt; omega)
+
+/-- The AR polynomial as a lag operator on an arbitrary sequence. -/
+private lemma arPoly_apply {p : ℕ} (b : Fin p → ℝ) (G : ℕ → ℝ) :
+    ∑ k ∈ Finset.range (p + 1), (arPoly b).coeff k * G k
+      = G 0 - ∑ i : Fin p, b i * G ((i : ℕ) + 1) := by
+  rw [← Fin.sum_univ_eq_sum_range (fun k => (arPoly b).coeff k * G k) (p + 1), Fin.sum_univ_succ]
+  have h0 : (arPoly b).coeff ((0 : Fin (p + 1)) : ℕ) * G ((0 : Fin (p + 1)) : ℕ) = G 0 := by
+    simp [coeff_arPoly_zero]
+  have hs : ∀ i : Fin p, (arPoly b).coeff ((i.succ : Fin (p + 1)) : ℕ) * G ((i.succ : Fin (p+1)) : ℕ)
+      = -(b i * G ((i : ℕ) + 1)) := by
+    intro i
+    simp only [Fin.val_succ]
+    rw [coeff_arPoly_succ]
+    ring
+  rw [h0, Finset.sum_congr rfl (fun i _ => hs i), Finset.sum_neg_distrib]
+  ring
+
+/-- The MA polynomial as a lag operator on an arbitrary sequence. -/
+private lemma maPoly_apply {q : ℕ} (a : Fin q → ℝ) (G : ℕ → ℝ) :
+    ∑ m ∈ Finset.range (q + 1), (maPoly a).coeff m * G m
+      = G 0 + ∑ j : Fin q, a j * G ((j : ℕ) + 1) := by
+  rw [← Fin.sum_univ_eq_sum_range (fun m => (maPoly a).coeff m * G m) (q + 1), Fin.sum_univ_succ]
+  have h0 : (maPoly a).coeff ((0 : Fin (q + 1)) : ℕ) * G ((0 : Fin (q + 1)) : ℕ) = G 0 := by
+    simp [coeff_maPoly_zero]
+  have hs : ∀ j : Fin q, (maPoly a).coeff ((j.succ : Fin (q + 1)) : ℕ) * G ((j.succ : Fin (q+1)) : ℕ)
+      = a j * G ((j : ℕ) + 1) := by
+    intro j
+    simp only [Fin.val_succ]
+    rw [coeff_maPoly_succ]
+  rw [h0, Finset.sum_congr rfl (fun j _ => hs j)]
+
+/-- The convolution identity with the AR sum truncated at the AR order. -/
+private lemma conv_range {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (m : ℕ) :
+    ∑ k ∈ Finset.range (p + 1),
+        (if k ≤ m then (arPoly b).coeff k * armaPsi b a (m - k) else 0)
+      = (maPoly a).coeff m := by
+  classical
+  obtain ⟨N, hNp, hNm⟩ : ∃ N : ℕ, p ≤ N ∧ m ≤ N := ⟨max p m, le_max_left _ _, le_max_right _ _⟩
+  have hcz : ∀ k, p < k → (arPoly b).coeff k = 0 := by
+    intro k hk
+    rw [coeff_arPoly, if_neg (by omega), zero_sub, neg_eq_zero]
+    exact Finset.sum_eq_zero fun i _ => if_neg (by have := i.isLt; omega)
+  have e1 : ∑ k ∈ Finset.range (p + 1),
+        (if k ≤ m then (arPoly b).coeff k * armaPsi b a (m - k) else 0)
+      = ∑ k ∈ Finset.range (N + 1),
+        (if k ≤ m then (arPoly b).coeff k * armaPsi b a (m - k) else 0) := by
+    have hsub : Finset.range (p + 1) ⊆ Finset.range (N + 1) := by
+      intro k hk; simp only [Finset.mem_range] at hk ⊢; omega
+    refine Finset.sum_subset hsub fun k _ hk => ?_
+    simp only [Finset.mem_range, not_lt] at hk
+    rw [hcz k (by omega)]
+    simp
+  have e2 : ∑ k ∈ Finset.range (m + 1), (arPoly b).coeff k * armaPsi b a (m - k)
+      = ∑ k ∈ Finset.range (N + 1),
+        (if k ≤ m then (arPoly b).coeff k * armaPsi b a (m - k) else 0) := by
+    have hsub : Finset.range (m + 1) ⊆ Finset.range (N + 1) := by
+      intro k hk; simp only [Finset.mem_range] at hk ⊢; omega
+    rw [← Finset.sum_subset hsub (fun k _ hk => by
+      simp only [Finset.mem_range, not_lt] at hk
+      rw [if_neg (by omega)])]
+    exact Finset.sum_congr rfl fun k hk => by
+      simp only [Finset.mem_range] at hk
+      rw [if_pos (by omega)]
+  rw [e1, ← e2, arPoly_conv_armaPsi]
+
+/-- A range sum minus its head is the tail chunk. -/
+private lemma chunk (F : ℕ → ℝ) (N k : ℕ) :
+    ∑ l ∈ Finset.range N, F l - ∑ l ∈ Finset.range (N - k), F l
+      = ∑ l ∈ Finset.Ico (N - k) N, F l := by
+  rw [Finset.range_eq_Ico,
+    ← Finset.sum_Ico_consecutive F (Nat.zero_le (N - k)) (Nat.sub_le N k)]
+  ring
+
+omit [MeasurableSpace Ω] in
+/-- The AR filter applied to the partial sums differs from the truncated MA combination
+only by the `p` boundary chunks. -/
+private lemma UV_diff {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (ε : ℤ → Ω → ℝ) (t : ℤ) (N : ℕ)
+    (ω : Ω) :
+    (∑ k ∈ Finset.range (p + 1), (arPoly b).coeff k *
+        ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - (k : ℕ) - (l : ℕ)) ω)
+      - ∑ m ∈ Finset.range N, (maPoly a).coeff m * ε (t - (m : ℕ)) ω
+      = ∑ k ∈ Finset.range (p + 1), ∑ l ∈ Finset.Ico (N - k) N,
+          ((arPoly b).coeff k * armaPsi b a l) * ε (t - (k : ℕ) - (l : ℕ)) ω := by
+  classical
+  have hV : ∑ m ∈ Finset.range N, (maPoly a).coeff m * ε (t - (m : ℕ)) ω
+      = ∑ k ∈ Finset.range (p + 1), ∑ l ∈ Finset.range (N - k),
+          ((arPoly b).coeff k * armaPsi b a l) * ε (t - (k : ℕ) - (l : ℕ)) ω := by
+    have step1 : ∀ m : ℕ, (maPoly a).coeff m * ε (t - (m : ℕ)) ω
+        = ∑ k ∈ Finset.range (p + 1),
+            (if k ≤ m then ((arPoly b).coeff k * armaPsi b a (m - k)) * ε (t - (m : ℕ)) ω
+              else 0) := by
+      intro m
+      rw [← conv_range b a m, Finset.sum_mul]
+      exact Finset.sum_congr rfl fun k _ => by split <;> simp
+    rw [Finset.sum_congr rfl (fun m _ => step1 m), Finset.sum_comm]
+    refine Finset.sum_congr rfl fun k _ => ?_
+    have hfil : (Finset.range N).filter (fun m => k ≤ m) = Finset.Ico k N := by
+      ext m; simp only [Finset.mem_filter, Finset.mem_range, Finset.mem_Ico]; omega
+    rw [← Finset.sum_filter, hfil, Finset.sum_Ico_eq_sum_range]
+    refine Finset.sum_congr rfl fun l _ => ?_
+    have h1 : k + l - k = l := by omega
+    have h2 : t - ((k + l : ℕ) : ℤ) = t - (k : ℕ) - (l : ℕ) := by push_cast; ring
+    rw [h1, h2]
+  rw [hV, ← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [Finset.mul_sum, ← chunk (fun l => (arPoly b).coeff k * armaPsi b a l
+    * ε (t - (k : ℕ) - (l : ℕ)) ω) N k]
+  congr 1
+  exact Finset.sum_congr rfl fun l _ => by ring
+
+
+
+/-- The `L²` norm of a finite scalar combination. -/
+private lemma eLpNorm_const_mul_sum_le {ι : Type*} (s : Finset ι) (c : ι → ℝ) (f : ι → Ω → ℝ)
+    (hf : ∀ i ∈ s, AEStronglyMeasurable (f i) μ) :
+    eLpNorm (fun ω => ∑ i ∈ s, c i * f i ω) 2 μ
+      ≤ ∑ i ∈ s, ENNReal.ofReal |c i| * eLpNorm (f i) 2 μ := by
+  have hfun : (fun ω => ∑ i ∈ s, c i * f i ω) = ∑ i ∈ s, fun ω => c i * f i ω := by
+    funext ω; simp
+  rw [hfun]
+  refine (eLpNorm_sum_le (fun i hi => ((hf i hi).const_mul (c i))) one_le_two).trans
+    (Finset.sum_le_sum fun i _ => ?_)
+  have hsm : (fun ω => c i * f i ω) = c i • f i := rfl
+  rw [hsm, eLpNorm_const_smul]
+  exact mul_le_mul_right' (le_of_eq (by simp [Real.enorm_eq_ofReal_abs])) _
+
+/-- Two `L²`-limits of the same sequence agree a.e. -/
+private lemma ae_eq_of_tendsto {f g : Ω → ℝ} {F : ℕ → Ω → ℝ}
+    (hfm : AEStronglyMeasurable f μ) (hgm : AEStronglyMeasurable g μ)
+    (hFm : ∀ N, AEStronglyMeasurable (F N) μ)
+    (hf : Tendsto (fun N => eLpNorm (fun ω => f ω - F N ω) 2 μ) atTop (𝓝 0))
+    (hg : Tendsto (fun N => eLpNorm (fun ω => g ω - F N ω) 2 μ) atTop (𝓝 0)) :
+    f =ᵐ[μ] g := by
+  have hle : ∀ N, eLpNorm (fun ω => f ω - g ω) 2 μ
+      ≤ eLpNorm (fun ω => f ω - F N ω) 2 μ + eLpNorm (fun ω => F N ω - g ω) 2 μ := by
+    intro N
+    have hfun : (fun ω => f ω - g ω)
+        = (fun ω => f ω - F N ω) + (fun ω => F N ω - g ω) := by funext ω; simp
+    rw [hfun]
+    exact eLpNorm_add_le (hfm.sub (hFm N)) ((hFm N).sub hgm) one_le_two
+  have hlim : Tendsto (fun N => eLpNorm (fun ω => f ω - F N ω) 2 μ
+      + eLpNorm (fun ω => F N ω - g ω) 2 μ) atTop (𝓝 0) := by
+    have hcomm : ∀ N, eLpNorm (fun ω => F N ω - g ω) 2 μ
+        = eLpNorm (fun ω => g ω - F N ω) 2 μ := by
+      intro N
+      rw [show (fun ω => F N ω - g ω) = -(fun ω => g ω - F N ω) by funext ω; simp, eLpNorm_neg]
+    simp only [hcomm]
+    simpa using hf.add hg
+  have hzero : eLpNorm (fun ω => f ω - g ω) 2 μ = 0 :=
+    le_antisymm (ge_of_tendsto hlim (Eventually.of_forall hle)) (zero_le _)
+  have hae := (eLpNorm_eq_zero_iff (hfm.sub hgm) (by norm_num)).1 hzero
+  filter_upwards [hae] with ω hω
+  have : f ω - g ω = 0 := hω
+  linarith
+
 /-- **Causality** (FY §2.1.2, Definition 2.3): `X` is a causal function of the noise `ε`
 when it is an MA(∞) over `ε` with absolutely summable coefficients. -/
 def IsCausalFor (X ε : ℤ → Ω → ℝ) (μ : Measure Ω) : Prop :=
@@ -546,7 +715,191 @@ theorem exists_stationary_arma [IsProbabilityMeasure μ] {p q : ℕ} {b : Fin p 
     ∃ X : ℤ → Ω → ℝ, (∀ t, Measurable (X t)) ∧
       IsLinearProcessOf (armaPsi b a) X ε μ ∧ IsARMA b a σ2 X ε μ ∧
       IsStationary X μ ∧ IsCausalFor X ε μ := by
-  sorry
+  classical
+  have hψ := summable_abs_armaPsi a hb
+  obtain ⟨X, hXm, hXlin⟩ := exists_isLinearProcessOf hψ hε
+  have hmX : ∀ c, MemLp (X c) 2 μ := hXlin.memLp hψ hε hXm
+  refine ⟨X, hXm, hXlin, ⟨hXm, hε, ?_⟩, (hXlin.isStationary hψ hε hXm).1,
+    ⟨armaPsi b a, hψ, hXlin⟩⟩
+  intro t
+  have hmemPS : ∀ (c : ℤ) (N : ℕ),
+      MemLp (fun ω => ∑ l ∈ Finset.range N, armaPsi b a l * ε (c - (l : ℕ)) ω) 2 μ :=
+    fun c N => memLp_finset_sum _ fun l _ => (hε.memLp _).const_mul _
+  -- the tail of the coefficient series
+  obtain ⟨Tail, hTail⟩ : ∃ T : ℕ → ℝ, T = fun N => ∑ l ∈ Finset.Ico (N - p) N, |armaPsi b a l| :=
+    ⟨_, rfl⟩
+  have hTailnn : ∀ N, 0 ≤ Tail N := by
+    intro N; rw [hTail]; exact Finset.sum_nonneg fun l _ => abs_nonneg _
+  have hTail0 : Tendsto Tail atTop (𝓝 0) := by
+    have hsub : Tendsto (fun N : ℕ => N - p) atTop atTop :=
+      tendsto_atTop_atTop.2 fun c => ⟨c + p, fun n hn => by omega⟩
+    have hbig : Tendsto (fun n : ℕ => ∑' k : ℕ, |armaPsi b a (k + n)|) atTop (𝓝 0) :=
+      tendsto_sum_nat_add fun l => |armaPsi b a l|
+    refine squeeze_zero hTailnn (fun N => ?_) (hbig.comp hsub)
+    rw [hTail]
+    simp only [Function.comp_apply]
+    rw [Finset.sum_Ico_eq_sum_range]
+    refine (Finset.sum_le_sum (fun i _ =>
+      le_of_eq (by rw [Nat.add_comm] :
+        |armaPsi b a (N - p + i)| = |armaPsi b a (i + (N - p))|))).trans ?_
+    exact ((summable_nat_add_iff (N - p)).2 hψ).sum_le_tsum _ (fun i _ => abs_nonneg _)
+  -- the AR coefficient mass
+  obtain ⟨Cb, hCb⟩ : ∃ x : ℝ, x = ∑ k ∈ Finset.range (p + 1), |(arPoly b).coeff k| := ⟨_, rfl⟩
+  -- the `L²` bound on the boundary defect
+  have hdiffbd : ∀ N : ℕ,
+      eLpNorm (fun ω => ∑ k ∈ Finset.range (p + 1), ∑ l ∈ Finset.Ico (N - k) N,
+        ((arPoly b).coeff k * armaPsi b a l) * ε (t - (k : ℕ) - (l : ℕ)) ω) 2 μ
+      ≤ ENNReal.ofReal (Cb * Tail N) * ENNReal.ofReal (Real.sqrt σ2) := by
+    intro N
+    have hfun : (fun ω => ∑ k ∈ Finset.range (p + 1), ∑ l ∈ Finset.Ico (N - k) N,
+        ((arPoly b).coeff k * armaPsi b a l) * ε (t - (k : ℕ) - (l : ℕ)) ω)
+        = ∑ k ∈ Finset.range (p + 1), fun ω => ∑ l ∈ Finset.Ico (N - k) N,
+            ((arPoly b).coeff k * armaPsi b a l) * ε (t - (k : ℕ) - (l : ℕ)) ω := by
+      funext ω; simp
+    rw [hfun]
+    refine (eLpNorm_sum_le (fun k _ => (memLp_finset_sum _ fun l _ =>
+      (hε.memLp _).const_mul _).aestronglyMeasurable) one_le_two).trans ?_
+    have hk : ∀ k ∈ Finset.range (p + 1),
+        eLpNorm (fun ω => ∑ l ∈ Finset.Ico (N - k) N,
+          ((arPoly b).coeff k * armaPsi b a l) * ε (t - (k : ℕ) - (l : ℕ)) ω) 2 μ
+        ≤ ENNReal.ofReal (|(arPoly b).coeff k| * Tail N) * ENNReal.ofReal (Real.sqrt σ2) := by
+      intro k hkmem
+      simp only [Finset.mem_range] at hkmem
+      refine (eLpNorm_noise_comb_le hε (Finset.Ico (N - k) N)
+        (fun l => (arPoly b).coeff k * armaPsi b a l)
+        (fun l => t - (k : ℕ) - (l : ℕ))).trans ?_
+      refine mul_le_mul_right' (ENNReal.ofReal_le_ofReal ?_) _
+      have hs : ∑ l ∈ Finset.Ico (N - k) N, |(arPoly b).coeff k * armaPsi b a l|
+          = |(arPoly b).coeff k| * ∑ l ∈ Finset.Ico (N - k) N, |armaPsi b a l| := by
+        rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun l _ => abs_mul _ _
+      rw [hs, hTail]
+      refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)
+      refine Finset.sum_le_sum_of_subset_of_nonneg ?_ (fun l _ _ => abs_nonneg _)
+      intro l hl
+      simp only [Finset.mem_Ico] at hl ⊢
+      omega
+    refine (Finset.sum_le_sum hk).trans ?_
+    rw [← Finset.sum_mul, ← ENNReal.ofReal_sum_of_nonneg
+      (fun k _ => mul_nonneg (abs_nonneg _) (hTailnn N)), ← Finset.sum_mul, ← hCb]
+  -- the `L²` bound on the head defect
+  have hAbd : ∀ N : ℕ,
+      eLpNorm (fun ω => ∑ i : Fin p, b i * (X (t - 1 - (i : ℕ)) ω
+        - ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - 1 - (i : ℕ) - (l : ℕ)) ω)) 2 μ
+      ≤ ∑ i : Fin p, ENNReal.ofReal |b i| *
+          eLpNorm (fun ω => X (t - 1 - (i : ℕ)) ω
+            - ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - 1 - (i : ℕ) - (l : ℕ)) ω) 2 μ :=
+    fun N => eLpNorm_const_mul_sum_le Finset.univ b
+      (fun i => fun ω => X (t - 1 - (i : ℕ)) ω
+        - ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - 1 - (i : ℕ) - (l : ℕ)) ω)
+      (fun i _ => ((hmX _).sub (hmemPS (t - 1 - (i : ℕ)) N)).aestronglyMeasurable)
+  -- the pointwise decomposition of the defect
+  have hpt : ∀ N : ℕ, q + 1 ≤ N → ∀ ω : Ω,
+      ((∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω) + ε t ω
+          + ∑ j : Fin q, a j * ε (t - 1 - (j : ℕ)) ω)
+        - ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - (l : ℕ)) ω
+      = (∑ i : Fin p, b i * (X (t - 1 - (i : ℕ)) ω
+          - ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - 1 - (i : ℕ) - (l : ℕ)) ω))
+        - ∑ k ∈ Finset.range (p + 1), ∑ l ∈ Finset.Ico (N - k) N,
+            ((arPoly b).coeff k * armaPsi b a l) * ε (t - (k : ℕ) - (l : ℕ)) ω := by
+    intro N hN ω
+    have hU : ∑ k ∈ Finset.range (p + 1), (arPoly b).coeff k *
+          ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - (k : ℕ) - (l : ℕ)) ω
+        = (∑ l ∈ Finset.range N, armaPsi b a l * ε (t - (l : ℕ)) ω)
+          - ∑ i : Fin p, b i *
+              ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - 1 - (i : ℕ) - (l : ℕ)) ω := by
+      rw [arPoly_apply b
+        (fun k => ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - (k : ℕ) - (l : ℕ)) ω)]
+      congr 1
+      · exact Finset.sum_congr rfl fun l _ => by norm_num
+      · refine Finset.sum_congr rfl fun i _ => ?_
+        congr 1
+        refine Finset.sum_congr rfl fun l _ => ?_
+        congr 2
+        push_cast
+        ring
+    have hV : ∑ m ∈ Finset.range N, (maPoly a).coeff m * ε (t - (m : ℕ)) ω
+        = ε t ω + ∑ j : Fin q, a j * ε (t - 1 - (j : ℕ)) ω := by
+      have h1 : ∑ m ∈ Finset.range N, (maPoly a).coeff m * ε (t - (m : ℕ)) ω
+          = ∑ m ∈ Finset.range (q + 1), (maPoly a).coeff m * ε (t - (m : ℕ)) ω := by
+        refine (Finset.sum_subset ?_ ?_).symm
+        · intro m hm; simp only [Finset.mem_range] at hm ⊢; omega
+        · intro m _ hm
+          simp only [Finset.mem_range, not_lt] at hm
+          rw [coeff_maPoly_eq_zero a (by omega), zero_mul]
+      rw [h1, maPoly_apply a (fun m => ε (t - (m : ℕ)) ω)]
+      congr 1
+      · norm_num
+      · refine Finset.sum_congr rfl fun j _ => ?_
+        congr 2
+        push_cast
+        ring
+    have hexp : (∑ i : Fin p, b i * (X (t - 1 - (i : ℕ)) ω
+          - ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - 1 - (i : ℕ) - (l : ℕ)) ω))
+        = (∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω)
+          - ∑ i : Fin p, b i *
+              ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - 1 - (i : ℕ) - (l : ℕ)) ω := by
+      rw [← Finset.sum_sub_distrib]
+      exact Finset.sum_congr rfl fun i _ => by ring
+    have hdiff := UV_diff b a ε t N ω
+    rw [hexp]
+    linarith
+  -- the bounding sequence
+  obtain ⟨D, hD⟩ : ∃ D : ℕ → ℝ≥0∞, D = fun N =>
+      (∑ i : Fin p, ENNReal.ofReal |b i| *
+        eLpNorm (fun ω => X (t - 1 - (i : ℕ)) ω
+          - ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - 1 - (i : ℕ) - (l : ℕ)) ω) 2 μ)
+      + ENNReal.ofReal (Cb * Tail N) * ENNReal.ofReal (Real.sqrt σ2) := ⟨_, rfl⟩
+  have hD0 : Tendsto D atTop (𝓝 0) := by
+    have h1 : Tendsto (fun N => ∑ i : Fin p, ENNReal.ofReal |b i| *
+        eLpNorm (fun ω => X (t - 1 - (i : ℕ)) ω
+          - ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - 1 - (i : ℕ) - (l : ℕ)) ω) 2 μ)
+        atTop (𝓝 0) := by
+      have := tendsto_finset_sum (Finset.univ : Finset (Fin p))
+        (fun (i : Fin p) (_ : i ∈ Finset.univ) =>
+          ENNReal.Tendsto.const_mul (a := ENNReal.ofReal |b i|)
+            (hXlin (t - 1 - (i : ℕ))) (Or.inr ENNReal.ofReal_ne_top))
+      simpa using this
+    have h2 : Tendsto (fun N => ENNReal.ofReal (Cb * Tail N) * ENNReal.ofReal (Real.sqrt σ2))
+        atTop (𝓝 0) := by
+      have hr : Tendsto (fun N => ENNReal.ofReal (Cb * Tail N)) atTop (𝓝 0) := by
+        have := ENNReal.tendsto_ofReal (hTail0.const_mul Cb)
+        simpa using this
+      have := ENNReal.Tendsto.mul_const (b := ENNReal.ofReal (Real.sqrt σ2)) hr
+        (Or.inr ENNReal.ofReal_ne_top)
+      simpa using this
+    rw [hD]
+    simpa using h1.add h2
+  -- the RHS is in `L²`
+  have hmemR : MemLp (fun ω => (∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω) + ε t ω
+      + ∑ j : Fin q, a j * ε (t - 1 - (j : ℕ)) ω) 2 μ :=
+    ((memLp_finset_sum _ fun i _ => (hmX _).const_mul _).add (hε.memLp t)).add
+      (memLp_finset_sum _ fun j _ => (hε.memLp _).const_mul _)
+  refine ae_eq_of_tendsto (hmX t).aestronglyMeasurable hmemR.aestronglyMeasurable
+    (fun N => (hmemPS t N).aestronglyMeasurable) (hXlin t) ?_
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hD0
+    (Eventually.of_forall fun N => zero_le _) ?_
+  filter_upwards [eventually_ge_atTop (q + 1)] with N hN
+  have hfeq : (fun ω => ((∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω) + ε t ω
+        + ∑ j : Fin q, a j * ε (t - 1 - (j : ℕ)) ω)
+      - ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - (l : ℕ)) ω)
+      = (fun ω => ∑ i : Fin p, b i * (X (t - 1 - (i : ℕ)) ω
+          - ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - 1 - (i : ℕ) - (l : ℕ)) ω))
+        - (fun ω => ∑ k ∈ Finset.range (p + 1), ∑ l ∈ Finset.Ico (N - k) N,
+            ((arPoly b).coeff k * armaPsi b a l) * ε (t - (k : ℕ) - (l : ℕ)) ω) :=
+    funext (hpt N hN)
+  rw [hfeq, hD]
+  refine (eLpNorm_sub_le ?_ ?_ one_le_two).trans (add_le_add (hAbd N) (hdiffbd N))
+  · have hm : MemLp (fun ω => ∑ i : Fin p, b i * (X (t - 1 - (i : ℕ)) ω
+        - ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - 1 - (i : ℕ) - (l : ℕ)) ω)) 2 μ := by
+      refine memLp_finset_sum _ fun i _ => ?_
+      have h1 : MemLp (fun ω => X (t - 1 - (i : ℕ)) ω
+          - ∑ l ∈ Finset.range N, armaPsi b a l * ε (t - 1 - (i : ℕ) - (l : ℕ)) ω) 2 μ :=
+        (hmX _).sub (hmemPS (t - 1 - (i : ℕ)) N)
+      exact h1.const_mul _
+    exact hm.aestronglyMeasurable
+  · exact (memLp_finset_sum _ fun k _ =>
+      memLp_finset_sum _ fun l _ => (hε.memLp _).const_mul _).aestronglyMeasurable
+
 
 /-- **Yule–Walker recurrences** (FY §2.2.1, eq. (2.21)): for a causal stationary ARMA
 process and lags beyond the MA order, `γ(k) = Σᵢ bᵢ γ(k−1−i)`. -/
