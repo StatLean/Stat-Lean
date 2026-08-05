@@ -53,7 +53,25 @@ noncomputable def rangeSpaceRKHS (S : X → Y → 𝕜) (hS : IsL2Symbol μ S) :
     (ContinuousLinearMap.pi fun x => innerSL 𝕜 (symbolConjLp μ S hS x)).comp
       (Submodule.subtypeL _)
   coeCLM_injective := by
-    sorry
+    intro f g hfg
+    have h0 : ∀ x, ⟪symbolConjLp μ S hS x,
+        ((f : Lp 𝕜 2 μ) - (g : Lp 𝕜 2 μ))⟫_𝕜 = 0 := by
+      intro x
+      have hx := congrFun hfg x
+      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.pi_apply,
+        innerSL_apply_apply] at hx
+      rw [inner_sub_right]
+      exact sub_eq_zero.mpr hx
+    have hmem : ((f : Lp 𝕜 2 μ) - (g : Lp 𝕜 2 μ)) ∈ rangeSpaceCarrier μ S hS :=
+      Submodule.sub_mem _ f.2 g.2
+    have hsub : rangeSpaceCarrier μ S hS ≤ (𝕜 ∙ ((f : Lp 𝕜 2 μ) - (g : Lp 𝕜 2 μ)))ᗮ := by
+      refine Submodule.topologicalClosure_minimal _ ?_ (Submodule.isClosed_orthogonal _)
+      rw [Submodule.span_le]
+      rintro _ ⟨x, rfl⟩
+      exact Submodule.mem_orthogonal_singleton_iff_inner_left.mpr (h0 x)
+    have hz := Submodule.mem_orthogonal_singleton_iff_inner_right.mp (hsub hmem)
+    have hfg0 : (f : Lp 𝕜 2 μ) - (g : Lp 𝕜 2 μ) = 0 := inner_self_eq_zero.mp hz
+    exact Subtype.ext (by linear_combination (norm := module) hfg0)
 
 /-- In the range-space model, members act by the integral operator:
 `f x = T_S f (x)`. -/
@@ -61,7 +79,9 @@ theorem rangeSpace_apply (S : X → Y → 𝕜) (hS : IsL2Symbol μ S)
     (f : rangeSpaceCarrier μ S hS) (x : X) :
     letI := rangeSpaceRKHS μ S hS
     f x = integralOp μ S (f : Lp 𝕜 2 μ) x := by
-  sorry
+  letI := rangeSpaceRKHS μ S hS
+  rw [integralOp_eq_inner S hS]
+  rfl
 
 variable (μ) in
 /-- Completeness of the range-space carrier, as an explicit term (closed subspace of the
