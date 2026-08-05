@@ -121,17 +121,17 @@ noncomputable def mercerCLM {K : X → X → 𝕜}
         intro g h
         rw [← MemLp.toLp_add]
         refine (MemLp.toLp_eq_toLp_iff _ _).2 (Filter.Eventually.of_forall fun x => ?_)
-        show integralOp μ K (g + h) x = integralOp μ K g x + integralOp μ K h x
+        change integralOp μ K (g + h) x = integralOp μ K g x + integralOp μ K h x
         rw [integralOp_eq_inner K (isL2Symbol_of_continuous hKc),
           integralOp_eq_inner K (isL2Symbol_of_continuous hKc),
           integralOp_eq_inner K (isL2Symbol_of_continuous hKc), inner_add_right]
       map_smul' := by
         intro c g
-        show (memLp_integralOp_of_continuous hKc (c • g)).toLp _
+        change (memLp_integralOp_of_continuous hKc (c • g)).toLp _
           = c • (memLp_integralOp_of_continuous hKc g).toLp _
         rw [← MemLp.toLp_const_smul]
         refine (MemLp.toLp_eq_toLp_iff _ _).2 (Filter.Eventually.of_forall fun x => ?_)
-        show integralOp μ K (c • g) x = c • integralOp μ K g x
+        change integralOp μ K (c • g) x = c • integralOp μ K g x
         rw [integralOp_eq_inner K (isL2Symbol_of_continuous hKc),
           integralOp_eq_inner K (isL2Symbol_of_continuous hKc), inner_smul_right,
           smul_eq_mul] }
@@ -143,7 +143,7 @@ noncomputable def mercerCLM {K : X → X → 𝕜}
       refine Lp.norm_le_of_ae_bound (by positivity) ?_
       filter_upwards [MemLp.coeFn_toLp (μ := μ) (p := 2)
         (memLp_integralOp_of_continuous hKc g)] with x hx
-      show ‖(((memLp_integralOp_of_continuous hKc g).toLp (integralOp μ K g) :
+      change ‖(((memLp_integralOp_of_continuous hKc g).toLp (integralOp μ K g) :
         Lp 𝕜 2 μ) : X → 𝕜) x‖ ≤ _
       rw [hx]
       exact norm_integralOp_le_of_continuous hKc hM0 hM g x)

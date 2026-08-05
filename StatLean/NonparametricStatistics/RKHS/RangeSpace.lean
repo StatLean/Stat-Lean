@@ -148,7 +148,7 @@ theorem rangeSpace_kernelFun (S : X → Y → 𝕜) (hS : IsL2Symbol μ S) (x : 
 theorem rangeSpace_scalarKernel (S : X → Y → 𝕜) (hS : IsL2Symbol μ S) (x z : X) :
     rangeSpaceScalarKernel μ S hS x z = boxProd μ S (symbolAdjoint S) x z := by
   rw [boxProd_symbolAdjoint_eq_featureKernel S hS]
-  show ⟪symbolConjLp μ S hS x, (rangeSpaceKernelFun μ S hS z : Lp 𝕜 2 μ)⟫_𝕜 = _
+  change ⟪symbolConjLp μ S hS x, (rangeSpaceKernelFun μ S hS z : Lp 𝕜 2 μ)⟫_𝕜 = _
   rw [rangeSpace_kernelFun S hS z]
   rfl
 
@@ -170,7 +170,7 @@ theorem range_integralOp_eq_range_coe (S : X → Y → 𝕜) (hS : IsL2Symbol μ
       Submodule.sub_starProjection_mem_orthogonal (K := rangeSpaceCarrier μ S hS) g
         _ (mem_rangeSpaceCarrier_symbolConjLp S hS x)
     rw [integralOp_eq_inner S hS]
-    show ⟪symbolConjLp μ S hS x, (rangeSpaceCarrier μ S hS).starProjection g⟫_𝕜
+    change ⟪symbolConjLp μ S hS x, (rangeSpaceCarrier μ S hS).starProjection g⟫_𝕜
         = ⟪symbolConjLp μ S hS x, g⟫_𝕜
     rw [inner_sub_right] at hz
     exact (sub_eq_zero.mp hz).symm
