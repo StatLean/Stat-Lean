@@ -161,9 +161,73 @@ theorem isCompactOperator_mercerCLM_finiteRank {ι : Type*} (s : Finset ι)
   exact isCompactOperator_finset_sum s _ fun i => isCompactOperator_rankOne _ _
 
 
+private theorem mercerCLM_sub {K₁ K₂ : X → X → 𝕜}
+    (h₁ : Continuous fun p : X × X => K₁ p.1 p.2)
+    (h₂ : Continuous fun p : X × X => K₂ p.1 p.2)
+    (h₁₂ : Continuous fun p : X × X => K₁ p.1 p.2 - K₂ p.1 p.2) :
+    mercerCLM μ h₁ - mercerCLM μ h₂
+      = mercerCLM (K := fun x y => K₁ x y - K₂ x y) μ h₁₂ := by
+  refine ContinuousLinearMap.ext fun g => ?_
+  refine Lp.ext ?_
+  filter_upwards [Lp.coeFn_sub (mercerCLM μ h₁ g) (mercerCLM μ h₂ g),
+    mercerCLM_coeFn_ae h₁ g, mercerCLM_coeFn_ae h₂ g,
+    mercerCLM_coeFn_ae (K := fun x y => K₁ x y - K₂ x y) h₁₂ g] with x hx hx1 hx2 hx3
+  rw [ContinuousLinearMap.sub_apply, hx, hx3]
+  simp only [Pi.sub_apply, hx1, hx2]
+  have i1 : Integrable (fun y => K₁ x y * (g : X → 𝕜) y) μ :=
+    (isL2Symbol_of_continuous h₁ x).integrable_mul (Lp.memLp _)
+  have i2 : Integrable (fun y => K₂ x y * (g : X → 𝕜) y) μ :=
+    (isL2Symbol_of_continuous h₂ x).integrable_mul (Lp.memLp _)
+  rw [integralOp, integralOp, integralOp, ← integral_sub i1 i2]
+  exact integral_congr_ae (Filter.Eventually.of_forall fun y => by ring)
+
 /-- **The Mercer integral operator is compact.** -/
 theorem isCompactOperator_mercerCLM {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K) :
     IsCompactOperator (mercerCLM μ hK.continuous) := by
-  sorry
+  classical
+  obtain ⟨H₀, _, _, _, _, hKH⟩ := hK.isKernelFun.exists_rkhs
+  obtain ⟨w, e, -⟩ := exists_hilbertBasis 𝕜 H₀
+  have hKsc : Continuous fun p : X × X => scalarKernel H₀ p.1 p.2 := by
+    rw [hKH]; exact hK.continuous
+  set φ : w → C(X, 𝕜) := fun i =>
+    ⟨((e i : H₀) : X → 𝕜), continuous_coe_of_continuous_scalarKernel hKsc _⟩ with hφ
+  have hc : ∀ s : Finset w,
+      Continuous fun p : X × X => ∑ i ∈ s, (φ i) p.1 * conj ((φ i) p.2) := by
+    intro s
+    refine continuous_finset_sum s fun i _ => ?_
+    exact ((φ i).continuous.comp' continuous_fst).mul
+      (RCLike.continuous_conj.comp' ((φ i).continuous.comp' continuous_snd))
+  have hsub : ∀ s : Finset w, Continuous fun p : X × X =>
+      (∑ i ∈ s, (φ i) p.1 * conj ((φ i) p.2)) - K p.1 p.2 := fun s => (hc s).sub hK.continuous
+  refine isCompactOperator_of_tendsto (l := Filter.atTop)
+    (F := fun s : Finset w => mercerCLM
+      (K := fun x y => ∑ i ∈ s, (φ i) x * conj ((φ i) y)) μ (hc s)) ?_ ?_
+  · rw [Metric.tendsto_atTop]
+    intro ε hε
+    have hμ0 : (0 : ℝ) ≤ (μ Set.univ).toReal := ENNReal.toReal_nonneg
+    have hε' : (0 : ℝ) < ε / ((μ Set.univ).toReal + 1) := by positivity
+    have huc := Metric.tendstoUniformly_iff.mp
+      (tendstoUniformly_scalarKernel (H := H₀) hK hKH e) _ hε'
+    obtain ⟨s₀, hs₀⟩ := Filter.eventually_atTop.mp huc
+    refine ⟨s₀, fun s hs => ?_⟩
+    have hbnd : ∀ x y : X,
+        ‖(∑ i ∈ s, (φ i) x * conj ((φ i) y)) - K x y‖
+          ≤ ε / ((μ Set.univ).toReal + 1) := by
+      intro x y
+      have h := hs₀ s hs (x, y)
+      rw [dist_eq_norm] at h
+      have hcomm : (∑ i ∈ s, conj ((e i : H₀) y) * (e i : H₀) x)
+          = ∑ i ∈ s, (φ i) x * conj ((φ i) y) :=
+        Finset.sum_congr rfl fun i _ => by rw [hφ]; exact mul_comm _ _
+      rw [hcomm] at h
+      rw [← norm_neg]
+      simpa using h.le
+    rw [dist_eq_norm, mercerCLM_sub (hc s) hK.continuous (hsub s)]
+    refine lt_of_le_of_lt (norm_mercerCLM_le_of_bounded (hsub s) hbnd) ?_
+    rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
+    nlinarith [hμ0, hε]
+  · filter_upwards with s
+    exact isCompactOperator_mercerCLM_finiteRank s φ φ (hc s)
+
 
 end StatLean.NonparametricStatistics
