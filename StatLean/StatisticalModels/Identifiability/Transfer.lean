@@ -51,12 +51,14 @@ variable {Θ Φ Γ : Type*} {𝓧 𝓨 : Type*} [MeasurableSpace 𝓧] [Measurab
 /-- **Engine lemma**: θ-wise post-processing by any `F : Measure 𝓧 → Measure 𝓨` can only make
 identification harder; a target identified after processing was identified before. -/
 theorem identifiesTarget_of_comp {P : Θ → Measure 𝓧} {ψ : Θ → Γ}
+    -- LEAN-ONLY: identifiability certificate being transferred; antecedent, no scope change
     (F : Measure 𝓧 → Measure 𝓨) (h : IdentifiesTarget (fun θ => F (P θ)) ψ) :
     IdentifiesTarget P ψ :=
   fun _ _ hEq => h (congrArg F hEq)
 
 /-- The law functional represents the estimand on the model range. -/
 theorem lawFunctional_comp {P : Θ → Measure 𝓧} {ψ : Θ → Γ} [Nonempty Γ]
+    -- LEAN-ONLY: identifiability certificate being transferred; antecedent, no scope change
     (h : IdentifiesTarget P ψ) (θ : Θ) :
     lawFunctional P ψ (P θ) = ψ θ :=
   Function.FactorsThrough.extend_apply h _ θ
@@ -64,6 +66,7 @@ theorem lawFunctional_comp {P : Θ → Measure 𝓧} {ψ : Θ → Γ} [Nonempty 
 /-- Conversely, any representation of the estimand as a functional of the law certifies
 target identifiability. -/
 theorem identifiesTarget_of_rep {P : Θ → Measure 𝓧} {ψ : Θ → Γ} (Ψ : Measure 𝓧 → Γ)
+    -- LEAN-ONLY: law-functional representation of the estimand; antecedent, no scope change
     (h : ∀ θ, Ψ (P θ) = ψ θ) : IdentifiesTarget P ψ :=
   fun θ₁ θ₂ hEq => by rw [← h θ₁, ← h θ₂, hEq]
 
@@ -76,18 +79,22 @@ theorem identifiable_iff_identifiesTarget_id {P : Θ → Measure 𝓧} :
 /-- Identified targets pull back along any reparameterization. The converse is false: a
 submodel can identify a target the full model does not. -/
 theorem identifiesTarget_comp {P : Θ → Measure 𝓧} {ψ : Θ → Γ} (g : Φ → Θ)
+    -- LEAN-ONLY: identifiability certificate being transferred; antecedent, no scope change
     (h : IdentifiesTarget P ψ) : IdentifiesTarget (P ∘ g) (ψ ∘ g) :=
   fun _ _ hEq => h hEq
 
 /-- Identifiability pulls back along injective reparameterizations (in particular along
 `Subtype.val`, i.e. restriction to a submodel). -/
 theorem identifiable_comp_of_injective {P : Θ → Measure 𝓧} {g : Φ → Θ}
+    -- LEAN-ONLY: injectivity of the reparameterization + identifiability certificate being
+    -- transferred; antecedents, no scope change
     (hg : Function.Injective g) (h : Identifiable P) : Identifiable (P ∘ g) :=
   fun _ _ hEq => hg (h hEq)
 
 /-- **Semiparametric section**: a target identified on `Θ = Ψ × Η` stays identified on every
 nuisance section `η ↦ P (ψ₀, η)` (instance of `identifiesTarget_comp` at `g = (ψ₀, ·)`). -/
 theorem identifiesTarget_section {Ψ' Η : Type*} {P : Ψ' × Η → Measure 𝓧} {ψ : Ψ' × Η → Γ}
+    -- LEAN-ONLY: identifiability certificate being transferred; antecedent, no scope change
     (h : IdentifiesTarget P ψ) (ψ₀ : Ψ') :
     IdentifiesTarget (fun η => P (ψ₀, η)) (fun η => ψ (ψ₀, η)) :=
   fun _ _ hEq => h hEq
@@ -96,22 +103,26 @@ theorem identifiesTarget_section {Ψ' Η : Type*} {P : Ψ' × Η → Measure �
 
 /-- A target identified from the law of a statistic was identified from the full data. -/
 theorem identifiesTarget_of_pushforward {P : Θ → Measure 𝓧} {ψ : Θ → Γ} (T : 𝓧 → 𝓨)
+    -- LEAN-ONLY: identifiability certificate being transferred; antecedent, no scope change
     (h : IdentifiesTarget (pushforward P T) ψ) : IdentifiesTarget P ψ :=
   identifiesTarget_of_comp (fun Q => Q.map T) h
 
 /-- A target identified from data observed through a mechanism `κ` was identified from the
 full data. -/
 theorem identifiesTarget_of_observe {P : Θ → Measure 𝓧} {ψ : Θ → Γ} (κ : Kernel 𝓧 𝓨)
+    -- LEAN-ONLY: identifiability certificate being transferred; antecedent, no scope change
     (h : IdentifiesTarget (observe P κ) ψ) : IdentifiesTarget P ψ :=
   identifiesTarget_of_comp (fun Q => κ ∘ₘ Q) h
 
 /-- Identifiability from the coarsened model implies identifiability from the full model. -/
 theorem identifiable_of_pushforward {P : Θ → Measure 𝓧} (T : 𝓧 → 𝓨)
+    -- LEAN-ONLY: identifiability certificate being transferred; antecedent, no scope change
     (h : Identifiable (pushforward P T)) : Identifiable P :=
   identifiesTarget_of_comp (fun Q => Q.map T) h
 
 /-- Identifiability from the observed model implies identifiability from the full model. -/
 theorem identifiable_of_observe {P : Θ → Measure 𝓧} (κ : Kernel 𝓧 𝓨)
+    -- LEAN-ONLY: identifiability certificate being transferred; antecedent, no scope change
     (h : Identifiable (observe P κ)) : Identifiable P :=
   identifiesTarget_of_comp (fun Q => κ ∘ₘ Q) h
 
@@ -164,6 +175,7 @@ theorem fibersNonempty_singletonFibers (P : Θ → Measure 𝓧) :
 /-- Separation transfers back from the observed constraint model (image fibers under a
 θ-free observation mechanism). -/
 theorem separatesTarget_of_observe {C : Θ → Set (Measure 𝓧)} {ψ : Θ → Γ} (κ : Kernel 𝓧 𝓨)
+    -- LEAN-ONLY: separation certificate being transferred; antecedent, no scope change
     (h : SeparatesTarget (fun θ => (fun Q => κ ∘ₘ Q) '' C θ) ψ) :
     SeparatesTarget C ψ := by
   rintro θ₁ θ₂ ⟨Q, hQ₁, hQ₂⟩

@@ -55,11 +55,15 @@ def toKernel (P : Θ → Measure 𝓧) (hP : Measurable P) : Kernel Θ 𝓧 :=
   ⟨P, hP⟩
 
 @[simp]
-theorem toKernel_apply (P : Θ → Measure 𝓧) (hP : Measurable P) (θ : Θ) :
+theorem toKernel_apply (P : Θ → Measure 𝓧)
+    -- LEAN-ONLY: measurability in θ, the datum `toKernel` bundles; no scope change
+    (hP : Measurable P) (θ : Θ) :
     toKernel P hP θ = P θ := rfl
 
 @[simp]
-theorem coe_toKernel (P : Θ → Measure 𝓧) (hP : Measurable P) : ⇑(toKernel P hP) = P := rfl
+theorem coe_toKernel (P : Θ → Measure 𝓧)
+    -- LEAN-ONLY: measurability in θ, the datum `toKernel` bundles; no scope change
+    (hP : Measurable P) : ⇑(toKernel P hP) = P := rfl
 
 @[simp]
 theorem toKernel_coe (κ : Kernel Θ 𝓧) : toKernel ⇑κ κ.measurable = κ := rfl

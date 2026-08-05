@@ -183,6 +183,7 @@ theorem crudeCumHazard_censoredLaw (μT μC : Measure ℝ) [IsProbabilityMeasure
 
 /-- The uncensored sub-law is dominated by the observed-time law (LEAN-ONLY; the
 restrict-monotonicity workhorse for S2.3). -/
+-- LEAN-ONLY: measurability of the event; standard regularity
 theorem uncensoredSubLaw_le (P : Measure (ℝ × Bool)) {A : Set ℝ} (hA : MeasurableSet A) :
     uncensoredSubLaw P A ≤ observedTimeLaw P A := by
   rw [uncensoredSubLaw, observedTimeLaw, Measure.map_apply measurable_fst hA,

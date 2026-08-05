@@ -73,6 +73,7 @@ noncomputable def affineNoiseKernel {E₁ E₂ : Type*} [MeasurableSpace E₁] [
 @[simp]
 theorem affineNoiseKernel_apply {E₁ E₂ : Type*} [MeasurableSpace E₁] [MeasurableSpace E₂]
     [AddCommMonoid E₂] [MeasurableAdd₂ E₂] (ν : Measure E₂) [SFinite ν] {A : E₁ → E₂}
+    -- LEAN-ONLY: measurability of the affine part
     (hA : Measurable A) (b : E₂) (x : E₁) :
     affineNoiseKernel ν A hA b x = ν.map fun z => A x + b + z := by
   have hf : Measurable fun p : E₂ × E₂ => p.1 + b + p.2 :=
