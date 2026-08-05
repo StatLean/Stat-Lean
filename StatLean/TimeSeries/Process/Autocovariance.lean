@@ -8,10 +8,10 @@ import StatLean.TimeSeries.ForMathlib.PosSemidefSequence
 For a weakly stationary process: evenness `γ(−k) = γ(k)`, the bound `|γ(k)| ≤ γ(0)`
 (Cauchy–Schwarz), and **FY Theorem 2.7 (necessity)**: the autocovariance function is an
 even, positive semidefinite sequence — `Σᵢⱼ aᵢaⱼ γ(tᵢ − tⱼ) = Var(Σᵢ aᵢ X_{tᵢ}) ≥ 0`.
-The **sufficiency** half (every even positive semidefinite sequence is the ACVF of some
-stationary process — via a Gaussian process and Kolmogorov extension, cited by FY to
-Brockwell & Davis 1991 p. 27) is a named DEBT here, scheduled for the Gaussian batch.
-Basic ACF facts (`ρ(0) = 1`, `|ρ(k)| ≤ 1`) close the section.
+The **sufficiency** half lives in `Stationarity/Gaussian.lean`
+(`exists_stationary_of_isPosSemidefSeq`, proved by the random-phase construction over
+the Herglotz spectral measure). Basic ACF facts (`ρ(0) = 1`, `|ρ(k)| ≤ 1`) close the
+section.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.2.1:
 Definition 2.5, Theorem 2.7 with eq. (2.17) (pp. 39–40). (`FY §2.2.1 Thm 2.7`.)
@@ -74,20 +74,6 @@ theorem IsStationary.acvf_posSemidef [IsProbabilityMeasure μ] (h : IsStationary
     _ = ∑ i, ∑ j, cov[a i • X (t i), a j • X (t j); μ] := variance_sum hmem
     _ = ∑ i, ∑ j, a i * a j * acvf X μ (t i - t j) :=
         Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => hcov i j
-
-/-- **FY Theorem 2.7, sufficiency — DEBT** (proof scheduled for the Gaussian batch:
-construct a stationary Gaussian process with the prescribed covariance via Kolmogorov
-extension; FY cites Brockwell & Davis 1991, p. 27). Every even positive semidefinite
-sequence is the autocovariance function of some weakly stationary process. -/
-theorem exists_stationary_of_isPosSemidefSeq (γ : ℤ → ℝ)
-    -- USER-INPUT: evenness; FY §2.2.1 Thm 2.7
-    (heven : ∀ k, γ (-k) = γ k)
-    -- USER-INPUT: positive semidefiniteness, eq. (2.17); FY §2.2.1 Thm 2.7
-    (hpsd : IsPosSemidefSeq γ) :
-    ∃ (Ω' : Type) (_ : MeasurableSpace Ω') (μ' : Measure Ω') (X' : ℤ → Ω' → ℝ),
-      IsProbabilityMeasure μ' ∧ (∀ t, Measurable (X' t)) ∧ IsStationary X' μ' ∧
-        acvf X' μ' = γ := by
-  sorry
 
 /-- `ρ(0) = 1` when `γ(0) ≠ 0` (no stationarity needed: this is `div_self`). -/
 theorem acf_zero (h0 : acvf X μ 0 ≠ 0) : acf X μ 0 = 1 :=

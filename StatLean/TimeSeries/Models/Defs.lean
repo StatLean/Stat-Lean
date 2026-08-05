@@ -222,6 +222,41 @@ structure IsGARCH (c0 : ℝ) {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ)
   recVol : ∀ t : ℤ, (fun ω => σvol t ω ^ 2) =ᵐ[μ] fun ω =>
     c0 + (∑ i, b i * X (t - 1 - (i : ℕ)) ω ^ 2) + ∑ j, a j * σvol (t - 1 - (j : ℕ)) ω ^ 2
 
+/-! ## ARCH(∞) (FY §2.1.5, eq. (2.15)) -/
+
+/-- **ARCH(∞) model** (FY §2.1.5, eq. (2.15)): `Y_t = ρ_t ξ_t` with
+`ρ_t = a + Σ_{j≥1} b_j Y_{t-1-j+1}` — in our indexing, coefficient `bc j` multiplies
+`Y_{t-1-j}`, matching the book's `b_{j+1} Y_{t-(j+1)}` — where `{ξ_t}` is a nonnegative
+i.i.d. family with mean `1`, and `a ≥ 0`, `bc j ≥ 0`. Contains the standard ARCH(q) via
+`Y_t = X_t²`, `ξ_t = ε_t²`, and GARCH under `Σaᵢ < 1` (FY §2.1.5). The infinite sum is a
+`tsum` (junk `0` when not a.e. summable; the §2.1.5 theory works under `Σ bc < 1`, where
+the constructed solutions are a.e. summable). -/
+structure IsARCHInf (a : ℝ) (bc : ℕ → ℝ) (Y ξ : ℤ → Ω → ℝ) (μ : Measure Ω) : Prop where
+  /-- Constitutive (FY eq. (2.15)): `a ≥ 0`. -/
+  a_nonneg : 0 ≤ a
+  /-- Constitutive (FY eq. (2.15)): `b_j ≥ 0`. -/
+  bc_nonneg : ∀ j, 0 ≤ bc j
+  /-- Constitutive (implicit in FY: the solution and noise are random variables). -/
+  measurableY : ∀ t, Measurable (Y t)
+  measurableXi : ∀ t, Measurable (ξ t)
+  /-- Constitutive (FY eq. (2.15)): the noise is nonnegative. -/
+  xi_nonneg : ∀ t, ∀ᵐ ω ∂μ, 0 ≤ ξ t ω
+  /-- Constitutive (FY eq. (2.15)): the noise is i.i.d. -/
+  iIndep : iIndepFun ξ μ
+  identDistrib : ∀ s t, IdentDistrib (ξ s) (ξ t) μ μ
+  /-- Constitutive (FY eq. (2.15)): unit mean, `E ξ_t = 1`. -/
+  integrable_xi : Integrable (ξ 0) μ
+  integral_xi : ∫ ω, ξ 0 ω ∂μ = 1
+  /-- Constitutive (FY §2.7.1 model semantics, surfaced): `ξ_t` is independent of the
+  past of the solution — the implicit assumption FY's uniqueness proof uses. -/
+  indep_past : ∀ t : ℤ,
+    Indep (MeasurableSpace.comap (ξ t) inferInstance) (sigmaLT Y t) μ
+  /-- Constitutive (FY eq. (2.15)): the solution is nonnegative. -/
+  Y_nonneg : ∀ t, ∀ᵐ ω ∂μ, 0 ≤ Y t ω
+  /-- Constitutive (FY eq. (2.15)): `Y_t = (a + Σ_j bc_j Y_{t-1-j}) ξ_t` a.e. -/
+  recurrence : ∀ t : ℤ, Y t =ᵐ[μ]
+    fun ω => (a + ∑' j : ℕ, bc j * Y (t - 1 - (j : ℕ)) ω) * ξ t ω
+
 /-! ## Threshold autoregression (FY §4.1.1, Definition 4.1) -/
 
 /-- **TAR model with `k` regimes** (FY Definition 4.1, eq. (4.1)):
