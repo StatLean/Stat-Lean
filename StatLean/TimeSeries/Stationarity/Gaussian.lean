@@ -2,6 +2,7 @@ import StatLean.TimeSeries.ForMathlib.Fourier.HerglotzBochner
 import StatLean.TimeSeries.Process.LinearProcess
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import Mathlib.Probability.Distributions.Gaussian.Real
+import Mathlib.Probability.Distributions.Gaussian.CharFun
 
 /-!
 # Stationary Gaussian processes and the completion of FY Theorem 2.7 (FY §2.1.3, §2.2.1)
@@ -382,6 +383,94 @@ theorem isPosSemidefSeq_and_even_iff_acvf (γ : ℤ → ℝ) :
   · rintro ⟨Ω', _, μ', X', hprob, _hmeas, hstat, rfl⟩
     exact ⟨hstat.acvf_even, hstat.acvf_posSemidef⟩
 
+/-! ### Gaussian finite-dimensional laws (private machinery for the weak ⇒ strict step) -/
+
+/-- Every finite-dimensional tuple of a Gaussian process has a Gaussian law on `Fin n → ℝ`
+(a continuous-linear image of the `Finset`-restricted process). -/
+private lemma hasGaussianLaw_tuple {X : ℤ → Ω → ℝ} (hG : IsGaussianProcess X μ)
+    {n : ℕ} (τ : Fin n → ℤ) :
+    HasGaussianLaw (fun ω (i : Fin n) => X (τ i) ω) μ := by
+  classical
+  let I : Finset ℤ := Finset.image τ Finset.univ
+  let L : (I → ℝ) →L[ℝ] (Fin n → ℝ) :=
+    { toFun := fun x i => x ⟨τ i, Finset.mem_image.2 ⟨i, Finset.mem_univ i, rfl⟩⟩
+      map_add' := fun x y => by ext i; simp
+      map_smul' := fun c x => by ext i; simp
+      cont := by fun_prop }
+  exact (hG.hasGaussianLaw I).map_fun L
+
+/-- A continuous linear functional on `Fin n → ℝ` in coordinates. -/
+private lemma dual_apply_sum {n : ℕ} (L : StrongDual ℝ (Fin n → ℝ)) (x : Fin n → ℝ) :
+    L x = ∑ i, x i * L (fun j => if i = j then (1 : ℝ) else 0) := by
+  have h := LinearMap.pi_apply_eq_sum_univ (L : (Fin n → ℝ) →ₗ[ℝ] ℝ) x
+  simpa [smul_eq_mul] using h
+
+/-- The covariance of two linear functionals of a tuple, in terms of the ACVF. -/
+private lemma cov_dual_tuple [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
+    (hstat : IsStationary X μ) {n : ℕ} (τ : Fin n → ℤ)
+    (L₁ L₂ : StrongDual ℝ (Fin n → ℝ)) :
+    cov[fun ω => L₁ fun i => X (τ i) ω, fun ω => L₂ fun i => X (τ i) ω; μ]
+      = ∑ i, ∑ j, (L₁ (fun j' => if i = j' then (1 : ℝ) else 0)
+          * L₂ (fun j' => if j = j' then (1 : ℝ) else 0)) * acvf X μ (τ i - τ j) := by
+  have h1 : (fun ω => L₁ fun i => X (τ i) ω)
+      = fun ω => ∑ i, X (τ i) ω * L₁ (fun j => if i = j then (1 : ℝ) else 0) := by
+    funext ω; exact dual_apply_sum L₁ _
+  have h2 : (fun ω => L₂ fun i => X (τ i) ω)
+      = fun ω => ∑ i, X (τ i) ω * L₂ (fun j => if i = j then (1 : ℝ) else 0) := by
+    funext ω; exact dual_apply_sum L₂ _
+  rw [h1, h2, covariance_fun_sum_fun_sum (fun i => (hstat.memLp (τ i)).mul_const _)
+    (fun j => (hstat.memLp (τ j)).mul_const _)]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  rw [covariance_mul_const_left, covariance_mul_const_right, hstat.cov_eq_acvf]
+  ring
+
+/-- Two finite-dimensional laws of a weakly stationary Gaussian process agree as soon as the
+covariance patterns of the two time tuples agree: both laws are Gaussian, their mean vectors
+are constant (weak stationarity) and their dual covariance forms are the ACVF pattern. -/
+private theorem map_tuple_eq_of_acvf [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
+    (hG : IsGaussianProcess X μ) (hmeas : ∀ t, Measurable (X t)) (hstat : IsStationary X μ)
+    {n : ℕ} (τ σ : Fin n → ℤ)
+    (hacvf : ∀ i j, acvf X μ (τ i - τ j) = acvf X μ (σ i - σ j)) :
+    (μ.map fun ω (i : Fin n) => X (τ i) ω) = μ.map fun ω (i : Fin n) => X (σ i) ω := by
+  haveI hgτ : IsGaussian (μ.map fun ω (i : Fin n) => X (τ i) ω) :=
+    (hasGaussianLaw_tuple hG τ).isGaussian_map
+  haveI hgσ : IsGaussian (μ.map fun ω (i : Fin n) => X (σ i) ω) :=
+    (hasGaussianLaw_tuple hG σ).isGaussian_map
+  have hmτ : Measurable fun ω (i : Fin n) => X (τ i) ω :=
+    measurable_pi_lambda _ fun i => hmeas _
+  have hmσ : Measurable fun ω (i : Fin n) => X (σ i) ω :=
+    measurable_pi_lambda _ fun i => hmeas _
+  have hIτ : Integrable (fun ω (i : Fin n) => X (τ i) ω) μ := by
+    have h := IsGaussian.integrable_id (μ := μ.map fun ω (i : Fin n) => X (τ i) ω)
+    rw [integrable_map_measure aestronglyMeasurable_id hmτ.aemeasurable] at h
+    simpa [Function.comp_def] using h
+  have hIσ : Integrable (fun ω (i : Fin n) => X (σ i) ω) μ := by
+    have h := IsGaussian.integrable_id (μ := μ.map fun ω (i : Fin n) => X (σ i) ω)
+    rw [integrable_map_measure aestronglyMeasurable_id hmσ.aemeasurable] at h
+    simpa [Function.comp_def] using h
+  refine IsGaussian.ext_covarianceBilinDual ?_ ?_
+  · -- mean vectors: coordinatewise, the constant mean of the process
+    rw [integral_map hmτ.aemeasurable aestronglyMeasurable_id,
+      integral_map hmσ.aemeasurable aestronglyMeasurable_id]
+    funext i
+    have f1 := (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin n => ℝ) i).integral_comp_comm
+      hIτ
+    have f2 := (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin n => ℝ) i).integral_comp_comm
+      hIσ
+    simp only [ContinuousLinearMap.proj_apply, id_eq] at f1 f2 ⊢
+    rw [← f1, ← f2]
+    exact hstat.integral_eq _ _
+  · -- dual covariance forms: the ACVF pattern of the tuple
+    ext L₁ L₂
+    rw [covarianceBilinDual_eq_covariance IsGaussian.memLp_two_id,
+      covarianceBilinDual_eq_covariance IsGaussian.memLp_two_id,
+      covariance_map_fun L₁.continuous.aestronglyMeasurable L₂.continuous.aestronglyMeasurable
+        hmτ.aemeasurable,
+      covariance_map_fun L₁.continuous.aestronglyMeasurable L₂.continuous.aestronglyMeasurable
+        hmσ.aemeasurable,
+      cov_dual_tuple hstat τ L₁ L₂, cov_dual_tuple hstat σ L₁ L₂]
+    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by rw [hacvf i j]
+
 /-- **Weakly stationary Gaussian processes are strictly stationary** (FY §2.1.3): the
 finite-dimensional laws of a Gaussian process are determined by the mean vector and
 covariance matrix, and both are shift-invariant under weak stationarity. -/
@@ -394,7 +483,9 @@ theorem IsGaussianProcess.isStrictlyStationary [IsProbabilityMeasure μ]
     -- USER-INPUT: weak stationarity; FY §2.1.3
     (hstat : IsStationary X μ) :
     IsStrictlyStationary X μ := by
-  sorry
+  intro n t k
+  exact map_tuple_eq_of_acvf hG hmeas hstat (fun i => t i + k) t
+    (fun i j => by rw [show t i + k - (t j + k) = t i - t j by ring])
 
 /-- **Causal ARMA with i.i.d. Gaussian noise is a Gaussian process** (FY §2.1.3): the
 finite-dimensional vectors are `L²`-limits of linear images of Gaussian vectors. -/
