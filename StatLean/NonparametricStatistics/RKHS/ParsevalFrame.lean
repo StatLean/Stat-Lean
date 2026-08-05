@@ -118,25 +118,59 @@ theorem isParsevalFrame_iff_exists_isometry {f : ι → E} :
     have := lp2_hasSum_sq (V h)
     simpa [hV] using this
 
+/-- The adjoint of the analysis operator sends the canonical `ℓ²` basis vector `δ_i` to the
+frame vector `f i`. -/
+private theorem adjoint_single [CompleteSpace E] [DecidableEq ι] {f : ι → E}
+    (V : E →ₗᵢ[𝕜] lp (fun _ : ι => 𝕜) 2) (hV : ∀ h i, V h i = ⟪f i, h⟫_𝕜) (i : ι) :
+    ContinuousLinearMap.adjoint V.toContinuousLinearMap (lp.single 2 i (1 : 𝕜)) = f i := by
+  refine ext_inner_right 𝕜 fun v => ?_
+  rw [ContinuousLinearMap.adjoint_inner_left, lp.inner_single_left, RCLike.inner_apply]
+  simp [hV]
+
+/-- The adjoint of the analysis operator is a left inverse of it. -/
+private theorem adjoint_analysis_apply [CompleteSpace E]
+    (V : E →ₗᵢ[𝕜] lp (fun _ : ι => 𝕜) 2) (h : E) :
+    ContinuousLinearMap.adjoint V.toContinuousLinearMap (V h) = h := by
+  refine ext_inner_right 𝕜 fun v => ?_
+  rw [ContinuousLinearMap.adjoint_inner_left]
+  exact V.inner_map_map h v
+
 /-- **Reconstruction formula**: for a Parseval frame, `h = ∑ᵢ ⟪f_i, h⟫ • f_i`
 (unordered norm convergence). -/
 theorem IsParsevalFrame.hasSum_reconstruction [CompleteSpace E] {f : ι → E}
     (hf : IsParsevalFrame 𝕜 f) (h : E) :
     HasSum (fun i => ⟪f i, h⟫_𝕜 • f i) h := by
-  sorry
+  classical
+  obtain ⟨V, hV⟩ := isParsevalFrame_iff_exists_isometry.1 hf
+  have hs := (lp.hasSum_single (p := 2) (by norm_num) (V h)).mapL
+    (ContinuousLinearMap.adjoint V.toContinuousLinearMap)
+  rw [adjoint_analysis_apply V h] at hs
+  convert hs using 2 with i
+  have e1 : lp.single 2 i (V h i)
+      = (V h i) • (lp.single 2 i (1 : 𝕜) : lp (fun _ : ι => 𝕜) 2) := by
+    rw [← lp.single_smul]; simp
+  rw [e1, map_smul, adjoint_single V hV i, hV]
 
 /-- Conversely, the reconstruction formula for all vectors makes `f` a Parseval frame. -/
 theorem isParsevalFrame_of_hasSum_reconstruction [CompleteSpace E] {f : ι → E}
     (hrec : ∀ h : E, HasSum (fun i => ⟪f i, h⟫_𝕜 • f i) h) :
     IsParsevalFrame 𝕜 f := by
-  sorry
+  intro h
+  refine hasSum_sq_iff.2 ?_
+  have := (hrec h).mapL (innerSL 𝕜 h)
+  simpa [inner_smul_right, mul_comm] using this
 
 /-- **Polarized Parseval identity** for a Parseval frame:
 `⟪h₁, h₂⟫ = ∑ᵢ ⟪h₁, f_i⟫ · ⟪f_i, h₂⟫`. -/
 theorem IsParsevalFrame.hasSum_inner [CompleteSpace E] {f : ι → E}
     (hf : IsParsevalFrame 𝕜 f) (h₁ h₂ : E) :
     HasSum (fun i => ⟪h₁, f i⟫_𝕜 * ⟪f i, h₂⟫_𝕜) ⟪h₁, h₂⟫_𝕜 := by
-  sorry
+  obtain ⟨V, hV⟩ := isParsevalFrame_iff_exists_isometry.1 hf
+  have H := lp.hasSum_inner (𝕜 := 𝕜) (G := fun _ : ι => 𝕜) (V h₁) (V h₂)
+  rw [V.inner_map_map] at H
+  convert H using 2 with i
+  rw [hV, hV, RCLike.inner_apply, inner_conj_symm]
+  ring
 
 /-- **Dilation (Han–Larson)**: every Parseval frame for `E` is the compression of the
 canonical orthonormal basis of `ℓ²(ι)`: there is a linear isometry `V : E → ℓ²(ι)`
@@ -145,6 +179,7 @@ theorem IsParsevalFrame.exists_dilation [CompleteSpace E] [DecidableEq ι] {f : 
     (hf : IsParsevalFrame 𝕜 f) :
     ∃ V : E →ₗᵢ[𝕜] lp (fun _ : ι => 𝕜) 2,
       ∀ i, V.toContinuousLinearMap.adjoint (lp.single 2 i (1 : 𝕜)) = f i := by
-  sorry
+  obtain ⟨V, hV⟩ := isParsevalFrame_iff_exists_isometry.1 hf
+  exact ⟨V, adjoint_single V hV⟩
 
 end StatLean.NonparametricStatistics
