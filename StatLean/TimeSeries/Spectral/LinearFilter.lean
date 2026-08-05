@@ -207,6 +207,60 @@ theorem exists_isFilteredBy [IsProbabilityMeasure μ] {Y : ℤ → Ω → ℝ} {
   choose X hXm hXlim using main
   exact ⟨X, hXm, hXlim⟩
 
+section Aux2
+
+variable {Y : ℤ → Ω → ℝ} {φ : ℤ → ℝ}
+
+/-- The finite-window covariance of two partial sums is the finite double convolution. -/
+private lemma covariance_fpsum [IsProbabilityMeasure μ] (hY : IsStationary Y μ)
+    (φ : ℤ → ℝ) (s t : ℤ) (N : ℕ) :
+    cov[fpsum φ Y s N, fpsum φ Y t N; μ]
+      = ∑ j ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), ∑ l ∈ Finset.Icc (-(N : ℤ)) (N : ℤ),
+          φ j * φ l * acvf Y μ (s - t + j - l) := by
+  have hfun : ∀ u : ℤ, fpsum φ Y u N
+      = ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), (fun ω => φ k * Y (u - k) ω) := by
+    intro u
+    funext ω
+    simp [fpsum, Finset.sum_apply]
+  rw [hfun s, hfun t, covariance_sum_sum'
+    (fun k _ => (hY.memLp (s - k)).const_mul (φ k))
+    (fun k _ => (hY.memLp (t - k)).const_mul (φ k))]
+  have hterm : ∀ j l : ℤ, cov[fun ω => φ j * Y (s - j) ω, fun ω => φ l * Y (t - l) ω; μ]
+      = φ j * φ l * acvf Y μ (s - j - (t - l)) := by
+    intro j l
+    rw [covariance_const_mul_left, covariance_const_mul_right, hY.cov_eq_acvf, ← mul_assoc]
+  rw [Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun l _ => hterm j l]
+  conv_lhs => rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun y _ => Finset.sum_congr rfl fun x _ => ?_
+  rw [show s - x - (t - y) = s - t + y - x by ring]
+  ring
+
+/-- The double-convolution family is absolutely summable on `ℤ × ℤ`. -/
+private lemma summable_convProd [IsProbabilityMeasure μ] (hY : IsStationary Y μ)
+    (hφ : Summable fun k => |φ k|) (k : ℤ) :
+    Summable fun p : ℤ × ℤ => φ p.1 * φ p.2 * acvf Y μ (k + p.1 - p.2) := by
+  refine Summable.of_norm (Summable.of_nonneg_of_le (fun p => norm_nonneg _)
+    (fun p => ?_)
+    ((hφ.mul_of_nonneg hφ (fun i => abs_nonneg (φ i)) (fun i => abs_nonneg (φ i))).mul_right
+      (acvf Y μ 0)))
+  rw [Real.norm_eq_abs, abs_mul, abs_mul]
+  exact mul_le_mul_of_nonneg_left (hY.abs_acvf_le _) (by positivity)
+
+/-- The symmetric square windows exhaust `ℤ × ℤ`. -/
+private lemma tendsto_IccProd :
+    Tendsto (fun N : ℕ => Finset.Icc (-(N : ℤ)) (N : ℤ) ×ˢ Finset.Icc (-(N : ℤ)) (N : ℤ))
+      atTop atTop := by
+  refine tendsto_atTop_finset_of_monotone (fun a b hab => ?_) (fun p => ?_)
+  · have hab' : (a : ℤ) ≤ (b : ℤ) := by exact_mod_cast hab
+    refine Finset.subset_iff.mpr fun q hq => ?_
+    simp only [Finset.mem_product, Finset.mem_Icc] at hq ⊢
+    omega
+  · refine ⟨max p.1.natAbs p.2.natAbs, ?_⟩
+    simp only [Finset.mem_product, Finset.mem_Icc]
+    omega
+
+end Aux2
+
 /-- **FY Theorem 2.12, stationarity + ACVF convolution** (output stationarity and the
 double-convolution formula, both *derived* — FY assumes the former and glosses the
 latter): `γ_X(k) = Σ'_j Σ'_l φ_j φ_l γ_Y(k + j − l)`. -/
@@ -216,7 +270,100 @@ theorem IsFilteredBy.isStationary [IsProbabilityMeasure μ] {X Y : ℤ → Ω �
     (hmeasY : ∀ t, Measurable (Y t)) (hmeasX : ∀ t, Measurable (X t)) :
     IsStationary X μ ∧
       ∀ k : ℤ, acvf X μ k = ∑' j : ℤ, ∑' l : ℤ, φ j * φ l * acvf Y μ (k + j - l) := by
-  sorry
+  -- the output marginals are square integrable
+  have hmem : ∀ t, MemLp (X t) 2 μ := by
+    intro t
+    obtain ⟨N, hN⟩ := ((h t).eventually (gt_mem_nhds (show (0 : ℝ≥0∞) < 1 by norm_num))).exists
+    have hdiff : MemLp (fun ω => X t ω - fpsum φ Y t N ω) 2 μ :=
+      ⟨(hmeasX t).aestronglyMeasurable.sub (memLp_fpsum hY t N).aestronglyMeasurable,
+        lt_of_lt_of_le hN (by norm_num)⟩
+    have hsum2 := hdiff.add (memLp_fpsum (φ := φ) hY t N)
+    have hfun : ((fun ω => X t ω - fpsum φ Y t N ω) + fpsum φ Y t N) = X t := by
+      funext ω; simp
+    rwa [hfun] at hsum2
+  -- the partial sums converge to the output in the Hilbert space `L²`
+  have hconv : ∀ t : ℤ,
+      Tendsto (fun N => fpsumLp hY φ t N) atTop (nhds ((hmem t).toLp (X t))) := by
+    intro t
+    rw [tendsto_iff_dist_tendsto_zero]
+    have hd : ∀ N, dist (fpsumLp hY φ t N) ((hmem t).toLp (X t))
+        = (eLpNorm (fun ω => X t ω - fpsum φ Y t N ω) 2 μ).toReal := by
+      intro N
+      rw [Lp.dist_def, eLpNorm_sub_comm]
+      congr 1
+      refine eLpNorm_congr_ae ?_
+      filter_upwards [coeFn_fpsumLp hY φ t N, (hmem t).coeFn_toLp] with ω h1 h2
+      simp only [Pi.sub_apply, h1, h2]
+    simp_rw [hd]
+    simpa using (ENNReal.continuousAt_toReal (by simp)).tendsto.comp (h t)
+  have hone : MemLp (fun _ : Ω => (1 : ℝ)) 2 μ := memLp_const 1
+  have hI : ∀ {f : Ω → ℝ} (hf : MemLp f 2 μ),
+      (inner ℝ (hf.toLp f) (hone.toLp (fun _ => (1 : ℝ))) : ℝ) = ∫ ω, f ω ∂μ := by
+    intro f hf
+    rw [inner_toLp]
+    simp
+  have hform : ∀ (f g : Ω → ℝ) (hf : MemLp f 2 μ) (hg : MemLp g 2 μ),
+      cov[f, g; μ] = (inner ℝ (hf.toLp f) (hg.toLp g) : ℝ)
+        - (inner ℝ (hf.toLp f) (hone.toLp (fun _ => (1 : ℝ))) : ℝ)
+          * (inner ℝ (hg.toLp g) (hone.toLp (fun _ => (1 : ℝ))) : ℝ) := by
+    intro f g hf hg
+    rw [covariance_eq_sub hf hg, inner_toLp, hI hf, hI hg]
+    congr 1
+  -- covariances pass to the `L²` limits
+  have hcovlim : ∀ s t : ℤ, Tendsto (fun N => cov[fpsum φ Y s N, fpsum φ Y t N; μ]) atTop
+      (nhds cov[X s, X t; μ]) := by
+    intro s t
+    have h1 : Tendsto (fun N => (inner ℝ (fpsumLp hY φ s N) (fpsumLp hY φ t N) : ℝ)) atTop
+        (nhds (inner ℝ ((hmem s).toLp (X s)) ((hmem t).toLp (X t)) : ℝ)) :=
+      (hconv s).inner (hconv t)
+    have h2 : ∀ u : ℤ, Tendsto
+        (fun N => (inner ℝ (fpsumLp hY φ u N) (hone.toLp (fun _ => (1 : ℝ))) : ℝ)) atTop
+        (nhds (inner ℝ ((hmem u).toLp (X u)) (hone.toLp (fun _ => (1 : ℝ))) : ℝ)) :=
+      fun u => (hconv u).inner tendsto_const_nhds
+    have hlim := h1.sub ((h2 s).mul (h2 t))
+    rw [← hform (X s) (X t) (hmem s) (hmem t)] at hlim
+    exact hlim.congr fun N =>
+      (hform (fpsum φ Y s N) (fpsum φ Y t N) (memLp_fpsum hY s N) (memLp_fpsum hY t N)).symm
+  -- ... and the finite windows converge to the double series
+  have hcov : ∀ s t : ℤ, cov[X s, X t; μ]
+      = ∑' j : ℤ, ∑' l : ℤ, φ j * φ l * acvf Y μ (s - t + j - l) := by
+    intro s t
+    refine tendsto_nhds_unique (hcovlim s t) ?_
+    have hstep : ∀ N : ℕ, cov[fpsum φ Y s N, fpsum φ Y t N; μ]
+        = ∑ p ∈ Finset.Icc (-(N : ℤ)) (N : ℤ) ×ˢ Finset.Icc (-(N : ℤ)) (N : ℤ),
+            φ p.1 * φ p.2 * acvf Y μ (s - t + p.1 - p.2) := by
+      intro N
+      rw [covariance_fpsum hY φ s t N, ← Finset.sum_product']
+    simp only [hstep]
+    have hlim := (summable_convProd hY hφ (s - t)).hasSum.comp tendsto_IccProd
+    rw [(summable_convProd hY hφ (s - t)).tsum_prod] at hlim
+    exact hlim
+  -- the means are constant in time
+  have hmeanlim : ∀ t : ℤ, Tendsto (fun N => ∫ ω, fpsum φ Y t N ω ∂μ) atTop
+      (nhds (∫ ω, X t ω ∂μ)) := by
+    intro t
+    have hlim : Tendsto
+        (fun N => (inner ℝ (fpsumLp hY φ t N) (hone.toLp (fun _ => (1 : ℝ))) : ℝ)) atTop
+        (nhds (inner ℝ ((hmem t).toLp (X t)) (hone.toLp (fun _ => (1 : ℝ))) : ℝ)) :=
+      (hconv t).inner tendsto_const_nhds
+    rw [hI (hmem t)] at hlim
+    exact hlim.congr fun N => hI (memLp_fpsum hY t N)
+  have hmeanval : ∀ (t : ℤ) (N : ℕ), ∫ ω, fpsum φ Y t N ω ∂μ
+      = (∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), φ k) * ∫ ω, Y 0 ω ∂μ := by
+    intro t N
+    simp only [fpsum]
+    rw [integral_finset_sum _ (fun k _ =>
+      ((hY.memLp (t - k)).const_mul (φ k)).integrable (by norm_num)), Finset.sum_mul]
+    refine Finset.sum_congr rfl fun k _ => ?_
+    calc ∫ ω, φ k * Y (t - k) ω ∂μ = φ k * ∫ ω, Y (t - k) ω ∂μ :=
+          MeasureTheory.integral_const_mul _ _
+      _ = φ k * ∫ ω, Y 0 ω ∂μ := by rw [hY.integral_eq (t - k) 0]
+  refine ⟨⟨hmem, fun s t => ?_, fun t k => ?_⟩, fun k => ?_⟩
+  · refine tendsto_nhds_unique (hmeanlim s) ((hmeanlim t).congr fun N => ?_)
+    rw [hmeanval t N, hmeanval s N]
+  · rw [hcov (t + k) t, hcov k 0, show t + k - t = k by ring, sub_zero]
+  · change cov[X k, X 0; μ] = _
+    rw [hcov k 0, sub_zero]
 
 /-- Summability of the output ACVF (derived; FY assumes it): `ℓ¹ ∗ ℓ¹ ∗ ℓ¹`. -/
 theorem IsFilteredBy.hasSummableACVF [IsProbabilityMeasure μ] {X Y : ℤ → Ω → ℝ}
