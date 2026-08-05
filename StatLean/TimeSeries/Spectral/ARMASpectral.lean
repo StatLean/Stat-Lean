@@ -153,6 +153,84 @@ theorem IsWhiteNoise.spectralDensityOf_eq [IsProbabilityMeasure μ] {σ2 : ℝ}
     hε.acvf_eq 0, if_pos rfl, fourier_zero, Complex.one_re, mul_one]
   ring
 
+/-! ### Coefficient bookkeeping for the lag polynomials
+
+These mirror the (file-private) computations of `Models/Linear.lean`: `arPoly` and
+`maPoly` have constant coefficient `1`, coefficient `∓bᵢ`/`aⱼ` in degree `i+1`/`j+1`, and
+degree at most `p`/`q`. -/
+
+/-- The coefficients of the AR polynomial `b(z) = 1 - b₁z - ⋯ - b_pz^p`. -/
+private theorem coeff_arPoly {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
+    (arPoly b).coeff m
+      = (if m = 0 then (1 : ℝ) else 0) - ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
+  simp [arPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+    Polynomial.coeff_X_pow, mul_ite]
+
+private theorem coeff_arPoly_zero {p : ℕ} (b : Fin p → ℝ) : (arPoly b).coeff 0 = 1 := by
+  rw [coeff_arPoly]; simp
+
+private theorem coeff_arPoly_succ {p : ℕ} (b : Fin p → ℝ) (j : Fin p) :
+    (arPoly b).coeff ((j : ℕ) + 1) = -(b j) := by
+  rw [coeff_arPoly]
+  simp [Fin.val_eq_val, Finset.sum_ite_eq]
+
+private theorem natDegree_arPoly_le {p : ℕ} (b : Fin p → ℝ) : (arPoly b).natDegree ≤ p := by
+  refine Polynomial.natDegree_le_iff_coeff_eq_zero.mpr fun N hN => ?_
+  rw [coeff_arPoly, if_neg (by omega), zero_sub, neg_eq_zero]
+  refine Finset.sum_eq_zero fun i _ => if_neg ?_
+  have := i.isLt
+  omega
+
+/-- The coefficients of the MA polynomial `a(z) = 1 + a₁z + ⋯ + a_qz^q`. -/
+private theorem coeff_maPoly {q : ℕ} (a : Fin q → ℝ) (m : ℕ) :
+    (maPoly a).coeff m
+      = (if m = 0 then (1 : ℝ) else 0) + ∑ j : Fin q, if m = (j : ℕ) + 1 then a j else 0 := by
+  simp [maPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+    Polynomial.coeff_X_pow, mul_ite]
+
+private theorem coeff_maPoly_zero {q : ℕ} (a : Fin q → ℝ) : (maPoly a).coeff 0 = 1 := by
+  rw [coeff_maPoly]; simp
+
+private theorem coeff_maPoly_succ {q : ℕ} (a : Fin q → ℝ) (j : Fin q) :
+    (maPoly a).coeff ((j : ℕ) + 1) = a j := by
+  rw [coeff_maPoly]
+  simp [Fin.val_eq_val, Finset.sum_ite_eq]
+
+private theorem natDegree_maPoly_le {q : ℕ} (a : Fin q → ℝ) : (maPoly a).natDegree ≤ q := by
+  refine Polynomial.natDegree_le_iff_coeff_eq_zero.mpr fun N hN => ?_
+  rw [coeff_maPoly, if_neg (by omega), zero_add]
+  refine Finset.sum_eq_zero fun j _ => if_neg ?_
+  have := j.isLt
+  omega
+
+omit [MeasurableSpace Ω] in
+/-- Coefficients past the degree contribute nothing, so the defining `natDegree`-truncated
+sum can be run to any larger order. -/
+private theorem sum_range_coeff_extend {P : Polynomial ℝ} {n : ℕ} (hn : P.natDegree ≤ n)
+    (W : ℤ → Ω → ℝ) (t : ℤ) (ω : Ω) :
+    ∑ k ∈ Finset.range (P.natDegree + 1), P.coeff k * W (t - (k : ℕ)) ω
+      = ∑ k ∈ Finset.range (n + 1), P.coeff k * W (t - (k : ℕ)) ω := by
+  have hsub : Finset.range (P.natDegree + 1) ⊆ Finset.range (n + 1) := by
+    intro x hx
+    rw [Finset.mem_range] at hx ⊢
+    omega
+  refine Finset.sum_subset hsub fun x _ hx => ?_
+  rw [Finset.mem_range, not_lt] at hx
+  rw [Polynomial.coeff_eq_zero_of_natDegree_lt (by omega), zero_mul]
+
+omit [MeasurableSpace Ω] in
+/-- The `P(B)W` sum with its degree-`0` term split off (FY's `b(B)X`, `a(B)ε` shape). -/
+private theorem sum_range_split (P : Polynomial ℝ) (n : ℕ) (W : ℤ → Ω → ℝ) (t : ℤ) (ω : Ω) :
+    ∑ k ∈ Finset.range (n + 1), P.coeff k * W (t - (k : ℕ)) ω
+      = P.coeff 0 * W t ω + ∑ i : Fin n, P.coeff ((i : ℕ) + 1) * W (t - 1 - (i : ℕ)) ω := by
+  rw [← Fin.sum_univ_eq_sum_range (fun m => P.coeff m * W (t - (m : ℤ)) ω) (n + 1),
+    Fin.sum_univ_succ]
+  simp only [Fin.val_zero, Nat.cast_zero, sub_zero, Fin.val_succ]
+  congr 1
+  refine Finset.sum_congr rfl fun i _ => ?_
+  have h : t - (((i : ℕ) + 1 : ℕ) : ℤ) = t - 1 - ((i : ℕ) : ℤ) := by push_cast; ring
+  rw [h]
+
 /-- **FY Proposition 2.4 (eq. (2.46))**: the spectral density of a stationary causal
 ARMA(p, q) process with `b(z) ≠ 0` on the closed unit disc is
 `g(ω) = σ²/(2π) · |a(e^{−iω})|²/|b(e^{−iω})|²`.
@@ -175,7 +253,48 @@ theorem IsARMA.spectralDensityOf_eq [IsProbabilityMeasure μ] {p q : ℕ}
     spectralDensityOf X μ l =
       σ2 / (2 * π) * ‖Polynomial.aeval ((fourier (-1) l : ℂ)) (maPoly a)‖ ^ 2
         / ‖Polynomial.aeval ((fourier (-1) l : ℂ)) (arPoly b)‖ ^ 2 := by
-  sorry
+  have hεstat : IsStationary ε μ := h.whiteNoise.isStationary
+  have hεsum : HasSummableACVF ε μ := h.whiteNoise.hasSummableACVF
+  have hεmeas : ∀ t, Measurable (ε t) := h.whiteNoise.measurable
+  have hsum : HasSummableACVF X μ := h.hasSummableACVF (h.acvf_exponential_decay hcausal hroot)
+  -- the intermediate MA process `W_t = a(B) ε_t`, which is also `b(B) X_t`
+  obtain ⟨W, hWdef⟩ : ∃ W : ℤ → Ω → ℝ,
+      W = fun t ω => ε t ω + ∑ j : Fin q, a j * ε (t - 1 - (j : ℕ)) ω := ⟨_, rfl⟩
+  have hWmeas : ∀ t, Measurable (W t) := by
+    intro t
+    simp only [hWdef]
+    exact (hεmeas t).add (Finset.measurable_sum _ fun j _ => measurable_const.mul (hεmeas _))
+  have hWa : IsFilteredBy W ε (polyFilterCoeffs (maPoly a)) μ := by
+    refine isFilteredBy_of_ae_eq_polySum fun t => Filter.Eventually.of_forall fun ω => ?_
+    change W t ω
+      = ∑ k ∈ Finset.range ((maPoly a).natDegree + 1), (maPoly a).coeff k * ε (t - (k : ℕ)) ω
+    have hs : ∑ j : Fin q, (maPoly a).coeff ((j : ℕ) + 1) * ε (t - 1 - (j : ℕ)) ω
+        = ∑ j : Fin q, a j * ε (t - 1 - (j : ℕ)) ω :=
+      Finset.sum_congr rfl fun j _ => by rw [coeff_maPoly_succ]
+    rw [sum_range_coeff_extend (natDegree_maPoly_le a) ε t ω, sum_range_split,
+      coeff_maPoly_zero, one_mul, hs]
+    simp only [hWdef]
+  have hWb : IsFilteredBy W X (polyFilterCoeffs (arPoly b)) μ := by
+    refine isFilteredBy_of_ae_eq_polySum fun t => ?_
+    filter_upwards [h.recurrence t] with ω hω
+    have hs : ∑ i : Fin p, (arPoly b).coeff ((i : ℕ) + 1) * X (t - 1 - (i : ℕ)) ω
+        = ∑ i : Fin p, -(b i * X (t - 1 - (i : ℕ)) ω) :=
+      Finset.sum_congr rfl fun i _ => by rw [coeff_arPoly_succ]; ring
+    rw [sum_range_coeff_extend (natDegree_arPoly_le b) X t ω, sum_range_split,
+      coeff_arPoly_zero, one_mul, hs, Finset.sum_neg_distrib]
+    simp only [hWdef]
+    linarith [hω]
+  -- FY Theorem 2.12 applied twice to the same `W`
+  have e1 := hWa.spectralDensityOf_eq (summable_abs_polyFilterCoeffs _) hεstat hεsum hεmeas
+    hWmeas l
+  have e2 := hWb.spectralDensityOf_eq (summable_abs_polyFilterCoeffs _) hstat hsum hmeas hWmeas l
+  rw [transferFun_polyFilterCoeffs, h.whiteNoise.spectralDensityOf_eq l] at e1
+  rw [transferFun_polyFilterCoeffs] at e2
+  have hz1 : ‖(fourier (-1) l : ℂ)‖ = 1 := Circle.norm_coe _
+  have hA : ‖Polynomial.aeval ((fourier (-1) l : ℂ)) (arPoly b)‖ ^ 2 ≠ 0 :=
+    pow_ne_zero 2 (norm_ne_zero_iff.mpr (hroot _ hz1.le))
+  rw [eq_div_iff hA]
+  linear_combination e1 - e2
 
 /-- **FY Example 2.5 (eq. (2.40))**, in unnormalized `g`-scale: a stationary causal
 AR(1) process with `|b| < 1` has
