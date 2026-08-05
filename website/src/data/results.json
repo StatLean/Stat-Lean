@@ -15623,7 +15623,7 @@
     "shortRef": "Lehmann–Casella (1998), §3.1",
     "reference": {
       "formal": "E. L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed., Springer, New York, 1998.",
-      "pointer": "§3.1 (supporting material for Thm 1.10 and Cor 1.11)",
+      "pointer": "Chapter 3, §3.1 (supporting material for Theorem 1.10 and Corollary 1.11)",
       "keys": [
         "lehmann-casella1998"
       ],
@@ -21282,7 +21282,7 @@
     "shortRef": "Lehmann–Casella (1998), §1.7 Thm 1.7.8",
     "reference": {
       "formal": "E. L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed., Springer Texts in Statistics, Springer-Verlag New York, 1998.",
-      "pointer": "Chapter 2, §1.7, Theorem 1.7.8",
+      "pointer": "Chapter 1, §1.7, Theorem 7.8",
       "keys": [
         "lehmann-casella1998",
         "rao1945",
