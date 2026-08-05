@@ -1,4 +1,5 @@
 import StatLean.TimeSeries.Mixing.Inequalities
+import StatLean.TimeSeries.Mixing.Relations
 import StatLean.TimeSeries.ForMathlib.Probability.TriangularCLT
 import Mathlib.Analysis.Normed.Group.Tannery
 
@@ -408,6 +409,120 @@ theorem summable_acvf_and_var_rate_of_bounded [IsProbabilityMeasure μ]
         exact abs_nonneg _
   rw [← hσeq]
   exact (Tendsto.congr (fun n => (hns n).symm) hdom)
+
+/-! ### Analytic bricks for the Bernstein-block CLT -/
+
+section Bernstein
+
+/-- Third-order Taylor control of `e^{ix}` in the two forms the block expansion consumes:
+a **global cubic** bound (for the bulk, where the phase is small) and a **global
+quadratic** bound (for the Lindeberg tail, where the phase is not small). Both follow from
+`Complex.exp_bound` at `n = 3` on `|x| ≤ 1` and from the triangle inequality
+(`‖e^{ix}‖ = 1`) on `|x| > 1`. -/
+private lemma norm_expI_taylor (x : ℝ) :
+    ‖Complex.exp ((x : ℂ) * Complex.I) - (1 + (x : ℂ) * Complex.I - (x : ℂ) ^ 2 / 2)‖
+        ≤ 4 * |x| ^ 3 ∧
+      ‖Complex.exp ((x : ℂ) * Complex.I) - (1 + (x : ℂ) * Complex.I - (x : ℂ) ^ 2 / 2)‖
+        ≤ 4 * x ^ 2 := by
+  have hzn : ‖(x : ℂ) * Complex.I‖ = |x| := by
+    simp
+  have hI2 : ((x : ℂ) * Complex.I) ^ 2 = -(x : ℂ) ^ 2 := by
+    rw [mul_pow, Complex.I_sq]; ring
+  have hsum : ∑ m ∈ Finset.range 3, ((x : ℂ) * Complex.I) ^ m / (Nat.factorial m : ℂ)
+      = 1 + (x : ℂ) * Complex.I - (x : ℂ) ^ 2 / 2 := by
+    simp only [Finset.sum_range_succ, Finset.sum_range_zero, Nat.factorial, hI2]
+    push_cast
+    ring
+  have habs : 0 ≤ |x| := abs_nonneg x
+  have hsq : |x| ^ 2 = x ^ 2 := sq_abs x
+  by_cases hx : |x| ≤ 1
+  · have hb := Complex.exp_bound (x := (x : ℂ) * Complex.I) (by rw [hzn]; exact hx)
+      (n := 3) (by norm_num)
+    rw [hsum, hzn] at hb
+    have hb' : ‖Complex.exp ((x : ℂ) * Complex.I)
+        - (1 + (x : ℂ) * Complex.I - (x : ℂ) ^ 2 / 2)‖ ≤ |x| ^ 3 := by
+      refine hb.trans ?_
+      have : ((3 : ℕ).succ : ℝ) * (((Nat.factorial 3 : ℝ)) * (3 : ℝ))⁻¹ ≤ 1 := by
+        norm_num [Nat.factorial]
+      nlinarith [pow_nonneg habs 3]
+    refine ⟨hb'.trans (by nlinarith [pow_nonneg habs 3]), hb'.trans ?_⟩
+    have : |x| ^ 3 = |x| * x ^ 2 := by rw [← hsq]; ring
+    nlinarith [sq_nonneg x]
+  · rw [not_le] at hx
+    have hE : ‖Complex.exp ((x : ℂ) * Complex.I)
+        - (1 + (x : ℂ) * Complex.I - (x : ℂ) ^ 2 / 2)‖ ≤ 1 + (1 + |x| + x ^ 2 / 2) := by
+      refine (norm_sub_le _ _).trans ?_
+      gcongr
+      · exact le_of_eq (Complex.norm_exp_ofReal_mul_I x)
+      · refine (norm_sub_le _ _).trans ?_
+        gcongr
+        · refine (norm_add_le _ _).trans ?_
+          rw [hzn, norm_one]
+        · rw [norm_div, ← Complex.ofReal_pow, Complex.norm_real, Real.norm_eq_abs,
+            Complex.norm_ofNat, abs_of_nonneg (sq_nonneg x)]
+    have h1 : (1 : ℝ) ≤ x ^ 2 := by nlinarith
+    have h2 : |x| ≤ x ^ 2 := by nlinarith
+    have hq : ‖Complex.exp ((x : ℂ) * Complex.I)
+        - (1 + (x : ℂ) * Complex.I - (x : ℂ) ^ 2 / 2)‖ ≤ 4 * x ^ 2 := by
+      refine hE.trans ?_; linarith
+    refine ⟨hq.trans ?_, hq⟩
+    have : x ^ 2 ≤ |x| ^ 3 := by
+      rw [← hsq]; nlinarith [pow_nonneg habs 2]
+    linarith
+
+/-- Telescoping bound for powers of unit-modulus complex numbers. -/
+private lemma norm_pow_sub_pow_le_of_norm_le_one {a b : ℂ} (ha : ‖a‖ ≤ 1) (hb : ‖b‖ ≤ 1) :
+    ∀ k : ℕ, ‖a ^ k - b ^ k‖ ≤ (k : ℝ) * ‖a - b‖ := by
+  intro k
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    have hstep : a ^ (k + 1) - b ^ (k + 1) = a * (a ^ k - b ^ k) + (a - b) * b ^ k := by ring
+    rw [hstep]
+    refine (norm_add_le _ _).trans ?_
+    rw [norm_mul, norm_mul, norm_pow]
+    have h1 : ‖a‖ * ‖a ^ k - b ^ k‖ ≤ 1 * ((k : ℝ) * ‖a - b‖) :=
+      mul_le_mul ha ih (norm_nonneg _) zero_le_one
+    have h2 : ‖a - b‖ * ‖b‖ ^ k ≤ ‖a - b‖ * 1 :=
+      mul_le_mul_of_nonneg_left (pow_le_one₀ (norm_nonneg _) hb) (norm_nonneg _)
+    push_cast
+    linarith
+
+/-- **`m · α(m) → 0`** for a monotone summable mixing sequence: the tail block
+`Σ_{m/2 ≤ j < m} α(j)` dominates `(m/2)·α(m)` and vanishes by the Cauchy criterion. -/
+private lemma tendsto_mul_alphaCoeff [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
+    (hα : Summable fun n : ℕ => alphaCoeff X μ n) :
+    Tendsto (fun m : ℕ => (m : ℝ) * alphaCoeff X μ m) atTop (𝓝 0) := by
+  have hanti : Antitone fun n : ℕ => alphaCoeff X μ n := alphaCoeff_antitone X
+  have hnn : ∀ n : ℕ, 0 ≤ alphaCoeff X μ n := fun _ => alphaMixCoeff_nonneg
+  have hT : Tendsto (fun m : ℕ => ∑ j ∈ Finset.range m, alphaCoeff X μ j) atTop
+      (𝓝 (∑' j : ℕ, alphaCoeff X μ j)) := hα.hasSum.tendsto_sum_nat
+  have hhalf : Tendsto (fun m : ℕ => m / 2) atTop atTop :=
+    tendsto_atTop_atTop.2 fun b => ⟨2 * b + 1, fun a ha => by omega⟩
+  have hdiff : Tendsto (fun m : ℕ => (∑ j ∈ Finset.range m, alphaCoeff X μ j)
+      - ∑ j ∈ Finset.range (m / 2), alphaCoeff X μ j) atTop (𝓝 0) := by
+    simpa using hT.sub (hT.comp hhalf)
+  refine squeeze_zero (fun m => mul_nonneg (Nat.cast_nonneg _) (hnn m)) (fun m => ?_)
+    (by simpa using hdiff.const_mul 2)
+  have hle : m / 2 ≤ m := Nat.div_le_self _ _
+  have hIco : ∑ j ∈ Finset.Ico (m / 2) m, alphaCoeff X μ j
+      = (∑ j ∈ Finset.range m, alphaCoeff X μ j)
+        - ∑ j ∈ Finset.range (m / 2), alphaCoeff X μ j := by
+    rw [Finset.sum_Ico_eq_sub _ hle]
+  have hcard : ((Finset.Ico (m / 2) m).card : ℝ) * alphaCoeff X μ m
+      ≤ ∑ j ∈ Finset.Ico (m / 2) m, alphaCoeff X μ j := by
+    rw [← nsmul_eq_mul]
+    refine Finset.card_nsmul_le_sum _ _ _ fun j hj => ?_
+    exact hanti (le_of_lt (Finset.mem_Ico.mp hj).2)
+  rw [← hIco]
+  have hc : ((Finset.Ico (m / 2) m).card : ℝ) = ((m - m / 2 : ℕ) : ℝ) := by
+    rw [Nat.card_Ico]
+  have hge : (m : ℝ) ≤ 2 * ((m - m / 2 : ℕ) : ℝ) := by
+    have : m ≤ 2 * (m - m / 2) := by omega
+    exact_mod_cast this
+  nlinarith [hnn m, hcard, hc ▸ hcard]
+
+end Bernstein
 
 /-- **FY Theorem 2.21(ii)** (full in-text proof, Bernstein blocks): bounded zero-mean
 strictly stationary, summable α, positive long-run variance ⇒ `S_n/√n →d N(0, σ²)`
