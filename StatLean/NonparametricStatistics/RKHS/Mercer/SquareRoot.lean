@@ -680,6 +680,125 @@ private theorem sqrtCLM_coeFn_ae (g : Lp 𝕜 2 μ) :
     (sqrtCLM d hK g : X → 𝕜) =ᵐ[μ] integralOp μ (sqrtSymbol d) g :=
   MemLp.coeFn_toLp (memLp_integralOp_sqrtSymbol d hK g)
 
+-- The `L²` error of the `s`-th partial sum, controlled by the tail of the trace.
+private theorem norm_partial_sub_le (g : Lp 𝕜 2 μ) (s : Finset d.ι) :
+    ‖(∑ n ∈ s, (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+        ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜) •
+        ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)) - sqrtCLM d hK g‖
+      ≤ ‖g‖ * Real.sqrt ((∫ x, RCLike.re (K x x) ∂μ) - ∑ n ∈ s, d.eigval n) := by
+  classical
+  -- (1) the coefficientwise description of the difference
+  have hcoe : (((∑ n ∈ s, (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+        ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜) •
+        ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)) - sqrtCLM d hK g : Lp 𝕜 2 μ) : X → 𝕜)
+      =ᵐ[μ] fun x => (∑ n ∈ s, (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+          ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜) * d.eigfun n x)
+        - integralOp μ (sqrtSymbol d) g x := by
+    filter_upwards [Lp.coeFn_sub (∑ n ∈ s, (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+        ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜) •
+        ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)) (sqrtCLM d hK g),
+      coeFn_finset_sum_smul s (fun n => ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+        ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜)
+        (fun n => ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)),
+      sqrtCLM_coeFn_ae d hK g,
+      (Filter.eventually_all_finset s).2 (fun n _ =>
+        ContinuousMap.coeFn_toLp (E := 𝕜) (p := 2) (μ := μ) (𝕜 := 𝕜) (d.eigfun n))]
+      with x h1 h2 h3 h4
+    rw [h1]
+    simp only [Pi.sub_apply]
+    rw [h2, h3]
+    congr 1
+    exact Finset.sum_congr rfl fun n hn => by rw [h4 n hn]
+  -- (2) the pointwise bound through the bilinear pairing
+  have hpt : ∀ x : X, ‖(∑ n ∈ s, (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+        ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜) * d.eigfun n x)
+        - integralOp μ (sqrtSymbol d) g x‖ ^ 2
+      ≤ (RCLike.re (K x x) - ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2) * ‖g‖ ^ 2 := by
+    intro x
+    have hP : pairAdd μ g (∑ n ∈ s, (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x) •
+          ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n)))
+        = ∑ n ∈ s, (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+            ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜) * d.eigfun n x := by
+      rw [map_sum]
+      refine Finset.sum_congr rfl fun n _ => ?_
+      rw [pairAdd_smul, pairAdd_toLp_star d g n]
+      ring
+    have hS : pairAdd μ g (sqrtSectionLp d x) = integralOp μ (sqrtSymbol d) g x :=
+      (congrFun (integralOp_sqrtSymbol_eq d g) x).symm
+    have hdiff : (∑ n ∈ s, (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+          ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜) * d.eigfun n x)
+        - integralOp μ (sqrtSymbol d) g x
+        = pairAdd μ g ((∑ n ∈ s, (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x) •
+            ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n))) - sqrtSectionLp d x) := by
+      rw [map_sub, hP, hS]
+    have hps : ‖sqrtSectionLp d x - ∑ n ∈ s, (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+          d.eigfun n x) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n))‖ ^ 2
+        = RCLike.re (K x x) - ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2 := by
+      rw [norm_sq_sub_partial_aux (sqrtSectionLp d x)
+        (fun n => ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n)))
+        (orthonormal_toLp_star d)
+        (fun n => ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x)
+        (fun n => inner_toLp_star_sqrtSectionLp d hK x n) s, norm_sq_sqrtSectionLp d hK x]
+      congr 1
+      exact Finset.sum_congr rfl fun n _ => norm_sq_sqrtCoeff d n x
+    rw [hdiff]
+    have hb := norm_pairAdd_le g ((∑ n ∈ s, (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+      d.eigfun n x) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n)))
+      - sqrtSectionLp d x)
+    rw [norm_sub_rev] at hb
+    have hsq := mul_self_le_mul_self (norm_nonneg _) hb
+    nlinarith [hps, norm_nonneg g, norm_nonneg (sqrtSectionLp d x -
+      ∑ n ∈ s, (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x) •
+        ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n)))]
+  -- (3) integrate the pointwise bound
+  have hcontK : Continuous fun x : X => RCLike.re (K x x) :=
+    (RCLike.continuous_re (K := 𝕜)).comp' (hKc.comp' (continuous_id.prodMk continuous_id))
+  have hcontS : Continuous fun x : X => ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2 :=
+    continuous_finset_sum s fun n _ =>
+      continuous_const.mul (((d.eigfun n).continuous.norm).pow 2)
+  have hintb : Integrable (fun x : X =>
+      (RCLike.re (K x x) - ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2) * ‖g‖ ^ 2) μ :=
+    (integrable_of_cont_real (hcontK.sub hcontS)).mul_const _
+  have hintegral : (∫ x, (RCLike.re (K x x) - ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2)
+        * ‖g‖ ^ 2 ∂μ)
+      = ((∫ x, RCLike.re (K x x) ∂μ) - ∑ n ∈ s, d.eigval n) * ‖g‖ ^ 2 := by
+    rw [integral_mul_const, integral_sub (integrable_of_cont_real hcontK)
+      (integrable_of_cont_real hcontS)]
+    congr 2
+    rw [integral_finset_sum s fun n _ =>
+      (integrable_of_cont_real (((d.eigfun n).continuous.norm).pow 2)).const_mul _]
+    exact Finset.sum_congr rfl fun n _ => by
+      rw [integral_const_mul, integral_normSq_eigfun' d n, mul_one]
+  have hnorm : ‖(∑ n ∈ s, (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+        ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜) •
+        ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)) - sqrtCLM d hK g‖ ^ 2
+      ≤ ((∫ x, RCLike.re (K x x) ∂μ) - ∑ n ∈ s, d.eigval n) * ‖g‖ ^ 2 := by
+    rw [norm_sq_eq_integral, ← hintegral]
+    refine integral_mono_of_nonneg (Filter.Eventually.of_forall fun x => by positivity) hintb ?_
+    filter_upwards [hcoe] with x hx
+    rw [hx]
+    exact hpt x
+  -- (4) take square roots
+  have hR0 : 0 ≤ (∫ x, RCLike.re (K x x) ∂μ) - ∑ n ∈ s, d.eigval n := by
+    have := sum_le_hasSum s (fun n _ => (d.eigval_pos n).le) (d.hasSum_eigval hK)
+    linarith
+  have hsq : (‖g‖ * Real.sqrt ((∫ x, RCLike.re (K x x) ∂μ) - ∑ n ∈ s, d.eigval n)) ^ 2
+      = ((∫ x, RCLike.re (K x x) ∂μ) - ∑ n ∈ s, d.eigval n) * ‖g‖ ^ 2 := by
+    rw [mul_pow, Real.sq_sqrt hR0]
+    ring
+  calc ‖(∑ n ∈ s, (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+          ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜) •
+          ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)) - sqrtCLM d hK g‖
+      = Real.sqrt (‖(∑ n ∈ s, (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+          ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜) •
+          ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)) - sqrtCLM d hK g‖ ^ 2) :=
+        (Real.sqrt_sq (norm_nonneg _)).symm
+    _ ≤ Real.sqrt ((‖g‖ *
+          Real.sqrt ((∫ x, RCLike.re (K x x) ∂μ) - ∑ n ∈ s, d.eigval n)) ^ 2) := by
+        rw [hsq]; exact Real.sqrt_le_sqrt hnorm
+    _ = ‖g‖ * Real.sqrt ((∫ x, RCLike.re (K x x) ∂μ) - ∑ n ∈ s, d.eigval n) :=
+        Real.sqrt_sq (by positivity)
+
 /-- Diagonalization of the square root: `T_S g = ∑ₙ √λₙ ⟪eₙ, g⟫ eₙ`. -/
 theorem sqrtCLM_hasSum (g : Lp 𝕜 2 μ) :
     HasSum
