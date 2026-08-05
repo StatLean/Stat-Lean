@@ -1,5 +1,6 @@
 import StatLean.NonparametricStatistics.RKHS.Mercer.Theorem
 import StatLean.NonparametricStatistics.RKHS.RangeSpace
+import StatLean.NonparametricStatistics.RKHS.Uniqueness
 import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
@@ -929,6 +930,29 @@ theorem sqrtCLM_comp_self : (sqrtCLM d hK).comp (sqrtCLM d hK) = mercerCLM μ hK
   rw [ContinuousLinearMap.comp_apply]
   exact h2.unique (d.opExpansion g)
 
+omit [μ.IsOpenPosMeasure] in
+private theorem inner_starLp (u v : Lp 𝕜 2 μ) : ⟪starLp u, starLp v⟫_𝕜 = conj ⟪u, v⟫_𝕜 := by
+  rw [L2.inner_def, L2.inner_def, ← integral_conj]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_starLp u, coeFn_starLp v] with y h1 h2
+  rw [h1, h2, RCLike.inner_apply, RCLike.inner_apply]
+  simp
+
+private theorem symbolConjLp_sqrt (x : X) :
+    symbolConjLp μ (sqrtSymbol d) (isL2Symbol_sqrtSymbol d hK) x = starLp (sqrtSectionLp d x) :=
+  rfl
+
+include hK in
+-- **`S □ S* = K`**: the box square of the square-root symbol is the kernel itself.
+private theorem boxProd_sqrtSymbol (x z : X) :
+    boxProd μ (sqrtSymbol d) (symbolAdjoint (sqrtSymbol d)) x z = K x z := by
+  rw [boxProd_symbolAdjoint_eq_featureKernel (sqrtSymbol d) (isL2Symbol_sqrtSymbol d hK)]
+  change ⟪symbolConjLp μ (sqrtSymbol d) (isL2Symbol_sqrtSymbol d hK) x,
+    symbolConjLp μ (sqrtSymbol d) (isL2Symbol_sqrtSymbol d hK) z⟫_𝕜 = K x z
+  rw [symbolConjLp_sqrt d hK x, symbolConjLp_sqrt d hK z, inner_starLp,
+    inner_sqrtSectionLp d hK x z]
+  exact hK.isKernelFun.conj_symm z x
+
 /-- **`range T_S = H(K)`**: the square-root operator maps `L²(X, μ)` onto exactly the
 functions of the (measure-independent!) RKHS of `K`. -/
 theorem range_integralOp_sqrtSymbol_eq
@@ -941,7 +965,17 @@ theorem range_integralOp_sqrtSymbol_eq
   -- `S □ S* = K` (from `sqrtCLM_comp_self` and Hermitian symmetry of `S`), so
   -- `RangeSpace.lean`'s range space of `S` is an RKHS with kernel `K`, and
   -- `Uniqueness.range_coe_eq_of_scalarKernel_eq` transports the range to `H`.
-  sorry
+  have hK : IsMercerKernel 𝕜 K := ⟨hKc, by rw [← hKH]; exact isKernelFun_scalarKernel (H := H)⟩
+  have hS : IsL2Symbol μ (sqrtSymbol d) := isL2Symbol_sqrtSymbol d hK
+  have hker : rangeSpaceScalarKernel μ (sqrtSymbol d) hS = scalarKernel (X := X) H := by
+    funext x z
+    rw [hKH, rangeSpace_scalarKernel]
+    exact boxProd_sqrtSymbol d hK x z
+  letI := rangeSpaceRKHS μ (sqrtSymbol d) hS
+  rw [range_integralOp_eq_range_coe (sqrtSymbol d) hS]
+  exact @range_coe_eq_of_scalarKernel_eq 𝕜 _ X (rangeSpaceCarrier μ (sqrtSymbol d) hS) _ _
+    (rangeSpaceCompleteSpace μ (sqrtSymbol d) hS) H _ _ _
+    (rangeSpaceRKHS μ (sqrtSymbol d) hS) _ hker
 
 /-- **`T_S` is an isometry of `(ker T_K)ᗮ` onto `H(K)`**: for `g ⊥ ker T_K`, the
 function `T_S g` is realized in `H` with equal norm. -/
