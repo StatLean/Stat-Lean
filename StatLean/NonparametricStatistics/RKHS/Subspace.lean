@@ -26,7 +26,8 @@ restricted evaluation. -/
 noncomputable instance Submodule.instRKHS (H₀ : Submodule 𝕜 H) : RKHS 𝕜 H₀ X 𝕜 where
   coeCLM := (coeCLM 𝕜).comp H₀.subtypeL
   coeCLM_injective := by
-    sorry
+    intro f g hfg
+    exact Subtype.val_injective (RKHS.coeCLM_injective hfg)
 
 /-- Evaluation in the subspace RKHS agrees with evaluation in the ambient space. -/
 @[simp]
@@ -38,20 +39,27 @@ kernel function: `kernelFun H₀ x = P₀ (kernelFun H x)`. -/
 theorem kernelFun_submodule (H₀ : Submodule 𝕜 H) [hc : CompleteSpace H₀] (x : X) :
     ((@kernelFun 𝕜 _ X (↥H₀) _ _ hc _ x : ↥H₀) : H)
       = H₀.starProjection (kernelFun H x) := by
-  sorry
+  refine (Submodule.eq_starProjection_of_mem_of_inner_eq_zero (SetLike.coe_mem _) ?_).symm
+  intro w hw
+  rw [inner_sub_left, inner_kernelFun]
+  have h2 : ⟪((@kernelFun 𝕜 _ X (↥H₀) _ _ hc _ x : ↥H₀) : H), w⟫_𝕜 = w x := by
+    rw [← H₀.coe_inner (@kernelFun 𝕜 _ X (↥H₀) _ _ hc _ x) ⟨w, hw⟩]
+    exact @inner_kernelFun 𝕜 _ X (↥H₀) _ _ hc _ x ⟨w, hw⟩
+  rw [h2, sub_self]
 
 /-- **The kernel of a closed subspace**: `K₀(x, y) = (P₀ k_y)(x)`, the projected ambient
 kernel function evaluated at the point. -/
 theorem scalarKernel_submodule (H₀ : Submodule 𝕜 H) [hc : CompleteSpace H₀] (x y : X) :
     @scalarKernel 𝕜 _ X (↥H₀) _ _ hc _ x y
       = (H₀.starProjection (kernelFun H y)) x := by
-  sorry
+  rw [← kernelFun_submodule H₀ y]
+  rfl
 
 /-- The kernel of a closed subspace as an inner product against the ambient kernel
 function: `K₀(x, y) = ⟪k_x, P₀ k_y⟫`. -/
 theorem scalarKernel_submodule_inner (H₀ : Submodule 𝕜 H) [hc : CompleteSpace H₀] (x y : X) :
     @scalarKernel 𝕜 _ X (↥H₀) _ _ hc _ x y
       = ⟪kernelFun H x, H₀.starProjection (kernelFun H y)⟫_𝕜 := by
-  sorry
+  rw [scalarKernel_submodule H₀ x y, inner_kernelFun]
 
 end StatLean.NonparametricStatistics
