@@ -203,8 +203,31 @@ abbrev OfScalarKernel (K : X → X → 𝕜) [Fact (IsKernelFun K)] : Type _ :=
 reproducing kernel exactly `K`. -/
 theorem scalarKernel_ofScalarKernel (K : X → X → 𝕜) [Fact (IsKernelFun K)] :
     scalarKernel (OfScalarKernel 𝕜 K) = K := by
-  sorry
+  funext x y
+  rw [scalarKernel_eq_kernel_one, RKHS.OfKernel.kernel_ofKernel, toCLMMatrix_apply, mul_one]
 
+-- OBSTRUCTION (universe-level, not mathematical).  In `∃ (H : Type _)` the hole `Type _`
+-- is elaborated BEFORE the proof body, so Lean auto-binds it to a *fresh universe
+-- parameter* `u_3` independent of `u_1` (`𝕜`) and `u_2` (`X`):
+--
+--   @IsKernelFun.exists_rkhs.{u_1, u_2, u_3} : ... → ∃ H : Type u_3, ... scalarKernel H = K
+--
+-- The statement therefore asks for a witness in EVERY universe, and that is false.  Take
+-- `𝕜 := ℝ` (`u_1 = 0`), `X := Type 0` (`u_2 = 1`), `u_3 := 0`, and `K x y = if x = y then
+-- 1 else 0` (a kernel function: its quadratic form is `‖∑ᵢ aᵢ e_{xᵢ}‖²` in `ℓ²(X)`).  Any
+-- `H` with `scalarKernel H = K` satisfies `‖k_x - k_y‖² = K x x - 2 re (K x y) + K y y = 2`
+-- for `x ≠ y`, so `x ↦ kernelFun H x` injects `X = Type 0` into `H`; but no type in
+-- `Type 0` admits an injection from `Type 0` (`Cardinal.univ.{0,1}` exceeds the lift of
+-- every cardinal in `Type 0`).  Supplying the intended witness fails with exactly this
+-- universe constraint:
+--
+--   failed to solve universe constraint  u_3 =?= max u_1 u_2
+--
+-- The mathematical content is fully proved above: `scalarKernel_ofScalarKernel` exhibits
+-- `OfScalarKernel 𝕜 K : Type (max u_1 u_2)` as an RKHS with kernel `K`, and this lemma is
+-- only its repackaging.  The repair is to write `Type (max u_1 u_2)` (or to name the
+-- universes and use `Type (max u v)`) in place of `Type _`.  The statement is frozen
+-- (header rule 5), so the `sorry` is left in place.
 /-- Existence form of Moore's theorem: every kernel function is the reproducing kernel of
 *some* RKHS. -/
 theorem IsKernelFun.exists_rkhs {K : X → X → 𝕜} (hK : IsKernelFun K) :
