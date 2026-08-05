@@ -92,7 +92,7 @@ theorem log_coxPartialLikelihood (β : EuclideanSpace ℝ (Fin p))
     (dz : Fin n → (ℝ × Bool) × EuclideanSpace ℝ (Fin p)) :
     Real.log (coxPartialLikelihood β dz) = coxPartialLogLik β dz := by
   rw [coxPartialLikelihood, coxPartialLogLik,
-    Real.log_prod _ _ fun i _ => (div_pos (Real.exp_pos _) (sum_exp_riskSet_pos β dz i)).ne']
+    Real.log_prod fun i _ => (div_pos (Real.exp_pos _) (sum_exp_riskSet_pos β dz i)).ne']
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [Real.log_div (Real.exp_ne_zero _) (sum_exp_riskSet_pos β dz i).ne', Real.log_exp]
 
@@ -145,13 +145,17 @@ theorem convexOn_logSumExp (R : Finset (Fin n)) (z : Fin n → EuclideanSpace �
       ≤ a * (Real.exp ⟪β₁, z j⟫_ℝ / ∑ k ∈ R, Real.exp ⟪β₁, z k⟫_ℝ)
         + b * (Real.exp ⟪β₂, z j⟫_ℝ / ∑ k ∈ R, Real.exp ⟪β₂, z k⟫_ℝ) := by
     intro j _
+    -- the numerator splits into the two rpow factors (`exp` of a convex combination)
+    have hnum : Real.exp ⟪a • β₁ + b • β₂, z j⟫_ℝ
+        = Real.exp ⟪β₁, z j⟫_ℝ ^ a * Real.exp ⟪β₂, z j⟫_ℝ ^ b := by
+      rw [inner_add_left, real_inner_smul_left, real_inner_smul_left, Real.exp_add,
+        mul_comm a ⟪β₁, z j⟫_ℝ, mul_comm b ⟪β₂, z j⟫_ℝ, Real.exp_mul, Real.exp_mul]
     have hsplit : Real.exp ⟪a • β₁ + b • β₂, z j⟫_ℝ
         / ((∑ k ∈ R, Real.exp ⟪β₁, z k⟫_ℝ) ^ a * (∑ k ∈ R, Real.exp ⟪β₂, z k⟫_ℝ) ^ b)
         = (Real.exp ⟪β₁, z j⟫_ℝ / ∑ k ∈ R, Real.exp ⟪β₁, z k⟫_ℝ) ^ a
           * (Real.exp ⟪β₂, z j⟫_ℝ / ∑ k ∈ R, Real.exp ⟪β₂, z k⟫_ℝ) ^ b := by
       rw [Real.div_rpow (Real.exp_pos _).le hX.le, Real.div_rpow (Real.exp_pos _).le hY.le,
-        div_mul_div_comm, inner_add_left, real_inner_smul_left, real_inner_smul_left,
-        Real.exp_add, Real.exp_mul, Real.exp_mul]
+        div_mul_div_comm, hnum]
     rw [hsplit]
     exact Real.geom_mean_le_arith_mean2_weighted ha hb (by positivity) (by positivity) hab
   have hsum : (∑ j ∈ R, Real.exp ⟪a • β₁ + b • β₂, z j⟫_ℝ)
@@ -183,7 +187,8 @@ private theorem concaveOn_univ_sum {E ι : Type*} [AddCommMonoid E] [Module ℝ 
     ConcaveOn ℝ (Set.univ : Set E) fun x => ∑ i ∈ s, f i x := by
   classical
   induction s using Finset.induction_on with
-  | empty => simpa using concaveOn_const (0 : ℝ) (convex_univ (𝕜 := ℝ) (s := (Set.univ : Set E)))
+  | empty =>
+      simpa using concaveOn_const (0 : ℝ) (convex_univ : Convex ℝ (Set.univ : Set E))
   | insert i s hi ih =>
       simp only [Finset.sum_insert hi]
       exact (hf i (Finset.mem_insert_self i s)).add
