@@ -591,6 +591,18 @@ theorem isPositive_mercerCLM {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K)
     rw [ContinuousLinearMap.reApplyInnerSelf_apply, inner_re_symm]
     exact h3
 
+omit [MetricSpace X] [CompactSpace X] [BorelSpace X] in
+/-- A set integral is close to the constant multiple of the measure when the integrand is
+uniformly close to that constant. -/
+private theorem norm_setIntegral_sub_const_le {s : Set X} (hs : μ s ≠ ⊤) {F : X → 𝕜}
+    (hF : Integrable F μ) {c : 𝕜} {C : ℝ} (hC : ∀ z ∈ s, ‖F z - c‖ ≤ C) :
+    ‖(∫ z in s, F z ∂μ) - ((μ.real s : ℝ) : 𝕜) * c‖ ≤ C * μ.real s := by
+  have h1 : (∫ z in s, F z ∂μ) - ((μ.real s : ℝ) : 𝕜) * c = ∫ z in s, (F z - c) ∂μ := by
+    rw [integral_sub hF.restrict (integrable_const c), setIntegral_const,
+      RCLike.real_smul_eq_coe_mul]
+  rw [h1]
+  exact norm_setIntegral_le_of_norm_le_const (lt_top_iff_ne_top.mpr hs) hC
+
 /-- **Converse**: for `μ` of full support, a continuous Hermitian function with positive
 integral operator is positive semidefinite, hence a Mercer kernel.  (Averaging the
 quadratic form over shrinking neighborhoods of the points.) -/
@@ -603,7 +615,197 @@ theorem isMercerKernel_of_isPositive {K : X → X → 𝕜}
     -- USER-INPUT: positivity of the integral operator
     (hpos : (mercerCLM μ hKc).IsPositive) :
     IsMercerKernel 𝕜 K := by
-  sorry
+  refine ⟨hKc, hsym, ?_⟩
+  intro n x a
+  refine le_of_forall_pos_le_add fun ε hε => ?_
+  have hA0 : (0 : ℝ) ≤ ∑ i, ‖a i‖ := Finset.sum_nonneg fun i _ => norm_nonneg _
+  have hη0 : (0 : ℝ) < ε / ((∑ i, ‖a i‖) ^ 2 + 1) := by positivity
+  have huc : UniformContinuous fun p : X × X => K p.1 p.2 :=
+    CompactSpace.uniformContinuous_of_continuous hKc
+  obtain ⟨δ, hδ0, hδ⟩ := Metric.uniformContinuous_iff.mp huc _ hη0
+  have hr0 : (0 : ℝ) < δ / 2 := by positivity
+  have hBmeas : ∀ i : Fin n, MeasurableSet (Metric.ball (x i) (δ / 2)) :=
+    fun i => measurableSet_ball
+  have hBfin : ∀ i : Fin n, μ (Metric.ball (x i) (δ / 2)) ≠ ⊤ := fun i => measure_ne_top μ _
+  have hBpos : ∀ i : Fin n, 0 < μ.real (Metric.ball (x i) (δ / 2)) := fun i =>
+    ENNReal.toReal_pos (Metric.measure_ball_pos μ (x i) hr0).ne' (hBfin i)
+  set u : Fin n → Lp 𝕜 2 μ := fun i =>
+    indicatorConstLp 2 (hBmeas i) (hBfin i) (1 : 𝕜) with hu
+  set m : Fin n → ℝ := fun i => μ.real (Metric.ball (x i) (δ / 2)) with hm
+  set b : Fin n → 𝕜 := fun i => a i * ((m i : ℝ) : 𝕜)⁻¹ with hbdef
+  set g : Lp 𝕜 2 μ := ∑ i, b i • u i with hg
+  -- the pairing of two indicators through `T_K` is the double set integral
+  have hval : ∀ i j : Fin n, ⟪u i, mercerCLM μ hKc (u j)⟫_𝕜
+      = ∫ z in Metric.ball (x i) (δ / 2), ∫ y in Metric.ball (x j) (δ / 2), K z y ∂μ ∂μ := by
+    intro i j
+    rw [inner_mercerCLM]
+    have hinner : ∀ z : X,
+        integralOp μ K (u j) z = ∫ y in Metric.ball (x j) (δ / 2), K z y ∂μ := by
+      intro z
+      rw [integralOp]
+      have hae : ∀ᵐ y ∂μ, K z y * (u j : X → 𝕜) y
+          = (Metric.ball (x j) (δ / 2)).indicator (fun y => K z y) y := by
+        filter_upwards [indicatorConstLp_coeFn (p := 2) (hs := hBmeas j) (hμs := hBfin j)
+          (c := (1 : 𝕜))] with y hy
+        rw [hu]
+        simp only [hy]
+        by_cases hyB : y ∈ Metric.ball (x j) (δ / 2) <;>
+          simp [Set.indicator_of_mem, Set.indicator_of_notMem, hyB]
+      rw [integral_congr_ae hae, integral_indicator (hBmeas j)]
+    simp_rw [hinner]
+    have hae2 : ∀ᵐ z ∂μ, conj ((u i : X → 𝕜) z) * (∫ y in Metric.ball (x j) (δ / 2), K z y ∂μ)
+        = (Metric.ball (x i) (δ / 2)).indicator
+            (fun z => ∫ y in Metric.ball (x j) (δ / 2), K z y ∂μ) z := by
+      filter_upwards [indicatorConstLp_coeFn (p := 2) (hs := hBmeas i) (hμs := hBfin i)
+        (c := (1 : 𝕜))] with z hz
+      rw [hu]
+      simp only [hz]
+      by_cases hzB : z ∈ Metric.ball (x i) (δ / 2) <;>
+        simp [Set.indicator_of_mem, Set.indicator_of_notMem, hzB]
+    rw [integral_congr_ae hae2, integral_indicator (hBmeas i)]
+  -- the same identity, but keeping the (continuous) inner integral as a function
+  have hval2 : ∀ i j : Fin n, ⟪u i, mercerCLM μ hKc (u j)⟫_𝕜
+      = ∫ z in Metric.ball (x i) (δ / 2), integralOp μ K (u j) z ∂μ := by
+    intro i j
+    rw [inner_mercerCLM]
+    have hae2 : ∀ᵐ z ∂μ, conj ((u i : X → 𝕜) z) * integralOp μ K (u j) z
+        = (Metric.ball (x i) (δ / 2)).indicator (fun z => integralOp μ K (u j) z) z := by
+      filter_upwards [indicatorConstLp_coeFn (p := 2) (hs := hBmeas i) (hμs := hBfin i)
+        (c := (1 : 𝕜))] with z hz
+      rw [hu]
+      simp only [hz]
+      by_cases hzB : z ∈ Metric.ball (x i) (δ / 2) <;>
+        simp [Set.indicator_of_mem, Set.indicator_of_notMem, hzB]
+    rw [integral_congr_ae hae2, integral_indicator (hBmeas i)]
+  -- the inner integral is uniformly close to the constant `m j * K (x i) (x j)`
+  have hinner : ∀ i j : Fin n, ∀ z ∈ Metric.ball (x i) (δ / 2),
+      ‖integralOp μ K (u j) z - ((m j : ℝ) : 𝕜) * K (x i) (x j)‖
+        ≤ (ε / ((∑ i, ‖a i‖) ^ 2 + 1)) * m j := by
+    intro i j z hz
+    have hzi : integralOp μ K (u j) z = ∫ y in Metric.ball (x j) (δ / 2), K z y ∂μ := by
+      rw [integralOp]
+      have hae : ∀ᵐ y ∂μ, K z y * (u j : X → 𝕜) y
+          = (Metric.ball (x j) (δ / 2)).indicator (fun y => K z y) y := by
+        filter_upwards [indicatorConstLp_coeFn (p := 2) (hs := hBmeas j) (hμs := hBfin j)
+          (c := (1 : 𝕜))] with y hy
+        rw [hu]
+        simp only [hy]
+        by_cases hyB : y ∈ Metric.ball (x j) (δ / 2) <;>
+          simp [Set.indicator_of_mem, Set.indicator_of_notMem, hyB]
+      rw [integral_congr_ae hae, integral_indicator (hBmeas j)]
+    rw [hzi, hm]
+    refine norm_setIntegral_sub_const_le (hBfin j)
+      ((isL2Symbol_of_continuous hKc z).integrable (by norm_num)) ?_
+    intro y hy
+    have hd : dist ((z, y) : X × X) (x i, x j) < δ := by
+      rw [Prod.dist_eq]
+      refine max_lt ?_ ?_
+      · exact lt_of_lt_of_le (Metric.mem_ball.mp hz) (by linarith)
+      · exact lt_of_lt_of_le (Metric.mem_ball.mp hy) (by linarith)
+    have := hδ hd
+    rw [dist_eq_norm] at this
+    exact this.le
+  -- hence the pairing is close to `m i * m j * K (x i) (x j)`
+  have houter : ∀ i j : Fin n,
+      ‖⟪u i, mercerCLM μ hKc (u j)⟫_𝕜
+          - ((m i : ℝ) : 𝕜) * (((m j : ℝ) : 𝕜) * K (x i) (x j))‖
+        ≤ ((ε / ((∑ i, ‖a i‖) ^ 2 + 1)) * m j) * m i := by
+    intro i j
+    rw [hval2 i j, hm]
+    exact norm_setIntegral_sub_const_le (hBfin i)
+      ((memLp_integralOp_of_continuous hKc (u j)).integrable (by norm_num)) (hinner i j)
+  -- sesquilinear expansion of the quadratic form
+  have hTg : mercerCLM μ hKc g = ∑ j, b j • mercerCLM μ hKc (u j) := by
+    rw [hg, map_sum]
+    exact Finset.sum_congr rfl fun j _ => by rw [map_smul]
+  have hexp : ⟪g, mercerCLM μ hKc g⟫_𝕜
+      = ∑ i, ∑ j, conj (b i) * b j * ⟪u i, mercerCLM μ hKc (u j)⟫_𝕜 := by
+    rw [hTg]
+    nth_rewrite 1 [hg]
+    rw [sum_inner]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [inner_smul_left, inner_sum, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun j _ => by rw [inner_smul_right]; ring
+  -- per-term error bound
+  have hterm : ∀ i j : Fin n,
+      ‖conj (b i) * b j * ⟪u i, mercerCLM μ hKc (u j)⟫_𝕜
+        - conj (a i) * a j * K (x i) (x j)‖
+        ≤ ‖a i‖ * ‖a j‖ * (ε / ((∑ i, ‖a i‖) ^ 2 + 1)) := by
+    intro i j
+    have hmi' : m i ≠ 0 := (hBpos i).ne'
+    have hmj' : m j ≠ 0 := (hBpos j).ne'
+    have hmi : ((m i : ℝ) : 𝕜) ≠ 0 := by
+      simpa using (hBpos i).ne'
+    have hmj : ((m j : ℝ) : 𝕜) ≠ 0 := by
+      simpa using (hBpos j).ne'
+    have hconj : conj (b i) = conj (a i) * (((m i : ℝ) : 𝕜))⁻¹ := by
+      rw [hbdef]
+      simp [map_mul, map_inv₀]
+    have hid : conj (b i) * b j * ⟪u i, mercerCLM μ hKc (u j)⟫_𝕜
+        - conj (a i) * a j * K (x i) (x j)
+        = (conj (a i) * a j * ((((m i : ℝ) : 𝕜))⁻¹ * (((m j : ℝ) : 𝕜))⁻¹)) *
+          (⟪u i, mercerCLM μ hKc (u j)⟫_𝕜
+            - ((m i : ℝ) : 𝕜) * ((((m j : ℝ) : 𝕜)) * K (x i) (x j))) := by
+      rw [hconj, hbdef]
+      field_simp
+    have hnc : ‖conj (a i) * a j * ((((m i : ℝ) : 𝕜))⁻¹ * (((m j : ℝ) : 𝕜))⁻¹)‖
+        = ‖a i‖ * ‖a j‖ * ((m i)⁻¹ * (m j)⁻¹) := by
+      rw [norm_mul, norm_mul, RCLike.norm_conj, norm_mul, norm_inv, norm_inv,
+        RCLike.norm_ofReal, RCLike.norm_ofReal, abs_of_pos (hBpos i), abs_of_pos (hBpos j)]
+    rw [hid, norm_mul, hnc]
+    have hb1 : (0 : ℝ) ≤ ‖a i‖ * ‖a j‖ * ((m i)⁻¹ * (m j)⁻¹) := by positivity
+    calc ‖a i‖ * ‖a j‖ * ((m i)⁻¹ * (m j)⁻¹) *
+          ‖⟪u i, mercerCLM μ hKc (u j)⟫_𝕜
+            - ((m i : ℝ) : 𝕜) * ((((m j : ℝ) : 𝕜)) * K (x i) (x j))‖
+        ≤ ‖a i‖ * ‖a j‖ * ((m i)⁻¹ * (m j)⁻¹) *
+          (((ε / ((∑ i, ‖a i‖) ^ 2 + 1)) * m j) * m i) :=
+          mul_le_mul_of_nonneg_left (houter i j) hb1
+      _ = ‖a i‖ * ‖a j‖ * (ε / ((∑ i, ‖a i‖) ^ 2 + 1)) := by
+          field_simp
+  -- assemble the error bound
+  have hDbound : ‖⟪g, mercerCLM μ hKc g⟫_𝕜
+      - (∑ i, ∑ j, conj (a i) * a j * K (x i) (x j))‖
+      ≤ (∑ i, ‖a i‖) ^ 2 * (ε / ((∑ i, ‖a i‖) ^ 2 + 1)) := by
+    rw [hexp]
+    have hsplit : (∑ i, ∑ j, conj (b i) * b j * ⟪u i, mercerCLM μ hKc (u j)⟫_𝕜)
+        - (∑ i, ∑ j, conj (a i) * a j * K (x i) (x j))
+        = ∑ i, ∑ j, (conj (b i) * b j * ⟪u i, mercerCLM μ hKc (u j)⟫_𝕜
+            - conj (a i) * a j * K (x i) (x j)) := by
+      rw [← Finset.sum_sub_distrib]
+      exact Finset.sum_congr rfl fun i _ => (Finset.sum_sub_distrib ..).symm
+    rw [hsplit]
+    have hstep : ∀ i : Fin n, (∑ j, ‖a i‖ * ‖a j‖ * (ε / ((∑ i, ‖a i‖) ^ 2 + 1)))
+        = ‖a i‖ * (ε / ((∑ i, ‖a i‖) ^ 2 + 1)) * ∑ j, ‖a j‖ := by
+      intro i
+      rw [Finset.mul_sum]
+      exact Finset.sum_congr rfl fun j _ => by ring
+    calc ‖∑ i, ∑ j, (conj (b i) * b j * ⟪u i, mercerCLM μ hKc (u j)⟫_𝕜
+            - conj (a i) * a j * K (x i) (x j))‖
+        ≤ ∑ i, ‖∑ j, (conj (b i) * b j * ⟪u i, mercerCLM μ hKc (u j)⟫_𝕜
+            - conj (a i) * a j * K (x i) (x j))‖ := norm_sum_le _ _
+      _ ≤ ∑ i, ∑ j, ‖a i‖ * ‖a j‖ * (ε / ((∑ i, ‖a i‖) ^ 2 + 1)) :=
+          Finset.sum_le_sum fun i _ =>
+            le_trans (norm_sum_le _ _) (Finset.sum_le_sum fun j _ => hterm i j)
+      _ = (∑ i, ‖a i‖) ^ 2 * (ε / ((∑ i, ‖a i‖) ^ 2 + 1)) := by
+          rw [Finset.sum_congr rfl fun i _ => hstep i, ← Finset.sum_mul, ← Finset.sum_mul]
+          ring
+  -- positivity of the quadratic form of `T_K`
+  have hposg : (0 : ℝ) ≤ RCLike.re ⟪g, mercerCLM μ hKc g⟫_𝕜 := by
+    have h := hpos.2 g
+    rw [ContinuousLinearMap.reApplyInnerSelf_apply, inner_re_symm] at h
+    exact h
+  have hre : RCLike.re ⟪g, mercerCLM μ hKc g⟫_𝕜
+      - RCLike.re (∑ i, ∑ j, conj (a i) * a j * K (x i) (x j))
+      ≤ (∑ i, ‖a i‖) ^ 2 * (ε / ((∑ i, ‖a i‖) ^ 2 + 1)) := by
+    refine le_trans ?_ hDbound
+    rw [← map_sub]
+    exact RCLike.re_le_norm _
+  have hden : (0 : ℝ) < (∑ i, ‖a i‖) ^ 2 + 1 := by positivity
+  have hkey : (∑ i, ‖a i‖) ^ 2 * (ε / ((∑ i, ‖a i‖) ^ 2 + 1)) ≤ ε := by
+    rw [← mul_div_assoc, div_le_iff₀ hden]
+    nlinarith [sq_nonneg (∑ i, ‖a i‖), hε.le]
+  linarith [hposg, hre, hkey]
+
 
 /-- **Equicontinuity of the image of the unit ball**: `{T_K g : ‖g‖ ≤ 1}` is uniformly
 equicontinuous on `X` (via uniform continuity of `K` on the compact square). -/
