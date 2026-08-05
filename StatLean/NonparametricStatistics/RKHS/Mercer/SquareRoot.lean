@@ -398,14 +398,26 @@ theorem exists_orthonormalBasis_sqrt_eigfun
         ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x) ∧
       Orthonormal 𝕜 b ∧
       (Submodule.span 𝕜 (Set.range b)).topologicalClosure = ⊤ := by
-  -- OPEN.  Statement TRUE and no longer blocked on the (false) `sqrtSymbol` route:
-  -- `MercerEigensystem.hasSum_kernel` is PROVED, so the family `{√λₙ eₙ}` expands `K`
-  -- pointwise, and `isParsevalFrame_of_hasSum_scalarKernel` (Papadakis, PROVED)
-  -- recognizes it as a Parseval frame of `H`; a Parseval frame whose members are
-  -- pairwise orthogonal with unit norm is an orthonormal basis.  What remains is the
-  -- bookkeeping of getting the members into `H` from the frame construction (the frame
-  -- lemma produces the vectors of `H`; one has to read off that their coercions are the
-  -- functions `x ↦ √λₙ eₙ(x)` and that the span is dense).
+  -- OPEN.  Statement TRUE and no longer blocked on the (false) `sqrtSymbol` route.
+  -- Here `d` is mentioned in the statement, so `d` and `hKc` ARE in scope (unlike in
+  -- `range_mercerCLM_subset` below); `hK` is not, but `IsMercerKernel 𝕜 K` is recovered
+  -- as `⟨hKc, hKH ▸ isKernelFun_scalarKernel⟩`.  Complete route, in three steps:
+  -- (1) *the members are in `H`*: for `h : Lp 𝕜 2 μ` the Bochner integral
+  --     `∫ y, h y • kernelFun H y ∂μ : H` (integrable because `‖kernelFun H y‖` is
+  --     bounded on the compact `X` by `continuous_kernelFun H` and `h ∈ L¹`) coerces to
+  --     `x ↦ ∫ y, K x y * h y ∂μ = integralOp μ K h x`, by `inner_kernelFun` and
+  --     `integral_inner`.  Taking `h := ContinuousMap.toLp 2 μ 𝕜 (d.eigfun m)` and using
+  --     `d.eigen_eq` gives `λₘ • eₘ ∈ H`, hence `bₘ := (λₘ)^{-1/2} • (that element)`
+  --     has coercion `x ↦ √λₘ eₘ(x)`.
+  -- (2) *Parseval frame*: `MercerEigensystem.hasSum_kernel` (PROVED) rewritten through
+  --     `hKH` is exactly the hypothesis of `isParsevalFrame_of_hasSum_scalarKernel`
+  --     (Papadakis, PROVED), so `{bₙ}` is a Parseval frame of `H`.
+  -- (3) *orthonormality and density*: frame reconstruction gives
+  --     `b_j = ∑ᵢ ⟪bᵢ, b_j⟫ bᵢ` in `H`, hence pointwise; pairing with `conj (e_k(·))` and
+  --     integrating against `μ` (legitimate by `L²`-convergence of the reconstruction and
+  --     `d.orthonormal`) yields `√λ_j δ_{jk} = ⟪b_k, b_j⟫ √λ_k`, i.e. `⟪b_k, b_j⟫ = δ_{jk}`
+  --     since `λ_k > 0`.  Density of the span is the frame property (a vector orthogonal
+  --     to every `bᵢ` has norm `0` by the Parseval identity).
   sorry
 
 /-- **Spectral membership test for `H(K)`**: a function lies in `H(K)` iff it is a
@@ -417,9 +429,11 @@ theorem mem_range_coe_iff_summable
       ↔ ∃ a : d.ι → 𝕜,
           Summable (fun n => ‖a n‖ ^ 2 / d.eigval n) ∧
           ∀ x, HasSum (fun n => a n * d.eigfun n x) (g₀ x) := by
-  -- OPEN.  Statement TRUE.  Immediate from `exists_orthonormalBasis_sqrt_eigfun`:
+  -- OPEN.  Statement TRUE, and independent of the false `sqrtSymbol` route.  Immediate
+  -- from `exists_orthonormalBasis_sqrt_eigfun` (whose full route is documented there):
   -- expand `f` in the orthonormal basis `{√λₙ eₙ}` and set `aₙ := √λₙ ⟪bₙ, f⟫`, so that
-  -- `∑ₙ ‖aₙ‖²/λₙ = ‖f‖²`.  Independent of the false `sqrtSymbol` route.
+  -- `∑ₙ ‖aₙ‖²/λₙ = ∑ₙ ‖⟪bₙ, f⟫‖² = ‖f‖²`; the pointwise `HasSum` is the RKHS
+  -- norm-to-pointwise convergence (`Basic.lean`) applied to the partial sums.
   sorry
 
 /-- `range T_K ⊆ H(K)`: the (non-square-rooted) Mercer operator maps into the RKHS. -/
