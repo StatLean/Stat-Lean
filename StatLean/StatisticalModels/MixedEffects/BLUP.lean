@@ -260,6 +260,229 @@ noncomputable def blupRisk (D : LMMDesign n p q)
   ∫ be, ‖be.1 - Matrix.toEuclideanLin (𝕜 := ℝ) A
       (Matrix.toEuclideanLin (𝕜 := ℝ) D.Z be.1 + be.2)‖ ^ 2 ∂(G.prod R)
 
+/-! ### LEAN-ONLY plumbing for the variational identity (M3c)
+
+The mean and the mean-square norm of a linear-image sum of two independent coordinates
+(the covariance half is the closed `covMatrix_map_add_prod`), and the trace algebra that
+completes the square around `A* = G Zᵀ V⁻¹`.
+-/
+
+/-- LEAN-ONLY -/
+private noncomputable def matCLM {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂] [DecidableEq ι₁]
+    (A : Matrix ι₂ ι₁ ℝ) : EuclideanSpace ℝ ι₁ →L[ℝ] EuclideanSpace ℝ ι₂ :=
+  LinearMap.toContinuousLinearMap (Matrix.toEuclideanLin (𝕜 := ℝ) A)
+
+/-- LEAN-ONLY -/
+private theorem integral_comp_fst' {E α γ : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace α] [MeasurableSpace γ] {μ : Measure α} {ν : Measure γ}
+    [SFinite μ] [IsProbabilityMeasure ν] (f : α → E) (hf : AEStronglyMeasurable f μ) :
+    ∫ z : α × γ, f z.1 ∂(μ.prod ν) = ∫ x, f x ∂μ := by
+  have hm : (μ.prod ν).map Prod.fst = μ := Measure.fst_prod
+  have h : ∫ y, f y ∂((μ.prod ν).map Prod.fst) = ∫ z : α × γ, f z.1 ∂(μ.prod ν) :=
+    integral_map measurable_fst.aemeasurable (by rw [hm]; exact hf)
+  rw [hm] at h
+  exact h.symm
+
+/-- LEAN-ONLY -/
+private theorem integral_comp_snd' {E α γ : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace α] [MeasurableSpace γ] {μ : Measure α} {ν : Measure γ}
+    [IsProbabilityMeasure μ] [SFinite ν] (f : γ → E) (hf : AEStronglyMeasurable f ν) :
+    ∫ z : α × γ, f z.2 ∂(μ.prod ν) = ∫ y, f y ∂ν := by
+  have hm : (μ.prod ν).map Prod.snd = ν := Measure.snd_prod
+  have h : ∫ y, f y ∂((μ.prod ν).map Prod.snd) = ∫ z : α × γ, f z.2 ∂(μ.prod ν) :=
+    integral_map measurable_snd.aemeasurable (by rw [hm]; exact hf)
+  rw [hm] at h
+  exact h.symm
+
+/-- LEAN-ONLY: the mean of a sum of linear images of independent coordinates. -/
+private theorem meanVec_map_add_prod {ι₁ ι₂ ι₃ : Type*} [Fintype ι₁] [Fintype ι₂] [Fintype ι₃]
+    [DecidableEq ι₁] [DecidableEq ι₂]
+    (μ : Measure (EuclideanSpace ℝ ι₁)) (ν : Measure (EuclideanSpace ℝ ι₂))
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    (A : Matrix ι₃ ι₁ ℝ) (B : Matrix ι₃ ι₂ ℝ)
+    (h1 : Integrable id μ) (h2 : Integrable id ν) :
+    meanVec ((μ.prod ν).map fun p =>
+        Matrix.toEuclideanLin (𝕜 := ℝ) A p.1 + Matrix.toEuclideanLin (𝕜 := ℝ) B p.2)
+      = Matrix.toEuclideanLin (𝕜 := ℝ) A (meanVec μ)
+        + Matrix.toEuclideanLin (𝕜 := ℝ) B (meanVec ν) := by
+  have h1' : Integrable (fun x : EuclideanSpace ℝ ι₁ => x) μ := h1
+  have h2' : Integrable (fun x : EuclideanSpace ℝ ι₂ => x) ν := h2
+  have hA : Integrable (fun p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ =>
+      Matrix.toEuclideanLin (𝕜 := ℝ) A p.1) (μ.prod ν) :=
+    ((matCLM A).integrable_comp h1').comp_fst ν
+  have hB : Integrable (fun p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂ =>
+      Matrix.toEuclideanLin (𝕜 := ℝ) B p.2) (μ.prod ν) :=
+    ((matCLM B).integrable_comp h2').comp_snd μ
+  have hmap : ∫ y, y ∂((μ.prod ν).map fun p =>
+        Matrix.toEuclideanLin (𝕜 := ℝ) A p.1 + Matrix.toEuclideanLin (𝕜 := ℝ) B p.2)
+      = ∫ p : EuclideanSpace ℝ ι₁ × EuclideanSpace ℝ ι₂,
+          (Matrix.toEuclideanLin (𝕜 := ℝ) A p.1
+            + Matrix.toEuclideanLin (𝕜 := ℝ) B p.2) ∂(μ.prod ν) :=
+    integral_map (by fun_prop) (by fun_prop)
+  rw [meanVec, hmap, integral_add hA hB,
+    integral_comp_fst' (fun x => Matrix.toEuclideanLin (𝕜 := ℝ) A x)
+      (matCLM A).continuous.aestronglyMeasurable,
+    integral_comp_snd' (fun x => Matrix.toEuclideanLin (𝕜 := ℝ) B x)
+      (matCLM B).continuous.aestronglyMeasurable]
+  have hcA : ∫ x, Matrix.toEuclideanLin (𝕜 := ℝ) A x ∂μ
+      = Matrix.toEuclideanLin (𝕜 := ℝ) A (meanVec μ) := (matCLM A).integral_comp_comm h1'
+  have hcB : ∫ x, Matrix.toEuclideanLin (𝕜 := ℝ) B x ∂ν
+      = Matrix.toEuclideanLin (𝕜 := ℝ) B (meanVec ν) := (matCLM B).integral_comp_comm h2'
+  rw [hcA, hcB]
+
+/-- LEAN-ONLY: for a centered law, the mean square norm is the trace of the covariance. -/
+private theorem integral_sq_norm_eq_trace {ι : Type*} [Fintype ι]
+    (μ : Measure (EuclideanSpace ℝ ι)) [IsProbabilityMeasure μ]
+    (hL2 : MemLp id 2 μ) (hm : meanVec μ = 0) :
+    ∫ x, ‖x‖ ^ 2 ∂μ = (covMatrix μ).trace := by
+  have hev : ∀ i : ι, MemLp (fun x : EuclideanSpace ℝ ι => x i) 2 μ := fun i =>
+    (EuclideanSpace.proj (𝕜 := ℝ) i).comp_memLp' hL2
+  have h1 : Integrable (fun x : EuclideanSpace ℝ ι => x) μ := hL2.integrable (by norm_num)
+  have hmean : ∀ i : ι, ∫ x, x i ∂μ = 0 := by
+    intro i
+    have h := (EuclideanSpace.proj (𝕜 := ℝ) i).integral_comp_comm h1
+    rw [show (∫ x, x ∂μ) = meanVec μ from rfl, hm] at h
+    simpa using h
+  calc ∫ x, ‖x‖ ^ 2 ∂μ = ∫ x, ∑ i, (x i) ^ 2 ∂μ := by
+        simp_rw [EuclideanSpace.real_norm_sq_eq]
+    _ = ∑ i, ∫ x, (x i) ^ 2 ∂μ := integral_finset_sum _ fun i _ => (hev i).integrable_sq
+    _ = (covMatrix μ).trace := by
+        rw [Matrix.trace]
+        refine Finset.sum_congr rfl fun i _ => ?_
+        rw [Matrix.diag_apply, covMatrix_apply, covariance_self (hev i).aemeasurable,
+          variance_eq_sub (hev i)]
+        simp [hmean i]
+
+
+/-- LEAN-ONLY: transposing a triple product inside the trace. -/
+private theorem trace_swap {q n : ℕ} (Z : Matrix (Fin n) (Fin q) ℝ)
+    (W : Matrix (Fin q) (Fin q) ℝ) (hW : Wᵀ = W) (A : Matrix (Fin q) (Fin n) ℝ) :
+    (W * Zᵀ * Aᵀ).trace = (A * Z * W).trace := by
+  rw [← Matrix.trace_transpose (A * Z * W)]
+  congr 1
+  simp [Matrix.transpose_mul, hW, Matrix.mul_assoc]
+
+/-- LEAN-ONLY: the risk trace in "completed" form. -/
+private theorem risk_expand {q n : ℕ} (Z : Matrix (Fin n) (Fin q) ℝ)
+    (W : Matrix (Fin q) (Fin q) ℝ) (S : Matrix (Fin n) (Fin n) ℝ) (hW : Wᵀ = W)
+    (A : Matrix (Fin q) (Fin n) ℝ) :
+    ((1 - A * Z) * W * (1 - A * Z)ᵀ).trace + (A * S * Aᵀ).trace
+      = W.trace - 2 * (A * Z * W).trace + (A * (Z * W * Zᵀ + S) * Aᵀ).trace := by
+  have h1 : (1 - A * Z) * W * (1 - A * Z)ᵀ
+      = W - W * Zᵀ * Aᵀ - A * Z * W + A * Z * W * Zᵀ * Aᵀ := by
+    rw [Matrix.transpose_sub, Matrix.transpose_one, Matrix.transpose_mul]
+    simp only [Matrix.sub_mul, Matrix.mul_sub, Matrix.one_mul, Matrix.mul_one, Matrix.mul_assoc]
+    abel
+  have h3 : A * (Z * W * Zᵀ + S) * Aᵀ = A * Z * W * Zᵀ * Aᵀ + A * S * Aᵀ := by
+    simp only [Matrix.mul_add, Matrix.add_mul, Matrix.mul_assoc]
+  rw [h1, h3, Matrix.trace_add, Matrix.trace_add, Matrix.trace_sub, Matrix.trace_sub,
+    trace_swap Z W hW A]
+  ring
+
+/-- LEAN-ONLY: completing the square in the trace. -/
+private theorem trace_complete_square {q n : ℕ} (Z : Matrix (Fin n) (Fin q) ℝ)
+    (W : Matrix (Fin q) (Fin q) ℝ) (S : Matrix (Fin n) (Fin n) ℝ)
+    (V : Matrix (Fin n) (Fin n) ℝ) (hW : Wᵀ = W) (hVdef : V = Z * W * Zᵀ + S)
+    (hVT : Vᵀ = V) (hVd : IsUnit V.det) (A : Matrix (Fin q) (Fin n) ℝ) :
+    ((1 - A * Z) * W * (1 - A * Z)ᵀ).trace + (A * S * Aᵀ).trace
+      = (((1 - W * Zᵀ * V⁻¹ * Z) * W * (1 - W * Zᵀ * V⁻¹ * Z)ᵀ).trace
+          + (W * Zᵀ * V⁻¹ * S * (W * Zᵀ * V⁻¹)ᵀ).trace)
+        + ((A - W * Zᵀ * V⁻¹) * V * (A - W * Zᵀ * V⁻¹)ᵀ).trace := by
+  have hVi : V * V⁻¹ = 1 := Matrix.mul_nonsing_inv _ hVd
+  have hiV : V⁻¹ * V = 1 := Matrix.nonsing_inv_mul _ hVd
+  have hAsT : (W * Zᵀ * V⁻¹)ᵀ = V⁻¹ * (Z * W) := by
+    rw [Matrix.transpose_mul, Matrix.transpose_mul, Matrix.transpose_transpose,
+      Matrix.transpose_nonsing_inv, hVT, hW]
+  have hVAs : V * (W * Zᵀ * V⁻¹)ᵀ = Z * W := by
+    rw [hAsT, ← Matrix.mul_assoc, hVi, Matrix.one_mul]
+  have hAsV : W * Zᵀ * V⁻¹ * V = W * Zᵀ := by
+    rw [Matrix.mul_assoc, hiV, Matrix.mul_one]
+  have hcross : ((A - W * Zᵀ * V⁻¹) * V * (A - W * Zᵀ * V⁻¹)ᵀ).trace
+      = (A * V * Aᵀ).trace - 2 * (A * Z * W).trace + (W * Zᵀ * V⁻¹ * Z * W).trace := by
+    have hexp : (A - W * Zᵀ * V⁻¹) * V * (A - W * Zᵀ * V⁻¹)ᵀ
+        = A * V * Aᵀ - A * (V * (W * Zᵀ * V⁻¹)ᵀ) - W * Zᵀ * V⁻¹ * V * Aᵀ
+          + W * Zᵀ * V⁻¹ * (V * (W * Zᵀ * V⁻¹)ᵀ) := by
+      rw [Matrix.transpose_sub]
+      simp only [Matrix.sub_mul, Matrix.mul_sub, Matrix.mul_assoc]
+      abel
+    rw [hexp, hVAs, hAsV, Matrix.trace_add, Matrix.trace_sub, Matrix.trace_sub,
+      ← Matrix.mul_assoc A Z W, trace_swap Z W hW A, ← Matrix.mul_assoc (W * Zᵀ * V⁻¹) Z W]
+    ring
+  have hfAs : ((1 - W * Zᵀ * V⁻¹ * Z) * W * (1 - W * Zᵀ * V⁻¹ * Z)ᵀ).trace
+        + (W * Zᵀ * V⁻¹ * S * (W * Zᵀ * V⁻¹)ᵀ).trace
+      = W.trace - (W * Zᵀ * V⁻¹ * Z * W).trace := by
+    rw [risk_expand Z W S hW (W * Zᵀ * V⁻¹), ← hVdef,
+      Matrix.mul_assoc (W * Zᵀ * V⁻¹) V, hVAs, ← Matrix.mul_assoc]
+    ring
+  rw [risk_expand Z W S hW A, ← hVdef, hfAs, hcross]
+  ring
+
+
+/-- LEAN-ONLY: the risk of a linear predictor is a trace of transported covariances. -/
+private theorem blupRisk_eq_trace (D : LMMDesign n p q)
+    (G : Measure (EuclideanSpace ℝ (Fin q))) (R : Measure (EuclideanSpace ℝ (Fin n)))
+    [IsProbabilityMeasure G] [IsProbabilityMeasure R]
+    (hGc : meanVec G = 0) (hRc : meanVec R = 0)
+    (hG2 : MemLp id 2 G) (hR2 : MemLp id 2 R) (A : Matrix (Fin q) (Fin n) ℝ) :
+    blupRisk D G R A
+      = ((1 - A * D.Z) * covMatrix G * (1 - A * D.Z)ᵀ).trace
+        + (A * covMatrix R * Aᵀ).trace := by
+  have hfun : ∀ be : EuclideanSpace ℝ (Fin q) × EuclideanSpace ℝ (Fin n),
+      be.1 - Matrix.toEuclideanLin (𝕜 := ℝ) A
+          (Matrix.toEuclideanLin (𝕜 := ℝ) D.Z be.1 + be.2)
+        = Matrix.toEuclideanLin (𝕜 := ℝ) (1 - A * D.Z) be.1
+          + Matrix.toEuclideanLin (𝕜 := ℝ) (-A) be.2 := by
+    intro be
+    ext i
+    simp [Matrix.toLpLin_apply, Matrix.mulVec_add]
+    ring
+  have hmT : Measurable fun be : EuclideanSpace ℝ (Fin q) × EuclideanSpace ℝ (Fin n) =>
+      Matrix.toEuclideanLin (𝕜 := ℝ) (1 - A * D.Z) be.1
+        + Matrix.toEuclideanLin (𝕜 := ℝ) (-A) be.2 :=
+    (((matCLM (1 - A * D.Z)).continuous.measurable).comp measurable_fst).add
+      (((matCLM (-A)).continuous.measurable).comp measurable_snd)
+  have hg1 : MemLp (fun x : EuclideanSpace ℝ (Fin q) =>
+      Matrix.toEuclideanLin (𝕜 := ℝ) (1 - A * D.Z) x) 2 G := by
+    have h := (matCLM (1 - A * D.Z)).comp_memLp' hG2
+    simp only [Function.comp_def, id_eq] at h
+    exact h
+  have hg2 : MemLp (fun x : EuclideanSpace ℝ (Fin n) =>
+      Matrix.toEuclideanLin (𝕜 := ℝ) (-A) x) 2 R := by
+    have h := (matCLM (-A)).comp_memLp' hR2
+    simp only [Function.comp_def, id_eq] at h
+    exact h
+  have hL2T : MemLp (fun be : EuclideanSpace ℝ (Fin q) × EuclideanSpace ℝ (Fin n) =>
+      Matrix.toEuclideanLin (𝕜 := ℝ) (1 - A * D.Z) be.1
+        + Matrix.toEuclideanLin (𝕜 := ℝ) (-A) be.2) 2 (G.prod R) :=
+    (hg1.comp_fst R).add (hg2.comp_snd G)
+  have hL2map : MemLp id 2 ((G.prod R).map fun be =>
+      Matrix.toEuclideanLin (𝕜 := ℝ) (1 - A * D.Z) be.1
+        + Matrix.toEuclideanLin (𝕜 := ℝ) (-A) be.2) := by
+    rw [memLp_map_measure_iff aestronglyMeasurable_id hmT.aemeasurable]
+    exact hL2T
+  have hmean : meanVec ((G.prod R).map fun be =>
+      Matrix.toEuclideanLin (𝕜 := ℝ) (1 - A * D.Z) be.1
+        + Matrix.toEuclideanLin (𝕜 := ℝ) (-A) be.2) = 0 := by
+    rw [meanVec_map_add_prod G R (1 - A * D.Z) (-A) (hG2.integrable one_le_two)
+      (hR2.integrable one_le_two), hGc, hRc]
+    simp
+  have hae : AEStronglyMeasurable (fun x : EuclideanSpace ℝ (Fin q) => ‖x‖ ^ 2)
+      ((G.prod R).map fun be : EuclideanSpace ℝ (Fin q) × EuclideanSpace ℝ (Fin n) =>
+        Matrix.toEuclideanLin (𝕜 := ℝ) (1 - A * D.Z) be.1
+          + Matrix.toEuclideanLin (𝕜 := ℝ) (-A) be.2) :=
+    (continuous_norm.pow 2).aestronglyMeasurable
+  have hneg : (-A) * covMatrix R * (-A)ᵀ = A * covMatrix R * Aᵀ := by
+    simp only [Matrix.transpose_neg, Matrix.mul_neg, Matrix.neg_mul]
+    exact neg_neg _
+  haveI : IsProbabilityMeasure ((G.prod R).map fun be =>
+      Matrix.toEuclideanLin (𝕜 := ℝ) (1 - A * D.Z) be.1
+        + Matrix.toEuclideanLin (𝕜 := ℝ) (-A) be.2) :=
+    Measure.isProbabilityMeasure_map hmT.aemeasurable
+  rw [blupRisk]
+  simp_rw [hfun]
+  rw [← integral_map hmT.aemeasurable hae, integral_sq_norm_eq_trace _ hL2map hmean,
+    covMatrix_map_add_prod G R (1 - A * D.Z) (-A) hG2 hR2, hneg, Matrix.trace_add]
+
 /-- **M3c, the variational BLUP identity** (Harville 1976; `Rob91 §3`): for centered
 second-moment latent laws, the prediction risk of any linear `A` exceeds that of
 `A* = G Zᵀ V⁻¹` by exactly `tr((A − A*) V (A − A*)ᵀ)` — completing the square in the
@@ -280,7 +503,16 @@ theorem blupRisk_eq_add (D : LMMDesign n p q)
               * (D.Z * covMatrix G * D.Zᵀ + covMatrix R)
               * (A - covMatrix G * D.Zᵀ
                   * (D.Z * covMatrix G * D.Zᵀ + covMatrix R)⁻¹)ᵀ).trace := by
-  sorry
+  have hVT : (D.Z * covMatrix G * D.Zᵀ + covMatrix R)ᵀ
+      = D.Z * covMatrix G * D.Zᵀ + covMatrix R := by
+    rw [← Matrix.conjTranspose_eq_transpose_of_trivial]; exact hV.1
+  have hVd : IsUnit (D.Z * covMatrix G * D.Zᵀ + covMatrix R).det :=
+    (Matrix.isUnit_iff_isUnit_det _).mp hV.isUnit
+  rw [blupRisk_eq_trace D G R hGc hRc hG2 hR2 A,
+    blupRisk_eq_trace D G R hGc hRc hG2 hR2
+      (covMatrix G * D.Zᵀ * (D.Z * covMatrix G * D.Zᵀ + covMatrix R)⁻¹)]
+  exact trace_complete_square D.Z (covMatrix G) (covMatrix R)
+    (D.Z * covMatrix G * D.Zᵀ + covMatrix R) (covMatrix_transpose G) rfl hVT hVd A
 
 /-- **BLUP is optimal** (`Rob91` — "that BLUP is a good thing"): `A* = G Zᵀ V⁻¹` minimizes
 the prediction risk among all linear predictors. -/
@@ -295,6 +527,19 @@ theorem blupRisk_le (D : LMMDesign n p q)
     blupRisk D G R
         (covMatrix G * D.Zᵀ * (D.Z * covMatrix G * D.Zᵀ + covMatrix R)⁻¹)
       ≤ blupRisk D G R A := by
-  sorry
+  have hnn : 0 ≤ ((A - covMatrix G * D.Zᵀ * (D.Z * covMatrix G * D.Zᵀ + covMatrix R)⁻¹)
+      * (D.Z * covMatrix G * D.Zᵀ + covMatrix R)
+      * (A - covMatrix G * D.Zᵀ
+          * (D.Z * covMatrix G * D.Zᵀ + covMatrix R)⁻¹)ᵀ).trace := by
+    have hps : ((A - covMatrix G * D.Zᵀ * (D.Z * covMatrix G * D.Zᵀ + covMatrix R)⁻¹)
+        * (D.Z * covMatrix G * D.Zᵀ + covMatrix R)
+        * (A - covMatrix G * D.Zᵀ
+            * (D.Z * covMatrix G * D.Zᵀ + covMatrix R)⁻¹)ᵀ).PosSemidef := by
+      simpa [Matrix.conjTranspose_eq_transpose_of_trivial] using
+        hV.posSemidef.mul_mul_conjTranspose_same
+          (A - covMatrix G * D.Zᵀ * (D.Z * covMatrix G * D.Zᵀ + covMatrix R)⁻¹)
+    exact hps.trace_nonneg
+  rw [blupRisk_eq_add D G R hGc hRc hG2 hR2 hV A]
+  linarith
 
 end StatLean.StatisticalModels.MixedEffects
