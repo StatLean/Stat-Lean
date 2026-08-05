@@ -420,6 +420,68 @@ theorem IsFilteredBy.hasSummableACVF [IsProbabilityMeasure μ] {X Y : ℤ → Ω
     _ = ∑' p : ℤ × ℤ, |φ p.1| * |φ p.2| * |acvf Y μ (k + p.1 - p.2)| :=
         tsum_congr fun p => by simp only [Real.norm_eq_abs, abs_mul]
 
+section Aux3
+
+private lemma norm_fourier_one (k : ℤ) (l : AddCircle (2 * π)) :
+    ‖fourier (T := 2 * π) k l‖ = 1 := by
+  rw [fourier_apply]; exact Circle.norm_coe _
+
+/-- Character series with `ℓ¹` real weights are absolutely convergent. -/
+private lemma summable_fourier_mul {γ : ℤ → ℝ} (hsum : Summable fun k => |γ k|)
+    (l : AddCircle (2 * π)) (n : ℤ → ℤ) :
+    Summable fun j : ℤ => (γ j : ℂ) * fourier (T := 2 * π) (n j) l := by
+  have hn : ∀ j : ℤ, ‖(γ j : ℂ) * fourier (T := 2 * π) (n j) l‖ = |γ j| := by
+    intro j
+    rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, norm_fourier_one, mul_one]
+  exact Summable.of_norm (by simpa only [hn] using hsum)
+
+private lemma tsum_mul_im_zero {γ : ℤ → ℝ} (heven : ∀ k, γ (-k) = γ k)
+    (l : AddCircle (2 * π)) :
+    ∑' j : ℤ, γ j * (fourier (T := 2 * π) j l).im = 0 := by
+  have hodd : ∀ j : ℤ, γ (-j) * (fourier (T := 2 * π) (-j) l).im
+      = -(γ j * (fourier (T := 2 * π) j l).im) := by
+    intro j
+    rw [heven, fourier_neg, Complex.conj_im]
+    ring
+  have h1 : ∑' j : ℤ, γ (-j) * (fourier (T := 2 * π) (-j) l).im
+      = ∑' j : ℤ, γ j * (fourier (T := 2 * π) j l).im :=
+    (Equiv.neg ℤ).tsum_eq fun j => γ j * (fourier (T := 2 * π) j l).im
+  rw [tsum_congr hodd, tsum_neg] at h1
+  linarith
+
+private lemma tsum_fourier_ofReal' {γ : ℤ → ℝ} (heven : ∀ k, γ (-k) = γ k)
+    (hsum : Summable fun k => |γ k|) (l : AddCircle (2 * π)) :
+    ∑' j : ℤ, (γ j : ℂ) * fourier (T := 2 * π) j l
+      = (((∑' j : ℤ, γ j * (fourier (T := 2 * π) j l).re : ℝ)) : ℂ) := by
+  have hFsum := summable_fourier_mul hsum l (fun j => j)
+  refine Complex.ext ?_ ?_
+  · rw [Complex.ofReal_re, Complex.re_tsum hFsum]
+    exact tsum_congr fun j => Complex.re_ofReal_mul _ _
+  · rw [Complex.ofReal_im, Complex.im_tsum hFsum,
+      tsum_congr fun j => Complex.im_ofReal_mul (γ j) (fourier (T := 2 * π) j l)]
+    exact tsum_mul_im_zero heven l
+
+/-- The spectral density in complex (character-series) form. -/
+private lemma ofReal_spectralDensityOf [IsProbabilityMeasure μ] {Z : ℤ → Ω → ℝ}
+    (hstat : IsStationary Z μ) (hsum : HasSummableACVF Z μ) (l : AddCircle (2 * π)) :
+    ((spectralDensityOf Z μ l : ℝ) : ℂ)
+      = (((2 * π)⁻¹ : ℝ) : ℂ) * ∑' k : ℤ, (acvf Z μ k : ℂ) * fourier k l := by
+  rw [spectralDensityOf, Complex.ofReal_mul, tsum_fourier_ofReal' hstat.acvf_even hsum l]
+
+/-- The reindexing `(k, j, l) ↦ ((j, l), k + j − l)` matching the output ACVF series
+against the triple product `Γ · conj Γ · g_Y`. -/
+private def convEquiv : ℤ × ℤ × ℤ ≃ (ℤ × ℤ) × ℤ where
+  toFun r := ((r.2.1, r.2.2), r.1 + r.2.1 - r.2.2)
+  invFun q := (q.2 - q.1.1 + q.1.2, q.1.1, q.1.2)
+  left_inv r := by
+    show (r.1 + r.2.1 - r.2.2 - r.2.1 + r.2.2, r.2.1, r.2.2) = r
+    rw [show r.1 + r.2.1 - r.2.2 - r.2.1 + r.2.2 = r.1 by ring]
+  right_inv q := by
+    show ((q.1.1, q.1.2), q.2 - q.1.1 + q.1.2 + q.1.1 - q.1.2) = q
+    rw [show q.2 - q.1.1 + q.1.2 + q.1.1 - q.1.2 = q.2 by ring]
+
+end Aux3
+
 /-- **FY Theorem 2.12 (spectral form)**: `g_X(λ) = |Γ(λ)|² · g_Y(λ)`. -/
 theorem IsFilteredBy.spectralDensityOf_eq [IsProbabilityMeasure μ] {X Y : ℤ → Ω → ℝ}
     {φ : ℤ → ℝ} (h : IsFilteredBy X Y φ μ)
@@ -428,6 +490,103 @@ theorem IsFilteredBy.spectralDensityOf_eq [IsProbabilityMeasure μ] {X Y : ℤ �
     (hmeasY : ∀ t, Measurable (Y t)) (hmeasX : ∀ t, Measurable (X t))
     (l : AddCircle (2 * π)) :
     spectralDensityOf X μ l = ‖transferFun φ l‖ ^ 2 * spectralDensityOf Y μ l := by
-  sorry
+  obtain ⟨hXstat, hXacvf⟩ := h.isStationary hφ hY hmeasY hmeasX
+  have hXsum : HasSummableACVF X μ := h.hasSummableACVF hφ hY hYsum hmeasY hmeasX
+  have hφ2 : Summable fun p : ℤ × ℤ => |φ p.1| * |φ p.2| :=
+    hφ.mul_of_nonneg hφ (fun i => abs_nonneg (φ i)) (fun i => abs_nonneg (φ i))
+  have hf1 : Summable fun j : ℤ => (φ j : ℂ) * fourier (T := 2 * π) (-j) l :=
+    summable_fourier_mul hφ l (fun j => -j)
+  have hf2 : Summable fun j : ℤ => (φ j : ℂ) * fourier (T := 2 * π) j l :=
+    summable_fourier_mul hφ l (fun j => j)
+  have hgY : Summable fun m : ℤ => (acvf Y μ m : ℂ) * fourier (T := 2 * π) m l :=
+    summable_fourier_mul hYsum l (fun m => m)
+  -- the conjugate transfer function is the positively-indexed character series
+  have hconjΓ : (starRingEnd ℂ) (transferFun φ l)
+      = ∑' j : ℤ, (φ j : ℂ) * fourier (T := 2 * π) j l := by
+    have hmap : HasSum
+        (fun j : ℤ => (starRingEnd ℂ) ((φ j : ℂ) * fourier (T := 2 * π) (-j) l))
+        ((starRingEnd ℂ) (transferFun φ l)) :=
+      hf1.hasSum.map ((starRingEnd ℂ).toAddMonoidHom) Complex.continuous_conj
+    rw [← hmap.tsum_eq]
+    exact tsum_congr fun j => by
+      rw [map_mul, Complex.conj_ofReal, fourier_neg, Complex.conj_conj]
+  -- `Γ · conj Γ` is the double character series
+  have hprod2 : Summable fun p : ℤ × ℤ =>
+      ((φ p.1 : ℂ) * fourier (T := 2 * π) (-p.1) l) *
+        ((φ p.2 : ℂ) * fourier (T := 2 * π) p.2 l) := by
+    have hn : ∀ p : ℤ × ℤ, ‖((φ p.1 : ℂ) * fourier (T := 2 * π) (-p.1) l) *
+        ((φ p.2 : ℂ) * fourier (T := 2 * π) p.2 l)‖ = |φ p.1| * |φ p.2| := by
+      intro p
+      rw [norm_mul, norm_mul, norm_mul, Complex.norm_real, Complex.norm_real,
+        Real.norm_eq_abs, Real.norm_eq_abs, norm_fourier_one, norm_fourier_one,
+        mul_one, mul_one]
+    exact Summable.of_norm (by simpa only [hn] using hφ2)
+  have hprod3 : Summable fun q : (ℤ × ℤ) × ℤ =>
+      (((φ q.1.1 : ℂ) * fourier (T := 2 * π) (-q.1.1) l) *
+          ((φ q.1.2 : ℂ) * fourier (T := 2 * π) q.1.2 l)) *
+        ((acvf Y μ q.2 : ℂ) * fourier (T := 2 * π) q.2 l) := by
+    have hn : ∀ q : (ℤ × ℤ) × ℤ,
+        ‖(((φ q.1.1 : ℂ) * fourier (T := 2 * π) (-q.1.1) l) *
+            ((φ q.1.2 : ℂ) * fourier (T := 2 * π) q.1.2 l)) *
+          ((acvf Y μ q.2 : ℂ) * fourier (T := 2 * π) q.2 l)‖
+        = (|φ q.1.1| * |φ q.1.2|) * |acvf Y μ q.2| := by
+      intro q
+      rw [norm_mul, norm_mul, norm_mul, norm_mul, norm_mul, Complex.norm_real,
+        Complex.norm_real, Complex.norm_real, Real.norm_eq_abs, Real.norm_eq_abs,
+        Real.norm_eq_abs, norm_fourier_one, norm_fourier_one, norm_fourier_one,
+        mul_one, mul_one, mul_one]
+    refine Summable.of_norm (by
+      simpa only [hn] using
+        hφ2.mul_of_nonneg hYsum (fun p => by positivity) (fun m => abs_nonneg _))
+  have hCB : (transferFun φ l * (starRingEnd ℂ) (transferFun φ l))
+        * (∑' m : ℤ, (acvf Y μ m : ℂ) * fourier (T := 2 * π) m l)
+      = ∑' q : (ℤ × ℤ) × ℤ,
+          (((φ q.1.1 : ℂ) * fourier (T := 2 * π) (-q.1.1) l) *
+              ((φ q.1.2 : ℂ) * fourier (T := 2 * π) q.1.2 l)) *
+            ((acvf Y μ q.2 : ℂ) * fourier (T := 2 * π) q.2 l) := by
+    rw [hconjΓ, transferFun, hf1.tsum_mul_tsum hf2 hprod2]
+    exact hprod2.tsum_mul_tsum hgY hprod3
+  -- the reindexed summand identity
+  have hFG : ∀ r : ℤ × ℤ × ℤ,
+      (((φ r.2.1 * φ r.2.2 * acvf Y μ (r.1 + r.2.1 - r.2.2) : ℝ)) : ℂ)
+          * fourier (T := 2 * π) r.1 l
+        = (((φ r.2.1 : ℂ) * fourier (T := 2 * π) (-r.2.1) l) *
+              ((φ r.2.2 : ℂ) * fourier (T := 2 * π) r.2.2 l)) *
+            ((acvf Y μ (r.1 + r.2.1 - r.2.2) : ℂ) *
+              fourier (T := 2 * π) (r.1 + r.2.1 - r.2.2) l) := by
+    intro r
+    have he : fourier (T := 2 * π) (-r.2.1) l * fourier (T := 2 * π) r.2.2 l
+        * fourier (T := 2 * π) (r.1 + r.2.1 - r.2.2) l = fourier (T := 2 * π) r.1 l := by
+      rw [← fourier_add, ← fourier_add,
+        show -r.2.1 + r.2.2 + (r.1 + r.2.1 - r.2.2) = r.1 by ring]
+    push_cast
+    rw [← he]
+    ring
+  have hFsum : Summable fun r : ℤ × ℤ × ℤ =>
+      (((φ r.2.1 * φ r.2.2 * acvf Y μ (r.1 + r.2.1 - r.2.2) : ℝ)) : ℂ)
+        * fourier (T := 2 * π) r.1 l :=
+    ((Equiv.summable_iff convEquiv).mpr hprod3).congr fun r => (hFG r).symm
+  -- the output density series is the same triple sum
+  have hslice : ∀ k : ℤ, (∑' p : ℤ × ℤ,
+        (((φ p.1 * φ p.2 * acvf Y μ (k + p.1 - p.2) : ℝ)) : ℂ) * fourier (T := 2 * π) k l)
+      = (acvf X μ k : ℂ) * fourier (T := 2 * π) k l := by
+    intro k
+    rw [tsum_mul_right, ← Complex.ofReal_tsum, hXacvf k,
+      ← (summable_convProd hY hφ k).tsum_prod]
+  have hA : (∑' k : ℤ, (acvf X μ k : ℂ) * fourier (T := 2 * π) k l)
+      = ∑' q : (ℤ × ℤ) × ℤ,
+          (((φ q.1.1 : ℂ) * fourier (T := 2 * π) (-q.1.1) l) *
+              ((φ q.1.2 : ℂ) * fourier (T := 2 * π) q.1.2 l)) *
+            ((acvf Y μ q.2 : ℂ) * fourier (T := 2 * π) q.2 l) := by
+    rw [← tsum_congr hslice, ← hFsum.tsum_prod, tsum_congr hFG]
+    exact convEquiv.tsum_eq (fun q : (ℤ × ℤ) × ℤ =>
+      (((φ q.1.1 : ℂ) * fourier (T := 2 * π) (-q.1.1) l) *
+          ((φ q.1.2 : ℂ) * fourier (T := 2 * π) q.1.2 l)) *
+        ((acvf Y μ q.2 : ℂ) * fourier (T := 2 * π) q.2 l))
+  -- assemble over ℂ
+  refine Complex.ofReal_inj.mp ?_
+  rw [ofReal_spectralDensityOf hXstat hXsum l, hA, ← hCB, Complex.ofReal_mul,
+    ofReal_spectralDensityOf hY hYsum l, Complex.ofReal_pow, ← Complex.mul_conj']
+  ring
 
 end StatLean.TimeSeries
