@@ -123,6 +123,88 @@ private lemma dist_psumLp_succ [IsProbabilityMeasure μ] (hε : IsWhiteNoise ε 
   rw [h]
   simp
 
+/-- The mixed second moment of two partial sums at lag `s − t = m ≥ 0`: by
+uncorrelatedness only the matched noise indices `s − i = t − j` survive, and they
+contribute `σ² ψ_{m+l} ψ_l`. -/
+private lemma integral_psum_mul [IsProbabilityMeasure μ] (hε : IsWhiteNoise ε σ2 μ)
+    (ψ : ℕ → ℝ) {s t : ℤ} {m : ℕ} (hd : s - t = (m : ℤ)) (N : ℕ) :
+    ∫ ω, psum ψ ε s N ω * psum ψ ε t N ω ∂μ
+      = σ2 * ∑ l ∈ Finset.range (N - m), ψ (m + l) * ψ l := by
+  have hint : ∀ (a b : ℤ) (c d : ℝ),
+      Integrable (fun ω => (c * ε a ω) * (d * ε b ω)) μ :=
+    fun a b c d => ((hε.memLp a).const_mul c).integrable_mul ((hε.memLp b).const_mul d)
+  have hterm : ∀ i j : ℕ, ∫ ω, (ψ i * ε (s - (i : ℕ)) ω) * (ψ j * ε (t - (j : ℕ)) ω) ∂μ
+      = ψ i * ψ j * (if s - (i : ℤ) = t - (j : ℤ) then σ2 else 0) := by
+    intro i j
+    have hre : ∀ ω, (ψ i * ε (s - (i : ℕ)) ω) * (ψ j * ε (t - (j : ℕ)) ω)
+        = (ψ i * ψ j) * (ε (s - (i : ℕ)) ω * ε (t - (j : ℕ)) ω) := fun ω => by ring
+    simp_rw [hre]
+    rw [integral_const_mul, integral_noise_mul hε]
+  have hexp : ∀ ω, psum ψ ε s N ω * psum ψ ε t N ω
+      = ∑ i ∈ Finset.range N, ∑ j ∈ Finset.range N,
+          (ψ i * ε (s - (i : ℕ)) ω) * (ψ j * ε (t - (j : ℕ)) ω) := by
+    intro ω
+    simp only [psum]
+    rw [Finset.sum_mul_sum]
+  simp_rw [hexp]
+  rw [integral_finset_sum _ fun i _ => integrable_finset_sum _ fun j _ => hint _ _ _ _]
+  have hstep : ∀ i ∈ Finset.range N,
+      ∫ ω, ∑ j ∈ Finset.range N, (ψ i * ε (s - (i : ℕ)) ω) * (ψ j * ε (t - (j : ℕ)) ω) ∂μ
+        = if m ≤ i then ψ i * ψ (i - m) * σ2 else 0 := by
+    intro i hi
+    rw [Finset.mem_range] at hi
+    rw [integral_finset_sum _ fun j _ => hint _ _ _ _]
+    simp_rw [hterm]
+    by_cases him : m ≤ i
+    · rw [if_pos him]
+      rw [Finset.sum_eq_single (i - m) (fun j _ hjne => ?_) (fun hnot => ?_)]
+      · rw [if_pos (by omega)]
+      · rw [if_neg (fun h => hjne (by omega)), mul_zero]
+      · exact absurd (Finset.mem_range.2 (by omega)) hnot
+    · rw [if_neg him]
+      refine Finset.sum_eq_zero fun j _ => ?_
+      rw [if_neg (fun h => him (by omega)), mul_zero]
+  rw [Finset.sum_congr rfl hstep]
+  have hsub : ∑ i ∈ Finset.Ico m N, (if m ≤ i then ψ i * ψ (i - m) * σ2 else 0)
+      = ∑ i ∈ Finset.range N, (if m ≤ i then ψ i * ψ (i - m) * σ2 else 0) :=
+    Finset.sum_subset (fun x hx => Finset.mem_range.2 (Finset.mem_Ico.1 hx).2)
+      (fun x hx hxn => by
+        rw [Finset.mem_range] at hx
+        rw [Finset.mem_Ico] at hxn
+        rw [if_neg (by omega)])
+  rw [← hsub, Finset.sum_congr rfl (fun i hi => if_pos (Finset.mem_Ico.1 hi).1),
+    Finset.sum_Ico_eq_sum_range, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun l _ => by rw [Nat.add_sub_cancel_left]; ring
+
+private lemma inner_psumLp [IsProbabilityMeasure μ] (hε : IsWhiteNoise ε σ2 μ)
+    (ψ : ℕ → ℝ) (s t : ℤ) (N M : ℕ) :
+    inner ℝ (psumLp hε ψ s N) (psumLp hε ψ t M)
+      = ∫ ω, psum ψ ε s N ω * psum ψ ε t M ω ∂μ :=
+  inner_toLp _ _
+
+/-- Partial sums have mean zero. -/
+private lemma integral_psum [IsProbabilityMeasure μ] (hε : IsWhiteNoise ε σ2 μ)
+    (ψ : ℕ → ℝ) (t : ℤ) (N : ℕ) : ∫ ω, psum ψ ε t N ω ∂μ = 0 := by
+  simp only [psum]
+  rw [integral_finset_sum _ fun j _ => ((hε.memLp (t - (j : ℕ))).const_mul (ψ j)).integrable
+    (by norm_num)]
+  refine Finset.sum_eq_zero fun j _ => ?_
+  rw [integral_const_mul, hε.integral_eq_zero, mul_zero]
+
+/-- `|ψ|` is bounded by its own sum. -/
+private lemma abs_psi_le (hψ : Summable fun j => |ψ j|) (j : ℕ) :
+    |ψ j| ≤ ∑' i : ℕ, |ψ i| :=
+  hψ.le_tsum j fun i _ => abs_nonneg _
+
+/-- The lag-`m` coefficient series is summable. -/
+private lemma summable_shift (hψ : Summable fun j => |ψ j|) (m : ℕ) :
+    Summable fun l : ℕ => ψ (m + l) * ψ l := by
+  refine Summable.of_abs ?_
+  refine Summable.of_nonneg_of_le (fun l => abs_nonneg _)
+    (fun l => ?_) (hψ.mul_left (∑' i : ℕ, |ψ i|))
+  rw [abs_mul]
+  exact mul_le_mul_of_nonneg_right (abs_psi_le hψ (m + l)) (abs_nonneg _)
+
 end Aux
 
 /-- **Existence** (FY §2.1.2): over white noise, absolutely summable coefficients define
@@ -178,7 +260,71 @@ theorem IsLinearProcessOf.isStationary [IsProbabilityMeasure μ] {ψ : ℕ → �
     (hmeas : ∀ t, Measurable (X t)) :
     IsStationary X μ ∧
       ∀ k : ℤ, acvf X μ k = σ2 * ∑' j : ℕ, ψ j * ψ (j + k.natAbs) := by
-  sorry
+  have hmem : ∀ t, MemLp (X t) 2 μ := hX.memLp hψ hε hmeas
+  -- the partial sums converge to `X t` in the Hilbert space `L²`
+  have hconv : ∀ t : ℤ,
+      Tendsto (fun N => psumLp hε ψ t N) atTop (𝓝 ((hmem t).toLp (X t))) := by
+    intro t
+    rw [tendsto_iff_dist_tendsto_zero]
+    have hd : ∀ N, dist (psumLp hε ψ t N) ((hmem t).toLp (X t))
+        = (eLpNorm (fun ω => X t ω - psum ψ ε t N ω) 2 μ).toReal := by
+      intro N
+      rw [Lp.dist_def, eLpNorm_sub_comm]
+      congr 1
+      refine eLpNorm_congr_ae ?_
+      filter_upwards [coeFn_psumLp hε ψ t N, (hmem t).coeFn_toLp] with ω h1 h2
+      simp only [Pi.sub_apply, h1, h2]
+    simp_rw [hd]
+    simpa using (ENNReal.continuousAt_toReal (by simp)).tendsto.comp (hX t)
+  -- the mean is zero at every time, being the limit of the (zero) means of the partial sums
+  have hone : MemLp (fun _ : Ω => (1 : ℝ)) 2 μ := memLp_const 1
+  have hmean : ∀ t : ℤ, ∫ ω, X t ω ∂μ = 0 := by
+    intro t
+    have hlim : Tendsto (fun N => (inner ℝ (psumLp hε ψ t N) (hone.toLp _) : ℝ)) atTop
+        (𝓝 (inner ℝ ((hmem t).toLp (X t)) (hone.toLp (fun _ => (1 : ℝ))))) :=
+      (hconv t).inner tendsto_const_nhds
+    have hzero : ∀ N, (inner ℝ (psumLp hε ψ t N) (hone.toLp (fun _ => (1 : ℝ))) : ℝ) = 0 := by
+      intro N
+      rw [show psumLp hε ψ t N = (memLp_psum (ψ := ψ) hε t N).toLp (psum ψ ε t N) from rfl,
+        inner_toLp]
+      simpa using integral_psum hε ψ t N
+    have hval : (inner ℝ ((hmem t).toLp (X t)) (hone.toLp (fun _ => (1 : ℝ))) : ℝ)
+        = ∫ ω, X t ω ∂μ := by
+      rw [inner_toLp]; simp
+    rw [← hval]
+    exact tendsto_nhds_unique hlim (by simp only [hzero]; exact tendsto_const_nhds)
+  -- with vanishing means the covariance is the `L²` inner product
+  have hcovXL : ∀ s t : ℤ, cov[X s, X t; μ]
+      = (inner ℝ ((hmem s).toLp (X s)) ((hmem t).toLp (X t)) : ℝ) := by
+    intro s t
+    rw [covariance_eq_sub (hmem s) (hmem t), hmean s, hmean t, inner_toLp]
+    simp [Pi.mul_apply]
+  -- the covariance at a nonnegative lag `m`
+  have hkey : ∀ (s t : ℤ) (m : ℕ), s - t = (m : ℤ) →
+      cov[X s, X t; μ] = σ2 * ∑' l : ℕ, ψ (m + l) * ψ l := by
+    intro s t m hd
+    rw [hcovXL]
+    refine tendsto_nhds_unique ((hconv s).inner (hconv t)) ?_
+    have heq : ∀ N : ℕ, (inner ℝ (psumLp hε ψ s N) (psumLp hε ψ t N) : ℝ)
+        = σ2 * ∑ l ∈ Finset.range (N - m), ψ (m + l) * ψ l := fun N => by
+      rw [inner_psumLp, integral_psum_mul hε ψ hd]
+    simp only [heq]
+    refine Filter.Tendsto.const_mul _ ?_
+    exact ((summable_shift hψ m).hasSum.tendsto_sum_nat).comp
+      (Filter.tendsto_atTop_atTop.2 fun b => ⟨b + m, fun a ha => by omega⟩)
+  -- ... hence at every lag, by symmetry
+  have hcov : ∀ s t : ℤ, cov[X s, X t; μ] = σ2 * ∑' j : ℕ, ψ j * ψ (j + (s - t).natAbs) := by
+    have hconvert : ∀ m : ℕ, (∑' l : ℕ, ψ (m + l) * ψ l) = ∑' j : ℕ, ψ j * ψ (j + m) :=
+      fun m => tsum_congr fun l => by rw [mul_comm, add_comm m l]
+    intro s t
+    by_cases h : t ≤ s
+    · rw [hkey s t (s - t).natAbs (Int.natAbs_of_nonneg (by omega)).symm, hconvert]
+    · rw [covariance_comm, hkey t s (s - t).natAbs (by omega), hconvert]
+  refine ⟨⟨hmem, fun s t => by rw [hmean s, hmean t], fun t k => ?_⟩, fun k => ?_⟩
+  · have h1 : t + k - t = k := by ring
+    rw [hcov (t + k) t, hcov k 0, sub_zero, h1]
+  · change cov[X k, X 0; μ] = _
+    rw [hcov k 0, sub_zero]
 
 /-- **Strict stationarity under i.i.d. innovations** (FY §2.1.2, asserted): a linear
 process over i.i.d. noise is strictly stationary. -/
