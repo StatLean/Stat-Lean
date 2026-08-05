@@ -3,6 +3,7 @@ import StatLean.TimeSeries.Process.LinearProcess
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Distributions.Gaussian.CharFun
+import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
 
 /-!
 # Stationary Gaussian processes and the completion of FY Theorem 2.7 (FY §2.1.3, §2.2.1)
@@ -50,7 +51,7 @@ processes", *Ann. of Math.* **41** (1940), 215–230). The Wold decomposition is
 -/
 
 open MeasureTheory ProbabilityTheory Filter
-open scoped ProbabilityTheory Real
+open scoped ProbabilityTheory Real ENNReal Topology
 
 namespace StatLean.TimeSeries
 
@@ -399,10 +400,11 @@ private lemma hasGaussianLaw_tuple {X : ℤ → Ω → ℝ} (hG : IsGaussianProc
       cont := by fun_prop }
   exact (hG.hasGaussianLaw I).map_fun L
 
-/-- A continuous linear functional on `Fin n → ℝ` in coordinates. -/
-private lemma dual_apply_sum {n : ℕ} (L : StrongDual ℝ (Fin n → ℝ)) (x : Fin n → ℝ) :
+/-- A continuous linear functional on a finite product of copies of `ℝ`, in coordinates. -/
+private lemma dual_apply_sum {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (L : StrongDual ℝ (ι → ℝ)) (x : ι → ℝ) :
     L x = ∑ i, x i * L (fun j => if i = j then (1 : ℝ) else 0) := by
-  have h := LinearMap.pi_apply_eq_sum_univ (L : (Fin n → ℝ) →ₗ[ℝ] ℝ) x
+  have h := LinearMap.pi_apply_eq_sum_univ (L : (ι → ℝ) →ₗ[ℝ] ℝ) x
   simpa [smul_eq_mul] using h
 
 /-- The covariance of two linear functionals of a tuple, in terms of the ACVF. -/
@@ -487,6 +489,232 @@ theorem IsGaussianProcess.isStrictlyStationary [IsProbabilityMeasure μ]
   exact map_tuple_eq_of_acvf hG hmeas hstat (fun i => t i + k) t
     (fun i j => by rw [show t i + k - (t j + k) = t i - t j by ring])
 
+/-! ### `L²`-limits of Gaussian laws (private machinery for the linear-process step) -/
+
+private lemma real_inner_mul' (x y : ℝ) : inner ℝ x y = x * y := by
+  rw [real_inner_eq_re_inner ℝ, RCLike.inner_apply]
+  simp [mul_comm]
+
+private lemma integral_sq_eq_norm_sq {g : Ω → ℝ} (hg : MemLp g 2 μ) :
+    ∫ ω, g ω ^ 2 ∂μ = ‖hg.toLp g‖ ^ 2 := by
+  rw [← real_inner_self_eq_norm_sq, L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [hg.coeFn_toLp] with ω hω
+  rw [real_inner_mul', hω, ← pow_two]
+
+/-- **`L²`-limits of real Gaussian random variables are Gaussian.** -/
+private lemma isGaussian_map_of_tendsto_L2 [IsProbabilityMeasure μ] {Y : ℕ → Ω → ℝ} {Z : Ω → ℝ}
+    (hYg : ∀ N, IsGaussian (μ.map (Y N)))
+    (hYm : ∀ N, AEStronglyMeasurable (Y N) μ) (hZm : AEStronglyMeasurable Z μ)
+    (hconv : Tendsto (fun N => eLpNorm (Y N - Z) 2 μ) atTop (𝓝 0)) :
+    IsGaussian (μ.map Z) := by
+  haveI : IsProbabilityMeasure (μ.map Z) := Measure.isProbabilityMeasure_map hZm.aemeasurable
+  -- `L²` membership
+  have hYL2 : ∀ N, MemLp (Y N) 2 μ := by
+    intro N
+    haveI := hYg N
+    have h := IsGaussian.memLp_two_id (μ := μ.map (Y N))
+    rw [memLp_map_measure_iff aestronglyMeasurable_id (hYm N).aemeasurable] at h
+    simpa [Function.comp_def] using h
+  obtain ⟨N₀, hN₀⟩ : ∃ N₀, eLpNorm (Y N₀ - Z) 2 μ < ⊤ := by
+    obtain ⟨N₀, hN₀⟩ := (hconv.eventually_lt_const (by norm_num : (0 : ℝ≥0∞) < 1)).exists
+    exact ⟨N₀, hN₀.trans_le le_top⟩
+  have hdiff : MemLp (Y N₀ - Z) 2 μ := ⟨(hYm N₀).sub hZm, hN₀⟩
+  have hZL2 : MemLp Z 2 μ := by
+    have h := (hYL2 N₀).sub hdiff
+    simpa using h
+  -- means converge
+  have hmean : Tendsto (fun N => ∫ ω, Y N ω ∂μ) atTop (𝓝 (∫ ω, Z ω ∂μ)) := by
+    refine tendsto_integral_of_L1' Z (hZL2.integrable one_le_two)
+      (Eventually.of_forall fun N => (hYL2 N).integrable one_le_two) ?_
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hconv
+      (fun N => zero_le _) fun N => ?_
+    exact eLpNorm_le_eLpNorm_of_exponent_le one_le_two ((hYm N).sub hZm)
+  -- second moments converge (continuity of the `L²` norm)
+  have hLp : Tendsto (fun N => (hYL2 N).toLp (Y N)) atTop (𝓝 (hZL2.toLp Z)) := by
+    rw [tendsto_iff_dist_tendsto_zero]
+    have hd : ∀ N, dist ((hYL2 N).toLp (Y N)) (hZL2.toLp Z)
+        = (eLpNorm (Y N - Z) 2 μ).toReal := by
+      intro N
+      rw [dist_eq_norm, ← MemLp.toLp_sub, Lp.norm_toLp]
+    simp only [hd]
+    exact (ENNReal.continuousAt_toReal (by simp)).tendsto.comp hconv
+  have hsq : Tendsto (fun N => ∫ ω, Y N ω ^ 2 ∂μ) atTop (𝓝 (∫ ω, Z ω ^ 2 ∂μ)) := by
+    simp only [integral_sq_eq_norm_sq (hYL2 _), integral_sq_eq_norm_sq hZL2]
+    exact (hLp.norm).pow 2
+  have hvar : Tendsto (fun N => Var[Y N; μ]) atTop (𝓝 Var[Z; μ]) := by
+    simp only [variance_eq_sub (hYL2 _), variance_eq_sub hZL2]
+    have h1 : ∀ N, (μ[(Y N) ^ 2] : ℝ) = ∫ ω, Y N ω ^ 2 ∂μ := fun N => by simp
+    have h2 : (μ[Z ^ 2] : ℝ) = ∫ ω, Z ω ^ 2 ∂μ := by simp
+    simp only [h1, h2]
+    exact hsq.sub (hmean.pow 2)
+  -- pass to a subsequence along which `Y` converges a.e.
+  obtain ⟨ns, hmono, hns⟩ :=
+    (tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num) (fun N => hYm N) hZm
+      hconv).exists_seq_tendsto_ae
+  -- the characteristic functions agree in the limit
+  suffices h : μ.map Z = gaussianReal (∫ ω, Z ω ∂μ) Var[Z; μ].toNNReal by
+    rw [h]; infer_instance
+  refine Measure.ext_of_charFun ?_
+  funext u
+  have hchar : ∀ N, charFun (μ.map (Y N)) u
+      = Complex.exp (u * (∫ ω, Y N ω ∂μ) * Complex.I - Var[Y N; μ] * u ^ 2 / 2) := by
+    intro N
+    haveI := hYg N
+    rw [(hYg N).eq_gaussianReal, charFun_gaussianReal, integral_map (hYm N).aemeasurable
+      aestronglyMeasurable_id, variance_map aemeasurable_id (hYm N).aemeasurable]
+    simp [Real.coe_toNNReal _ (variance_nonneg _ _)]
+  have hcv : ∀ N, charFun (μ.map (Y N)) u = ∫ ω, Complex.exp (u * Y N ω * Complex.I) ∂μ := by
+    intro N
+    rw [charFun_apply, integral_map (hYm N).aemeasurable]
+    · refine integral_congr_ae (Eventually.of_forall fun ω => ?_)
+      simp only [real_inner_mul']
+      congr 1
+      push_cast
+      ring
+    · exact (Complex.continuous_exp.comp (by fun_prop)).aestronglyMeasurable
+  have hcz : charFun (μ.map Z) u = ∫ ω, Complex.exp (u * Z ω * Complex.I) ∂μ := by
+    rw [charFun_apply, integral_map hZm.aemeasurable]
+    · refine integral_congr_ae (Eventually.of_forall fun ω => ?_)
+      simp only [real_inner_mul']
+      congr 1
+      push_cast
+      ring
+    · exact (Complex.continuous_exp.comp (by fun_prop)).aestronglyMeasurable
+  have hlim1 : Tendsto (fun j => ∫ ω, Complex.exp (u * Y (ns j) ω * Complex.I) ∂μ) atTop
+      (𝓝 (∫ ω, Complex.exp (u * Z ω * Complex.I) ∂μ)) := by
+    have hcont : Continuous fun x : ℝ => Complex.exp ((u : ℂ) * (x : ℂ) * Complex.I) := by
+      fun_prop
+    refine tendsto_integral_of_dominated_convergence (fun _ => 1)
+      (fun j => hcont.comp_aestronglyMeasurable (hYm (ns j))) (integrable_const _)
+      (fun j => Eventually.of_forall fun ω => ?_) ?_
+    · have hre : ((u : ℂ) * (Y (ns j) ω : ℂ) * Complex.I).re = 0 := by simp
+      rw [Complex.norm_exp, hre]
+      simp
+    · filter_upwards [hns] with ω hω
+      exact (hcont.tendsto _).comp hω
+  rw [charFun_gaussianReal, Real.coe_toNNReal _ (variance_nonneg _ _), hcz]
+  refine tendsto_nhds_unique hlim1 ?_
+  have hrw : ∀ j, ∫ ω, Complex.exp (u * Y (ns j) ω * Complex.I) ∂μ
+      = Complex.exp (u * (∫ ω, Y (ns j) ω ∂μ) * Complex.I
+          - Var[Y (ns j); μ] * u ^ 2 / 2) := fun j => by rw [← hcv, hchar]
+  simp only [hrw]
+  have hm' : Tendsto (fun j => ∫ ω, Y (ns j) ω ∂μ) atTop (𝓝 (∫ ω, Z ω ∂μ)) :=
+    hmean.comp hmono.tendsto_atTop
+  have hv' : Tendsto (fun j => Var[Y (ns j); μ]) atTop (𝓝 Var[Z; μ]) :=
+    hvar.comp hmono.tendsto_atTop
+  have hA : Tendsto (fun j => ((u : ℂ) * ((∫ ω, Y (ns j) ω ∂μ : ℝ) : ℂ) * Complex.I
+      - ((Var[Y (ns j); μ] : ℝ) : ℂ) * (u : ℂ) ^ 2 / 2)) atTop
+      (𝓝 ((u : ℂ) * ((∫ ω, Z ω ∂μ : ℝ) : ℂ) * Complex.I
+        - ((Var[Z; μ] : ℝ) : ℂ) * (u : ℂ) ^ 2 / 2)) := by
+    refine Tendsto.sub ?_ ?_
+    · exact (((Complex.continuous_ofReal.tendsto _).comp hm').const_mul _).mul_const _
+    · exact ((((Complex.continuous_ofReal.tendsto _).comp hv').mul_const _)).div_const _
+  exact (Complex.continuous_exp.tendsto _).comp hA
+
+
+
+section LinearGaussian
+
+variable {ψ : ℕ → ℝ} {X ε : ℤ → Ω → ℝ}
+
+/-- Partial sums of the linear process (FY eq. (2.1)). -/
+private noncomputable def gpsum (ψ : ℕ → ℝ) (ε : ℤ → Ω → ℝ) (s : ℤ) (N : ℕ) : Ω → ℝ :=
+  fun ω => ∑ j ∈ Finset.range N, ψ j * ε (s - (j : ℕ)) ω
+
+/-- A finite linear combination of i.i.d. standard Gaussian innovations is Gaussian. -/
+private lemma isGaussian_noise_comb [IsProbabilityMeasure μ] {σ2 : ℝ}
+    (hε : IsIIDNoise ε σ2 μ) (hgauss : ∀ t, μ.map (ε t) = gaussianReal 0 1)
+    {A : Type*} [Fintype A] (τ : A → ℤ) (c : A → ℝ) :
+    IsGaussian (μ.map fun ω => ∑ a, c a * ε (τ a) ω) := by
+  classical
+  have hmem : ∀ a : A, τ a ∈ Finset.image τ Finset.univ := fun a =>
+    Finset.mem_image_of_mem τ (Finset.mem_univ a)
+  have hblock : HasGaussianLaw
+      (fun ω (b : {x // x ∈ Finset.image τ Finset.univ}) => ε (b : ℤ) ω) μ := by
+    refine iIndepFun.hasGaussianLaw (fun b => ⟨by rw [hgauss]; infer_instance⟩) ?_
+    exact hε.iIndep.precomp Subtype.val_injective
+  let G : ({x // x ∈ Finset.image τ Finset.univ} → ℝ) →L[ℝ] ℝ :=
+    { toFun := fun v => ∑ a, c a * v ⟨τ a, hmem a⟩
+      map_add' := fun v w => by simp [mul_add, Finset.sum_add_distrib]
+      map_smul' := fun r v => by
+        simp only [Pi.smul_apply, smul_eq_mul, RingHom.id_apply, Finset.mul_sum]
+        exact Finset.sum_congr rfl fun x _ => by ring
+      cont := by fun_prop }
+  have heq : (fun ω => ∑ a, c a * ε (τ a) ω)
+      = fun ω => G (fun (b : {x // x ∈ Finset.image τ Finset.univ}) => ε (b : ℤ) ω) := rfl
+  rw [heq]
+  exact (hblock.map_fun G).isGaussian_map
+
+
+
+
+
+
+
+/-- A window of partial sums, linearly combined, is Gaussian. -/
+private lemma isGaussian_gpsum_comb [IsProbabilityMeasure μ] {σ2 : ℝ}
+    (hε : IsIIDNoise ε σ2 μ) (hgauss : ∀ t, μ.map (ε t) = gaussianReal 0 1)
+    (ψ : ℕ → ℝ) {A : Type*} [Fintype A] (τ : A → ℤ) (c : A → ℝ) (N : ℕ) :
+    IsGaussian (μ.map fun ω => ∑ a, c a * gpsum ψ ε (τ a) N ω) := by
+  have heq : (fun ω => ∑ a, c a * gpsum ψ ε (τ a) N ω)
+      = fun ω => ∑ p : A × Fin N, (c p.1 * ψ (p.2 : ℕ)) * ε (τ p.1 - (p.2 : ℕ)) ω := by
+    funext ω
+    rw [Fintype.sum_prod_type]
+    refine Finset.sum_congr rfl fun a _ => ?_
+    rw [gpsum, ← Fin.sum_univ_eq_sum_range (fun j => ψ j * ε (τ a - (j : ℕ)) ω) N,
+      Finset.mul_sum]
+    exact Finset.sum_congr rfl fun j _ => by ring
+  rw [heq]
+  exact isGaussian_noise_comb hε hgauss _ _
+
+/-- The linear combination of the partial sums converges to that of the process in `L²`. -/
+private lemma tendsto_eLpNorm_comb [IsProbabilityMeasure μ]
+    (hX : IsLinearProcessOf ψ X ε μ) (hmX : ∀ t, Measurable (X t)) (hmε : ∀ t, Measurable (ε t))
+    {A : Type*} [Fintype A] (τ : A → ℤ) (c : A → ℝ) :
+    Tendsto (fun N => eLpNorm
+      ((fun ω => ∑ a, c a * gpsum ψ ε (τ a) N ω) - fun ω => ∑ a, c a * X (τ a) ω) 2 μ)
+      atTop (𝓝 0) := by
+  have hmg : ∀ (a : A) (N : ℕ), Measurable (gpsum ψ ε (τ a) N) := fun a N =>
+    Finset.measurable_sum _ fun j _ => (hmε _).const_mul _
+  have hterm : ∀ a : A, Tendsto (fun N => eLpNorm
+      (fun ω => c a * (gpsum ψ ε (τ a) N ω - X (τ a) ω)) 2 μ) atTop (𝓝 0) := by
+    intro a
+    have h0 : Tendsto (fun N =>
+        eLpNorm (fun ω => gpsum ψ ε (τ a) N ω - X (τ a) ω) 2 μ) atTop (𝓝 0) := by
+      refine (hX (τ a)).congr fun N => ?_
+      rw [← eLpNorm_neg]
+      exact eLpNorm_congr_ae (Eventually.of_forall fun ω => by simp [gpsum])
+    have hc : ∀ N, eLpNorm (fun ω => c a * (gpsum ψ ε (τ a) N ω - X (τ a) ω)) 2 μ
+        = ‖c a‖ₑ * eLpNorm (fun ω => gpsum ψ ε (τ a) N ω - X (τ a) ω) 2 μ := fun N => by
+      simpa using eLpNorm_const_smul (c := c a)
+        (f := fun ω => gpsum ψ ε (τ a) N ω - X (τ a) ω) (p := 2) (μ := μ)
+    simp only [hc]
+    simpa using (ENNReal.Tendsto.const_mul h0 (Or.inr (by simp)))
+  have hsum : Tendsto (fun N => ∑ a : A, eLpNorm
+      (fun ω => c a * (gpsum ψ ε (τ a) N ω - X (τ a) ω)) 2 μ) atTop (𝓝 0) := by
+    simpa using tendsto_finset_sum (Finset.univ : Finset A) fun a _ => hterm a
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsum
+    (fun N => zero_le _) fun N => ?_
+  have hcongr : ((fun ω => ∑ a, c a * gpsum ψ ε (τ a) N ω) - fun ω => ∑ a, c a * X (τ a) ω)
+      = fun ω => ∑ a : A, c a * (gpsum ψ ε (τ a) N ω - X (τ a) ω) := by
+    funext ω
+    simp only [Pi.sub_apply, ← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun a _ => by ring
+  rw [hcongr]
+  have hfun : (fun ω => ∑ a : A, c a * (gpsum ψ ε (τ a) N ω - X (τ a) ω))
+      = ∑ a : A, fun ω => c a * (gpsum ψ ε (τ a) N ω - X (τ a) ω) := by
+    funext ω; simp
+  rw [hfun]
+  exact eLpNorm_sum_le (fun a _ => (((hmg a N).sub (hmX _)).const_mul _).aestronglyMeasurable)
+    one_le_two
+
+
+
+private lemma measurable_gpsum (hmε : ∀ t, Measurable (ε t)) (ψ : ℕ → ℝ) (s : ℤ) (N : ℕ) :
+    Measurable (gpsum ψ ε s N) :=
+  Finset.measurable_sum _ fun _ _ => (hmε _).const_mul _
+
 /-- **Causal ARMA with i.i.d. Gaussian noise is a Gaussian process** (FY §2.1.3): the
 finite-dimensional vectors are `L²`-limits of linear images of Gaussian vectors. -/
 theorem isGaussianProcess_of_linearProcess [IsProbabilityMeasure μ]
@@ -497,7 +725,31 @@ theorem isGaussianProcess_of_linearProcess [IsProbabilityMeasure μ]
     (hε : IsIIDNoise ε 1 μ)
     (hgauss : ∀ t, μ.map (ε t) = gaussianReal 0 1) :
     IsGaussianProcess X μ := by
-  sorry
+
+  refine ⟨fun I => ⟨?_⟩⟩
+  refine isGaussian_of_map_eq_gaussianReal fun L => ?_
+  have hVm : Measurable fun ω => (I.restrict (X · ω) : {x // x ∈ I} → ℝ) :=
+    measurable_pi_lambda _ fun b => hmeas _
+  obtain ⟨c, hcdef⟩ : ∃ c : {x // x ∈ I} → ℝ,
+      ∀ b, c b = L (fun j => if b = j then (1 : ℝ) else 0) := ⟨_, fun _ => rfl⟩
+  have hZeq : (⇑L ∘ fun ω => (I.restrict (X · ω) : {x // x ∈ I} → ℝ))
+      = fun ω => ∑ b : {x // x ∈ I}, c b * X (b : ℤ) ω := by
+    funext ω
+    simp only [Function.comp_apply]
+    rw [dual_apply_sum L]
+    exact Finset.sum_congr rfl fun b _ => by rw [hcdef, mul_comm]; rfl
+  rw [Measure.map_map L.continuous.measurable hVm, hZeq]
+  have hg : IsGaussian (μ.map fun ω => ∑ b : {x // x ∈ I}, c b * X (b : ℤ) ω) := by
+    refine isGaussian_map_of_tendsto_L2
+      (fun N => isGaussian_gpsum_comb hε hgauss ψ (fun b : {x // x ∈ I} => (b : ℤ)) c N)
+      (fun N => ?_) ?_ (tendsto_eLpNorm_comb hX hmeas hε.measurable _ c)
+    · exact (Finset.measurable_sum _ fun b _ =>
+        (measurable_gpsum hε.measurable ψ _ N).const_mul _).aestronglyMeasurable
+    · exact (Finset.measurable_sum _ fun b _ => (hmeas _).const_mul _).aestronglyMeasurable
+  exact ⟨_, _, IsGaussian.eq_gaussianReal _ hg⟩
+
+end LinearGaussian
+
 
 /-- **Wold decomposition, Gaussian form — DEBT** (FY §2.1.3, eq. (2.6); cited to
 Brockwell & Davis 1991, p. 187; closure scheduled for batch F via the conditional-
