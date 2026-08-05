@@ -146,7 +146,7 @@ theorem isClosed_marginFeasible (x : Fin n → E) (lab : Fin n → ℝ) :
       linarith
     rw [hempty]
     exact isClosed_empty
-  · push_neg at hz
+  · simp only [not_exists] at hz
     rw [marginFeasible_eq_iInter hz]
     refine isClosed_iInter fun i => isClosed_iInter fun j => isClosed_iInter fun _ =>
       isClosed_iInter fun _ => ?_
@@ -276,7 +276,7 @@ private lemma dataMargin_zero_left (x : Fin n → E) (hn : 0 < n) (c : ℝ) :
 
 /-- For a `±1` label, `|l * t| = |t|`. -/
 private lemma abs_lab_mul {l : ℝ} (hl : l = 1 ∨ l = -1) (t : ℝ) : |l * t| = |t| := by
-  rcases hl with h | h <;> subst h <;> simp [abs_mul]
+  rcases hl with h | h <;> subst h <;> simp
 
 /-- A `±1`-labeled constraint fixes the sign of the residual: `|t| = l * t`. -/
 private lemma abs_eq_lab_mul {l t : ℝ} (hl : l = 1 ∨ l = -1) (h : 0 < l * t) :

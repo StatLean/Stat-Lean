@@ -65,7 +65,7 @@ theorem infDist_hyperplane [CompleteSpace E] (p : E) {v : E}
   have hqmem : q ∈ hyperplane v c := by
     have : ⟪q, v⟫ = ⟪p, v⟫ - t * ‖v‖ ^ 2 := by
       rw [hq, inner_sub_left, real_inner_smul_left, real_inner_self_eq_norm_sq]
-    show ⟪q, v⟫ = c
+    change ⟪q, v⟫ = c
     rw [this, ht, div_mul_cancel₀ _ (ne_of_gt hv2)]
     ring
   have hdist : dist p q = |⟪p, v⟫ - c| / ‖v‖ := by

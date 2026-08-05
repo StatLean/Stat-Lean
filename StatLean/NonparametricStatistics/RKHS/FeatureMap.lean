@@ -33,7 +33,7 @@ variable {L : Type*} [NormedAddCommGroup L] [InnerProductSpace 𝕜 L]
 /-- A feature-map kernel is Hermitian-diagonal-normalized: `K(x,x) = ‖φ x‖²`. -/
 theorem featureKernel_self (φ : X → L) (x : X) :
     featureKernel 𝕜 φ x x = ((‖φ x‖ : 𝕜)) ^ 2 := by
-  simpa [featureKernel] using inner_self_eq_norm_sq_to_K (𝕜 := 𝕜) (φ x)
+  simp [featureKernel, inner_self_eq_norm_sq_to_K]
 
 /-- **Every kernel function is a feature-map kernel**: by Moore's theorem, a kernel
 function `K` is the Gram function of the kernel-function embedding of its RKHS. -/
