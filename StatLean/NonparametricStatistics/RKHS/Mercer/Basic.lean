@@ -226,18 +226,130 @@ end UniformConvergence
 
 section OperatorProperties
 
+omit [MetricSpace X] [CompactSpace X] [BorelSpace X] [IsFiniteMeasure μ] in
+/-- The squared `L²` norm as an integral of the squared pointwise norm. -/
+private theorem norm_Lp_sq (f : Lp 𝕜 2 μ) :
+    ‖f‖ ^ 2 = ∫ a, ‖(f : X → 𝕜) a‖ ^ 2 ∂μ := by
+  have h : (inner 𝕜 f f : 𝕜) = ((∫ a, ‖(f : X → 𝕜) a‖ ^ 2 ∂μ : ℝ) : 𝕜) := by
+    rw [L2.inner_def, ← integral_ofReal]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun a => ?_)
+    simp only [inner_self_eq_norm_sq_to_K]
+    push_cast
+    ring
+  rw [norm_sq_eq_re_inner (𝕜 := 𝕜) f, h, RCLike.ofReal_re]
+
+omit [MetricSpace X] [CompactSpace X] [BorelSpace X] [IsFiniteMeasure μ] in
+/-- The `L²` norm of the class of a square-integrable function. -/
+private theorem norm_toLp_eq_sqrt {F : X → 𝕜} (hF : MemLp F 2 μ) :
+    ‖hF.toLp F‖ = Real.sqrt (∫ y, ‖F y‖ ^ 2 ∂μ) := by
+  have h : ‖hF.toLp F‖ ^ 2 = ∫ y, ‖F y‖ ^ 2 ∂μ := by
+    rw [norm_Lp_sq]
+    exact integral_congr_ae ((hF.coeFn_toLp).mono fun y hy => by simp only [hy])
+  rw [← h, Real.sqrt_sq (norm_nonneg _)]
+
+omit [MetricSpace X] [CompactSpace X] [BorelSpace X] [IsFiniteMeasure μ] in
+/-- Cauchy–Schwarz for a single integral pairing:
+`‖∫ F g dμ‖ ≤ ‖F‖_{L²} ‖g‖_{L²}`. -/
+private theorem norm_integral_mul_le {F : X → 𝕜} (hF : MemLp F 2 μ) (g : Lp 𝕜 2 μ) :
+    ‖∫ y, F y * (g : X → 𝕜) y ∂μ‖ ≤ Real.sqrt (∫ y, ‖F y‖ ^ 2 ∂μ) * ‖g‖ := by
+  have hS : IsL2Symbol μ (fun _ : Unit => F) := fun _ => hF
+  have h := norm_integralOp_le (fun _ : Unit => F) hS g ()
+  have hnorm : ‖symbolConjLp μ (fun _ : Unit => F) hS ()‖
+      = Real.sqrt (∫ y, ‖F y‖ ^ 2 ∂μ) := by
+    rw [symbolConjLp, norm_toLp_eq_sqrt]
+    simp
+  rwa [hnorm] at h
+
+omit [MeasurableSpace X] [BorelSpace X] in
+/-- Uniform bound on a continuous kernel over the compact square. -/
+private theorem exists_bnd {K : X → X → 𝕜}
+    (hKc : Continuous fun p : X × X => K p.1 p.2) :
+    ∃ M : ℝ, 0 ≤ M ∧ ∀ x y : X, ‖K x y‖ ≤ M := by
+  obtain ⟨M, hM⟩ := isCompact_univ.exists_bound_of_continuousOn
+    (f := fun p : X × X => K p.1 p.2) hKc.continuousOn
+  exact ⟨max M 0, le_max_right _ _,
+    fun x y => le_trans (hM (x, y) (Set.mem_univ _)) (le_max_left _ _)⟩
+
+/-- Continuity of the squared `L²` norm of the sections of a continuous kernel. -/
+private theorem continuous_integral_normSq_section {K : X → X → 𝕜}
+    (hKc : Continuous fun p : X × X => K p.1 p.2) :
+    Continuous fun x : X => ∫ y, ‖K x y‖ ^ 2 ∂μ := by
+  obtain ⟨M, hM0, hM⟩ := exists_bnd hKc
+  refine continuous_of_dominated (bound := fun _ : X => M ^ 2) ?_ ?_ (integrable_const _) ?_
+  · exact fun x => ((hKc.comp' (continuous_const.prodMk continuous_id)).norm.pow
+      2).aestronglyMeasurable
+  · intro x
+    filter_upwards with y
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+    exact pow_le_pow_left₀ (norm_nonneg _) (hM x y) 2
+  · filter_upwards with y
+    exact ((hKc.comp' (continuous_id.prodMk continuous_const)).norm.pow 2)
+
 /-- `‖T_K‖` is bounded by the `L²(μ × μ)` norm of the kernel. -/
 theorem norm_mercerCLM_le {K : X → X → 𝕜}
     (hKc : Continuous fun p : X × X => K p.1 p.2) :
     ‖mercerCLM μ hKc‖
       ≤ Real.sqrt (∫ x, ∫ y, ‖K x y‖ ^ 2 ∂μ ∂μ) := by
-  sorry
+  have hsec : ∀ x : X, (0 : ℝ) ≤ ∫ y, ‖K x y‖ ^ 2 ∂μ :=
+    fun x => integral_nonneg fun y => by positivity
+  have hA : (0 : ℝ) ≤ ∫ x, ∫ y, ‖K x y‖ ^ 2 ∂μ ∂μ := integral_nonneg hsec
+  refine ContinuousLinearMap.opNorm_le_bound _ (Real.sqrt_nonneg _) fun g => ?_
+  have hint : Integrable (fun x : X => (∫ y, ‖K x y‖ ^ 2 ∂μ) * ‖g‖ ^ 2) μ := by
+    obtain ⟨M, hM0, hM⟩ := exists_bnd hKc
+    refine Integrable.mono' (g := fun _ : X => ((μ Set.univ).toReal * M ^ 2) * ‖g‖ ^ 2)
+      (integrable_const _)
+      ((continuous_integral_normSq_section (μ := μ) hKc).aestronglyMeasurable.mul_const _) ?_
+    filter_upwards with x
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+    refine mul_le_mul_of_nonneg_right ?_ (by positivity)
+    calc ∫ y, ‖K x y‖ ^ 2 ∂μ ≤ ∫ _y : X, M ^ 2 ∂μ :=
+          integral_mono_of_nonneg (Filter.Eventually.of_forall fun y => by positivity)
+            (integrable_const _)
+            (Filter.Eventually.of_forall fun y => pow_le_pow_left₀ (norm_nonneg _) (hM x y) 2)
+      _ = (μ Set.univ).toReal * M ^ 2 := by rw [integral_const, smul_eq_mul, measureReal_def]
+  have hsq : ‖mercerCLM μ hKc g‖ ^ 2 ≤ (∫ x, ∫ y, ‖K x y‖ ^ 2 ∂μ ∂μ) * ‖g‖ ^ 2 := by
+    rw [norm_Lp_sq]
+    have h1 : ∫ x, ‖(mercerCLM μ hKc g : X → 𝕜) x‖ ^ 2 ∂μ
+        = ∫ x, ‖integralOp μ K g x‖ ^ 2 ∂μ :=
+      integral_congr_ae ((mercerCLM_coeFn_ae hKc g).mono fun x hx => by simp only [hx])
+    rw [h1]
+    calc ∫ x, ‖integralOp μ K g x‖ ^ 2 ∂μ
+        ≤ ∫ x, (∫ y, ‖K x y‖ ^ 2 ∂μ) * ‖g‖ ^ 2 ∂μ := by
+          refine integral_mono_of_nonneg
+            (Filter.Eventually.of_forall fun x => by positivity) hint
+            (Filter.Eventually.of_forall fun x => ?_)
+          have h : ‖integralOp μ K g x‖ ≤ Real.sqrt (∫ y, ‖K x y‖ ^ 2 ∂μ) * ‖g‖ :=
+            norm_integral_mul_le (isL2Symbol_of_continuous hKc x) g
+          have hs := Real.sq_sqrt (hsec x)
+          change ‖integralOp μ K g x‖ ^ 2 ≤ (∫ y, ‖K x y‖ ^ 2 ∂μ) * ‖g‖ ^ 2
+          calc ‖integralOp μ K g x‖ ^ 2
+              ≤ (Real.sqrt (∫ y, ‖K x y‖ ^ 2 ∂μ) * ‖g‖) ^ 2 :=
+                pow_le_pow_left₀ (norm_nonneg _) h 2
+            _ = (∫ y, ‖K x y‖ ^ 2 ∂μ) * ‖g‖ ^ 2 := by rw [mul_pow, hs]
+      _ = (∫ x, ∫ y, ‖K x y‖ ^ 2 ∂μ ∂μ) * ‖g‖ ^ 2 := integral_mul_const _ _
+  calc ‖mercerCLM μ hKc g‖ = Real.sqrt (‖mercerCLM μ hKc g‖ ^ 2) :=
+        (Real.sqrt_sq (norm_nonneg _)).symm
+    _ ≤ Real.sqrt ((∫ x, ∫ y, ‖K x y‖ ^ 2 ∂μ ∂μ) * ‖g‖ ^ 2) := Real.sqrt_le_sqrt hsq
+    _ = Real.sqrt (∫ x, ∫ y, ‖K x y‖ ^ 2 ∂μ ∂μ) * ‖g‖ := by
+        rw [Real.sqrt_mul hA, Real.sqrt_sq (norm_nonneg _)]
 
 /-- Functions in the range of `T_K` (pointwise version) are continuous. -/
 theorem continuous_integralOp_of_continuous {K : X → X → 𝕜}
     (hKc : Continuous fun p : X × X => K p.1 p.2) (g : Lp 𝕜 2 μ) :
     Continuous (integralOp μ K g) := by
-  sorry
+  obtain ⟨M, hM0, hM⟩ := exists_bnd hKc
+  have hgi : Integrable (g : X → 𝕜) μ := (Lp.memLp g).integrable (by norm_num)
+  refine continuous_of_dominated (bound := fun y => M * ‖(g : X → 𝕜) y‖) ?_ ?_ ?_ ?_
+  · exact fun x =>
+      ((hKc.comp' (continuous_const.prodMk continuous_id)).aestronglyMeasurable).mul
+        (Lp.aestronglyMeasurable g)
+  · intro x
+    filter_upwards with y
+    rw [norm_mul]
+    exact mul_le_mul_of_nonneg_right (hM x y) (norm_nonneg _)
+  · exact hgi.norm.const_mul M
+  · filter_upwards with y
+    exact (hKc.comp' (continuous_id.prodMk continuous_const)).mul continuous_const
 
 /-- **`T_K` is a positive operator** when `K` is a Mercer kernel. -/
 theorem isPositive_mercerCLM {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K) :
@@ -272,7 +384,8 @@ theorem norm_integralOp_le_of_mem_ball {K : X → X → 𝕜}
     (hKc : Continuous fun p : X × X => K p.1 p.2) {g : Lp 𝕜 2 μ}
     (hg : ‖g‖ ≤ 1) (x : X) :
     ‖integralOp μ K g x‖ ≤ Real.sqrt (∫ y, ‖K x y‖ ^ 2 ∂μ) := by
-  sorry
+  refine le_trans (norm_integral_mul_le (isL2Symbol_of_continuous hKc x) g) ?_
+  nlinarith [Real.sqrt_nonneg (∫ y, ‖K x y‖ ^ 2 ∂μ), norm_nonneg g]
 
 end OperatorProperties
 
