@@ -594,6 +594,92 @@ noncomputable def sqrtCLM : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 2 μ :=
       rw [hx]
       exact norm_integralOp_sqrtSymbol_le d hK hM g x)
 
+-- Coefficientwise description of a finite `L²` combination.
+private theorem coeFn_finset_sum_smul {ι : Type*} (s : Finset ι) (c : ι → 𝕜)
+    (F : ι → Lp 𝕜 2 μ) :
+    ((∑ i ∈ s, c i • F i : Lp 𝕜 2 μ) : X → 𝕜)
+      =ᵐ[μ] fun x => ∑ i ∈ s, c i * (F i : X → 𝕜) x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using Lp.coeFn_zero 𝕜 2 μ
+  | insert a t ha ih =>
+      rw [Finset.sum_insert ha]
+      filter_upwards [Lp.coeFn_add (c a • F a) (∑ i ∈ t, c i • F i),
+        Lp.coeFn_smul (c a) (F a), ih] with x h1 h2 h3
+      rw [h1]
+      simp only [Pi.add_apply, h2, h3, Pi.smul_apply, smul_eq_mul]
+      rw [Finset.sum_insert ha]
+
+-- Pythagoras against a finite piece of an orthonormal family whose coefficients are the
+-- Fourier coefficients of `u`.
+private theorem norm_sq_sub_partial_aux {ι : Type*} (u : Lp 𝕜 2 μ) (v : ι → Lp 𝕜 2 μ)
+    (hv : Orthonormal 𝕜 v) (c : ι → 𝕜) (hcu : ∀ n, ⟪v n, u⟫_𝕜 = c n) (s : Finset ι) :
+    ‖u - ∑ n ∈ s, c n • v n‖ ^ 2 = ‖u‖ ^ 2 - ∑ n ∈ s, ‖c n‖ ^ 2 := by
+  classical
+  have hvv : ∀ m : ι, ⟪v m, v m⟫_𝕜 = 1 := by
+    intro m
+    rw [inner_self_eq_norm_sq_to_K, hv.1 m]
+    norm_num
+  have hvP : ∀ m ∈ s, ⟪v m, ∑ n ∈ s, c n • v n⟫_𝕜 = c m := by
+    intro m hm
+    rw [inner_sum, Finset.sum_eq_single m]
+    · rw [inner_smul_right, hvv m, mul_one]
+    · intro n _ hnm
+      rw [inner_smul_right, hv.2 (Ne.symm hnm), mul_zero]
+    · intro hms
+      exact absurd hm hms
+  have hPS : ⟪∑ n ∈ s, c n • v n, u⟫_𝕜 = ((∑ n ∈ s, ‖c n‖ ^ 2 : ℝ) : 𝕜) := by
+    rw [sum_inner, RCLike.ofReal_sum]
+    refine Finset.sum_congr rfl fun n _ => ?_
+    rw [inner_smul_left, hcu n, RCLike.conj_mul, ← RCLike.ofReal_pow]
+  have hPP : ⟪∑ n ∈ s, c n • v n, ∑ n ∈ s, c n • v n⟫_𝕜 = ((∑ n ∈ s, ‖c n‖ ^ 2 : ℝ) : 𝕜) := by
+    rw [sum_inner, RCLike.ofReal_sum]
+    refine Finset.sum_congr rfl fun n hn => ?_
+    rw [inner_smul_left, hvP n hn, RCLike.conj_mul, ← RCLike.ofReal_pow]
+  have hSP : ⟪u, ∑ n ∈ s, c n • v n⟫_𝕜 = ((∑ n ∈ s, ‖c n‖ ^ 2 : ℝ) : 𝕜) := by
+    rw [← inner_conj_symm, hPS, RCLike.conj_ofReal]
+  rw [norm_sq_eq_re_inner (𝕜 := 𝕜), inner_sub_sub_self, hSP, hPS, hPP]
+  have hsimp : ⟪u, u⟫_𝕜 - ((∑ n ∈ s, ‖c n‖ ^ 2 : ℝ) : 𝕜) - ((∑ n ∈ s, ‖c n‖ ^ 2 : ℝ) : 𝕜)
+      + ((∑ n ∈ s, ‖c n‖ ^ 2 : ℝ) : 𝕜) = ⟪u, u⟫_𝕜 - ((∑ n ∈ s, ‖c n‖ ^ 2 : ℝ) : 𝕜) := by
+    ring
+  rw [hsimp, map_sub, RCLike.ofReal_re, ← norm_sq_eq_re_inner (𝕜 := 𝕜)]
+
+private theorem pairAdd_smul (g : Lp 𝕜 2 μ) (c : 𝕜) (u : Lp 𝕜 2 μ) :
+    pairAdd μ g (c • u) = c * pairAdd μ g u := by
+  change conj ⟪c • u, starLp g⟫_𝕜 = c * conj ⟪u, starLp g⟫_𝕜
+  rw [inner_smul_left, map_mul, RCLike.conj_conj]
+
+private theorem norm_pairAdd_le (g u : Lp 𝕜 2 μ) : ‖pairAdd μ g u‖ ≤ ‖u‖ * ‖g‖ := by
+  change ‖conj ⟪u, starLp g⟫_𝕜‖ ≤ _
+  rw [RCLike.norm_conj, ← norm_starLp g]
+  exact norm_inner_le_norm _ _
+
+-- The eigenfunctions have unit `L²` mass.
+private theorem integral_normSq_eigfun' (n : d.ι) : ∫ z, ‖d.eigfun n z‖ ^ 2 ∂μ = 1 := by
+  have h1 : ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n),
+      ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)⟫_𝕜 = 1 := by
+    rw [inner_self_eq_norm_sq_to_K, d.orthonormal.1 n]
+    norm_num
+  rw [L2.inner_def] at h1
+  have h2 : ((∫ z, ‖d.eigfun n z‖ ^ 2 ∂μ : ℝ) : 𝕜) = 1 := by
+    rw [← h1, ← integral_ofReal]
+    refine integral_congr_ae ?_
+    filter_upwards [ContinuousMap.coeFn_toLp (E := 𝕜) (p := 2) (μ := μ) (𝕜 := 𝕜)
+      (d.eigfun n)] with z hz
+    rw [hz, RCLike.inner_apply, RCLike.mul_conj, ← RCLike.ofReal_pow]
+  exact_mod_cast h2
+
+-- Continuous real functions on the compact base space are integrable.
+private theorem integrable_of_cont_real {f : X → ℝ} (hf : Continuous f) : Integrable f μ := by
+  obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn hf.continuousOn
+  exact memLp_one_iff_integrable.mp
+    (MemLp.of_bound hf.aestronglyMeasurable C
+      (Filter.Eventually.of_forall fun z => hC z (Set.mem_univ _)))
+
+private theorem sqrtCLM_coeFn_ae (g : Lp 𝕜 2 μ) :
+    (sqrtCLM d hK g : X → 𝕜) =ᵐ[μ] integralOp μ (sqrtSymbol d) g :=
+  MemLp.coeFn_toLp (memLp_integralOp_sqrtSymbol d hK g)
+
 /-- Diagonalization of the square root: `T_S g = ∑ₙ √λₙ ⟪eₙ, g⟫ eₙ`. -/
 theorem sqrtCLM_hasSum (g : Lp 𝕜 2 μ) :
     HasSum
