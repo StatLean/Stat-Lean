@@ -1,2 +1,0 @@
-import StatLean.TimeSeries.Mixing.LimitTheorems
-#print axioms StatLean.TimeSeries.summable_acvf_and_var_rate_of_bounded
