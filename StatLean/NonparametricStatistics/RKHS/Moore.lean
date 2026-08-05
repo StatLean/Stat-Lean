@@ -16,6 +16,19 @@ scalar kernel functions `K : X → X → 𝕜`:
 Together with `isKernelFun_scalarKernel` this gives the classical one-to-one
 correspondence between kernel functions on `X` and RKHSs on `X`.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 2, §2.2, Theorem 2.14 (Moore's theorem), Definition 2.15 ($\mathcal{H}(K)$), and
+Remark 2.16.
+
+**Proof formalization notes.** The construction is not rebuilt: `OfScalarKernel` is Mathlib's
+`RKHS.OfKernel` applied to the operator matrix `x y ↦ K x y • 1`, and Moore's theorem is Mathlib's
+`kernel_ofKernel` read back through the scalar bridge `isKernelFun_iff_posSemidef_toCLMMatrix`
+(proved via `RKHS.posSemidef_tfae`, with a `Finsupp`↔`Fin` quadratic-form transfer that merges
+repeated points' coefficients). In `exists_rkhs` the witness universe must be pinned to `Type (max
+uK uX)`: with an auto-bound `∃ H : Type _` the statement quantifies over an *independent* universe
+and is false (a discrete kernel on a large `X` forces `X` to inject into `H`).
+
 **Bibliographic comments.** E. H. Moore, *General Analysis, Part I*, Mem. Amer. Philos.
 Soc. (1935); N. Aronszajn, Trans. Amer. Math. Soc. **68** (1950), Part I §2
 (the "Moore–Aronszajn theorem").

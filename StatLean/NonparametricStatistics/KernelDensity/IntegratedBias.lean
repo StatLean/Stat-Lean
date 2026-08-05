@@ -12,6 +12,10 @@ $$ \int b^2(x)\,dx \;\le\; C_2^2\,h^{2\beta}, \qquad
    C_2 = \frac{L}{\ell!}\int|u|^{\beta}|K(u)|\,du $$
 — the same constant as the pointwise bias bound, now in integrated form.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.2.3, Proposition 1.5 (integrated squared bias
+bound $C_2^2 h^{2\beta}$ over $\mathcal{P}_H(\beta, L)$).
+
 **Proof formalization notes.** For a.e. `x` (Tonelli gives `∫∫|K(u)|·p(x+uh)·du·dx =
 ∫|K| < ∞`, hence a.e.-`x` integrability), the bias equals
 `∫K(u)·(p(x+uh) − ∑_{j≤ℓ} p⁽ʲ⁾(x)(uh)ʲ/j!)du` after moment cancellation. The `L²(dx)`-norm is

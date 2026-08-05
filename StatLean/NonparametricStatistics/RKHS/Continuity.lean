@@ -10,6 +10,17 @@ continuous, then:
 * every `f ∈ H` is a continuous function on `X`, since
   `|f(y) − f(y₀)| ≤ ‖f‖·‖k_y − k_{y₀}‖`.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 2, §2.3, Theorem 2.17 (continuous kernels have continuous functions), via the norm
+identity $\|k_y - k_{y_0}\|^2 = K(y,y) - K(y,y_0) - K(y_0,y) + K(y_0,y_0)$.
+
+**Proof formalization notes.** The proof of `continuous_kernelFun` first makes `scalarKernel H`
+opaque (`obtain ⟨K, hKd⟩ : ∃ K, scalarKernel H = K`): otherwise the elaborator whnf-unfolds the
+kernel through `RKHS.kerFun`'s adjoint during `Continuous.comp` unification and exhausts the
+heartbeat budget. Membership continuity then follows from $|f(y) - f(y_0)| \le \|f\|\,\|k_y -
+k_{y_0}\|$ exactly as in the book.
+
 **Bibliographic comments.** N. Aronszajn, Trans. Amer. Math. Soc. **68** (1950), §I.5.
 -/
 

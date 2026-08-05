@@ -14,6 +14,18 @@ Forward direction: `K(x,y) = ⟪k_x, k_y⟫` and the polarized Parseval identity
 the analysis operator is isometric on the dense span of the kernel functions, hence
 extends to an isometry, which characterizes Parseval frames.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 2, §2.1, Theorem 2.10 (Papadakis' criterion: Parseval frames are exactly the
+families expanding the kernel pointwise) and Remark 2.11.
+
+**Proof formalization notes.** The forward direction is the polarized Parseval identity evaluated
+at kernel functions. For the converse, the analysis operator is shown norm-nonincreasing
+everywhere (partial sums are dominated on the *dense span* of the kernel functions and the
+domination is a closed condition), then isometric on that dense span, hence isometric everywhere
+by continuity (`Continuous.ext_on`) — the book's "isometric on a dense subspace extends" device
+made explicit.
+
 **Bibliographic comments.** Attributed to M. Papadakis; see M. Papadakis,
 *On the dimension function of orthonormal wavelets*, Proc. Amer. Math. Soc. **128**
 (2000), 2043–2049, and V. I. Paulsen's course notes on reproducing kernels for this

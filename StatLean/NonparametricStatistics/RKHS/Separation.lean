@@ -13,6 +13,19 @@ Binary classification background for the maximal margin classifier: labeled data
 * a separating normal vector can always be replaced by its orthogonal projection onto
   the span of the data, without changing any of the constraint values.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 8, §§8.3–8.4, Definition 8.1 (linearly separable data), Lemma 8.2 (distance to an
+affine hyperplane), Proposition 8.3 (the separating normal can be taken in the span of the data).
+
+**Proof formalization notes.** Separation is encoded as $0 < \lambda_i(\langle x_i, v\rangle -
+c)$, uniform over labels. `SeparatesData.ne_zero` requires *both* label signs to occur: with a
+single sign the degenerate normal $v = 0$ (with a suitable offset) vacuously separates — e.g. all
+labels $+1$ and $c = -1$ — so the book's implicit two-nonempty-classes assumption is made an
+explicit hypothesis. The distance formula is proved via the orthogonal projection onto the span of
+the normal, and span-reduction via `starProjection` identities on any closed subspace containing
+the data.
+
 **Bibliographic comments.** The geometry of separating hyperplanes for classification
 goes back to R. A. Fisher (1936) and F. Rosenblatt's perceptron (1958); the Hilbert-space
 formulation is standard in statistical learning theory, cf. V. N. Vapnik, *The Nature of

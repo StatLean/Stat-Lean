@@ -14,6 +14,10 @@ Also here: membership in an ellipsoid with `β > 1/2` forces absolute summabilit
 coefficients — so the summability assumption of the risk decomposition is *derived* on the
 ellipsoid, never assumed there.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.7.2, Lemma 1.8 (bounds on the aliasing
+residuals $\alpha_j$ over the ellipsoid $\Theta(\beta, Q)$).
+
 **Proof formalization notes.** Substituting the (uniformly convergent) series into the design
 sum and using discrete orthonormality for `m ≤ n − 1` leaves
 `αⱼ = ∑_{m≥n} θ_m·(n⁻¹∑ₛφ_m(s/n)φⱼ(s/n))`, and each averaged product is bounded by `2`

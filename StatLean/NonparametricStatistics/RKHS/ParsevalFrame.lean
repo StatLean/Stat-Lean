@@ -17,6 +17,19 @@ independence are *not* required.  We prove the standard characterizations:
 * (dilation) every Parseval frame is the compression of an orthonormal basis of a larger
   Hilbert space: there is an isometry `V : E → ℓ²(ι)` with `V* (δ_i) = f_i`.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 2, §2.1, Definition 2.6 (Parseval frames), Proposition 2.7 (compressions of
+orthonormal bases), Proposition 2.8 (analysis-operator and reconstruction characterizations),
+Proposition 2.9 (the Han–Larson dilation).
+
+**Proof formalization notes.** Frames are defined by the unordered `HasSum` Parseval identity; the
+analysis operator lands in `lp (fun _ : ι => 𝕜) 2` and the equivalence of the three
+characterizations goes through `Memℓp` of the coefficient family plus the `lp`-norm/`HasSum`
+dictionary. The dilation (Proposition 2.9) is stated via the adjoint on the canonical basis,
+`V.toContinuousLinearMap.adjoint (lp.single 2 i 1) = f i`, which requires `[DecidableEq ι]` for
+`lp.single`.
+
 **Bibliographic comments.** Frames originate with R. J. Duffin and A. C. Schaeffer,
 *A class of nonharmonic Fourier series*, Trans. Amer. Math. Soc. **72** (1952), 341–366.
 The dilation theorem is due to D. Han and D. R. Larson, *Frames, bases and group

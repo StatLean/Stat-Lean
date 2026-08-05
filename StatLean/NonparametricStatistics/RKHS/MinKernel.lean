@@ -21,6 +21,18 @@ Two classical positivity computations:
 The RKHS of the min kernel (Cameron–Martin space of Brownian motion) is identified with
 the range of the Volterra operator in `RangeSpace.lean`.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 2, §2.3.2, Lemma 2.20 (the all-ones matrix $J_n$) and Proposition 2.21 (the min
+kernel on $[0,\infty)$).
+
+**Proof formalization notes.** Instead of the book's inductive block decomposition, positivity of
+the min kernel is exhibited through the feature map $x \mapsto \mathbf{1}_{[0,x]} \in
+L^2[0,\infty)$ with $\langle \mathbf{1}_{[0,x]}, \mathbf{1}_{[0,y]}\rangle = \min(x,y)$ — the same
+identity that later identifies this space as the range of the Volterra operator (book §11.2.1).
+The $J_n$ spectrum is captured as: PSD, eigenvalue $n$ on the constant vector, every eigenvalue in
+$\{0, n\}$ (from $J_n^2 = n J_n$), and $\operatorname{rank} J_n = 1$.
+
 **Bibliographic comments.** The min kernel is the covariance of Brownian motion
 (N. Wiener 1923); its RKHS was identified by R. H. Cameron and W. T. Martin, Ann. of
 Math. **48** (1947), 385–392, and the general covariance–RKHS correspondence is due to

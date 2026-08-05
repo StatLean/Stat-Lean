@@ -19,6 +19,21 @@ Main results here:
   of a finite family of vectors is positive semidefinite, and positive definite iff the
   family is linearly independent.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 2, §2.2, Definition 2.12 (kernel functions) and Proposition 2.13 (reproducing
+kernels are kernel functions); §2.3.4, Definition 2.22 and Proposition 2.23 (Grammians); Chapter
+8, §8.2 (kernels induced by feature maps).
+
+**Proof formalization notes.** `IsKernelFun` builds Hermitian symmetry into the definition: over
+`ℝ` positivity of the real quadratic form does *not* imply symmetry (the book's Remark 2.16
+example $K(1,2) = 1$, $K(2,1) = -1$), and the classical convention quantifies over complex
+scalars; the built-in symmetry makes the real and complex cases uniform. Points are not required
+to be distinct (coefficient merging makes the two formulations equivalent). Positivity of
+Gram/feature kernels is the single computation $\sum_{ij} \bar a_i a_j \langle\varphi(x_i),
+\varphi(x_j)\rangle = \|\sum_i a_i \varphi(x_i)\|^2$, and Proposition 2.13 is its specialization
+$\varphi = x \mapsto k_x$ via `scalarKernel_eq_featureKernel`.
+
 **Bibliographic comments.** Positive definite functions in this sense were introduced by
 E. H. Moore (1935, under the name "positive Hermitian matrices") and J. Mercer,
 *Functions of positive and negative type*, Philos. Trans. Roy. Soc. A **209** (1909),

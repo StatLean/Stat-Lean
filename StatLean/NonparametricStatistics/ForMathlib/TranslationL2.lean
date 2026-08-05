@@ -19,6 +19,9 @@ error of kernel density estimators acquires its `o(1)`: the difference between t
 integrand and its small-bandwidth limit is controlled by `L²`-moduli of translates of the
 (weak) second derivative.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Appendix, Lemma A.2 ($L^2$-continuity of translation).
+
 **Proof formalization notes.** Stated with the lower Lebesgue integral (no integrability side
 conditions; the hypothesis `MemLp f 2` makes the value finite). Proof route: density of
 continuous compactly supported functions in `L²`

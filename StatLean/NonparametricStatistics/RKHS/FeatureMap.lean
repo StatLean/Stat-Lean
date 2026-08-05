@@ -15,6 +15,16 @@ records the two directions of the "kernel trick":
   (via Moore's theorem), so optimizing over the induced function class is optimizing
   over an RKHS.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 8, §8.2 (the kernel method: feature maps, induced kernels, and predictors).
+
+**Proof formalization notes.** The two directions of the kernel trick: `featureKernel` positivity
+lives in `KernelFunction.lean`, and the converse — every kernel function is a feature-map kernel —
+instantiates Moore's theorem with $\varphi = x \mapsto k_x$. As in `Moore.lean`, the feature-space
+universe must be pinned to `Type (max uK uX)` (auto-bound `Type _` would quantify over an
+independent universe and fail).
+
 **Bibliographic comments.** The kernel trick in statistical learning goes back to
 M. Aizerman, E. Braverman and L. Rozonoer, *Theoretical foundations of the potential
 function method*, Autom. Remote Control **25** (1964), 821–837, and was popularized by

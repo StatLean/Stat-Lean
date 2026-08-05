@@ -10,6 +10,17 @@ particular they consist of the same functions on `X` with the same norms.  The p
 matches finite combinations of kernel functions (where the inner products are determined
 by the kernel) and extends by density (`RKHS.kerFun_dense`).
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 2, §2.1, Proposition 2.3 (two RKHSs with the same kernel coincide, with equal
+norms).
+
+**Proof formalization notes.** "Coincide" is formalized as an isometric linear equivalence
+commuting with point evaluation. The equivalence is produced by `LinearEquiv.extendOfIsometry`
+applied to the identity on coefficient families: `Finsupp.linearCombination` of the kernel
+functions has dense range in both spaces (`RKHS.kerFun_dense`) and equal Gram norms (the kernel
+double sum), which is precisely the book's compute-on-the-span-and-extend argument.
+
 **Bibliographic comments.** N. Aronszajn, Trans. Amer. Math. Soc. **68** (1950), Part I
 §2, Théorème (uniqueness half of the Moore–Aronszajn correspondence).
 -/

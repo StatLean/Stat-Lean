@@ -13,6 +13,10 @@ $$ \sup_{x_0}\ \sup_{p \in \mathcal P(\beta,L)}
 with `C = C(β, L, α, K)`. (The rate `n^{−β/(2β+1)}` is optimal over the class; lower bounds
 are minimax-theory material outside this area.)
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.2.1, Theorem 1.1 (pointwise rate
+$n^{-2\beta/(2\beta+1)}$ of the kernel density estimator over $\mathcal{P}(\beta, L)$).
+
 **Proof formalization notes.** MSE = bias² + variance (`kdeMseAt_eq_bias_sq_add_variance`);
 the bias term is `(C₂·h^β)²` (`kde_bias_abs_le`), the variance term `C₁/(nh)`
 (`kde_variance_le`) with `pmax` supplied *internally* by `holder_density_uniform_bound` — the

@@ -23,8 +23,10 @@ assumptions of its risk analysis:
   `C* = max{2K_max/λ₀, 4K_max·a₀/λ₀}`, `q₁ = C*·L/ℓ!`, `q₂ = σ²_max·C*²`, and the assembled
   pointwise-rate constant `q₁²·α^{2β} + q₂/α`.
 
-**Reference.** Classical local polynomial regression; original sources in the bibliographic
-comments below.
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.6: Definition 1.8 (the local polynomial
+estimator $LP(\ell)$), Eqs. (1.65)–(1.67) (objective, normal equations, weights), and Assumptions
+(LP1)–(LP3).
 
 **Proof formalization notes.**
 

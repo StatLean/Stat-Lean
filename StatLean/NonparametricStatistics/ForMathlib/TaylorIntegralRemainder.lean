@@ -17,6 +17,10 @@ This is the remainder form consumed by the *integrated* bias analysis of kernel 
 Nikol'skii classes: unlike the Lagrange form it is linear in `f^{(ℓ)}` along the segment, so
 `L²`-moduli of continuity can be pulled through by the generalized Minkowski inequality.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.2.3 (integral-remainder Taylor tooling for the
+integrated bias bound of Proposition 1.5).
+
 **Proof formalization notes.** Not available in Mathlib in this form (Mathlib's
 `Mathlib.Analysis.Calculus.Taylor` provides mean-value-type remainders). Proof: induction on
 `ℓ` with integration by parts in `τ`

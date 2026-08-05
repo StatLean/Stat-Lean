@@ -10,6 +10,16 @@ truncating the uniformly convergent basis expansion of `K`
 `T_K` in operator norm, and the space of compact operators is closed
 (`isCompactOperator_of_tendsto`).
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 11, §11.3 (compactness of the Mercer integral operator — implicit in the book's
+proof of Theorem 11.15 via Arzelà–Ascoli).
+
+**Proof formalization notes.** Compactness is obtained without Arzelà–Ascoli: truncating the
+uniformly convergent basis expansion of $K$ gives finite-rank integral operators (sums of rank-one
+operators) with $\|T_K - T_{K_s}\| \le \mu(X)\,\sup|K - K_s| \to 0$, and the space of compact
+operators is closed (`isCompactOperator_of_tendsto`).
+
 **Bibliographic comments.** Compactness of integral operators with continuous kernels
 is due to D. Hilbert (1904) and E. Schmidt (1907); the finite-rank approximation
 argument is standard, cf. F. Smithies, *Integral Equations* (CUP, 1958), Ch. 7.

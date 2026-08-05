@@ -13,7 +13,9 @@ noise `ξ`) and the two basic estimator notions:
   $f_n(x) = \dfrac{\sum_i Y_i K((X_i - x)/h)}{\sum_j K((X_j - x)/h)}$, set to `0` when the
   denominator vanishes.
 
-**Reference.** Classical kernel regression; original sources in the bibliographic comments.
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.5: nonparametric regression, the
+Nadaraya–Watson estimator, Eqs. (1.62)–(1.63), and Definition 1.7 (linear estimators).
 
 **Proof formalization notes.**
 

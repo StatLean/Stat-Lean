@@ -13,6 +13,10 @@ and `h ≥ 1/(2n)`, the LP(`ℓ`) weights satisfy, uniformly over `t ∈ [0,1]`:
 
 with the explicit constant `C* = lpWeightConst Kmax lam0 a₀ = max{2K_max/λ₀, 4K_max·a₀/λ₀}`.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.6.1, Lemma 1.3 (bounds on the LP weights,
+constant $C_* = \max\{2K_{\max}/\lambda_0,\ 4K_{\max}a_0/\lambda_0\}$).
+
 **Proof formalization notes.** (iii) is immediate from the kernel's support. For (i):
 `|W*ᵢ| ≤ (nh)⁻¹·‖B⁻¹U(zᵢ)K(zᵢ)‖ ≤ (nh)⁻¹·K_max·‖U(zᵢ)‖/λ₀` by the inverse bound
 (`lpMatrix_inv_mulVec_sq_le`); on `|z| ≤ 1`, `‖U(z)‖² = ∑ (z^k/k!)² ≤ ∑ 1/k! ≤ e ≤ 4`

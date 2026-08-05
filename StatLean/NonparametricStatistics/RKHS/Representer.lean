@@ -18,6 +18,19 @@ the values at the data points.
   convex and continuous: the parallelogram law gives uniqueness, and coercivity via an
   affine minorant of `L` gives existence.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 8, §8.6, Theorem 8.7 (the representer theorem) and Theorem 8.8 (existence and
+uniqueness for convex ridge losses).
+
+**Proof formalization notes.** Theorem 8.7 is split by the strength of monotonicity: for
+*strictly* increasing $W$ every minimizer lies in the data span (the book's proof implicitly uses
+strictness in its strict inequality), while for merely monotone $W$ the projection of a minimizer
+is again a minimizer. In Theorem 8.8 the continuity of the convex loss is *derived* (convex
+functions on the finite-dimensional value space are continuous), existence comes from an affine
+minorant (`ConvexOn.exists_affine_le`) giving coercivity, hence a minimum on a large closed ball
+of the finite-dimensional data span, and uniqueness is the book's parallelogram/midpoint argument.
+
 **Bibliographic comments.** G. Kimeldorf and G. Wahba, *Some results on Tchebycheffian
 spline functions*, J. Math. Anal. Appl. **33** (1971), 82–95; the general form with an
 arbitrary increasing regularizer is due to B. Schölkopf, R. Herbrich and A. J. Smola,

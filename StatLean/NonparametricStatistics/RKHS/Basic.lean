@@ -15,6 +15,20 @@ Mathlib's inner product `⟪·,·⟫_𝕜` is conjugate-linear in the *first* sl
 classical `f(x) = ⟨f, k_x⟩` (conjugate-linear in the second slot) appears here as
 `f x = ⟪kernelFun H x, f⟫_𝕜`, and `K(x,y) = ⟪kernelFun H x, kernelFun H y⟫_𝕜`.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 1, §1.1, Definitions 1.1–1.2 (RKHS, kernel functions, the reproducing kernel) and
+the basic identities $K(x,y) = \langle k_y, k_x\rangle$, $\|E_y\|^2 = K(y,y)$ (p. 4); Chapter 2,
+§2.1, Lemma 2.2 (norm convergence implies pointwise convergence).
+
+**Proof formalization notes.** The file is a thin scalar layer over Mathlib's vector-valued `RKHS`
+class (`Mathlib.Analysis.InnerProductSpace.Reproducing`, itself modeled on this book): `kernelFun
+H x` is `RKHS.kerFun H x 1` and `scalarKernel H x y = (kernelFun H y) x`. Mathlib's inner product
+is conjugate-linear in the *first* slot, so the book's $f(x) = \langle f, k_x\rangle$ becomes `f x
+= ⟪kernelFun H x, f⟫` and $K(x,y) = \langle k_y, k_x\rangle$ becomes `⟪kernelFun H x, kernelFun H
+y⟫`; all conjugation orientations downstream follow this flip. The exact evaluation norm
+`norm_evalCLM` is the Riesz form `evalCLM = innerSL (kernelFun H x)` plus `innerSL_apply_norm`.
+
 **Bibliographic comments.** The abstract theory of reproducing kernels was systematized
 by N. Aronszajn, *Theory of reproducing kernels*, Trans. Amer. Math. Soc. **68** (1950),
 337–404; the reproducing identity via the Riesz representation theorem goes back to

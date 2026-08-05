@@ -17,6 +17,22 @@ norm solution `w` exists (Hilbert projection theorem), that `w` lies in the span
 data, and that the associated hyperplane maximizes the minimal margin among all
 separating hyperplanes.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 8, §8.4, Definition 8.5 (maximal margin hyperplane) and Theorem 8.6 (existence,
+uniqueness, span membership, and margin optimality of the minimal-norm solution); §8.5 gives the
+RKHS reading.
+
+**Proof formalization notes.** Closedness of the normalized feasible set is proved by *offset
+elimination*: the constraints pin $c$ between the negative-label lower bounds and positive-label
+upper bounds, exhibiting the set as a finite intersection of closed half-space conditions in $v$
+alone. Existence and uniqueness of the minimal-norm solution are the Hilbert projection theorem
+plus the parallelogram law; margin optimality follows the book's rescaling argument, with the
+degenerate hyperplanes ($v = 0$, empty or full) handled via `Metric.infDist` conventions. The
+headline theorem requires both classes nonempty: with one label sign, $0$ is feasible and minimal
+but its "hyperplane" has zero margin (compiled counterexample: $n = 1$, $x = 0$, label $+1$), so
+the nondegenerate core `w ≠ 0` is derived from the two-sign hypothesis.
+
 **Bibliographic comments.** The optimal (maximal-margin) hyperplane is due to
 V. N. Vapnik and A. Ya. Chervonenkis (1964, 1974) and B. E. Boser, I. M. Guyon and
 V. N. Vapnik, COLT (1992); uniqueness via strict convexity of the norm is classical.
