@@ -51,6 +51,106 @@ open StatLean.StatisticalModels
 
 variable {n p q : ℕ}
 
+/-! ### LEAN-ONLY plumbing
+
+The block-diagonal PSD lemma, the stacked design matrix `M = [Z 1; 1 0]` realizing the pair
+map `(b, ε) ↦ (Z b + ε, b)` on the sum index, and its conjugation identity
+`M · diag(G, R) · Mᵀ = [Z G Zᵀ + R, Z G; (Z G)ᵀ, G]` — the block bookkeeping of M3a.
+-/
+
+/-- LEAN-ONLY: the matrix action on Euclidean space is measurable. -/
+private theorem measurable_matAct {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂] [DecidableEq ι₁]
+    (A : Matrix ι₂ ι₁ ℝ) :
+    Measurable fun x : EuclideanSpace ℝ ι₁ => Matrix.toEuclideanLin (𝕜 := ℝ) A x :=
+  ((Matrix.toEuclideanLin (𝕜 := ℝ) A).continuous_of_finiteDimensional).measurable
+
+/-- LEAN-ONLY: the joint LMM map `(b, ε) ↦ (Xβ + Z b + ε, b)` is measurable. -/
+private theorem measurable_jointMap (D : LMMDesign n p q) (β : EuclideanSpace ℝ (Fin p)) :
+    Measurable fun be : EuclideanSpace ℝ (Fin q) × EuclideanSpace ℝ (Fin n) =>
+      (Matrix.toEuclideanLin (𝕜 := ℝ) D.X β + Matrix.toEuclideanLin (𝕜 := ℝ) D.Z be.1
+          + be.2,
+        be.1) :=
+  ((((measurable_matAct D.Z).comp measurable_fst).const_add _).add measurable_snd).prodMk
+    measurable_fst
+
+/-- LEAN-ONLY: the zero vector assembles from zero blocks. -/
+private theorem blockPair_zero {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂] :
+    blockPair (0 : EuclideanSpace ℝ ι₁) (0 : EuclideanSpace ℝ ι₂) = 0 := by
+  ext k; cases k <;> rfl
+
+/-- LEAN-ONLY: the quadratic form of a block matrix splits into its four block terms. -/
+private theorem dotProduct_fromBlocks_mulVec {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
+    (A : Matrix ι₁ ι₁ ℝ) (B : Matrix ι₁ ι₂ ℝ) (C : Matrix ι₂ ι₁ ℝ) (E : Matrix ι₂ ι₂ ℝ)
+    (x : ι₁ ⊕ ι₂ → ℝ) :
+    x ⬝ᵥ (Matrix.fromBlocks A B C E) *ᵥ x
+      = ((x ∘ Sum.inl) ⬝ᵥ A *ᵥ (x ∘ Sum.inl) + (x ∘ Sum.inl) ⬝ᵥ B *ᵥ (x ∘ Sum.inr))
+        + ((x ∘ Sum.inr) ⬝ᵥ C *ᵥ (x ∘ Sum.inl) + (x ∘ Sum.inr) ⬝ᵥ E *ᵥ (x ∘ Sum.inr)) := by
+  rw [Matrix.fromBlocks_mulVec]
+  simp [dotProduct, Fintype.sum_sum_type, Finset.sum_add_distrib, mul_add]
+
+/-- LEAN-ONLY: a block-diagonal matrix with PSD blocks is PSD (no cross terms). -/
+private theorem posSemidef_fromBlocks_diag {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
+    {S₁₁ : Matrix ι₁ ι₁ ℝ} {S₂₂ : Matrix ι₂ ι₂ ℝ} (h₁ : S₁₁.PosSemidef)
+    (h₂ : S₂₂.PosSemidef) :
+    (Matrix.fromBlocks S₁₁ (0 : Matrix ι₁ ι₂ ℝ) (0 : Matrix ι₂ ι₁ ℝ) S₂₂).PosSemidef := by
+  rw [Matrix.posSemidef_iff_dotProduct_mulVec]
+  refine ⟨h₁.1.fromBlocks (by simp) h₂.1, fun x => ?_⟩
+  have e₁ := (Matrix.posSemidef_iff_dotProduct_mulVec.mp h₁).2 (x ∘ Sum.inl)
+  have e₂ := (Matrix.posSemidef_iff_dotProduct_mulVec.mp h₂).2 (x ∘ Sum.inr)
+  simp only [star_trivial] at e₁ e₂ ⊢
+  rw [dotProduct_fromBlocks_mulVec]
+  simp only [Matrix.zero_mulVec, dotProduct_zero, add_zero, zero_add]
+  linarith
+
+/-- LEAN-ONLY: the coordinates of the first block. -/
+private theorem ofLp_blockFst {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
+    (w : EuclideanSpace ℝ (ι₁ ⊕ ι₂)) :
+    WithLp.ofLp (blockFst w) = WithLp.ofLp w ∘ Sum.inl := rfl
+
+/-- LEAN-ONLY: the coordinates of the second block. -/
+private theorem ofLp_blockSnd {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
+    (w : EuclideanSpace ℝ (ι₁ ⊕ ι₂)) :
+    WithLp.ofLp (blockSnd w) = WithLp.ofLp w ∘ Sum.inr := rfl
+
+/-- LEAN-ONLY: the stacked design matrix `[Z 1; 1 0]` — the linear part of the joint map. -/
+private noncomputable def stackM (D : LMMDesign n p q) :
+    Matrix (Fin n ⊕ Fin q) (Fin q ⊕ Fin n) ℝ :=
+  Matrix.fromBlocks D.Z 1 1 0
+
+/-- LEAN-ONLY: the stacked design acts as `(b, ε) ↦ (Z b + ε, b)`. -/
+private theorem stackM_apply (D : LMMDesign n p q) (w : EuclideanSpace ℝ (Fin q ⊕ Fin n)) :
+    Matrix.toEuclideanLin (𝕜 := ℝ) (stackM D) w
+      = blockPair (Matrix.toEuclideanLin (𝕜 := ℝ) D.Z (blockFst w) + blockSnd w)
+          (blockFst w) := by
+  ext k
+  cases k with
+  | inl i =>
+      simp [stackM, Matrix.toLpLin_apply, Matrix.fromBlocks_mulVec, blockPair,
+        ← ofLp_blockFst, ← ofLp_blockSnd]
+  | inr j =>
+      simp [stackM, Matrix.toLpLin_apply, Matrix.fromBlocks_mulVec, blockPair,
+        ← ofLp_blockFst, ← ofLp_blockSnd]
+
+/-- LEAN-ONLY: the conjugation of the block-diagonal latent covariance by the stacked design
+is the joint covariance of `(Y, b)`. -/
+private theorem stackM_conj (D : LMMDesign n p q) (Gm : Matrix (Fin q) (Fin q) ℝ)
+    (Rm : Matrix (Fin n) (Fin n) ℝ) (hGm : Gmᵀ = Gm) :
+    stackM D * (Matrix.fromBlocks Gm 0 0 Rm) * (stackM D)ᵀ
+      = Matrix.fromBlocks (D.Z * Gm * D.Zᵀ + Rm) (D.Z * Gm) (D.Z * Gm)ᵀ Gm := by
+  rw [stackM, Matrix.fromBlocks_transpose, Matrix.fromBlocks_multiply,
+    Matrix.fromBlocks_multiply]
+  simp [Matrix.transpose_mul, hGm]
+
+/-- LEAN-ONLY: the joint covariance of `(Y, b)` is a genuine covariance. -/
+private theorem posSemidef_lmmJoint (D : LMMDesign n p q) (Gm : Matrix (Fin q) (Fin q) ℝ)
+    (Rm : Matrix (Fin n) (Fin n) ℝ) (hGm : Gm.PosSemidef) (hRm : Rm.PosSemidef) :
+    (Matrix.fromBlocks (D.Z * Gm * D.Zᵀ + Rm) (D.Z * Gm) (D.Z * Gm)ᵀ Gm).PosSemidef := by
+  have hGmT : Gmᵀ = Gm := by
+    rw [← Matrix.conjTranspose_eq_transpose_of_trivial]; exact hGm.1
+  rw [← stackM_conj D Gm Rm hGmT]
+  simpa [Matrix.conjTranspose_eq_transpose_of_trivial] using
+    (posSemidef_fromBlocks_diag hGm hRm).mul_mul_conjTranspose_same (stackM D)
+
 /-- The joint law of `(Y, b)` in the linear mixed model — response first (the conditioning
 block), latent effects second. -/
 noncomputable def lmmJointLaw (D : LMMDesign n p q) (β : EuclideanSpace ℝ (Fin p))
@@ -66,7 +166,8 @@ theorem lmmJointLaw_fst (D : LMMDesign n p q) (β : EuclideanSpace ℝ (Fin p))
     (G : Measure (EuclideanSpace ℝ (Fin q))) (R : Measure (EuclideanSpace ℝ (Fin n)))
     [IsProbabilityMeasure G] [IsProbabilityMeasure R] :
     (lmmJointLaw D β G R).map Prod.fst = lmmLaw D β G R := by
-  sorry
+  rw [lmmJointLaw, Measure.map_map measurable_fst (measurable_jointMap D β)]
+  rfl
 
 /-- **M3a, the Gaussian joint** (`Hen75 §2`; `Rob91 §2`): with Gaussian latent effects and
 noise, `(Y, b)` is the block Gaussian with `Σ_YY = Z G Zᵀ + R`, `Σ_Yb = Z G`, `Σ_bb = G`
@@ -81,7 +182,46 @@ theorem lmmJointLaw_eq_blockGaussian (D : LMMDesign n p q) (β : EuclideanSpace 
             (Matrix.fromBlocks (D.Z * Gm * D.Zᵀ + Rm) (D.Z * Gm)
               (D.Z * Gm)ᵀ Gm)).map
           (sumMeasEquivProd (ι₁ := Fin n) (ι₂ := Fin q)) := by
-  sorry
+  have hGmT : Gmᵀ = Gm := by
+    rw [← Matrix.conjTranspose_eq_transpose_of_trivial]; exact hGm.1
+  have hdiag : (Matrix.fromBlocks Gm (0 : Matrix (Fin q) (Fin n) ℝ)
+      (0 : Matrix (Fin n) (Fin q) ℝ) Rm).PosSemidef := posSemidef_fromBlocks_diag hGm hRm
+  have hprod : (multivariateGaussian (0 : EuclideanSpace ℝ (Fin q)) Gm).prod
+        (multivariateGaussian (0 : EuclideanSpace ℝ (Fin n)) Rm)
+      = (multivariateGaussian (0 : EuclideanSpace ℝ (Fin q ⊕ Fin n))
+          (Matrix.fromBlocks Gm 0 0 Rm)).map
+            (sumMeasEquivProd (ι₁ := Fin q) (ι₂ := Fin n)) := by
+    rw [← multivariateGaussian_fromBlocks_prod (m₁ := (0 : EuclideanSpace ℝ (Fin q)))
+      (m₂ := (0 : EuclideanSpace ℝ (Fin n))) (S₁₁ := Gm) (S₂₂ := Rm) hGm hRm, blockPair_zero]
+  have haff : Measurable fun w : EuclideanSpace ℝ (Fin q ⊕ Fin n) =>
+      Matrix.toEuclideanLin (𝕜 := ℝ) (stackM D) w
+        + blockPair (Matrix.toEuclideanLin (𝕜 := ℝ) D.X β) (0 : EuclideanSpace ℝ (Fin q)) :=
+    (measurable_matAct (stackM D)).add_const _
+  have hcomp : (fun be : EuclideanSpace ℝ (Fin q) × EuclideanSpace ℝ (Fin n) =>
+        (Matrix.toEuclideanLin (𝕜 := ℝ) D.X β + Matrix.toEuclideanLin (𝕜 := ℝ) D.Z be.1
+            + be.2, be.1))
+        ∘ ⇑(sumMeasEquivProd (ι₁ := Fin q) (ι₂ := Fin n))
+      = ⇑(sumMeasEquivProd (ι₁ := Fin n) (ι₂ := Fin q))
+        ∘ fun w : EuclideanSpace ℝ (Fin q ⊕ Fin n) =>
+            Matrix.toEuclideanLin (𝕜 := ℝ) (stackM D) w
+              + blockPair (Matrix.toEuclideanLin (𝕜 := ℝ) D.X β)
+                (0 : EuclideanSpace ℝ (Fin q)) := by
+    funext w
+    simp only [Function.comp_apply, sumMeasEquivProd_apply, stackM_apply]
+    refine Prod.ext ?_ ?_
+    · ext i
+      simp [blockPair, add_assoc]
+      ring
+    · ext j
+      simp [blockPair]
+  rw [lmmJointLaw, hprod,
+    Measure.map_map (measurable_jointMap D β)
+      (sumMeasEquivProd (ι₁ := Fin q) (ι₂ := Fin n)).measurable,
+    hcomp, ← Measure.map_map (sumMeasEquivProd (ι₁ := Fin n) (ι₂ := Fin q)).measurable haff,
+    multivariateGaussian_map_affine (0 : EuclideanSpace ℝ (Fin q ⊕ Fin n))
+      (Matrix.fromBlocks Gm 0 0 Rm) hdiag (stackM D)
+      (blockPair (Matrix.toEuclideanLin (𝕜 := ℝ) D.X β) (0 : EuclideanSpace ℝ (Fin q))),
+    map_zero, zero_add, stackM_conj D Gm Rm hGmT]
 
 /-- **Henderson's regression matrix**: the Gaussian conditioning mean matrix at the mixed-
 model blocks is `G Zᵀ V⁻¹` (`Hen50`; `Rob91 §2`). -/
@@ -91,7 +231,7 @@ theorem condMeanMatrix_lmm (D : LMMDesign n p q) (Gm : Matrix (Fin q) (Fin q) �
     (hGm : Gmᵀ = Gm) :
     condMeanMatrix (D.Z * Gm * D.Zᵀ + Rm) (D.Z * Gm)
       = Gm * D.Zᵀ * (D.Z * Gm * D.Zᵀ + Rm)⁻¹ := by
-  sorry
+  rw [condMeanMatrix, Matrix.transpose_mul, hGm]
 
 /-- **M3b, BLUP = Gaussian conditioning** (`Hen75 §2`; `Rob91 §2`): the Gaussian mixed-model
 joint disintegrates through the Gaussian conditional kernel — whose mean at `y` is the BLUP
@@ -107,7 +247,10 @@ theorem compProd_lmmJointLaw (D : LMMDesign n p q) (β : EuclideanSpace ℝ (Fin
         ⊗ₘ gaussianCondKernel (Matrix.toEuclideanLin (𝕜 := ℝ) D.X β) 0
             (D.Z * Gm * D.Zᵀ + Rm) (D.Z * Gm) Gm
       = lmmJointLaw D β (multivariateGaussian 0 Gm) (multivariateGaussian 0 Rm) := by
-  sorry
+  rw [lmmLaw_multivariateGaussian D β Gm Rm hGm hRm,
+    compProd_gaussianCondKernel (Matrix.toEuclideanLin (𝕜 := ℝ) D.X β) 0
+      (D.Z * Gm * D.Zᵀ + Rm) (D.Z * Gm) Gm (posSemidef_lmmJoint D Gm Rm hGm hRm) hV,
+    lmmJointLaw_eq_blockGaussian D β Gm Rm hGm hRm]
 
 /-- The mean-squared prediction risk of the linear predictor `b̂ = A (Y − Xβ)` — for
 **arbitrary** latent laws (no Gaussianity). -/
