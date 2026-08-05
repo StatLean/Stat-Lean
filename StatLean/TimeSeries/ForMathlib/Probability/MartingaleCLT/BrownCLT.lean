@@ -15,17 +15,34 @@ ARMA quasi-score at the true parameter is a stationary ergodic martingale-differ
 sequence, and the array `X_{n,i} = ξ_i/√n` fed into `mds_clt` yields asymptotic
 normality of the score (batch D wires this through `ARMA/ScoreAnalysis`).
 
-**Assembly plan** (from `MartingaleCLT/CondCharFun.lean`):
+**Assembly plan** (from `MartingaleCLT/CondCharFun.lean`), as executed:
+0. replace the array by its Hall–Heyde **truncation** at level `σ² + 1` (see below);
 1. `norm_integral_exp_rowSum_sub_prod_le` reduces `E e^{iuS_n}` to the Taylor product
-   at cost of the Lindeberg sums (choose `ε = ε_n → 0` slowly);
+   at cost of the Lindeberg sums — for the truncated array the second error term is
+   `≤ |u|³ ε (σ² + 1)` *uniformly in n*, so a plain `ε`-squeeze suffices and no
+   diagonal extraction `ε = ε_n → 0` is needed;
 2. `tendsto_integral_prod_one_sub_condVar` sends the Taylor product to `e^{−u²σ²/2}`
-   (uniform negligibility of the conditional variances follows from Lindeberg +
-   variance convergence — derive, don't assume);
+   (uniform negligibility of the conditional variances is derived, not assumed:
+   `E[Xᵢ²|𝓕ᵢ] ≤ ε² + E[Xᵢ²1_{|Xᵢ|≥ε}|𝓕ᵢ]` plus Markov on the summed Lindeberg mass);
 3. rewrite `charFun (gaussianReal 0 σ²) u = e^{−u²σ²/2}`.
-The truncation/stopping refinement of Hall–Heyde (replacing the L¹-boundedness input
-by a stopping-time argument) is NOT needed at this generality: the `hbdd` input of
-step 2 is derived from `hvar` + `hlind` via the row variance identity
-`Σᵢ E Xᵢ² = E V_n`.
+
+**Correction to the commissioned plan** (wave `ts/c-mds-clt`). The plan asserted that
+the truncation/stopping refinement is not needed because the `hbdd` input of step 2
+follows from `hvar` + `hlind` through the row variance identity `Σᵢ E Xᵢ² = E V_n`.
+That identity is true but the conclusion is **false**: `E V_n` can diverge while both
+Brown conditions hold. Take `𝓕_{n,0}`-measurable events `A_n` with `μ(A_n) = 1/n`,
+`k_n = n⁴`, and `X_{n,i} = n⁻¹ 1_{A_n} ε_i` with `ε_i` iid signs; then
+`V_n = n² 1_{A_n} + (the part carrying σ² off A_n) →p σ²`, the Lindeberg sums vanish
+identically for large `n` (since `|X_{n,i}| ≤ 1/n`), and `∫ V_n = n → ∞`. The `hbdd`
+hypothesis is moreover not removable from step 2 itself: with `k_n = n`,
+`m_n ≍ log n` active coordinates of conditional variance `8/u²` on `A_n`, the Taylor
+product has modulus `3^{m_n} ≫ n` on a set of probability `1/n`, so its integral
+diverges although `hvar`, `hunif` and Lindeberg all hold.
+Hence this file runs the truncation: `X'_{n,i} = X_{n,i} 1_{Σ_{j≤i} E[X_{n,j}²|𝓕_j] ≤ σ²+1}`.
+The stopping set is `𝓕_{n,i}`-measurable, so `X'` is again a martingale-difference
+array with `V'_n ≤ σ² + 1` pointwise (`hbdd` is then free), it inherits `hvar` and
+`hlind`, and it changes the row sum only on `{V_n > σ² + 1}`, whose probability
+vanishes by `hvar`.
 
 **Reference.** B. M. Brown, *Martingale central limit theorems*, Ann. Math. Statist.
 **42** (1971), 59–66, Thm 2; P. Hall & C. C. Heyde, *Martingale Limit Theory and Its
@@ -112,7 +129,7 @@ private noncomputable def truncArray (k : ℕ → ℕ) (X : (n : ℕ) → Fin (k
 private lemma measurableSet_truncSet (h : IsMDSArray k X F μ) (c : ℝ) (n : ℕ) (i : Fin (k n)) :
     MeasurableSet[F n i.castSucc] (truncSet k X F μ c n i) :=
   measurableSet_le
-    (Finset.measurable_sum _ fun j hj => cvar_measurable_le h n (Finset.mem_Iic.1 hj))
+    (Finset.measurable_sum _ fun _ hj => cvar_measurable_le h n (Finset.mem_Iic.1 hj))
     measurable_const
 
 private lemma isMDSArray_truncArray [IsProbabilityMeasure μ] (h : IsMDSArray k X F μ) (c : ℝ) :
@@ -128,7 +145,7 @@ private lemma isMDSArray_truncArray [IsProbabilityMeasure μ] (h : IsMDSArray k 
     have h1 := condExp_indicator (m := F n i.castSucc) (integrable_of_mds h n i)
       (measurableSet_truncSet h c n i)
     filter_upwards [h1, h.condexp_zero n i] with ω e1 e2
-    show μ[(truncSet k X F μ c n i).indicator (X n i) | F n i.castSucc] ω = (0 : Ω → ℝ) ω
+    change μ[(truncSet k X F μ c n i).indicator (X n i) | F n i.castSucc] ω = (0 : Ω → ℝ) ω
     rw [e1]
     by_cases hω : ω ∈ truncSet k X F μ c n i
     · simp [Set.indicator_of_mem hω, e2]
@@ -139,9 +156,8 @@ private lemma cvar_truncArray (h : IsMDSArray k X F μ) (c : ℝ) (n : ℕ) (i :
       =ᵐ[μ] (truncSet k X F μ c n i).indicator (cvar k X F μ n i) := by
   have hsq : (fun ω => truncArray k X F μ c n i ω ^ 2)
       = (truncSet k X F μ c n i).indicator (fun ω => X n i ω ^ 2) := by
-    funext ω; by_cases hω : ω ∈ truncSet k X F μ c n i <;>
-      simp [truncArray, Set.indicator_apply, hω]
-  show μ[fun ω => truncArray k X F μ c n i ω ^ 2 | F n i.castSucc] =ᵐ[μ] _
+    funext ω; by_cases hω : ω ∈ truncSet k X F μ c n i <;> simp [truncArray, hω]
+  change μ[fun ω => truncArray k X F μ c n i ω ^ 2 | F n i.castSucc] =ᵐ[μ] _
   rw [hsq]
   exact condExp_indicator (integrable_sq_of_mds h n i) (measurableSet_truncSet h c n i)
 
@@ -161,7 +177,7 @@ private lemma mdsCondVariance_truncArray_le (h : IsMDSArray k X F μ) {c : ℝ} 
           cvar k X F μ n i ω else 0 := by
     intro i
     rw [hωc i]
-    by_cases hi : ω ∈ truncSet k X F μ c n i <;> simp [Set.indicator_apply, hi]
+    by_cases hi : ω ∈ truncSet k X F μ c n i <;> simp [hi]
   rw [Finset.sum_congr rfl fun i _ => hstep i, Finset.sum_ite_mem, Finset.univ_inter]
   set T : Finset (Fin (k n)) := Finset.univ.filter (fun i => ω ∈ truncSet k X F μ c n i) with hT
   rcases T.eq_empty_or_nonempty with he | hne
@@ -233,11 +249,11 @@ private lemma tendsto_measure_exists_cvar_ge [IsProbabilityMeasure μ] (h : IsMD
         (hYint n i) (ae_of_all _ fun ω => ?_)
       by_cases hω : ω ∈ {x : Ω | ε ≤ |X n i x|}
       · have hY : Y n i ω = X n i ω ^ 2 := by
-          show Set.indicator {x : Ω | ε ≤ |X n i x|} (fun ω' => X n i ω' ^ 2) ω = _
+          change Set.indicator {x : Ω | ε ≤ |X n i x|} (fun ω' => X n i ω' ^ 2) ω = _
           exact Set.indicator_of_mem hω _
         rw [hY]; nlinarith [sq_nonneg ε]
       · have hY : Y n i ω = 0 := by
-          show Set.indicator {x : Ω | ε ≤ |X n i x|} (fun ω' => X n i ω' ^ 2) ω = 0
+          change Set.indicator {x : Ω | ε ≤ |X n i x|} (fun ω' => X n i ω' ^ 2) ω = 0
           exact Set.indicator_of_notMem hω _
         have hlt : |X n i ω| < ε := lt_of_not_ge hω
         rw [hY, add_zero]
@@ -266,27 +282,27 @@ private lemma tendsto_measure_exists_cvar_ge [IsProbabilityMeasure μ] (h : IsMD
         mul_le_mul_of_nonneg_left hmark hc.le
 
 /-- Below the truncation level the stopping is inactive. -/
-private lemma mem_truncSet_of_le (h : IsMDSArray k X F μ) {c : ℝ} (n : ℕ) {ω : Ω}
+private lemma mem_truncSet_of_le {c : ℝ} (n : ℕ) {ω : Ω}
     (hnn : ∀ i, 0 ≤ cvar k X F μ n i ω) (hle : mdsCondVariance k X F μ n ω ≤ c)
     (i : Fin (k n)) : ω ∈ truncSet k X F μ c n i := by
-  show ∑ j ∈ Finset.Iic i, cvar k X F μ n j ω ≤ c
+  change ∑ j ∈ Finset.Iic i, cvar k X F μ n j ω ≤ c
   refine le_trans (Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ _)
     (fun j _ _ => hnn j)) ?_
   rw [← mdsCondVariance_eq_sum_cvar]
   exact hle
 
-private lemma ae_truncArray_eq (h : IsMDSArray k X F μ) (c : ℝ) (n : ℕ) :
+private lemma ae_truncArray_eq (c : ℝ) (n : ℕ) :
     ∀ᵐ ω ∂μ, mdsCondVariance k X F μ n ω ≤ c →
       ∀ i, truncArray k X F μ c n i ω = X n i ω := by
   have hnn0 : ∀ᵐ ω ∂μ, ∀ i, 0 ≤ cvar k X F μ n i ω :=
     ae_all_iff.2 fun i => cvar_nonneg (μ := μ) n i
   filter_upwards [hnn0] with ω hnn hle i
-  exact Set.indicator_of_mem (mem_truncSet_of_le h n hnn hle i) _
+  exact Set.indicator_of_mem (mem_truncSet_of_le n hnn hle i) _
 
-private lemma ae_mdsRowSum_eq (h : IsMDSArray k X F μ) (c : ℝ) (n : ℕ) :
+private lemma ae_mdsRowSum_eq (c : ℝ) (n : ℕ) :
     ∀ᵐ ω ∂μ, mdsCondVariance k X F μ n ω ≤ c →
       mdsRowSum k (truncArray k X F μ c) n ω = mdsRowSum k X n ω := by
-  filter_upwards [ae_truncArray_eq h c n] with ω hω hle
+  filter_upwards [ae_truncArray_eq c n] with ω hω hle
   exact Finset.sum_congr rfl fun i _ => hω hle i
 
 private lemma ae_mdsCondVariance_eq (h : IsMDSArray k X F μ) (c : ℝ) (n : ℕ) :
@@ -300,7 +316,7 @@ private lemma ae_mdsCondVariance_eq (h : IsMDSArray k X F μ) (c : ℝ) (n : ℕ
   filter_upwards [hnn0, hc0] with ω hnn hcc hle
   rw [mdsCondVariance_eq_sum_cvar, mdsCondVariance_eq_sum_cvar]
   refine Finset.sum_congr rfl fun i _ => ?_
-  rw [hcc i, Set.indicator_of_mem (mem_truncSet_of_le h n hnn hle i)]
+  rw [hcc i, Set.indicator_of_mem (mem_truncSet_of_le n hnn hle i)]
 
 /-- The truncated array inherits the Lindeberg condition. -/
 private lemma tendsto_lindeberg_truncArray [IsProbabilityMeasure μ] (h : IsMDSArray k X F μ)
@@ -368,8 +384,8 @@ private lemma tendsto_measure_truncArray_var [IsProbabilityMeasure μ] (h : IsMD
       rw [hω hle] at hm
       exact hm
     · refine Set.mem_union_right _ ?_
-      push_neg at hle
-      show (1 : ℝ) ≤ |mdsCondVariance k X F μ n ω - σ2|
+      have hle : σ2 + 1 < mdsCondVariance k X F μ n ω := lt_of_not_ge hle
+      change (1 : ℝ) ≤ |mdsCondVariance k X F μ n ω - σ2|
       rw [abs_of_nonneg (by linarith)]
       linarith
   refine le_trans (ENNReal.toReal_mono ?_ hsub) (le_of_eq ?_)
@@ -388,9 +404,9 @@ private lemma charFun_map_mdsRowSum (h : IsMDSArray k X F μ) (n : ℕ) (u : ℝ
       (Continuous.aestronglyMeasurable (by fun_prop : Continuous fun x : ℝ =>
         Complex.exp (u * x * Complex.I)))]
   refine integral_congr_ae (ae_of_all _ fun ω => ?_)
-  congr 1
-  push_cast
-  ring
+  have harg : (u : ℂ) * ((mdsRowSum k X n ω : ℝ) : ℂ) * Complex.I
+      = Complex.I * ((u * mdsRowSum k X n ω : ℝ) : ℂ) := by push_cast; ring
+  simp only [harg]
 
 private lemma integrable_exp_rowSum (h : IsMDSArray k X F μ) [IsProbabilityMeasure μ] (n : ℕ)
     (u : ℝ) : Integrable (fun ω => Complex.exp (Complex.I * (u * mdsRowSum k X n ω : ℝ))) μ := by
@@ -422,7 +438,7 @@ private lemma norm_integral_exp_rowSum_sub_trunc [IsProbabilityMeasure μ] (h : 
   have hbound : ∀ᵐ ω ∂μ, ‖Complex.exp (Complex.I * (u * mdsRowSum k X n ω : ℝ))
       - Complex.exp (Complex.I * (u * mdsRowSum k (truncArray k X F μ c) n ω : ℝ))‖
       ≤ 2 * Set.indicator {ω | ¬ mdsCondVariance k X F μ n ω ≤ c} (fun _ => (1 : ℝ)) ω := by
-    filter_upwards [ae_mdsRowSum_eq h c n] with ω hω
+    filter_upwards [ae_mdsRowSum_eq c n] with ω hω
     by_cases hle : mdsCondVariance k X F μ n ω ≤ c
     · rw [hω hle, sub_self, norm_zero]
       have : (0 : ℝ) ≤ Set.indicator {ω | ¬ mdsCondVariance k X F μ n ω ≤ c}
@@ -496,7 +512,7 @@ theorem mds_clt [IsProbabilityMeasure μ]
       (∫ ω, Complex.exp (Complex.I * (u * mdsRowSum k X' n ω : ℝ)) ∂μ)
         - ∫ ω, ∏ i, (1 - (u ^ 2 / 2 : ℂ) *
             (μ[fun ω' => X' n i ω' ^ 2 | F n i.castSucc] ω : ℝ)) ∂μ) atTop (𝓝 0) := by
-    refine NormedAddCommGroup.tendsto_nhds_zero.2 fun η hη => ?_
+    refine NormedAddGroup.tendsto_nhds_zero.2 fun η hη => ?_
     obtain ⟨ε, hε, hεbd⟩ : ∃ ε : ℝ, 0 < ε ∧ |u| ^ 3 * ε * c < η / 2 := by
       have hd : (0 : ℝ) ≤ |u| ^ 3 * c := by positivity
       have hpos : (0 : ℝ) < |u| ^ 3 * c + 1 := by positivity
@@ -508,7 +524,7 @@ theorem mds_clt [IsProbabilityMeasure μ]
     have hL2 : Tendsto (fun n => u ^ 2 *
         ∑ i, ∫ ω in {ω | ε ≤ |X' n i ω|}, (X' n i ω) ^ 2 ∂μ) atTop (𝓝 0) := by
       simpa using (hlind' ε hε).const_mul (u ^ 2)
-    filter_upwards [NormedAddCommGroup.tendsto_nhds_zero.1 hL2 (η / 2) (by linarith)] with n hn
+    filter_upwards [NormedAddGroup.tendsto_nhds_zero.1 hL2 (η / 2) (by linarith)] with n hn
     refine lt_of_le_of_lt (norm_integral_exp_rowSum_sub_prod_le h' n u hε) ?_
     have e1 : ∑ i, (u ^ 2 * ∫ ω, X' n i ω ^ 2 *
           Set.indicator {x : Ω | ε ≤ |X' n i x|} (fun _ => (1 : ℝ)) ω ∂μ)
@@ -549,10 +565,9 @@ theorem mds_clt [IsProbabilityMeasure μ]
     have hsub : μ {ω | ¬ mdsCondVariance k X F μ n ω ≤ c}
         ≤ μ {ω | (1 : ℝ) ≤ |mdsCondVariance k X F μ n ω - σ2|} := by
       refine measure_mono fun ω hω => ?_
-      have hω' : ¬ mdsCondVariance k X F μ n ω ≤ c := hω
-      push_neg at hω'
-      rw [hcdef] at hω'
-      show (1 : ℝ) ≤ |mdsCondVariance k X F μ n ω - σ2|
+      have hω' : σ2 + 1 < mdsCondVariance k X F μ n ω := by
+        rw [hcdef] at hω; exact lt_of_not_ge hω
+      change (1 : ℝ) ≤ |mdsCondVariance k X F μ n ω - σ2|
       rw [abs_of_nonneg (by linarith)]
       linarith
     have := ENNReal.toReal_mono (measure_ne_top μ _) hsub
@@ -598,6 +613,91 @@ theorem mds_clt_sequence [IsProbabilityMeasure μ]
     Tendsto (fun n : ℕ => charFun (μ.map fun ω =>
         (Real.sqrt n)⁻¹ * ∑ i ∈ Finset.range n, ξ i ω) u) atTop
       (𝓝 (charFun (gaussianReal 0 (Real.toNNReal σ2)) u)) := by
-  sorry
+  classical
+  set X : (n : ℕ) → Fin n → Ω → ℝ := fun n i ω => ξ (i : ℕ) ω / Real.sqrt n with hXdef
+  set F : (n : ℕ) → Fin (n + 1) → MeasurableSpace Ω := fun n i => G (i : ℕ) with hFdef
+  have hsq : ∀ (n : ℕ) (i : Fin n) (ω : Ω), X n i ω ^ 2 = ((n : ℝ))⁻¹ * ξ (i : ℕ) ω ^ 2 := by
+    intro n i ω
+    simp only [hXdef]
+    rw [div_pow, Real.sq_sqrt (Nat.cast_nonneg n)]
+    ring
+  -- the array `X_{n,i} = ξ_i/√n` is a martingale-difference array for `F_{n,i} = G_i`
+  have harray : IsMDSArray (fun n => n) X F μ := by
+    refine ⟨fun n i => hle _, fun n i j hij => hmono hij, fun n i => ?_, fun n i => ?_,
+      fun n i => ?_⟩
+    · simp only [hXdef]
+      exact (hadapted (i : ℕ)).div_const _
+    · simp only [hXdef]
+      simpa [div_eq_inv_mul] using (hL2 (i : ℕ)).const_mul (Real.sqrt n)⁻¹
+    · have hXi : X n i = (Real.sqrt n)⁻¹ • ξ (i : ℕ) := by
+        funext ω; simp [hXdef, div_eq_inv_mul]
+      have h2 : μ[X n i | G (i : ℕ)] =ᵐ[μ] (Real.sqrt n)⁻¹ • μ[ξ (i : ℕ) | G (i : ℕ)] := by
+        rw [hXi]; exact condExp_smul _ _ _
+      filter_upwards [h2, hmds (i : ℕ)] with ω e1 e2
+      change μ[X n i | G (i : ℕ)] ω = (0 : Ω → ℝ) ω
+      simp [e1, e2]
+  -- the conditional variance process is the average of the `E[ξᵢ²|Gᵢ]`
+  have hVar : ∀ n : ℕ, ∀ᵐ ω ∂μ, mdsCondVariance (fun n => n) X F μ n ω
+      = ((n : ℝ))⁻¹ * ∑ i ∈ Finset.range n, μ[fun ω' => ξ i ω' ^ 2 | G i] ω := by
+    intro n
+    have hall : ∀ᵐ ω ∂μ, ∀ i : Fin n, μ[fun ω' => X n i ω' ^ 2 | G (i : ℕ)] ω
+        = ((n : ℝ))⁻¹ * μ[fun ω' => ξ (i : ℕ) ω' ^ 2 | G (i : ℕ)] ω := by
+      refine ae_all_iff.2 fun i => ?_
+      have e0 : (fun ω' => X n i ω' ^ 2) = ((n : ℝ))⁻¹ • fun ω' => ξ (i : ℕ) ω' ^ 2 := by
+        funext ω'; rw [hsq n i ω']; rfl
+      rw [e0]
+      exact condExp_smul _ _ _
+    filter_upwards [hall] with ω hω
+    change ∑ i : Fin n, μ[fun ω' => X n i ω' ^ 2 | G (i : ℕ)] ω = _
+    rw [Finset.sum_congr rfl fun i _ => hω i, ← Finset.mul_sum,
+      Fin.sum_univ_eq_sum_range (fun i => μ[fun ω' => ξ i ω' ^ 2 | G i] ω) n]
+  have hvar' : ∀ δ : ℝ, 0 < δ →
+      Tendsto (fun n => (μ {ω | δ ≤ |mdsCondVariance (fun n => n) X F μ n ω - σ2|}).toReal)
+        atTop (𝓝 0) := by
+    intro δ hδ
+    refine (hvar δ hδ).congr fun n => ?_
+    congr 1
+    refine measure_congr ?_
+    filter_upwards [hVar n] with ω hω
+    change (δ ≤ |(n : ℝ)⁻¹ * (∑ i ∈ Finset.range n, μ[fun ω' => ξ i ω' ^ 2 | G i] ω) - σ2|)
+      = (δ ≤ |mdsCondVariance (fun n => n) X F μ n ω - σ2|)
+    rw [hω]
+  -- the Lindeberg sets match on the nose: `{|ξᵢ/√n| ≥ ε} = {|ξᵢ| ≥ ε√n}`
+  have hlind' : ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n => ∑ i : Fin n, ∫ ω in {ω | ε ≤ |X n i ω|}, (X n i ω) ^ 2 ∂μ)
+        atTop (𝓝 0) := by
+    intro ε hε
+    refine (hlind ε hε).congr fun n => ?_
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · simp
+    have hsqrt : 0 < Real.sqrt n := Real.sqrt_pos.2 (by exact_mod_cast hn)
+    have hset : ∀ i : Fin n, {ω | ε ≤ |X n i ω|}
+        = {ω | ε * Real.sqrt n ≤ |ξ (i : ℕ) ω|} := by
+      intro i
+      ext ω
+      simp only [Set.mem_setOf_eq, hXdef, abs_div, abs_of_nonneg (Real.sqrt_nonneg (n : ℝ))]
+      rw [le_div_iff₀ hsqrt]
+    have hterm : ∀ i : Fin n, ∫ ω in {ω | ε ≤ |X n i ω|}, (X n i ω) ^ 2 ∂μ
+        = ((n : ℝ))⁻¹ * ∫ ω in {ω | ε * Real.sqrt n ≤ |ξ (i : ℕ) ω|}, ξ (i : ℕ) ω ^ 2 ∂μ := by
+      intro i
+      calc ∫ ω in {ω | ε ≤ |X n i ω|}, (X n i ω) ^ 2 ∂μ
+          = ∫ ω in {ω | ε * Real.sqrt n ≤ |ξ (i : ℕ) ω|}, ((n : ℝ))⁻¹ * ξ (i : ℕ) ω ^ 2 ∂μ := by
+            rw [hset i]
+            exact integral_congr_ae (ae_of_all _ fun ω => hsq n i ω)
+        _ = ((n : ℝ))⁻¹ * ∫ ω in {ω | ε * Real.sqrt n ≤ |ξ (i : ℕ) ω|}, ξ (i : ℕ) ω ^ 2 ∂μ :=
+            integral_const_mul _ _
+    rw [Finset.sum_congr rfl fun (i : Fin n) _ => hterm i, ← Finset.mul_sum,
+      Fin.sum_univ_eq_sum_range
+        (fun i => ∫ ω in {ω | ε * Real.sqrt n ≤ |ξ i ω|}, ξ i ω ^ 2 ∂μ) n]
+  -- the row sums are the normalized partial sums
+  have hrow : ∀ n : ℕ, mdsRowSum (fun n => n) X n
+      = fun ω => (Real.sqrt n)⁻¹ * ∑ i ∈ Finset.range n, ξ i ω := by
+    intro n
+    funext ω
+    change ∑ i : Fin n, X n i ω = _
+    simp only [hXdef]
+    rw [Fin.sum_univ_eq_sum_range (fun i => ξ i ω / Real.sqrt n) n, ← Finset.sum_div,
+      div_eq_inv_mul]
+  simpa only [hrow] using mds_clt harray hσ hvar' hlind' u
 
 end StatLean.TimeSeries
