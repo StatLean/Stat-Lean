@@ -2,6 +2,8 @@ import StatLean.TimeSeries.Mixing.Defs
 import StatLean.TimeSeries.Process.Stationary
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
+import Mathlib.MeasureTheory.Integral.MeanInequalities
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
 # Covariance and moment inequalities under mixing (FY §2.6.2, pp. 71–73)
@@ -343,6 +345,125 @@ theorem norm_covariance_le_of_bounded_complex {m₁ m₂ mΩ : MeasurableSpace �
 
 /-! ### Proposition 2.5(i): the Davydov covariance inequality -/
 
+/-- Tail Hölder: the `L^r`-mass of `u` on a set `S` is controlled by its `L^t`-norm times a
+power of `μ S`. -/
+private lemma tail_holder {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {u : Ω → ℝ} {r t : ℝ} (hr : 0 < r) (hrt : r < t) (hu : MemLp u (ENNReal.ofReal t) μ)
+    {S : Set Ω} (hS : MeasurableSet S) :
+    ∫ ω, S.indicator (fun ω => |u ω| ^ r) ω ∂μ
+      ≤ (∫ ω, |u ω| ^ t ∂μ) ^ (r / t) * (μ.real S) ^ (1 - r / t) := by
+  have ht : 0 < t := lt_trans hr hrt
+  have htr : 0 < t - r := by linarith
+  set P : ℝ := t / r with hP
+  set Q : ℝ := t / (t - r) with hQ
+  have hconj : Real.HolderConjugate P Q := by
+    refine ⟨?_, by positivity, by positivity⟩
+    rw [hP, hQ]
+    field_simp
+    ring
+  have hmem : MemLp (fun ω => |u ω| ^ r) (ENNReal.ofReal P) μ := by
+    have h := hu.norm_rpow_div (ENNReal.ofReal r)
+    rw [ENNReal.toReal_ofReal hr.le, ← ENNReal.ofReal_div_of_pos hr] at h
+    simpa [Real.norm_eq_abs] using h
+  have hind : MemLp (S.indicator (1 : Ω → ℝ)) (ENNReal.ofReal Q) μ := by
+    refine (memLp_top_of_bound ((stronglyMeasurable_const.indicator hS)).aestronglyMeasurable 1
+      ?_).mono_exponent le_top
+    filter_upwards with ω
+    exact (norm_indicator_le_norm_self (1 : Ω → ℝ) ω).trans (by simp)
+  have key := integral_mul_le_Lp_mul_Lq_of_nonneg (μ := μ) hconj
+    (f := fun ω => |u ω| ^ r) (g := S.indicator (1 : Ω → ℝ))
+    (Eventually.of_forall fun ω => Real.rpow_nonneg (abs_nonneg _) _)
+    (Eventually.of_forall fun ω => Set.indicator_nonneg (fun _ _ => zero_le_one) ω)
+    hmem hind
+  have e1 : ∀ ω, S.indicator (fun ω => |u ω| ^ r) ω
+      = (|u ω| ^ r) * S.indicator (1 : Ω → ℝ) ω := by
+    intro ω
+    by_cases hω : ω ∈ S <;> simp [Set.indicator_of_mem, Set.indicator_of_notMem, hω]
+  have e2 : ∫ ω, (S.indicator (1 : Ω → ℝ) ω) ^ Q ∂μ = μ.real S := by
+    have h : ∀ ω, (S.indicator (1 : Ω → ℝ) ω) ^ Q = S.indicator (1 : Ω → ℝ) ω := by
+      intro ω
+      by_cases hω : ω ∈ S
+      · simp [Set.indicator_of_mem, hω, Real.one_rpow]
+      · simp [Set.indicator_of_notMem, hω, Real.zero_rpow hconj.symm.ne_zero]
+    rw [funext h, integral_indicator_one hS]
+  have e3 : ∀ ω, (|u ω| ^ r) ^ P = |u ω| ^ t := by
+    intro ω
+    rw [← Real.rpow_mul (abs_nonneg _), hP]
+    congr 1
+    field_simp
+  simp_rw [e1]
+  rw [e2] at key
+  refine key.trans_eq ?_
+  rw [show ∫ ω, (|u ω| ^ r) ^ P ∂μ = ∫ ω, |u ω| ^ t ∂μ from integral_congr_ae
+    (Eventually.of_forall e3)]
+  rw [show (1:ℝ) / P = r / t by rw [hP]; field_simp,
+    show (1:ℝ) / Q = 1 - r / t by rw [hQ]; field_simp]
+
+
+/-- Markov/Chebyshev in the form needed below. -/
+private lemma markov_rpow {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {u : Ω → ℝ} {r c : ℝ} (hr : 0 < r) (hc : 0 < c) (hum : Measurable u)
+    (hint : Integrable (fun ω => |u ω| ^ r) μ) :
+    μ.real {ω | c < |u ω|} * c ^ r ≤ ∫ ω, |u ω| ^ r ∂μ := by
+  have hS : MeasurableSet {ω | c < |u ω|} := measurableSet_lt measurable_const (by fun_prop)
+  have h1 : ∫ ω, ({ω | c < |u ω|}).indicator (fun _ => c ^ r) ω ∂μ ≤ ∫ ω, |u ω| ^ r ∂μ := by
+    refine integral_mono ((integrable_const _).indicator hS) hint fun ω => ?_
+    by_cases hω : ω ∈ {ω | c < |u ω|}
+    · rw [Set.indicator_of_mem hω]
+      exact Real.rpow_le_rpow hc.le (le_of_lt hω) hr.le
+    · rw [Set.indicator_of_notMem hω]
+      exact Real.rpow_nonneg (abs_nonneg _) _
+  rwa [integral_indicator_const _ hS, smul_eq_mul] at h1
+
+/-- Clamping to `[-c, c]` is bounded by `c`. -/
+private lemma abs_clamp_le {c x : ℝ} (hc : 0 ≤ c) : |max (-c) (min c x)| ≤ c := by
+  rw [abs_le]
+  exact ⟨le_max_left _ _, max_le (by linarith) (min_le_left _ _)⟩
+
+/-- Clamping is a contraction towards the origin. -/
+private lemma abs_sub_clamp_le_of_lt {c x : ℝ} (hc : 0 ≤ c) (hx : c < |x|) :
+    |x - max (-c) (min c x)| ≤ |x| := by
+  rcases le_total c x with h | h
+  · rw [min_eq_left h, max_eq_right (by linarith), abs_of_nonneg (by linarith : (0:ℝ) ≤ x - c),
+      abs_of_nonneg (by linarith : (0:ℝ) ≤ x)]
+    linarith
+  · have h2 : x ≤ -c := by
+      rcases abs_cases x with ⟨he, _⟩ | ⟨he, _⟩ <;> rw [he] at hx <;> linarith
+    rw [min_eq_right h, max_eq_left h2, abs_of_nonpos (by linarith : x - -c ≤ 0),
+      abs_of_nonpos (by linarith : x ≤ 0)]
+    linarith
+
+/-- Below the level, clamping is the identity. -/
+private lemma sub_clamp_eq_zero {c x : ℝ} (hx : |x| ≤ c) : x - max (-c) (min c x) = 0 := by
+  rw [abs_le] at hx
+  rw [min_eq_right hx.2, max_eq_right hx.1, sub_self]
+
+private lemma covariance_eq_sub' {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] {f g : Ω → ℝ}
+    (hf : Integrable f μ) (hg : Integrable g μ) (hfg : Integrable (fun ω => f ω * g ω) μ) :
+    cov[f, g; μ] = (∫ ω, f ω * g ω ∂μ) - (∫ ω, f ω ∂μ) * ∫ ω, g ω ∂μ := by
+  have i1 : Integrable (fun ω => f ω * g ω - μ[g] * f ω) μ := hfg.sub (hf.const_mul _)
+  have i2 : Integrable (fun ω => f ω * g ω - μ[g] * f ω - μ[f] * g ω) μ := i1.sub (hg.const_mul _)
+  have e0 : ∫ ω, ((f ω * g ω - μ[g] * f ω - μ[f] * g ω) + μ[f] * μ[g]) ∂μ
+      = (∫ ω, (f ω * g ω - μ[g] * f ω - μ[f] * g ω) ∂μ) + ∫ _ω : Ω, μ[f] * μ[g] ∂μ :=
+    integral_add i2 (integrable_const _)
+  have e1 : ∫ ω, (f ω * g ω - μ[g] * f ω - μ[f] * g ω) ∂μ
+      = (∫ ω, (f ω * g ω - μ[g] * f ω) ∂μ) - ∫ ω, μ[f] * g ω ∂μ :=
+    integral_sub i1 (hg.const_mul _)
+  have e2 : ∫ ω, (f ω * g ω - μ[g] * f ω) ∂μ
+      = (∫ ω, f ω * g ω ∂μ) - ∫ ω, μ[g] * f ω ∂μ :=
+    integral_sub hfg (hf.const_mul _)
+  have e3 : ∫ ω, μ[f] * g ω ∂μ = μ[f] * ∫ ω, g ω ∂μ := integral_const_mul _ _
+  have e4 : ∫ ω, μ[g] * f ω ∂μ = μ[g] * ∫ ω, f ω ∂μ := integral_const_mul _ _
+  have e5 : ∫ _ω : Ω, μ[f] * μ[g] ∂μ = μ[f] * μ[g] := by simp
+  have h : ∀ ω, (f ω - μ[f]) * (g ω - μ[g])
+      = (f ω * g ω - μ[g] * f ω - μ[f] * g ω) + μ[f] * μ[g] := by intro ω; ring
+  rw [covariance, integral_congr_ae (Eventually.of_forall h), e0, e1, e2, e3, e4, e5]
+  ring
+
+set_option maxHeartbeats 1000000 in
+-- Davydov's truncation argument is long (four Hölder applications and a limit);
+-- the default heartbeat budget is not enough.
 /-- **FY Proposition 2.5(i) (Davydov)**: for `p, q > 1` with `1/p + 1/q < 1`,
 `|Cov(f, g)| ≤ 8 α^{1 − 1/p − 1/q} ‖f‖_p ‖g‖_q`. Built in full (truncation against the
 bounded case; FY cites Doukhan §1.2.2). -/
@@ -357,7 +478,376 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
       ≤ 8 * alphaMixCoeff μ m₁ m₂ ^ (1 - 1 / p - 1 / q)
         * (eLpNorm f (ENNReal.ofReal p) μ).toReal
         * (eLpNorm g (ENNReal.ofReal q) μ).toReal := by
-  sorry
+  -- exponent bookkeeping
+  have hp0 : (0:ℝ) < p := lt_trans one_pos hp
+  have hq0 : (0:ℝ) < q := lt_trans one_pos hq
+  have hip : 0 < 1 / p := by positivity
+  have hiq : 0 < 1 / q := by positivity
+  set p' : ℝ := p / (p - 1) with hp'def
+  have hp1 : (0:ℝ) < p - 1 := by linarith
+  have hp'0 : 0 < p' := by positivity
+  have hinvp' : 1 / p' = 1 - 1 / p := by rw [hp'def]; field_simp
+  have hp'1 : 1 < p' := by
+    by_contra hcon
+    replace hcon := not_lt.mp hcon
+    have h : 1 ≤ 1 / p' := by rw [le_div_iff₀ hp'0]; linarith
+    rw [hinvp'] at h; linarith
+  have hp'q : p' < q := by
+    have h1 : 1 / q < 1 / p' := by rw [hinvp']; linarith
+    by_contra hcon
+    replace hcon := not_lt.mp hcon
+    have := one_div_le_one_div_of_le hq0 hcon
+    linarith
+  set θ : ℝ := 1 - 1 / p - 1 / q with hθdef
+  have hθ0 : 0 < θ := by rw [hθdef]; linarith
+  have hθp' : θ = 1 / p' - 1 / q := by rw [hθdef, hinvp']
+  set α : ℝ := alphaMixCoeff μ m₁ m₂ with hαdef
+  set A : ℝ := (eLpNorm f (ENNReal.ofReal p) μ).toReal with hAdef
+  set B : ℝ := (eLpNorm g (ENNReal.ofReal q) μ).toReal with hBdef
+  have hA0 : 0 ≤ A := ENNReal.toReal_nonneg
+  have hB0 : 0 ≤ B := ENNReal.toReal_nonneg
+  have hα0 : 0 ≤ α := by
+    have h := le_alphaMixCoeff_of_measurableSet (m₁ := m₁) (m₂ := m₂) (mΩ := mΩ) (μ := μ)
+      (A := ∅) (B := ∅)
+      (@MeasurableSet.empty Ω m₁) (@MeasurableSet.empty Ω m₂)
+    simpa using h
+  have hconjp : Real.HolderConjugate p p' := ⟨by rw [hp'def]; field_simp; ring, hp0, hp'0⟩
+  -- measurability and integrability
+  have hfm : Measurable f := hf.mono h₁ le_rfl
+  have hgm : Measurable g := hg.mono h₂ le_rfl
+  have hfint : Integrable f μ := hfLp.integrable (by simp [ENNReal.one_le_ofReal, hp.le])
+  have hgint : Integrable g μ := hgLq.integrable (by simp [ENNReal.one_le_ofReal, hq.le])
+  have hIf : Integrable (fun ω => |f ω| ^ p) μ := by
+    have h := hfLp.integrable_norm_rpow (by simp [hp0]) (by simp)
+    simpa [Real.norm_eq_abs, ENNReal.toReal_ofReal hp0.le] using h
+  have hIg : Integrable (fun ω => |g ω| ^ q) μ := by
+    have h := hgLq.integrable_norm_rpow (by simp [hq0]) (by simp)
+    simpa [Real.norm_eq_abs, ENNReal.toReal_ofReal hq0.le] using h
+  have hA : A = (∫ ω, |f ω| ^ p ∂μ) ^ (1 / p) := by
+    rw [hAdef, toReal_eLpNorm hfLp.aestronglyMeasurable,
+      lpNorm_eq_integral_norm_rpow_toReal (by simp [hp0]) (by simp) hfLp.aestronglyMeasurable,
+      ENNReal.toReal_ofReal hp0.le]
+    simp [Real.norm_eq_abs, one_div]
+  have hB : B = (∫ ω, |g ω| ^ q ∂μ) ^ (1 / q) := by
+    rw [hBdef, toReal_eLpNorm hgLq.aestronglyMeasurable,
+      lpNorm_eq_integral_norm_rpow_toReal (by simp [hq0]) (by simp) hgLq.aestronglyMeasurable,
+      ENNReal.toReal_ofReal hq0.le]
+    simp [Real.norm_eq_abs, one_div]
+  have hAp : A ^ p = ∫ ω, |f ω| ^ p ∂μ := by
+    rw [hA, ← Real.rpow_mul (integral_nonneg fun ω => Real.rpow_nonneg (abs_nonneg _) _), one_div,
+      inv_mul_cancel₀ hp0.ne', Real.rpow_one]
+  have hBq : B ^ q = ∫ ω, |g ω| ^ q ∂μ := by
+    rw [hB, ← Real.rpow_mul (integral_nonneg fun ω => Real.rpow_nonneg (abs_nonneg _) _), one_div,
+      inv_mul_cancel₀ hq0.ne', Real.rpow_one]
+  -- `g` lies in `L^{p'}` as well
+  have hgLp' : MemLp g (ENNReal.ofReal p') μ :=
+    hgLq.mono_exponent (ENNReal.ofReal_le_ofReal hp'q.le)
+  have hfgint : Integrable (fun ω => f ω * g ω) μ := by
+    haveI : ENNReal.HolderTriple (ENNReal.ofReal p) (ENNReal.ofReal p') 1 := by
+      constructor
+      simpa using hconjp.inv_add_inv_ennreal
+    exact hfLp.integrable_mul hgLp'
+  have hcov : cov[f, g; μ] = (∫ ω, f ω * g ω ∂μ) - (∫ ω, f ω ∂μ) * ∫ ω, g ω ∂μ :=
+    covariance_eq_sub' hfint hgint hfgint
+  -- degenerate cases
+  rcases eq_or_lt_of_le hA0 with hA0' | hApos
+  · have hfae : f =ᵐ[μ] 0 := by
+      have hpne : ENNReal.ofReal p ≠ 0 := by simp [hp0]
+      refine (eLpNorm_eq_zero_iff hfLp.aestronglyMeasurable hpne).mp ?_
+      have := hfLp.eLpNorm_ne_top
+      rcases (ENNReal.toReal_eq_zero_iff _).mp hA0'.symm with h | h
+      · exact h
+      · exact absurd h this
+    have hz : cov[f, g; μ] = 0 := by
+      have h0 : μ[f] = 0 := by rw [integral_congr_ae hfae]; simp
+      rw [covariance, h0]
+      refine integral_eq_zero_of_ae ?_
+      filter_upwards [hfae] with ω hω
+      simp [hω]
+    rw [hz, abs_zero, ← hA0']
+    simp
+  rcases eq_or_lt_of_le hB0 with hB0' | hBpos
+  · have hgae : g =ᵐ[μ] 0 := by
+      have hqne : ENNReal.ofReal q ≠ 0 := by simp [hq0]
+      refine (eLpNorm_eq_zero_iff hgLq.aestronglyMeasurable hqne).mp ?_
+      have := hgLq.eLpNorm_ne_top
+      rcases (ENNReal.toReal_eq_zero_iff _).mp hB0'.symm with h | h
+      · exact h
+      · exact absurd h this
+    have hz : cov[f, g; μ] = 0 := by
+      have h0 : μ[g] = 0 := by rw [integral_congr_ae hgae]; simp
+      rw [covariance, h0]
+      refine integral_eq_zero_of_ae ?_
+      filter_upwards [hgae] with ω hω
+      simp [hω]
+    rw [hz, abs_zero, ← hB0']
+    simp
+  -- the main estimate, at every level `β = α + ε`
+  have main : ∀ ε : ℝ, 0 < ε → |cov[f, g; μ]| ≤ 8 * (α + ε) ^ θ * A * B := by
+    intro ε hε
+    set β : ℝ := α + ε with hβdef
+    have hβ0 : 0 < β := by rw [hβdef]; linarith
+    set c₁ : ℝ := A * β ^ (-(1 / p)) with hc₁def
+    set c₂ : ℝ := B * β ^ (-(1 / q)) with hc₂def
+    have hc₁0 : 0 < c₁ := mul_pos hApos (Real.rpow_pos_of_pos hβ0 _)
+    have hc₂0 : 0 < c₂ := mul_pos hBpos (Real.rpow_pos_of_pos hβ0 _)
+    set f' : Ω → ℝ := fun ω => max (-c₁) (min c₁ (f ω)) with hf'def
+    set g' : Ω → ℝ := fun ω => max (-c₂) (min c₂ (g ω)) with hg'def
+    set S : Set Ω := {ω | c₁ < |f ω|} with hSdef
+    set T : Set Ω := {ω | c₂ < |g ω|} with hTdef
+    have hSm : MeasurableSet S := measurableSet_lt measurable_const (by fun_prop)
+    have hTm : MeasurableSet T := measurableSet_lt measurable_const (by fun_prop)
+    have hf'meas : Measurable[m₁] f' := measurable_const.max (measurable_const.min hf)
+    have hg'meas : Measurable[m₂] g' := measurable_const.max (measurable_const.min hg)
+    have hf'm : Measurable f' := hf'meas.mono h₁ le_rfl
+    have hg'm : Measurable g' := hg'meas.mono h₂ le_rfl
+    have hf'bdd : ∀ ω, |f' ω| ≤ c₁ := fun ω => abs_clamp_le hc₁0.le
+    have hg'bdd : ∀ ω, |g' ω| ≤ c₂ := fun ω => abs_clamp_le hc₂0.le
+    have hf''le : ∀ ω, |f ω - f' ω| ≤ S.indicator (fun ω => |f ω|) ω := by
+      intro ω
+      by_cases hω : ω ∈ S
+      · rw [Set.indicator_of_mem hω]
+        exact abs_sub_clamp_le_of_lt hc₁0.le hω
+      · rw [Set.indicator_of_notMem hω, sub_clamp_eq_zero (not_lt.mp hω), abs_zero]
+    have hg''le : ∀ ω, |g ω - g' ω| ≤ T.indicator (fun ω => |g ω|) ω := by
+      intro ω
+      by_cases hω : ω ∈ T
+      · rw [Set.indicator_of_mem hω]
+        exact abs_sub_clamp_le_of_lt hc₂0.le hω
+      · rw [Set.indicator_of_notMem hω, sub_clamp_eq_zero (not_lt.mp hω), abs_zero]
+    -- pointwise domination of the tails
+    have hgg'abs : ∀ ω, |g ω - g' ω| ≤ |g ω| := by
+      intro ω
+      refine (hg''le ω).trans ?_
+      by_cases hω : ω ∈ T
+      · rw [Set.indicator_of_mem hω]
+      · rw [Set.indicator_of_notMem hω]; exact abs_nonneg _
+    -- Markov
+    have hMS : μ.real S ≤ β := by
+      have h := markov_rpow (u := f) (r := p) (c := c₁) hp0 hc₁0 hfm hIf
+      have hc : c₁ ^ p * β = A ^ p := by
+        rw [hc₁def, Real.mul_rpow hA0 (Real.rpow_nonneg hβ0.le _), ← Real.rpow_mul hβ0.le,
+          show -(1 / p) * p = -1 by field_simp, Real.rpow_neg_one]
+        field_simp
+      have hcp : 0 < c₁ ^ p := Real.rpow_pos_of_pos hc₁0 p
+      have h2 : μ.real S * c₁ ^ p ≤ β * c₁ ^ p := by
+        rw [mul_comm β, hc, hAp]; exact h
+      exact le_of_mul_le_mul_right h2 hcp
+    have hMT : μ.real T ≤ β := by
+      have h := markov_rpow (u := g) (r := q) (c := c₂) hq0 hc₂0 hgm hIg
+      have hc : c₂ ^ q * β = B ^ q := by
+        rw [hc₂def, Real.mul_rpow hB0 (Real.rpow_nonneg hβ0.le _), ← Real.rpow_mul hβ0.le,
+          show -(1 / q) * q = -1 by field_simp, Real.rpow_neg_one]
+        field_simp
+      have hcq : 0 < c₂ ^ q := Real.rpow_pos_of_pos hc₂0 q
+      have h2 : μ.real T * c₂ ^ q ≤ β * c₂ ^ q := by
+        rw [mul_comm β, hc, hBq]; exact h
+      exact le_of_mul_le_mul_right h2 hcq
+    -- integrability of the pieces
+    have hf'int : Integrable f' μ :=
+      (memLp_top_of_bound hf'm.aestronglyMeasurable c₁
+        (Eventually.of_forall fun ω => by simpa [Real.norm_eq_abs] using hf'bdd ω)).integrable
+        le_top
+    have hg'int : Integrable g' μ :=
+      (memLp_top_of_bound hg'm.aestronglyMeasurable c₂
+        (Eventually.of_forall fun ω => by simpa [Real.norm_eq_abs] using hg'bdd ω)).integrable
+        le_top
+    have hg'n : ∀ᵐ ω ∂μ, ‖g' ω‖ ≤ c₂ :=
+      Eventually.of_forall fun ω => by simpa [Real.norm_eq_abs] using hg'bdd ω
+    have hf''int : Integrable (fun ω => f ω - f' ω) μ := hfint.sub hf'int
+    have hg''int : Integrable (fun ω => g ω - g' ω) μ := hgint.sub hg'int
+    have hfg'int : Integrable (fun ω => f ω * g' ω) μ :=
+      hfint.mul_bdd hg'm.aestronglyMeasurable hg'n
+    have hf'g'int : Integrable (fun ω => f' ω * g' ω) μ :=
+      hf'int.mul_bdd hg'm.aestronglyMeasurable hg'n
+    have hf''g'int : Integrable (fun ω => (f ω - f' ω) * g' ω) μ :=
+      hf''int.mul_bdd hg'm.aestronglyMeasurable hg'n
+    have hfg''int : Integrable (fun ω => f ω * (g ω - g' ω)) μ := by
+      have h : ∀ ω, f ω * (g ω - g' ω) = f ω * g ω - f ω * g' ω := by intro ω; ring
+      simpa [h] using hfgint.sub hfg'int
+    -- the three-term decomposition
+    have e1 : (∫ ω, f ω * g' ω ∂μ) + (∫ ω, f ω * (g ω - g' ω) ∂μ) = ∫ ω, f ω * g ω ∂μ := by
+      rw [← integral_add hfg'int hfg''int]
+      exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
+    have e2 : (∫ ω, f' ω * g' ω ∂μ) + (∫ ω, (f ω - f' ω) * g' ω ∂μ) = ∫ ω, f ω * g' ω ∂μ := by
+      rw [← integral_add hf'g'int hf''g'int]
+      exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
+    have e3 : (∫ ω, g' ω ∂μ) + (∫ ω, (g ω - g' ω) ∂μ) = ∫ ω, g ω ∂μ := by
+      rw [← integral_add hg'int hg''int]
+      exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
+    have e4 : (∫ ω, f' ω ∂μ) + (∫ ω, (f ω - f' ω) ∂μ) = ∫ ω, f ω ∂μ := by
+      rw [← integral_add hf'int hf''int]
+      exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
+    have hsplit : (∫ ω, f ω * g ω ∂μ) - (∫ ω, f ω ∂μ) * (∫ ω, g ω ∂μ)
+        = ((∫ ω, f' ω * g' ω ∂μ) - (∫ ω, f' ω ∂μ) * ∫ ω, g' ω ∂μ)
+          + ((∫ ω, (f ω - f' ω) * g' ω ∂μ) - (∫ ω, (f ω - f' ω) ∂μ) * ∫ ω, g' ω ∂μ)
+          + ((∫ ω, f ω * (g ω - g' ω) ∂μ) - (∫ ω, f ω ∂μ) * ∫ ω, (g ω - g' ω) ∂μ) := by
+      rw [← e1, ← e2, ← e3, ← e4]
+      ring
+    -- tail bounds
+    have hTf : ∫ ω, |f ω - f' ω| ∂μ ≤ A * β ^ (1 - 1 / p) := by
+      have h1 : ∫ ω, |f ω - f' ω| ∂μ ≤ ∫ ω, S.indicator (fun ω => |f ω|) ω ∂μ :=
+        integral_mono hf''int.abs (hfint.abs.indicator hSm) fun ω => hf''le ω
+      have h2 := tail_holder (u := f) (r := 1) (t := p) one_pos hp hfLp hSm
+      simp only [Real.rpow_one] at h2
+      refine h1.trans (h2.trans ?_)
+      rw [← hA]
+      refine mul_le_mul_of_nonneg_left ?_ hA0
+      exact Real.rpow_le_rpow measureReal_nonneg hMS (by linarith)
+    have hgg'Lp' : MemLp (fun ω => g ω - g' ω) (ENNReal.ofReal p') μ :=
+      hgLp'.of_le (hgint.sub hg'int).aestronglyMeasurable
+        (Eventually.of_forall fun ω => by simpa [Real.norm_eq_abs] using hgg'abs ω)
+    have hIgg' : Integrable (fun ω => |g ω - g' ω| ^ p') μ := by
+      have h := hgg'Lp'.integrable_norm_rpow (by simp [hp'0]) (by simp)
+      simpa [Real.norm_eq_abs, ENNReal.toReal_ofReal hp'0.le] using h
+    have hN : (∫ ω, |g ω - g' ω| ^ p' ∂μ) ^ (1 / p') ≤ B * β ^ θ := by
+      have hIgp' : Integrable (fun ω => |g ω| ^ p') μ := by
+        have h := hgLp'.integrable_norm_rpow (by simp [hp'0]) (by simp)
+        simpa [Real.norm_eq_abs, ENNReal.toReal_ofReal hp'0.le] using h
+      have h1 : ∫ ω, |g ω - g' ω| ^ p' ∂μ ≤ ∫ ω, T.indicator (fun ω => |g ω| ^ p') ω ∂μ := by
+        refine integral_mono hIgg' (hIgp'.indicator hTm) fun ω => ?_
+        · by_cases hω : ω ∈ T
+          · rw [Set.indicator_of_mem hω]
+            exact Real.rpow_le_rpow (abs_nonneg _) (hgg'abs ω) hp'0.le
+          · rw [Set.indicator_of_notMem hω, sub_clamp_eq_zero (not_lt.mp hω), abs_zero,
+              Real.zero_rpow hp'0.ne']
+      have h2 := tail_holder (u := g) (r := p') (t := q) hp'0 hp'q hgLq hTm
+      have h3 : ∫ ω, |g ω - g' ω| ^ p' ∂μ ≤ B ^ p' * β ^ (1 - p' / q) := by
+        refine (h1.trans (h2.trans ?_))
+        have hBp' : (∫ ω, |g ω| ^ q ∂μ) ^ (p' / q) = B ^ p' := by
+          rw [← hBq, ← Real.rpow_mul hB0]
+          congr 1
+          field_simp
+        rw [hBp']
+        refine mul_le_mul_of_nonneg_left ?_ (Real.rpow_nonneg hB0 _)
+        refine Real.rpow_le_rpow measureReal_nonneg hMT ?_
+        rw [sub_nonneg, div_le_one hq0]
+        exact hp'q.le
+      calc (∫ ω, |g ω - g' ω| ^ p' ∂μ) ^ (1 / p')
+          ≤ (B ^ p' * β ^ (1 - p' / q)) ^ (1 / p') := by
+            refine Real.rpow_le_rpow ?_ h3 (by positivity)
+            exact integral_nonneg fun ω => Real.rpow_nonneg (abs_nonneg _) _
+        _ = B * β ^ θ := by
+            rw [Real.mul_rpow (Real.rpow_nonneg hB0 _) (Real.rpow_nonneg hβ0.le _),
+              ← Real.rpow_mul hB0, ← Real.rpow_mul hβ0.le,
+              mul_one_div, div_self hp'0.ne', Real.rpow_one]
+            congr 1
+            rw [hθp']
+            field_simp
+    have hTg : ∫ ω, |g ω - g' ω| ∂μ ≤ (∫ ω, |g ω - g' ω| ^ p' ∂μ) ^ (1 / p') := by
+      have h := tail_holder (u := fun ω => g ω - g' ω) (r := 1) (t := p') one_pos hp'1 hgg'Lp'
+        MeasurableSet.univ
+      simpa using h
+    have hIA : ∫ ω, |f ω| ∂μ ≤ A := by
+      have h := tail_holder (u := f) (r := 1) (t := p) one_pos hp hfLp MeasurableSet.univ
+      simp only [Real.rpow_one, Set.indicator_univ, probReal_univ, Real.one_rpow,
+        mul_one] at h
+      rw [hA]
+      exact h
+    -- the three covariance terms
+    have hsub : ∀ x y : ℝ, |x - y| ≤ |x| + |y| := fun x y => by
+      have h := abs_add_le x (-y)
+      rwa [abs_neg, ← sub_eq_add_neg] at h
+    have hT1 : |(∫ ω, f' ω * g' ω ∂μ) - (∫ ω, f' ω ∂μ) * ∫ ω, g' ω ∂μ| ≤ 4 * α * c₁ * c₂ := by
+      have h := abs_covariance_le_of_bounded (mΩ := mΩ) (μ := μ) h₁ h₂ hf'meas hg'meas
+        (Eventually.of_forall hf'bdd) (Eventually.of_forall hg'bdd)
+      rwa [covariance_eq_sub' hf'int hg'int hf'g'int] at h
+    have hb1 : |∫ ω, (f ω - f' ω) * g' ω ∂μ| ≤ c₂ * ∫ ω, |f ω - f' ω| ∂μ := by
+      calc |∫ ω, (f ω - f' ω) * g' ω ∂μ| ≤ ∫ ω, |(f ω - f' ω) * g' ω| ∂μ :=
+            abs_integral_le_integral_abs
+        _ ≤ ∫ ω, |f ω - f' ω| * c₂ ∂μ := by
+            refine integral_mono hf''g'int.abs (hf''int.abs.mul_const c₂) fun ω => ?_
+            rw [abs_mul]
+            exact mul_le_mul_of_nonneg_left (hg'bdd ω) (abs_nonneg _)
+        _ = (∫ ω, |f ω - f' ω| ∂μ) * c₂ := integral_mul_const _ _
+        _ = c₂ * ∫ ω, |f ω - f' ω| ∂μ := mul_comm _ _
+    have hb3 : |∫ ω, g' ω ∂μ| ≤ c₂ := by
+      have h := norm_integral_le_of_norm_le_const (μ := μ) hg'n
+      simpa using h
+    have hT2 : |(∫ ω, (f ω - f' ω) * g' ω ∂μ) - (∫ ω, (f ω - f' ω) ∂μ) * ∫ ω, g' ω ∂μ|
+        ≤ 2 * (c₂ * (A * β ^ (1 - 1 / p))) := by
+      refine (hsub _ _).trans ?_
+      rw [abs_mul]
+      have h4 : |∫ ω, (f ω - f' ω) ∂μ| * |∫ ω, g' ω ∂μ| ≤ c₂ * ∫ ω, |f ω - f' ω| ∂μ := by
+        rw [mul_comm c₂]
+        exact mul_le_mul (abs_integral_le_integral_abs) hb3 (abs_nonneg _)
+          (integral_nonneg fun ω => abs_nonneg _)
+      have h5 : c₂ * (∫ ω, |f ω - f' ω| ∂μ) ≤ c₂ * (A * β ^ (1 - 1 / p)) :=
+        mul_le_mul_of_nonneg_left hTf hc₂0.le
+      linarith
+    have hfabs : MemLp (fun ω => |f ω|) (ENNReal.ofReal p) μ := by
+      simpa [Real.norm_eq_abs] using hfLp.norm
+    have hgg'abs' : MemLp (fun ω => |g ω - g' ω|) (ENNReal.ofReal p') μ := by
+      simpa [Real.norm_eq_abs] using hgg'Lp'.norm
+    have hb4 : |∫ ω, f ω * (g ω - g' ω) ∂μ| ≤ A * (B * β ^ θ) := by
+      calc |∫ ω, f ω * (g ω - g' ω) ∂μ| ≤ ∫ ω, |f ω * (g ω - g' ω)| ∂μ :=
+            abs_integral_le_integral_abs
+        _ = ∫ ω, |f ω| * |g ω - g' ω| ∂μ := by simp_rw [abs_mul]
+        _ ≤ (∫ ω, |f ω| ^ p ∂μ) ^ (1 / p) * (∫ ω, |g ω - g' ω| ^ p' ∂μ) ^ (1 / p') :=
+            integral_mul_le_Lp_mul_Lq_of_nonneg hconjp
+              (Eventually.of_forall fun ω => abs_nonneg _)
+              (Eventually.of_forall fun ω => abs_nonneg _) hfabs hgg'abs'
+        _ = A * (∫ ω, |g ω - g' ω| ^ p' ∂μ) ^ (1 / p') := by rw [← hA]
+        _ ≤ A * (B * β ^ θ) := mul_le_mul_of_nonneg_left hN hA0
+    have hT3 : |(∫ ω, f ω * (g ω - g' ω) ∂μ) - (∫ ω, f ω ∂μ) * ∫ ω, (g ω - g' ω) ∂μ|
+        ≤ 2 * (A * (B * β ^ θ)) := by
+      refine (hsub _ _).trans ?_
+      rw [abs_mul]
+      have h5 : |∫ ω, f ω ∂μ| * |∫ ω, (g ω - g' ω) ∂μ| ≤ A * (B * β ^ θ) := by
+        refine mul_le_mul (abs_integral_le_integral_abs.trans hIA)
+          (abs_integral_le_integral_abs.trans (hTg.trans hN)) (abs_nonneg _) hA0
+      linarith
+    -- the exponent ledger
+    have hβθ : β * (β ^ (-(1 / p)) * β ^ (-(1 / q))) = β ^ θ := by
+      rw [← Real.rpow_add hβ0]
+      calc β * β ^ (-(1 / p) + -(1 / q)) = β ^ (1:ℝ) * β ^ (-(1 / p) + -(1 / q)) := by
+            rw [Real.rpow_one]
+        _ = β ^ (1 + (-(1 / p) + -(1 / q))) := (Real.rpow_add hβ0 _ _).symm
+        _ = β ^ θ := by rw [hθdef]; congr 1; ring
+    have hbc : β * (c₁ * c₂) = A * B * β ^ θ := by
+      rw [hc₁def, hc₂def, ← hβθ]; ring
+    have hbc2 : c₂ * (A * β ^ (1 - 1 / p)) = A * B * β ^ θ := by
+      have h : β ^ (-(1 / q)) * β ^ (1 - 1 / p) = β ^ θ := by
+        rw [← Real.rpow_add hβ0, hθdef]
+        congr 1
+        ring
+      rw [hc₂def]
+      calc B * β ^ (-(1 / q)) * (A * β ^ (1 - 1 / p))
+          = A * B * (β ^ (-(1 / q)) * β ^ (1 - 1 / p)) := by ring
+        _ = A * B * β ^ θ := by rw [h]
+    -- assemble
+    rw [hcov, hsplit]
+    have habs3 : ∀ x y z : ℝ, |x + y + z| ≤ |x| + |y| + |z| := fun x y z => by
+      have h1 := abs_add_le (x + y) z
+      have h2 := abs_add_le x y
+      linarith
+    refine (habs3 _ _ _).trans ?_
+    have hα' : α ≤ β := by rw [hβdef]; linarith
+    have hcc : 0 ≤ c₁ * c₂ := by positivity
+    have hkey1 : 4 * α * c₁ * c₂ ≤ 4 * (A * B * β ^ θ) := by
+      have h : α * (c₁ * c₂) ≤ β * (c₁ * c₂) := mul_le_mul_of_nonneg_right hα' hcc
+      rw [hbc] at h
+      nlinarith [h]
+    have h2 := hT2
+    rw [hbc2] at h2
+    have h3 : 2 * (A * (B * β ^ θ)) = 2 * (A * B * β ^ θ) := by ring
+    rw [h3] at hT3
+    have hfinal : 4 * (A * B * β ^ θ) + 2 * (A * B * β ^ θ) + 2 * (A * B * β ^ θ)
+        = 8 * β ^ θ * A * B := by ring
+    linarith [hT1, hkey1, h2, hT3]
+  -- pass to the limit `ε → 0`
+  have hcontα : ContinuousAt (fun y : ℝ => 8 * y ^ θ * A * B) α :=
+    (((Real.continuousAt_rpow_const α θ (Or.inr hθ0.le)).const_mul 8).mul continuousAt_const).mul
+      continuousAt_const
+  have hlim : Tendsto (fun ε : ℝ => 8 * (α + ε) ^ θ * A * B) (𝓝[>] (0:ℝ))
+      (𝓝 (8 * α ^ θ * A * B)) := by
+    have h1 : Tendsto (fun ε : ℝ => α + ε) (𝓝[>] (0:ℝ)) (𝓝 α) := by
+      have h2 : Continuous (fun ε : ℝ => α + ε) := continuous_const.add continuous_id
+      simpa using (h2.tendsto (0:ℝ)).mono_left nhdsWithin_le_nhds
+    exact hcontα.tendsto.comp h1
+  refine ge_of_tendsto hlim ?_
+  filter_upwards [self_mem_nhdsWithin] with ε hε using main ε hε
+
 
 /-! ### Proposition 2.6: the Volkonskii–Rozanov factorization -/
 
