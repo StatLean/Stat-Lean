@@ -12,9 +12,15 @@ import StatLean.TimeSeries.Process.LinearProcess
 import StatLean.TimeSeries.Models.Defs
 import StatLean.TimeSeries.Models.WhiteNoise
 import StatLean.TimeSeries.Models.Linear
+import StatLean.TimeSeries.Process.PartialAutocorrelation
 import StatLean.TimeSeries.Stationarity.ARMAExistence
 import StatLean.TimeSeries.Stationarity.Gaussian
 import StatLean.TimeSeries.Stationarity.ARCH
+import StatLean.TimeSeries.Spectral.SpectralMeasure
+import StatLean.TimeSeries.Spectral.SpectralDensity
+import StatLean.TimeSeries.Spectral.LinearFilter
+import StatLean.TimeSeries.Spectral.DFT
+import StatLean.TimeSeries.Spectral.Periodogram
 import StatLean.TimeSeries.Mixing.Defs
 
 /-!
