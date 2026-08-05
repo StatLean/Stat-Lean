@@ -97,7 +97,7 @@ theorem evalCLM_apply (x : X) (f : H) : evalCLM 𝕜 H x f = f x := rfl
 theorem evalCLM_eq_innerSL_kernelFun (x : X) :
     evalCLM 𝕜 H x = innerSL 𝕜 (kernelFun H x) := by
   refine ContinuousLinearMap.ext fun f => ?_
-  rw [evalCLM_apply, innerSL_apply, inner_kernelFun]
+  rw [evalCLM_apply, innerSL_apply_apply, inner_kernelFun]
 
 /-- The exact norm of the evaluation functional: `‖E_x‖ = ‖k_x‖ = √(K(x,x))`. -/
 theorem norm_evalCLM (x : X) : ‖evalCLM 𝕜 H x‖ = ‖kernelFun H x‖ := by
