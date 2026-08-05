@@ -315,6 +315,125 @@ theorem linRegCoeffs_isMinOn [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
   have := variance_nonneg (fun ω => ∑ i, (β i - linRegCoeffs X μ t0 w i) * X (w i) ω) μ
   linarith
 
+/-! ### The PACF in residual form
+
+`pacf` divides by `√(Var R₁)·√(Var R₂)`; FY's "two-moment time reversibility" says the two
+residual variances agree, so the denominator is just `Var R₁`. At the coefficient level the
+reversibility is `β = α ∘ rev`, which we get from the uniqueness of the normal-equation
+solution together with the evenness of `γ`. -/
+
+section Reversibility
+
+variable {X : ℤ → Ω → ℝ}
+
+/-- The `k ≤ 1` branch of `pacf`. -/
+private lemma pacf_of_le_one (X : ℤ → Ω → ℝ) (μ : Measure Ω) {k : ℕ} (hk : k ≤ 1) :
+    pacf X μ k = acf X μ 1 := by
+  rw [pacf, if_pos hk]
+
+/-- The `k ≥ 2` branch of `pacf`, with the window spelled out. -/
+private lemma pacf_of_two_le (X : ℤ → Ω → ℝ) (μ : Measure Ω) {k : ℕ} (hk : 2 ≤ k) :
+    pacf X μ k =
+      cov[linRegResidual X μ 1 (fun i : Fin (k - 1) => ((i : ℕ) : ℤ) + 2),
+          linRegResidual X μ ((k : ℤ) + 1)
+            (fun i : Fin (k - 1) => ((i : ℕ) : ℤ) + 2); μ] /
+        (Real.sqrt (variance (linRegResidual X μ 1
+            (fun i : Fin (k - 1) => ((i : ℕ) : ℤ) + 2)) μ) *
+          Real.sqrt (variance (linRegResidual X μ ((k : ℤ) + 1)
+            (fun i : Fin (k - 1) => ((i : ℕ) : ℤ) + 2)) μ)) := by
+  rw [pacf, if_neg (by omega : ¬ (k ≤ 1))]
+
+/-- **Two-moment time reversibility** at the coefficient level (FY §2.7.2): regressing
+`X_{m+2}` on `(X_2, …, X_{m+1})` gives the *reversed* coefficient vector of the regression
+of `X_1` on the same window. -/
+private lemma linRegCoeffs_rev [IsProbabilityMeasure μ] (hstat : IsStationary X μ) {m : ℕ}
+    (hinv : IsUnit (Matrix.of fun i j : Fin m =>
+      cov[X (((i : ℕ) : ℤ) + 2), X (((j : ℕ) : ℤ) + 2); μ]).det) :
+    linRegCoeffs X μ ((m : ℤ) + 2) (fun i : Fin m => ((i : ℕ) : ℤ) + 2)
+      = fun i => linRegCoeffs X μ 1 (fun i : Fin m => ((i : ℕ) : ℤ) + 2) (Fin.rev i) := by
+  set w : Fin m → ℤ := fun i => ((i : ℕ) : ℤ) + 2 with hw
+  have hrv : ∀ i : Fin m, ((Fin.rev i : Fin m) : ℕ) = m - 1 - (i : ℕ) := by
+    intro i; rw [Fin.val_rev]; omega
+  refine linRegCoeffs_eq_of_normalEq _ _ hinv _ fun l => ?_
+  have hc : ∀ i j : Fin m,
+      cov[X (w i), X (w j); μ] = acvf X μ (((i : ℕ) : ℤ) - ((j : ℕ) : ℤ)) := by
+    intro i j; rw [hstat.cov_eq_acvf]; congr 1; simp only [hw]; ring
+  calc ∑ j, cov[X (w l), X (w j); μ] * linRegCoeffs X μ 1 w (Fin.rev j)
+      = ∑ j, cov[X (w (Fin.rev l)), X (w (Fin.revPerm j)); μ]
+          * linRegCoeffs X μ 1 w (Fin.revPerm j) := by
+        refine Finset.sum_congr rfl fun j _ => ?_
+        congr 1
+        rw [hc, hc]
+        simp only [Fin.revPerm_apply]
+        have hneg : ((l : ℕ) : ℤ) - ((j : ℕ) : ℤ)
+            = -((((Fin.rev l : Fin m) : ℕ) : ℤ) - (((Fin.rev j : Fin m) : ℕ) : ℤ)) := by
+          rw [hrv, hrv]
+          have h1 := l.isLt; have h2 := j.isLt
+          omega
+        rw [hneg, hstat.acvf_even]
+    _ = ∑ j, cov[X (w (Fin.rev l)), X (w j); μ] * linRegCoeffs X μ 1 w j :=
+        Equiv.sum_comp Fin.revPerm
+          fun j => cov[X (w (Fin.rev l)), X (w j); μ] * linRegCoeffs X μ 1 w j
+    _ = cov[X 1, X (w (Fin.rev l)); μ] := linRegCoeffs_normalEq 1 w hinv (Fin.rev l)
+    _ = cov[X ((m : ℤ) + 2), X (w l); μ] := by
+        rw [hstat.cov_eq_acvf, hstat.cov_eq_acvf]
+        have hneg : (1 : ℤ) - w (Fin.rev l) = -(((m : ℤ) + 2) - w l) := by
+          simp only [hw]
+          rw [hrv]
+          have h1 := l.isLt
+          omega
+        rw [hneg, hstat.acvf_even]
+
+/-- **FY Definition 2.6 in residual form**: the two residual variances coincide, so the
+PACF is the residual covariance divided by the (single) residual variance. -/
+private lemma pacf_eq_cov_div_variance [IsProbabilityMeasure μ] (hstat : IsStationary X μ)
+    {k : ℕ} (hk : 1 ≤ k)
+    (hinv : IsUnit (Matrix.of fun i j : Fin (k - 1) =>
+      cov[X (((i : ℕ) : ℤ) + 2), X (((j : ℕ) : ℤ) + 2); μ]).det)
+    (hpos : 0 < variance (linRegResidual X μ 1
+      (fun i : Fin (k - 1) => ((i : ℕ) : ℤ) + 2)) μ) :
+    pacf X μ k =
+      cov[linRegResidual X μ 1 (fun i : Fin (k - 1) => ((i : ℕ) : ℤ) + 2),
+          linRegResidual X μ ((k : ℤ) + 1)
+            (fun i : Fin (k - 1) => ((i : ℕ) : ℤ) + 2); μ] /
+        variance (linRegResidual X μ 1
+          (fun i : Fin (k - 1) => ((i : ℕ) : ℤ) + 2)) μ := by
+  rcases eq_or_lt_of_le hk with h1 | h2
+  · -- `k = 1`: the window is empty and both residuals are the raw variables
+    haveI : IsEmpty (Fin (k - 1)) := by
+      rw [show k - 1 = 0 by omega]; infer_instance
+    have hres : ∀ t : ℤ,
+        linRegResidual X μ t (fun i : Fin (k - 1) => ((i : ℕ) : ℤ) + 2) = X t := by
+      intro t; funext ω; simp [linRegResidual_eq]
+    have hzero : (1 : ℤ) - ((k : ℤ) + 1) = -1 := by omega
+    rw [pacf_of_le_one X μ (by omega), hres, hres, acf, hstat.cov_eq_acvf, hzero,
+      hstat.acvf_even 1, ← hstat.acvf_zero_eq_variance 1]
+  · -- `k ≥ 2`: reversibility identifies the two residual variances
+    set w : Fin (k - 1) → ℤ := fun i => ((i : ℕ) : ℤ) + 2 with hw
+    have hkm : (k : ℤ) + 1 = ((k - 1 : ℕ) : ℤ) + 2 := by omega
+    have hrev : linRegCoeffs X μ ((k : ℤ) + 1) w
+        = fun i => linRegCoeffs X μ 1 w (Fin.rev i) := by
+      rw [hkm]; exact linRegCoeffs_rev hstat hinv
+    have hrv : ∀ i : Fin (k - 1), ((Fin.rev i : Fin (k - 1)) : ℕ) = (k - 1) - 1 - (i : ℕ) := by
+      intro i; rw [Fin.val_rev]; omega
+    have hvar : variance (linRegResidual X μ ((k : ℤ) + 1) w) μ
+        = variance (linRegResidual X μ 1 w) μ := by
+      rw [variance_linRegResidual hstat _ w hinv, variance_linRegResidual hstat _ w hinv, hrev]
+      congr 1
+      rw [← Equiv.sum_comp Fin.revPerm
+        fun i => linRegCoeffs X μ 1 w i * acvf X μ (w i - 1)]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      congr 1
+      have hneg : w i - ((k : ℤ) + 1) = -(w (Fin.revPerm i) - 1) := by
+        simp only [hw, Fin.revPerm_apply]
+        rw [hrv]
+        have h1 := i.isLt
+        omega
+      rw [hneg, hstat.acvf_even]
+    rw [pacf_of_two_le X μ (by omega), hvar, Real.mul_self_sqrt hpos.le]
+
+end Reversibility
+
 /-- **Proposition 2.3(i)** (FY eq. (2.29); proof §2.7.2): the closed formula
 `π(k) = (γ(k) − cᵀΣ⁻¹c̃) / (γ(0) − c̃ᵀΣ⁻¹c̃)` in Toeplitz form, under invertibility of
 the inner-window covariance matrix. -/
@@ -336,7 +455,54 @@ theorem pacf_eq_matrix_formula [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ
           (Matrix.of fun i j : Fin (k - 1) =>
             acvf X μ (((i : ℕ) : ℤ) - ((j : ℕ) : ℤ)))⁻¹ i j *
           acvf X μ (((j : ℕ) + 2 : ℤ) - 1)) := by
-  sorry
+  have hcast : ∀ i : Fin (k - 1), ((((i : ℕ) + 2 : ℕ)) : ℤ) = ((i : ℕ) : ℤ) + 2 :=
+    fun i => by push_cast; ring
+  simp only [hcast] at hinv
+  set w : Fin (k - 1) → ℤ := fun i => ((i : ℕ) : ℤ) + 2 with hw
+  -- the window covariance matrix is the Toeplitz matrix of the statement
+  have hMΓ : (Matrix.of fun i j => cov[X (w i), X (w j); μ])
+      = Matrix.of fun i j : Fin (k - 1) => acvf X μ (((i : ℕ) : ℤ) - ((j : ℕ) : ℤ)) := by
+    ext i j
+    simp only [Matrix.of_apply]
+    rw [hstat.cov_eq_acvf]
+    congr 1
+    simp only [hw]
+    ring
+  -- the coefficient vector in Toeplitz form (FY's `Σ⁻¹c̃`)
+  have hα : ∀ i, linRegCoeffs X μ 1 w i
+      = ∑ j, (Matrix.of fun i j : Fin (k - 1) =>
+          acvf X μ (((i : ℕ) : ℤ) - ((j : ℕ) : ℤ)))⁻¹ i j
+            * acvf X μ (((j : ℕ) + 2 : ℤ) - 1) := by
+    intro i
+    rw [linRegCoeffs_eq, hMΓ]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    congr 1
+    rw [hstat.cov_eq_acvf]
+    have hneg : (1 : ℤ) - w j = -(((j : ℕ) + 2 : ℤ) - 1) := by simp only [hw]; ring
+    rw [hneg, hstat.acvf_even]
+  rw [pacf_eq_cov_div_variance hstat (by omega) hinv hpos,
+    cov_linRegResidual_residual_acvf hstat 1 ((k : ℤ) + 1) w hinv,
+    variance_linRegResidual hstat 1 w hinv]
+  congr 1
+  · -- numerator (FY's `γ(k) − cᵀΣ⁻¹c̃`)
+    have h1 : (1 : ℤ) - ((k : ℤ) + 1) = -(k : ℤ) := by ring
+    rw [h1, hstat.acvf_even]
+    congr 1
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [hα i, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    have h2 : w i - ((k : ℤ) + 1) = -(((k : ℤ) + 1) - (((i : ℕ) : ℤ) + 2)) := by
+      simp only [hw]; ring
+    rw [h2, hstat.acvf_even]
+    ring
+  · -- denominator (FY's `γ(0) − c̃ᵀΣ⁻¹c̃`)
+    congr 1
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [hα i, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    have h3 : (1 : ℤ) - (((i : ℕ) : ℤ) + 2) = -(w i - 1) := by simp only [hw]; ring
+    rw [h3, hstat.acvf_even]
+    ring
 
 /-- **Theorem 2.9** (FY §2.2.3; proof §2.7.3, partitioned inverse): `π(k)` equals the
 last coefficient of the best linear AR(k) predictor of `X_t` from
