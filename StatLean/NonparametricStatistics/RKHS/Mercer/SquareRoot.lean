@@ -36,11 +36,33 @@ variable {μ : Measure X} [IsFiniteMeasure μ]
 
 section BoxSquare
 
+omit [MeasurableSpace X] [BorelSpace X] in
+/-- Uniform bound on a continuous kernel over the compact square. -/
+private theorem exists_bnd {K : X → X → 𝕜}
+    (hKc : Continuous fun p : X × X => K p.1 p.2) :
+    ∃ M : ℝ, 0 ≤ M ∧ ∀ x y : X, ‖K x y‖ ≤ M := by
+  obtain ⟨M, hM⟩ := isCompact_univ.exists_bound_of_continuousOn
+    (f := fun p : X × X => K p.1 p.2) hKc.continuousOn
+  exact ⟨max M 0, le_max_right _ _,
+    fun x y => le_trans (hM (x, y) (Set.mem_univ _)) (le_max_left _ _)⟩
+
 /-- The box square of a continuous symbol on a compact space is continuous. -/
 theorem continuous_boxProd {K : X → X → 𝕜}
     (hKc : Continuous fun p : X × X => K p.1 p.2) :
     Continuous fun p : X × X => boxProd μ K K p.1 p.2 := by
-  sorry
+  obtain ⟨M, hM0, hM⟩ := exists_bnd hKc
+  refine continuous_of_dominated (bound := fun _ : X => M * M) ?_ ?_ (integrable_const _) ?_
+  · intro p
+    exact (((hKc.comp' (continuous_const.prodMk continuous_id))).mul
+      (hKc.comp' (continuous_id.prodMk continuous_const))).aestronglyMeasurable
+  · intro p
+    filter_upwards with t
+    rw [norm_mul]
+    exact mul_le_mul (hM _ _) (hM _ _) (norm_nonneg _) hM0
+  · filter_upwards with t
+    exact (hKc.comp' (continuous_fst.prodMk continuous_const)).mul
+      (hKc.comp' (continuous_const.prodMk continuous_snd))
+
 
 /-- **`T_K²` is the integral operator with symbol `K □ K`.** -/
 theorem mercerCLM_comp_self {K : X → X → 𝕜}
