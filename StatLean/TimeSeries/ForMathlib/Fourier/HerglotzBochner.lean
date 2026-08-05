@@ -58,7 +58,40 @@ coefficients of a finite measure form a positive semidefinite sequence
 theorem isPosSemidefSeq_measureFourierCoeff (F : Measure (AddCircle (2 * π)))
     [IsFiniteMeasure F] :
     IsPosSemidefSeq fun k => (measureFourierCoeff F k).re := by
-  sorry
+  haveI : Fact (0 < 2 * π) := ⟨by positivity⟩
+  intro n t a
+  have hint : ∀ m : ℤ, Integrable (fun z => fourier (T := 2 * π) m z) F := fun m =>
+    (BoundedContinuousFunction.mkOfCompact (fourier (T := 2 * π) m)).integrable F
+  -- pointwise: the Hermitian form of the characters is the squared modulus of `Σ aᵢ e^{itᵢz}`
+  have hkey : ∀ z : AddCircle (2 * π),
+      ∑ i, ∑ j, (((a i * a j : ℝ)) : ℂ) * fourier (T := 2 * π) (t i - t j) z
+        = ((‖∑ i, ((a i : ℝ) : ℂ) * fourier (T := 2 * π) (t i) z‖ ^ 2 : ℝ) : ℂ) := by
+    intro z
+    rw [Complex.ofReal_pow, ← Complex.mul_conj', map_sum, Finset.sum_mul_sum]
+    refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+    rw [map_mul, Complex.conj_ofReal, ← fourier_neg, sub_eq_add_neg, fourier_add]
+    push_cast
+    ring
+  -- the real quadratic form is the real part of the complex one
+  have hre : ∑ i, ∑ j, a i * a j * (measureFourierCoeff F (t i - t j)).re
+      = (∑ i, ∑ j, (((a i * a j : ℝ)) : ℂ) * measureFourierCoeff F (t i - t j)).re := by
+    simp only [Complex.re_sum, Complex.re_ofReal_mul]
+  have h2 : ∀ i j : Fin n, (((a i * a j : ℝ)) : ℂ) * measureFourierCoeff F (t i - t j)
+      = ∫ z, (((a i * a j : ℝ)) : ℂ) * fourier (T := 2 * π) (t i - t j) z ∂F := by
+    intro i j
+    rw [measureFourierCoeff]
+    exact (integral_const_mul _ _).symm
+  -- swap the finite sum with the integral (characters are bounded continuous)
+  have h3 : (∑ i, ∑ j, (((a i * a j : ℝ)) : ℂ) * measureFourierCoeff F (t i - t j))
+      = ∫ z, ∑ i, ∑ j, (((a i * a j : ℝ)) : ℂ) * fourier (T := 2 * π) (t i - t j) z ∂F := by
+    rw [integral_finset_sum _ (fun i _ =>
+      integrable_finset_sum _ (fun j _ => (hint (t i - t j)).const_mul _))]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [integral_finset_sum _ (fun j _ => (hint (t i - t j)).const_mul _)]
+    exact Finset.sum_congr rfl fun j _ => h2 i j
+  rw [hre, h3, integral_congr_ae (Filter.Eventually.of_forall hkey), integral_complex_ofReal,
+    Complex.ofReal_re]
+  exact integral_nonneg fun z => by positivity
 
 /-- Evenness of the coefficient sequence of a negation-invariant finite measure
 (companion to the converse: together they say the coefficient sequence of a
@@ -66,6 +99,6 @@ theorem isPosSemidefSeq_measureFourierCoeff (F : Measure (AddCircle (2 * π)))
 theorem measureFourierCoeff_re_even (F : Measure (AddCircle (2 * π))) [IsFiniteMeasure F]
     (hF : NegInvariant F) (k : ℤ) :
     (measureFourierCoeff F (-k)).re = (measureFourierCoeff F k).re := by
-  sorry
+  rw [measureFourierCoeff_neg F hF k]
 
 end StatLean.TimeSeries
