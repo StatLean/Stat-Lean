@@ -1,5 +1,6 @@
 import StatLean.TimeSeries.ForMathlib.Fourier.HerglotzBochner
 import StatLean.TimeSeries.Process.Autocovariance
+import StatLean.TimeSeries.Models.WhiteNoise
 
 /-!
 # The spectral distribution of a stationary process (FY §2.3.1–§2.3.2, Theorem 2.10)
@@ -72,7 +73,7 @@ theorem IsSpectralMeasure.mass {X : ℤ → Ω → ℝ} {F : Measure (AddCircle 
 theorem isSpectralMeasure_whiteNoise [IsProbabilityMeasure μ] {ε : ℤ → Ω → ℝ} {σ2 : ℝ}
     (hσ : 0 ≤ σ2) (hε : IsWhiteNoise ε σ2 μ) :
     IsSpectralMeasure ε μ (ENNReal.ofReal σ2 •
-      (haarAddCircle : Measure (AddCircle (2 * π)))) := by
+      (AddCircle.haarAddCircle : Measure (AddCircle (2 * π)))) := by
   sorry
 
 end StatLean.TimeSeries

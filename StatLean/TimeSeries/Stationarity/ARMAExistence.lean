@@ -54,7 +54,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 as formal power-series coefficients; well-defined because `b(0) = 1` makes `arPoly b`
 invertible in `ℝ⟦X⟧`. -/
 noncomputable def armaPsi {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (n : ℕ) : ℝ :=
-  PowerSeries.coeff ℝ n
+  PowerSeries.coeff n
     (((maPoly a : Polynomial ℝ) : PowerSeries ℝ) *
       (((arPoly b : Polynomial ℝ) : PowerSeries ℝ))⁻¹)
 

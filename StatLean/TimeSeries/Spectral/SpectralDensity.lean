@@ -70,7 +70,8 @@ coefficient clause of `IsSpectralMeasure`). -/
 theorem isSpectralMeasure_withDensity [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     (hstat : IsStationary X μ) (hsum : HasSummableACVF X μ) :
     IsSpectralMeasure X μ
-      (((2 * π : ℝ≥0∞) • (haarAddCircle : Measure (AddCircle (2 * π)))).withDensity
+      ((ENNReal.ofReal (2 * π) •
+          (AddCircle.haarAddCircle : Measure (AddCircle (2 * π)))).withDensity
         fun l => ENNReal.ofReal (spectralDensityOf X μ l)) := by
   sorry
 
