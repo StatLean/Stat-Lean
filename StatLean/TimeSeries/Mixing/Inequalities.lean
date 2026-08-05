@@ -1,6 +1,7 @@
 import StatLean.TimeSeries.Mixing.Defs
 import StatLean.TimeSeries.Process.Stationary
 import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 
 /-!
 # Covariance and moment inequalities under mixing (FY §2.6.2, pp. 71–73)
@@ -68,6 +69,93 @@ section TwoAlgebras
 
 variable {Ω : Type*}
 
+/-- Every element of the α description set is dominated by `α` itself: the description set
+is bounded above by `1` on a probability space, so `le_csSup` applies. -/
+private lemma le_alphaMixCoeff_of_measurableSet {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] {A B : Set Ω} (hA : MeasurableSet[m₁] A)
+    (hB : MeasurableSet[m₂] B) :
+    |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal| ≤ alphaMixCoeff μ m₁ m₂ := by
+  refine le_csSup ⟨1, ?_⟩ ⟨A, B, hA, hB, rfl⟩
+  rintro r ⟨A', B', -, -, rfl⟩
+  have h1 : (μ (A' ∩ B')).toReal ≤ 1 := measureReal_le_one
+  have h2 : (μ A').toReal ≤ 1 := measureReal_le_one
+  have h3 : (μ B').toReal ≤ 1 := measureReal_le_one
+  have h4 : (0:ℝ) ≤ (μ (A' ∩ B')).toReal := ENNReal.toReal_nonneg
+  have h5 : (0:ℝ) ≤ (μ A').toReal := ENNReal.toReal_nonneg
+  have h6 : (0:ℝ) ≤ (μ B').toReal := ENNReal.toReal_nonneg
+  rw [abs_le]
+  refine ⟨by nlinarith, by nlinarith⟩
+
+/-- The peeling step behind Billingsley's inequality: if the `m`-set discrepancies of `ψ`
+are bounded by `K`, then `ψ` decorrelates from every `m`-measurable `φ` bounded by `C`,
+with constant `2 C K`.
+
+Proof: `∫ φ ψ = ∫ φ · E[ψ | m]` (pull-out property), so the left-hand side is
+`∫ φ · W` with `W = E[ψ | m] − E ψ`; then `|∫ φ W| ≤ C ∫ |W|` and, splitting `Ω` at the
+`m`-measurable sign event of `W`, `∫ |W| = ∫_A W − ∫_{Aᶜ} W ≤ 2 K` by hypothesis. -/
+private lemma abs_integral_mul_sub_le_of_setIntegral_bound
+    {m mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbabilityMeasure μ] (hm : m ≤ mΩ)
+    {φ ψ : Ω → ℝ} {C K : ℝ}
+    (hφ : StronglyMeasurable[m] φ) (hφC : ∀ᵐ ω ∂μ, |φ ω| ≤ C)
+    (hψ : Integrable ψ μ)
+    (hK : ∀ A : Set Ω, MeasurableSet[m] A →
+      |(∫ ω in A, ψ ω ∂μ) - (∫ ω, ψ ω ∂μ) * (μ A).toReal| ≤ K) :
+    |(∫ ω, φ ω * ψ ω ∂μ) - (∫ ω, φ ω ∂μ) * ∫ ω, ψ ω ∂μ| ≤ 2 * C * K := by
+  have hC : 0 ≤ C := le_trans (abs_nonneg _) hφC.exists.choose_spec
+  have hφn : ∀ᵐ ω ∂μ, ‖φ ω‖ ≤ C := by simpa [Real.norm_eq_abs] using hφC
+  have hφ' : StronglyMeasurable φ := hφ.mono hm
+  have hφint : Integrable φ μ :=
+    (memLp_top_of_bound hφ'.aestronglyMeasurable C hφn).integrable le_top
+  set c : ℝ := ∫ ω, ψ ω ∂μ with hcdef
+  set W : Ω → ℝ := fun ω => (μ[ψ|m]) ω - c with hWdef
+  have hWm : StronglyMeasurable[m] W := stronglyMeasurable_condExp.sub stronglyMeasurable_const
+  have hWint : Integrable W μ := integrable_condExp.sub (integrable_const c)
+  have hpull : ∫ ω, φ ω * ψ ω ∂μ = ∫ ω, φ ω * (μ[ψ|m]) ω ∂μ := by
+    have h1 : μ[φ * ψ|m] =ᵐ[μ] φ * μ[ψ|m] :=
+      condExp_stronglyMeasurable_mul_of_bound hm hφ hψ C hφn
+    calc ∫ ω, φ ω * ψ ω ∂μ = ∫ ω, (μ[φ * ψ|m]) ω ∂μ := (integral_condExp hm).symm
+      _ = ∫ ω, (φ * μ[ψ|m]) ω ∂μ := integral_congr_ae h1
+      _ = ∫ ω, φ ω * (μ[ψ|m]) ω ∂μ := rfl
+  have hkey : (∫ ω, φ ω * ψ ω ∂μ) - (∫ ω, φ ω ∂μ) * c = ∫ ω, φ ω * W ω ∂μ := by
+    rw [hpull]
+    have h : ∀ ω, φ ω * W ω = φ ω * (μ[ψ|m]) ω - φ ω * c := by intro ω; ring
+    simp_rw [h]
+    rw [integral_sub (integrable_condExp.bdd_mul hφ'.aestronglyMeasurable hφn)
+      (hφint.mul_const c), integral_mul_const]
+  have hsetW : ∀ A : Set Ω, MeasurableSet[m] A →
+      ∫ ω in A, W ω ∂μ = (∫ ω in A, ψ ω ∂μ) - c * (μ A).toReal := by
+    intro A hA
+    rw [hWdef]
+    rw [integral_sub (integrable_condExp.restrict) (integrable_const c),
+      setIntegral_condExp hm hψ hA, setIntegral_const, smul_eq_mul, mul_comm]
+    rfl
+  set A : Set Ω := {ω | 0 ≤ W ω} with hAdef
+  have hA : MeasurableSet[m] A := hWm.measurable measurableSet_Ici
+  have hsplit : ∫ ω, |W ω| ∂μ = (∫ ω in A, W ω ∂μ) - ∫ ω in Aᶜ, W ω ∂μ := by
+    have h1 : ∫ ω in A, |W ω| ∂μ = ∫ ω in A, W ω ∂μ :=
+      setIntegral_congr_fun (hm A hA) fun x hx => abs_of_nonneg hx
+    have h2 : ∫ ω in Aᶜ, |W ω| ∂μ = -∫ ω in Aᶜ, W ω ∂μ := by
+      rw [← integral_neg]
+      exact setIntegral_congr_fun (hm A hA).compl fun x hx => abs_of_neg (not_le.mp hx)
+    rw [← integral_add_compl (hm A hA) hWint.abs, h1, h2]
+    ring
+  have hbd1 : |∫ ω in A, W ω ∂μ| ≤ K := by rw [hsetW A hA]; exact hK A hA
+  have hbd2 : |∫ ω in Aᶜ, W ω ∂μ| ≤ K := by rw [hsetW _ hA.compl]; exact hK _ hA.compl
+  have hW2K : ∫ ω, |W ω| ∂μ ≤ 2 * K := by
+    rw [hsplit]
+    linarith [(abs_le.mp hbd1).2, (abs_le.mp hbd2).1]
+  rw [hkey]
+  calc |∫ ω, φ ω * W ω ∂μ| ≤ ∫ ω, |φ ω * W ω| ∂μ := abs_integral_le_integral_abs
+    _ ≤ ∫ ω, C * |W ω| ∂μ := by
+        refine integral_mono_ae ((hWint.bdd_mul hφ'.aestronglyMeasurable hφn).abs)
+          (hWint.abs.const_mul C) ?_
+        filter_upwards [hφC] with ω hω
+        rw [abs_mul]
+        exact mul_le_mul_of_nonneg_right hω (abs_nonneg _)
+    _ = C * ∫ ω, |W ω| ∂μ := integral_const_mul _ _
+    _ ≤ C * (2 * K) := mul_le_mul_of_nonneg_left hW2K hC
+    _ = 2 * C * K := by ring
+
 /-- **FY Proposition 2.5(ii) (Billingsley)**: `m₁`/`m₂`-measurable bounded factors have
 covariance at most `4 α C₁ C₂`. -/
 theorem abs_covariance_le_of_bounded {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
@@ -77,7 +165,58 @@ theorem abs_covariance_le_of_bounded {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : 
     -- USER-INPUT: uniform bounds; FY Prop 2.5(ii)
     (hfC : ∀ᵐ ω ∂μ, |f ω| ≤ C₁) (hgC : ∀ᵐ ω ∂μ, |g ω| ≤ C₂) :
     |cov[f, g; μ]| ≤ 4 * alphaMixCoeff μ m₁ m₂ * C₁ * C₂ := by
-  sorry
+  set α := alphaMixCoeff μ m₁ m₂ with hα
+  have hC₁ : 0 ≤ C₁ := le_trans (abs_nonneg _) hfC.exists.choose_spec
+  have hC₂ : 0 ≤ C₂ := le_trans (abs_nonneg _) hgC.exists.choose_spec
+  have hfsm : StronglyMeasurable[m₁] f := hf.stronglyMeasurable
+  have hgsm : StronglyMeasurable[m₂] g := hg.stronglyMeasurable
+  have hfn : ∀ᵐ ω ∂μ, ‖f ω‖ ≤ C₁ := by simpa [Real.norm_eq_abs] using hfC
+  have hgn : ∀ᵐ ω ∂μ, ‖g ω‖ ≤ C₂ := by simpa [Real.norm_eq_abs] using hgC
+  have hfLp : MemLp f 2 μ :=
+    (memLp_top_of_bound (hfsm.mono h₁).aestronglyMeasurable C₁ hfn).mono_exponent le_top
+  have hgLp : MemLp g 2 μ :=
+    (memLp_top_of_bound (hgsm.mono h₂).aestronglyMeasurable C₂ hgn).mono_exponent le_top
+  have hfint : Integrable f μ := hfLp.integrable one_le_two
+  -- Step A: peel `f` against an arbitrary `m₂`-event; the discrepancies are the α set.
+  have hstepA : ∀ B : Set Ω, MeasurableSet[m₂] B →
+      |(∫ ω in B, f ω ∂μ) - (∫ ω, f ω ∂μ) * (μ B).toReal| ≤ 2 * C₁ * α := by
+    intro B hB
+    have hBΩ : MeasurableSet B := h₂ B hB
+    have hind : Integrable (B.indicator (1 : Ω → ℝ)) μ :=
+      (integrable_const (1 : ℝ)).indicator hBΩ
+    have h := abs_integral_mul_sub_le_of_setIntegral_bound (m := m₁) (mΩ := mΩ) h₁
+      hfsm hfC hind (K := α) ?_
+    · have e1 : ∫ ω, f ω * B.indicator (1 : Ω → ℝ) ω ∂μ = ∫ ω in B, f ω ∂μ := by
+        rw [← integral_indicator hBΩ]
+        congr 1 with ω
+        by_cases hω : ω ∈ B <;> simp [Set.indicator_of_mem, Set.indicator_of_notMem, hω]
+      have e2 : ∫ ω, B.indicator (1 : Ω → ℝ) ω ∂μ = (μ B).toReal := by
+        rw [integral_indicator hBΩ]
+        simp [measureReal_def]
+      rw [e1, e2] at h
+      exact h
+    · intro A hA
+      have e3 : ∫ ω in A, B.indicator (1 : Ω → ℝ) ω ∂μ = (μ (A ∩ B)).toReal := by
+        rw [setIntegral_indicator hBΩ]
+        simp [measureReal_def]
+      have e4 : ∫ ω, B.indicator (1 : Ω → ℝ) ω ∂μ = (μ B).toReal := by
+        rw [integral_indicator hBΩ]
+        simp [measureReal_def]
+      rw [e3, e4, mul_comm ((μ B).toReal) ((μ A).toReal)]
+      exact le_alphaMixCoeff_of_measurableSet (mΩ := mΩ) (μ := μ) hA hB
+  -- Step B: peel `g` against `f`, feeding Step A as the discrepancy bound.
+  have hstepB := abs_integral_mul_sub_le_of_setIntegral_bound (m := m₂) (mΩ := mΩ) h₂
+    hgsm hgC hfint (K := 2 * C₁ * α) hstepA
+  rw [covariance_eq_sub hfLp hgLp]
+  have e5 : ∫ ω, g ω * f ω ∂μ = ∫ ω, f ω * g ω ∂μ := by simp_rw [mul_comm]
+  rw [e5] at hstepB
+  have e6 : (∫ ω, f ω * g ω ∂μ) - (∫ ω, g ω ∂μ) * ∫ ω, f ω ∂μ
+      = μ[f * g] - μ[f] * μ[g] := by
+    simp only [Pi.mul_apply]
+    ring
+  rw [e6] at hstepB
+  calc |μ[f * g] - μ[f] * μ[g]| ≤ 2 * C₂ * (2 * C₁ * α) := hstepB
+    _ = 4 * α * C₁ * C₂ := by ring
 
 /-- **Complex Billingsley** (FY §2.6.2, constant 16): unit-modulus-bounded complex
 factors. Stated with the real-bilinear covariance
