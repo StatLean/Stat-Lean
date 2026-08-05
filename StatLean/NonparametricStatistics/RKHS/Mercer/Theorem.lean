@@ -647,18 +647,148 @@ theorem MercerEigensystem.hasSum_kernel {K : X → X → 𝕜}
     [μ.IsOpenPosMeasure]
     (d : MercerEigensystem μ K hKc) (x y : X) :
     HasSum (fun n => (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y))) (K x y) := by
-  -- OPEN.  Route (independent of `exists_mercerEigensystem`): for a finite `s ⊆ ι` the
-  -- residual symbol `K_s := K − ∑_{n ∈ s} λₙ eₙ ⊗ conj eₙ` is continuous, Hermitian, and
-  -- its integral operator is `T_K` minus the spectral truncation, which is positive by
-  -- `d.opExpansion`; hence `isMercerKernel_of_isPositive` (Mercer/Basic, PROVED) makes
-  -- `K_s` a Mercer kernel and its diagonal is `≥ 0`, i.e.
-  -- `∑_{n ∈ s} λₙ ‖eₙ x‖² ≤ re K(x,x)`.  Missing: the residual operators' norms tend to
-  -- `0` (this is where the spectral theorem re-enters — it is exactly the statement that
-  -- the eigen-expansion exhausts `(ker T_K)ᗮ`, which `opExpansion` gives in `L²` but
-  -- which must be converted into `‖T_{K_s}‖ → 0`), plus the final step "a continuous
-  -- kernel whose integral operator vanishes is `0` pointwise" (again
-  -- `isMercerKernel_of_isPositive`'s averaging argument, applied to `±K_∞`).
-  sorry
+  classical
+  -- the eigenfunctions as `L²` classes, and the section `conj K(x, ·)`
+  have hL2 : IsL2Symbol μ K := isL2Symbol_of_continuous hKc
+  have hkx : ∀ g : Lp 𝕜 2 μ, ⟪symbolConjLp μ K hL2 x, g⟫_𝕜 = integralOp μ K g x :=
+    fun g => (integralOp_eq_inner K hL2 g x).symm
+  have hTsym : ∀ a b : Lp 𝕜 2 μ,
+      ⟪mercerCLM μ hKc a, b⟫_𝕜 = ⟪a, mercerCLM μ hKc b⟫_𝕜 :=
+    fun a b => (isPositive_mercerCLM hK).1 a b
+  -- (α) the eigenvalue equation in `L²`
+  have heigL : ∀ n, mercerCLM μ hKc (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)) = (d.eigval n : 𝕜) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n) := by
+    intro n
+    refine Lp.ext ?_
+    filter_upwards [mercerCLM_coeFn_ae hKc (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)),
+      Lp.coeFn_smul ((d.eigval n : 𝕜)) (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)),
+      ContinuousMap.coeFn_toLp (E := 𝕜) (p := 2) (μ := μ) (𝕜 := 𝕜) (d.eigfun n)]
+      with z h1 h2 h3
+    rw [h1, h2, Pi.smul_apply, smul_eq_mul, h3, d.eigen_eq n z]
+  -- (γ) the integral operator vanishes pointwise on its kernel
+  have hker0 : ∀ g₀ : Lp 𝕜 2 μ, mercerCLM μ hKc g₀ = 0 → ∀ z, integralOp μ K g₀ z = 0 := by
+    intro g₀ h0 z
+    have hae : integralOp μ K g₀ =ᵐ[μ] fun _ : X => (0 : 𝕜) := by
+      filter_upwards [(mercerCLM_coeFn_ae hKc g₀).symm,
+        Lp.coeFn_zero (E := 𝕜) (p := 2) (μ := μ)] with a ha hb
+      rw [ha, h0, hb]
+      rfl
+    have := (Continuous.ae_eq_iff_eq (μ := μ)
+      (continuous_integralOp_of_continuous hKc g₀) continuous_const).mp hae
+    exact congrFun this z
+  -- (β) the eigenfunctions are orthogonal to the kernel of `T_K`
+  have hEEker : ∀ (n : d.ι) (g₀ : Lp 𝕜 2 μ), mercerCLM μ hKc g₀ = 0 → ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g₀⟫_𝕜 = 0 := by
+    intro n g₀ h0
+    have h1 : ⟪mercerCLM μ hKc (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)), g₀⟫_𝕜 = ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), mercerCLM μ hKc g₀⟫_𝕜 := hTsym _ _
+    rw [heigL n, h0, inner_zero_right, inner_smul_left, RCLike.conj_ofReal] at h1
+    rcases mul_eq_zero.mp h1 with h | h
+    · exact absurd h (RCLike.ofReal_ne_zero.mpr (d.eigval_pos n).ne')
+    · exact h
+  -- the continuous limit of the conjugated expansion, as an element of `C(X, 𝕜)`
+  have hSc : Continuous fun z : X =>
+      conj (∑' n, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n z))) :=
+    RCLike.continuous_conj.comp' (continuous_eig_tsum hK d x)
+  set Sc : C(X, 𝕜) := ⟨_, hSc⟩ with hScdef
+  set G : Finset d.ι → C(X, 𝕜) := fun t =>
+    ∑ n ∈ t, ((d.eigval n : 𝕜) * conj (d.eigfun n x)) • d.eigfun n with hGdef
+  have hUC : TendstoUniformly (fun t : Finset d.ι => fun z => G t z) (fun z => Sc z)
+      Filter.atTop := by
+    rw [Metric.tendstoUniformly_iff]
+    intro ε hε
+    filter_upwards [(Metric.tendstoUniformly_iff.mp (tendstoUniformly_eig hK d x)) ε hε]
+      with t ht z
+    have hGz : G t z
+        = conj (∑ n ∈ t, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n z))) := by
+      rw [map_sum, hGdef]
+      simp only [ContinuousMap.coe_sum, ContinuousMap.coe_smul, Finset.sum_apply,
+        Pi.smul_apply, smul_eq_mul]
+      refine Finset.sum_congr rfl fun n _ => ?_
+      rw [map_mul, map_mul, RCLike.conj_conj, RCLike.conj_ofReal]
+      ring
+    have hScz : Sc z = conj (∑' n, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n z))) := rfl
+    rw [hGz, hScz, dist_eq_norm, ← map_sub, RCLike.norm_conj, ← dist_eq_norm]
+    exact ht z
+  have hGtend : Filter.Tendsto G Filter.atTop (nhds Sc) :=
+    ContinuousMap.tendsto_iff_tendstoUniformly.mpr hUC
+  have hw : HasSum (fun n => ((d.eigval n : 𝕜) * conj (d.eigfun n x)) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n))
+      (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 Sc) := by
+    have h := ((ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜).continuous.tendsto Sc).comp hGtend
+    refine h.congr fun t => ?_
+    simp only [Function.comp_apply, hGdef, map_sum, map_smul]
+  -- the coefficients of `w` and of `conj K(x, ·)` against the eigenfunctions agree
+  have hEEw : ∀ m : d.ι, ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m), ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 Sc⟫_𝕜
+      = (d.eigval m : 𝕜) * conj (d.eigfun m x) := by
+    intro m
+    have h := hw.mapL (innerSL 𝕜 (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m)))
+    have heq : (fun n => (innerSL 𝕜 (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m))) (((d.eigval n : 𝕜) * conj (d.eigfun n x)) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)))
+        = fun n => if n = m then (d.eigval m : 𝕜) * conj (d.eigfun m x) else 0 := by
+      funext n
+      rw [innerSL_apply_apply, inner_smul_right, orthonormal_iff_ite.mp d.orthonormal m n]
+      by_cases hnm : n = m
+      · subst hnm; simp
+      · simp [hnm, Ne.symm hnm]
+    rw [heq] at h
+    exact ((hasSum_ite_eq m ((d.eigval m : 𝕜) * conj (d.eigfun m x))).unique h).symm
+  have hEEk : ∀ m : d.ι, ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m), symbolConjLp μ K hL2 x⟫_𝕜
+      = (d.eigval m : 𝕜) * conj (d.eigfun m x) := by
+    intro m
+    rw [← inner_conj_symm, hkx, d.eigen_eq m x, map_mul, RCLike.conj_ofReal]
+  -- both are orthogonal to the kernel of `T_K`
+  have hg0w : ∀ g₀ : Lp 𝕜 2 μ, mercerCLM μ hKc g₀ = 0 →
+      ⟪g₀, ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 Sc⟫_𝕜 = 0 := by
+    intro g₀ h0
+    have h := hw.mapL (innerSL 𝕜 g₀)
+    have heq : (fun n => (innerSL 𝕜 g₀) (((d.eigval n : 𝕜) * conj (d.eigfun n x)) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)))
+        = fun _ : d.ι => (0 : 𝕜) := by
+      funext n
+      rw [innerSL_apply_apply, inner_smul_right, ← inner_conj_symm, hEEker n g₀ h0,
+        map_zero, mul_zero]
+    rw [heq] at h
+    exact (hasSum_zero.unique h).symm
+  have hg0k : ∀ g₀ : Lp 𝕜 2 μ, mercerCLM μ hKc g₀ = 0 →
+      ⟪g₀, symbolConjLp μ K hL2 x⟫_𝕜 = 0 := by
+    intro g₀ h0
+    rw [← inner_conj_symm, hkx, hker0 g₀ h0 x, map_zero]
+  -- the difference is in the kernel and orthogonal to it, hence zero
+  set ψ : Lp 𝕜 2 μ := ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 Sc - symbolConjLp μ K hL2 x with hψdef
+  have hψE : ∀ m : d.ι, ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun m), ψ⟫_𝕜 = 0 := by
+    intro m
+    rw [hψdef, inner_sub_right, hEEw m, hEEk m, sub_self]
+  have hψker : mercerCLM μ hKc ψ = 0 := by
+    have h := d.opExpansion ψ
+    have heq : (fun n => (d.eigval n : 𝕜) • (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), ψ⟫_𝕜 • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)))
+        = fun _ : d.ι => (0 : Lp 𝕜 2 μ) := by
+      funext n
+      rw [hψE n, zero_smul, smul_zero]
+    rw [heq] at h
+    exact (hasSum_zero.unique h).symm
+  have hψ0 : ψ = 0 := by
+    have h1 : ⟪ψ, ψ⟫_𝕜 = 0 := by
+      rw [hψdef, inner_sub_right, hg0w ψ hψker, hg0k ψ hψker, sub_zero]
+    exact inner_self_eq_zero.mp h1
+  -- conclude: the two continuous functions agree a.e., hence everywhere
+  have hwk : ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 Sc = symbolConjLp μ K hL2 x :=
+    sub_eq_zero.mp hψ0
+  have hae : (fun z : X => conj (∑' n, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n z))))
+      =ᵐ[μ] fun z : X => conj (K x z) := by
+    filter_upwards [ContinuousMap.coeFn_toLp (E := 𝕜) (p := 2) (μ := μ) (𝕜 := 𝕜) Sc,
+      MemLp.coeFn_toLp (μ := μ) (p := 2) ((IsL2Symbol.conj K hL2) x)] with z h1 h2
+    have h3 : ((ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 Sc : Lp 𝕜 2 μ) : X → 𝕜) z
+        = ((symbolConjLp μ K hL2 x : Lp 𝕜 2 μ) : X → 𝕜) z := by rw [hwk]
+    rw [h3] at h1
+    simp only [symbolConjLp] at h1
+    rw [h2] at h1
+    exact h1.symm
+  have heverywhere : (fun z : X => conj (∑' n, (d.eigval n : 𝕜) *
+      (d.eigfun n x * conj (d.eigfun n z)))) = fun z : X => conj (K x z) :=
+    (Continuous.ae_eq_iff_eq (μ := μ) hSc
+      (RCLike.continuous_conj.comp' (hKc.comp' (continuous_const.prodMk continuous_id)))).mp hae
+  have hxy : (∑' n, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y))) = K x y := by
+    have := congrFun heverywhere y
+    have h4 : conj (conj (∑' n, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y))))
+        = conj (conj (K x y)) := by rw [this]
+    rwa [RCLike.conj_conj, RCLike.conj_conj] at h4
+  rw [← hxy]
+  exact (summable_eig_prod hK d x y).hasSum
 
 /-- **Mercer's theorem, uniform convergence**: the finite partial sums of the
 eigen-expansion converge to `K` uniformly on `X × X`. -/
