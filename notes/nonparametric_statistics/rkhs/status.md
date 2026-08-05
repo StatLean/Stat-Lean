@@ -24,9 +24,10 @@ book↔Lean dictionary and lane plan.
 | frames | `np/rkhs-frames` | ParsevalFrame, Papadakis | MERGED 0-sorry |
 | sobolev | `np/rkhs-sobolev` | MinKernel, Sobolev | MERGED 0-sorry |
 | moore | `np/rkhs-moore` | Moore, Uniqueness, RankOne, InnerKernel | MERGED; exists_rkhs repaired+proved on laptop; dualRKHS_range_coe restated (conj-linear), 1 sorry to residual pass |
-| ml | `np/rkhs-ml` | FeatureMap, Separation, MaxMargin, Representer | RUNNING |
-| integral | `np/rkhs-integral` | IntegralOperator, RangeSpace, Mercer/Defs, Mercer/OperatorLemmas | RUNNING |
-| mercer | `np/rkhs-mercer` | Mercer/Basic, Mercer/Compact, Mercer/Theorem, Mercer/SquareRoot | queued (wave 3) |
+| ml | `np/rkhs-ml` | FeatureMap, Separation, MaxMargin, Representer | MERGED; MaxMargin degeneracy repaired+proved on laptop |
+| integral | `np/rkhs-integral` | IntegralOperator, RangeSpace, Mercer/Defs, Mercer/OperatorLemmas | MERGED 0-sorry |
+| mercer | `np/rkhs-mercer` | Mercer/Basic, Mercer/Compact, Mercer/Theorem, Mercer/SquareRoot | MERGED: Basic+Compact 0-sorry (11.6–11.12, T_K compact), BoxSquare (11.16/11.17) closed; Thm 11.15 assembly + 11.18 open w/ routes |
+| mercer2 | `np/rkhs-mercer2` | Mercer/Theorem, Mercer/SquareRoot, InnerKernel | RUNNING (summit round) |
 
 ## Known design decisions / deviations (documented in file docstrings)
 
@@ -55,6 +56,20 @@ book↔Lean dictionary and lane plan.
   counterexample `dualRKHS_range_coe_false`, kept in-file); restated with `L →L⋆[𝕜] 𝕜`
   (Riesz–Fréchet for conjugate-linear functionals).  Proof deferred to residual pass.
 
-## Debts
+## Statement renegotiations (continued)
 
-- `dualRKHS_range_coe` (restated) — 1 sorry, residual pass.
+- `isMaxMarginHyperplane_of_min_norm`: FALSE in the all-one-sign degenerate case
+  (ml-lane compiled counterexample: n=1, x=0, lab=+1 makes 0 feasible and minimal);
+  repaired with both-classes-nonempty inputs and closed via the lane's proved
+  nondegenerate core.
+- `exists_featureMap`: same auto-bound-universe artifact as `exists_rkhs`; pinned to
+  `Type (max uK uX)` and proof updated.
+
+## Debts (as of mercer round 1)
+
+- `dualRKHS_range_coe` (restated, conj-linear Riesz) — mercer2 target.
+- `Mercer/Theorem.lean`: `exists_mercerEigensystem`, `hasSum_kernel`,
+  `tendstoUniformly_kernel`, `summable_eigval`, `hasSum_eigval` — each with an
+  `-- OPEN.` route note; mercer2 targets.
+- `Mercer/SquareRoot.lean`: SquareRoot section (13 sorries) gated on `hasSum_kernel`;
+  mercer2 targets.
