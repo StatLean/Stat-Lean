@@ -351,6 +351,65 @@ theorem continuous_integralOp_of_continuous {K : X → X → 𝕜}
   · filter_upwards with y
     exact (hKc.comp' (continuous_id.prodMk continuous_const)).mul continuous_const
 
+/-- Two continuous symbols that are uniformly `η`-close have `μ(X)·η`-close integral
+operators (pointwise on `L²`). -/
+private theorem norm_mercerCLM_sub_apply_le {K₁ K₂ : X → X → 𝕜}
+    (h₁ : Continuous fun p : X × X => K₁ p.1 p.2)
+    (h₂ : Continuous fun p : X × X => K₂ p.1 p.2)
+    {η : ℝ} (hη0 : 0 ≤ η) (hη : ∀ x y, ‖K₁ x y - K₂ x y‖ ≤ η) (g : Lp 𝕜 2 μ) :
+    ‖mercerCLM μ h₁ g - mercerCLM μ h₂ g‖ ≤ (μ Set.univ).toReal * η * ‖g‖ := by
+  have hμ0 : (0 : ℝ) ≤ (μ Set.univ).toReal := ENNReal.toReal_nonneg
+  have hpt : ∀ᵐ x ∂μ, ‖((mercerCLM μ h₁ g - mercerCLM μ h₂ g : Lp 𝕜 2 μ) : X → 𝕜) x‖
+      ≤ Real.sqrt ((μ Set.univ).toReal) * η * ‖g‖ := by
+    filter_upwards [Lp.coeFn_sub (mercerCLM μ h₁ g) (mercerCLM μ h₂ g),
+      mercerCLM_coeFn_ae h₁ g, mercerCLM_coeFn_ae h₂ g] with x hx hx1 hx2
+    rw [hx]
+    simp only [Pi.sub_apply, hx1, hx2]
+    have hF : MemLp (fun y => K₁ x y - K₂ x y) 2 μ :=
+      (isL2Symbol_of_continuous h₁ x).sub (isL2Symbol_of_continuous h₂ x)
+    have hd : integralOp μ K₁ g x - integralOp μ K₂ g x
+        = ∫ y, (K₁ x y - K₂ x y) * (g : X → 𝕜) y ∂μ := by
+      have i1 : Integrable (fun y => K₁ x y * (g : X → 𝕜) y) μ :=
+        (isL2Symbol_of_continuous h₁ x).integrable_mul (Lp.memLp _)
+      have i2 : Integrable (fun y => K₂ x y * (g : X → 𝕜) y) μ :=
+        (isL2Symbol_of_continuous h₂ x).integrable_mul (Lp.memLp _)
+      rw [integralOp, integralOp, ← integral_sub i1 i2]
+      exact integral_congr_ae (Filter.Eventually.of_forall fun y => by ring)
+    rw [hd]
+    refine le_trans (norm_integral_mul_le hF g) ?_
+    have hb : ∫ y, ‖K₁ x y - K₂ x y‖ ^ 2 ∂μ ≤ (μ Set.univ).toReal * η ^ 2 := by
+      calc ∫ y, ‖K₁ x y - K₂ x y‖ ^ 2 ∂μ ≤ ∫ _y : X, η ^ 2 ∂μ :=
+            integral_mono_of_nonneg (Filter.Eventually.of_forall fun y => by positivity)
+              (integrable_const _)
+              (Filter.Eventually.of_forall fun y => pow_le_pow_left₀ (norm_nonneg _) (hη x y) 2)
+        _ = (μ Set.univ).toReal * η ^ 2 := by
+            rw [integral_const, smul_eq_mul, measureReal_def]
+    have h2 : Real.sqrt ((μ Set.univ).toReal * η ^ 2)
+        = Real.sqrt ((μ Set.univ).toReal) * η := by
+      rw [Real.sqrt_mul hμ0, Real.sqrt_sq hη0]
+    have h1 := (Real.sqrt_le_sqrt hb).trans_eq h2
+    nlinarith [norm_nonneg g, Real.sqrt_nonneg (∫ y, ‖K₁ x y - K₂ x y‖ ^ 2 ∂μ)]
+  have hsq : ‖mercerCLM μ h₁ g - mercerCLM μ h₂ g‖ ^ 2
+      ≤ ((μ Set.univ).toReal * η * ‖g‖) ^ 2 := by
+    rw [norm_Lp_sq]
+    calc ∫ x, ‖((mercerCLM μ h₁ g - mercerCLM μ h₂ g : Lp 𝕜 2 μ) : X → 𝕜) x‖ ^ 2 ∂μ
+        ≤ ∫ _x : X, (Real.sqrt ((μ Set.univ).toReal) * η * ‖g‖) ^ 2 ∂μ :=
+          integral_mono_of_nonneg (Filter.Eventually.of_forall fun x => by positivity)
+            (integrable_const _) (hpt.mono fun x hx => by
+              exact pow_le_pow_left₀ (norm_nonneg _) hx 2)
+      _ = (μ Set.univ).toReal * (Real.sqrt ((μ Set.univ).toReal) * η * ‖g‖) ^ 2 := by
+          rw [integral_const, smul_eq_mul, measureReal_def]
+      _ = ((μ Set.univ).toReal * η * ‖g‖) ^ 2 := by
+          have hs : Real.sqrt ((μ Set.univ).toReal) ^ 2 = (μ Set.univ).toReal :=
+            Real.sq_sqrt hμ0
+          linear_combination ((μ Set.univ).toReal * η ^ 2 * ‖g‖ ^ 2) * hs
+  calc ‖mercerCLM μ h₁ g - mercerCLM μ h₂ g‖
+      = Real.sqrt (‖mercerCLM μ h₁ g - mercerCLM μ h₂ g‖ ^ 2) :=
+        (Real.sqrt_sq (norm_nonneg _)).symm
+    _ ≤ Real.sqrt (((μ Set.univ).toReal * η * ‖g‖) ^ 2) := Real.sqrt_le_sqrt hsq
+    _ = (μ Set.univ).toReal * η * ‖g‖ :=
+        Real.sqrt_sq (mul_nonneg (mul_nonneg hμ0 hη0) (norm_nonneg _))
+
 /-- **`T_K` is a positive operator** when `K` is a Mercer kernel. -/
 theorem isPositive_mercerCLM {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K) :
     (mercerCLM μ hK.continuous).IsPositive := by
