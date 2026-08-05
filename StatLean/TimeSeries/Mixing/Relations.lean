@@ -67,36 +67,59 @@ section TwoAlgebras
 
 variable {Ω : Type*}
 
+/-- On a probability space every measure is at most `1` after `toReal`. -/
+private lemma toReal_le_one {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbabilityMeasure μ]
+    (s : Set Ω) : (μ s).toReal ≤ 1 := by
+  simpa using ENNReal.toReal_mono (measure_ne_top μ Set.univ) (measure_mono (Set.subset_univ s))
+
+/-- Every value in the α description set is bounded by `1`. -/
+private lemma abs_alpha_term_le_one {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] (A B : Set Ω) :
+    |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal| ≤ 1 := by
+  have h1 := toReal_le_one (μ := μ) (A ∩ B)
+  have h2 := toReal_le_one (μ := μ) A
+  have h3 := toReal_le_one (μ := μ) B
+  have h0 : (0 : ℝ) ≤ (μ (A ∩ B)).toReal := ENNReal.toReal_nonneg
+  have h0a : (0 : ℝ) ≤ (μ A).toReal := ENNReal.toReal_nonneg
+  have h0b : (0 : ℝ) ≤ (μ B).toReal := ENNReal.toReal_nonneg
+  rw [abs_le]
+  constructor <;> nlinarith
+
 /-- The α description set contains `0` (take `A = ∅`). -/
 theorem alphaMixCoeff_set_nonempty {m₁ m₂ mΩ : MeasurableSpace Ω} (μ : Measure Ω) :
     (0 : ℝ) ∈ {r : ℝ | ∃ A B : Set Ω, MeasurableSet[m₁] A ∧ MeasurableSet[m₂] B ∧
-      r = |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal|} := by
-  sorry
+      r = |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal|} :=
+  ⟨∅, ∅, @MeasurableSet.empty Ω m₁, @MeasurableSet.empty Ω m₂, by simp⟩
 
 /-- On a probability space the α description set is bounded above by `1`. -/
 theorem alphaMixCoeff_set_bddAbove {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ] :
     BddAbove {r : ℝ | ∃ A B : Set Ω, MeasurableSet[m₁] A ∧ MeasurableSet[m₂] B ∧
       r = |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal|} := by
-  sorry
+  refine ⟨1, ?_⟩
+  rintro r ⟨A, B, -, -, rfl⟩
+  exact abs_alpha_term_le_one A B
 
 /-- `0 ≤ α`. -/
 theorem alphaMixCoeff_nonneg {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ] :
-    0 ≤ alphaMixCoeff μ m₁ m₂ := by
-  sorry
+    0 ≤ alphaMixCoeff μ m₁ m₂ :=
+  le_csSup (alphaMixCoeff_set_bddAbove (mΩ := mΩ)) (alphaMixCoeff_set_nonempty (mΩ := mΩ) μ)
 
 /-- `α ≤ 1` (indeed `α ≤ ¼`, but FY only uses boundedness). -/
 theorem alphaMixCoeff_le_one {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ] :
-    alphaMixCoeff μ m₁ m₂ ≤ 1 := by
-  sorry
+    alphaMixCoeff μ m₁ m₂ ≤ 1 :=
+  Real.sSup_le (by rintro r ⟨A, B, -, -, rfl⟩; exact abs_alpha_term_le_one A B) zero_le_one
 
 /-- α is monotone in both σ-algebra arguments. -/
 theorem alphaMixCoeff_mono {m₁ m₂ m₁' m₂' mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ] (h₁ : m₁' ≤ m₁) (h₂ : m₂' ≤ m₂) :
     alphaMixCoeff μ m₁' m₂' ≤ alphaMixCoeff μ m₁ m₂ := by
-  sorry
+  refine csSup_le_csSup (alphaMixCoeff_set_bddAbove (mΩ := mΩ))
+    ⟨0, alphaMixCoeff_set_nonempty (mΩ := mΩ) μ⟩ ?_
+  rintro r ⟨A, B, hA, hB, rfl⟩
+  exact ⟨A, B, h₁ _ hA, h₂ _ hB, rfl⟩
 
 end TwoAlgebras
 
@@ -108,7 +131,12 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 used silently; from `sigmaGE X (n+1) ≤ sigmaGE X n`). -/
 theorem alphaCoeff_antitone [IsProbabilityMeasure μ] (X : ℤ → Ω → ℝ) :
     Antitone fun n : ℕ => alphaCoeff X μ n := by
-  sorry
+  intro a b hab
+  refine alphaMixCoeff_mono le_rfl ?_
+  refine iSup₂_le fun s hs => ?_
+  have hs' : (b : ℤ) ≤ s := hs
+  refine le_iSup₂_of_le s (Set.mem_Ici.mpr ?_) le_rfl
+  exact le_trans (by exact_mod_cast hab) hs'
 
 end Process
 
