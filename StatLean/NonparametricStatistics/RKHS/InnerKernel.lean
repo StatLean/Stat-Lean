@@ -103,6 +103,37 @@ theorem dualRKHS_range_coe :
     letI := dualRKHS 𝕜 L
     Set.range (fun w : L => (w : L → 𝕜))
       = {g : L → 𝕜 | ∃ T : L →L⋆[𝕜] 𝕜, g = T} := by
-  sorry
+  letI := dualRKHS 𝕜 L
+  ext g
+  constructor
+  · rintro ⟨w, rfl⟩
+    -- the functional `v ↦ ⟪v, w⟫` is conjugate-linear and bounded by `‖w‖`
+    refine ⟨LinearMap.mkContinuous
+      { toFun := fun v => ⟪v, w⟫_𝕜
+        map_add' := fun v₁ v₂ => inner_add_left _ _ _
+        map_smul' := fun c v => by
+          simpa [smul_eq_mul] using inner_smul_left (𝕜 := 𝕜) v w c }
+      ‖w‖ (fun v => by
+        change ‖⟪v, w⟫_𝕜‖ ≤ ‖w‖ * ‖v‖
+        rw [mul_comm]
+        exact norm_inner_le_norm _ _), ?_⟩
+    rfl
+  · rintro ⟨T, rfl⟩
+    -- `v ↦ conj (T v)` is a bounded `𝕜`-linear functional; represent it by Riesz
+    set S : L →L[𝕜] 𝕜 := LinearMap.mkContinuous
+      { toFun := fun v => conj (T v)
+        map_add' := fun v₁ v₂ => by simp
+        map_smul' := fun c v => by
+          simp [ContinuousLinearMap.map_smulₛₗ, smul_eq_mul] }
+      ‖T‖ (fun v => by
+        change ‖conj (T v)‖ ≤ ‖T‖ * ‖v‖
+        rw [RCLike.norm_conj]
+        exact T.le_opNorm v) with hS
+    refine ⟨(InnerProductSpace.toDual 𝕜 L).symm S, ?_⟩
+    funext v
+    change ⟪v, (InnerProductSpace.toDual 𝕜 L).symm S⟫_𝕜 = T v
+    rw [← inner_conj_symm, InnerProductSpace.toDual_symm_apply, hS]
+    change conj (conj (T v)) = T v
+    rw [RCLike.conj_conj]
 
 end StatLean.NonparametricStatistics
