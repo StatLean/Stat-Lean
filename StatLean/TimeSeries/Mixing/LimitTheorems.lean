@@ -681,6 +681,84 @@ private lemma exists_block_scheme [IsProbabilityMeasure μ] {X : ℤ → Ω → 
     exact mul_le_mul_of_nonneg_right this (hnn _)
   exact ⟨l, s, k, hs1, hl1, hfit, hltop, hln0, hkl, hkα⟩
 
+/-! #### Window laws, phase increments, and the Lindeberg input -/
+
+/-- `‖e^{ix} − 1‖ ≤ |x| + 5x²` — the crude phase-increment bound, read off the
+third-order Taylor brick (no trigonometric identities needed). -/
+private lemma norm_expI_sub_one_le (x : ℝ) :
+    ‖Complex.exp ((x : ℂ) * Complex.I) - 1‖ ≤ |x| + 5 * x ^ 2 := by
+  have hT := (norm_expI_taylor x).2
+  have hx : ‖(x : ℂ) * Complex.I‖ = |x| := by simp
+  have hx2 : ‖(x : ℂ) ^ 2 / 2‖ = x ^ 2 / 2 := by
+    rw [norm_div, ← Complex.ofReal_pow, Complex.norm_real, Real.norm_eq_abs,
+      Complex.norm_ofNat, abs_of_nonneg (sq_nonneg x)]
+  have hsplit : Complex.exp ((x : ℂ) * Complex.I) - 1
+      = (Complex.exp ((x : ℂ) * Complex.I) - (1 + (x : ℂ) * Complex.I - (x : ℂ) ^ 2 / 2))
+        + ((x : ℂ) * Complex.I - (x : ℂ) ^ 2 / 2) := by ring
+  rw [hsplit]
+  refine (norm_add_le _ _).trans ?_
+  have h2 : ‖(x : ℂ) * Complex.I - (x : ℂ) ^ 2 / 2‖ ≤ |x| + x ^ 2 / 2 := by
+    refine (norm_sub_le _ _).trans ?_
+    rw [hx, hx2]
+  nlinarith [hT, h2, sq_nonneg x]
+
+/-- Strict stationarity transports the law of a length-`m` window: any measurable
+functional of a shifted block sum has the anchored expectation. -/
+private lemma integral_comp_window_eq [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
+    (hmeas : ∀ t, Measurable (X t)) (hstat : IsStrictlyStationary X μ)
+    {F : ℝ → ℂ} (hF : Measurable F) (m : ℕ) (c : ℤ) :
+    ∫ ω, F (∑ t ∈ Finset.range m, X ((t : ℤ) + 1 + c) ω) ∂μ
+      = ∫ ω, F (∑ t ∈ Finset.range m, X ((t : ℤ) + 1) ω) ∂μ := by
+  have hG : Measurable fun q : Fin m → ℝ => F (∑ i, q i) :=
+    hF.comp (Finset.measurable_sum _ fun i _ => measurable_pi_apply i)
+  have hm1 : Measurable fun ω (i : Fin m) => X (((i : ℕ) : ℤ) + 1 + c) ω :=
+    measurable_pi_lambda _ fun _ => hmeas _
+  have hm2 : Measurable fun ω (i : Fin m) => X (((i : ℕ) : ℤ) + 1) ω :=
+    measurable_pi_lambda _ fun _ => hmeas _
+  have key := hstat m (fun i : Fin m => ((i : ℕ) : ℤ) + 1) c
+  have e1 := integral_map (μ := μ) (φ := fun ω (i : Fin m) => X (((i : ℕ) : ℤ) + 1 + c) ω)
+    (f := fun q : Fin m → ℝ => F (∑ i, q i)) hm1.aemeasurable hG.aestronglyMeasurable
+  have e2 := integral_map (μ := μ) (φ := fun ω (i : Fin m) => X (((i : ℕ) : ℤ) + 1) ω)
+    (f := fun q : Fin m → ℝ => F (∑ i, q i)) hm2.aemeasurable hG.aestronglyMeasurable
+  rw [key] at e1
+  have h := e1.symm.trans e2
+  have conv1 : ∀ ω : Ω, ∑ t ∈ Finset.range m, X ((t : ℤ) + 1 + c) ω
+      = ∑ i : Fin m, X (((i : ℕ) : ℤ) + 1 + c) ω :=
+    fun ω => (Fin.sum_univ_eq_sum_range (fun j : ℕ => X ((j : ℤ) + 1 + c) ω) m).symm
+  have conv2 : ∀ ω : Ω, ∑ t ∈ Finset.range m, X ((t : ℤ) + 1) ω
+      = ∑ i : Fin m, X (((i : ℕ) : ℤ) + 1) ω :=
+    fun ω => (Fin.sum_univ_eq_sum_range (fun j : ℕ => X ((j : ℤ) + 1) ω) m).symm
+  simp only [conv1, conv2]
+  exact h
+
+/-- **NAMED PRIVATE DEBT** (Ibragimov–Linnik, *Independent and Stationary Sequences of
+Random Variables*, 1971, Theorem 18.5.3; the technical lemma behind FY Theorem 2.21(ii)).
+
+Under `|X| ≤ C`, strict stationarity, zero mean and `Σ α(j) < ∞`, the normalised block
+sums `S_l²/l` are **uniformly integrable**, so the Lindeberg mass at a level `ε√n` with
+`l_n/n → 0` vanishes.
+
+**This is the single unproved brick of `clt_of_bounded_alphaMixing`.** It is *not*
+derivable from the ambient hypotheses by the fourth-moment route: Yokoyama's bound
+`E S_l⁴ = O(l²)` needs `Σ_j (j+1) α(j) < ∞`, strictly stronger than `Σ_j α(j) < ∞`, so
+`Mixing/Inequalities.moment4_partial_sum_le` (which assumes `α(n) ≤ K n⁻²`) does not
+apply. The statement below is the weakest true form that closes the Bernstein scheme. -/
+private theorem lindeberg_blocks_debt [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
+    (hmeas : ∀ t, Measurable (X t)) (hstat : IsStrictlyStationary X μ) {C : ℝ}
+    -- USER-INPUT: uniform bound; FY Thm 2.21(ii)
+    (hbdd : ∀ t, ∀ᵐ ω ∂μ, |X t ω| ≤ C)
+    -- USER-INPUT: zero mean; FY §2.6.3 setup
+    (hmean : ∫ ω, X 0 ω ∂μ = 0)
+    -- USER-INPUT: summable mixing coefficients; FY Thm 2.21(ii)
+    (hα : Summable fun n : ℕ => alphaCoeff X μ n)
+    (l : ℕ → ℕ) (hl1 : ∀ n, 1 ≤ l n)
+    (hln : Tendsto (fun n : ℕ => (l n : ℝ) / (n : ℝ)) atTop (𝓝 0))
+    {ε : ℝ} (hε : 0 < ε) :
+    Tendsto (fun n : ℕ => ((l n : ℝ))⁻¹ *
+        ∫ ω in {ω | ε * Real.sqrt n ≤ |∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω|},
+          (∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω) ^ 2 ∂μ) atTop (𝓝 0) := by
+  sorry
+
 end Bernstein
 
 /-- **FY Theorem 2.21(ii)** (full in-text proof, Bernstein blocks): bounded zero-mean
