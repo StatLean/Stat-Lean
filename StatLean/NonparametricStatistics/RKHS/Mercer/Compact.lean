@@ -60,6 +60,43 @@ theorem norm_mercerCLM_le_of_bounded {S : X → X → 𝕜}
       ≤ Real.sqrt (((μ Set.univ).toReal * C) ^ 2) := Real.sqrt_le_sqrt hout
     _ = (μ Set.univ).toReal * C := Real.sqrt_sq hprod
 
+private theorem coeFn_finset_sum_smul {ι : Type*} (s : Finset ι) (c : ι → 𝕜)
+    (F : ι → Lp 𝕜 2 μ) :
+    ((∑ i ∈ s, c i • F i : Lp 𝕜 2 μ) : X → 𝕜)
+      =ᵐ[μ] fun x => ∑ i ∈ s, c i * (F i : X → 𝕜) x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using Lp.coeFn_zero 𝕜 2 μ
+  | insert a t ha ih =>
+      rw [Finset.sum_insert ha]
+      filter_upwards [Lp.coeFn_add (c a • F a) (∑ i ∈ t, c i • F i),
+        Lp.coeFn_smul (c a) (F a), ih] with x h1 h2 h3
+      rw [h1]
+      simp only [Pi.add_apply, h2, h3, Pi.smul_apply, smul_eq_mul]
+      rw [Finset.sum_insert ha]
+
+private theorem isCompactOperator_finset_sum {ι : Type*} (s : Finset ι)
+    (A : ι → (Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 2 μ)) (hA : ∀ i, IsCompactOperator (A i)) :
+    IsCompactOperator ((∑ i ∈ s, A i : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 2 μ) : Lp 𝕜 2 μ → Lp 𝕜 2 μ) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using isCompactOperator_zero (M₁ := Lp 𝕜 2 μ) (M₂ := Lp 𝕜 2 μ)
+  | insert a t ha ih =>
+      rw [Finset.sum_insert ha]
+      have : ((A a + ∑ i ∈ t, A i : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 2 μ) : Lp 𝕜 2 μ → Lp 𝕜 2 μ)
+          = (A a : Lp 𝕜 2 μ → Lp 𝕜 2 μ) + ((∑ i ∈ t, A i : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 2 μ) :
+            Lp 𝕜 2 μ → Lp 𝕜 2 μ) := rfl
+      rw [this]
+      exact (hA a).add ih
+
+private theorem isCompactOperator_rankOne (u v : Lp 𝕜 2 μ) :
+    IsCompactOperator (((innerSL 𝕜 u).smulRight v : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 2 μ) :
+      Lp 𝕜 2 μ → Lp 𝕜 2 μ) := by
+  have h1 : IsCompactOperator
+      (((ContinuousLinearMap.id 𝕜 𝕜).smulRight v : 𝕜 →L[𝕜] Lp 𝕜 2 μ) : 𝕜 → Lp 𝕜 2 μ) :=
+    isCompactOperator_of_locallyCompactSpace_rng _
+  exact h1.comp_clm (innerSL 𝕜 u)
+
 /-- The integral operator of a finite-rank symbol `∑_{i ∈ s} fᵢ(x) conj (gᵢ(y))` has
 finite-dimensional range, hence is a compact operator. -/
 theorem isCompactOperator_mercerCLM_finiteRank {ι : Type*} (s : Finset ι)
@@ -68,7 +105,61 @@ theorem isCompactOperator_mercerCLM_finiteRank {ι : Type*} (s : Finset ι)
     (hc : Continuous fun p : X × X => ∑ i ∈ s, f i p.1 * conj (g i p.2)) :
     IsCompactOperator
       (mercerCLM (K := fun x y => ∑ i ∈ s, f i x * conj (g i y)) μ hc) := by
-  sorry
+  classical
+  have hfae : ∀ i : ι, ((ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (f i) : Lp 𝕜 2 μ) : X → 𝕜)
+      =ᵐ[μ] fun x => (f i) x :=
+    fun i => ContinuousMap.coeFn_toLp (E := 𝕜) (p := 2) (𝕜 := 𝕜) μ (f i)
+  have hgae : ∀ i : ι, ((ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (g i) : Lp 𝕜 2 μ) : X → 𝕜)
+      =ᵐ[μ] fun x => (g i) x :=
+    fun i => ContinuousMap.coeFn_toLp (E := 𝕜) (p := 2) (𝕜 := 𝕜) μ (g i)
+  have hgmem : ∀ i : ι, MemLp (fun y => conj ((g i) y)) 2 μ := fun i =>
+    ((Lp.memLp (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (g i))).ae_eq (hgae i)).star
+  have hEq : ((mercerCLM (K := fun x y => ∑ i ∈ s, f i x * conj (g i y)) μ hc) :
+        Lp 𝕜 2 μ → Lp 𝕜 2 μ)
+      = ((∑ i ∈ s, ((innerSL 𝕜 (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (g i))).smulRight
+          (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (f i))) : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 2 μ) :
+        Lp 𝕜 2 μ → Lp 𝕜 2 μ) := by
+    funext h
+    have hcoefg : ∀ i : ι, ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (g i), h⟫_𝕜
+        = ∫ y, conj ((g i) y) * (h : X → 𝕜) y ∂μ := by
+      intro i
+      rw [L2.inner_def]
+      refine integral_congr_ae ?_
+      filter_upwards [hgae i] with y hy
+      rw [RCLike.inner_apply, hy]
+      ring
+    have hint : ∀ x : X,
+        integralOp μ (fun x y => ∑ i ∈ s, (f i) x * conj ((g i) y)) h x
+          = ∑ i ∈ s, (f i) x * ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (g i), h⟫_𝕜 := by
+      intro x
+      have hre : ∀ y : X, (∑ i ∈ s, (f i) x * conj ((g i) y)) * (h : X → 𝕜) y
+          = ∑ i ∈ s, (f i) x * (conj ((g i) y) * (h : X → 𝕜) y) := by
+        intro y
+        rw [Finset.sum_mul]
+        exact Finset.sum_congr rfl fun i _ => by ring
+      have hintg : ∀ i ∈ s,
+          Integrable (fun y => (f i) x * (conj ((g i) y) * (h : X → 𝕜) y)) μ := fun i _ =>
+        ((hgmem i).integrable_mul (Lp.memLp h)).const_mul ((f i) x)
+      rw [integralOp, integral_congr_ae (Filter.Eventually.of_forall hre),
+        integral_finset_sum s hintg]
+      exact Finset.sum_congr rfl fun i _ => by rw [integral_const_mul, hcoefg]
+    have hRHS : ((∑ i ∈ s, ((innerSL 𝕜 (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (g i))).smulRight
+          (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (f i))) : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 2 μ)) h
+        = ∑ i ∈ s, (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (g i), h⟫_𝕜) •
+            ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (f i) := by
+      rw [ContinuousLinearMap.sum_apply]
+      exact Finset.sum_congr rfl fun i _ => rfl
+    refine Lp.ext ?_
+    rw [hRHS]
+    filter_upwards [mercerCLM_coeFn_ae (K := fun x y => ∑ i ∈ s, (f i) x * conj ((g i) y)) hc h,
+      coeFn_finset_sum_smul s (fun i => ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (g i), h⟫_𝕜)
+        (fun i => ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (f i)),
+      (Filter.eventually_all_finset s).mpr (fun i _ => hfae i)] with x h1 h2 h3
+    rw [h1, h2, hint x]
+    exact Finset.sum_congr rfl fun i hi => by rw [h3 i hi]; ring
+  rw [hEq]
+  exact isCompactOperator_finset_sum s _ fun i => isCompactOperator_rankOne _ _
+
 
 /-- **The Mercer integral operator is compact.** -/
 theorem isCompactOperator_mercerCLM {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K) :
