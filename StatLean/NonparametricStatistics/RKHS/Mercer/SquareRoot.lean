@@ -810,7 +810,32 @@ theorem sqrtCLM_hasSum (g : Lp 𝕜 2 μ) :
   -- `integralOp μ (sqrtSymbol d) g x = ⟪star-section, g⟫`; expand `sqrtSectionLp` through
   -- the continuous pairing (`HasSum.mapL` of `innerSL`), identify coefficientwise with
   -- `∑ₙ √λₙ ⟪eₙ, g⟫ eₙ(x)` and lift the `L²`-convergent series through `MemLp.toLp`.
-  sorry
+  classical
+  have hrw : (fun n : d.ι => ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) •
+        (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜 •
+          ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)))
+      = fun n : d.ι => (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) *
+          ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜) •
+          ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n) := by
+    funext n
+    rw [smul_smul]
+  rw [hrw, HasSum, tendsto_iff_norm_sub_tendsto_zero]
+  have htail : Filter.Tendsto
+      (fun s : Finset d.ι =>
+        ‖g‖ * Real.sqrt ((∫ x, RCLike.re (K x x) ∂μ) - ∑ n ∈ s, d.eigval n))
+      Filter.atTop (nhds 0) := by
+    have h1 : Filter.Tendsto (fun s : Finset d.ι => ∑ n ∈ s, d.eigval n) Filter.atTop
+        (nhds (∫ x, RCLike.re (K x x) ∂μ)) := d.hasSum_eigval hK
+    have h2 : Filter.Tendsto
+        (fun s : Finset d.ι => (∫ x, RCLike.re (K x x) ∂μ) - ∑ n ∈ s, d.eigval n)
+        Filter.atTop (nhds 0) := by
+      have h0 : Filter.Tendsto (fun _ : Finset d.ι => (∫ x, RCLike.re (K x x) ∂μ))
+          Filter.atTop (nhds (∫ x, RCLike.re (K x x) ∂μ)) := tendsto_const_nhds
+      simpa using h0.sub h1
+    have h3 := (Real.continuous_sqrt.tendsto 0).comp h2
+    rw [Real.sqrt_zero] at h3
+    simpa using h3.const_mul ‖g‖
+  exact squeeze_zero (fun s => norm_nonneg _) (fun s => norm_partial_sub_le d hK g s) htail
 
 /-- The square root is a positive operator. -/
 theorem sqrtCLM_isPositive : (sqrtCLM d hK).IsPositive := by
