@@ -1206,7 +1206,53 @@ theorem mem_range_coe_iff_summable
   -- expand `f` in the orthonormal basis `{√λₙ eₙ}` and set `aₙ := √λₙ ⟪bₙ, f⟫`, so that
   -- `∑ₙ ‖aₙ‖²/λₙ = ∑ₙ ‖⟪bₙ, f⟫‖² = ‖f‖²`; the pointwise `HasSum` is the RKHS
   -- norm-to-pointwise convergence (`Basic.lean`) applied to the partial sums.
-  sorry
+  classical
+  obtain ⟨b, hbcoe, hborth, hbdense⟩ := exists_orthonormalBasis_sqrt_eigfun d hKH
+  have hsp : ⊤ ≤ (Submodule.span 𝕜 (Set.range b)).topologicalClosure := by rw [hbdense]
+  have hframe : IsParsevalFrame 𝕜 b := by
+    have hpf := HilbertBasis.isParsevalFrame (𝕜 := 𝕜) (HilbertBasis.mk hborth hsp)
+    rwa [HilbertBasis.coe_mk] at hpf
+  have hsqrt_ne : ∀ n : d.ι, ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) ≠ 0 := fun n =>
+    RCLike.ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr (d.eigval_pos n))
+  have hnormsq : ∀ (n : d.ι) (z : 𝕜),
+      ‖((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * z‖ ^ 2 = d.eigval n * ‖z‖ ^ 2 := by
+    intro n z
+    rw [norm_mul, RCLike.norm_ofReal, abs_of_nonneg (Real.sqrt_nonneg _), mul_pow,
+      Real.sq_sqrt (d.eigval_pos n).le]
+  constructor
+  · rintro ⟨f, rfl⟩
+    refine ⟨fun n => ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * ⟪b n, f⟫_𝕜, ?_, fun x => ?_⟩
+    · refine (hframe f).summable.congr fun n => ?_
+      have hne : d.eigval n ≠ 0 := (d.eigval_pos n).ne'
+      rw [hnormsq n]
+      field_simp
+    · have hrec := (hframe.hasSum_reconstruction f).mapL (evalCLM 𝕜 H x)
+      refine hrec.congr_fun fun n => ?_
+      rw [map_smul, smul_eq_mul, evalCLM_apply,
+        show (b n : X → 𝕜) x = ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x from
+          congrFun (hbcoe n) x]
+      ring
+  · rintro ⟨a, hsum, hpt⟩
+    have hcsum : Summable fun n : d.ι =>
+        ‖a n / ((Real.sqrt (d.eigval n) : ℝ) : 𝕜)‖ ^ 2 := by
+      refine hsum.congr fun n => ?_
+      rw [norm_div, div_pow, RCLike.norm_ofReal, abs_of_nonneg (Real.sqrt_nonneg _),
+        Real.sq_sqrt (d.eigval_pos n).le]
+    have hiff := hborth.orthogonalFamily.summable_iff_norm_sq_summable
+      (fun n : d.ι => a n / ((Real.sqrt (d.eigval n) : ℝ) : 𝕜))
+    simp only [LinearIsometry.toSpanSingleton_apply] at hiff
+    have hsummable : Summable fun n : d.ι =>
+        (a n / ((Real.sqrt (d.eigval n) : ℝ) : 𝕜)) • b n := hiff.mpr hcsum
+    refine ⟨∑' n, (a n / ((Real.sqrt (d.eigval n) : ℝ) : 𝕜)) • b n, funext fun x => ?_⟩
+    have hx : HasSum (fun n : d.ι => a n * d.eigfun n x)
+        (evalCLM 𝕜 H x (∑' n, (a n / ((Real.sqrt (d.eigval n) : ℝ) : 𝕜)) • b n)) := by
+      refine (hsummable.hasSum.mapL (evalCLM 𝕜 H x)).congr_fun fun n => ?_
+      have hne := hsqrt_ne n
+      rw [map_smul, smul_eq_mul, evalCLM_apply,
+        show (b n : X → 𝕜) x = ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x from
+          congrFun (hbcoe n) x]
+      field_simp
+    exact hx.unique (hpt x)
 
 include hKc in
 /-- `range T_K ⊆ H(K)`: the (non-square-rooted) Mercer operator maps into the RKHS.
