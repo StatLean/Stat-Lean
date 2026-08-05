@@ -897,7 +897,29 @@ uniformly in `k`, and the right side tends to `0` by dominated convergence on th
 weight (split at `|j| ≤ T^{1/2}`).
 
 Formalizing it needs the `L²` interchange of the (infinite) filter sum with the (finite)
-DFT sum through `IsFilteredBy`, which is the piece this wave did not reach. Everything
+DFT sum through `IsFilteredBy`, which is the piece this wave did not reach.
+
+**Route, decomposed (checked, not executed — the sweep left this as a debt).** The trap is
+that `IsFilteredBy` is stated as an `L²` limit of the *symmetric* partial sums
+`Σ_{|j| ≤ N} a_j ε_{t−j}`, so the interchange must be done at finite `N`, where it is an
+exact finite rearrangement, and only then passed to the limit:
+1. (deterministic, finite) for `X^N_t = Σ_{|j| ≤ N} a_j ε_{t−j}`,
+   `dftSample X^N T k = Σ_{|j| ≤ N} a_j e^{−ijω_k} · D_j` where
+   `D_j = T^{−1/2} Σ_{t=1}^{T} ε_{t−j} e^{−i(t−j)ω_k}` is the DFT of `ε` over the shifted
+   window `[1−j, T−j]` — a `Finset.sum_comm` plus `e^{−itω_k} = e^{−ijω_k}e^{−i(t−j)ω_k}`;
+2. (probabilistic) `‖D_j − dftSample ε T k‖_{L²} ≤ σ (2 min(|j|,T)/T)^{1/2}`: the two
+   windows differ in at most `2 min(|j|,T)` innovations and the iid orthogonality of
+   `hε` makes the `L²` norm of that difference the square root of `σ²/T` times their
+   count;
+3. (`ℓ¹` limit) `‖dftSample X^N T k − Γ_N(ω_k) dftSample ε T k‖_{L²} ≤ e_N(T)` with
+   `e_N(T) = σ√2 Σ_{|j| ≤ N} |a_j| (min(|j|,T)/T)^{1/2}`, then `N → ∞` using
+   `IsFilteredBy` on the left (`dftSample` is a *finite* linear combination of the `X_t`,
+   so `L²` convergence transfers) and `ha` on the right;
+4. (uniformity) `e(T) = σ√2 Σ_j |a_j| (min(|j|,T)/T)^{1/2} → 0` and does not depend on
+   `k`: split at `|j| ≤ √T`, where `(min(|j|,T)/T)^{1/2} ≤ T^{−1/4}`, against the `ℓ¹`
+   tail `Σ_{|j| > √T} |a_j| → 0`.
+
+Everything
 downstream of it — the spectral identification `2π g = σ²‖Γ‖²`, the `χ²₂` normalisation
 `‖α_{k,ε}‖² = (σ²/2)(ξ_{2k−1}² + ξ_{2k}²)`, the exact second moment `E‖α_{k,ε}‖² = σ²`
 and the `L¹` assembly — is proved. -/
