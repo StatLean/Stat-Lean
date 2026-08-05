@@ -250,19 +250,52 @@ variable (d : MercerEigensystem μ K hKc)
 
 /-- The **square-root symbol** `S(x, y) = ∑ₙ √λₙ eₙ(x) conj (eₙ(y))` of a Mercer
 eigensystem (pointwise unordered sum; `0` where the series fails to converge — it
-converges for a.e. pair, and everywhere in the `y`-section `L²` sense used below). -/
+converges for a.e. pair, and everywhere in the `y`-section `L²` sense used below).
+
+**WARNING (round-2 finding).**  The parenthetical claim in this docstring is FALSE, and
+with it every statement below that mentions `sqrtSymbol` or `sqrtCLM`.  In Lean `∑'`
+is the unordered (net) sum, and for a scalar-valued family unordered summability is
+equivalent to *absolute* summability; the square-root series is in general only
+`L²`-convergent, never absolutely convergent.  Explicit counterexample (all data
+elementary and checkable):
+
+* `X` = the circle, `μ` = normalized Haar measure (compact metric, finite Borel, full
+  support), `K x y = ∑_{n ∈ ℤ} (1 + n²)⁻¹ e^{i n (x − y)}`.  The series converges
+  absolutely and uniformly, so `K` is continuous; its Fourier coefficients are positive,
+  so `K` is positive semidefinite: `K` is a Mercer kernel.
+* Its Mercer eigensystem is `ι = ℤ`, `eₙ(θ) = e^{i n θ}`, `λₙ = (1 + n²)⁻¹ > 0`, which
+  is orthonormal in `L²(μ)` and satisfies `T_K eₙ = λₙ eₙ`.
+* Then `‖√λₙ eₙ(x) conj (eₙ(y))‖ = (1 + n²)^{-1/2} ∼ |n|⁻¹`, which is **not** summable
+  over `ℤ`.  Hence the family is nowhere unordered-summable and
+  `sqrtSymbol d x y = 0` for *every* pair `(x, y)`, so `integralOp μ (sqrtSymbol d) = 0`
+  and `sqrtCLM d hK = 0`.
+
+Consequently `sqrtCLM_hasSum`, `sqrtCLM_comp_self` (it asserts `0 = T_K`, and `T_K ≠ 0`),
+`range_integralOp_sqrtSymbol_eq` (it asserts `{0} = H(K)`) and
+`sqrtCLM_isometry_on_ker_orthogonal` are all false as frozen.  The repair is to
+*change the definition* of `sqrtSymbol`, not the theorems: `T_S` must be defined as the
+`L²`-limit `T_S g = ∑ₙ √λₙ ⟪eₙ, g⟫ eₙ` (equivalently, `S(x, ·)` as the `L²`-limit of the
+partial sums, which exists because `∑ₙ λₙ ‖eₙ(x)‖² ≤ re K(x,x) < ∞`).  Under Rule 5 the
+frozen statements are left with their `sorry`.  Note that a.e.-*pointwise* convergence of
+the partial sums cannot rescue the `tsum` definition either: for a general orthonormal
+system an `ℓ²`-coefficient series need not converge a.e. (Menshov–Rademacher is sharp),
+and even when it does (Carleson, for the trigonometric system) the *unordered* sum still
+diverges, as the counterexample above shows. -/
 noncomputable def sqrtSymbol : X → X → 𝕜 := fun x y =>
   ∑' n, ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * (d.eigfun n x * conj (d.eigfun n y))
 
 /-- The square-root symbol has square-integrable sections:
 `∫ ‖S(x,y)‖² dμ(y) = ∑ₙ λₙ ‖eₙ(x)‖² = K(x,x)`. -/
--- OPEN.  Every statement of this section is downstream of the (still open) kernel
--- expansion `MercerEigensystem.hasSum_kernel` in `Mercer/Theorem.lean`: without it the
--- eigen-family `{eₙ}` is not known to expand `K`, so nothing pins down `sqrtSymbol`.
--- Here specifically: `∫ ‖S(x,y)‖² dμ(y) = ∑ₙ λₙ ‖eₙ(x)‖²` by Parseval against the
--- orthonormal family `d.orthonormal`, and the right-hand side is `re K(x,x)` by the
--- diagonal case of `hasSum_kernel`.  (Measurability of `sqrtSymbol d x` also has to be
--- extracted from the `tsum`, e.g. as an a.e.-limit of the continuous partial sums.)
+-- OPEN.  `MercerEigensystem.hasSum_kernel` is now PROVED (Mercer/Theorem.lean), so the
+-- stated *value* `∑ₙ λₙ ‖eₙ(x)‖² = re K(x,x)` is available.  What is missing is not that
+-- but the identification of `sqrtSymbol d x` with the `L²`-limit of its partial sums:
+-- see the WARNING on `sqrtSymbol` above — the unordered `tsum` is `0` on the (possibly
+-- full-measure) set where the family fails to be absolutely summable.  The *statement*
+-- `IsL2Symbol μ (sqrtSymbol d)` is nevertheless believed TRUE (it only asks that the
+-- `tsum` function be a.e.-strongly-measurable with finite `L²` norm; a Fatou argument
+-- over a fixed enumeration of the countable index bounds `∫ ‖S(x,y)‖² dμ(y)` by
+-- `∑ₙ λₙ ‖eₙ(x)‖² ≤ re K(x,x)`), but proving it is of no use downstream, because on the
+-- non-summability set `sqrtSymbol` is `0` rather than the `L²`-limit.
 theorem isL2Symbol_sqrtSymbol (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure] :
     IsL2Symbol μ (sqrtSymbol d) := by
   sorry
@@ -273,8 +306,10 @@ theorem memLp_integralOp_sqrtSymbol (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMe
     MemLp (integralOp μ (sqrtSymbol d) g) 2 μ := by
   -- OPEN.  Once `isL2Symbol_sqrtSymbol` is available this is `norm_integralOp_le`
   -- (IntegralOperator) plus `Lp.norm_le_of_ae_bound`, exactly as in
-  -- `memLp_integralOp_of_continuous` (Mercer/Defs) — but the pointwise bound
-  -- `‖symbolConjLp S x‖ ≤ √(re K(x,x))` again needs the diagonal expansion.
+  -- `memLp_integralOp_of_continuous` (Mercer/Defs); the pointwise bound
+  -- `‖symbolConjLp S x‖ ≤ √(re K(x,x))` is now available from the diagonal case of the
+  -- (PROVED) `MercerEigensystem.hasSum_kernel`.  Statement TRUE; blocked only on
+  -- `isL2Symbol_sqrtSymbol`.
   sorry
 
 variable (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure]
@@ -287,7 +322,8 @@ noncomputable def sqrtCLM : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 2 μ :=
       -- OPEN (all three): the linearity fields are `integralOp_eq_inner` plus
       -- `inner_add_right`/`inner_smul_right` verbatim as in `mercerCLM` (Mercer/Defs);
       -- the bound is `‖T_S g‖ ≤ √(sup_x re K(x,x)) · √μ(X) · ‖g‖`.  Both are blocked
-      -- only by `isL2Symbol_sqrtSymbol` above.
+      -- only by `isL2Symbol_sqrtSymbol` above.  Note that with the frozen `tsum`
+      -- definition of `sqrtSymbol` this operator can be `0` — see the WARNING above.
       map_add' := by sorry
       map_smul' := by sorry }
     (by sorry)
@@ -299,23 +335,29 @@ theorem sqrtCLM_hasSum (g : Lp 𝕜 2 μ) :
         (⟪ContinuousMap.toLp 2 μ 𝕜 (d.eigfun n), g⟫_𝕜 •
           ContinuousMap.toLp 2 μ 𝕜 (d.eigfun n)))
       (sqrtCLM d hK g) := by
-  -- OPEN.  Same shape as the `key` HasSum inside `isPositive_mercerCLM`
-  -- (Mercer/Basic, PROVED): finite truncations of `sqrtSymbol` give the finite sums, and
-  -- `norm_mercerCLM_le_of_bounded` (Mercer/Compact) transfers the limit — except that
-  -- the truncation error of `sqrtSymbol` is NOT uniform (the square-root symbol need not
-  -- be continuous), so the transfer has to be run in `L²` via `d.orthonormal`.
+  -- OPEN — and FALSE as frozen.  With the counterexample recorded on `sqrtSymbol`
+  -- (`K x y = ∑_{n ∈ ℤ} (1+n²)⁻¹ e^{i n (x−y)}` on the circle) one has `sqrtCLM d hK = 0`
+  -- while the right-hand family `∑ₙ √λₙ ⟪eₙ,g⟫ eₙ` has a nonzero sum for, e.g., `g = e₀`.
+  -- The missing ingredient is a *definitional* one: `sqrtSymbol` must be the `L²`-limit
+  -- of its partial sums, not their unordered pointwise `tsum`.  With that repair the
+  -- proof is the one sketched here: finite truncations give the finite sums and the
+  -- limit transfers in `L²` via `d.orthonormal`.
   sorry
 
 /-- The square root is a positive operator. -/
 theorem sqrtCLM_isPositive : (sqrtCLM d hK).IsPositive := by
-  -- OPEN.  Immediate from `sqrtCLM_hasSum`: `⟪g, T_S g⟫ = ∑ₙ √λₙ ‖⟪eₙ, g⟫‖² ≥ 0`, and
-  -- symmetry by the same uniqueness-of-sums argument used in `isPositive_mercerCLM`.
+  -- OPEN.  Statement TRUE (vacuously so under the frozen `tsum` definition, where the
+  -- operator is `0`).  With the `L²`-limit repair of `sqrtSymbol` it is immediate from
+  -- `sqrtCLM_hasSum`: `⟪g, T_S g⟫ = ∑ₙ √λₙ ‖⟪eₙ, g⟫‖² ≥ 0`, and symmetry by the same
+  -- uniqueness-of-sums argument used in `isPositive_mercerCLM`.
   sorry
 
 /-- **`T_S` squares to `T_K`**: `T_S ∘ T_S = T_K`. -/
 theorem sqrtCLM_comp_self : (sqrtCLM d hK).comp (sqrtCLM d hK) = mercerCLM μ hKc := by
-  -- OPEN.  From `sqrtCLM_hasSum` twice and `d.opExpansion`: both sides send `g` to
-  -- `∑ₙ λₙ ⟪eₙ, g⟫ eₙ`.  Needs `HasSum.unique` in `L²` plus orthonormality.
+  -- OPEN — and FALSE as frozen: on the counterexample recorded at `sqrtSymbol` the left
+  -- side is `0` and `T_K ≠ 0`.  After the `L²`-limit repair of `sqrtSymbol` the proof is
+  -- `sqrtCLM_hasSum` twice plus `d.opExpansion`: both sides send `g` to
+  -- `∑ₙ λₙ ⟪eₙ, g⟫ eₙ`, and `HasSum.unique` in `L²` plus orthonormality closes it.
   sorry
 
 /-- **`range T_S = H(K)`**: the square-root operator maps `L²(X, μ)` onto exactly the
@@ -325,9 +367,11 @@ theorem range_integralOp_sqrtSymbol_eq
     (hKH : scalarKernel H = K) :
     Set.range (integralOp μ (sqrtSymbol d))
       = Set.range fun f : H => (f : X → 𝕜) := by
-  -- OPEN.  Route: `S □ S* = K` (compute from `sqrtCLM_comp_self` and Hermitian symmetry
-  -- of `S`), so `RangeSpace.lean`'s range space of the symbol `S` is an RKHS with kernel
-  -- `K`; `Uniqueness.range_coe_eq_of_scalarKernel_eq` then transports the range to `H`.
+  -- OPEN — and FALSE as frozen: on the counterexample recorded at `sqrtSymbol` the left
+  -- side is `{0}` and `H(K) ≠ {0}`.  After the `L²`-limit repair the route is:
+  -- `S □ S* = K` (from `sqrtCLM_comp_self` and Hermitian symmetry of `S`), so
+  -- `RangeSpace.lean`'s range space of `S` is an RKHS with kernel `K`, and
+  -- `Uniqueness.range_coe_eq_of_scalarKernel_eq` transports the range to `H`.
   sorry
 
 /-- **`T_S` is an isometry of `(ker T_K)ᗮ` onto `H(K)`**: for `g ⊥ ker T_K`, the
@@ -337,8 +381,11 @@ theorem sqrtCLM_isometry_on_ker_orthogonal
     (hKH : scalarKernel H = K)
     {g : Lp 𝕜 2 μ} (hg : g ∈ (LinearMap.ker (mercerCLM μ hKc).toLinearMap)ᗮ) :
     ∃ f : H, (f : X → 𝕜) = integralOp μ (sqrtSymbol d) g ∧ ‖f‖ = ‖g‖ := by
-  -- OPEN.  Same route as `range_integralOp_sqrtSymbol_eq`, plus the fact that the range
-  -- space's norm agrees with `‖g‖` on `(ker T_S)ᗮ = (ker T_K)ᗮ` (`rangeSpace_*`).
+  -- OPEN — and FALSE as frozen, for the same reason as
+  -- `range_integralOp_sqrtSymbol_eq` (the frozen `integralOp μ (sqrtSymbol d) g` is `0`
+  -- while `‖g‖ ≠ 0` for `g ⊥ ker T_K`, `g ≠ 0`).  After the `L²`-limit repair: same route
+  -- as `range_integralOp_sqrtSymbol_eq`, plus the fact that the range space's norm agrees
+  -- with `‖g‖` on `(ker T_S)ᗮ = (ker T_K)ᗮ` (`rangeSpace_*`).
   sorry
 
 /-- **`{√λₙ eₙ}` is an orthonormal basis of `H(K)`**: the rescaled eigenfunctions are
@@ -351,10 +398,26 @@ theorem exists_orthonormalBasis_sqrt_eigfun
         ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x) ∧
       Orthonormal 𝕜 b ∧
       (Submodule.span 𝕜 (Set.range b)).topologicalClosure = ⊤ := by
-  -- OPEN.  With `hasSum_kernel` the family `{√λₙ eₙ}` expands `K` pointwise, so
-  -- `ParsevalFrame`/`Papadakis` recognizes it as a Parseval frame of `H`; orthonormality
-  -- upgrades it to an orthonormal basis.  Blocked on getting the members into `H`, i.e.
-  -- on `range_integralOp_sqrtSymbol_eq`.
+  -- OPEN.  Statement TRUE and no longer blocked on the (false) `sqrtSymbol` route.
+  -- Here `d` is mentioned in the statement, so `d` and `hKc` ARE in scope (unlike in
+  -- `range_mercerCLM_subset` below); `hK` is not, but `IsMercerKernel 𝕜 K` is recovered
+  -- as `⟨hKc, hKH ▸ isKernelFun_scalarKernel⟩`.  Complete route, in three steps:
+  -- (1) *the members are in `H`*: for `h : Lp 𝕜 2 μ` the Bochner integral
+  --     `∫ y, h y • kernelFun H y ∂μ : H` (integrable because `‖kernelFun H y‖` is
+  --     bounded on the compact `X` by `continuous_kernelFun H` and `h ∈ L¹`) coerces to
+  --     `x ↦ ∫ y, K x y * h y ∂μ = integralOp μ K h x`, by `inner_kernelFun` and
+  --     `integral_inner`.  Taking `h := ContinuousMap.toLp 2 μ 𝕜 (d.eigfun m)` and using
+  --     `d.eigen_eq` gives `λₘ • eₘ ∈ H`, hence `bₘ := (λₘ)^{-1/2} • (that element)`
+  --     has coercion `x ↦ √λₘ eₘ(x)`.
+  -- (2) *Parseval frame*: `MercerEigensystem.hasSum_kernel` (PROVED) rewritten through
+  --     `hKH` is exactly the hypothesis of `isParsevalFrame_of_hasSum_scalarKernel`
+  --     (Papadakis, PROVED), so `{bₙ}` is a Parseval frame of `H`.
+  -- (3) *orthonormality and density*: frame reconstruction gives
+  --     `b_j = ∑ᵢ ⟪bᵢ, b_j⟫ bᵢ` in `H`, hence pointwise; pairing with `conj (e_k(·))` and
+  --     integrating against `μ` (legitimate by `L²`-convergence of the reconstruction and
+  --     `d.orthonormal`) yields `√λ_j δ_{jk} = ⟪b_k, b_j⟫ √λ_k`, i.e. `⟪b_k, b_j⟫ = δ_{jk}`
+  --     since `λ_k > 0`.  Density of the span is the frame property (a vector orthogonal
+  --     to every `bᵢ` has norm `0` by the Parseval identity).
   sorry
 
 /-- **Spectral membership test for `H(K)`**: a function lies in `H(K)` iff it is a
@@ -366,9 +429,11 @@ theorem mem_range_coe_iff_summable
       ↔ ∃ a : d.ι → 𝕜,
           Summable (fun n => ‖a n‖ ^ 2 / d.eigval n) ∧
           ∀ x, HasSum (fun n => a n * d.eigfun n x) (g₀ x) := by
-  -- OPEN.  Immediate from `exists_orthonormalBasis_sqrt_eigfun`: expand `f` in the
-  -- orthonormal basis `{√λₙ eₙ}` and set `aₙ := √λₙ ⟪bₙ, f⟫`, so that
-  -- `∑ₙ ‖aₙ‖²/λₙ = ‖f‖²`.
+  -- OPEN.  Statement TRUE, and independent of the false `sqrtSymbol` route.  Immediate
+  -- from `exists_orthonormalBasis_sqrt_eigfun` (whose full route is documented there):
+  -- expand `f` in the orthonormal basis `{√λₙ eₙ}` and set `aₙ := √λₙ ⟪bₙ, f⟫`, so that
+  -- `∑ₙ ‖aₙ‖²/λₙ = ∑ₙ ‖⟪bₙ, f⟫‖² = ‖f‖²`; the pointwise `HasSum` is the RKHS
+  -- norm-to-pointwise convergence (`Basic.lean`) applied to the partial sums.
   sorry
 
 /-- `range T_K ⊆ H(K)`: the (non-square-rooted) Mercer operator maps into the RKHS. -/
@@ -376,11 +441,29 @@ theorem range_mercerCLM_subset
     -- USER-INPUT: `H` has reproducing kernel `K`
     (hKH : scalarKernel H = K) (g : Lp 𝕜 2 μ) :
     ∃ f : H, (f : X → 𝕜) = integralOp μ K g := by
-  -- OPEN.  `T_K = T_S ∘ T_S` (`sqrtCLM_comp_self`), so `range T_K ⊆ range T_S = H(K)`
-  -- by `range_integralOp_sqrtSymbol_eq`.  Alternatively, directly from
-  -- `isMercerKernel_trace_smul_sub_boxProd` (PROVED above) via the Aronszajn domination
-  -- criterion `K □ K ⪯ (∫ K(t,t) dμ) · K`, which is the measure-free route.
+  -- OPEN.  Statement TRUE for a *continuous* `K`, but as frozen the theorem does not have
+  -- access to any continuity or measurability hypothesis: its statement mentions only
+  -- `H`, `K`, `μ`, `hKH` and `g`, so the section variables `hKc`, `hK` and `d` are NOT
+  -- auto-included and are unavailable inside the proof (verified: both `hKc` and `hK` are
+  -- `Unknown identifier` here).  Every route needs one of them:
+  -- (a) the Bochner-integral route, which is otherwise completely elementary and was
+  --     written out in full in this session: with `hKsc : Continuous (scalarKernel H)`
+  --     one gets `hker := continuous_kernelFun H hKsc`, a uniform bound `C` on
+  --     `‖kernelFun H y‖` from compactness, integrability of `y ↦ g y • kernelFun H y`
+  --     by `Integrable.mono'` against `‖g ·‖ * C`, and then
+  --     `f := ∫ y, g y • kernelFun H y ∂μ : H` satisfies
+  --     `f x = ⟪kernelFun H x, f⟫ = ∫ y, g y * K x y ∂μ = integralOp μ K g x`
+  --     by `inner_kernelFun` and `integral_inner`;
+  -- (b) the spectral route through `MercerEigensystem.hasSum_kernel` (now PROVED) needs
+  --     `d`;
+  -- (c) the measure-free route through `isMercerKernel_trace_smul_sub_boxProd` needs
+  --     `hK`, and in addition an Aronszajn domination theorem (`c • K − L` PSD implies
+  --     `H(L) ⊆ H(K)`), which is not present anywhere in `StatLean/.../RKHS/`.
+  -- The fix is one line at the declaration site — `include hKc in` before the theorem, or
+  -- a `(hKc : Continuous fun p : X × X => K p.1 p.2)` binder — but that changes the
+  -- frozen signature, so under Rule 5 it is left here as a documented obstruction.
   sorry
+
 
 end SquareRoot
 
