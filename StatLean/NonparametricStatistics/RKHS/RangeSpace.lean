@@ -66,6 +66,7 @@ theorem rangeSpace_apply (S : X → Y → 𝕜) (hS : IsL2Symbol μ S)
 variable (μ) in
 /-- Completeness of the range-space carrier, as an explicit term (closed subspace of the
 complete space `L²`). -/
+@[reducible]
 noncomputable def rangeSpaceCompleteSpace (S : X → Y → 𝕜) (hS : IsL2Symbol μ S) :
     CompleteSpace (rangeSpaceCarrier μ S hS) :=
   (Submodule.isClosed_topologicalClosure _).completeSpace_coe

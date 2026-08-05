@@ -45,7 +45,8 @@ theorem continuous_boxProd {K : X → X → 𝕜}
 /-- **`T_K²` is the integral operator with symbol `K □ K`.** -/
 theorem mercerCLM_comp_self {K : X → X → 𝕜}
     (hKc : Continuous fun p : X × X => K p.1 p.2) :
-    (mercerCLM μ hKc).comp (mercerCLM μ hKc) = mercerCLM μ (continuous_boxProd hKc) := by
+    (mercerCLM μ hKc).comp (mercerCLM μ hKc)
+      = mercerCLM (K := boxProd μ K K) μ (continuous_boxProd (μ := μ) hKc) := by
   sorry
 
 /-- **`(∫ K(t,t) dμ) · K − K □ K` is a Mercer kernel** (Cholesky-style domination of the
@@ -126,7 +127,7 @@ function `T_S g` is realized in `H` with equal norm. -/
 theorem sqrtCLM_isometry_on_ker_orthogonal
     -- USER-INPUT: `H` has reproducing kernel `K`
     (hKH : scalarKernel H = K)
-    {g : Lp 𝕜 2 μ} (hg : g ∈ (LinearMap.ker (mercerCLM μ hKc))ᗮ) :
+    {g : Lp 𝕜 2 μ} (hg : g ∈ (LinearMap.ker (mercerCLM μ hKc).toLinearMap)ᗮ) :
     ∃ f : H, (f : X → 𝕜) = integralOp μ (sqrtSymbol d) g ∧ ‖f‖ = ‖g‖ := by
   sorry
 

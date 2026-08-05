@@ -89,8 +89,9 @@ theorem sobolevH01_apply_one (f : SobolevH01) :
 
 /-- Completeness of the Sobolev carrier, as an explicit term (the orthogonal complement
 of a subspace of the complete space `L²` is complete). -/
+@[reducible]
 noncomputable def sobolevH01CompleteSpace : CompleteSpace SobolevH01 :=
-  Submodule.instOrthogonalCompleteSpace
+  Submodule.instOrthogonalCompleteSpace (ℝ ∙ sobolevOne)
 
 /-- The kernel function of the Sobolev space at `x` (the completeness instance is passed
 explicitly; definitionally `kernelFun SobolevH01 x`). -/
