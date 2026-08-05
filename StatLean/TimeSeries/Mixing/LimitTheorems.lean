@@ -11,13 +11,22 @@ import Mathlib.Analysis.Normed.Group.Tannery
   `n⁻¹ Var(S_n) → γ(0) + 2 Σ_{j≥1} γ(j)` (eq. (2.63)). **Erratum**: the book's display
   bounds `|γ(j)| ≤ 4α(j){E|X_1|}²`; the correct Billingsley bound is `4α(j)C²` — we
   state and use the corrected form.
-* **Theorem 2.21(ii)** (FULL in-text proof, pp. 75–76): additionally `σ² > 0` ⇒
+* **Theorem 2.21(ii)** (in-text proof, pp. 75–76): additionally `σ² > 0` ⇒
   `S_n/√n →d N(0, σ²)`, `σ² = γ(0) + 2Σγ(j)` — the Bernstein-block scheme: big blocks
-  of length `l_n`, small blocks `s_n` (`s_n → ∞`, `s_n/l_n → 0`, `l_n/n → 0`);
-  small-block negligibility via the fourth-moment bound; characteristic-function
-  factorization via Volkonskii–Rozanov (`16(k_n − 1)α(s_n) → 0`, using
-  `α(n) = o(1/n)` from monotone + summable); big-block array CLT via the Lindeberg
-  double-array theorem.
+  of length `l_n ≈ n^{3/4}`, small blocks `s_n ≈ n^{1/4}`, block count `k_n ≈ n^{1/4}`;
+  small-block negligibility in `L²`; characteristic-function factorization via
+  Volkonskii–Rozanov (`16(k_n − 1)α(s_n) → 0`, using `m·α(m) → 0` from monotone +
+  summable). **Note.** Strict stationarity makes the big blocks *identically
+  distributed*, so the factorized characteristic function is the single power
+  `(φ_n)^{k_n}` — no independent-copy triangular array (and hence no appeal to the
+  Lindeberg double-array CLT) is needed.
+  **STATUS: incomplete.** Steps (a) small-block negligibility and (b) the
+  Volkonskii–Rozanov factorization are proved; the closing scalar limit
+  `(φ_n)^{k_n} → e^{−σ²u²/2}` is left as an in-proof `sorry` (see the comment at the end
+  of the proof for the exact residue). The proof additionally rests on the named private
+  debt `lindeberg_blocks_debt` (Ibragimov–Linnik Thm 18.5.3): under `Σ α(j) < ∞` alone,
+  the fourth-moment route of `Mixing/Inequalities.moment4_partial_sum_le` is *not*
+  available — Yokoyama's `E S_l⁴ = O(l²)` needs `Σ_j (j+1) α(j) < ∞`.
 * **Theorem 2.20(i)/2.21(i)** — the `δ`-moment versions (cited Bosq / Peligrad):
   literature DEBTS.
 * **Proposition 2.8 (SLLN)** — α-mixing + `E|X| < ∞` ⇒ `S_n/n → EX` a.s.: literature
@@ -1220,6 +1229,18 @@ theorem clt_of_bounded_alphaMixing [IsProbabilityMeasure μ]
       (u * (Real.sqrt n)⁻¹)) ?_
     have hnn : 0 ≤ alphaCoeff X μ (s n) := alphaMixCoeff_nonneg
     nlinarith [hnn]
+  -- ### 6. Gap C (OPEN): `(φ n)^{k_n} → exp(−σ²u²/2)`, then the three-term squeeze
+  --
+  -- All the inputs are in place; what remains is the scalar analysis
+  --   `φ n = ∫ exp(i·u n^{-1/2}·B_{l_n})`,  `z n := φ n − 1`,
+  --   `z n = R n − ((u n^{-1/2})² · E B_{l_n}² / 2)`  (mean zero kills the linear term),
+  --   `‖R n‖ ≤ 4 (u n^{-1/2})² E B²`                   (`norm_expI_taylor`, quadratic form),
+  --   `k_n z n → −σ²u²/2`                              (`hkl` + `hblock`, plus
+  --                                                     `lindeberg_blocks_debt` for the
+  --                                                     cubic/quadratic split of `R n`),
+  --   `k_n ‖z n‖² → 0`                                 (`‖z n‖ = O(l_n/n)`, `k_n l_n/n → 1`),
+  -- and then `tendsto_pow_of_tendsto_mul` gives `(φ n)^{k_n} → exp(−σ²u²/2)`; the headline
+  -- follows from `Φ n = (Φ n − Φ' n) + (Φ' n − (φ n)^{k_n}) + (φ n)^{k_n}` with `hA`, `hB`.
   sorry
 
 /-- **DEBT (Bosq 1998 §1.5; FY Theorem 2.20(i))**: the `δ`-moment version of the
