@@ -8,7 +8,13 @@ book↔Lean dictionary and lane plan.
 - 2026-08-05: 25 stub files + umbrella `StatLean/NonparametricStatistics/RKHS.lean`
   authored on laptop (statement-first, all proofs `sorry`).  NOT yet wired into the area
   umbrella `StatLean/NonparametricStatistics.lean` (done at merge, laptop-only).
-  Next: stub gate on FAS-RC, then lane fan-out.
+- 2026-08-05: **stub gate GREEN** after 6 rounds (`Build completed successfully, 2816
+  jobs`, 145 sorries).  Notable elaboration finding: `CompleteSpace ↥H₀` synthesized
+  bare does not match `kernelFun`'s recorded norm-chain uniformity at instance
+  transparency — resolved by explicit-instance wrappers
+  (`sobolevKernelFun`, `rangeSpaceKernelFun`, `@kernelFun … hc …` in Subspace).
+  Statement repair at stub time: `SeparatesData.ne_zero` needs both label signs.
+  Wave-1 fan-out launched (core, frames, sobolev).
 
 ## Lane status
 
