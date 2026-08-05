@@ -21,8 +21,10 @@ The kernel density estimator and its risk functionals:
   `kdeBiasConst β L K = (L/ℓ!)·∫|u|^β|K(u)|du` — the explicit constants of the pointwise
   variance and bias bounds.
 
-**Reference.** Classical kernel density estimation; original sources in the bibliographic
-comments below.
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.2: the kernel density estimator, Eqs.
+(1.2)–(1.3); Definition 1.1 (bias and variance) and the MSE (1.4); Definition 1.3 (kernel of order
+$\ell$); the MISE (1.13).
 
 **Proof formalization notes.**
 

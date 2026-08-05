@@ -11,6 +11,17 @@ because `k_y = ∑ᵢ conj (e_i y) · e_i` converges in norm and norm convergenc
 pointwise convergence.  On the diagonal this is the Parseval identity
 `K(x, x) = ∑ᵢ ‖e_i x‖²`.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 2, §2.1, Theorem 2.4 (pointwise expansion of the kernel along an orthonormal basis).
+
+**Proof formalization notes.** Sums are unordered (`HasSum` over the basis index), matching the
+book's net convergence. The proof maps the norm-convergent expansion $k_y = \sum_i
+\overline{e_i(y)}\, e_i$ (from `HilbertBasis.hasSum_repr` and the reproducing identity) through
+the *continuous* evaluation functional `evalCLM`, which is exactly the book's "norm convergence
+implies pointwise convergence" step; the Parseval diagonal form is the same sum pushed through
+`RCLike.reCLM`.
+
 **Bibliographic comments.** The expansion of a reproducing kernel along an orthonormal
 basis appears in N. Aronszajn, Trans. Amer. Math. Soc. **68** (1950), 337–404, §I.4;
 for the Szegő and Bergman kernels it goes back to G. Szegő (1921) and S. Bergman (1922).

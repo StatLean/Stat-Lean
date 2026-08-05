@@ -21,6 +21,21 @@ For a Mercer kernel `K` on a compact metric space `X` and a finite Borel measure
   is a Mercer kernel;
 * the image of the `L²` unit ball under `T_K` is equicontinuous and pointwise bounded.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 11, §11.3, Propositions 11.6–11.12 (norm comparisons, separability, uniform absolute
+convergence of the basis expansion, boundedness and positivity of $T_K$, the full-support
+converse, equicontinuity).
+
+**Proof formalization notes.** Proposition 11.8 is proved by Dini's theorem
+(`Monotone.tendstoUniformly_of_forall_tendsto`) on the diagonal partial sums, with the
+off-diagonal controlled by finite Cauchy–Schwarz — the book's argument verbatim, over
+`Finset`-indexed nets. Positivity of $T_K$ (Proposition 11.10) expands against a Hilbert basis of
+the Moore RKHS of $K$ and transfers along the uniformly convergent kernel expansion. In the
+converse (Proposition 11.11) the averaging over shrinking balls needs *neither* disjoint
+neighborhoods nor distinct points — the bilinear expansion works for overlapping balls, so the
+book's reduction to distinct points is unnecessary.
+
 **Bibliographic comments.** J. Mercer, Philos. Trans. Roy. Soc. A **209** (1909);
 the Dini argument for uniform convergence is from E. H. Moore's treatment, cf.
 F. Smithies, *Integral Equations* (CUP, 1958), Ch. 7.

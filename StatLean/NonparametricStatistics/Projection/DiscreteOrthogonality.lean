@@ -11,6 +11,10 @@ $$ \frac1n \sum_{s=1}^{n} \varphi_j(s/n)\,\varphi_k(s/n) \;=\; \delta_{jk},
 This is the reason coefficient estimates at the regular design behave *exactly* like Fourier
 coefficients: the empirical Gram matrix of the first `n − 1` basis functions is the identity.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.7.2, Lemma 1.7 (discrete orthonormality of the
+trigonometric basis at the regular design).
+
 **Proof formalization notes.** Product-to-sum turns each product into discrete cosine/sine
 sums at frequencies `j/2 ± k/2` (ℕ-division bookkeeping); by `ForMathlib/TrigDiscreteSums`
 these vanish unless the frequency is a multiple of `n`, and for `1 ≤ j, k ≤ n − 1` the

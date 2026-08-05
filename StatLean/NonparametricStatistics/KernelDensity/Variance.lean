@@ -11,6 +11,10 @@ for **any** `x₀`, `h > 0`, `n` — a fully non-asymptotic bound. Also provided
 square-integrable under these hypotheses, and the exact bias–variance decomposition of the
 pointwise mean squared error.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.2.1, Proposition 1.1 (pointwise variance
+bound, constant $C_1 = p_{\max}\int K^2$).
+
 **Proof formalization notes.** Write `p̂ₙ(x₀) = (nh)⁻¹ ∑ ηᵢ + E` with
 `ηᵢ = K((Xᵢ−x₀)/h) − E K((Xᵢ−x₀)/h)` i.i.d. centered; independence gives
 `Var(p̂ₙ(x₀)) = (nh²)⁻¹·n⁻¹·…` — concretely `Mathlib`'s `IndepFun.variance_sum` after

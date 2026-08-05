@@ -15,6 +15,17 @@ The `L²`-endomorphism only needs continuity of `K`, not positivity, so `mercerC
 defined from a `Continuous` hypothesis alone — the converse direction of Mercer theory
 (positivity of `T_K` implies positivity of `K`) then makes sense.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 11, §11.3, Definition 11.5 (Mercer kernels) and the associated integral operator on
+$L^2(X,\mu)$ (the boundedness computation of Proposition 11.9).
+
+**Proof formalization notes.** `mercerCLM` is defined from joint continuity alone — positivity is
+*not* assumed — so the converse direction of Mercer theory (Proposition 11.11) is well-posed. The
+`L²`-valued operator is assembled by `LinearMap.mkContinuousOfExistsBound` with a
+dominated-convergence proof that images are continuous, a uniform bound from compactness of $X
+\times X$, and linearity read off the inner-product form `integralOp_eq_inner`.
+
 **Bibliographic comments.** J. Mercer, *Functions of positive and negative type and
 their connection with the theory of integral equations*, Philos. Trans. Roy. Soc. A
 **209** (1909), 415–446.

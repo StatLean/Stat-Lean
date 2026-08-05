@@ -31,4 +31,8 @@ Umbrella module for the RKHS cluster of the nonparametric-statistics area: scala
 theory over Mathlib's `RKHS` class, kernel functions and Moore's theorem, Parseval
 frames, the Sobolev and min-kernel examples, feature maps / maximal margin / representer
 theorems, integral operators and range spaces, and Mercer theory.
+
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University
+Press, 2016. Chapters 1 (§1.1, §1.3.1), 2 (§§2.1–2.4), 8 (§§8.2–8.6), and 11 (§§11.1–11.3).
 -/

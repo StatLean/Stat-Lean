@@ -19,6 +19,10 @@ $$ \Bigl\|\,f(\cdot+t) - \sum_{j=0}^{\ell} \frac{f^{(j)}(\cdot)}{j!}t^j\,\Bigr\|
 * `MemNikolski.lintegral_sq_remainder_le` — the squared-`L²` bound, via the generalized
   Minkowski inequality and the Nikol'skii translate condition.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.2.3 (integrated Taylor-remainder control on
+the Nikol'skii class $\mathcal{H}(\beta, L)$, as used in the proof of Proposition 1.5).
+
 **Proof formalization notes.** For `ℓ = 0` the identity degenerates and the bound is the
 Nikol'skii condition itself. For `ℓ ≥ 1`: `taylor_integral_remainder` plus linearity of the
 `τ`-integral gives the identity; then `lintegral_lintegral_sq_rpow_le` (with `μ` the restricted

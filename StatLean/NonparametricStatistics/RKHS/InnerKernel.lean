@@ -13,6 +13,20 @@ itself and the reproducing kernel is the inner product.
 The structure is provided as a `def` (`dualRKHS`), not a global instance: making every
 Hilbert space coerce to functions on itself would pollute downstream elaboration.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 2, §2.3.4, Proposition 2.24 (the RKHS induced by the inner product) and Exercise
+2.10.
+
+**Proof formalization notes.** With Mathlib's convention (inner conjugate-linear in the first
+slot), `coeCLM` must put the representing element in the *second* slot, so the members of the dual
+RKHS are the functions $v \mapsto \langle v, w\rangle$ — continuous *conjugate-linear*
+functionals. The book's Proposition 2.24 (linear functionals) and Exercise 2.10 (conjugate-linear
+functionals) therefore swap roles: the ℂ-linear range statement is FALSE here (machine-checked
+witness `dualRKHS_range_coe_false`, kept in-file: on `L = ℂ` the element `1` acts as `conj`), and
+the correct statement — proved — is Riesz–Fréchet for conjugate-linear functionals, `range = {⇑T :
+T ∈ L →L⋆[𝕜] 𝕜}`.
+
 **Bibliographic comments.** This is the Riesz–Fréchet representation theorem (F. Riesz
 1907, M. Fréchet 1907) read as a statement about reproducing kernels; see also
 N. Aronszajn, Trans. Amer. Math. Soc. **68** (1950), §I.3.

@@ -7,6 +7,15 @@ For a function `f₀ : X → 𝕜`, the product `K(x, y) = f₀(x) · conj (f₀
 function, and any RKHS with this kernel is the one-dimensional space spanned by `f₀`,
 on which `f₀` itself has norm `1` (when `f₀ ≠ 0`).
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 2, §2.3.1, Proposition 2.19 (the one-dimensional RKHS induced by a single function).
+
+**Proof formalization notes.** Elements of an RKHS are determined by their values (`RKHS.ext`), so
+the unit representative of $f_0$ is pinned down pointwise; spanning follows because every kernel
+function is a scalar multiple of it and the line `𝕜 ∙ g` is closed (finite-dimensional), so the
+closed span of the kernel functions (`kerFun_dense`) collapses to the line.
+
 **Bibliographic comments.** N. Aronszajn, Trans. Amer. Math. Soc. **68** (1950), Part I
 §2 (elementary examples of reproducing kernels).
 -/

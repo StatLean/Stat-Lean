@@ -21,6 +21,24 @@ independent RKHS `H(K)` as a range space:
 Also here: `T_K²` is the integral operator with symbol the box product `K □ K`, and
 `(∫ K(t,t) dμ)·K − K □ K` is again a Mercer kernel, whence `range T_K ⊆ H(K)`.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 11, §11.3, Propositions 11.16–11.17 ($T_K^2$ and the Cholesky domination $CK -
+K^{(2)}$) and Theorem 11.18 (the square root $T_S$, $\mathcal{H}(K)$ as its range, the orthonormal
+basis $\{\sqrt{\lambda_n} e_n\}$, and the spectral membership test).
+
+**Proof formalization notes.** The square-root symbol must NOT be defined as a pointwise unordered
+sum: for a scalar family `∑'` is absolute summability, and $\|\sqrt{\lambda_n}
+e_n(x)\overline{e_n(y)}\|$ is generically non-summable — on the circle with $K = \sum_n
+(1+n^2)^{-1} e^{in(x-y)}$ the terms decay like $|n|^{-1}$, the `tsum` junk-defaults to $0$, and
+the square-root theory would be false (the counterexample is preserved in the `sqrtSectionLp`
+docstring). Instead the section $S(x,\cdot)$ is the $L^2$-valued `tsum` of the orthogonal family
+$(\sqrt{\lambda_n} e_n(x))\cdot\overline{e_n}$, convergent since $\sum_n \lambda_n |e_n(x)|^2 \le
+\mathrm{re}\,K(x,x)$. All of Theorem 11.18 flows from the master identity $T_S g(x) = \sum_n
+\sqrt{\lambda_n}\, e_n(x)\langle e_n, g\rangle$; the $\mathcal{H}(K)$-side statements are
+transported from the range space of $S$ (where $S \square S^* = K$) through the kernel-uniqueness
+isometry, and the orthonormal basis claim goes through Papadakis' Parseval-frame criterion.
+
 **Bibliographic comments.** The square-root factorization of Mercer operators and the
 spectral description of `H(K)` are classical; see H. König, *Eigenvalue Distribution of
 Compact Operators* (Birkhäuser, 1986), and E. Parzen, *Statistical inference on time

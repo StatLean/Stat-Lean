@@ -17,6 +17,10 @@ Provided in a global form (class on `ℝ`, for kernel density bias) and an inter
 on `Icc a b`, for local polynomial bias), plus a polynomial-growth envelope used to derive
 integrability of kernel-weighted compositions.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.2.1 (Taylor-remainder control on the Hölder
+class $\Sigma(\beta, L)$, as used in the proof of Proposition 1.2).
+
 **Proof formalization notes.** The `ℓ = 0` case is the Hölder condition itself (no Taylor
 step). For `ℓ ≥ 1`, the global form uses `taylor_lagrange_global`; the interval form uses
 Mathlib's `taylor_mean_remainder_lagrange` on `uIcc x₀ x` together with

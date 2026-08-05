@@ -15,6 +15,10 @@ $$ \mathbb E\,\|\hat f_{nN} - f\|_{L^2[0,1]}^2
 — an exact identity: stochastic error `σ_ξ²N/n`, Riemann-sum (aliasing) error `∑αⱼ²`, and
 approximation (tail) error `ρ_N`.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.7.2, Proposition 1.17 (exact MISE
+decomposition of the projection estimator).
+
 **Proof formalization notes.** Expand `f̂ − f = ∑_{j≤N}(θ̂ⱼ − θⱼ)φⱼ − ∑_{j>N}θⱼφⱼ`. The `L²`
 cross terms vanish and the squares decouple by orthonormality (`trigBasis_orthonormal`); the
 tail's squared norm is `ρ_N` by dominated convergence (uniform convergence of the tail series

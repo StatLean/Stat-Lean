@@ -11,6 +11,18 @@ Two Hilbert-space lemmas feeding the constructive proof of Mercer's theorem:
 * consequently, a unit vector at which a *positive* operator attains its norm is an
   eigenvector with eigenvalue `‖P‖`.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 11, §11.3, Lemmas 11.13–11.14 (norm-attaining vectors of positive operators are
+eigenvectors).
+
+**Proof formalization notes.** The book differentiates $t \mapsto \|A(\cos t\, h + \sin t\,
+k)\|^2$ at a maximum; here the derivative is avoided entirely: for all real $s$, $\|A(h + s k)\|^2
+\le \|A\|^2\|h + s k\|^2$ expands to $2 s\, \mathrm{re}\langle Ah, Ak\rangle \le s^2 D$, and
+choosing $s = \pm\varepsilon/(D+1)$ kills the real part; a unimodular twist of $k$ kills the
+imaginary part. Lemma 11.14 then follows the book's decomposition $Ph = c h + k$ with the
+degenerate case handled via the tilt $h - Ph$.
+
 **Bibliographic comments.** Classical operator theory; see F. Riesz and B. Sz.-Nagy,
 *Functional Analysis* (1955), §93 (norm-attaining vectors of symmetric operators).
 -/

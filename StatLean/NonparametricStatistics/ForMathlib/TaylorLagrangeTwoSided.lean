@@ -14,6 +14,10 @@ This is the exact shape consumed by the pointwise bias analysis of kernel smooth
 Hölder classes: the remainder features the `ℓ`-th derivative at an intermediate point, to be
 compared with its value at `x₀` via the Hölder condition.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.2.1 (Taylor–Lagrange tooling for the bias
+bound of Proposition 1.2).
+
 **Proof formalization notes.** Mathlib's `taylor_mean_remainder_lagrange` is one-sided
 (`x₀ < x`, sets phrased with `Icc x₀ x` and `iteratedDerivWithin`); this file upgrades it to
 the two-sided global form by working on `uIcc` (or by reflecting `f`), and converts

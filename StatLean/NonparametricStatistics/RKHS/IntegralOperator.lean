@@ -12,6 +12,17 @@ matrix products, we define the **box product** `(S₁ □ S₂)(x,z) = ∫ S₁(
 and the **adjoint symbol** `S*(y,x) = conj (S x y)`, and prove that `S □ S*` is always a
 kernel function — the continuous analogue of `A Aᴴ ⪰ 0`.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 11, §§11.1–11.2, Definition 11.1 (integral operators, box products, adjoint symbols)
+and Proposition 11.2 ($S \square S^*$ is a kernel function).
+
+**Proof formalization notes.** Symbols are genuine functions with `MemLp` sections, so
+`integralOp` lands in honest functions on $X$ (not equivalence classes) — the point the book
+emphasizes. The conjugated sections are packaged as `L²` classes (`symbolConjLp`), making $T_S
+g(x) = \langle \overline{S(x,\cdot)}, g\rangle$ an inner product and $S \square S^*$ literally the
+Gram function of those sections, whence positivity by the feature-kernel lemma.
+
 **Bibliographic comments.** Integral operators with square-integrable symbols go back to
 D. Hilbert and E. Schmidt (1907); the positivity of `S □ S*` is the continuous Schur
 factorization, cf. F. Smithies, *Integral Equations* (CUP, 1958).

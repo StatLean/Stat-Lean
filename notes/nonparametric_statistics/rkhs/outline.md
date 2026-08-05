@@ -4,11 +4,13 @@ Reference: Paulsen & Raghupathi, *An Introduction to the Theory of Reproducing K
 Hilbert Spaces* (CUP, 2016). PDF: `ref/Nonparametric/RKHS.pdf`. Plan: `RKHS_plan.md`
 (chapters 1 §1.1 + §1.3.1, 2 §2.1–2.4, 8 §8.2/8.5–8.6 + representer, 11 §11.3).
 
-**Citation convention** (mirrors the batch-a no-Tsybakov rule): `.lean` docstrings and
-comments cite the *original* literature (Aronszajn 1950, Moore 1935, Mercer 1909,
-Larson, Papadakis, Kimeldorf–Wahba 1971, Boser–Guyon–Vapnik 1992, …), never P&R.
-P&R numbering lives only in this ledger. `-- USER-INPUT:`/`-- LEAN-ONLY:` tags state
-the mathematical claim; the ledger row gives the P&R locus.
+**Citation convention (UPDATED 2026-08-05, user request):** every module docstring carries a
+`**Reference.**` block citing Paulsen–Raghupathi with chapter/§/item numbers and a
+`**Proof formalization notes.**` block (YangBarron style), before `**Bibliographic
+comments.**`, which continue to cite the *original* literature (Aronszajn 1950, Moore 1935,
+Mercer 1909, Larson, Papadakis, Kimeldorf–Wahba 1971, Boser–Guyon–Vapnik 1992, …).
+`-- USER-INPUT:`/`-- LEAN-ONLY:` tags state the mathematical claim; this ledger remains the
+authoritative book↔Lean dictionary.
 
 **The big reuse**: our Mathlib pin (`5e932f97`, v4.29.1) contains
 `Mathlib.Analysis.InnerProductSpace.Reproducing` — the (vector-valued) `RKHS 𝕜 H X V`

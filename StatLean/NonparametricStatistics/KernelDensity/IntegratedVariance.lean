@@ -13,6 +13,10 @@ The striking feature — emphasized in the classical treatment — is that no co
 whatsoever is required: integrating the pointwise second moment in `x` and applying
 Tonelli–Fubini turns the density into its total mass `∫ p = 1`.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.2.3, Proposition 1.4 (integrated variance
+bound $(nh)^{-1}\int K^2$, valid for any density).
+
 **Proof formalization notes.** `σ²(x) ≤ (nh²)⁻¹·E K²((X₁−x)/h)`; integrate in `x`, swap by
 Tonelli (`lintegral_lintegral_swap`), and change variables `u = (z−x)/h` at fixed `z`
 (translation invariance + scaling of Lebesgue measure), yielding

@@ -23,6 +23,22 @@ with `‖E_x‖² = x(1−x)`, and the kernel function of `x` is the representat
 `𝟙_{[0,x]} − x·𝟙` (whose primitive is the Green's function above).  Completeness is
 inherited from `L²` — this replaces the classical pointwise-Cauchy argument.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 1, §1.3.1 (Sobolev spaces on $[0,1]$: the Dirichlet space of absolutely continuous
+functions with $f(0)=f(1)=0$, its kernel, and the sharp evaluation bound); the
+integral-representation view is the book's §11.2.1.
+
+**Proof formalization notes.** The book defines the space via absolute continuity and proves $f(x)
+= \int_0^x f'$; we take the integral representation as the *definition*: the carrier is the
+mean-zero subspace $(\mathbb{R}\cdot\mathbf{1})^{\perp} \subseteq L^2[0,1]$ of derivative
+representatives, an element $g$ acting as $x \mapsto \langle \mathbf{1}_{[0,x]}, g\rangle$.
+Completeness is then inherited from $L^2$ (replacing the book's pointwise-Cauchy argument), the
+boundary conditions become the mean-zero constraint, and the kernel function of $x$ is the
+representative $\mathbf{1}_{[0,x]} - x\cdot\mathbf{1}$, giving $K(x,y) = \min(x,y) - xy$ and
+$\|E_x\|^2 = x(1-x)$ by four indicator inner products. Injectivity of the action (the only
+nontrivial point of the RKHS structure) is a π-system argument promoted from the rays $[0,x]$.
+
 **Bibliographic comments.** The Green's-function kernel of the Dirichlet Sobolev space
 is classical; see N. Aronszajn, Trans. Amer. Math. Soc. **68** (1950), §II.5, and
 S. Bergman's earlier work on kernels of differential operators.  This space is the

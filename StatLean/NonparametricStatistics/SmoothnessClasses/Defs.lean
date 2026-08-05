@@ -23,8 +23,10 @@ The function classes over which nonparametric risk bounds are proved uniformly:
 * `densityMeasure p` — the Borel measure `volume.withDensity (ofReal ∘ p)` on $\mathbb R$,
   the law of an observation with Lebesgue density `p`.
 
-**Reference.** Classical smoothness classes of nonparametric estimation; original sources in the
-bibliographic comments below.
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.2.1, Definition 1.2 (the Hölder class
+$\Sigma(\beta, L)$ and the density class $\mathcal{P}(\beta, L)$) and §1.2.3, Definition 1.4 (the
+Nikol'skii class $\mathcal{H}(\beta, L)$ and $\mathcal{P}_H(\beta, L)$).
 
 **Proof formalization notes.**
 

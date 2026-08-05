@@ -10,6 +10,10 @@ polynomial of degree `≤ ℓ` is a combination `∑_k c_k (x − t)^k`, so this
 classical statement. In particular the weights sum to one, and their centered moments of
 orders `1, …, ℓ` vanish — the cancellation mechanism of the bias analysis.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.6, Proposition 1.12 (polynomial reproduction,
+Eq. (1.68)).
+
 **Proof formalization notes.** For responses `Y i = (xdat i − t)^k`, the coefficient vector
 `q` with `q_j = δ_{jk}·k!·h^k` satisfies `q ⬝ U((xᵢ−t)/h) = (xᵢ−t)^k`, so it solves the normal
 equations `B_t q = a_t`; since `B_t` is invertible, `lpEstimator = (B_t⁻¹ a_t)₀ = q₀`. By

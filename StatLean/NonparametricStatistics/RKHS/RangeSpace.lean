@@ -17,6 +17,19 @@ the point `x` is then the section `conj S(x,·)` itself, and the reproducing ker
 `(S □ S*)`.  The classical statements (range description and infimum formula) are
 derived from this model.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 11, §11.2, Theorem 11.3 (the range of an integral operator is an RKHS with kernel $S
+\square S^*$ and the Sarason range norm) and Corollary 11.4; §11.2.1 identifies the Volterra
+example.
+
+**Proof formalization notes.** The range space is *modeled* as the closed span of the conjugated
+sections — i.e. $(\ker T_S)^{\perp}$ — acting through $T_S$, so the Sarason norm is simply the
+subspace norm and the infimum formula and its attainment become theorems about the orthogonal
+decomposition of a preimage. The kernel function at $x$ is the conjugated section itself. As in
+`Subspace.lean`, `rangeSpaceKernelFun`/`rangeSpaceScalarKernel` pass the carrier's `CompleteSpace`
+instance explicitly (bare synthesis records an instance-transparency-incompatible uniformity).
+
 **Bibliographic comments.** Range spaces with the lifted norm are due to D. Sarason,
 *Sub-Hardy Hilbert Spaces in the Unit Disk* (Wiley, 1994); the identification of the
 range of an integral operator as an RKHS goes back to N. Aronszajn, Trans. Amer. Math.

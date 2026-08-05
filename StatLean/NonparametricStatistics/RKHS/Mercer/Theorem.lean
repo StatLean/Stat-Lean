@@ -23,6 +23,24 @@ continuous representatives (`e = λ⁻¹ T_K e` and `T_K` has continuous range),
 uniform kernel expansion follows from the positivity of the residual kernels and Dini's
 theorem (`tendstoUniformly_scalarKernel`).
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 11, §11.3, Theorem 11.15 (Mercer's theorem): countable orthonormal continuous
+eigenfunctions with positive eigenvalues, the diagonalization of $T_K$, the pointwise and uniform
+kernel expansions, and the trace formula $\sum_n \lambda_n = \int K(x,x)\,d\mu$.
+
+**Proof formalization notes.** The eigensystem is produced from Mathlib's spectral theorem for
+compact self-adjoint operators rather than the book's Arzelà–Ascoli iteration: countability of the
+positive spectrum is built from total boundedness of the image of the unit ball (orthonormal
+eigenvectors with eigenvalues $\ge \varepsilon$ are $\sqrt{2}\varepsilon$-separated), the index is
+re-encoded into a `Type 0` via `Encodable`, and eigenfunctions get *continuous representatives*
+$\lambda^{-1} T_K e$ — so the pointwise eigen-equation holds everywhere by construction, with full
+support (`IsOpenPosMeasure`) used to identify the `L²` classes. The kernel expansion follows the
+residual-kernel route: each residual $K_s = K - \sum_{n \in s}\lambda_n e_n \overline{e_n}$ has
+positive operator, hence is a Mercer kernel by the (proved) converse, giving the diagonal bound;
+residual operator norms tend to $0$, and a continuous kernel with vanishing operator vanishes
+identically (averaging argument applied to $\pm K_\infty$).
+
 **Bibliographic comments.** J. Mercer, *Functions of positive and negative type and
 their connection with the theory of integral equations*, Philos. Trans. Roy. Soc. A
 **209** (1909), 415–446; modern treatments in F. Smithies, *Integral Equations* (1958),

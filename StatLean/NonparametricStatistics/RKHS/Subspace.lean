@@ -8,6 +8,20 @@ functionals stay bounded under restriction), and its kernel is the projection of
 ambient kernel: `K₀(x, y) = (P₀ k_y)(x) = ⟪P₀ k_y, k_x⟫`, where `P₀` is the orthogonal
 projection onto `H₀`.  In particular `kernelFun H₀ x = P₀ (kernelFun H x)`.
 
+**Reference.** V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing
+Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press,
+2016. Chapter 2, §2.1, Theorem 2.5 (closed subspaces of an RKHS are RKHSs, with the projected
+kernel).
+
+**Proof formalization notes.** The subspace RKHS is an instance on the subtype `↥H₀` (`coeCLM`
+composed with `Submodule.subtypeL`). The statements pass the `CompleteSpace ↥H₀` instance
+*explicitly* (`@kernelFun 𝕜 _ X (↥H₀) _ _ hc _ x`): a bare typeclass-synthesized instance carries
+a different (defeq but not instance-transparent) uniformity than the one recorded in
+`RKHS.kerFun`'s signature, and unification bridges the two forms only at default transparency —
+i.e. only under explicit application. The kernel identity itself is Riesz-uniqueness: both sides
+have equal inner products against all of `H₀`
+(`Submodule.eq_starProjection_of_mem_of_inner_eq_zero`).
+
 **Bibliographic comments.** N. Aronszajn, Trans. Amer. Math. Soc. **68** (1950),
 §I.9 (kernels of subspaces and differences of kernels).
 -/
