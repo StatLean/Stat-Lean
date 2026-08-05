@@ -195,7 +195,7 @@ private lemma integral_psum [IsProbabilityMeasure μ] (hε : IsWhiteNoise ε σ2
 /-- `|ψ|` is bounded by its own sum. -/
 private lemma abs_psi_le (hψ : Summable fun j => |ψ j|) (j : ℕ) :
     |ψ j| ≤ ∑' i : ℕ, |ψ i| :=
-  hψ.le_tsum j fun i _ => abs_nonneg _
+  hψ.le_tsum j fun _ _ => abs_nonneg _
 
 /-- The lag-`m` coefficient series is summable. -/
 private lemma summable_shift (hψ : Summable fun j => |ψ j|) (m : ℕ) :
@@ -210,10 +210,11 @@ private lemma summable_shift (hψ : Summable fun j => |ψ j|) (m : ℕ) :
 any shift `k`, the joint law of `(ε_{u a + k})_a` is that of `(ε_{u a})_a`. Repetitions in
 `u` are allowed: the block factors through the (injective) enumeration of the range, on
 which the product-law characterization of independence applies. -/
-private lemma map_noise_block [IsProbabilityMeasure μ] {A : Type*} [Fintype A]
+private lemma map_noise_block [IsProbabilityMeasure μ] {A : Type*} [Finite A]
     (hε : IsIIDNoise ε σ2 μ) (u : A → ℤ) (k : ℤ) :
     μ.map (fun ω a => ε (u a + k) ω) = μ.map (fun ω a => ε (u a) ω) := by
   classical
+  have : Fintype A := Fintype.ofFinite A
   set S : Finset ℤ := Finset.image u Finset.univ with hS
   set ρ : A → {x // x ∈ S} :=
     fun a => ⟨u a, Finset.mem_image_of_mem u (Finset.mem_univ a)⟩ with hρ
@@ -275,7 +276,7 @@ private lemma map_psum_vec [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ
 
 private lemma measurable_psum (hmε : ∀ s, Measurable (ε s)) (ψ : ℕ → ℝ) (s : ℤ) (N : ℕ) :
     Measurable (psum ψ ε s N) :=
-  Finset.measurable_sum _ fun j _ => (hmε _).const_mul _
+  Finset.measurable_sum _ fun _ _ => (hmε _).const_mul _
 
 /-- The total defect of a `k`-shifted and an unshifted window of partial sums at stage
 `N`: one scalar sequence dominating every coordinate of both. -/
@@ -287,8 +288,8 @@ private noncomputable def windowDefect (ψ : ℕ → ℝ) (X ε : ℤ → Ω →
 private lemma measurable_windowDefect {X : ℤ → Ω → ℝ} {n : ℕ} (hmε : ∀ s, Measurable (ε s))
     (hmX : ∀ s, Measurable (X s)) (ψ : ℕ → ℝ) (t : Fin n → ℤ) (k : ℤ) (N : ℕ) :
     Measurable (windowDefect ψ X ε t k N) :=
-  (Finset.measurable_sum _ fun i _ => ((hmX _).sub (measurable_psum hmε ψ _ _)).norm).add
-    (Finset.measurable_sum _ fun i _ => ((hmX _).sub (measurable_psum hmε ψ _ _)).norm)
+  (Finset.measurable_sum _ fun _ _ => ((hmX _).sub (measurable_psum hmε ψ _ _)).norm).add
+    (Finset.measurable_sum _ fun _ _ => ((hmX _).sub (measurable_psum hmε ψ _ _)).norm)
 
 /-- The total defect vanishes in `L²`. -/
 private lemma tendsto_windowDefect [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ} {n : ℕ}
