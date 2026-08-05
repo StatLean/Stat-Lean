@@ -1177,6 +1177,49 @@ theorem clt_of_bounded_alphaMixing [IsProbabilityMeasure μ]
           have heq2 : 5 * (u ^ 2 / (n : ℝ)) * (∫ ω, (∑ t ∈ D, X ((t : ℤ) + 1) ω) ^ 2 ∂μ)
               = 5 * u ^ 2 * ((∫ ω, (∑ t ∈ D, X ((t : ℤ) + 1) ω) ^ 2 ∂μ) / (n : ℝ)) := by ring
           linarith
+  -- ### 5. Gap B: Volkonskii–Rozanov factorization; identical block laws give a power
+  have hB : Tendsto (fun n : ℕ => Φ' n - (φ n) ^ (k n)) atTop (𝓝 0) := by
+    have hlim : Tendsto (fun n : ℕ => 16 * (k n : ℝ) * alphaCoeff X μ (s n)) atTop (𝓝 0) := by
+      have h := hkα.const_mul (16 : ℝ)
+      simpa [mul_assoc] using h
+    refine squeeze_zero_norm' (Eventually.of_forall fun n => ?_) hlim
+    have hprod : Φ' n = ∫ ω, ∏ j : Fin (k n), Complex.exp (((u * (Real.sqrt n)⁻¹ *
+        ∑ i ∈ Finset.range (l n),
+          X ((i : ℤ) + 1 + (((j : ℕ) * (l n + s n) : ℕ) : ℤ)) ω : ℝ) : ℂ) * Complex.I) ∂μ := by
+      simp only [hΦ'def]
+      refine integral_congr_ae (Eventually.of_forall fun ω => ?_)
+      dsimp only
+      rw [hblocksum n ω]
+      have hexpo : (((u * (Real.sqrt n)⁻¹ * ∑ j ∈ Finset.range (k n), ∑ i ∈ Finset.range (l n),
+            X ((i : ℤ) + 1 + ((j * (l n + s n) : ℕ) : ℤ)) ω : ℝ)) : ℂ) * Complex.I
+          = ∑ j : Fin (k n), ((((u * (Real.sqrt n)⁻¹ * ∑ i ∈ Finset.range (l n),
+            X ((i : ℤ) + 1 + (((j : ℕ) * (l n + s n) : ℕ) : ℤ)) ω : ℝ)) : ℂ) * Complex.I) := by
+        rw [Fin.sum_univ_eq_sum_range (fun j : ℕ => ((((u * (Real.sqrt n)⁻¹ *
+          ∑ i ∈ Finset.range (l n),
+            X ((i : ℤ) + 1 + ((j * (l n + s n) : ℕ) : ℤ)) ω : ℝ)) : ℂ) * Complex.I))]
+        push_cast
+        rw [Finset.mul_sum, Finset.sum_mul]
+      rw [hexpo, Complex.exp_sum]
+    have hFmeas : Measurable fun x : ℝ =>
+        Complex.exp (((u * (Real.sqrt n)⁻¹ * x : ℝ) : ℂ) * Complex.I) :=
+      Complex.measurable_exp.comp ((Complex.measurable_ofReal.comp
+        (measurable_const.mul measurable_id)).mul measurable_const)
+    have hone : ∀ j : Fin (k n), (∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+        ∑ i ∈ Finset.range (l n),
+          X ((i : ℤ) + 1 + (((j : ℕ) * (l n + s n) : ℕ) : ℤ)) ω : ℝ) : ℂ) * Complex.I) ∂μ)
+        = φ n := fun j =>
+      integral_comp_window_eq hmeas hstat hFmeas (l n) (((j : ℕ) * (l n + s n) : ℕ) : ℤ)
+    have hfac : ∏ j : Fin (k n), (∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+        ∑ i ∈ Finset.range (l n),
+          X ((i : ℤ) + 1 + (((j : ℕ) * (l n + s n) : ℕ) : ℤ)) ω : ℝ) : ℂ) * Complex.I) ∂μ)
+        = (φ n) ^ (k n) := by
+      rw [Finset.prod_congr rfl (fun j _ => hone j), Finset.prod_const, Finset.card_univ,
+        Fintype.card_fin]
+    rw [hprod, ← hfac]
+    refine le_trans (norm_integral_prod_blocks_sub_prod_le hmeas hstat (l n) (s n) (k n)
+      (u * (Real.sqrt n)⁻¹)) ?_
+    have hnn : 0 ≤ alphaCoeff X μ (s n) := alphaMixCoeff_nonneg
+    nlinarith [hnn]
   sorry
 
 /-- **DEBT (Bosq 1998 §1.5; FY Theorem 2.20(i))**: the `δ`-moment version of the
