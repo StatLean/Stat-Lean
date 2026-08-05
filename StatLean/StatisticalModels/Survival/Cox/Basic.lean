@@ -333,10 +333,173 @@ theorem cumHazard_coxMeasure (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure 
     (hΛ0 : Λ₀ (Iic 0) = 0)
     (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤) [NoAtoms Λ₀] :
     cumHazard (coxMeasure β Λ₀ z hfin) = ENNReal.ofReal (Real.exp ⟪β, z⟫_ℝ) • Λ₀ := by
-  -- TODO (S5.2, designated carry): rides the S-B4 analytic bricks of
-  -- `Survival.HazardBridges`, which are not on this branch yet. Per evaluation set the
-  -- goal reduces to the Stieltjes-FTC identity
-  -- `∫_{(a,b]} c·e^{−c·G t} dΛ₀ t = e^{−c·G a} − e^{−c·G b}` with `G t = Λ₀ (Ioc 0 t)`.
+  -- TODO (S5.2, the single carry): this statement is **FALSE as frozen** — it is not merely
+  -- unproved. `not_forall_cumHazard_coxMeasure` (below, machine-checked) exhibits a baseline
+  -- meeting every hypothesis here — `Λ₀ = volume.restrict (Ioc 0 1)`, atomless, carried by
+  -- `(0, ∞)`, locally finite — whose Cox law violates the conclusion: the total baseline
+  -- hazard is `1 < ∞`, so the constructed law is defective (cure fraction `e^{-1}`) and its
+  -- hazard denominator is the *defective* survival `S(t) − e^{-1}`, not `S(t)`, which
+  -- strictly inflates `Λ` above `e^{⟪β,z⟫} Λ₀`.
+  -- The missing hypothesis is exactly `Tendsto (fun t => Λ₀ (Ioc 0 t)) atTop (𝓝 ⊤)` (no cure
+  -- mass, ABGK §II.1) — the same one `isEventTimeLaw_coxMeasure` already carries. With it
+  -- supplied, S5.2 is PROVED, axiom-clean, as `cumHazard_coxMeasure_of_tendsto_top` above.
+  -- Unfreezing this signature to add `htot` retires the carry with no further work.
   sorry
+
+/-! ### The cure-defect witness: S5.2 is false without a no-cure hypothesis
+
+Everything below certifies that the divergence hypothesis in
+`cumHazard_coxMeasure_of_tendsto_top` cannot be dropped, i.e. that the frozen statement of
+`cumHazard_coxMeasure` is **false**, not merely unproved. The witness is the uniform baseline
+hazard on `(0, 1]`: atomless, carried by the positive axis, locally finite — every hypothesis
+of the frozen S5.2 — but with total hazard `1 < ∞`, so the constructed Cox law is defective
+with cure fraction `e^{-1}`. Its survival `S(t) − e^{-1}` (not `S(t)`) sits in the hazard
+denominator, which strictly inflates the cumulative hazard above `e^{⟪β,z⟫} Λ₀`. -/
+
+/-- The cumulative-hazard measure is invariant under positive rescaling of the law
+(LEAN-ONLY; the hazard density is a ratio, so the scale cancels). -/
+theorem cumHazard_smul (μ : Measure ℝ) {k : ℝ≥0∞} (hk0 : k ≠ 0) (hktop : k ≠ ⊤) :
+    cumHazard (k • μ) = cumHazard μ := by
+  ext s hs
+  rw [cumHazard_apply _ hs, cumHazard_apply _ hs]
+  have hint : ∀ t : ℝ, ((k • μ) (Ici t))⁻¹ = k⁻¹ * (μ (Ici t))⁻¹ := fun t => by
+    rw [Measure.smul_apply, smul_eq_mul, ENNReal.mul_inv (Or.inl hk0) (Or.inl hktop)]
+  simp only [hint]
+  rw [Measure.restrict_smul, lintegral_smul_measure,
+    lintegral_const_mul' _ _ (ENNReal.inv_ne_top.2 hk0), smul_eq_mul, ← mul_assoc,
+    ENNReal.mul_inv_cancel hk0 hktop, one_mul]
+
+/-- **Cure-defect witness baseline**: uniform hazard on `(0, 1]`, total hazard `1 < ∞`. -/
+noncomputable def cureBaseline : Measure ℝ := volume.restrict (Ioc 0 1)
+
+instance : NoAtoms cureBaseline := ⟨fun x => by
+  rw [cureBaseline, Measure.restrict_apply (measurableSet_singleton x)]
+  exact measure_mono_null inter_subset_left (measure_singleton x)⟩
+
+theorem cureBaseline_Ioc (t : ℝ) : cureBaseline (Ioc 0 t) = ENNReal.ofReal (min t 1) := by
+  have hset : Ioc (0 : ℝ) t ∩ Ioc 0 1 = Ioc 0 (min t 1) := by
+    ext x
+    simp only [mem_inter_iff, mem_Ioc, le_min_iff]
+    tauto
+  rw [cureBaseline, Measure.restrict_apply measurableSet_Ioc, hset, Real.volume_Ioc, sub_zero]
+
+theorem cureBaseline_Iic_zero : cureBaseline (Iic 0) = 0 := by
+  have hset : Iic (0 : ℝ) ∩ Ioc 0 1 = ∅ :=
+    eq_empty_of_forall_notMem fun x hx => absurd hx.1 (not_le.2 hx.2.1)
+  rw [cureBaseline, Measure.restrict_apply measurableSet_Iic, hset, measure_empty]
+
+theorem cureBaseline_ne_top (t : ℝ) : cureBaseline (Ioc 0 t) ≠ ⊤ := by
+  rw [cureBaseline_Ioc]; exact ENNReal.ofReal_ne_top
+
+/-- The Cox law of the cure-defect baseline (zero coefficient and covariate): a *defective*
+law of total mass `1 − e^{-1}`, the defect being the cure fraction. -/
+noncomputable def cureCoxMeasure (p : ℕ) : Measure ℝ :=
+  coxMeasure (0 : EuclideanSpace ℝ (Fin p)) cureBaseline 0 cureBaseline_ne_top
+
+private theorem exp_inner_zero (p : ℕ) :
+    Real.exp ⟪(0 : EuclideanSpace ℝ (Fin p)), (0 : EuclideanSpace ℝ (Fin p))⟫_ℝ = 1 := by
+  simp
+
+private theorem cureSF_apply (p : ℕ) {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t ≤ 1) :
+    coxSF (0 : EuclideanSpace ℝ (Fin p)) cureBaseline 0 cureBaseline_ne_top t
+      = 1 - Real.exp (-t) := by
+  rw [coxSF_apply, coxSurvival, cureBaseline_Ioc, min_eq_left ht1, ENNReal.toReal_ofReal ht0,
+    exp_inner_zero, one_mul]
+
+private theorem cureSF_apply_ge (p : ℕ) {t : ℝ} (ht : 1 ≤ t) :
+    coxSF (0 : EuclideanSpace ℝ (Fin p)) cureBaseline 0 cureBaseline_ne_top t
+      = 1 - Real.exp (-1) := by
+  rw [coxSF_apply, coxSurvival, cureBaseline_Ioc, min_eq_right ht,
+    ENNReal.toReal_ofReal zero_le_one, exp_inner_zero, one_mul]
+
+private theorem cureSF_atTop (p : ℕ) :
+    Tendsto (coxSF (0 : EuclideanSpace ℝ (Fin p)) cureBaseline 0 cureBaseline_ne_top) atTop
+      (𝓝 (1 - Real.exp (-1))) := by
+  refine Tendsto.congr' ?_ tendsto_const_nhds
+  filter_upwards [eventually_ge_atTop (1 : ℝ)] with t ht
+  exact (cureSF_apply_ge p ht).symm
+
+private theorem cureCoxMeasure_univ (p : ℕ) :
+    cureCoxMeasure p univ = ENNReal.ofReal (1 - Real.exp (-1)) := by
+  rw [cureCoxMeasure, coxMeasure,
+    (coxSF (0 : EuclideanSpace ℝ (Fin p)) cureBaseline 0 cureBaseline_ne_top).measure_univ
+      (tendsto_coxSF_atBot _ _ _ _) (cureSF_atTop p), sub_zero]
+
+private theorem cureCoxMeasure_Ioi (p : ℕ) {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t ≤ 1) :
+    cureCoxMeasure p (Ioi t) = ENNReal.ofReal (Real.exp (-t) - Real.exp (-1)) := by
+  rw [cureCoxMeasure, coxMeasure,
+    (coxSF (0 : EuclideanSpace ℝ (Fin p)) cureBaseline 0 cureBaseline_ne_top).measure_Ioi
+      (cureSF_atTop p) t, cureSF_apply p ht0 ht1]
+  congr 1
+  ring
+
+/-- **The frozen S5.2 is FALSE**: no proof of `cumHazard_coxMeasure`'s statement can exist,
+because the cure-defect witness satisfies every hypothesis and violates the conclusion. The
+mechanism: the constructed law is defective, so the hazard denominator is `S(t) − e^{-1}`
+rather than `S(t)`, which strictly inflates the cumulative hazard. -/
+theorem not_forall_cumHazard_coxMeasure :
+    ¬ ∀ (p : ℕ) (β : EuclideanSpace ℝ (Fin p)) (Λ₀ : Measure ℝ) (z : EuclideanSpace ℝ (Fin p))
+        (inst : NoAtoms Λ₀) (_ : Λ₀ (Iic 0) = 0) (hfin : ∀ t, Λ₀ (Ioc 0 t) ≠ ⊤),
+        cumHazard (@coxMeasure p β Λ₀ z hfin inst)
+          = ENNReal.ofReal (Real.exp ⟪β, z⟫_ℝ) • Λ₀ := by
+  intro hcon
+  have h := hcon 0 0 cureBaseline 0 inferInstance cureBaseline_Iic_zero cureBaseline_ne_top
+  -- numeric facts about the cure fraction `e^{-1}`
+  have he1 : Real.exp (-1 : ℝ) < 1 := by
+    have h0 := Real.exp_lt_exp.2 (show (-1 : ℝ) < 0 by norm_num)
+    rwa [Real.exp_zero] at h0
+  have hden : (0 : ℝ) < 1 - Real.exp (-1) := by linarith
+  have hnum : (0 : ℝ) < Real.exp (-(1 / 2 : ℝ)) - Real.exp (-1) := by
+    have := Real.exp_lt_exp.2 (show (-1 : ℝ) < -(1 / 2 : ℝ) by norm_num)
+    linarith
+  -- normalize the defective law to a probability law; the hazard is scale-invariant
+  have hm := cureCoxMeasure_univ 0
+  have hm0 : cureCoxMeasure 0 univ ≠ 0 := by
+    rw [hm, ne_eq, ENNReal.ofReal_eq_zero, not_le]; linarith
+  have hmtop : cureCoxMeasure 0 univ ≠ ⊤ := by rw [hm]; exact ENNReal.ofReal_ne_top
+  haveI hprob : IsProbabilityMeasure ((cureCoxMeasure 0 univ)⁻¹ • cureCoxMeasure 0) := ⟨by
+    rw [Measure.smul_apply, smul_eq_mul, ENNReal.inv_mul_cancel hm0 hmtop]⟩
+  haveI hna : NoAtoms ((cureCoxMeasure 0 univ)⁻¹ • cureCoxMeasure 0) := ⟨fun x => by
+    rw [Measure.smul_apply, smul_eq_mul, cureCoxMeasure, coxMeasure_singleton, mul_zero]⟩
+  have hev : IsEventTimeLaw ((cureCoxMeasure 0 univ)⁻¹ • cureCoxMeasure 0) := ⟨hprob, by
+    rw [Measure.smul_apply, smul_eq_mul, cureCoxMeasure, coxMeasure_Iio_zero, mul_zero]⟩
+  -- the survival of the normalized law at `t = 1/2`
+  have hsurv : survival ((cureCoxMeasure 0 univ)⁻¹ • cureCoxMeasure 0) (1 / 2)
+      = (ENNReal.ofReal (1 - Real.exp (-1)))⁻¹
+        * ENNReal.ofReal (Real.exp (-(1 / 2 : ℝ)) - Real.exp (-1)) := by
+    rw [survival, Measure.smul_apply, smul_eq_mul, hm,
+      cureCoxMeasure_Ioi 0 (by norm_num) (by norm_num)]
+  have hsne : survival ((cureCoxMeasure 0 univ)⁻¹ • cureCoxMeasure 0) (1 / 2) ≠ 0 := by
+    rw [hsurv]
+    refine mul_ne_zero (ENNReal.inv_ne_zero.2 ENNReal.ofReal_ne_top) ?_
+    rw [ne_eq, ENNReal.ofReal_eq_zero, not_le]
+    exact hnum
+  have hsr : survivalReal ((cureCoxMeasure 0 univ)⁻¹ • cureCoxMeasure 0) (1 / 2)
+      = (Real.exp (-(1 / 2 : ℝ)) - Real.exp (-1)) / (1 - Real.exp (-1)) := by
+    rw [survivalReal, hsurv, ENNReal.toReal_mul, ENNReal.toReal_inv,
+      ENNReal.toReal_ofReal hden.le, ENNReal.toReal_ofReal hnum.le, inv_mul_eq_div]
+  -- S4.1′ against the (contradictory) frozen conclusion
+  have h41 := survivalReal_eq_exp_neg_cumHazard _ hev hsne
+  have hcum : cumHazard ((cureCoxMeasure 0 univ)⁻¹ • cureCoxMeasure 0)
+      = cumHazard (cureCoxMeasure 0) :=
+    cumHazard_smul _ (ENNReal.inv_ne_zero.2 hmtop) (ENNReal.inv_ne_top.2 hm0)
+  have hrhs : (ENNReal.ofReal (Real.exp ⟪(0 : EuclideanSpace ℝ (Fin 0)),
+        (0 : EuclideanSpace ℝ (Fin 0))⟫_ℝ) • cureBaseline) (Ioc 0 (1 / 2 : ℝ))
+      = ENNReal.ofReal (1 / 2) := by
+    rw [Measure.smul_apply, smul_eq_mul, cureBaseline_Ioc,
+      min_eq_left (by norm_num : (1 / 2 : ℝ) ≤ 1), exp_inner_zero, ENNReal.ofReal_one, one_mul]
+  rw [hsr, hcum, show cumHazard (cureCoxMeasure 0) = _ from h, hrhs,
+    ENNReal.toReal_ofReal (by norm_num : (0 : ℝ) ≤ 1 / 2)] at h41
+  -- `(e^{-1/2} − e^{-1})/(1 − e^{-1}) = e^{-1/2}` is impossible
+  rw [div_eq_iff hden.ne'] at h41
+  have hprod : Real.exp (-(1 / 2 : ℝ)) * Real.exp (-1) = Real.exp (-(3 / 2 : ℝ)) := by
+    rw [← Real.exp_add]; norm_num
+  have hexp : Real.exp (-(1 / 2 : ℝ)) * (1 - Real.exp (-1))
+      = Real.exp (-(1 / 2 : ℝ)) - Real.exp (-(3 / 2 : ℝ)) := by
+    rw [mul_sub, mul_one, hprod]
+  rw [hexp] at h41
+  have hlt : Real.exp (-(3 / 2 : ℝ)) < Real.exp (-1) :=
+    Real.exp_lt_exp.2 (by norm_num)
+  linarith
 
 end StatLean.StatisticalModels.Survival
