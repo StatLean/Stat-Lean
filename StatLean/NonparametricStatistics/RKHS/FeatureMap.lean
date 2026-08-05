@@ -33,14 +33,16 @@ variable {L : Type*} [NormedAddCommGroup L] [InnerProductSpace 𝕜 L]
 /-- A feature-map kernel is Hermitian-diagonal-normalized: `K(x,x) = ‖φ x‖²`. -/
 theorem featureKernel_self (φ : X → L) (x : X) :
     featureKernel 𝕜 φ x x = ((‖φ x‖ : 𝕜)) ^ 2 := by
-  sorry
+  simp [featureKernel, inner_self_eq_norm_sq_to_K]
 
 /-- **Every kernel function is a feature-map kernel**: by Moore's theorem, a kernel
 function `K` is the Gram function of the kernel-function embedding of its RKHS. -/
 theorem IsKernelFun.exists_featureMap {K : X → X → 𝕜} (hK : IsKernelFun K) :
     ∃ (L' : Type _) (_ : NormedAddCommGroup L') (_ : InnerProductSpace 𝕜 L')
       (φ : X → L'), K = featureKernel 𝕜 φ := by
-  sorry
+  obtain ⟨H, _, _, _, _, hHK⟩ := hK.exists_rkhs
+  exact ⟨H, ‹_›, ‹_›, kernelFun (X := X) H, by
+    rw [← hHK, scalarKernel_eq_featureKernel]⟩
 
 variable (𝕜) in
 /-- The predictor class of a feature map: functions of the form `x ↦ ⟪φ x, w⟫` for
@@ -52,6 +54,9 @@ def featurePredictor (φ : X → L) (w : L) : X → 𝕜 := fun x => ⟪φ x, w�
 theorem norm_featurePredictor_le (φ : X → L) (w : L) (x : X) :
     ‖featurePredictor 𝕜 φ w x‖
       ≤ Real.sqrt (RCLike.re (featureKernel 𝕜 φ x x)) * ‖w‖ := by
-  sorry
+  have hre : RCLike.re (featureKernel 𝕜 φ x x) = ‖φ x‖ ^ 2 :=
+    inner_self_eq_norm_sq (𝕜 := 𝕜) (φ x)
+  rw [hre, Real.sqrt_sq (norm_nonneg _)]
+  exact norm_inner_le_norm (𝕜 := 𝕜) (φ x) w
 
 end StatLean.NonparametricStatistics
