@@ -377,6 +377,93 @@ private theorem norm_sq_sqrtSectionLp (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPos
     (hasSum_diag d hK x).unique (hre.congr_fun fun n => (hval n).symm)
   rw [h2, ← norm_sq_eq_re_inner (𝕜 := 𝕜)]
 
+-- The conjugate of an `L²` function, as an `L²` function.
+private noncomputable def starLp (g : Lp 𝕜 2 μ) : Lp 𝕜 2 μ := ((Lp.memLp g).star).toLp _
+
+private theorem coeFn_starLp (g : Lp 𝕜 2 μ) :
+    (starLp g : X → 𝕜) =ᵐ[μ] fun y => conj ((g : X → 𝕜) y) :=
+  MemLp.coeFn_toLp _
+
+variable (μ) in
+/-- The **bilinear** `L²` pairing `f ↦ ∫ f y · g y dμ` (no conjugation), packaged as a
+continuous additive map — this is the functional through which `integralOp` reads a
+symbol section, and it is what transports the `L²`-convergent series defining
+`sqrtSectionLp` into a scalar series. -/
+private noncomputable def pairAdd (g : Lp 𝕜 2 μ) : Lp 𝕜 2 μ →+ 𝕜 where
+  toFun f := conj ⟪f, starLp g⟫_𝕜
+  map_zero' := by simp
+  map_add' f₁ f₂ := by rw [inner_add_left, map_add]
+
+private theorem continuous_pairAdd (g : Lp 𝕜 2 μ) : Continuous (pairAdd μ g) := by
+  change Continuous fun f : Lp 𝕜 2 μ => conj ⟪f, starLp g⟫_𝕜
+  exact RCLike.continuous_conj.comp (continuous_id.inner continuous_const)
+
+private theorem pairAdd_apply (g f : Lp 𝕜 2 μ) :
+    pairAdd μ g f = ∫ y, (f : X → 𝕜) y * (g : X → 𝕜) y ∂μ := by
+  change conj ⟪f, starLp g⟫_𝕜 = _
+  rw [L2.inner_def]
+  have hcongr : (∫ y, ⟪(f : X → 𝕜) y, (starLp g : X → 𝕜) y⟫_𝕜 ∂μ)
+      = ∫ y, conj ((f : X → 𝕜) y * (g : X → 𝕜) y) ∂μ := by
+    refine integral_congr_ae ?_
+    filter_upwards [coeFn_starLp g] with y hy
+    rw [RCLike.inner_apply, hy, map_mul, mul_comm]
+  rw [hcongr, integral_conj, RCLike.conj_conj]
+
+private theorem pairAdd_toLp_star (g : Lp 𝕜 2 μ) (n : d.ι) :
+    pairAdd μ g (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n)))
+      = ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜 := by
+  rw [pairAdd_apply, L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards
+    [ContinuousMap.coeFn_toLp (E := 𝕜) (p := 2) (μ := μ) (𝕜 := 𝕜) (star (d.eigfun n)),
+      ContinuousMap.coeFn_toLp (E := 𝕜) (p := 2) (μ := μ) (𝕜 := 𝕜) (d.eigfun n)] with y h1 h2
+  rw [h1, h2, RCLike.inner_apply, mul_comm]
+  simp [RCLike.star_def]
+
+/-- **Master identity for the square-root operator**: `T_S g (x) = ∑ₙ √λₙ eₙ(x) ⟪eₙ, g⟫`,
+the scalar series obtained by pushing the `L²`-convergent series defining the section
+through the bilinear pairing against `g`. -/
+private theorem hasSum_integralOp_sqrtSymbol (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure]
+    (g : Lp 𝕜 2 μ) (x : X) :
+    HasSum (fun n => ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x *
+        ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜)
+      (integralOp μ (sqrtSymbol d) g x) := by
+  have h := (hasSum_sqrtSectionLp d hK x).map (pairAdd μ g) (continuous_pairAdd g)
+  have hval : ∀ n : d.ι,
+      pairAdd μ g ((((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x) •
+        ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n)))
+      = ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x *
+        ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜 := by
+    intro n
+    change conj ⟪_ • _, starLp g⟫_𝕜 = _
+    rw [inner_smul_left, map_mul, RCLike.conj_conj]
+    change _ * (pairAdd μ g (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n)))) = _
+    rw [pairAdd_toLp_star d g n]
+  have hgoal : pairAdd μ g (sqrtSectionLp d x) = integralOp μ (sqrtSymbol d) g x := by
+    rw [pairAdd_apply]; rfl
+  rw [← hgoal]
+  exact h.congr_fun fun n => (hval n).symm
+
+-- Off-diagonal `L²` pairing of two sections: `⟪S(x,·), S(x',·)⟫ = K(x', x)`.
+private theorem inner_sqrtSectionLp (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure] (x x' : X) :
+    ⟪sqrtSectionLp d x, sqrtSectionLp d x'⟫_𝕜 = K x' x := by
+  have h := (hasSum_sqrtSectionLp d hK x').mapL (innerSL 𝕜 (sqrtSectionLp d x))
+  have hval : ∀ n : d.ι,
+      (d.eigval n : 𝕜) * (d.eigfun n x' * conj (d.eigfun n x))
+      = ⟪sqrtSectionLp d x, (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x') •
+          ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (star (d.eigfun n))⟫_𝕜 := by
+    intro n
+    rw [inner_smul_right, ← inner_conj_symm, inner_toLp_star_sqrtSectionLp d hK x n, map_mul,
+      RCLike.conj_ofReal]
+    have hsq : ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * ((Real.sqrt (d.eigval n) : ℝ) : 𝕜)
+        = (d.eigval n : 𝕜) := by
+      rw [← RCLike.ofReal_mul, Real.mul_self_sqrt (d.eigval_pos n).le]
+    calc (d.eigval n : 𝕜) * (d.eigfun n x' * conj (d.eigfun n x))
+        = (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * ((Real.sqrt (d.eigval n) : ℝ) : 𝕜)) *
+            (d.eigfun n x' * conj (d.eigfun n x)) := by rw [hsq]
+      _ = _ := by ring
+  exact (((d.hasSum_kernel hK x' x).congr_fun fun n => (hval n).symm).unique h).symm
+
 /-- The square-root symbol has square-integrable sections:
 `∫ ‖S(x,y)‖² dμ(y) = ∑ₙ λₙ ‖eₙ(x)‖² = K(x,x)`. -/
 -- With the `L²`-limit definition of `sqrtSymbol` (this revision) the sections are `Lp`
