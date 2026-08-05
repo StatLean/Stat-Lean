@@ -692,7 +692,39 @@ theorem alphaCoeff_ge_of_deterministic [IsProbabilityMeasure μ]
     {C : Set ℝ} (hC : MeasurableSet C) (n : ℕ) :
     (μ (X n ⁻¹' C)).toReal * (1 - (μ (X n ⁻¹' C)).toReal)
       ≤ alphaCoeff X μ n := by
-  sorry
+  -- The recursion solves as `X_n = m^[n] ∘ X_0`, so the time-`n` state is `𝓕_{-∞}^0`-measurable.
+  have hiter : ∀ (k : ℕ) (ω : Ω), X (k : ℤ) ω = m^[k] (X 0 ω) := by
+    intro k
+    induction k with
+    | zero => intro ω; simp
+    | succ k ih =>
+      intro ω
+      have hcast : ((k + 1 : ℕ) : ℤ) = (k : ℤ) + 1 := by push_cast; ring
+      rw [hcast, hrec (k : ℤ) ω, ih ω]
+      exact (Function.iterate_succ_apply' m k (X 0 ω)).symm
+  have hDm : MeasurableSet (m^[n] ⁻¹' C) := (hm.iterate n) hC
+  have hset : X (n : ℤ) ⁻¹' C = X 0 ⁻¹' (m^[n] ⁻¹' C) := by
+    ext ω; simp [Set.mem_preimage, hiter n ω]
+  set A : Set Ω := X (n : ℤ) ⁻¹' C with hAdef
+  have hA1 : MeasurableSet[sigmaLE X 0] A := by
+    have hcomap : MeasurableSpace.comap (X 0) inferInstance ≤ sigmaLE X 0 :=
+      le_iSup₂_of_le (0 : ℤ) (Set.mem_Iic.mpr le_rfl) le_rfl
+    refine hcomap _ ?_
+    exact ⟨m^[n] ⁻¹' C, hDm, hset.symm⟩
+  have hA2 : MeasurableSet[sigmaGE X (n : ℤ)] A := by
+    have hcomap : MeasurableSpace.comap (X (n : ℤ)) inferInstance ≤ sigmaGE X (n : ℤ) :=
+      le_iSup₂_of_le (n : ℤ) (Set.mem_Ici.mpr le_rfl) le_rfl
+    exact hcomap _ ⟨C, hC, rfl⟩
+  have hp0 : (0 : ℝ) ≤ (μ A).toReal := ENNReal.toReal_nonneg
+  have hp1 : (μ A).toReal ≤ 1 := toReal_le_one (μ := μ) A
+  have hval : (μ A).toReal * (1 - (μ A).toReal)
+      = |(μ (A ∩ A)).toReal - (μ A).toReal * (μ A).toReal| := by
+    rw [Set.inter_self]
+    rw [abs_of_nonneg (by nlinarith : (0:ℝ) ≤ (μ A).toReal - (μ A).toReal * (μ A).toReal)]
+    ring
+  rw [hval]
+  have hbdd := alphaMixCoeff_set_bddAbove (μ := μ) (m₁ := sigmaLE X 0) (m₂ := sigmaGE X (n : ℤ))
+  exact le_csSup hbdd ⟨A, A, hA1, hA2, rfl⟩
 
 /-- **FY §2.6.1(ix)**: a deterministic recursion with uniformly non-degenerate events is
 not α-mixing. -/
@@ -704,7 +736,14 @@ theorem not_isAlphaMixing_of_deterministic [IsProbabilityMeasure μ]
     (hC : ∀ n : ℕ, ∃ C : Set ℝ, MeasurableSet C ∧
       c ≤ (μ (X n ⁻¹' C)).toReal ∧ (μ (X n ⁻¹' C)).toReal ≤ 1 - c) :
     ¬ IsAlphaMixing X μ := by
-  sorry
+  intro hmix
+  have hpos : 0 < c * (1 - c) := by nlinarith
+  obtain ⟨n, hn⟩ := (hmix.eventually (gt_mem_nhds hpos)).exists
+  obtain ⟨C, hCm, hc1, hc2⟩ := hC n
+  have hge := alphaCoeff_ge_of_deterministic (μ := μ) hmeas hm hrec hCm n
+  have hprod : 0 ≤ ((μ (X n ⁻¹' C)).toReal - c) * (1 - (μ (X n ⁻¹' C)).toReal - c) :=
+    mul_nonneg (by linarith) (by linarith)
+  nlinarith
 
 /-! ### Literature statement DEBTS (FY §2.6.1(v), (viii), (x)) -/
 
