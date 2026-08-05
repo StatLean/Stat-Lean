@@ -91,13 +91,41 @@ end NormComparison
 
 section Separability
 
+omit [MeasurableSpace X] [BorelSpace X] in
 /-- **The RKHS of a Mercer kernel is separable**: kernel functions over a countable
 dense subset of the compact base space already span densely. -/
 theorem separableSpace_of_mercer {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K)
     -- USER-INPUT: `H` has reproducing kernel `K`
     (hKH : scalarKernel H = K) :
     TopologicalSpace.SeparableSpace H := by
-  sorry
+  have hKsc : Continuous fun p : X × X => scalarKernel H p.1 p.2 := by
+    rw [hKH]; exact hK.continuous
+  have hcont : Continuous fun x : X => kernelFun H x := continuous_kernelFun H hKsc
+  obtain ⟨D, hDc, hDd⟩ := TopologicalSpace.exists_countable_dense X
+  have hmem : ∀ x : X, kernelFun H x
+      ∈ (Submodule.span 𝕜 (kernelFun H '' D)).topologicalClosure := by
+    intro x
+    have h1 : kernelFun H x ∈ closure (kernelFun H '' D) := by
+      refine image_closure_subset_closure_image hcont ?_
+      exact ⟨x, by rw [hDd.closure_eq]; trivial, rfl⟩
+    exact closure_mono Submodule.subset_span h1
+  have htop : (Submodule.span 𝕜 (kernelFun H '' D)).topologicalClosure = ⊤ := by
+    refine top_le_iff.mp ?_
+    rw [← RKHS.kerFun_dense (H := H) (X := X) (V := 𝕜)]
+    refine Submodule.topologicalClosure_minimal _ ?_
+      (Submodule.isClosed_topologicalClosure _)
+    refine Submodule.span_le.mpr ?_
+    rintro y ⟨x, v, rfl⟩
+    have hkv : RKHS.kerFun H x v = v • kernelFun H x := by
+      rw [kernelFun, ← map_smul, smul_eq_mul, mul_one]
+    rw [hkv]
+    exact Submodule.smul_mem _ _ (hmem x)
+  have hsep : TopologicalSpace.IsSeparable
+      ((Submodule.span 𝕜 (kernelFun H '' D)).topologicalClosure : Set H) := by
+    rw [Submodule.topologicalClosure_coe]
+    exact ((hDc.image (kernelFun H)).isSeparable.span).closure
+  rw [htop] at hsep
+  exact TopologicalSpace.isSeparable_univ_iff.mp (by simpa using hsep)
 
 end Separability
 
