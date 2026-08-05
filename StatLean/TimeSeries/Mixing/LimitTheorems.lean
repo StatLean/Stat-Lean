@@ -522,6 +522,165 @@ private lemma tendsto_mul_alphaCoeff [IsProbabilityMeasure μ] {X : ℤ → Ω �
     exact_mod_cast this
   nlinarith [hnn m, hcard, hc ▸ hcard]
 
+/-! #### The block scheme -/
+
+private lemma tendsto_natSqrt : Tendsto Nat.sqrt atTop atTop :=
+  tendsto_atTop_atTop.2 fun b => ⟨b * b, fun a ha => by
+    calc b = Nat.sqrt (b * b) := (Nat.sqrt_eq b).symm
+      _ ≤ Nat.sqrt a := Nat.sqrt_le_sqrt ha⟩
+
+private lemma tendsto_natSqrt_div : Tendsto (fun n : ℕ => (Nat.sqrt n : ℝ) / (n : ℝ))
+    atTop (𝓝 0) := by
+  have hone : Tendsto (fun n : ℕ => (1 : ℝ) / (Nat.sqrt n : ℝ)) atTop (𝓝 0) :=
+    tendsto_one_div_atTop_nhds_zero_nat.comp tendsto_natSqrt
+  refine squeeze_zero' (Eventually.of_forall fun n => by positivity) ?_ hone
+  filter_upwards [eventually_ge_atTop 1] with n hn
+  have hs : 1 ≤ Nat.sqrt n := Nat.sqrt_pos.mpr hn
+  have hsq : (Nat.sqrt n : ℝ) * (Nat.sqrt n : ℝ) ≤ (n : ℝ) := by exact_mod_cast Nat.sqrt_le n
+  have hs0 : (0 : ℝ) < (Nat.sqrt n : ℝ) := by exact_mod_cast hs
+  rw [div_le_div_iff₀ (by positivity) hs0]
+  nlinarith
+
+/-- **The Bernstein block scheme.** Small blocks `s_n ≈ n^{1/4}`, big blocks
+`l_n = ⌊n/s_n⌋ + 1 ≈ n^{3/4}`, block count `k_n = ⌊n/(l_n + s_n)⌋ ≈ n^{1/4}`. The choice
+`l_n s_n > n` forces `k_n ≤ s_n`, which is exactly what turns `m α(m) → 0` into the
+Volkonskii–Rozanov budget `k_n α(s_n) → 0`. -/
+private lemma exists_block_scheme [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
+    (hα : Summable fun n : ℕ => alphaCoeff X μ n) :
+    ∃ l s k : ℕ → ℕ,
+      (∀ n, 1 ≤ s n) ∧ (∀ n, 1 ≤ l n) ∧ (∀ n, k n * (l n + s n) ≤ n) ∧
+      Tendsto (fun n : ℕ => (l n : ℝ)) atTop atTop ∧
+      Tendsto (fun n : ℕ => (l n : ℝ) / (n : ℝ)) atTop (𝓝 0) ∧
+      Tendsto (fun n : ℕ => ((k n * l n : ℕ) : ℝ) / (n : ℝ)) atTop (𝓝 1) ∧
+      Tendsto (fun n : ℕ => (k n : ℝ) * alphaCoeff X μ (s n)) atTop (𝓝 0) := by
+  classical
+  obtain ⟨s, hsdef⟩ : ∃ s : ℕ → ℕ, ∀ n, s n = Nat.sqrt (Nat.sqrt n) + 1 := ⟨_, fun _ => rfl⟩
+  obtain ⟨l, hldef⟩ : ∃ l : ℕ → ℕ, ∀ n, l n = n / s n + 1 := ⟨_, fun _ => rfl⟩
+  obtain ⟨k, hkdef⟩ : ∃ k : ℕ → ℕ, ∀ n, k n = n / (l n + s n) := ⟨_, fun _ => rfl⟩
+  have hs1 : ∀ n, 1 ≤ s n := fun n => by rw [hsdef]; omega
+  have hl1 : ∀ n, 1 ≤ l n := fun n => by rw [hldef]; exact Nat.le_add_left 1 _
+  have hfit : ∀ n, k n * (l n + s n) ≤ n := fun n => by rw [hkdef]; exact Nat.div_mul_le_self _ _
+  -- `s_n l_n > n`: the big blocks overshoot, which is what caps the block count
+  have hsl : ∀ n, n < s n * l n := by
+    intro n
+    have h1 := Nat.div_add_mod n (s n)
+    have h2 : n % s n < s n := Nat.mod_lt _ (hs1 n)
+    have h3 : s n * l n = s n * (n / s n) + s n := by rw [hldef]; ring
+    omega
+  have hks : ∀ n, k n ≤ s n := by
+    intro n
+    by_contra hcon
+    rw [not_le] at hcon
+    have h1 : k n * l n ≤ n :=
+      le_trans (Nat.mul_le_mul_left (k n) (Nat.le_add_right (l n) (s n))) (hfit n)
+    have h2 : (s n + 1) * l n ≤ k n * l n := Nat.mul_le_mul_right _ hcon
+    have h3 : (s n + 1) * l n = s n * l n + l n := by ring
+    have h4 := hsl n
+    have h5 := hl1 n
+    omega
+  -- the small blocks grow
+  have hstopN : Tendsto s atTop atTop :=
+    tendsto_atTop_mono (fun n => by simp only [Function.comp_apply, hsdef]; omega)
+      (tendsto_natSqrt.comp tendsto_natSqrt)
+  have hinvs : Tendsto (fun n : ℕ => (1 : ℝ) / (s n : ℝ)) atTop (𝓝 0) :=
+    tendsto_one_div_atTop_nhds_zero_nat.comp hstopN
+  have hinvn : Tendsto (fun n : ℕ => (1 : ℝ) / (n : ℝ)) atTop (𝓝 0) :=
+    tendsto_one_div_atTop_nhds_zero_nat
+  -- `s_n² / n → 0`
+  have hs2 : ∀ n, s n ^ 2 ≤ 3 * Nat.sqrt n + 1 := by
+    intro n
+    have hq : Nat.sqrt (Nat.sqrt n) * Nat.sqrt (Nat.sqrt n) ≤ Nat.sqrt n :=
+      Nat.sqrt_le (Nat.sqrt n)
+    have hq' : Nat.sqrt (Nat.sqrt n) ≤ Nat.sqrt n := Nat.sqrt_le_self _
+    have : s n ^ 2 = Nat.sqrt (Nat.sqrt n) * Nat.sqrt (Nat.sqrt n)
+        + 2 * Nat.sqrt (Nat.sqrt n) + 1 := by rw [hsdef]; ring
+    omega
+  have hsqn : Tendsto (fun n : ℕ => (s n : ℝ) ^ 2 / (n : ℝ)) atTop (𝓝 0) := by
+    have hlim : Tendsto (fun n : ℕ => 3 * ((Nat.sqrt n : ℝ) / (n : ℝ)) + 1 / (n : ℝ))
+        atTop (𝓝 0) := by
+      simpa using (tendsto_natSqrt_div.const_mul 3).add hinvn
+    refine squeeze_zero' (Eventually.of_forall fun n => by positivity) ?_ hlim
+    filter_upwards [eventually_ge_atTop 1] with n hn
+    have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hb : (s n : ℝ) ^ 2 ≤ 3 * (Nat.sqrt n : ℝ) + 1 := by exact_mod_cast hs2 n
+    have hrw : 3 * ((Nat.sqrt n : ℝ) / (n : ℝ)) + 1 / (n : ℝ)
+        = (3 * (Nat.sqrt n : ℝ) + 1) / (n : ℝ) := by ring
+    rw [hrw, div_le_div_iff_of_pos_right hn0]
+    exact hb
+  -- `l_n / n → 0`
+  have hln0 : Tendsto (fun n : ℕ => (l n : ℝ) / (n : ℝ)) atTop (𝓝 0) := by
+    refine squeeze_zero' (Eventually.of_forall fun n => by positivity) ?_
+      (by simpa only [add_zero] using hinvs.add hinvn)
+    filter_upwards [eventually_ge_atTop 1] with n hn
+    have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hs0 : (0 : ℝ) < (s n : ℝ) := by exact_mod_cast hs1 n
+    have hdiv : ((n / s n : ℕ) : ℝ) ≤ (n : ℝ) / (s n : ℝ) := Nat.cast_div_le
+    have hlc : (l n : ℝ) ≤ (n : ℝ) / (s n : ℝ) + 1 := by
+      rw [hldef]; push_cast; linarith
+    calc (l n : ℝ) / (n : ℝ) ≤ ((n : ℝ) / (s n : ℝ) + 1) / (n : ℝ) := by gcongr
+      _ = 1 / (s n : ℝ) + 1 / (n : ℝ) := by field_simp
+  -- `l_n → ∞`
+  have hltop : Tendsto (fun n : ℕ => (l n : ℝ)) atTop atTop := by
+    have hhalf : Tendsto (fun n : ℕ => (Nat.sqrt n : ℝ) / 2) atTop atTop :=
+      Tendsto.atTop_div_const (by norm_num)
+        (tendsto_natCast_atTop_atTop.comp tendsto_natSqrt)
+    refine tendsto_atTop_mono' _ ?_ hhalf
+    filter_upwards [eventually_ge_atTop 1] with n hn
+    have hr1 : 1 ≤ Nat.sqrt n := Nat.sqrt_pos.mpr hn
+    have hsr : s n ≤ 2 * Nat.sqrt n := by
+      have := Nat.sqrt_le_self (Nat.sqrt n)
+      rw [hsdef]; omega
+    have hrr : (Nat.sqrt n : ℝ) * (Nat.sqrt n : ℝ) ≤ (n : ℝ) := by exact_mod_cast Nat.sqrt_le n
+    have hs0 : (0 : ℝ) < (s n : ℝ) := by exact_mod_cast hs1 n
+    have hnl : (n : ℝ) < (s n : ℝ) * (l n : ℝ) := by exact_mod_cast hsl n
+    have hsr' : (s n : ℝ) ≤ 2 * (Nat.sqrt n : ℝ) := by exact_mod_cast hsr
+    have hr0 : (0 : ℝ) < (Nat.sqrt n : ℝ) := by exact_mod_cast hr1
+    nlinarith [hnl, hrr, hsr', hr0]
+  -- `k_n l_n / n → 1`
+  have hkl : Tendsto (fun n : ℕ => ((k n * l n : ℕ) : ℝ) / (n : ℝ)) atTop (𝓝 1) := by
+    have hsn0 : Tendsto (fun n : ℕ => (s n : ℝ) / (n : ℝ)) atTop (𝓝 0) := by
+      refine squeeze_zero' (Eventually.of_forall fun n => by positivity) ?_ hsqn
+      filter_upwards [eventually_ge_atTop 1] with n hn
+      have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+      have hs1' : (1 : ℝ) ≤ (s n : ℝ) := by exact_mod_cast hs1 n
+      gcongr
+      nlinarith
+    have hlow : Tendsto (fun n : ℕ => 1 - (s n : ℝ) ^ 2 / (n : ℝ) - (l n : ℝ) / (n : ℝ)
+        - (s n : ℝ) / (n : ℝ)) atTop (𝓝 1) := by
+      simpa using ((tendsto_const_nhds.sub hsqn).sub hln0).sub hsn0
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' hlow tendsto_const_nhds ?_ ?_
+    · filter_upwards [eventually_ge_atTop 1] with n hn
+      have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+      have hkq : (l n + s n) * k n + n % (l n + s n) = n := by
+        rw [hkdef]; exact Nat.div_add_mod n (l n + s n)
+      have hmlt : n % (l n + s n) < l n + s n := Nat.mod_lt _ (by have := hl1 n; omega)
+      have hexp : (l n + s n) * k n = k n * l n + k n * s n := by ring
+      have hks' : k n * s n ≤ s n * s n := Nat.mul_le_mul_right _ (hks n)
+      have hnat : n ≤ k n * l n + s n * s n + l n + s n := by omega
+      have hcast : (n : ℝ) ≤ ((k n * l n : ℕ) : ℝ) + (s n : ℝ) ^ 2 + (l n : ℝ) + (s n : ℝ) := by
+        have h2 : ((n : ℕ) : ℝ) ≤ ((k n * l n + s n * s n + l n + s n : ℕ) : ℝ) := by
+          exact_mod_cast hnat
+        push_cast at h2 ⊢
+        nlinarith [h2]
+      have hne : (n : ℝ) ≠ 0 := ne_of_gt hn0
+      calc 1 - (s n : ℝ) ^ 2 / (n : ℝ) - (l n : ℝ) / (n : ℝ) - (s n : ℝ) / (n : ℝ)
+          = ((n : ℝ) - (s n : ℝ) ^ 2 - (l n : ℝ) - (s n : ℝ)) / (n : ℝ) := by field_simp
+        _ ≤ ((k n * l n : ℕ) : ℝ) / (n : ℝ) := by gcongr; linarith
+    · filter_upwards [eventually_ge_atTop 1] with n hn
+      have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+      have h1 : k n * l n ≤ n :=
+        le_trans (Nat.mul_le_mul_left (k n) (Nat.le_add_right (l n) (s n))) (hfit n)
+      rw [div_le_one hn0]
+      exact_mod_cast h1
+  -- `k_n α(s_n) → 0`
+  have hkα : Tendsto (fun n : ℕ => (k n : ℝ) * alphaCoeff X μ (s n)) atTop (𝓝 0) := by
+    have hnn : ∀ m : ℕ, 0 ≤ alphaCoeff X μ m := fun _ => alphaMixCoeff_nonneg
+    refine squeeze_zero (fun n => mul_nonneg (Nat.cast_nonneg _) (hnn _)) (fun n => ?_)
+      ((tendsto_mul_alphaCoeff hα).comp hstopN)
+    have : (k n : ℝ) ≤ (s n : ℝ) := by exact_mod_cast hks n
+    exact mul_le_mul_of_nonneg_right this (hnn _)
+  exact ⟨l, s, k, hs1, hl1, hfit, hltop, hln0, hkl, hkα⟩
+
 end Bernstein
 
 /-- **FY Theorem 2.21(ii)** (full in-text proof, Bernstein blocks): bounded zero-mean
