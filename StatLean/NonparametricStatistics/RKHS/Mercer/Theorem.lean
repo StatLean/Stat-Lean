@@ -297,6 +297,184 @@ theorem exists_mercerEigensystem {K : X → X → 𝕜} (hK : IsMercerKernel �
     simp only [htoLp]
     exact hexp g
 
+section Residual
+
+variable {K : X → X → 𝕜} {hKc : Continuous fun p : X × X => K p.1 p.2}
+
+/-- Coefficientwise description of a finite `L²` combination. -/
+private theorem coeFn_finset_sum_smul' {ι : Type*} (s : Finset ι) (c : ι → 𝕜)
+    (F : ι → Lp 𝕜 2 μ) :
+    ((∑ i ∈ s, c i • F i : Lp 𝕜 2 μ) : X → 𝕜)
+      =ᵐ[μ] fun x => ∑ i ∈ s, c i * (F i : X → 𝕜) x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using Lp.coeFn_zero 𝕜 2 μ
+  | insert a t ha ih =>
+      rw [Finset.sum_insert ha]
+      filter_upwards [Lp.coeFn_add (c a • F a) (∑ i ∈ t, c i • F i),
+        Lp.coeFn_smul (c a) (F a), ih] with x h1 h2 h3
+      rw [h1]
+      simp only [Pi.add_apply, h2, h3, Pi.smul_apply, smul_eq_mul]
+      rw [Finset.sum_insert ha]
+
+/-- The residual symbol of a Mercer eigensystem after removing a finite set of modes. -/
+private noncomputable def residualSymbol (d : MercerEigensystem μ K hKc) (s : Finset d.ι) :
+    X → X → 𝕜 :=
+  fun x y => K x y - ∑ n ∈ s, (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y))
+
+private theorem continuous_residualSymbol (d : MercerEigensystem μ K hKc) (s : Finset d.ι) :
+    Continuous fun p : X × X => residualSymbol d s p.1 p.2 :=
+  hKc.sub (continuous_finset_sum s fun n _ =>
+    continuous_const.mul (((d.eigfun n).continuous.comp continuous_fst).mul
+      (RCLike.continuous_conj.comp ((d.eigfun n).continuous.comp continuous_snd))))
+
+private theorem symbolConjLp_residual (d : MercerEigensystem μ K hKc) (s : Finset d.ι) (x : X) :
+    symbolConjLp μ (residualSymbol d s)
+        (isL2Symbol_of_continuous (continuous_residualSymbol d s)) x
+      = symbolConjLp μ K (isL2Symbol_of_continuous hKc) x
+        - ∑ n ∈ s, ((d.eigval n : 𝕜) * conj (d.eigfun n x)) •
+            ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n) := by
+  refine Lp.ext ?_
+  filter_upwards [MemLp.coeFn_toLp (μ := μ) (p := 2)
+      ((IsL2Symbol.conj _ (isL2Symbol_of_continuous (continuous_residualSymbol d s))) x),
+    MemLp.coeFn_toLp (μ := μ) (p := 2)
+      ((IsL2Symbol.conj _ (isL2Symbol_of_continuous hKc)) x),
+    Lp.coeFn_sub (symbolConjLp μ K (isL2Symbol_of_continuous hKc) x)
+      (∑ n ∈ s, ((d.eigval n : 𝕜) * conj (d.eigfun n x)) •
+        ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)),
+    coeFn_finset_sum_smul' s (fun n => (d.eigval n : 𝕜) * conj (d.eigfun n x))
+      (fun n => ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)),
+    (Filter.eventually_all_finset s).2 (fun n _ =>
+      ContinuousMap.coeFn_toLp (E := 𝕜) (p := 2) (μ := μ) (𝕜 := 𝕜) (d.eigfun n))]
+    with y h1 h2 h3 h4 h5
+  rw [h3]
+  simp only [symbolConjLp, Pi.sub_apply]
+  rw [h1, h2, h4]
+  simp only [residualSymbol, map_sub, map_sum, map_mul, RCLike.conj_conj]
+  congr 1
+  refine Finset.sum_congr rfl fun n hn => ?_
+  rw [h5 n hn, RCLike.conj_ofReal]
+  ring
+
+private theorem integralOp_residual (d : MercerEigensystem μ K hKc) (s : Finset d.ι)
+    (g : Lp 𝕜 2 μ) (x : X) :
+    integralOp μ (residualSymbol d s) g x
+      = integralOp μ K g x
+        - ∑ n ∈ s, (d.eigval n : 𝕜) *
+            (d.eigfun n x * ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜) := by
+  rw [integralOp_eq_inner _ (isL2Symbol_of_continuous (continuous_residualSymbol d s)),
+    integralOp_eq_inner _ (isL2Symbol_of_continuous hKc), symbolConjLp_residual,
+    inner_sub_left, sum_inner]
+  congr 1
+  refine Finset.sum_congr rfl fun n _ => ?_
+  rw [inner_smul_left, map_mul, RCLike.conj_ofReal, RCLike.conj_conj]
+  ring
+
+private theorem mercerCLM_residual (d : MercerEigensystem μ K hKc) (s : Finset d.ι)
+    (g : Lp 𝕜 2 μ) :
+    mercerCLM μ (continuous_residualSymbol d s) g
+      = mercerCLM μ hKc g
+        - ∑ n ∈ s, ((d.eigval n : 𝕜) *
+            ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜) •
+              ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n) := by
+  refine Lp.ext ?_
+  filter_upwards [mercerCLM_coeFn_ae (continuous_residualSymbol d s) g,
+    mercerCLM_coeFn_ae hKc g,
+    Lp.coeFn_sub (mercerCLM μ hKc g)
+      (∑ n ∈ s, ((d.eigval n : 𝕜) * ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜) •
+        ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)),
+    coeFn_finset_sum_smul' s
+      (fun n => (d.eigval n : 𝕜) * ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜)
+      (fun n => ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)),
+    (Filter.eventually_all_finset s).2 (fun n _ =>
+      ContinuousMap.coeFn_toLp (E := 𝕜) (p := 2) (μ := μ) (𝕜 := 𝕜) (d.eigfun n))]
+    with x h1 h2 h3 h4 h5
+  rw [h1, h3, Pi.sub_apply, h2, h4, integralOp_residual]
+  congr 1
+  refine Finset.sum_congr rfl fun n hn => ?_
+  rw [h5 n hn]
+  ring
+
+/-- The quadratic form of `T_K` expands over the eigensystem with nonnegative terms. -/
+private theorem hasSum_re_quadratic (d : MercerEigensystem μ K hKc) (g : Lp 𝕜 2 μ) :
+    HasSum
+      (fun n => d.eigval n *
+        ‖⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜‖ ^ 2)
+      (RCLike.re ⟪g, mercerCLM μ hKc g⟫_𝕜) := by
+  refine (((d.opExpansion g).mapL (innerSL 𝕜 g)).map
+    (RCLike.reCLM (K := 𝕜)).toLinearMap.toAddMonoidHom RCLike.reCLM.continuous).congr_fun
+    fun n => ?_
+  show d.eigval n * ‖⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜‖ ^ 2
+      = RCLike.re ⟪g, (d.eigval n : 𝕜) •
+          (⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜 •
+            ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n))⟫_𝕜
+  rw [inner_smul_right, inner_smul_right,
+    ← inner_conj_symm g (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)),
+    RCLike.mul_conj, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul, RCLike.ofReal_re]
+
+private theorem isPositive_residual (hK : IsMercerKernel 𝕜 K)
+    (d : MercerEigensystem μ K hKc) (s : Finset d.ι) :
+    (mercerCLM μ (continuous_residualSymbol d s)).IsPositive := by
+  have hTsym : ∀ a b : Lp 𝕜 2 μ,
+      ⟪mercerCLM μ hKc a, b⟫_𝕜 = ⟪a, mercerCLM μ hKc b⟫_𝕜 :=
+    fun a b => (isPositive_mercerCLM hK).1 a b
+  constructor
+  · intro h g
+    show ⟪mercerCLM μ (continuous_residualSymbol d s) h, g⟫_𝕜
+      = ⟪h, mercerCLM μ (continuous_residualSymbol d s) g⟫_𝕜
+    rw [mercerCLM_residual, mercerCLM_residual, inner_sub_left, inner_sub_right, sum_inner,
+      inner_sum, hTsym h g]
+    congr 1
+    refine Finset.sum_congr rfl fun n _ => ?_
+    rw [inner_smul_left, inner_smul_right, map_mul (starRingEnd 𝕜), RCLike.conj_ofReal,
+      inner_conj_symm]
+    ring
+  · intro g
+    rw [ContinuousLinearMap.reApplyInnerSelf_apply, mercerCLM_residual, inner_sub_left,
+      sum_inner, map_sub, map_sum]
+    have hkey := hasSum_re_quadratic d g
+    have hre : RCLike.re ⟪mercerCLM μ hKc g, g⟫_𝕜 = RCLike.re ⟪g, mercerCLM μ hKc g⟫_𝕜 :=
+      inner_re_symm _ _
+    rw [hre]
+    have hterm : ∀ n : d.ι,
+        RCLike.re (⟪((d.eigval n : 𝕜) *
+          ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜) •
+            ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜)
+          = d.eigval n * ‖⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n), g⟫_𝕜‖ ^ 2 := by
+      intro n
+      rw [inner_smul_left, map_mul (starRingEnd 𝕜), RCLike.conj_ofReal, mul_assoc,
+        RCLike.conj_mul, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul, RCLike.ofReal_re]
+    simp only [hterm]
+    have := sum_le_hasSum s
+      (fun n _ => mul_nonneg (d.eigval_pos n).le (by positivity)) hkey
+    linarith
+
+/-- **Bessel-type bound**: the truncated diagonal sums are dominated by the kernel
+diagonal.  This is the analytic heart of Mercer's theorem. -/
+private theorem eig_diag_bound (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure]
+    (d : MercerEigensystem μ K hKc) (s : Finset d.ι) (x : X) :
+    ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2 ≤ RCLike.re (K x x) := by
+  have hsym : ∀ a b : X, conj (residualSymbol d s a b) = residualSymbol d s b a := by
+    intro a b
+    simp only [residualSymbol, map_sub, map_sum, map_mul, RCLike.conj_conj,
+      RCLike.conj_ofReal, hK.isKernelFun.conj_symm]
+    congr 1
+    exact Finset.sum_congr rfl fun n _ => by ring
+  have hM := isMercerKernel_of_isPositive (continuous_residualSymbol d s) hsym
+    (isPositive_residual hK d s)
+  have h1 := hM.isKernelFun.re_sum_nonneg 1 (fun _ => x) (fun _ => 1)
+  simp only [Fin.sum_univ_one, map_one, one_mul] at h1
+  have h2 : RCLike.re (residualSymbol d s x x)
+      = RCLike.re (K x x) - ∑ n ∈ s, d.eigval n * ‖d.eigfun n x‖ ^ 2 := by
+    simp only [residualSymbol, map_sub, map_sum]
+    congr 1
+    refine Finset.sum_congr rfl fun n _ => ?_
+    rw [RCLike.mul_conj, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul, RCLike.ofReal_re]
+  rw [h2] at h1
+  linarith
+
+end Residual
+
 /-- **Mercer's theorem, kernel expansion**: `K(x, y) = ∑ₙ λₙ eₙ(x) conj (eₙ(y))`
 pointwise (unordered absolute convergence). -/
 theorem MercerEigensystem.hasSum_kernel {K : X → X → 𝕜}
