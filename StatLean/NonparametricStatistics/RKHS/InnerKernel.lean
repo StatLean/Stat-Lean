@@ -32,25 +32,33 @@ variable (L : Type*) [NormedAddCommGroup L] [InnerProductSpace 𝕜 L] [Complete
 noncomputable def dualRKHS : RKHS 𝕜 L L 𝕜 where
   coeCLM := ContinuousLinearMap.pi fun v => innerSL 𝕜 v
   coeCLM_injective := by
-    sorry
+    intro w₁ w₂ h
+    refine ext_inner_left 𝕜 fun v => ?_
+    simpa using congrFun h v
 
 /-- Under `dualRKHS`, the kernel function of the point `x ∈ L` is `x` itself. -/
 theorem dualRKHS_kernelFun (x : L) :
     letI := dualRKHS 𝕜 L
     kernelFun L x = x := by
-  sorry
+  letI := dualRKHS 𝕜 L
+  refine ext_inner_right 𝕜 fun f => ?_
+  rw [inner_kernelFun]
+  rfl
 
 /-- **The inner product is the reproducing kernel of the dual RKHS**:
 `K(x, y) = ⟪x, y⟫_𝕜`. -/
 theorem dualRKHS_scalarKernel (x y : L) :
     letI := dualRKHS 𝕜 L
     scalarKernel L x y = ⟪x, y⟫_𝕜 := by
-  sorry
+  letI := dualRKHS 𝕜 L
+  show (kernelFun L y) x = ⟪x, y⟫_𝕜
+  rw [dualRKHS_kernelFun]
+  rfl
 
 /-- The inner product of a Hilbert space is a kernel function on the underlying set. -/
 theorem isKernelFun_inner :
-    IsKernelFun fun x y : L => ⟪x, y⟫_𝕜 := by
-  sorry
+    IsKernelFun fun x y : L => ⟪x, y⟫_𝕜 :=
+  isKernelFun_featureKernel (𝕜 := 𝕜) (E := L) (X := L) id
 
 /-- Under `dualRKHS`, the functions of the RKHS are exactly the bounded linear
 functionals on `L` (Riesz representation). -/
