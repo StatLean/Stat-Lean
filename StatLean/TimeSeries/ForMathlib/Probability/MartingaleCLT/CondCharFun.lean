@@ -335,6 +335,163 @@ theorem norm_condexp_exp_sub_one_sub_le {m mΩ : MeasurableSpace Ω} {μ : Measu
 
 end CondTaylor
 
+section ProductEstimates
+
+/-! ### Elementary product estimates
+
+The deterministic inputs to the product comparison: the Taylor product `∏ (1 − u²vᵢ/2)`
+is compared with `∏ e^{−u²vᵢ/2} = e^{−u²V/2}` factorwise, and the latter with the
+Gaussian factor by the (one-)Lipschitz property of `e^{−·}` on `[0, ∞)`. -/
+
+/-- `|∏ f − ∏ g| ≤ Σ |f − g|` for two families in the real unit ball. -/
+private lemma abs_prod_sub_prod_le {ι : Type*} [DecidableEq ι] (s : Finset ι) {f g : ι → ℝ}
+    (hf : ∀ i, |f i| ≤ 1) (hg : ∀ i, |g i| ≤ 1) :
+    |(∏ i ∈ s, f i) - ∏ i ∈ s, g i| ≤ ∑ i ∈ s, |f i - g i| := by
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert a s ha ih =>
+    rw [Finset.prod_insert ha, Finset.prod_insert ha, Finset.sum_insert ha]
+    have hfs : |∏ i ∈ s, f i| ≤ 1 := by
+      rw [Finset.abs_prod]
+      exact Finset.prod_le_one (fun i _ => abs_nonneg _) fun i _ => hf i
+    have hkey : f a * (∏ i ∈ s, f i) - g a * ∏ i ∈ s, g i
+        = (f a - g a) * (∏ i ∈ s, f i) + g a * ((∏ i ∈ s, f i) - ∏ i ∈ s, g i) := by ring
+    rw [hkey]
+    refine (abs_add_le _ _).trans ?_
+    rw [abs_mul, abs_mul]
+    have h1 : |f a - g a| * |∏ i ∈ s, f i| ≤ |f a - g a| * 1 :=
+      mul_le_mul_of_nonneg_left hfs (abs_nonneg _)
+    have h2 : |g a| * |(∏ i ∈ s, f i) - ∏ i ∈ s, g i| ≤ 1 * ∑ i ∈ s, |f i - g i| :=
+      mul_le_mul (hg a) ih (abs_nonneg _) zero_le_one
+    linarith
+
+/-- `|(1 − a) − e^{−a}| ≤ a²` for `a ≥ 0` (both halves from `1 + x ≤ eˣ`). -/
+private lemma abs_one_sub_sub_exp_neg_le {a : ℝ} (ha : 0 ≤ a) :
+    |(1 - a) - Real.exp (-a)| ≤ a ^ 2 := by
+  have hA : 1 - a ≤ Real.exp (-a) := by have := Real.add_one_le_exp (-a); linarith
+  have hp : 0 < Real.exp (-a) := Real.exp_pos _
+  have hB : Real.exp (-a) * (1 + a) ≤ 1 := by
+    have h := Real.add_one_le_exp a
+    have he : Real.exp (-a) * Real.exp a = 1 := by rw [← Real.exp_add]; simp
+    nlinarith
+  rw [abs_le]
+  constructor <;> nlinarith
+
+/-- `e^{−·}` is `1`-Lipschitz on `[0, ∞)`. -/
+private lemma abs_exp_neg_sub_le {S L : ℝ} (hS : 0 ≤ S) (hL : 0 ≤ L) :
+    |Real.exp (-S) - Real.exp (-L)| ≤ |S - L| := by
+  have key : ∀ x y : ℝ, 0 ≤ x → x ≤ y → Real.exp (-x) - Real.exp (-y) ≤ y - x := by
+    intro x y hx hxy
+    have h1 : Real.exp (-x) ≤ 1 := Real.exp_le_one_iff.2 (by linarith)
+    have h2 : 1 - (y - x) ≤ Real.exp (-(y - x)) := by
+      have := Real.add_one_le_exp (-(y - x)); linarith
+    have h3 : Real.exp (-x) * Real.exp (-(y - x)) = Real.exp (-y) := by
+      rw [← Real.exp_add]; congr 1; ring
+    have hp : 0 < Real.exp (-x) := Real.exp_pos _
+    nlinarith
+  rcases le_total S L with hle | hle
+  · have h1 := key S L hS hle
+    have h2 : Real.exp (-L) ≤ Real.exp (-S) := Real.exp_le_exp.2 (by linarith)
+    rw [abs_of_nonpos (by linarith : S - L ≤ 0), abs_of_nonneg (by linarith)]
+    linarith
+  · have h1 := key L S hL hle
+    have h2 : Real.exp (-S) ≤ Real.exp (-L) := Real.exp_le_exp.2 (by linarith)
+    rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ S - L), abs_of_nonpos (by linarith)]
+    linarith
+
+/-- The Taylor product is uniformly bounded by `e^{u²c/2}` as soon as the conditional
+variance **process** is bounded by `c` — this is what makes the product comparison
+dominated-convergence-friendly (a bound on `E V` alone does not, see the witness on
+`tendsto_integral_prod_one_sub_condVar`). -/
+private lemma abs_prod_one_sub_le_exp {m : ℕ} {v : Fin m → ℝ} {u c : ℝ}
+    (hv0 : ∀ i, 0 ≤ v i) (hsum : (∑ i, v i) ≤ c) :
+    |∏ i, (1 - u ^ 2 / 2 * v i)| ≤ Real.exp (u ^ 2 * c / 2) := by
+  rw [Finset.abs_prod]
+  have hstep : ∀ i ∈ Finset.univ, |1 - u ^ 2 / 2 * v i| ≤ Real.exp (u ^ 2 / 2 * v i) := by
+    intro i _
+    have ha : 0 ≤ u ^ 2 / 2 * v i := mul_nonneg (by positivity) (hv0 i)
+    have h1 : |1 - u ^ 2 / 2 * v i| ≤ 1 + u ^ 2 / 2 * v i := by
+      rw [abs_le]; constructor <;> linarith
+    have h2 := Real.add_one_le_exp (u ^ 2 / 2 * v i)
+    linarith
+  calc ∏ i, |1 - u ^ 2 / 2 * v i| ≤ ∏ i, Real.exp (u ^ 2 / 2 * v i) :=
+        Finset.prod_le_prod (fun i _ => abs_nonneg _) hstep
+    _ = Real.exp (∑ i, u ^ 2 / 2 * v i) := (Real.exp_sum _ _).symm
+    _ = Real.exp (u ^ 2 / 2 * ∑ i, v i) := by rw [Finset.mul_sum]
+    _ ≤ Real.exp (u ^ 2 * c / 2) := by
+        refine Real.exp_le_exp.2 ?_
+        have : (0:ℝ) ≤ u ^ 2 / 2 := by positivity
+        nlinarith
+
+/-- **The pointwise product comparison**: on the event where every conditional variance is
+at most `β` and the variance process is within `β` of `σ²`, the Taylor product is within
+`(u²β/2)·(u²(σ² + β)/2) + u²β/2` of the Gaussian factor `e^{−u²σ²/2}`. -/
+private lemma abs_prod_one_sub_sub_exp_le {m : ℕ} {v : Fin m → ℝ} {u σ2 β : ℝ}
+    (hv0 : ∀ i, 0 ≤ v i) (hvb : ∀ i, v i ≤ β) (hβ : 0 ≤ β)
+    (hsmall : u ^ 2 * β ≤ 1) (hσ : 0 ≤ σ2)
+    (hsum : |(∑ i, v i) - σ2| ≤ β) :
+    |(∏ i, (1 - u ^ 2 / 2 * v i)) - Real.exp (-(u ^ 2 * σ2 / 2))|
+      ≤ u ^ 2 * β / 2 * (u ^ 2 * (σ2 + β) / 2) + u ^ 2 * β / 2 := by
+  have hu : (0:ℝ) ≤ u ^ 2 := sq_nonneg u
+  have ha0 : ∀ i, 0 ≤ u ^ 2 / 2 * v i := fun i => mul_nonneg (by positivity) (hv0 i)
+  have hab : ∀ i, u ^ 2 / 2 * v i ≤ u ^ 2 * β / 2 := by
+    intro i
+    have := mul_le_mul_of_nonneg_left (hvb i) (by positivity : (0:ℝ) ≤ u ^ 2 / 2)
+    linarith
+  have hahalf : ∀ i, u ^ 2 / 2 * v i ≤ 1 / 2 := fun i => (hab i).trans (by linarith)
+  -- (i) replace each factor by its exponential
+  have hstep1 : |(∏ i, (1 - u ^ 2 / 2 * v i)) - ∏ i, Real.exp (-(u ^ 2 / 2 * v i))|
+      ≤ ∑ i, (u ^ 2 / 2 * v i) ^ 2 := by
+    refine le_trans (abs_prod_sub_prod_le Finset.univ
+      (f := fun i => 1 - u ^ 2 / 2 * v i) (g := fun i => Real.exp (-(u ^ 2 / 2 * v i)))
+      (fun i => by rw [abs_le]; constructor <;> linarith [ha0 i, hahalf i])
+      (fun i => by
+        rw [abs_of_pos (Real.exp_pos _)]
+        exact Real.exp_le_one_iff.2 (by linarith [ha0 i]))) ?_
+    exact Finset.sum_le_sum fun i _ => abs_one_sub_sub_exp_neg_le (ha0 i)
+  -- (ii) the exponential product is the exponential of the variance process
+  have hstep2 : (∏ i, Real.exp (-(u ^ 2 / 2 * v i))) = Real.exp (-(u ^ 2 / 2 * ∑ i, v i)) := by
+    rw [← Real.exp_sum]
+    congr 1
+    simp [Finset.mul_sum]
+  -- (iii) the quadratic remainder
+  have hsq : ∑ i, (u ^ 2 / 2 * v i) ^ 2 ≤ u ^ 2 * β / 2 * (u ^ 2 / 2 * ∑ i, v i) := by
+    have hrw : u ^ 2 * β / 2 * (u ^ 2 / 2 * ∑ i, v i)
+        = ∑ i, u ^ 2 * β / 2 * (u ^ 2 / 2 * v i) := by
+      rw [Finset.mul_sum, Finset.mul_sum]
+    rw [hrw]
+    refine Finset.sum_le_sum fun i _ => ?_
+    have h1 := ha0 i
+    have h2 := hab i
+    nlinarith
+  have hSle : u ^ 2 / 2 * ∑ i, v i ≤ u ^ 2 * (σ2 + β) / 2 := by
+    have h1 : (∑ i, v i) ≤ σ2 + β := by
+      have := (abs_le.1 hsum).2; linarith
+    nlinarith
+  have hS0 : 0 ≤ u ^ 2 / 2 * ∑ i, v i :=
+    mul_nonneg (by positivity) (Finset.sum_nonneg fun i _ => hv0 i)
+  -- (iv) the Gaussian factor
+  have hstep3 : |Real.exp (-(u ^ 2 / 2 * ∑ i, v i)) - Real.exp (-(u ^ 2 * σ2 / 2))|
+      ≤ u ^ 2 * β / 2 := by
+    refine le_trans (abs_exp_neg_sub_le hS0 (by positivity)) ?_
+    have he : u ^ 2 / 2 * (∑ i, v i) - u ^ 2 * σ2 / 2 = u ^ 2 / 2 * ((∑ i, v i) - σ2) := by ring
+    rw [he, abs_mul, abs_of_nonneg (by positivity : (0:ℝ) ≤ u ^ 2 / 2)]
+    have := mul_le_mul_of_nonneg_left hsum (by positivity : (0:ℝ) ≤ u ^ 2 / 2)
+    linarith
+  have hquad : ∑ i, (u ^ 2 / 2 * v i) ^ 2 ≤ u ^ 2 * β / 2 * (u ^ 2 * (σ2 + β) / 2) := by
+    refine hsq.trans ?_
+    have h0 : (0:ℝ) ≤ u ^ 2 * β / 2 := by positivity
+    exact mul_le_mul_of_nonneg_left hSle h0
+  calc |(∏ i, (1 - u ^ 2 / 2 * v i)) - Real.exp (-(u ^ 2 * σ2 / 2))|
+      ≤ |(∏ i, (1 - u ^ 2 / 2 * v i)) - ∏ i, Real.exp (-(u ^ 2 / 2 * v i))|
+        + |(∏ i, Real.exp (-(u ^ 2 / 2 * v i))) - Real.exp (-(u ^ 2 * σ2 / 2))| :=
+        abs_sub_le _ _ _
+    _ ≤ u ^ 2 * β / 2 * (u ^ 2 * (σ2 + β) / 2) + u ^ 2 * β / 2 := by
+        rw [hstep2] at hstep1 ⊢
+        linarith [hstep1.trans hquad, hstep3]
+
+end ProductEstimates
+
 section Arrays
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
@@ -401,11 +558,17 @@ theorem tendsto_integral_prod_one_sub_condVar [IsProbabilityMeasure μ]
           | F n i.castSucc] ω}).toReal) atTop (𝓝 0))
     -- LEAN-ONLY: a uniform L¹ bound on the variance process, ruling out mass escape
     (hbdd : ∃ B : ℝ, ∀ n, ∫ ω, mdsCondVariance k X F μ n ω ∂μ ≤ B)
+    -- LEAN-ONLY (repair, 2026-08-05): pointwise clamp on the conditional variance
+    -- PROCESS (supplied by the Hall–Heyde truncated array, whose variance process is
+    -- bounded by the truncation level); this is what `hbdd` fails to give and what makes
+    -- the Taylor product uniformly bounded — see the witness recorded below.
+    {c : ℝ} (hclamp : ∀ n, ∀ᵐ ω ∂μ, mdsCondVariance k X F μ n ω ≤ c)
     (u : ℝ) :
     Tendsto (fun n => ∫ ω, ∏ i, (1 - (u ^ 2 / 2 : ℂ) *
         (μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℝ)) ∂μ) atTop
       (𝓝 (Complex.exp (-(u ^ 2 * σ2 / 2 : ℝ)))) := by
-  -- DEBT (wave 2, reported loudly): FALSE as frozen, with an explicit witness.
+  -- DEBT (wave 2): FALSE as frozen, with an explicit witness — REPAIRED 2026-08-05 by
+  -- the `hclamp` hypothesis (a pointwise bound on the conditional variance PROCESS).
   -- `hbdd` (an L¹ bound on `V_n`) does not rule out mass escape, because the factors
   -- `1 - u²v/2` are NOT bounded by 1: a single index with `v ≈ 1/p` on an event of
   -- probability `p` contributes `p · u²/(2p) = u²/2` to the integral while carrying
@@ -423,12 +586,193 @@ theorem tendsto_integral_prod_one_sub_condVar [IsProbabilityMeasure μ]
   --   `∫ ∏_i (1 - u²v_{n,i}/2) = (1 - u²p_n(1-p_n)/2)·(1 - (u²/(2p_n))·μ(A_n))`
   --                            = `(1 - u²p_n(1-p_n)/2)(1 - u²/2) → 1 - u²/2`,
   -- whereas the claimed limit is `exp(-u²·0/2) = 1`.  These differ for every `u ≠ 0`.
+  -- (Note `V_n = p_n^{-1}` on `A_n`, so this witness violates `hclamp` for every `c`.)
   --
-  -- REPAIR: the product must be clamped/stopped before the limit is taken — e.g. assume
-  -- an a.s. bound `u²·v_{n,i} ≤ 1` (all factors in `[1/2,1]`, so `‖∏‖ ≤ 1`), or replace
-  -- the product by the variance-stopped one `∏_i (if partial-V at i ≤ σ²+1 then factor
-  -- else 1)`, which agrees with it on the good event and is uniformly bounded.
-  sorry
+  -- REPAIR APPLIED: `hclamp` gives `‖∏ᵢ(1 - u²vᵢ/2)‖ ≤ e^{u²c/2}` pointwise
+  -- (`abs_prod_one_sub_le_exp`), which is exactly the domination the witness destroys.
+  -- The proof is then a plain `ε`-argument: on the event where every `vᵢ ≤ β` and
+  -- `|V_n - σ²| ≤ β` the product is within `βM` of `e^{-u²σ²/2}`
+  -- (`abs_prod_one_sub_sub_exp_le`), and the complementary event has vanishing measure
+  -- by `hvar` and `hunif`.  Note the argument does not use `hbdd`, which `hclamp`
+  -- subsumes; `hbdd` is kept so that the frozen call sites are unaffected.
+  classical
+  obtain ⟨p, hp⟩ : ∃ p : ℕ → Ω → ℝ, ∀ (n : ℕ) (ω : Ω), p n ω =
+      ∏ i, (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω) :=
+    ⟨_, fun _ _ => rfl⟩
+  have hvmeas : ∀ (n : ℕ) (i : Fin (k n)),
+      Measurable (μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc]) := fun n i =>
+    (stronglyMeasurable_condExp.measurable).mono (h.le_ambient n i.castSucc) le_rfl
+  have hv0 : ∀ n : ℕ, ∀ᵐ ω ∂μ, ∀ i : Fin (k n),
+      0 ≤ μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω :=
+    fun n => ae_all_iff.2 fun i => condExp_nonneg (ae_of_all _ fun _ => sq_nonneg _)
+  have hVsum : ∀ (n : ℕ) (ω : Ω),
+      (∑ i, μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω) = mdsCondVariance k X F μ n ω :=
+    fun _ _ => rfl
+  have hVmeas : ∀ n, Measurable (mdsCondVariance k X F μ n) := fun n =>
+    Finset.measurable_sum _ fun i _ => hvmeas n i
+  have hpmeas : ∀ n, Measurable (p n) := by
+    intro n
+    have he : p n = fun ω => ∏ i, (1 - u ^ 2 / 2 *
+        μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω) := funext (hp n)
+    rw [he]
+    exact Finset.measurable_prod _ fun i _ => measurable_const.sub ((hvmeas n i).const_mul _)
+  have hpbdd : ∀ n, ∀ᵐ ω ∂μ, |p n ω| ≤ Real.exp (u ^ 2 * c / 2) := by
+    intro n
+    filter_upwards [hv0 n, hclamp n] with ω h1 h2
+    rw [hp n ω]
+    exact abs_prod_one_sub_le_exp h1 (by rw [hVsum]; exact h2)
+  have hpint : ∀ n, Integrable (p n) μ := by
+    intro n
+    refine Integrable.mono' (integrable_const (Real.exp (u ^ 2 * c / 2)))
+      (hpmeas n).aestronglyMeasurable ?_
+    filter_upwards [hpbdd n] with ω hω
+    rwa [Real.norm_eq_abs]
+  -- the real limit; the complex statement is its `ofReal` image
+  have main : Tendsto (fun n => ∫ ω, p n ω ∂μ) atTop (𝓝 (Real.exp (-(u ^ 2 * σ2 / 2)))) := by
+    rw [Metric.tendsto_atTop]
+    intro η hη
+    obtain ⟨M, hM0, hMdef⟩ : ∃ M : ℝ, 0 ≤ M ∧ M = u ^ 2 * u ^ 2 * (σ2 + 1) / 4 + u ^ 2 / 2 := by
+      refine ⟨_, ?_, rfl⟩
+      have h1 : (0:ℝ) ≤ u ^ 2 * u ^ 2 * (σ2 + 1) :=
+        mul_nonneg (mul_nonneg (sq_nonneg u) (sq_nonneg u)) (by linarith)
+      have h2 : (0:ℝ) ≤ u ^ 2 := sq_nonneg u
+      linarith
+    obtain ⟨T, hT0, hTdef⟩ : ∃ T : ℝ, 0 < T ∧ T = Real.exp (u ^ 2 * c / 2) + 1 :=
+      ⟨_, by positivity, rfl⟩
+    obtain ⟨β, hβpos, hβ1, hβu, hβM⟩ : ∃ β : ℝ, 0 < β ∧ β ≤ 1 ∧ u ^ 2 * β ≤ 1
+        ∧ M * β ≤ η / 4 := by
+      refine ⟨min 1 (min (1 / (u ^ 2 + 1)) ((η / 4) / (M + 1))), ?_, min_le_left _ _, ?_, ?_⟩
+      · have h1 : (0:ℝ) < 1 / (u ^ 2 + 1) := by positivity
+        have h2 : (0:ℝ) < (η / 4) / (M + 1) := by
+          have : (0:ℝ) < M + 1 := by linarith
+          positivity
+        exact lt_min one_pos (lt_min h1 h2)
+      · have hle : min 1 (min (1 / (u ^ 2 + 1)) ((η / 4) / (M + 1))) ≤ 1 / (u ^ 2 + 1) :=
+          le_trans (min_le_right _ _) (min_le_left _ _)
+        have hu2 : (0:ℝ) < u ^ 2 + 1 := by positivity
+        have := mul_le_mul_of_nonneg_left hle (sq_nonneg u)
+        rw [mul_one_div] at this
+        have hdiv : u ^ 2 / (u ^ 2 + 1) ≤ 1 := by
+          rw [div_le_one hu2]; linarith
+        linarith
+      · have hle : min 1 (min (1 / (u ^ 2 + 1)) ((η / 4) / (M + 1))) ≤ (η / 4) / (M + 1) :=
+          le_trans (min_le_right _ _) (min_le_right _ _)
+        have hM1 : (0:ℝ) < M + 1 := by linarith
+        have := mul_le_mul_of_nonneg_left hle hM0
+        refine this.trans ?_
+        rw [mul_div_assoc'] at *
+        rw [div_le_iff₀ hM1]
+        nlinarith [hη.le]
+    -- the exceptional event
+    obtain ⟨θ, hθpos, hθdef⟩ : ∃ θ : ℝ, 0 < θ ∧ θ = η / (8 * T) := ⟨_, by positivity, rfl⟩
+    have e1 := (hvar β hβpos).eventually (gt_mem_nhds hθpos)
+    have e2 := (hunif β hβpos).eventually (gt_mem_nhds hθpos)
+    obtain ⟨N, hN⟩ := Filter.eventually_atTop.1 (e1.and e2)
+    refine ⟨N, fun n hn => ?_⟩
+    obtain ⟨hn1, hn2⟩ := hN n hn
+    obtain ⟨A, hAdef⟩ : ∃ A : Set Ω, A = {ω | β ≤ |mdsCondVariance k X F μ n ω - σ2|}
+        ∪ {ω | ∃ i, β ≤ μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω} := ⟨_, rfl⟩
+    have hA : MeasurableSet A := by
+      rw [hAdef]
+      refine MeasurableSet.union
+        (measurableSet_le measurable_const
+          (continuous_abs.measurable.comp ((hVmeas n).sub measurable_const))) ?_
+      have hEq : {ω | ∃ i, β ≤ μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω}
+          = ⋃ i, {ω | β ≤ μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω} := by
+        ext ω; simp
+      rw [hEq]
+      exact MeasurableSet.iUnion fun i => measurableSet_le measurable_const (hvmeas n i)
+    have hmajor : ∀ᵐ ω ∂μ, |p n ω - Real.exp (-(u ^ 2 * σ2 / 2))|
+        ≤ M * β + T * Set.indicator A (fun _ => (1:ℝ)) ω := by
+      filter_upwards [hv0 n, hpbdd n] with ω hnn hbd
+      by_cases hωA : ω ∈ A
+      · rw [Set.indicator_of_mem hωA]
+        have h1 : |p n ω - Real.exp (-(u ^ 2 * σ2 / 2))|
+            ≤ |p n ω| + |Real.exp (-(u ^ 2 * σ2 / 2))| := abs_sub _ _
+        have h2 : |Real.exp (-(u ^ 2 * σ2 / 2))| ≤ 1 := by
+          rw [abs_of_pos (Real.exp_pos _)]
+          exact Real.exp_le_one_iff.2 (by nlinarith [sq_nonneg u])
+        have h3 : (0:ℝ) ≤ M * β := mul_nonneg hM0 hβpos.le
+        rw [hTdef]
+        linarith
+      · have hnotA : ω ∉ {ω | β ≤ |mdsCondVariance k X F μ n ω - σ2|}
+            ∧ ω ∉ {ω | ∃ i, β ≤ μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω} := by
+          rw [hAdef] at hωA
+          exact ⟨fun hc => hωA (Or.inl hc), fun hc => hωA (Or.inr hc)⟩
+        have hvb : ∀ i, μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω ≤ β := by
+          intro i
+          by_contra hc
+          exact hnotA.2 ⟨i, le_of_lt (lt_of_not_ge hc)⟩
+        have hsum : |(∑ i, μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω) - σ2| ≤ β := by
+          rw [hVsum]
+          exact le_of_lt (lt_of_not_ge hnotA.1)
+        rw [Set.indicator_of_notMem hωA, hp n ω]
+        have hkey := abs_prod_one_sub_sub_exp_le hnn hvb hβpos.le hβu hσ hsum
+        have hσβ : σ2 + β ≤ σ2 + 1 := by linarith
+        have hu2 : (0:ℝ) ≤ u ^ 2 := sq_nonneg u
+        have hbb : u ^ 2 * β / 2 * (u ^ 2 * (σ2 + β) / 2) + u ^ 2 * β / 2 ≤ M * β := by
+          rw [hMdef]
+          nlinarith [mul_nonneg hu2 hβpos.le, mul_nonneg (mul_nonneg hu2 hu2) hβpos.le]
+        have hT1 : (0:ℝ) ≤ T := hT0.le
+        linarith
+    -- integrate the majorant
+    have hint1 : Integrable (fun ω => |p n ω - Real.exp (-(u ^ 2 * σ2 / 2))|) μ :=
+      ((hpint n).sub (integrable_const _)).abs
+    have hint2 : Integrable
+        (fun ω => M * β + T * Set.indicator A (fun _ => (1:ℝ)) ω) μ :=
+      (integrable_const _).add (((integrable_const (1:ℝ)).indicator hA).const_mul _)
+    have hstep : ∫ ω, |p n ω - Real.exp (-(u ^ 2 * σ2 / 2))| ∂μ ≤ M * β + T * μ.real A := by
+      refine le_trans (integral_mono_ae hint1 hint2 hmajor) (le_of_eq ?_)
+      rw [integral_add (integrable_const _) (((integrable_const (1:ℝ)).indicator hA).const_mul _),
+        integral_const, integral_const_mul, integral_indicator_const _ hA]
+      simp
+    have hAmeas : μ.real A ≤ (μ {ω | β ≤ |mdsCondVariance k X F μ n ω - σ2|}).toReal
+        + (μ {ω | ∃ i, β ≤ μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω}).toReal := by
+      rw [hAdef, measureReal_def]
+      refine le_trans (ENNReal.toReal_mono ?_ (measure_union_le _ _)) (le_of_eq ?_)
+      · exact ENNReal.add_ne_top.2 ⟨measure_ne_top _ _, measure_ne_top _ _⟩
+      · exact ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)
+    have habs : |(∫ ω, p n ω ∂μ) - Real.exp (-(u ^ 2 * σ2 / 2))|
+        ≤ ∫ ω, |p n ω - Real.exp (-(u ^ 2 * σ2 / 2))| ∂μ := by
+      have hsub : (∫ ω, p n ω ∂μ) - Real.exp (-(u ^ 2 * σ2 / 2))
+          = ∫ ω, (p n ω - Real.exp (-(u ^ 2 * σ2 / 2))) ∂μ := by
+        rw [integral_sub (hpint n) (integrable_const _), integral_const]
+        simp
+      rw [hsub]
+      have := norm_integral_le_integral_norm
+        (μ := μ) (f := fun ω => p n ω - Real.exp (-(u ^ 2 * σ2 / 2)))
+      simpa only [Real.norm_eq_abs] using this
+    rw [Real.dist_eq]
+    have hfin : T * μ.real A ≤ T * (2 * θ) := by
+      have : μ.real A ≤ 2 * θ := by
+        have := hAmeas
+        rw [measureReal_def] at this ⊢
+        linarith
+      exact mul_le_mul_of_nonneg_left this hT0.le
+    have hθval : T * (2 * θ) = η / 4 := by
+      rw [hθdef]; field_simp; ring
+    have hMβ : M * β ≤ η / 4 := hβM
+    linarith [habs.trans hstep]
+  -- transfer to the complex statement
+  have hcast : ∀ n : ℕ, (∫ ω, ∏ i, (1 - (u ^ 2 / 2 : ℂ) * (μ[fun ω' => X n i ω' ^ 2
+      | F n i.castSucc] ω : ℝ)) ∂μ) = ((∫ ω, p n ω ∂μ : ℝ) : ℂ) := by
+    intro n
+    have hpt : ∀ ω, (∏ i, (1 - (u ^ 2 / 2 : ℂ) * (μ[fun ω' => X n i ω' ^ 2
+        | F n i.castSucc] ω : ℝ))) = ((p n ω : ℝ) : ℂ) := by
+      intro ω
+      rw [hp n ω, Complex.ofReal_prod]
+      exact Finset.prod_congr rfl fun i _ => by push_cast; ring
+    simp_rw [hpt]
+    exact integral_complex_ofReal
+  have hgauss : Complex.exp (-(u ^ 2 * σ2 / 2 : ℝ))
+      = ((Real.exp (-(u ^ 2 * σ2 / 2)) : ℝ) : ℂ) := by
+    rw [Complex.ofReal_exp]
+    congr 1
+    push_cast
+    ring
+  rw [hgauss]
+  refine Tendsto.congr (fun n => (hcast n).symm) ?_
+  exact (Complex.continuous_ofReal.tendsto _).comp main
 
 end Arrays
 

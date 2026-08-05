@@ -496,7 +496,10 @@ theorem mds_clt [IsProbabilityMeasure μ]
         ≤ ∫ _ω, c ∂μ := integral_mono_ae integrable_mdsCondVariance (integrable_const c)
           (mdsCondVariance_truncArray_le h hc0 n)
       _ = c := by simp
-  have hprod := tendsto_integral_prod_one_sub_condVar h' hσ hvar' hunif' hbdd' u
+  -- the repaired `tendsto_integral_prod_one_sub_condVar` also wants the *pointwise* clamp on
+  -- the variance process, which is exactly what the truncation was built to supply
+  have hprod := tendsto_integral_prod_one_sub_condVar h' hσ hvar' hunif' hbdd'
+    (fun n => mdsCondVariance_truncArray_le h hc0 n) u
   -- the row variance identity `Σᵢ E Xᵢ² = E V_n` for the truncated array
   have hsumsq : ∀ n, ∑ i, ∫ ω, X' n i ω ^ 2 ∂μ = ∫ ω, mdsCondVariance k X' F μ n ω ∂μ := by
     intro n
