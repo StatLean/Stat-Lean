@@ -43,7 +43,7 @@ noncomputable def periodogram {T : ℕ} (x : Fin T → ℝ) (k : ℤ) : ℝ :=
 `Σ_t x_t² = Σ_{k<T} I_T(k)`. -/
 theorem sum_sq_eq_sum_periodogram {T : ℕ} (x : Fin T → ℝ) :
     ∑ t : Fin T, (x t) ^ 2 = ∑ k ∈ Finset.range T, periodogram x (k : ℤ) := by
-  sorry
+  simpa only [periodogram] using sum_sq_eq_sum_normSq_dft x
 
 /-- **FY Theorem 2.13** (proof §2.7.5): for a nonzero Fourier frequency, the
 periodogram is the discrete Fourier transform of the sample autocovariances:
@@ -59,6 +59,16 @@ theorem periodogram_eq_sampleACVF {T : ℕ} (hT : 0 < T) (x : Fin T → ℝ) {k 
 /-- At the zero frequency the periodogram is `T · (sample mean)²` (FY §2.7.5 remark). -/
 theorem periodogram_zero {T : ℕ} (x : Fin T → ℝ) :
     periodogram x 0 = T * sampleMean x ^ 2 := by
-  sorry
+  rcases Nat.eq_zero_or_pos T with hT | hT
+  · subst hT; simp [periodogram, dft]
+  have hTR : (T : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hT.ne'
+  have hfreq : fourierFreq T 0 = 0 := by simp [fourierFreq]
+  have hdft : dft x 0 = (((Real.sqrt T)⁻¹ * ∑ t : Fin T, x t : ℝ) : ℂ) := by
+    rw [dft, hfreq]
+    push_cast
+    simp
+  rw [periodogram, hdft, Complex.norm_real, Real.norm_eq_abs, sq_abs, sampleMean, mul_pow,
+    mul_pow, inv_pow, Real.sq_sqrt (by positivity : (0 : ℝ) ≤ (T : ℝ))]
+  field_simp
 
 end StatLean.TimeSeries
