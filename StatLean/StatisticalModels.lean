@@ -28,6 +28,8 @@ import StatLean.StatisticalModels.MixedEffects.Defs
 import StatLean.StatisticalModels.MixedEffects.Marginal
 import StatLean.StatisticalModels.Longitudinal.Defs
 import StatLean.StatisticalModels.Longitudinal.GEE
+import StatLean.StatisticalModels.Longitudinal.Sandwich
+import StatLean.StatisticalModels.Longitudinal.Godambe
 import StatLean.StatisticalModels.Adapters.ParametricFamily
 import StatLean.StatisticalModels.Adapters.Bayes
 import StatLean.StatisticalModels.Adapters.DecisionRisk
