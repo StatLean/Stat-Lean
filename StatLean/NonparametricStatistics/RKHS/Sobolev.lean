@@ -69,23 +69,102 @@ noncomputable instance : RKHS ℝ SobolevH01 unitInterval01 ℝ where
   coeCLM_injective := by
     sorry
 
+section Aux
+
+/-- The measure of `[0,m]` inside `[0,1]`, as a real number. -/
+private theorem sobolevMeasure_real_Icc {m : ℝ} (hm0 : 0 ≤ m) (hm1 : m ≤ 1) :
+    sobolevMeasure.real (Set.Icc 0 m) = m := by
+  change ((volume.restrict (Set.Icc (0 : ℝ) 1)) (Set.Icc 0 m)).toReal = m
+  rw [Measure.restrict_apply measurableSet_Icc, Set.Icc_inter_Icc, max_self, min_eq_left hm1,
+    Real.volume_Icc, sub_zero, ENNReal.toReal_ofReal hm0]
+
+/-- The total mass of `sobolevMeasure` is one. -/
+private theorem sobolevMeasure_real_univ : sobolevMeasure.real Set.univ = 1 := by
+  change ((volume.restrict (Set.Icc (0 : ℝ) 1)) Set.univ).toReal = 1
+  rw [Measure.restrict_apply MeasurableSet.univ, Set.univ_inter, Real.volume_Icc]
+  norm_num
+
+/-- Restricting `sobolevMeasure` to `[0,1]` changes nothing. -/
+private theorem sobolevMeasure_restrict_Icc :
+    sobolevMeasure.restrict (Set.Icc (0 : ℝ) 1) = sobolevMeasure := by
+  change (volume.restrict (Set.Icc (0 : ℝ) 1)).restrict (Set.Icc (0 : ℝ) 1) = _
+  rw [Measure.restrict_restrict measurableSet_Icc, Set.inter_self]
+
+private theorem inner_sobolevInd_sobolevInd {x y : ℝ} (hx0 : 0 ≤ x) (hx1 : x ≤ 1)
+    (hy0 : 0 ≤ y) :
+    ⟪sobolevInd x, sobolevInd y⟫_ℝ = min x y := by
+  rw [sobolevInd, sobolevInd,
+    MeasureTheory.L2.real_inner_indicatorConstLp_one_indicatorConstLp_one
+      (μ := sobolevMeasure) (measurableSet_Icc (a := (0 : ℝ)) (b := x))
+      (measurableSet_Icc (a := (0 : ℝ)) (b := y)) (measure_ne_top _ _) (measure_ne_top _ _),
+    Set.Icc_inter_Icc, max_self,
+    sobolevMeasure_real_Icc (le_min hx0 hy0) ((min_le_left x y).trans hx1)]
+
+private theorem inner_sobolevOne_sobolevInd {y : ℝ} (hy0 : 0 ≤ y) (hy1 : y ≤ 1) :
+    ⟪sobolevOne, sobolevInd y⟫_ℝ = y := by
+  rw [sobolevOne, sobolevInd,
+    MeasureTheory.L2.real_inner_indicatorConstLp_one_indicatorConstLp_one
+      (μ := sobolevMeasure) MeasurableSet.univ (measurableSet_Icc (a := (0 : ℝ)) (b := y))
+      (measure_ne_top _ _) (measure_ne_top _ _),
+    Set.univ_inter, sobolevMeasure_real_Icc hy0 hy1]
+
+private theorem inner_sobolevInd_sobolevOne {y : ℝ} (hy0 : 0 ≤ y) (hy1 : y ≤ 1) :
+    ⟪sobolevInd y, sobolevOne⟫_ℝ = y := by
+  rw [real_inner_comm, inner_sobolevOne_sobolevInd hy0 hy1]
+
+private theorem inner_sobolevOne_sobolevOne : ⟪sobolevOne, sobolevOne⟫_ℝ = 1 := by
+  rw [sobolevOne,
+    MeasureTheory.L2.real_inner_indicatorConstLp_one_indicatorConstLp_one
+      (μ := sobolevMeasure) MeasurableSet.univ MeasurableSet.univ
+      (measure_ne_top _ _) (measure_ne_top _ _),
+    Set.univ_inter, sobolevMeasure_real_univ]
+
+private theorem inner_sobolevInd_eq_setIntegral (x : ℝ) (g : Lp ℝ 2 sobolevMeasure) :
+    ⟪sobolevInd x, g⟫_ℝ = ∫ t in Set.Icc 0 x, (g : ℝ → ℝ) t ∂sobolevMeasure :=
+  MeasureTheory.L2.inner_indicatorConstLp_one (𝕜 := ℝ) (μ := sobolevMeasure)
+    (measurableSet_Icc (a := (0 : ℝ)) (b := x)) (measure_ne_top _ _) g
+
+private theorem inner_sobolevOne_eq_integral (g : Lp ℝ 2 sobolevMeasure) :
+    ⟪sobolevOne, g⟫_ℝ = ∫ t, (g : ℝ → ℝ) t ∂sobolevMeasure := by
+  rw [← MeasureTheory.setIntegral_univ]
+  exact MeasureTheory.L2.inner_indicatorConstLp_one (𝕜 := ℝ) (μ := sobolevMeasure)
+    MeasurableSet.univ (measure_ne_top _ _) g
+
+/-- Unfolding of the RKHS action of the Sobolev space. -/
+private theorem sobolevH01_coe_apply (f : SobolevH01) (x : unitInterval01) :
+    f x = ⟪sobolevInd (x : ℝ), (f : Lp ℝ 2 sobolevMeasure)⟫_ℝ := rfl
+
+/-- The `[0,1]`-indicator and the constant `1` have the same action on `L²[0,1]`. -/
+private theorem inner_sobolevInd_one_eq (g : Lp ℝ 2 sobolevMeasure) :
+    ⟪sobolevInd (1 : ℝ), g⟫_ℝ = ⟪sobolevOne, g⟫_ℝ := by
+  rw [inner_sobolevInd_eq_setIntegral, inner_sobolevOne_eq_integral, sobolevMeasure_restrict_Icc]
+
+end Aux
+
 /-- Interpretation of the action: `f x = ∫_{[0,x]} g` where `g` is the derivative
 representative of `f`. -/
 theorem sobolevH01_apply (f : SobolevH01) (x : unitInterval01) :
     f x = ∫ t in Set.Icc 0 (x : ℝ), ((f : Lp ℝ 2 sobolevMeasure) : ℝ → ℝ) t
       ∂sobolevMeasure := by
-  sorry
+  rw [sobolevH01_coe_apply, inner_sobolevInd_eq_setIntegral]
 
 /-- Left boundary condition: every function of the Sobolev space vanishes at `0`. -/
 theorem sobolevH01_apply_zero (f : SobolevH01) :
     f (⟨0, by norm_num⟩ : unitInterval01) = 0 := by
-  sorry
+  rw [sobolevH01_apply]
+  refine setIntegral_measure_zero _ ?_
+  change (volume.restrict (Set.Icc (0 : ℝ) 1)) (Set.Icc 0 (0 : ℝ)) = 0
+  rw [Set.Icc_self, Measure.restrict_apply (measurableSet_singleton _)]
+  exact measure_mono_null Set.inter_subset_left (by simp)
 
 /-- Right boundary condition: every function of the Sobolev space vanishes at `1`
 (this is where the mean-zero constraint enters). -/
 theorem sobolevH01_apply_one (f : SobolevH01) :
     f (⟨1, by norm_num⟩ : unitInterval01) = 0 := by
-  sorry
+  rw [sobolevH01_coe_apply]
+  change ⟪sobolevInd (1 : ℝ), (f : Lp ℝ 2 sobolevMeasure)⟫_ℝ = 0
+  rw [inner_sobolevInd_one_eq]
+  exact Submodule.mem_orthogonal_singleton_iff_inner_right.mp f.2
 
 /-- Completeness of the Sobolev carrier, as an explicit term (the orthogonal complement
 of a subspace of the complete space `L²` is complete). -/
