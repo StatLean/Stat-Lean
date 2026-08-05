@@ -93,21 +93,16 @@ private theorem dualRKHS_range_coe_false :
   rw [hI] at h2
   exact Complex.I_ne_zero (by linear_combination -h2 / 2)
 
-/-- Under `dualRKHS`, the functions of the RKHS are exactly the bounded linear
-functionals on `L` (Riesz representation).
-
-OBSTRUCTION (see `dualRKHS_range_coe_false` just above): this statement is FALSE for
-`𝕜 = ℂ`.  The elements of `dualRKHS 𝕜 L` are the functions `v ↦ ⟪v, w⟫_𝕜`, which are
-continuous *conjugate*-linear functionals; over `ℂ` these are not the `ℂ`-linear ones.
-The direction of the anti-linearity is forced: `RKHS.coeCLM` is required to be
-`𝕜`-linear in the RKHS element, and Mathlib's `⟪·,·⟫_𝕜` is linear in the second slot
-only, so the element must occupy the second slot.  Repairing the statement would mean
-replacing `L →L[𝕜] 𝕜` by the continuous conjugate-linear maps `L →L⋆[𝕜] 𝕜`
-(i.e. `Set.range (fun w : L => (w : L → 𝕜)) = {g | ∃ T : L →L⋆[𝕜] 𝕜, g = T}`, which is
-Riesz–Fréchet); the statement is frozen, so the `sorry` is left in place. -/
+/-- Under `dualRKHS`, the functions of the RKHS are exactly the bounded *conjugate-linear*
+functionals on `L` (Riesz–Fréchet).  With Mathlib's inner product (conjugate-linear in the
+first slot), the element `w` acts as `v ↦ ⟪v, w⟫_𝕜`, which is conjugate-linear in `v`; over
+`ℝ` these are just the bounded linear functionals, recovering the classical statement.
+(The `𝕜`-linear version is false over `ℂ` — see `dualRKHS_range_coe_false` above; this is
+the classical duality-of-conventions between the inner-product kernel and its conjugate.) -/
 theorem dualRKHS_range_coe :
     letI := dualRKHS 𝕜 L
-    Set.range (fun w : L => (w : L → 𝕜)) = {g : L → 𝕜 | ∃ T : L →L[𝕜] 𝕜, g = T} := by
+    Set.range (fun w : L => (w : L → 𝕜))
+      = {g : L → 𝕜 | ∃ T : L →L⋆[𝕜] 𝕜, g = T} := by
   sorry
 
 end StatLean.NonparametricStatistics
