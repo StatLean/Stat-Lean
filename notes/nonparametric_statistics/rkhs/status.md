@@ -27,7 +27,8 @@ book↔Lean dictionary and lane plan.
 | ml | `np/rkhs-ml` | FeatureMap, Separation, MaxMargin, Representer | MERGED; MaxMargin degeneracy repaired+proved on laptop |
 | integral | `np/rkhs-integral` | IntegralOperator, RangeSpace, Mercer/Defs, Mercer/OperatorLemmas | MERGED 0-sorry |
 | mercer | `np/rkhs-mercer` | Mercer/Basic, Mercer/Compact, Mercer/Theorem, Mercer/SquareRoot | MERGED: Basic+Compact 0-sorry (11.6–11.12, T_K compact), BoxSquare (11.16/11.17) closed; Thm 11.15 assembly + 11.18 open w/ routes |
-| mercer2 | `np/rkhs-mercer2` | Mercer/Theorem, Mercer/SquareRoot, InnerKernel | RUNNING (summit round) |
+| mercer2 | `np/rkhs-mercer2` | Mercer/Theorem, Mercer/SquareRoot, InnerKernel | MERGED: Theorem.lean 0-sorry (THM 11.15 COMPLETE incl. trace formula), InnerKernel 0-sorry; sqrtSymbol tsum-def refuted (circle counterexample) |
+| sqrt | `np/rkhs-sqrt` | Mercer/SquareRoot | MERGED 0-sorry — THM 11.18 complete against the repaired L²-limit definition |
 
 ## Known design decisions / deviations (documented in file docstrings)
 
@@ -65,11 +66,20 @@ book↔Lean dictionary and lane plan.
 - `exists_featureMap`: same auto-bound-universe artifact as `exists_rkhs`; pinned to
   `Type (max uK uX)` and proof updated.
 
-## Debts (as of mercer round 1)
+## Statement renegotiations (final)
 
-- `dualRKHS_range_coe` (restated, conj-linear Riesz) — mercer2 target.
-- `Mercer/Theorem.lean`: `exists_mercerEigensystem`, `hasSum_kernel`,
-  `tendstoUniformly_kernel`, `summable_eigval`, `hasSum_eigval` — each with an
-  `-- OPEN.` route note; mercer2 targets.
-- `Mercer/SquareRoot.lean`: SquareRoot section (13 sorries) gated on `hasSum_kernel`;
-  mercer2 targets.
+- `sqrtSymbol` (Thm 11.18 apparatus): the original pointwise unordered-`tsum` definition
+  junk-defaults to `0` whenever the √λ-series is not absolutely summable — the generic
+  case (mercer2-lane circle counterexample `K = ∑ (1+n²)⁻¹ e^{in(x−y)}`, recorded in the
+  docstring).  Repaired definitionally: `sqrtSectionLp d x` is the `L²`-valued `tsum` of
+  the orthogonal family, `sqrtSymbol d x` its representative.
+- `range_mercerCLM_subset`: frozen signature had no access to any regularity of `K`
+  (every proof route needs it); repaired with `include hKc in`.
+
+## Final state (2026-08-05)
+
+- **BATCH COMPLETE, 0 sorries.**  Umbrella gate green; axiom sweep: all 44 headline
+  declarations depend only on `propext`, `Classical.choice`, `Quot.sound`.
+- `StatLean.NonparametricStatistics.RKHS` wired into the area umbrella (laptop commit).
+- Full-library build: see phase log; branch `np/rkhs` is the deliverable (NOT merged to
+  main, NOT pushed to origin — per request, the work lives on the new branch).
