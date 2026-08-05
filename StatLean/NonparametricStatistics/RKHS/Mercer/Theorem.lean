@@ -70,6 +70,27 @@ variable {μ : Measure X} [IsFiniteMeasure μ]
 
 /-- **Mercer's theorem, existence of the eigensystem**: every Mercer kernel against a
 finite Borel measure of full support admits a Mercer eigensystem. -/
+-- OPEN.  All three operator inputs are now available: `isCompactOperator_mercerCLM`
+-- (Mercer/Compact), `isPositive_mercerCLM` (Mercer/Basic, hence `IsSymmetric` via
+-- `ContinuousLinearMap.IsPositive.1`), and `continuous_integralOp_of_continuous`
+-- (Mercer/Basic) for the continuous representative of an eigenfunction
+-- (`e = λ⁻¹ • T_K e`, upgraded from a.e. to everywhere by `μ.IsOpenPosMeasure`).
+-- Missing ingredients, in order of difficulty:
+-- (a) *countability of the nonzero spectrum*: for a compact self-adjoint `T` and each
+--     `k : ℕ` the set of eigenvalues with `|λ| > 1/k` carries only finitely many
+--     mutually orthogonal eigenvectors (else `‖T eₙ − T eₘ‖² = λₙ² + λₘ² ≥ 2/k²`
+--     contradicts total boundedness of the image of the unit ball).  Mathlib's
+--     `Mathlib/Analysis/InnerProductSpace/Spectrum.lean` has
+--     `ContinuousLinearMap.orthogonalComplement_iSup_eigenspaces_eq_bot` and
+--     finite-dimensionality of the nonzero eigenspaces, but no countability statement;
+--     it has to be built here from `IsCompactOperator.isCompact_closure_image_ball`.
+-- (b) the index type of `MercerEigensystem` lives in `Type` (universe 0), so the
+--     `Σ (λ : nonzero eigenvalues), Fin (dim (eigenspace λ))` bookkeeping needs an
+--     explicit encoding into `ℕ × ℕ`-style data, not just a sigma type over the
+--     (large) eigenvalue set.
+-- (c) `opExpansion` needs a Hilbert basis of `L²` refining the eigenspaces
+--     (eigenvectors over `ι` together with any ONB of `ker T_K`), obtained from (a)
+--     plus `HilbertBasis.hasSum_repr` and `ContinuousLinearMap.hasSum`.
 theorem exists_mercerEigensystem {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K)
     -- USER-INPUT: the measure has full support
     [μ.IsOpenPosMeasure] :
@@ -85,6 +106,17 @@ theorem MercerEigensystem.hasSum_kernel {K : X → X → 𝕜}
     [μ.IsOpenPosMeasure]
     (d : MercerEigensystem μ K hKc) (x y : X) :
     HasSum (fun n => (d.eigval n : 𝕜) * (d.eigfun n x * conj (d.eigfun n y))) (K x y) := by
+  -- OPEN.  Route (independent of `exists_mercerEigensystem`): for a finite `s ⊆ ι` the
+  -- residual symbol `K_s := K − ∑_{n ∈ s} λₙ eₙ ⊗ conj eₙ` is continuous, Hermitian, and
+  -- its integral operator is `T_K` minus the spectral truncation, which is positive by
+  -- `d.opExpansion`; hence `isMercerKernel_of_isPositive` (Mercer/Basic, PROVED) makes
+  -- `K_s` a Mercer kernel and its diagonal is `≥ 0`, i.e.
+  -- `∑_{n ∈ s} λₙ ‖eₙ x‖² ≤ re K(x,x)`.  Missing: the residual operators' norms tend to
+  -- `0` (this is where the spectral theorem re-enters — it is exactly the statement that
+  -- the eigen-expansion exhausts `(ker T_K)ᗮ`, which `opExpansion` gives in `L²` but
+  -- which must be converted into `‖T_{K_s}‖ → 0`), plus the final step "a continuous
+  -- kernel whose integral operator vanishes is `0` pointwise" (again
+  -- `isMercerKernel_of_isPositive`'s averaging argument, applied to `±K_∞`).
   sorry
 
 /-- **Mercer's theorem, uniform convergence**: the finite partial sums of the
@@ -98,6 +130,12 @@ theorem MercerEigensystem.tendstoUniformly_kernel {K : X → X → 𝕜}
       (fun s : Finset d.ι => fun p : X × X =>
         ∑ n ∈ s, (d.eigval n : 𝕜) * (d.eigfun n p.1 * conj (d.eigfun n p.2)))
       (fun p => K p.1 p.2) Filter.atTop := by
+  -- OPEN.  Given `hasSum_kernel`, this is the same Dini-plus-Cauchy–Schwarz pattern as
+  -- `tendstoUniformly_scalarKernel` (Mercer/Basic, PROVED): the diagonal partial sums
+  -- `∑_{n ∈ s} λₙ ‖eₙ x‖²` are continuous, monotone in `s`, and converge pointwise to the
+  -- continuous limit `re K(x,x)`, so `Monotone.tendstoUniformly_of_forall_tendsto`
+  -- applies; the off-diagonal is then controlled by `sq_norm_sum_le` applied to the
+  -- family `√λₙ eₙ`.
   sorry
 
 /-- The eigenvalues of a Mercer eigensystem are square-summable (they are dominated by
@@ -108,6 +146,9 @@ theorem MercerEigensystem.summable_eigval {K : X → X → 𝕜}
     [μ.IsOpenPosMeasure]
     (d : MercerEigensystem μ K hKc) :
     Summable d.eigval := by
+  -- OPEN.  Follows from `hasSum_eigval` below (or directly from the residual positivity
+  -- of `hasSum_kernel`: `∑_{n ∈ s} λₙ ‖eₙ x‖² ≤ re K(x,x)`, integrated over `x` with
+  -- `‖eₙ‖_{L²} = 1`, bounds the partial sums by `∫ re K(x,x) dμ`).
   sorry
 
 /-- The trace formula: `∑ₙ λₙ = ∫ K(x, x) dμ(x)`. -/
@@ -117,6 +158,9 @@ theorem MercerEigensystem.hasSum_eigval {K : X → X → 𝕜}
     [μ.IsOpenPosMeasure]
     (d : MercerEigensystem μ K hKc) :
     HasSum d.eigval (∫ x, RCLike.re (K x x) ∂μ) := by
+  -- OPEN.  Integrate the uniform diagonal expansion of `tendstoUniformly_kernel` over
+  -- `x`, swapping the integral with the uniform limit (`TendstoUniformlyOn` on the
+  -- finite-measure space `X`), and use `∫ ‖eₙ‖² dμ = 1` from `d.orthonormal`.
   sorry
 
 end StatLean.NonparametricStatistics

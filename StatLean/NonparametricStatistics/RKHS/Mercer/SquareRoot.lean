@@ -256,6 +256,13 @@ noncomputable def sqrtSymbol : X → X → 𝕜 := fun x y =>
 
 /-- The square-root symbol has square-integrable sections:
 `∫ ‖S(x,y)‖² dμ(y) = ∑ₙ λₙ ‖eₙ(x)‖² = K(x,x)`. -/
+-- OPEN.  Every statement of this section is downstream of the (still open) kernel
+-- expansion `MercerEigensystem.hasSum_kernel` in `Mercer/Theorem.lean`: without it the
+-- eigen-family `{eₙ}` is not known to expand `K`, so nothing pins down `sqrtSymbol`.
+-- Here specifically: `∫ ‖S(x,y)‖² dμ(y) = ∑ₙ λₙ ‖eₙ(x)‖²` by Parseval against the
+-- orthonormal family `d.orthonormal`, and the right-hand side is `re K(x,x)` by the
+-- diagonal case of `hasSum_kernel`.  (Measurability of `sqrtSymbol d x` also has to be
+-- extracted from the `tsum`, e.g. as an a.e.-limit of the continuous partial sums.)
 theorem isL2Symbol_sqrtSymbol (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure] :
     IsL2Symbol μ (sqrtSymbol d) := by
   sorry
@@ -264,6 +271,10 @@ theorem isL2Symbol_sqrtSymbol (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure]
 theorem memLp_integralOp_sqrtSymbol (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure]
     (g : Lp 𝕜 2 μ) :
     MemLp (integralOp μ (sqrtSymbol d) g) 2 μ := by
+  -- OPEN.  Once `isL2Symbol_sqrtSymbol` is available this is `norm_integralOp_le`
+  -- (IntegralOperator) plus `Lp.norm_le_of_ae_bound`, exactly as in
+  -- `memLp_integralOp_of_continuous` (Mercer/Defs) — but the pointwise bound
+  -- `‖symbolConjLp S x‖ ≤ √(re K(x,x))` again needs the diagonal expansion.
   sorry
 
 variable (hK : IsMercerKernel 𝕜 K) [μ.IsOpenPosMeasure]
@@ -273,6 +284,10 @@ symbol `sqrtSymbol d`, i.e. `T_S g = ∑ₙ √λₙ ⟪eₙ, g⟫ eₙ`. -/
 noncomputable def sqrtCLM : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 2 μ :=
   LinearMap.mkContinuousOfExistsBound
     { toFun := fun g => (memLp_integralOp_sqrtSymbol d hK g).toLp _
+      -- OPEN (all three): the linearity fields are `integralOp_eq_inner` plus
+      -- `inner_add_right`/`inner_smul_right` verbatim as in `mercerCLM` (Mercer/Defs);
+      -- the bound is `‖T_S g‖ ≤ √(sup_x re K(x,x)) · √μ(X) · ‖g‖`.  Both are blocked
+      -- only by `isL2Symbol_sqrtSymbol` above.
       map_add' := by sorry
       map_smul' := by sorry }
     (by sorry)
@@ -284,14 +299,23 @@ theorem sqrtCLM_hasSum (g : Lp 𝕜 2 μ) :
         (⟪ContinuousMap.toLp 2 μ 𝕜 (d.eigfun n), g⟫_𝕜 •
           ContinuousMap.toLp 2 μ 𝕜 (d.eigfun n)))
       (sqrtCLM d hK g) := by
+  -- OPEN.  Same shape as the `key` HasSum inside `isPositive_mercerCLM`
+  -- (Mercer/Basic, PROVED): finite truncations of `sqrtSymbol` give the finite sums, and
+  -- `norm_mercerCLM_le_of_bounded` (Mercer/Compact) transfers the limit — except that
+  -- the truncation error of `sqrtSymbol` is NOT uniform (the square-root symbol need not
+  -- be continuous), so the transfer has to be run in `L²` via `d.orthonormal`.
   sorry
 
 /-- The square root is a positive operator. -/
 theorem sqrtCLM_isPositive : (sqrtCLM d hK).IsPositive := by
+  -- OPEN.  Immediate from `sqrtCLM_hasSum`: `⟪g, T_S g⟫ = ∑ₙ √λₙ ‖⟪eₙ, g⟫‖² ≥ 0`, and
+  -- symmetry by the same uniqueness-of-sums argument used in `isPositive_mercerCLM`.
   sorry
 
 /-- **`T_S` squares to `T_K`**: `T_S ∘ T_S = T_K`. -/
 theorem sqrtCLM_comp_self : (sqrtCLM d hK).comp (sqrtCLM d hK) = mercerCLM μ hKc := by
+  -- OPEN.  From `sqrtCLM_hasSum` twice and `d.opExpansion`: both sides send `g` to
+  -- `∑ₙ λₙ ⟪eₙ, g⟫ eₙ`.  Needs `HasSum.unique` in `L²` plus orthonormality.
   sorry
 
 /-- **`range T_S = H(K)`**: the square-root operator maps `L²(X, μ)` onto exactly the
@@ -301,6 +325,9 @@ theorem range_integralOp_sqrtSymbol_eq
     (hKH : scalarKernel H = K) :
     Set.range (integralOp μ (sqrtSymbol d))
       = Set.range fun f : H => (f : X → 𝕜) := by
+  -- OPEN.  Route: `S □ S* = K` (compute from `sqrtCLM_comp_self` and Hermitian symmetry
+  -- of `S`), so `RangeSpace.lean`'s range space of the symbol `S` is an RKHS with kernel
+  -- `K`; `Uniqueness.range_coe_eq_of_scalarKernel_eq` then transports the range to `H`.
   sorry
 
 /-- **`T_S` is an isometry of `(ker T_K)ᗮ` onto `H(K)`**: for `g ⊥ ker T_K`, the
@@ -310,6 +337,8 @@ theorem sqrtCLM_isometry_on_ker_orthogonal
     (hKH : scalarKernel H = K)
     {g : Lp 𝕜 2 μ} (hg : g ∈ (LinearMap.ker (mercerCLM μ hKc).toLinearMap)ᗮ) :
     ∃ f : H, (f : X → 𝕜) = integralOp μ (sqrtSymbol d) g ∧ ‖f‖ = ‖g‖ := by
+  -- OPEN.  Same route as `range_integralOp_sqrtSymbol_eq`, plus the fact that the range
+  -- space's norm agrees with `‖g‖` on `(ker T_S)ᗮ = (ker T_K)ᗮ` (`rangeSpace_*`).
   sorry
 
 /-- **`{√λₙ eₙ}` is an orthonormal basis of `H(K)`**: the rescaled eigenfunctions are
@@ -322,6 +351,10 @@ theorem exists_orthonormalBasis_sqrt_eigfun
         ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x) ∧
       Orthonormal 𝕜 b ∧
       (Submodule.span 𝕜 (Set.range b)).topologicalClosure = ⊤ := by
+  -- OPEN.  With `hasSum_kernel` the family `{√λₙ eₙ}` expands `K` pointwise, so
+  -- `ParsevalFrame`/`Papadakis` recognizes it as a Parseval frame of `H`; orthonormality
+  -- upgrades it to an orthonormal basis.  Blocked on getting the members into `H`, i.e.
+  -- on `range_integralOp_sqrtSymbol_eq`.
   sorry
 
 /-- **Spectral membership test for `H(K)`**: a function lies in `H(K)` iff it is a
@@ -333,6 +366,9 @@ theorem mem_range_coe_iff_summable
       ↔ ∃ a : d.ι → 𝕜,
           Summable (fun n => ‖a n‖ ^ 2 / d.eigval n) ∧
           ∀ x, HasSum (fun n => a n * d.eigfun n x) (g₀ x) := by
+  -- OPEN.  Immediate from `exists_orthonormalBasis_sqrt_eigfun`: expand `f` in the
+  -- orthonormal basis `{√λₙ eₙ}` and set `aₙ := √λₙ ⟪bₙ, f⟫`, so that
+  -- `∑ₙ ‖aₙ‖²/λₙ = ‖f‖²`.
   sorry
 
 /-- `range T_K ⊆ H(K)`: the (non-square-rooted) Mercer operator maps into the RKHS. -/
@@ -340,6 +376,10 @@ theorem range_mercerCLM_subset
     -- USER-INPUT: `H` has reproducing kernel `K`
     (hKH : scalarKernel H = K) (g : Lp 𝕜 2 μ) :
     ∃ f : H, (f : X → 𝕜) = integralOp μ K g := by
+  -- OPEN.  `T_K = T_S ∘ T_S` (`sqrtCLM_comp_self`), so `range T_K ⊆ range T_S = H(K)`
+  -- by `range_integralOp_sqrtSymbol_eq`.  Alternatively, directly from
+  -- `isMercerKernel_trace_smul_sub_boxProd` (PROVED above) via the Aronszajn domination
+  -- criterion `K □ K ⪯ (∫ K(t,t) dμ) · K`, which is the measure-free route.
   sorry
 
 end SquareRoot
