@@ -175,6 +175,118 @@ theorem IsMA.tendstoInMeasure_inversion [IsProbabilityMeasure μ] {a1 : ℝ} {σ
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
     (fun _ => zero_le _) hbound
 
+/-! ### Lag polynomials acting on processes
+
+The ARIMA composition is the identity `b(B)(1-B)^d Y = b(B) (1-B)^d Y` read off
+coefficientwise. The bookkeeping runs through `papp P n W`, the polynomial `P`
+applied to the process `W` as a lag operator with the sum truncated at order `n`
+(faithful whenever `P.natDegree ≤ n`), and through the single structural step
+`P (1-B) W = P (diff W)`. -/
+
+/-- The coefficients of the AR polynomial `b(z) = 1 - b₁z - ⋯ - b_pz^p`. -/
+private lemma coeff_arPoly {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
+    (arPoly b).coeff m
+      = (if m = 0 then (1 : ℝ) else 0) - ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
+  simp [arPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+    Polynomial.coeff_X_pow, mul_ite]
+
+private lemma coeff_arPoly_zero {p : ℕ} (b : Fin p → ℝ) : (arPoly b).coeff 0 = 1 := by
+  rw [coeff_arPoly]; simp
+
+private lemma coeff_arPoly_succ {p : ℕ} (b : Fin p → ℝ) (j : Fin p) :
+    (arPoly b).coeff ((j : ℕ) + 1) = -(b j) := by
+  rw [coeff_arPoly]
+  simp [Fin.val_eq_val, Finset.sum_ite_eq]
+
+private lemma natDegree_arPoly_le {p : ℕ} (b : Fin p → ℝ) : (arPoly b).natDegree ≤ p := by
+  refine Polynomial.natDegree_le_iff_coeff_eq_zero.mpr fun N hN => ?_
+  rw [coeff_arPoly, if_neg (by omega), zero_sub, neg_eq_zero]
+  refine Finset.sum_eq_zero fun i _ => if_neg ?_
+  have := i.isLt
+  omega
+
+private lemma natDegree_one_sub_X_pow_le (d : ℕ) :
+    ((1 - Polynomial.X : Polynomial ℝ) ^ d).natDegree ≤ d := by
+  have h1 : (1 - Polynomial.X : Polynomial ℝ).natDegree ≤ 1 := by
+    refine (Polynomial.natDegree_sub_le _ _).trans ?_
+    simp
+  simpa using Polynomial.natDegree_pow_le_of_le d h1
+
+private lemma coeff_zero_one_sub_X_pow (d : ℕ) :
+    ((1 - Polynomial.X : Polynomial ℝ) ^ d).coeff 0 = 1 := by
+  simp [Polynomial.coeff_zero_eq_eval_zero]
+
+/-- A polynomial acting on a process as a lag operator, with the sum truncated at
+order `n`: `(P W)_t = Σ_{m ≤ n} P_m W_{t-m}`. -/
+private noncomputable def papp (P : Polynomial ℝ) (n : ℕ) (W : ℤ → Ω → ℝ) (t : ℤ) (ω : Ω) : ℝ :=
+  ∑ m ∈ Finset.range (n + 1), P.coeff m * W (t - (m : ℤ)) ω
+
+omit [MeasurableSpace Ω] in
+/-- The constant term of `papp` split off. -/
+private lemma papp_eq (P : Polynomial ℝ) (n : ℕ) (W : ℤ → Ω → ℝ) (t : ℤ) (ω : Ω) :
+    papp P n W t ω
+      = P.coeff 0 * W t ω + ∑ i : Fin n, P.coeff ((i : ℕ) + 1) * W (t - 1 - (i : ℕ)) ω := by
+  rw [papp, ← Fin.sum_univ_eq_sum_range (fun m => P.coeff m * W (t - (m : ℤ)) ω) (n + 1),
+    Fin.sum_univ_succ]
+  simp only [Fin.val_zero, Nat.cast_zero, sub_zero, Fin.val_succ]
+  congr 1
+  refine Finset.sum_congr rfl fun i _ => ?_
+  have h : t - (((i : ℕ) + 1 : ℕ) : ℤ) = t - 1 - ((i : ℕ) : ℤ) := by push_cast; ring
+  rw [h]
+
+omit [MeasurableSpace Ω] in
+/-- The structural step: multiplying the lag polynomial by `(1 - z)` is differencing
+the process. -/
+private lemma papp_mul_one_sub_X (P : Polynomial ℝ) {n : ℕ} (hn : P.natDegree ≤ n)
+    (W : ℤ → Ω → ℝ) (t : ℤ) (ω : Ω) :
+    papp (P * (1 - Polynomial.X)) (n + 1) W t ω = papp P n (diff W) t ω := by
+  have hc : ∀ k, (P * (1 - Polynomial.X)).coeff k
+      = P.coeff k - (P * Polynomial.X).coeff k := by
+    intro k; rw [mul_sub, mul_one, Polynomial.coeff_sub]
+  have hfirst : ∑ k ∈ Finset.range (n + 1 + 1), P.coeff k * W (t - (k : ℤ)) ω
+      = ∑ m ∈ Finset.range (n + 1), P.coeff m * W (t - (m : ℤ)) ω := by
+    rw [Finset.sum_range_succ, Polynomial.coeff_eq_zero_of_natDegree_lt (by omega),
+      zero_mul, add_zero]
+  have hsecond : ∑ k ∈ Finset.range (n + 1 + 1), (P * Polynomial.X).coeff k * W (t - (k : ℤ)) ω
+      = ∑ m ∈ Finset.range (n + 1), P.coeff m * W (t - (m : ℤ) - 1) ω := by
+    rw [Finset.sum_range_succ']
+    simp only [Polynomial.coeff_mul_X, Polynomial.mul_coeff_zero, Polynomial.coeff_X_zero,
+      mul_zero, zero_mul, add_zero]
+    refine Finset.sum_congr rfl fun m _ => ?_
+    have h : t - (((m : ℕ) + 1 : ℕ) : ℤ) = t - (m : ℤ) - 1 := by push_cast; ring
+    rw [h]
+  simp only [papp, hc, sub_mul, Finset.sum_sub_distrib]
+  rw [hfirst, hsecond, ← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun m _ => ?_
+  simp only [diff]
+  ring
+
+omit [MeasurableSpace Ω] in
+/-- The AR polynomial acting on a process is the ARMA left-hand side. -/
+private lemma papp_arPoly {p : ℕ} (b : Fin p → ℝ) (Z : ℤ → Ω → ℝ) (t : ℤ) (ω : Ω) :
+    papp (arPoly b) p Z t ω = Z t ω - ∑ i : Fin p, b i * Z (t - 1 - (i : ℕ)) ω := by
+  have h : ∀ i : Fin p, (arPoly b).coeff ((i : ℕ) + 1) * Z (t - 1 - (i : ℕ)) ω
+      = -(b i * Z (t - 1 - (i : ℕ)) ω) := by
+    intro i; rw [coeff_arPoly_succ]; ring
+  rw [papp_eq, coeff_arPoly_zero, one_mul, Finset.sum_congr rfl (fun i _ => h i),
+    Finset.sum_neg_distrib]
+  ring
+
+omit [MeasurableSpace Ω] in
+/-- `b(z)(1-z)^d` acting on `Y` is `b(z)` acting on the `d`-fold difference of `Y`. -/
+private lemma papp_arPoly_mul {p : ℕ} (b : Fin p → ℝ) (d : ℕ) (Y : ℤ → Ω → ℝ) (t : ℤ) (ω : Ω) :
+    papp (arPoly b * (1 - Polynomial.X) ^ d) (p + d) Y t ω
+      = papp (arPoly b) p (diff^[d] Y) t ω := by
+  induction d generalizing Y with
+  | zero => simp
+  | succ d ih =>
+    have hdeg : (arPoly b * (1 - Polynomial.X) ^ d).natDegree ≤ p + d :=
+      Polynomial.natDegree_mul_le_of_le (natDegree_arPoly_le b) (natDegree_one_sub_X_pow_le d)
+    have hpoly : (arPoly b * (1 - Polynomial.X) ^ (d + 1))
+        = (arPoly b * (1 - Polynomial.X) ^ d) * (1 - Polynomial.X) := by ring
+    rw [show p + (d + 1) = (p + d) + 1 from rfl, hpoly, papp_mul_one_sub_X _ hdeg, ih,
+      Function.iterate_succ_apply]
+
 /-- **ARIMA(p,d,q) satisfies an ARMA(p+d, q) recurrence** (FY §1.3.5; the book's
 "ARMA(p+d, p)" is a misprint for the MA order `q`): the composed AR coefficients are
 read off `b(z)(1−z)^d`. Nonstationarity of `Y` itself is the typical situation and is
@@ -185,6 +297,21 @@ theorem IsARIMA.satisfiesARMA {p q d : ℕ} {b : Fin p → ℝ} {a : Fin q → �
       (fun i : Fin (p + d) =>
         -((arPoly b * (1 - Polynomial.X) ^ d).coeff ((i : ℕ) + 1)))
       a Y ε μ := by
-  sorry
+  intro t
+  filter_upwards [h.isARMA.recurrence t] with ω hω
+  -- the AR polynomial applied to the differenced process is the innovation side
+  have hP : papp (arPoly b * (1 - Polynomial.X) ^ d) (p + d) Y t ω
+      = ε t ω + ∑ j, a j * ε (t - 1 - (j : ℕ)) ω := by
+    rw [papp_arPoly_mul, papp_arPoly, hω]
+    ring
+  rw [papp_eq, Polynomial.mul_coeff_zero, coeff_arPoly_zero, coeff_zero_one_sub_X_pow,
+    one_mul, one_mul] at hP
+  have hneg : ∑ i : Fin (p + d),
+        -((arPoly b * (1 - Polynomial.X) ^ d).coeff ((i : ℕ) + 1)) * Y (t - 1 - (i : ℕ)) ω
+      = -∑ i : Fin (p + d),
+        (arPoly b * (1 - Polynomial.X) ^ d).coeff ((i : ℕ) + 1) * Y (t - 1 - (i : ℕ)) ω := by
+    simp [neg_mul, Finset.sum_neg_distrib]
+  rw [hneg]
+  linarith [hP]
 
 end StatLean.TimeSeries
