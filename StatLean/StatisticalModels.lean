@@ -31,6 +31,8 @@ import StatLean.StatisticalModels.Coarsening.Ignorability
 import StatLean.StatisticalModels.Coarsening.CARBridge
 import StatLean.StatisticalModels.MixedEffects.Defs
 import StatLean.StatisticalModels.MixedEffects.Marginal
+import StatLean.StatisticalModels.MixedEffects.BLUP
+import StatLean.StatisticalModels.MixedEffects.Henderson
 import StatLean.StatisticalModels.Longitudinal.Defs
 import StatLean.StatisticalModels.Longitudinal.GEE
 import StatLean.StatisticalModels.Longitudinal.Sandwich
