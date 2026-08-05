@@ -711,6 +711,155 @@ private lemma norm_expI_sub_one_le (x : ℝ) :
     rw [hx, hx2]
   nlinarith [hT, h2, sq_nonneg x]
 
+/-- The phase `e^{i v B}` is integrable (unit modulus). -/
+private lemma integrable_expI_block [IsProbabilityMeasure μ] {B : Ω → ℝ}
+    (hB : Measurable B) (v : ℝ) :
+    Integrable (fun ω => Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I)) μ := by
+  have hmf : Measurable fun ω => Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I) :=
+    Complex.measurable_exp.comp ((Complex.measurable_ofReal.comp
+      (measurable_const.mul hB)).mul measurable_const)
+  refine MemLp.integrable (q := ⊤) le_top (memLp_top_of_bound hmf.aestronglyMeasurable 1 ?_)
+  filter_upwards with ω
+  rw [Complex.norm_exp_ofReal_mul_I]
+
+/-- Integrability of the third-order Taylor remainder of `e^{i v B}`. -/
+private lemma integrable_expI_remainder [IsProbabilityMeasure μ] {B : Ω → ℝ}
+    (hB : Measurable B) (hBmem : MemLp B 2 μ) (v : ℝ) :
+    Integrable (fun ω => Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I)
+      - (1 + ((v * B ω : ℝ) : ℂ) * Complex.I - ((v * B ω : ℝ) : ℂ) ^ 2 / 2)) μ := by
+  have hBi : Integrable B μ := hBmem.integrable one_le_two
+  have hB2 : Integrable (fun ω => B ω ^ 2) μ := hBmem.integrable_sq
+  have ha : Integrable (fun _ : Ω => (1 : ℂ)) μ := integrable_const _
+  have hb : Integrable (fun ω => ((v * B ω : ℝ) : ℂ) * Complex.I) μ :=
+    ((hBi.const_mul v).ofReal).mul_const _
+  have hc : Integrable (fun ω => ((v * B ω : ℝ) : ℂ) ^ 2 / 2) μ := by
+    have h0 : Integrable (fun ω => (((v ^ 2 * B ω ^ 2 : ℝ)) : ℂ)) μ :=
+      ((hB2.const_mul (v ^ 2)).ofReal)
+    refine (h0.div_const 2).congr (Eventually.of_forall fun ω => ?_)
+    push_cast
+    ring
+  exact (integrable_expI_block hB v).sub ((ha.add hb).sub hc)
+
+/-- **Block expansion.** For a zero-mean square-integrable `B`,
+`E e^{i v B} − 1 = −(v²/2) E B² + R` with `R` the integrated Taylor remainder. -/
+private lemma charFun_block_expand [IsProbabilityMeasure μ] {B : Ω → ℝ}
+    (hB : Measurable B) (hBmem : MemLp B 2 μ) (hB1 : ∫ ω, B ω ∂μ = 0) (v : ℝ) :
+    (∫ ω, Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I) ∂μ) - 1
+      = -((v ^ 2 / 2 * ∫ ω, B ω ^ 2 ∂μ : ℝ) : ℂ)
+        + ∫ ω, (Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I)
+            - (1 + ((v * B ω : ℝ) : ℂ) * Complex.I - ((v * B ω : ℝ) : ℂ) ^ 2 / 2)) ∂μ := by
+  have hBi : Integrable B μ := hBmem.integrable one_le_two
+  have hB2 : Integrable (fun ω => B ω ^ 2) μ := hBmem.integrable_sq
+  have ha : Integrable (fun _ : Ω => (1 : ℂ)) μ := integrable_const _
+  have hb : Integrable (fun ω => ((v * B ω : ℝ) : ℂ) * Complex.I) μ :=
+    ((hBi.const_mul v).ofReal).mul_const _
+  have hc : Integrable (fun ω => ((v * B ω : ℝ) : ℂ) ^ 2 / 2) μ := by
+    have h0 : Integrable (fun ω => (((v ^ 2 * B ω ^ 2 : ℝ)) : ℂ)) μ :=
+      ((hB2.const_mul (v ^ 2)).ofReal)
+    refine (h0.div_const 2).congr (Eventually.of_forall fun ω => ?_)
+    push_cast
+    ring
+  have hab : Integrable (fun ω => (1 : ℂ) + ((v * B ω : ℝ) : ℂ) * Complex.I) μ := ha.add hb
+  have habc : Integrable (fun ω => (1 : ℂ) + ((v * B ω : ℝ) : ℂ) * Complex.I
+      - ((v * B ω : ℝ) : ℂ) ^ 2 / 2) μ := hab.sub hc
+  have hpoly : ∫ ω, ((1 : ℂ) + ((v * B ω : ℝ) : ℂ) * Complex.I
+      - ((v * B ω : ℝ) : ℂ) ^ 2 / 2) ∂μ = 1 - ((v ^ 2 / 2 * ∫ ω, B ω ^ 2 ∂μ : ℝ) : ℂ) := by
+    have s1 : ∫ ω, ((1 : ℂ) + ((v * B ω : ℝ) : ℂ) * Complex.I
+        - ((v * B ω : ℝ) : ℂ) ^ 2 / 2) ∂μ
+        = (∫ ω, ((1 : ℂ) + ((v * B ω : ℝ) : ℂ) * Complex.I) ∂μ)
+          - ∫ ω, ((v * B ω : ℝ) : ℂ) ^ 2 / 2 ∂μ := integral_sub hab hc
+    have s2 : ∫ ω, ((1 : ℂ) + ((v * B ω : ℝ) : ℂ) * Complex.I) ∂μ
+        = (∫ _ : Ω, (1 : ℂ) ∂μ) + ∫ ω, ((v * B ω : ℝ) : ℂ) * Complex.I ∂μ := integral_add ha hb
+    have e1 : ∫ _ : Ω, (1 : ℂ) ∂μ = 1 := by simp
+    have e2 : ∫ ω, ((v * B ω : ℝ) : ℂ) * Complex.I ∂μ = 0 := by
+      have h1 : ∫ ω, ((v * B ω : ℝ) : ℂ) * Complex.I ∂μ
+          = (∫ ω, ((v * B ω : ℝ) : ℂ) ∂μ) * Complex.I :=
+        integral_mul_const Complex.I (fun ω => ((v * B ω : ℝ) : ℂ))
+      have h2 : ∫ ω, ((v * B ω : ℝ) : ℂ) ∂μ = ((∫ ω, v * B ω ∂μ : ℝ) : ℂ) :=
+        integral_complex_ofReal
+      have h3 : ∫ ω, v * B ω ∂μ = v * ∫ ω, B ω ∂μ := integral_const_mul v B
+      rw [h1, h2, h3, hB1]
+      simp
+    have e3 : ∫ ω, ((v * B ω : ℝ) : ℂ) ^ 2 / 2 ∂μ = ((v ^ 2 / 2 * ∫ ω, B ω ^ 2 ∂μ : ℝ) : ℂ) := by
+      have hcg : ∀ ω : Ω, ((v * B ω : ℝ) : ℂ) ^ 2 / 2 = (((v ^ 2 / 2 * B ω ^ 2 : ℝ)) : ℂ) := by
+        intro ω; push_cast; ring
+      simp_rw [hcg]
+      rw [integral_complex_ofReal, integral_const_mul]
+    rw [s1, s2, e1, e2, e3]
+    ring
+  have s0 : ∫ ω, (Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I)
+      - ((1 : ℂ) + ((v * B ω : ℝ) : ℂ) * Complex.I - ((v * B ω : ℝ) : ℂ) ^ 2 / 2)) ∂μ
+      = (∫ ω, Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I) ∂μ)
+        - ∫ ω, ((1 : ℂ) + ((v * B ω : ℝ) : ℂ) * Complex.I
+            - ((v * B ω : ℝ) : ℂ) ^ 2 / 2) ∂μ :=
+    integral_sub (integrable_expI_block hB v) habc
+  rw [s0, hpoly]
+  ring
+
+/-- **Lindeberg split of the remainder.** -/
+private lemma norm_integral_remainder_le [IsProbabilityMeasure μ] {B : Ω → ℝ}
+    (hB : Measurable B) (hBmem : MemLp B 2 μ) (v : ℝ) {T : ℝ} (hT : 0 ≤ T) :
+    ‖∫ ω, (Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I)
+        - (1 + ((v * B ω : ℝ) : ℂ) * Complex.I - ((v * B ω : ℝ) : ℂ) ^ 2 / 2)) ∂μ‖
+      ≤ 4 * |v| ^ 3 * T * (∫ ω, B ω ^ 2 ∂μ)
+        + 4 * v ^ 2 * ∫ ω in {ω | T ≤ |B ω|}, B ω ^ 2 ∂μ := by
+  classical
+  set g : Ω → ℝ := fun ω => ‖Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I)
+      - (1 + ((v * B ω : ℝ) : ℂ) * Complex.I - ((v * B ω : ℝ) : ℂ) ^ 2 / 2)‖ with hgdef
+  have hrem : Integrable (fun ω => Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I)
+      - (1 + ((v * B ω : ℝ) : ℂ) * Complex.I - ((v * B ω : ℝ) : ℂ) ^ 2 / 2)) μ :=
+    integrable_expI_remainder hB hBmem v
+  have hg : Integrable g μ := hrem.norm
+  have hB2 : Integrable (fun ω => B ω ^ 2) μ := hBmem.integrable_sq
+  set S : Set Ω := {ω | T ≤ |B ω|} with hSdef
+  have hSm : MeasurableSet S := measurableSet_le measurable_const hB.abs
+  have hsplit : ∫ ω, g ω ∂μ = (∫ ω in S, g ω ∂μ) + ∫ ω in Sᶜ, g ω ∂μ :=
+    (integral_add_compl hSm hg).symm
+  -- on `S`: quadratic bound
+  have hS1 : ∫ ω in S, g ω ∂μ ≤ 4 * v ^ 2 * ∫ ω in S, B ω ^ 2 ∂μ := by
+    have hmono : ∫ ω in S, g ω ∂μ ≤ ∫ ω in S, (4 * v ^ 2) * B ω ^ 2 ∂μ := by
+      refine setIntegral_mono_on hg.integrableOn ((hB2.const_mul _).integrableOn) hSm ?_
+      intro ω _
+      have := (norm_expI_taylor (v * B ω)).2
+      calc g ω ≤ 4 * (v * B ω) ^ 2 := this
+        _ = 4 * v ^ 2 * B ω ^ 2 := by ring
+    rw [integral_const_mul] at hmono
+    exact hmono
+  -- on `Sᶜ`: cubic bound
+  have hS2 : ∫ ω in Sᶜ, g ω ∂μ ≤ 4 * |v| ^ 3 * T * ∫ ω, B ω ^ 2 ∂μ := by
+    have hmono : ∫ ω in Sᶜ, g ω ∂μ ≤ ∫ ω in Sᶜ, (4 * |v| ^ 3 * T) * B ω ^ 2 ∂μ := by
+      refine setIntegral_mono_on hg.integrableOn ((hB2.const_mul _).integrableOn) hSm.compl ?_
+      intro ω hω
+      have hlt : |B ω| < T := by
+        simp only [hSdef, Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hω
+        exact hω
+      have h1 := (norm_expI_taylor (v * B ω)).1
+      have habs : |v * B ω| ^ 3 = |v| ^ 3 * |B ω| ^ 3 := by
+        rw [abs_mul, mul_pow]
+      have h3 : |B ω| ^ 3 ≤ T * B ω ^ 2 := by
+        have : |B ω| ^ 3 = |B ω| * B ω ^ 2 := by
+          rw [← sq_abs (B ω)]; ring
+        rw [this]
+        exact mul_le_mul_of_nonneg_right hlt.le (sq_nonneg _)
+      calc g ω ≤ 4 * |v * B ω| ^ 3 := h1
+        _ = 4 * |v| ^ 3 * |B ω| ^ 3 := by rw [habs]; ring
+        _ ≤ 4 * |v| ^ 3 * (T * B ω ^ 2) := by
+            have : (0:ℝ) ≤ 4 * |v| ^ 3 := by positivity
+            exact mul_le_mul_of_nonneg_left h3 this
+        _ = 4 * |v| ^ 3 * T * B ω ^ 2 := by ring
+    rw [integral_const_mul] at hmono
+    refine hmono.trans ?_
+    have hle : ∫ ω in Sᶜ, B ω ^ 2 ∂μ ≤ ∫ ω, B ω ^ 2 ∂μ :=
+      setIntegral_le_integral hB2 (Eventually.of_forall fun ω => sq_nonneg _)
+    have hcnn : (0:ℝ) ≤ 4 * |v| ^ 3 * T := by positivity
+    exact mul_le_mul_of_nonneg_left hle hcnn
+  calc ‖∫ ω, (Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I)
+        - (1 + ((v * B ω : ℝ) : ℂ) * Complex.I - ((v * B ω : ℝ) : ℂ) ^ 2 / 2)) ∂μ‖
+      ≤ ∫ ω, g ω ∂μ := norm_integral_le_integral_norm _
+    _ = (∫ ω in S, g ω ∂μ) + ∫ ω in Sᶜ, g ω ∂μ := hsplit
+    _ ≤ 4 * |v| ^ 3 * T * (∫ ω, B ω ^ 2 ∂μ) + 4 * v ^ 2 * ∫ ω in S, B ω ^ 2 ∂μ := by
+        linarith
+
 /-- **Product-to-exponential comparison.** If `a_n = 1 + z_n` has modulus at most one,
 `Re z_n ≤ 0`, `z_n → 0`, `k_n z_n → w` and `k_n ‖z_n‖² → 0`, then `a_n^{k_n} → e^w`. This
 is the scalar limit that replaces the independent-copy array in the Bernstein scheme:
@@ -1228,19 +1377,227 @@ theorem clt_of_bounded_alphaMixing [IsProbabilityMeasure μ]
       (u * (Real.sqrt n)⁻¹)) ?_
     have hnn : 0 ≤ alphaCoeff X μ (s n) := alphaMixCoeff_nonneg
     nlinarith [hnn]
-  -- ### 6. Gap C (OPEN): `(φ n)^{k_n} → exp(−σ²u²/2)`, then the three-term squeeze
+  -- ### 6. Gap C: the scalar limit `(φ n)^{k_n} → exp(−σ²u²/2)`, then the three-term squeeze
   --
-  -- All the inputs are in place; what remains is the scalar analysis
-  --   `φ n = ∫ exp(i·u n^{-1/2}·B_{l_n})`,  `z n := φ n − 1`,
-  --   `z n = R n − ((u n^{-1/2})² · E B_{l_n}² / 2)`  (mean zero kills the linear term),
-  --   `‖R n‖ ≤ 4 (u n^{-1/2})² E B²`                   (`norm_expI_taylor`, quadratic form),
-  --   `k_n z n → −σ²u²/2`                              (`hkl` + `hblock`, plus
-  --                                                     `lindeberg_blocks_debt` for the
-  --                                                     cubic/quadratic split of `R n`),
-  --   `k_n ‖z n‖² → 0`                                 (`‖z n‖ = O(l_n/n)`, `k_n l_n/n → 1`),
-  -- and then `tendsto_pow_of_tendsto_mul` gives `(φ n)^{k_n} → exp(−σ²u²/2)`; the headline
-  -- follows from `Φ n = (Φ n − Φ' n) + (Φ' n − (φ n)^{k_n}) + (φ n)^{k_n}` with `hA`, `hB`.
-  sorry
+  -- `φ n = E e^{i v_n B_n}` with `v_n = u n^{-1/2}` and `B_n` one big block; mean zero
+  -- kills the linear Taylor term, so `φ n − 1 = −(v_n²/2) E B_n² + R n`. The remainder
+  -- is split at the Lindeberg level `ε √n` (cubic bound below, quadratic bound above).
+  have hBmeas : ∀ n : ℕ, Measurable fun ω => ∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω :=
+    fun n => hSmeas _
+  have hφn : ∀ n : ℕ, φ n = ∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+      ∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω : ℝ) : ℂ) * Complex.I) ∂μ := by
+    intro n; simp only [hφdef]
+  obtain ⟨m2, hm2def⟩ : ∃ m2 : ℕ → ℝ, ∀ n : ℕ, m2 n
+      = ∫ ω, (∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω) ^ 2 ∂μ := ⟨_, fun _ => rfl⟩
+  obtain ⟨R, hRdef⟩ : ∃ R : ℕ → ℂ, ∀ n : ℕ, R n = ∫ ω,
+      (Complex.exp (((u * (Real.sqrt n)⁻¹ *
+          ∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω : ℝ) : ℂ) * Complex.I)
+        - (1 + ((u * (Real.sqrt n)⁻¹ *
+              ∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω : ℝ) : ℂ) * Complex.I
+          - ((u * (Real.sqrt n)⁻¹ *
+              ∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω : ℝ) : ℂ) ^ 2 / 2)) ∂μ :=
+    ⟨_, fun _ => rfl⟩
+  have hm2nn : ∀ n, 0 ≤ m2 n := fun n => by rw [hm2def]; exact hS2nn _
+  have hm2le : ∀ n, m2 n ≤ Λ * (l n : ℝ) := fun n => by
+    rw [hm2def]
+    have h := hS2 (Finset.range (l n))
+    rwa [Finset.card_range] at h
+  -- (a) the block expansion
+  have hexp : ∀ n : ℕ, φ n - 1
+      = -((((u * (Real.sqrt n)⁻¹) ^ 2 / 2 * m2 n : ℝ)) : ℂ) + R n := fun n => by
+    rw [hφn n, hm2def n, hRdef n]
+    exact charFun_block_expand (hBmeas n) (hSmem _ 2) (hS1 _) (u * (Real.sqrt n)⁻¹)
+  -- (b) the crude remainder bound (Lindeberg level `0`)
+  have hRbd0 : ∀ n : ℕ, ‖R n‖ ≤ 4 * (u * (Real.sqrt n)⁻¹) ^ 2 * m2 n := fun n => by
+    rw [hRdef n, hm2def n]
+    have h := norm_integral_remainder_le (B := fun ω => ∑ t ∈ Finset.range (l n),
+      X ((t : ℤ) + 1) ω) (hBmeas n) (hSmem _ 2) (u * (Real.sqrt n)⁻¹) (T := 0) le_rfl
+    have hset : {ω : Ω | (0 : ℝ) ≤ |∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω|} = Set.univ := by
+      ext ω; simp [abs_nonneg]
+    rw [hset, setIntegral_univ] at h
+    simpa using h
+  -- (c) `‖φ n − 1‖ ≤ 5 u² Λ (l_n / n)`
+  have hzbd : ∀ n : ℕ, 1 ≤ n → ‖φ n - 1‖ ≤ 5 * u ^ 2 * Λ * ((l n : ℝ) / (n : ℝ)) := by
+    intro n hn
+    have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hv2 : (u * (Real.sqrt n)⁻¹) ^ 2 = u ^ 2 / (n : ℝ) := by
+      rw [mul_pow, inv_pow, Real.sq_sqrt hn0.le]
+      ring
+    have h4 : (0 : ℝ) ≤ u ^ 2 / (n : ℝ) := by positivity
+    have hnorm1 : ‖(-((((u * (Real.sqrt n)⁻¹) ^ 2 / 2 * m2 n : ℝ)) : ℂ))‖
+        = u ^ 2 / (n : ℝ) / 2 * m2 n := by
+      rw [norm_neg, Complex.norm_real, Real.norm_eq_abs, hv2,
+        abs_of_nonneg (mul_nonneg (by positivity) (hm2nn n))]
+    have h1 : ‖R n‖ ≤ 4 * (u ^ 2 / (n : ℝ)) * m2 n := by
+      have h := hRbd0 n; rwa [hv2] at h
+    have h2 : ‖φ n - 1‖ ≤ u ^ 2 / (n : ℝ) / 2 * m2 n + 4 * (u ^ 2 / (n : ℝ)) * m2 n := by
+      rw [hexp n]
+      refine (norm_add_le _ _).trans ?_
+      rw [hnorm1]
+      linarith
+    have h3 : m2 n ≤ Λ * (l n : ℝ) := hm2le n
+    have hprod : (0 : ℝ) ≤ u ^ 2 * Λ * ((l n : ℝ) / (n : ℝ)) := by
+      refine mul_nonneg (mul_nonneg (sq_nonneg u) hΛ0) ?_
+      positivity
+    calc ‖φ n - 1‖ ≤ u ^ 2 / (n : ℝ) / 2 * m2 n + 4 * (u ^ 2 / (n : ℝ)) * m2 n := h2
+      _ = (9 / 2 * (u ^ 2 / (n : ℝ))) * m2 n := by ring
+      _ ≤ (9 / 2 * (u ^ 2 / (n : ℝ))) * (Λ * (l n : ℝ)) :=
+          mul_le_mul_of_nonneg_left h3 (by positivity)
+      _ = 9 / 2 * (u ^ 2 * Λ * ((l n : ℝ) / (n : ℝ))) := by
+          field_simp
+      _ ≤ 5 * u ^ 2 * Λ * ((l n : ℝ) / (n : ℝ)) := by linarith
+  -- (d) `φ n − 1 → 0`
+  have hz0 : Tendsto (fun n : ℕ => φ n - 1) atTop (𝓝 0) := by
+    have hlim : Tendsto (fun n : ℕ => 5 * u ^ 2 * Λ * ((l n : ℝ) / (n : ℝ))) atTop (𝓝 0) := by
+      simpa using hln0.const_mul (5 * u ^ 2 * Λ)
+    refine squeeze_zero_norm' ?_ hlim
+    filter_upwards [eventually_ge_atTop 1] with n hn using hzbd n hn
+  -- (e) `k_n ‖φ n − 1‖² → 0`
+  have hkb : Tendsto (fun n : ℕ => (k n : ℝ) * ‖φ n - 1‖ ^ 2) atTop (𝓝 0) := by
+    have hlim : Tendsto (fun n : ℕ => (5 * u ^ 2 * Λ) ^ 2 * (((k n * l n : ℕ) : ℝ) / (n : ℝ))
+        * ((l n : ℝ) / (n : ℝ))) atTop (𝓝 0) := by
+      simpa using (hkl.const_mul ((5 * u ^ 2 * Λ) ^ 2)).mul hln0
+    refine squeeze_zero' (Eventually.of_forall fun n => by positivity) ?_ hlim
+    filter_upwards [eventually_ge_atTop 1] with n hn
+    have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hne : (n : ℝ) ≠ 0 := ne_of_gt hn0
+    have hsq : ‖φ n - 1‖ ^ 2 ≤ (5 * u ^ 2 * Λ * ((l n : ℝ) / (n : ℝ))) ^ 2 :=
+      pow_le_pow_left₀ (norm_nonneg _) (hzbd n hn) 2
+    calc (k n : ℝ) * ‖φ n - 1‖ ^ 2
+        ≤ (k n : ℝ) * (5 * u ^ 2 * Λ * ((l n : ℝ) / (n : ℝ))) ^ 2 :=
+          mul_le_mul_of_nonneg_left hsq (Nat.cast_nonneg _)
+      _ = (5 * u ^ 2 * Λ) ^ 2 * (((k n * l n : ℕ) : ℝ) / (n : ℝ)) * ((l n : ℝ) / (n : ℝ)) := by
+          push_cast
+          field_simp
+  -- (f) `k_n E B_n² / n → σ²`
+  have hkm2 : Tendsto (fun n : ℕ => (k n : ℝ) * m2 n / (n : ℝ)) atTop (𝓝 σ2) := by
+    have hblock' : Tendsto (fun n : ℕ => ((l n : ℝ))⁻¹ * m2 n) atTop (𝓝 σ2) := by
+      simpa only [hm2def] using hblock
+    have hprod : Tendsto (fun n : ℕ => ((k n * l n : ℕ) : ℝ) / (n : ℝ)
+        * (((l n : ℝ))⁻¹ * m2 n)) atTop (𝓝 (1 * σ2)) := hkl.mul hblock'
+    rw [one_mul] at hprod
+    refine hprod.congr' ?_
+    filter_upwards [eventually_ge_atTop 1] with n hn
+    have hl0 : (0 : ℝ) < (l n : ℝ) := by exact_mod_cast hl1 n
+    have hlne : (l n : ℝ) ≠ 0 := ne_of_gt hl0
+    push_cast
+    field_simp
+  -- (g) the Lindeberg-split remainder limit `k_n ‖R n‖ → 0`
+  have hkR : Tendsto (fun n : ℕ => (k n : ℝ) * ‖R n‖) atTop (𝓝 0) := by
+    refine NormedAddGroup.tendsto_nhds_zero.2 fun δ hδ => ?_
+    obtain ⟨ε, hε0, hεlt⟩ : ∃ ε : ℝ, 0 < ε ∧ 4 * |u| ^ 3 * ε * σ2 < δ := by
+      refine ⟨δ / (8 * (|u| ^ 3 + 1) * (σ2 + 1)), by positivity, ?_⟩
+      have hA1 : (0 : ℝ) < |u| ^ 3 + 1 := by positivity
+      have hA2 : (0 : ℝ) < σ2 + 1 := by linarith
+      have hkey : 4 * |u| ^ 3 * (δ / (8 * (|u| ^ 3 + 1) * (σ2 + 1))) * σ2
+          = δ * ((4 * |u| ^ 3 * σ2) / (8 * (|u| ^ 3 + 1) * (σ2 + 1))) := by
+        field_simp
+      rw [hkey]
+      have hfrac : (4 * |u| ^ 3 * σ2) / (8 * (|u| ^ 3 + 1) * (σ2 + 1)) ≤ 1 / 2 := by
+        rw [div_le_iff₀ (by positivity)]
+        nlinarith [pow_nonneg (abs_nonneg u) 3, hσ.le]
+      nlinarith [hδ]
+    have hJ := lindeberg_blocks_debt hmeas hstat hbdd hmean hα l hl1 hln0 hε0
+    have hglim : Tendsto (fun n : ℕ => 4 * |u| ^ 3 * ε * ((k n : ℝ) * m2 n / (n : ℝ))
+        + 4 * u ^ 2 * (((k n * l n : ℕ) : ℝ) / (n : ℝ) * (((l n : ℝ))⁻¹ *
+          ∫ ω in {ω | ε * Real.sqrt n ≤ |∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω|},
+            (∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω) ^ 2 ∂μ)))
+        atTop (𝓝 (4 * |u| ^ 3 * ε * σ2)) := by
+      have h1 := hkm2.const_mul (4 * |u| ^ 3 * ε)
+      have h2 := (hkl.mul hJ).const_mul (4 * u ^ 2)
+      simpa using h1.add h2
+    filter_upwards [hglim.eventually_lt_const hεlt, eventually_ge_atTop 1] with n hlt hn
+    have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hne : (n : ℝ) ≠ 0 := ne_of_gt hn0
+    have hs0 : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hn0
+    have hsne : Real.sqrt (n : ℝ) ≠ 0 := ne_of_gt hs0
+    have hl0 : (0 : ℝ) < (l n : ℝ) := by exact_mod_cast hl1 n
+    have hlne : (l n : ℝ) ≠ 0 := ne_of_gt hl0
+    have hT : (0 : ℝ) ≤ ε * Real.sqrt (n : ℝ) := by positivity
+    have hbd := norm_integral_remainder_le (B := fun ω => ∑ t ∈ Finset.range (l n),
+      X ((t : ℤ) + 1) ω) (hBmeas n) (hSmem _ 2) (u * (Real.sqrt n)⁻¹) hT
+    rw [← hRdef n, ← hm2def n] at hbd
+    have h3 : (Real.sqrt (n : ℝ)) ^ 3 = (n : ℝ) * Real.sqrt (n : ℝ) := by
+      rw [pow_succ, Real.sq_sqrt hn0.le]
+    have habs : 4 * |u * (Real.sqrt (n : ℝ))⁻¹| ^ 3 * (ε * Real.sqrt (n : ℝ))
+        = 4 * (|u| ^ 3 * ε / (n : ℝ)) := by
+      rw [abs_mul, abs_inv, abs_of_nonneg (Real.sqrt_nonneg _), mul_pow, inv_pow, h3]
+      field_simp
+    have hv2 : (u * (Real.sqrt (n : ℝ))⁻¹) ^ 2 = u ^ 2 / (n : ℝ) := by
+      rw [mul_pow, inv_pow, Real.sq_sqrt hn0.le]
+      ring
+    rw [habs, hv2] at hbd
+    have hk0 : (0 : ℝ) ≤ (k n : ℝ) := Nat.cast_nonneg _
+    have hstep := mul_le_mul_of_nonneg_left hbd hk0
+    have heq : (k n : ℝ) * (4 * (|u| ^ 3 * ε / (n : ℝ)) * m2 n
+          + 4 * (u ^ 2 / (n : ℝ)) *
+            ∫ ω in {ω | ε * Real.sqrt n ≤ |∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω|},
+              (∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω) ^ 2 ∂μ)
+        = 4 * |u| ^ 3 * ε * ((k n : ℝ) * m2 n / (n : ℝ))
+          + 4 * u ^ 2 * (((k n * l n : ℕ) : ℝ) / (n : ℝ) * (((l n : ℝ))⁻¹ *
+            ∫ ω in {ω | ε * Real.sqrt n ≤ |∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω|},
+              (∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω) ^ 2 ∂μ)) := by
+      push_cast
+      field_simp
+    rw [heq] at hstep
+    have hRnn : (0 : ℝ) ≤ (k n : ℝ) * ‖R n‖ := mul_nonneg hk0 (norm_nonneg _)
+    rw [Real.norm_eq_abs, abs_of_nonneg hRnn]
+    exact lt_of_le_of_lt hstep hlt
+  -- (h) `k_n (φ n − 1) → −σ²u²/2`
+  have hkz : Tendsto (fun n : ℕ => (k n : ℂ) * (φ n - 1)) atTop
+      (𝓝 (-((σ2 : ℂ) * (u : ℂ) ^ 2 / 2))) := by
+    have hmain : Tendsto (fun n : ℕ => (-(((u ^ 2 / 2) * ((k n : ℝ) * m2 n / (n : ℝ)) : ℝ) : ℂ)))
+        atTop (𝓝 (-(((u ^ 2 / 2) * σ2 : ℝ) : ℂ))) :=
+      (((Complex.continuous_ofReal.tendsto _).comp (hkm2.const_mul (u ^ 2 / 2)))).neg
+    have hrem : Tendsto (fun n : ℕ => (k n : ℂ) * R n) atTop (𝓝 0) := by
+      refine squeeze_zero_norm ?_ hkR
+      intro n
+      rw [norm_mul, Complex.norm_natCast]
+    have hsum := hmain.add hrem
+    rw [add_zero] at hsum
+    have heqlim : (-(((u ^ 2 / 2) * σ2 : ℝ) : ℂ)) = -((σ2 : ℂ) * (u : ℂ) ^ 2 / 2) := by
+      push_cast
+      ring
+    rw [heqlim] at hsum
+    refine hsum.congr' ?_
+    filter_upwards [eventually_ge_atTop 1] with n hn
+    have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hv2 : (u * (Real.sqrt (n : ℝ))⁻¹) ^ 2 = u ^ 2 / (n : ℝ) := by
+      rw [mul_pow, inv_pow, Real.sq_sqrt hn0.le]
+      ring
+    have hne : (n : ℝ) ≠ 0 := ne_of_gt hn0
+    rw [hexp n, hv2]
+    push_cast
+    field_simp
+  -- (i) the power
+  have hpow : Tendsto (fun n : ℕ => (φ n) ^ (k n)) atTop
+      (𝓝 (Complex.exp (-((σ2 : ℂ) * (u : ℂ) ^ 2 / 2)))) := by
+    have hz1 : ∀ n : ℕ, ‖1 + (φ n - 1)‖ ≤ 1 := by
+      intro n
+      have hfold : (1 : ℂ) + (φ n - 1) = φ n := by ring
+      rw [hfold, hφn n]
+      refine (norm_integral_le_integral_norm _).trans ?_
+      have hpt : ∀ ω : Ω, ‖Complex.exp (((u * (Real.sqrt n)⁻¹ *
+          ∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω : ℝ) : ℂ) * Complex.I)‖ = 1 :=
+        fun ω => Complex.norm_exp_ofReal_mul_I _
+      simp only [hpt]
+      simp
+    have hzre : ∀ n : ℕ, (φ n - 1).re ≤ 0 := by
+      intro n
+      have h := hz1 n
+      have hfold : (1 : ℂ) + (φ n - 1) = φ n := by ring
+      rw [hfold] at h
+      have h2 : (φ n).re ≤ ‖φ n‖ := Complex.re_le_norm _
+      simp only [Complex.sub_re, Complex.one_re]
+      linarith
+    refine (tendsto_pow_of_tendsto_mul hz1 hzre hz0 hkz hkb).congr fun n => ?_
+    congr 1
+    ring
+  -- (j) the three-term squeeze
+  have hfin := (hA.add hB).add hpow
+  rw [zero_add, zero_add] at hfin
+  refine hfin.congr fun n => ?_
+  ring
 
 /-- **DEBT (Bosq 1998 §1.5; FY Theorem 2.20(i))**: the `δ`-moment version of the
 variance rate: `E|X|^δ < ∞` (δ > 2) and `Σ_j α(j)^{1−2/δ} < ∞` suffice. -/
