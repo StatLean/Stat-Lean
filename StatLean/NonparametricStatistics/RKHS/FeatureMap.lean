@@ -42,9 +42,9 @@ theorem IsKernelFun.exists_featureMap {K : X → X → 𝕜} (hK : IsKernelFun K
       (φ : X → L'), K = featureKernel 𝕜 φ := by
   sorry
 
+variable (𝕜) in
 /-- The predictor class of a feature map: functions of the form `x ↦ ⟪φ x, w⟫` for
 `w ∈ L` — the "linear functionals in feature space". -/
-variable (𝕜) in
 def featurePredictor (φ : X → L) (w : L) : X → 𝕜 := fun x => ⟪φ x, w⟫_𝕜
 
 /-- Predictors are pointwise-bounded by the kernel diagonal:
