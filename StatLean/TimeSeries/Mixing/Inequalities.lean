@@ -1,6 +1,9 @@
 import StatLean.TimeSeries.Mixing.Defs
 import StatLean.TimeSeries.Process.Stationary
 import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
+import Mathlib.MeasureTheory.Integral.MeanInequalities
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
 # Covariance and moment inequalities under mixing (FY §2.6.2, pp. 71–73)
@@ -68,6 +71,93 @@ section TwoAlgebras
 
 variable {Ω : Type*}
 
+/-- Every element of the α description set is dominated by `α` itself: the description set
+is bounded above by `1` on a probability space, so `le_csSup` applies. -/
+private lemma le_alphaMixCoeff_of_measurableSet {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] {A B : Set Ω} (hA : MeasurableSet[m₁] A)
+    (hB : MeasurableSet[m₂] B) :
+    |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal| ≤ alphaMixCoeff μ m₁ m₂ := by
+  refine le_csSup ⟨1, ?_⟩ ⟨A, B, hA, hB, rfl⟩
+  rintro r ⟨A', B', -, -, rfl⟩
+  have h1 : (μ (A' ∩ B')).toReal ≤ 1 := measureReal_le_one
+  have h2 : (μ A').toReal ≤ 1 := measureReal_le_one
+  have h3 : (μ B').toReal ≤ 1 := measureReal_le_one
+  have h4 : (0:ℝ) ≤ (μ (A' ∩ B')).toReal := ENNReal.toReal_nonneg
+  have h5 : (0:ℝ) ≤ (μ A').toReal := ENNReal.toReal_nonneg
+  have h6 : (0:ℝ) ≤ (μ B').toReal := ENNReal.toReal_nonneg
+  rw [abs_le]
+  refine ⟨by nlinarith, by nlinarith⟩
+
+/-- The peeling step behind Billingsley's inequality: if the `m`-set discrepancies of `ψ`
+are bounded by `K`, then `ψ` decorrelates from every `m`-measurable `φ` bounded by `C`,
+with constant `2 C K`.
+
+Proof: `∫ φ ψ = ∫ φ · E[ψ | m]` (pull-out property), so the left-hand side is
+`∫ φ · W` with `W = E[ψ | m] − E ψ`; then `|∫ φ W| ≤ C ∫ |W|` and, splitting `Ω` at the
+`m`-measurable sign event of `W`, `∫ |W| = ∫_A W − ∫_{Aᶜ} W ≤ 2 K` by hypothesis. -/
+private lemma abs_integral_mul_sub_le_of_setIntegral_bound
+    {m mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbabilityMeasure μ] (hm : m ≤ mΩ)
+    {φ ψ : Ω → ℝ} {C K : ℝ}
+    (hφ : StronglyMeasurable[m] φ) (hφC : ∀ᵐ ω ∂μ, |φ ω| ≤ C)
+    (hψ : Integrable ψ μ)
+    (hK : ∀ A : Set Ω, MeasurableSet[m] A →
+      |(∫ ω in A, ψ ω ∂μ) - (∫ ω, ψ ω ∂μ) * (μ A).toReal| ≤ K) :
+    |(∫ ω, φ ω * ψ ω ∂μ) - (∫ ω, φ ω ∂μ) * ∫ ω, ψ ω ∂μ| ≤ 2 * C * K := by
+  have hC : 0 ≤ C := le_trans (abs_nonneg _) hφC.exists.choose_spec
+  have hφn : ∀ᵐ ω ∂μ, ‖φ ω‖ ≤ C := by simpa [Real.norm_eq_abs] using hφC
+  have hφ' : StronglyMeasurable φ := hφ.mono hm
+  have hφint : Integrable φ μ :=
+    (memLp_top_of_bound hφ'.aestronglyMeasurable C hφn).integrable le_top
+  set c : ℝ := ∫ ω, ψ ω ∂μ with hcdef
+  set W : Ω → ℝ := fun ω => (μ[ψ|m]) ω - c with hWdef
+  have hWm : StronglyMeasurable[m] W := stronglyMeasurable_condExp.sub stronglyMeasurable_const
+  have hWint : Integrable W μ := integrable_condExp.sub (integrable_const c)
+  have hpull : ∫ ω, φ ω * ψ ω ∂μ = ∫ ω, φ ω * (μ[ψ|m]) ω ∂μ := by
+    have h1 : μ[φ * ψ|m] =ᵐ[μ] φ * μ[ψ|m] :=
+      condExp_stronglyMeasurable_mul_of_bound hm hφ hψ C hφn
+    calc ∫ ω, φ ω * ψ ω ∂μ = ∫ ω, (μ[φ * ψ|m]) ω ∂μ := (integral_condExp hm).symm
+      _ = ∫ ω, (φ * μ[ψ|m]) ω ∂μ := integral_congr_ae h1
+      _ = ∫ ω, φ ω * (μ[ψ|m]) ω ∂μ := rfl
+  have hkey : (∫ ω, φ ω * ψ ω ∂μ) - (∫ ω, φ ω ∂μ) * c = ∫ ω, φ ω * W ω ∂μ := by
+    rw [hpull]
+    have h : ∀ ω, φ ω * W ω = φ ω * (μ[ψ|m]) ω - φ ω * c := by intro ω; ring
+    simp_rw [h]
+    rw [integral_sub (integrable_condExp.bdd_mul hφ'.aestronglyMeasurable hφn)
+      (hφint.mul_const c), integral_mul_const]
+  have hsetW : ∀ A : Set Ω, MeasurableSet[m] A →
+      ∫ ω in A, W ω ∂μ = (∫ ω in A, ψ ω ∂μ) - c * (μ A).toReal := by
+    intro A hA
+    rw [hWdef]
+    rw [integral_sub (integrable_condExp.restrict) (integrable_const c),
+      setIntegral_condExp hm hψ hA, setIntegral_const, smul_eq_mul, mul_comm]
+    rfl
+  set A : Set Ω := {ω | 0 ≤ W ω} with hAdef
+  have hA : MeasurableSet[m] A := hWm.measurable measurableSet_Ici
+  have hsplit : ∫ ω, |W ω| ∂μ = (∫ ω in A, W ω ∂μ) - ∫ ω in Aᶜ, W ω ∂μ := by
+    have h1 : ∫ ω in A, |W ω| ∂μ = ∫ ω in A, W ω ∂μ :=
+      setIntegral_congr_fun (hm A hA) fun x hx => abs_of_nonneg hx
+    have h2 : ∫ ω in Aᶜ, |W ω| ∂μ = -∫ ω in Aᶜ, W ω ∂μ := by
+      rw [← integral_neg]
+      exact setIntegral_congr_fun (hm A hA).compl fun x hx => abs_of_neg (not_le.mp hx)
+    rw [← integral_add_compl (hm A hA) hWint.abs, h1, h2]
+    ring
+  have hbd1 : |∫ ω in A, W ω ∂μ| ≤ K := by rw [hsetW A hA]; exact hK A hA
+  have hbd2 : |∫ ω in Aᶜ, W ω ∂μ| ≤ K := by rw [hsetW _ hA.compl]; exact hK _ hA.compl
+  have hW2K : ∫ ω, |W ω| ∂μ ≤ 2 * K := by
+    rw [hsplit]
+    linarith [(abs_le.mp hbd1).2, (abs_le.mp hbd2).1]
+  rw [hkey]
+  calc |∫ ω, φ ω * W ω ∂μ| ≤ ∫ ω, |φ ω * W ω| ∂μ := abs_integral_le_integral_abs
+    _ ≤ ∫ ω, C * |W ω| ∂μ := by
+        refine integral_mono_ae ((hWint.bdd_mul hφ'.aestronglyMeasurable hφn).abs)
+          (hWint.abs.const_mul C) ?_
+        filter_upwards [hφC] with ω hω
+        rw [abs_mul]
+        exact mul_le_mul_of_nonneg_right hω (abs_nonneg _)
+    _ = C * ∫ ω, |W ω| ∂μ := integral_const_mul _ _
+    _ ≤ C * (2 * K) := mul_le_mul_of_nonneg_left hW2K hC
+    _ = 2 * C * K := by ring
+
 /-- **FY Proposition 2.5(ii) (Billingsley)**: `m₁`/`m₂`-measurable bounded factors have
 covariance at most `4 α C₁ C₂`. -/
 theorem abs_covariance_le_of_bounded {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
@@ -77,7 +167,85 @@ theorem abs_covariance_le_of_bounded {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : 
     -- USER-INPUT: uniform bounds; FY Prop 2.5(ii)
     (hfC : ∀ᵐ ω ∂μ, |f ω| ≤ C₁) (hgC : ∀ᵐ ω ∂μ, |g ω| ≤ C₂) :
     |cov[f, g; μ]| ≤ 4 * alphaMixCoeff μ m₁ m₂ * C₁ * C₂ := by
-  sorry
+  set α := alphaMixCoeff μ m₁ m₂ with hα
+  have hC₁ : 0 ≤ C₁ := le_trans (abs_nonneg _) hfC.exists.choose_spec
+  have hC₂ : 0 ≤ C₂ := le_trans (abs_nonneg _) hgC.exists.choose_spec
+  have hfsm : StronglyMeasurable[m₁] f := hf.stronglyMeasurable
+  have hgsm : StronglyMeasurable[m₂] g := hg.stronglyMeasurable
+  have hfn : ∀ᵐ ω ∂μ, ‖f ω‖ ≤ C₁ := by simpa [Real.norm_eq_abs] using hfC
+  have hgn : ∀ᵐ ω ∂μ, ‖g ω‖ ≤ C₂ := by simpa [Real.norm_eq_abs] using hgC
+  have hfLp : MemLp f 2 μ :=
+    (memLp_top_of_bound (hfsm.mono h₁).aestronglyMeasurable C₁ hfn).mono_exponent le_top
+  have hgLp : MemLp g 2 μ :=
+    (memLp_top_of_bound (hgsm.mono h₂).aestronglyMeasurable C₂ hgn).mono_exponent le_top
+  have hfint : Integrable f μ := hfLp.integrable one_le_two
+  -- Step A: peel `f` against an arbitrary `m₂`-event; the discrepancies are the α set.
+  have hstepA : ∀ B : Set Ω, MeasurableSet[m₂] B →
+      |(∫ ω in B, f ω ∂μ) - (∫ ω, f ω ∂μ) * (μ B).toReal| ≤ 2 * C₁ * α := by
+    intro B hB
+    have hBΩ : MeasurableSet B := h₂ B hB
+    have hind : Integrable (B.indicator (1 : Ω → ℝ)) μ :=
+      (integrable_const (1 : ℝ)).indicator hBΩ
+    have h := abs_integral_mul_sub_le_of_setIntegral_bound (m := m₁) (mΩ := mΩ) h₁
+      hfsm hfC hind (K := α) ?_
+    · have e1 : ∫ ω, f ω * B.indicator (1 : Ω → ℝ) ω ∂μ = ∫ ω in B, f ω ∂μ := by
+        rw [← integral_indicator hBΩ]
+        congr 1 with ω
+        by_cases hω : ω ∈ B <;> simp [Set.indicator_of_mem, Set.indicator_of_notMem, hω]
+      have e2 : ∫ ω, B.indicator (1 : Ω → ℝ) ω ∂μ = (μ B).toReal := by
+        rw [integral_indicator hBΩ]
+        simp [measureReal_def]
+      rw [e1, e2] at h
+      exact h
+    · intro A hA
+      have e3 : ∫ ω in A, B.indicator (1 : Ω → ℝ) ω ∂μ = (μ (A ∩ B)).toReal := by
+        rw [setIntegral_indicator hBΩ]
+        simp [measureReal_def]
+      have e4 : ∫ ω, B.indicator (1 : Ω → ℝ) ω ∂μ = (μ B).toReal := by
+        rw [integral_indicator hBΩ]
+        simp [measureReal_def]
+      rw [e3, e4, mul_comm ((μ B).toReal) ((μ A).toReal)]
+      exact le_alphaMixCoeff_of_measurableSet (mΩ := mΩ) (μ := μ) hA hB
+  -- Step B: peel `g` against `f`, feeding Step A as the discrepancy bound.
+  have hstepB := abs_integral_mul_sub_le_of_setIntegral_bound (m := m₂) (mΩ := mΩ) h₂
+    hgsm hgC hfint (K := 2 * C₁ * α) hstepA
+  rw [covariance_eq_sub hfLp hgLp]
+  have e5 : ∫ ω, g ω * f ω ∂μ = ∫ ω, f ω * g ω ∂μ := by simp_rw [mul_comm]
+  rw [e5] at hstepB
+  have e6 : (∫ ω, f ω * g ω ∂μ) - (∫ ω, g ω ∂μ) * ∫ ω, f ω ∂μ
+      = μ[f * g] - μ[f] * μ[g] := by
+    simp only [Pi.mul_apply]
+    ring
+  rw [e6] at hstepB
+  calc |μ[f * g] - μ[f] * μ[g]| ≤ 2 * C₂ * (2 * C₁ * α) := hstepB
+    _ = 4 * α * C₁ * C₂ := by ring
+
+/-- Billingsley's inequality in the `E[fg] − Ef·Eg` form (the shape the complex and
+Volkonskii–Rozanov arguments consume). -/
+private lemma abs_integral_mul_sub_mul_le_of_bounded {m₁ m₂ mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ)
+    {f g : Ω → ℝ} (hf : Measurable[m₁] f) (hg : Measurable[m₂] g) {C₁ C₂ : ℝ}
+    (hfC : ∀ᵐ ω ∂μ, |f ω| ≤ C₁) (hgC : ∀ᵐ ω ∂μ, |g ω| ≤ C₂) :
+    |(∫ ω, f ω * g ω ∂μ) - (∫ ω, f ω ∂μ) * ∫ ω, g ω ∂μ|
+      ≤ 4 * alphaMixCoeff μ m₁ m₂ * C₁ * C₂ := by
+  have hfn : ∀ᵐ ω ∂μ, ‖f ω‖ ≤ C₁ := by simpa [Real.norm_eq_abs] using hfC
+  have hgn : ∀ᵐ ω ∂μ, ‖g ω‖ ≤ C₂ := by simpa [Real.norm_eq_abs] using hgC
+  have hfLp : MemLp f 2 μ :=
+    (memLp_top_of_bound ((hf.stronglyMeasurable.mono h₁)).aestronglyMeasurable C₁ hfn).mono_exponent
+      le_top
+  have hgLp : MemLp g 2 μ :=
+    (memLp_top_of_bound ((hg.stronglyMeasurable.mono h₂)).aestronglyMeasurable C₂ hgn).mono_exponent
+      le_top
+  have h := abs_covariance_le_of_bounded h₁ h₂ hf hg hfC hgC
+  rwa [covariance_eq_sub hfLp hgLp] at h
+
+private lemma abs_comb_le {x y z w K : ℝ} (hx : |x| ≤ K) (hy : |y| ≤ K) (hz : |z| ≤ K)
+    (hw : |w| ≤ K) : |x - y| + |z + w| ≤ 4 * K := by
+  have h1 : |x - y| ≤ |x| + |y| := by
+    have h := abs_add_le x (-y)
+    rwa [abs_neg, ← sub_eq_add_neg] at h
+  have h2 : |z + w| ≤ |z| + |w| := abs_add_le z w
+  linarith
 
 /-- **Complex Billingsley** (FY §2.6.2, constant 16): unit-modulus-bounded complex
 factors. Stated with the real-bilinear covariance
@@ -90,10 +258,212 @@ theorem norm_covariance_le_of_bounded_complex {m₁ m₂ mΩ : MeasurableSpace �
     (hfC : ∀ᵐ ω ∂μ, ‖f ω‖ ≤ C₁) (hgC : ∀ᵐ ω ∂μ, ‖g ω‖ ≤ C₂) :
     ‖(∫ ω, f ω * g ω ∂μ) - (∫ ω, f ω ∂μ) * ∫ ω, g ω ∂μ‖
       ≤ 16 * alphaMixCoeff μ m₁ m₂ * C₁ * C₂ := by
-  sorry
+  have hre : Measurable (Complex.re) := Complex.continuous_re.measurable
+  have him : Measurable (Complex.im) := Complex.continuous_im.measurable
+  have hf₁ : Measurable[m₁] fun ω => (f ω).re := hre.comp hf
+  have hf₂ : Measurable[m₁] fun ω => (f ω).im := him.comp hf
+  have hg₁ : Measurable[m₂] fun ω => (g ω).re := hre.comp hg
+  have hg₂ : Measurable[m₂] fun ω => (g ω).im := him.comp hg
+  have hf₁C : ∀ᵐ ω ∂μ, |(f ω).re| ≤ C₁ := by
+    filter_upwards [hfC] with ω hω using (Complex.abs_re_le_norm _).trans hω
+  have hf₂C : ∀ᵐ ω ∂μ, |(f ω).im| ≤ C₁ := by
+    filter_upwards [hfC] with ω hω using (Complex.abs_im_le_norm _).trans hω
+  have hg₁C : ∀ᵐ ω ∂μ, |(g ω).re| ≤ C₂ := by
+    filter_upwards [hgC] with ω hω using (Complex.abs_re_le_norm _).trans hω
+  have hg₂C : ∀ᵐ ω ∂μ, |(g ω).im| ≤ C₂ := by
+    filter_upwards [hgC] with ω hω using (Complex.abs_im_le_norm _).trans hω
+  -- integrability
+  have hfsm : StronglyMeasurable f := (hf.mono h₁ le_rfl).stronglyMeasurable
+  have hf₁' : StronglyMeasurable fun ω => (f ω).re := (hf₁.mono h₁ le_rfl).stronglyMeasurable
+  have hf₂' : StronglyMeasurable fun ω => (f ω).im := (hf₂.mono h₁ le_rfl).stronglyMeasurable
+  have hg₁' : StronglyMeasurable fun ω => (g ω).re := (hg₁.mono h₂ le_rfl).stronglyMeasurable
+  have hg₂' : StronglyMeasurable fun ω => (g ω).im := (hg₂.mono h₂ le_rfl).stronglyMeasurable
+  have hgsm : StronglyMeasurable g := (hg.mono h₂ le_rfl).stronglyMeasurable
+  have hfint : Integrable f μ :=
+    (memLp_top_of_bound hfsm.aestronglyMeasurable C₁ hfC).integrable le_top
+  have hgint : Integrable g μ :=
+    (memLp_top_of_bound hgsm.aestronglyMeasurable C₂ hgC).integrable le_top
+  have hfgint : Integrable (fun ω => f ω * g ω) μ :=
+    hgint.bdd_mul hfsm.aestronglyMeasurable hfC
+  have hcre : ∀ {F : Ω → ℂ}, Integrable F μ → (∫ ω, F ω ∂μ).re = ∫ ω, (F ω).re ∂μ := by
+    intro F hF
+    simpa using (integral_re hF).symm
+  have hcim : ∀ {F : Ω → ℂ}, Integrable F μ → (∫ ω, F ω ∂μ).im = ∫ ω, (F ω).im ∂μ := by
+    intro F hF
+    simpa using (integral_im hF).symm
+  have hint₁ : Integrable (fun ω => (f ω).re) μ :=
+    (memLp_top_of_bound (hf₁').aestronglyMeasurable C₁
+      (by simpa [Real.norm_eq_abs] using hf₁C)).integrable le_top
+  have hint₂ : Integrable (fun ω => (f ω).im) μ :=
+    (memLp_top_of_bound (hf₂').aestronglyMeasurable C₁
+      (by simpa [Real.norm_eq_abs] using hf₂C)).integrable le_top
+  have hint₃ : Integrable (fun ω => (g ω).re) μ :=
+    (memLp_top_of_bound (hg₁').aestronglyMeasurable C₂
+      (by simpa [Real.norm_eq_abs] using hg₁C)).integrable le_top
+  have hint₄ : Integrable (fun ω => (g ω).im) μ :=
+    (memLp_top_of_bound (hg₂').aestronglyMeasurable C₂
+      (by simpa [Real.norm_eq_abs] using hg₂C)).integrable le_top
+  have hprod : ∀ {u v : Ω → ℝ} {D : ℝ}, StronglyMeasurable u → Integrable v μ →
+      (∀ᵐ ω ∂μ, |u ω| ≤ D) → Integrable (fun ω => u ω * v ω) μ := by
+    intro u v D hu hv hb
+    exact hv.bdd_mul hu.aestronglyMeasurable (by simpa [Real.norm_eq_abs] using hb)
+  have e11 : Integrable (fun ω => (f ω).re * (g ω).re) μ := hprod hf₁' hint₃ hf₁C
+  have e22 : Integrable (fun ω => (f ω).im * (g ω).im) μ := hprod hf₂' hint₄ hf₂C
+  have e12 : Integrable (fun ω => (f ω).re * (g ω).im) μ := hprod hf₁' hint₄ hf₁C
+  have e21 : Integrable (fun ω => (f ω).im * (g ω).re) μ := hprod hf₂' hint₃ hf₂C
+  -- real and imaginary parts of the complex covariance
+  have hRe : ((∫ ω, f ω * g ω ∂μ) - (∫ ω, f ω ∂μ) * ∫ ω, g ω ∂μ).re
+      = ((∫ ω, (f ω).re * (g ω).re ∂μ) - (∫ ω, (f ω).re ∂μ) * ∫ ω, (g ω).re ∂μ)
+        - ((∫ ω, (f ω).im * (g ω).im ∂μ) - (∫ ω, (f ω).im ∂μ) * ∫ ω, (g ω).im ∂μ) := by
+    rw [Complex.sub_re, Complex.mul_re, hcre hfgint, hcre hfint, hcre hgint, hcim hfint,
+      hcim hgint]
+    have : ∀ ω, (f ω * g ω).re = (f ω).re * (g ω).re - (f ω).im * (g ω).im := by
+      intro ω; rw [Complex.mul_re]
+    simp_rw [this]
+    rw [integral_sub e11 e22]
+    ring
+  have hIm : ((∫ ω, f ω * g ω ∂μ) - (∫ ω, f ω ∂μ) * ∫ ω, g ω ∂μ).im
+      = ((∫ ω, (f ω).re * (g ω).im ∂μ) - (∫ ω, (f ω).re ∂μ) * ∫ ω, (g ω).im ∂μ)
+        + ((∫ ω, (f ω).im * (g ω).re ∂μ) - (∫ ω, (f ω).im ∂μ) * ∫ ω, (g ω).re ∂μ) := by
+    rw [Complex.sub_im, Complex.mul_im, hcim hfgint, hcre hfint, hcre hgint, hcim hfint,
+      hcim hgint]
+    have : ∀ ω, (f ω * g ω).im = (f ω).re * (g ω).im + (f ω).im * (g ω).re := by
+      intro ω; rw [Complex.mul_im]
+    simp_rw [this]
+    rw [integral_add e12 e21]
+    ring
+  have b11 := abs_integral_mul_sub_mul_le_of_bounded (mΩ := mΩ) h₁ h₂ hf₁ hg₁ hf₁C hg₁C
+  have b22 := abs_integral_mul_sub_mul_le_of_bounded (mΩ := mΩ) h₁ h₂ hf₂ hg₂ hf₂C hg₂C
+  have b12 := abs_integral_mul_sub_mul_le_of_bounded (mΩ := mΩ) h₁ h₂ hf₁ hg₂ hf₁C hg₂C
+  have b21 := abs_integral_mul_sub_mul_le_of_bounded (mΩ := mΩ) h₁ h₂ hf₂ hg₁ hf₂C hg₁C
+  refine (Complex.norm_le_abs_re_add_abs_im _).trans ?_
+  rw [hRe, hIm]
+  refine (abs_comb_le b11 b22 b12 b21).trans ?_
+  ring_nf
+  rfl
+
 
 /-! ### Proposition 2.5(i): the Davydov covariance inequality -/
 
+/-- Tail Hölder: the `L^r`-mass of `u` on a set `S` is controlled by its `L^t`-norm times a
+power of `μ S`. -/
+private lemma tail_holder {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {u : Ω → ℝ} {r t : ℝ} (hr : 0 < r) (hrt : r < t) (hu : MemLp u (ENNReal.ofReal t) μ)
+    {S : Set Ω} (hS : MeasurableSet S) :
+    ∫ ω, S.indicator (fun ω => |u ω| ^ r) ω ∂μ
+      ≤ (∫ ω, |u ω| ^ t ∂μ) ^ (r / t) * (μ.real S) ^ (1 - r / t) := by
+  have ht : 0 < t := lt_trans hr hrt
+  have htr : 0 < t - r := by linarith
+  set P : ℝ := t / r with hP
+  set Q : ℝ := t / (t - r) with hQ
+  have hconj : Real.HolderConjugate P Q := by
+    refine ⟨?_, by positivity, by positivity⟩
+    rw [hP, hQ]
+    field_simp
+    ring
+  have hmem : MemLp (fun ω => |u ω| ^ r) (ENNReal.ofReal P) μ := by
+    have h := hu.norm_rpow_div (ENNReal.ofReal r)
+    rw [ENNReal.toReal_ofReal hr.le, ← ENNReal.ofReal_div_of_pos hr] at h
+    simpa [Real.norm_eq_abs] using h
+  have hind : MemLp (S.indicator (1 : Ω → ℝ)) (ENNReal.ofReal Q) μ := by
+    refine (memLp_top_of_bound ((stronglyMeasurable_const.indicator hS)).aestronglyMeasurable 1
+      ?_).mono_exponent le_top
+    filter_upwards with ω
+    exact (norm_indicator_le_norm_self (1 : Ω → ℝ) ω).trans (by simp)
+  have key := integral_mul_le_Lp_mul_Lq_of_nonneg (μ := μ) hconj
+    (f := fun ω => |u ω| ^ r) (g := S.indicator (1 : Ω → ℝ))
+    (Eventually.of_forall fun ω => Real.rpow_nonneg (abs_nonneg _) _)
+    (Eventually.of_forall fun ω => Set.indicator_nonneg (fun _ _ => zero_le_one) ω)
+    hmem hind
+  have e1 : ∀ ω, S.indicator (fun ω => |u ω| ^ r) ω
+      = (|u ω| ^ r) * S.indicator (1 : Ω → ℝ) ω := by
+    intro ω
+    by_cases hω : ω ∈ S <;> simp [Set.indicator_of_mem, Set.indicator_of_notMem, hω]
+  have e2 : ∫ ω, (S.indicator (1 : Ω → ℝ) ω) ^ Q ∂μ = μ.real S := by
+    have h : ∀ ω, (S.indicator (1 : Ω → ℝ) ω) ^ Q = S.indicator (1 : Ω → ℝ) ω := by
+      intro ω
+      by_cases hω : ω ∈ S
+      · simp [Set.indicator_of_mem, hω, Real.one_rpow]
+      · simp [Set.indicator_of_notMem, hω, Real.zero_rpow hconj.symm.ne_zero]
+    rw [funext h, integral_indicator_one hS]
+  have e3 : ∀ ω, (|u ω| ^ r) ^ P = |u ω| ^ t := by
+    intro ω
+    rw [← Real.rpow_mul (abs_nonneg _), hP]
+    congr 1
+    field_simp
+  simp_rw [e1]
+  rw [e2] at key
+  refine key.trans_eq ?_
+  rw [show ∫ ω, (|u ω| ^ r) ^ P ∂μ = ∫ ω, |u ω| ^ t ∂μ from integral_congr_ae
+    (Eventually.of_forall e3)]
+  rw [show (1:ℝ) / P = r / t by rw [hP]; field_simp,
+    show (1:ℝ) / Q = 1 - r / t by rw [hQ]; field_simp]
+
+
+/-- Markov/Chebyshev in the form needed below. -/
+private lemma markov_rpow {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {u : Ω → ℝ} {r c : ℝ} (hr : 0 < r) (hc : 0 < c) (hum : Measurable u)
+    (hint : Integrable (fun ω => |u ω| ^ r) μ) :
+    μ.real {ω | c < |u ω|} * c ^ r ≤ ∫ ω, |u ω| ^ r ∂μ := by
+  have hS : MeasurableSet {ω | c < |u ω|} := measurableSet_lt measurable_const (by fun_prop)
+  have h1 : ∫ ω, ({ω | c < |u ω|}).indicator (fun _ => c ^ r) ω ∂μ ≤ ∫ ω, |u ω| ^ r ∂μ := by
+    refine integral_mono ((integrable_const _).indicator hS) hint fun ω => ?_
+    by_cases hω : ω ∈ {ω | c < |u ω|}
+    · rw [Set.indicator_of_mem hω]
+      exact Real.rpow_le_rpow hc.le (le_of_lt hω) hr.le
+    · rw [Set.indicator_of_notMem hω]
+      exact Real.rpow_nonneg (abs_nonneg _) _
+  rwa [integral_indicator_const _ hS, smul_eq_mul] at h1
+
+/-- Clamping to `[-c, c]` is bounded by `c`. -/
+private lemma abs_clamp_le {c x : ℝ} (hc : 0 ≤ c) : |max (-c) (min c x)| ≤ c := by
+  rw [abs_le]
+  exact ⟨le_max_left _ _, max_le (by linarith) (min_le_left _ _)⟩
+
+/-- Clamping is a contraction towards the origin. -/
+private lemma abs_sub_clamp_le_of_lt {c x : ℝ} (hc : 0 ≤ c) (hx : c < |x|) :
+    |x - max (-c) (min c x)| ≤ |x| := by
+  rcases le_total c x with h | h
+  · rw [min_eq_left h, max_eq_right (by linarith), abs_of_nonneg (by linarith : (0:ℝ) ≤ x - c),
+      abs_of_nonneg (by linarith : (0:ℝ) ≤ x)]
+    linarith
+  · have h2 : x ≤ -c := by
+      rcases abs_cases x with ⟨he, _⟩ | ⟨he, _⟩ <;> rw [he] at hx <;> linarith
+    rw [min_eq_right h, max_eq_left h2, abs_of_nonpos (by linarith : x - -c ≤ 0),
+      abs_of_nonpos (by linarith : x ≤ 0)]
+    linarith
+
+/-- Below the level, clamping is the identity. -/
+private lemma sub_clamp_eq_zero {c x : ℝ} (hx : |x| ≤ c) : x - max (-c) (min c x) = 0 := by
+  rw [abs_le] at hx
+  rw [min_eq_right hx.2, max_eq_right hx.1, sub_self]
+
+private lemma covariance_eq_sub' {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] {f g : Ω → ℝ}
+    (hf : Integrable f μ) (hg : Integrable g μ) (hfg : Integrable (fun ω => f ω * g ω) μ) :
+    cov[f, g; μ] = (∫ ω, f ω * g ω ∂μ) - (∫ ω, f ω ∂μ) * ∫ ω, g ω ∂μ := by
+  have i1 : Integrable (fun ω => f ω * g ω - μ[g] * f ω) μ := hfg.sub (hf.const_mul _)
+  have i2 : Integrable (fun ω => f ω * g ω - μ[g] * f ω - μ[f] * g ω) μ := i1.sub (hg.const_mul _)
+  have e0 : ∫ ω, ((f ω * g ω - μ[g] * f ω - μ[f] * g ω) + μ[f] * μ[g]) ∂μ
+      = (∫ ω, (f ω * g ω - μ[g] * f ω - μ[f] * g ω) ∂μ) + ∫ _ω : Ω, μ[f] * μ[g] ∂μ :=
+    integral_add i2 (integrable_const _)
+  have e1 : ∫ ω, (f ω * g ω - μ[g] * f ω - μ[f] * g ω) ∂μ
+      = (∫ ω, (f ω * g ω - μ[g] * f ω) ∂μ) - ∫ ω, μ[f] * g ω ∂μ :=
+    integral_sub i1 (hg.const_mul _)
+  have e2 : ∫ ω, (f ω * g ω - μ[g] * f ω) ∂μ
+      = (∫ ω, f ω * g ω ∂μ) - ∫ ω, μ[g] * f ω ∂μ :=
+    integral_sub hfg (hf.const_mul _)
+  have e3 : ∫ ω, μ[f] * g ω ∂μ = μ[f] * ∫ ω, g ω ∂μ := integral_const_mul _ _
+  have e4 : ∫ ω, μ[g] * f ω ∂μ = μ[g] * ∫ ω, f ω ∂μ := integral_const_mul _ _
+  have e5 : ∫ _ω : Ω, μ[f] * μ[g] ∂μ = μ[f] * μ[g] := by simp
+  have h : ∀ ω, (f ω - μ[f]) * (g ω - μ[g])
+      = (f ω * g ω - μ[g] * f ω - μ[f] * g ω) + μ[f] * μ[g] := by intro ω; ring
+  rw [covariance, integral_congr_ae (Eventually.of_forall h), e0, e1, e2, e3, e4, e5]
+  ring
+
+set_option maxHeartbeats 1000000 in
+-- Davydov's truncation argument is long (four Hölder applications and a limit);
+-- the default heartbeat budget is not enough.
 /-- **FY Proposition 2.5(i) (Davydov)**: for `p, q > 1` with `1/p + 1/q < 1`,
 `|Cov(f, g)| ≤ 8 α^{1 − 1/p − 1/q} ‖f‖_p ‖g‖_q`. Built in full (truncation against the
 bounded case; FY cites Doukhan §1.2.2). -/
@@ -108,7 +478,376 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
       ≤ 8 * alphaMixCoeff μ m₁ m₂ ^ (1 - 1 / p - 1 / q)
         * (eLpNorm f (ENNReal.ofReal p) μ).toReal
         * (eLpNorm g (ENNReal.ofReal q) μ).toReal := by
-  sorry
+  -- exponent bookkeeping
+  have hp0 : (0:ℝ) < p := lt_trans one_pos hp
+  have hq0 : (0:ℝ) < q := lt_trans one_pos hq
+  have hip : 0 < 1 / p := by positivity
+  have hiq : 0 < 1 / q := by positivity
+  set p' : ℝ := p / (p - 1) with hp'def
+  have hp1 : (0:ℝ) < p - 1 := by linarith
+  have hp'0 : 0 < p' := by positivity
+  have hinvp' : 1 / p' = 1 - 1 / p := by rw [hp'def]; field_simp
+  have hp'1 : 1 < p' := by
+    by_contra hcon
+    replace hcon := not_lt.mp hcon
+    have h : 1 ≤ 1 / p' := by rw [le_div_iff₀ hp'0]; linarith
+    rw [hinvp'] at h; linarith
+  have hp'q : p' < q := by
+    have h1 : 1 / q < 1 / p' := by rw [hinvp']; linarith
+    by_contra hcon
+    replace hcon := not_lt.mp hcon
+    have := one_div_le_one_div_of_le hq0 hcon
+    linarith
+  set θ : ℝ := 1 - 1 / p - 1 / q with hθdef
+  have hθ0 : 0 < θ := by rw [hθdef]; linarith
+  have hθp' : θ = 1 / p' - 1 / q := by rw [hθdef, hinvp']
+  set α : ℝ := alphaMixCoeff μ m₁ m₂ with hαdef
+  set A : ℝ := (eLpNorm f (ENNReal.ofReal p) μ).toReal with hAdef
+  set B : ℝ := (eLpNorm g (ENNReal.ofReal q) μ).toReal with hBdef
+  have hA0 : 0 ≤ A := ENNReal.toReal_nonneg
+  have hB0 : 0 ≤ B := ENNReal.toReal_nonneg
+  have hα0 : 0 ≤ α := by
+    have h := le_alphaMixCoeff_of_measurableSet (m₁ := m₁) (m₂ := m₂) (mΩ := mΩ) (μ := μ)
+      (A := ∅) (B := ∅)
+      (@MeasurableSet.empty Ω m₁) (@MeasurableSet.empty Ω m₂)
+    simpa using h
+  have hconjp : Real.HolderConjugate p p' := ⟨by rw [hp'def]; field_simp; ring, hp0, hp'0⟩
+  -- measurability and integrability
+  have hfm : Measurable f := hf.mono h₁ le_rfl
+  have hgm : Measurable g := hg.mono h₂ le_rfl
+  have hfint : Integrable f μ := hfLp.integrable (by simp [ENNReal.one_le_ofReal, hp.le])
+  have hgint : Integrable g μ := hgLq.integrable (by simp [ENNReal.one_le_ofReal, hq.le])
+  have hIf : Integrable (fun ω => |f ω| ^ p) μ := by
+    have h := hfLp.integrable_norm_rpow (by simp [hp0]) (by simp)
+    simpa [Real.norm_eq_abs, ENNReal.toReal_ofReal hp0.le] using h
+  have hIg : Integrable (fun ω => |g ω| ^ q) μ := by
+    have h := hgLq.integrable_norm_rpow (by simp [hq0]) (by simp)
+    simpa [Real.norm_eq_abs, ENNReal.toReal_ofReal hq0.le] using h
+  have hA : A = (∫ ω, |f ω| ^ p ∂μ) ^ (1 / p) := by
+    rw [hAdef, toReal_eLpNorm hfLp.aestronglyMeasurable,
+      lpNorm_eq_integral_norm_rpow_toReal (by simp [hp0]) (by simp) hfLp.aestronglyMeasurable,
+      ENNReal.toReal_ofReal hp0.le]
+    simp [Real.norm_eq_abs, one_div]
+  have hB : B = (∫ ω, |g ω| ^ q ∂μ) ^ (1 / q) := by
+    rw [hBdef, toReal_eLpNorm hgLq.aestronglyMeasurable,
+      lpNorm_eq_integral_norm_rpow_toReal (by simp [hq0]) (by simp) hgLq.aestronglyMeasurable,
+      ENNReal.toReal_ofReal hq0.le]
+    simp [Real.norm_eq_abs, one_div]
+  have hAp : A ^ p = ∫ ω, |f ω| ^ p ∂μ := by
+    rw [hA, ← Real.rpow_mul (integral_nonneg fun ω => Real.rpow_nonneg (abs_nonneg _) _), one_div,
+      inv_mul_cancel₀ hp0.ne', Real.rpow_one]
+  have hBq : B ^ q = ∫ ω, |g ω| ^ q ∂μ := by
+    rw [hB, ← Real.rpow_mul (integral_nonneg fun ω => Real.rpow_nonneg (abs_nonneg _) _), one_div,
+      inv_mul_cancel₀ hq0.ne', Real.rpow_one]
+  -- `g` lies in `L^{p'}` as well
+  have hgLp' : MemLp g (ENNReal.ofReal p') μ :=
+    hgLq.mono_exponent (ENNReal.ofReal_le_ofReal hp'q.le)
+  have hfgint : Integrable (fun ω => f ω * g ω) μ := by
+    haveI : ENNReal.HolderTriple (ENNReal.ofReal p) (ENNReal.ofReal p') 1 := by
+      constructor
+      simpa using hconjp.inv_add_inv_ennreal
+    exact hfLp.integrable_mul hgLp'
+  have hcov : cov[f, g; μ] = (∫ ω, f ω * g ω ∂μ) - (∫ ω, f ω ∂μ) * ∫ ω, g ω ∂μ :=
+    covariance_eq_sub' hfint hgint hfgint
+  -- degenerate cases
+  rcases eq_or_lt_of_le hA0 with hA0' | hApos
+  · have hfae : f =ᵐ[μ] 0 := by
+      have hpne : ENNReal.ofReal p ≠ 0 := by simp [hp0]
+      refine (eLpNorm_eq_zero_iff hfLp.aestronglyMeasurable hpne).mp ?_
+      have := hfLp.eLpNorm_ne_top
+      rcases (ENNReal.toReal_eq_zero_iff _).mp hA0'.symm with h | h
+      · exact h
+      · exact absurd h this
+    have hz : cov[f, g; μ] = 0 := by
+      have h0 : μ[f] = 0 := by rw [integral_congr_ae hfae]; simp
+      rw [covariance, h0]
+      refine integral_eq_zero_of_ae ?_
+      filter_upwards [hfae] with ω hω
+      simp [hω]
+    rw [hz, abs_zero, ← hA0']
+    simp
+  rcases eq_or_lt_of_le hB0 with hB0' | hBpos
+  · have hgae : g =ᵐ[μ] 0 := by
+      have hqne : ENNReal.ofReal q ≠ 0 := by simp [hq0]
+      refine (eLpNorm_eq_zero_iff hgLq.aestronglyMeasurable hqne).mp ?_
+      have := hgLq.eLpNorm_ne_top
+      rcases (ENNReal.toReal_eq_zero_iff _).mp hB0'.symm with h | h
+      · exact h
+      · exact absurd h this
+    have hz : cov[f, g; μ] = 0 := by
+      have h0 : μ[g] = 0 := by rw [integral_congr_ae hgae]; simp
+      rw [covariance, h0]
+      refine integral_eq_zero_of_ae ?_
+      filter_upwards [hgae] with ω hω
+      simp [hω]
+    rw [hz, abs_zero, ← hB0']
+    simp
+  -- the main estimate, at every level `β = α + ε`
+  have main : ∀ ε : ℝ, 0 < ε → |cov[f, g; μ]| ≤ 8 * (α + ε) ^ θ * A * B := by
+    intro ε hε
+    set β : ℝ := α + ε with hβdef
+    have hβ0 : 0 < β := by rw [hβdef]; linarith
+    set c₁ : ℝ := A * β ^ (-(1 / p)) with hc₁def
+    set c₂ : ℝ := B * β ^ (-(1 / q)) with hc₂def
+    have hc₁0 : 0 < c₁ := mul_pos hApos (Real.rpow_pos_of_pos hβ0 _)
+    have hc₂0 : 0 < c₂ := mul_pos hBpos (Real.rpow_pos_of_pos hβ0 _)
+    set f' : Ω → ℝ := fun ω => max (-c₁) (min c₁ (f ω)) with hf'def
+    set g' : Ω → ℝ := fun ω => max (-c₂) (min c₂ (g ω)) with hg'def
+    set S : Set Ω := {ω | c₁ < |f ω|} with hSdef
+    set T : Set Ω := {ω | c₂ < |g ω|} with hTdef
+    have hSm : MeasurableSet S := measurableSet_lt measurable_const (by fun_prop)
+    have hTm : MeasurableSet T := measurableSet_lt measurable_const (by fun_prop)
+    have hf'meas : Measurable[m₁] f' := measurable_const.max (measurable_const.min hf)
+    have hg'meas : Measurable[m₂] g' := measurable_const.max (measurable_const.min hg)
+    have hf'm : Measurable f' := hf'meas.mono h₁ le_rfl
+    have hg'm : Measurable g' := hg'meas.mono h₂ le_rfl
+    have hf'bdd : ∀ ω, |f' ω| ≤ c₁ := fun ω => abs_clamp_le hc₁0.le
+    have hg'bdd : ∀ ω, |g' ω| ≤ c₂ := fun ω => abs_clamp_le hc₂0.le
+    have hf''le : ∀ ω, |f ω - f' ω| ≤ S.indicator (fun ω => |f ω|) ω := by
+      intro ω
+      by_cases hω : ω ∈ S
+      · rw [Set.indicator_of_mem hω]
+        exact abs_sub_clamp_le_of_lt hc₁0.le hω
+      · rw [Set.indicator_of_notMem hω, sub_clamp_eq_zero (not_lt.mp hω), abs_zero]
+    have hg''le : ∀ ω, |g ω - g' ω| ≤ T.indicator (fun ω => |g ω|) ω := by
+      intro ω
+      by_cases hω : ω ∈ T
+      · rw [Set.indicator_of_mem hω]
+        exact abs_sub_clamp_le_of_lt hc₂0.le hω
+      · rw [Set.indicator_of_notMem hω, sub_clamp_eq_zero (not_lt.mp hω), abs_zero]
+    -- pointwise domination of the tails
+    have hgg'abs : ∀ ω, |g ω - g' ω| ≤ |g ω| := by
+      intro ω
+      refine (hg''le ω).trans ?_
+      by_cases hω : ω ∈ T
+      · rw [Set.indicator_of_mem hω]
+      · rw [Set.indicator_of_notMem hω]; exact abs_nonneg _
+    -- Markov
+    have hMS : μ.real S ≤ β := by
+      have h := markov_rpow (u := f) (r := p) (c := c₁) hp0 hc₁0 hfm hIf
+      have hc : c₁ ^ p * β = A ^ p := by
+        rw [hc₁def, Real.mul_rpow hA0 (Real.rpow_nonneg hβ0.le _), ← Real.rpow_mul hβ0.le,
+          show -(1 / p) * p = -1 by field_simp, Real.rpow_neg_one]
+        field_simp
+      have hcp : 0 < c₁ ^ p := Real.rpow_pos_of_pos hc₁0 p
+      have h2 : μ.real S * c₁ ^ p ≤ β * c₁ ^ p := by
+        rw [mul_comm β, hc, hAp]; exact h
+      exact le_of_mul_le_mul_right h2 hcp
+    have hMT : μ.real T ≤ β := by
+      have h := markov_rpow (u := g) (r := q) (c := c₂) hq0 hc₂0 hgm hIg
+      have hc : c₂ ^ q * β = B ^ q := by
+        rw [hc₂def, Real.mul_rpow hB0 (Real.rpow_nonneg hβ0.le _), ← Real.rpow_mul hβ0.le,
+          show -(1 / q) * q = -1 by field_simp, Real.rpow_neg_one]
+        field_simp
+      have hcq : 0 < c₂ ^ q := Real.rpow_pos_of_pos hc₂0 q
+      have h2 : μ.real T * c₂ ^ q ≤ β * c₂ ^ q := by
+        rw [mul_comm β, hc, hBq]; exact h
+      exact le_of_mul_le_mul_right h2 hcq
+    -- integrability of the pieces
+    have hf'int : Integrable f' μ :=
+      (memLp_top_of_bound hf'm.aestronglyMeasurable c₁
+        (Eventually.of_forall fun ω => by simpa [Real.norm_eq_abs] using hf'bdd ω)).integrable
+        le_top
+    have hg'int : Integrable g' μ :=
+      (memLp_top_of_bound hg'm.aestronglyMeasurable c₂
+        (Eventually.of_forall fun ω => by simpa [Real.norm_eq_abs] using hg'bdd ω)).integrable
+        le_top
+    have hg'n : ∀ᵐ ω ∂μ, ‖g' ω‖ ≤ c₂ :=
+      Eventually.of_forall fun ω => by simpa [Real.norm_eq_abs] using hg'bdd ω
+    have hf''int : Integrable (fun ω => f ω - f' ω) μ := hfint.sub hf'int
+    have hg''int : Integrable (fun ω => g ω - g' ω) μ := hgint.sub hg'int
+    have hfg'int : Integrable (fun ω => f ω * g' ω) μ :=
+      hfint.mul_bdd hg'm.aestronglyMeasurable hg'n
+    have hf'g'int : Integrable (fun ω => f' ω * g' ω) μ :=
+      hf'int.mul_bdd hg'm.aestronglyMeasurable hg'n
+    have hf''g'int : Integrable (fun ω => (f ω - f' ω) * g' ω) μ :=
+      hf''int.mul_bdd hg'm.aestronglyMeasurable hg'n
+    have hfg''int : Integrable (fun ω => f ω * (g ω - g' ω)) μ := by
+      have h : ∀ ω, f ω * (g ω - g' ω) = f ω * g ω - f ω * g' ω := by intro ω; ring
+      simpa [h] using hfgint.sub hfg'int
+    -- the three-term decomposition
+    have e1 : (∫ ω, f ω * g' ω ∂μ) + (∫ ω, f ω * (g ω - g' ω) ∂μ) = ∫ ω, f ω * g ω ∂μ := by
+      rw [← integral_add hfg'int hfg''int]
+      exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
+    have e2 : (∫ ω, f' ω * g' ω ∂μ) + (∫ ω, (f ω - f' ω) * g' ω ∂μ) = ∫ ω, f ω * g' ω ∂μ := by
+      rw [← integral_add hf'g'int hf''g'int]
+      exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
+    have e3 : (∫ ω, g' ω ∂μ) + (∫ ω, (g ω - g' ω) ∂μ) = ∫ ω, g ω ∂μ := by
+      rw [← integral_add hg'int hg''int]
+      exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
+    have e4 : (∫ ω, f' ω ∂μ) + (∫ ω, (f ω - f' ω) ∂μ) = ∫ ω, f ω ∂μ := by
+      rw [← integral_add hf'int hf''int]
+      exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
+    have hsplit : (∫ ω, f ω * g ω ∂μ) - (∫ ω, f ω ∂μ) * (∫ ω, g ω ∂μ)
+        = ((∫ ω, f' ω * g' ω ∂μ) - (∫ ω, f' ω ∂μ) * ∫ ω, g' ω ∂μ)
+          + ((∫ ω, (f ω - f' ω) * g' ω ∂μ) - (∫ ω, (f ω - f' ω) ∂μ) * ∫ ω, g' ω ∂μ)
+          + ((∫ ω, f ω * (g ω - g' ω) ∂μ) - (∫ ω, f ω ∂μ) * ∫ ω, (g ω - g' ω) ∂μ) := by
+      rw [← e1, ← e2, ← e3, ← e4]
+      ring
+    -- tail bounds
+    have hTf : ∫ ω, |f ω - f' ω| ∂μ ≤ A * β ^ (1 - 1 / p) := by
+      have h1 : ∫ ω, |f ω - f' ω| ∂μ ≤ ∫ ω, S.indicator (fun ω => |f ω|) ω ∂μ :=
+        integral_mono hf''int.abs (hfint.abs.indicator hSm) fun ω => hf''le ω
+      have h2 := tail_holder (u := f) (r := 1) (t := p) one_pos hp hfLp hSm
+      simp only [Real.rpow_one] at h2
+      refine h1.trans (h2.trans ?_)
+      rw [← hA]
+      refine mul_le_mul_of_nonneg_left ?_ hA0
+      exact Real.rpow_le_rpow measureReal_nonneg hMS (by linarith)
+    have hgg'Lp' : MemLp (fun ω => g ω - g' ω) (ENNReal.ofReal p') μ :=
+      hgLp'.of_le (hgint.sub hg'int).aestronglyMeasurable
+        (Eventually.of_forall fun ω => by simpa [Real.norm_eq_abs] using hgg'abs ω)
+    have hIgg' : Integrable (fun ω => |g ω - g' ω| ^ p') μ := by
+      have h := hgg'Lp'.integrable_norm_rpow (by simp [hp'0]) (by simp)
+      simpa [Real.norm_eq_abs, ENNReal.toReal_ofReal hp'0.le] using h
+    have hN : (∫ ω, |g ω - g' ω| ^ p' ∂μ) ^ (1 / p') ≤ B * β ^ θ := by
+      have hIgp' : Integrable (fun ω => |g ω| ^ p') μ := by
+        have h := hgLp'.integrable_norm_rpow (by simp [hp'0]) (by simp)
+        simpa [Real.norm_eq_abs, ENNReal.toReal_ofReal hp'0.le] using h
+      have h1 : ∫ ω, |g ω - g' ω| ^ p' ∂μ ≤ ∫ ω, T.indicator (fun ω => |g ω| ^ p') ω ∂μ := by
+        refine integral_mono hIgg' (hIgp'.indicator hTm) fun ω => ?_
+        · by_cases hω : ω ∈ T
+          · rw [Set.indicator_of_mem hω]
+            exact Real.rpow_le_rpow (abs_nonneg _) (hgg'abs ω) hp'0.le
+          · rw [Set.indicator_of_notMem hω, sub_clamp_eq_zero (not_lt.mp hω), abs_zero,
+              Real.zero_rpow hp'0.ne']
+      have h2 := tail_holder (u := g) (r := p') (t := q) hp'0 hp'q hgLq hTm
+      have h3 : ∫ ω, |g ω - g' ω| ^ p' ∂μ ≤ B ^ p' * β ^ (1 - p' / q) := by
+        refine (h1.trans (h2.trans ?_))
+        have hBp' : (∫ ω, |g ω| ^ q ∂μ) ^ (p' / q) = B ^ p' := by
+          rw [← hBq, ← Real.rpow_mul hB0]
+          congr 1
+          field_simp
+        rw [hBp']
+        refine mul_le_mul_of_nonneg_left ?_ (Real.rpow_nonneg hB0 _)
+        refine Real.rpow_le_rpow measureReal_nonneg hMT ?_
+        rw [sub_nonneg, div_le_one hq0]
+        exact hp'q.le
+      calc (∫ ω, |g ω - g' ω| ^ p' ∂μ) ^ (1 / p')
+          ≤ (B ^ p' * β ^ (1 - p' / q)) ^ (1 / p') := by
+            refine Real.rpow_le_rpow ?_ h3 (by positivity)
+            exact integral_nonneg fun ω => Real.rpow_nonneg (abs_nonneg _) _
+        _ = B * β ^ θ := by
+            rw [Real.mul_rpow (Real.rpow_nonneg hB0 _) (Real.rpow_nonneg hβ0.le _),
+              ← Real.rpow_mul hB0, ← Real.rpow_mul hβ0.le,
+              mul_one_div, div_self hp'0.ne', Real.rpow_one]
+            congr 1
+            rw [hθp']
+            field_simp
+    have hTg : ∫ ω, |g ω - g' ω| ∂μ ≤ (∫ ω, |g ω - g' ω| ^ p' ∂μ) ^ (1 / p') := by
+      have h := tail_holder (u := fun ω => g ω - g' ω) (r := 1) (t := p') one_pos hp'1 hgg'Lp'
+        MeasurableSet.univ
+      simpa using h
+    have hIA : ∫ ω, |f ω| ∂μ ≤ A := by
+      have h := tail_holder (u := f) (r := 1) (t := p) one_pos hp hfLp MeasurableSet.univ
+      simp only [Real.rpow_one, Set.indicator_univ, probReal_univ, Real.one_rpow,
+        mul_one] at h
+      rw [hA]
+      exact h
+    -- the three covariance terms
+    have hsub : ∀ x y : ℝ, |x - y| ≤ |x| + |y| := fun x y => by
+      have h := abs_add_le x (-y)
+      rwa [abs_neg, ← sub_eq_add_neg] at h
+    have hT1 : |(∫ ω, f' ω * g' ω ∂μ) - (∫ ω, f' ω ∂μ) * ∫ ω, g' ω ∂μ| ≤ 4 * α * c₁ * c₂ := by
+      have h := abs_covariance_le_of_bounded (mΩ := mΩ) (μ := μ) h₁ h₂ hf'meas hg'meas
+        (Eventually.of_forall hf'bdd) (Eventually.of_forall hg'bdd)
+      rwa [covariance_eq_sub' hf'int hg'int hf'g'int] at h
+    have hb1 : |∫ ω, (f ω - f' ω) * g' ω ∂μ| ≤ c₂ * ∫ ω, |f ω - f' ω| ∂μ := by
+      calc |∫ ω, (f ω - f' ω) * g' ω ∂μ| ≤ ∫ ω, |(f ω - f' ω) * g' ω| ∂μ :=
+            abs_integral_le_integral_abs
+        _ ≤ ∫ ω, |f ω - f' ω| * c₂ ∂μ := by
+            refine integral_mono hf''g'int.abs (hf''int.abs.mul_const c₂) fun ω => ?_
+            rw [abs_mul]
+            exact mul_le_mul_of_nonneg_left (hg'bdd ω) (abs_nonneg _)
+        _ = (∫ ω, |f ω - f' ω| ∂μ) * c₂ := integral_mul_const _ _
+        _ = c₂ * ∫ ω, |f ω - f' ω| ∂μ := mul_comm _ _
+    have hb3 : |∫ ω, g' ω ∂μ| ≤ c₂ := by
+      have h := norm_integral_le_of_norm_le_const (μ := μ) hg'n
+      simpa using h
+    have hT2 : |(∫ ω, (f ω - f' ω) * g' ω ∂μ) - (∫ ω, (f ω - f' ω) ∂μ) * ∫ ω, g' ω ∂μ|
+        ≤ 2 * (c₂ * (A * β ^ (1 - 1 / p))) := by
+      refine (hsub _ _).trans ?_
+      rw [abs_mul]
+      have h4 : |∫ ω, (f ω - f' ω) ∂μ| * |∫ ω, g' ω ∂μ| ≤ c₂ * ∫ ω, |f ω - f' ω| ∂μ := by
+        rw [mul_comm c₂]
+        exact mul_le_mul (abs_integral_le_integral_abs) hb3 (abs_nonneg _)
+          (integral_nonneg fun ω => abs_nonneg _)
+      have h5 : c₂ * (∫ ω, |f ω - f' ω| ∂μ) ≤ c₂ * (A * β ^ (1 - 1 / p)) :=
+        mul_le_mul_of_nonneg_left hTf hc₂0.le
+      linarith
+    have hfabs : MemLp (fun ω => |f ω|) (ENNReal.ofReal p) μ := by
+      simpa [Real.norm_eq_abs] using hfLp.norm
+    have hgg'abs' : MemLp (fun ω => |g ω - g' ω|) (ENNReal.ofReal p') μ := by
+      simpa [Real.norm_eq_abs] using hgg'Lp'.norm
+    have hb4 : |∫ ω, f ω * (g ω - g' ω) ∂μ| ≤ A * (B * β ^ θ) := by
+      calc |∫ ω, f ω * (g ω - g' ω) ∂μ| ≤ ∫ ω, |f ω * (g ω - g' ω)| ∂μ :=
+            abs_integral_le_integral_abs
+        _ = ∫ ω, |f ω| * |g ω - g' ω| ∂μ := by simp_rw [abs_mul]
+        _ ≤ (∫ ω, |f ω| ^ p ∂μ) ^ (1 / p) * (∫ ω, |g ω - g' ω| ^ p' ∂μ) ^ (1 / p') :=
+            integral_mul_le_Lp_mul_Lq_of_nonneg hconjp
+              (Eventually.of_forall fun ω => abs_nonneg _)
+              (Eventually.of_forall fun ω => abs_nonneg _) hfabs hgg'abs'
+        _ = A * (∫ ω, |g ω - g' ω| ^ p' ∂μ) ^ (1 / p') := by rw [← hA]
+        _ ≤ A * (B * β ^ θ) := mul_le_mul_of_nonneg_left hN hA0
+    have hT3 : |(∫ ω, f ω * (g ω - g' ω) ∂μ) - (∫ ω, f ω ∂μ) * ∫ ω, (g ω - g' ω) ∂μ|
+        ≤ 2 * (A * (B * β ^ θ)) := by
+      refine (hsub _ _).trans ?_
+      rw [abs_mul]
+      have h5 : |∫ ω, f ω ∂μ| * |∫ ω, (g ω - g' ω) ∂μ| ≤ A * (B * β ^ θ) := by
+        refine mul_le_mul (abs_integral_le_integral_abs.trans hIA)
+          (abs_integral_le_integral_abs.trans (hTg.trans hN)) (abs_nonneg _) hA0
+      linarith
+    -- the exponent ledger
+    have hβθ : β * (β ^ (-(1 / p)) * β ^ (-(1 / q))) = β ^ θ := by
+      rw [← Real.rpow_add hβ0]
+      calc β * β ^ (-(1 / p) + -(1 / q)) = β ^ (1:ℝ) * β ^ (-(1 / p) + -(1 / q)) := by
+            rw [Real.rpow_one]
+        _ = β ^ (1 + (-(1 / p) + -(1 / q))) := (Real.rpow_add hβ0 _ _).symm
+        _ = β ^ θ := by rw [hθdef]; congr 1; ring
+    have hbc : β * (c₁ * c₂) = A * B * β ^ θ := by
+      rw [hc₁def, hc₂def, ← hβθ]; ring
+    have hbc2 : c₂ * (A * β ^ (1 - 1 / p)) = A * B * β ^ θ := by
+      have h : β ^ (-(1 / q)) * β ^ (1 - 1 / p) = β ^ θ := by
+        rw [← Real.rpow_add hβ0, hθdef]
+        congr 1
+        ring
+      rw [hc₂def]
+      calc B * β ^ (-(1 / q)) * (A * β ^ (1 - 1 / p))
+          = A * B * (β ^ (-(1 / q)) * β ^ (1 - 1 / p)) := by ring
+        _ = A * B * β ^ θ := by rw [h]
+    -- assemble
+    rw [hcov, hsplit]
+    have habs3 : ∀ x y z : ℝ, |x + y + z| ≤ |x| + |y| + |z| := fun x y z => by
+      have h1 := abs_add_le (x + y) z
+      have h2 := abs_add_le x y
+      linarith
+    refine (habs3 _ _ _).trans ?_
+    have hα' : α ≤ β := by rw [hβdef]; linarith
+    have hcc : 0 ≤ c₁ * c₂ := by positivity
+    have hkey1 : 4 * α * c₁ * c₂ ≤ 4 * (A * B * β ^ θ) := by
+      have h : α * (c₁ * c₂) ≤ β * (c₁ * c₂) := mul_le_mul_of_nonneg_right hα' hcc
+      rw [hbc] at h
+      nlinarith [h]
+    have h2 := hT2
+    rw [hbc2] at h2
+    have h3 : 2 * (A * (B * β ^ θ)) = 2 * (A * B * β ^ θ) := by ring
+    rw [h3] at hT3
+    have hfinal : 4 * (A * B * β ^ θ) + 2 * (A * B * β ^ θ) + 2 * (A * B * β ^ θ)
+        = 8 * β ^ θ * A * B := by ring
+    linarith [hT1, hkey1, h2, hT3]
+  -- pass to the limit `ε → 0`
+  have hcontα : ContinuousAt (fun y : ℝ => 8 * y ^ θ * A * B) α :=
+    (((Real.continuousAt_rpow_const α θ (Or.inr hθ0.le)).const_mul 8).mul continuousAt_const).mul
+      continuousAt_const
+  have hlim : Tendsto (fun ε : ℝ => 8 * (α + ε) ^ θ * A * B) (𝓝[>] (0:ℝ))
+      (𝓝 (8 * α ^ θ * A * B)) := by
+    have h1 : Tendsto (fun ε : ℝ => α + ε) (𝓝[>] (0:ℝ)) (𝓝 α) := by
+      have h2 : Continuous (fun ε : ℝ => α + ε) := continuous_const.add continuous_id
+      simpa using (h2.tendsto (0:ℝ)).mono_left nhdsWithin_le_nhds
+    exact hcontα.tendsto.comp h1
+  refine ge_of_tendsto hlim ?_
+  filter_upwards [self_mem_nhdsWithin] with ε hε using main ε hε
+
 
 /-! ### Proposition 2.6: the Volkonskii–Rozanov factorization -/
 
@@ -130,7 +869,110 @@ theorem norm_integral_prod_sub_prod_integral_le {k : ℕ}
       alphaMixCoeff μ (⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ l, m j) (m ⟨(l : ℕ) + 1, hl⟩) ≤ a) :
     ‖(∫ ω, ∏ l, ξ l ω ∂μ) - ∏ l, ∫ ω, ξ l ω ∂μ‖
       ≤ 16 * ((k : ℝ) - 1) * a := by
-  sorry
+  rcases Nat.eq_zero_or_pos k with hk0 | hk
+  · -- **FALSE CORNER OF THE FROZEN STATEMENT.** For `k = 0` every hypothesis is vacuous
+    -- (`Fin 0` is empty), the left-hand side is exactly `‖1 − 1‖ = 0` (empty products,
+    -- `∫ 1 = 1`), and the right-hand side is `16 · (0 − 1) · a = −16 a`, which is
+    -- negative for every `a > 0`. So the claim `0 ≤ −16 a` is refutable; the statement
+    -- is true exactly for `k ≥ 1`, which is what the branch below proves in full.
+    -- Reported, not repaired: the statement is frozen.
+    subst hk0
+    sorry
+  · classical
+    have hbdd' : ∀ᵐ ω ∂μ, ∀ l, ‖ξ l ω‖ ≤ 1 := ae_all_iff.mpr hbdd
+    set S : ℕ → Finset (Fin k) := fun n => Finset.univ.filter (fun j : Fin k => (j : ℕ) < n)
+      with hSdef
+    -- the cumulative product is bounded by 1
+    have hPbdd : ∀ n : ℕ, ∀ᵐ ω ∂μ, ‖∏ j ∈ S n, ξ j ω‖ ≤ 1 := by
+      intro n
+      filter_upwards [hbdd'] with ω hω
+      rw [norm_prod]
+      exact Finset.prod_le_one (fun i _ => norm_nonneg _) (fun i _ => hω i)
+    have hint : ∀ l : Fin k, ‖∫ ω, ξ l ω ∂μ‖ ≤ 1 := by
+      intro l
+      have h := norm_integral_le_of_norm_le_const (μ := μ) (hbdd l)
+      simpa using h
+    have main : ∀ n : ℕ, 1 ≤ n → n ≤ k →
+        ‖(∫ ω, ∏ j ∈ S n, ξ j ω ∂μ) - ∏ j ∈ S n, ∫ ω, ξ j ω ∂μ‖ ≤ 16 * ((n : ℝ) - 1) * a := by
+      intro n hn
+      induction n, hn using Nat.le_induction with
+      | base =>
+        intro _
+        have h1 : S 1 = ({⟨0, hk⟩} : Finset (Fin k)) := by
+          ext j
+          simp [hSdef, Fin.ext_iff]
+        rw [h1]
+        simp
+      | succ n hn ih =>
+        intro hnk
+        have hnk' : n < k := by omega
+        have ihb := ih (by omega)
+        set l : Fin k := ⟨n - 1, by omega⟩ with hl
+        set l' : Fin k := ⟨n, hnk'⟩ with hl'
+        have hln : (l : ℕ) + 1 = n := by simp [hl]; omega
+        have hMle : (⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ (l : ℕ), m j) ≤ mΩ :=
+          iSup_le fun j => iSup_le fun _ => hle j
+        have hmem : ∀ j ∈ S n, m j ≤ ⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ (l : ℕ), m j := by
+          intro j hj
+          simp only [hSdef, Finset.mem_filter] at hj
+          exact le_iSup₂ (f := fun (j : Fin k) (_ : (j : ℕ) ≤ (l : ℕ)) => m j) j (by omega)
+        have hPmeas : Measurable[⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ (l : ℕ), m j]
+            (fun ω => ∏ j ∈ S n, ξ j ω) :=
+          Finset.measurable_prod _ fun j hj => (hmeas j).mono (hmem j hj) le_rfl
+        -- the α-gap bound transported to the cumulative past and the next block
+        have hα : alphaMixCoeff μ (⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ (l : ℕ), m j) (m l') ≤ a := by
+          have h := hgap l (by omega)
+          have he : (⟨(l : ℕ) + 1, by omega⟩ : Fin k) = l' := by
+            apply Fin.ext; simp [hl', hln]
+          rw [he] at h
+          exact h
+        have hcov := norm_covariance_le_of_bounded_complex
+          (m₁ := ⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ (l : ℕ), m j) (m₂ := m l') (mΩ := mΩ)
+          hMle (hle l') hPmeas (hmeas l') (hPbdd n) (hbdd l')
+        -- the recursion
+        have hnot : (l' : Fin k) ∉ S n := by simp [hSdef, hl']
+        have hins : S (n + 1) = insert l' (S n) := by
+          ext j
+          simp [hSdef, hl', Fin.ext_iff]
+          omega
+        have hP1 : ∀ ω, ∏ j ∈ S (n + 1), ξ j ω = (∏ j ∈ S n, ξ j ω) * ξ l' ω := by
+          intro ω
+          rw [hins, Finset.prod_insert hnot, mul_comm]
+        have hP2 : ∏ j ∈ S (n + 1), (∫ ω, ξ j ω ∂μ)
+            = (∏ j ∈ S n, ∫ ω, ξ j ω ∂μ) * ∫ ω, ξ l' ω ∂μ := by
+          rw [hins, Finset.prod_insert hnot, mul_comm]
+        have hexp : (∫ ω, ∏ j ∈ S (n + 1), ξ j ω ∂μ) - ∏ j ∈ S (n + 1), ∫ ω, ξ j ω ∂μ
+            = ((∫ ω, (∏ j ∈ S n, ξ j ω) * ξ l' ω ∂μ)
+                - (∫ ω, ∏ j ∈ S n, ξ j ω ∂μ) * ∫ ω, ξ l' ω ∂μ)
+              + ((∫ ω, ∏ j ∈ S n, ξ j ω ∂μ) - ∏ j ∈ S n, ∫ ω, ξ j ω ∂μ)
+                * (∫ ω, ξ l' ω ∂μ) := by
+          simp_rw [hP1]
+          rw [hP2]
+          ring
+        rw [hexp]
+        refine (norm_add_le _ _).trans ?_
+        have hb1 : ‖(∫ ω, (∏ j ∈ S n, ξ j ω) * ξ l' ω ∂μ)
+            - (∫ ω, ∏ j ∈ S n, ξ j ω ∂μ) * ∫ ω, ξ l' ω ∂μ‖ ≤ 16 * a := by
+          refine hcov.trans ?_
+          nlinarith [hα]
+        have hb2 : ‖((∫ ω, ∏ j ∈ S n, ξ j ω ∂μ) - ∏ j ∈ S n, ∫ ω, ξ j ω ∂μ)
+            * (∫ ω, ξ l' ω ∂μ)‖ ≤ 16 * ((n : ℝ) - 1) * a := by
+          rw [norm_mul]
+          calc ‖(∫ ω, ∏ j ∈ S n, ξ j ω ∂μ) - ∏ j ∈ S n, ∫ ω, ξ j ω ∂μ‖ * ‖∫ ω, ξ l' ω ∂μ‖
+              ≤ (16 * ((n : ℝ) - 1) * a) * 1 := by
+                refine mul_le_mul ihb (hint l') (norm_nonneg _) ?_
+                exact le_trans (norm_nonneg _) ihb
+            _ = 16 * ((n : ℝ) - 1) * a := by ring
+        have : (16 : ℝ) * (((n : ℝ) + 1) - 1) * a = 16 * a + 16 * ((n : ℝ) - 1) * a := by ring
+        push_cast
+        rw [this]
+        linarith
+    have hSk : S k = Finset.univ := by
+      ext j
+      simp [hSdef]
+    have := main k hk le_rfl
+    rwa [hSk] at this
+
 
 end TwoAlgebras
 
@@ -155,6 +997,23 @@ theorem moment4_partial_sum_le [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ
     (hα : ∀ n : ℕ, 1 ≤ n → alphaCoeff X μ n ≤ K / (n : ℝ) ^ 2) :
     ∃ C' : ℝ, 0 ≤ C' ∧ ∀ n : ℕ,
       ∫ ω, (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) ^ 4 ∂μ ≤ C' * (n : ℝ) ^ 2 := by
+  -- NOT ATTEMPTED in this wave (the other four targets of the batch are closed). Route,
+  -- with the ledger checked by hand:
+  -- (1) `E ∏ X_{t_i}` for a *sorted* tuple `t₁ ≤ t₂ ≤ t₃ ≤ t₄` with gaps `g₁, g₂, g₃`
+  --     obeys `|E ∏| ≤ 4 C⁴ α(max g) + 16 C⁴ α(g₁) α(g₃)`: split at the largest gap with
+  --     `abs_covariance_le_of_bounded` (blocks are `sigmaLE`/`sigmaGE`-measurable, each
+  --     bounded by `C²`, and `IsStrictlyStationary.alphaMixCoeff_shift` turns the
+  --     coefficient into `alphaCoeff`); at the outer splits the product term vanishes
+  --     because `E X_t = 0` (transported off `hmean` by `hstat.identDistrib`), at the
+  --     middle split it is `|E X_{t₁}X_{t₂}| |E X_{t₃}X_{t₄}| ≤ 16 C⁴ α(g₁) α(g₃)`.
+  -- (2) `Σ_{sorted} α(max g) ≤ n Σ_{m ≤ n} 3 (m+1)² K/m² = O(n²)` and
+  --     `Σ_{sorted} α(g₁)α(g₃) ≤ n · n · (Σ_m α m)² = O(n²)` (the second sum converges by
+  --     `α(m) ≤ K/m²`); both need `α ≤ 1` at `m = 0`.
+  -- (3) The unsorted 4-fold expansion of `(Σ X)⁴` reduces to the sorted one by the
+  --     fibrewise bound `#{p | sort p = q} ≤ 4⁴` (`Tuple.sort`, `Fintype.prod_equiv`);
+  --     the constant is irrelevant since `C'` is existential.
+  -- Step (1) is the probabilistic content and is cheap given the bricks above; steps
+  -- (2)–(3) are the combinatorics and are what remains.
   sorry
 
 /-! ### Theorems 2.18/2.19: Bosq exponential inequalities (literature DEBTS) -/
