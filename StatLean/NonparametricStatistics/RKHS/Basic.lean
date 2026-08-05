@@ -1,0 +1,116 @@
+import Mathlib.Analysis.InnerProductSpace.Reproducing
+
+/-!
+# Scalar reproducing kernel Hilbert spaces: kernel functions and the reproducing identity
+
+Mathlib's `RKHS 𝕜 H X V` class packages a Hilbert space `H` with a continuous injection
+into functions `X → V` (pointwise-continuous evaluation).  This file develops the *scalar*
+theory (`V = 𝕜`) in the classical form: the kernel function `k_x ∈ H` of a point,
+the scalar reproducing kernel `K(x, y) = k_y(x)`, the reproducing identity
+`f x = ⟪k_x, f⟫`, Hermitian symmetry, the evaluation functional and its exact norm
+`‖E_x‖ = ‖k_x‖ = √(K(x,x))`, and the fact that norm convergence implies pointwise
+convergence.
+
+Mathlib's inner product `⟪·,·⟫_𝕜` is conjugate-linear in the *first* slot, so the
+classical `f(x) = ⟨f, k_x⟩` (conjugate-linear in the second slot) appears here as
+`f x = ⟪kernelFun H x, f⟫_𝕜`, and `K(x,y) = ⟪kernelFun H x, kernelFun H y⟫_𝕜`.
+
+**Bibliographic comments.** The abstract theory of reproducing kernels was systematized
+by N. Aronszajn, *Theory of reproducing kernels*, Trans. Amer. Math. Soc. **68** (1950),
+337–404; the reproducing identity via the Riesz representation theorem goes back to
+Aronszajn and, in special cases, S. Bergman (1922).
+-/
+
+open RKHS ComplexConjugate
+open scoped InnerProductSpace
+
+namespace StatLean.NonparametricStatistics
+
+variable {𝕜 : Type*} [RCLike 𝕜] {X : Type*}
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
+variable [RKHS 𝕜 H X 𝕜]
+
+variable (H) in
+/-- The **kernel function of the point** `x`: the unique element `k_x ∈ H` representing the
+evaluation functional at `x`, i.e. `f x = ⟪k_x, f⟫_𝕜` for every `f ∈ H`.  This is the
+scalar (`V = 𝕜`) specialization of `RKHS.kerFun` applied to `1 : 𝕜`. -/
+noncomputable def kernelFun (x : X) : H := RKHS.kerFun H x 1
+
+variable (H) in
+/-- The **scalar reproducing kernel** of the RKHS `H`: `K(x, y) = k_y(x)`, the value of the
+kernel function of `y` at the point `x`.  Beware the argument order: `scalarKernel H x y`
+evaluates `kernelFun H y` at `x`. -/
+noncomputable def scalarKernel (x y : X) : 𝕜 := (kernelFun H y : H) x
+
+/-- The reproducing identity: evaluation at `x` is the inner product against the kernel
+function of `x` (conjugate-linear slot first, per Mathlib's convention). -/
+@[simp]
+theorem inner_kernelFun (x : X) (f : H) : ⟪kernelFun H x, f⟫_𝕜 = f x := by
+  sorry
+
+/-- The reproducing identity, conjugated version. -/
+theorem inner_kernelFun_right (x : X) (f : H) : ⟪f, kernelFun H x⟫_𝕜 = conj (f x) := by
+  sorry
+
+variable (H) in
+/-- The scalar kernel is the Gram function of the kernel functions:
+`K(x, y) = ⟪k_x, k_y⟫_𝕜`. -/
+theorem scalarKernel_eq_inner (x y : X) :
+    scalarKernel H x y = ⟪kernelFun H x, kernelFun H y⟫_𝕜 := by
+  sorry
+
+variable (H) in
+/-- The scalar kernel agrees with Mathlib's operator-valued `RKHS.kernel` evaluated at `1`. -/
+theorem scalarKernel_eq_kernel_one (x y : X) :
+    scalarKernel H x y = RKHS.kernel H x y 1 := by
+  sorry
+
+variable (H) in
+/-- Hermitian symmetry of the reproducing kernel: `conj (K(x, y)) = K(y, x)`. -/
+theorem scalarKernel_conj_symm (x y : X) :
+    conj (scalarKernel H x y) = scalarKernel H y x := by
+  sorry
+
+variable (H) in
+/-- The diagonal of the kernel is the squared norm of the kernel function:
+`K(x, x) = ‖k_x‖²`. -/
+theorem scalarKernel_self (x : X) :
+    scalarKernel H x x = ((‖kernelFun H x‖ : 𝕜)) ^ 2 := by
+  sorry
+
+variable (H) in
+/-- The diagonal of the kernel is real and nonnegative. -/
+theorem re_scalarKernel_self_nonneg (x : X) : 0 ≤ RCLike.re (scalarKernel H x x) := by
+  sorry
+
+variable (𝕜 H) in
+/-- The **evaluation functional** `E_x : H →L[𝕜] 𝕜`, `E_x f = f x`.  Bounded by definition
+of an RKHS. -/
+noncomputable def evalCLM (x : X) : H →L[𝕜] 𝕜 :=
+  (ContinuousLinearMap.proj x).comp (coeCLM 𝕜)
+
+@[simp]
+theorem evalCLM_apply (x : X) (f : H) : evalCLM 𝕜 H x f = f x := rfl
+
+/-- Riesz representation of the evaluation functional: `E_x = ⟪k_x, ·⟫_𝕜`. -/
+theorem evalCLM_eq_innerSL_kernelFun (x : X) :
+    evalCLM 𝕜 H x = innerSL 𝕜 (kernelFun H x) := by
+  sorry
+
+/-- The exact norm of the evaluation functional: `‖E_x‖ = ‖k_x‖ = √(K(x,x))`. -/
+theorem norm_evalCLM (x : X) : ‖evalCLM 𝕜 H x‖ = ‖kernelFun H x‖ := by
+  sorry
+
+/-- Pointwise evaluation is controlled by the kernel diagonal:
+`‖f x‖ ≤ ‖k_x‖ · ‖f‖`. -/
+theorem norm_apply_le (f : H) (x : X) : ‖f x‖ ≤ ‖kernelFun H x‖ * ‖f‖ := by
+  sorry
+
+/-- Norm convergence in an RKHS implies pointwise convergence: if `f_n → f` in `H`,
+then `f_n x → f x` for every `x`. -/
+theorem tendsto_apply_of_tendsto {ι : Type*} {l : Filter ι} {f : ι → H} {g : H}
+    (h : Filter.Tendsto f l (nhds g)) (x : X) :
+    Filter.Tendsto (fun n => f n x) l (nhds (g x)) := by
+  sorry
+
+end StatLean.NonparametricStatistics
