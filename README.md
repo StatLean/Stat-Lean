@@ -121,6 +121,7 @@ The library is the single `lean_lib StatLean`, organized into per-area sublibrar
 - `StatLean/MultipleTesting/` — FDR / FWER control, knockoffs, goodness-of-fit (Lu, *Big Data Analysis*; Candès)
 - `StatLean/Minimaxity/` — Le Cam and Fano minimax lower bounds (Wainwright)
 - `StatLean/Optimization/` — gradient, proximal, and accelerated methods (Lu, *Big Data Analysis*)
+- `StatLean/StatisticalModels/` — compositional statistical models: model calculus & identifiability, survival / event history, Gaussian conditioning substrate, mixed effects, longitudinal / GEE, missing data (Andersen–Borgan–Gill–Keiding; Liang–Zeger; Rubin)
 
 ### 3. Fetch the Mathlib build cache
 
