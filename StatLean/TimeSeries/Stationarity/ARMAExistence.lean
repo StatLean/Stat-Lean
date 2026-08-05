@@ -388,7 +388,10 @@ theorem exists_geometric_bound_armaPsi {p q : ℕ} {b : Fin p → ℝ} (a : Fin 
 theorem summable_abs_armaPsi {p q : ℕ} {b : Fin p → ℝ} (a : Fin q → ℝ)
     (hb : NoRootClosedDisc b) :
     Summable fun n => |armaPsi b a n| := by
-  sorry
+  obtain ⟨C, hC, r, hr0, hr1, hbnd⟩ := exists_geometric_bound_armaPsi a hb
+  exact Summable.of_nonneg_of_le (fun n => abs_nonneg _) hbnd
+    ((summable_geometric_of_lt_one hr0 hr1).mul_left C)
+
 
 /-- **Causality** (FY §2.1.2, Definition 2.3): `X` is a causal function of the noise `ε`
 when it is an MA(∞) over `ε` with absolutely summable coefficients. -/
@@ -431,7 +434,42 @@ theorem IsARMA.acvf_exponential_decay [IsProbabilityMeasure μ] {p q : ℕ}
     (hb : NoRootClosedDisc b) :
     ∃ C : ℝ, 0 ≤ C ∧ ∃ r : ℝ, 0 ≤ r ∧ r < 1 ∧
       ∀ k : ℤ, |acvf X μ k| ≤ C * r ^ k.natAbs := by
-  sorry
+  obtain ⟨C, hC, r, hr0, hr1, hbnd⟩ := exists_geometric_bound_armaPsi a hb
+  have hψ := summable_abs_armaPsi a hb
+  have hform := (hcausal.isStationary hψ h.whiteNoise h.measurableX).2
+  have hr2 : r ^ 2 < 1 := by nlinarith
+  have hr2' : (0:ℝ) ≤ r ^ 2 := by positivity
+  have hden : (0:ℝ) < 1 - r ^ 2 := by linarith
+  refine ⟨|σ2| * C ^ 2 * (1 - r ^ 2)⁻¹, by positivity, r, hr0, hr1, fun k => ?_⟩
+  set m := k.natAbs with hm
+  have hle : ∀ j : ℕ, |armaPsi b a j * armaPsi b a (j + m)| ≤ C ^ 2 * r ^ m * (r ^ 2) ^ j := by
+    intro j
+    rw [abs_mul]
+    have h1 : |armaPsi b a j| * |armaPsi b a (j + m)| ≤ (C * r ^ j) * (C * r ^ (j + m)) :=
+      mul_le_mul (hbnd j) (hbnd (j + m)) (abs_nonneg _) (by positivity)
+    refine h1.trans_eq ?_
+    have hpow : (r ^ 2) ^ j = (r ^ j) ^ 2 := by rw [← pow_mul, ← pow_mul, Nat.mul_comm]
+    rw [pow_add, hpow]
+    ring
+  have hmaj : Summable fun j : ℕ => C ^ 2 * r ^ m * (r ^ 2) ^ j :=
+    (summable_geometric_of_lt_one hr2' hr2).mul_left _
+  have hsum : Summable fun j : ℕ => |armaPsi b a j * armaPsi b a (j + m)| :=
+    Summable.of_nonneg_of_le (fun _ => abs_nonneg _) hle hmaj
+  have habs : |∑' j : ℕ, armaPsi b a j * armaPsi b a (j + m)|
+      ≤ ∑' j : ℕ, |armaPsi b a j * armaPsi b a (j + m)| := by
+    simpa only [Real.norm_eq_abs] using
+      norm_tsum_le_tsum_norm (f := fun j : ℕ => armaPsi b a j * armaPsi b a (j + m))
+        (by simpa only [Real.norm_eq_abs] using hsum)
+  have hmajsum : ∑' j : ℕ, |armaPsi b a j * armaPsi b a (j + m)|
+      ≤ C ^ 2 * r ^ m * (1 - r ^ 2)⁻¹ := by
+    refine (hsum.tsum_le_tsum hle hmaj).trans_eq ?_
+    rw [tsum_mul_left, tsum_geometric_of_lt_one hr2' hr2]
+  rw [hform k, abs_mul, ← hm]
+  calc |σ2| * |∑' j : ℕ, armaPsi b a j * armaPsi b a (j + m)|
+      ≤ |σ2| * (C ^ 2 * r ^ m * (1 - r ^ 2)⁻¹) :=
+        mul_le_mul_of_nonneg_left (habs.trans hmajsum) (abs_nonneg _)
+    _ = |σ2| * C ^ 2 * (1 - r ^ 2)⁻¹ * r ^ m := by ring
+
 
 /-- **DEBT (Brockwell & Davis 1996, p. 83; FY §2.1.2 cited fact (i))**: an ARMA process
 with a stationary solution is causal **iff** `b` has no roots in the closed unit disc.
