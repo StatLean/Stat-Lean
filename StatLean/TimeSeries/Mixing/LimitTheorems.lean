@@ -945,7 +945,6 @@ theorem clt_of_bounded_alphaMixing [IsProbabilityMeasure μ]
       (Complex.continuous_exp.comp (by fun_prop)).aestronglyMeasurable
     rw [charFun_apply_real, integral_map hae hsm]
     refine integral_congr_ae (Eventually.of_forall fun ω => ?_)
-    congr 1
     push_cast
     ring
   rw [hRHS]
