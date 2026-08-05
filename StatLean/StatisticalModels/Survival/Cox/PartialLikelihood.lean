@@ -96,6 +96,95 @@ theorem log_coxPartialLikelihood (β : EuclideanSpace ℝ (Fin p))
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [Real.log_div (Real.exp_ne_zero _) (sum_exp_riskSet_pos β dz i).ne', Real.log_exp]
 
+/-- LEAN-ONLY: the failure cube `Fin n → Bool` is finite and discrete, so every set on it is
+measurable (no cylinder bookkeeping is needed downstream). -/
+private theorem measurableSet_boolCube (s : Set (Fin n → Bool)) : MeasurableSet s :=
+  (Set.toFinite s).measurableSet
+
+/-- The "`i'` is the unique failure inside `R`" event, read off the failure `Finset`. -/
+private theorem singleFailure_iff (R : Finset (Fin n)) {i' : Fin n} (hi' : i' ∈ R)
+    (ω : Fin n → Bool) :
+    (∀ j ∈ R, (ω j = true ↔ j = i')) ↔ R.filter (fun j => ω j = true) = {i'} := by
+  constructor
+  · intro h
+    ext a
+    simp only [Finset.mem_filter, Finset.mem_singleton]
+    exact ⟨fun ha => (h a ha.1).1 ha.2, by rintro rfl; exact ⟨hi', (h a hi').2 rfl⟩⟩
+  · intro h j hj
+    refine ⟨fun hjt => ?_, ?_⟩
+    · have hmem : j ∈ R.filter (fun k => ω k = true) := Finset.mem_filter.2 ⟨hj, hjt⟩
+      rw [h] at hmem
+      exact Finset.mem_singleton.1 hmem
+    · rintro rfl
+      have hmem : j ∈ R.filter (fun k => ω k = true) := by
+        rw [h]; exact Finset.mem_singleton_self j
+      exact (Finset.mem_filter.1 hmem).2
+
+/-- The Bernoulli-cube mass of the one-failure block: the event is a cylinder constraining
+exactly the coordinates in `R`, so `Measure.pi_pi` evaluates it as
+`p_{i'} ∏_{j ∈ R \ {i'}} (1 − p_j)`. -/
+private theorem pi_bernoulli_single (R : Finset (Fin n)) (prob : Fin n → ℝ≥0)
+    (h1 : ∀ j, prob j ≤ 1) {i' : Fin n} (hi' : i' ∈ R) :
+    (Measure.pi fun j => (PMF.bernoulli (prob j) (h1 j)).toMeasure)
+        {ω : Fin n → Bool | ∀ j ∈ R, (ω j = true ↔ j = i')}
+      = ENNReal.ofReal ((prob i' : ℝ) * ∏ j ∈ R.erase i', (1 - (prob j : ℝ))) := by
+  obtain ⟨s, hs⟩ : ∃ s : Fin n → Set Bool, ∀ j,
+      s j = if j ∈ R then (if j = i' then {true} else {false}) else Set.univ :=
+    ⟨_, fun _ => rfl⟩
+  have hset : {ω : Fin n → Bool | ∀ j ∈ R, (ω j = true ↔ j = i')} = Set.univ.pi s := by
+    ext ω
+    simp only [Set.mem_setOf_eq, Set.mem_pi, Set.mem_univ, forall_const]
+    constructor
+    · intro h j
+      rw [hs]
+      by_cases hjR : j ∈ R
+      · rw [if_pos hjR]
+        by_cases hji : j = i'
+        · rw [if_pos hji]
+          exact (h j hjR).2 hji
+        · rw [if_neg hji]
+          have hne : ¬ (ω j = true) := fun hc => hji ((h j hjR).1 hc)
+          simpa using hne
+      · rw [if_neg hjR]
+        exact Set.mem_univ _
+    · intro h j hjR
+      have hj := h j
+      rw [hs, if_pos hjR] at hj
+      by_cases hji : j = i'
+      · rw [if_pos hji] at hj
+        simp only [Set.mem_singleton_iff] at hj
+        exact ⟨fun _ => hji, fun _ => hj⟩
+      · rw [if_neg hji] at hj
+        simp only [Set.mem_singleton_iff] at hj
+        refine ⟨fun hc => ?_, fun hc => absurd hc hji⟩
+        rw [hj] at hc
+        simp at hc
+  have hprod : ∏ j : Fin n, (PMF.bernoulli (prob j) (h1 j)).toMeasure (s j)
+      = ∏ j ∈ R, (PMF.bernoulli (prob j) (h1 j)).toMeasure (s j) := by
+    refine (Finset.prod_subset (Finset.subset_univ R) fun j _ hjR => ?_).symm
+    rw [hs, if_neg hjR]
+    exact measure_univ
+  have hsi : s i' = ({true} : Set Bool) := by rw [hs, if_pos hi', if_pos rfl]
+  have hrest : ∀ j ∈ R.erase i', (PMF.bernoulli (prob j) (h1 j)).toMeasure (s j)
+      = ENNReal.ofReal (1 - (prob j : ℝ)) := by
+    intro j hj
+    have hsj : s j = ({false} : Set Bool) := by
+      rw [hs, if_pos (Finset.mem_of_mem_erase hj), if_neg (Finset.ne_of_mem_erase hj)]
+    rw [hsj, PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton false),
+      ENNReal.ofReal_sub _ (prob j).coe_nonneg, ENNReal.ofReal_one, ENNReal.ofReal_coe_nnreal]
+    simp
+  have htrue : (PMF.bernoulli (prob i') (h1 i')).toMeasure ({true} : Set Bool)
+      = ENNReal.ofReal ((prob i' : ℝ)) := by
+    rw [PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton true),
+      ENNReal.ofReal_coe_nnreal]
+    simp
+  have hnn : ∀ j ∈ R.erase i', (0 : ℝ) ≤ 1 - (prob j : ℝ) := fun j _ => by
+    have : ((prob j : ℝ)) ≤ 1 := by exact_mod_cast h1 j
+    linarith
+  rw [hset, Measure.pi_pi, hprod, ← Finset.mul_prod_erase _ _ hi', hsi, htrue,
+    Finset.prod_congr rfl hrest, ← ENNReal.ofReal_prod_of_nonneg hnn,
+    ← ENNReal.ofReal_mul (prob i').coe_nonneg]
+
 /-- **S5.5, the discrete conditional theorem** (`Cox72 §6`): in the discrete logistic model —
 independent Bernoulli failure indicators over the risk set `R`, with odds
 `pⱼ/(1−pⱼ) = θ₀·e^{⟪β,zⱼ⟫}` — the conditional probability that subject `i` fails, given
@@ -116,7 +205,83 @@ theorem cond_single_failure (R : Finset (Fin n)) (z : Fin n → EuclideanSpace �
         (R.filter fun j => ω j = true).card = 1}] {ω | ω i = true}
       = ENNReal.ofReal
           (Real.exp ⟪β, z i⟫_ℝ / ∑ j ∈ R, Real.exp ⟪β, z j⟫_ℝ) := by
-  sorry
+  set μ : Measure (Fin n → Bool) :=
+    Measure.pi fun j => (PMF.bernoulli (prob j) (h1 j)).toMeasure with hμ
+  have hQpos : (0 : ℝ) < ∏ j ∈ R, (1 - (prob j : ℝ)) :=
+    Finset.prod_pos fun j hj => by have := hlt j hj; linarith
+  have hEsum : (0 : ℝ) < ∑ j ∈ R, Real.exp ⟪β, z j⟫_ℝ :=
+    Finset.sum_pos (fun _ _ => Real.exp_pos _) ⟨i, hi⟩
+  -- each one-failure block, rewritten through the proportional-odds hypothesis
+  have hblock : ∀ i' ∈ R, μ {ω : Fin n → Bool | ∀ j ∈ R, (ω j = true ↔ j = i')}
+      = ENNReal.ofReal
+          (θ₀ * Real.exp ⟪β, z i'⟫_ℝ * ∏ j ∈ R, (1 - (prob j : ℝ))) := by
+    intro i' hi'
+    rw [hμ, pi_bernoulli_single R prob h1 hi']
+    congr 1
+    have hne : (1 : ℝ) - (prob i' : ℝ) ≠ 0 := by have := hlt i' hi'; linarith
+    rw [← Finset.mul_prod_erase _ _ hi', ← hodds i' hi']
+    field_simp
+  -- the conditioning event is the disjoint union of the blocks over the risk set
+  have hSU : {ω : Fin n → Bool | (R.filter fun j => ω j = true).card = 1}
+      = ⋃ i' ∈ R, {ω : Fin n → Bool | ∀ j ∈ R, (ω j = true ↔ j = i')} := by
+    ext ω
+    simp only [Set.mem_setOf_eq, Set.mem_iUnion, exists_prop]
+    constructor
+    · intro hcard
+      obtain ⟨i', hi'⟩ := Finset.card_eq_one.1 hcard
+      have hi'R : i' ∈ R := by
+        have hmem : i' ∈ R.filter (fun j => ω j = true) := by
+          rw [hi']; exact Finset.mem_singleton_self i'
+        exact (Finset.mem_filter.1 hmem).1
+      exact ⟨i', hi'R, (singleFailure_iff R hi'R ω).2 hi'⟩
+    · rintro ⟨i', hi'R, h⟩
+      rw [(singleFailure_iff R hi'R ω).1 h]
+      exact Finset.card_singleton i'
+  have hdisj : (R : Set (Fin n)).PairwiseDisjoint
+      fun i' => {ω : Fin n → Bool | ∀ j ∈ R, (ω j = true ↔ j = i')} := by
+    intro a ha b _ hab
+    refine Set.disjoint_left.2 fun ω hωa hωb => hab ?_
+    exact (hωb a (Finset.mem_coe.1 ha)).1 ((hωa a (Finset.mem_coe.1 ha)).2 rfl)
+  have hμS : μ {ω : Fin n → Bool | (R.filter fun j => ω j = true).card = 1}
+      = ENNReal.ofReal (θ₀ * (∑ j ∈ R, Real.exp ⟪β, z j⟫_ℝ)
+          * ∏ j ∈ R, (1 - (prob j : ℝ))) := by
+    rw [hSU, measure_biUnion_finset hdisj fun b _ => measurableSet_boolCube _,
+      Finset.sum_congr rfl hblock,
+      ← ENNReal.ofReal_sum_of_nonneg fun i' _ =>
+        mul_nonneg (mul_nonneg hθ.le (Real.exp_pos _).le) hQpos.le]
+    congr 1
+    rw [Finset.mul_sum, Finset.sum_mul]
+  -- the numerator: conditioning event ∩ "`i` failed" is exactly the `i`-block
+  have hμSA : μ ({ω : Fin n → Bool | (R.filter fun j => ω j = true).card = 1}
+        ∩ {ω : Fin n → Bool | ω i = true})
+      = ENNReal.ofReal (θ₀ * Real.exp ⟪β, z i⟫_ℝ * ∏ j ∈ R, (1 - (prob j : ℝ))) := by
+    have hint : {ω : Fin n → Bool | (R.filter fun j => ω j = true).card = 1}
+          ∩ {ω : Fin n → Bool | ω i = true}
+        = {ω : Fin n → Bool | ∀ j ∈ R, (ω j = true ↔ j = i)} := by
+      ext ω
+      simp only [Set.mem_inter_iff, Set.mem_setOf_eq]
+      constructor
+      · rintro ⟨hcard, hωi⟩
+        obtain ⟨i', hi'⟩ := Finset.card_eq_one.1 hcard
+        have hmem : i ∈ R.filter (fun j => ω j = true) := Finset.mem_filter.2 ⟨hi, hωi⟩
+        rw [hi'] at hmem
+        have hii : i = i' := Finset.mem_singleton.1 hmem
+        subst hii
+        exact (singleFailure_iff R hi ω).2 hi'
+      · intro h
+        refine ⟨?_, (h i hi).2 rfl⟩
+        rw [(singleFailure_iff R hi ω).1 h]
+        exact Finset.card_singleton i
+    rw [hint, hblock i hi]
+  rw [ProbabilityTheory.cond_apply (measurableSet_boolCube _) μ, hμS, hμSA,
+    ← ENNReal.div_eq_inv_mul,
+    ← ENNReal.ofReal_div_of_pos (mul_pos (mul_pos hθ hEsum) hQpos)]
+  congr 1
+  have hrw1 : θ₀ * Real.exp ⟪β, z i⟫_ℝ * (∏ j ∈ R, (1 - (prob j : ℝ)))
+      = (θ₀ * ∏ j ∈ R, (1 - (prob j : ℝ))) * Real.exp ⟪β, z i⟫_ℝ := by ring
+  have hrw2 : θ₀ * (∑ j ∈ R, Real.exp ⟪β, z j⟫_ℝ) * (∏ j ∈ R, (1 - (prob j : ℝ)))
+      = (θ₀ * ∏ j ∈ R, (1 - (prob j : ℝ))) * (∑ j ∈ R, Real.exp ⟪β, z j⟫_ℝ) := by ring
+  rw [hrw1, hrw2, mul_div_mul_left _ _ (mul_pos hθ hQpos).ne']
 
 /-- The one-failure events partition: conditioning on "exactly one failure" and asking which
 subject failed sums the S5.5 factors to one (sanity identity for the conditional family). -/
