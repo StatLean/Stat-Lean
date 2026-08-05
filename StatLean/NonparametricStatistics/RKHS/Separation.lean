@@ -44,7 +44,12 @@ theorem SeparatesData.ne_zero {ι : Type*} {v : E} {c : ℝ} {x : ι → E}
     {lab : ι → ℝ} (h : SeparatesData v c x lab) {iPos iNeg : ι}
     -- USER-INPUT: both classes are nonempty (a positive and a negative label occur)
     (hPos : 0 < lab iPos) (hNeg : lab iNeg < 0) : v ≠ 0 := by
-  sorry
+  rintro rfl
+  have h1 := h iPos
+  have h2 := h iNeg
+  rw [inner_zero_right, zero_sub] at h1 h2
+  -- `h1` forces `c < 0`, `h2` forces `0 < c`.
+  nlinarith
 
 /-- **Distance to an affine hyperplane**: for `v ≠ 0`,
 `d(p, {⟪·, v⟫ = c}) = |⟪p, v⟫ − c| / ‖v‖`. -/
@@ -52,14 +57,44 @@ theorem infDist_hyperplane [CompleteSpace E] (p : E) {v : E}
     -- LEAN-ONLY: nondegenerate normal vector; for `v = 0` the "hyperplane" is `∅` or `E`
     (hv : v ≠ 0) (c : ℝ) :
     Metric.infDist p (hyperplane v c) = |⟪p, v⟫ - c| / ‖v‖ := by
-  sorry
+  have hv2 : (0 : ℝ) < ‖v‖ ^ 2 := by positivity
+  have hvn : (0 : ℝ) < ‖v‖ := norm_pos_iff.mpr hv
+  -- the foot of the perpendicular from `p`
+  set t : ℝ := (⟪p, v⟫ - c) / ‖v‖ ^ 2 with ht
+  set q : E := p - t • v with hq
+  have hqmem : q ∈ hyperplane v c := by
+    have : ⟪q, v⟫ = ⟪p, v⟫ - t * ‖v‖ ^ 2 := by
+      rw [hq, inner_sub_left, real_inner_smul_left, real_inner_self_eq_norm_sq]
+    show ⟪q, v⟫ = c
+    rw [this, ht, div_mul_cancel₀ _ (ne_of_gt hv2)]
+    ring
+  have hdist : dist p q = |⟪p, v⟫ - c| / ‖v‖ := by
+    have : p - q = t • v := by rw [hq]; abel
+    rw [dist_eq_norm, this, norm_smul, Real.norm_eq_abs, ht, abs_div, abs_of_pos hv2]
+    field_simp
+  refine le_antisymm ?_ ?_
+  · exact hdist ▸ Metric.infDist_le_dist_of_mem hqmem
+  · rw [Metric.le_infDist ⟨q, hqmem⟩]
+    intro y hy
+    have hyv : ⟪y, v⟫ = c := hy
+    have hcs : |⟪p - y, v⟫| ≤ ‖p - y‖ * ‖v‖ := by
+      simpa [Real.norm_eq_abs] using abs_real_inner_le_norm (p - y) v
+    have hpy : ⟪p - y, v⟫ = ⟪p, v⟫ - c := by rw [inner_sub_left, hyv]
+    rw [div_le_iff₀ hvn, dist_eq_norm]
+    rw [hpy] at hcs
+    exact hcs
 
 /-- Inner products against members of a subspace see only the subspace component of the
 other vector: `⟪m, P_M v⟫ = ⟪m, v⟫` for `m ∈ M`. -/
 theorem inner_starProjection_of_mem {M : Submodule ℝ E} [M.HasOrthogonalProjection]
     {m : E} (hm : m ∈ M) (v : E) :
     ⟪m, M.starProjection v⟫ = ⟪m, v⟫ := by
-  sorry
+  have h0 : ⟪v - M.starProjection v, m⟫ = 0 :=
+    Submodule.starProjection_inner_eq_zero (K := M) v m hm
+  have h0' : ⟪m, v - M.starProjection v⟫ = 0 := by
+    rw [real_inner_comm]; exact h0
+  rw [inner_sub_right] at h0'
+  linarith
 
 /-- **The separating normal can be chosen in the span of the data**: projecting `v` onto
 any closed subspace containing the data preserves all constraint values, hence preserves
@@ -70,6 +105,8 @@ theorem SeparatesData.starProjection {ι : Type*} {v : E} {c : ℝ} {x : ι → 
     (hxM : ∀ i, x i ∈ M)
     (h : SeparatesData v c x lab) :
     SeparatesData (M.starProjection v) c x lab := by
-  sorry
+  intro i
+  rw [inner_starProjection_of_mem (hxM i) v]
+  exact h i
 
 end StatLean.NonparametricStatistics
