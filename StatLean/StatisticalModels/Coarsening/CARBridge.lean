@@ -131,7 +131,7 @@ full-data law — the model-level missing-data slice plugs into the semiparametr
 observed-data theory. Single-measure instance witnessed by the explicit slice-wise kernel
 `carKernel Q`; see the module docstring's scope-honesty note (family-level θ-free bridge =
 debt `D-C1`). -/
-theorem isCoarseningAtRandom_of_isMAR
+theorem isCoarseningAtRandom_of_isMAR [MeasurableSingletonClass 𝓧]
     (Q : Measure (𝓧 × ℝ)) [IsProbabilityMeasure Q] {ρ : Kernel (𝓧 × ℝ) Bool}
     [IsMarkovKernel ρ]
     -- USER-INPUT: missing at random; Rubin76 §2, HR91
