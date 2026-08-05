@@ -432,9 +432,20 @@ theorem two_mul_alphaMixCoeff_le_betaMixCoeff {m₁ m₂ mΩ : MeasurableSpace �
   linarith
 
 /-- `φ ≤ ψ` in the calibrated form `|P(B) − P(B|A)| = P(B)|1 − P(B|A)/P(B)|`
-(the `P(B) = 0` cell contributes `0` on both sides). -/
+(the `P(B) = 0` cell contributes `0` on both sides).
+
+**Statement repaired 2026-08-05**: the unconditional form is FALSE — the classical
+ψ-coefficient may be `+∞`, the ψ description set is then unbounded, and Lean's
+`Real.sSup` junk convention makes `psiMixCoeff = 0` (formally verified counterexample
+recorded in the proof body below). The finiteness hypothesis `hψbdd` restores the
+classical statement (Bradley ch. 3: `φ ≤ ψ` whenever `ψ < ∞`). -/
 theorem phiMixCoeff_le_psiMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
-    {μ : Measure Ω} [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ) :
+    {μ : Measure Ω} [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ)
+    -- USER-INPUT: finiteness of ψ (the classical coefficient may be +∞); Bradley ch. 3
+    (hψbdd : BddAbove {r : ℝ | ∃ A B : Set Ω,
+      MeasurableSet[m₁] A ∧ MeasurableSet[m₂] B ∧
+      0 < (μ A).toReal ∧ 0 < (μ B).toReal ∧
+      r = |1 - (μ (A ∩ B)).toReal / (μ A).toReal / (μ B).toReal|}) :
     phiMixCoeff μ m₁ m₂ ≤ psiMixCoeff μ m₁ m₂ := by
   -- **FALSE AS FROZEN — unplanned debt (formally verified counterexample).**
   -- The ψ description set `{|1 − P(A∩B)/(P(A)P(B))| : P(A)P(B) > 0}` is *unbounded above*
@@ -630,9 +641,19 @@ private lemma sigmaGE_le_ambient {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measur
     sigmaGE X n ≤ (inferInstance : MeasurableSpace Ω) :=
   iSup₂_le fun s _ => (hmeas s).comap_le
 
-/-- ψ-mixing ⇒ φ-mixing. -/
+/-- ψ-mixing ⇒ φ-mixing.
+
+**Statement repaired 2026-08-05**: needs per-lag finiteness of ψ, for the same reason
+as `phiMixCoeff_le_psiMixCoeff` (formally verified counterexample in the proof body:
+constant-in-time process on `[0,1]` has junk `ψ ≡ 0` but `φ ≥ 1/2`). -/
 theorem IsPsiMixing.isPhiMixing [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
-    (hmeas : ∀ t, Measurable (X t)) (h : IsPsiMixing X μ) : IsPhiMixing X μ := by
+    (hmeas : ∀ t, Measurable (X t)) (h : IsPsiMixing X μ)
+    -- USER-INPUT: per-lag finiteness of ψ; Bradley ch. 3 / FY Def 2.11 implicit
+    (hψbdd : ∀ n : ℕ, BddAbove {r : ℝ | ∃ A B : Set Ω,
+      MeasurableSet[sigmaLE X 0] A ∧ MeasurableSet[sigmaGE X (n : ℤ)] B ∧
+      0 < (μ A).toReal ∧ 0 < (μ B).toReal ∧
+      r = |1 - (μ (A ∩ B)).toReal / (μ A).toReal / (μ B).toReal|}) :
+    IsPhiMixing X μ := by
   -- **FALSE AS FROZEN — unplanned debt (formally verified counterexample).** The process
   -- shadow of `phiMixCoeff_le_psiMixCoeff`'s falsity: with `μ₀ = volume.restrict (Icc 0 1)`
   -- on `Ω = ℝ` and the constant-in-time process `X t ω = ω`, both flanking σ-algebras are
