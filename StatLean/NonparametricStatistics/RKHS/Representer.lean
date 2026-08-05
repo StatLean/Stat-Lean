@@ -1,5 +1,7 @@
 import StatLean.NonparametricStatistics.RKHS.Basic
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.Analysis.Convex.Continuous
+import Mathlib.Analysis.RCLike.Lemmas
 
 /-!
 # The representer theorem
@@ -103,6 +105,52 @@ theorem representer_starProjection_isMin (x : Fin n → X) (W : ℝ → ℝ)
   simp only [hval]
   have := hmin f
   linarith
+
+/-!
+### Coercivity of the ridge objective
+
+A convex real-valued function on a finite-dimensional space is continuous, hence bounded
+below on the closed unit ball; convexity along rays then upgrades that to a global affine
+minorant `B − M‖w‖`.  Against the quadratic regularizer `‖f‖²` this makes the objective
+coercive, which is what produces a minimizer on a (compact) ball of the data span.
+-/
+
+private lemma exists_linear_minorant (L : (Fin n → 𝕜) → ℝ)
+    (hL : ConvexOn ℝ Set.univ L) :
+    ∃ B M : ℝ, 0 ≤ M ∧ ∀ w : Fin n → 𝕜, B - M * ‖w‖ ≤ L w := by
+  have hcont : Continuous L := continuousOn_univ.mp (hL.continuousOn isOpen_univ)
+  obtain ⟨u₀, hu₀mem, hu₀min⟩ :=
+    (isCompact_closedBall (0 : Fin n → 𝕜) 1).exists_isMinOn
+      ⟨0, Metric.mem_closedBall_self zero_le_one⟩ hcont.continuousOn
+  have hBle : ∀ w : Fin n → 𝕜, ‖w‖ ≤ 1 → L u₀ ≤ L w := by
+    intro w hw
+    exact hu₀min (by simpa [Metric.mem_closedBall, dist_zero_right] using hw)
+  have hB0 : L u₀ ≤ L 0 := hBle 0 (by simp)
+  refine ⟨L u₀, L 0 - L u₀, by linarith, fun w => ?_⟩
+  rcases le_or_gt ‖w‖ 1 with hw | hw
+  · have h := hBle w hw
+    nlinarith [norm_nonneg w]
+  · have ht0 : (0 : ℝ) < ‖w‖ := by linarith
+    have hinv1 : ‖w‖⁻¹ ≤ 1 := by
+      nlinarith [mul_inv_cancel₀ (ne_of_gt ht0), inv_pos.mpr ht0]
+    have hLc := hL.2
+    have hconv := hLc (Set.mem_univ (0 : Fin n → 𝕜)) (Set.mem_univ w)
+      (a := 1 - ‖w‖⁻¹) (b := ‖w‖⁻¹) (by linarith)
+      (le_of_lt (inv_pos.mpr ht0)) (by ring)
+    have hsimp : ((1 - ‖w‖⁻¹) • (0 : Fin n → 𝕜) + ‖w‖⁻¹ • w) = ‖w‖⁻¹ • w := by
+      simp
+    rw [hsimp] at hconv
+    have hnu : ‖(‖w‖⁻¹ • w : Fin n → 𝕜)‖ ≤ 1 := by
+      rw [norm_smul, norm_inv, Real.norm_eq_abs, abs_of_pos ht0,
+        inv_mul_cancel₀ (ne_of_gt ht0)]
+    have hstart : L u₀ ≤ (1 - ‖w‖⁻¹) * L 0 + ‖w‖⁻¹ * L w :=
+      le_trans (hBle _ hnu) hconv
+    have hmul : ‖w‖ * L u₀ ≤ ‖w‖ * ((1 - ‖w‖⁻¹) * L 0 + ‖w‖⁻¹ * L w) :=
+      mul_le_mul_of_nonneg_left hstart ht0.le
+    have hexp : ‖w‖ * ((1 - ‖w‖⁻¹) * L 0 + ‖w‖⁻¹ * L w) = ‖w‖ * L 0 - L 0 + L w := by
+      field_simp
+    rw [hexp] at hmul
+    nlinarith
 
 /-- **Existence and uniqueness for convex ridge losses**: with the regularizer `‖f‖²`
 and `L` convex, the regularized empirical risk has a unique minimizer.  (Continuity of
