@@ -336,6 +336,26 @@ theorem condKernel_ae_eq_gaussianCondKernel (m₁ : EuclideanSpace ℝ ι₁)
           (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map
             (sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂))).condKernel x
         = gaussianCondKernel m₁ m₂ S₁₁ S₁₂ S₂₂ x := by
-  sorry
+  haveI : IsProbabilityMeasure ((multivariateGaussian (blockPair m₁ m₂)
+      (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map
+        ⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂))) :=
+    Measure.isProbabilityMeasure_map
+      (sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂)).measurable.aemeasurable
+  have hG34 := compProd_gaussianCondKernel m₁ m₂ S₁₁ S₁₂ S₂₂ hJ h₁₁
+  have hfst : ((multivariateGaussian (blockPair m₁ m₂)
+        (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map
+          ⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂))).fst = multivariateGaussian m₁ S₁₁ := by
+    rw [← hG34, Measure.fst_compProd]
+  have hcp : (multivariateGaussian (blockPair m₁ m₂)
+        (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map
+          ⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂))
+      = ((multivariateGaussian (blockPair m₁ m₂)
+          (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).map
+            ⇑(sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂))).fst
+          ⊗ₘ gaussianCondKernel m₁ m₂ S₁₁ S₁₂ S₂₂ := by
+    rw [hfst, ← hG34]
+  have h := eq_condKernel_of_measure_eq_compProd _ hcp
+  rw [hfst] at h
+  filter_upwards [h] with x hx using hx.symm
 
 end StatLean.StatisticalModels
