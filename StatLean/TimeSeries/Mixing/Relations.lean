@@ -671,6 +671,130 @@ theorem IsAlphaMixing.comp [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
   refine squeeze_zero (fun n => alphaMixCoeff_nonneg (μ := μ)) (fun n => ?_) h
   exact alphaMixCoeff_mono (iSup₂_mono fun s _ => hcomap s) (iSup₂_mono fun s _ => hcomap s)
 
+omit [MeasurableSpace Ω] in
+/-- The path map of a shifted process pulls the coordinate σ-algebras back to the process
+σ-algebras. -/
+private lemma comap_path_cylinderEvents (X : ℤ → Ω → ℝ) (k : ℤ) (S : Set ℤ) :
+    MeasurableSpace.comap (fun ω (t : ℤ) => X (t + k) ω) (cylinderEvents S)
+      = ⨆ s ∈ S, MeasurableSpace.comap (X (s + k)) inferInstance := by
+  unfold cylinderEvents
+  rw [MeasurableSpace.comap_iSup]
+  refine iSup_congr fun s => ?_
+  rw [MeasurableSpace.comap_iSup]
+  refine iSup_congr fun _ => ?_
+  rw [MeasurableSpace.comap_comp]
+  rfl
+
+omit [MeasurableSpace Ω] in
+private lemma iSup_Iic_shift (X : ℤ → Ω → ℝ) (c k : ℤ) :
+    (⨆ s ∈ Set.Iic c, MeasurableSpace.comap (X (s + k)) inferInstance) = sigmaLE X (c + k) := by
+  refine le_antisymm (iSup₂_le fun s hs => ?_) (iSup₂_le fun u hu => ?_)
+  · exact le_iSup₂_of_le (s + k) (Set.mem_Iic.mpr (by have : s ≤ c := hs; omega)) le_rfl
+  · refine le_iSup₂_of_le (u - k) (Set.mem_Iic.mpr (by have : u ≤ c + k := hu; omega)) ?_
+    exact le_of_eq (by rw [sub_add_cancel])
+
+omit [MeasurableSpace Ω] in
+private lemma iSup_Ici_shift (X : ℤ → Ω → ℝ) (c k : ℤ) :
+    (⨆ s ∈ Set.Ici c, MeasurableSpace.comap (X (s + k)) inferInstance) = sigmaGE X (c + k) := by
+  refine le_antisymm (iSup₂_le fun s hs => ?_) (iSup₂_le fun u hu => ?_)
+  · exact le_iSup₂_of_le (s + k) (Set.mem_Ici.mpr (by have : c ≤ s := hs; omega)) le_rfl
+  · refine le_iSup₂_of_le (u - k) (Set.mem_Ici.mpr (by have : c + k ≤ u := hu; omega)) ?_
+    exact le_of_eq (by rw [sub_add_cancel])
+
+omit [MeasurableSpace Ω] in
+private lemma cylinderEvents_le (S : Set ℤ) :
+    cylinderEvents (X := fun _ : ℤ => ℝ) S ≤ MeasurableSpace.pi :=
+  iSup₂_le fun i _ => (measurable_pi_apply i).comap_le
+
+/-- Strict stationarity transported to a finite index set: the law of `(X_{i+k})_{i ∈ s}`
+is the law of `(X_i)_{i ∈ s}`. -/
+private lemma map_finsetTuple_shift {X : ℤ → Ω → ℝ} (hstat : IsStrictlyStationary X μ)
+    (hmeas : ∀ t, Measurable (X t)) (k : ℤ) (s : Finset ℤ) :
+    (μ.map fun ω (i : s) => X ((i : ℤ) + k) ω)
+      = μ.map fun ω (i : s) => X (i : ℤ) ω := by
+  classical
+  set e : s ≃ Fin s.card := s.equivFin with he
+  set t : Fin s.card → ℤ := fun j => ((e.symm j : s) : ℤ) with ht
+  set Φ : (Fin s.card → ℝ) → (∀ _ : s, ℝ) := fun p i => p (e i) with hΦdef
+  have hΦ : Measurable Φ := measurable_pi_lambda _ fun i => measurable_pi_apply (e i)
+  have hte : ∀ i : s, t (e i) = (i : ℤ) := by
+    intro i; simp [ht]
+  have hcomp : ∀ c : ℤ, Measurable fun ω (j : Fin s.card) => X (t j + c) ω :=
+    fun c => measurable_pi_lambda _ fun j => hmeas _
+  have hpush : ∀ c : ℤ,
+      (μ.map fun ω (j : Fin s.card) => X (t j + c) ω).map Φ
+        = μ.map fun ω (i : s) => X ((i : ℤ) + c) ω := by
+    intro c
+    rw [Measure.map_map hΦ (hcomp c)]
+    congr 1
+    funext ω i
+    simp [hΦdef, hte i]
+  have h0 : (μ.map fun ω (j : Fin s.card) => X (t j + 0) ω)
+      = μ.map fun ω (j : Fin s.card) => X (t j) ω := by simp
+  calc (μ.map fun ω (i : s) => X ((i : ℤ) + k) ω)
+      = (μ.map fun ω (j : Fin s.card) => X (t j + k) ω).map Φ := (hpush k).symm
+    _ = (μ.map fun ω (j : Fin s.card) => X (t j) ω).map Φ := by rw [hstat s.card t k]
+    _ = (μ.map fun ω (j : Fin s.card) => X (t j + 0) ω).map Φ := by rw [h0]
+    _ = μ.map fun ω (i : s) => X ((i : ℤ) + 0) ω := hpush 0
+    _ = μ.map fun ω (i : s) => X (i : ℤ) ω := by simp
+
+/-- **Strict stationarity = shift-invariance of the path law.** -/
+private lemma map_path_shift {X : ℤ → Ω → ℝ} [IsProbabilityMeasure μ]
+    (hstat : IsStrictlyStationary X μ) (hmeas : ∀ t, Measurable (X t)) (k : ℤ) :
+    (μ.map fun ω (u : ℤ) => X (u + k) ω) = μ.map fun ω (u : ℤ) => X u ω := by
+  have hTm : Measurable fun ω (u : ℤ) => X (u + k) ω :=
+    measurable_pi_lambda _ fun _ => hmeas _
+  have hUm : Measurable fun ω (u : ℤ) => X u ω := measurable_pi_lambda _ fun _ => hmeas _
+  refine ext_of_generate_finite (measurableCylinders fun _ : ℤ => ℝ)
+    generateFrom_measurableCylinders.symm isPiSystem_measurableCylinders ?_ ?_
+  · intro C hC
+    obtain ⟨s, S, hSm, rfl⟩ := (mem_measurableCylinders C).mp hC
+    have hcyl : MeasurableSet (cylinder s S) := MeasurableSet.cylinder (α := fun _ : ℤ => ℝ) s hSm
+    have hT : Measurable fun ω (i : s) => X ((i : ℤ) + k) ω :=
+      measurable_pi_lambda _ fun _ => hmeas _
+    have hU : Measurable fun ω (i : s) => X (i : ℤ) ω :=
+      measurable_pi_lambda _ fun _ => hmeas _
+    have eT : (μ.map fun ω (u : ℤ) => X (u + k) ω) (cylinder s S)
+        = (μ.map fun ω (i : s) => X ((i : ℤ) + k) ω) S := by
+      rw [Measure.map_apply hTm hcyl, Measure.map_apply hT hSm]
+      rfl
+    have eU : (μ.map fun ω (u : ℤ) => X u ω) (cylinder s S)
+        = (μ.map fun ω (i : s) => X (i : ℤ) ω) S := by
+      rw [Measure.map_apply hUm hcyl, Measure.map_apply hU hSm]
+      rfl
+    rw [eT, eU, map_finsetTuple_shift hstat hmeas k s]
+  · rw [Measure.map_apply hTm MeasurableSet.univ, Measure.map_apply hUm MeasurableSet.univ]
+    simp
+
+/-- The α-coefficient between two pulled-back σ-algebras only depends on the pushforward
+law. -/
+private lemma alphaMixCoeff_comap {V : Ω → (ℤ → ℝ)} (hV : Measurable V)
+    {ν : Measure (ℤ → ℝ)} (hν : μ.map V = ν)
+    (m₁ m₂ : MeasurableSpace (ℤ → ℝ)) (h₁ : m₁ ≤ MeasurableSpace.pi)
+    (h₂ : m₂ ≤ MeasurableSpace.pi) :
+    alphaMixCoeff μ (m₁.comap V) (m₂.comap V)
+      = @alphaMixCoeff (ℤ → ℝ) MeasurableSpace.pi ν m₁ m₂ := by
+  have hval : ∀ {S : Set (ℤ → ℝ)},
+      @MeasurableSet (ℤ → ℝ) MeasurableSpace.pi S → ν S = μ (V ⁻¹' S) := by
+    intro S hS
+    rw [← hν]
+    exact Measure.map_apply hV hS
+  unfold alphaMixCoeff
+  refine congrArg sSup (Set.ext fun r => ?_)
+  constructor
+  · rintro ⟨A, B, ⟨A', hA', rfl⟩, ⟨B', hB', rfl⟩, rfl⟩
+    refine ⟨A', B', hA', hB', ?_⟩
+    have e3 : ν (A' ∩ B') = μ (V ⁻¹' A' ∩ V ⁻¹' B') := by
+      rw [hval (@MeasurableSet.inter (ℤ → ℝ) MeasurableSpace.pi _ _ (h₁ _ hA') (h₂ _ hB')),
+        Set.preimage_inter]
+    rw [hval (h₁ _ hA'), hval (h₂ _ hB'), e3]
+  · rintro ⟨A', B', hA', hB', rfl⟩
+    refine ⟨V ⁻¹' A', V ⁻¹' B', ⟨A', hA', rfl⟩, ⟨B', hB', rfl⟩, ?_⟩
+    have e3 : ν (A' ∩ B') = μ (V ⁻¹' A' ∩ V ⁻¹' B') := by
+      rw [hval (@MeasurableSet.inter (ℤ → ℝ) MeasurableSpace.pi _ _ (h₁ _ hA') (h₂ _ hB')),
+        Set.preimage_inter]
+    rw [hval (h₁ _ hA'), hval (h₂ _ hB'), e3]
+
 /-- **Shift lemma** (used silently by every FY block argument): under strict
 stationarity, the α-coefficient between the past up to `k` and the future from `k + n`
 does not depend on the anchor `k`. -/
@@ -678,7 +802,38 @@ theorem IsStrictlyStationary.alphaMixCoeff_shift [IsProbabilityMeasure μ]
     {X : ℤ → Ω → ℝ} (hstat : IsStrictlyStationary X μ)
     (hmeas : ∀ t, Measurable (X t)) (k : ℤ) (n : ℕ) :
     alphaMixCoeff μ (sigmaLE X k) (sigmaGE X (k + n)) = alphaCoeff X μ n := by
-  sorry
+  have hTm : Measurable fun ω (u : ℤ) => X (u + k) ω := measurable_pi_lambda _ fun _ => hmeas _
+  have hUm : Measurable fun ω (u : ℤ) => X u ω := measurable_pi_lambda _ fun _ => hmeas _
+  obtain ⟨ν, hν⟩ : ∃ ν : Measure (ℤ → ℝ), (μ.map fun ω (u : ℤ) => X u ω) = ν := ⟨_, rfl⟩
+  have hνT : (μ.map fun ω (u : ℤ) => X (u + k) ω) = ν := by
+    rw [← hν]; exact map_path_shift hstat hmeas k
+  have hLk : MeasurableSpace.comap (fun ω (u : ℤ) => X (u + k) ω) (cylinderEvents (Set.Iic 0))
+      = sigmaLE X k := by
+    rw [comap_path_cylinderEvents X k (Set.Iic 0), iSup_Iic_shift X 0 k, zero_add]
+  have hGk : MeasurableSpace.comap (fun ω (u : ℤ) => X (u + k) ω)
+      (cylinderEvents (Set.Ici (n : ℤ))) = sigmaGE X (k + n) := by
+    rw [comap_path_cylinderEvents X k (Set.Ici (n : ℤ)), iSup_Ici_shift X (n : ℤ) k, add_comm]
+  have hL0 : MeasurableSpace.comap (fun ω (u : ℤ) => X u ω) (cylinderEvents (Set.Iic 0))
+      = sigmaLE X 0 := by
+    have h := comap_path_cylinderEvents X 0 (Set.Iic 0)
+    simp only [add_zero] at h
+    exact h
+  have hG0 : MeasurableSpace.comap (fun ω (u : ℤ) => X u ω) (cylinderEvents (Set.Ici (n : ℤ)))
+      = sigmaGE X (n : ℤ) := by
+    have h := comap_path_cylinderEvents X 0 (Set.Ici (n : ℤ))
+    simp only [add_zero] at h
+    exact h
+  calc alphaMixCoeff μ (sigmaLE X k) (sigmaGE X (k + n))
+      = alphaMixCoeff μ ((cylinderEvents (Set.Iic 0)).comap fun ω (u : ℤ) => X (u + k) ω)
+          ((cylinderEvents (Set.Ici (n : ℤ))).comap fun ω (u : ℤ) => X (u + k) ω) := by
+        rw [hLk, hGk]
+    _ = @alphaMixCoeff (ℤ → ℝ) MeasurableSpace.pi ν (cylinderEvents (Set.Iic 0))
+          (cylinderEvents (Set.Ici (n : ℤ))) :=
+        alphaMixCoeff_comap hTm hνT _ _ (cylinderEvents_le _) (cylinderEvents_le _)
+    _ = alphaMixCoeff μ ((cylinderEvents (Set.Iic 0)).comap fun ω (u : ℤ) => X u ω)
+          ((cylinderEvents (Set.Ici (n : ℤ))).comap fun ω (u : ℤ) => X u ω) :=
+        (alphaMixCoeff_comap hUm hν _ _ (cylinderEvents_le _) (cylinderEvents_le _)).symm
+    _ = alphaCoeff X μ n := by rw [hL0, hG0]; rfl
 
 /-! ### The deterministic non-example (FY §2.6.1(ix)) -/
 
