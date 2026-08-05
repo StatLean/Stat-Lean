@@ -119,7 +119,61 @@ theorem IsMA.tendstoInMeasure_inversion [IsProbabilityMeasure μ] {a1 : ℝ} {σ
     TendstoInMeasure μ
       (fun N ω => ∑ j ∈ Finset.range (N + 1), (-a1) ^ j * X (t - (j : ℕ)) ω)
       atTop (ε t) := by
-  sorry
+  have hw := h.whiteNoise
+  -- the MA(1) recurrence in cleaned-up form
+  have hrec : ∀ u : ℤ, X u =ᵐ[μ] fun ω => ε u ω + a1 * ε (u - 1) ω := by
+    intro u
+    filter_upwards [h.recurrence u] with ω hω
+    simpa using hω
+  -- the telescoping identity: the partial sums are the innovation plus a geometric tail
+  have key : ∀ N : ℕ, (fun ω => ∑ j ∈ Finset.range (N + 1), (-a1) ^ j * X (t - (j : ℕ)) ω)
+      =ᵐ[μ] fun ω => ε t ω - (-a1) ^ (N + 1) * ε (t - (N : ℤ) - 1) ω := by
+    intro N
+    induction N with
+    | zero =>
+      filter_upwards [hrec t] with ω hω
+      simp only [Finset.sum_range_one, Nat.cast_zero, sub_zero, pow_zero, one_mul,
+        zero_add, pow_one, hω]
+      ring
+    | succ N ih =>
+      have e1 : t - ((N + 1 : ℕ) : ℤ) = t - (N : ℤ) - 1 := by push_cast; ring
+      have e2 : t - (N : ℤ) - 1 - 1 = t - ((N + 1 : ℕ) : ℤ) - 1 := by push_cast; ring
+      filter_upwards [ih, hrec (t - (N : ℤ) - 1)] with ω h1 h2
+      rw [Finset.sum_range_succ, h1, e1, h2, e2]
+      ring
+  refine TendstoInMeasure.congr_left (fun N => (key N).symm) ?_
+  -- the geometric tail vanishes in measure, by Chebyshev
+  rw [tendstoInMeasure_iff_dist]
+  intro ζ hζ
+  have hbound : ∀ N : ℕ,
+      μ {ω | ζ ≤ dist (ε t ω - (-a1) ^ (N + 1) * ε (t - (N : ℤ) - 1) ω) (ε t ω)}
+        ≤ ENNReal.ofReal ((a1 ^ 2) ^ (N + 1) * σ2 / ζ ^ 2) := by
+    intro N
+    set Z : Ω → ℝ := fun ω => (-a1) ^ (N + 1) * ε (t - (N : ℤ) - 1) ω with hZdef
+    have hZmem : MemLp Z 2 μ := (hw.memLp _).const_mul _
+    have hZint : ∫ ω, Z ω ∂μ = 0 := by
+      simp only [hZdef, integral_const_mul, hw.integral_eq_zero, mul_zero]
+    have hpow : ((-a1) ^ (N + 1)) ^ 2 = (a1 ^ 2) ^ (N + 1) := by
+      rw [← pow_mul, mul_comm (N + 1) 2, pow_mul, neg_sq]
+    have hZvar : variance Z μ = (a1 ^ 2) ^ (N + 1) * σ2 := by
+      rw [hZdef, variance_const_mul, hw.variance_eq, hpow]
+    have hset : {ω | ζ ≤ dist (ε t ω - Z ω) (ε t ω)} = {ω | ζ ≤ |Z ω - ∫ ω, Z ω ∂μ|} := by
+      ext ω
+      simp only [Set.mem_setOf_eq, Real.dist_eq, hZint, sub_zero,
+        show ε t ω - Z ω - ε t ω = -Z ω from by ring, abs_neg]
+    rw [hset]
+    exact (meas_ge_le_variance_div_sq hZmem hζ).trans (by rw [hZvar])
+  have ha0 : (0 : ℝ) ≤ a1 ^ 2 := sq_nonneg _
+  have ha1 : a1 ^ 2 < 1 := by nlinarith [abs_nonneg a1, sq_abs a1]
+  have hreal : Tendsto (fun N : ℕ => (a1 ^ 2) ^ (N + 1) * σ2 / ζ ^ 2) atTop (nhds 0) := by
+    have := (((tendsto_pow_atTop_nhds_zero_of_lt_one ha0 ha1).comp
+      (tendsto_add_atTop_nat 1)).mul_const σ2).div_const (ζ ^ 2)
+    simpa using this
+  have hlim : Tendsto (fun N : ℕ => ENNReal.ofReal ((a1 ^ 2) ^ (N + 1) * σ2 / ζ ^ 2))
+      atTop (nhds 0) := by
+    simpa using ENNReal.tendsto_ofReal hreal
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
+    (fun _ => zero_le _) hbound
 
 /-- **ARIMA(p,d,q) satisfies an ARMA(p+d, q) recurrence** (FY §1.3.5; the book's
 "ARMA(p+d, p)" is a misprint for the MA order `q`): the composed AR coefficients are
