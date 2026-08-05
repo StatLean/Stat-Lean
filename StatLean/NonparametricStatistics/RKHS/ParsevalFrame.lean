@@ -24,7 +24,7 @@ representations*, Mem. Amer. Math. Soc. **147** (2000), no. 697.
 -/
 
 open ComplexConjugate
-open scoped InnerProductSpace
+open scoped InnerProductSpace ENNReal
 
 namespace StatLean.NonparametricStatistics
 
@@ -37,29 +37,86 @@ variable (𝕜) in
 def IsParsevalFrame (f : ι → E) : Prop :=
   ∀ h : E, HasSum (fun i => ‖⟪f i, h⟫_𝕜‖ ^ 2) (‖h‖ ^ 2)
 
+/-- `⟪h, f i⟫ · ⟪f i, h⟫` is the real scalar `‖⟪f i, h⟫‖²`. -/
+private theorem inner_mul_inner_self (f : ι → E) (h : E) (i : ι) :
+    ⟪h, f i⟫_𝕜 * ⟪f i, h⟫_𝕜 = ((‖⟪f i, h⟫_𝕜‖ ^ 2 : ℝ) : 𝕜) := by
+  rw [← inner_conj_symm (𝕜 := 𝕜) (f i) h, RCLike.mul_conj, RCLike.norm_conj]
+  norm_cast
+
+/-- `⟪h, h⟫` is the real scalar `‖h‖²`. -/
+private theorem inner_self_ofReal (h : E) : ⟪h, h⟫_𝕜 = ((‖h‖ ^ 2 : ℝ) : 𝕜) := by
+  rw [inner_self_eq_norm_sq_to_K]; push_cast; ring
+
+/-- The real Parseval identity at `h` is equivalent to its `𝕜`-valued (polarized at
+`h₁ = h₂ = h`) form. -/
+private theorem hasSum_sq_iff {f : ι → E} {h : E} :
+    HasSum (fun i => ‖⟪f i, h⟫_𝕜‖ ^ 2) (‖h‖ ^ 2) ↔
+      HasSum (fun i => ⟪h, f i⟫_𝕜 * ⟪f i, h⟫_𝕜) ⟪h, h⟫_𝕜 := by
+  constructor
+  · intro H
+    have := H.mapL (RCLike.ofRealCLM (K := 𝕜))
+    simpa only [Function.comp_def, RCLike.ofRealCLM_apply, inner_mul_inner_self,
+      inner_self_ofReal] using this
+  · intro H
+    have := H.mapL (RCLike.reCLM (K := 𝕜))
+    simpa only [Function.comp_def, RCLike.reCLM_apply, inner_mul_inner_self, inner_self_ofReal,
+      RCLike.ofReal_re] using this
+
+/-- The defining `HasSum` of the `ℓ²` norm, specialized to `p = 2`. -/
+private theorem lp2_hasSum_sq (x : lp (fun _ : ι => 𝕜) 2) :
+    HasSum (fun i => ‖x i‖ ^ 2) (‖x‖ ^ 2) := by
+  have h2 : (0:ℝ) < (2 : ℝ≥0∞).toReal := by norm_num
+  simpa using lp.hasSum_norm h2 x
+
 /-- An orthonormal basis (as a Hilbert basis) is a Parseval frame. -/
 theorem HilbertBasis.isParsevalFrame [CompleteSpace E] (e : HilbertBasis ι 𝕜 E) :
-    IsParsevalFrame 𝕜 (e : ι → E) := by
-  sorry
+    IsParsevalFrame 𝕜 (e : ι → E) :=
+  fun h => hasSum_sq_iff.2 (e.hasSum_inner_mul_inner h h)
 
 /-- **Compressions of orthonormal bases are Parseval frames**: the orthogonal projection
 of a Hilbert basis of `E` onto a closed subspace `M` is a Parseval frame for `M`. -/
 theorem isParsevalFrame_orthogonalProjection [CompleteSpace E]
     (e : HilbertBasis ι 𝕜 E) (M : Submodule 𝕜 E) [CompleteSpace M] :
     IsParsevalFrame 𝕜 fun i => M.orthogonalProjection (e i) := by
-  sorry
+  intro h
+  have := HilbertBasis.isParsevalFrame (𝕜 := 𝕜) e (h : E)
+  simpa using this
 
 /-- A Parseval frame is norm-bounded by `1`. -/
 theorem IsParsevalFrame.norm_le_one {f : ι → E} (hf : IsParsevalFrame 𝕜 f) (i : ι) :
     ‖f i‖ ≤ 1 := by
-  sorry
+  have H := hf (f i)
+  have hle := le_hasSum H i (fun j _ => by positivity)
+  rw [inner_self_ofReal] at hle
+  rw [RCLike.norm_ofReal, abs_of_nonneg (by positivity)] at hle
+  nlinarith [norm_nonneg (f i), sq_nonneg (‖f i‖ - 1), sq_nonneg (‖f i‖ + 1)]
 
 /-- **Analysis-operator characterization**: `f` is a Parseval frame iff
 `h ↦ (⟪f_i, h⟫)ᵢ` is a well-defined linear isometry into `ℓ²(ι)`. -/
 theorem isParsevalFrame_iff_exists_isometry {f : ι → E} :
     IsParsevalFrame 𝕜 f
       ↔ ∃ V : E →ₗᵢ[𝕜] lp (fun _ : ι => 𝕜) 2, ∀ h i, V h i = ⟪f i, h⟫_𝕜 := by
-  sorry
+  constructor
+  · intro hf
+    have hmem : ∀ h : E, Memℓp (fun i => ⟪f i, h⟫_𝕜) 2 := by
+      intro h
+      refine memℓp_gen ?_
+      simpa using (hf h).summable
+    let L : E →ₗ[𝕜] lp (fun _ : ι => 𝕜) 2 :=
+      { toFun := fun h => ⟨fun i => ⟪f i, h⟫_𝕜, hmem h⟩
+        map_add' := by intro x y; ext i; simp only [inner_add_right]; rfl
+        map_smul' := by intro c x; ext i; simp [inner_smul_right, Pi.smul_apply] }
+    have hL : ∀ (h : E) (i : ι), (L h) i = ⟪f i, h⟫_𝕜 := fun _ _ => rfl
+    have hnorm : ∀ h : E, ‖L h‖ = ‖h‖ := by
+      intro h
+      have h1 := lp2_hasSum_sq (L h)
+      simp only [hL] at h1
+      have h2 := h1.unique (hf h)
+      rw [← Real.sqrt_sq (norm_nonneg (L h)), h2, Real.sqrt_sq (norm_nonneg h)]
+    exact ⟨⟨L, hnorm⟩, hL⟩
+  · rintro ⟨V, hV⟩ h
+    have := lp2_hasSum_sq (V h)
+    simpa [hV] using this
 
 /-- **Reconstruction formula**: for a Parseval frame, `h = ∑ᵢ ⟪f_i, h⟫ • f_i`
 (unordered norm convergence). -/
