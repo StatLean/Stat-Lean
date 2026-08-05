@@ -60,8 +60,8 @@ private theorem aesm_matAct {a b : ℕ} (A : Matrix (Fin a) (Fin b) ℝ)
   (matCLM A).continuous.aestronglyMeasurable
 
 /-- LEAN-ONLY: coordinate evaluation is a.e.-strongly measurable for any law. -/
-private theorem aesm_proj {ι : Type*} [Fintype ι] {α : Type*} [MeasurableSpace α]
-    {ν : Measure α} (i : ι) :
+private theorem aesm_proj {ι : Type*} [Fintype ι]
+    {ν : Measure (EuclideanSpace ℝ ι)} (i : ι) :
     AEStronglyMeasurable (fun y : EuclideanSpace ℝ ι => y i) ν :=
   (EuclideanSpace.proj (𝕜 := ℝ) i).continuous.aestronglyMeasurable
 
@@ -73,7 +73,7 @@ private theorem aesm_self {ι : Type*} [Fintype ι] {ν : Measure (EuclideanSpac
 /-- LEAN-ONLY: the identity matrix acts as the identity. -/
 private theorem toEuclideanLin_one_apply {a : ℕ} (x : EuclideanSpace ℝ (Fin a)) :
     Matrix.toEuclideanLin (𝕜 := ℝ) (1 : Matrix (Fin a) (Fin a) ℝ) x = x := by
-  simp [Matrix.toEuclideanLin_apply]
+  simp
 
 /-- LEAN-ONLY: the LMM observation map `(b, ε) ↦ Xβ + Z b + ε` is measurable. -/
 private theorem measurable_lmmMap :
@@ -106,7 +106,7 @@ private theorem lmmLaw_eq_map_lmmInner (G : Measure (EuclideanSpace ℝ (Fin q))
             Matrix.toEuclideanLin (𝕜 := ℝ) D.Z be.1 + be.2 := by
     funext be
     simp only [Function.comp_apply, add_assoc]
-  rw [lmmInner, ← Measure.map_map (measurable_const_add _) (measurable_innerMap D), ← h, lmmLaw]
+  rw [lmmInner, Measure.map_map (measurable_const_add _) (measurable_innerMap D), ← h, lmmLaw]
 
 /-- LEAN-ONLY: an integral of a function of the first coordinate lives on the first marginal. -/
 private theorem integral_comp_fst {E α γ : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -138,8 +138,9 @@ private theorem lmmInner_eq_conv (G : Measure (EuclideanSpace ℝ (Fin q)))
     lmmInner D G R = (G.map fun x => Matrix.toEuclideanLin (𝕜 := ℝ) D.Z x) ∗ R := by
   have hmap : (G.map fun x => Matrix.toEuclideanLin (𝕜 := ℝ) D.Z x).prod R
       = (G.prod R).map (Prod.map (fun x => Matrix.toEuclideanLin (𝕜 := ℝ) D.Z x) id) := by
-    rw [← Measure.map_id (μ := R)]
-    exact Measure.map_prod_map G R (measurable_matAct D.Z) measurable_id
+    have h := Measure.map_prod_map G R (measurable_matAct D.Z)
+      (measurable_id (α := EuclideanSpace ℝ (Fin n)))
+    rwa [Measure.map_id] at h
   have hadd : Measurable fun z : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) =>
       z.1 + z.2 := measurable_add
   calc lmmInner D G R
@@ -148,7 +149,8 @@ private theorem lmmInner_eq_conv (G : Measure (EuclideanSpace ℝ (Fin q)))
     _ = ((G.prod R).map (Prod.map (fun x => Matrix.toEuclideanLin (𝕜 := ℝ) D.Z x) id)).map
           (fun z => z.1 + z.2) :=
         (Measure.map_map hadd ((measurable_matAct D.Z).prodMap measurable_id)).symm
-    _ = (G.map fun x => Matrix.toEuclideanLin (𝕜 := ℝ) D.Z x) ∗ R := by rw [← hmap]
+    _ = (G.map fun x => Matrix.toEuclideanLin (𝕜 := ℝ) D.Z x) ∗ R := by
+        rw [← hmap]; rfl
 
 instance (G : Measure (EuclideanSpace ℝ (Fin q))) (R : Measure (EuclideanSpace ℝ (Fin n)))
     [IsProbabilityMeasure G] [IsProbabilityMeasure R] :
@@ -180,7 +182,9 @@ theorem meanVec_lmmLaw (G : Measure (EuclideanSpace ℝ (Fin q)))
       show (∫ x, x ∂G) = meanVec G from rfl, hG, map_zero]
   have hE0 : ∫ be : EuclideanSpace ℝ (Fin q) × EuclideanSpace ℝ (Fin n), be.2 ∂(G.prod R)
       = 0 := by
-    rw [integral_comp_snd _ aesm_self]
+    have h := integral_comp_snd (μ := G) (ν := R)
+      (fun y : EuclideanSpace ℝ (Fin n) => y) aesm_self
+    rw [h]
     exact hR
   have hmap : ∫ y : EuclideanSpace ℝ (Fin n), y ∂(lmmLaw D β G R)
       = ∫ be : EuclideanSpace ℝ (Fin q) × EuclideanSpace ℝ (Fin n),
@@ -188,8 +192,24 @@ theorem meanVec_lmmLaw (G : Measure (EuclideanSpace ℝ (Fin q)))
             + Matrix.toEuclideanLin (𝕜 := ℝ) D.Z be.1 + be.2) ∂(G.prod R) := by
     rw [lmmLaw]
     exact integral_map (measurable_lmmMap D β).aemeasurable aesm_self
-  rw [meanVec, hmap, integral_add ((integrable_const _).add hZ) hE,
-    integral_add (integrable_const _) hZ, hZ0, hE0, integral_const]
+  -- `Pi.add` reshapes the integrand, so the two splits go through explicit `have`s
+  have hsplit1 : ∫ be : EuclideanSpace ℝ (Fin q) × EuclideanSpace ℝ (Fin n),
+        (Matrix.toEuclideanLin (𝕜 := ℝ) D.X β
+          + Matrix.toEuclideanLin (𝕜 := ℝ) D.Z be.1 + be.2) ∂(G.prod R)
+      = (∫ be : EuclideanSpace ℝ (Fin q) × EuclideanSpace ℝ (Fin n),
+            (Matrix.toEuclideanLin (𝕜 := ℝ) D.X β
+              + Matrix.toEuclideanLin (𝕜 := ℝ) D.Z be.1) ∂(G.prod R))
+        + ∫ be : EuclideanSpace ℝ (Fin q) × EuclideanSpace ℝ (Fin n), be.2 ∂(G.prod R) :=
+    integral_add ((integrable_const _).add hZ) hE
+  have hsplit2 : ∫ be : EuclideanSpace ℝ (Fin q) × EuclideanSpace ℝ (Fin n),
+        (Matrix.toEuclideanLin (𝕜 := ℝ) D.X β
+          + Matrix.toEuclideanLin (𝕜 := ℝ) D.Z be.1) ∂(G.prod R)
+      = (∫ _be : EuclideanSpace ℝ (Fin q) × EuclideanSpace ℝ (Fin n),
+            Matrix.toEuclideanLin (𝕜 := ℝ) D.X β ∂(G.prod R))
+        + ∫ be : EuclideanSpace ℝ (Fin q) × EuclideanSpace ℝ (Fin n),
+            Matrix.toEuclideanLin (𝕜 := ℝ) D.Z be.1 ∂(G.prod R) :=
+    integral_add (integrable_const _) hZ
+  rw [meanVec, hmap, hsplit1, hsplit2, hZ0, hE0, integral_const]
   simp
 
 /-- **M1b, marginal covariance without Gaussianity**: `Cov Y = Z·Cov(b)·Zᵀ + Cov(ε)` —
