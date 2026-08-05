@@ -237,9 +237,137 @@ theorem min_norm_marginFeasible_mem_span [CompleteSpace E] {x : Fin n → E}
   have h2 : ‖M.starProjection w‖ ≤ ‖w‖ := M.norm_starProjection_apply_le w
   exact (M.mem_iff_norm_starProjection w).mpr (le_antisymm h2 h1)
 
+/-!
+### Margin bookkeeping
+
+`dataMargin` is an infimum over a nonempty finite index type, so it is bounded above by
+each of its terms and below by any common lower bound.  The degenerate normal vector
+`v = 0` has `hyperplane 0 c` equal to `∅` (for `c ≠ 0`) or to `E` (for `c = 0`), and in
+both cases every data point is at `Metric.infDist` zero from it.
+-/
+
+private lemma le_dataMargin {x : Fin n → E} (hn : 0 < n) {v : E} {c a : ℝ}
+    (h : ∀ i, a ≤ Metric.infDist (x i) (hyperplane v c)) : a ≤ dataMargin x v c := by
+  haveI : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
+  exact le_ciInf h
+
+private lemma dataMargin_le (x : Fin n → E) (v : E) (c : ℝ) (i : Fin n) :
+    dataMargin x v c ≤ Metric.infDist (x i) (hyperplane v c) :=
+  ciInf_le ⟨0, Set.forall_mem_range.2 fun _ => Metric.infDist_nonneg⟩ i
+
+private lemma dataMargin_zero_left (x : Fin n → E) (hn : 0 < n) (c : ℝ) :
+    dataMargin x (0 : E) c = 0 := by
+  haveI : Nonempty (Fin n) := Fin.pos_iff_nonempty.mp hn
+  have hzero : ∀ i, Metric.infDist (x i) (hyperplane (0 : E) c) = 0 := by
+    intro i
+    by_cases hc : c = 0
+    · have hset : hyperplane (0 : E) c = Set.univ := by
+        ext y; simp [hyperplane, hc]
+      rw [hset]
+      exact Metric.infDist_zero_of_mem (Set.mem_univ _)
+    · have hset : hyperplane (0 : E) c = ∅ := by
+        ext y
+        simp only [hyperplane, Set.mem_setOf_eq, inner_zero_right,
+          Set.mem_empty_iff_false, iff_false]
+        exact fun h => hc h.symm
+      rw [hset, Metric.infDist_empty]
+  simp only [dataMargin, hzero]
+  exact ciInf_const
+
+/-- For a `±1` label, `|l * t| = |t|`. -/
+private lemma abs_lab_mul {l : ℝ} (hl : l = 1 ∨ l = -1) (t : ℝ) : |l * t| = |t| := by
+  rcases hl with h | h <;> subst h <;> simp [abs_mul]
+
+/-- A `±1`-labeled constraint fixes the sign of the residual: `|t| = l * t`. -/
+private lemma abs_eq_lab_mul {l t : ℝ} (hl : l = 1 ∨ l = -1) (h : 0 < l * t) :
+    |t| = l * t := by
+  rcases hl with h1 | h1 <;> subst h1
+  · rw [one_mul] at h ⊢; exact abs_of_pos h
+  · rw [neg_one_mul] at h ⊢; exact abs_of_neg (by linarith)
+
+/-- **The minimal-norm solution is a maximal margin hyperplane**, nondegenerate case.
+
+This is the full content of `isMaxMarginHyperplane_of_min_norm` under the extra
+hypothesis `w ≠ 0`, which (see the comment on that theorem) is exactly what the frozen
+statement is missing. -/
+private theorem isMaxMarginHyperplane_of_min_norm_of_ne_zero [CompleteSpace E]
+    {x : Fin n → E} {lab : Fin n → ℝ} {w : E} (hn : 0 < n)
+    (hlab : ∀ i, lab i = 1 ∨ lab i = -1)
+    (hw : w ∈ marginFeasible x lab)
+    (hmin : ∀ v ∈ marginFeasible x lab, ‖w‖ ≤ ‖v‖)
+    (hw0 : w ≠ 0) :
+    ∃ c : ℝ, (∀ i, 1 ≤ lab i * (⟪x i, w⟫ - c)) ∧
+      IsMaxMarginHyperplane w c x lab := by
+  obtain ⟨c, hc⟩ := hw
+  have hwn : 0 < ‖w‖ := norm_pos_iff.mpr hw0
+  refine ⟨c, hc, fun i => lt_of_lt_of_le zero_lt_one (hc i), ?_⟩
+  -- (b) the margin of `(w, c)` is at least `1/‖w‖`
+  have hlow : 1 / ‖w‖ ≤ dataMargin x w c := by
+    refine le_dataMargin hn fun i => ?_
+    rw [infDist_hyperplane _ hw0 c]
+    have h1 : (1 : ℝ) ≤ |⟪x i, w⟫ - c| :=
+      calc (1 : ℝ) ≤ lab i * (⟪x i, w⟫ - c) := hc i
+        _ ≤ |lab i * (⟪x i, w⟫ - c)| := le_abs_self _
+        _ = |⟪x i, w⟫ - c| := abs_lab_mul (hlab i) _
+    gcongr
+  -- (c) no separating hyperplane does better
+  intro v' c' hsep'
+  have hmnn : 0 ≤ dataMargin x v' c' := le_dataMargin hn fun _ => Metric.infDist_nonneg
+  rcases eq_or_lt_of_le hmnn with hm0 | hmpos
+  · rw [← hm0]
+    have : (0 : ℝ) < 1 / ‖w‖ := by positivity
+    linarith
+  by_cases hv0 : v' = 0
+  · rw [hv0, dataMargin_zero_left x hn c'] at hmpos
+    exact absurd hmpos (lt_irrefl 0)
+  set m := dataMargin x v' c' with hmdef
+  have hv'n : 0 < ‖v'‖ := norm_pos_iff.mpr hv0
+  -- the normalized constraints hold at scale `m ‖v'‖`
+  have hkey : ∀ i, m * ‖v'‖ ≤ lab i * (⟪x i, v'⟫ - c') := by
+    intro i
+    have h1 : m ≤ |⟪x i, v'⟫ - c'| / ‖v'‖ := by
+      rw [← infDist_hyperplane (x i) hv0 c']
+      exact dataMargin_le x v' c' i
+    rw [abs_eq_lab_mul (hlab i) (hsep' i), le_div_iff₀ hv'n] at h1
+    exact h1
+  -- rescaling `(v', c')` lands in the feasible set with norm `1/m`
+  have hκpos : 0 < 1 / (m * ‖v'‖) := by positivity
+  have hfeas : (1 / (m * ‖v'‖)) • v' ∈ marginFeasible x lab := by
+    refine ⟨1 / (m * ‖v'‖) * c', fun i => ?_⟩
+    rw [real_inner_smul_right]
+    have hring : lab i * (1 / (m * ‖v'‖) * ⟪x i, v'⟫ - 1 / (m * ‖v'‖) * c')
+        = 1 / (m * ‖v'‖) * (lab i * (⟪x i, v'⟫ - c')) := by ring
+    rw [hring]
+    calc (1 : ℝ) = 1 / (m * ‖v'‖) * (m * ‖v'‖) := by field_simp
+      _ ≤ 1 / (m * ‖v'‖) * (lab i * (⟪x i, v'⟫ - c')) :=
+          mul_le_mul_of_nonneg_left (hkey i) hκpos.le
+  have hnw : ‖w‖ ≤ 1 / m := by
+    have h := hmin _ hfeas
+    rw [norm_smul, Real.norm_eq_abs, abs_of_pos hκpos] at h
+    have hrw : 1 / (m * ‖v'‖) * ‖v'‖ = 1 / m := by field_simp
+    rwa [hrw] at h
+  rw [le_div_iff₀ hmpos] at hnw
+  have : m ≤ 1 / ‖w‖ := by rw [le_div_iff₀ hwn, mul_comm]; exact hnw
+  linarith
+
 /-- **The minimal-norm solution is a maximal margin hyperplane**: an offset `c` for the
 minimal-norm feasible `w` realizes the maximal margin among all separating hyperplanes,
 with margin `1/‖w‖`. -/
+-- OBSTRUCTION (np/rkhs-ml): FALSE as frozen — the hypotheses do not rule out `w = 0`.
+-- Counterexample (each step below was compiled against this file): `E = ℝ`, `n = 1`,
+-- `x 0 = 0`, `lab 0 = 1`.  Then `marginFeasible x lab = Set.univ` (the constraint
+-- `1 ≤ 1 * (0 - c)` holds for every `c ≤ -1`), so the minimal-norm feasible vector is
+-- `w = 0`, satisfying `hw` and `hmin`; `hn` and `hlab` hold.  But for every `c`,
+-- `hyperplane (0 : ℝ) c` is `∅` (`c ≠ 0`) or `Set.univ` (`c = 0`), so
+-- `dataMargin x 0 c = 0` (`dataMargin_zero_left` above), while `(v', c') = (1, -1)`
+-- separates the data with `dataMargin x 1 (-1) = |0 - (-1)| / ‖1‖ = 1 > 0`.  Hence the
+-- required `dataMargin x v' c' ≤ dataMargin x w c` fails.
+-- ROOT CAUSE: with only one label sign present, `0` is always feasible, so the
+-- minimal-norm solution degenerates.  FIX (deferred, needs a statement change): add the
+-- USER-INPUT hypothesis that both classes are nonempty — the same input already carried
+-- by `SeparatesData.ne_zero` — i.e. `(hPos : 0 < lab iPos) (hNeg : lab iNeg < 0)`.  That
+-- forces `w ≠ 0` (if `w = 0` the two constraints give `c ≤ -1` and `1 ≤ c`), after which
+-- `isMaxMarginHyperplane_of_min_norm_of_ne_zero` above closes the goal outright.
 theorem isMaxMarginHyperplane_of_min_norm [CompleteSpace E] {x : Fin n → E}
     {lab : Fin n → ℝ} {w : E}
     -- LEAN-ONLY: at least one data point; the margin is an infimum over the data
