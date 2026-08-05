@@ -1,6 +1,7 @@
 import StatLean.NonparametricStatistics.RKHS.Mercer.Theorem
 import StatLean.NonparametricStatistics.RKHS.RangeSpace
 import StatLean.NonparametricStatistics.RKHS.Uniqueness
+import StatLean.NonparametricStatistics.RKHS.Papadakis
 import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
@@ -953,6 +954,16 @@ private theorem boxProd_sqrtSymbol (x z : X) :
     inner_sqrtSectionLp d hK x z]
   exact hK.isKernelFun.conj_symm z x
 
+-- The eigenvalue equation in `L²`.
+private theorem mercerCLM_eigfun (j : d.ι) :
+    mercerCLM μ hKc (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun j))
+      = (d.eigval j : 𝕜) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun j) := by
+  refine Lp.ext ?_
+  filter_upwards [mercerCLM_coeFn_ae hKc (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun j)),
+    Lp.coeFn_smul ((d.eigval j : 𝕜)) (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun j)),
+    ContinuousMap.coeFn_toLp (E := 𝕜) (p := 2) (μ := μ) (𝕜 := 𝕜) (d.eigfun j)] with z h1 h2 h3
+  rw [h1, h2, Pi.smul_apply, smul_eq_mul, h3, d.eigen_eq j z]
+
 include hK in
 -- The range space of the square-root symbol has reproducing kernel `K`.
 private theorem rangeSpaceScalarKernel_sqrt :
@@ -1098,7 +1109,88 @@ theorem exists_orthonormalBasis_sqrt_eigfun
   --     `d.orthonormal`) yields `√λ_j δ_{jk} = ⟪b_k, b_j⟫ √λ_k`, i.e. `⟪b_k, b_j⟫ = δ_{jk}`
   --     since `λ_k > 0`.  Density of the span is the frame property (a vector orthogonal
   --     to every `bᵢ` has norm `0` by the Parseval identity).
-  sorry
+  classical
+  have hK : IsMercerKernel 𝕜 K := ⟨hKc, by rw [← hKH]; exact isKernelFun_scalarKernel (H := H)⟩
+  -- the eigenfunctions are orthogonal to `ker T_K`
+  have hmem : ∀ j : d.ι, ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun j)
+      ∈ (LinearMap.ker (mercerCLM μ hKc).toLinearMap)ᗮ := by
+    intro j
+    rw [Submodule.mem_orthogonal]
+    intro u hu
+    have hu0 : mercerCLM μ hKc u = 0 := by
+      rw [LinearMap.mem_ker] at hu
+      exact hu
+    have hsym := (isPositive_mercerCLM hK).1 u
+      (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun j))
+    simp only [ContinuousLinearMap.coe_coe] at hsym
+    rw [hu0, inner_zero_left, mercerCLM_eigfun d j, inner_smul_right] at hsym
+    rcases mul_eq_zero.mp hsym.symm with h | h
+    · exact absurd h (RCLike.ofReal_ne_zero.mpr (d.eigval_pos j).ne')
+    · exact h
+  -- the square root sends the `j`-th eigenfunction to `√λⱼ eⱼ`, everywhere
+  have hval : ∀ (j : d.ι) (x : X),
+      integralOp μ (sqrtSymbol d) (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun j)) x
+        = ((Real.sqrt (d.eigval j) : ℝ) : 𝕜) * d.eigfun j x := by
+    intro j x
+    refine (hasSum_integralOp_sqrtSymbol d hK
+      (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun j)) x).unique ?_
+    refine (hasSum_ite_eq j (((Real.sqrt (d.eigval j) : ℝ) : 𝕜) * d.eigfun j x)).congr_fun
+      fun n => ?_
+    by_cases hnj : n = j
+    · subst hnj
+      rw [if_pos rfl, inner_self_eq_norm_sq_to_K, d.orthonormal.1 n]
+      norm_num
+    · rw [if_neg hnj, d.orthonormal.2 hnj, mul_zero]
+  choose b hb1 hb2 using fun j => sqrtCLM_isometry_on_ker_orthogonal d hKH (hmem j)
+  have hbcoe : ∀ j : d.ι, (b j : X → 𝕜)
+      = fun x => ((Real.sqrt (d.eigval j) : ℝ) : 𝕜) * d.eigfun j x := by
+    intro j
+    rw [hb1 j]
+    funext x
+    exact hval j x
+  have hbnorm : ∀ j : d.ι, ‖b j‖ = 1 := by
+    intro j
+    rw [hb2 j]
+    exact d.orthonormal.1 j
+  -- Papadakis: the family is a Parseval frame
+  have hframe : IsParsevalFrame 𝕜 b := by
+    refine isParsevalFrame_of_hasSum_scalarKernel fun x y => ?_
+    rw [hKH]
+    refine (d.hasSum_kernel hK x y).congr_fun fun n => ?_
+    rw [hbcoe n]
+    change ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x *
+      conj (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n y) = _
+    rw [map_mul, RCLike.conj_ofReal]
+    have hsq : ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * ((Real.sqrt (d.eigval n) : ℝ) : 𝕜)
+        = (d.eigval n : 𝕜) := by
+      rw [← RCLike.ofReal_mul, Real.mul_self_sqrt (d.eigval_pos n).le]
+    calc ((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * d.eigfun n x *
+          (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * conj (d.eigfun n y))
+        = (((Real.sqrt (d.eigval n) : ℝ) : 𝕜) * ((Real.sqrt (d.eigval n) : ℝ) : 𝕜)) *
+            (d.eigfun n x * conj (d.eigfun n y)) := by ring
+      _ = _ := by rw [hsq]
+  refine ⟨b, hbcoe, ⟨hbnorm, fun i j hij => ?_⟩, ?_⟩
+  · -- orthogonality: a unit-norm Parseval frame is orthonormal
+    have hjj : ‖⟪b j, b j⟫_𝕜‖ ^ 2 = 1 := by
+      rw [inner_self_eq_norm_sq_to_K, hbnorm j]
+      norm_num
+    have hsum := sum_le_hasSum ({i, j} : Finset d.ι) (fun n _ => sq_nonneg _) (hframe (b j))
+    rw [Finset.sum_pair hij, hjj, hbnorm j] at hsum
+    have hle : ‖⟪b i, b j⟫_𝕜‖ ^ 2 ≤ 0 := by nlinarith
+    have h0 : ‖⟪b i, b j⟫_𝕜‖ ^ 2 = 0 := le_antisymm hle (sq_nonneg _)
+    exact norm_eq_zero.mp (by nlinarith [norm_nonneg (⟪b i, b j⟫_𝕜)])
+  · -- density: a vector orthogonal to the whole frame has norm zero
+    have hbot : (Submodule.span 𝕜 (Set.range b))ᗮ = ⊥ := by
+      refine Submodule.eq_bot_iff _ |>.2 fun v hv => ?_
+      have hzero : ∀ i : d.ι, ⟪b i, v⟫_𝕜 = 0 := fun i =>
+        hv _ (Submodule.subset_span ⟨i, rfl⟩)
+      have hns : HasSum (fun _ : d.ι => (0 : ℝ)) (‖v‖ ^ 2) := by
+        refine (hframe v).congr_fun fun i => ?_
+        rw [hzero i]
+        norm_num
+      have : ‖v‖ ^ 2 = 0 := (hasSum_zero.unique hns).symm
+      exact norm_eq_zero.mp (by nlinarith [norm_nonneg v])
+    rw [← Submodule.orthogonal_orthogonal_eq_closure, hbot, Submodule.bot_orthogonal_eq_top]
 
 /-- **Spectral membership test for `H(K)`**: a function lies in `H(K)` iff it is a
 pointwise sum `∑ₙ aₙ eₙ` with `∑ₙ |aₙ|²/λₙ < ∞`. -/
