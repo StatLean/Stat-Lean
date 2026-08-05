@@ -266,7 +266,7 @@ const resultFullNames = new Set();
 for (let index = 0; index < results.length; index += 1) {
   const result = results[index];
   const location = `results.json[${index}]`;
-  if (!exactKeys(result, resultRequiredKeys, ["formalizationNotes", "shortRef", "reference"], location)) continue;
+  if (!exactKeys(result, resultRequiredKeys, ["formalizationNotes", "shortRef", "reference", "keywords"], location)) continue;
 
   for (const field of ["id", "category", "kind", "leanName", "fullName", "title", "citation", "file", "docGenUrl", "informal", "summary", "leanSignature"]) {
     nonemptyString(result[field], `${location}.${field}`);
@@ -313,6 +313,20 @@ for (let index = 0; index < results.length; index += 1) {
           if (!referenceKeys.has(key)) fail(keyLocation, `unknown reference key ${JSON.stringify(key)}`);
           seenKeys.add(key);
         }
+      }
+    }
+  }
+  if (Object.hasOwn(result, "keywords")) {
+    const kw = result.keywords;
+    if (!Array.isArray(kw) || kw.length === 0 || kw.length > 3) {
+      fail(`${location}.keywords`, "expected an array of 1 to 3 index terms");
+    } else {
+      const seen = new Set();
+      for (let i = 0; i < kw.length; i += 1) {
+        if (!nonemptyString(kw[i], `${location}.keywords[${i}]`)) continue;
+        if (kw[i] !== kw[i].trim()) fail(`${location}.keywords[${i}]`, "must not have surrounding whitespace");
+        if (seen.has(kw[i])) fail(`${location}.keywords[${i}]`, `duplicate keyword ${JSON.stringify(kw[i])}`);
+        seen.add(kw[i]);
       }
     }
   }

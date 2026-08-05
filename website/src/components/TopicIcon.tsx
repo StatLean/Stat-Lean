@@ -115,5 +115,33 @@ export function TopicIcon({
           <path d="M24 9l4 11 11 4-11 4-4 11-4-11-11-4 11-4z" />
         </svg>
       );
+    case "hypothesistesting":
+      // null density cut by a critical value, with the rejection region beyond it
+      return (
+        <svg {...common}>
+          <path d="M5 34h38" />
+          <path d="M7 34c8 0 6-20 15-20s7 20 15 20" />
+          <path d="M31 34V16" strokeDasharray="2 3" opacity={0.85} />
+          <path d="M32.5 34v-3.4M35 34v-2.5M37.5 34v-1.7" opacity={0.7} />
+        </svg>
+      );
+    case "pointestimation":
+      // target on the parameter with an estimate off-centre — bias and variance
+      return (
+        <svg {...common}>
+          <circle cx="24" cy="24" r="15" opacity={0.45} />
+          <circle cx="24" cy="24" r="7.5" opacity={0.7} />
+          <path d="M24 20v8M20 24h8" opacity={0.5} />
+          <circle cx="30" cy="18.5" r="2.5" fill="currentColor" stroke="none" />
+        </svg>
+      );
+    default:
+      // Never render an empty card: fall back to a neutral mark for any new topic.
+      return (
+        <svg {...common}>
+          <circle cx="24" cy="24" r="15" opacity={0.5} />
+          <path d="M24 15v18M15 24h18" opacity={0.7} />
+        </svg>
+      );
   }
 }

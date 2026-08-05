@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useRef } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
+import IndexPage from "./pages/Index";
 import { ThemeProvider } from "./lib/theme";
 import { recordPageview } from "./lib/analytics";
 import { SiteHeader } from "./components/SiteHeader";
@@ -69,6 +70,7 @@ export default function App() {
                 </Suspense>
               }
             />
+            <Route path="/index" element={<IndexPage />} />
             <Route path="/references" element={<References />} />
             <Route path="/team" element={<Team />} />
             <Route path="/category/:catId" element={<Category />} />
