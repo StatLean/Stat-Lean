@@ -83,7 +83,32 @@ theorem isBetaMixing_of_geometric_envelope [IsProbabilityMeasure μ]
         ≤ ENNReal.ofReal (A x * ρ ^ n)) :
     (∀ n : ℕ, betaCoeff X μ n ≤ (∫ x, A x ∂(μ.map (X 0))) * ρ ^ n) ∧
       IsBetaMixing X μ := by
-  sorry
+  set F : Measure ℝ := μ.map (X 0) with hF
+  have hnn : ∀ n : ℕ, (0 : ℝ) ≤ (∫ x, A x ∂F) * ρ ^ n := fun n =>
+    mul_nonneg (integral_nonneg hA0) (pow_nonneg hρ0 n)
+  -- (2.59): integrate the pointwise envelope of (2.58).
+  have hkey : ∀ n : ℕ, betaCoeff X μ n ≤ (∫ x, A x ∂F) * ρ ^ n := by
+    intro n
+    rw [betaCoeff_eq_integral_tvDist_debt hmeas hstat hmarkov n]
+    have hmono : (∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) F ∂F)
+        ≤ ∫⁻ x, ENNReal.ofReal (A x * ρ ^ n) ∂F :=
+      lintegral_mono fun x => henv x n
+    have heq : (∫⁻ x, ENNReal.ofReal (A x * ρ ^ n) ∂F)
+        = ENNReal.ofReal ((∫ x, A x ∂F) * ρ ^ n) := by
+      rw [← ofReal_integral_eq_lintegral_ofReal (hAint.mul_const _)
+        (Filter.Eventually.of_forall fun x => mul_nonneg (hA0 x) (pow_nonneg hρ0 n)),
+        integral_mul_const]
+    have hfin : (∫⁻ x, ENNReal.ofReal (A x * ρ ^ n) ∂F) ≠ ∞ := by
+      rw [heq]; exact ENNReal.ofReal_ne_top
+    calc (∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) F ∂F).toReal
+        ≤ (∫⁻ x, ENNReal.ofReal (A x * ρ ^ n) ∂F).toReal := ENNReal.toReal_mono hfin hmono
+      _ = (∫ x, A x ∂F) * ρ ^ n := by rw [heq, ENNReal.toReal_ofReal (hnn n)]
+  refine ⟨hkey, ?_⟩
+  refine squeeze_zero (fun n => ?_) hkey ?_
+  · rw [betaCoeff_eq_integral_tvDist_debt hmeas hstat hmarkov n]
+    exact ENNReal.toReal_nonneg
+  · have := (tendsto_pow_atTop_nhds_zero_of_lt_one hρ0 hρ1).const_mul (∫ x, A x ∂F)
+    simpa using this
 
 /-- **DEBT (Bradley Thms 4.1–4.2; FY §2.6.1(vi))**: for a strictly stationary Markov
 process the α-coefficient collapses to the two-marginal coefficient of `(X_0, X_n)`:
