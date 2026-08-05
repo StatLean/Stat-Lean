@@ -475,7 +475,93 @@ private theorem inner_mercerCLM_finset {ι : Type*} (φ : ι → C(X, 𝕜)) (s 
 /-- **`T_K` is a positive operator** when `K` is a Mercer kernel. -/
 theorem isPositive_mercerCLM {K : X → X → 𝕜} (hK : IsMercerKernel 𝕜 K) :
     (mercerCLM μ hK.continuous).IsPositive := by
-  sorry
+  classical
+  -- Moore's construction supplies an RKHS with reproducing kernel `K`
+  obtain ⟨H₀, _, _, _, _, hKH⟩ := hK.isKernelFun.exists_rkhs
+  obtain ⟨w, e, -⟩ := exists_hilbertBasis 𝕜 H₀
+  have hKsc : Continuous fun p : X × X => scalarKernel H₀ p.1 p.2 := by
+    rw [hKH]; exact hK.continuous
+  set φ : w → C(X, 𝕜) := fun i =>
+    ⟨((e i : H₀) : X → 𝕜), continuous_coe_of_continuous_scalarKernel hKsc _⟩ with hφ
+  have hcs : ∀ s : Finset w,
+      Continuous fun p : X × X => ∑ i ∈ s, conj ((φ i) p.2) * (φ i) p.1 := by
+    intro s
+    refine continuous_finset_sum s fun i _ => ?_
+    exact (RCLike.continuous_conj.comp' ((φ i).continuous.comp' continuous_snd)).mul
+      ((φ i).continuous.comp' continuous_fst)
+  -- the coefficientwise expansion of the inner products against `T_K`
+  have key : ∀ h g : Lp 𝕜 2 μ,
+      HasSum (fun i : w => ⟪h, ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i)⟫_𝕜 *
+        ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i), g⟫_𝕜)
+        ⟪h, mercerCLM μ hK.continuous g⟫_𝕜 := by
+    intro h g
+    have hpartial : ∀ s : Finset w,
+        ∑ i ∈ s, ⟪h, ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i)⟫_𝕜 *
+          ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i), g⟫_𝕜
+        = ⟪h, mercerCLM (K := fun x y => ∑ i ∈ s, conj ((φ i) y) * (φ i) x) μ (hcs s) g⟫_𝕜 :=
+      fun s => (inner_mercerCLM_finset φ s (hcs s) h g).symm
+    change Filter.Tendsto _ Filter.atTop _
+    simp only [hpartial]
+    rw [Metric.tendsto_atTop]
+    intro ε hε
+    have hμ0 : (0 : ℝ) ≤ (μ Set.univ).toReal := ENNReal.toReal_nonneg
+    have hden : (0 : ℝ) < ‖h‖ * (μ Set.univ).toReal * ‖g‖ + 1 := by positivity
+    have hε' : (0 : ℝ) < ε / (‖h‖ * (μ Set.univ).toReal * ‖g‖ + 1) := by positivity
+    have huc := Metric.tendstoUniformly_iff.mp
+      (tendstoUniformly_scalarKernel (H := H₀) hK hKH e) _ hε'
+    obtain ⟨s₀, hs₀⟩ := Filter.eventually_atTop.mp huc
+    refine ⟨s₀, fun s hs => ?_⟩
+    have hclose : ∀ x y : X,
+        ‖(∑ i ∈ s, conj ((φ i) y) * (φ i) x) - K x y‖
+          ≤ ε / (‖h‖ * (μ Set.univ).toReal * ‖g‖ + 1) := by
+      intro x y
+      have := hs₀ s hs (x, y)
+      rw [dist_eq_norm] at this
+      rw [← norm_neg]
+      simpa using this.le
+    have hop := norm_mercerCLM_sub_apply_le (hcs s) hK.continuous hε'.le hclose g
+    have hinner : dist
+        (⟪h, mercerCLM (K := fun x y => ∑ i ∈ s, conj ((φ i) y) * (φ i) x) μ (hcs s) g⟫_𝕜)
+        (⟪h, mercerCLM μ hK.continuous g⟫_𝕜)
+        ≤ ‖h‖ * ((μ Set.univ).toReal * (ε / (‖h‖ * (μ Set.univ).toReal * ‖g‖ + 1)) * ‖g‖) := by
+      rw [dist_eq_norm, ← inner_sub_right]
+      refine le_trans (norm_inner_le_norm _ _) ?_
+      exact mul_le_mul_of_nonneg_left hop (norm_nonneg h)
+    refine lt_of_le_of_lt hinner ?_
+    rw [show ‖h‖ * ((μ Set.univ).toReal * (ε / (‖h‖ * (μ Set.univ).toReal * ‖g‖ + 1)) * ‖g‖)
+        = (‖h‖ * (μ Set.univ).toReal * ‖g‖) * ε / (‖h‖ * (μ Set.univ).toReal * ‖g‖ + 1) by
+      field_simp]
+    rw [div_lt_iff₀ hden]
+    nlinarith [norm_nonneg h, norm_nonneg g, hμ0, hε]
+  refine ⟨fun h g => ?_, fun g => ?_⟩
+  · -- symmetry
+    simp only [ContinuousLinearMap.coe_coe]
+    have h1 := key h g
+    have h2 : HasSum (fun i : w => ⟪h, ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i)⟫_𝕜 *
+        ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i), g⟫_𝕜)
+        (conj ⟪g, mercerCLM μ hK.continuous h⟫_𝕜) := by
+      refine ((key g h).map ((starRingEnd 𝕜).toAddMonoidHom)
+        RCLike.continuous_conj).congr_fun fun i => ?_
+      change _ = conj (⟪g, ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i)⟫_𝕜 *
+        ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i), h⟫_𝕜)
+      rw [map_mul, inner_conj_symm, inner_conj_symm]
+      ring
+    rw [h1.unique h2, inner_conj_symm]
+  · -- positivity
+    have h2 : HasSum (fun i : w => ‖⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i), g⟫_𝕜‖ ^ 2)
+        (RCLike.re ⟪g, mercerCLM μ hK.continuous g⟫_𝕜) := by
+      refine ((key g g).map (RCLike.reCLM (K := 𝕜)).toLinearMap.toAddMonoidHom
+        RCLike.reCLM.continuous).congr_fun fun i => ?_
+      change _ = RCLike.re (⟪g, ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i)⟫_𝕜 *
+        ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i), g⟫_𝕜)
+      rw [← inner_conj_symm g (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (φ i)), RCLike.conj_mul,
+        ← RCLike.ofReal_pow, RCLike.ofReal_re]
+      
+    have h3 : (0 : ℝ) ≤ RCLike.re ⟪g, mercerCLM μ hK.continuous g⟫_𝕜 := by
+      have := sum_le_hasSum (∅ : Finset w) (fun i _ => by positivity) h2
+      simpa using this
+    rw [ContinuousLinearMap.reApplyInnerSelf_apply, inner_re_symm]
+    exact h3
 
 /-- **Converse**: for `μ` of full support, a continuous Hermitian function with positive
 integral operator is positive semidefinite, hence a Mercer kernel.  (Averaging the
