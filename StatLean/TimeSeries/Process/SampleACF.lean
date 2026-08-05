@@ -44,7 +44,7 @@ this Process-layer file must not import.
 -/
 
 open MeasureTheory ProbabilityTheory Filter
-open scoped ProbabilityTheory
+open scoped ProbabilityTheory Topology
 
 namespace StatLean.TimeSeries
 
