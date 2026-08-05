@@ -36,12 +36,15 @@ subspace in which representer solutions live. -/
 def dataSpan (x : Fin n → X) : Submodule 𝕜 H :=
   Submodule.span 𝕜 (Set.range fun i => kernelFun H (x i))
 
-instance (x : Fin n → X) : FiniteDimensional 𝕜 (dataSpan x) := by
+instance (x : Fin n → X) : FiniteDimensional 𝕜 (dataSpan (H := H) x) := by
   unfold dataSpan
   exact FiniteDimensional.span_of_finite 𝕜 (Set.finite_range fun i => kernelFun H (x i))
 
-instance (x : Fin n → X) : CompleteSpace (dataSpan x) :=
+instance (x : Fin n → X) : CompleteSpace (dataSpan (H := H) x) :=
   FiniteDimensional.complete 𝕜 _
+
+instance (x : Fin n → X) : (dataSpan (H := H) x).HasOrthogonalProjection :=
+  Submodule.HasOrthogonalProjection.ofCompleteSpace _
 
 /-- Functions orthogonal to the data span vanish at the data points. -/
 theorem apply_eq_zero_of_mem_dataSpan_orthogonal {x : Fin n → X} {h : H}

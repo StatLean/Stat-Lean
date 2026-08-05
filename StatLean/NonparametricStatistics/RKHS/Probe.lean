@@ -34,4 +34,21 @@ noncomputable def probe4 (H₀ : Submodule 𝕜 H) [CompleteSpace H₀] (x : X) 
 noncomputable def probe5 (H₀ : Submodule 𝕜 H) [CompleteSpace H₀] (v : H) : H :=
   H₀.starProjection v
 
+-- V6: closedness hypothesis + haveI at the term level
+noncomputable def probe6 (H₀ : Submodule 𝕜 H) (hc : IsClosed (H₀ : Set H)) (x : X) :
+    ↥H₀ :=
+  haveI := hc.completeSpace_coe
+  RKHS.kerFun (↥H₀) x 1
+
+-- V7: reassert the instance via letI
+noncomputable def probe7 (H₀ : Submodule 𝕜 H) [hcs : CompleteSpace H₀] (x : X) : ↥H₀ :=
+  letI : CompleteSpace ↥H₀ := hcs
+  RKHS.kerFun (↥H₀) x 1
+
+-- V8: trace the failing synthesis
+set_option maxHeartbeats 1000000 in
+set_option trace.Meta.synthInstance true in
+noncomputable def probe8 (H₀ : Submodule 𝕜 H) [CompleteSpace H₀] (x : X) : ↥H₀ :=
+  RKHS.kerFun (↥H₀) x 1
+
 end StatLean.NonparametricStatistics

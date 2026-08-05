@@ -28,6 +28,7 @@ variable (L : Type*) [NormedAddCommGroup L] [InnerProductSpace 𝕜 L] [Complete
 
 /-- The RKHS structure on a Hilbert space `L` over the set `L` itself, where the element
 `w` acts as the bounded functional `v ↦ ⟪v, w⟫_𝕜`.  Not an instance by design. -/
+@[reducible]
 noncomputable def dualRKHS : RKHS 𝕜 L L 𝕜 where
   coeCLM := ContinuousLinearMap.pi fun v => innerSL 𝕜 v
   coeCLM_injective := by

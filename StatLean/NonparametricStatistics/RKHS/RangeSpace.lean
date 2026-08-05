@@ -40,12 +40,13 @@ noncomputable def rangeSpaceCarrier (S : X → Y → 𝕜) (hS : IsL2Symbol μ S
 
 instance (S : X → Y → 𝕜) (hS : IsL2Symbol μ S) :
     CompleteSpace (rangeSpaceCarrier μ S hS) :=
-  IsClosed.completeSpace_coe (Submodule.isClosed_topologicalClosure _)
+  (Submodule.isClosed_topologicalClosure _).completeSpace_coe
 
 variable (μ) in
 /-- The RKHS structure of the range of an integral operator: an element `g` of the
 closed span of the conjugated sections acts as the function `T_S g` on `X`.  Provided as
 a `def` (used via `letI`), since it depends on the symbol data. -/
+@[reducible]
 noncomputable def rangeSpaceRKHS (S : X → Y → 𝕜) (hS : IsL2Symbol μ S) :
     RKHS 𝕜 (rangeSpaceCarrier μ S hS) X 𝕜 where
   coeCLM :=
