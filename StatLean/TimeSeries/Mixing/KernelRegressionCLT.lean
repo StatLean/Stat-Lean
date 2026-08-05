@@ -50,6 +50,32 @@ Sub-steps may be left as **named ledger-(a) debts** if the wave budget is hit.
 [Print slips (recorded in the inventory): Term-1 of the telescope is missing a `½`
 exponent; the final "(2.83)" should read "(2.84)".]
 
+**Status of the ledger.** `kernel_localized_clt` is assembled (no `sorry` of its own)
+from the two step-(d) inputs through the proved `tendsto_of_uniform_approx`. Proved in
+full: the four analytic bricks (`integral_dilate_translate`,
+`integral_comp_eq_integral_density`, `integral_bdd_comp_mul_eq_of_condExp`,
+`tendsto_integral_dilate_of_bounded`), the repaired diagonal
+`tendsto_localized_second_moment_of_bounded`, the small-lag bound (2.76)
+`small_lag_covariance_bound`, the large-lag Davydov bound (2.75)
+`large_lag_covariance_bound`, the pair-σ-algebra transport, and the `pairAlphaCoeff`
+basics. Open, as named debts: `tendsto_localized_second_moment_debt` (2.73),
+`var_localized_sum` (the (a) headline), `tendsto_blockCount_mul_pairAlpha` (2.78),
+`tendsto_smallBlock_variance` (2.79)–(2.81), `charFun_locSum_sub_locTruncSum_le`
+(2.82)–(2.83), `tendsto_charFun_locTruncSum` ((b) + (d) at fixed `L`, and (2.84)).
+
+**FALSE AS FROZEN (verified).** FY (2.73) — hence Theorem 2.22 itself — does not follow
+from (C1)–(C5) *as formalized here*. The diagonal term equals, identically,
+`∫ (σ²·p)(x + h u) W²(u) du` (this identity is proved, inside
+`tendsto_localized_second_moment_of_bounded`), and its convergence to `σ²(x)p(x)∫W²`
+needs control of the range `|u| > M`, which continuity of `σ²·p` **at `x`** does not
+give. (C2) forces only `σ·p` bounded, never `σ²·p`; and `σ²·p ∈ L¹` (`= E e_0² < ∞`) is
+too weak against a merely-`L¹` weight `W²`. See
+`tendsto_localized_second_moment_debt`'s docstring for the explicit spike/kernel
+counterexample and the two possible repairs (compactly supported `W`, or `σ²·p`
+bounded — the latter is the textbook's silent reading of (C1)). Note also that (C1) as
+frozen carries **no measurability hypothesis on `σsq`**; only `hcv` constrains it, and
+only `μ.map (X 0)`-a.e.
+
 **Bibliographic comments.** Theorem 2.22 descends from Masry & Fan, *Local polynomial
 estimation of regression functions for mixing processes* (Scand. J. Statist. 1997) and
 Fan & Gijbels (1996) §6.5; the Bernstein-block scheme under (C3) follows Bosq (1998).
@@ -297,6 +323,32 @@ private noncomputable def blockCount (h : ℕ → ℝ) (δ lam : ℝ) (n : ℕ) 
 private noncomputable def smallLagCut (h : ℕ → ℝ) (n : ℕ) : ℕ :=
   ⌈(h n * |Real.log (h n)|)⁻¹⌉₊
 
+/-! #### σ-algebra transport for the pair series
+
+The past/future σ-algebras of `pairAlphaCoeff` are `⨆`-sups over index sets; these three
+lemmas are all the transport the Davydov step needs. -/
+
+/-- Every pair σ-algebra sits below the ambient one. -/
+private theorem pairSigma_le {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t))
+    (hmeasE : ∀ t, Measurable (e t)) (S : Set ℤ) :
+    (⨆ s ∈ S, MeasurableSpace.comap (X s) inferInstance ⊔
+      MeasurableSpace.comap (e s) inferInstance) ≤ ‹MeasurableSpace Ω› :=
+  iSup₂_le fun s _ => sup_le (hmeasX s).comap_le (hmeasE s).comap_le
+
+omit [MeasurableSpace Ω] in
+/-- `X t` is measurable for the pair σ-algebra of any index set containing `t`. -/
+private theorem measurable_X_pairSigma {X e : ℤ → Ω → ℝ} {S : Set ℤ} {t : ℤ} (ht : t ∈ S) :
+    Measurable[⨆ s ∈ S, MeasurableSpace.comap (X s) inferInstance ⊔
+      MeasurableSpace.comap (e s) inferInstance] (X t) :=
+  (Measurable.of_comap_le le_rfl).mono (le_iSup₂_of_le t ht le_sup_left) le_rfl
+
+omit [MeasurableSpace Ω] in
+/-- `e t` is measurable for the pair σ-algebra of any index set containing `t`. -/
+private theorem measurable_e_pairSigma {X e : ℤ → Ω → ℝ} {S : Set ℤ} {t : ℤ} (ht : t ∈ S) :
+    Measurable[⨆ s ∈ S, MeasurableSpace.comap (X s) inferInstance ⊔
+      MeasurableSpace.comap (e s) inferInstance] (e t) :=
+  (Measurable.of_comap_le le_rfl).mono (le_iSup₂_of_le t ht le_sup_right) le_rfl
+
 /-! #### Ledger (a): variance asymptotics (2.73)–(2.76) -/
 
 /-- **FY (2.76), small-lag covariance bound — PROVED.** For every nonzero lag,
@@ -384,13 +436,15 @@ private theorem tendsto_localized_second_moment_debt [IsProbabilityMeasure μ]
       (𝓝 (σsq x * p x * ∫ v, W v ^ 2)) := by
   sorry
 
-/-- **FY (2.75), large-lag covariance bound — DEBT.** For lags beyond the cut `m_n`,
-Davydov (`abs_covariance_le_davydov` with `p = q = δ`) against the pair α-coefficient:
-`|Cov(ξ_0, ξ_j)| ≤ 8 α_pair(j)^{1−2/δ} ‖ξ_0‖_δ ‖ξ_j‖_δ`, where the σ-algebra transport
-is `σ(X_0, e_0) ≤ ⨆_{s ≤ 0}` and `σ(X_j, e_j) ≤ ⨆_{s ≥ j}`. The remaining work is the
-kernel-localization estimate `‖ξ_0‖_δ² ≤ C h^{2/δ}` and the summation
+/-- **FY (2.75), large-lag covariance bound — PROVED.** Davydov
+(`abs_covariance_le_davydov` at `p = q = δ`, so the exponent is `1 − 2/δ`) against the
+pair α-coefficient: `|Cov(ξ_0, ξ_j)| ≤ 8 α_pair(j)^{1−2/δ} ‖ξ_0‖_δ ‖ξ_j‖_δ`. The
+σ-algebra transport is `σ(X_0, e_0) ≤ ⨆_{s ≤ 0}` and `σ(X_j, e_j) ≤ ⨆_{s ≥ j}`.
+
+What remains for ledger (a) — and is *not* part of this lemma — is the kernel
+localization of the δ-norms, `‖ξ_0‖_δ² ≤ C h^{2/δ}`, and the summation
 `Σ_{j > m_n} α^{1−2/δ}(j) ≤ m_n^{−λ} Σ_j j^λ α^{1−2/δ}(j)` from (C3), whose `h`-powers
-close against (C5). -/
+close against (C5); those live in `var_localized_sum`'s assembly. -/
 private theorem large_lag_covariance_bound [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     {δ : ℝ} (hδ : 2 < δ) {W : ℝ → ℝ} {x : ℝ} (hWm : Measurable W)
@@ -403,6 +457,71 @@ private theorem large_lag_covariance_bound [IsProbabilityMeasure μ]
         * (eLpNorm (fun ω => e 0 ω * W ((X 0 ω - x) / hn)) (ENNReal.ofReal δ) μ).toReal
         * (eLpNorm (fun ω => e (j : ℤ) ω * W ((X (j : ℤ) ω - x) / hn))
             (ENNReal.ofReal δ) μ).toReal := by
+  have hpq : 1 / δ + 1 / δ < 1 := by
+    have h2d : 1 / δ + 1 / δ = 2 / δ := by ring
+    rw [h2d, div_lt_one (by linarith : (0 : ℝ) < δ)]; linarith
+  have hf : Measurable[⨆ s ∈ Set.Iic (0 : ℤ), MeasurableSpace.comap (X s) inferInstance ⊔
+      MeasurableSpace.comap (e s) inferInstance]
+      (fun ω => e 0 ω * W ((X 0 ω - x) / hn)) :=
+    (measurable_e_pairSigma (X := X) (e := e) (Set.mem_Iic.2 (le_refl (0 : ℤ)))).mul
+      (hWm.comp (((measurable_X_pairSigma (X := X) (e := e)
+        (Set.mem_Iic.2 (le_refl (0 : ℤ)))).sub measurable_const).div measurable_const))
+  have hg : Measurable[⨆ s ∈ Set.Ici (j : ℤ), MeasurableSpace.comap (X s) inferInstance ⊔
+      MeasurableSpace.comap (e s) inferInstance]
+      (fun ω => e (j : ℤ) ω * W ((X (j : ℤ) ω - x) / hn)) :=
+    (measurable_e_pairSigma (X := X) (e := e) (Set.mem_Ici.2 (le_refl (j : ℤ)))).mul
+      (hWm.comp (((measurable_X_pairSigma (X := X) (e := e)
+        (Set.mem_Ici.2 (le_refl (j : ℤ)))).sub measurable_const).div measurable_const))
+  have hdav := abs_covariance_le_davydov (pairSigma_le hmeasX hmeasE (Set.Iic (0 : ℤ)))
+    (pairSigma_le hmeasX hmeasE (Set.Ici (j : ℤ))) hf hg (p := δ) (q := δ)
+    (by linarith) (by linarith) hpq hL0 hLj
+  have hexp : (1 : ℝ) - 1 / δ - 1 / δ = 1 - 2 / δ := by ring
+  rw [hexp] at hdav
+  exact hdav
+
+/-- **FY (2.73)–(2.76), the ledger-(a) headline — DEBT.**
+`(n h_n)⁻¹ Var(S_n(x)) → σ²(x) p(x) ∫ W²`.
+
+Assembled from three inputs, all present in this file: the diagonal
+(`tendsto_localized_second_moment_debt`, which is the *only* one still open as an
+analytic fact — and is FALSE as frozen, see its docstring), the small lags
+`1 ≤ j ≤ smallLagCut h n` via `small_lag_covariance_bound` (total
+`m_n · h² / h = h/|log h| → 0`), and the large lags `j > smallLagCut h n` via
+`large_lag_covariance_bound` + (C3)'s weighted summability
+(`Σ_{j>m} α^{1−2/δ}(j) ≤ m^{−λ} Σ j^λ α^{1−2/δ}(j)`), whose `h`-powers close against
+(C5)'s `n h³ → ∞`. Stationarity (`hstat`) turns the double sum over `1 ≤ s, t ≤ n`
+into `n` times a single lag sum. Mean-zero of each summand (from `hce` through
+`integral_bdd_comp_mul_eq_of_condExp`) is what lets the variance be read off the
+second moment. -/
+private theorem var_localized_sum [IsProbabilityMeasure μ]
+    {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
+    (hstat : ∀ (k : ℕ) (t : ℤ),
+      μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
+        = μ.map (fun ω (i : Fin k) => (X ((i : ℕ) : ℤ) ω, e ((i : ℕ) : ℤ) ω)))
+    {σsq p : ℝ → ℝ} {δ x : ℝ}
+    (hce : μ[e 0 | MeasurableSpace.comap (X 0) inferInstance] =ᵐ[μ] 0)
+    (hcv : μ[fun ω => e 0 ω ^ 2 | MeasurableSpace.comap (X 0) inferInstance]
+      =ᵐ[μ] fun ω => σsq (X 0 ω))
+    (hδ : 2 < δ) (heLδ : MemLp (e 0) (ENNReal.ofReal δ) μ)
+    (hmp : Measurable p) (hp0 : ∀ v, 0 ≤ p v)
+    (hpd : μ.map (X 0) = MeasureTheory.volume.withDensity fun v => ENNReal.ofReal (p v))
+    (hσc : ContinuousAt σsq x) (hpc : ContinuousAt p x) (hpx : 0 < p x)
+    (hC2 : ∃ B : ℝ, 0 ≤ B ∧ ∀ j : ℤ, j ≠ 0 → ∀ g : ℝ × ℝ → ℝ, Measurable g →
+      (∀ v, 0 ≤ g v) →
+      ∫ ω, |e 0 ω * e j ω| * g (X 0 ω, X j ω) ∂μ
+        ≤ B * (∫ ω, e 0 ω ^ 2 ∂μ) *
+          ∫ v, g v ∂(MeasureTheory.volume.prod MeasureTheory.volume))
+    {lam : ℝ} (hlam : 1 - 2 / δ < lam)
+    (hα : Summable fun t : ℕ => (t : ℝ) ^ lam * pairAlphaCoeff X e μ t ^ (1 - 2 / δ))
+    {W : ℝ → ℝ} {CW : ℝ} (hWm : Measurable W) (hWb : ∀ v, |W v| ≤ CW)
+    (hW1 : Integrable W MeasureTheory.volume)
+    (hW2 : Integrable (fun v => W v ^ 2) MeasureTheory.volume)
+    {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n) (hh : Tendsto h atTop (𝓝 0))
+    (hnh : Tendsto (fun n : ℕ => (n : ℝ) * h n ^ 3) atTop atTop) :
+    Tendsto (fun n : ℕ => ((n : ℝ) * h n)⁻¹ *
+        ∫ ω, (∑ t ∈ Finset.range n,
+          e ((t : ℤ) + 1) ω * W ((X ((t : ℤ) + 1) ω - x) / h n)) ^ 2 ∂μ)
+      atTop (𝓝 (σsq x * p x * ∫ v, W v ^ 2 ∂MeasureTheory.volume)) := by
   sorry
 
 /-! #### Ledger (b)–(c): Bernstein blocks and truncation -/
