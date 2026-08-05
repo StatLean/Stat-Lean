@@ -569,20 +569,45 @@ private theorem large_lag_covariance_bound [IsProbabilityMeasure μ]
   rw [hexp] at hdav
   exact hdav
 
-/-- **FY (2.73)–(2.76), the ledger-(a) headline — DEBT.**
+/-- **FY (2.73)–(2.76), the ledger-(a) headline — DEBT, with a *sharp* missing input.**
 `(n h_n)⁻¹ Var(S_n(x)) → σ²(x) p(x) ∫ W²`.
 
-Assembled from three inputs, all present in this file: the diagonal
-(`tendsto_localized_second_moment_debt`, which is the *only* one still open as an
-analytic fact — and is FALSE as frozen, see its docstring), the small lags
-`1 ≤ j ≤ smallLagCut h n` via `small_lag_covariance_bound` (total
-`m_n · h² / h = h/|log h| → 0`), and the large lags `j > smallLagCut h n` via
-`large_lag_covariance_bound` + (C3)'s weighted summability
-(`Σ_{j>m} α^{1−2/δ}(j) ≤ m^{−λ} Σ j^λ α^{1−2/δ}(j)`), whose `h`-powers close against
-(C5)'s `n h³ → ∞`. Stationarity (`hstat`) turns the double sum over `1 ≤ s, t ≤ n`
-into `n` times a single lag sum. Mean-zero of each summand (from `hce` through
-`integral_bdd_comp_mul_eq_of_condExp`) is what lets the variance be read off the
-second moment. -/
+Assembled from three inputs: the diagonal (`tendsto_localized_second_moment_debt`, now
+**proved** under the authorized (C1) repair), the small lags `1 ≤ j ≤ smallLagCut h n`
+via `small_lag_covariance_bound` (total `m_n · h² / h = h/|log h| → 0`), and the large
+lags `j > smallLagCut h n` via `large_lag_covariance_bound` + (C3)'s weighted summability
+(`Σ_{j>m} α^{1−2/δ}(j) ≤ m^{−λ} Σ j^λ α^{1−2/δ}(j)`). Stationarity (`hstat`) turns the
+double sum over `1 ≤ s, t ≤ n` into `n` times a single lag sum. Mean-zero of each summand
+(from `hce` through `integral_bdd_comp_mul_eq_of_condExp`) is what lets the variance be
+read off the second moment.
+
+**BLOCKED AS FROZEN (this wave's finding; a *separate* gap from the one the authorized
+repair fixes).** The large-lag half does not close under (C1)–(C5) as formalized here,
+for any `λ ≤ 1`. FY's step is `|Cov(ξ_0, ξ_j)| ≤ 8 α(j)^{1−2/δ} ‖ξ_0‖_δ ‖ξ_j‖_δ` with the
+**kernel-localized δ-norm** `‖ξ_0‖_δ² = O(h^{2/δ})`, i.e. `E|ξ_0|^δ = O(h)`; then
+`h⁻¹ · h^{2/δ} · m_n^{−λ} = h^{λ + 2/δ − 1} |log h|^λ → 0`, which is *exactly* (C3)'s
+`λ > 1 − 2/δ`. But `E|ξ_0|^δ = E[|e_0|^δ |W((X_0−x)/h)|^δ]` factorizes only through a
+**conditional** δ-moment `E(|e_0|^δ | X_0) ≤ M` (with `p` bounded), and the frozen (C1)
+supplies only the *unconditional* `MemLp (e 0) δ` (`heLδ`), which gives merely
+`‖ξ_0‖_δ ≤ CW ‖e_0‖_δ = O(1)` — no `h`-gain at all.
+
+The gap is not repairable by interpolating the inputs that *are* available. Writing
+`β = 1 − 2/δ`, what the file has is `‖ξ_0‖_2 = O(√h)` (this **is** new, and comes from the
+authorized repair: `E ξ_0² = ∫ (σ²p)(x+hu)W(u)²du ≤ C h ∫W²`), `‖ξ_0‖_δ = O(1)`, and the
+`(C2)` bound `|E[ξ_0 ξ_j]| = O(h²)` valid at *every* lag. Hölder interpolation at
+`2 < q ≤ δ` gives `‖ξ_0‖_q = O(h^{θ/2})` with `1/q = θ/2 + (1−θ)/δ`, and the Davydov
+exponent is then `1 − 2/q = β(1−θ)`, so the large-lag total is
+`h^{θ−1} Σ_{j>m} α(j)^{β(1−θ)}`. With `s := 1 − θ`, `(C3)` gives only
+`α(j)^β = o(j^{−λ})`, hence `α(j)^{βs} = o(j^{−λs})`, whose tail converges only when
+`λ s > 1`; since `s ≤ 1` this forces `λ > 1`. Taking instead the `(C2)` bound on the same
+range costs `n h → ∞`. So for `λ ∈ (1 − 2/δ, 1]` — the range (C3) actually allows —
+every combination of the frozen inputs diverges.
+
+**Missing input, precisely.** FY's implicit (2.74): `E|ξ_0|^δ ≤ K h` (equivalently:
+`E(|e_0|^δ | X_0) ≤ M` a.e. together with `p` bounded). This is a *third* silent reading
+of (C1), independent of the two authorized here (`hσm`, `hσpb` bound `σ²·p`, i.e. the
+**second** conditional moment; they do not bound the δ-th). It is not in this wave's
+authorization, so the item stays a named debt rather than being repaired. -/
 private theorem var_localized_sum [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
