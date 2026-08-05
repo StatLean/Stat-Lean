@@ -174,6 +174,12 @@ Adjustments follow the neutral register of §1.2(f).
 * **`biblio`** — the bibliographic-comments paragraph: the primary literature
   the result descends from, drawn from the book's end-of-chapter notes.
 
+**The Reference block is the only place the source appears.** The Informal
+statement card deliberately carries no citation tag. A statement that has to be
+read against a citation is not self-contained (§1.2), and a source printed twice
+on one page is just noise — so state the mathematics in the card and let the
+Reference block below carry the provenance.
+
 **The bibliographic comment must not name the primary reference again.** The
 citation and pointer directly above it already say "van der Vaart, *Asymptotic
 Statistics*, Theorem 5.7". Repeating it in the paragraph below is noise, and it

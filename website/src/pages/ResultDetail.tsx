@@ -105,11 +105,9 @@ export function ResultDetail() {
         <div className="grid gap-6 lg:grid-cols-2 items-start">
           {/* informal */}
           <div className="rounded-2xl border hairline bg-parchment-panel overflow-hidden">
-            <PaneHeader
-              label="Informal statement"
-              sub={r.shortRef ?? r.citation}
-              subHref={r.reference?.keys?.[0] ? refUrl(r.reference.keys[0]) : undefined}
-            />
+            {/* No citation here: the statement stands on its own, and the
+                Reference block below carries the source in full. */}
+            <PaneHeader label="Informal statement" />
             <div className="p-6">
               <MathText
                 html={r.informal}
@@ -246,7 +244,7 @@ function PaneHeader({
   mono,
 }: {
   label: string;
-  sub: string;
+  sub?: string;
   subHref?: string;
   mono?: boolean;
 }) {
@@ -258,7 +256,7 @@ function PaneHeader({
       <span className="font-sans text-xs uppercase tracking-widest text-ink-faint">
         {label}
       </span>
-      {subHref ? (
+      {sub === undefined ? null : subHref ? (
         <a href={subHref} className={`${subClass} ulink hover:text-ink`}>
           {sub}
         </a>
