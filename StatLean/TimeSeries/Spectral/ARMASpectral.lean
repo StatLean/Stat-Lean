@@ -296,6 +296,19 @@ theorem IsARMA.spectralDensityOf_eq [IsProbabilityMeasure μ] {p q : ℕ}
   rw [eq_div_iff hA]
   linear_combination e1 - e2
 
+/-- For an AR(1) polynomial `b(z) = 1 − b₁z`, the condition `|b₁| < 1` is the no-root
+condition on the closed unit disc. -/
+private theorem noRootClosedDisc_of_abs_lt_one {b1 : ℝ} (hb : |b1| < 1) :
+    NoRootClosedDisc (fun _ : Fin 1 => b1) := by
+  intro z hz hcon
+  have har : Polynomial.aeval z (arPoly (fun _ : Fin 1 => b1)) = 1 - (b1 : ℂ) * z := by
+    simp [arPoly]
+  rw [har, sub_eq_zero] at hcon
+  have hnorm : (1 : ℝ) = |b1| * ‖z‖ := by
+    have h2 := congrArg (fun w : ℂ => ‖w‖) hcon
+    simpa using h2
+  nlinarith [norm_nonneg z, abs_nonneg b1]
+
 /-- **FY Example 2.5 (eq. (2.40))**, in unnormalized `g`-scale: a stationary causal
 AR(1) process with `|b| < 1` has
 `g(ω) = σ²/(2π) / (1 + b² − 2b cos ω)`. (FY prints the normalized `f = g/γ(0)`; the
@@ -315,7 +328,24 @@ theorem spectralDensityOf_ar_one [IsProbabilityMeasure μ] {b1 σ2 : ℝ}
     (l : AddCircle (2 * π)) :
     spectralDensityOf X μ l
       = σ2 / (2 * π) / (1 + b1 ^ 2 - 2 * b1 * (fourier 1 l).re) := by
-  sorry
+  have hma : ∀ z : ℂ, Polynomial.aeval z (maPoly (Fin.elim0 : Fin 0 → ℝ)) = 1 := by
+    intro z; simp [maPoly]
+  have har : ∀ z : ℂ, Polynomial.aeval z (arPoly (fun _ : Fin 1 => b1)) = 1 - (b1 : ℂ) * z := by
+    intro z; simp [arPoly]
+  have hz1 : ‖(fourier (-1) l : ℂ)‖ = 1 := Circle.norm_coe _
+  have hre : ((fourier (-1) l : ℂ)).re = ((fourier 1 l : ℂ)).re := by
+    rw [fourier_neg]; simp
+  have hns : ((fourier (-1) l : ℂ)).re * ((fourier (-1) l : ℂ)).re
+      + ((fourier (-1) l : ℂ)).im * ((fourier (-1) l : ℂ)).im = 1 := by
+    rw [← Complex.normSq_apply, ← Complex.sq_norm, hz1, one_pow]
+  have hden : ‖(1 : ℂ) - (b1 : ℂ) * (fourier (-1) l : ℂ)‖ ^ 2
+      = 1 + b1 ^ 2 - 2 * b1 * ((fourier 1 l : ℂ)).re := by
+    rw [Complex.sq_norm, Complex.normSq_apply, ← hre]
+    simp only [Complex.sub_re, Complex.sub_im, Complex.one_re, Complex.one_im,
+      Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im]
+    linear_combination b1 ^ 2 * hns
+  rw [h.spectralDensityOf_eq hstat hcausal (noRootClosedDisc_of_abs_lt_one hb) hmeas l,
+    hma, har, hden, norm_one, one_pow, mul_one]
 
 /-- Sum of two uncorrelated weakly stationary processes: stationary again, with
 additive ACVF (the covariance computation behind FY Example 2.7). -/
@@ -325,7 +355,46 @@ theorem isStationary_add_of_uncorrelated [IsProbabilityMeasure μ] {X Y : ℤ �
     (huncorr : ∀ s t : ℤ, cov[X s, Y t; μ] = 0) :
     IsStationary (fun t ω => X t ω + Y t ω) μ ∧
       ∀ k : ℤ, acvf (fun t ω => X t ω + Y t ω) μ k = acvf X μ k + acvf Y μ k := by
-  sorry
+  have hcov : ∀ s t : ℤ, cov[fun ω => X s ω + Y s ω, fun ω => X t ω + Y t ω; μ]
+      = cov[X s, X t; μ] + cov[Y s, Y t; μ] := by
+    intro s t
+    have h0 : cov[fun ω => X s ω + Y s ω, fun ω => X t ω + Y t ω; μ]
+        = cov[X s + Y s, X t + Y t; μ] := rfl
+    rw [h0, covariance_add_left (hX.memLp s) (hY.memLp s) ((hX.memLp t).add (hY.memLp t)),
+      covariance_add_right (hX.memLp s) (hX.memLp t) (hY.memLp t),
+      covariance_add_right (hY.memLp s) (hX.memLp t) (hY.memLp t),
+      huncorr s t, covariance_comm (X := Y s) (Y := X t), huncorr t s]
+    ring
+  refine ⟨⟨fun t => (hX.memLp t).add (hY.memLp t), fun s t => ?_, fun t k => ?_⟩, fun k => ?_⟩
+  · rw [integral_add ((hX.memLp s).integrable one_le_two) ((hY.memLp s).integrable one_le_two),
+      integral_add ((hX.memLp t).integrable one_le_two) ((hY.memLp t).integrable one_le_two),
+      hX.integral_eq s t, hY.integral_eq s t]
+  · rw [hcov, hcov, hX.cov_shift t k, hY.cov_shift t k]
+  · exact hcov k 0
+
+/-- The spectral-density series converges absolutely under summable ACVF (`|Re e^{ikλ}| ≤ 1`). -/
+private theorem summable_acvf_mul_fourier [IsProbabilityMeasure μ] {Z : ℤ → Ω → ℝ}
+    (hZ : HasSummableACVF Z μ) (l : AddCircle (2 * π)) :
+    Summable fun k : ℤ => acvf Z μ k * (fourier k l).re := by
+  refine Summable.of_norm_bounded hZ fun k => ?_
+  have h1 : |((fourier k l : ℂ)).re| ≤ 1 := by
+    have h3 : ‖(fourier k l : ℂ)‖ = 1 := Circle.norm_coe _
+    have h2 := Complex.abs_re_le_norm (fourier k l : ℂ)
+    rwa [h3] at h2
+  rw [norm_mul, Real.norm_eq_abs, Real.norm_eq_abs]
+  nlinarith [abs_nonneg (acvf Z μ k)]
+
+/-- Additive ACVFs give additive spectral densities. -/
+private theorem spectralDensityOf_add [IsProbabilityMeasure μ] {X Y : ℤ → Ω → ℝ}
+    (hX : HasSummableACVF X μ) (hY : HasSummableACVF Y μ)
+    (hadd : ∀ k : ℤ, acvf (fun t ω => X t ω + Y t ω) μ k = acvf X μ k + acvf Y μ k)
+    (l : AddCircle (2 * π)) :
+    spectralDensityOf (fun t ω => X t ω + Y t ω) μ l
+      = spectralDensityOf X μ l + spectralDensityOf Y μ l := by
+  rw [spectralDensityOf, spectralDensityOf, spectralDensityOf, ← mul_add,
+    ← Summable.tsum_add (summable_acvf_mul_fourier hX l) (summable_acvf_mul_fourier hY l)]
+  congr 1
+  exact tsum_congr fun k => by rw [hadd k, add_mul]
 
 /-- **FY Example 2.7**: AR(1) signal plus uncorrelated white observation noise has
 spectral density `g_Z(ω) + σ_η²/(2π)` — an ARMA(1,1)-shaped rational spectrum. FY's
@@ -349,6 +418,10 @@ theorem spectralDensityOf_ar_one_add_noise [IsProbabilityMeasure μ]
     (l : AddCircle (2 * π)) :
     spectralDensityOf (fun t ω => Z t ω + η t ω) μ l
       = σ2 / (2 * π) / (1 + b1 ^ 2 - 2 * b1 * (fourier 1 l).re) + ση2 / (2 * π) := by
-  sorry
+  have hZsum : HasSummableACVF Z μ :=
+    hZ.hasSummableACVF (hZ.acvf_exponential_decay hcausal (noRootClosedDisc_of_abs_lt_one hb))
+  obtain ⟨-, hacvfAdd⟩ := isStationary_add_of_uncorrelated hstatZ hη.isStationary huncorr
+  rw [spectralDensityOf_add hZsum hη.hasSummableACVF hacvfAdd l,
+    spectralDensityOf_ar_one hZ hstatZ hcausal hb hmeas l, hη.spectralDensityOf_eq l]
 
 end StatLean.TimeSeries
