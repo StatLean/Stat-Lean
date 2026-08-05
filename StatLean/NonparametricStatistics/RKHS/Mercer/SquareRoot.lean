@@ -499,7 +499,7 @@ private theorem continuous_sqrtSectionLp (hK : IsMercerKernel 𝕜 K) [μ.IsOpen
       ((((hKc.comp' (continuous_id.prodMk continuous_id)).sub
         (hKc.comp' (continuous_const.prodMk continuous_id))).sub
         (hKc.comp' (continuous_id.prodMk continuous_const))).add continuous_const)
-  show Filter.Tendsto (fun x : X => sqrtSectionLp d x) (nhds x₀) (nhds (sqrtSectionLp d x₀))
+  change Filter.Tendsto (fun x : X => sqrtSectionLp d x) (nhds x₀) (nhds (sqrtSectionLp d x₀))
   rw [tendsto_iff_norm_sub_tendsto_zero, heq]
   have hct : Filter.Tendsto
       (fun x : X => Real.sqrt (RCLike.re (K x x - K x₀ x - K x x₀ + K x₀ x₀))) (nhds x₀)
@@ -597,6 +597,7 @@ noncomputable def sqrtCLM : Lp 𝕜 2 μ →L[𝕜] Lp 𝕜 2 μ :=
       exact norm_integralOp_sqrtSymbol_le d hK hM g x)
 
 -- Coefficientwise description of a finite `L²` combination.
+omit [μ.IsOpenPosMeasure] in
 private theorem coeFn_finset_sum_smul {ι : Type*} (s : Finset ι) (c : ι → 𝕜)
     (F : ι → Lp 𝕜 2 μ) :
     ((∑ i ∈ s, c i • F i : Lp 𝕜 2 μ) : X → 𝕜)
@@ -614,6 +615,7 @@ private theorem coeFn_finset_sum_smul {ι : Type*} (s : Finset ι) (c : ι → �
 
 -- Pythagoras against a finite piece of an orthonormal family whose coefficients are the
 -- Fourier coefficients of `u`.
+omit [μ.IsOpenPosMeasure] in
 private theorem norm_sq_sub_partial_aux {ι : Type*} (u : Lp 𝕜 2 μ) (v : ι → Lp 𝕜 2 μ)
     (hv : Orthonormal 𝕜 v) (c : ι → 𝕜) (hcu : ∀ n, ⟪v n, u⟫_𝕜 = c n) (s : Finset ι) :
     ‖u - ∑ n ∈ s, c n • v n‖ ^ 2 = ‖u‖ ^ 2 - ∑ n ∈ s, ‖c n‖ ^ 2 := by
@@ -646,17 +648,20 @@ private theorem norm_sq_sub_partial_aux {ι : Type*} (u : Lp 𝕜 2 μ) (v : ι 
     ring
   rw [hsimp, map_sub, RCLike.ofReal_re, ← norm_sq_eq_re_inner (𝕜 := 𝕜)]
 
+omit [μ.IsOpenPosMeasure] in
 private theorem pairAdd_smul (g : Lp 𝕜 2 μ) (c : 𝕜) (u : Lp 𝕜 2 μ) :
     pairAdd μ g (c • u) = c * pairAdd μ g u := by
   change conj ⟪c • u, starLp g⟫_𝕜 = c * conj ⟪u, starLp g⟫_𝕜
   rw [inner_smul_left, map_mul, RCLike.conj_conj]
 
+omit [μ.IsOpenPosMeasure] in
 private theorem norm_pairAdd_le (g u : Lp 𝕜 2 μ) : ‖pairAdd μ g u‖ ≤ ‖u‖ * ‖g‖ := by
   change ‖conj ⟪u, starLp g⟫_𝕜‖ ≤ _
   rw [RCLike.norm_conj, ← norm_starLp g]
   exact norm_inner_le_norm _ _
 
 -- The eigenfunctions have unit `L²` mass.
+omit [μ.IsOpenPosMeasure] in
 private theorem integral_normSq_eigfun' (n : d.ι) : ∫ z, ‖d.eigfun n z‖ ^ 2 ∂μ = 1 := by
   have h1 : ⟪ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n),
       ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun n)⟫_𝕜 = 1 := by
@@ -672,6 +677,7 @@ private theorem integral_normSq_eigfun' (n : d.ι) : ∫ z, ‖d.eigfun n z‖ ^
   exact_mod_cast h2
 
 -- Continuous real functions on the compact base space are integrable.
+omit [μ.IsOpenPosMeasure] in
 private theorem integrable_of_cont_real {f : X → ℝ} (hf : Continuous f) : Integrable f μ := by
   obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn hf.continuousOn
   exact memLp_one_iff_integrable.mp
@@ -955,6 +961,7 @@ private theorem boxProd_sqrtSymbol (x z : X) :
   exact hK.isKernelFun.conj_symm z x
 
 -- The eigenvalue equation in `L²`.
+omit [μ.IsOpenPosMeasure] in
 private theorem mercerCLM_eigfun (j : d.ι) :
     mercerCLM μ hKc (ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun j))
       = (d.eigval j : 𝕜) • ContinuousMap.toLp (E := 𝕜) 2 μ 𝕜 (d.eigfun j) := by
