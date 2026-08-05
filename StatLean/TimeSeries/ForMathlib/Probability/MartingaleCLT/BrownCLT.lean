@@ -265,6 +265,177 @@ private lemma tendsto_measure_exists_cvar_ge [IsProbabilityMeasure μ] (h : IsMD
     _ ≤ 2 / δ * ∑ i, ∫ ω in {ω | ε ≤ |X n i ω|}, X n i ω ^ 2 ∂μ :=
         mul_le_mul_of_nonneg_left hmark hc.le
 
+/-- Below the truncation level the stopping is inactive. -/
+private lemma mem_truncSet_of_le (h : IsMDSArray k X F μ) {c : ℝ} (n : ℕ) {ω : Ω}
+    (hnn : ∀ i, 0 ≤ cvar k X F μ n i ω) (hle : mdsCondVariance k X F μ n ω ≤ c)
+    (i : Fin (k n)) : ω ∈ truncSet k X F μ c n i := by
+  show ∑ j ∈ Finset.Iic i, cvar k X F μ n j ω ≤ c
+  refine le_trans (Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ _)
+    (fun j _ _ => hnn j)) ?_
+  rw [← mdsCondVariance_eq_sum_cvar]
+  exact hle
+
+private lemma ae_truncArray_eq (h : IsMDSArray k X F μ) (c : ℝ) (n : ℕ) :
+    ∀ᵐ ω ∂μ, mdsCondVariance k X F μ n ω ≤ c →
+      ∀ i, truncArray k X F μ c n i ω = X n i ω := by
+  have hnn0 : ∀ᵐ ω ∂μ, ∀ i, 0 ≤ cvar k X F μ n i ω :=
+    ae_all_iff.2 fun i => cvar_nonneg (μ := μ) n i
+  filter_upwards [hnn0] with ω hnn hle i
+  exact Set.indicator_of_mem (mem_truncSet_of_le h n hnn hle i) _
+
+private lemma ae_mdsRowSum_eq (h : IsMDSArray k X F μ) (c : ℝ) (n : ℕ) :
+    ∀ᵐ ω ∂μ, mdsCondVariance k X F μ n ω ≤ c →
+      mdsRowSum k (truncArray k X F μ c) n ω = mdsRowSum k X n ω := by
+  filter_upwards [ae_truncArray_eq h c n] with ω hω hle
+  exact Finset.sum_congr rfl fun i _ => hω hle i
+
+private lemma ae_mdsCondVariance_eq (h : IsMDSArray k X F μ) (c : ℝ) (n : ℕ) :
+    ∀ᵐ ω ∂μ, mdsCondVariance k X F μ n ω ≤ c →
+      mdsCondVariance k (truncArray k X F μ c) F μ n ω = mdsCondVariance k X F μ n ω := by
+  have hnn0 : ∀ᵐ ω ∂μ, ∀ i, 0 ≤ cvar k X F μ n i ω :=
+    ae_all_iff.2 fun i => cvar_nonneg (μ := μ) n i
+  have hc0 : ∀ᵐ ω ∂μ, ∀ i, cvar k (truncArray k X F μ c) F μ n i ω
+      = (truncSet k X F μ c n i).indicator (cvar k X F μ n i) ω :=
+    ae_all_iff.2 fun i => cvar_truncArray h c n i
+  filter_upwards [hnn0, hc0] with ω hnn hcc hle
+  rw [mdsCondVariance_eq_sum_cvar, mdsCondVariance_eq_sum_cvar]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [hcc i, Set.indicator_of_mem (mem_truncSet_of_le h n hnn hle i)]
+
+/-- The truncated array inherits the Lindeberg condition. -/
+private lemma tendsto_lindeberg_truncArray [IsProbabilityMeasure μ] (h : IsMDSArray k X F μ)
+    (hlind : ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n => ∑ i, ∫ ω in {ω | ε ≤ |X n i ω|}, (X n i ω) ^ 2 ∂μ) atTop (𝓝 0))
+    (c : ℝ) {ε : ℝ} (hε : 0 < ε) :
+    Tendsto (fun n => ∑ i, ∫ ω in {ω | ε ≤ |truncArray k X F μ c n i ω|},
+      (truncArray k X F μ c n i ω) ^ 2 ∂μ) atTop (𝓝 0) := by
+  have hmeas' : ∀ (n : ℕ) (i : Fin (k n)), Measurable (truncArray k X F μ c n i) := fun n i =>
+    measurable_of_mds (isMDSArray_truncArray h c) n i
+  refine squeeze_zero (fun n => Finset.sum_nonneg fun i _ => ?_) (fun n => ?_) (hlind ε hε)
+  · exact setIntegral_nonneg (measurableSet_le measurable_const (hmeas' n i).abs)
+      fun ω _ => sq_nonneg _
+  refine Finset.sum_le_sum fun i _ => ?_
+  have hS'meas : MeasurableSet {ω | ε ≤ |truncArray k X F μ c n i ω|} :=
+    measurableSet_le measurable_const (hmeas' n i).abs
+  have hmem : ∀ ω ∈ {ω | ε ≤ |truncArray k X F μ c n i ω|}, ω ∈ truncSet k X F μ c n i := by
+    intro ω hω
+    by_contra hA
+    rw [Set.mem_setOf_eq, show truncArray k X F μ c n i ω = 0 from
+      Set.indicator_of_notMem hA _] at hω
+    simp only [abs_zero] at hω
+    linarith
+  have heq : ∫ ω in {ω | ε ≤ |truncArray k X F μ c n i ω|},
+      (truncArray k X F μ c n i ω) ^ 2 ∂μ
+      = ∫ ω in {ω | ε ≤ |truncArray k X F μ c n i ω|}, X n i ω ^ 2 ∂μ :=
+    setIntegral_congr_fun hS'meas fun ω hω => by
+      rw [show truncArray k X F μ c n i ω = X n i ω from
+        Set.indicator_of_mem (hmem ω hω) _]
+  rw [heq]
+  refine setIntegral_mono_set (integrable_sq_of_mds h n i).integrableOn
+    (ae_of_all _ fun ω => sq_nonneg _) (HasSubset.Subset.eventuallyLE fun ω hω => ?_)
+  have := hmem ω hω
+  rw [Set.mem_setOf_eq, show truncArray k X F μ c n i ω = X n i ω from
+    Set.indicator_of_mem this _] at hω
+  exact hω
+
+private lemma measurable_mdsCondVariance (h : IsMDSArray k X F μ) (n : ℕ) :
+    Measurable (mdsCondVariance k X F μ n) :=
+  Finset.measurable_sum _ fun i _ =>
+    (cvar_measurable (X := X) n i).mono (h.le_ambient n i.castSucc) le_rfl
+
+/-- The truncated array inherits the convergence of the conditional variance process: the two
+processes differ only on `{V_n > σ² + 1}`. -/
+private lemma tendsto_measure_truncArray_var [IsProbabilityMeasure μ] (h : IsMDSArray k X F μ)
+    {σ2 : ℝ}
+    (hvar : ∀ δ : ℝ, 0 < δ →
+      Tendsto (fun n => (μ {ω | δ ≤ |mdsCondVariance k X F μ n ω - σ2|}).toReal)
+        atTop (𝓝 0))
+    {δ : ℝ} (hδ : 0 < δ) :
+    Tendsto (fun n => (μ {ω | δ ≤
+        |mdsCondVariance k (truncArray k X F μ (σ2 + 1)) F μ n ω - σ2|}).toReal) atTop (𝓝 0) := by
+  have hg : Tendsto (fun n => (μ {ω | δ ≤ |mdsCondVariance k X F μ n ω - σ2|}).toReal
+      + (μ {ω | (1 : ℝ) ≤ |mdsCondVariance k X F μ n ω - σ2|}).toReal) atTop (𝓝 0) := by
+    simpa using (hvar δ hδ).add (hvar 1 one_pos)
+  refine squeeze_zero (fun n => ENNReal.toReal_nonneg) (fun n => ?_) hg
+  have hsub : μ {ω | δ ≤ |mdsCondVariance k (truncArray k X F μ (σ2 + 1)) F μ n ω - σ2|}
+      ≤ μ {ω | δ ≤ |mdsCondVariance k X F μ n ω - σ2|}
+        + μ {ω | (1 : ℝ) ≤ |mdsCondVariance k X F μ n ω - σ2|} := by
+    refine le_trans (measure_mono_ae ?_) (measure_union_le _ _)
+    filter_upwards [ae_mdsCondVariance_eq h (σ2 + 1) n] with ω hω hmem
+    by_cases hle : mdsCondVariance k X F μ n ω ≤ σ2 + 1
+    · refine Set.mem_union_left _ ?_
+      have hm : δ ≤ |mdsCondVariance k (truncArray k X F μ (σ2 + 1)) F μ n ω - σ2| := hmem
+      rw [hω hle] at hm
+      exact hm
+    · refine Set.mem_union_right _ ?_
+      push_neg at hle
+      show (1 : ℝ) ≤ |mdsCondVariance k X F μ n ω - σ2|
+      rw [abs_of_nonneg (by linarith)]
+      linarith
+  refine le_trans (ENNReal.toReal_mono ?_ hsub) (le_of_eq ?_)
+  · exact ENNReal.add_ne_top.2 ⟨measure_ne_top _ _, measure_ne_top _ _⟩
+  · exact ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)
+
+/-- Step 1 of the assembly: the characteristic function of the law of the row sum is the
+integral of the exponential against the underlying measure. -/
+private lemma charFun_map_mdsRowSum (h : IsMDSArray k X F μ) (n : ℕ) (u : ℝ) :
+    charFun (μ.map (mdsRowSum k X n)) u
+      = ∫ ω, Complex.exp (Complex.I * (u * mdsRowSum k X n ω : ℝ)) ∂μ := by
+  have hmeas : Measurable (mdsRowSum k X n) :=
+    Finset.measurable_sum _ fun i _ => measurable_of_mds h n i
+  rw [charFun_apply_real,
+    integral_map hmeas.aemeasurable
+      (Continuous.aestronglyMeasurable (by fun_prop : Continuous fun x : ℝ =>
+        Complex.exp (u * x * Complex.I)))]
+  refine integral_congr_ae (ae_of_all _ fun ω => ?_)
+  congr 1
+  push_cast
+  ring
+
+private lemma integrable_exp_rowSum (h : IsMDSArray k X F μ) [IsProbabilityMeasure μ] (n : ℕ)
+    (u : ℝ) : Integrable (fun ω => Complex.exp (Complex.I * (u * mdsRowSum k X n ω : ℝ))) μ := by
+  have hmeas : Measurable (mdsRowSum k X n) :=
+    Finset.measurable_sum _ fun i _ => measurable_of_mds h n i
+  have hm2 : Measurable fun ω => Complex.exp (Complex.I * ((u * mdsRowSum k X n ω : ℝ) : ℂ)) :=
+    Complex.measurable_exp.comp
+      ((Complex.measurable_ofReal.comp (measurable_const.mul hmeas)).const_mul Complex.I)
+  refine Integrable.mono' (integrable_const (1 : ℝ)) hm2.aestronglyMeasurable
+    (ae_of_all _ fun ω => ?_)
+  rw [Complex.norm_exp]
+  simp
+
+/-- Step 1′: replacing the array by its truncation costs at most twice the probability that the
+truncation is active. -/
+private lemma norm_integral_exp_rowSum_sub_trunc [IsProbabilityMeasure μ] (h : IsMDSArray k X F μ)
+    (c : ℝ) (n : ℕ) (u : ℝ) :
+    ‖(∫ ω, Complex.exp (Complex.I * (u * mdsRowSum k X n ω : ℝ)) ∂μ)
+        - ∫ ω, Complex.exp (Complex.I *
+            (u * mdsRowSum k (truncArray k X F μ c) n ω : ℝ)) ∂μ‖
+      ≤ 2 * (μ {ω | ¬ mdsCondVariance k X F μ n ω ≤ c}).toReal := by
+  have h' : IsMDSArray k (truncArray k X F μ c) F μ := isMDSArray_truncArray h c
+  have hB : MeasurableSet {ω | ¬ mdsCondVariance k X F μ n ω ≤ c} :=
+    (measurableSet_le (measurable_mdsCondVariance h n) measurable_const).compl
+  have hfint := integrable_exp_rowSum h n u
+  have hgint := integrable_exp_rowSum h' n u
+  rw [← integral_sub hfint hgint]
+  refine le_trans (norm_integral_le_integral_norm _) ?_
+  have hbound : ∀ᵐ ω ∂μ, ‖Complex.exp (Complex.I * (u * mdsRowSum k X n ω : ℝ))
+      - Complex.exp (Complex.I * (u * mdsRowSum k (truncArray k X F μ c) n ω : ℝ))‖
+      ≤ 2 * Set.indicator {ω | ¬ mdsCondVariance k X F μ n ω ≤ c} (fun _ => (1 : ℝ)) ω := by
+    filter_upwards [ae_mdsRowSum_eq h c n] with ω hω
+    by_cases hle : mdsCondVariance k X F μ n ω ≤ c
+    · rw [hω hle, sub_self, norm_zero]
+      have : (0 : ℝ) ≤ Set.indicator {ω | ¬ mdsCondVariance k X F μ n ω ≤ c}
+          (fun _ => (1 : ℝ)) ω := Set.indicator_nonneg (fun _ _ => zero_le_one) ω
+      linarith
+    · rw [Set.indicator_of_mem (by exact hle : ω ∈ {ω | ¬ mdsCondVariance k X F μ n ω ≤ c})]
+      refine le_trans (norm_sub_le _ _) ?_
+      rw [Complex.norm_exp, Complex.norm_exp]
+      norm_num
+  refine le_trans (integral_mono_ae (hfint.sub hgint).norm
+    (((integrable_const (1 : ℝ)).indicator hB).const_mul 2) hbound) (le_of_eq ?_)
+  rw [integral_const_mul, integral_indicator_const _ hB, smul_eq_mul, mul_one, measureReal_def]
+
 end Truncation
 
 /-- **The Brown/Hall–Heyde martingale CLT** (charFun form): martingale-difference
@@ -285,7 +456,121 @@ theorem mds_clt [IsProbabilityMeasure μ]
     (u : ℝ) :
     Tendsto (fun n => charFun (μ.map (mdsRowSum k X n)) u) atTop
       (𝓝 (charFun (gaussianReal 0 (Real.toNNReal σ2)) u)) := by
-  sorry
+  classical
+  set c : ℝ := σ2 + 1 with hcdef
+  have hc0 : (0 : ℝ) ≤ c := by rw [hcdef]; linarith
+  set X' := truncArray k X F μ c with hX'def
+  have h' : IsMDSArray k X' F μ := isMDSArray_truncArray h c
+  -- (i) the truncated array still satisfies Lindeberg's condition …
+  have hlind' : ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n => ∑ i, ∫ ω in {ω | ε ≤ |X' n i ω|}, (X' n i ω) ^ 2 ∂μ) atTop (𝓝 0) :=
+    fun ε hε => tendsto_lindeberg_truncArray h hlind c hε
+  -- (ii) … and Brown's variance condition …
+  have hvar' : ∀ δ : ℝ, 0 < δ →
+      Tendsto (fun n => (μ {ω | δ ≤ |mdsCondVariance k X' F μ n ω - σ2|}).toReal)
+        atTop (𝓝 0) := fun δ hδ => tendsto_measure_truncArray_var h hvar hδ
+  -- (iii) … whence uniform asymptotic negligibility …
+  have hunif' : ∀ δ : ℝ, 0 < δ →
+      Tendsto (fun n => (μ {ω | ∃ i, δ ≤ μ[fun ω' => X' n i ω' ^ 2 | F n i.castSucc] ω}).toReal)
+        atTop (𝓝 0) := fun δ hδ => tendsto_measure_exists_cvar_ge h' hlind' hδ
+  -- (iv) … and, unlike the original array, a uniform `L¹` bound on its variance process.
+  have hbdd' : ∃ B : ℝ, ∀ n, ∫ ω, mdsCondVariance k X' F μ n ω ∂μ ≤ B := by
+    refine ⟨c, fun n => ?_⟩
+    calc ∫ ω, mdsCondVariance k X' F μ n ω ∂μ
+        ≤ ∫ _ω, c ∂μ := integral_mono_ae integrable_mdsCondVariance (integrable_const c)
+          (mdsCondVariance_truncArray_le h hc0 n)
+      _ = c := by simp
+  have hprod := tendsto_integral_prod_one_sub_condVar h' hσ hvar' hunif' hbdd' u
+  -- the row variance identity `Σᵢ E Xᵢ² = E V_n` for the truncated array
+  have hsumsq : ∀ n, ∑ i, ∫ ω, X' n i ω ^ 2 ∂μ = ∫ ω, mdsCondVariance k X' F μ n ω ∂μ := by
+    intro n
+    have e0 : ∫ ω, mdsCondVariance k X' F μ n ω ∂μ = ∑ i, ∫ ω, cvar k X' F μ n i ω ∂μ := by
+      simp only [mdsCondVariance_eq_sum_cvar]
+      exact integral_finset_sum _ fun i _ => integrable_condExp
+    rw [e0]
+    exact Finset.sum_congr rfl fun i _ =>
+      (integral_condExp (h'.le_ambient n i.castSucc)).symm
+  -- Step 2: the tower telescope, with `ε` chosen after `η` (the truncation makes the second
+  -- error term uniformly `O(ε)`, so no diagonal extraction is needed).
+  have htel : Tendsto (fun n =>
+      (∫ ω, Complex.exp (Complex.I * (u * mdsRowSum k X' n ω : ℝ)) ∂μ)
+        - ∫ ω, ∏ i, (1 - (u ^ 2 / 2 : ℂ) *
+            (μ[fun ω' => X' n i ω' ^ 2 | F n i.castSucc] ω : ℝ)) ∂μ) atTop (𝓝 0) := by
+    refine NormedAddCommGroup.tendsto_nhds_zero.2 fun η hη => ?_
+    obtain ⟨ε, hε, hεbd⟩ : ∃ ε : ℝ, 0 < ε ∧ |u| ^ 3 * ε * c < η / 2 := by
+      have hd : (0 : ℝ) ≤ |u| ^ 3 * c := by positivity
+      have hpos : (0 : ℝ) < |u| ^ 3 * c + 1 := by positivity
+      refine ⟨(η / 2) / (|u| ^ 3 * c + 1), by positivity, ?_⟩
+      have expand : |u| ^ 3 * ((η / 2) / (|u| ^ 3 * c + 1)) * c
+          = (|u| ^ 3 * c) * (η / 2) / (|u| ^ 3 * c + 1) := by field_simp
+      rw [expand, div_lt_iff₀ hpos]
+      nlinarith
+    have hL2 : Tendsto (fun n => u ^ 2 *
+        ∑ i, ∫ ω in {ω | ε ≤ |X' n i ω|}, (X' n i ω) ^ 2 ∂μ) atTop (𝓝 0) := by
+      simpa using (hlind' ε hε).const_mul (u ^ 2)
+    filter_upwards [NormedAddCommGroup.tendsto_nhds_zero.1 hL2 (η / 2) (by linarith)] with n hn
+    refine lt_of_le_of_lt (norm_integral_exp_rowSum_sub_prod_le h' n u hε) ?_
+    have e1 : ∑ i, (u ^ 2 * ∫ ω, X' n i ω ^ 2 *
+          Set.indicator {x : Ω | ε ≤ |X' n i x|} (fun _ => (1 : ℝ)) ω ∂μ)
+        = u ^ 2 * ∑ i, ∫ ω in {ω | ε ≤ |X' n i ω|}, (X' n i ω) ^ 2 ∂μ := by
+      rw [Finset.mul_sum]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      congr 1
+      rw [← integral_indicator (measurableSet_le measurable_const
+        (measurable_of_mds h' n i).abs)]
+      refine integral_congr_ae (ae_of_all _ fun ω => ?_)
+      by_cases hω : ω ∈ {x : Ω | ε ≤ |X' n i x|}
+      · simp only [Set.indicator_of_mem hω, mul_one]
+      · simp only [Set.indicator_of_notMem hω, mul_zero]
+    have e2 : ∑ i, (|u| ^ 3 * ε * ∫ ω, X' n i ω ^ 2 ∂μ)
+        = |u| ^ 3 * ε * ∫ ω, mdsCondVariance k X' F μ n ω ∂μ := by
+      rw [← Finset.mul_sum, hsumsq n]
+    rw [e1, e2]
+    have hbound2 : |u| ^ 3 * ε * ∫ ω, mdsCondVariance k X' F μ n ω ∂μ ≤ |u| ^ 3 * ε * c := by
+      obtain ⟨B, hB⟩ := hbdd'
+      have hmono : ∫ ω, mdsCondVariance k X' F μ n ω ∂μ ≤ c := by
+        calc ∫ ω, mdsCondVariance k X' F μ n ω ∂μ
+            ≤ ∫ _ω, c ∂μ := integral_mono_ae integrable_mdsCondVariance (integrable_const c)
+              (mdsCondVariance_truncArray_le h hc0 n)
+          _ = c := by simp
+      have : (0 : ℝ) ≤ |u| ^ 3 * ε := by positivity
+      nlinarith
+    have hn' : u ^ 2 * ∑ i, ∫ ω in {ω | ε ≤ |X' n i ω|}, (X' n i ω) ^ 2 ∂μ < η / 2 :=
+      lt_of_le_of_lt (le_abs_self _) hn
+    linarith
+  -- Step 1′: the truncation changes the row sum only on a vanishing event.
+  have hcomp : Tendsto (fun n => (∫ ω, Complex.exp (Complex.I * (u * mdsRowSum k X n ω : ℝ)) ∂μ)
+      - ∫ ω, Complex.exp (Complex.I * (u * mdsRowSum k X' n ω : ℝ)) ∂μ) atTop (𝓝 0) := by
+    refine squeeze_zero_norm (fun n => norm_integral_exp_rowSum_sub_trunc h c n u) ?_
+    have hlim : Tendsto (fun n => 2 * (μ {ω | (1 : ℝ) ≤
+        |mdsCondVariance k X F μ n ω - σ2|}).toReal) atTop (𝓝 0) := by
+      simpa using (hvar 1 one_pos).const_mul 2
+    refine squeeze_zero (fun n => by positivity) (fun n => ?_) hlim
+    have hsub : μ {ω | ¬ mdsCondVariance k X F μ n ω ≤ c}
+        ≤ μ {ω | (1 : ℝ) ≤ |mdsCondVariance k X F μ n ω - σ2|} := by
+      refine measure_mono fun ω hω => ?_
+      have hω' : ¬ mdsCondVariance k X F μ n ω ≤ c := hω
+      push_neg at hω'
+      rw [hcdef] at hω'
+      show (1 : ℝ) ≤ |mdsCondVariance k X F μ n ω - σ2|
+      rw [abs_of_nonneg (by linarith)]
+      linarith
+    have := ENNReal.toReal_mono (measure_ne_top μ _) hsub
+    linarith
+  -- Step 3: assemble and identify the Gaussian characteristic function.
+  have hsum := hcomp.add (htel.add hprod)
+  simp only [zero_add] at hsum
+  have hfinal : Tendsto (fun n => ∫ ω, Complex.exp (Complex.I * (u * mdsRowSum k X n ω : ℝ)) ∂μ)
+      atTop (𝓝 (Complex.exp (-(u ^ 2 * σ2 / 2 : ℝ)))) := hsum.congr fun n => by ring
+  have hgauss : charFun (gaussianReal 0 (Real.toNNReal σ2)) u
+      = Complex.exp (-(u ^ 2 * σ2 / 2 : ℝ)) := by
+    rw [charFun_gaussianReal]
+    congr 1
+    rw [Real.coe_toNNReal σ2 hσ]
+    push_cast
+    ring
+  rw [hgauss]
+  exact (tendsto_congr fun n => charFun_map_mdsRowSum h n u).2 hfinal
 
 /-- **Stationary-sequence corollary** (the Hannan-facing form): a single
 martingale-difference sequence `ξ` against a filtration `G` with
