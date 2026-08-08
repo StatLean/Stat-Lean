@@ -209,7 +209,7 @@ private lemma armaContrastVar_eq_one_iff_coeff {p q : ℕ} {b0 b : Fin p → ℝ
       · rw [hzero n hn, if_neg hn]
         ring
     rw [tsum_congr h]
-    simpa using tsum_ite_eq (0 : ℕ) (fun _ : ℕ => (1 : ℝ))
+    exact tsum_ite_eq (0 : ℕ) (fun _ : ℕ => (1 : ℝ))
 
 /-- **Identifiability, honest form** (this is what the contrast variance sees): the
 contrast variance equals `1` exactly when the two transfer functions agree, i.e.
@@ -303,44 +303,98 @@ representation of the same white noise. Both parameter pairs lie in `𝓑`, the 
 variance is `1`, yet `b ≠ b₀`. Identifiability of the *parameters* needs coprimality of
 the **working** pair too (or a search region of minimal representations); the contrast
 variance only ever sees the transfer function — `armaContrastVar_eq_one_iff_transfer`. -/
+private lemma arPoly_witness_zero : arPoly (fun _ : Fin 1 => (0 : ℝ)) = 1 := by simp [arPoly]
+
+private lemma maPoly_witness_zero : maPoly (fun _ : Fin 1 => (0 : ℝ)) = 1 := by simp [maPoly]
+
+private lemma maPoly_witness_neg :
+    maPoly (fun _ : Fin 1 => (-(1 / 2) : ℝ)) = arPoly (fun _ : Fin 1 => (1 / 2 : ℝ)) :=
+  maPoly_neg (fun _ : Fin 1 => (1 / 2 : ℝ))
+
+private lemma noRoot_witness : NoRootClosedDisc (fun _ : Fin 1 => (1 / 2 : ℝ)) := by
+  intro z hz hzero
+  have hev : Polynomial.aeval z (arPoly (fun _ : Fin 1 => (1 / 2 : ℝ))) = 1 - z / 2 := by
+    simp [arPoly]
+    ring
+  rw [hev] at hzero
+  have hz2 : z = 2 := by linear_combination -2 * hzero
+  rw [hz2] at hz
+  norm_num at hz
+
+private lemma invertible_witness_zero :
+    ARMAInvertibleParams (fun _ : Fin 1 => (0 : ℝ)) (fun _ : Fin 1 => (0 : ℝ)) := by
+  constructor
+  · intro z _
+    rw [arPoly_witness_zero]
+    simp
+  · intro z _
+    rw [maPoly_witness_zero]
+    simp
+
+private lemma invertible_witness_half :
+    ARMAInvertibleParams (fun _ : Fin 1 => (1 / 2 : ℝ)) (fun _ : Fin 1 => (-(1 / 2) : ℝ)) := by
+  refine ⟨noRoot_witness, fun z hz => ?_⟩
+  rw [maPoly_witness_neg]
+  exact noRoot_witness z hz
+
 private theorem armaContrastVar_eq_one_not_identifiable :
     ∃ (b0 b : Fin 1 → ℝ) (a0 a : Fin 1 → ℝ),
       ARMAInvertibleParams b0 a0 ∧ ARMAInvertibleParams b a ∧
         IsCoprime (arPoly b0) (maPoly a0) ∧ armaContrastVar b0 a0 b a = 1 ∧ b ≠ b0 := by
-  have harZero : arPoly (fun _ : Fin 1 => (0 : ℝ)) = 1 := by simp [arPoly]
-  have hmaZero : maPoly (fun _ : Fin 1 => (0 : ℝ)) = 1 := by simp [maPoly]
-  have hmaNeg : maPoly (fun _ : Fin 1 => (-(1 / 2) : ℝ)) = arPoly (fun _ : Fin 1 => (1 / 2 : ℝ)) :=
-    maPoly_neg (fun _ : Fin 1 => (1 / 2 : ℝ))
-  have hroot : NoRootClosedDisc (fun _ : Fin 1 => (1 / 2 : ℝ)) := by
-    intro z hz hzero
-    have hev : Polynomial.aeval z (arPoly (fun _ : Fin 1 => (1 / 2 : ℝ))) = 1 - z / 2 := by
-      simp [arPoly]
-      ring
-    rw [hev] at hzero
-    have hz2 : z = 2 := by linear_combination -2 * hzero
-    rw [hz2] at hz
-    norm_num at hz
-  have hB0 : ARMAInvertibleParams (fun _ : Fin 1 => (0 : ℝ)) (fun _ : Fin 1 => (0 : ℝ)) := by
-    constructor
-    · intro z _
-      rw [harZero]
-      simp
-    · intro z _
-      rw [hmaZero]
-      simp
-  have hB : ARMAInvertibleParams (fun _ : Fin 1 => (1 / 2 : ℝ))
-      (fun _ : Fin 1 => (-(1 / 2) : ℝ)) := by
-    refine ⟨hroot, fun z hz => ?_⟩
-    rw [hmaNeg]
-    exact hroot z hz
-  refine ⟨fun _ => 0, fun _ => 1 / 2, fun _ => 0, fun _ => -(1 / 2), hB0, hB, ?_, ?_, ?_⟩
-  · rw [harZero, hmaZero]
+  refine ⟨fun _ => 0, fun _ => 1 / 2, fun _ => 0, fun _ => -(1 / 2),
+    invertible_witness_zero, invertible_witness_half, ?_, ?_, ?_⟩
+  · rw [arPoly_witness_zero, maPoly_witness_zero]
     exact isCoprime_one_left
-  · refine (armaContrastVar_eq_one_iff_transfer hB0 hB).2 ?_
-    rw [harZero, hmaZero, hmaNeg, mul_one, one_mul]
+  · refine (armaContrastVar_eq_one_iff_transfer invertible_witness_zero
+      invertible_witness_half).2 ?_
+    rw [arPoly_witness_zero, maPoly_witness_zero, maPoly_witness_neg, mul_one, one_mul]
   · intro h
     have := congrFun h 0
     norm_num at this
+
+/-- The two witness pairs have the **same transfer coefficients** (both are white noise:
+`(1 − z/2)/(1 − z/2) = 1 = 1/1`). -/
+private lemma armaPsi_witness_eq :
+    armaPsi (fun _ : Fin 1 => (1 / 2 : ℝ)) (fun _ : Fin 1 => (-(1 / 2) : ℝ))
+      = armaPsi (fun _ : Fin 1 => (0 : ℝ)) (fun _ : Fin 1 => (0 : ℝ)) := by
+  have hne : PowerSeries.constantCoeff
+      (((arPoly (fun _ : Fin 1 => (1 / 2 : ℝ)) : Polynomial ℝ) : PowerSeries ℝ)) ≠ 0 := by
+    rw [Polynomial.constantCoeff_coe, coeff_arPoly_zero']
+    exact one_ne_zero
+  funext n
+  rw [armaPsi, armaPsi, maPoly_witness_neg, arPoly_witness_zero, maPoly_witness_zero,
+    PowerSeries.mul_inv_cancel _ hne]
+  simp
+
+/-- **Falsity witness for `mle_consistent` as frozen**: two *distinct* parameter points of
+the constraint set, the first one coprime (a legitimate `θ₀`), at which the profiled
+criterion is identically equal *for every sample of every length*. Taking
+`K = {θ₀, θ₁}` (finite, hence compact, and containing `θ₀`) and the constant sequence
+`θ T ω = θ₁` satisfies every hypothesis of `mle_consistent` — including `hargmin` with
+`δT = 0` — while `dist (θ T ω) θ₀` is a fixed positive number. -/
+private theorem mle_consistent_not_identifiable :
+    ∃ θ0 θ1 : (Fin 1 → ℝ) × (Fin 1 → ℝ),
+      ARMAInvertibleParams θ0.1 θ0.2 ∧ ARMAInvertibleParams θ1.1 θ1.2 ∧
+        IsCoprime (arPoly θ0.1) (maPoly θ0.2) ∧ θ0 ≠ θ1 ∧
+        ∀ (T : ℕ) (x : Fin T → ℝ),
+          armaProfileCriterion θ1.1 θ1.2 x = armaProfileCriterion θ0.1 θ0.2 x := by
+  refine ⟨(fun _ => 0, fun _ => 0), (fun _ => 1 / 2, fun _ => -(1 / 2)),
+    invertible_witness_zero, invertible_witness_half, ?_, ?_, ?_⟩
+  · rw [arPoly_witness_zero, maPoly_witness_zero]
+    exact isCoprime_one_left
+  · intro h
+    have := congrFun (congrArg Prod.fst h) 0
+    norm_num at this
+  · intro T x
+    have hacvf : armaACVF (fun _ : Fin 1 => (1 / 2 : ℝ)) (fun _ : Fin 1 => (-(1 / 2) : ℝ))
+        = armaACVF (fun _ : Fin 1 => (0 : ℝ)) (fun _ : Fin 1 => (0 : ℝ)) := by
+      funext k
+      simp only [armaACVF, armaPsi_witness_eq]
+    have hT : armaToeplitz (fun _ : Fin 1 => (1 / 2 : ℝ)) (fun _ : Fin 1 => (-(1 / 2) : ℝ)) T
+        = armaToeplitz (fun _ : Fin 1 => (0 : ℝ)) (fun _ : Fin 1 => (0 : ℝ)) T := by
+      ext i j
+      simp only [armaToeplitz, Matrix.of_apply, hacvf]
+    simp only [armaProfileCriterion, armaProfileS, hT]
 
 end CompositeFilter
 
@@ -890,6 +944,30 @@ section Process
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
+/-- **The one missing analytic input of this lane** (named debt): the *quadratic-form
+law of large numbers*
+
+  `T⁻¹ · xᵀ Γ_T(θ)⁻¹ x  →p  σ² · armaContrastVar θ₀ θ`
+
+for data from the true ARMA law. This is Hannan's ergodic step: `T⁻¹ Σ_t r_t(θ)²` for
+the stationary `θ`-residual process `r(θ)` (an iid-driven linear process) converges by
+the *pointwise ergodic theorem*, which Mathlib does not have; the `L²` route is blocked
+because the ACVF of `r(θ)²` involves fourth cumulants and FY assumes only two moments.
+Everything else in `criterion_tendsto_contrast` is discharged from this input below
+(the `log`-continuity transfer and the deterministic `T⁻¹ log det Γ_T → 0`, which is
+PROVED as `logdet_armaToeplitz_vanishes`). -/
+private theorem armaProfileS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
+    {b0 b : Fin p → ℝ} {a0 a : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
+    (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
+    (hB0 : ARMAInvertibleParams b0 a0) (hB : ARMAInvertibleParams b a)
+    (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
+    (hmeas : ∀ t, Measurable (X t)) {η : ℝ} (hη : 0 < η) :
+    Tendsto (fun T : ℕ => (μ {ω | η ≤
+        |(T : ℝ)⁻¹ * armaProfileS b a (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+          - σ2 * armaContrastVar b0 a0 b a|}).toReal)
+      atTop (𝓝 0) := by
+  sorry
+
 /-- **Pointwise LLN for the profiled criterion**: at each fixed `θ` in the constraint
 set, `armaProfileCriterion θ (data_T) →p log(σ² · armaContrastVar θ₀ θ)` under the
 true ARMA law. -/
@@ -903,7 +981,47 @@ theorem criterion_tendsto_contrast [IsProbabilityMeasure μ] {p q : ℕ}
         |armaProfileCriterion b a (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
           - Real.log (σ2 * armaContrastVar b0 a0 b a)|}).toReal)
       atTop (𝓝 0) := by
-  sorry
+  -- the limit is `≥ σ² > 0`, so `log` is continuous there (`one_le_armaContrastVar`)
+  have hc : 0 < σ2 * armaContrastVar b0 a0 b a := by
+    nlinarith [one_le_armaContrastVar hB0 hB]
+  obtain ⟨η, hη, hlog⟩ : ∃ η > 0, ∀ y : ℝ, |y - σ2 * armaContrastVar b0 a0 b a| < η →
+      |Real.log y - Real.log (σ2 * armaContrastVar b0 a0 b a)| < δ / 2 := by
+    have hcont : ContinuousAt Real.log (σ2 * armaContrastVar b0 a0 b a) :=
+      Real.continuousAt_log (ne_of_gt hc)
+    rw [Metric.continuousAt_iff] at hcont
+    obtain ⟨η, hη, hball⟩ := hcont (δ / 2) (by linarith)
+    refine ⟨η, hη, fun y hy => ?_⟩
+    have := hball (x := y) (by rwa [Real.dist_eq])
+    rwa [Real.dist_eq] at this
+  -- the log-determinant term is deterministic and vanishes
+  have hLsmall : ∀ᶠ T : ℕ in atTop,
+      |(T : ℝ)⁻¹ * Real.log (armaToeplitz b a T).det| < δ / 2 := by
+    have hball := (logdet_armaToeplitz_vanishes hB).eventually
+      (Metric.ball_mem_nhds (0 : ℝ) (by linarith : (0 : ℝ) < δ / 2))
+    filter_upwards [hball] with T hT
+    simpa [Real.dist_eq] using hT
+  refine squeeze_zero' (Eventually.of_forall fun T => ENNReal.toReal_nonneg) ?_
+    (armaProfileS_tendstoInProb h hiid hσ hB0 hB hcausal hmeas hη)
+  filter_upwards [hLsmall] with T hT
+  refine ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono fun ω hω => ?_)
+  simp only [Set.mem_setOf_eq] at hω ⊢
+  by_contra hcon
+  push Not at hcon
+  have h1 := hlog _ hcon
+  have hsplit : armaProfileCriterion b a (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+        - Real.log (σ2 * armaContrastVar b0 a0 b a)
+      = (Real.log ((T : ℝ)⁻¹ *
+            armaProfileS b a (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+          - Real.log (σ2 * armaContrastVar b0 a0 b a))
+        + (T : ℝ)⁻¹ * Real.log (armaToeplitz b a T).det := by
+    rw [armaProfileCriterion, div_eq_inv_mul]
+    ring
+  rw [hsplit] at hω
+  have habs := abs_add_le
+    (Real.log ((T : ℝ)⁻¹ * armaProfileS b a (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+      - Real.log (σ2 * armaContrastVar b0 a0 b a))
+    ((T : ℝ)⁻¹ * Real.log (armaToeplitz b a T).det)
+  linarith
 
 /-- **Consistency of approximate MLE sequences** over a compact identifiable
 neighbourhood: any measurable approximate-minimizer sequence of the profiled
@@ -932,6 +1050,28 @@ theorem mle_consistent [IsProbabilityMeasure μ] {p q : ℕ}
     {δ : ℝ} (hδ : 0 < δ) :
     Tendsto (fun T : ℕ =>
         (μ {ω | δ ≤ dist (θ T ω) (b0, a0)}).toReal) atTop (𝓝 0) := by
+  -- **FALSE AS FROZEN**, for the identifiability reason isolated (and formalized) in
+  -- `mle_consistent_not_identifiable`: nothing here forces the *working* pairs in `K` to
+  -- be coprime, and the profiled criterion is a function of the transfer function only.
+  -- Concretely (`p = q = 1`): with `b₀ = a₀ = 0`, `K = {(0,0), (1/2, −1/2)}` (finite,
+  -- hence compact; both members in `𝓑`; `(b₀,a₀) ∈ K`; `hcop` holds) and the *constant*
+  -- measurable sequence `θ T ω = (1/2, −1/2)`, the hypothesis `hargmin` holds with
+  -- `δT = 0` because
+  --   `armaProfileCriterion (1/2) (−1/2) x = armaProfileCriterion 0 0 x` for every `x`
+  -- (`mle_consistent_not_identifiable`, PROVED: the two models have the same `armaPsi`,
+  -- hence the same `armaACVF`, hence the same `Γ_T`), while
+  -- `dist (θ T ω) (b₀,a₀) = ‖(1/2, −1/2)‖ > 0` for all `T`, so the conclusion fails for
+  -- any `δ` below that distance.
+  --
+  -- REPAIR (then this lane's wiring closes): add minimality of the search region, e.g.
+  -- `(hcopK : ∀ ba ∈ K, IsCoprime (arPoly ba.1) (maPoly ba.2))`. With it,
+  -- `armaContrastVar_eq_one_iff_transfer` upgrades to parameter identifiability, and the
+  -- standard argmin-consistency argument runs on: (i) `criterion_tendsto_contrast`
+  -- (PROVED here modulo the single named debt `armaProfileS_tendstoInProb`),
+  -- (ii) `one_le_armaContrastVar` + continuity of `θ ↦ armaContrastVar θ₀ θ` giving a
+  -- positive contrast gap `inf {K(θ) − K(θ₀) : θ ∈ K, dist θ θ₀ ≥ δ} > 0` on the compact
+  -- `K`, and (iii) a finite subcover / stochastic-equicontinuity step to make the
+  -- convergence in (i) uniform over `K`.
   sorry
 
 end Process
