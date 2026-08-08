@@ -1,5 +1,9 @@
 import StatLean.TimeSeries.Models.Defs
 import StatLean.TimeSeries.ForMathlib.Markov.GeometricErgodicity
+-- `nlARKernel_geometricallyErgodic` (FY Thm 2.4(ii)) is stated here: its proof consumes
+-- the Harris engine, and `HarrisTheorem` imports `GeometricErgodicity`, so the theorem
+-- had to live on the far side of that import edge.
+import StatLean.TimeSeries.ForMathlib.Markov.HarrisTheorem
 import StatLean.TimeSeries.Process.Stationary
 import Mathlib.Probability.Distributions.Gaussian.Real
 
@@ -16,8 +20,9 @@ carries the §4.1.1 structural facts:
   (a) equal regime scales `σ₁ = ⋯ = σ_k` *(the book prints `σ_p` — typo)* and
   (b) `max_i Σ_j |b_{ij}| < 1`, a strictly stationary solution exists. FY delegates
   this entirely to §2.1.4's Theorem 2.4 + Example 2.1, so we state it as a corollary
-  of the Markov-layer debt `nlARKernel_geometricallyErgodic` (whose closure is
-  batch F's `ts/f-thm24`): the TAR autoregression function is the `nlARKernel`
+  of the Markov-layer theorem `nlARKernel_geometricallyErgodic` (PROVED in batch F,
+  axiom-clean, in `ForMathlib/Markov/HarrisTheorem.lean`): the TAR autoregression
+  function is the `nlARKernel`
   drift function, and the contraction condition (b) is the Lyapunov input;
 * the **canonical toy instance** eq. (4.2), `X_t = ∓0.7 X_{t−1} + ε_t` according to the
   sign of `X_{t−1} − r`, exhibited as a two-regime SETAR satisfying (a)+(b).
@@ -41,6 +46,16 @@ open scoped ProbabilityTheory Topology
 namespace StatLean.TimeSeries
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+
+/-- The Gaussian density is continuous — the input `nlARKernel_geometricallyErgodic`
+(FY Thm 2.4(ii)) asks for on top of positivity. The pin has `measurable_gaussianPDFReal`
+but no continuity lemma, and it is immediate from the closed form. -/
+private lemma continuous_gaussianPDF (m : ℝ) (v : NNReal) :
+    Continuous (ProbabilityTheory.gaussianPDF m v) := by
+  have h : Continuous (ProbabilityTheory.gaussianPDFReal m v) := by
+    unfold ProbabilityTheory.gaussianPDFReal
+    fun_prop
+  exact ENNReal.continuous_ofReal.comp h
 
 /-- The **SETAR interval partition** determined by ordered thresholds
 `r : Fin (k − 1) → ℝ`: regime `i` is `(r_{i−1}, r_i]` with the conventions
@@ -243,9 +258,10 @@ the *marginal* core of FY Theorem 2.2 (`invariant_nstep_eq`) but the project has
 path-space construction: Mathlib's pin supplies Ionescu–Tulcea on `ℕ`
 (`ProbabilityTheory.Kernel.traj`) and `Measure.infinitePi`, but no Kolmogorov extension
 over `ℤ` and no natural extension of a one-sided shift system, so the two-sided
-trajectory measure cannot be assembled from what exists. This is the single named debt
-of the derivation below (besides the frozen `nlARKernel_geometricallyErgodic`), and its
-closure belongs with the batch that builds the path space. -/
+trajectory measure cannot be assembled from what exists. Since
+`nlARKernel_geometricallyErgodic` is now PROVED, this is the **only** remaining debt of
+the derivation below, and its closure belongs with the batch that builds the path
+space. -/
 private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
     {f : (Fin (P + 1) → ℝ) → ℝ} (hf : Measurable f)
     {ν : Measure ℝ} [IsProbabilityMeasure ν]
@@ -264,8 +280,10 @@ private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
 /-- **FY §4.1.1, pp. 126–127 (delegated to Theorem 2.4)**: under equal regime scales and
 the uniform contraction `max_i Σ_j |b_{ij}| < 1`, the TAR state chain is geometrically
 ergodic, hence admits a strictly stationary solution. Stated as a corollary of the
-Markov-layer statement `nlARKernel_geometricallyErgodic` (FY Thm 2.4(ii)); the closure
-of that statement is batch F.
+Markov-layer statement `nlARKernel_geometricallyErgodic` (FY Thm 2.4(ii)), which is
+PROVED and axiom-clean. That theorem additionally requires the innovation density to be
+**continuous** (a documented strengthening); the Gaussian law used here supplies it via
+`continuous_gaussianPDF` above.
 
 The innovation law fed to Theorem 2.4 is taken to be `N(0, σ₀²)` rather than the
 hypothesis' `ν`: the conclusion asks for a TAR in the sense of `IsTAR`, whose innovations
@@ -334,6 +352,7 @@ theorem exists_stationary_tar [IsProbabilityMeasure μ] {k P : ℕ}
       (measurable_tarStateDrift b0 b hA d)
       (g := ProbabilityTheory.gaussianPDF 0 v)
       (ProbabilityTheory.measurable_gaussianPDF 0 v)
+      (continuous_gaussianPDF 0 v)
       (ProbabilityTheory.gaussianPDF_pos 0 hvne)
       (ν := ProbabilityTheory.gaussianReal 0 v)
       (ProbabilityTheory.gaussianReal_of_var_ne_zero 0 hvne)
