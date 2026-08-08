@@ -137,6 +137,30 @@ private lemma measurable_archFun (a : ℝ) (bc : ℕ → ℝ) : Measurable (arch
   (((measurable_const.mul ((measurable_pi_apply _).ennreal_ofReal)).mul
     (Measurable.ennreal_tsum fun k => measurable_archLayer bc k)).ennreal_toReal)
 
+/-- **Causality of a Volterra layer**: `archLayer bc k p` reads `p` only at coordinates
+`≤ 0` (indeed only at `< 0` for `k ≥ 1`), because every recursion step steps back by at
+least one unit of time. -/
+private lemma archLayer_congr (bc : ℕ → ℝ) (k : ℕ) : ∀ {r r' : ℤ → ℝ},
+    (∀ s ≤ (0 : ℤ), r s = r' s) → archLayer bc k r = archLayer bc k r' := by
+  induction k with
+  | zero => intro r r' _; rfl
+  | succ k ih =>
+    intro r r' h
+    simp only [archLayer]
+    refine tsum_congr fun j => ?_
+    have h1 : r (-1 - (j : ℤ)) = r' (-1 - (j : ℤ)) := h _ (by omega)
+    have h2 : (archLayer bc k fun s => r (s + (-1 - (j : ℤ))))
+        = archLayer bc k fun s => r' (s + (-1 - (j : ℤ))) :=
+      ih fun s hs => h _ (by omega)
+    rw [h1, h2]
+
+/-- **Causality of the Volterra functional**: `archFun a bc p` depends only on the
+coordinates `p s` with `s ≤ 0`. -/
+private lemma archFun_congr (a : ℝ) (bc : ℕ → ℝ) {r r' : ℤ → ℝ}
+    (h : ∀ s ≤ (0 : ℤ), r s = r' s) : archFun a bc r = archFun a bc r' := by
+  simp only [archFun, h 0 le_rfl]
+  rw [tsum_congr fun k => archLayer_congr bc k h]
+
 private lemma measurable_archPath {ξ : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ξ t)) (t : ℤ) :
     Measurable (archPath ξ t) :=
   measurable_pi_lambda _ fun s => hm (s + t)
@@ -324,9 +348,47 @@ private lemma map_path_shift [IsProbabilityMeasure μ] {ξ : ℤ → Ω → ℝ}
     (iIndepFun_iff_map_fun_eq_infinitePi_map hm).1 hi]
   exact congrArg Measure.infinitePi (funext fun s => (hid (s + c) s).map_eq)
 
+/-- **Strict stationarity of a path functional of an i.i.d. family** — the reusable brick
+behind FY Thm 2.5(i)'s stationarity claim (and behind FY Thm 4.4's, through the ARCH(∞)
+reduction): if `X_t = F(ξ_{·+t})` for one fixed measurable `F`, then `X` is strictly
+stationary, because the shifted path laws all coincide (`map_path_shift`). -/
+theorem isStrictlyStationary_of_shift_comp [IsProbabilityMeasure μ] {ξ : ℤ → Ω → ℝ}
+    (hm : ∀ t, Measurable (ξ t)) (hi : iIndepFun ξ μ)
+    (hid : ∀ s t, IdentDistrib (ξ s) (ξ t) μ μ) {F : (ℤ → ℝ) → ℝ} (hF : Measurable F) :
+    IsStrictlyStationary (fun t ω => F fun s => ξ (s + t) ω) μ := by
+  intro n tt k
+  obtain ⟨Ψ, hΨ⟩ : ∃ Ψ : (ℤ → ℝ) → (Fin n → ℝ),
+      Ψ = fun p i => F fun s => p (s + tt i) := ⟨_, rfl⟩
+  have hΨm : Measurable Ψ := by
+    rw [hΨ]
+    exact measurable_pi_lambda _ fun i => hF.comp
+      (measurable_pi_lambda _ fun s => measurable_pi_apply (s + tt i))
+  have hmb : ∀ c : ℤ, Measurable fun ω (s : ℤ) => ξ (s + c) ω :=
+    fun c => measurable_pi_lambda _ fun s => hm (s + c)
+  have hfac : ∀ c : ℤ, (fun ω (i : Fin n) => F fun s => ξ (s + (tt i + c)) ω)
+      = Ψ ∘ fun ω (s : ℤ) => ξ (s + c) ω := by
+    intro c
+    funext ω i
+    simp only [hΨ, Function.comp_apply, add_assoc]
+  have h0 : (fun ω (i : Fin n) => F fun s => ξ (s + tt i) ω)
+      = Ψ ∘ fun ω (s : ℤ) => ξ s ω := by simpa using hfac 0
+  rw [hfac k, h0, ← Measure.map_map hΨm (hmb k),
+    ← Measure.map_map hΨm (measurable_pi_lambda _ fun s : ℤ => hm s),
+    map_path_shift hm hi hid k]
+
 /-- **FY Theorem 2.5(i), existence** (proof: §2.7.1 Volterra series): if
 `Σ_j bc j < 1`, there is a strictly stationary, integrable, a.e.-nonnegative solution of
-the ARCH(∞) equation over the given noise, with `E Y_t = a / (1 − Σ_j bc j)`. -/
+the ARCH(∞) equation over the given noise, with `E Y_t = a / (1 − Σ_j bc j)`.
+
+The final clause exposes the solution as a **measurable causal path functional** of the
+noise: `Y_t = G(ξ_{·+t})` for one fixed measurable `G` that reads its argument only at
+coordinates `≤ 0`. Everything the §2.7.1 construction knows about the solution's
+*dependence structure* is in that clause: causality gives `σ(Y_s : s < t) ≤ σ(ξ_u : u < t)`
+and shift-equivariance gives strict stationarity of any further functional built from
+`Y` and `ξ` jointly (`isStrictlyStationary_of_shift_comp`). This is what makes the
+theorem reusable — e.g. FY Thm 4.4's GARCH construction needs `X_t = σ_t ε_t` to be
+independent of its own past and strictly stationary, neither of which follows from
+`IsARCHInf`/`IsStrictlyStationary Y` alone. -/
 theorem exists_stationary_archInf [IsProbabilityMeasure μ]
     {a : ℝ} {bc : ℕ → ℝ} {ξ : ℤ → Ω → ℝ}
     -- USER-INPUT: coefficients; FY eq. (2.15)
@@ -336,7 +398,9 @@ theorem exists_stationary_archInf [IsProbabilityMeasure μ]
     -- USER-INPUT: the noise; FY eq. (2.15)
     (hξ : IsARCHNoise ξ μ) :
     ∃ Y : ℤ → Ω → ℝ, IsARCHInf a bc Y ξ μ ∧ IsStrictlyStationary Y μ ∧
-      (∀ t, Integrable (Y t) μ) ∧ ∀ t, ∫ ω, Y t ω ∂μ = a / (1 - ∑' j, bc j) := by
+      (∀ t, Integrable (Y t) μ) ∧ (∀ t, ∫ ω, Y t ω ∂μ = a / (1 - ∑' j, bc j)) ∧
+      ∃ G : (ℤ → ℝ) → ℝ, Measurable G ∧ (∀ t ω, Y t ω = G fun s => ξ (s + t) ω) ∧
+        ∀ r r' : ℤ → ℝ, (∀ s ≤ (0 : ℤ), r s = r' s) → G r = G r' := by
   obtain ⟨hm, hnn, hi, hid, hint, hmean⟩ := hξ
   -- The contraction constant, in `ℝ≥0∞`.
   have hSeq : archS bc = ENNReal.ofReal (∑' j, bc j) := archS_eq hbc hsum
@@ -415,27 +479,8 @@ theorem exists_stationary_archInf [IsProbabilityMeasure μ]
       (le_refl (MeasurableSpace.comap (ξ s) inferInstance))).mono
         (comap_le_sigmaLT hst) le_rfl).ennreal_ofReal
   -- Strict stationarity: the solution is a fixed functional of the shifted noise path.
-  have hstat : IsStrictlyStationary (archSol a bc ξ) μ := by
-    intro n tt k
-    obtain ⟨Ψ, hΨ⟩ : ∃ Ψ : (ℤ → ℝ) → (Fin n → ℝ),
-        Ψ = fun p i => archFun a bc fun s => p (s + tt i) := ⟨_, rfl⟩
-    have hΨm : Measurable Ψ := by
-      rw [hΨ]
-      exact measurable_pi_lambda _ fun i => (measurable_archFun a bc).comp
-        (measurable_pi_lambda _ fun s => measurable_pi_apply (s + tt i))
-    have hmb : ∀ c : ℤ, Measurable fun ω (s : ℤ) => ξ (s + c) ω :=
-      fun c => measurable_pi_lambda _ fun s => hm (s + c)
-    have hfac : ∀ c : ℤ, (fun ω (i : Fin n) => archSol a bc ξ (tt i + c) ω)
-        = Ψ ∘ fun ω (s : ℤ) => ξ (s + c) ω := by
-      intro c
-      funext ω i
-      simp only [hΨ, Function.comp_apply, archSol, add_assoc]
-      rfl
-    have h0 : (fun ω (i : Fin n) => archSol a bc ξ (tt i) ω)
-        = Ψ ∘ fun ω (s : ℤ) => ξ s ω := by simpa using hfac 0
-    rw [hfac k, h0, ← Measure.map_map hΨm (hmb k),
-      ← Measure.map_map hΨm (measurable_pi_lambda _ fun s : ℤ => hm s),
-      map_path_shift hm hi hid k]
+  have hstat : IsStrictlyStationary (archSol a bc ξ) μ :=
+    isStrictlyStationary_of_shift_comp hm hi hid (measurable_archFun a bc)
   exact ⟨archSol a bc ξ,
     { a_nonneg := ha
       bc_nonneg := hbc
@@ -451,7 +496,9 @@ theorem exists_stationary_archInf [IsProbabilityMeasure μ]
       Y_nonneg := fun t => Filter.Eventually.of_forall fun ω => by
         rw [hSolZ]; exact ENNReal.toReal_nonneg
       recurrence := hrec },
-    hstat, hintY, hmeanY⟩
+    hstat, hintY, hmeanY,
+    archFun a bc, measurable_archFun a bc, fun _ _ => rfl,
+    fun _ _ h => archFun_congr a bc h⟩
 
 /-! ### Uniqueness (FY §2.7.1)
 
