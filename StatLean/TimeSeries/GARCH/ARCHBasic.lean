@@ -1,4 +1,5 @@
 import StatLean.TimeSeries.Stationarity.ARCH
+import StatLean.TimeSeries.Stationarity.ARMAExistence
 import StatLean.TimeSeries.Models.Linear
 import StatLean.TimeSeries.Process.LinearProcess
 
