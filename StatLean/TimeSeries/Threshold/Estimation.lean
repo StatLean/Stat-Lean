@@ -42,6 +42,7 @@ namespace StatLean.TimeSeries
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
+open Classical in
 /-- Time indices (within the usable window `P + 1 ≤ t < T`) whose threshold variable
 falls in regime `i` (FY §4.1.2). -/
 noncomputable def tarRegimeIndices {T : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d P : ℕ) :
@@ -99,7 +100,7 @@ theorem tarLS_clt_debt [IsProbabilityMeasure μ] {k P : ℕ}
     (hL2 : ∀ t, MemLp (X t) 2 μ)
     -- USER-INPUT: the fictitious regime-i AR process' second-moment matrix, assumed
     -- invertible; Chan 1993a
-    (i : Fin k) (W : Matrix (Fin P) (Fin P) ℝ) (hW : W.PosDef)
+    (i : Fin k) (W : Matrix (Fin P) (Fin P) ℝ) (hW : Matrix.PosDef W)
     -- USER-INPUT: a measurable regime-wise LS estimator sequence; FY eqs. (4.4)-(4.5)
     (bhat : (T : ℕ) → Ω → Fin P → ℝ) (hmeas : ∀ T, Measurable (bhat T))
     (hLS : ∀ (T : ℕ) (ω : Ω), ∀ γ0 : ℝ, ∀ γ : Fin P → ℝ,

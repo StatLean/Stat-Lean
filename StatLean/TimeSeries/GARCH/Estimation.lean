@@ -132,7 +132,7 @@ theorem whittle_clt_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     -- USER-INPUT: fourth-order stationarity; FY §4.2.3 / GR 2001
     (hL4 : ∀ t, MemLp (X t) 4 μ)
     -- USER-INPUT: the limiting covariance matrix of the Whittle estimator; GR 2001
-    (W : Matrix (Fin (p + q + 1)) (Fin (p + q + 1)) ℝ) (hW : W.PosDef)
+    (W : Matrix (Fin (p + q + 1)) (Fin (p + q + 1)) ℝ) (hW : Matrix.PosDef W)
     -- USER-INPUT: a measurable Whittle-minimizing estimator sequence; FY eq. (4.41)
     (θhat : (T : ℕ) → Ω → Fin (p + q + 1) → ℝ) (hmeas : ∀ T, Measurable (θhat T))
     (θ0 : Fin (p + q + 1) → ℝ)
@@ -152,7 +152,7 @@ theorem lad_clt_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     (h : IsGARCH c0 b a X σvol ε μ) (hstat : IsStrictlyStationary X μ)
     -- USER-INPUT: median-1 normalization of the squared innovations; Peng & Yao
     (hmed : μ {ω | ε 0 ω ^ 2 ≤ 1} = μ {ω | 1 ≤ ε 0 ω ^ 2})
-    (W : Matrix (Fin (p + q + 1)) (Fin (p + q + 1)) ℝ) (hW : W.PosDef)
+    (W : Matrix (Fin (p + q + 1)) (Fin (p + q + 1)) ℝ) (hW : Matrix.PosDef W)
     (θhat : (T : ℕ) → Ω → Fin (p + q + 1) → ℝ) (hmeas : ∀ T, Measurable (θhat T))
     (θ0 : Fin (p + q + 1) → ℝ)
     (c : Fin (p + q + 1) → ℝ) (u : ℝ) :
