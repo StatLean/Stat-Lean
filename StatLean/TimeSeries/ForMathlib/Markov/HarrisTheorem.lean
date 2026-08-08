@@ -116,6 +116,164 @@ noncomputable def weightedTV (β : ℝ) (V : S → ℝ) (μ ν : Measure S) : �
     ((μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x)
       + (ν.rnDeriv (μ + ν) x - μ.rnDeriv (μ + ν) x)) ∂(μ + ν)
 
+/-! ### The Jordan decomposition of `μ − ν`, in the `rnDeriv`-against-`μ + ν` form
+
+`weightedTV` integrates against `|μ − ν| = jPos μ ν + jPos ν μ`, where `jPos μ ν` is the
+positive part. Everything the contraction proof needs about `jPos` is here: it is the
+`μ`-part where `μ` dominates (`jPos_le_left`), the two parts are exchanged by the identity
+`μ + jPos ν μ = ν + jPos μ ν` (`add_jPos_comm`), and — the only nontrivial fact — that
+identity is *minimal*: any other pair of measures realizing the same difference dominates
+the Jordan parts, even after a common piece is removed (`jPos_add_le_of_add_eq`). That
+minimality is what replaces Hairer–Mattingly's coupling step. -/
+
+/-- The positive part of the Jordan decomposition of `μ − ν`, realized as a density against
+`λ = μ + ν`. This is the measure `weightedTV` integrates against (together with `jPos ν μ`). -/
+private noncomputable def jPos (μ ν : Measure S) : Measure S :=
+  (μ + ν).withDensity fun x => μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x
+
+private theorem jPos_swap (μ ν : Measure S) :
+    jPos ν μ = (μ + ν).withDensity fun x => ν.rnDeriv (μ + ν) x - μ.rnDeriv (μ + ν) x := by
+  rw [jPos, add_comm ν μ]
+
+private theorem jPos_apply (μ ν : Measure S) {s : Set S} (hs : MeasurableSet s) :
+    jPos μ ν s = ∫⁻ x in s, (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x) ∂(μ + ν) := by
+  rw [jPos, withDensity_apply _ hs]
+
+/-- `weightedTV` is the `(1 + βV)`-weighted mass of `|μ − ν| = jPos μ ν + jPos ν μ`. -/
+private theorem weightedTV_eq (β : ℝ) {V : S → ℝ} (hV : Measurable V) (μ ν : Measure S) :
+    weightedTV β V μ ν = (∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂(jPos μ ν))
+      + ∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂(jPos ν μ) := by
+  have hf : Measurable fun x => μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x :=
+    (Measure.measurable_rnDeriv _ _).sub (Measure.measurable_rnDeriv _ _)
+  have hg : Measurable fun x => ν.rnDeriv (μ + ν) x - μ.rnDeriv (μ + ν) x :=
+    (Measure.measurable_rnDeriv _ _).sub (Measure.measurable_rnDeriv _ _)
+  have hw : Measurable fun x => ENNReal.ofReal (1 + β * V x) :=
+    ENNReal.measurable_ofReal.comp (measurable_const.add ((measurable_const : Measurable
+      fun _ : S => β).mul hV))
+  calc weightedTV β V μ ν
+      = ∫⁻ x, (ENNReal.ofReal (1 + β * V x) * (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x)
+          + ENNReal.ofReal (1 + β * V x) * (ν.rnDeriv (μ + ν) x - μ.rnDeriv (μ + ν) x))
+            ∂(μ + ν) := by
+        rw [weightedTV]; exact lintegral_congr fun x => by ring
+    _ = (∫⁻ x, ENNReal.ofReal (1 + β * V x) * (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x)
+            ∂(μ + ν))
+          + ∫⁻ x, ENNReal.ofReal (1 + β * V x) * (ν.rnDeriv (μ + ν) x - μ.rnDeriv (μ + ν) x)
+            ∂(μ + ν) := lintegral_add_left (hw.mul hf) _
+    _ = _ := by
+        rw [jPos, jPos_swap, lintegral_withDensity_eq_lintegral_mul _ hf hw,
+          lintegral_withDensity_eq_lintegral_mul _ hg hw]
+        congr 1 <;> exact lintegral_congr fun x => by simp only [Pi.mul_apply]; ring
+
+/-- The positive part is dominated by the measure it comes from. -/
+private theorem jPos_le_left (μ ν : Measure S) [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
+    jPos μ ν ≤ μ := by
+  have hac : μ ≪ μ + ν := Measure.absolutelyContinuous_of_le (Measure.le_add_right le_rfl)
+  calc jPos μ ν
+      ≤ (μ + ν).withDensity (μ.rnDeriv (μ + ν)) :=
+        withDensity_mono (Filter.Eventually.of_forall fun _ => tsub_le_self)
+    _ = μ := Measure.withDensity_rnDeriv_eq _ _ hac
+
+private instance jPos_isFiniteMeasure (μ ν : Measure S) [IsFiniteMeasure μ]
+    [IsFiniteMeasure ν] : IsFiniteMeasure (jPos μ ν) :=
+  ⟨lt_of_le_of_lt (jPos_le_left μ ν _) (measure_lt_top μ _)⟩
+
+/-- The defining identity of the Jordan decomposition, in additive (subtraction-free) form:
+`μ − ν = jPos μ ν − jPos ν μ`. Both sides are `λ.withDensity (max (dμ/dλ) (dν/dλ))`. -/
+private theorem add_jPos_comm (μ ν : Measure S) [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
+    μ + jPos ν μ = ν + jPos μ ν := by
+  have hacμ : μ ≪ μ + ν := Measure.absolutelyContinuous_of_le (Measure.le_add_right le_rfl)
+  have hacν : ν ≪ μ + ν := Measure.absolutelyContinuous_of_le (Measure.le_add_left le_rfl)
+  have hμ : (μ + ν).withDensity (μ.rnDeriv (μ + ν)) = μ :=
+    Measure.withDensity_rnDeriv_eq _ _ hacμ
+  have hν : (μ + ν).withDensity (ν.rnDeriv (μ + ν)) = ν :=
+    Measure.withDensity_rnDeriv_eq _ _ hacν
+  -- `p·λ + (q − p)·λ = max p q · λ`, applied in both orders
+  have hmax : ∀ p q : S → ℝ≥0∞, Measurable p →
+      (μ + ν).withDensity p + (μ + ν).withDensity (fun x => q x - p x)
+        = (μ + ν).withDensity fun x => max (p x) (q x) := by
+    intro p q hp
+    rw [← withDensity_add_left hp fun x => q x - p x]
+    refine withDensity_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    simp only [Pi.add_apply]
+    exact add_tsub_eq_max
+  have e1 : μ + jPos ν μ
+      = (μ + ν).withDensity fun x => max (μ.rnDeriv (μ + ν) x) (ν.rnDeriv (μ + ν) x) := by
+    have h := hmax (μ.rnDeriv (μ + ν)) (ν.rnDeriv (μ + ν)) (Measure.measurable_rnDeriv _ _)
+    rw [hμ] at h
+    rw [jPos_swap]
+    exact h
+  have e2 : ν + jPos μ ν
+      = (μ + ν).withDensity fun x => max (ν.rnDeriv (μ + ν) x) (μ.rnDeriv (μ + ν) x) := by
+    have h := hmax (ν.rnDeriv (μ + ν)) (μ.rnDeriv (μ + ν)) (Measure.measurable_rnDeriv _ _)
+    rw [hν] at h
+    rw [jPos]
+    exact h
+  rw [e1, e2]
+  exact withDensity_congr_ae (Filter.Eventually.of_forall fun x => max_comm _ _)
+
+/-- The two Jordan parts of a pair of probability measures carry the same mass. -/
+private theorem jPos_mass_eq (μ ν : Measure S) [IsProbabilityMeasure μ]
+    [IsProbabilityMeasure ν] : jPos μ ν Set.univ = jPos ν μ Set.univ := by
+  have h := congrArg (fun m => m Set.univ) (add_jPos_comm μ ν)
+  simp only [Measure.add_apply, measure_univ] at h
+  exact ((ENNReal.add_right_inj ENNReal.one_ne_top).1 h).symm
+
+/-- **Minimality of the Jordan decomposition**, in the form the contraction needs: if
+`μ + B = ν + A` and a common piece `m` sits under both `A` and `B`, then `jPos μ ν + m ≤ A`.
+(With `m = 0` this is the usual minimality; the extra `m` is where the minorization mass is
+subtracted from both sides at once.) -/
+private theorem jPos_add_le_of_add_eq {μ ν A B m : Measure S} [IsFiniteMeasure μ]
+    [IsFiniteMeasure ν] (h : μ + B = ν + A) (hmA : m ≤ A) (hmB : m ≤ B) :
+    jPos μ ν + m ≤ A := by
+  have hfm : Measurable (μ.rnDeriv (μ + ν)) := Measure.measurable_rnDeriv _ _
+  have hgm : Measurable (ν.rnDeriv (μ + ν)) := Measure.measurable_rnDeriv _ _
+  have hacμ : μ ≪ μ + ν := Measure.absolutelyContinuous_of_le (Measure.le_add_right le_rfl)
+  have hacν : ν ≪ μ + ν := Measure.absolutelyContinuous_of_le (Measure.le_add_left le_rfl)
+  have hμ : (μ + ν).withDensity (μ.rnDeriv (μ + ν)) = μ :=
+    Measure.withDensity_rnDeriv_eq _ _ hacμ
+  have hν : (μ + ν).withDensity (ν.rnDeriv (μ + ν)) = ν :=
+    Measure.withDensity_rnDeriv_eq _ _ hacν
+  -- `D` is a Hahn set for the pair: off `D` the positive part has no mass.
+  set D : Set S := {x | ν.rnDeriv (μ + ν) x ≤ μ.rnDeriv (μ + ν) x} with hDdef
+  have hD : MeasurableSet D := measurableSet_le hgm hfm
+  refine Measure.le_iff.2 fun s hs => ?_
+  have hsD : MeasurableSet (s ∩ D) := hs.inter hD
+  have hsDc : MeasurableSet (s \ D) := hs.diff hD
+  have hmuD : ∫⁻ x in s ∩ D, μ.rnDeriv (μ + ν) x ∂(μ + ν) = μ (s ∩ D) := by
+    rw [← withDensity_apply _ hsD, hμ]
+  have hnuD : ∫⁻ x in s ∩ D, ν.rnDeriv (μ + ν) x ∂(μ + ν) = ν (s ∩ D) := by
+    rw [← withDensity_apply _ hsD, hν]
+  -- the positive part lives on `D`
+  have hloc : jPos μ ν s = jPos μ ν (s ∩ D) := by
+    have hz : jPos μ ν (s \ D) = 0 := by
+      rw [jPos_apply _ _ hsDc]
+      refine setLIntegral_eq_zero hsDc fun x hx => ?_
+      exact tsub_eq_zero_of_le (le_of_not_ge fun hc => hx.2 hc)
+    have hsplit := measure_inter_add_diff (μ := jPos μ ν) s hD
+    rw [hz, add_zero] at hsplit
+    exact hsplit.symm
+  -- on `D` the positive part is exactly the difference of the two masses
+  have hjord : jPos μ ν (s ∩ D) + ν (s ∩ D) = μ (s ∩ D) := by
+    rw [jPos_apply _ _ hsD, ← hnuD, ← hmuD, ← lintegral_add_left (hfm.sub hgm)]
+    refine setLIntegral_congr_fun hsD fun x hx => ?_
+    rw [tsub_add_eq_max, max_eq_left hx.2]
+  -- the hypothesis `μ + B = ν + A`, read on `s ∩ D`
+  have hkey : jPos μ ν (s ∩ D) + B (s ∩ D) = A (s ∩ D) := by
+    have h1 : μ (s ∩ D) + B (s ∩ D) = ν (s ∩ D) + A (s ∩ D) := by
+      have h2 := congrArg (fun m => m (s ∩ D)) h
+      simpa only [Measure.add_apply] using h2
+    have h3 : ν (s ∩ D) + (jPos μ ν (s ∩ D) + B (s ∩ D)) = ν (s ∩ D) + A (s ∩ D) := by
+      rw [← add_assoc, add_comm (ν (s ∩ D)) (jPos μ ν (s ∩ D)), hjord]; exact h1
+    exact (ENNReal.add_right_inj (measure_ne_top ν _)).1 h3
+  calc (jPos μ ν + m) s
+      = jPos μ ν (s ∩ D) + (m (s ∩ D) + m (s \ D)) := by
+        rw [Measure.add_apply, hloc, measure_inter_add_diff (μ := m) s hD]
+    _ ≤ jPos μ ν (s ∩ D) + B (s ∩ D) + A (s \ D) := by
+        rw [add_assoc]
+        exact add_le_add le_rfl (add_le_add (hmB _) (hmA _))
+    _ = A s := by rw [hkey, measure_inter_add_diff (μ := A) s hD]
+
+
 /-- **Lyapunov drift condition**: `∫ V d(κ x) ≤ γ V x + K` with a contraction factor
 `γ < 1` (Hairer–Mattingly Assumption 1). -/
 structure HasLyapunovDrift (κ : Kernel S S) (V : S → ℝ) (γ K : ℝ) : Prop where
