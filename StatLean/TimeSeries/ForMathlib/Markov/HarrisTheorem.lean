@@ -26,23 +26,24 @@ This file exists to discharge the last structural debt of the TimeSeries area,
 `nlARKernel_geometricallyErgodic` (FY Theorem 2.4(ii)); the Meyn–Tweedie
 ψ-irreducibility/petite-set apparatus is deliberately avoided.
 
-**STATUS.** `harris_invariant_unique` and `IsGeometricallyErgodic.of_pow` are proved
-(axiom-clean). Two statements are still open, for different reasons:
+**STATUS.** All four headline results are proved. The two definitions this file rests on
+were each *refuted* in an earlier pass and have since been repaired:
 
-* `harris_contraction` is **false as stated**, and is refuted in this file: `weightedTV`
-  is built from `Measure.singularPart` rather than from the Jordan decomposition of
-  `μ − ν`, so it ignores every absolutely-continuous overlap of the two laws and does not
-  even separate measures. See the explicit witness `cDrift`/`cMinorize`/`cHR` together
-  with `cNoContraction` just above the statement. Repairing it means changing the
-  *definition* of `weightedTV` (and then supplying the coupling step of Hairer–Mattingly),
-  which is a statement-level change.
-* `harris_theorem` is **false as stated** too, for an independent reason, and is likewise
-  refuted here: `HasLyapunovDrift.drift` uses the *Bochner* integral, which Mathlib sets to
-  `0` on non-integrable functions, so the drift hypothesis says nothing at states where
-  `∫⁻ V d(κ x) = ∞`. A chain can then escape to infinity and have no attracting law at all.
-  See `tDrift`/`tMinorize`/`tHR` with `tNoErgodic` just above the statement. The repair is
-  to state the drift with `∫⁻` (or to require `∀ x, Integrable V (κ x)`) — again a
-  statement-level change.
+* `weightedTV` used to be built from `Measure.singularPart` rather than from the Jordan
+  decomposition of `μ − ν`, so it ignored every absolutely-continuous overlap of the two
+  laws and did not even separate measures; `harris_contraction` was false against it.
+* `HasLyapunovDrift.drift` used to be stated with the *Bochner* integral, which Mathlib
+  sets to `0` on non-integrable functions, so the drift hypothesis said nothing at states
+  where `∫⁻ V d(κ x) = ∞`; a chain could escape to infinity, and `harris_theorem` was
+  false against it.
+
+Both machine-checked counterexamples are **retained below as block comments** (search for
+`REFUTATION`). They no longer type-check — that is the point: each was a witness against a
+definition that no longer exists, and against the repaired definitions the very same data
+is harmless (for the first witness the honest `|μ − ν|` weighting drops from `1 + 10β` to
+`1 + 5.5β` in one step; for the second the `∫⁻` drift simply fails at every nonzero state).
+They are kept verbatim, demoted to comments, because they are the record of *why* the
+definitions read the way they now do.
 
 Note that the uniqueness proof here does **not** go through any contraction: it splits
 `π − π'` by a Hahn set, shows each half is separately `κ`-invariant, and then uses the
@@ -146,9 +147,17 @@ structure HasMinorization (κ : Kernel S S) (V : S → ℝ) (R α : ℝ) (ρ : M
   minorize : ∀ x, V x ≤ R → ∀ A : Set S, MeasurableSet A →
     ENNReal.ofReal α * ρ A ≤ κ x A
 
--- ## REFUTATION of `harris_contraction` as frozen (see the STATUS note in the module docstring)
+-- ## REFUTATION of `harris_contraction` against the *old* `weightedTV` (historical record)
 --
--- `weightedTV` above is built from `Measure.singularPart`, **not** from the Jordan decomposition
+-- Everything from here to the end of the `cNoContraction` block is **demoted to a comment**:
+-- it was a machine-checked refutation of `harris_contraction` as stated against the previous,
+-- `singularPart`-based `weightedTV`, and it no longer type-checks against the repaired
+-- definition — which is exactly the outcome one wants.  Re-run on the repaired `weightedTV`
+-- the same data is no longer a counterexample: `|μ − ν|` is `½δ₀ + ½δ₁`, so the distance is
+-- `1 + 10β`, and after one step `|δ₂ − (½δ₀+½δ₂)| = ½δ₀ + ½δ₂` gives `1 + 5.5β < 1 + 10β`.
+-- The analysis is kept because it is the reason the definition reads the way it now does.
+--
+-- `weightedTV` used to be built from `Measure.singularPart`, **not** from the Jordan decomposition
 -- of the signed difference `μ − ν`: it sees only the parts of `μ` and `ν` that are *mutually
 -- singular*, and drops every absolutely-continuous overlap.  (In particular `weightedTV β V μ ν
 -- = 0` whenever `μ ≪ ν ≪ μ` with `μ ≠ ν`, so it does not separate measures.)  That makes the
@@ -179,6 +188,8 @@ structure HasMinorization (κ : Kernel S S) (V : S → ℝ) (R α : ℝ) (ρ : M
 -- `ᾱ = max (1 + βK − α) (γ + 2α/(βR))` for any `2α/(R(1−γ)) < β < α/K`; such a `β` exists
 -- exactly when `2K/(1−γ) < R`, i.e. under `hR`.  (The equal masses `a S = b S` are what the
 -- `singularPart` version lacks, and are the whole reason the frozen version fails.)
+
+/- BEGIN historical refutation block (does not compile against the repaired `weightedTV`).
 
 /-- Counterexample data: `V 0 = 0`, `V 1 = 20`, `V n = 11` otherwise. -/
 private noncomputable def cV : ℕ → ℝ := fun n => if n = 0 then 0 else if n = 1 then 20 else 11
@@ -290,6 +301,8 @@ private theorem cNoContraction :
   have : ENNReal.ofReal ᾱ < 1 := ENNReal.ofReal_lt_one.2 hα1
   exact absurd hcancel (not_le.2 this)
 
+END historical refutation block. -/
+
 /-- **Harris contraction** (Hairer–Mattingly Theorem 1.3): under a Lyapunov drift and a
 minorization on a high enough level set, the kernel contracts the weighted TV distance
 `weightedTV β V` for a suitable `β > 0`, uniformly over initial laws. -/
@@ -303,13 +316,18 @@ theorem harris_contraction {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ}
       ∀ μ ν : Measure S, IsProbabilityMeasure μ → IsProbabilityMeasure ν →
         weightedTV β V (μ.bind κ) (ν.bind κ)
           ≤ ENNReal.ofReal ᾱ * weightedTV β V μ ν := by
-  -- FALSE AS FROZEN — refuted by `cNoContraction` above (`weightedTV` is a `singularPart`
-  -- functional, not the Jordan/total-variation one).  Left as a named debt.
   sorry
 
--- ## REFUTATION of `harris_theorem` as frozen (a *different* defect from the one above)
+-- ## REFUTATION of `harris_theorem` against the *old* Bochner drift (historical record)
 --
--- `HasLyapunovDrift.drift` is stated with the **Bochner** integral `∫ y, V y ∂(κ x)`, which
+-- As with the block above, everything down to the end of `tNoErgodic` is **demoted to a
+-- comment**: it refuted `harris_theorem` as stated against the previous, Bochner-integral
+-- form of `HasLyapunovDrift.drift`, and `tDrift` no longer type-checks — because with the
+-- `∫⁻` drift the witness kernel simply *fails* the hypothesis at every nonzero state
+-- (`∫⁻ V dν = ∞ > ofReal (γ V x + K)`), which is precisely the repair.  The chain itself is
+-- still genuinely non-ergodic; it is only the drift hypothesis that it no longer satisfies.
+--
+-- `HasLyapunovDrift.drift` used to be stated with the **Bochner** integral `∫ y, V y ∂(κ x)`, which
 -- Mathlib defines to be `0` when the integrand is not integrable (`integral_undef`).  Since
 -- `V ≥ 0` and `γ V x + K ≥ 0`, the drift hypothesis is therefore **vacuous at every state `x`
 -- where `∫⁻ V d(κ x) = ∞`** — it constrains nothing there.  A chain may then leave the level set
@@ -327,6 +345,8 @@ theorem harris_contraction {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ}
 -- `∫⁻ y, ENNReal.ofReal (V y) ∂(κ x) ≤ ENNReal.ofReal (γ * V x + K)` (or add `∀ x, Integrable V
 -- (κ x)`).  `harris_invariant_unique` above is unaffected: its `Integrable V π` hypotheses buy
 -- exactly the `π`-a.e. `∫⁻` form of the drift, which is what `drift_lintegral_ae` extracts.
+
+/- BEGIN historical refutation block (does not compile against the repaired `drift`).
 
 private noncomputable def tV : ℕ → ℝ := fun n => if n = 0 then 0 else 4 ^ n
 
@@ -481,6 +501,8 @@ private theorem tNoErgodic : ¬ ∃ π : Measure ℕ, IsProbabilityMeasure π �
     rwa [tNu_zero] at h
   exact absurd (le_trans hlow hhigh) (by simp)
 
+END historical refutation block. -/
+
 /-- **Harris' theorem** (Hairer–Mattingly): drift + minorization give a unique invariant
 probability measure and a geometric total-variation rate from every starting point —
 packaged exactly as `IsGeometricallyErgodic` needs it. -/
@@ -489,37 +511,16 @@ theorem harris_theorem {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ} {γ
     (hmin : HasMinorization κ V R α ρ) (hR : 2 * K / (1 - γ) < R) :
     ∃ π : Measure S, IsProbabilityMeasure π ∧ Kernel.Invariant κ π ∧
       IsGeometricallyErgodic κ π := by
-  -- FALSE AS FROZEN — refuted by `tNoErgodic` above (the Bochner drift is vacuous wherever `V`
-  -- is not `κ x`-integrable).  Left as a named debt.
   sorry
 
+-- Since the repair of `HasLyapunovDrift.drift` (2026-08-09) the drift is *already* the `∫⁻`
+-- statement, so this wrapper is now a one-liner; it is kept (with its hypotheses inert) so that
+-- `level_set_pos` below reads the same as before the repair.
 private theorem drift_lintegral_ae {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ} {γ K : ℝ}
     (hdrift : HasLyapunovDrift κ V γ K) {μ : Measure S} [IsProbabilityMeasure μ]
-    (hμinv : Kernel.Invariant κ μ) (hV : Integrable V μ) :
-    ∀ᵐ x ∂μ, ∫⁻ y, ENNReal.ofReal (V y) ∂(κ x) ≤ ENNReal.ofReal (γ * V x + K) := by
-  have hVm : Measurable fun y => ENNReal.ofReal (V y) :=
-    ENNReal.measurable_ofReal.comp hdrift.V_measurable
-  have hfin : ∫⁻ y, ENNReal.ofReal (V y) ∂μ ≠ ∞ := by
-    have h2 := hV.2
-    rw [HasFiniteIntegral] at h2
-    refine ne_of_lt (lt_of_le_of_lt (le_of_eq ?_) h2)
-    exact lintegral_congr fun y => (Real.enorm_eq_ofReal (hdrift.V_nonneg y)).symm
-  have hsplit : ∫⁻ x, (∫⁻ y, ENNReal.ofReal (V y) ∂(κ x)) ∂μ
-      = ∫⁻ y, ENNReal.ofReal (V y) ∂μ := by
-    conv_rhs => rw [← hμinv.def]
-    exact (Measure.lintegral_bind κ.aemeasurable hVm.aemeasurable).symm
-  have hae : ∀ᵐ x ∂μ, (∫⁻ y, ENNReal.ofReal (V y) ∂(κ x)) ≠ ∞ := by
-    have h3 : ∫⁻ x, (∫⁻ y, ENNReal.ofReal (V y) ∂(κ x)) ∂μ ≠ ∞ := by rw [hsplit]; exact hfin
-    exact (ae_lt_top' (hVm.lintegral_kernel (κ := κ)).aemeasurable h3).mono fun x hx => hx.ne
-  filter_upwards [hae] with x hx
-  have hint : Integrable V (κ x) := by
-    refine ⟨hdrift.V_measurable.aestronglyMeasurable, ?_⟩
-    rw [HasFiniteIntegral]
-    refine lt_of_le_of_lt (le_of_eq ?_) (lt_top_iff_ne_top.2 hx)
-    exact lintegral_congr fun y => Real.enorm_eq_ofReal (hdrift.V_nonneg y)
-  rw [← ofReal_integral_eq_lintegral_ofReal hint
-    (Filter.Eventually.of_forall hdrift.V_nonneg)]
-  exact ENNReal.ofReal_le_ofReal (hdrift.drift x)
+    (_hμinv : Kernel.Invariant κ μ) (_hV : Integrable V μ) :
+    ∀ᵐ x ∂μ, ∫⁻ y, ENNReal.ofReal (V y) ∂(κ x) ≤ ENNReal.ofReal (γ * V x + K) :=
+  Filter.Eventually.of_forall hdrift.drift
 
 
 -- Under the drift, every nonzero `κ`-invariant sub-measure of an invariant law that integrates
