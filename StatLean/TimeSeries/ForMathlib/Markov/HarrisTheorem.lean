@@ -127,6 +127,127 @@ theorem harris_theorem {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ} {γ
       IsGeometricallyErgodic κ π := by
   sorry
 
+private theorem drift_lintegral_ae {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ} {γ K : ℝ}
+    (hdrift : HasLyapunovDrift κ V γ K) {μ : Measure S} [IsProbabilityMeasure μ]
+    (hμinv : Kernel.Invariant κ μ) (hV : Integrable V μ) :
+    ∀ᵐ x ∂μ, ∫⁻ y, ENNReal.ofReal (V y) ∂(κ x) ≤ ENNReal.ofReal (γ * V x + K) := by
+  have hVm : Measurable fun y => ENNReal.ofReal (V y) :=
+    ENNReal.measurable_ofReal.comp hdrift.V_measurable
+  have hfin : ∫⁻ y, ENNReal.ofReal (V y) ∂μ ≠ ∞ := by
+    have h2 := hV.2
+    rw [HasFiniteIntegral] at h2
+    refine ne_of_lt (lt_of_le_of_lt (le_of_eq ?_) h2)
+    exact lintegral_congr fun y => (Real.enorm_eq_ofReal (hdrift.V_nonneg y)).symm
+  have hsplit : ∫⁻ x, (∫⁻ y, ENNReal.ofReal (V y) ∂(κ x)) ∂μ
+      = ∫⁻ y, ENNReal.ofReal (V y) ∂μ := by
+    conv_rhs => rw [← hμinv.def]
+    exact (Measure.lintegral_bind κ.aemeasurable hVm.aemeasurable).symm
+  have hae : ∀ᵐ x ∂μ, (∫⁻ y, ENNReal.ofReal (V y) ∂(κ x)) ≠ ∞ := by
+    have h3 : ∫⁻ x, (∫⁻ y, ENNReal.ofReal (V y) ∂(κ x)) ∂μ ≠ ∞ := by rw [hsplit]; exact hfin
+    exact (ae_lt_top' (hVm.lintegral_kernel (κ := κ)).aemeasurable h3).mono fun x hx => hx.ne
+  filter_upwards [hae] with x hx
+  have hint : Integrable V (κ x) := by
+    refine ⟨hdrift.V_measurable.aestronglyMeasurable, ?_⟩
+    rw [HasFiniteIntegral]
+    refine lt_of_le_of_lt (le_of_eq ?_) (lt_top_iff_ne_top.2 hx)
+    exact lintegral_congr fun y => Real.enorm_eq_ofReal (hdrift.V_nonneg y)
+  rw [← ofReal_integral_eq_lintegral_ofReal hint
+    (Filter.Eventually.of_forall hdrift.V_nonneg)]
+  exact ENNReal.ofReal_le_ofReal (hdrift.drift x)
+
+
+-- Under the drift, every nonzero `κ`-invariant sub-measure of an invariant law that integrates
+-- `V` charges the level set `{V ≤ R}` (this is where `2K/(1−γ) < R` is spent).
+private theorem level_set_pos {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ} {γ K : ℝ}
+    (hdrift : HasLyapunovDrift κ V γ K) {R : ℝ} (hR : 2 * K / (1 - γ) < R)
+    {μ : Measure S} [IsProbabilityMeasure μ] (hμinv : Kernel.Invariant κ μ) (hV : Integrable V μ)
+    {ξ : Measure S} (hξμ : ξ ≤ μ) (hξinv : Kernel.Invariant κ ξ) (hc : ξ Set.univ ≠ 0) :
+    ξ {x | V x ≤ R} ≠ 0 := by
+  obtain ⟨hγ0, hγ1⟩ := hdrift.gamma_mem
+  have hK := hdrift.K_nonneg
+  have h1γ : (0:ℝ) < 1 - γ := by linarith
+  have hRpos : (0:ℝ) < R := lt_of_le_of_lt (by positivity) hR
+  have hVm : Measurable fun y => ENNReal.ofReal (V y) :=
+    ENNReal.measurable_ofReal.comp hdrift.V_measurable
+  set t := ∫⁻ y, ENNReal.ofReal (V y) ∂ξ with htdef
+  have htfin : t ≠ ∞ := by
+    have hle : t ≤ ∫⁻ y, ENNReal.ofReal (V y) ∂μ := lintegral_mono' hξμ le_rfl
+    have hfin : ∫⁻ y, ENNReal.ofReal (V y) ∂μ ≠ ∞ := by
+      have h2 := hV.2
+      rw [HasFiniteIntegral] at h2
+      refine ne_of_lt (lt_of_le_of_lt (le_of_eq ?_) h2)
+      exact lintegral_congr fun y => (Real.enorm_eq_ofReal (hdrift.V_nonneg y)).symm
+    exact ne_top_of_le_ne_top hfin hle
+  have hξfin : ξ Set.univ ≠ ∞ := ne_top_of_le_ne_top (measure_ne_top μ _) (hξμ _)
+  -- the drift, integrated against `ξ`
+  have key : t ≤ ENNReal.ofReal γ * t + ENNReal.ofReal K * ξ Set.univ := by
+    have hac : ξ ≪ μ := Measure.absolutelyContinuous_of_le hξμ
+    have hstep : ∀ᵐ x ∂ξ, ∫⁻ y, ENNReal.ofReal (V y) ∂(κ x) ≤ ENNReal.ofReal (γ * V x + K) :=
+      hac.ae_le (drift_lintegral_ae hdrift hμinv hV)
+    calc t = ∫⁻ x, (∫⁻ y, ENNReal.ofReal (V y) ∂(κ x)) ∂ξ := by
+            conv_lhs => rw [htdef, ← hξinv.def]
+            exact Measure.lintegral_bind κ.aemeasurable hVm.aemeasurable
+      _ ≤ ∫⁻ x, ENNReal.ofReal (γ * V x + K) ∂ξ := lintegral_mono_ae hstep
+      _ = ∫⁻ x, (ENNReal.ofReal γ * ENNReal.ofReal (V x) + ENNReal.ofReal K) ∂ξ := by
+            refine lintegral_congr fun x => ?_
+            rw [ENNReal.ofReal_add (mul_nonneg hγ0.le (hdrift.V_nonneg x)) hK,
+              ENNReal.ofReal_mul hγ0.le]
+      _ = ENNReal.ofReal γ * t + ENNReal.ofReal K * ξ Set.univ := by
+            rw [lintegral_add_right _ measurable_const, lintegral_const_mul _ hVm,
+              lintegral_const]
+  -- read the drift bound off in `ℝ`
+  set T := t.toReal with hTdef
+  set c := (ξ Set.univ).toReal with hcdef
+  have hcpos : 0 < c := by
+    rw [hcdef]; exact ENNReal.toReal_pos hc hξfin
+  have hTle : T ≤ γ * T + K * c := by
+    have hmono := ENNReal.toReal_mono (by finiteness) key
+    rwa [ENNReal.toReal_add (by finiteness) (by finiteness), ENNReal.toReal_mul,
+      ENNReal.toReal_mul, ENNReal.toReal_ofReal hγ0.le, ENNReal.toReal_ofReal hK] at hmono
+  by_contra hzero
+  -- if the level set is null, Markov's inequality forces `R·c ≤ T`
+  have hcompl : ξ Set.univ = ξ {x | ¬ V x ≤ R} := by
+    have hms : MeasurableSet {x | V x ≤ R} := hdrift.V_measurable measurableSet_Iic
+    have := measure_add_measure_compl (μ := ξ) hms
+    rw [hzero, zero_add] at this
+    exact this.symm
+  have hmarkov : ENNReal.ofReal R * ξ Set.univ ≤ t := by
+    have hsub : {x | ¬ V x ≤ R} ⊆ {x | ENNReal.ofReal R ≤ ENNReal.ofReal (V x)} :=
+      fun x hx => ENNReal.ofReal_le_ofReal (not_le.mp hx).le
+    calc ENNReal.ofReal R * ξ Set.univ
+        = ENNReal.ofReal R * ξ {x | ¬ V x ≤ R} := by rw [← hcompl]
+      _ ≤ ENNReal.ofReal R * ξ {x | ENNReal.ofReal R ≤ ENNReal.ofReal (V x)} :=
+          mul_le_mul_right (measure_mono hsub) _
+      _ ≤ t := mul_meas_ge_le_lintegral₀ hVm.aemeasurable _
+  have hRc : R * c ≤ T := by
+    have := ENNReal.toReal_mono htfin hmarkov
+    rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal hRpos.le] at this
+  have hTbound : (1 - γ) * T ≤ K * c := by linarith
+  have hKR : 2 * K < R * (1 - γ) := by rw [div_lt_iff₀ h1γ] at hR; linarith
+  nlinarith [hRc, hTbound, hcpos, h1γ, hKR, hK]
+
+
+-- Kernel averaging is additive in the initial law.
+private theorem bind_add' (κ : Kernel S S) [IsSFiniteKernel κ] (μ ν : Measure S) :
+    (μ + ν).bind κ = μ.bind κ + ν.bind κ := by
+  ext t ht
+  rw [Measure.bind_apply ht κ.aemeasurable, Measure.add_apply,
+    Measure.bind_apply ht κ.aemeasurable, Measure.bind_apply ht κ.aemeasurable,
+    lintegral_add_measure]
+
+-- The minorization, integrated: one step from any initial law dominates `α·ρ` on the mass that
+-- the law puts on the level set.
+private theorem minorize_bind {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ} {R α : ℝ}
+    {ρ : Measure S} (hmin : HasMinorization κ V R α ρ)
+    (ξ : Measure S) {A : Set S} (hA : MeasurableSet A) :
+    ENNReal.ofReal α * ρ A * ξ {x | V x ≤ R} ≤ (ξ.bind κ) A := by
+  rw [Measure.bind_apply hA κ.aemeasurable]
+  calc ENNReal.ofReal α * ρ A * ξ {x | V x ≤ R}
+      = ∫⁻ _ in {x | V x ≤ R}, ENNReal.ofReal α * ρ A ∂ξ := (setLIntegral_const _ _).symm
+    _ ≤ ∫⁻ x in {x | V x ≤ R}, κ x A ∂ξ :=
+        setLIntegral_mono (κ.measurable_coe hA) fun x hx => hmin.minorize x hx A hA
+    _ ≤ ∫⁻ x, κ x A ∂ξ := setLIntegral_le_lintegral _ _
+
 /-- **Uniqueness** of the invariant law under the Harris hypotheses. -/
 theorem harris_invariant_unique {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ}
     {γ K : ℝ} (hdrift : HasLyapunovDrift κ V γ K) {R α : ℝ} {ρ : Measure S}
@@ -137,7 +258,195 @@ theorem harris_invariant_unique {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
     -- the constructed one; needed to compare in the weighted distance)
     (hV : Integrable V π) (hV' : Integrable V π') :
     π = π' := by
-  sorry
+  haveI := hmin.isProbability
+  obtain ⟨hα0, hα1⟩ := hmin.alpha_mem
+  -- Hahn: `π' ≤ π` on `E` and `π ≤ π'` off `E`
+  obtain ⟨E, hE, hE1, hE2⟩ := hahn_decomposition π π'
+  have hle1 : π'.restrict E ≤ π.restrict E := by
+    refine Measure.le_iff.2 fun t ht => ?_
+    rw [Measure.restrict_apply ht, Measure.restrict_apply ht]
+    exact hE1 _ (ht.inter hE) Set.inter_subset_right
+  have hle2 : π.restrict Eᶜ ≤ π'.restrict Eᶜ := by
+    refine Measure.le_iff.2 fun t ht => ?_
+    rw [Measure.restrict_apply ht, Measure.restrict_apply ht]
+    exact hE2 _ (ht.inter hE.compl) Set.inter_subset_right
+  obtain ⟨P, hPdef⟩ : ∃ P : Measure S, P = π.restrict E - π'.restrict E := ⟨_, rfl⟩
+  obtain ⟨N, hNdef⟩ : ∃ N : Measure S, N = π'.restrict Eᶜ - π.restrict Eᶜ := ⟨_, rfl⟩
+  have hPapp : ∀ t, MeasurableSet t → P t = π (t ∩ E) - π' (t ∩ E) := fun t ht => by
+    rw [hPdef, Measure.sub_apply ht hle1, Measure.restrict_apply ht, Measure.restrict_apply ht]
+  have hNapp : ∀ t, MeasurableSet t → N t = π' (t ∩ Eᶜ) - π (t ∩ Eᶜ) := fun t ht => by
+    rw [hNdef, Measure.sub_apply ht hle2, Measure.restrict_apply ht, Measure.restrict_apply ht]
+  have hPle : P ≤ π := by rw [hPdef]; exact le_trans Measure.sub_le Measure.restrict_le_self
+  have hNle : N ≤ π' := by rw [hNdef]; exact le_trans Measure.sub_le Measure.restrict_le_self
+  haveI : IsFiniteMeasure P :=
+    ⟨lt_of_le_of_lt (Measure.le_iff'.1 hPle Set.univ) (measure_lt_top π Set.univ)⟩
+  haveI : IsFiniteMeasure N :=
+    ⟨lt_of_le_of_lt (Measure.le_iff'.1 hNle Set.univ) (measure_lt_top π' Set.univ)⟩
+  have hPEc : P Eᶜ = 0 := by rw [hPapp _ hE.compl]; simp
+  have hNE : N E = 0 := by rw [hNapp _ hE]; simp
+  -- `π − π' = P − N`, in the additive form `π + N = π' + P`
+  have hsum : π + N = π' + P := by
+    ext t ht
+    have hb : π (t ∩ Eᶜ) ≤ π' (t ∩ Eᶜ) := hE2 _ (ht.inter hE.compl) Set.inter_subset_right
+    have ha : π' (t ∩ E) ≤ π (t ∩ E) := hE1 _ (ht.inter hE) Set.inter_subset_right
+    have h1 : π (t ∩ Eᶜ) + (π' (t ∩ Eᶜ) - π (t ∩ Eᶜ)) = π' (t ∩ Eᶜ) := add_tsub_cancel_of_le hb
+    have h2 : π' (t ∩ E) + (π (t ∩ E) - π' (t ∩ E)) = π (t ∩ E) := add_tsub_cancel_of_le ha
+    have hsπ : π t = π (t ∩ E) + π (t ∩ Eᶜ) := by
+      rw [← Set.diff_eq]; exact (measure_inter_add_diff t hE).symm
+    have hsπ' : π' t = π' (t ∩ E) + π' (t ∩ Eᶜ) := by
+      rw [← Set.diff_eq]; exact (measure_inter_add_diff t hE).symm
+    rw [Measure.add_apply, Measure.add_apply, hPapp t ht, hNapp t ht]
+    calc π t + (π' (t ∩ Eᶜ) - π (t ∩ Eᶜ))
+        = π (t ∩ E) + (π (t ∩ Eᶜ) + (π' (t ∩ Eᶜ) - π (t ∩ Eᶜ))) := by rw [hsπ, add_assoc]
+      _ = π (t ∩ E) + π' (t ∩ Eᶜ) := by rw [h1]
+      _ = (π' (t ∩ E) + (π (t ∩ E) - π' (t ∩ E))) + π' (t ∩ Eᶜ) := by rw [h2]
+      _ = π' t + (π (t ∩ E) - π' (t ∩ E)) := by rw [hsπ']; ring
+  -- both halves have the same (finite) mass
+  have hmassPN : N Set.univ = P Set.univ := by
+    have := congrArg (fun m => m Set.univ) hsum
+    simp only [Measure.add_apply, measure_univ] at this
+    exact (ENNReal.add_right_inj ENNReal.one_ne_top).1 this
+  -- one kernel step of the identity `π + N = π' + P`
+  have hbind : π + N.bind κ = π' + P.bind κ := by
+    have h := congrArg (fun m => m.bind κ) hsum
+    simpa [bind_add', hπ.def, hπ'.def] using h
+  have hmassbind : ∀ ξ : Measure S, (ξ.bind κ) Set.univ = ξ Set.univ := fun ξ => by
+    rw [Measure.bind_apply MeasurableSet.univ κ.aemeasurable]
+    simp
+  -- `P` is invariant: it is dominated by its own image, with the same total mass
+  have hPQ : ∀ t, MeasurableSet t → t ⊆ E → P t ≤ (P.bind κ) t := by
+    intro t ht htE
+    have hNt : N t = 0 := le_antisymm (hNE ▸ measure_mono htE) (zero_le _)
+    have e1 : π t + N t = π' t + P t := by
+      have := congrArg (fun m => m t) hsum; simpa [Measure.add_apply] using this
+    have e2 : π t + (N.bind κ) t = π' t + (P.bind κ) t := by
+      have := congrArg (fun m => m t) hbind; simpa [Measure.add_apply] using this
+    rw [hNt, add_zero] at e1
+    rw [e1] at e2
+    have : P t + (N.bind κ) t ≤ (P.bind κ) t := by
+      rw [add_assoc] at e2
+      exact le_of_eq ((ENNReal.add_right_inj (measure_ne_top π' t)).1 e2)
+    exact le_trans le_self_add this
+  have hQEc : (P.bind κ) Eᶜ = 0 := by
+    have h1 : P Set.univ = P E := by
+      have := measure_add_measure_compl (μ := P) hE
+      rw [hPEc, add_zero] at this; exact this.symm
+    have h2 : P E ≤ (P.bind κ) E := hPQ E hE subset_rfl
+    have h3 : (P.bind κ) E + (P.bind κ) Eᶜ = P Set.univ := by
+      rw [measure_add_measure_compl (μ := P.bind κ) hE, hmassbind]
+    have h4 : (P.bind κ) Eᶜ ≤ 0 := by
+      have : (P.bind κ) E + (P.bind κ) Eᶜ ≤ (P.bind κ) E + 0 := by
+        rw [h3, add_zero, h1]; exact h2
+      exact (ENNReal.add_le_add_iff_left (measure_ne_top _ _)).1 this
+    exact le_antisymm h4 (zero_le _)
+  have hPQ' : P ≤ P.bind κ := by
+    refine Measure.le_iff.2 fun t ht => ?_
+    have h1 : P t = P (t ∩ E) := by
+      have := measure_inter_add_diff t hE (μ := P)
+      have h0 : P (t \ E) = 0 := by
+        refine le_antisymm ?_ (zero_le _)
+        rw [Set.diff_eq]
+        exact le_trans (measure_mono Set.inter_subset_right) (le_of_eq hPEc)
+      rw [h0, add_zero] at this; exact this.symm
+    have h2 : (P.bind κ) (t ∩ E) ≤ (P.bind κ) t := measure_mono Set.inter_subset_left
+    exact h1 ▸ le_trans (hPQ _ (ht.inter hE) Set.inter_subset_right) h2
+  have hPinv : Kernel.Invariant κ P := by
+    refine le_antisymm ?_ hPQ'
+    refine Measure.le_iff.2 fun t ht => ?_
+    have h1 : (P.bind κ) t + P tᶜ ≤ (P.bind κ) t + (P.bind κ) tᶜ :=
+      add_le_add le_rfl (Measure.le_iff'.1 hPQ' _)
+    rw [measure_add_measure_compl (μ := P.bind κ) ht, hmassbind,
+      ← measure_add_measure_compl (μ := P) ht] at h1
+    exact (ENNReal.add_le_add_iff_right (measure_ne_top P tᶜ)).1 h1
+  -- and so is `N`
+  have hME : (N.bind κ) E = 0 := by
+    have h1 : ∀ t, MeasurableSet t → t ⊆ Eᶜ → N t = (N.bind κ) t := by
+      intro t ht htE
+      have hPt : P t = 0 := le_antisymm (hPEc ▸ measure_mono htE) (zero_le _)
+      have hQt : (P.bind κ) t = 0 := le_antisymm (hQEc ▸ measure_mono htE) (zero_le _)
+      have e1 : π t + N t = π' t + P t := by
+        have := congrArg (fun m => m t) hsum; simpa [Measure.add_apply] using this
+      have e2 : π t + (N.bind κ) t = π' t + (P.bind κ) t := by
+        have := congrArg (fun m => m t) hbind; simpa [Measure.add_apply] using this
+      rw [hPt, add_zero] at e1
+      rw [hQt, add_zero] at e2
+      rw [← e2] at e1
+      exact (ENNReal.add_right_inj (measure_ne_top π t)).1 e1
+    have h2 : N Set.univ = N Eᶜ := by
+      have := measure_add_measure_compl (μ := N) hE
+      rw [hNE, zero_add] at this; exact this.symm
+    have h3 : (N.bind κ) E + (N.bind κ) Eᶜ = N Set.univ := by
+      rw [measure_add_measure_compl (μ := N.bind κ) hE, hmassbind]
+    rw [← h1 Eᶜ hE.compl subset_rfl, ← h2] at h3
+    have : (N.bind κ) E ≤ 0 := by
+      have h4 : (N.bind κ) E + N Set.univ ≤ 0 + N Set.univ := by rw [h3, zero_add]
+      exact (ENNReal.add_le_add_iff_right (measure_ne_top N _)).1 h4
+    exact le_antisymm this (zero_le _)
+  have hNinv : Kernel.Invariant κ N := by
+    have hNQ : N ≤ N.bind κ := by
+      refine Measure.le_iff.2 fun t ht => ?_
+      have h1 : N t = N (t ∩ Eᶜ) := by
+        have h := measure_inter_add_diff t hE.compl (μ := N)
+        have h0 : N (t \ Eᶜ) = 0 := by
+          refine le_antisymm ?_ (zero_le _)
+          rw [Set.diff_eq, compl_compl]
+          exact le_trans (measure_mono Set.inter_subset_right) (le_of_eq hNE)
+        rw [h0, add_zero] at h; exact h.symm
+      have h2 : N (t ∩ Eᶜ) ≤ (N.bind κ) (t ∩ Eᶜ) := by
+        have hPt : P (t ∩ Eᶜ) = 0 :=
+          le_antisymm (hPEc ▸ measure_mono Set.inter_subset_right) (zero_le _)
+        have hQt : (P.bind κ) (t ∩ Eᶜ) = 0 :=
+          le_antisymm (hQEc ▸ measure_mono Set.inter_subset_right) (zero_le _)
+        have e1 : π (t ∩ Eᶜ) + N (t ∩ Eᶜ) = π' (t ∩ Eᶜ) + P (t ∩ Eᶜ) := by
+          have := congrArg (fun m => m (t ∩ Eᶜ)) hsum; simpa [Measure.add_apply] using this
+        have e2 : π (t ∩ Eᶜ) + (N.bind κ) (t ∩ Eᶜ) = π' (t ∩ Eᶜ) + (P.bind κ) (t ∩ Eᶜ) := by
+          have := congrArg (fun m => m (t ∩ Eᶜ)) hbind; simpa [Measure.add_apply] using this
+        rw [hPt, add_zero] at e1
+        rw [hQt, add_zero] at e2
+        rw [← e2] at e1
+        exact le_of_eq ((ENNReal.add_right_inj (measure_ne_top π _)).1 e1)
+      exact h1 ▸ le_trans h2 (measure_mono Set.inter_subset_left)
+    refine le_antisymm ?_ hNQ
+    refine Measure.le_iff.2 fun t ht => ?_
+    have h1 : (N.bind κ) t + N tᶜ ≤ (N.bind κ) t + (N.bind κ) tᶜ :=
+      add_le_add le_rfl (Measure.le_iff'.1 hNQ _)
+    rw [measure_add_measure_compl (μ := N.bind κ) ht, hmassbind,
+      ← measure_add_measure_compl (μ := N) ht] at h1
+    exact (ENNReal.add_le_add_iff_right (measure_ne_top N tᶜ)).1 h1
+  -- if the two halves were nonzero they would be mutually singular invariant laws, each
+  -- charging the level set — impossible, because the minorizing measure would have to vanish
+  by_cases hc : P Set.univ = 0
+  · have hP0 : P = 0 := by simpa using Measure.measure_univ_eq_zero.1 hc
+    have hN0 : N = 0 := by
+      have : N Set.univ = 0 := by rw [hmassPN, hc]
+      simpa using Measure.measure_univ_eq_zero.1 this
+    rw [hP0, hN0] at hsum
+    simpa using hsum
+  · exfalso
+    have hcN : N Set.univ ≠ 0 := by rw [hmassPN]; exact hc
+    have hPL : P {x | V x ≤ R} ≠ 0 := level_set_pos hdrift hR hπ hV hPle hPinv hc
+    have hNL : N {x | V x ≤ R} ≠ 0 := level_set_pos hdrift hR hπ' hV' hNle hNinv hcN
+    have hρEc : ρ Eᶜ = 0 := by
+      have h := minorize_bind hmin P hE.compl
+      rw [hPinv.def, hPEc] at h
+      have h0 : ENNReal.ofReal α * ρ Eᶜ * P {x | V x ≤ R} = 0 := le_antisymm h (zero_le _)
+      rcases mul_eq_zero.1 h0 with h1 | h1
+      · rcases mul_eq_zero.1 h1 with h2 | h2
+        · exact absurd h2 (by simp [ENNReal.ofReal_eq_zero, not_le, hα0])
+        · exact h2
+      · exact absurd h1 hPL
+    have hρE : ρ E = 0 := by
+      have h := minorize_bind hmin N hE
+      rw [hNinv.def, hNE] at h
+      have h0 : ENNReal.ofReal α * ρ E * N {x | V x ≤ R} = 0 := le_antisymm h (zero_le _)
+      rcases mul_eq_zero.1 h0 with h1 | h1
+      · rcases mul_eq_zero.1 h1 with h2 | h2
+        · exact absurd h2 (by simp [ENNReal.ofReal_eq_zero, not_le, hα0])
+        · exact h2
+      · exact absurd h1 hNL
+    have : (1 : ℝ≥0∞) = 0 := by
+      rw [← measure_univ (μ := ρ), ← measure_add_measure_compl (μ := ρ) hE, hρE, hρEc, add_zero]
+    exact one_ne_zero this
 
 /-- **Lifting from the `p`-step kernel**: if `κ^p` is geometrically ergodic with
 invariant law `π` and `π` is invariant for `κ` itself, then `κ` is geometrically
