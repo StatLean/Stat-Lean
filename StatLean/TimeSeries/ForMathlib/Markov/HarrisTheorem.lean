@@ -26,8 +26,25 @@ This file exists to discharge the last structural debt of the TimeSeries area,
 `nlARKernel_geometricallyErgodic` (FY Theorem 2.4(ii)); the Meyn–Tweedie
 ψ-irreducibility/petite-set apparatus is deliberately avoided.
 
-**STATUS.** All four headline results are proved. The two definitions this file rests on
-were each *refuted* in an earlier pass and have since been repaired:
+**STATUS.** All four headline results are proved and axiom-clean. Two features of the
+formalization are worth flagging, because both replace a step of the textbook argument:
+
+* **No coupling.** Hairer–Mattingly close the contraction with a coupling construction.
+  Here the same estimate falls out of the *minimality* of the Jordan decomposition,
+  `jPos_add_le_of_add_eq`: from `μ + B = ν + A` with a common piece `m ≤ A`, `m ≤ B` one
+  gets `jPos μ ν + m ≤ A` directly, and taking `m = α·min(aL, bL)·ρ` subtracts the
+  minorization mass from both halves at once. The scalar core, `harris_num`, needs no
+  finiteness at all — every step is monotone in `ℝ≥0∞`, so the estimate is true verbatim
+  when the weighted distance is infinite.
+* **No completeness argument.** The invariant law is built *explicitly* rather than as the
+  limit of a TV-Cauchy sequence: writing `a n`, `b n` for the one-step Jordan parts of the
+  chain from a fixed `x₀`, the identity `μ n + b n = μ (n+1) + a n` telescopes to
+  `μ N + Σ_{n<N} a n = μ 0 + Σ_{n<N} b n`, both series converge geometrically (their masses
+  are exactly what the contraction bounds), and `π := (μ 0 + Σ b) − Σ a` is the limit —
+  with the *tails* of the two series as the explicit total-variation error.
+
+The two definitions this file rests on were each *refuted* in an earlier pass and have
+since been repaired:
 
 * `weightedTV` used to be built from `Measure.singularPart` rather than from the Jordan
   decomposition of `μ − ν`, so it ignored every absolutely-continuous overlap of the two
@@ -962,6 +979,54 @@ private theorem tNoErgodic : ¬ ∃ π : Measure ℕ, IsProbabilityMeasure π �
 
 END historical refutation block. -/
 
+/-! ### From the contraction to the invariant law
+
+The limit is built **explicitly**, with no completeness argument: the Jordan identity
+`μ n + b n = μ (n+1) + a n` for the chain `μ n = κⁿ(x₀,·)` telescopes to
+`μ N + Σ_{n<N} a n = μ 0 + Σ_{n<N} b n`, the two series of nonnegative measures converge
+geometrically (their masses are bounded by the contraction), and
+`π := (μ 0 + Σ b) − Σ a` is the limit, with the tails of the two series as the explicit
+total-variation error. -/
+
+private theorem kpow_succ_apply (κ : Kernel S S) (n : ℕ) (x : S) :
+    (κ ^ (n + 1)) x = ((κ ^ n) x).bind κ := by
+  rw [pow_succ']
+  exact Kernel.comp_apply κ (κ ^ n) x
+
+-- The weight is `≥ 1`, so the weighted distance dominates the mass of the positive Jordan part.
+private theorem jPos_univ_le_weightedTV {β : ℝ} (hβ : 0 ≤ β) {V : S → ℝ} (hVm : Measurable V)
+    (hVnn : ∀ x, 0 ≤ V x) (μ ν : Measure S) :
+    (jPos μ ν) Set.univ ≤ weightedTV β V μ ν := by
+  rw [weightedTV_eq β hVm μ ν]
+  refine le_trans ?_ le_self_add
+  calc (jPos μ ν) Set.univ = ∫⁻ _, (1:ℝ≥0∞) ∂(jPos μ ν) := by rw [lintegral_one]
+    _ ≤ ∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂(jPos μ ν) :=
+        lintegral_mono fun x => by
+          rw [← ENNReal.ofReal_one]
+          exact ENNReal.ofReal_le_ofReal (by nlinarith [hVnn x])
+
+-- ... and hence the total-variation distance itself, because the positive Jordan part already
+-- dominates every one-sided set difference.
+private theorem tvDist_le_weightedTV {β : ℝ} (hβ : 0 ≤ β) {V : S → ℝ} (hVm : Measurable V)
+    (hVnn : ∀ x, 0 ≤ V x) (μ ν : Measure S) [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
+    tvDist μ ν ≤ weightedTV β V μ ν := by
+  refine le_trans (iSup_le fun s => iSup_le fun _ => ?_)
+    (jPos_univ_le_weightedTV hβ hVm hVnn μ ν)
+  have h := congrArg (fun t : Measure S => t s) (add_jPos_comm μ ν)
+  simp only [Measure.add_apply] at h
+  refine le_trans (tsub_le_iff_left.2 ?_) (measure_mono (Set.subset_univ s))
+  calc μ s ≤ μ s + (jPos ν μ) s := le_self_add
+    _ = ν s + (jPos μ ν) s := h
+
+-- The crude upper bound on the weighted distance (each Jordan part is under its own measure).
+private theorem weightedTV_le_add {β : ℝ} {V : S → ℝ} (hVm : Measurable V) (μ ν : Measure S)
+    [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
+    weightedTV β V μ ν ≤ (∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂μ)
+      + ∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂ν := by
+  rw [weightedTV_eq β hVm μ ν]
+  exact add_le_add (lintegral_mono' (jPos_le_left μ ν) le_rfl)
+    (lintegral_mono' (jPos_le_left ν μ) le_rfl)
+
 /-- **Harris' theorem** (Hairer–Mattingly): drift + minorization give a unique invariant
 probability measure and a geometric total-variation rate from every starting point —
 packaged exactly as `IsGeometricallyErgodic` needs it. -/
@@ -970,7 +1035,237 @@ theorem harris_theorem {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ} {γ
     (hmin : HasMinorization κ V R α ρ) (hR : 2 * K / (1 - γ) < R) :
     ∃ π : Measure S, IsProbabilityMeasure π ∧ Kernel.Invariant κ π ∧
       IsGeometricallyErgodic κ π := by
-  sorry
+  haveI := hmin.isProbability
+  have hVnn := hdrift.V_nonneg
+  have hVm := hdrift.V_measurable
+  obtain ⟨β, ᾱ, hβpos, hᾱpos, hᾱlt, hcon⟩ := harris_contraction hdrift hmin hR
+  have hwm : Measurable fun x => ENNReal.ofReal (1 + β * V x) :=
+    ENNReal.measurable_ofReal.comp (measurable_const.add (measurable_const.mul hVm))
+  -- the state space is nonempty: it carries the minorizing probability measure
+  haveI hne : Nonempty S := by
+    rcases isEmpty_or_nonempty S with h | h
+    · exact absurd (measure_univ (μ := ρ))
+        (by rw [Set.univ_eq_empty_iff.2 h, measure_empty]; exact zero_ne_one)
+    · exact h
+  obtain ⟨x₀⟩ := id hne
+  have hprob : ∀ (n : ℕ) (x : S), IsProbabilityMeasure ((κ ^ n) x) := fun n x => by
+    haveI := markov_pow κ n; infer_instance
+  have h0 : ∀ x : S, (κ ^ 0) x = Measure.dirac x := fun x => by rw [pow_zero]; rfl
+  have hstep : ∀ (n : ℕ) (x : S), (κ ^ (n + 1)) x = ((κ ^ n) x).bind κ :=
+    fun n x => kpow_succ_apply κ n x
+  -- ## Step 1: geometric decay along the chain, and between two chains
+  obtain ⟨W, hWdef⟩ : ∃ t : ℝ≥0∞, weightedTV β V (Measure.dirac x₀) (κ x₀) = t := ⟨_, rfl⟩
+  have hWne : W ≠ ⊤ := by
+    haveI := hprob 1 x₀
+    rw [← hWdef]
+    refine ne_top_of_le_ne_top ?_ (weightedTV_le_add (β := β) hVm (Measure.dirac x₀) (κ x₀))
+    rw [lintegral_dirac' _ hwm]
+    exact ENNReal.add_ne_top.2 ⟨ENNReal.ofReal_ne_top,
+      ne_top_of_le_ne_top ENNReal.ofReal_ne_top (drift_weight hdrift hβpos.le x₀)⟩
+  have hdiracne : ∀ x y : S, weightedTV β V (Measure.dirac x) (Measure.dirac y) ≠ ⊤ := by
+    intro x y
+    refine ne_top_of_le_ne_top ?_
+      (weightedTV_le_add (β := β) hVm (Measure.dirac x) (Measure.dirac y))
+    rw [lintegral_dirac' _ hwm, lintegral_dirac' _ hwm]
+    exact ENNReal.add_ne_top.2 ⟨ENNReal.ofReal_ne_top, ENNReal.ofReal_ne_top⟩
+  have hpair : ∀ (x y : S) (n : ℕ), weightedTV β V ((κ ^ n) x) ((κ ^ n) y)
+      ≤ ENNReal.ofReal ᾱ ^ n * weightedTV β V (Measure.dirac x) (Measure.dirac y) := by
+    intro x y n
+    induction n with
+    | zero => rw [h0 x, h0 y, pow_zero, one_mul]
+    | succ n ih =>
+        haveI := hprob n x
+        haveI := hprob n y
+        have h := hcon ((κ ^ n) x) ((κ ^ n) y) inferInstance inferInstance
+        rw [← hstep n x, ← hstep n y] at h
+        refine h.trans ?_
+        calc ENNReal.ofReal ᾱ * weightedTV β V ((κ ^ n) x) ((κ ^ n) y)
+            ≤ ENNReal.ofReal ᾱ *
+                (ENNReal.ofReal ᾱ ^ n * weightedTV β V (Measure.dirac x) (Measure.dirac y)) :=
+              mul_le_mul_right ih _
+          _ = _ := by ring
+  have hgeo : ∀ n : ℕ, weightedTV β V ((κ ^ n) x₀) ((κ ^ (n + 1)) x₀)
+      ≤ ENNReal.ofReal ᾱ ^ n * W := by
+    intro n
+    induction n with
+    | zero =>
+        have e1 : (κ ^ (0 + 1)) x₀ = κ x₀ := by rw [zero_add, pow_one]
+        rw [h0 x₀, e1, hWdef, pow_zero, one_mul]
+    | succ n ih =>
+        haveI := hprob n x₀
+        haveI := hprob (n + 1) x₀
+        have h := hcon ((κ ^ n) x₀) ((κ ^ (n + 1)) x₀) inferInstance inferInstance
+        rw [← hstep n x₀, ← hstep (n + 1) x₀] at h
+        refine h.trans ?_
+        calc ENNReal.ofReal ᾱ * weightedTV β V ((κ ^ n) x₀) ((κ ^ (n + 1)) x₀)
+            ≤ ENNReal.ofReal ᾱ * (ENNReal.ofReal ᾱ ^ n * W) := mul_le_mul_right ih _
+          _ = _ := by ring
+  -- ## Step 2: the two telescoping series of Jordan parts
+  obtain ⟨a, ha⟩ : ∃ f : ℕ → Measure S, ∀ n, f n = jPos ((κ ^ n) x₀) ((κ ^ (n + 1)) x₀) :=
+    ⟨_, fun _ => rfl⟩
+  obtain ⟨b, hb⟩ : ∃ f : ℕ → Measure S, ∀ n, f n = jPos ((κ ^ (n + 1)) x₀) ((κ ^ n) x₀) :=
+    ⟨_, fun _ => rfl⟩
+  have hmassa : ∀ n, (a n) Set.univ ≤ ENNReal.ofReal ᾱ ^ n * W := by
+    intro n
+    rw [ha]
+    exact le_trans (jPos_univ_le_weightedTV hβpos.le hVm hVnn _ _) (hgeo n)
+  have hmassb : ∀ n, (b n) Set.univ = (a n) Set.univ := by
+    intro n
+    haveI := hprob n x₀
+    haveI := hprob (n + 1) x₀
+    rw [ha, hb]
+    exact (jPos_mass_eq ((κ ^ n) x₀) ((κ ^ (n + 1)) x₀)).symm
+  have htel : ∀ N : ℕ, (κ ^ N) x₀ + ∑ n ∈ Finset.range N, a n
+      = (κ ^ 0) x₀ + ∑ n ∈ Finset.range N, b n := by
+    intro N
+    induction N with
+    | zero => simp
+    | succ N ih =>
+        haveI := hprob N x₀
+        haveI := hprob (N + 1) x₀
+        have hj : (κ ^ N) x₀ + b N = (κ ^ (N + 1)) x₀ + a N := by
+          rw [ha, hb]; exact add_jPos_comm _ _
+        rw [Finset.sum_range_succ, Finset.sum_range_succ]
+        calc (κ ^ (N + 1)) x₀ + ((∑ n ∈ Finset.range N, a n) + a N)
+            = ((κ ^ (N + 1)) x₀ + a N) + ∑ n ∈ Finset.range N, a n := by abel
+          _ = ((κ ^ N) x₀ + b N) + ∑ n ∈ Finset.range N, a n := by rw [hj]
+          _ = ((κ ^ N) x₀ + ∑ n ∈ Finset.range N, a n) + b N := by abel
+          _ = ((κ ^ 0) x₀ + ∑ n ∈ Finset.range N, b n) + b N := by rw [ih]
+          _ = (κ ^ 0) x₀ + ((∑ n ∈ Finset.range N, b n) + b N) := by abel
+  -- splitting a series of measures at its `N`-th term
+  have htsum : ∀ (g : ℕ → ℝ≥0∞) (N : ℕ),
+      ∑' n, g n = (∑ n ∈ Finset.range N, g n) + ∑' k, g (k + N) := fun g N =>
+    (Summable.sum_add_tsum_nat_add' (f := g) (k := N) ENNReal.summable).symm
+  have hsplit : ∀ (f : ℕ → Measure S) (N : ℕ),
+      Measure.sum f = (∑ n ∈ Finset.range N, f n) + Measure.sum fun k => f (k + N) := by
+    intro f N
+    ext s hs
+    rw [Measure.sum_apply _ hs, Measure.add_apply, Measure.finset_sum_apply,
+      Measure.sum_apply _ hs]
+    exact htsum (fun n => f n s) N
+  -- the geometric bound on every tail mass
+  have hᾱ1 : ENNReal.ofReal ᾱ < 1 := ENNReal.ofReal_lt_one.2 hᾱlt
+  have hinvne : (1 - ENNReal.ofReal ᾱ)⁻¹ ≠ ⊤ := by
+    rw [Ne, ENNReal.inv_eq_top, tsub_eq_zero_iff_le]
+    exact not_le.2 hᾱ1
+  obtain ⟨C, hCdef⟩ : ∃ t : ℝ≥0∞, (1 - ENNReal.ofReal ᾱ)⁻¹ * W = t := ⟨_, rfl⟩
+  have hCne : C ≠ ⊤ := by rw [← hCdef]; exact ENNReal.mul_ne_top hinvne hWne
+  have hmassA : ∀ N : ℕ, (Measure.sum fun k => a (k + N)) Set.univ
+      ≤ ENNReal.ofReal ᾱ ^ N * C := by
+    intro N
+    rw [Measure.sum_apply _ MeasurableSet.univ, ← hCdef]
+    calc ∑' k, (a (k + N)) Set.univ
+        ≤ ∑' k, ENNReal.ofReal ᾱ ^ (k + N) * W := ENNReal.tsum_le_tsum fun k => hmassa (k + N)
+      _ = ∑' k, ENNReal.ofReal ᾱ ^ k * (ENNReal.ofReal ᾱ ^ N * W) :=
+          tsum_congr fun k => by rw [pow_add]; ring
+      _ = (∑' k : ℕ, ENNReal.ofReal ᾱ ^ k) * (ENNReal.ofReal ᾱ ^ N * W) := ENNReal.tsum_mul_right
+      _ = _ := by rw [ENNReal.tsum_geometric]; ring
+  have hAfin : (Measure.sum a) Set.univ ≠ ⊤ := by
+    have h := hmassA 0
+    simp only [add_zero, pow_zero, one_mul] at h
+    exact ne_top_of_le_ne_top hCne h
+  have hABuniv : (Measure.sum a) Set.univ = (Measure.sum b) Set.univ := by
+    rw [Measure.sum_apply _ MeasurableSet.univ, Measure.sum_apply _ MeasurableSet.univ]
+    exact tsum_congr fun n => (hmassb n).symm
+  have hBfin : (Measure.sum b) Set.univ ≠ ⊤ := hABuniv ▸ hAfin
+  -- ## Step 3: the invariant law, as `(μ 0 + Σ b) − Σ a`
+  have hpart : ∀ N : ℕ, (∑ n ∈ Finset.range N, a n) ≤ Measure.sum a := by
+    intro N
+    rw [hsplit a N]
+    exact Measure.le_add_right le_rfl
+  have hAle : Measure.sum a ≤ (κ ^ 0) x₀ + Measure.sum b := by
+    refine Measure.le_iff.2 fun s hs => ?_
+    rw [Measure.sum_apply _ hs, ENNReal.tsum_eq_iSup_nat]
+    refine iSup_le fun N => ?_
+    rw [← Measure.finset_sum_apply]
+    calc (∑ n ∈ Finset.range N, a n) s
+        ≤ ((κ ^ N) x₀ + ∑ n ∈ Finset.range N, a n) s := by
+          rw [Measure.add_apply]; exact le_add_self
+      _ = ((κ ^ 0) x₀ + ∑ n ∈ Finset.range N, b n) s := by rw [htel N]
+      _ ≤ ((κ ^ 0) x₀ + Measure.sum b) s := by
+          rw [Measure.add_apply, Measure.add_apply]
+          refine add_le_add le_rfl ?_
+          rw [Measure.finset_sum_apply, Measure.sum_apply _ hs]
+          exact ENNReal.sum_le_tsum _
+  haveI hAfinm : IsFiniteMeasure (Measure.sum a) := ⟨lt_top_iff_ne_top.2 hAfin⟩
+  obtain ⟨π, hπdef⟩ : ∃ m : Measure S, m = ((κ ^ 0) x₀ + Measure.sum b) - Measure.sum a :=
+    ⟨_, rfl⟩
+  have hπapp : ∀ s, MeasurableSet s →
+      π s + (Measure.sum a) s = ((κ ^ 0) x₀) s + (Measure.sum b) s := by
+    intro s hs
+    rw [hπdef, Measure.sub_apply hs hAle, tsub_add_cancel_of_le (Measure.le_iff'.1 hAle s),
+      Measure.add_apply]
+  haveI hπprob : IsProbabilityMeasure π := by
+    haveI := hprob 0 x₀
+    refine ⟨?_⟩
+    have h := hπapp Set.univ MeasurableSet.univ
+    rw [hABuniv, show ((κ ^ 0) x₀) Set.univ = 1 from measure_univ,
+      add_comm (π Set.univ) ((Measure.sum b) Set.univ),
+      add_comm (1 : ℝ≥0∞) ((Measure.sum b) Set.univ)] at h
+    exact (ENNReal.add_right_inj hBfin).1 h
+  -- ## Step 4: the tail of the `a`-series *is* the total-variation error
+  have hdist : ∀ N : ℕ, tvDist ((κ ^ N) x₀) π ≤ ENNReal.ofReal ᾱ ^ N * C := by
+    intro N
+    refine le_trans (iSup_le fun s => iSup_le fun hs => ?_) (hmassA N)
+    have hAN : (∑ n ∈ Finset.range N, a n) s ≠ ⊤ :=
+      ne_top_of_le_ne_top (ne_top_of_le_ne_top hAfin (measure_mono (Set.subset_univ s)))
+        (Measure.le_iff'.1 (hpart N) s)
+    have e1 := hπapp s hs
+    have e2 := congrArg (fun m : Measure S => m s) (htel N)
+    simp only [Measure.add_apply] at e2
+    have e3 := congrArg (fun m : Measure S => m s) (hsplit a N)
+    simp only [Measure.add_apply] at e3
+    have e4 := congrArg (fun m : Measure S => m s) (hsplit b N)
+    simp only [Measure.add_apply] at e4
+    refine le_trans (tsub_le_iff_left.2 ?_) (measure_mono (Set.subset_univ s))
+    refine (ENNReal.add_le_add_iff_right hAN).1 ?_
+    calc ((κ ^ N) x₀) s + (∑ n ∈ Finset.range N, a n) s
+        ≤ (((κ ^ N) x₀) s + (∑ n ∈ Finset.range N, a n) s)
+            + (Measure.sum fun k => b (k + N)) s := le_self_add
+      _ = (((κ ^ 0) x₀) s + (∑ n ∈ Finset.range N, b n) s)
+            + (Measure.sum fun k => b (k + N)) s := by rw [e2]
+      _ = ((κ ^ 0) x₀) s + (Measure.sum b) s := by rw [e4]; ring
+      _ = π s + (Measure.sum a) s := e1.symm
+      _ = π s + ((∑ n ∈ Finset.range N, a n) s + (Measure.sum fun k => a (k + N)) s) := by
+            rw [e3]
+      _ = (π s + (Measure.sum fun k => a (k + N)) s) + (∑ n ∈ Finset.range N, a n) s := by ring
+  -- ## Step 5: geometric ergodicity from every starting point
+  obtain ⟨r, hrdef⟩ : ∃ t : ℝ, t = (ᾱ + 1) / 2 := ⟨_, rfl⟩
+  have hrpos : 0 < r := by rw [hrdef]; linarith
+  have hrlt : r < 1 := by rw [hrdef]; linarith
+  have hαr : ᾱ / r < 1 := by rw [div_lt_one hrpos, hrdef]; linarith
+  have hbound : ∀ (x : S) (n : ℕ), tvDist ((κ ^ n) x) π
+      ≤ ENNReal.ofReal ᾱ ^ n * (weightedTV β V (Measure.dirac x) (Measure.dirac x₀) + C) := by
+    intro x n
+    haveI := hprob n x
+    haveI := hprob n x₀
+    calc tvDist ((κ ^ n) x) π
+        ≤ tvDist ((κ ^ n) x) ((κ ^ n) x₀) + tvDist ((κ ^ n) x₀) π := tvDist_triangle _ _ _
+      _ ≤ ENNReal.ofReal ᾱ ^ n * weightedTV β V (Measure.dirac x) (Measure.dirac x₀)
+            + ENNReal.ofReal ᾱ ^ n * C :=
+          add_le_add (le_trans (tvDist_le_weightedTV hβpos.le hVm hVnn _ _) (hpair x x₀ n))
+            (hdist n)
+      _ = _ := by ring
+  have hge : IsGeometricallyErgodic κ π := by
+    refine ⟨ENNReal.ofReal r, ENNReal.ofReal_lt_one.2 hrlt,
+      ⟨ENNReal.ofReal_pos.2 hrpos, (ENNReal.ofReal_lt_one.2 hrlt).le, fun x => ?_⟩⟩
+    obtain ⟨D, hDdef⟩ : ∃ t : ℝ≥0∞,
+        weightedTV β V (Measure.dirac x) (Measure.dirac x₀) + C = t := ⟨_, rfl⟩
+    have hDne : D ≠ ⊤ := by
+      rw [← hDdef]; exact ENNReal.add_ne_top.2 ⟨hdiracne x x₀, hCne⟩
+    have hq : ENNReal.ofReal ᾱ * (ENNReal.ofReal r)⁻¹ = ENNReal.ofReal (ᾱ / r) := by
+      rw [ENNReal.ofReal_div_of_pos hrpos, div_eq_mul_inv]
+    have hmaj : Tendsto (fun n : ℕ => ENNReal.ofReal (ᾱ / r) ^ n * D) atTop (𝓝 0) := by
+      have h := ENNReal.tendsto_pow_atTop_nhds_zero_of_lt_one (ENNReal.ofReal_lt_one.2 hαr)
+      simpa using ENNReal.Tendsto.mul_const h (Or.inr hDne)
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hmaj
+      (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+    calc (ENNReal.ofReal r)⁻¹ ^ n * tvDist ((κ ^ n) x) π
+        ≤ (ENNReal.ofReal r)⁻¹ ^ n * (ENNReal.ofReal ᾱ ^ n * D) := by
+          rw [← hDdef]; exact mul_le_mul_right (hbound x n) _
+      _ = (ENNReal.ofReal ᾱ * (ENNReal.ofReal r)⁻¹) ^ n * D := by rw [mul_pow]; ring
+      _ = ENNReal.ofReal (ᾱ / r) ^ n * D := by rw [hq]
+  exact ⟨π, hπprob, hge.isErgodicKernel.invariant, hge⟩
 
 -- Since the repair of `HasLyapunovDrift.drift` (2026-08-09) the drift is *already* the `∫⁻`
 -- statement, so this wrapper is now a one-liner; it is kept (with its hypotheses inert) so that
