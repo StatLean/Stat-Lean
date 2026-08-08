@@ -64,13 +64,40 @@ one — hence `S_T ≥ 0` whenever the alternative fit is nondegenerate. -/
 theorem setarResidualSS_le_arLSResidualSS {T P : ℕ} (x : Fin T → ℝ) (d : ℕ) (r : ℝ)
     (β0 : ℝ) (β : Fin P → ℝ) (hd : 1 ≤ d) (hdP : d ≤ P) :
     setarResidualSS x d r (fun _ => β0) (fun _ => β) = arLSResidualSS x β0 β := by
-  sorry
+  classical
+  -- The two regime index sets are the two halves of the AR window split by the sign of
+  -- `x_{t−d} − r`: the extra guard `d ≤ t` of `tarRegimeIndices` is implied by `P < t`
+  -- (as `d ≤ P`), so it disappears from both filters.
+  set S : Finset (Fin T) := Finset.univ.filter (fun t : Fin T => P < (t : ℕ)) with hS
+  have hlow : tarRegimeIndices x {y : ℝ | y ≤ r} d P
+      = S.filter fun t : Fin T =>
+          x ⟨(t : ℕ) - d, Nat.lt_of_le_of_lt (Nat.sub_le _ _) t.isLt⟩ ≤ r := by
+    ext t
+    simp only [tarRegimeIndices, hS, Finset.mem_filter, Finset.mem_univ, true_and,
+      Set.mem_setOf_eq]
+    constructor
+    · rintro ⟨ht, -, hx⟩; exact ⟨ht, hx⟩
+    · rintro ⟨ht, hx⟩; exact ⟨ht, le_of_lt (lt_of_le_of_lt hdP ht), hx⟩
+  have hhigh : tarRegimeIndices x {y : ℝ | r < y} d P
+      = S.filter fun t : Fin T =>
+          ¬ x ⟨(t : ℕ) - d, Nat.lt_of_le_of_lt (Nat.sub_le _ _) t.isLt⟩ ≤ r := by
+    ext t
+    simp only [tarRegimeIndices, hS, Finset.mem_filter, Finset.mem_univ, true_and,
+      Set.mem_setOf_eq, not_le]
+    constructor
+    · rintro ⟨ht, -, hx⟩; exact ⟨ht, hx⟩
+    · rintro ⟨ht, hx⟩; exact ⟨ht, le_of_lt (lt_of_le_of_lt hdP ht), hx⟩
+  simp only [setarResidualSS, tarLSResidualSS, arLSResidualSS, hlow, hhigh, ← hS]
+  exact Finset.sum_filter_add_sum_filter_not S _ _
 
 /-- `S_T ≥ 0` at any threshold, for the best-fitting alternative: profiling over a
 family containing the null cannot increase the residual sum of squares. -/
 theorem linearityStat_nonneg {T P : ℕ} (x : Fin T → ℝ) (d : ℕ) {ss0 ss1 : ℝ}
     (hT : max P d ≤ T) (hss1 : 0 < ss1) (hle : ss1 ≤ ss0) :
     0 ≤ linearityStat (P := P) x d ss0 ss1 := by
-  sorry
+  have hwin : (0 : ℝ) ≤ (T : ℝ) - ((max P d : ℕ) : ℝ) := by
+    have : ((max P d : ℕ) : ℝ) ≤ (T : ℝ) := Nat.cast_le.mpr hT
+    linarith
+  exact div_nonneg (mul_nonneg hwin (by linarith)) hss1.le
 
 end StatLean.TimeSeries
