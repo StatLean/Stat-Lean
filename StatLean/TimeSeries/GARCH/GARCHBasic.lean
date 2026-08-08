@@ -199,17 +199,196 @@ noncomputable def garchInfCoeffs {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → 
 
 /-- The GARCH ARCH(∞) coefficients are nonnegative under nonnegative GARCH
 coefficients (FY p. 148: "the recursion has nonnegative solutions like (2.20)"). -/
+private lemma coeffArPoly {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
+    (arPoly b).coeff m
+      = (if m = 0 then (1 : ℝ) else 0) - ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
+  simp [arPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+    Polynomial.coeff_X_pow, mul_ite]
+
+private lemma coeffGarchNum {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
+    (∑ i : Fin p, Polynomial.C (b i) * Polynomial.X ^ ((i : ℕ) + 1) : Polynomial ℝ).coeff m
+      = ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
+  simp [Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, mul_ite]
+
+private lemma constantCoeffArPoly_ne_zero {p : ℕ} (b : Fin p → ℝ) :
+    PowerSeries.constantCoeff (((arPoly b : Polynomial ℝ) : PowerSeries ℝ)) ≠ 0 := by
+  rw [Polynomial.constantCoeff_coe]
+  have h : (arPoly b).coeff 0 = 1 := by rw [coeffArPoly]; simp
+  rw [h]
+  exact one_ne_zero
+
+/-- The defining convolution identity `a ∗ d = b` (FY p. 148: the `d_i` solve a recursion
+like eq. (2.20)). -/
+private lemma arPoly_conv_garchInfCoeffs {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (n : ℕ) :
+    ∑ k ∈ Finset.range (n + 1), (arPoly a).coeff k * garchInfCoeffs b a (n - k)
+      = (∑ i : Fin p, Polynomial.C (b i) * Polynomial.X ^ ((i : ℕ) + 1) :
+          Polynomial ℝ).coeff n := by
+  have key : (((arPoly a : Polynomial ℝ) : PowerSeries ℝ))
+      * ((((∑ i : Fin p, Polynomial.C (b i) * Polynomial.X ^ ((i : ℕ) + 1) :
+              Polynomial ℝ) : PowerSeries ℝ))
+        * (((arPoly a : Polynomial ℝ) : PowerSeries ℝ))⁻¹)
+      = (((∑ i : Fin p, Polynomial.C (b i) * Polynomial.X ^ ((i : ℕ) + 1) :
+            Polynomial ℝ) : PowerSeries ℝ)) := by
+    rw [← mul_assoc, mul_comm (((arPoly a : Polynomial ℝ) : PowerSeries ℝ)),
+      mul_assoc, PowerSeries.mul_inv_cancel _ (constantCoeffArPoly_ne_zero a), mul_one]
+  have hcoeff := congrArg (PowerSeries.coeff n) key
+  rw [PowerSeries.coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk,
+    Polynomial.coeff_coe] at hcoeff
+  rw [← hcoeff]
+  exact Finset.sum_congr rfl fun k _ => by rw [Polynomial.coeff_coe]; rfl
+
+/-- The ARCH(∞) coefficients solve `d_n = b_n + Σ_j a_j d_{n−1−j}` (FY p. 148). -/
+private lemma garchInfCoeffs_rec {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (n : ℕ) :
+    garchInfCoeffs b a n
+      = (∑ i : Fin p, if n = (i : ℕ) + 1 then b i else 0)
+        + ∑ j : Fin q, a j *
+            (if (j : ℕ) < n then garchInfCoeffs b a (n - ((j : ℕ) + 1)) else 0) := by
+  have hconv := arPoly_conv_garchInfCoeffs b a n
+  rw [Finset.sum_range_succ', coeffGarchNum] at hconv
+  have h0 : (arPoly a).coeff 0 = 1 := by rw [coeffArPoly]; simp
+  rw [h0, one_mul, Nat.sub_zero] at hconv
+  have hk : ∀ k : ℕ, (arPoly a).coeff (k + 1)
+      = - ∑ j : Fin q, if k + 1 = (j : ℕ) + 1 then a j else 0 := by
+    intro k; rw [coeffArPoly]; simp
+  simp only [hk, neg_mul] at hconv
+  rw [Finset.sum_neg_distrib] at hconv
+  have hswap : (∑ k ∈ Finset.range n,
+        (∑ j : Fin q, if k + 1 = (j : ℕ) + 1 then a j else 0) * garchInfCoeffs b a (n - (k + 1)))
+      = ∑ j : Fin q, a j *
+          (if (j : ℕ) < n then garchInfCoeffs b a (n - ((j : ℕ) + 1)) else 0) := by
+    simp only [Finset.sum_mul, ite_mul, zero_mul]
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    by_cases hj : (j : ℕ) < n
+    · rw [if_pos hj]
+      rw [Finset.sum_eq_single ((j : ℕ))]
+      · rw [if_pos rfl]
+      · intro k _ hkj
+        rw [if_neg (by omega)]
+      · intro hmem
+        exact absurd (Finset.mem_range.2 hj) hmem
+    · rw [if_neg hj, mul_zero]
+      refine Finset.sum_eq_zero fun k hk => ?_
+      rw [Finset.mem_range] at hk
+      rw [if_neg (by omega)]
+  linarith [hconv, hswap]
+
 theorem garchInfCoeffs_nonneg {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
     (hb : ∀ i, 0 ≤ b i) (ha : ∀ j, 0 ≤ a j) (hsum : (∑ j, a j) < 1) (i : ℕ) :
     0 ≤ garchInfCoeffs b a i := by
-  sorry
+  induction i using Nat.strong_induction_on with
+  | _ n ih =>
+    rw [garchInfCoeffs_rec]
+    refine add_nonneg (Finset.sum_nonneg fun i _ => ?_) (Finset.sum_nonneg fun j _ => ?_)
+    · split
+      · exact hb i
+      · exact le_rfl
+    · refine mul_nonneg (ha j) ?_
+      split
+      · rename_i hj
+        exact ih _ (by omega)
+      · exact le_rfl
 
 /-- Their total mass: `Σ_i d_i = (Σ b_i)/(1 − Σ a_j)`, which is `< 1` exactly when
 `Σ b + Σ a < 1` — the bridge from FY Theorem 4.4's hypothesis to Theorem 2.5's. -/
 theorem tsum_garchInfCoeffs {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
     (hb : ∀ i, 0 ≤ b i) (ha : ∀ j, 0 ≤ a j) (hsum : (∑ j, a j) < 1) :
     HasSum (garchInfCoeffs b a) ((∑ i, b i) / (1 - ∑ j, a j)) := by
-  sorry
+  have hd := garchInfCoeffs_nonneg hb ha hsum
+  have hsa0 : 0 ≤ ∑ j : Fin q, a j := Finset.sum_nonneg fun j _ => ha j
+  -- shifting the index in a partial sum
+  have hshift : ∀ (j : ℕ) (N : ℕ),
+      (∑ n ∈ Finset.range N, if j < n then garchInfCoeffs b a (n - (j + 1)) else 0)
+        = ∑ m ∈ Finset.range (N - (j + 1)), garchInfCoeffs b a m := by
+    intro j N
+    induction N with
+    | zero => simp
+    | succ N ihN =>
+      rw [Finset.sum_range_succ, ihN]
+      by_cases hjN : j < N
+      · have h1 : N + 1 - (j + 1) = (N - (j + 1)) + 1 := by omega
+        rw [if_pos hjN, h1, Finset.sum_range_succ]
+      · have h1 : N + 1 - (j + 1) = 0 := by omega
+        have h2 : N - (j + 1) = 0 := by omega
+        rw [if_neg hjN, h1, h2]
+        simp
+  -- the recursion, summed over `range N`
+  have hpart : ∀ N : ℕ, (∑ n ∈ Finset.range N, garchInfCoeffs b a n)
+      = (∑ i : Fin p, if (i : ℕ) + 1 < N then b i else 0)
+        + ∑ j : Fin q, a j * ∑ m ∈ Finset.range (N - ((j : ℕ) + 1)), garchInfCoeffs b a m := by
+    intro N
+    rw [Finset.sum_congr rfl fun n (_ : n ∈ Finset.range N) => garchInfCoeffs_rec b a n,
+      Finset.sum_add_distrib]
+    congr 1
+    · rw [Finset.sum_comm]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      by_cases hi : (i : ℕ) + 1 < N
+      · rw [if_pos hi, Finset.sum_eq_single ((i : ℕ) + 1)]
+        · rw [if_pos rfl]
+        · intro n _ hn
+          rw [if_neg hn]
+        · intro hmem
+          exact absurd (Finset.mem_range.2 hi) hmem
+      · rw [if_neg hi]
+        refine Finset.sum_eq_zero fun n hn => ?_
+        rw [Finset.mem_range] at hn
+        rw [if_neg (by omega)]
+    · rw [Finset.sum_comm]
+      refine Finset.sum_congr rfl fun j _ => ?_
+      rw [← Finset.mul_sum, hshift]
+  -- the partial sums are bounded, hence the family is summable
+  have hmono : ∀ M N : ℕ, M ≤ N → (∑ m ∈ Finset.range M, garchInfCoeffs b a m)
+      ≤ ∑ m ∈ Finset.range N, garchInfCoeffs b a m := by
+    intro M N hMN
+    refine Finset.sum_le_sum_of_subset_of_nonneg ?_ fun m _ _ => hd m
+    intro x hx
+    simp only [Finset.mem_range] at hx ⊢
+    omega
+  have hbnd : ∀ N : ℕ, (∑ n ∈ Finset.range N, garchInfCoeffs b a n)
+      ≤ (∑ i, b i) / (1 - ∑ j, a j) := by
+    intro N
+    have h1 := hpart N
+    have h2 : (∑ j : Fin q, a j * ∑ m ∈ Finset.range (N - ((j : ℕ) + 1)), garchInfCoeffs b a m)
+        ≤ (∑ j : Fin q, a j) * ∑ m ∈ Finset.range N, garchInfCoeffs b a m := by
+      rw [Finset.sum_mul]
+      exact Finset.sum_le_sum fun j _ =>
+        mul_le_mul_of_nonneg_left (hmono _ _ (by omega)) (ha j)
+    have h3 : (∑ i : Fin p, if (i : ℕ) + 1 < N then b i else 0) ≤ ∑ i, b i :=
+      Finset.sum_le_sum fun i _ => by
+        split
+        · exact le_rfl
+        · exact hb i
+    rw [le_div_iff₀ (by linarith)]
+    nlinarith [h1, h2, h3]
+  have hsummable : Summable (garchInfCoeffs b a) := summable_of_sum_range_le hd hbnd
+  -- pass to the limit in the summed recursion
+  have hTlim : Filter.Tendsto (fun N => ∑ n ∈ Finset.range N, garchInfCoeffs b a n)
+      Filter.atTop (nhds (∑' n, garchInfCoeffs b a n)) := hsummable.hasSum.tendsto_sum_nat
+  have hshiftlim : ∀ j : ℕ, Filter.Tendsto
+      (fun N => ∑ m ∈ Finset.range (N - (j + 1)), garchInfCoeffs b a m) Filter.atTop
+      (nhds (∑' n, garchInfCoeffs b a n)) :=
+    fun j => hTlim.comp (Filter.tendsto_sub_atTop_nat (j + 1))
+  have hblim : Filter.Tendsto (fun N : ℕ => ∑ i : Fin p, if (i : ℕ) + 1 < N then b i else 0)
+      Filter.atTop (nhds (∑ i, b i)) := by
+    refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
+    filter_upwards [Filter.eventually_ge_atTop (p + 1)] with N hN
+    refine (Finset.sum_congr rfl fun i _ => ?_).symm
+    have := i.isLt
+    rw [if_pos (by omega)]
+  have hRlim : Filter.Tendsto (fun N : ℕ => (∑ i : Fin p, if (i : ℕ) + 1 < N then b i else 0)
+      + ∑ j : Fin q, a j * ∑ m ∈ Finset.range (N - ((j : ℕ) + 1)), garchInfCoeffs b a m)
+      Filter.atTop (nhds ((∑ i, b i) + ∑ j : Fin q, a j * ∑' n, garchInfCoeffs b a n)) :=
+    hblim.add (tendsto_finset_sum _ fun j _ => (hshiftlim (j : ℕ)).const_mul (a j))
+  have heq : (∑' n, garchInfCoeffs b a n)
+      = (∑ i, b i) + ∑ j : Fin q, a j * ∑' n, garchInfCoeffs b a n :=
+    tendsto_nhds_unique (hTlim.congr fun N => hpart N) hRlim
+  rw [← Finset.sum_mul] at heq
+  have hne : (1 : ℝ) - ∑ j, a j ≠ 0 := by linarith
+  have hval : (∑' n, garchInfCoeffs b a n) = (∑ i, b i) / (1 - ∑ j, a j) := by
+    rw [eq_div_iff hne]
+    linarith [heq]
+  rw [← hval]
+  exact hsummable.hasSum
 
 /-- **FY Theorem 4.4, existence**: under `Σ b + Σ a < 1` a strictly stationary
 square-integrable GARCH(p, q) solution exists. -/
