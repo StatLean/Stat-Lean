@@ -1,5 +1,6 @@
 import StatLean.TimeSeries.GARCH.ARCHBasic
 import Mathlib.Probability.StrongLaw
+import Mathlib.Probability.ConditionalExpectation
 
 /-!
 # Basic properties of GARCH(p, q) (FY §4.2.2, Theorem 4.4, Proposition 4.2)
@@ -103,13 +104,58 @@ theorem IsGARCH.isWhiteNoise [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     IsWhiteNoise X (c0 / (1 - (∑ i, b i) - ∑ j, a j)) μ := by
   sorry
 
+/-- `E ε_t² = 1` for unit-variance centred i.i.d. innovations, at every time. -/
+private lemma iidNoise_integral_sq [IsProbabilityMeasure μ] {ε : ℤ → Ω → ℝ}
+    (hε : IsIIDNoise ε 1 μ) (t : ℤ) : (∫ ω, ε t ω ^ 2 ∂μ) = 1 := by
+  have h0 : (∫ ω, ε 0 ω ^ 2 ∂μ) = 1 := by
+    have hv := variance_eq_sub (μ := μ) hε.memLp
+    rw [hε.variance_eq, hε.integral_eq_zero] at hv
+    simpa using hv.symm
+  rw [← h0]
+  exact ((hε.identDistrib t 0).comp
+    (measurable_id.pow_const 2 : Measurable fun x : ℝ => x ^ 2)).integral_eq
+
 /-- **FY Proposition 4.2(i)**: `σ_t²` is the conditional variance of `X_t` given the
 strict past. -/
 theorem IsGARCH.condexp_sq [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     {b : Fin p → ℝ} {a : Fin q → ℝ} {X σvol ε : ℤ → Ω → ℝ}
     (h : IsGARCH c0 b a X σvol ε μ) (hL2 : ∀ t, MemLp (X t) 2 μ) (t : ℤ) :
     μ[fun ω => X t ω ^ 2 | sigmaLT X t] =ᵐ[μ] fun ω => σvol t ω ^ 2 := by
-  sorry
+  have hFle : sigmaLT X t ≤ (inferInstance : MeasurableSpace Ω) :=
+    iSup₂_le fun s _ => (h.measurableX s).comap_le
+  haveI : SigmaFinite (μ.trim hFle) := by
+    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+    infer_instance
+  -- `E ε_t² = 1`
+  have hEeps : (∫ ω, ε t ω ^ 2 ∂μ) = 1 := iidNoise_integral_sq h.iid t
+  have hεL2 : MemLp (ε t) 2 μ := (h.iid.identDistrib 0 t).memLp_snd h.iid.memLp
+  have hεsq : Integrable (fun ω => ε t ω ^ 2) μ := hεL2.integrable_sq
+  have hXsq : Integrable (fun ω => X t ω ^ 2) μ := (hL2 t).integrable_sq
+  -- `X_t² = σ_t² ε_t²`
+  have hprod : (fun ω => X t ω ^ 2) =ᵐ[μ] fun ω => σvol t ω ^ 2 * ε t ω ^ 2 := by
+    filter_upwards [h.recX t] with ω hω
+    rw [hω, mul_pow]
+  have hprodint : Integrable (fun ω => σvol t ω ^ 2 * ε t ω ^ 2) μ := hXsq.congr hprod
+  -- the volatility is measurable for the strict past, so it pulls out
+  have hσm : StronglyMeasurable[sigmaLT X t] fun ω => σvol t ω ^ 2 :=
+    ((h.adapted t).pow_const 2).stronglyMeasurable
+  have hpull := MeasureTheory.condExp_mul_of_stronglyMeasurable_left (m := sigmaLT X t)
+    hσm hprodint hεsq
+  -- and the innovation is independent of the strict past
+  have hεm : StronglyMeasurable[MeasurableSpace.comap (ε t) inferInstance]
+      fun ω => ε t ω ^ 2 :=
+    ((Measurable.of_comap_le (le_refl (MeasurableSpace.comap (ε t) inferInstance))).pow_const
+      2).stronglyMeasurable
+  have hcondε : μ[fun ω => ε t ω ^ 2 | sigmaLT X t] =ᵐ[μ] fun _ => (1 : ℝ) := by
+    have := condExp_indep_eq (h.iid.measurable t).comap_le hFle hεm (h.indep_past t)
+    filter_upwards [this] with ω hω
+    rw [hω, hEeps]
+  calc μ[fun ω => X t ω ^ 2 | sigmaLT X t]
+      =ᵐ[μ] μ[fun ω => σvol t ω ^ 2 * ε t ω ^ 2 | sigmaLT X t] := condExp_congr_ae hprod
+    _ =ᵐ[μ] (fun ω => σvol t ω ^ 2) * μ[fun ω => ε t ω ^ 2 | sigmaLT X t] := hpull
+    _ =ᵐ[μ] fun ω => σvol t ω ^ 2 := by
+        filter_upwards [hcondε] with ω hω
+        simp only [Pi.mul_apply, hω, mul_one]
 
 /-- **FY eqs. (4.25)–(4.26)**: the squared process satisfies the ARMA(p∨q, q) recursion
 `X_t² = c₀ + Σ_{i ≤ p∨q}(b_i + a_i) X_{t−i}² + e_t − Σ_j a_j e_{t−j}` with the
