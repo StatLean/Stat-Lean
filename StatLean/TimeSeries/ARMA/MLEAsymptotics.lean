@@ -583,18 +583,34 @@ section Sigma2
 LLN at the truth, the first is killed by consistency plus a local equicontinuity
 estimate. Both are recorded as named debts below; everything else is proved. -/
 
-/-- **DEBT — the quadratic-form LLN at the truth**: `T⁻¹ xᵀ Γ_T(θ₀)⁻¹ x →p σ²`.
+/-- At the truth the composite filter is `δ₀`, so the contrast variance is `1`. This is
+the convolution identity `π(θ₀) ∗ ψ(θ₀) = δ` (`armaPi_conv_armaPsi`) read off term by
+term; unlike `armaContrastVar_eq_one_iff` it needs no coprimality hypothesis. -/
+private lemma armaContrastVar_self {p q : ℕ} (b0 : Fin p → ℝ) (a0 : Fin q → ℝ) :
+    armaContrastVar b0 a0 b0 a0 = 1 := by
+  have hterm : ∀ n : ℕ,
+      (∑ jk ∈ Finset.range (n + 1), armaPi b0 a0 jk * armaPsi b0 a0 (n - jk)) ^ 2
+        = if n = 0 then (1 : ℝ) else 0 := by
+    intro n
+    rw [armaPi_conv_armaPsi]
+    split_ifs <;> norm_num
+  rw [armaContrastVar, tsum_congr hterm]
+  simpa using tsum_ite_eq (0 : ℕ) (1 : ℝ)
 
-This is **not a second copy** of Consistency's ergodic debt: it is exactly that lane's
-`armaProfileS_tendstoInProb` specialised to `θ = θ₀` (where the contrast variance is
-`1`, by `armaContrastVar_eq_one_iff`). That lemma is `private` to
-`ARMA/Consistency.lean` and therefore not citeable from this module, and the public
-`criterion_tendsto_contrast` is **strictly weaker** than what is needed here: it
-controls `log(S_T/T) + T⁻¹ log det Γ_T`, and `Real.log` is not injective at Lean's junk
-value (`Real.log 0 = 0`), so at `σ² = 1` the degenerate event `{S_T = 0}` is invisible
-at the `log` level and the `exp`-transfer back to `S_T/T` fails. Relocating the
-statement is the only repair available inside this lane's touch-set; the project-level
-fix is to make Consistency's lemma public. -/
+/-- **The quadratic-form LLN at the truth**: `T⁻¹ xᵀ Γ_T(θ₀)⁻¹ x →p σ²`.
+
+This is **not a second copy** of Consistency's debt: it is exactly that lane's
+`armaProfileS_tendstoInProb` specialised to `θ = θ₀`, where the contrast variance is
+`1` (`armaContrastVar_self`, above — the coprimality-free half of
+`armaContrastVar_eq_one_iff`). The public `criterion_tendsto_contrast` is **strictly
+weaker** than what is needed here: it controls `log(S_T/T) + T⁻¹ log det Γ_T`, and
+`Real.log` is not injective at Lean's junk value (`Real.log 0 = 0`), so at `σ² = 1` the
+degenerate event `{S_T = 0}` is invisible at the `log` level and the `exp`-transfer back
+to `S_T/T` fails.
+
+The lemma cited was `private` to `ARMA/Consistency.lean` when this debt was recorded;
+the project-level fix that note asked for — making it public — has now been applied, so
+this statement is a two-line corollary and no longer carries any debt of its own. -/
 private theorem armaProfileS_atTruth_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -604,7 +620,10 @@ private theorem armaProfileS_atTruth_tendstoInProb [IsProbabilityMeasure μ] {p 
     Tendsto (fun T : ℕ => (μ {ω | η ≤
         |armaProfileS b0 a0 (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) / T - σ2|}).toReal)
       atTop (𝓝 0) := by
-  sorry
+  refine (armaProfileS_tendstoInProb h hiid hσ hB0 hB0 hcausal hmeas hη).congr fun T => ?_
+  congr 1
+  refine congrArg _ (Set.ext fun ω => ?_)
+  simp only [Set.mem_setOf_eq, armaContrastVar_self, mul_one, div_eq_inv_mul]
 
 /-- **DEBT — local stochastic equicontinuity of the profiled sum of squares**: the
 oscillation of `θ ↦ T⁻¹ S_T(θ)` over a small ball around `θ₀` is uniformly (in `T`)

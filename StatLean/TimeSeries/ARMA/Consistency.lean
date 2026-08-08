@@ -570,7 +570,7 @@ private lemma piK_self (b : Fin p → ℝ) (a : Fin q → ℝ) (i : ℕ) : piK b
   simp [piK, armaPi_zero]
 
 /-- **The convolution identity `π ∗ ψ = δ`** (the two power series are inverse). -/
-private lemma armaPi_conv_armaPsi (b : Fin p → ℝ) (a : Fin q → ℝ) (n : ℕ) :
+lemma armaPi_conv_armaPsi (b : Fin p → ℝ) (a : Fin q → ℝ) (n : ℕ) :
     ∑ k ∈ Finset.range (n + 1), armaPi b a k * armaPsi b a (n - k)
       = if n = 0 then 1 else 0 := by
   have hAne : PowerSeries.constantCoeff (((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) ≠ 0 := by
@@ -1022,6 +1022,134 @@ private lemma one_add_gramTail_det_isUnit (hB : ARMAInvertibleParams b a) (T : �
   exact (by linarith : (0 : ℝ) < ((1 : Matrix (Fin T) (Fin T) ℝ)
     + gramTail b a T).det).ne'.isUnit
 
+/-! ### The correction term `(B)`: three deterministic matrix bricks
+
+These are the deterministic half of step (B) of the route recorded at
+`armaProfileS_tendstoInProb`. They replace the operator-norm/eigenbasis argument
+sketched there by an elementary Schur test: for a *positive semidefinite* `M` the
+off-diagonal entries are dominated by the diagonal (`abs_entry_le_of_posSemidef`),
+which turns the pairing `Σ_{ij} M_ij S_ij` — i.e. `tr(M S)` for symmetric `S` — into
+`(row sum bound of S) · tr M` (`sum_entry_mul_le_of_posSemidef`), with no spectral
+theory at all. -/
+
+/-- **Off-diagonal entries of a psd matrix are dominated by the diagonal**:
+`|M_ij| ≤ (M_ii + M_jj)/2`, by testing the quadratic form at `e_i ± e_j`. -/
+private lemma abs_entry_le_of_posSemidef {n : ℕ} {M : Matrix (Fin n) (Fin n) ℝ}
+    (hM : M.PosSemidef) (i j : Fin n) : |M i j| ≤ (M i i + M j j) / 2 := by
+  have hsym : M j i = M i j := by
+    have h := hM.1
+    calc M j i = Mᴴ i j := by simp [Matrix.conjTranspose_apply]
+      _ = M i j := by rw [h]
+  have key : ∀ s : ℝ, 0 ≤ M i i + s * s * M j j + 2 * s * M i j := by
+    intro s
+    have hx := hM.dotProduct_mulVec_nonneg (Pi.single i (1 : ℝ) + Pi.single j s)
+    simp only [star_trivial, Matrix.mulVec_add, add_dotProduct, dotProduct_add,
+      single_dotProduct, Matrix.mulVec_single] at hx
+    simp only [Pi.smul_apply, Matrix.col_apply, MulOpposite.smul_eq_mul_unop,
+      MulOpposite.unop_op, mul_one] at hx
+    rw [hsym] at hx
+    nlinarith [hx]
+  have h1 := key 1
+  have h2 := key (-1)
+  rw [abs_le]
+  constructor <;> nlinarith
+
+/-- **The Schur-test trace bound** `tr(M S) ≤ R · tr M` for positive semidefinite `M`
+and symmetric `S` whose row sums are bounded by `R`. This is the substitute for
+`tr(A B) ≤ ‖A‖_op tr B`: no operator norm and no eigenbasis are needed, because
+`|M_ij| ≤ (M_ii + M_jj)/2` already redistributes the whole pairing onto the diagonal
+of `M`. -/
+private lemma sum_entry_mul_le_of_posSemidef {n : ℕ} {M S : Matrix (Fin n) (Fin n) ℝ}
+    (hM : M.PosSemidef) (hS : ∀ i j, S i j = S j i) {R : ℝ}
+    (hrow : ∀ i, ∑ j, |S i j| ≤ R) :
+    ∑ i, ∑ j, M i j * S i j ≤ R * M.trace := by
+  have hdiag : ∀ i, 0 ≤ M i i := fun i => hM.diag_nonneg
+  have hstep : ∑ i, ∑ j, M i j * S i j
+      ≤ ∑ i, ∑ j, (M i i / 2) * |S i j| + ∑ i, ∑ j, (M j j / 2) * |S i j| := by
+    rw [← Finset.sum_add_distrib]
+    refine Finset.sum_le_sum fun i _ => ?_
+    rw [← Finset.sum_add_distrib]
+    refine Finset.sum_le_sum fun j _ => ?_
+    have h1 : M i j * S i j ≤ |M i j| * |S i j| := by
+      calc M i j * S i j ≤ |M i j * S i j| := le_abs_self _
+        _ = |M i j| * |S i j| := abs_mul _ _
+    have h2 : |M i j| * |S i j| ≤ ((M i i + M j j) / 2) * |S i j| :=
+      mul_le_mul_of_nonneg_right (abs_entry_le_of_posSemidef hM i j) (abs_nonneg _)
+    nlinarith [h1, h2]
+  have hA : ∑ i, ∑ j, (M i i / 2) * |S i j| ≤ R / 2 * M.trace := by
+    have hrow' : ∀ i : Fin n, ∑ j, (M i i / 2) * |S i j| ≤ (M i i / 2) * R := by
+      intro i
+      rw [← Finset.mul_sum]
+      exact mul_le_mul_of_nonneg_left (hrow i) (by linarith [hdiag i])
+    calc ∑ i, ∑ j, (M i i / 2) * |S i j| ≤ ∑ i, (M i i / 2) * R :=
+          Finset.sum_le_sum fun i _ => hrow' i
+      _ = R / 2 * M.trace := by
+          have htr : M.trace = ∑ i, M i i := rfl
+          rw [htr, Finset.mul_sum]
+          exact Finset.sum_congr rfl fun i _ => by ring
+  have hB : ∑ i, ∑ j, (M j j / 2) * |S i j| ≤ R / 2 * M.trace := by
+    rw [Finset.sum_comm]
+    have hcol : ∀ j : Fin n, ∑ i, (M j j / 2) * |S i j| ≤ (M j j / 2) * R := by
+      intro j
+      rw [← Finset.mul_sum]
+      refine mul_le_mul_of_nonneg_left ?_ (by linarith [hdiag j])
+      calc ∑ i, |S i j| = ∑ i, |S j i| := Finset.sum_congr rfl fun i _ => by rw [hS i j]
+        _ ≤ R := hrow j
+    calc ∑ j, ∑ i, (M j j / 2) * |S i j| ≤ ∑ j, (M j j / 2) * R :=
+          Finset.sum_le_sum fun j _ => hcol j
+      _ = R / 2 * M.trace := by
+          have htr : M.trace = ∑ i, M i i := rfl
+          rw [htr, Finset.mul_sum]
+          exact Finset.sum_congr rfl fun i _ => by ring
+  linarith
+
+/-- **The resolvent sandwich** `xᵀ G x ≥ xᵀ x − xᵀ (1 + G)⁻¹ x ≥ 0` for positive
+semidefinite `G` with `1 + G` invertible. Substituting `x = (1 + G) y` makes both
+halves polynomial identities in `y`: with `a = ‖y‖²`, `b = yᵀ G y`, `c = ‖G y‖²`,
+`d = (Gy)ᵀ G (Gy)`,
+
+  `xᵀ (1+G)⁻¹ x = a + b`,  `xᵀ x = a + 2b + c`,  `xᵀ G x = b + 2c + d`,
+
+so the two gaps are `b + c ≥ 0` and `c + d ≥ 0`. No spectral theory, and in particular
+no positive semidefiniteness of `(1 + G)⁻¹ G` itself, is needed. -/
+private lemma quadForm_one_add_inv_bounds {n : ℕ} {G : Matrix (Fin n) (Fin n) ℝ}
+    (hG : G.PosSemidef) (hdet : IsUnit (((1 : Matrix (Fin n) (Fin n) ℝ) + G).det))
+    (x : Fin n → ℝ) :
+    x ⬝ᵥ ((1 + G)⁻¹ *ᵥ x) ≤ x ⬝ᵥ x ∧
+      x ⬝ᵥ x - x ⬝ᵥ (G *ᵥ x) ≤ x ⬝ᵥ ((1 + G)⁻¹ *ᵥ x) := by
+  have hGT : Gᵀ = G := by
+    ext i j
+    have h := congrFun (congrFun hG.1 i) j
+    simpa [Matrix.conjTranspose_apply, Matrix.transpose_apply] using h
+  have hswap : ∀ v w : Fin n → ℝ, v ⬝ᵥ (G *ᵥ w) = (G *ᵥ v) ⬝ᵥ w := by
+    intro v w
+    rw [dotProduct_mulVec, ← Matrix.mulVec_transpose, hGT]
+  obtain ⟨y, hy⟩ : ∃ y : Fin n → ℝ, y = (1 + G)⁻¹ *ᵥ x := ⟨_, rfl⟩
+  have hxy : x = y + G *ᵥ y := by
+    have h1 : (1 + G) *ᵥ y = x := by
+      rw [hy, Matrix.mulVec_mulVec, Matrix.mul_nonsing_inv _ hdet, Matrix.one_mulVec]
+    rw [← h1, Matrix.add_mulVec, Matrix.one_mulVec]
+  have hb : 0 ≤ y ⬝ᵥ (G *ᵥ y) := by
+    have := hG.dotProduct_mulVec_nonneg y
+    rwa [star_trivial] at this
+  have hd : 0 ≤ (G *ᵥ y) ⬝ᵥ (G *ᵥ (G *ᵥ y)) := by
+    have := hG.dotProduct_mulVec_nonneg (G *ᵥ y)
+    rwa [star_trivial] at this
+  have hc : 0 ≤ (G *ᵥ y) ⬝ᵥ (G *ᵥ y) := Finset.sum_nonneg fun i _ => mul_self_nonneg _
+  have e1 : x ⬝ᵥ ((1 + G)⁻¹ *ᵥ x) = y ⬝ᵥ y + y ⬝ᵥ (G *ᵥ y) := by
+    rw [← hy]
+    nth_rewrite 1 [hxy]
+    rw [add_dotProduct, dotProduct_comm (G *ᵥ y) y]
+  have e2 : x ⬝ᵥ x = y ⬝ᵥ y + 2 * (y ⬝ᵥ (G *ᵥ y)) + (G *ᵥ y) ⬝ᵥ (G *ᵥ y) := by
+    rw [hxy, add_dotProduct, dotProduct_add, dotProduct_add, dotProduct_comm (G *ᵥ y) y]
+    ring
+  have e3 : x ⬝ᵥ (G *ᵥ x) = y ⬝ᵥ (G *ᵥ y) + 2 * ((G *ᵥ y) ⬝ᵥ (G *ᵥ y))
+      + (G *ᵥ y) ⬝ᵥ (G *ᵥ (G *ᵥ y)) := by
+    rw [hxy, Matrix.mulVec_add, add_dotProduct, dotProduct_add, dotProduct_add,
+      dotProduct_comm (G *ᵥ y) (G *ᵥ y), hswap y (G *ᵥ y)]
+    ring
+  constructor <;> rw [e1] <;> [rw [e2]; rw [e2, e3]] <;> linarith
+
 /-- **Finite-section identity for the profiling quadratic form.** Inverting
 `Π_T Γ_T Π_Tᵀ = 1 + G_T` (legitimate: `det Π_T = 1` and `1 + G_T` is positive definite)
 gives `Γ_T⁻¹ = Π_Tᵀ (1 + G_T)⁻¹ Π_T`, hence
@@ -1069,6 +1197,26 @@ private lemma armaProfileS_eq_gramTail_quadForm (hB : ARMAInvertibleParams b a) 
           rw [Matrix.nonsing_inv_mul _ hN, mul_one, Matrix.mul_nonsing_inv _ hPiTr]
   rw [armaProfileS, hinv, ← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec,
     Matrix.dotProduct_mulVec, Matrix.vecMul_transpose]
+
+/-- **The residual sandwich** (the deterministic half of step (B) of the route recorded
+at `armaProfileS_tendstoInProb`): with `u = Π_T x` the vector of truncated `θ`-residuals,
+
+  `‖u‖² − uᵀ G_T u  ≤  S_T(θ)  ≤  ‖u‖²`.
+
+Combining `armaProfileS_eq_gramTail_quadForm` (the finite-section identity) with
+`quadForm_one_add_inv_bounds`, this reduces the profiling statistic to the residual sum
+of squares up to an error controlled by the *bounded-trace* Gram tail `G_T`
+(`trace_gramTail_le`) — no operator norm, no eigenbasis, and no positive
+semidefiniteness of `(1 + G_T)⁻¹ G_T`. -/
+private lemma armaProfileS_sandwich (hB : ARMAInvertibleParams b a) (T : ℕ)
+    (x : Fin T → ℝ) :
+    armaProfileS b a x ≤ (piMat b a T *ᵥ x) ⬝ᵥ (piMat b a T *ᵥ x) ∧
+      (piMat b a T *ᵥ x) ⬝ᵥ (piMat b a T *ᵥ x)
+          - (piMat b a T *ᵥ x) ⬝ᵥ (gramTail b a T *ᵥ (piMat b a T *ᵥ x))
+        ≤ armaProfileS b a x := by
+  rw [armaProfileS_eq_gramTail_quadForm hB T x]
+  exact quadForm_one_add_inv_bounds (gramTail_posSemidef hB T)
+    (one_add_gramTail_det_isUnit hB T) _
 
 end Szego
 
@@ -1130,7 +1278,7 @@ statistic does not need it. The route, and what is actually left:
   obstruction is real, but it only blocks a *direct* `L²` LLN for `r_t(θ)²`; it does
   not touch this route, which uses second moments only. The same device also absorbs
   the edge effect `u_i` (truncated at `x_1`) versus the two-sided residual `r_i`. -/
-private theorem armaProfileS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
+theorem armaProfileS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 b : Fin p → ℝ} {a0 a : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
     (hB0 : ARMAInvertibleParams b0 a0) (hB : ARMAInvertibleParams b a)
