@@ -1,9 +1,14 @@
 # Stat-Lean — the interactive website
 
 A React + Vite + Tailwind front-end that aligns informal mathematical statements
-with their Lean 4 / Mathlib formalizations, organized across ten categories of
-statistical theory. Deployed to GitHub Pages at
+with their Lean 4 / Mathlib formalizations, organized across twelve categories
+of statistical theory. Deployed to GitHub Pages at
 `https://statlean.github.io/website/`.
+
+## Contributing
+
+Authoring standards for result pages, graphs, references, the index and topics
+are in [CONTRIBUTING.md](CONTRIBUTING.md). Read it before opening a PR.
 
 ## Develop
 
@@ -49,13 +54,15 @@ The site is driven by two data layers:
 
 ## Categories
 
-Results are organized into ten categories (defined in `src/lib/categories.ts`):
+Results are organized into twelve categories (defined in `src/lib/categories.ts`):
 
 | Category | `id` | Content |
 |---|---|---|
 | Parametric Statistics | `parametric` | Local asymptotic normality, DQM, LAN expansion, Hájek–Le Cam bounds |
+| Hypothesis Tests | `hypothesistesting` | Neyman–Pearson, MLR and UMP tests, Neyman structure, invariance, goodness-of-fit, permutation tests, bootstrap |
+| Point Estimation | `pointestimation` | Exponential families, sufficiency, completeness, Rao–Blackwell/Lehmann–Scheffé, Cramér–Rao, equivariance |
 | Semiparametric Statistics | `semiparametric` | Tangent spaces, efficient influence functions, score operators |
-| Concentration Inequalities | `concentration` | Sub-Gaussian/sub-exponential tails, Bernstein, McDiarmid, chaining, empirical processes |
+| Probability Inequalities | `concentration` | Sub-Gaussian/sub-exponential tails, Bernstein, McDiarmid, chaining, empirical processes |
 | High-Dimensional Statistics | `highdim` | OLS, Lasso rates, support recovery, compressed sensing, M-estimators |
 | Multiple Testing | `multipletesting` | FDR/FWER control, knockoffs, e-values, goodness-of-fit |
 | Minimaxity | `minimaxity` | Le Cam, Fano, local packing, minimax lower bounds |

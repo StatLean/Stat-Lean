@@ -1,0 +1,30 @@
+{
+  "root": "StatLean.PointEstimation.cramer_rao",
+  "nodes": [
+    {"id":"StatLean.PointEstimation.cramer_rao","label":"cramer_rao","full":"StatLean.PointEstimation.cramer_rao","kind":"root","decl":"thm","module":"StatLean.PointEstimation.InformationInequality.CramerRao"},
+    {"id":"AsymptoticStatistics.ParametricFamily","label":"ParametricFamily","full":"AsymptoticStatistics.ParametricFamily","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ParametricFamily.Defs"},
+    {"id":"AsymptoticStatistics.IsPDFOf","label":"IsPDFOf","full":"AsymptoticStatistics.IsPDFOf","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ParametricFamily.Defs"},
+    {"id":"StatLean.PointEstimation.HasCommonSupport","label":"HasCommonSupport","full":"StatLean.PointEstimation.HasCommonSupport","kind":"repo","decl":"def","module":"StatLean.PointEstimation.InformationInequality.Basic"},
+    {"id":"StatLean.PointEstimation.score","label":"score","full":"StatLean.PointEstimation.score","kind":"repo","decl":"def","module":"StatLean.PointEstimation.InformationInequality.Defs"},
+    {"id":"AsymptoticStatistics.ParametricFamily.toMeasure","label":"toMeasure","full":"AsymptoticStatistics.ParametricFamily.toMeasure","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Model.Defs"},
+    {"id":"StatLean.PointEstimation.fisherInfo","label":"fisherInfo","full":"StatLean.PointEstimation.fisherInfo","kind":"repo","decl":"def","module":"StatLean.PointEstimation.InformationInequality.Defs"},
+    {"id":"IsModuleTopology.toContinuousSMul","label":"toContinuousSMul","full":"IsModuleTopology.toContinuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Module.ModuleTopology"},
+    {"id":"IsTopologicalSemiring.toIsModuleTopology","label":"toIsModuleTopology","full":"IsTopologicalSemiring.toIsModuleTopology","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Module.ModuleTopology"}
+  ],
+  "edges": [
+    {"source":"StatLean.PointEstimation.cramer_rao","target":"AsymptoticStatistics.ParametricFamily"},
+    {"source":"StatLean.PointEstimation.cramer_rao","target":"AsymptoticStatistics.IsPDFOf"},
+    {"source":"StatLean.PointEstimation.cramer_rao","target":"StatLean.PointEstimation.HasCommonSupport"},
+    {"source":"StatLean.PointEstimation.cramer_rao","target":"StatLean.PointEstimation.score"},
+    {"source":"StatLean.PointEstimation.cramer_rao","target":"AsymptoticStatistics.ParametricFamily.toMeasure"},
+    {"source":"StatLean.PointEstimation.cramer_rao","target":"StatLean.PointEstimation.fisherInfo"},
+    {"source":"StatLean.PointEstimation.cramer_rao","target":"IsModuleTopology.toContinuousSMul"},
+    {"source":"StatLean.PointEstimation.cramer_rao","target":"IsTopologicalSemiring.toIsModuleTopology"},
+    {"source":"AsymptoticStatistics.IsPDFOf","target":"AsymptoticStatistics.ParametricFamily"},
+    {"source":"StatLean.PointEstimation.HasCommonSupport","target":"AsymptoticStatistics.ParametricFamily"},
+    {"source":"StatLean.PointEstimation.score","target":"AsymptoticStatistics.ParametricFamily"},
+    {"source":"AsymptoticStatistics.ParametricFamily.toMeasure","target":"AsymptoticStatistics.ParametricFamily"},
+    {"source":"StatLean.PointEstimation.fisherInfo","target":"AsymptoticStatistics.ParametricFamily"},
+    {"source":"StatLean.PointEstimation.fisherInfo","target":"StatLean.PointEstimation.score"}
+  ]
+}

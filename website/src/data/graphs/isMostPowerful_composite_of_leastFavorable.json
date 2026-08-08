@@ -1,0 +1,24 @@
+{
+  "root": "StatLean.HypothesisTesting.isMostPowerful_composite_of_leastFavorable",
+  "nodes": [
+    {"id":"StatLean.HypothesisTesting.isMostPowerful_composite_of_leastFavorable","label":"isMostPowerful_composite_of_leastFavorable","full":"StatLean.HypothesisTesting.isMostPowerful_composite_of_leastFavorable","kind":"root","decl":"thm","module":"StatLean.HypothesisTesting.NeymanPearson.LeastFavorable"},
+    {"id":"StatLean.HypothesisTesting.HasDensity","label":"HasDensity","full":"StatLean.HypothesisTesting.HasDensity","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.NeymanPearson.Lemma"},
+    {"id":"StatLean.HypothesisTesting.IsMostPowerful","label":"IsMostPowerful","full":"StatLean.HypothesisTesting.IsMostPowerful","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Tests.Defs"},
+    {"id":"StatLean.HypothesisTesting.mixtureMeasure","label":"mixtureMeasure","full":"StatLean.HypothesisTesting.mixtureMeasure","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.NeymanPearson.LeastFavorable"},
+    {"id":"StatLean.HypothesisTesting.IsLevel","label":"IsLevel","full":"StatLean.HypothesisTesting.IsLevel","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Tests.Defs"},
+    {"id":"StatLean.HypothesisTesting.IsCriticalFn","label":"IsCriticalFn","full":"StatLean.HypothesisTesting.IsCriticalFn","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Tests.Defs"},
+    {"id":"StatLean.HypothesisTesting.powerAgainst","label":"powerAgainst","full":"StatLean.HypothesisTesting.powerAgainst","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Tests.Defs"},
+    {"id":"StatLean.HypothesisTesting.power","label":"power","full":"StatLean.HypothesisTesting.power","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Tests.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.HypothesisTesting.isMostPowerful_composite_of_leastFavorable","target":"StatLean.HypothesisTesting.HasDensity"},
+    {"source":"StatLean.HypothesisTesting.isMostPowerful_composite_of_leastFavorable","target":"StatLean.HypothesisTesting.IsMostPowerful"},
+    {"source":"StatLean.HypothesisTesting.isMostPowerful_composite_of_leastFavorable","target":"StatLean.HypothesisTesting.mixtureMeasure"},
+    {"source":"StatLean.HypothesisTesting.isMostPowerful_composite_of_leastFavorable","target":"StatLean.HypothesisTesting.IsLevel"},
+    {"source":"StatLean.HypothesisTesting.isMostPowerful_composite_of_leastFavorable","target":"StatLean.HypothesisTesting.IsCriticalFn"},
+    {"source":"StatLean.HypothesisTesting.isMostPowerful_composite_of_leastFavorable","target":"StatLean.HypothesisTesting.powerAgainst"},
+    {"source":"StatLean.HypothesisTesting.IsMostPowerful","target":"StatLean.HypothesisTesting.IsCriticalFn"},
+    {"source":"StatLean.HypothesisTesting.IsMostPowerful","target":"StatLean.HypothesisTesting.powerAgainst"},
+    {"source":"StatLean.HypothesisTesting.IsLevel","target":"StatLean.HypothesisTesting.power"}
+  ]
+}

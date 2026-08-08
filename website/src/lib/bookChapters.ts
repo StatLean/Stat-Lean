@@ -13,6 +13,8 @@ export const TEXTBOOK_KEYS = new Set([
   "robert2007",
   "gelman2014",
   "tsybakov2009",
+  "lehmann-romano2022",
+  "lehmann-casella1998",
 ]);
 
 export function isTextbook(key: string): boolean {
@@ -40,6 +42,22 @@ const CHAPTER_TITLES: Record<string, Record<number, string>> = {
     18: "Stochastic Convergence in Metric Spaces",
     19: "Empirical Processes",
     25: "Semiparametric Models",
+  },
+  "lehmann-romano2022": {
+    3: "Uniformly Most Powerful Tests",
+    4: "Unbiasedness: Theory and First Applications",
+    6: "Invariance",
+    11: "Basic Large-Sample Theory",
+    12: "Extensions of the CLT to Sums of Dependent Random Variables",
+    14: "Quadratic Mean Differentiable Families",
+    16: "Testing Goodness of Fit",
+    17: "Permutation and Randomization Tests",
+    18: "Bootstrap and Subsampling Methods",
+  },
+  "lehmann-casella1998": {
+    1: "Preparations",
+    2: "Unbiasedness",
+    3: "Equivariance",
   },
   "lu-bda": {
     4: "Sub-Gaussian Random Variables",

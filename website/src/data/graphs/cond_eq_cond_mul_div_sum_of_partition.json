@@ -1,0 +1,33 @@
+{
+  "root": "StatLean.Bayesian.cond_eq_cond_mul_div_sum_of_partition",
+  "nodes": [
+    {"id":"StatLean.Bayesian.cond_eq_cond_mul_div_sum_of_partition","label":"cond_eq_cond_mul_div_sum_of_partition","full":"StatLean.Bayesian.cond_eq_cond_mul_div_sum_of_partition","kind":"root","decl":"thm","module":"StatLean.Bayesian.Cond.FinitePartition"},
+    {"id":"StatLean.Bayesian.measure_eq_sum_cond_mul_of_partition","label":"measure_eq_sum_cond_mul_of_partition","full":"StatLean.Bayesian.measure_eq_sum_cond_mul_of_partition","kind":"repo","decl":"thm","module":"StatLean.Bayesian.Cond.FinitePartition"},
+    {"id":"ProbabilityTheory.cond_apply'","label":"cond_apply'","full":"ProbabilityTheory.cond_apply'","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.ConditionalProbability"},
+    {"id":"ProbabilityTheory.cond_mul_eq_inter","label":"cond_mul_eq_inter","full":"ProbabilityTheory.cond_mul_eq_inter","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.ConditionalProbability"},
+    {"id":"Set.inter_comm","label":"inter_comm","full":"Set.inter_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Set.Basic"},
+    {"id":"ENNReal.div_eq_inv_mul","label":"div_eq_inv_mul","full":"ENNReal.div_eq_inv_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Inv"},
+    {"id":"Disjoint.mono","label":"mono","full":"Disjoint.mono","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Disjoint"},
+    {"id":"Set.inter_subset_left","label":"inter_subset_left","full":"Set.inter_subset_left","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Set.Basic"},
+    {"id":"MeasurableSet.inter","label":"inter","full":"MeasurableSet.inter","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"Set.iUnion₂_inter","label":"iUnion₂_inter","full":"Set.iUnion₂_inter","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Set.Lattice"},
+    {"id":"Set.univ_inter","label":"univ_inter","full":"Set.univ_inter","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Set.Basic"},
+    {"id":"MeasureTheory.measure_biUnion_finset","label":"measure_biUnion_finset","full":"MeasureTheory.measure_biUnion_finset","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpace"},
+    {"id":"Finset.sum_congr","label":"sum_congr","full":"Finset.sum_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.Bayesian.cond_eq_cond_mul_div_sum_of_partition","target":"StatLean.Bayesian.measure_eq_sum_cond_mul_of_partition"},
+    {"source":"StatLean.Bayesian.cond_eq_cond_mul_div_sum_of_partition","target":"ProbabilityTheory.cond_apply'"},
+    {"source":"StatLean.Bayesian.cond_eq_cond_mul_div_sum_of_partition","target":"ProbabilityTheory.cond_mul_eq_inter"},
+    {"source":"StatLean.Bayesian.cond_eq_cond_mul_div_sum_of_partition","target":"Set.inter_comm"},
+    {"source":"StatLean.Bayesian.cond_eq_cond_mul_div_sum_of_partition","target":"ENNReal.div_eq_inv_mul"},
+    {"source":"StatLean.Bayesian.measure_eq_sum_cond_mul_of_partition","target":"Disjoint.mono"},
+    {"source":"StatLean.Bayesian.measure_eq_sum_cond_mul_of_partition","target":"Set.inter_subset_left"},
+    {"source":"StatLean.Bayesian.measure_eq_sum_cond_mul_of_partition","target":"MeasurableSet.inter"},
+    {"source":"StatLean.Bayesian.measure_eq_sum_cond_mul_of_partition","target":"Set.iUnion₂_inter"},
+    {"source":"StatLean.Bayesian.measure_eq_sum_cond_mul_of_partition","target":"Set.univ_inter"},
+    {"source":"StatLean.Bayesian.measure_eq_sum_cond_mul_of_partition","target":"MeasureTheory.measure_biUnion_finset"},
+    {"source":"StatLean.Bayesian.measure_eq_sum_cond_mul_of_partition","target":"Finset.sum_congr"},
+    {"source":"StatLean.Bayesian.measure_eq_sum_cond_mul_of_partition","target":"ProbabilityTheory.cond_mul_eq_inter"}
+  ]
+}

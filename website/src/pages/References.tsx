@@ -47,7 +47,7 @@ function ResultLink({ c, showItem }: { c: Citing; showItem?: boolean }) {
       className="group flex gap-2 rounded-lg px-2 py-1.5 -mx-2 hover:bg-accent/[0.07] transition-colors"
     >
       {showItem && (
-        <span className="font-mono text-xs accent shrink-0 pt-0.5 min-w-[4.5rem]">
+        <span className="font-mono text-xs accent shrink-0 pt-0.5 min-w-[7.5rem]">
           {c.itemLabel}
         </span>
       )}

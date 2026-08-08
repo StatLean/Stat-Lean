@@ -1,0 +1,16 @@
+{
+  "root": "StatLean.PointEstimation.risk_rbEstimator_le",
+  "nodes": [
+    {"id":"StatLean.PointEstimation.risk_rbEstimator_le","label":"risk_rbEstimator_le","full":"StatLean.PointEstimation.risk_rbEstimator_le","kind":"root","decl":"thm","module":"StatLean.PointEstimation.UMVU.RaoBlackwell"},
+    {"id":"StatLean.PointEstimation.statLaw","label":"statLaw","full":"StatLean.PointEstimation.statLaw","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Sufficiency.Defs"},
+    {"id":"StatLean.PointEstimation.risk","label":"risk","full":"StatLean.PointEstimation.risk","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Model.Defs"},
+    {"id":"StatLean.PointEstimation.rbEstimator","label":"rbEstimator","full":"StatLean.PointEstimation.rbEstimator","kind":"repo","decl":"def","module":"StatLean.PointEstimation.UMVU.RaoBlackwell"},
+    {"id":"StatLean.PointEstimation.crossRisk","label":"crossRisk","full":"StatLean.PointEstimation.crossRisk","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Model.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.PointEstimation.risk_rbEstimator_le","target":"StatLean.PointEstimation.statLaw"},
+    {"source":"StatLean.PointEstimation.risk_rbEstimator_le","target":"StatLean.PointEstimation.risk"},
+    {"source":"StatLean.PointEstimation.risk_rbEstimator_le","target":"StatLean.PointEstimation.rbEstimator"},
+    {"source":"StatLean.PointEstimation.risk","target":"StatLean.PointEstimation.crossRisk"}
+  ]
+}

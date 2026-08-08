@@ -1,0 +1,34 @@
+{
+  "root": "StatLean.HypothesisTesting.bayesTest_isDAdmissible",
+  "nodes": [
+    {"id":"StatLean.HypothesisTesting.bayesTest_isDAdmissible","label":"bayesTest_isDAdmissible","full":"StatLean.HypothesisTesting.bayesTest_isDAdmissible","kind":"root","decl":"thm","module":"StatLean.HypothesisTesting.Invariance.BayesAdmissible"},
+    {"id":"StatLean.HypothesisTesting.mixtureDensity","label":"mixtureDensity","full":"StatLean.HypothesisTesting.mixtureDensity","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Invariance.BayesAdmissible"},
+    {"id":"StatLean.HypothesisTesting.IsDAdmissible","label":"IsDAdmissible","full":"StatLean.HypothesisTesting.IsDAdmissible","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Invariance.Admissibility"},
+    {"id":"StatLean.HypothesisTesting.bayesTest","label":"bayesTest","full":"StatLean.HypothesisTesting.bayesTest","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Invariance.BayesAdmissible"},
+    {"id":"StatLean.HypothesisTesting.IsCriticalFn","label":"IsCriticalFn","full":"StatLean.HypothesisTesting.IsCriticalFn","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Tests.Defs"},
+    {"id":"StatLean.HypothesisTesting.power","label":"power","full":"StatLean.HypothesisTesting.power","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Tests.Defs"},
+    {"id":"MeasureTheory.ae_iff","label":"ae_iff","full":"MeasureTheory.ae_iff","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.OuterMeasure.AE"},
+    {"id":"MeasureTheory.measure_compl","label":"measure_compl","full":"MeasureTheory.measure_compl","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpace"},
+    {"id":"MeasureTheory.measure_ne_top","label":"measure_ne_top","full":"MeasureTheory.measure_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Finite"},
+    {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
+    {"id":"tsub_self","label":"tsub_self","full":"tsub_self","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Sub.Basic"},
+    {"id":"Filter.mp_mem","label":"mp_mem","full":"Filter.mp_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
+    {"id":"Filter.univ_mem'","label":"univ_mem'","full":"Filter.univ_mem'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.HypothesisTesting.bayesTest_isDAdmissible","target":"StatLean.HypothesisTesting.mixtureDensity"},
+    {"source":"StatLean.HypothesisTesting.bayesTest_isDAdmissible","target":"StatLean.HypothesisTesting.IsDAdmissible"},
+    {"source":"StatLean.HypothesisTesting.bayesTest_isDAdmissible","target":"StatLean.HypothesisTesting.bayesTest"},
+    {"source":"StatLean.HypothesisTesting.bayesTest_isDAdmissible","target":"StatLean.HypothesisTesting.IsCriticalFn"},
+    {"source":"StatLean.HypothesisTesting.bayesTest_isDAdmissible","target":"StatLean.HypothesisTesting.power"},
+    {"source":"StatLean.HypothesisTesting.bayesTest_isDAdmissible","target":"MeasureTheory.ae_iff"},
+    {"source":"StatLean.HypothesisTesting.bayesTest_isDAdmissible","target":"MeasureTheory.measure_compl"},
+    {"source":"StatLean.HypothesisTesting.bayesTest_isDAdmissible","target":"MeasureTheory.measure_ne_top"},
+    {"source":"StatLean.HypothesisTesting.bayesTest_isDAdmissible","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
+    {"source":"StatLean.HypothesisTesting.bayesTest_isDAdmissible","target":"tsub_self"},
+    {"source":"StatLean.HypothesisTesting.bayesTest_isDAdmissible","target":"Filter.mp_mem"},
+    {"source":"StatLean.HypothesisTesting.bayesTest_isDAdmissible","target":"Filter.univ_mem'"},
+    {"source":"StatLean.HypothesisTesting.IsDAdmissible","target":"StatLean.HypothesisTesting.IsCriticalFn"},
+    {"source":"StatLean.HypothesisTesting.IsDAdmissible","target":"StatLean.HypothesisTesting.power"}
+  ]
+}

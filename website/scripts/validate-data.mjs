@@ -12,6 +12,8 @@ const graphsDir = path.join(websiteDir, "src/data/graphs");
 
 const categories = new Set([
   "parametric",
+  "hypothesistesting",
+  "pointestimation",
   "semiparametric",
   "concentration",
   "highdim",
@@ -129,7 +131,10 @@ function sourceDeclares(source, name) {
 }
 
 function validateMath(text, location) {
-  const masked = [...text];
+  // Split by UTF-16 code units, not code points: `matchAll` reports code-unit
+  // offsets, and astral characters (e.g. the script letters 𝓧, 𝓨) would
+  // otherwise shift the mask and leave real delimiters unmasked.
+  const masked = text.split("");
   const parse = (tex, displayMode, offset) => {
     try {
       katex.renderToString(tex, { displayMode, throwOnError: true, strict: false });
@@ -264,7 +269,7 @@ const resultFullNames = new Set();
 for (let index = 0; index < results.length; index += 1) {
   const result = results[index];
   const location = `results.json[${index}]`;
-  if (!exactKeys(result, resultRequiredKeys, ["formalizationNotes", "shortRef", "reference"], location)) continue;
+  if (!exactKeys(result, resultRequiredKeys, ["formalizationNotes", "shortRef", "reference", "keywords"], location)) continue;
 
   for (const field of ["id", "category", "kind", "leanName", "fullName", "title", "citation", "file", "docGenUrl", "informal", "summary", "leanSignature"]) {
     nonemptyString(result[field], `${location}.${field}`);
@@ -314,6 +319,20 @@ for (let index = 0; index < results.length; index += 1) {
       }
     }
   }
+  if (Object.hasOwn(result, "keywords")) {
+    const kw = result.keywords;
+    if (!Array.isArray(kw) || kw.length === 0 || kw.length > 3) {
+      fail(`${location}.keywords`, "expected an array of 1 to 3 index terms");
+    } else {
+      const seen = new Set();
+      for (let i = 0; i < kw.length; i += 1) {
+        if (!nonemptyString(kw[i], `${location}.keywords[${i}]`)) continue;
+        if (kw[i] !== kw[i].trim()) fail(`${location}.keywords[${i}]`, "must not have surrounding whitespace");
+        if (seen.has(kw[i])) fail(`${location}.keywords[${i}]`, `duplicate keyword ${JSON.stringify(kw[i])}`);
+        seen.add(kw[i]);
+      }
+    }
+  }
   if (typeof result.informal === "string") validateMath(result.informal, `${location}.informal`);
 
   const hypotheses = Array.isArray(result.hypotheses) ? result.hypotheses : [];
@@ -324,7 +343,12 @@ for (let index = 0; index < results.length; index += 1) {
     const hypothesisLocation = `${location}.hypotheses[${hypothesisIndex}]`;
     if (!exactKeys(hypothesis, hypothesisRequiredKeys, ["note"], hypothesisLocation)) continue;
     for (const field of hypothesisRequiredKeys) nonemptyString(hypothesis[field], `${hypothesisLocation}.${field}`);
-    if (Object.hasOwn(hypothesis, "note")) nonemptyString(hypothesis.note, `${hypothesisLocation}.note`);
+    if (typeof hypothesis.label === "string") validateMath(hypothesis.label, `${hypothesisLocation}.label`);
+    if (Object.hasOwn(hypothesis, "note")) {
+      if (nonemptyString(hypothesis.note, `${hypothesisLocation}.note`)) {
+        validateMath(hypothesis.note, `${hypothesisLocation}.note`);
+      }
+    }
     if (!urlSafeId.test(hypothesis.id)) fail(`${hypothesisLocation}.id`, "must be URL-safe");
     if (hypothesisIds.has(hypothesis.id)) fail(`${hypothesisLocation}.id`, `duplicate hypothesis id ${JSON.stringify(hypothesis.id)}`);
     hypothesisIds.add(hypothesis.id);

@@ -24,6 +24,7 @@ export function SiteFooter() {
           <ul className="space-y-1.5 text-ink-soft">
             <li><Link className="ulink" to="/search">Search results</Link></li>
             <li><Link className="ulink" to="/dependencies">Dependency graph</Link></li>
+            <li><Link className="ulink" to="/index">Index</Link></li>
             <li><Link className="ulink" to="/references">References</Link></li>
             <li><Link className="ulink" to="/category/concentration">Concentration Inequalities</Link></li>
             <li><Link className="ulink" to="/category/multipletesting">Multiple Testing</Link></li>

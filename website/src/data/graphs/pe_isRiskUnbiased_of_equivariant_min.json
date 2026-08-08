@@ -1,0 +1,29 @@
+{
+  "root": "StatLean.PointEstimation.isRiskUnbiased_of_equivariant_min",
+  "nodes": [
+    {"id":"StatLean.PointEstimation.isRiskUnbiased_of_equivariant_min","label":"isRiskUnbiased_of_equivariant_min","full":"StatLean.PointEstimation.isRiskUnbiased_of_equivariant_min","kind":"root","decl":"thm","module":"StatLean.PointEstimation.Equivariance.RiskUnbiased"},
+    {"id":"StatLean.PointEstimation.IsInvariantLoss","label":"IsInvariantLoss","full":"StatLean.PointEstimation.IsInvariantLoss","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Equivariance.Defs"},
+    {"id":"StatLean.PointEstimation.IsEquivariant","label":"IsEquivariant","full":"StatLean.PointEstimation.IsEquivariant","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Equivariance.Defs"},
+    {"id":"StatLean.PointEstimation.risk","label":"risk","full":"StatLean.PointEstimation.risk","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Model.Defs"},
+    {"id":"StatLean.PointEstimation.IsRiskUnbiased","label":"IsRiskUnbiased","full":"StatLean.PointEstimation.IsRiskUnbiased","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Equivariance.Defs"},
+    {"id":"StatLean.PointEstimation.crossRisk","label":"crossRisk","full":"StatLean.PointEstimation.crossRisk","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Model.Defs"},
+    {"id":"MulAction.exists_smul_eq","label":"exists_smul_eq","full":"MulAction.exists_smul_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Action.Pretransitive"},
+    {"id":"Measurable.const_smul","label":"const_smul","full":"Measurable.const_smul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Group.Arithmetic"},
+    {"id":"StatLean.PointEstimation.IsEquivariant.smul","label":"smul","full":"StatLean.PointEstimation.IsEquivariant.smul","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.Equivariance.RiskUnbiased"},
+    {"id":"MeasureTheory.lintegral_congr","label":"lintegral_congr","full":"MeasureTheory.lintegral_congr","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.PointEstimation.isRiskUnbiased_of_equivariant_min","target":"StatLean.PointEstimation.IsInvariantLoss"},
+    {"source":"StatLean.PointEstimation.isRiskUnbiased_of_equivariant_min","target":"StatLean.PointEstimation.IsEquivariant"},
+    {"source":"StatLean.PointEstimation.isRiskUnbiased_of_equivariant_min","target":"StatLean.PointEstimation.risk"},
+    {"source":"StatLean.PointEstimation.isRiskUnbiased_of_equivariant_min","target":"StatLean.PointEstimation.IsRiskUnbiased"},
+    {"source":"StatLean.PointEstimation.isRiskUnbiased_of_equivariant_min","target":"StatLean.PointEstimation.crossRisk"},
+    {"source":"StatLean.PointEstimation.isRiskUnbiased_of_equivariant_min","target":"MulAction.exists_smul_eq"},
+    {"source":"StatLean.PointEstimation.isRiskUnbiased_of_equivariant_min","target":"Measurable.const_smul"},
+    {"source":"StatLean.PointEstimation.isRiskUnbiased_of_equivariant_min","target":"StatLean.PointEstimation.IsEquivariant.smul"},
+    {"source":"StatLean.PointEstimation.isRiskUnbiased_of_equivariant_min","target":"MeasureTheory.lintegral_congr"},
+    {"source":"StatLean.PointEstimation.risk","target":"StatLean.PointEstimation.crossRisk"},
+    {"source":"StatLean.PointEstimation.IsRiskUnbiased","target":"StatLean.PointEstimation.crossRisk"},
+    {"source":"StatLean.PointEstimation.IsEquivariant.smul","target":"StatLean.PointEstimation.IsEquivariant"}
+  ]
+}

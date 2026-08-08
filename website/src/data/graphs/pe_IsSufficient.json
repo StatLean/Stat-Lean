@@ -1,0 +1,28 @@
+{
+  "root": "StatLean.PointEstimation.IsSufficient",
+  "nodes": [
+    {"id":"StatLean.PointEstimation.IsSufficient","label":"IsSufficient","full":"StatLean.PointEstimation.IsSufficient","kind":"root","decl":"def","module":"StatLean.PointEstimation.Sufficiency.Defs"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"Set","label":"Set","full":"Set","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"MeasurableSet","label":"MeasurableSet","full":"MeasurableSet","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"Measurable","label":"Measurable","full":"Measurable","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"ENNReal.measurableSpace","label":"measurableSpace","full":"ENNReal.measurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"MeasureTheory.lintegral","label":"lintegral","full":"MeasureTheory.lintegral","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"},
+    {"id":"MeasureTheory.Measure.restrict","label":"restrict","full":"MeasureTheory.Measure.restrict","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.Restrict"},
+    {"id":"Set.preimage","label":"preimage","full":"Set.preimage","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Operations"}
+  ],
+  "edges": [
+    {"source":"StatLean.PointEstimation.IsSufficient","target":"MeasurableSpace"},
+    {"source":"StatLean.PointEstimation.IsSufficient","target":"MeasureTheory.Measure"},
+    {"source":"StatLean.PointEstimation.IsSufficient","target":"Set"},
+    {"source":"StatLean.PointEstimation.IsSufficient","target":"MeasurableSet"},
+    {"source":"StatLean.PointEstimation.IsSufficient","target":"ENNReal"},
+    {"source":"StatLean.PointEstimation.IsSufficient","target":"Measurable"},
+    {"source":"StatLean.PointEstimation.IsSufficient","target":"ENNReal.measurableSpace"},
+    {"source":"StatLean.PointEstimation.IsSufficient","target":"MeasureTheory.lintegral"},
+    {"source":"StatLean.PointEstimation.IsSufficient","target":"MeasureTheory.Measure.restrict"},
+    {"source":"StatLean.PointEstimation.IsSufficient","target":"Set.preimage"}
+  ]
+}
