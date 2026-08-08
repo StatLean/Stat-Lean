@@ -461,6 +461,268 @@ private theorem cNoContraction :
 
 END historical refutation block. -/
 
+-- The minorization, integrated: one step from any initial law dominates `α·ρ` on the mass that
+-- the law puts on the level set.
+private theorem minorize_bind {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ} {R α : ℝ}
+    {ρ : Measure S} (hmin : HasMinorization κ V R α ρ)
+    (ξ : Measure S) {A : Set S} (hA : MeasurableSet A) :
+    ENNReal.ofReal α * ρ A * ξ {x | V x ≤ R} ≤ (ξ.bind κ) A := by
+  rw [Measure.bind_apply hA κ.aemeasurable]
+  calc ENNReal.ofReal α * ρ A * ξ {x | V x ≤ R}
+      = ∫⁻ _ in {x | V x ≤ R}, ENNReal.ofReal α * ρ A ∂ξ := (setLIntegral_const _ _).symm
+    _ ≤ ∫⁻ x in {x | V x ≤ R}, κ x A ∂ξ :=
+        setLIntegral_mono (κ.measurable_coe hA) fun x hx => hmin.minorize x hx A hA
+    _ ≤ ∫⁻ x, κ x A ∂ξ := setLIntegral_le_lintegral _ _
+
+
+/-! ### The three analytic inputs of the contraction -/
+
+-- The drift, read on the weight `1 + βV`: one kernel step of the weight is bounded by the affine
+-- function `1 + βK + βγ·V` of the current state.
+private theorem drift_weight {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ} {γ K : ℝ}
+    (hdrift : HasLyapunovDrift κ V γ K) {β : ℝ} (hβ : 0 ≤ β) (x : S) :
+    ∫⁻ y, ENNReal.ofReal (1 + β * V y) ∂(κ x)
+      ≤ ENNReal.ofReal (1 + β * K + β * γ * V x) := by
+  have hVm : Measurable fun y => ENNReal.ofReal (V y) :=
+    ENNReal.measurable_ofReal.comp hdrift.V_measurable
+  have hnn : (0:ℝ) ≤ β * (γ * V x + K) :=
+    mul_nonneg hβ (add_nonneg (mul_nonneg hdrift.gamma_mem.1.le (hdrift.V_nonneg x))
+      hdrift.K_nonneg)
+  calc ∫⁻ y, ENNReal.ofReal (1 + β * V y) ∂(κ x)
+      = ∫⁻ y, (1 + ENNReal.ofReal β * ENNReal.ofReal (V y)) ∂(κ x) :=
+        lintegral_congr fun y => by
+          rw [ENNReal.ofReal_add zero_le_one (mul_nonneg hβ (hdrift.V_nonneg y)),
+            ENNReal.ofReal_mul hβ, ENNReal.ofReal_one]
+    _ = 1 + ENNReal.ofReal β * ∫⁻ y, ENNReal.ofReal (V y) ∂(κ x) := by
+        rw [lintegral_add_left measurable_const, lintegral_const, measure_univ, mul_one,
+          lintegral_const_mul _ hVm]
+    _ ≤ 1 + ENNReal.ofReal β * ENNReal.ofReal (γ * V x + K) :=
+        add_le_add le_rfl (mul_le_mul_right (hdrift.drift x) _)
+    _ = ENNReal.ofReal (1 + β * (γ * V x + K)) := by
+        rw [ENNReal.ofReal_add zero_le_one hnn, ENNReal.ofReal_one, ENNReal.ofReal_mul hβ]
+    _ = ENNReal.ofReal (1 + β * K + β * γ * V x) := by congr 1; ring
+
+-- The weight is affine in `V`, so its `ξ`-mass splits into a mass term and a `V`-term.
+private theorem lintegral_affine_ofReal {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) {V : S → ℝ}
+    (hVm : Measurable V) (hVnn : ∀ x, 0 ≤ V x) (ξ : Measure S) :
+    ∫⁻ x, ENNReal.ofReal (a + b * V x) ∂ξ
+      = ENNReal.ofReal a * ξ Set.univ + ENNReal.ofReal b * ∫⁻ x, ENNReal.ofReal (V x) ∂ξ := by
+  have hVe : Measurable fun x => ENNReal.ofReal (V x) := ENNReal.measurable_ofReal.comp hVm
+  have h : ∀ x, ENNReal.ofReal (a + b * V x)
+      = ENNReal.ofReal a + ENNReal.ofReal b * ENNReal.ofReal (V x) := fun x => by
+    rw [ENNReal.ofReal_add ha (mul_nonneg hb (hVnn x)), ENNReal.ofReal_mul hb]
+  rw [lintegral_congr h, lintegral_add_left measurable_const, lintegral_const,
+    lintegral_const_mul _ hVe]
+
+-- Markov's inequality on the level set `{V ≤ R}`: the mass outside it costs `∫ V / R`.
+private theorem markov_level {V : S → ℝ} (hVm : Measurable V) (_hVnn : ∀ x, 0 ≤ V x)
+    {R : ℝ} (_hR : 0 ≤ R) (ξ : Measure S) :
+    ENNReal.ofReal R * ξ Set.univ
+      ≤ ENNReal.ofReal R * ξ {x | V x ≤ R} + ∫⁻ x, ENNReal.ofReal (V x) ∂ξ := by
+  have hms : MeasurableSet {x | V x ≤ R} := hVm measurableSet_Iic
+  have hVe : Measurable fun x => ENNReal.ofReal (V x) := ENNReal.measurable_ofReal.comp hVm
+  have hsub : {x | V x ≤ R}ᶜ ⊆ {x | ENNReal.ofReal R ≤ ENNReal.ofReal (V x)} := by
+    intro x hx
+    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hx
+    exact ENNReal.ofReal_le_ofReal hx.le
+  have hmk : ENNReal.ofReal R * ξ {x | V x ≤ R}ᶜ ≤ ∫⁻ x, ENNReal.ofReal (V x) ∂ξ :=
+    le_trans (mul_le_mul_right (measure_mono hsub) _)
+      (mul_meas_ge_le_lintegral₀ hVe.aemeasurable _)
+  rw [← measure_add_measure_compl (μ := ξ) hms, mul_add]
+  exact add_le_add le_rfl hmk
+
+-- The scalar heart of the Hairer–Mattingly estimate, isolated from all measure theory: with
+-- `ᾱ ≥ max (1 + βK − α) (γ + 2α/(βR))` the drift bound plus the Markov bound close the loop.
+-- No finiteness is needed anywhere — every step is monotone.
+private theorem harris_num {β γ K R α ᾱ : ℝ} (hβ : 0 < β) (hγ0 : 0 < γ) (_hK : 0 ≤ K)
+    (hRpos : 0 < R) (hα0 : 0 < α) (hᾱ0 : 0 < ᾱ)
+    (h1 : 1 + β * K - α ≤ ᾱ) (h2 : γ + 2 * α / (β * R) ≤ ᾱ)
+    (c Va Vb mL : ℝ≥0∞)
+    (hmark : ENNReal.ofReal R * c ≤ ENNReal.ofReal R * mL + (Va + Vb)) :
+    (ENNReal.ofReal (1 + β * K) * c + ENNReal.ofReal (β * γ) * Va)
+      + (ENNReal.ofReal (1 + β * K) * c + ENNReal.ofReal (β * γ) * Vb)
+      ≤ ENNReal.ofReal ᾱ * ((c + ENNReal.ofReal β * Va) + (c + ENNReal.ofReal β * Vb))
+        + (ENNReal.ofReal α * mL + ENNReal.ofReal α * mL) := by
+  have hRne : (R : ℝ) ≠ 0 := hRpos.ne'
+  have hβne : (β : ℝ) ≠ 0 := hβ.ne'
+  have h2αR : (0:ℝ) ≤ 2 * α / R := (div_pos (by linarith) hRpos).le
+  -- (i) `1 + βK ≤ ᾱ + α`
+  have e1 : ENNReal.ofReal (1 + β * K) ≤ ENNReal.ofReal ᾱ + ENNReal.ofReal α := by
+    rw [← ENNReal.ofReal_add hᾱ0.le hα0.le]
+    exact ENNReal.ofReal_le_ofReal (by linarith)
+  have hcoef : ENNReal.ofReal (2 * α / R) * ENNReal.ofReal R
+      = ENNReal.ofReal α + ENNReal.ofReal α := by
+    rw [← ENNReal.ofReal_mul h2αR, ← ENNReal.ofReal_add hα0.le hα0.le]
+    congr 1
+    field_simp
+    ring
+  -- (ii) Markov's inequality, scaled by `2α/R`
+  have e2 : ENNReal.ofReal α * c + ENNReal.ofReal α * c
+      ≤ (ENNReal.ofReal α * mL + ENNReal.ofReal α * mL)
+        + ENNReal.ofReal (2 * α / R) * (Va + Vb) := by
+    have h := mul_le_mul_right hmark (ENNReal.ofReal (2 * α / R))
+    calc ENNReal.ofReal α * c + ENNReal.ofReal α * c
+        = ENNReal.ofReal (2 * α / R) * (ENNReal.ofReal R * c) := by
+          rw [← mul_assoc, hcoef, add_mul]
+      _ ≤ ENNReal.ofReal (2 * α / R) * (ENNReal.ofReal R * mL + (Va + Vb)) := h
+      _ = ENNReal.ofReal (2 * α / R) * ENNReal.ofReal R * mL
+            + ENNReal.ofReal (2 * α / R) * (Va + Vb) := by ring
+      _ = _ := by rw [hcoef, add_mul]
+  -- (iii) `βγ + 2α/R ≤ ᾱβ`
+  have e3 : ENNReal.ofReal (β * γ) + ENNReal.ofReal (2 * α / R)
+      ≤ ENNReal.ofReal ᾱ * ENNReal.ofReal β := by
+    rw [← ENNReal.ofReal_add (mul_nonneg hβ.le hγ0.le) h2αR, ← ENNReal.ofReal_mul hᾱ0.le]
+    refine ENNReal.ofReal_le_ofReal ?_
+    have hmul : (γ + 2 * α / (β * R)) * β ≤ ᾱ * β := mul_le_mul_of_nonneg_right h2 hβ.le
+    have hrw : (γ + 2 * α / (β * R)) * β = β * γ + 2 * α / R := by field_simp
+    linarith [hrw ▸ hmul]
+  calc (ENNReal.ofReal (1 + β * K) * c + ENNReal.ofReal (β * γ) * Va)
+        + (ENNReal.ofReal (1 + β * K) * c + ENNReal.ofReal (β * γ) * Vb)
+      = (ENNReal.ofReal (1 + β * K) * c + ENNReal.ofReal (1 + β * K) * c)
+          + ENNReal.ofReal (β * γ) * (Va + Vb) := by ring
+    _ ≤ ((ENNReal.ofReal ᾱ + ENNReal.ofReal α) * c + (ENNReal.ofReal ᾱ + ENNReal.ofReal α) * c)
+          + ENNReal.ofReal (β * γ) * (Va + Vb) :=
+        add_le_add (add_le_add (mul_le_mul_left e1 c) (mul_le_mul_left e1 c)) le_rfl
+    _ = (ENNReal.ofReal ᾱ * c + ENNReal.ofReal ᾱ * c)
+          + ((ENNReal.ofReal α * c + ENNReal.ofReal α * c)
+              + ENNReal.ofReal (β * γ) * (Va + Vb)) := by ring
+    _ ≤ (ENNReal.ofReal ᾱ * c + ENNReal.ofReal ᾱ * c)
+          + (((ENNReal.ofReal α * mL + ENNReal.ofReal α * mL)
+              + ENNReal.ofReal (2 * α / R) * (Va + Vb))
+              + ENNReal.ofReal (β * γ) * (Va + Vb)) :=
+        add_le_add le_rfl (add_le_add e2 le_rfl)
+    _ = (ENNReal.ofReal ᾱ * c + ENNReal.ofReal ᾱ * c)
+          + (ENNReal.ofReal (β * γ) + ENNReal.ofReal (2 * α / R)) * (Va + Vb)
+          + (ENNReal.ofReal α * mL + ENNReal.ofReal α * mL) := by ring
+    _ ≤ (ENNReal.ofReal ᾱ * c + ENNReal.ofReal ᾱ * c)
+          + ENNReal.ofReal ᾱ * ENNReal.ofReal β * (Va + Vb)
+          + (ENNReal.ofReal α * mL + ENNReal.ofReal α * mL) :=
+        add_le_add (add_le_add le_rfl (mul_le_mul_left e3 _)) le_rfl
+    _ = _ := by ring
+
+-- The contraction estimate at a fixed admissible pair `(β, ᾱ)`. This is where the Jordan
+-- minimality lemma `jPos_add_le_of_add_eq` does the work that Hairer–Mattingly do by coupling.
+private theorem harris_contraction_aux {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ}
+    {γ K : ℝ} (hdrift : HasLyapunovDrift κ V γ K) {R α : ℝ} {ρ : Measure S}
+    (hmin : HasMinorization κ V R α ρ) {β ᾱ : ℝ} (hβpos : 0 < β) (hᾱpos : 0 < ᾱ)
+    (hRpos : 0 < R) (hᾱ1 : 1 + β * K - α ≤ ᾱ) (hᾱ2 : γ + 2 * α / (β * R) ≤ ᾱ)
+    (μ ν : Measure S) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    weightedTV β V (μ.bind κ) (ν.bind κ) ≤ ENNReal.ofReal ᾱ * weightedTV β V μ ν := by
+  haveI := hmin.isProbability
+  obtain ⟨hγ0, hγ1⟩ := hdrift.gamma_mem
+  obtain ⟨hα0, hα1⟩ := hmin.alpha_mem
+  have hK := hdrift.K_nonneg
+  have hVnn := hdrift.V_nonneg
+  have hVm := hdrift.V_measurable
+  have hwm : Measurable fun x => ENNReal.ofReal (1 + β * V x) :=
+    ENNReal.measurable_ofReal.comp (measurable_const.add (measurable_const.mul hVm))
+  haveI : IsProbabilityMeasure (μ.bind κ) :=
+    ⟨by rw [Measure.bind_apply MeasurableSet.univ κ.aemeasurable]; simp⟩
+  haveI : IsProbabilityMeasure (ν.bind κ) :=
+    ⟨by rw [Measure.bind_apply MeasurableSet.univ κ.aemeasurable]; simp⟩
+  obtain ⟨mL, hmL⟩ : ∃ t : ℝ≥0∞,
+      t = min ((jPos μ ν) {x | V x ≤ R}) ((jPos ν μ) {x | V x ≤ R}) := ⟨_, rfl⟩
+  obtain ⟨m, hm⟩ : ∃ n : Measure S, n = (ENNReal.ofReal α * mL) • ρ := ⟨_, rfl⟩
+  -- the common minorization mass sits under both pushed Jordan parts
+  have hmle : ∀ ξ : Measure S, mL ≤ ξ {x | V x ≤ R} → m ≤ ξ.bind κ := by
+    intro ξ hξ
+    refine Measure.le_iff.2 fun t ht => ?_
+    rw [hm, Measure.smul_apply, smul_eq_mul, mul_right_comm]
+    exact le_trans (mul_le_mul_right hξ _) (minorize_bind hmin ξ ht)
+  have hmA : m ≤ (jPos μ ν).bind κ := hmle _ (by rw [hmL]; exact min_le_left _ _)
+  have hmB : m ≤ (jPos ν μ).bind κ := hmle _ (by rw [hmL]; exact min_le_right _ _)
+  -- one kernel step of the Jordan identity, then minimality
+  have hid : (μ.bind κ) + (jPos ν μ).bind κ = (ν.bind κ) + (jPos μ ν).bind κ := by
+    have h : (μ + jPos ν μ).bind κ = (ν + jPos μ ν).bind κ := by rw [add_jPos_comm]
+    rwa [bind_add', bind_add'] at h
+  have hA : jPos (μ.bind κ) (ν.bind κ) + m ≤ (jPos μ ν).bind κ :=
+    jPos_add_le_of_add_eq hid hmA hmB
+  have hB : jPos (ν.bind κ) (μ.bind κ) + m ≤ (jPos ν μ).bind κ :=
+    jPos_add_le_of_add_eq hid.symm hmB hmA
+  have hintA : (∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂(jPos (μ.bind κ) (ν.bind κ)))
+      + ∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂m
+      ≤ ∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂((jPos μ ν).bind κ) := by
+    rw [← lintegral_add_measure]
+    exact lintegral_mono' hA le_rfl
+  have hintB : (∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂(jPos (ν.bind κ) (μ.bind κ)))
+      + ∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂m
+      ≤ ∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂((jPos ν μ).bind κ) := by
+    rw [← lintegral_add_measure]
+    exact lintegral_mono' hB le_rfl
+  -- the minorization mass, measured in the weight (the weight is `≥ 1`)
+  have hJm : ENNReal.ofReal α * mL ≤ ∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂m := by
+    rw [hm, lintegral_smul_measure]
+    refine le_mul_of_one_le_right' ?_
+    calc (1:ℝ≥0∞) = ∫⁻ _, (1:ℝ≥0∞) ∂ρ := by rw [lintegral_one, measure_univ]
+      _ ≤ ∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂ρ :=
+          lintegral_mono fun x => by
+            rw [← ENNReal.ofReal_one]
+            exact ENNReal.ofReal_le_ofReal (by nlinarith [hVnn x])
+  -- the drift, integrated against each Jordan part
+  have hdriftint : ∀ ξ : Measure S, ∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂(ξ.bind κ)
+      ≤ ENNReal.ofReal (1 + β * K) * ξ Set.univ
+        + ENNReal.ofReal (β * γ) * ∫⁻ x, ENNReal.ofReal (V x) ∂ξ := by
+    intro ξ
+    rw [Measure.lintegral_bind κ.aemeasurable hwm.aemeasurable]
+    calc ∫⁻ x, (∫⁻ y, ENNReal.ofReal (1 + β * V y) ∂(κ x)) ∂ξ
+        ≤ ∫⁻ x, ENNReal.ofReal (1 + β * K + β * γ * V x) ∂ξ :=
+          lintegral_mono fun x => drift_weight hdrift hβpos.le x
+      _ = _ := lintegral_affine_ofReal (by nlinarith [mul_nonneg hβpos.le hK])
+                (mul_nonneg hβpos.le hγ0.le) hVm hVnn _
+  -- Markov's inequality on the smaller of the two level-set masses
+  have hmark : ENNReal.ofReal R * (jPos μ ν) Set.univ
+      ≤ ENNReal.ofReal R * mL
+        + ((∫⁻ x, ENNReal.ofReal (V x) ∂(jPos μ ν))
+            + ∫⁻ x, ENNReal.ofReal (V x) ∂(jPos ν μ)) := by
+    rcases min_cases ((jPos μ ν) {x | V x ≤ R}) ((jPos ν μ) {x | V x ≤ R}) with
+      ⟨he, _⟩ | ⟨he, _⟩
+    · rw [hmL, he]
+      exact le_trans (markov_level hVm hVnn hRpos.le _) (add_le_add le_rfl le_self_add)
+    · rw [hmL, he, jPos_mass_eq μ ν]
+      exact le_trans (markov_level hVm hVnn hRpos.le _) (add_le_add le_rfl le_add_self)
+  -- the two distances, in the mass/`V` coordinates
+  have hWmu : weightedTV β V μ ν
+      = ((jPos μ ν) Set.univ + ENNReal.ofReal β * ∫⁻ x, ENNReal.ofReal (V x) ∂(jPos μ ν))
+        + ((jPos μ ν) Set.univ
+            + ENNReal.ofReal β * ∫⁻ x, ENNReal.ofReal (V x) ∂(jPos ν μ)) := by
+    rw [weightedTV_eq β hVm μ ν, lintegral_affine_ofReal zero_le_one hβpos.le hVm hVnn,
+      lintegral_affine_ofReal zero_le_one hβpos.le hVm hVnn, ENNReal.ofReal_one, one_mul,
+      one_mul, ← jPos_mass_eq μ ν]
+  -- the doubled minorization mass is finite, so it can be cancelled at the end
+  have hmLne : mL ≠ ⊤ :=
+    ne_top_of_le_ne_top (measure_ne_top (jPos μ ν) _) (by rw [hmL]; exact min_le_left _ _)
+  have hfin : ENNReal.ofReal α * mL + ENNReal.ofReal α * mL ≠ ⊤ :=
+    ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top ENNReal.ofReal_ne_top hmLne,
+      ENNReal.mul_ne_top ENNReal.ofReal_ne_top hmLne⟩
+  rw [weightedTV_eq β hVm (μ.bind κ) (ν.bind κ), hWmu]
+  refine (ENNReal.add_le_add_iff_right hfin).1 ?_
+  calc ((∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂(jPos (μ.bind κ) (ν.bind κ)))
+          + ∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂(jPos (ν.bind κ) (μ.bind κ)))
+        + (ENNReal.ofReal α * mL + ENNReal.ofReal α * mL)
+      ≤ ((∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂(jPos (μ.bind κ) (ν.bind κ)))
+            + ∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂m)
+          + ((∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂(jPos (ν.bind κ) (μ.bind κ)))
+            + ∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂m) := by
+        have hrw : ((∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂(jPos (μ.bind κ) (ν.bind κ)))
+              + ∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂(jPos (ν.bind κ) (μ.bind κ)))
+              + (ENNReal.ofReal α * mL + ENNReal.ofReal α * mL)
+            = ((∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂(jPos (μ.bind κ) (ν.bind κ)))
+                + ENNReal.ofReal α * mL)
+              + ((∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂(jPos (ν.bind κ) (μ.bind κ)))
+                + ENNReal.ofReal α * mL) := by ring
+        rw [hrw]
+        exact add_le_add (add_le_add le_rfl hJm) (add_le_add le_rfl hJm)
+    _ ≤ (∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂((jPos μ ν).bind κ))
+          + ∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂((jPos ν μ).bind κ) := add_le_add hintA hintB
+    _ ≤ (ENNReal.ofReal (1 + β * K) * (jPos μ ν) Set.univ
+            + ENNReal.ofReal (β * γ) * ∫⁻ x, ENNReal.ofReal (V x) ∂(jPos μ ν))
+          + (ENNReal.ofReal (1 + β * K) * (jPos μ ν) Set.univ
+            + ENNReal.ofReal (β * γ) * ∫⁻ x, ENNReal.ofReal (V x) ∂(jPos ν μ)) := by
+        refine add_le_add (hdriftint (jPos μ ν)) ?_
+        rw [jPos_mass_eq μ ν]
+        exact hdriftint (jPos ν μ)
+    _ ≤ _ := harris_num hβpos hγ0 hK hRpos hα0 hᾱpos hᾱ1 hᾱ2 _ _ _ _ hmark
+
 /-- **Harris contraction** (Hairer–Mattingly Theorem 1.3): under a Lyapunov drift and a
 minorization on a high enough level set, the kernel contracts the weighted TV distance
 `weightedTV β V` for a suitable `β > 0`, uniformly over initial laws. -/
@@ -474,7 +736,46 @@ theorem harris_contraction {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ}
       ∀ μ ν : Measure S, IsProbabilityMeasure μ → IsProbabilityMeasure ν →
         weightedTV β V (μ.bind κ) (ν.bind κ)
           ≤ ENNReal.ofReal ᾱ * weightedTV β V μ ν := by
-  sorry
+  obtain ⟨hγ0, hγ1⟩ := hdrift.gamma_mem
+  obtain ⟨hα0, hα1⟩ := hmin.alpha_mem
+  have hK := hdrift.K_nonneg
+  have h1γ : (0:ℝ) < 1 - γ := by linarith
+  have hRpos : (0:ℝ) < R := lt_of_le_of_lt (by positivity) hR
+  have hKR : 2 * K < R * (1 - γ) := by rw [div_lt_iff₀ h1γ] at hR; linarith
+  -- the admissible window `2α/(R(1−γ)) < β < α/K` is nonempty *exactly* under `hR`
+  obtain ⟨b0, hb0pos, hb0K, hb0R⟩ :
+      ∃ b : ℝ, 0 < b ∧ b * K < α ∧ b * (R * (1 - γ)) = 2 * α := by
+    have hne : R * (1 - γ) ≠ 0 := (mul_pos hRpos h1γ).ne'
+    refine ⟨2 * α / (R * (1 - γ)), div_pos (by linarith) (mul_pos hRpos h1γ), ?_, by field_simp⟩
+    rw [div_mul_eq_mul_div, div_lt_iff₀ (mul_pos hRpos h1γ)]
+    nlinarith [mul_lt_mul_of_pos_left hKR hα0]
+  obtain ⟨β, hβpos, hβK, hβR⟩ :
+      ∃ β : ℝ, 0 < β ∧ β * K < α ∧ 2 * α < β * (R * (1 - γ)) := by
+    have hE : (0:ℝ) < α - b0 * K := by linarith
+    have hd : (0:ℝ) < (α - b0 * K) / (2 * (K + 1)) := div_pos hE (by linarith)
+    refine ⟨b0 + (α - b0 * K) / (2 * (K + 1)), by linarith, ?_, ?_⟩
+    · have hlt : (α - b0 * K) / (2 * (K + 1)) * K < α - b0 * K := by
+        rw [div_mul_eq_mul_div, div_lt_iff₀ (by linarith : (0:ℝ) < 2 * (K + 1))]
+        nlinarith
+      rw [add_mul]
+      linarith
+    · rw [add_mul, hb0R]
+      nlinarith [mul_pos hd (mul_pos hRpos h1γ)]
+  obtain ⟨ᾱ, hᾱ1, hᾱ2, hᾱpos, hᾱlt⟩ :
+      ∃ a : ℝ, 1 + β * K - α ≤ a ∧ γ + 2 * α / (β * R) ≤ a ∧ 0 < a ∧ a < 1 := by
+    refine ⟨max (1 + β * K - α) (γ + 2 * α / (β * R)), le_max_left _ _, le_max_right _ _, ?_, ?_⟩
+    · refine lt_of_lt_of_le ?_ (le_max_right _ _)
+      have : (0:ℝ) < 2 * α / (β * R) := div_pos (by linarith) (mul_pos hβpos hRpos)
+      linarith
+    · refine max_lt (by linarith) ?_
+      have hlt : 2 * α / (β * R) < 1 - γ := by
+        rw [div_lt_iff₀ (mul_pos hβpos hRpos)]
+        nlinarith
+      linarith
+  refine ⟨β, ᾱ, hβpos, hᾱpos, hᾱlt, fun μ ν hμ hν => ?_⟩
+  haveI := hμ
+  haveI := hν
+  exact harris_contraction_aux hdrift hmin hβpos hᾱpos hRpos hᾱ1 hᾱ2 μ ν
 
 -- ## REFUTATION of `harris_theorem` against the *old* Bochner drift (historical record)
 --
@@ -751,19 +1052,6 @@ private theorem level_set_pos {κ : Kernel S S} [IsMarkovKernel κ] {V : S → �
   have hKR : 2 * K < R * (1 - γ) := by rw [div_lt_iff₀ h1γ] at hR; linarith
   nlinarith [hRc, hTbound, hcpos, h1γ, hKR, hK]
 
-
--- The minorization, integrated: one step from any initial law dominates `α·ρ` on the mass that
--- the law puts on the level set.
-private theorem minorize_bind {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ} {R α : ℝ}
-    {ρ : Measure S} (hmin : HasMinorization κ V R α ρ)
-    (ξ : Measure S) {A : Set S} (hA : MeasurableSet A) :
-    ENNReal.ofReal α * ρ A * ξ {x | V x ≤ R} ≤ (ξ.bind κ) A := by
-  rw [Measure.bind_apply hA κ.aemeasurable]
-  calc ENNReal.ofReal α * ρ A * ξ {x | V x ≤ R}
-      = ∫⁻ _ in {x | V x ≤ R}, ENNReal.ofReal α * ρ A ∂ξ := (setLIntegral_const _ _).symm
-    _ ≤ ∫⁻ x in {x | V x ≤ R}, κ x A ∂ξ :=
-        setLIntegral_mono (κ.measurable_coe hA) fun x hx => hmin.minorize x hx A hA
-    _ ≤ ∫⁻ x, κ x A ∂ξ := setLIntegral_le_lintegral _ _
 
 /-- **Uniqueness** of the invariant law under the Harris hypotheses. -/
 theorem harris_invariant_unique {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ}
