@@ -14,6 +14,10 @@ These are the arithmetic engine behind the discrete orthonormality of the trigon
 at the regular design — the fact that makes coefficient estimates at design points behave like
 genuine Fourier coefficients.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.7.2 (roots-of-unity sums behind the discrete
+orthogonality of Lemma 1.7).
+
 **Proof formalization notes.** Pass to the complex exponential: the sums are the real and
 imaginary parts of the geometric sum `∑_{s=1}^n ζ^s` with `ζ = exp(2πi·m/n)`. For `n ∤ m` one
 has `ζ ≠ 1` and `ζ^n = 1`, so `∑_{s=0}^{n-1} ζ^s = (ζ^n − 1)/(ζ − 1) = 0`

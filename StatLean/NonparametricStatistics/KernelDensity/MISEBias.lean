@@ -14,6 +14,10 @@ $$ \Bigl|\ \int b^2(x)\,dx \;-\; \frac{h^4}{4}\,S_K^2 \int w^2 \ \Bigr| \;\le\; 
    \qquad (0 < h < h_0(\varepsilon)),\qquad S_K = \int u^2 K(u)\,du. $$
 This is the bias half of the exact asymptotic MISE: as `h → 0`, `∫b² ~ (h⁴/4)·S_K²·∫w²`.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.2.3, Proposition 1.6 (bias half of the exact
+asymptotic MISE; proof in the Appendix, Proposition A.1).
+
 **Proof formalization notes.** From the order-`2` integral remainder (with `ℓ = 2` playing the
 role of `holderIndex` at `β = 2`),
 `b(x) = h²∫u²K(u)∫₀¹(1−τ)·w(x+τuh) dτ du` (a.e. `x`); compare with the constant-`w` surrogate

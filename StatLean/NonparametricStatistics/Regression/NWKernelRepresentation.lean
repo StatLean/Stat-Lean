@@ -15,6 +15,10 @@ where `p̂ₙ(x, y)` is the bivariate product-kernel estimate from the pairs `(X
 `p̂ₙ(x)` the marginal estimate from the `Xᵢ`. This identifies the locally-weighted average as
 the natural estimator of `E[Y | X = x] = ∫y·p(x,y)dy / p(x)`.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.5, Proposition 1.10 (the Nadaraya–Watson
+estimator as a ratio of kernel density estimators).
+
 **Proof formalization notes.** A purely algebraic/deterministic identity in the data vectors
 (no probability): compute
 `∫ y·K((Yᵢ−y)/h) dy = h·(Yᵢ·∫K − h·∫uK) = h·Yᵢ` by the change of variables `y = Yᵢ − hu`

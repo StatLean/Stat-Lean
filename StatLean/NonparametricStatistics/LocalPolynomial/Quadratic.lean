@@ -10,6 +10,10 @@ local design matrix, the inverse bound from the eigenvalue hypothesis, normal eq
 uniqueness of the minimiser, agreement of the closed-form weights with the minimiser, and
 linearity of the estimator.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.6, Proposition 1.11 (the LP estimator is
+linear) with the normal equations (1.66) and the inverse bound (1.70).
+
 **Proof formalization notes.** Expanding the square,
 `lpObjective θ = ∑ Yᵢ²Kᵢ − 2·(nh)·⟨θ, a_t⟩ + (nh)·⟨θ, B_t θ⟩`; when `B_t ≻ 0` this strictly
 convex quadratic has the unique stationary point `B_t θ = a_t`. `lpEstimator` is by

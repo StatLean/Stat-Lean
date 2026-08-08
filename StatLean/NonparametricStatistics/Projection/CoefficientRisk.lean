@@ -20,6 +20,11 @@ by discrete orthonormality.
 Also here: elementary facts about `seriesFun` under absolute summability of the coefficients
 (uniform bound, square-summability), used across the projection risk files.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.7.2, Proposition 1.16 (mean and squared error
+of the coefficient estimators: $\mathbf{E}\hat\theta_j = \theta_j + \alpha_j$,
+$\mathbf{E}(\hat\theta_j - \theta_j)^2 = \sigma^2/n + \alpha_j^2$).
+
 **Proof formalization notes.** The mean is linearity plus `E ξᵢ = 0` (noise integrability is
 *derived* from the second-moment equality: a finite `∫⁻ ξ²` forces `MemLp 2`, hence `L¹` on a
 probability space). The variance uses independence to reduce to

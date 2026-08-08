@@ -16,6 +16,10 @@ which is equivalent to the multiplicative form because `A(n,h) ≍ (nh)⁻¹ + h
 coefficients `∫K² > 0` and `S_K²∫(p'')² > 0` are bounded away from zero; the equivalence is
 recorded in the batch ledger).
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.2.3, Proposition 1.6 (exact asymptotic MISE;
+proof in the Appendix, Proposition A.1).
+
 **Proof formalization notes.** MISE decomposes exactly as `∫b² + ∫σ²`
 (`kdeMise_eq_integrated`, Tonelli plus the a.e.-`x` bias–variance decomposition); the variance
 part is pinned by `kde_integrated_variance_le` / `kde_integrated_variance_ge` (correction

@@ -16,6 +16,10 @@ Contents:
   `|∫ K(u)·f(x₀+uh) du − f(x₀)| ≤ C₂·h^β`;
 * `kde_bias_abs_le` — the probabilistic statement for the estimator's bias.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.2.1, Proposition 1.2 (pointwise bias bound on
+$\mathcal{P}(\beta, L)$, constant $C_2 = \frac{L}{\ell!}\int |u|^{\beta}|K(u)|\,du$).
+
 **Proof formalization notes.** Write `∫K(u)f(x₀+uh)du − f(x₀) = ∫K(u)·(f(x₀+uh) − f(x₀))du`
 using `∫K = 1`; insert the order-`ℓ` Taylor polynomial: the vanishing moments kill every term
 `f⁽ʲ⁾(x₀)·hʲ·∫uʲK`, `1 ≤ j ≤ ℓ` (and the `j = 0` term cancels with `f(x₀)`), leaving the

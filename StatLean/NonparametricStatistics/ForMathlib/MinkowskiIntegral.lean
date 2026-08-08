@@ -15,6 +15,10 @@ $$ \Bigl(\int \Bigl(\int g(u,x)\,d\mu(u)\Bigr)^2 d\nu(x)\Bigr)^{1/2}
 continuous analogue of the triangle inequality, used to push `L²` moduli of continuity through
 kernel-weighted integrals in the integrated-bias analysis of kernel estimators.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.2.3, Lemma 1.1 (generalized Minkowski
+inequality; proof in the Appendix, Lemma A.1).
+
 **Proof formalization notes.** Stated for `ℝ≥0∞`-valued integrands (the applications are
 absolute values of real functions, inserted via `ENNReal.ofReal`), so no integrability side
 conditions are needed. Proof route: the classical `L²` duality argument — for `S(x) = ∫ g(u,x)

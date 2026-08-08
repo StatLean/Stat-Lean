@@ -12,6 +12,10 @@ $$ \mathbb E\bigl[\ \|\hat f_n - f\|_\infty^2\ \bigr]
 uniformly over the class — the pointwise rate deteriorates by exactly a `log n` factor, the
 classical price of the supremum (and this rate is optimal for sup-norm loss).
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.6.2, Theorem 1.8 (sup-norm rate $(\log n /
+n)^{\beta/(2\beta+1)}$ of the local polynomial estimator).
+
 **Proof formalization notes.** Split
 `‖f̂ − f‖∞² ≤ 2·(sup_t |∑ᵢ ξᵢW*ᵢ(t)|)² + 2·(sup_t |bias(t)|)²`: the bias sup is
 `q₁·h^β` pointwise-uniformly (`lp_bias_deterministic`), the stochastic sup is

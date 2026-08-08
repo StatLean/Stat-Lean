@@ -28,8 +28,10 @@ regular design, and the Sobolev-type classes of its risk analysis:
 * `riemannResidual θ n j` — the Riemann-sum residual `αⱼ = n⁻¹∑ᵢ f(i/n)φⱼ(i/n) − θⱼ` for
   `f = seriesFun θ`; `tailEnergy θ N = ∑_{j>N} θⱼ²` — the squared-bias tail.
 
-**Reference.** Classical orthogonal series estimation; original sources in the bibliographic
-comments below.
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.7: Definition 1.9 (projection estimator);
+§1.7.1: Definitions 1.11–1.12 (Sobolev classes $W(\beta, L)$, $W^{\mathrm{per}}$) and the
+ellipsoid $\Theta(\beta, Q)$, Eqs. (1.90)–(1.91).
 
 **Proof formalization notes.**
 

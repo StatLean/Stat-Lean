@@ -17,6 +17,10 @@ The bridge between sample-space expectations and Lebesgue integrals against the 
 These lemmas are the only place where `HasLaw`/`withDensity` plumbing appears; all risk files
 consume the clean integral forms.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.2 (sampling-model bookkeeping for the i.i.d.
+density model underlying Propositions 1.1–1.6).
+
 **Proof formalization notes.** Bochner transfer: `HasLaw.integral_comp` +
 `integral_withDensity_eq_integral_toReal_smul` (plus `ENNReal.toReal_ofReal` on the
 nonnegative density). Lower-Lebesgue transfer: `HasLaw.lintegral_comp`-style map lemma +

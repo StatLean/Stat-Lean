@@ -12,6 +12,10 @@ $$ \mathbb E\,\|\hat f_n - f\|_2^2 \;\le\; C\,n^{-\frac{2\beta}{2\beta+1}},
    \qquad \|g\|_2^2 = \int_0^1 g^2(t)\,dt, $$
 with the same explicit constant as the pointwise bound.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.6.1, Corollary 1.2 ($L^2$ rate of the local
+polynomial estimator).
+
 **Proof formalization notes.** Tonelli swaps the sample-space and `t` integrals; the pointwise
 MSE bound (`lp_pointwise_rate`) is uniform over `t ∈ [0,1]`, and `volume (Icc 0 1) = 1`, so
 integrating costs nothing. Everything stays in `∫⁻`, so no measurability of the risk in `t`
