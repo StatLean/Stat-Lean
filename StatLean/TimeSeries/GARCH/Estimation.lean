@@ -195,16 +195,24 @@ private theorem presample_stable_rate_false :
 
 /-- **The truncation is asymptotically negligible** (the fact that makes (4.36) usable):
 under `Σ a_j < 1` the effect of the presample value decays geometrically, so two
-presample choices give criteria differing by `O(ρ^ν)`. -/
+presample choices give criteria differing by `O(ρ^ν)` for **some** rate `ρ < 1`.
+
+**Rate repaired 2026-08-09.** The statement previously claimed the rate `Σ a_j`; that is
+false for `q ≥ 2` with mass on the higher lags, since the recursion contracts at the
+dominant root `ρ` of `ρ^q = Σ_j a_j ρ^{q−1−j}`, which exceeds `Σ a_j`. The witness
+`a = (0, 9/10)` is formalized just above (`presample_stable_rate_false`). Only the
+existence of *a* geometric rate is used downstream, so the rate is now existentially
+quantified. -/
 theorem garchTruncVol_presample_stable {p q : ℕ} {c0 : ℝ} {b : Fin p → ℝ}
     {a : Fin q → ℝ} (hc0 : 0 ≤ c0) (hb : ∀ i, 0 ≤ b i) (ha : ∀ j, 0 ≤ a j)
     (hsum : (∑ j, a j) < 1) {v0 v1 : ℝ} (hv0 : 0 ≤ v0) (hv1 : 0 ≤ v1)
     {T : ℕ} (x : Fin T → ℝ) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ n : ℕ,
-      |garchTruncVol c0 b a v0 x n - garchTruncVol c0 b a v1 x n|
-        ≤ C * (∑ j, a j) ^ n := by
-  -- DEBT (reported loudly): **FALSE as frozen**, with a machine-checked witness —
-  -- see `presample_stable_rate_false` just above.
+    ∃ C ρ : ℝ, 0 ≤ C ∧ 0 ≤ ρ ∧ ρ < 1 ∧ ∀ n : ℕ,
+      |garchTruncVol c0 b a v0 x n - garchTruncVol c0 b a v1 x n| ≤ C * ρ ^ n := by
+  -- The statement has been repaired (see the docstring); the rate is now existential,
+  -- so the intended proof runs: `D n ≤ Σⱼ aⱼ · D (n − j)` with `Σ a < 1` gives
+  -- geometric decay at the dominant characteristic root. Left as a named debt for a
+  -- sweep lane.
   --
   -- The mathematics FY intends is correct: writing `D n` for the discrepancy, the `c₀`
   -- and data terms cancel and `D (n+1) ≤ ∑_j a_j · D (n - j)`, so `D` is dominated by the
