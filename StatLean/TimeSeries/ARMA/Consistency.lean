@@ -1575,6 +1575,7 @@ private lemma gramTail_quadForm_tendstoInProb [IsProbabilityMeasure μ] {p q : �
     nlinarith [h4]
   exact key _ ENNReal.toReal_nonneg hle
 
+open Matrix in
 /-- **The one missing analytic input of this lane** (named debt): the *quadratic-form
 law of large numbers*
 
@@ -1594,14 +1595,24 @@ statistic does not need it. The route, and what is actually left:
 * **(A) deterministic half — PROVED** as `armaProfileS_eq_gramTail_quadForm`:
   `S_T = uᵀ (1 + G_T)⁻¹ u` with `u = Π_T x` the vector of truncated `θ`-residuals.
   Writing `(1 + G)⁻¹ = 1 − (1 + G)⁻¹G` splits this into `‖u‖² − uᵀ (1+G)⁻¹G u`.
-* **(B) the correction term.** `(1+G)⁻¹G` is positive semidefinite, so
-  `E[uᵀ (1+G)⁻¹G u] = tr((1+G)⁻¹G · Cov u) ≤ ‖Cov u‖_op · tr G_T`, and `tr G_T ≤ K`
-  uniformly in `T` is PROVED (`trace_gramTail_le`). Markov then makes `T⁻¹ ·` this
-  term vanish in probability. MISSING: the trace inequality `tr(AB) ≤ ‖A‖_op tr B`
-  for psd `B`, and a uniform operator-norm bound on `Cov u = σ² Π_T Γ_T(θ₀) Π_Tᵀ`
-  (Schur test on the absolutely summable `π(θ)` and the bounded spectral density of
-  `θ₀` — `summable_abs_armaPi` and `summable_abs_armaACVF` are both available).
-* **(C) `T⁻¹‖u‖² →p σ² Σ_j c_j²` — ergodic-theorem-free.** Truncate the composite
+* **(B) the correction term — PROVED** as `gramTail_quadForm_tendstoInProb`, and the
+  deterministic sandwich it feeds is `armaProfileS_sandwich`:
+  `‖u‖² − uᵀ G_T u ≤ S_T ≤ ‖u‖²`. Two amendments to the plan recorded above were
+  needed, and both simplify it:
+  - the positive semidefiniteness of `(1+G)⁻¹G` is **not** needed, and neither is any
+    eigenbasis: substituting `x = (1+G)y` turns both halves of the sandwich into the
+    polynomial identities `b + c ≥ 0`, `c + d ≥ 0` (`quadForm_one_add_inv_bounds`);
+  - the trace inequality `tr(AB) ≤ ‖A‖_op tr B` is **not** needed either. For psd `M`
+    one has `|M_ij| ≤ (M_ii + M_jj)/2` (`abs_entry_le_of_posSemidef`), which already
+    redistributes the pairing onto the diagonal:
+    `tr(M S) ≤ (max_i Σ_j |S_ij|) · tr M` (`sum_entry_mul_le_of_posSemidef`). This
+    Schur test is what the row sums of `E[u_i u_j] = σ² Σ_{k,l} π̃(i,k) π̃(j,l) γ(k−l)`
+    feed, via `summable_abs_armaPi` and `summable_abs_armaACVF` exactly as predicted
+    (`rowSum_kernel_le`). Since `Cov u` never appears as an operator, no bound on it is
+    needed; the second-moment matrix is used directly, and its mean-zero input
+    (`integral_linearProcess_eq_zero`, `integral_mul_linearProcess`) is proved here.
+* **(C) — THE ONLY REMAINING GAP**, isolated below as the single `sorry` `hCLLN`:
+  `T⁻¹‖u‖² →p σ² Σ_j c_j²` — ergodic-theorem-free. Truncate the composite
   filter at lag `m`. Along each arithmetic progression `t ≡ k (mod m)` the truncated
   squares `(r_t^{(m)})²` depend on *disjoint* windows of the iid noise, so they are
   genuinely independent and identically distributed, and integrable (two moments on
@@ -1623,7 +1634,68 @@ theorem armaProfileS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
         |(T : ℝ)⁻¹ * armaProfileS b a (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
           - σ2 * armaContrastVar b0 a0 b a|}).toReal)
       atTop (𝓝 0) := by
-  sorry
+  -- **(C)** — the residual sum of squares LLN; the single remaining gap, see above.
+  have hCLLN : ∀ η' : ℝ, 0 < η' → Tendsto (fun T : ℕ => (μ {ω | η' ≤
+      |(T : ℝ)⁻¹ * ((piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+          (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+        - σ2 * armaContrastVar b0 a0 b a|}).toReal) atTop (𝓝 0) := by
+    sorry
+  -- **(B)** — the correction term, proved above.
+  have hB2 := gramTail_quadForm_tendstoInProb (b0 := b0) (a0 := a0) h.whiteNoise (le_of_lt hσ)
+    hB0 hB hcausal hmeas (η := η / 2) (by linarith)
+  have hsum : Tendsto (fun T : ℕ =>
+      (μ {ω | η / 2 ≤
+        |(T : ℝ)⁻¹ * ((piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+            (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+          - σ2 * armaContrastVar b0 a0 b a|}).toReal
+      + (μ {ω | η / 2 ≤ (T : ℝ)⁻¹ *
+          ((piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+            (gramTail b a T *ᵥ
+              (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)))}).toReal)
+      atTop (𝓝 0) := by
+    simpa using (hCLLN (η / 2) (by linarith)).add hB2
+  refine squeeze_zero' (Eventually.of_forall fun T => ENNReal.toReal_nonneg) ?_ hsum
+  filter_upwards with T
+  -- the sandwich turns the event into the union of the two events above
+  have hsub : {ω | η ≤
+        |(T : ℝ)⁻¹ * armaProfileS b a (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+          - σ2 * armaContrastVar b0 a0 b a|}
+      ⊆ {ω | η / 2 ≤
+          |(T : ℝ)⁻¹ * ((piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+              (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+            - σ2 * armaContrastVar b0 a0 b a|}
+        ∪ {ω | η / 2 ≤ (T : ℝ)⁻¹ *
+            ((piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+              (gramTail b a T *ᵥ
+                (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)))} := by
+    intro ω hω
+    simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+    by_contra hcon
+    push Not at hcon
+    obtain ⟨h1, h2⟩ := hcon
+    obtain ⟨hup, hlow⟩ :=
+      armaProfileS_sandwich hB T (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+    have hTnn : (0 : ℝ) ≤ (T : ℝ)⁻¹ := by positivity
+    have hup' := mul_le_mul_of_nonneg_left hup hTnn
+    have hlow' := mul_le_mul_of_nonneg_left hlow hTnn
+    rw [mul_sub] at hlow'
+    have habs := abs_lt.1 h1
+    rcases le_abs.1 hω with hcase | hcase <;> linarith [habs.1, habs.2]
+  calc (μ {ω | η ≤
+        |(T : ℝ)⁻¹ * armaProfileS b a (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+          - σ2 * armaContrastVar b0 a0 b a|}).toReal
+      ≤ (μ ({ω | η / 2 ≤
+          |(T : ℝ)⁻¹ * ((piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+              (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+            - σ2 * armaContrastVar b0 a0 b a|}
+        ∪ {ω | η / 2 ≤ (T : ℝ)⁻¹ *
+            ((piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+              (gramTail b a T *ᵥ
+                (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)))})).toReal :=
+        ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono hsub)
+    _ ≤ _ := by
+        refine le_trans (ENNReal.toReal_mono (by finiteness) (measure_union_le _ _)) ?_
+        exact le_of_eq (ENNReal.toReal_add (measure_ne_top μ _) (measure_ne_top μ _))
 
 /-- **Pointwise LLN for the profiled criterion**: at each fixed `θ` in the constraint
 set, `armaProfileCriterion θ (data_T) →p log(σ² · armaContrastVar θ₀ θ)` under the
