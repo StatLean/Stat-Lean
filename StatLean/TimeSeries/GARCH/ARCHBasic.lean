@@ -150,6 +150,23 @@ private lemma memLp_sq_of_memLp_four [IsProbabilityMeasure μ] {f : Ω → ℝ}
   change f ω ^ 4 = (f ω ^ 2) ^ 2
   ring
 
+/-- Strict stationarity passes to the squared process (a fixed measurable map applied
+coordinatewise to every finite-dimensional distribution). -/
+private lemma strictlyStationary_sq {X : ℤ → Ω → ℝ} (hstat : IsStrictlyStationary X μ)
+    (hm : ∀ t, Measurable (X t)) : IsStrictlyStationary (fun t ω => X t ω ^ 2) μ := by
+  intro n tt k
+  have hsq : Measurable fun q : Fin n → ℝ => fun i => q i ^ 2 :=
+    measurable_pi_lambda _ fun i => (measurable_pi_apply i).pow_const 2
+  have e : ∀ c : ℤ, (μ.map fun ω (i : Fin n) => X (tt i + c) ω ^ 2)
+      = (μ.map fun ω (i : Fin n) => X (tt i + c) ω).map fun q i => q i ^ 2 := fun c => by
+    rw [Measure.map_map hsq (measurable_pi_lambda _ fun i => hm (tt i + c))]
+    rfl
+  have e0 : (μ.map fun ω (i : Fin n) => X (tt i) ω ^ 2)
+      = (μ.map fun ω (i : Fin n) => X (tt i) ω).map fun q i => q i ^ 2 := by
+    rw [Measure.map_map hsq (measurable_pi_lambda _ fun i => hm (tt i))]
+    rfl
+  rw [e k, e0, hstat n tt k]
+
 /-- **`E X_t² = E σ_t²`**: the innovation is independent of the volatility and has unit
 second moment. -/
 private lemma integral_sq_eq_archVol [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
@@ -522,7 +539,100 @@ theorem IsARCH.acf_sq_arch_one [IsProbabilityMeasure μ] {c0 b1 : ℝ}
     -- USER-INPUT: nondegenerate squared process; FY Example 4.1
     (hvar : 0 < variance (fun ω => X 0 ω ^ 2) μ) (τ : ℤ) :
     acf (fun t ω => X t ω ^ 2) μ τ = b1 ^ τ.natAbs := by
-  sorry
+  have hmY : ∀ t : ℤ, Measurable fun ω => X t ω ^ 2 := fun t => (h.measurableX t).pow_const 2
+  have hY2 : ∀ t : ℤ, MemLp (fun ω => X t ω ^ 2) 2 μ := fun t =>
+    memLp_sq_of_memLp_four (h.measurableX t) (hL4 t)
+  have hYint : ∀ t : ℤ, Integrable (fun ω => X t ω ^ 2) μ := fun t =>
+    (hY2 t).integrable one_le_two
+  have hEY : ∀ t : ℤ, ∫ ω, X t ω ^ 2 ∂μ = ∫ ω, X 0 ω ^ 2 ∂μ := fun t => by
+    simpa [Function.comp_def] using
+      ((hstat.identDistrib h.measurableX t 0).comp (measurable_id.pow_const 2)).integral_eq
+  -- The ARCH(1) volatility, in closed form.
+  have hvolsq : ∀ (t : ℤ) (ω : Ω),
+      archVol c0 (fun _ : Fin 1 => b1) X t ω ^ 2 = c0 + b1 * X (t - 1) ω ^ 2 := by
+    intro t ω
+    rw [archVol_sq h.c0_nonneg h.b_nonneg]
+    simp
+  -- The stationary second moment solves `m = c₀ + b₁ m`.
+  have hm_fix : (∫ ω, X 0 ω ^ 2 ∂μ) = c0 + b1 * ∫ ω, X 0 ω ^ 2 ∂μ := by
+    have h1 : (∫ ω, X 0 ω ^ 2 ∂μ)
+        = ∫ ω, archVol c0 (fun _ : Fin 1 => b1) X 0 ω ^ 2 ∂μ := integral_sq_eq_archVol h 0
+    have h2 : ∫ ω, archVol c0 (fun _ : Fin 1 => b1) X 0 ω ^ 2 ∂μ
+        = c0 + b1 * ∫ ω, X 0 ω ^ 2 ∂μ := by
+      have he : (fun ω => archVol c0 (fun _ : Fin 1 => b1) X 0 ω ^ 2)
+          = fun ω => c0 + b1 * X (0 - 1) ω ^ 2 := funext fun ω => hvolsq 0 ω
+      rw [he, integral_add (integrable_const c0) ((hYint (0 - 1)).const_mul _),
+        integral_const_mul, hEY (0 - 1)]
+      simp
+    exact h1.trans h2
+  -- The cross moment recursion at positive lags.
+  have hprod : ∀ k : ℤ, 0 < k →
+      ∫ ω, X k ω ^ 2 * X 0 ω ^ 2 ∂μ
+        = c0 * (∫ ω, X 0 ω ^ 2 ∂μ) + b1 * ∫ ω, X (k - 1) ω ^ 2 * X 0 ω ^ 2 ∂μ := by
+    intro k hk
+    have hle : sigmaLT X k ≤ (inferInstance : MeasurableSpace Ω) := sigmaLT_le h.measurableX k
+    have hvolM : Measurable (archVol c0 (fun _ : Fin 1 => b1) X k) :=
+      (measurable_archVol_sigmaLT (c0 := c0) (b := fun _ : Fin 1 => b1) (X := X) k).mono
+        hle le_rfl
+    have hfm : Measurable[sigmaLT X k]
+        fun ω => archVol c0 (fun _ : Fin 1 => b1) X k ω ^ 2 * X 0 ω ^ 2 :=
+      ((measurable_archVol_sigmaLT k).pow_const 2).mul ((measurable_sigmaLT hk).pow_const 2)
+    have hIF : IndepFun (fun ω => archVol c0 (fun _ : Fin 1 => b1) X k ω ^ 2 * X 0 ω ^ 2)
+        (fun ω => ε k ω ^ 2) μ :=
+      (indepFun_of_sigmaLT (h.indep_past k) hfm).comp measurable_id
+        (measurable_id.pow_const 2)
+    have hae : (fun ω => X k ω ^ 2 * X 0 ω ^ 2) =ᵐ[μ] fun ω =>
+        (archVol c0 (fun _ : Fin 1 => b1) X k ω ^ 2 * X 0 ω ^ 2) * ε k ω ^ 2 := by
+      filter_upwards [h.recurrence k] with ω hω
+      rw [hω]; ring
+    have hstep : ∫ ω, X k ω ^ 2 * X 0 ω ^ 2 ∂μ
+        = ∫ ω, archVol c0 (fun _ : Fin 1 => b1) X k ω ^ 2 * X 0 ω ^ 2 ∂μ := by
+      rw [integral_congr_ae hae, hIF.integral_fun_mul_eq_mul_integral
+        ((hvolM.pow_const 2).mul (hmY 0)).aestronglyMeasurable
+        ((h.iid.measurable k).pow_const 2).aestronglyMeasurable,
+        integral_sq_iid h.iid k, mul_one]
+    have hprodint : Integrable (fun ω => X (k - 1) ω ^ 2 * X 0 ω ^ 2) μ :=
+      (hY2 (k - 1)).integrable_mul (hY2 0)
+    have he : (fun ω => archVol c0 (fun _ : Fin 1 => b1) X k ω ^ 2 * X 0 ω ^ 2)
+        = fun ω => c0 * X 0 ω ^ 2 + b1 * (X (k - 1) ω ^ 2 * X 0 ω ^ 2) := by
+      funext ω
+      rw [hvolsq]; ring
+    rw [hstep, he, integral_add ((hYint 0).const_mul _) (hprodint.const_mul _),
+      integral_const_mul, integral_const_mul]
+  -- Yule–Walker at `p = 1`.
+  have hcovrec : ∀ k : ℤ, 0 < k → acvf (fun t ω => X t ω ^ 2) μ k
+      = b1 * acvf (fun t ω => X t ω ^ 2) μ (k - 1) := by
+    intro k hk
+    change cov[fun ω => X k ω ^ 2, fun ω => X 0 ω ^ 2; μ]
+      = b1 * cov[fun ω => X (k - 1) ω ^ 2, fun ω => X 0 ω ^ 2; μ]
+    rw [covariance_eq_sub (hY2 k) (hY2 0), covariance_eq_sub (hY2 (k - 1)) (hY2 0)]
+    simp only [Pi.mul_apply]
+    rw [hprod k hk, hEY k, hEY (k - 1)]
+    linear_combination (-(∫ ω, X 0 ω ^ 2 ∂μ)) * hm_fix
+  have hmain : ∀ n : ℕ, acvf (fun t ω => X t ω ^ 2) μ (n : ℤ)
+      = b1 ^ n * acvf (fun t ω => X t ω ^ 2) μ 0 := by
+    intro n
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      have hk : (0 : ℤ) < ((n + 1 : ℕ) : ℤ) := by exact_mod_cast Nat.succ_pos n
+      have hkm : ((n + 1 : ℕ) : ℤ) - 1 = (n : ℤ) := by push_cast; ring
+      rw [hcovrec _ hk, hkm, ih]
+      ring
+  have hg0 : acvf (fun t ω => X t ω ^ 2) μ 0 ≠ 0 := by
+    have : acvf (fun t ω => X t ω ^ 2) μ 0 = variance (fun ω => X 0 ω ^ 2) μ :=
+      covariance_self (hmY 0).aemeasurable
+    rw [this]
+    exact ne_of_gt hvar
+  have hstatY : IsStationary (fun t ω => X t ω ^ 2) μ :=
+    (strictlyStationary_sq hstat h.measurableX).isStationary hmY (hY2 0)
+  rcases Int.natAbs_eq τ with hτ | hτ
+  · rw [acf, hτ]
+    simp only [Int.natAbs_natCast]
+    rw [hmain τ.natAbs, mul_div_assoc, div_self hg0, mul_one]
+  · rw [acf, hτ]
+    simp only [Int.natAbs_neg, Int.natAbs_natCast]
+    rw [hstatY.acvf_even, hmain τ.natAbs, mul_div_assoc, div_self hg0, mul_one]
 
 /-- **FY Example 4.1**, normal-error specialization: for `ε ∼ N(0,1)`, condition (4.16)
 reads `3b₁² < 1`, and then the kurtosis is `κ_x = 3(1 − b₁²)/(1 − 3b₁²)`. -/
