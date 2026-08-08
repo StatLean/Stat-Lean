@@ -152,10 +152,20 @@ structure HasMinorization (κ : Kernel S S) (V : S → ℝ) (R α : ℝ) (ρ : M
 -- Hence `½ ≤ ᾱ · ½` for every admissible `β`, forcing `1 ≤ ᾱ` — no `ᾱ < 1` can work.
 -- `cNoContraction (harris_contraction cDrift cMinorize cHR)` has type `False` (checked).
 --
+-- The defect is *only* about `weightedTV`: every kernel below is a Dirac, so `V` is integrable
+-- at every step and the Bochner/`∫⁻` forms of the drift agree.  The counterexample therefore
+-- survives the drift repair described before `harris_theorem`.
+--
 -- The repair is to define `weightedTV` from the Jordan decomposition of `μ − ν` (equivalently,
--- from a Hahn set for the pair), which is what Hairer–Mattingly's `ρ_β` actually is; the proof
--- then needs the coupling/Kantorovich step as well.  Both are statement-level changes, hence
--- outside this session's frozen touch-set.
+-- from a Hahn set for the pair), which is what Hairer–Mattingly's `ρ_β` actually is.  With that
+-- definition the contraction *is* provable without any coupling step: writing `μ − ν = a − b`
+-- with `a ⊥ b` and `a S = b S = c`, one subtracts the common minorization mass
+-- `m = α·min(a L, b L)·ρ` from both `a.bind κ` and `b.bind κ` (Jordan minimality gives
+-- `a₁ ≤ a.bind κ − m`, `b₁ ≤ b.bind κ − m`), and the drift plus Markov's inequality
+-- `a Lᶜ ≤ (∫V da)/R` close the estimate with
+-- `ᾱ = max (1 + βK − α) (γ + 2α/(βR))` for any `2α/(R(1−γ)) < β < α/K`; such a `β` exists
+-- exactly when `2K/(1−γ) < R`, i.e. under `hR`.  (The equal masses `a S = b S` are what the
+-- `singularPart` version lacks, and are the whole reason the frozen version fails.)
 
 /-- Counterexample data: `V 0 = 0`, `V 1 = 20`, `V n = 11` otherwise. -/
 private noncomputable def cV : ℕ → ℝ := fun n => if n = 0 then 0 else if n = 1 then 20 else 11
