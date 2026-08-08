@@ -1240,6 +1240,192 @@ section Process
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
+/-! ### Step (B): the correction term `T⁻¹ uᵀ G_T u` vanishes in probability
+
+The remaining ingredients of step (B) of the route recorded at
+`armaProfileS_tendstoInProb`. The deterministic bricks are in the `Szego` section above;
+here the second-moment matrix `E[u_i u_j]` of the truncated residual vector is computed
+and Schur-tested, and Markov's inequality finishes. -/
+
+/-- A linear process over white noise has vanishing mean (the `L²` limit of partial sums
+of centred noise). -/
+private lemma integral_linearProcess_eq_zero [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ2 : ℝ}
+    {X ε : ℤ → Ω → ℝ} (hX : IsLinearProcessOf ψ X ε μ) (hψ : Summable fun j => |ψ j|)
+    (hε : IsWhiteNoise ε σ2 μ) (hmeas : ∀ t, Measurable (X t)) (t : ℤ) :
+    ∫ ω, X t ω ∂μ = 0 := by
+  have hmem : MemLp (X t) 2 μ := hX.memLp hψ hε hmeas t
+  have hint : Integrable (X t) μ := hmem.integrable one_le_two
+  have hFmem : ∀ N : ℕ,
+      MemLp (fun ω => ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 2 μ := by
+    intro N
+    exact memLp_finset_sum _ fun j _ => (hε.memLp _).const_mul (ψ j)
+  have hFzero : ∀ N : ℕ, ∫ ω, (∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) ∂μ = 0 := by
+    intro N
+    rw [integral_finset_sum _ fun j _ => ((hε.memLp _).integrable one_le_two).const_mul (ψ j)]
+    refine Finset.sum_eq_zero fun j _ => ?_
+    rw [integral_const_mul, hε.integral_eq_zero, mul_zero]
+  have hL1 : Tendsto (fun N : ℕ => ∫⁻ ω,
+      ‖(∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) - X t ω‖ₑ ∂μ) atTop (𝓝 0) := by
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (hX t)
+      (fun N => zero_le _) fun N => ?_
+    rw [← eLpNorm_one_eq_lintegral_enorm]
+    refine le_trans (eLpNorm_le_eLpNorm_of_exponent_le (p := 1) (q := 2) (by norm_num) ?_) ?_
+    · exact ((hFmem N).sub hmem).aestronglyMeasurable
+    · refine le_of_eq ?_
+      rw [show (fun ω => (∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) - X t ω)
+            = -fun ω => X t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω from by
+          funext ω; simp, eLpNorm_neg]
+  have hlim := tendsto_integral_of_L1 (X t) hint
+    (Eventually.of_forall fun N => (hFmem N).integrable one_le_two) hL1
+  simp only [hFzero] at hlim
+  exact tendsto_nhds_unique hlim tendsto_const_nhds
+
+/-- **The second-moment structure of a linear process**: `E[X_s X_t] = σ² γ(s − t)`, the
+mean being zero. -/
+private lemma integral_mul_linearProcess [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ2 : ℝ}
+    {X ε : ℤ → Ω → ℝ} (hX : IsLinearProcessOf ψ X ε μ) (hψ : Summable fun j => |ψ j|)
+    (hε : IsWhiteNoise ε σ2 μ) (hmeas : ∀ t, Measurable (X t)) (s t : ℤ) :
+    ∫ ω, X s ω * X t ω ∂μ = σ2 * ∑' j : ℕ, ψ j * ψ (j + (s - t).natAbs) := by
+  obtain ⟨hstat, hacvf⟩ := hX.isStationary hψ hε hmeas
+  have hmem : ∀ r, MemLp (X r) 2 μ := fun r => hX.memLp hψ hε hmeas r
+  have hz : ∀ r, ∫ ω, X r ω ∂μ = 0 := fun r =>
+    integral_linearProcess_eq_zero hX hψ hε hmeas r
+  have hidx : t + (s - t) = s := by ring
+  have hshift : cov[X s, X t; μ] = acvf X μ (s - t) := by
+    have h := hstat.cov_shift t (s - t)
+    rwa [hidx] at h
+  have hsub := covariance_eq_sub (μ := μ) (hmem s) (hmem t)
+  rw [hshift, hacvf (s - t)] at hsub
+  have hprod : μ[X s * X t] = ∫ ω, X s ω * X t ω ∂μ := by simp [Pi.mul_apply]
+  rw [hprod, hz s, hz t] at hsub
+  linarith [hsub]
+
+/-- Transporting a finite sum of absolute values into a `tsum` along an injection. -/
+private lemma finsum_abs_le_tsum {T : ℕ} {ι : Type*} [DecidableEq ι] (F : Fin T → ℝ)
+    (g : ι → ℝ) (f : Fin T → ι) (hs : Summable g) (hg : ∀ n, 0 ≤ g n) (s : Finset (Fin T))
+    (hzero : ∀ i, i ∉ s → F i = 0) (hbd : ∀ i ∈ s, |F i| ≤ g (f i))
+    (hinj : ∀ i ∈ s, ∀ j ∈ s, f i = f j → i = j) :
+    ∑ i : Fin T, |F i| ≤ ∑' n, g n := by
+  have hrestrict : ∑ i : Fin T, |F i| = ∑ i ∈ s, |F i| := by
+    refine (Finset.sum_subset (Finset.subset_univ s) fun i _ hi => ?_).symm
+    rw [hzero i hi, abs_zero]
+  calc ∑ i : Fin T, |F i| = ∑ i ∈ s, |F i| := hrestrict
+    _ ≤ ∑ i ∈ s, g (f i) := Finset.sum_le_sum hbd
+    _ = ∑ n ∈ s.image f, g n := (Finset.sum_image hinj).symm
+    _ ≤ ∑' n, g n := hs.sum_le_tsum _ fun n _ => hg n
+
+/-- Row sums of the one-sided inversion kernel are bounded by `Σ|π|`, uniformly in `T`. -/
+private lemma sum_abs_piK_row {T : ℕ} (hπ : Summable fun n => |armaPi b a n|) (i : Fin T) :
+    ∑ k : Fin T, |piK b a (i : ℕ) (k : ℕ)| ≤ ∑' n : ℕ, |armaPi b a n| := by
+  refine finsum_abs_le_tsum _ (fun n => |armaPi b a n|) (fun k => (k : ℕ) - (i : ℕ)) hπ
+    (fun n => abs_nonneg _) (Finset.univ.filter fun k : Fin T => (i : ℕ) ≤ (k : ℕ))
+    (fun k hk => ?_) (fun k hk => ?_) (fun k hk l hl hkl => ?_)
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_le] at hk
+    exact piK_eq_zero b a hk
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk
+    rw [piK, if_pos hk]
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk hl
+    have hkl' : (k : ℕ) - (i : ℕ) = (l : ℕ) - (i : ℕ) := hkl
+    exact Fin.ext (by omega)
+
+/-- Column sums of the one-sided inversion kernel are bounded by `Σ|π|`. -/
+private lemma sum_abs_piK_col {T : ℕ} (hπ : Summable fun n => |armaPi b a n|) (l : Fin T) :
+    ∑ j : Fin T, |piK b a (j : ℕ) (l : ℕ)| ≤ ∑' n : ℕ, |armaPi b a n| := by
+  refine finsum_abs_le_tsum _ (fun n => |armaPi b a n|) (fun j => (l : ℕ) - (j : ℕ)) hπ
+    (fun n => abs_nonneg _) (Finset.univ.filter fun j : Fin T => (j : ℕ) ≤ (l : ℕ))
+    (fun j hj => ?_) (fun j hj => ?_) (fun j hj k hk hjk => ?_)
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_le] at hj
+    exact piK_eq_zero b a hj
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj
+    rw [piK, if_pos hj]
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj hk
+    have hjk' : (l : ℕ) - (j : ℕ) = (l : ℕ) - (k : ℕ) := hjk
+    exact Fin.ext (by omega)
+
+/-- Row sums of the (absolutely summable) model ACVF kernel. -/
+private lemma sum_abs_acvfK {p' q' : ℕ} {b' : Fin p' → ℝ} {a' : Fin q' → ℝ} {T : ℕ}
+    (hγ : Summable fun m : ℤ => |armaACVF b' a' m|) (c : ℝ) (hc : 0 ≤ c) (k : Fin T) :
+    ∑ l : Fin T, |c * armaACVF b' a' (((k : ℕ) : ℤ) - ((l : ℕ) : ℤ))|
+      ≤ c * ∑' m : ℤ, |armaACVF b' a' m| := by
+  have hstep : ∑ l : Fin T, |c * armaACVF b' a' (((k : ℕ) : ℤ) - ((l : ℕ) : ℤ))|
+      = c * ∑ l : Fin T, |armaACVF b' a' (((k : ℕ) : ℤ) - ((l : ℕ) : ℤ))| := by
+    rw [Finset.mul_sum]
+    exact Finset.sum_congr rfl fun l _ => by rw [abs_mul, abs_of_nonneg hc]
+  rw [hstep]
+  refine mul_le_mul_of_nonneg_left ?_ hc
+  refine finsum_abs_le_tsum _ (fun m => |armaACVF b' a' m|)
+    (fun l => ((k : ℕ) : ℤ) - ((l : ℕ) : ℤ)) hγ (fun n => abs_nonneg _) Finset.univ
+    (fun l hl => absurd (Finset.mem_univ l) hl) (fun l _ => le_of_eq rfl) (fun l _ j _ hlj => ?_)
+  have hlj' : ((k : ℕ) : ℤ) - ((l : ℕ) : ℤ) = ((k : ℕ) : ℤ) - ((j : ℕ) : ℤ) := hlj
+  exact Fin.ext (by omega)
+
+/-- **The Schur-test row bound** for a doubly filtered kernel: the row sums of
+`Σ_{k,l} A_k B_{jl} g_{kl}` are bounded by `P · (P · Γ)`. -/
+private lemma rowSum_kernel_le {T : ℕ} (A : Fin T → ℝ) (B : Fin T → Fin T → ℝ)
+    (g : Fin T → Fin T → ℝ) {P Γ : ℝ} (hA : ∑ k, |A k| ≤ P) (hB : ∀ l, ∑ j, |B j l| ≤ P)
+    (hg : ∀ k, ∑ l, |g k l| ≤ Γ) (hP : 0 ≤ P) (hΓ : 0 ≤ Γ) :
+    ∑ j : Fin T, |∑ k : Fin T, ∑ l : Fin T, A k * B j l * g k l| ≤ P * (P * Γ) := by
+  have hstep1 : ∀ j : Fin T, |∑ k : Fin T, ∑ l : Fin T, A k * B j l * g k l|
+      ≤ ∑ k : Fin T, ∑ l : Fin T, |A k| * |B j l| * |g k l| := by
+    intro j
+    refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun k _ => ?_)
+    refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun l _ => ?_)
+    rw [abs_mul, abs_mul]
+  calc ∑ j : Fin T, |∑ k : Fin T, ∑ l : Fin T, A k * B j l * g k l|
+      ≤ ∑ j : Fin T, ∑ k : Fin T, ∑ l : Fin T, |A k| * |B j l| * |g k l| :=
+        Finset.sum_le_sum fun j _ => hstep1 j
+    _ = ∑ k : Fin T, ∑ j : Fin T, ∑ l : Fin T, |A k| * |B j l| * |g k l| := Finset.sum_comm
+    _ = ∑ k : Fin T, ∑ l : Fin T, ∑ j : Fin T, |A k| * |B j l| * |g k l| :=
+        Finset.sum_congr rfl fun k _ => Finset.sum_comm
+    _ ≤ ∑ k : Fin T, ∑ l : Fin T, |A k| * |g k l| * P := by
+        refine Finset.sum_le_sum fun k _ => Finset.sum_le_sum fun l _ => ?_
+        have hrw : ∑ j : Fin T, |A k| * |B j l| * |g k l|
+            = (|A k| * |g k l|) * ∑ j : Fin T, |B j l| := by
+          rw [Finset.mul_sum]
+          exact Finset.sum_congr rfl fun j _ => by ring
+        rw [hrw]
+        exact mul_le_mul_of_nonneg_left (hB l) (by positivity)
+    _ ≤ ∑ k : Fin T, |A k| * P * Γ := by
+        refine Finset.sum_le_sum fun k _ => ?_
+        have hrw : ∑ l : Fin T, |A k| * |g k l| * P = (|A k| * P) * ∑ l : Fin T, |g k l| := by
+          rw [Finset.mul_sum]
+          exact Finset.sum_congr rfl fun l _ => by ring
+        rw [hrw]
+        exact mul_le_mul_of_nonneg_left (hg k) (by positivity)
+    _ = (∑ k : Fin T, |A k|) * (P * Γ) := by
+        rw [Finset.sum_mul]
+        exact Finset.sum_congr rfl fun k _ => by ring
+    _ ≤ P * (P * Γ) := mul_le_mul_of_nonneg_right hA (by positivity)
+
+open Matrix in
+/-- **The expected quadratic form of a psd matrix** against a random vector is controlled
+by the trace, once the second-moment matrix has bounded row sums (this is where
+`sum_entry_mul_le_of_posSemidef` is used). -/
+private lemma integral_quadForm_le {T : ℕ} (G : Matrix (Fin T) (Fin T) ℝ) (hG : G.PosSemidef)
+    (u : Fin T → Ω → ℝ) (hu : ∀ i, MemLp (u i) 2 μ) {R : ℝ}
+    (hrow : ∀ i, ∑ j, |∫ ω, u i ω * u j ω ∂μ| ≤ R) :
+    ∫ ω, (fun i => u i ω) ⬝ᵥ (G *ᵥ fun i => u i ω) ∂μ ≤ R * G.trace := by
+  have hint : ∀ i j : Fin T, Integrable (fun ω => u i ω * u j ω) μ := by
+    intro i j
+    have h := (hu i).integrable_mul (hu j)
+    exact h.congr (by filter_upwards with ω using rfl)
+  have hexp : ∀ ω, (fun i => u i ω) ⬝ᵥ (G *ᵥ fun i => u i ω)
+      = ∑ i : Fin T, ∑ j : Fin T, G i j * (u i ω * u j ω) := by
+    intro ω
+    simp only [dotProduct, mulVec, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+  calc ∫ ω, (fun i => u i ω) ⬝ᵥ (G *ᵥ fun i => u i ω) ∂μ
+      = ∑ i : Fin T, ∑ j : Fin T, G i j * ∫ ω, u i ω * u j ω ∂μ := by
+        rw [integral_congr_ae (Filter.Eventually.of_forall hexp),
+          integral_finset_sum _ fun i _ =>
+            integrable_finset_sum _ fun j _ => (hint i j).const_mul (G i j)]
+        refine Finset.sum_congr rfl fun i _ => ?_
+        rw [integral_finset_sum _ fun j _ => (hint i j).const_mul (G i j)]
+        exact Finset.sum_congr rfl fun j _ => integral_const_mul _ _
+    _ ≤ R * G.trace := by
+        refine sum_entry_mul_le_of_posSemidef hG (fun i j => ?_) hrow
+        exact integral_congr_ae (Filter.Eventually.of_forall fun ω => mul_comm _ _)
+
 /-- **The one missing analytic input of this lane** (named debt): the *quadratic-form
 law of large numbers*
 
