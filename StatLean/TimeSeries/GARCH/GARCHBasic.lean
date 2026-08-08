@@ -57,6 +57,17 @@ private lemma sigmaLT_le_of_measurable {X : ℤ → Ω → ℝ} (hm : ∀ t, Mea
     sigmaLT X t ≤ (inferInstance : MeasurableSpace Ω) :=
   iSup₂_le fun s _ => (hm s).comap_le
 
+omit [MeasurableSpace Ω] in
+private lemma comapLE_sigmaLT {X : ℤ → Ω → ℝ} {s t : ℤ} (hst : s < t) :
+    MeasurableSpace.comap (X s) inferInstance ≤ sigmaLT X t :=
+  le_iSup₂ (f := fun s (_ : s ∈ Set.Iio t) => MeasurableSpace.comap (X s) inferInstance) s hst
+
+omit [MeasurableSpace Ω] in
+private lemma measurable_of_lt_sigmaLT {X : ℤ → Ω → ℝ} {s t : ℤ} (hst : s < t) :
+    Measurable[sigmaLT X t] (X s) :=
+  (Measurable.of_comap_le (le_refl (MeasurableSpace.comap (X s) inferInstance))).mono
+    (comapLE_sigmaLT hst) le_rfl
+
 /-- `E ε_t² = 1` for unit-variance centred i.i.d. innovations, at every time. -/
 private lemma iidNoise_integral_sq [IsProbabilityMeasure μ] {ε : ℤ → Ω → ℝ}
     (hε : IsIIDNoise ε 1 μ) (t : ℤ) : (∫ ω, ε t ω ^ 2 ∂μ) = 1 := by
@@ -109,6 +120,59 @@ private lemma garch_condexp_sq [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     _ =ᵐ[μ] fun ω => σvol t ω ^ 2 := by
         filter_upwards [hcondε] with ω hω
         simp only [Pi.mul_apply, hω, mul_one]
+
+/-- The GARCH process is a martingale difference: `E[X_t | past] = 0` (FY Prop 4.2(i)). -/
+private lemma garch_condexp_zero [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
+    {b : Fin p → ℝ} {a : Fin q → ℝ} {X σvol ε : ℤ → Ω → ℝ}
+    (h : IsGARCH c0 b a X σvol ε μ) (hL2 : ∀ t, MemLp (X t) 2 μ) (t : ℤ) :
+    μ[X t | sigmaLT X t] =ᵐ[μ] fun _ => (0 : ℝ) := by
+  have hFle := sigmaLT_le_of_measurable h.measurableX t
+  haveI : SigmaFinite (μ.trim hFle) := by
+    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+    infer_instance
+  have hEeps0 : (∫ ω, ε t ω ∂μ) = 0 :=
+    (h.iid.identDistrib t 0).integral_eq.trans h.iid.integral_eq_zero
+  have hXint : Integrable (X t) μ := (hL2 t).integrable one_le_two
+  have hεint : Integrable (ε t) μ :=
+    ((h.iid.identDistrib 0 t).memLp_snd h.iid.memLp).integrable one_le_two
+  have hprodint : Integrable (fun ω => σvol t ω * ε t ω) μ := hXint.congr (h.recX t)
+  have hpull : μ[fun ω => σvol t ω * ε t ω | sigmaLT X t]
+      =ᵐ[μ] fun ω => σvol t ω * (μ[ε t | sigmaLT X t]) ω :=
+    condExp_mul_of_stronglyMeasurable_left (h.adapted t).stronglyMeasurable hprodint hεint
+  have hcondε : μ[ε t | sigmaLT X t] =ᵐ[μ] fun _ => (0 : ℝ) := by
+    have := condExp_indep_eq (h.iid.measurable t).comap_le hFle
+      (Measurable.of_comap_le
+        (le_refl (MeasurableSpace.comap (ε t) inferInstance))).stronglyMeasurable
+      (h.indep_past t)
+    filter_upwards [this] with ω hω
+    rw [hω, hEeps0]
+  refine ((condExp_congr_ae (h.recX t)).trans hpull).trans ?_
+  filter_upwards [hcondε] with ω hω
+  rw [hω, mul_zero]
+
+/-- The martingale-difference property kills the cross moments: `E[X_s X_t] = 0` for
+`s < t`. -/
+private lemma garch_integral_mul_eq_zero [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
+    {b : Fin p → ℝ} {a : Fin q → ℝ} {X σvol ε : ℤ → Ω → ℝ}
+    (h : IsGARCH c0 b a X σvol ε μ) (hL2 : ∀ t, MemLp (X t) 2 μ) {s t : ℤ} (hst : s < t) :
+    (∫ ω, X s ω * X t ω ∂μ) = 0 := by
+  have hFle := sigmaLT_le_of_measurable h.measurableX t
+  haveI : SigmaFinite (μ.trim hFle) := by
+    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+    infer_instance
+  have hmulint : Integrable (fun ω => X s ω * X t ω) μ :=
+    MemLp.integrable_mul (p := 2) (q := 2) (hL2 s) (hL2 t)
+  have hXtint : Integrable (X t) μ := (hL2 t).integrable one_le_two
+  have hpull : μ[fun ω => X s ω * X t ω | sigmaLT X t]
+      =ᵐ[μ] fun ω => X s ω * (μ[X t | sigmaLT X t]) ω :=
+    condExp_mul_of_stronglyMeasurable_left
+      (measurable_of_lt_sigmaLT hst).stronglyMeasurable hmulint hXtint
+  have hz : μ[fun ω => X s ω * X t ω | sigmaLT X t] =ᵐ[μ] fun _ => (0 : ℝ) := by
+    refine hpull.trans ?_
+    filter_upwards [garch_condexp_zero h hL2 t] with ω hω
+    rw [hω, mul_zero]
+  rw [← integral_condExp hFle (f := fun ω => X s ω * X t ω), integral_congr_ae hz]
+  simp
 
 /-- `σ_t²` is integrable with the same mean as `X_t²`: it *is* the conditional expectation
 of `X_t²` given the strict past (FY Prop 4.2(i)). -/
@@ -175,26 +239,7 @@ theorem IsGARCH.integral_and_variance [IsProbabilityMeasure μ] {c0 : ℝ} {p q 
     haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
     infer_instance
   -- (i) `E X_t = E σ_t · E ε_t = 0`, via the conditional expectation given the strict past
-  have hEeps0 : (∫ ω, ε t ω ∂μ) = 0 :=
-    (h.iid.identDistrib t 0).integral_eq.trans h.iid.integral_eq_zero
-  have hXint : Integrable (X t) μ := (hL2 t).integrable one_le_two
-  have hεint : Integrable (ε t) μ :=
-    ((h.iid.identDistrib 0 t).memLp_snd h.iid.memLp).integrable one_le_two
-  have hprodint : Integrable (fun ω => σvol t ω * ε t ω) μ := hXint.congr (h.recX t)
-  have hpull : μ[fun ω => σvol t ω * ε t ω | sigmaLT X t]
-      =ᵐ[μ] fun ω => σvol t ω * (μ[ε t | sigmaLT X t]) ω :=
-    condExp_mul_of_stronglyMeasurable_left (h.adapted t).stronglyMeasurable hprodint hεint
-  have hcondε : μ[ε t | sigmaLT X t] =ᵐ[μ] fun _ => (0 : ℝ) := by
-    have := condExp_indep_eq (h.iid.measurable t).comap_le hFle
-      (Measurable.of_comap_le
-        (le_refl (MeasurableSpace.comap (ε t) inferInstance))).stronglyMeasurable
-      (h.indep_past t)
-    filter_upwards [this] with ω hω
-    rw [hω, hEeps0]
-  have hcondX : μ[X t | sigmaLT X t] =ᵐ[μ] fun _ => (0 : ℝ) := by
-    refine ((condExp_congr_ae (h.recX t)).trans hpull).trans ?_
-    filter_upwards [hcondε] with ω hω
-    rw [hω, mul_zero]
+  have hcondX : μ[X t | sigmaLT X t] =ᵐ[μ] fun _ => (0 : ℝ) := garch_condexp_zero h hL2 t
   have hmean : (∫ ω, X t ω ∂μ) = 0 := by
     rw [← integral_condExp hFle (f := X t), integral_congr_ae hcondX]
     simp
@@ -250,7 +295,24 @@ theorem IsGARCH.isWhiteNoise [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     (h : IsGARCH c0 b a X σvol ε μ) (hstat : IsStrictlyStationary X μ)
     (hL2 : ∀ t, MemLp (X t) 2 μ) (hsum : (∑ i, b i) + (∑ j, a j) < 1) :
     IsWhiteNoise X (c0 / (1 - (∑ i, b i) - ∑ j, a j)) μ := by
-  sorry
+  refine
+    { measurable := h.measurableX
+      memLp := hL2
+      integral_eq_zero := fun t => (h.integral_and_variance hstat hL2 hsum t).1
+      variance_eq := fun t => (h.integral_and_variance hstat hL2 hsum t).2
+      uncorrelated := fun s t hst => ?_ }
+  have hkey : ∀ u v : ℤ, u < v → cov[X u, X v; μ] = 0 := by
+    intro u v huv
+    rw [covariance_eq_sub (hL2 u) (hL2 v),
+      (h.integral_and_variance hstat hL2 hsum u).1, zero_mul, sub_zero]
+    have : μ[X u * X v] = ∫ ω, X u ω * X v ω ∂μ := by
+      simp only [Pi.mul_apply]
+    rw [this]
+    exact garch_integral_mul_eq_zero h hL2 huv
+  rcases lt_or_gt_of_ne hst with hlt | hgt
+  · exact hkey s t hlt
+  · rw [covariance_comm]
+    exact hkey t s hgt
 
 /-- **FY Proposition 4.2(i)**: `σ_t²` is the conditional variance of `X_t` given the
 strict past. -/
@@ -597,17 +659,6 @@ private lemma ofReal_pow_le_nelProd {b1 a1 : ℝ} (hb1 : 0 ≤ b1) (ha1 : 0 ≤ 
   linarith
 
 /-! #### σ-algebra bookkeeping (local copies of the `Stationarity/ARCH.lean` bricks) -/
-
-omit [MeasurableSpace Ω] in
-private lemma comapLE_sigmaLT {X : ℤ → Ω → ℝ} {s t : ℤ} (hst : s < t) :
-    MeasurableSpace.comap (X s) inferInstance ≤ sigmaLT X t :=
-  le_iSup₂ (f := fun s (_ : s ∈ Set.Iio t) => MeasurableSpace.comap (X s) inferInstance) s hst
-
-omit [MeasurableSpace Ω] in
-private lemma measurable_of_lt_sigmaLT {X : ℤ → Ω → ℝ} {s t : ℤ} (hst : s < t) :
-    Measurable[sigmaLT X t] (X s) :=
-  (Measurable.of_comap_le (le_refl (MeasurableSpace.comap (X s) inferInstance))).mono
-    (comapLE_sigmaLT hst) le_rfl
 
 private lemma indep_last_sigmaLT {ε : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ε t))
     (hi : iIndepFun ε μ) (t : ℤ) :
