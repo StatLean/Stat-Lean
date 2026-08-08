@@ -11,6 +11,10 @@ $$ \sup_{f}\ \mathbb E\,\|\hat f_{nN} - f\|_{L^2[0,1]}^2 \;\le\; C\,n^{-\frac{2\
    \qquad C = C(\beta, L, \alpha, \sigma_\xi^2), $$
 the same rate as for Hölder pointwise estimation — MISE-optimal over the class.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.7.2, Theorem 1.9 (MISE rate
+$n^{-2\beta/(2\beta+1)}$ of the projection estimator over the Sobolev ellipsoid).
+
 **Proof formalization notes.** Combine the exact decomposition (`proj_mise_decomposition`)
 with the three term bounds: the stochastic term `σ_ξ²N/n ≤ σ_ξ²(α+1)·n^{−2β/(2β+1)}` (ceiling
 bound `N ≤ αn^{1/(2β+1)} + 1`); the aliasing term

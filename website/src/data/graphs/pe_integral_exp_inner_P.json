@@ -1,0 +1,33 @@
+{
+  "root": "StatLean.PointEstimation.ExpFamily.integral_exp_inner_P",
+  "nodes": [
+    {"id":"StatLean.PointEstimation.ExpFamily.integral_exp_inner_P","label":"integral_exp_inner_P","full":"StatLean.PointEstimation.ExpFamily.integral_exp_inner_P","kind":"root","decl":"thm","module":"StatLean.PointEstimation.ExponentialFamily.MGF"},
+    {"id":"StatLean.PointEstimation.ExpFamily","label":"ExpFamily","full":"StatLean.PointEstimation.ExpFamily","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ExponentialFamily.Defs"},
+    {"id":"StatLean.PointEstimation.ExpFamily.natSet","label":"natSet","full":"StatLean.PointEstimation.ExpFamily.natSet","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ExponentialFamily.Defs"},
+    {"id":"StatLean.PointEstimation.ExpFamily.P","label":"P","full":"StatLean.PointEstimation.ExpFamily.P","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ExponentialFamily.Defs"},
+    {"id":"StatLean.PointEstimation.ExpFamily.logPartition","label":"logPartition","full":"StatLean.PointEstimation.ExpFamily.logPartition","kind":"repo","decl":"def","module":"StatLean.PointEstimation.ExponentialFamily.Defs"},
+    {"id":"MeasureTheory.integral_exp_pos","label":"integral_exp_pos","full":"MeasureTheory.integral_exp_pos","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
+    {"id":"MeasureTheory.integral_exp_tilted","label":"integral_exp_tilted","full":"MeasureTheory.integral_exp_tilted","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Tilted"},
+    {"id":"MeasureTheory.integral_congr_ae","label":"integral_congr_ae","full":"MeasureTheory.integral_congr_ae","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
+    {"id":"Filter.Eventually.of_forall","label":"of_forall","full":"Filter.Eventually.of_forall","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Basic"},
+    {"id":"inner_add_left","label":"inner_add_left","full":"inner_add_left","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
+    {"id":"Real.exp_sub","label":"exp_sub","full":"Real.exp_sub","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Complex.Exponential"},
+    {"id":"Real.exp_log","label":"exp_log","full":"Real.exp_log","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Log.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.PointEstimation.ExpFamily.integral_exp_inner_P","target":"StatLean.PointEstimation.ExpFamily"},
+    {"source":"StatLean.PointEstimation.ExpFamily.integral_exp_inner_P","target":"StatLean.PointEstimation.ExpFamily.natSet"},
+    {"source":"StatLean.PointEstimation.ExpFamily.integral_exp_inner_P","target":"StatLean.PointEstimation.ExpFamily.P"},
+    {"source":"StatLean.PointEstimation.ExpFamily.integral_exp_inner_P","target":"StatLean.PointEstimation.ExpFamily.logPartition"},
+    {"source":"StatLean.PointEstimation.ExpFamily.integral_exp_inner_P","target":"MeasureTheory.integral_exp_pos"},
+    {"source":"StatLean.PointEstimation.ExpFamily.integral_exp_inner_P","target":"MeasureTheory.integral_exp_tilted"},
+    {"source":"StatLean.PointEstimation.ExpFamily.integral_exp_inner_P","target":"MeasureTheory.integral_congr_ae"},
+    {"source":"StatLean.PointEstimation.ExpFamily.integral_exp_inner_P","target":"Filter.Eventually.of_forall"},
+    {"source":"StatLean.PointEstimation.ExpFamily.integral_exp_inner_P","target":"inner_add_left"},
+    {"source":"StatLean.PointEstimation.ExpFamily.integral_exp_inner_P","target":"Real.exp_sub"},
+    {"source":"StatLean.PointEstimation.ExpFamily.integral_exp_inner_P","target":"Real.exp_log"},
+    {"source":"StatLean.PointEstimation.ExpFamily.natSet","target":"StatLean.PointEstimation.ExpFamily"},
+    {"source":"StatLean.PointEstimation.ExpFamily.P","target":"StatLean.PointEstimation.ExpFamily"},
+    {"source":"StatLean.PointEstimation.ExpFamily.logPartition","target":"StatLean.PointEstimation.ExpFamily"}
+  ]
+}

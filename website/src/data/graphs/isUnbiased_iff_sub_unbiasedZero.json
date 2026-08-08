@@ -1,0 +1,23 @@
+{
+  "root": "StatLean.PointEstimation.isUnbiased_iff_sub_unbiasedZero",
+  "nodes": [
+    {"id":"StatLean.PointEstimation.isUnbiased_iff_sub_unbiasedZero","label":"isUnbiased_iff_sub_unbiasedZero","full":"StatLean.PointEstimation.isUnbiased_iff_sub_unbiasedZero","kind":"root","decl":"thm","module":"StatLean.PointEstimation.UMVU.Basic"},
+    {"id":"StatLean.PointEstimation.IsUnbiased","label":"IsUnbiased","full":"StatLean.PointEstimation.IsUnbiased","kind":"repo","decl":"def","module":"StatLean.PointEstimation.UMVU.Defs"},
+    {"id":"StatLean.PointEstimation.IsUnbiasedZero","label":"IsUnbiasedZero","full":"StatLean.PointEstimation.IsUnbiasedZero","kind":"repo","decl":"def","module":"StatLean.PointEstimation.UMVU.Defs"},
+    {"id":"MeasureTheory.integral_sub","label":"integral_sub","full":"MeasureTheory.integral_sub","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
+    {"id":"sub_self","label":"sub_self","full":"sub_self","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
+    {"id":"sub_eq_zero_of_eq","label":"sub_eq_zero_of_eq","full":"sub_eq_zero_of_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
+    {"id":"neg_eq_zero","label":"neg_eq_zero","full":"neg_eq_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.PointEstimation.isUnbiased_iff_sub_unbiasedZero","target":"StatLean.PointEstimation.IsUnbiased"},
+    {"source":"StatLean.PointEstimation.isUnbiased_iff_sub_unbiasedZero","target":"StatLean.PointEstimation.IsUnbiasedZero"},
+    {"source":"StatLean.PointEstimation.isUnbiased_iff_sub_unbiasedZero","target":"MeasureTheory.integral_sub"},
+    {"source":"StatLean.PointEstimation.isUnbiased_iff_sub_unbiasedZero","target":"sub_self"},
+    {"source":"StatLean.PointEstimation.isUnbiased_iff_sub_unbiasedZero","target":"Nat.cast_zero"},
+    {"source":"StatLean.PointEstimation.isUnbiased_iff_sub_unbiasedZero","target":"sub_eq_zero_of_eq"},
+    {"source":"StatLean.PointEstimation.isUnbiased_iff_sub_unbiasedZero","target":"neg_eq_zero"},
+    {"source":"StatLean.PointEstimation.IsUnbiasedZero","target":"StatLean.PointEstimation.IsUnbiased"}
+  ]
+}

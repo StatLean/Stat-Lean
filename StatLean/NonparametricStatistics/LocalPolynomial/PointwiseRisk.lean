@@ -17,6 +17,11 @@ $$ |b(x_0)| \le q_1 h^{\beta}, \qquad \sigma^2(x_0) \le \frac{q_2}{nh}, \qquad
 and the assembled pointwise rate with `h = α·n^{−1/(2β+1)}`:
 `E[(f̂(x₀) − f(x₀))²] ≤ lpRateConst·n^{−2β/(2β+1)}` — with a fully explicit constant.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.6.1, Proposition 1.13 (LP bias and variance,
+constants $q_1 = C_* L/\ell!$, $q_2 = \sigma_{\max}^2 C_*^2$) and Theorem 1.6 (pointwise rate
+$n^{-2\beta/(2\beta+1)}$).
+
 **Proof formalization notes.** *Bias* (deterministic): with `∑ W* = 1` (reproduction) and the
 support/ℓ¹ weight bounds,
 `|∑ f(xᵢ)W*ᵢ − f(t)| = |∑ (f(xᵢ) − Taylor_t(xᵢ))W*ᵢ| ≤ (L/ℓ!)·∑|xᵢ−t|^β|W*ᵢ|

@@ -1,0 +1,25 @@
+{
+  "root": "StatLean.PointEstimation.risk_smul",
+  "nodes": [
+    {"id":"StatLean.PointEstimation.risk_smul","label":"risk_smul","full":"StatLean.PointEstimation.risk_smul","kind":"root","decl":"thm","module":"StatLean.PointEstimation.Equivariance.General"},
+    {"id":"StatLean.PointEstimation.IsInvariantModel","label":"IsInvariantModel","full":"StatLean.PointEstimation.IsInvariantModel","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Equivariance.Defs"},
+    {"id":"StatLean.PointEstimation.IsInvariantLoss","label":"IsInvariantLoss","full":"StatLean.PointEstimation.IsInvariantLoss","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Equivariance.Defs"},
+    {"id":"StatLean.PointEstimation.IsEquivariant","label":"IsEquivariant","full":"StatLean.PointEstimation.IsEquivariant","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Equivariance.Defs"},
+    {"id":"StatLean.PointEstimation.risk","label":"risk","full":"StatLean.PointEstimation.risk","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Model.Defs"},
+    {"id":"StatLean.PointEstimation.crossRisk","label":"crossRisk","full":"StatLean.PointEstimation.crossRisk","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Model.Defs"},
+    {"id":"Measurable.comp","label":"comp","full":"Measurable.comp","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"MeasureTheory.lintegral_map","label":"lintegral_map","full":"MeasureTheory.lintegral_map","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Map"},
+    {"id":"MeasureTheory.lintegral_congr","label":"lintegral_congr","full":"MeasureTheory.lintegral_congr","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.PointEstimation.risk_smul","target":"StatLean.PointEstimation.IsInvariantModel"},
+    {"source":"StatLean.PointEstimation.risk_smul","target":"StatLean.PointEstimation.IsInvariantLoss"},
+    {"source":"StatLean.PointEstimation.risk_smul","target":"StatLean.PointEstimation.IsEquivariant"},
+    {"source":"StatLean.PointEstimation.risk_smul","target":"StatLean.PointEstimation.risk"},
+    {"source":"StatLean.PointEstimation.risk_smul","target":"StatLean.PointEstimation.crossRisk"},
+    {"source":"StatLean.PointEstimation.risk_smul","target":"Measurable.comp"},
+    {"source":"StatLean.PointEstimation.risk_smul","target":"MeasureTheory.lintegral_map"},
+    {"source":"StatLean.PointEstimation.risk_smul","target":"MeasureTheory.lintegral_congr"},
+    {"source":"StatLean.PointEstimation.risk","target":"StatLean.PointEstimation.crossRisk"}
+  ]
+}

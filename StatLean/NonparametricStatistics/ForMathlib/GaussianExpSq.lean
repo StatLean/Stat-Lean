@@ -13,6 +13,10 @@ Two Gaussian facts feeding the sup-norm risk analysis of linear smoothers:
 * `hasLaw_sum_mul_gaussianReal` — a linear combination `∑ cᵢ·ξᵢ` of independent `N(0, v)`
   variables is `N(0, (∑ cᵢ²)·v)`.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.6.2 (Gaussian exponential-square moment bricks
+for Lemma 1.6 and Corollary 1.3).
+
 **Proof formalization notes.** The exponential-square moment is the explicit Gaussian integral
 `E exp(aX²) = (1 − 2av)^{-1/2}`, computed from the density (`gaussianPDFReal`) and
 `integral_gaussian`-family lemmas; at `4av ≤ 1` the value is at most `√2`, and for `a ≤ 0` the

@@ -1,0 +1,12 @@
+{
+  "root": "StatLean.HypothesisTesting.HasMLR",
+  "nodes": [
+    {"id":"StatLean.HypothesisTesting.HasMLR","label":"HasMLR","full":"StatLean.HypothesisTesting.HasMLR","kind":"root","decl":"def","module":"StatLean.HypothesisTesting.MLR.Defs"},
+    {"id":"Preorder","label":"Preorder","full":"Preorder","kind":"mathlib","decl":"def","module":"Mathlib.Order.Defs.PartialOrder"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.HypothesisTesting.HasMLR","target":"Preorder"},
+    {"source":"StatLean.HypothesisTesting.HasMLR","target":"Real"}
+  ]
+}

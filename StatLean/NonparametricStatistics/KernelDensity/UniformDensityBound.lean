@@ -11,6 +11,10 @@ This is the hidden ingredient of the pointwise minimax rate: the variance bound 
 `p ≤ pmax`, and over the class this bound must be *derived*, not assumed — keeping it as a
 hypothesis of the rate theorem would silently shrink the class.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.2.1, Eq. (1.9) (uniform bound on the densities
+of the class $\mathcal{P}(\beta, L)$ — the hidden dependency of Theorem 1.1).
+
 **Proof formalization notes.** Apply the deterministic bias core
 (`abs_integral_kernel_taylor_le`) with bandwidth `h = 1` and an auxiliary **bounded** kernel
 `K*` of order `ℓ` supported in `[−1,1]` (`exists_bounded_kernel_of_order`):

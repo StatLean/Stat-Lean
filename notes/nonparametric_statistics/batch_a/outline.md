@@ -1,9 +1,11 @@
 # Nonparametric statistics, Batch a — outline
 
 Reference: Tsybakov, *Introduction to Nonparametric Estimation* (Springer, 2009), ch. 1.
-**The book must NOT be cited in .lean comments** (per `Nonparametric_TODO.md`); Lean docstrings
-cite original papers (Rosenblatt/Parzen/Nadaraya/Watson/Stone/Katkovnik/Čencov/Rice/…). This
-file is the book↔Lean dictionary; the Tsybakov numbering lives only here.
+**Citation convention (UPDATED 2026-08-05, user request):** every module docstring now carries a
+`**Reference.**` block citing Tsybakov with chapter/§/item numbers (YangBarron style), placed
+before `**Proof formalization notes.**`; `**Bibliographic comments.**` keep citing the original
+papers (Rosenblatt/Parzen/Nadaraya/Watson/Stone/Katkovnik/Čencov/Rice/…). The earlier
+"no Tsybakov in .lean" rule is superseded. This file remains the book↔Lean dictionary.
 
 Area: `StatLean/NonparametricStatistics/` — new area, greenfield (the old ConcentrationInequalities
 "KDE uniform rate" milestone was dropped before any code landed; nothing to reuse there).

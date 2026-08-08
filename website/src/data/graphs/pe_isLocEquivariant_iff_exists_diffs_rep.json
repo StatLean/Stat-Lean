@@ -1,0 +1,31 @@
+{
+  "root": "StatLean.PointEstimation.isLocEquivariant_iff_exists_diffs_rep",
+  "nodes": [
+    {"id":"StatLean.PointEstimation.isLocEquivariant_iff_exists_diffs_rep","label":"isLocEquivariant_iff_exists_diffs_rep","full":"StatLean.PointEstimation.isLocEquivariant_iff_exists_diffs_rep","kind":"root","decl":"thm","module":"StatLean.PointEstimation.Equivariance.LocationStructure"},
+    {"id":"StatLean.PointEstimation.IsLocEquivariant","label":"IsLocEquivariant","full":"StatLean.PointEstimation.IsLocEquivariant","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Equivariance.Defs"},
+    {"id":"StatLean.PointEstimation.diffs","label":"diffs","full":"StatLean.PointEstimation.diffs","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Equivariance.Defs"},
+    {"id":"StatLean.PointEstimation.IsLocInvariant","label":"IsLocInvariant","full":"StatLean.PointEstimation.IsLocInvariant","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Equivariance.Defs"},
+    {"id":"StatLean.PointEstimation.isLocEquivariant_iff_sub_invariant","label":"isLocEquivariant_iff_sub_invariant","full":"StatLean.PointEstimation.isLocEquivariant_iff_sub_invariant","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.Equivariance.LocationStructure"},
+    {"id":"StatLean.PointEstimation.isLocInvariant_iff_factors_diffs","label":"isLocInvariant_iff_factors_diffs","full":"StatLean.PointEstimation.isLocInvariant_iff_factors_diffs","kind":"repo","decl":"thm","module":"StatLean.PointEstimation.Equivariance.LocationStructure"},
+    {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
+    {"id":"neg_eq_zero","label":"neg_eq_zero","full":"neg_eq_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
+    {"id":"sub_eq_zero_of_eq","label":"sub_eq_zero_of_eq","full":"sub_eq_zero_of_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.PointEstimation.isLocEquivariant_iff_exists_diffs_rep","target":"StatLean.PointEstimation.IsLocEquivariant"},
+    {"source":"StatLean.PointEstimation.isLocEquivariant_iff_exists_diffs_rep","target":"StatLean.PointEstimation.diffs"},
+    {"source":"StatLean.PointEstimation.isLocEquivariant_iff_exists_diffs_rep","target":"StatLean.PointEstimation.IsLocInvariant"},
+    {"source":"StatLean.PointEstimation.isLocEquivariant_iff_exists_diffs_rep","target":"StatLean.PointEstimation.isLocEquivariant_iff_sub_invariant"},
+    {"source":"StatLean.PointEstimation.isLocEquivariant_iff_exists_diffs_rep","target":"StatLean.PointEstimation.isLocInvariant_iff_factors_diffs"},
+    {"source":"StatLean.PointEstimation.isLocEquivariant_iff_exists_diffs_rep","target":"Nat.cast_zero"},
+    {"source":"StatLean.PointEstimation.isLocEquivariant_iff_exists_diffs_rep","target":"neg_eq_zero"},
+    {"source":"StatLean.PointEstimation.isLocEquivariant_iff_exists_diffs_rep","target":"sub_eq_zero_of_eq"},
+    {"source":"StatLean.PointEstimation.isLocEquivariant_iff_sub_invariant","target":"StatLean.PointEstimation.IsLocEquivariant"},
+    {"source":"StatLean.PointEstimation.isLocEquivariant_iff_sub_invariant","target":"StatLean.PointEstimation.IsLocInvariant"},
+    {"source":"StatLean.PointEstimation.isLocEquivariant_iff_sub_invariant","target":"Nat.cast_zero"},
+    {"source":"StatLean.PointEstimation.isLocEquivariant_iff_sub_invariant","target":"neg_eq_zero"},
+    {"source":"StatLean.PointEstimation.isLocEquivariant_iff_sub_invariant","target":"sub_eq_zero_of_eq"},
+    {"source":"StatLean.PointEstimation.isLocInvariant_iff_factors_diffs","target":"StatLean.PointEstimation.IsLocInvariant"},
+    {"source":"StatLean.PointEstimation.isLocInvariant_iff_factors_diffs","target":"StatLean.PointEstimation.diffs"}
+  ]
+}

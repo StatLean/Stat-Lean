@@ -1,5 +1,7 @@
 export type CategoryId =
   | "parametric"
+  | "hypothesistesting"
+  | "pointestimation"
   | "semiparametric"
   | "concentration"
   | "highdim"
@@ -70,6 +72,8 @@ export interface ResultEntry {
   id: string;
   category: CategoryId;
   kind: ResultKind;
+  /** 1-3 index terms for the Index page (standard textbook terminology). */
+  keywords?: string[];
   /** short Lean declaration name */
   leanName: string;
   /** fully-qualified Lean name (for doc-gen anchor) */

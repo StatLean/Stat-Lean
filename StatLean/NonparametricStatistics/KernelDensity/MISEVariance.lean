@@ -14,6 +14,10 @@ $$ \frac{1}{nh}\int K^2 - \frac{1}{n}\Bigl(\int |K|\Bigr)^2\!\!\int p^2
 The correction term is `O(1/n)`, hence negligible against the main term `(nh)⁻¹∫K²` as
 `h → 0` — this is the variance half of the exact asymptotic MISE.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.2.3, Proposition 1.6 (variance half of the
+exact asymptotic MISE; proof in the Appendix, Proposition A.1).
+
 **Proof formalization notes.** The exact identity is
 `∫σ² = (nh²)⁻¹(h∫K² − ∫(E K((X−x)/h))² dx)`; the subtracted term is the squared `L²` norm of
 the convolution-type mean, bounded by Young/Minkowski

@@ -54,7 +54,7 @@ export function GraphView() {
         <aside className="hidden md:flex flex-col w-[340px] xl:w-[400px] shrink-0 border-l hairline overflow-y-auto">
           <div className="p-5 border-b hairline">
             <div className="font-sans text-xs uppercase tracking-widest text-ink-faint mb-2">
-              Informal statement · {r.citation}
+              Informal statement
             </div>
             <MathText
               html={r.informal}

@@ -10,6 +10,10 @@ $$ \sum_i \bigl|W^*_i(t) - W^*_i(t')\bigr| \;\le\; C_L\,\frac{|t - t'|}{h^3},
 with `C_L = C_L(ℓ, K_max, λ₀, a₀, L_K)`. This is the grid-to-continuum step of the sup-norm
 analysis: on a grid of mesh `n^{-4}` the increment is `O(n^{-4}/h³) = O(n^{-1})`.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.6.2 (Lipschitz increments of the LP weight
+sums, for the discretization step of Theorem 1.8).
+
 **Proof formalization notes.** Write the weight difference through the resolvent identity
 `B_t⁻¹ − B_{t'}⁻¹ = B_t⁻¹(B_{t'} − B_t)B_{t'}⁻¹`. Each ingredient is Lipschitz in `t` with
 constants polynomial in `1/h`: `‖U(zᵢ)K(zᵢ) − U(z'ᵢ)K(z'ᵢ)‖ ≤ C·|t−t'|/h` (Lipschitz kernel,

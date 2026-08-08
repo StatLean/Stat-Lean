@@ -82,7 +82,7 @@ export function Home() {
           Browse the library by area; each opens a gallery of aligned results.
         </p>
 
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-5 auto-rows-fr md:grid-cols-2 xl:grid-cols-4">
           {TOPICS.map((c, i) => (
             <motion.div
               key={c.id}
@@ -94,7 +94,7 @@ export function Home() {
               <Link
                 to={`/category/${c.id}`}
                 data-cat={c.id}
-                className="group relative block overflow-hidden rounded-2xl border hairline bg-parchment-panel p-7 min-h-[14rem] transition-all duration-300 hover:border-accent/60 hover:shadow-[0_20px_50px_-24px_rgb(var(--accent)/0.5)]"
+                className="group relative flex h-full flex-col overflow-hidden rounded-2xl border hairline bg-parchment-panel p-7 min-h-[14rem] transition-all duration-300 hover:border-accent/60 hover:shadow-[0_20px_50px_-24px_rgb(var(--accent)/0.5)]"
               >
                 <ConvergenceMark
                   rings={6}

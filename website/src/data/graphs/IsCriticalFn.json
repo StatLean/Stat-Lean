@@ -1,0 +1,20 @@
+{
+  "root": "StatLean.HypothesisTesting.IsCriticalFn",
+  "nodes": [
+    {"id":"StatLean.HypothesisTesting.IsCriticalFn","label":"IsCriticalFn","full":"StatLean.HypothesisTesting.IsCriticalFn","kind":"root","decl":"def","module":"StatLean.HypothesisTesting.Tests.Defs"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Measurable","label":"Measurable","full":"Measurable","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"Real.measurableSpace","label":"measurableSpace","full":"Real.measurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"Set","label":"Set","full":"Set","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"Set.Icc","label":"Icc","full":"Set.Icc","kind":"mathlib","decl":"def","module":"Mathlib.Order.Interval.Set.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.HypothesisTesting.IsCriticalFn","target":"MeasurableSpace"},
+    {"source":"StatLean.HypothesisTesting.IsCriticalFn","target":"Real"},
+    {"source":"StatLean.HypothesisTesting.IsCriticalFn","target":"Measurable"},
+    {"source":"StatLean.HypothesisTesting.IsCriticalFn","target":"Real.measurableSpace"},
+    {"source":"StatLean.HypothesisTesting.IsCriticalFn","target":"Set"},
+    {"source":"StatLean.HypothesisTesting.IsCriticalFn","target":"Set.Icc"}
+  ]
+}

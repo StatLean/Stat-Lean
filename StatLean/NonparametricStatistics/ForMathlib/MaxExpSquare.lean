@@ -12,6 +12,10 @@ import StatLean.NonparametricStatistics.ForMathlib.GaussianExpSq
 These are the grid-maximum bounds behind sup-norm risk rates of linear smoothers with Gaussian
 noise (the `log n` price of the sup-norm).
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.6.2, Lemma 1.6 (expected maximum of squares
+under exponential-square moments) and Corollary 1.3 (Gaussian vectors).
+
 **Proof formalization notes.** The first bound is Jensen + a union bound inside the logarithm:
 `E max ηⱼ² = α₀⁻¹·E log max exp(α₀ηⱼ²) ≤ α₀⁻¹·log E ∑ⱼ exp(α₀ηⱼ²) ≤ α₀⁻¹·log(M·C₀)`.
 Note `C₀ ≥ 1` is *derived* (each `E exp(α₀η²) ≥ 1` by Jensen since `E[α₀η²] ≥ 0`), not

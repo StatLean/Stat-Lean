@@ -6,6 +6,10 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 `∫₀¹ φⱼ(x)·φ_k(x) dx = δ_{jk}` for `j, k ≥ 1`, and the uniform bound `|φⱼ| ≤ √2`.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.7.1–1.7.2 (the trigonometric Fourier basis and
+its $L^2[0,1]$ orthonormality).
+
 **Proof formalization notes.** Case-split on the parities and frequencies: the products reduce
 by the product-to-sum identities (`Real.cos_mul_cos`-style, or directly
 `2·cos a·cos b = cos(a−b) + cos(a+b)` etc.) to integrals of `cos(2πmx)` and `sin(2πmx)` over

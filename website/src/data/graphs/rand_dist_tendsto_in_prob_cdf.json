@@ -1,0 +1,16 @@
+{
+  "root": "StatLean.HypothesisTesting.randDist_tendstoInProb_cdf",
+  "nodes": [
+    {"id":"StatLean.HypothesisTesting.randDist_tendstoInProb_cdf","label":"randDist_tendstoInProb_cdf","full":"StatLean.HypothesisTesting.randDist_tendstoInProb_cdf","kind":"root","decl":"thm","module":"StatLean.HypothesisTesting.Randomization.Asymptotics"},
+    {"id":"AsymptoticStatistics.WeakConverges","label":"WeakConverges","full":"AsymptoticStatistics.WeakConverges","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ForMathlib.Contiguity"},
+    {"id":"StatLean.HypothesisTesting.randPairLaw","label":"randPairLaw","full":"StatLean.HypothesisTesting.randPairLaw","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Randomization.Asymptotics"},
+    {"id":"StatLean.HypothesisTesting.TendstoInProbTriangular","label":"TendstoInProbTriangular","full":"StatLean.HypothesisTesting.TendstoInProbTriangular","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Randomization.Asymptotics"},
+    {"id":"StatLean.HypothesisTesting.randDist","label":"randDist","full":"StatLean.HypothesisTesting.randDist","kind":"repo","decl":"def","module":"StatLean.HypothesisTesting.Randomization.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.HypothesisTesting.randDist_tendstoInProb_cdf","target":"AsymptoticStatistics.WeakConverges"},
+    {"source":"StatLean.HypothesisTesting.randDist_tendstoInProb_cdf","target":"StatLean.HypothesisTesting.randPairLaw"},
+    {"source":"StatLean.HypothesisTesting.randDist_tendstoInProb_cdf","target":"StatLean.HypothesisTesting.TendstoInProbTriangular"},
+    {"source":"StatLean.HypothesisTesting.randDist_tendstoInProb_cdf","target":"StatLean.HypothesisTesting.randDist"}
+  ]
+}

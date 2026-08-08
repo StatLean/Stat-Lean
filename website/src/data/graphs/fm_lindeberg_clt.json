@@ -1,0 +1,30 @@
+{
+  "root": "StatLean.HypothesisTesting.lindeberg_clt",
+  "nodes": [
+    {"id":"StatLean.HypothesisTesting.lindeberg_clt","label":"lindeberg_clt","full":"StatLean.HypothesisTesting.lindeberg_clt","kind":"root","decl":"thm","module":"StatLean.HypothesisTesting.ForMathlib.LindebergCLT"},
+    {"id":"BorelSpace.opensMeasurable","label":"opensMeasurable","full":"BorelSpace.opensMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"Real.borelSpace","label":"borelSpace","full":"Real.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"Finset.aemeasurable_fun_sum","label":"aemeasurable_fun_sum","full":"Finset.aemeasurable_fun_sum","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Group.Arithmetic"},
+    {"id":"ContinuousAdd.measurableMul₂","label":"measurableMul₂","full":"ContinuousAdd.measurableMul₂","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"IsTopologicalRing.toIsSemitopologicalRing","label":"toIsSemitopologicalRing","full":"IsTopologicalRing.toIsSemitopologicalRing","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Ring.Basic"},
+    {"id":"Measurable.aemeasurable","label":"aemeasurable","full":"Measurable.aemeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"MeasureTheory.Measure.isProbabilityMeasure_map","label":"isProbabilityMeasure_map","full":"MeasureTheory.Measure.isProbabilityMeasure_map","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
+    {"id":"MeasureTheory.ProbabilityMeasure.tendsto_iff_tendsto_charFun","label":"tendsto_iff_tendsto_charFun","full":"MeasureTheory.ProbabilityMeasure.tendsto_iff_tendsto_charFun","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.LevyConvergence"},
+    {"id":"FiniteDimensional.rclike_to_real","label":"rclike_to_real","full":"FiniteDimensional.rclike_to_real","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Lemmas"},
+    {"id":"ProbabilityTheory.iIndepFun.charFun_map_fun_sum_eq_prod","label":"charFun_map_fun_sum_eq_prod","full":"ProbabilityTheory.iIndepFun.charFun_map_fun_sum_eq_prod","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Independence.CharacteristicFunction"},
+    {"id":"Finset.prod_apply","label":"prod_apply","full":"Finset.prod_apply","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Pi"}
+  ],
+  "edges": [
+    {"source":"StatLean.HypothesisTesting.lindeberg_clt","target":"BorelSpace.opensMeasurable"},
+    {"source":"StatLean.HypothesisTesting.lindeberg_clt","target":"Real.borelSpace"},
+    {"source":"StatLean.HypothesisTesting.lindeberg_clt","target":"Finset.aemeasurable_fun_sum"},
+    {"source":"StatLean.HypothesisTesting.lindeberg_clt","target":"ContinuousAdd.measurableMul₂"},
+    {"source":"StatLean.HypothesisTesting.lindeberg_clt","target":"IsTopologicalRing.toIsSemitopologicalRing"},
+    {"source":"StatLean.HypothesisTesting.lindeberg_clt","target":"Measurable.aemeasurable"},
+    {"source":"StatLean.HypothesisTesting.lindeberg_clt","target":"MeasureTheory.Measure.isProbabilityMeasure_map"},
+    {"source":"StatLean.HypothesisTesting.lindeberg_clt","target":"MeasureTheory.ProbabilityMeasure.tendsto_iff_tendsto_charFun"},
+    {"source":"StatLean.HypothesisTesting.lindeberg_clt","target":"FiniteDimensional.rclike_to_real"},
+    {"source":"StatLean.HypothesisTesting.lindeberg_clt","target":"ProbabilityTheory.iIndepFun.charFun_map_fun_sum_eq_prod"},
+    {"source":"StatLean.HypothesisTesting.lindeberg_clt","target":"Finset.prod_apply"}
+  ]
+}

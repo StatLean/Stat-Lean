@@ -17,6 +17,11 @@ This existence result is the auxiliary device behind the uniform bound on Hölde
 (`KernelDensity/UniformDensityBound.lean`): applying the bias inequality with bandwidth `1`
 and such a kernel `K*` yields `p(x) ≤ C₂* + sup|K*|` uniformly over the density class.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.2.2 (construction of a kernel of order $\ell$;
+this file replaces the Legendre-polynomial construction of Proposition 1.3 by a bounded
+box-superposition construction).
+
 **Proof formalization notes.** Instead of the classical Legendre-polynomial construction, use
 a superposition of boxes: with `K₀ = ½·𝟙_{[−1,1]}` and distinct scales `a_r ∈ (0, 1]`,
 `r = 0, …, ℓ`, set `K(u) = ∑ r, c_r·a_r⁻¹·K₀(u/a_r)`. Odd moments vanish by symmetry; the even

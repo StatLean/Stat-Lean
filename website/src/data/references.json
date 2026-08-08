@@ -1138,5 +1138,505 @@
     "key": "pollard1985",
     "sortKey": "Pollard",
     "html": "D. Pollard, \"New ways to prove central limit theorems,\" *Econometric Theory* **1**(3), 1985, pp. 295–313."
+  },
+  {
+    "key": "lehmann-romano2022",
+    "sortKey": "Lehmann",
+    "html": "E. L. Lehmann and J. P. Romano, *Testing Statistical Hypotheses*, 4th ed., Springer Texts in Statistics, Springer Nature Switzerland AG, 2022."
+  },
+  {
+    "key": "lehmann-casella1998",
+    "sortKey": "Lehmann",
+    "html": "E. L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed., Springer Texts in Statistics, Springer-Verlag New York, 1998."
+  },
+  {
+    "key": "bernstein1917",
+    "sortKey": "Bernstein",
+    "html": "S. N. Bernstein, *Theory of Probability* (in Russian), Gosizdat, Moscow, 1917."
+  },
+  {
+    "key": "vonmises1931",
+    "sortKey": "Mises",
+    "html": "R. von Mises, *Wahrscheinlichkeitsrechnung und ihre Anwendung in der Statistik und theoretischen Physik*, Deuticke, Leipzig and Vienna, 1931."
+  },
+  {
+    "key": "lecam-yang1990",
+    "sortKey": "Le Cam",
+    "html": "L. Le Cam and G. L. Yang, *Asymptotics in Statistics: Some Basic Concepts*, Springer, 1990."
+  },
+  {
+    "key": "diaconis-freedman1986",
+    "sortKey": "Diaconis",
+    "html": "P. Diaconis and D. Freedman, “On the consistency of Bayes estimates,” *Annals of Statistics* **14** (1986), 1–26 (with discussion)."
+  },
+  {
+    "key": "schwartz1965",
+    "sortKey": "Schwartz",
+    "html": "L. Schwartz, “On Bayes procedures,” *Zeitschrift für Wahrscheinlichkeitstheorie und Verwandte Gebiete* **4** (1965), 10–26."
+  },
+  {
+    "key": "berry1941",
+    "sortKey": "Berry",
+    "html": "A. C. Berry, \"The accuracy of the Gaussian approximation to the sum of independent variates\", *Transactions of the American Mathematical Society* **49** (1941), 122–136."
+  },
+  {
+    "key": "esseen1942",
+    "sortKey": "Esseen",
+    "html": "C.-G. Esseen, \"On the Liapunoff limit of error in the theory of probability\", *Arkiv för Matematik, Astronomi och Fysik* **A28** (1942), no. 9, 1–19."
+  },
+  {
+    "key": "feller1971",
+    "sortKey": "Feller",
+    "html": "W. Feller, *An Introduction to Probability Theory and Its Applications*, Vol. II, 2nd ed., Wiley, New York, 1971."
+  },
+  {
+    "key": "feller1935",
+    "sortKey": "Feller",
+    "html": "W. Feller, \"Über den zentralen Grenzwertsatz der Wahrscheinlichkeitsrechnung\", *Mathematische Zeitschrift* **40** (1935), 521–559."
+  },
+  {
+    "key": "edgeworth1905",
+    "sortKey": "Edgeworth",
+    "html": "F. Y. Edgeworth, \"The law of error\", *Transactions of the Cambridge Philosophical Society* **20** (1905), 36–65 and 113–141."
+  },
+  {
+    "key": "bentkus2003",
+    "sortKey": "Bentkus",
+    "html": "V. Bentkus, \"On the dependence of the Berry–Esseen bound on dimension\", *Journal of Statistical Planning and Inference* **113** (2003), 385–402."
+  },
+  {
+    "key": "stein1986",
+    "sortKey": "Stein",
+    "html": "C. Stein, *Approximate Computation of Expectations*, IMS Lecture Notes—Monograph Series **7**, Institute of Mathematical Statistics, Hayward, CA, 1986."
+  },
+  {
+    "key": "chen-goldstein-shao2011",
+    "sortKey": "Chen",
+    "html": "L. H. Y. Chen, L. Goldstein and Q.-M. Shao, *Normal Approximation by Stein's Method*, Springer, Berlin, 2011."
+  },
+  {
+    "key": "hoeffding1951",
+    "sortKey": "Hoeffding",
+    "html": "W. Hoeffding, \"A combinatorial central limit theorem\", *Annals of Mathematical Statistics* **22** (1951), 558–566."
+  },
+  {
+    "key": "waldwolfowitz1944",
+    "sortKey": "Wald",
+    "html": "A. Wald and J. Wolfowitz, \"Statistical tests based on permutations of the observations\", *Annals of Mathematical Statistics* **15** (1944), 358–372."
+  },
+  {
+    "key": "noether1949",
+    "sortKey": "Noether",
+    "html": "G. E. Noether, \"On a theorem by Wald and Wolfowitz\", *Annals of Mathematical Statistics* **20** (1949), 455–458."
+  },
+  {
+    "key": "erdos-renyi1959",
+    "sortKey": "Erdős",
+    "html": "P. Erdős and A. Rényi, \"On the central limit theorem for samples from a finite population\", *Publications of the Mathematical Institute of the Hungarian Academy of Sciences* **4** (1959), 49–61."
+  },
+  {
+    "key": "hajek1960",
+    "sortKey": "Hájek",
+    "html": "J. Hájek, \"Limiting distributions in simple random sampling from a finite population\", *Publications of the Mathematical Institute of the Hungarian Academy of Sciences* **5** (1960), 361–374."
+  },
+  {
+    "key": "bolthausen1984",
+    "sortKey": "Bolthausen",
+    "html": "E. Bolthausen, \"An estimate of the remainder in a combinatorial central limit theorem\", *Zeitschrift für Wahrscheinlichkeitstheorie und verwandte Gebiete* **66** (1984), 379–386."
+  },
+  {
+    "key": "polya1920",
+    "sortKey": "Pólya",
+    "html": "G. Pólya, \"Über den zentralen Grenzwertsatz der Wahrscheinlichkeitsrechnung und das Momentenproblem\", *Mathematische Zeitschrift* **8** (1920), 171–181."
+  },
+  {
+    "key": "cramer1937",
+    "sortKey": "Cramér",
+    "html": "H. Cramér, *Random Variables and Probability Distributions*, Cambridge Tracts in Mathematics **36**, Cambridge University Press, 1937."
+  },
+  {
+    "key": "neyman-pearson1936",
+    "sortKey": "Neyman",
+    "html": "J. Neyman and E. S. Pearson, \"Contributions to the theory of testing statistical hypotheses,\" *Statistical Research Memoirs* **1** (1936), 1–37."
+  },
+  {
+    "key": "neyman1937",
+    "sortKey": "Neyman",
+    "html": "J. Neyman, \"Outline of a theory of statistical estimation based on the classical theory of probability,\" *Philosophical Transactions of the Royal Society of London A* **236** (1937), 333–380."
+  },
+  {
+    "key": "dantzig-wald1951",
+    "sortKey": "Dantzig",
+    "html": "G. B. Dantzig and A. Wald, \"On the fundamental lemma of Neyman and Pearson,\" *Annals of Mathematical Statistics* **22** (1951), 87–93."
+  },
+  {
+    "key": "karlin-rubin1956",
+    "sortKey": "Karlin",
+    "html": "S. Karlin and H. Rubin, \"The theory of decision procedures for distributions with monotone likelihood ratio,\" *Annals of Mathematical Statistics* **27** (1956), 272–299."
+  },
+  {
+    "key": "lehmann1952",
+    "sortKey": "Lehmann",
+    "html": "E. L. Lehmann, \"On the existence of least favorable distributions,\" *Annals of Mathematical Statistics* **23** (1952), 408–416."
+  },
+  {
+    "key": "lehmann1955",
+    "sortKey": "Lehmann",
+    "html": "E. L. Lehmann, \"Ordered families of distributions,\" *Annals of Mathematical Statistics* **26** (1955), 399–419."
+  },
+  {
+    "key": "strassen1965",
+    "sortKey": "Strassen",
+    "html": "V. Strassen, \"The existence of probability measures with given marginals,\" *Annals of Mathematical Statistics* **36** (1965), 423–439."
+  },
+  {
+    "key": "bahadur1960",
+    "sortKey": "Bahadur",
+    "html": "R. R. Bahadur, \"Stochastic comparison of tests,\" *Annals of Mathematical Statistics* **31** (1960), 276–295."
+  },
+  {
+    "key": "fisher1925",
+    "sortKey": "Fisher",
+    "html": "R. A. Fisher, *Statistical Methods for Research Workers*, Oliver &amp; Boyd, Edinburgh, 1925."
+  },
+  {
+    "key": "lehmann-scheffe1950",
+    "sortKey": "Lehmann",
+    "html": "E. L. Lehmann and H. Scheffé, “Completeness, similar regions, and unbiased estimation — Part I,” *Sankhyā* **10** (1950), 305–340."
+  },
+  {
+    "key": "lehmann-stein1949",
+    "sortKey": "Lehmann",
+    "html": "E. L. Lehmann and C. Stein, “On the theory of some non-parametric hypotheses,” *Annals of Mathematical Statistics* **20** (1949), 28–45."
+  },
+  {
+    "key": "hunt-stein1946",
+    "sortKey": "Hunt",
+    "html": "G. A. Hunt and C. Stein, “Most stringent tests of statistical hypotheses,” unpublished manuscript, 1946."
+  },
+  {
+    "key": "stein1956hotelling",
+    "sortKey": "Stein",
+    "html": "C. Stein, “The admissibility of Hotelling's $T^2$-test,” *Annals of Mathematical Statistics* **27** (1956), 616–623."
+  },
+  {
+    "key": "birnbaum1955",
+    "sortKey": "Birnbaum",
+    "html": "A. Birnbaum, “Characterizations of complete classes of tests of some multiparametric hypotheses, with applications to likelihood ratio tests,” *Annals of Mathematical Statistics* **26** (1955), 21–36."
+  },
+  {
+    "key": "matthes-truax1967",
+    "sortKey": "Matthes",
+    "html": "K. Matthes and D. R. Truax, “Tests of composite hypotheses for the multivariate exponential family,” *Annals of Mathematical Statistics* **38** (1967), 681–697."
+  },
+  {
+    "key": "hall-wijsman-ghosh1965",
+    "sortKey": "Hall",
+    "html": "W. J. Hall, R. A. Wijsman and J. K. Ghosh, “The relationship between sufficiency and invariance with applications in sequential analysis,” *Annals of Mathematical Statistics* **36** (1965), 575–614."
+  },
+  {
+    "key": "berk-bickel1968",
+    "sortKey": "Berk",
+    "html": "R. H. Berk and P. J. Bickel, “On invariance and almost invariance,” *Annals of Mathematical Statistics* **39** (1968), 1573–1576."
+  },
+  {
+    "key": "wilcoxon1945",
+    "sortKey": "Wilcoxon",
+    "html": "F. Wilcoxon, “Individual comparisons by ranking methods,” *Biometrics Bulletin* **1** (1945), 80–83."
+  },
+  {
+    "key": "massey1950",
+    "sortKey": "Massey",
+    "html": "F. J. Massey, “A note on the power of a non-parametric test,” *Annals of Mathematical Statistics* **21** (1950), 440–443."
+  },
+  {
+    "key": "fisher1924",
+    "sortKey": "Fisher",
+    "html": "R. A. Fisher, “The conditions under which chi-squared measures the discrepancy between observation and hypothesis,” *Journal of the Royal Statistical Society* **87** (1924), 442–450."
+  },
+  {
+    "key": "wald1943",
+    "sortKey": "Wald",
+    "html": "A. Wald, “Tests of statistical hypotheses concerning several parameters when the number of observations is large,” *Transactions of the American Mathematical Society* **54** (1943), 426–482."
+  },
+  {
+    "key": "wald1945",
+    "sortKey": "Wald",
+    "html": "A. Wald, “Statistical decision functions which minimize the maximum risk,” *Annals of Mathematics* **46** (1945), 265–280."
+  },
+  {
+    "key": "mann-wald1942",
+    "sortKey": "Mann",
+    "html": "H. B. Mann and A. Wald, “On the choice of the number of class intervals in the application of the chi square test,” *Annals of Mathematical Statistics* **13** (1942), 306–317."
+  },
+  {
+    "key": "cochran1952",
+    "sortKey": "Cochran",
+    "html": "W. G. Cochran, “The chi-square test of goodness of fit,” *Annals of Mathematical Statistics* **23** (1952), 315–345."
+  },
+  {
+    "key": "rao1948",
+    "sortKey": "Rao",
+    "html": "C. R. Rao, “Large sample tests of statistical hypotheses concerning several parameters with applications to problems of estimation,” *Proceedings of the Cambridge Philosophical Society* **44** (1948), 50–57."
+  },
+  {
+    "key": "wilks1938",
+    "sortKey": "Wilks",
+    "html": "S. S. Wilks, “The large-sample distribution of the likelihood ratio for testing composite hypotheses,” *Annals of Mathematical Statistics* **9** (1938), 60–62."
+  },
+  {
+    "key": "hajek1962",
+    "sortKey": "Hájek",
+    "html": "J. Hájek, “Asymptotically most powerful rank-order tests,” *Annals of Mathematical Statistics* **33** (1962), 1124–1147."
+  },
+  {
+    "key": "fisher1935",
+    "sortKey": "Fisher",
+    "html": "R. A. Fisher, *The Design of Experiments*, Oliver & Boyd, Edinburgh, 1935."
+  },
+  {
+    "key": "pitman1937",
+    "sortKey": "Pitman",
+    "html": "E. J. G. Pitman, “Significance tests which may be applied to samples from any populations,” *Journal of the Royal Statistical Society, Supplement* **4** (1937), 119–130."
+  },
+  {
+    "key": "dwass1957",
+    "sortKey": "Dwass",
+    "html": "M. Dwass, “Modified randomization tests for nonparametric hypotheses,” *Annals of Mathematical Statistics* **28** (1957), 181–187."
+  },
+  {
+    "key": "hoeffding1952",
+    "sortKey": "Hoeffding",
+    "html": "W. Hoeffding, “The large-sample power of tests based on permutations of observations,” *Annals of Mathematical Statistics* **23** (1952), 169–192."
+  },
+  {
+    "key": "wald-wolfowitz1944",
+    "sortKey": "Wald",
+    "html": "A. Wald and J. Wolfowitz, “Statistical tests based on permutations of the observations,” *Annals of Mathematical Statistics* **15** (1944), 358–372."
+  },
+  {
+    "key": "romano1988",
+    "sortKey": "Romano",
+    "html": "J. P. Romano, “A bootstrap revival of some nonparametric distance tests,” *Journal of the American Statistical Association* **83** (1988), 698–708."
+  },
+  {
+    "key": "romano1989",
+    "sortKey": "Romano",
+    "html": "J. P. Romano, “Bootstrap and randomization tests of some nonparametric hypotheses,” *Annals of Statistics* **17** (1989), 141–159."
+  },
+  {
+    "key": "romano1990",
+    "sortKey": "Romano",
+    "html": "J. P. Romano, “On the behavior of randomization tests without a group invariance assumption,” *Journal of the American Statistical Association* **85** (1990), 686–692."
+  },
+  {
+    "key": "janssen1997",
+    "sortKey": "Janssen",
+    "html": "A. Janssen, “Studentized permutation tests for non-i.i.d. hypotheses and the generalized Behrens–Fisher problem,” *Statistics & Probability Letters* **36** (1997), 9–21."
+  },
+  {
+    "key": "chung-romano2013",
+    "sortKey": "Chung",
+    "html": "E. Chung and J. P. Romano, “Exact and asymptotically robust permutation tests,” *Annals of Statistics* **41** (2013), 484–507."
+  },
+  {
+    "key": "hotelling1931",
+    "sortKey": "Hotelling",
+    "html": "H. Hotelling, “The generalization of Student's ratio,” *Annals of Mathematical Statistics* **2** (1931), 360–378."
+  },
+  {
+    "key": "efron1979",
+    "sortKey": "Efron",
+    "html": "B. Efron, “Bootstrap methods: another look at the jackknife,” *Annals of Statistics* **7** (1979), 1–26."
+  },
+  {
+    "key": "bickel-freedman1981",
+    "sortKey": "Bickel",
+    "html": "P. J. Bickel and D. A. Freedman, “Some asymptotic theory for the bootstrap,” *Annals of Statistics* **9** (1981), 1196–1217."
+  },
+  {
+    "key": "singh1981",
+    "sortKey": "Singh",
+    "html": "K. Singh, “On the asymptotic accuracy of Efron's bootstrap,” *Annals of Statistics* **9** (1981), 1187–1195."
+  },
+  {
+    "key": "beran1984",
+    "sortKey": "Beran",
+    "html": "R. Beran, “Bootstrap methods in statistics,” *Jahresbericht der Deutschen Mathematiker-Vereinigung* **86** (1984), 14–30."
+  },
+  {
+    "key": "politis-romano-wolf1999",
+    "sortKey": "Politis",
+    "html": "D. N. Politis, J. P. Romano and M. Wolf, *Subsampling*, Springer, New York, 1999."
+  },
+  {
+    "key": "hall1992",
+    "sortKey": "Hall",
+    "html": "P. Hall, *The Bootstrap and Edgeworth Expansion*, Springer, New York, 1992."
+  },
+  {
+    "key": "esseen1945",
+    "sortKey": "Esseen",
+    "html": "C.-G. Esseen, “Fourier analysis of distribution functions. A mathematical study of the Laplace–Gaussian law,” *Acta Mathematica* **77** (1945), 1–125."
+  },
+  {
+    "key": "cornish-fisher1938",
+    "sortKey": "Cornish",
+    "html": "E. A. Cornish and R. A. Fisher, “Moments and cumulants in the specification of distributions,” *Revue de l'Institut International de Statistique* **5** (1938), 307–320."
+  },
+  {
+    "key": "fisher1934",
+    "sortKey": "Fisher",
+    "html": "R. A. Fisher, \"Two new properties of mathematical likelihood,\" *Proceedings of the Royal Society of London A* **144** (1934), 285–307."
+  },
+  {
+    "key": "darmois1935",
+    "sortKey": "Darmois",
+    "html": "G. Darmois, \"Sur les lois de probabilité à estimation exhaustive,\" *Comptes Rendus de l'Académie des Sciences, Paris* **200** (1935), 1265–1266."
+  },
+  {
+    "key": "koopman1936",
+    "sortKey": "Koopman",
+    "html": "B. O. Koopman, \"On distributions admitting a sufficient statistic,\" *Transactions of the American Mathematical Society* **39** (1936), 399–409."
+  },
+  {
+    "key": "pitman1936",
+    "sortKey": "Pitman",
+    "html": "E. J. G. Pitman, \"Sufficient statistics and intrinsic accuracy,\" *Proceedings of the Cambridge Philosophical Society* **32** (1936), 567–579."
+  },
+  {
+    "key": "bahadur1954",
+    "sortKey": "Bahadur",
+    "html": "R. R. Bahadur, \"Sufficiency and statistical decision functions,\" *Annals of Mathematical Statistics* **25** (1954), 423–462."
+  },
+  {
+    "key": "basu1955",
+    "sortKey": "Basu",
+    "html": "D. Basu, \"On statistics independent of a complete sufficient statistic,\" *Sankhyā* **15** (1955), 377–380."
+  },
+  {
+    "key": "dynkin1951",
+    "sortKey": "Dynkin",
+    "html": "E. B. Dynkin, \"Necessary and sufficient statistics for a family of probability distributions,\" *Uspekhi Matematicheskikh Nauk* **6** (1951), 68–90."
+  },
+  {
+    "key": "hudson1978",
+    "sortKey": "Hudson",
+    "html": "H. M. Hudson, \"A natural identity for exponential families with applications in multiparameter estimation,\" *Annals of Statistics* **6** (1978), 473–484."
+  },
+  {
+    "key": "sverdrup1953",
+    "sortKey": "Sverdrup",
+    "html": "E. Sverdrup, \"Similarity, unbiasedness, minimaxibility and admissibility of statistical test procedures,\" *Skandinavisk Aktuarietidskrift* **36** (1953), 64–86."
+  },
+  {
+    "key": "barndorff-nielsen1978",
+    "sortKey": "Barndorff-Nielsen",
+    "html": "O. Barndorff-Nielsen, *Information and Exponential Families in Statistical Theory*, Wiley, Chichester, 1978."
+  },
+  {
+    "key": "rao1949",
+    "sortKey": "Rao",
+    "html": "C. R. Rao, \"Sufficient statistics and minimum variance estimates,\" *Proceedings of the Cambridge Philosophical Society* **45**, 1949, pp. 213–218."
+  },
+  {
+    "key": "lehmann-scheffe1955",
+    "sortKey": "Lehmann",
+    "html": "E. L. Lehmann and H. Scheffé, \"Completeness, similar regions, and unbiased estimation — Part II,\" *Sankhyā* **15**(3), 1955, pp. 219–236."
+  },
+  {
+    "key": "bahadur1957",
+    "sortKey": "Bahadur",
+    "html": "R. R. Bahadur, \"On unbiased estimates of uniformly minimum variance,\" *Sankhyā* **18**(3/4), 1957, pp. 211–224."
+  },
+  {
+    "key": "frechet1943",
+    "sortKey": "Fréchet",
+    "html": "M. Fréchet, \"Sur l'extension de certaines évaluations statistiques au cas de petits échantillons,\" *Revue de l'Institut International de Statistique* **11**(3/4), 1943, pp. 182–205."
+  },
+  {
+    "key": "darmois1945",
+    "sortKey": "Darmois",
+    "html": "G. Darmois, \"Sur les limites de la dispersion de certaines estimations,\" *Revue de l'Institut International de Statistique* **13**(1/4), 1945, pp. 9–15."
+  },
+  {
+    "key": "blyth1974",
+    "sortKey": "Blyth",
+    "html": "C. R. Blyth, \"Necessary and sufficient conditions for inequalities of Cramér–Rao type,\" *The Annals of Statistics* **2**(3), 1974, pp. 464–473."
+  },
+  {
+    "key": "wijsman1973",
+    "sortKey": "Wijsman",
+    "html": "R. A. Wijsman, \"On the attainment of the Cramér–Rao lower bound,\" *The Annals of Statistics* **1**(3), 1973, pp. 538–542."
+  },
+  {
+    "key": "fabian-hannan1977",
+    "sortKey": "Fabian",
+    "html": "V. Fabian and J. Hannan, \"On the Cramér–Rao inequality,\" *The Annals of Statistics* **5**(1), 1977, pp. 197–205."
+  },
+  {
+    "key": "bhattacharyya1946",
+    "sortKey": "Bhattacharyya",
+    "html": "A. Bhattacharyya, \"On some analogues of the amount of information and their use in statistical estimation,\" *Sankhyā* **8**, 1946, pp. 1–14, 201–218, 315–328."
+  },
+  {
+    "key": "pitman1939",
+    "sortKey": "Pitman",
+    "html": "E. J. G. Pitman, “The estimation of the location and scale parameters of a continuous population of any given form,” *Biometrika* **30** (1939), 391–421."
+  },
+  {
+    "key": "girshick-savage1951",
+    "sortKey": "Girshick",
+    "html": "M. A. Girshick and L. J. Savage, “Bayes and minimax estimates for quadratic loss functions,” *Proceedings of the Second Berkeley Symposium on Mathematical Statistics and Probability*, University of California Press, 1951, 53–73."
+  },
+  {
+    "key": "stein1959",
+    "sortKey": "Stein",
+    "html": "C. Stein, “The admissibility of Pitman’s estimator of a single location parameter,” *Annals of Mathematical Statistics* **30** (1959), 970–979."
+  },
+  {
+    "key": "lehmann1951",
+    "sortKey": "Lehmann",
+    "html": "E. L. Lehmann, “A general concept of unbiasedness,” *Annals of Mathematical Statistics* **22** (1951), 587–592."
+  },
+  {
+    "key": "kagan-linnik-rao1973",
+    "sortKey": "Kagan",
+    "html": "A. M. Kagan, Yu. V. Linnik and C. R. Rao, *Characterization Problems in Mathematical Statistics*, Wiley, New York, 1973."
+  },
+  {
+    "key": "gauss1823",
+    "sortKey": "Gauss",
+    "html": "C. F. Gauss, *Theoria combinationis observationum erroribus minimis obnoxiae*, Königliche Gesellschaft der Wissenschaften zu Göttingen, 1821/1823."
+  },
+  {
+    "key": "markov1912",
+    "sortKey": "Markov",
+    "html": "A. A. Markov, *Wahrscheinlichkeitsrechnung*, Teubner, Leipzig, 1912."
+  },
+  {
+    "key": "scheffe1959",
+    "sortKey": "Scheffe",
+    "html": "H. Scheffé, *The Analysis of Variance*, Wiley, New York, 1959."
+  },
+  {
+    "key": "rao1973",
+    "sortKey": "Rao",
+    "html": "C. R. Rao, *Linear Statistical Inference and Its Applications*, 2nd ed., Wiley, New York, 1973."
+  },
+  {
+    "key": "kruskal1965",
+    "sortKey": "Kruskal",
+    "html": "W. Kruskal, “When are Gauss–Markov and least squares estimators identical? A coordinate-free approach,” in *Essays in Probability and Statistics*, 1965."
+  },
+  {
+    "key": "helmert1876",
+    "sortKey": "Helmert",
+    "html": "F. R. Helmert, “Über die Wahrscheinlichkeit der Potenzsummen der Beobachtungsfehler,” *Zeitschrift für Mathematik und Physik* **21** (1876), 192–218."
+  },
+  {
+    "key": "shaffer1991",
+    "sortKey": "Shaffer",
+    "html": "J. P. Shaffer, “The Gauss–Markov theorem and random regressors,” *The American Statistician* **45** (1991), 269–273."
   }
 ]

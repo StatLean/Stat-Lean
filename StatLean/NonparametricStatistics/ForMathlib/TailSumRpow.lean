@@ -13,6 +13,10 @@ $$ \sum_{m \ge n} m^{-s} \;\le\; \frac{s}{s-1}\,(n-1)^{1-s} \qquad (n \ge 2). $$
 Used to bound the aliasing residual of trigonometric coefficient estimates over Sobolev
 ellipsoids (Cauchy–Schwarz turns an ellipsoid membership into a weighted tail `∑ a_m^{-2}`).
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.7.2 ($p$-series tail bounds used in Lemma 1.8
+and Theorem 1.9).
+
 **Proof formalization notes.** Standard integral test: `m^{-s} ≤ ∫_{m-1}^m x^{-s} dx` and
 summation (`AntitoneOn.sum_le_integral`-style comparison, or directly via Mathlib's
 `sum_rpow`-comparison lemmas if present on the pin); the stated constant `s/(s−1)` is

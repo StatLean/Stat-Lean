@@ -12,6 +12,10 @@ $$ \mathbb E\Bigl[\ \sup_{t\in[0,1]}\Bigl|\sum_i \xi_i\,W^*_i(t)\Bigr|^2\Bigr]
    \;\le\; C\,\frac{\sigma_\xi^2\,\log n}{n h}, $$
 with `C = C(ℓ, K_max, λ₀, a₀, L_K)` — the `log n` being the price of the supremum.
 
+**Reference.** A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer Series in
+Statistics, Springer, New York, 2009. Chapter 1, §1.6.2 (the stochastic term of the sup-norm bound
+of Theorem 1.8, via Lemma 1.6 and Corollary 1.3 on a grid of $M = n^4$ points).
+
 **Proof formalization notes.** Discretize `[0,1]` on the grid `t_j = j/M`, `M = n⁴`:
 
 1. *Grid maximum.* At each grid point, `∑ᵢ ξᵢW*ᵢ(t_j) = U(0)ᵀB_{t_j}⁻¹·η_j/√(nh)·…` where the
