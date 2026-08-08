@@ -48,6 +48,82 @@ namespace StatLean.TimeSeries
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
+/-! ### Shared second-moment bricks -/
+
+/-- The strict past is a sub-σ-algebra, and (over a probability measure) trimming to it
+keeps the measure σ-finite — the standing side conditions of the conditional-expectation
+API. -/
+private lemma sigmaLT_le_of_measurable {X : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (X t)) (t : ℤ) :
+    sigmaLT X t ≤ (inferInstance : MeasurableSpace Ω) :=
+  iSup₂_le fun s _ => (hm s).comap_le
+
+/-- `E ε_t² = 1` for unit-variance centred i.i.d. innovations, at every time. -/
+private lemma iidNoise_integral_sq [IsProbabilityMeasure μ] {ε : ℤ → Ω → ℝ}
+    (hε : IsIIDNoise ε 1 μ) (t : ℤ) : (∫ ω, ε t ω ^ 2 ∂μ) = 1 := by
+  have h0 : (∫ ω, ε 0 ω ^ 2 ∂μ) = 1 := by
+    have hv := variance_eq_sub (μ := μ) hε.memLp
+    rw [hε.variance_eq, hε.integral_eq_zero] at hv
+    simpa using hv.symm
+  rw [← h0]
+  exact ((hε.identDistrib t 0).comp
+    (measurable_id.pow_const 2 : Measurable fun x : ℝ => x ^ 2)).integral_eq
+
+/-- `σ_t²` is the conditional variance of `X_t` given the strict past (FY Prop 4.2(i)).
+Private form, so that the second-moment identities below can use it. -/
+private lemma garch_condexp_sq [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
+    {b : Fin p → ℝ} {a : Fin q → ℝ} {X σvol ε : ℤ → Ω → ℝ}
+    (h : IsGARCH c0 b a X σvol ε μ) (hL2 : ∀ t, MemLp (X t) 2 μ) (t : ℤ) :
+    μ[fun ω => X t ω ^ 2 | sigmaLT X t] =ᵐ[μ] fun ω => σvol t ω ^ 2 := by
+  have hFle : sigmaLT X t ≤ (inferInstance : MeasurableSpace Ω) :=
+    iSup₂_le fun s _ => (h.measurableX s).comap_le
+  haveI : SigmaFinite (μ.trim hFle) := by
+    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+    infer_instance
+  -- `E ε_t² = 1`
+  have hEeps : (∫ ω, ε t ω ^ 2 ∂μ) = 1 := iidNoise_integral_sq h.iid t
+  have hεL2 : MemLp (ε t) 2 μ := (h.iid.identDistrib 0 t).memLp_snd h.iid.memLp
+  have hεsq : Integrable (fun ω => ε t ω ^ 2) μ := hεL2.integrable_sq
+  have hXsq : Integrable (fun ω => X t ω ^ 2) μ := (hL2 t).integrable_sq
+  -- `X_t² = σ_t² ε_t²`
+  have hprod : (fun ω => X t ω ^ 2) =ᵐ[μ] fun ω => σvol t ω ^ 2 * ε t ω ^ 2 := by
+    filter_upwards [h.recX t] with ω hω
+    rw [hω, mul_pow]
+  have hprodint : Integrable (fun ω => σvol t ω ^ 2 * ε t ω ^ 2) μ := hXsq.congr hprod
+  -- the volatility is measurable for the strict past, so it pulls out
+  have hσm : StronglyMeasurable[sigmaLT X t] fun ω => σvol t ω ^ 2 :=
+    ((h.adapted t).pow_const 2).stronglyMeasurable
+  have hpull := MeasureTheory.condExp_mul_of_stronglyMeasurable_left (m := sigmaLT X t)
+    hσm hprodint hεsq
+  -- and the innovation is independent of the strict past
+  have hεm : StronglyMeasurable[MeasurableSpace.comap (ε t) inferInstance]
+      fun ω => ε t ω ^ 2 :=
+    ((Measurable.of_comap_le (le_refl (MeasurableSpace.comap (ε t) inferInstance))).pow_const
+      2).stronglyMeasurable
+  have hcondε : μ[fun ω => ε t ω ^ 2 | sigmaLT X t] =ᵐ[μ] fun _ => (1 : ℝ) := by
+    have := condExp_indep_eq (h.iid.measurable t).comap_le hFle hεm (h.indep_past t)
+    filter_upwards [this] with ω hω
+    rw [hω, hEeps]
+  calc μ[fun ω => X t ω ^ 2 | sigmaLT X t]
+      =ᵐ[μ] μ[fun ω => σvol t ω ^ 2 * ε t ω ^ 2 | sigmaLT X t] := condExp_congr_ae hprod
+    _ =ᵐ[μ] (fun ω => σvol t ω ^ 2) * μ[fun ω => ε t ω ^ 2 | sigmaLT X t] := hpull
+    _ =ᵐ[μ] fun ω => σvol t ω ^ 2 := by
+        filter_upwards [hcondε] with ω hω
+        simp only [Pi.mul_apply, hω, mul_one]
+
+/-- `σ_t²` is integrable with the same mean as `X_t²`: it *is* the conditional expectation
+of `X_t²` given the strict past (FY Prop 4.2(i)). -/
+private lemma garch_integral_vol_sq [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
+    {b : Fin p → ℝ} {a : Fin q → ℝ} {X σvol ε : ℤ → Ω → ℝ}
+    (h : IsGARCH c0 b a X σvol ε μ) (hL2 : ∀ t, MemLp (X t) 2 μ) (t : ℤ) :
+    Integrable (fun ω => σvol t ω ^ 2) μ ∧
+      (∫ ω, σvol t ω ^ 2 ∂μ) = ∫ ω, X t ω ^ 2 ∂μ := by
+  have hFle := sigmaLT_le_of_measurable h.measurableX t
+  haveI : SigmaFinite (μ.trim hFle) := by
+    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+    infer_instance
+  have hce := garch_condexp_sq h hL2 t
+  exact ⟨integrable_condExp.congr hce, by rw [← integral_congr_ae hce, integral_condExp hFle]⟩
+
 /-- The **ARCH(∞) coefficients of a GARCH(p, q)** (FY p. 148): the coefficients `d_i` of
 `(Σ_i b_i z^i)/(1 − Σ_j a_j z^j)`, obtained as formal power-series coefficients. -/
 noncomputable def garchInfCoeffs {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (i : ℕ) :
@@ -94,7 +170,79 @@ theorem IsGARCH.integral_and_variance [IsProbabilityMeasure μ] {c0 : ℝ} {p q 
     (hsum : (∑ i, b i) + (∑ j, a j) < 1) (t : ℤ) :
     (∫ ω, X t ω ∂μ) = 0 ∧
       variance (X t) μ = c0 / (1 - (∑ i, b i) - ∑ j, a j) := by
-  sorry
+  have hFle := sigmaLT_le_of_measurable h.measurableX t
+  haveI : SigmaFinite (μ.trim hFle) := by
+    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+    infer_instance
+  -- (i) `E X_t = E σ_t · E ε_t = 0`, via the conditional expectation given the strict past
+  have hEeps0 : (∫ ω, ε t ω ∂μ) = 0 :=
+    (h.iid.identDistrib t 0).integral_eq.trans h.iid.integral_eq_zero
+  have hXint : Integrable (X t) μ := (hL2 t).integrable one_le_two
+  have hεint : Integrable (ε t) μ :=
+    ((h.iid.identDistrib 0 t).memLp_snd h.iid.memLp).integrable one_le_two
+  have hprodint : Integrable (fun ω => σvol t ω * ε t ω) μ := hXint.congr (h.recX t)
+  have hpull : μ[fun ω => σvol t ω * ε t ω | sigmaLT X t]
+      =ᵐ[μ] fun ω => σvol t ω * (μ[ε t | sigmaLT X t]) ω :=
+    condExp_mul_of_stronglyMeasurable_left (h.adapted t).stronglyMeasurable hprodint hεint
+  have hcondε : μ[ε t | sigmaLT X t] =ᵐ[μ] fun _ => (0 : ℝ) := by
+    have := condExp_indep_eq (h.iid.measurable t).comap_le hFle
+      (Measurable.of_comap_le
+        (le_refl (MeasurableSpace.comap (ε t) inferInstance))).stronglyMeasurable
+      (h.indep_past t)
+    filter_upwards [this] with ω hω
+    rw [hω, hEeps0]
+  have hcondX : μ[X t | sigmaLT X t] =ᵐ[μ] fun _ => (0 : ℝ) := by
+    refine ((condExp_congr_ae (h.recX t)).trans hpull).trans ?_
+    filter_upwards [hcondε] with ω hω
+    rw [hω, mul_zero]
+  have hmean : (∫ ω, X t ω ∂μ) = 0 := by
+    rw [← integral_condExp hFle (f := X t), integral_congr_ae hcondX]
+    simp
+  refine ⟨hmean, ?_⟩
+  -- (ii) the second moment solves `v = c₀ + (Σb + Σa) v`
+  have hXsq_eq : ∀ s : ℤ, (∫ ω, X s ω ^ 2 ∂μ) = ∫ ω, X t ω ^ 2 ∂μ := fun s =>
+    ((hstat.identDistrib h.measurableX s t).comp
+      (measurable_id.pow_const 2 : Measurable fun x : ℝ => x ^ 2)).integral_eq
+  have hIb : Integrable (fun ω => ∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω ^ 2) μ :=
+    integrable_finset_sum _ fun i _ => (hL2 _).integrable_sq.const_mul (b i)
+  have hIa : Integrable (fun ω => ∑ j : Fin q, a j * σvol (t - 1 - (j : ℕ)) ω ^ 2) μ :=
+    integrable_finset_sum _ fun j _ => (garch_integral_vol_sq h hL2 _).1.const_mul (a j)
+  have hc : Integrable (fun _ : Ω => c0) μ := integrable_const c0
+  have e1 : (∫ ω, (c0 + (∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω ^ 2)
+        + ∑ j : Fin q, a j * σvol (t - 1 - (j : ℕ)) ω ^ 2) ∂μ)
+      = (∫ ω, (c0 + ∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω ^ 2) ∂μ)
+        + ∫ ω, (∑ j : Fin q, a j * σvol (t - 1 - (j : ℕ)) ω ^ 2) ∂μ :=
+    integral_add (hc.add hIb) hIa
+  have e2 : (∫ ω, (c0 + ∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω ^ 2) ∂μ)
+      = (∫ _ω : Ω, c0 ∂μ) + ∫ ω, (∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω ^ 2) ∂μ :=
+    integral_add hc hIb
+  have e3 : (∫ ω, (∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω ^ 2) ∂μ)
+      = (∑ i : Fin p, b i) * ∫ ω, X t ω ^ 2 ∂μ := by
+    rw [integral_finset_sum (Finset.univ : Finset (Fin p)) fun i _ =>
+      (hL2 (t - 1 - (i : ℕ))).integrable_sq.const_mul (b i), Finset.sum_mul]
+    exact Finset.sum_congr rfl fun i _ => by rw [integral_const_mul, hXsq_eq]
+  have e4 : (∫ ω, (∑ j : Fin q, a j * σvol (t - 1 - (j : ℕ)) ω ^ 2) ∂μ)
+      = (∑ j : Fin q, a j) * ∫ ω, X t ω ^ 2 ∂μ := by
+    rw [integral_finset_sum (Finset.univ : Finset (Fin q)) fun j _ =>
+      (garch_integral_vol_sq h hL2 (t - 1 - (j : ℕ))).1.const_mul (a j), Finset.sum_mul]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    rw [integral_const_mul, (garch_integral_vol_sq h hL2 (t - 1 - (j : ℕ))).2, hXsq_eq]
+  have hcv : (∫ _ω : Ω, c0 ∂μ) = c0 := by simp
+  have hfix0 : (∫ ω, σvol t ω ^ 2 ∂μ)
+      = c0 + ((∑ i : Fin p, b i) + ∑ j : Fin q, a j) * ∫ ω, X t ω ^ 2 ∂μ := by
+    rw [integral_congr_ae (h.recVol t), e1, e2, e3, e4, hcv]
+    ring
+  have hfix : (∫ ω, X t ω ^ 2 ∂μ)
+      = c0 + ((∑ i : Fin p, b i) + ∑ j : Fin q, a j) * ∫ ω, X t ω ^ 2 ∂μ :=
+    (garch_integral_vol_sq h hL2 t).2.symm.trans hfix0
+  have hne : (1 : ℝ) - (∑ i : Fin p, b i) - ∑ j : Fin q, a j ≠ 0 := by linarith
+  have hval : (∫ ω, X t ω ^ 2 ∂μ) = c0 / (1 - (∑ i : Fin p, b i) - ∑ j : Fin q, a j) := by
+    rw [eq_div_iff hne]
+    linarith [hfix]
+  have hvar := variance_eq_sub (μ := μ) (hL2 t)
+  simp only [Pi.pow_apply] at hvar
+  rw [hvar, hmean, hval]
+  norm_num
 
 /-- **FY Proposition 4.2(i)**: a stationary GARCH process is white noise. -/
 theorem IsGARCH.isWhiteNoise [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
@@ -104,58 +252,13 @@ theorem IsGARCH.isWhiteNoise [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     IsWhiteNoise X (c0 / (1 - (∑ i, b i) - ∑ j, a j)) μ := by
   sorry
 
-/-- `E ε_t² = 1` for unit-variance centred i.i.d. innovations, at every time. -/
-private lemma iidNoise_integral_sq [IsProbabilityMeasure μ] {ε : ℤ → Ω → ℝ}
-    (hε : IsIIDNoise ε 1 μ) (t : ℤ) : (∫ ω, ε t ω ^ 2 ∂μ) = 1 := by
-  have h0 : (∫ ω, ε 0 ω ^ 2 ∂μ) = 1 := by
-    have hv := variance_eq_sub (μ := μ) hε.memLp
-    rw [hε.variance_eq, hε.integral_eq_zero] at hv
-    simpa using hv.symm
-  rw [← h0]
-  exact ((hε.identDistrib t 0).comp
-    (measurable_id.pow_const 2 : Measurable fun x : ℝ => x ^ 2)).integral_eq
-
 /-- **FY Proposition 4.2(i)**: `σ_t²` is the conditional variance of `X_t` given the
 strict past. -/
 theorem IsGARCH.condexp_sq [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     {b : Fin p → ℝ} {a : Fin q → ℝ} {X σvol ε : ℤ → Ω → ℝ}
     (h : IsGARCH c0 b a X σvol ε μ) (hL2 : ∀ t, MemLp (X t) 2 μ) (t : ℤ) :
-    μ[fun ω => X t ω ^ 2 | sigmaLT X t] =ᵐ[μ] fun ω => σvol t ω ^ 2 := by
-  have hFle : sigmaLT X t ≤ (inferInstance : MeasurableSpace Ω) :=
-    iSup₂_le fun s _ => (h.measurableX s).comap_le
-  haveI : SigmaFinite (μ.trim hFle) := by
-    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
-    infer_instance
-  -- `E ε_t² = 1`
-  have hEeps : (∫ ω, ε t ω ^ 2 ∂μ) = 1 := iidNoise_integral_sq h.iid t
-  have hεL2 : MemLp (ε t) 2 μ := (h.iid.identDistrib 0 t).memLp_snd h.iid.memLp
-  have hεsq : Integrable (fun ω => ε t ω ^ 2) μ := hεL2.integrable_sq
-  have hXsq : Integrable (fun ω => X t ω ^ 2) μ := (hL2 t).integrable_sq
-  -- `X_t² = σ_t² ε_t²`
-  have hprod : (fun ω => X t ω ^ 2) =ᵐ[μ] fun ω => σvol t ω ^ 2 * ε t ω ^ 2 := by
-    filter_upwards [h.recX t] with ω hω
-    rw [hω, mul_pow]
-  have hprodint : Integrable (fun ω => σvol t ω ^ 2 * ε t ω ^ 2) μ := hXsq.congr hprod
-  -- the volatility is measurable for the strict past, so it pulls out
-  have hσm : StronglyMeasurable[sigmaLT X t] fun ω => σvol t ω ^ 2 :=
-    ((h.adapted t).pow_const 2).stronglyMeasurable
-  have hpull := MeasureTheory.condExp_mul_of_stronglyMeasurable_left (m := sigmaLT X t)
-    hσm hprodint hεsq
-  -- and the innovation is independent of the strict past
-  have hεm : StronglyMeasurable[MeasurableSpace.comap (ε t) inferInstance]
-      fun ω => ε t ω ^ 2 :=
-    ((Measurable.of_comap_le (le_refl (MeasurableSpace.comap (ε t) inferInstance))).pow_const
-      2).stronglyMeasurable
-  have hcondε : μ[fun ω => ε t ω ^ 2 | sigmaLT X t] =ᵐ[μ] fun _ => (1 : ℝ) := by
-    have := condExp_indep_eq (h.iid.measurable t).comap_le hFle hεm (h.indep_past t)
-    filter_upwards [this] with ω hω
-    rw [hω, hEeps]
-  calc μ[fun ω => X t ω ^ 2 | sigmaLT X t]
-      =ᵐ[μ] μ[fun ω => σvol t ω ^ 2 * ε t ω ^ 2 | sigmaLT X t] := condExp_congr_ae hprod
-    _ =ᵐ[μ] (fun ω => σvol t ω ^ 2) * μ[fun ω => ε t ω ^ 2 | sigmaLT X t] := hpull
-    _ =ᵐ[μ] fun ω => σvol t ω ^ 2 := by
-        filter_upwards [hcondε] with ω hω
-        simp only [Pi.mul_apply, hω, mul_one]
+    μ[fun ω => X t ω ^ 2 | sigmaLT X t] =ᵐ[μ] fun ω => σvol t ω ^ 2 :=
+  garch_condexp_sq h hL2 t
 
 /-- **FY eqs. (4.25)–(4.26)**: the squared process satisfies the ARMA(p∨q, q) recursion
 `X_t² = c₀ + Σ_{i ≤ p∨q}(b_i + a_i) X_{t−i}² + e_t − Σ_j a_j e_{t−j}` with the
