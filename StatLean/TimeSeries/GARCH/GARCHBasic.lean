@@ -391,7 +391,60 @@ theorem tsum_garchInfCoeffs {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
   exact hsummable.hasSum
 
 /-- **FY Theorem 4.4, existence**: under `Σ b + Σ a < 1` a strictly stationary
-square-integrable GARCH(p, q) solution exists. -/
+square-integrable GARCH(p, q) solution exists.
+
+**BLOCKED — the ARCH(∞) machinery is not reusable through its frozen interface**
+(assessed 2026-08-08). The reduction itself is sound and every *arithmetic* input for it
+is already available in this file:
+
+* the ARCH(∞) coefficients `d_i` of `b(z)/(1 − a(z))` are `garchInfCoeffs`, nonnegative
+  by `garchInfCoeffs_nonneg` and summable with `Σ_i d_i = (Σ b)/(1 − Σ a)` by
+  `tsum_garchInfCoeffs`; `hsum` is *exactly* `Σ_i d_i < 1`, the hypothesis of
+  `exists_stationary_archInf` (`Stationarity/ARCH.lean`, FY Thm 2.5(i)).
+
+Instantiating that theorem at `ξ = ε²`, `bc j = d_{j+1}`, `a = c₀/(1 − Σ a)` produces a
+process `Y` (morally `X²`) with `IsARCHInf`, `IsStrictlyStationary Y`, integrability and
+its mean. From `Y` one sets `σ² = ā + Σ_j d_{j+1} Y_{t−1−j}` and `X_t = σ_t ε_t`. Of the
+eleven `IsGARCH` fields, that route delivers all but two, and `MemLp (X t) 2` is free
+(`X_t² = Y_t` a.e. and `Y_t` is integrable). The two it cannot deliver are:
+
+1. **`indep_past`** — `Indep (comap (ε t)) (sigmaLT X t)`. `IsARCHInf.indep_past` only
+   gives `Indep (comap (ξ t)) (sigmaLT Y t)`, which is weaker in *two* independent ways:
+   `comap (ε t) ⊋ comap (ε t ²) = comap (ξ t)` (an independence statement about `ε_t²`
+   says nothing about the sign of `ε_t`), and `sigmaLT X t` is the join of `sigmaLT Y t`
+   with `σ(ε_s : s < t)` (because `X_s = σ_s ε_s` carries the innovation's sign), which is
+   strictly larger than `sigmaLT Y t`.
+2. **`IsStrictlyStationary X`** — strict stationarity of `Y` alone is not enough: `X_t` is
+   a *joint* functional of the `Y`-past and of `ε_t`, so one needs the joint law of
+   `(Y, ε)` to be shift-invariant, not just `Y`'s own finite-dimensional laws.
+
+Both facts *are* proved inside `exists_stationary_archInf` — its `hmeasSolLT` shows the
+Volterra solution at time `s` is `sigmaLT ξ t`-measurable for `s < t`, and its `hstat`
+goes through the fixed path functional `archFun`/`archPath` — but neither is exported:
+`archLayer`, `archPath`, `archFun`, `archSol` and every lemma about them are `private` to
+`Stationarity/ARCH.lean`, and the theorem's conclusion is purely `∃ Y, IsARCHInf … ∧
+IsStrictlyStationary Y … ∧ Integrable … ∧ mean`. No other file consumes
+`exists_stationary_archInf`, so nothing else pins its shape.
+
+**Precise repair** (a statement change in `Stationarity/ARCH.lean`, outside this lane's
+touch-set): strengthen the conclusion of `exists_stationary_archInf` to expose the
+solution as a shift-equivariant path functional, e.g. add
+`∃ G : (ℤ → ℝ) → ℝ, Measurable G ∧ (∀ t ω, Y t ω = G (fun s => ξ (s + t) ω)) ∧
+∀ p q : ℤ → ℝ, (∀ s ≤ 0, p s = q s) → G p = G q`
+(measurable, causal, shift-equivariant). Given that clause both blockers evaporate:
+causality gives `Y_s` measurable for `σ(ε_u : u ≤ s)`, hence `sigmaLT X t ≤ σ(ε_u : u < t)`
+and `indep_past` from the i.i.d. property of `ε`; and shift-equivariance transports the
+shift-invariance of the *`ε`*-path law to the family `X_t = √(ā + Σ_j d_{j+1} G(…)) · ε_t`,
+giving `IsStrictlyStationary X` by the same argument
+`isStrictlyStationary_nelX` uses below for `(p, q) = (1, 1)`.
+
+The alternative, staying inside the touch-set, is to re-derive the Volterra construction
+here (the general-`(p, q)` analogue of the `nel*` cascade below, which is specific to
+`(1,1)`); that is a construction from scratch, not a reuse, and is left undone.
+
+The `(p, q) = (1, 1)` case is *not* affected: it is proved below without ARCH(∞), by
+`exists_strictlyStationary_garch_one_one_nelson` (Nelson's random-product series), whose
+hypothesis `E log(b₁ε² + a₁) < 0` follows from `b₁ + a₁ < 1` by Jensen. -/
 theorem exists_stationary_garch [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     {b : Fin p → ℝ} {a : Fin q → ℝ} {ε : ℤ → Ω → ℝ}
     -- USER-INPUT: nonnegative coefficients; FY Def 4.3
@@ -563,10 +616,62 @@ theorem IsGARCH.sum_lt_one_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     (∑ i, b i) + (∑ j, a j) < 1 := by
   sorry
 
+/-! ### Fourth-moment bricks for the GARCH(1,1) squared-process ACF
+
+`L⁴` bookkeeping in the `x ↦ x⁴` form the file uses, plus the working form of
+`IsGARCH.indep_past`. Same statements as the corresponding bricks of `ARCHBasic.lean`,
+which are `private` there. -/
+
+omit [MeasurableSpace Ω] in
+private lemma norm_rpow_four' {f : Ω → ℝ} (ω : Ω) :
+    ‖f ω‖ ^ (ENNReal.toReal 4) = f ω ^ 4 := by
+  have h4 : (ENNReal.toReal 4) = ((4 : ℕ) : ℝ) := by norm_num
+  rw [h4, Real.rpow_natCast, ← norm_pow, Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+
+private lemma memLp_four_iff_integrable' {f : Ω → ℝ} (hf : AEStronglyMeasurable f μ) :
+    MemLp f 4 μ ↔ Integrable (fun ω => f ω ^ 4) μ := by
+  rw [← integrable_norm_rpow_iff hf (by norm_num) (by norm_num)]
+  exact ⟨fun hi => hi.congr (Filter.Eventually.of_forall fun ω => norm_rpow_four' ω),
+    fun hi => hi.congr (Filter.Eventually.of_forall fun ω => (norm_rpow_four' ω).symm)⟩
+
+/-- The square of an `L⁴` variable lies in `L²`. -/
+private lemma memLp_sq_of_memLp_four' [IsProbabilityMeasure μ] {f : Ω → ℝ}
+    (hm : Measurable f) (hf : MemLp f 4 μ) : MemLp (fun ω => f ω ^ 2) 2 μ := by
+  refine (memLp_two_iff_integrable_sq (hm.pow_const 2).aestronglyMeasurable).2 ?_
+  refine ((memLp_four_iff_integrable' hf.aestronglyMeasurable).1 hf).congr
+    (Filter.Eventually.of_forall fun ω => ?_)
+  change f ω ^ 4 = (f ω ^ 2) ^ 2
+  ring
+
+/-- Every past-measurable functional is independent of the current innovation — the
+working form of the model's `indep_past` field. -/
+private lemma indepFun_of_sigmaLT' {X ε : ℤ → Ω → ℝ} {t : ℤ}
+    (hindep : Indep (MeasurableSpace.comap (ε t) inferInstance) (sigmaLT X t) μ)
+    {f : Ω → ℝ} (hf : Measurable[sigmaLT X t] f) : IndepFun f (ε t) μ :=
+  (IndepFun_iff_Indep _ _ _).2 (indep_of_indep_of_le_right hindep hf.comap_le).symm
+
 /-- **FY Example 4.2, eq. (4.30)**: the squared-process ACF of a stationary GARCH(1,1)
 with finite fourth moment is
 `Corr(X_t², X_{t+k}²) = ((1 − a₁² − a₁b₁)b₁/(1 − a₁² − 2a₁b₁))·(b₁ + a₁)^{k−1}`
-for `k ≥ 1`. -/
+for `k ≥ 1`.
+
+**Verified against the recursion before formalizing** (the analogous FY formula (4.62) in
+`StochasticVolatility.lean` turned out to be misprinted): this one is *correct as printed*,
+and — worth stressing — it carries **no dependence on `κ_ε = E ε⁴`**, even though the
+individual moments it is built from all do. Writing `Y_t = X_t²`, `V_t = σ_t²` and
+`e_t = Y_t − V_t`, the squared process is the exact ARMA(1,1)
+`Y_t = c₀ + (b₁+a₁)Y_{t−1} + e_t − a₁e_{t−1}`, whose lag-1 correlation
+`(1+φθ)(φ+θ)/(1+2φθ+θ²)` at `φ = b₁+a₁`, `θ = −a₁` is exactly the stated constant; the
+factor `κ_ε − 1` that appears in both `γ(0)` and `γ(1)` cancels in the ratio.
+
+The proof below never introduces `κ_ε` at all. It runs on three scalar relations:
+`m = c₀ + (b₁+a₁)m` for `m = E Y_t`; `E[V_t Y_t] = E[V_t²]` (from `X_t = σ_tε_t` and
+`indep_past`); and the fact that `u_t = E[V_t²]` is *constant in `t`* — obtained not from
+a fourth moment of `ε` but from the affine recursion `u_t = K + (a₁²+2a₁b₁)u_{t−1}` with
+contraction factor `< 1`, together with the a priori bound `u_t ≤ E[Y_t²]` that
+`E[(Y_t − V_t)²] ≥ 0` supplies. Those pin `u·(1−a₁²−2a₁b₁) = c₀² + b₁²E[Y²] + 2c₀(b₁+a₁)m`,
+and the closed form is then polynomial algebra. Lags `k ≥ 2` obey `γ(k) = (b₁+a₁)γ(k−1)`
+because `e_t` and `e_{t−1}` are both uncorrelated with `Y_0`. -/
 theorem IsGARCH.acf_sq_garch_one_one [IsProbabilityMeasure μ] {c0 b1 a1 : ℝ}
     {X σvol ε : ℤ → Ω → ℝ}
     (h : IsGARCH c0 (fun _ : Fin 1 => b1) (fun _ : Fin 1 => a1) X σvol ε μ)
@@ -578,7 +683,272 @@ theorem IsGARCH.acf_sq_garch_one_one [IsProbabilityMeasure μ] {c0 b1 a1 : ℝ}
     acf (fun t ω => X t ω ^ 2) μ (k : ℤ)
       = ((1 - a1 ^ 2 - a1 * b1) * b1 / (1 - a1 ^ 2 - 2 * a1 * b1))
         * (b1 + a1) ^ (k - 1) := by
-  sorry
+  ---------------------------------------------------------------- basic regularity
+  have hmX : ∀ t, Measurable (X t) := h.measurableX
+  have hL2 : ∀ t, MemLp (X t) 2 μ := fun t => (hL4 t).mono_exponent (by norm_num)
+  have hmY : ∀ t : ℤ, Measurable fun ω => X t ω ^ 2 := fun t => (hmX t).pow_const 2
+  have hmV : ∀ t : ℤ, Measurable fun ω => σvol t ω ^ 2 :=
+    fun t => (h.measurableVol t).pow_const 2
+  have hY2 : ∀ t : ℤ, MemLp (fun ω => X t ω ^ 2) 2 μ := fun t => memLp_sq_of_memLp_four' (hmX t) (hL4 t)
+  have hYint : ∀ t : ℤ, Integrable (fun ω => X t ω ^ 2) μ :=
+    fun t => (hY2 t).integrable one_le_two
+  have hYsqint : ∀ t : ℤ, Integrable (fun ω => (X t ω ^ 2) ^ 2) μ :=
+    fun t => (hY2 t).integrable_sq
+  have hFle : ∀ t : ℤ, sigmaLT X t ≤ (inferInstance : MeasurableSpace Ω) :=
+    fun t => iSup₂_le fun s _ => (hmX s).comap_le
+  have hSF : ∀ t : ℤ, SigmaFinite (μ.trim (hFle t)) := by
+    intro t
+    haveI : IsFiniteMeasure (μ.trim (hFle t)) := MeasureTheory.isFiniteMeasure_trim (hFle t)
+    infer_instance
+  have hcond : ∀ t : ℤ, μ[fun ω => X t ω ^ 2 | sigmaLT X t] =ᵐ[μ] fun ω => σvol t ω ^ 2 :=
+    fun t => h.condexp_sq hL2 t
+  have hV2 : ∀ t : ℤ, MemLp (fun ω => σvol t ω ^ 2) 2 μ := by
+    intro t
+    haveI := hSF t
+    exact ((hY2 t).condExp).ae_eq (hcond t)
+  have hVint : ∀ t : ℤ, Integrable (fun ω => σvol t ω ^ 2) μ :=
+    fun t => (hV2 t).integrable one_le_two
+  have hVsqint : ∀ t : ℤ, Integrable (fun ω => (σvol t ω ^ 2) ^ 2) μ :=
+    fun t => (hV2 t).integrable_sq
+  ---------------------------------------------------------------- constants
+  obtain ⟨m, hmdef⟩ : ∃ m : ℝ, ∫ ω, X 0 ω ^ 2 ∂μ = m := ⟨_, rfl⟩
+  obtain ⟨w, hwdef⟩ : ∃ w : ℝ, ∫ ω, (X 0 ω ^ 2) ^ 2 ∂μ = w := ⟨_, rfl⟩
+  ---------------------------------------------------------------- stationary moments
+  have hEY : ∀ t : ℤ, ∫ ω, X t ω ^ 2 ∂μ = m := fun t => by
+    rw [← hmdef]
+    simpa [Function.comp_def] using ((hstat.identDistrib hmX t 0).comp
+      (measurable_id.pow_const 2 : Measurable fun x : ℝ => x ^ 2)).integral_eq
+  have hEYsq : ∀ t : ℤ, ∫ ω, (X t ω ^ 2) ^ 2 ∂μ = w := fun t => by
+    have h1 := ((hstat.identDistrib hmX t 0).comp
+      (measurable_id.pow_const 4 : Measurable fun x : ℝ => x ^ 4)).integral_eq
+    simp only [Function.comp_def] at h1
+    calc ∫ ω, (X t ω ^ 2) ^ 2 ∂μ = ∫ ω, X t ω ^ 4 ∂μ :=
+          integral_congr_ae (Filter.Eventually.of_forall fun ω => by ring)
+      _ = ∫ ω, X 0 ω ^ 4 ∂μ := h1
+      _ = ∫ ω, (X 0 ω ^ 2) ^ 2 ∂μ :=
+          integral_congr_ae (Filter.Eventually.of_forall fun ω => by ring)
+      _ = w := hwdef
+  have hEV : ∀ t : ℤ, ∫ ω, σvol t ω ^ 2 ∂μ = m := by
+    intro t
+    haveI := hSF t
+    rw [← integral_congr_ae (hcond t), integral_condExp (hFle t), hEY t]
+  ---------------------------------------------------------------- the (1,1) recursion
+  have hrec : ∀ t : ℤ, (fun ω => σvol t ω ^ 2) =ᵐ[μ]
+      fun ω => c0 + b1 * X (t - 1) ω ^ 2 + a1 * σvol (t - 1) ω ^ 2 := by
+    intro t
+    filter_upwards [h.recVol t] with ω hω
+    simpa using hω
+  ---------------------------------------------------------------- E[V_t Y_t] = E[V_t²]
+  have hVY : ∀ t : ℤ, ∫ ω, σvol t ω ^ 2 * X t ω ^ 2 ∂μ = ∫ ω, (σvol t ω ^ 2) ^ 2 ∂μ := by
+    intro t
+    have hae : (fun ω => σvol t ω ^ 2 * X t ω ^ 2)
+        =ᵐ[μ] fun ω => (σvol t ω ^ 2) ^ 2 * ε t ω ^ 2 := by
+      filter_upwards [h.recX t] with ω hω
+      rw [hω]; ring
+    have hIF : IndepFun (fun ω => (σvol t ω ^ 2) ^ 2) (fun ω => ε t ω ^ 2) μ :=
+      (indepFun_of_sigmaLT' (h.indep_past t) (((h.adapted t).pow_const 2).pow_const 2)).comp
+        measurable_id (measurable_id.pow_const 2)
+    rw [integral_congr_ae hae, hIF.integral_fun_mul_eq_mul_integral
+      ((hmV t).pow_const 2).aestronglyMeasurable
+      (((h.iid.measurable t).pow_const 2)).aestronglyMeasurable, iidNoise_integral_sq h.iid t, mul_one]
+  ---------------------------------------------------------------- E X² fixed point
+  have hmfix : m = c0 + (b1 + a1) * m := by
+    have i1 : Integrable (fun ω => c0 + b1 * X (0 - 1) ω ^ 2) μ :=
+      (integrable_const c0).add ((hYint _).const_mul _)
+    have i2 : Integrable (fun ω => a1 * σvol (0 - 1) ω ^ 2) μ := (hVint _).const_mul _
+    have h1 : ∫ ω, σvol 0 ω ^ 2 ∂μ = c0 + b1 * m + a1 * m := by
+      rw [integral_congr_ae (hrec 0), integral_add i1 i2,
+        integral_add (integrable_const c0) ((hYint _).const_mul _),
+        integral_const_mul, integral_const_mul, hEY, hEV]
+      simp
+    rw [hEV 0] at h1
+    linarith
+  ---------------------------------------------------------------- E[V_t²] recursion
+  have hurec : ∀ t : ℤ, ∫ ω, (σvol t ω ^ 2) ^ 2 ∂μ
+      = (c0 ^ 2 + b1 ^ 2 * w + 2 * c0 * (b1 + a1) * m)
+        + (a1 ^ 2 + 2 * a1 * b1) * ∫ ω, (σvol (t - 1) ω ^ 2) ^ 2 ∂μ := by
+    intro t
+    have hae : (fun ω => (σvol t ω ^ 2) ^ 2) =ᵐ[μ] fun ω =>
+        c0 ^ 2 + b1 ^ 2 * (X (t - 1) ω ^ 2) ^ 2 + a1 ^ 2 * (σvol (t - 1) ω ^ 2) ^ 2
+          + 2 * c0 * b1 * X (t - 1) ω ^ 2 + 2 * c0 * a1 * σvol (t - 1) ω ^ 2
+          + 2 * a1 * b1 * (σvol (t - 1) ω ^ 2 * X (t - 1) ω ^ 2) := by
+      filter_upwards [hrec t] with ω hω
+      rw [hω]; ring
+    have j1 : Integrable (fun _ : Ω => c0 ^ 2) μ := integrable_const _
+    have j2 : Integrable (fun ω => b1 ^ 2 * (X (t - 1) ω ^ 2) ^ 2) μ :=
+      (hYsqint _).const_mul _
+    have j3 : Integrable (fun ω => a1 ^ 2 * (σvol (t - 1) ω ^ 2) ^ 2) μ :=
+      (hVsqint _).const_mul _
+    have j4 : Integrable (fun ω => 2 * c0 * b1 * X (t - 1) ω ^ 2) μ := (hYint _).const_mul _
+    have j5 : Integrable (fun ω => 2 * c0 * a1 * σvol (t - 1) ω ^ 2) μ := (hVint _).const_mul _
+    have j6 : Integrable (fun ω => 2 * a1 * b1 * (σvol (t - 1) ω ^ 2 * X (t - 1) ω ^ 2)) μ :=
+      (MemLp.integrable_mul (p := 2) (q := 2) (hV2 _) (hY2 _)).const_mul _
+    have j12 : Integrable (fun ω => c0 ^ 2 + b1 ^ 2 * (X (t - 1) ω ^ 2) ^ 2) μ := j1.add j2
+    have j123 : Integrable (fun ω => c0 ^ 2 + b1 ^ 2 * (X (t - 1) ω ^ 2) ^ 2
+        + a1 ^ 2 * (σvol (t - 1) ω ^ 2) ^ 2) μ := j12.add j3
+    have j1234 : Integrable (fun ω => c0 ^ 2 + b1 ^ 2 * (X (t - 1) ω ^ 2) ^ 2
+        + a1 ^ 2 * (σvol (t - 1) ω ^ 2) ^ 2 + 2 * c0 * b1 * X (t - 1) ω ^ 2) μ := j123.add j4
+    have j12345 : Integrable (fun ω => c0 ^ 2 + b1 ^ 2 * (X (t - 1) ω ^ 2) ^ 2
+        + a1 ^ 2 * (σvol (t - 1) ω ^ 2) ^ 2 + 2 * c0 * b1 * X (t - 1) ω ^ 2
+        + 2 * c0 * a1 * σvol (t - 1) ω ^ 2) μ := j1234.add j5
+    rw [integral_congr_ae hae, integral_add j12345 j6, integral_add j1234 j5,
+      integral_add j123 j4, integral_add j12 j3, integral_add j1 j2,
+      integral_const_mul, integral_const_mul, integral_const_mul, integral_const_mul,
+      integral_const_mul, hEYsq, hEY, hEV, hVY]
+    simp
+    ring
+  ---------------------------------------------------------------- E[V_t²] ≤ E[Y_t²]
+  have huw : ∀ t : ℤ, ∫ ω, (σvol t ω ^ 2) ^ 2 ∂μ ≤ w := by
+    intro t
+    have hnn : (0 : ℝ) ≤ ∫ ω, (X t ω ^ 2 - σvol t ω ^ 2) ^ 2 ∂μ :=
+      integral_nonneg fun ω => sq_nonneg _
+    have kVY : Integrable (fun ω => σvol t ω ^ 2 * X t ω ^ 2) μ :=
+      MemLp.integrable_mul (p := 2) (q := 2) (hV2 t) (hY2 t)
+    have k2 : Integrable (fun ω => 2 * (σvol t ω ^ 2 * X t ω ^ 2)) μ := kVY.const_mul 2
+    have k1 : Integrable (fun ω => (X t ω ^ 2) ^ 2 - 2 * (σvol t ω ^ 2 * X t ω ^ 2)) μ :=
+      (hYsqint t).sub k2
+    have hexp : ∫ ω, (X t ω ^ 2 - σvol t ω ^ 2) ^ 2 ∂μ
+        = ((∫ ω, (X t ω ^ 2) ^ 2 ∂μ) - 2 * ∫ ω, σvol t ω ^ 2 * X t ω ^ 2 ∂μ)
+          + ∫ ω, (σvol t ω ^ 2) ^ 2 ∂μ := by
+      rw [show (fun ω => (X t ω ^ 2 - σvol t ω ^ 2) ^ 2)
+            = fun ω => ((X t ω ^ 2) ^ 2 - 2 * (σvol t ω ^ 2 * X t ω ^ 2))
+              + (σvol t ω ^ 2) ^ 2 from funext fun ω => by ring,
+        integral_add k1 (hVsqint t), integral_sub (hYsqint t) k2, integral_const_mul]
+    rw [hVY t, hEYsq t] at hexp
+    linarith
+  ---------------------------------------------------------------- E[V_t²] is constant
+  have hS0 : (0 : ℝ) ≤ a1 ^ 2 + 2 * a1 * b1 := by positivity
+  have hS1 : a1 ^ 2 + 2 * a1 * b1 < 1 := by
+    have h0 : (0 : ℝ) ≤ a1 + b1 := by linarith
+    have h1 : (a1 + b1) ^ 2 < 1 := by nlinarith
+    nlinarith [sq_nonneg b1, h1]
+  have hDne : (1 : ℝ) - (a1 ^ 2 + 2 * a1 * b1) ≠ 0 := ne_of_gt (by linarith)
+  obtain ⟨c, hcdef⟩ : ∃ c : ℝ,
+      (c0 ^ 2 + b1 ^ 2 * w + 2 * c0 * (b1 + a1) * m) / (1 - (a1 ^ 2 + 2 * a1 * b1)) = c :=
+    ⟨_, rfl⟩
+  have hcD : c * (1 - (a1 ^ 2 + 2 * a1 * b1)) = c0 ^ 2 + b1 ^ 2 * w + 2 * c0 * (b1 + a1) * m := by
+    rw [← hcdef, div_mul_cancel₀ _ hDne]
+  have hstep : ∀ t : ℤ, (∫ ω, (σvol t ω ^ 2) ^ 2 ∂μ) - c
+      = (a1 ^ 2 + 2 * a1 * b1) * ((∫ ω, (σvol (t - 1) ω ^ 2) ^ 2 ∂μ) - c) := by
+    intro t
+    have hu := hurec t
+    linear_combination hu - hcD
+  have hiter : ∀ (n : ℕ) (t : ℤ),
+      |(∫ ω, (σvol t ω ^ 2) ^ 2 ∂μ) - c| ≤ (a1 ^ 2 + 2 * a1 * b1) ^ n * (w + |c|) := by
+    intro n
+    induction n with
+    | zero =>
+      intro t
+      have h1 : (0 : ℝ) ≤ ∫ ω, (σvol t ω ^ 2) ^ 2 ∂μ := integral_nonneg fun ω => sq_nonneg _
+      have h2 := huw t
+      have h3 := le_abs_self c
+      have h4 := neg_abs_le c
+      rw [pow_zero, one_mul, abs_le]
+      constructor <;> linarith
+    | succ n ih =>
+      intro t
+      rw [hstep t, abs_mul, abs_of_nonneg hS0, pow_succ]
+      calc (a1 ^ 2 + 2 * a1 * b1) * |(∫ ω, (σvol (t - 1) ω ^ 2) ^ 2 ∂μ) - c|
+          ≤ (a1 ^ 2 + 2 * a1 * b1) * ((a1 ^ 2 + 2 * a1 * b1) ^ n * (w + |c|)) :=
+            mul_le_mul_of_nonneg_left (ih (t - 1)) hS0
+        _ = (a1 ^ 2 + 2 * a1 * b1) ^ n * (a1 ^ 2 + 2 * a1 * b1) * (w + |c|) := by ring
+  have hufix : ∀ t : ℤ, ∫ ω, (σvol t ω ^ 2) ^ 2 ∂μ = c := by
+    intro t
+    have hlim : Tendsto (fun n : ℕ => (a1 ^ 2 + 2 * a1 * b1) ^ n * (w + |c|)) atTop (𝓝 0) := by
+      simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one hS0 hS1).mul_const (w + |c|)
+    have hle : |(∫ ω, (σvol t ω ^ 2) ^ 2 ∂μ) - c| ≤ 0 :=
+      le_of_tendsto_of_tendsto' tendsto_const_nhds hlim (fun n => hiter n t)
+    have hz := abs_nonpos_iff.1 hle
+    linarith [sub_eq_zero.1 hz]
+  ---------------------------------------------------------------- cross moments
+  have hAB : ∀ t : ℤ, 0 < t →
+      ∫ ω, X t ω ^ 2 * X 0 ω ^ 2 ∂μ = ∫ ω, σvol t ω ^ 2 * X 0 ω ^ 2 ∂μ := by
+    intro t ht
+    have hae : (fun ω => X t ω ^ 2 * X 0 ω ^ 2)
+        =ᵐ[μ] fun ω => (σvol t ω ^ 2 * X 0 ω ^ 2) * ε t ω ^ 2 := by
+      filter_upwards [h.recX t] with ω hω
+      rw [hω]; ring
+    have hfm : Measurable[sigmaLT X t] fun ω => σvol t ω ^ 2 * X 0 ω ^ 2 :=
+      ((h.adapted t).pow_const 2).mul ((measurable_of_lt_sigmaLT ht).pow_const 2)
+    have hIF : IndepFun (fun ω => σvol t ω ^ 2 * X 0 ω ^ 2) (fun ω => ε t ω ^ 2) μ :=
+      (indepFun_of_sigmaLT' (h.indep_past t) hfm).comp measurable_id (measurable_id.pow_const 2)
+    rw [integral_congr_ae hae, hIF.integral_fun_mul_eq_mul_integral
+      (((hmV t).mul (hmY 0)).aestronglyMeasurable)
+      (((h.iid.measurable t).pow_const 2)).aestronglyMeasurable, iidNoise_integral_sq h.iid t, mul_one]
+  have hBrec : ∀ t : ℤ, ∫ ω, σvol t ω ^ 2 * X 0 ω ^ 2 ∂μ
+      = c0 * m + b1 * (∫ ω, X (t - 1) ω ^ 2 * X 0 ω ^ 2 ∂μ)
+        + a1 * ∫ ω, σvol (t - 1) ω ^ 2 * X 0 ω ^ 2 ∂μ := by
+    intro t
+    have hae : (fun ω => σvol t ω ^ 2 * X 0 ω ^ 2) =ᵐ[μ] fun ω =>
+        c0 * X 0 ω ^ 2 + b1 * (X (t - 1) ω ^ 2 * X 0 ω ^ 2)
+          + a1 * (σvol (t - 1) ω ^ 2 * X 0 ω ^ 2) := by
+      filter_upwards [hrec t] with ω hω
+      rw [hω]; ring
+    have l1 : Integrable (fun ω => c0 * X 0 ω ^ 2) μ := (hYint 0).const_mul _
+    have l2 : Integrable (fun ω => b1 * (X (t - 1) ω ^ 2 * X 0 ω ^ 2)) μ :=
+      (MemLp.integrable_mul (p := 2) (q := 2) (hY2 _) (hY2 0)).const_mul _
+    have l3 : Integrable (fun ω => a1 * (σvol (t - 1) ω ^ 2 * X 0 ω ^ 2)) μ :=
+      (MemLp.integrable_mul (p := 2) (q := 2) (hV2 _) (hY2 0)).const_mul _
+    have l12 : Integrable (fun ω => c0 * X 0 ω ^ 2 + b1 * (X (t - 1) ω ^ 2 * X 0 ω ^ 2)) μ :=
+      l1.add l2
+    rw [integral_congr_ae hae, integral_add l12 l3, integral_add l1 l2,
+      integral_const_mul, integral_const_mul, integral_const_mul, hEY 0]
+  have hA0 : ∫ ω, X 0 ω ^ 2 * X 0 ω ^ 2 ∂μ = w := by
+    rw [← hwdef]
+    exact integral_congr_ae (Filter.Eventually.of_forall fun ω => by ring)
+  have hA1 : ∫ ω, X 1 ω ^ 2 * X 0 ω ^ 2 ∂μ = c0 * m + b1 * w + a1 * c := by
+    rw [hAB 1 one_pos, hBrec 1]
+    norm_num
+    rw [hA0, hVY 0, hufix 0]
+  have hArec : ∀ t : ℤ, 2 ≤ t → ∫ ω, X t ω ^ 2 * X 0 ω ^ 2 ∂μ
+      = c0 * m + (b1 + a1) * ∫ ω, X (t - 1) ω ^ 2 * X 0 ω ^ 2 ∂μ := by
+    intro t ht
+    rw [hAB t (by omega), hBrec t, ← hAB (t - 1) (by omega)]
+    ring
+  ---------------------------------------------------------------- autocovariances
+  have hgam : ∀ t : ℤ, acvf (fun s ω => X s ω ^ 2) μ t
+      = (∫ ω, X t ω ^ 2 * X 0 ω ^ 2 ∂μ) - m * m := by
+    intro t
+    change cov[fun ω => X t ω ^ 2, fun ω => X 0 ω ^ 2; μ] = _
+    rw [covariance_eq_sub (hY2 t) (hY2 0)]
+    simp only [Pi.mul_apply]
+    rw [hEY t, hEY 0]
+  have hgam0 : acvf (fun s ω => X s ω ^ 2) μ 0 = w - m * m := by rw [hgam 0, hA0]
+  have hgam1 : acvf (fun s ω => X s ω ^ 2) μ 1 = c0 * m + b1 * w + a1 * c - m * m := by
+    rw [hgam 1, hA1]
+  have hgamrec : ∀ t : ℤ, 2 ≤ t → acvf (fun s ω => X s ω ^ 2) μ t
+      = (b1 + a1) * acvf (fun s ω => X s ω ^ 2) μ (t - 1) := by
+    intro t ht
+    rw [hgam t, hgam (t - 1), hArec t ht]
+    linear_combination (-m) * hmfix
+  ---------------------------------------------------------------- the algebra
+  have hkey : (c0 * m + b1 * w + a1 * c - m * m) * (1 - a1 ^ 2 - 2 * a1 * b1)
+      = (w - m * m) * (b1 * (1 - a1 ^ 2 - a1 * b1)) := by
+    linear_combination a1 * hcD
+      - (a1 * c0 + m * ((1 - a1 ^ 2 - 2 * a1 * b1) + a1 * (b1 + a1) + a1)) * hmfix
+  ---------------------------------------------------------------- assembly
+  have hg0ne : acvf (fun s ω => X s ω ^ 2) μ 0 ≠ 0 := by
+    have he : acvf (fun s ω => X s ω ^ 2) μ 0 = variance (fun ω => X 0 ω ^ 2) μ :=
+      covariance_self (hmY 0).aemeasurable
+    rw [he]
+    exact ne_of_gt hvar
+  have hmain : ∀ n : ℕ, acvf (fun s ω => X s ω ^ 2) μ ((n + 1 : ℕ) : ℤ)
+      = (b1 + a1) ^ n * acvf (fun s ω => X s ω ^ 2) μ 1 := by
+    intro n
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      have ht : (2 : ℤ) ≤ ((n + 1 + 1 : ℕ) : ℤ) := by push_cast; omega
+      have he : ((n + 1 + 1 : ℕ) : ℤ) - 1 = ((n + 1 : ℕ) : ℤ) := by push_cast; ring
+      rw [hgamrec _ ht, he, ih]
+      ring
+  have hratio : acvf (fun s ω => X s ω ^ 2) μ 1 / acvf (fun s ω => X s ω ^ 2) μ 0
+      = (1 - a1 ^ 2 - a1 * b1) * b1 / (1 - a1 ^ 2 - 2 * a1 * b1) := by
+    rw [div_eq_div_iff hg0ne hden, hgam0, hgam1]
+    linear_combination hkey
+  obtain ⟨n, rfl⟩ : ∃ n : ℕ, k = n + 1 := ⟨k - 1, by omega⟩
+  rw [acf, hmain n, Nat.add_sub_cancel, mul_div_assoc, hratio]
+  ring
 
 /-! ### Nelson's strict-stationarity criterion (commissioned proof target) -/
 

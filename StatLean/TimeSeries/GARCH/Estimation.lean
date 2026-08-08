@@ -193,6 +193,71 @@ private theorem presample_stable_rate_false :
   rw [show ((10 : ℝ) / 9) ^ k * (9 / 10 : ℝ) ^ k = 1 by rw [← mul_pow]; norm_num] at h3
   linarith
 
+/-! ### The repaired rate
+
+The discrepancy `D n := |σ̃²_n(v₀) − σ̃²_n(v₁)|` obeys `D 0 = |v₀ − v₁|` (the `c₀` and data
+terms are common to both runs and cancel) and `D (n+1) ≤ Σⱼ aⱼ · D (n − j)`. Since each
+lag index `n − j` with `j < q` is at least `n + 1 − q`, one factor `A := Σⱼ aⱼ` is gained
+every `q` steps: `D n ≤ |v₀ − v₁| · A ^ ⌊n/q⌋`. Choosing any `ρ ∈ (0, 1)` with `A ≤ ρ^q`
+— e.g. `ρ = max (A ^ (1/q)) (1/2)`, the `max` only to keep `ρ > 0` when `A = 0` — turns
+that into the geometric bound `D n ≤ (|v₀ − v₁| / ρ^{q−1}) · ρ^n`. No characteristic-root
+analysis is needed: `ρ` is *some* admissible rate, not the dominant root. -/
+
+/-- One factor `A = Σⱼ aⱼ` is gained every `q` steps of the recursion (4.36). -/
+private lemma garchTruncVol_diff_le {p q : ℕ} {c0 : ℝ} {b : Fin p → ℝ} {a : Fin q → ℝ}
+    (ha : ∀ j, 0 ≤ a j) (ha1 : (∑ j, a j) ≤ 1) {v0 v1 : ℝ} {T : ℕ} (x : Fin T → ℝ) (n : ℕ) :
+    |garchTruncVol c0 b a v0 x n - garchTruncVol c0 b a v1 x n|
+      ≤ |v0 - v1| * (∑ j, a j) ^ (n / q) := by
+  have hA0 : (0 : ℝ) ≤ ∑ j, a j := Finset.sum_nonneg fun j _ => ha j
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    match n with
+    | 0 => simp [garchTruncVol]
+    | (m + 1) =>
+      rw [garchTruncVol, garchTruncVol]
+      -- the constant and the data terms are common to both runs
+      have hcancel : ∀ u v : ℝ,
+          (c0 + (∑ i : Fin p, b i * (if h : m - (i : ℕ) < T then x ⟨m - (i : ℕ), h⟩ else 0) ^ 2)
+              + u)
+            - (c0 + (∑ i : Fin p,
+                b i * (if h : m - (i : ℕ) < T then x ⟨m - (i : ℕ), h⟩ else 0) ^ 2) + v)
+            = u - v := by intro u v; ring
+      rw [hcancel, ← Finset.sum_sub_distrib]
+      -- every lag index `m − j` (`j < q`) has quotient at least `e`
+      set e : ℕ := (m + 1 - q) / q with he
+      have hstep : ∀ j : Fin q,
+          |a j * garchTruncVol c0 b a v0 x (m - (j : ℕ))
+              - a j * garchTruncVol c0 b a v1 x (m - (j : ℕ))|
+            ≤ a j * (|v0 - v1| * (∑ j, a j) ^ e) := by
+        intro j
+        rw [← mul_sub, abs_mul, abs_of_nonneg (ha j)]
+        refine mul_le_mul_of_nonneg_left ?_ (ha j)
+        refine (ih _ (by omega)).trans ?_
+        refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)
+        refine pow_le_pow_of_le_one hA0 ha1 ?_
+        have hj := j.isLt
+        exact Nat.div_le_div_right (by omega)
+      calc |∑ j : Fin q, (a j * garchTruncVol c0 b a v0 x (m - (j : ℕ))
+                - a j * garchTruncVol c0 b a v1 x (m - (j : ℕ)))|
+          ≤ ∑ j : Fin q, |a j * garchTruncVol c0 b a v0 x (m - (j : ℕ))
+              - a j * garchTruncVol c0 b a v1 x (m - (j : ℕ))| := Finset.abs_sum_le_sum_abs _ _
+        _ ≤ ∑ j : Fin q, a j * (|v0 - v1| * (∑ j, a j) ^ e) :=
+            Finset.sum_le_sum fun j _ => hstep j
+        _ = |v0 - v1| * (∑ j, a j) ^ (e + 1) := by
+            rw [← Finset.sum_mul, pow_succ]; ring
+        _ ≤ |v0 - v1| * (∑ j, a j) ^ ((m + 1) / q) := by
+            refine mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one hA0 ha1 ?_) (abs_nonneg _)
+            rcases Nat.eq_zero_or_pos q with hq | hq
+            · subst hq; simp
+            · rcases lt_or_ge (m + 1) q with h | h
+              · rw [Nat.div_eq_of_lt h]; exact Nat.zero_le _
+              · rw [he]
+                have : (m + 1 - q) / q + 1 = (m + 1) / q := by
+                  rw [← Nat.add_div_right _ hq]
+                  congr 1
+                  omega
+                omega
+
 /-- **The truncation is asymptotically negligible** (the fact that makes (4.36) usable):
 under `Σ a_j < 1` the effect of the presample value decays geometrically, so two
 presample choices give criteria differing by `O(ρ^ν)` for **some** rate `ρ < 1`.
@@ -209,28 +274,42 @@ theorem garchTruncVol_presample_stable {p q : ℕ} {c0 : ℝ} {b : Fin p → ℝ
     {T : ℕ} (x : Fin T → ℝ) :
     ∃ C ρ : ℝ, 0 ≤ C ∧ 0 ≤ ρ ∧ ρ < 1 ∧ ∀ n : ℕ,
       |garchTruncVol c0 b a v0 x n - garchTruncVol c0 b a v1 x n| ≤ C * ρ ^ n := by
-  -- The statement has been repaired (see the docstring); the rate is now existential,
-  -- so the intended proof runs: `D n ≤ Σⱼ aⱼ · D (n − j)` with `Σ a < 1` gives
-  -- geometric decay at the dominant characteristic root. Left as a named debt for a
-  -- sweep lane.
-  --
-  -- The mathematics FY intends is correct: writing `D n` for the discrepancy, the `c₀`
-  -- and data terms cancel and `D (n+1) ≤ ∑_j a_j · D (n - j)`, so `D` is dominated by the
-  -- linear recursion with characteristic equation `ρ^q = ∑_j a_j ρ^{q-1-j}`, whose unique
-  -- positive root satisfies `ρ < 1` exactly when `A := ∑_j a_j < 1`. That gives geometric
-  -- decay `D n ≤ C ρ^n`, which is what §4.2.3 uses.
-  --
-  -- But the frozen conclusion names the rate `A`, not `ρ`, and `ρ > A` as soon as `q ≥ 2`
-  -- carries mass on a lag `j ≥ 1`: with `a = (0, A)` the equation is `ρ² = A`, i.e.
-  -- `ρ = √A > A`. The witness above takes `p = 0`, `q = 2`, `c₀ = 0`, `a = (0, 9/10)`,
-  -- `v₀ = 1`, `v₁ = 0`, satisfying every hypothesis (`A = 9/10 < 1`), and computes
-  -- `D (2k) = (9/10)^k` exactly, against a claimed bound `C · (9/10)^{2k}`; the ratio
-  -- `(10/9)^k` is unbounded, so no `C` works.
-  --
-  -- REPAIR (statement change, out of scope for this lane): replace `(∑ j, a j) ^ n` by
-  -- `ρ ^ n` for the dominant root `ρ`, or weaken to `(∑ j, a j) ^ (n / q)` (`q ≥ 1`), or
-  -- restrict to `q ≤ 1`, where the frozen rate is correct.
-  sorry
+  have hA0 : (0 : ℝ) ≤ ∑ j, a j := Finset.sum_nonneg fun j _ => ha j
+  rcases Nat.eq_zero_or_pos q with hq | hq
+  · -- with no lag terms the discrepancy is annihilated after a single step
+    subst hq
+    refine ⟨|v0 - v1|, 0, abs_nonneg _, le_rfl, by norm_num, ?_⟩
+    intro n
+    match n with
+    | 0 => simp [garchTruncVol]
+    | (m + 1) => rw [garchTruncVol, garchTruncVol]; simp
+  · have hqR : (0 : ℝ) < (q : ℝ) := by exact_mod_cast hq
+    set A : ℝ := ∑ j, a j with hAdef
+    -- any `ρ < 1` with `A ≤ ρ^q` will do; the `max` only keeps `ρ > 0` when `A = 0`
+    set ρ : ℝ := max (A ^ ((q : ℝ)⁻¹)) (1 / 2) with hρdef
+    have hρ0 : (0 : ℝ) < ρ := lt_of_lt_of_le (by norm_num) (le_max_right _ _)
+    have hρ1 : ρ < 1 := max_lt (Real.rpow_lt_one hA0 hsum (inv_pos.2 hqR)) (by norm_num)
+    have hAρ : A ≤ ρ ^ q := by
+      have h1 : (A ^ ((q : ℝ)⁻¹)) ^ q = A := by
+        rw [← Real.rpow_natCast (A ^ ((q : ℝ)⁻¹)) q, ← Real.rpow_mul hA0,
+          inv_mul_cancel₀ hqR.ne', Real.rpow_one]
+      calc A = (A ^ ((q : ℝ)⁻¹)) ^ q := h1.symm
+        _ ≤ ρ ^ q := pow_le_pow_left₀ (Real.rpow_nonneg hA0 _) (le_max_left _ _) q
+    refine ⟨|v0 - v1| / ρ ^ (q - 1), ρ, by positivity, hρ0.le, hρ1, fun n => ?_⟩
+    refine (garchTruncVol_diff_le ha hsum.le x n).trans ?_
+    calc |v0 - v1| * A ^ (n / q)
+        ≤ |v0 - v1| * (ρ ^ q) ^ (n / q) :=
+          mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hA0 hAρ _) (abs_nonneg _)
+      _ = |v0 - v1| * ρ ^ (q * (n / q)) := by rw [← pow_mul]
+      _ ≤ |v0 - v1| * ρ ^ (n - (q - 1)) := by
+          refine mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one hρ0.le hρ1.le ?_) (abs_nonneg _)
+          have h1 : q * (n / q) + n % q = n := Nat.div_add_mod n q
+          have h2 : n % q < q := Nat.mod_lt _ hq
+          omega
+      _ ≤ |v0 - v1| / ρ ^ (q - 1) * ρ ^ n := by
+          rw [div_mul_eq_mul_div, le_div_iff₀ (pow_pos hρ0 (q - 1)), mul_assoc, ← pow_add]
+          exact mul_le_mul_of_nonneg_left
+            (pow_le_pow_of_le_one hρ0.le hρ1.le (by omega)) (abs_nonneg _)
 
 /-- **DEBT (Giraitis & Robinson 2001; FY §4.2.3)**: `√T`-asymptotic normality of the
 Whittle estimator of a GARCH model under fourth-order stationarity. Recorded at the
