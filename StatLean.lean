@@ -9,7 +9,6 @@ import StatLean.NonparametricStatistics
 import StatLean.PointEstimation
 import StatLean.HypothesisTesting
 import StatLean.StatisticalModels
-import StatLean.TimeSeries
 
 /-!
 # StatLean
@@ -43,10 +42,6 @@ theory, organized into per-area sublibraries.
   (covariance calculus, block conditioning), mixed effects, longitudinal / GEE,
   and missing data (MAR, IPW, ignorability) with adapters to the other areas
   (Andersen–Borgan–Gill–Keiding; Liang–Zeger; Rubin; Anderson).
-* `StatLean.TimeSeries` — time series: stationarity, autocovariance/autocorrelation,
-  the Herglotz theorem and spectral bricks on the circle, Markov-kernel ergodicity,
-  linear and nonlinear model classes (ARMA/ARIMA, ARCH/GARCH, TAR, SV), and MA(∞)
-  linear processes (Fan & Yao, *Nonlinear Time Series*).
 * `StatLean.NonparametricStatistics` — nonparametric estimation: kernel density
   estimation (pointwise and integrated risk, exact asymptotic MISE), local
   polynomial regression (pointwise/L²/sup-norm rates over Hölder classes), and
