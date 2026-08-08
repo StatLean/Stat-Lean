@@ -132,14 +132,38 @@ private lemma integrable_archVol_sq [IsProbabilityMeasure μ] {c0 : ℝ} {p : �
   exact (integrable_const c0).add (integrable_finset_sum _ fun i _ =>
     ((hL2 _).integrable_sq).const_mul _)
 
+omit [MeasurableSpace Ω] in
+private lemma norm_rpow_four {f : Ω → ℝ} (ω : Ω) :
+    ‖f ω‖ ^ (ENNReal.toReal 4) = f ω ^ 4 := by
+  have h4 : (ENNReal.toReal 4) = ((4 : ℕ) : ℝ) := by norm_num
+  rw [h4, Real.rpow_natCast, ← norm_pow, Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+
+/-- `L⁴` membership in the `x ↦ x⁴` form the file uses. -/
+private lemma memLp_four_iff_integrable {f : Ω → ℝ} (hf : AEStronglyMeasurable f μ) :
+    MemLp f 4 μ ↔ Integrable (fun ω => f ω ^ 4) μ := by
+  rw [← integrable_norm_rpow_iff hf (by norm_num) (by norm_num)]
+  exact ⟨fun hi => hi.congr (Filter.Eventually.of_forall fun ω => norm_rpow_four ω),
+    fun hi => hi.congr (Filter.Eventually.of_forall fun ω => (norm_rpow_four ω).symm)⟩
+
 /-- A fourth `L`-power is integrable, in the `x ↦ x⁴` form the file uses. -/
-private lemma integrable_pow_four [IsProbabilityMeasure μ] {f : Ω → ℝ} (hf : MemLp f 4 μ) :
-    Integrable (fun ω => f ω ^ 4) μ := by
-  have h := hf.integrable_norm_rpow'
-  have he : ∀ ω, ‖f ω‖ ^ (ENNReal.toReal 4) = f ω ^ 4 := fun ω => by
-    have h4 : (ENNReal.toReal 4) = ((4 : ℕ) : ℝ) := by norm_num
-    rw [h4, Real.rpow_natCast, ← norm_pow, Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-  simpa only [he] using h
+private lemma integrable_pow_four {f : Ω → ℝ} (hf : MemLp f 4 μ) :
+    Integrable (fun ω => f ω ^ 4) μ :=
+  (memLp_four_iff_integrable hf.aestronglyMeasurable).1 hf
+
+/-- `archInfCoeffs` is finitely supported, hence summable. -/
+private lemma summable_archInfCoeffs {p : ℕ} (b : Fin p → ℝ) : Summable (archInfCoeffs b) := by
+  refine summable_of_ne_finset_zero (s := Finset.range p) fun j hj => ?_
+  have hj' : ¬ j < p := by simpa using hj
+  simp [archInfCoeffs, hj']
+
+/-- The ARCH(∞) reading of a finite coefficient vector has the same total mass. -/
+private lemma tsum_archInfCoeffs {p : ℕ} (b : Fin p → ℝ) :
+    ∑' j : ℕ, archInfCoeffs b j = ∑ i, b i := by
+  rw [tsum_eq_sum (s := Finset.range p) fun j hj => by
+    have hj' : ¬ j < p := by simpa using hj
+    simp [archInfCoeffs, hj']]
+  rw [← Fin.sum_univ_eq_sum_range (fun j => archInfCoeffs b j) p]
+  exact Finset.sum_congr rfl fun i _ => by simp [archInfCoeffs, i.isLt]
 
 /-- The square of an `L⁴` variable lies in `L²`. -/
 private lemma memLp_sq_of_memLp_four [IsProbabilityMeasure μ] {f : Ω → ℝ}
@@ -340,6 +364,25 @@ theorem IsARCH.sum_lt_one_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     (∑ i, b i) < 1 := by
   sorry
 
+/-- **EXTRA DEBT — reported loudly** (Giraitis–Kokoszka–Leipus 2000; Vervaat-type
+uniqueness, *not* proved in FY §4.2.1): under `Σ_j b_j < 1` a **strictly stationary**
+ARCH(p) solution automatically has a finite second moment.
+
+FY Theorem 4.3(ii) (`IsARCH.memLp_four` below) is stated with no `E X_t² < ∞` hypothesis,
+while the ARCH(∞) `L²` theory it is proved from (`archInf_memLp_two_debt`, itself a
+literature debt) requires integrability of `Y = X²`. Supplying it needs the a.s.-contraction
+argument that identifies *every* strictly stationary solution of the random recurrence
+`Y_t = (c₀ + Σ b_j Y_{t−1−j}) ε_t²` with the (integrable) Volterra series — the
+`E log(b ξ) < 0` route of Vervaat/Bougerol–Picard. That machinery (an SLLN for possibly
+non-integrable logarithms plus tightness of the common marginal) is outside the batch's
+scope; note that the naive fixed-point argument `m = c₀ + (Σ b) m` cannot conclude, since
+`m = ∞` is a fixed point too. -/
+private theorem memLp_two_of_stationary_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
+    {b : Fin p → ℝ} {X ε : ℤ → Ω → ℝ} (h : IsARCH c0 b X ε μ)
+    (hstat : IsStrictlyStationary X μ) (hsum : (∑ i, b i) < 1) (t : ℤ) :
+    MemLp (X t) 2 μ := by
+  sorry
+
 /-- **FY Theorem 4.3(ii)** (eq. (4.16)): a finite fourth innovation moment together with
 `max{1, (Eε⁴)^{1/2}}·Σ b_j < 1` gives a finite fourth moment for the process. -/
 theorem IsARCH.memLp_four [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ} {b : Fin p → ℝ}
@@ -351,7 +394,31 @@ theorem IsARCH.memLp_four [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ} {b : Fi
     (h416 : max 1 (Real.sqrt (∫ ω, ε 0 ω ^ 4 ∂μ)) * (∑ i, b i) < 1)
     (t : ℤ) :
     MemLp (X t) 4 μ := by
-  sorry
+  have hb0 : 0 ≤ ∑ i, b i := Finset.sum_nonneg fun i _ => h.b_nonneg i
+  have hmax : (1 : ℝ) ≤ max 1 (Real.sqrt (∫ ω, ε 0 ω ^ 4 ∂μ)) := le_max_left _ _
+  have hsum : (∑ i, b i) < 1 := by nlinarith
+  have hL2 : ∀ s : ℤ, MemLp (X s) 2 μ := fun s =>
+    memLp_two_of_stationary_debt h hstat hsum s
+  -- The squared process is an ARCH(∞) process; apply FY Theorem 2.5(ii).
+  have hnoise : IsARCHNoise (fun s ω => ε s ω ^ 2) μ :=
+    ⟨h.isARCHInf_sq.measurableXi, h.isARCHInf_sq.xi_nonneg, h.isARCHInf_sq.iIndep,
+      h.isARCHInf_sq.identDistrib, h.isARCHInf_sq.integrable_xi, h.isARCHInf_sq.integral_xi⟩
+  have hξ2 : MemLp (fun ω => ε 0 ω ^ 2) 2 μ :=
+    memLp_sq_of_memLp_four (h.iid.measurable 0) hε4
+  have hI : ∫ ω, (ε 0 ω ^ 2) ^ 2 ∂μ = ∫ ω, ε 0 ω ^ 4 ∂μ :=
+    integral_congr_ae (Filter.Eventually.of_forall fun ω => by ring)
+  have h16 : max 1 (Real.sqrt (∫ ω, (ε 0 ω ^ 2) ^ 2 ∂μ))
+      * ∑' j : ℕ, archInfCoeffs b j < 1 := by
+    rw [hI, tsum_archInfCoeffs]
+    exact h416
+  have hY2 : MemLp (fun ω => X t ω ^ 2) 2 μ :=
+    archInf_memLp_two_debt h.c0_nonneg h.isARCHInf_sq.bc_nonneg (summable_archInfCoeffs b)
+      hnoise hξ2 h16 h.isARCHInf_sq (strictlyStationary_sq hstat h.measurableX)
+      (fun s => (hL2 s).integrable_sq) t
+  refine (memLp_four_iff_integrable (h.measurableX t).aestronglyMeasurable).2 ?_
+  have h4 := (memLp_two_iff_integrable_sq
+    ((h.measurableX t).pow_const 2).aestronglyMeasurable).1 hY2
+  exact h4.congr (Filter.Eventually.of_forall fun ω => by ring)
 
 /-- **FY eq. (4.18)**: the squared-process innovations `e_t = (ε_t² − 1)σ_t²` are a
 martingale difference with respect to the strict past of `X`. -/
