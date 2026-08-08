@@ -132,6 +132,42 @@ private lemma integrable_archVol_sq [IsProbabilityMeasure μ] {c0 : ℝ} {p : �
   exact (integrable_const c0).add (integrable_finset_sum _ fun i _ =>
     ((hL2 _).integrable_sq).const_mul _)
 
+/-- A fourth `L`-power is integrable, in the `x ↦ x⁴` form the file uses. -/
+private lemma integrable_pow_four [IsProbabilityMeasure μ] {f : Ω → ℝ} (hf : MemLp f 4 μ) :
+    Integrable (fun ω => f ω ^ 4) μ := by
+  have h := hf.integrable_norm_rpow'
+  have he : ∀ ω, ‖f ω‖ ^ (ENNReal.toReal 4) = f ω ^ 4 := fun ω => by
+    have h4 : (ENNReal.toReal 4) = ((4 : ℕ) : ℝ) := by norm_num
+    rw [h4, Real.rpow_natCast, ← norm_pow, Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+  simpa only [he] using h
+
+/-- The square of an `L⁴` variable lies in `L²`. -/
+private lemma memLp_sq_of_memLp_four [IsProbabilityMeasure μ] {f : Ω → ℝ}
+    (hm : Measurable f) (hf : MemLp f 4 μ) : MemLp (fun ω => f ω ^ 2) 2 μ := by
+  refine (memLp_two_iff_integrable_sq (hm.pow_const 2).aestronglyMeasurable).2 ?_
+  have h := integrable_pow_four hf
+  refine h.congr (Filter.Eventually.of_forall fun ω => ?_)
+  change f ω ^ 4 = (f ω ^ 2) ^ 2
+  ring
+
+/-- **`E X_t² = E σ_t²`**: the innovation is independent of the volatility and has unit
+second moment. -/
+private lemma integral_sq_eq_archVol [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
+    {b : Fin p → ℝ} {X ε : ℤ → Ω → ℝ} (h : IsARCH c0 b X ε μ) (t : ℤ) :
+    ∫ ω, X t ω ^ 2 ∂μ = ∫ ω, archVol c0 b X t ω ^ 2 ∂μ := by
+  have hle : sigmaLT X t ≤ (inferInstance : MeasurableSpace Ω) := sigmaLT_le h.measurableX t
+  have hvolM : Measurable (archVol c0 b X t) :=
+    (measurable_archVol_sigmaLT (c0 := c0) (b := b) (X := X) t).mono hle le_rfl
+  have hIF2 : IndepFun (fun ω => archVol c0 b X t ω ^ 2) (fun ω => ε t ω ^ 2) μ :=
+    (indepFun_of_sigmaLT (h.indep_past t) (measurable_archVol_sigmaLT t)).comp
+      (measurable_id.pow_const 2) (measurable_id.pow_const 2)
+  have hae : (fun ω => X t ω ^ 2) =ᵐ[μ] fun ω => archVol c0 b X t ω ^ 2 * ε t ω ^ 2 := by
+    filter_upwards [h.recurrence t] with ω hω
+    rw [hω]; ring
+  rw [integral_congr_ae hae, hIF2.integral_fun_mul_eq_mul_integral
+    (hvolM.pow_const 2).aestronglyMeasurable
+    ((h.iid.measurable t).pow_const 2).aestronglyMeasurable, integral_sq_iid h.iid t, mul_one]
+
 /-- The squared ARCH(p) process is an ARCH(∞) process in the sense of `IsARCHInf`
 (FY §4.2.1's reduction to Theorem 2.5). -/
 theorem IsARCH.isARCHInf_sq [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ} {b : Fin p → ℝ}
@@ -384,7 +420,52 @@ theorem IsARCH.kurtosis_le [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ} {b : F
     (hε4 : MemLp (ε 0) 4 μ) :
     (∫ ω, ε 0 ω ^ 4 ∂μ) * (∫ ω, X 0 ω ^ 2 ∂μ) ^ 2
       ≤ (∫ ω, X 0 ω ^ 4 ∂μ) * (∫ ω, ε 0 ω ^ 2 ∂μ) ^ 2 := by
-  sorry
+  have hle : sigmaLT X 0 ≤ (inferInstance : MeasurableSpace Ω) := sigmaLT_le h.measurableX 0
+  have hvolM : Measurable (archVol c0 b X 0) :=
+    (measurable_archVol_sigmaLT (c0 := c0) (b := b) (X := X) 0).mono hle le_rfl
+  -- `σ_0² ∈ L²`, i.e. `E σ_0⁴ < ∞`, because `X ∈ L⁴`.
+  have hvolL2 : MemLp (fun ω => archVol c0 b X 0 ω ^ 2) 2 μ := by
+    have he : (fun ω => archVol c0 b X 0 ω ^ 2)
+        = fun ω => c0 + ∑ i, b i * X (0 - 1 - (i : ℕ)) ω ^ 2 :=
+      funext fun ω => archVol_sq h.c0_nonneg h.b_nonneg 0 ω
+    rw [he]
+    exact (memLp_const c0).add (memLp_finset_sum _ fun i _ =>
+      (memLp_sq_of_memLp_four (h.measurableX _) (hL4 _)).const_mul _)
+  have hvol4 : Integrable (fun ω => archVol c0 b X 0 ω ^ 4) μ := by
+    have h4 := (memLp_two_iff_integrable_sq
+      (hvolM.pow_const 2).aestronglyMeasurable).1 hvolL2
+    refine h4.congr (Filter.Eventually.of_forall fun ω => ?_)
+    change (archVol c0 b X 0 ω ^ 2) ^ 2 = archVol c0 b X 0 ω ^ 4
+    ring
+  have hε4int : Integrable (fun ω => ε 0 ω ^ 4) μ := integrable_pow_four hε4
+  have hIF : IndepFun (archVol c0 b X 0) (ε 0) μ :=
+    indepFun_of_sigmaLT (h.indep_past 0) (measurable_archVol_sigmaLT 0)
+  have hIF4 : IndepFun (fun ω => archVol c0 b X 0 ω ^ 4) (fun ω => ε 0 ω ^ 4) μ :=
+    hIF.comp (measurable_id.pow_const 4) (measurable_id.pow_const 4)
+  -- `E X⁴ = E σ⁴ · E ε⁴`.
+  have hE4 : ∫ ω, X 0 ω ^ 4 ∂μ
+      = (∫ ω, archVol c0 b X 0 ω ^ 4 ∂μ) * ∫ ω, ε 0 ω ^ 4 ∂μ := by
+    have hae : (fun ω => X 0 ω ^ 4)
+        =ᵐ[μ] fun ω => archVol c0 b X 0 ω ^ 4 * ε 0 ω ^ 4 := by
+      filter_upwards [h.recurrence 0] with ω hω
+      rw [hω]; ring
+    rw [integral_congr_ae hae, hIF4.integral_fun_mul_eq_mul_integral
+      hvol4.aestronglyMeasurable hε4int.aestronglyMeasurable]
+  -- Jensen: `(E σ²)² ≤ E σ⁴`.
+  have hJensen : (∫ ω, archVol c0 b X 0 ω ^ 2 ∂μ) ^ 2
+      ≤ ∫ ω, archVol c0 b X 0 ω ^ 4 ∂μ := by
+    have hv := variance_nonneg (fun ω => archVol c0 b X 0 ω ^ 2) μ
+    rw [variance_eq_sub hvolL2] at hv
+    have hp : ∫ ω, ((fun ω => archVol c0 b X 0 ω ^ 2) ^ 2) ω ∂μ
+        = ∫ ω, archVol c0 b X 0 ω ^ 4 ∂μ := by
+      refine integral_congr_ae (Filter.Eventually.of_forall fun ω => ?_)
+      change (archVol c0 b X 0 ω ^ 2) ^ 2 = archVol c0 b X 0 ω ^ 4
+      ring
+    rw [hp] at hv
+    linarith
+  have he4nn : 0 ≤ ∫ ω, ε 0 ω ^ 4 ∂μ := integral_nonneg fun ω => by positivity
+  rw [integral_sq_eq_archVol h 0, hE4, integral_sq_iid h.iid 0]
+  nlinarith [hJensen, he4nn]
 
 /-- **FY Proposition 4.1(i)**: a stationary ARCH(p) process is white noise with variance
 `c₀/(1 − Σ b_j)`. -/
@@ -393,7 +474,44 @@ theorem IsARCH.isWhiteNoise [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ} {b : 
     (hstat : IsStrictlyStationary X μ) (hL2 : ∀ t, MemLp (X t) 2 μ)
     (hsum : (∑ i, b i) < 1) :
     IsWhiteNoise X (c0 / (1 - ∑ i, b i)) μ := by
-  sorry
+  -- The martingale-difference property kills every nonzero-lag covariance.
+  have key : ∀ s t : ℤ, s < t → cov[X s, X t; μ] = 0 := by
+    intro s t hst
+    have hle : sigmaLT X t ≤ (inferInstance : MeasurableSpace Ω) := sigmaLT_le h.measurableX t
+    have hvolM : Measurable (archVol c0 b X t) :=
+      (measurable_archVol_sigmaLT (c0 := c0) (b := b) (X := X) t).mono hle le_rfl
+    have hvolL2 : MemLp (archVol c0 b X t) 2 μ :=
+      (memLp_two_iff_integrable_sq hvolM.aestronglyMeasurable).2
+        (integrable_archVol_sq h hL2 t)
+    have hfm : Measurable[sigmaLT X t] fun ω => X s ω * archVol c0 b X t ω :=
+      (measurable_sigmaLT hst).mul (measurable_archVol_sigmaLT t)
+    have hIF : IndepFun (fun ω => X s ω * archVol c0 b X t ω) (ε t) μ :=
+      indepFun_of_sigmaLT (h.indep_past t) hfm
+    have hprod : Integrable (fun ω => X s ω * archVol c0 b X t ω) μ :=
+      (hL2 s).integrable_mul hvolL2
+    have he : ∫ ω, ε t ω ∂μ = 0 := by
+      rw [(h.iid.identDistrib t 0).integral_eq, h.iid.integral_eq_zero]
+    have hxy : ∫ ω, X s ω * X t ω ∂μ = 0 := by
+      have hae : (fun ω => X s ω * X t ω)
+          =ᵐ[μ] fun ω => (X s ω * archVol c0 b X t ω) * ε t ω := by
+        filter_upwards [h.recurrence t] with ω hω
+        rw [hω]; ring
+      rw [integral_congr_ae hae, hIF.integral_fun_mul_eq_mul_integral
+        hprod.aestronglyMeasurable (h.iid.measurable t).aestronglyMeasurable, he, mul_zero]
+    rw [covariance_eq_sub (hL2 s) (hL2 t), (h.integral_and_variance hstat hL2 hsum s).1,
+      (h.integral_and_variance hstat hL2 hsum t).1]
+    simp only [Pi.mul_apply]
+    rw [hxy]
+    ring
+  exact
+    { measurable := h.measurableX
+      memLp := hL2
+      integral_eq_zero := fun t => (h.integral_and_variance hstat hL2 hsum t).1
+      variance_eq := fun t => (h.integral_and_variance hstat hL2 hsum t).2
+      uncorrelated := fun s t hne => by
+        rcases lt_or_gt_of_ne hne with hlt | hlt
+        · exact key s t hlt
+        · rw [covariance_comm]; exact key t s hlt }
 
 /-- **FY Example 4.1, eq. (4.23)**: for a stationary ARCH(1) with finite fourth moment,
 the squared process has autocorrelation `Corr(X_t², X_{t+τ}²) = b₁^{|τ|}`. -/
