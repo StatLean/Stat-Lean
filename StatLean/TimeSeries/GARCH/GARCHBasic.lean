@@ -710,7 +710,8 @@ private lemma nelW_ne_top_of_tendsto {b1 a1 c : ℝ} {p : ℤ → ℝ} {g : ℝ 
   -- past a threshold, the log-partial-sums drop below `k · c/2`
   obtain ⟨K, hK⟩ := Filter.eventually_atTop.1
     (Filter.Tendsto.eventually_lt_const (show c < c / 2 by linarith) h)
-  have hgeom : ∀ k : ℕ, max K 1 ≤ k → nelProd b1 a1 k p ≤ ENNReal.ofReal (Real.exp (c / 2)) ^ k := by
+  have hgeom : ∀ k : ℕ, max K 1 ≤ k →
+      nelProd b1 a1 k p ≤ ENNReal.ofReal (Real.exp (c / 2)) ^ k := by
     intro k hk
     have hk1 : 1 ≤ k := le_trans (le_max_right K 1) hk
     have hkpos : (0 : ℝ) < (k : ℝ) := by exact_mod_cast hk1
@@ -849,6 +850,7 @@ private lemma indep_last_sigmaLT {ε : ℤ → Ω → ℝ} (hm : ∀ t, Measurab
     (fun s => (hm s).comap_le) hi hdisj
   simpa using this
 
+omit [MeasurableSpace Ω] in
 /-- The random product at time `s ≤ t`, as a function of the strict past of time `t`. -/
 private lemma measurable_nelProd_sigmaLT {ε : ℤ → Ω → ℝ} (b1 a1 : ℝ) (k : ℕ) {s t : ℤ}
     (hst : s ≤ t) : Measurable[sigmaLT ε t] fun ω => nelProd b1 a1 k (nelPath ε s ω) := by
@@ -866,12 +868,14 @@ private lemma measurable_nelProd_sigmaLT {ε : ℤ → Ω → ℝ} (b1 a1 : ℝ)
   rw [hfun]
   exact (((measurable_of_lt_sigmaLT hlt).pow_const 2).const_mul b1).add_const a1
 
+omit [MeasurableSpace Ω] in
 private lemma measurable_nelV_sigmaLT {ε : ℤ → Ω → ℝ} (c0 b1 a1 : ℝ) {s t : ℤ} (hst : s ≤ t) :
     Measurable[sigmaLT ε t] fun ω => nelV c0 b1 a1 (nelPath ε s ω) := by
   simp only [nelV, nelW]
   exact Measurable.ennreal_toReal (measurable_const.mul
     (Measurable.ennreal_tsum fun k => measurable_nelProd_sigmaLT b1 a1 k hst))
 
+omit [MeasurableSpace Ω] in
 private lemma measurable_nelXf_sigmaLT {ε : ℤ → Ω → ℝ} (c0 b1 a1 : ℝ) {s t : ℤ} (hst : s < t) :
     Measurable[sigmaLT ε t] fun ω => nelXf c0 b1 a1 (nelPath ε s ω) := by
   simp only [nelXf]
@@ -957,6 +961,7 @@ private lemma measurable_nelU (c0 b1 a1 : ℝ) : Measurable (nelU c0 b1 a1) :=
 private lemma nelU_nonneg (c0 b1 a1 : ℝ) (q : ℤ → ℝ) : 0 ≤ nelU c0 b1 a1 q :=
   ENNReal.toReal_nonneg
 
+omit [MeasurableSpace Ω] in
 private lemma measurable_nelT_sigmaLT {X : ℤ → Ω → ℝ} (b1 a1 : ℝ) (t : ℤ) :
     Measurable[sigmaLT X t] fun ω => nelT b1 a1 (nelPath X t ω) := by
   simp only [nelT]
@@ -973,10 +978,12 @@ private lemma measurable_nelT_sigmaLT {X : ℤ → Ω → ℝ} (b1 a1 : ℝ) (t 
   rw [hfun]
   exact ((measurable_of_lt_sigmaLT hlt).pow_const 2).const_mul (b1 * a1 ^ k)
 
+omit [MeasurableSpace Ω] in
 private lemma measurable_nelU_sigmaLT {X : ℤ → Ω → ℝ} (c0 b1 a1 : ℝ) (t : ℤ) :
     Measurable[sigmaLT X t] fun ω => nelU c0 b1 a1 (nelPath X t ω) :=
   Measurable.ennreal_toReal (measurable_const.add (measurable_nelT_sigmaLT b1 a1 t))
 
+omit [MeasurableSpace Ω] in
 /-- The GARCH(1,1) volatility recursion `σ_t² = c₀ + b₁X_{t−1}² + a₁σ_{t−1}²` for the
 constructed pair, pointwise wherever the random-product series converges. -/
 private lemma nelV_rec_proc {c0 b1 a1 : ℝ} (hc0 : 0 ≤ c0) (hb1 : 0 ≤ b1) (ha1 : 0 ≤ a1)
@@ -1003,6 +1010,7 @@ private lemma nelV_rec_proc {c0 b1 a1 : ℝ} (hc0 : 0 ≤ c0) (hb1 : 0 ≤ b1) (
   rw [hnv, hX2]
   ring
 
+omit [MeasurableSpace Ω] in
 /-- **The ARCH(∞) form recovers Nelson's series** (FY eq. (4.29)). The proof is entirely
 pathwise: iterating the volatility recursion `N` times leaves the remainder
 `a₁^N σ²_{t−N}`, which is dominated by `c₀ Σ_{k ≥ N} ∏_{i<k} M_{t−1−i}` — the depth-`N`
@@ -1033,11 +1041,11 @@ private lemma nelU_eq_nelV {c0 b1 a1 : ℝ} (hc0 : 0 ≤ c0) (hb1 : 0 ≤ b1) (h
       rw [Finset.sum_range_succ, Finset.sum_range_succ]
       have h1 := ih s
       have h2 := hrec (s - (N : ℕ))
-      have hcast1 : s - (N : ℕ) - 1 = s - 1 - (N : ℕ) := by push_cast; ring
+      have hcast1 : s - (N : ℕ) - 1 = s - 1 - (N : ℕ) := by ring
       have hcast2 : s - ((N + 1 : ℕ) : ℤ) = s - (N : ℕ) - 1 := by push_cast; ring
       rw [hcast1] at h2
       rw [hcast2, h1, h2]
-      ring
+      ring_nf
   -- the remainder is dominated by the tail of the random-product series
   have htail : ∀ N : ℕ, a1 ^ N * V (t - (N : ℕ))
       ≤ c0 * ∑' j : ℕ, (nelProd b1 a1 (j + N) (nelPath ε t ω)).toReal := by
@@ -1213,7 +1221,7 @@ theorem exists_strictlyStationary_garch_one_one_nelson [IsProbabilityMeasure μ]
   -- Nelson's condition already forces `a₁ < 1`: otherwise every multiplier is `≥ 1`.
   have ha1' : a1 < 1 := by
     by_contra hcon
-    push_neg at hcon
+    rw [not_lt] at hcon
     have hnn : ∀ ω, 0 ≤ Real.log (b1 * ε 0 ω ^ 2 + a1) := by
       intro ω
       refine Real.log_nonneg ?_
@@ -1291,7 +1299,7 @@ theorem exists_strictlyStationary_igarch_one_one [IsProbabilityMeasure μ]
       rw [h1, h2, hEM, integral_const]
       simp
     by_contra hcon
-    push_neg at hcon
+    rw [not_lt] at hcon
     have hz : (∫ ω, ((b1 * ε 0 ω ^ 2 + a1 - 1)
         - Real.log (b1 * ε 0 ω ^ 2 + a1)) ∂μ) = 0 := by
       have h1 := integral_nonneg_of_ae hgap
