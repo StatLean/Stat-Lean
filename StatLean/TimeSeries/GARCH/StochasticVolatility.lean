@@ -1,6 +1,7 @@
 import StatLean.TimeSeries.Models.Defs
 import StatLean.TimeSeries.Process.LinearProcess
 import StatLean.TimeSeries.Process.SecondOrder
+import StatLean.TimeSeries.Process.Stationary
 import Mathlib.Probability.Distributions.Gaussian.Real
 
 /-!
@@ -23,6 +24,25 @@ formula are available:
 
 Estimation for SV models (GMM, Kalman filtering on (4.62), MCMC) is citation-only in
 FY §4.2.9 and is not formalized.
+
+**Proof formalization notes.**
+* The standard-normal even moment `∫ x^{2k} dN(0,1) = (2k)!/(2^k k!)` is absent from the
+  Mathlib pin and is built here (`integral_pow_even_gaussianReal`) out of the m.g.f.
+  `e^{t²/2}` via the Leibniz recursion `f^{(n+1)} = y f^{(n)} + n f^{(n−1)}`
+  (`iteratedDeriv_id_mul`), which gives `f^{(n+1)}(0) = n f^{(n−1)}(0)`.
+* Four *named debts* record hypotheses that FY's §4.2.9 has but the frozen statements do
+  not carry; each is a `private` brick with a witness in its docstring:
+  `indep_noise_latent` (`σ{ε} ⟂ σ{h}`, which `IsSV` does not imply — the recursion admits
+  non-causal solutions; FY gets it from the causal representation `hcausal`),
+  `measurable_g_brick` (`Measurable g`), `noise_ne_zero_ae` (`μ{ε_t = 0} = 0`, which
+  `IsIIDNoise ε 1` does not imply), and `joint_lognormal_brick` (joint normality of
+  `(h_k, h_0)`, not implied by the marginal `hlatent` plus `hacvf`).
+* **`IsSV.acf_sq_lognormal` is false as frozen** whenever `a₁ ≠ 0` and `k ≠ 0`: the
+  denominator of `Corr(X_t², X_{t−k}²)` is `3e^{σ_h²} − 1`, not `e^{σ_h²} − 1`, the `3`
+  being `E ε⁴` in `Var(X_t²)`. The corrected identity is proved here as
+  `acf_sq_lognormal_corrected` (over the bricks above); the frozen theorem is proved in
+  the two cases where the two formulas agree (`k = 0`; `a₁ = 0`) and carries a `sorry`,
+  with the derivation spelled out, in the remaining — false — case.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §4.2.9,
 eqs. (4.60)–(4.62) (pp. 179–181). (`FY §4.2.9`.)
@@ -78,7 +98,8 @@ private lemma integral_eq_zero_of_isLinearProcessOf [IsProbabilityMeasure μ]
         ≤ ∫ ω, |Y t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω| ∂μ :=
       abs_integral_le_integral_abs
     have h2 : ∫ ω, |Y t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω| ∂μ
-        = (eLpNorm (fun ω => Y t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 1 μ).toReal := by
+        = (eLpNorm (fun ω => Y t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω)
+            1 μ).toReal := by
       rw [eLpNorm_one_eq_lintegral_enorm]
       rw [← integral_norm_eq_lintegral_enorm hfint.aestronglyMeasurable]
       simp [Real.norm_eq_abs]
@@ -90,8 +111,8 @@ private lemma integral_eq_zero_of_isLinearProcessOf [IsProbabilityMeasure μ]
     rw [h2]
     exact ENNReal.toReal_mono hfmem.eLpNorm_ne_top h3
   have htend : Tendsto
-      (fun N => (eLpNorm (fun ω => Y t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 2 μ).toReal)
-      atTop (𝓝 0) := by
+      (fun N => (eLpNorm (fun ω => Y t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω)
+        2 μ).toReal) atTop (𝓝 0) := by
     simpa using (ENNReal.continuousAt_toReal (by simp)).tendsto.comp (hY t)
   exact abs_eq_zero.mp (le_antisymm (ge_of_tendsto' htend hbound) (abs_nonneg _))
 
@@ -202,6 +223,7 @@ private lemma measurable_g_brick [IsProbabilityMeasure μ] {g : ℝ → ℝ} {a0
     {X h ε e : ℤ → Ω → ℝ} (hSV : IsSV g a0 a1 σe2 X h ε e μ) : Measurable g := by
   sorry
 
+omit [MeasurableSpace Ω] in
 private lemma comap_window_le {ι : Type*} (f : ℤ → Ω → ℝ) (u : ι → ℤ) :
     MeasurableSpace.comap (fun ω (i : ι) => f (u i) ω) inferInstance
       ≤ ⨆ s : ℤ, MeasurableSpace.comap (f s) inferInstance := by
@@ -340,7 +362,8 @@ private lemma iteratedDeriv_id_mul {g : ℝ → ℝ} (hg : ∀ m : ℕ, Differen
       rwa [← iteratedDeriv_succ] at this
     rw [iteratedDeriv_succ, ih]
     funext y
-    have hd : HasDerivAt (fun y : ℝ => y * iteratedDeriv n g y + (n : ℝ) * iteratedDeriv (n - 1) g y)
+    have hd : HasDerivAt
+        (fun y : ℝ => y * iteratedDeriv n g y + (n : ℝ) * iteratedDeriv (n - 1) g y)
         (1 * iteratedDeriv n g y + y * iteratedDeriv (n + 1) g y
           + (n : ℝ) * iteratedDeriv (n - 1 + 1) g y) y :=
       ((hasDerivAt_id y).mul (hA y)).add ((hB y).const_mul (n : ℝ))
@@ -370,7 +393,8 @@ private lemma iteratedDeriv_gexp_even (k : ℕ) :
       rw [h1, iteratedDeriv_gexp_recur (2 * k + 1)]
       simp
     rw [hstep, ih]
-    have h2 : Nat.factorial (2 * (k + 1)) = (2 * k + 2) * ((2 * k + 1) * Nat.factorial (2 * k)) := by
+    have h2 : Nat.factorial (2 * (k + 1))
+        = (2 * k + 2) * ((2 * k + 1) * Nat.factorial (2 * k)) := by
       have : 2 * (k + 1) = (2 * k + 1) + 1 := by ring
       rw [this, Nat.factorial_succ, Nat.factorial_succ]
     rw [h2, Nat.factorial_succ]
@@ -497,6 +521,188 @@ theorem IsSV.log_sq_decomposition [IsProbabilityMeasure μ] {a0 a1 σe2 : ℝ}
   ring
 
 
+omit [MeasurableSpace Ω] in
+private lemma norm_rpow_four' {f : Ω → ℝ} (ω : Ω) :
+    ‖f ω‖ ^ (ENNReal.toReal 4) = f ω ^ 4 := by
+  have h4 : (ENNReal.toReal 4) = ((4 : ℕ) : ℝ) := by norm_num
+  rw [h4, Real.rpow_natCast, ← norm_pow, Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+
+private lemma memLp_four_iff_integrable' {f : Ω → ℝ} (hf : AEStronglyMeasurable f μ) :
+    MemLp f 4 μ ↔ Integrable (fun ω => f ω ^ 4) μ := by
+  rw [← integrable_norm_rpow_iff hf (by norm_num) (by norm_num)]
+  exact ⟨fun hi => hi.congr (Filter.Eventually.of_forall fun ω => norm_rpow_four' ω),
+    fun hi => hi.congr (Filter.Eventually.of_forall fun ω => (norm_rpow_four' ω).symm)⟩
+
+omit [MeasurableSpace Ω] in
+private lemma comap_pair_le (f : ℤ → Ω → ℝ) (s t : ℤ) :
+    MeasurableSpace.comap (fun ω => (f s ω, f t ω)) inferInstance
+      ≤ ⨆ r : ℤ, MeasurableSpace.comap (f r) inferInstance := by
+  have h1 : (inferInstance : MeasurableSpace (ℝ × ℝ))
+      = MeasurableSpace.comap Prod.fst inferInstance
+        ⊔ MeasurableSpace.comap Prod.snd inferInstance := rfl
+  rw [h1, MeasurableSpace.comap_sup]
+  refine sup_le ?_ ?_
+  · rw [MeasurableSpace.comap_comp]
+    exact le_iSup (fun r : ℤ => MeasurableSpace.comap (f r) inferInstance) s
+  · rw [MeasurableSpace.comap_comp]
+    exact le_iSup (fun r : ℤ => MeasurableSpace.comap (f r) inferInstance) t
+
+/-- **NAMED DEBT — a missing hypothesis.** The lognormal moment of the *pair*
+`(h_k, h_0)`: `E e^{h_k + h_0} = exp(2μ_h + σ_h²(1 + a₁^{|k|}))`, i.e. the m.g.f. at
+`t = 1` of the Gaussian sum `h_k + h_0`, whose variance is
+`2σ_h² + 2Cov(h_k,h_0) = 2σ_h²(1 + a₁^{|k|})` by `hacvf`.
+
+The frozen hypotheses of (4.62) give only the *marginal* law of `h_0` (`hlatent`) and the
+autocovariances (`hacvf`); joint normality of `(h_k, h_0)` — and even
+`Var h_k = Var h_0` — is not among them (`hstat` is strict stationarity of `X`, not of
+`h`). In FY it holds because `h` is a Gaussian AR(1): the causal representation
+`h_t − a₀/(1−a₁) = Σ_j a₁^j e_{t−j}` over Gaussian `e` makes every finite window jointly
+Gaussian. Neither the causal representation nor Gaussianity of `e` is carried here. -/
+private lemma joint_lognormal_brick [IsProbabilityMeasure μ] {a0 a1 σe2 μh σh2 : ℝ}
+    {X h ε e : ℤ → Ω → ℝ}
+    (hSV : IsSV (fun x => Real.exp (x / 2)) a0 a1 σe2 X h ε e μ)
+    (hlatent : μ.map (h 0) = gaussianReal μh (Real.toNNReal σh2)) (hσh : 0 < σh2)
+    (hacvf : ∀ k : ℤ, acvf h μ k = σh2 * a1 ^ k.natAbs) (k : ℤ) :
+    ∫ ω, Real.exp (h k ω + h 0 ω) ∂μ
+      = Real.exp (2 * μh + σh2 * (1 + a1 ^ k.natAbs)) := by
+  sorry
+
+private lemma integral_sq_noise [IsProbabilityMeasure μ] {ε : ℤ → Ω → ℝ}
+    (hε : IsIIDNoise ε 1 μ) (s : ℤ) : ∫ ω, ε s ω ^ 2 ∂μ = 1 := by
+  have hmem : MemLp (ε s) 2 μ := (hε.identDistrib 0 s).memLp_snd hε.memLp
+  have hvar : variance (ε s) μ = 1 := by
+    rw [← (hε.identDistrib 0 s).variance_eq]; exact hε.variance_eq
+  have hmean : ∫ ω, ε s ω ∂μ = 0 := by
+    rw [← (hε.identDistrib 0 s).integral_eq]; exact hε.integral_eq_zero
+  have := variance_eq_sub hmem
+  rw [hvar, hmean] at this
+  have h2 : (μ[(ε s) ^ 2]) = ∫ ω, ε s ω ^ 2 ∂μ := by simp [Pi.pow_apply]
+  rw [h2] at this
+  simp at this
+  linarith
+
+private lemma memLp_sq_of_memLp_four' [IsProbabilityMeasure μ] {f : Ω → ℝ}
+    (hm : Measurable f) (hf : MemLp f 4 μ) : MemLp (fun ω => f ω ^ 2) 2 μ := by
+  refine (memLp_two_iff_integrable_sq (hm.pow_const 2).aestronglyMeasurable).2 ?_
+  have h4 : Integrable (fun ω => f ω ^ 4) μ :=
+    (memLp_four_iff_integrable' hf.aestronglyMeasurable).1 hf
+  refine h4.congr (Filter.Eventually.of_forall fun ω => ?_)
+  change f ω ^ 4 = (f ω ^ 2) ^ 2
+  ring
+
+private lemma acvf_sq_lognormal_zero [IsProbabilityMeasure μ] {a0 a1 σe2 μh σh2 : ℝ}
+    {X h ε e : ℤ → Ω → ℝ}
+    (hSV : IsSV (fun x => Real.exp (x / 2)) a0 a1 σe2 X h ε e μ)
+    (hgauss : μ.map (ε 0) = gaussianReal 0 1)
+    (hlatent : μ.map (h 0) = gaussianReal μh (Real.toNNReal σh2)) (hσh : 0 < σh2)
+    (hL4 : ∀ t, MemLp (X t) 4 μ) :
+    acvf (fun t ω => X t ω ^ 2) μ 0
+      = Real.exp (μh + σh2 / 2) ^ 2 * (3 * Real.exp σh2 - 1) := by
+  have hmX : ∀ s : ℤ, Measurable (X s) := hSV.measurableX
+  have hm2 : ∫ ω, X 0 ω ^ 2 ∂μ = Real.exp (μh + σh2 / 2) := by
+    have h1 := hSV.moment_even_lognormal hgauss hlatent hσh 1
+    norm_num at h1
+    exact h1
+  have hm4 : ∫ ω, X 0 ω ^ 4 ∂μ = 3 * Real.exp (2 * μh + 2 * σh2) := by
+    have h1 := hSV.moment_even_lognormal hgauss hlatent hσh 2
+    norm_num at h1
+    rw [h1]
+    ring_nf
+  have hmem := memLp_sq_of_memLp_four' (hmX 0) (hL4 0)
+  have hB : (3 : ℝ) * Real.exp (2 * μh + 2 * σh2)
+      = Real.exp (μh + σh2 / 2) ^ 2 * (3 * Real.exp σh2) := by
+    have hr : Real.exp (μh + σh2 / 2) ^ 2 * (3 * Real.exp σh2)
+        = 3 * (Real.exp (μh + σh2 / 2) * Real.exp (μh + σh2 / 2) * Real.exp σh2) := by
+      rw [sq]; ring
+    rw [hr, ← Real.exp_add, ← Real.exp_add]
+    ring_nf
+  rw [acvf, covariance_eq_sub hmem hmem]
+  have e1 : (μ[(fun ω => X 0 ω ^ 2) * fun ω => X 0 ω ^ 2]) = ∫ ω, X 0 ω ^ 4 ∂μ := by
+    rw [show ((fun ω => X 0 ω ^ 2) * fun ω => X 0 ω ^ 2) = fun ω => X 0 ω ^ 4 from
+      funext fun ω => by simp only [Pi.mul_apply]; ring]
+  rw [e1, hm4, hm2, hB]
+  ring
+
+/-- **The corrected form of FY eq. (4.62)'s squared-process ACF.** At every nonzero lag,
+`Corr(X_t², X_{t−k}²) = (e^{σ_h²a₁^{|k|}} − 1)/(3e^{σ_h²} − 1)`: the `3` comes from
+`E ε⁴ = 3` in `Var(X_t²) = E ε⁴ E e^{2h} − (E ε² E e^h)²`. The frozen statement
+`IsSV.acf_sq_lognormal` divides by `e^{σ_h²} − 1` instead — that is the ACF of the
+*volatility* `e^{h_t}` itself, not of `X_t²`; see the note there. -/
+private lemma acf_sq_lognormal_corrected [IsProbabilityMeasure μ] {a0 a1 σe2 μh σh2 : ℝ}
+    {X h ε e : ℤ → Ω → ℝ}
+    (hSV : IsSV (fun x => Real.exp (x / 2)) a0 a1 σe2 X h ε e μ)
+    (hgauss : μ.map (ε 0) = gaussianReal 0 1)
+    (hlatent : μ.map (h 0) = gaussianReal μh (Real.toNNReal σh2)) (hσh : 0 < σh2)
+    (hacvf : ∀ k : ℤ, acvf h μ k = σh2 * a1 ^ k.natAbs)
+    (hstat : IsStrictlyStationary X μ) (hL4 : ∀ t, MemLp (X t) 4 μ) {k : ℤ} (hk : k ≠ 0) :
+    acf (fun t ω => X t ω ^ 2) μ k
+      = (Real.exp (σh2 * a1 ^ k.natAbs) - 1) / (3 * Real.exp σh2 - 1) := by
+  have hmε : ∀ s : ℤ, Measurable (ε s) := hSV.iidNoise.measurable
+  have hmh : ∀ s : ℤ, Measurable (h s) := hSV.measurableH
+  have hmX : ∀ s : ℤ, Measurable (X s) := hSV.measurableX
+  have hm2 : ∫ ω, X 0 ω ^ 2 ∂μ = Real.exp (μh + σh2 / 2) := by
+    have h1 := hSV.moment_even_lognormal hgauss hlatent hσh 1
+    norm_num at h1
+    exact h1
+  -- marginals are identically distributed, so `E X_k² = E X_0²`
+  have hid : ∀ s t : ℤ, IdentDistrib (X s) (X t) μ μ := hstat.identDistrib hmX
+  have hsq : ∀ s : ℤ, ∫ ω, X s ω ^ 2 ∂μ = ∫ ω, X 0 ω ^ 2 ∂μ :=
+    fun s => ((hid s 0).comp (measurable_id.pow_const 2)).integral_eq
+  have hmemsq : ∀ s : ℤ, MemLp (fun ω => X s ω ^ 2) 2 μ :=
+    fun s => memLp_sq_of_memLp_four' (hmX s) (hL4 s)
+  -- the cross moment `E[X_k² X_0²] = E[ε_k²ε_0²] · E[e^{h_k+h_0}]`
+  have hcross : ∫ ω, X k ω ^ 2 * X 0 ω ^ 2 ∂μ
+      = Real.exp (2 * μh + σh2 * (1 + a1 ^ k.natAbs)) := by
+    have hpair : IndepFun (fun ω => (ε k ω, ε 0 ω)) (fun ω => (h k ω, h 0 ω)) μ :=
+      indep_of_indep_of_le_right
+        (indep_of_indep_of_le_left (indep_noise_latent hSV) (comap_pair_le ε k 0))
+        (comap_pair_le h k 0)
+    have hφ : Measurable fun p : ℝ × ℝ => p.1 ^ 2 * p.2 ^ 2 := by fun_prop
+    have hψ : Measurable fun p : ℝ × ℝ => Real.exp (p.1 + p.2) := by fun_prop
+    have hsplit : IndepFun (fun ω => ε k ω ^ 2 * ε 0 ω ^ 2)
+        (fun ω => Real.exp (h k ω + h 0 ω)) μ := hpair.comp hφ hψ
+    have hprod : ∫ ω, (ε k ω ^ 2 * ε 0 ω ^ 2) * Real.exp (h k ω + h 0 ω) ∂μ
+        = (∫ ω, ε k ω ^ 2 * ε 0 ω ^ 2 ∂μ) * ∫ ω, Real.exp (h k ω + h 0 ω) ∂μ :=
+      hsplit.integral_fun_mul_eq_mul_integral
+        (((hmε k).pow_const 2).mul ((hmε 0).pow_const 2)).aestronglyMeasurable
+        (((hmh k).add (hmh 0)).exp).aestronglyMeasurable
+    have hεsq : ∫ ω, ε k ω ^ 2 * ε 0 ω ^ 2 ∂μ = 1 := by
+      have hik : IndepFun (ε k) (ε 0) μ := hSV.iidNoise.iIndep.indepFun hk
+      have h2 := (hik.comp (measurable_id.pow_const 2) (measurable_id.pow_const 2))
+        |>.integral_fun_mul_eq_mul_integral
+          ((hmε k).pow_const 2).aestronglyMeasurable
+          ((hmε 0).pow_const 2).aestronglyMeasurable
+      simp only [Function.comp_apply, id_eq] at h2
+      rw [h2, integral_sq_noise hSV.iidNoise, integral_sq_noise hSV.iidNoise, mul_one]
+    have hae : (fun ω => X k ω ^ 2 * X 0 ω ^ 2)
+        =ᵐ[μ] fun ω => (ε k ω ^ 2 * ε 0 ω ^ 2) * Real.exp (h k ω + h 0 ω) := by
+      filter_upwards [hSV.recX k, hSV.recX 0] with ω hk0 h00
+      have e1 : Real.exp (h k ω / 2) ^ 2 = Real.exp (h k ω) := by
+        rw [← Real.exp_nat_mul]; congr 1; push_cast; ring
+      have e2 : Real.exp (h 0 ω / 2) ^ 2 = Real.exp (h 0 ω) := by
+        rw [← Real.exp_nat_mul]; congr 1; push_cast; ring
+      rw [hk0, h00, mul_pow, mul_pow, e1, e2, Real.exp_add]
+      ring
+    rw [integral_congr_ae hae, hprod, hεsq, one_mul,
+      joint_lognormal_brick hSV hlatent hσh hacvf k]
+  have hcov1 : cov[fun ω => X k ω ^ 2, fun ω => X 0 ω ^ 2; μ]
+      = Real.exp (μh + σh2 / 2) ^ 2 * (Real.exp (σh2 * a1 ^ k.natAbs) - 1) := by
+    rw [covariance_eq_sub (hmemsq k) (hmemsq 0)]
+    have e1 : (μ[(fun ω => X k ω ^ 2) * fun ω => X 0 ω ^ 2])
+        = ∫ ω, X k ω ^ 2 * X 0 ω ^ 2 ∂μ := by simp [Pi.mul_apply]
+    have hA : Real.exp (2 * μh + σh2 * (1 + a1 ^ k.natAbs))
+        = Real.exp (μh + σh2 / 2) ^ 2 * Real.exp (σh2 * a1 ^ k.natAbs) := by
+      rw [sq, ← Real.exp_add, ← Real.exp_add]
+      ring_nf
+    rw [e1, hcross, hsq k, hm2, hA]
+    ring
+  have hden : (0:ℝ) < 3 * Real.exp σh2 - 1 := by
+    nlinarith [Real.add_one_lt_exp (ne_of_gt hσh), Real.exp_pos σh2]
+  have hpos : (0:ℝ) < Real.exp (μh + σh2 / 2) ^ 2 := by positivity
+  rw [acf, acvf, hcov1, acvf_sq_lognormal_zero hSV hgauss hlatent hσh hL4]
+  rw [div_eq_div_iff (by nlinarith) (by nlinarith)]
+  ring
+
 /-- **FY eq. (4.62), squared-process ACF** (lognormal algebra):
 `Corr(X_t², X_{t−k}²) = (exp(σ_h² a₁^{|k|}) − 1)/(exp(σ_h²) − 1)`. -/
 theorem IsSV.acf_sq_lognormal [IsProbabilityMeasure μ] {a0 a1 σe2 μh σh2 : ℝ}
@@ -510,6 +716,34 @@ theorem IsSV.acf_sq_lognormal [IsProbabilityMeasure μ] {a0 a1 σe2 μh σh2 : �
     (hstat : IsStrictlyStationary X μ) (hL4 : ∀ t, MemLp (X t) 4 μ) (k : ℤ) :
     acf (fun t ω => X t ω ^ 2) μ k
       = (Real.exp (σh2 * a1 ^ k.natAbs) - 1) / (Real.exp σh2 - 1) := by
-  sorry
+  rcases eq_or_ne k 0 with rfl | hk
+  · -- lag `0`: both sides are `1`
+    have h0 := acvf_sq_lognormal_zero hSV hgauss hlatent hσh hL4
+    have hden : (0:ℝ) < 3 * Real.exp σh2 - 1 := by
+      nlinarith [Real.add_one_lt_exp (ne_of_gt hσh), Real.exp_pos σh2]
+    have hpos : (0:ℝ) < Real.exp (μh + σh2 / 2) ^ 2 := by positivity
+    have hne : acvf (fun t ω => X t ω ^ 2) μ 0 ≠ 0 := by
+      rw [h0]; exact ne_of_gt (mul_pos hpos hden)
+    have hR : (Real.exp (σh2 * a1 ^ (0 : ℤ).natAbs) - 1) / (Real.exp σh2 - 1) = 1 := by
+      simp only [Int.natAbs_zero, pow_zero, mul_one]
+      exact div_self (by nlinarith [Real.add_one_lt_exp (ne_of_gt hσh)])
+    rw [hR, acf, div_self hne]
+  · rcases eq_or_ne a1 0 with rfl | ha0
+    · -- `a₁ = 0`: the latent chain is i.i.d., both sides vanish at every nonzero lag
+      rw [acf_sq_lognormal_corrected hSV hgauss hlatent hσh hacvf hstat hL4 hk,
+        zero_pow (fun hz => hk (Int.natAbs_eq_zero.mp hz))]
+      simp
+    · -- **THE FROZEN STATEMENT IS FALSE HERE** (`a₁ ≠ 0`, `k ≠ 0`).
+      -- Under the hypotheses (with the two bricks above),
+      --   `Cov(X_k², X_0²) = e^{2μ_h+σ_h²}(e^{σ_h²a₁^{|k|}} − 1)`,
+      --   `Var(X_0²)      = E ε⁴ E e^{2h} − (E ε²E e^h)² = e^{2μ_h+σ_h²}(3e^{σ_h²} − 1)`,
+      -- the `3 = E ε⁴` being the source of the discrepancy, so
+      --   `Corr(X_k², X_0²) = (e^{σ_h²a₁^{|k|}} − 1)/(3e^{σ_h²} − 1)`,
+      -- which is `acf_sq_lognormal_corrected` above (proved, over the same two bricks).
+      -- The frozen right-hand side divides by `e^{σ_h²} − 1`: that is the ACF of the
+      -- *volatility* `e^{h_t}` (where the multiplier `ε_t²` is absent), not of `X_t²`.
+      -- The two agree only when the numerator vanishes (`a₁ = 0`, handled above) or at
+      -- lag `0` (handled above), since `3e^{σ_h²} − 1 > e^{σ_h²} − 1 > 0` for `σ_h² > 0`.
+      sorry
 
 end StatLean.TimeSeries
