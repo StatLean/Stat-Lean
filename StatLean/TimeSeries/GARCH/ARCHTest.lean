@@ -27,6 +27,80 @@ the `χ²_p` approximation is *not* valid for the constrained versions of these 
 FY notes this and cites the one-sided-testing literature. Our statements are for the
 **unconstrained** parametrization, where the classical limits do hold.
 
+## The three `χ²_p` debts: why the in-repo trinity does not discharge them
+
+`IsARCH.iid_of_b_eq_zero` is proved, so the structural input FY relies on is available.
+The intended follow-up — instantiating `logLR_tendsto_chiSquared_affine` (and its score /
+Wald companions) of `HypothesisTesting/LikelihoodMethods/TrinityChiSquared.lean` at the
+null `b = 0` — was examined and **rejected**. Two independent reasons, in order of
+severity.
+
+**(1) The three frozen statements are false as they stand, for every `p ≥ 1`, so no
+proof of them exists.** None of them constrains its estimator arguments to the data:
+`archLRStat_chiSq_debt` takes `c0hat`, `bhat`, `c0null` merely measurable,
+`archTR2Stat_chiSq_debt` takes `rss`, `tss` merely measurable, and
+`archWaldStat_chiSq_debt` takes `bhat` measurable and `Ihat` entirely free. Choosing the
+constants `c0hat = c0null = c0`, `bhat = 0` (resp. `rss = tss = 1`, resp. `bhat = 0`)
+makes each statistic *identically zero*, so its law is `δ₀`, whose characteristic
+function is the constant `1`; the conclusion then forces `charFun chiSq u = 1` for
+every `u`, while `hchi` at `u = 1/2` gives `‖(1 − i)^{−p/2}‖ = 2^{−p/4} < 1`. (Both
+halves of this contradiction were machine-checked.) The repair is not a proof but a
+*statement* amendment, which is out of scope here: each debt needs the missing
+`USER-INPUT` hypothesis that its estimator sequence is the actual (quasi-)MLE — or,
+in the trinity's currency, is asymptotically linear with the ARCH score and information.
+
+**(2) Even after that repair the trinity's shape does not fit.** Ranked by how hard
+each mismatch is to bridge:
+
+* *Fatal — the ARCH likelihood is not an iid likelihood.* The trinity's statistic is
+  `logLRStatistic M est est₀ n ω = 2 Σᵢ log(p_{θ̂}(ωᵢ) / p_{θ̂₀}(ωᵢ))`: one factor per
+  observation, from a single `ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))`.
+  `archLRStat` is built from `archLogLik = −½ · garchQuasiLik`, i.e.
+  `−½ Σ_{t=ν}^{T−1} (log σ̃_t² + x_t²/σ̃_t²)` with `σ̃_t²` the truncated ARCH recursion
+  `garchTruncVol`, which reads back `p` lags of the *same* sample. The `t`-th summand is
+  a function of `x_{t−1}, …, x_{t−p}` as well as `x_t`, so it is not `log p_θ(x_t)` for
+  any density family: the two are different functions of the data, not one function in
+  two notations. This is intrinsic, not an artefact of the definitions — the likelihood
+  ratio must be evaluated across the whole `(c₀, b)` space, where the ARCH observations
+  are genuinely dependent; the iid collapse of `IsARCH.iid_of_b_eq_zero` holds only on
+  the null slice `b = 0`. It is exactly why FY cites Serfling §4.4.4 as the source of the
+  *limit law* rather than instantiating an iid-likelihood theorem: what the null iid
+  structure makes classical is the behaviour of the score and information *averages* at
+  `b = 0`, not the likelihood itself.
+* *Fatal — no truncation parameter.* `archLRStat` carries the presample index `ν`, and
+  `archLRStat_chiSq_debt` carries `νseq` with `ν → ∞`, `ν/T → 0`. The trinity has no such
+  parameter, so the truncated-versus-exact conditional-likelihood bookkeeping that those
+  hypotheses exist to control lies entirely outside its statement.
+* *Serious — regularity currency.* The trinity consumes `IsPDFOf`, joint measurability of
+  `(θ, x) ↦ p_θ(x)`, `DifferentiableQuadraticMean` at `θ₀` with an explicit score,
+  a positive-definite Fisher matrix in the `⟪u, J v⟫` normalisation, `IsAsymptoticallyLinear`
+  estimator sequences in the full *and* restricted charts, and the amended **two-point**
+  second-order envelope `henv` with an integrable envelope `Menv`. The debts here supply
+  only `MemLp (ε 0) 4 μ`. Nothing in this development establishes quadratic-mean
+  differentiability of the ARCH family, and the Fisher information of eq. (4.51) is named
+  in this docstring but never defined.
+* *Bridgeable, but not free — the sample law.* The trinity concludes about
+  `productMeasure M μ θ₀ n = Measure.pi …` on `Fin n → 𝓧`, whereas the debts push forward
+  `μ` on the process space `Ω`. `IsARCH.iid_of_b_eq_zero` does give that the null law of
+  `(X₁, …, X_T)` is such a product, so this mismatch alone would be honest work rather
+  than an obstruction.
+* *Bridgeable, but not free — the conclusion form.* The trinity concludes
+  `WeakConverges … (MultipleTesting.chiSquared p)`; the debts ask for pointwise `charFun`
+  convergence to an abstract `chiSq` pinned by `hchi`. Bridging needs both
+  `WeakConverges → charFun` convergence and `charFun (MultipleTesting.chiSquared p) u =
+  (1 − 2iu)^{−p/2}`, and the latter is not proved anywhere in the repo at present.
+
+Only the affine-null *geometry* lines up cleanly: `k = p + 1` with coordinates
+`(c₀, b₁, …, b_p)`, null subspace `a + range B` for `m = 1`, `B : ℝ → ℝ^{p+1}` the first
+coordinate inclusion, giving exactly the `p` degrees of freedom FY reports (and, per the
+boundary caveat above, the unconstrained parametrization the trinity needs). That
+agreement is real but superficial: it fixes the degrees of freedom, not the statistic.
+
+**Verdict: the trinity is not reusable here.** The three limits stay as named debts, and
+closing them calls for a *time-series* likelihood theorem — a martingale CLT for the
+conditional score of the ARCH quasi-likelihood, valid over the whole `(c₀, b)` space —
+rather than an instance of the iid one.
+
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §4.2.6,
 eqs. (4.48)–(4.54) (pp. 165–168). (`FY §4.2.6`.)
 
@@ -49,7 +123,39 @@ theorem IsARCH.iid_of_b_eq_zero [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     {X ε : ℤ → Ω → ℝ} (h : IsARCH c0 (fun _ : Fin p => (0 : ℝ)) X ε μ) :
     (∀ t, X t =ᵐ[μ] fun ω => Real.sqrt c0 * ε t ω) ∧
       IsIIDNoise X c0 μ := by
-  sorry
+  -- With `b = 0` the whole `Finset.sum` in the radicand vanishes, so the volatility is
+  -- the *constant* `√c₀` and the recurrence reads `X_t = √c₀ · ε_t`.
+  have hvol : ∀ (t : ℤ) (ω : Ω),
+      archVol c0 (fun _ : Fin p => (0 : ℝ)) X t ω = Real.sqrt c0 := by
+    intro t ω
+    simp [archVol]
+  have hX : ∀ t, X t =ᵐ[μ] fun ω => Real.sqrt c0 * ε t ω := by
+    intro t
+    filter_upwards [h.recurrence t] with ω hω
+    rw [hω, hvol]
+  refine ⟨hX, ?_⟩
+  -- The scaling map `x ↦ √c₀ · x`, along which every `IsIIDNoise` field transports.
+  have hsm : Measurable fun x : ℝ => Real.sqrt c0 * x := measurable_const_mul _
+  have hsq : Real.sqrt c0 ^ 2 = c0 := Real.sq_sqrt h.c0_nonneg
+  refine ⟨h.measurableX, ?_, ?_, ?_, ?_, ?_⟩
+  · -- Independence: `iIndepFun` transports along the scaling and then along `=ᵐ`.
+    have hind : iIndepFun (fun (t : ℤ) (ω : Ω) => Real.sqrt c0 * ε t ω) μ := by
+      have := h.iid.iIndep.comp (fun _ : ℤ => fun x : ℝ => Real.sqrt c0 * x) fun _ => hsm
+      simpa [Function.comp_def] using this
+    exact (iIndepFun_congr fun t => (hX t).symm).mp hind
+  · -- Identical distribution, through the scaled noise.
+    intro s t
+    have hs : IdentDistrib (X s) (fun ω => Real.sqrt c0 * ε s ω) μ μ :=
+      IdentDistrib.of_ae_eq (h.measurableX s).aemeasurable (hX s)
+    have ht : IdentDistrib (X t) (fun ω => Real.sqrt c0 * ε t ω) μ μ :=
+      IdentDistrib.of_ae_eq (h.measurableX t).aemeasurable (hX t)
+    exact (hs.trans ((h.iid.identDistrib s t).const_mul _)).trans ht.symm
+  · exact (h.iid.memLp.const_mul (Real.sqrt c0)).ae_eq (hX 0).symm
+  · rw [integral_congr_ae (hX 0)]
+    have : ∫ ω, Real.sqrt c0 * ε 0 ω ∂μ = Real.sqrt c0 * ∫ ω, ε 0 ω ∂μ :=
+      integral_const_mul _ _
+    rw [this, h.iid.integral_eq_zero, mul_zero]
+  · rw [variance_congr (hX 0), variance_const_mul, h.iid.variance_eq, mul_one, hsq]
 
 /-- The ARCH(p) **conditional Gaussian log-likelihood** of the data at parameters
 `(c₀, b)` (the `§4.2.6` likelihood: `−½ Σ_t (log σ_t² + X_t²/σ_t²)` up to constants),
