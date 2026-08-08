@@ -827,6 +827,159 @@ theorem exists_strictlyStationary_igarch_one_one [IsProbabilityMeasure μ]
     ∃ X σvol : ℤ → Ω → ℝ,
       IsGARCH c0 (fun _ : Fin 1 => b1) (fun _ : Fin 1 => a1) X σvol ε μ ∧
         IsStrictlyStationary X μ := by
-  sorry
+  have ha1' : a1 < 1 := by linarith
+  have hMnn : ∀ x : ℝ, 0 ≤ b1 * x ^ 2 + a1 := fun x =>
+    add_nonneg (mul_nonneg hb1.le (sq_nonneg x)) ha1
+  have hmM : Measurable fun ω => b1 * ε 0 ω ^ 2 + a1 :=
+    (((hε.measurable 0).pow_const 2).const_mul b1).add_const a1
+  by_cases hdeg : μ {ω | b1 * ε 0 ω ^ 2 + a1 = 0} = 0
+  · -- **Nondegenerate case**: the multiplier is a.e. positive, so strict Jensen applies:
+    -- `E log M < log E M = log 1 = 0`, i.e. exactly Nelson's condition.
+    refine exists_strictlyStationary_garch_one_one_nelson hc0 hb1 ha1 hε hlogint ?_
+    have hsqint : Integrable (fun ω => ε 0 ω ^ 2) μ := hε.memLp.integrable_sq
+    have hEsq : (∫ ω, ε 0 ω ^ 2 ∂μ) = 1 := by
+      have hv := variance_eq_sub (μ := μ) hε.memLp
+      rw [hε.variance_eq, hε.integral_eq_zero] at hv
+      simpa using hv.symm
+    have hMint : Integrable (fun ω => b1 * ε 0 ω ^ 2 + a1) μ :=
+      (hsqint.const_mul b1).add (integrable_const a1)
+    have hEM : (∫ ω, (b1 * ε 0 ω ^ 2 + a1) ∂μ) = 1 := by
+      rw [integral_add (hsqint.const_mul b1) (integrable_const a1), integral_const_mul, hEsq]
+      simp [hunit]
+    have hMpos : ∀ᵐ ω ∂μ, 0 < b1 * ε 0 ω ^ 2 + a1 := by
+      have hne : ∀ᵐ ω ∂μ, ¬ (b1 * ε 0 ω ^ 2 + a1 = 0) := by
+        rw [ae_iff]; simpa using hdeg
+      filter_upwards [hne] with ω hω
+      exact lt_of_le_of_ne (hMnn (ε 0 ω)) (Ne.symm hω)
+    -- the Jensen gap `(M − 1) − log M` is nonnegative, and strictly positive off `{M = 1}`
+    have hgapint : Integrable (fun ω =>
+        (b1 * ε 0 ω ^ 2 + a1 - 1) - Real.log (b1 * ε 0 ω ^ 2 + a1)) μ :=
+      (hMint.sub (integrable_const 1)).sub hlogint
+    have hgap : (0 : Ω → ℝ) ≤ᵐ[μ] fun ω =>
+        (b1 * ε 0 ω ^ 2 + a1 - 1) - Real.log (b1 * ε 0 ω ^ 2 + a1) := by
+      filter_upwards [hMpos] with ω hω
+      have := Real.log_le_sub_one_of_pos hω
+      simp only [Pi.zero_apply]
+      linarith
+    have hgapval : (∫ ω, ((b1 * ε 0 ω ^ 2 + a1 - 1)
+          - Real.log (b1 * ε 0 ω ^ 2 + a1)) ∂μ)
+        = - ∫ ω, Real.log (b1 * ε 0 ω ^ 2 + a1) ∂μ := by
+      have h1 : (∫ ω, ((b1 * ε 0 ω ^ 2 + a1 - 1)
+            - Real.log (b1 * ε 0 ω ^ 2 + a1)) ∂μ)
+          = (∫ ω, (b1 * ε 0 ω ^ 2 + a1 - 1) ∂μ)
+            - ∫ ω, Real.log (b1 * ε 0 ω ^ 2 + a1) ∂μ :=
+        integral_sub (hMint.sub (integrable_const 1)) hlogint
+      have h2 : (∫ ω, (b1 * ε 0 ω ^ 2 + a1 - 1) ∂μ)
+          = (∫ ω, (b1 * ε 0 ω ^ 2 + a1) ∂μ) - ∫ _ω : Ω, (1 : ℝ) ∂μ :=
+        integral_sub hMint (integrable_const 1)
+      rw [h1, h2, hEM, integral_const]
+      simp
+    by_contra hcon
+    push_neg at hcon
+    have hz : (∫ ω, ((b1 * ε 0 ω ^ 2 + a1 - 1)
+        - Real.log (b1 * ε 0 ω ^ 2 + a1)) ∂μ) = 0 := by
+      have h1 := integral_nonneg_of_ae hgap
+      rw [hgapval] at h1 ⊢
+      linarith
+    have hae := (integral_eq_zero_iff_of_nonneg_ae hgap hgapint).1 hz
+    refine hnondeg ?_
+    filter_upwards [hae, hMpos] with ω h1 h2
+    by_contra hne
+    have hMne : b1 * ε 0 ω ^ 2 + a1 ≠ 1 := by
+      intro h
+      exact hne (mul_left_cancel₀ hb1.ne' (by linarith : b1 * (ε 0 ω ^ 2) = b1 * 1))
+    have hstrict := Real.log_lt_sub_one_of_pos h2 hMne
+    simp only [Pi.zero_apply] at h1
+    linarith
+  · -- **Degenerate case**: `μ{b₁ε² + a₁ = 0} > 0`. Nelson's own condition may fail here
+    -- (`Real.log`'s junk value at `0` is `0`, not `−∞`), but the generalized criterion
+    -- applies with `g x = log (max (b₁x² + a₁) δ)` for a small enough floor `δ`.
+    have hSm : MeasurableSet {ω | b1 * ε 0 ω ^ 2 + a1 = 0} := hmM (measurableSet_singleton 0)
+    obtain ⟨ind, hind⟩ : ∃ ind : Ω → ℝ,
+        ind = Set.indicator {ω | b1 * ε 0 ω ^ 2 + a1 = 0} fun _ => (1 : ℝ) := ⟨_, rfl⟩
+    have hindint : Integrable ind μ := by
+      rw [hind]; exact (integrable_const (1 : ℝ)).indicator hSm
+    have hindval : (∫ ω, ind ω ∂μ) = (μ {ω | b1 * ε 0 ω ^ 2 + a1 = 0}).toReal := by
+      rw [hind, integral_indicator_const (1 : ℝ) hSm]
+      simp [measureReal_def]
+    have hIpos : 0 < ∫ ω, ind ω ∂μ := by
+      rw [hindval]; exact ENNReal.toReal_pos hdeg (measure_ne_top μ _)
+    obtain ⟨C, hC⟩ : ∃ C : ℝ, C = ∫ ω, |Real.log (b1 * ε 0 ω ^ 2 + a1)| ∂μ := ⟨_, rfl⟩
+    have hCnn : 0 ≤ C := by
+      rw [hC]
+      exact integral_nonneg (μ := μ) (f := fun ω => |Real.log (b1 * ε 0 ω ^ 2 + a1)|)
+        fun ω => abs_nonneg _
+    obtain ⟨δ, hδ⟩ : ∃ δ : ℝ, δ = Real.exp (-((C + 1) / ∫ ω, ind ω ∂μ)) := ⟨_, rfl⟩
+    have hδpos : 0 < δ := by rw [hδ]; exact Real.exp_pos _
+    have hlogδ : Real.log δ = -((C + 1) / ∫ ω, ind ω ∂μ) := by rw [hδ, Real.log_exp]
+    have hδle : δ ≤ 1 := by
+      rw [hδ]
+      have : -((C + 1) / ∫ ω, ind ω ∂μ) ≤ 0 := by
+        have : 0 ≤ (C + 1) / ∫ ω, ind ω ∂μ := div_nonneg (by linarith) hIpos.le
+        linarith
+      calc Real.exp (-((C + 1) / ∫ ω, ind ω ∂μ)) ≤ Real.exp 0 := Real.exp_le_exp.2 this
+        _ = 1 := Real.exp_zero
+    -- the floored log dominates the multiplier
+    have hdom : ∀ x : ℝ, b1 * x ^ 2 + a1 ≤ Real.exp (Real.log (max (b1 * x ^ 2 + a1) δ)) := by
+      intro x
+      have hmax : 0 < max (b1 * x ^ 2 + a1) δ := lt_of_lt_of_le hδpos (le_max_right _ _)
+      rw [Real.exp_log hmax]
+      exact le_max_left _ _
+    have hgm : Measurable fun x : ℝ => Real.log (max (b1 * x ^ 2 + a1) δ) := by fun_prop
+    -- pointwise control of the floored log
+    have hbdd : ∀ ω, Real.log (max (b1 * ε 0 ω ^ 2 + a1) δ)
+        ≤ |Real.log (b1 * ε 0 ω ^ 2 + a1)| + Real.log δ * ind ω := by
+      intro ω
+      by_cases hz : b1 * ε 0 ω ^ 2 + a1 = 0
+      · have hmem : ω ∈ {ω | b1 * ε 0 ω ^ 2 + a1 = 0} := hz
+        have hi : ind ω = 1 := by rw [hind]; exact Set.indicator_of_mem hmem _
+        rw [hz, hi, Real.log_zero]
+        simp only [abs_zero, zero_add, mul_one]
+        rw [max_eq_right hδpos.le]
+      · have hnmem : ω ∉ {ω | b1 * ε 0 ω ^ 2 + a1 = 0} := hz
+        have hi : ind ω = 0 := by
+          rw [hind]; exact Set.indicator_of_notMem hnmem _
+        rw [hi, mul_zero, add_zero]
+        rcases le_total (b1 * ε 0 ω ^ 2 + a1) δ with h | h
+        · rw [max_eq_right h]
+          calc Real.log δ ≤ Real.log 1 := Real.log_le_log hδpos hδle
+            _ = 0 := Real.log_one
+            _ ≤ |Real.log (b1 * ε 0 ω ^ 2 + a1)| := abs_nonneg _
+        · rw [max_eq_left h]
+          exact le_abs_self _
+    have habs : ∀ ω, |Real.log (max (b1 * ε 0 ω ^ 2 + a1) δ)|
+        ≤ |Real.log (b1 * ε 0 ω ^ 2 + a1)| + |Real.log δ| := by
+      intro ω
+      rcases le_total (b1 * ε 0 ω ^ 2 + a1) δ with h | h
+      · rw [max_eq_right h]
+        have := abs_nonneg (Real.log (b1 * ε 0 ω ^ 2 + a1))
+        linarith
+      · rw [max_eq_left h]
+        have := abs_nonneg (Real.log δ)
+        linarith
+    have hbound_int : Integrable
+        (fun ω => |Real.log (b1 * ε 0 ω ^ 2 + a1)| + |Real.log δ|) μ :=
+      hlogint.abs.add (integrable_const _)
+    have hgint : Integrable (fun ω => Real.log (max (b1 * ε 0 ω ^ 2 + a1) δ)) μ := by
+      refine hbound_int.mono' ((hgm.comp (hε.measurable 0)).aestronglyMeasurable) ?_
+      filter_upwards with ω
+      rw [Real.norm_eq_abs]
+      exact habs ω
+    have hneg : (∫ ω, Real.log (max (b1 * ε 0 ω ^ 2 + a1) δ) ∂μ) < 0 := by
+      have hmono : (∫ ω, Real.log (max (b1 * ε 0 ω ^ 2 + a1) δ) ∂μ)
+          ≤ ∫ ω, (|Real.log (b1 * ε 0 ω ^ 2 + a1)| + Real.log δ * ind ω) ∂μ := by
+        refine integral_mono hgint (hlogint.abs.add (hindint.const_mul _)) ?_
+        exact hbdd
+      have hval : (∫ ω, (|Real.log (b1 * ε 0 ω ^ 2 + a1)| + Real.log δ * ind ω) ∂μ)
+          = C + Real.log δ * ∫ ω, ind ω ∂μ := by
+        rw [integral_add hlogint.abs (hindint.const_mul _), integral_const_mul, hC]
+      have hIne : (∫ ω, ind ω ∂μ) ≠ 0 := hIpos.ne'
+      have hkey : Real.log δ * ∫ ω, ind ω ∂μ = -(C + 1) := by
+        rw [hlogδ, neg_mul, div_mul_cancel₀ _ hIne]
+      rw [hval, hkey] at hmono
+      linarith
+    refine exists_garch_of_nelW_ae hc0.le hb1.le ha1 ha1' hε fun t => ?_
+    exact nelW_ae_ne_top (g := fun x => Real.log (max (b1 * x ^ 2 + a1) δ)) hb1.le ha1 hgm
+      hdom hε hgint hneg t
 
 end StatLean.TimeSeries
