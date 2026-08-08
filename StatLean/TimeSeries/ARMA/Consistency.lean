@@ -1,4 +1,6 @@
 import StatLean.TimeSeries.ARMA.ScoreAnalysis
+import Mathlib.Analysis.Matrix.Spectrum
+import Mathlib.Analysis.Matrix.PosDef
 
 /-!
 # Consistency of the ARMA Gaussian MLE (Hannan program, step 1)
@@ -56,10 +58,10 @@ conventions of `arPoly`/`maPoly` differ by exactly the sign of the coefficients)
 (geometric decay in particular) applies verbatim to `π`. -/
 
 private lemma coeff_arPoly_zero' {p : ℕ} (b : Fin p → ℝ) : (arPoly b).coeff 0 = 1 := by
-  simp [arPoly, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow]
+  simp [arPoly, Polynomial.finset_sum_coeff, Polynomial.coeff_X_pow]
 
 private lemma coeff_maPoly_zero' {q : ℕ} (a : Fin q → ℝ) : (maPoly a).coeff 0 = 1 := by
-  simp [maPoly, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow]
+  simp [maPoly, Polynomial.finset_sum_coeff, Polynomial.coeff_X_pow]
 
 /-- The AR polynomial of the negated coefficients is the MA polynomial. -/
 private lemma arPoly_neg {q : ℕ} (a : Fin q → ℝ) : arPoly (fun j => -a j) = maPoly a := by
@@ -197,6 +199,497 @@ theorem armaContrastVar_eq_one_iff {p q : ℕ} {b0 b : Fin p → ℝ} {a0 a : Fi
     armaContrastVar b0 a0 b a = 1 ↔ b = b0 ∧ a = a0 := by
   sorry
 
+section Szego
+
+/-! ### The Szegő-type limit `T⁻¹ log det Γ_T → 0`
+
+The route avoids the innovations recursion entirely. With `ψ̃(m, s) = ψ_{m−s} 1{s ≤ m}`
+the Cholesky-type kernel of the model ACVF (`Γ_{st} = Σ_m ψ̃(m,s) ψ̃(m,t)`) and
+`π̃(i, k) = π_{k−i} 1{i ≤ k}` the (upper-triangular, unit-diagonal, determinant-one)
+inversion matrix, the whitened matrix `N_T = Π_T Γ_T Π_Tᵀ` has entries
+`N_{ij} = Σ_m u_i(m) u_j(m)` with `u_i(m) = Σ_{k<T} π̃(i,k) ψ̃(m,k)`. The convolution
+identity `π ∗ ψ = δ` makes `u_i(m) = 1{i = m}` for every `m < T`, so
+
+  `N_T = 1 + G_T`,  `G_{ij} = Σ_{m ≥ T} u_i(m) u_j(m)`,
+
+with `G_T` positive semidefinite and — this is the whole point — of *bounded trace*:
+`|u_i(m)| ≤ C²(T − i) r^{m−i}` gives `tr G_T ≤ C⁴ Σ_{d ≥ 1} d² r^{2d}/(1 − r²) =: K`
+uniformly in `T`. Since `det Γ_T = det N_T = ∏(1 + λ_j(G_T))`,
+
+  `0 ≤ log det Γ_T ≤ Σ_j λ_j(G_T) = tr G_T ≤ K`,
+
+which is `O(1)`, not merely `O(T)`: dividing by `T` gives the limit. -/
+
+open Matrix
+
+variable {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
+
+/-- The **one-sided transfer kernel** `ψ̃(m, s) = ψ_{m−s} 1{s ≤ m}` (the lower-triangular
+unit-diagonal Cholesky-type factor of the model ACVF). -/
+private noncomputable def psiK (b : Fin p → ℝ) (a : Fin q → ℝ) (m s : ℕ) : ℝ :=
+  if s ≤ m then armaPsi b a (m - s) else 0
+
+/-- The **one-sided inversion kernel** `π̃(i, k) = π_{k−i} 1{i ≤ k}`. -/
+private noncomputable def piK (b : Fin p → ℝ) (a : Fin q → ℝ) (i k : ℕ) : ℝ :=
+  if i ≤ k then armaPi b a (k - i) else 0
+
+private lemma psiK_eq_zero (b : Fin p → ℝ) (a : Fin q → ℝ) {m s : ℕ} (h : m < s) :
+    psiK b a m s = 0 := by
+  simp [psiK, Nat.not_le.2 h]
+
+private lemma piK_eq_zero (b : Fin p → ℝ) (a : Fin q → ℝ) {i k : ℕ} (h : k < i) :
+    piK b a i k = 0 := by
+  simp [piK, Nat.not_le.2 h]
+
+private lemma piK_self (b : Fin p → ℝ) (a : Fin q → ℝ) (i : ℕ) : piK b a i i = 1 := by
+  simp [piK, armaPi_zero]
+
+/-- **The convolution identity `π ∗ ψ = δ`** (the two power series are inverse). -/
+private lemma armaPi_conv_armaPsi (b : Fin p → ℝ) (a : Fin q → ℝ) (n : ℕ) :
+    ∑ k ∈ Finset.range (n + 1), armaPi b a k * armaPsi b a (n - k)
+      = if n = 0 then 1 else 0 := by
+  have hAne : PowerSeries.constantCoeff (((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) ≠ 0 := by
+    rw [Polynomial.constantCoeff_coe, coeff_maPoly_zero']
+    exact one_ne_zero
+  have hBne : PowerSeries.constantCoeff (((arPoly b : Polynomial ℝ) : PowerSeries ℝ)) ≠ 0 := by
+    rw [Polynomial.constantCoeff_coe, coeff_arPoly_zero']
+    exact one_ne_zero
+  have key : ((((arPoly b : Polynomial ℝ) : PowerSeries ℝ)) *
+        ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ)))⁻¹) *
+      (((((maPoly a : Polynomial ℝ) : PowerSeries ℝ))) *
+        ((((arPoly b : Polynomial ℝ) : PowerSeries ℝ)))⁻¹) = 1 := by
+    calc ((((arPoly b : Polynomial ℝ) : PowerSeries ℝ)) *
+          ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ)))⁻¹) *
+        (((((maPoly a : Polynomial ℝ) : PowerSeries ℝ))) *
+          ((((arPoly b : Polynomial ℝ) : PowerSeries ℝ)))⁻¹)
+        = ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) *
+            ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ)))⁻¹) *
+          ((((arPoly b : Polynomial ℝ) : PowerSeries ℝ)) *
+            ((((arPoly b : Polynomial ℝ) : PowerSeries ℝ)))⁻¹) := by ring
+      _ = 1 := by
+          rw [PowerSeries.mul_inv_cancel _ hAne, PowerSeries.mul_inv_cancel _ hBne, mul_one]
+  have hc := congrArg (PowerSeries.coeff n) key
+  rw [PowerSeries.coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk,
+    PowerSeries.coeff_one] at hc
+  exact hc
+
+/-- The filtered kernel `u_i(m) = Σ_{k<T} π̃(i,k) ψ̃(m,k)`: the rows of `Π_T Ψ̃`. -/
+private noncomputable def uSeq (b : Fin p → ℝ) (a : Fin q → ℝ) (T i m : ℕ) : ℝ :=
+  ∑ k ∈ Finset.range T, piK b a i k * psiK b a m k
+
+/-- **Whitening below the horizon**: for `m < T` the filtered kernel is `1{i = m}` —
+this is the convolution identity `π ∗ ψ = δ`, and it is what makes `Π Γ Πᵀ − 1` a
+*tail* Gram matrix. -/
+private lemma uSeq_eq_of_lt (b : Fin p → ℝ) (a : Fin q → ℝ) {T i m : ℕ} (hm : m < T) :
+    uSeq b a T i m = if i = m then 1 else 0 := by
+  have hsub : Finset.range (m + 1) ⊆ Finset.range T := Finset.range_mono hm
+  have hrestrict : uSeq b a T i m
+      = ∑ k ∈ Finset.range (m + 1), piK b a i k * psiK b a m k := by
+    refine (Finset.sum_subset hsub ?_).symm
+    intro k _ hk
+    rw [Finset.mem_range, not_lt] at hk
+    rw [psiK_eq_zero b a (by omega), mul_zero]
+  have hpsi : ∑ k ∈ Finset.range (m + 1), piK b a i k * psiK b a m k
+      = ∑ k ∈ Finset.range (m + 1), piK b a i k * armaPsi b a (m - k) := by
+    refine Finset.sum_congr rfl fun k hk => ?_
+    rw [Finset.mem_range] at hk
+    rw [psiK, if_pos (by omega)]
+  rw [hrestrict, hpsi]
+  by_cases him : i ≤ m
+  · have hzero : ∑ k ∈ Finset.Ico 0 i, piK b a i k * armaPsi b a (m - k) = 0 :=
+      Finset.sum_eq_zero fun k hk => by
+        rw [Finset.mem_Ico] at hk
+        rw [piK_eq_zero b a hk.2, zero_mul]
+    have hsplit : ∑ k ∈ Finset.range (m + 1), piK b a i k * armaPsi b a (m - k)
+        = ∑ k ∈ Finset.Ico i (m + 1), piK b a i k * armaPsi b a (m - k) := by
+      rw [Finset.range_eq_Ico,
+        ← Finset.sum_Ico_consecutive (fun k => piK b a i k * armaPsi b a (m - k))
+          (Nat.zero_le i) (by omega : i ≤ m + 1), hzero, zero_add]
+    have hshift : ∑ k ∈ Finset.Ico i (m + 1), piK b a i k * armaPsi b a (m - k)
+        = ∑ d ∈ Finset.range ((m - i) + 1), armaPi b a d * armaPsi b a ((m - i) - d) := by
+      rw [Finset.sum_Ico_eq_sum_range, show m + 1 - i = (m - i) + 1 by omega]
+      refine Finset.sum_congr rfl fun d hd => ?_
+      rw [piK, if_pos (Nat.le_add_right _ _)]
+      congr 2 <;> omega
+    rw [hsplit, hshift, armaPi_conv_armaPsi]
+    by_cases h : i = m
+    · rw [if_pos (by omega), if_pos h]
+    · rw [if_neg (by omega), if_neg h]
+  · rw [Finset.sum_eq_zero fun k hk => by
+      rw [Finset.mem_range] at hk
+      rw [piK_eq_zero b a (by omega), zero_mul], if_neg (by omega)]
+
+/-- **Above the horizon**: the geometric estimate `|u_i(m)| ≤ C²(T − i) r^{m−i}`, whose
+`(T − i)` factor (rather than `T`) is what keeps the trace bounded. -/
+private lemma abs_uSeq_le {C r : ℝ} (hC : 1 ≤ C) (hr0 : 0 ≤ r)
+    (hπ : ∀ n, |armaPi b a n| ≤ C * r ^ n) (hψ : ∀ n, |armaPsi b a n| ≤ C * r ^ n)
+    {T i m : ℕ} (hi : i < T) (hm : T ≤ m) :
+    |uSeq b a T i m| ≤ C ^ 2 * ((T : ℝ) - i) * r ^ (m - i) := by
+  have hCpos : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC
+  have hzero : ∑ k ∈ Finset.Ico 0 i, piK b a i k * psiK b a m k = 0 :=
+    Finset.sum_eq_zero fun k hk => by
+      rw [Finset.mem_Ico] at hk
+      rw [piK_eq_zero b a hk.2, zero_mul]
+  have hsplit : uSeq b a T i m = ∑ k ∈ Finset.Ico i T, piK b a i k * psiK b a m k := by
+    rw [uSeq, Finset.range_eq_Ico,
+      ← Finset.sum_Ico_consecutive (fun k => piK b a i k * psiK b a m k)
+        (Nat.zero_le i) (le_of_lt hi), hzero, zero_add]
+  have hterm : ∀ k ∈ Finset.Ico i T,
+      |piK b a i k * psiK b a m k| ≤ C ^ 2 * r ^ (m - i) := by
+    intro k hk
+    rw [Finset.mem_Ico] at hk
+    have hkm : k ≤ m := by omega
+    rw [piK, if_pos hk.1, psiK, if_pos hkm, abs_mul]
+    calc |armaPi b a (k - i)| * |armaPsi b a (m - k)|
+        ≤ (C * r ^ (k - i)) * (C * r ^ (m - k)) :=
+          mul_le_mul (hπ _) (hψ _) (abs_nonneg _) (by positivity)
+      _ = C ^ 2 * (r ^ (k - i) * r ^ (m - k)) := by ring
+      _ = C ^ 2 * r ^ (m - i) := by rw [← pow_add]; congr 2; omega
+  calc |uSeq b a T i m| ≤ ∑ k ∈ Finset.Ico i T, |piK b a i k * psiK b a m k| := by
+        rw [hsplit]; exact Finset.abs_sum_le_sum_abs _ _
+    _ ≤ ∑ _k ∈ Finset.Ico i T, C ^ 2 * r ^ (m - i) := Finset.sum_le_sum hterm
+    _ = C ^ 2 * ((T : ℝ) - i) * r ^ (m - i) := by
+        rw [Finset.sum_const, Nat.card_Ico, nsmul_eq_mul]
+        have : ((T - i : ℕ) : ℝ) = (T : ℝ) - i := by
+          push_cast [Nat.cast_sub (le_of_lt hi)]
+          ring
+        rw [this]
+        ring
+
+/-- Each kernel product is summable in the absolute time `m` (geometric ψ-decay). -/
+private lemma summable_psiK_mul (a : Fin q → ℝ) (hb : NoRootClosedDisc b) (s t : ℕ) :
+    Summable fun m : ℕ => psiK b a m s * psiK b a m t := by
+  obtain ⟨C, hC, r₀, hr₀, hr₁, hbnd₀⟩ := exists_geometric_bound_armaPsi a hb
+  obtain ⟨r, hrdef⟩ : ∃ r : ℝ, r = max r₀ (1 / 2) := ⟨_, rfl⟩
+  have hrpos : (0 : ℝ) < r := lt_of_lt_of_le (by norm_num) (hrdef ▸ le_max_right r₀ (1 / 2))
+  have hrlt : r < 1 := hrdef ▸ max_lt hr₁ (by norm_num)
+  have hbnd : ∀ n, |armaPsi b a n| ≤ C * r ^ n := fun n =>
+    (hbnd₀ n).trans (by
+      have h : r₀ ^ n ≤ r ^ n := pow_le_pow_left₀ hr₀ (hrdef ▸ le_max_left r₀ (1 / 2)) n
+      nlinarith)
+  have hCr : ∀ u : ℕ, 0 ≤ C / r ^ u := fun u => div_nonneg hC (by positivity)
+  have hker : ∀ m u : ℕ, |psiK b a m u| ≤ C / r ^ u * r ^ m := by
+    intro m u
+    unfold psiK
+    split_ifs with h
+    · have hsplit : r ^ m = r ^ (m - u) * r ^ u := by rw [← pow_add]; congr 1; omega
+      calc |armaPsi b a (m - u)| ≤ C * r ^ (m - u) := hbnd _
+        _ = C / r ^ u * (r ^ (m - u) * r ^ u) := by field_simp
+        _ = C / r ^ u * r ^ m := by rw [← hsplit]
+    · rw [abs_zero]
+      exact mul_nonneg (hCr u) (by positivity)
+  refine Summable.of_abs (Summable.of_nonneg_of_le (fun _ => abs_nonneg _) (fun m => ?_)
+    ((summable_geometric_of_lt_one (sq_nonneg r) (by nlinarith)).mul_left
+      (C / r ^ s * (C / r ^ t))))
+  rw [abs_mul]
+  calc |psiK b a m s| * |psiK b a m t|
+      ≤ (C / r ^ s * r ^ m) * (C / r ^ t * r ^ m) :=
+        mul_le_mul (hker m s) (hker m t) (abs_nonneg _) (mul_nonneg (hCr s) (by positivity))
+    _ = C / r ^ s * (C / r ^ t) * (r ^ 2) ^ m := by rw [← pow_mul]; ring
+
+/-- **The Cholesky-type factorization of the model ACVF**: `γ(s − t) = Σ_m ψ̃(m,s) ψ̃(m,t)`. -/
+private lemma armaACVF_eq_tsum_psiK (a : Fin q → ℝ) (hb : NoRootClosedDisc b) (s t : ℕ) :
+    armaACVF b a ((s : ℤ) - (t : ℤ)) = ∑' m : ℕ, psiK b a m s * psiK b a m t := by
+  have main : ∀ u v : ℕ, v ≤ u →
+      armaACVF b a ((u : ℤ) - (v : ℤ)) = ∑' m : ℕ, psiK b a m u * psiK b a m v := by
+    intro u v hvu
+    have hs := summable_psiK_mul a hb u v
+    have hzero : ∑ i ∈ Finset.range u, psiK b a i u * psiK b a i v = 0 :=
+      Finset.sum_eq_zero fun i hi => by
+        rw [psiK_eq_zero b a (Finset.mem_range.1 hi), zero_mul]
+    have hsplit := hs.sum_add_tsum_nat_add u
+    rw [hzero, zero_add] at hsplit
+    rw [← hsplit, armaACVF, show ((u : ℤ) - (v : ℤ)).natAbs = u - v by omega]
+    refine tsum_congr fun j => ?_
+    have h1 : psiK b a (j + u) u = armaPsi b a j := by simp [psiK]
+    have h2 : psiK b a (j + u) v = armaPsi b a (j + (u - v)) := by
+      rw [psiK, if_pos (by omega)]
+      congr 1
+      omega
+    rw [h1, h2]
+  rcases le_total t s with h | h
+  · exact main s t h
+  · have hsymm : armaACVF b a ((s : ℤ) - (t : ℤ)) = armaACVF b a ((t : ℤ) - (s : ℤ)) := by
+      simp only [armaACVF, show ((s : ℤ) - (t : ℤ)).natAbs = ((t : ℤ) - (s : ℤ)).natAbs by omega]
+    rw [hsymm, main t s h]
+    exact tsum_congr fun m => mul_comm _ _
+
+/-- Fubini for a weighted Gram pairing of `ℓ²`-type sequences. -/
+private lemma tsum_weighted_gram {T : ℕ} (v : Fin T → ℕ → ℝ)
+    (hv : ∀ i j, Summable fun m : ℕ => v i m * v j m) (c d : Fin T → ℝ) :
+    ∑' m : ℕ, (∑ i, c i * v i m) * (∑ j, d j * v j m)
+      = ∑ i, ∑ j, c i * d j * ∑' m : ℕ, v i m * v j m := by
+  have hsummand : ∀ i j : Fin T, Summable fun m : ℕ => (c i * v i m) * (d j * v j m) := by
+    intro i j
+    exact ((hv i j).mul_left (c i * d j)).congr fun m => by ring
+  have hexp : ∀ m : ℕ, (∑ i, c i * v i m) * (∑ j, d j * v j m)
+      = ∑ i, ∑ j, (c i * v i m) * (d j * v j m) := fun m => Finset.sum_mul_sum _ _ _ _
+  rw [tsum_congr hexp,
+    Summable.tsum_finsetSum (fun i _ => summable_sum fun j _ => hsummand i j)]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [Summable.tsum_finsetSum (fun j _ => hsummand i j)]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [← tsum_mul_left]
+  exact tsum_congr fun m => by ring
+
+private lemma summable_uSeq_mul (hb : NoRootClosedDisc b) (T i j : ℕ) :
+    Summable fun m : ℕ => uSeq b a T i m * uSeq b a T j m := by
+  have h : ∀ m : ℕ, uSeq b a T i m * uSeq b a T j m
+      = ∑ k ∈ Finset.range T, ∑ l ∈ Finset.range T,
+          (piK b a i k * piK b a j l) * (psiK b a m k * psiK b a m l) := by
+    intro m
+    rw [uSeq, uSeq, Finset.sum_mul_sum]
+    exact Finset.sum_congr rfl fun k _ => Finset.sum_congr rfl fun l _ => by ring
+  refine Summable.congr ?_ fun m => (h m).symm
+  exact summable_sum fun k _ => summable_sum fun l _ => (summable_psiK_mul a hb k l).mul_left _
+
+/-- The **inversion matrix** `Π_T` (upper triangular with unit diagonal). -/
+private noncomputable def piMat (b : Fin p → ℝ) (a : Fin q → ℝ) (T : ℕ) :
+    Matrix (Fin T) (Fin T) ℝ :=
+  Matrix.of fun i k => piK b a (i : ℕ) (k : ℕ)
+
+/-- The **tail Gram matrix** `G_T = Π_T Γ_T Π_Tᵀ − 1`. -/
+private noncomputable def gramTail (b : Fin p → ℝ) (a : Fin q → ℝ) (T : ℕ) :
+    Matrix (Fin T) (Fin T) ℝ :=
+  Matrix.of fun i j => ∑' m : ℕ, uSeq b a T (i : ℕ) (m + T) * uSeq b a T (j : ℕ) (m + T)
+
+private lemma det_piMat (b : Fin p → ℝ) (a : Fin q → ℝ) (T : ℕ) : (piMat b a T).det = 1 := by
+  rw [Matrix.det_of_upperTriangular]
+  · simp [piMat, piK_self]
+  · intro i j hij
+    exact piK_eq_zero b a hij
+
+/-- **The whitened Toeplitz matrix is `1` plus a tail Gram matrix.** -/
+private lemma piMat_mul_toeplitz_mul_transpose (hB : ARMAInvertibleParams b a) (T : ℕ) :
+    piMat b a T * armaToeplitz b a T * (piMat b a T)ᵀ = 1 + gramTail b a T := by
+  have huFin : ∀ x m : ℕ,
+      uSeq b a T x m = ∑ k : Fin T, piK b a x (k : ℕ) * psiK b a m (k : ℕ) := by
+    intro x m
+    rw [uSeq, ← Fin.sum_univ_eq_sum_range (fun k => piK b a x k * psiK b a m k) T]
+  ext i j
+  have hgram := tsum_weighted_gram (T := T) (fun k m => psiK b a m (k : ℕ))
+    (fun k l => summable_psiK_mul a hB.1 (k : ℕ) (l : ℕ))
+    (fun k => piK b a (i : ℕ) (k : ℕ)) (fun l => piK b a (j : ℕ) (l : ℕ))
+  have hentry : (piMat b a T * armaToeplitz b a T * (piMat b a T)ᵀ) i j
+      = ∑' m : ℕ, uSeq b a T (i : ℕ) m * uSeq b a T (j : ℕ) m := by
+    simp only [huFin]
+    rw [hgram]
+    simp only [Matrix.mul_apply, Matrix.transpose_apply, piMat, Matrix.of_apply]
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun k _ => ?_
+    rw [Finset.sum_mul]
+    refine Finset.sum_congr rfl fun l _ => ?_
+    have hΓ : (∑' m : ℕ, psiK b a m (l : ℕ) * psiK b a m (k : ℕ)) = armaToeplitz b a T l k :=
+      (armaACVF_eq_tsum_psiK a hB.1 (l : ℕ) (k : ℕ)).symm
+    rw [hΓ]
+    ring
+  rw [hentry]
+  have hsplit := (summable_uSeq_mul (a := a) hB.1 T (i : ℕ) (j : ℕ)).sum_add_tsum_nat_add T
+  rw [← hsplit]
+  have hhead : ∑ m ∈ Finset.range T, uSeq b a T (i : ℕ) m * uSeq b a T (j : ℕ) m
+      = (1 : Matrix (Fin T) (Fin T) ℝ) i j := by
+    have hterm : ∀ m ∈ Finset.range T,
+        uSeq b a T (i : ℕ) m * uSeq b a T (j : ℕ) m
+          = (if (i : ℕ) = m then (1 : ℝ) else 0) * (if (j : ℕ) = m then 1 else 0) := by
+      intro m hm
+      rw [Finset.mem_range] at hm
+      rw [uSeq_eq_of_lt b a hm, uSeq_eq_of_lt b a hm]
+    rw [Finset.sum_congr rfl hterm, Finset.sum_eq_single (i : ℕ)]
+    · rw [if_pos rfl, one_mul, Matrix.one_apply]
+      by_cases h : i = j
+      · rw [if_pos h, if_pos (by rw [h])]
+      · rw [if_neg h, if_neg (by simpa [Fin.ext_iff, eq_comm] using h)]
+    · intro m _ hm
+      rw [if_neg (Ne.symm hm), zero_mul]
+    · intro h
+      exact absurd (Finset.mem_range.2 i.isLt) h
+  rw [hhead]
+  rfl
+
+private lemma gramTail_posSemidef (hB : ARMAInvertibleParams b a) (T : ℕ) :
+    (gramTail b a T).PosSemidef := by
+  have hsummable : ∀ i j : Fin T,
+      Summable fun m : ℕ => uSeq b a T (i : ℕ) (m + T) * uSeq b a T (j : ℕ) (m + T) :=
+    fun i j => (summable_nat_add_iff T).2 (summable_uSeq_mul (a := a) hB.1 T (i : ℕ) (j : ℕ))
+  refine Matrix.PosSemidef.of_dotProduct_mulVec_nonneg ?_ fun c => ?_
+  · ext i j
+    simp only [Matrix.conjTranspose_apply, star_trivial, gramTail, Matrix.of_apply]
+    exact tsum_congr fun m => mul_comm _ _
+  · have hquad : star c ⬝ᵥ (gramTail b a T *ᵥ c)
+        = ∑' m : ℕ, (∑ i, c i * uSeq b a T (i : ℕ) (m + T)) *
+            (∑ j, c j * uSeq b a T (j : ℕ) (m + T)) := by
+      rw [tsum_weighted_gram (fun i m => uSeq b a T (i : ℕ) (m + T)) hsummable c c]
+      simp only [dotProduct, mulVec, gramTail, Matrix.of_apply, star_trivial, Finset.mul_sum]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      exact Finset.sum_congr rfl fun j _ => by ring
+    rw [hquad]
+    refine tsum_nonneg fun m => ?_
+    exact mul_self_nonneg _
+
+/-- **The uniform trace bound**: `tr G_T ≤ K` with `K` free of `T` — the quantitative
+heart of the Szegő limit. -/
+private lemma trace_gramTail_le {C r : ℝ} (hC : 1 ≤ C) (hr0 : 0 ≤ r) (hr1 : r < 1)
+    (hπ : ∀ n, |armaPi b a n| ≤ C * r ^ n) (hψ : ∀ n, |armaPsi b a n| ≤ C * r ^ n)
+    (hB : ARMAInvertibleParams b a) (T : ℕ) :
+    (gramTail b a T).trace
+      ≤ C ^ 4 / (1 - r ^ 2) * ∑' d : ℕ, ((d : ℝ) + 1) ^ 2 * (r ^ 2) ^ (d + 1) := by
+  have hCpos : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC
+  have hr2 : (0 : ℝ) ≤ r ^ 2 := sq_nonneg r
+  have hr2lt : r ^ 2 < 1 := by nlinarith
+  have hgeom : Summable fun m : ℕ => (r ^ 2) ^ m := summable_geometric_of_lt_one hr2 hr2lt
+  have hgeomval : ∑' m : ℕ, (r ^ 2) ^ m = (1 - r ^ 2)⁻¹ := tsum_geometric_of_lt_one hr2 hr2lt
+  have hmaj : Summable fun d : ℕ => ((d : ℝ) + 1) ^ 2 * (r ^ 2) ^ (d + 1) := by
+    have h0 : Summable fun n : ℕ => (r ^ 2) ^ n := hgeom
+    have h1 : Summable fun n : ℕ => (n : ℝ) ^ 1 * (r ^ 2) ^ n :=
+      summable_pow_mul_geometric_of_norm_lt_one (R := ℝ) 1
+        (by rw [Real.norm_eq_abs, abs_of_nonneg hr2]; exact hr2lt)
+    have h2 : Summable fun n : ℕ => (n : ℝ) ^ 2 * (r ^ 2) ^ n :=
+      summable_pow_mul_geometric_of_norm_lt_one (R := ℝ) 2
+        (by rw [Real.norm_eq_abs, abs_of_nonneg hr2]; exact hr2lt)
+    have hsum := ((h2.add (h1.mul_left 2)).add h0).mul_right (r ^ 2)
+    refine hsum.congr fun n => ?_
+    rw [pow_succ]
+    ring
+  -- the diagonal estimate
+  have hdiag : ∀ i : Fin T, gramTail b a T i i
+      ≤ C ^ 4 / (1 - r ^ 2) * (((T - (i : ℕ) : ℕ) : ℝ) ^ 2 * (r ^ 2) ^ ((T : ℕ) - (i : ℕ))) := by
+    intro i
+    have hi : (i : ℕ) < T := i.isLt
+    have hterm : ∀ m : ℕ,
+        uSeq b a T (i : ℕ) (m + T) * uSeq b a T (i : ℕ) (m + T)
+          ≤ C ^ 4 * (((T - (i : ℕ) : ℕ) : ℝ) ^ 2 * (r ^ 2) ^ ((T : ℕ) - (i : ℕ))) *
+              (r ^ 2) ^ m := by
+      intro m
+      have hb := abs_uSeq_le hC hr0 hπ hψ hi (Nat.le_add_left T m)
+      have hcast : ((T : ℝ) - (i : ℕ)) = ((T - (i : ℕ) : ℕ) : ℝ) := by
+        rw [Nat.cast_sub (le_of_lt hi)]
+      have hexp : r ^ (m + T - (i : ℕ)) = r ^ m * r ^ (T - (i : ℕ)) := by
+        rw [← pow_add]
+        congr 1
+        omega
+      rw [hcast, hexp] at hb
+      have hsq : (uSeq b a T (i : ℕ) (m + T)) ^ 2
+          ≤ (C ^ 2 * ((T - (i : ℕ) : ℕ) : ℝ) * (r ^ m * r ^ (T - (i : ℕ)))) ^ 2 := by
+        rw [← sq_abs]
+        exact pow_le_pow_left₀ (abs_nonneg _) hb 2
+      calc uSeq b a T (i : ℕ) (m + T) * uSeq b a T (i : ℕ) (m + T)
+          = (uSeq b a T (i : ℕ) (m + T)) ^ 2 := (sq _).symm
+        _ ≤ (C ^ 2 * ((T - (i : ℕ) : ℕ) : ℝ) * (r ^ m * r ^ (T - (i : ℕ)))) ^ 2 := hsq
+        _ = C ^ 4 * (((T - (i : ℕ) : ℕ) : ℝ) ^ 2 * (r ^ 2) ^ ((T : ℕ) - (i : ℕ))) *
+              (r ^ 2) ^ m := by
+            rw [← pow_mul, ← pow_mul, mul_comm 2 m, mul_comm 2 (T - (i : ℕ)), pow_mul, pow_mul]
+            ring
+    have hsum1 : Summable fun m : ℕ =>
+        uSeq b a T (i : ℕ) (m + T) * uSeq b a T (i : ℕ) (m + T) :=
+      (summable_nat_add_iff T).2 (summable_uSeq_mul (a := a) hB.1 T (i : ℕ) (i : ℕ))
+    have hsum2 := hgeom.mul_left
+      (C ^ 4 * (((T - (i : ℕ) : ℕ) : ℝ) ^ 2 * (r ^ 2) ^ ((T : ℕ) - (i : ℕ))))
+    have := hsum1.tsum_le_tsum hterm hsum2
+    rw [tsum_mul_left, hgeomval] at this
+    calc gramTail b a T i i
+        = ∑' m : ℕ, uSeq b a T (i : ℕ) (m + T) * uSeq b a T (i : ℕ) (m + T) := rfl
+      _ ≤ C ^ 4 * (((T - (i : ℕ) : ℕ) : ℝ) ^ 2 * (r ^ 2) ^ ((T : ℕ) - (i : ℕ))) *
+            (1 - r ^ 2)⁻¹ := this
+      _ = C ^ 4 / (1 - r ^ 2) *
+            (((T - (i : ℕ) : ℕ) : ℝ) ^ 2 * (r ^ 2) ^ ((T : ℕ) - (i : ℕ))) := by
+          rw [div_eq_mul_inv]
+          ring
+  have hconst : (0 : ℝ) ≤ C ^ 4 / (1 - r ^ 2) := by
+    have : (0 : ℝ) < 1 - r ^ 2 := by nlinarith
+    positivity
+  calc (gramTail b a T).trace
+      = ∑ i : Fin T, gramTail b a T i i := rfl
+    _ ≤ ∑ i : Fin T, C ^ 4 / (1 - r ^ 2) *
+          (((T - (i : ℕ) : ℕ) : ℝ) ^ 2 * (r ^ 2) ^ ((T : ℕ) - (i : ℕ))) :=
+        Finset.sum_le_sum fun i _ => hdiag i
+    _ = C ^ 4 / (1 - r ^ 2) *
+          ∑ i ∈ Finset.range T, ((T - i : ℕ) : ℝ) ^ 2 * (r ^ 2) ^ (T - i) := by
+        rw [← Finset.mul_sum,
+          Fin.sum_univ_eq_sum_range (fun i => ((T - i : ℕ) : ℝ) ^ 2 * (r ^ 2) ^ (T - i)) T]
+    _ ≤ C ^ 4 / (1 - r ^ 2) * ∑' d : ℕ, ((d : ℝ) + 1) ^ 2 * (r ^ 2) ^ (d + 1) := by
+        refine mul_le_mul_of_nonneg_left ?_ hconst
+        have hreflect : ∑ i ∈ Finset.range T, ((T - i : ℕ) : ℝ) ^ 2 * (r ^ 2) ^ (T - i)
+            = ∑ d ∈ Finset.range T, ((d : ℝ) + 1) ^ 2 * (r ^ 2) ^ (d + 1) := by
+          rw [← Finset.sum_range_reflect
+            (fun d => ((d : ℝ) + 1) ^ 2 * (r ^ 2) ^ (d + 1)) T]
+          refine Finset.sum_congr rfl fun i hi => ?_
+          rw [Finset.mem_range] at hi
+          have h1 : T - 1 - i + 1 = T - i := by omega
+          rw [h1]
+          congr 1
+          rw [Nat.cast_sub (by omega : i ≤ T)]
+          have : ((T - 1 - i : ℕ) : ℝ) + 1 = (T : ℝ) - i := by
+            rw [Nat.cast_sub (by omega : i ≤ T - 1), Nat.cast_sub (by omega : 1 ≤ T)]
+            push_cast
+            ring
+          rw [this]
+        rw [hreflect]
+        exact hmaj.sum_le_tsum _ (fun d _ => by positivity)
+
+/-- `det (1 + G) = ∏(1 + λ_j(G))` for positive semidefinite `G`: bounded below by `1`,
+and its logarithm bounded above by `tr G`. -/
+private lemma det_one_add_bounds {n : ℕ} {G : Matrix (Fin n) (Fin n) ℝ}
+    (hGh : G.IsHermitian) (hnn : ∀ i, 0 ≤ Matrix.IsHermitian.eigenvalues hGh i) :
+    1 ≤ (1 + G).det ∧ Real.log (1 + G).det ≤ G.trace := by
+  obtain ⟨d, hd⟩ : ∃ d : Fin n → ℝ, d = Matrix.IsHermitian.eigenvalues hGh := ⟨_, rfl⟩
+  obtain ⟨U, hU⟩ : ∃ U : unitary (Matrix (Fin n) (Fin n) ℝ),
+      U = Matrix.IsHermitian.eigenvectorUnitary hGh := ⟨_, rfl⟩
+  have hnn' : ∀ i, 0 ≤ d i := by rw [hd]; exact hnn
+  have hdet : (1 + G).det = ∏ i, (1 + d i) := by
+    have hspec : (1 : Matrix (Fin n) (Fin n) ℝ) + G
+        = Unitary.conjStarAlgAut ℝ (Matrix (Fin n) (Fin n) ℝ) U
+            (1 + Matrix.diagonal (RCLike.ofReal ∘ d)) := by
+      rw [map_add, map_one, hd, hU, ← Matrix.IsHermitian.spectral_theorem hGh]
+    have hUdet : ((U : Matrix (Fin n) (Fin n) ℝ)).det *
+        (star (U : Matrix (Fin n) (Fin n) ℝ)).det = 1 := by
+      have hmul : (U : Matrix (Fin n) (Fin n) ℝ) * star (U : Matrix (Fin n) (Fin n) ℝ) = 1 := by
+        simp
+      rw [← Matrix.det_mul, hmul, Matrix.det_one]
+    have hdiag : (1 : Matrix (Fin n) (Fin n) ℝ) + Matrix.diagonal (RCLike.ofReal ∘ d)
+        = Matrix.diagonal fun i => 1 + d i := by
+      rw [← Matrix.diagonal_one, Matrix.diagonal_add]
+      rfl
+    rw [hspec, Unitary.conjStarAlgAut_apply, hdiag, Matrix.det_mul, Matrix.det_mul,
+      Matrix.det_diagonal]
+    calc ((U : Matrix (Fin n) (Fin n) ℝ)).det * (∏ i, (1 + d i))
+          * (star (U : Matrix (Fin n) (Fin n) ℝ)).det
+        = (((U : Matrix (Fin n) (Fin n) ℝ)).det *
+            (star (U : Matrix (Fin n) (Fin n) ℝ)).det) * ∏ i, (1 + d i) := by ring
+      _ = ∏ i, (1 + d i) := by rw [hUdet, one_mul]
+  have htrace : G.trace = ∑ i, d i := by
+    rw [hd]
+    simpa using Matrix.IsHermitian.trace_eq_sum_eigenvalues hGh
+  refine ⟨?_, ?_⟩
+  · rw [hdet]
+    exact Finset.one_le_prod fun i _ => by linarith [hnn' i]
+  · rw [hdet, htrace, Real.log_prod fun i _ => by
+      have := hnn' i
+      positivity]
+    refine Finset.sum_le_sum fun i _ => ?_
+    have h := Real.log_le_sub_one_of_pos (x := 1 + d i) (by linarith [hnn' i])
+    linarith
+
+/-- The two-sided bound `0 ≤ log det Γ_T ≤ K` with `K` free of `T`. -/
+private lemma log_det_armaToeplitz_bounds {C r : ℝ} (hC : 1 ≤ C) (hr0 : 0 ≤ r) (hr1 : r < 1)
+    (hπ : ∀ n, |armaPi b a n| ≤ C * r ^ n) (hψ : ∀ n, |armaPsi b a n| ≤ C * r ^ n)
+    (hB : ARMAInvertibleParams b a) (T : ℕ) :
+    0 ≤ Real.log (armaToeplitz b a T).det ∧
+      Real.log (armaToeplitz b a T).det
+        ≤ C ^ 4 / (1 - r ^ 2) * ∑' d : ℕ, ((d : ℝ) + 1) ^ 2 * (r ^ 2) ^ (d + 1) := by
+  have hdet : (armaToeplitz b a T).det = (1 + gramTail b a T).det := by
+    rw [← piMat_mul_toeplitz_mul_transpose hB T, Matrix.det_mul, Matrix.det_mul,
+      Matrix.det_transpose, det_piMat]
+    ring
+  have hpsd := gramTail_posSemidef (a := a) hB T
+  obtain ⟨h1, h2⟩ := det_one_add_bounds hpsd.1 (Matrix.PosSemidef.eigenvalues_nonneg hpsd)
+  refine ⟨?_, ?_⟩
+  · rw [hdet]
+    exact Real.log_nonneg h1
+  · rw [hdet]
+    exact h2.trans (trace_gramTail_le hC hr0 hr1 hπ hψ hB T)
+
+end Szego
+
 /-- **Szegő-type limit**: on the constraint set, `T⁻¹ log det Γ_T(b, a) → 0`
 (unit-variance model; `det Γ_T = ∏_{j<T} ν_j` with innovations variances `ν_j ↓ 1`
 geometrically). -/
@@ -204,7 +697,14 @@ theorem logdet_armaToeplitz_vanishes {p q : ℕ} {b : Fin p → ℝ} {a : Fin q 
     (hB : ARMAInvertibleParams b a) :
     Tendsto (fun T : ℕ => (T : ℝ)⁻¹ * Real.log (armaToeplitz b a T).det)
       atTop (𝓝 0) := by
-  sorry
+  obtain ⟨C, r, hC, hr0, hr1, hπ, hψ⟩ := exists_common_geometric_bound hB hB
+  obtain ⟨K, hKdef⟩ : ∃ K : ℝ,
+      K = C ^ 4 / (1 - r ^ 2) * ∑' d : ℕ, ((d : ℝ) + 1) ^ 2 * (r ^ 2) ^ (d + 1) := ⟨_, rfl⟩
+  refine squeeze_zero_norm (fun T => ?_) (tendsto_const_div_atTop_nhds_zero_nat K)
+  obtain ⟨hlow, hhigh⟩ := log_det_armaToeplitz_bounds hC hr0 hr1 hπ hψ hB T
+  have hTnn : (0 : ℝ) ≤ (T : ℝ)⁻¹ := inv_nonneg.2 (Nat.cast_nonneg T)
+  rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg hTnn hlow), div_eq_mul_inv, mul_comm K]
+  exact mul_le_mul_of_nonneg_left (hKdef ▸ hhigh) hTnn
 
 section Process
 
