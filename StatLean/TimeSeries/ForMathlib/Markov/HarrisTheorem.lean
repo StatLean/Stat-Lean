@@ -100,11 +100,20 @@ private theorem bind_add' (κ : Kernel S S) [IsSFiniteKernel κ] (μ ν : Measur
     lintegral_add_measure]
 
 /-- The **weighted total-variation distance** `∫ (1 + βV) d|μ − ν|` of Hairer–Mattingly
-(their `ρ_β`), as an `ℝ≥0∞`-valued quantity built from the Jordan decomposition of the
-signed difference. At `β = 0` it is twice `StatLean.Minimaxity.tvDist`. -/
+(their `ρ_β`). The total-variation measure `|μ − ν|` is realized as
+`|dμ/dλ − dν/dλ| · λ` for the common dominating measure `λ = μ + ν`; in `ℝ≥0∞` the
+absolute difference is the sum of the two truncated subtractions. At `β = 0` this is
+twice `StatLean.Minimaxity.tvDist`.
+
+**Definition repaired 2026-08-09.** The first version used
+`μ.singularPart ν + ν.singularPart μ`, which is *not* the Jordan decomposition of the
+signed difference — it discards the absolutely-continuous disagreement entirely — and a
+machine-checked counterexample (`cNoContraction`, retained below) refuted the
+contraction theorem stated against it. -/
 noncomputable def weightedTV (β : ℝ) (V : S → ℝ) (μ ν : Measure S) : ℝ≥0∞ :=
-  (∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂(μ.singularPart ν))
-    + ∫⁻ x, ENNReal.ofReal (1 + β * V x) ∂(ν.singularPart μ)
+  ∫⁻ x, ENNReal.ofReal (1 + β * V x) *
+    ((μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x)
+      + (ν.rnDeriv (μ + ν) x - μ.rnDeriv (μ + ν) x)) ∂(μ + ν)
 
 /-- **Lyapunov drift condition**: `∫ V d(κ x) ≤ γ V x + K` with a contraction factor
 `γ < 1` (Hairer–Mattingly Assumption 1). -/
@@ -117,8 +126,12 @@ structure HasLyapunovDrift (κ : Kernel S S) (V : S → ℝ) (γ K : ℝ) : Prop
   gamma_mem : 0 < γ ∧ γ < 1
   /-- Constitutive (H–M Assumption 1): the additive constant is nonnegative. -/
   K_nonneg : 0 ≤ K
-  /-- Constitutive (H–M Assumption 1): the drift inequality `PV ≤ γV + K`. -/
-  drift : ∀ x, (∫ y, V y ∂(κ x)) ≤ γ * V x + K
+  /-- Constitutive (H–M Assumption 1): the drift inequality `PV ≤ γV + K`, stated with
+  the **lower** integral. Repaired 2026-08-09: with the Bochner integral, Mathlib's
+  `integral_undef` convention makes the inequality vacuous at every state where `V` is
+  not `κ x`-integrable (both sides are then trivially ordered), so the hypothesis
+  constrained nothing where it mattered most and both existence and uniqueness failed. -/
+  drift : ∀ x, (∫⁻ y, ENNReal.ofReal (V y) ∂(κ x)) ≤ ENNReal.ofReal (γ * V x + K)
 
 /-- **Minorization on a sublevel set**: on `{V ≤ R}` the kernel dominates `α·ρ` for a
 fixed probability measure `ρ` (Hairer–Mattingly Assumption 2). -/
