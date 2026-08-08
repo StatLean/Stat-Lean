@@ -390,61 +390,172 @@ theorem tsum_garchInfCoeffs {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
   rw [← hval]
   exact hsummable.hasSum
 
+/-- **The ARCH(∞) volatility identity, coefficient side** (FY p. 148). -/
+private lemma garchVolSq_rec_aux {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ} {c0 A : ℝ}
+    {d : ℕ → ℝ} (hb : ∀ i, 0 ≤ b i) (ha : ∀ j, 0 ≤ a j) (hc0 : 0 ≤ c0) (hA : 0 ≤ A)
+    (hd : ∀ i, 0 ≤ d i) (hd0 : d 0 = 0)
+    (hdrec : ∀ n, d n = (∑ i : Fin p, if n = (i : ℕ) + 1 then b i else 0)
+      + ∑ j : Fin q, a j * (if (j : ℕ) < n then d (n - ((j : ℕ) + 1)) else 0))
+    (hfix : c0 + (∑ j, a j) * A = A) (e : ℤ → ENNReal) :
+    ENNReal.ofReal A + ∑' m : ℕ, ENNReal.ofReal (d (m + 1)) * e (-1 - (m : ℤ))
+      = ENNReal.ofReal c0 + (∑ i : Fin p, ENNReal.ofReal (b i) * e (-1 - ((i : ℕ) : ℤ)))
+        + ∑ j : Fin q, ENNReal.ofReal (a j)
+            * (ENNReal.ofReal A
+              + ∑' m : ℕ, ENNReal.ofReal (d (m + 1))
+                  * e (-1 - (m : ℤ) - 1 - ((j : ℕ) : ℤ))) := by
+  have hanpos : (0 : ℝ) ≤ ∑ j, a j := Finset.sum_nonneg fun j _ => ha j
+  -- the constant part: `ā = c₀ + (Σ_j a_j) ā`
+  have hconst : ENNReal.ofReal A
+      = ENNReal.ofReal c0 + ∑ j : Fin q, ENNReal.ofReal (a j) * ENNReal.ofReal A := by
+    have h1 : (∑ j : Fin q, ENNReal.ofReal (a j) * ENNReal.ofReal A)
+        = ENNReal.ofReal ((∑ j, a j) * A) := by
+      rw [Finset.sum_mul, ENNReal.ofReal_sum_of_nonneg fun j _ => mul_nonneg (ha j) hA]
+      exact Finset.sum_congr rfl fun j _ => (ENNReal.ofReal_mul (ha j)).symm
+    rw [h1, ← ENNReal.ofReal_add hc0 (mul_nonneg hanpos hA), hfix]
+  -- the coefficient recursion, in `ℝ≥0∞`
+  have hcoef : ∀ m : ℕ, ENNReal.ofReal (d (m + 1))
+      = (∑ i : Fin p, if m = (i : ℕ) then ENNReal.ofReal (b i) else 0)
+        + ∑ j : Fin q, (if (j : ℕ) < m then ENNReal.ofReal (a j * d (m - (j : ℕ))) else 0) := by
+    intro m
+    have h1 : (∑ i : Fin p, if m + 1 = (i : ℕ) + 1 then b i else 0)
+        = ∑ i : Fin p, if m = (i : ℕ) then b i else 0 := by
+      refine Finset.sum_congr rfl fun i _ => ?_
+      by_cases h : m = (i : ℕ)
+      · rw [if_pos (by omega), if_pos h]
+      · rw [if_neg (by omega), if_neg h]
+    have h2 : (∑ j : Fin q, a j * (if (j : ℕ) < m + 1 then d (m + 1 - ((j : ℕ) + 1)) else 0))
+        = ∑ j : Fin q, (if (j : ℕ) < m then a j * d (m - (j : ℕ)) else 0) := by
+      refine Finset.sum_congr rfl fun j _ => ?_
+      rcases lt_trichotomy ((j : ℕ)) m with h | h | h
+      · rw [if_pos (by omega), if_pos h]
+        congr 2
+        omega
+      · rw [if_pos (by omega), if_neg (by omega)]
+        have : m + 1 - ((j : ℕ) + 1) = 0 := by omega
+        rw [this, hd0, mul_zero]
+      · rw [if_neg (by omega), if_neg (by omega), mul_zero]
+    have hs1 : (0 : ℝ) ≤ ∑ i : Fin p, if m = (i : ℕ) then b i else 0 :=
+      Finset.sum_nonneg fun i _ => by split; exacts [hb i, le_rfl]
+    have hs2 : (0 : ℝ) ≤ ∑ j : Fin q, if (j : ℕ) < m then a j * d (m - (j : ℕ)) else 0 :=
+      Finset.sum_nonneg fun j _ => by split; exacts [mul_nonneg (ha j) (hd _), le_rfl]
+    rw [hdrec (m + 1), h1, h2, ENNReal.ofReal_add hs1 hs2,
+      ENNReal.ofReal_sum_of_nonneg (fun i _ => by split; exacts [hb i, le_rfl]),
+      ENNReal.ofReal_sum_of_nonneg fun j _ => by
+        split; exacts [mul_nonneg (ha j) (hd _), le_rfl]]
+    congr 1 <;> refine Finset.sum_congr rfl fun x _ => ?_ <;> split <;> simp
+  -- the series part
+  have hseries : (∑' m : ℕ, ENNReal.ofReal (d (m + 1)) * e (-1 - (m : ℤ)))
+      = (∑ i : Fin p, ENNReal.ofReal (b i) * e (-1 - ((i : ℕ) : ℤ)))
+        + ∑ j : Fin q, ENNReal.ofReal (a j)
+            * ∑' m : ℕ, ENNReal.ofReal (d (m + 1))
+                * e (-1 - (m : ℤ) - 1 - ((j : ℕ) : ℤ)) := by
+    have hsplit : ∀ m : ℕ, ENNReal.ofReal (d (m + 1)) * e (-1 - (m : ℤ))
+        = (∑ i : Fin p, (if m = (i : ℕ) then ENNReal.ofReal (b i) else 0) * e (-1 - (m : ℤ)))
+          + ∑ j : Fin q, (if (j : ℕ) < m then ENNReal.ofReal (a j * d (m - (j : ℕ))) else 0)
+              * e (-1 - (m : ℤ)) := by
+      intro m
+      rw [hcoef m, add_mul, Finset.sum_mul, Finset.sum_mul]
+    rw [tsum_congr hsplit, ENNReal.tsum_add,
+      Summable.tsum_finsetSum fun i _ => ENNReal.summable,
+      Summable.tsum_finsetSum fun j _ => ENNReal.summable]
+    congr 1
+    · refine Finset.sum_congr rfl fun i _ => ?_
+      have hpt : ∀ m : ℕ, (if m = (i : ℕ) then ENNReal.ofReal (b i) else 0) * e (-1 - (m : ℤ))
+          = if m = (i : ℕ) then ENNReal.ofReal (b i) * e (-1 - ((i : ℕ) : ℤ)) else 0 := by
+        intro m
+        split
+        · next h => rw [h]
+        · rw [zero_mul]
+      rw [tsum_congr hpt, tsum_ite_eq]
+    · refine Finset.sum_congr rfl fun j _ => ?_
+      have hinj : Function.Injective fun k : ℕ => (j : ℕ) + 1 + k := fun x y h => by
+        simpa using h
+      have hsupp : Function.support (fun m : ℕ =>
+            (if (j : ℕ) < m then ENNReal.ofReal (a j * d (m - (j : ℕ))) else 0)
+              * e (-1 - (m : ℤ)))
+          ⊆ Set.range fun k : ℕ => (j : ℕ) + 1 + k := by
+        intro m hm
+        have hlt : (j : ℕ) < m := by
+          by_contra hnl
+          exact hm (by simp only [if_neg hnl, zero_mul])
+        exact ⟨m - ((j : ℕ) + 1), by show (j : ℕ) + 1 + (m - ((j : ℕ) + 1)) = m; omega⟩
+      rw [← hinj.tsum_eq hsupp, ← ENNReal.tsum_mul_left]
+      refine tsum_congr fun k => ?_
+      have hidx : (-1 - (((j : ℕ) + 1 + k : ℕ) : ℤ))
+          = -1 - (k : ℤ) - 1 - ((j : ℕ) : ℤ) := by push_cast; ring
+      have hsub : (j : ℕ) + 1 + k - (j : ℕ) = k + 1 := by omega
+      rw [if_pos (by omega), hsub, hidx, ENNReal.ofReal_mul (ha j), mul_assoc]
+  rw [hseries]
+  have hRHS : (∑ j : Fin q, ENNReal.ofReal (a j)
+        * (ENNReal.ofReal A + ∑' m : ℕ, ENNReal.ofReal (d (m + 1))
+            * e (-1 - (m : ℤ) - 1 - ((j : ℕ) : ℤ))))
+      = (∑ j : Fin q, ENNReal.ofReal (a j) * ENNReal.ofReal A)
+        + ∑ j : Fin q, ENNReal.ofReal (a j) * ∑' m : ℕ, ENNReal.ofReal (d (m + 1))
+            * e (-1 - (m : ℤ) - 1 - ((j : ℕ) : ℤ)) := by
+    rw [← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun j _ => mul_add _ _ _
+  rw [hRHS]
+  conv_lhs => rw [hconst]
+  ring
+
+/-- A measurable path functional of a measurable family is measurable — stated so that it
+can be applied at a *sub*-σ-algebra by supplying the instance explicitly. -/
+private lemma measurable_pathFun {Ω' : Type*} [MeasurableSpace Ω'] {f : ℤ → Ω' → ℝ}
+    (hf : ∀ u, Measurable (f u)) {F : (ℤ → ℝ) → ℝ} (hF : Measurable F) :
+    Measurable fun ω => F fun u => f u ω :=
+  hF.comp (measurable_pi_lambda _ hf)
+
+/-- `ξ = ε²` is an ARCH(∞) noise. -/
+private lemma isARCHNoise_sq [IsProbabilityMeasure μ] {ε : ℤ → Ω → ℝ}
+    (hε : IsIIDNoise ε 1 μ) : IsARCHNoise (fun t ω => ε t ω ^ 2) μ where
+  measurable t := (hε.measurable t).pow_const 2
+  nonneg t := Filter.Eventually.of_forall fun ω => sq_nonneg _
+  iIndep := hε.iIndep.comp (fun _ : ℤ => fun x : ℝ => x ^ 2)
+    fun _ => (measurable_id.pow_const 2 : Measurable fun x : ℝ => x ^ 2)
+  identDistrib s t := (hε.identDistrib s t).comp
+    (measurable_id.pow_const 2 : Measurable fun x : ℝ => x ^ 2)
+  integrable := hε.memLp.integrable_sq
+  integral_eq_one := by
+    have hv := variance_eq_sub (μ := μ) hε.memLp
+    rw [hε.variance_eq, hε.integral_eq_zero] at hv
+    simpa using hv.symm
+
 /-- **FY Theorem 4.4, existence**: under `Σ b + Σ a < 1` a strictly stationary
 square-integrable GARCH(p, q) solution exists.
 
-**BLOCKED — the ARCH(∞) machinery is not reusable through its frozen interface**
-(assessed 2026-08-08). The reduction itself is sound and every *arithmetic* input for it
-is already available in this file:
+**Proof** (FY p. 148, then FY Thm 2.5(i)). Inverting `1 − Σ_j a_j z^j` turns the
+volatility recursion into an ARCH(∞) one: the coefficients `d_i = garchInfCoeffs b a i`
+are nonnegative (`garchInfCoeffs_nonneg`) with `Σ_i d_i = (Σ b)/(1 − Σ a)`
+(`tsum_garchInfCoeffs`), which is `< 1` exactly under `hsum`. So `bc j = d_{j+1}` and
+`ā = c₀/(1 − Σ a)` satisfy the hypotheses of `exists_stationary_archInf`
+(`Stationarity/ARCH.lean`) over the noise `ξ_t = ε_t²`, which returns the solution
+`Y ≃ X²` *together with its path functional*: `Y_t = G(ξ_{·+t})` for one fixed measurable
+`G` that reads its argument only at coordinates `≤ 0`. The GARCH pair is then two
+readings of the same ARCH(∞) volatility:
 
-* the ARCH(∞) coefficients `d_i` of `b(z)/(1 − a(z))` are `garchInfCoeffs`, nonnegative
-  by `garchInfCoeffs_nonneg` and summable with `Σ_i d_i = (Σ b)/(1 − Σ a)` by
-  `tsum_garchInfCoeffs`; `hsum` is *exactly* `Σ_i d_i < 1`, the hypothesis of
-  `exists_stationary_archInf` (`Stationarity/ARCH.lean`, FY Thm 2.5(i)).
+* `X_t = Φ(ε_{·+t})`, where `Φ(r) = √(ā + Σ_j d_{j+1} G((r(· − 1 − j))²)) · r 0`;
+* `σ_t = √(ā + Σ_j d_{j+1} X_{t−1−j}²)`, the same functional read off the **observation**
+  path — which is what makes `σ_t` measurable for `sigmaLT X t` (the `adapted` field).
 
-Instantiating that theorem at `ξ = ε²`, `bc j = d_{j+1}`, `a = c₀/(1 − Σ a)` produces a
-process `Y` (morally `X²`) with `IsARCHInf`, `IsStrictlyStationary Y`, integrability and
-its mean. From `Y` one sets `σ² = ā + Σ_j d_{j+1} Y_{t−1−j}` and `X_t = σ_t ε_t`. Of the
-eleven `IsGARCH` fields, that route delivers all but two, and `MemLp (X t) 2` is free
-(`X_t² = Y_t` a.e. and `Y_t` is integrable). The two it cannot deliver are:
+The two readings agree a.e. because `X_t² = Y_t` a.e. (the ARCH(∞) recurrence,
+`archInf_ofReal_recurrence`); `MemLp (X t) 2` is then the integrability of `Y_t`, and the
+volatility recursion `σ_t² = c₀ + Σ_i b_i X²_{t−i} + Σ_j a_j σ²_{t−j}` is exactly the
+coefficient recursion `d_n = b_n + Σ_j a_j d_{n−1−j}` (`garchVolSq_rec_aux`, carried out
+in `ℝ≥0∞` where the rearrangements are unconditional).
 
-1. **`indep_past`** — `Indep (comap (ε t)) (sigmaLT X t)`. `IsARCHInf.indep_past` only
-   gives `Indep (comap (ξ t)) (sigmaLT Y t)`, which is weaker in *two* independent ways:
-   `comap (ε t) ⊋ comap (ε t ²) = comap (ξ t)` (an independence statement about `ε_t²`
-   says nothing about the sign of `ε_t`), and `sigmaLT X t` is the join of `sigmaLT Y t`
-   with `σ(ε_s : s < t)` (because `X_s = σ_s ε_s` carries the innovation's sign), which is
-   strictly larger than `sigmaLT Y t`.
-2. **`IsStrictlyStationary X`** — strict stationarity of `Y` alone is not enough: `X_t` is
-   a *joint* functional of the `Y`-past and of `ε_t`, so one needs the joint law of
-   `(Y, ε)` to be shift-invariant, not just `Y`'s own finite-dimensional laws.
+The two fields that `IsARCHInf` plus `IsStrictlyStationary Y` cannot deliver on their own
+are supplied by `G`'s two extra properties. **`indep_past`**: causality of `G` (hence of
+`Φ`) gives `sigmaLT X t ≤ σ(ε_u : u < t)`, and `ε_t` is independent of that
+(`indep_xi_sigmaLT`); note `IsARCHInf.indep_past` is strictly weaker — it only sees
+`ε_t²` and only the `Y`-past. **`IsStrictlyStationary X`**: `X` is a fixed measurable
+functional of the shifted innovation path, so `isStrictlyStationary_of_shift_comp`
+applies; stationarity of `Y` alone would not suffice, since `X_t` is a joint functional of
+the `Y`-past and of `ε_t`.
 
-Both facts *are* proved inside `exists_stationary_archInf` — its `hmeasSolLT` shows the
-Volterra solution at time `s` is `sigmaLT ξ t`-measurable for `s < t`, and its `hstat`
-goes through the fixed path functional `archFun`/`archPath` — but neither is exported:
-`archLayer`, `archPath`, `archFun`, `archSol` and every lemma about them are `private` to
-`Stationarity/ARCH.lean`, and the theorem's conclusion is purely `∃ Y, IsARCHInf … ∧
-IsStrictlyStationary Y … ∧ Integrable … ∧ mean`. No other file consumes
-`exists_stationary_archInf`, so nothing else pins its shape.
-
-**Precise repair** (a statement change in `Stationarity/ARCH.lean`, outside this lane's
-touch-set): strengthen the conclusion of `exists_stationary_archInf` to expose the
-solution as a shift-equivariant path functional, e.g. add
-`∃ G : (ℤ → ℝ) → ℝ, Measurable G ∧ (∀ t ω, Y t ω = G (fun s => ξ (s + t) ω)) ∧
-∀ p q : ℤ → ℝ, (∀ s ≤ 0, p s = q s) → G p = G q`
-(measurable, causal, shift-equivariant). Given that clause both blockers evaporate:
-causality gives `Y_s` measurable for `σ(ε_u : u ≤ s)`, hence `sigmaLT X t ≤ σ(ε_u : u < t)`
-and `indep_past` from the i.i.d. property of `ε`; and shift-equivariance transports the
-shift-invariance of the *`ε`*-path law to the family `X_t = √(ā + Σ_j d_{j+1} G(…)) · ε_t`,
-giving `IsStrictlyStationary X` by the same argument
-`isStrictlyStationary_nelX` uses below for `(p, q) = (1, 1)`.
-
-The alternative, staying inside the touch-set, is to re-derive the Volterra construction
-here (the general-`(p, q)` analogue of the `nel*` cascade below, which is specific to
-`(1,1)`); that is a construction from scratch, not a reuse, and is left undone.
-
-The `(p, q) = (1, 1)` case is *not* affected: it is proved below without ARCH(∞), by
-`exists_strictlyStationary_garch_one_one_nelson` (Nelson's random-product series), whose
-hypothesis `E log(b₁ε² + a₁) < 0` follows from `b₁ + a₁ < 1` by Jensen. -/
+The `(p, q) = (1, 1)` case is *also* covered — with no moment condition at all, so beyond
+`hsum` — by `exists_strictlyStationary_garch_one_one_nelson` below (Nelson's
+random-product series), and at the IGARCH boundary `b₁ + a₁ = 1` by
+`exists_strictlyStationary_igarch_one_one`. -/
 theorem exists_stationary_garch [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     {b : Fin p → ℝ} {a : Fin q → ℝ} {ε : ℤ → Ω → ℝ}
     -- USER-INPUT: nonnegative coefficients; FY Def 4.3
@@ -455,7 +566,216 @@ theorem exists_stationary_garch [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     (hε : IsIIDNoise ε 1 μ) :
     ∃ X σvol : ℤ → Ω → ℝ, IsGARCH c0 b a X σvol ε μ ∧ IsStrictlyStationary X μ ∧
       (∀ t, MemLp (X t) 2 μ) := by
-  sorry
+  -- ### the ARCH(∞) coefficients
+  have hdrec := garchInfCoeffs_rec b a
+  have hb0 : (0 : ℝ) ≤ ∑ i, b i := Finset.sum_nonneg fun i _ => hb i
+  have ha0 : (0 : ℝ) ≤ ∑ j, a j := Finset.sum_nonneg fun j _ => ha j
+  have hsa : (∑ j, a j) < 1 := by linarith
+  have hd : ∀ i, 0 ≤ garchInfCoeffs b a i := garchInfCoeffs_nonneg hb ha hsa
+  have hdhas := tsum_garchInfCoeffs hb ha hsa
+  have hd0 : garchInfCoeffs b a 0 = 0 := by rw [hdrec 0]; simp
+  obtain ⟨A, hAdef⟩ : ∃ A : ℝ, A = c0 / (1 - ∑ j, a j) := ⟨_, rfl⟩
+  have hA : 0 ≤ A := by rw [hAdef]; exact div_nonneg hc0 (by linarith)
+  have hne : (1 : ℝ) - ∑ j, a j ≠ 0 := by linarith
+  have hfix : c0 + (∑ j, a j) * A = A := by
+    rw [hAdef]; field_simp; ring
+  obtain ⟨bc, hbcdef⟩ : ∃ bc : ℕ → ℝ, bc = fun j => garchInfCoeffs b a (j + 1) := ⟨_, rfl⟩
+  have hbcnn : ∀ j, 0 ≤ bc j := by rw [hbcdef]; exact fun j => hd (j + 1)
+  have hbcsum : Summable bc := by
+    rw [hbcdef]; exact (summable_nat_add_iff 1).2 hdhas.summable
+  have hbclt : (∑' j, bc j) < 1 := by
+    have h := hdhas.summable.tsum_eq_zero_add
+    rw [hd0, zero_add, hdhas.tsum_eq] at h
+    rw [hbcdef, ← h, div_lt_one (by linarith)]
+    linarith
+  -- ### the ARCH(∞) solution `Y ≃ X²` over the noise `ξ = ε²`
+  obtain ⟨Y, hY, hstatY, hintY, hmeanY, G, hGm, hGY, hGcaus⟩ :=
+    exists_stationary_archInf hA hbcnn hbcsum hbclt (isARCHNoise_sq hε)
+  -- ### the volatility, as a functional of the *innovation* path
+  obtain ⟨V, hVdef⟩ : ∃ V : (ℤ → ℝ) → ENNReal, V = fun r => ENNReal.ofReal A
+      + ∑' j : ℕ, ENNReal.ofReal (bc j)
+          * ENNReal.ofReal (G fun s => r (s - 1 - (j : ℕ)) ^ 2) := ⟨_, rfl⟩
+  have hVm : Measurable V := by
+    rw [hVdef]
+    refine measurable_const.add (Measurable.ennreal_tsum fun j => measurable_const.mul ?_)
+    exact Measurable.ennreal_ofReal (hGm.comp (measurable_pi_lambda _ fun s =>
+      (measurable_pi_apply (s - 1 - (j : ℕ))).pow_const 2))
+  have hVcaus : ∀ r r' : ℤ → ℝ, (∀ s ≤ (0 : ℤ), r s = r' s) → V r = V r' := by
+    intro r r' h
+    simp only [hVdef]
+    refine congrArg _ (tsum_congr fun j => ?_)
+    refine congrArg _ (congrArg _ (hGcaus _ _ fun s hs => ?_))
+    rw [h (s - 1 - (j : ℕ)) (by omega)]
+  have hVY : ∀ (t : ℤ) (ω : Ω), V (fun s => ε (s + t) ω)
+      = ENNReal.ofReal A
+        + ∑' j : ℕ, ENNReal.ofReal (bc j)
+            * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω) := by
+    intro t ω
+    simp only [hVdef]
+    refine congrArg _ (tsum_congr fun j => ?_)
+    refine congrArg _ (congrArg _ ?_)
+    rw [hGY (t - 1 - (j : ℕ)) ω]
+    exact congrArg G (funext fun s => by congr 2; ring)
+  -- ### the process
+  obtain ⟨Φ, hΦdef⟩ : ∃ Φ : (ℤ → ℝ) → ℝ, Φ = fun r => Real.sqrt (V r).toReal * r 0 := ⟨_, rfl⟩
+  have hΦm : Measurable Φ := by
+    rw [hΦdef]; exact (hVm.ennreal_toReal.sqrt).mul (measurable_pi_apply 0)
+  have hΦcaus : ∀ r r' : ℤ → ℝ, (∀ s ≤ (0 : ℤ), r s = r' s) → Φ r = Φ r' := by
+    intro r r' h
+    simp only [hΦdef, hVcaus r r' h, h 0 le_rfl]
+  obtain ⟨X, hXdef⟩ : ∃ X : ℤ → Ω → ℝ, X = fun t ω => Φ fun s => ε (s + t) ω := ⟨_, rfl⟩
+  have hXm : ∀ t, Measurable (X t) := by
+    intro t
+    simp only [hXdef]
+    exact hΦm.comp (measurable_pi_lambda _ fun s => hε.measurable (s + t))
+  -- ### `X_t² = Y_t` a.e.
+  have hZfin : ∀ t : ℤ, ∀ᵐ ω ∂μ,
+      (∑' j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω)) < ⊤ :=
+    fun t => archInf_tsum_ae_lt_top hbcsum hY hintY hstatY t
+  have hVfin : ∀ t : ℤ, ∀ᵐ ω ∂μ, (V fun s => ε (s + t) ω) ≠ ⊤ := by
+    intro t
+    filter_upwards [hZfin t] with ω hfin
+    rw [hVY t ω]
+    exact (ENNReal.add_lt_top.2 ⟨ENNReal.ofReal_lt_top, hfin⟩).ne
+  have hXsq : ∀ t : ℤ, ∀ᵐ ω ∂μ, X t ω ^ 2 = Y t ω := by
+    intro t
+    filter_upwards [archInf_ofReal_recurrence hbcsum hY hintY hstatY t, hY.Y_nonneg t]
+      with ω hrec hYnn
+    have h1 : X t ω ^ 2 = (V fun s => ε (s + t) ω).toReal * ε t ω ^ 2 := by
+      simp only [hXdef, hΦdef, mul_pow, zero_add]
+      rw [Real.sq_sqrt ENNReal.toReal_nonneg]
+    have h2 : ENNReal.ofReal (Y t ω)
+        = ENNReal.ofReal (ε t ω ^ 2) * V (fun s => ε (s + t) ω) := by
+      rw [hVY t ω]; exact hrec
+    have h3 := congrArg ENNReal.toReal h2
+    rw [ENNReal.toReal_ofReal hYnn, ENNReal.toReal_mul,
+      ENNReal.toReal_ofReal (sq_nonneg _)] at h3
+    rw [h1, h3]; ring
+  -- ### the volatility, as a functional of the *observation* path (`adapted`)
+  obtain ⟨U, hUdef⟩ : ∃ U : (ℤ → ℝ) → ENNReal, U = fun r => ENNReal.ofReal A
+      + ∑' j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (r (-1 - (j : ℕ)) ^ 2) := ⟨_, rfl⟩
+  obtain ⟨σv, hσdef⟩ : ∃ σv : ℤ → Ω → ℝ,
+      σv = fun t ω => Real.sqrt (U fun s => X (s + t) ω).toReal := ⟨_, rfl⟩
+  have hσm : ∀ t, Measurable (σv t) := by
+    intro t
+    simp only [hσdef, hUdef]
+    refine Measurable.sqrt (Measurable.ennreal_toReal (measurable_const.add
+      (Measurable.ennreal_tsum fun j => measurable_const.mul ?_)))
+    exact Measurable.ennreal_ofReal ((hXm _).pow_const 2)
+  have hUV : ∀ t : ℤ, ∀ᵐ ω ∂μ, (U fun s => X (s + t) ω) = V fun s => ε (s + t) ω := by
+    intro t
+    filter_upwards [ae_all_iff.2 fun j : ℕ => hXsq (t - 1 - (j : ℕ))] with ω hω
+    rw [hVY t ω]
+    simp only [hUdef]
+    refine congrArg _ (tsum_congr fun j => congrArg _ (congrArg _ ?_))
+    have hidx : (-1 - ((j : ℕ) : ℤ) + t) = t - 1 - (j : ℕ) := by ring
+    rw [hidx]; exact hω j
+  have hUfin : ∀ t : ℤ, ∀ᵐ ω ∂μ, (U fun s => X (s + t) ω) ≠ ⊤ := by
+    intro t
+    filter_upwards [hUV t, hVfin t] with ω hω hfin
+    rw [hω]; exact hfin
+  -- ### the eleven `IsGARCH` fields
+  have hvolnn : ∀ t, ∀ᵐ ω ∂μ, 0 ≤ σv t ω := fun t =>
+    Filter.Eventually.of_forall fun ω => by simp only [hσdef]; exact Real.sqrt_nonneg _
+  have hadapt : ∀ t, Measurable[sigmaLT X t] (σv t) := by
+    intro t
+    simp only [hσdef, hUdef]
+    refine Measurable.sqrt (Measurable.ennreal_toReal (measurable_const.add
+      (Measurable.ennreal_tsum fun j => measurable_const.mul ?_)))
+    refine Measurable.ennreal_ofReal (Measurable.pow_const ?_ 2)
+    exact measurable_of_lt_sigmaLT (by omega : (-1 : ℤ) - ((j : ℕ) : ℤ) + t < t)
+  have hpast : ∀ t : ℤ, Indep (MeasurableSpace.comap (ε t) inferInstance) (sigmaLT X t) μ := by
+    intro t
+    refine indep_of_indep_of_le_right (indep_xi_sigmaLT hε.measurable hε.iIndep t) ?_
+    refine iSup₂_le fun s hs => ?_
+    have hst : s < t := hs
+    have heq : X s = fun ω => Φ fun u => if u + s < t then ε (u + s) ω else 0 := by
+      funext ω
+      simp only [hXdef]
+      exact hΦcaus _ _ fun u hu => (if_pos (by omega)).symm
+    have hcoord : ∀ u : ℤ,
+        Measurable[sigmaLT ε t] fun ω => if u + s < t then ε (u + s) ω else 0 := by
+      intro u
+      by_cases hu : u + s < t
+      · simp only [if_pos hu]
+        exact measurable_of_lt_sigmaLT hu
+      · simp only [if_neg hu]
+        exact measurable_const
+    have hms : Measurable[sigmaLT ε t] (X s) := by
+      rw [heq]
+      exact @measurable_pathFun Ω (sigmaLT ε t) _ hcoord _ hΦm
+    exact hms.comap_le
+  have hrecX : ∀ t : ℤ, X t =ᵐ[μ] fun ω => σv t ω * ε t ω := by
+    intro t
+    filter_upwards [hUV t] with ω hω
+    have hXt : X t ω = Real.sqrt (V fun s => ε (s + t) ω).toReal * ε t ω := by
+      simp only [hXdef, hΦdef, zero_add]
+    have hσt : σv t ω = Real.sqrt (V fun s => ε (s + t) ω).toReal := by
+      simp only [hσdef, hω]
+    rw [hXt, hσt]
+  have hrecVol : ∀ t : ℤ, (fun ω => σv t ω ^ 2) =ᵐ[μ] fun ω =>
+      c0 + (∑ i, b i * X (t - 1 - (i : ℕ)) ω ^ 2)
+        + ∑ j, a j * σv (t - 1 - (j : ℕ)) ω ^ 2 := by
+    intro t
+    filter_upwards [hUfin t, ae_all_iff.2 fun j : Fin q => hUfin (t - 1 - (j : ℕ))]
+      with ω hfin hfinj
+    have hsq : ∀ s : ℤ, σv s ω ^ 2 = (U fun u => X (u + s) ω).toReal := fun s => by
+      simp only [hσdef]; exact Real.sq_sqrt ENNReal.toReal_nonneg
+    have key := garchVolSq_rec_aux hb ha hc0 hA hd hd0 hdrec hfix
+      (fun z => ENNReal.ofReal (X (z + t) ω ^ 2))
+    have hL : (U fun s => X (s + t) ω)
+        = ENNReal.ofReal A + ∑' m : ℕ, ENNReal.ofReal (garchInfCoeffs b a (m + 1))
+            * ENNReal.ofReal (X (-1 - (m : ℤ) + t) ω ^ 2) := by
+      simp only [hUdef, hbcdef]
+    have hRj : ∀ j : Fin q, (U fun s => X (s + (t - 1 - (j : ℕ))) ω)
+        = ENNReal.ofReal A + ∑' m : ℕ, ENNReal.ofReal (garchInfCoeffs b a (m + 1))
+            * ENNReal.ofReal (X (-1 - (m : ℤ) - 1 - ((j : ℕ) : ℤ) + t) ω ^ 2) := by
+      intro j
+      simp only [hUdef, hbcdef]
+      refine congrArg _ (tsum_congr fun m => congrArg _ (congrArg _ ?_))
+      congr 1
+      ring
+    have hbi : ∀ i : Fin p, ENNReal.ofReal (X (-1 - ((i : ℕ) : ℤ) + t) ω ^ 2)
+        = ENNReal.ofReal (X (t - 1 - (i : ℕ)) ω ^ 2) := by
+      intro i
+      congr 2
+      ring
+    rw [← hL] at key
+    simp only [← hRj] at key
+    simp only [hbi] at key
+    -- convert the `ℝ≥0∞` identity to `ℝ`
+    have hu : ∀ i : Fin p, (0 : ℝ) ≤ b i * X (t - 1 - (i : ℕ)) ω ^ 2 :=
+      fun i => mul_nonneg (hb i) (sq_nonneg _)
+    have hvj : ∀ j : Fin q, (0 : ℝ) ≤ a j * σv (t - 1 - (j : ℕ)) ω ^ 2 :=
+      fun j => mul_nonneg (ha j) (sq_nonneg _)
+    have hv : ∀ j : Fin q, ENNReal.ofReal (a j) * (U fun u => X (u + (t - 1 - (j : ℕ))) ω)
+        = ENNReal.ofReal (a j * σv (t - 1 - (j : ℕ)) ω ^ 2) := by
+      intro j
+      rw [ENNReal.ofReal_mul (ha j), hsq, ENNReal.ofReal_toReal (hfinj j)]
+    have hbterm : ∀ i : Fin p, ENNReal.ofReal (b i) * ENNReal.ofReal (X (t - 1 - (i : ℕ)) ω ^ 2)
+        = ENNReal.ofReal (b i * X (t - 1 - (i : ℕ)) ω ^ 2) :=
+      fun i => (ENNReal.ofReal_mul (hb i)).symm
+    simp only [hv, hbterm] at key
+    rw [← ENNReal.ofReal_sum_of_nonneg fun i _ => hu i,
+      ← ENNReal.ofReal_sum_of_nonneg fun j _ => hvj j,
+      ← ENNReal.ofReal_add hc0 (Finset.sum_nonneg fun i _ => hu i),
+      ← ENNReal.ofReal_add (add_nonneg hc0 (Finset.sum_nonneg fun i _ => hu i))
+        (Finset.sum_nonneg fun j _ => hvj j)] at key
+    have hfinal := congrArg ENNReal.toReal key
+    rw [ENNReal.toReal_ofReal (add_nonneg (add_nonneg hc0
+      (Finset.sum_nonneg fun i _ => hu i)) (Finset.sum_nonneg fun j _ => hvj j))] at hfinal
+    rw [hsq t, hfinal]
+  have hstatX : IsStrictlyStationary X μ := by
+    rw [hXdef]
+    exact isStrictlyStationary_of_shift_comp hε.measurable hε.iIndep hε.identDistrib hΦm
+  have hL2 : ∀ t, MemLp (X t) 2 μ := by
+    intro t
+    have hEq : (fun ω => X t ω ^ 2) =ᵐ[μ] Y t := hXsq t
+    exact (memLp_two_iff_integrable_sq (hXm t).aestronglyMeasurable).2
+      ((hintY t).congr hEq.symm)
+  exact ⟨X, σv, ⟨hc0, hb, ha, hXm, hσm, hvolnn, hadapt, hε, hpast, hrecX, hrecVol⟩,
+    hstatX, hL2⟩
+
 
 /-- **FY Theorem 4.4, moments**: a stationary square-integrable GARCH process is
 centered with variance `c₀/(1 − Σb − Σa)`. -/
