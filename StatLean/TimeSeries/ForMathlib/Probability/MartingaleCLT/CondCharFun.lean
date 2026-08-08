@@ -752,7 +752,7 @@ theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ
     -- LEAN-ONLY: clamp on the conditional variance process
     (hc : ∀ᵐ ω ∂μ, mdsCondVariance k X F μ n ω ≤ c) :
     ‖(∫ ω, Complex.exp (I * ((u * mdsRowSum k X n ω : ℝ) : ℂ))
-        * ∏ i, (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)⁻¹ ∂μ) - 1‖
+        * ∏ i, (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℂ)⁻¹ ∂μ) - 1‖
       ≤ 2 * Real.exp (u ^ 2 * c)
         * (∑ i, (u ^ 2 * ∫ ω, X n i ω ^ 2 * Set.indicator {x : Ω | ε ≤ |X n i x|}
               (fun _ => (1 : ℝ)) ω ∂μ) + ∑ i, (|u| ^ 3 * ε * ∫ ω, X n i ω ^ 2 ∂μ)) := by
@@ -797,7 +797,7 @@ theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ
   -- (2) the cumulative reweighted product
   obtain ⟨P, hP⟩ : ∃ P : ℕ → Ω → ℂ, ∀ m ω, P m ω =
       ∏ j ∈ S m, (Complex.exp (I * ((u * X n j ω : ℝ) : ℂ))
-        * (1 - u ^ 2 / 2 * μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc] ω)⁻¹) :=
+        * (1 - u ^ 2 / 2 * μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc] ω : ℂ)⁻¹) :=
     ⟨_, fun _ _ => rfl⟩
   have hψcast : ∀ (j : Fin (k n)) (ω : Ω),
       (1 - u ^ 2 / 2 * μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc] ω : ℂ)
@@ -808,7 +808,7 @@ theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ
     obtain ⟨hfac, hsum⟩ := hω
     rw [hP m ω, norm_prod]
     have hstep : ∀ j ∈ S m, ‖Complex.exp (I * ((u * X n j ω : ℝ) : ℂ))
-        * (1 - u ^ 2 / 2 * μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc] ω)⁻¹‖
+        * (1 - u ^ 2 / 2 * μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc] ω : ℂ)⁻¹‖
         = (1 - u ^ 2 / 2 * μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc] ω : ℝ)⁻¹ := by
       intro j _
       rw [norm_mul, Complex.norm_exp]
@@ -822,7 +822,7 @@ theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ
       Measurable[F n (⟨m, hm⟩ : Fin (k n)).castSucc] (P m) := by
     intro m hm
     have he : P m = fun ω => ∏ j ∈ S m, (Complex.exp (I * ((u * X n j ω : ℝ) : ℂ))
-        * (1 - u ^ 2 / 2 * μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc] ω)⁻¹) := funext (hP m)
+        * (1 - u ^ 2 / 2 * μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc] ω : ℂ)⁻¹) := funext (hP m)
     rw [he]
     refine Finset.measurable_prod _ fun j hj => ?_
     have hjm : (j : ℕ) < m := by rw [hS] at hj; simpa using hj
@@ -843,7 +843,7 @@ theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ
     intro m
     have hmeas : Measurable (P m) := by
       have he : P m = fun ω => ∏ j ∈ S m, (Complex.exp (I * ((u * X n j ω : ℝ) : ℂ))
-          * (1 - u ^ 2 / 2 * μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc] ω)⁻¹) := funext (hP m)
+          * (1 - u ^ 2 / 2 * μ[fun ω' => X n j ω' ^ 2 | F n j.castSucc] ω : ℂ)⁻¹) := funext (hP m)
       rw [he]
       refine Finset.measurable_prod _ fun j _ => ?_
       have hXj : Measurable (X n j) := (h.adapted n j).mono (h.le_ambient n _) le_rfl
@@ -855,7 +855,7 @@ theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ
     refine Integrable.mono' (integrable_const (Real.exp (u ^ 2 * c)))
       hmeas.aestronglyMeasurable ?_
     filter_upwards [hnormP] with ω hω
-    exact (hω m).trans (le_abs_self _)
+    exact hω m
   -- (4) one telescope step
   have hstep : ∀ (m : ℕ) (hm : m < k n),
       ‖(∫ ω, P (m + 1) ω ∂μ) - ∫ ω, P m ω ∂μ‖
@@ -867,10 +867,10 @@ theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ
     intro m hm
     set i : Fin (k n) := ⟨m, hm⟩ with hidef
     obtain ⟨Y, hY⟩ : ∃ Y : Ω → ℂ, ∀ ω, Y ω = P m ω *
-        (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)⁻¹ := ⟨_, fun _ => rfl⟩
+        (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℂ)⁻¹ := ⟨_, fun _ => rfl⟩
     have hYm : StronglyMeasurable[F n i.castSucc] Y := by
       have he : Y = fun ω => P m ω *
-          (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)⁻¹ := funext hY
+          (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℂ)⁻¹ := funext hY
       rw [he]
       refine Measurable.stronglyMeasurable ?_
       exact (hPmeas m hm).mul
@@ -899,8 +899,11 @@ theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ
         rw [hψcast i ω, Ne, Complex.ofReal_eq_zero]
         linarith [(hfac i).2]
       rw [hP (m + 1) ω, hSins m hm, Finset.prod_insert (hSnotmem m hm), ← hP m ω, hY ω]
-      field_simp
-      ring
+      -- with `A = P m ω`, `E = e^{iuX_i}`, `B = ψ_i`: `E·B⁻¹·A − A = A·B⁻¹·(E − B)`
+      have key : ∀ A E B : ℂ, B ≠ 0 → E * B⁻¹ * A - A = A * B⁻¹ * (E - B) := by
+        intro A E B hB
+        field_simp
+      exact key _ _ _ hne
     have hint : (∫ ω, P (m + 1) ω ∂μ) - ∫ ω, P m ω ∂μ
         = ∫ ω, Y ω * (Complex.exp (I * ((u * X n i ω : ℝ) : ℂ))
           - (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)) ∂μ := by
@@ -940,7 +943,7 @@ theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ
       linarith
   -- (6) identify the endpoint
   have hend : ∀ ω, P (k n) ω = Complex.exp (I * ((u * mdsRowSum k X n ω : ℝ) : ℂ))
-      * ∏ i, (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)⁻¹ := by
+      * ∏ i, (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℂ)⁻¹ := by
     intro ω
     rw [hP (k n) ω, hSfull, Finset.prod_mul_distrib]
     congr 1
@@ -949,11 +952,11 @@ theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ
     rw [mdsRowSum]
     push_cast
     rw [Finset.mul_sum]
-    exact Finset.sum_congr rfl fun j _ => by ring
+    exact (Finset.mul_sum _ _ _).symm
   have hfinal := htel (k n) le_rfl
   rw [integral_congr_ae (ae_of_all _ hend)] at hfinal
   refine hfinal.trans (le_of_eq ?_)
-  rw [Finset.mul_add, Finset.mul_sum, Finset.mul_sum]
+  rw [mul_add, Finset.mul_sum, Finset.mul_sum]
   rw [← Fin.sum_univ_eq_sum_range (fun j => (if hj : j < k n then
     2 * Real.exp (u ^ 2 * c)
       * (u ^ 2 * ∫ ω, X n (⟨j, hj⟩ : Fin (k n)) ω ^ 2 *
