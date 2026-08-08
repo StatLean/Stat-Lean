@@ -17,14 +17,16 @@ the book's `L¹` norm — a constant factor immaterial to every convergence-to-z
 statement, documented deviation).
 
 Also here: the transition kernel `nlARKernel` of the vectorized nonlinear autoregression
-`X_t = f(X_{t-1}, …, X_{t-p-1}) + ε_t` (FY eqs. (2.7)–(2.8)) and the **statement-level
-debt** for FY Theorem 2.4(ii) — the drift/contraction criterion for geometric ergodicity.
-§2.1.4 is excluded from the formalization scope by project decision (`TimeSeries_plan.md`),
-but its Theorem 2.4 is the certificate that §2.1.5's remark, §4.1's TAR stationarity
-claims and Theorem 4.2's hypothesis (i) consume; per the hypothesis-discipline rule it is
-therefore *stated* here as a named `sorry` and consumers derive from it. Proof source (if
-ever commissioned): An & Huang (1996); Bhattacharya & Lee (1995) — Meyn–Tweedie drift
-machinery.
+`X_t = f(X_{t-1}, …, X_{t-p-1}) + ε_t` (FY eqs. (2.7)–(2.8)), and
+`eq_of_invariant_of_isErgodicKernel` — the converse of `IsErgodicKernel.invariant`, i.e.
+the fact that an ergodic kernel has *only one* invariant law.
+
+**FY Theorem 2.4(ii)** — the drift/contraction criterion for geometric ergodicity of that
+chain — was carried here as a named `sorry` (§2.1.4 is excluded from the formalization scope
+by project decision, `TimeSeries_plan.md`, but its Theorem 2.4 is the certificate that
+§2.1.5's remark and §4.1's TAR stationarity claims consume). It is now **proved**, in
+`ForMathlib/Markov/HarrisTheorem.lean`, which is where the Harris engine it consumes lives;
+see the comment at the foot of this file.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.1.4:
 Definition 2.4 with eq. (2.10) (p. 34), eqs. (2.7)–(2.8) (vectorization), Theorem 2.4
@@ -181,6 +183,69 @@ theorem IsErgodicKernel.invariant {κ : Kernel S S} [IsMarkovKernel κ] {F : Mea
     le_antisymm (ge_of_tendsto hlim (Eventually.of_forall key)) (zero_le _)
   exact (eq_of_tvDist_eq_zero h0).symm
 
+-- `∫⁻ a − ∫⁻ b ≤ ∫⁻ (a − b)` in `ℝ≥0∞` (truncated subtraction), for measurable `b`. The
+-- `≤`-mover behind the dominated-convergence step of `eq_of_invariant_of_isErgodicKernel`.
+private theorem lintegral_sub_le_lintegral_sub {μ : Measure S} (a b : S → ℝ≥0∞)
+    (hb : Measurable b) :
+    (∫⁻ y, a y ∂μ) - (∫⁻ y, b y ∂μ) ≤ ∫⁻ y, (a y - b y) ∂μ := by
+  refine tsub_le_iff_right.2 ?_
+  rw [← lintegral_add_right _ hb]
+  exact lintegral_mono fun y => le_tsub_add
+
+/-- **Ergodicity pins down the invariant law.** If `κ` attracts every starting state to `F`
+in total variation, then `F` is its *only* invariant probability law: for an invariant `ξ`
+and a measurable `s`, `ξ s = ∫ κⁿ(y, s) dξ(y)` for every `n`, and the integrand converges to
+`F s` uniformly enough (it is `[0,1]`-valued) for dominated convergence to apply. The
+converse of `IsErgodicKernel.invariant`, and the uniqueness statement the Harris route needs
+in order to transport an invariant law of `κ^p` back to `κ`. -/
+theorem eq_of_invariant_of_isErgodicKernel {κ : Kernel S S} [IsMarkovKernel κ]
+    {F ξ : Measure S} [IsProbabilityMeasure F] [IsProbabilityMeasure ξ]
+    (hF : IsErgodicKernel κ F) (hξ : Kernel.Invariant κ ξ) : ξ = F := by
+  ext s hs
+  have hstep : ∀ n : ℕ, ξ s = ∫⁻ y, ((κ ^ n) y) s ∂ξ := by
+    intro n
+    conv_lhs => rw [← (invariant_pow hξ n).def]
+    rw [Measure.bind_apply hs (Kernel.aemeasurable _)]
+  have hmeas : ∀ n : ℕ, Measurable fun y : S => ((κ ^ n) y) s := fun n =>
+    Kernel.measurable_coe _ hs
+  have hcst : (∫⁻ _ : S, F s ∂ξ) = F s := by simp
+  -- a `[0,1]`-valued sequence dominated by the ergodic envelope integrates to zero
+  have hDCT : ∀ G : ℕ → S → ℝ≥0∞, (∀ n, Measurable (G n)) →
+      (∀ n y, G n y ≤ tvDist ((κ ^ n) y) F) →
+      Tendsto (fun n => ∫⁻ y, G n y ∂ξ) atTop (𝓝 0) := by
+    intro G hGm hGle
+    have := tendsto_lintegral_of_dominated_convergence (μ := ξ) (F := G) (f := fun _ => 0)
+      (fun _ => 1) hGm (fun n => Eventually.of_forall fun y => ?_)
+      (by simp) (Eventually.of_forall fun y => ?_)
+    · simpa using this
+    · haveI := isMarkovKernel_pow κ n
+      exact (hGle n y).trans (tvDist_le_one _ _)
+    · exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+        (hF.tendsto_tvDist y) (Eventually.of_forall fun n => zero_le _)
+        (Eventually.of_forall fun n => hGle n y)
+  refine le_antisymm ?_ ?_
+  · have hb : ∀ n : ℕ, ξ s - F s ≤ ∫⁻ y, (((κ ^ n) y) s - F s) ∂ξ := by
+      intro n
+      have h := lintegral_sub_le_lintegral_sub (μ := ξ)
+        (fun y => ((κ ^ n) y) s) (fun _ => F s) measurable_const
+      rwa [hcst, ← hstep n] at h
+    have hlim := hDCT (fun n y => ((κ ^ n) y) s - F s) (fun n => (hmeas n).sub measurable_const)
+      (fun n y => le_iSup₂ (f := fun t (_ : MeasurableSet t) => ((κ ^ n) y) t - F t) s hs)
+    exact tsub_eq_zero_iff_le.1
+      (le_antisymm (ge_of_tendsto hlim (Eventually.of_forall hb)) (zero_le _))
+  · have hb : ∀ n : ℕ, F s - ξ s ≤ ∫⁻ y, (F s - ((κ ^ n) y) s) ∂ξ := by
+      intro n
+      have h := lintegral_sub_le_lintegral_sub (μ := ξ)
+        (fun _ => F s) (fun y => ((κ ^ n) y) s) (hmeas n)
+      rwa [hcst, ← hstep n] at h
+    have hlim := hDCT (fun n y => F s - ((κ ^ n) y) s) (fun n => measurable_const.sub (hmeas n))
+      (fun n y => by
+        haveI := isMarkovKernel_pow κ n
+        rw [tvDist_comm]
+        exact le_iSup₂ (f := fun t (_ : MeasurableSet t) => F t - ((κ ^ n) y) t) s hs)
+    exact tsub_eq_zero_iff_le.1
+      (le_antisymm (ge_of_tendsto hlim (Eventually.of_forall hb)) (zero_le _))
+
 /-- Transition kernel of the **vectorized nonlinear autoregression** (FY eqs.
 (2.7)–(2.8)): from state `x = (X_{t-1}, …, X_{t-p-1})` draw `ε ∼ ν` and move to
 `(f(x) + ε, x₀, …, x_{p-1})`. -/
@@ -202,31 +267,12 @@ theorem isMarkovKernel_nlARKernel {p : ℕ} {f : (Fin (p + 1) → ℝ) → ℝ}
     · exact fun i => by simpa using (measurable_pi_apply i.castSucc).comp measurable_fst
   exact Kernel.IsMarkovKernel.map _ hmeas
 
-/-- **FY Theorem 2.4(ii) — statement-level DEBT** (§2.1.4 is outside the formalization
-scope by project decision; this named statement is the certificate consumed by the TAR
-stationarity claims of §4.1 and by Theorem 4.2(i), which derive from it rather than
-carrying provider hypotheses). If the autoregression function is a sup-norm contraction
-up to a constant and the noise has an everywhere-positive density with zero mean, the
-vectorized chain is geometrically ergodic toward some stationary probability law.
-Proof source (not in FY): An & Huang (1996), Thm 2.4(ii) route; Meyn–Tweedie drift
-machinery. -/
-theorem nlARKernel_geometricallyErgodic
-    {p : ℕ} {f : (Fin (p + 1) → ℝ) → ℝ}
-    -- USER-INPUT: the autoregression function, measurable; FY §2.1.4 Thm 2.4
-    (hf : Measurable f)
-    {g : ℝ → ℝ≥0∞} (hg : Measurable g)
-    -- USER-INPUT: the noise has an (everywhere) positive density; FY §2.1.4 Thm 2.4
-    (hgpos : ∀ x, 0 < g x)
-    {ν : Measure ℝ} (hν : ν = MeasureTheory.volume.withDensity g)
-    [IsProbabilityMeasure ν]
-    -- USER-INPUT: integrable, mean-zero noise; FY §2.1.4 Thm 2.4
-    (hint : Integrable (fun x : ℝ => x) ν) (hmean : ∫ x, x ∂ν = 0)
-    {lam c : ℝ}
-    -- USER-INPUT: sup-norm contraction |f(x)| ≤ λ maxᵢ|xᵢ| + c with λ < 1; FY Thm 2.4(ii)
-    (hlam0 : 0 ≤ lam) (hlam : lam < 1) (hc : 0 ≤ c)
-    (hbound : ∀ x, |f x| ≤ lam * (⨆ i, |x i|) + c) :
-    ∃ F : Measure (Fin (p + 1) → ℝ), IsProbabilityMeasure F ∧
-      IsGeometricallyErgodic (nlARKernel f ν) F := by
-  sorry
+-- **FY Theorem 2.4(ii)** (`nlARKernel_geometricallyErgodic`) used to be stated here as a
+-- named `sorry`.  It is now **PROVED**, and lives one file downstream, in
+-- `ForMathlib/Markov/HarrisTheorem.lean`: its proof consumes `harris_theorem`,
+-- `IsGeometricallyErgodic.of_pow` and `HasLyapunovDrift`, all of which are defined there,
+-- and `HarrisTheorem.lean` imports *this* file (for `IsGeometricallyErgodic`,
+-- `IsErgodicWithRate` and `nlARKernel`), so the statement cannot stay on this side of the
+-- import edge.  Nothing outside its own file referenced it, so no consumer moved with it.
 
 end StatLean.TimeSeries
