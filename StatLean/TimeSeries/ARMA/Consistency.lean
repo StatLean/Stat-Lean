@@ -398,6 +398,92 @@ private theorem mle_consistent_not_identifiable :
 
 end CompositeFilter
 
+section PolyIdentifiability
+
+/-! ### The polynomial step of identifiability
+
+`arPoly`/`maPoly` are *normalized at the origin*: both have constant coefficient `1`.
+That normalization is what turns "associated" into "equal" below: a unit of `ℝ[X]` is a
+nonzero constant, and matching constant coefficients pins it to `1`. Together with
+injectivity of `arPoly` (read off coefficient `i + 1`) this converts the cross equation
+`b(z)a₀(z) = b₀(z)a(z)` of `armaContrastVar_eq_one_iff_transfer` into equality of the
+parameter vectors, provided *both* pairs are coprime. -/
+
+/-- The coefficients of the AR polynomial `b(z) = 1 − b₁z − ⋯ − b_p z^p`. -/
+private lemma coeff_arPoly' {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
+    (arPoly b).coeff m
+      = (if m = 0 then (1 : ℝ) else 0) - ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
+  simp [arPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+    Polynomial.coeff_X_pow, mul_ite]
+
+private lemma coeff_arPoly_succ' {p : ℕ} (b : Fin p → ℝ) (j : Fin p) :
+    (arPoly b).coeff ((j : ℕ) + 1) = -(b j) := by
+  rw [coeff_arPoly']
+  simp [Fin.val_eq_val, Finset.sum_ite_eq]
+
+/-- `arPoly` is injective: coefficient `i + 1` is `−bᵢ`. -/
+private lemma arPoly_injective' {p : ℕ} :
+    Function.Injective (arPoly : (Fin p → ℝ) → Polynomial ℝ) := by
+  intro b b' h
+  funext i
+  have hc := congrArg (fun r => Polynomial.coeff r ((i : ℕ) + 1)) h
+  simp only [coeff_arPoly_succ'] at hc
+  linarith
+
+/-- `maPoly` is injective (through `arPoly_neg`). -/
+private lemma maPoly_injective' {q : ℕ} :
+    Function.Injective (maPoly : (Fin q → ℝ) → Polynomial ℝ) := by
+  intro a a' h
+  rw [← arPoly_neg, ← arPoly_neg] at h
+  have hneg := arPoly_injective' h
+  funext j
+  have := congrFun hneg j
+  simpa using this
+
+private lemma arPoly_ne_zero' {p : ℕ} (b : Fin p → ℝ) : arPoly b ≠ 0 := by
+  intro h
+  have h1 := coeff_arPoly_zero' b
+  rw [h] at h1
+  simp at h1
+
+/-- Two polynomials with constant coefficient `1` that divide each other are **equal**:
+the unit relating them is a constant, and the normalization pins that constant to `1`. -/
+private lemma eq_of_dvd_dvd_of_coeff_zero_eq_one {f g : Polynomial ℝ}
+    (hf : f.coeff 0 = 1) (hg : g.coeff 0 = 1) (h1 : f ∣ g) (h2 : g ∣ f) : f = g := by
+  obtain ⟨c, hc⟩ := h1
+  obtain ⟨d, hd⟩ := h2
+  have hf0 : f ≠ 0 := fun h => by rw [h] at hf; simp at hf
+  have hcd : c * d = 1 := by
+    have hstep : f * (c * d) = f * 1 := by
+      rw [mul_one, ← mul_assoc, ← hc, ← hd]
+    exact mul_left_cancel₀ hf0 hstep
+  have hcu : IsUnit c := ⟨⟨c, d, hcd, by rw [mul_comm]; exact hcd⟩, rfl⟩
+  have hcC : c = Polynomial.C (c.coeff 0) :=
+    Polynomial.eq_C_of_natDegree_eq_zero (Polynomial.natDegree_eq_zero_of_isUnit hcu)
+  have hc0 : c.coeff 0 = 1 := by
+    have h0 := congrArg (fun r => Polynomial.coeff r 0) hc
+    simp only [Polynomial.mul_coeff_zero, hf, hg, one_mul] at h0
+    exact h0.symm
+  rw [hc, hcC, hc0, map_one, mul_one]
+
+/-- **Minimal representations are unique**: if `b(z)a₀(z) = b₀(z)a(z)` and both pairs are
+coprime, then the parameter vectors coincide. This is the polynomial content of
+identifiability; the analytic content is `armaContrastVar_eq_one_iff_transfer`. -/
+private lemma eq_of_transfer_eq {p q : ℕ} {b0 b : Fin p → ℝ} {a0 a : Fin q → ℝ}
+    (hcop : IsCoprime (arPoly b0) (maPoly a0)) (hcopW : IsCoprime (arPoly b) (maPoly a))
+    (hT : arPoly b * maPoly a0 = arPoly b0 * maPoly a) : b = b0 ∧ a = a0 := by
+  -- `b₀ ∣ b·a₀` and `b₀` is coprime to `a₀`, hence `b₀ ∣ b`; symmetrically `b ∣ b₀`.
+  have hd1 : arPoly b0 ∣ arPoly b := hcop.dvd_of_dvd_mul_right ⟨maPoly a, hT⟩
+  have hd2 : arPoly b ∣ arPoly b0 := hcopW.dvd_of_dvd_mul_right ⟨maPoly a0, hT.symm⟩
+  -- Both are normalized at the origin, so mutual divisibility is equality.
+  have hb : arPoly b = arPoly b0 :=
+    eq_of_dvd_dvd_of_coeff_zero_eq_one (coeff_arPoly_zero' b) (coeff_arPoly_zero' b0) hd2 hd1
+  rw [hb] at hT
+  exact ⟨arPoly_injective' hb,
+    (maPoly_injective' (mul_left_cancel₀ (arPoly_ne_zero' b0) hT)).symm⟩
+
+end PolyIdentifiability
+
 /-- The composite filter has leading coefficient `1`, so the contrast variance is at
 least `1`, with equality iff the working model matches the true transfer function. -/
 theorem one_le_armaContrastVar {p q : ℕ} {b0 b : Fin p → ℝ} {a0 a : Fin q → ℝ}
@@ -425,18 +511,16 @@ theorem armaContrastVar_eq_one_iff {p q : ℕ} {b0 b : Fin p → ℝ} {a0 a : Fi
     (hcopW : IsCoprime (arPoly b) (maPoly a)) :
     armaContrastVar b0 a0 b a = 1 ↔ b = b0 ∧ a = a0 := by
   constructor
-  · -- **FALSE AS FROZEN.** The hypotheses constrain only the *true* pair to be coprime,
-    -- so a non-minimal working pair with the same transfer function is a counterexample:
-    -- `armaContrastVar_eq_one_not_identifiable` exhibits (in Lean) `p = q = 1`,
-    -- `b₀ = a₀ = 0`, `b = 1/2`, `a = −1/2`, where both pairs are in `𝓑`,
+  · -- **Was FALSE as originally frozen** — with only the *true* pair constrained to be
+    -- coprime, a non-minimal working pair with the same transfer function is a
+    -- counterexample: `armaContrastVar_eq_one_not_identifiable` exhibits (in Lean)
+    -- `p = q = 1`, `b₀ = a₀ = 0`, `b = 1/2`, `a = −1/2`, where both pairs are in `𝓑`,
     -- `IsCoprime (arPoly b₀) (maPoly a₀)` holds, the contrast variance is `1`, and
-    -- `b ≠ b₀`. The provable statement is the transfer-function one,
-    -- `armaContrastVar_eq_one_iff_transfer`:
-    --   `armaContrastVar b₀ a₀ b a = 1 ↔ arPoly b * maPoly a₀ = arPoly b₀ * maPoly a`,
-    -- which is PROVED above; the frozen conclusion follows from it only after adding
-    -- `IsCoprime (arPoly b) (maPoly a)` (minimality of the *working* model) to the
-    -- hypotheses. Repair the statement, do not attempt this branch.
-    sorry
+    -- `b ≠ b₀`. The witness is kept above as documentation. `hcopW` (minimality of the
+    -- *working* model, Hannan 1973 §2) excludes it, and then the criterion's
+    -- transfer-function reading plus the polynomial step close the branch.
+    intro h
+    exact eq_of_transfer_eq hcop hcopW ((armaContrastVar_eq_one_iff_transfer hB0 hB).1 h)
   · rintro ⟨rfl, rfl⟩
     exact (armaContrastVar_eq_one_iff_transfer hB0 hB).2 rfl
 
@@ -929,6 +1013,63 @@ private lemma log_det_armaToeplitz_bounds {C r : ℝ} (hC : 1 ≤ C) (hr0 : 0 �
   · rw [hdet]
     exact h2.trans (trace_gramTail_le hC hr0 hr1 hπ hψ hB T)
 
+/-- `1 + G_T` has determinant `≥ 1`, hence is invertible (the eigenvalue bound already
+used for the Szegő estimate). -/
+private lemma one_add_gramTail_det_isUnit (hB : ARMAInvertibleParams b a) (T : ℕ) :
+    IsUnit (((1 : Matrix (Fin T) (Fin T) ℝ) + gramTail b a T).det) := by
+  have hpsd := gramTail_posSemidef (a := a) hB T
+  obtain ⟨h1, -⟩ := det_one_add_bounds hpsd.1 (Matrix.PosSemidef.eigenvalues_nonneg hpsd)
+  exact (by linarith : (0 : ℝ) < ((1 : Matrix (Fin T) (Fin T) ℝ)
+    + gramTail b a T).det).ne'.isUnit
+
+/-- **Finite-section identity for the profiling quadratic form.** Inverting
+`Π_T Γ_T Π_Tᵀ = 1 + G_T` (legitimate: `det Π_T = 1` and `1 + G_T` is positive definite)
+gives `Γ_T⁻¹ = Π_Tᵀ (1 + G_T)⁻¹ Π_T`, hence
+
+  `S_T(θ) = xᵀ Γ_T(θ)⁻¹ x = uᵀ (1 + G_T)⁻¹ u`,  `u = Π_T x`,
+
+where `u_i = Σ_{j ≤ i} π_{i−j}(θ) x_j` is exactly the **truncated θ-residual** at time
+`i`. This is the deterministic half of `armaProfileS_tendstoInProb`: it converts the
+matrix-inverse statistic into the residual sum of squares plus a correction governed by
+`G_T`, whose trace is bounded uniformly in `T` (`trace_gramTail_le`). See the debt note
+at `armaProfileS_tendstoInProb` for what remains. -/
+private lemma armaProfileS_eq_gramTail_quadForm (hB : ARMAInvertibleParams b a) (T : ℕ)
+    (x : Fin T → ℝ) :
+    armaProfileS b a x
+      = dotProduct (Matrix.mulVec (piMat b a T) x)
+          (Matrix.mulVec ((1 + gramTail b a T)⁻¹) (Matrix.mulVec (piMat b a T) x)) := by
+  have hPi : IsUnit ((piMat b a T).det) := by rw [det_piMat]; exact isUnit_one
+  have hPiTr : IsUnit (((piMat b a T)ᵀ).det) := by rw [Matrix.det_transpose]; exact hPi
+  have hN : IsUnit (((1 : Matrix (Fin T) (Fin T) ℝ) + gramTail b a T).det) :=
+    one_add_gramTail_det_isUnit hB T
+  -- the whitened identity, solved for `Pi * Gamma`
+  have h1 : piMat b a T * armaToeplitz b a T
+      = (1 + gramTail b a T) * ((piMat b a T)ᵀ)⁻¹ := by
+    calc piMat b a T * armaToeplitz b a T
+        = piMat b a T * armaToeplitz b a T * ((piMat b a T)ᵀ * ((piMat b a T)ᵀ)⁻¹) := by
+          rw [Matrix.mul_nonsing_inv _ hPiTr, mul_one]
+      _ = piMat b a T * armaToeplitz b a T * (piMat b a T)ᵀ * ((piMat b a T)ᵀ)⁻¹ := by
+          simp only [mul_assoc]
+      _ = (1 + gramTail b a T) * ((piMat b a T)ᵀ)⁻¹ := by
+          rw [piMat_mul_toeplitz_mul_transpose hB T]
+  -- hence the inverse factorises through the whitener
+  have hinv : (armaToeplitz b a T)⁻¹
+      = (piMat b a T)ᵀ * (1 + gramTail b a T)⁻¹ * piMat b a T := by
+    refine Matrix.inv_eq_left_inv ?_
+    calc (piMat b a T)ᵀ * (1 + gramTail b a T)⁻¹ * piMat b a T * armaToeplitz b a T
+        = (piMat b a T)ᵀ * (1 + gramTail b a T)⁻¹
+            * (piMat b a T * armaToeplitz b a T) := by
+          simp only [mul_assoc]
+      _ = (piMat b a T)ᵀ * (1 + gramTail b a T)⁻¹
+            * ((1 + gramTail b a T) * ((piMat b a T)ᵀ)⁻¹) := by rw [h1]
+      _ = (piMat b a T)ᵀ * ((1 + gramTail b a T)⁻¹ * (1 + gramTail b a T))
+            * ((piMat b a T)ᵀ)⁻¹ := by
+          simp only [mul_assoc]
+      _ = 1 := by
+          rw [Matrix.nonsing_inv_mul _ hN, mul_one, Matrix.mul_nonsing_inv _ hPiTr]
+  rw [armaProfileS, hinv, ← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec,
+    Matrix.dotProduct_mulVec, Matrix.vecMul_transpose]
+
 end Szego
 
 /-- **Szegő-type limit**: on the constraint set, `T⁻¹ log det Γ_T(b, a) → 0`
@@ -956,13 +1097,39 @@ law of large numbers*
 
   `T⁻¹ · xᵀ Γ_T(θ)⁻¹ x  →p  σ² · armaContrastVar θ₀ θ`
 
-for data from the true ARMA law. This is Hannan's ergodic step: `T⁻¹ Σ_t r_t(θ)²` for
-the stationary `θ`-residual process `r(θ)` (an iid-driven linear process) converges by
-the *pointwise ergodic theorem*, which Mathlib does not have; the `L²` route is blocked
-because the ACVF of `r(θ)²` involves fourth cumulants and FY assumes only two moments.
-Everything else in `criterion_tendsto_contrast` is discharged from this input below
-(the `log`-continuity transfer and the deterministic `T⁻¹ log det Γ_T → 0`, which is
-PROVED as `logdet_armaToeplitz_vanishes`). -/
+for data from the true ARMA law. Everything else in `criterion_tendsto_contrast` is
+discharged from this input below (the `log`-continuity transfer and the deterministic
+`T⁻¹ log det Γ_T → 0`, which is PROVED as `logdet_armaToeplitz_vanishes`).
+
+**The earlier verdict on this debt — "needs the pointwise ergodic theorem, which the
+pin does not have" — is OVERTURNED.** The pin really does lack Birkhoff (it carries
+only von Neumann's mean ergodic theorem, `Analysis/InnerProductSpace/MeanErgodic.lean`,
+which is an `L²` statement and so does not reach the `L¹` variable `r_t(θ)²`; the repo
+records the same gap at `Mixing/LimitTheorems.slln_of_alphaMixing_debt`). But *this*
+statistic does not need it. The route, and what is actually left:
+
+* **(A) deterministic half — PROVED** as `armaProfileS_eq_gramTail_quadForm`:
+  `S_T = uᵀ (1 + G_T)⁻¹ u` with `u = Π_T x` the vector of truncated `θ`-residuals.
+  Writing `(1 + G)⁻¹ = 1 − (1 + G)⁻¹G` splits this into `‖u‖² − uᵀ (1+G)⁻¹G u`.
+* **(B) the correction term.** `(1+G)⁻¹G` is positive semidefinite, so
+  `E[uᵀ (1+G)⁻¹G u] = tr((1+G)⁻¹G · Cov u) ≤ ‖Cov u‖_op · tr G_T`, and `tr G_T ≤ K`
+  uniformly in `T` is PROVED (`trace_gramTail_le`). Markov then makes `T⁻¹ ·` this
+  term vanish in probability. MISSING: the trace inequality `tr(AB) ≤ ‖A‖_op tr B`
+  for psd `B`, and a uniform operator-norm bound on `Cov u = σ² Π_T Γ_T(θ₀) Π_Tᵀ`
+  (Schur test on the absolutely summable `π(θ)` and the bounded spectral density of
+  `θ₀` — `summable_abs_armaPi` and `summable_abs_armaACVF` are both available).
+* **(C) `T⁻¹‖u‖² →p σ² Σ_j c_j²` — ergodic-theorem-free.** Truncate the composite
+  filter at lag `m`. Along each arithmetic progression `t ≡ k (mod m)` the truncated
+  squares `(r_t^{(m)})²` depend on *disjoint* windows of the iid noise, so they are
+  genuinely independent and identically distributed, and integrable (two moments on
+  `ε` suffice). Mathlib's `ProbabilityTheory.strong_law_ae` (Etemadi: pairwise
+  independence and `L¹` only) therefore applies to each of the `m` progressions, and
+  summing them gives the `m`-dependent LLN. The `m → ∞` transfer is Cauchy–Schwarz,
+  `|T⁻¹Σ r² − T⁻¹Σ (r^{(m)})²| ≤ (T⁻¹Σ(r − r^{(m)})²)^{1/2} (T⁻¹Σ(|r| + |r^{(m)}|)²)^{1/2}`,
+  whose first factor has mean `σ² Σ_{j ≥ m} c_j² → 0`. The recorded "fourth cumulants"
+  obstruction is real, but it only blocks a *direct* `L²` LLN for `r_t(θ)²`; it does
+  not touch this route, which uses second moments only. The same device also absorbs
+  the edge effect `u_i` (truncated at `x_1`) versus the two-sided residual `r_i`. -/
 private theorem armaProfileS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 b : Fin p → ℝ} {a0 a : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -1062,28 +1229,28 @@ theorem mle_consistent [IsProbabilityMeasure μ] {p q : ℕ}
     {δ : ℝ} (hδ : 0 < δ) :
     Tendsto (fun T : ℕ =>
         (μ {ω | δ ≤ dist (θ T ω) (b0, a0)}).toReal) atTop (𝓝 0) := by
-  -- **FALSE AS FROZEN**, for the identifiability reason isolated (and formalized) in
-  -- `mle_consistent_not_identifiable`: nothing here forces the *working* pairs in `K` to
-  -- be coprime, and the profiled criterion is a function of the transfer function only.
-  -- Concretely (`p = q = 1`): with `b₀ = a₀ = 0`, `K = {(0,0), (1/2, −1/2)}` (finite,
-  -- hence compact; both members in `𝓑`; `(b₀,a₀) ∈ K`; `hcop` holds) and the *constant*
-  -- measurable sequence `θ T ω = (1/2, −1/2)`, the hypothesis `hargmin` holds with
-  -- `δT = 0` because
-  --   `armaProfileCriterion (1/2) (−1/2) x = armaProfileCriterion 0 0 x` for every `x`
-  -- (`mle_consistent_not_identifiable`, PROVED: the two models have the same `armaPsi`,
-  -- hence the same `armaACVF`, hence the same `Γ_T`), while
-  -- `dist (θ T ω) (b₀,a₀) = ‖(1/2, −1/2)‖ > 0` for all `T`, so the conclusion fails for
-  -- any `δ` below that distance.
+  -- **NO LONGER FALSE AS FROZEN.** The earlier refutation
+  -- (`mle_consistent_not_identifiable`, kept above as documentation: `p = q = 1`,
+  -- `b₀ = a₀ = 0`, `K = {(0,0), (1/2, −1/2)}`, on which the profiled criterion is
+  -- *constant*, so the constant sequence `θ T ω = (1/2, −1/2)` satisfies `hargmin` with
+  -- `δT = 0` while staying a fixed distance from `θ₀`) attacked the OLD signature, which
+  -- did not constrain the working pairs in `K`. The repair it asked for —
+  -- `hcopK : ∀ ba ∈ K, IsCoprime (arPoly ba.1) (maPoly ba.2)` — is now a hypothesis, and
+  -- it excludes that witness. What remains is analytic debt, not falsity:
   --
-  -- REPAIR (then this lane's wiring closes): add minimality of the search region, e.g.
-  -- `(hcopK : ∀ ba ∈ K, IsCoprime (arPoly ba.1) (maPoly ba.2))`. With it,
-  -- `armaContrastVar_eq_one_iff_transfer` upgrades to parameter identifiability, and the
-  -- standard argmin-consistency argument runs on: (i) `criterion_tendsto_contrast`
-  -- (PROVED here modulo the single named debt `armaProfileS_tendstoInProb`),
-  -- (ii) `one_le_armaContrastVar` + continuity of `θ ↦ armaContrastVar θ₀ θ` giving a
-  -- positive contrast gap `inf {K(θ) − K(θ₀) : θ ∈ K, dist θ θ₀ ≥ δ} > 0` on the compact
-  -- `K`, and (iii) a finite subcover / stochastic-equicontinuity step to make the
-  -- convergence in (i) uniform over `K`.
+  --   (i)   `criterion_tendsto_contrast` — PROVED here, modulo the single named debt
+  --         `armaProfileS_tendstoInProb` (see its docstring for the corrected route);
+  --   (ii)  the positive contrast gap `inf {K(θ) − K(θ₀) : θ ∈ K, dist θ θ₀ ≥ δ} > 0`.
+  --         Its *pointwise* half is now AVAILABLE: `armaContrastVar_eq_one_iff` (PROVED
+  --         above, using exactly `hcop` and `hcopK`) plus `one_le_armaContrastVar` give
+  --         `armaContrastVar b₀ a₀ ba.1 ba.2 > 1` for every `ba ∈ K` with `ba ≠ θ₀`.
+  --         Still missing: continuity of `θ ↦ armaContrastVar θ₀ θ`, which turns that
+  --         pointwise strictness into a uniform gap on the compact `K`;
+  --   (iii) a stochastic-equicontinuity / finite-subcover step making the convergence in
+  --         (i) uniform over `K`. A finite subcover alone does not suffice — (i) is
+  --         pointwise in `θ`, so interpolating between cover centres needs equicontinuity
+  --         of `θ ↦ armaProfileCriterion θ (data_T)` in probability. This is the largest
+  --         remaining piece and is independent of the (i) debt.
   sorry
 
 end Process
