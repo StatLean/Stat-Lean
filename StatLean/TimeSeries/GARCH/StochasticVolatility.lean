@@ -167,6 +167,139 @@ theorem IsSV.isStrictlyStationary [IsProbabilityMeasure μ] {g : ℝ → ℝ}
     IsStrictlyStationary X μ := by
   sorry
 
+/-! ### Gaussian even moments -/
+
+private noncomputable def gexp : ℝ → ℝ := fun y => Real.exp (y ^ 2 / 2)
+
+private lemma contDiff_gexp : ContDiff ℝ (⊤ : ℕ∞) gexp :=
+  Real.contDiff_exp.comp ((contDiff_id.pow 2).div_const 2)
+
+private lemma differentiable_iteratedDeriv_gexp (m : ℕ) :
+    Differentiable ℝ (iteratedDeriv m gexp) :=
+  contDiff_gexp.differentiable_iteratedDeriv m (by exact_mod_cast lt_top_iff_ne_top.2 (by simp))
+
+private lemma deriv_gexp : deriv gexp = fun y => y * gexp y := by
+  funext y
+  have h1 : HasDerivAt (fun t : ℝ => t ^ 2 / 2) y y := by
+    simpa using (hasDerivAt_pow 2 y).div_const 2
+  have := (Real.hasDerivAt_exp (y ^ 2 / 2)).comp y h1
+  simpa [gexp, Function.comp_def, mul_comm] using this.deriv
+
+private lemma iteratedDeriv_id_mul {g : ℝ → ℝ} (hg : ∀ m : ℕ, Differentiable ℝ (iteratedDeriv m g))
+    (n : ℕ) : iteratedDeriv n (fun y => y * g y)
+      = fun y => y * iteratedDeriv n g y + (n : ℝ) * iteratedDeriv (n - 1) g y := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have hA : ∀ y : ℝ, HasDerivAt (iteratedDeriv n g) (iteratedDeriv (n + 1) g y) y := by
+      intro y
+      have := (hg n y).hasDerivAt
+      rwa [← iteratedDeriv_succ] at this
+    have hB : ∀ y : ℝ, HasDerivAt (iteratedDeriv (n - 1) g) (iteratedDeriv (n - 1 + 1) g y) y := by
+      intro y
+      have := (hg (n - 1) y).hasDerivAt
+      rwa [← iteratedDeriv_succ] at this
+    rw [iteratedDeriv_succ, ih]
+    funext y
+    have hd : HasDerivAt (fun y : ℝ => y * iteratedDeriv n g y + (n : ℝ) * iteratedDeriv (n - 1) g y)
+        (1 * iteratedDeriv n g y + y * iteratedDeriv (n + 1) g y
+          + (n : ℝ) * iteratedDeriv (n - 1 + 1) g y) y :=
+      ((hasDerivAt_id y).mul (hA y)).add ((hB y).const_mul (n : ℝ))
+    rw [hd.deriv]
+    cases n with
+    | zero => simp; ring
+    | succ m =>
+      simp only [Nat.add_sub_cancel]
+      push_cast
+      ring
+
+private lemma iteratedDeriv_gexp_recur (n : ℕ) :
+    iteratedDeriv (n + 1) gexp 0 = (n : ℝ) * iteratedDeriv (n - 1) gexp 0 := by
+  rw [iteratedDeriv_succ', deriv_gexp,
+    iteratedDeriv_id_mul differentiable_iteratedDeriv_gexp n]
+  simp
+
+private lemma iteratedDeriv_gexp_even (k : ℕ) :
+    iteratedDeriv (2 * k) gexp 0
+      = (Nat.factorial (2 * k) : ℝ) / (2 ^ k * Nat.factorial k) := by
+  induction k with
+  | zero => simp [gexp]
+  | succ k ih =>
+    have hstep : iteratedDeriv (2 * (k + 1)) gexp 0
+        = (2 * k + 1 : ℝ) * iteratedDeriv (2 * k) gexp 0 := by
+      have h1 : 2 * (k + 1) = (2 * k + 1) + 1 := by ring
+      rw [h1, iteratedDeriv_gexp_recur (2 * k + 1)]
+      simp
+    rw [hstep, ih]
+    have h2 : Nat.factorial (2 * (k + 1)) = (2 * k + 2) * ((2 * k + 1) * Nat.factorial (2 * k)) := by
+      have : 2 * (k + 1) = (2 * k + 1) + 1 := by ring
+      rw [this, Nat.factorial_succ, Nat.factorial_succ]
+    rw [h2, Nat.factorial_succ]
+    have hk : (0:ℝ) < (Nat.factorial k : ℝ) := by exact_mod_cast Nat.factorial_pos k
+    push_cast
+    field_simp
+    ring
+
+private lemma integral_pow_even_gaussianReal (k : ℕ) :
+    ∫ x, x ^ (2 * k) ∂(gaussianReal 0 1)
+      = (Nat.factorial (2 * k) : ℝ) / (2 ^ k * Nat.factorial k) := by
+  have hmgf : mgf id (gaussianReal 0 1) = gexp := by
+    rw [mgf_id_gaussianReal]
+    funext t
+    norm_num [gexp]
+  have hint : (0 : ℝ) ∈ interior (integrableExpSet id (gaussianReal 0 1)) := by simp
+  have hkey := iteratedDeriv_mgf_zero (X := (id : ℝ → ℝ)) (μ := gaussianReal 0 1) hint (2 * k)
+  rw [hmgf, iteratedDeriv_gexp_even k] at hkey
+  have hpi : ((gaussianReal 0 1)[(id : ℝ → ℝ) ^ (2 * k)])
+      = ∫ x, x ^ (2 * k) ∂(gaussianReal 0 1) := by simp
+  rw [hpi] at hkey
+  exact hkey.symm
+
+/-- **NAMED DEBT — a missing hypothesis, not a gap in the mathematics.** The observation
+noise family `{ε_t}` is independent of the latent family `{h_t}`.
+
+This is *not* derivable from `IsSV` alone. The structure carries `indep_families`
+(`σ{ε_t} ⟂ σ{e_t}`) together with the pointwise recursion `h_t = a₀ + a₁h_{t−1} + e_t`,
+and the recursion does not tie `h` to `σ{e_t}`: it is satisfied by every solution,
+including ones whose "initial condition at `−∞`" is built out of `ε`. Witness: take
+`a₀ = 0`, `a₁ = 1`, `h_0 := μ_h + √σ_h² ε_0`, `h_t := h_0 + Σ_{0<s≤t} e_s` for `t > 0`
+and `h_t := h_0 − Σ_{t<s≤0} e_s` for `t < 0`. Every field of `IsSV` holds, `h_0` is
+`N(μ_h, σ_h²)` and `ε_0` is `N(0,1)`, so all hypotheses of (4.61) hold, yet
+`E X_0² = e^{μ_h+σ_h²/2}(1+σ_h²) ≠ e^{μ_h+σ_h²/2}`.
+
+In FY the latent chain *is* the causal solution `h_t − a₀/(1−a₁) = Σ_{j≥0} a₁^j e_{t−j}`
+of (4.60) — the hypothesis `hcausal` carried by `IsSV.latent_stationary` and
+`IsSV.isStrictlyStationary` — and then `h_t` is `σ{e_s}`-measurable up to a null set, so
+`indep_families` yields the conclusion. The frozen statements of (4.61)–(4.62) do not
+carry `hcausal`, so the missing input is recorded here as a single brick. -/
+private lemma indep_noise_latent [IsProbabilityMeasure μ] {g : ℝ → ℝ} {a0 a1 σe2 : ℝ}
+    {X h ε e : ℤ → Ω → ℝ} (hSV : IsSV g a0 a1 σe2 X h ε e μ) :
+    Indep (⨆ t : ℤ, MeasurableSpace.comap (ε t) inferInstance)
+      (⨆ t : ℤ, MeasurableSpace.comap (h t) inferInstance) μ := by
+  sorry
+
+private lemma indepFun_noise_latent [IsProbabilityMeasure μ] {g : ℝ → ℝ} {a0 a1 σe2 : ℝ}
+    {X h ε e : ℤ → Ω → ℝ} (hSV : IsSV g a0 a1 σe2 X h ε e μ) (s t : ℤ) :
+    IndepFun (ε s) (h t) μ :=
+  indep_of_indep_of_le_right
+    (indep_of_indep_of_le_left (indep_noise_latent hSV)
+      (le_iSup (fun s : ℤ => MeasurableSpace.comap (ε s) inferInstance) s))
+    (le_iSup (fun t : ℤ => MeasurableSpace.comap (h t) inferInstance) t)
+
+/-- **NAMED DEBT — a missing hypothesis.** The noise does not charge `0`.
+
+`IsIIDNoise ε 1` constrains only the first two moments, and a mean-zero unit-variance law
+may well have an atom at `0` (e.g. `P(ε = ±√2) = 1/4`, `P(ε = 0) = 1/2`). On `{ε_t = 0}`
+one has `log X_t² = log 0 = 0` while `h_t + log ε_t² = h_t + 0 = h_t`, so (4.62) fails
+there unless `h_t = 0`: with such noise the frozen statement of `log_sq_decomposition` is
+false (take `a₁ = 0`, `h_t = e_t` standard normal). It holds in FY's setting because the
+observation noise is Gaussian (`hgauss` plus `noAtoms_gaussianReal`), a hypothesis this
+statement does not carry. -/
+private lemma noise_ne_zero_ae [IsProbabilityMeasure μ] {g : ℝ → ℝ} {a0 a1 σe2 : ℝ}
+    {X h ε e : ℤ → Ω → ℝ} (hSV : IsSV g a0 a1 σe2 X h ε e μ) (t : ℤ) :
+    μ {ω | ε t ω = 0} = 0 := by
+  sorry
+
 /-- **FY eq. (4.61)** (Taylor's lognormal SV): with `g(x) = e^{x/2}`, standard normal
 `ε`, and a stationary Gaussian latent process with mean `μ_h` and variance `σ_h²`,
 `E X_t^{2k} = (2k)! · exp(k μ_h + k²σ_h²/2) / (2^k k!)`. -/
@@ -181,7 +314,41 @@ theorem IsSV.moment_even_lognormal [IsProbabilityMeasure μ] {a0 a1 σe2 μh σh
     (∫ ω, X 0 ω ^ (2 * k) ∂μ)
       = (Nat.factorial (2 * k) : ℝ) * Real.exp (k * μh + (k : ℝ) ^ 2 * σh2 / 2)
         / (2 ^ k * Nat.factorial k) := by
-  sorry
+  have hmε : Measurable (ε 0) := hSV.iidNoise.measurable 0
+  have hmh : Measurable (h 0) := hSV.measurableH 0
+  -- (a) the standard-normal even moment `(2k)!/(2^k k!)`
+  have hA : ∫ ω, ε 0 ω ^ (2 * k) ∂μ
+      = (Nat.factorial (2 * k) : ℝ) / (2 ^ k * Nat.factorial k) := by
+    rw [← integral_pow_even_gaussianReal k, ← hgauss,
+      integral_map hmε.aemeasurable
+        (by fun_prop : AEStronglyMeasurable (fun x : ℝ => x ^ (2 * k)) _)]
+  -- (b) the lognormal moment: the Gaussian m.g.f. at `t = k`
+  have hB : ∫ ω, Real.exp ((k : ℝ) * h 0 ω) ∂μ
+      = Real.exp ((k : ℝ) * μh + (k : ℝ) ^ 2 * σh2 / 2) := by
+    have hm := mgf_gaussianReal hlatent (k : ℝ)
+    rw [Real.coe_toNNReal σh2 hσh.le] at hm
+    rw [show (∫ ω, Real.exp ((k : ℝ) * h 0 ω) ∂μ) = mgf (h 0) μ (k : ℝ) from rfl, hm]
+    ring_nf
+  -- (c) split the product along `ε ⟂ h`
+  have hindep : IndepFun (fun ω => ε 0 ω ^ (2 * k)) (fun ω => Real.exp ((k : ℝ) * h 0 ω)) μ :=
+    (indepFun_noise_latent hSV 0 0).comp (measurable_id.pow_const (2 * k))
+      ((measurable_id.const_mul (k : ℝ)).exp)
+  have hprod : ∫ ω, (ε 0 ω ^ (2 * k) * Real.exp ((k : ℝ) * h 0 ω)) ∂μ
+      = (∫ ω, ε 0 ω ^ (2 * k) ∂μ) * ∫ ω, Real.exp ((k : ℝ) * h 0 ω) ∂μ :=
+    hindep.integral_fun_mul_eq_mul_integral
+      (hmε.pow_const (2 * k)).aestronglyMeasurable
+      ((hmh.const_mul (k : ℝ)).exp).aestronglyMeasurable
+  -- (d) the model equation, squared `k` times
+  have hae : (fun ω => X 0 ω ^ (2 * k))
+      =ᵐ[μ] fun ω => ε 0 ω ^ (2 * k) * Real.exp ((k : ℝ) * h 0 ω) := by
+    filter_upwards [hSV.recX 0] with ω hω
+    rw [hω, mul_pow, ← Real.exp_nat_mul]
+    congr 2
+    push_cast
+    ring
+  rw [integral_congr_ae hae, hprod, hA, hB]
+  ring
+
 
 /-- **FY eq. (4.61), kurtosis**: the lognormal SV kurtosis is `3e^{σ_h²} > 3` — SV is
 strictly leptokurtic (stated multiplicatively to avoid division). -/
@@ -192,7 +359,18 @@ theorem IsSV.kurtosis_lognormal [IsProbabilityMeasure μ] {a0 a1 σe2 μh σh2 :
     (hlatent : μ.map (h 0) = gaussianReal μh (Real.toNNReal σh2)) (hσh : 0 < σh2) :
     (∫ ω, X 0 ω ^ 4 ∂μ) = 3 * Real.exp σh2 * (∫ ω, X 0 ω ^ 2 ∂μ) ^ 2 ∧
       3 < 3 * Real.exp σh2 := by
-  sorry
+  have h4 := hSV.moment_even_lognormal hgauss hlatent hσh 2
+  have h2 := hSV.moment_even_lognormal hgauss hlatent hσh 1
+  norm_num at h4 h2
+  refine ⟨?_, ?_⟩
+  · rw [h4, h2, sq]
+    have he : Real.exp σh2 * (Real.exp (μh + σh2 / 2) * Real.exp (μh + σh2 / 2))
+        = Real.exp (2 * μh + 4 * σh2 / 2) := by
+      rw [← Real.exp_add, ← Real.exp_add]
+      ring_nf
+    linarith
+  · nlinarith [Real.add_one_lt_exp (ne_of_gt hσh)]
+
 
 /-- **FY eq. (4.62)**: the log-squared observation decomposes as `log X_t² = h_t +
 log ε_t²` (for `g = exp(·/2)`), the identity behind the ARMA(1,1)-in-two-moments
@@ -201,7 +379,15 @@ theorem IsSV.log_sq_decomposition [IsProbabilityMeasure μ] {a0 a1 σe2 : ℝ}
     {X h ε e : ℤ → Ω → ℝ}
     (hSV : IsSV (fun x => Real.exp (x / 2)) a0 a1 σe2 X h ε e μ) (t : ℤ) :
     (fun ω => Real.log (X t ω ^ 2)) =ᵐ[μ] fun ω => h t ω + Real.log (ε t ω ^ 2) := by
-  sorry
+  have hne : ∀ᵐ ω ∂μ, ε t ω ≠ 0 := by
+    rw [ae_iff]
+    simpa using noise_ne_zero_ae hSV t
+  filter_upwards [hSV.recX t, hne] with ω hω hε0
+  rw [hω, mul_pow, Real.log_mul (pow_ne_zero 2 hε0)
+      (ne_of_gt (pow_pos (Real.exp_pos _) 2)), ← Real.exp_nat_mul, Real.log_exp]
+  push_cast
+  ring
+
 
 /-- **FY eq. (4.62), squared-process ACF** (lognormal algebra):
 `Corr(X_t², X_{t−k}²) = (exp(σ_h² a₁^{|k|}) − 1)/(exp(σ_h²) − 1)`. -/
