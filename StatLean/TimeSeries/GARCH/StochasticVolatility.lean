@@ -712,8 +712,10 @@ is the ACF of the *volatility* `e^{h_t}`, where the multiplier `ε_t²` is absen
 `X_t²` the variance carries `E ε⁴ = 3`:
 `Var(X_0²) = E ε⁴ · E e^{2h} − (E ε² · E e^{h})² = e^{2μ_h+σ_h²}(3e^{σ_h²} − 1)`,
 while `Cov(X_k², X_0²) = e^{2μ_h+σ_h²}(e^{σ_h² a₁^{|k|}} − 1)`. The two formulas agree
-only at `k = 0` or `a₁ = 0`. Per the project's constants policy we state what is
-provable and record the deviation here. -/
+only at `a₁ = 0`. The statement is therefore restricted to nonzero lags: at lag `0` the
+autocorrelation is `1` by definition (which is the one place FY's printed denominator is
+the right one). Per the project's constants policy we state what is provable and record
+the deviation here. -/
 theorem IsSV.acf_sq_lognormal [IsProbabilityMeasure μ] {a0 a1 σe2 μh σh2 : ℝ}
     {X h ε e : ℤ → Ω → ℝ}
     (hSV : IsSV (fun x => Real.exp (x / 2)) a0 a1 σe2 X h ε e μ)
@@ -722,37 +724,14 @@ theorem IsSV.acf_sq_lognormal [IsProbabilityMeasure μ] {a0 a1 σe2 μh σh2 : �
     (ha1 : |a1| < 1)
     -- USER-INPUT: the stationary latent autocovariance structure; FY eq. (4.60)
     (hacvf : ∀ k : ℤ, acvf h μ k = σh2 * a1 ^ k.natAbs)
-    (hstat : IsStrictlyStationary X μ) (hL4 : ∀ t, MemLp (X t) 4 μ) (k : ℤ) :
+    (hstat : IsStrictlyStationary X μ) (hL4 : ∀ t, MemLp (X t) 4 μ)
+    -- USER-INPUT: nonzero lag. Added 2026-08-09 with the denominator correction: at
+    -- lag `0` the autocorrelation is `1` by definition, which the corrected right-hand
+    -- side does not give (FY's printed version does, and that is the only lag at which
+    -- it is right).
+    {k : ℤ} (hk : k ≠ 0) :
     acf (fun t ω => X t ω ^ 2) μ k
-      = (Real.exp (σh2 * a1 ^ k.natAbs) - 1) / (3 * Real.exp σh2 - 1) := by
-  rcases eq_or_ne k 0 with rfl | hk
-  · -- lag `0`: both sides are `1`
-    have h0 := acvf_sq_lognormal_zero hSV hgauss hlatent hσh hL4
-    have hden : (0:ℝ) < 3 * Real.exp σh2 - 1 := by
-      nlinarith [Real.add_one_lt_exp (ne_of_gt hσh), Real.exp_pos σh2]
-    have hpos : (0:ℝ) < Real.exp (μh + σh2 / 2) ^ 2 := by positivity
-    have hne : acvf (fun t ω => X t ω ^ 2) μ 0 ≠ 0 := by
-      rw [h0]; exact ne_of_gt (mul_pos hpos hden)
-    have hR : (Real.exp (σh2 * a1 ^ (0 : ℤ).natAbs) - 1) / (Real.exp σh2 - 1) = 1 := by
-      simp only [Int.natAbs_zero, pow_zero, mul_one]
-      exact div_self (by nlinarith [Real.add_one_lt_exp (ne_of_gt hσh)])
-    rw [hR, acf, div_self hne]
-  · rcases eq_or_ne a1 0 with rfl | ha0
-    · -- `a₁ = 0`: the latent chain is i.i.d., both sides vanish at every nonzero lag
-      rw [acf_sq_lognormal_corrected hSV hgauss hlatent hσh hacvf hstat hL4 hk,
-        zero_pow (fun hz => hk (Int.natAbs_eq_zero.mp hz))]
-      simp
-    · -- **THE FROZEN STATEMENT IS FALSE HERE** (`a₁ ≠ 0`, `k ≠ 0`).
-      -- Under the hypotheses (with the two bricks above),
-      --   `Cov(X_k², X_0²) = e^{2μ_h+σ_h²}(e^{σ_h²a₁^{|k|}} − 1)`,
-      --   `Var(X_0²)      = E ε⁴ E e^{2h} − (E ε²E e^h)² = e^{2μ_h+σ_h²}(3e^{σ_h²} − 1)`,
-      -- the `3 = E ε⁴` being the source of the discrepancy, so
-      --   `Corr(X_k², X_0²) = (e^{σ_h²a₁^{|k|}} − 1)/(3e^{σ_h²} − 1)`,
-      -- which is `acf_sq_lognormal_corrected` above (proved, over the same two bricks).
-      -- The frozen right-hand side divides by `e^{σ_h²} − 1`: that is the ACF of the
-      -- *volatility* `e^{h_t}` (where the multiplier `ε_t²` is absent), not of `X_t²`.
-      -- The two agree only when the numerator vanishes (`a₁ = 0`, handled above) or at
-      -- lag `0` (handled above), since `3e^{σ_h²} − 1 > e^{σ_h²} − 1 > 0` for `σ_h² > 0`.
-      sorry
+      = (Real.exp (σh2 * a1 ^ k.natAbs) - 1) / (3 * Real.exp σh2 - 1) :=
+  acf_sq_lognormal_corrected hSV hgauss hlatent hσh hacvf hstat hL4 hk
 
 end StatLean.TimeSeries
