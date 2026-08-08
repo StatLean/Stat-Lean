@@ -391,7 +391,60 @@ theorem tsum_garchInfCoeffs {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
   exact hsummable.hasSum
 
 /-- **FY Theorem 4.4, existence**: under `Σ b + Σ a < 1` a strictly stationary
-square-integrable GARCH(p, q) solution exists. -/
+square-integrable GARCH(p, q) solution exists.
+
+**BLOCKED — the ARCH(∞) machinery is not reusable through its frozen interface**
+(assessed 2026-08-08). The reduction itself is sound and every *arithmetic* input for it
+is already available in this file:
+
+* the ARCH(∞) coefficients `d_i` of `b(z)/(1 − a(z))` are `garchInfCoeffs`, nonnegative
+  by `garchInfCoeffs_nonneg` and summable with `Σ_i d_i = (Σ b)/(1 − Σ a)` by
+  `tsum_garchInfCoeffs`; `hsum` is *exactly* `Σ_i d_i < 1`, the hypothesis of
+  `exists_stationary_archInf` (`Stationarity/ARCH.lean`, FY Thm 2.5(i)).
+
+Instantiating that theorem at `ξ = ε²`, `bc j = d_{j+1}`, `a = c₀/(1 − Σ a)` produces a
+process `Y` (morally `X²`) with `IsARCHInf`, `IsStrictlyStationary Y`, integrability and
+its mean. From `Y` one sets `σ² = ā + Σ_j d_{j+1} Y_{t−1−j}` and `X_t = σ_t ε_t`. Of the
+eleven `IsGARCH` fields, that route delivers all but two, and `MemLp (X t) 2` is free
+(`X_t² = Y_t` a.e. and `Y_t` is integrable). The two it cannot deliver are:
+
+1. **`indep_past`** — `Indep (comap (ε t)) (sigmaLT X t)`. `IsARCHInf.indep_past` only
+   gives `Indep (comap (ξ t)) (sigmaLT Y t)`, which is weaker in *two* independent ways:
+   `comap (ε t) ⊋ comap (ε t ²) = comap (ξ t)` (an independence statement about `ε_t²`
+   says nothing about the sign of `ε_t`), and `sigmaLT X t` is the join of `sigmaLT Y t`
+   with `σ(ε_s : s < t)` (because `X_s = σ_s ε_s` carries the innovation's sign), which is
+   strictly larger than `sigmaLT Y t`.
+2. **`IsStrictlyStationary X`** — strict stationarity of `Y` alone is not enough: `X_t` is
+   a *joint* functional of the `Y`-past and of `ε_t`, so one needs the joint law of
+   `(Y, ε)` to be shift-invariant, not just `Y`'s own finite-dimensional laws.
+
+Both facts *are* proved inside `exists_stationary_archInf` — its `hmeasSolLT` shows the
+Volterra solution at time `s` is `sigmaLT ξ t`-measurable for `s < t`, and its `hstat`
+goes through the fixed path functional `archFun`/`archPath` — but neither is exported:
+`archLayer`, `archPath`, `archFun`, `archSol` and every lemma about them are `private` to
+`Stationarity/ARCH.lean`, and the theorem's conclusion is purely `∃ Y, IsARCHInf … ∧
+IsStrictlyStationary Y … ∧ Integrable … ∧ mean`. No other file consumes
+`exists_stationary_archInf`, so nothing else pins its shape.
+
+**Precise repair** (a statement change in `Stationarity/ARCH.lean`, outside this lane's
+touch-set): strengthen the conclusion of `exists_stationary_archInf` to expose the
+solution as a shift-equivariant path functional, e.g. add
+`∃ G : (ℤ → ℝ) → ℝ, Measurable G ∧ (∀ t ω, Y t ω = G (fun s => ξ (s + t) ω)) ∧
+∀ p q : ℤ → ℝ, (∀ s ≤ 0, p s = q s) → G p = G q`
+(measurable, causal, shift-equivariant). Given that clause both blockers evaporate:
+causality gives `Y_s` measurable for `σ(ε_u : u ≤ s)`, hence `sigmaLT X t ≤ σ(ε_u : u < t)`
+and `indep_past` from the i.i.d. property of `ε`; and shift-equivariance transports the
+shift-invariance of the *`ε`*-path law to the family `X_t = √(ā + Σ_j d_{j+1} G(…)) · ε_t`,
+giving `IsStrictlyStationary X` by the same argument
+`isStrictlyStationary_nelX` uses below for `(p, q) = (1, 1)`.
+
+The alternative, staying inside the touch-set, is to re-derive the Volterra construction
+here (the general-`(p, q)` analogue of the `nel*` cascade below, which is specific to
+`(1,1)`); that is a construction from scratch, not a reuse, and is left undone.
+
+The `(p, q) = (1, 1)` case is *not* affected: it is proved below without ARCH(∞), by
+`exists_strictlyStationary_garch_one_one_nelson` (Nelson's random-product series), whose
+hypothesis `E log(b₁ε² + a₁) < 0` follows from `b₁ + a₁ < 1` by Jensen. -/
 theorem exists_stationary_garch [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     {b : Fin p → ℝ} {a : Fin q → ℝ} {ε : ℤ → Ω → ℝ}
     -- USER-INPUT: nonnegative coefficients; FY Def 4.3
