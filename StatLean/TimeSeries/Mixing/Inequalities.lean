@@ -21,7 +21,11 @@ The quantitative toolbox for α-mixing processes:
   (Theorems 2.21(ii) and 2.22);
 * the **fourth-moment bound** (the `q = 4` instance of FY Proposition 2.7(ii) that the
   Bernstein-block CLT consumes): bounded, zero-mean, strictly stationary,
-  `α(n) ≤ K n⁻²` ⇒ `E S_n⁴ ≤ C n²`;
+  `α(n) ≤ K n⁻²` ⇒ `E S_n⁴ ≤ C n²`.  Its *probabilistic* half is proved here — the
+  sorted 4-tuple mixing bound `abs_integral_quad_le`, the expansion of `E S_n⁴` over
+  4-tuples, and the assembly.  Its *counting* half is the single remaining DEBT
+  `sum_four_le_of_cut_bound`: a purely combinatorial statement (no probability) whose
+  route is spelled out at its declaration;
 * **Theorems 2.18/2.19 (Bosq exponential inequalities)** — literature DEBTS (used only
   by ch. 5 KDE uniform rates, outside the current scope).
 
@@ -48,6 +52,11 @@ Propositions 2.5–2.7 and Theorems 2.17–2.19 (pp. 71–73). (`FY §2.6.2`.)
 * Fourth moment: expand `E S⁴` over index 4-tuples, split each expectation at the
   largest gap `g` (Billingsley pairs), count tuples with largest gap `g` as `O(n g²)`;
   `Σ_g n g² · g⁻² = O(n²)`, and the paired products contribute `(n Σ α)² = O(n²)`.
+  As executed, the split is `abs_integral_quad_le` (proved: the two outer cuts kill the
+  product term because `E X_t = 0`, the middle cut pays `E[X_aX_b]·E[X_cX_d]`), and the
+  counting is isolated as `sum_four_le_of_cut_bound`.  The expensive unformalised step
+  there is the symmetrisation `Σ_{(a,b,c,d)} G ≤ 24 Σ_{a≤b≤c≤d} G`, which needs an
+  explicit sorting network on `ℕ⁴` or `Tuple.sort` with a fibre count.
 
 **Bibliographic comments.** Prop 2.5(i) is Yu. A. Davydov (1968); (ii) is
 P. Billingsley, *Convergence of Probability Measures* (1968), Lemma 1 of §20;
