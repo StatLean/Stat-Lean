@@ -460,12 +460,42 @@ theorem phiMixCoeff_le_psiMixCoeff {m₁ m₂ mΩ : MeasurableSpace Ω}
   --   * `A = B = Set.Icc 0 (1/2)` gives the φ-value `|1/2 − (1/2)/(1/2)| = 1/2`, and the
   --     φ set *is* bounded by `1`, so `phiMixCoeff μ₀ ≥ 1/2 > 0 = psiMixCoeff μ₀`.
   --
-  -- REPAIR (statement-level, for a future frozen-statement revision): either add the
-  -- hypothesis `BddAbove {r | …ψ description set…}` (equivalently "ψ is finite"), or state
-  -- the inequality in the `ℝ≥0∞`-valued form of ψ. Under either repair the intended proof
-  -- goes through verbatim: for a φ-witness `(A, B)` with `P(A) > 0`, either `P(B) = 0`
-  -- (both sides `0`) or `|P(B) − P(A∩B)/P(A)| = P(B)·|1 − P(A∩B)/(P(A)P(B))| ≤ ψ`.
-  sorry
+  -- REPAIR APPLIED (2026-08-05, wave `ts/c-sweep-mixing`): the hypothesis `hψbdd`
+  -- ("ψ is finite") is now part of the statement, and the intended proof below closes it:
+  -- for a φ-witness `(A, B)` with `P(A) > 0`, either `P(B) = 0` (both sides `0`) or
+  -- `|P(B) − P(A∩B)/P(A)| = P(B)·|1 − P(A∩B)/(P(A)P(B))| ≤ 1·ψ`.
+  have hψnn : 0 ≤ psiMixCoeff μ m₁ m₂ :=
+    le_csSup hψbdd ⟨Set.univ, Set.univ, @MeasurableSet.univ Ω m₁, @MeasurableSet.univ Ω m₂,
+      by simp, by simp, by simp⟩
+  refine Real.sSup_le ?_ hψnn
+  rintro r ⟨A, B, hA, hB, hApos, rfl⟩
+  rcases eq_or_lt_of_le (ENNReal.toReal_nonneg : (0:ℝ) ≤ (μ B).toReal) with hB0 | hBpos
+  · -- `P(B) = 0`: the φ value is `0`
+    have hB0' : μ B = 0 :=
+      ((ENNReal.toReal_eq_zero_iff (μ B)).1 hB0.symm).resolve_right (measure_ne_top μ B)
+    have hAB : μ (A ∩ B) = 0 := measure_mono_null Set.inter_subset_right hB0'
+    simpa [hAB, hB0'] using hψnn
+  · -- `P(B) > 0`: calibrate the φ value against the ψ witness at the same pair
+    have hAne : (μ A).toReal ≠ 0 := ne_of_gt hApos
+    have hBne : (μ B).toReal ≠ 0 := ne_of_gt hBpos
+    have hmem : |1 - (μ (A ∩ B)).toReal / (μ A).toReal / (μ B).toReal| ≤ psiMixCoeff μ m₁ m₂ :=
+      le_csSup hψbdd ⟨A, B, hA, hB, hApos, hBpos, rfl⟩
+    have e1 : (μ B).toReal * (1 - (μ (A ∩ B)).toReal / (μ A).toReal / (μ B).toReal)
+        = (μ B).toReal - (μ (A ∩ B)).toReal / (μ A).toReal := by
+      field_simp
+    have key : |(μ B).toReal - (μ (A ∩ B)).toReal / (μ A).toReal|
+        = (μ B).toReal * |1 - (μ (A ∩ B)).toReal / (μ A).toReal / (μ B).toReal| := by
+      calc |(μ B).toReal - (μ (A ∩ B)).toReal / (μ A).toReal|
+          = |(μ B).toReal * (1 - (μ (A ∩ B)).toReal / (μ A).toReal / (μ B).toReal)| := by
+            rw [e1]
+        _ = |(μ B).toReal| * |1 - (μ (A ∩ B)).toReal / (μ A).toReal / (μ B).toReal| :=
+            abs_mul _ _
+        _ = (μ B).toReal * |1 - (μ (A ∩ B)).toReal / (μ A).toReal / (μ B).toReal| := by
+            rw [abs_of_pos hBpos]
+    rw [key]
+    have hnn : (0:ℝ) ≤ |1 - (μ (A ∩ B)).toReal / (μ A).toReal / (μ B).toReal| := abs_nonneg _
+    have hle1 := toReal_le_one (μ := μ) B
+    nlinarith
 
 /-- Cauchy–Schwarz for real `L²` integrals. -/
 private lemma abs_integral_mul_le {mΩ : MeasurableSpace Ω} {μ : Measure Ω} {f g : Ω → ℝ}
@@ -661,9 +691,16 @@ theorem IsPsiMixing.isPhiMixing [IsProbabilityMeasure μ] {X : ℤ → Ω → �
   -- `psiCoeff X μ₀ n = 0` for every `n` (junk value of an unbounded `Real.sSup`) — hence
   -- `IsPsiMixing X μ₀` holds — while `phiCoeff X μ₀ n ≥ 1/2` for every `n`, so
   -- `IsPhiMixing X μ₀` fails. Checked in Lean with 0 sorries.
-  -- The repair is the one recorded on `phiMixCoeff_le_psiMixCoeff`: once ψ is finite
-  -- (or `ℝ≥0∞`-valued), `φ(n) ≤ ψ(n)` and the squeeze against `0 ≤ φ(n)` closes this.
-  sorry
+  -- REPAIR APPLIED (2026-08-05, wave `ts/c-sweep-mixing`): with `hψbdd` in the statement,
+  -- `phiMixCoeff_le_psiMixCoeff` gives `φ(n) ≤ ψ(n)` at every lag and the squeeze against
+  -- `0 ≤ φ(n)` closes this.
+  have hnn : ∀ n : ℕ, (0 : ℝ) ≤ phiMixCoeff μ (sigmaLE X 0) (sigmaGE X (n : ℤ)) :=
+    fun _ => phiMixCoeff_nonneg (mΩ := ‹MeasurableSpace Ω›)
+  have hle : ∀ n : ℕ, phiMixCoeff μ (sigmaLE X 0) (sigmaGE X (n : ℤ))
+      ≤ psiMixCoeff μ (sigmaLE X 0) (sigmaGE X (n : ℤ)) := fun n =>
+    phiMixCoeff_le_psiMixCoeff (sigmaLE_le_ambient hmeas 0)
+      (sigmaGE_le_ambient hmeas (n : ℤ)) (hψbdd n)
+  exact squeeze_zero hnn hle h
 
 /-- φ-mixing ⇒ β-mixing. -/
 theorem IsPhiMixing.isBetaMixing [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
