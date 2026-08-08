@@ -1519,6 +1519,19 @@ private lemma comap_pi_eq {ι : Type*} (Z : ι → Ω → ℝ) :
     MeasurableSpace.pi, MeasurableSpace.comap_iSup]
   exact iSup_congr fun i => by rw [MeasurableSpace.comap_comp]; rfl
 
+private lemma measure_inter_eq_right_of_measure_eq_one [IsProbabilityMeasure μ] {A B : Set Ω}
+    (hA : MeasurableSet A) (h : μ A = 1) : μ (A ∩ B) = μ B := by
+  have hc : μ Aᶜ = 0 := by rw [prob_compl_eq_one_sub hA, h, tsub_self]
+  refine le_antisymm (measure_mono Set.inter_subset_right) ?_
+  have h1 : B ⊆ (A ∩ B) ∪ Aᶜ := by
+    intro ω hω
+    by_cases hA' : ω ∈ A
+    · exact Or.inl ⟨hA', hω⟩
+    · exact Or.inr hA'
+  calc μ B ≤ μ ((A ∩ B) ∪ Aᶜ) := measure_mono h1
+    _ ≤ μ (A ∩ B) + μ Aᶜ := measure_union_le _ _
+    _ = μ (A ∩ B) := by rw [hc, add_zero]
+
 end WoldProb
 
 
@@ -1714,6 +1727,197 @@ theorem gaussian_q_dependent_isMA_debt [IsProbabilityMeasure μ] {X : ℤ → Ω
     (hpnd : ∀ A : Set Ω, MeasurableSet[⨅ n : ℕ, sigmaLE X (-(n : ℤ))] A →
       μ A = 0 ∨ μ A = 1) :
     ∃ (a : Fin q → ℝ) (σ2 : ℝ) (ε : ℤ → Ω → ℝ), IsMA a σ2 X ε μ := by
-  sorry
+  classical
+  obtain ⟨x, hx⟩ : ∃ x : ℤ → Lp ℝ 2 μ, ∀ t, (x t : Ω → ℝ) =ᵐ[μ] X t :=
+    ⟨fun t => (hstat.memLp t).toLp (X t), fun t => MemLp.coeFn_toLp _⟩
+  have hγ : ∀ s t : ℤ, (inner ℝ (x s) (x t) : ℝ) = acvf X μ (s - t) := inner_lpProc hstat hmean hx
+  have hεm : ∀ t : ℤ, Measurable (((winn x t : Lp ℝ 2 μ) : Ω → ℝ)) := fun t =>
+    (Lp.stronglyMeasurable _).measurable
+  have hεg : ∀ t : ℤ, winn x t ∈ gspan x := fun t => wspan_le_gspan x t (winn_mem x t)
+  have hdg : ∀ t : ℤ, wdet x t ∈ gspan x := fun t =>
+    wspan_le_gspan x t (by simpa using wdet_mem hγ t 0)
+  have hmean0 : ∀ g : Lp ℝ 2 μ, g ∈ gspan x → ∫ ω, (g : Ω → ℝ) ω ∂μ = 0 :=
+    fun g hg => integral_eq_zero_of_mem_gspan hmean hx hg
+  -- **Step 1**: the deterministic component vanishes (trivial remote past).
+  have hdet : ∀ t : ℤ, wdet x t = 0 := by
+    intro t
+    have hrepr : ∀ n : ℕ, ∃ g : Ω → ℝ, Measurable[sigmaLE X (t - (n : ℤ))] g ∧
+        ((wdet x t : Lp ℝ 2 μ) : Ω → ℝ) =ᵐ[μ] g :=
+      fun n => exists_repr_of_mem_wspan hmeas hx _ (wdet_mem hγ t n)
+    choose gr hgrm hgrae using hrepr
+    set W : Ω → ℝ := fun ω => limsup (fun n => gr n ω) atTop with hWdef
+    have hWae : W =ᵐ[μ] ((wdet x t : Lp ℝ 2 μ) : Ω → ℝ) := by
+      have hall : ∀ᵐ ω ∂μ, ∀ n : ℕ, gr n ω = ((wdet x t : Lp ℝ 2 μ) : Ω → ℝ) ω :=
+        ae_all_iff.2 fun n => (hgrae n).symm
+      filter_upwards [hall] with ω hω
+      simp only [hWdef, hω, limsup_const]
+    have hWN : ∀ N : ℕ, Measurable[sigmaLE X (t - (N : ℤ))] W := by
+      intro N
+      have h1 : Measurable[sigmaLE X (t - (N : ℤ))]
+          fun ω => limsup (fun n => gr (n + N) ω) atTop :=
+        Measurable.limsup fun n =>
+          (hgrm (n + N)).mono (sigmaLE_mono X (by push_cast; omega)) le_rfl
+      have h2 : (fun ω => limsup (fun n => gr (n + N) ω) atTop) = W := by
+        funext ω; exact limsup_nat_add (fun n => gr n ω) N
+      rwa [h2] at h1
+    have hWtail : ∀ m : ℕ, Measurable[sigmaLE X (-(m : ℤ))] W := fun m =>
+      (hWN (t + (m : ℤ)).toNat).mono (sigmaLE_mono X (by omega)) le_rfl
+    have hWm : Measurable W := (hWtail 0).mono (sigmaLE_le hmeas _) le_rfl
+    have hWiInf : Measurable[⨅ n : ℕ, sigmaLE X (-(n : ℤ))] W := fun B hB =>
+      MeasurableSpace.measurableSet_iInf.2 fun n => hWtail n hB
+    have hle0 : (⨅ n : ℕ, sigmaLE X (-(n : ℤ))) ≤ (inferInstance : MeasurableSpace Ω) :=
+      le_trans (iInf_le _ 0) (by simpa using sigmaLE_le hmeas (0 : ℤ))
+    have hind : IndepFun W W μ := by
+      rw [indepFun_iff_measure_inter_preimage_eq_mul]
+      intro s s' hs hs'
+      rcases hpnd _ (hWiInf hs) with h0 | h1
+      · rw [h0, zero_mul]
+        exact measure_mono_null Set.inter_subset_left h0
+      · rw [h1, one_mul]
+        exact measure_inter_eq_right_of_measure_eq_one (hle0 _ (hWiInf hs)) h1
+    have hmW : MemLp W 2 μ := (Lp.memLp (wdet x t)).ae_eq hWae.symm
+    have hvar : Var[W; μ] = 0 := by
+      rw [← covariance_self hWm.aemeasurable]
+      exact hind.covariance_eq_zero hmW hmW
+    have hmeanW : ∫ ω, W ω ∂μ = 0 := by
+      rw [integral_congr_ae hWae]
+      exact hmean0 _ (hdg t)
+    have hsq : (μ[W ^ 2] : ℝ) = ∫ ω, W ω ^ 2 ∂μ := rfl
+    have hnorm : ‖wdet x t‖ ^ 2 = 0 := by
+      rw [← integral_sq_lp (wdet x t)]
+      have h1 : ∫ ω, ((wdet x t : Lp ℝ 2 μ) : Ω → ℝ) ω ^ 2 ∂μ = ∫ ω, W ω ^ 2 ∂μ :=
+        integral_congr_ae (by filter_upwards [hWae] with ω hω; rw [hω])
+      have h2 := variance_eq_sub hmW
+      rw [hvar, hmeanW, hsq] at h2
+      rw [h1]
+      linarith [h2]
+    exact norm_eq_zero.1 (pow_eq_zero_iff (n := 2) (by norm_num) |>.1 hnorm)
+  -- **Step 2**: the innovations are white noise `WN(0, σ²)`.
+  have hcovε : ∀ s t : ℤ, s ≠ t →
+      cov[((winn x s : Lp ℝ 2 μ) : Ω → ℝ), ((winn x t : Lp ℝ 2 μ) : Ω → ℝ); μ] = 0 := by
+    intro s t hst
+    have h1 : ∫ ω, ((((winn x s : Lp ℝ 2 μ) : Ω → ℝ)
+        * ((winn x t : Lp ℝ 2 μ) : Ω → ℝ)) ω) ∂μ = 0 := by
+      rw [show (fun ω => ((((winn x s : Lp ℝ 2 μ) : Ω → ℝ)
+            * ((winn x t : Lp ℝ 2 μ) : Ω → ℝ)) ω))
+          = fun ω => ((winn x s : Lp ℝ 2 μ) : Ω → ℝ) ω
+            * ((winn x t : Lp ℝ 2 μ) : Ω → ℝ) ω from rfl,
+        ← inner_lp_eq_integral (winn x s) (winn x t) (Filter.EventuallyEq.refl _ _)
+          (Filter.EventuallyEq.refl _ _), inner_winn_winn hst]
+    rw [covariance_eq_sub (Lp.memLp _) (Lp.memLp _), hmean0 _ (hεg s), hmean0 _ (hεg t), h1]
+    ring
+  have hvarε : ∀ t : ℤ, Var[((winn x t : Lp ℝ 2 μ) : Ω → ℝ); μ] = wsig x := by
+    intro t
+    have h3 : (μ[((winn x t : Lp ℝ 2 μ) : Ω → ℝ) ^ 2] : ℝ)
+        = ∫ ω, ((winn x t : Lp ℝ 2 μ) : Ω → ℝ) ω ^ 2 ∂μ := rfl
+    rw [variance_eq_sub (Lp.memLp _), hmean0 _ (hεg t), h3, integral_sq_lp, norm_winn_sq hγ]
+    ring
+  have hwn : IsWhiteNoise (fun t => ((winn x t : Lp ℝ 2 μ) : Ω → ℝ)) (wsig x) μ :=
+    ⟨hεm, fun t => Lp.memLp _, fun t => hmean0 _ (hεg t), hvarε, hcovε⟩
+  -- **Step 3**: `q`-dependence kills the Wold coefficients beyond lag `q`.
+  have hψhigh : ∀ j : ℕ, q < j → wpsi x j = 0 := by
+    intro j hj
+    have h1 := inner_x_winn hγ 0 j
+    have hzero : (inner ℝ (x 0) (winn x (0 - (j : ℤ))) : ℝ) = 0 := by
+      rw [show winn x (0 - (j : ℤ))
+          = x (0 - (j : ℤ)) - (wspan x (0 - (j : ℤ) - 1)).starProjection (x (0 - (j : ℤ)))
+          from rfl, inner_sub_right]
+      have hA : (inner ℝ (x 0) (x (0 - (j : ℤ))) : ℝ) = 0 := by
+        rw [hγ, acvf]
+        have hq : ((q : ℤ)) < |(0 - (0 - (j : ℤ))) - 0| := by
+          rcases abs_cases ((0 - (0 - (j : ℤ))) - 0) with ⟨h, _⟩ | ⟨h, _⟩ <;> rw [h] <;> omega
+        simpa using hdep (0 - (0 - (j : ℤ))) 0 hq
+      have hB : (inner ℝ (x 0)
+          ((wspan x (0 - (j : ℤ) - 1)).starProjection (x (0 - (j : ℤ)))) : ℝ) = 0 := by
+        have hperp : x 0 ∈ (wspan x (0 - (j : ℤ) - 1))ᗮ := by
+          refine mem_orthogonal_wspan fun s hs => ?_
+          rw [hγ, acvf]
+          have hq : ((q : ℤ)) < |(s - 0) - 0| := by
+            rcases abs_cases ((s - 0) - 0) with ⟨h, _⟩ | ⟨h, _⟩ <;> rw [h] <;> omega
+          simpa using hdep (s - 0) 0 hq
+        rw [← real_inner_comm]
+        exact hperp ((wspan x (0 - (j : ℤ) - 1)).starProjection (x (0 - (j : ℤ))))
+          (Submodule.starProjection_apply_mem _ _)
+      rw [hA, hB, sub_zero]
+    rw [hzero] at h1
+    rcases eq_or_ne (wsig x) 0 with hz | hz
+    · rw [wpsi, hz, div_zero]
+    · exact (mul_eq_zero.1 h1.symm).resolve_right hz
+  have hψ0 : wsig x ≠ 0 → wpsi x 0 = 1 := by
+    intro hz
+    have h1 := inner_x_winn hγ 0 0
+    have hsplit : x 0 = winn x 0 + (wspan x ((0 : ℤ) - 1)).starProjection (x 0) := by
+      rw [winn]; abel
+    have hP : (inner ℝ ((wspan x ((0 : ℤ) - 1)).starProjection (x 0)) (winn x 0) : ℝ) = 0 := by
+      rw [← real_inner_comm]
+      exact inner_winn_of_mem (Submodule.starProjection_apply_mem _ _)
+    have h2 : (inner ℝ (x 0) (winn x 0) : ℝ) = wsig x := by
+      nth_rewrite 1 [hsplit]
+      rw [inner_add_left, hP, add_zero, real_inner_self_eq_norm_sq, norm_winn_sq hγ]
+    simp only [Nat.cast_zero, sub_zero] at h1
+    rw [h2] at h1
+    have h4 : wpsi x 0 * wsig x = 1 * wsig x := by rw [one_mul]; exact h1.symm
+    exact mul_right_cancel₀ hz h4
+  -- **Step 4**: the Wold series terminates, so `X` is an MA(q).
+  have hpart : ∀ (t : ℤ) (N : ℕ), q + 1 ≤ N → wpartial x t N = wpartial x t (q + 1) := by
+    intro t N hN
+    have hsub : Finset.range (q + 1) ⊆ Finset.range N := fun j hj =>
+      Finset.mem_range.2 (lt_of_lt_of_le (Finset.mem_range.1 hj) hN)
+    refine (Finset.sum_subset hsub fun j _ hj => ?_).symm
+    have hj' : q < j := by
+      by_contra hcon
+      exact hj (Finset.mem_range.2 (by omega))
+    rw [hψhigh j hj', zero_smul]
+  have hsum_eq : ∀ t : ℤ, wsum x t = wpartial x t (q + 1) := by
+    intro t
+    refine tendsto_nhds_unique (tendsto_wpartial hγ t) (Tendsto.congr' ?_ tendsto_const_nhds)
+    filter_upwards [eventually_ge_atTop (q + 1)] with N hN
+    exact (hpart t N hN).symm
+  have hxeq : ∀ t : ℤ, x t = wpartial x t (q + 1) := by
+    intro t
+    have h := hdet t
+    rw [wdet, hsum_eq t, sub_eq_zero] at h
+    exact h
+  have hrec : ∀ t : ℤ, X t =ᵐ[μ] fun ω => ∑ j ∈ Finset.range (q + 1), wpsi x j
+      * ((winn x (t - (j : ℤ)) : Lp ℝ 2 μ) : Ω → ℝ) ω := by
+    intro t
+    have h1 := coeFn_lp_lincomb (Finset.range (q + 1)) (wpsi x) (fun j => winn x (t - (j : ℤ)))
+      (fun j => ((winn x (t - (j : ℤ)) : Lp ℝ 2 μ) : Ω → ℝ))
+      fun _ => Filter.EventuallyEq.refl _ _
+    have h2 : ((x t : Lp ℝ 2 μ) : Ω → ℝ) =ᵐ[μ] fun ω => ∑ j ∈ Finset.range (q + 1), wpsi x j
+        * ((winn x (t - (j : ℤ)) : Lp ℝ 2 μ) : Ω → ℝ) ω := by
+      rw [hxeq t]; exact h1
+    exact (hx t).symm.trans h2
+  refine ⟨fun i : Fin q => wpsi x ((i : ℕ) + 1), wsig x,
+    fun t => ((winn x t : Lp ℝ 2 μ) : Ω → ℝ), hmeas, hwn, ?_⟩
+  intro t
+  rcases eq_or_ne (wsig x) 0 with hz | hz
+  · have hεz : ∀ᵐ ω ∂μ, ∀ s : ℤ, ((winn x s : Lp ℝ 2 μ) : Ω → ℝ) ω = 0 := by
+      refine ae_all_iff.2 fun s => ?_
+      have : ((winn x s : Lp ℝ 2 μ) : Ω → ℝ) =ᵐ[μ] 0 := by
+        rw [winn_eq_zero hγ hz s]; exact Lp.coeFn_zero ℝ 2 μ
+      filter_upwards [this] with ω hω
+      simpa using hω
+    have hX0 : X t =ᵐ[μ] fun _ => (0 : ℝ) := by
+      refine (hrec t).trans ?_
+      filter_upwards [hεz] with ω hω
+      exact Finset.sum_eq_zero fun j _ => by rw [hω (t - (j : ℤ)), mul_zero]
+    filter_upwards [hX0, hεz] with ω h1 h2
+    simp [h1, h2]
+  · filter_upwards [hrec t] with ω hω
+    have e1 : ∑ j ∈ Finset.range (q + 1), wpsi x j
+        * ((winn x (t - (j : ℤ)) : Lp ℝ 2 μ) : Ω → ℝ) ω
+        = (∑ i ∈ Finset.range q, wpsi x (i + 1)
+            * ((winn x (t - 1 - ((i : ℕ) : ℤ)) : Lp ℝ 2 μ) : Ω → ℝ) ω)
+          + wpsi x 0 * ((winn x t : Lp ℝ 2 μ) : Ω → ℝ) ω := by
+      have hidx : ∀ i : ℕ, t - ((i + 1 : ℕ) : ℤ) = t - 1 - ((i : ℕ) : ℤ) := by
+        intro i; push_cast; ring
+      have hidx0 : t - ((0 : ℕ) : ℤ) = t := by simp
+      rw [Finset.sum_range_succ']
+      simp only [hidx, hidx0]
+    rw [hω, e1, hψ0 hz, Fin.sum_univ_eq_sum_range (fun i => wpsi x (i + 1)
+      * ((winn x (t - 1 - ((i : ℕ) : ℤ)) : Lp ℝ 2 μ) : Ω → ℝ) ω) q]
+    simp only [Finset.univ_eq_empty, Finset.sum_empty, one_mul, zero_add]
+    ring
 
 end StatLean.TimeSeries
