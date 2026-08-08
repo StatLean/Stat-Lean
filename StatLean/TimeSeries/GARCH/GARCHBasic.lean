@@ -248,14 +248,18 @@ private lemma self_le_exp_log {x : ℝ} (hx : 0 ≤ x) : x ≤ Real.exp (Real.lo
   · rw [Real.exp_log h]
   · rw [← h]; positivity
 
-/-- **Pathwise convergence criterion.** If the running log-averages of the multipliers
-`M_i = b₁ p(−1−i)² + a₁` converge to a negative limit, Nelson's random-product series
-converges: the partial products are dominated by a geometric sequence. (The multipliers
-may vanish, in which case `Real.log`'s junk value `0` only makes the bound weaker.) -/
-private lemma nelW_ne_top_of_tendsto {b1 a1 c : ℝ} {p : ℤ → ℝ}
-    (hb1 : 0 ≤ b1) (ha1 : 0 ≤ a1) (hc : c < 0)
+/-- **Pathwise convergence criterion.** Let `g` dominate the multipliers in the sense
+`b₁x² + a₁ ≤ exp (g x)`. If the running `g`-averages along the path converge to a negative
+limit, Nelson's random-product series converges: the partial products are dominated by a
+geometric sequence. Taking `g x = log (b₁x² + a₁)` gives Nelson's own criterion (the
+junk value `Real.log 0 = 0` only weakens the domination, so vanishing multipliers are
+harmless); a `g` that is more negative on the zero set covers the degenerate case where
+`E log(b₁ε² + a₁)` is not negative. -/
+private lemma nelW_ne_top_of_tendsto {b1 a1 c : ℝ} {p : ℤ → ℝ} {g : ℝ → ℝ}
+    (hb1 : 0 ≤ b1) (ha1 : 0 ≤ a1) (hdom : ∀ x : ℝ, b1 * x ^ 2 + a1 ≤ Real.exp (g x))
+    (hc : c < 0)
     (h : Filter.Tendsto
-      (fun k : ℕ => (∑ i ∈ Finset.range k, Real.log (b1 * p (-1 - (i : ℤ)) ^ 2 + a1)) / k)
+      (fun k : ℕ => (∑ i ∈ Finset.range k, g (p (-1 - (i : ℤ)))) / k)
       Filter.atTop (nhds c)) :
     nelW b1 a1 p ≠ ⊤ := by
   have hmnn : ∀ i : ℕ, 0 ≤ b1 * p (-1 - (i : ℤ)) ^ 2 + a1 :=
@@ -267,7 +271,7 @@ private lemma nelW_ne_top_of_tendsto {b1 a1 c : ℝ} {p : ℤ → ℝ}
   -- the partial products are bounded by the exponential of the log-partial-sums
   have hbound : ∀ k : ℕ, nelProd b1 a1 k p
       ≤ ENNReal.ofReal
-          (Real.exp (∑ i ∈ Finset.range k, Real.log (b1 * p (-1 - (i : ℤ)) ^ 2 + a1))) := by
+          (Real.exp (∑ i ∈ Finset.range k, g (p (-1 - (i : ℤ))))) := by
     intro k
     have h1 : nelProd b1 a1 k p
         = ENNReal.ofReal (∏ i ∈ Finset.range k, (b1 * p (-1 - (i : ℤ)) ^ 2 + a1)) := by
@@ -275,7 +279,7 @@ private lemma nelW_ne_top_of_tendsto {b1 a1 c : ℝ} {p : ℤ → ℝ}
     rw [h1]
     refine ENNReal.ofReal_le_ofReal ?_
     rw [Real.exp_sum]
-    exact Finset.prod_le_prod (fun i _ => hmnn i) fun i _ => self_le_exp_log (hmnn i)
+    exact Finset.prod_le_prod (fun i _ => hmnn i) fun i _ => hdom (p (-1 - (i : ℤ)))
   -- past a threshold, the log-partial-sums drop below `k · c/2`
   obtain ⟨K, hK⟩ := Filter.eventually_atTop.1
     (Filter.Tendsto.eventually_lt_const (show c < c / 2 by linarith) h)
@@ -285,7 +289,7 @@ private lemma nelW_ne_top_of_tendsto {b1 a1 c : ℝ} {p : ℤ → ℝ}
     have hkpos : (0 : ℝ) < (k : ℝ) := by exact_mod_cast hk1
     have hlt := hK k (le_trans (le_max_left K 1) hk)
     rw [div_lt_iff₀ hkpos] at hlt
-    have hS : (∑ i ∈ Finset.range k, Real.log (b1 * p (-1 - (i : ℤ)) ^ 2 + a1))
+    have hS : (∑ i ∈ Finset.range k, g (p (-1 - (i : ℤ))))
         ≤ (k : ℝ) * (c / 2) := by
       have := mul_comm (c / 2) ((k : ℕ) : ℝ)
       linarith
@@ -319,42 +323,41 @@ private lemma nelW_ne_top_of_tendsto {b1 a1 c : ℝ} {p : ℤ → ℝ}
   exact ENNReal.add_ne_top.2 ⟨hfin1, ne_top_of_le_ne_top hfin2 htail⟩
 
 /-- **The engine of Nelson's theorem**: by the i.i.d. strong law of large numbers the
-log-multipliers have negative running averages, so the random-product series converges
-almost surely — with *no* moment condition on the innovations. -/
+`g`-averages of the innovations converge to `E g(ε₀) < 0`, so the random-product series
+converges almost surely — with *no* moment condition on the innovations. -/
 private lemma nelW_ae_ne_top [IsProbabilityMeasure μ] {b1 a1 : ℝ} {ε : ℤ → Ω → ℝ}
-    (hb1 : 0 ≤ b1) (ha1 : 0 ≤ a1) (hε : IsIIDNoise ε 1 μ)
-    (hlogint : Integrable (fun ω => Real.log (b1 * ε 0 ω ^ 2 + a1)) μ)
-    (hneg : (∫ ω, Real.log (b1 * ε 0 ω ^ 2 + a1) ∂μ) < 0) (t : ℤ) :
+    {g : ℝ → ℝ} (hb1 : 0 ≤ b1) (ha1 : 0 ≤ a1) (hgm : Measurable g)
+    (hdom : ∀ x : ℝ, b1 * x ^ 2 + a1 ≤ Real.exp (g x)) (hε : IsIIDNoise ε 1 μ)
+    (hgint : Integrable (fun ω => g (ε 0 ω)) μ)
+    (hneg : (∫ ω, g (ε 0 ω) ∂μ) < 0) (t : ℤ) :
     ∀ᵐ ω ∂μ, nelW b1 a1 (nelPath ε t ω) ≠ ⊤ := by
-  have hg : Measurable fun x : ℝ => Real.log (b1 * x ^ 2 + a1) := by fun_prop
   have hid : ∀ i : ℕ,
-      IdentDistrib (fun ω => Real.log (b1 * ε (t - 1 - (i : ℕ)) ω ^ 2 + a1))
-        (fun ω => Real.log (b1 * ε (t - 1 - ((0 : ℕ) : ℤ)) ω ^ 2 + a1)) μ μ :=
-    fun i => (hε.identDistrib (t - 1 - (i : ℕ)) (t - 1 - ((0 : ℕ) : ℤ))).comp hg
+      IdentDistrib (fun ω => g (ε (t - 1 - (i : ℕ)) ω))
+        (fun ω => g (ε (t - 1 - ((0 : ℕ) : ℤ)) ω)) μ μ :=
+    fun i => (hε.identDistrib (t - 1 - (i : ℕ)) (t - 1 - ((0 : ℕ) : ℤ))).comp hgm
   have hindep : ∀ i j : ℕ, i ≠ j →
-      IndepFun (fun ω => Real.log (b1 * ε (t - 1 - (i : ℕ)) ω ^ 2 + a1))
-        (fun ω => Real.log (b1 * ε (t - 1 - (j : ℕ)) ω ^ 2 + a1)) μ := by
+      IndepFun (fun ω => g (ε (t - 1 - (i : ℕ)) ω))
+        (fun ω => g (ε (t - 1 - (j : ℕ)) ω)) μ := by
     intro i j hij
     have hne : t - 1 - (i : ℕ) ≠ t - 1 - (j : ℕ) := by
       intro hEq
       rw [sub_right_inj, Nat.cast_inj] at hEq
       exact hij hEq
-    exact (hε.iIndep.indepFun hne).comp hg hg
-  have hid0 : IdentDistrib (fun ω => Real.log (b1 * ε 0 ω ^ 2 + a1))
-      (fun ω => Real.log (b1 * ε (t - 1 - ((0 : ℕ) : ℤ)) ω ^ 2 + a1)) μ μ :=
-    (hε.identDistrib 0 (t - 1 - ((0 : ℕ) : ℤ))).comp hg
-  have hint0 : Integrable
-      (fun ω => Real.log (b1 * ε (t - 1 - ((0 : ℕ) : ℤ)) ω ^ 2 + a1)) μ :=
-    hid0.integrable_snd hlogint
-  have hmean0 : (∫ ω, Real.log (b1 * ε (t - 1 - ((0 : ℕ) : ℤ)) ω ^ 2 + a1) ∂μ) < 0 := by
+    exact (hε.iIndep.indepFun hne).comp hgm hgm
+  have hid0 : IdentDistrib (fun ω => g (ε 0 ω))
+      (fun ω => g (ε (t - 1 - ((0 : ℕ) : ℤ)) ω)) μ μ :=
+    (hε.identDistrib 0 (t - 1 - ((0 : ℕ) : ℤ))).comp hgm
+  have hint0 : Integrable (fun ω => g (ε (t - 1 - ((0 : ℕ) : ℤ)) ω)) μ :=
+    hid0.integrable_snd hgint
+  have hmean0 : (∫ ω, g (ε (t - 1 - ((0 : ℕ) : ℤ)) ω) ∂μ) < 0 := by
     rw [← hid0.integral_eq]; exact hneg
   have hslln := ProbabilityTheory.strong_law_ae_real
-    (fun (i : ℕ) ω => Real.log (b1 * ε (t - 1 - (i : ℕ)) ω ^ 2 + a1)) hint0
+    (fun (i : ℕ) ω => g (ε (t - 1 - (i : ℕ)) ω)) hint0
     (fun i j hij => hindep i j hij) hid
   filter_upwards [hslln] with ω hω
   have hp : ∀ i : ℕ, nelPath ε t ω (-1 - (i : ℤ)) = ε (t - 1 - (i : ℕ)) ω := by
     intro i; simp only [nelPath]; congr 1; ring
-  refine nelW_ne_top_of_tendsto hb1 ha1 hmean0 ?_
+  refine nelW_ne_top_of_tendsto hb1 ha1 hdom hmean0 ?_
   simpa only [hp] using hω
 
 private lemma nelV_nonneg (c0 b1 a1 : ℝ) (p : ℤ → ℝ) : 0 ≤ nelV c0 b1 a1 p :=
@@ -558,6 +561,32 @@ private lemma measurable_nelU_sigmaLT {X : ℤ → Ω → ℝ} (c0 b1 a1 : ℝ) 
     Measurable[sigmaLT X t] fun ω => nelU c0 b1 a1 (nelPath X t ω) :=
   Measurable.ennreal_toReal (measurable_const.add (measurable_nelT_sigmaLT b1 a1 t))
 
+/-- The GARCH(1,1) volatility recursion `σ_t² = c₀ + b₁X_{t−1}² + a₁σ_{t−1}²` for the
+constructed pair, pointwise wherever the random-product series converges. -/
+private lemma nelV_rec_proc {c0 b1 a1 : ℝ} (hc0 : 0 ≤ c0) (hb1 : 0 ≤ b1) (ha1 : 0 ≤ a1)
+    {ε X : ℤ → Ω → ℝ} {ω : Ω}
+    (hX : ∀ s : ℤ, X s ω = nelXf c0 b1 a1 (nelPath ε s ω))
+    (hfin : ∀ s : ℤ, nelW b1 a1 (nelPath ε s ω) ≠ ⊤) (s : ℤ) :
+    nelV c0 b1 a1 (nelPath ε s ω)
+      = c0 + b1 * X (s - 1) ω ^ 2 + a1 * nelV c0 b1 a1 (nelPath ε (s - 1) ω) := by
+  have hX2 : X (s - 1) ω ^ 2
+      = nelV c0 b1 a1 (nelPath ε (s - 1) ω) * ε (s - 1) ω ^ 2 := by
+    rw [hX (s - 1)]
+    simp only [nelXf]
+    have h0 : nelPath ε (s - 1) ω 0 = ε (s - 1) ω := by
+      simp only [nelPath]; congr 1; ring
+    rw [h0, mul_pow, Real.sq_sqrt (nelV_nonneg c0 b1 a1 _)]
+  have hp1 : (fun u => nelPath ε s ω (u - 1)) = nelPath ε (s - 1) ω := nelPath_sub ε s 1 ω
+  have h2 : nelW b1 a1 (fun u => nelPath ε s ω (u - 1)) ≠ ⊤ := by
+    rw [hp1]; exact hfin (s - 1)
+  have hnv := nelV_rec (c0 := c0) hc0 hb1 ha1 h2
+  rw [hp1] at hnv
+  have hm1 : nelPath ε s ω (-1) = ε (s - 1) ω := by
+    simp only [nelPath]; congr 1; ring
+  rw [hm1] at hnv
+  rw [hnv, hX2]
+  ring
+
 /-- **The ARCH(∞) form recovers Nelson's series** (FY eq. (4.29)). The proof is entirely
 pathwise: iterating the volatility recursion `N` times leaves the remainder
 `a₁^N σ²_{t−N}`, which is dominated by `c₀ Σ_{k ≥ N} ∏_{i<k} M_{t−1−i}` — the depth-`N`
@@ -571,26 +600,11 @@ private lemma nelU_eq_nelV {c0 b1 a1 : ℝ} (hc0 : 0 ≤ c0) (hb1 : 0 ≤ b1) (h
   obtain ⟨V, hVdef⟩ : ∃ V : ℤ → ℝ, ∀ s, V s = nelV c0 b1 a1 (nelPath ε s ω) :=
     ⟨_, fun _ => rfl⟩
   have hVnn : ∀ s, 0 ≤ V s := fun s => by rw [hVdef]; exact nelV_nonneg _ _ _ _
-  -- the squared process in terms of the volatility
-  have hX2 : ∀ s : ℤ, X s ω ^ 2 = V s * ε s ω ^ 2 := by
-    intro s
-    rw [hX s, hVdef s]
-    simp only [nelXf]
-    have h0 : nelPath ε s ω 0 = ε s ω := by simp only [nelPath]; congr 1; ring
-    rw [h0, mul_pow, Real.sq_sqrt (nelV_nonneg c0 b1 a1 _)]
   -- the one-step recursion
   have hrec : ∀ s : ℤ, V s = c0 + b1 * X (s - 1) ω ^ 2 + a1 * V (s - 1) := by
     intro s
-    have hp1 : (fun u => nelPath ε s ω (u - 1)) = nelPath ε (s - 1) ω := nelPath_sub ε s 1 ω
-    have h2 : nelW b1 a1 (fun u => nelPath ε s ω (u - 1)) ≠ ⊤ := by
-      rw [hp1]; exact hfin (s - 1)
-    have hnv := nelV_rec (c0 := c0) hc0 hb1 ha1 h2
-    rw [hp1] at hnv
-    have hm1 : nelPath ε s ω (-1) = ε (s - 1) ω := by
-      simp only [nelPath]; congr 1; ring
-    rw [hm1] at hnv
-    rw [hVdef s, hVdef (s - 1), hnv, hX2 (s - 1), hVdef (s - 1)]
-    ring
+    rw [hVdef s, hVdef (s - 1)]
+    exact nelV_rec_proc hc0 hb1 ha1 hX hfin s
   -- iterating the recursion `N` times
   have hiter : ∀ (N : ℕ) (s : ℤ), V s = c0 * (∑ k ∈ Finset.range N, a1 ^ k)
       + (∑ k ∈ Finset.range N, b1 * a1 ^ k * X (s - 1 - (k : ℕ)) ω ^ 2)
@@ -700,6 +714,66 @@ private lemma nelU_eq_nelV {c0 b1 a1 : ℝ} (hc0 : 0 ≤ c0) (hb1 : 0 ≤ b1) (h
   rw [← ENNReal.ofReal_add hc0d hL, ENNReal.toReal_ofReal (by linarith [hVnn t])]
   ring
 
+/-- **The construction.** Given only the almost-sure convergence of the random-product
+series, the pair `X_t = σ_t ε_t` with `σ_t² = c₀/(1−a₁) + b₁ Σ_k a₁^k X_{t−1−k}²` solves
+the GARCH(1,1) equations and is strictly stationary. -/
+private lemma exists_garch_of_nelW_ae [IsProbabilityMeasure μ] {c0 b1 a1 : ℝ}
+    {ε : ℤ → Ω → ℝ} (hc0 : 0 ≤ c0) (hb1 : 0 ≤ b1) (ha1 : 0 ≤ a1) (ha1' : a1 < 1)
+    (hε : IsIIDNoise ε 1 μ)
+    (hconv : ∀ t : ℤ, ∀ᵐ ω ∂μ, nelW b1 a1 (nelPath ε t ω) ≠ ⊤) :
+    ∃ X σvol : ℤ → Ω → ℝ,
+      IsGARCH c0 (fun _ : Fin 1 => b1) (fun _ : Fin 1 => a1) X σvol ε μ ∧
+        IsStrictlyStationary X μ := by
+  obtain ⟨X, hX⟩ : ∃ X : ℤ → Ω → ℝ, ∀ t, X t = fun ω => nelXf c0 b1 a1 (nelPath ε t ω) :=
+    ⟨_, fun _ => rfl⟩
+  obtain ⟨σv, hσ⟩ : ∃ σv : ℤ → Ω → ℝ,
+      ∀ t, σv t = fun ω => Real.sqrt (nelU c0 b1 a1 (nelPath X t ω)) := ⟨_, fun _ => rfl⟩
+  have hXfun : X = fun t ω => nelXf c0 b1 a1 (nelPath ε t ω) := funext hX
+  have hXpt : ∀ (s : ℤ) (ω : Ω), X s ω = nelXf c0 b1 a1 (nelPath ε s ω) :=
+    fun s ω => congrFun (hX s) ω
+  have hgood : ∀ᵐ ω ∂μ, ∀ s : ℤ, nelW b1 a1 (nelPath ε s ω) ≠ ⊤ := ae_all_iff.2 hconv
+  have hmX : ∀ t, Measurable (X t) := fun t => by
+    rw [hX t]; exact (measurable_nelXf c0 b1 a1).comp (measurable_nelPath hε.measurable t)
+  have hmσ : ∀ t, Measurable (σv t) := fun t => by
+    rw [hσ t]
+    exact ((measurable_nelU c0 b1 a1).comp (measurable_nelPath hmX t)).sqrt
+  have hUV : ∀ᵐ ω ∂μ, ∀ t : ℤ,
+      nelU c0 b1 a1 (nelPath X t ω) = nelV c0 b1 a1 (nelPath ε t ω) := by
+    filter_upwards [hgood] with ω hω t
+    exact nelU_eq_nelV hc0 hb1 ha1 ha1' (fun s => hXpt s ω) hω t
+  have hvolnn : ∀ t, ∀ᵐ ω ∂μ, 0 ≤ σv t ω := fun t =>
+    Filter.Eventually.of_forall fun ω => by simp only [hσ]; exact Real.sqrt_nonneg _
+  have hadapt : ∀ t, Measurable[sigmaLT X t] (σv t) := fun t => by
+    rw [hσ t]; exact (measurable_nelU_sigmaLT c0 b1 a1 t).sqrt
+  have hpast : ∀ t : ℤ, Indep (MeasurableSpace.comap (ε t) inferInstance) (sigmaLT X t) μ := by
+    intro t
+    refine indep_of_indep_of_le_right (indep_last_sigmaLT hε.measurable hε.iIndep t) ?_
+    refine iSup₂_le fun s hs => ?_
+    have hms : Measurable[sigmaLT ε t] (X s) := by
+      rw [hX s]; exact measurable_nelXf_sigmaLT c0 b1 a1 hs
+    exact hms.comap_le
+  have hrecX : ∀ t : ℤ, X t =ᵐ[μ] fun ω => σv t ω * ε t ω := by
+    intro t
+    filter_upwards [hUV] with ω hω
+    simp only [hσ, hX, nelXf]
+    have h0 : nelPath ε t ω 0 = ε t ω := by simp only [nelPath]; congr 1; ring
+    rw [h0, hω t]
+  have hrecVol : ∀ t : ℤ, (fun ω => σv t ω ^ 2) =ᵐ[μ] fun ω =>
+      c0 + (∑ i : Fin 1, b1 * X (t - 1 - (i : ℕ)) ω ^ 2)
+        + ∑ j : Fin 1, a1 * σv (t - 1 - (j : ℕ)) ω ^ 2 := by
+    intro t
+    filter_upwards [hgood, hUV] with ω hg hω
+    have hsq : ∀ s : ℤ, σv s ω ^ 2 = nelV c0 b1 a1 (nelPath ε s ω) := by
+      intro s
+      simp only [hσ]
+      rw [Real.sq_sqrt (nelU_nonneg _ _ _ _), hω s]
+    simp only [Fin.sum_univ_one, Fin.val_zero, Nat.cast_zero, sub_zero, hsq]
+    exact nelV_rec_proc hc0 hb1 ha1 (fun s => hXpt s ω) hg t
+  refine ⟨X, σv, ⟨hc0, fun _ => hb1, fun _ => ha1, hmX, hmσ, hvolnn, hadapt, hε, hpast,
+    hrecX, hrecVol⟩, ?_⟩
+  rw [hXfun]
+  exact isStrictlyStationary_nelX hε.measurable hε.iIndep hε.identDistrib
+
 /-- **Nelson (1990), sufficiency — COMMISSIONED PROOF TARGET** (user, 2026-08-04):
 if `E log(b₁ ε₀² + a₁) < 0` then the GARCH(1,1) equations admit a strictly stationary
 solution, *with no moment condition on `ε`*. The volatility is the a.s.-convergent
@@ -718,7 +792,23 @@ theorem exists_strictlyStationary_garch_one_one_nelson [IsProbabilityMeasure μ]
     ∃ X σvol : ℤ → Ω → ℝ,
       IsGARCH c0 (fun _ : Fin 1 => b1) (fun _ : Fin 1 => a1) X σvol ε μ ∧
         IsStrictlyStationary X μ := by
-  sorry
+  have hMnn : ∀ x : ℝ, 0 ≤ b1 * x ^ 2 + a1 := fun x =>
+    add_nonneg (mul_nonneg hb1.le (sq_nonneg x)) ha1
+  -- Nelson's condition already forces `a₁ < 1`: otherwise every multiplier is `≥ 1`.
+  have ha1' : a1 < 1 := by
+    by_contra hcon
+    push_neg at hcon
+    have hnn : ∀ ω, 0 ≤ Real.log (b1 * ε 0 ω ^ 2 + a1) := by
+      intro ω
+      refine Real.log_nonneg ?_
+      have := mul_nonneg hb1.le (sq_nonneg (ε 0 ω))
+      linarith
+    have := integral_nonneg (μ := μ)
+      (f := fun ω => Real.log (b1 * ε 0 ω ^ 2 + a1)) hnn
+    linarith
+  refine exists_garch_of_nelW_ae hc0.le hb1.le ha1 ha1' hε fun t => ?_
+  exact nelW_ae_ne_top (g := fun x => Real.log (b1 * x ^ 2 + a1)) hb1.le ha1 (by fun_prop)
+    (fun x => self_le_exp_log (hMnn x)) hε hlogint hnelson t
 
 /-- **IGARCH(1,1)** (the `(p,q) = (1,1)` case of FY eq. (4.33), the only case in scope):
 when `b₁ + a₁ = 1` and `ε²` is nondegenerate, strict Jensen gives
