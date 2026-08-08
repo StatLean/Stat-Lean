@@ -12,13 +12,35 @@ The analytic bricks of the Brown/Hall–Heyde martingale CLT
 * the **conditional Taylor estimate**: a.e.,
   `‖E[e^{iuX} | 𝓖] − (1 − u²/2 · E[X² | 𝓖])‖` is controlled by the conditional
   Lindeberg mass at any level `ε` plus `|u|³ ε · E[X² | 𝓖]`;
-* the **tower telescope**: for an MDS row, the gap between `E[e^{iuS_n}]` and
-  `E[∏_i (1 − u²/2 · E[X_i²|𝓕_i])]` is at most the summed conditional Taylor errors
-  (peel factors from the right by the tower property; the martingale-difference
-  property kills the linear terms);
+* the **nesting-free tower telescope**
+  (`norm_integral_exp_rowSum_mul_invProd_sub_one_le`): reweighting `e^{iuS_n}` by the
+  *inverse* Taylor product `∏_i ψ_i⁻¹`, `ψ_i = 1 − u²/2 · E[X_i²|𝓕_i]`, makes
+  `E[e^{iuS_n}∏_i ψ_i⁻¹]` a genuine martingale telescope whose distance to `1` is at
+  most the summed conditional Taylor errors;
 * the **product comparison**: on the event where the conditional variance process is
   close to `σ²` and the summands are uniformly small,
-  `∏_i (1 − u²/2 · E[X_i²|𝓕_i])` is close to `e^{−u²σ²/2}`.
+  `∏_i (1 − u²/2 · E[X_i²|𝓕_i])` is close to `e^{−u²σ²/2}` — in `L¹`
+  (`tendsto_integral_abs_prod_one_sub_condVar_sub`), hence in mean;
+* the **assembled comparison** (`norm_integral_exp_rowSum_sub_gaussian_le`), which
+  combines the two into the bound on `‖E e^{iuS_n} − e^{−u²σ²/2}‖` that `mds_clt`
+  consumes.
+
+**Retired statement.**  An earlier plan routed the argument through an *unweighted*
+telescope `‖E e^{iuS_n} − E ∏_i ψ_i‖ ≤ Σ_i (conditional Taylor errors)`
+(`norm_integral_exp_rowSum_sub_prod_le`, deleted 2026-08-08).  That statement is
+**false** as frozen.  Writing `φ_i = e^{iuX_i}` (modulus `1`, `𝓕_{i+1}`-measurable),
+any telescoping of `∏φ − ∏ψ` has summands `Φ_j(φ_j − ψ_j)Λ_j` with `Φ_j = ∏_{i<j}φ_i`,
+`Λ_j = ∏_{i>j}ψ_i`, and `φ_j − ψ_j = T_j + iuX_j + (u²/2)(v_j − X_j²)` with
+`‖T_j‖ ≤ min(|uX_j|³/6, u²X_j²)`.  The frozen right-hand side is exactly `Σ_j E‖T_j‖`;
+the other two summands are killed only if `Λ_j` is `𝓕_{n,j}`-measurable, i.e. only if
+the *future* conditional variances are already known at time `j`.  They are
+`𝓕_{n,i}`-measurable, never `𝓕_{n,j}`-measurable, so peeling from the right, from the
+left, and the nested and bounded-multiplier variants all break at the same place; with
+`v_i` a slowly-varying function of the past sum, `Σ_j E[Φ_j(iuX_j)Λ_j]` adds coherently
+and grows like `√(k n)` relative to the frozen bound.  This is a missing hypothesis
+(Brown's `V_n →p σ²` constant, or Hall–Heyde's nesting `𝓕_{n,i} ⊆ 𝓕_{n+1,i}`), not a
+proof-search failure.  The nesting-free telescope above avoids it entirely: keeping the
+ψ-factors in the *past* product makes the multiplier `𝓕_{n,i}`-measurable at every step.
 
 **Reference.** Hall & Heyde (1980), §3.2 (proof of Thm 3.2), after Brown (1971) §3.
 (`Hall–Heyde §3.2` in tags.)
@@ -969,55 +991,16 @@ theorem norm_integral_exp_rowSum_mul_invProd_sub_one_le [IsProbabilityMeasure μ
   simp only [Fin.eta]
   ring
 
-/-- **Tower telescope** (the heart of Brown's proof): for an MDS row, peeling the
-factors of `e^{iuS}` from the right against the filtration replaces each by its
-conditional Taylor polynomial, at total cost the summed conditional errors. -/
-theorem norm_integral_exp_rowSum_sub_prod_le [IsProbabilityMeasure μ]
-    {k : ℕ → ℕ} {X : (n : ℕ) → Fin (k n) → Ω → ℝ}
-    {F : (n : ℕ) → Fin (k n + 1) → MeasurableSpace Ω}
-    (h : IsMDSArray k X F μ) (n : ℕ) (u : ℝ) {ε : ℝ} (hε : 0 < ε) :
-    ‖(∫ ω, Complex.exp (Complex.I * (u * mdsRowSum k X n ω : ℝ)) ∂μ)
-        - ∫ ω, ∏ i, (1 - (u ^ 2 / 2 : ℂ) * (μ[fun ω' => X n i ω' ^ 2
-            | F n i.castSucc] ω : ℝ)) ∂μ‖
-      ≤ ∑ i, (u ^ 2 * ∫ ω, X n i ω ^ 2 * Set.indicator {x : Ω | ε ≤ |X n i x|}
-            (fun _ => (1 : ℝ)) ω ∂μ)
-        + ∑ i, (|u| ^ 3 * ε * ∫ ω, X n i ω ^ 2 ∂μ) := by
-  -- DEBT (wave 2, reported loudly): NOT provable as frozen — the frozen right-hand
-  -- side accounts for only one of the three terms the telescope produces.
-  --
-  -- Write `φ_i ω = e^{iuX_{n,i}ω}` (modulus 1, `𝓕_{n,i+1}`-measurable) and
-  -- `ψ_i = 1 - u²/2 · E[X_{n,i}²|𝓕_{n,i}]` (`𝓕_{n,i}`-measurable).  Any telescoping
-  -- of `∏φ - ∏ψ` has summands `Φ_j (φ_j - ψ_j) Λ_j` with `Φ_j = ∏_{i<j}φ_i` and
-  -- `Λ_j = ∏_{i>j}ψ_i`, and
-  --   `φ_j - ψ_j = T_j + iuX_j + (u²/2)(v_j - X_j²)`,  `‖T_j‖ ≤ min(|uX_j|³/6, u²X_j²)`.
-  -- The frozen RHS is exactly `Σ_j E‖T_j‖` bounded through `norm_condexp_exp_sub_one_sub_le`.
-  -- The other two summands are killed only if `Λ_j` is `𝓕_{n,j}`-measurable, i.e. only
-  -- if the FUTURE conditional variances `E[X_{n,i}²|𝓕_{n,i}]`, `i > j`, are already
-  -- known at time `j` (e.g. deterministic).  They are `𝓕_{n,i}`-measurable, never
-  -- `𝓕_{n,j}`-measurable, so:
-  --   * peeling from the right (`Q_j = E[(∏_{i<j}φ_i)(∏_{i≥j}ψ_i)]`) works only at the
-  --     last index and breaks at the second step;
-  --   * peeling from the left, and the nested forms `E[∏_{i≥j}φ_i|𝓕_j]` vs
-  --     `E[∏_{i≥j}ψ_i|𝓕_j]`, break at the same place;
-  --   * the "bounded `𝓕_j`-measurable multiplier" induction breaks there too.
-  -- This is not a proof-search failure but a missing hypothesis: the interaction terms
-  -- are precisely what Brown's `V_n →p σ²` (constant) or Hall–Heyde's nesting condition
-  -- `𝓕_{n,i} ⊆ 𝓕_{n+1,i}` controls.  Without one of them the conclusion is false:
-  -- taking `ε = ε_n → 0` along a conditional-Lindeberg array would force
-  -- `E[e^{iuS_n}] - E[e^{-u²V_n/2}] → 0` for every MDS array, contradicting the standard
-  -- examples (Hall–Heyde §3.3) where `V_n →p η²` random, nesting fails, and `S_n` does
-  -- not converge to the variance mixture.  A quantitative version of the same obstruction:
-  -- with `v_i` a slowly-varying function of the past sum, `Σ_j E[Φ_j(iuX_j)Λ_j]` adds
-  -- coherently and grows like `√(k n)` relative to the frozen RHS.
-  --
-  -- REPAIR: add `V_n →p σ²` (or nesting) to the statement, or state the bound for the
-  -- special case of predictable-at-time-0 conditional variances.
-  sorry
-
-/-- **Product comparison**: if the conditional variance process converges to `σ²` in
+/-- **`L¹` product comparison**: if the conditional variance process converges to `σ²` in
 probability and the individual conditional variances are uniformly asymptotically
-negligible, the Taylor product converges to the Gaussian factor. -/
-theorem tendsto_integral_prod_one_sub_condVar [IsProbabilityMeasure μ]
+negligible, the Taylor product converges to the Gaussian factor **in `L¹`**.
+
+The `L¹` form (rather than the convergence-in-mean form
+`tendsto_integral_prod_one_sub_condVar` below, which it implies) is what the
+nesting-free telescope needs: the telescope controls `E[e^{iuS_n}∏ᵢψᵢ⁻¹] − 1`, and
+converting that into `E e^{iuS_n} − e^{−u²σ²/2}` costs one pointwise multiplication by
+the *random* weight `∏ᵢψᵢ` — see `norm_integral_exp_rowSum_sub_gaussian_le`. -/
+theorem tendsto_integral_abs_prod_one_sub_condVar_sub [IsProbabilityMeasure μ]
     {k : ℕ → ℕ} {X : (n : ℕ) → Fin (k n) → Ω → ℝ}
     {F : (n : ℕ) → Fin (k n + 1) → MeasurableSpace Ω}
     (h : IsMDSArray k X F μ) {σ2 : ℝ} (hσ : 0 ≤ σ2)
@@ -1029,17 +1012,15 @@ theorem tendsto_integral_prod_one_sub_condVar [IsProbabilityMeasure μ]
     (hunif : ∀ δ : ℝ, 0 < δ →
       Tendsto (fun n => (μ {ω | ∃ i, δ ≤ μ[fun ω' => X n i ω' ^ 2
           | F n i.castSucc] ω}).toReal) atTop (𝓝 0))
-    -- LEAN-ONLY: a uniform L¹ bound on the variance process, ruling out mass escape
-    (hbdd : ∃ B : ℝ, ∀ n, ∫ ω, mdsCondVariance k X F μ n ω ∂μ ≤ B)
     -- LEAN-ONLY (repair, 2026-08-05): pointwise clamp on the conditional variance
     -- PROCESS (supplied by the Hall–Heyde truncated array, whose variance process is
-    -- bounded by the truncation level); this is what `hbdd` fails to give and what makes
-    -- the Taylor product uniformly bounded — see the witness recorded below.
+    -- bounded by the truncation level); an `L¹` bound on `V_n` does NOT suffice and what
+    -- makes the Taylor product uniformly bounded — see the witness recorded below.
     {c : ℝ} (hclamp : ∀ n, ∀ᵐ ω ∂μ, mdsCondVariance k X F μ n ω ≤ c)
     (u : ℝ) :
-    Tendsto (fun n => ∫ ω, ∏ i, (1 - (u ^ 2 / 2 : ℂ) *
-        (μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℝ)) ∂μ) atTop
-      (𝓝 (Complex.exp (-(u ^ 2 * σ2 / 2 : ℝ)))) := by
+    Tendsto (fun n => ∫ ω, |(∏ i, (1 - u ^ 2 / 2 *
+          μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω))
+        - Real.exp (-(u ^ 2 * σ2 / 2))| ∂μ) atTop (𝓝 0) := by
   -- DEBT (wave 2): FALSE as frozen, with an explicit witness — REPAIRED 2026-08-05 by
   -- the `hclamp` hypothesis (a pointwise bound on the conditional variance PROCESS).
   -- `hbdd` (an L¹ bound on `V_n`) does not rule out mass escape, because the factors
@@ -1100,8 +1081,9 @@ theorem tendsto_integral_prod_one_sub_condVar [IsProbabilityMeasure μ]
       (hpmeas n).aestronglyMeasurable ?_
     filter_upwards [hpbdd n] with ω hω
     rwa [Real.norm_eq_abs]
-  -- the real limit; the complex statement is its `ofReal` image
-  have main : Tendsto (fun n => ∫ ω, p n ω ∂μ) atTop (𝓝 (Real.exp (-(u ^ 2 * σ2 / 2)))) := by
+  -- the `L¹` limit, stated through the opaque abbreviation `p`
+  have main : Tendsto (fun n => ∫ ω, |p n ω - Real.exp (-(u ^ 2 * σ2 / 2))| ∂μ)
+      atTop (𝓝 0) := by
     rw [Metric.tendsto_atTop]
     intro η hη
     obtain ⟨M, hM0, hMdef⟩ : ∃ M : ℝ, 0 ≤ M ∧ M = u ^ 2 * u ^ 2 * (σ2 + 1) / 4 + u ^ 2 / 2 := by
@@ -1205,17 +1187,9 @@ theorem tendsto_integral_prod_one_sub_condVar [IsProbabilityMeasure μ]
       refine le_trans (ENNReal.toReal_mono ?_ (measure_union_le _ _)) (le_of_eq ?_)
       · exact ENNReal.add_ne_top.2 ⟨measure_ne_top _ _, measure_ne_top _ _⟩
       · exact ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)
-    have habs : |(∫ ω, p n ω ∂μ) - Real.exp (-(u ^ 2 * σ2 / 2))|
-        ≤ ∫ ω, |p n ω - Real.exp (-(u ^ 2 * σ2 / 2))| ∂μ := by
-      have hsub : (∫ ω, p n ω ∂μ) - Real.exp (-(u ^ 2 * σ2 / 2))
-          = ∫ ω, (p n ω - Real.exp (-(u ^ 2 * σ2 / 2))) ∂μ := by
-        rw [integral_sub (hpint n) (integrable_const _), integral_const]
-        simp
-      rw [hsub]
-      have := norm_integral_le_integral_norm
-        (μ := μ) (f := fun ω => p n ω - Real.exp (-(u ^ 2 * σ2 / 2)))
-      simpa only [Real.norm_eq_abs] using this
-    rw [Real.dist_eq]
+    have hnn : (0:ℝ) ≤ ∫ ω, |p n ω - Real.exp (-(u ^ 2 * σ2 / 2))| ∂μ :=
+      integral_nonneg fun ω => abs_nonneg _
+    rw [Real.dist_eq, sub_zero, abs_of_nonneg hnn]
     have hfin : T * μ.real A ≤ T * (2 * θ) := by
       have : μ.real A ≤ 2 * θ := by
         have := hAmeas
@@ -1225,7 +1199,90 @@ theorem tendsto_integral_prod_one_sub_condVar [IsProbabilityMeasure μ]
     have hθval : T * (2 * θ) = η / 4 := by
       rw [hθdef]; field_simp; ring
     have hMβ : M * β ≤ η / 4 := hβM
-    linarith [habs.trans hstep]
+    linarith [hstep]
+  -- unfold the opaque abbreviation
+  exact main.congr fun n => integral_congr_ae (ae_of_all _ fun ω => by rw [hp n ω])
+
+/-- **Product comparison**: if the conditional variance process converges to `σ²` in
+probability and the individual conditional variances are uniformly asymptotically
+negligible, the Taylor product converges to the Gaussian factor.  This is the
+convergence-in-mean shadow of `tendsto_integral_abs_prod_one_sub_condVar_sub`. -/
+theorem tendsto_integral_prod_one_sub_condVar [IsProbabilityMeasure μ]
+    {k : ℕ → ℕ} {X : (n : ℕ) → Fin (k n) → Ω → ℝ}
+    {F : (n : ℕ) → Fin (k n + 1) → MeasurableSpace Ω}
+    (h : IsMDSArray k X F μ) {σ2 : ℝ} (hσ : 0 ≤ σ2)
+    -- USER-INPUT: conditional variance → σ² in probability; Brown's condition
+    (hvar : ∀ δ : ℝ, 0 < δ →
+      Tendsto (fun n => (μ {ω | δ ≤ |mdsCondVariance k X F μ n ω - σ2|}).toReal)
+        atTop (𝓝 0))
+    -- USER-INPUT: uniform asymptotic negligibility of the conditional variances
+    (hunif : ∀ δ : ℝ, 0 < δ →
+      Tendsto (fun n => (μ {ω | ∃ i, δ ≤ μ[fun ω' => X n i ω' ^ 2
+          | F n i.castSucc] ω}).toReal) atTop (𝓝 0))
+    -- LEAN-ONLY: a uniform L¹ bound on the variance process.  Unused (the pointwise
+    -- clamp `hclamp` subsumes it); retained so that the frozen call sites are unaffected.
+    (_hbdd : ∃ B : ℝ, ∀ n, ∫ ω, mdsCondVariance k X F μ n ω ∂μ ≤ B)
+    -- LEAN-ONLY (repair, 2026-08-05): pointwise clamp on the conditional variance PROCESS
+    {c : ℝ} (hclamp : ∀ n, ∀ᵐ ω ∂μ, mdsCondVariance k X F μ n ω ≤ c)
+    (u : ℝ) :
+    Tendsto (fun n => ∫ ω, ∏ i, (1 - (u ^ 2 / 2 : ℂ) *
+        (μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℝ)) ∂μ) atTop
+      (𝓝 (Complex.exp (-(u ^ 2 * σ2 / 2 : ℝ)))) := by
+  classical
+  obtain ⟨p, hp⟩ : ∃ p : ℕ → Ω → ℝ, ∀ (n : ℕ) (ω : Ω), p n ω =
+      ∏ i, (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω) :=
+    ⟨_, fun _ _ => rfl⟩
+  have hvmeas : ∀ (n : ℕ) (i : Fin (k n)),
+      Measurable (μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc]) := fun n i =>
+    (stronglyMeasurable_condExp.measurable).mono (h.le_ambient n i.castSucc) le_rfl
+  have hv0 : ∀ n : ℕ, ∀ᵐ ω ∂μ, ∀ i : Fin (k n),
+      0 ≤ μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω :=
+    fun n => ae_all_iff.2 fun i => condExp_nonneg (ae_of_all _ fun _ => sq_nonneg _)
+  have hVsum : ∀ (n : ℕ) (ω : Ω),
+      (∑ i, μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω) = mdsCondVariance k X F μ n ω :=
+    fun _ _ => rfl
+  have hpmeas : ∀ n, Measurable (p n) := by
+    intro n
+    have he : p n = fun ω => ∏ i, (1 - u ^ 2 / 2 *
+        μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω) := funext (hp n)
+    rw [he]
+    exact Finset.measurable_prod _ fun i _ => measurable_const.sub ((hvmeas n i).const_mul _)
+  have hpbdd : ∀ n, ∀ᵐ ω ∂μ, |p n ω| ≤ Real.exp (u ^ 2 * c / 2) := by
+    intro n
+    filter_upwards [hv0 n, hclamp n] with ω h1 h2
+    rw [hp n ω]
+    exact abs_prod_one_sub_le_exp h1 (by rw [hVsum]; exact h2)
+  have hpint : ∀ n, Integrable (p n) μ := by
+    intro n
+    refine Integrable.mono' (integrable_const (Real.exp (u ^ 2 * c / 2)))
+      (hpmeas n).aestronglyMeasurable ?_
+    filter_upwards [hpbdd n] with ω hω
+    rwa [Real.norm_eq_abs]
+  have hL1 := tendsto_integral_abs_prod_one_sub_condVar_sub h hσ hvar hunif hclamp u
+  have main : Tendsto (fun n => ∫ ω, p n ω ∂μ) atTop
+      (𝓝 (Real.exp (-(u ^ 2 * σ2 / 2)))) := by
+    rw [Metric.tendsto_atTop] at hL1 ⊢
+    intro η hη
+    obtain ⟨N, hN⟩ := hL1 η hη
+    refine ⟨N, fun n hn => ?_⟩
+    have h1 := hN n hn
+    have heq : (∫ ω, |(∏ i, (1 - u ^ 2 / 2 *
+          μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω))
+          - Real.exp (-(u ^ 2 * σ2 / 2))| ∂μ)
+        = ∫ ω, |p n ω - Real.exp (-(u ^ 2 * σ2 / 2))| ∂μ :=
+      integral_congr_ae (ae_of_all _ fun ω => by simp only [hp n ω])
+    rw [Real.dist_eq, sub_zero, heq,
+      abs_of_nonneg (integral_nonneg fun ω => abs_nonneg _)] at h1
+    rw [Real.dist_eq]
+    refine lt_of_le_of_lt ?_ h1
+    have hsub : (∫ ω, p n ω ∂μ) - Real.exp (-(u ^ 2 * σ2 / 2))
+        = ∫ ω, (p n ω - Real.exp (-(u ^ 2 * σ2 / 2))) ∂μ := by
+      rw [integral_sub (hpint n) (integrable_const _), integral_const]
+      simp
+    rw [hsub]
+    have := norm_integral_le_integral_norm
+      (μ := μ) (f := fun ω => p n ω - Real.exp (-(u ^ 2 * σ2 / 2)))
+    simpa only [Real.norm_eq_abs] using this
   -- transfer to the complex statement
   have hcast : ∀ n : ℕ, (∫ ω, ∏ i, (1 - (u ^ 2 / 2 : ℂ) * (μ[fun ω' => X n i ω' ^ 2
       | F n i.castSucc] ω : ℝ)) ∂μ) = ((∫ ω, p n ω ∂μ : ℝ) : ℂ) := by
@@ -1246,6 +1303,202 @@ theorem tendsto_integral_prod_one_sub_condVar [IsProbabilityMeasure μ]
   rw [hgauss]
   refine Tendsto.congr (fun n => (hcast n).symm) ?_
   exact (Complex.continuous_ofReal.tendsto _).comp main
+
+open Complex in
+/-- **The comparison `mds_clt` consumes.**  Combining the nesting-free telescope
+`norm_integral_exp_rowSum_mul_invProd_sub_one_le` with the `L¹` distance of the Taylor
+product `Π = ∏ᵢ(1 − u²vᵢ/2)` from the Gaussian factor `γ = e^{−u²σ²/2}` bounds
+`‖E e^{iuS_n} − γ‖` directly.
+
+The algebra is the exact identity
+`e^{iuS} − γ = e^{iuS}·(1 − γΠ⁻¹) + γ·(e^{iuS}Π⁻¹ − 1)`.
+The second summand is the telescope (times `γ ≤ 1`).  The first is pointwise
+`‖1 − γΠ⁻¹‖ = |Π − γ|·‖Π⁻¹‖ ≤ e^{u²c}|Π − γ|`, using `Π·Π⁻¹ = 1`, which is where the
+clamps `hd`/`hdu` are needed: they put every factor in `[1/2, 1]`, so `Π` never
+vanishes and `Π⁻¹` is dominated by `e^{u²c}` (`prod_inv_one_sub_le_exp`). -/
+theorem norm_integral_exp_rowSum_sub_gaussian_le [IsProbabilityMeasure μ]
+    {k : ℕ → ℕ} {X : (n : ℕ) → Fin (k n) → Ω → ℝ}
+    {F : (n : ℕ) → Fin (k n + 1) → MeasurableSpace Ω}
+    (h : IsMDSArray k X F μ) (n : ℕ) (u : ℝ) {ε : ℝ} (hε : 0 < ε) {c d σ2 : ℝ}
+    (hσ : 0 ≤ σ2)
+    -- LEAN-ONLY: per-index clamp making every Taylor factor lie in `[1/2, 1]`
+    (hd : ∀ i, ∀ᵐ ω ∂μ, μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω ≤ d)
+    (hdu : u ^ 2 * d ≤ 1)
+    -- LEAN-ONLY: clamp on the conditional variance process
+    (hc : ∀ᵐ ω ∂μ, mdsCondVariance k X F μ n ω ≤ c) :
+    ‖(∫ ω, Complex.exp (I * ((u * mdsRowSum k X n ω : ℝ) : ℂ)) ∂μ)
+        - ((Real.exp (-(u ^ 2 * σ2 / 2)) : ℝ) : ℂ)‖
+      ≤ Real.exp (u ^ 2 * c) * ∫ ω, |(∏ i, (1 - u ^ 2 / 2 *
+            μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω))
+          - Real.exp (-(u ^ 2 * σ2 / 2))| ∂μ
+        + 2 * Real.exp (u ^ 2 * c)
+            * (∑ i, (u ^ 2 * ∫ ω, X n i ω ^ 2 * Set.indicator {x : Ω | ε ≤ |X n i x|}
+                  (fun _ => (1 : ℝ)) ω ∂μ) + ∑ i, (|u| ^ 3 * ε * ∫ ω, X n i ω ^ 2 ∂μ)) := by
+  classical
+  have hu2 : (0:ℝ) ≤ u ^ 2 := sq_nonneg u
+  set γ : ℝ := Real.exp (-(u ^ 2 * σ2 / 2)) with hγdef
+  have hγ0 : 0 < γ := by rw [hγdef]; exact Real.exp_pos _
+  have hγ1 : γ ≤ 1 := by
+    rw [hγdef]
+    exact Real.exp_le_one_iff.2 (by nlinarith)
+  -- (0) pointwise control of the Taylor factors (as in the telescope)
+  have hae : ∀ᵐ ω ∂μ, (∀ i : Fin (k n),
+        0 ≤ μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω
+          ∧ u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω ≤ 1 / 2)
+      ∧ mdsCondVariance k X F μ n ω ≤ c := by
+    have h1 : ∀ᵐ ω ∂μ, ∀ i : Fin (k n),
+        0 ≤ μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω :=
+      ae_all_iff.2 fun i => condExp_nonneg (ae_of_all _ fun _ => sq_nonneg _)
+    have h2 : ∀ᵐ ω ∂μ, ∀ i : Fin (k n),
+        μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω ≤ d := ae_all_iff.2 hd
+    filter_upwards [h1, h2, hc] with ω e1 e2 e3
+    refine ⟨fun i => ⟨e1 i, ?_⟩, e3⟩
+    have := mul_le_mul_of_nonneg_left (e2 i) (by positivity : (0:ℝ) ≤ u ^ 2 / 2)
+    nlinarith [e1 i]
+  have hψcast : ∀ (i : Fin (k n)) (ω : Ω),
+      (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℂ)
+        = ((1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℝ) : ℂ) := by
+    intro i ω; push_cast; ring
+  -- (1) the three players
+  obtain ⟨E, hE⟩ : ∃ E : Ω → ℂ, ∀ ω,
+      E ω = Complex.exp (I * ((u * mdsRowSum k X n ω : ℝ) : ℂ)) := ⟨_, fun _ => rfl⟩
+  obtain ⟨Ψ, hΨ⟩ : ∃ Ψ : Ω → ℝ, ∀ ω, Ψ ω =
+      ∏ i, (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω) :=
+    ⟨_, fun _ => rfl⟩
+  obtain ⟨Q, hQ⟩ : ∃ Q : Ω → ℂ, ∀ ω, Q ω =
+      ∏ i, (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℂ)⁻¹ :=
+    ⟨_, fun _ => rfl⟩
+  have hvmeas : ∀ i : Fin (k n),
+      Measurable (μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc]) := fun i =>
+    (stronglyMeasurable_condExp.measurable).mono (h.le_ambient n i.castSucc) le_rfl
+  have hEmeas : Measurable E := by
+    have he : E = fun ω => Complex.exp (I * ((u * mdsRowSum k X n ω : ℝ) : ℂ)) := funext hE
+    rw [he]
+    have hS : Measurable (mdsRowSum k X n) :=
+      Finset.measurable_sum _ fun i _ => (h.adapted n i).mono (h.le_ambient n _) le_rfl
+    exact Complex.measurable_exp.comp
+      ((Complex.measurable_ofReal.comp (measurable_const.mul hS)).const_mul I)
+  have hΨmeas : Measurable Ψ := by
+    have he : Ψ = fun ω => ∏ i, (1 - u ^ 2 / 2 *
+        μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω) := funext hΨ
+    rw [he]
+    exact Finset.measurable_prod _ fun i _ => measurable_const.sub ((hvmeas i).const_mul _)
+  have hQmeas : Measurable Q := by
+    have he : Q = fun ω => ∏ i, (1 - u ^ 2 / 2 *
+        μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℂ)⁻¹ := funext hQ
+    rw [he]
+    exact Finset.measurable_prod _ fun i _ =>
+      (measurable_const.sub ((Complex.measurable_ofReal.comp (hvmeas i)).const_mul _)).inv
+  have hE1 : ∀ ω, ‖E ω‖ = 1 := fun ω => by rw [hE ω, Complex.norm_exp]; simp
+  -- (2) the inverse product is dominated, and inverts `Ψ`
+  have hQb : ∀ᵐ ω ∂μ, ‖Q ω‖ ≤ Real.exp (u ^ 2 * c) := by
+    filter_upwards [hae] with ω hω
+    obtain ⟨hfac, hsum⟩ := hω
+    rw [hQ ω, norm_prod]
+    have hstep : ∀ i ∈ (Finset.univ : Finset (Fin (k n))),
+        ‖(1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℂ)⁻¹‖
+        = (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℝ)⁻¹ := by
+      intro i _
+      rw [hψcast i ω, norm_inv, Complex.norm_real, Real.norm_eq_abs,
+        abs_of_pos (by linarith [(hfac i).2] : (0:ℝ) <
+          1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)]
+    rw [Finset.prod_congr rfl hstep]
+    exact prod_inv_one_sub_le_exp (fun i => (hfac i).1) (fun i => (hfac i).2) hsum Finset.univ
+  have hΨQ : ∀ᵐ ω ∂μ, ((Ψ ω : ℝ) : ℂ) * Q ω = 1 := by
+    filter_upwards [hae] with ω hω
+    obtain ⟨hfac, -⟩ := hω
+    rw [hΨ ω, hQ ω, Complex.ofReal_prod, ← Finset.prod_mul_distrib]
+    refine Finset.prod_eq_one fun i _ => ?_
+    have hne : (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℂ) ≠ 0 := by
+      rw [hψcast i ω, Ne, Complex.ofReal_eq_zero]
+      linarith [(hfac i).2]
+    rw [← hψcast i ω]
+    exact mul_inv_cancel₀ hne
+  have hΨ1 : ∀ᵐ ω ∂μ, |Ψ ω| ≤ 1 := by
+    filter_upwards [hae] with ω hω
+    obtain ⟨hfac, -⟩ := hω
+    rw [hΨ ω, Finset.abs_prod]
+    refine Finset.prod_le_one (fun i _ => abs_nonneg _) fun i _ => ?_
+    rw [abs_of_pos (by linarith [(hfac i).2] : (0:ℝ) <
+      1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)]
+    have := mul_nonneg (by positivity : (0:ℝ) ≤ u ^ 2 / 2) (hfac i).1
+    linarith
+  -- (3) integrability
+  have hEint : Integrable E μ :=
+    Integrable.mono' (integrable_const (1:ℝ)) hEmeas.aestronglyMeasurable
+      (ae_of_all _ fun ω => le_of_eq (hE1 ω))
+  have hEQint : Integrable (fun ω => E ω * Q ω) μ := by
+    refine Integrable.mono' (integrable_const (Real.exp (u ^ 2 * c)))
+      (hEmeas.mul hQmeas).aestronglyMeasurable ?_
+    filter_upwards [hQb] with ω hω
+    rw [norm_mul, hE1 ω, one_mul]
+    exact hω
+  have hΨγint : Integrable (fun ω => |Ψ ω - γ|) μ := by
+    have hsubm : Measurable fun ω => Ψ ω - γ := hΨmeas.sub measurable_const
+    have hmeas2 : Measurable fun ω => |Ψ ω - γ| := continuous_abs.measurable.comp hsubm
+    refine Integrable.mono' (integrable_const (2:ℝ)) hmeas2.aestronglyMeasurable ?_
+    filter_upwards [hΨ1] with ω hω
+    rw [Real.norm_eq_abs, abs_abs]
+    have h1 : |Ψ ω - γ| ≤ |Ψ ω| + |γ| := abs_sub _ _
+    rw [abs_of_pos hγ0] at h1
+    linarith
+  have hmixint : Integrable (fun ω => E ω * (1 - (γ : ℂ) * Q ω)) μ := by
+    have hfun : (fun ω => E ω * (1 - (γ : ℂ) * Q ω))
+        = fun ω => E ω - (γ : ℂ) * (E ω * Q ω) := by funext ω; ring
+    rw [hfun]
+    exact hEint.sub (hEQint.const_mul _)
+  -- (4) the identity
+  have hsplit : (∫ ω, E ω ∂μ) - (γ : ℂ)
+      = (∫ ω, E ω * (1 - (γ : ℂ) * Q ω) ∂μ) + (γ : ℂ) * ((∫ ω, E ω * Q ω ∂μ) - 1) := by
+    have h1 : (∫ ω, E ω * (1 - (γ : ℂ) * Q ω) ∂μ)
+        = (∫ ω, E ω ∂μ) - (γ : ℂ) * ∫ ω, E ω * Q ω ∂μ := by
+      have hfun : (fun ω => E ω * (1 - (γ : ℂ) * Q ω))
+          = fun ω => E ω - (γ : ℂ) * (E ω * Q ω) := by funext ω; ring
+      rw [hfun, integral_sub hEint (hEQint.const_mul _)]
+      congr 1
+      exact integral_const_mul _ _
+    rw [h1]; ring
+  -- (5) fold the goal onto the abbreviations
+  have hEgoal : (∫ ω, Complex.exp (I * ((u * mdsRowSum k X n ω : ℝ) : ℂ)) ∂μ)
+      = ∫ ω, E ω ∂μ := integral_congr_ae (ae_of_all _ fun ω => (hE ω).symm)
+  have hΨgoal : (∫ ω, |(∏ i, (1 - u ^ 2 / 2 *
+        μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω)) - γ| ∂μ)
+      = ∫ ω, |Ψ ω - γ| ∂μ :=
+    integral_congr_ae (ae_of_all _ fun ω => by simp only [hΨ ω])
+  have hEQgoal : (∫ ω, Complex.exp (I * ((u * mdsRowSum k X n ω : ℝ) : ℂ))
+        * ∏ i, (1 - u ^ 2 / 2 * μ[fun ω' => X n i ω' ^ 2 | F n i.castSucc] ω : ℂ)⁻¹ ∂μ)
+      = ∫ ω, E ω * Q ω ∂μ :=
+    integral_congr_ae (ae_of_all _ fun ω => by simp only [hE ω, hQ ω])
+  have htel := norm_integral_exp_rowSum_mul_invProd_sub_one_le h n u hε hd hdu hc
+  rw [hEQgoal] at htel
+  rw [hEgoal, hΨgoal, hsplit]
+  refine (norm_add_le _ _).trans ?_
+  -- (6) the two summands
+  have hb1 : ‖∫ ω, E ω * (1 - (γ : ℂ) * Q ω) ∂μ‖
+      ≤ Real.exp (u ^ 2 * c) * ∫ ω, |Ψ ω - γ| ∂μ := by
+    refine (norm_integral_le_integral_norm _).trans ?_
+    have hpt : ∀ᵐ ω ∂μ, ‖E ω * (1 - (γ : ℂ) * Q ω)‖
+        ≤ Real.exp (u ^ 2 * c) * |Ψ ω - γ| := by
+      filter_upwards [hΨQ, hQb] with ω h1 h2
+      have hid : (1 : ℂ) - (γ : ℂ) * Q ω = ((Ψ ω - γ : ℝ) : ℂ) * Q ω := by
+        push_cast
+        rw [sub_mul, h1]
+      rw [norm_mul, hE1 ω, one_mul, hid, norm_mul, Complex.norm_real, Real.norm_eq_abs]
+      calc |Ψ ω - γ| * ‖Q ω‖ ≤ |Ψ ω - γ| * Real.exp (u ^ 2 * c) :=
+            mul_le_mul_of_nonneg_left h2 (abs_nonneg _)
+        _ = Real.exp (u ^ 2 * c) * |Ψ ω - γ| := mul_comm _ _
+    refine (integral_mono_ae hmixint.norm (hΨγint.const_mul _) hpt).trans (le_of_eq ?_)
+    exact integral_const_mul _ _
+  have hb2 : ‖(γ : ℂ) * ((∫ ω, E ω * Q ω ∂μ) - 1)‖
+      ≤ 2 * Real.exp (u ^ 2 * c)
+          * (∑ i, (u ^ 2 * ∫ ω, X n i ω ^ 2 * Set.indicator {x : Ω | ε ≤ |X n i x|}
+                (fun _ => (1 : ℝ)) ω ∂μ) + ∑ i, (|u| ^ 3 * ε * ∫ ω, X n i ω ^ 2 ∂μ)) := by
+    rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hγ0]
+    calc γ * ‖(∫ ω, E ω * Q ω ∂μ) - 1‖ ≤ 1 * ‖(∫ ω, E ω * Q ω ∂μ) - 1‖ :=
+          mul_le_mul_of_nonneg_right hγ1 (norm_nonneg _)
+      _ = ‖(∫ ω, E ω * Q ω ∂μ) - 1‖ := one_mul _
+      _ ≤ _ := htel
+  linarith
 
 end Arrays
 
