@@ -190,6 +190,8 @@ theorem archLRStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     (c0hat : (T : ℕ) → Ω → ℝ) (bhat : (T : ℕ) → Ω → Fin p → ℝ)
     (c0null : (T : ℕ) → Ω → ℝ)
     (hmeas : ∀ T, Measurable (c0hat T) ∧ Measurable (bhat T) ∧ Measurable (c0null T))
+    (νseq : ℕ → ℕ) (hν : Tendsto νseq atTop atTop)
+    (hνT : Tendsto (fun T : ℕ => (νseq T : ℝ) / T) atTop (𝓝 0))
     -- USER-INPUT: the estimators are the unrestricted and null-restricted maximizers of
     -- the ARCH conditional log-likelihood. Added 2026-08-09: without them the statement
     -- is FALSE — arbitrary measurable sequences carry no distributional information.
@@ -202,8 +204,6 @@ theorem archLRStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
           (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
         ≤ archLogLik (c0null T ω) (fun _ : Fin p => (0 : ℝ))
             (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T))
-    (νseq : ℕ → ℕ) (hν : Tendsto νseq atTop atTop)
-    (hνT : Tendsto (fun T : ℕ => (νseq T : ℝ) / T) atTop (𝓝 0))
     -- USER-INPUT: the χ²_p limit law as a measure on ℝ; Serfling §4.4.4
     (chiSq : Measure ℝ) [IsProbabilityMeasure chiSq]
     (hchi : ∀ u : ℝ, charFun chiSq u = (1 - 2 * Complex.I * u) ^ (-(p : ℂ) / 2))
@@ -256,12 +256,12 @@ theorem archWaldStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     -- USER-INPUT: `bhat` is the unrestricted maximizer's ARCH block. Added 2026-08-09
     -- (an unconstrained sequence makes the statement FALSE).
     (c0hat : (T : ℕ) → Ω → ℝ)
+    (νseq : ℕ → ℕ) (hν : Tendsto νseq atTop atTop)
+    (hνT : Tendsto (fun T : ℕ => (νseq T : ℝ) / T) atTop (𝓝 0))
     (hMLE : ∀ (T : ℕ) (ω : Ω) (c : ℝ) (bb : Fin p → ℝ),
       archLogLik c bb (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
         ≤ archLogLik (c0hat T ω) (bhat T ω)
             (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T))
-    (νseq : ℕ → ℕ) (hν : Tendsto νseq atTop atTop)
-    (hνT : Tendsto (fun T : ℕ => (νseq T : ℝ) / T) atTop (𝓝 0))
     -- USER-INPUT: the estimated information block I²² (Schur complement), assumed
     -- consistent for a positive-definite limit; FY eq. (4.54)
     (Ihat : (T : ℕ) → Ω → Matrix (Fin p) (Fin p) ℝ)
