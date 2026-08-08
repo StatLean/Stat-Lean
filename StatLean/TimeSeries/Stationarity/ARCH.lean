@@ -186,7 +186,7 @@ private lemma sigmaLT_le {X : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (X t))
   iSup₂_le fun _ _ => (hm _).comap_le
 
 /-- **One-vs-past independence of the noise**: `ξ_t` is independent of `σ(ξ_s : s < t)`. -/
-private lemma indep_xi_sigmaLT {ξ : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ξ t))
+theorem indep_xi_sigmaLT {ξ : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ξ t))
     (hi : iIndepFun ξ μ) (t : ℤ) :
     Indep (MeasurableSpace.comap (ξ t) inferInstance) (sigmaLT ξ t) μ := by
   have hdisj : Disjoint ({t} : Set ℤ) (Set.Iio t) :=
@@ -582,7 +582,7 @@ private lemma lintegral_ofReal_sol [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ
 
 /-- The driving series `Σ_j b_j Y_{t−1−j}` is a.e. finite for any integrable stationary
 solution — the summability side condition the real-valued recurrence needs. -/
-private lemma archInf_tsum_ae_lt_top [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
+theorem archInf_tsum_ae_lt_top [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
     {Y ξ : ℤ → Ω → ℝ} (hsum : Summable bc) (h : IsARCHInf a bc Y ξ μ)
     (hint : ∀ t, Integrable (Y t) μ) (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
     ∀ᵐ ω ∂μ, (∑' j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω)) < ∞ := by
@@ -599,7 +599,7 @@ private lemma archInf_tsum_ae_lt_top [IsProbabilityMeasure μ] {a : ℝ} {bc : �
   exact ENNReal.mul_ne_top (archS_ne_top h.bc_nonneg hsum) ENNReal.ofReal_ne_top
 
 /-- The ARCH(∞) recurrence in `ℝ≥0∞`, for an arbitrary integrable stationary solution. -/
-private lemma archInf_ofReal_recurrence [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
+theorem archInf_ofReal_recurrence [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
     {Y ξ : ℤ → Ω → ℝ} (hsum : Summable bc) (h : IsARCHInf a bc Y ξ μ)
     (hint : ∀ t, Integrable (Y t) μ) (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
     ∀ᵐ ω ∂μ, ENNReal.ofReal (Y t ω) = ENNReal.ofReal (ξ t ω)
