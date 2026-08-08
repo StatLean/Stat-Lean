@@ -1611,6 +1611,10 @@ theorem armaResidualSS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
       atTop (𝓝 0) := by
   sorry
 
+-- The `have hCLLN := armaResidualSS_tendstoInProb …` application below re-unifies the
+-- full matrix statement (piMat/dotProduct at width `T`), which exceeds the default
+-- heartbeat budget at `whnf`.
+set_option maxHeartbeats 1600000 in
 /-- **The one missing analytic input of this lane** (named debt): the *quadratic-form
 law of large numbers*
 
@@ -1668,10 +1672,6 @@ statistic does not need it. The route, and what is actually left:
   `E[u_i²] = σ² Σ_{d,e ≥ 0} π_d π_e γ_{θ₀}(e − d)` is symmetric in the reversal
   (`γ` is even) and tends to `σ² Σ_n c_n²` as `i` recedes from the truncation; but an
   implementation of (C) must truncate the composite filter *forwards* in `i`. -/
--- The `have hCLLN := armaResidualSS_tendstoInProb …` application below re-unifies the
--- full matrix statement (piMat/dotProduct at width `T`), which exceeds the default
--- heartbeat budget at `whnf`.
-set_option maxHeartbeats 1600000 in
 theorem armaProfileS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 b : Fin p → ℝ} {a0 a : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -1684,11 +1684,10 @@ theorem armaProfileS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
       atTop (𝓝 0) := by
   -- **(C)** — the residual sum of squares LLN; the single remaining gap, now the named
   -- debt `armaResidualSS_tendstoInProb` above.
-  have hCLLN : ∀ η' : ℝ, 0 < η' → Tendsto (fun T : ℕ => (μ {ω | η' ≤
-      |(T : ℝ)⁻¹ * ((piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
-          (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
-        - σ2 * armaContrastVar b0 a0 b a|}).toReal) atTop (𝓝 0) :=
-    fun η' hη' => armaResidualSS_tendstoInProb h hiid hσ hB0 hB hcausal hmeas hη'
+  -- no type ascription: the `have` takes the debt's stated type verbatim, so there is
+  -- no second copy of the matrix statement to re-unify against
+  have hCLLN := fun (η' : ℝ) (hη' : 0 < η') =>
+    armaResidualSS_tendstoInProb (b := b) (a := a) h hiid hσ hB0 hB hcausal hmeas hη'
   -- **(B)** — the correction term, proved above.
   have hB2 := gramTail_quadForm_tendstoInProb (b0 := b0) (a0 := a0) h.whiteNoise (le_of_lt hσ)
     hB0 hB hcausal hmeas (η := η / 2) (by linarith)
