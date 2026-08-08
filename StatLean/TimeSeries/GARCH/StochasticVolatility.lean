@@ -154,6 +154,97 @@ theorem IsSV.latent_stationary [IsProbabilityMeasure μ] {g : ℝ → ℝ} {a0 a
     rw [acvf, hcov k 0] at h1
     rw [acvf, h1, hgeo k.natAbs, mul_div_assoc]
 
+/-- **NAMED DEBT — a missing hypothesis, not a gap in the mathematics.** The observation
+noise family `{ε_t}` is independent of the latent family `{h_t}`.
+
+This is *not* derivable from `IsSV` alone. The structure carries `indep_families`
+(`σ{ε_t} ⟂ σ{e_t}`) together with the pointwise recursion `h_t = a₀ + a₁h_{t−1} + e_t`,
+and the recursion does not tie `h` to `σ{e_t}`: it is satisfied by every solution,
+including ones whose "initial condition at `−∞`" is built out of `ε`. Witness: take
+`a₀ = 0`, `a₁ = 1`, `h_0 := μ_h + √σ_h² ε_0`, `h_t := h_0 + Σ_{0<s≤t} e_s` for `t > 0`
+and `h_t := h_0 − Σ_{t<s≤0} e_s` for `t < 0`. Every field of `IsSV` holds, `h_0` is
+`N(μ_h, σ_h²)` and `ε_0` is `N(0,1)`, so all hypotheses of (4.61) hold, yet
+`E X_0² = e^{μ_h+σ_h²/2}(1+σ_h²) ≠ e^{μ_h+σ_h²/2}`.
+
+In FY the latent chain *is* the causal solution `h_t − a₀/(1−a₁) = Σ_{j≥0} a₁^j e_{t−j}`
+of (4.60) — the hypothesis `hcausal` carried by `IsSV.latent_stationary` and
+`IsSV.isStrictlyStationary` — and then `h_t` is `σ{e_s}`-measurable up to a null set, so
+`indep_families` yields the conclusion. The frozen statements of (4.61)–(4.62) do not
+carry `hcausal`, so the missing input is recorded here as a single brick. -/
+private lemma indep_noise_latent [IsProbabilityMeasure μ] {g : ℝ → ℝ} {a0 a1 σe2 : ℝ}
+    {X h ε e : ℤ → Ω → ℝ} (hSV : IsSV g a0 a1 σe2 X h ε e μ) :
+    Indep (⨆ t : ℤ, MeasurableSpace.comap (ε t) inferInstance)
+      (⨆ t : ℤ, MeasurableSpace.comap (h t) inferInstance) μ := by
+  sorry
+
+private lemma indepFun_noise_latent [IsProbabilityMeasure μ] {g : ℝ → ℝ} {a0 a1 σe2 : ℝ}
+    {X h ε e : ℤ → Ω → ℝ} (hSV : IsSV g a0 a1 σe2 X h ε e μ) (s t : ℤ) :
+    IndepFun (ε s) (h t) μ :=
+  indep_of_indep_of_le_right
+    (indep_of_indep_of_le_left (indep_noise_latent hSV)
+      (le_iSup (fun s : ℤ => MeasurableSpace.comap (ε s) inferInstance) s))
+    (le_iSup (fun t : ℤ => MeasurableSpace.comap (h t) inferInstance) t)
+
+/-- **NAMED DEBT — a missing `LEAN-ONLY` hypothesis.** The volatility transform `g` is
+measurable.
+
+`IsSV` requires only `g_pos`. Strict stationarity of `X_t = ε_t g(h_t)` is proved by
+pushing the shift through the joint law of the pair of windows
+`((ε_{t_i+k})_i, (h_{t_i+k})_i)` and then composing with the fixed map
+`(a, b) ↦ (a_i g(b_i))_i`; that last step is a `Measure.map` composition and needs the
+map to be measurable. `hSV.measurableX` gives measurability of each `X_t`, which pins
+`g` down only on `{ε_t ≠ 0}` and only through `h_t` (`g(h_t) = X_t/ε_t` there); recovering
+a measurable `g` from that is a descriptive-set-theoretic statement about the fibres of
+`(ε_t, h_t)`, not available for an abstract measurable space `Ω`. Every concrete FY
+instance (`g = exp(·/2)` in (4.61)–(4.62)) is continuous, so this is a bookkeeping
+hypothesis the frozen `IsSV` omits. -/
+private lemma measurable_g_brick [IsProbabilityMeasure μ] {g : ℝ → ℝ} {a0 a1 σe2 : ℝ}
+    {X h ε e : ℤ → Ω → ℝ} (hSV : IsSV g a0 a1 σe2 X h ε e μ) : Measurable g := by
+  sorry
+
+private lemma comap_window_le {ι : Type*} (f : ℤ → Ω → ℝ) (u : ι → ℤ) :
+    MeasurableSpace.comap (fun ω (i : ι) => f (u i) ω) inferInstance
+      ≤ ⨆ s : ℤ, MeasurableSpace.comap (f s) inferInstance := by
+  have h1 : (inferInstance : MeasurableSpace (ι → ℝ))
+      = ⨆ i : ι, MeasurableSpace.comap (fun v : ι → ℝ => v i) inferInstance := rfl
+  rw [h1, MeasurableSpace.comap_iSup]
+  refine iSup_le fun i => ?_
+  rw [MeasurableSpace.comap_comp]
+  exact le_iSup (fun s : ℤ => MeasurableSpace.comap (f s) inferInstance) (u i)
+
+private lemma map_noise_block' [IsProbabilityMeasure μ] {ε : ℤ → Ω → ℝ} {σ2 : ℝ}
+    {A : Type*} [Finite A] (hε : IsIIDNoise ε σ2 μ) (u : A → ℤ) (k : ℤ) :
+    μ.map (fun ω a => ε (u a + k) ω) = μ.map (fun ω a => ε (u a) ω) := by
+  classical
+  have : Fintype A := Fintype.ofFinite A
+  set S : Finset ℤ := Finset.image u Finset.univ with hS
+  set ρ : A → {x // x ∈ S} :=
+    fun a => ⟨u a, Finset.mem_image_of_mem u (Finset.mem_univ a)⟩ with hρ
+  have hlaw : ∀ c : ℤ, μ.map (fun ω (b : {x // x ∈ S}) => ε ((b : ℤ) + c) ω)
+      = Measure.pi (fun _ : {x // x ∈ S} => μ.map (ε 0)) := by
+    intro c
+    have hinj : Function.Injective (fun b : {x // x ∈ S} => (b : ℤ) + c) := by
+      intro b1 b2 h
+      exact Subtype.ext (by simpa using h)
+    have hindep : iIndepFun (fun b : {x // x ∈ S} => ε ((b : ℤ) + c)) μ :=
+      hε.iIndep.precomp hinj
+    rw [(iIndepFun_iff_map_fun_eq_pi_map fun b => (hε.measurable _).aemeasurable).1 hindep]
+    exact congrArg Measure.pi (funext fun b => (hε.identDistrib _ 0).map_eq)
+  have hmb : ∀ c : ℤ, Measurable (fun ω (b : {x // x ∈ S}) => ε ((b : ℤ) + c) ω) :=
+    fun c => measurable_pi_lambda _ fun b => hε.measurable _
+  have hcomp : Measurable (fun v : {x // x ∈ S} → ℝ => v ∘ ρ) :=
+    measurable_pi_lambda _ fun a => measurable_pi_apply (ρ a)
+  have hfac : ∀ c : ℤ, (fun ω a => ε (u a + c) ω)
+      = (fun v : {x // x ∈ S} → ℝ => v ∘ ρ) ∘ (fun ω (b : {x // x ∈ S}) => ε ((b : ℤ) + c) ω) :=
+    fun c => rfl
+  have hzero : (fun ω a => ε (u a) ω)
+      = (fun v : {x // x ∈ S} → ℝ => v ∘ ρ)
+        ∘ (fun ω (b : {x // x ∈ S}) => ε ((b : ℤ) + 0) ω) := by
+    funext ω a
+    simp only [Function.comp_apply, add_zero, hρ]
+  rw [hfac k, hzero, ← Measure.map_map hcomp (hmb k), ← Measure.map_map hcomp (hmb 0),
+    hlaw k, hlaw 0]
+
 /-- **FY eq. (4.60), conclusion**: a stationary latent process makes the observed SV
 process strictly stationary. -/
 theorem IsSV.isStrictlyStationary [IsProbabilityMeasure μ] {g : ℝ → ℝ}
@@ -165,7 +256,55 @@ theorem IsSV.isStrictlyStationary [IsProbabilityMeasure μ] {g : ℝ → ℝ}
     -- representation over iid noise); FY eq. (4.60)
     (hstath : IsStrictlyStationary h μ) :
     IsStrictlyStationary X μ := by
-  sorry
+  classical
+  intro n tt k
+  have hg : Measurable g := measurable_g_brick hSV
+  have hmε : ∀ s : ℤ, Measurable (ε s) := hSV.iidNoise.measurable
+  have hmh : ∀ s : ℤ, Measurable (h s) := hSV.measurableH
+  set Φ : ((Fin n → ℝ) × (Fin n → ℝ)) → (Fin n → ℝ) := fun p i => p.1 i * g (p.2 i) with hΦdef
+  have hΦ : Measurable Φ := measurable_pi_lambda _ fun i =>
+    ((measurable_pi_apply i).comp measurable_fst).mul
+      (hg.comp ((measurable_pi_apply i).comp measurable_snd))
+  have hEm : ∀ c : ℤ, Measurable (fun ω (i : Fin n) => ε (tt i + c) ω) :=
+    fun c => measurable_pi_lambda _ fun i => hmε _
+  have hHm : ∀ c : ℤ, Measurable (fun ω (i : Fin n) => h (tt i + c) ω) :=
+    fun c => measurable_pi_lambda _ fun i => hmh _
+  -- the noise window and the latent window are independent
+  have hindep : ∀ c : ℤ, IndepFun (fun ω (i : Fin n) => ε (tt i + c) ω)
+      (fun ω (i : Fin n) => h (tt i + c) ω) μ := by
+    intro c
+    exact indep_of_indep_of_le_right
+      (indep_of_indep_of_le_left (indep_noise_latent hSV)
+        (comap_window_le ε fun i : Fin n => tt i + c))
+      (comap_window_le h fun i : Fin n => tt i + c)
+  have hpair : ∀ c : ℤ,
+      μ.map (fun ω => ((fun (i : Fin n) => ε (tt i + c) ω), (fun (i : Fin n) => h (tt i + c) ω)))
+        = (μ.map fun ω (i : Fin n) => ε (tt i + c) ω).prod
+          (μ.map fun ω (i : Fin n) => h (tt i + c) ω) :=
+    fun c => (indepFun_iff_map_prod_eq_prod_map_map (hEm c).aemeasurable
+      (hHm c).aemeasurable).1 (hindep c)
+  -- every window of `X` is the same measurable function of the pair of windows
+  have hX : ∀ c : ℤ, μ.map (fun ω (i : Fin n) => X (tt i + c) ω)
+      = (μ.map (fun ω => ((fun (i : Fin n) => ε (tt i + c) ω),
+          (fun (i : Fin n) => h (tt i + c) ω)))).map Φ := by
+    intro c
+    have hall : ∀ᵐ ω ∂μ, ∀ i : Fin n, X (tt i + c) ω = ε (tt i + c) ω * g (h (tt i + c) ω) :=
+      ae_all_iff.2 fun i => hSV.recX (tt i + c)
+    have hae : (fun ω (i : Fin n) => X (tt i + c) ω)
+        =ᵐ[μ] fun ω (i : Fin n) => ε (tt i + c) ω * g (h (tt i + c) ω) := by
+      filter_upwards [hall] with ω hω
+      funext i
+      exact hω i
+    rw [Measure.map_congr hae, Measure.map_map hΦ ((hEm c).prodMk (hHm c))]
+    rfl
+  have hh : (μ.map fun ω (i : Fin n) => h (tt i + k) ω)
+      = μ.map fun ω (i : Fin n) => h (tt i + 0) ω := by
+    simpa using hstath n tt k
+  have hgoal0 : (fun ω (i : Fin n) => X (tt i) ω) = fun ω (i : Fin n) => X (tt i + 0) ω := by
+    simp
+  rw [hgoal0, hX k, hX 0, hpair k, hpair 0, hh,
+    map_noise_block' hSV.iidNoise tt k, map_noise_block' hSV.iidNoise tt 0]
+
 
 /-! ### Gaussian even moments -/
 
@@ -254,37 +393,6 @@ private lemma integral_pow_even_gaussianReal (k : ℕ) :
       = ∫ x, x ^ (2 * k) ∂(gaussianReal 0 1) := by simp
   rw [hpi] at hkey
   exact hkey.symm
-
-/-- **NAMED DEBT — a missing hypothesis, not a gap in the mathematics.** The observation
-noise family `{ε_t}` is independent of the latent family `{h_t}`.
-
-This is *not* derivable from `IsSV` alone. The structure carries `indep_families`
-(`σ{ε_t} ⟂ σ{e_t}`) together with the pointwise recursion `h_t = a₀ + a₁h_{t−1} + e_t`,
-and the recursion does not tie `h` to `σ{e_t}`: it is satisfied by every solution,
-including ones whose "initial condition at `−∞`" is built out of `ε`. Witness: take
-`a₀ = 0`, `a₁ = 1`, `h_0 := μ_h + √σ_h² ε_0`, `h_t := h_0 + Σ_{0<s≤t} e_s` for `t > 0`
-and `h_t := h_0 − Σ_{t<s≤0} e_s` for `t < 0`. Every field of `IsSV` holds, `h_0` is
-`N(μ_h, σ_h²)` and `ε_0` is `N(0,1)`, so all hypotheses of (4.61) hold, yet
-`E X_0² = e^{μ_h+σ_h²/2}(1+σ_h²) ≠ e^{μ_h+σ_h²/2}`.
-
-In FY the latent chain *is* the causal solution `h_t − a₀/(1−a₁) = Σ_{j≥0} a₁^j e_{t−j}`
-of (4.60) — the hypothesis `hcausal` carried by `IsSV.latent_stationary` and
-`IsSV.isStrictlyStationary` — and then `h_t` is `σ{e_s}`-measurable up to a null set, so
-`indep_families` yields the conclusion. The frozen statements of (4.61)–(4.62) do not
-carry `hcausal`, so the missing input is recorded here as a single brick. -/
-private lemma indep_noise_latent [IsProbabilityMeasure μ] {g : ℝ → ℝ} {a0 a1 σe2 : ℝ}
-    {X h ε e : ℤ → Ω → ℝ} (hSV : IsSV g a0 a1 σe2 X h ε e μ) :
-    Indep (⨆ t : ℤ, MeasurableSpace.comap (ε t) inferInstance)
-      (⨆ t : ℤ, MeasurableSpace.comap (h t) inferInstance) μ := by
-  sorry
-
-private lemma indepFun_noise_latent [IsProbabilityMeasure μ] {g : ℝ → ℝ} {a0 a1 σe2 : ℝ}
-    {X h ε e : ℤ → Ω → ℝ} (hSV : IsSV g a0 a1 σe2 X h ε e μ) (s t : ℤ) :
-    IndepFun (ε s) (h t) μ :=
-  indep_of_indep_of_le_right
-    (indep_of_indep_of_le_left (indep_noise_latent hSV)
-      (le_iSup (fun s : ℤ => MeasurableSpace.comap (ε s) inferInstance) s))
-    (le_iSup (fun t : ℤ => MeasurableSpace.comap (h t) inferInstance) t)
 
 /-- **NAMED DEBT — a missing hypothesis.** The noise does not charge `0`.
 
