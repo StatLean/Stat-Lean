@@ -265,4 +265,64 @@ theorem lad_clt_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
         (∑ i, ∑ j, c i * c j * W i j))) u)) := by
   sorry
 
+/-! ### Sanity checks on the criteria
+
+Cheap facts pinning down the degenerate corners and the AIC/BIC penalties, so that the
+definitions above are exercised rather than merely stated. -/
+
+/-- Strict positivity of the truncated volatility — what the `log σ̃_t²` in (4.37) and the
+division in (4.38) actually need. -/
+private lemma garchTruncVol_pos {p q : ℕ} {c0 : ℝ} {b : Fin p → ℝ} {a : Fin q → ℝ}
+    {v0 : ℝ} (hc0 : 0 < c0) (hb : ∀ i, 0 ≤ b i) (ha : ∀ j, 0 ≤ a j) (hv0 : 0 < v0)
+    {T : ℕ} (x : Fin T → ℝ) (n : ℕ) :
+    0 < garchTruncVol c0 b a v0 x n := by
+  match n with
+  | 0 => simpa [garchTruncVol] using hv0
+  | (m + 1) =>
+    rw [garchTruncVol]
+    have h1 : 0 ≤ ∑ i : Fin p,
+        b i * (if h : m - (i : ℕ) < T then x ⟨m - (i : ℕ), h⟩ else 0) ^ 2 :=
+      Finset.sum_nonneg fun i _ => mul_nonneg (hb i) (sq_nonneg _)
+    have h2 : 0 ≤ ∑ j : Fin q, a j * garchTruncVol c0 b a v0 x (m - (j : ℕ)) :=
+      Finset.sum_nonneg fun j _ =>
+        mul_nonneg (ha j) (garchTruncVol_nonneg hc0.le hb ha hv0.le x _)
+    linarith
+
+/-- The quasi-likelihood (4.37) over an empty time range is `0` (in particular at `T = 0`). -/
+private lemma garchQuasiLik_of_le {p q : ℕ} (c0 : ℝ) (b : Fin p → ℝ) (a : Fin q → ℝ)
+    (v0 : ℝ) {T : ℕ} (x : Fin T → ℝ) {ν : ℕ} (h : T ≤ ν) :
+    garchQuasiLik c0 b a v0 x ν = 0 := by
+  simp [garchQuasiLik, Finset.Ico_eq_empty_of_le h]
+
+/-- The general-density criterion (4.38) over an empty time range is `0`. -/
+private lemma garchDensityLik_of_le {p q : ℕ} (c0 : ℝ) (b : Fin p → ℝ) (a : Fin q → ℝ)
+    (v0 : ℝ) (f : ℝ → ℝ) {T : ℕ} (x : Fin T → ℝ) {ν : ℕ} (h : T ≤ ν) :
+    garchDensityLik c0 b a v0 f x ν = 0 := by
+  simp [garchDensityLik, Finset.Ico_eq_empty_of_le h]
+
+/-- The LAD criterion (4.42) over an empty time range is `0`. -/
+private lemma garchLAD_of_le {p q : ℕ} (c0 : ℝ) (b : Fin p → ℝ) (a : Fin q → ℝ)
+    (v0 : ℝ) {T : ℕ} (x : Fin T → ℝ) {ν : ℕ} (h : T ≤ ν) :
+    garchLAD c0 b a v0 x ν = 0 := by
+  simp [garchLAD, Finset.Ico_eq_empty_of_le h]
+
+/-- The Whittle criterion (4.41) is well defined on an empty frequency range, where it
+vanishes; the Fourier frequencies `k = 1, …, T − 1` are none for `T ≤ 1`. -/
+private lemma garchWhittle_of_le_one {T : ℕ} (x : Fin T → ℝ) (gmodel : ℝ → ℝ)
+    (h : T ≤ 1) : garchWhittle x gmodel = 0 := by
+  simp [garchWhittle, Finset.Ico_eq_empty_of_le h]
+
+/-- AIC (4.39) is the quasi-likelihood plus its stated `2(p + q + 1)` penalty. -/
+private lemma garchAIC_sub_quasiLik {p q : ℕ} (c0 : ℝ) (b : Fin p → ℝ) (a : Fin q → ℝ)
+    (v0 : ℝ) {T : ℕ} (x : Fin T → ℝ) (ν : ℕ) :
+    garchAIC c0 b a v0 x ν - garchQuasiLik c0 b a v0 x ν = 2 * ((p : ℝ) + (q : ℝ) + 1) := by
+  simp [garchAIC]
+
+/-- BIC (4.40) is the quasi-likelihood plus its stated `(p + q + 1) log T` penalty. -/
+private lemma garchBIC_sub_quasiLik {p q : ℕ} (c0 : ℝ) (b : Fin p → ℝ) (a : Fin q → ℝ)
+    (v0 : ℝ) {T : ℕ} (x : Fin T → ℝ) (ν : ℕ) :
+    garchBIC c0 b a v0 x ν - garchQuasiLik c0 b a v0 x ν
+      = ((p : ℝ) + (q : ℝ) + 1) * Real.log T := by
+  simp [garchBIC]
+
 end StatLean.TimeSeries
