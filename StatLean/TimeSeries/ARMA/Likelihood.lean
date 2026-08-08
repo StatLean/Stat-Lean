@@ -98,7 +98,7 @@ theorem acvf_eq_smul_armaACVF [IsProbabilityMeasure μ] {p q : ℕ}
     -- USER-INPUT: no roots on the closed disc; FY §3.1
     (hroot : NoRootClosedDisc b) (k : ℤ) :
     acvf X μ k = σ2 * armaACVF b a k := by
-  sorry
+  exact (hcausal.isStationary (summable_abs_armaPsi a hroot) h.whiteNoise h.measurableX).2 k
 
 /-- **FY eq. (3.12)**: at fixed `(b, a)` the Gaussian likelihood is maximized in `σ²`
 at `σ̂² = S(b, a)/T`, and the minimized value is the profiled criterion up to the
