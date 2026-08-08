@@ -1426,6 +1426,155 @@ private lemma integral_quadForm_le {T : ℕ} (G : Matrix (Fin T) (Fin T) ℝ) (h
         refine sum_entry_mul_le_of_posSemidef hG (fun i j => ?_) hrow
         exact integral_congr_ae (Filter.Eventually.of_forall fun ω => mul_comm _ _)
 
+open Matrix in
+/-- Integrability of the quadratic form (same finite-sum expansion as
+`integral_quadForm_le`). -/
+private lemma integrable_quadForm {T : ℕ} (G : Matrix (Fin T) (Fin T) ℝ)
+    (u : Fin T → Ω → ℝ) (hu : ∀ i, MemLp (u i) 2 μ) :
+    Integrable (fun ω => (fun i => u i ω) ⬝ᵥ (G *ᵥ fun i => u i ω)) μ := by
+  have hint : ∀ i j : Fin T, Integrable (fun ω => u i ω * u j ω) μ := by
+    intro i j
+    have h := (hu i).integrable_mul (hu j)
+    exact h.congr (by filter_upwards with ω using rfl)
+  refine Integrable.congr (integrable_finset_sum (Finset.univ : Finset (Fin T)) fun i _ =>
+    integrable_finset_sum (Finset.univ : Finset (Fin T)) fun j _ =>
+      (hint i j).const_mul (G i j)) ?_
+  filter_upwards with ω
+  simp only [dotProduct, mulVec, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+
+open Matrix in
+/-- **Step (B) — the correction term vanishes in probability**:
+`T⁻¹ uᵀ G_T u →p 0` for `u = Π_T x` the truncated `θ`-residual vector of the true
+process.
+
+The proof is the one recorded at `armaProfileS_tendstoInProb`, with the operator-norm
+step replaced by the Schur test: `E[u_i u_j] = σ² Σ_{k,l} π̃(i,k) π̃(j,l) γ_{θ₀}(k − l)`
+has row sums bounded by `(Σ|π|)² · σ² Σ|γ|` uniformly in `T` and `i`
+(`rowSum_kernel_le` over `sum_abs_piK_row`, `sum_abs_piK_col`, `sum_abs_acvfK`), so
+`E[uᵀ G_T u] ≤ R · tr G_T ≤ R · K` with `K` the uniform trace bound
+(`trace_gramTail_le`). Markov's inequality on the nonnegative variable `T⁻¹ uᵀ G_T u`
+finishes. -/
+private lemma gramTail_quadForm_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
+    {b0 b : Fin p → ℝ} {a0 a : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
+    (hwn : IsWhiteNoise ε σ2 μ) (hσ : 0 ≤ σ2)
+    (hB0 : ARMAInvertibleParams b0 a0) (hB : ARMAInvertibleParams b a)
+    (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
+    (hmeas : ∀ t, Measurable (X t)) {η : ℝ} (hη : 0 < η) :
+    Tendsto (fun T : ℕ => (μ {ω | η ≤ (T : ℝ)⁻¹ *
+        ((piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+          (gramTail b a T *ᵥ
+            (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)))}).toReal)
+      atTop (𝓝 0) := by
+  have hπ : Summable fun n => |armaPi b a n| := summable_abs_armaPi hB
+  have hγ : Summable fun k : ℤ => |armaACVF b0 a0 k| := summable_abs_armaACVF hB0
+  have hψ : Summable fun n => |armaPsi b0 a0 n| := summable_abs_armaPsi a0 hB0.1
+  obtain ⟨P, hPdef⟩ : ∃ P : ℝ, P = ∑' n : ℕ, |armaPi b a n| := ⟨_, rfl⟩
+  obtain ⟨Γ, hΓdef⟩ : ∃ Γ : ℝ, Γ = ∑' m : ℤ, |armaACVF b0 a0 m| := ⟨_, rfl⟩
+  have hP0 : 0 ≤ P := hPdef ▸ tsum_nonneg fun n => abs_nonneg _
+  have hΓ0 : 0 ≤ Γ := hΓdef ▸ tsum_nonneg fun m => abs_nonneg _
+  obtain ⟨C, r, hC, hr0, hr1, hπg, hψg⟩ := exists_common_geometric_bound hB hB
+  obtain ⟨K, hKdef⟩ : ∃ K : ℝ,
+      K = C ^ 4 / (1 - r ^ 2) * ∑' d : ℕ, ((d : ℝ) + 1) ^ 2 * (r ^ 2) ^ (d + 1) := ⟨_, rfl⟩
+  have hKtr : ∀ T : ℕ, (gramTail b a T).trace ≤ K := fun T =>
+    hKdef ▸ trace_gramTail_le hC hr0 hr1 hπg hψg hB T
+  have hK0 : 0 ≤ K := by simpa using hKtr 0
+  obtain ⟨R, hRdef⟩ : ∃ R : ℝ, R = P * (P * (σ2 * Γ)) := ⟨_, rfl⟩
+  have hR0 : 0 ≤ R := by rw [hRdef]; positivity
+  -- the entries of the residual vector, and their second moments
+  have humem : ∀ (T : ℕ) (i : Fin T),
+      MemLp (fun ω => (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) i) 2 μ := by
+    intro T i
+    have : (fun ω => (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) i)
+        = fun ω => ∑ k : Fin T, piK b a (i : ℕ) (k : ℕ) * X (((k : ℕ) : ℤ) + 1) ω := rfl
+    rw [this]
+    exact memLp_finset_sum _ fun k _ =>
+      (hcausal.memLp hψ hwn hmeas _).const_mul (piK b a (i : ℕ) (k : ℕ))
+  have hmoment : ∀ (T : ℕ) (i j : Fin T),
+      ∫ ω, (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) i *
+        (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) j ∂μ
+        = ∑ k : Fin T, ∑ l : Fin T, piK b a (i : ℕ) (k : ℕ) * piK b a (j : ℕ) (l : ℕ) *
+            (σ2 * armaACVF b0 a0 (((k : ℕ) : ℤ) - ((l : ℕ) : ℤ))) := by
+    intro T i j
+    have hXint : ∀ k l : Fin T, Integrable
+        (fun ω => X (((k : ℕ) : ℤ) + 1) ω * X (((l : ℕ) : ℤ) + 1) ω) μ := by
+      intro k l
+      have h := (hcausal.memLp hψ hwn hmeas (((k : ℕ) : ℤ) + 1)).integrable_mul
+        (hcausal.memLp hψ hwn hmeas (((l : ℕ) : ℤ) + 1))
+      exact h.congr (by filter_upwards with ω using rfl)
+    have hexp : ∀ ω, (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) i *
+        (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) j
+        = ∑ k : Fin T, ∑ l : Fin T, (piK b a (i : ℕ) (k : ℕ) * piK b a (j : ℕ) (l : ℕ)) *
+            (X (((k : ℕ) : ℤ) + 1) ω * X (((l : ℕ) : ℤ) + 1) ω) := by
+      intro ω
+      show (∑ k : Fin T, piK b a (i : ℕ) (k : ℕ) * X (((k : ℕ) : ℤ) + 1) ω) *
+          (∑ l : Fin T, piK b a (j : ℕ) (l : ℕ) * X (((l : ℕ) : ℤ) + 1) ω) = _
+      rw [Finset.sum_mul_sum]
+      exact Finset.sum_congr rfl fun k _ => Finset.sum_congr rfl fun l _ => by ring
+    rw [integral_congr_ae (Filter.Eventually.of_forall hexp),
+      integral_finset_sum _ fun k _ => integrable_finset_sum _ fun l _ =>
+        (hXint k l).const_mul _]
+    refine Finset.sum_congr rfl fun k _ => ?_
+    rw [integral_finset_sum _ fun l _ => (hXint k l).const_mul _]
+    refine Finset.sum_congr rfl fun l _ => ?_
+    have hidx : ((((k : ℕ) : ℤ) + 1) - (((l : ℕ) : ℤ) + 1))
+        = ((k : ℕ) : ℤ) - ((l : ℕ) : ℤ) := by ring
+    rw [integral_const_mul, integral_mul_linearProcess hcausal hψ hwn hmeas, hidx, armaACVF]
+  -- the row-sum bound, uniform in `T` and in the row index
+  have hrow : ∀ (T : ℕ) (i : Fin T),
+      ∑ j : Fin T, |∫ ω, (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) i *
+        (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) j ∂μ| ≤ R := by
+    intro T i
+    have hcongr : ∀ j : Fin T,
+        |∫ ω, (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) i *
+          (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) j ∂μ|
+          = |∑ k : Fin T, ∑ l : Fin T, piK b a (i : ℕ) (k : ℕ) * piK b a (j : ℕ) (l : ℕ) *
+              (σ2 * armaACVF b0 a0 (((k : ℕ) : ℤ) - ((l : ℕ) : ℤ)))| := by
+      intro j; rw [hmoment T i j]
+    rw [Finset.sum_congr rfl fun j _ => hcongr j, hRdef]
+    exact rowSum_kernel_le _ _ _ (hPdef ▸ sum_abs_piK_row hπ i)
+      (fun l => hPdef ▸ sum_abs_piK_col hπ l)
+      (fun k => hΓdef ▸ sum_abs_acvfK hγ σ2 hσ k) hP0 (by positivity)
+  -- Markov
+  refine squeeze_zero' (Eventually.of_forall fun T => ENNReal.toReal_nonneg) ?_
+    (tendsto_const_div_atTop_nhds_zero_nat (R * K / η))
+  filter_upwards [eventually_ge_atTop 1] with T hT
+  have hTpos : (0 : ℝ) < T := by exact_mod_cast hT
+  have hpsd := gramTail_posSemidef hB T
+  have hZnn : 0 ≤ᵐ[μ] fun ω => (T : ℝ)⁻¹ *
+      ((piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+        (gramTail b a T *ᵥ (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))) := by
+    filter_upwards with ω
+    refine mul_nonneg (by positivity) ?_
+    have := hpsd.dotProduct_mulVec_nonneg
+      (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+    rwa [star_trivial] at this
+  have hZint : Integrable (fun ω =>
+      (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+        (gramTail b a T *ᵥ (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))) μ :=
+    integrable_quadForm (gramTail b a T) _ (humem T)
+  have hbnd : ∫ ω, (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+      (gramTail b a T *ᵥ (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)) ∂μ
+      ≤ R * K := by
+    refine le_trans (integral_quadForm_le (gramTail b a T) hpsd _ (humem T) (hrow T)) ?_
+    exact mul_le_mul_of_nonneg_left (hKtr T) hR0
+  have hmark := mul_meas_ge_le_integral_of_nonneg hZnn (hZint.const_mul (T : ℝ)⁻¹) η
+  rw [integral_const_mul] at hmark
+  have hle : η * (μ.real {ω | η ≤ (T : ℝ)⁻¹ *
+      ((piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+        (gramTail b a T *ᵥ (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)))})
+      ≤ (T : ℝ)⁻¹ * (R * K) :=
+    hmark.trans (mul_le_mul_of_nonneg_left hbnd (by positivity))
+  rw [measureReal_def] at hle
+  have key : ∀ M : ℝ, 0 ≤ M → η * M ≤ (T : ℝ)⁻¹ * (R * K) → M ≤ R * K / η / T := by
+    intro M hM0 hM
+    rw [div_div, le_div_iff₀ (by positivity)]
+    have h3 : (T : ℝ)⁻¹ * (R * K) * T = R * K := by field_simp
+    have h4 := mul_le_mul_of_nonneg_right hM (le_of_lt hTpos)
+    rw [h3] at h4
+    nlinarith [h4]
+  exact key _ ENNReal.toReal_nonneg hle
+
 /-- **The one missing analytic input of this lane** (named debt): the *quadratic-form
 law of large numbers*
 
