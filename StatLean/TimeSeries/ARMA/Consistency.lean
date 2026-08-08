@@ -1623,7 +1623,16 @@ statistic does not need it. The route, and what is actually left:
   whose first factor has mean `σ² Σ_{j ≥ m} c_j² → 0`. The recorded "fourth cumulants"
   obstruction is real, but it only blocks a *direct* `L²` LLN for `r_t(θ)²`; it does
   not touch this route, which uses second moments only. The same device also absorbs
-  the edge effect `u_i` (truncated at `x_1`) versus the two-sided residual `r_i`. -/
+  the edge effect of the truncation versus the two-sided residual.
+
+  **Orientation (correcting the note at `armaProfileS_eq_gramTail_quadForm`).** `Π_T`
+  is *upper* triangular (`det_piMat` proves determinant one from
+  `piK b a i k = 0` for `k < i`), so its rows are the *time-reversed* residuals
+  `u_i = Σ_{j ≥ 0} π_j(θ) x_{i+j}`, truncated at `x_T` — not `Σ_{j ≤ i} π_{i−j} x_j`
+  truncated at `x_1`. This changes nothing in the limit, since
+  `E[u_i²] = σ² Σ_{d,e ≥ 0} π_d π_e γ_{θ₀}(e − d)` is symmetric in the reversal
+  (`γ` is even) and tends to `σ² Σ_n c_n²` as `i` recedes from the truncation; but an
+  implementation of (C) must truncate the composite filter *forwards* in `i`. -/
 theorem armaProfileS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 b : Fin p → ℝ} {a0 a : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
