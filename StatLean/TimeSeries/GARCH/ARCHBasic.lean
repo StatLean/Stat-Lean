@@ -2,6 +2,7 @@ import StatLean.TimeSeries.Stationarity.ARCH
 import StatLean.TimeSeries.Stationarity.ARMAExistence
 import StatLean.TimeSeries.Models.Linear
 import StatLean.TimeSeries.Process.LinearProcess
+import Mathlib.Probability.ConditionalExpectation
 
 /-!
 # Basic properties of ARCH(p) (FY §4.2.1, Theorem 4.3, Proposition 4.1)
@@ -112,12 +113,71 @@ private lemma integrable_sq_iid [IsProbabilityMeasure μ] {ε : ℤ → Ω → �
     (hε : IsIIDNoise ε 1 μ) (t : ℤ) : Integrable (fun ω => ε t ω ^ 2) μ :=
   ((hε.identDistrib 0 t).memLp_snd hε.memLp).integrable_sq
 
+/-- Every past-measurable functional is independent of the current innovation — the
+working form of the model's `indep_past` field. -/
+private lemma indepFun_of_sigmaLT {X ε : ℤ → Ω → ℝ} {t : ℤ}
+    (hindep : Indep (MeasurableSpace.comap (ε t) inferInstance) (sigmaLT X t) μ)
+    {f : Ω → ℝ} (hf : Measurable[sigmaLT X t] f) : IndepFun f (ε t) μ :=
+  (IndepFun_iff_Indep _ _ _).2 (indep_of_indep_of_le_right hindep hf.comap_le).symm
+
+/-- `σ_t²` is integrable as soon as the process is square-integrable. -/
+private lemma integrable_archVol_sq [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
+    {b : Fin p → ℝ} {X ε : ℤ → Ω → ℝ} (h : IsARCH c0 b X ε μ)
+    (hL2 : ∀ t, MemLp (X t) 2 μ) (t : ℤ) :
+    Integrable (fun ω => archVol c0 b X t ω ^ 2) μ := by
+  have hvolsq : (fun ω => archVol c0 b X t ω ^ 2)
+      = fun ω => c0 + ∑ i, b i * X (t - 1 - (i : ℕ)) ω ^ 2 :=
+    funext fun ω => archVol_sq h.c0_nonneg h.b_nonneg t ω
+  rw [hvolsq]
+  exact (integrable_const c0).add (integrable_finset_sum _ fun i _ =>
+    ((hL2 _).integrable_sq).const_mul _)
+
 /-- The squared ARCH(p) process is an ARCH(∞) process in the sense of `IsARCHInf`
 (FY §4.2.1's reduction to Theorem 2.5). -/
 theorem IsARCH.isARCHInf_sq [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ} {b : Fin p → ℝ}
     {X ε : ℤ → Ω → ℝ} (h : IsARCH c0 b X ε μ) :
     IsARCHInf c0 (archInfCoeffs b) (fun t ω => X t ω ^ 2) (fun t ω => ε t ω ^ 2) μ := by
-  sorry
+  have hsq : Measurable fun x : ℝ => x ^ 2 := measurable_id.pow_const 2
+  have hcoe : ∀ i : Fin p, archInfCoeffs b (i : ℕ) = b i := fun i => by
+    simp [archInfCoeffs, i.isLt]
+  refine
+    { a_nonneg := h.c0_nonneg
+      bc_nonneg := fun j => ?_
+      measurableY := fun s => (h.measurableX s).pow_const 2
+      measurableXi := fun s => (h.iid.measurable s).pow_const 2
+      xi_nonneg := fun s => Filter.Eventually.of_forall fun ω => sq_nonneg _
+      iIndep := h.iid.iIndep.comp (fun _ x => x ^ 2) fun _ => hsq
+      identDistrib := fun s s' => (h.iid.identDistrib s s').comp hsq
+      integrable_xi := integrable_sq_iid h.iid 0
+      integral_xi := integral_sq_iid h.iid 0
+      indep_past := fun s => ?_
+      Y_nonneg := fun s => Filter.Eventually.of_forall fun ω => sq_nonneg _
+      recurrence := fun s => ?_ }
+  · simp only [archInfCoeffs]
+    split
+    · exact h.b_nonneg _
+    · exact le_rfl
+  · -- `σ(ε_s²) ⊆ σ(ε_s)` and `σ(X_u² : u < s) ⊆ σ(X_u : u < s)`
+    have h1 : MeasurableSpace.comap (fun ω => ε s ω ^ 2) inferInstance
+        ≤ MeasurableSpace.comap (ε s) inferInstance :=
+      (hsq.comp (Measurable.of_comap_le
+        (le_refl (MeasurableSpace.comap (ε s) inferInstance)))).comap_le
+    have h2 : sigmaLT (fun u ω => X u ω ^ 2) s ≤ sigmaLT X s :=
+      iSup₂_le fun u hu =>
+        ((measurable_sigmaLT (X := X) (t := s) hu).pow_const 2).comap_le
+    exact indep_of_indep_of_le_left
+      (indep_of_indep_of_le_right (h.indep_past s) h2) h1
+  · filter_upwards [h.recurrence s] with ω hω
+    have htsum : (∑' j : ℕ, archInfCoeffs b j * X (s - 1 - (j : ℕ)) ω ^ 2)
+        = ∑ i, b i * X (s - 1 - (i : ℕ)) ω ^ 2 := by
+      rw [tsum_eq_sum (s := Finset.range p) (fun j hj => by
+        have hj' : ¬ j < p := by simpa using hj
+        simp [archInfCoeffs, hj'])]
+      rw [← Fin.sum_univ_eq_sum_range
+        (fun j => archInfCoeffs b j * X (s - 1 - (j : ℕ)) ω ^ 2) p]
+      exact Finset.sum_congr rfl fun i _ => by rw [hcoe i]
+    change X s ω ^ 2 = _
+    rw [hω, mul_pow, htsum, archVol_sq h.c0_nonneg h.b_nonneg]
 
 /-- **FY Theorem 4.3(i), existence + moments**: under `Σ_j b_j < 1` there is a strictly
 stationary ARCH(p) solution with finite variance, and every such solution has
@@ -141,7 +201,59 @@ theorem IsARCH.integral_and_variance [IsProbabilityMeasure μ] {c0 : ℝ} {p : �
     (hstat : IsStrictlyStationary X μ) (hL2 : ∀ t, MemLp (X t) 2 μ)
     (hsum : (∑ i, b i) < 1) (t : ℤ) :
     (∫ ω, X t ω ∂μ) = 0 ∧ variance (X t) μ = c0 / (1 - ∑ i, b i) := by
-  sorry
+  have hsq : Measurable fun x : ℝ => x ^ 2 := measurable_id.pow_const 2
+  have hle : sigmaLT X t ≤ (inferInstance : MeasurableSpace Ω) := sigmaLT_le h.measurableX t
+  have hvolM : Measurable (archVol c0 b X t) :=
+    (measurable_archVol_sigmaLT (c0 := c0) (b := b) (X := X) t).mono hle le_rfl
+  have hIF : IndepFun (archVol c0 b X t) (ε t) μ :=
+    indepFun_of_sigmaLT (h.indep_past t) (measurable_archVol_sigmaLT t)
+  -- (i) `E X_t = E σ_t · E ε_t = 0`.
+  have hmean : (∫ ω, X t ω ∂μ) = 0 := by
+    have e1 : ∫ ω, X t ω ∂μ = ∫ ω, archVol c0 b X t ω * ε t ω ∂μ :=
+      integral_congr_ae (h.recurrence t)
+    have he : ∫ ω, ε t ω ∂μ = 0 := by
+      rw [(h.iid.identDistrib t 0).integral_eq, h.iid.integral_eq_zero]
+    rw [e1, hIF.integral_fun_mul_eq_mul_integral hvolM.aestronglyMeasurable
+      (h.iid.measurable t).aestronglyMeasurable, he, mul_zero]
+  -- (ii) `E X_t² = E σ_t² = c₀ + (Σ b) E X_t²`.
+  have e2 : ∫ ω, X t ω ^ 2 ∂μ = ∫ ω, archVol c0 b X t ω ^ 2 ∂μ := by
+    have hae : (fun ω => X t ω ^ 2)
+        =ᵐ[μ] fun ω => archVol c0 b X t ω ^ 2 * ε t ω ^ 2 := by
+      filter_upwards [h.recurrence t] with ω hω
+      rw [hω]; ring
+    have hIF2 : IndepFun (fun ω => archVol c0 b X t ω ^ 2) (fun ω => ε t ω ^ 2) μ :=
+      hIF.comp hsq hsq
+    rw [integral_congr_ae hae,
+      hIF2.integral_fun_mul_eq_mul_integral
+        (hvolM.pow_const 2).aestronglyMeasurable
+        ((h.iid.measurable t).pow_const 2).aestronglyMeasurable,
+      integral_sq_iid h.iid t, mul_one]
+  have hstatsq : ∀ s : ℤ, ∫ ω, X s ω ^ 2 ∂μ = ∫ ω, X t ω ^ 2 ∂μ := fun s => by
+    simpa [Function.comp_def] using
+      ((hstat.identDistrib h.measurableX s t).comp hsq).integral_eq
+  have e3 : ∫ ω, archVol c0 b X t ω ^ 2 ∂μ = c0 + (∑ i, b i) * ∫ ω, X t ω ^ 2 ∂μ := by
+    have hvolsq : (fun ω => archVol c0 b X t ω ^ 2)
+        = fun ω => c0 + ∑ i, b i * X (t - 1 - (i : ℕ)) ω ^ 2 :=
+      funext fun ω => archVol_sq h.c0_nonneg h.b_nonneg t ω
+    have hterm : ∀ i : Fin p, ∫ ω, b i * X (t - 1 - (i : ℕ)) ω ^ 2 ∂μ
+        = b i * ∫ ω, X t ω ^ 2 ∂μ := fun i => by
+      rw [integral_const_mul, hstatsq]
+    have hc : ∫ _ω : Ω, c0 ∂μ = c0 := by simp
+    rw [hvolsq, integral_add (integrable_const c0)
+      (integrable_finset_sum _ fun i _ => ((hL2 _).integrable_sq).const_mul _),
+      integral_finset_sum _ fun i _ => ((hL2 _).integrable_sq).const_mul _, hc,
+      Finset.sum_mul]
+    exact congrArg _ (Finset.sum_congr rfl fun i _ => hterm i)
+  have hne : (1 : ℝ) - ∑ i, b i ≠ 0 := by linarith
+  have hfix : ∫ ω, X t ω ^ 2 ∂μ = c0 / (1 - ∑ i, b i) := by
+    have hkey := e2.trans e3
+    rw [eq_div_iff hne]
+    nlinarith [hkey]
+  refine ⟨hmean, ?_⟩
+  rw [variance_eq_sub (hL2 t)]
+  have hpow : ∫ ω, ((X t) ^ 2) ω ∂μ = ∫ ω, X t ω ^ 2 ∂μ := rfl
+  rw [hpow, hmean, hfix]
+  ring
 
 /-- **FY Theorem 4.3(i), degenerate case**: `c₀ = 0` forces the stationary solution to
 vanish. -/
@@ -150,7 +262,20 @@ theorem IsARCH.eq_zero_of_c0_eq_zero [IsProbabilityMeasure μ] {p : ℕ} {b : Fi
     (hstat : IsStrictlyStationary X μ) (hL2 : ∀ t, MemLp (X t) 2 μ)
     (hsum : (∑ i, b i) < 1) (t : ℤ) :
     X t =ᵐ[μ] 0 := by
-  sorry
+  obtain ⟨hm, hv⟩ := h.integral_and_variance hstat hL2 hsum t
+  have h2 : ∫ ω, X t ω ^ 2 ∂μ = 0 := by
+    have hvs := variance_eq_sub (hL2 t)
+    rw [hv, hm] at hvs
+    have hpow : ∫ ω, ((X t) ^ 2) ω ∂μ = ∫ ω, X t ω ^ 2 ∂μ := rfl
+    rw [hpow] at hvs
+    simp at hvs
+    linarith [hvs]
+  have hint : Integrable (fun ω => X t ω ^ 2) μ := (hL2 t).integrable_sq
+  have hnn : 0 ≤ᵐ[μ] fun ω => X t ω ^ 2 :=
+    Filter.Eventually.of_forall fun ω => sq_nonneg _
+  filter_upwards [(integral_eq_zero_iff_of_nonneg_ae hnn hint).1 h2] with ω hω
+  have hz : X t ω ^ 2 = 0 := hω
+  exact (pow_eq_zero_iff (by norm_num : (2 : ℕ) ≠ 0)).1 hz
 
 /-- **DEBT (Bollerslev 1986 Thm 1; FY Theorem 4.3(i), necessity half)**: conversely, a
 strictly stationary ARCH(p) solution with finite variance forces `Σ_j b_j < 1`. -/
@@ -181,7 +306,40 @@ theorem IsARCH.condexp_sq_innovation [IsProbabilityMeasure μ] {c0 : ℝ} {p : �
     {b : Fin p → ℝ} {X ε : ℤ → Ω → ℝ} (h : IsARCH c0 b X ε μ)
     (hL2 : ∀ t, MemLp (X t) 2 μ) (t : ℤ) :
     μ[fun ω => (ε t ω ^ 2 - 1) * archVol c0 b X t ω ^ 2 | sigmaLT X t] =ᵐ[μ] 0 := by
-  sorry
+  have hle : sigmaLT X t ≤ (inferInstance : MeasurableSpace Ω) := sigmaLT_le h.measurableX t
+  have hvolm : Measurable[sigmaLT X t] fun ω => archVol c0 b X t ω ^ 2 :=
+    (measurable_archVol_sigmaLT (c0 := c0) (b := b) (X := X) t).pow_const 2
+  have hvolint : Integrable (fun ω => archVol c0 b X t ω ^ 2) μ :=
+    integrable_archVol_sq h hL2 t
+  have hεint : Integrable (fun ω => ε t ω ^ 2 - 1) μ :=
+    (integrable_sq_iid h.iid t).sub (integrable_const 1)
+  -- The innovation `ε_t² − 1` is independent of the past and centered.
+  have hIF : IndepFun (fun ω => archVol c0 b X t ω ^ 2) (fun ω => ε t ω ^ 2 - 1) μ :=
+    (indepFun_of_sigmaLT (h.indep_past t) hvolm).comp measurable_id
+      ((measurable_id.pow_const 2).sub_const 1)
+  have hprod : Integrable
+      ((fun ω => ε t ω ^ 2 - 1) * fun ω => archVol c0 b X t ω ^ 2) μ :=
+    (hIF.symm).integrable_mul hεint hvolint
+  have hmean : ∫ ω, (ε t ω ^ 2 - 1) ∂μ = 0 := by
+    rw [integral_sub (integrable_sq_iid h.iid t) (integrable_const 1),
+      integral_sq_iid h.iid t]
+    simp
+  have hcond : μ[fun ω => ε t ω ^ 2 - 1 | sigmaLT X t] =ᵐ[μ] fun _ => (0 : ℝ) := by
+    have := condExp_indep_eq (μ := μ) (h.iid.measurable t).comap_le hle
+      (f := fun ω => ε t ω ^ 2 - 1)
+      (((Measurable.of_comap_le
+          (le_refl (MeasurableSpace.comap (ε t) inferInstance))).pow_const 2).sub_const
+        1).stronglyMeasurable (h.indep_past t)
+    filter_upwards [this] with ω hω
+    rw [hω, hmean]
+  have hpull := condExp_mul_of_stronglyMeasurable_right (μ := μ) (m := sigmaLT X t)
+    (f := fun ω => ε t ω ^ 2 - 1) (g := fun ω => archVol c0 b X t ω ^ 2)
+    hvolm.stronglyMeasurable hprod hεint
+  filter_upwards [hpull, hcond] with ω h1 h2
+  change μ[fun ω => (ε t ω ^ 2 - 1) * archVol c0 b X t ω ^ 2 | sigmaLT X t] ω = 0
+  rw [show (fun ω => (ε t ω ^ 2 - 1) * archVol c0 b X t ω ^ 2)
+      = ((fun ω => ε t ω ^ 2 - 1) * fun ω => archVol c0 b X t ω ^ 2) from rfl, h1]
+  simp [h2]
 
 /-- **FY eq. (4.17)**: the squared process satisfies the AR(p) recursion
 `X_t² = c₀ + Σᵢ bᵢ X_{t−i}² + e_t` with `e_t = (ε_t² − 1)σ_t²`. -/
