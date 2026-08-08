@@ -1182,6 +1182,72 @@ private lemma abs_integral_quad_le [IsProbabilityMeasure μ]
     · rw [hmx']; linarith
     · rw [hmx']; linarith
 
+/-- The four-fold expansion of a fourth power of a finite sum. -/
+private lemma sum_pow_four_expand {ι : Type*} (s : Finset ι) (f : ι → ℝ) :
+    (∑ t ∈ s, f t) ^ 4
+      = ∑ a ∈ s, ∑ b ∈ s, ∑ c ∈ s, ∑ d ∈ s, f a * f b * f c * f d := by
+  have h2 : (∑ t ∈ s, f t) * (∑ t ∈ s, f t) = ∑ a ∈ s, ∑ b ∈ s, f a * f b := by
+    rw [Finset.sum_mul]
+    exact Finset.sum_congr rfl fun a _ => Finset.mul_sum _ _ _
+  have h3 : (∑ t ∈ s, f t) ^ 3 = ∑ a ∈ s, ∑ b ∈ s, ∑ c ∈ s, f a * f b * f c := by
+    have e : (∑ t ∈ s, f t) ^ 3 = (∑ a ∈ s, ∑ b ∈ s, f a * f b) * ∑ t ∈ s, f t := by
+      rw [← h2]; ring
+    rw [e, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun a _ => ?_
+    rw [Finset.sum_mul]
+    exact Finset.sum_congr rfl fun b _ => Finset.mul_sum _ _ _
+  have e : (∑ t ∈ s, f t) ^ 4
+      = (∑ a ∈ s, ∑ b ∈ s, ∑ c ∈ s, f a * f b * f c) * ∑ t ∈ s, f t := by
+    rw [← h3]; ring
+  rw [e, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun a _ => ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_congr rfl fun b _ => ?_
+  rw [Finset.sum_mul]
+  exact Finset.sum_congr rfl fun c _ => Finset.mul_sum _ _ _
+
+/-- **DEBT (the counting half of FY Proposition 2.7(ii) at `q = 4`)** — reported loudly.
+
+Purely combinatorial: no probability appears.  A symmetric nonnegative kernel `G` on
+`ℕ⁴` whose *sorted* values obey the mixing cut bound against an antitone `A ≤ 1` with
+`A m ≤ K m⁻²` has `O(n²)` four-fold sums over `range n`.  Everything probabilistic that
+feeds this — the cut bound itself — is proved above (`abs_integral_quad_le`).
+
+ROUTE (ledger checked by hand, not yet formalised):
+* **Symmetrisation.**  `G` is invariant under the three adjacent transpositions
+  `hGs1`–`hGs3`, which generate `S₄`, so
+  `∑_{(a,b,c,d) ∈ (range n)⁴} G ≤ 24 · ∑_{a ≤ b ≤ c ≤ d < n} G a b c d`: map each tuple
+  to its sorted representative and bound the fibres by `4! = 24`.  In Lean this is the
+  expensive step — it needs an explicit sorting network on `ℕ⁴` (five comparators) plus
+  the proof that it is a permutation, or `Tuple.sort` with a fibre count.
+* **Gap parametrisation.**  Reindex sorted tuples by `(a, g₁, g₂, g₃)` with
+  `a + g₁ + g₂ + g₃ < n`; the map is a bijection onto its image, and dropping the
+  constraint only increases a sum of nonnegative terms.
+* **First sum.**  `∑_{a<n} ∑_{g₁,g₂,g₃<n} A (max g₁ (max g₂ g₃)) ≤ n · ∑_{g<n} 3 (g+1)² A g`
+  (a triple with maximum `g` has all entries `≤ g` and at least one equal to `g`, so the
+  fibre over `g` has at most `3(g+1)²` elements), and `3(g+1)² A g ≤ 3 · 4 K` for `g ≥ 1`
+  while the `g = 0` term is `≤ 3` by `A ≤ 1`; hence the inner sum is `≤ 3 + 12Kn` and the
+  total is `≤ n(3 + 12Kn) = O(n²)`.
+* **Second sum.**  `∑_{a<n} ∑_{g₁,g₂,g₃<n} A g₁ · A g₃ ≤ n · n · (∑_{g<n} A g)²` and
+  `∑_{g<n} A g ≤ 1 + K · ∑_{g≥1} g⁻² ≤ 1 + 2K` is bounded uniformly in `n`, so this is
+  `O(n²)` as well.
+* `D = 24 · (4C⁴(3 + 12K) + 16C⁴(1 + 2K)²)` works. -/
+private lemma sum_four_le_of_cut_bound {G : ℕ → ℕ → ℕ → ℕ → ℝ} {A : ℕ → ℝ} {C K : ℝ}
+    (hC : 0 ≤ C) (hK : 0 ≤ K)
+    (hA0 : ∀ m, 0 ≤ A m) (hA1 : ∀ m, A m ≤ 1) (hAanti : Antitone A)
+    (hAK : ∀ m : ℕ, 1 ≤ m → A m ≤ K / (m : ℝ) ^ 2)
+    (hG0 : ∀ a b c d, 0 ≤ G a b c d)
+    (hGs1 : ∀ a b c d, G a b c d = G b a c d)
+    (hGs2 : ∀ a b c d, G a b c d = G a c b d)
+    (hGs3 : ∀ a b c d, G a b c d = G a b d c)
+    (hcut : ∀ a b c d : ℕ, a ≤ b → b ≤ c → c ≤ d →
+      G a b c d ≤ 4 * C ^ 4 * A (max (b - a) (max (c - b) (d - c)))
+        + 16 * C ^ 4 * (A (b - a) * A (d - c))) :
+    ∃ D : ℝ, 0 ≤ D ∧ ∀ n : ℕ,
+      ∑ a ∈ Finset.range n, ∑ b ∈ Finset.range n, ∑ c ∈ Finset.range n,
+        ∑ d ∈ Finset.range n, G a b c d ≤ D * (n : ℝ) ^ 2 := by
+  sorry
+
 end Moment4
 
 /-- **FY Proposition 2.7(ii), `q = 4` instance** (the one the Bernstein-block CLT
@@ -1199,24 +1265,79 @@ theorem moment4_partial_sum_le [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ
     (hα : ∀ n : ℕ, 1 ≤ n → alphaCoeff X μ n ≤ K / (n : ℝ) ^ 2) :
     ∃ C' : ℝ, 0 ≤ C' ∧ ∀ n : ℕ,
       ∫ ω, (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) ^ 4 ∂μ ≤ C' * (n : ℝ) ^ 2 := by
-  -- NOT ATTEMPTED in this wave (the other four targets of the batch are closed). Route,
-  -- with the ledger checked by hand:
-  -- (1) `E ∏ X_{t_i}` for a *sorted* tuple `t₁ ≤ t₂ ≤ t₃ ≤ t₄` with gaps `g₁, g₂, g₃`
-  --     obeys `|E ∏| ≤ 4 C⁴ α(max g) + 16 C⁴ α(g₁) α(g₃)`: split at the largest gap with
-  --     `abs_covariance_le_of_bounded` (blocks are `sigmaLE`/`sigmaGE`-measurable, each
-  --     bounded by `C²`, and `IsStrictlyStationary.alphaMixCoeff_shift` turns the
-  --     coefficient into `alphaCoeff`); at the outer splits the product term vanishes
-  --     because `E X_t = 0` (transported off `hmean` by `hstat.identDistrib`), at the
-  --     middle split it is `|E X_{t₁}X_{t₂}| |E X_{t₃}X_{t₄}| ≤ 16 C⁴ α(g₁) α(g₃)`.
-  -- (2) `Σ_{sorted} α(max g) ≤ n Σ_{m ≤ n} 3 (m+1)² K/m² = O(n²)` and
-  --     `Σ_{sorted} α(g₁)α(g₃) ≤ n · n · (Σ_m α m)² = O(n²)` (the second sum converges by
-  --     `α(m) ≤ K/m²`); both need `α ≤ 1` at `m = 0`.
-  -- (3) The unsorted 4-fold expansion of `(Σ X)⁴` reduces to the sorted one by the
-  --     fibrewise bound `#{p | sort p = q} ≤ 4⁴` (`Tuple.sort`, `Fintype.prod_equiv`);
-  --     the constant is irrelevant since `C'` is existential.
-  -- Step (1) is the probabilistic content and is cheap given the bricks above; steps
-  -- (2)–(3) are the combinatorics and are what remains.
-  sorry
+  classical
+  have hC0 : 0 ≤ C := le_trans (abs_nonneg _) (hbdd 0).exists.choose_spec
+  have hA0 : ∀ m, 0 ≤ alphaCoeff X μ m := alphaCoeff_nonneg' X
+  have hA1 : ∀ m, alphaCoeff X μ m ≤ 1 := fun _ => alphaMixCoeff_le_one (mΩ := inferInstance)
+  have hAanti : Antitone fun m : ℕ => alphaCoeff X μ m := alphaCoeff_antitone X
+  have hK0 : 0 ≤ K := by
+    have h1 := hα 1 le_rfl
+    have h2 := hA0 1
+    norm_num at h1
+    linarith
+  -- the kernel: the modulus of the four-fold moment
+  obtain ⟨G, hG⟩ : ∃ G : ℕ → ℕ → ℕ → ℕ → ℝ, ∀ a b c d, G a b c d =
+      |∫ ω, X ((a : ℤ) + 1) ω * X ((b : ℤ) + 1) ω * X ((c : ℤ) + 1) ω
+        * X ((d : ℤ) + 1) ω ∂μ| := ⟨_, fun _ _ _ _ => rfl⟩
+  have hGsymm : ∀ (a b c d a' b' c' d' : ℕ),
+      (∀ ω, X ((a : ℤ) + 1) ω * X ((b : ℤ) + 1) ω * X ((c : ℤ) + 1) ω * X ((d : ℤ) + 1) ω
+        = X ((a' : ℤ) + 1) ω * X ((b' : ℤ) + 1) ω * X ((c' : ℤ) + 1) ω * X ((d' : ℤ) + 1) ω)
+      → G a b c d = G a' b' c' d' := by
+    intro a b c d a' b' c' d' he
+    rw [hG, hG]
+    congr 1
+    exact integral_congr_ae (ae_of_all _ he)
+  -- the cut bound, transported from `abs_integral_quad_le`
+  have hcut : ∀ a b c d : ℕ, a ≤ b → b ≤ c → c ≤ d →
+      G a b c d ≤ 4 * C ^ 4 * alphaCoeff X μ (max (b - a) (max (c - b) (d - c)))
+        + 16 * C ^ 4 * (alphaCoeff X μ (b - a) * alphaCoeff X μ (d - c)) := by
+    intro a b c d hab hbc hcd
+    have e1 : (((b : ℤ) + 1) - ((a : ℤ) + 1)).toNat = b - a := by omega
+    have e2 : (((c : ℤ) + 1) - ((b : ℤ) + 1)).toNat = c - b := by omega
+    have e3 : (((d : ℤ) + 1) - ((c : ℤ) + 1)).toNat = d - c := by omega
+    have key := abs_integral_quad_le hstat hmeas hbdd hmean
+      (a := (a : ℤ) + 1) (b := (b : ℤ) + 1) (c := (c : ℤ) + 1) (d := (d : ℤ) + 1)
+      (by omega) (by omega) (by omega)
+    rw [e1, e2, e3] at key
+    rw [hG]
+    exact key
+  obtain ⟨D, hD0, hD⟩ := sum_four_le_of_cut_bound (G := G)
+    (A := fun m : ℕ => alphaCoeff X μ m) (C := C) (K := K) hC0 hK0 hA0 hA1 hAanti
+    (fun m hm => hα m hm) (fun a b c d => by rw [hG]; exact abs_nonneg _)
+    (fun a b c d => hGsymm _ _ _ _ _ _ _ _ fun ω => by ring)
+    (fun a b c d => hGsymm _ _ _ _ _ _ _ _ fun ω => by ring)
+    (fun a b c d => hGsymm _ _ _ _ _ _ _ _ fun ω => by ring) hcut
+  refine ⟨D, hD0, fun n => ?_⟩
+  -- expand the fourth power of the partial sum and exchange with the integral
+  have hint : ∀ a b c d : ℕ, Integrable (fun ω => X ((a : ℤ) + 1) ω * X ((b : ℤ) + 1) ω
+      * X ((c : ℤ) + 1) ω * X ((d : ℤ) + 1) ω) μ := by
+    intro a b c d
+    refine integrable_of_bdd ((((hmeas _).mul (hmeas _)).mul (hmeas _)).mul (hmeas _))
+      (B := C * C * C * C) ?_
+    filter_upwards [hbdd ((a : ℤ) + 1), hbdd ((b : ℤ) + 1), hbdd ((c : ℤ) + 1),
+      hbdd ((d : ℤ) + 1)] with ω f1 f2 f3 f4
+    exact abs_mul_le_of_bdd (abs_mul_le_of_bdd (abs_mul_le_of_bdd f1 f2) f3) f4
+  have hexp : (∫ ω, (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) ^ 4 ∂μ)
+      = ∑ a ∈ Finset.range n, ∑ b ∈ Finset.range n, ∑ c ∈ Finset.range n,
+          ∑ d ∈ Finset.range n, ∫ ω, X ((a : ℤ) + 1) ω * X ((b : ℤ) + 1) ω
+            * X ((c : ℤ) + 1) ω * X ((d : ℤ) + 1) ω ∂μ := by
+    rw [integral_congr_ae (ae_of_all _ fun ω =>
+      sum_pow_four_expand (Finset.range n) fun t : ℕ => X ((t : ℤ) + 1) ω)]
+    rw [integral_finset_sum _ fun a _ => integrable_finset_sum _ fun b _ =>
+      integrable_finset_sum _ fun c _ => integrable_finset_sum _ fun d _ => hint a b c d]
+    refine Finset.sum_congr rfl fun a _ => ?_
+    rw [integral_finset_sum _ fun b _ => integrable_finset_sum _ fun c _ =>
+      integrable_finset_sum _ fun d _ => hint a b c d]
+    refine Finset.sum_congr rfl fun b _ => ?_
+    rw [integral_finset_sum _ fun c _ => integrable_finset_sum _ fun d _ => hint a b c d]
+    refine Finset.sum_congr rfl fun c _ => ?_
+    exact integral_finset_sum _ fun d _ => hint a b c d
+  rw [hexp]
+  refine le_trans ?_ (hD n)
+  refine Finset.sum_le_sum fun a _ => Finset.sum_le_sum fun b _ =>
+    Finset.sum_le_sum fun c _ => Finset.sum_le_sum fun d _ => ?_
+  rw [hG]
+  exact le_abs_self _
 
 /-! ### Theorems 2.18/2.19: Bosq exponential inequalities (literature DEBTS) -/
 
