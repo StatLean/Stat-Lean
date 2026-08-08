@@ -52,7 +52,40 @@ theorem klInfo_nonneg {α : Type*} [MeasurableSpace α] {ν : Measure α}
     -- LEAN-ONLY: integrability of the KL integrand (finite KL); junk otherwise
     (hint : Integrable (fun v => f v * Real.log (f v / g v)) ν) :
     0 ≤ klInfo ν f g := by
-  sorry
+  -- Both densities are integrable: a non-integrable function has integral `0 ≠ 1`.
+  have hfi : Integrable f ν := by
+    by_contra h
+    rw [integral_undef h] at hf1
+    exact zero_ne_one hf1
+  have hgi : Integrable g ν := by
+    by_contra h
+    rw [integral_undef h] at hg1
+    exact zero_ne_one hg1
+  -- The pointwise comparison `f − g ≤ f log(f/g)`, i.e. `log x ≤ x − 1` at `x = g/f`.
+  have hkey : ∀ v, f v - g v ≤ f v * Real.log (f v / g v) := by
+    intro v
+    rcases eq_or_lt_of_le (hf0 v) with h | h
+    · -- `f v = 0`: the integrand vanishes (`0 · log` junk included) and `−g v ≤ 0`.
+      rw [← h]
+      simp only [zero_sub, zero_mul, neg_nonpos]
+      exact hg0 v
+    · have hgv : 0 < g v := hsupp v h
+      have hlog : Real.log (g v / f v) ≤ g v / f v - 1 :=
+        Real.log_le_sub_one_of_pos (by positivity)
+      have hneg : Real.log (f v / g v) = -Real.log (g v / f v) := by
+        rw [← Real.log_inv]
+        congr 1
+        field_simp
+      rw [hneg]
+      have h2 : f v * (1 - g v / f v) ≤ f v * (-Real.log (g v / f v)) :=
+        mul_le_mul_of_nonneg_left (by linarith) (le_of_lt h)
+      calc f v - g v = f v * (1 - g v / f v) := by field_simp
+        _ ≤ _ := h2
+  -- Integrate: `KL ≥ ∫ (f − g) = 1 − 1 = 0`.
+  have hcomp : ∫ v, (f v - g v) ∂ν ≤ ∫ v, f v * Real.log (f v / g v) ∂ν :=
+    integral_mono (hfi.sub hgi) hint hkey
+  rw [integral_sub hfi hgi, hf1, hg1] at hcomp
+  simpa [klInfo] using hcomp
 
 /-- **AIC** (FY eq. (3.18), profiled form): `T·ℓ*(b, a) + 2(p + q)` — stated as a
 definition on the profiled criterion; the `argmin` semantics live with the
@@ -81,7 +114,34 @@ theorem armaAICC_sub_armaAIC_le {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → �
     {T : ℕ} (x : Fin T → ℝ) {m : ℕ}
     (hm : p + q ≤ m) (hT : 2 * (m + 1) ≤ T) :
     |armaAICC b a x - armaAIC b a x| ≤ 4 * ((m : ℝ) + 1) ^ 2 / T := by
-  sorry
+  have hm' : (p : ℝ) + (q : ℝ) ≤ (m : ℝ) := by exact_mod_cast hm
+  have hT' : 2 * ((m : ℝ) + 1) ≤ (T : ℝ) := by exact_mod_cast hT
+  have hp0 : (0 : ℝ) ≤ (p : ℝ) := Nat.cast_nonneg p
+  have hq0 : (0 : ℝ) ≤ (q : ℝ) := Nat.cast_nonneg q
+  have hm0 : (0 : ℝ) ≤ (m : ℝ) := Nat.cast_nonneg m
+  have hTpos : (0 : ℝ) < (T : ℝ) := by linarith
+  -- `p + q + 1 ≤ m + 1 ≤ T/2`, so the AICC denominator is at least `T/2`.
+  have hden : (T : ℝ) / 2 ≤ (T : ℝ) - (p : ℝ) - (q : ℝ) - 1 := by linarith
+  have hdenpos : (0 : ℝ) < (T : ℝ) - (p : ℝ) - (q : ℝ) - 1 := by linarith
+  -- The penalties differ by `2(p+q)(p+q+1)/(T − p − q − 1)`.
+  have hdiff : armaAICC b a x - armaAIC b a x
+      = 2 * ((p : ℝ) + (q : ℝ)) * (((p : ℝ) + (q : ℝ)) + 1)
+        / ((T : ℝ) - (p : ℝ) - (q : ℝ) - 1) := by
+    simp only [armaAICC, armaAIC]
+    field_simp
+    ring
+  rw [hdiff, abs_of_nonneg (by positivity)]
+  have h1 : 2 * ((p : ℝ) + (q : ℝ)) * (((p : ℝ) + (q : ℝ)) + 1)
+      ≤ 2 * ((m : ℝ) + 1) ^ 2 := by nlinarith
+  have h2 : 2 * ((p : ℝ) + (q : ℝ)) * (((p : ℝ) + (q : ℝ)) + 1)
+        / ((T : ℝ) - (p : ℝ) - (q : ℝ) - 1)
+      ≤ 2 * ((m : ℝ) + 1) ^ 2 / ((T : ℝ) / 2) := by
+    gcongr
+  calc 2 * ((p : ℝ) + (q : ℝ)) * (((p : ℝ) + (q : ℝ)) + 1)
+        / ((T : ℝ) - (p : ℝ) - (q : ℝ) - 1)
+      ≤ 2 * ((m : ℝ) + 1) ^ 2 / ((T : ℝ) / 2) := h2
+    _ = 4 * ((m : ℝ) + 1) ^ 2 / (T : ℝ) := by
+        rw [div_div_eq_mul_div]; ring
 
 /-- The order-level BIC **value function**: the infimum of `armaBIC` over parameters
 in the constraint set at fixed orders `(p, q)` (junk by the `iInf` convention when

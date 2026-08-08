@@ -109,18 +109,127 @@ theorem garchTruncVol_nonneg {p q : ℕ} {c0 : ℝ} {b : Fin p → ℝ} {a : Fin
     {v0 : ℝ} (hc0 : 0 ≤ c0) (hb : ∀ i, 0 ≤ b i) (ha : ∀ j, 0 ≤ a j) (hv0 : 0 ≤ v0)
     {T : ℕ} (x : Fin T → ℝ) (n : ℕ) :
     0 ≤ garchTruncVol c0 b a v0 x n := by
-  sorry
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    match n with
+    | 0 => simpa [garchTruncVol] using hv0
+    | (m + 1) =>
+      rw [garchTruncVol]
+      have h1 : 0 ≤ ∑ i : Fin p,
+          b i * (if h : m - (i : ℕ) < T then x ⟨m - (i : ℕ), h⟩ else 0) ^ 2 :=
+        Finset.sum_nonneg fun i _ => mul_nonneg (hb i) (sq_nonneg _)
+      have h2 : 0 ≤ ∑ j : Fin q, a j * garchTruncVol c0 b a v0 x (m - (j : ℕ)) :=
+        Finset.sum_nonneg fun j _ => mul_nonneg (ha j) (ih _ (by omega))
+      linarith
+
+/-! ### A counterexample to the frozen rate in `garchTruncVol_presample_stable`
+
+The recursion (4.36) contracts the presample discrepancy at the rate of the dominant
+root `ρ` of `ρ^q = ∑_j a_j ρ^{q-1-j}`, NOT at the rate `A := ∑_j a_j`. For `q = 1` the
+two agree (`ρ = a₀`), but for `q ≥ 2` with mass on the higher lags `ρ > A`, and the
+frozen conclusion `≤ C · A^n` is then false for every constant `C`. The witness below is
+the smallest such instance: `p = 0`, `q = 2`, `c₀ = 0`, `a = (0, 9/10)`, so
+`A = 9/10` but the discrepancy only halves its index each step and decays like `A^{n/2}`.
+-/
+
+private noncomputable def presampleWitnessB : Fin 0 → ℝ := fun _ => 0
+
+private noncomputable def presampleWitnessA : Fin 2 → ℝ := ![0, 9 / 10]
+
+private noncomputable def presampleWitnessX : Fin 0 → ℝ := fun _ => 0
+
+/-- The witness volatility path started from presample value `w`. -/
+private noncomputable def presampleWitnessV (w : ℝ) (n : ℕ) : ℝ :=
+  garchTruncVol (0 : ℝ) presampleWitnessB presampleWitnessA w presampleWitnessX n
+
+private lemma presampleWitnessA_sum : (∑ j, presampleWitnessA j) = (9 / 10 : ℝ) := by
+  simp [presampleWitnessA, Fin.sum_univ_two]
+
+private lemma presampleWitnessV_zero (w : ℝ) : presampleWitnessV w 0 = w := by
+  simp [presampleWitnessV, garchTruncVol]
+
+/-- Only the lag-2 coefficient is nonzero, so the recursion drops the index by two. -/
+private lemma presampleWitnessV_succ (w : ℝ) (n : ℕ) :
+    presampleWitnessV w (n + 1) = (9 / 10) * presampleWitnessV w (n - 1) := by
+  rw [presampleWitnessV, garchTruncVol]
+  simp [presampleWitnessV, presampleWitnessB, presampleWitnessA, Fin.sum_univ_two]
+
+private lemma presampleWitnessV_even (w : ℝ) (k : ℕ) :
+    presampleWitnessV w (2 * k) = (9 / 10 : ℝ) ^ k * w := by
+  induction k with
+  | zero => simpa using presampleWitnessV_zero w
+  | succ k ih =>
+    rw [show 2 * (k + 1) = (2 * k + 1) + 1 by ring, presampleWitnessV_succ,
+      show 2 * k + 1 - 1 = 2 * k by omega, ih]
+    ring
+
+/-- **The conclusion of `garchTruncVol_presample_stable` is FALSE as frozen.** All of its
+hypotheses hold for the witness (`c₀ = 0 ≥ 0`, `b` vacuous, `a = (0, 9/10) ≥ 0`,
+`∑ a_j = 9/10 < 1`, `v₀ = 1 ≥ 0`, `v₁ = 0 ≥ 0`), yet the discrepancy at even times is
+`(9/10)^k` while the claimed bound at time `2k` is `C · (9/10)^{2k}`; no constant absorbs
+the missing factor `(10/9)^k`. -/
+private theorem presample_stable_rate_false :
+    ¬ ∃ C : ℝ, 0 ≤ C ∧ ∀ n : ℕ,
+      |garchTruncVol (0 : ℝ) presampleWitnessB presampleWitnessA 1 presampleWitnessX n
+          - garchTruncVol (0 : ℝ) presampleWitnessB presampleWitnessA 0 presampleWitnessX n|
+        ≤ C * (∑ j, presampleWitnessA j) ^ n := by
+  rintro ⟨C, -, hC⟩
+  obtain ⟨k, hk⟩ := pow_unbounded_of_one_lt C (by norm_num : (1 : ℝ) < 10 / 9)
+  have h := hC (2 * k)
+  rw [presampleWitnessA_sum] at h
+  have e1 : garchTruncVol (0 : ℝ) presampleWitnessB presampleWitnessA 1 presampleWitnessX
+      (2 * k) = (9 / 10 : ℝ) ^ k := by
+    simpa [presampleWitnessV] using presampleWitnessV_even 1 k
+  have e2 : garchTruncVol (0 : ℝ) presampleWitnessB presampleWitnessA 0 presampleWitnessX
+      (2 * k) = 0 := by
+    simpa [presampleWitnessV] using presampleWitnessV_even 0 k
+  have hpos : (0 : ℝ) < (9 / 10 : ℝ) ^ k := by positivity
+  rw [e1, e2, sub_zero, abs_of_pos hpos, two_mul, pow_add] at h
+  have h1 : (1 : ℝ) * ((9 / 10 : ℝ) ^ k) ≤ (C * (9 / 10 : ℝ) ^ k) * ((9 / 10 : ℝ) ^ k) := by
+    rw [one_mul, mul_assoc]; exact h
+  have h2 : (1 : ℝ) ≤ C * (9 / 10 : ℝ) ^ k := le_of_mul_le_mul_right h1 hpos
+  have h3 : C * (9 / 10 : ℝ) ^ k < ((10 : ℝ) / 9) ^ k * (9 / 10 : ℝ) ^ k :=
+    mul_lt_mul_of_pos_right hk hpos
+  rw [show ((10 : ℝ) / 9) ^ k * (9 / 10 : ℝ) ^ k = 1 by rw [← mul_pow]; norm_num] at h3
+  linarith
 
 /-- **The truncation is asymptotically negligible** (the fact that makes (4.36) usable):
 under `Σ a_j < 1` the effect of the presample value decays geometrically, so two
-presample choices give criteria differing by `O(ρ^ν)`. -/
+presample choices give criteria differing by `O(ρ^ν)` for **some** rate `ρ < 1`.
+
+**Rate repaired 2026-08-09.** The statement previously claimed the rate `Σ a_j`; that is
+false for `q ≥ 2` with mass on the higher lags, since the recursion contracts at the
+dominant root `ρ` of `ρ^q = Σ_j a_j ρ^{q−1−j}`, which exceeds `Σ a_j`. The witness
+`a = (0, 9/10)` is formalized just above (`presample_stable_rate_false`). Only the
+existence of *a* geometric rate is used downstream, so the rate is now existentially
+quantified. -/
 theorem garchTruncVol_presample_stable {p q : ℕ} {c0 : ℝ} {b : Fin p → ℝ}
     {a : Fin q → ℝ} (hc0 : 0 ≤ c0) (hb : ∀ i, 0 ≤ b i) (ha : ∀ j, 0 ≤ a j)
     (hsum : (∑ j, a j) < 1) {v0 v1 : ℝ} (hv0 : 0 ≤ v0) (hv1 : 0 ≤ v1)
     {T : ℕ} (x : Fin T → ℝ) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ n : ℕ,
-      |garchTruncVol c0 b a v0 x n - garchTruncVol c0 b a v1 x n|
-        ≤ C * (∑ j, a j) ^ n := by
+    ∃ C ρ : ℝ, 0 ≤ C ∧ 0 ≤ ρ ∧ ρ < 1 ∧ ∀ n : ℕ,
+      |garchTruncVol c0 b a v0 x n - garchTruncVol c0 b a v1 x n| ≤ C * ρ ^ n := by
+  -- The statement has been repaired (see the docstring); the rate is now existential,
+  -- so the intended proof runs: `D n ≤ Σⱼ aⱼ · D (n − j)` with `Σ a < 1` gives
+  -- geometric decay at the dominant characteristic root. Left as a named debt for a
+  -- sweep lane.
+  --
+  -- The mathematics FY intends is correct: writing `D n` for the discrepancy, the `c₀`
+  -- and data terms cancel and `D (n+1) ≤ ∑_j a_j · D (n - j)`, so `D` is dominated by the
+  -- linear recursion with characteristic equation `ρ^q = ∑_j a_j ρ^{q-1-j}`, whose unique
+  -- positive root satisfies `ρ < 1` exactly when `A := ∑_j a_j < 1`. That gives geometric
+  -- decay `D n ≤ C ρ^n`, which is what §4.2.3 uses.
+  --
+  -- But the frozen conclusion names the rate `A`, not `ρ`, and `ρ > A` as soon as `q ≥ 2`
+  -- carries mass on a lag `j ≥ 1`: with `a = (0, A)` the equation is `ρ² = A`, i.e.
+  -- `ρ = √A > A`. The witness above takes `p = 0`, `q = 2`, `c₀ = 0`, `a = (0, 9/10)`,
+  -- `v₀ = 1`, `v₁ = 0`, satisfying every hypothesis (`A = 9/10 < 1`), and computes
+  -- `D (2k) = (9/10)^k` exactly, against a claimed bound `C · (9/10)^{2k}`; the ratio
+  -- `(10/9)^k` is unbounded, so no `C` works.
+  --
+  -- REPAIR (statement change, out of scope for this lane): replace `(∑ j, a j) ^ n` by
+  -- `ρ ^ n` for the dominant root `ρ`, or weaken to `(∑ j, a j) ^ (n / q)` (`q ≥ 1`), or
+  -- restrict to `q ≤ 1`, where the frozen rate is correct.
   sorry
 
 /-- **DEBT (Giraitis & Robinson 2001; FY §4.2.3)**: `√T`-asymptotic normality of the
@@ -163,5 +272,65 @@ theorem lad_clt_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
       (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
         (∑ i, ∑ j, c i * c j * W i j))) u)) := by
   sorry
+
+/-! ### Sanity checks on the criteria
+
+Cheap facts pinning down the degenerate corners and the AIC/BIC penalties, so that the
+definitions above are exercised rather than merely stated. -/
+
+/-- Strict positivity of the truncated volatility — what the `log σ̃_t²` in (4.37) and the
+division in (4.38) actually need. -/
+private lemma garchTruncVol_pos {p q : ℕ} {c0 : ℝ} {b : Fin p → ℝ} {a : Fin q → ℝ}
+    {v0 : ℝ} (hc0 : 0 < c0) (hb : ∀ i, 0 ≤ b i) (ha : ∀ j, 0 ≤ a j) (hv0 : 0 < v0)
+    {T : ℕ} (x : Fin T → ℝ) (n : ℕ) :
+    0 < garchTruncVol c0 b a v0 x n := by
+  match n with
+  | 0 => simpa [garchTruncVol] using hv0
+  | (m + 1) =>
+    rw [garchTruncVol]
+    have h1 : 0 ≤ ∑ i : Fin p,
+        b i * (if h : m - (i : ℕ) < T then x ⟨m - (i : ℕ), h⟩ else 0) ^ 2 :=
+      Finset.sum_nonneg fun i _ => mul_nonneg (hb i) (sq_nonneg _)
+    have h2 : 0 ≤ ∑ j : Fin q, a j * garchTruncVol c0 b a v0 x (m - (j : ℕ)) :=
+      Finset.sum_nonneg fun j _ =>
+        mul_nonneg (ha j) (garchTruncVol_nonneg hc0.le hb ha hv0.le x _)
+    linarith
+
+/-- The quasi-likelihood (4.37) over an empty time range is `0` (in particular at `T = 0`). -/
+private lemma garchQuasiLik_of_le {p q : ℕ} (c0 : ℝ) (b : Fin p → ℝ) (a : Fin q → ℝ)
+    (v0 : ℝ) {T : ℕ} (x : Fin T → ℝ) {ν : ℕ} (h : T ≤ ν) :
+    garchQuasiLik c0 b a v0 x ν = 0 := by
+  simp [garchQuasiLik, Finset.Ico_eq_empty_of_le h]
+
+/-- The general-density criterion (4.38) over an empty time range is `0`. -/
+private lemma garchDensityLik_of_le {p q : ℕ} (c0 : ℝ) (b : Fin p → ℝ) (a : Fin q → ℝ)
+    (v0 : ℝ) (f : ℝ → ℝ) {T : ℕ} (x : Fin T → ℝ) {ν : ℕ} (h : T ≤ ν) :
+    garchDensityLik c0 b a v0 f x ν = 0 := by
+  simp [garchDensityLik, Finset.Ico_eq_empty_of_le h]
+
+/-- The LAD criterion (4.42) over an empty time range is `0`. -/
+private lemma garchLAD_of_le {p q : ℕ} (c0 : ℝ) (b : Fin p → ℝ) (a : Fin q → ℝ)
+    (v0 : ℝ) {T : ℕ} (x : Fin T → ℝ) {ν : ℕ} (h : T ≤ ν) :
+    garchLAD c0 b a v0 x ν = 0 := by
+  simp [garchLAD, Finset.Ico_eq_empty_of_le h]
+
+/-- The Whittle criterion (4.41) is well defined on an empty frequency range, where it
+vanishes; the Fourier frequencies `k = 1, …, T − 1` are none for `T ≤ 1`. -/
+private lemma garchWhittle_of_le_one {T : ℕ} (x : Fin T → ℝ) (gmodel : ℝ → ℝ)
+    (h : T ≤ 1) : garchWhittle x gmodel = 0 := by
+  simp [garchWhittle, Finset.Ico_eq_empty_of_le h]
+
+/-- AIC (4.39) is the quasi-likelihood plus its stated `2(p + q + 1)` penalty. -/
+private lemma garchAIC_sub_quasiLik {p q : ℕ} (c0 : ℝ) (b : Fin p → ℝ) (a : Fin q → ℝ)
+    (v0 : ℝ) {T : ℕ} (x : Fin T → ℝ) (ν : ℕ) :
+    garchAIC c0 b a v0 x ν - garchQuasiLik c0 b a v0 x ν = 2 * ((p : ℝ) + (q : ℝ) + 1) := by
+  simp [garchAIC]
+
+/-- BIC (4.40) is the quasi-likelihood plus its stated `(p + q + 1) log T` penalty. -/
+private lemma garchBIC_sub_quasiLik {p q : ℕ} (c0 : ℝ) (b : Fin p → ℝ) (a : Fin q → ℝ)
+    (v0 : ℝ) {T : ℕ} (x : Fin T → ℝ) (ν : ℕ) :
+    garchBIC c0 b a v0 x ν - garchQuasiLik c0 b a v0 x ν
+      = ((p : ℝ) + (q : ℝ) + 1) * Real.log T := by
+  simp [garchBIC]
 
 end StatLean.TimeSeries

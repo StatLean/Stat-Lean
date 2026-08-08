@@ -1,4 +1,5 @@
 import StatLean.TimeSeries.Mixing.Defs
+import StatLean.TimeSeries.Mixing.Relations
 import StatLean.TimeSeries.Process.Stationary
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
@@ -20,7 +21,11 @@ The quantitative toolbox for α-mixing processes:
   (Theorems 2.21(ii) and 2.22);
 * the **fourth-moment bound** (the `q = 4` instance of FY Proposition 2.7(ii) that the
   Bernstein-block CLT consumes): bounded, zero-mean, strictly stationary,
-  `α(n) ≤ K n⁻²` ⇒ `E S_n⁴ ≤ C n²`;
+  `α(n) ≤ K n⁻²` ⇒ `E S_n⁴ ≤ C n²`.  Its *probabilistic* half is proved here — the
+  sorted 4-tuple mixing bound `abs_integral_quad_le`, the expansion of `E S_n⁴` over
+  4-tuples, and the assembly.  Its *counting* half is the single remaining DEBT
+  `sum_four_le_of_cut_bound`: a purely combinatorial statement (no probability) whose
+  route is spelled out at its declaration;
 * **Theorems 2.18/2.19 (Bosq exponential inequalities)** — literature DEBTS (used only
   by ch. 5 KDE uniform rates, outside the current scope).
 
@@ -47,6 +52,11 @@ Propositions 2.5–2.7 and Theorems 2.17–2.19 (pp. 71–73). (`FY §2.6.2`.)
 * Fourth moment: expand `E S⁴` over index 4-tuples, split each expectation at the
   largest gap `g` (Billingsley pairs), count tuples with largest gap `g` as `O(n g²)`;
   `Σ_g n g² · g⁻² = O(n²)`, and the paired products contribute `(n Σ α)² = O(n²)`.
+  As executed, the split is `abs_integral_quad_le` (proved: the two outer cuts kill the
+  product term because `E X_t = 0`, the middle cut pays `E[X_aX_b]·E[X_cX_d]`), and the
+  counting is isolated as `sum_four_le_of_cut_bound`.  The expensive unformalised step
+  there is the symmetrisation `Σ_{(a,b,c,d)} G ≤ 24 Σ_{a≤b≤c≤d} G`, which needs an
+  explicit sorting network on `ℕ⁴` or `Tuple.sort` with a fibre count.
 
 **Bibliographic comments.** Prop 2.5(i) is Yu. A. Davydov (1968); (ii) is
 P. Billingsley, *Convergence of Probability Measures* (1968), Lemma 1 of §20;
@@ -982,6 +992,273 @@ section Process
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
+/-! The probabilistic half of FY Proposition 2.7(ii) at `q = 4`: the mixing bound on
+`E[X_{t₁}X_{t₂}X_{t₃}X_{t₄}]` for a sorted 4-tuple, obtained by splitting the product at
+its largest gap.  At the two outer splits the product term vanishes because the marginals
+are centred; at the middle split it is `E[X_{t₁}X_{t₂}]·E[X_{t₃}X_{t₄}]`, itself a pair of
+covariances of centred variables. -/
+
+section Moment4
+
+variable {X : ℤ → Ω → ℝ}
+
+/-- `X s` is measurable for the past σ-algebra at any later time. -/
+private lemma measurable_sigmaLE (X : ℤ → Ω → ℝ) {s t : ℤ} (hst : s ≤ t) :
+    Measurable[sigmaLE X t] (X s) :=
+  (Measurable.of_comap_le le_rfl).mono
+    (le_iSup₂ (f := fun r (_ : r ∈ Set.Iic t) =>
+      MeasurableSpace.comap (X r) inferInstance) s hst) le_rfl
+
+/-- `X s` is measurable for the future σ-algebra at any earlier time. -/
+private lemma measurable_sigmaGE (X : ℤ → Ω → ℝ) {s t : ℤ} (hst : t ≤ s) :
+    Measurable[sigmaGE X t] (X s) :=
+  (Measurable.of_comap_le le_rfl).mono
+    (le_iSup₂ (f := fun r (_ : r ∈ Set.Ici t) =>
+      MeasurableSpace.comap (X r) inferInstance) s hst) le_rfl
+
+private lemma sigmaLE_le (hmeas : ∀ t, Measurable (X t)) (t : ℤ) :
+    sigmaLE X t ≤ (inferInstance : MeasurableSpace Ω) :=
+  iSup₂_le fun s _ => (hmeas s).comap_le
+
+private lemma sigmaGE_le (hmeas : ∀ t, Measurable (X t)) (t : ℤ) :
+    sigmaGE X t ≤ (inferInstance : MeasurableSpace Ω) :=
+  iSup₂_le fun s _ => (hmeas s).comap_le
+
+/-- A bounded measurable function on a probability space is integrable. -/
+private lemma integrable_of_bdd [IsProbabilityMeasure μ] {f : Ω → ℝ} (hf : Measurable f)
+    {B : ℝ} (hb : ∀ᵐ ω ∂μ, |f ω| ≤ B) : Integrable f μ :=
+  Integrable.mono' (integrable_const B) hf.aestronglyMeasurable
+    (by filter_upwards [hb] with ω hω; rwa [Real.norm_eq_abs])
+
+/-- Mean zero propagates to every time by strict stationarity. -/
+private lemma integral_eq_zero_of_stat [IsProbabilityMeasure μ]
+    (hstat : IsStrictlyStationary X μ) (hmeas : ∀ t, Measurable (X t))
+    (hmean : ∫ ω, X 0 ω ∂μ = 0) (t : ℤ) : ∫ ω, X t ω ∂μ = 0 := by
+  rw [(hstat.identDistrib hmeas t 0).integral_eq, hmean]
+
+/-- **The cut bound**: Billingsley's inequality across a cut of the time axis, with the
+mixing coefficient identified as `alphaCoeff` at the gap (this is where stationarity
+enters, through `IsStrictlyStationary.alphaMixCoeff_shift`). -/
+private lemma abs_integral_mul_sub_le_cut [IsProbabilityMeasure μ]
+    (hstat : IsStrictlyStationary X μ) (hmeas : ∀ t, Measurable (X t))
+    {a b : ℤ} (hab : a ≤ b) {f g : Ω → ℝ}
+    (hf : Measurable[sigmaLE X a] f) (hg : Measurable[sigmaGE X b] g)
+    {C₁ C₂ : ℝ} (hfC : ∀ᵐ ω ∂μ, |f ω| ≤ C₁) (hgC : ∀ᵐ ω ∂μ, |g ω| ≤ C₂) :
+    |(∫ ω, f ω * g ω ∂μ) - (∫ ω, f ω ∂μ) * ∫ ω, g ω ∂μ|
+      ≤ 4 * alphaCoeff X μ (b - a).toNat * C₁ * C₂ := by
+  have hbe : a + ((b - a).toNat : ℤ) = b := by
+    rw [Int.toNat_of_nonneg (by omega)]
+    ring
+  have hα : alphaMixCoeff μ (sigmaLE X a) (sigmaGE X b) = alphaCoeff X μ (b - a).toNat := by
+    have := IsStrictlyStationary.alphaMixCoeff_shift hstat hmeas a (b - a).toNat
+    rwa [hbe] at this
+  have h1 : sigmaLE X a ≤ (inferInstance : MeasurableSpace Ω) := sigmaLE_le hmeas a
+  have h2 : sigmaGE X b ≤ (inferInstance : MeasurableSpace Ω) := sigmaGE_le hmeas b
+  have hcov := abs_covariance_le_of_bounded h1 h2 hf hg hfC hgC
+  rw [hα] at hcov
+  have hfm : Measurable f := hf.mono h1 le_rfl
+  have hgm : Measurable g := hg.mono h2 le_rfl
+  have hfi : Integrable f μ := integrable_of_bdd hfm hfC
+  have hgi : Integrable g μ := integrable_of_bdd hgm hgC
+  have hfgi : Integrable (fun ω => f ω * g ω) μ := by
+    refine integrable_of_bdd (hfm.mul hgm) (B := C₁ * C₂) ?_
+    filter_upwards [hfC, hgC] with ω e1 e2
+    rw [abs_mul]
+    exact mul_le_mul e1 e2 (abs_nonneg _) (le_trans (abs_nonneg _) e1)
+  rwa [covariance_eq_sub' hfi hgi hfgi] at hcov
+
+/-- The pair bound `|E X_a X_b| ≤ 4 C² α(b − a)` (the product term vanishes: `E X_a = 0`). -/
+private lemma abs_integral_pair_le [IsProbabilityMeasure μ]
+    (hstat : IsStrictlyStationary X μ) (hmeas : ∀ t, Measurable (X t))
+    {C : ℝ} (hbdd : ∀ t, ∀ᵐ ω ∂μ, |X t ω| ≤ C) (hmean : ∫ ω, X 0 ω ∂μ = 0)
+    {a b : ℤ} (hab : a ≤ b) :
+    |∫ ω, X a ω * X b ω ∂μ| ≤ 4 * alphaCoeff X μ (b - a).toNat * C * C := by
+  have h0 : (∫ ω, X a ω ∂μ) = 0 := integral_eq_zero_of_stat hstat hmeas hmean a
+  have := abs_integral_mul_sub_le_cut hstat hmeas hab
+    (measurable_sigmaLE X (le_refl a)) (measurable_sigmaGE X (le_refl b)) (hbdd a) (hbdd b)
+  rwa [h0, zero_mul, sub_zero] at this
+
+/-- Nonnegativity of the process α-coefficient. -/
+private lemma alphaCoeff_nonneg' [IsProbabilityMeasure μ] (X : ℤ → Ω → ℝ) (m : ℕ) :
+    0 ≤ alphaCoeff X μ m := alphaMixCoeff_nonneg (mΩ := inferInstance)
+
+private lemma abs_mul_le_of_bdd {x y B₁ B₂ : ℝ} (hx : |x| ≤ B₁) (hy : |y| ≤ B₂) :
+    |x * y| ≤ B₁ * B₂ := by
+  rw [abs_mul]
+  exact mul_le_mul hx hy (abs_nonneg _) (le_trans (abs_nonneg _) hx)
+
+/-- **The sorted 4-tuple bound** (the probabilistic content of FY Prop 2.7(ii) at `q = 4`):
+split `E[X_a X_b X_c X_d]` at its largest gap.  At the two outer splits the product term
+vanishes because `E X_t = 0`; at the middle split it is `E[X_aX_b]·E[X_cX_d]`, bounded by
+the pair estimate. -/
+private lemma abs_integral_quad_le [IsProbabilityMeasure μ]
+    (hstat : IsStrictlyStationary X μ) (hmeas : ∀ t, Measurable (X t))
+    {C : ℝ} (hbdd : ∀ t, ∀ᵐ ω ∂μ, |X t ω| ≤ C) (hmean : ∫ ω, X 0 ω ∂μ = 0)
+    {a b c d : ℤ} (hab : a ≤ b) (hbc : b ≤ c) (hcd : c ≤ d) :
+    |∫ ω, X a ω * X b ω * X c ω * X d ω ∂μ|
+      ≤ 4 * C ^ 4 * alphaCoeff X μ (max (b - a).toNat (max (c - b).toNat (d - c).toNat))
+        + 16 * C ^ 4 * (alphaCoeff X μ (b - a).toNat * alphaCoeff X μ (d - c).toNat) := by
+  have hC0 : 0 ≤ C := le_trans (abs_nonneg _) (hbdd 0).exists.choose_spec
+  have hzero : ∀ t : ℤ, (∫ ω, X t ω ∂μ) = 0 :=
+    integral_eq_zero_of_stat hstat hmeas hmean
+  have hprod0 : (0:ℝ) ≤ alphaCoeff X μ (b - a).toNat * alphaCoeff X μ (d - c).toNat :=
+    mul_nonneg (alphaCoeff_nonneg' X _) (alphaCoeff_nonneg' X _)
+  have hC4 : (0:ℝ) ≤ C ^ 4 := by positivity
+  -- (L) the left split: `X_a` against `X_b X_c X_d`
+  have hL : |∫ ω, X a ω * X b ω * X c ω * X d ω ∂μ|
+      ≤ 4 * C ^ 4 * alphaCoeff X μ (b - a).toNat := by
+    have hgm : Measurable[sigmaGE X b] fun ω => X b ω * X c ω * X d ω :=
+      ((measurable_sigmaGE X (le_refl b)).mul (measurable_sigmaGE X hbc)).mul
+        (measurable_sigmaGE X (hbc.trans hcd))
+    have hgC : ∀ᵐ ω ∂μ, |X b ω * X c ω * X d ω| ≤ C * C * C := by
+      filter_upwards [hbdd b, hbdd c, hbdd d] with ω e1 e2 e3
+      exact abs_mul_le_of_bdd (abs_mul_le_of_bdd e1 e2) e3
+    have key := abs_integral_mul_sub_le_cut hstat hmeas hab
+      (measurable_sigmaLE X (le_refl a)) hgm (hbdd a) hgC
+    rw [hzero a, zero_mul, sub_zero] at key
+    have hre : (∫ ω, X a ω * (X b ω * X c ω * X d ω) ∂μ)
+        = ∫ ω, X a ω * X b ω * X c ω * X d ω ∂μ :=
+      integral_congr_ae (ae_of_all _ fun ω => by ring)
+    rw [hre] at key
+    refine key.trans (le_of_eq ?_)
+    ring
+  -- (R) the right split: `X_a X_b X_c` against `X_d`
+  have hR : |∫ ω, X a ω * X b ω * X c ω * X d ω ∂μ|
+      ≤ 4 * C ^ 4 * alphaCoeff X μ (d - c).toNat := by
+    have hfm : Measurable[sigmaLE X c] fun ω => X a ω * X b ω * X c ω :=
+      ((measurable_sigmaLE X (hab.trans hbc)).mul (measurable_sigmaLE X hbc)).mul
+        (measurable_sigmaLE X (le_refl c))
+    have hfC : ∀ᵐ ω ∂μ, |X a ω * X b ω * X c ω| ≤ C * C * C := by
+      filter_upwards [hbdd a, hbdd b, hbdd c] with ω e1 e2 e3
+      exact abs_mul_le_of_bdd (abs_mul_le_of_bdd e1 e2) e3
+    have key := abs_integral_mul_sub_le_cut hstat hmeas hcd hfm
+      (measurable_sigmaGE X (le_refl d)) hfC (hbdd d)
+    rw [hzero d, mul_zero, sub_zero] at key
+    refine key.trans (le_of_eq ?_)
+    ring
+  -- (M) the middle split: `X_a X_b` against `X_c X_d`
+  have hM : |∫ ω, X a ω * X b ω * X c ω * X d ω ∂μ|
+      ≤ 4 * C ^ 4 * alphaCoeff X μ (c - b).toNat
+        + 16 * C ^ 4 * (alphaCoeff X μ (b - a).toNat * alphaCoeff X μ (d - c).toNat) := by
+    have hfm : Measurable[sigmaLE X b] fun ω => X a ω * X b ω :=
+      (measurable_sigmaLE X hab).mul (measurable_sigmaLE X (le_refl b))
+    have hgm : Measurable[sigmaGE X c] fun ω => X c ω * X d ω :=
+      (measurable_sigmaGE X (le_refl c)).mul (measurable_sigmaGE X hcd)
+    have hfC : ∀ᵐ ω ∂μ, |X a ω * X b ω| ≤ C * C := by
+      filter_upwards [hbdd a, hbdd b] with ω e1 e2
+      exact abs_mul_le_of_bdd e1 e2
+    have hgC : ∀ᵐ ω ∂μ, |X c ω * X d ω| ≤ C * C := by
+      filter_upwards [hbdd c, hbdd d] with ω e1 e2
+      exact abs_mul_le_of_bdd e1 e2
+    have key := abs_integral_mul_sub_le_cut hstat hmeas hbc hfm hgm hfC hgC
+    have hre : (∫ ω, (X a ω * X b ω) * (X c ω * X d ω) ∂μ)
+        = ∫ ω, X a ω * X b ω * X c ω * X d ω ∂μ :=
+      integral_congr_ae (ae_of_all _ fun ω => by ring)
+    rw [hre] at key
+    have hpair1 := abs_integral_pair_le hstat hmeas hbdd hmean hab
+    have hpair2 := abs_integral_pair_le hstat hmeas hbdd hmean hcd
+    have hsplit : |∫ ω, X a ω * X b ω * X c ω * X d ω ∂μ|
+        ≤ |(∫ ω, X a ω * X b ω * X c ω * X d ω ∂μ)
+            - (∫ ω, X a ω * X b ω ∂μ) * ∫ ω, X c ω * X d ω ∂μ|
+          + |(∫ ω, X a ω * X b ω ∂μ) * ∫ ω, X c ω * X d ω ∂μ| := by
+      have := abs_add_le ((∫ ω, X a ω * X b ω * X c ω * X d ω ∂μ)
+        - (∫ ω, X a ω * X b ω ∂μ) * ∫ ω, X c ω * X d ω ∂μ)
+        ((∫ ω, X a ω * X b ω ∂μ) * ∫ ω, X c ω * X d ω ∂μ)
+      simpa using this
+    have hpp : |(∫ ω, X a ω * X b ω ∂μ) * ∫ ω, X c ω * X d ω ∂μ|
+        ≤ (4 * alphaCoeff X μ (b - a).toNat * C * C)
+          * (4 * alphaCoeff X μ (d - c).toNat * C * C) := by
+      rw [abs_mul]
+      exact mul_le_mul hpair1 hpair2 (abs_nonneg _) (le_trans (abs_nonneg _) hpair1)
+    have harr : (4 * alphaCoeff X μ (b - a).toNat * C * C)
+          * (4 * alphaCoeff X μ (d - c).toNat * C * C)
+        = 16 * C ^ 4 * (alphaCoeff X μ (b - a).toNat * alphaCoeff X μ (d - c).toNat) := by
+      ring
+    rw [harr] at hpp
+    have hkey' : |(∫ ω, X a ω * X b ω * X c ω * X d ω ∂μ)
+        - (∫ ω, X a ω * X b ω ∂μ) * ∫ ω, X c ω * X d ω ∂μ|
+        ≤ 4 * C ^ 4 * alphaCoeff X μ (c - b).toNat := by
+      refine key.trans (le_of_eq ?_)
+      ring
+    linarith
+  -- pick the split at the largest gap
+  have hextra : (0:ℝ) ≤ 16 * C ^ 4 *
+      (alphaCoeff X μ (b - a).toNat * alphaCoeff X μ (d - c).toNat) := by positivity
+  rcases max_choice (b - a).toNat (max (c - b).toNat (d - c).toNat) with hmx | hmx
+  · rw [hmx]; linarith
+  · rw [hmx]
+    rcases max_choice (c - b).toNat (d - c).toNat with hmx' | hmx'
+    · rw [hmx']; linarith
+    · rw [hmx']; linarith
+
+/-- The four-fold expansion of a fourth power of a finite sum. -/
+private lemma sum_pow_four_expand {ι : Type*} (s : Finset ι) (f : ι → ℝ) :
+    (∑ t ∈ s, f t) ^ 4
+      = ∑ a ∈ s, ∑ b ∈ s, ∑ c ∈ s, ∑ d ∈ s, f a * f b * f c * f d := by
+  have h2 : (∑ t ∈ s, f t) * (∑ t ∈ s, f t) = ∑ a ∈ s, ∑ b ∈ s, f a * f b := by
+    rw [Finset.sum_mul]
+    exact Finset.sum_congr rfl fun a _ => Finset.mul_sum _ _ _
+  have h3 : (∑ t ∈ s, f t) ^ 3 = ∑ a ∈ s, ∑ b ∈ s, ∑ c ∈ s, f a * f b * f c := by
+    have e : (∑ t ∈ s, f t) ^ 3 = (∑ a ∈ s, ∑ b ∈ s, f a * f b) * ∑ t ∈ s, f t := by
+      rw [← h2]; ring
+    rw [e, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun a _ => ?_
+    rw [Finset.sum_mul]
+    exact Finset.sum_congr rfl fun b _ => Finset.mul_sum _ _ _
+  have e : (∑ t ∈ s, f t) ^ 4
+      = (∑ a ∈ s, ∑ b ∈ s, ∑ c ∈ s, f a * f b * f c) * ∑ t ∈ s, f t := by
+    rw [← h3]; ring
+  rw [e, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun a _ => ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_congr rfl fun b _ => ?_
+  rw [Finset.sum_mul]
+  exact Finset.sum_congr rfl fun c _ => Finset.mul_sum _ _ _
+
+/-- **DEBT (the counting half of FY Proposition 2.7(ii) at `q = 4`)** — reported loudly.
+
+Purely combinatorial: no probability appears.  A symmetric nonnegative kernel `G` on
+`ℕ⁴` whose *sorted* values obey the mixing cut bound against an antitone `A ≤ 1` with
+`A m ≤ K m⁻²` has `O(n²)` four-fold sums over `range n`.  Everything probabilistic that
+feeds this — the cut bound itself — is proved above (`abs_integral_quad_le`).
+
+ROUTE (ledger checked by hand, not yet formalised):
+* **Symmetrisation.**  `G` is invariant under the three adjacent transpositions
+  `hGs1`–`hGs3`, which generate `S₄`, so
+  `∑_{(a,b,c,d) ∈ (range n)⁴} G ≤ 24 · ∑_{a ≤ b ≤ c ≤ d < n} G a b c d`: map each tuple
+  to its sorted representative and bound the fibres by `4! = 24`.  In Lean this is the
+  expensive step — it needs an explicit sorting network on `ℕ⁴` (five comparators) plus
+  the proof that it is a permutation, or `Tuple.sort` with a fibre count.
+* **Gap parametrisation.**  Reindex sorted tuples by `(a, g₁, g₂, g₃)` with
+  `a + g₁ + g₂ + g₃ < n`; the map is a bijection onto its image, and dropping the
+  constraint only increases a sum of nonnegative terms.
+* **First sum.**  `∑_{a<n} ∑_{g₁,g₂,g₃<n} A (max g₁ (max g₂ g₃)) ≤ n · ∑_{g<n} 3 (g+1)² A g`
+  (a triple with maximum `g` has all entries `≤ g` and at least one equal to `g`, so the
+  fibre over `g` has at most `3(g+1)²` elements), and `3(g+1)² A g ≤ 3 · 4 K` for `g ≥ 1`
+  while the `g = 0` term is `≤ 3` by `A ≤ 1`; hence the inner sum is `≤ 3 + 12Kn` and the
+  total is `≤ n(3 + 12Kn) = O(n²)`.
+* **Second sum.**  `∑_{a<n} ∑_{g₁,g₂,g₃<n} A g₁ · A g₃ ≤ n · n · (∑_{g<n} A g)²` and
+  `∑_{g<n} A g ≤ 1 + K · ∑_{g≥1} g⁻² ≤ 1 + 2K` is bounded uniformly in `n`, so this is
+  `O(n²)` as well.
+* `D = 24 · (4C⁴(3 + 12K) + 16C⁴(1 + 2K)²)` works. -/
+private lemma sum_four_le_of_cut_bound {G : ℕ → ℕ → ℕ → ℕ → ℝ} {A : ℕ → ℝ} {C K : ℝ}
+    (hC : 0 ≤ C) (hK : 0 ≤ K)
+    (hA0 : ∀ m, 0 ≤ A m) (hA1 : ∀ m, A m ≤ 1) (hAanti : Antitone A)
+    (hAK : ∀ m : ℕ, 1 ≤ m → A m ≤ K / (m : ℝ) ^ 2)
+    (hG0 : ∀ a b c d, 0 ≤ G a b c d)
+    (hGs1 : ∀ a b c d, G a b c d = G b a c d)
+    (hGs2 : ∀ a b c d, G a b c d = G a c b d)
+    (hGs3 : ∀ a b c d, G a b c d = G a b d c)
+    (hcut : ∀ a b c d : ℕ, a ≤ b → b ≤ c → c ≤ d →
+      G a b c d ≤ 4 * C ^ 4 * A (max (b - a) (max (c - b) (d - c)))
+        + 16 * C ^ 4 * (A (b - a) * A (d - c))) :
+    ∃ D : ℝ, 0 ≤ D ∧ ∀ n : ℕ,
+      ∑ a ∈ Finset.range n, ∑ b ∈ Finset.range n, ∑ c ∈ Finset.range n,
+        ∑ d ∈ Finset.range n, G a b c d ≤ D * (n : ℝ) ^ 2 := by
+  sorry
+
+end Moment4
+
 /-- **FY Proposition 2.7(ii), `q = 4` instance** (the one the Bernstein-block CLT
 consumes): a bounded zero-mean strictly stationary α-mixing process with
 `α(n) ≤ K n⁻²` has `E S_n⁴ ≤ C n²`. -/
@@ -997,24 +1274,79 @@ theorem moment4_partial_sum_le [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ
     (hα : ∀ n : ℕ, 1 ≤ n → alphaCoeff X μ n ≤ K / (n : ℝ) ^ 2) :
     ∃ C' : ℝ, 0 ≤ C' ∧ ∀ n : ℕ,
       ∫ ω, (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) ^ 4 ∂μ ≤ C' * (n : ℝ) ^ 2 := by
-  -- NOT ATTEMPTED in this wave (the other four targets of the batch are closed). Route,
-  -- with the ledger checked by hand:
-  -- (1) `E ∏ X_{t_i}` for a *sorted* tuple `t₁ ≤ t₂ ≤ t₃ ≤ t₄` with gaps `g₁, g₂, g₃`
-  --     obeys `|E ∏| ≤ 4 C⁴ α(max g) + 16 C⁴ α(g₁) α(g₃)`: split at the largest gap with
-  --     `abs_covariance_le_of_bounded` (blocks are `sigmaLE`/`sigmaGE`-measurable, each
-  --     bounded by `C²`, and `IsStrictlyStationary.alphaMixCoeff_shift` turns the
-  --     coefficient into `alphaCoeff`); at the outer splits the product term vanishes
-  --     because `E X_t = 0` (transported off `hmean` by `hstat.identDistrib`), at the
-  --     middle split it is `|E X_{t₁}X_{t₂}| |E X_{t₃}X_{t₄}| ≤ 16 C⁴ α(g₁) α(g₃)`.
-  -- (2) `Σ_{sorted} α(max g) ≤ n Σ_{m ≤ n} 3 (m+1)² K/m² = O(n²)` and
-  --     `Σ_{sorted} α(g₁)α(g₃) ≤ n · n · (Σ_m α m)² = O(n²)` (the second sum converges by
-  --     `α(m) ≤ K/m²`); both need `α ≤ 1` at `m = 0`.
-  -- (3) The unsorted 4-fold expansion of `(Σ X)⁴` reduces to the sorted one by the
-  --     fibrewise bound `#{p | sort p = q} ≤ 4⁴` (`Tuple.sort`, `Fintype.prod_equiv`);
-  --     the constant is irrelevant since `C'` is existential.
-  -- Step (1) is the probabilistic content and is cheap given the bricks above; steps
-  -- (2)–(3) are the combinatorics and are what remains.
-  sorry
+  classical
+  have hC0 : 0 ≤ C := le_trans (abs_nonneg _) (hbdd 0).exists.choose_spec
+  have hA0 : ∀ m, 0 ≤ alphaCoeff X μ m := alphaCoeff_nonneg' X
+  have hA1 : ∀ m, alphaCoeff X μ m ≤ 1 := fun _ => alphaMixCoeff_le_one (mΩ := inferInstance)
+  have hAanti : Antitone fun m : ℕ => alphaCoeff X μ m := alphaCoeff_antitone X
+  have hK0 : 0 ≤ K := by
+    have h1 := hα 1 le_rfl
+    have h2 := hA0 1
+    norm_num at h1
+    linarith
+  -- the kernel: the modulus of the four-fold moment
+  obtain ⟨G, hG⟩ : ∃ G : ℕ → ℕ → ℕ → ℕ → ℝ, ∀ a b c d, G a b c d =
+      |∫ ω, X ((a : ℤ) + 1) ω * X ((b : ℤ) + 1) ω * X ((c : ℤ) + 1) ω
+        * X ((d : ℤ) + 1) ω ∂μ| := ⟨_, fun _ _ _ _ => rfl⟩
+  have hGsymm : ∀ (a b c d a' b' c' d' : ℕ),
+      (∀ ω, X ((a : ℤ) + 1) ω * X ((b : ℤ) + 1) ω * X ((c : ℤ) + 1) ω * X ((d : ℤ) + 1) ω
+        = X ((a' : ℤ) + 1) ω * X ((b' : ℤ) + 1) ω * X ((c' : ℤ) + 1) ω * X ((d' : ℤ) + 1) ω)
+      → G a b c d = G a' b' c' d' := by
+    intro a b c d a' b' c' d' he
+    rw [hG, hG]
+    congr 1
+    exact integral_congr_ae (ae_of_all _ he)
+  -- the cut bound, transported from `abs_integral_quad_le`
+  have hcut : ∀ a b c d : ℕ, a ≤ b → b ≤ c → c ≤ d →
+      G a b c d ≤ 4 * C ^ 4 * alphaCoeff X μ (max (b - a) (max (c - b) (d - c)))
+        + 16 * C ^ 4 * (alphaCoeff X μ (b - a) * alphaCoeff X μ (d - c)) := by
+    intro a b c d hab hbc hcd
+    have e1 : (((b : ℤ) + 1) - ((a : ℤ) + 1)).toNat = b - a := by omega
+    have e2 : (((c : ℤ) + 1) - ((b : ℤ) + 1)).toNat = c - b := by omega
+    have e3 : (((d : ℤ) + 1) - ((c : ℤ) + 1)).toNat = d - c := by omega
+    have key := abs_integral_quad_le hstat hmeas hbdd hmean
+      (a := (a : ℤ) + 1) (b := (b : ℤ) + 1) (c := (c : ℤ) + 1) (d := (d : ℤ) + 1)
+      (by omega) (by omega) (by omega)
+    rw [e1, e2, e3] at key
+    rw [hG]
+    exact key
+  obtain ⟨D, hD0, hD⟩ := sum_four_le_of_cut_bound (G := G)
+    (A := fun m : ℕ => alphaCoeff X μ m) (C := C) (K := K) hC0 hK0 hA0 hA1 hAanti
+    (fun m hm => hα m hm) (fun a b c d => by rw [hG]; exact abs_nonneg _)
+    (fun a b c d => hGsymm _ _ _ _ _ _ _ _ fun ω => by ring)
+    (fun a b c d => hGsymm _ _ _ _ _ _ _ _ fun ω => by ring)
+    (fun a b c d => hGsymm _ _ _ _ _ _ _ _ fun ω => by ring) hcut
+  refine ⟨D, hD0, fun n => ?_⟩
+  -- expand the fourth power of the partial sum and exchange with the integral
+  have hint : ∀ a b c d : ℕ, Integrable (fun ω => X ((a : ℤ) + 1) ω * X ((b : ℤ) + 1) ω
+      * X ((c : ℤ) + 1) ω * X ((d : ℤ) + 1) ω) μ := by
+    intro a b c d
+    refine integrable_of_bdd ((((hmeas _).mul (hmeas _)).mul (hmeas _)).mul (hmeas _))
+      (B := C * C * C * C) ?_
+    filter_upwards [hbdd ((a : ℤ) + 1), hbdd ((b : ℤ) + 1), hbdd ((c : ℤ) + 1),
+      hbdd ((d : ℤ) + 1)] with ω f1 f2 f3 f4
+    exact abs_mul_le_of_bdd (abs_mul_le_of_bdd (abs_mul_le_of_bdd f1 f2) f3) f4
+  have hexp : (∫ ω, (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) ^ 4 ∂μ)
+      = ∑ a ∈ Finset.range n, ∑ b ∈ Finset.range n, ∑ c ∈ Finset.range n,
+          ∑ d ∈ Finset.range n, ∫ ω, X ((a : ℤ) + 1) ω * X ((b : ℤ) + 1) ω
+            * X ((c : ℤ) + 1) ω * X ((d : ℤ) + 1) ω ∂μ := by
+    rw [integral_congr_ae (ae_of_all _ fun ω =>
+      sum_pow_four_expand (Finset.range n) fun t : ℕ => X ((t : ℤ) + 1) ω)]
+    rw [integral_finset_sum _ fun a _ => integrable_finset_sum _ fun b _ =>
+      integrable_finset_sum _ fun c _ => integrable_finset_sum _ fun d _ => hint a b c d]
+    refine Finset.sum_congr rfl fun a _ => ?_
+    rw [integral_finset_sum _ fun b _ => integrable_finset_sum _ fun c _ =>
+      integrable_finset_sum _ fun d _ => hint a b c d]
+    refine Finset.sum_congr rfl fun b _ => ?_
+    rw [integral_finset_sum _ fun c _ => integrable_finset_sum _ fun d _ => hint a b c d]
+    refine Finset.sum_congr rfl fun c _ => ?_
+    exact integral_finset_sum _ fun d _ => hint a b c d
+  rw [hexp]
+  refine le_trans ?_ (hD n)
+  refine Finset.sum_le_sum fun a _ => Finset.sum_le_sum fun b _ =>
+    Finset.sum_le_sum fun c _ => Finset.sum_le_sum fun d _ => ?_
+  rw [hG]
+  exact le_abs_self _
 
 /-! ### Theorems 2.18/2.19: Bosq exponential inequalities (literature DEBTS) -/
 
