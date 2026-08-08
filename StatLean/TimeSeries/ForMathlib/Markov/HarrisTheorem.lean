@@ -26,6 +26,26 @@ This file exists to discharge the last structural debt of the TimeSeries area,
 `nlARKernel_geometricallyErgodic` (FY Theorem 2.4(ii)); the Meyn–Tweedie
 ψ-irreducibility/petite-set apparatus is deliberately avoided.
 
+**STATUS.** `harris_invariant_unique` and `IsGeometricallyErgodic.of_pow` are proved
+(axiom-clean). Two statements are still open, for different reasons:
+
+* `harris_contraction` is **false as stated**, and is refuted in this file: `weightedTV`
+  is built from `Measure.singularPart` rather than from the Jordan decomposition of
+  `μ − ν`, so it ignores every absolutely-continuous overlap of the two laws and does not
+  even separate measures. See the explicit witness `cDrift`/`cMinorize`/`cHR` together
+  with `cNoContraction` just above the statement. Repairing it means changing the
+  *definition* of `weightedTV` (and then supplying the coupling step of Hairer–Mattingly),
+  which is a statement-level change.
+* `harris_theorem` is true but open: with `weightedTV` unusable it has no shortcut from
+  the contraction, and the *existence* half needs a completeness argument for the
+  total-variation metric on probability measures (or a regeneration construction) that is
+  not available in the pinned Mathlib.
+
+Note that the uniqueness proof here does **not** go through any contraction: it splits
+`π − π'` by a Hahn set, shows each half is separately `κ`-invariant, and then uses the
+drift (through `level_set_pos`) and the minorization to make the minorizing measure
+vanish. So the downstream consumers that only need uniqueness are unaffected.
+
 **Reference.** M. Hairer and J. C. Mattingly, *Yet another look at Harris' ergodic
 theorem for Markov chains*, in Seminar on Stochastic Analysis, Random Fields and
 Applications VI, Progr. Probab. 63, Birkhäuser (2011), 109–117. Consumed by
@@ -68,6 +88,14 @@ private theorem tvDist_bind_le (κ : Kernel S S) [IsMarkovKernel κ] (μ ν : Me
   simpa using
     lintegral_le_lintegral_add_tvDist μ ν (κ.measurable_coe hs) (B := 1) fun _ => prob_le_one
 
+-- Kernel averaging is additive in the initial law.
+private theorem bind_add' (κ : Kernel S S) [IsSFiniteKernel κ] (μ ν : Measure S) :
+    (μ + ν).bind κ = μ.bind κ + ν.bind κ := by
+  ext t ht
+  rw [Measure.bind_apply ht κ.aemeasurable, Measure.add_apply,
+    Measure.bind_apply ht κ.aemeasurable, Measure.bind_apply ht κ.aemeasurable,
+    lintegral_add_measure]
+
 /-- The **weighted total-variation distance** `∫ (1 + βV) d|μ − ν|` of Hairer–Mattingly
 (their `ρ_β`), as an `ℝ≥0∞`-valued quantity built from the Jordan decomposition of the
 signed difference. At `β = 0` it is twice `StatLean.Minimaxity.tvDist`. -/
@@ -102,6 +130,140 @@ structure HasMinorization (κ : Kernel S S) (V : S → ℝ) (R α : ℝ) (ρ : M
   minorize : ∀ x, V x ≤ R → ∀ A : Set S, MeasurableSet A →
     ENNReal.ofReal α * ρ A ≤ κ x A
 
+-- ## REFUTATION of `harris_contraction` as frozen (see the STATUS note in the module docstring)
+--
+-- `weightedTV` above is built from `Measure.singularPart`, **not** from the Jordan decomposition
+-- of the signed difference `μ − ν`: it sees only the parts of `μ` and `ν` that are *mutually
+-- singular*, and drops every absolutely-continuous overlap.  (In particular `weightedTV β V μ ν
+-- = 0` whenever `μ ≪ ν ≪ μ` with `μ ≠ ν`, so it does not separate measures.)  That makes the
+-- frozen contraction statement false: mixing an `ε` of one law into the other can annihilate an
+-- arbitrarily large share of the right-hand side while leaving the left-hand side untouched.
+--
+-- The witness below lives on `ℕ` with `V = (0, 20, 11, 11, …)`, `γ = 1/2`, `K = 1`, `R = 10`
+-- (so `2K/(1−γ) = 4 < 10`), `α = 1`, `ρ = δ₀`, and the deterministic kernel `1 ↦ 2`, `n ↦ 0`
+-- otherwise.  For `μ = δ₁` and `ν = ½δ₀ + ½δ₁`:
+--   * `μ` is `ν`-absolutely continuous, so `singularPart μ ν = 0` and `weightedTV β V μ ν
+--     = ∫(1+βV) d(½δ₀) = ½`;
+--   * one step sends `μ ↦ δ₂` and `ν ↦ ½δ₀ + ½δ₂`, the *same* configuration, so the pushed
+--     distance is again `½`.
+-- Hence `½ ≤ ᾱ · ½` for every admissible `β`, forcing `1 ≤ ᾱ` — no `ᾱ < 1` can work.
+-- `cNoContraction (harris_contraction cDrift cMinorize cHR)` has type `False` (checked).
+--
+-- The repair is to define `weightedTV` from the Jordan decomposition of `μ − ν` (equivalently,
+-- from a Hahn set for the pair), which is what Hairer–Mattingly's `ρ_β` actually is; the proof
+-- then needs the coupling/Kantorovich step as well.  Both are statement-level changes, hence
+-- outside this session's frozen touch-set.
+
+/-- Counterexample data: `V 0 = 0`, `V 1 = 20`, `V n = 11` otherwise. -/
+private noncomputable def cV : ℕ → ℝ := fun n => if n = 0 then 0 else if n = 1 then 20 else 11
+
+/-- Counterexample kernel: `1 ↦ 2`, everything else `↦ 0`. -/
+private noncomputable def cK : Kernel ℕ ℕ :=
+  ⟨fun n => if n = 1 then Measure.dirac 2 else Measure.dirac 0, Measurable.of_discrete⟩
+
+private theorem cK_apply (n : ℕ) :
+    cK n = if n = 1 then Measure.dirac 2 else Measure.dirac 0 := rfl
+
+private instance : IsMarkovKernel cK :=
+  ⟨fun n => by rw [cK_apply]; split <;> infer_instance⟩
+
+/-- The half-and-half mixture `½δ_a + ½δ_b`. -/
+private noncomputable def cMix (a b : ℕ) : Measure ℕ :=
+  (2 : ℝ≥0∞)⁻¹ • Measure.dirac a + (2 : ℝ≥0∞)⁻¹ • Measure.dirac b
+
+private instance (a b : ℕ) : IsProbabilityMeasure (cMix a b) := by
+  refine ⟨?_⟩
+  rw [cMix]
+  simp
+  rw [ENNReal.inv_two_add_inv_two]
+
+private theorem cMix_apply (a b : ℕ) (s : Set ℕ) :
+    cMix a b s = (2 : ℝ≥0∞)⁻¹ * Measure.dirac a s + (2 : ℝ≥0∞)⁻¹ * Measure.dirac b s := by
+  rw [cMix, Measure.add_apply, Measure.smul_apply, Measure.smul_apply, smul_eq_mul, smul_eq_mul]
+
+private theorem sing_dirac_mix (a b : ℕ) :
+    (Measure.dirac b : Measure ℕ).singularPart (cMix a b) = 0 := by
+  refine (Measure.singularPart_eq_zero _ _).2 ?_
+  refine Measure.AbsolutelyContinuous.mk fun s hs hzero => ?_
+  rw [cMix_apply] at hzero
+  have h := (add_eq_zero.1 hzero).2
+  simpa using h
+
+private theorem sing_mix_dirac (a b : ℕ) (hab : a ≠ b) :
+    (cMix a b).singularPart (Measure.dirac b) = (2 : ℝ≥0∞)⁻¹ • Measure.dirac a := by
+  refine (Measure.eq_singularPart (f := fun _ => (2 : ℝ≥0∞)⁻¹) measurable_const ?_ ?_).symm
+  · refine ⟨{a}ᶜ, (MeasurableSet.singleton a).compl, ?_, ?_⟩
+    · rw [Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ (MeasurableSet.singleton a).compl]
+      simp
+    · rw [compl_compl, Measure.dirac_apply' _ (MeasurableSet.singleton a)]
+      simp only [Set.indicator_apply, Set.mem_singleton_iff, Pi.one_apply]
+      exact if_neg fun h => hab h.symm
+  · rw [withDensity_const, cMix]
+
+private theorem lintegral_smul_dirac (c : ℝ≥0∞) (a : ℕ) (f : ℕ → ℝ≥0∞) :
+    ∫⁻ x, f x ∂(c • Measure.dirac a) = c * f a := by
+  rw [lintegral_smul_measure, lintegral_dirac, smul_eq_mul]
+
+private theorem cWeightedTV (β : ℝ) (a b : ℕ) (hab : a ≠ b) :
+    weightedTV β cV (Measure.dirac b) (cMix a b)
+      = (2 : ℝ≥0∞)⁻¹ * ENNReal.ofReal (1 + β * cV a) := by
+  rw [weightedTV, sing_dirac_mix, sing_mix_dirac a b hab, lintegral_zero_measure, zero_add,
+    lintegral_smul_dirac]
+
+
+private theorem cDrift : HasLyapunovDrift cK cV (1/2) 1 where
+  V_nonneg x := by rw [cV]; split_ifs <;> norm_num
+  V_measurable := Measurable.of_discrete
+  gamma_mem := ⟨by norm_num, by norm_num⟩
+  K_nonneg := by norm_num
+  drift x := by
+    have hnn : ∀ y : ℕ, (0:ℝ) ≤ cV y := fun y => by rw [cV]; split_ifs <;> norm_num
+    rw [cK_apply]
+    split_ifs with h
+    · subst h
+      rw [integral_dirac]
+      norm_num [cV]
+    · rw [integral_dirac]
+      have : cV 0 = 0 := by norm_num [cV]
+      rw [this]
+      nlinarith [hnn x]
+
+private theorem cMinorize : HasMinorization cK cV 10 1 (Measure.dirac 0) where
+  alpha_mem := ⟨one_pos, le_rfl⟩
+  isProbability := inferInstance
+  minorize x hx A _ := by
+    have hx0 : x = 0 := by
+      by_contra hne
+      rw [cV, if_neg hne] at hx
+      split_ifs at hx <;> norm_num at hx
+    subst hx0
+    rw [cK_apply, if_neg (by norm_num), ENNReal.ofReal_one, one_mul]
+
+private theorem cHR : 2 * (1:ℝ) / (1 - 1/2) < 10 := by norm_num
+
+private theorem cNoContraction :
+    ¬ ∃ β ᾱ : ℝ, 0 < β ∧ 0 < ᾱ ∧ ᾱ < 1 ∧
+      ∀ μ ν : Measure ℕ, IsProbabilityMeasure μ → IsProbabilityMeasure ν →
+        weightedTV β cV (μ.bind cK) (ν.bind cK) ≤ ENNReal.ofReal ᾱ * weightedTV β cV μ ν := by
+  rintro ⟨β, ᾱ, hβ, hα0, hα1, h⟩
+  have hV0 : cV 0 = 0 := by norm_num [cV]
+  have hbind1 : (Measure.dirac 1 : Measure ℕ).bind cK = Measure.dirac 2 := by
+    rw [Measure.dirac_bind cK.measurable, cK_apply, if_pos rfl]
+  have hbind0 : (Measure.dirac 0 : Measure ℕ).bind cK = Measure.dirac 0 := by
+    rw [Measure.dirac_bind cK.measurable, cK_apply, if_neg (by norm_num)]
+  have hbindmix : (cMix 0 1).bind cK = cMix 0 2 := by
+    rw [cMix, bind_add', Measure.bind_smul, Measure.bind_smul, hbind0, hbind1, cMix]
+  have key := h (Measure.dirac 1) (cMix 0 1) inferInstance inferInstance
+  rw [hbind1, hbindmix, cWeightedTV β 0 2 (by norm_num), cWeightedTV β 0 1 (by norm_num),
+    hV0] at key
+  norm_num at key
+  have hcancel : (1 : ℝ≥0∞) ≤ ENNReal.ofReal ᾱ := by
+    have h2 : (1 : ℝ≥0∞) * (2:ℝ≥0∞)⁻¹ ≤ ENNReal.ofReal ᾱ * (2:ℝ≥0∞)⁻¹ := by
+      rw [one_mul]; exact key
+    exact (ENNReal.mul_le_mul_right (by simp) (by simp)).1 h2
+  have : ENNReal.ofReal ᾱ < 1 := ENNReal.ofReal_lt_one.2 hα1
+  exact absurd hcancel (not_le.2 this)
+
 /-- **Harris contraction** (Hairer–Mattingly Theorem 1.3): under a Lyapunov drift and a
 minorization on a high enough level set, the kernel contracts the weighted TV distance
 `weightedTV β V` for a suitable `β > 0`, uniformly over initial laws. -/
@@ -115,6 +277,8 @@ theorem harris_contraction {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ}
       ∀ μ ν : Measure S, IsProbabilityMeasure μ → IsProbabilityMeasure ν →
         weightedTV β V (μ.bind κ) (ν.bind κ)
           ≤ ENNReal.ofReal ᾱ * weightedTV β V μ ν := by
+  -- FALSE AS FROZEN — refuted by `cNoContraction` above (`weightedTV` is a `singularPart`
+  -- functional, not the Jordan/total-variation one).  Left as a named debt.
   sorry
 
 /-- **Harris' theorem** (Hairer–Mattingly): drift + minorization give a unique invariant
@@ -226,14 +390,6 @@ private theorem level_set_pos {κ : Kernel S S} [IsMarkovKernel κ] {V : S → �
   have hKR : 2 * K < R * (1 - γ) := by rw [div_lt_iff₀ h1γ] at hR; linarith
   nlinarith [hRc, hTbound, hcpos, h1γ, hKR, hK]
 
-
--- Kernel averaging is additive in the initial law.
-private theorem bind_add' (κ : Kernel S S) [IsSFiniteKernel κ] (μ ν : Measure S) :
-    (μ + ν).bind κ = μ.bind κ + ν.bind κ := by
-  ext t ht
-  rw [Measure.bind_apply ht κ.aemeasurable, Measure.add_apply,
-    Measure.bind_apply ht κ.aemeasurable, Measure.bind_apply ht κ.aemeasurable,
-    lintegral_add_measure]
 
 -- The minorization, integrated: one step from any initial law dominates `α·ρ` on the mass that
 -- the law puts on the level set.
