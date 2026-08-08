@@ -1633,6 +1633,41 @@ statistic does not need it. The route, and what is actually left:
   `E[u_i²] = σ² Σ_{d,e ≥ 0} π_d π_e γ_{θ₀}(e − d)` is symmetric in the reversal
   (`γ` is even) and tends to `σ² Σ_n c_n²` as `i` recedes from the truncation; but an
   implementation of (C) must truncate the composite filter *forwards* in `i`. -/
+/-- **DEBT — step (C) of the `armaProfileS_tendstoInProb` route**: the residual
+sum-of-squares LLN `T⁻¹‖Π_T x‖² →p σ² · Σ_j c_j²`.
+
+This is the **only** remaining gap in `armaProfileS_tendstoInProb`; steps (A) and (B) are
+proved. It is stated here as a named theorem rather than left as an anonymous `have` inside
+that proof, so that a sorry census names it (project charter §2, "`sorry` is a planned
+debt": lift it to a top-level lemma so future sessions see the gap).
+
+**Route (ergodic-theorem-free — see the full discussion at
+`armaProfileS_tendstoInProb`).** Truncate the composite filter at lag `m`. Along each
+arithmetic progression `t ≡ k (mod m)` the truncated squares `(r_t^{(m)})²` depend on
+*disjoint* windows of the iid noise, hence are genuinely i.i.d. and integrable (two moments
+on `ε` suffice), so `ProbabilityTheory.strong_law_ae` (Etemadi: pairwise independence and
+`L¹` only) applies to each progression; summing the `m` of them gives the `m`-dependent
+LLN, and `m → ∞` transfers by Cauchy–Schwarz. The Mathlib pin has **no** pointwise
+(Birkhoff) ergodic theorem — only von Neumann's mean ergodic theorem, an `L²` statement
+that does not reach the `L¹` variable `r_t(θ)²` — but this route does not need one. A
+*direct* `L²` LLN for `r_t(θ)²` is genuinely blocked by fourth cumulants.
+
+**Orientation.** `Π_T` is *upper* triangular, so its rows are the **time-reversed**
+residuals `u_i = Σ_{j ≥ 0} π_j(θ) x_{i+j}` truncated at `x_T`; an implementation must
+truncate the composite filter *forwards* in `i`. -/
+theorem armaResidualSS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
+    {b0 b : Fin p → ℝ} {a0 a : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
+    (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
+    (hB0 : ARMAInvertibleParams b0 a0) (hB : ARMAInvertibleParams b a)
+    (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
+    (hmeas : ∀ t, Measurable (X t)) {η' : ℝ} (hη' : 0 < η') :
+    Tendsto (fun T : ℕ => (μ {ω | η' ≤
+        |(T : ℝ)⁻¹ * ((piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+            (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+          - σ2 * armaContrastVar b0 a0 b a|}).toReal)
+      atTop (𝓝 0) := by
+  sorry
+
 theorem armaProfileS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 b : Fin p → ℝ} {a0 a : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -1643,12 +1678,13 @@ theorem armaProfileS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
         |(T : ℝ)⁻¹ * armaProfileS b a (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
           - σ2 * armaContrastVar b0 a0 b a|}).toReal)
       atTop (𝓝 0) := by
-  -- **(C)** — the residual sum of squares LLN; the single remaining gap, see above.
+  -- **(C)** — the residual sum of squares LLN; the single remaining gap, now the named
+  -- debt `armaResidualSS_tendstoInProb` above.
   have hCLLN : ∀ η' : ℝ, 0 < η' → Tendsto (fun T : ℕ => (μ {ω | η' ≤
       |(T : ℝ)⁻¹ * ((piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
           (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
-        - σ2 * armaContrastVar b0 a0 b a|}).toReal) atTop (𝓝 0) := by
-    sorry
+        - σ2 * armaContrastVar b0 a0 b a|}).toReal) atTop (𝓝 0) :=
+    fun η' hη' => armaResidualSS_tendstoInProb h hiid hσ hB0 hB hcausal hmeas hη'
   -- **(B)** — the correction term, proved above.
   have hB2 := gramTail_quadForm_tendstoInProb (b0 := b0) (a0 := a0) h.whiteNoise (le_of_lt hσ)
     hB0 hB hcausal hmeas (η := η / 2) (by linarith)
