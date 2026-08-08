@@ -1793,8 +1793,9 @@ theorem mle_consistent [IsProbabilityMeasure μ] {p q : ℕ}
   -- `hcopK : ∀ ba ∈ K, IsCoprime (arPoly ba.1) (maPoly ba.2)` — is now a hypothesis, and
   -- it excludes that witness. What remains is analytic debt, not falsity:
   --
-  --   (i)   `criterion_tendsto_contrast` — PROVED here, modulo the single named debt
-  --         `armaProfileS_tendstoInProb` (see its docstring for the corrected route);
+  --   (i)   `criterion_tendsto_contrast` — PROVED here, modulo `armaProfileS_tendstoInProb`,
+  --         whose steps (A) and (B) are now PROVED and whose only residue is the named
+  --         item (C) inside it (`hCLLN`: `T⁻¹‖u‖² →p σ² Σ_j c_j²`); see its docstring;
   --   (ii)  the positive contrast gap `inf {K(θ) − K(θ₀) : θ ∈ K, dist θ θ₀ ≥ δ} > 0`.
   --         Its *pointwise* half is now AVAILABLE: `armaContrastVar_eq_one_iff` (PROVED
   --         above, using exactly `hcop` and `hcopK`) plus `one_le_armaContrastVar` give

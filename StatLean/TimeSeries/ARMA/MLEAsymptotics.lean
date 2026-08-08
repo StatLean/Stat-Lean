@@ -333,18 +333,25 @@ Given the martingale-difference property (which is PROVED upstream:
    `E[ε_t² ⟨d, Z_t⟩²] = σ² E⟨d, Z_t⟩² < ∞`. The independence brick is
    `indep_noise_sigmaLT`, `private` to `ARMA/ScoreAnalysis.lean`.
 2. The **conditional-variance LLN** `n⁻¹ Σ_{i<n} E[ξ_i² | 𝓕_i] →p σ²·(σ² dᵀ W d)`. By
-   the same independence, `E[ξ_i² | 𝓕_i] = σ² ⟨d, Z_i⟩²` a.e., so this is the ergodic
-   time-average of the stationary sequence `⟨d, Z_t⟩²` — the *same* pointwise-ergodic
-   gap that blocks `ARMA/Consistency.lean`'s `armaProfileS_tendstoInProb` (Mathlib has
-   no pointwise ergodic theorem, and the `L²` route needs fourth cumulants that FY does
-   not assume).
+   the same independence, `E[ξ_i² | 𝓕_i] = σ² ⟨d, Z_i⟩²` a.e., so this is the time
+   average of the stationary sequence `⟨d, Z_t⟩²`. **The diagnosis "this is the
+   pointwise-ergodic gap, absent from Mathlib" is WITHDRAWN** (2026-08-08): it is the
+   *same shape* as `ARMA/Consistency.lean`'s residual item (C), and (C) is now known to
+   be ergodic-theorem-free. `⟨d, Z_t⟩` is a one-sided linear filter of the i.i.d. noise,
+   so truncating the filter at lag `m` makes the truncated squares `m`-dependent; along
+   each arithmetic progression `t ≡ k (mod m)` they are i.i.d. and `L¹` (two moments on
+   `ε` suffice), so Etemadi's `ProbabilityTheory.strong_law_ae` applies progression by
+   progression, and the `m → ∞` transfer is Cauchy–Schwarz on second moments. What is
+   missing here is therefore that *construction*, not a missing Mathlib theorem. (The
+   `L²` route really does need fourth cumulants; that part of the note stands, and it is
+   exactly why the route goes through `L¹` + a.e. convergence.)
 3. The **averaged Lindeberg condition**. Under stationarity the average collapses to the
    single term `E[ξ_0² 1{|ξ_0| ≥ η√n}] → 0`, which is dominated convergence once (1) is
    available; it is bundled here because it shares (1)'s independence input.
 
-Recorded as one named debt rather than three, since (1)–(3) all reduce to the single
-missing brick pair (noise/past independence — `private` upstream — and the pointwise
-ergodic theorem — absent from Mathlib). -/
+Recorded as one named debt rather than three, since (1)–(3) all reduce to the same two
+inputs: noise/past independence (`indep_noise_sigmaLT`, `private` upstream) and the
+`m`-dependent LLN described in (2). -/
 private theorem hannanScore_brownInputs [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -634,10 +641,16 @@ up to the `O(1/T)` edge effect controlled by `logdet_armaToeplitz_vanishes`'s
 whitened-Toeplitz factorisation, the time average `T⁻¹ Σ_t r_t(θ)²` of the squared
 `θ`-residual process, and `θ ↦ r_t(θ)` is Lipschitz in `θ` on the compact `K ⊆ 𝓑`
 with an `L²`-integrable Lipschitz constant (geometric decay of `∂π_j/∂θ`, uniform on
-`K` by `exists_geometric_bound_armaPi`). The missing ingredient is the same one that
-blocks Consistency's lane — the pointwise ergodic theorem, absent from Mathlib — so
-this is recorded rather than proved. It is the same brick Consistency's `mle_consistent`
-needs for its finite-subcover step. -/
+`K` by `exists_geometric_bound_armaPi`). The claim that the missing ingredient is "the
+pointwise ergodic theorem, absent from Mathlib" is **WITHDRAWN** (2026-08-08): the
+pointwise LLN it is paired with is now reduced, in Consistency, to the single
+ergodic-theorem-free item (C) (`armaProfileS_tendstoInProb`'s `hCLLN`), and the
+finite-`T` half of the *oscillation* statement is not an ergodic statement at all — it
+is the `θ`-Lipschitz estimate above, uniform in `T`, which needs a locally uniform
+geometric bound on `π(θ)` and on `∂π(θ)` over the compact `K`. That uniformity (roots of
+`maPoly a` staying off the closed unit disc uniformly on `K`, by compactness, and then a
+Cauchy estimate) is the actual missing brick, and it is the same one
+`mle_consistent`(ii) needs for the continuity of `θ ↦ armaContrastVar θ₀ θ`. -/
 private theorem armaProfileS_equicontinuous [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
