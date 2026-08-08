@@ -111,7 +111,37 @@ theorem armaNegTwoLogLik_profile {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → 
         armaNegTwoLogLik b a (armaProfileS b a x / T) x ≤ armaNegTwoLogLik b a σ2 x) ∧
       armaNegTwoLogLik b a (armaProfileS b a x / T) x
         = (T : ℝ) * armaProfileCriterion b a x + (T : ℝ) * (Real.log (2 * π) + 1) := by
-  sorry
+  have hTpos : (0 : ℝ) < T := Nat.cast_pos.2 hT
+  have hT0 : (T : ℝ) ≠ 0 := hTpos.ne'
+  have h2pi : (0 : ℝ) < 2 * π := by positivity
+  simp only [armaNegTwoLogLik, armaProfileCriterion, armaProfileS] at hS ⊢
+  set S : ℝ := x ⬝ᵥ ((armaToeplitz b a T)⁻¹ *ᵥ x) with hSdef
+  set L : ℝ := Real.log (armaToeplitz b a T).det with hLdef
+  have hS0 : S ≠ 0 := hS.ne'
+  have hST : (0 : ℝ) < S / T := div_pos hS hTpos
+  -- `σ̂²⁻¹ S = T` and `T · T⁻¹ L = L`
+  have hSTinv : (S / (T : ℝ))⁻¹ * S = T := by field_simp
+  have hLT : (T : ℝ) * ((T : ℝ)⁻¹ * L) = L := by field_simp
+  constructor
+  · intro σ2 hσ
+    -- the scale-free ratio `u = σ² T / S`
+    have hu : (0 : ℝ) < σ2 * T / S := div_pos (mul_pos hσ hTpos) hS
+    -- `log u + u⁻¹ ≥ 1`, i.e. `log y ≤ y - 1` at `y = u⁻¹`
+    have hkey : 1 ≤ Real.log (σ2 * T / S) + (σ2 * T / S)⁻¹ := by
+      have h := Real.log_le_sub_one_of_pos (inv_pos.2 hu)
+      rw [Real.log_inv] at h
+      linarith
+    have hlogσ : Real.log σ2 = Real.log (S / T) + Real.log (σ2 * T / S) := by
+      rw [← Real.log_mul hST.ne' hu.ne']
+      congr 1
+      field_simp
+    have hinv : σ2⁻¹ * S = (T : ℝ) * (σ2 * T / S)⁻¹ := by field_simp
+    rw [Real.log_mul h2pi.ne' hST.ne', Real.log_mul h2pi.ne' hσ.ne', hSTinv, hlogσ, hinv]
+    have hmul : (T : ℝ) * 1 ≤ (T : ℝ) * (Real.log (σ2 * T / S) + (σ2 * T / S)⁻¹) :=
+      mul_le_mul_of_nonneg_left hkey hTpos.le
+    linarith
+  · rw [Real.log_mul h2pi.ne' hST.ne', hSTinv]
+    linarith [hLT]
 
 /-- **Positive-definiteness of the model Toeplitz matrices** on the constraint set:
 the spectral density of the model is bounded below by a positive constant on the
