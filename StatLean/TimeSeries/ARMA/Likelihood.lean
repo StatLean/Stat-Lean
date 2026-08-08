@@ -176,6 +176,86 @@ theorem armaNegTwoLogLik_profile {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → 
   · rw [Real.log_mul h2pi.ne' hST.ne', hSTinv]
     linarith [hLT]
 
+section Toeplitz
+
+/-- The **one-sided transfer kernel** `ψ̃(m, s) = ψ_{m−s} · 1{s ≤ m}`. It is the
+(lower-triangular, unit-diagonal) Cholesky-type factor of the model Toeplitz matrices:
+`γ(s − t) = Σ_m ψ̃(m, s) ψ̃(m, t)` (`armaACVF_eq_tsum_psiKer`). -/
+private noncomputable def psiKer {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (m s : ℕ) : ℝ :=
+  if s ≤ m then armaPsi b a (m - s) else 0
+
+private lemma psiKer_self {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (s : ℕ) :
+    psiKer b a s s = 1 := by
+  simp [psiKer, armaPsi_zero]
+
+private lemma psiKer_eq_zero {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) {m s : ℕ}
+    (h : m < s) : psiKer b a m s = 0 := by
+  simp [psiKer, Nat.not_le.2 h]
+
+/-- Each kernel product is summable in `m` (geometric ψ-decay). -/
+private lemma summable_psiKer_mul {p q : ℕ} {b : Fin p → ℝ} (a : Fin q → ℝ)
+    (hb : NoRootClosedDisc b) (s t : ℕ) :
+    Summable fun m : ℕ => psiKer b a m s * psiKer b a m t := by
+  obtain ⟨C, hC, r₀, hr₀, hr₁, hbnd₀⟩ := exists_geometric_bound_armaPsi a hb
+  -- enlarge the ratio so that it is strictly positive (needed to divide by `r^s`)
+  obtain ⟨r, hrdef⟩ : ∃ r : ℝ, r = max r₀ (1 / 2) := ⟨_, rfl⟩
+  have hrpos : (0 : ℝ) < r := lt_of_lt_of_le (by norm_num) (hrdef ▸ le_max_right r₀ (1 / 2))
+  have hrlt : r < 1 := hrdef ▸ max_lt hr₁ (by norm_num)
+  have hbnd : ∀ n, |armaPsi b a n| ≤ C * r ^ n := fun n =>
+    (hbnd₀ n).trans (by
+      have h : r₀ ^ n ≤ r ^ n := pow_le_pow_left₀ hr₀ (hrdef ▸ le_max_left r₀ (1 / 2)) n
+      nlinarith)
+  have hCr : ∀ u : ℕ, 0 ≤ C / r ^ u := fun u => div_nonneg hC (by positivity)
+  have hker : ∀ m u : ℕ, |psiKer b a m u| ≤ C / r ^ u * r ^ m := by
+    intro m u
+    unfold psiKer
+    split_ifs with h
+    · have hsplit : r ^ m = r ^ (m - u) * r ^ u := by rw [← pow_add]; congr 1; omega
+      calc |armaPsi b a (m - u)| ≤ C * r ^ (m - u) := hbnd _
+        _ = C / r ^ u * (r ^ (m - u) * r ^ u) := by field_simp
+        _ = C / r ^ u * r ^ m := by rw [← hsplit]
+    · rw [abs_zero]
+      exact mul_nonneg (hCr u) (by positivity)
+  refine Summable.of_abs (Summable.of_nonneg_of_le (fun _ => abs_nonneg _) (fun m => ?_)
+    ((summable_geometric_of_lt_one (sq_nonneg r) (by nlinarith)).mul_left
+      (C / r ^ s * (C / r ^ t))))
+  rw [abs_mul]
+  calc |psiKer b a m s| * |psiKer b a m t|
+      ≤ (C / r ^ s * r ^ m) * (C / r ^ t * r ^ m) :=
+        mul_le_mul (hker m s) (hker m t) (abs_nonneg _) (mul_nonneg (hCr s) (by positivity))
+    _ = C / r ^ s * (C / r ^ t) * (r ^ 2) ^ m := by rw [← pow_mul]; ring
+
+/-- **The Cholesky-type factorization of the model ACVF**: `γ(s − t) = Σ_m ψ̃(m,s) ψ̃(m,t)`.
+(Reindexing `Σ_j ψ_j ψ_{j+|s−t|}` by the absolute time `m = j + max(s,t)`.) -/
+private lemma armaACVF_eq_tsum_psiKer {p q : ℕ} {b : Fin p → ℝ} (a : Fin q → ℝ)
+    (hb : NoRootClosedDisc b) (s t : ℕ) :
+    armaACVF b a ((s : ℤ) - (t : ℤ)) = ∑' m : ℕ, psiKer b a m s * psiKer b a m t := by
+  have main : ∀ u v : ℕ, v ≤ u →
+      armaACVF b a ((u : ℤ) - (v : ℤ)) = ∑' m : ℕ, psiKer b a m u * psiKer b a m v := by
+    intro u v hvu
+    have hs := summable_psiKer_mul a hb u v
+    have hzero : ∑ i ∈ Finset.range u, psiKer b a i u * psiKer b a i v = 0 :=
+      Finset.sum_eq_zero fun i hi => by
+        rw [psiKer_eq_zero b a (Finset.mem_range.1 hi), zero_mul]
+    have hsplit := hs.sum_add_tsum_nat_add u
+    rw [hzero, zero_add] at hsplit
+    rw [← hsplit, armaACVF, show ((u : ℤ) - (v : ℤ)).natAbs = u - v by omega]
+    refine tsum_congr fun j => ?_
+    have h1 : psiKer b a (j + u) u = armaPsi b a j := by simp [psiKer]
+    have h2 : psiKer b a (j + u) v = armaPsi b a (j + (u - v)) := by
+      rw [psiKer, if_pos (by omega)]
+      congr 1
+      omega
+    rw [h1, h2]
+  rcases le_total t s with h | h
+  · exact main s t h
+  · have hsymm : armaACVF b a ((s : ℤ) - (t : ℤ)) = armaACVF b a ((t : ℤ) - (s : ℤ)) := by
+      simp only [armaACVF, show ((s : ℤ) - (t : ℤ)).natAbs = ((t : ℤ) - (s : ℤ)).natAbs by omega]
+    rw [hsymm, main t s h]
+    exact tsum_congr fun m => mul_comm _ _
+
+end Toeplitz
+
 /-- **Positive-definiteness of the model Toeplitz matrices** on the constraint set:
 the spectral density of the model is bounded below by a positive constant on the
 circle (`|a|²/|b|²` continuous and root-free), so every `Γ_T(b, a)` is positive
@@ -183,6 +263,81 @@ definite; in particular invertible. (FY uses this silently in (3.9)–(3.13).) -
 theorem armaToeplitz_posDef {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
     (hB : ARMAInvertibleParams b a) (T : ℕ) :
     (armaToeplitz b a T).PosDef := by
-  sorry
+  classical
+  have hb := hB.1
+  have hsum : ∀ s t : ℕ, Summable fun m : ℕ => psiKer b a m s * psiKer b a m t :=
+    fun s t => summable_psiKer_mul a hb s t
+  have hentry : ∀ i j : Fin T, armaToeplitz b a T i j
+      = ∑' m : ℕ, psiKer b a m (i : ℕ) * psiKer b a m (j : ℕ) := fun i j =>
+    armaACVF_eq_tsum_psiKer a hb (i : ℕ) (j : ℕ)
+  -- expanding the square of the filtered vector `(ψ̃ᵀ c)_m`
+  have hexp : ∀ (c : Fin T → ℝ) (m : ℕ), (∑ s : Fin T, c s * psiKer b a m (s : ℕ)) ^ 2
+      = ∑ s : Fin T, ∑ t : Fin T, c s * c t * (psiKer b a m s * psiKer b a m t) := by
+    intro c m
+    rw [sq, Finset.sum_mul_sum]
+    exact Finset.sum_congr rfl fun s _ => Finset.sum_congr rfl fun t _ => by ring
+  have hsumsq : ∀ c : Fin T → ℝ,
+      Summable fun m : ℕ => (∑ s : Fin T, c s * psiKer b a m (s : ℕ)) ^ 2 := by
+    intro c
+    simp_rw [hexp c]
+    exact summable_sum fun s _ => summable_sum fun t _ => (hsum s t).mul_left _
+  -- **the quadratic form is the `ℓ²` norm of the filtered vector**
+  have hquad : ∀ c : Fin T → ℝ, c ⬝ᵥ (armaToeplitz b a T *ᵥ c)
+      = ∑' m : ℕ, (∑ s : Fin T, c s * psiKer b a m (s : ℕ)) ^ 2 := by
+    intro c
+    have hrow : ∀ s : Fin T,
+        ∑' m : ℕ, ∑ t : Fin T, c s * c t * (psiKer b a m s * psiKer b a m t)
+          = ∑ t : Fin T, c s * c t * armaToeplitz b a T s t := by
+      intro s
+      rw [Summable.tsum_finsetSum
+        (f := fun (t : Fin T) (m : ℕ) => c s * c t * (psiKer b a m s * psiKer b a m t))
+        (s := (Finset.univ : Finset (Fin T))) (fun t _ => (hsum s t).mul_left _)]
+      exact Finset.sum_congr rfl fun t _ => by rw [tsum_mul_left, ← hentry s t]
+    have hswap : ∑' m : ℕ, (∑ s : Fin T, c s * psiKer b a m (s : ℕ)) ^ 2
+        = ∑ s : Fin T, ∑' m : ℕ, ∑ t : Fin T,
+            c s * c t * (psiKer b a m s * psiKer b a m t) := by
+      simp_rw [hexp c]
+      exact Summable.tsum_finsetSum fun s _ => summable_sum fun t _ => (hsum s t).mul_left _
+    rw [hswap]
+    simp_rw [hrow]
+    simp only [dotProduct, mulVec, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun s _ => Finset.sum_congr rfl fun t _ => by ring
+  refine Matrix.PosDef.of_dotProduct_mulVec_pos ?_ ?_
+  · -- symmetry: `γ` depends on `|i − j|` only
+    have hnat : ∀ i j : Fin T, ((j : ℤ) - (i : ℤ)).natAbs = ((i : ℤ) - (j : ℤ)).natAbs := by
+      intro i j; omega
+    ext i j
+    simp only [Matrix.conjTranspose_apply, star_trivial, armaToeplitz, Matrix.of_apply,
+      armaACVF, hnat i j]
+  · intro c hc
+    have hstar : star c = c := by funext i; simp
+    rw [hstar, hquad c]
+    -- the least index carrying a nonzero coefficient
+    obtain ⟨i₀, hi₀⟩ : ∃ i : Fin T, c i ≠ 0 := by
+      by_contra h
+      push Not at h
+      exact hc (funext h)
+    obtain ⟨S, hSdef⟩ : ∃ S : Finset (Fin T), S = Finset.univ.filter fun i => c i ≠ 0 :=
+      ⟨_, rfl⟩
+    have hmemS : ∀ i : Fin T, i ∈ S ↔ c i ≠ 0 := by intro i; rw [hSdef]; simp
+    obtain ⟨s₀, hs₀S, hs₀min⟩ := S.exists_min_image (fun i => (i : ℕ)) ⟨i₀, (hmemS i₀).2 hi₀⟩
+    have hc₀ : c s₀ ≠ 0 := (hmemS s₀).1 hs₀S
+    -- at the absolute time `m = s₀` the filtered vector is exactly `c s₀`: the kernel is
+    -- lower triangular with unit diagonal, and every earlier coefficient vanishes
+    have hval : ∑ s : Fin T, c s * psiKer b a (s₀ : ℕ) (s : ℕ) = c s₀ := by
+      rw [Finset.sum_eq_single s₀]
+      · rw [psiKer_self, mul_one]
+      · intro s _ hne
+        rcases lt_or_gt_of_ne (fun h : (s : ℕ) = (s₀ : ℕ) => hne (Fin.ext h)) with h | h
+        · have hcs : c s = 0 := by
+            by_contra hcs
+            exact absurd (hs₀min s ((hmemS s).2 hcs)) (by omega)
+          rw [hcs, zero_mul]
+        · rw [psiKer_eq_zero b a h, mul_zero]
+      · exact fun h => absurd (Finset.mem_univ s₀) h
+    have hposterm : 0 < (∑ s : Fin T, c s * psiKer b a (s₀ : ℕ) (s : ℕ)) ^ 2 := by
+      rw [hval]
+      exact lt_of_le_of_ne (sq_nonneg _) (Ne.symm (pow_ne_zero 2 hc₀))
+    exact lt_of_lt_of_le hposterm ((hsumsq c).le_tsum (s₀ : ℕ) fun j _ => sq_nonneg _)
 
 end StatLean.TimeSeries
