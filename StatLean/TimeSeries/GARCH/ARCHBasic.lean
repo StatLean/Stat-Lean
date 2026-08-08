@@ -3,6 +3,7 @@ import StatLean.TimeSeries.Stationarity.ARMAExistence
 import StatLean.TimeSeries.Models.Linear
 import StatLean.TimeSeries.Process.LinearProcess
 import Mathlib.Probability.ConditionalExpectation
+import Mathlib.Probability.Moments.MGFAnalytic
 
 /-!
 # Basic properties of ARCH(p) (FY §4.2.1, Theorem 4.3, Proposition 4.1)
@@ -1072,6 +1073,73 @@ theorem IsARCH.acf_sq_arch_one [IsProbabilityMeasure μ] {c0 b1 : ℝ}
     simp only [Int.natAbs_neg, Int.natAbs_natCast]
     rw [hstatY.acvf_even, hmain τ.natAbs, mul_div_assoc, div_self hg0, mul_one]
 
+/-- The fourth moment of the standard normal law is `3` — read off the fourth derivative
+at `0` of its moment-generating function `t ↦ e^{t²/2}`. -/
+private lemma integral_pow_four_gaussianReal :
+    ∫ x, x ^ 4 ∂(gaussianReal 0 1) = 3 := by
+  -- the successive derivatives of `t ↦ e^{t²/2}`
+  have hg : ∀ t : ℝ, HasDerivAt (fun t : ℝ => Real.exp (t ^ 2 / 2))
+      (t * Real.exp (t ^ 2 / 2)) t := by
+    intro t
+    have h1 : HasDerivAt (fun t : ℝ => t ^ 2 / 2) t t := by
+      simpa using (hasDerivAt_pow 2 t).div_const 2
+    simpa [Function.comp_def, mul_comm] using (Real.hasDerivAt_exp (t ^ 2 / 2)).comp t h1
+  have hg1 : ∀ t : ℝ, HasDerivAt (fun t : ℝ => t * Real.exp (t ^ 2 / 2))
+      ((1 + t ^ 2) * Real.exp (t ^ 2 / 2)) t := by
+    intro t
+    have := (hasDerivAt_id t).mul (hg t)
+    convert this using 1
+    simp only [id_eq]
+    ring
+  have hg2 : ∀ t : ℝ, HasDerivAt (fun t : ℝ => (1 + t ^ 2) * Real.exp (t ^ 2 / 2))
+      ((3 * t + t ^ 3) * Real.exp (t ^ 2 / 2)) t := by
+    intro t
+    have hp : HasDerivAt (fun t : ℝ => 1 + t ^ 2) (2 * t) t := by
+      simpa using (hasDerivAt_pow 2 t).const_add 1
+    have := hp.mul (hg t)
+    convert this using 1
+    ring
+  have hg3 : ∀ t : ℝ, HasDerivAt (fun t : ℝ => (3 * t + t ^ 3) * Real.exp (t ^ 2 / 2))
+      ((3 + 6 * t ^ 2 + t ^ 4) * Real.exp (t ^ 2 / 2)) t := by
+    intro t
+    have h1 : HasDerivAt (fun t : ℝ => 3 * t) 3 t := by
+      simpa using (hasDerivAt_id t).const_mul (3 : ℝ)
+    have h2 : HasDerivAt (fun t : ℝ => t ^ 3) (3 * t ^ 2) t := by
+      simpa using hasDerivAt_pow 3 t
+    have hp : HasDerivAt (fun t : ℝ => 3 * t + t ^ 3) (3 + 3 * t ^ 2) t := h1.add h2
+    have := hp.mul (hg t)
+    convert this using 1
+    ring
+  have d1 : iteratedDeriv 1 (fun t : ℝ => Real.exp (t ^ 2 / 2))
+      = fun t : ℝ => t * Real.exp (t ^ 2 / 2) := by
+    rw [iteratedDeriv_succ, iteratedDeriv_zero]
+    exact funext fun t => (hg t).deriv
+  have d2 : iteratedDeriv 2 (fun t : ℝ => Real.exp (t ^ 2 / 2))
+      = fun t : ℝ => (1 + t ^ 2) * Real.exp (t ^ 2 / 2) := by
+    rw [iteratedDeriv_succ, d1]
+    exact funext fun t => (hg1 t).deriv
+  have d3 : iteratedDeriv 3 (fun t : ℝ => Real.exp (t ^ 2 / 2))
+      = fun t : ℝ => (3 * t + t ^ 3) * Real.exp (t ^ 2 / 2) := by
+    rw [iteratedDeriv_succ, d2]
+    exact funext fun t => (hg2 t).deriv
+  have d4 : iteratedDeriv 4 (fun t : ℝ => Real.exp (t ^ 2 / 2))
+      = fun t : ℝ => (3 + 6 * t ^ 2 + t ^ 4) * Real.exp (t ^ 2 / 2) := by
+    rw [iteratedDeriv_succ, d3]
+    exact funext fun t => (hg3 t).deriv
+  -- the mgf of `N(0,1)` and its fourth derivative at `0`
+  have hmgf : mgf id (gaussianReal 0 1) = fun t : ℝ => Real.exp (t ^ 2 / 2) := by
+    rw [mgf_id_gaussianReal]
+    funext t
+    norm_num
+  have hint : (0 : ℝ) ∈ interior (integrableExpSet id (gaussianReal 0 1)) := by simp
+  have hkey := iteratedDeriv_mgf_zero (X := (id : ℝ → ℝ)) (μ := gaussianReal 0 1) hint 4
+  rw [hmgf, d4] at hkey
+  have hpi : ((gaussianReal 0 1)[(id : ℝ → ℝ) ^ 4]) = ∫ x, x ^ 4 ∂(gaussianReal 0 1) := by
+    simp
+  rw [hpi] at hkey
+  rw [← hkey]
+  norm_num
+
 /-- **FY Example 4.1**, normal-error specialization: for `ε ∼ N(0,1)`, condition (4.16)
 reads `3b₁² < 1`, and then the kurtosis is `κ_x = 3(1 − b₁²)/(1 − 3b₁²)`. -/
 theorem IsARCH.kurtosis_arch_one_gaussian [IsProbabilityMeasure μ] {c0 b1 : ℝ}
@@ -1083,6 +1151,95 @@ theorem IsARCH.kurtosis_arch_one_gaussian [IsProbabilityMeasure μ] {c0 b1 : ℝ
     MemLp (X 0) 4 μ ∧
       (∫ ω, X 0 ω ^ 4 ∂μ) * (1 - 3 * b1 ^ 2)
         = 3 * (1 - b1 ^ 2) * (∫ ω, X 0 ω ^ 2 ∂μ) ^ 2 := by
-  sorry
+  have hmε : AEMeasurable (ε 0) μ := (h.iid.measurable 0).aemeasurable
+  -- (a) `E ε⁴ = 3`.
+  have hε4val : ∫ ω, ε 0 ω ^ 4 ∂μ = 3 := by
+    rw [← integral_pow_four_gaussianReal, ← hgauss,
+      integral_map hmε (by fun_prop : AEStronglyMeasurable (fun x : ℝ => x ^ 4) _)]
+  have hε4 : MemLp (ε 0) 4 μ := by
+    have h1 : MemLp (id : ℝ → ℝ) 4 (μ.map (ε 0)) := by
+      rw [hgauss]; exact memLp_id_gaussianReal' 4 (by simp)
+    exact (memLp_map_measure_iff (by fun_prop) hmε).1 h1
+  -- (b) eq. (4.16) reads `√3 · b₁ < 1`, i.e. `3b₁² < 1`.
+  have h3 : Real.sqrt 3 ^ 2 = 3 := Real.sq_sqrt (by norm_num)
+  have h1le : (1 : ℝ) ≤ Real.sqrt 3 := by nlinarith [Real.sqrt_nonneg 3]
+  have hsq3 : Real.sqrt 3 * b1 < 1 := by
+    have hnn : 0 ≤ Real.sqrt 3 * b1 := mul_nonneg (Real.sqrt_nonneg 3) hb1.le
+    nlinarith
+  have h416 : max 1 (Real.sqrt (∫ ω, ε 0 ω ^ 4 ∂μ))
+      * (∑ i, (fun _ : Fin 1 => b1) i) < 1 := by
+    rw [hε4val, max_eq_right h1le]
+    simpa using hsq3
+  have hL4 : ∀ t, MemLp (X t) 4 μ := fun t => h.memLp_four hstat hε4 h416 t
+  have hL2 : ∀ t, MemLp (X t) 2 μ := fun t => (hL4 t).mono_exponent (by norm_num)
+  refine ⟨hL4 0, ?_⟩
+  -- (c) stationary moments and the ARCH(1) volatility.
+  have hEY : ∀ t : ℤ, ∫ ω, X t ω ^ 2 ∂μ = ∫ ω, X 0 ω ^ 2 ∂μ := fun t => by
+    simpa [Function.comp_def] using
+      ((hstat.identDistrib h.measurableX t 0).comp (measurable_id.pow_const 2)).integral_eq
+  have hEM : ∀ t : ℤ, ∫ ω, X t ω ^ 4 ∂μ = ∫ ω, X 0 ω ^ 4 ∂μ := fun t => by
+    simpa [Function.comp_def] using
+      ((hstat.identDistrib h.measurableX t 0).comp (measurable_id.pow_const 4)).integral_eq
+  have hvolsq : ∀ (t : ℤ) (ω : Ω),
+      archVol c0 (fun _ : Fin 1 => b1) X t ω ^ 2 = c0 + b1 * X (t - 1) ω ^ 2 := by
+    intro t ω
+    rw [archVol_sq h.c0_nonneg h.b_nonneg]
+    simp
+  have hI2 : Integrable (fun ω => X (0 - 1) ω ^ 2) μ := (hL2 _).integrable_sq
+  have hI4 : Integrable (fun ω => X (0 - 1) ω ^ 4) μ := integrable_pow_four (hL4 _)
+  have hm_fix : (∫ ω, X 0 ω ^ 2 ∂μ) = c0 + b1 * ∫ ω, X 0 ω ^ 2 ∂μ := by
+    have h1 : (∫ ω, X 0 ω ^ 2 ∂μ)
+        = ∫ ω, archVol c0 (fun _ : Fin 1 => b1) X 0 ω ^ 2 ∂μ := integral_sq_eq_archVol h 0
+    have h2 : ∫ ω, archVol c0 (fun _ : Fin 1 => b1) X 0 ω ^ 2 ∂μ
+        = c0 + b1 * ∫ ω, X 0 ω ^ 2 ∂μ := by
+      have he : (fun ω => archVol c0 (fun _ : Fin 1 => b1) X 0 ω ^ 2)
+          = fun ω => c0 + b1 * X (0 - 1) ω ^ 2 := funext fun ω => hvolsq 0 ω
+      rw [he, integral_add (integrable_const c0) (hI2.const_mul _),
+        integral_const_mul, hEY (0 - 1)]
+      simp
+    exact h1.trans h2
+  -- (d) `E σ⁴ = c₀² + 2c₀b₁ E X² + b₁² E X⁴`.
+  have hexp : ∀ ω, archVol c0 (fun _ : Fin 1 => b1) X 0 ω ^ 4
+      = (c0 ^ 2 + (2 * c0 * b1) * X (0 - 1) ω ^ 2) + b1 ^ 2 * X (0 - 1) ω ^ 4 := fun ω => by
+    have hv := hvolsq 0 ω
+    calc archVol c0 (fun _ : Fin 1 => b1) X 0 ω ^ 4
+        = (archVol c0 (fun _ : Fin 1 => b1) X 0 ω ^ 2) ^ 2 := by ring
+      _ = (c0 + b1 * X (0 - 1) ω ^ 2) ^ 2 := by rw [hv]
+      _ = _ := by ring
+  have hvol4int : Integrable (fun ω => archVol c0 (fun _ : Fin 1 => b1) X 0 ω ^ 4) μ :=
+    Integrable.congr (((integrable_const (c0 ^ 2)).add (hI2.const_mul _)).add
+      (hI4.const_mul _)) (Filter.Eventually.of_forall fun ω => (hexp ω).symm)
+  have hσ4 : ∫ ω, archVol c0 (fun _ : Fin 1 => b1) X 0 ω ^ 4 ∂μ
+      = c0 ^ 2 + (2 * c0 * b1) * (∫ ω, X 0 ω ^ 2 ∂μ) + b1 ^ 2 * ∫ ω, X 0 ω ^ 4 ∂μ := by
+    have hint1 : Integrable (fun ω => c0 ^ 2 + (2 * c0 * b1) * X (0 - 1) ω ^ 2) μ :=
+      (integrable_const (c0 ^ 2)).add (hI2.const_mul _)
+    have hint2 : Integrable (fun ω => b1 ^ 2 * X (0 - 1) ω ^ 4) μ := hI4.const_mul _
+    have e1 : ∫ ω, ((c0 ^ 2 + (2 * c0 * b1) * X (0 - 1) ω ^ 2)
+          + b1 ^ 2 * X (0 - 1) ω ^ 4) ∂μ
+        = (∫ ω, (c0 ^ 2 + (2 * c0 * b1) * X (0 - 1) ω ^ 2) ∂μ)
+          + ∫ ω, b1 ^ 2 * X (0 - 1) ω ^ 4 ∂μ := integral_add hint1 hint2
+    have e2 : ∫ ω, (c0 ^ 2 + (2 * c0 * b1) * X (0 - 1) ω ^ 2) ∂μ
+        = (∫ _ω : Ω, c0 ^ 2 ∂μ) + ∫ ω, (2 * c0 * b1) * X (0 - 1) ω ^ 2 ∂μ :=
+      integral_add (integrable_const _) (hI2.const_mul _)
+    rw [integral_congr_ae (Filter.Eventually.of_forall hexp), e1, e2,
+      integral_const_mul, integral_const_mul, hEY (0 - 1), hEM (0 - 1)]
+    simp
+  -- (e) `E X⁴ = E σ⁴ · E ε⁴`, and the algebra.
+  have hIF : IndepFun (archVol c0 (fun _ : Fin 1 => b1) X 0) (ε 0) μ :=
+    indepFun_of_sigmaLT (h.indep_past 0) (measurable_archVol_sigmaLT 0)
+  have hIF4 : IndepFun (fun ω => archVol c0 (fun _ : Fin 1 => b1) X 0 ω ^ 4)
+      (fun ω => ε 0 ω ^ 4) μ :=
+    hIF.comp (measurable_id.pow_const 4) (measurable_id.pow_const 4)
+  have hM : ∫ ω, X 0 ω ^ 4 ∂μ
+      = (∫ ω, archVol c0 (fun _ : Fin 1 => b1) X 0 ω ^ 4 ∂μ) * 3 := by
+    have hae : (fun ω => X 0 ω ^ 4)
+        =ᵐ[μ] fun ω => archVol c0 (fun _ : Fin 1 => b1) X 0 ω ^ 4 * ε 0 ω ^ 4 := by
+      filter_upwards [h.recurrence 0] with ω hω
+      rw [hω]; ring
+    rw [integral_congr_ae hae, hIF4.integral_fun_mul_eq_mul_integral
+      hvol4int.aestronglyMeasurable (integrable_pow_four hε4).aestronglyMeasurable, hε4val]
+  rw [hσ4] at hM
+  linear_combination hM
+    - (3 * (c0 + (∫ ω, X 0 ω ^ 2 ∂μ) + b1 * ∫ ω, X 0 ω ^ 2 ∂μ)) * hm_fix
 
 end StatLean.TimeSeries
