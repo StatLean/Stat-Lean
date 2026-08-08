@@ -24,10 +24,24 @@ distance**, hence a unique invariant law approached at a geometric rate.
 
 This file exists to discharge the last structural debt of the TimeSeries area,
 `nlARKernel_geometricallyErgodic` (FY Theorem 2.4(ii)); the Meyn–Tweedie
-ψ-irreducibility/petite-set apparatus is deliberately avoided.
+ψ-irreducibility/petite-set apparatus is deliberately avoided. **That debt is now closed
+here**, in the `NLAR` section at the foot of the file:
 
-**STATUS.** All four headline results are proved and axiom-clean. Two features of the
-formalization are worth flagging, because both replace a step of the textbook argument:
+* `HasLyapunovDrift.pow` — the drift iterates: `κ^n` drifts with `γⁿ` and `K/(1−γ)`;
+* `hasLyapunovDrift_nlAR` — the geometrically weighted sup-norm `V(𝐱) = ⨆ᵢ θⁱ|xᵢ|` is a
+  Lyapunov function for the nonlinear-AR kernel, with `θ = λ^{1/(p+1)}`;
+* `pow_ge_window` / `hasMinorization_nlAR_pow` — after `p+1` steps every coordinate has
+  been refreshed, so the law is a fixed multiple of a *state-independent* window measure;
+* `nlARKernel_geometricallyErgodic` — **FY Theorem 2.4(ii)**, assembled from the above by
+  `harris_theorem` on `κ^{p+1}`, `eq_of_invariant_of_isErgodicKernel` (to move invariance
+  back to `κ`) and `IsGeometricallyErgodic.of_pow`.
+
+The statement of FY Theorem 2.4(ii) used to live in `GeometricErgodicity.lean` as a named
+`sorry`; it had to move here because its proof consumes this file's engine while this file
+imports that one. Nothing outside its own file referenced it.
+
+**STATUS.** All five headline results are proved and axiom-clean. Three features of the
+formalization are worth flagging, because each replaces a step of the textbook argument:
 
 * **No coupling.** Hairer–Mattingly close the contraction with a coupling construction.
   Here the same estimate falls out of the *minimality* of the Jordan decomposition,
@@ -42,6 +56,15 @@ formalization are worth flagging, because both replace a step of the textbook ar
   `μ N + Σ_{n<N} a n = μ 0 + Σ_{n<N} b n`, both series converge geometrically (their masses
   are exactly what the contraction bounds), and `π := (μ 0 + Σ b) − Σ a` is the limit —
   with the *tails* of the two series as the explicit total-variation error.
+* **No change of variables, no Jacobian.** The `p+1`-step minorization is usually written
+  with the density `∏ₖ g(y_k − m_k(𝐱, y_{<k}))` of the triangular value map. Here that
+  density is never formed: the chain is rewritten *in value coordinates* once
+  (`nlAR_lintegral`, a one-dimensional translation of Lebesgue measure), and the induction
+  `pow_ge_window` peels one value at a time, so the only product structure needed is
+  `Measure.pi` over `Fin (p+1)` reassociated by `Fin.cons` (`map_iterPush_succ`). The
+  minorizing law is then *defined* as the pushforward of the window measure, so it needs no
+  identification with Lebesgue measure on a cube — only the fact that it does not depend on
+  the starting state, which `iterPush_congr` proves from index arithmetic alone.
 
 The two definitions this file rests on were each *refuted* in an earlier pass and have
 since been repaired:
@@ -1761,7 +1784,7 @@ theorem lyapV_shiftPush_le {θ : ℝ} (hθ0 : 0 ≤ θ) (x : Fin (p + 1) → ℝ
     lyapV θ (shiftPush x u) ≤ max |u| (θ * lyapV θ x) := by
   refine lyapV_le fun j => ?_
   refine Fin.cases ?_ ?_ j
-  · simpa [shiftPush] using le_max_left _ _
+  · simp [shiftPush]
   · intro i
     refine le_trans ?_ (le_max_right |u| (θ * lyapV θ x))
     have h1 : θ ^ ((i.succ : Fin (p + 1)) : ℕ) * |shiftPush x u i.succ|
@@ -1926,7 +1949,7 @@ window measure. -/
 theorem pow_ge_window {f : (Fin (p + 1) → ℝ) → ℝ} (hf : Measurable f)
     {g : ℝ → ℝ≥0∞} (hg : Measurable g) {ν : Measure ℝ} [IsProbabilityMeasure ν]
     (hν : ν = MeasureTheory.volume.withDensity g) {J : Set ℝ} (hJ : MeasurableSet J)
-    {Rb δ : ℝ} (hδ : 0 ≤ δ)
+    {Rb δ : ℝ}
     (hstab : ∀ x : Fin (p + 1) → ℝ, (∀ i, |x i| ≤ Rb) → ∀ u ∈ J, ∀ i, |shiftPush x u i| ≤ Rb)
     (hdens : ∀ x : Fin (p + 1) → ℝ, (∀ i, |x i| ≤ Rb) → ∀ u ∈ J,
       ENNReal.ofReal δ ≤ g (u - f x)) :
@@ -2066,7 +2089,7 @@ theorem hasMinorization_nlAR_pow
       Set.preimage_univ,
       show (Set.univ : Set (Fin (p + 1) → ℝ)) = Set.univ.pi fun _ => Set.univ by simp,
       Measure.pi_pi]
-    simp [Measure.restrict_apply_univ, hvolJ]
+    simp [hvolJ]
   obtain ⟨m, hmdef⟩ : ∃ t : ℝ≥0∞, t = ENNReal.ofReal (2 * Rb) ^ (p + 1) := ⟨_, rfl⟩
   have hm0 : m ≠ 0 := by
     rw [hmdef]
@@ -2077,11 +2100,11 @@ theorem hasMinorization_nlAR_pow
   have hρuniv : (m⁻¹ • Q) Set.univ = 1 := by
     rw [Measure.smul_apply, smul_eq_mul, hQuniv, ← hmdef, ENNReal.inv_mul_cancel hm0 hmtop]
   refine ⟨⟨lt_min (by positivity) one_pos, min_le_right _ _⟩, ⟨hρuniv⟩, fun x hx A hA => ?_⟩
-  have hw := pow_ge_window hf hg hν hJm hδ0.le hstab hdens (p + 1) x (hbox x hx) A hA
+  have hw := pow_ge_window hf hg hν hJm hstab hdens (p + 1) x (hbox x hx) A hA
   rw [hmapQ x] at hw
   refine le_trans ?_ hw
   rw [Measure.smul_apply, smul_eq_mul, ← mul_assoc]
-  refine mul_le_mul_right' ?_ _
+  refine mul_le_mul_left ?_ _
   have hle1 : ENNReal.ofReal (min (δ ^ (p + 1) * m.toReal) 1)
       ≤ ENNReal.ofReal δ ^ (p + 1) * m := by
     calc ENNReal.ofReal (min (δ ^ (p + 1) * m.toReal) 1)
@@ -2091,7 +2114,7 @@ theorem hasMinorization_nlAR_pow
           rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow hδ0.le,
             ENNReal.ofReal_toReal hmtop]
   calc ENNReal.ofReal (min (δ ^ (p + 1) * m.toReal) 1) * m⁻¹
-      ≤ (ENNReal.ofReal δ ^ (p + 1) * m) * m⁻¹ := mul_le_mul_right' hle1 _
+      ≤ (ENNReal.ofReal δ ^ (p + 1) * m) * m⁻¹ := mul_le_mul_left hle1 _
     _ = ENNReal.ofReal δ ^ (p + 1) := by
         rw [mul_assoc, ENNReal.mul_inv_cancel hm0 hmtop, mul_one]
 
@@ -2160,7 +2183,7 @@ theorem nlARKernel_geometricallyErgodic
     rw [hθdef]; exact Real.rpow_inv_natCast_pow hlam'0.le (Nat.succ_ne_zero p)
   have hθ1 : θ < 1 := by
     by_contra hcon
-    push_neg at hcon
+    rw [not_lt] at hcon
     have := one_le_pow₀ (n := p + 1) hcon
     rw [hθp] at this
     linarith
@@ -2195,10 +2218,10 @@ theorem nlARKernel_geometricallyErgodic
     simp
   haveI := hξprob
   have hξinv : Kernel.Invariant ((nlARKernel f ν) ^ (p + 1)) (π.bind (nlARKernel f ν)) := by
-    show (π.bind (nlARKernel f ν)).bind ((nlARKernel f ν) ^ (p + 1)) = π.bind (nlARKernel f ν)
+    change (π.bind (nlARKernel f ν)).bind ((nlARKernel f ν) ^ (p + 1)) = π.bind (nlARKernel f ν)
     have hcomm : ((nlARKernel f ν) ^ (p + 1)) ∘ₖ (nlARKernel f ν)
         = (nlARKernel f ν) ∘ₖ ((nlARKernel f ν) ^ (p + 1)) := by
-      show ((nlARKernel f ν) ^ (p + 1)) * (nlARKernel f ν)
+      change ((nlARKernel f ν) ^ (p + 1)) * (nlARKernel f ν)
         = (nlARKernel f ν) * ((nlARKernel f ν) ^ (p + 1))
       rw [← pow_succ, ← pow_succ']
     rw [Measure.comp_assoc (μ := π) (κ := nlARKernel f ν) (η := (nlARKernel f ν) ^ (p + 1)),
