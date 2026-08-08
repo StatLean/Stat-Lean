@@ -1668,6 +1668,10 @@ statistic does not need it. The route, and what is actually left:
   `E[u_i²] = σ² Σ_{d,e ≥ 0} π_d π_e γ_{θ₀}(e − d)` is symmetric in the reversal
   (`γ` is even) and tends to `σ² Σ_n c_n²` as `i` recedes from the truncation; but an
   implementation of (C) must truncate the composite filter *forwards* in `i`. -/
+-- The `have hCLLN := armaResidualSS_tendstoInProb …` application below re-unifies the
+-- full matrix statement (piMat/dotProduct at width `T`), which exceeds the default
+-- heartbeat budget at `whnf`.
+set_option maxHeartbeats 1600000 in
 theorem armaProfileS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 b : Fin p → ℝ} {a0 a : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
