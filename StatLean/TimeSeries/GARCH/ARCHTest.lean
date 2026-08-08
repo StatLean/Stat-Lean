@@ -190,6 +190,18 @@ theorem archLRStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     (c0hat : (T : ℕ) → Ω → ℝ) (bhat : (T : ℕ) → Ω → Fin p → ℝ)
     (c0null : (T : ℕ) → Ω → ℝ)
     (hmeas : ∀ T, Measurable (c0hat T) ∧ Measurable (bhat T) ∧ Measurable (c0null T))
+    -- USER-INPUT: the estimators are the unrestricted and null-restricted maximizers of
+    -- the ARCH conditional log-likelihood. Added 2026-08-09: without them the statement
+    -- is FALSE — arbitrary measurable sequences carry no distributional information.
+    (hMLE : ∀ (T : ℕ) (ω : Ω) (c : ℝ) (bb : Fin p → ℝ),
+      archLogLik c bb (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
+        ≤ archLogLik (c0hat T ω) (bhat T ω)
+            (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T))
+    (hMLE0 : ∀ (T : ℕ) (ω : Ω) (c : ℝ),
+      archLogLik c (fun _ : Fin p => (0 : ℝ))
+          (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
+        ≤ archLogLik (c0null T ω) (fun _ : Fin p => (0 : ℝ))
+            (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T))
     (νseq : ℕ → ℕ) (hν : Tendsto νseq atTop atTop)
     (hνT : Tendsto (fun T : ℕ => (νseq T : ℝ) / T) atTop (𝓝 0))
     -- USER-INPUT: the χ²_p limit law as a measure on ℝ; Serfling §4.4.4
@@ -216,6 +228,16 @@ theorem archTR2Stat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     -- FY eq. (4.53)
     (rss tss : (T : ℕ) → Ω → ℝ)
     (hmeas : ∀ T, Measurable (rss T) ∧ Measurable (tss T))
+    -- USER-INPUT: `rss`/`tss` are the residual and centered total sums of squares of the
+    -- auxiliary regression of `X_t²` on its `p` lags. Added 2026-08-09: without pinning
+    -- them to the data the statement is FALSE (free reals carry no information).
+    (hrss : ∀ (T : ℕ) (ω : Ω), IsLeast
+      {r : ℝ | ∃ (β0 : ℝ) (β : Fin p → ℝ), r = ∑ t ∈ Finset.Ico p T,
+        (X ((t : ℤ) + 1) ω ^ 2 - β0
+          - ∑ j : Fin p, β j * X ((t : ℤ) - (j : ℕ)) ω ^ 2) ^ 2} (rss T ω))
+    (htss : ∀ (T : ℕ) (ω : Ω), tss T ω = ∑ t ∈ Finset.Ico p T,
+      (X ((t : ℤ) + 1) ω ^ 2
+        - ((T : ℝ) - p)⁻¹ * ∑ u ∈ Finset.Ico p T, X ((u : ℤ) + 1) ω ^ 2) ^ 2)
     (chiSq : Measure ℝ) [IsProbabilityMeasure chiSq]
     (hchi : ∀ u : ℝ, charFun chiSq u = (1 - 2 * Complex.I * u) ^ (-(p : ℂ) / 2))
     (u : ℝ) :
@@ -231,8 +253,21 @@ theorem archWaldStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     (h : IsARCH c0 (fun _ : Fin p => (0 : ℝ)) X ε μ) (hc0 : 0 < c0)
     (hε4 : MemLp (ε 0) 4 μ)
     (bhat : (T : ℕ) → Ω → Fin p → ℝ) (hmeas : ∀ T, Measurable (bhat T))
-    -- USER-INPUT: the estimated information block I²² (Schur complement); FY eq. (4.54)
+    -- USER-INPUT: `bhat` is the unrestricted maximizer's ARCH block. Added 2026-08-09
+    -- (an unconstrained sequence makes the statement FALSE).
+    (c0hat : (T : ℕ) → Ω → ℝ)
+    (hMLE : ∀ (T : ℕ) (ω : Ω) (c : ℝ) (bb : Fin p → ℝ),
+      archLogLik c bb (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
+        ≤ archLogLik (c0hat T ω) (bhat T ω)
+            (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T))
+    (νseq : ℕ → ℕ) (hν : Tendsto νseq atTop atTop)
+    (hνT : Tendsto (fun T : ℕ => (νseq T : ℝ) / T) atTop (𝓝 0))
+    -- USER-INPUT: the estimated information block I²² (Schur complement), assumed
+    -- consistent for a positive-definite limit; FY eq. (4.54)
     (Ihat : (T : ℕ) → Ω → Matrix (Fin p) (Fin p) ℝ)
+    (I0 : Matrix (Fin p) (Fin p) ℝ) (hI0 : Matrix.PosDef I0)
+    (hIhat : ∀ δ : ℝ, 0 < δ → Tendsto (fun T : ℕ =>
+      (μ {ω | δ ≤ ∑ i, ∑ j, |Ihat T ω i j - I0 i j|}).toReal) atTop (𝓝 0))
     (chiSq : Measure ℝ) [IsProbabilityMeasure chiSq]
     (hchi : ∀ u : ℝ, charFun chiSq u = (1 - 2 * Complex.I * u) ^ (-(p : ℂ) / 2))
     (u : ℝ) :
