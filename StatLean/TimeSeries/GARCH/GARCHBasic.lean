@@ -357,6 +357,349 @@ private lemma nelW_ae_ne_top [IsProbabilityMeasure μ] {b1 a1 : ℝ} {ε : ℤ �
   refine nelW_ne_top_of_tendsto hb1 ha1 hmean0 ?_
   simpa only [hp] using hω
 
+private lemma nelV_nonneg (c0 b1 a1 : ℝ) (p : ℤ → ℝ) : 0 ≤ nelV c0 b1 a1 p :=
+  ENNReal.toReal_nonneg
+
+/-- Nelson's one-step recursion `σ_t² = c₀ + (b₁ε_{t−1}² + a₁)σ_{t−1}²`, valid pointwise
+wherever the series converges. -/
+private lemma nelV_rec {c0 b1 a1 : ℝ} (hc0 : 0 ≤ c0) (hb1 : 0 ≤ b1) (ha1 : 0 ≤ a1)
+    {p : ℤ → ℝ} (h2 : nelW b1 a1 (fun s => p (s - 1)) ≠ ⊤) :
+    nelV c0 b1 a1 p = c0 + (b1 * p (-1) ^ 2 + a1) * nelV c0 b1 a1 (fun s => p (s - 1)) := by
+  have hm : 0 ≤ b1 * p (-1) ^ 2 + a1 := add_nonneg (mul_nonneg hb1 (sq_nonneg _)) ha1
+  have hfin : ENNReal.ofReal (b1 * p (-1) ^ 2 + a1)
+      * (ENNReal.ofReal c0 * nelW b1 a1 (fun s => p (s - 1))) ≠ ⊤ :=
+    ENNReal.mul_ne_top ENNReal.ofReal_ne_top (ENNReal.mul_ne_top ENNReal.ofReal_ne_top h2)
+  have hkey : ENNReal.ofReal c0 * nelW b1 a1 p
+      = ENNReal.ofReal c0
+        + ENNReal.ofReal (b1 * p (-1) ^ 2 + a1)
+          * (ENNReal.ofReal c0 * nelW b1 a1 (fun s => p (s - 1))) := by
+    rw [nelW_succ]; ring
+  simp only [nelV]
+  rw [hkey, ENNReal.toReal_add ENNReal.ofReal_ne_top hfin, ENNReal.toReal_mul,
+    ENNReal.toReal_ofReal hc0, ENNReal.toReal_ofReal hm]
+
+/-- Splitting the random product at depth `N`. -/
+private lemma nelProd_add (b1 a1 : ℝ) (N j : ℕ) (p : ℤ → ℝ) :
+    nelProd b1 a1 (N + j) p
+      = nelProd b1 a1 N p * nelProd b1 a1 j (fun s => p (s - (N : ℤ))) := by
+  simp only [nelProd]
+  rw [Finset.prod_range_add]
+  congr 1
+  refine Finset.prod_congr rfl fun i _ => ?_
+  have h : ((-1 : ℤ) - ((N + i : ℕ) : ℤ)) = -1 - (i : ℤ) - (N : ℤ) := by push_cast; ring
+  rw [h]
+
+/-- `∏_{i<N} M_{t−1−i} · Σ_k ∏_{i<k} M_{t−N−1−i} = Σ_{k ≥ N} ∏_{i<k} M_{t−1−i}` — the
+identity behind the pointwise decay of the remainder `a₁^N σ²_{t−N}`. -/
+private lemma nelProd_mul_nelW (b1 a1 : ℝ) (N : ℕ) (p : ℤ → ℝ) :
+    nelProd b1 a1 N p * nelW b1 a1 (fun s => p (s - (N : ℤ)))
+      = ∑' j : ℕ, nelProd b1 a1 (N + j) p := by
+  rw [nelW, ← ENNReal.tsum_mul_left]
+  exact tsum_congr fun j => (nelProd_add b1 a1 N j p).symm
+
+/-- Each multiplier dominates `a₁`, so the random product dominates `a₁^N`. -/
+private lemma ofReal_pow_le_nelProd {b1 a1 : ℝ} (hb1 : 0 ≤ b1) (ha1 : 0 ≤ a1) (N : ℕ)
+    (p : ℤ → ℝ) : ENNReal.ofReal (a1 ^ N) ≤ nelProd b1 a1 N p := by
+  have h1 : ENNReal.ofReal a1 ^ N = ∏ _i ∈ Finset.range N, ENNReal.ofReal a1 := by
+    rw [Finset.prod_const, Finset.card_range]
+  rw [ENNReal.ofReal_pow ha1, h1, nelProd]
+  refine Finset.prod_le_prod' fun i _ => ENNReal.ofReal_le_ofReal ?_
+  have := mul_nonneg hb1 (sq_nonneg (p (-1 - (i : ℤ))))
+  linarith
+
+/-! #### σ-algebra bookkeeping (local copies of the `Stationarity/ARCH.lean` bricks) -/
+
+omit [MeasurableSpace Ω] in
+private lemma comapLE_sigmaLT {X : ℤ → Ω → ℝ} {s t : ℤ} (hst : s < t) :
+    MeasurableSpace.comap (X s) inferInstance ≤ sigmaLT X t :=
+  le_iSup₂ (f := fun s (_ : s ∈ Set.Iio t) => MeasurableSpace.comap (X s) inferInstance) s hst
+
+omit [MeasurableSpace Ω] in
+private lemma measurable_of_lt_sigmaLT {X : ℤ → Ω → ℝ} {s t : ℤ} (hst : s < t) :
+    Measurable[sigmaLT X t] (X s) :=
+  (Measurable.of_comap_le (le_refl (MeasurableSpace.comap (X s) inferInstance))).mono
+    (comapLE_sigmaLT hst) le_rfl
+
+private lemma indep_last_sigmaLT {ε : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ε t))
+    (hi : iIndepFun ε μ) (t : ℤ) :
+    Indep (MeasurableSpace.comap (ε t) inferInstance) (sigmaLT ε t) μ := by
+  have hdisj : Disjoint ({t} : Set ℤ) (Set.Iio t) :=
+    Set.disjoint_singleton_left.2 (by simp)
+  have := indep_iSup_of_disjoint
+    (m := fun s : ℤ => MeasurableSpace.comap (ε s) inferInstance)
+    (fun s => (hm s).comap_le) hi hdisj
+  simpa using this
+
+/-- The random product at time `s ≤ t`, as a function of the strict past of time `t`. -/
+private lemma measurable_nelProd_sigmaLT {ε : ℤ → Ω → ℝ} (b1 a1 : ℝ) (k : ℕ) {s t : ℤ}
+    (hst : s ≤ t) : Measurable[sigmaLT ε t] fun ω => nelProd b1 a1 k (nelPath ε s ω) := by
+  simp only [nelProd]
+  refine Finset.measurable_prod _ fun i _ => Measurable.ennreal_ofReal ?_
+  have hlt : s - 1 - (i : ℕ) < t := by
+    have : (0 : ℤ) ≤ (i : ℤ) := Int.natCast_nonneg i
+    omega
+  have hfun : (fun ω => b1 * nelPath ε s ω (-1 - (i : ℤ)) ^ 2 + a1)
+      = fun ω => b1 * ε (s - 1 - (i : ℕ)) ω ^ 2 + a1 := by
+    funext ω
+    have h : nelPath ε s ω (-1 - (i : ℤ)) = ε (s - 1 - (i : ℕ)) ω := by
+      simp only [nelPath]; congr 1; ring
+    rw [h]
+  rw [hfun]
+  exact (((measurable_of_lt_sigmaLT hlt).pow_const 2).const_mul b1).add_const a1
+
+private lemma measurable_nelV_sigmaLT {ε : ℤ → Ω → ℝ} (c0 b1 a1 : ℝ) {s t : ℤ} (hst : s ≤ t) :
+    Measurable[sigmaLT ε t] fun ω => nelV c0 b1 a1 (nelPath ε s ω) := by
+  simp only [nelV, nelW]
+  exact Measurable.ennreal_toReal (measurable_const.mul
+    (Measurable.ennreal_tsum fun k => measurable_nelProd_sigmaLT b1 a1 k hst))
+
+private lemma measurable_nelXf_sigmaLT {ε : ℤ → Ω → ℝ} (c0 b1 a1 : ℝ) {s t : ℤ} (hst : s < t) :
+    Measurable[sigmaLT ε t] fun ω => nelXf c0 b1 a1 (nelPath ε s ω) := by
+  simp only [nelXf]
+  have h0 : (fun ω => nelPath ε s ω 0) = ε s := by
+    funext ω; simp only [nelPath]; congr 1; ring
+  refine Measurable.mul ((measurable_nelV_sigmaLT c0 b1 a1 hst.le).sqrt) ?_
+  rw [h0]
+  exact measurable_of_lt_sigmaLT hst
+
+/-! #### Shift-invariance of the innovation path law -/
+
+private lemma map_nelPath [IsProbabilityMeasure μ] {ε : ℤ → Ω → ℝ}
+    (hm : ∀ t, Measurable (ε t)) (hi : iIndepFun ε μ)
+    (hid : ∀ s t, IdentDistrib (ε s) (ε t) μ μ) (t t' : ℤ) :
+    μ.map (nelPath ε t) = μ.map (nelPath ε t') := by
+  have hinj : ∀ c : ℤ, Function.Injective fun s : ℤ => s + c :=
+    fun c x y h => by simpa using h
+  have h1 : iIndepFun (fun s : ℤ => ε (s + t)) μ := hi.precomp (hinj t)
+  have h2 : iIndepFun (fun s : ℤ => ε (s + t')) μ := hi.precomp (hinj t')
+  have e1 : (nelPath ε t) = fun ω (s : ℤ) => ε (s + t) ω := rfl
+  have e2 : (nelPath ε t') = fun ω (s : ℤ) => ε (s + t') ω := rfl
+  rw [e1, e2, (iIndepFun_iff_map_fun_eq_infinitePi_map fun s => hm (s + t)).1 h1,
+    (iIndepFun_iff_map_fun_eq_infinitePi_map fun s => hm (s + t')).1 h2]
+  exact congrArg Measure.infinitePi (funext fun s => (hid (s + t) (s + t')).map_eq)
+
+private lemma map_comp_nelPath [IsProbabilityMeasure μ] {ε : ℤ → Ω → ℝ} {β : Type*}
+    [MeasurableSpace β] (hm : ∀ t, Measurable (ε t)) (hi : iIndepFun ε μ)
+    (hid : ∀ s t, IdentDistrib (ε s) (ε t) μ μ) {F : (ℤ → ℝ) → β} (hF : Measurable F)
+    (t t' : ℤ) :
+    (μ.map fun ω => F (nelPath ε t ω)) = μ.map fun ω => F (nelPath ε t' ω) := by
+  have e1 : (fun ω => F (nelPath ε t ω)) = F ∘ nelPath ε t := rfl
+  have e2 : (fun ω => F (nelPath ε t' ω)) = F ∘ nelPath ε t' := rfl
+  rw [e1, e2, ← Measure.map_map hF (measurable_nelPath hm t),
+    ← Measure.map_map hF (measurable_nelPath hm t'), map_nelPath hm hi hid t t']
+
+/-- **Strict stationarity of the constructed process**: it is a fixed measurable
+functional of the shifted innovation path. -/
+private lemma isStrictlyStationary_nelX [IsProbabilityMeasure μ] {c0 b1 a1 : ℝ}
+    {ε : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ε t)) (hi : iIndepFun ε μ)
+    (hid : ∀ s t, IdentDistrib (ε s) (ε t) μ μ) :
+    IsStrictlyStationary (fun t ω => nelXf c0 b1 a1 (nelPath ε t ω)) μ := by
+  intro n tt k
+  set Ψ : (ℤ → ℝ) → (Fin n → ℝ) :=
+    fun p i => nelXf c0 b1 a1 fun s => p (s + tt i) with hΨ
+  have hΨm : Measurable Ψ :=
+    measurable_pi_lambda _ fun i => (measurable_nelXf c0 b1 a1).comp
+      (measurable_pi_lambda _ fun s => measurable_pi_apply (s + tt i))
+  have hfac : ∀ c : ℤ, (fun ω (i : Fin n) => nelXf c0 b1 a1 (nelPath ε (tt i + c) ω))
+      = fun ω => Ψ (nelPath ε c ω) := by
+    intro c
+    funext ω i
+    simp only [hΨ]
+    congr 1
+    funext s
+    simp only [nelPath]
+    congr 1
+    ring
+  have hz : (fun ω (i : Fin n) => nelXf c0 b1 a1 (nelPath ε (tt i) ω))
+      = fun ω => Ψ (nelPath ε 0 ω) := by
+    have := hfac 0
+    simpa using this
+  rw [hfac k, hz]
+  exact map_comp_nelPath hm hi hid hΨm k 0
+
+/-! #### The ARCH(∞) form of the volatility, read off the *observation* path -/
+
+private noncomputable def nelT (b1 a1 : ℝ) (q : ℤ → ℝ) : ENNReal :=
+  ∑' k : ℕ, ENNReal.ofReal (b1 * a1 ^ k * q (-1 - (k : ℤ)) ^ 2)
+
+/-- FY eq. (4.29): `σ_t² = c₀/(1−a₁) + b₁ Σ_{k≥0} a₁^k X_{t−1−k}²`. Reading the volatility
+off the *observation* path is what makes it measurable for the strict past of `X` — the
+`adapted` field of `IsGARCH`. -/
+private noncomputable def nelU (c0 b1 a1 : ℝ) (q : ℤ → ℝ) : ℝ :=
+  (ENNReal.ofReal (c0 / (1 - a1)) + nelT b1 a1 q).toReal
+
+private lemma measurable_nelT (b1 a1 : ℝ) : Measurable (nelT b1 a1) := by
+  refine Measurable.ennreal_tsum fun k => Measurable.ennreal_ofReal ?_
+  fun_prop
+
+private lemma measurable_nelU (c0 b1 a1 : ℝ) : Measurable (nelU c0 b1 a1) :=
+  (measurable_const.add (measurable_nelT b1 a1)).ennreal_toReal
+
+private lemma nelU_nonneg (c0 b1 a1 : ℝ) (q : ℤ → ℝ) : 0 ≤ nelU c0 b1 a1 q :=
+  ENNReal.toReal_nonneg
+
+private lemma measurable_nelT_sigmaLT {X : ℤ → Ω → ℝ} (b1 a1 : ℝ) (t : ℤ) :
+    Measurable[sigmaLT X t] fun ω => nelT b1 a1 (nelPath X t ω) := by
+  simp only [nelT]
+  refine Measurable.ennreal_tsum fun k => Measurable.ennreal_ofReal ?_
+  have hlt : t - 1 - (k : ℕ) < t := by
+    have : (0 : ℤ) ≤ (k : ℤ) := Int.natCast_nonneg k
+    omega
+  have hfun : (fun ω => b1 * a1 ^ k * nelPath X t ω (-1 - (k : ℤ)) ^ 2)
+      = fun ω => b1 * a1 ^ k * X (t - 1 - (k : ℕ)) ω ^ 2 := by
+    funext ω
+    have h : nelPath X t ω (-1 - (k : ℤ)) = X (t - 1 - (k : ℕ)) ω := by
+      simp only [nelPath]; congr 1; ring
+    rw [h]
+  rw [hfun]
+  exact ((measurable_of_lt_sigmaLT hlt).pow_const 2).const_mul (b1 * a1 ^ k)
+
+private lemma measurable_nelU_sigmaLT {X : ℤ → Ω → ℝ} (c0 b1 a1 : ℝ) (t : ℤ) :
+    Measurable[sigmaLT X t] fun ω => nelU c0 b1 a1 (nelPath X t ω) :=
+  Measurable.ennreal_toReal (measurable_const.add (measurable_nelT_sigmaLT b1 a1 t))
+
+/-- **The ARCH(∞) form recovers Nelson's series** (FY eq. (4.29)). The proof is entirely
+pathwise: iterating the volatility recursion `N` times leaves the remainder
+`a₁^N σ²_{t−N}`, which is dominated by `c₀ Σ_{k ≥ N} ∏_{i<k} M_{t−1−i}` — the depth-`N`
+tail of the (convergent) random-product series — because every multiplier dominates `a₁`.
+So no moment condition and no identical-distribution argument is needed. -/
+private lemma nelU_eq_nelV {c0 b1 a1 : ℝ} (hc0 : 0 ≤ c0) (hb1 : 0 ≤ b1) (ha1 : 0 ≤ a1)
+    (ha1' : a1 < 1) {ε X : ℤ → Ω → ℝ} {ω : Ω}
+    (hX : ∀ s : ℤ, X s ω = nelXf c0 b1 a1 (nelPath ε s ω))
+    (hfin : ∀ s : ℤ, nelW b1 a1 (nelPath ε s ω) ≠ ⊤) (t : ℤ) :
+    nelU c0 b1 a1 (nelPath X t ω) = nelV c0 b1 a1 (nelPath ε t ω) := by
+  obtain ⟨V, hVdef⟩ : ∃ V : ℤ → ℝ, ∀ s, V s = nelV c0 b1 a1 (nelPath ε s ω) :=
+    ⟨_, fun _ => rfl⟩
+  have hVnn : ∀ s, 0 ≤ V s := fun s => by rw [hVdef]; exact nelV_nonneg _ _ _ _
+  -- the squared process in terms of the volatility
+  have hX2 : ∀ s : ℤ, X s ω ^ 2 = V s * ε s ω ^ 2 := by
+    intro s
+    rw [hX s, hVdef s]
+    simp only [nelXf]
+    have h0 : nelPath ε s ω 0 = ε s ω := by simp only [nelPath]; congr 1; ring
+    rw [h0, mul_pow, Real.sq_sqrt (nelV_nonneg c0 b1 a1 _)]
+  -- the one-step recursion
+  have hrec : ∀ s : ℤ, V s = c0 + b1 * X (s - 1) ω ^ 2 + a1 * V (s - 1) := by
+    intro s
+    have hp1 : (fun u => nelPath ε s ω (u - 1)) = nelPath ε (s - 1) ω := nelPath_sub ε s 1 ω
+    have h2 : nelW b1 a1 (fun u => nelPath ε s ω (u - 1)) ≠ ⊤ := by
+      rw [hp1]; exact hfin (s - 1)
+    have hnv := nelV_rec (c0 := c0) hc0 hb1 ha1 h2
+    rw [hp1] at hnv
+    have hm1 : nelPath ε s ω (-1) = ε (s - 1) ω := by
+      simp only [nelPath]; congr 1; ring
+    rw [hm1] at hnv
+    rw [hVdef s, hVdef (s - 1), hnv, hX2 (s - 1), hVdef (s - 1)]
+    ring
+  -- iterating the recursion `N` times
+  have hiter : ∀ (N : ℕ) (s : ℤ), V s = c0 * (∑ k ∈ Finset.range N, a1 ^ k)
+      + (∑ k ∈ Finset.range N, b1 * a1 ^ k * X (s - 1 - (k : ℕ)) ω ^ 2)
+      + a1 ^ N * V (s - (N : ℕ)) := by
+    intro N
+    induction N with
+    | zero => intro s; simp
+    | succ N ih =>
+      intro s
+      rw [Finset.sum_range_succ, Finset.sum_range_succ]
+      have h1 := ih s
+      have h2 := hrec (s - (N : ℕ))
+      have hcast1 : s - (N : ℕ) - 1 = s - 1 - (N : ℕ) := by push_cast; ring
+      have hcast2 : s - ((N + 1 : ℕ) : ℤ) = s - (N : ℕ) - 1 := by push_cast; ring
+      rw [hcast1] at h2
+      rw [hcast2, h1, h2]
+      ring
+  -- the remainder is dominated by the tail of the random-product series
+  have htail : ∀ N : ℕ, a1 ^ N * V (t - (N : ℕ))
+      ≤ c0 * ∑' j : ℕ, (nelProd b1 a1 (j + N) (nelPath ε t ω)).toReal := by
+    intro N
+    have hpN : (fun u => nelPath ε t ω (u - (N : ℤ))) = nelPath ε (t - (N : ℕ)) ω :=
+      nelPath_sub ε t (N : ℤ) ω
+    have hsplit : (∑' j : ℕ, nelProd b1 a1 (N + j) (nelPath ε t ω))
+        = nelProd b1 a1 N (nelPath ε t ω) * nelW b1 a1 (nelPath ε (t - (N : ℕ)) ω) := by
+      rw [← nelProd_mul_nelW b1 a1 N (nelPath ε t ω), hpN]
+    have htne : (∑' j : ℕ, nelProd b1 a1 (N + j) (nelPath ε t ω)) ≠ ⊤ := by
+      rw [hsplit]
+      exact ENNReal.mul_ne_top (nelProd_ne_top _ _ _ _) (hfin _)
+    have hfin2 : ENNReal.ofReal c0 * ∑' j : ℕ, nelProd b1 a1 (N + j) (nelPath ε t ω) ≠ ⊤ :=
+      ENNReal.mul_ne_top ENNReal.ofReal_ne_top htne
+    have hle : ENNReal.ofReal (a1 ^ N)
+          * (ENNReal.ofReal c0 * nelW b1 a1 (nelPath ε (t - (N : ℕ)) ω))
+        ≤ ENNReal.ofReal c0 * ∑' j : ℕ, nelProd b1 a1 (N + j) (nelPath ε t ω) := by
+      rw [hsplit]
+      calc ENNReal.ofReal (a1 ^ N)
+            * (ENNReal.ofReal c0 * nelW b1 a1 (nelPath ε (t - (N : ℕ)) ω))
+          = ENNReal.ofReal c0 * (ENNReal.ofReal (a1 ^ N)
+              * nelW b1 a1 (nelPath ε (t - (N : ℕ)) ω)) := by ring
+        _ ≤ ENNReal.ofReal c0 * (nelProd b1 a1 N (nelPath ε t ω)
+              * nelW b1 a1 (nelPath ε (t - (N : ℕ)) ω)) := by
+            gcongr
+            exact ofReal_pow_le_nelProd hb1 ha1 N (nelPath ε t ω)
+    have hmono := ENNReal.toReal_mono hfin2 hle
+    have hLHS : (ENNReal.ofReal (a1 ^ N)
+        * (ENNReal.ofReal c0 * nelW b1 a1 (nelPath ε (t - (N : ℕ)) ω))).toReal
+        = a1 ^ N * nelV c0 b1 a1 (nelPath ε (t - (N : ℕ)) ω) := by
+      rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (pow_nonneg ha1 N)]
+      rfl
+    have hRHS : (ENNReal.ofReal c0 * ∑' j : ℕ, nelProd b1 a1 (N + j) (nelPath ε t ω)).toReal
+        = c0 * ∑' j : ℕ, (nelProd b1 a1 (j + N) (nelPath ε t ω)).toReal := by
+      rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal hc0,
+        ENNReal.tsum_toReal_eq fun j => nelProd_ne_top b1 a1 (N + j) (nelPath ε t ω)]
+      exact congrArg (fun z => c0 * z)
+        (tsum_congr fun j => congrArg (fun m => (nelProd b1 a1 m (nelPath ε t ω)).toReal)
+          (Nat.add_comm N j))
+    rw [hVdef, ← hLHS, ← hRHS]
+    exact hmono
+  -- hence the remainder vanishes
+  have hzero : Filter.Tendsto (fun N : ℕ => a1 ^ N * V (t - (N : ℕ))) Filter.atTop (nhds 0) := by
+    have h1 := tendsto_sum_nat_add fun k : ℕ => (nelProd b1 a1 k (nelPath ε t ω)).toReal
+    have h2 := h1.const_mul c0
+    rw [mul_zero] at h2
+    exact squeeze_zero (fun N => mul_nonneg (pow_nonneg ha1 N) (hVnn _)) htail h2
+  -- the geometric part
+  have hgeo : Filter.Tendsto (fun N : ℕ => c0 * ∑ k ∈ Finset.range N, a1 ^ k) Filter.atTop
+      (nhds (c0 / (1 - a1))) := by
+    have hg := (hasSum_geometric_of_lt_one ha1 ha1').tendsto_sum_nat
+    have := hg.const_mul c0
+    rwa [← div_eq_mul_inv] at this
+  -- so the ARCH(∞) partial sums converge
+  have hfnn : ∀ k : ℕ, 0 ≤ b1 * a1 ^ k * X (t - 1 - (k : ℕ)) ω ^ 2 :=
+    fun k => mul_nonneg (mul_nonneg hb1 (pow_nonneg ha1 k)) (sq_nonneg _)
+  have hEq : ∀ N : ℕ, (∑ k ∈ Finset.range N, b1 * a1 ^ k * X (t - 1 - (k : ℕ)) ω ^ 2)
+      = V t - c0 * (∑ k ∈ Finset.range N, a1 ^ k) - a1 ^ N * V (t - (N : ℕ)) := by
+    intro N
+    have := hiter N t
+    linarith
+  have hS : Filter.Tendsto
+      (fun N : ℕ => ∑ k ∈ Finset.range N, b1 * a1 ^ k * X (t - 1 - (k : ℕ)) ω ^ 2)
+      Filter.atTop (nhds (V t - c0 / (1 - a1))) := by
+    simp only [hEq]
+    have h3 := ((tendsto_const_nhds :
+      Filter.Tendsto (fun _ : ℕ => V t) Filter.atTop (nhds (V t))).sub hgeo).sub hzero
+    rwa [sub_zero] at h3
+  have hsummable : Summable fun k : ℕ => b1 * a1 ^ k * X (t - 1 - (k : ℕ)) ω ^ 2 := by
+    refine summable_of_sum_range_le (c := V t) hfnn fun N => ?_
+    have h1 : 0 ≤ c0 * (∑ k ∈ Finset.range N, a1 ^ k) :=
+      mul_nonneg hc0 (Finset.sum_nonneg fun k _ => pow_nonneg ha1 k)
+    have h2 : 0 ≤ a1 ^ N * V (t - (N : ℕ)) := mul_nonneg (pow_nonneg ha1 N) (hVnn _)
+    have := hEq N
+    linarith
+  have hhas : HasSum (fun k : ℕ => b1 * a1 ^ k * X (t - 1 - (k : ℕ)) ω ^ 2)
+      (V t - c0 / (1 - a1)) := hsummable.hasSum_iff_tendsto_nat.2 hS
+  have hL : 0 ≤ V t - c0 / (1 - a1) :=
+    ge_of_tendsto hS (Filter.Eventually.of_forall fun N =>
+      Finset.sum_nonneg fun k _ => hfnn k)
+  -- assemble
+  have hq : ∀ k : ℕ, nelPath X t ω (-1 - (k : ℤ)) = X (t - 1 - (k : ℕ)) ω := by
+    intro k; simp only [nelPath]; congr 1; ring
+  have hnelT : nelT b1 a1 (nelPath X t ω) = ENNReal.ofReal (V t - c0 / (1 - a1)) := by
+    simp only [nelT, hq]
+    rw [← ENNReal.ofReal_tsum_of_nonneg hfnn hsummable, hhas.tsum_eq]
+  have hc0d : 0 ≤ c0 / (1 - a1) := div_nonneg hc0 (by linarith)
+  rw [← hVdef t]
+  simp only [nelU, hnelT]
+  rw [← ENNReal.ofReal_add hc0d hL, ENNReal.toReal_ofReal (by linarith [hVnn t])]
+  ring
+
 /-- **Nelson (1990), sufficiency — COMMISSIONED PROOF TARGET** (user, 2026-08-04):
 if `E log(b₁ ε₀² + a₁) < 0` then the GARCH(1,1) equations admit a strictly stationary
 solution, *with no moment condition on `ε`*. The volatility is the a.s.-convergent
