@@ -165,6 +165,271 @@ private lemma toReal_measure_le_of_subset_union₃ [IsFiniteMeasure μ] {A B C D
 
 end CharFunBricks
 
+section ScoreCLT
+
+/-! ### The score martingale and its CLT
+
+**The variance algebra, done symbolically first** (this is what forces the frozen
+`W = (hannanVarZ b₀ a₀)⁻¹`). Write `Q_T(θ) = T⁻¹ Σ_t r_t(θ)²` for the residual sum of
+squares (`S_T(θ)/T` up to the edge effect) and `θ₀ = (b₀, a₀)`.
+
+*Score.* With `b(z) = 1 − Σ b_i z^{i+1}`, `a(z) = 1 + Σ a_j z^{j+1}` and
+`r_t(θ) = (b(B)/a(B)) X_t`:
+`∂r_t/∂b_i = −(1/a(B)) X_{t−1−i}`, which at `θ₀` (where `X = (a₀/b₀) ε`) is `−U_{t−1−i}`
+for the auxiliary AR process `b₀(B) U = ε`; and `∂r_t/∂a_j = −(1/a(B)) r_{t−1−j}`, which
+at `θ₀` is `−V_{t−1−j}` for `a₀(B) V = ε`. So with
+`Z_t = (U_{t−1−i})_{i<p} ⌢ (V_{t−1−j})_{j<q}`,
+
+  `∇Q_T(θ₀) = −2 T⁻¹ Σ_t ε_t Z_t`.
+
+*Information.* `Cov(Z_t) = σ² · hannanVarZ b₀ a₀`. (`hannanVarZ` is literally the
+covariance matrix of the *forward* vector `(U_{t+i}, V_{t+j})`; the backward `Z_t` used
+here has the transposed cross-blocks, and a covariance matrix is symmetric, so the two
+coincide.) Hence `H := ∇²Q_T(θ₀) →p 2 σ² · hannanVarZ` (the `ε_t ∂²r_t` part is itself a
+martingale difference and vanishes), and
+`√T ∇Q_T(θ₀) →d N(0, 4·Var(ε Z)) = N(0, 4 σ⁴ · hannanVarZ)` by independence of `ε_t`
+from its past.
+
+*Sandwich.* `√T(θ̂ − θ₀) = −H⁻¹ √T ∇Q_T(θ₀) + o_p(1)` has limit variance
+
+  `(2σ²W)⁻¹ (4σ⁴ W) (2σ²W)⁻¹ = W⁻¹`,  `W := hannanVarZ b₀ a₀`,
+
+exactly the frozen `cᵀ W⁻¹ c`. Coordinate-wise, with `d := W⁻¹ c`,
+
+  `cᵀ √T(θ̂ − θ₀) = σ⁻² · T^{−1/2} Σ_t ε_t ⟨d, Z_t⟩ + o_p(1)`,
+
+and `Var(ε_t ⟨d, Z_t⟩) = σ² · dᵀ(σ² W)d = σ⁴ · cᵀW⁻¹c`, so the scalar multiplier `σ⁻²`
+turns the score's limit `N(0, σ⁴ cᵀW⁻¹c)` into `N(0, cᵀW⁻¹c)`. The multiplier is applied
+to the *Gaussian scale* through `charFun_map_mul_comp`, so no multiplier-Slutsky lemma is
+needed; only the additive `tendsto_charFun_of_tendstoInProb_sub` above. -/
+
+omit [MeasurableSpace Ω] in
+private lemma comap_le_sigmaLT' {Z : ℤ → Ω → ℝ} {s t : ℤ} (hst : s < t) :
+    MeasurableSpace.comap (Z s) inferInstance ≤ sigmaLT Z t :=
+  le_iSup₂ (f := fun s (_ : s ∈ Set.Iio t) => MeasurableSpace.comap (Z s) inferInstance) s hst
+
+private lemma sigmaLT_le' {Z : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (Z t)) (t : ℤ) :
+    sigmaLT Z t ≤ (inferInstance : MeasurableSpace Ω) :=
+  iSup₂_le fun _ _ => (hm _).comap_le
+
+omit [MeasurableSpace Ω] in
+private lemma measurable_sigmaLT' {Z : ℤ → Ω → ℝ} {s t : ℤ} (hst : s < t) :
+    Measurable[sigmaLT Z t] (Z s) :=
+  (Measurable.of_comap_le (le_refl (MeasurableSpace.comap (Z s) inferInstance))).mono
+    (comap_le_sigmaLT' hst) le_rfl
+
+/-- The AR polynomial of the negated MA coefficients is the MA polynomial (the two sign
+conventions of `arPoly`/`maPoly` differ exactly by the sign of the coefficients). -/
+private lemma arPoly_neg' {q : ℕ} (a : Fin q → ℝ) : arPoly (fun j => -a j) = maPoly a := by
+  simp only [maPoly, arPoly, map_neg, neg_mul, Finset.sum_neg_distrib, sub_neg_eq_add]
+
+/-- Invertibility of `a` is root-freeness of the AR polynomial of `−a`. -/
+private lemma noRootClosedDisc_neg' {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
+    (hB : ARMAInvertibleParams b a) : NoRootClosedDisc (fun j => -a j) := by
+  intro z hz
+  rw [arPoly_neg']
+  exact hB.2 z hz
+
+/-- **Adapted version of a linear process.** `IsLinearProcessOf` only constrains `L²`
+distances, so replacing `U_t` by `E[U_t | σ(ε_s : s ≤ t)]` — which is adapted by
+construction — preserves it: conditional expectation fixes the (adapted) partial sums
+and is an `L²` contraction. This is what lets the Brown CLT see the auxiliary AR
+processes as a *filtered* martingale-difference sequence, which
+`exists_isLinearProcessOf` alone does not provide. -/
+private lemma exists_adapted_isLinearProcessOf [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ2 : ℝ}
+    {ε U : ℤ → Ω → ℝ} (hψ : Summable fun n => |ψ n|) (hε : IsWhiteNoise ε σ2 μ)
+    (hUmeas : ∀ t, Measurable (U t)) (hU : IsLinearProcessOf ψ U ε μ) :
+    ∃ U' : ℤ → Ω → ℝ, (∀ t, Measurable (U' t)) ∧
+      (∀ t, Measurable[sigmaLT ε (t + 1)] (U' t)) ∧ IsLinearProcessOf ψ U' ε μ := by
+  classical
+  refine ⟨fun t => μ[U t | sigmaLT ε (t + 1)],
+    fun t => (stronglyMeasurable_condExp.mono (sigmaLT_le' hε.measurable _)).measurable,
+    fun _ => stronglyMeasurable_condExp.measurable, fun t => ?_⟩
+  have hle : sigmaLT ε (t + 1) ≤ (inferInstance : MeasurableSpace Ω) :=
+    sigmaLT_le' hε.measurable _
+  have hUint : Integrable (U t) μ := (hU.memLp hψ hε hUmeas t).integrable one_le_two
+  have hbd : ∀ N : ℕ,
+      eLpNorm (fun ω => (μ[U t | sigmaLT ε (t + 1)]) ω
+          - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 2 μ
+        ≤ eLpNorm (fun ω => U t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 2 μ := by
+    intro N
+    have hpsm : StronglyMeasurable[sigmaLT ε (t + 1)]
+        (fun ω => ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) :=
+      Finset.stronglyMeasurable_fun_sum _ fun j _ =>
+        ((measurable_sigmaLT' (Z := ε) (by omega : t - (j : ℕ) < t + 1)).const_mul
+          (ψ j)).stronglyMeasurable
+    have hpint : Integrable (fun ω => ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) μ :=
+      integrable_finset_sum _ fun j _ => ((hε.memLp _).integrable one_le_two).const_mul _
+    have h2 : μ[(fun ω => ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) | sigmaLT ε (t + 1)]
+        = fun ω => ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω :=
+      condExp_of_stronglyMeasurable hle hpsm hpint
+    have hcond : (fun ω => (μ[U t | sigmaLT ε (t + 1)]) ω
+          - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω)
+        =ᵐ[μ] μ[U t - (fun ω => ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω)
+          | sigmaLT ε (t + 1)] := by
+      filter_upwards [condExp_sub hUint hpint (sigmaLT ε (t + 1))] with ω e1
+      rw [e1, Pi.sub_apply, h2]
+    calc eLpNorm (fun ω => (μ[U t | sigmaLT ε (t + 1)]) ω
+            - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 2 μ
+        = eLpNorm (μ[U t - (fun ω => ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω)
+            | sigmaLT ε (t + 1)]) 2 μ := eLpNorm_congr_ae hcond
+      _ ≤ _ := eLpNorm_condExp_le
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (hU t)
+    (fun N => zero_le _) hbd
+
+omit [MeasurableSpace Ω] in
+private lemma sigmaLT_mono' {Z : ℤ → Ω → ℝ} {s t : ℤ} (hst : s ≤ t) :
+    sigmaLT Z s ≤ sigmaLT Z t :=
+  iSup₂_le fun _ hr => comap_le_sigmaLT' (lt_of_lt_of_le hr hst)
+
+/-- The **scalar score sequence** at the truth, `ξ_t = ε_t ⟨d, Z_t⟩` with
+`Z_t = (U_{t−1−i})_{i<p} ⌢ (V_{t−1−j})_{j<q}`: the martingale difference whose partial
+sums carry the whole asymptotic distribution of the MLE (see the variance algebra
+above). -/
+private noncomputable def scoreSeq {p q : ℕ} (ε U V : ℤ → Ω → ℝ)
+    (d : Fin p ⊕ Fin q → ℝ) (t : ℤ) (ω : Ω) : ℝ :=
+  ε t ω * ((∑ i : Fin p, d (.inl i) * U (t - 1 - (i : ℕ)) ω)
+    + ∑ j : Fin q, d (.inr j) * V (t - 1 - (j : ℕ)) ω)
+
+/-- **DEBT — the three analytic inputs Brown's CLT needs for the ARMA score.**
+
+Given the martingale-difference property (which is PROVED upstream:
+`armaScore_condexp_zero`), `mds_clt_sequence` additionally requires
+
+1. `ξ_t = ε_t ⟨d, Z_t⟩ ∈ L²`. This does **not** follow from `ε ∈ L²` and `Z ∈ L²` by
+   Hölder — FY assumes only two moments, so `ε_t²` need not be integrable against
+   `Z_t²` term by term. It holds because `ε_t` is *independent* of `σ(ε_s : s < t)` and
+   `Z_t` is (a.e. equal to) a `σ(ε_s : s < t)`-measurable variable, whence
+   `E[ε_t² ⟨d, Z_t⟩²] = σ² E⟨d, Z_t⟩² < ∞`. The independence brick is
+   `indep_noise_sigmaLT`, `private` to `ARMA/ScoreAnalysis.lean`.
+2. The **conditional-variance LLN** `n⁻¹ Σ_{i<n} E[ξ_i² | 𝓕_i] →p σ²·(σ² dᵀ W d)`. By
+   the same independence, `E[ξ_i² | 𝓕_i] = σ² ⟨d, Z_i⟩²` a.e., so this is the ergodic
+   time-average of the stationary sequence `⟨d, Z_t⟩²` — the *same* pointwise-ergodic
+   gap that blocks `ARMA/Consistency.lean`'s `armaProfileS_tendstoInProb` (Mathlib has
+   no pointwise ergodic theorem, and the `L²` route needs fourth cumulants that FY does
+   not assume).
+3. The **averaged Lindeberg condition**. Under stationarity the average collapses to the
+   single term `E[ξ_0² 1{|ξ_0| ≥ η√n}] → 0`, which is dominated convergence once (1) is
+   available; it is bundled here because it shares (1)'s independence input.
+
+Recorded as one named debt rather than three, since (1)–(3) all reduce to the single
+missing brick pair (noise/past independence — `private` upstream — and the pointwise
+ergodic theorem — absent from Mathlib). -/
+private theorem hannanScore_brownInputs [IsProbabilityMeasure μ] {p q : ℕ}
+    {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
+    (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
+    (hB0 : ARMAInvertibleParams b0 a0)
+    (hU : IsLinearProcessOf (armaPsi b0 (Fin.elim0 : Fin 0 → ℝ)) U ε μ)
+    (hV : IsLinearProcessOf (armaPsi (fun j => -a0 j) (Fin.elim0 : Fin 0 → ℝ)) V ε μ)
+    (hUmeas : ∀ t, Measurable (U t)) (hVmeas : ∀ t, Measurable (V t))
+    (d : Fin p ⊕ Fin q → ℝ) :
+    (∀ i : ℕ, MemLp (scoreSeq ε U V d ((i : ℤ) + 1)) 2 μ) ∧
+    (∀ δ : ℝ, 0 < δ → Tendsto (fun n : ℕ => (μ {ω | δ ≤ |(n : ℝ)⁻¹ *
+        (∑ i ∈ Finset.range n,
+          μ[fun ω' => scoreSeq ε U V d ((i : ℤ) + 1) ω' ^ 2 | sigmaLT ε ((i : ℤ) + 1)] ω)
+        - σ2 * (σ2 * (d ⬝ᵥ (hannanVarZ b0 a0 *ᵥ d)))|}).toReal) atTop (𝓝 0)) ∧
+    (∀ η : ℝ, 0 < η → Tendsto (fun n : ℕ => (n : ℝ)⁻¹ * ∑ i ∈ Finset.range n,
+        ∫ ω in {ω | η * Real.sqrt n ≤ |scoreSeq ε U V d ((i : ℤ) + 1) ω|},
+          (scoreSeq ε U V d ((i : ℤ) + 1) ω) ^ 2 ∂μ) atTop (𝓝 0)) := by
+  sorry
+
+/-- **The score CLT** (step 3 of the assembly): the normalized partial sums of the
+score martingale are asymptotically `N(0, σ⁴ dᵀ W d)`, `W = hannanVarZ b₀ a₀`. Proved by
+feeding `armaScore_condexp_zero` (the martingale-difference property) and
+`hannanScore_brownInputs` into Brown's martingale CLT `mds_clt_sequence`, along the
+noise filtration `𝓕_t = σ(ε_s : s < t)`. -/
+private theorem hannanScore_clt [IsProbabilityMeasure μ] {p q : ℕ}
+    {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
+    (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
+    (hB0 : ARMAInvertibleParams b0 a0)
+    (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
+    (hmeas : ∀ t, Measurable (X t))
+    (hU : IsLinearProcessOf (armaPsi b0 (Fin.elim0 : Fin 0 → ℝ)) U ε μ)
+    (hV : IsLinearProcessOf (armaPsi (fun j => -a0 j) (Fin.elim0 : Fin 0 → ℝ)) V ε μ)
+    (hUmeas : ∀ t, Measurable (U t)) (hVmeas : ∀ t, Measurable (V t))
+    (hUadapt : ∀ t, Measurable[sigmaLT ε (t + 1)] (U t))
+    (hVadapt : ∀ t, Measurable[sigmaLT ε (t + 1)] (V t))
+    (d : Fin p ⊕ Fin q → ℝ) (hnn : 0 ≤ d ⬝ᵥ (hannanVarZ b0 a0 *ᵥ d)) (u : ℝ) :
+    Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
+        (Real.sqrt T)⁻¹ * ∑ i ∈ Finset.range T, scoreSeq ε U V d ((i : ℤ) + 1) ω) u)
+      atTop
+      (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
+        (σ2 * (σ2 * (d ⬝ᵥ (hannanVarZ b0 a0 *ᵥ d)))))) u)) := by
+  obtain ⟨hL2, hvar, hlind⟩ :=
+    hannanScore_brownInputs h hiid hσ hB0 hU hV hUmeas hVmeas d
+  refine mds_clt_sequence (G := fun i : ℕ => sigmaLT ε ((i : ℤ) + 1))
+    (fun i => sigmaLT_le' hiid.measurable _)
+    (fun i j hij => sigmaLT_mono' (by
+      have : (i : ℤ) ≤ (j : ℤ) := Int.ofNat_le.2 hij
+      omega))
+    (fun i => ?_) hL2 (fun i => ?_) (by positivity) hvar hlind u
+  · -- adaptedness: `ξ_i` is `σ(ε_s : s ≤ i + 1)`-measurable
+    have hunfold : scoreSeq ε U V d ((i : ℤ) + 1)
+        = fun ω => ε ((i : ℤ) + 1) ω *
+          ((∑ k : Fin p, d (.inl k) * U (((i : ℤ) + 1) - 1 - (k : ℕ)) ω)
+            + ∑ k : Fin q, d (.inr k) * V (((i : ℤ) + 1) - 1 - (k : ℕ)) ω) := rfl
+    rw [hunfold]
+    refine (measurable_sigmaLT' (Z := ε) (by push_cast; omega)).mul (Measurable.add ?_ ?_)
+    · exact Finset.measurable_sum _ fun k _ => measurable_const.mul
+        ((hUadapt _).mono (sigmaLT_mono' (by push_cast; omega)) le_rfl)
+    · exact Finset.measurable_sum _ fun k _ => measurable_const.mul
+        ((hVadapt _).mono (sigmaLT_mono' (by push_cast; omega)) le_rfl)
+  · exact armaScore_condexp_zero h hiid hB0 hcausal hmeas hU hV hUmeas hVmeas d ((i : ℤ) + 1)
+
+/-- **DEBT — the Taylor/sandwich linearization** (steps 2, 4 and 5 of the assembly).
+
+On the event `θ̂_T ∈ ball(θ₀, ρ)` (which has probability `→ 1` by `mle_consistent`, since
+`θ₀ ∈ interior K`), the `o(1/T)`-approximate minimality `hargmin` gives a near-first-order
+condition `∇Q_T(θ̂_T) = o_p(T^{−1/2})`; a coordinatewise mean-value expansion of `∇Q_T`
+around `θ₀` then yields `0 = ∇Q_T(θ₀) + H_T(θ̄_T)(θ̂_T − θ₀) + o_p(T^{−1/2})` with
+`θ̄_T` between `θ̂_T` and `θ₀`, and `H_T(θ̄_T) →p 2σ² W` uniformly on `ball(θ₀, ρ)`
+(continuity of the second-derivative filters plus the same ergodic average as
+`hannanScore_brownInputs`(2)). Inverting `H` and reading off the `c`-coordinate gives
+
+  `√T·cᵀ(θ̂_T − θ₀) = σ⁻²·T^{−1/2} Σ_t ε_t ⟨W⁻¹c, Z_t⟩ + o_p(1)`,
+
+which is the statement below (the constant is fixed by the variance algebra recorded at
+the head of this section; `hannanVarZ_posDef` — itself an open `sorry` upstream — is what
+makes `W⁻¹` meaningful, whence the `hcop`/`hbdeg`/`hadeg` hypotheses).
+
+Blocked on the same two missing bricks as the rest of the lane: a *uniform* (in `θ` near
+`θ₀`) law of large numbers for the residual filters — the pointwise ergodic theorem — and
+Consistency's `mle_consistent`, still `sorry` upstream. -/
+private theorem armaMLE_linearization [IsProbabilityMeasure μ] {p q : ℕ}
+    {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
+    (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
+    (hB0 : ARMAInvertibleParams b0 a0)
+    (hcop : IsCoprime (arPoly b0) (maPoly a0))
+    (hbdeg : (arPoly b0).natDegree = p) (hadeg : (maPoly a0).natDegree = q)
+    (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
+    (hmeas : ∀ t, Measurable (X t))
+    (hU : IsLinearProcessOf (armaPsi b0 (Fin.elim0 : Fin 0 → ℝ)) U ε μ)
+    (hV : IsLinearProcessOf (armaPsi (fun j => -a0 j) (Fin.elim0 : Fin 0 → ℝ)) V ε μ)
+    (hUmeas : ∀ t, Measurable (U t)) (hVmeas : ∀ t, Measurable (V t))
+    {K : Set ((Fin p → ℝ) × (Fin q → ℝ))}
+    (hK : IsCompact K) (hKB : ∀ ba ∈ K, ARMAInvertibleParams ba.1 ba.2)
+    (hcopK : ∀ ba ∈ K, IsCoprime (arPoly ba.1) (maPoly ba.2))
+    (hK0 : (b0, a0) ∈ interior K)
+    (θ : (T : ℕ) → Ω → (Fin p → ℝ) × (Fin q → ℝ)) (hθmeas : ∀ T, Measurable (θ T))
+    {δT : ℕ → ℝ} (hδT0 : ∀ T, 0 ≤ δT T)
+    (hδTfast : Tendsto (fun T : ℕ => (T : ℝ) * δT T) atTop (𝓝 0))
+    (hargmin : ∀ (T : ℕ) (ω : Ω), θ T ω ∈ K ∧ ∀ ba ∈ K,
+      armaProfileCriterion (θ T ω).1 (θ T ω).2
+          (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+        ≤ armaProfileCriterion ba.1 ba.2
+            (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) + δT T)
+    (c : Fin p ⊕ Fin q → ℝ) {δ : ℝ} (hδ : 0 < δ) :
+    Tendsto (fun T : ℕ => (μ {ω | δ ≤
+        |Real.sqrt T *
+            ((∑ i : Fin p, c (.inl i) * ((θ T ω).1 i - b0 i)) +
+              ∑ j : Fin q, c (.inr j) * ((θ T ω).2 j - a0 j))
+          - σ2⁻¹ * ((Real.sqrt T)⁻¹ * ∑ i ∈ Finset.range T,
+              scoreSeq ε U V ((hannanVarZ b0 a0)⁻¹ *ᵥ c) ((i : ℤ) + 1) ω)|}).toReal)
+      atTop (𝓝 0) := by
+  sorry
+
+end ScoreCLT
+
 /-- **FY Theorem 3.2 (Hannan), Cramér–Wold/charFun form**: under the `mle_consistent`
 setting, every linear combination of `√T (θ̂_T − θ₀)` is asymptotically
 `N(0, cᵀ W c)` with `W = (hannanVarZ b₀ a₀)⁻¹`. -/
@@ -208,7 +473,77 @@ theorem hannan_mle_clt [IsProbabilityMeasure μ] {p q : ℕ}
       atTop
       (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
         (c ⬝ᵥ ((hannanVarZ b0 a0)⁻¹ *ᵥ c)))) u)) := by
-  sorry
+  classical
+  -- ## The information matrix, the sandwich direction `d = W⁻¹c`, and the limit variance
+  have hWpd : (hannanVarZ b0 a0).PosDef := hannanVarZ_posDef hB0 hcop hbdeg hadeg
+  have hWdet : IsUnit (hannanVarZ b0 a0).det := Matrix.isUnit_iff_isUnit_det _ |>.1 hWpd.isUnit
+  have hWd : hannanVarZ b0 a0 *ᵥ ((hannanVarZ b0 a0)⁻¹ *ᵥ c) = c := by
+    rw [Matrix.mulVec_mulVec, Matrix.mul_nonsing_inv _ hWdet, Matrix.one_mulVec]
+  -- `dᵀ W d = cᵀ W⁻¹ c` — the collapse `(2σ²W)⁻¹(4σ⁴W)(2σ²W)⁻¹ = W⁻¹` in coordinates
+  have hdv : ((hannanVarZ b0 a0)⁻¹ *ᵥ c) ⬝ᵥ
+      (hannanVarZ b0 a0 *ᵥ ((hannanVarZ b0 a0)⁻¹ *ᵥ c))
+        = c ⬝ᵥ ((hannanVarZ b0 a0)⁻¹ *ᵥ c) := by
+    rw [hWd, dotProduct_comm]
+  have hvnn : 0 ≤ c ⬝ᵥ ((hannanVarZ b0 a0)⁻¹ *ᵥ c) := by
+    have := hWpd.inv.posSemidef.dotProduct_mulVec_nonneg c
+    simpa using this
+  -- ## The auxiliary AR processes `b₀(B)U = ε`, `a₀(B)V = ε`, in adapted form
+  have hψb : Summable fun n => |armaPsi b0 (Fin.elim0 : Fin 0 → ℝ) n| :=
+    summable_abs_armaPsi (Fin.elim0 : Fin 0 → ℝ) hB0.1
+  have hψa : Summable fun n => |armaPsi (fun j => -a0 j) (Fin.elim0 : Fin 0 → ℝ) n| :=
+    summable_abs_armaPsi (Fin.elim0 : Fin 0 → ℝ) (noRootClosedDisc_neg' hB0)
+  obtain ⟨U0, hU0meas, hU0⟩ := exists_isLinearProcessOf hψb h.whiteNoise
+  obtain ⟨V0, hV0meas, hV0⟩ := exists_isLinearProcessOf hψa h.whiteNoise
+  obtain ⟨U, hUmeas, hUadapt, hU⟩ :=
+    exists_adapted_isLinearProcessOf hψb h.whiteNoise hU0meas hU0
+  obtain ⟨V, hVmeas, hVadapt, hV⟩ :=
+    exists_adapted_isLinearProcessOf hψa h.whiteNoise hV0meas hV0
+  -- ## Step 3: the score CLT
+  have hscore := hannanScore_clt h hiid hσ hB0 hcausal hmeas hU hV hUmeas hVmeas
+    hUadapt hVadapt ((hannanVarZ b0 a0)⁻¹ *ᵥ c) (hdv ▸ hvnn) (σ2⁻¹ * u)
+  rw [hdv] at hscore
+  -- ## The multiplier `σ⁻²` acts on the Gaussian scale, not on the random variable
+  have hgauss : charFun (gaussianReal 0 (Real.toNNReal
+        (σ2 * (σ2 * (c ⬝ᵥ ((hannanVarZ b0 a0)⁻¹ *ᵥ c)))))) (σ2⁻¹ * u)
+      = charFun (gaussianReal 0 (Real.toNNReal (c ⬝ᵥ ((hannanVarZ b0 a0)⁻¹ *ᵥ c)))) u := by
+    rw [charFun_gaussianReal, charFun_gaussianReal,
+      Real.coe_toNNReal _ (by positivity), Real.coe_toNNReal _ hvnn]
+    congr 1
+    have hneC : (σ2 : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 (ne_of_gt hσ)
+    push_cast
+    field_simp
+    ring
+  rw [hgauss] at hscore
+  -- ## The two sequences of the Slutsky step, and their measurability
+  have hUVmeas : ∀ (T : ℕ), Measurable
+      (fun ω => σ2⁻¹ * ((Real.sqrt T)⁻¹ * ∑ i ∈ Finset.range T,
+        scoreSeq ε U V ((hannanVarZ b0 a0)⁻¹ *ᵥ c) ((i : ℤ) + 1) ω)) := by
+    intro T
+    refine measurable_const.mul (measurable_const.mul (Finset.measurable_sum _ fun i _ => ?_))
+    exact (hiid.measurable _).mul
+      ((Finset.measurable_sum _ fun k _ => measurable_const.mul (hUmeas _)).add
+        (Finset.measurable_sum _ fun k _ => measurable_const.mul (hVmeas _)))
+  have hZmeas : ∀ (T : ℕ), Measurable
+      (fun ω => Real.sqrt T *
+        ((∑ i : Fin p, c (.inl i) * ((θ T ω).1 i - b0 i)) +
+          ∑ j : Fin q, c (.inr j) * ((θ T ω).2 j - a0 j))) := by
+    intro T
+    refine measurable_const.mul (Measurable.add ?_ ?_)
+    · exact Finset.measurable_sum _ fun i _ => measurable_const.mul
+        (((measurable_pi_apply i).comp (hθmeas T).fst).sub measurable_const)
+    · exact Finset.measurable_sum _ fun j _ => measurable_const.mul
+        (((measurable_pi_apply j).comp (hθmeas T).snd).sub measurable_const)
+  -- ## Steps 2/4/5 (the sandwich) + charFun Slutsky
+  refine tendsto_charFun_of_tendstoInProb_sub hUVmeas hZmeas ?_ (fun η hη =>
+    armaMLE_linearization h hiid hσ hB0 hcop hbdeg hadeg hcausal hmeas hU hV hUmeas hVmeas
+      hK hKB hcopK hK0 θ hθmeas hδT0 hδTfast hargmin c hη)
+  refine hscore.congr fun T => ?_
+  exact (charFun_map_mul_comp
+    (((measurable_const.mul (Finset.measurable_sum _ fun i _ =>
+        (hiid.measurable _).mul
+          ((Finset.measurable_sum _ fun k _ => measurable_const.mul (hUmeas _)).add
+            (Finset.measurable_sum _ fun k _ => measurable_const.mul (hVmeas _))))) :
+      Measurable _)).aemeasurable σ2⁻¹ u).symm
 
 section Sigma2
 
