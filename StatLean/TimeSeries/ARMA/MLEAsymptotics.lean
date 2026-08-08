@@ -53,6 +53,9 @@ theorem hannan_mle_clt [IsProbabilityMeasure μ] {p q : ℕ}
     (hB0 : ARMAInvertibleParams b0 a0)
     -- USER-INPUT: coprime minimal orders; Hannan 1973 (FY implicit)
     (hcop : IsCoprime (arPoly b0) (maPoly a0))
+    -- USER-INPUT: exact orders (see `hannanVarZ_posDef`'s docstring — coprimality alone
+    -- does not make the information matrix invertible); Hannan 1973 §2
+    (hbdeg : (arPoly b0).natDegree = p) (hadeg : (maPoly a0).natDegree = q)
     (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
     (hmeas : ∀ t, Measurable (X t))
     {K : Set ((Fin p → ℝ) × (Fin q → ℝ))}
@@ -87,6 +90,8 @@ theorem hannan_sigma2_consistent [IsProbabilityMeasure μ] {p q : ℕ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
     (hB0 : ARMAInvertibleParams b0 a0)
     (hcop : IsCoprime (arPoly b0) (maPoly a0))
+    -- USER-INPUT: exact orders (see `hannanVarZ_posDef`); Hannan 1973 §2
+    (hbdeg : (arPoly b0).natDegree = p) (hadeg : (maPoly a0).natDegree = q)
     (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
     (hmeas : ∀ t, Measurable (X t))
     {K : Set ((Fin p → ℝ) × (Fin q → ℝ))}

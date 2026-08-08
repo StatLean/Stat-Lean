@@ -123,11 +123,19 @@ polynomials (FY's implicit minimal-orders assumption; the ARMA(1,1) `a + b = 0`
 degeneracy shows it is necessary). -/
 theorem hannanVarZ_posDef {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
     (hB : ARMAInvertibleParams b a)
-    -- USER-INPUT: coprime lag polynomials (minimal orders); FY §3.3.2 implicit,
-    -- explicit in Hannan 1973
-    (hcop : IsCoprime (arPoly b) (maPoly a)) :
+    -- USER-INPUT: coprime lag polynomials; FY §3.3.2 implicit, explicit in Hannan 1973
+    (hcop : IsCoprime (arPoly b) (maPoly a))
+    -- USER-INPUT: FY's minimal-orders convention *in full* — the lag polynomials
+    -- genuinely have degrees `p` and `q` (i.e. `b_{p−1} ≠ 0`, `a_{q−1} ≠ 0`).
+    -- Added 2026-08-09 after a machine-checked counterexample showed coprimality alone
+    -- is insufficient: with `b = (1/2, 0)`, `a = (1/3, 0)` (degrees 1 < p = q = 2) the
+    -- Gram matrix is singular, since `(U_t − ½U_{t−1}) − (V_t + ⅓V_{t−1}) = 0`.
+    -- Hannan 1973 §2 assumes the orders are exact; FY inherits it silently.
+    (hbdeg : (arPoly b).natDegree = p) (hadeg : (maPoly a).natDegree = q) :
     (hannanVarZ b a).PosDef := by
-  -- **FALSE AS FROZEN** (reported debt; the statement is frozen, so no repair is applied).
+  -- **Was FALSE as originally frozen**; the two degree hypotheses above were added by
+  -- the laptop session on 2026-08-09 in response to the counterexample recorded below,
+  -- which is kept as documentation. Under `hbdeg`/`hadeg` the Bézout argument closes.
   --
   -- `hannanVarZ b a` is the Gram matrix of the `ℓ²(ℤ)` vectors `g_i(m) = ψᵇ_{m+i}`,
   -- `h_j(m) = ψᵃ_{m+j}` (`ψᵇ = 1/b`, `ψᵃ = 1/a`), i.e. the covariance matrix of
