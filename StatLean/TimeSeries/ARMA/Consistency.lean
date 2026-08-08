@@ -398,6 +398,92 @@ private theorem mle_consistent_not_identifiable :
 
 end CompositeFilter
 
+section PolyIdentifiability
+
+/-! ### The polynomial step of identifiability
+
+`arPoly`/`maPoly` are *normalized at the origin*: both have constant coefficient `1`.
+That normalization is what turns "associated" into "equal" below: a unit of `ℝ[X]` is a
+nonzero constant, and matching constant coefficients pins it to `1`. Together with
+injectivity of `arPoly` (read off coefficient `i + 1`) this converts the cross equation
+`b(z)a₀(z) = b₀(z)a(z)` of `armaContrastVar_eq_one_iff_transfer` into equality of the
+parameter vectors, provided *both* pairs are coprime. -/
+
+/-- The coefficients of the AR polynomial `b(z) = 1 − b₁z − ⋯ − b_p z^p`. -/
+private lemma coeff_arPoly' {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
+    (arPoly b).coeff m
+      = (if m = 0 then (1 : ℝ) else 0) - ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
+  simp [arPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+    Polynomial.coeff_X_pow, mul_ite]
+
+private lemma coeff_arPoly_succ' {p : ℕ} (b : Fin p → ℝ) (j : Fin p) :
+    (arPoly b).coeff ((j : ℕ) + 1) = -(b j) := by
+  rw [coeff_arPoly']
+  simp [Fin.val_eq_val, Finset.sum_ite_eq]
+
+/-- `arPoly` is injective: coefficient `i + 1` is `−bᵢ`. -/
+private lemma arPoly_injective' {p : ℕ} :
+    Function.Injective (arPoly : (Fin p → ℝ) → Polynomial ℝ) := by
+  intro b b' h
+  funext i
+  have hc := congrArg (fun r => Polynomial.coeff r ((i : ℕ) + 1)) h
+  simp only [coeff_arPoly_succ'] at hc
+  linarith
+
+/-- `maPoly` is injective (through `arPoly_neg`). -/
+private lemma maPoly_injective' {q : ℕ} :
+    Function.Injective (maPoly : (Fin q → ℝ) → Polynomial ℝ) := by
+  intro a a' h
+  rw [← arPoly_neg, ← arPoly_neg] at h
+  have hneg := arPoly_injective' h
+  funext j
+  have := congrFun hneg j
+  simpa using this
+
+private lemma arPoly_ne_zero' {p : ℕ} (b : Fin p → ℝ) : arPoly b ≠ 0 := by
+  intro h
+  have h1 := coeff_arPoly_zero' b
+  rw [h] at h1
+  simp at h1
+
+/-- Two polynomials with constant coefficient `1` that divide each other are **equal**:
+the unit relating them is a constant, and the normalization pins that constant to `1`. -/
+private lemma eq_of_dvd_dvd_of_coeff_zero_eq_one {f g : Polynomial ℝ}
+    (hf : f.coeff 0 = 1) (hg : g.coeff 0 = 1) (h1 : f ∣ g) (h2 : g ∣ f) : f = g := by
+  obtain ⟨c, hc⟩ := h1
+  obtain ⟨d, hd⟩ := h2
+  have hf0 : f ≠ 0 := fun h => by rw [h] at hf; simp at hf
+  have hcd : c * d = 1 := by
+    have hstep : f * (c * d) = f * 1 := by
+      rw [mul_one, ← mul_assoc, ← hc, ← hd]
+    exact mul_left_cancel₀ hf0 hstep
+  have hcu : IsUnit c := ⟨⟨c, d, hcd, by rw [mul_comm]; exact hcd⟩, rfl⟩
+  have hcC : c = Polynomial.C (c.coeff 0) :=
+    Polynomial.eq_C_of_natDegree_eq_zero (Polynomial.natDegree_eq_zero_of_isUnit hcu)
+  have hc0 : c.coeff 0 = 1 := by
+    have h0 := congrArg (fun r => Polynomial.coeff r 0) hc
+    simp only [Polynomial.mul_coeff_zero, hf, hg, one_mul] at h0
+    exact h0.symm
+  rw [hc, hcC, hc0, map_one, mul_one]
+
+/-- **Minimal representations are unique**: if `b(z)a₀(z) = b₀(z)a(z)` and both pairs are
+coprime, then the parameter vectors coincide. This is the polynomial content of
+identifiability; the analytic content is `armaContrastVar_eq_one_iff_transfer`. -/
+private lemma eq_of_transfer_eq {p q : ℕ} {b0 b : Fin p → ℝ} {a0 a : Fin q → ℝ}
+    (hcop : IsCoprime (arPoly b0) (maPoly a0)) (hcopW : IsCoprime (arPoly b) (maPoly a))
+    (hT : arPoly b * maPoly a0 = arPoly b0 * maPoly a) : b = b0 ∧ a = a0 := by
+  -- `b₀ ∣ b·a₀` and `b₀` is coprime to `a₀`, hence `b₀ ∣ b`; symmetrically `b ∣ b₀`.
+  have hd1 : arPoly b0 ∣ arPoly b := hcop.dvd_of_dvd_mul_right ⟨maPoly a, hT⟩
+  have hd2 : arPoly b ∣ arPoly b0 := hcopW.dvd_of_dvd_mul_right ⟨maPoly a0, hT.symm⟩
+  -- Both are normalized at the origin, so mutual divisibility is equality.
+  have hb : arPoly b = arPoly b0 :=
+    eq_of_dvd_dvd_of_coeff_zero_eq_one (coeff_arPoly_zero' b) (coeff_arPoly_zero' b0) hd2 hd1
+  rw [hb] at hT
+  exact ⟨arPoly_injective' hb,
+    (maPoly_injective' (mul_left_cancel₀ (arPoly_ne_zero' b0) hT)).symm⟩
+
+end PolyIdentifiability
+
 /-- The composite filter has leading coefficient `1`, so the contrast variance is at
 least `1`, with equality iff the working model matches the true transfer function. -/
 theorem one_le_armaContrastVar {p q : ℕ} {b0 b : Fin p → ℝ} {a0 a : Fin q → ℝ}
@@ -425,18 +511,16 @@ theorem armaContrastVar_eq_one_iff {p q : ℕ} {b0 b : Fin p → ℝ} {a0 a : Fi
     (hcopW : IsCoprime (arPoly b) (maPoly a)) :
     armaContrastVar b0 a0 b a = 1 ↔ b = b0 ∧ a = a0 := by
   constructor
-  · -- **FALSE AS FROZEN.** The hypotheses constrain only the *true* pair to be coprime,
-    -- so a non-minimal working pair with the same transfer function is a counterexample:
-    -- `armaContrastVar_eq_one_not_identifiable` exhibits (in Lean) `p = q = 1`,
-    -- `b₀ = a₀ = 0`, `b = 1/2`, `a = −1/2`, where both pairs are in `𝓑`,
+  · -- **Was FALSE as originally frozen** — with only the *true* pair constrained to be
+    -- coprime, a non-minimal working pair with the same transfer function is a
+    -- counterexample: `armaContrastVar_eq_one_not_identifiable` exhibits (in Lean)
+    -- `p = q = 1`, `b₀ = a₀ = 0`, `b = 1/2`, `a = −1/2`, where both pairs are in `𝓑`,
     -- `IsCoprime (arPoly b₀) (maPoly a₀)` holds, the contrast variance is `1`, and
-    -- `b ≠ b₀`. The provable statement is the transfer-function one,
-    -- `armaContrastVar_eq_one_iff_transfer`:
-    --   `armaContrastVar b₀ a₀ b a = 1 ↔ arPoly b * maPoly a₀ = arPoly b₀ * maPoly a`,
-    -- which is PROVED above; the frozen conclusion follows from it only after adding
-    -- `IsCoprime (arPoly b) (maPoly a)` (minimality of the *working* model) to the
-    -- hypotheses. Repair the statement, do not attempt this branch.
-    sorry
+    -- `b ≠ b₀`. The witness is kept above as documentation. `hcopW` (minimality of the
+    -- *working* model, Hannan 1973 §2) excludes it, and then the criterion's
+    -- transfer-function reading plus the polynomial step close the branch.
+    intro h
+    exact eq_of_transfer_eq hcop hcopW ((armaContrastVar_eq_one_iff_transfer hB0 hB).1 h)
   · rintro ⟨rfl, rfl⟩
     exact (armaContrastVar_eq_one_iff_transfer hB0 hB).2 rfl
 
