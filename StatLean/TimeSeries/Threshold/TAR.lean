@@ -48,13 +48,96 @@ def setarPartition {k : ℕ} (r : Fin k → ℝ) : Fin (k + 1) → Set ℝ := fu
   {x : ℝ | (∀ j : Fin k, (j : ℕ) < (i : ℕ) → r j < x) ∧
     ∀ j : Fin k, (i : ℕ) ≤ (j : ℕ) → x ≤ r j}
 
+-- The regime `i` is a finite intersection of half-lines: for each threshold index `j`
+-- one of the two guards is vacuous and the other cuts out an `Ioi` resp. an `Iic`.
+private lemma setarPartition_eq_iInter {k : ℕ} (r : Fin k → ℝ) (i : Fin (k + 1)) :
+    setarPartition r i =
+      (⋂ j : Fin k, {x : ℝ | (j : ℕ) < (i : ℕ) → r j < x}) ∩
+        ⋂ j : Fin k, {x : ℝ | (i : ℕ) ≤ (j : ℕ) → x ≤ r j} := by
+  ext x
+  simp only [setarPartition, Set.mem_setOf_eq, Set.mem_inter_iff, Set.mem_iInter]
+
+-- The **regime index of a point**: the number of thresholds strictly below `x`. Under
+-- `StrictMono r` the set `{j | r j < x}` is a down-closed initial segment of `Fin k`, so
+-- its cardinality is exactly the index of the regime containing `x`.
+private noncomputable def setarIndex {k : ℕ} (r : Fin k → ℝ) (x : ℝ) : Fin (k + 1) :=
+  ⟨(Finset.univ.filter fun j : Fin k => r j < x).card,
+    Nat.lt_succ_of_le (by simpa using Finset.card_filter_le (Finset.univ : Finset (Fin k)) _)⟩
+
+-- Existence: `x` lies in the regime indexed by its threshold count. Both halves are
+-- cardinality arguments against the initial segment `Iio j` resp. `Iic j`.
+private lemma mem_setarPartition_setarIndex {k : ℕ} {r : Fin k → ℝ} (hr : StrictMono r)
+    (x : ℝ) : x ∈ setarPartition r (setarIndex r x) := by
+  classical
+  refine ⟨fun j hj => ?_, fun j hj => ?_⟩
+  · -- `j` is below the count, so `r j < x`: otherwise `{j' | r j' < x} ⊆ Iio j`.
+    by_contra hx
+    push_neg at hx
+    have hsub : (Finset.univ.filter fun j' : Fin k => r j' < x) ⊆ Finset.Iio j := by
+      intro j' hj'
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj'
+      simp only [Finset.mem_Iio]
+      by_contra hle
+      push_neg at hle
+      exact absurd (lt_of_lt_of_le (lt_of_lt_of_le hj' hx) (hr.monotone hle)) (lt_irrefl _)
+    have hcard := Finset.card_le_card hsub
+    rw [Fin.card_Iio] at hcard
+    simp only [setarIndex] at hj
+    omega
+  · -- `j` is at or above the count, so `x ≤ r j`: otherwise `Iic j ⊆ {j' | r j' < x}`.
+    by_contra hx
+    push_neg at hx
+    have hsub : Finset.Iic j ⊆ Finset.univ.filter fun j' : Fin k => r j' < x := by
+      intro j' hj'
+      simp only [Finset.mem_Iic] at hj'
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+      exact lt_of_le_of_lt (hr.monotone hj') hx
+    have hcard := Finset.card_le_card hsub
+    rw [Fin.card_Iic] at hcard
+    simp only [setarIndex] at hj
+    omega
+
+-- Uniqueness: a point cannot lie in two regimes. If `i < i'` then `j := i` is a legitimate
+-- threshold index, and the two memberships give `r j < x` and `x ≤ r j`.
+private lemma setarPartition_not_mem_of_lt {k : ℕ} {r : Fin k → ℝ} {x : ℝ}
+    {i i' : Fin (k + 1)} (h : x ∈ setarPartition r i) (h' : x ∈ setarPartition r i')
+    (hlt : (i : ℕ) < (i' : ℕ)) : False := by
+  have hik : (i : ℕ) < k := lt_of_lt_of_le hlt (Nat.lt_succ_iff.mp i'.isLt)
+  have h1 : r ⟨(i : ℕ), hik⟩ < x := h'.1 ⟨(i : ℕ), hik⟩ hlt
+  have h2 : x ≤ r ⟨(i : ℕ), hik⟩ := h.2 ⟨(i : ℕ), hik⟩ le_rfl
+  linarith
+
 /-- A SETAR partition is a measurable partition of `ℝ` (so `IsTAR` applies to it):
 the regimes are measurable, pairwise disjoint, and cover the line. -/
 theorem setarPartition_isPartition {k : ℕ} {r : Fin k → ℝ} (hr : StrictMono r) :
     (∀ i, MeasurableSet (setarPartition r i)) ∧
       (Pairwise fun i j => Disjoint (setarPartition r i) (setarPartition r j)) ∧
       (⋃ i, setarPartition r i) = Set.univ := by
-  sorry
+  classical
+  refine ⟨fun i => ?_, fun i i' hne => ?_, ?_⟩
+  · rw [setarPartition_eq_iInter]
+    refine MeasurableSet.inter (MeasurableSet.iInter fun j => ?_)
+      (MeasurableSet.iInter fun j => ?_)
+    · by_cases h : (j : ℕ) < (i : ℕ)
+      · have he : {x : ℝ | (j : ℕ) < (i : ℕ) → r j < x} = Set.Ioi (r j) := by
+          ext x; simp [h, Set.mem_Ioi]
+        rw [he]; exact measurableSet_Ioi
+      · have he : {x : ℝ | (j : ℕ) < (i : ℕ) → r j < x} = Set.univ := by
+          ext x; simp [h]
+        rw [he]; exact MeasurableSet.univ
+    · by_cases h : (i : ℕ) ≤ (j : ℕ)
+      · have he : {x : ℝ | (i : ℕ) ≤ (j : ℕ) → x ≤ r j} = Set.Iic (r j) := by
+          ext x; simp [h, Set.mem_Iic]
+        rw [he]; exact measurableSet_Iic
+      · have he : {x : ℝ | (i : ℕ) ≤ (j : ℕ) → x ≤ r j} = Set.univ := by
+          ext x; simp [h]
+        rw [he]; exact MeasurableSet.univ
+  · refine Set.disjoint_left.mpr fun x hx hx' => ?_
+    rcases lt_or_gt_of_ne (fun hcon : (i : ℕ) = (i' : ℕ) => hne (Fin.ext hcon)) with h | h
+    · exact setarPartition_not_mem_of_lt hx hx' h
+    · exact setarPartition_not_mem_of_lt hx' hx h
+  · exact Set.eq_univ_of_forall fun x =>
+      Set.mem_iUnion.mpr ⟨setarIndex r x, mem_setarPartition_setarIndex hr x⟩
 
 /-- **SETAR model** (FY §4.1.1): a TAR whose regimes form an interval partition. -/
 def IsSETAR {k P : ℕ} (b0 : Fin (k + 1) → ℝ) (b : Fin (k + 1) → Fin P → ℝ)
