@@ -115,6 +115,29 @@ theorem IsGARCH.condexp_sq [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
 `X_t² = c₀ + Σ_{i ≤ p∨q}(b_i + a_i) X_{t−i}² + e_t − Σ_j a_j e_{t−j}` with the
 martingale-difference noise `e_t = (ε_t² − 1)σ_t²` (coefficients zero-padded to the
 common order). -/
+private lemma sum_range_pad_two {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (g : ℕ → ℝ) :
+    (∑ i ∈ Finset.range (max p q),
+        ((if hi : i < p then b ⟨i, hi⟩ else 0) + (if hi : i < q then a ⟨i, hi⟩ else 0)) * g i)
+      = (∑ i : Fin p, b i * g (i : ℕ)) + ∑ j : Fin q, a j * g (j : ℕ) := by
+  have key : ∀ (m : ℕ) (f : Fin m → ℝ), m ≤ max p q →
+      (∑ i ∈ Finset.range (max p q), (if hi : i < m then f ⟨i, hi⟩ else 0) * g i)
+        = ∑ i : Fin m, f i * g (i : ℕ) := by
+    intro m f hm
+    have hsub : Finset.range m ⊆ Finset.range (max p q) := by
+      intro x hx
+      simp only [Finset.mem_range] at hx ⊢
+      omega
+    have hzero : ∀ x ∈ Finset.range (max p q), x ∉ Finset.range m →
+        (if hi : x < m then f ⟨x, hi⟩ else 0) * g x = 0 := by
+      intro x _ hx
+      rw [dif_neg (by simpa using hx)]
+      ring
+    rw [← Finset.sum_subset hsub hzero]
+    rw [← Fin.sum_univ_eq_sum_range (fun i => (if hi : i < m then f ⟨i, hi⟩ else 0) * g i) m]
+    exact Finset.sum_congr rfl fun i _ => by simp
+  simp only [add_mul]
+  rw [Finset.sum_add_distrib, key p b (le_max_left p q), key q a (le_max_right p q)]
+
 theorem IsGARCH.sq_arma_recursion [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     {b : Fin p → ℝ} {a : Fin q → ℝ} {X σvol ε : ℤ → Ω → ℝ}
     (h : IsGARCH c0 b a X σvol ε μ) (t : ℤ) :
@@ -125,7 +148,21 @@ theorem IsGARCH.sq_arma_recursion [IsProbabilityMeasure μ] {c0 : ℝ} {p q : �
         + ((ε t ω ^ 2 - 1) * σvol t ω ^ 2)
         - ∑ j : Fin q, a j * ((ε (t - 1 - (j : ℕ)) ω ^ 2 - 1)
             * σvol (t - 1 - (j : ℕ)) ω ^ 2) := by
-  sorry
+  filter_upwards [h.recX t, h.recVol t,
+    ae_all_iff.2 fun j : Fin q => h.recX (t - 1 - (j : ℕ))] with ω h1 h2 h3
+  -- `X_t² = σ_t² + e_t` with `e_t = (ε_t² − 1)σ_t²`
+  have hL : X t ω ^ 2 = σvol t ω ^ 2 + (ε t ω ^ 2 - 1) * σvol t ω ^ 2 := by
+    rw [h1, mul_pow]; ring
+  -- and `σ²_{t−1−j} = X²_{t−1−j} − e_{t−1−j}`
+  have hsig : ∀ j : Fin q, a j * σvol (t - 1 - (j : ℕ)) ω ^ 2
+      = a j * X (t - 1 - (j : ℕ)) ω ^ 2
+        - a j * ((ε (t - 1 - (j : ℕ)) ω ^ 2 - 1) * σvol (t - 1 - (j : ℕ)) ω ^ 2) := by
+    intro j
+    rw [h3 j, mul_pow]
+    ring
+  rw [hL, h2, sum_range_pad_two b a fun i : ℕ => X (t - 1 - (i : ℕ)) ω ^ 2,
+    Finset.sum_congr rfl fun j (_ : j ∈ Finset.univ) => hsig j, Finset.sum_sub_distrib]
+  ring
 
 /-- **DEBT (Bollerslev 1986; FY Theorem 4.4, necessity half)**: a strictly stationary
 GARCH solution with finite variance and `c₀ > 0` forces `Σ b + Σ a < 1`. -/
