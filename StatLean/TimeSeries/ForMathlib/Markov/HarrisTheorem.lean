@@ -186,9 +186,9 @@ private noncomputable def cMix (a b : ℕ) : Measure ℕ :=
 
 private instance (a b : ℕ) : IsProbabilityMeasure (cMix a b) := by
   refine ⟨?_⟩
-  rw [cMix]
-  simp
-  rw [ENNReal.inv_two_add_inv_two]
+  rw [cMix, Measure.add_apply, Measure.smul_apply, Measure.smul_apply, smul_eq_mul, smul_eq_mul]
+  simp only [measure_univ, mul_one]
+  exact ENNReal.inv_two_add_inv_two
 
 private theorem cMix_apply (a b : ℕ) (s : Set ℕ) :
     cMix a b s = (2 : ℝ≥0∞)⁻¹ * Measure.dirac a s + (2 : ℝ≥0∞)⁻¹ * Measure.dirac b s := by
@@ -273,7 +273,7 @@ private theorem cNoContraction :
   have hcancel : (1 : ℝ≥0∞) ≤ ENNReal.ofReal ᾱ := by
     have h2 : (1 : ℝ≥0∞) * (2:ℝ≥0∞)⁻¹ ≤ ENNReal.ofReal ᾱ * (2:ℝ≥0∞)⁻¹ := by
       rw [one_mul]; exact key
-    exact (ENNReal.mul_le_mul_right (by simp) (by simp)).1 h2
+    exact (ENNReal.mul_le_mul_iff_left (by simp) (by simp)).1 h2
   have : ENNReal.ofReal ᾱ < 1 := ENNReal.ofReal_lt_one.2 hα1
   exact absurd hcancel (not_le.2 this)
 
