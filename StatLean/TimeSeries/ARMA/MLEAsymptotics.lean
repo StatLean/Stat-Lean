@@ -34,7 +34,7 @@ Theorem 3.2, eq. (3.14), Prop 3.1 (pp. 96–99); E. J. Hannan, J. Appl. Probab. 
 1973`.)
 -/
 
-open MeasureTheory ProbabilityTheory Filter
+open MeasureTheory ProbabilityTheory Filter Matrix
 open scoped ProbabilityTheory Topology
 
 namespace StatLean.TimeSeries

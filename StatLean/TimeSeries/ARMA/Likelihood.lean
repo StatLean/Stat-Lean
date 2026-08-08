@@ -36,7 +36,7 @@ eqs. (3.9)–(3.13) (pp. 93–95). (`FY §3.3.1`.)
 Root-flipping identifiability is Brockwell & Davis (1991) Prop 4.4.2.
 -/
 
-open MeasureTheory ProbabilityTheory Filter Polynomial
+open MeasureTheory ProbabilityTheory Filter Polynomial Matrix
 open scoped ProbabilityTheory Topology Real
 
 namespace StatLean.TimeSeries
