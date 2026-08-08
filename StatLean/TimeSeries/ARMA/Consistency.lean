@@ -415,7 +415,14 @@ parameters agree. -/
 theorem armaContrastVar_eq_one_iff {p q : ℕ} {b0 b : Fin p → ℝ} {a0 a : Fin q → ℝ}
     (hB0 : ARMAInvertibleParams b0 a0) (hB : ARMAInvertibleParams b a)
     -- USER-INPUT: coprime minimal true orders; Hannan 1973
-    (hcop : IsCoprime (arPoly b0) (maPoly a0)) :
+    (hcop : IsCoprime (arPoly b0) (maPoly a0))
+    -- USER-INPUT: minimality of the *working* model too. Added 2026-08-09 after a
+    -- Lean witness (`armaContrastVar_eq_one_not_identifiable`: `p = q = 1`,
+    -- `b₀ = a₀ = 0`, `b = 1/2`, `a = −1/2`) showed that constraining only the true
+    -- pair leaves the contrast blind to common factors in the working pair — the
+    -- criterion sees the transfer function alone. Hannan 1973 §2 searches over
+    -- minimal models.
+    (hcopW : IsCoprime (arPoly b) (maPoly a)) :
     armaContrastVar b0 a0 b a = 1 ↔ b = b0 ∧ a = a0 := by
   constructor
   · -- **FALSE AS FROZEN.** The hypotheses constrain only the *true* pair to be coprime,
@@ -1037,6 +1044,11 @@ theorem mle_consistent [IsProbabilityMeasure μ] {p q : ℕ}
     {K : Set ((Fin p → ℝ) × (Fin q → ℝ))}
     -- USER-INPUT: compact identifiable search region containing the truth; Hannan §2
     (hK : IsCompact K) (hKB : ∀ ba ∈ K, ARMAInvertibleParams ba.1 ba.2)
+    -- USER-INPUT: the search region consists of MINIMAL models. Added 2026-08-09 after
+    -- the Lean witness `mle_consistent_not_identifiable` (`K = {(0,0), (1/2, −1/2)}`,
+    -- on which the profiled criterion is constant, so a constant estimator sequence
+    -- satisfies `hargmin` while staying a fixed distance from θ₀). Hannan 1973 §2.
+    (hcopK : ∀ ba ∈ K, IsCoprime (arPoly ba.1) (maPoly ba.2))
     (hK0 : (b0, a0) ∈ K)
     (θ : (T : ℕ) → Ω → (Fin p → ℝ) × (Fin q → ℝ))
     (hθmeas : ∀ T, Measurable (θ T))

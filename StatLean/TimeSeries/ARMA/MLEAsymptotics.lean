@@ -61,6 +61,9 @@ theorem hannan_mle_clt [IsProbabilityMeasure μ] {p q : ℕ}
     {K : Set ((Fin p → ℝ) × (Fin q → ℝ))}
     -- USER-INPUT: compact identifiable search region with θ₀ interior; Hannan §2
     (hK : IsCompact K) (hKB : ∀ ba ∈ K, ARMAInvertibleParams ba.1 ba.2)
+    -- USER-INPUT: the search region consists of minimal models (see `mle_consistent`'s
+    -- docstring for the Lean witness showing this cannot be dropped); Hannan 1973 §2
+    (hcopK : ∀ ba ∈ K, IsCoprime (arPoly ba.1) (maPoly ba.2))
     (hK0 : (b0, a0) ∈ interior K)
     (θ : (T : ℕ) → Ω → (Fin p → ℝ) × (Fin q → ℝ))
     (hθmeas : ∀ T, Measurable (θ T))
@@ -96,6 +99,9 @@ theorem hannan_sigma2_consistent [IsProbabilityMeasure μ] {p q : ℕ}
     (hmeas : ∀ t, Measurable (X t))
     {K : Set ((Fin p → ℝ) × (Fin q → ℝ))}
     (hK : IsCompact K) (hKB : ∀ ba ∈ K, ARMAInvertibleParams ba.1 ba.2)
+    -- USER-INPUT: the search region consists of minimal models (see `mle_consistent`'s
+    -- docstring for the Lean witness showing this cannot be dropped); Hannan 1973 §2
+    (hcopK : ∀ ba ∈ K, IsCoprime (arPoly ba.1) (maPoly ba.2))
     (hK0 : (b0, a0) ∈ interior K)
     (θ : (T : ℕ) → Ω → (Fin p → ℝ) × (Fin q → ℝ)) (hθmeas : ∀ T, Measurable (θ T))
     {δT : ℕ → ℝ} (hδT0 : ∀ T, 0 ≤ δT T)
