@@ -49,7 +49,39 @@ theorem IsARCH.iid_of_b_eq_zero [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     {X ε : ℤ → Ω → ℝ} (h : IsARCH c0 (fun _ : Fin p => (0 : ℝ)) X ε μ) :
     (∀ t, X t =ᵐ[μ] fun ω => Real.sqrt c0 * ε t ω) ∧
       IsIIDNoise X c0 μ := by
-  sorry
+  -- With `b = 0` the whole `Finset.sum` in the radicand vanishes, so the volatility is
+  -- the *constant* `√c₀` and the recurrence reads `X_t = √c₀ · ε_t`.
+  have hvol : ∀ (t : ℤ) (ω : Ω),
+      archVol c0 (fun _ : Fin p => (0 : ℝ)) X t ω = Real.sqrt c0 := by
+    intro t ω
+    simp [archVol]
+  have hX : ∀ t, X t =ᵐ[μ] fun ω => Real.sqrt c0 * ε t ω := by
+    intro t
+    filter_upwards [h.recurrence t] with ω hω
+    rw [hω, hvol]
+  refine ⟨hX, ?_⟩
+  -- The scaling map `x ↦ √c₀ · x`, along which every `IsIIDNoise` field transports.
+  have hsm : Measurable fun x : ℝ => Real.sqrt c0 * x := measurable_const_mul _
+  have hsq : Real.sqrt c0 ^ 2 = c0 := Real.sq_sqrt h.c0_nonneg
+  refine ⟨h.measurableX, ?_, ?_, ?_, ?_, ?_⟩
+  · -- Independence: `iIndepFun` transports along the scaling and then along `=ᵐ`.
+    have hind : iIndepFun (fun (t : ℤ) (ω : Ω) => Real.sqrt c0 * ε t ω) μ := by
+      have := h.iid.iIndep.comp (fun _ : ℤ => fun x : ℝ => Real.sqrt c0 * x) fun _ => hsm
+      simpa [Function.comp_def] using this
+    exact (iIndepFun_congr fun t => (hX t).symm).mp hind
+  · -- Identical distribution, through the scaled noise.
+    intro s t
+    have hs : IdentDistrib (X s) (fun ω => Real.sqrt c0 * ε s ω) μ μ :=
+      IdentDistrib.of_ae_eq (h.measurableX s).aemeasurable (hX s)
+    have ht : IdentDistrib (X t) (fun ω => Real.sqrt c0 * ε t ω) μ μ :=
+      IdentDistrib.of_ae_eq (h.measurableX t).aemeasurable (hX t)
+    exact (hs.trans ((h.iid.identDistrib s t).const_mul _)).trans ht.symm
+  · exact (h.iid.memLp.const_mul (Real.sqrt c0)).ae_eq (hX 0).symm
+  · rw [integral_congr_ae (hX 0)]
+    have : ∫ ω, Real.sqrt c0 * ε 0 ω ∂μ = Real.sqrt c0 * ∫ ω, ε 0 ω ∂μ :=
+      integral_const_mul _ _
+    rw [this, h.iid.integral_eq_zero, mul_zero]
+  · rw [variance_congr (hX 0), variance_const_mul, h.iid.variance_eq, mul_one, hsq]
 
 /-- The ARCH(p) **conditional Gaussian log-likelihood** of the data at parameters
 `(c₀, b)` (the `§4.2.6` likelihood: `−½ Σ_t (log σ_t² + X_t²/σ_t²)` up to constants),
