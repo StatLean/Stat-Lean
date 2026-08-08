@@ -41,6 +41,14 @@ import StatLean.TimeSeries.ARMA.ScoreAnalysis
 import StatLean.TimeSeries.ARMA.Consistency
 import StatLean.TimeSeries.ARMA.MLEAsymptotics
 import StatLean.TimeSeries.ARMA.Diagnostics
+import StatLean.TimeSeries.Threshold.TAR
+import StatLean.TimeSeries.Threshold.Estimation
+import StatLean.TimeSeries.Threshold.LinearityTest
+import StatLean.TimeSeries.GARCH.ARCHBasic
+import StatLean.TimeSeries.GARCH.GARCHBasic
+import StatLean.TimeSeries.GARCH.Estimation
+import StatLean.TimeSeries.GARCH.ARCHTest
+import StatLean.TimeSeries.GARCH.StochasticVolatility
 
 /-!
 # StatLean.TimeSeries — area umbrella
