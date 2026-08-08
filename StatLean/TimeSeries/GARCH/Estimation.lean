@@ -109,7 +109,18 @@ theorem garchTruncVol_nonneg {p q : ℕ} {c0 : ℝ} {b : Fin p → ℝ} {a : Fin
     {v0 : ℝ} (hc0 : 0 ≤ c0) (hb : ∀ i, 0 ≤ b i) (ha : ∀ j, 0 ≤ a j) (hv0 : 0 ≤ v0)
     {T : ℕ} (x : Fin T → ℝ) (n : ℕ) :
     0 ≤ garchTruncVol c0 b a v0 x n := by
-  sorry
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    match n with
+    | 0 => simpa [garchTruncVol] using hv0
+    | (m + 1) =>
+      rw [garchTruncVol]
+      have h1 : 0 ≤ ∑ i : Fin p,
+          b i * (if h : m - (i : ℕ) < T then x ⟨m - (i : ℕ), h⟩ else 0) ^ 2 :=
+        Finset.sum_nonneg fun i _ => mul_nonneg (hb i) (sq_nonneg _)
+      have h2 : 0 ≤ ∑ j : Fin q, a j * garchTruncVol c0 b a v0 x (m - (j : ℕ)) :=
+        Finset.sum_nonneg fun j _ => mul_nonneg (ha j) (ih _ (by omega))
+      linarith
 
 /-- **The truncation is asymptotically negligible** (the fact that makes (4.36) usable):
 under `Σ a_j < 1` the effect of the presample value decays geometrically, so two
