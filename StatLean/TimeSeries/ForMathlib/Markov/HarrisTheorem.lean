@@ -112,7 +112,7 @@ theorem harris_invariant_unique {κ : Kernel S S} [IsMarkovKernel κ] {V : S →
     (hπ : Kernel.Invariant κ π) (hπ' : Kernel.Invariant κ π')
     -- LEAN-ONLY: both invariant laws integrate the Lyapunov function (automatic for
     -- the constructed one; needed to compare in the weighted distance)
-    (hV : (∫ x, V x ∂π) < ⊤.toReal ∧ (∫ x, V x ∂π') < ⊤.toReal) :
+    (hV : Integrable V π) (hV' : Integrable V π') :
     π = π' := by
   sorry
 
