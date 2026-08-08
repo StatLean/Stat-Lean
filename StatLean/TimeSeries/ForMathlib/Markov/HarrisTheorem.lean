@@ -322,6 +322,59 @@ structure HasMinorization (κ : Kernel S S) (V : S → ℝ) (R α : ℝ) (ρ : M
   minorize : ∀ x, V x ≤ R → ∀ A : Set S, MeasurableSet A →
     ENNReal.ofReal α * ρ A ≤ κ x A
 
+/-- **Iterating the drift**: `n` steps contract by `γⁿ` with the geometric-series constant
+`K/(1−γ)`. -/
+theorem HasLyapunovDrift.lintegral_pow_le {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ}
+    {γ K : ℝ} (h : HasLyapunovDrift κ V γ K) (n : ℕ) (x : S) :
+    ∫⁻ y, ENNReal.ofReal (V y) ∂((κ ^ n) x)
+      ≤ ENNReal.ofReal (γ ^ n * V x + K / (1 - γ)) := by
+  obtain ⟨hγ0, hγ1⟩ := h.gamma_mem
+  have h1γ : (0 : ℝ) < 1 - γ := by linarith
+  have hKq : 0 ≤ K / (1 - γ) := div_nonneg h.K_nonneg h1γ.le
+  have hVm : Measurable fun y : S => ENNReal.ofReal (V y) :=
+    ENNReal.measurable_ofReal.comp h.V_measurable
+  induction n with
+  | zero =>
+      have h0 : (κ ^ 0) x = Measure.dirac x := by rw [pow_zero]; rfl
+      rw [h0, lintegral_dirac' _ hVm, pow_zero, one_mul]
+      exact ENNReal.ofReal_le_ofReal (by linarith)
+  | succ n ih =>
+      haveI := markov_pow κ n
+      have h0 : (κ ^ (n + 1)) x = ((κ ^ n) x).bind κ := by
+        rw [pow_succ']; exact Kernel.comp_apply κ (κ ^ n) x
+      rw [h0, Measure.lintegral_bind (Kernel.aemeasurable _) hVm.aemeasurable]
+      have hpt : ∀ z : S, (∫⁻ y, ENNReal.ofReal (V y) ∂(κ z))
+          ≤ ENNReal.ofReal γ * ENNReal.ofReal (V z) + ENNReal.ofReal K := by
+        intro z
+        refine (h.drift z).trans (le_of_eq ?_)
+        rw [ENNReal.ofReal_add (by nlinarith [h.V_nonneg z]) h.K_nonneg,
+          ENNReal.ofReal_mul hγ0.le]
+      calc ∫⁻ z, (∫⁻ y, ENNReal.ofReal (V y) ∂(κ z)) ∂((κ ^ n) x)
+          ≤ ∫⁻ z, (ENNReal.ofReal γ * ENNReal.ofReal (V z) + ENNReal.ofReal K) ∂((κ ^ n) x) :=
+            lintegral_mono hpt
+        _ = ENNReal.ofReal γ * (∫⁻ z, ENNReal.ofReal (V z) ∂((κ ^ n) x)) + ENNReal.ofReal K := by
+            rw [lintegral_add_right _ measurable_const, lintegral_const, measure_univ, mul_one,
+              lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+        _ ≤ ENNReal.ofReal γ * ENNReal.ofReal (γ ^ n * V x + K / (1 - γ))
+              + ENNReal.ofReal K := by gcongr
+        _ = ENNReal.ofReal (γ ^ (n + 1) * V x + K / (1 - γ)) := by
+            have hVx : (0 : ℝ) ≤ γ ^ n * V x := mul_nonneg (pow_nonneg hγ0.le n) (h.V_nonneg x)
+            have hnn1 : (0 : ℝ) ≤ γ * (γ ^ n * V x + K / (1 - γ)) := by nlinarith
+            have hne : (1 : ℝ) - γ ≠ 0 := ne_of_gt h1γ
+            rw [← ENNReal.ofReal_mul hγ0.le, ← ENNReal.ofReal_add hnn1 h.K_nonneg]
+            congr 1
+            field_simp
+            ring
+
+/-- The `n`-step kernel inherits a Lyapunov drift, with contraction `γⁿ`. -/
+theorem HasLyapunovDrift.pow {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ} {γ K : ℝ}
+    (h : HasLyapunovDrift κ V γ K) {n : ℕ} (hn : 0 < n) :
+    HasLyapunovDrift (κ ^ n) V (γ ^ n) (K / (1 - γ)) := by
+  obtain ⟨hγ0, hγ1⟩ := h.gamma_mem
+  exact ⟨h.V_nonneg, h.V_measurable, ⟨pow_pos hγ0 n, pow_lt_one₀ hγ0.le hγ1 hn.ne'⟩,
+    div_nonneg h.K_nonneg (by linarith), fun x => h.lintegral_pow_le n x⟩
+
+
 -- ## REFUTATION of `harris_contraction` against the *old* `weightedTV` (historical record)
 --
 -- Everything from here to the end of the `cNoContraction` block is **demoted to a comment**:
@@ -1605,5 +1658,557 @@ theorem IsGeometricallyErgodic.of_pow {κ : Kernel S S} [IsMarkovKernel κ]
   calc (ρ ^ ((p : ℝ)⁻¹))⁻¹ ^ n * tvDist ((κ ^ n) x) π
       ≤ (ρ⁻¹ * ρ⁻¹ ^ q) * tvDist (((κ ^ p) ^ q) x) π := mul_le_mul' hrate hdist
     _ = ρ⁻¹ * (ρ⁻¹ ^ q * tvDist (((κ ^ p) ^ q) x) π) := by ring
+
+section NLAR
+
+variable {p : ℕ}
+
+/-- The state update of the vectorized autoregression, parametrized by the **new value**
+`u` rather than by the noise: `shiftPush x u = (u, x₀, …, x_{p−1})`. -/
+def shiftPush (x : Fin (p + 1) → ℝ) (u : ℝ) : Fin (p + 1) → ℝ :=
+  Fin.cons u (fun i => x i.castSucc)
+
+theorem measurable_shiftPush :
+    Measurable fun q : (Fin (p + 1) → ℝ) × ℝ => shiftPush q.1 q.2 := by
+  rw [measurable_pi_iff]
+  refine Fin.cases ?_ ?_
+  · simpa [shiftPush] using measurable_snd
+  · exact fun i => by simpa [shiftPush] using (measurable_pi_apply i.castSucc).comp measurable_fst
+
+theorem nlARKernel_apply_eq {f : (Fin (p + 1) → ℝ) → ℝ} (hf : Measurable f) (ν : Measure ℝ)
+    [SFinite ν] (x : Fin (p + 1) → ℝ) :
+    nlARKernel f ν x =
+      Measure.map (fun e : ℝ => shiftPush x (f x + e)) ν := by
+  have hmeas : Measurable fun xe : (Fin (p + 1) → ℝ) × ℝ =>
+      (Fin.cons (f xe.1 + xe.2) (fun i => xe.1 i.castSucc) : Fin (p + 1) → ℝ) := by
+    rw [measurable_pi_iff]
+    refine Fin.cases ?_ ?_
+    · simpa using (hf.comp measurable_fst).add measurable_snd
+    · exact fun i => by simpa using (measurable_pi_apply i.castSucc).comp measurable_fst
+  rw [nlARKernel, Kernel.map_apply _ hmeas, Kernel.prod_apply]
+  simp only [Kernel.id_apply, Kernel.const_apply]
+  rw [Measure.dirac_prod, Measure.map_map hmeas measurable_prodMk_left]
+  rfl
+
+/-- **One step, in value coordinates.** Substituting `u = f x + ε` turns the noise integral
+into a Lebesgue integral over the *new value* `u`, with the shifted density `g (u − f x)`. -/
+theorem nlAR_lintegral {f : (Fin (p + 1) → ℝ) → ℝ} (hf : Measurable f) {g : ℝ → ℝ≥0∞}
+    (hg : Measurable g) {ν : Measure ℝ} [SFinite ν] (hν : ν = MeasureTheory.volume.withDensity g)
+    (x : Fin (p + 1) → ℝ) {h : (Fin (p + 1) → ℝ) → ℝ≥0∞} (hh : Measurable h) :
+    ∫⁻ y, h y ∂(nlARKernel f ν x) = ∫⁻ u, g (u - f x) * h (shiftPush x u) := by
+  have hsp : Measurable fun u : ℝ => shiftPush x u :=
+    measurable_shiftPush.comp (measurable_const.prodMk measurable_id)
+  have hcomp : Measurable fun e : ℝ => shiftPush x (f x + e) :=
+    hsp.comp (measurable_const.add measurable_id)
+  rw [nlARKernel_apply_eq hf ν x, lintegral_map hh hcomp]
+  subst hν
+  have hhc : Measurable fun e : ℝ => h (shiftPush x (f x + e)) := hh.comp hcomp
+  rw [lintegral_withDensity_eq_lintegral_mul _ hg hhc]
+  have key := lintegral_add_right_eq_self
+    (μ := (volume : Measure ℝ)) (fun u => g (u - f x) * h (shiftPush x u)) (f x)
+  simp only [add_sub_cancel_right] at key
+  rw [← key]
+  refine lintegral_congr fun e => ?_
+  simp [add_comm]
+
+/-! ### The Lyapunov function -/
+
+/-- The geometrically weighted sup-norm `V(x) = ⨆ᵢ θⁱ |xᵢ|`. -/
+noncomputable def lyapV (θ : ℝ) (x : Fin (p + 1) → ℝ) : ℝ :=
+  ⨆ i : Fin (p + 1), θ ^ (i : ℕ) * |x i|
+
+theorem bddAbove_lyap (θ : ℝ) (x : Fin (p + 1) → ℝ) :
+    BddAbove (Set.range fun i : Fin (p + 1) => θ ^ (i : ℕ) * |x i|) :=
+  (Set.finite_range _).bddAbove
+
+theorem le_lyapV (θ : ℝ) (x : Fin (p + 1) → ℝ) (i : Fin (p + 1)) :
+    θ ^ (i : ℕ) * |x i| ≤ lyapV θ x :=
+  le_ciSup (f := fun i : Fin (p + 1) => θ ^ (i : ℕ) * |x i|) (bddAbove_lyap θ x) i
+
+theorem lyapV_le {θ : ℝ} {x : Fin (p + 1) → ℝ} {b : ℝ}
+    (h : ∀ i : Fin (p + 1), θ ^ (i : ℕ) * |x i| ≤ b) : lyapV θ x ≤ b :=
+  ciSup_le h
+
+theorem lyapV_nonneg (θ : ℝ) (x : Fin (p + 1) → ℝ) : 0 ≤ lyapV θ x := by
+  refine le_trans ?_ (le_lyapV θ x 0)
+  simp
+
+theorem measurable_lyapV (θ : ℝ) : Measurable (lyapV (p := p) θ) := by
+  unfold lyapV
+  refine Measurable.iSup fun i : Fin (p + 1) => measurable_const.mul ?_
+  fun_prop
+
+theorem bddAbove_abs (x : Fin (p + 1) → ℝ) :
+    BddAbove (Set.range fun i : Fin (p + 1) => |x i|) := (Set.finite_range _).bddAbove
+
+theorem ciSup_abs_nonneg (x : Fin (p + 1) → ℝ) : 0 ≤ ⨆ i, |x i| :=
+  le_trans (abs_nonneg (x 0)) (le_ciSup (bddAbove_abs x) 0)
+
+/-- The sup-norm is controlled by the weighted one: `θᵖ · ‖x‖_∞ ≤ V(x)`. -/
+theorem pow_mul_ciSup_abs_le {θ : ℝ} (hθ0 : 0 < θ) (hθ1 : θ ≤ 1) (x : Fin (p + 1) → ℝ) :
+    θ ^ p * (⨆ i, |x i|) ≤ lyapV θ x := by
+  have hpow : (0 : ℝ) < θ ^ p := pow_pos hθ0 p
+  rw [← le_div_iff₀' hpow]
+  refine ciSup_le fun i : Fin (p + 1) => ?_
+  rw [le_div_iff₀' hpow]
+  refine le_trans ?_ (le_lyapV θ x i)
+  have hle : θ ^ p ≤ θ ^ (i : ℕ) :=
+    pow_le_pow_of_le_one hθ0.le hθ1 (Nat.lt_succ_iff.mp i.isLt)
+  exact mul_le_mul_of_nonneg_right hle (abs_nonneg _)
+
+/-- One shift-push step of the Lyapunov function. -/
+theorem lyapV_shiftPush_le {θ : ℝ} (hθ0 : 0 ≤ θ) (x : Fin (p + 1) → ℝ) (u : ℝ) :
+    lyapV θ (shiftPush x u) ≤ max |u| (θ * lyapV θ x) := by
+  refine lyapV_le fun j => ?_
+  refine Fin.cases ?_ ?_ j
+  · simpa [shiftPush] using le_max_left _ _
+  · intro i
+    refine le_trans ?_ (le_max_right |u| (θ * lyapV θ x))
+    have h1 : θ ^ ((i.succ : Fin (p + 1)) : ℕ) * |shiftPush x u i.succ|
+        = θ * (θ ^ (i : ℕ) * |x i.castSucc|) := by
+      simp only [shiftPush, Fin.cons_succ, Fin.val_succ, pow_succ]
+      ring
+    rw [h1]
+    exact mul_le_mul_of_nonneg_left (le_lyapV θ x i.castSucc) hθ0
+
+/-- Pointwise one-step bound on the Lyapunov function, with the contraction supplied by
+`lam ≤ θ^{p+1}`. -/
+theorem lyapV_step_le {θ lam c : ℝ} (hθ0 : 0 < θ) (hθ1 : θ ≤ 1)
+    (hlam : lam ≤ θ ^ (p + 1)) (hc : 0 ≤ c)
+    {f : (Fin (p + 1) → ℝ) → ℝ} (hbound : ∀ x, |f x| ≤ lam * (⨆ i, |x i|) + c)
+    (x : Fin (p + 1) → ℝ) (e : ℝ) :
+    lyapV θ (shiftPush x (f x + e)) ≤ θ * lyapV θ x + c + |e| := by
+  have hS := ciSup_abs_nonneg x
+  have hkey : lam * (⨆ i, |x i|) ≤ θ * lyapV θ x := by
+    have h1 : lam * (⨆ i, |x i|) ≤ θ ^ (p + 1) * (⨆ i, |x i|) :=
+      mul_le_mul_of_nonneg_right hlam hS
+    have h2 : θ ^ (p + 1) * (⨆ i, |x i|) = θ * (θ ^ p * (⨆ i, |x i|)) := by ring
+    have h3 : θ * (θ ^ p * (⨆ i, |x i|)) ≤ θ * lyapV θ x :=
+      mul_le_mul_of_nonneg_left (pow_mul_ciSup_abs_le hθ0 hθ1 x) hθ0.le
+    linarith [h1, h2 ▸ h1]
+  have habs : |f x + e| ≤ θ * lyapV θ x + c + |e| := by
+    have := hbound x
+    have h4 : |f x + e| ≤ |f x| + |e| := abs_add_le _ _
+    linarith
+  refine (lyapV_shiftPush_le hθ0.le x _).trans (max_le habs ?_)
+  have := lyapV_nonneg θ x
+  linarith [abs_nonneg e]
+
+/-- **Lyapunov drift for the nonlinear-AR kernel** (one step). -/
+theorem hasLyapunovDrift_nlAR {θ lam c : ℝ} (hθ0 : 0 < θ) (hθ1 : θ < 1)
+    (hlam : lam ≤ θ ^ (p + 1)) (hc : 0 ≤ c)
+    {f : (Fin (p + 1) → ℝ) → ℝ} (hf : Measurable f)
+    (hbound : ∀ x, |f x| ≤ lam * (⨆ i, |x i|) + c)
+    {ν : Measure ℝ} [IsProbabilityMeasure ν] (hint : Integrable (fun e : ℝ => e) ν) :
+    HasLyapunovDrift (nlARKernel f ν) (lyapV θ) θ (c + ∫ e, |e| ∂ν) := by
+  have hE : 0 ≤ ∫ e, |e| ∂ν := integral_nonneg fun e => abs_nonneg e
+  have hEeq : ∫⁻ e, ENNReal.ofReal |e| ∂ν = ENNReal.ofReal (∫ e, |e| ∂ν) :=
+    (ofReal_integral_eq_lintegral_ofReal hint.abs
+      (Filter.Eventually.of_forall fun e => abs_nonneg e)).symm
+  refine ⟨lyapV_nonneg θ, measurable_lyapV θ, ⟨hθ0, hθ1⟩, by linarith, fun x => ?_⟩
+  have hnn : 0 ≤ θ * lyapV θ x + c := by
+    have := lyapV_nonneg θ x; nlinarith
+  have hsp : Measurable fun u : ℝ => shiftPush x u :=
+    measurable_shiftPush.comp (measurable_const.prodMk measurable_id)
+  have hcomp : Measurable fun e : ℝ => shiftPush x (f x + e) :=
+    hsp.comp (measurable_const.add measurable_id)
+  have hVm : Measurable fun y : Fin (p + 1) → ℝ => ENNReal.ofReal (lyapV θ y) :=
+    ENNReal.measurable_ofReal.comp (measurable_lyapV θ)
+  rw [nlARKernel_apply_eq hf ν x, lintegral_map hVm hcomp]
+  have hmono : ∀ e : ℝ, ENNReal.ofReal (lyapV θ (shiftPush x (f x + e)))
+      ≤ ENNReal.ofReal (θ * lyapV θ x + c) + ENNReal.ofReal |e| := by
+    intro e
+    rw [← ENNReal.ofReal_add (hnn) (abs_nonneg e)]
+    exact ENNReal.ofReal_le_ofReal (by linarith [lyapV_step_le hθ0 hθ1.le hlam hc hbound x e])
+  calc ∫⁻ e, ENNReal.ofReal (lyapV θ (shiftPush x (f x + e))) ∂ν
+      ≤ ∫⁻ e, (ENNReal.ofReal (θ * lyapV θ x + c) + ENNReal.ofReal |e|) ∂ν :=
+        lintegral_mono hmono
+    _ = ENNReal.ofReal (θ * lyapV θ x + c) + ENNReal.ofReal (∫ e, |e| ∂ν) := by
+        rw [lintegral_add_left measurable_const, lintegral_const, measure_univ, mul_one, hEeq]
+    _ = ENNReal.ofReal (θ * lyapV θ x + (c + ∫ e, |e| ∂ν)) := by
+        rw [← ENNReal.ofReal_add (hnn) hE]; ring_nf
+
+/-! ### The `(p+1)`-step map in value coordinates -/
+
+/-- The state reached from `x` after `k` steps whose successive **new values** are
+`u 0, …, u (k−1)`. -/
+def iterPush : (k : ℕ) → (Fin (p + 1) → ℝ) → (Fin k → ℝ) → (Fin (p + 1) → ℝ)
+  | 0, x, _ => x
+  | k + 1, x, u => iterPush k (shiftPush x (u 0)) (Fin.tail u)
+
+theorem iterPush_cons (k : ℕ) (x : Fin (p + 1) → ℝ) (a : ℝ) (v : Fin k → ℝ) :
+    iterPush (k + 1) x (Fin.cons a v) = iterPush k (shiftPush x a) v := by
+  simp [iterPush]
+
+theorem measurable_iterPush (k : ℕ) :
+    Measurable fun q : (Fin (p + 1) → ℝ) × (Fin k → ℝ) => iterPush k q.1 q.2 := by
+  induction k with
+  | zero => exact measurable_fst
+  | succ k ih =>
+      have hstep : Measurable fun q : (Fin (p + 1) → ℝ) × (Fin (k + 1) → ℝ) =>
+          ((shiftPush q.1 (q.2 0) : Fin (p + 1) → ℝ), (Fin.tail q.2 : Fin k → ℝ)) :=
+        (measurable_shiftPush.comp
+            (measurable_fst.prodMk ((measurable_pi_apply 0).comp measurable_snd))).prodMk
+          (measurable_pi_iff.2 fun i => (measurable_pi_apply i.succ).comp measurable_snd)
+      exact ih.comp hstep
+
+/-- **The state forgets its initial value after `p+1` steps.** After `k` steps the state
+depends on `x` only through the coordinates `i` with `i + k ≤ p`. -/
+theorem iterPush_congr : ∀ (k : ℕ) (x x' : Fin (p + 1) → ℝ) (u : Fin k → ℝ),
+    (∀ i : Fin (p + 1), (i : ℕ) + k < p + 1 → x i = x' i) → iterPush k x u = iterPush k x' u := by
+  intro k
+  induction k with
+  | zero =>
+      intro x x' u h
+      have : x = x' := funext fun i => h i (by simpa using i.isLt)
+      simp [iterPush, this]
+  | succ k ih =>
+      intro x x' u h
+      refine ih _ _ _ fun i => ?_
+      refine Fin.cases ?_ ?_ i
+      · intro _; simp [shiftPush]
+      · intro j hj
+        simp only [shiftPush, Fin.cons_succ]
+        refine h j.castSucc ?_
+        simp only [Fin.val_succ] at hj
+        simp only [Fin.val_castSucc]
+        omega
+
+/-- After `p+1` steps the state is a function of the new values alone. -/
+theorem iterPush_full (x x' : Fin (p + 1) → ℝ) (u : Fin (p + 1) → ℝ) :
+    iterPush (p + 1) x u = iterPush (p + 1) x' u :=
+  iterPush_congr (p + 1) x x' u fun i hi => absurd hi (by omega)
+
+/-! ### The window measure and its one-step recursion -/
+
+theorem measurePreserving_consBox (J : Set ℝ) (k : ℕ) :
+    MeasurePreserving (fun z : ℝ × (Fin k → ℝ) => (Fin.cons z.1 z.2 : Fin (k + 1) → ℝ))
+      ((volume.restrict J).prod (Measure.pi fun _ : Fin k => volume.restrict J))
+      (Measure.pi fun _ : Fin (k + 1) => volume.restrict J) := by
+  have h := (measurePreserving_piFinSuccAbove
+    (fun _ : Fin (k + 1) => (volume.restrict J : Measure ℝ)) 0).symm
+  have hfun : (fun z : ℝ × (Fin k → ℝ) => (Fin.cons z.1 z.2 : Fin (k + 1) → ℝ))
+      = ⇑(MeasurableEquiv.piFinSuccAbove (fun _ : Fin (k + 1) => ℝ) 0).symm := by
+    ext z i
+    simp [MeasurableEquiv.piFinSuccAbove_symm_apply]
+  rw [hfun]
+  exact h
+
+theorem measurable_iterPush' (k : ℕ) (x : Fin (p + 1) → ℝ) :
+    Measurable (iterPush k x) :=
+  (measurable_iterPush k).comp (measurable_const.prodMk measurable_id)
+
+/-- **The window measure recursion**: pushing the `(k+1)`-fold window forward through the
+chain map is the `J`-average of the `k`-fold pushforwards from the once-updated state. -/
+theorem map_iterPush_succ (J : Set ℝ) (k : ℕ) (x : Fin (p + 1) → ℝ)
+    {A : Set (Fin (p + 1) → ℝ)} (hA : MeasurableSet A) :
+    (Measure.map (iterPush (k + 1) x) (Measure.pi fun _ : Fin (k + 1) => volume.restrict J)) A
+      = ∫⁻ u in J, (Measure.map (iterPush k (shiftPush x u))
+          (Measure.pi fun _ : Fin k => volume.restrict J)) A := by
+  have hcons : Measurable fun z : ℝ × (Fin k → ℝ) => (Fin.cons z.1 z.2 : Fin (k + 1) → ℝ) := by
+    rw [measurable_pi_iff]
+    refine Fin.cases ?_ ?_
+    · simpa using measurable_fst
+    · exact fun i => by simpa using (measurable_pi_apply i).comp measurable_snd
+  have hmk : Measurable (iterPush (k + 1) x) := measurable_iterPush' _ x
+  rw [← (measurePreserving_consBox J k).map_eq, Measure.map_map hmk hcons,
+    Measure.map_apply (hmk.comp hcons) hA, Measure.prod_apply ((hmk.comp hcons) hA)]
+  refine lintegral_congr fun u => ?_
+  rw [Measure.map_apply (measurable_iterPush' k _) hA]
+  congr 1
+
+/-! ### The `k`-step lower bound -/
+
+/-- **The window minorization, by induction on the number of steps.** As long as the state
+stays inside the box `{‖·‖_∞ ≤ Rb}` and the innovation density is at least `δ` on the
+relevant window, the `k`-step law dominates `δᵏ` times the pushforward of the `k`-fold
+window measure. -/
+theorem pow_ge_window {f : (Fin (p + 1) → ℝ) → ℝ} (hf : Measurable f)
+    {g : ℝ → ℝ≥0∞} (hg : Measurable g) {ν : Measure ℝ} [IsProbabilityMeasure ν]
+    (hν : ν = MeasureTheory.volume.withDensity g) {J : Set ℝ} (hJ : MeasurableSet J)
+    {Rb δ : ℝ} (hδ : 0 ≤ δ)
+    (hstab : ∀ x : Fin (p + 1) → ℝ, (∀ i, |x i| ≤ Rb) → ∀ u ∈ J, ∀ i, |shiftPush x u i| ≤ Rb)
+    (hdens : ∀ x : Fin (p + 1) → ℝ, (∀ i, |x i| ≤ Rb) → ∀ u ∈ J,
+      ENNReal.ofReal δ ≤ g (u - f x)) :
+    ∀ (k : ℕ) (x : Fin (p + 1) → ℝ), (∀ i, |x i| ≤ Rb) →
+      ∀ A : Set (Fin (p + 1) → ℝ), MeasurableSet A →
+      ENNReal.ofReal δ ^ k *
+          (Measure.map (iterPush k x) (Measure.pi fun _ : Fin k => volume.restrict J)) A
+        ≤ ((nlARKernel f ν) ^ k) x A := by
+  haveI : IsMarkovKernel (nlARKernel f ν) := isMarkovKernel_nlARKernel hf ν
+  intro k
+  induction k with
+  | zero =>
+      intro x _ A hA
+      have hmass : (Measure.pi fun _ : Fin 0 => (volume.restrict J : Measure ℝ)) Set.univ = 1 := by
+        rw [show (Set.univ : Set (Fin 0 → ℝ)) = Set.univ.pi fun _ => Set.univ by simp,
+          Measure.pi_pi]
+        simp
+      have : Measure.map (iterPush 0 x) (Measure.pi fun _ : Fin 0 => volume.restrict J)
+          = Measure.dirac x := by
+        rw [show (iterPush 0 x) = fun _ : Fin 0 → ℝ => x from rfl, Measure.map_const, hmass,
+          one_smul]
+      rw [this, pow_zero, one_mul, pow_zero]
+      exact le_of_eq rfl
+  | succ k ih =>
+      intro x hx A hA
+      have hδne : (ENNReal.ofReal δ) ^ (k + 1) ≠ ⊤ := by
+        exact (ENNReal.pow_ne_top ENNReal.ofReal_ne_top)
+      have hcoe : Measurable fun y : Fin (p + 1) → ℝ => ((nlARKernel f ν ^ k) y A) :=
+        Kernel.measurable_coe _ hA
+      -- the `(k+1)`-step law, in value coordinates
+      have hstepR : ((nlARKernel f ν) ^ (k + 1)) x A
+          = ∫⁻ u, g (u - f x) * ((nlARKernel f ν ^ k) (shiftPush x u) A) := by
+        have h0 : ((nlARKernel f ν) ^ (k + 1)) x
+            = ((nlARKernel f ν) x).bind ((nlARKernel f ν) ^ k) := by
+          rw [pow_succ]
+          exact Kernel.comp_apply ((nlARKernel f ν) ^ k) (nlARKernel f ν) x
+        rw [h0, Measure.bind_apply hA (Kernel.aemeasurable _)]
+        exact nlAR_lintegral hf hg hν x hcoe
+      rw [hstepR, map_iterPush_succ J k x hA,
+        ← lintegral_const_mul' _ _ hδne]
+      refine le_trans (lintegral_mono_ae ((ae_restrict_iff' hJ).2
+        (Filter.Eventually.of_forall fun u hu => ?_)))
+        (lintegral_mono' Measure.restrict_le_self le_rfl)
+      have hIH := ih (shiftPush x u) (hstab x hx u hu) A hA
+      calc ENNReal.ofReal δ ^ (k + 1) *
+            (Measure.map (iterPush k (shiftPush x u))
+              (Measure.pi fun _ : Fin k => volume.restrict J)) A
+          = ENNReal.ofReal δ * (ENNReal.ofReal δ ^ k *
+              (Measure.map (iterPush k (shiftPush x u))
+                (Measure.pi fun _ : Fin k => volume.restrict J)) A) := by
+            rw [pow_succ']; ring
+        _ ≤ g (u - f x) * ((nlARKernel f ν ^ k) (shiftPush x u) A) :=
+            mul_le_mul' (hdens x hx u hu) hIH
+
+/-- **Minorization of the `(p+1)`-step kernel.** After `p+1` steps every coordinate has been
+refreshed, so the law dominates a fixed multiple of (normalized) Lebesgue measure on a cube,
+uniformly over the Lyapunov sublevel set `{V ≤ R}`. -/
+theorem hasMinorization_nlAR_pow
+    {f : (Fin (p + 1) → ℝ) → ℝ} (hf : Measurable f)
+    {g : ℝ → ℝ≥0∞} (hg : Measurable g) (hgc : Continuous g) (hgpos : ∀ t, 0 < g t)
+    {ν : Measure ℝ} [IsProbabilityMeasure ν] (hν : ν = MeasureTheory.volume.withDensity g)
+    {lam c : ℝ} (hlam0 : 0 ≤ lam) (hc : 0 ≤ c)
+    (hbound : ∀ x : Fin (p + 1) → ℝ, |f x| ≤ lam * (⨆ i, |x i|) + c)
+    {θ : ℝ} (hθ0 : 0 < θ) (hθ1 : θ < 1) {R : ℝ} (hR0 : 0 < R) :
+    ∃ (α : ℝ) (ρ : Measure (Fin (p + 1) → ℝ)),
+      HasMinorization ((nlARKernel f ν) ^ (p + 1)) (lyapV θ) R α ρ := by
+  haveI : IsMarkovKernel (nlARKernel f ν) := isMarkovKernel_nlARKernel hf ν
+  -- the box the level set lives in
+  obtain ⟨Rb, hRbdef⟩ : ∃ r : ℝ, r = R / θ ^ p := ⟨_, rfl⟩
+  have hRb0 : 0 < Rb := hRbdef ▸ div_pos hR0 (pow_pos hθ0 p)
+  have hbox : ∀ x : Fin (p + 1) → ℝ, lyapV θ x ≤ R → ∀ i, |x i| ≤ Rb := by
+    intro x hx i
+    rw [hRbdef, le_div_iff₀ (pow_pos hθ0 p)]
+    have h1 : θ ^ p ≤ θ ^ (i : ℕ) :=
+      pow_le_pow_of_le_one hθ0.le hθ1.le (Nat.lt_succ_iff.mp i.isLt)
+    calc |x i| * θ ^ p = θ ^ p * |x i| := mul_comm _ _
+      _ ≤ θ ^ (i : ℕ) * |x i| := mul_le_mul_of_nonneg_right h1 (abs_nonneg _)
+      _ ≤ lyapV θ x := le_lyapV θ x i
+      _ ≤ R := hx
+  obtain ⟨J, hJdef⟩ : ∃ s : Set ℝ, s = Set.Icc (-Rb) Rb := ⟨_, rfl⟩
+  have hJm : MeasurableSet J := hJdef ▸ measurableSet_Icc
+  have hJmem : ∀ u ∈ J, |u| ≤ Rb := fun u hu => by
+    rw [hJdef] at hu; exact abs_le.2 ⟨hu.1, hu.2⟩
+  have hstab : ∀ x : Fin (p + 1) → ℝ, (∀ i, |x i| ≤ Rb) → ∀ u ∈ J, ∀ i,
+      |shiftPush x u i| ≤ Rb := by
+    intro x hx u hu i
+    refine Fin.cases ?_ ?_ i
+    · simpa [shiftPush] using hJmem u hu
+    · intro j; simpa [shiftPush] using hx j.castSucc
+  -- the drift function is bounded on the box
+  obtain ⟨B, hBdef⟩ : ∃ b : ℝ, b = lam * Rb + c := ⟨_, rfl⟩
+  have hB0 : 0 ≤ B := hBdef ▸ by positivity
+  have hfB : ∀ x : Fin (p + 1) → ℝ, (∀ i, |x i| ≤ Rb) → |f x| ≤ B := by
+    intro x hx
+    refine (hbound x).trans ?_
+    have hsup : (⨆ i, |x i|) ≤ Rb := ciSup_le hx
+    rw [hBdef]
+    nlinarith
+  -- the density is bounded below on the (compact) relevant window
+  have hne : (Set.Icc (-(Rb + B)) (Rb + B)).Nonempty := ⟨0, by constructor <;> linarith⟩
+  obtain ⟨t₀, ht₀mem, ht₀min⟩ := isCompact_Icc.exists_isMinOn hne hgc.continuousOn
+  obtain ⟨δ, hδdef⟩ : ∃ d : ℝ, d = (min (g t₀) 1).toReal := ⟨_, rfl⟩
+  have hminne : min (g t₀) 1 ≠ ⊤ := ne_top_of_le_ne_top ENNReal.one_ne_top (min_le_right _ _)
+  have hofδ : ENNReal.ofReal δ = min (g t₀) 1 := by
+    rw [hδdef, ENNReal.ofReal_toReal hminne]
+  have hδ0 : 0 < δ := by
+    have : 0 < min (g t₀) 1 := lt_min (hgpos t₀) one_pos
+    rw [hδdef]
+    exact ENNReal.toReal_pos this.ne' hminne
+  have hδg : ∀ t : ℝ, |t| ≤ Rb + B → ENNReal.ofReal δ ≤ g t := by
+    intro t ht
+    rw [hofδ]
+    refine (min_le_left _ _).trans (ht₀min ?_)
+    exact ⟨by linarith [neg_abs_le t, le_abs_self t], by linarith [le_abs_self t]⟩
+  have hdens : ∀ x : Fin (p + 1) → ℝ, (∀ i, |x i| ≤ Rb) → ∀ u ∈ J,
+      ENNReal.ofReal δ ≤ g (u - f x) := by
+    intro x hx u hu
+    refine hδg _ ?_
+    calc |u - f x| ≤ |u| + |f x| := abs_sub _ _
+      _ ≤ Rb + B := add_le_add (hJmem u hu) (hfB x hx)
+  -- the `(p+1)`-step window law, which does not depend on the starting state
+  obtain ⟨Q, hQdef⟩ : ∃ m : Measure (Fin (p + 1) → ℝ),
+      m = Measure.map (iterPush (p + 1) (0 : Fin (p + 1) → ℝ))
+        (Measure.pi fun _ : Fin (p + 1) => volume.restrict J) := ⟨_, rfl⟩
+  have hmapQ : ∀ x : Fin (p + 1) → ℝ,
+      Measure.map (iterPush (p + 1) x) (Measure.pi fun _ : Fin (p + 1) => volume.restrict J)
+        = Q := by
+    intro x
+    have hfun : iterPush (p + 1) x = iterPush (p + 1) (0 : Fin (p + 1) → ℝ) :=
+      funext fun u => iterPush_full x 0 u
+    rw [hQdef, hfun]
+  -- its total mass
+  have hvolJ : volume J = ENNReal.ofReal (2 * Rb) := by
+    rw [hJdef, Real.volume_Icc]; ring_nf
+  have hQuniv : Q Set.univ = ENNReal.ofReal (2 * Rb) ^ (p + 1) := by
+    rw [hQdef, Measure.map_apply (measurable_iterPush' _ _) MeasurableSet.univ,
+      Set.preimage_univ,
+      show (Set.univ : Set (Fin (p + 1) → ℝ)) = Set.univ.pi fun _ => Set.univ by simp,
+      Measure.pi_pi]
+    simp [Measure.restrict_apply_univ, hvolJ]
+  obtain ⟨m, hmdef⟩ : ∃ t : ℝ≥0∞, t = ENNReal.ofReal (2 * Rb) ^ (p + 1) := ⟨_, rfl⟩
+  have hm0 : m ≠ 0 := by
+    rw [hmdef]
+    exact pow_ne_zero _ (by simp [ENNReal.ofReal_eq_zero]; linarith)
+  have hmtop : m ≠ ⊤ := by rw [hmdef]; exact ENNReal.pow_ne_top ENNReal.ofReal_ne_top
+  have hmtr : 0 < m.toReal := ENNReal.toReal_pos hm0 hmtop
+  refine ⟨min (δ ^ (p + 1) * m.toReal) 1, m⁻¹ • Q, ?_⟩
+  have hρuniv : (m⁻¹ • Q) Set.univ = 1 := by
+    rw [Measure.smul_apply, smul_eq_mul, hQuniv, ← hmdef, ENNReal.inv_mul_cancel hm0 hmtop]
+  refine ⟨⟨lt_min (by positivity) one_pos, min_le_right _ _⟩, ⟨hρuniv⟩, fun x hx A hA => ?_⟩
+  have hw := pow_ge_window hf hg hν hJm hδ0.le hstab hdens (p + 1) x (hbox x hx) A hA
+  rw [hmapQ x] at hw
+  refine le_trans ?_ hw
+  rw [Measure.smul_apply, smul_eq_mul, ← mul_assoc]
+  refine mul_le_mul_right' ?_ _
+  have hle1 : ENNReal.ofReal (min (δ ^ (p + 1) * m.toReal) 1)
+      ≤ ENNReal.ofReal δ ^ (p + 1) * m := by
+    calc ENNReal.ofReal (min (δ ^ (p + 1) * m.toReal) 1)
+        ≤ ENNReal.ofReal (δ ^ (p + 1) * m.toReal) :=
+          ENNReal.ofReal_le_ofReal (min_le_left _ _)
+      _ = ENNReal.ofReal δ ^ (p + 1) * m := by
+          rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow hδ0.le,
+            ENNReal.ofReal_toReal hmtop]
+  calc ENNReal.ofReal (min (δ ^ (p + 1) * m.toReal) 1) * m⁻¹
+      ≤ (ENNReal.ofReal δ ^ (p + 1) * m) * m⁻¹ := mul_le_mul_right' hle1 _
+    _ = ENNReal.ofReal δ ^ (p + 1) := by
+        rw [mul_assoc, ENNReal.mul_inv_cancel hm0 hmtop, mul_one]
+
+/-- **FY Theorem 2.4(ii)** — the drift/contraction criterion for the vectorized nonlinear
+autoregression `X_t = f(X_{t−1}, …, X_{t−p−1}) + ε_t`. If the autoregression function is a
+sup-norm contraction up to a constant, `|f(𝐱)| ≤ λ‖𝐱‖_∞ + c` with `λ < 1`, and the noise
+has an everywhere-positive **continuous** density and a finite first moment, then the chain
+is geometrically ergodic toward a (unique) stationary probability law.
+
+This is the statement that used to sit in `GeometricErgodicity.lean` as a named `sorry`; it
+moved here because its proof consumes this file's Harris engine, and this file imports that
+one. It is the last structural debt of the TimeSeries area.
+
+**Proof.** `V(𝐱) := ⨆ᵢ θⁱ|xᵢ|` with `θ := λ'^{1/(p+1)}`, `λ' := max λ ½` (the boost keeps
+`θ > 0` when `λ = 0`), is a Lyapunov function: the shifted coordinates each gain a factor
+`θ`, and the new coordinate `f(𝐱) + ε` costs `λ·θ^{−p} ≤ θ`, so
+`E V(next) ≤ θ V + (c + E|ε|)` (`hasLyapunovDrift_nlAR`). After `p+1` steps every
+coordinate has been refreshed and the state no longer depends on where it started
+(`iterPush_full`), so `κ^{p+1}(𝐱, ·)` dominates `δ^{p+1}` times a *fixed* window measure —
+Lebesgue measure on a cube, pushed through the (bijective, triangular) value map — where
+`δ > 0` is the minimum of the density over a compact window (`hasMinorization_nlAR_pow`).
+`harris_theorem` on `κ^{p+1}` then supplies the invariant law and the geometric rate;
+`eq_of_invariant_of_isErgodicKernel` transports invariance from `κ^{p+1}` back to `κ`, and
+`IsGeometricallyErgodic.of_pow` finishes. Petite sets and ψ-irreducibility are avoided
+throughout — that is exactly what the continuity strengthening buys.
+
+**Statement strengthening (documented).** FY assume only that `ε_t` has a positive density.
+We additionally assume that density **continuous** (`hgc`): without it the density has no
+positive lower bound on a compact window (`{g ≥ 1/n}` may have measure zero on every
+interval for every fixed `n` only up to null sets, and the natural repair — restricting the
+*noise* rather than the *value* — makes the `p+1`-step window law depend on the starting
+state, which destroys the minorization). Every consumer of this theorem in the project
+already supplies continuity: `Threshold/TAR.lean`'s `exists_stationary_tar` and
+`exists_stationary_toy_setar` both hypothesize `∃ g, Continuous g ∧ (∀ x, 0 < g x) ∧ …`.
+The mean-zero hypothesis `hmean` is not needed by the proof and is kept only because it is
+part of the frozen FY statement. -/
+theorem nlARKernel_geometricallyErgodic
+    {f : (Fin (p + 1) → ℝ) → ℝ}
+    -- USER-INPUT: the autoregression function, measurable; FY §2.1.4 Thm 2.4
+    (hf : Measurable f)
+    {g : ℝ → ℝ≥0∞} (hg : Measurable g)
+    -- USER-INPUT: the innovation density is *continuous* — the documented strengthening of
+    -- FY's hypothesis, see the docstring; supplied by every consumer
+    (hgc : Continuous g)
+    -- USER-INPUT: the noise has an (everywhere) positive density; FY §2.1.4 Thm 2.4
+    (hgpos : ∀ x, 0 < g x)
+    {ν : Measure ℝ} (hν : ν = MeasureTheory.volume.withDensity g)
+    [IsProbabilityMeasure ν]
+    -- USER-INPUT: integrable, mean-zero noise; FY §2.1.4 Thm 2.4 (`hmean` is unused)
+    (hint : Integrable (fun x : ℝ => x) ν) (hmean : ∫ x, x ∂ν = 0)
+    {lam c : ℝ}
+    -- USER-INPUT: sup-norm contraction |f(x)| ≤ λ maxᵢ|xᵢ| + c with λ < 1; FY Thm 2.4(ii)
+    (hlam0 : 0 ≤ lam) (hlam : lam < 1) (hc : 0 ≤ c)
+    (hbound : ∀ x, |f x| ≤ lam * (⨆ i, |x i|) + c) :
+    ∃ F : Measure (Fin (p + 1) → ℝ), IsProbabilityMeasure F ∧
+      IsGeometricallyErgodic (nlARKernel f ν) F := by
+  haveI : IsMarkovKernel (nlARKernel f ν) := isMarkovKernel_nlARKernel hf ν
+  -- the contraction factor, boosted away from `0` and taken to the `(p+1)`-st root
+  obtain ⟨lam', hlam'def⟩ : ∃ t : ℝ, t = max lam (1 / 2) := ⟨_, rfl⟩
+  have hlam'0 : 0 < lam' := hlam'def ▸ lt_of_lt_of_le (by norm_num) (le_max_right _ _)
+  have hlam'1 : lam' < 1 := hlam'def ▸ max_lt hlam (by norm_num)
+  have hlamle : lam ≤ lam' := hlam'def ▸ le_max_left _ _
+  obtain ⟨θ, hθdef⟩ : ∃ t : ℝ, t = lam' ^ ((((p + 1 : ℕ) : ℝ))⁻¹) := ⟨_, rfl⟩
+  have hθ0 : 0 < θ := hθdef ▸ Real.rpow_pos_of_pos hlam'0 _
+  have hθp : θ ^ (p + 1) = lam' := by
+    rw [hθdef]; exact Real.rpow_inv_natCast_pow hlam'0.le (Nat.succ_ne_zero p)
+  have hθ1 : θ < 1 := by
+    by_contra hcon
+    push_neg at hcon
+    have := one_le_pow₀ (n := p + 1) hcon
+    rw [hθp] at this
+    linarith
+  have hlamθ : lam ≤ θ ^ (p + 1) := hθp ▸ hlamle
+  -- the drift, one step and then `p+1` steps
+  have hdr := hasLyapunovDrift_nlAR hθ0 hθ1 hlamθ hc hf hbound hint
+  have hdrP := hdr.pow (n := p + 1) (Nat.succ_pos p)
+  obtain ⟨K, hKdef⟩ : ∃ t : ℝ, t = c + ∫ e, |e| ∂ν := ⟨_, rfl⟩
+  have hK0 : 0 ≤ K := hKdef ▸ by
+    have : 0 ≤ ∫ e, |e| ∂ν := integral_nonneg fun e => abs_nonneg e
+    linarith
+  rw [← hKdef] at hdrP
+  have hKq : 0 ≤ K / (1 - θ) := div_nonneg hK0 (by linarith)
+  have hγ1 : θ ^ (p + 1) < 1 := pow_lt_one₀ hθ0.le hθ1 (Nat.succ_ne_zero p)
+  obtain ⟨R, hRdef⟩ : ∃ t : ℝ, t = 2 * (K / (1 - θ)) / (1 - θ ^ (p + 1)) + 1 := ⟨_, rfl⟩
+  have hRpos : 0 < R := by
+    rw [hRdef]
+    have : 0 ≤ 2 * (K / (1 - θ)) / (1 - θ ^ (p + 1)) :=
+      div_nonneg (by linarith) (by linarith)
+    linarith
+  have hR : 2 * (K / (1 - θ)) / (1 - θ ^ (p + 1)) < R := by rw [hRdef]; linarith
+  -- the minorization of the `(p+1)`-step kernel
+  obtain ⟨α, ρ, hmin⟩ :=
+    hasMinorization_nlAR_pow hf hg hgc hgpos hν hlam0 hc hbound hθ0 hθ1 hRpos
+  haveI := markov_pow (nlARKernel f ν) (p + 1)
+  obtain ⟨π, hπprob, hπinv, hπge⟩ := harris_theorem hdrP hmin hR
+  haveI := hπprob
+  -- `π` is invariant for the one-step kernel too
+  have hξprob : IsProbabilityMeasure (π.bind (nlARKernel f ν)) := by
+    refine ⟨?_⟩
+    rw [Measure.bind_apply MeasurableSet.univ (Kernel.aemeasurable _)]
+    simp
+  haveI := hξprob
+  have hξinv : Kernel.Invariant ((nlARKernel f ν) ^ (p + 1)) (π.bind (nlARKernel f ν)) := by
+    show (π.bind (nlARKernel f ν)).bind ((nlARKernel f ν) ^ (p + 1)) = π.bind (nlARKernel f ν)
+    have hcomm : ((nlARKernel f ν) ^ (p + 1)) ∘ₖ (nlARKernel f ν)
+        = (nlARKernel f ν) ∘ₖ ((nlARKernel f ν) ^ (p + 1)) := by
+      show ((nlARKernel f ν) ^ (p + 1)) * (nlARKernel f ν)
+        = (nlARKernel f ν) * ((nlARKernel f ν) ^ (p + 1))
+      rw [← pow_succ, ← pow_succ']
+    rw [Measure.comp_assoc (μ := π) (κ := nlARKernel f ν) (η := (nlARKernel f ν) ^ (p + 1)),
+      hcomm,
+      ← Measure.comp_assoc (μ := π) (κ := (nlARKernel f ν) ^ (p + 1)) (η := nlARKernel f ν),
+      hπinv.def]
+  have hinv : Kernel.Invariant (nlARKernel f ν) π :=
+    eq_of_invariant_of_isErgodicKernel hπge.isErgodicKernel hξinv
+  exact ⟨π, hπprob, IsGeometricallyErgodic.of_pow (Nat.succ_pos p) hπge hinv⟩
+
+end NLAR
 
 end StatLean.TimeSeries
