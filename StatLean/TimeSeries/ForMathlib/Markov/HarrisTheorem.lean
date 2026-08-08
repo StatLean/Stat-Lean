@@ -38,12 +38,35 @@ minorization formulation is Meyn & Tweedie, *Markov Chains and Stochastic Stabil
 Hairer–Mattingly simplification, which needs no irreducibility theory.
 -/
 
-open MeasureTheory ProbabilityTheory Filter
+open MeasureTheory ProbabilityTheory Filter StatLean.Minimaxity StatLean.Bayesian
 open scoped ProbabilityTheory Topology ENNReal
 
 namespace StatLean.TimeSeries
 
 variable {S : Type*} [MeasurableSpace S]
+
+-- Kernel powers of a Markov kernel are Markov (the same one-line induction as the private
+-- `isMarkovKernel_pow` of `GeometricErgodicity`, repeated here because that one is file-scoped).
+private theorem markov_pow (κ : Kernel S S) [IsMarkovKernel κ] :
+    ∀ n : ℕ, IsMarkovKernel (κ ^ n)
+  | 0 => by rw [pow_zero]; exact (inferInstance : IsMarkovKernel (Kernel.id : Kernel S S))
+  | n + 1 => by
+      haveI := markov_pow κ n
+      rw [pow_succ]
+      exact Kernel.IsMarkovKernel.comp (κ ^ n) κ
+
+-- **Kernel averaging is a total-variation contraction** (the private `tvDist_bind_le` of
+-- `GeometricErgodicity`, repeated here for the same reason): on a measurable `s` the two sides
+-- are the integrals of the `[0,1]`-valued measurable function `y ↦ κ y s`, which moves by at
+-- most `1 * tvDist μ ν`.
+private theorem tvDist_bind_le (κ : Kernel S S) [IsMarkovKernel κ] (μ ν : Measure S)
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    tvDist (μ.bind κ) (ν.bind κ) ≤ tvDist μ ν := by
+  refine iSup_le fun s => iSup_le fun hs => ?_
+  rw [Measure.bind_apply hs κ.aemeasurable, Measure.bind_apply hs κ.aemeasurable]
+  refine tsub_le_iff_left.mpr ?_
+  simpa using
+    lintegral_le_lintegral_add_tvDist μ ν (κ.measurable_coe hs) (B := 1) fun _ => prob_le_one
 
 /-- The **weighted total-variation distance** `∫ (1 + βV) d|μ − ν|` of Hairer–Mattingly
 (their `ρ_β`), as an `ℝ≥0∞`-valued quantity built from the Jordan decomposition of the
@@ -124,6 +147,54 @@ theorem IsGeometricallyErgodic.of_pow {κ : Kernel S S} [IsMarkovKernel κ]
     {π : Measure S} [IsProbabilityMeasure π] {p : ℕ} (hp : 0 < p)
     (hpow : IsGeometricallyErgodic (κ ^ p) π) (hinv : Kernel.Invariant κ π) :
     IsGeometricallyErgodic κ π := by
-  sorry
+  obtain ⟨ρ, hρ1, hρ⟩ := hpow
+  have hpinv : (0 : ℝ) < (p : ℝ)⁻¹ := by positivity
+  have hbase : (1 : ℝ≥0∞) ≤ ρ⁻¹ := ENNReal.one_le_inv.mpr hρ.rho_le_one
+  refine ⟨ρ ^ ((p : ℝ)⁻¹), ENNReal.rpow_lt_one hρ1 hpinv,
+    ⟨ENNReal.rpow_pos hρ.rho_pos hρ1.ne_top, (ENNReal.rpow_lt_one hρ1 hpinv).le, fun x => ?_⟩⟩
+  -- the `q`-step envelope of the `p`-step kernel, scaled by the fixed constant `ρ⁻¹`
+  have hq : Tendsto (fun n : ℕ => n / p) atTop atTop :=
+    tendsto_atTop_atTop.2 fun b => ⟨b * p, fun _ ha => (Nat.le_div_iff_mul_le hp).2 ha⟩
+  have hmaj : Tendsto
+      (fun n : ℕ => ρ⁻¹ * (ρ⁻¹ ^ (n / p) * tvDist (((κ ^ p) ^ (n / p)) x) π)) atTop (𝓝 0) := by
+    have h := (hρ.tendsto x).comp hq
+    simpa using ENNReal.Tendsto.const_mul h (Or.inr (by simp [hρ.rho_pos.ne']))
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hmaj
+    (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+  set q := n / p with hqdef
+  set r := n % p with hrdef
+  have hnr : n = r + p * q := by rw [hrdef, hqdef, Nat.mod_add_div]
+  haveI := markov_pow κ (p * q)
+  haveI := markov_pow κ r
+  -- Distance: the leftover `r = n % p` steps, applied *last*, can only contract (`π` is
+  -- `κ^r`-invariant), so the `n`-step distance is at most the `pq`-step one.
+  have hdist : tvDist ((κ ^ n) x) π ≤ tvDist (((κ ^ p) ^ q) x) π := by
+    have hπ : π = π.bind (κ ^ r) := ((invariant_pow hinv r).def).symm
+    have hstep : (κ ^ n) x = ((κ ^ (p * q)) x).bind (κ ^ r) := by
+      rw [hnr, pow_add]
+      exact Kernel.comp_apply (κ ^ r) (κ ^ (p * q)) x
+    rw [hstep, ← pow_mul]
+    nth_rewrite 1 [hπ]
+    exact tvDist_bind_le (κ ^ r) ((κ ^ (p * q)) x) π
+  -- Rate: `(ρ^{1/p})⁻ⁿ ≤ ρ⁻¹ · ρ⁻ᵠ` because `n/p ≤ q + 1`.
+  have hrate : (ρ ^ ((p : ℝ)⁻¹))⁻¹ ^ n ≤ ρ⁻¹ * ρ⁻¹ ^ q := by
+    have hexp : ((p : ℝ)⁻¹) * (n : ℝ) ≤ (q : ℝ) + 1 := by
+      have hnp : (n : ℝ) ≤ (p : ℝ) * ((q : ℝ) + 1) := by
+        have hr : r < p := by rw [hrdef]; exact Nat.mod_lt n hp
+        have hpq : p * (q + 1) = p * q + p := by ring
+        have hle : n ≤ p * (q + 1) := by omega
+        exact_mod_cast hle
+      rw [inv_mul_le_iff₀ (by exact_mod_cast hp)]
+      linarith
+    calc (ρ ^ ((p : ℝ)⁻¹))⁻¹ ^ n
+        = (ρ⁻¹ ^ ((p : ℝ)⁻¹)) ^ ((n : ℕ) : ℝ) := by
+          rw [ENNReal.inv_rpow, ENNReal.rpow_natCast]
+      _ = ρ⁻¹ ^ (((p : ℝ)⁻¹) * (n : ℝ)) := (ENNReal.rpow_mul _ _ _).symm
+      _ ≤ ρ⁻¹ ^ ((q : ℝ) + 1) := ENNReal.rpow_le_rpow_of_exponent_le hbase hexp
+      _ = ρ⁻¹ ^ (q + 1) := by rw [← ENNReal.rpow_natCast ρ⁻¹ (q + 1)]; norm_num
+      _ = ρ⁻¹ * ρ⁻¹ ^ q := by rw [pow_succ]; ring
+  calc (ρ ^ ((p : ℝ)⁻¹))⁻¹ ^ n * tvDist ((κ ^ n) x) π
+      ≤ (ρ⁻¹ * ρ⁻¹ ^ q) * tvDist (((κ ^ p) ^ q) x) π := mul_le_mul' hrate hdist
+    _ = ρ⁻¹ * (ρ⁻¹ ^ q * tvDist (((κ ^ p) ^ q) x) π) := by ring
 
 end StatLean.TimeSeries
