@@ -36,10 +36,13 @@ This file exists to discharge the last structural debt of the TimeSeries area,
   with `cNoContraction` just above the statement. Repairing it means changing the
   *definition* of `weightedTV` (and then supplying the coupling step of Hairer–Mattingly),
   which is a statement-level change.
-* `harris_theorem` is true but open: with `weightedTV` unusable it has no shortcut from
-  the contraction, and the *existence* half needs a completeness argument for the
-  total-variation metric on probability measures (or a regeneration construction) that is
-  not available in the pinned Mathlib.
+* `harris_theorem` is **false as stated** too, for an independent reason, and is likewise
+  refuted here: `HasLyapunovDrift.drift` uses the *Bochner* integral, which Mathlib sets to
+  `0` on non-integrable functions, so the drift hypothesis says nothing at states where
+  `∫⁻ V d(κ x) = ∞`. A chain can then escape to infinity and have no attracting law at all.
+  See `tDrift`/`tMinorize`/`tHR` with `tNoErgodic` just above the statement. The repair is
+  to state the drift with `∫⁻` (or to require `∀ x, Integrable V (κ x)`) — again a
+  statement-level change.
 
 Note that the uniqueness proof here does **not** go through any contraction: it splits
 `π − π'` by a Hahn set, shows each half is separately `κ`-invariant, and then uses the
@@ -281,6 +284,180 @@ theorem harris_contraction {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ}
   -- functional, not the Jordan/total-variation one).  Left as a named debt.
   sorry
 
+-- ## REFUTATION of `harris_theorem` as frozen (a *different* defect from the one above)
+--
+-- `HasLyapunovDrift.drift` is stated with the **Bochner** integral `∫ y, V y ∂(κ x)`, which
+-- Mathlib defines to be `0` when the integrand is not integrable (`integral_undef`).  Since
+-- `V ≥ 0` and `γ V x + K ≥ 0`, the drift hypothesis is therefore **vacuous at every state `x`
+-- where `∫⁻ V d(κ x) = ∞`** — it constrains nothing there.  A chain may then leave the level set
+-- forever, and both existence *and* uniqueness of an attracting law fail.
+--
+-- The witness below lives on `ℕ` with `V 0 = 0`, `V n = 4ⁿ` (`n ≥ 1`), `γ = 1/2`, `K = 0`,
+-- `R = 1` (so `2K/(1−γ) = 0 < 1`), `α = 1`, `ρ = δ₀`, and the kernel `0 ↦ δ₀`, `n ↦ ν`
+-- (`n ≥ 1`) for the heavy-tailed law `ν = Σⱼ 2^{-(j+1)} δ_{j+1}`, which satisfies
+-- `∫⁻ V dν = Σⱼ 2^{j+1} = ∞`.  The level set is `{0}`, where the minorization is exact; the
+-- drift holds genuinely at `0` and vacuously everywhere else.  But `κⁿ(0,·) = δ₀` and
+-- `κⁿ(1,·) = ν` for all `n ≥ 1`, and `δ₀ ≠ ν`, so no single law attracts every state:
+-- `tNoErgodic (harris_theorem tDrift tMinorize tHR)` has type `False` (checked).
+--
+-- The repair is at the level of `HasLyapunovDrift`: state the drift as
+-- `∫⁻ y, ENNReal.ofReal (V y) ∂(κ x) ≤ ENNReal.ofReal (γ * V x + K)` (or add `∀ x, Integrable V
+-- (κ x)`).  `harris_invariant_unique` above is unaffected: its `Integrable V π` hypotheses buy
+-- exactly the `π`-a.e. `∫⁻` form of the drift, which is what `drift_lintegral_ae` extracts.
+
+private noncomputable def tV : ℕ → ℝ := fun n => if n = 0 then 0 else 4 ^ n
+
+private noncomputable def tNu : Measure ℕ :=
+  Measure.sum fun j : ℕ => ((2 : ℝ≥0∞)⁻¹) ^ (j + 1) • Measure.dirac (j + 1)
+
+private noncomputable def tK : Kernel ℕ ℕ :=
+  ⟨fun n => if n = 0 then Measure.dirac 0 else tNu, Measurable.of_discrete⟩
+
+private theorem tK_apply (n : ℕ) : tK n = if n = 0 then Measure.dirac 0 else tNu := rfl
+
+private theorem tNu_apply {s : Set ℕ} (hs : MeasurableSet s) :
+    tNu s = ∑' j : ℕ, ((2 : ℝ≥0∞)⁻¹) ^ (j + 1) * Measure.dirac (j + 1) s := by
+  rw [tNu, Measure.sum_apply _ hs]
+  exact tsum_congr fun j => by rw [Measure.smul_apply, smul_eq_mul]
+
+private theorem tsum_half : ∑' j : ℕ, ((2 : ℝ≥0∞)⁻¹) ^ (j + 1) = 1 := by
+  have h : ∀ j : ℕ, ((2 : ℝ≥0∞)⁻¹) ^ (j + 1) = ((2 : ℝ≥0∞)⁻¹) ^ j * (2 : ℝ≥0∞)⁻¹ :=
+    fun j => pow_succ _ _
+  rw [tsum_congr h, ENNReal.tsum_mul_right, ENNReal.tsum_geometric, ENNReal.one_sub_inv_two,
+    inv_inv]
+  exact ENNReal.mul_inv_cancel two_ne_zero (by simp)
+
+private instance : IsProbabilityMeasure tNu := by
+  refine ⟨?_⟩
+  rw [tNu_apply MeasurableSet.univ]
+  simpa using tsum_half
+
+private theorem tNu_zero : tNu {0} = 0 := by
+  rw [tNu_apply (MeasurableSet.singleton 0)]
+  have h : ∀ j : ℕ, ((2 : ℝ≥0∞)⁻¹) ^ (j + 1) * Measure.dirac (j + 1) {0} = 0 := by
+    intro j
+    rw [Measure.dirac_apply' _ (MeasurableSet.singleton 0)]
+    simp
+  rw [tsum_congr h, tsum_zero]
+
+private instance : IsMarkovKernel tK :=
+  ⟨fun n => by rw [tK_apply]; split <;> infer_instance⟩
+
+private theorem tNu_not_integrable : ¬ Integrable tV tNu := by
+  intro hint
+  have hlt : ∫⁻ y, ENNReal.ofReal (tV y) ∂tNu < ∞ := by
+    have h2 := hint.2
+    rw [HasFiniteIntegral] at h2
+    refine lt_of_le_of_lt (le_of_eq ?_) h2
+    refine lintegral_congr fun y => (Real.enorm_eq_ofReal ?_).symm
+    rw [tV]; split_ifs <;> positivity
+  refine absurd hlt (not_lt.2 (le_of_eq ?_))
+  symm
+  rw [tNu, lintegral_sum_measure]
+  have hterm : ∀ j : ℕ, ∫⁻ y, ENNReal.ofReal (tV y) ∂(((2 : ℝ≥0∞)⁻¹) ^ (j + 1) •
+      Measure.dirac (j + 1)) = (2 : ℝ≥0∞) ^ (j + 1) := by
+    intro j
+    rw [lintegral_smul_measure, lintegral_dirac, smul_eq_mul, tV, if_neg (Nat.succ_ne_zero j),
+      ENNReal.ofReal_pow (by norm_num : (0:ℝ) ≤ 4), ← mul_pow]
+    norm_num
+    congr 1
+    rw [show (4:ℝ≥0∞) = 2 * 2 by norm_num, ← mul_assoc,
+      ENNReal.inv_mul_cancel two_ne_zero (by simp), one_mul]
+  rw [tsum_congr hterm]
+  have h : ∀ j : ℕ, ((2 : ℝ≥0∞)) ^ (j + 1) = ((2 : ℝ≥0∞)) ^ j * (2 : ℝ≥0∞) :=
+    fun j => pow_succ _ _
+  rw [tsum_congr h, ENNReal.tsum_mul_right, ENNReal.tsum_geometric,
+    show (1 : ℝ≥0∞) - 2 = 0 by simp [tsub_eq_zero_of_le], ENNReal.inv_zero,
+    ENNReal.top_mul (by norm_num)]
+
+private theorem tDrift : HasLyapunovDrift tK tV (1/2) 0 where
+  V_nonneg x := by rw [tV]; split_ifs <;> positivity
+  V_measurable := Measurable.of_discrete
+  gamma_mem := ⟨by norm_num, by norm_num⟩
+  K_nonneg := le_rfl
+  drift x := by
+    have hnn : (0:ℝ) ≤ tV x := by rw [tV]; split_ifs <;> positivity
+    rw [tK_apply]
+    split_ifs with h
+    · subst h
+      rw [integral_dirac]
+      norm_num [tV]
+    · rw [integral_undef tNu_not_integrable]
+      nlinarith
+
+private theorem tMinorize : HasMinorization tK tV 1 1 (Measure.dirac 0) where
+  alpha_mem := ⟨one_pos, le_rfl⟩
+  isProbability := inferInstance
+  minorize x hx A _ := by
+    have hx0 : x = 0 := by
+      by_contra hne
+      rw [tV, if_neg hne] at hx
+      have : (4:ℝ) ^ x ≥ 4 ^ 1 := by
+        refine pow_le_pow_right₀ (by norm_num) ?_
+        omega
+      norm_num at this
+      linarith
+    subst hx0
+    rw [tK_apply, if_pos rfl, ENNReal.ofReal_one, one_mul]
+
+private theorem tHR : 2 * (0:ℝ) / (1 - 1/2) < 1 := by norm_num
+
+
+private theorem tNu_lintegral (f : ℕ → ℝ≥0∞) :
+    ∫⁻ x, f x ∂tNu = ∑' j : ℕ, ((2 : ℝ≥0∞)⁻¹) ^ (j + 1) * f (j + 1) := by
+  rw [tNu, lintegral_sum_measure]
+  exact tsum_congr fun j => by rw [lintegral_smul_measure, lintegral_dirac, smul_eq_mul]
+
+private theorem tNu_invariant : Kernel.Invariant tK tNu := by
+  ext s hs
+  rw [Measure.bind_apply hs tK.aemeasurable, tNu_lintegral]
+  have h : ∀ j : ℕ, ((2 : ℝ≥0∞)⁻¹) ^ (j + 1) * (tK (j + 1)) s
+      = ((2 : ℝ≥0∞)⁻¹) ^ (j + 1) * tNu s := by
+    intro j; rw [tK_apply, if_neg (Nat.succ_ne_zero j)]
+  rw [tsum_congr h, ENNReal.tsum_mul_right, tsum_half, one_mul]
+
+private theorem tPow_succ_apply (n : ℕ) (x : ℕ) : (tK ^ (n + 1)) x = ((tK ^ n) x).bind tK := by
+  rw [pow_succ']
+  exact Kernel.comp_apply tK (tK ^ n) x
+
+private theorem tK_pow_zero : ∀ n : ℕ, (tK ^ n) 0 = Measure.dirac 0
+  | 0 => by rw [pow_zero]; rfl
+  | n + 1 => by
+      rw [tPow_succ_apply, tK_pow_zero n, Measure.dirac_bind tK.measurable, tK_apply, if_pos rfl]
+
+private theorem tK_pow_one : ∀ n : ℕ, (tK ^ (n + 1)) 1 = tNu
+  | 0 => by rw [pow_one, tK_apply, if_neg one_ne_zero]
+  | n + 1 => by rw [tPow_succ_apply, tK_pow_one n]; exact tNu_invariant.def
+
+private theorem tv_le_of_zero {μ ν : Measure ℕ} (h : tvDist μ ν = 0) {s : Set ℕ}
+    (hs : MeasurableSet s) : μ s ≤ ν s := by
+  have h1 : μ s - ν s ≤ tvDist μ ν :=
+    le_iSup₂ (f := fun t (_ : MeasurableSet t) => μ t - ν t) s hs
+  rw [h] at h1
+  exact tsub_eq_zero_iff_le.mp (le_antisymm h1 (zero_le _))
+
+private theorem tNoErgodic : ¬ ∃ π : Measure ℕ, IsProbabilityMeasure π ∧
+    Kernel.Invariant tK π ∧ IsGeometricallyErgodic tK π := by
+  rintro ⟨π, hπp, -, ρ, hρ1, hrate⟩
+  haveI := hπp
+  have e0 : tvDist (Measure.dirac 0 : Measure ℕ) π = 0 := by
+    have h : Tendsto (fun _ : ℕ => tvDist (Measure.dirac 0 : Measure ℕ) π) atTop (𝓝 0) := by
+      simpa [tK_pow_zero] using hrate.tendsto_tvDist 0
+    exact tendsto_nhds_unique (tendsto_const_nhds (α := ℕ) (f := atTop)) h
+  have e1 : tvDist tNu π = 0 := by
+    have h : Tendsto (fun _ : ℕ => tvDist tNu π) atTop (𝓝 0) := by
+      have h2 := (hrate.tendsto_tvDist 1).comp (tendsto_add_atTop_nat 1)
+      simp only [Function.comp_def, tK_pow_one] at h2
+      exact h2
+    exact tendsto_nhds_unique (tendsto_const_nhds (α := ℕ) (f := atTop)) h
+  have hlow : (1 : ℝ≥0∞) ≤ π {0} := by
+    have := tv_le_of_zero e0 (MeasurableSet.singleton 0)
+    simpa using this
+  have hhigh : π {0} ≤ 0 := by
+    have h := tv_le_of_zero (by rwa [tvDist_comm] at e1) (MeasurableSet.singleton 0)
+    rwa [tNu_zero] at h
+  exact absurd (le_trans hlow hhigh) (by simp)
+
 /-- **Harris' theorem** (Hairer–Mattingly): drift + minorization give a unique invariant
 probability measure and a geometric total-variation rate from every starting point —
 packaged exactly as `IsGeometricallyErgodic` needs it. -/
@@ -289,6 +466,8 @@ theorem harris_theorem {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ} {γ
     (hmin : HasMinorization κ V R α ρ) (hR : 2 * K / (1 - γ) < R) :
     ∃ π : Measure S, IsProbabilityMeasure π ∧ Kernel.Invariant κ π ∧
       IsGeometricallyErgodic κ π := by
+  -- FALSE AS FROZEN — refuted by `tNoErgodic` above (the Bochner drift is vacuous wherever `V`
+  -- is not `κ x`-integrable).  Left as a named debt.
   sorry
 
 private theorem drift_lintegral_ae {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ} {γ K : ℝ}
