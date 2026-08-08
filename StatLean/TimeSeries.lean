@@ -4,6 +4,7 @@ import StatLean.TimeSeries.ForMathlib.Fourier.MeasureFourierCoeff
 import StatLean.TimeSeries.ForMathlib.Fourier.HerglotzBochner
 import StatLean.TimeSeries.ForMathlib.Markov.Chain
 import StatLean.TimeSeries.ForMathlib.Markov.GeometricErgodicity
+import StatLean.TimeSeries.ForMathlib.Markov.HarrisTheorem
 import StatLean.TimeSeries.ForMathlib.Probability.TriangularCLT
 import StatLean.TimeSeries.ForMathlib.Probability.MartingaleCLT.Defs
 import StatLean.TimeSeries.ForMathlib.Probability.MartingaleCLT.CondCharFun
