@@ -85,7 +85,40 @@ FY Thm 2.1 machinery). -/
 theorem summable_abs_armaACVF {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
     (hB : ARMAInvertibleParams b a) :
     Summable fun k : ℤ => |armaACVF b a k| := by
-  sorry
+  obtain ⟨C, hC, r, hr0, hr1, hbnd⟩ := exists_geometric_bound_armaPsi a hB.1
+  have hr2nn : (0 : ℝ) ≤ r ^ 2 := sq_nonneg r
+  have hr2 : r ^ 2 < 1 := by nlinarith
+  have hgeom : Summable fun j : ℕ => (r ^ 2) ^ j := summable_geometric_of_lt_one hr2nn hr2
+  have hgeomval : ∑' j : ℕ, (r ^ 2) ^ j = (1 - r ^ 2)⁻¹ := tsum_geometric_of_lt_one hr2nn hr2
+  -- the Cauchy-product estimate `|ψ_j ψ_{j+m}| ≤ C² r^m (r²)^j`
+  have hterm : ∀ m j : ℕ,
+      |armaPsi b a j * armaPsi b a (j + m)| ≤ C ^ 2 * r ^ m * (r ^ 2) ^ j := by
+    intro m j
+    rw [abs_mul]
+    calc |armaPsi b a j| * |armaPsi b a (j + m)|
+        ≤ (C * r ^ j) * (C * r ^ (j + m)) :=
+          mul_le_mul (hbnd j) (hbnd (j + m)) (abs_nonneg _) (by positivity)
+      _ = C ^ 2 * r ^ m * (r ^ 2) ^ j := by rw [pow_add, ← pow_mul]; ring
+  have hsum : ∀ m : ℕ, Summable fun j : ℕ => |armaPsi b a j * armaPsi b a (j + m)| :=
+    fun m => Summable.of_nonneg_of_le (fun _ => abs_nonneg _) (hterm m) (hgeom.mul_left _)
+  -- hence `|γ(k)| ≤ (C²/(1 − r²)) r^{|k|}`
+  have hACVF : ∀ k : ℤ, |armaACVF b a k| ≤ C ^ 2 / (1 - r ^ 2) * r ^ k.natAbs := by
+    intro k
+    have h1 : |armaACVF b a k| ≤ ∑' j : ℕ, |armaPsi b a j * armaPsi b a (j + k.natAbs)| := by
+      rw [armaACVF, ← Real.norm_eq_abs]
+      simpa [Real.norm_eq_abs] using
+        norm_tsum_le_tsum_norm (f := fun j : ℕ => armaPsi b a j * armaPsi b a (j + k.natAbs))
+          (by simpa [Real.norm_eq_abs] using hsum k.natAbs)
+    have h2 : ∑' j : ℕ, |armaPsi b a j * armaPsi b a (j + k.natAbs)|
+        ≤ ∑' j : ℕ, C ^ 2 * r ^ k.natAbs * (r ^ 2) ^ j :=
+      (hsum _).tsum_le_tsum (hterm _) (hgeom.mul_left _)
+    have h3 : ∑' j : ℕ, C ^ 2 * r ^ k.natAbs * (r ^ 2) ^ j
+        = C ^ 2 / (1 - r ^ 2) * r ^ k.natAbs := by
+      rw [tsum_mul_left, hgeomval]; ring
+    linarith
+  refine Summable.of_nonneg_of_le (fun _ => abs_nonneg _) hACVF ?_
+  refine Summable.of_nat_of_neg ?_ ?_ <;>
+    simpa using (summable_geometric_of_lt_one hr0 hr1).mul_left (C ^ 2 / (1 - r ^ 2))
 
 /-- **The model/process ACVF link**: a stationary causal ARMA(p, q) process with noise
 variance `σ²` has `acvf X μ k = σ² · armaACVF b a k` (FY eq. (2.2); connects the
