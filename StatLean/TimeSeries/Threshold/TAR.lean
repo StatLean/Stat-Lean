@@ -391,6 +391,46 @@ theorem exists_stationary_toy_setar [IsProbabilityMeasure μ] (r : ℝ)
           (fun i : Fin 2 => if i = 0 then {x : ℝ | x ≤ r} else {x : ℝ | r < x})
           1 X' ε' μ' ∧
         IsStrictlyStationary X' μ' := by
-  sorry
+  -- the two half-lines are a measurable partition, and `|∓0.7| = 0.7 < 1` is the
+  -- contraction condition (b); `d = 1 ≤ P = 1` is the delay condition
+  have hd01 : Disjoint {x : ℝ | x ≤ r} {x : ℝ | r < x} := by
+    refine Set.disjoint_left.mpr fun x hx hx' => ?_
+    have h1 : x ≤ r := hx
+    have h2 : r < x := hx'
+    linarith
+  have hfin : ∀ a : Fin 2, a ≠ 0 → a = 1 := by decide
+  refine exists_stationary_tar (μ := μ) (b0 := fun _ : Fin 2 => (0 : ℝ))
+    (b := fun i : Fin 2 => fun _ : Fin 1 => if i = 0 then (-0.7 : ℝ) else 0.7)
+    (σ0 := 1)
+    (A := fun i : Fin 2 => if i = 0 then {x : ℝ | x ≤ r} else {x : ℝ | r < x})
+    (d := 1) ?_ ?_ ?_ one_pos ?_ le_rfl le_rfl hν hν2 hνmean
+  · intro i
+    dsimp only
+    by_cases h : i = 0
+    · rw [if_pos h]; exact measurableSet_Iic
+    · rw [if_neg h]; exact measurableSet_Ioi
+  · intro i j hij
+    dsimp only
+    by_cases hi : i = 0
+    · have hj : j ≠ 0 := fun h => hij (hi.trans h.symm)
+      rw [if_pos hi, if_neg hj]
+      exact hd01
+    · have hj : j = 0 := by
+        by_contra hj0
+        exact hij ((hfin i hi).trans (hfin j hj0).symm)
+      rw [if_neg hi, if_pos hj]
+      exact hd01.symm
+  · ext x
+    simp only [Set.mem_iUnion, Set.mem_univ, iff_true]
+    rcases le_or_gt x r with h | h
+    · exact ⟨0, by rw [if_pos rfl]; exact h⟩
+    · exact ⟨1, by rw [if_neg (by decide : ¬((1 : Fin 2) = 0))]; exact h⟩
+  · intro i
+    dsimp only
+    by_cases h : i = 0
+    · rw [Fin.sum_univ_one, if_pos h]
+      norm_num
+    · rw [Fin.sum_univ_one, if_neg h]
+      norm_num
 
 end StatLean.TimeSeries
