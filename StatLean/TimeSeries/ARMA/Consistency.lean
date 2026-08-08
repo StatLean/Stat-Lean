@@ -176,6 +176,172 @@ private lemma summable_sq_contrastCoeff {p q : ℕ} {b0 b : Fin p → ℝ} {a0 a
         rw [← pow_mul, mul_comm 2 n, pow_mul]
         ring
 
+/-- The composite filter is the coefficient sequence of the composite transfer function
+`(b(z)/a(z)) · (a₀(z)/b₀(z))`. -/
+private lemma contrastCoeff_eq_coeff {p q : ℕ} (b0 b : Fin p → ℝ) (a0 a : Fin q → ℝ) (n : ℕ) :
+    contrastCoeff b0 a0 b a n
+      = PowerSeries.coeff n
+          ((((arPoly b : Polynomial ℝ) : PowerSeries ℝ) *
+              ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ)))⁻¹) *
+            ((((maPoly a0 : Polynomial ℝ) : PowerSeries ℝ)) *
+              ((((arPoly b0 : Polynomial ℝ) : PowerSeries ℝ)))⁻¹)) := by
+  rw [PowerSeries.coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
+  rfl
+
+/-- The contrast variance is `1` exactly when the composite filter is `δ₀`. -/
+private lemma armaContrastVar_eq_one_iff_coeff {p q : ℕ} {b0 b : Fin p → ℝ} {a0 a : Fin q → ℝ}
+    (hB0 : ARMAInvertibleParams b0 a0) (hB : ARMAInvertibleParams b a) :
+    armaContrastVar b0 a0 b a = 1 ↔ ∀ n : ℕ, n ≠ 0 → contrastCoeff b0 a0 b a n = 0 := by
+  have hsum := summable_sq_contrastCoeff hB0 hB
+  constructor
+  · intro hvar n hn
+    have hpair := hsum.sum_le_tsum ({0, n} : Finset ℕ) (fun i _ => sq_nonneg _)
+    rw [Finset.sum_pair (Ne.symm hn), ← armaContrastVar_eq_tsum, hvar,
+      contrastCoeff_zero, one_pow] at hpair
+    have hle : contrastCoeff b0 a0 b a n ^ 2 ≤ 0 := by linarith
+    exact pow_eq_zero_iff (n := 2) (by norm_num) |>.1 (le_antisymm hle (sq_nonneg _))
+  · intro hzero
+    rw [armaContrastVar_eq_tsum]
+    have h : ∀ n : ℕ, contrastCoeff b0 a0 b a n ^ 2 = if n = 0 then 1 else 0 := by
+      intro n
+      rcases eq_or_ne n 0 with rfl | hn
+      · rw [contrastCoeff_zero, if_pos rfl, one_pow]
+      · rw [hzero n hn, if_neg hn]
+        ring
+    rw [tsum_congr h]
+    simpa using tsum_ite_eq (0 : ℕ) (fun _ : ℕ => (1 : ℝ))
+
+/-- **Identifiability, honest form** (this is what the contrast variance sees): the
+contrast variance equals `1` exactly when the two transfer functions agree, i.e.
+`b(z) a₀(z) = b₀(z) a(z)` as polynomials. Recovering `(b, a) = (b₀, a₀)` from this needs
+the *working* pair to be coprime as well — see `armaContrastVar_eq_one_not_identifiable`. -/
+private lemma armaContrastVar_eq_one_iff_transfer {p q : ℕ} {b0 b : Fin p → ℝ}
+    {a0 a : Fin q → ℝ} (hB0 : ARMAInvertibleParams b0 a0) (hB : ARMAInvertibleParams b a) :
+    armaContrastVar b0 a0 b a = 1 ↔ arPoly b * maPoly a0 = arPoly b0 * maPoly a := by
+  have hAne : PowerSeries.constantCoeff (((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) ≠ 0 := by
+    rw [Polynomial.constantCoeff_coe, coeff_maPoly_zero']
+    exact one_ne_zero
+  have hB0ne : PowerSeries.constantCoeff (((arPoly b0 : Polynomial ℝ) : PowerSeries ℝ)) ≠ 0 := by
+    rw [Polynomial.constantCoeff_coe, coeff_arPoly_zero']
+    exact one_ne_zero
+  have hcoeff : armaContrastVar b0 a0 b a = 1 ↔
+      (((arPoly b : Polynomial ℝ) : PowerSeries ℝ) *
+          ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ)))⁻¹) *
+        ((((maPoly a0 : Polynomial ℝ) : PowerSeries ℝ)) *
+          ((((arPoly b0 : Polynomial ℝ) : PowerSeries ℝ)))⁻¹) = 1 := by
+    rw [armaContrastVar_eq_one_iff_coeff hB0 hB, PowerSeries.ext_iff]
+    constructor
+    · intro h n
+      rw [← contrastCoeff_eq_coeff, PowerSeries.coeff_one]
+      rcases eq_or_ne n 0 with rfl | hn
+      · rw [contrastCoeff_zero, if_pos rfl]
+      · rw [h n hn, if_neg hn]
+    · intro h n hn
+      have := h n
+      rw [← contrastCoeff_eq_coeff, PowerSeries.coeff_one, if_neg hn] at this
+      exact this
+  rw [hcoeff]
+  constructor
+  · intro h
+    have h2 : ((arPoly b : Polynomial ℝ) : PowerSeries ℝ) *
+        ((maPoly a0 : Polynomial ℝ) : PowerSeries ℝ)
+        = ((arPoly b0 : Polynomial ℝ) : PowerSeries ℝ) *
+            ((maPoly a : Polynomial ℝ) : PowerSeries ℝ) := by
+      have hmul := congrArg (fun S => S * ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) *
+        (((arPoly b0 : Polynomial ℝ) : PowerSeries ℝ)))) h
+      simp only [one_mul] at hmul
+      rw [show ((((arPoly b : Polynomial ℝ) : PowerSeries ℝ)) *
+            ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ)))⁻¹) *
+          ((((maPoly a0 : Polynomial ℝ) : PowerSeries ℝ)) *
+            ((((arPoly b0 : Polynomial ℝ) : PowerSeries ℝ)))⁻¹) *
+          ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) *
+            (((arPoly b0 : Polynomial ℝ) : PowerSeries ℝ)))
+          = ((((arPoly b : Polynomial ℝ) : PowerSeries ℝ)) *
+              (((maPoly a0 : Polynomial ℝ) : PowerSeries ℝ))) *
+            (((((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) *
+                ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ)))⁻¹) *
+              (((((arPoly b0 : Polynomial ℝ) : PowerSeries ℝ))) *
+                ((((arPoly b0 : Polynomial ℝ) : PowerSeries ℝ)))⁻¹)) from by ring,
+        PowerSeries.mul_inv_cancel _ hAne, PowerSeries.mul_inv_cancel _ hB0ne, mul_one,
+        mul_one] at hmul
+      rw [hmul]
+      ring
+    refine (Polynomial.coe_inj (R := ℝ)).1 ?_
+    rw [Polynomial.coe_mul, Polynomial.coe_mul]
+    exact h2
+  · intro h
+    have h2 : ((arPoly b : Polynomial ℝ) : PowerSeries ℝ) *
+        ((maPoly a0 : Polynomial ℝ) : PowerSeries ℝ)
+        = ((arPoly b0 : Polynomial ℝ) : PowerSeries ℝ) *
+            ((maPoly a : Polynomial ℝ) : PowerSeries ℝ) := by
+      rw [← Polynomial.coe_mul, ← Polynomial.coe_mul, h]
+    calc ((arPoly b : Polynomial ℝ) : PowerSeries ℝ) *
+          ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ)))⁻¹ *
+          ((((maPoly a0 : Polynomial ℝ) : PowerSeries ℝ)) *
+            ((((arPoly b0 : Polynomial ℝ) : PowerSeries ℝ)))⁻¹)
+        = (((arPoly b : Polynomial ℝ) : PowerSeries ℝ) *
+            ((maPoly a0 : Polynomial ℝ) : PowerSeries ℝ)) *
+          (((((maPoly a : Polynomial ℝ) : PowerSeries ℝ)))⁻¹ *
+            ((((arPoly b0 : Polynomial ℝ) : PowerSeries ℝ)))⁻¹) := by ring
+      _ = (((arPoly b0 : Polynomial ℝ) : PowerSeries ℝ) *
+            ((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) *
+          (((((maPoly a : Polynomial ℝ) : PowerSeries ℝ)))⁻¹ *
+            ((((arPoly b0 : Polynomial ℝ) : PowerSeries ℝ)))⁻¹) := by rw [h2]
+      _ = ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) *
+            ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ)))⁻¹) *
+          ((((arPoly b0 : Polynomial ℝ) : PowerSeries ℝ)) *
+            ((((arPoly b0 : Polynomial ℝ) : PowerSeries ℝ)))⁻¹) := by ring
+      _ = 1 := by
+          rw [PowerSeries.mul_inv_cancel _ hAne, PowerSeries.mul_inv_cancel _ hB0ne, mul_one]
+
+/-- **Falsity witness for the frozen forward implication of `armaContrastVar_eq_one_iff`.**
+
+With `p = q = 1`, true parameters `b₀ = a₀ = 0` (so `b₀(z) = a₀(z) = 1`: white noise, and
+`IsCoprime 1 1` holds) and working parameters `b = 1/2`, `a = −1/2`, the working transfer
+function is `b(z)/a(z) = (1 − z/2)/(1 − z/2) = 1`: the working model is a *non-minimal*
+representation of the same white noise. Both parameter pairs lie in `𝓑`, the contrast
+variance is `1`, yet `b ≠ b₀`. Identifiability of the *parameters* needs coprimality of
+the **working** pair too (or a search region of minimal representations); the contrast
+variance only ever sees the transfer function — `armaContrastVar_eq_one_iff_transfer`. -/
+private theorem armaContrastVar_eq_one_not_identifiable :
+    ∃ (b0 b : Fin 1 → ℝ) (a0 a : Fin 1 → ℝ),
+      ARMAInvertibleParams b0 a0 ∧ ARMAInvertibleParams b a ∧
+        IsCoprime (arPoly b0) (maPoly a0) ∧ armaContrastVar b0 a0 b a = 1 ∧ b ≠ b0 := by
+  have harZero : arPoly (fun _ : Fin 1 => (0 : ℝ)) = 1 := by simp [arPoly]
+  have hmaZero : maPoly (fun _ : Fin 1 => (0 : ℝ)) = 1 := by simp [maPoly]
+  have hmaNeg : maPoly (fun _ : Fin 1 => (-(1 / 2) : ℝ)) = arPoly (fun _ : Fin 1 => (1 / 2 : ℝ)) :=
+    maPoly_neg (fun _ : Fin 1 => (1 / 2 : ℝ))
+  have hroot : NoRootClosedDisc (fun _ : Fin 1 => (1 / 2 : ℝ)) := by
+    intro z hz hzero
+    have hev : Polynomial.aeval z (arPoly (fun _ : Fin 1 => (1 / 2 : ℝ))) = 1 - z / 2 := by
+      simp [arPoly]
+      ring
+    rw [hev] at hzero
+    have hz2 : z = 2 := by linear_combination -2 * hzero
+    rw [hz2] at hz
+    norm_num at hz
+  have hB0 : ARMAInvertibleParams (fun _ : Fin 1 => (0 : ℝ)) (fun _ : Fin 1 => (0 : ℝ)) := by
+    constructor
+    · intro z _
+      rw [harZero]
+      simp
+    · intro z _
+      rw [hmaZero]
+      simp
+  have hB : ARMAInvertibleParams (fun _ : Fin 1 => (1 / 2 : ℝ))
+      (fun _ : Fin 1 => (-(1 / 2) : ℝ)) := by
+    refine ⟨hroot, fun z hz => ?_⟩
+    rw [hmaNeg]
+    exact hroot z hz
+  refine ⟨fun _ => 0, fun _ => 1 / 2, fun _ => 0, fun _ => -(1 / 2), hB0, hB, ?_, ?_, ?_⟩
+  · rw [harZero, hmaZero]
+    exact isCoprime_one_left
+  · refine (armaContrastVar_eq_one_iff_transfer hB0 hB).2 ?_
+    rw [harZero, hmaZero, hmaNeg, mul_one, one_mul]
+  · intro h
+    have := congrFun h 0
+    norm_num at this
+
 end CompositeFilter
 
 /-- The composite filter has leading coefficient `1`, so the contrast variance is at
@@ -197,7 +363,21 @@ theorem armaContrastVar_eq_one_iff {p q : ℕ} {b0 b : Fin p → ℝ} {a0 a : Fi
     -- USER-INPUT: coprime minimal true orders; Hannan 1973
     (hcop : IsCoprime (arPoly b0) (maPoly a0)) :
     armaContrastVar b0 a0 b a = 1 ↔ b = b0 ∧ a = a0 := by
-  sorry
+  constructor
+  · -- **FALSE AS FROZEN.** The hypotheses constrain only the *true* pair to be coprime,
+    -- so a non-minimal working pair with the same transfer function is a counterexample:
+    -- `armaContrastVar_eq_one_not_identifiable` exhibits (in Lean) `p = q = 1`,
+    -- `b₀ = a₀ = 0`, `b = 1/2`, `a = −1/2`, where both pairs are in `𝓑`,
+    -- `IsCoprime (arPoly b₀) (maPoly a₀)` holds, the contrast variance is `1`, and
+    -- `b ≠ b₀`. The provable statement is the transfer-function one,
+    -- `armaContrastVar_eq_one_iff_transfer`:
+    --   `armaContrastVar b₀ a₀ b a = 1 ↔ arPoly b * maPoly a₀ = arPoly b₀ * maPoly a`,
+    -- which is PROVED above; the frozen conclusion follows from it only after adding
+    -- `IsCoprime (arPoly b) (maPoly a)` (minimality of the *working* model) to the
+    -- hypotheses. Repair the statement, do not attempt this branch.
+    sorry
+  · rintro ⟨rfl, rfl⟩
+    exact (armaContrastVar_eq_one_iff_transfer hB0 hB).2 rfl
 
 section Szego
 
