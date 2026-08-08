@@ -703,8 +703,17 @@ private lemma acf_sq_lognormal_corrected [IsProbabilityMeasure μ] {a0 a1 σe2 �
   rw [div_eq_div_iff (by nlinarith) (by nlinarith)]
   ring
 
-/-- **FY eq. (4.62), squared-process ACF** (lognormal algebra):
-`Corr(X_t², X_{t−k}²) = (exp(σ_h² a₁^{|k|}) − 1)/(exp(σ_h²) − 1)`. -/
+/-- **FY eq. (4.62), squared-process ACF** (lognormal algebra), with the book's
+denominator **corrected**:
+`Corr(X_t², X_{t−k}²) = (exp(σ_h² a₁^{|k|}) − 1)/(3 exp(σ_h²) − 1)`.
+
+**Book error, verified 2026-08-09.** FY prints `exp(σ_h²) − 1` in the denominator; that
+is the ACF of the *volatility* `e^{h_t}`, where the multiplier `ε_t²` is absent. For
+`X_t²` the variance carries `E ε⁴ = 3`:
+`Var(X_0²) = E ε⁴ · E e^{2h} − (E ε² · E e^{h})² = e^{2μ_h+σ_h²}(3e^{σ_h²} − 1)`,
+while `Cov(X_k², X_0²) = e^{2μ_h+σ_h²}(e^{σ_h² a₁^{|k|}} − 1)`. The two formulas agree
+only at `k = 0` or `a₁ = 0`. Per the project's constants policy we state what is
+provable and record the deviation here. -/
 theorem IsSV.acf_sq_lognormal [IsProbabilityMeasure μ] {a0 a1 σe2 μh σh2 : ℝ}
     {X h ε e : ℤ → Ω → ℝ}
     (hSV : IsSV (fun x => Real.exp (x / 2)) a0 a1 σe2 X h ε e μ)
@@ -715,7 +724,7 @@ theorem IsSV.acf_sq_lognormal [IsProbabilityMeasure μ] {a0 a1 σe2 μh σh2 : �
     (hacvf : ∀ k : ℤ, acvf h μ k = σh2 * a1 ^ k.natAbs)
     (hstat : IsStrictlyStationary X μ) (hL4 : ∀ t, MemLp (X t) 4 μ) (k : ℤ) :
     acf (fun t ω => X t ω ^ 2) μ k
-      = (Real.exp (σh2 * a1 ^ k.natAbs) - 1) / (Real.exp σh2 - 1) := by
+      = (Real.exp (σh2 * a1 ^ k.natAbs) - 1) / (3 * Real.exp σh2 - 1) := by
   rcases eq_or_ne k 0 with rfl | hk
   · -- lag `0`: both sides are `1`
     have h0 := acvf_sq_lognormal_zero hSV hgauss hlatent hσh hL4
