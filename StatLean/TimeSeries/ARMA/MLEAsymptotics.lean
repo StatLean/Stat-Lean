@@ -28,6 +28,36 @@ Also here:
 score MDS (`armaScore_condexp_zero` + Brown `mds_clt_sequence`) + Hessian/information
 LLN + the standard Taylor/sandwich argument on the profiled criterion.
 
+**Status of the assembly** (wave `ts/d-hannan-assembly`). All three headline theorems
+are *assembled*: their proofs run end to end over named `private` debts, which are
+listed here with their exact blockers.
+
+* Proved outright: the charFun bricks (`tendsto_charFun_of_tendstoInProb_sub`, the
+  charFun form of Slutsky), `exists_adapted_isLinearProcessOf` (conditional expectation
+  turns a linear process into an *adapted* one — `exists_isLinearProcessOf` alone does
+  not, and Brown's CLT needs adaptedness), `hannanScore_clt` (the Brown CLT genuinely
+  wired along the noise filtration), the padding lemmas and measurability of
+  `samplePACF`, and the three assemblies.
+* The **variance algebra** of the sandwich is carried out symbolically in the
+  `ScoreCLT` section docstring; it collapses to `W⁻¹ = (hannanVarZ b₀ a₀)⁻¹` exactly as
+  the frozen statement demands.
+* Debts: `armaProfileS_atTruth_tendstoInProb`, `armaProfileS_equicontinuous`,
+  `hannanScore_brownInputs`, `armaMLE_linearization`, `samplePACF_linearization`.
+  Every one of them reduces to the *same two* missing bricks: the **pointwise ergodic
+  theorem** (absent from Mathlib; this is also what blocks `ARMA/Consistency.lean`'s
+  `armaProfileS_tendstoInProb`) and `ARMA/ScoreAnalysis.lean`'s `indep_noise_sigmaLT`,
+  which is `private` there and hence not citeable from this module.
+
+**Two findings reported by this wave.**
+1. `criterion_tendsto_contrast` is *strictly weaker* than the `S_T/T`-level LLN the
+   variance part needs: `Real.log 0 = 0`, so at `σ² = 1` the degenerate event
+   `{S_T = 0}` is invisible at the `log` level and the `exp`-transfer fails. The
+   project-level fix is to un-`private` Consistency's `armaProfileS_tendstoInProb`.
+2. The commissioned Bartlett route to `samplePACF_clt` is **closed**:
+   `sampleACF_bartlett_clt_debt` carries `MemLp (ε 0) 4 μ`, which `samplePACF_clt` —
+   correctly, FY Prop 3.1 needs two moments — does not assume. The martingale route
+   taken instead is documented in the `PACF` section.
+
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §3.3.2,
 Theorem 3.2, eq. (3.14), Prop 3.1 (pp. 96–99); E. J. Hannan, J. Appl. Probab. 10
 (1973) 130–145; Brockwell & Davis (1991) §8.7–§10.8. (`FY §3.3 Thm 3.2 / Hannan
@@ -696,6 +726,154 @@ noncomputable def samplePACF {T : ℕ} (x : Fin T → ℝ) (k : ℕ) : ℝ :=
         *ᵥ fun i : Fin k => sampleACVF x ((i : ℕ) + 1)) ⟨k - 1, by omega⟩
   else 0
 
+section PACF
+
+/-! ### The sample PACF (FY Proposition 3.1)
+
+**A blocker on the commissioned route, reported.** The lane plan routed this through
+Bartlett's formula (`sampleACF_bartlett_clt_debt`, FY Thm 2.8(iii)) plus a delta method.
+That is **not available for the frozen statement**: the Bartlett debt carries a
+`MemLp (ε 0) 4 μ` hypothesis (FY assumes a finite fourth moment throughout Thm 2.8),
+whereas `samplePACF_clt` — correctly, since FY Prop 3.1 needs only two moments — does
+not. There is no way to manufacture the fourth moment, so the Bartlett route is closed.
+
+The route taken instead is the martingale one, which is also the one that explains the
+`N(0, 1)`: for `k > p` the population Yule–Walker solution at order `k` is `(b₀, 0…0)`,
+so the AR(k) fit is *exact*, and
+
+  `√T π̂(k) = σ⁻² · T^{−1/2} Σ_t ε_t ⟨d, (X_{t−1}, …, X_{t−k})⟩ + o_p(1)`,
+
+where `d` is the last row of the order-`k` information matrix's inverse. The instrument
+`ε_t ⟨d, past⟩` is a martingale difference against the noise filtration, so the *same*
+Brown CLT wiring as `hannanScore_clt` applies verbatim once the AR(p) coefficient vector
+is padded with zeros to length `k`. FY's reciprocal-variance identity
+`(Γ_k⁻¹)_{kk} = 1/ν_{k−1} = σ⁻²` for `k > p` (Schur complement plus exactness of the
+AR(p) predictor beyond lag `p`) is exactly the normalisation `dᵀ W_k d = 1` that turns
+the limit into `N(0, 1)`; it is carried by the single named debt below. -/
+
+/-- Padding a coefficient vector with zeros beyond its length changes no induced sum. -/
+private lemma sum_padCoeff {p k : ℕ} {M : Type*} [AddCommMonoid M] (hk : p ≤ k)
+    (b0 : Fin p → ℝ) (f : ℕ → ℝ → M) (hf : ∀ n, f n 0 = 0) :
+    ∑ i : Fin k, f (i : ℕ) (if hi : (i : ℕ) < p then b0 ⟨i, hi⟩ else 0)
+      = ∑ i : Fin p, f (i : ℕ) (b0 i) := by
+  classical
+  have h1 : ∑ i : Fin k, f (i : ℕ) (if hi : (i : ℕ) < p then b0 ⟨i, hi⟩ else 0)
+      = ∑ n ∈ Finset.range k, f n (if hn : n < p then b0 ⟨n, hn⟩ else 0) :=
+    Fin.sum_univ_eq_sum_range (fun n => f n (if hn : n < p then b0 ⟨n, hn⟩ else 0)) k
+  have h2 : ∑ n ∈ Finset.range p, f n (if hn : n < p then b0 ⟨n, hn⟩ else 0)
+      = ∑ n ∈ Finset.range k, f n (if hn : n < p then b0 ⟨n, hn⟩ else 0) :=
+    Finset.sum_subset (fun x hx => Finset.mem_range.2
+        (lt_of_lt_of_le (Finset.mem_range.1 hx) hk))
+      (fun n _ hn => by rw [dif_neg (by simpa using hn), hf])
+  have h3 : ∑ n ∈ Finset.range p, f n (if hn : n < p then b0 ⟨n, hn⟩ else 0)
+      = ∑ i : Fin p, f (i : ℕ) (b0 i) := by
+    rw [← Fin.sum_univ_eq_sum_range (fun n => f n (if hn : n < p then b0 ⟨n, hn⟩ else 0)) p]
+    exact Finset.sum_congr rfl fun i _ => by rw [dif_pos i.isLt]
+  rw [h1, ← h2, h3]
+
+/-- Padding does not change the AR lag polynomial. -/
+private lemma arPoly_pad {p k : ℕ} (hk : p ≤ k) (b0 : Fin p → ℝ) :
+    arPoly (fun i : Fin k => if hi : (i : ℕ) < p then b0 ⟨i, hi⟩ else 0) = arPoly b0 := by
+  simp only [arPoly]
+  exact congrArg (fun z => 1 - z)
+    (sum_padCoeff hk b0 (fun n r => Polynomial.C r * Polynomial.X ^ (n + 1)) (by simp))
+
+/-- Entrywise measurability of a matrix inverse with measurable entries (via
+`A⁻¹ = (det A)⁻¹ • adj A`, both polynomial in the entries). -/
+private lemma measurable_inv_mulVec {α : Type*} [MeasurableSpace α] {n : ℕ}
+    {M : α → Matrix (Fin n) (Fin n) ℝ} {v : α → Fin n → ℝ}
+    (hM : ∀ i j, Measurable fun x => M x i j) (hv : ∀ i, Measurable fun x => v x i)
+    (i : Fin n) : Measurable fun x => ((M x)⁻¹ *ᵥ v x) i := by
+  classical
+  have hdet : ∀ N : α → Matrix (Fin n) (Fin n) ℝ, (∀ i j, Measurable fun x => N x i j) →
+      Measurable fun x => (N x).det := by
+    intro N hN
+    simp only [Matrix.det_apply]
+    exact Finset.measurable_sum _ fun σ _ =>
+      (Finset.measurable_prod _ fun j _ => hN _ _).const_smul _
+  have hadj : ∀ i' j' : Fin n, Measurable fun x => (M x).adjugate i' j' := by
+    intro i' j'
+    simp only [Matrix.adjugate_apply]
+    refine hdet _ fun r s => ?_
+    simp only [Matrix.updateRow_apply]
+    rcases eq_or_ne r j' with rfl | hr
+    · simp
+    · simpa [hr] using hM r s
+  have hexp : (fun x => ((M x)⁻¹ *ᵥ v x) i)
+      = fun x => ∑ j, ((M x).det)⁻¹ * ((M x).adjugate i j * v x j) := by
+    funext x
+    simp [Matrix.mulVec, dotProduct, Matrix.inv_def, Ring.inverse_eq_inv', mul_assoc]
+  rw [hexp]
+  exact Finset.measurable_sum _ fun j _ =>
+    ((hdet M hM).inv).mul ((hadj i j).mul (hv j))
+
+/-- `sampleACVF` of the observation window is measurable. -/
+private lemma measurable_sampleACVF {T : ℕ} {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
+    (m : ℕ) : Measurable fun ω => sampleACVF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) m := by
+  classical
+  have hmean : Measurable fun ω => sampleMean (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) := by
+    simp only [sampleMean]
+    exact (Finset.measurable_sum _ fun t _ => hmeas _).const_mul _
+  simp only [sampleACVF]
+  refine Measurable.const_mul (Finset.measurable_sum _ fun t _ => ?_) _
+  rcases eq_or_ne (decide ((t : ℕ) + m < T)) true with hlt | hlt
+  · have hlt' : (t : ℕ) + m < T := of_decide_eq_true hlt
+    simpa [dif_pos hlt'] using ((hmeas _).sub hmean).mul ((hmeas _).sub hmean)
+  · have hlt' : ¬ ((t : ℕ) + m < T) := by simpa using hlt
+    simp [dif_neg hlt']
+
+/-- The sample PACF of the observation window is measurable. -/
+private lemma measurable_samplePACF {T : ℕ} {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
+    (k : ℕ) :
+    Measurable fun ω => samplePACF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) k := by
+  classical
+  simp only [samplePACF]
+  split
+  · exact measurable_inv_mulVec (fun i j => measurable_sampleACVF hmeas _)
+      (fun i => measurable_sampleACVF hmeas _) _
+  · exact measurable_const
+
+/-- **DEBT — the delta-method linearization of the sample PACF, with its variance
+normalisation** (FY Prop 3.1's "can be proved").
+
+Two classical facts are bundled, because they are proved together (B&D §8.10, §10.8):
+
+* the **linearization**: for `k > p` the sample Yule–Walker map `γ̂ ↦ (Γ̂_k⁻¹ γ̂_k)_k` is
+  differentiable at the population point, where the solution is `(b₀, 0, …, 0)` with last
+  coordinate `pacf X μ k = 0` (PROVED upstream as `pacf_eq_zero_of_isAR`), so no centring
+  term appears; propagating the derivative through the exact AR(k) recursion
+  `X_t = Σ_{j<k} φ_j X_{t−1−j} + ε_t` turns `√T π̂(k)` into the normalized score
+  `σ⁻² T^{−1/2} Σ_t ε_t ⟨d, (X_{t−1−j})_{j<k}⟩` up to `o_p(1)`;
+* the **reciprocal-variance identity** `dᵀ W_k d = 1`, i.e. `(Γ_k⁻¹)_{kk} = 1/ν_{k−1}`
+  (Schur complement / partitioned inverse) together with `ν_{k−1} = σ²` for `k > p`
+  (the AR(p) one-step predictor is already exact from `p` lags, so no further lag reduces
+  the prediction variance).
+
+Blocked on the same missing brick as the rest of the lane — the ergodic LLN for
+`Γ̂_k →p Γ_k`, which is what makes the linearization's remainder `o_p(1)`. -/
+private theorem samplePACF_linearization [IsProbabilityMeasure μ] {p k : ℕ}
+    {b0 : Fin p → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
+    (h : IsAR b0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
+    (hroot : NoRootClosedDisc b0)
+    (hcausal : IsLinearProcessOf (armaPsi b0 (Fin.elim0 : Fin 0 → ℝ)) X ε μ)
+    (hmeas : ∀ t, Measurable (X t)) (hk : p < k)
+    (hU : IsLinearProcessOf (armaPsi
+      (fun i : Fin k => if hi : (i : ℕ) < p then b0 ⟨i, hi⟩ else 0)
+      (Fin.elim0 : Fin 0 → ℝ)) U ε μ)
+    (hV : IsLinearProcessOf (armaPsi (fun j => -(Fin.elim0 : Fin 0 → ℝ) j)
+      (Fin.elim0 : Fin 0 → ℝ)) V ε μ)
+    (hUmeas : ∀ t, Measurable (U t)) (hVmeas : ∀ t, Measurable (V t)) :
+    ∃ d : Fin k ⊕ Fin 0 → ℝ,
+      d ⬝ᵥ (hannanVarZ (fun i : Fin k => if hi : (i : ℕ) < p then b0 ⟨i, hi⟩ else 0)
+        (Fin.elim0 : Fin 0 → ℝ) *ᵥ d) = 1 ∧
+      ∀ δ : ℝ, 0 < δ → Tendsto (fun T : ℕ => (μ {ω | δ ≤
+        |Real.sqrt T * samplePACF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) k
+          - σ2⁻¹ * ((Real.sqrt T)⁻¹ * ∑ i ∈ Finset.range T,
+              scoreSeq ε U V d ((i : ℤ) + 1) ω)|}).toReal) atTop (𝓝 0) := by
+  sorry
+
+end PACF
+
 /-- **FY Proposition 3.1** (misprint corrected: `√T`, not `T^{−1/2}`): for a causal
 AR(p) with iid noise and lag `k > p`, the sample PACF is asymptotically standard
 normal: `√T π̂(k) →d N(0, 1)`. -/
@@ -710,7 +888,68 @@ theorem samplePACF_clt [IsProbabilityMeasure μ] {p : ℕ}
     Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
         Real.sqrt T * samplePACF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) k) u)
       atTop (𝓝 (charFun (gaussianReal 0 1) u)) := by
-  sorry
+  classical
+  -- ## Pad the AR(p) coefficients with zeros to length `k`: the same process is an AR(k)
+  set bk : Fin k → ℝ := fun i => if hi : (i : ℕ) < p then b0 ⟨i, hi⟩ else 0 with hbkdef
+  have hpoly : arPoly bk = arPoly b0 := arPoly_pad hk.le b0
+  have hrootk : NoRootClosedDisc bk := by
+    intro z hz; rw [hpoly]; exact hroot z hz
+  have hBk : ARMAInvertibleParams bk (Fin.elim0 : Fin 0 → ℝ) :=
+    ⟨hrootk, fun z _ => by simp [maPoly]⟩
+  have hpsi : armaPsi bk (Fin.elim0 : Fin 0 → ℝ) = armaPsi b0 (Fin.elim0 : Fin 0 → ℝ) := by
+    funext n; simp only [armaPsi, hpoly]
+  have hcausalk : IsLinearProcessOf (armaPsi bk (Fin.elim0 : Fin 0 → ℝ)) X ε μ := by
+    rw [hpsi]; exact hcausal
+  have hARk : IsARMA bk (Fin.elim0 : Fin 0 → ℝ) σ2 X ε μ := by
+    refine ⟨h.measurableX, h.whiteNoise, fun t => ?_⟩
+    filter_upwards [h.recurrence t] with ω hω
+    rw [hω]
+    exact congrArg (fun z => z + ε t ω + ∑ j : Fin 0, (Fin.elim0 : Fin 0 → ℝ) j *
+        ε (t - 1 - (j : ℕ)) ω)
+      (sum_padCoeff hk.le b0 (fun n r => r * X (t - 1 - (n : ℕ)) ω) (by simp)).symm
+  -- ## The auxiliary processes of the order-`k` score, in adapted form
+  have hψb : Summable fun n => |armaPsi bk (Fin.elim0 : Fin 0 → ℝ) n| :=
+    summable_abs_armaPsi (Fin.elim0 : Fin 0 → ℝ) hBk.1
+  have hψa : Summable fun n =>
+      |armaPsi (fun j => -(Fin.elim0 : Fin 0 → ℝ) j) (Fin.elim0 : Fin 0 → ℝ) n| :=
+    summable_abs_armaPsi (Fin.elim0 : Fin 0 → ℝ) (noRootClosedDisc_neg' hBk)
+  obtain ⟨U0, hU0meas, hU0⟩ := exists_isLinearProcessOf hψb h.whiteNoise
+  obtain ⟨V0, hV0meas, hV0⟩ := exists_isLinearProcessOf hψa h.whiteNoise
+  obtain ⟨U, hUmeas, hUadapt, hU⟩ :=
+    exists_adapted_isLinearProcessOf hψb h.whiteNoise hU0meas hU0
+  obtain ⟨V, hVmeas, hVadapt, hV⟩ :=
+    exists_adapted_isLinearProcessOf hψa h.whiteNoise hV0meas hV0
+  -- ## The delta-method debt supplies the direction `d` and its unit normalisation
+  obtain ⟨d, hd1, hlin⟩ :=
+    samplePACF_linearization h hiid hσ hroot hcausal hmeas hk hU hV hUmeas hVmeas
+  -- ## The score CLT at order `k`, then the `σ⁻²` multiplier on the Gaussian scale
+  have hscore := hannanScore_clt hARk hiid hσ hBk hcausalk h.measurableX hU hV hUmeas hVmeas
+    hUadapt hVadapt d (by rw [hd1]; norm_num) (σ2⁻¹ * u)
+  rw [hd1] at hscore
+  have hgauss : charFun (gaussianReal 0 (Real.toNNReal (σ2 * (σ2 * 1)))) (σ2⁻¹ * u)
+      = charFun (gaussianReal 0 1) u := by
+    rw [charFun_gaussianReal, charFun_gaussianReal, Real.coe_toNNReal _ (by positivity)]
+    have hneC : (σ2 : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 (ne_of_gt hσ)
+    congr 1
+    push_cast
+    field_simp
+    ring
+  rw [hgauss] at hscore
+  -- ## charFun Slutsky
+  refine tendsto_charFun_of_tendstoInProb_sub (Y := fun T ω =>
+      σ2⁻¹ * ((Real.sqrt T)⁻¹ * ∑ i ∈ Finset.range T, scoreSeq ε U V d ((i : ℤ) + 1) ω))
+    (fun T => ?_) (fun T => measurable_const.mul (measurable_samplePACF hmeas k)) ?_ hlin
+  · refine measurable_const.mul (measurable_const.mul (Finset.measurable_sum _ fun i _ => ?_))
+    exact (hiid.measurable _).mul
+      ((Finset.measurable_sum _ fun l _ => measurable_const.mul (hUmeas _)).add
+        (Finset.measurable_sum _ fun l _ => measurable_const.mul (hVmeas _)))
+  · refine hscore.congr fun T => ?_
+    exact (charFun_map_mul_comp
+      (((measurable_const.mul (Finset.measurable_sum _ fun i _ =>
+          (hiid.measurable _).mul
+            ((Finset.measurable_sum _ fun l _ => measurable_const.mul (hUmeas _)).add
+              (Finset.measurable_sum _ fun l _ => measurable_const.mul (hVmeas _))))) :
+        Measurable _)).aemeasurable σ2⁻¹ u).symm
 
 /-- **DEBT (B&D Thm 10.8.2; FY §3.3.2 remark)**: least-squares, Yule–Walker, and
 Gaussian-MLE estimator sequences of a causal AR(p) are asymptotically equivalent
