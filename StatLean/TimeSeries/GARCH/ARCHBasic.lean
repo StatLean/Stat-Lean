@@ -40,7 +40,7 @@ heteroscedasticity with estimates of the variance of United Kingdom inflation*
 -/
 
 open MeasureTheory ProbabilityTheory Filter
-open scoped ProbabilityTheory Topology
+open scoped ProbabilityTheory Topology ENNReal
 
 namespace StatLean.TimeSeries
 
@@ -256,6 +256,314 @@ theorem IsARCH.isARCHInf_sq [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ} {b : 
     change X s ω ^ 2 = _
     rw [hω, mul_pow, htsum, archVol_sq h.c0_nonneg h.b_nonneg]
 
+/-! ### The stationary solution (FY Theorem 4.3(i), existence)
+
+`Stationarity/ARCH.lean` builds the stationary ARCH(∞) solution, but only as an
+*existential*: its Volterra functional is `private` there, and the ARCH(p) statement needs
+strictly more than the `IsARCHInf` package exports — that the solution's past sits inside
+the *noise's* past, which is what makes `ε_t` independent of `σ(X_s : s < t)` (rather than
+just of `σ(X_s² : s < t)`) and what transports the finite-dimensional laws along the shift.
+So the finite-order solution is built here directly, by backward iteration of the
+volatility recursion — finitely many terms per step, so none of §2.7.1's Volterra
+bookkeeping is needed — as a fixed measurable functional of the noise path. -/
+
+/-- The `n`-step backward iteration of `Y_t = (c₀ + Σ_i b_i Y_{t−1−i}) ε_t²`, read off a
+noise path `q` (with `q 0` in the role of `ε_t`); valued in `ℝ≥0∞`, so the iteration is
+unconditionally monotone and no summability side condition is carried. -/
+private noncomputable def archIter (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) : ℕ → (ℤ → ℝ) → ℝ≥0∞
+  | 0, _ => 0
+  | n + 1, q => ENNReal.ofReal (q 0 ^ 2) * (ENNReal.ofReal c0
+      + ∑ i : Fin p, ENNReal.ofReal (b i) * archIter c0 b n fun s => q (s - 1 - (i : ℕ)))
+
+/-- The stationary square `Y_t = X_t²`, read off the noise path. -/
+private noncomputable def archSq (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) (q : ℤ → ℝ) : ℝ≥0∞ :=
+  ⨆ n, archIter c0 b n q
+
+/-- The stationary squared volatility `σ_t²`, read off the noise path. -/
+private noncomputable def archRho (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) (q : ℤ → ℝ) : ℝ≥0∞ :=
+  ENNReal.ofReal c0
+    + ∑ i : Fin p, ENNReal.ofReal (b i) * archSq c0 b fun s => q (s - 1 - (i : ℕ))
+
+/-- The stationary ARCH(p) process, as a fixed measurable functional of the noise path. -/
+private noncomputable def archXFun (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) (q : ℤ → ℝ) : ℝ :=
+  Real.sqrt (archRho c0 b q).toReal * q 0
+
+/-- The noise path seen from time `t`. -/
+private def noisePath (ε : ℤ → Ω → ℝ) (t : ℤ) (ω : Ω) : ℤ → ℝ := fun s => ε (s + t) ω
+
+/-- The stationary ARCH(p) solution over the given noise. -/
+private noncomputable def archX (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) (ε : ℤ → Ω → ℝ) (t : ℤ)
+    (ω : Ω) : ℝ := archXFun c0 b (noisePath ε t ω)
+
+private lemma archIter_succ (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) (n : ℕ) (q : ℤ → ℝ) :
+    archIter c0 b (n + 1) q = ENNReal.ofReal (q 0 ^ 2) * (ENNReal.ofReal c0
+      + ∑ i : Fin p, ENNReal.ofReal (b i) * archIter c0 b n fun s => q (s - 1 - (i : ℕ))) :=
+  rfl
+
+omit [MeasurableSpace Ω] in
+private lemma noisePath_zero (ε : ℤ → Ω → ℝ) (t : ℤ) (ω : Ω) :
+    noisePath ε t ω 0 = ε t ω := by simp [noisePath]
+
+omit [MeasurableSpace Ω] in
+private lemma noisePath_shift (ε : ℤ → Ω → ℝ) (t : ℤ) (ω : Ω) (i : ℕ) :
+    (fun s => noisePath ε t ω (s - 1 - (i : ℕ))) = noisePath ε (t - 1 - (i : ℕ)) ω := by
+  funext s
+  simp only [noisePath]
+  congr 1
+  ring
+
+private lemma archIter_le_succ (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) :
+    ∀ (n : ℕ) (q : ℤ → ℝ), archIter c0 b n q ≤ archIter c0 b (n + 1) q := by
+  intro n
+  induction n with
+  | zero => intro q; simp [archIter]
+  | succ n ih =>
+    intro q
+    rw [archIter_succ, archIter_succ]
+    gcongr with i _
+    exact ih _
+
+private lemma archIter_monotone (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) (q : ℤ → ℝ) :
+    Monotone fun n => archIter c0 b n q :=
+  monotone_nat_of_le_succ fun n => archIter_le_succ c0 b n q
+
+/-- **The recursion satisfied by the limit**: `Y_t = σ_t² ε_t²`. -/
+private lemma archSq_eq (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) (q : ℤ → ℝ) :
+    archSq c0 b q = ENNReal.ofReal (q 0 ^ 2) * archRho c0 b q := by
+  have h1 : archSq c0 b q = ⨆ n, archIter c0 b (n + 1) q :=
+    le_antisymm (iSup_le fun n =>
+        (archIter_le_succ c0 b n q).trans (le_iSup (fun m => archIter c0 b (m + 1) q) n))
+      (iSup_le fun n => le_iSup (fun m => archIter c0 b m q) (n + 1))
+  have h3 : (⨆ n : ℕ, ∑ i : Fin p, ENNReal.ofReal (b i)
+        * archIter c0 b n fun s => q (s - 1 - (i : ℕ)))
+      = ∑ i : Fin p, ENNReal.ofReal (b i) * archSq c0 b fun s => q (s - 1 - (i : ℕ)) := by
+    rw [← ENNReal.finsetSum_iSup_of_monotone
+      (f := fun (i : Fin p) (n : ℕ) => ENNReal.ofReal (b i)
+        * archIter c0 b n fun s => q (s - 1 - (i : ℕ)))
+      (fun i m n hmn => mul_le_mul_left' (archIter_monotone c0 b _ hmn) _)]
+    exact Finset.sum_congr rfl fun i _ => by rw [archSq, ENNReal.mul_iSup]
+  rw [h1]
+  simp only [archIter_succ]
+  rw [← ENNReal.mul_iSup, ← ENNReal.add_iSup, h3, archRho]
+
+/-! #### Measurability -/
+
+private lemma measurable_archIter (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) (n : ℕ) :
+    Measurable (archIter c0 b n) := by
+  induction n with
+  | zero => simpa only [archIter] using measurable_const
+  | succ n ih =>
+    change Measurable fun q : ℤ → ℝ => ENNReal.ofReal (q 0 ^ 2) * (ENNReal.ofReal c0
+      + ∑ i : Fin p, ENNReal.ofReal (b i) * archIter c0 b n fun s => q (s - 1 - (i : ℕ)))
+    refine (((measurable_pi_apply 0).pow_const 2).ennreal_ofReal).mul
+      (measurable_const.add (Finset.measurable_sum _ fun i _ => measurable_const.mul ?_))
+    exact ih.comp (measurable_pi_lambda _ fun s => measurable_pi_apply _)
+
+private lemma measurable_archSq (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) :
+    Measurable (archSq c0 b) := by
+  change Measurable fun q : ℤ → ℝ => ⨆ n : ℕ, archIter c0 b n q
+  exact Measurable.iSup fun n => measurable_archIter c0 b n
+
+private lemma measurable_archRho (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) :
+    Measurable (archRho c0 b) :=
+  measurable_const.add (Finset.measurable_sum _ fun i _ => measurable_const.mul
+    ((measurable_archSq c0 b).comp (measurable_pi_lambda _ fun s => measurable_pi_apply _)))
+
+private lemma measurable_archXFun (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) :
+    Measurable (archXFun c0 b) :=
+  ((measurable_archRho c0 b).ennreal_toReal.sqrt).mul (measurable_pi_apply 0)
+
+private lemma measurable_noisePath {ε : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ε t)) (t : ℤ) :
+    Measurable (noisePath ε t) := measurable_pi_lambda _ fun s => hm (s + t)
+
+private lemma measurable_archX {c0 : ℝ} {p : ℕ} {b : Fin p → ℝ} {ε : ℤ → Ω → ℝ}
+    (hm : ∀ t, Measurable (ε t)) (t : ℤ) : Measurable (archX c0 b ε t) :=
+  (measurable_archXFun c0 b).comp (measurable_noisePath hm t)
+
+/-! #### `σ`-algebra bookkeeping for the noise -/
+
+omit [MeasurableSpace Ω] in
+private lemma comap_le_sigmaLE {X : ℤ → Ω → ℝ} {s t : ℤ} (hst : s ≤ t) :
+    MeasurableSpace.comap (X s) inferInstance ≤ sigmaLE X t :=
+  le_iSup₂ (f := fun s (_ : s ∈ Set.Iic t) => MeasurableSpace.comap (X s) inferInstance) s hst
+
+omit [MeasurableSpace Ω] in
+private lemma sigmaLE_mono {X : ℤ → Ω → ℝ} {s t : ℤ} (hst : s ≤ t) :
+    sigmaLE X s ≤ sigmaLE X t :=
+  iSup₂_le fun _ hu => comap_le_sigmaLE (le_trans hu hst)
+
+omit [MeasurableSpace Ω] in
+private lemma sigmaLE_le_sigmaLT {X : ℤ → Ω → ℝ} {s t : ℤ} (hst : s < t) :
+    sigmaLE X s ≤ sigmaLT X t :=
+  iSup₂_le fun _ hu => comap_le_sigmaLT (lt_of_le_of_lt hu hst)
+
+omit [MeasurableSpace Ω] in
+private lemma measurable_self_sigmaLE {X : ℤ → Ω → ℝ} (t : ℤ) : Measurable[sigmaLE X t] (X t) :=
+  (Measurable.of_comap_le (le_refl (MeasurableSpace.comap (X t) inferInstance))).mono
+    (comap_le_sigmaLE le_rfl) le_rfl
+
+private lemma sigmaLT_le' {X : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (X t)) (t : ℤ) :
+    sigmaLT X t ≤ (inferInstance : MeasurableSpace Ω) := sigmaLT_le hm t
+
+/-- **One-vs-past independence of the noise**: `ε_t` is independent of `σ(ε_s : s < t)`. -/
+private lemma indep_eps_sigmaLT {ε : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ε t))
+    (hi : iIndepFun ε μ) (t : ℤ) :
+    Indep (MeasurableSpace.comap (ε t) inferInstance) (sigmaLT ε t) μ := by
+  have hdisj : Disjoint ({t} : Set ℤ) (Set.Iio t) := Set.disjoint_singleton_left.2 (by simp)
+  have := indep_iSup_of_disjoint
+    (m := fun s : ℤ => MeasurableSpace.comap (ε s) inferInstance)
+    (fun s => (hm s).comap_le) hi hdisj
+  simpa using this
+
+omit [MeasurableSpace Ω] in
+/-- Each iterate, read at time `t`, is a function of `σ(ε_s : s ≤ t)`. -/
+private lemma measurable_archIter_sigmaLE (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) {ε : ℤ → Ω → ℝ}
+    (n : ℕ) : ∀ t : ℤ,
+    Measurable[sigmaLE ε t] fun ω => archIter c0 b n (noisePath ε t ω) := by
+  induction n with
+  | zero => intro t; simpa only [archIter] using measurable_const
+  | succ n ih =>
+    intro t
+    simp only [archIter_succ, noisePath_zero, noisePath_shift]
+    refine (((measurable_self_sigmaLE (X := ε) t).pow_const 2).ennreal_ofReal).mul
+      (measurable_const.add (Finset.measurable_sum _ fun i _ => measurable_const.mul ?_))
+    exact (ih (t - 1 - (i : ℕ))).mono
+      (sigmaLE_mono (le_of_lt (sub_one_sub_lt t (i : ℕ)))) le_rfl
+
+omit [MeasurableSpace Ω] in
+private lemma measurable_archSq_sigmaLE (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) {ε : ℤ → Ω → ℝ}
+    (t : ℤ) : Measurable[sigmaLE ε t] fun ω => archSq c0 b (noisePath ε t ω) := by
+  have he : (fun ω => archSq c0 b (noisePath ε t ω))
+      = fun ω => ⨆ n : ℕ, archIter c0 b n (noisePath ε t ω) := rfl
+  rw [he]
+  exact Measurable.iSup fun n => measurable_archIter_sigmaLE c0 b n t
+
+private lemma measurable_archRho_sigmaLE (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) {ε : ℤ → Ω → ℝ}
+    (t : ℤ) : Measurable[sigmaLE ε t] fun ω => archRho c0 b (noisePath ε t ω) := by
+  simp only [archRho, noisePath_shift]
+  refine measurable_const.add (Finset.measurable_sum _ fun i _ => measurable_const.mul ?_)
+  exact (measurable_archSq_sigmaLE c0 b (t - 1 - (i : ℕ))).mono
+    (sigmaLE_mono (le_of_lt (sub_one_sub_lt t (i : ℕ)))) le_rfl
+
+private lemma measurable_archX_sigmaLE (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) {ε : ℤ → Ω → ℝ}
+    (t : ℤ) : Measurable[sigmaLE ε t] (archX c0 b ε t) := by
+  have he : archX c0 b ε t
+      = fun ω => Real.sqrt (archRho c0 b (noisePath ε t ω)).toReal * ε t ω := by
+    funext ω
+    simp [archX, archXFun, noisePath_zero]
+  rw [he]
+  exact ((measurable_archRho_sigmaLE c0 b t).ennreal_toReal.sqrt).mul
+    (measurable_self_sigmaLE t)
+
+/-! #### The mass of the iteration -/
+
+private lemma lintegral_ofReal_sq_eps [IsProbabilityMeasure μ] {ε : ℤ → Ω → ℝ}
+    (hε : IsIIDNoise ε 1 μ) (t : ℤ) : ∫⁻ ω, ENNReal.ofReal (ε t ω ^ 2) ∂μ = 1 := by
+  rw [← ofReal_integral_eq_lintegral_ofReal (integrable_sq_iid hε t)
+    (Filter.Eventually.of_forall fun ω => sq_nonneg _), integral_sq_iid hε t,
+    ENNReal.ofReal_one]
+
+/-- **Uniform mass bound**: every iterate has mass at most `c₀/(1 − Σ b_j)`. -/
+private lemma lintegral_archIter_le [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ} {b : Fin p → ℝ}
+    {ε : ℤ → Ω → ℝ} (hc0 : 0 ≤ c0) (hb : ∀ i, 0 ≤ b i) (hsum : (∑ i, b i) < 1)
+    (hε : IsIIDNoise ε 1 μ) (n : ℕ) : ∀ t : ℤ,
+    ∫⁻ ω, archIter c0 b n (noisePath ε t ω) ∂μ
+      ≤ ENNReal.ofReal (c0 / (1 - ∑ i, b i)) := by
+  have hb0 : 0 ≤ ∑ i, b i := Finset.sum_nonneg fun i _ => hb i
+  have hne : (1 : ℝ) - ∑ i, b i ≠ 0 := by linarith
+  have hK0 : 0 ≤ c0 / (1 - ∑ i, b i) := div_nonneg hc0 (by linarith)
+  have hKfix : c0 + (∑ i, b i) * (c0 / (1 - ∑ i, b i)) = c0 / (1 - ∑ i, b i) := by
+    field_simp
+    ring
+  induction n with
+  | zero => intro t; simp [archIter]
+  | succ n ih =>
+    intro t
+    have hmeas : ∀ s : ℤ, Measurable fun ω => archIter c0 b n (noisePath ε s ω) := fun s =>
+      (measurable_archIter c0 b n).comp (measurable_noisePath hε.measurable s)
+    have hpast : Measurable[sigmaLT ε t] fun ω => ENNReal.ofReal c0
+        + ∑ i : Fin p, ENNReal.ofReal (b i)
+            * archIter c0 b n (noisePath ε (t - 1 - (i : ℕ)) ω) := by
+      refine measurable_const.add (Finset.measurable_sum _ fun i _ => measurable_const.mul ?_)
+      exact (measurable_archIter_sigmaLE c0 b n (t - 1 - (i : ℕ))).mono
+        (sigmaLE_le_sigmaLT (sub_one_sub_lt t (i : ℕ))) le_rfl
+    have hsplit : ∫⁻ ω, archIter c0 b (n + 1) (noisePath ε t ω) ∂μ
+        = (∫⁻ ω, ENNReal.ofReal (ε t ω ^ 2) ∂μ)
+          * ∫⁻ ω, (ENNReal.ofReal c0 + ∑ i : Fin p, ENNReal.ofReal (b i)
+              * archIter c0 b n (noisePath ε (t - 1 - (i : ℕ)) ω)) ∂μ := by
+      simp only [archIter_succ, noisePath_zero, noisePath_shift]
+      exact lintegral_mul_eq_lintegral_mul_lintegral_of_independent_measurableSpace
+        (hε.measurable t).comap_le (sigmaLT_le' hε.measurable t)
+        (indep_eps_sigmaLT hε.measurable hε.iIndep t)
+        ((Measurable.of_comap_le le_rfl).pow_const 2).ennreal_ofReal hpast
+    have hterm : ∫⁻ ω, (ENNReal.ofReal c0 + ∑ i : Fin p, ENNReal.ofReal (b i)
+          * archIter c0 b n (noisePath ε (t - 1 - (i : ℕ)) ω)) ∂μ
+        ≤ ENNReal.ofReal (c0 / (1 - ∑ i, b i)) := by
+      have hfs : ∫⁻ ω, (∑ i : Fin p, ENNReal.ofReal (b i)
+            * archIter c0 b n (noisePath ε (t - 1 - (i : ℕ)) ω)) ∂μ
+          = ∑ i : Fin p, ∫⁻ ω, ENNReal.ofReal (b i)
+            * archIter c0 b n (noisePath ε (t - 1 - (i : ℕ)) ω) ∂μ :=
+        lintegral_finset_sum _ fun i _ => measurable_const.mul (hmeas (t - 1 - (i : ℕ)))
+      rw [lintegral_add_left measurable_const, lintegral_const, measure_univ, mul_one, hfs]
+      have hb' : ∀ i : Fin p, ∫⁻ ω, ENNReal.ofReal (b i)
+            * archIter c0 b n (noisePath ε (t - 1 - (i : ℕ)) ω) ∂μ
+          ≤ ENNReal.ofReal (b i) * ENNReal.ofReal (c0 / (1 - ∑ i, b i)) := fun i => by
+        rw [lintegral_const_mul _ (hmeas (t - 1 - (i : ℕ)))]
+        exact mul_le_mul_left' (ih (t - 1 - (i : ℕ))) _
+      calc ENNReal.ofReal c0 + ∑ i : Fin p, ∫⁻ ω, ENNReal.ofReal (b i)
+              * archIter c0 b n (noisePath ε (t - 1 - (i : ℕ)) ω) ∂μ
+          ≤ ENNReal.ofReal c0
+              + ∑ i : Fin p, ENNReal.ofReal (b i) * ENNReal.ofReal (c0 / (1 - ∑ i, b i)) :=
+            by gcongr with i _; exact hb' i
+        _ = ENNReal.ofReal (c0 / (1 - ∑ i, b i)) := by
+            rw [← Finset.sum_mul, ← ENNReal.ofReal_sum_of_nonneg fun i _ => hb i,
+              ← ENNReal.ofReal_mul hb0, ← ENNReal.ofReal_add hc0
+                (mul_nonneg hb0 hK0), hKfix]
+    rw [hsplit, lintegral_ofReal_sq_eps hε, one_mul]
+    exact hterm
+
+private lemma lintegral_archSq_le [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ} {b : Fin p → ℝ}
+    {ε : ℤ → Ω → ℝ} (hc0 : 0 ≤ c0) (hb : ∀ i, 0 ≤ b i) (hsum : (∑ i, b i) < 1)
+    (hε : IsIIDNoise ε 1 μ) (t : ℤ) :
+    ∫⁻ ω, archSq c0 b (noisePath ε t ω) ∂μ ≤ ENNReal.ofReal (c0 / (1 - ∑ i, b i)) := by
+  have he : ∀ ω, archSq c0 b (noisePath ε t ω)
+      = ⨆ n : ℕ, archIter c0 b n (noisePath ε t ω) := fun ω => rfl
+  simp only [he]
+  rw [lintegral_iSup (f := fun (n : ℕ) (ω : Ω) => archIter c0 b n (noisePath ε t ω))
+    (fun n => (measurable_archIter c0 b n).comp (measurable_noisePath hε.measurable t))
+    (fun m n hmn ω => archIter_monotone c0 b _ hmn)]
+  exact iSup_le fun n => lintegral_archIter_le hc0 hb hsum hε n t
+
+private lemma archSq_ae_lt_top [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ} {b : Fin p → ℝ}
+    {ε : ℤ → Ω → ℝ} (hc0 : 0 ≤ c0) (hb : ∀ i, 0 ≤ b i) (hsum : (∑ i, b i) < 1)
+    (hε : IsIIDNoise ε 1 μ) (t : ℤ) :
+    ∀ᵐ ω ∂μ, archSq c0 b (noisePath ε t ω) < ∞ := by
+  refine ae_lt_top ((measurable_archSq c0 b).comp (measurable_noisePath hε.measurable t))
+    (ne_top_of_le_ne_top ENNReal.ofReal_ne_top (lintegral_archSq_le hc0 hb hsum hε t))
+
+/-! #### The solution -/
+
+omit [MeasurableSpace Ω] in
+private lemma archX_sq (c0 : ℝ) {p : ℕ} (b : Fin p → ℝ) (ε : ℤ → Ω → ℝ) (t : ℤ) (ω : Ω) :
+    archX c0 b ε t ω ^ 2 = (archSq c0 b (noisePath ε t ω)).toReal := by
+  have hq0 : noisePath ε t ω 0 = ε t ω := noisePath_zero ε t ω
+  rw [archSq_eq, ENNReal.toReal_mul, ENNReal.toReal_ofReal (sq_nonneg _)]
+  simp only [archX, archXFun, hq0]
+  rw [mul_pow, Real.sq_sqrt ENNReal.toReal_nonneg]
+  ring
+
+/-- **Shift-invariance of the noise path law**, the transport behind strict
+stationarity. -/
+private lemma map_noisePath_shift [IsProbabilityMeasure μ] {ε : ℤ → Ω → ℝ}
+    (hm : ∀ t, Measurable (ε t)) (hi : iIndepFun ε μ)
+    (hid : ∀ s t, IdentDistrib (ε s) (ε t) μ μ) (c : ℤ) :
+    (μ.map fun ω (s : ℤ) => ε (s + c) ω) = μ.map fun ω (s : ℤ) => ε s ω := by
+  have hinj : Function.Injective fun s : ℤ => s + c := fun x y h => by simpa using h
+  have h1 : iIndepFun (fun s : ℤ => ε (s + c)) μ := hi.precomp hinj
+  rw [(iIndepFun_iff_map_fun_eq_infinitePi_map fun s => hm (s + c)).1 h1,
+    (iIndepFun_iff_map_fun_eq_infinitePi_map hm).1 hi]
+  exact congrArg Measure.infinitePi (funext fun s => (hid (s + c) s).map_eq)
+
 /-- **FY Theorem 4.3(i), existence + moments**: under `Σ_j b_j < 1` there is a strictly
 stationary ARCH(p) solution with finite variance, and every such solution has
 `E X_t = 0` and `E X_t² = c₀/(1 − Σ b_j)`. -/
@@ -269,7 +577,70 @@ theorem exists_stationary_arch [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     (hε : IsIIDNoise ε 1 μ) :
     ∃ X : ℤ → Ω → ℝ, IsARCH c0 b X ε μ ∧ IsStrictlyStationary X μ ∧
       (∀ t, MemLp (X t) 2 μ) := by
-  sorry
+  refine ⟨archX c0 b ε, ?_, ?_, ?_⟩
+  · refine
+      { c0_nonneg := hc0
+        b_nonneg := hb
+        measurableX := fun t => measurable_archX hε.measurable t
+        iid := hε
+        indep_past := fun t => indep_of_indep_of_le_right
+          (indep_eps_sigmaLT hε.measurable hε.iIndep t)
+          (iSup₂_le fun s hs =>
+            ((measurable_archX_sigmaLE c0 b s).mono (sigmaLE_le_sigmaLT hs) le_rfl).comap_le)
+        recurrence := fun t => ?_ }
+    filter_upwards [ae_all_iff.2 fun i : Fin p =>
+      archSq_ae_lt_top hc0 hb hsum hε (t - 1 - (i : ℕ))] with ω hfin
+    have hne : ∀ i : Fin p, ENNReal.ofReal (b i)
+        * archSq c0 b (noisePath ε (t - 1 - (i : ℕ)) ω) ≠ ∞ := fun i =>
+      ENNReal.mul_ne_top ENNReal.ofReal_ne_top (hfin i).ne
+    have hsumne : (∑ i : Fin p, ENNReal.ofReal (b i)
+        * archSq c0 b (noisePath ε (t - 1 - (i : ℕ)) ω)) ≠ ∞ :=
+      (ENNReal.sum_lt_top.2 fun i _ => lt_top_iff_ne_top.2 (hne i)).ne
+    have hrho : (archRho c0 b (noisePath ε t ω)).toReal
+        = c0 + ∑ i, b i * archX c0 b ε (t - 1 - (i : ℕ)) ω ^ 2 := by
+      simp only [archRho, noisePath_shift]
+      rw [ENNReal.toReal_add ENNReal.ofReal_ne_top hsumne, ENNReal.toReal_ofReal hc0,
+        ENNReal.toReal_sum fun i _ => hne i]
+      refine congrArg _ (Finset.sum_congr rfl fun i _ => ?_)
+      rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (hb i), archX_sq]
+    have h1 : archX c0 b ε t ω
+        = Real.sqrt (archRho c0 b (noisePath ε t ω)).toReal * ε t ω := by
+      simp [archX, archXFun, noisePath_zero]
+    change archX c0 b ε t ω = archVol c0 b (archX c0 b ε) t ω * ε t ω
+    rw [h1, archVol, ← hrho]
+  · -- strict stationarity: a fixed functional of the shifted noise path
+    intro n tt k
+    obtain ⟨Ψ, hΨ⟩ : ∃ Ψ : (ℤ → ℝ) → (Fin n → ℝ),
+        Ψ = fun q i => archXFun c0 b fun s => q (s + tt i) := ⟨_, rfl⟩
+    have hΨm : Measurable Ψ := by
+      rw [hΨ]
+      exact measurable_pi_lambda _ fun i => (measurable_archXFun c0 b).comp
+        (measurable_pi_lambda _ fun s => measurable_pi_apply (s + tt i))
+    have hmb : ∀ c : ℤ, Measurable fun ω (s : ℤ) => ε (s + c) ω :=
+      fun c => measurable_pi_lambda _ fun s => hε.measurable (s + c)
+    have hfac : ∀ c : ℤ, (fun ω (i : Fin n) => archX c0 b ε (tt i + c) ω)
+        = Ψ ∘ fun ω (s : ℤ) => ε (s + c) ω := by
+      intro c
+      funext ω i
+      simp only [hΨ, Function.comp_apply, archX, add_assoc]
+      rfl
+    have h0 : (fun ω (i : Fin n) => archX c0 b ε (tt i) ω)
+        = Ψ ∘ fun ω (s : ℤ) => ε s ω := by simpa using hfac 0
+    rw [hfac k, h0, ← Measure.map_map hΨm (hmb k),
+      ← Measure.map_map hΨm (measurable_pi_lambda _ fun s : ℤ => hε.measurable s),
+      map_noisePath_shift hε.measurable hε.iIndep hε.identDistrib k]
+  · intro t
+    refine (memLp_two_iff_integrable_sq
+      (measurable_archX hε.measurable t).aestronglyMeasurable).2
+      ⟨((measurable_archX hε.measurable t).pow_const 2).aestronglyMeasurable, ?_⟩
+    have hle : ∫⁻ ω, ‖archX c0 b ε t ω ^ 2‖ₑ ∂μ
+        ≤ ∫⁻ ω, archSq c0 b (noisePath ε t ω) ∂μ := by
+      refine lintegral_mono fun ω => ?_
+      rw [archX_sq, Real.enorm_eq_ofReal ENNReal.toReal_nonneg]
+      exact ENNReal.ofReal_toReal_le
+    change ∫⁻ ω, ‖archX c0 b ε t ω ^ 2‖ₑ ∂μ < ∞
+    exact lt_of_le_of_lt hle
+      (lt_of_le_of_lt (lintegral_archSq_le hc0 hb hsum hε t) ENNReal.ofReal_lt_top)
 
 /-- **FY Theorem 4.3(i), moment identities**: a stationary square-integrable ARCH(p)
 process is centered with variance `c₀/(1 − Σ b_j)`. -/
