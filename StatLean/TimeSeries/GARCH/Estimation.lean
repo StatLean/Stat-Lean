@@ -2,6 +2,7 @@ import StatLean.TimeSeries.GARCH.GARCHBasic
 import StatLean.TimeSeries.Spectral.Periodogram
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.Probability.Distributions.Gaussian.Real
+import Mathlib.LinearAlgebra.Matrix.PosDef
 
 /-!
 # GARCH estimation: QMLE, general-density MLE, Whittle, LAD (FY §4.2.3)
