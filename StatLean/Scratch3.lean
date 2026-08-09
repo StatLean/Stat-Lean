@@ -1754,6 +1754,45 @@ end Envelope
 
 section Glue
 
+/-- (Copy of the private `norm_charFun_map_sub_le'` of `KernelRegressionCLT.lean`.) -/
+theorem norm_charFun_map_sub_le3 [IsProbabilityMeasure μ] {S T : Ω → ℝ}
+    (hS : AEMeasurable S μ) (hT : AEMeasurable T μ)
+    (hi : Integrable (fun ω => |S ω - T ω|) μ) (u : ℝ) :
+    ‖charFun (μ.map S) u - charFun (μ.map T) u‖ ≤ |u| * ∫ ω, |S ω - T ω| ∂μ := by
+  have hc : Continuous fun z : ℝ => Complex.exp ((u : ℂ) * (z : ℂ) * Complex.I) := by fun_prop
+  have hbdd : ∀ (f : Ω → ℝ) (ω : Ω),
+      ‖Complex.exp ((u : ℂ) * (f ω : ℂ) * Complex.I)‖ = 1 := by
+    intro f ω
+    rw [show ((u : ℂ) * (f ω : ℂ) * Complex.I) = ((u * f ω : ℝ) : ℂ) * Complex.I by
+      push_cast; ring]
+    exact Complex.norm_exp_ofReal_mul_I _
+  have hint : ∀ f : Ω → ℝ, AEMeasurable f μ →
+      Integrable (fun ω => Complex.exp ((u : ℂ) * (f ω : ℂ) * Complex.I)) μ := by
+    intro f hf
+    exact (integrable_const (1 : ℝ)).mono'
+      (hc.measurable.comp_aemeasurable' hf).aestronglyMeasurable
+      (Eventually.of_forall fun ω => le_of_eq (hbdd f ω))
+  have hmapS : charFun (μ.map S) u
+      = ∫ ω, Complex.exp ((u : ℂ) * (S ω : ℂ) * Complex.I) ∂μ := by
+    rw [charFun_apply_real, integral_map hS hc.aestronglyMeasurable]
+  have hmapT : charFun (μ.map T) u
+      = ∫ ω, Complex.exp ((u : ℂ) * (T ω : ℂ) * Complex.I) ∂μ := by
+    rw [charFun_apply_real, integral_map hT hc.aestronglyMeasurable]
+  rw [hmapS, hmapT, ← integral_sub (hint S hS) (hint T hT)]
+  refine (norm_integral_le_integral_norm _).trans ?_
+  rw [← integral_const_mul]
+  refine integral_mono ((hint S hS).sub (hint T hT)).norm (hi.const_mul |u|) fun ω => ?_
+  have hfac : Complex.exp ((u : ℂ) * (S ω : ℂ) * Complex.I)
+        - Complex.exp ((u : ℂ) * (T ω : ℂ) * Complex.I)
+      = Complex.exp ((u : ℂ) * (T ω : ℂ) * Complex.I) *
+        (Complex.exp (Complex.I * ((u * (S ω - T ω) : ℝ) : ℂ)) - 1) := by
+    rw [mul_sub, mul_one, ← Complex.exp_add]
+    congr 2
+    push_cast; ring
+  rw [hfac, norm_mul, hbdd T ω, one_mul]
+  refine le_trans Real.norm_exp_I_mul_ofReal_sub_one_le ?_
+  rw [Real.norm_eq_abs, abs_mul]
+
 /-- `truncErr` is measurable (the conditional expectation is `σ(X_t)`-measurable). -/
 theorem measurable_truncErr {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t))
     (hmeasE : ∀ t, Measurable (e t)) (L : ℝ) (t : ℤ) :
@@ -1801,5 +1840,421 @@ theorem tendsto_integral_abs_of_tendsto_sq [IsProbabilityMeasure μ] {D : ℕ �
   linarith
 
 end Glue
+
+section Assembly
+
+/-- Eventually there is at least one block. -/
+theorem eventually_blockCount_pos {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
+    (hh : Tendsto h atTop (𝓝 0))
+    (hnh : Tendsto (fun n : ℕ => (n : ℝ) * h n ^ 3) atTop atTop)
+    {δ lam : ℝ} (hδ : 2 < δ) (hlam : 1 - 2 / δ < lam) :
+    ∀ᶠ n : ℕ in atTop, 0 < blockCount h δ lam n := by
+  have hl := tendsto_bigBlockLen_div hh0 hh
+  have hs := tendsto_smallBlockLen_div hh0 hh hnh hδ hlam
+  filter_upwards [eventually_ge_atTop 2,
+    hl.eventually_lt_const (by norm_num : (0:ℝ) < 1/3),
+    hs.eventually_lt_const (by norm_num : (0:ℝ) < 1/3)] with n hn2 hln hsn
+  have hn0 : (0 : ℝ) < (n : ℝ) := by
+    have : (1 : ℕ) ≤ n := by omega
+    exact_mod_cast Nat.lt_of_lt_of_le Nat.zero_lt_one this
+  have hq1 : 1 ≤ bigBlockLen h n + smallBlockLen h δ lam n := by
+    have hbl : 0 < bigBlockLen h n := by
+      rw [bigBlockLen]
+      refine Nat.ceil_pos.2 ?_
+      have hlog : 0 < Real.log n := Real.log_pos (by exact_mod_cast hn2)
+      have := hh0 n
+      positivity
+    omega
+  have hlR : (bigBlockLen h n : ℝ) < (n : ℝ) / 3 := by
+    rw [div_lt_iff₀ hn0] at hln
+    rw [lt_div_iff₀ (by norm_num : (0:ℝ) < 3)]
+    linarith
+  have hsR : (smallBlockLen h δ lam n : ℝ) < (n : ℝ) / 3 := by
+    rw [div_lt_iff₀ hn0] at hsn
+    rw [lt_div_iff₀ (by norm_num : (0:ℝ) < 3)]
+    linarith
+  have hqn : bigBlockLen h n + smallBlockLen h δ lam n ≤ n := by
+    have : ((bigBlockLen h n + smallBlockLen h δ lam n : ℕ) : ℝ) ≤ (n : ℝ) := by
+      push_cast
+      linarith
+    exact_mod_cast this
+  exact Nat.one_le_div_iff (by omega) |>.2 hqn
+
+set_option maxHeartbeats 2000000 in
+set_option maxHeartbeats 2000000 in
+theorem tendsto_charFun_locTruncSum_pos [IsProbabilityMeasure μ]
+    {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
+    (hstat : ∀ (k : ℕ) (t : ℤ),
+      μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
+        = μ.map (fun ω (i : Fin k) => (X ((i : ℕ) : ℤ) ω, e ((i : ℕ) : ℤ) ω)))
+    {p : ℝ → ℝ} {δ x : ℝ} (hδ : 2 < δ)
+    (hmp : Measurable p) (hp0 : ∀ v, 0 ≤ p v)
+    (hpd : μ.map (X 0) = MeasureTheory.volume.withDensity fun v => ENNReal.ofReal (p v))
+    {Cp : ℝ} (hpb : ∀ v, p v ≤ Cp)
+    {B : ℝ} (hB0 : 0 ≤ B)
+    (hC2gen : ∀ j : ℤ, j ≠ 0 → ∀ f : ℝ × ℝ → ℝ, Measurable f →
+      ∀ g : ℝ × ℝ → ℝ, Measurable g → (∀ v, 0 ≤ g v) →
+      ∫ ω, |f (e 0 ω, e j ω)| * g (X 0 ω, X j ω) ∂μ
+        ≤ B * (∫ ω, |f (e 0 ω, e j ω)| ∂μ) *
+          ∫ v, g v ∂(MeasureTheory.volume.prod MeasureTheory.volume))
+    {lam : ℝ} (hlam : 1 - 2 / δ < lam)
+    (hα : Summable fun t : ℕ => (t : ℝ) ^ lam * pairAlphaCoeff X e μ t ^ (1 - 2 / δ))
+    {W : ℝ → ℝ} {CW : ℝ} (hWm : Measurable W) (hWb : ∀ v, |W v| ≤ CW)
+    (hW1 : Integrable W MeasureTheory.volume)
+    (hW2 : Integrable (fun v => W v ^ 2) MeasureTheory.volume)
+    {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n) (hh : Tendsto h atTop (𝓝 0))
+    {L : ℝ} (hL : 0 < L)
+    (mL sL : ℝ → ℝ → ℝ) (hmLm : ∀ L : ℝ, Measurable (mL L))
+    (hsLm : ∀ L : ℝ, Measurable (sL L))
+    (hmLv :
+      μ[fun ω => max (-L) (min L (e 0 ω)) | MeasurableSpace.comap (X 0) inferInstance]
+        =ᵐ[μ] fun ω => mL L (X 0 ω))
+    (hsLv :
+      μ[fun ω => max (-L) (min L (e 0 ω)) ^ 2 | MeasurableSpace.comap (X 0) inferInstance]
+        =ᵐ[μ] fun ω => sL L (X 0 ω))
+    (hσLc : ContinuousAt (fun v => (sL L v - mL L v ^ 2) * p v) x)
+    (hσLb : ∃ C : ℝ, ∀ v : ℝ, (sL L v - mL L v ^ 2) * p v ≤ C)
+    (hpc : ContinuousAt p x) (hpx : 0 < p x)
+    (hnh : Tendsto (fun n : ℕ => (n : ℝ) * h n ^ 3) atTop atTop) (u : ℝ) :
+    Tendsto (fun n : ℕ => charFun (μ.map (locTruncSum X e μ W x h L n)) u) atTop
+      (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
+        ((sL L x - mL L x ^ 2) * p x * ∫ v, W v ^ 2))) u)) := by
+  classical
+  obtain ⟨Z, Gz, hZm, hZrep, hint, hCG, hCG', hdiaglim, hRto0, hZb, hmean0⟩ :=
+    truncArray_core hmeasX hmeasE hstat hδ hmp hp0 hpd hpb hB0 hC2gen hlam hα hWm hWb hW1 hW2
+      hh0 hh hL mL sL hmLm hsLm hmLv hsLv hσLc hσLb hpc hpx
+  have hCW0 : (0 : ℝ) ≤ CW := le_trans (abs_nonneg _) (hWb 0)
+  set ζ : ℕ → ℕ → Ω → ℝ := fun n t ω =>
+    truncErr X e μ L ((t : ℤ) + 1) ω * W ((X ((t : ℤ) + 1) ω - x) / h n) with hζdef
+  have hζm : ∀ n t : ℕ, Measurable (ζ n t) := fun n t =>
+    (measurable_truncErr hmeasX hmeasE L _).mul
+      (hWm.comp (((hmeasX _).sub measurable_const).div measurable_const))
+  have hζZ : ∀ n t : ℕ, ζ n t =ᵐ[μ] Z n ((t : ℤ) + 1) := fun n t => hZrep n ((t : ℤ) + 1)
+  have hζb : ∀ n t : ℕ, ∀ᵐ ω ∂μ, |ζ n t ω| ≤ 2 * L * CW := by
+    intro n t
+    filter_upwards [hζZ n t] with ω hω
+    rw [hω]; exact hZb n _ ω
+  have hζint : ∀ n t : ℕ, Integrable (ζ n t) μ := by
+    intro n t
+    refine (integrable_const (2 * L * CW)).mono' (hζm n t).aestronglyMeasurable ?_
+    filter_upwards [hζb n t] with ω hω
+    rwa [Real.norm_eq_abs]
+  have hζmean : ∀ n t : ℕ, ∫ ω, ζ n t ω ∂μ = 0 := by
+    intro n t
+    rw [integral_congr_ae (hζZ n t)]
+    exact hmean0 n _
+  -- the block statistics
+  set V : ℕ → ℕ → Ω → ℝ := fun n i ω => (Real.sqrt ((n : ℝ) * h n))⁻¹ *
+    ∑ t ∈ Finset.Ico (i * (bigBlockLen h n + smallBlockLen h δ lam n))
+      (i * (bigBlockLen h n + smallBlockLen h δ lam n) + bigBlockLen h n), ζ n t ω with hVdef
+  set bn : ℕ → ℝ := fun n =>
+    (Real.sqrt ((n : ℝ) * h n))⁻¹ * (bigBlockLen h n : ℝ) * (2 * L * CW) with hbndef
+  have hsq0 : ∀ n : ℕ, (0 : ℝ) ≤ (Real.sqrt ((n : ℝ) * h n))⁻¹ := fun n => by positivity
+  have hVm : ∀ n i : ℕ, Measurable (V n i) := fun n i =>
+    (Finset.measurable_sum _ fun t _ => hζm n t).const_mul _
+  have hVmean : ∀ n i : ℕ, ∫ ω, V n i ω ∂μ = 0 := by
+    intro n i
+    rw [hVdef]
+    simp only
+    rw [integral_const_mul, integral_finset_sum _ (fun t _ => hζint n t)]
+    simp only [hζmean n]
+    simp
+  have hVb : ∀ n i : ℕ, ∀ᵐ ω ∂μ, |V n i ω| ≤ bn n := by
+    intro n i
+    have hall : ∀ᵐ ω ∂μ, ∀ t ∈ Finset.Ico (i * (bigBlockLen h n + smallBlockLen h δ lam n))
+        (i * (bigBlockLen h n + smallBlockLen h δ lam n) + bigBlockLen h n),
+        |ζ n t ω| ≤ 2 * L * CW :=
+      (Filter.eventually_all_finset _).2 fun t _ => hζb n t
+    filter_upwards [hall] with ω hω
+    have hcard : (Finset.Ico (i * (bigBlockLen h n + smallBlockLen h δ lam n))
+        (i * (bigBlockLen h n + smallBlockLen h δ lam n) + bigBlockLen h n)).card
+          = bigBlockLen h n := by rw [Nat.card_Ico]; omega
+    have hsum : |∑ t ∈ Finset.Ico (i * (bigBlockLen h n + smallBlockLen h δ lam n))
+        (i * (bigBlockLen h n + smallBlockLen h δ lam n) + bigBlockLen h n), ζ n t ω|
+        ≤ (bigBlockLen h n : ℝ) * (2 * L * CW) := by
+      refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
+      have := Finset.sum_le_card_nsmul _ (fun t => |ζ n t ω|) (2 * L * CW) hω
+      simpa [hcard, nsmul_eq_mul] using this
+    rw [hVdef]
+    simp only [abs_mul, abs_of_nonneg (hsq0 n), hbndef]
+    calc (Real.sqrt ((n : ℝ) * h n))⁻¹ * |∑ t ∈ _, ζ n t ω|
+        ≤ (Real.sqrt ((n : ℝ) * h n))⁻¹ * ((bigBlockLen h n : ℝ) * (2 * L * CW)) :=
+          mul_le_mul_of_nonneg_left hsum (hsq0 n)
+      _ = (Real.sqrt ((n : ℝ) * h n))⁻¹ * (bigBlockLen h n : ℝ) * (2 * L * CW) := by ring
+  have hVL2 : ∀ n i : ℕ, MemLp (V n i) 2 μ := by
+    intro n i
+    refine MemLp.of_bound (hVm n i).aestronglyMeasurable (bn n) ?_
+    filter_upwards [hVb n i] with ω hω
+    rwa [Real.norm_eq_abs]
+  have hbn0 : Tendsto bn atTop (𝓝 0) := by
+    have := (tendsto_bigBlockLen_div_sqrt hh0 hh hnh).mul_const (2 * L * CW)
+    simpa [hbndef] using this
+  -- the row variances
+  have hVvar : Tendsto (fun n : ℕ =>
+      ∑ i : Fin (blockCount h δ lam n), variance (V n i) μ) atTop
+      (𝓝 ((sL L x - mL L x ^ 2) * p x * ∫ v, W v ^ 2)) := by
+    have hblk := tendsto_blockVar_sum hmeasX hmeasE hstat hδ hmp hp0 hpd hpb hB0 hC2gen hlam
+      hα hWm hWb hW1 hW2 hh0 hh hL mL sL hmLm hsLm hmLv hsLv hσLc hσLb hpc hpx hnh
+    refine hblk.congr fun n => ?_
+    rw [Fin.sum_univ_eq_sum_range (fun i => variance (V n i) μ)]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    have hv : variance (V n i) μ = ∫ ω, (V n i ω) ^ 2 ∂μ := by
+      rw [variance_eq_sub (hVL2 n i)]
+      simp only [hVmean n i]
+      norm_num
+    have hinv : ((Real.sqrt ((n : ℝ) * h n))⁻¹) ^ 2 = ((n : ℝ) * h n)⁻¹ := by
+      rw [inv_pow, Real.sq_sqrt (mul_nonneg (Nat.cast_nonneg n) (hh0 n).le)]
+    rw [hv, ← integral_const_mul]
+    refine (integral_congr_ae (Eventually.of_forall fun ω => ?_)).symm
+    rw [hVdef]
+    simp only [mul_pow, hinv, hζdef]
+  -- step 1: the product of block charFuns
+  have hstep1 := tendsto_prod_charFun_of_uniformly_small (μ := μ)
+    (Y := fun n (i : Fin (blockCount h δ lam n)) => V n (i : ℕ))
+    (fun n i => hVm n i) (fun n i => hVmean n i) (fun n i => hVL2 n i)
+    (fun n i => hVb n i) hbn0 hVvar u
+  -- step 2: Volkonskii–Rozanov
+  have hstep2 : Tendsto (fun n : ℕ =>
+      ‖charFun (μ.map (fun ω => ∑ i : Fin (blockCount h δ lam n), V n (i : ℕ) ω)) u
+        - ∏ i : Fin (blockCount h δ lam n), charFun (μ.map (V n (i : ℕ))) u‖)
+      atTop (𝓝 0) := by
+    have hα0 : ∀ n : ℕ, (0 : ℝ) ≤ pairAlphaCoeff X e μ (smallBlockLen h δ lam n) :=
+      fun n => pairAlphaCoeff_nonneg X e _
+    have hmaj : Tendsto (fun n : ℕ => 16 * ((blockCount h δ lam n : ℝ) *
+        pairAlphaCoeff X e μ (smallBlockLen h δ lam n))) atTop (𝓝 0) := by
+      simpa using (tendsto_blockCount_mul_pairAlpha hδ hlam hα hh0 hh hnh).const_mul 16
+    refine squeeze_zero' (Eventually.of_forall fun n => norm_nonneg _) ?_ hmaj
+    filter_upwards [eventually_blockCount_pos hh0 hh hnh hδ hlam] with n hkn
+    refine (norm_charFun_blockSum_sub_prod_le hmeasX hmeasE hstat hWm (L := L) n hkn u).trans ?_
+    have hk1 : (1 : ℝ) ≤ (blockCount h δ lam n : ℝ) := by exact_mod_cast hkn
+    nlinarith [hα0 n]
+  -- step 3: the discarded indices
+  have hstep3 : Tendsto (fun n : ℕ =>
+      ‖charFun (μ.map (locTruncSum X e μ W x h L n)) u
+        - charFun (μ.map (fun ω => ∑ i : Fin (blockCount h δ lam n), V n (i : ℕ) ω)) u‖)
+      atTop (𝓝 0) := by
+    set R : ℕ → Finset ℕ := fun n => Finset.range n \ bigBlockIdx h δ lam n with hRdef
+    set D : ℕ → Ω → ℝ := fun n ω =>
+      (Real.sqrt ((n : ℝ) * h n))⁻¹ * ∑ t ∈ R n, ζ n t ω with hDdef
+    have hDm : ∀ n, Measurable (D n) := fun n =>
+      (Finset.measurable_sum _ fun t _ => hζm n t).const_mul _
+    have hDrep : ∀ n : ℕ, ∀ ω,
+        locTruncSum X e μ W x h L n ω
+          - (∑ i : Fin (blockCount h δ lam n), V n (i : ℕ) ω) = D n ω := by
+      intro n ω
+      have hbig : ∑ i : Fin (blockCount h δ lam n), V n (i : ℕ) ω
+          = (Real.sqrt ((n : ℝ) * h n))⁻¹ * ∑ t ∈ bigBlockIdx h δ lam n, ζ n t ω := by
+        rw [Fin.sum_univ_eq_sum_range (fun i => V n i ω), hVdef]
+        simp only
+        rw [← Finset.mul_sum, bigBlockIdx]
+        congr 1
+        exact (Finset.sum_biUnion (bigBlockIdx_pairwiseDisjoint h δ lam n)).symm
+      have hsplit : (∑ t ∈ R n, ζ n t ω) + (∑ t ∈ bigBlockIdx h δ lam n, ζ n t ω)
+          = ∑ t ∈ Finset.range n, ζ n t ω :=
+        Finset.sum_sdiff (bigBlockIdx_subset h δ lam n)
+      rw [hbig, hDdef]
+      simp only [locTruncSum, hζdef]
+      rw [← hsplit]
+      ring
+    have hDL2 : ∀ n, MemLp (D n) 2 μ := by
+      intro n
+      refine MemLp.of_bound (hDm n).aestronglyMeasurable
+        ((Real.sqrt ((n : ℝ) * h n))⁻¹ * ((R n).card : ℝ) * (2 * L * CW)) ?_
+      have hall : ∀ᵐ ω ∂μ, ∀ t ∈ R n, |ζ n t ω| ≤ 2 * L * CW :=
+        (Filter.eventually_all_finset _).2 fun t _ => hζb n t
+      filter_upwards [hall] with ω hω
+      have hsum : |∑ t ∈ R n, ζ n t ω| ≤ ((R n).card : ℝ) * (2 * L * CW) := by
+        refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
+        have := Finset.sum_le_card_nsmul _ (fun t => |ζ n t ω|) (2 * L * CW) hω
+        simpa [nsmul_eq_mul] using this
+      rw [Real.norm_eq_abs, hDdef]
+      simp only [abs_mul, abs_of_nonneg (hsq0 n)]
+      calc (Real.sqrt ((n : ℝ) * h n))⁻¹ * |∑ t ∈ R n, ζ n t ω|
+          ≤ (Real.sqrt ((n : ℝ) * h n))⁻¹ * (((R n).card : ℝ) * (2 * L * CW)) :=
+            mul_le_mul_of_nonneg_left hsum (hsq0 n)
+        _ = (Real.sqrt ((n : ℝ) * h n))⁻¹ * ((R n).card : ℝ) * (2 * L * CW) := by ring
+    have hDsq : Tendsto (fun n => ∫ ω, (D n ω) ^ 2 ∂μ) atTop (𝓝 0) := by
+      have hIsub : ∀ n, R n ⊆ Finset.range n := fun n => Finset.sdiff_subset
+      have hIcard := tendsto_restIdx_card hh0 hh hnh hδ hlam
+      have hvar := tendsto_truncArray_variance hmeasX hmeasE hstat hδ hmp hp0 hpd hpb hB0
+        hC2gen hlam hα hWm hWb hW1 hW2 hh0 hh hL mL sL hmLm hsLm hmLv hsLv hσLc hσLb hpc hpx
+        R hIsub (a := 0) hIcard
+      rw [zero_mul] at hvar
+      refine hvar.congr fun n => ?_
+      have hinv : ((Real.sqrt ((n : ℝ) * h n))⁻¹) ^ 2 = ((n : ℝ) * h n)⁻¹ := by
+        rw [inv_pow, Real.sq_sqrt (mul_nonneg (Nat.cast_nonneg n) (hh0 n).le)]
+      rw [← integral_const_mul]
+      refine integral_congr_ae (Eventually.of_forall fun ω => ?_)
+      rw [hDdef]
+      simp only [mul_pow, hinv, hζdef]
+    have hL1 := tendsto_integral_abs_of_tendsto_sq hDL2 hDsq
+    have hTm : ∀ n : ℕ, Measurable (locTruncSum X e μ W x h L n) := by
+      intro n
+      exact (Finset.measurable_sum _ fun t _ => hζm n t).const_mul _
+    have hSm : ∀ n : ℕ, Measurable
+        (fun ω => ∑ i : Fin (blockCount h δ lam n), V n (i : ℕ) ω) :=
+      fun n => Finset.measurable_sum _ fun i _ => hVm n i
+    refine squeeze_zero' (Eventually.of_forall fun n => norm_nonneg _) ?_
+      (by simpa using hL1.const_mul |u|)
+    filter_upwards with n
+    have hi : Integrable (fun ω => |locTruncSum X e μ W x h L n ω
+        - (∑ i : Fin (blockCount h δ lam n), V n (i : ℕ) ω)|) μ := by
+      have := ((hDL2 n).integrable (by norm_num)).abs
+      refine this.congr ?_
+      filter_upwards with ω
+      rw [hDrep n ω]
+    have := norm_charFun_map_sub_le3 (hTm n).aemeasurable (hSm n).aemeasurable hi u
+    refine this.trans (le_of_eq ?_)
+    congr 1
+    refine integral_congr_ae (Eventually.of_forall fun ω => ?_)
+    show |locTruncSum X e μ W x h L n ω
+        - (∑ i : Fin (blockCount h δ lam n), V n (i : ℕ) ω)| = |D n ω|
+    rw [hDrep n ω]
+  -- combine
+  have hcomb := (tendsto_zero_iff_norm_tendsto_zero.2 hstep3).add
+    ((tendsto_zero_iff_norm_tendsto_zero.2 hstep2).add hstep1)
+  rw [zero_add, zero_add] at hcomb
+  refine hcomb.congr fun n => ?_
+  ring
+
+set_option maxHeartbeats 1000000 in
+theorem tendsto_charFun_locTruncSum_scratch [IsProbabilityMeasure μ]
+    {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
+    (hstat : ∀ (k : ℕ) (t : ℤ),
+      μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
+        = μ.map (fun ω (i : Fin k) => (X ((i : ℕ) : ℤ) ω, e ((i : ℕ) : ℤ) ω)))
+    {σsq p : ℝ → ℝ} {δ : ℝ} {x : ℝ}
+    (hce : μ[e 0 | MeasurableSpace.comap (X 0) inferInstance] =ᵐ[μ] 0)
+    (hcv : μ[fun ω => e 0 ω ^ 2 | MeasurableSpace.comap (X 0) inferInstance]
+      =ᵐ[μ] fun ω => σsq (X 0 ω))
+    (hδ : 2 < δ) (heLδ : MemLp (e 0) (ENNReal.ofReal δ) μ)
+    -- USER-INPUT (authorized (C1) repair): σ² measurable; FY §2.6.4
+    (hσm : Measurable σsq)
+    (hmp : Measurable p) (hp0 : ∀ v, 0 ≤ p v)
+    (hpd : μ.map (X 0) = MeasureTheory.volume.withDensity fun v => ENNReal.ofReal (p v))
+    (hσc : ContinuousAt σsq x) (hpc : ContinuousAt p x) (hpx : 0 < p x)
+    -- USER-INPUT: σ²·p bounded (the textbook's silent reading of (C1)); FY §2.6.4
+    (hσpb : ∃ C : ℝ, ∀ v : ℝ, σsq v * p v ≤ C)
+    {M Cp : ℝ}
+    -- USER-INPUT: (2.74) δ-th conditional moment of the error, FY's silent reading of
+    -- (C1); FY §2.6.4
+    (heδc : μ[fun ω => |e 0 ω| ^ δ | MeasurableSpace.comap (X 0) inferInstance]
+      ≤ᵐ[μ] fun _ => M)
+    -- USER-INPUT: (2.74) δ-th conditional moment of the error, FY's silent reading of
+    -- (C1); FY §2.6.4
+    (hpb : ∀ v, p v ≤ Cp)
+    -- USER-INPUT ((C1)-family — the **fourth** silent reading, identified by the witness
+    -- in `tendsto_charFun_locTruncSum`'s docstring): the conditional law of `e_0` given
+    -- `X_0 = v` is regular at `v = x` at *every* truncation level. `mL L` and `sL L` are
+    -- measurable versions of `v ↦ E(clamp_L e_0 | X_0 = v)` and
+    -- `v ↦ E(clamp_L(e_0)² | X_0 = v)` — their mere existence is Doob–Dynkin, not an
+    -- assumption; the content is `hσLc` (continuity at `x` of `σ_L²·p`), `hσLb` (`σ_L²·p`
+    -- bounded, the level-`L` form of `hσpb`) and `hσL84` (FY's (2.84)). FY §2.6.4
+    (mL sL : ℝ → ℝ → ℝ)
+    (hmLm : ∀ L : ℝ, Measurable (mL L)) (hsLm : ∀ L : ℝ, Measurable (sL L))
+    (hmLv : ∀ L : ℝ, 0 < L →
+      μ[fun ω => max (-L) (min L (e 0 ω)) | MeasurableSpace.comap (X 0) inferInstance]
+        =ᵐ[μ] fun ω => mL L (X 0 ω))
+    (hsLv : ∀ L : ℝ, 0 < L →
+      μ[fun ω => max (-L) (min L (e 0 ω)) ^ 2 | MeasurableSpace.comap (X 0) inferInstance]
+        =ᵐ[μ] fun ω => sL L (X 0 ω))
+    (hσLc : ∀ L : ℝ, 0 < L → ContinuousAt (fun v => (sL L v - mL L v ^ 2) * p v) x)
+    (hσLb : ∀ L : ℝ, 0 < L → ∃ C : ℝ, ∀ v : ℝ, (sL L v - mL L v ^ 2) * p v ≤ C)
+    (hσL84 : Tendsto (fun L : ℝ => sL L x - mL L x ^ 2) atTop (𝓝 (σsq x)))
+    -- (C2) USER-INPUT: (C2) as printed (conditional joint density bounded); FY §2.6.4
+    (hC2 : ∃ B : ℝ, 0 ≤ B ∧ ∀ j : ℤ, j ≠ 0 → ∀ f : ℝ × ℝ → ℝ, Measurable f →
+      ∀ g : ℝ × ℝ → ℝ, Measurable g → (∀ v, 0 ≤ g v) →
+      ∫ ω, |f (e 0 ω, e j ω)| * g (X 0 ω, X j ω) ∂μ
+        ≤ B * (∫ ω, |f (e 0 ω, e j ω)| ∂μ) *
+          ∫ v, g v ∂(MeasureTheory.volume.prod MeasureTheory.volume))
+    {lam : ℝ} (hlam : 1 - 2 / δ < lam)
+    (hα : Summable fun t : ℕ => (t : ℝ) ^ lam * pairAlphaCoeff X e μ t ^ (1 - 2 / δ))
+    {W : ℝ → ℝ} {CW : ℝ} (hWm : Measurable W) (hWb : ∀ v, |W v| ≤ CW)
+    (hW1 : Integrable W MeasureTheory.volume)
+    (hW2 : Integrable (fun v => W v ^ 2) MeasureTheory.volume)
+    {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n) (hh : Tendsto h atTop (𝓝 0))
+    (hnh : Tendsto (fun n : ℕ => (n : ℝ) * h n ^ 3) atTop atTop) (u : ℝ) :
+    ∃ vT : ℝ → ℝ,
+      (∀ L : ℝ, Tendsto (fun n : ℕ => charFun (μ.map (locTruncSum X e μ W x h L n)) u)
+          atTop (𝓝 (charFun (gaussianReal 0 (Real.toNNReal (vT L))) u)))
+      ∧ Tendsto (fun L : ℝ => charFun (gaussianReal 0 (Real.toNNReal (vT L))) u) atTop
+          (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
+            (σsq x * p x * ∫ v, W v ^ 2 ∂MeasureTheory.volume))) u)) := by
+  classical
+  obtain ⟨B, hB0, hC2gen⟩ := hC2
+  set vT : ℝ → ℝ := fun L =>
+    if 0 < L then (sL L x - mL L x ^ 2) * p x * ∫ v, W v ^ 2 else 0 with hvTdef
+  refine ⟨vT, ?_, ?_⟩
+  · intro L
+    rcases lt_or_ge 0 L with hL | hL
+    · have hpos := tendsto_charFun_locTruncSum_pos hmeasX hmeasE hstat hδ hmp hp0 hpd hpb
+        hB0 hC2gen hlam hα hWm hWb hW1 hW2 hh0 hh hL mL sL hmLm hsLm (hmLv L hL) (hsLv L hL)
+        (hσLc L hL) (hσLb L hL) hpc hpx hnh u
+      rw [hvTdef]
+      simpa only [if_pos hL] using hpos
+    · -- degenerate truncation levels: the statistic vanishes
+      have hclampconst : ∀ z : ℝ, clampAt L z = -L := by
+        intro z
+        unfold clampAt
+        rcases le_or_gt z L with hz | hz
+        · rw [min_eq_right hz]
+          exact max_eq_left (by linarith)
+        · rw [min_eq_left hz.le]
+          exact max_eq_left (by linarith)
+      have htr0 : ∀ t : ℤ, truncErr X e μ L t =ᵐ[μ] fun _ => (0 : ℝ) := by
+        intro t
+        have hfun : (fun ω' => clampAt L (e t ω')) = fun _ : Ω => -L :=
+          funext fun ω' => hclampconst _
+        have hce0 : μ[fun ω' => clampAt L (e t ω') |
+            MeasurableSpace.comap (X t) inferInstance] = fun _ => -L := by
+          rw [hfun, condExp_const (hmeasX t).comap_le]
+        filter_upwards with ω
+        have hdef : truncErr X e μ L t ω = clampAt L (e t ω)
+            - (μ[fun ω' => clampAt L (e t ω') |
+              MeasurableSpace.comap (X t) inferInstance]) ω := rfl
+        rw [hdef, hce0, hclampconst]
+        simp
+      have hzero : ∀ n : ℕ, locTruncSum X e μ W x h L n =ᵐ[μ] fun _ => (0 : ℝ) := by
+        intro n
+        have hall : ∀ᵐ ω ∂μ, ∀ t ∈ Finset.range n, truncErr X e μ L ((t : ℤ) + 1) ω = 0 :=
+          (Filter.eventually_all_finset _).2 fun t _ => htr0 ((t : ℤ) + 1)
+        filter_upwards [hall] with ω hω
+        have hs : ∑ t ∈ Finset.range n, truncErr X e μ L ((t : ℤ) + 1) ω *
+            W ((X ((t : ℤ) + 1) ω - x) / h n) = 0 :=
+          Finset.sum_eq_zero fun t ht => by rw [hω t ht, zero_mul]
+        simp only [locTruncSum, hs, mul_zero]
+      have hmap : ∀ n : ℕ, μ.map (locTruncSum X e μ W x h L n) = Measure.dirac (0 : ℝ) := by
+        intro n
+        rw [Measure.map_congr (hzero n)]
+        simp
+      have hvT0 : vT L = 0 := by rw [hvTdef]; simp only [if_neg (not_lt.2 hL)]
+      rw [hvT0]
+      have hgauss : charFun (gaussianReal 0 (Real.toNNReal (0 : ℝ))) u
+          = charFun (Measure.dirac (0 : ℝ)) u := by
+        rw [Real.toNNReal_zero, gaussianReal_zero_var]
+      rw [hgauss]
+      refine tendsto_const_nhds.congr fun n => ?_
+      rw [hmap n]
+  · -- (2.84): the level-`L` variance converges to `σ²(x) p(x) ∫W²`
+    have hcont : Continuous (fun w : ℝ => charFun (gaussianReal 0 (Real.toNNReal w)) u) := by
+      have hrw : (fun w : ℝ => charFun (gaussianReal 0 (Real.toNNReal w)) u)
+          = fun w : ℝ => Complex.exp ((u : ℂ) * (0 : ℂ) * Complex.I
+            - ((Real.toNNReal w : ℝ) : ℂ) * (u : ℂ) ^ 2 / 2) := by
+        funext w
+        rw [charFun_gaussianReal]
+        norm_num
+      rw [hrw]
+      fun_prop
+    have hvTlim : Tendsto vT atTop (𝓝 (σsq x * p x * ∫ v, W v ^ 2)) := by
+      have hbase : Tendsto (fun L : ℝ => (sL L x - mL L x ^ 2) * p x * ∫ v, W v ^ 2) atTop
+          (𝓝 (σsq x * p x * ∫ v, W v ^ 2)) :=
+        (hσL84.mul_const (p x)).mul_const (∫ v, W v ^ 2)
+      refine hbase.congr' ?_
+      filter_upwards [eventually_gt_atTop (0 : ℝ)] with L hL
+      rw [hvTdef]
+      simp only [if_pos hL]
+    exact (hcont.tendsto _).comp hvTlim
+
+end Assembly
 
 end StatLean.TimeSeries
