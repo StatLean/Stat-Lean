@@ -1614,6 +1614,7 @@ theorem armaResidualSS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
 -- The `have hCLLN := armaResidualSS_tendstoInProb …` application below re-unifies the
 -- full matrix statement (piMat/dotProduct at width `T`), which exceeds the default
 -- heartbeat budget at `whnf`.
+open Matrix in
 set_option maxHeartbeats 1600000 in
 /-- **The one missing analytic input of this lane** (named debt): the *quadratic-form
 law of large numbers*
