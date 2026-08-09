@@ -116,6 +116,7 @@ The library is the single `lean_lib StatLean`, organized into per-area sublibrar
 
 - `StatLean/AsymptoticStatistics/` — parametric & semiparametric asymptotics (van der Vaart, *Asymptotic Statistics*)
 - `StatLean/Bayesian/` — posteriors via disintegration, conjugacy, Bayesian decision theory, hierarchical & empirical Bayes, MCMC correctness, posterior contraction (Robert, *The Bayesian Choice*; Bhattacharya–Pati–Pillai–Dunson)
+- `StatLean/CausalInference/` — potential-outcomes causal inference: randomized experiments (Fisher's randomization test, Neyman's variance, stratified & matched-pair designs), observational identification (unconfoundedness, standardization, propensity score, IPW, doubly robust AIPW, ATT, matching & trimming), sensitivity analysis (Manski bounds, E-value, Rosenbaum) and instrumental variables (LATE/CACE, instrumental inequalities, linear IV) (Ding, *A First Course in Causal Inference*; Imbens & Rubin, *Causal Inference for Statistics, Social, and Biomedical Sciences*)
 - `StatLean/ConcentrationInequalities/` — sub-Gaussian / sub-exponential / Bernstein / maximal inequalities and empirical processes (Lu, *Big Data Analysis*)
 - `StatLean/HighDimensionalStatistics/` — OLS, Lasso rates, compressed sensing, M-estimators (Lu, *Big Data Analysis*; Wainwright)
 - `StatLean/MultipleTesting/` — FDR / FWER control, knockoffs, goodness-of-fit (Lu, *Big Data Analysis*; Candès)
