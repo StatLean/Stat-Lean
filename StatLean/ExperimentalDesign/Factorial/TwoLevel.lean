@@ -84,16 +84,20 @@ theorem character_mul_self (S : Finset ι) (x : ι → Bool) :
   rw [← Finset.prod_mul_distrib]
   exact Finset.prod_eq_one fun j _ => levelSign_mul_self (x j)
 
+set_option maxHeartbeats 800000 in
 /-- **Multiplicativity**: `χ_S · χ_T = χ_{S Δ T}` — Mead's product rule for effect
 rows (`Mead §13.1`; the group law behind confounding, `Mead §16.2`). -/
-set_option maxHeartbeats 800000 in
 theorem character_mul (S T : Finset ι) (x : ι → Bool) :
     character S x * character T x = character (symmDiff S T) x := by
   classical
   have hchi : character (symmDiff S T) x
       = (∏ j ∈ S \ T, levelSign (x j)) * ∏ j ∈ T \ S, levelSign (x j) := by
+    have hdd : Disjoint (S \ T) (T \ S) := by
+      rw [Finset.disjoint_left]
+      intro a ha hb
+      exact (Finset.mem_sdiff.mp hb).2 (Finset.mem_sdiff.mp ha).1
     unfold character
-    rw [symmDiff_def, Finset.sup_eq_union, Finset.prod_union disjoint_sdiff_sdiff]
+    rw [symmDiff_def, Finset.sup_eq_union, Finset.prod_union hdd]
   have hd : Disjoint (S \ T) (S ∩ T) := by
     rw [Finset.disjoint_left]
     intro a ha hb
