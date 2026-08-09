@@ -29,8 +29,21 @@ import Mathlib.Analysis.Normed.Group.Tannery
   docstring records both the exact obstruction and a concrete route that would remove it
   (a `E S_l⁴ = o(l³)` bound — which `Σ α(j) < ∞` *does* buy — together with an
   adaptively chosen big-block length `l_n = ⌈√n a_n⌉`).
-* **Theorem 2.20(i)/2.21(i)** — the `δ`-moment versions (cited Bosq / Peligrad):
-  literature DEBTS.
+* **Theorem 2.20(i)** (Bosq 1998 §1.5) — the `δ`-moment variance rate: **PROVED**, and
+  axiom-clean. The Billingsley bound `|γ(n)| ≤ 4α(n)C²` is replaced by **Davydov**
+  (`Mixing/Inequalities.abs_covariance_le_davydov` at `p = q = δ`), whose side condition
+  `1/p + 1/q < 1` is exactly `δ > 2`: `|γ(n)| ≤ 8 α(n)^{1−2/δ} ‖X_0‖_δ²`. The limit itself
+  is the shared Fejér/Tannery core `tendsto_var_rate_of_summable`, which 2.20(ii) also uses.
+* **Theorem 2.21(i)** (Peligrad; the `δ`-moment CLT) — **PROVED** by **truncation onto
+  2.21(ii)**. Clamp and re-centre, `Y^M_t = clamp_M(X_t) − E clamp_M(X_0)`,
+  `Z^M_t = X_t − Y^M_t`; both are common measurable transforms of `X`, hence strictly
+  stationary with `α_{Y^M}, α_{Z^M} ≤ α_X` (`isStrictlyStationary_comp`,
+  `alphaCoeff_comp_le`), and `Σ α^{1−2/δ} < ∞` forces `Σ α < ∞` because `α ≤ 1`. The two
+  limits in `M` both come from 2.20(i): `σ_Z(M)² = Σ_k γ_{Z^M}(k) → 0` by dominated
+  convergence over the lags (dominant: Davydov on `Z^M` with the `M`-uniform envelope
+  `|Z^M_0| ≤ |X_0| + E|X_0|`; per-lag limit: the AM–GM bound `|γ_{Z^M}(k)| ≤ E(Z^M_0)²`),
+  and `σ_Y(M)² → σ²` by Minkowski at every `n`. It inherits `sorryAx` only through
+  `lindeberg_blocks_debt` inside 2.21(ii).
 * **Proposition 2.8 (SLLN)** — α-mixing + `E|X| < ∞` ⇒ `S_n/n → EX` a.s.: literature
   DEBT (the cited route is "α-mixing ⇒ ergodic" + Birkhoff; Mathlib has no pointwise
   ergodic theorem in the pin).
@@ -316,27 +329,11 @@ private lemma sum_sub_double_eq (f : ℤ → ℝ) : ∀ n : ℕ,
 
 end Triangular
 
-/-- **FY Theorem 2.20(ii)** (in-text; erratum `4α(j)C²` applied): bounded zero-mean
-strictly stationary + summable α ⇒ summable ACVF and the variance-rate identity
-(2.63). -/
-theorem summable_acvf_and_var_rate_of_bounded [IsProbabilityMeasure μ]
-    {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
-    (hstat : IsStrictlyStationary X μ)
-    {C : ℝ}
-    -- USER-INPUT: uniform bound; FY Thm 2.20(ii)
-    (hbdd : ∀ t, ∀ᵐ ω ∂μ, |X t ω| ≤ C)
-    -- USER-INPUT: zero mean; FY §2.6.3 setup
-    (hmean : ∫ ω, X 0 ω ∂μ = 0)
-    -- USER-INPUT: summable mixing coefficients; FY Thm 2.20(ii)
-    (hα : Summable fun n : ℕ => alphaCoeff X μ n) :
-    (Summable fun k : ℤ => |acvf X μ k|) ∧
-      Tendsto (fun n : ℕ => (n : ℝ)⁻¹ *
-          variance (fun ω => ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) μ) atTop
-        (𝓝 (acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1))) := by
-  classical
-  have hws : IsStationary X μ := hstat.isStationary hmeas (memLp_of_bdd hmeas hbdd 0 2)
-  have hsum : Summable fun k : ℤ => |acvf X μ k| := summable_abs_acvf' hmeas hstat hbdd hα
-  refine ⟨hsum, ?_⟩
+/-- The two-sided ACVF series is the book's `σ² = γ(0) + 2 Σ_{j ≥ 1} γ(j)` (evenness of the
+ACVF folds the negative lags onto the positive ones). -/
+private lemma tsum_acvf_eq [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
+    (hws : IsStationary X μ) (hsum : Summable fun k : ℤ => |acvf X μ k|) :
+    (∑' k : ℤ, acvf X μ k) = acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) := by
   have hsumZ : Summable fun k : ℤ => acvf X μ k := hsum.of_abs
   have hsumN : Summable fun n : ℕ => acvf X μ (n : ℤ) := hsumZ.comp_injective Nat.cast_injective
   have hsumN1 : Summable fun n : ℕ => acvf X μ ((n : ℤ) + 1) := by
@@ -344,23 +341,39 @@ theorem summable_acvf_and_var_rate_of_bounded [IsProbabilityMeasure μ]
     refine h.congr fun n => ?_
     have e : ((n + 1 : ℕ) : ℤ) = (n : ℤ) + 1 := by push_cast; ring
     rw [e]
+  have hneg : Summable fun n : ℕ => acvf X μ (-((n : ℤ) + 1)) := by
+    simpa only [acvf_neg hws] using hsumN1
+  have hnegeq : (∑' n : ℕ, acvf X μ (-((n : ℤ) + 1))) = ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) :=
+    tsum_congr fun n => acvf_neg hws _
+  have hshift : (∑' n : ℕ, acvf X μ ((n + 1 : ℕ) : ℤ))
+      = ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) :=
+    tsum_congr fun n => by
+      rw [show ((n + 1 : ℕ) : ℤ) = (n : ℤ) + 1 by push_cast; ring]
+  have hpos : (∑' n : ℕ, acvf X μ (n : ℤ))
+      = acvf X μ 0 + ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) := by
+    rw [hsumN.tsum_eq_zero_add, hshift]
+    norm_num
+  rw [tsum_of_nat_of_neg_add_one hsumN hneg, hnegeq, hpos]
+  ring
+
+/-- **The variance rate from summability alone.** For a weakly stationary process whose
+ACVF is absolutely summable, `n⁻¹ Var(S_n) → Σ_{k ∈ ℤ} γ(k) = γ(0) + 2 Σ_{j ≥ 1} γ(j)`:
+the exact triangular-weight expansion turns `n⁻¹ Var(S_n)` into the Fejér-weighted series
+`Σ_k (1 − |k|/n) γ(k)`, and Tannery's theorem (dominated convergence for series, dominant
+`|γ|`) passes to the limit.
+
+This is the analytic core shared by FY Theorem 2.20(ii) (bounded, `Σ α < ∞`) and its
+`δ`-moment counterpart 2.20(i) (`L^δ`, `Σ α^{1−2/δ} < ∞`) — the two differ only in how
+absolute summability of the ACVF is obtained (Billingsley vs. Davydov). -/
+private lemma tendsto_var_rate_of_summable [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
+    (hws : IsStationary X μ) (hsum : Summable fun k : ℤ => |acvf X μ k|) :
+    Tendsto (fun n : ℕ => (n : ℝ)⁻¹ *
+        variance (fun ω => ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) μ) atTop
+      (𝓝 (acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1))) := by
+  classical
   -- (a) the `ℤ`-series of the ACVF is the book's `σ² = γ(0) + 2 Σ_{j≥1} γ(j)`
   have hσeq : (∑' k : ℤ, acvf X μ k)
-      = acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) := by
-    have hneg : Summable fun n : ℕ => acvf X μ (-((n : ℤ) + 1)) := by
-      simpa only [acvf_neg hws] using hsumN1
-    have hnegeq : (∑' n : ℕ, acvf X μ (-((n : ℤ) + 1))) = ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) :=
-      tsum_congr fun n => acvf_neg hws _
-    have hshift : (∑' n : ℕ, acvf X μ ((n + 1 : ℕ) : ℤ))
-        = ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) :=
-      tsum_congr fun n => by
-        rw [show ((n + 1 : ℕ) : ℤ) = (n : ℤ) + 1 by push_cast; ring]
-    have hpos : (∑' n : ℕ, acvf X μ (n : ℤ))
-        = acvf X μ 0 + ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) := by
-      rw [hsumN.tsum_eq_zero_add, hshift]
-      norm_num
-    rw [tsum_of_nat_of_neg_add_one hsumN hneg, hnegeq, hpos]
-    ring
+      = acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) := tsum_acvf_eq hws hsum
   -- (b) the exact triangular-weight expansion of `Var S_n`
   have hvar : ∀ n : ℕ, variance (fun ω => ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) μ
       = ∑ k ∈ Finset.Ioo (-(n : ℤ)) (n : ℤ), ((n : ℝ) - |(k : ℝ)|) * acvf X μ k := by
@@ -370,7 +383,7 @@ theorem summable_acvf_and_var_rate_of_bounded [IsProbabilityMeasure μ]
         = ∑ s ∈ Finset.range n, ∑ t ∈ Finset.range n, acvf X μ ((s : ℤ) - (t : ℤ)) :=
       Finset.sum_congr rfl fun s _ => Finset.sum_congr rfl fun t _ => cov_shift_pair hws s t
     have h0 := variance_fun_sum' (μ := μ) (X := fun t : ℕ => X ((t : ℤ) + 1))
-      (s := Finset.range n) (fun t _ => memLp_of_bdd hmeas hbdd ((t : ℤ) + 1) 2)
+      (s := Finset.range n) (fun t _ => hws.memLp _)
     rw [h0, h1, sum_sub_double_eq]
   -- (c) the Fejér-weighted family, extended by zero to all of `ℤ`
   set g : ℕ → ℤ → ℝ := fun n k =>
@@ -420,6 +433,28 @@ theorem summable_acvf_and_var_rate_of_bounded [IsProbabilityMeasure μ]
         exact abs_nonneg _
   rw [← hσeq]
   exact (Tendsto.congr (fun n => (hns n).symm) hdom)
+
+/-- **FY Theorem 2.20(ii)** (in-text; erratum `4α(j)C²` applied): bounded zero-mean
+strictly stationary + summable α ⇒ summable ACVF and the variance-rate identity
+(2.63). -/
+theorem summable_acvf_and_var_rate_of_bounded [IsProbabilityMeasure μ]
+    {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
+    (hstat : IsStrictlyStationary X μ)
+    {C : ℝ}
+    -- USER-INPUT: uniform bound; FY Thm 2.20(ii)
+    (hbdd : ∀ t, ∀ᵐ ω ∂μ, |X t ω| ≤ C)
+    -- USER-INPUT: zero mean; FY §2.6.3 setup
+    (hmean : ∫ ω, X 0 ω ∂μ = 0)
+    -- USER-INPUT: summable mixing coefficients; FY Thm 2.20(ii)
+    (hα : Summable fun n : ℕ => alphaCoeff X μ n) :
+    (Summable fun k : ℤ => |acvf X μ k|) ∧
+      Tendsto (fun n : ℕ => (n : ℝ)⁻¹ *
+          variance (fun ω => ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) μ) atTop
+        (𝓝 (acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1))) := by
+  classical
+  have hws : IsStationary X μ := hstat.isStationary hmeas (memLp_of_bdd hmeas hbdd 0 2)
+  have hsum : Summable fun k : ℤ => |acvf X μ k| := summable_abs_acvf' hmeas hstat hbdd hα
+  exact ⟨hsum, tendsto_var_rate_of_summable hws hsum⟩
 
 /-! ### Analytic bricks for the Bernstein-block CLT -/
 
@@ -1032,6 +1067,24 @@ sums `S_l²/l` are **uniformly integrable**, so the Lindeberg mass at a level `�
 **This is the single unproved brick of `clt_of_bounded_alphaMixing`** (everything else in
 Theorems 2.20(ii) and 2.21(ii) is now proved; `summable_acvf_and_var_rate_of_bounded` is
 axiom-clean and `clt_of_bounded_alphaMixing` reaches `sorryAx` only through this lemma).
+Theorems 2.20(i) and 2.21(i) are proved too, and 2.21(i)
+(`clt_of_alphaMixing_debt`) inherits `sorryAx` through this same lemma and no other.
+
+**The statement is exactly asymptotic uniform integrability of `S_l²/l`** — *not* something
+weaker. In the variable `Y_l = S_l²/l` the Lindeberg level `ε√n` is the threshold
+`K_n = ε² n / l_n`, and `l_n/n → 0` says precisely `K_n → ∞`; conversely every sequence
+`K_n → ∞` is realised by the admissible choice `l_n = ⌈ε² n / K_n⌉`. So quantifying over all
+`l` with `l_n/n → 0` is quantifying over all thresholds, i.e.
+`lim_{K→∞} limsup_l ∫_{S_l²/l ≥ K} S_l²/l = 0`.
+
+**Consequently the debt is *equivalent* to the theorem it serves, not a weaker ingredient.**
+`S_l/√l →d N(0, σ²)` (Theorem 2.21(ii)) together with `E S_l²/l → σ²`
+(Theorem 2.20(ii), proved here) gives `Y_l ≥ 0`, `Y_l →d σ²Z²`, `E Y_l → σ² = E σ²Z²`, and a
+nonnegative sequence converging in distribution with converging means is uniformly
+integrable. Any derivation of this lemma from the CLT is therefore circular, and — the
+point — **no strengthening of the local moment toolbox can close it**: it carries the full
+content of the CLT. Removing it requires a genuinely different proof of Theorem 2.21(ii),
+namely the cubic/adaptive-block route recorded below.
 
 **Why the second-moment toolbox cannot close it.** The two facts this file supplies about
 one big block are `E S_l² ≤ Λ l` (`integral_sq_partialSum_le`) and `|S_l| ≤ C l` a.s.
@@ -1061,9 +1114,15 @@ Two consequences worth recording. (i) The previous verdict in this docstring —
 fourth-moment route needs `Σ_j (j+1) α(j) < ∞`" — is **too pessimistic**: that hypothesis
 buys the *rate* `E S_l⁴ = O(l²)` (Yokoyama), but only `o(l³)` is needed, and `o(l³)`
 follows from `Σ α < ∞`. (ii) Removing this debt therefore costs a 4-fold sorted-tuple
-moment expansion inside this file (the combinatorial half that
-`Mixing/Inequalities.moment4_partial_sum_le` also leaves open) *plus* a diagonal rebuild
-of `exists_block_scheme` with an `α`-dependent `l_n`; both are out of this lane's budget.
+moment expansion *plus* a diagonal rebuild of `exists_block_scheme` with an `α`-dependent
+`l_n`; both are out of this lane's budget. **Erratum to (ii)**:
+`Mixing/Inequalities.moment4_partial_sum_le` is now proved, but it is *not* the brick this
+route needs — its hypothesis is the decay **rate** `α(n) ≤ K n⁻²`, which delivers the
+Yokoyama bound `E S_n⁴ ≤ C' n²`. Under `Σ α < ∞` alone no such rate is available (all one
+gets is `n α(n) → 0`), and the `o(l³)` bound has to be re-derived from the
+largest-gap split with a *summability* rather than a rate hypothesis; the counting lemma
+`sum_four_le_of_cut_bound` that `Inequalities` supplies is stated against `α(m) ≤ K/m²`
+and does not cover it.
 
 The statement below is the weakest form that closes the Bernstein scheme as currently
 assembled. -/
@@ -1634,8 +1693,355 @@ theorem clt_of_bounded_alphaMixing [IsProbabilityMeasure μ]
   refine hfin.congr fun n => ?_
   ring
 
-/-- **DEBT (Bosq 1998 §1.5; FY Theorem 2.20(i))**: the `δ`-moment version of the
-variance rate: `E|X|^δ < ∞` (δ > 2) and `Σ_j α(j)^{1−2/δ} < ∞` suffice. -/
+/-! ### The `δ`-moment versions (FY Theorems 2.20(i)/2.21(i))
+
+The `L^δ` route replaces the Billingsley bound `|γ(n)| ≤ 4α(n)C²` by the **Davydov** bound
+`|γ(n)| ≤ 8 α(n)^{1−2/δ} ‖X_0‖_δ²` (`Mixing/Inequalities.abs_covariance_le_davydov` at
+`p = q = δ`); absolute summability of the ACVF then follows from `Σ α^{1−2/δ} < ∞`, and the
+variance rate is the shared analytic core `tendsto_var_rate_of_summable`. -/
+
+section Delta
+
+variable {X : ℤ → Ω → ℝ} {δ : ℝ}
+
+/-- `2 ≤ ENNReal.ofReal δ` for `2 < δ`. -/
+private lemma two_le_ofReal (hδ : 2 < δ) : (2 : ℝ≥0∞) ≤ ENNReal.ofReal δ := by
+  rw [show (2 : ℝ≥0∞) = ENNReal.ofReal 2 by simp]
+  exact ENNReal.ofReal_le_ofReal hδ.le
+
+/-- **Davydov bound on the ACVF** (FY Thm 2.20(i)), taken at `p = q = δ`: the lag-`n`
+covariance pairs the anchored past `σ{X_s : s ≤ 0}` (holding `X_0`) with the future
+`σ{X_s : s ≥ n}` (holding `X_n`), and strict stationarity makes the two `L^δ` norms equal.
+The `1/p + 1/q < 1` side condition of Davydov's inequality is exactly `δ > 2`. -/
+private lemma abs_acvf_le_alphaCoeff_davydov [IsProbabilityMeasure μ]
+    (hmeas : ∀ t, Measurable (X t)) (hstat : IsStrictlyStationary X μ)
+    (hδ : 2 < δ) (hLδ : MemLp (X 0) (ENNReal.ofReal δ) μ) (n : ℕ) :
+    |acvf X μ (n : ℤ)| ≤ 8 * alphaCoeff X μ n ^ (1 - 2 / δ)
+      * (eLpNorm (X 0) (ENNReal.ofReal δ) μ).toReal ^ 2 := by
+  have hδ0 : (0 : ℝ) < δ := by linarith
+  have hδ1 : (1 : ℝ) < δ := by linarith
+  have hpq : 1 / δ + 1 / δ < 1 := by
+    have h2 : 1 / δ + 1 / δ = 2 / δ := by ring
+    rw [h2, div_lt_one hδ0]; linarith
+  have h1 : sigmaLE X 0 ≤ (inferInstance : MeasurableSpace Ω) := sigmaLE_le hmeas 0
+  have h2 : sigmaGE X (n : ℤ) ≤ (inferInstance : MeasurableSpace Ω) := sigmaGE_le hmeas _
+  have hf : Measurable[sigmaLE X 0] (X 0) :=
+    (measurable_comap_self X 0).mono (comap_le_sigmaLE X le_rfl) le_rfl
+  have hg : Measurable[sigmaGE X (n : ℤ)] (X (n : ℤ)) :=
+    (measurable_comap_self X _).mono (comap_le_sigmaGE X le_rfl) le_rfl
+  have hid : IdentDistrib (X 0) (X (n : ℤ)) μ μ := hstat.identDistrib hmeas 0 (n : ℤ)
+  have hLδn : MemLp (X (n : ℤ)) (ENNReal.ofReal δ) μ := hid.memLp_snd hLδ
+  have hnorm : eLpNorm (X (n : ℤ)) (ENNReal.ofReal δ) μ
+      = eLpNorm (X 0) (ENNReal.ofReal δ) μ := (hid.eLpNorm_eq (ENNReal.ofReal δ)).symm
+  have key := abs_covariance_le_davydov h1 h2 hf hg hδ1 hδ1 hpq hLδ hLδn
+  rw [acvf, covariance_comm]
+  refine key.trans (le_of_eq ?_)
+  rw [hnorm, alphaCoeff]
+  have he : (1 : ℝ) - 1 / δ - 1 / δ = 1 - 2 / δ := by ring
+  rw [he]
+  ring
+
+/-- Absolute summability of the ACVF under the `δ`-moment hypotheses (first half of FY
+Theorem 2.20(i)): Davydov per lag, `Σ α^{1−2/δ} < ∞` over lags, and evenness of the ACVF
+to fold the negative lags in. -/
+private lemma summable_abs_acvf_davydov [IsProbabilityMeasure μ]
+    (hmeas : ∀ t, Measurable (X t)) (hstat : IsStrictlyStationary X μ)
+    (hδ : 2 < δ) (hLδ : MemLp (X 0) (ENNReal.ofReal δ) μ) (hws : IsStationary X μ)
+    (hα : Summable fun n : ℕ => alphaCoeff X μ n ^ (1 - 2 / δ)) :
+    Summable fun k : ℤ => |acvf X μ k| := by
+  have hpos : Summable fun n : ℕ => |acvf X μ (n : ℤ)| :=
+    Summable.of_nonneg_of_le (fun n => abs_nonneg _)
+      (fun n => abs_acvf_le_alphaCoeff_davydov hmeas hstat hδ hLδ n)
+      ((hα.mul_left 8).mul_right _)
+  refine Summable.of_nat_of_neg hpos ?_
+  simpa only [acvf_neg hws] using hpos
+
+/-! #### Transfer bricks for the truncation argument
+
+`clt_of_alphaMixing_debt` is reduced to `clt_of_bounded_alphaMixing` by truncating the
+coordinates. Every structural hypothesis has to be transported along a *common measurable
+transform* `X_t ↦ g(X_t)`: strict stationarity (the finite-dimensional laws compose), the
+past/future σ-algebras (they shrink) and hence the α-coefficients. -/
+
+/-- Strict stationarity is preserved by a common measurable transform of the coordinates:
+the finite-dimensional law of `(g ∘ X_{t_i + k})_i` is the pushforward of that of
+`(X_{t_i + k})_i` along the fixed map `v ↦ g ∘ v`. -/
+private lemma isStrictlyStationary_comp (hmeas : ∀ t, Measurable (X t))
+    (hstat : IsStrictlyStationary X μ) {g : ℝ → ℝ} (hg : Measurable g) :
+    IsStrictlyStationary (fun t ω => g (X t ω)) μ := by
+  intro n t k
+  have hG : Measurable fun (v : Fin n → ℝ) (i : Fin n) => g (v i) :=
+    measurable_pi_lambda _ fun i => hg.comp (measurable_pi_apply i)
+  have hXk : Measurable fun ω (i : Fin n) => X (t i + k) ω :=
+    measurable_pi_lambda _ fun i => hmeas _
+  have hX0 : Measurable fun ω (i : Fin n) => X (t i) ω :=
+    measurable_pi_lambda _ fun i => hmeas _
+  show (μ.map fun ω (i : Fin n) => g (X (t i + k) ω))
+      = μ.map fun ω (i : Fin n) => g (X (t i) ω)
+  have e1 : (fun ω (i : Fin n) => g (X (t i + k) ω))
+      = (fun (v : Fin n → ℝ) (i : Fin n) => g (v i)) ∘ fun ω (i : Fin n) => X (t i + k) ω := rfl
+  have e2 : (fun ω (i : Fin n) => g (X (t i) ω))
+      = (fun (v : Fin n → ℝ) (i : Fin n) => g (v i)) ∘ fun ω (i : Fin n) => X (t i) ω := rfl
+  rw [e1, e2, ← Measure.map_map hG hXk, ← Measure.map_map hG hX0, hstat n t k]
+
+/-- The past σ-algebra of a transformed process is contained in that of the original. -/
+private lemma sigmaLE_comp_le (hmeas : ∀ t, Measurable (X t)) {g : ℝ → ℝ} (hg : Measurable g)
+    (n : ℤ) : sigmaLE (fun t ω => g (X t ω)) n ≤ sigmaLE X n := by
+  refine iSup₂_le fun s hs => ?_
+  have hm : Measurable[sigmaLE X n] fun ω => g (X s ω) :=
+    hg.comp ((measurable_comap_self X s).mono (comap_le_sigmaLE X hs) le_rfl)
+  exact hm.comap_le
+
+/-- The future σ-algebra of a transformed process is contained in that of the original. -/
+private lemma sigmaGE_comp_le (hmeas : ∀ t, Measurable (X t)) {g : ℝ → ℝ} (hg : Measurable g)
+    (n : ℤ) : sigmaGE (fun t ω => g (X t ω)) n ≤ sigmaGE X n := by
+  refine iSup₂_le fun s hs => ?_
+  have hm : Measurable[sigmaGE X n] fun ω => g (X s ω) :=
+    hg.comp ((measurable_comap_self X s).mono (comap_le_sigmaGE X hs) le_rfl)
+  exact hm.comap_le
+
+/-- Transformed coordinates are *at most* as dependent: `α_{g∘X}(n) ≤ α_X(n)`. -/
+private lemma alphaCoeff_comp_le [IsProbabilityMeasure μ] (hmeas : ∀ t, Measurable (X t))
+    {g : ℝ → ℝ} (hg : Measurable g) (n : ℕ) :
+    alphaCoeff (fun t ω => g (X t ω)) μ n ≤ alphaCoeff X μ n :=
+  alphaMixCoeff_mono (sigmaLE_comp_le hmeas hg 0) (sigmaGE_comp_le hmeas hg (n : ℤ))
+
+/-- `Σ α^θ < ∞` with `0 < θ ≤ 1` forces `Σ α < ∞`: the coefficients lie in `[0, 1]`, where
+raising to a smaller exponent can only increase them. -/
+private lemma summable_alphaCoeff_of_rpow [IsProbabilityMeasure μ] {θ : ℝ} (hθ0 : 0 < θ)
+    (hθ1 : θ ≤ 1) (hα : Summable fun n : ℕ => alphaCoeff X μ n ^ θ) :
+    Summable fun n : ℕ => alphaCoeff X μ n := by
+  refine hα.of_nonneg_of_le (fun n => alphaMixCoeff_nonneg) (fun n => ?_)
+  have h0 : 0 ≤ alphaCoeff X μ n := alphaMixCoeff_nonneg
+  have h1 : alphaCoeff X μ n ≤ 1 := alphaMixCoeff_le_one (mΩ := inferInstance)
+  rcases eq_or_lt_of_le h0 with h | h
+  · rw [← h, Real.zero_rpow hθ0.ne']
+  · calc alphaCoeff X μ n = alphaCoeff X μ n ^ (1 : ℝ) := (Real.rpow_one _).symm
+      _ ≤ alphaCoeff X μ n ^ θ := Real.rpow_le_rpow_of_exponent_ge h h1 hθ1
+
+/-! #### `L²` bricks: the `√∫f²` form of the `L²` norm and Minkowski's inequality -/
+
+/-- `‖f‖_{L²}` in the `√∫f²` form. -/
+private lemma eLpNorm_two_eq_sqrt [IsProbabilityMeasure μ] {f : Ω → ℝ} (hf : MemLp f 2 μ) :
+    eLpNorm f 2 μ = ENNReal.ofReal (Real.sqrt (∫ ω, f ω ^ 2 ∂μ)) := by
+  rw [hf.eLpNorm_eq_integral_rpow_norm (by norm_num) (by norm_num)]
+  have hint : (∫ ω, ‖f ω‖ ^ ((2 : ℝ≥0∞).toReal) ∂μ) = ∫ ω, f ω ^ 2 ∂μ := by
+    refine integral_congr_ae (Eventually.of_forall fun ω => ?_)
+    show ‖f ω‖ ^ ((2 : ℝ≥0∞).toReal) = f ω ^ 2
+    have h2 : ((2 : ℝ≥0∞).toReal) = ((2 : ℕ) : ℝ) := by norm_num
+    rw [h2, Real.rpow_natCast, Real.norm_eq_abs, sq_abs]
+  rw [hint]
+  congr 1
+  rw [Real.sqrt_eq_rpow]
+  norm_num
+
+/-- **Minkowski** in the only form the truncation argument consumes. -/
+private lemma sqrt_integral_sq_add_le [IsProbabilityMeasure μ] {f g : Ω → ℝ}
+    (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    Real.sqrt (∫ ω, (f ω + g ω) ^ 2 ∂μ)
+      ≤ Real.sqrt (∫ ω, f ω ^ 2 ∂μ) + Real.sqrt (∫ ω, g ω ^ 2 ∂μ) := by
+  have hfg : MemLp (fun ω => f ω + g ω) 2 μ := hf.add hg
+  have hmink : eLpNorm (fun ω => f ω + g ω) 2 μ ≤ eLpNorm f 2 μ + eLpNorm g 2 μ := by
+    have h := eLpNorm_add_le (μ := μ) (p := 2) hf.aestronglyMeasurable hg.aestronglyMeasurable
+      one_le_two
+    exact h
+  rw [eLpNorm_two_eq_sqrt hfg, eLpNorm_two_eq_sqrt hf, eLpNorm_two_eq_sqrt hg,
+    ← ENNReal.ofReal_add (Real.sqrt_nonneg _) (Real.sqrt_nonneg _)] at hmink
+  exact (ENNReal.ofReal_le_ofReal_iff (by positivity)).mp hmink
+
+/-- **Minkowski**, difference form. -/
+private lemma sqrt_integral_sq_sub_le [IsProbabilityMeasure μ] {f g : Ω → ℝ}
+    (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    Real.sqrt (∫ ω, (f ω - g ω) ^ 2 ∂μ)
+      ≤ Real.sqrt (∫ ω, f ω ^ 2 ∂μ) + Real.sqrt (∫ ω, g ω ^ 2 ∂μ) := by
+  have hgn : MemLp (fun ω => -g ω) 2 μ := hg.neg
+  have h : Real.sqrt (∫ ω, (f ω + -g ω) ^ 2 ∂μ)
+      ≤ Real.sqrt (∫ ω, f ω ^ 2 ∂μ) + Real.sqrt (∫ ω, (-g ω) ^ 2 ∂μ) :=
+    sqrt_integral_sq_add_le hf hgn
+  have e1 : (∫ ω, (f ω + -g ω) ^ 2 ∂μ) = ∫ ω, (f ω - g ω) ^ 2 ∂μ :=
+    integral_congr_ae (Eventually.of_forall fun ω => by ring)
+  have e2 : (∫ ω, (-g ω) ^ 2 ∂μ) = ∫ ω, g ω ^ 2 ∂μ :=
+    integral_congr_ae (Eventually.of_forall fun ω => by ring)
+  rw [e1, e2] at h
+  exact h
+
+/-! #### Clamping arithmetic -/
+
+/-- The clamp `x ↦ max (−M) (min M x)` is measurable. -/
+private lemma measurable_clamp (M : ℝ) : Measurable fun x : ℝ => max (-M) (min M x) :=
+  measurable_const.max (measurable_const.min measurable_id)
+
+/-- Clamping to `[−M, M]` is bounded by `M`. -/
+private lemma abs_clamp_le'' {M x : ℝ} (hM : 0 ≤ M) : |max (-M) (min M x)| ≤ M := by
+  rw [abs_le]
+  exact ⟨le_max_left _ _, max_le (by linarith) (min_le_left _ _)⟩
+
+/-- Clamping only moves a point towards the origin, so the discarded part is no larger than
+the point itself. -/
+private lemma abs_sub_clamp_le'' {M x : ℝ} (hM : 0 ≤ M) :
+    |x - max (-M) (min M x)| ≤ |x| := by
+  rcases le_total x (-M) with h | h
+  · rw [min_eq_right (by linarith), max_eq_left h]
+    rw [abs_of_nonpos (by linarith : x ≤ 0), abs_of_nonpos (by linarith : x - -M ≤ 0)]
+    linarith
+  · rcases le_total x M with h2 | h2
+    · rw [min_eq_right h2, max_eq_right h]
+      simp
+    · rw [min_eq_left h2, max_eq_right (by linarith)]
+      rw [abs_of_nonneg (by linarith : (0 : ℝ) ≤ x), abs_of_nonneg (by linarith : (0 : ℝ) ≤ x - M)]
+      linarith
+
+/-- Below the clamping level nothing is discarded. -/
+private lemma sub_clamp_eq_zero'' {M x : ℝ} (h : |x| ≤ M) : x - max (-M) (min M x) = 0 := by
+  rw [abs_le] at h
+  rw [min_eq_right h.2, max_eq_right h.1, sub_self]
+
+/-! #### Davydov over `ℤ`-lags, and transfer of the mixing hypothesis -/
+
+/-- The Davydov ACVF bound at an arbitrary (signed) lag. -/
+private lemma abs_acvf_int_le_davydov [IsProbabilityMeasure μ] {W : ℤ → Ω → ℝ}
+    (hmW : ∀ t, Measurable (W t)) (hstatW : IsStrictlyStationary W μ)
+    (hwsW : IsStationary W μ) (hδ : 2 < δ) (hLδW : MemLp (W 0) (ENNReal.ofReal δ) μ) (k : ℤ) :
+    |acvf W μ k| ≤ 8 * alphaCoeff W μ k.natAbs ^ (1 - 2 / δ)
+      * (eLpNorm (W 0) (ENNReal.ofReal δ) μ).toReal ^ 2 := by
+  set m : ℕ := k.natAbs with hm
+  rcases le_or_gt 0 k with h | h
+  · have hk : k = (m : ℤ) := by omega
+    rw [hk]
+    exact abs_acvf_le_alphaCoeff_davydov hmW hstatW hδ hLδW m
+  · have hk : k = -((m : ℤ)) := by omega
+    rw [hk, acvf_neg hwsW]
+    exact abs_acvf_le_alphaCoeff_davydov hmW hstatW hδ hLδW m
+
+/-- `Σ α_X^θ < ∞` transfers to any process whose coefficients are dominated by `α_X`. -/
+private lemma summable_rpow_of_le [IsProbabilityMeasure μ] {W : ℤ → Ω → ℝ} {θ : ℝ} (hθ : 0 ≤ θ)
+    (hle : ∀ n : ℕ, alphaCoeff W μ n ≤ alphaCoeff X μ n)
+    (hα : Summable fun n : ℕ => alphaCoeff X μ n ^ θ) :
+    Summable fun n : ℕ => alphaCoeff W μ n ^ θ :=
+  hα.of_nonneg_of_le (fun _ => Real.rpow_nonneg alphaMixCoeff_nonneg θ)
+    (fun n => Real.rpow_le_rpow alphaMixCoeff_nonneg (hle n) hθ)
+
+/-! #### Partial-sum bookkeeping for a general stationary `L²` process -/
+
+/-- Every coordinate has the law of `W 0`, hence the same `L^p` membership. -/
+private lemma memLp_coord [IsProbabilityMeasure μ] {W : ℤ → Ω → ℝ}
+    (hmW : ∀ t, Measurable (W t)) (hstatW : IsStrictlyStationary W μ) {p : ℝ≥0∞}
+    (hL : MemLp (W 0) p μ) (t : ℤ) : MemLp (W t) p μ :=
+  (hstatW.identDistrib hmW 0 t).memLp_snd hL
+
+/-- Partial sums inherit `L^p` membership. -/
+private lemma memLp_partialSum [IsProbabilityMeasure μ] {W : ℤ → Ω → ℝ}
+    (hmW : ∀ t, Measurable (W t)) (hstatW : IsStrictlyStationary W μ) {p : ℝ≥0∞}
+    (hL : MemLp (W 0) p μ) (D : Finset ℕ) :
+    MemLp (fun ω => ∑ t ∈ D, W ((t : ℤ) + 1) ω) p μ := by
+  have hfun : (fun ω => ∑ t ∈ D, W ((t : ℤ) + 1) ω) = ∑ t ∈ D, W ((t : ℤ) + 1) := by
+    funext ω; simp [Finset.sum_apply]
+  rw [hfun]
+  exact memLp_finset_sum' (μ := μ) D fun t _ => memLp_coord hmW hstatW hL _
+
+/-- Partial sums of a zero-mean stationary process have mean zero. -/
+private lemma integral_partialSum_eq_zero' [IsProbabilityMeasure μ] {W : ℤ → Ω → ℝ}
+    (hmW : ∀ t, Measurable (W t)) (hstatW : IsStrictlyStationary W μ)
+    (hL1 : MemLp (W 0) 1 μ) (hmeanW : ∫ ω, W 0 ω ∂μ = 0) (D : Finset ℕ) :
+    ∫ ω, (∑ t ∈ D, W ((t : ℤ) + 1) ω) ∂μ = 0 := by
+  have hsplit : ∫ ω, (∑ t ∈ D, W ((t : ℤ) + 1) ω) ∂μ
+      = ∑ t ∈ D, ∫ ω, W ((t : ℤ) + 1) ω ∂μ :=
+    integral_finset_sum (f := fun (t : ℕ) ω => W ((t : ℤ) + 1) ω) D
+      (fun t _ => (memLp_coord hmW hstatW hL1 _).integrable le_rfl)
+  rw [hsplit]
+  refine Finset.sum_eq_zero fun t _ => ?_
+  rw [(hstatW.identDistrib hmW ((t : ℤ) + 1) 0).integral_eq, hmeanW]
+
+/-- For a zero-mean stationary `L²` process the variance of a partial sum is its second
+moment. -/
+private lemma variance_partialSum_eq [IsProbabilityMeasure μ] {W : ℤ → Ω → ℝ}
+    (hmW : ∀ t, Measurable (W t)) (hstatW : IsStrictlyStationary W μ)
+    (hL2 : MemLp (W 0) 2 μ) (hmeanW : ∫ ω, W 0 ω ∂μ = 0) (D : Finset ℕ) :
+    variance (fun ω => ∑ t ∈ D, W ((t : ℤ) + 1) ω) μ
+      = ∫ ω, (∑ t ∈ D, W ((t : ℤ) + 1) ω) ^ 2 ∂μ :=
+  variance_of_integral_eq_zero
+    (memLp_partialSum hmW hstatW hL2 D).aestronglyMeasurable.aemeasurable
+    (integral_partialSum_eq_zero' hmW hstatW (hL2.mono_exponent one_le_two) hmeanW D)
+
+/-- The crude bound `|γ_W(k)| ≤ E W_0²` (AM–GM on the product, stationarity on the second
+moment). It is what makes the *discarded* part of the truncation negligible lag by lag. -/
+private lemma abs_acvf_le_integral_sq [IsProbabilityMeasure μ] {W : ℤ → Ω → ℝ}
+    (hmW : ∀ t, Measurable (W t)) (hstatW : IsStrictlyStationary W μ)
+    (hL2 : MemLp (W 0) 2 μ) (hmeanW : ∫ ω, W 0 ω ∂μ = 0) (k : ℤ) :
+    |acvf W μ k| ≤ ∫ ω, (W 0 ω) ^ 2 ∂μ := by
+  have hk2 : MemLp (W k) 2 μ := memLp_coord hmW hstatW hL2 k
+  have hmk : ∫ ω, W k ω ∂μ = 0 := by
+    rw [(hstatW.identDistrib hmW k 0).integral_eq, hmeanW]
+  have hsqk : ∫ ω, (W k ω) ^ 2 ∂μ = ∫ ω, (W 0 ω) ^ 2 ∂μ := by
+    have := ((hstatW.identDistrib hmW k 0).comp (measurable_id.pow_const 2)).integral_eq
+    simpa using this
+  have hprod : Integrable (fun ω => W k ω * W 0 ω) μ := by
+    have h := MemLp.integrable_mul hk2 hL2
+    exact h
+  have hcov : acvf W μ k = ∫ ω, W k ω * W 0 ω ∂μ := by
+    rw [acvf, covariance_eq_sub hk2 hL2, hmk, hmeanW]
+    simp [Pi.mul_apply]
+  rw [hcov]
+  have h1 : |∫ ω, W k ω * W 0 ω ∂μ| ≤ ∫ ω, |W k ω * W 0 ω| ∂μ :=
+    abs_integral_le_integral_abs
+  have h2 : ∫ ω, |W k ω * W 0 ω| ∂μ
+      ≤ ∫ ω, ((W k ω) ^ 2 + (W 0 ω) ^ 2) / 2 ∂μ := by
+    refine integral_mono hprod.abs ((hk2.integrable_sq.add hL2.integrable_sq).div_const 2)
+      fun ω => ?_
+    rw [abs_mul]
+    nlinarith [sq_nonneg (|W k ω| - |W 0 ω|), abs_nonneg (W k ω), abs_nonneg (W 0 ω),
+      sq_abs (W k ω), sq_abs (W 0 ω)]
+  have h3 : ∫ ω, ((W k ω) ^ 2 + (W 0 ω) ^ 2) / 2 ∂μ = ∫ ω, (W 0 ω) ^ 2 ∂μ := by
+    rw [integral_div, integral_add hk2.integrable_sq hL2.integrable_sq, hsqk]
+    ring
+  linarith
+
+/-- Clamping never increases the modulus. -/
+private lemma abs_clamp_le_abs {M x : ℝ} (hM : 0 ≤ M) : |max (-M) (min M x)| ≤ |x| := by
+  rcases le_total x (-M) with h | h
+  · rw [min_eq_right (by linarith), max_eq_left h]
+    rw [abs_of_nonpos (by linarith : (-M : ℝ) ≤ 0), abs_of_nonpos (by linarith : x ≤ 0)]
+    linarith
+  · rcases le_total x M with h2 | h2
+    · rw [min_eq_right h2, max_eq_right h]
+    · rw [min_eq_left h2, max_eq_right (by linarith)]
+      rw [abs_of_nonneg hM, abs_of_nonneg (by linarith : (0 : ℝ) ≤ x)]
+      linarith
+
+/-- Below the clamping level the clamp is the identity. -/
+private lemma clamp_eq_self'' {M x : ℝ} (h : |x| ≤ M) : max (-M) (min M x) = x := by
+  have := sub_clamp_eq_zero'' h
+  linarith
+
+/-- The characteristic function of the law of a scaled statistic, as an integral over `Ω`. -/
+private lemma charFun_map_scaled [IsProbabilityMeasure μ] {S : Ω → ℝ} (hS : Measurable S)
+    (a u : ℝ) :
+    charFun (μ.map fun ω => a * S ω) u
+      = ∫ ω, Complex.exp (((u * a * S ω : ℝ) : ℂ) * Complex.I) ∂μ := by
+  have hae : AEMeasurable (fun ω => a * S ω) μ := (measurable_const.mul hS).aemeasurable
+  have hsm : AEStronglyMeasurable (fun x : ℝ => Complex.exp ((u : ℂ) * (x : ℂ) * Complex.I))
+      (μ.map fun ω => a * S ω) :=
+    (Complex.continuous_exp.comp (by fun_prop)).aestronglyMeasurable
+  rw [charFun_apply_real, integral_map hae hsm]
+  refine integral_congr_ae (Eventually.of_forall fun ω => ?_)
+  push_cast
+  ring
+
+/-- The `ℤ`-indexed Davydov dominant is summable. -/
+private lemma summable_int_dominant [IsProbabilityMeasure μ] {θ c : ℝ}
+    (hα : Summable fun n : ℕ => alphaCoeff X μ n ^ θ) :
+    Summable fun k : ℤ => 8 * alphaCoeff X μ k.natAbs ^ θ * c := by
+  refine Summable.of_nat_of_neg ?_ ?_
+  · simpa using (hα.mul_left 8).mul_right c
+  · simpa using (hα.mul_left 8).mul_right c
+
+end Delta
+
+/-- **FY Theorem 2.20(i)** (Bosq 1998 §1.5) — the `δ`-moment version of the variance rate:
+`E|X|^δ < ∞` (`δ > 2`) and `Σ_j α(j)^{1−2/δ} < ∞` give an absolutely summable ACVF and
+`n⁻¹ Var(S_n) → γ(0) + 2 Σ_{j ≥ 1} γ(j)`. Davydov's covariance inequality supplies the
+per-lag bound; the limit itself is the shared Fejér/Tannery core
+`tendsto_var_rate_of_summable`. -/
 theorem summable_acvf_and_var_rate_debt [IsProbabilityMeasure μ]
     {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
     (hstat : IsStrictlyStationary X μ)
@@ -1650,7 +2056,11 @@ theorem summable_acvf_and_var_rate_debt [IsProbabilityMeasure μ]
       Tendsto (fun n : ℕ => (n : ℝ)⁻¹ *
           variance (fun ω => ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) μ) atTop
         (𝓝 (acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1))) := by
-  sorry
+  have hws : IsStationary X μ :=
+    hstat.isStationary hmeas (hLδ.mono_exponent (two_le_ofReal hδ))
+  have hsum : Summable fun k : ℤ => |acvf X μ k| :=
+    summable_abs_acvf_davydov hmeas hstat hδ hLδ hws hα
+  exact ⟨hsum, tendsto_var_rate_of_summable hws hsum⟩
 
 /-- **DEBT (Peligrad; FY Theorem 2.21(i))**: the `δ`-moment CLT under the Thm 2.20(i)
 hypotheses and positive long-run variance. -/
@@ -1666,7 +2076,510 @@ theorem clt_of_alphaMixing_debt [IsProbabilityMeasure μ]
         (Real.sqrt n)⁻¹ * ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) u) atTop
       (𝓝 (charFun (gaussianReal 0
         (Real.toNNReal (acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1)))) u)) := by
-  sorry
+  classical
+  -- ### 0. Exponent bookkeeping and the `X`-side variance rate
+  have hδ0 : (0 : ℝ) < δ := by linarith
+  have hθ0 : (0 : ℝ) < 1 - 2 / δ := by
+    have h : 2 / δ < 1 := (div_lt_one hδ0).mpr (by linarith)
+    linarith
+  have hθ1 : (1 : ℝ) - 2 / δ ≤ 1 := by
+    have h : (0 : ℝ) < 2 / δ := by positivity
+    linarith
+  have hmem2 : MemLp (X 0) 2 μ := hLδ.mono_exponent (two_le_ofReal hδ)
+  have hXint : Integrable (X 0) μ := hmem2.integrable one_le_two
+  obtain ⟨hsumX, hrateX⟩ := summable_acvf_and_var_rate_debt hmeas hstat hδ hLδ hmean hα
+  set σ2 : ℝ := acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) with hσ2def
+  -- ### 1. The truncated (`gY`) and discarded (`gZ`) coordinate maps
+  obtain ⟨c, hc⟩ : ∃ c : ℕ → ℝ, ∀ M : ℕ,
+      c M = ∫ ω, max (-(M : ℝ)) (min (M : ℝ) (X 0 ω)) ∂μ := ⟨_, fun _ => rfl⟩
+  obtain ⟨gY, hgY⟩ : ∃ gY : ℕ → ℝ → ℝ, ∀ M : ℕ,
+      gY M = fun x : ℝ => max (-(M : ℝ)) (min (M : ℝ) x) - c M := ⟨_, fun _ => rfl⟩
+  obtain ⟨gZ, hgZ⟩ : ∃ gZ : ℕ → ℝ → ℝ, ∀ M : ℕ,
+      gZ M = fun x : ℝ => x - gY M x := ⟨_, fun _ => rfl⟩
+  have hgYm : ∀ M : ℕ, Measurable (gY M) := fun M => by
+    rw [hgY M]; exact (measurable_clamp _).sub_const _
+  have hgZm : ∀ M : ℕ, Measurable (gZ M) := fun M => by
+    rw [hgZ M]; exact measurable_id.sub (hgYm M)
+  have hsplitYZ : ∀ (M : ℕ) (x : ℝ), gY M x + gZ M x = x := by
+    intro M x; simp only [hgZ M]; ring
+  have hclampInt : ∀ M : ℕ, Integrable (fun ω => max (-(M : ℝ)) (min (M : ℝ) (X 0 ω))) μ := by
+    intro M
+    refine MemLp.integrable (q := ⊤) le_top (memLp_top_of_bound
+      ((measurable_clamp _).comp (hmeas 0)).aestronglyMeasurable (M : ℝ) ?_)
+    filter_upwards with ω
+    simpa [Real.norm_eq_abs] using abs_clamp_le'' (M := (M : ℝ)) (Nat.cast_nonneg M)
+  set b : ℝ := ∫ ω, |X 0 ω| ∂μ with hbdef
+  have hb0 : (0 : ℝ) ≤ b := integral_nonneg fun _ => abs_nonneg _
+  have hcb : ∀ M : ℕ, |c M| ≤ b := by
+    intro M
+    have hz : c M = ∫ ω, (max (-(M : ℝ)) (min (M : ℝ) (X 0 ω)) - X 0 ω) ∂μ := by
+      rw [hc M, integral_sub (hclampInt M) hXint, hmean, sub_zero]
+    rw [hz]
+    refine abs_integral_le_integral_abs.trans ?_
+    refine integral_mono ((hclampInt M).sub hXint).abs hXint.abs fun ω => ?_
+    rw [abs_sub_comm]
+    exact abs_sub_clamp_le'' (M := (M : ℝ)) (Nat.cast_nonneg M)
+  -- pointwise size of the two parts
+  have hYbound : ∀ (M : ℕ) (x : ℝ), |gY M x| ≤ (M : ℝ) + b := by
+    intro M x
+    have h1 := abs_clamp_le'' (M := (M : ℝ)) (x := x) (Nat.cast_nonneg M)
+    have h2 := hcb M
+    rw [hgY M]
+    rw [abs_le] at h1 h2 ⊢
+    constructor <;> [linarith; linarith]
+  have hZbound : ∀ (M : ℕ) (x : ℝ), |gZ M x| ≤ |x| + b := by
+    intro M x
+    have h1 := abs_sub_clamp_le'' (M := (M : ℝ)) (x := x) (Nat.cast_nonneg M)
+    have h2 := hcb M
+    have hx : gZ M x = (x - max (-(M : ℝ)) (min (M : ℝ) x)) + c M := by
+      simp only [hgZ M, hgY M]; ring
+    rw [hx]
+    rw [abs_le] at h1 h2 ⊢
+    constructor <;> [linarith; linarith]
+  -- ### 2. Structural facts for the two derived processes
+  have hmY : ∀ (M : ℕ) (t : ℤ), Measurable fun ω => gY M (X t ω) :=
+    fun M t => (hgYm M).comp (hmeas t)
+  have hmZ : ∀ (M : ℕ) (t : ℤ), Measurable fun ω => gZ M (X t ω) :=
+    fun M t => (hgZm M).comp (hmeas t)
+  have hstatY : ∀ M : ℕ, IsStrictlyStationary (fun t ω => gY M (X t ω)) μ :=
+    fun M => isStrictlyStationary_comp hmeas hstat (hgYm M)
+  have hstatZ : ∀ M : ℕ, IsStrictlyStationary (fun t ω => gZ M (X t ω)) μ :=
+    fun M => isStrictlyStationary_comp hmeas hstat (hgZm M)
+  have hαYle : ∀ (M n : ℕ), alphaCoeff (fun t ω => gY M (X t ω)) μ n ≤ alphaCoeff X μ n :=
+    fun M n => alphaCoeff_comp_le hmeas (hgYm M) n
+  have hαZle : ∀ (M n : ℕ), alphaCoeff (fun t ω => gZ M (X t ω)) μ n ≤ alphaCoeff X μ n :=
+    fun M n => alphaCoeff_comp_le hmeas (hgZm M) n
+  have hbddY : ∀ (M : ℕ) (t : ℤ), ∀ᵐ ω ∂μ, |gY M (X t ω)| ≤ (M : ℝ) + b := by
+    intro M t; filter_upwards with ω; exact hYbound M _
+  have hYtop : ∀ M : ℕ, MemLp (fun ω => gY M (X 0 ω)) ⊤ μ := by
+    intro M
+    refine memLp_top_of_bound (hmY M 0).aestronglyMeasurable ((M : ℝ) + b) ?_
+    filter_upwards with ω
+    simpa [Real.norm_eq_abs] using hYbound M (X 0 ω)
+  have hδY : ∀ M : ℕ, MemLp (fun ω => gY M (X 0 ω)) (ENNReal.ofReal δ) μ :=
+    fun M => (hYtop M).mono_exponent le_top
+  have hY2 : ∀ M : ℕ, MemLp (fun ω => gY M (X 0 ω)) 2 μ :=
+    fun M => (hYtop M).mono_exponent le_top
+  have hYint : ∀ M : ℕ, Integrable (fun ω => gY M (X 0 ω)) μ :=
+    fun M => (hY2 M).integrable one_le_two
+  have hmeanY : ∀ M : ℕ, ∫ ω, gY M (X 0 ω) ∂μ = 0 := by
+    intro M
+    have heq : (fun ω => gY M (X 0 ω))
+        = fun ω => max (-(M : ℝ)) (min (M : ℝ) (X 0 ω)) - c M := by
+      funext ω; rw [hgY M]
+    rw [heq, integral_sub (hclampInt M) (integrable_const _), integral_const, ← hc M]
+    simp
+  have hmeanZ : ∀ M : ℕ, ∫ ω, gZ M (X 0 ω) ∂μ = 0 := by
+    intro M
+    have heq : (fun ω => gZ M (X 0 ω)) = fun ω => X 0 ω - gY M (X 0 ω) := by
+      funext ω; simp only [hgZ M]
+    rw [heq, integral_sub hXint (hYint M), hmean, hmeanY M, sub_zero]
+  -- the dominating envelope of the discarded coordinate
+  have hEnvδ : MemLp (fun ω => |X 0 ω| + b) (ENNReal.ofReal δ) μ := by
+    have h1 : MemLp (fun ω => |X 0 ω|) (ENNReal.ofReal δ) μ := by
+      simpa only [Real.norm_eq_abs] using hLδ.norm
+    exact h1.add (memLp_const b)
+  have hEnv2 : MemLp (fun ω => |X 0 ω| + b) 2 μ := by
+    have h1 : MemLp (fun ω => |X 0 ω|) 2 μ := by
+      simpa only [Real.norm_eq_abs] using hmem2.norm
+    exact h1.add (memLp_const b)
+  have hδZ : ∀ M : ℕ, MemLp (fun ω => gZ M (X 0 ω)) (ENNReal.ofReal δ) μ := by
+    intro M
+    refine hEnvδ.mono (hmZ M 0).aestronglyMeasurable ?_
+    filter_upwards with ω
+    rw [Real.norm_eq_abs, Real.norm_eq_abs,
+      abs_of_nonneg (add_nonneg (abs_nonneg (X 0 ω)) hb0)]
+    exact hZbound M (X 0 ω)
+  have hZ2 : ∀ M : ℕ, MemLp (fun ω => gZ M (X 0 ω)) 2 μ := by
+    intro M
+    refine hEnv2.mono (hmZ M 0).aestronglyMeasurable ?_
+    filter_upwards with ω
+    rw [Real.norm_eq_abs, Real.norm_eq_abs,
+      abs_of_nonneg (add_nonneg (abs_nonneg (X 0 ω)) hb0)]
+    exact hZbound M (X 0 ω)
+  have hαYsum : ∀ M : ℕ,
+      Summable fun n : ℕ => alphaCoeff (fun t ω => gY M (X t ω)) μ n ^ (1 - 2 / δ) :=
+    fun M => summable_rpow_of_le hθ0.le (hαYle M) hα
+  have hαZsum : ∀ M : ℕ,
+      Summable fun n : ℕ => alphaCoeff (fun t ω => gZ M (X t ω)) μ n ^ (1 - 2 / δ) :=
+    fun M => summable_rpow_of_le hθ0.le (hαZle M) hα
+  -- ### 3. Variance rates for the two derived processes
+  obtain ⟨sY, hsY⟩ : ∃ sY : ℕ → ℝ, ∀ M : ℕ, sY M = acvf (fun t ω => gY M (X t ω)) μ 0
+      + 2 * ∑' j : ℕ, acvf (fun t ω => gY M (X t ω)) μ ((j : ℤ) + 1) := ⟨_, fun _ => rfl⟩
+  obtain ⟨sZ, hsZ⟩ : ∃ sZ : ℕ → ℝ, ∀ M : ℕ, sZ M = acvf (fun t ω => gZ M (X t ω)) μ 0
+      + 2 * ∑' j : ℕ, acvf (fun t ω => gZ M (X t ω)) μ ((j : ℤ) + 1) := ⟨_, fun _ => rfl⟩
+  have hYpack := fun M : ℕ =>
+    summable_acvf_and_var_rate_debt (hmY M) (hstatY M) hδ (hδY M) (hmeanY M) (hαYsum M)
+  have hZpack := fun M : ℕ =>
+    summable_acvf_and_var_rate_debt (hmZ M) (hstatZ M) hδ (hδZ M) (hmeanZ M) (hαZsum M)
+  have hrateY : ∀ M : ℕ, Tendsto (fun n : ℕ => (n : ℝ)⁻¹ *
+      variance (fun ω => ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)) μ) atTop
+      (𝓝 (sY M)) := by
+    intro M; rw [hsY M]; exact (hYpack M).2
+  have hrateZ : ∀ M : ℕ, Tendsto (fun n : ℕ => (n : ℝ)⁻¹ *
+      variance (fun ω => ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) μ) atTop
+      (𝓝 (sZ M)) := by
+    intro M; rw [hsZ M]; exact (hZpack M).2
+  -- ### 4. The discarded part vanishes: `σ_Z(M)² → 0`
+  have hcM0 : Tendsto c atTop (𝓝 0) := by
+    have hconv : ∀ᵐ ω ∂μ, Tendsto (fun M : ℕ => max (-(M : ℝ)) (min (M : ℝ) (X 0 ω)))
+        atTop (𝓝 (X 0 ω)) := by
+      filter_upwards with ω
+      refine Tendsto.congr' ?_ tendsto_const_nhds
+      filter_upwards [eventually_ge_atTop (Nat.ceil |X 0 ω|)] with M hM
+      have hle : |X 0 ω| ≤ (M : ℝ) := le_trans (Nat.le_ceil _) (by exact_mod_cast hM)
+      exact (clamp_eq_self'' hle).symm
+    have hdct := tendsto_integral_of_dominated_convergence (μ := μ)
+      (F := fun (M : ℕ) ω => max (-(M : ℝ)) (min (M : ℝ) (X 0 ω))) (f := fun ω => X 0 ω)
+      (bound := fun ω => |X 0 ω|)
+      (fun M => ((measurable_clamp _).comp (hmeas 0)).aestronglyMeasurable)
+      hXint.abs
+      (fun M => Eventually.of_forall fun ω => by
+        simpa [Real.norm_eq_abs] using abs_clamp_le_abs (M := (M : ℝ)) (Nat.cast_nonneg M))
+      hconv
+    rw [hmean] at hdct
+    exact hdct.congr fun M => (hc M).symm
+  have heZ : Tendsto (fun M : ℕ => ∫ ω, (gZ M (X 0 ω)) ^ 2 ∂μ) atTop (𝓝 0) := by
+    have hconv : ∀ᵐ ω ∂μ, Tendsto (fun M : ℕ => (gZ M (X 0 ω)) ^ 2) atTop (𝓝 0) := by
+      filter_upwards with ω
+      have hEq : ∀ᶠ M : ℕ in atTop, c M = gZ M (X 0 ω) := by
+        filter_upwards [eventually_ge_atTop (Nat.ceil |X 0 ω|)] with M hM
+        have hle : |X 0 ω| ≤ (M : ℝ) := le_trans (Nat.le_ceil _) (by exact_mod_cast hM)
+        have := sub_clamp_eq_zero'' hle
+        simp only [hgZ M, hgY M]
+        linarith
+      have h1 : Tendsto (fun M : ℕ => gZ M (X 0 ω)) atTop (𝓝 0) := Tendsto.congr' hEq hcM0
+      simpa using h1.pow 2
+    have hdomint : Integrable (fun ω => (|X 0 ω| + b) ^ 2) μ := hEnv2.integrable_sq
+    have hdct := tendsto_integral_of_dominated_convergence (μ := μ)
+      (F := fun (M : ℕ) ω => (gZ M (X 0 ω)) ^ 2) (f := fun _ => (0 : ℝ))
+      (bound := fun ω => (|X 0 ω| + b) ^ 2)
+      (fun M => ((hmZ M 0).pow_const 2).aestronglyMeasurable)
+      hdomint
+      (fun M => Eventually.of_forall fun ω => by
+        rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+        have hb := hZbound M (X 0 ω)
+        have h0 : (0 : ℝ) ≤ |gZ M (X 0 ω)| := abs_nonneg _
+        nlinarith [sq_abs (gZ M (X 0 ω)), abs_nonneg (X 0 ω)])
+      hconv
+    simpa using hdct
+  have hptZ : ∀ k : ℤ,
+      Tendsto (fun M : ℕ => acvf (fun t ω => gZ M (X t ω)) μ k) atTop (𝓝 0) := by
+    intro k
+    refine squeeze_zero_norm (fun M => ?_) heZ
+    rw [Real.norm_eq_abs]
+    exact abs_acvf_le_integral_sq (hmZ M) (hstatZ M) (hZ2 M) (hmeanZ M) k
+  set A2 : ℝ := (eLpNorm (fun ω => |X 0 ω| + b) (ENNReal.ofReal δ) μ).toReal with hA2def
+  have hA20 : (0 : ℝ) ≤ A2 := ENNReal.toReal_nonneg
+  have hZδle : ∀ M : ℕ,
+      (eLpNorm (fun ω => gZ M (X 0 ω)) (ENNReal.ofReal δ) μ).toReal ≤ A2 := by
+    intro M
+    refine ENNReal.toReal_mono hEnvδ.eLpNorm_ne_top (eLpNorm_mono_ae ?_)
+    filter_upwards with ω
+    rw [Real.norm_eq_abs, Real.norm_eq_abs,
+      abs_of_nonneg (add_nonneg (abs_nonneg (X 0 ω)) hb0)]
+    exact hZbound M (X 0 ω)
+  have hdomk : ∀ (M : ℕ) (k : ℤ), |acvf (fun t ω => gZ M (X t ω)) μ k|
+      ≤ 8 * alphaCoeff X μ k.natAbs ^ (1 - 2 / δ) * A2 ^ 2 := by
+    intro M k
+    have hwsZ : IsStationary (fun t ω => gZ M (X t ω)) μ :=
+      (hstatZ M).isStationary (hmZ M) (hZ2 M)
+    refine (abs_acvf_int_le_davydov (hmZ M) (hstatZ M) hwsZ hδ (hδZ M) k).trans ?_
+    have h1 : alphaCoeff (fun t ω => gZ M (X t ω)) μ k.natAbs ^ (1 - 2 / δ)
+        ≤ alphaCoeff X μ k.natAbs ^ (1 - 2 / δ) :=
+      Real.rpow_le_rpow alphaMixCoeff_nonneg (hαZle M _) hθ0.le
+    have h0 : (0 : ℝ) ≤ alphaCoeff (fun t ω => gZ M (X t ω)) μ k.natAbs ^ (1 - 2 / δ) :=
+      Real.rpow_nonneg alphaMixCoeff_nonneg _
+    have h2 : (eLpNorm (fun ω => gZ M (X 0 ω)) (ENNReal.ofReal δ) μ).toReal ^ 2 ≤ A2 ^ 2 := by
+      have h := hZδle M
+      nlinarith [ENNReal.toReal_nonneg
+        (a := eLpNorm (fun ω => gZ M (X 0 ω)) (ENNReal.ofReal δ) μ)]
+    have h3 : (0 : ℝ) ≤ (eLpNorm (fun ω => gZ M (X 0 ω)) (ENNReal.ofReal δ) μ).toReal ^ 2 :=
+      sq_nonneg _
+    nlinarith [Real.rpow_nonneg (alphaMixCoeff_nonneg (μ := μ)
+      (m₁ := sigmaLE X 0) (m₂ := sigmaGE X (k.natAbs : ℤ))) (1 - 2 / δ)]
+  have hK1 : Tendsto sZ atTop (𝓝 0) := by
+    have htsum : ∀ M : ℕ, sZ M = ∑' k : ℤ, acvf (fun t ω => gZ M (X t ω)) μ k := by
+      intro M
+      rw [hsZ M]
+      exact (tsum_acvf_eq ((hstatZ M).isStationary (hmZ M) (hZ2 M)) (hZpack M).1).symm
+    have hdc := tendsto_tsum_of_dominated_convergence
+      (f := fun (M : ℕ) (k : ℤ) => acvf (fun t ω => gZ M (X t ω)) μ k)
+      (g := fun _ : ℤ => (0 : ℝ))
+      (summable_int_dominant (X := X) (c := A2 ^ 2) hα) hptZ
+      (Eventually.of_forall fun M k => by rw [Real.norm_eq_abs]; exact hdomk M k)
+    rw [tsum_zero] at hdc
+    exact hdc.congr fun M => (htsum M).symm
+  -- ### 5. The truncated variance converges: `σ_Y(M)² → σ²`
+  have hsqX : Tendsto (fun n : ℕ => Real.sqrt ((n : ℝ)⁻¹ *
+      ∫ ω, (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) ^ 2 ∂μ)) atTop (𝓝 (Real.sqrt σ2)) := by
+    refine (Real.continuous_sqrt.tendsto _).comp (hrateX.congr fun n => ?_)
+    rw [variance_partialSum_eq hmeas hstat hmem2 hmean (Finset.range n)]
+  have hsqY : ∀ M : ℕ, Tendsto (fun n : ℕ => Real.sqrt ((n : ℝ)⁻¹ *
+      ∫ ω, (∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ)) atTop
+      (𝓝 (Real.sqrt (sY M))) := by
+    intro M
+    refine (Real.continuous_sqrt.tendsto _).comp ((hrateY M).congr fun n => ?_)
+    rw [variance_partialSum_eq (hmY M) (hstatY M) (hY2 M) (hmeanY M) (Finset.range n)]
+  have hsqZ : ∀ M : ℕ, Tendsto (fun n : ℕ => Real.sqrt ((n : ℝ)⁻¹ *
+      ∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ)) atTop
+      (𝓝 (Real.sqrt (sZ M))) := by
+    intro M
+    refine (Real.continuous_sqrt.tendsto _).comp ((hrateZ M).congr fun n => ?_)
+    rw [variance_partialSum_eq (hmZ M) (hstatZ M) (hZ2 M) (hmeanZ M) (Finset.range n)]
+  have hsumsplit : ∀ (M n : ℕ) (ω : Ω), (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω)
+      = (∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω))
+        + ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω) := by
+    intro M n ω
+    rw [← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun t _ => (hsplitYZ M (X ((t : ℤ) + 1) ω)).symm
+  have hmink : ∀ M n : ℕ, Real.sqrt ((n : ℝ)⁻¹ *
+      ∫ ω, (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) ^ 2 ∂μ)
+      ≤ Real.sqrt ((n : ℝ)⁻¹ *
+          ∫ ω, (∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ)
+        + Real.sqrt ((n : ℝ)⁻¹ *
+          ∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ) := by
+    intro M n
+    have hX : (∫ ω, (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) ^ 2 ∂μ)
+        = ∫ ω, ((∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω))
+            + ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ :=
+      integral_congr_ae (Eventually.of_forall fun ω => by
+        show (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) ^ 2
+            = ((∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω))
+              + ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2
+        rw [hsumsplit M n ω])
+    have hmk := sqrt_integral_sq_add_le
+      (memLp_partialSum (hmY M) (hstatY M) (hY2 M) (Finset.range n))
+      (memLp_partialSum (hmZ M) (hstatZ M) (hZ2 M) (Finset.range n))
+    have hc0 : (0 : ℝ) ≤ (n : ℝ)⁻¹ := by positivity
+    rw [hX, Real.sqrt_mul hc0, Real.sqrt_mul hc0, Real.sqrt_mul hc0]
+    have := mul_le_mul_of_nonneg_left hmk (Real.sqrt_nonneg ((n : ℝ)⁻¹))
+    linarith [this]
+  have hmink' : ∀ M n : ℕ, Real.sqrt ((n : ℝ)⁻¹ *
+      ∫ ω, (∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ)
+      ≤ Real.sqrt ((n : ℝ)⁻¹ * ∫ ω, (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) ^ 2 ∂μ)
+        + Real.sqrt ((n : ℝ)⁻¹ *
+          ∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ) := by
+    intro M n
+    have hY : (∫ ω, (∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ)
+        = ∫ ω, ((∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω)
+            - ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ :=
+      integral_congr_ae (Eventually.of_forall fun ω => by
+        show (∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)) ^ 2
+            = ((∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω)
+              - ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2
+        rw [hsumsplit M n ω]; ring)
+    have hmk := sqrt_integral_sq_sub_le
+      (memLp_partialSum hmeas hstat hmem2 (Finset.range n))
+      (memLp_partialSum (hmZ M) (hstatZ M) (hZ2 M) (Finset.range n))
+    have hc0 : (0 : ℝ) ≤ (n : ℝ)⁻¹ := by positivity
+    rw [hY, Real.sqrt_mul hc0, Real.sqrt_mul hc0, Real.sqrt_mul hc0]
+    have := mul_le_mul_of_nonneg_left hmk (Real.sqrt_nonneg ((n : ℝ)⁻¹))
+    linarith [this]
+  have hsqrtZ0 : Tendsto (fun M : ℕ => Real.sqrt (sZ M)) atTop (𝓝 0) := by
+    have := (Real.continuous_sqrt.tendsto 0).comp hK1
+    simpa using this
+  have hcmp1 : ∀ M : ℕ, Real.sqrt σ2 ≤ Real.sqrt (sY M) + Real.sqrt (sZ M) := fun M =>
+    le_of_tendsto_of_tendsto' hsqX ((hsqY M).add (hsqZ M)) (fun n => hmink M n)
+  have hcmp2 : ∀ M : ℕ, Real.sqrt (sY M) ≤ Real.sqrt σ2 + Real.sqrt (sZ M) := fun M =>
+    le_of_tendsto_of_tendsto' (hsqY M) (hsqX.add (hsqZ M)) (fun n => hmink' M n)
+  have hsY0 : ∀ M : ℕ, 0 ≤ sY M := by
+    intro M
+    refine ge_of_tendsto' (hrateY M) fun n => ?_
+    have : (0 : ℝ) ≤ variance (fun ω => ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)) μ :=
+      variance_nonneg _ _
+    positivity
+  have hsqrtY : Tendsto (fun M : ℕ => Real.sqrt (sY M)) atTop (𝓝 (Real.sqrt σ2)) := by
+    have hd : Tendsto (fun M : ℕ => Real.sqrt (sY M) - Real.sqrt σ2) atTop (𝓝 0) := by
+      refine squeeze_zero_norm (fun M => ?_) hsqrtZ0
+      rw [Real.norm_eq_abs, abs_le]
+      exact ⟨by linarith [hcmp1 M], by linarith [hcmp2 M]⟩
+    have := hd.add_const (Real.sqrt σ2)
+    simpa using this
+  have hK2 : Tendsto sY atTop (𝓝 σ2) := by
+    have h := hsqrtY.pow 2
+    rw [Real.sq_sqrt hσ.le] at h
+    exact h.congr fun M => Real.sq_sqrt (hsY0 M)
+  -- ### 6. Assembly: three-term `ε`-argument
+  have hRHS : charFun (gaussianReal 0 (Real.toNNReal σ2)) u
+      = Complex.exp (-((σ2 : ℂ) * (u : ℂ) ^ 2 / 2)) := by
+    rw [charFun_gaussianReal, Real.coe_toNNReal _ hσ.le]
+    congr 1
+    push_cast
+    ring
+  have hSmeasX : ∀ n : ℕ, Measurable fun ω => ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω :=
+    fun n => Finset.measurable_sum _ fun t _ => hmeas _
+  have hSmeasY : ∀ M n : ℕ,
+      Measurable fun ω => ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) :=
+    fun M n => Finset.measurable_sum _ fun t _ => hmY M _
+  have hSmeasZ : ∀ M n : ℕ,
+      Measurable fun ω => ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω) :=
+    fun M n => Finset.measurable_sum _ fun t _ => hmZ M _
+  have hcfX : ∀ n : ℕ, charFun (μ.map fun ω =>
+      (Real.sqrt n)⁻¹ * ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) u
+      = ∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+          ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω : ℝ) : ℂ) * Complex.I) ∂μ :=
+    fun n => charFun_map_scaled (hSmeasX n) _ u
+  have hcfY : ∀ M n : ℕ, charFun (μ.map fun ω =>
+      (Real.sqrt n)⁻¹ * ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)) u
+      = ∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+          ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) : ℝ) : ℂ) * Complex.I) ∂μ :=
+    fun M n => charFun_map_scaled (hSmeasY M n) _ u
+  simp only [hcfX, hRHS]
+  -- the truncated central limit theorem, in integral form
+  have hCLTY : ∀ M : ℕ, 0 < sY M → Tendsto (fun n : ℕ => ∫ ω, Complex.exp
+      (((u * (Real.sqrt n)⁻¹ * ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) : ℝ) : ℂ)
+        * Complex.I) ∂μ) atTop (𝓝 (Complex.exp (-((sY M : ℂ) * (u : ℂ) ^ 2 / 2)))) := by
+    intro M hpos
+    have hpos' : 0 < acvf (fun t ω => gY M (X t ω)) μ 0
+        + 2 * ∑' j : ℕ, acvf (fun t ω => gY M (X t ω)) μ ((j : ℤ) + 1) := by
+      rw [← hsY M]; exact hpos
+    have h := clt_of_bounded_alphaMixing (hmY M) (hstatY M) (hbddY M) (hmeanY M)
+      (summable_alphaCoeff_of_rpow hθ0 hθ1 (hαYsum M)) hpos' u
+    have hR : charFun (gaussianReal 0 (Real.toNNReal (acvf (fun t ω => gY M (X t ω)) μ 0
+        + 2 * ∑' j : ℕ, acvf (fun t ω => gY M (X t ω)) μ ((j : ℤ) + 1)))) u
+        = Complex.exp (-((sY M : ℂ) * (u : ℂ) ^ 2 / 2)) := by
+      rw [charFun_gaussianReal, Real.coe_toNNReal _ hpos'.le, ← hsY M]
+      congr 1
+      push_cast
+      ring
+    rw [hR] at h
+    simpa only [hcfY] using h
+  -- the truncation error, uniformly in `n`
+  have hdiff : ∀ (M n : ℕ), 1 ≤ n →
+      dist (∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+            ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω : ℝ) : ℂ) * Complex.I) ∂μ)
+        (∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+            ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) : ℝ) : ℂ) * Complex.I) ∂μ)
+      ≤ |u| * Real.sqrt ((n : ℝ)⁻¹ *
+          ∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ) := by
+    intro M n hn
+    have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hs0 : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hn0
+    have hiX := integrable_expI_block (μ := μ) (hSmeasX n) (u * (Real.sqrt n)⁻¹)
+    have hiY := integrable_expI_block (μ := μ) (hSmeasY M n) (u * (Real.sqrt n)⁻¹)
+    rw [dist_eq_norm, ← integral_sub hiX hiY]
+    refine (norm_integral_le_integral_norm _).trans ?_
+    have hptw : ∀ ω : Ω, ‖Complex.exp (((u * (Real.sqrt n)⁻¹ *
+          ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω : ℝ) : ℂ) * Complex.I)
+        - Complex.exp (((u * (Real.sqrt n)⁻¹ *
+          ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) : ℝ) : ℂ) * Complex.I)‖
+        ≤ |u| * (Real.sqrt (n : ℝ))⁻¹ *
+          |∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)| := by
+      intro ω
+      set aX : ℝ := u * (Real.sqrt n)⁻¹ * ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω with haX
+      set aY : ℝ := u * (Real.sqrt n)⁻¹ * ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)
+        with haY
+      have harg : (aX : ℂ) * Complex.I
+          = (aY : ℂ) * Complex.I + Complex.I * ((aX - aY : ℝ) : ℂ) := by
+        push_cast; ring
+      have hfac : Complex.exp ((aX : ℂ) * Complex.I) - Complex.exp ((aY : ℂ) * Complex.I)
+          = Complex.exp ((aY : ℂ) * Complex.I) *
+            (Complex.exp (Complex.I * ((aX - aY : ℝ) : ℂ)) - 1) := by
+        rw [mul_sub, mul_one, ← Complex.exp_add, ← harg]
+      rw [hfac, norm_mul, Complex.norm_exp_ofReal_mul_I, one_mul]
+      refine le_trans Real.norm_exp_I_mul_ofReal_sub_one_le ?_
+      have hd : aX - aY
+          = u * (Real.sqrt (n : ℝ))⁻¹ * ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω) := by
+        rw [haX, haY, ← mul_sub, hsumsplit M n ω]
+        ring
+      have habs : |u * (Real.sqrt (n : ℝ))⁻¹ *
+            ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)|
+          = |u| * (Real.sqrt (n : ℝ))⁻¹ *
+            |∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)| := by
+        rw [abs_mul, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (Real.sqrt (n : ℝ))⁻¹)]
+      rw [Real.norm_eq_abs, hd, habs]
+    refine (integral_mono ((hiX.sub hiY).norm) ?_ hptw).trans ?_
+    · exact (((memLp_partialSum (hmZ M) (hstatZ M) (hZ2 M) (Finset.range n)).integrable
+        one_le_two).abs.const_mul _)
+    · have hIC : ∫ ω, |u| * (Real.sqrt (n : ℝ))⁻¹ *
+            |∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)| ∂μ
+          = |u| * (Real.sqrt (n : ℝ))⁻¹ *
+            ∫ ω, |∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)| ∂μ := integral_const_mul _ _
+      rw [hIC]
+      have hcs : ∫ ω, |∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)| ∂μ
+          ≤ Real.sqrt (∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ) := by
+        have h0 : (0 : ℝ) ≤ ∫ ω, |∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)| ∂μ :=
+          integral_nonneg fun _ => abs_nonneg _
+        calc ∫ ω, |∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)| ∂μ
+            = Real.sqrt ((∫ ω, |∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)| ∂μ) ^ 2) :=
+              (Real.sqrt_sq h0).symm
+          _ ≤ Real.sqrt (∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ) :=
+              Real.sqrt_le_sqrt (sq_integral_abs_le
+                (memLp_partialSum (hmZ M) (hstatZ M) (hZ2 M) (Finset.range n)))
+      have hsq : Real.sqrt ((n : ℝ)⁻¹ *
+          ∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ)
+          = (Real.sqrt (n : ℝ))⁻¹ *
+            Real.sqrt (∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ) := by
+        rw [Real.sqrt_mul (by positivity), Real.sqrt_inv]
+      rw [hsq]
+      have hu0 : (0 : ℝ) ≤ |u| := abs_nonneg _
+      have hinv0 : (0 : ℝ) ≤ (Real.sqrt (n : ℝ))⁻¹ := by positivity
+      calc |u| * (Real.sqrt (n : ℝ))⁻¹ *
+            ∫ ω, |∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)| ∂μ
+          ≤ |u| * (Real.sqrt (n : ℝ))⁻¹ *
+            Real.sqrt (∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ) := by
+            have : (0 : ℝ) ≤ |u| * (Real.sqrt (n : ℝ))⁻¹ := by positivity
+            exact mul_le_mul_of_nonneg_left hcs this
+        _ = |u| * ((Real.sqrt (n : ℝ))⁻¹ *
+            Real.sqrt (∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ)) := by
+            ring
+  -- choose the truncation level
+  rw [Metric.tendsto_atTop]
+  intro ε hε
+  have hε4 : (0 : ℝ) < ε / 4 := by linarith
+  have hExp : Tendsto (fun M : ℕ => Complex.exp (-((sY M : ℂ) * (u : ℂ) ^ 2 / 2))) atTop
+      (𝓝 (Complex.exp (-((σ2 : ℂ) * (u : ℂ) ^ 2 / 2)))) := by
+    refine (Complex.continuous_exp.tendsto _).comp ?_
+    have h1 : Tendsto (fun M : ℕ => ((sY M : ℝ) : ℂ)) atTop (𝓝 ((σ2 : ℝ) : ℂ)) :=
+      (Complex.continuous_ofReal.tendsto _).comp hK2
+    exact ((h1.mul tendsto_const_nhds).div_const 2).neg
+  have hf1 : ∀ᶠ M : ℕ in atTop, |u| * Real.sqrt (sZ M) < ε / 4 := by
+    have h0 : Tendsto (fun M : ℕ => |u| * Real.sqrt (sZ M)) atTop (𝓝 0) := by
+      simpa using hsqrtZ0.const_mul |u|
+    exact h0.eventually (gt_mem_nhds hε4)
+  have hf2 : ∀ᶠ M : ℕ in atTop, 0 < sY M := hK2.eventually (lt_mem_nhds hσ)
+  have hf3 : ∀ᶠ M : ℕ in atTop,
+      dist (Complex.exp (-((sY M : ℂ) * (u : ℂ) ^ 2 / 2)))
+        (Complex.exp (-((σ2 : ℂ) * (u : ℂ) ^ 2 / 2))) < ε / 4 := by
+    have h := hExp.eventually (Metric.ball_mem_nhds
+      (Complex.exp (-((σ2 : ℂ) * (u : ℂ) ^ 2 / 2))) hε4)
+    simpa only [Metric.mem_ball] using h
+  obtain ⟨M, h1, h2, h3⟩ := (hf1.and (hf2.and hf3)).exists
+  -- with `M` fixed, both remaining terms are eventually small
+  have he1 : ∀ᶠ n : ℕ in atTop, |u| * Real.sqrt ((n : ℝ)⁻¹ *
+      ∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ) < ε / 4 :=
+    ((hsqZ M).const_mul |u|).eventually (gt_mem_nhds h1)
+  have he2 : ∀ᶠ n : ℕ in atTop, dist (∫ ω, Complex.exp
+      (((u * (Real.sqrt n)⁻¹ * ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) : ℝ) : ℂ)
+        * Complex.I) ∂μ) (Complex.exp (-((sY M : ℂ) * (u : ℂ) ^ 2 / 2))) < ε / 4 := by
+    have h := (hCLTY M h2).eventually (Metric.ball_mem_nhds
+      (Complex.exp (-((sY M : ℂ) * (u : ℂ) ^ 2 / 2))) hε4)
+    simpa only [Metric.mem_ball] using h
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (he1.and (he2.and (eventually_ge_atTop 1)))
+  refine ⟨N, fun n hn => ?_⟩
+  obtain ⟨hn1, hn2, hn3⟩ := hN n hn
+  have hstep := hdiff M n hn3
+  calc dist (∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+          ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω : ℝ) : ℂ) * Complex.I) ∂μ)
+        (Complex.exp (-((σ2 : ℂ) * (u : ℂ) ^ 2 / 2)))
+      ≤ dist (∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+            ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω : ℝ) : ℂ) * Complex.I) ∂μ)
+          (∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+            ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) : ℝ) : ℂ) * Complex.I) ∂μ)
+        + dist (∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+            ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) : ℝ) : ℂ) * Complex.I) ∂μ)
+          (Complex.exp (-((σ2 : ℂ) * (u : ℂ) ^ 2 / 2))) := dist_triangle _ _ _
+    _ < ε := by
+        have h4 : dist (∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+              ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) : ℝ) : ℂ) * Complex.I) ∂μ)
+            (Complex.exp (-((σ2 : ℂ) * (u : ℂ) ^ 2 / 2)))
+            ≤ dist (∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+              ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) : ℝ) : ℂ) * Complex.I) ∂μ)
+              (Complex.exp (-((sY M : ℂ) * (u : ℂ) ^ 2 / 2)))
+              + dist (Complex.exp (-((sY M : ℂ) * (u : ℂ) ^ 2 / 2)))
+                (Complex.exp (-((σ2 : ℂ) * (u : ℂ) ^ 2 / 2))) := dist_triangle _ _ _
+        linarith
 
 /-- **DEBT (Doob 1953 / Ibragimov–Linnik 1971; FY Proposition 2.8)**: the strong law
 for α-mixing strictly stationary sequences with a first moment. The cited route is
