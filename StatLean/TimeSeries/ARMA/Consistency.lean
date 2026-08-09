@@ -1765,6 +1765,139 @@ private lemma indepFun_blockResid_sq [IsProbabilityMeasure μ] {σ2 : ℝ} {ε :
   rw [hfac i, hfac j]
   exact hbase.comp (hΦm i) (hΦm j)
 
+/-- The **truncated composite filter** `c_r^{(m)} = Σ_{d+n=r, d,n<m} π_d ψ_n`; it agrees
+with `contrastCoeff` below the truncation level (`cTrunc_eq_of_lt`). -/
+private noncomputable def cTrunc (π ψ : ℕ → ℝ) (m r : ℕ) : ℝ :=
+  ∑ x : Fin m × Fin m, if (x.1 : ℕ) + (x.2 : ℕ) = r then π (x.1 : ℕ) * ψ (x.2 : ℕ) else 0
+
+/-- Second moments of white noise: `E[ε_α ε_β] = σ² δ_{αβ}` (the means vanish). -/
+private lemma integral_noise_mul' [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
+    (hε : IsWhiteNoise ε σ2 μ) (α β : ℤ) :
+    ∫ ω, ε α ω * ε β ω ∂μ = if α = β then σ2 else 0 := by
+  have h := covariance_eq_sub (hε.memLp α) (hε.memLp β)
+  rw [hε.integral_eq_zero α, zero_mul, sub_zero] at h
+  have h2 : μ[ε α * ε β] = ∫ ω, ε α ω * ε β ω ∂μ := by simp [Pi.mul_apply]
+  rw [h2] at h
+  rw [← h]
+  by_cases hab : α = β
+  · subst hab
+    rw [if_pos rfl, covariance_self (hε.memLp α).aestronglyMeasurable.aemeasurable,
+      hε.variance_eq α]
+  · rw [if_neg hab, hε.uncorrelated α β hab]
+
+/-- **The window form of the second moment**: `E[(z_i^{(m)})²] = σ² Σ_{x,y} 1{x₁−x₂ =
+y₁−y₂} π ψ π ψ`. The constraint is on the *difference* of the two block coordinates,
+because the block index is `1 + d − n + i`. -/
+private lemma integral_blockResid_sq [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
+    (hε : IsWhiteNoise ε σ2 μ) (π ψ : ℕ → ℝ) (m i : ℕ) :
+    ∫ ω, blockResid π ψ ε m i ω ^ 2 ∂μ
+      = σ2 * ∑ x : Fin m × Fin m, ∑ y : Fin m × Fin m,
+          (if ((x.1 : ℕ) : ℤ) - ((x.2 : ℕ) : ℤ) = ((y.1 : ℕ) : ℤ) - ((y.2 : ℕ) : ℤ)
+            then (π (x.1 : ℕ) * ψ (x.2 : ℕ)) * (π (y.1 : ℕ) * ψ (y.2 : ℕ)) else 0) := by
+  classical
+  set c : Fin m × Fin m → ℝ := fun x => π (x.1 : ℕ) * ψ (x.2 : ℕ) with hc
+  set t : Fin m × Fin m → ℤ :=
+    fun x => 1 + ((x.1 : ℕ) : ℤ) - ((x.2 : ℕ) : ℤ) + (i : ℤ) with ht
+  have hint : ∀ x y : Fin m × Fin m, Integrable (fun ω => ε (t x) ω * ε (t y) ω) μ := by
+    intro x y
+    exact ((hε.memLp (t x)).integrable_mul (hε.memLp (t y))).congr
+      (Filter.Eventually.of_forall fun ω => rfl)
+  have hpt : ∀ ω, blockResid π ψ ε m i ω ^ 2
+      = ∑ x : Fin m × Fin m, ∑ y : Fin m × Fin m,
+          (c x * c y) * (ε (t x) ω * ε (t y) ω) := by
+    intro ω
+    show (∑ x : Fin m × Fin m, c x * ε (t x) ω) ^ 2 = _
+    rw [sq, Finset.sum_mul_sum]
+    exact Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => by ring
+  rw [integral_congr_ae (Filter.Eventually.of_forall hpt),
+    integral_finset_sum _ fun x _ =>
+      integrable_finset_sum _ fun y _ => (hint x y).const_mul _, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun x _ => ?_
+  rw [integral_finset_sum _ fun y _ => (hint x y).const_mul _, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun y _ => ?_
+  have hcm : ∫ ω, (c x * c y) * (ε (t x) ω * ε (t y) ω) ∂μ
+      = (c x * c y) * ∫ ω, ε (t x) ω * ε (t y) ω ∂μ := integral_const_mul _ _
+  rw [hcm, integral_noise_mul' hε]
+  have hiff : (t x = t y) ↔
+      (((x.1 : ℕ) : ℤ) - ((x.2 : ℕ) : ℤ) = ((y.1 : ℕ) : ℤ) - ((y.2 : ℕ) : ℤ)) := by
+    simp only [ht]
+    omega
+  by_cases h : ((x.1 : ℕ) : ℤ) - ((x.2 : ℕ) : ℤ) = ((y.1 : ℕ) : ℤ) - ((y.2 : ℕ) : ℤ)
+  · rw [if_pos (hiff.2 h), if_pos h]
+    simp only [hc]
+    ring
+  · rw [if_neg (fun hh => h (hiff.1 hh)), if_neg h]
+    ring
+
+/-- **The combinatorial Parseval identity**, the step that replaces a Fourier argument:
+the swap `((d,n),(d′,n′)) ↦ ((d,n′),(d′,n))` is an involution of the index set carrying
+the *difference* constraint `d − n = d′ − n′` to the *sum* constraint `d + n′ = d′ + n`,
+and it leaves the summand `π_d ψ_n π_{d′} ψ_{n′}` untouched. So the second moment of the
+window equals the sum of squares of the truncated composite filter. -/
+private lemma sum_pairs_swap (π ψ : ℕ → ℝ) (m : ℕ) :
+    (∑ x : Fin m × Fin m, ∑ y : Fin m × Fin m,
+        (if ((x.1 : ℕ) : ℤ) - ((x.2 : ℕ) : ℤ) = ((y.1 : ℕ) : ℤ) - ((y.2 : ℕ) : ℤ)
+          then (π (x.1 : ℕ) * ψ (x.2 : ℕ)) * (π (y.1 : ℕ) * ψ (y.2 : ℕ)) else 0))
+      = ∑ x : Fin m × Fin m, ∑ y : Fin m × Fin m,
+        (if (x.1 : ℕ) + (x.2 : ℕ) = (y.1 : ℕ) + (y.2 : ℕ)
+          then (π (x.1 : ℕ) * ψ (x.2 : ℕ)) * (π (y.1 : ℕ) * ψ (y.2 : ℕ)) else 0) := by
+  classical
+  rw [← Fintype.sum_prod_type', ← Fintype.sum_prod_type']
+  refine Fintype.sum_equiv
+    (⟨fun z : (Fin m × Fin m) × (Fin m × Fin m) => ((z.1.1, z.2.2), (z.2.1, z.1.2)),
+      fun z : (Fin m × Fin m) × (Fin m × Fin m) => ((z.1.1, z.2.2), (z.2.1, z.1.2)),
+      fun z => rfl, fun z => rfl⟩) _ _ ?_
+  rintro ⟨⟨d, n⟩, ⟨d', n'⟩⟩
+  simp only [Equiv.coe_fn_mk]
+  by_cases h : ((d : ℕ) : ℤ) - ((n : ℕ) : ℤ) = ((d' : ℕ) : ℤ) - ((n' : ℕ) : ℤ)
+  · rw [if_pos h, if_pos (by omega : (d : ℕ) + (n' : ℕ) = (d' : ℕ) + (n : ℕ))]
+    ring
+  · rw [if_neg h, if_neg (by omega : ¬((d : ℕ) + (n' : ℕ) = (d' : ℕ) + (n : ℕ)))]
+
+/-- The sum-constrained pairing collapses fibrewise into `Σ_r (c_r^{(m)})²`. -/
+private lemma sum_sq_cTrunc (π ψ : ℕ → ℝ) (m : ℕ) :
+    ∑ r ∈ Finset.range (2 * m), cTrunc π ψ m r ^ 2
+      = ∑ x : Fin m × Fin m, ∑ y : Fin m × Fin m,
+        (if (x.1 : ℕ) + (x.2 : ℕ) = (y.1 : ℕ) + (y.2 : ℕ)
+          then (π (x.1 : ℕ) * ψ (x.2 : ℕ)) * (π (y.1 : ℕ) * ψ (y.2 : ℕ)) else 0) := by
+  classical
+  have hexp : ∀ r : ℕ, cTrunc π ψ m r ^ 2
+      = ∑ x : Fin m × Fin m, ∑ y : Fin m × Fin m,
+          (if (x.1 : ℕ) + (x.2 : ℕ) = r then π (x.1 : ℕ) * ψ (x.2 : ℕ) else 0) *
+          (if (y.1 : ℕ) + (y.2 : ℕ) = r then π (y.1 : ℕ) * ψ (y.2 : ℕ) else 0) := by
+    intro r
+    rw [cTrunc, sq, Finset.sum_mul_sum]
+  simp only [hexp]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun x _ => ?_
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun y _ => ?_
+  have hx : (x.1 : ℕ) + (x.2 : ℕ) ∈ Finset.range (2 * m) := by
+    have h1 := x.1.isLt
+    have h2 := x.2.isLt
+    simp only [Finset.mem_range]
+    omega
+  by_cases h : (x.1 : ℕ) + (x.2 : ℕ) = (y.1 : ℕ) + (y.2 : ℕ)
+  · rw [if_pos h, Finset.sum_eq_single ((x.1 : ℕ) + (x.2 : ℕ))]
+    · rw [if_pos rfl, if_pos h.symm]
+    · intro r _ hr
+      rw [if_neg (Ne.symm hr), zero_mul]
+    · intro hnot
+      exact absurd hx hnot
+  · rw [if_neg h]
+    refine Finset.sum_eq_zero fun r _ => ?_
+    by_cases h1 : (x.1 : ℕ) + (x.2 : ℕ) = r
+    · rw [if_neg (by omega : ¬((y.1 : ℕ) + (y.2 : ℕ) = r)), mul_zero]
+    · rw [if_neg h1, zero_mul]
+
+/-- **The second moment of the truncated residual**: `E[(z_i^{(m)})²] = σ² Σ_r
+(c_r^{(m)})²`, the same at every `i`. -/
+private lemma integral_blockResid_sq_eq [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
+    (hε : IsWhiteNoise ε σ2 μ) (π ψ : ℕ → ℝ) (m i : ℕ) :
+    ∫ ω, blockResid π ψ ε m i ω ^ 2 ∂μ
+      = σ2 * ∑ r ∈ Finset.range (2 * m), cTrunc π ψ m r ^ 2 := by
+  rw [integral_blockResid_sq hε π ψ m i, sum_pairs_swap π ψ m, sum_sq_cTrunc π ψ m]
+
 open Matrix in
 /-- **DEBT — step (C) of the `armaProfileS_tendstoInProb` route**: the residual
 sum-of-squares LLN `T⁻¹‖Π_T x‖² →p σ² · Σ_j c_j²`.
