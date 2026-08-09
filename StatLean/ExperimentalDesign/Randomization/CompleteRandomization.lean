@@ -173,20 +173,76 @@ noncomputable def completeRandomization (r : T → ℕ)
 
 theorem mem_support_completeRandomization {r : T → ℕ}
     {hr : ∑ t, r t = Fintype.card U} {a : Allocation U T} :
-    a ∈ (completeRandomization r hr).support ↔ ∀ t, (arm t a).card = r t := by
-  sorry
+    a ∈ (completeRandomization r hr).support ↔ ∀ t, (arm t a).card = r t :=
+  (PMF.mem_support_uniformOfFinset_iff _ a).trans mem_validAllocations
 
 /-- On the support of the design, arm sizes are the prescribed replications. -/
 theorem card_arm_of_mem_validAllocations {r : T → ℕ} {a : Allocation U T}
     (ha : a ∈ validAllocations (U := U) r) (t : T) :
-    (arm t a).card = r t := by
-  sorry
+    (arm t a).card = r t :=
+  mem_validAllocations.mp ha t
 
 /-- Every replication is at most the population size. -/
 theorem replication_le_card (r : T → ℕ)
     (hr : ∑ t, r t = Fintype.card U) (t : T) :
     r t ≤ Fintype.card U := by
-  sorry
+  rw [← hr]
+  exact Finset.single_le_sum (f := r) (fun i _ => Nat.zero_le (r i)) (Finset.mem_univ t)
+
+/-! ### Permutation symmetry of the support
+
+Precomposition with a permutation `σ` of the units pulls arms back along `σ`, hence
+preserves arm sizes and so acts on `validAllocations r`.  This is ingredient (B) of the
+moment calculus: every sum over the support is invariant under it. -/
+
+/-- Arms pull back along a relabelling of the units. -/
+private theorem arm_precomp (t : T) (a : Allocation U T) (σ : Equiv.Perm U) :
+    arm t (fun i => a (σ i)) = Finset.image σ.symm (arm t a) := by
+  ext i
+  simp only [mem_arm_iff, Finset.mem_image]
+  constructor
+  · exact fun h => ⟨σ i, h, σ.symm_apply_apply i⟩
+  · rintro ⟨j, hj, rfl⟩
+    simpa using hj
+
+/-- Relabelling the units preserves arm sizes. -/
+private theorem card_arm_precomp (t : T) (a : Allocation U T) (σ : Equiv.Perm U) :
+    (arm t (fun i => a (σ i))).card = (arm t a).card := by
+  rw [arm_precomp, Finset.card_image_of_injective _ σ.symm.injective]
+
+/-- Relabelling the units acts on the valid allocations. -/
+private theorem precomp_mem_validAllocations {r : T → ℕ} {a : Allocation U T}
+    (ha : a ∈ validAllocations (U := U) r) (σ : Equiv.Perm U) :
+    (fun i => a (σ i)) ∈ validAllocations (U := U) r := by
+  rw [mem_validAllocations]
+  intro t
+  rw [card_arm_precomp]
+  exact card_arm_of_mem_validAllocations ha t
+
+/-- Membership in the valid allocations is invariant under relabelling. -/
+private theorem precomp_mem_validAllocations_iff {r : T → ℕ} (a : Allocation U T)
+    (σ : Equiv.Perm U) :
+    (fun i => a (σ i)) ∈ validAllocations (U := U) r ↔ a ∈ validAllocations (U := U) r := by
+  refine ⟨fun h => ?_, fun h => precomp_mem_validAllocations h σ⟩
+  simpa using precomp_mem_validAllocations h σ.symm
+
+/-- **Reindexing a sum over the support by a permutation of the units** — ingredient (B)
+of the symmetry route. -/
+private theorem sum_validAllocations_precomp (r : T → ℕ) (σ : Equiv.Perm U)
+    (g : Allocation U T → ℝ) :
+    ∑ a ∈ validAllocations (U := U) r, g a
+      = ∑ a ∈ validAllocations (U := U) r, g (fun i => a (σ i)) := by
+  refine Finset.sum_nbij' (i := fun a => fun i => a (σ.symm i))
+    (j := fun a => fun i => a (σ i)) ?_ ?_ ?_ ?_ ?_
+  · exact fun a ha => precomp_mem_validAllocations ha σ.symm
+  · exact fun a ha => precomp_mem_validAllocations ha σ
+  · intro a _; funext i; simp
+  · intro a _; funext i; simp
+  · intro a _; simp
+
+/-- The assignment indicator transported along a relabelling. -/
+private theorem armIndicator_precomp (t : T) (i : U) (a : Allocation U T) (σ : Equiv.Perm U) :
+    armIndicator t i (fun k => a (σ k)) = armIndicator t (σ i) a := rfl
 
 /-- **Randomisation symmetry**: the completely randomised design is invariant under
 relabelling the units by any permutation (`Mead §9.2`: every unit is treated
@@ -195,7 +251,24 @@ theorem completeRandomization_map_precomp (r : T → ℕ)
     (hr : ∑ t, r t = Fintype.card U) (σ : Equiv.Perm U) :
     (completeRandomization r hr).map (fun a => fun i => a (σ i))
       = completeRandomization r hr := by
-  sorry
+  ext b
+  rw [PMF.map_apply, tsum_eq_single (fun i => b (σ.symm i))]
+  · have hb : (fun i => (fun k => b (σ.symm k)) (σ i)) = b := by
+      funext i; simp
+    rw [if_pos hb.symm]
+    simp only [completeRandomization]
+    by_cases hmem : b ∈ validAllocations (U := U) r
+    · rw [PMF.uniformOfFinset_apply_of_mem _ hmem,
+        PMF.uniformOfFinset_apply_of_mem _
+          ((precomp_mem_validAllocations_iff (r := r) b σ.symm).mpr hmem)]
+    · rw [PMF.uniformOfFinset_apply_of_notMem _ hmem,
+        PMF.uniformOfFinset_apply_of_notMem _
+          (fun h => hmem ((precomp_mem_validAllocations_iff (r := r) b σ.symm).mp h))]
+  · intro a ha
+    refine if_neg fun h => ha ?_
+    subst h
+    funext i
+    simp
 
 /-- **First-order assignment probability**: each unit receives treatment `t` with
 probability `r_t / N` (`Mead §9.6`, allocation probabilities `n_A/∑n`). -/
