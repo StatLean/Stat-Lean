@@ -101,6 +101,38 @@ closing them calls for a *time-series* likelihood theorem — a martingale CLT f
 conditional score of the ARCH quasi-likelihood, valid over the whole `(c₀, b)` space —
 rather than an instance of the iid one.
 
+## ⚠ The `hMLE` repair OVERSHOT: `archLRStat_chiSq_debt` and `archWaldStat_chiSq_debt` are VACUOUS
+
+The `2026-08-09` amendment above (added to repair the falsity diagnosed in item (1)) pins
+the estimators by requiring them to *globally maximize* `archLogLik` over **all** of
+`ℝ × ℝᵖ`. No such maximizer exists, so `hMLE` and `hMLE0` are unsatisfiable and the two
+statements carry no statistical content: both are proved below **by deriving `False` from
+their own hypotheses**, not by any asymptotic argument. The two `sorry`s are gone; the
+mathematics of FY eqs. (4.50), (4.54) is *not* formalized. Reading the module as
+`1 sorry` would be a mistake — the honest count is one debt plus two vacuities.
+
+The witness is `archLogLik_unbounded` (machine-checked): with `b = 0` the truncated
+volatility is the *constant* `c₀` (`truncVol_const`, no positivity used, because the
+presample value of `archLogLik` is `c₀` itself), so at `c₀ = −δ < 0`
+
+  `archLogLik (−δ) 0 x ν = −½·(T−ν)·log δ + (Σ_{t=ν}^{T−1} x_t²)/(2δ) → +∞`  as `δ ↓ 0`,
+
+using `Real.log (−δ) = Real.log δ` and the *sign flip* of the `x_t²/σ̃_t²` term at a
+negative `σ̃_t²`: both summands of `−½(log σ̃_t² + x_t²/σ̃_t²)` diverge to `+∞` together.
+`hνT` forces `νseq T < T` for all large `T`, so the sum is nonempty at some `T` and
+`hMLE`/`hMLE0` are contradicted there (`false_of_bddAbove_archLogLik`). This is not an
+artefact of `Real.log`'s totalization: restricting to `c₀ > 0` does not help either, since
+negative `b` coordinates drive `σ̃_t² = c₀ + Σ b_i x_{t−i}²` negative just the same.
+
+**The next amendment.** Maximization must be over the *admissible* set, on which the
+criterion is bounded above — FY's `{c₀ > 0, b_j ≥ 0}`, or any constraint forcing
+`σ̃_t² ≥ κ > 0` along the sample — or, better (item (2) above), the estimators should be
+pinned in the trinity's currency: asymptotically linear with the ARCH score and
+information. Either way it is a *statement* change, out of scope for a `sorry`-filling
+lane. `archTR2Stat_chiSq_debt`'s `hrss`/`htss` do **not** have this defect: a
+least-squares minimum is always attained, so its hypotheses are consistent and it remains
+an honest debt.
+
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §4.2.6,
 eqs. (4.48)–(4.54) (pp. 165–168). (`FY §4.2.6`.)
 
@@ -176,10 +208,97 @@ regression's residual and total sums of squares. -/
 noncomputable def archTR2Stat {T : ℕ} (rss tss : ℝ) : ℝ :=
   (T : ℝ) * (1 - rss / tss)
 
+/-! ### The unrestricted ARCH quasi-likelihood has no maximizer
+
+The witness announced in the module docstring: `hMLE`/`hMLE0` of the two likelihood-based
+debts below are unsatisfiable, so those debts are vacuous. -/
+
+/-- At `b = 0` — and with the presample value `archLogLik` uses, namely `c₀` itself — the
+truncated ARCH volatility is the *constant* `c₀`, for **every** real `c₀`. No positivity
+is available here and none is needed: with `q = 0` the recursion has no volatility
+feedback, so a single case split on `t` replaces the induction. -/
+private lemma truncVol_const {p T : ℕ} (c : ℝ) (x : Fin T → ℝ) (t : ℕ) :
+    garchTruncVol c (fun _ : Fin p => (0 : ℝ)) (Fin.elim0 : Fin 0 → ℝ) c x t = c := by
+  cases t with
+  | zero => simp [garchTruncVol]
+  | succ n => simp [garchTruncVol]
+
+/-- The closed form of the null log-likelihood at a **negative** variance parameter `−δ`:
+`Real.log (−δ) = Real.log δ`, and the quadratic term keeps the factor `(−δ)⁻¹ < 0`, whose
+sign the outer `−½` flips to `+`. So both summands push the criterion *up*. -/
+private lemma archLogLik_neg {p T : ℕ} (δ : ℝ) (x : Fin T → ℝ) (ν : ℕ) :
+    archLogLik (-δ) (fun _ : Fin p => (0 : ℝ)) x ν
+      = -(1 / 2) * (((T - ν : ℕ) : ℝ) * Real.log δ
+          + (∑ t ∈ Finset.Ico ν T, (if h : t < T then x ⟨t, h⟩ else 0) ^ 2) * (-δ)⁻¹) := by
+  rw [archLogLik, garchQuasiLik]
+  simp only [truncVol_const, Real.log_neg_eq_log, div_eq_mul_inv]
+  rw [Finset.sum_add_distrib, Finset.sum_const, ← Finset.sum_mul, Nat.card_Ico]
+  simp
+
+/-- **The witness.** As soon as the criterion's index set `Ico ν T` is nonempty, the null
+ARCH log-likelihood is unbounded above on the unrestricted parameter space: take
+`c₀ = −δ` with `δ = exp(−(2|M| + 2)/(T − ν))`, which makes the logarithmic part alone
+equal `|M| + 1 > M` while the quadratic part is nonnegative. Hence no `(c₀, b)` maximizes
+it, over the unrestricted set or over any set containing the negative axis. -/
+private lemma archLogLik_unbounded {p T : ℕ} (x : Fin T → ℝ) {ν : ℕ} (hν : ν < T) (M : ℝ) :
+    ∃ c : ℝ, M < archLogLik c (fun _ : Fin p => (0 : ℝ)) x ν := by
+  have hn : 0 < T - ν := Nat.sub_pos_of_lt hν
+  have hnR : (0 : ℝ) < ((T - ν : ℕ) : ℝ) := Nat.cast_pos.2 hn
+  set δ : ℝ := Real.exp (-(2 * |M| + 2) / ((T - ν : ℕ) : ℝ)) with hδdef
+  have hδ0 : 0 < δ := Real.exp_pos _
+  refine ⟨-δ, ?_⟩
+  rw [archLogLik_neg]
+  have hlog : Real.log δ = -(2 * |M| + 2) / ((T - ν : ℕ) : ℝ) := Real.log_exp _
+  have hS : 0 ≤ ∑ t ∈ Finset.Ico ν T, (if h : t < T then x ⟨t, h⟩ else 0) ^ 2 :=
+    Finset.sum_nonneg fun t _ => sq_nonneg _
+  have hkey : ((T - ν : ℕ) : ℝ) * Real.log δ = -(2 * |M| + 2) := by
+    rw [hlog]; field_simp
+  have hinv : (∑ t ∈ Finset.Ico ν T, (if h : t < T then x ⟨t, h⟩ else 0) ^ 2) * (-δ)⁻¹ ≤ 0 :=
+    mul_nonpos_of_nonneg_of_nonpos hS (inv_nonpos.2 (by linarith))
+  have hM : M ≤ |M| := le_abs_self M
+  rw [hkey]
+  nlinarith [hinv, hM]
+
+/-- The frozen `hMLE`/`hMLE0` shape — a global maximizer of the null log-likelihood, at
+every sample size — is contradictory under `νseq T / T → 0`, which forces `νseq T < T` for
+all large `T` and hence a nonempty criterion sum at some `T`. -/
+private lemma false_of_bddAbove_archLogLik {p : ℕ} {νseq : ℕ → ℕ}
+    (hνT : Tendsto (fun T : ℕ => (νseq T : ℝ) / T) atTop (𝓝 0))
+    (data : (T : ℕ) → Fin T → ℝ) (F : ℕ → ℝ)
+    (hmax : ∀ (T : ℕ) (c : ℝ),
+      archLogLik c (fun _ : Fin p => (0 : ℝ)) (data T) (νseq T) ≤ F T) : False := by
+  have h1 : ∀ᶠ T : ℕ in atTop, (νseq T : ℝ) / T < 1 / 2 :=
+    hνT.eventually_lt_const (by norm_num)
+  obtain ⟨T, hT, hT1⟩ := (h1.and (eventually_ge_atTop 1)).exists
+  have hTpos : (0 : ℝ) < T := by exact_mod_cast hT1
+  have hlt : νseq T < T := by
+    have : (νseq T : ℝ) < T := by
+      have := (div_lt_iff₀ hTpos).1 hT
+      linarith
+    exact_mod_cast this
+  obtain ⟨c, hc⟩ := archLogLik_unbounded (p := p) (data T) hlt (F T)
+  exact absurd (hmax T c) (not_le.2 hc)
+
+/-- A probability space is nonempty — needed to evaluate the contradictory hypotheses at a
+sample point. -/
+private lemma nonempty_of_isProbabilityMeasure {Ω : Type*} [MeasurableSpace Ω]
+    (μ : Measure Ω) [IsProbabilityMeasure μ] : Nonempty Ω := by
+  rcases isEmpty_or_nonempty Ω with hE | hE
+  · have h1 : μ (Set.univ : Set Ω) = 1 := measure_univ
+    rw [Set.univ_eq_empty_iff.2 hE, measure_empty] at h1
+    exact absurd h1 (by norm_num)
+  · exact hE
+
 /-- **FY eq. (4.50) — DEBT** (Serfling §4.4.4 via the iid structure under `H₀`): the
 likelihood-ratio statistic has the `χ²_p` null limit. Recorded through the
 distribution function of the limit (`chiSqLimitCDF` supplied as the comparison law, so
-the statement does not depend on which χ² construction the repo settles on). -/
+the statement does not depend on which χ² construction the repo settles on).
+
+⚠ **VACUOUS as frozen, and the proof below says so.** `hMLE0` (equally `hMLE`) asks the
+null-restricted estimator to maximize `archLogLik` over all of `ℝ`, and no maximizer
+exists: `archLogLik_unbounded`. The proof is a derivation of `False` from the hypotheses;
+it establishes nothing about FY eq. (4.50). See the module docstring for the amendment
+this needs. -/
 theorem archLRStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     {X ε : ℤ → Ω → ℝ}
     -- USER-INPUT: the null model; FY §4.2.6 H₀
@@ -212,7 +331,14 @@ theorem archLRStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
         archLRStat (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
           (c0hat T ω) (bhat T ω) (c0null T ω)) u)
       atTop (𝓝 (charFun chiSq u)) := by
-  sorry
+  -- The hypotheses are contradictory: `hMLE0` asserts a global maximizer of a criterion
+  -- that `archLogLik_unbounded` shows is unbounded above.
+  obtain ⟨ω₀⟩ := nonempty_of_isProbabilityMeasure μ
+  exact (false_of_bddAbove_archLogLik (p := p) hνT
+    (fun T => fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω₀)
+    (fun T => archLogLik (c0null T ω₀) (fun _ : Fin p => (0 : ℝ))
+      (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω₀) (νseq T))
+    (fun T c => hMLE0 T ω₀ c)).elim
 
 /-- **FY eqs. (4.52)–(4.53) — DEBT**: the score/LM statistic (equivalently, for normal
 errors, Engle's `TR²`) has the same `χ²_p` null limit as the likelihood-ratio
@@ -247,7 +373,12 @@ theorem archTR2Stat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
   sorry
 
 /-- **FY eq. (4.54) — DEBT**: the Wald statistic (through the Schur-complement block
-`I²²` of the information matrix) has the `χ²_p` null limit. -/
+`I²²` of the information matrix) has the `χ²_p` null limit.
+
+⚠ **VACUOUS as frozen, for the same reason as `archLRStat_chiSq_debt`**: `hMLE` asks for a
+global maximizer of `archLogLik` over `ℝ × ℝᵖ`, which `archLogLik_unbounded` refutes. The
+proof derives `False`; the consistency hypothesis `hIhat` on the information block is
+never used, and FY eq. (4.54) is not formalized. -/
 theorem archWaldStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     {X ε : ℤ → Ω → ℝ}
     (h : IsARCH c0 (fun _ : Fin p => (0 : ℝ)) X ε μ) (hc0 : 0 < c0)
@@ -274,6 +405,12 @@ theorem archWaldStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
         (T : ℝ) * ∑ i, ∑ j, bhat T ω i * Ihat T ω i j * bhat T ω j) u)
       atTop (𝓝 (charFun chiSq u)) := by
-  sorry
+  -- Contradictory hypotheses again: instantiate `hMLE` at the null direction `bb = 0`.
+  obtain ⟨ω₀⟩ := nonempty_of_isProbabilityMeasure μ
+  exact (false_of_bddAbove_archLogLik (p := p) hνT
+    (fun T => fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω₀)
+    (fun T => archLogLik (c0hat T ω₀) (bhat T ω₀)
+      (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω₀) (νseq T))
+    (fun T c => hMLE T ω₀ c (fun _ : Fin p => (0 : ℝ)))).elim
 
 end StatLean.TimeSeries
