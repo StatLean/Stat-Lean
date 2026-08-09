@@ -21,6 +21,26 @@ The bridge between the Markov layer (`ForMathlib/Markov/*`) and the mixing coeff
   `(X_0, X_n)`. **Both the α- and the β-case are proved here** (2026-08-09; the β-case
   2026-08-09, wave 4).
 
+**Status (2026-08-09, wave 5): the whole bridge is now stated over an arbitrary measurable
+state space `E`** (`IsMarkovOf : (ℤ → Ω → E) → Kernel E E → Measure Ω → Prop`, with
+`sigmaLE'`/`sigmaGE'` the state-space-free forms of `Process/Defs.lean`'s
+`sigmaLE`/`sigmaGE`, definitionally equal to them at `E = ℝ`). Nothing in the proofs used
+any property of `ℝ` beyond measurability, so the generalisation is a change of statements
+only; the frozen real-valued theorems (`alphaCoeff_eq_two_marginal_debt`,
+`betaCoeff_eq_integral_tvDist_debt`, `isBetaMixing_of_geometric_envelope`) are kept as
+`E = ℝ` corollaries. Two by-products of the generalisation:
+
+* strict stationarity turned out to be **unused** by the Bradley reduction (α and β), and
+  Davydov's identity only needs *equality of the one-dimensional marginals*, so both are
+  now stated with `hmarg : ∀ s t, μ.map (X s) = μ.map (X t)`, which
+  `map_eq_map_of_isStrictlyStationary` supplies in the scalar case;
+* a new, **`sorry`-free α-route** to the model statements —
+  `alphaMixCoeff_two_marginal_le_of_envelope` (the inequality half of (2.58) at the α
+  level), `alphaMixCoeff_le_of_measurable_state` (process σ-algebras sit inside state
+  σ-algebras) and their composite `alphaCoeff_le_of_state_envelope`, which turns a
+  geometric TV envelope for the state kernel into `α_Y(n) ≤ C ρ^{n−1}` for the observed
+  series. The β-route still passes through the open Davydov brick; the α-route does not.
+
 **Status (2026-08-09, wave 4).** Two of the three bricks are now **PROVED** and
 `alphaCoeff_eq_two_marginal_debt` is axiom-clean:
 
@@ -766,15 +786,60 @@ private lemma betaMixCoeff_mono' {m₁ m₂ m₁' m₂' mΩ : MeasurableSpace Ω
 
 end BetaShrink
 
-variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {E : Type*} [MeasurableSpace E]
 
-/-- The **Markov representation** hypothesis tying a real-valued process to a kernel:
-the conditional law of `X_{t+n}` given the past through time `t` is `κⁿ(X_t, ·)`,
-expressed through conditional expectations of indicators. -/
-def IsMarkovOf (X : ℤ → Ω → ℝ) (κ : ProbabilityTheory.Kernel ℝ ℝ) (μ : Measure Ω) :
+/-! ### The state σ-algebras of a process with values in an arbitrary measurable space
+
+`Process/Defs.lean`'s `sigmaLE`/`sigmaGE` are frozen at real-valued processes. The Markov
+bridge below is run on the **state** of a model (the ARMA companion vector, the GARCH
+volatility vector), so it needs the same two σ-algebras for an arbitrary measurable state
+space `E`. The definitions are literally the same expressions, hence `sigmaLE'_eq_sigmaLE`
+and `sigmaGE'_eq_sigmaGE` below are `rfl`: nothing in the scalar layer changes. -/
+
+/-- `σ{V_s : s ≤ n}` for a process with values in an arbitrary measurable space
+(`Process/Defs.lean`'s `sigmaLE`, freed of `ℝ`). -/
+@[reducible] noncomputable def sigmaLE' (V : ℤ → Ω → E) (n : ℤ) : MeasurableSpace Ω :=
+  ⨆ s ∈ Set.Iic n, MeasurableSpace.comap (V s) inferInstance
+
+/-- `σ{V_s : s ≥ n}` for a process with values in an arbitrary measurable space
+(`Process/Defs.lean`'s `sigmaGE`, freed of `ℝ`). -/
+@[reducible] noncomputable def sigmaGE' (V : ℤ → Ω → E) (n : ℤ) : MeasurableSpace Ω :=
+  ⨆ s ∈ Set.Ici n, MeasurableSpace.comap (V s) inferInstance
+
+@[simp] lemma sigmaLE'_eq_sigmaLE (X : ℤ → Ω → ℝ) (n : ℤ) : sigmaLE' X n = sigmaLE X n := rfl
+
+@[simp] lemma sigmaGE'_eq_sigmaGE (X : ℤ → Ω → ℝ) (n : ℤ) : sigmaGE' X n = sigmaGE X n := rfl
+
+/-- Shifting the process shifts the past σ-algebra. -/
+lemma sigmaLE'_shift (V : ℤ → Ω → E) (k n : ℤ) :
+    sigmaLE' (fun s => V (s + k)) n = sigmaLE' V (n + k) := by
+  refine le_antisymm (iSup₂_le fun s hs => le_iSup₂_of_le (s + k) ?_ le_rfl)
+    (iSup₂_le fun s hs => le_iSup₂_of_le (s - k) ?_ ?_)
+  · exact Set.mem_Iic.mpr (by have := Set.mem_Iic.mp hs; omega)
+  · exact Set.mem_Iic.mpr (by have := Set.mem_Iic.mp hs; omega)
+  · simpa using le_rfl
+
+/-- Shifting the process shifts the future σ-algebra. -/
+lemma sigmaGE'_shift (V : ℤ → Ω → E) (k n : ℤ) :
+    sigmaGE' (fun s => V (s + k)) n = sigmaGE' V (n + k) := by
+  refine le_antisymm (iSup₂_le fun s hs => le_iSup₂_of_le (s + k) ?_ le_rfl)
+    (iSup₂_le fun s hs => le_iSup₂_of_le (s - k) ?_ ?_)
+  · exact Set.mem_Ici.mpr (by have := Set.mem_Ici.mp hs; omega)
+  · exact Set.mem_Ici.mpr (by have := Set.mem_Ici.mp hs; omega)
+  · simpa using le_rfl
+
+/-- The **Markov representation** hypothesis tying a process with values in a measurable
+space `E` to a kernel on `E`: the conditional law of `X_{t+n}` given the past through time
+`t` is `κⁿ(X_t, ·)`, expressed through conditional expectations of indicators.
+
+**Generalized (2026-08-09, wave 5)** from `Kernel ℝ ℝ` to `Kernel E E`. The scalar case
+`E = ℝ` is unchanged (`sigmaLE'` is definitionally `sigmaLE`); the vector case is what the
+model debts of `Mixing/Relations.lean` consume, since the Markov object of an ARMA or a
+GARCH is its *state* vector, not the observed scalar series. -/
+def IsMarkovOf (X : ℤ → Ω → E) (κ : ProbabilityTheory.Kernel E E) (μ : Measure Ω) :
     Prop :=
-  ∀ (t : ℤ) (n : ℕ) (B : Set ℝ), MeasurableSet B →
-    (μ[fun ω => (B.indicator (fun _ => (1 : ℝ)) (X (t + n) ω)) | sigmaLE X t])
+  ∀ (t : ℤ) (n : ℕ) (B : Set E), MeasurableSet B →
+    (μ[fun ω => (B.indicator (fun _ => (1 : ℝ)) (X (t + n) ω)) | sigmaLE' X t])
       =ᵐ[μ] fun ω => (((κ ^ n) (X t ω)) B).toReal
 
 section MarkovFuture
@@ -799,17 +864,17 @@ private lemma integrable_bdd_comp {α β : Type*} [MeasurableSpace α] [Measurab
   rw [Real.norm_eq_abs, Real.norm_eq_abs]
   exact (hfb _).trans (le_abs_self M)
 
-private lemma sigmaLE_le {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t)) (t : ℤ) :
-    sigmaLE X t ≤ (inferInstance : MeasurableSpace Ω) :=
+private lemma sigmaLE_le {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t)) (t : ℤ) :
+    sigmaLE' X t ≤ (inferInstance : MeasurableSpace Ω) :=
   iSup₂_le fun s _ => (hmeas s).comap_le
 
 /-- The `n`-step kernel average of a bounded measurable function is measurable. -/
-private lemma measurable_kernel_integral {κ : Kernel ℝ ℝ} (n : ℕ) {f : ℝ → ℝ}
+private lemma measurable_kernel_integral {κ : Kernel E E} (n : ℕ) {f : E → ℝ}
     (hf : Measurable f) : Measurable fun x => ∫ y, f y ∂((κ ^ n) x) :=
   (hf.stronglyMeasurable.integral_kernel (κ := κ ^ n)).measurable
 
-private lemma abs_kernel_integral_le {κ : Kernel ℝ ℝ} [IsMarkovKernel κ] (n : ℕ) {f : ℝ → ℝ}
-    {M : ℝ} (hfb : ∀ y, |f y| ≤ M) (x : ℝ) : |∫ y, f y ∂((κ ^ n) x)| ≤ M := by
+private lemma abs_kernel_integral_le {κ : Kernel E E} [IsMarkovKernel κ] (n : ℕ) {f : E → ℝ}
+    {M : ℝ} (hfb : ∀ y, |f y| ≤ M) (x : E) : |∫ y, f y ∂((κ ^ n) x)| ≤ M := by
   haveI := isMarkovKernel_pow' κ n
   have h := norm_integral_le_of_norm_le_const (μ := (κ ^ n) x) (C := M)
     (Filter.Eventually.of_forall fun y => by rw [Real.norm_eq_abs]; exact hfb y)
@@ -818,29 +883,29 @@ private lemma abs_kernel_integral_le {κ : Kernel ℝ ℝ} [IsMarkovKernel κ] (
 /-- **Step 1**: the set-integral form of the Markov property against a bounded measurable
 test function. -/
 private lemma markov_setIntegral_eq [IsProbabilityMeasure μ]
-    {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
-    {κ : Kernel ℝ ℝ} [IsMarkovKernel κ] (hmarkov : IsMarkovOf X κ μ)
-    (t : ℤ) (n : ℕ) {f : ℝ → ℝ} (hf : Measurable f) {M : ℝ} (hfb : ∀ y, |f y| ≤ M)
-    {A : Set Ω} (hA : MeasurableSet[sigmaLE X t] A) :
+    {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
+    {κ : Kernel E E} [IsMarkovKernel κ] (hmarkov : IsMarkovOf X κ μ)
+    (t : ℤ) (n : ℕ) {f : E → ℝ} (hf : Measurable f) {M : ℝ} (hfb : ∀ y, |f y| ≤ M)
+    {A : Set Ω} (hA : MeasurableSet[sigmaLE' X t] A) :
     ∫ ω in A, (∫ y, f y ∂((κ ^ n) (X t ω))) ∂μ = ∫ ω in A, f (X (t + n) ω) ∂μ := by
   haveI := isMarkovKernel_pow' κ n
   have hm := sigmaLE_le hmeas t
   have hAΩ : MeasurableSet A := hm _ hA
   set lam : Measure Ω := μ.restrict A with hlam
   haveI : IsFiniteMeasure lam := by rw [hlam]; infer_instance
-  set κ' : Kernel Ω ℝ := (κ ^ n).comap (X t) (hmeas t) with hκ'
+  set κ' : Kernel Ω E := (κ ^ n).comap (X t) (hmeas t) with hκ'
   haveI : IsMarkovKernel κ' := by rw [hκ']; infer_instance
   -- (a) the one-event Markov identity, in `ℝ≥0∞`
-  have hone : ∀ B : Set ℝ, MeasurableSet B →
+  have hone : ∀ B : Set E, MeasurableSet B →
       lam (X (t + n) ⁻¹' B) = ∫⁻ ω, (κ' ω) B ∂lam := by
     intro B hB
-    have hbd1 : ∀ y : ℝ, |B.indicator (fun _ => (1 : ℝ)) y| ≤ 1 := fun y => by
+    have hbd1 : ∀ y : E, |B.indicator (fun _ => (1 : ℝ)) y| ≤ 1 := fun y => by
       by_cases hy : y ∈ B <;> simp [Set.indicator_of_mem, Set.indicator_of_notMem, hy]
     have hint : Integrable (fun ω => B.indicator (fun _ => (1 : ℝ)) (X (t + n) ω)) μ :=
       integrable_bdd_comp μ (hmeas _) (measurable_const.indicator hB) hbd1
     have hsi := setIntegral_condExp hm hint hA
     have hcond : ∫ ω in A, (μ[fun ω => B.indicator (fun _ => (1 : ℝ)) (X (t + n) ω)
-        | sigmaLE X t]) ω ∂μ = ∫ ω in A, (((κ ^ n) (X t ω)) B).toReal ∂μ :=
+        | sigmaLE' X t]) ω ∂μ = ∫ ω in A, (((κ ^ n) (X t ω)) B).toReal ∂μ :=
       setIntegral_congr_ae hAΩ (by filter_upwards [hmarkov t n B hB] with ω hω using fun _ => hω)
     have hrhs : ∫ ω in A, B.indicator (fun _ => (1 : ℝ)) (X (t + n) ω) ∂μ
         = (lam (X (t + n) ⁻¹' B)).toReal := by
@@ -878,7 +943,7 @@ private lemma markov_setIntegral_eq [IsProbabilityMeasure μ]
       Measure.compProd_apply (measurable_snd hB), hone B hB]
     rfl
   -- (c) integrate `f`
-  have hfint : Integrable (fun z : Ω × ℝ => f z.2) (lam ⊗ₘ κ') :=
+  have hfint : Integrable (fun z : Ω × E => f z.2) (lam ⊗ₘ κ') :=
     integrable_bdd_comp _ measurable_snd hf hfb
   have e1 : ∫ ω in A, (∫ y, f y ∂((κ ^ n) (X t ω))) ∂μ = ∫ ω, (∫ y, f y ∂(κ' ω)) ∂lam := by
     simp only [hκ', Kernel.comap_apply, hlam]
@@ -892,17 +957,17 @@ private lemma markov_setIntegral_eq [IsProbabilityMeasure μ]
 
 /-- **Step 1′**: the Markov property against a bounded measurable test function. -/
 private lemma condExp_bdd_eq_kernel_integral [IsProbabilityMeasure μ]
-    {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
-    {κ : Kernel ℝ ℝ} [IsMarkovKernel κ] (hmarkov : IsMarkovOf X κ μ)
-    (t : ℤ) (n : ℕ) {f : ℝ → ℝ} (hf : Measurable f) {M : ℝ} (hfb : ∀ y, |f y| ≤ M) :
-    μ[fun ω => f (X (t + n) ω) | sigmaLE X t]
+    {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
+    {κ : Kernel E E} [IsMarkovKernel κ] (hmarkov : IsMarkovOf X κ μ)
+    (t : ℤ) (n : ℕ) {f : E → ℝ} (hf : Measurable f) {M : ℝ} (hfb : ∀ y, |f y| ≤ M) :
+    μ[fun ω => f (X (t + n) ω) | sigmaLE' X t]
       =ᵐ[μ] fun ω => ∫ y, f y ∂((κ ^ n) (X t ω)) := by
   have hm := sigmaLE_le hmeas t
-  have hFm : Measurable fun x : ℝ => ∫ y, f y ∂((κ ^ n) x) :=
+  have hFm : Measurable fun x : E => ∫ y, f y ∂((κ ^ n) x) :=
     measurable_kernel_integral n hf
-  have hcomap : MeasurableSpace.comap (X t) inferInstance ≤ sigmaLE X t :=
+  have hcomap : MeasurableSpace.comap (X t) inferInstance ≤ sigmaLE' X t :=
     le_iSup₂_of_le t (Set.mem_Iic.mpr le_rfl) le_rfl
-  have hgm : StronglyMeasurable[sigmaLE X t] fun ω => ∫ y, f y ∂((κ ^ n) (X t ω)) := by
+  have hgm : StronglyMeasurable[sigmaLE' X t] fun ω => ∫ y, f y ∂((κ ^ n) (X t ω)) := by
     refine StronglyMeasurable.mono ?_ hcomap
     exact (hFm.comp (Measurable.of_comap_le le_rfl)).stronglyMeasurable
   refine (ae_eq_condExp_of_forall_setIntegral_eq hm
@@ -915,11 +980,11 @@ private lemma condExp_bdd_eq_kernel_integral [IsProbabilityMeasure μ]
 /-- **Step 2**: the conditional expectation, given the past up to `t`, of a finite product
 of bounded measurable functions of the coordinates at times `≥ t` is a function of `X t`. -/
 private lemma condExp_prod_future [IsProbabilityMeasure μ]
-    {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
-    {κ : Kernel ℝ ℝ} [IsMarkovKernel κ] (hmarkov : IsMarkovOf X κ μ) (t : ℤ) (S : Finset ℕ) :
-    ∀ f : ℕ → ℝ → ℝ, (∀ s, Measurable (f s)) → (∀ s y, |f s y| ≤ 1) →
-      ∃ G : ℝ → ℝ, Measurable G ∧ (∀ x, |G x| ≤ 1) ∧
-        μ[fun ω => ∏ s ∈ S, f s (X (t + (s : ℤ)) ω) | sigmaLE X t]
+    {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
+    {κ : Kernel E E} [IsMarkovKernel κ] (hmarkov : IsMarkovOf X κ μ) (t : ℤ) (S : Finset ℕ) :
+    ∀ f : ℕ → E → ℝ, (∀ s, Measurable (f s)) → (∀ s y, |f s y| ≤ 1) →
+      ∃ G : E → ℝ, Measurable G ∧ (∀ x, |G x| ≤ 1) ∧
+        μ[fun ω => ∏ s ∈ S, f s (X (t + (s : ℤ)) ω) | sigmaLE' X t]
           =ᵐ[μ] fun ω => G (X t ω) := by
   classical
   have hmt := sigmaLE_le hmeas t
@@ -943,17 +1008,17 @@ private lemma condExp_prod_future [IsProbabilityMeasure μ]
       set b : ℕ := S.max' hSne with hbdef
       have hba : b < a := hlt b hbmem
       have hmb := sigmaLE_le hmeas (t + (b : ℤ))
-      have hmono : sigmaLE X t ≤ sigmaLE X (t + (b : ℤ)) :=
+      have hmono : sigmaLE' X t ≤ sigmaLE' X (t + (b : ℤ)) :=
         iSup₂_le fun s hs => le_iSup₂_of_le s
           (Set.mem_Iic.mpr (le_trans (Set.mem_Iic.mp hs) (by omega))) le_rfl
       set Δ : ℕ := a - b with hΔ
       have hcast : t + (a : ℤ) = (t + (b : ℤ)) + (Δ : ℤ) := by
         have h1 : (Δ : ℤ) = (a : ℤ) - (b : ℤ) := by rw [hΔ, Nat.cast_sub hba.le]
         omega
-      set g : ℝ → ℝ := fun x => ∫ y, f a y ∂((κ ^ Δ) x) with hg
+      set g : E → ℝ := fun x => ∫ y, f a y ∂((κ ^ Δ) x) with hg
       have hgm : Measurable g := measurable_kernel_integral Δ (hfm a)
       have hgb : ∀ x, |g x| ≤ 1 := fun x => abs_kernel_integral_le Δ (hfb a) x
-      set f' : ℕ → ℝ → ℝ := fun s => if s = b then (fun x => f b x * g x) else f s with hf'
+      set f' : ℕ → E → ℝ := fun s => if s = b then (fun x => f b x * g x) else f s with hf'
       have hf'm : ∀ s, Measurable (f' s) := by
         intro s
         by_cases hs : s = b
@@ -971,12 +1036,12 @@ private lemma condExp_prod_future [IsProbabilityMeasure μ]
       refine ⟨G, hGm, hGb, ?_⟩
       set P : Ω → ℝ := fun ω => ∏ s ∈ S, f s (X (t + (s : ℤ)) ω) with hP
       set Q : Ω → ℝ := fun ω => f a (X (t + (a : ℤ)) ω) with hQ
-      have hPmeas : StronglyMeasurable[sigmaLE X (t + (b : ℤ))] P := by
+      have hPmeas : StronglyMeasurable[sigmaLE' X (t + (b : ℤ))] P := by
         refine Measurable.stronglyMeasurable ?_
         rw [hP]
         refine Finset.measurable_prod S fun s hs => ?_
         have hcs : MeasurableSpace.comap (X (t + (s : ℤ))) inferInstance
-            ≤ sigmaLE X (t + (b : ℤ)) :=
+            ≤ sigmaLE' X (t + (b : ℤ)) :=
           le_iSup₂_of_le (t + (s : ℤ)) (Set.mem_Iic.mpr (by
             have := hbmax s hs; omega)) le_rfl
         exact (hfm s).comp (Measurable.of_comap_le hcs)
@@ -988,11 +1053,11 @@ private lemma condExp_prod_future [IsProbabilityMeasure μ]
           _ ≤ 1 := Finset.prod_le_one (fun s _ => abs_nonneg _) (fun s _ => hfb s _)
       have hQint : Integrable Q μ := by
         rw [hQ]; exact integrable_bdd_comp μ (hmeas _) (hfm a) (hfb a)
-      have hpull : μ[P * Q | sigmaLE X (t + (b : ℤ))]
-          =ᵐ[μ] P * μ[Q | sigmaLE X (t + (b : ℤ))] :=
+      have hpull : μ[P * Q | sigmaLE' X (t + (b : ℤ))]
+          =ᵐ[μ] P * μ[Q | sigmaLE' X (t + (b : ℤ))] :=
         condExp_stronglyMeasurable_mul_of_bound₀ hmb hPmeas.aestronglyMeasurable hQint 1
           (Filter.Eventually.of_forall fun ω => by rw [Real.norm_eq_abs]; exact hPb ω)
-      have hQc : μ[Q | sigmaLE X (t + (b : ℤ))] =ᵐ[μ] fun ω => g (X (t + (b : ℤ)) ω) := by
+      have hQc : μ[Q | sigmaLE' X (t + (b : ℤ))] =ᵐ[μ] fun ω => g (X (t + (b : ℤ)) ω) := by
         rw [hQ, hcast, hg]
         exact condExp_bdd_eq_kernel_integral hmeas hmarkov (t + (b : ℤ)) Δ (hfm a) (hfb a)
       have hprod : ∀ ω, P ω * g (X (t + (b : ℤ)) ω)
@@ -1017,18 +1082,18 @@ private lemma condExp_prod_future [IsProbabilityMeasure μ]
       refine Filter.EventuallyEq.trans (condExp_condExp_of_le hmono hmb).symm ?_
       refine condExp_congr_ae ?_
       filter_upwards [hpull, hQc] with ω h1 h2
-      calc (μ[P * Q | sigmaLE X (t + (b : ℤ))]) ω
-          = P ω * (μ[Q | sigmaLE X (t + (b : ℤ))]) ω := h1
+      calc (μ[P * Q | sigmaLE' X (t + (b : ℤ))]) ω
+          = P ω * (μ[Q | sigmaLE' X (t + (b : ℤ))]) ω := h1
         _ = P ω * g (X (t + (b : ℤ)) ω) := by rw [h2]
         _ = ∏ s ∈ S, f' s (X (t + (s : ℤ)) ω) := hprod ω
 
 /-- The π-system of finite-dimensional cylinders on the coordinates at times `≥ t`. -/
-private def futureCyl (X : ℤ → Ω → ℝ) (t : ℤ) : Set (Set Ω) :=
-  {A | ∃ (S : Finset ℕ) (B : ℕ → Set ℝ), (∀ s, MeasurableSet (B s)) ∧
+private def futureCyl (X : ℤ → Ω → E) (t : ℤ) : Set (Set Ω) :=
+  {A | ∃ (S : Finset ℕ) (B : ℕ → Set E), (∀ s, MeasurableSet (B s)) ∧
     A = ⋂ s ∈ S, (X (t + (s : ℤ))) ⁻¹' (B s)}
 
 omit [MeasurableSpace Ω] in
-private lemma isPiSystem_futureCyl (X : ℤ → Ω → ℝ) (t : ℤ) : IsPiSystem (futureCyl X t) := by
+private lemma isPiSystem_futureCyl (X : ℤ → Ω → E) (t : ℤ) : IsPiSystem (futureCyl X t) := by
   classical
   rintro A ⟨S₁, B₁, hB₁, rfl⟩ D ⟨S₂, B₂, hB₂, rfl⟩ -
   refine ⟨S₁ ∪ S₂, fun s => (if s ∈ S₁ then B₁ s else Set.univ)
@@ -1053,13 +1118,13 @@ private lemma isPiSystem_futureCyl (X : ℤ → Ω → ℝ) (t : ℤ) : IsPiSyst
       · have := (h s (Or.inr hs)).2
         simpa only [if_pos hs] using this
 
-private lemma measurableSet_futureCyl {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
+private lemma measurableSet_futureCyl {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
     {t : ℤ} {A : Set Ω} (hA : A ∈ futureCyl X t) : MeasurableSet A := by
   obtain ⟨S, B, hB, rfl⟩ := hA
   exact Finset.measurableSet_biInter S fun s _ => (hmeas _) (hB s)
 
-private lemma sigmaGE_eq_generateFrom {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t)) (t : ℤ) :
-    sigmaGE X t = MeasurableSpace.generateFrom (futureCyl X t) := by
+private lemma sigmaGE_eq_generateFrom {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t)) (t : ℤ) :
+    sigmaGE' X t = MeasurableSpace.generateFrom (futureCyl X t) := by
   refine le_antisymm (iSup₂_le fun s hs => ?_) (MeasurableSpace.generateFrom_le fun A hA => ?_)
   · intro A hA
     obtain ⟨B, hB, rfl⟩ := hA
@@ -1071,12 +1136,12 @@ private lemma sigmaGE_eq_generateFrom {X : ℤ → Ω → ℝ} (hmeas : ∀ t, M
     rw [hn]
   · obtain ⟨S, B, hB, rfl⟩ := hA
     refine Finset.measurableSet_biInter S fun s _ => ?_
-    have hle : MeasurableSpace.comap (X (t + (s : ℤ))) inferInstance ≤ sigmaGE X t :=
+    have hle : MeasurableSpace.comap (X (t + (s : ℤ))) inferInstance ≤ sigmaGE' X t :=
       le_iSup₂_of_le (t + (s : ℤ)) (Set.mem_Ici.mpr (by omega)) le_rfl
     exact hle _ ⟨B s, hB s, rfl⟩
 
 omit [MeasurableSpace Ω] in
-private lemma indicator_biInter_eq_prod {X : ℤ → Ω → ℝ} (t : ℤ) (S : Finset ℕ) (B : ℕ → Set ℝ)
+private lemma indicator_biInter_eq_prod {X : ℤ → Ω → E} (t : ℤ) (S : Finset ℕ) (B : ℕ → Set E)
     (ω : Ω) :
     (⋂ s ∈ S, (X (t + (s : ℤ))) ⁻¹' (B s)).indicator (fun _ => (1 : ℝ)) ω
       = ∏ s ∈ S, (B s).indicator (fun _ => (1 : ℝ)) (X (t + (s : ℤ)) ω) := by
@@ -1094,21 +1159,21 @@ private lemma indicator_biInter_eq_prod {X : ℤ → Ω → ℝ} (t : ℤ) (S : 
     exact (Finset.prod_eq_zero hs (by simp [Set.indicator_of_notMem hns])).symm
 
 private lemma setIntegral_condExp_indicator_all [IsProbabilityMeasure μ]
-    {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
-    {κ : Kernel ℝ ℝ} [IsMarkovKernel κ] (hmarkov : IsMarkovOf X κ μ) (t : ℤ) :
-    ∀ A : Set Ω, MeasurableSet[sigmaGE X t] A →
-      ∀ D : Set Ω, MeasurableSet[sigmaLE X t] D →
+    {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
+    {κ : Kernel E E} [IsMarkovKernel κ] (hmarkov : IsMarkovOf X κ μ) (t : ℤ) :
+    ∀ A : Set Ω, MeasurableSet[sigmaGE' X t] A →
+      ∀ D : Set Ω, MeasurableSet[sigmaLE' X t] D →
         ∫ ω in A, (μ[D.indicator (fun _ => (1 : ℝ))
             | MeasurableSpace.comap (X t) inferInstance]) ω ∂μ = (μ (A ∩ D)).toReal := by
   have hmt := sigmaLE_le hmeas t
-  have hGE : sigmaGE X t ≤ (inferInstance : MeasurableSpace Ω) :=
+  have hGE : sigmaGE' X t ≤ (inferInstance : MeasurableSpace Ω) :=
     iSup₂_le fun s _ => (hmeas s).comap_le
-  have hG : MeasurableSpace.comap (X t) (inferInstance : MeasurableSpace ℝ)
+  have hG : MeasurableSpace.comap (X t) (inferInstance : MeasurableSpace E)
       ≤ (inferInstance : MeasurableSpace Ω) := (hmeas t).comap_le
-  have hGt : MeasurableSpace.comap (X t) (inferInstance : MeasurableSpace ℝ) ≤ sigmaLE X t :=
+  have hGt : MeasurableSpace.comap (X t) (inferInstance : MeasurableSpace E) ≤ sigmaLE' X t :=
     le_iSup₂_of_le t (Set.mem_Iic.mpr le_rfl) le_rfl
   refine MeasurableSpace.induction_on_inter
-    (C := fun A _ => ∀ D : Set Ω, MeasurableSet[sigmaLE X t] D →
+    (C := fun A _ => ∀ D : Set Ω, MeasurableSet[sigmaLE' X t] D →
       ∫ ω in A, (μ[D.indicator (fun _ => (1 : ℝ))
           | MeasurableSpace.comap (X t) inferInstance]) ω ∂μ = (μ (A ∩ D)).toReal)
     (sigmaGE_eq_generateFrom hmeas t) (isPiSystem_futureCyl X t) ?_ ?_ ?_ ?_
@@ -1127,7 +1192,7 @@ private lemma setIntegral_condExp_indicator_all [IsProbabilityMeasure μ]
         = fun ω => ∏ s ∈ S, (B s).indicator (fun _ => (1 : ℝ)) (X (t + (s : ℤ)) ω) :=
       funext fun ω => indicator_biInter_eq_prod t S B ω
     have hcond_mt : μ[(⋂ s ∈ S, (X (t + (s : ℤ))) ⁻¹' (B s)).indicator (fun _ => (1 : ℝ))
-        | sigmaLE X t] =ᵐ[μ] fun ω => G (X t ω) := by rw [hind]; exact hGe
+        | sigmaLE' X t] =ᵐ[μ] fun ω => G (X t ω) := by rw [hind]; exact hGe
     have hGsm : StronglyMeasurable[MeasurableSpace.comap (X t) inferInstance]
         fun ω => G (X t ω) :=
       (hGm.comp (Measurable.of_comap_le le_rfl)).stronglyMeasurable
@@ -1146,7 +1211,7 @@ private lemma setIntegral_condExp_indicator_all [IsProbabilityMeasure μ]
               | MeasurableSpace.comap (X t) inferInstance]) ω ∂μ :=
           (setIntegral_condExp_indicator_symm hG hAm hDm).symm
       _ = ∫ ω in D, (μ[(⋂ s ∈ S, (X (t + (s : ℤ))) ⁻¹' (B s)).indicator (fun _ => (1 : ℝ))
-              | sigmaLE X t]) ω ∂μ := by
+              | sigmaLE' X t]) ω ∂μ := by
           refine setIntegral_congr_ae hDm ?_
           filter_upwards [hcond_G, hcond_mt] with ω e1 e2 using fun _ => by rw [e1, e2]
       _ = ∫ ω in D, (⋂ s ∈ S, (X (t + (s : ℤ))) ⁻¹' (B s)).indicator (fun _ => (1 : ℝ)) ω ∂μ :=
@@ -1186,17 +1251,17 @@ private lemma setIntegral_condExp_indicator_all [IsProbabilityMeasure μ]
 /-- The content of `condExp_sigmaGE_indicator_brick`, placed early so that the β-side
 reduction below can consume it as well. -/
 private lemma condExp_sigmaGE_versionable [IsProbabilityMeasure μ]
-    {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
-    {κ : ProbabilityTheory.Kernel ℝ ℝ} [ProbabilityTheory.IsMarkovKernel κ]
-    (hmarkov : IsMarkovOf X κ μ) (t : ℤ) {B : Set Ω} (hB : MeasurableSet[sigmaGE X t] B) :
+    {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
+    {κ : ProbabilityTheory.Kernel E E} [ProbabilityTheory.IsMarkovKernel κ]
+    (hmarkov : IsMarkovOf X κ μ) (t : ℤ) {B : Set Ω} (hB : MeasurableSet[sigmaGE' X t] B) :
     ∃ p : Ω → ℝ, StronglyMeasurable[MeasurableSpace.comap (X t) inferInstance] p ∧
-      μ[B.indicator (fun _ => (1 : ℝ)) | sigmaLE X t] =ᵐ[μ] p := by
+      μ[B.indicator (fun _ => (1 : ℝ)) | sigmaLE' X t] =ᵐ[μ] p := by
   have hmt := sigmaLE_le hmeas t
-  have hGE : sigmaGE X t ≤ (inferInstance : MeasurableSpace Ω) :=
+  have hGE : sigmaGE' X t ≤ (inferInstance : MeasurableSpace Ω) :=
     iSup₂_le fun s _ => (hmeas s).comap_le
-  have hG : MeasurableSpace.comap (X t) (inferInstance : MeasurableSpace ℝ)
+  have hG : MeasurableSpace.comap (X t) (inferInstance : MeasurableSpace E)
       ≤ (inferInstance : MeasurableSpace Ω) := (hmeas t).comap_le
-  have hGt : MeasurableSpace.comap (X t) (inferInstance : MeasurableSpace ℝ) ≤ sigmaLE X t :=
+  have hGt : MeasurableSpace.comap (X t) (inferInstance : MeasurableSpace E) ≤ sigmaLE' X t :=
     le_iSup₂_of_le t (Set.mem_Iic.mpr le_rfl) le_rfl
   have hBm : MeasurableSet B := hGE _ hB
   refine ⟨μ[B.indicator (fun _ => (1 : ℝ)) | MeasurableSpace.comap (X t) inferInstance],
@@ -1233,29 +1298,28 @@ only increase the partition sum:
   the joint sign-pattern partition — this time of the `E[g_k|σ(X_n)]`. Note that **no
   reverse (time-symmetric) Markov property is used**: the future side is moved by
   conditioning the future cells on the *past* up to `n`. -/
-private lemma betaMixCoeff_two_marginal_brick [IsProbabilityMeasure μ]
-    {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
-    (hstat : IsStrictlyStationary X μ)
-    {κ : ProbabilityTheory.Kernel ℝ ℝ} [ProbabilityTheory.IsMarkovKernel κ]
+theorem betaMixCoeff_two_marginal_of_markov [IsProbabilityMeasure μ]
+    {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
+    {κ : ProbabilityTheory.Kernel E E} [ProbabilityTheory.IsMarkovKernel κ]
     (hmarkov : IsMarkovOf X κ μ) (n : ℕ) :
-    betaMixCoeff μ (sigmaLE X 0) (sigmaGE X (n : ℤ))
+    betaMixCoeff μ (sigmaLE' X 0) (sigmaGE' X (n : ℤ))
       = betaMixCoeff μ (MeasurableSpace.comap (X 0) inferInstance)
           (MeasurableSpace.comap (X (n : ℤ)) inferInstance) := by
   classical
-  have hLEΩ : ∀ t : ℤ, sigmaLE X t ≤ (inferInstance : MeasurableSpace Ω) := sigmaLE_le hmeas
-  have hGEΩ : ∀ t : ℤ, sigmaGE X t ≤ (inferInstance : MeasurableSpace Ω) :=
+  have hLEΩ : ∀ t : ℤ, sigmaLE' X t ≤ (inferInstance : MeasurableSpace Ω) := sigmaLE_le hmeas
+  have hGEΩ : ∀ t : ℤ, sigmaGE' X t ≤ (inferInstance : MeasurableSpace Ω) :=
     fun t => iSup₂_le fun s _ => (hmeas s).comap_le
   have hm0Ω : MeasurableSpace.comap (X 0) inferInstance
       ≤ (inferInstance : MeasurableSpace Ω) := (hmeas 0).comap_le
   have hmnΩ : MeasurableSpace.comap (X (n : ℤ)) inferInstance
       ≤ (inferInstance : MeasurableSpace Ω) := (hmeas _).comap_le
-  have hm0le : MeasurableSpace.comap (X 0) inferInstance ≤ sigmaLE X 0 :=
+  have hm0le : MeasurableSpace.comap (X 0) inferInstance ≤ sigmaLE' X 0 :=
     le_iSup₂_of_le (0 : ℤ) (Set.mem_Iic.mpr le_rfl) le_rfl
-  have hm0leN : MeasurableSpace.comap (X 0) inferInstance ≤ sigmaLE X (n : ℤ) :=
+  have hm0leN : MeasurableSpace.comap (X 0) inferInstance ≤ sigmaLE' X (n : ℤ) :=
     le_iSup₂_of_le (0 : ℤ) (Set.mem_Iic.mpr (Int.natCast_nonneg n)) le_rfl
-  have hmnle : MeasurableSpace.comap (X (n : ℤ)) inferInstance ≤ sigmaGE X (n : ℤ) :=
+  have hmnle : MeasurableSpace.comap (X (n : ℤ)) inferInstance ≤ sigmaGE' X (n : ℤ) :=
     le_iSup₂_of_le (n : ℤ) (Set.mem_Ici.mpr le_rfl) le_rfl
-  have hGEmono : sigmaGE X (n : ℤ) ≤ sigmaGE X 0 :=
+  have hGEmono : sigmaGE' X (n : ℤ) ≤ sigmaGE' X 0 :=
     iSup₂_le fun s hs => le_iSup₂_of_le s
       (Set.mem_Ici.mpr (le_trans (Int.natCast_nonneg n) (Set.mem_Ici.mp hs))) le_rfl
   refine le_antisymm ?_
@@ -1268,7 +1332,7 @@ private lemma betaMixCoeff_two_marginal_brick [IsProbabilityMeasure μ]
   -- Step A: the first side collapses to `σ(X_0)` (Markov property at time `0`)
   have hbrick0 : ∀ j, ∃ p : Ω → ℝ,
       Measurable[MeasurableSpace.comap (X 0) inferInstance] p ∧
-      μ[(B j).indicator (fun _ => (1 : ℝ)) | sigmaLE X 0] =ᵐ[μ] p := by
+      μ[(B j).indicator (fun _ => (1 : ℝ)) | sigmaLE' X 0] =ᵐ[μ] p := by
     intro j
     obtain ⟨p, hpm, hpe⟩ := condExp_sigmaGE_versionable hmeas hmarkov 0 (hGEmono _ (hB j))
     exact ⟨p, hpm.measurable, hpe⟩
@@ -1278,7 +1342,7 @@ private lemma betaMixCoeff_two_marginal_brick [IsProbabilityMeasure μ]
   -- Step B: the second side collapses to `σ(X_n)` (Markov property at time `n`)
   have hbrickn : ∀ j, ∃ p : Ω → ℝ,
       Measurable[MeasurableSpace.comap (X (n : ℤ)) inferInstance] p ∧
-      μ[(B j).indicator (fun _ => (1 : ℝ)) | sigmaLE X (n : ℤ)] =ᵐ[μ] p := by
+      μ[(B j).indicator (fun _ => (1 : ℝ)) | sigmaLE' X (n : ℤ)] =ᵐ[μ] p := by
     intro j
     obtain ⟨p, hpm, hpe⟩ := condExp_sigmaGE_versionable hmeas hmarkov (n : ℤ) (hB j)
     exact ⟨p, hpm.measurable, hpe⟩
@@ -1342,9 +1406,11 @@ bricks are now proved, so this is exactly what stands between the file and a `so
   *partition pair* (the finite algebra generated by the `U`'s and the `V`'s). Neither is
   a `sorry`-filling task; both are new `ForMathlib` bricks. -/
 private lemma betaMixCoeff_two_marginal_eq_integral_tvDist_brick [IsProbabilityMeasure μ]
-    {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
-    (hstat : IsStrictlyStationary X μ)
-    {κ : ProbabilityTheory.Kernel ℝ ℝ} [ProbabilityTheory.IsMarkovKernel κ]
+    {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
+    -- only the equality of the one-dimensional marginals is used (wave 5: this replaces
+    -- the frozen `IsStrictlyStationary`, which is unavailable for a vector state)
+    (hmarg : ∀ s t : ℤ, μ.map (X s) = μ.map (X t))
+    {κ : ProbabilityTheory.Kernel E E} [ProbabilityTheory.IsMarkovKernel κ]
     (hmarkov : IsMarkovOf X κ μ) (n : ℕ) :
     betaMixCoeff μ (MeasurableSpace.comap (X 0) inferInstance)
         (MeasurableSpace.comap (X (n : ℤ)) inferInstance)
@@ -1357,11 +1423,92 @@ with kernel `κ` and time-`0` marginal `F = μ ∘ X_0⁻¹`,
 `β(n) = ∫ tvDist (κⁿ x) F dF(x)` (sup-over-events normalization — see the module
 docstring's calibration warning).
 
-**Status (2026-08-09, wave 4).** Split into its two independent halves, of which the
-first is now **PROVED**: `betaMixCoeff_two_marginal_brick` (Bradley's collapse to the two
-marginals) and `betaMixCoeff_two_marginal_eq_integral_tvDist_brick` (Davydov's identity
+**Status (2026-08-09, wave 5).** Split into its two independent halves, of which the
+first is now **PROVED**: `betaMixCoeff_two_marginal_of_markov` (Bradley's collapse to the
+two marginals) and `betaMixCoeff_two_marginal_eq_integral_tvDist_brick` (Davydov's identity
 proper — the only remaining `sorry` of this file; its docstring records the verified
-calibration and the proof of each direction). -/
+calibration and the proof of each direction).
+
+Stated for a general state space `E`; the scalar form is
+`betaCoeff_eq_integral_tvDist_debt` below. -/
+theorem betaMixCoeff_eq_integral_tvDist_of_markov [IsProbabilityMeasure μ]
+    {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
+    (hmarg : ∀ s t : ℤ, μ.map (X s) = μ.map (X t))
+    {κ : ProbabilityTheory.Kernel E E} [ProbabilityTheory.IsMarkovKernel κ]
+    -- USER-INPUT: Markov representation; FY §2.6.1(vi) setting
+    (hmarkov : IsMarkovOf X κ μ) (n : ℕ) :
+    betaMixCoeff μ (sigmaLE' X 0) (sigmaGE' X (n : ℤ))
+      = (∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0))
+          ∂(μ.map (X 0))).toReal := by
+  rw [betaMixCoeff_two_marginal_of_markov hmeas hmarkov n,
+    betaMixCoeff_two_marginal_eq_integral_tvDist_brick hmeas hmarg hmarkov n]
+
+/-- **FY eq. (2.59), derived from the (2.58) debt**, general state space: a pointwise
+geometric envelope `tvDist (κⁿ x) F ≤ A(x) ρⁿ` with `A` integrable gives
+`β(n) ≤ ρⁿ ∫ A dF`. -/
+theorem betaMixCoeff_le_of_geometric_envelope [IsProbabilityMeasure μ]
+    {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
+    (hmarg : ∀ s t : ℤ, μ.map (X s) = μ.map (X t))
+    {κ : ProbabilityTheory.Kernel E E} [ProbabilityTheory.IsMarkovKernel κ]
+    (hmarkov : IsMarkovOf X κ μ)
+    {A : E → ℝ} (hA0 : ∀ x, 0 ≤ A x)
+    (hAint : Integrable A (μ.map (X 0)))
+    {ρ : ℝ} (hρ0 : 0 ≤ ρ)
+    -- USER-INPUT: geometric TV envelope; FY eq. (2.59)
+    (henv : ∀ (x : E) (n : ℕ),
+      StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0))
+        ≤ ENNReal.ofReal (A x * ρ ^ n)) :
+    ∀ n : ℕ, betaMixCoeff μ (sigmaLE' X 0) (sigmaGE' X (n : ℤ))
+      ≤ (∫ x, A x ∂(μ.map (X 0))) * ρ ^ n := by
+  set F : Measure E := μ.map (X 0) with hF
+  have hnn : ∀ n : ℕ, (0 : ℝ) ≤ (∫ x, A x ∂F) * ρ ^ n := fun n =>
+    mul_nonneg (integral_nonneg hA0) (pow_nonneg hρ0 n)
+  -- (2.59): integrate the pointwise envelope of (2.58).
+  · intro n
+    rw [betaMixCoeff_eq_integral_tvDist_of_markov hmeas hmarg hmarkov n]
+    have hmono : (∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) F ∂F)
+        ≤ ∫⁻ x, ENNReal.ofReal (A x * ρ ^ n) ∂F :=
+      lintegral_mono fun x => henv x n
+    have heq : (∫⁻ x, ENNReal.ofReal (A x * ρ ^ n) ∂F)
+        = ENNReal.ofReal ((∫ x, A x ∂F) * ρ ^ n) := by
+      rw [← ofReal_integral_eq_lintegral_ofReal (hAint.mul_const _)
+        (Filter.Eventually.of_forall fun x => mul_nonneg (hA0 x) (pow_nonneg hρ0 n)),
+        integral_mul_const]
+    have hfin : (∫⁻ x, ENNReal.ofReal (A x * ρ ^ n) ∂F) ≠ ∞ := by
+      rw [heq]; exact ENNReal.ofReal_ne_top
+    calc (∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) F ∂F).toReal
+        ≤ (∫⁻ x, ENNReal.ofReal (A x * ρ ^ n) ∂F).toReal := ENNReal.toReal_mono hfin hmono
+      _ = (∫ x, A x ∂F) * ρ ^ n := by rw [heq, ENNReal.toReal_ofReal (hnn n)]
+
+/-! ### Scalar corollaries (`E = ℝ`)
+
+The bridge above is stated for an arbitrary measurable state space; `sigmaLE'`/`sigmaGE'`
+are definitionally `Process/Defs.lean`'s `sigmaLE`/`sigmaGE` at `E = ℝ`, so the frozen
+real-valued statements of FY §2.6.1 are immediate specialisations. The only work is
+extracting the *equality of one-dimensional marginals* from strict stationarity. -/
+
+/-- Strict stationarity equalises the one-dimensional marginals. -/
+lemma map_eq_map_of_isStrictlyStationary [IsProbabilityMeasure μ]
+    {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t)) (hstat : IsStrictlyStationary X μ)
+    (s t : ℤ) : μ.map (X s) = μ.map (X t) := by
+  have h := hstat 1 (fun _ => t) (s - t)
+  have hts : t + (s - t) = s := by ring
+  simp only [hts] at h
+  have hm1 : Measurable fun ω (_ : Fin 1) => X s ω :=
+    measurable_pi_lambda _ fun _ => hmeas _
+  have hm2 : Measurable fun ω (_ : Fin 1) => X t ω :=
+    measurable_pi_lambda _ fun _ => hmeas _
+  have hev : Measurable fun f : Fin 1 → ℝ => f 0 := measurable_pi_apply 0
+  have e1 : (μ.map fun ω (_ : Fin 1) => X s ω).map (fun f : Fin 1 → ℝ => f 0)
+      = μ.map (X s) := by rw [Measure.map_map hev hm1]; rfl
+  have e2 : (μ.map fun ω (_ : Fin 1) => X t ω).map (fun f : Fin 1 → ℝ => f 0)
+      = μ.map (X t) := by rw [Measure.map_map hev hm2]; rfl
+  rw [← e1, ← e2, h]
+
+/-- **DEBT (Davydov 1973; FY eq. (2.58))**, scalar form: for a strictly stationary Markov
+process with kernel `κ` and time-`0` marginal `F = μ ∘ X_0⁻¹`,
+`β(n) = ∫ tvDist (κⁿ x) F dF(x)`. Specialisation of
+`betaMixCoeff_eq_integral_tvDist_of_markov`. -/
 theorem betaCoeff_eq_integral_tvDist_debt [IsProbabilityMeasure μ]
     {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
     (hstat : IsStrictlyStationary X μ)
@@ -1370,9 +1517,9 @@ theorem betaCoeff_eq_integral_tvDist_debt [IsProbabilityMeasure μ]
     (hmarkov : IsMarkovOf X κ μ) (n : ℕ) :
     betaCoeff X μ n
       = (∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0))
-          ∂(μ.map (X 0))).toReal := by
-  rw [betaCoeff, betaMixCoeff_two_marginal_brick hmeas hstat hmarkov n,
-    betaMixCoeff_two_marginal_eq_integral_tvDist_brick hmeas hstat hmarkov n]
+          ∂(μ.map (X 0))).toReal :=
+  betaMixCoeff_eq_integral_tvDist_of_markov hmeas
+    (map_eq_map_of_isStrictlyStationary hmeas hstat) hmarkov n
 
 /-- **FY eq. (2.59), derived from the (2.58) debt**: a pointwise geometric envelope
 `tvDist (κⁿ x) F ≤ A(x) ρⁿ` with `A` integrable gives `β(n) ≤ ρⁿ ∫ A dF`; in
@@ -1391,31 +1538,15 @@ theorem isBetaMixing_of_geometric_envelope [IsProbabilityMeasure μ]
         ≤ ENNReal.ofReal (A x * ρ ^ n)) :
     (∀ n : ℕ, betaCoeff X μ n ≤ (∫ x, A x ∂(μ.map (X 0))) * ρ ^ n) ∧
       IsBetaMixing X μ := by
-  set F : Measure ℝ := μ.map (X 0) with hF
-  have hnn : ∀ n : ℕ, (0 : ℝ) ≤ (∫ x, A x ∂F) * ρ ^ n := fun n =>
-    mul_nonneg (integral_nonneg hA0) (pow_nonneg hρ0 n)
-  -- (2.59): integrate the pointwise envelope of (2.58).
-  have hkey : ∀ n : ℕ, betaCoeff X μ n ≤ (∫ x, A x ∂F) * ρ ^ n := by
-    intro n
-    rw [betaCoeff_eq_integral_tvDist_debt hmeas hstat hmarkov n]
-    have hmono : (∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) F ∂F)
-        ≤ ∫⁻ x, ENNReal.ofReal (A x * ρ ^ n) ∂F :=
-      lintegral_mono fun x => henv x n
-    have heq : (∫⁻ x, ENNReal.ofReal (A x * ρ ^ n) ∂F)
-        = ENNReal.ofReal ((∫ x, A x ∂F) * ρ ^ n) := by
-      rw [← ofReal_integral_eq_lintegral_ofReal (hAint.mul_const _)
-        (Filter.Eventually.of_forall fun x => mul_nonneg (hA0 x) (pow_nonneg hρ0 n)),
-        integral_mul_const]
-    have hfin : (∫⁻ x, ENNReal.ofReal (A x * ρ ^ n) ∂F) ≠ ∞ := by
-      rw [heq]; exact ENNReal.ofReal_ne_top
-    calc (∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) F ∂F).toReal
-        ≤ (∫⁻ x, ENNReal.ofReal (A x * ρ ^ n) ∂F).toReal := ENNReal.toReal_mono hfin hmono
-      _ = (∫ x, A x ∂F) * ρ ^ n := by rw [heq, ENNReal.toReal_ofReal (hnn n)]
+  have hkey : ∀ n : ℕ, betaCoeff X μ n ≤ (∫ x, A x ∂(μ.map (X 0))) * ρ ^ n :=
+    betaMixCoeff_le_of_geometric_envelope hmeas
+      (map_eq_map_of_isStrictlyStationary hmeas hstat) hmarkov hA0 hAint hρ0 henv
   refine ⟨hkey, ?_⟩
   refine squeeze_zero (fun n => ?_) hkey ?_
   · rw [betaCoeff_eq_integral_tvDist_debt hmeas hstat hmarkov n]
     exact ENNReal.toReal_nonneg
-  · have := (tendsto_pow_atTop_nhds_zero_of_lt_one hρ0 hρ1).const_mul (∫ x, A x ∂F)
+  · have := (tendsto_pow_atTop_nhds_zero_of_lt_one hρ0 hρ1).const_mul
+      (∫ x, A x ∂(μ.map (X 0)))
     simpa using this
 
 /-- **BRICK — the Markov property for the whole future σ-algebra** (the only open input of
@@ -1437,10 +1568,10 @@ extension of that to the σ-algebra they generate.
    `Y' g(X_{s'})` into a finite linear combination of products over `S \ {max S}` (merge the
    level set into `B_{s'}`), and pass to the limit through the `L¹`-contractivity of
    `condExp`.
-2. *π-system.* Those products form a π-system generating `sigmaGE X t`.
+2. *π-system.* Those products form a π-system generating `sigmaGE' X t`.
 3. *Dynkin.* The `B`'s satisfying the conclusion form a λ-system (`condExp` is linear,
    monotone and continuous along monotone limits), so `MeasurableSpace.induction_on_inter`
-   upgrades step 1 to all of `sigmaGE X t`.
+   upgrades step 1 to all of `sigmaGE' X t`.
 
 This is the classical statement that the past and the future of a Markov chain are
 conditionally independent given the present (Bradley, *Introduction to Strong Mixing
@@ -1448,19 +1579,20 @@ Conditions*, ch. 7); it is genuinely the analytic content of the two-marginal re
 is left as a single named debt. Everything else in
 `alphaCoeff_eq_two_marginal_debt` is proved from it. -/
 private lemma condExp_sigmaGE_indicator_brick [IsProbabilityMeasure μ]
-    {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
-    {κ : ProbabilityTheory.Kernel ℝ ℝ} [ProbabilityTheory.IsMarkovKernel κ]
-    (hmarkov : IsMarkovOf X κ μ) (t : ℤ) {B : Set Ω} (hB : MeasurableSet[sigmaGE X t] B) :
+    {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
+    {κ : ProbabilityTheory.Kernel E E} [ProbabilityTheory.IsMarkovKernel κ]
+    (hmarkov : IsMarkovOf X κ μ) (t : ℤ) {B : Set Ω} (hB : MeasurableSet[sigmaGE' X t] B) :
     ∃ p : Ω → ℝ, StronglyMeasurable[MeasurableSpace.comap (X t) inferInstance] p ∧
-      μ[B.indicator (fun _ => (1:ℝ)) | sigmaLE X t] =ᵐ[μ] p :=
+      μ[B.indicator (fun _ => (1:ℝ)) | sigmaLE' X t] =ᵐ[μ] p :=
   condExp_sigmaGE_versionable hmeas hmarkov t hB
 
-/-- **DEBT (Bradley Thms 4.1–4.2; FY §2.6.1(vi))**: for a strictly stationary Markov
+/-- **Bradley Thms 4.1–4.2; FY §2.6.1(vi)**, general state space: for a Markov
 process the α-coefficient collapses to the two-marginal coefficient of `(X_0, X_n)`:
 `α(σ{X_s : s ≤ 0}, σ{X_s : s ≥ n}) = α(σ(X_0), σ(X_n))`. (Same statement holds for
 β, ρ, φ, ψ; α is the consumed one.)
 
-**Status (2026-08-09, wave 4).** PROVED, and axiom-clean: its single input
+**Status (2026-08-09, wave 5).** PROVED, and axiom-clean; generalized from `Kernel ℝ ℝ`
+to `Kernel E E` (strict stationarity was never used, and is dropped). Its single input
 `condExp_sigmaGE_indicator_brick` (the Markov property for the whole future σ-algebra) is
 itself now proved (see the module docstring).
 The reduction is:
@@ -1475,29 +1607,28 @@ The reduction is:
   property are needed: the optimisation lemma is stated for an arbitrary `[0,1]`-valued
   test function, which covers both the indicator `1_A` and the conditional probability
   `w`. -/
-theorem alphaCoeff_eq_two_marginal_debt [IsProbabilityMeasure μ]
-    {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
-    (hstat : IsStrictlyStationary X μ)
-    {κ : ProbabilityTheory.Kernel ℝ ℝ} [ProbabilityTheory.IsMarkovKernel κ]
+theorem alphaMixCoeff_two_marginal_of_markov [IsProbabilityMeasure μ]
+    {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
+    {κ : ProbabilityTheory.Kernel E E} [ProbabilityTheory.IsMarkovKernel κ]
     (hmarkov : IsMarkovOf X κ μ) (n : ℕ) :
-    alphaCoeff X μ n
+    alphaMixCoeff μ (sigmaLE' X 0) (sigmaGE' X (n : ℤ))
       = alphaMixCoeff μ (MeasurableSpace.comap (X 0) inferInstance)
           (MeasurableSpace.comap (X n) inferInstance) := by
-  have hLEΩ : ∀ t : ℤ, sigmaLE X t ≤ (inferInstance : MeasurableSpace Ω) :=
+  have hLEΩ : ∀ t : ℤ, sigmaLE' X t ≤ (inferInstance : MeasurableSpace Ω) :=
     fun t => iSup₂_le fun s _ => (hmeas s).comap_le
-  have hGEΩ : ∀ t : ℤ, sigmaGE X t ≤ (inferInstance : MeasurableSpace Ω) :=
+  have hGEΩ : ∀ t : ℤ, sigmaGE' X t ≤ (inferInstance : MeasurableSpace Ω) :=
     fun t => iSup₂_le fun s _ => (hmeas s).comap_le
-  have hm0le : MeasurableSpace.comap (X 0) inferInstance ≤ sigmaLE X 0 :=
+  have hm0le : MeasurableSpace.comap (X 0) inferInstance ≤ sigmaLE' X 0 :=
     le_iSup₂_of_le (0 : ℤ) (Set.mem_Iic.mpr le_rfl) le_rfl
-  have hm0leN : MeasurableSpace.comap (X 0) inferInstance ≤ sigmaLE X (n : ℤ) :=
+  have hm0leN : MeasurableSpace.comap (X 0) inferInstance ≤ sigmaLE' X (n : ℤ) :=
     le_iSup₂_of_le (0 : ℤ) (Set.mem_Iic.mpr (Int.natCast_nonneg n)) le_rfl
-  have hmnle : MeasurableSpace.comap (X (n : ℤ)) inferInstance ≤ sigmaGE X (n : ℤ) :=
+  have hmnle : MeasurableSpace.comap (X (n : ℤ)) inferInstance ≤ sigmaGE' X (n : ℤ) :=
     le_iSup₂_of_le (n : ℤ) (Set.mem_Ici.mpr le_rfl) le_rfl
   have hmnΩ : MeasurableSpace.comap (X (n : ℤ)) inferInstance
       ≤ (inferInstance : MeasurableSpace Ω) := (hmeas _).comap_le
   have hm0Ω : MeasurableSpace.comap (X 0) inferInstance
       ≤ (inferInstance : MeasurableSpace Ω) := (hmeas _).comap_le
-  have hGEmono : sigmaGE X (n : ℤ) ≤ sigmaGE X 0 :=
+  have hGEmono : sigmaGE' X (n : ℤ) ≤ sigmaGE' X 0 :=
     iSup₂_le fun s hs => le_iSup₂_of_le s
       (Set.mem_Ici.mpr (le_trans (Int.natCast_nonneg n) (Set.mem_Ici.mp hs))) le_rfl
   refine le_antisymm ?_ (alphaMixCoeff_mono' (mΩ := inferInstance) hm0le hmnle)
@@ -1511,10 +1642,10 @@ theorem alphaCoeff_eq_two_marginal_debt [IsProbabilityMeasure μ]
   -- Step 1: replace `A` by an event of `σ(X 0)`
   obtain ⟨p₀, hp₀m, hp₀e⟩ :=
     condExp_sigmaGE_indicator_brick hmeas hmarkov 0 (hGEmono _ hB)
-  have hcond0 : μ[hB'|sigmaLE X 0] =ᵐ[μ] fun ω => p₀ ω - (μ B).toReal := by
+  have hcond0 : μ[hB'|sigmaLE' X 0] =ᵐ[μ] fun ω => p₀ ω - (μ B).toReal := by
     have h1 := condExp_sub (μ := μ) ((integrable_const (1:ℝ)).indicator hBm)
-      (integrable_const ((μ B).toReal)) (sigmaLE X 0)
-    have h2 : μ[fun _ : Ω => (μ B).toReal|sigmaLE X 0] = fun _ => (μ B).toReal :=
+      (integrable_const ((μ B).toReal)) (sigmaLE' X 0)
+    have h2 : μ[fun _ : Ω => (μ B).toReal|sigmaLE' X 0] = fun _ => (μ B).toReal :=
       condExp_const (hLEΩ 0) _
     filter_upwards [h1, hp₀e] with ω e1 e2
     simp only [Pi.sub_apply] at e1
@@ -1540,24 +1671,25 @@ theorem alphaCoeff_eq_two_marginal_debt [IsProbabilityMeasure μ]
   set hA'' : Ω → ℝ := fun ω => A'.indicator (fun _ => (1:ℝ)) ω - (μ A').toReal with hA''def
   have hA''int : Integrable hA'' μ := integrable_centred_indicator hA'Ω
   have hA''0 : ∫ ω, hA'' ω ∂μ = 0 := integral_centred_indicator hA'Ω
-  have hA''sm : StronglyMeasurable[sigmaLE X (n : ℤ)] hA'' :=
+  have hA''sm : StronglyMeasurable[sigmaLE' X (n : ℤ)] hA'' :=
     (stronglyMeasurable_const.indicator (hm0leN _ hA'm₀)).sub stronglyMeasurable_const
   obtain ⟨pn, hpnm, hpne⟩ := condExp_sigmaGE_indicator_brick hmeas hmarkov (n : ℤ) hB
   -- `w := μ[1_B | 𝓕_{≤n}]` lies in `[0,1]` a.e.
-  have hw0 : (0 : Ω → ℝ) ≤ᵐ[μ] μ[B.indicator (fun _ => (1:ℝ))|sigmaLE X (n : ℤ)] :=
+  have hw0 : (0 : Ω → ℝ) ≤ᵐ[μ] μ[B.indicator (fun _ => (1:ℝ))|sigmaLE' X (n : ℤ)] :=
     condExp_nonneg (Filter.Eventually.of_forall fun ω => indicator_one_nonneg B ω)
-  have hw1 : μ[B.indicator (fun _ => (1:ℝ))|sigmaLE X (n : ℤ)] ≤ᵐ[μ] fun _ => (1:ℝ) := by
-    have := condExp_mono (m := sigmaLE X (n : ℤ))
+  have hw1 : μ[B.indicator (fun _ => (1:ℝ))|sigmaLE' X (n : ℤ)] ≤ᵐ[μ] fun _ => (1:ℝ) := by
+    have := condExp_mono (m := sigmaLE' X (n : ℤ))
       ((integrable_const (μ := μ) (1:ℝ)).indicator hBm) (integrable_const (μ := μ) (1:ℝ))
       (Filter.Eventually.of_forall fun ω => indicator_one_le_one B ω)
     rw [condExp_const (μ := μ) (hLEΩ (n : ℤ))] at this
     exact this
   set Y : Ω → ℝ := fun ω => max 0 (min 1 (pn ω)) with hYdef
   have hYsm : StronglyMeasurable[MeasurableSpace.comap (X (n : ℤ)) inferInstance] Y :=
-    (Measurable.max measurable_const (Measurable.min measurable_const hpnm.measurable)).stronglyMeasurable
+    (Measurable.max measurable_const
+      (Measurable.min measurable_const hpnm.measurable)).stronglyMeasurable
   have hY0 : ∀ ω, 0 ≤ Y ω := fun ω => le_max_left _ _
   have hY1 : ∀ ω, Y ω ≤ 1 := fun ω => max_le zero_le_one (min_le_left _ _)
-  have hYw : Y =ᵐ[μ] μ[B.indicator (fun _ => (1:ℝ))|sigmaLE X (n : ℤ)] := by
+  have hYw : Y =ᵐ[μ] μ[B.indicator (fun _ => (1:ℝ))|sigmaLE' X (n : ℤ)] := by
     filter_upwards [hw0, hw1, hpne] with ω e0 e1 e2
     have e0' : (0:ℝ) ≤ pn ω := by rw [← e2]; exact e0
     have e1' : pn ω ≤ 1 := by rw [← e2]; exact e1
@@ -1567,16 +1699,16 @@ theorem alphaCoeff_eq_two_marginal_debt [IsProbabilityMeasure μ]
   -- transfer the covariance onto `Y`
   have hkey : (μ (A' ∩ B)).toReal - (μ A').toReal * (μ B).toReal = ∫ ω, Y ω * hA'' ω ∂μ := by
     have e1 : ∫ ω, hA'' ω * B.indicator (fun _ => (1:ℝ)) ω ∂μ
-        = ∫ ω, hA'' ω * (μ[B.indicator (fun _ => (1:ℝ))|sigmaLE X (n : ℤ)]) ω ∂μ := by
+        = ∫ ω, hA'' ω * (μ[B.indicator (fun _ => (1:ℝ))|sigmaLE' X (n : ℤ)]) ω ∂μ := by
       have hpull := condExp_stronglyMeasurable_mul_of_bound₀ (hLEΩ (n : ℤ))
         hA''sm.aestronglyMeasurable ((integrable_const (μ := μ) (1:ℝ)).indicator hBm) 1
         (Filter.Eventually.of_forall fun ω => norm_centred_indicator_le_one A' ω)
       calc ∫ ω, hA'' ω * B.indicator (fun _ => (1:ℝ)) ω ∂μ
-          = ∫ ω, (μ[hA'' * B.indicator (fun _ => (1:ℝ))|sigmaLE X (n : ℤ)]) ω ∂μ :=
+          = ∫ ω, (μ[hA'' * B.indicator (fun _ => (1:ℝ))|sigmaLE' X (n : ℤ)]) ω ∂μ :=
             (integral_condExp (hLEΩ (n : ℤ))).symm
-        _ = ∫ ω, hA'' ω * (μ[B.indicator (fun _ => (1:ℝ))|sigmaLE X (n : ℤ)]) ω ∂μ :=
+        _ = ∫ ω, hA'' ω * (μ[B.indicator (fun _ => (1:ℝ))|sigmaLE' X (n : ℤ)]) ω ∂μ :=
             integral_congr_ae (by filter_upwards [hpull] with ω hω using hω)
-    have e2 : ∫ ω, hA'' ω * (μ[B.indicator (fun _ => (1:ℝ))|sigmaLE X (n : ℤ)]) ω ∂μ
+    have e2 : ∫ ω, hA'' ω * (μ[B.indicator (fun _ => (1:ℝ))|sigmaLE' X (n : ℤ)]) ω ∂μ
         = ∫ ω, Y ω * hA'' ω ∂μ :=
       integral_congr_ae (by filter_upwards [hYw] with ω hω using by rw [hω]; ring)
     rw [← e2, ← e1]
@@ -1603,5 +1735,251 @@ theorem alphaCoeff_eq_two_marginal_debt [IsProbabilityMeasure μ]
   rw [abs_le] at this
   rw [Set.inter_comm B' A', mul_comm]
   exact this.2
+
+
+/-- **DEBT (Bradley Thms 4.1–4.2; FY §2.6.1(vi))**, scalar form: for a strictly stationary
+Markov process the α-coefficient collapses to the two-marginal coefficient of `(X_0, X_n)`.
+Specialisation of `alphaMixCoeff_two_marginal_of_markov` (which needs neither `ℝ` nor
+stationarity); `hstat` is kept because it is part of the frozen FY statement. -/
+theorem alphaCoeff_eq_two_marginal_debt [IsProbabilityMeasure μ]
+    {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
+    (hstat : IsStrictlyStationary X μ)
+    {κ : ProbabilityTheory.Kernel ℝ ℝ} [ProbabilityTheory.IsMarkovKernel κ]
+    (hmarkov : IsMarkovOf X κ μ) (n : ℕ) :
+    alphaCoeff X μ n
+      = alphaMixCoeff μ (MeasurableSpace.comap (X 0) inferInstance)
+          (MeasurableSpace.comap (X n) inferInstance) :=
+  alphaMixCoeff_two_marginal_of_markov hmeas hmarkov n
+
+/-! ### The α-envelope and the process-vs-state comparison (wave 5)
+
+Two additions the model debts of `Mixing/Relations.lean` consume, and which do **not**
+depend on the open Davydov identity:
+
+* `alphaMixCoeff_two_marginal_le_of_envelope` — the *inequality* half of (2.58) at the α
+  level. Only `IsMarkovOf` at one time and a change of variables along `X_k` are used; no
+  finite-partition formula, and in particular no measurable Hahn selection (the ingredient
+  that keeps `betaMixCoeff_two_marginal_eq_integral_tvDist_brick` open). This is why the
+  α-route to the model statements is available while the β-route is not.
+* `alphaMixCoeff_le_of_measurable_state` / `alphaCoeff_le_of_state_envelope` — the
+  process-vs-state comparison. If each observed `Y_s` is a measurable function of the state
+  at time `s + d` (`d = 1` in the models: `Y_s` is recovered from the *next* state, which
+  records the fresh innovation), then `α_Y(n) ≤ α_V(n − d)`. Composed with the anchored
+  two-marginal reduction and the envelope this reads
+  `α_Y(n) ≤ (∫ A dF) ρ^{n−1}` — FY §2.6.1(v)/(x)'s conclusion, over the two model-side
+  inputs "the state is a Markov chain with kernel `κ`" and "`κ` has a geometric TV
+  envelope". -/
+
+/-- Two probability measures differ on a set by at most their total-variation distance. -/
+private lemma abs_toReal_sub_le_tvDist {P Q : Measure E} [IsProbabilityMeasure P]
+    [IsProbabilityMeasure Q] {W : Set E} (hW : MeasurableSet W) :
+    |(P W).toReal - (Q W).toReal| ≤ (StatLean.Minimaxity.tvDist P Q).toReal := by
+  have hne : StatLean.Minimaxity.tvDist P Q ≠ ⊤ :=
+    ne_top_of_le_ne_top ENNReal.one_ne_top (StatLean.Minimaxity.tvDist_le_one P Q)
+  have hne' : StatLean.Minimaxity.tvDist Q P ≠ ⊤ :=
+    ne_top_of_le_ne_top ENNReal.one_ne_top (StatLean.Minimaxity.tvDist_le_one Q P)
+  have key : ∀ (P' Q' : Measure E), P' W - Q' W ≤ StatLean.Minimaxity.tvDist P' Q' := by
+    intro P' Q'
+    exact le_iSup₂ (f := fun (s : Set E) (_ : MeasurableSet s) => P' s - Q' s) W hW
+  rcases le_total (Q W) (P W) with h | h
+  · have h1 : (P W).toReal - (Q W).toReal = (P W - Q W).toReal :=
+      (ENNReal.toReal_sub_of_le h (measure_ne_top _ _)).symm
+    have h2 : (P W - Q W).toReal ≤ (StatLean.Minimaxity.tvDist P Q).toReal :=
+      ENNReal.toReal_mono hne (key P Q)
+    rw [abs_of_nonneg (by rw [h1]; exact ENNReal.toReal_nonneg), h1]
+    exact h2
+  · have h1 : (Q W).toReal - (P W).toReal = (Q W - P W).toReal :=
+      (ENNReal.toReal_sub_of_le h (measure_ne_top _ _)).symm
+    have h2 : (Q W - P W).toReal ≤ (StatLean.Minimaxity.tvDist Q P).toReal :=
+      ENNReal.toReal_mono hne' (key Q P)
+    rw [StatLean.Minimaxity.tvDist_comm] at h2
+    rw [abs_sub_comm, abs_of_nonneg (by rw [h1]; exact ENNReal.toReal_nonneg), h1]
+    exact h2
+
+
+private theorem markovPow {S : Type*} [MeasurableSpace S] (κ : Kernel S S)
+    [IsMarkovKernel κ] : ∀ n : ℕ, IsMarkovKernel (κ ^ n)
+  | 0 => by rw [pow_zero]; exact (inferInstance : IsMarkovKernel (Kernel.id : Kernel S S))
+  | n + 1 => by
+      haveI := isMarkovKernel_pow' κ n
+      rw [pow_succ]
+      exact Kernel.IsMarkovKernel.comp (κ ^ n) κ
+
+theorem alphaMixCoeff_two_marginal_le_of_envelope [IsProbabilityMeasure μ]
+    {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
+    (hmarg : ∀ s t : ℤ, μ.map (X s) = μ.map (X t))
+    {κ : Kernel E E} [IsMarkovKernel κ] (hmarkov : IsMarkovOf X κ μ)
+    {A : E → ℝ} (hA0 : ∀ x, 0 ≤ A x)
+    (hAint : Integrable A (μ.map (X 0)))
+    {ρ : ℝ} (hρ0 : 0 ≤ ρ)
+    (henv : ∀ (x : E) (m : ℕ),
+      StatLean.Minimaxity.tvDist ((κ ^ m) x) (μ.map (X 0))
+        ≤ ENNReal.ofReal (A x * ρ ^ m))
+    (k : ℤ) (n : ℕ) :
+    alphaMixCoeff μ (MeasurableSpace.comap (X k) inferInstance)
+        (MeasurableSpace.comap (X (k + n)) inferInstance)
+      ≤ (∫ x, A x ∂(μ.map (X 0))) * ρ ^ n := by
+  classical
+  haveI hFprob : IsProbabilityMeasure (μ.map (X 0)) :=
+    Measure.isProbabilityMeasure_map (hmeas 0).aemeasurable
+  haveI := isMarkovKernel_pow' κ n
+  have hTot0 : (0:ℝ) ≤ (∫ x, A x ∂(μ.map (X 0))) * ρ ^ n :=
+    mul_nonneg (integral_nonneg hA0) (pow_nonneg hρ0 n)
+  have hAρ : Integrable (fun x => A x * ρ ^ n) (μ.map (X 0)) := hAint.mul_const _
+  refine Real.sSup_le ?_ hTot0
+  rintro r ⟨A0, B0, hA0m, hB0m, rfl⟩
+  obtain ⟨U, hU, rfl⟩ := hA0m
+  obtain ⟨W, hW, rfl⟩ := hB0m
+  -- the kernel evaluation, as a bounded measurable function of the state
+  have hgm : Measurable fun x : E => (((κ ^ n) x) W).toReal :=
+    (((κ ^ n).measurable_coe hW)).ennreal_toReal
+  have hg1 : ∀ x : E, (((κ ^ n) x) W).toReal ≤ 1 := fun x => by
+    simpa using ENNReal.toReal_mono (measure_ne_top ((κ ^ n) x) Set.univ)
+      (measure_mono (Set.subset_univ W))
+  -- the two marginals
+  have hmuA : μ (X k ⁻¹' U) = (μ.map (X 0)) U := by
+    rw [← Measure.map_apply (hmeas k) hU, hmarg k 0]
+  have hmuB : μ (X (k + n) ⁻¹' W) = (μ.map (X 0)) W := by
+    rw [← Measure.map_apply (hmeas _) hW, hmarg (k + (n:ℤ)) 0]
+  -- the joint, via the Markov property at time `k`
+  have hkle : MeasurableSpace.comap (X k) inferInstance ≤ sigmaLE' X k :=
+    le_iSup₂_of_le k (Set.mem_Iic.mpr le_rfl) le_rfl
+  have hm : sigmaLE' X k ≤ (inferInstance : MeasurableSpace Ω) :=
+    iSup₂_le fun s _ => (hmeas s).comap_le
+  have hAmk : MeasurableSet[sigmaLE' X k] (X k ⁻¹' U) := hkle _ ⟨U, hU, rfl⟩
+  have hAΩ : MeasurableSet (X k ⁻¹' U) := (hmeas k) hU
+  have hBΩ : MeasurableSet (X (k + n) ⁻¹' W) := (hmeas _) hW
+  have hfe : (fun ω => W.indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω))
+      = (X (k + (n:ℤ)) ⁻¹' W).indicator (fun _ => (1:ℝ)) := by
+    funext ω
+    by_cases hy : X (k + (n:ℤ)) ω ∈ W <;>
+      simp [Set.indicator_of_mem, Set.indicator_of_notMem, hy, Set.mem_preimage]
+  have hint : Integrable (fun ω => W.indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω)) μ := by
+    rw [hfe]; exact (integrable_const (1:ℝ)).indicator hBΩ
+  have hjoint : (μ (X k ⁻¹' U ∩ X (k + (n:ℤ)) ⁻¹' W)).toReal
+      = ∫ x in U, (((κ ^ n) x) W).toReal ∂(μ.map (X 0)) := by
+    have e1 : ∫ ω in X k ⁻¹' U,
+        (μ[fun ω => W.indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω) | sigmaLE' X k]) ω ∂μ
+        = ∫ ω in X k ⁻¹' U, W.indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω) ∂μ :=
+      setIntegral_condExp hm hint hAmk
+    have e2 : ∫ ω in X k ⁻¹' U,
+        (μ[fun ω => W.indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω) | sigmaLE' X k]) ω ∂μ
+        = ∫ ω in X k ⁻¹' U, (((κ ^ n) (X k ω)) W).toReal ∂μ :=
+      setIntegral_congr_ae hAΩ
+        (by filter_upwards [hmarkov k n W hW] with ω hω using fun _ => hω)
+    have e3 : ∫ ω in X k ⁻¹' U, W.indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω) ∂μ
+        = (μ (X k ⁻¹' U ∩ X (k + (n:ℤ)) ⁻¹' W)).toReal := by
+      rw [hfe, integral_indicator_const (1:ℝ) hBΩ]
+      simp [Measure.real, Measure.restrict_apply hBΩ, Set.inter_comm]
+    have e4 : ∫ x in U, (((κ ^ n) x) W).toReal ∂(μ.map (X k))
+        = ∫ ω in X k ⁻¹' U, (((κ ^ n) (X k ω)) W).toReal ∂μ :=
+      setIntegral_map hU hgm.aestronglyMeasurable (hmeas k).aemeasurable
+    rw [← e3, ← e1, e2, ← e4, hmarg k 0]
+  -- the covariance as a set integral of the centred kernel evaluation
+  have hcov : (μ (X k ⁻¹' U ∩ X (k + (n:ℤ)) ⁻¹' W)).toReal
+        - (μ (X k ⁻¹' U)).toReal * (μ (X (k + (n:ℤ)) ⁻¹' W)).toReal
+      = ∫ x in U, ((((κ ^ n) x) W).toReal - ((μ.map (X 0)) W).toReal) ∂(μ.map (X 0)) := by
+    have hgint : IntegrableOn (fun x : E => (((κ ^ n) x) W).toReal) U (μ.map (X 0)) := by
+      refine Integrable.mono (integrable_const (1:ℝ)) hgm.aestronglyMeasurable.restrict
+        (Filter.Eventually.of_forall fun x => ?_)
+      rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg zero_le_one,
+        abs_of_nonneg ENNReal.toReal_nonneg]
+      exact hg1 x
+    rw [integral_sub hgint (integrable_const ((μ.map (X 0)) W).toReal).integrableOn,
+      hjoint, hmuA, hmuB, setIntegral_const]
+    simp [Measure.real]
+  rw [hcov]
+  -- and the envelope
+  have hpt : ∀ x ∈ U, |(((κ ^ n) x) W).toReal - ((μ.map (X 0)) W).toReal| ≤ A x * ρ ^ n := by
+    intro x _
+    refine (abs_toReal_sub_le_tvDist (P := (κ ^ n) x) (Q := μ.map (X 0)) hW).trans ?_
+    have h2 := ENNReal.toReal_mono ENNReal.ofReal_ne_top (henv x n)
+    rwa [ENNReal.toReal_ofReal (mul_nonneg (hA0 x) (pow_nonneg hρ0 n))] at h2
+  have habsm : Measurable fun x : E =>
+      |(((κ ^ n) x) W).toReal - ((μ.map (X 0)) W).toReal| := by
+    have h := hgm.sub (measurable_const (a := ((μ.map (X 0)) W).toReal))
+    exact continuous_abs.measurable.comp h
+  have habsi : IntegrableOn
+      (fun x : E => |(((κ ^ n) x) W).toReal - ((μ.map (X 0)) W).toReal|) U (μ.map (X 0)) := by
+    refine Integrable.mono (integrable_const (2:ℝ)) habsm.aestronglyMeasurable.restrict
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_abs,
+      abs_of_nonneg (by norm_num : (0:ℝ) ≤ 2)]
+    have h1 := hg1 x
+    have h2 : ((μ.map (X 0)) W).toReal ≤ 1 := by
+      simpa using ENNReal.toReal_mono (measure_ne_top (μ.map (X 0)) Set.univ)
+        (measure_mono (Set.subset_univ W))
+    have h3 : (0:ℝ) ≤ (((κ ^ n) x) W).toReal := ENNReal.toReal_nonneg
+    have h4 : (0:ℝ) ≤ ((μ.map (X 0)) W).toReal := ENNReal.toReal_nonneg
+    rw [abs_le]; constructor <;> linarith
+  calc |∫ x in U, ((((κ ^ n) x) W).toReal - ((μ.map (X 0)) W).toReal) ∂(μ.map (X 0))|
+      ≤ ∫ x in U, |(((κ ^ n) x) W).toReal - ((μ.map (X 0)) W).toReal| ∂(μ.map (X 0)) :=
+        abs_integral_le_integral_abs
+    _ ≤ ∫ x in U, A x * ρ ^ n ∂(μ.map (X 0)) :=
+        setIntegral_mono_on habsi hAρ.integrableOn hU hpt
+    _ ≤ ∫ x, A x * ρ ^ n ∂(μ.map (X 0)) :=
+        setIntegral_le_integral hAρ
+          (Filter.Eventually.of_forall fun x => mul_nonneg (hA0 x) (pow_nonneg hρ0 n))
+    _ = (∫ x, A x ∂(μ.map (X 0))) * ρ ^ n := integral_mul_const _ _
+
+
+
+lemma IsMarkovOf.shiftBy {X : ℤ → Ω → E} {κ : Kernel E E} (h : IsMarkovOf X κ μ) (k : ℤ) :
+    IsMarkovOf (fun s => X (s + k)) κ μ := by
+  intro t n B hB
+  have h1 := h (t + k) n B hB
+  have e : t + k + (n : ℤ) = t + (n : ℤ) + k := by ring
+  rw [e] at h1
+  rw [sigmaLE'_shift]
+  exact h1
+
+theorem alphaMixCoeff_two_marginal_of_markov_anchor [IsProbabilityMeasure μ]
+    {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
+    {κ : Kernel E E} [IsMarkovKernel κ] (hmarkov : IsMarkovOf X κ μ) (k : ℤ) (n : ℕ) :
+    alphaMixCoeff μ (sigmaLE' X k) (sigmaGE' X (k + n))
+      = alphaMixCoeff μ (MeasurableSpace.comap (X k) inferInstance)
+          (MeasurableSpace.comap (X (k + n)) inferInstance) := by
+  have h := alphaMixCoeff_two_marginal_of_markov (X := fun s => X (s + k))
+    (fun t => hmeas _) (hmarkov.shiftBy k) n
+  rw [sigmaLE'_shift, sigmaGE'_shift] at h
+  simp only [zero_add] at h
+  rw [show k + (n : ℤ) = (n : ℤ) + k from add_comm _ _]
+  exact h
+
+theorem alphaMixCoeff_le_of_measurable_state [IsProbabilityMeasure μ]
+    {Y : ℤ → Ω → ℝ} {V : ℤ → Ω → E} {d : ℤ}
+    (hYV : ∀ s : ℤ, Measurable[MeasurableSpace.comap (V (s + d)) inferInstance] (Y s))
+    {n m : ℤ} (hnm : m ≤ n + d) :
+    alphaMixCoeff μ (sigmaLE Y 0) (sigmaGE Y n)
+      ≤ alphaMixCoeff μ (sigmaLE' V d) (sigmaGE' V m) := by
+  refine alphaMixCoeff_mono' (mΩ := (inferInstance : MeasurableSpace Ω)) ?_ ?_
+  · exact iSup₂_le fun s hs => (hYV s).comap_le.trans
+      (le_iSup₂_of_le (s + d) (Set.mem_Iic.mpr (by have := Set.mem_Iic.mp hs; omega)) le_rfl)
+  · exact iSup₂_le fun s hs => (hYV s).comap_le.trans
+      (le_iSup₂_of_le (s + d) (Set.mem_Ici.mpr (by have := Set.mem_Ici.mp hs; omega)) le_rfl)
+
+theorem alphaCoeff_le_of_state_envelope [IsProbabilityMeasure μ]
+    {Y : ℤ → Ω → ℝ} {V : ℤ → Ω → E} (hV : ∀ t, Measurable (V t))
+    (hYV : ∀ s : ℤ, Measurable[MeasurableSpace.comap (V (s + 1)) inferInstance] (Y s))
+    (hmarg : ∀ s t : ℤ, μ.map (V s) = μ.map (V t))
+    {κ : Kernel E E} [IsMarkovKernel κ] (hmarkov : IsMarkovOf V κ μ)
+    {A : E → ℝ} (hA0 : ∀ x, 0 ≤ A x) (hAint : Integrable A (μ.map (V 0)))
+    {ρ : ℝ} (hρ0 : 0 ≤ ρ)
+    (henv : ∀ (x : E) (m : ℕ),
+      StatLean.Minimaxity.tvDist ((κ ^ m) x) (μ.map (V 0)) ≤ ENNReal.ofReal (A x * ρ ^ m))
+    {n : ℕ} (hn : 1 ≤ n) :
+    alphaCoeff Y μ n ≤ (∫ x, A x ∂(μ.map (V 0))) * ρ ^ (n - 1) := by
+  have hcast : (1 : ℤ) + ((n - 1 : ℕ) : ℤ) = (n : ℤ) := by omega
+  have hstep1 : alphaCoeff Y μ n
+      ≤ alphaMixCoeff μ (sigmaLE' V 1) (sigmaGE' V (n : ℤ)) :=
+    alphaMixCoeff_le_of_measurable_state hYV (by omega)
+  have hstep2 := alphaMixCoeff_two_marginal_of_markov_anchor hV hmarkov 1 (n - 1)
+  rw [hcast] at hstep2
+  have hstep3 :=
+    alphaMixCoeff_two_marginal_le_of_envelope hV hmarg hmarkov hA0 hAint hρ0 henv 1 (n - 1)
+  rw [hcast] at hstep3
+  exact hstep1.trans (hstep2.le.trans hstep3)
+
+
 
 end StatLean.TimeSeries
