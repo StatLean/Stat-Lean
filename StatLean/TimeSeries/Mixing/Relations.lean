@@ -644,13 +644,460 @@ theorem alphaMixCoeff_le_quarter_mul_rhoMixCoeff {m₁ m₂ mΩ : MeasurableSpac
     have h1 : 0 ≤ |cov[f, g; μ]| / D := div_nonneg (abs_nonneg _) hD0
     nlinarith
 
+/-! #### The square-root relation `ρ ≤ 2√φ` (Ibragimov's covariance inequality)
+
+The engine is Ibragimov's `L²`-`L²` covariance inequality
+`|Cov(f, g)| ≤ 2 φ^{1/2} ‖f‖₂ ‖g‖₂`, proved here for finite-range (simple) `f`, `g` by a
+two-fold Cauchy–Schwarz against the row bound `Σ_j |P(A ∩ B_j) − P(A)P(B_j)| ≤ 2 P(A) φ`,
+and then transported to general `L²` functions by simple-function approximation and
+dominated convergence. -/
+
+
+private lemma toReal_inter_biUnion_finset {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] {ι : Type*} [DecidableEq ι] {B : ι → Set Ω}
+    (hB : ∀ j, MeasurableSet (B j)) (S : Finset ι)
+    (hdB : ∀ j ∈ S, ∀ j' ∈ S, j ≠ j' → Disjoint (B j) (B j'))
+    {T : Set Ω} (hT : MeasurableSet T) :
+    (μ (T ∩ ⋃ j ∈ S, B j)).toReal = ∑ j ∈ S, (μ (T ∩ B j)).toReal := by
+  have hset : T ∩ (⋃ j ∈ S, B j) = ⋃ j ∈ S, (T ∩ B j) := by
+    simp [Set.inter_iUnion]
+  rw [hset, measure_biUnion_finset
+      (fun j hj j' hj' hjj' =>
+        (hdB j hj j' hj' hjj').mono Set.inter_subset_right Set.inter_subset_right)
+      (fun j _ => hT.inter (hB j)),
+    ENNReal.toReal_sum (fun j _ => measure_ne_top μ _)]
+
+private lemma sum_toReal_inter_finset {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {ι : Type*} [DecidableEq ι] {T : Finset ι} {B : ι → Set Ω}
+    (hB : ∀ j, MeasurableSet (B j))
+    (hdB : ∀ j ∈ T, ∀ j' ∈ T, j ≠ j' → Disjoint (B j) (B j'))
+    (hcov : ∀ ω, ∃ j ∈ T, ω ∈ B j)
+    {S : Set Ω} (hS : MeasurableSet S) :
+    ∑ j ∈ T, (μ (S ∩ B j)).toReal = (μ S).toReal := by
+  have huniv : (⋃ j ∈ T, B j) = (Set.univ : Set Ω) := by
+    ext ω
+    simp only [Set.mem_iUnion, Set.mem_univ, iff_true, exists_prop]
+    exact hcov ω
+  rw [← toReal_inter_biUnion_finset hB T hdB hS, huniv, Set.inter_univ]
+
+private lemma phi_row_bound_finset {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ) {ι : Type*} [DecidableEq ι]
+    (T : Finset ι) (B : ι → Set Ω) (hB : ∀ j, MeasurableSet[m₂] (B j))
+    (hdB : ∀ j ∈ T, ∀ j' ∈ T, j ≠ j' → Disjoint (B j) (B j'))
+    {A : Set Ω} (hA : MeasurableSet[m₁] A) :
+    ∑ j ∈ T, |(μ (A ∩ B j)).toReal - (μ A).toReal * (μ (B j)).toReal|
+      ≤ 2 * ((μ A).toReal * phiMixCoeff μ m₁ m₂) := by
+  classical
+  have hBm : ∀ j, MeasurableSet (B j) := fun j => h₂ _ (hB j)
+  have hAm : MeasurableSet A := h₁ _ hA
+  set d : ι → ℝ := fun j =>
+    (μ (A ∩ B j)).toReal - (μ A).toReal * (μ (B j)).toReal with hd
+  have hgroup : ∀ S : Finset ι, S ⊆ T → ∑ j ∈ S, d j
+      = (μ (A ∩ ⋃ j ∈ S, B j)).toReal
+        - (μ A).toReal * (μ (⋃ j ∈ S, B j)).toReal := by
+    intro S hS
+    have hdS : ∀ j ∈ S, ∀ j' ∈ S, j ≠ j' → Disjoint (B j) (B j') :=
+      fun j hj j' hj' hne => hdB j (hS hj) j' (hS hj') hne
+    have h1 := toReal_inter_biUnion_finset (μ := μ) hBm S hdS hAm
+    have h2 := toReal_inter_biUnion_finset (μ := μ) hBm S hdS (MeasurableSet.univ (α := Ω))
+    simp only [Set.univ_inter] at h2
+    rw [h1, h2, Finset.mul_sum, ← Finset.sum_sub_distrib]
+  have habs : ∀ S : Finset ι, S ⊆ T → |∑ j ∈ S, d j|
+      ≤ (μ A).toReal * phiMixCoeff μ m₁ m₂ := by
+    intro S hS
+    rw [hgroup S hS]
+    have hUm : MeasurableSet[m₂] (⋃ j ∈ S, B j) :=
+      Finset.measurableSet_biUnion S (fun j _ => hB j)
+    exact abs_alpha_term_le_mul_phi hA hUm
+  set P : ι → Prop := fun j => 0 ≤ d j with hP
+  have hsplit : ∑ j ∈ T, |d j|
+      = (∑ j ∈ T.filter P, d j) + (-∑ j ∈ T.filter (fun j => ¬ P j), d j) := by
+    rw [← Finset.sum_filter_add_sum_filter_not T P (fun j => |d j|),
+      ← Finset.sum_neg_distrib]
+    congr 1
+    · exact Finset.sum_congr rfl fun j hj => abs_of_nonneg (Finset.mem_filter.1 hj).2
+    · exact Finset.sum_congr rfl fun j hj =>
+        abs_of_neg (lt_of_not_ge (Finset.mem_filter.1 hj).2)
+  rw [hsplit]
+  have e1 := (le_abs_self _).trans (habs (T.filter P) (Finset.filter_subset _ _))
+  have e2 := (neg_le_abs _).trans (habs (T.filter (fun j => ¬ P j)) (Finset.filter_subset _ _))
+  linarith
+
+private lemma cov_partition_arith {ι κ : Type*} (S : Finset ι) (T : Finset κ)
+    (a : ι → ℝ) (b : κ → ℝ) (P : ι → ℝ) (Q : κ → ℝ) (R : ι → κ → ℝ) (φ : ℝ)
+    (hφ : 0 ≤ φ) (hP : ∀ i, 0 ≤ P i) (hQ : ∀ j, 0 ≤ Q j) (hR : ∀ i j, 0 ≤ R i j)
+    (hrow : ∀ i ∈ S, ∑ j ∈ T, |R i j - P i * Q j| ≤ 2 * (P i * φ))
+    (hcolsum : ∀ j ∈ T, ∑ i ∈ S, R i j = Q j)
+    (htot : ∑ i ∈ S, P i = 1) :
+    |∑ i ∈ S, ∑ j ∈ T, a i * b j * R i j
+        - (∑ i ∈ S, a i * P i) * (∑ j ∈ T, b j * Q j)|
+      ≤ 2 * Real.sqrt φ * Real.sqrt (∑ i ∈ S, a i ^ 2 * P i)
+          * Real.sqrt (∑ j ∈ T, b j ^ 2 * Q j) := by
+  classical
+  have hWnn : ∀ i, (0:ℝ) ≤ (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) := fun i =>
+    Finset.sum_nonneg fun j _ => mul_nonneg (sq_nonneg _)
+      (by have h1 := hR i j; have h2 := mul_nonneg (hP i) (hQ j); linarith)
+  have hX : (0:ℝ) ≤ ∑ i ∈ S, a i ^ 2 * P i :=
+    Finset.sum_nonneg fun i _ => mul_nonneg (sq_nonneg _) (hP i)
+  have hY : (0:ℝ) ≤ ∑ j ∈ T, b j ^ 2 * Q j :=
+    Finset.sum_nonneg fun j _ => mul_nonneg (sq_nonneg _) (hQ j)
+  have hid : (∑ i ∈ S, ∑ j ∈ T, a i * b j * R i j
+        - (∑ i ∈ S, a i * P i) * (∑ j ∈ T, b j * Q j))
+      = ∑ i ∈ S, ∑ j ∈ T, a i * b j * (R i j - P i * Q j) := by
+    rw [Finset.sum_mul_sum, ← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun j _ => by ring
+  rw [hid]
+  have hstep1 : |∑ i ∈ S, ∑ j ∈ T, a i * b j * (R i j - P i * Q j)|
+      ≤ ∑ i ∈ S, |a i| * ∑ j ∈ T, |b j| * |R i j - P i * Q j| := by
+    refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => ?_)
+    rw [Finset.mul_sum]
+    refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun j _ => ?_)
+    rw [abs_mul, abs_mul, mul_assoc]
+  refine hstep1.trans ?_
+  have hrowCS : ∀ i ∈ S, ∑ j ∈ T, |b j| * |R i j - P i * Q j|
+      ≤ Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) * Real.sqrt (2 * (P i * φ)) := by
+    intro i hi
+    have hCS := Finset.sum_sq_le_sum_mul_sum_of_sq_eq_mul T
+      (r := fun j => |b j| * |R i j - P i * Q j|)
+      (f := fun j => b j ^ 2 * |R i j - P i * Q j|)
+      (g := fun j => |R i j - P i * Q j|)
+      (fun j _ => mul_nonneg (sq_nonneg _) (abs_nonneg _)) (fun j _ => abs_nonneg _)
+      (fun j _ => by rw [mul_pow, sq_abs (b j)]; ring)
+    have hnn : (0:ℝ) ≤ ∑ j ∈ T, |b j| * |R i j - P i * Q j| :=
+      Finset.sum_nonneg fun j _ => mul_nonneg (abs_nonneg _) (abs_nonneg _)
+    have h1 : ∑ j ∈ T, b j ^ 2 * |R i j - P i * Q j| ≤ (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) :=
+      Finset.sum_le_sum fun j _ => by
+        refine mul_le_mul_of_nonneg_left ?_ (sq_nonneg _)
+        rw [abs_le]
+        have h1 := hR i j
+        have h2 := mul_nonneg (hP i) (hQ j)
+        constructor <;> linarith
+    have h2 := hrow i hi
+    have hg0 : (0:ℝ) ≤ ∑ j ∈ T, |R i j - P i * Q j| :=
+      Finset.sum_nonneg fun j _ => abs_nonneg _
+    have hb : (∑ j ∈ T, |b j| * |R i j - P i * Q j|) ^ 2
+        ≤ (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) * (2 * (P i * φ)) :=
+      hCS.trans (mul_le_mul h1 h2 hg0 (hWnn i))
+    calc ∑ j ∈ T, |b j| * |R i j - P i * Q j|
+        = Real.sqrt ((∑ j ∈ T, |b j| * |R i j - P i * Q j|) ^ 2) := (Real.sqrt_sq hnn).symm
+      _ ≤ Real.sqrt ((∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) * (2 * (P i * φ))) := Real.sqrt_le_sqrt hb
+      _ = Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) * Real.sqrt (2 * (P i * φ)) := Real.sqrt_mul (hWnn i) _
+  have hstep2 : ∑ i ∈ S, |a i| * ∑ j ∈ T, |b j| * |R i j - P i * Q j|
+      ≤ ∑ i ∈ S, |a i| * (Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) * Real.sqrt (2 * (P i * φ))) :=
+    Finset.sum_le_sum fun i hi => mul_le_mul_of_nonneg_left (hrowCS i hi) (abs_nonneg _)
+  refine hstep2.trans ?_
+  have h2φ : (0:ℝ) ≤ 2 * φ := by linarith
+  have hfac : ∀ i ∈ S, |a i| * (Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) * Real.sqrt (2 * (P i * φ)))
+      = Real.sqrt (2 * φ) * (|a i| * Real.sqrt (P i) * Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))) := by
+    intro i _
+    have hsp : Real.sqrt (2 * (P i * φ)) = Real.sqrt (2 * φ) * Real.sqrt (P i) := by
+      rw [← Real.sqrt_mul h2φ (P i)]
+      congr 1
+      ring
+    rw [hsp]; ring
+  rw [Finset.sum_congr rfl hfac, ← Finset.mul_sum]
+  have hCS2 := Finset.sum_sq_le_sum_mul_sum_of_sq_eq_mul S
+    (r := fun i => |a i| * Real.sqrt (P i) * Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)))
+    (f := fun i => a i ^ 2 * P i)
+    (g := fun i => (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)))
+    (fun i _ => mul_nonneg (sq_nonneg _) (hP i)) (fun i _ => hWnn i)
+    (fun i _ => by
+      rw [mul_pow, mul_pow, sq_abs (a i), Real.sq_sqrt (hP i), Real.sq_sqrt (hWnn i)])
+  have hWsum : ∑ i ∈ S, (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) = 2 * ∑ j ∈ T, b j ^ 2 * Q j := by
+    have e1 : ∀ i ∈ S, (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))
+        = (∑ j ∈ T, b j ^ 2 * R i j) + P i * ∑ j ∈ T, b j ^ 2 * Q j := by
+      intro i _
+      rw [Finset.mul_sum, ← Finset.sum_add_distrib]
+      exact Finset.sum_congr rfl fun j _ => by ring
+    rw [Finset.sum_congr rfl e1, Finset.sum_add_distrib, ← Finset.sum_mul, htot, one_mul,
+      Finset.sum_comm]
+    have e2 : ∀ j ∈ T, ∑ i ∈ S, b j ^ 2 * R i j = b j ^ 2 * Q j := by
+      intro j hj
+      rw [← Finset.mul_sum, hcolsum j hj]
+    rw [Finset.sum_congr rfl e2]
+    ring
+  have hrnn : (0:ℝ) ≤ ∑ i ∈ S, |a i| * Real.sqrt (P i) * Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j)) :=
+    Finset.sum_nonneg fun i _ =>
+      mul_nonneg (mul_nonneg (abs_nonneg _) (Real.sqrt_nonneg _)) (Real.sqrt_nonneg _)
+  have hfin : ∑ i ∈ S, |a i| * Real.sqrt (P i) * Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))
+      ≤ Real.sqrt (∑ i ∈ S, a i ^ 2 * P i) * Real.sqrt (2 * ∑ j ∈ T, b j ^ 2 * Q j) := by
+    calc ∑ i ∈ S, |a i| * Real.sqrt (P i) * Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))
+        = Real.sqrt ((∑ i ∈ S, |a i| * Real.sqrt (P i) * Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))) ^ 2) :=
+          (Real.sqrt_sq hrnn).symm
+      _ ≤ Real.sqrt ((∑ i ∈ S, a i ^ 2 * P i) * ∑ i ∈ S, (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))) := Real.sqrt_le_sqrt hCS2
+      _ = Real.sqrt (∑ i ∈ S, a i ^ 2 * P i) * Real.sqrt (∑ i ∈ S, (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))) :=
+          Real.sqrt_mul hX _
+      _ = Real.sqrt (∑ i ∈ S, a i ^ 2 * P i) * Real.sqrt (2 * ∑ j ∈ T, b j ^ 2 * Q j) := by
+          rw [hWsum]
+  have hnum : Real.sqrt (2 * φ) * Real.sqrt (2 * ∑ j ∈ T, b j ^ 2 * Q j)
+      = 2 * Real.sqrt φ * Real.sqrt (∑ j ∈ T, b j ^ 2 * Q j) := by
+    rw [← Real.sqrt_mul h2φ]
+    have e : (2 * φ) * (2 * ∑ j ∈ T, b j ^ 2 * Q j)
+        = 2 ^ 2 * (φ * ∑ j ∈ T, b j ^ 2 * Q j) := by ring
+    rw [e, Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 2 ^ 2),
+      Real.sqrt_sq (by norm_num : (0:ℝ) ≤ 2), Real.sqrt_mul hφ]
+    ring
+  calc Real.sqrt (2 * φ) * ∑ i ∈ S, |a i| * Real.sqrt (P i) * Real.sqrt (∑ j ∈ T, b j ^ 2 * (R i j + P i * Q j))
+      ≤ Real.sqrt (2 * φ)
+          * (Real.sqrt (∑ i ∈ S, a i ^ 2 * P i) * Real.sqrt (2 * ∑ j ∈ T, b j ^ 2 * Q j)) :=
+        mul_le_mul_of_nonneg_left hfin (Real.sqrt_nonneg _)
+    _ = Real.sqrt (∑ i ∈ S, a i ^ 2 * P i)
+          * (Real.sqrt (2 * φ) * Real.sqrt (2 * ∑ j ∈ T, b j ^ 2 * Q j)) := by ring
+    _ = 2 * Real.sqrt φ * Real.sqrt (∑ i ∈ S, a i ^ 2 * P i)
+          * Real.sqrt (∑ j ∈ T, b j ^ 2 * Q j) := by rw [hnum]; ring
+
+
+private lemma finiteRange_pointwise {f : Ω → ℝ} (hfin : (Set.range f).Finite) (F : ℝ → ℝ) (ω : Ω) :
+    F (f ω) = ∑ y ∈ hfin.toFinset, (f ⁻¹' {y}).indicator (fun _ => F y) ω := by
+  classical
+  rw [Finset.sum_eq_single (f ω)]
+  · rw [Set.indicator_of_mem (by simp : ω ∈ f ⁻¹' {f ω})]
+  · intro y _ hne
+    refine Set.indicator_of_notMem ?_ _
+    simp only [Set.mem_preimage, Set.mem_singleton_iff]
+    exact fun h => hne h.symm
+  · intro h
+    exact absurd (hfin.mem_toFinset.mpr (Set.mem_range_self (f := f) ω)) h
+
+private lemma indicator_inter_mul_const {E₁ E₂ : Set Ω} (c₁ c₂ : ℝ) (ω : Ω) :
+    (E₁.indicator (fun _ => c₁) ω) * (E₂.indicator (fun _ => c₂) ω)
+      = (E₁ ∩ E₂).indicator (fun _ => c₁ * c₂) ω := by
+  by_cases h1 : ω ∈ E₁ <;> by_cases h2 : ω ∈ E₂ <;>
+    simp [Set.indicator_of_mem, Set.indicator_of_notMem, h1, h2]
+
+private lemma finiteRange_pointwise_mul {f g : Ω → ℝ} (hff : (Set.range f).Finite)
+    (hgf : (Set.range g).Finite) (F G : ℝ → ℝ) (ω : Ω) :
+    F (f ω) * G (g ω)
+      = ∑ y ∈ hff.toFinset, ∑ z ∈ hgf.toFinset,
+          ((f ⁻¹' {y}) ∩ (g ⁻¹' {z})).indicator (fun _ => F y * G z) ω := by
+  classical
+  rw [finiteRange_pointwise hff F ω, finiteRange_pointwise hgf G ω, Finset.sum_mul_sum]
+  exact Finset.sum_congr rfl fun y _ => Finset.sum_congr rfl fun z _ =>
+    indicator_inter_mul_const _ _ ω
+
+private lemma integral_finiteRange {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {f : Ω → ℝ} (hfin : (Set.range f).Finite) (hmeas : ∀ y : ℝ, MeasurableSet (f ⁻¹' {y}))
+    (F : ℝ → ℝ) :
+    ∫ ω, F (f ω) ∂μ = ∑ y ∈ hfin.toFinset, F y * (μ (f ⁻¹' {y})).toReal := by
+  classical
+  have hfun : (fun ω => F (f ω))
+      = fun ω => ∑ y ∈ hfin.toFinset, (f ⁻¹' {y}).indicator (fun _ => F y) ω :=
+    funext fun ω => finiteRange_pointwise hfin F ω
+  have hsum := integral_finset_sum (μ := μ) hfin.toFinset
+      (f := fun (y : ℝ) (ω : Ω) => (f ⁻¹' {y}).indicator (fun _ => F y) ω)
+      (fun y _ => (integrable_const (F y)).indicator (hmeas y))
+  rw [hfun, hsum]
+  refine Finset.sum_congr rfl fun y _ => ?_
+  rw [integral_indicator_const (F y) (hmeas y), smul_eq_mul, mul_comm]
+  rfl
+
+private lemma integral_finiteRange_mul {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbabilityMeasure μ]
+    {f g : Ω → ℝ} (hff : (Set.range f).Finite) (hgf : (Set.range g).Finite)
+    (hfm : ∀ y : ℝ, MeasurableSet (f ⁻¹' {y})) (hgm : ∀ z : ℝ, MeasurableSet (g ⁻¹' {z}))
+    (F G : ℝ → ℝ) :
+    ∫ ω, F (f ω) * G (g ω) ∂μ
+      = ∑ y ∈ hff.toFinset, ∑ z ∈ hgf.toFinset,
+          F y * G z * (μ ((f ⁻¹' {y}) ∩ (g ⁻¹' {z}))).toReal := by
+  classical
+  have hfun : (fun ω => F (f ω) * G (g ω))
+      = fun ω => ∑ y ∈ hff.toFinset, ∑ z ∈ hgf.toFinset,
+          ((f ⁻¹' {y}) ∩ (g ⁻¹' {z})).indicator (fun _ => F y * G z) ω :=
+    funext fun ω => finiteRange_pointwise_mul hff hgf F G ω
+  have hsum := integral_finset_sum (μ := μ) hff.toFinset
+      (f := fun (y : ℝ) (ω : Ω) => ∑ z ∈ hgf.toFinset,
+        ((f ⁻¹' {y}) ∩ (g ⁻¹' {z})).indicator (fun _ => F y * G z) ω)
+      (fun y _ => integrable_finset_sum _ (fun z _ =>
+        (integrable_const (F y * G z)).indicator ((hfm y).inter (hgm z))))
+  rw [hfun, hsum]
+  refine Finset.sum_congr rfl fun y _ => ?_
+  have hsum2 := integral_finset_sum (μ := μ) hgf.toFinset
+      (f := fun (z : ℝ) (ω : Ω) => ((f ⁻¹' {y}) ∩ (g ⁻¹' {z})).indicator (fun _ => F y * G z) ω)
+      (fun z _ => (integrable_const (F y * G z)).indicator ((hfm y).inter (hgm z)))
+  rw [hsum2]
+  refine Finset.sum_congr rfl fun z _ => ?_
+  rw [integral_indicator_const (F y * G z) ((hfm y).inter (hgm z)), smul_eq_mul, mul_comm]
+  rfl
+
+private lemma preimage_fiber_disjoint (h : Ω → ℝ) {y y' : ℝ} (hne : y ≠ y') :
+    Disjoint (h ⁻¹' {y}) (h ⁻¹' {y'}) := by
+  refine Set.disjoint_left.mpr fun ω hy hy' => hne ?_
+  simp only [Set.mem_preimage, Set.mem_singleton_iff] at hy hy'
+  rw [← hy, ← hy']
+
+private lemma abs_cov_le_of_finiteRange {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ)
+    {f g : Ω → ℝ} (hf : Measurable[m₁] f) (hg : Measurable[m₂] g)
+    (hff : (Set.range f).Finite) (hgf : (Set.range g).Finite) :
+    |∫ ω, f ω * g ω ∂μ - (∫ ω, f ω ∂μ) * (∫ ω, g ω ∂μ)|
+      ≤ 2 * Real.sqrt (phiMixCoeff μ m₁ m₂) * Real.sqrt (∫ ω, f ω ^ 2 ∂μ)
+          * Real.sqrt (∫ ω, g ω ^ 2 ∂μ) := by
+  classical
+  have hA : ∀ y : ℝ, MeasurableSet[m₁] (f ⁻¹' {y}) := fun y => hf (measurableSet_singleton y)
+  have hB : ∀ z : ℝ, MeasurableSet[m₂] (g ⁻¹' {z}) := fun z => hg (measurableSet_singleton z)
+  have hAm : ∀ y : ℝ, MeasurableSet (f ⁻¹' {y}) := fun y => h₁ _ (hA y)
+  have hBm : ∀ z : ℝ, MeasurableSet (g ⁻¹' {z}) := fun z => h₂ _ (hB z)
+  have hcovf : ∀ ω, ∃ y ∈ hff.toFinset, ω ∈ f ⁻¹' {y} :=
+    fun ω => ⟨f ω, hff.mem_toFinset.mpr (Set.mem_range_self ω), by simp⟩
+  have hcovg : ∀ ω, ∃ z ∈ hgf.toFinset, ω ∈ g ⁻¹' {z} :=
+    fun ω => ⟨g ω, hgf.mem_toFinset.mpr (Set.mem_range_self ω), by simp⟩
+  have e1 : ∫ ω, f ω * g ω ∂μ
+      = ∑ y ∈ hff.toFinset, ∑ z ∈ hgf.toFinset,
+          y * z * (μ (f ⁻¹' {y} ∩ g ⁻¹' {z})).toReal :=
+    integral_finiteRange_mul hff hgf hAm hBm (fun t => t) (fun t => t)
+  have e2 : ∫ ω, f ω ∂μ = ∑ y ∈ hff.toFinset, y * (μ (f ⁻¹' {y})).toReal :=
+    integral_finiteRange hff hAm (fun t => t)
+  have e3 : ∫ ω, g ω ∂μ = ∑ z ∈ hgf.toFinset, z * (μ (g ⁻¹' {z})).toReal :=
+    integral_finiteRange hgf hBm (fun t => t)
+  have e4 : ∫ ω, f ω ^ 2 ∂μ = ∑ y ∈ hff.toFinset, y ^ 2 * (μ (f ⁻¹' {y})).toReal :=
+    integral_finiteRange hff hAm (fun t => t ^ 2)
+  have e5 : ∫ ω, g ω ^ 2 ∂μ = ∑ z ∈ hgf.toFinset, z ^ 2 * (μ (g ⁻¹' {z})).toReal :=
+    integral_finiteRange hgf hBm (fun t => t ^ 2)
+  rw [e1, e2, e3, e4, e5]
+  refine cov_partition_arith hff.toFinset hgf.toFinset (fun t => t) (fun t => t)
+    (fun y => (μ (f ⁻¹' {y})).toReal) (fun z => (μ (g ⁻¹' {z})).toReal)
+    (fun y z => (μ (f ⁻¹' {y} ∩ g ⁻¹' {z})).toReal) (phiMixCoeff μ m₁ m₂)
+    (phiMixCoeff_nonneg (mΩ := mΩ)) (fun _ => ENNReal.toReal_nonneg)
+    (fun _ => ENNReal.toReal_nonneg) (fun _ _ => ENNReal.toReal_nonneg) ?_ ?_ ?_
+  · intro y _
+    exact phi_row_bound_finset h₁ h₂ hgf.toFinset (fun z => g ⁻¹' {z}) hB
+      (fun z _ z' _ hne => preimage_fiber_disjoint g hne) (hA y)
+  · intro z _
+    show ∑ y ∈ hff.toFinset, (μ (f ⁻¹' {y} ∩ g ⁻¹' {z})).toReal = (μ (g ⁻¹' {z})).toReal
+    have := sum_toReal_inter_finset (μ := μ) (T := hff.toFinset) (B := fun y => f ⁻¹' {y}) hAm
+      (fun y _ y' _ hne => preimage_fiber_disjoint f hne) hcovf (hBm z)
+    rw [← this]
+    exact Finset.sum_congr rfl fun y _ => by rw [Set.inter_comm]
+  · have := sum_toReal_inter_finset (μ := μ) (T := hff.toFinset) (B := fun y => f ⁻¹' {y}) hAm
+      (fun y _ y' _ hne => preimage_fiber_disjoint f hne) hcovf (MeasurableSet.univ (α := Ω))
+    simpa using this
+
+/-- Simple-function approximation inside a single measurable structure. -/
+private lemma exists_simple_approx {Ω' : Type*} [MeasurableSpace Ω'] {f : Ω' → ℝ} (hf : Measurable f) :
+    ∃ u : ℕ → Ω' → ℝ, (∀ n, Measurable (u n)) ∧ (∀ n, (Set.range (u n)).Finite) ∧
+      (∀ n ω, |u n ω| ≤ 2 * |f ω|) ∧ (∀ ω, Tendsto (fun n => u n ω) atTop (𝓝 (f ω))) := by
+  refine ⟨fun n => ⇑(SimpleFunc.approxOn f hf Set.univ 0 (Set.mem_univ 0) n),
+    fun n => SimpleFunc.measurable _, fun n => SimpleFunc.finite_range _,
+    fun n ω => ?_, fun ω => ?_⟩
+  · have h := SimpleFunc.norm_approxOn_zero_le hf (Set.mem_univ (0 : ℝ)) ω n
+    simpa [Real.norm_eq_abs, two_mul] using h
+  · exact SimpleFunc.tendsto_approxOn hf (Set.mem_univ (0 : ℝ)) (by simp)
+
+private lemma abs_cov_le_of_memLp {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ)
+    {f g : Ω → ℝ} (hf : Measurable[m₁] f) (hg : Measurable[m₂] g)
+    (hfL : MemLp f 2 μ) (hgL : MemLp g 2 μ) :
+    |∫ ω, f ω * g ω ∂μ - (∫ ω, f ω ∂μ) * (∫ ω, g ω ∂μ)|
+      ≤ 2 * Real.sqrt (phiMixCoeff μ m₁ m₂) * Real.sqrt (∫ ω, f ω ^ 2 ∂μ)
+          * Real.sqrt (∫ ω, g ω ^ 2 ∂μ) := by
+  classical
+  obtain ⟨u, hum, huf, hubd, hutd⟩ := @exists_simple_approx Ω m₁ f hf
+  obtain ⟨v, hvm, hvf, hvbd, hvtd⟩ := @exists_simple_approx Ω m₂ g hg
+  have humΩ : ∀ n, Measurable (u n) := fun n => (hum n).mono h₁ le_rfl
+  have hvmΩ : ∀ n, Measurable (v n) := fun n => (hvm n).mono h₂ le_rfl
+  have hfI : Integrable f μ := hfL.integrable (by norm_num)
+  have hgI : Integrable g μ := hgL.integrable (by norm_num)
+  have hf2I : Integrable (fun ω => f ω ^ 2) μ := by
+    have h := hfL.integrable_mul hfL
+    have he : (f * f) = fun ω => f ω ^ 2 := by funext ω; simp [Pi.mul_apply, sq]
+    rwa [he] at h
+  have hg2I : Integrable (fun ω => g ω ^ 2) μ := by
+    have h := hgL.integrable_mul hgL
+    have he : (g * g) = fun ω => g ω ^ 2 := by funext ω; simp [Pi.mul_apply, sq]
+    rwa [he] at h
+  have hfgI : Integrable (fun ω => |f ω| * |g ω|) μ := by
+    have h := (hfL.integrable_mul hgL).abs
+    have he : (fun ω => |(f * g) ω|) = fun ω => |f ω| * |g ω| := by
+      funext ω; simp [Pi.mul_apply, abs_mul]
+    rwa [he] at h
+  have T1 : Tendsto (fun n => ∫ ω, u n ω ∂μ) atTop (𝓝 (∫ ω, f ω ∂μ)) :=
+    tendsto_integral_of_dominated_convergence (fun ω => 2 * |f ω|)
+      (fun n => (humΩ n).aestronglyMeasurable) (hfI.abs.const_mul 2)
+      (fun n => Filter.Eventually.of_forall fun ω => by
+        simpa [Real.norm_eq_abs] using hubd n ω)
+      (Filter.Eventually.of_forall hutd)
+  have T3 : Tendsto (fun n => ∫ ω, v n ω ∂μ) atTop (𝓝 (∫ ω, g ω ∂μ)) :=
+    tendsto_integral_of_dominated_convergence (fun ω => 2 * |g ω|)
+      (fun n => (hvmΩ n).aestronglyMeasurable) (hgI.abs.const_mul 2)
+      (fun n => Filter.Eventually.of_forall fun ω => by
+        simpa [Real.norm_eq_abs] using hvbd n ω)
+      (Filter.Eventually.of_forall hvtd)
+  have T2 : Tendsto (fun n => ∫ ω, u n ω ^ 2 ∂μ) atTop (𝓝 (∫ ω, f ω ^ 2 ∂μ)) :=
+    tendsto_integral_of_dominated_convergence (fun ω => 4 * f ω ^ 2)
+      (fun n => ((humΩ n).pow_const 2).aestronglyMeasurable) (hf2I.const_mul 4)
+      (fun n => Filter.Eventually.of_forall fun ω => by
+        have h := hubd n ω
+        rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+        nlinarith [sq_abs (u n ω), sq_abs (f ω), abs_nonneg (f ω), abs_nonneg (u n ω)])
+      (Filter.Eventually.of_forall fun ω => (hutd ω).pow 2)
+  have T4 : Tendsto (fun n => ∫ ω, v n ω ^ 2 ∂μ) atTop (𝓝 (∫ ω, g ω ^ 2 ∂μ)) :=
+    tendsto_integral_of_dominated_convergence (fun ω => 4 * g ω ^ 2)
+      (fun n => ((hvmΩ n).pow_const 2).aestronglyMeasurable) (hg2I.const_mul 4)
+      (fun n => Filter.Eventually.of_forall fun ω => by
+        have h := hvbd n ω
+        rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+        nlinarith [sq_abs (v n ω), sq_abs (g ω), abs_nonneg (g ω), abs_nonneg (v n ω)])
+      (Filter.Eventually.of_forall fun ω => (hvtd ω).pow 2)
+  have T5 : Tendsto (fun n => ∫ ω, u n ω * v n ω ∂μ) atTop (𝓝 (∫ ω, f ω * g ω ∂μ)) :=
+    tendsto_integral_of_dominated_convergence (fun ω => 4 * (|f ω| * |g ω|))
+      (fun n => ((humΩ n).mul (hvmΩ n)).aestronglyMeasurable) (hfgI.const_mul 4)
+      (fun n => Filter.Eventually.of_forall fun ω => by
+        rw [Real.norm_eq_abs, abs_mul]
+        have h1 := hubd n ω
+        have h2 := hvbd n ω
+        nlinarith [abs_nonneg (u n ω), abs_nonneg (v n ω), abs_nonneg (f ω), abs_nonneg (g ω)])
+      (Filter.Eventually.of_forall fun ω => (hutd ω).mul (hvtd ω))
+  refine le_of_tendsto_of_tendsto'
+    (f := fun n => |∫ ω, u n ω * v n ω ∂μ - (∫ ω, u n ω ∂μ) * (∫ ω, v n ω ∂μ)|)
+    (g := fun n => 2 * Real.sqrt (phiMixCoeff μ m₁ m₂) * Real.sqrt (∫ ω, u n ω ^ 2 ∂μ)
+      * Real.sqrt (∫ ω, v n ω ^ 2 ∂μ))
+    ((T5.sub (T1.mul T3)).abs) ((tendsto_const_nhds.mul T2.sqrt).mul T4.sqrt) (fun n => ?_)
+  exact abs_cov_le_of_finiteRange h₁ h₂ (hum n) (hvm n) (huf n) (hvf n)
+
 /-- **DEBT (Bradley/Peligrad; FY §2.6.1 display `¼ρ ≤ ½√φ`)**: the square-root
 relation `ρ ≤ 2√φ`. Literature-level; the proof needs the L²-duality description of
 `ρ` and a two-sided conditional Cauchy–Schwarz argument. -/
 theorem rhoMixCoeff_le_two_mul_sqrt_phiMixCoeff_debt {m₁ m₂ mΩ : MeasurableSpace Ω}
     {μ : Measure Ω} [IsProbabilityMeasure μ] (h₁ : m₁ ≤ mΩ) (h₂ : m₂ ≤ mΩ) :
     rhoMixCoeff μ m₁ m₂ ≤ 2 * Real.sqrt (phiMixCoeff μ m₁ m₂) := by
-  sorry
+  have hφ0 : 0 ≤ phiMixCoeff μ m₁ m₂ := phiMixCoeff_nonneg (mΩ := mΩ)
+  refine Real.sSup_le ?_ (by positivity)
+  rintro r ⟨f, g, hfm, hgm, hfL, hgL, rfl⟩
+  set c : ℝ := ∫ ω, f ω ∂μ with hc
+  set d : ℝ := ∫ ω, g ω ∂μ with hd
+  have hf'm : Measurable[m₁] (fun ω => f ω - c) := hfm.sub measurable_const
+  have hg'm : Measurable[m₂] (fun ω => g ω - d) := hgm.sub measurable_const
+  have hf'L : MemLp (fun ω => f ω - c) 2 μ := hfL.sub (memLp_const _)
+  have hg'L : MemLp (fun ω => g ω - d) 2 μ := hgL.sub (memLp_const _)
+  have hf'0 : ∫ ω, (f ω - c) ∂μ = 0 := by
+    rw [integral_sub (hfL.integrable (by norm_num)) (integrable_const _), integral_const]
+    simp [hc]
+  have hg'0 : ∫ ω, (g ω - d) ∂μ = 0 := by
+    rw [integral_sub (hgL.integrable (by norm_num)) (integrable_const _), integral_const]
+    simp [hd]
+  have hmain := abs_cov_le_of_memLp h₁ h₂ hf'm hg'm hf'L hg'L
+  rw [hf'0, hg'0] at hmain
+  have hcov : cov[f, g; μ] = ∫ ω, (f ω - c) * (g ω - d) ∂μ := rfl
+  have hvf : variance f μ = ∫ ω, (f ω - c) ^ 2 ∂μ :=
+    variance_eq_integral hfL.aestronglyMeasurable.aemeasurable
+  have hvg : variance g μ = ∫ ω, (g ω - d) ^ 2 ∂μ :=
+    variance_eq_integral hgL.aestronglyMeasurable.aemeasurable
+  have hkey : |cov[f, g; μ]|
+      ≤ 2 * Real.sqrt (phiMixCoeff μ m₁ m₂)
+          * Real.sqrt (variance f μ) * Real.sqrt (variance g μ) := by
+    rw [hcov, hvf, hvg]
+    simpa using hmain
+  set D : ℝ := Real.sqrt (variance f μ) * Real.sqrt (variance g μ) with hD
+  have hD0 : 0 ≤ D := mul_nonneg (Real.sqrt_nonneg _) (Real.sqrt_nonneg _)
+  rcases eq_or_lt_of_le hD0 with hD0' | hDpos
+  · rw [← hD0']
+    simp [Real.sqrt_nonneg]
+  · rw [div_le_iff₀ hDpos]
+    calc |cov[f, g; μ]|
+        ≤ 2 * Real.sqrt (phiMixCoeff μ m₁ m₂)
+            * Real.sqrt (variance f μ) * Real.sqrt (variance g μ) := hkey
+      _ = 2 * Real.sqrt (phiMixCoeff μ m₁ m₂) * D := by rw [hD]; ring
 
 end TwoAlgebras2
 
