@@ -2,6 +2,7 @@ import Mathlib.Data.Fintype.Powerset
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Real.Basic
 import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Algebra.Notation.Indicator
 
 /-!
 # Potential outcomes on a finite population — science tables and assignment designs
