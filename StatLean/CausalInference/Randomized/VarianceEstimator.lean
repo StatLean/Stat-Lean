@@ -296,7 +296,58 @@ theorem armVar_false_unbiased (S : ScienceTable n) (hsum : n₁ + n₀ = n)
     -- USER-INPUT: at least two control units, so that `ŝ²(0)` is defined; Ding Theorem 4.1(3)
     (h0 : 2 ≤ n₀) :
     (completeDesign n n₁ (by omega)).expect (fun z => armVar S z false) = popVar S.y0 := by
-  sorry
+  have hle : n₁ ≤ n := by omega
+  have hn : 2 ≤ n := by omega
+  have hcast : (n₁ : ℝ) + (n₀ : ℝ) = (n : ℝ) := by exact_mod_cast hsum
+  have hn0R : (2 : ℝ) ≤ (n₀ : ℝ) := by exact_mod_cast h0
+  have hn1R : (1 : ℝ) ≤ (n₁ : ℝ) := by exact_mod_cast h1
+  have hnR : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hn0ne : (n₀ : ℝ) ≠ 0 := ne_of_gt (by linarith)
+  have hnne : (n : ℝ) ≠ 0 := ne_of_gt (by linarith)
+  have hnm1 : (n : ℝ) - 1 ≠ 0 := ne_of_gt (by linarith)
+  have e1 : (n : ℝ) - (n₁ : ℝ) = (n₀ : ℝ) := by linarith
+  have e2 : (n : ℝ) - (n₀ : ℝ) = (n₁ : ℝ) := by linarith
+  refine armVar_unbiased_core _ n₀ _ (fun z i => 1 - ind (z i)) _ hn h0 ?_ ?_ ?_
+  · intro i
+    have hs : (completeDesign n n₁ hle).expect (fun z => (fun _ : Assignment n => (1 : ℝ)) z
+          - (fun z => ind (z i)) z)
+        = (completeDesign n n₁ hle).expect (fun _ : Assignment n => (1 : ℝ))
+          - (completeDesign n n₁ hle).expect (fun z => ind (z i)) := expect_sub _ _ _
+    rw [hs, expect_const, completeDesign_expect_ind hle i]
+    field_simp
+    linarith
+  · have hsplit : (fun z : Assignment n => ∑ i, (S.y0 i / (n₀ : ℝ)) * (1 - ind (z i)))
+        = fun z => (∑ i, S.y0 i / (n₀ : ℝ)) - ∑ i, (S.y0 i / (n₀ : ℝ)) * ind (z i) := by
+      funext z
+      rw [← Finset.sum_sub_distrib]
+      exact Finset.sum_congr rfl fun i _ => by ring
+    rw [hsplit, var_const_sub, completeDesign_var_linear hle hn fun i => S.y0 i / (n₀ : ℝ),
+      sum_sq_dev_div S.y0 (n₀ : ℝ) hn, e1, e2]
+    field_simp
+  · intro z hz
+    have hcard : (armIdx z false).card = n₀ := by
+      rw [card_armIdx_false hle hz]; omega
+    have hM : armMean S z false = (n₀ : ℝ)⁻¹ * ∑ i, S.y0 i * (1 - ind (z i)) :=
+      armMean_false_eq S hsum hle hz (by omega)
+    have hobs : ∑ i ∈ armIdx z false, (S.observed z i - armMean S z false) ^ 2
+        = ∑ i ∈ armIdx z false, (S.y0 i - armMean S z false) ^ 2 :=
+      Finset.sum_congr rfl fun i hi => by
+        rw [observed_eq_y0 S (by simpa [armIdx] using hi)]
+    have hsum1 : ∑ i ∈ armIdx z false, S.y0 i = ∑ i, S.y0 i * (1 - ind (z i)) :=
+      sum_armIdx_false_eq_sum_ind z S.y0
+    have hsum2 : ∑ i ∈ armIdx z false, S.y0 i ^ 2 = ∑ i, S.y0 i ^ 2 * (1 - ind (z i)) :=
+      sum_armIdx_false_eq_sum_ind z fun i => S.y0 i ^ 2
+    have hsumM : ∑ i, S.y0 i * (1 - ind (z i)) = (n₀ : ℝ) * armMean S z false := by
+      rw [hM, ← mul_assoc, mul_inv_cancel₀ hn0ne, one_mul]
+    have hgM : ∑ i, (S.y0 i / (n₀ : ℝ)) * (1 - ind (z i)) = armMean S z false := by
+      have hr : ∑ i, (S.y0 i / (n₀ : ℝ)) * (1 - ind (z i))
+          = (n₀ : ℝ)⁻¹ * ∑ i, S.y0 i * (1 - ind (z i)) := by
+        rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun i _ => by ring
+      rw [hr, hM]
+    rw [armVar, hobs, sum_sq_sub (armIdx z false) S.y0 (armMean S z false), hcard, hsum1,
+      hsum2, hgM, hsumM]
+    ring
 
 /-- **The expectation of Neyman's variance estimator** (Ding Theorem 4.1(3)):
 `E[V̂] = S²(1)/n₁ + S²(0)/n₀`. -/
