@@ -1039,6 +1039,215 @@ private theorem localized_delta_moment_le [IsProbabilityMeasure μ]
         mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hlast hhn.le) hM0
     _ = (M * Cp * ∫ v, |W v| ^ δ) * hn := by ring
 
+/-! #### FY (2.82)–(2.83): the truncation tail
+
+Step (c) truncates `e` at level `L`; what the telescope needs is that the residual
+`e_t − e^L_t` contributes a variance that vanishes as `L → ∞`, *uniformly in `n`*. The two
+bricks below are the diagonal half of that estimate — the half that (C1)–(C5) as
+formalized do support. (The lag half does not close; see `tendsto_smallBlock_variance`.) -/
+
+/-- **Pointwise truncation residual — PROVED.** `(z − clamp_L z)² ≤ L^{2−δ} |z|^δ` for
+`δ > 2`, `L > 0`. Below the clamp the left side is `0`; above it `|z − clamp_L z| ≤ |z|`
+and `|z|² = |z|^{2−δ}|z|^δ ≤ L^{2−δ}|z|^δ`, the exponent `2 − δ` being negative. This is
+where `δ > 2` buys the `L → ∞` decay of the truncation tail. -/
+private theorem sq_sub_clamp_le {δ L z : ℝ} (hδ : 2 < δ) (hL : 0 < L) :
+    (z - clampAt L z) ^ 2 ≤ L ^ (2 - δ) * |z| ^ δ := by
+  have hd : (0 : ℝ) < δ - 2 := by linarith
+  have hLd : (0 : ℝ) < L ^ (2 - δ) := Real.rpow_pos_of_pos hL _
+  rcases le_or_gt |z| L with hz | hz
+  · have h1 : min L z = z := min_eq_right (le_trans (le_abs_self z) hz)
+    have h2 : max (-L) z = z := max_eq_right (by
+      have := neg_abs_le z; linarith)
+    have hz0 : z - clampAt L z = 0 := by simp [clampAt, h1, h2]
+    have hzz : ((0 : ℝ)) ^ 2 = 0 := by norm_num
+    rw [hz0, hzz]
+    positivity
+  · have hzpos : (0 : ℝ) < |z| := lt_trans hL hz
+    -- `|z − clamp| ≤ |z|`
+    have hkey : (z - clampAt L z) ^ 2 ≤ |z| ^ (2 : ℝ) := by
+      have h2 : |z| ^ (2 : ℝ) = z ^ 2 := by
+        rw [show (2 : ℝ) = ((2 : ℕ) : ℝ) from by norm_num, Real.rpow_natCast, sq_abs]
+      rw [h2]
+      have habs : |z - clampAt L z| ≤ |z| := by
+        rcases le_or_gt z 0 with hz0 | hz0
+        · have hzneg : z < -L := by
+            rw [abs_of_nonpos hz0] at hz; linarith
+          have h1 : min L z = z := min_eq_right (by linarith)
+          have h2 : max (-L) z = -L := max_eq_left (by linarith)
+          simp only [clampAt, h1, h2]
+          rw [abs_of_nonpos (by linarith), abs_of_nonpos hz0]
+          linarith
+        · have hzpos' : L < z := by rw [abs_of_pos hz0] at hz; exact hz
+          have h1 : min L z = L := min_eq_left (by linarith)
+          have h2 : max (-L) L = L := max_eq_right (by linarith)
+          simp only [clampAt, h1, h2]
+          rw [abs_of_nonneg (by linarith), abs_of_pos hz0]
+          linarith
+      have h3 : |z - clampAt L z| * |z - clampAt L z| ≤ |z| * |z| :=
+        mul_le_mul habs habs (abs_nonneg _) (abs_nonneg _)
+      calc (z - clampAt L z) ^ 2
+          = |z - clampAt L z| * |z - clampAt L z| := by rw [← sq_abs, pow_two]
+        _ ≤ |z| * |z| := h3
+        _ = z ^ 2 := by rw [← pow_two, sq_abs]
+    refine hkey.trans ?_
+    have hstep : L ^ (δ - 2) ≤ |z| ^ (δ - 2) :=
+      Real.rpow_le_rpow hL.le hz.le hd.le
+    have hsplit : |z| ^ δ = |z| ^ (2 : ℝ) * |z| ^ (δ - 2) := by
+      rw [← Real.rpow_add hzpos]; ring_nf
+    have hmul : |z| ^ (2 : ℝ) * L ^ (δ - 2) ≤ |z| ^ δ := by
+      rw [hsplit]
+      exact mul_le_mul_of_nonneg_left hstep (Real.rpow_nonneg (abs_nonneg _) _)
+    have hone : L ^ (2 - δ) * L ^ (δ - 2) = 1 := by
+      rw [← Real.rpow_add hL]; norm_num
+    have h4 := mul_le_mul_of_nonneg_left hmul hLd.le
+    have h5 : L ^ (2 - δ) * (|z| ^ (2 : ℝ) * L ^ (δ - 2)) = |z| ^ (2 : ℝ) := by
+      rw [← mul_assoc, mul_comm (L ^ (2 - δ)) (|z| ^ (2 : ℝ)), mul_assoc, hone, mul_one]
+    linarith [h4, h5]
+
+/-- **FY (2.82)–(2.83), the diagonal of the truncation tail — PROVED.** The localized
+second moment of the truncation residual carries *both* small factors at once:
+`E[(e_0 − clamp_L e_0)² W((X_0−x)/h)²] ≤ (M · C_p · ∫W²) · L^{2−δ} h`,
+so after the `h⁻¹` of the normalization it is `O(L^{2−δ})` — vanishing as `L → ∞`
+uniformly in `n` and in the bandwidth, which is exactly the uniformity (2.82) needs.
+
+Same three steps as `localized_delta_moment_le`, with the weight `|W|^δ` replaced by `W²`:
+dominate pointwise by `L^{2−δ} |e_0|^δ W²` (`sq_sub_clamp_le`), pull `W²` out of the
+conditional expectation of `|e_0|^δ` and bound the latter by `M`
+(`integral_bdd_comp_mul_eq_of_condExp` with `heδc`), then substitute the density
+(`integral_comp_eq_integral_density`) and rescale (`integral_dilate_translate`), the factor
+`h` being the Jacobian and `C_p` the density bound.
+
+This bounds the residual *before* its conditional recentring; since
+`e_t − e^L_t = r_t − E(r_t | X_t)` with `r_t = e_t − clamp_L(e_t)`, conditional Jensen
+turns it into the same bound for the recentred residual at no cost. What it does **not**
+give — and what blocks (2.82) as a whole — is the corresponding *lag* estimate; see
+`tendsto_smallBlock_variance` for the proof that the frozen (C2) cannot supply it. -/
+private theorem localized_trunc_residual_moment_le [IsProbabilityMeasure μ]
+    {X e : ℤ → Ω → ℝ} (hX : Measurable (X 0)) (hE : Measurable (e 0))
+    {p : ℝ → ℝ} (hmp : Measurable p) (hp0 : ∀ v, 0 ≤ p v)
+    (hpd : μ.map (X 0) = MeasureTheory.volume.withDensity fun v => ENNReal.ofReal (p v))
+    {δ : ℝ} (hδ : 2 < δ) (heLδ : MemLp (e 0) (ENNReal.ofReal δ) μ)
+    {M : ℝ}
+    (heδc : μ[fun ω => |e 0 ω| ^ δ | MeasurableSpace.comap (X 0) inferInstance]
+      ≤ᵐ[μ] fun _ => M)
+    {Cp : ℝ} (hpb : ∀ v, p v ≤ Cp)
+    {W : ℝ → ℝ} {CW : ℝ} (hWm : Measurable W) (hWb : ∀ v, |W v| ≤ CW)
+    (hW2 : Integrable (fun v => W v ^ 2) MeasureTheory.volume)
+    {x hn L : ℝ} (hhn : 0 < hn) (hL : 0 < L) :
+    ∫ ω, (e 0 ω - clampAt L (e 0 ω)) ^ 2 * W ((X 0 ω - x) / hn) ^ 2 ∂μ
+      ≤ (M * Cp * ∫ v, W v ^ 2) * (L ^ (2 - δ) * hn) := by
+  have hδ0 : (0 : ℝ) < δ := by linarith
+  have hLd : (0 : ℝ) < L ^ (2 - δ) := Real.rpow_pos_of_pos hL _
+  have hGm : Measurable (fun v => W ((v - x) / hn) ^ 2) :=
+    ((hWm.comp ((measurable_id.sub measurable_const).div measurable_const)).pow_const 2)
+  have hG0 : ∀ v : ℝ, 0 ≤ W ((v - x) / hn) ^ 2 := fun v => sq_nonneg _
+  have hGb : ∀ v : ℝ, |W ((v - x) / hn) ^ 2| ≤ CW ^ 2 := by
+    intro v
+    rw [abs_of_nonneg (hG0 v)]
+    nlinarith [hWb ((v - x) / hn), abs_nonneg (W ((v - x) / hn)),
+      sq_abs (W ((v - x) / hn))]
+  have hGXm : Measurable (fun ω => W ((X 0 ω - x) / hn) ^ 2) := hGm.comp hX
+  -- `|e_0|^δ` is integrable
+  have hζ : Integrable (fun ω => |e 0 ω| ^ δ) μ := by
+    have hr := heLδ.integrable_norm_rpow (by
+      simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]; exact hδ0) ENNReal.ofReal_ne_top
+    simpa only [Real.norm_eq_abs, ENNReal.toReal_ofReal hδ0.le] using hr
+  have hZ0 : (0 : Ω → ℝ)
+      ≤ᵐ[μ] μ[fun ω => |e 0 ω| ^ δ | MeasurableSpace.comap (X 0) inferInstance] :=
+    condExp_nonneg (Eventually.of_forall fun ω => Real.rpow_nonneg (abs_nonneg _) _)
+  have hM0 : (0 : ℝ) ≤ M := by
+    obtain ⟨ω, h1, h2⟩ := (hZ0.and heδc).exists
+    exact le_trans h1 h2
+  -- Step 1: pointwise domination by `L^{2−δ} |e|^δ W²`
+  have hdom' : Integrable (fun ω => W ((X 0 ω - x) / hn) ^ 2 * |e 0 ω| ^ δ) μ :=
+    hζ.bdd_mul hGXm.aestronglyMeasurable
+      (Eventually.of_forall fun ω => by rw [Real.norm_eq_abs]; exact hGb _)
+  have hdom : Integrable (fun ω => (|e 0 ω| ^ δ) * W ((X 0 ω - x) / hn) ^ 2) μ :=
+    hdom'.congr (Eventually.of_forall fun ω => mul_comm _ _)
+  have hint1 : Integrable
+      (fun ω => (e 0 ω - clampAt L (e 0 ω)) ^ 2 * W ((X 0 ω - x) / hn) ^ 2) μ := by
+    refine Integrable.mono (hdom.const_mul (L ^ (2 - δ)))
+      (((((hE.sub ((measurable_const.max (measurable_const.min hE))))).pow_const
+        2)).mul hGXm).aestronglyMeasurable (Eventually.of_forall fun ω => ?_)
+    rw [Real.norm_eq_abs, Real.norm_eq_abs,
+      abs_of_nonneg (mul_nonneg (sq_nonneg _) (sq_nonneg _)),
+      abs_of_nonneg (by positivity : (0:ℝ) ≤ L ^ (2 - δ) *
+        ((|e 0 ω| ^ δ) * W ((X 0 ω - x) / hn) ^ 2)), ← mul_assoc]
+    exact mul_le_mul_of_nonneg_right (sq_sub_clamp_le hδ hL) (sq_nonneg _)
+  have hstep1 : ∫ ω, (e 0 ω - clampAt L (e 0 ω)) ^ 2 * W ((X 0 ω - x) / hn) ^ 2 ∂μ
+      ≤ L ^ (2 - δ) * ∫ ω, (|e 0 ω| ^ δ) * W ((X 0 ω - x) / hn) ^ 2 ∂μ := by
+    rw [← integral_const_mul]
+    refine integral_mono hint1 (hdom.const_mul _) fun ω => ?_
+    rw [← mul_assoc]
+    exact mul_le_mul_of_nonneg_right (sq_sub_clamp_le hδ hL) (sq_nonneg _)
+  -- Step 2: tower + density + rescaling, exactly as in `localized_delta_moment_le`
+  have htow : ∫ ω, (W ((X 0 ω - x) / hn) ^ 2) * |e 0 ω| ^ δ ∂μ
+      = ∫ ω, (W ((X 0 ω - x) / hn) ^ 2) *
+          (μ[fun ω' => |e 0 ω'| ^ δ | MeasurableSpace.comap (X 0) inferInstance]) ω ∂μ :=
+    integral_bdd_comp_mul_eq_of_condExp hX hζ (Filter.EventuallyEq.refl _ _)
+      (fun v => W ((v - x) / hn) ^ 2) hGm hGb
+  have hmono : ∫ ω, (W ((X 0 ω - x) / hn) ^ 2) *
+        (μ[fun ω' => |e 0 ω'| ^ δ | MeasurableSpace.comap (X 0) inferInstance]) ω ∂μ
+      ≤ ∫ ω, (W ((X 0 ω - x) / hn) ^ 2) * M ∂μ := by
+    refine integral_mono_ae
+      (integrable_condExp.bdd_mul hGXm.aestronglyMeasurable
+        (Eventually.of_forall fun ω => by rw [Real.norm_eq_abs]; exact hGb _))
+      ((integrable_const M).bdd_mul hGXm.aestronglyMeasurable
+        (Eventually.of_forall fun ω => by rw [Real.norm_eq_abs]; exact hGb _)) ?_
+    filter_upwards [heδc] with ω hω
+    exact mul_le_mul_of_nonneg_left hω (hG0 _)
+  have hdens : ∫ ω, (W ((X 0 ω - x) / hn) ^ 2) * M ∂μ
+      = M * ∫ v, p v * W ((v - x) / hn) ^ 2 := by
+    have hsub : ∫ ω, (fun v => W ((v - x) / hn) ^ 2 * M) (X 0 ω) ∂μ
+        = ∫ v, p v * (W ((v - x) / hn) ^ 2 * M) :=
+      integral_comp_eq_integral_density hX hmp hp0 hpd
+        (fun v => W ((v - x) / hn) ^ 2 * M) (hGm.mul_const M)
+    have hpull : ∫ v, p v * (W ((v - x) / hn) ^ 2 * M)
+        = M * ∫ v, p v * W ((v - x) / hn) ^ 2 := by
+      rw [← integral_const_mul]
+      exact integral_congr_ae (Eventually.of_forall fun v => by ring)
+    rw [← hpull, ← hsub]
+  have hcov : ∫ u, W u ^ 2 * p (x + hn * u) = hn⁻¹ * ∫ v, W ((v - x) / hn) ^ 2 * p v :=
+    integral_dilate_translate (fun u => W u ^ 2) p x hhn
+  have hpint : ∫ v, p v * W ((v - x) / hn) ^ 2
+      = hn * ∫ u, W u ^ 2 * p (x + hn * u) := by
+    rw [hcov, ← mul_assoc, mul_inv_cancel₀ hhn.ne', one_mul]
+    exact integral_congr_ae (Eventually.of_forall fun v => by ring)
+  have hlast : ∫ u, W u ^ 2 * p (x + hn * u) ≤ Cp * ∫ u, W u ^ 2 := by
+    have hi : Integrable (fun u => W u ^ 2 * p (x + hn * u)) MeasureTheory.volume := by
+      refine Integrable.mono (hW2.const_mul Cp)
+        (((hWm.pow_const 2)).mul (hmp.comp (measurable_const.add
+          (measurable_const.mul measurable_id)))).aestronglyMeasurable
+        (Eventually.of_forall fun u => ?_)
+      rw [Real.norm_eq_abs, Real.norm_eq_abs,
+        abs_of_nonneg (mul_nonneg (sq_nonneg _) (hp0 _)),
+        abs_of_nonneg (mul_nonneg (le_trans (hp0 0) (hpb 0)) (sq_nonneg _)), mul_comm Cp]
+      exact mul_le_mul_of_nonneg_left (hpb _) (sq_nonneg _)
+    rw [← integral_const_mul]
+    refine integral_mono hi (hW2.const_mul Cp) fun u => ?_
+    rw [mul_comm Cp]
+    exact mul_le_mul_of_nonneg_left (hpb _) (sq_nonneg _)
+  have hcomm : ∫ ω, (|e 0 ω| ^ δ) * W ((X 0 ω - x) / hn) ^ 2 ∂μ
+      = ∫ ω, (W ((X 0 ω - x) / hn) ^ 2) * |e 0 ω| ^ δ ∂μ :=
+    integral_congr_ae (Eventually.of_forall fun ω => mul_comm _ _)
+  have hchain : ∫ ω, (|e 0 ω| ^ δ) * W ((X 0 ω - x) / hn) ^ 2 ∂μ
+      ≤ (M * Cp * ∫ v, W v ^ 2) * hn := by
+    rw [hcomm, htow]
+    calc ∫ ω, (W ((X 0 ω - x) / hn) ^ 2) *
+          (μ[fun ω' => |e 0 ω'| ^ δ | MeasurableSpace.comap (X 0) inferInstance]) ω ∂μ
+        ≤ ∫ ω, (W ((X 0 ω - x) / hn) ^ 2) * M ∂μ := hmono
+      _ = M * ∫ v, p v * W ((v - x) / hn) ^ 2 := hdens
+      _ = M * (hn * ∫ u, W u ^ 2 * p (x + hn * u)) := by rw [hpint]
+      _ ≤ M * (hn * (Cp * ∫ u, W u ^ 2)) :=
+          mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hlast hhn.le) hM0
+      _ = (M * Cp * ∫ v, W v ^ 2) * hn := by ring
+  calc ∫ ω, (e 0 ω - clampAt L (e 0 ω)) ^ 2 * W ((X 0 ω - x) / hn) ^ 2 ∂μ
+      ≤ L ^ (2 - δ) * ∫ ω, (|e 0 ω| ^ δ) * W ((X 0 ω - x) / hn) ^ 2 ∂μ := hstep1
+    _ ≤ L ^ (2 - δ) * ((M * Cp * ∫ v, W v ^ 2) * hn) :=
+        mul_le_mul_of_nonneg_left hchain hLd.le
+    _ = (M * Cp * ∫ v, W v ^ 2) * (L ^ (2 - δ) * hn) := by ring
+
+
 /-! #### Bandwidth limits behind the small/large lag split -/
 
 /-- `h_n → 0⁺` in the punctured-right sense. -/
