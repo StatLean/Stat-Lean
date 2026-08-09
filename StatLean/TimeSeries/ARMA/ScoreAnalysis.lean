@@ -1069,8 +1069,12 @@ private lemma measurable_sigmaLT {Z : ℤ → Ω → ℝ} {s t : ℤ} (hst : s <
     (comap_le_sigmaLT hst) le_rfl
 
 /-- **One-vs-past independence of i.i.d. noise**: `ε_t` is independent of
-`σ(ε_s : s < t)` (the `Stationarity/ARCH.lean` pull, replayed here). -/
-private lemma indep_noise_sigmaLT {ε : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ε t))
+`σ(ε_s : s < t)` (the `Stationarity/ARCH.lean` pull, replayed here).
+
+**Made public 2026-08-09** (wave `ts/s1b-arma-finish`), as the cross-file scope blocker
+recorded at `MLEAsymptotics.hannanScore_brownInputs`: inputs (1) and (3) of that debt
+both consume this independence, and it was not citeable while `private`. -/
+lemma indep_noise_sigmaLT {ε : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ε t))
     (hi : iIndepFun ε μ) (t : ℤ) :
     Indep (MeasurableSpace.comap (ε t) inferInstance) (sigmaLT ε t) μ := by
   have hdisj : Disjoint ({t} : Set ℤ) (Set.Iio t) :=
