@@ -1547,7 +1547,45 @@ above, while the stochastic half has to control a **ratio** — `sampleACF = γ�
 the Lipschitz bound has to be pushed through both the numerator and the denominator, i.e.
 through a quotient-Slutsky step of the shape already available in this file as
 `tendstoInProb_ratio` (used by residue (A)). That is the natural entry point and is not
-mentioned by the note above. -/
+mentioned by the note above.
+
+**STATUS after wave `ts/f1b-arma-deep` (2026-08-09): NOT attempted, but the previous
+paragraph's diagnosis is REFINED — FINDING 28: the ratio is not an extra difficulty, and
+the denominator leg needs no Lipschitz bound at all.**
+
+`tendstoInProb_ratio` compares `(A + Δ)/D` against `A/σ²` — a *deterministic* denominator.
+Residue (B) is a difference of two ratios with two *random* denominators, so the lemma does
+not apply to it directly. It applies **twice**, through the common linear surrogate that
+residue (A) already uses:
+
+* with `A_T = (√T)⁻¹ Σ_{i<T} acfProd ε k i`, `Δ₁ = √T γ̂_ε(k) − A_T`, `D₁ = γ̂_ε(0)`, the
+  lemma gives `√T ρ̂_ε(k) − σ⁻² A_T →p 0` — this is exactly the last step of
+  `sampleACF_whiteNoise_clt_residue` above, already proved;
+* with the **same** `A_T`, `Δ₂ = √T γ̂_ε̂(k) − A_T` and `D₂ = γ̂_ε̂(0)`, the lemma gives
+  `√T ρ̂_ε̂(k) − σ⁻² A_T →p 0`.
+
+Subtracting the two conclusions *is* the residue. So the ratio is discharged entirely by
+re-using an existing lemma, and what is left are two **ACVF-level** (unnormalized)
+transfers, which are of very different sizes:
+
+1. `√T (γ̂_ε̂(k) − γ̂_ε(k)) →p 0` — lag `k`, `√T`-scaled. This is the leg that consumes
+   `Consistency.exists_armaPi_l1_lipschitz`, because only a Lipschitz bound converts
+   `dist(θ̂, θ₀) = o_p(T^{−1/2})` into something that survives the `√T`;
+2. `γ̂_ε̂(0) − γ̂_ε(0) →p 0` — lag `0`, **unscaled**. This leg needs no Lipschitz bound at
+   all: the *modulus of continuity* `Consistency.exists_armaPi_l1_modulus` (which the note
+   above dismisses as "one full factor of `√T` short") is exactly enough, because there is
+   no `√T` to be short by.
+
+That asymmetry is the content of the refinement: the previous note's "the Lipschitz bound
+has to be pushed through both the numerator and the denominator" overstates the cost of the
+denominator by a factor of `√T` of difficulty. `Δ₂` also splits as
+`[√T(γ̂_ε̂(k) − γ̂_ε(k))] + [√T γ̂_ε(k) − A_T]`, whose second summand is the already-proved
+`tendstoInProb_sampleACVF_sub`; and `tendstoInProb_ratio`'s tightness input for `A_T` is the
+already-proved `integral_scaledCross_sq_le`. So of the lemma's five inputs, four are in
+hand and only item 1 above is new mathematics.
+
+The measurability half and the two `private` scope items (`Consistency.continuous_armaPi`,
+`maPoly_conv_armaPi`) are unchanged. -/
 private theorem residual_acf_transfer_residue [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)

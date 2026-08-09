@@ -46,6 +46,16 @@ listed here with their exact blockers.
   the frozen statement demands.
 * Debts (after wave `ts/s1b-arma-finish`, 2026-08-09): `hannanScore_brownInputs`,
   `armaMLE_linearization`, `samplePACF_linearization`.
+  **FINDING 26 (wave `ts/f1b-arma-deep`, 2026-08-09): `hannanVarZ` is the covariance of
+  the FORWARD auxiliary vector, while the score contracts the BACKWARD one `Z_t =
+  (U_{t−1−i}, V_{t−1−j})`; the two Grams read the AR–MA cross-block at opposite lags and
+  differ whenever `p, q ≥ 1` and `max (p, q) ≥ 2`.** So `hannanScore_brownInputs`(2),
+  `hannanScore_clt`, `armaMLE_linearization` and the headline `hannan_mle_clt` all carry
+  the wrong asymptotic variance in the genuinely mixed case; `samplePACF_linearization`
+  and `ls_yw_mle_equivalent_debt` (both `q = 0`) are immune. Items (1) and (2) of the Brown
+  inputs are PROVED with the corrected matrix as `hannanScore_brownInputs_back`. Full
+  detail, the ARMA(2,1) witness, and the one-line repair are recorded at
+  `hannanScore_brownInputs`.
   **CLOSED**: `armaProfileS_atTruth_tendstoInProb` (a two-line corollary of Consistency's
   now-public `armaProfileS_tendstoInProb`) and `armaProfileS_equicontinuous` (a one-line
   corollary of `Consistency.armaProfileS_locallyEquicontinuous`).
@@ -1064,7 +1074,24 @@ Not attempted in this wave: the first-order condition from `hδTfast` (the
 `o(1/T)`-approximate minimality) and the mean-value expansion, which are the substance.
 
 **STATUS after wave `ts/f1-arma-finale` (2026-08-09): NOT attempted; the two-input residue
-above is unchanged.** -/
+above is unchanged.**
+
+**STATUS after wave `ts/f1b-arma-deep` (2026-08-09): NOT attempted, and this statement
+carries FINDING 26** — its `(hannanVarZ b0 a0)⁻¹ *ᵥ c` is the *forward* Gram, whereas the
+score direction the sandwich produces is `(hannanVarZBack b0 a0)⁻¹ *ᵥ c`; see the finding
+paragraph at `hannanScore_brownInputs`. For `p, q ≥ 1` with `max (p, q) ≥ 2` the two differ,
+so the statement is expected to be FALSE as frozen; for `q = 0` (the instantiation used by
+`ls_yw_mle_equivalent_debt`) it is unaffected, by
+`ScoreAnalysis.hannanVarZ_eq_back_of_pure_ar`.
+
+Of the two recorded inputs, the first is now discharged in its corrected form
+(`hannanScore_brownInputs_back`: items (1) and (2)), so the honest residue here is
+(a) the Hessian ULLN, (b) the first-order condition from `hδTfast` and the mean-value
+expansion, and (c) the matrix repair. Note that (a)'s pointwise half now has a second
+route besides the one recorded above: the derivative filters are finite combinations of
+shifted linear processes, so `isLinearProcessOf_comb` puts them in the exact shape
+`Consistency.linearProcess_avgSq_tendstoInProb` consumes, with no ad-hoc coefficient
+bookkeeping. -/
 private theorem armaMLE_linearization [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -1570,7 +1597,23 @@ the propagation through the exact AR(k) recursion, and the reciprocal-variance i
 `(Γ_k⁻¹)_{kk} = σ⁻²` for `k > p`. Not attempted in this wave.
 
 **STATUS after wave `ts/f1-arma-finale` (2026-08-09): NOT attempted; the residue above is
-unchanged.** -/
+unchanged.**
+
+**STATUS after wave `ts/f1b-arma-deep` (2026-08-09): NOT attempted, but this statement is
+IMMUNE to finding 26** — it instantiates the MA order at `0`, and
+`ScoreAnalysis.hannanVarZ_eq_back_of_pure_ar` proves `hannanVarZ b elim0 = hannanVarZBack b
+elim0` (only the AR–AR block survives, and an autocovariance is even). So its
+`d ⬝ᵥ (hannanVarZ … *ᵥ d) = 1` normalization is the right one and the residue is exactly
+the three delta-method items listed above, with none of the matrix repair
+`armaMLE_linearization` needs.
+
+One brick the residue list does not name is now available and is the right entry point for
+the `√T` half: `hannanScore_brownInputs_back` supplies items (1) and (2) of the Brown
+inputs (in the pure-AR case with the correct matrix, by the immunity just quoted), so what
+is left really is only the delta-method bookkeeping — the Jacobian of
+`γ̂ ↦ (Γ̂_k⁻¹ γ̂_k)_k`, the AR(k) recursion, and `(Γ_k⁻¹)_{kk} = σ⁻²`. The brief's suggestion
+to cite `sampleACF_bartlett_clt_debt` remains available but is not needed for the *matrix*
+side of the statement; it is needed only to feed the joint CLT of `γ̂`. -/
 private theorem samplePACF_linearization [IsProbabilityMeasure μ] {p k : ℕ}
     {b0 : Fin p → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
     (h : IsAR b0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -1870,7 +1913,16 @@ nonsingularity of `A` for large `T` makes the selection a.s. unique. The two rem
 mathematical items are unchanged: the MLE leg (via `armaMLE_linearization`) and the YW-vs-LS
 edge-effect bookkeeping, where note the two windows genuinely differ — `hLS` reaches back to
 `X_0`, one step outside the `X_1, …, X_T` window that `sampleACVF` sees, an `O_p(1)`
-boundary term that dies after `√T`-scaling but must be discarded explicitly. -/
+boundary term that dies after `√T`-scaling but must be discarded explicitly.
+
+**STATUS after wave `ts/f1b-arma-deep` (2026-08-09): NOT attempted; IMMUNE to finding 26.**
+The MLE leg goes through `armaMLE_linearization`, which finding 26 shows carries the wrong
+information matrix in general — but only for genuinely mixed models. Here the MA order is
+`0`, and `ScoreAnalysis.hannanVarZ_eq_back_of_pure_ar` gives
+`hannanVarZ b₀ elim0 = hannanVarZBack b₀ elim0`, so the instantiation this debt needs is
+unaffected and the two mathematical items recorded above stand verbatim. In particular this
+debt does **not** have to wait on the `hannanVarZ` repair; it waits only on the
+Taylor/sandwich analysis and on the `X_0` boundary discard. -/
 theorem ls_yw_mle_equivalent_debt [IsProbabilityMeasure μ] {p : ℕ}
     {b0 : Fin p → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsAR b0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
