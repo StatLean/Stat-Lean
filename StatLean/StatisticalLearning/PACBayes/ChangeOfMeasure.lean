@@ -28,6 +28,9 @@ namespace StatLean.StatisticalLearning
 variable {ι : Type*} [MeasurableSpace ι] [DiscreteMeasurableSpace ι]
   [Countable ι]
 
+-- The proof goes through Mathlib's tilted-measure/`llr` API, which needs no
+-- discreteness; the instance is kept for the countable Round-1 interface.
+set_option linter.unusedSectionVars false in
 /-- **Change of measure / Donsker–Varadhan upper bound** (SSBD Eq. (31.2)):
 for probability measures `Q ≪ P` on a countable discrete index with
 `D(Q‖P) < ∞`, and `f` with `Q`-integrable value and `P`-integrable
@@ -47,6 +50,43 @@ theorem gibbsAvg_le_klDiv_add_log_integral_exp
     (hexp : Integrable (fun k => Real.exp (f k)) P) :
     gibbsAvg Q f ≤ (klDiv Q P).toReal +
       Real.log (∫ k, Real.exp (f k) ∂P) := by
-  sorry
+  classical
+  obtain ⟨-, hllr⟩ := klDiv_ne_top_iff.mp hkl
+  have hZpos : 0 < ∫ k, Real.exp (f k) ∂P := integral_exp_pos hexp
+  have hPf : IsProbabilityMeasure (P.tilted f) := isProbabilityMeasure_tilted hexp
+  have hacf : Q ≪ P.tilted f := hac.trans (absolutelyContinuous_tilted hexp)
+  -- Pointwise on the support of `Q`, the log-likelihood ratio against the tilted
+  -- measure splits: `log dQ/dP_f = −f + log E_P[e^f] + log dQ/dP`.
+  have key : llr Q (P.tilted f) =ᵐ[Q]
+      fun k => -f k + Real.log (∫ k, Real.exp (f k) ∂P) + llr Q P k := by
+    have h1 := (toReal_rnDeriv_tilted_right Q P hexp).filter_mono hac.ae_le
+    filter_upwards [h1, Measure.rnDeriv_pos hac,
+      hac.ae_le (Measure.rnDeriv_lt_top Q P)] with k hk hkpos hklt
+    have hr : (0 : ℝ) < (Q.rnDeriv P k).toReal := ENNReal.toReal_pos hkpos.ne' hklt.ne
+    simp only [llr_def]
+    rw [hk, Real.log_mul (by positivity) hr.ne',
+      Real.log_mul (Real.exp_pos _).ne' hZpos.ne', Real.log_exp]
+  have hint : Integrable (llr Q (P.tilted f)) Q := by
+    have h : Integrable
+        (fun k => -f k + Real.log (∫ k, Real.exp (f k) ∂P) + llr Q P k) Q :=
+      (hf.neg.add (integrable_const _)).add hllr
+    exact h.congr key.symm
+  -- Gibbs' inequality for `D(Q‖P_f) ≥ 0`.
+  have hnn := integral_llr_add_sub_measure_univ_nonneg hacf hint
+  simp only [probReal_univ, add_sub_cancel_right] at hnn
+  -- Split the integral (the lambda shapes must be pinned down, else `Pi.neg`/`Pi.add`
+  -- block the `integral_add` rewrite).
+  have hIneg : Integrable (fun a : ι => -f a) Q := hf.neg
+  have hI1 : Integrable
+      (fun a : ι => -f a + Real.log (∫ k, Real.exp (f k) ∂P)) Q :=
+    hIneg.add (integrable_const _)
+  have hsplit : ∫ a, (-f a + Real.log (∫ k, Real.exp (f k) ∂P) + llr Q P a) ∂Q
+      = -(∫ a, f a ∂Q) + Real.log (∫ k, Real.exp (f k) ∂P)
+        + ∫ a, llr Q P a ∂Q := by
+    rw [integral_add hI1 hllr, integral_add hIneg (integrable_const _), integral_neg,
+      integral_const, probReal_univ, smul_eq_mul, one_mul]
+  rw [integral_congr_ae key, hsplit] at hnn
+  rw [gibbsAvg, toReal_klDiv_of_measure_eq hac (by simp)]
+  linarith
 
 end StatLean.StatisticalLearning
