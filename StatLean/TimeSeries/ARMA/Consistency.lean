@@ -4655,6 +4655,36 @@ theorem criterion_tendsto_contrast [IsProbabilityMeasure μ] {p q : ℕ}
     ((T : ℝ)⁻¹ * Real.log (armaToeplitz b a T).det)
   linarith
 
+/-- At the truth the contrast variance is `1` (the coprimality-free half of
+`armaContrastVar_eq_one_iff`: the composite filter is `π(θ₀) ∗ ψ(θ₀) = δ`). -/
+private lemma armaContrastVar_self {p q : ℕ} (b0 : Fin p → ℝ) (a0 : Fin q → ℝ) :
+    armaContrastVar b0 a0 b0 a0 = 1 := by
+  have hterm : ∀ n : ℕ,
+      (∑ jk ∈ Finset.range (n + 1), armaPi b0 a0 jk * armaPsi b0 a0 (n - jk)) ^ 2
+        = if n = 0 then (1 : ℝ) else 0 := by
+    intro n
+    rw [armaPi_conv_armaPsi]
+    split_ifs <;> norm_num
+  rw [armaContrastVar, tsum_congr hterm]
+  simpa using tsum_ite_eq (0 : ℕ) (1 : ℝ)
+
+/-- The arithmetic of the tolerance `e = σ² min(1, γ)/8`: three tolerances still fit
+strictly inside the contrast gap, even after the `exp(e')` slack. -/
+private lemma contrast_tolerance_pos {σ2 γ e : ℝ} (hσ : 0 < σ2) (hγ : 0 < γ)
+    (he1 : e ≤ σ2 / 8) : 0 < σ2 * (1 + γ) - 3 * e := by
+  nlinarith [mul_pos hσ hγ]
+
+/-- ... and the same tolerance defeats the exponentiated criterion comparison. -/
+private lemma contrast_tolerance_absurd {σ2 γ e : ℝ} (hσ : 0 < σ2) (hγ : 0 < γ)
+    (he1 : e ≤ σ2 / 8) (he2 : e ≤ σ2 * γ / 8)
+    (hfinal : σ2 * (1 + γ) - 3 * e ≤ (σ2 + e) * (1 + γ / 4)) : False := by
+  have hprodγ : e * γ ≤ σ2 / 8 * γ := mul_le_mul_of_nonneg_right he1 (le_of_lt hγ)
+  nlinarith [mul_pos hσ hγ]
+
+-- The assembly re-unifies the full four-fold union of `Fin T`-indexed matrix events
+-- several times, which exceeds the default heartbeat budget at `whnf`.
+set_option maxHeartbeats 1600000 in
+open Matrix in
 /-- **Consistency of approximate MLE sequences** over a compact identifiable
 neighbourhood: any measurable approximate-minimizer sequence of the profiled
 criterion over a compact `K ⊆ 𝓑` containing `θ₀` in its interior converges in
@@ -4746,7 +4776,298 @@ theorem mle_consistent [IsProbabilityMeasure μ] {p q : ℕ}
   --  so neither replaces the modulus. The `∂π/∂θ` companion the 2026-08-08 note asked
   --  for is **not** needed: a modulus of continuity suffices, and it is free from
   --  compactness of `K × K` plus the brick.)
-  sorry
+  --
+  --  **(iii) is now PROVED** (2026-08-09, wave `ts/s1b-arma-finish`), and the Gram-tail
+  --  *difference* modulus asked for just above turned out to be **unnecessary**: the
+  --  consistency argument only ever needs a one-sided (lower) bound on `S_T(θ)/T` over
+  --  the far set, so it suffices that the correction term `T⁻¹uᵀG_T(θ)u` be `o_p(1)`
+  --  *uniformly in `θ ∈ K`*, not that its `θ`-oscillation be small. The entrywise bound
+  --  `|G_{ij}| ≤ (1−r²)⁻¹h_ih_j`, `h_i = C²(T−i)r^{T−i}`, factorises the quadratic form
+  --  into the square of a **`θ`-free** envelope (`quadForm_gramTail_le_env`), whose `L²`
+  --  norm is `O(1)` by Minkowski; one Markov inequality then covers the whole supremum
+  --  at rate `O(1/T)` (`gramTail_uniform_tendstoInProb`). The residual part is priced by
+  --  the `ℓ¹` modulus exactly as predicted (`abs_residSS_sub_le`), and the random factor
+  --  `T⁻¹‖x‖²` it multiplies is `O_p(1)` with a **deterministic** bound because it is
+  --  itself a residual sum of squares — the one at the zero parameter, whose inversion
+  --  filter is the identity (`normSq_bounded_inProb`). The two "shortcuts" declared dead
+  --  above really are dead; they are simply not on the route.
+  classical
+  -- **(ii)** the uniform contrast gap
+  obtain ⟨γ, hγ, hgap⟩ := exists_contrast_gap hB0 hcop hK hKB hcopK hδ
+  -- the locally uniform geometric brick over `K`
+  obtain ⟨C, r, hC, hr0, hr1, hψK, hπK⟩ := exists_uniform_geometric_bound_arma hK hKB
+  have hCpos : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC
+  have hr1' : (0 : ℝ) < 1 - r := by linarith
+  have hPpos : (0 : ℝ) < C / (1 - r) := by positivity
+  have hPbd : ∀ ba ∈ K, ∑' n : ℕ, |armaPi ba.1 ba.2 n| ≤ C / (1 - r) := by
+    intro ba hba
+    have hs : Summable fun n => |armaPi ba.1 ba.2 n| := summable_abs_armaPi (hKB ba hba)
+    have hg : Summable fun n : ℕ => C * r ^ n :=
+      (summable_geometric_of_lt_one hr0 hr1).mul_left C
+    refine le_trans (hs.tsum_le_tsum (fun n => hπK ba hba n) hg) ?_
+    rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1, div_eq_mul_inv]
+  obtain ⟨M, hM0, hMt⟩ := normSq_bounded_inProb h hiid hσ hB0 hcausal hmeas
+  -- the tolerance `e` (three of them fit inside the gap) and the log-scale slack `e'`
+  obtain ⟨e, hedef⟩ : ∃ e : ℝ, e = σ2 * min 1 γ / 8 := ⟨_, rfl⟩
+  have hminpos : (0 : ℝ) < min 1 γ := lt_min one_pos hγ
+  have he0 : 0 < e := by rw [hedef]; positivity
+  have he1 : e ≤ σ2 / 8 := by
+    rw [hedef]
+    have : min 1 γ ≤ 1 := min_le_left _ _
+    nlinarith
+  have he2 : e ≤ σ2 * γ / 8 := by
+    rw [hedef]
+    have : min 1 γ ≤ γ := min_le_right _ _
+    nlinarith
+  obtain ⟨e', he'def⟩ : ∃ e' : ℝ, e' = Real.log (1 + γ / 4) := ⟨_, rfl⟩
+  have he'0 : 0 < e' := by rw [he'def]; exact Real.log_pos (by linarith)
+  have hexpe' : Real.exp e' = 1 + γ / 4 := by
+    rw [he'def]; exact Real.exp_log (by linarith)
+  -- the `ℓ¹` modulus at the scale the oscillation estimate needs
+  obtain ⟨ρ, hρ, hmod⟩ := exists_armaPi_l1_modulus hK hKB
+    (ε := e / (2 * (C / (1 - r)) * M)) (by positivity)
+  -- a finite `ρ`-cover of the far set, by points of the far set
+  have hfarc : IsCompact (K ∩ {ba : (Fin p → ℝ) × (Fin q → ℝ) | δ ≤ dist ba (b0, a0)}) :=
+    hK.inter_right (isClosed_le continuous_const (continuous_id.dist continuous_const))
+  obtain ⟨s, hsK, hsfin, hscov⟩ := hfarc.elim_finite_subcover_image
+    (c := fun ba : (Fin p → ℝ) × (Fin q → ℝ) => Metric.ball ba ρ)
+    (fun ba _ => Metric.isOpen_ball)
+    (fun ba hba => Set.mem_biUnion hba (Metric.mem_ball_self hρ))
+  -- the four families of bad events
+  have hzero := armaResidualSS_tendstoInProb (b := b0) (a := a0) h hiid hσ hB0 hB0
+    hcausal hmeas he0
+  have hG := gramTail_uniform_tendstoInProb (b0 := b0) (a0 := a0) h.whiteNoise hB0
+    hcausal hmeas hK hKB he0
+  have hcentre : ∀ ba ∈ hsfin.toFinset, Tendsto (fun T : ℕ => (μ {ω | e ≤
+      |(T : ℝ)⁻¹ * ((piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+          (piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+        - σ2 * armaContrastVar b0 a0 ba.1 ba.2|}).toReal) atTop (𝓝 0) := by
+    intro ba hba
+    exact armaResidualSS_tendstoInProb h hiid hσ hB0
+      (hKB ba (hsK (hsfin.mem_toFinset.1 hba)).1) hcausal hmeas he0
+  have hfinsum : Tendsto (fun T : ℕ => ∑ ba ∈ hsfin.toFinset, (μ {ω | e ≤
+      |(T : ℝ)⁻¹ * ((piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+          (piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+        - σ2 * armaContrastVar b0 a0 ba.1 ba.2|}).toReal) atTop (𝓝 0) := by
+    simpa using tendsto_finset_sum hsfin.toFinset hcentre
+  have hsum := ((hzero.add hMt).add hG).add hfinsum
+  rw [add_zero, add_zero, add_zero] at hsum
+  -- the two deterministic eventual conditions
+  have hlog : ∀ᶠ T : ℕ in atTop,
+      |(T : ℝ)⁻¹ * Real.log (armaToeplitz b0 a0 T).det| < e' / 2 := by
+    have hball := (logdet_armaToeplitz_vanishes hB0).eventually
+      (Metric.ball_mem_nhds (0 : ℝ) (by linarith : (0 : ℝ) < e' / 2))
+    filter_upwards [hball] with T hTb
+    simpa [Real.dist_eq] using hTb
+  have hdel : ∀ᶠ T : ℕ in atTop, δT T < e' / 2 := by
+    have hball := hδT.eventually
+      (Metric.ball_mem_nhds (0 : ℝ) (by linarith : (0 : ℝ) < e' / 2))
+    filter_upwards [hball] with T hTb
+    have habs := abs_lt.1 (by simpa [Real.dist_eq] using hTb)
+    linarith [habs.2]
+  refine squeeze_zero' (Eventually.of_forall fun T => ENNReal.toReal_nonneg) ?_ hsum
+  filter_upwards [eventually_ge_atTop 1, hlog, hdel] with T hT hlogT hdelT
+  have hTpos : (0 : ℝ) < T := by exact_mod_cast hT
+  have hTnn : (0 : ℝ) ≤ (T : ℝ)⁻¹ := by positivity
+  have hunion : ∀ A B : Set Ω, (μ (A ∪ B)).toReal ≤ (μ A).toReal + (μ B).toReal := by
+    intro A B
+    refine le_trans (ENNReal.toReal_mono (by finiteness) (measure_union_le A B)) ?_
+    exact le_of_eq (ENNReal.toReal_add (measure_ne_top μ _) (measure_ne_top μ _))
+  have hsub : {ω | δ ≤ dist (θ T ω) (b0, a0)}
+      ⊆ ({ω | e ≤ |(T : ℝ)⁻¹ *
+            ((piMat b0 a0 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+              (piMat b0 a0 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+            - σ2 * armaContrastVar b0 a0 b0 a0|}
+        ∪ {ω | M ≤ (T : ℝ)⁻¹ * ∑ k : Fin T, X (((k : ℕ) : ℤ) + 1) ω ^ 2}
+        ∪ {ω | ∃ ba ∈ K, e ≤ (T : ℝ)⁻¹ *
+            ((piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+              (gramTail ba.1 ba.2 T *ᵥ
+                (piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)))})
+        ∪ ⋃ ba ∈ hsfin.toFinset, {ω | e ≤
+            |(T : ℝ)⁻¹ * ((piMat ba.1 ba.2 T *ᵥ
+                fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+                (piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+              - σ2 * armaContrastVar b0 a0 ba.1 ba.2|} := by
+    intro ω hω
+    simp only [Set.mem_setOf_eq] at hω
+    by_contra hcon
+    simp only [Set.mem_union, not_or] at hcon
+    obtain ⟨⟨⟨hn1, hn2⟩, hn3⟩, hn4⟩ := hcon
+    simp only [Set.mem_setOf_eq, not_le] at hn1 hn2
+    simp only [Set.mem_setOf_eq, not_exists, not_and, not_le] at hn3
+    simp only [Set.mem_iUnion, Set.mem_setOf_eq, not_exists, not_le] at hn4
+    -- the estimate is in the far set, hence in some cover ball
+    have hθK : θ T ω ∈ K := (hargmin T ω).1
+    obtain ⟨bj, hbjs, hmem⟩ := Set.mem_iUnion₂.1 (hscov ⟨hθK, hω⟩)
+    have hbjK : bj ∈ K := (hsK hbjs).1
+    have hbjfar : δ ≤ dist bj (b0, a0) := (hsK hbjs).2
+    have hdist : dist (θ T ω) bj < ρ := Metric.mem_ball.1 hmem
+    have hn4' := hn4 bj (hsfin.mem_toFinset.2 hbjs)
+    -- the residual-part oscillation between the estimate and the cover centre
+    have hQ0 : (0 : ℝ) ≤ (T : ℝ)⁻¹ * ∑ k : Fin T, X (((k : ℕ) : ℤ) + 1) ω ^ 2 :=
+      mul_nonneg hTnn (Finset.sum_nonneg fun k _ => sq_nonneg _)
+    have hosc := abs_residSS_sub_le (b1 := (θ T ω).1) (a1 := (θ T ω).2)
+      (b2 := bj.1) (a2 := bj.2) (summable_abs_armaPi (hKB _ hθK))
+      (summable_abs_armaPi (hKB bj hbjK)) (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+    have hDl1 : ∑' n : ℕ, |armaPi (θ T ω).1 (θ T ω).2 n - armaPi bj.1 bj.2 n|
+        ≤ e / (2 * (C / (1 - r)) * M) := le_of_lt (hmod _ hθK bj hbjK hdist)
+    have hDl0 : (0 : ℝ) ≤ ∑' n : ℕ, |armaPi (θ T ω).1 (θ T ω).2 n - armaPi bj.1 bj.2 n| :=
+      tsum_nonneg fun n => abs_nonneg _
+    have hPP : (∑' n : ℕ, |armaPi (θ T ω).1 (θ T ω).2 n|) + (∑' n : ℕ, |armaPi bj.1 bj.2 n|)
+        ≤ 2 * (C / (1 - r)) := by
+      have h1 := hPbd _ hθK
+      have h2 := hPbd bj hbjK
+      linarith
+    have hPP0 : (0 : ℝ) ≤ (∑' n : ℕ, |armaPi (θ T ω).1 (θ T ω).2 n|)
+        + (∑' n : ℕ, |armaPi bj.1 bj.2 n|) :=
+      add_nonneg (tsum_nonneg fun n => abs_nonneg _) (tsum_nonneg fun n => abs_nonneg _)
+    have hval : e / (2 * (C / (1 - r)) * M) * (2 * (C / (1 - r))) * M = e := by field_simp
+    have hprod : (∑' n : ℕ, |armaPi (θ T ω).1 (θ T ω).2 n - armaPi bj.1 bj.2 n|) *
+          ((∑' n : ℕ, |armaPi (θ T ω).1 (θ T ω).2 n|) + (∑' n : ℕ, |armaPi bj.1 bj.2 n|)) *
+          ((T : ℝ)⁻¹ * ∑ k : Fin T, X (((k : ℕ) : ℤ) + 1) ω ^ 2) ≤ e := by
+      rw [← hval]
+      exact mul_le_mul (mul_le_mul hDl1 hPP hPP0 (by positivity)) (le_of_lt hn2) hQ0
+        (by positivity)
+    have hoscT : |(T : ℝ)⁻¹ * ((piMat (θ T ω).1 (θ T ω).2 T *ᵥ
+          fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+            (piMat (θ T ω).1 (θ T ω).2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+        - (T : ℝ)⁻¹ * ((piMat bj.1 bj.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+            (piMat bj.1 bj.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))| ≤ e := by
+      rw [← mul_sub, abs_mul, abs_of_nonneg hTnn]
+      calc (T : ℝ)⁻¹ * |(piMat (θ T ω).1 (θ T ω).2 T *ᵥ
+              fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+              (piMat (θ T ω).1 (θ T ω).2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+            - (piMat bj.1 bj.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+              (piMat bj.1 bj.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)|
+          ≤ (T : ℝ)⁻¹ * ((∑' n : ℕ,
+              |armaPi (θ T ω).1 (θ T ω).2 n - armaPi bj.1 bj.2 n|) *
+              ((∑' n : ℕ, |armaPi (θ T ω).1 (θ T ω).2 n|)
+                + (∑' n : ℕ, |armaPi bj.1 bj.2 n|)) *
+              ∑ k : Fin T, X (((k : ℕ) : ℤ) + 1) ω ^ 2) :=
+            mul_le_mul_of_nonneg_left hosc hTnn
+        _ = (∑' n : ℕ, |armaPi (θ T ω).1 (θ T ω).2 n - armaPi bj.1 bj.2 n|) *
+              ((∑' n : ℕ, |armaPi (θ T ω).1 (θ T ω).2 n|)
+                + (∑' n : ℕ, |armaPi bj.1 bj.2 n|)) *
+              ((T : ℝ)⁻¹ * ∑ k : Fin T, X (((k : ℕ) : ℤ) + 1) ω ^ 2) := by ring
+        _ ≤ e := hprod
+    -- the two sandwiches
+    obtain ⟨hup1, hlow1⟩ := armaProfileS_sandwich (hKB _ hθK) T
+      (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+    obtain ⟨hup0, hlow0⟩ := armaProfileS_sandwich hB0 T
+      (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+    have hs1l := mul_le_mul_of_nonneg_left hlow1 hTnn
+    have hs0u := mul_le_mul_of_nonneg_left hup0 hTnn
+    have hs0l := mul_le_mul_of_nonneg_left hlow0 hTnn
+    rw [mul_sub] at hs1l hs0l
+    have hD1 := hn3 _ hθK
+    have hD0 := hn3 (b0, a0) hK0
+    have habsosc := abs_le.1 hoscT
+    have habsj := abs_lt.1 hn4'
+    have habs0 := abs_lt.1 hn1
+    rw [armaContrastVar_self] at habs0
+    simp only [mul_one] at habs0
+    have hgapj : 1 + γ ≤ armaContrastVar b0 a0 bj.1 bj.2 := hgap bj hbjK hbjfar
+    have hσcv : σ2 * (1 + γ) ≤ σ2 * armaContrastVar b0 a0 bj.1 bj.2 :=
+      mul_le_mul_of_nonneg_left hgapj (le_of_lt hσ)
+    -- the lower bound at the estimate and the upper bound at the truth
+    have hApos : (0 : ℝ) < σ2 * (1 + γ) - 3 * e := contrast_tolerance_pos hσ hγ he1
+    have hSlow : σ2 * (1 + γ) - 3 * e
+        ≤ (T : ℝ)⁻¹ * armaProfileS (θ T ω).1 (θ T ω).2
+            (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) := by
+      linarith [habsosc.1, habsj.1, hD1]
+    have hS0pos : (0 : ℝ) < (T : ℝ)⁻¹ * armaProfileS b0 a0
+        (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) := by
+      linarith [habs0.1, hD0, he1]
+    have hS0up : (T : ℝ)⁻¹ * armaProfileS b0 a0
+        (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ≤ σ2 + e := by
+      linarith [habs0.2]
+    -- the criterion comparison
+    have hlogdet1 := (log_det_armaToeplitz_bounds hC hr0 hr1 (hπK _ hθK) (hψK _ hθK)
+      (hKB _ hθK) T).1
+    have hcrit1 : Real.log (σ2 * (1 + γ) - 3 * e)
+        ≤ armaProfileCriterion (θ T ω).1 (θ T ω).2
+            (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) := by
+      rw [armaProfileCriterion, div_eq_inv_mul]
+      have hmono := Real.log_le_log hApos hSlow
+      have hnn := mul_nonneg hTnn hlogdet1
+      linarith
+    have hcrit0 : armaProfileCriterion b0 a0
+        (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ≤ Real.log (σ2 + e) + e' / 2 := by
+      rw [armaProfileCriterion, div_eq_inv_mul]
+      have hmono := Real.log_le_log hS0pos hS0up
+      have habsl := abs_lt.1 hlogT
+      linarith [habsl.2]
+    have hcmp := (hargmin T ω).2 (b0, a0) hK0
+    have hchain : Real.log (σ2 * (1 + γ) - 3 * e) ≤ Real.log (σ2 + e) + e' := by
+      linarith
+    have hfinal : σ2 * (1 + γ) - 3 * e ≤ (σ2 + e) * (1 + γ / 4) := by
+      have h1 : Real.exp (Real.log (σ2 * (1 + γ) - 3 * e))
+          ≤ Real.exp (Real.log (σ2 + e) + e') := Real.exp_le_exp.2 hchain
+      rw [Real.exp_log hApos, Real.exp_add, Real.exp_log (by linarith : (0 : ℝ) < σ2 + e),
+        hexpe'] at h1
+      exact h1
+    exact contrast_tolerance_absurd hσ hγ he1 he2 hfinal
+  calc (μ {ω | δ ≤ dist (θ T ω) (b0, a0)}).toReal
+      ≤ (μ (({ω | e ≤ |(T : ℝ)⁻¹ *
+            ((piMat b0 a0 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+              (piMat b0 a0 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+            - σ2 * armaContrastVar b0 a0 b0 a0|}
+        ∪ {ω | M ≤ (T : ℝ)⁻¹ * ∑ k : Fin T, X (((k : ℕ) : ℤ) + 1) ω ^ 2}
+        ∪ {ω | ∃ ba ∈ K, e ≤ (T : ℝ)⁻¹ *
+            ((piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+              (gramTail ba.1 ba.2 T *ᵥ
+                (piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)))})
+        ∪ ⋃ ba ∈ hsfin.toFinset, {ω | e ≤
+            |(T : ℝ)⁻¹ * ((piMat ba.1 ba.2 T *ᵥ
+                fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+                (piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+              - σ2 * armaContrastVar b0 a0 ba.1 ba.2|})).toReal :=
+        ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono hsub)
+    _ ≤ _ := by
+        have hbi : (μ (⋃ ba ∈ hsfin.toFinset, {ω | e ≤
+            |(T : ℝ)⁻¹ * ((piMat ba.1 ba.2 T *ᵥ
+                fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+                (piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+              - σ2 * armaContrastVar b0 a0 ba.1 ba.2|})).toReal
+            ≤ ∑ ba ∈ hsfin.toFinset, (μ {ω | e ≤
+                |(T : ℝ)⁻¹ * ((piMat ba.1 ba.2 T *ᵥ
+                    fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+                    (piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+                  - σ2 * armaContrastVar b0 a0 ba.1 ba.2|}).toReal := by
+          refine le_trans (ENNReal.toReal_mono
+            (ENNReal.sum_ne_top.2 fun ba _ => measure_ne_top μ _)
+            (measure_biUnion_finset_le _ _)) ?_
+          exact le_of_eq (ENNReal.toReal_sum fun ba _ => measure_ne_top μ _)
+        have h1 := hunion (({ω | e ≤ |(T : ℝ)⁻¹ *
+              ((piMat b0 a0 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+                (piMat b0 a0 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+              - σ2 * armaContrastVar b0 a0 b0 a0|}
+          ∪ {ω | M ≤ (T : ℝ)⁻¹ * ∑ k : Fin T, X (((k : ℕ) : ℤ) + 1) ω ^ 2})
+          ∪ {ω | ∃ ba ∈ K, e ≤ (T : ℝ)⁻¹ *
+              ((piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+                (gramTail ba.1 ba.2 T *ᵥ
+                  (piMat ba.1 ba.2 T *ᵥ
+                    fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)))})
+          (⋃ ba ∈ hsfin.toFinset, {ω | e ≤
+              |(T : ℝ)⁻¹ * ((piMat ba.1 ba.2 T *ᵥ
+                  fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+                  (piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+                - σ2 * armaContrastVar b0 a0 ba.1 ba.2|})
+        have h2 := hunion ({ω | e ≤ |(T : ℝ)⁻¹ *
+              ((piMat b0 a0 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+                (piMat b0 a0 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+              - σ2 * armaContrastVar b0 a0 b0 a0|}
+          ∪ {ω | M ≤ (T : ℝ)⁻¹ * ∑ k : Fin T, X (((k : ℕ) : ℤ) + 1) ω ^ 2})
+          {ω | ∃ ba ∈ K, e ≤ (T : ℝ)⁻¹ *
+              ((piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+                (gramTail ba.1 ba.2 T *ᵥ
+                  (piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)))}
+        have h3 := hunion {ω | e ≤ |(T : ℝ)⁻¹ *
+              ((piMat b0 a0 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+                (piMat b0 a0 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+              - σ2 * armaContrastVar b0 a0 b0 a0|}
+          {ω | M ≤ (T : ℝ)⁻¹ * ∑ k : Fin T, X (((k : ℕ) : ℤ) + 1) ω ^ 2}
+        linarith
 
 end Process
 
