@@ -1078,6 +1078,76 @@ private lemma exists_contrast_gap {p q : ℕ} {b0 : Fin p → ℝ} {a0 : Fin q �
     linarith
 
 
+
+/-- **The `ℓ¹` modulus of continuity of the inversion filter on a compact set** — the
+deterministic first input of the stochastic-equicontinuity estimate `mle_consistent`(iii).
+
+Each `π_n` is a polynomial in the parameters (`continuous_armaPi`) and the brick
+`exists_uniform_geometric_bound_arma` supplies the uniform envelope `2C rⁿ`, so
+`(θ, θ') ↦ Σ_n |π_n(θ) − π_n(θ')|` is continuous on the compact `K × K` and vanishes on
+the diagonal; the modulus is then the minimal distance on the (compact) super-level set. -/
+private lemma exists_armaPi_l1_modulus {p q : ℕ}
+    {K : Set ((Fin p → ℝ) × (Fin q → ℝ))} (hK : IsCompact K)
+    (hKB : ∀ ba ∈ K, ARMAInvertibleParams ba.1 ba.2) {ε : ℝ} (hε : 0 < ε) :
+    ∃ ρ : ℝ, 0 < ρ ∧ ∀ ba ∈ K, ∀ ba' ∈ K, dist ba ba' < ρ →
+      ∑' n : ℕ, |armaPi ba.1 ba.2 n - armaPi ba'.1 ba'.2 n| < ε := by
+  classical
+  obtain ⟨C, r, hC, hr0, hr1, _, hπK⟩ := exists_uniform_geometric_bound_arma hK hKB
+  have hCpos : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC
+  have hgeom : Summable fun n : ℕ => 2 * C * r ^ n :=
+    (summable_geometric_of_lt_one hr0 hr1).mul_left (2 * C)
+  have hFcont : ContinuousOn (fun z : ((Fin p → ℝ) × (Fin q → ℝ)) ×
+      ((Fin p → ℝ) × (Fin q → ℝ)) =>
+        ∑' n : ℕ, |armaPi z.1.1 z.1.2 n - armaPi z.2.1 z.2.2 n|) (K ×ˢ K) := by
+    refine continuousOn_tsum (u := fun n : ℕ => 2 * C * r ^ n)
+      (fun n => (((continuous_armaPi n).comp continuous_fst).sub
+        ((continuous_armaPi n).comp continuous_snd)).abs.continuousOn) hgeom
+      (fun n z hz => ?_)
+    have h1 := hπK z.1 hz.1 n
+    have h2 := hπK z.2 hz.2 n
+    have habs : |armaPi z.1.1 z.1.2 n - armaPi z.2.1 z.2.2 n|
+        ≤ |armaPi z.1.1 z.1.2 n| + |armaPi z.2.1 z.2.2 n| := abs_sub _ _
+    rw [Real.norm_eq_abs, abs_abs]
+    linarith
+  haveI : CompactSpace ↥(K ×ˢ K) := isCompact_iff_compactSpace.1 (hK.prod hK)
+  obtain ⟨F, hF⟩ : ∃ F : ↥(K ×ˢ K) → ℝ, F = (K ×ˢ K).restrict
+      (fun z : ((Fin p → ℝ) × (Fin q → ℝ)) × ((Fin p → ℝ) × (Fin q → ℝ)) =>
+        ∑' n : ℕ, |armaPi z.1.1 z.1.2 n - armaPi z.2.1 z.2.2 n|) := ⟨_, rfl⟩
+  have hFc : Continuous F := by
+    rw [hF]; exact continuousOn_iff_continuous_restrict.1 hFcont
+  have hdc : Continuous fun s : ↥(K ×ˢ K) => dist s.1.1 s.1.2 :=
+    (continuous_fst.comp continuous_subtype_val).dist
+      (continuous_snd.comp continuous_subtype_val)
+  have hAcl : IsClosed {s : ↥(K ×ˢ K) | ε ≤ F s} := isClosed_le continuous_const hFc
+  rcases Set.eq_empty_or_nonempty {s : ↥(K ×ˢ K) | ε ≤ F s} with hemp | hAne
+  · refine ⟨1, one_pos, fun ba hba ba' hba' _ => ?_⟩
+    by_contra hcon
+    have : (⟨(ba, ba'), Set.mk_mem_prod hba hba'⟩ : ↥(K ×ˢ K)) ∈ {s | ε ≤ F s} := by
+      simpa [hF, Set.restrict_apply] using not_lt.1 hcon
+    rw [hemp] at this
+    exact this
+  · obtain ⟨s0, hs0, hmin⟩ := hAcl.isCompact.exists_isMinOn hAne hdc.continuousOn
+    have hpos : 0 < dist s0.1.1 s0.1.2 := by
+      rcases (dist_nonneg (x := s0.1.1) (y := s0.1.2)).lt_or_eq with h | h
+      · exact h
+      · exfalso
+        have heq : s0.1.1 = s0.1.2 := dist_eq_zero.1 h.symm
+        have hzero : F s0 = 0 := by
+          rw [hF]
+          show ∑' n : ℕ, |armaPi s0.1.1.1 s0.1.1.2 n - armaPi s0.1.2.1 s0.1.2.2 n| = 0
+          rw [heq]
+          simp
+        have := hs0
+        simp only [Set.mem_setOf_eq, hzero] at this
+        linarith
+    refine ⟨dist s0.1.1 s0.1.2, hpos, fun ba hba ba' hba' hd => ?_⟩
+    by_contra hcon
+    have hmemA : (⟨(ba, ba'), Set.mk_mem_prod hba hba'⟩ : ↥(K ×ˢ K)) ∈ {s | ε ≤ F s} := by
+      simpa [hF, Set.restrict_apply] using not_lt.1 hcon
+    have hge := hmin hmemA
+    simp only [Set.mem_setOf_eq] at hge
+    linarith
+
 section Szego
 
 /-! ### The Szegő-type limit `T⁻¹ log det Γ_T → 0`
