@@ -220,6 +220,201 @@ theorem maximal_ergodic (hf : MeasurePreserving f μ μ) {g : α → ℝ}
     integral_congr_ae (ae_restrict_of_ae hgg' : g =ᵐ[μ.restrict _] g')]
   exact maximal_ergodic_aux hf hg'm hg'
 
+/-! ### The pointwise theorem
+
+Fix `ε > 0`, write `E = μ[g | invariantSigma f]` (which satisfies `E ∘ f = E` *exactly*,
+because an `invariantSigma f`-measurable function has `invariantSigma f`-measurable level
+sets) and put `h = g − E − ε/2`. The set
+
+`B = {x | ∀ M : ℝ, ∃ᶠ n, M < birkhoffSum f h n x}`
+
+of points whose `h`-Birkhoff sums are unbounded above is **exactly** `f`-invariant: by
+`birkhoffSum_succ'`, `birkhoffSum f h n (f x) = birkhoffSum f h (n+1) x − h x`, and the shift
+by the constant `h x` is absorbed by the quantifier over `M` — no limit argument and no
+`limsup` are needed. This is what makes the argument formalizable without an `EReal`-valued
+`limsup` calculus. Since `B` is invariant, `maximal_ergodic` applied to `h · 1_B` gives
+`0 ≤ ∫_B h`, while `B ∈ invariantSigma f` gives `∫_B g = ∫_B E` and hence
+`∫_B h = −(ε/2)·μ B`. So `μ B = 0`, and off `B` the sums `birkhoffSum f h n` are bounded
+above, whence `birkhoffAverage f g n ≤ E + ε` eventually. -/
+
+section Pointwise
+
+private theorem frequently_succ_iff (p : ℕ → Prop) :
+    (∃ᶠ n in atTop, p (n + 1)) ↔ ∃ᶠ n in atTop, p n := by
+  simp only [Filter.frequently_atTop]
+  constructor
+  · intro hp a
+    obtain ⟨b, hb, hpb⟩ := hp a
+    exact ⟨b + 1, le_trans hb (Nat.le_succ b), hpb⟩
+  · intro hp a
+    obtain ⟨b, hb, hpb⟩ := hp (a + 1)
+    exact ⟨b - 1, by omega, by rwa [Nat.sub_add_cancel (by omega)]⟩
+
+/-- One half of the pointwise ergodic theorem: the Birkhoff averages are eventually below
+`μ[g | invariantSigma f] + ε`, almost everywhere. -/
+private theorem birkhoff_ae_le [IsProbabilityMeasure μ] (hf : MeasurePreserving f μ μ)
+    (hfm : Measurable f) {g : α → ℝ} (hgm : Measurable g) (hg : Integrable g μ)
+    {ε : ℝ} (hε : 0 < ε) :
+    ∀ᵐ x ∂μ, ∀ᶠ n in atTop,
+      birkhoffAverage ℝ f g n x ≤ (μ[g | invariantSigma f]) x + ε := by
+  set E := μ[g | invariantSigma f] with hEdef
+  have hEsm : StronglyMeasurable[invariantSigma f] E := stronglyMeasurable_condExp
+  have hEint : Integrable E μ := integrable_condExp
+  have hEmeas : Measurable E := hEsm.measurable.mono (invariantSigma_le f) le_rfl
+  -- an `invariantSigma f`-measurable function is *pointwise* invariant
+  have hEf : ∀ x, E (f x) = E x := by
+    intro x
+    have hm : MeasurableSet (E ⁻¹' {E x}) ∧ f ⁻¹' (E ⁻¹' {E x}) = E ⁻¹' {E x} :=
+      hEsm.measurable (measurableSet_singleton (E x))
+    have hx : x ∈ f ⁻¹' (E ⁻¹' {E x}) := by rw [hm.2]; rfl
+    exact hx
+  obtain ⟨c, hc, hεc⟩ : ∃ c : ℝ, 0 < c ∧ ε = c + c := ⟨ε / 2, by linarith, by ring⟩
+  set φ : α → ℝ := fun y => E y + c with hφ
+  set h : α → ℝ := fun y => g y - φ y with hh
+  have hhPi : h = g - φ := by funext y; simp [hh]
+  have hφf : φ ∘ f = φ := funext fun x => by simp [hφ, hEf x]
+  have hφm : Measurable φ := hEmeas.add measurable_const
+  have hφint : Integrable φ μ := hEint.add (integrable_const c)
+  have hhm : Measurable h := hgm.sub hφm
+  have hhint : Integrable h μ := hg.sub hφint
+  have hSh : ∀ (n : ℕ) (x : α),
+      birkhoffSum f h n x = birkhoffSum f g n x - (n : ℝ) * (E x + c) := by
+    intro n x
+    have hSφ : birkhoffSum f φ n x = (n : ℝ) * (E x + c) := by
+      rw [birkhoffSum_of_comp_eq hφf]
+      simp [hφ, Pi.smul_apply, nsmul_eq_mul]
+      ring
+    rw [hhPi, birkhoffSum_sub, hSφ]
+  -- the invariant set of points with unbounded Birkhoff sums
+  set B : Set α := {x | ∀ M : ℝ, ∃ᶠ n in atTop, M < birkhoffSum f h n x} with hB
+  have hmemB : ∀ x, x ∈ B ↔ ∀ M : ℝ, ∃ᶠ n in atTop, M < birkhoffSum f h n x :=
+    fun _ => Iff.rfl
+  have hBm : MeasurableSet B := by
+    have hEq : B = ⋂ m : ℕ, ⋂ N : ℕ, ⋃ n : ℕ, ⋃ (_ : N ≤ n),
+        {x | (m : ℝ) < birkhoffSum f h n x} := by
+      ext x
+      simp only [hmemB, Set.mem_iInter, Set.mem_iUnion, Set.mem_setOf_eq,
+        Filter.frequently_atTop, ge_iff_le, exists_prop]
+      refine ⟨fun hx m N => hx (m : ℝ) N, fun hx M N => ?_⟩
+      obtain ⟨m, hm⟩ := exists_nat_gt M
+      obtain ⟨n, hn1, hn2⟩ := hx m N
+      exact ⟨n, hn1, lt_trans hm hn2⟩
+    rw [hEq]
+    exact MeasurableSet.iInter fun _ => MeasurableSet.iInter fun _ =>
+      MeasurableSet.iUnion fun n => MeasurableSet.iUnion fun _ =>
+        measurableSet_lt measurable_const (measurable_birkhoffSum hfm hhm n)
+  have hshift : ∀ (x : α) (n : ℕ),
+      birkhoffSum f h n (f x) = birkhoffSum f h (n + 1) x - h x := by
+    intro x n
+    rw [birkhoffSum_succ']
+    ring
+  have hBinv : f ⁻¹' B = B := by
+    ext x
+    simp only [Set.mem_preimage, hmemB]
+    constructor
+    · intro hfx M
+      have h1 := hfx (M - h x)
+      simp only [hshift x] at h1
+      exact (frequently_succ_iff _).1 (h1.mono fun n hn => by linarith)
+    · intro hx M
+      have h1 : ∃ᶠ n in atTop, M + h x < birkhoffSum f h (n + 1) x :=
+        (frequently_succ_iff fun n => M + h x < birkhoffSum f h n x).2 (hx (M + h x))
+      refine h1.mono fun n hn => ?_
+      rw [hshift x n]
+      linarith
+  have hfB : ∀ x, f x ∈ B ↔ x ∈ B := fun x => Set.ext_iff.1 hBinv x
+  have hBiter : ∀ (k : ℕ) (x : α), f^[k] x ∈ B ↔ x ∈ B := by
+    intro k
+    induction k with
+    | zero => intro x; simp
+    | succ k ih => intro x; rw [Function.iterate_succ_apply, ih (f x), hfB]
+  -- `B` is contained in the set of the maximal ergodic theorem
+  have hBD : ∀ x ∈ B, ∃ n : ℕ, 0 < birkhoffSum f h (n + 1) x := by
+    intro x hx
+    have h0 := (hmemB x).1 hx 0
+    rw [Filter.frequently_atTop] at h0
+    obtain ⟨n, hn1, hn2⟩ := h0 1
+    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+    exact ⟨k, hn2⟩
+  -- Birkhoff sums of the truncated observable
+  have hSind : ∀ (n : ℕ) (x : α),
+      birkhoffSum f (Set.indicator B h) n x = Set.indicator B (birkhoffSum f h n) x := by
+    intro n x
+    by_cases hx : x ∈ B
+    · rw [Set.indicator_of_mem hx]
+      unfold birkhoffSum
+      exact Finset.sum_congr rfl fun k _ => Set.indicator_of_mem ((hBiter k x).2 hx) h
+    · rw [Set.indicator_of_notMem hx]
+      unfold birkhoffSum
+      exact Finset.sum_eq_zero fun k _ =>
+        Set.indicator_of_notMem (fun hc' => hx ((hBiter k x).1 hc')) h
+  have hmax := maximal_ergodic hf (hhint.indicator hBm)
+  have hsetEq : {x | ∃ n : ℕ, 0 < birkhoffSum f (Set.indicator B h) (n + 1) x} = B := by
+    ext x
+    simp only [Set.mem_setOf_eq, hSind]
+    constructor
+    · rintro ⟨n, hn⟩
+      by_contra hx
+      rw [Set.indicator_of_notMem hx] at hn
+      exact lt_irrefl 0 hn
+    · intro hx
+      obtain ⟨n, hn⟩ := hBD x hx
+      exact ⟨n, by rwa [Set.indicator_of_mem hx]⟩
+  rw [hsetEq, setIntegral_congr_fun hBm (fun x hx => Set.indicator_of_mem hx h)] at hmax
+  -- but `B` is invariant, so the conditional expectation kills the `g − E` part
+  have hBG : MeasurableSet[invariantSigma f] B := ⟨hBm, hBinv⟩
+  have hgE : ∫ x in B, E x ∂μ = ∫ x in B, g x ∂μ :=
+    setIntegral_condExp (invariantSigma_le f) hg hBG
+  have hsplit : ∫ x in B, h x ∂μ
+      = (∫ x in B, g x ∂μ) - (∫ x in B, E x ∂μ) - μ.real B * c := by
+    have h1 : ∫ x in B, h x ∂μ = (∫ x in B, g x ∂μ) - ∫ x in B, φ x ∂μ := by
+      simp only [hh]
+      exact integral_sub hg.integrableOn hφint.integrableOn
+    have h2 : ∫ x in B, φ x ∂μ = (∫ x in B, E x ∂μ) + μ.real B * c := by
+      simp only [hφ]
+      rw [integral_add hEint.integrableOn (integrable_const c).integrableOn,
+        setIntegral_const, smul_eq_mul]
+    rw [h1, h2]; ring
+  have hμB : μ.real B = 0 := by
+    rw [hsplit, hgE] at hmax
+    have h2 : (0 : ℝ) ≤ μ.real B := measureReal_nonneg
+    nlinarith
+  have hμB0 : μ B = 0 := by
+    rw [measureReal_def] at hμB
+    rcases (ENNReal.toReal_eq_zero_iff (μ B)).1 hμB with h' | h'
+    · exact h'
+    · exact absurd h' (measure_ne_top μ B)
+  have haeB : ∀ᵐ x ∂μ, x ∉ B := by
+    rw [ae_iff]
+    simpa using hμB0
+  filter_upwards [haeB] with x hx
+  -- off `B` the Birkhoff sums of `h` are bounded above; divide by `n`
+  have hxB : ¬ ∀ M : ℝ, ∃ᶠ n in atTop, M < birkhoffSum f h n x := fun hc' => hx ((hmemB x).2 hc')
+  push Not at hxB
+  obtain ⟨M, hM'⟩ := hxB
+  have hbig : ∀ᶠ n : ℕ in atTop, (2 * |M| / ε : ℝ) ≤ (n : ℝ) :=
+    (tendsto_natCast_atTop_atTop (R := ℝ)).eventually_ge_atTop _
+  filter_upwards [hM', hbig, eventually_ge_atTop 1] with n hn1 hn2 hn3
+  have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast Nat.lt_of_lt_of_le Nat.zero_lt_one hn3
+  have hMcn : M ≤ (n : ℝ) * c := by
+    have h4 : 2 * |M| ≤ (n : ℝ) * ε := (div_le_iff₀ hε).1 hn2
+    have h5 : M ≤ |M| := le_abs_self M
+    have h6 : (n : ℝ) * ε = (n : ℝ) * c + (n : ℝ) * c := by rw [hεc]; ring
+    linarith
+  have hkey : birkhoffSum f g n x ≤ (n : ℝ) * (E x + ε) := by
+    have h7 := hSh n x
+    have h8 : (n : ℝ) * (E x + c) = (n : ℝ) * E x + (n : ℝ) * c := by ring
+    have h9 : (n : ℝ) * (E x + ε) = (n : ℝ) * E x + (n : ℝ) * c + (n : ℝ) * c := by
+      rw [hεc]; ring
+    linarith
+  calc birkhoffAverage ℝ f g n x = (n : ℝ)⁻¹ * birkhoffSum f g n x := by
+        simp [birkhoffAverage, smul_eq_mul]
+    _ ≤ (n : ℝ)⁻¹ * ((n : ℝ) * (E x + ε)) :=
+        mul_le_mul_of_nonneg_left hkey (by positivity)
+    _ = E x + ε := by field_simp
+
+end Pointwise
+
 /-- **The pointwise (Birkhoff) ergodic theorem, conditional-expectation form**: for a
 measure-preserving `f` on a probability space and integrable `g`, the Birkhoff averages
 converge a.e. to the conditional expectation of `g` on the invariant σ-algebra.
@@ -229,7 +424,49 @@ theorem birkhoffAverage_ae_tendsto_condexp [IsProbabilityMeasure μ]
     (hg : Integrable g μ) :
     ∀ᵐ x ∂μ, Tendsto (fun n => birkhoffAverage ℝ f g n x) atTop
       (𝓝 ((μ[g | invariantSigma f]) x)) := by
-  sorry
+  -- pass to a measurable representative
+  set g' := hg.1.mk g with hg'def
+  have hg'm : Measurable g' := hg.1.stronglyMeasurable_mk.measurable
+  have hgg' : g =ᵐ[μ] g' := hg.1.ae_eq_mk
+  have hg' : Integrable g' μ := hg.congr hgg'
+  have hiter : ∀ᵐ x ∂μ, ∀ k : ℕ, g (f^[k] x) = g' (f^[k] x) := by
+    rw [ae_all_iff]
+    exact fun k => (hf.iterate k).quasiMeasurePreserving.ae hgg'
+  have havg : ∀ᵐ x ∂μ, ∀ n : ℕ,
+      birkhoffAverage ℝ f g n x = birkhoffAverage ℝ f g' n x := by
+    filter_upwards [hiter] with x hx n
+    simp only [birkhoffAverage, birkhoffSum]
+    exact congrArg _ (Finset.sum_congr rfl fun k _ => hx k)
+  have hcond : μ[g | invariantSigma f] =ᵐ[μ] μ[g' | invariantSigma f] := condExp_congr_ae hgg'
+  -- the two one-sided bounds, for `g'` and for `-g'`
+  have hup : ∀ᵐ x ∂μ, ∀ m : ℕ, ∀ᶠ n in atTop,
+      birkhoffAverage ℝ f g' n x ≤ (μ[g' | invariantSigma f]) x + 1 / (m + 1) := by
+    rw [ae_all_iff]
+    exact fun m => birkhoff_ae_le hf hfm hg'm hg' (by positivity)
+  have hlo : ∀ᵐ x ∂μ, ∀ m : ℕ, ∀ᶠ n in atTop,
+      (μ[g' | invariantSigma f]) x - 1 / (m + 1) ≤ birkhoffAverage ℝ f g' n x := by
+    rw [ae_all_iff]
+    intro m
+    have hneg := birkhoff_ae_le (g := -g') hf hfm hg'm.neg hg'.neg
+      (ε := 1 / (m + 1)) (by positivity)
+    filter_upwards [hneg, condExp_neg g' (invariantSigma f)] with x hx hcx
+    filter_upwards [hx] with n hn
+    have h1 : birkhoffAverage ℝ f (-g') n x = -birkhoffAverage ℝ f g' n x := by
+      simp [birkhoffAverage, birkhoffSum_neg]
+    rw [h1, hcx] at hn
+    simp only [Pi.neg_apply] at hn
+    linarith
+  filter_upwards [havg, hcond, hup, hlo] with x hx1 hx2 hx3 hx4
+  rw [hx2, Metric.tendsto_atTop]
+  intro δ hδ
+  obtain ⟨m, hm⟩ := exists_nat_one_div_lt hδ
+  obtain ⟨N1, hN1⟩ := eventually_atTop.1 (hx3 m)
+  obtain ⟨N2, hN2⟩ := eventually_atTop.1 (hx4 m)
+  refine ⟨max N1 N2, fun n hn => ?_⟩
+  have h1 := hN1 n (le_trans (le_max_left _ _) hn)
+  have h2 := hN2 n (le_trans (le_max_right _ _) hn)
+  rw [hx1 n, Real.dist_eq, abs_lt]
+  constructor <;> linarith
 
 /-- **Birkhoff for an ergodic map**: the averages converge a.e. to the space mean.
 -- USER-INPUT: ergodic dynamics and integrable observable; Birkhoff 1931 -/
