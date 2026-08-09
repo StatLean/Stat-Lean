@@ -54,7 +54,6 @@ theorem finiteClass_isAgnosticPACLearnerWith (𝓗 : Finset H)
     rcases eq_or_ne ε 0 with rfl | hne
     · norm_num
     · field_simp
-      ring
   intro D hD ε δ hε hδ hδ1 n hn
   refine hPAC D hD ε δ hε hδ hδ1 n ?_
   show ⌈Real.log (2 * 𝓗.card / δ) / (2 * (ε / 2) ^ 2)⌉₊ ≤ n
