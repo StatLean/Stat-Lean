@@ -263,7 +263,97 @@ theorem srs_sampleMean_variance (n : ℕ) (hn : n ≤ Fintype.card U)
     (hn0 : n ≠ 0) (y : U → ℝ) :
     pmfVar (simpleRandomSampling n hn) (sampleMean y)
       = (1 - (n : ℝ) / (Fintype.card U : ℝ)) * populationVariance y / (n : ℝ) := by
-  sorry
+  have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn0
+  have hcard : 0 < Fintype.card U := lt_of_lt_of_le (Nat.pos_of_ne_zero hn0) hn
+  have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hcard.ne'
+  haveI : Nonempty U := Fintype.card_pos_iff.1 hcard
+  rcases le_or_gt (Fintype.card U) 1 with hN1 | hN2
+  · -- Degenerate population: `N = 1` forces `n = 1`, the sample is deterministic.
+    have hNeq : Fintype.card U = 1 := le_antisymm hN1 hcard
+    have hneq : n = 1 := le_antisymm (hNeq ▸ hn) (Nat.one_le_iff_ne_zero.2 hn0)
+    have hconstf : ∀ s : Finset U, s.card = n → sampleMean y s = populationMean y := by
+      intro s hs
+      have hsu : s = Finset.univ := Finset.eq_univ_of_card s (by rw [hs, hneq, hNeq])
+      subst hsu
+      unfold sampleMean populationMean
+      rw [Finset.card_univ]
+    rw [srs_var_congr n hn (g := fun _ => populationMean y) hconstf, pmfVar_const, hNeq, hneq]
+    norm_num
+  · have hNR : (1 : ℝ) < (Fintype.card U : ℝ) := by exact_mod_cast hN2
+    have hN1' : (Fintype.card U : ℝ) - 1 ≠ 0 := by linarith
+    -- on the support the sample mean is the linear statistic `n⁻¹ ∑ₖ yₖ 𝟙ₖ`
+    have hlin : ∀ s : Finset U, s.card = n →
+        sampleMean y s = (n : ℝ)⁻¹ * ∑ k, y k * inclusionIndicator k s := by
+      intro s hs
+      unfold sampleMean
+      rw [hs, sum_sample_eq_sum_indicator]
+      exact congrArg _ (Finset.sum_congr rfl fun k _ => mul_comm _ _)
+    -- the covariance kernel, diagonal and off-diagonal
+    have hcovker : ∀ i j : U,
+        pmfCov (simpleRandomSampling n hn) (fun s => y i * inclusionIndicator i s)
+            (fun s => y j * inclusionIndicator j s)
+          = y i * y j * ((if i = j then (n : ℝ) / (Fintype.card U : ℝ)
+              else (n : ℝ) * ((n : ℝ) - 1)
+                / ((Fintype.card U : ℝ) * ((Fintype.card U : ℝ) - 1)))
+            - ((n : ℝ) / (Fintype.card U : ℝ)) ^ 2) := by
+      intro i j
+      rw [pmfCov_smul_smul, cov_inclusionIndicator]
+      rcases eq_or_ne i j with rfl | hij
+      · rw [if_pos rfl, pairInclusionProb_self, srs_inclusionProb]; ring
+      · rw [if_neg hij, srs_pairInclusionProb n hn hij, srs_inclusionProb,
+          srs_inclusionProb]
+        ring
+    -- the two elementary double sums
+    have hfull : ∀ c : ℝ, ∑ i, ∑ j, c * (y i * y j) = c * (∑ i, y i) ^ 2 := by
+      intro c
+      have hrow : ∀ i : U, ∑ j, c * (y i * y j) = c * y i * ∑ j, y j := by
+        intro i
+        rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun j _ => (mul_assoc c (y i) (y j)).symm
+      rw [Finset.sum_congr rfl fun i _ => hrow i, ← Finset.sum_mul, ← Finset.mul_sum]
+      ring
+    have hdiag : ∀ c : ℝ,
+        ∑ i, ∑ j, (if i = j then c * (y i * y j) else 0) = c * ∑ i, y i ^ 2 := by
+      intro c
+      rw [Finset.mul_sum]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      rw [Finset.sum_ite_eq Finset.univ i fun j => c * (y i * y j),
+        if_pos (Finset.mem_univ i)]
+      ring
+    have hdouble : ∀ q r : ℝ,
+        ∑ i, ∑ j, y i * y j * ((if i = j then q else r) - q ^ 2)
+          = (r - q ^ 2) * (∑ i, y i) ^ 2 + (q - r) * ∑ i, y i ^ 2 := by
+      intro q r
+      have e1 : ∀ i j : U, y i * y j * ((if i = j then q else r) - q ^ 2)
+          = (r - q ^ 2) * (y i * y j) + (if i = j then (q - r) * (y i * y j) else 0) := by
+        intro i j
+        rcases eq_or_ne i j with rfl | h
+        · rw [if_pos rfl, if_pos rfl]; ring
+        · rw [if_neg h, if_neg h]; ring
+      calc ∑ i, ∑ j, y i * y j * ((if i = j then q else r) - q ^ 2)
+          = ∑ i, ∑ j, ((r - q ^ 2) * (y i * y j)
+              + (if i = j then (q - r) * (y i * y j) else 0)) :=
+            Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => e1 i j
+        _ = (∑ i, ∑ j, (r - q ^ 2) * (y i * y j))
+              + ∑ i, ∑ j, (if i = j then (q - r) * (y i * y j) else 0) := by
+            rw [← Finset.sum_add_distrib]
+            exact Finset.sum_congr rfl fun i _ => Finset.sum_add_distrib
+        _ = (r - q ^ 2) * (∑ i, y i) ^ 2 + (q - r) * ∑ i, y i ^ 2 := by
+            rw [hfull, hdiag]
+    rw [srs_var_congr n hn (g := fun s => (n : ℝ)⁻¹ * ∑ k, y k * inclusionIndicator k s) hlin,
+      pmfVar_smul, pmfVar_sum (simpleRandomSampling n hn) Finset.univ
+        fun k s => y k * inclusionIndicator k s,
+      Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => hcovker i j,
+      hdouble ((n : ℝ) / (Fintype.card U : ℝ))
+        ((n : ℝ) * ((n : ℝ) - 1) / ((Fintype.card U : ℝ) * ((Fintype.card U : ℝ) - 1)))]
+    have hpv : populationVariance y = ((Fintype.card U : ℝ) - 1)⁻¹
+        * (∑ i, y i ^ 2 - (Fintype.card U : ℝ) * populationMean y ^ 2) := by
+      unfold populationVariance
+      rw [sum_sq_sub_populationMean]
+    have hpm : populationMean y = (Fintype.card U : ℝ)⁻¹ * ∑ i, y i := rfl
+    rw [hpv, hpm]
+    field_simp
+    ring
 
 /-- Under SRS the Horvitz–Thompson estimator is the scaled sample total
 `(N/n) ∑_{i ∈ s} yᵢ` — pointwise in the subset `s`, by the constancy of the
