@@ -803,6 +803,109 @@ private theorem abs_double_sum_sub_diag_le (n : ℕ) (c : ℕ → ℕ → ℝ) (
     _ = 2 * n * ∑ j ∈ Finset.Ico 1 n, |g j| := by
         rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]; ring
 
+/-- **The stationary double sum over an arbitrary index set.** Same hypothesis as
+`abs_double_sum_sub_diag_le` — the array `c` depends only on the lag — but the sum runs
+over an arbitrary `I ⊆ range n` rather than over all of `range n`, and the diagonal is
+kept on the right instead of being subtracted off:
+`|Σ_{s,t ∈ I} c s t| ≤ |I| (|g 0| + 2 Σ_{1 ≤ j < n} |g j|)`.
+
+This is the combinatorial half of the small-block estimate (2.79)–(2.81): there `I` is the
+union of the `k_n` small blocks, of total length `N_n = k_n s_n` with `N_n / n → 0`, and
+the two factors are exactly the ones ledger (a) already controls — the diagonal
+`|g 0| = O(h)` and the lag sum `Σ_j |g j| = o(h)` — so that
+`(n h_n)⁻¹ |Σ_{s,t ∈ I}| ≤ (N_n / n) · h_n⁻¹ (|g 0| + 2 Σ_j |g j|) → 0`. The proof is the
+one of `abs_double_sum_sub_diag_le` with `range n` replaced by `I` in the row split; `hI`
+is what keeps the two lag injections landing in `Ico 1 n`.
+
+Note that this brick is *not* the obstruction to (2.79)–(2.81): the analytic half is (see
+`tendsto_smallBlock_variance`, whose summands are the **truncated** ones, for which the
+small-lag input `Σ_j |g j| = o(h)` needs (C2) in its unweighted form). -/
+private theorem abs_double_sum_subset_le {n : ℕ} (I : Finset ℕ) (hI : I ⊆ Finset.range n)
+    (c : ℕ → ℕ → ℝ) (g : ℕ → ℝ)
+    (hc : ∀ s d : ℕ, c s (s + d) = g d) (hc' : ∀ s d : ℕ, c (s + d) s = g d) :
+    |∑ s ∈ I, ∑ t ∈ I, c s t|
+      ≤ (I.card : ℝ) * (|g 0| + 2 * ∑ j ∈ Finset.Ico 1 n, |g j|) := by
+  classical
+  have hS0 : (0 : ℝ) ≤ ∑ j ∈ Finset.Ico 1 n, |g j| :=
+    Finset.sum_nonneg fun j _ => abs_nonneg _
+  have hdiag : ∀ s : ℕ, c s s = g 0 := fun s => by simpa using hc s 0
+  have key : ∀ s ∈ I, |∑ t ∈ I, c s t| ≤ |g 0| + 2 * ∑ j ∈ Finset.Ico 1 n, |g j| := by
+    intro s hs
+    have hsn : s < n := Finset.mem_range.1 (hI hs)
+    have hsplit : (∑ t ∈ I, c s t) = g 0 + ∑ t ∈ I.erase s, c s t := by
+      rw [← Finset.add_sum_erase _ _ hs, hdiag]
+    set A : Finset ℕ := I.filter (fun t => t < s) with hA
+    set B : Finset ℕ := I.filter (fun t => s < t) with hB
+    have hAB : I.erase s = A ∪ B := by
+      ext t
+      simp only [Finset.mem_erase, Finset.mem_union, hA, hB, Finset.mem_filter]
+      constructor
+      · rintro ⟨hts, htI⟩; rcases lt_or_gt_of_ne hts with h | h
+        · exact Or.inl ⟨htI, h⟩
+        · exact Or.inr ⟨htI, h⟩
+      · rintro (⟨htI, h⟩ | ⟨htI, h⟩) <;> exact ⟨by omega, htI⟩
+    have hdisj : Disjoint A B := by
+      rw [Finset.disjoint_left]
+      intro t htA htB
+      simp only [hA, hB, Finset.mem_filter] at htA htB
+      omega
+    have htail : |∑ t ∈ I.erase s, c s t| ≤ 2 * ∑ j ∈ Finset.Ico 1 n, |g j| := by
+      calc |∑ t ∈ I.erase s, c s t|
+          ≤ ∑ t ∈ I.erase s, |c s t| := Finset.abs_sum_le_sum_abs _ _
+        _ = (∑ t ∈ A, |c s t|) + ∑ t ∈ B, |c s t| := by
+            rw [hAB, Finset.sum_union hdisj]
+        _ ≤ (∑ j ∈ Finset.Ico 1 n, |g j|) + ∑ j ∈ Finset.Ico 1 n, |g j| := by
+            gcongr
+            · have hinj : ∀ t₁ ∈ A, ∀ t₂ ∈ A, s - t₁ = s - t₂ → t₁ = t₂ := by
+                intro t₁ h₁ t₂ h₂ he
+                simp only [hA, Finset.mem_filter] at h₁ h₂
+                omega
+              have himg : A.image (fun t => s - t) ⊆ Finset.Ico 1 n := by
+                intro j hj
+                simp only [Finset.mem_image, hA, Finset.mem_filter] at hj
+                obtain ⟨t, ⟨ht1, ht2⟩, rfl⟩ := hj
+                simp only [Finset.mem_Ico]
+                omega
+              have hval : ∀ t ∈ A, |c s t| = |g (s - t)| := by
+                intro t ht
+                simp only [hA, Finset.mem_filter] at ht
+                have : t + (s - t) = s := by omega
+                rw [← hc' t (s - t), this]
+              have himgsum : ∑ j ∈ A.image (fun t => s - t), |g j| = ∑ t ∈ A, |g (s - t)| :=
+                Finset.sum_image hinj
+              rw [Finset.sum_congr rfl hval, ← himgsum]
+              exact Finset.sum_le_sum_of_subset_of_nonneg himg fun j _ _ => abs_nonneg _
+            · have hinj : ∀ t₁ ∈ B, ∀ t₂ ∈ B, t₁ - s = t₂ - s → t₁ = t₂ := by
+                intro t₁ h₁ t₂ h₂ he
+                simp only [hB, Finset.mem_filter] at h₁ h₂
+                omega
+              have himg : B.image (fun t => t - s) ⊆ Finset.Ico 1 n := by
+                intro j hj
+                simp only [Finset.mem_image, hB, Finset.mem_filter] at hj
+                obtain ⟨t, ⟨ht1, ht2⟩, rfl⟩ := hj
+                have : t < n := Finset.mem_range.1 (hI ht1)
+                simp only [Finset.mem_Ico]
+                omega
+              have hval : ∀ t ∈ B, |c s t| = |g (t - s)| := by
+                intro t ht
+                simp only [hB, Finset.mem_filter] at ht
+                have : s + (t - s) = t := by omega
+                rw [← hc s (t - s), this]
+              have himgsum : ∑ j ∈ B.image (fun t => t - s), |g j| = ∑ t ∈ B, |g (t - s)| :=
+                Finset.sum_image hinj
+              rw [Finset.sum_congr rfl hval, ← himgsum]
+              exact Finset.sum_le_sum_of_subset_of_nonneg himg fun j _ _ => abs_nonneg _
+        _ = 2 * ∑ j ∈ Finset.Ico 1 n, |g j| := by ring
+    calc |∑ t ∈ I, c s t| = |g 0 + ∑ t ∈ I.erase s, c s t| := by rw [hsplit]
+      _ ≤ |g 0| + |∑ t ∈ I.erase s, c s t| := abs_add_le _ _
+      _ ≤ |g 0| + 2 * ∑ j ∈ Finset.Ico 1 n, |g j| := by gcongr
+  calc |∑ s ∈ I, ∑ t ∈ I, c s t|
+      ≤ ∑ s ∈ I, |∑ t ∈ I, c s t| := Finset.abs_sum_le_sum_abs _ _
+    _ ≤ ∑ _s ∈ I, (|g 0| + 2 * ∑ j ∈ Finset.Ico 1 n, |g j|) := Finset.sum_le_sum key
+    _ = (I.card : ℝ) * (|g 0| + 2 * ∑ j ∈ Finset.Ico 1 n, |g j|) := by
+        rw [Finset.sum_const, nsmul_eq_mul]
+
+
 /-! #### FY's implicit (2.74): the localized δ-th moment
 
 The one input FY uses without stating it. See `var_localized_sum`'s docstring for the
