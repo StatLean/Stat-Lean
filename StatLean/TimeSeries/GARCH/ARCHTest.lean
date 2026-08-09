@@ -827,24 +827,39 @@ theorem archTR2Stat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
 /-- **FY eq. (4.54) — DEBT**: the Wald statistic (through the Schur-complement block
 `I²²` of the information matrix) has the `χ²_p` null limit.
 
-⚠ **VACUOUS as frozen, for the same reason as `archLRStat_chiSq_debt`**: `hMLE` asks for a
-global maximizer of `archLogLik` over `ℝ × ℝᵖ`, which `archLogLik_unbounded` refutes. The
-proof derives `False`; the consistency hypothesis `hIhat` on the information block is
-never used, and FY eq. (4.54) is not formalized. -/
+**Statement strengthening (documented), 2026-08-09b — the de-vacuation.** As for
+`archLRStat_chiSq_debt`, the global-maximizer `hMLE` is replaced by maximization over
+`K ∩ archAdmissible κ` — compact, and nonempty at the truth — which
+`exists_archMLE_sequences` shows is satisfiable. The superseded shape's refutation
+(`archLogLik_unbounded`, `false_of_bddAbove_archLogLik`) is retained above as the
+justification. Only the `hMLE` block changes: `hIhat`, `hI0` and the conclusion are as
+frozen.
+
+**Proved here:** the `p = 0` case (`χ²₀ = δ₀`, and the Wald form is an empty sum, hence
+identically `0` — no hypothesis needed). **Debt:** `p ≥ 1`. -/
 theorem archWaldStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     {X ε : ℤ → Ω → ℝ}
     (h : IsARCH c0 (fun _ : Fin p => (0 : ℝ)) X ε μ) (hc0 : 0 < c0)
     (hε4 : MemLp (ε 0) 4 μ)
     (bhat : (T : ℕ) → Ω → Fin p → ℝ) (hmeas : ∀ T, Measurable (bhat T))
-    -- USER-INPUT: `bhat` is the unrestricted maximizer's ARCH block. Added 2026-08-09
-    -- (an unconstrained sequence makes the statement FALSE).
     (c0hat : (T : ℕ) → Ω → ℝ)
     (νseq : ℕ → ℕ) (hν : Tendsto νseq atTop atTop)
     (hνT : Tendsto (fun T : ℕ => (νseq T : ℝ) / T) atTop (𝓝 0))
-    (hMLE : ∀ (T : ℕ) (ω : Ω) (c : ℝ) (bb : Fin p → ℝ),
-      archLogLik c bb (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
-        ≤ archLogLik (c0hat T ω) (bhat T ω)
-            (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T))
+    -- USER-INPUT: variance floor and compact search region with the truth interior to it;
+    -- FY §4.2.6 / Serfling §4.4.4, `mle_consistent`'s `hargmin`-over-`K` pattern.
+    -- Replaces (2026-08-09b) the unsatisfiable global-maximizer shape of 2026-08-09.
+    {κ : ℝ} (hκ : 0 < κ) (hκc0 : κ ≤ c0)
+    {K : Set (ℝ × (Fin p → ℝ))} (hK : IsCompact K)
+    (hK0 : ((c0, fun _ : Fin p => (0 : ℝ)) : ℝ × (Fin p → ℝ)) ∈ interior K)
+    -- USER-INPUT: `(c0hat, bhat)` maximizes the ARCH conditional log-likelihood over the
+    -- feasible set `K ∩ archAdmissible κ`; FY eqs. (4.37), (4.54)
+    (hMLE : ∀ (T : ℕ) (ω : Ω),
+      ((c0hat T ω, bhat T ω) : ℝ × (Fin p → ℝ)) ∈
+          K ∩ archAdmissible κ (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T) ∧
+        ∀ θ ∈ K ∩ archAdmissible κ (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T),
+          archLogLik θ.1 θ.2 (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
+            ≤ archLogLik (c0hat T ω) (bhat T ω)
+                (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T))
     -- USER-INPUT: the estimated information block I²² (Schur complement), assumed
     -- consistent for a positive-definite limit; FY eq. (4.54)
     (Ihat : (T : ℕ) → Ω → Matrix (Fin p) (Fin p) ℝ)
@@ -857,12 +872,28 @@ theorem archWaldStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
         (T : ℝ) * ∑ i, ∑ j, bhat T ω i * Ihat T ω i j * bhat T ω j) u)
       atTop (𝓝 (charFun chiSq u)) := by
-  -- Contradictory hypotheses again: instantiate `hMLE` at the null direction `bb = 0`.
-  obtain ⟨ω₀⟩ := nonempty_of_isProbabilityMeasure μ
-  exact (false_of_bddAbove_archLogLik (p := p) hνT
-    (fun T => fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω₀)
-    (fun T => archLogLik (c0hat T ω₀) (bhat T ω₀)
-      (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω₀) (νseq T))
-    (fun T c => hMLE T ω₀ c (fun _ : Fin p => (0 : ℝ)))).elim
+  rcases Nat.eq_zero_or_pos p with hp | hp
+  · -- `p = 0`: the quadratic form is an empty sum, so the statistic is identically `0`,
+    -- and `χ²₀ = δ₀` has the constant character `1`.
+    subst hp
+    have hchi1 : charFun chiSq u = 1 := by
+      rw [hchi u, show (-((0 : ℕ) : ℂ) / 2) = 0 by norm_num, Complex.cpow_zero]
+    have hfun : (fun T : ℕ => charFun (μ.map fun ω =>
+        (T : ℝ) * ∑ i, ∑ j, bhat T ω i * Ihat T ω i j * bhat T ω j) u)
+          = fun _ : ℕ => (1 : ℂ) := by
+      funext T
+      rw [show (fun ω => (T : ℝ) * ∑ i, ∑ j, bhat T ω i * Ihat T ω i j * bhat T ω j)
+          = fun _ : Ω => (0 : ℝ) by funext ω; simp]
+      simp [Measure.map_const, charFun_apply_real]
+    rw [hchi1, hfun]
+    exact tendsto_const_nhds
+  · -- REMAINING DEBT (`p ≥ 1`): FY eq. (4.54). With the repaired pinning the missing input
+    -- is the ARCH MLE limit law `√T · bhat ⇒ N(0, (I²²)⁻¹)` on the free `b` block — the
+    -- same bricks (a)–(c) listed at `archLRStat_chiSq_debt`. Given it, `hIhat` upgrades
+    -- `Ihat` to `I0` by Slutsky and the statistic is the Gaussian quadratic form
+    -- `Zᵀ Z` with `Z ∼ N(0, I_p)`, whose law is identified here by
+    -- `eq_map_sum_sq_gaussian_of_charFun`. Note `hIhat` is genuinely used only in that
+    -- last step, and is *not* what is missing.
+    sorry
 
 end StatLean.TimeSeries
