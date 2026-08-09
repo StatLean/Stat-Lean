@@ -181,20 +181,17 @@ private lemma map_arm_apply (r : T → ℕ) (hr : ∑ t, r t = Fintype.card U)
         * ((validAllocations (U := U) r).card : ℝ≥0∞)⁻¹ := by
   classical
   rw [PMF.map_apply, tsum_fintype]
-  have hpt : ∀ a : Allocation U T,
-      (if X = arm t a then completeRandomization r hr a else 0)
-      = if a ∈ (validAllocations (U := U) r).filter (fun a => arm t a = X)
-        then ((validAllocations (U := U) r).card : ℝ≥0∞)⁻¹ else 0 := by
-    intro a
+  trans ∑ a : Allocation U T,
+      (if a ∈ (validAllocations (U := U) r).filter (fun a => arm t a = X)
+        then ((validAllocations (U := U) r).card : ℝ≥0∞)⁻¹ else 0)
+  · refine Finset.sum_congr rfl fun a _ => ?_
     by_cases h1 : X = arm t a <;> by_cases h2 : a ∈ validAllocations (U := U) r <;>
       simp [completeRandomization, PMF.uniformOfFinset_apply, Finset.mem_filter,
         h1, h2, eq_comm]
-  calc ∑ a : Allocation U T, (if X = arm t a then completeRandomization r hr a else 0)
-      = ∑ a : Allocation U T,
+  calc ∑ a : Allocation U T,
           (if a ∈ (validAllocations (U := U) r).filter (fun a => arm t a = X)
-            then ((validAllocations (U := U) r).card : ℝ≥0∞)⁻¹ else 0) :=
-        Finset.sum_congr rfl fun a _ => hpt a
-    _ = ∑ a ∈ (validAllocations (U := U) r).filter (fun a => arm t a = X),
+            then ((validAllocations (U := U) r).card : ℝ≥0∞)⁻¹ else 0)
+      = ∑ a ∈ (validAllocations (U := U) r).filter (fun a => arm t a = X),
           (if a ∈ (validAllocations (U := U) r).filter (fun a => arm t a = X)
             then ((validAllocations (U := U) r).card : ℝ≥0∞)⁻¹ else 0) :=
         (Finset.sum_subset (Finset.subset_univ _)
@@ -239,7 +236,8 @@ theorem completeRandomization_map_arm (r : T → ℕ)
       rw [(Finset.mem_powersetCard.mp h₁).2, (Finset.mem_powersetCard.mp h₂).2]
     obtain ⟨σ, hσ⟩ := exists_perm_image_eq hcards
     rw [map_arm_apply, map_arm_apply, ← hσ, card_filter_arm_image]
-  exact eq_uniformOfFinset_of_constant _ _ (samplesOfCard_nonempty _) hoff hconst
+  exact eq_uniformOfFinset_of_constant _ _
+    (samplesOfCard_nonempty (replication_le_card r hr t)) hoff hconst
 
 /-- **Design unbiasedness of the arm mean**: for a treatment with positive
 replication, the arm mean of a deterministic quantity `y` has design expectation the

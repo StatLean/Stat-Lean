@@ -69,7 +69,7 @@ noncomputable def productDesign (D : ∀ b, PMF (Ω b)) : PMF (∀ b, Ω b) :=
 @[simp]
 theorem productDesign_apply (D : ∀ b, PMF (Ω b)) (ω : ∀ b, Ω b) :
     productDesign D ω = ∏ b, D b (ω b) :=
-  PMF.ofFintype_apply _ _ _
+  rfl
 
 /-- **Marginals of the product design**: a statistic of one stratum has its
 single-stratum expectation. -/
