@@ -934,6 +934,150 @@ theorem armaContrastVar_eq_one_iff {p q : ℕ} {b0 b : Fin p → ℝ} {a0 a : Fi
   · rintro ⟨rfl, rfl⟩
     exact (armaContrastVar_eq_one_iff_transfer hB0 hB).2 rfl
 
+/-! ### Continuity of the contrast in the working parameter, and the uniform gap -/
+
+private lemma maPoly_conv_armaPi {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (n : ℕ) :
+    ∑ k ∈ Finset.range (n + 1), (maPoly a).coeff k * armaPi b a (n - k)
+      = (arPoly b).coeff n := by
+  have h := arPoly_conv_armaPsi (fun j => -a j) (fun i => -b i) n
+  rw [arPoly_neg, maPoly_neg] at h
+  rw [← h]
+  exact Finset.sum_congr rfl fun k _ => by rw [armaPi_eq_armaPsi]
+
+private lemma coeff_maPoly' {q : ℕ} (a : Fin q → ℝ) (m : ℕ) :
+    (maPoly a).coeff m
+      = (if m = 0 then (1 : ℝ) else 0) + ∑ j : Fin q, if m = (j : ℕ) + 1 then a j else 0 := by
+  simp [maPoly, Polynomial.finset_sum_coeff, Polynomial.coeff_X_pow, Polynomial.coeff_one]
+
+private lemma continuous_coeff_maPoly {q : ℕ} (m : ℕ) :
+    Continuous fun a : Fin q → ℝ => (maPoly a).coeff m := by
+  simp only [coeff_maPoly']
+  refine continuous_const.add (continuous_finset_sum _ fun j _ => ?_)
+  by_cases h : m = (j : ℕ) + 1
+  · simpa [h] using (continuous_apply j)
+  · simpa [h] using continuous_const
+
+private lemma continuous_coeff_arPoly {p : ℕ} (m : ℕ) :
+    Continuous fun b : Fin p → ℝ => (arPoly b).coeff m := by
+  simp only [coeff_arPoly']
+  refine continuous_const.sub (continuous_finset_sum _ fun i _ => ?_)
+  by_cases h : m = (i : ℕ) + 1
+  · simpa [h] using (continuous_apply i)
+  · simpa [h] using continuous_const
+
+/-- Each inversion coefficient is a polynomial — in particular continuous — function of
+the parameters (`a(0) = 1` makes the recursion explicit). -/
+private lemma continuous_armaPi {p q : ℕ} (n : ℕ) :
+    Continuous fun ba : (Fin p → ℝ) × (Fin q → ℝ) => armaPi ba.1 ba.2 n := by
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    have hrec : ∀ ba : (Fin p → ℝ) × (Fin q → ℝ), armaPi ba.1 ba.2 n
+        = (arPoly ba.1).coeff n
+          - ∑ i ∈ Finset.range n, (maPoly ba.2).coeff (i + 1) * armaPi ba.1 ba.2 (n - (i + 1)) := by
+      intro ba
+      have h := maPoly_conv_armaPi ba.1 ba.2 n
+      rw [Finset.sum_range_succ', coeff_maPoly_zero', one_mul, Nat.sub_zero] at h
+      linarith
+    simp only [hrec]
+    refine (continuous_coeff_arPoly n).comp continuous_fst |>.sub
+      (continuous_finset_sum _ fun i hi => ?_)
+    have hi' : i < n := Finset.mem_range.1 hi
+    exact ((continuous_coeff_maPoly (i + 1)).comp continuous_snd).mul (ih _ (by omega))
+
+private lemma continuous_contrastCoeff {p q : ℕ} (b0 : Fin p → ℝ) (a0 : Fin q → ℝ) (n : ℕ) :
+    Continuous fun ba : (Fin p → ℝ) × (Fin q → ℝ) => contrastCoeff b0 a0 ba.1 ba.2 n := by
+  unfold contrastCoeff
+  exact continuous_finset_sum _ fun k _ => (continuous_armaPi k).mul continuous_const
+
+private lemma summable_geom_env (C : ℝ) {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1) :
+    Summable fun n : ℕ => C ^ 4 * (((n : ℝ) + 1) ^ 2 * (r ^ 2) ^ n) := by
+  have hr2 : ‖r ^ 2‖ < 1 := by
+    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg r)]
+    nlinarith
+  have h0 : Summable fun n : ℕ => (r ^ 2) ^ n := by
+    simpa using summable_pow_mul_geometric_of_norm_lt_one (R := ℝ) 0 hr2
+  have h1 : Summable fun n : ℕ => (n : ℝ) ^ 1 * (r ^ 2) ^ n :=
+    summable_pow_mul_geometric_of_norm_lt_one (R := ℝ) 1 hr2
+  have h2 : Summable fun n : ℕ => (n : ℝ) ^ 2 * (r ^ 2) ^ n :=
+    summable_pow_mul_geometric_of_norm_lt_one (R := ℝ) 2 hr2
+  refine (((h2.add (h1.mul_left 2)).add h0).mul_left (C ^ 4)).congr fun n => ?_
+  ring
+
+/-- **Continuity of the contrast variance in the working parameter**, on a compact set of
+invertible pairs. Each summand `c_n(θ)²` is a *polynomial* in the entries of `θ`
+(`continuous_armaPi`), and the brick `exists_uniform_geometric_bound_arma` supplies the
+uniform envelope `C⁴(n+1)²(r²)ⁿ` that `continuousOn_tsum` needs. This is the half of
+`mle_consistent`(ii) that was missing. -/
+private lemma continuousOn_armaContrastVar {p q : ℕ} {b0 : Fin p → ℝ} {a0 : Fin q → ℝ}
+    (hB0 : ARMAInvertibleParams b0 a0)
+    {K : Set ((Fin p → ℝ) × (Fin q → ℝ))} (hK : IsCompact K)
+    (hKB : ∀ ba ∈ K, ARMAInvertibleParams ba.1 ba.2) :
+    ContinuousOn (fun ba : (Fin p → ℝ) × (Fin q → ℝ) =>
+      armaContrastVar b0 a0 ba.1 ba.2) K := by
+  obtain ⟨C₁, r₁, hC₁, hr₁0, hr₁1, _, hπK⟩ := exists_uniform_geometric_bound_arma hK hKB
+  obtain ⟨C₂, hC₂, r₂, hr₂0, hr₂1, hψ0⟩ := exists_geometric_bound_armaPsi a0 hB0.1
+  obtain ⟨C, r, hC, hr0, hr1, hπ, hψ⟩ :
+      ∃ C r : ℝ, 1 ≤ C ∧ 0 ≤ r ∧ r < 1 ∧
+        (∀ ba ∈ K, ∀ n, |armaPi ba.1 ba.2 n| ≤ C * r ^ n) ∧
+        (∀ n, |armaPsi b0 a0 n| ≤ C * r ^ n) := by
+    refine ⟨max C₁ (max 1 C₂), max r₁ r₂, le_trans (le_max_left _ _) (le_max_right _ _),
+      le_trans hr₁0 (le_max_left _ _), max_lt hr₁1 hr₂1, fun ba hba n => ?_, fun n => ?_⟩
+    · refine (hπK ba hba n).trans (mul_le_mul (le_max_left _ _)
+        (pow_le_pow_left₀ hr₁0 (le_max_left _ _) n) (by positivity) ?_)
+      exact le_trans zero_le_one (le_trans (le_max_left _ _) (le_max_right _ _))
+    · refine (hψ0 n).trans (mul_le_mul (le_trans (le_max_right _ _) (le_max_right _ _))
+        (pow_le_pow_left₀ hr₂0 (le_max_right _ _) n) (by positivity) ?_)
+      exact le_trans zero_le_one (le_trans (le_max_left _ _) (le_max_right _ _))
+  have hCpos : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC
+  refine continuousOn_tsum (u := fun n : ℕ => C ^ 4 * (((n : ℝ) + 1) ^ 2 * (r ^ 2) ^ n))
+    (fun n => ((continuous_contrastCoeff b0 a0 n).pow 2).continuousOn)
+    (summable_geom_env C hr0 hr1) (fun n ba hba => ?_)
+  have habs := abs_contrastCoeff_le hC hr0 (hπ ba hba) hψ n
+  have hnn : 0 ≤ C ^ 2 * ((n : ℝ) + 1) * r ^ n := by positivity
+  calc ‖contrastCoeff b0 a0 ba.1 ba.2 n ^ 2‖
+      = |contrastCoeff b0 a0 ba.1 ba.2 n| ^ 2 := by
+        rw [Real.norm_eq_abs, abs_pow]
+    _ ≤ (C ^ 2 * ((n : ℝ) + 1) * r ^ n) ^ 2 := pow_le_pow_left₀ (abs_nonneg _) habs 2
+    _ = C ^ 4 * (((n : ℝ) + 1) ^ 2 * (r ^ 2) ^ n) := by
+        rw [← pow_mul, mul_comm 2 n, pow_mul]; ring
+
+/-- **The uniform contrast gap** — `mle_consistent`(ii). Away from the truth the contrast
+variance is bounded away from `1` on the compact identifiable region: pointwise
+strictness is `armaContrastVar_eq_one_iff`, and `continuousOn_armaContrastVar` plus
+compactness of `K ∩ {dist · θ₀ ≥ δ}` turn it into a uniform gap. -/
+private lemma exists_contrast_gap {p q : ℕ} {b0 : Fin p → ℝ} {a0 : Fin q → ℝ}
+    (hB0 : ARMAInvertibleParams b0 a0) (hcop : IsCoprime (arPoly b0) (maPoly a0))
+    {K : Set ((Fin p → ℝ) × (Fin q → ℝ))} (hK : IsCompact K)
+    (hKB : ∀ ba ∈ K, ARMAInvertibleParams ba.1 ba.2)
+    (hcopK : ∀ ba ∈ K, IsCoprime (arPoly ba.1) (maPoly ba.2))
+    {δ : ℝ} (hδ : 0 < δ) :
+    ∃ γ : ℝ, 0 < γ ∧ ∀ ba ∈ K, δ ≤ dist ba (b0, a0) →
+      1 + γ ≤ armaContrastVar b0 a0 ba.1 ba.2 := by
+  classical
+  have hScl : IsCompact (K ∩ {ba : (Fin p → ℝ) × (Fin q → ℝ) | δ ≤ dist ba (b0, a0)}) :=
+    hK.inter_right (isClosed_le continuous_const (continuous_id.dist continuous_const))
+  rcases Set.eq_empty_or_nonempty
+      (K ∩ {ba : (Fin p → ℝ) × (Fin q → ℝ) | δ ≤ dist ba (b0, a0)}) with hemp | hne
+  · refine ⟨1, one_pos, fun ba hba hd => ?_⟩
+    exact absurd (Set.mem_inter hba hd) (by rw [hemp]; exact Set.notMem_empty _)
+  · obtain ⟨ba0, hba0, hmin⟩ := hScl.exists_isMinOn hne
+      ((continuousOn_armaContrastVar hB0 hK hKB).mono Set.inter_subset_left)
+    have hgt : 1 < armaContrastVar b0 a0 ba0.1 ba0.2 := by
+      rcases lt_or_eq_of_le (one_le_armaContrastVar hB0 (hKB ba0 hba0.1)) with h1 | h1
+      · exact h1
+      · exfalso
+        obtain ⟨hb, ha⟩ := (armaContrastVar_eq_one_iff hB0 (hKB ba0 hba0.1) hcop
+          (hcopK ba0 hba0.1)).1 h1.symm
+        have hzero : ba0 = (b0, a0) := Prod.ext hb ha
+        have hd := hba0.2
+        rw [Set.mem_setOf_eq, hzero, dist_self] at hd
+        linarith
+    refine ⟨armaContrastVar b0 a0 ba0.1 ba0.2 - 1, by linarith, fun ba hba hd => ?_⟩
+    have hle := hmin (Set.mem_inter hba hd)
+    simp only [Set.mem_setOf_eq] at hle
+    linarith
+
+
 section Szego
 
 /-! ### The Szegő-type limit `T⁻¹ log det Γ_T → 0`
