@@ -3,6 +3,8 @@ import StatLean.TimeSeries.Spectral.Periodogram
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.LinearAlgebra.Matrix.PosDef
+import Mathlib.Probability.Independence.InfinitePi
+import Mathlib.Data.Real.StarOrdered
 
 /-!
 # GARCH estimation: QMLE, general-density MLE, Whittle, LAD (FY §4.2.3)
@@ -40,7 +42,7 @@ ARCH models* (Econometric Theory 17 (2001), 608–631); the LAD estimator is Pen
 -/
 
 open MeasureTheory ProbabilityTheory Filter
-open scoped ProbabilityTheory Topology Real
+open scoped ProbabilityTheory Topology Real ENNReal
 
 namespace StatLean.TimeSeries
 
@@ -310,6 +312,235 @@ theorem garchTruncVol_presample_stable {p q : ℕ} {c0 : ℝ} {b : Fin p → ℝ
           rw [div_mul_eq_mul_div, le_div_iff₀ (pow_pos hρ0 (q - 1)), mul_assoc, ← pow_add]
           exact mul_le_mul_of_nonneg_left
             (pow_le_pow_of_le_one hρ0.le hρ1.le (by omega)) (abs_nonneg _)
+
+/-! ### The frozen `whittle_clt_debt` / `lad_clt_debt` statements are FALSE — a witness
+
+Both statements were frozen at a granularity that leaves **three** of their objects
+completely unlinked to the model, which is one more than the `tarLS_clt_debt` defect list
+of wave `ts/s12`:
+
+1. **`W` is a free parameter.** The docstrings call it "the limiting covariance matrix of
+   the Whittle (LAD) estimator", but formally it ranges over *all* positive-definite
+   matrices with no tie to `(c₀, b, a, X, μ)`. `W` and `2W` are both admissible and force
+   two different Gaussian limits for one and the same sequence.
+2. **`θhat` has no defining property.** It is any measurable array of parameter vectors.
+   Neither `garchWhittle` (eq. (4.41)) nor `garchLAD` (eq. (4.42)) — both *defined in this
+   very file* — appears anywhere in either statement, so nothing says `θhat` is the
+   estimator the theorem is about.
+3. **`θ0` is a free parameter too.** It is an arbitrary vector, not the true parameter of
+   the `IsGARCH` instance in the hypotheses. Even a perfect estimator would not be
+   centred at it.
+
+Any one of the three is fatal, and the cheapest satisfiable instance exhibits all three at
+once: take the **degenerate GARCH** `p = q = 0`, `c₀ = 0`, so `σ_t ≡ 0` and `X ≡ 0`, and
+take `θhat ≡ θ0 ≡ 0`. The scaled statistic is then identically `0`, its characteristic
+function is the constant `1`, while the frozen limit at `W = 1`, `c = 1`, `u = 1` is
+`exp(−1/2)`.
+
+The instance is built from scratch on `(ℤ → ℝ, ⊗ Rademacher)`, so the witness is
+**axiom-clean** and independent of `exists_stationary_garch`. The **Rademacher** noise
+(rather than the Gaussian of `Threshold/Estimation.lean`) is forced by `lad_clt_debt`'s
+median hypothesis `hmed`: it asks the median of `ε₀²` to be `1`, which for a mean-zero
+unit-variance law means `ε₀² = 1` a.s. up to the two-sided tail balance — the two-point
+law is the simple solution, whereas a standard Gaussian has `P(ε₀² ≤ 1) ≈ 0.683 ≠ 0.317`.
+`X ≡ 0` makes strict stationarity and `L⁴` free, and makes `σ(X_s : s < t)` the trivial
+σ-algebra, so `indep_past` is `indep_bot_right`; no shift-invariance of the noise law is
+needed anywhere. -/
+
+/-- The **Rademacher law** `(δ₋₁ + δ₁)/2`: mean `0`, variance `1`, and `x² = 1` a.s., the
+last being what `lad_clt_debt`'s median hypothesis needs. -/
+private noncomputable def radLaw : Measure ℝ :=
+  (2 : ℝ≥0∞)⁻¹ • (Measure.dirac (-1) + Measure.dirac 1)
+
+private lemma radLaw_apply (s : Set ℝ) :
+    radLaw s = (2 : ℝ≥0∞)⁻¹ * (s.indicator 1 (-1) + s.indicator 1 1) := by
+  simp [radLaw, Measure.smul_apply, Measure.add_apply, Measure.dirac_apply, mul_add]
+
+private lemma radLaw_eq_one {s : Set ℝ} (h1 : (-1 : ℝ) ∈ s) (h2 : (1 : ℝ) ∈ s) :
+    radLaw s = 1 := by
+  rw [radLaw_apply, Set.indicator_of_mem h1, Set.indicator_of_mem h2]
+  simp only [Pi.one_apply]
+  rw [show (1 : ℝ≥0∞) + 1 = 2 by norm_num]
+  exact ENNReal.inv_mul_cancel (by norm_num) (by norm_num)
+
+private lemma radLaw_eq_zero {s : Set ℝ} (h1 : (-1 : ℝ) ∉ s) (h2 : (1 : ℝ) ∉ s) :
+    radLaw s = 0 := by
+  rw [radLaw_apply, Set.indicator_of_notMem h1, Set.indicator_of_notMem h2]
+  simp
+
+private instance : IsProbabilityMeasure radLaw :=
+  ⟨radLaw_eq_one (Set.mem_univ _) (Set.mem_univ _)⟩
+
+private lemma radLaw_ae {p : ℝ → Prop} (h1 : p (-1)) (h2 : p 1) : ∀ᵐ x ∂radLaw, p x := by
+  rw [Filter.eventually_iff, mem_ae_iff]
+  exact radLaw_eq_zero (by simpa using h1) (by simpa using h2)
+
+private lemma integral_radLaw (f : ℝ → ℝ) :
+    ∫ x, f x ∂radLaw = (f (-1) + f 1) / 2 := by
+  have hi1 : Integrable f (Measure.dirac (-1 : ℝ)) := integrable_dirac (by finiteness)
+  have hi2 : Integrable f (Measure.dirac (1 : ℝ)) := integrable_dirac (by finiteness)
+  rw [radLaw, integral_smul_measure, integral_add_measure hi1 hi2, integral_dirac,
+    integral_dirac]
+  rw [show ((2 : ℝ≥0∞)⁻¹).toReal = 1 / 2 by
+    rw [ENNReal.toReal_inv]; norm_num]
+  simp only [smul_eq_mul]
+  ring
+
+/-! #### The i.i.d. Rademacher noise on `ℤ` -/
+
+private noncomputable def radMeasure : Measure (ℤ → ℝ) :=
+  Measure.infinitePi fun _ : ℤ => radLaw
+
+private instance : IsProbabilityMeasure radMeasure := by
+  unfold radMeasure; infer_instance
+
+private def radCoord (t : ℤ) (ω : ℤ → ℝ) : ℝ := ω t
+
+private lemma radCoord_measurable (t : ℤ) : Measurable (radCoord t) := measurable_pi_apply t
+
+private lemma radMeasure_map_coord (t : ℤ) : radMeasure.map (radCoord t) = radLaw :=
+  Measure.infinitePi_map_eval _ t
+
+private lemma radCoord_identDistrib (t : ℤ) :
+    IdentDistrib (radCoord t) (id : ℝ → ℝ) radMeasure radLaw :=
+  ⟨(radCoord_measurable t).aemeasurable, aemeasurable_id, by
+    rw [Measure.map_id, radMeasure_map_coord t]⟩
+
+private lemma memLp_id_radLaw : MemLp (id : ℝ → ℝ) 2 radLaw := by
+  refine MemLp.of_bound aemeasurable_id.aestronglyMeasurable 1 ?_
+  exact radLaw_ae (by norm_num) (by norm_num)
+
+private lemma rad_isIIDNoise : IsIIDNoise radCoord 1 radMeasure := by
+  refine ⟨radCoord_measurable, ?_, ?_, ?_, ?_, ?_⟩
+  · exact iIndepFun_infinitePi (X := fun _ : ℤ => (id : ℝ → ℝ)) (fun _ => measurable_id)
+  · exact fun s t => (radCoord_identDistrib s).trans (radCoord_identDistrib t).symm
+  · exact (radCoord_identDistrib 0).memLp_iff.2 memLp_id_radLaw
+  · rw [(radCoord_identDistrib 0).integral_eq]
+    have h := integral_radLaw (fun x : ℝ => x)
+    simpa using h
+  · rw [(radCoord_identDistrib 0).variance_eq, variance_eq_sub memLp_id_radLaw]
+    have h1 : (∫ x, ((id : ℝ → ℝ) ^ 2) x ∂radLaw) = 1 := by
+      have h := integral_radLaw (fun x : ℝ => x ^ 2)
+      simpa using h
+    have h2 : (∫ x, (id : ℝ → ℝ) x ∂radLaw) = 0 := by
+      have h := integral_radLaw (fun x : ℝ => x)
+      simpa using h
+    rw [h1, h2]
+    norm_num
+
+/-! #### The degenerate GARCH instance -/
+
+private def zeroProc : ℤ → (ℤ → ℝ) → ℝ := fun _ _ => 0
+
+private lemma sigmaLT_zeroProc (t : ℤ) : sigmaLT zeroProc t = ⊥ := by
+  refine le_antisymm (iSup₂_le fun s _ => ?_) bot_le
+  exact le_of_eq (MeasurableSpace.comap_const (0 : ℝ))
+
+private lemma rad_isGARCH :
+    IsGARCH (0 : ℝ) (fun _ : Fin 0 => (0 : ℝ)) (fun _ : Fin 0 => (0 : ℝ))
+      zeroProc zeroProc radCoord radMeasure := by
+  refine ⟨le_rfl, fun i => i.elim0, fun j => j.elim0, fun _ => measurable_const,
+    fun _ => measurable_const, fun _ => Filter.Eventually.of_forall fun _ => le_rfl,
+    fun _ => measurable_const, rad_isIIDNoise, fun t => ?_, fun t => ?_, fun t => ?_⟩
+  · rw [sigmaLT_zeroProc]
+    exact ProbabilityTheory.indep_bot_right _
+  · filter_upwards with ω
+    simp [zeroProc]
+  · filter_upwards with ω
+    simp [zeroProc]
+
+private lemma zeroProc_strictlyStationary : IsStrictlyStationary zeroProc radMeasure :=
+  fun _ _ _ => rfl
+
+private lemma zeroProc_memLp (r : ℝ≥0∞) (t : ℤ) : MemLp (zeroProc t) r radMeasure :=
+  memLp_const 0
+
+private lemma rad_hmed :
+    radMeasure {ω | radCoord 0 ω ^ 2 ≤ 1} = radMeasure {ω | 1 ≤ radCoord 0 ω ^ 2} := by
+  have hset1 : MeasurableSet {x : ℝ | x ^ 2 ≤ 1} :=
+    measurableSet_le (by fun_prop) measurable_const
+  have hset2 : MeasurableSet {x : ℝ | 1 ≤ x ^ 2} :=
+    measurableSet_le measurable_const (by fun_prop)
+  have e1 : radMeasure {ω | radCoord 0 ω ^ 2 ≤ 1} = radLaw {x : ℝ | x ^ 2 ≤ 1} := by
+    rw [← radMeasure_map_coord 0, Measure.map_apply (radCoord_measurable 0) hset1]
+    rfl
+  have e2 : radMeasure {ω | 1 ≤ radCoord 0 ω ^ 2} = radLaw {x : ℝ | 1 ≤ x ^ 2} := by
+    rw [← radMeasure_map_coord 0, Measure.map_apply (radCoord_measurable 0) hset2]
+    rfl
+  rw [e1, e2, radLaw_eq_one (by norm_num) (by norm_num),
+    radLaw_eq_one (by norm_num) (by norm_num)]
+
+/-! #### The refutations -/
+
+/-- The common tail of both refutations: on the degenerate instance the scaled statistic
+is identically `0`, whose characteristic function is the constant `1`, while the frozen
+limit at `W = 1`, `c = 1`, `u = 1` is `exp(−1/2)`. -/
+private lemma dirac_charFun_ne_gaussian
+    (key : Tendsto (fun _ : ℕ => charFun (radMeasure.map fun _ : ℤ → ℝ => (0 : ℝ)) (1 : ℝ))
+      atTop (𝓝 (charFun (gaussianReal 0 (Real.toNNReal (1 : ℝ))) 1))) :
+    False := by
+  have hmapconst : radMeasure.map (fun _ : ℤ → ℝ => (0 : ℝ)) = Measure.dirac 0 := by
+    rw [Measure.map_const]
+    simp
+  rw [hmapconst] at key
+  have hone : charFun (Measure.dirac (0 : ℝ)) (1 : ℝ) = 1 := by
+    rw [charFun_dirac]; simp
+  simp only [hone] at key
+  have hlim : charFun (gaussianReal 0 (Real.toNNReal 1)) (1 : ℝ) = 1 :=
+    (tendsto_nhds_unique tendsto_const_nhds key).symm
+  rw [charFun_gaussianReal] at hlim
+  norm_num at hlim
+  rw [show ((-(1 / 2) : ℂ)) = (((-(1 / 2) : ℝ)) : ℂ) by push_cast; ring,
+    ← Complex.ofReal_exp] at hlim
+  have hR : Real.exp (-(1 / 2)) = 1 := by exact_mod_cast hlim
+  have hlt : Real.exp (-(1 / 2)) < 1 := Real.exp_lt_one_iff.mpr (by norm_num)
+  linarith
+
+/-- **The frozen `whittle_clt_debt` statement is FALSE.** -/
+private theorem whittle_clt_debt_false
+    (H : ∀ {Ω : Type} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ] {c0 : ℝ}
+      {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ} {X σvol ε : ℤ → Ω → ℝ},
+      IsGARCH c0 b a X σvol ε μ → IsStrictlyStationary X μ → (∀ t, MemLp (X t) 4 μ) →
+      ∀ (W : Matrix (Fin (p + q + 1)) (Fin (p + q + 1)) ℝ), Matrix.PosDef W →
+      ∀ (θhat : (T : ℕ) → Ω → Fin (p + q + 1) → ℝ), (∀ T, Measurable (θhat T)) →
+      ∀ (θ0 c : Fin (p + q + 1) → ℝ) (u : ℝ),
+      Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
+          Real.sqrt T * ∑ i, c i * (θhat T ω i - θ0 i)) u)
+        atTop
+        (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
+          (∑ i, ∑ j, c i * c j * W i j))) u))) :
+    False := by
+  have key := H rad_isGARCH zeroProc_strictlyStationary (zeroProc_memLp 4)
+    (1 : Matrix (Fin 1) (Fin 1) ℝ) Matrix.PosDef.one (fun _ _ _ => 0)
+    (fun _ => measurable_const) (fun _ => 0) (fun _ => 1) 1
+  simp only [sub_self, mul_zero, Finset.sum_const_zero] at key
+  rw [show (∑ i : Fin 1, ∑ j : Fin 1,
+      (1 : ℝ) * 1 * (1 : Matrix (Fin 1) (Fin 1) ℝ) i j) = 1 from by simp] at key
+  exact dirac_charFun_ne_gaussian key
+
+/-- **The frozen `lad_clt_debt` statement is FALSE.** The median hypothesis is satisfied
+outright by the Rademacher noise (`ε₀² = 1` a.s.). -/
+private theorem lad_clt_debt_false
+    (H : ∀ {Ω : Type} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ] {c0 : ℝ}
+      {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ} {X σvol ε : ℤ → Ω → ℝ},
+      IsGARCH c0 b a X σvol ε μ → IsStrictlyStationary X μ →
+      μ {ω | ε 0 ω ^ 2 ≤ 1} = μ {ω | 1 ≤ ε 0 ω ^ 2} →
+      ∀ (W : Matrix (Fin (p + q + 1)) (Fin (p + q + 1)) ℝ), Matrix.PosDef W →
+      ∀ (θhat : (T : ℕ) → Ω → Fin (p + q + 1) → ℝ), (∀ T, Measurable (θhat T)) →
+      ∀ (θ0 c : Fin (p + q + 1) → ℝ) (u : ℝ),
+      Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
+          Real.sqrt T * ∑ i, c i * (θhat T ω i - θ0 i)) u)
+        atTop
+        (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
+          (∑ i, ∑ j, c i * c j * W i j))) u))) :
+    False := by
+  have key := H rad_isGARCH zeroProc_strictlyStationary rad_hmed
+    (1 : Matrix (Fin 1) (Fin 1) ℝ) Matrix.PosDef.one (fun _ _ _ => 0)
+    (fun _ => measurable_const) (fun _ => 0) (fun _ => 1) 1
+  simp only [sub_self, mul_zero, Finset.sum_const_zero] at key
+  rw [show (∑ i : Fin 1, ∑ j : Fin 1,
+      (1 : ℝ) * 1 * (1 : Matrix (Fin 1) (Fin 1) ℝ) i j) = 1 from by simp] at key
+  exact dirac_charFun_ne_gaussian key
 
 /-- **DEBT (Giraitis & Robinson 2001; FY §4.2.3)**: `√T`-asymptotic normality of the
 Whittle estimator of a GARCH model under fourth-order stationarity. Recorded at the
