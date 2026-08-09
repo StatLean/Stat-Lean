@@ -50,7 +50,7 @@ theorem invariantSigma_le (f : α → α) : invariantSigma f ≤ ‹MeasurableSp
 /-- **The maximal ergodic theorem** (Garsia): for integrable `g`, the integral of `g`
 over the set where some Birkhoff sum is positive is nonnegative.
 -- USER-INPUT: measure-preserving dynamics and integrable observable; Birkhoff/Garsia -/
-theorem maximal_ergodic (hf : MeasurePreserving f μ) {g : α → ℝ}
+theorem maximal_ergodic (hf : MeasurePreserving f μ μ) {g : α → ℝ}
     (hg : Integrable g μ) :
     0 ≤ ∫ x in {x | ∃ n : ℕ, 0 < birkhoffSum f g (n + 1) x}, g x ∂μ := by
   sorry
@@ -60,7 +60,7 @@ measure-preserving `f` on a probability space and integrable `g`, the Birkhoff a
 converge a.e. to the conditional expectation of `g` on the invariant σ-algebra.
 -- USER-INPUT: measure-preserving dynamics and integrable observable; Birkhoff 1931 -/
 theorem birkhoffAverage_ae_tendsto_condexp [IsProbabilityMeasure μ]
-    (hf : MeasurePreserving f μ) (hfm : Measurable f) {g : α → ℝ}
+    (hf : MeasurePreserving f μ μ) (hfm : Measurable f) {g : α → ℝ}
     (hg : Integrable g μ) :
     ∀ᵐ x ∂μ, Tendsto (fun n => birkhoffAverage ℝ f g n x) atTop
       (𝓝 ((μ[g | invariantSigma f]) x)) := by
