@@ -337,14 +337,25 @@ Given the martingale-difference property (which is PROVED upstream:
    average of the stationary sequence `⟨d, Z_t⟩²`. **The diagnosis "this is the
    pointwise-ergodic gap, absent from Mathlib" is WITHDRAWN** (2026-08-08): it is the
    *same shape* as `ARMA/Consistency.lean`'s residual item (C), and (C) is now known to
-   be ergodic-theorem-free. `⟨d, Z_t⟩` is a one-sided linear filter of the i.i.d. noise,
-   so truncating the filter at lag `m` makes the truncated squares `m`-dependent; along
-   each arithmetic progression `t ≡ k (mod m)` they are i.i.d. and `L¹` (two moments on
-   `ε` suffice), so Etemadi's `ProbabilityTheory.strong_law_ae` applies progression by
-   progression, and the `m → ∞` transfer is Cauchy–Schwarz on second moments. What is
-   missing here is therefore that *construction*, not a missing Mathlib theorem. (The
-   `L²` route really does need fourth cumulants; that part of the note stands, and it is
-   exactly why the route goes through `L¹` + a.e. convergence.)
+   be ergodic-theorem-free — and (C) has since been **PROVED** there
+   (`armaResidualSS_tendstoInProb`, axiom-clean). The construction to copy, and the two
+   places the original sketch was wrong, are:
+   - the truncation must be **double**. Truncating only the filter at lag `m` leaves each
+     truncated square a function of the *entire* noise past, so the progressions are
+     **not** independent; one must also truncate the linear processes `U`, `V` at `m`,
+     and then the window is `[t−m, t+m]` and the progression step is `2m`, not `m`;
+   - the `m → ∞` transfer is **not** the two-factor Cauchy–Schwarz of the sketch but the
+     term-by-term one, `∫|u² − z²| ≤ ‖u − z‖₂(‖u‖₂ + ‖z‖₂)`, followed by one Markov
+     inequality. (The `L²` route really does need fourth cumulants; that part of the note
+     stands, and it is exactly why the route goes through `L¹` + a.e. convergence.)
+   **Scope blocker.** Consistency's implementation (`blockResid`, `cTrunc`,
+   `ae_tendsto_avg_blockResid_sq`, `tendsto_avg_of_tendsto_block`, `integral_defect_le`,
+   the `l2n` toolkit) is `private` to that file, so it cannot be imported here. Reusing it
+   requires relocating the reusable core to a file both can see (`Process/LinearProcess`
+   or a new `ForMathlib` module); otherwise it must be duplicated. Note also that here the
+   filter is applied to *two* linear processes (`U` and `V`) with different coefficient
+   sequences, so the surrogate is a sum of two `blockResid`-type windows and the
+   combinatorial Parseval identity is needed in a bilinear form.
 3. The **averaged Lindeberg condition**. Under stationarity the average collapses to the
    single term `E[ξ_0² 1{|ξ_0| ≥ η√n}] → 0`, which is dominated convergence once (1) is
    available; it is bundled here because it shares (1)'s independence input.
@@ -647,10 +658,25 @@ pointwise LLN it is paired with is now reduced, in Consistency, to the single
 ergodic-theorem-free item (C) (`armaProfileS_tendstoInProb`'s `hCLLN`), and the
 finite-`T` half of the *oscillation* statement is not an ergodic statement at all — it
 is the `θ`-Lipschitz estimate above, uniform in `T`, which needs a locally uniform
-geometric bound on `π(θ)` and on `∂π(θ)` over the compact `K`. That uniformity (roots of
-`maPoly a` staying off the closed unit disc uniformly on `K`, by compactness, and then a
-Cauchy estimate) is the actual missing brick, and it is the same one
-`mle_consistent`(ii) needs for the continuity of `θ ↦ armaContrastVar θ₀ θ`. -/
+geometric bound on `π(θ)` and on `∂π(θ)` over the compact `K`.
+
+**That uniformity is the whole of what is left here** (the pointwise LLN it was paired
+with is now PROVED: `Consistency.armaResidualSS_tendstoInProb` closes
+`armaProfileS_tendstoInProb` and `criterion_tendsto_contrast` unconditionally). It is the
+*same* brick `mle_consistent`(ii) needs for the continuity of `θ ↦ armaContrastVar θ₀ θ`.
+Its shape:
+
+  `∃ C r, 1 ≤ C ∧ 0 ≤ r ∧ r < 1 ∧ ∀ ba ∈ K, ∀ n, |armaPi ba.1 ba.2 n| ≤ C * r ^ n`.
+
+The compactness step is cheap: `(ba, z) ↦ ‖aeval z (maPoly ba.2)‖` is continuous and
+positive on the compact `K × closedBall 0 1`, hence `≥ δ > 0` there; the coefficients are
+bounded on `K`, so with a uniform Lipschitz constant `L` in `z` the same polynomial stays
+`≥ δ/2` on the strictly larger disc of radius `1 + δ/(2L)`, and a Cauchy estimate on that
+*fixed* radius is uniform in `ba ∈ K`. What is **not** free is that
+`exists_geometric_bound_armaPsi` is stated non-quantitatively (it produces `C`, `r` with
+no control by the radius or the sup-bound), so the uniform statement cannot be derived
+from it as a black box: its `HasFPowerSeriesOnBall` proof has to be redone carrying the
+radius and the sup-bound as parameters. -/
 private theorem armaProfileS_equicontinuous [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
