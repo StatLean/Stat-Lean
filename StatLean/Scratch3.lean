@@ -1083,6 +1083,159 @@ theorem tendsto_smallBlockLen_div {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
     linarith
   linarith [hsle]
 
+/-- The big-block index set: the union of the `k_n` big blocks. -/
+noncomputable def bigBlockIdx (h : ℕ → ℝ) (δ lam : ℝ) (n : ℕ) : Finset ℕ :=
+  (Finset.range (blockCount h δ lam n)).biUnion fun i =>
+    Finset.Ico (i * (bigBlockLen h n + smallBlockLen h δ lam n))
+      (i * (bigBlockLen h n + smallBlockLen h δ lam n) + bigBlockLen h n)
+
+/-- The big blocks are pairwise disjoint. -/
+theorem bigBlockIdx_pairwiseDisjoint (h : ℕ → ℝ) (δ lam : ℝ) (n : ℕ) :
+    (↑(Finset.range (blockCount h δ lam n)) : Set ℕ).PairwiseDisjoint fun i =>
+      Finset.Ico (i * (bigBlockLen h n + smallBlockLen h δ lam n))
+        (i * (bigBlockLen h n + smallBlockLen h δ lam n) + bigBlockLen h n) := by
+  set q : ℕ := bigBlockLen h n + smallBlockLen h δ lam n with hq
+  set lb : ℕ := bigBlockLen h n with hlb
+  have key : ∀ i i' : ℕ, i < i' →
+      Disjoint (Finset.Ico (i * q) (i * q + lb)) (Finset.Ico (i' * q) (i' * q + lb)) := by
+    intro i i' hii
+    rw [Finset.disjoint_left]
+    intro a ha ha'
+    rw [Finset.mem_Ico] at ha ha'
+    have h1 : (i + 1) * q ≤ i' * q := Nat.mul_le_mul_right _ (by omega)
+    have h2 : lb ≤ q := by rw [hq, hlb]; omega
+    have h3 : (i + 1) * q = i * q + q := by ring
+    omega
+  intro i _ i' _ hne
+  rcases lt_or_gt_of_ne hne with hlt | hlt
+  · exact key i i' hlt
+  · exact (key i' i hlt).symm
+
+/-- The big blocks live inside `range n`. -/
+theorem bigBlockIdx_subset (h : ℕ → ℝ) (δ lam : ℝ) (n : ℕ) :
+    bigBlockIdx h δ lam n ⊆ Finset.range n := by
+  intro a ha
+  simp only [bigBlockIdx, Finset.mem_biUnion, Finset.mem_range, Finset.mem_Ico] at ha ⊢
+  obtain ⟨i, hi, ha1, ha2⟩ := ha
+  have hlq : bigBlockLen h n
+      ≤ bigBlockLen h n + smallBlockLen h δ lam n := Nat.le_add_right _ _
+  have h1 : (i + 1) * (bigBlockLen h n + smallBlockLen h δ lam n)
+      ≤ blockCount h δ lam n * (bigBlockLen h n + smallBlockLen h δ lam n) :=
+    Nat.mul_le_mul_right _ (by omega)
+  have h2 : blockCount h δ lam n * (bigBlockLen h n + smallBlockLen h δ lam n) ≤ n :=
+    Nat.div_mul_le_self _ _
+  have h3 : (i + 1) * (bigBlockLen h n + smallBlockLen h δ lam n)
+      = i * (bigBlockLen h n + smallBlockLen h δ lam n)
+        + (bigBlockLen h n + smallBlockLen h δ lam n) := by ring
+  omega
+
+/-- The total big-block length is `k_n l_n`. -/
+theorem bigBlockIdx_card (h : ℕ → ℝ) (δ lam : ℝ) (n : ℕ) :
+    (bigBlockIdx h δ lam n).card = blockCount h δ lam n * bigBlockLen h n := by
+  classical
+  rw [bigBlockIdx, Finset.card_biUnion (fun i hi i' hi' hne =>
+    bigBlockIdx_pairwiseDisjoint h δ lam n (by simpa using hi) (by simpa using hi') hne)]
+  have hcard : ∀ i : ℕ,
+      (Finset.Ico (i * (bigBlockLen h n + smallBlockLen h δ lam n))
+        (i * (bigBlockLen h n + smallBlockLen h δ lam n) + bigBlockLen h n)).card
+        = bigBlockLen h n := by
+    intro i; rw [Nat.card_Ico]; omega
+  rw [Finset.sum_congr rfl (fun i _ => hcard i), Finset.sum_const, Finset.card_range,
+    smul_eq_mul]
+
+/-- The block bookkeeping identity `k l + k s + (n mod (l+s)) = n`. -/
+theorem blockCount_identity (h : ℕ → ℝ) (δ lam : ℝ) (n : ℕ) :
+    blockCount h δ lam n * bigBlockLen h n
+      + blockCount h δ lam n * smallBlockLen h δ lam n
+      + n % (bigBlockLen h n + smallBlockLen h δ lam n) = n := by
+  have hdm := Nat.div_add_mod n (bigBlockLen h n + smallBlockLen h δ lam n)
+  simp only [blockCount]
+  nlinarith [hdm]
+
+/-- The complement of the big blocks inside `range n` is negligible. -/
+theorem tendsto_restIdx_card {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
+    (hh : Tendsto h atTop (𝓝 0))
+    (hnh : Tendsto (fun n : ℕ => (n : ℝ) * h n ^ 3) atTop atTop)
+    {δ lam : ℝ} (hδ : 2 < δ) (hlam : 1 - 2 / δ < lam) :
+    Tendsto (fun n : ℕ =>
+        (((Finset.range n) \ bigBlockIdx h δ lam n).card : ℝ) / (n : ℝ)) atTop (𝓝 0) := by
+  have hks := tendsto_blockCount_mul_smallBlockLen_div hh0 hnh hδ hlam
+  have hl := tendsto_bigBlockLen_div hh0 hh
+  have hs := tendsto_smallBlockLen_div hh0 hh hnh hδ hlam
+  have hmaj : Tendsto (fun n : ℕ =>
+      (blockCount h δ lam n : ℝ) * (smallBlockLen h δ lam n : ℝ) / (n : ℝ)
+        + ((bigBlockLen h n : ℝ) / (n : ℝ) + (smallBlockLen h δ lam n : ℝ) / (n : ℝ)))
+      atTop (𝓝 0) := by simpa using hks.add (hl.add hs)
+  refine squeeze_zero' ?_ ?_ hmaj
+  · filter_upwards with n; positivity
+  filter_upwards [eventually_ge_atTop 2] with n hn2
+  have hn1 : 1 ≤ n := by omega
+  have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn1
+  have hq1 : 1 ≤ bigBlockLen h n + smallBlockLen h δ lam n := by
+    have hbl : 0 < bigBlockLen h n := by
+      rw [bigBlockLen]
+      refine Nat.ceil_pos.2 ?_
+      have hlog : 0 < Real.log n := Real.log_pos (by exact_mod_cast hn2)
+      have := hh0 n
+      positivity
+    omega
+  have hsub := bigBlockIdx_subset h δ lam n
+  have hcard : ((Finset.range n) \ bigBlockIdx h δ lam n).card
+      = n - (bigBlockIdx h δ lam n).card := by
+    rw [Finset.card_sdiff, Finset.inter_eq_left.2 hsub, Finset.card_range]
+  have hid := blockCount_identity h δ lam n
+  have hcard2 : ((Finset.range n) \ bigBlockIdx h δ lam n).card
+      = blockCount h δ lam n * smallBlockLen h δ lam n
+        + n % (bigBlockLen h n + smallBlockLen h δ lam n) := by
+    rw [hcard, bigBlockIdx_card]
+    generalize blockCount h δ lam n * bigBlockLen h n = A at hid ⊢
+    generalize blockCount h δ lam n * smallBlockLen h δ lam n = Bc at hid ⊢
+    generalize n % (bigBlockLen h n + smallBlockLen h δ lam n) = C at hid ⊢
+    omega
+  have hmod : n % (bigBlockLen h n + smallBlockLen h δ lam n)
+      ≤ bigBlockLen h n + smallBlockLen h δ lam n := (Nat.mod_lt _ hq1).le
+  rw [hcard2, div_le_iff₀ hn0]
+  push_cast
+  have h1 : ((n % (bigBlockLen h n + smallBlockLen h δ lam n) : ℕ) : ℝ)
+      ≤ (bigBlockLen h n : ℝ) + (smallBlockLen h δ lam n : ℝ) := by
+    exact_mod_cast hmod
+  have hexp : ((blockCount h δ lam n : ℝ) * (smallBlockLen h δ lam n : ℝ) / (n : ℝ)
+      + ((bigBlockLen h n : ℝ) / (n : ℝ) + (smallBlockLen h δ lam n : ℝ) / (n : ℝ))) * (n : ℝ)
+      = (blockCount h δ lam n : ℝ) * (smallBlockLen h δ lam n : ℝ)
+        + ((bigBlockLen h n : ℝ) + (smallBlockLen h δ lam n : ℝ)) := by
+    field_simp
+  rw [hexp]
+  linarith
+
+/-- The big blocks fill `range n` asymptotically. -/
+theorem tendsto_bigBlockIdx_card {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
+    (hh : Tendsto h atTop (𝓝 0))
+    (hnh : Tendsto (fun n : ℕ => (n : ℝ) * h n ^ 3) atTop atTop)
+    {δ lam : ℝ} (hδ : 2 < δ) (hlam : 1 - 2 / δ < lam) :
+    Tendsto (fun n : ℕ => ((bigBlockIdx h δ lam n).card : ℝ) / (n : ℝ)) atTop (𝓝 1) := by
+  have hrest := tendsto_restIdx_card hh0 hh hnh hδ hlam
+  have hone : Tendsto (fun n : ℕ =>
+      1 - (((Finset.range n) \ bigBlockIdx h δ lam n).card : ℝ) / (n : ℝ)) atTop (𝓝 1) := by
+    simpa using hrest.const_sub (1 : ℝ)
+  refine hone.congr' ?_
+  filter_upwards [eventually_ge_atTop 1] with n hn1
+  have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn1
+  have hsub := bigBlockIdx_subset h δ lam n
+  have hcard : ((Finset.range n) \ bigBlockIdx h δ lam n).card
+      = n - (bigBlockIdx h δ lam n).card := by
+    rw [Finset.card_sdiff, Finset.inter_eq_left.2 hsub, Finset.card_range]
+  have hle : (bigBlockIdx h δ lam n).card ≤ n := by
+    have := Finset.card_le_card hsub
+    rwa [Finset.card_range] at this
+  have hcast : (((Finset.range n) \ bigBlockIdx h δ lam n).card : ℝ)
+      = (n : ℝ) - ((bigBlockIdx h δ lam n).card : ℝ) := by
+    rw [hcard, Nat.cast_sub hle]
+  show 1 - (((Finset.range n) \ bigBlockIdx h δ lam n).card : ℝ) / (n : ℝ)
+      = ((bigBlockIdx h δ lam n).card : ℝ) / (n : ℝ)
+  rw [hcast]
+  field_simp
+  ring
+
 end Blocks
 
 end StatLean.TimeSeries
