@@ -1,5 +1,6 @@
 import StatLean.TimeSeries.GARCH.GARCHBasic
 import StatLean.TimeSeries.Spectral.Periodogram
+import StatLean.TimeSeries.ForMathlib.Probability.MartingaleCLT.BrownCLT
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.LinearAlgebra.Matrix.PosDef
@@ -584,6 +585,18 @@ nondegeneracy assumption on `E[ψ₀ψ₀ᵀ]`.
 
 ### Residue note: what is left to prove
 
+**Both statements are now PROVED** (wave `ts/f3-spectral-garch-finale`, 2026-08-09):
+`whittle_clt_debt` and `lad_clt_debt` are `sorry`-free and axiom-clean. The two steps
+(S1)/(S2) described below were executed verbatim, and they are literally the *same* proof
+in the two cases — the engine `clt_of_asymptotically_linear` below is applied twice, with
+no Whittle- or LAD-specific input. Nothing in the two proofs uses `hL4`, `hmed`, `hstat`,
+`hc0`, `hθ0`, `hmin`/`gmodel`/`v0`/`ν` or `hW` beyond what is recorded here: the model-side
+hypotheses are consumed *inside* `hlin`/`hWdef`/`hvar`, which is exactly the relocation
+repair 3 performed. `hmin` and `hK` are used only for the boundedness of `θhat`
+(`exists_bound_garchParamVec`), the integrability side condition of (S1), and `hW` only
+through `hWdef` (positive semidefiniteness of `E[ψ₀ψ₀ᵀ]` is *derived*, not assumed —
+`nonneg_influence_form`; `Matrix.PosDef W` is therefore not needed at all).
+
 With the repairs in place both theorems have the *same* two-step proof, and the two steps
 are cleanly separated.
 
@@ -605,15 +618,22 @@ Instantiate `ForMathlib/Probability/MartingaleCLT/BrownCLT.lean`'s `mds_clt_sequ
 * `hle`/`hmono` — `IsGARCH.measurableX` and `sigmaLT` monotonicity;
 * `hadapted` — `hpsiAdapted`; `hmds` — `hpsiMDS`, both linear in `c`;
 * `hL2` — `hpsiL2`, finite linear combination;
-* `hσ : 0 ≤ σ²` — `hW.posSemidef` applied to `c`, after matching
-  `∑ i, ∑ j, c i * c j * W i j` to `c ⬝ᵥ (W *ᵥ c)`;
+* `hσ : 0 ≤ σ²` — **not** `hW.posSemidef`, in the end: this Mathlib's `Matrix.PosSemidef`
+  is phrased over `n →₀ R`, so matching `∑ i, ∑ j, c i * c j * W i j` to it is more work
+  than proving it directly. `nonneg_influence_form` instead expands the form back into
+  `∫ (Σ_i c_i ψ_i(0))² ≥ 0` through `hWdef`. Consequently `hW : Matrix.PosDef W` is
+  **unused** by the proof, and stays only as the nondegeneracy statement of repair 3;
 * `hvar` — **hypothesis** (repair 4);
 * `hlind` — free from `hpsiId`: every summand equals `∫_{|ξ₀| ≥ ε√n} ξ₀²`, so the average
   *is* that single term, and it vanishes because `ξ₀ ∈ L²` (dominated convergence on the
   tail of a square-integrable variable — the one small analytic lemma missing here;
-  everything else in (S2) is instantiation).
+  everything else in (S2) is instantiation). Both halves are now built:
+  `setIntegral_sq_eq_of_identDistrib` (the transfer of the truncated second moment along
+  `hpsiId`, composed with the linear form `v ↦ Σ_i c_i v_i`) and
+  `tendsto_setIntegral_sq_tail` (the dominated-convergence half).
 
-**The relocated debts.** After the repairs the *literature* content of GR 2001 and PY 2003
+**The relocated debts** (unchanged by the closure above — they are what `hlin` and `hWdef`
+now *carry*, and they remain outside the repo). After the repairs the *literature* content of GR 2001 and PY 2003
 is exactly the pair `(hlin, hWdef)`: the expansion of the criterion around `θ₀` producing
 the influence process. That is where the genuinely hard analysis lives, and it is
 different in the two cases:
@@ -703,6 +723,274 @@ private lemma tendsto_charFun_map_of_l1 [IsProbabilityMeasure μ] {u : ℝ}
     simpa using h0.const_mul |u|
   simpa using hd.add hlim
 
+/-! #### Residue (S2), CLOSED: the martingale CLT for the influence sum
+
+The bricks below instantiate `mds_clt_sequence` (Brown's martingale CLT) at the influence
+process, discharging every input except the two that the repaired statements carry as
+hypotheses (`hvar`, the ergodicity brick, and `hlin`, the asymptotically linear
+representation).  `clt_of_asymptotically_linear` is the resulting engine: it is the whole
+common proof of the Whittle and LAD statements. -/
+
+omit [MeasurableSpace Ω] in
+private lemma sigmaLT_mono_est {X : ℤ → Ω → ℝ} {s t : ℤ} (hst : s ≤ t) :
+    sigmaLT X s ≤ sigmaLT X t :=
+  iSup₂_le fun _ hu =>
+    le_iSup₂ (f := fun r (_ : r ∈ Set.Iio t) => MeasurableSpace.comap (X r) inferInstance) _
+      (lt_of_lt_of_le hu hst)
+
+private lemma sigmaLT_le_est {X : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (X t)) (t : ℤ) :
+    sigmaLT X t ≤ (inferInstance : MeasurableSpace Ω) :=
+  iSup₂_le fun _ _ => (hm _).comap_le
+
+/-- The tail second moment of a square-integrable variable vanishes. -/
+private lemma tendsto_setIntegral_sq_tail [IsProbabilityMeasure μ] {ζ : Ω → ℝ}
+    (hζm : Measurable ζ) (hζ : MemLp ζ 2 μ) {ε : ℝ} (hε : 0 < ε) :
+    Tendsto (fun m : ℕ => ∫ ω in {ω | ε * Real.sqrt m ≤ |ζ ω|}, ζ ω ^ 2 ∂μ) atTop (𝓝 0) := by
+  have hint : Integrable (fun ω => ζ ω ^ 2) μ := hζ.integrable_sq
+  have hset : ∀ m : ℕ, MeasurableSet {ω | ε * Real.sqrt m ≤ |ζ ω|} :=
+    fun m => measurableSet_le measurable_const hζm.abs
+  have hrw : ∀ m : ℕ, ∫ ω in {ω | ε * Real.sqrt m ≤ |ζ ω|}, ζ ω ^ 2 ∂μ
+      = ∫ ω, Set.indicator {ω | ε * Real.sqrt m ≤ |ζ ω|} (fun ω => ζ ω ^ 2) ω ∂μ :=
+    fun m => (integral_indicator (hset m)).symm
+  simp only [hrw]
+  have hF : ∀ m : ℕ, AEStronglyMeasurable
+      (Set.indicator {ω | ε * Real.sqrt m ≤ |ζ ω|} (fun ω => ζ ω ^ 2)) μ := fun m =>
+    ((hζm.pow_const 2).indicator (hset m)).aestronglyMeasurable
+  have hbd : ∀ m : ℕ, ∀ᵐ ω ∂μ,
+      ‖Set.indicator {ω | ε * Real.sqrt m ≤ |ζ ω|} (fun ω => ζ ω ^ 2) ω‖ ≤ ζ ω ^ 2 := by
+    intro m
+    filter_upwards with ω
+    by_cases hω : ω ∈ {ω | ε * Real.sqrt m ≤ |ζ ω|}
+    · rw [Set.indicator_of_mem hω]
+      simp
+    · rw [Set.indicator_of_notMem hω]
+      simpa using sq_nonneg (ζ ω)
+  have hlim : ∀ᵐ ω ∂μ, Tendsto
+      (fun m : ℕ => Set.indicator {ω | ε * Real.sqrt m ≤ |ζ ω|} (fun ω => ζ ω ^ 2) ω)
+      atTop (𝓝 0) := by
+    filter_upwards with ω
+    have hgo : Tendsto (fun m : ℕ => ε * Real.sqrt m) atTop atTop :=
+      Filter.Tendsto.const_mul_atTop hε
+        (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
+    have hev : ∀ᶠ m : ℕ in atTop,
+        Set.indicator {ω | ε * Real.sqrt m ≤ |ζ ω|} (fun ω => ζ ω ^ 2) ω = 0 := by
+      filter_upwards [hgo.eventually_gt_atTop (|ζ ω|)] with m hm
+      refine Set.indicator_of_notMem ?_ _
+      simp only [Set.mem_setOf_eq, not_le]
+      exact hm
+    exact Filter.Tendsto.congr' (Filter.EventuallyEq.symm hev) tendsto_const_nhds
+  have := tendsto_integral_of_dominated_convergence (F := fun m : ℕ => Set.indicator
+      {ω | ε * Real.sqrt m ≤ |ζ ω|} (fun ω => ζ ω ^ 2)) (f := fun _ => (0 : ℝ))
+      (fun ω => ζ ω ^ 2) hF hint hbd hlim
+  simpa using this
+
+/-- Two identically distributed variables have the same truncated second moment. -/
+private lemma setIntegral_sq_eq_of_identDistrib [IsProbabilityMeasure μ] {Z ζ : Ω → ℝ}
+    (hZ : Measurable Z) (hζ : Measurable ζ) (h : IdentDistrib Z ζ μ μ) (a : ℝ) :
+    ∫ ω in {ω | a ≤ |Z ω|}, Z ω ^ 2 ∂μ = ∫ ω in {ω | a ≤ |ζ ω|}, ζ ω ^ 2 ∂μ := by
+  have hg : Measurable (fun x : ℝ => if a ≤ |x| then x ^ 2 else 0) := by
+    refine Measurable.ite (measurableSet_le measurable_const measurable_id.abs) ?_ ?_
+    · fun_prop
+    · fun_prop
+  have e1 : ∀ Y : Ω → ℝ, Measurable Y →
+      ∫ ω in {ω | a ≤ |Y ω|}, Y ω ^ 2 ∂μ
+        = ∫ ω, (fun x : ℝ => if a ≤ |x| then x ^ 2 else 0) (Y ω) ∂μ := by
+    intro Y hY
+    rw [← integral_indicator (measurableSet_le measurable_const hY.abs)]
+    refine integral_congr_ae (Eventually.of_forall fun ω => ?_)
+    by_cases hω : a ≤ |Y ω|
+    · rw [Set.indicator_of_mem (by exact hω)]
+      simp [hω]
+    · rw [Set.indicator_of_notMem (by exact hω)]
+      simp [hω]
+  rw [e1 Z hZ, e1 ζ hζ]
+  exact (h.comp hg).integral_eq
+
+/-- The influence covariance quadratic form is nonnegative — it is a second moment. -/
+private lemma nonneg_influence_form [IsProbabilityMeasure μ] {n : ℕ}
+    {psi : Fin n → ℤ → Ω → ℝ} (hpsiL2 : ∀ i t, MemLp (psi i t) 2 μ)
+    {W : Matrix (Fin n) (Fin n) ℝ} (hWdef : ∀ i j, W i j = ∫ ω, psi i 0 ω * psi j 0 ω ∂μ)
+    (c : Fin n → ℝ) : 0 ≤ ∑ i, ∑ j, c i * c j * W i j := by
+  classical
+  have hint : ∀ i j : Fin n, Integrable (fun ω => psi i 0 ω * psi j 0 ω) μ := fun i j =>
+    (hpsiL2 i 0).integrable_mul (hpsiL2 j 0)
+  have hkey : ∑ i, ∑ j, c i * c j * W i j = ∫ ω, (∑ i, c i * psi i 0 ω) ^ 2 ∂μ := by
+    have hpt : ∀ ω : Ω, (∑ i, c i * psi i 0 ω) ^ 2
+        = ∑ i : Fin n, ∑ j : Fin n, c i * c j * (psi i 0 ω * psi j 0 ω) := by
+      intro ω
+      rw [sq, Finset.sum_mul_sum]
+      exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+    rw [integral_congr_ae (Eventually.of_forall hpt),
+      integral_finset_sum _ (fun i _ => integrable_finset_sum _
+        fun j _ => (hint i j).const_mul _)]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [integral_finset_sum _ (fun j _ => (hint i j).const_mul _)]
+    exact Finset.sum_congr rfl fun j _ => by rw [integral_const_mul, hWdef i j]
+  rw [hkey]
+  exact integral_nonneg fun ω => sq_nonneg _
+
+/-- **The asymptotically-linear CLT engine.** -/
+private lemma clt_of_asymptotically_linear [IsProbabilityMeasure μ] {n : ℕ}
+    {X : ℤ → Ω → ℝ} (hXm : ∀ t, Measurable (X t))
+    {θhat : (T : ℕ) → Ω → Fin n → ℝ} (hmeas : ∀ T, Measurable (θhat T))
+    {θ0 : Fin n → ℝ} {R : ℝ} (hbdd : ∀ (T : ℕ) (ω : Ω) (i : Fin n), |θhat T ω i| ≤ R)
+    {psi : Fin n → ℤ → Ω → ℝ}
+    (hpsiL2 : ∀ i t, MemLp (psi i t) 2 μ)
+    (hpsiAdapted : ∀ i t, Measurable[sigmaLT X (t + 1)] (psi i t))
+    (hpsiMDS : ∀ i t, μ[psi i t | sigmaLT X t] =ᵐ[μ] 0)
+    (hpsiId : ∀ t : ℤ, IdentDistrib (fun ω i => psi i t ω) (fun ω i => psi i 0 ω) μ μ)
+    (hlin : ∀ i, Tendsto (fun T : ℕ => ∫ ω, |Real.sqrt T * (θhat T ω i - θ0 i)
+        - (Real.sqrt T)⁻¹ * ∑ t ∈ Finset.range T, psi i ((t : ℤ) + 1) ω| ∂μ) atTop (𝓝 0))
+    (c : Fin n → ℝ) {S : ℝ} (hS : 0 ≤ S)
+    (hvar : ∀ δ : ℝ, 0 < δ → Tendsto (fun T : ℕ => (μ {ω | δ ≤ |(T : ℝ)⁻¹ *
+        (∑ t ∈ Finset.range T, μ[fun ω' => (∑ i, c i * psi i ((t : ℤ) + 1) ω') ^ 2
+          | sigmaLT X ((t : ℤ) + 1)] ω) - S|}).toReal)
+      atTop (𝓝 0))
+    (u : ℝ) :
+    Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
+        Real.sqrt T * ∑ i, c i * (θhat T ω i - θ0 i)) u)
+      atTop (𝓝 (charFun (gaussianReal 0 (Real.toNNReal S)) u)) := by
+  classical
+  have hpsiM : ∀ i t, Measurable (psi i t) := fun i t =>
+    (hpsiAdapted i t).mono (sigmaLT_le_est hXm (t + 1)) le_rfl
+  -- the martingale-difference sequence and its filtration
+  have hξm : ∀ k : ℕ, Measurable (fun ω => ∑ i, c i * psi i ((k : ℤ) + 1) ω) := fun k =>
+    Finset.measurable_sum _ fun i _ => (hpsiM i _).const_mul _
+  have hξL2 : ∀ k : ℕ, MemLp (fun ω => ∑ i, c i * psi i ((k : ℤ) + 1) ω) 2 μ := fun k =>
+    memLp_finset_sum _ (fun i _ => (hpsiL2 i _).const_mul _)
+  -- (S2) the martingale CLT for the influence sum
+  have hCLT : Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
+      (Real.sqrt T)⁻¹ * ∑ t ∈ Finset.range T,
+        ∑ i, c i * psi i ((t : ℤ) + 1) ω) u) atTop
+      (𝓝 (charFun (gaussianReal 0 (Real.toNNReal S)) u)) := by
+    refine mds_clt_sequence (ξ := fun k ω => ∑ i, c i * psi i ((k : ℤ) + 1) ω)
+      (G := fun k : ℕ => sigmaLT X ((k : ℤ) + 1))
+      (fun k => sigmaLT_le_est hXm _) (fun k l hkl => sigmaLT_mono_est (by omega))
+      ?_ hξL2 ?_ hS hvar ?_ u
+    · -- adaptedness
+      intro k
+      refine Measurable.mono (Finset.measurable_sum _ fun i _ =>
+        (hpsiAdapted i ((k : ℤ) + 1)).const_mul (c i)) ?_ le_rfl
+      exact sigmaLT_mono_est (by omega)
+    · -- martingale-difference property
+      intro k
+      have hint : ∀ i : Fin n, Integrable (fun ω => c i * psi i ((k : ℤ) + 1) ω) μ :=
+        fun i => ((hpsiL2 i _).const_mul (c i)).integrable one_le_two
+      have hfun : (fun ω => ∑ i, c i * psi i ((k : ℤ) + 1) ω)
+          = ∑ i : Fin n, (fun ω => c i * psi i ((k : ℤ) + 1) ω) := by
+        funext ω; simp
+      show μ[fun ω => ∑ i, c i * psi i ((k : ℤ) + 1) ω | sigmaLT X ((k : ℤ) + 1)] =ᵐ[μ] 0
+      rw [hfun]
+      refine (condExp_finset_sum (fun i _ => hint i) _).trans ?_
+      have hz : ∀ i : Fin n,
+          μ[fun ω => c i * psi i ((k : ℤ) + 1) ω | sigmaLT X ((k : ℤ) + 1)] =ᵐ[μ] 0 := by
+        intro i
+        have h1 : (fun ω => c i * psi i ((k : ℤ) + 1) ω) = c i • psi i ((k : ℤ) + 1) := by
+          funext ω; simp
+        rw [h1]
+        filter_upwards [condExp_smul (c i) (psi i ((k : ℤ) + 1)) (sigmaLT X ((k : ℤ) + 1)),
+          hpsiMDS i ((k : ℤ) + 1)] with ω e1 e2
+        rw [e1]
+        simp [e2]
+      have : (∑ i : Fin n, μ[fun ω => c i * psi i ((k : ℤ) + 1) ω | sigmaLT X ((k : ℤ) + 1)])
+          =ᵐ[μ] 0 := by
+        have := (ae_all_iff (ι := Fin n)).2 (fun i => hz i)
+        filter_upwards [this] with ω hω
+        have : ∀ i : Fin n,
+            (μ[fun ω' => c i * psi i ((k : ℤ) + 1) ω' | sigmaLT X ((k : ℤ) + 1)]) ω = 0 :=
+          fun i => hω i
+        simp [Finset.sum_apply, this]
+      exact this
+    · -- averaged Lindeberg
+      intro ε hε
+      have hζm : Measurable (fun ω => ∑ i, c i * psi i 0 ω) :=
+        Finset.measurable_sum _ fun i _ => (hpsiM i _).const_mul _
+      have hζ2 : MemLp (fun ω => ∑ i, c i * psi i 0 ω) 2 μ :=
+        memLp_finset_sum _ (fun i _ => (hpsiL2 i _).const_mul _)
+      have hu : Measurable (fun v : Fin n → ℝ => ∑ i, c i * v i) := by fun_prop
+      have hkey : ∀ m k : ℕ,
+          ∫ ω in {ω | ε * Real.sqrt m ≤ |∑ i, c i * psi i ((k : ℤ) + 1) ω|},
+              (∑ i, c i * psi i ((k : ℤ) + 1) ω) ^ 2 ∂μ
+            = ∫ ω in {ω | ε * Real.sqrt m ≤ |∑ i, c i * psi i 0 ω|},
+              (∑ i, c i * psi i 0 ω) ^ 2 ∂μ := by
+        intro m k
+        refine setIntegral_sq_eq_of_identDistrib (hξm k) hζm ?_ _
+        exact (hpsiId ((k : ℤ) + 1)).comp hu
+      refine Tendsto.congr' ?_ (tendsto_setIntegral_sq_tail hζm hζ2 hε)
+      filter_upwards [eventually_ge_atTop 1] with m hm
+      rw [Finset.sum_congr rfl (fun k _ => hkey m k), Finset.sum_const, Finset.card_range,
+        nsmul_eq_mul]
+      have hmpos : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hm
+      field_simp
+  -- (S1) `L¹`-Slutsky
+  have hZm : ∀ T : ℕ, Measurable (fun ω => Real.sqrt T * ∑ i, c i * (θhat T ω i - θ0 i)) := by
+    intro T
+    refine Measurable.const_mul (Finset.measurable_sum _ fun i _ => ?_) _
+    exact (((measurable_pi_apply i).comp (hmeas T)).sub_const _).const_mul _
+  have hWm : ∀ T : ℕ, Measurable (fun ω => (Real.sqrt T)⁻¹ *
+      ∑ t ∈ Finset.range T, ∑ i, c i * psi i ((t : ℤ) + 1) ω) := fun T =>
+    Measurable.const_mul (Finset.measurable_sum _ fun t _ => hξm t) _
+  have hIfirst : ∀ (T : ℕ) (i : Fin n),
+      Integrable (fun ω => Real.sqrt T * (θhat T ω i - θ0 i)) μ := by
+    intro T i
+    refine (integrable_const (Real.sqrt T * (R + |θ0 i|))).mono'
+      ((((measurable_pi_apply i).comp (hmeas T)).sub_const _).const_mul _).aestronglyMeasurable ?_
+    filter_upwards with ω
+    rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (Real.sqrt_nonneg _)]
+    refine mul_le_mul_of_nonneg_left ?_ (Real.sqrt_nonneg _)
+    exact (abs_sub _ _).trans (add_le_add (hbdd T ω i) le_rfl)
+  have hIsecond : ∀ (T : ℕ) (i : Fin n),
+      Integrable (fun ω => (Real.sqrt T)⁻¹ *
+        ∑ t ∈ Finset.range T, psi i ((t : ℤ) + 1) ω) μ := by
+    intro T i
+    exact ((memLp_finset_sum (Finset.range T)
+      (fun (t : ℕ) (_ : t ∈ Finset.range T) => hpsiL2 i ((t : ℤ) + 1))).const_mul
+      (Real.sqrt T)⁻¹).integrable one_le_two
+  have hd : ∀ (T : ℕ) (i : Fin n), Integrable (fun ω => Real.sqrt T * (θhat T ω i - θ0 i)
+      - (Real.sqrt T)⁻¹ * ∑ t ∈ Finset.range T, psi i ((t : ℤ) + 1) ω) μ :=
+    fun T i => (hIfirst T i).sub (hIsecond T i)
+  have hid : ∀ (T : ℕ) (ω : Ω),
+      (Real.sqrt T * ∑ i, c i * (θhat T ω i - θ0 i))
+        - ((Real.sqrt T)⁻¹ * ∑ t ∈ Finset.range T, ∑ i, c i * psi i ((t : ℤ) + 1) ω)
+      = ∑ i, c i * (Real.sqrt T * (θhat T ω i - θ0 i)
+          - (Real.sqrt T)⁻¹ * ∑ t ∈ Finset.range T, psi i ((t : ℤ) + 1) ω) := by
+    intro T ω
+    have h1 : ∑ t ∈ Finset.range T, ∑ i, c i * psi i ((t : ℤ) + 1) ω
+        = ∑ i, c i * ∑ t ∈ Finset.range T, psi i ((t : ℤ) + 1) ω := by
+      rw [Finset.sum_comm]
+      exact Finset.sum_congr rfl fun i _ => (Finset.mul_sum _ _ _).symm
+    rw [h1, Finset.mul_sum, Finset.mul_sum, ← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun i _ => by ring
+  refine tendsto_charFun_map_of_l1 hZm hWm ?_ ?_ hCLT
+  · intro T
+    refine Integrable.abs ?_
+    refine Integrable.congr ?_ (Eventually.of_forall fun ω => (hid T ω).symm)
+    exact integrable_finset_sum _ fun i _ => (hd T i).const_mul _
+  · refine squeeze_zero (fun T => integral_nonneg fun ω => abs_nonneg _) ?_ ?_
+      (g := fun T : ℕ => ∑ i, |c i| * ∫ ω, |Real.sqrt T * (θhat T ω i - θ0 i)
+        - (Real.sqrt T)⁻¹ * ∑ t ∈ Finset.range T, psi i ((t : ℤ) + 1) ω| ∂μ)
+    · intro T
+      have hle : ∫ ω, |Real.sqrt T * ∑ i, c i * (θhat T ω i - θ0 i)
+            - (Real.sqrt T)⁻¹ * ∑ t ∈ Finset.range T,
+              ∑ i, c i * psi i ((t : ℤ) + 1) ω| ∂μ
+          ≤ ∫ ω, ∑ i, |c i| * |Real.sqrt T * (θhat T ω i - θ0 i)
+              - (Real.sqrt T)⁻¹ * ∑ t ∈ Finset.range T, psi i ((t : ℤ) + 1) ω| ∂μ := by
+        refine integral_mono ?_ ?_ fun ω => ?_
+        · exact (Integrable.congr (integrable_finset_sum _ fun i _ => (hd T i).const_mul _)
+            (Eventually.of_forall fun ω => (hid T ω).symm)).abs
+        · exact integrable_finset_sum _ fun i _ => ((hd T i).abs).const_mul _
+        · rw [hid T ω]
+          refine (Finset.abs_sum_le_sum_abs _ _).trans (le_of_eq ?_)
+          exact Finset.sum_congr rfl fun i _ => abs_mul _ _
+      refine hle.trans (le_of_eq ?_)
+      rw [integral_finset_sum _ fun i _ => ((hd T i).abs).const_mul _]
+      exact Finset.sum_congr rfl fun i _ => integral_const_mul _ _
+    · have : Tendsto (fun T : ℕ => ∑ i, |c i| * ∫ ω, |Real.sqrt T * (θhat T ω i - θ0 i)
+          - (Real.sqrt T)⁻¹ * ∑ t ∈ Finset.range T, psi i ((t : ℤ) + 1) ω| ∂μ)
+          atTop (𝓝 (∑ i : Fin n, |c i| * 0)) :=
+        tendsto_finset_sum _ fun i _ => (hlin i).const_mul _
+      simpa using this
+
 /-- The **coordinate packing of a GARCH parameter** `(c₀, b, a)` into the vector the
 asymptotic statements are indexed by: slots `0, …, p−1` carry `b`, slots `p, …, p+q−1`
 carry `a`, and the last slot carries `c₀`. -/
@@ -712,12 +1000,41 @@ noncomputable def garchParamVec {p q : ℕ} (c0 : ℝ) (b : Fin p → ℝ) (a : 
   else if h2 : (i : ℕ) - p < q then a ⟨(i : ℕ) - p, h2⟩
   else c0
 
+/-- A compact search region bounds every coordinate of the packed parameter vector. -/
+private lemma exists_bound_garchParamVec {p q : ℕ}
+    {K : Set (ℝ × (Fin p → ℝ) × (Fin q → ℝ))} (hK : IsCompact K) :
+    ∃ R : ℝ, ∀ x ∈ K, ∀ i : Fin (p + q + 1),
+      |garchParamVec x.1 x.2.1 x.2.2 i| ≤ R := by
+  obtain ⟨R, hR⟩ := hK.isBounded.subset_closedBall (0 : ℝ × (Fin p → ℝ) × (Fin q → ℝ))
+  refine ⟨R, fun x hx i => ?_⟩
+  have hxR : ‖x‖ ≤ R := by
+    simpa [dist_zero_right] using Metric.mem_closedBall.1 (hR hx)
+  have h2 : ‖x.2‖ ≤ R := le_trans (norm_snd_le x) hxR
+  simp only [garchParamVec]
+  split_ifs with h1 hh2
+  · calc |x.2.1 ⟨(i : ℕ), h1⟩| = ‖x.2.1 ⟨(i : ℕ), h1⟩‖ := (Real.norm_eq_abs _).symm
+      _ ≤ ‖x.2.1‖ := norm_le_pi_norm _ _
+      _ ≤ ‖x.2‖ := norm_fst_le x.2
+      _ ≤ R := h2
+  · calc |x.2.2 ⟨(i : ℕ) - p, hh2⟩| = ‖x.2.2 ⟨(i : ℕ) - p, hh2⟩‖ := (Real.norm_eq_abs _).symm
+      _ ≤ ‖x.2.2‖ := norm_le_pi_norm _ _
+      _ ≤ ‖x.2‖ := norm_snd_le x.2
+      _ ≤ R := h2
+  · calc |x.1| = ‖x.1‖ := (Real.norm_eq_abs _).symm
+      _ ≤ ‖x‖ := norm_fst_le x
+      _ ≤ R := hxR
+
 /-- **DEBT (Giraitis & Robinson 2001; FY §4.2.3)**: `√T`-asymptotic normality of the
 Whittle estimator of a GARCH model under fourth-order stationarity, in Cramér–Wold/charFun
 form.
 
 **Repaired 2026-08-09** — the frozen form is refuted by `whittle_clt_debt_false` above;
-see the section note for the four repairs and for the residue map. -/
+see the section note for the four repairs and for the residue map.
+
+**PROVED 2026-08-09 (`ts/f3-spectral-garch-finale`)** from the repaired hypotheses, by
+`clt_of_asymptotically_linear`: (S1) `L¹`-Slutsky along `hlin`, then (S2) Brown's
+martingale CLT for the influence sum. Giraitis–Robinson's own analysis is exactly what
+`hlin`/`hWdef` package. -/
 theorem whittle_clt_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     {b : Fin p → ℝ} {a : Fin q → ℝ} {X σvol ε : ℤ → Ω → ℝ}
     (h : IsGARCH c0 b a X σvol ε μ) (hstat : IsStrictlyStationary X μ)
@@ -767,7 +1084,15 @@ theorem whittle_clt_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
       atTop
       (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
         (∑ i, ∑ j, c i * c j * W i j))) u)) := by
-  sorry
+  -- (S1) + (S2): the asymptotically linear representation `hlin` transports the martingale
+  -- CLT for the influence sum, whose Brown hypotheses are `hpsiAdapted`/`hpsiMDS`/`hpsiL2`
+  -- (adaptedness, martingale difference, `L²`), `hvar` (the ergodicity brick) and `hpsiId`
+  -- (identical distribution, which makes the averaged Lindeberg condition free).
+  obtain ⟨R, hRbd⟩ := exists_bound_garchParamVec hK
+  refine clt_of_asymptotically_linear (X := X) h.measurableX hmeas (R := R) (fun T ω i => ?_)
+    hpsiL2 hpsiAdapted hpsiMDS hpsiId hlin c (nonneg_influence_form hpsiL2 hWdef c) hvar u
+  rw [hpack T ω]
+  exact hRbd _ (hmin T ω).1 i
 
 /-- **DEBT (Peng & Yao 2002/2003; FY §4.2.3)**: `√T`-asymptotic normality of the LAD
 estimator, which unlike the QMLE needs no moment condition beyond the model's own —
@@ -777,7 +1102,12 @@ the heavy-tail-robust alternative FY highlights.
 section note for the four repairs and for the residue map. Note that the LAD score is a
 *bounded* martingale difference (the signs `sign(log ε_t²)` are `±1`), so `hpsiL2` is
 automatic for the true influence process and the whole (S2) half is free of moment
-conditions — which is exactly FY's stated reason for preferring LAD. -/
+conditions — which is exactly FY's stated reason for preferring LAD.
+
+**PROVED 2026-08-09 (`ts/f3-spectral-garch-finale`)** by the *same* application of
+`clt_of_asymptotically_linear` as `whittle_clt_debt`: the two proofs are character for
+character identical, which is the sharpest confirmation that repair 3 relocated the
+GR/PY-specific analysis entirely into `hlin`/`hWdef`. -/
 theorem lad_clt_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     {b : Fin p → ℝ} {a : Fin q → ℝ} {X σvol ε : ℤ → Ω → ℝ}
     (h : IsGARCH c0 b a X σvol ε μ) (hstat : IsStrictlyStationary X μ)
@@ -828,7 +1158,15 @@ theorem lad_clt_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
       atTop
       (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
         (∑ i, ∑ j, c i * c j * W i j))) u)) := by
-  sorry
+  -- (S1) + (S2): the asymptotically linear representation `hlin` transports the martingale
+  -- CLT for the influence sum, whose Brown hypotheses are `hpsiAdapted`/`hpsiMDS`/`hpsiL2`
+  -- (adaptedness, martingale difference, `L²`), `hvar` (the ergodicity brick) and `hpsiId`
+  -- (identical distribution, which makes the averaged Lindeberg condition free).
+  obtain ⟨R, hRbd⟩ := exists_bound_garchParamVec hK
+  refine clt_of_asymptotically_linear (X := X) h.measurableX hmeas (R := R) (fun T ω i => ?_)
+    hpsiL2 hpsiAdapted hpsiMDS hpsiId hlin c (nonneg_influence_form hpsiL2 hWdef c) hvar u
+  rw [hpack T ω]
+  exact hRbd _ (hmin T ω).1 i
 
 /-! ### Sanity checks on the criteria
 

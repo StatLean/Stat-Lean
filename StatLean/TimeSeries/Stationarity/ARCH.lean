@@ -1400,6 +1400,39 @@ Two facts finish it, for *any* cut `J`:
   `IsARCHInf.iIndep` + `Probability/ProductMeasure`, not assumed. `ForMathlib/Ergodic` is
   where it belongs.
 
+**(B′) Wave `ts/f3-spectral-garch-finale` (2026-08-09) — the ergodicity input, relocated
+precisely.** Wave `ts/s13`'s reading that this transfer "is not in the repo at this
+granularity" and that "`ForMathlib/Ergodic` is where it belongs" is **out of date**, and the
+correction matters because it shortens the item considerably:
+
+* `ForMathlib/Ergodic/Birkhoff.lean` **exists, is `0`-sorry and axiom-clean**, and supplies
+  exactly the consumer needed: `birkhoffAverage_ae_tendsto_integral` (a.e. convergence of
+  the Birkhoff averages of any integrable observable to its mean, for an `Ergodic` map).
+  Note `ρ_i²` is *not* a coordinate of the process, so the plain SLLN shape is useless here
+  — Birkhoff at an arbitrary observable on the **noise path space** is what applies.
+* `Mixing/LimitTheorems.lean` already executes the step above it — `α(n) → 0 ⇒ the shift is
+  ergodic for the path law` (`preErgodic_shiftPath`, together with
+  `measurePreserving_shiftPath`, `pathLaw`, `shiftPath`). It is **`private`**, i.e.
+  file-scoped, so it must either be un-privatised or re-proved; and `Stationarity/ARCH.lean`
+  imports neither that file nor `Birkhoff.lean` today.
+
+So the residue of `hvar` is now three named items, none of them a missing theory:
+1. **`IsAlphaMixing ξ μ` for an i.i.d. family** — `α(n) = 0` for `n ≥ 1` outright, from
+   independence of `⨆_{s ≤ 0} σ(ξ_s)` and `⨆_{s ≥ n} σ(ξ_s)`. This is not in the repo
+   (`Mixing/Relations.lean` has `IsAlphaMixing.comp` — heredity under an instantaneous
+   transform — but no i.i.d. instance), and it is the *only* mixing input the route needs:
+   no rate on `bc`, no mixing property of `Y` itself.
+2. the **causal-functional representation** `ρ_t = g ∘ shiftPath^t` on the noise path space,
+   which is what `archInf_eq_archSol` (`Y = archSol a bc ξ`, and `archSol` is by
+   construction `archFun a bc ∘ archPath ξ t`) is for. This is (C) below, and is the one
+   item with real work in it.
+3. `E[ρ_0²] = v⁻¹σ_d²` bookkeeping, free once 1–2 are in place.
+
+Everything downstream of `hvar` — `hL2`, `hlind`, `hadapted`, `hmds` — is unchanged and
+still free/proved. The α-mixing SLLN `slln_of_alphaMixing_debt` itself is *not* on the
+critical path: it is Birkhoff at the coordinate observable, and the coordinate observable is
+the wrong one here.
+
 **(C) The infinite-past transfer.** `IsStrictlyStationary Y μ` is a *finite-dimensional*
 statement (`isStrictlyStationary_iff_window`), while `d_i` and `ρ_i` read the whole past.
 Upgrading fdd-stationarity to identical distribution of `(d_i)` is a π-system/Dynkin
