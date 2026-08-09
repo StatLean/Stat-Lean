@@ -258,7 +258,28 @@ Under the model this is a null event, but any proof has to discard it explicitly
 (`OrderSelection` imports only `ARMA/Likelihood`), and `exists_contrast_gap`,
 `armaContrastVar` and `criterion_tendsto_contrast` are `private` or unreachable here. So
 (U) cannot even be *stated* in contrast-variance terms without an import edge plus an
-un-`private`ing. -/
+un-`private`ing.
+
+**STATUS after wave `ts/s12b-model-repairs` (2026-08-09): NOT attempted, and the
+obstruction is now named precisely.** The wave brief's instruction — "generalize
+`exists_contrast_gap` to the open-region form" — is not a generalization of that lemma's
+*proof*: that proof is `continuousOn_armaContrastVar` + `IsCompact.exists_isMinOn` on
+`K ∩ {dist ≥ δ}`, and the region `𝓑_{p,q}` fails compactness **twice over**, in two
+genuinely different ways:
+
+* it is **unbounded** — the coefficient vector may escape to infinity inside `𝓑`;
+* it is **not closed** — the escape to its boundary is roots of `b` or `a` approaching the
+  unit circle, where `armaContrastVar` is not even defined (the geometric brick
+  `exists_uniform_geometric_bound_arma`, on which every bound in the file rests, degenerates
+  there: its `r ↑ 1`).
+
+Un-`private`ing changes nothing about either. What is missing is a **lower** bound for
+`armaContrastVar b₀ a₀ b a` along both escapes; the project supplies only
+`one_le_armaContrastVar`, i.e. the bound `1`, and `1` is exactly the value the gap has to
+beat. A spectral (Parseval) representation of `armaContrastVar` — absent from the project —
+is the natural source of such a bound, since it exhibits the contrast as
+`(2π)⁻¹∫|b(e^{iλ})a₀(e^{iλ})/(a(e^{iλ})b₀(e^{iλ}))|²dλ`, which blows up along both escapes.
+Recorded as the honest shape of (U) rather than closed. -/
 private theorem bic_underfit_residue [IsProbabilityMeasure μ] {p0 q0 : ℕ}
     {b0 : Fin p0 → ℝ} {a0 : Fin q0 → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -293,7 +314,23 @@ control demanded by residue (U) is needed here too.
 
 Note this is where the frozen statement's `in probability` reading matters: an a.s.
 version would additionally need a summability/Borel-Cantelli upgrade of the same
-expansion, which nothing in the project supplies. -/
+expansion, which nothing in the project supplies.
+
+**STATUS after wave `ts/s12b-model-repairs` (2026-08-09): NOT attempted; the brief's
+"close BIC modulo `armaMLE_linearization` by citing it" is not available as stated**, for
+two reasons that are visible in the two statements side by side:
+
+* `armaMLE_linearization` consumes a *given measurable estimator sequence*
+  `θ : (T : ℕ) → Ω → (Fin p → ℝ) × (Fin q → ℝ)` together with `hargmin`. `armaBICmin` is an
+  `iInf` — a number, not a selection. Producing the `θ` the linearization needs is a
+  **measurable-selection** step over the parameter region, which the frozen note does not
+  mention and which nothing in the project supplies;
+* the linearization's `hargmin` minimizes over a **compact** `K` with `θ₀ ∈ interior K`,
+  while the BIC infimum is over the whole open `𝓑_{p,q}`. So even granted a selection, the
+  two do not match without exactly the boundary control that residue (U) is missing.
+
+The headline `bic_consistency_debt` is unaffected: it is proved over (U) and (O), so the
+grid union bound and the cell decomposition are not part of this residue. -/
 private theorem bic_overfit_residue [IsProbabilityMeasure μ] {p0 q0 : ℕ}
     {b0 : Fin p0 → ℝ} {a0 : Fin q0 → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)

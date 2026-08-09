@@ -39,6 +39,11 @@ bricks were produced on the way and are meant to be cited downstream:
   `T⁻¹ Σ_{t<T} W_{t+1}² →p σ² Σ_n c_n²` for any absolutely summable `c`, proved by the
   same ergodic-theorem-free progression device as `armaResidualSS_tendstoInProb` (of
   which it is **not** an instance: a general `c` is not an ARMA transfer sequence);
+* `exists_armaPi_l1_lipschitz` — the **Lipschitz** `ℓ¹` bound on `θ ↦ π(θ)` over a compact
+  set of invertible parameters (new in wave `ts/s12b-model-repairs`, 2026-08-09; proved by
+  the resolvent identity plus the `ℓ¹` convolution inequality, *not* by Cauchy estimates on
+  `∂π/∂θ`). This is the quantitative upgrade of `exists_armaPi_l1_modulus` that
+  `ARMA/Diagnostics.lean`'s residue (B) needs;
 * `exists_uniform_geometric_bound_arma` and `exists_armaPi_l1_modulus` (from the previous
   wave), the deterministic uniformity inputs.
 
@@ -1164,6 +1169,403 @@ lemma exists_armaPi_l1_modulus {p q : ℕ}
     have hge := hmin hmemA
     simp only [Set.mem_setOf_eq] at hge
     linarith
+
+/-! ### From the modulus to a Lipschitz bound
+
+The modulus above is what `mle_consistent` needs; the residual-correlogram claim of
+`ARMA/Diagnostics.lean` needs the *quantitative* form, because it must convert an
+`o_p(T^{−1/2})` parameter error into an `o_p(T^{−1/2})` filter error — a modulus only
+delivers `o_p(1)`, one full factor of `√T` short (the point recorded at that file's
+residue (B)). The route is the **resolvent identity** rather than derivatives: with
+`A = a(z)`, `B = b(z)` and `π = B/A`,
+
+  `π − π′ = ((B − B′) + (A′ − A)·π′) · A⁻¹`,
+
+so the `ℓ¹` (Banach-algebra) bound gives
+`‖π − π′‖₁ ≤ (‖B − B′‖₁ + ‖A′ − A‖₁‖π′‖₁)·‖A⁻¹‖₁`. The two polynomial differences are
+finitely supported with coefficients the parameter differences, and `‖π′‖₁`, `‖A⁻¹‖₁` are
+uniformly bounded on a compact set of invertible parameters by
+`exists_uniform_geometric_bound_arma` (applied to `K` and to its zero-AR slice, the latter
+carrying `A⁻¹ = π(0, a)`). No Cauchy estimate and no `∂π/∂θ` is needed. -/
+
+/-- The `ℓ¹` convolution bound for formal power series (the `ℓ¹` Banach-algebra
+inequality, coefficientwise). -/
+private lemma tsum_abs_coeff_mul_le (φ ψ : PowerSeries ℝ)
+    (hφ : Summable fun n => |PowerSeries.coeff n φ|)
+    (hψ : Summable fun n => |PowerSeries.coeff n ψ|) :
+    (Summable fun n => |PowerSeries.coeff n (φ * ψ)|) ∧
+      ∑' n, |PowerSeries.coeff n (φ * ψ)|
+        ≤ (∑' n, |PowerSeries.coeff n φ|) * ∑' n, |PowerSeries.coeff n ψ| := by
+  classical
+  have hfn : Summable fun n => ‖|PowerSeries.coeff n φ|‖ := by
+    simpa only [Real.norm_eq_abs, abs_abs] using hφ
+  have hgn : Summable fun n => ‖|PowerSeries.coeff n ψ|‖ := by
+    simpa only [Real.norm_eq_abs, abs_abs] using hψ
+  have hWs : Summable fun n : ℕ => ∑ kl ∈ Finset.antidiagonal n,
+      |PowerSeries.coeff kl.1 φ| * |PowerSeries.coeff kl.2 ψ| := by
+    have h := summable_norm_sum_mul_antidiagonal_of_summable_norm hfn hgn
+    refine h.of_nonneg_of_le (fun n => Finset.sum_nonneg fun kl _ => by positivity) fun n => ?_
+    rw [Real.norm_eq_abs, abs_of_nonneg (Finset.sum_nonneg fun kl _ => by positivity)]
+  have hsum : ((∑' n, |PowerSeries.coeff n φ|) * ∑' n, |PowerSeries.coeff n ψ|)
+      = ∑' n : ℕ, ∑ kl ∈ Finset.antidiagonal n,
+          |PowerSeries.coeff kl.1 φ| * |PowerSeries.coeff kl.2 ψ| :=
+    tsum_mul_tsum_eq_tsum_sum_antidiagonal_of_summable_norm hfn hgn
+  have hle : ∀ n : ℕ, |PowerSeries.coeff n (φ * ψ)|
+      ≤ ∑ kl ∈ Finset.antidiagonal n,
+          |PowerSeries.coeff kl.1 φ| * |PowerSeries.coeff kl.2 ψ| := by
+    intro n
+    rw [PowerSeries.coeff_mul]
+    refine le_trans (Finset.abs_sum_le_sum_abs _ _) (Finset.sum_le_sum fun kl _ => ?_)
+    rw [abs_mul]
+  have hsummable : Summable fun n => |PowerSeries.coeff n (φ * ψ)| :=
+    hWs.of_nonneg_of_le (fun n => abs_nonneg _) hle
+  exact ⟨hsummable, by rw [hsum]; exact hsummable.tsum_le_tsum hle hWs⟩
+
+/-- The **resolvent identity** for the inversion filters: with `A = a(z)`, `B = b(z)`,
+`π = B/A`, one has `π − π' = ((B − B') + (A' − A)·π')·A⁻¹`. -/
+private lemma armaPi_series_sub {p q : ℕ} (b b' : Fin p → ℝ) (a a' : Fin q → ℝ)
+    (hA : PowerSeries.constantCoeff (R := ℝ) ((maPoly a : Polynomial ℝ) : PowerSeries ℝ) ≠ 0)
+    (hA' : PowerSeries.constantCoeff (R := ℝ) ((maPoly a' : Polynomial ℝ) : PowerSeries ℝ) ≠ 0) :
+    ((arPoly b : Polynomial ℝ) : PowerSeries ℝ) *
+        (((maPoly a : Polynomial ℝ) : PowerSeries ℝ))⁻¹
+      - ((arPoly b' : Polynomial ℝ) : PowerSeries ℝ) *
+        (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ))⁻¹
+      = ((((arPoly b : Polynomial ℝ) : PowerSeries ℝ)
+            - ((arPoly b' : Polynomial ℝ) : PowerSeries ℝ))
+          + (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ)
+              - ((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) *
+            (((arPoly b' : Polynomial ℝ) : PowerSeries ℝ) *
+              (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ))⁻¹))
+        * (((maPoly a : Polynomial ℝ) : PowerSeries ℝ))⁻¹ := by
+  have e1 : (((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) *
+      (((maPoly a : Polynomial ℝ) : PowerSeries ℝ))⁻¹ = 1 :=
+    PowerSeries.mul_inv_cancel _ hA
+  have e2 : (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ)) *
+      (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ))⁻¹ = 1 :=
+    PowerSeries.mul_inv_cancel _ hA'
+  linear_combination (((arPoly b' : Polynomial ℝ) : PowerSeries ℝ) *
+      (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ))⁻¹) * e1
+    - (((arPoly b' : Polynomial ℝ) : PowerSeries ℝ) *
+      (((maPoly a : Polynomial ℝ) : PowerSeries ℝ))⁻¹) * e2
+
+private lemma constantCoeff_maPoly_ne {q : ℕ} (a : Fin q → ℝ) :
+    PowerSeries.constantCoeff (R := ℝ) ((maPoly a : Polynomial ℝ) : PowerSeries ℝ) ≠ 0 := by
+  rw [← PowerSeries.coeff_zero_eq_constantCoeff, Polynomial.coeff_coe]
+  simp [maPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_X_pow]
+
+private lemma coeff_inv_maPoly (p : ℕ) {q : ℕ} (a : Fin q → ℝ) (n : ℕ) :
+    PowerSeries.coeff n ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ))⁻¹)
+      = armaPi (fun _ : Fin p => (0 : ℝ)) a n := by
+  unfold armaPi
+  have h : arPoly (fun _ : Fin p => (0 : ℝ)) = 1 := by simp [arPoly]
+  rw [h]
+  simp
+
+/-- The `ℓ¹` norm of the AR-polynomial difference is controlled by the parameter
+distance: crude constant `(p+1)·p`, which is all a Lipschitz statement needs. -/
+private lemma l1_arPoly_sub {p : ℕ} (b b' : Fin p → ℝ) :
+    (Summable fun n : ℕ => |(arPoly b).coeff n - (arPoly b').coeff n|) ∧
+      ∑' n : ℕ, |(arPoly b).coeff n - (arPoly b').coeff n|
+        ≤ ((p : ℝ) + 1) * ∑ i : Fin p, |b i - b' i| := by
+  classical
+  have hcoeff : ∀ n : ℕ, (arPoly b).coeff n - (arPoly b').coeff n
+      = -∑ i : Fin p, (if n = (i : ℕ) + 1 then b i - b' i else 0) := by
+    intro n
+    rw [coeff_arPoly', coeff_arPoly']
+    have : ∑ i : Fin p, (if n = (i : ℕ) + 1 then b i - b' i else 0)
+        = (∑ i : Fin p, if n = (i : ℕ) + 1 then b i else 0)
+          - ∑ i : Fin p, if n = (i : ℕ) + 1 then b' i else 0 := by
+      rw [← Finset.sum_sub_distrib]
+      exact Finset.sum_congr rfl fun i _ => by by_cases h : n = (i : ℕ) + 1 <;> simp [h]
+    rw [this]
+    ring
+  have hbd : ∀ n : ℕ, |(arPoly b).coeff n - (arPoly b').coeff n| ≤ ∑ i : Fin p, |b i - b' i| := by
+    intro n
+    rw [hcoeff n, abs_neg]
+    refine le_trans (Finset.abs_sum_le_sum_abs _ _) (Finset.sum_le_sum fun i _ => ?_)
+    by_cases h : n = (i : ℕ) + 1 <;> simp [h, abs_nonneg]
+  have hzero : ∀ n ∉ Finset.range (p + 1),
+      |(arPoly b).coeff n - (arPoly b').coeff n| = 0 := by
+    intro n hn
+    rw [Finset.mem_range] at hn
+    rw [hcoeff n]
+    have : ∀ i : Fin p, (if n = (i : ℕ) + 1 then b i - b' i else 0) = 0 := by
+      intro i
+      have hne : n ≠ (i : ℕ) + 1 := by
+        have := i.isLt
+        omega
+      simp [hne]
+    simp [this]
+  have hsummable : Summable fun n : ℕ => |(arPoly b).coeff n - (arPoly b').coeff n| :=
+    summable_of_ne_finset_zero hzero
+  refine ⟨hsummable, ?_⟩
+  rw [tsum_eq_sum hzero]
+  refine le_trans (Finset.sum_le_sum fun n _ => hbd n) ?_
+  rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+  push_cast
+  exact le_rfl
+
+private lemma l1_maPoly_sub {q : ℕ} (a a' : Fin q → ℝ) :
+    (Summable fun n : ℕ => |(maPoly a').coeff n - (maPoly a).coeff n|) ∧
+      ∑' n : ℕ, |(maPoly a').coeff n - (maPoly a).coeff n|
+        ≤ ((q : ℝ) + 1) * ∑ j : Fin q, |a j - a' j| := by
+  classical
+  have hcoeff : ∀ n : ℕ, (maPoly a').coeff n - (maPoly a).coeff n
+      = ∑ j : Fin q, (if n = (j : ℕ) + 1 then a' j - a j else 0) := by
+    intro n
+    rw [coeff_maPoly', coeff_maPoly']
+    have : ∑ j : Fin q, (if n = (j : ℕ) + 1 then a' j - a j else 0)
+        = (∑ j : Fin q, if n = (j : ℕ) + 1 then a' j else 0)
+          - ∑ j : Fin q, if n = (j : ℕ) + 1 then a j else 0 := by
+      rw [← Finset.sum_sub_distrib]
+      exact Finset.sum_congr rfl fun j _ => by by_cases h : n = (j : ℕ) + 1 <;> simp [h]
+    rw [this]
+    ring
+  have hbd : ∀ n : ℕ, |(maPoly a').coeff n - (maPoly a).coeff n|
+      ≤ ∑ j : Fin q, |a j - a' j| := by
+    intro n
+    rw [hcoeff n]
+    refine le_trans (Finset.abs_sum_le_sum_abs _ _) (Finset.sum_le_sum fun j _ => ?_)
+    by_cases h : n = (j : ℕ) + 1
+    · simp only [h, if_pos]
+      rw [abs_sub_comm]
+    · simp [h, abs_nonneg]
+  have hzero : ∀ n ∉ Finset.range (q + 1),
+      |(maPoly a').coeff n - (maPoly a).coeff n| = 0 := by
+    intro n hn
+    rw [Finset.mem_range] at hn
+    rw [hcoeff n]
+    have : ∀ j : Fin q, (if n = (j : ℕ) + 1 then a' j - a j else 0) = 0 := by
+      intro j
+      have hne : n ≠ (j : ℕ) + 1 := by
+        have := j.isLt
+        omega
+      simp [hne]
+    simp [this]
+  have hsummable : Summable fun n : ℕ => |(maPoly a').coeff n - (maPoly a).coeff n| :=
+    summable_of_ne_finset_zero hzero
+  refine ⟨hsummable, ?_⟩
+  rw [tsum_eq_sum hzero]
+  refine le_trans (Finset.sum_le_sum fun n _ => hbd n) ?_
+  rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+  push_cast
+  exact le_rfl
+
+
+/-- **The `ℓ¹` Lipschitz bound for the inversion filter** on a compact set of invertible
+parameters — the quantitative upgrade of `exists_armaPi_l1_modulus`. -/
+theorem exists_armaPi_l1_lipschitz {p q : ℕ}
+    {K : Set ((Fin p → ℝ) × (Fin q → ℝ))} (hK : IsCompact K)
+    (hKB : ∀ ba ∈ K, ARMAInvertibleParams ba.1 ba.2) :
+    ∃ L : ℝ, 0 ≤ L ∧ ∀ ba ∈ K, ∀ ba' ∈ K,
+      ∑' n : ℕ, |armaPi ba.1 ba.2 n - armaPi ba'.1 ba'.2 n| ≤ L * dist ba ba' := by
+  classical
+  obtain ⟨C₁, r₁, hC₁, hr₁0, hr₁1, _, hπK⟩ := exists_uniform_geometric_bound_arma hK hKB
+  have hK₀ : IsCompact ((fun ba : (Fin p → ℝ) × (Fin q → ℝ) => ((0 : Fin p → ℝ), ba.2)) '' K) :=
+    hK.image (by fun_prop)
+  have hK₀B : ∀ ba ∈ (fun ba : (Fin p → ℝ) × (Fin q → ℝ) => ((0 : Fin p → ℝ), ba.2)) '' K,
+      ARMAInvertibleParams ba.1 ba.2 := by
+    rintro _ ⟨ba, hba, rfl⟩
+    exact ⟨fun z _ => by simp [arPoly], (hKB ba hba).2⟩
+  obtain ⟨C₂, r₂, hC₂, hr₂0, hr₂1, _, hπK₀⟩ := exists_uniform_geometric_bound_arma hK₀ hK₀B
+  -- one envelope for both filters
+  obtain ⟨C, r, hC, hr0, hr1, hb1, hb2⟩ : ∃ C r : ℝ, 1 ≤ C ∧ 0 ≤ r ∧ r < 1 ∧
+      (∀ ba ∈ K, ∀ n, |armaPi ba.1 ba.2 n| ≤ C * r ^ n) ∧
+      (∀ ba ∈ K, ∀ n, |armaPi (fun _ : Fin p => (0 : ℝ)) ba.2 n| ≤ C * r ^ n) := by
+    refine ⟨max C₁ C₂, max r₁ r₂, le_trans hC₁ (le_max_left _ _),
+      le_trans hr₁0 (le_max_left _ _), max_lt hr₁1 hr₂1, fun ba hba n => ?_, fun ba hba n => ?_⟩
+    · exact (hπK ba hba n).trans (mul_le_mul (le_max_left _ _)
+        (pow_le_pow_left₀ hr₁0 (le_max_left _ _) n) (by positivity)
+        (le_trans zero_le_one (le_trans hC₁ (le_max_left _ _))))
+    · exact (hπK₀ _ ⟨ba, hba, rfl⟩ n).trans (mul_le_mul (le_max_right _ _)
+        (pow_le_pow_left₀ hr₂0 (le_max_right _ _) n) (by positivity)
+        (le_trans zero_le_one (le_trans hC₁ (le_max_left _ _))))
+  have hCpos : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC
+  have hMnn : (0 : ℝ) ≤ C / (1 - r) := by
+    have : (0 : ℝ) < 1 - r := by linarith
+    positivity
+  have hgeo : ∀ f : ℕ → ℝ, (∀ n, |f n| ≤ C * r ^ n) →
+      (Summable fun n => |f n|) ∧ ∑' n, |f n| ≤ C / (1 - r) := by
+    intro f hf
+    have hgs : Summable fun n : ℕ => C * r ^ n :=
+      (summable_geometric_of_lt_one hr0 hr1).mul_left C
+    have hsummable : Summable fun n => |f n| :=
+      hgs.of_nonneg_of_le (fun n => abs_nonneg _) hf
+    refine ⟨hsummable, ?_⟩
+    have hle := hsummable.tsum_le_tsum hf hgs
+    rwa [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1, ← div_eq_mul_inv] at hle
+  refine ⟨(C / (1 - r)) * (((p : ℝ) + 1) * (p : ℝ)
+      + ((q : ℝ) + 1) * (q : ℝ) * (C / (1 - r))), by positivity, ?_⟩
+  intro ba hba ba' hba'
+  obtain ⟨b, a⟩ := ba
+  obtain ⟨b', a'⟩ := ba'
+  simp only at *
+  -- the parameter distance dominates every coordinate difference
+  have hd0 : (0 : ℝ) ≤ dist (b, a) (b', a') := dist_nonneg
+  have hbd : ∑ i : Fin p, |b i - b' i| ≤ (p : ℝ) * dist (b, a) (b', a') := by
+    have hterm : ∀ i : Fin p, |b i - b' i| ≤ dist (b, a) (b', a') := by
+      intro i
+      have h1 : |b i - b' i| = dist (b i) (b' i) := (Real.dist_eq _ _).symm
+      rw [h1]
+      exact le_trans (dist_le_pi_dist b b' i) (le_max_left _ _)
+    calc ∑ i : Fin p, |b i - b' i| ≤ ∑ _i : Fin p, dist (b, a) (b', a') :=
+          Finset.sum_le_sum fun i _ => hterm i
+      _ = (p : ℝ) * dist (b, a) (b', a') := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  have had : ∑ j : Fin q, |a j - a' j| ≤ (q : ℝ) * dist (b, a) (b', a') := by
+    have hterm : ∀ j : Fin q, |a j - a' j| ≤ dist (b, a) (b', a') := by
+      intro j
+      have h1 : |a j - a' j| = dist (a j) (a' j) := (Real.dist_eq _ _).symm
+      rw [h1]
+      exact le_trans (dist_le_pi_dist a a' j) (le_max_right _ _)
+    calc ∑ j : Fin q, |a j - a' j| ≤ ∑ _j : Fin q, dist (b, a) (b', a') :=
+          Finset.sum_le_sum fun j _ => hterm j
+      _ = (q : ℝ) * dist (b, a) (b', a') := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  -- the resolvent identity, coefficientwise
+  have hid := armaPi_series_sub b b' a a' (constantCoeff_maPoly_ne a) (constantCoeff_maPoly_ne a')
+  have hcoeffD : ∀ n : ℕ, armaPi b a n - armaPi b' a' n
+      = PowerSeries.coeff n
+        (((((arPoly b : Polynomial ℝ) : PowerSeries ℝ)
+              - ((arPoly b' : Polynomial ℝ) : PowerSeries ℝ))
+            + (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ)
+                - ((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) *
+              (((arPoly b' : Polynomial ℝ) : PowerSeries ℝ) *
+                (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ))⁻¹))
+          * (((maPoly a : Polynomial ℝ) : PowerSeries ℝ))⁻¹) := by
+    intro n
+    rw [← hid, map_sub]
+    rfl
+  -- the four `ℓ¹` inputs
+  obtain ⟨hs1, hb1'⟩ := l1_arPoly_sub b b'
+  obtain ⟨hs2, hb2'⟩ := l1_maPoly_sub a a'
+  obtain ⟨hs3, hb3⟩ := hgeo (fun n => armaPi b' a' n) (hb1 (b', a') hba')
+  obtain ⟨hs4, hb4⟩ := hgeo (fun n => armaPi (fun _ : Fin p => (0 : ℝ)) a n) (hb2 (b, a) hba)
+  have hcR1 : ∀ n : ℕ, PowerSeries.coeff n
+      (((arPoly b : Polynomial ℝ) : PowerSeries ℝ)
+        - ((arPoly b' : Polynomial ℝ) : PowerSeries ℝ))
+      = (arPoly b).coeff n - (arPoly b').coeff n := by
+    intro n; rw [map_sub, Polynomial.coeff_coe, Polynomial.coeff_coe]
+  have hcA : ∀ n : ℕ, PowerSeries.coeff n
+      (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ)
+        - ((maPoly a : Polynomial ℝ) : PowerSeries ℝ))
+      = (maPoly a').coeff n - (maPoly a).coeff n := by
+    intro n; rw [map_sub, Polynomial.coeff_coe, Polynomial.coeff_coe]
+  have hcPi : ∀ n : ℕ, PowerSeries.coeff n
+      (((arPoly b' : Polynomial ℝ) : PowerSeries ℝ) *
+        (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ))⁻¹) = armaPi b' a' n := fun n => rfl
+  have hcP : ∀ n : ℕ, PowerSeries.coeff n ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ))⁻¹)
+      = armaPi (fun _ : Fin p => (0 : ℝ)) a n := coeff_inv_maPoly p a
+  -- `‖(A' − A)·π'‖₁ ≤ ‖A' − A‖₁ ‖π'‖₁`
+  obtain ⟨hs5, hb5⟩ := tsum_abs_coeff_mul_le
+    (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ)
+      - ((maPoly a : Polynomial ℝ) : PowerSeries ℝ))
+    (((arPoly b' : Polynomial ℝ) : PowerSeries ℝ) *
+      (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ))⁻¹)
+    (by simpa only [hcA] using hs2) (by simpa only [hcPi] using hs3)
+  -- the sum `R = (B − B') + (A' − A)π'`
+  have hcR : ∀ n : ℕ, PowerSeries.coeff n
+      ((((arPoly b : Polynomial ℝ) : PowerSeries ℝ)
+          - ((arPoly b' : Polynomial ℝ) : PowerSeries ℝ))
+        + (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ)
+            - ((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) *
+          (((arPoly b' : Polynomial ℝ) : PowerSeries ℝ) *
+            (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ))⁻¹))
+      = PowerSeries.coeff n
+          (((arPoly b : Polynomial ℝ) : PowerSeries ℝ)
+            - ((arPoly b' : Polynomial ℝ) : PowerSeries ℝ))
+        + PowerSeries.coeff n
+          ((((maPoly a' : Polynomial ℝ) : PowerSeries ℝ)
+              - ((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) *
+            (((arPoly b' : Polynomial ℝ) : PowerSeries ℝ) *
+              (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ))⁻¹)) := fun n => map_add _ _ _
+  have hsR : Summable fun n : ℕ => |PowerSeries.coeff n
+      ((((arPoly b : Polynomial ℝ) : PowerSeries ℝ)
+          - ((arPoly b' : Polynomial ℝ) : PowerSeries ℝ))
+        + (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ)
+            - ((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) *
+          (((arPoly b' : Polynomial ℝ) : PowerSeries ℝ) *
+            (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ))⁻¹))| := by
+    refine Summable.of_nonneg_of_le (fun n => abs_nonneg _) (fun n => ?_)
+      (((by simpa only [hcR1] using hs1 : Summable fun n : ℕ => |PowerSeries.coeff n
+        (((arPoly b : Polynomial ℝ) : PowerSeries ℝ)
+          - ((arPoly b' : Polynomial ℝ) : PowerSeries ℝ))|)).add hs5)
+    rw [hcR n]
+    exact abs_add_le _ _
+  have hbR : ∑' n : ℕ, |PowerSeries.coeff n
+      ((((arPoly b : Polynomial ℝ) : PowerSeries ℝ)
+          - ((arPoly b' : Polynomial ℝ) : PowerSeries ℝ))
+        + (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ)
+            - ((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) *
+          (((arPoly b' : Polynomial ℝ) : PowerSeries ℝ) *
+            (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ))⁻¹))|
+      ≤ ((p : ℝ) + 1) * ((p : ℝ) * dist (b, a) (b', a'))
+        + ((q : ℝ) + 1) * ((q : ℝ) * dist (b, a) (b', a')) * (C / (1 - r)) := by
+    have hs1' : Summable fun n : ℕ => |PowerSeries.coeff n
+        (((arPoly b : Polynomial ℝ) : PowerSeries ℝ)
+          - ((arPoly b' : Polynomial ℝ) : PowerSeries ℝ))| := by simpa only [hcR1] using hs1
+    have hstep := hsR.tsum_le_tsum (fun n => by rw [hcR n]; exact abs_add_le _ _) (hs1'.add hs5)
+    rw [hs1'.tsum_add hs5] at hstep
+    have hpart1 : ∑' n : ℕ, |PowerSeries.coeff n
+        (((arPoly b : Polynomial ℝ) : PowerSeries ℝ)
+          - ((arPoly b' : Polynomial ℝ) : PowerSeries ℝ))|
+        ≤ ((p : ℝ) + 1) * ((p : ℝ) * dist (b, a) (b', a')) := by
+      have h := hb1'
+      simp only [hcR1]
+      refine le_trans h ?_
+      exact mul_le_mul_of_nonneg_left hbd (by positivity)
+    have hpart2 : ∑' n : ℕ, |PowerSeries.coeff n
+        ((((maPoly a' : Polynomial ℝ) : PowerSeries ℝ)
+            - ((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) *
+          (((arPoly b' : Polynomial ℝ) : PowerSeries ℝ) *
+            (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ))⁻¹))|
+        ≤ ((q : ℝ) + 1) * ((q : ℝ) * dist (b, a) (b', a')) * (C / (1 - r)) := by
+      refine le_trans hb5 ?_
+      have hA1 : ∑' n : ℕ, |PowerSeries.coeff n
+          (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ)
+            - ((maPoly a : Polynomial ℝ) : PowerSeries ℝ))|
+          ≤ ((q : ℝ) + 1) * ((q : ℝ) * dist (b, a) (b', a')) := by
+        simp only [hcA]
+        exact le_trans hb2' (mul_le_mul_of_nonneg_left had (by positivity))
+      have hA2 : ∑' n : ℕ, |PowerSeries.coeff n
+          (((arPoly b' : Polynomial ℝ) : PowerSeries ℝ) *
+            (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ))⁻¹)| ≤ C / (1 - r) := by
+        simpa only [hcPi] using hb3
+      have hnn1 : (0 : ℝ) ≤ ∑' n : ℕ, |PowerSeries.coeff n
+          (((arPoly b' : Polynomial ℝ) : PowerSeries ℝ) *
+            (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ))⁻¹)| :=
+        tsum_nonneg fun n => abs_nonneg _
+      have hnn2 : (0 : ℝ) ≤ ((q : ℝ) + 1) * ((q : ℝ) * dist (b, a) (b', a')) := by positivity
+      calc _ ≤ (((q : ℝ) + 1) * ((q : ℝ) * dist (b, a) (b', a'))) *
+              ∑' n : ℕ, |PowerSeries.coeff n
+                (((arPoly b' : Polynomial ℝ) : PowerSeries ℝ) *
+                  (((maPoly a' : Polynomial ℝ) : PowerSeries ℝ))⁻¹)| :=
+            mul_le_mul_of_nonneg_right hA1 hnn1
+        _ ≤ _ := mul_le_mul_of_nonneg_left hA2 hnn2
+    linarith
+  -- multiply by `A⁻¹`
+  obtain ⟨_, hb6⟩ := tsum_abs_coeff_mul_le _
+    ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ))⁻¹) hsR (by simpa only [hcP] using hs4)
+  simp only [hcoeffD]
+  refine le_trans hb6 ?_
+  have hPle : ∑' n : ℕ, |PowerSeries.coeff n
+      ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ))⁻¹)| ≤ C / (1 - r) := by
+    simpa only [hcP] using hb4
+  have hnnR : (0 : ℝ) ≤ ((p : ℝ) + 1) * ((p : ℝ) * dist (b, a) (b', a'))
+      + ((q : ℝ) + 1) * ((q : ℝ) * dist (b, a) (b', a')) * (C / (1 - r)) := by positivity
+  have hnnP : (0 : ℝ) ≤ ∑' n : ℕ, |PowerSeries.coeff n
+      ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ))⁻¹)| := tsum_nonneg fun n => abs_nonneg _
+  calc _ ≤ (((p : ℝ) + 1) * ((p : ℝ) * dist (b, a) (b', a'))
+            + ((q : ℝ) + 1) * ((q : ℝ) * dist (b, a) (b', a')) * (C / (1 - r)))
+          * ∑' n : ℕ, |PowerSeries.coeff n
+              ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ))⁻¹)| :=
+        mul_le_mul_of_nonneg_right (by linarith [hbR]) hnnP
+    _ ≤ (((p : ℝ) + 1) * ((p : ℝ) * dist (b, a) (b', a'))
+            + ((q : ℝ) + 1) * ((q : ℝ) * dist (b, a) (b', a')) * (C / (1 - r)))
+          * (C / (1 - r)) := mul_le_mul_of_nonneg_left hPle hnnR
+    _ = (C / (1 - r)) * (((p : ℝ) + 1) * (p : ℝ)
+          + ((q : ℝ) + 1) * (q : ℝ) * (C / (1 - r))) * dist (b, a) (b', a') := by ring
+
 
 section Szego
 
