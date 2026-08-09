@@ -68,14 +68,29 @@ repair, **the whole of ledger (a)**: `var_localized_sum`, together with its new 
 double-sum estimate `abs_double_sum_sub_diag_le`, the localized δ-moment
 `localized_delta_moment_le` (this is (2.74) itself), and the bandwidth limits
 `tendsto_smallLagCut_mul_bandwidth`, `tendsto_rpow_mul_abs_log_rpow`.
-Open, as named debts, each with an audit verdict in its own docstring:
-`tendsto_smallBlock_variance`
-(2.79)–(2.81) — **FALSE as frozen**: the statement carries no hypotheses at all;
-`charFun_locSum_sub_locTruncSum_le` (2.82)–(2.83) — **FALSE as frozen**: no stationarity,
-and `heLδ` constrains only `e 0`; `tendsto_charFun_locTruncSum` ((b) + (d) at fixed `L`,
-and (2.84)) — statement intact, blocked on those two items plus the open
-`norm_integral_prod_sub_prod_integral_le` in `Mixing/Inequalities.lean` (its ledger-(a)
-input is now discharged).
+Open, as named debts, each with an audit verdict in its own docstring — and, as of this
+wave, **all three of them are false as frozen**, so ledger (d) cannot be closed without
+lifting the statement freeze:
+* `tendsto_smallBlock_variance` (2.79)–(2.81) — **FALSE as frozen**, for two independent
+  reasons: the statement carries no hypotheses at all, and (new) even the fully hypothesized
+  version needs (C2) in its *unweighted* form, because the conditional recentring inside
+  `truncErr` strips both error factors out of the small-lag covariance;
+* `charFun_locSum_sub_locTruncSum_le` (2.82)–(2.83) — **FALSE as frozen**: no stationarity,
+  and `heLδ` constrains only `e 0`;
+* `tendsto_charFun_locTruncSum` ((b) + (d) at fixed `L`, and (2.84)) — **FALSE as frozen**
+  (new this wave; the earlier "statement intact" verdict is superseded). Refutable already
+  for an iid series: at a fixed truncation level the limit needs continuity at `x` of the
+  *truncated* conditional second moment `σ_L² · p`, which (C1) does not supply, and an
+  oscillating conditional law with `σ² ≡ 1` makes the charFun oscillate. Its three
+  blocking *inputs*, by contrast, are now two-thirds discharged: ledger (a) is proved, and
+  Volkonskii–Rozanov is available proved and axiom-clean as
+  `norm_integral_prod_sub_prod_integral_le_of_pos` (`Mixing/Inequalities.lean`), the
+  frozen `norm_integral_prod_sub_prod_integral_le` retaining only its false `k = 0` corner.
+
+The **headline** `kernel_localized_clt` is not itself damaged by any of this: truncation
+and Bernstein blocking are proof-route artifacts, and the variance asymptotics the
+Gaussian limit is read off (`var_localized_sum`) are proved. What the three verdicts say is
+that FY §2.7.7's *route* to it needs four silent readings of (C1)–(C2), not two.
 
 **FALSE AS FROZEN (verified) — REPAIRS APPLIED.** FY (2.73)–(2.76) — hence Theorem 2.22
 itself — does not follow from (C1)–(C5) *as formalized here*. Two independent gaps were
@@ -1622,7 +1637,33 @@ linearly. Witness: `X ≡ 0` (so `σ(X_t)` is trivial), `e_t ≡ ξ` for a singl
 `hC2`, `hlam`/`hα`, `hWm`/`hWb`, `hh0`/`hh`/`hnh`) into this statement, exactly as
 `var_localized_sum` carries it: with mixing the variance is `≍ N_n/n → 0`. Not done here
 — the statement freeze is lifted this wave only for the two (C1) hypotheses listed in the
-module docstring. -/
+module docstring.
+
+**Second obstruction (this wave's finding): the repair above is *not* sufficient.**
+Threading the full (C1)–(C5) package still does not close this statement, because the
+summands here are the **truncated** ones `ζ_t = e^L_t W((X_t − x)/h_n)` with
+`e^L_t = clamp_L(e_t) − E(clamp_L(e_t) | X_t)`, and the ledger-(a) route needs the
+small-lag bound `|E[ζ_0 ζ_j]| = O(h²)` (FY (2.76)) on the whole range `1 ≤ j ≤ m_n`. The
+combinatorial half is fine — `abs_double_sum_sub_diag_le` generalizes verbatim from
+`range n` to an arbitrary index set, which is all the small blocks need, and the diagonal
+and large-lag halves go through unchanged (`|ζ_0| ≤ |e_0 W_0| + M^{1/δ}|W_0|`, so
+`‖ζ_0‖_δ = O(h^{1/δ})` still, by `localized_delta_moment_le` plus the density change of
+variables). The small-lag half is not. Conditioning on `(X_0, X_j)` writes
+`E[ζ_0 ζ_j] = E[ψ_L(X_0, X_j) · W((X_0−x)/h) W((X_j−x)/h)]` with `|ψ_L| ≤ 4 M^{2/δ}`: the
+conditional recentring has removed **both** error factors, so what the estimate needs is
+an *unweighted* bounded joint density for `(X_0, X_j)`. (C2) as formalized supplies only
+the instance weighted by `|e_0 e_j|`, and does not imply it. The two substitutes that are
+available both diverge over the small-lag range: the crude
+`|E[ζ_0 ζ_j]| ≤ 4 M^{2/δ} C_W · E|W((X_0−x)/h)| = O(h)` (bounded density) gives
+`h⁻¹ · m_n · O(h) = O(m_n) → ∞`, and Davydov gives `h^{2/δ−1} Σ_j α(j)^{1−2/δ} → ∞`
+since `2/δ < 1`.
+
+FY's printed (C2) — "the conditional density of `(X_1, X_j)` given `(e_1, e_j)` is
+bounded uniformly in `j`" — *does* give it: integrating the errors out yields
+`E[|f(e_0,e_j)| g(X_0,X_j)] ≤ B · E|f(e_0,e_j)| · ∫∫ g` for **every** `f`, of which the
+frozen hypothesis is the single instance `f = e_0 e_j`. So the second repair needed here
+is to restate (C2) in that form (equivalently: add the unweighted instance `f ≡ 1`).
+Both repairs are outside this wave's authorization. -/
 private theorem tendsto_smallBlock_variance [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} {W : ℝ → ℝ} {x : ℝ} {δ lam : ℝ} {h : ℕ → ℝ} {L : ℝ} :
     Tendsto (fun n : ℕ =>
@@ -1715,13 +1756,66 @@ corollary `tendsto_charFun_rowSum_gaussian_of_uniformly_small` — applicable be
 truncated block summands carry the envelope `l_n L CW / √(n h_n) → 0`, which is exactly
 why `l_n = [√(n h_n)/log n]` is chosen. The block-variance input is ledger (a).
 
-**Status.** This is the one remaining item whose *statement* survives the audit intact (it
-carries the full (C1)–(C5) package). Of its three blocking inputs, (i) is now **cleared**:
-ledger (a) `var_localized_sum` is proved under the authorized (2.74) repair. Still blocked
-on (ii) `tendsto_smallBlock_variance`, whose frozen statement is false for want of
-hypotheses (see there), and (iii) the Volkonskii–Rozanov factorization
-`norm_integral_prod_sub_prod_integral_le`, an open `sorry` in `Mixing/Inequalities.lean`.
-Its *rate* input (2.78) is proved (`tendsto_blockCount_mul_pairAlpha`).
+**Status.** Of its three blocking inputs, (i) is **cleared** (ledger (a)
+`var_localized_sum`, proved under the authorized (2.74) repair) and (iii) is **cleared**
+(the Volkonskii–Rozanov factorization, now available proved and axiom-clean as
+`norm_integral_prod_sub_prod_integral_le_of_pos` in `Mixing/Inequalities.lean`; the
+frozen `norm_integral_prod_sub_prod_integral_le` keeps only its false `k = 0` corner, and
+every consumer here has `k = k_n ≥ 1`). Its *rate* input (2.78) is proved
+(`tendsto_blockCount_mul_pairAlpha`). Input (ii) `tendsto_smallBlock_variance` is still
+blocked, and now for two reasons (see there).
+
+**FALSE AS FROZEN (this wave's finding — this supersedes the previous "statement survives
+the audit intact" verdict).** The obstruction is *independent* of inputs (i)–(iii): the
+conclusion is refutable even for an **iid** series, where the Bernstein blocking is
+unnecessary and every one of (i)–(iii) is trivial. The point is that the hypotheses
+constrain the conditional law of `e_0` given `X_0` only through its first two moments
+(`hce`, `hcv`) and a δ-th moment bound (`heδc`), whereas the conclusion at a **fixed**
+truncation level `L` sees the conditional law of `clamp_L(e_0)` given `X_0` — a different
+functional, on which no regularity at `x` has been assumed.
+
+*Witness.* Take `(X_t, e_t)` iid (so `pairAlphaCoeff X e μ t = 0` for `t ≥ 1` and `hα`
+holds for any `lam`; take `δ = 3`, `lam = 1`, so `hδ`, `hlam` hold), `X_0` uniform on
+`[0,1]` (`p = 1_{[0,1]}`, `x = 1/2`: `hmp`, `hp0`, `hpd`, `hpc`, `hpx`, `hpb` with
+`Cp = 1`), `W = 1_{[1,2]}` (`hWm`, `hWb` with `C_W = 1`, `hW1`, `hW2`, `∫W² = 1`), and let
+the conditional law of `e_0` given `X_0 = v` be `±c(v)` with probability `q(v)/2` each and
+`0` with probability `1 − q(v)`, where `q(v) ∈ [1/4, 1/2]` and `c(v) = q(v)^{−1/2}`. Then
+`E(e_0|X_0) = 0` (`hce`); `E(e_0²|X_0) = c²q = 1`, so `σ² ≡ 1` (`hcv`, `hσm`, `hσc`, and
+`hσpb` with `C = 1`); `E(|e_0|³|X_0) = c³q = q^{−1/2} ≤ 2` (`heLδ`, `heδc` with `M = 2`);
+and (C2) holds with `B = 1`, since for `j ≠ 0` independence factorizes
+`E[|e_0 e_j| g(X_0,X_j)] = ∫∫ m(v) p(v) m(w) p(w) g` with
+`m(v) = E(|e_0| | X_0 = v) = q(v)^{1/2} ≤ 1` and `E[e_0²] = 1`.
+
+Now fix `L = 1`. As `c(v) ≥ √2 > 1`, `clamp_1(e_0)` is `±1` with probability `q(v)` and
+its conditional mean vanishes, so `truncErr` has conditional variance `σ_1²(v) = q(v)` —
+a function the hypotheses pin down only up to `q ∈ [1/4, 1/2]`. The summands of
+`locTruncSum … 1 n` are iid, centred, bounded by `1`, with common variance
+`h_n ∫ q(x + h_n u) W(u)² du`, so `Var (locTruncSum … 1 n) = ∫_1^2 q(x + h_n u) du =: V(h_n)`
+and, the array being uniformly bounded by `2/√(n h_n) → 0`, the Lindeberg CLT gives
+`charFun (μ.map (locTruncSum X e μ W x h 1 n)) u − exp(−u² V(h_n)/2) → 0`. Choose
+`q(v) = 3/8 + (1/8) cos(2π log₂ |v − x|)`. Along `h = 2^{−k}` the phase is an integer
+multiple of `2π`, so `V = 3/8 + (1/8) I`; along `h = 2^{−k−1/2}` the cosine flips sign, so
+`V = 3/8 − (1/8) I`; and
+`I = ∫_1^2 cos(2π log₂ u) du = (log 2)² / ((log 2)² + 4π²) > 0`. Interleaving the two
+scales along a bandwidth sequence with `h_n → 0` and `n h_n³ → ∞` (e.g. `h_n` the nearer
+of `2^{−k}`, `2^{−k−1/2}` to `n^{−1/4}`, alternating on long blocks — (C5) constrains only
+the *rate*, not the scale) makes `V(h_n)` oscillate between two distinct values. Hence
+`charFun (μ.map (locTruncSum … 1 n)) u` has no limit at any `u ≠ 0`, and **no** value of
+`vT 1` can satisfy the first conclusion.
+
+**Missing input, precisely.** FY's step (c) silently needs the diagonal (2.73) *for the
+truncated errors*: continuity at `x` of `σ_L² · p` for each `L`, where
+`σ_L²(v) = Var(clamp_L(e_0) | X_0 = v)`. This is a **fourth** silent reading of (C1),
+independent of `hσm`/`hσpb` (which regularize only `σ² = σ_∞²`) and of `heδc`/`hpb` (which
+bound only a δ-th moment). The economical repair is to assume that the conditional law of
+`e_0` given `X_0 = v` converges weakly to the one at `v = x` as `v → x`, together with
+uniform square-integrability along that limit: this yields continuity at `x` of `σ_L² · p`
+for every `L` *and* FY's (2.84) `σ_L²(x) → σ²(x)` as `L → ∞`, which is the second
+conclusion. Note that the **headline** `kernel_localized_clt` is *not* damaged by this: it
+is an artifact of the truncation route only, and the untruncated variance asymptotics
+`var_localized_sum` — which is what the headline's Gaussian limit is read off — is proved.
+
+Outside this wave's authorization; recorded, not repaired.
 
 **Statement strengthening (documented).** The two (2.74) hypotheses `heδc`/`hpb` are
 carried here solely because this statement consumes ledger (a); see
