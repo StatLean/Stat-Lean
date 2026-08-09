@@ -2,6 +2,9 @@ import StatLean.TimeSeries.ARMA.Consistency
 import StatLean.TimeSeries.ForMathlib.Probability.MartingaleCLT.BrownCLT
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.Probability.Distributions.Gaussian.Real
+-- Consumed only by the falsity witness `ls_yw_mle_equivalent_debt_false` below: the
+-- coordinate white noise on `(ℤ → ℝ, ⊗ N(0,1))`.
+import Mathlib.Probability.Independence.InfinitePi
 
 /-!
 # Hannan's theorem: asymptotic normality of the ARMA Gaussian MLE (FY Theorem 3.2)
@@ -1119,6 +1122,160 @@ theorem samplePACF_clt [IsProbabilityMeasure μ] {p : ℕ}
             ((Finset.measurable_sum _ fun l _ => measurable_const.mul (hUmeas _)).add
               (Finset.measurable_sum _ fun l _ => measurable_const.mul (hVmeas _))))) :
         Measurable _)).aemeasurable σ2⁻¹ u).symm
+
+/-! ### The frozen `ls_yw_mle_equivalent_debt` statement is FALSE — a formalized witness
+
+Found in wave `ts/s12-model-selection` (2026-08-09). The statement quantifies over an
+**arbitrary measurable** `bMLE`: no hypothesis ties it to the Gaussian likelihood, to
+least squares, or to the data at all (and no least-squares estimator appears anywhere,
+despite the name). It therefore asserts `√T · dist(b̂_YW, bMLE) →p 0` for *every*
+measurable sequence `bMLE`, which fails for the constant translate
+`bMLE := b̂_YW + 1` as soon as `p ≥ 1`.
+
+The witness below is axiom-clean: the instance is the causal AR(1) with zero coefficient
+(`b(z) = 1`, so `X = ε`) driven by the coordinate white noise on `(ℤ → ℝ, ⊗ N(0,1))`,
+and `bMLE` is the translate, whose measurability comes from `measurable_inv_mulVec` /
+`measurable_sampleACVF` above.
+
+**Repair.** B&D Thm 10.8.2 compares three *estimators*, so `bMLE` (and a least-squares
+sequence `bLS`, currently absent) must carry their defining hypotheses — for `bMLE` the
+`hargmin`/`hδTfast` pair of `hannan_mle_clt`, for `bLS` the normal equations. With those
+in place the statement becomes a genuine `√T`-equivalence and the residue is the one
+recorded at `armaMLE_linearization`. -/
+
+private noncomputable def wnMeasure : Measure (ℤ → ℝ) :=
+  Measure.infinitePi (fun _ : ℤ => gaussianReal 0 1)
+
+private instance : IsProbabilityMeasure wnMeasure := by
+  unfold wnMeasure; infer_instance
+
+private def wnCoord (t : ℤ) (ω : ℤ → ℝ) : ℝ := ω t
+
+private lemma wnCoord_measurable (t : ℤ) : Measurable (wnCoord t) := measurable_pi_apply t
+
+private lemma wnMeasure_map_coord (t : ℤ) : wnMeasure.map (wnCoord t) = gaussianReal 0 1 :=
+  Measure.infinitePi_map_eval _ t
+
+private lemma wnCoord_identDistrib (t : ℤ) :
+    IdentDistrib (wnCoord t) (id : ℝ → ℝ) wnMeasure (gaussianReal 0 1) :=
+  ⟨(wnCoord_measurable t).aemeasurable, aemeasurable_id, by
+    rw [Measure.map_id, wnMeasure_map_coord t]⟩
+
+private lemma wn_isIIDNoise : IsIIDNoise wnCoord 1 wnMeasure := by
+  refine ⟨wnCoord_measurable, ?_, ?_, ?_, ?_, ?_⟩
+  · exact iIndepFun_infinitePi (X := fun _ : ℤ => (id : ℝ → ℝ)) (fun _ => measurable_id)
+  · exact fun s t => (wnCoord_identDistrib s).trans (wnCoord_identDistrib t).symm
+  · exact (wnCoord_identDistrib 0).memLp_iff.2 (memLp_id_gaussianReal 2)
+  · rw [(wnCoord_identDistrib 0).integral_eq]
+    simp only [id_eq]
+    exact (integral_id_gaussianReal (μ := (0 : ℝ)) (v := (1 : NNReal)))
+  · rw [(wnCoord_identDistrib 0).variance_eq, variance_id_gaussianReal]
+    simp
+
+/-- The zero AR(1) coefficient vector: `b(z) = 1`, so `X = ε` is a causal AR(1). -/
+private def wnB : Fin 1 → ℝ := fun _ => 0
+
+private lemma arPoly_wnB : arPoly wnB = 1 := by
+  simp [arPoly, wnB]
+
+private lemma wn_noRoot : NoRootClosedDisc wnB := by
+  intro z _
+  rw [arPoly_wnB]
+  simp
+
+private lemma armaPsi_wnB (n : ℕ) :
+    armaPsi wnB (Fin.elim0 : Fin 0 → ℝ) n = if n = 0 then 1 else 0 := by
+  have hma : (maPoly (Fin.elim0 : Fin 0 → ℝ)) = 1 := by simp [maPoly]
+  unfold armaPsi
+  rw [hma, arPoly_wnB]
+  simp [PowerSeries.coeff_one]
+
+private lemma wn_isAR : IsAR wnB 1 wnCoord wnCoord wnMeasure := by
+  refine ⟨wnCoord_measurable, wn_isIIDNoise.isWhiteNoise, ?_⟩
+  intro t
+  filter_upwards with ω
+  simp [wnB]
+
+private lemma wn_isLinearProcess :
+    IsLinearProcessOf (armaPsi wnB (Fin.elim0 : Fin 0 → ℝ)) wnCoord wnCoord wnMeasure := by
+  intro t
+  refine Tendsto.congr' ?_ tendsto_const_nhds (f₁ := fun _ : ℕ => (0 : ENNReal))
+  filter_upwards [eventually_ge_atTop 1] with N hN
+  have hsum : ∀ ω : ℤ → ℝ,
+      ∑ j ∈ Finset.range N, armaPsi wnB (Fin.elim0 : Fin 0 → ℝ) j * wnCoord (t - (j : ℕ)) ω
+        = wnCoord t ω := by
+    intro ω
+    rw [Finset.sum_eq_single 0]
+    · simp [armaPsi_wnB]
+    · intro j _ hj; simp [armaPsi_wnB, hj]
+    · intro h; exact absurd (Finset.mem_range.2 (by omega)) h
+  have : (fun ω => wnCoord t ω -
+      ∑ j ∈ Finset.range N, armaPsi wnB (Fin.elim0 : Fin 0 → ℝ) j * wnCoord (t - (j : ℕ)) ω)
+      = fun _ => (0 : ℝ) := by
+    funext ω; rw [hsum ω]; ring
+  rw [this]
+  simp
+
+
+/-- The Yule-Walker estimator of the frozen statement, at the white-noise instance. -/
+private noncomputable def wnYW (T : ℕ) (ω : ℤ → ℝ) : Fin 1 → ℝ :=
+  ((Matrix.of fun i' j : Fin 1 =>
+      sampleACVF (fun t : Fin T => wnCoord (((t : ℕ) : ℤ) + 1) ω)
+        ((i' : ℤ) - (j : ℤ)).natAbs)⁻¹) *ᵥ
+    fun i' : Fin 1 => sampleACVF (fun t : Fin T => wnCoord (((t : ℕ) : ℤ) + 1) ω)
+      ((i' : ℕ) + 1)
+
+private lemma wnYW_measurable (T : ℕ) : Measurable (wnYW T) := by
+  refine measurable_pi_lambda _ fun i => ?_
+  exact measurable_inv_mulVec (fun _ _ => measurable_sampleACVF wnCoord_measurable _)
+    (fun _ => measurable_sampleACVF wnCoord_measurable _) i
+
+private theorem ls_yw_mle_equivalent_debt_false
+    (H : ∀ {Ω : Type} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ] {p : ℕ}
+      {b0 : Fin p → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ},
+      IsAR b0 σ2 X ε μ → IsIIDNoise ε σ2 μ → 0 < σ2 → NoRootClosedDisc b0 →
+      IsLinearProcessOf (armaPsi b0 (Fin.elim0 : Fin 0 → ℝ)) X ε μ →
+      (∀ t, Measurable (X t)) →
+      ∀ bYW : (T : ℕ) → Ω → Fin p → ℝ,
+      (∀ (T : ℕ) (ω : Ω) (i : Fin p),
+        bYW T ω i = (((Matrix.of fun i' j : Fin p =>
+            sampleACVF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+              ((i' : ℤ) - (j : ℤ)).natAbs)⁻¹) *ᵥ
+          fun i' : Fin p => sampleACVF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+            ((i' : ℕ) + 1)) i) →
+      ∀ bMLE : (T : ℕ) → Ω → Fin p → ℝ, (∀ T, Measurable (bMLE T)) →
+      ∀ {δ : ℝ}, 0 < δ →
+      Tendsto (fun T : ℕ => (μ {ω | δ ≤
+        Real.sqrt T * dist (bYW T ω) (bMLE T ω)}).toReal) atTop (𝓝 0)) :
+    False := by
+  classical
+  have hmle : ∀ T : ℕ, Measurable (fun ω : ℤ → ℝ => fun i : Fin 1 => wnYW T ω i + 1) :=
+    fun T => measurable_pi_lambda _ fun i =>
+      ((measurable_pi_apply i).comp (wnYW_measurable T)).add measurable_const
+  have key := H wn_isAR wn_isIIDNoise one_pos wn_noRoot wn_isLinearProcess
+    wnCoord_measurable wnYW (fun _ _ _ => rfl)
+    (fun T ω => fun i : Fin 1 => wnYW T ω i + 1) hmle (δ := 1) one_pos
+  -- the two estimator sequences are at distance `≥ 1`, so the event is everything
+  have hset : ∀ T : ℕ, 1 ≤ T → {ω : ℤ → ℝ | (1 : ℝ) ≤
+      Real.sqrt T * dist (wnYW T ω) (fun i : Fin 1 => wnYW T ω i + 1)} = Set.univ := by
+    intro T hT
+    ext ω
+    simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    have hd : (1 : ℝ) ≤ dist (wnYW T ω) (fun i : Fin 1 => wnYW T ω i + 1) := by
+      have := dist_le_pi_dist (wnYW T ω) (fun i : Fin 1 => wnYW T ω i + 1) 0
+      rw [Real.dist_eq] at this
+      simpa using this
+    have hs : (1 : ℝ) ≤ Real.sqrt T := by
+      rw [show (1 : ℝ) = Real.sqrt 1 by simp]
+      exact Real.sqrt_le_sqrt (by exact_mod_cast hT)
+    nlinarith [Real.sqrt_nonneg (T : ℝ)]
+  have hconst : Tendsto (fun _ : ℕ => (1 : ℝ)) atTop (𝓝 0) := by
+    refine key.congr' ?_
+    filter_upwards [eventually_ge_atTop 1] with T hT
+    rw [hset T hT]
+    simp
+  have := tendsto_nhds_unique hconst tendsto_const_nhds
+  norm_num at this
 
 /-- **DEBT (B&D Thm 10.8.2; FY §3.3.2 remark)**: least-squares, Yule–Walker, and
 Gaussian-MLE estimator sequences of a causal AR(p) are asymptotically equivalent

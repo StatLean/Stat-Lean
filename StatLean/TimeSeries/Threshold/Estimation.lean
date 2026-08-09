@@ -2,6 +2,10 @@ import StatLean.TimeSeries.Threshold.TAR
 import StatLean.TimeSeries.ARMA.Likelihood
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.Probability.Distributions.Gaussian.Real
+-- Consumed only by the falsity witness for eq. (4.8) (`tarLS_clt_debt_false` below):
+-- the coordinate white noise on `(ℤ → ℝ, ⊗ N(0,1))`, and `Matrix.PosDef.one`.
+import Mathlib.Probability.Independence.InfinitePi
+import Mathlib.Data.Real.StarOrdered
 
 /-!
 # TAR estimation with a known partition (FY §4.1.2, eqs. (4.4)–(4.8))
@@ -210,6 +214,192 @@ theorem exists_tarLS_minimizer {T P : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d 
     simpa only [Set.mem_setOf_eq] using hcase
   · have hw0le : tarObj x A d P w0 ≤ tarObj x A d P 0 := hw0C.2
     exact le_trans hw0le (le_of_not_ge hcase)
+
+/-! ### The frozen eq. (4.8) statement is FALSE — a formalized witness
+
+Two independent defects of the frozen statement, found in wave `ts/s12-model-selection`
+(2026-08-09):
+
+1. **`W` is a free parameter.** The docstring says `W_i` is the second-moment matrix of
+   the fictitious regime-`i` AR process, but formally `W` is universally quantified over
+   *all* positive-definite matrices with no link to `(b, σ, A, X)`. Two admissible values
+   `W` and `2W` force two different Gaussian limits for the same sequence, so the
+   conclusion cannot hold whenever `c ≠ 0` and the hypotheses are satisfiable.
+2. **`hLS` pins the intercept at the truth.** The minimality is asserted for the pair
+   `(b0 i, bhat T ω)` against *all* `(γ0, γ)`, i.e. the true intercept `b0 i` is required
+   to be the least-squares intercept at every `ω` and every `T`. That is a
+   probability-zero constraint on the data as soon as the regime window is non-empty and
+   the noise is non-degenerate; it is not what FY eqs. (4.4)-(4.5) define.
+
+The witness below exploits neither pathology directly: it takes the **degenerate-regime**
+route, which is the cheapest satisfiable instance. `IsTAR` allows an empty regime
+(`A = ![univ, ∅]` is a measurable partition), the regime-`1` least-squares problem is then
+vacuous (`hLS` reads `0 ≤ 0`), `T_1 = 0`, and the scaled statistic is identically `0`;
+its characteristic function is the constant `1`, while the frozen limit at `W = 1`,
+`c = 1` is `exp(-1/2)`. The instance is built from scratch on `(ℤ → ℝ, ⊗ N(0,1))` so the
+witness is **axiom-clean** — in particular it does not go through
+`exists_stationary_tar`, whose path-space input is itself an open debt.
+
+Repairing the statement needs (i) `W` tied to the process (Chan 1993a's
+`E[Z_t Z_tᵀ]` for the fictitious regime-`i` AR process), (ii) `hLS` re-stated as joint
+minimality over `(β₀, β)` with `bhat` the `β`-component, and (iii) a non-degeneracy
+hypothesis `T_i → ∞` (equivalently `P(X_{t-d} ∈ A_i) > 0`), without which even a repaired
+`W` leaves the degenerate instance a counterexample. -/
+
+/-! ### A concrete standard-Gaussian white noise on `ℤ` -/
+
+private noncomputable def wnMeasure : Measure (ℤ → ℝ) :=
+  Measure.infinitePi (fun _ : ℤ => gaussianReal 0 1)
+
+private instance : IsProbabilityMeasure wnMeasure := by
+  unfold wnMeasure; infer_instance
+
+private def wnCoord (t : ℤ) (ω : ℤ → ℝ) : ℝ := ω t
+
+private lemma wnCoord_measurable (t : ℤ) : Measurable (wnCoord t) := measurable_pi_apply t
+
+private lemma wnMeasure_map_coord (t : ℤ) : wnMeasure.map (wnCoord t) = gaussianReal 0 1 :=
+  Measure.infinitePi_map_eval _ t
+
+private lemma wnCoord_identDistrib (t : ℤ) :
+    IdentDistrib (wnCoord t) (id : ℝ → ℝ) wnMeasure (gaussianReal 0 1) :=
+  ⟨(wnCoord_measurable t).aemeasurable, aemeasurable_id, by
+    rw [Measure.map_id, wnMeasure_map_coord t]⟩
+
+private lemma wn_isIIDNoise : IsIIDNoise wnCoord 1 wnMeasure := by
+  refine ⟨wnCoord_measurable, ?_, ?_, ?_, ?_, ?_⟩
+  · exact iIndepFun_infinitePi (X := fun _ : ℤ => (id : ℝ → ℝ)) (fun _ => measurable_id)
+  · exact fun s t => (wnCoord_identDistrib s).trans (wnCoord_identDistrib t).symm
+  · exact (wnCoord_identDistrib 0).memLp_iff.2 (memLp_id_gaussianReal 2)
+  · rw [(wnCoord_identDistrib 0).integral_eq]
+    simp only [id_eq]
+    exact (integral_id_gaussianReal (μ := (0 : ℝ)) (v := (1 : NNReal)))
+  · rw [(wnCoord_identDistrib 0).variance_eq, variance_id_gaussianReal]
+    simp
+
+private lemma wn_memLp (t : ℤ) : MemLp (wnCoord t) 2 wnMeasure :=
+  (wn_isIIDNoise.identDistrib t 0).memLp_iff.2 wn_isIIDNoise.memLp
+
+private lemma wnMeasure_shift (k : ℤ) :
+    wnMeasure.map (fun (ω : ℤ → ℝ) (s : ℤ) => ω (s + k)) = wnMeasure := by
+  unfold wnMeasure
+  have h := Measure.infinitePi_map_piCongrLeft (X := fun _ : ℤ => ℝ)
+    (μ := fun _ : ℤ => gaussianReal 0 1) (Equiv.addRight (-k))
+  convert h using 2
+  funext ω s
+  rw [MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply_eq_cast]
+  simp
+
+private lemma wn_strictlyStationary : IsStrictlyStationary wnCoord wnMeasure := by
+  intro n t k
+  have hshift : Measurable (fun (ω : ℤ → ℝ) (s : ℤ) => ω (s + k)) :=
+    measurable_pi_lambda _ fun s => measurable_pi_apply _
+  have htup : Measurable (fun (ω : ℤ → ℝ) (i : Fin n) => ω (t i)) :=
+    measurable_pi_lambda _ fun i => measurable_pi_apply _
+  have hcomp : (fun (ω : ℤ → ℝ) (i : Fin n) => wnCoord (t i + k) ω)
+      = (fun (ω' : ℤ → ℝ) (i : Fin n) => ω' (t i)) ∘ (fun (ω : ℤ → ℝ) (s : ℤ) => ω (s + k)) :=
+    rfl
+  rw [hcomp, ← Measure.map_map htup hshift, wnMeasure_shift k]
+  rfl
+
+private lemma wn_indep_past (t : ℤ) :
+    Indep (MeasurableSpace.comap (wnCoord t) inferInstance) (sigmaLT wnCoord t) wnMeasure := by
+  have hdisj : Disjoint ({t} : Set ℤ) (Set.Iio t) :=
+    Set.disjoint_singleton_left.2 (by simp)
+  have := indep_iSup_of_disjoint
+    (m := fun s : ℤ => MeasurableSpace.comap (wnCoord s) inferInstance)
+    (fun s => (wnCoord_measurable s).comap_le) wn_isIIDNoise.iIndep hdisj
+  simpa using this
+
+
+/-! ### The degenerate two-regime TAR witness -/
+
+/-- Two regimes, the second of which is **empty**: a legitimate `IsTAR` partition. -/
+private noncomputable def wnA : Fin 2 → Set ℝ := fun i => if i = 0 then Set.univ else ∅
+
+private lemma wn_isTAR :
+    IsTAR (fun _ : Fin 2 => (0 : ℝ)) (fun _ : Fin 2 => fun _ : Fin 1 => (0 : ℝ))
+      (fun _ : Fin 2 => (1 : ℝ)) wnA 1 wnCoord wnCoord wnMeasure := by
+  refine ⟨le_rfl, fun _ => one_pos, ?_, ?_, ?_, wnCoord_measurable, wn_isIIDNoise,
+    wn_indep_past, ?_⟩
+  · intro i
+    by_cases h : i = 0 <;> simp [wnA, h]
+  · intro i j hij
+    fin_cases i <;> fin_cases j <;> simp_all [wnA]
+  · refine Set.eq_univ_of_univ_subset ?_
+    have h0 : wnA 0 ⊆ ⋃ i, wnA i := Set.subset_iUnion (fun i => wnA i) 0
+    simpa [wnA] using h0
+  · intro t
+    filter_upwards with ω
+    rw [Fin.sum_univ_two]
+    simp [wnA, wnCoord]
+
+
+/-! ### The falsity of the frozen eq. (4.8) statement -/
+
+private lemma tarRegimeIndices_empty {T : ℕ} (x : Fin T → ℝ) (d P : ℕ) :
+    tarRegimeIndices x (∅ : Set ℝ) d P = (∅ : Finset (Fin T)) := by
+  classical
+  ext t
+  simp [tarRegimeIndices]
+
+private lemma wnA_one : wnA 1 = (∅ : Set ℝ) := by
+  simp [wnA]
+
+/-- **The frozen `tarLS_clt_debt` statement is FALSE.** -/
+private theorem tarLS_clt_debt_false
+    (H : ∀ {Ω : Type} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ] {k P : ℕ}
+      {b0 : Fin k → ℝ} {b : Fin k → Fin P → ℝ} {σ : Fin k → ℝ} {A : Fin k → Set ℝ}
+      {d : ℕ} {X ε : ℤ → Ω → ℝ},
+      IsTAR b0 b σ A d X ε μ → IsStrictlyStationary X μ → (∀ t, MemLp (X t) 2 μ) →
+      ∀ (i : Fin k) (W : Matrix (Fin P) (Fin P) ℝ), W.PosDef →
+      ∀ (bhat : (T : ℕ) → Ω → Fin P → ℝ), (∀ T, Measurable (bhat T)) →
+      (∀ (T : ℕ) (ω : Ω) (γ0 : ℝ) (γ : Fin P → ℝ),
+        tarLSResidualSS (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (A i) d (b0 i) (bhat T ω)
+          ≤ tarLSResidualSS (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (A i) d γ0 γ) →
+      ∀ (c : Fin P → ℝ) (u : ℝ),
+      Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
+          Real.sqrt (tarRegimeCount (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (A i) d P) *
+            ∑ j, c j * (bhat T ω j - b i j)) u)
+        atTop
+        (𝓝 (charFun (gaussianReal 0 (Real.toNNReal (σ i ^ 2 * (c ⬝ᵥ (W⁻¹ *ᵥ c))))) u))) :
+    False := by
+  classical
+  have hLS : ∀ (T : ℕ) (ω : ℤ → ℝ) (γ0 : ℝ) (γ : Fin 1 → ℝ),
+      tarLSResidualSS (fun t : Fin T => wnCoord (((t : ℕ) : ℤ) + 1) ω) (wnA 1) 1
+          ((fun _ : Fin 2 => (0 : ℝ)) 1) ((fun _ _ _ => 0 : (T : ℕ) → (ℤ → ℝ) → Fin 1 → ℝ) T ω)
+        ≤ tarLSResidualSS (fun t : Fin T => wnCoord (((t : ℕ) : ℤ) + 1) ω) (wnA 1) 1 γ0 γ := by
+    intro T ω γ0 γ
+    simp only [tarLSResidualSS, wnA_one, tarRegimeIndices_empty, Finset.sum_empty]
+    exact le_rfl
+  have key := H wn_isTAR wn_strictlyStationary wn_memLp 1 (1 : Matrix (Fin 1) (Fin 1) ℝ)
+    Matrix.PosDef.one (fun _ _ _ => 0) (fun _ => measurable_const) hLS (fun _ => 1) 1
+  -- the regime is empty, so the scaled statistic is identically `0`
+  simp only [sub_self, mul_zero, Finset.sum_const_zero] at key
+  -- the law is `δ₀`, whose characteristic function is identically `1`
+  have hmapconst : wnMeasure.map (fun _ : ℤ → ℝ => (0 : ℝ)) = Measure.dirac 0 := by
+    rw [Measure.map_const]
+    simp
+  rw [hmapconst] at key
+  have hone : charFun (Measure.dirac (0 : ℝ)) (1 : ℝ) = 1 := by
+    rw [charFun_dirac]
+    simp
+  simp only [hone] at key
+  -- the alleged limit is `exp(−1/2) ≠ 1`
+  have hvar : ((fun _ : Fin 2 => (1 : ℝ)) 1) ^ 2 *
+      ((fun _ : Fin 1 => (1 : ℝ)) ⬝ᵥ ((1 : Matrix (Fin 1) (Fin 1) ℝ)⁻¹ *ᵥ (fun _ => 1))) = 1 := by
+    rw [inv_one]
+    simp [Matrix.one_mulVec, dotProduct]
+  rw [hvar] at key
+  have hlim : charFun (gaussianReal 0 (Real.toNNReal 1)) (1 : ℝ) = 1 :=
+    tendsto_nhds_unique tendsto_const_nhds key |>.symm
+  rw [charFun_gaussianReal] at hlim
+  norm_num at hlim
+  rw [show ((-(1 / 2) : ℂ)) = (((-(1 / 2) : ℝ)) : ℂ) by push_cast; ring,
+    ← Complex.ofReal_exp] at hlim
+  have hR : Real.exp (-(1 / 2)) = 1 := by exact_mod_cast hlim
+  have hlt : Real.exp (-(1 / 2)) < 1 := Real.exp_lt_one_iff.mpr (by norm_num)
+  linarith
 
 /-- **FY eq. (4.8) — DEBT (Chan 1993a; the book's "can be shown", companion to
 Thm 3.2)**: with a known partition, under strict stationarity, ergodicity and finite
