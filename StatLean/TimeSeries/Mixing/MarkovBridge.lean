@@ -16,7 +16,17 @@ The bridge between the Markov layer (`ForMathlib/Markov/*`) and the mixing coeff
   the (2.58) debt by monotone integration.
 * **Bradley reduction (FY §2.6.1(vi), cited Bradley Thms 4.1–4.2)** — for stationary
   Markov chains the process coefficients collapse to the two-marginal coefficients of
-  `(X_0, X_n)`; DEBT.
+  `(X_0, X_n)`. The α-case is **proved here** (2026-08-09) over the single named brick
+  `condExp_sigmaGE_indicator_brick`.
+
+**Open bricks (2026-08-09).** All three remaining `sorry`s sit in named `private` lemmas,
+and both public theorems of this file are assembled from them:
+`condExp_sigmaGE_indicator_brick` (the Markov property for the whole future σ-algebra —
+`IsMarkovOf` only supplies it one coordinate at a time), `betaMixCoeff_two_marginal_brick`
+(the same content in its β-form) and
+`betaMixCoeff_two_marginal_eq_integral_tvDist_brick` (Davydov's identity proper; its
+docstring records the *verified* calibration demanded below and the proof of each
+direction).
 
 **Normalization warning (for the closure session).** `tvDist` is the sup-over-events
 distance `sup_B |P(B) − Q(B)|`; the book's `‖·‖_TV` is twice that. FY's (2.58) is
@@ -251,10 +261,71 @@ def IsMarkovOf (X : ℤ → Ω → ℝ) (κ : ProbabilityTheory.Kernel ℝ ℝ) 
     (μ[fun ω => (B.indicator (fun _ => (1 : ℝ)) (X (t + n) ω)) | sigmaLE X t])
       =ᵐ[μ] fun ω => (((κ ^ n) (X t ω)) B).toReal
 
+/-- **BRICK — the two-marginal reduction for `β`** (Bradley Thms 4.1–4.2, the β-analogue of
+`alphaCoeff_eq_two_marginal_debt`).
+
+Its content is *exactly* `condExp_sigmaGE_indicator_brick` again — the Markov property for
+the whole future σ-algebra — combined with the β-version of the one-sided optimisation: for
+a partition pair the sum `Σ_{ij} |P(A_i ∩ B_j) − P(A_i)P(B_j)|` is `Σ_i P(A_i) · ‖P(· | A_i)
+− P‖` on the future, and each conditional law only sees `X_0` once the brick is available.
+Recorded separately so that the two halves of the (2.58) debt are visible. -/
+private lemma betaMixCoeff_two_marginal_brick [IsProbabilityMeasure μ]
+    {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
+    (hstat : IsStrictlyStationary X μ)
+    {κ : ProbabilityTheory.Kernel ℝ ℝ} [ProbabilityTheory.IsMarkovKernel κ]
+    (hmarkov : IsMarkovOf X κ μ) (n : ℕ) :
+    betaMixCoeff μ (sigmaLE X 0) (sigmaGE X (n : ℤ))
+      = betaMixCoeff μ (MeasurableSpace.comap (X 0) inferInstance)
+          (MeasurableSpace.comap (X (n : ℤ)) inferInstance) := by
+  sorry
+
+/-- **BRICK — Davydov's identity at the two-marginal level** (FY eq. (2.58) proper).
+
+`β(σ(X_0), σ(X_n)) = ∫ tvDist (κⁿ x) F dF(x)`.
+
+**Calibration (checked).** `betaMixCoeff` is the half-sum `½ sup Σ_{ij} |P(A_i ∩ B_j) −
+P(A_i)P(B_j)|` and `tvDist` is the *sup-over-events* distance `sup_B (P B − Q B)`, i.e.
+half of the total-mass norm. Writing `P(A_i ∩ B_j) = ∫_{U_i} (κⁿ x)(V_j) dF(x)` with
+`A_i = X_0⁻¹(U_i)`, `B_j = X_n⁻¹(V_j)` and `P(B_j) = F(V_j)` (strict stationarity), the
+partition sum is `Σ_j Σ_i |∫_{U_i} ((κⁿ x)(V_j) − F(V_j)) dF(x)| ≤ ∫ Σ_j |(κⁿ x)(V_j) −
+F(V_j)| dF(x) ≤ ∫ 2 · tvDist (κⁿ x) F dF(x)`, so the half-sum is `≤ ∫ tvDist dF`: the
+statement carries **no factor 2**, confirming the module docstring's warning.
+
+**Intended proof.**
+* `≤` — the display above. Its ingredients are all available: `IsMarkovOf` at `t = 0`
+  gives `μ[1_{V}(X_n) | 𝓕_{-∞}^0] = (κⁿ (X_0))(V)` and hence, by `setIntegral_condExp` on
+  `A_i ∈ σ(X_0) ⊆ 𝓕_{-∞}^0` and the change of variables along `X_0`, the displayed formula
+  for `P(A_i ∩ B_j)`; the `U_i` (resp. `V_j`) may be taken pairwise disjoint after
+  replacing `U_i` by `U_i \ ⋃_{i' < i} U_{i'}` (preimages are unchanged, by disjointness of
+  the `A_i`); and `Σ_j |P(V_j) − Q(V_j)| ≤ 2 · tvDist P Q` for a disjoint family follows by
+  splitting the `j`'s by sign and applying the definition of `tvDist` to the two unions
+  (using `tvDist_comm` on the negative half).
+* `≥` — for each `x`, a Hahn set `H_x` for `κⁿ(x, ·) − F` attains `tvDist`; the set
+  `⋃_x {x} × H_x` is measurable by `measurable_tvDist_kernel`-style arguments and is
+  approximated in `F ⊗ F`-measure by finite unions of rectangles `U_i × V_j`, whose
+  induced two-cell partitions realise the supremum in the limit. This half is the genuinely
+  hard one (it is where the finite-partition formula meets the disintegration). -/
+private lemma betaMixCoeff_two_marginal_eq_integral_tvDist_brick [IsProbabilityMeasure μ]
+    {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
+    (hstat : IsStrictlyStationary X μ)
+    {κ : ProbabilityTheory.Kernel ℝ ℝ} [ProbabilityTheory.IsMarkovKernel κ]
+    (hmarkov : IsMarkovOf X κ μ) (n : ℕ) :
+    betaMixCoeff μ (MeasurableSpace.comap (X 0) inferInstance)
+        (MeasurableSpace.comap (X (n : ℤ)) inferInstance)
+      = (∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0))
+          ∂(μ.map (X 0))).toReal := by
+  sorry
+
 /-- **DEBT (Davydov 1973; FY eq. (2.58))**: for a strictly stationary Markov process
 with kernel `κ` and time-`0` marginal `F = μ ∘ X_0⁻¹`,
 `β(n) = ∫ tvDist (κⁿ x) F dF(x)` (sup-over-events normalization — see the module
-docstring's calibration warning). -/
+docstring's calibration warning).
+
+**Status (2026-08-09).** Split into its two independent halves,
+`betaMixCoeff_two_marginal_brick` (Bradley's collapse to the two marginals — the *same*
+Markov-property content as `condExp_sigmaGE_indicator_brick`) and
+`betaMixCoeff_two_marginal_eq_integral_tvDist_brick` (Davydov's identity proper, whose
+docstring records the verified calibration and the proof of each direction). -/
 theorem betaCoeff_eq_integral_tvDist_debt [IsProbabilityMeasure μ]
     {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
     (hstat : IsStrictlyStationary X μ)
@@ -264,7 +335,8 @@ theorem betaCoeff_eq_integral_tvDist_debt [IsProbabilityMeasure μ]
     betaCoeff X μ n
       = (∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0))
           ∂(μ.map (X 0))).toReal := by
-  sorry
+  rw [betaCoeff, betaMixCoeff_two_marginal_brick hmeas hstat hmarkov n,
+    betaMixCoeff_two_marginal_eq_integral_tvDist_brick hmeas hstat hmarkov n]
 
 /-- **FY eq. (2.59), derived from the (2.58) debt**: a pointwise geometric envelope
 `tvDist (κⁿ x) F ≤ A(x) ρⁿ` with `A` integrable gives `β(n) ≤ ρⁿ ∫ A dF`; in

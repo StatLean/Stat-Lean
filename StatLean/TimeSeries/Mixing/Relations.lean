@@ -17,7 +17,8 @@ classical implication chain `ψ-mixing ⇒ φ-mixing ⇒ {β-, ρ-mixing} ⇒ α
 * provable coefficient inequalities: `2α ≤ β`, `α ≤ φ`, `β ≤ φ`, `φ ≤ 2ψ`-form,
   `α ≤ ¼ρ` (FY's display `α(k) ≤ ¼ρ(k)`);
 * the Bradley square-root relation `ρ ≤ 2√φ` (giving FY's `¼ρ(k) ≤ ½φ^{1/2}(k)`) —
-  literature DEBT;
+  **PROVED** (2026-08-09) via Ibragimov's covariance inequality
+  `|Cov(f,g)| ≤ 2 φ^{1/2} ‖f‖₂ ‖g‖₂`;
 * heredity under instantaneous measurable transforms;
 * the shift lemma: under strict stationarity the anchored coefficients equal the
   coefficients between any `k`-shifted past/future pair (the property FY uses silently
@@ -42,13 +43,20 @@ classical implication chain `ψ-mixing ⇒ φ-mixing ⇒ {β-, ρ-mixing} ⇒ α
   `Var(1_A) = P(A)(1−P(A)) ≤ ¼`.
 * The shift lemma transports the description sets through the path map; strict
   stationarity is exactly invariance of the path law under the shift.
+* `ρ ≤ 2√φ`: two Cauchy–Schwarz passes on a partition pair against the row bound
+  `Σ_j |P(A ∩ B_j) − P(A)P(B_j)| ≤ 2 P(A) φ` (the second pass against
+  `Σ_i (∫_{A_i} g² + P(A_i)∫g²) = 2∫g²`, which is what makes the constant `2` sharp), then
+  transport to general `L²` by simple-function approximation and dominated convergence.
 
 **Bibliographic comments.** The implication chain and the sharp constants are collected
 in R. C. Bradley, *Basic properties of strong mixing conditions* (in Eberlein–Taqqu,
 1986) and his 2005 survey; `ρ ≤ 2√φ` is due to Peligrad (after Cogburn and Ibragimov).
 Pham & Tran, *Some mixing properties of time series models*, SPA 1985; Basrak, Davis &
 Mikosch, *Regular variation of GARCH processes*, SPA 2002; Kolmogorov & Rozanov 1960
-for the Gaussian ρ ⇔ α equivalence.
+for the Gaussian ρ ⇔ α equivalence. The Gaussian comparison `ρ ≤ 2π α` is reduced here
+to two named bricks (`gaussian_rho_linear_brick`, the Wiener–Itô/Hermite reduction of the
+maximal correlation to the linear span, and `gaussian_pair_corr_le_alpha_brick`,
+Sheppard's bivariate orthant identity).
 -/
 
 open MeasureTheory ProbabilityTheory Filter
