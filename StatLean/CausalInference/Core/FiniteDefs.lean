@@ -72,6 +72,9 @@ variable {n : ℕ}
 treated. -/
 abbrev Assignment (n : ℕ) := Fin n → Bool
 
+/-- The real-valued indicator of a `Bool`: `Zᵢ` as a number. -/
+def ind (b : Bool) : ℝ := if b then 1 else 0
+
 /-- The **science table** of a finite population of `n` units: the two potential-outcome
 vectors (Ding §2.2). Under SUTVA (Ding Assumptions 2.1–2.3) these are fixed numbers, so
 the table is the complete "science" of the population; the assignment is the only source
@@ -144,7 +147,7 @@ noncomputable def expect (D : Design n) (f : Assignment n → ℝ) : ℝ :=
 
 /-- The **probability** of a set of assignments under the design. -/
 noncomputable def prob (D : Design n) (s : Set (Assignment n)) : ℝ :=
-  D.expect (s.indicator fun _ => (1 : ℝ))
+  D.expect (Set.indicator s fun _ => (1 : ℝ))
 
 /-- The **variance** of a function of the assignment under the design. -/
 noncomputable def var (D : Design n) (f : Assignment n → ℝ) : ℝ :=

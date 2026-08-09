@@ -1,3 +1,4 @@
+import StatLean.CausalInference.Core.FiniteDefs
 import Mathlib.Probability.ConditionalProbability
 import Mathlib.Probability.Independence.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.Set
@@ -69,9 +70,6 @@ namespace StatLean.CausalInference
 variable {Ω : Type*} [MeasurableSpace Ω] {𝒳 : Type*} [MeasurableSpace 𝒳]
 
 /-! ### Observed data -/
-
-/-- The real-valued indicator of a `Bool`. -/
-def ind (b : Bool) : ℝ := if b then 1 else 0
 
 /-- The **observed outcome** `Y = Z·Y(1) + (1 - Z)·Y(0)` (Ding eq. (2.2)). -/
 def obs (Z : Ω → Bool) (y1 y0 : Ω → ℝ) : Ω → ℝ := fun ω => if Z ω then y1 ω else y0 ω
