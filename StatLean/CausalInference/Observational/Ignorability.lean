@@ -43,15 +43,15 @@ namespace StatLean.CausalInference
 variable {Ω : Type*} [MeasurableSpace Ω] {𝒳 : Type*} [MeasurableSpace 𝒳]
   {μ : Measure Ω} {Z : Ω → Bool} {y1 y0 : Ω → ℝ} {X : Ω → 𝒳}
 
-/-- On the treated arm the observed outcome is the treated potential outcome. -/
 omit [MeasurableSpace Ω] [MeasurableSpace 𝒳] in
+/-- On the treated arm the observed outcome is the treated potential outcome. -/
 theorem obs_eqOn_treated : Set.EqOn (obs Z y1 y0) y1 {ω | Z ω = true} := by
   intro ω hω
   simp only [Set.mem_setOf_eq] at hω
   simp only [obs, hω, if_true]
 
-/-- On the control arm the observed outcome is the control potential outcome. -/
 omit [MeasurableSpace Ω] [MeasurableSpace 𝒳] in
+/-- On the control arm the observed outcome is the control potential outcome. -/
 theorem obs_eqOn_control : Set.EqOn (obs Z y1 y0) y0 {ω | Z ω = false} := by
   intro ω hω
   simp only [Set.mem_setOf_eq] at hω
@@ -97,9 +97,10 @@ private theorem cellMean_obs_eq' (hZ : Measurable Z) (z : Bool) (x : 𝒳) :
   have hle : μ.restrict (armCell Z X z x) ≤ μ.restrict {ω | Z ω = z} :=
     Measure.restrict_mono Set.inter_subset_left le_rfl
   have hae0 : ∀ᵐ ω ∂(μ.restrict (armCell Z X z x)), ω ∈ {ω | Z ω = z} :=
-    (ae_restrict_mem hZs).filter_mono (Measure.ae_mono hle)
-  have hae : ∀ᵐ ω ∂(μ[|armCell Z X z x]), ω ∈ {ω | Z ω = z} :=
-    Measure.ae_smul_measure hae0 _
+    ae_mono hle (ae_restrict_mem hZs)
+  have hae : ∀ᵐ ω ∂(μ[|armCell Z X z x]), ω ∈ {ω | Z ω = z} := by
+    rw [ProbabilityTheory.cond]
+    exact ae_smul_measure hae0 _
   refine integral_congr_ae ?_
   filter_upwards [hae] with ω hω
   simp only [Set.mem_setOf_eq] at hω
@@ -214,13 +215,15 @@ theorem MeanIgnorable_of_ignorable [IsProbabilityMeasure μ]
       exact this.ne'
     have hC : (μ[|cell X x]) {ω | Z ω = false} ≠ 0 := by
       have hcompl : {ω | Z ω = false} = {ω | Z ω = true}ᶜ := by ext ω; simp
-      have hsum : ((μ[|cell X x]) {ω | Z ω = true}).toReal
-          + ((μ[|cell X x]) {ω | Z ω = false}).toReal = 1 :=
-        cond_treated_add_cond_control hX hZ hcell
       intro h
-      rw [h] at hsum
-      simp only [ENNReal.toReal_zero, add_zero] at hsum
-      exact absurd hsum (by unfold propensity treatedEvent at hlt1; linarith)
+      have hsum := measure_add_measure_compl (μ := μ[|cell X x])
+        (hZ (measurableSet_singleton true))
+      rw [← hcompl, h, add_zero, measure_univ] at hsum
+      have hone : propensity μ Z X x = 1 := by
+        unfold propensity treatedEvent
+        rw [hsum]
+        simp
+      linarith
     rw [integral_cond_armCell_eq hZ hy1 hint (hi x) hcell hT,
       integral_cond_armCell_eq hZ hy1 hint (hi x) hcell hC]
 
