@@ -278,6 +278,165 @@ private lemma compProd_map_left' {α β γ : Type*} [MeasurableSpace α] [Measur
     lintegral_map (Kernel.measurable_kernel_prodMk_left hs) hg]
   rfl
 
+/-! ### The innovation-coordinate window law
+
+Both independence clauses of `exists_stationary_nlAR_of_invariant` below reduce to one
+identity: read in the **innovation coordinates** `e_i = w_{i+1}(0) − f(w_i)`, the window law
+`chainWindowLaw (nlARKernel f ν) F k` of the vectorized nonlinear-AR chain is the plain
+`k`-fold product `ν^{⊗k}` (`chainWindowLaw_map_innov`), and the one-step refinement
+`chainWindowLaw_map_init_innov` additionally records that the *last* innovation is
+independent of the whole preceding window. -/
+
+/-- `Fin.snoc` carries `ν^{⊗n} ⊗ ν` to `ν^{⊗(n+1)}`. -/
+private lemma map_snoc_prod_pi (n : ℕ) (ν : Measure ℝ) [IsProbabilityMeasure ν] :
+    ((Measure.pi fun _ : Fin n => ν).prod ν).map
+        (fun p : (Fin n → ℝ) × ℝ => (Fin.snoc p.1 p.2 : Fin (n + 1) → ℝ))
+      = Measure.pi (fun _ : Fin (n + 1) => ν) := by
+  have hsnoc : Measurable fun p : (Fin n → ℝ) × ℝ => (Fin.snoc p.1 p.2 : Fin (n + 1) → ℝ) := by
+    rw [measurable_pi_iff]
+    refine Fin.lastCases ?_ ?_
+    · simpa using measurable_snd
+    · exact fun i => by simpa using (measurable_pi_apply i).comp measurable_fst
+  refine (Measure.pi_eq fun s hs => ?_).symm
+  rw [Measure.map_apply hsnoc (MeasurableSet.univ_pi hs)]
+  have hpre : (fun p : (Fin n → ℝ) × ℝ => (Fin.snoc p.1 p.2 : Fin (n + 1) → ℝ)) ⁻¹'
+      (Set.univ.pi s) = (Set.univ.pi fun i : Fin n => s i.castSucc) ×ˢ s (Fin.last n) := by
+    ext p
+    simp only [Set.mem_preimage, Set.mem_pi, Set.mem_univ, forall_const, Set.mem_prod]
+    constructor
+    · exact fun h => ⟨fun i => by simpa using h i.castSucc, by simpa using h (Fin.last n)⟩
+    · rintro ⟨h1, h2⟩ i
+      refine Fin.lastCases ?_ (fun j => ?_) i
+      · simpa using h2
+      · simpa using h1 j
+  rw [hpre, Measure.prod_prod, Measure.pi_pi]
+  exact (Fin.prod_univ_castSucc fun i => ν (s i)).symm
+
+/-- **One `nlARKernel` step in innovation coordinates.** Conditionally on the current state
+`g a`, the increment `y 0 − f (g a)` is a fresh `ν`-draw, so the joint law of the state and
+the increment is the product `μ ⊗ ν`. -/
+private lemma nlAR_compProd_innov {α : Type*} [MeasurableSpace α] {P : ℕ}
+    {f : (Fin (P + 1) → ℝ) → ℝ} (hf : Measurable f) {ν : Measure ℝ} [IsProbabilityMeasure ν]
+    (μ : Measure α) [IsProbabilityMeasure μ] {g : α → (Fin (P + 1) → ℝ)} (hg : Measurable g) :
+    (μ ⊗ₘ ((nlARKernel f ν).comap g hg)).map (fun p => (p.1, p.2 0 - f (g p.1)))
+      = μ.prod ν := by
+  haveI := isMarkovKernel_nlARKernel hf ν
+  have hΦ : Measurable fun p : α × (Fin (P + 1) → ℝ) => (p.1, p.2 0 - f (g p.1)) :=
+    measurable_fst.prodMk (((measurable_pi_apply 0).comp measurable_snd).sub
+      (hf.comp (hg.comp measurable_fst)))
+  ext s hs
+  rw [Measure.map_apply hΦ hs, Measure.compProd_apply (hΦ hs), Measure.prod_apply hs]
+  refine lintegral_congr fun a => ?_
+  have hmc : Measurable fun e : ℝ =>
+      (Fin.cons (f (g a) + e) (fun i => (g a) i.castSucc) : Fin (P + 1) → ℝ) := by
+    rw [measurable_pi_iff]
+    refine Fin.cases ?_ ?_
+    · simpa using measurable_const.add measurable_id
+    · exact fun i => by simp
+  rw [Kernel.comap_apply, nlARKernel_apply hf ν (g a),
+    Measure.map_apply hmc (measurable_prodMk_left (hΦ hs))]
+  congr 1
+  ext e
+  simp only [Set.mem_preimage, Fin.cons_zero, add_sub_cancel_left]
+
+/-- **One-step innovation split of the window law.** Peeling the last coordinate off a
+`nlARKernel` window law leaves the shorter window law together with an *independent*
+`ν`-distributed innovation. -/
+private lemma chainWindowLaw_map_init_innov {P : ℕ} {f : (Fin (P + 1) → ℝ) → ℝ}
+    (hf : Measurable f) {ν : Measure ℝ} [IsProbabilityMeasure ν]
+    (F : Measure (Fin (P + 1) → ℝ)) [IsProbabilityMeasure F] (k : ℕ) :
+    (chainWindowLaw (nlARKernel f ν) F (k + 1)).map
+        (fun w : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ) =>
+          (Fin.init w, w (Fin.last (k + 1)) 0 - f (w (Fin.last k).castSucc)))
+      = (chainWindowLaw (nlARKernel f ν) F k).prod ν := by
+  haveI := isMarkovKernel_nlARKernel hf ν
+  haveI := isProbabilityMeasure_chainWindowLaw (nlARKernel f ν) F k
+  have hsnoc : Measurable fun wx : (Fin (k + 1) → (Fin (P + 1) → ℝ)) × (Fin (P + 1) → ℝ) =>
+      (Fin.snoc wx.1 wx.2 : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ)) := by
+    rw [measurable_pi_iff]
+    refine Fin.lastCases ?_ ?_
+    · simpa using measurable_snd
+    · exact fun i => by simpa using (measurable_pi_apply i).comp measurable_fst
+  have hΘ : Measurable fun w : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ) =>
+      (Fin.init w, w (Fin.last (k + 1)) 0 - f (w (Fin.last k).castSucc)) :=
+    (measurable_pi_lambda _ fun _ => measurable_pi_apply _).prodMk
+      (((measurable_pi_apply 0).comp (measurable_pi_apply _)).sub
+        (hf.comp (measurable_pi_apply _)))
+  have hstep : chainWindowLaw (nlARKernel f ν) F (k + 1)
+      = ((chainWindowLaw (nlARKernel f ν) F k) ⊗ₘ
+          ((nlARKernel f ν).comap (fun w : Fin (k + 1) → (Fin (P + 1) → ℝ) => w (Fin.last k))
+            (measurable_pi_apply _))).map
+        (fun wx => (Fin.snoc wx.1 wx.2 : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ))) := rfl
+  rw [hstep, Measure.map_map hΘ hsnoc]
+  have hfac : ((fun w : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ) =>
+        (Fin.init w, w (Fin.last (k + 1)) 0 - f (w (Fin.last k).castSucc))) ∘
+      (fun wx : (Fin (k + 1) → (Fin (P + 1) → ℝ)) × (Fin (P + 1) → ℝ) =>
+        (Fin.snoc wx.1 wx.2 : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ))))
+      = fun wx => (wx.1, wx.2 0 - f (wx.1 (Fin.last k))) := by
+    funext wx
+    simp
+  rw [hfac]
+  exact nlAR_compProd_innov hf (chainWindowLaw (nlARKernel f ν) F k)
+    (g := fun w : Fin (k + 1) → (Fin (P + 1) → ℝ) => w (Fin.last k))
+    (measurable_pi_apply (Fin.last k))
+
+/-- **The innovation-coordinate window law.** In the coordinates
+`e_i = w_{i+1}(0) − f(w_i)` the `nlARKernel` window law is the `k`-fold product `ν^{⊗k}`:
+the innovations of a stationary window are i.i.d. `ν`. -/
+private lemma chainWindowLaw_map_innov {P : ℕ} {f : (Fin (P + 1) → ℝ) → ℝ}
+    (hf : Measurable f) {ν : Measure ℝ} [IsProbabilityMeasure ν]
+    (F : Measure (Fin (P + 1) → ℝ)) [IsProbabilityMeasure F] (k : ℕ) :
+    (chainWindowLaw (nlARKernel f ν) F k).map
+        (fun w (i : Fin k) => w i.succ 0 - f (w i.castSucc))
+      = Measure.pi (fun _ : Fin k => ν) := by
+  haveI := isMarkovKernel_nlARKernel hf ν
+  induction k with
+  | zero =>
+    haveI := isProbabilityMeasure_chainWindowLaw (nlARKernel f ν) F 0
+    have hconst : (fun (w : Fin 1 → (Fin (P + 1) → ℝ)) (i : Fin 0) =>
+        w i.succ 0 - f (w i.castSucc)) = fun _ => (fun i : Fin 0 => (0 : ℝ)) := by
+      funext w
+      funext i
+      exact i.elim0
+    rw [hconst, Measure.map_const, measure_univ, one_smul,
+      Measure.pi_of_empty (fun _ : Fin 0 => ν) (fun _ : Fin 0 => (0 : ℝ))]
+  | succ k ih =>
+    haveI := isProbabilityMeasure_chainWindowLaw (nlARKernel f ν) F k
+    have hinnovk : Measurable fun w : Fin (k + 1) → (Fin (P + 1) → ℝ) =>
+        fun i : Fin k => w i.succ 0 - f (w i.castSucc) :=
+      measurable_pi_lambda _ fun _ =>
+        ((measurable_pi_apply 0).comp (measurable_pi_apply _)).sub
+          (hf.comp (measurable_pi_apply _))
+    have hΘ : Measurable fun w : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ) =>
+        (Fin.init w, w (Fin.last (k + 1)) 0 - f (w (Fin.last k).castSucc)) :=
+      (measurable_pi_lambda _ fun _ => measurable_pi_apply _).prodMk
+        (((measurable_pi_apply 0).comp (measurable_pi_apply _)).sub
+          (hf.comp (measurable_pi_apply _)))
+    have hsnocR : Measurable fun q : (Fin k → ℝ) × ℝ =>
+        (Fin.snoc q.1 q.2 : Fin (k + 1) → ℝ) := by
+      rw [measurable_pi_iff]
+      refine Fin.lastCases ?_ ?_
+      · simpa using measurable_snd
+      · exact fun i => by simpa using (measurable_pi_apply i).comp measurable_fst
+    have hfac : (fun (w : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ)) (i : Fin (k + 1)) =>
+          w i.succ 0 - f (w i.castSucc))
+        = ((fun q : (Fin k → ℝ) × ℝ => (Fin.snoc q.1 q.2 : Fin (k + 1) → ℝ)) ∘
+            (Prod.map (fun w : Fin (k + 1) → (Fin (P + 1) → ℝ) =>
+              fun i : Fin k => w i.succ 0 - f (w i.castSucc)) id)) ∘
+          (fun w : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ) =>
+            (Fin.init w, w (Fin.last (k + 1)) 0 - f (w (Fin.last k).castSucc))) := by
+      funext w
+      funext i
+      refine Fin.lastCases ?_ (fun j => ?_) i
+      · simp
+      · simp only [Function.comp_apply, Prod.map_apply, id_eq, Fin.snoc_castSucc, Fin.init]
+        rw [Fin.succ_castSucc]
+    rw [hfac, ← Measure.map_map (hsnocR.comp (hinnovk.prodMap measurable_id)) hΘ,
+      chainWindowLaw_map_init_innov hf F k,
+      ← Measure.map_map hsnocR (hinnovk.prodMap measurable_id),
+      ← Measure.map_prod_map _ _ hinnovk measurable_id, Measure.map_id, ih]
+    exact map_snoc_prod_pi k ν
+
 /-- The set of state pairs `(x, y)` in which `y` is `x` shifted by one coordinate. -/
 private def shiftSet (P : ℕ) : Set ((Fin (P + 1) → ℝ) × (Fin (P + 1) → ℝ)) :=
   {p | ∀ j : Fin P, p.2 j.succ = p.1 j.castSucc}
