@@ -90,21 +90,19 @@ private theorem cond_armCell_eq' [IsProbabilityMeasure μ] (hZ : Measurable Z) (
       (Or.inl (ENNReal.inv_ne_top.mpr hm0)), inv_inv,
     mul_comm (μ (cell X x)), mul_assoc, ENNReal.mul_inv_cancel hm0 hmtop, mul_one]
 
-/-- Consistency inside an arm cell, with the measurability of the treatment supplied. -/
-private theorem cellMean_obs_eq' (hZ : Measurable Z) (z : Bool) (x : 𝒳) :
+/-- Consistency inside an arm cell, with the measurability of the model variables supplied.
+The arm cell `{Z = z} ∩ X ⁻¹' {x}` is measurable — this is where the area's standing scope
+(a discrete covariate, `MeasurableSingletonClass 𝒳`) is used — so a.e. membership in it is
+available under the conditional measure. -/
+private theorem cellMean_obs_eq' [MeasurableSingletonClass 𝒳] (hZ : Measurable Z)
+    (hX : Measurable X) (z : Bool) (x : 𝒳) :
     cellMean μ Z X (obs Z y1 y0) z x = cellMean μ Z X (if z then y1 else y0) z x := by
-  have hZs : MeasurableSet {ω | Z ω = z} := hZ (measurableSet_singleton z)
-  have hle : μ.restrict (armCell Z X z x) ≤ μ.restrict {ω | Z ω = z} :=
-    Measure.restrict_mono Set.inter_subset_left le_rfl
-  have hae0 : ∀ᵐ ω ∂(μ.restrict (armCell Z X z x)), ω ∈ {ω | Z ω = z} :=
-    ae_mono hle (ae_restrict_mem hZs)
-  have hae : ∀ᵐ ω ∂(μ[|armCell Z X z x]), ω ∈ {ω | Z ω = z} := by
-    rw [ProbabilityTheory.cond]
-    exact ae_smul_measure hae0 _
+  have harm : MeasurableSet (armCell Z X z x) :=
+    (hZ (measurableSet_singleton z)).inter (hX (measurableSet_singleton x))
   refine integral_congr_ae ?_
-  filter_upwards [hae] with ω hω
-  simp only [Set.mem_setOf_eq] at hω
-  simp only [obs, hω]
+  filter_upwards [ProbabilityTheory.ae_cond_mem (μ := μ) harm] with ω hω
+  have hz : Z ω = z := hω.1
+  simp only [obs, hz]
   cases z <;> simp
 
 /-- Inside a covariate cell of positive mass, an arm conditional mean of an independent
@@ -136,18 +134,18 @@ theorem cond_armCell_eq [IsProbabilityMeasure μ]
 
 /-- The arm regression function of the *observed* outcome is the arm regression function
 of the corresponding *potential* outcome — consistency (Ding Assumption 2.2). -/
-theorem cellMean_obs_eq
-    -- USER-INPUT: the treatment is a random variable; needed to know the arm is measurable,
-    -- without which the a.e. consistency step is unavailable
-    (hZ : Measurable Z) (z : Bool) (x : 𝒳) :
+theorem cellMean_obs_eq [MeasurableSingletonClass 𝒳]
+    -- USER-INPUT: the model variables are random variables; needed to know the arm cell is
+    -- measurable, without which the a.e. consistency step is unavailable
+    (hZ : Measurable Z) (hX : Measurable X) (z : Bool) (x : 𝒳) :
     cellMean μ Z X (obs Z y1 y0) z x
       = cellMean μ Z X (if z then y1 else y0) z x :=
-  cellMean_obs_eq' hZ z x
+  cellMean_obs_eq' hZ hX z x
 
 /-- **Unconfoundedness identifies the cell means** (Ding Assumption 10.2 ⇒ eq. (10.5)):
 inside a covariate cell of positive probability, the treated arm's regression function
 equals the conditional mean of the treated potential outcome. -/
-theorem cellMean_true_eq_of_unconfounded [IsProbabilityMeasure μ]
+theorem cellMean_true_eq_of_unconfounded [IsProbabilityMeasure μ] [MeasurableSingletonClass 𝒳]
     -- USER-INPUT: strong ignorability `{Y(1),Y(0)} ⫫ Z | X`; Ding Assumption 10.2
     (hu : Unconfounded μ Z y1 y0 X)
     -- USER-INPUT: measurability of the model variables; user-supplied data
@@ -161,12 +159,12 @@ theorem cellMean_true_eq_of_unconfounded [IsProbabilityMeasure μ]
     cellMean μ Z X (obs Z y1 y0) true x = ∫ ω, y1 ω ∂(μ[|cell X x]) := by
   have hpos' : (μ[|cell X x]) {ω | Z ω = true} ≠ 0 := hpos
   have hindep : IndepFun y1 Z (μ[|cell X x]) := (hu x).comp measurable_fst measurable_id
-  rw [cellMean_obs_eq' hZ true x, cellMean]
+  rw [cellMean_obs_eq' hZ hX true x, cellMean]
   simpa using integral_cond_armCell_eq hZ hy1 hint hindep hcell hpos'
 
 /-- **Unconfoundedness identifies the cell means**, control arm (Ding Assumption 10.2 ⇒
 eq. (10.6)). -/
-theorem cellMean_false_eq_of_unconfounded [IsProbabilityMeasure μ]
+theorem cellMean_false_eq_of_unconfounded [IsProbabilityMeasure μ] [MeasurableSingletonClass 𝒳]
     (hu : Unconfounded μ Z y1 y0 X)
     (hy1 : Measurable y1) (hy0 : Measurable y0) (hZ : Measurable Z) (hX : Measurable X)
     (hint : Integrable y0 μ) {x : 𝒳}
@@ -175,7 +173,7 @@ theorem cellMean_false_eq_of_unconfounded [IsProbabilityMeasure μ]
     (hpos : (μ[|cell X x]) {ω | Z ω = false} ≠ 0) :
     cellMean μ Z X (obs Z y1 y0) false x = ∫ ω, y0 ω ∂(μ[|cell X x]) := by
   have hindep : IndepFun y0 Z (μ[|cell X x]) := (hu x).comp measurable_snd measurable_id
-  rw [cellMean_obs_eq' hZ false x, cellMean]
+  rw [cellMean_obs_eq' hZ hX false x, cellMean]
   simpa using integral_cond_armCell_eq hZ hy0 hint hindep hcell hpos
 
 /-- **Strong ignorability implies ignorability for each arm** (Ding Assumption 10.2 ⇒
@@ -192,7 +190,7 @@ theorem Unconfounded.ignorable_right (hu : Unconfounded μ Z y1 y0 X)
 
 /-- **Ignorability implies mean ignorability** (Ding Assumption 10.1 ⇒ eqs. (10.3)–(10.4)):
 the hypothesis actually used by the standardization theorem is weaker than independence. -/
-theorem MeanIgnorable_of_ignorable [IsProbabilityMeasure μ]
+theorem MeanIgnorable_of_ignorable [IsProbabilityMeasure μ] [MeasurableSingletonClass 𝒳]
     (hi : Ignorable μ Z y1 X)
     (hy1 : Measurable y1) (hZ : Measurable Z) (hX : Measurable X)
     (hint : Integrable y1 μ)
@@ -214,14 +212,17 @@ theorem MeanIgnorable_of_ignorable [IsProbabilityMeasure μ]
       have := (ENNReal.toReal_pos_iff.mp hlt0).1
       exact this.ne'
     have hC : (μ[|cell X x]) {ω | Z ω = false} ≠ 0 := by
-      have hcompl : {ω | Z ω = false} = {ω | Z ω = true}ᶜ := by ext ω; simp
       intro h
-      have hsum := measure_add_measure_compl (μ := μ[|cell X x])
-        (hZ (measurableSet_singleton true))
-      rw [← hcompl, h, add_zero, measure_univ] at hsum
-      have hone : propensity μ Z X x = 1 := by
+      have hZt : MeasurableSet {ω | Z ω = true} := hZ (measurableSet_singleton true)
+      have hcompl : ({ω | Z ω = true} : Set Ω)ᶜ = {ω | Z ω = false} := by ext ω; simp
+      have h0 : (μ[|cell X x]) (({ω | Z ω = true} : Set Ω)ᶜ) = 0 := by rw [hcompl]; exact h
+      have hge : 1 ≤ (μ[|cell X x]) {ω | Z ω = true} := by
+        rw [prob_compl_eq_one_sub hZt] at h0
+        exact tsub_eq_zero_iff_le.mp h0
+      have hone : (μ[|cell X x]) {ω | Z ω = true} = 1 := le_antisymm prob_le_one hge
+      have : propensity μ Z X x = 1 := by
         unfold propensity treatedEvent
-        rw [hsum]
+        rw [hone]
         simp
       linarith
     rw [integral_cond_armCell_eq hZ hy1 hint (hi x) hcell hT,
