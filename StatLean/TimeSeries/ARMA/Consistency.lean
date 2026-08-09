@@ -1,6 +1,7 @@
 import StatLean.TimeSeries.ARMA.ScoreAnalysis
 import Mathlib.Analysis.Matrix.Spectrum
 import Mathlib.Analysis.Matrix.PosDef
+import Mathlib.Probability.StrongLaw
 
 /-!
 # Consistency of the ARMA Gaussian MLE (Hannan program, step 1)
@@ -1574,6 +1575,195 @@ private lemma gramTail_quadForm_tendstoInProb [IsProbabilityMeasure μ] {p q : �
     rw [h3] at h4
     nlinarith [h4]
   exact key _ ENNReal.toReal_nonneg hle
+
+/-! ### Step (C): the residual sum-of-squares LLN
+
+The machinery of the ergodic-theorem-free route recorded at
+`armaResidualSS_tendstoInProb`: an `L²`-norm bookkeeping device, the doubly truncated
+residual `z_i^{(m)} = Σ_{d,n<m} π_d ψ_n ε_{i+1+d−n}` (a fixed linear functional of a
+*finite* block of the i.i.d. noise), its shift-invariance in law, and the independence
+of the blocks along an arithmetic progression of step `2m`. -/
+
+/-- The `L²(μ)` norm of a real function, as a real number. A bookkeeping device: the
+defect estimates below are triangle inequalities, and this makes them one-liners. -/
+private noncomputable def l2n (μ : Measure Ω) (f : Ω → ℝ) : ℝ := Real.sqrt (∫ ω, f ω ^ 2 ∂μ)
+
+private lemma l2n_nonneg (μ : Measure Ω) (f : Ω → ℝ) : 0 ≤ l2n μ f := Real.sqrt_nonneg _
+
+private lemma real_inner_mul' (x y : ℝ) : inner ℝ x y = x * y := by
+  rw [real_inner_eq_re_inner ℝ, RCLike.inner_apply]
+  simp [mul_comm]
+
+private lemma inner_toLp' {f g : Ω → ℝ} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    inner ℝ (hf.toLp f) (hg.toLp g) = ∫ ω, f ω * g ω ∂μ := by
+  rw [L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [hf.coeFn_toLp, hg.coeFn_toLp] with ω h1 h2
+  rw [real_inner_mul', h1, h2]
+
+private lemma l2n_eq_norm_toLp {f : Ω → ℝ} (hf : MemLp f 2 μ) : l2n μ f = ‖hf.toLp f‖ := by
+  have h : ‖hf.toLp f‖ ^ 2 = ∫ ω, f ω ^ 2 ∂μ := by
+    rw [← real_inner_self_eq_norm_sq, inner_toLp' hf hf]
+    exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
+  rw [l2n, ← h, Real.sqrt_sq (norm_nonneg _)]
+
+private lemma l2n_add_le {f g : Ω → ℝ} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    l2n μ (fun ω => f ω + g ω) ≤ l2n μ f + l2n μ g := by
+  have hfg : MemLp (fun ω => f ω + g ω) 2 μ := hf.add hg
+  rw [l2n_eq_norm_toLp hfg, l2n_eq_norm_toLp hf, l2n_eq_norm_toLp hg]
+  have hsum : hfg.toLp (fun ω => f ω + g ω) = hf.toLp f + hg.toLp g := rfl
+  rw [hsum]
+  exact norm_add_le _ _
+
+private lemma l2n_finset_sum_le {ι : Type*} (s : Finset ι) (F : ι → Ω → ℝ)
+    (hF : ∀ i, MemLp (F i) 2 μ) :
+    l2n μ (fun ω => ∑ i ∈ s, F i ω) ≤ ∑ i ∈ s, l2n μ (F i) := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp [l2n]
+  | insert i s hi ih =>
+      have hstep : (fun ω => ∑ j ∈ insert i s, F j ω)
+          = fun ω => F i ω + ∑ j ∈ s, F j ω := by
+        funext ω; rw [Finset.sum_insert hi]
+      rw [hstep, Finset.sum_insert hi]
+      have := l2n_add_le (hF i) (memLp_finset_sum (μ := μ) s fun j _ => hF j)
+      linarith [ih]
+
+private lemma l2n_const_mul (c : ℝ) (f : Ω → ℝ) :
+    l2n μ (fun ω => c * f ω) = |c| * l2n μ f := by
+  have hpt : ∀ ω : Ω, (c * f ω) ^ 2 = c ^ 2 * f ω ^ 2 := fun ω => by ring
+  have hint : ∫ ω, (c * f ω) ^ 2 ∂μ = c ^ 2 * ∫ ω, f ω ^ 2 ∂μ := by
+    rw [integral_congr_ae (Filter.Eventually.of_forall hpt)]
+    exact integral_const_mul _ _
+  rw [l2n, l2n, hint, Real.sqrt_mul (sq_nonneg c), Real.sqrt_sq_eq_abs]
+
+private lemma integral_sq_le_of_l2n_le {f : Ω → ℝ} {c : ℝ} (hc : 0 ≤ c) (h : l2n μ f ≤ c) :
+    ∫ ω, f ω ^ 2 ∂μ ≤ c ^ 2 := by
+  have h0 : 0 ≤ ∫ ω, f ω ^ 2 ∂μ := integral_nonneg fun ω => sq_nonneg _
+  have hsq : l2n μ f ^ 2 = ∫ ω, f ω ^ 2 ∂μ := Real.sq_sqrt h0
+  nlinarith [l2n_nonneg μ f]
+
+/-- **Shift invariance of finite i.i.d. blocks**: the joint law of `(ε_{u a + k})_a` does
+not depend on the shift `k`. (The same device as in `LinearProcess.lean`, which keeps its
+copy `private`.) -/
+private lemma map_noise_block' [IsProbabilityMeasure μ] {A : Type*} [Finite A] {σ2 : ℝ}
+    {ε : ℤ → Ω → ℝ} (hε : IsIIDNoise ε σ2 μ) (u : A → ℤ) (k : ℤ) :
+    μ.map (fun ω a => ε (u a + k) ω) = μ.map (fun ω a => ε (u a) ω) := by
+  classical
+  have : Fintype A := Fintype.ofFinite A
+  set S : Finset ℤ := Finset.image u Finset.univ with hS
+  set ρ : A → {x // x ∈ S} :=
+    fun a => ⟨u a, Finset.mem_image_of_mem u (Finset.mem_univ a)⟩ with hρ
+  have hlaw : ∀ c : ℤ, μ.map (fun ω (b : {x // x ∈ S}) => ε ((b : ℤ) + c) ω)
+      = Measure.pi (fun _ : {x // x ∈ S} => μ.map (ε 0)) := by
+    intro c
+    have hinj : Function.Injective (fun b : {x // x ∈ S} => (b : ℤ) + c) := by
+      intro b1 b2 h
+      exact Subtype.ext (by simpa using h)
+    have hindep : iIndepFun (fun b : {x // x ∈ S} => ε ((b : ℤ) + c)) μ :=
+      hε.iIndep.precomp hinj
+    rw [(iIndepFun_iff_map_fun_eq_pi_map fun b => (hε.measurable _).aemeasurable).1 hindep]
+    exact congrArg Measure.pi (funext fun b => (hε.identDistrib _ 0).map_eq)
+  have hmb : ∀ c : ℤ, Measurable (fun ω (b : {x // x ∈ S}) => ε ((b : ℤ) + c) ω) :=
+    fun c => measurable_pi_lambda _ fun b => hε.measurable _
+  have hcomp : Measurable (fun v : {x // x ∈ S} → ℝ => v ∘ ρ) :=
+    measurable_pi_lambda _ fun a => measurable_pi_apply (ρ a)
+  have hfac : ∀ c : ℤ, (fun ω a => ε (u a + c) ω)
+      = (fun v : {x // x ∈ S} → ℝ => v ∘ ρ) ∘ (fun ω (b : {x // x ∈ S}) => ε ((b : ℤ) + c) ω) :=
+    fun c => rfl
+  have hzero : (fun ω a => ε (u a) ω)
+      = (fun v : {x // x ∈ S} → ℝ => v ∘ ρ) ∘
+        (fun ω (b : {x // x ∈ S}) => ε ((b : ℤ) + 0) ω) := by
+    funext ω a
+    simp only [Function.comp_apply, add_zero, hρ]
+  rw [hfac k, hzero, ← Measure.map_map hcomp (hmb k), ← Measure.map_map hcomp (hmb 0),
+    hlaw k, hlaw 0]
+
+/-- The **doubly truncated residual** `z_i^{(m)} = Σ_{d,n<m} π_d ψ_n ε_{i+1+d−n}`: the
+`m`-truncation of the composite filter applied to the `m`-truncation of the linear
+process. It is a fixed linear functional of the noise block over the window
+`[i+1−m, i+m]`, which is what makes the progression device work. -/
+private noncomputable def blockResid (π ψ : ℕ → ℝ) (ε : ℤ → Ω → ℝ) (m i : ℕ) : Ω → ℝ :=
+  fun ω => ∑ x : Fin m × Fin m,
+    π (x.1 : ℕ) * ψ (x.2 : ℕ) * ε (1 + ((x.1 : ℕ) : ℤ) - ((x.2 : ℕ) : ℤ) + (i : ℤ)) ω
+
+private lemma measurable_blockResid {ε : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ε t))
+    (π ψ : ℕ → ℝ) (m i : ℕ) : Measurable (blockResid π ψ ε m i) :=
+  Finset.measurable_sum _ fun _ _ => (hm _).const_mul _
+
+private lemma memLp_blockResid [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
+    (hε : IsWhiteNoise ε σ2 μ) (π ψ : ℕ → ℝ) (m i : ℕ) :
+    MemLp (blockResid π ψ ε m i) 2 μ :=
+  memLp_finset_sum _ fun _ _ => (hε.memLp _).const_mul _
+
+/-- The block index map `x ↦ 1 + x₁ − x₂` of the window. -/
+private def blkIdx (m : ℕ) : Fin m × Fin m → ℤ :=
+  fun x => 1 + ((x.1 : ℕ) : ℤ) - ((x.2 : ℕ) : ℤ)
+
+/-- The linear functional the block is fed through. -/
+private noncomputable def blkFun (π ψ : ℕ → ℝ) (m : ℕ) : (Fin m × Fin m → ℝ) → ℝ :=
+  fun v => ∑ x : Fin m × Fin m, π (x.1 : ℕ) * ψ (x.2 : ℕ) * v x
+
+private lemma measurable_blkFun (π ψ : ℕ → ℝ) (m : ℕ) : Measurable (blkFun π ψ m) :=
+  Finset.measurable_sum _ fun x _ => (measurable_pi_apply x).const_mul _
+
+/-- **Shift invariance in law of the truncated residual**: `z_i^{(m)}` has the same law
+as `z_0^{(m)}`, hence `IdentDistrib` for the squares. -/
+private lemma identDistrib_blockResid_sq [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
+    (hε : IsIIDNoise ε σ2 μ) (π ψ : ℕ → ℝ) (m i j : ℕ) :
+    IdentDistrib (fun ω => blockResid π ψ ε m i ω ^ 2)
+      (fun ω => blockResid π ψ ε m j ω ^ 2) μ μ := by
+  have hΦ : Measurable (fun v : Fin m × Fin m → ℝ => (blkFun π ψ m v) ^ 2) :=
+    (measurable_blkFun π ψ m).pow_const 2
+  have hblk : ∀ c : ℤ, Measurable (fun ω (x : Fin m × Fin m) => ε (blkIdx m x + c) ω) :=
+    fun c => measurable_pi_lambda _ fun _ => hε.measurable _
+  have hfac : ∀ c : ℕ, (fun ω => blockResid π ψ ε m c ω ^ 2)
+      = (fun v : Fin m × Fin m → ℝ => (blkFun π ψ m v) ^ 2)
+        ∘ (fun ω (x : Fin m × Fin m) => ε (blkIdx m x + (c : ℤ)) ω) := fun c => rfl
+  have hmap : ∀ c : ℕ, μ.map (fun ω => blockResid π ψ ε m c ω ^ 2)
+      = Measure.map (fun v : Fin m × Fin m → ℝ => (blkFun π ψ m v) ^ 2)
+          (μ.map (fun ω (x : Fin m × Fin m) => ε (blkIdx m x) ω)) := by
+    intro c
+    rw [hfac c, ← Measure.map_map hΦ (hblk (c : ℤ)), map_noise_block' hε (blkIdx m) (c : ℤ)]
+  refine ⟨?_, ?_, ?_⟩
+  · exact ((measurable_blockResid hε.measurable π ψ m i).pow_const 2).aemeasurable
+  · exact ((measurable_blockResid hε.measurable π ψ m j).pow_const 2).aemeasurable
+  · rw [hmap i, hmap j]
+
+/-- **Independence along a progression of step `2m`**: the windows of `z_i^{(m)}` and
+`z_j^{(m)}` are disjoint blocks of the i.i.d. noise as soon as `j ≥ i + 2m`. -/
+private lemma indepFun_blockResid_sq [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
+    (hε : IsIIDNoise ε σ2 μ) (π ψ : ℕ → ℝ) {m i j : ℕ} (hij : i + 2 * m ≤ j) :
+    IndepFun (fun ω => blockResid π ψ ε m i ω ^ 2)
+      (fun ω => blockResid π ψ ε m j ω ^ 2) μ := by
+  classical
+  set S : ℕ → Finset ℤ := fun c => Finset.Icc ((c : ℤ) + 1 - (m : ℤ)) ((c : ℤ) + (m : ℤ))
+    with hSdef
+  have hmem : ∀ (c : ℕ) (x : Fin m × Fin m), blkIdx m x + (c : ℤ) ∈ S c := by
+    intro c x
+    have h1 := x.1.isLt
+    have h2 := x.2.isLt
+    simp only [hSdef, Finset.mem_Icc, blkIdx]
+    omega
+  have hdisj : Disjoint (S i) (S j) := by
+    refine Finset.disjoint_left.2 fun x hx hx' => ?_
+    simp only [hSdef, Finset.mem_Icc] at hx hx'
+    omega
+  set Φ : ∀ c : ℕ, ({x // x ∈ S c} → ℝ) → ℝ := fun c v =>
+    (∑ x : Fin m × Fin m,
+      π (x.1 : ℕ) * ψ (x.2 : ℕ) * v ⟨blkIdx m x + (c : ℤ), hmem c x⟩) ^ 2 with hΦdef
+  have hΦm : ∀ c : ℕ, Measurable (Φ c) := by
+    intro c
+    rw [hΦdef]
+    refine Measurable.pow_const (Finset.measurable_sum _ fun x _ => ?_) 2
+    exact Measurable.const_mul (measurable_pi_apply
+      (⟨blkIdx m x + (c : ℤ), hmem c x⟩ : {y // y ∈ S c})) _
+  have hfac : ∀ c : ℕ, (fun ω => blockResid π ψ ε m c ω ^ 2)
+      = (Φ c) ∘ (fun ω (y : {x // x ∈ S c}) => ε (y : ℤ) ω) := fun c => rfl
+  have hbase := ProbabilityTheory.iIndepFun.indepFun_finset (μ := μ) (f := ε) (S i) (S j)
+    hdisj hε.iIndep hε.measurable
+  rw [hfac i, hfac j]
+  exact hbase.comp (hΦm i) (hΦm j)
 
 open Matrix in
 /-- **DEBT — step (C) of the `armaProfileS_tendstoInProb` route**: the residual
