@@ -519,16 +519,18 @@ supplies the process `X'_t = (Y_t)_0` and the innovations
   **recursion** clause;
 * **strict stationarity**, through `isStrictlyStationary_iff_window`.
 
-**Remaining debt (2 sorries below).** Both are the *independence* clauses, and both
-reduce to one missing ingredient: the window law in **innovation coordinates**, i.e.
-`chainWindowLaw (nlARKernel f ν) F k = (F ×ˢ ν^{⊗k}).map Ψ_k` with
-`Ψ_k (x, e) = (x, …)` the deterministic recursion. That single identity (an induction on
-`k` over the definition of `chainWindowLaw`, using `nlARKernel_apply` at each step) yields
-(i) `IsIIDNoise ε' 1 μ'` — mutual independence follows because every finite subset of `ℤ`
-sits inside a consecutive window, on which the innovations are an i.i.d. `ν`-vector,
-rescaled by `σ₀` to variance one by `hνvar`; and (ii) independence of `ε'_t` from
-`sigmaLT X' t` — `ε'_t` is independent of every finite past window, and `sigmaLT` is the
-`⨆` of those, so a π-system/monotone-class step (`IndepSets.indep`) finishes it. -/
+The two *independence* clauses come from the **innovation-coordinate window law**
+`chainWindowLaw_map_innov` above: read in the coordinates `e_i = w_{i+1}(0) − f(w_i)`, the
+window law is the plain product `ν^{⊗k}`. From it:
+
+* `IsIIDNoise ε' 1 μ'` — every finite set of times embeds injectively into a consecutive
+  window (`iIndepFun_iff_finset` + `iIndepFun.precomp`), on which the innovations are the
+  coordinates of a `Measure.pi`; the moment clauses follow from `IdentDistrib` against `ν`
+  itself, so the variance is `σ₀²/σ₀² = 1` by `hνvar`;
+* independence of `ε'_t` from `sigmaLT X' t` — `ε'_t` is independent of every finite past
+  window (the one-step refinement `chainWindowLaw_map_init_innov`), and those windows form
+  a *monotone* `ℕ`-indexed family whose `⨆` dominates `sigmaLT X' t`, so
+  `indep_iSup_of_monotone` lifts it; no π-system/monotone-class step is needed. -/
 private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
     {f : (Fin (P + 1) → ℝ) → ℝ} (hf : Measurable f)
     {ν : Measure ℝ} [IsProbabilityMeasure ν]
