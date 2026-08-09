@@ -2194,6 +2194,94 @@ private lemma tendsto_avg_of_tendsto_block {L : ℕ} (hL : 0 < L) {S : ℕ → �
       calc (N : ℝ) * (L : ℝ) = ((N * L : ℕ) : ℝ) := hcast.symm
         _ ≤ (T : ℝ) := by exact_mod_cast hlow
 
+private lemma integrable_blockResid_sq [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
+    (hε : IsWhiteNoise ε σ2 μ) (π ψ : ℕ → ℝ) (m i : ℕ) :
+    Integrable (fun ω => blockResid π ψ ε m i ω ^ 2) μ := by
+  have h := (memLp_blockResid hε π ψ m i).integrable_mul (memLp_blockResid hε π ψ m i)
+  exact h.congr (Filter.Eventually.of_forall fun ω => by simp [Pi.mul_apply, sq])
+
+/-- **The `m`-dependent strong law**: along each of the `2m` arithmetic progressions of
+step `2m` the squares `(z_i^{(m)})²` are i.i.d. and integrable, so Etemadi's strong law
+applies progression by progression; summing the `2m` of them and passing from the block
+subsequence to the full sequence gives the Cesàro limit. -/
+private lemma ae_tendsto_avg_blockResid_sq [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
+    (hε : IsIIDNoise ε σ2 μ) (π ψ : ℕ → ℝ) {m : ℕ} (hm : 0 < m) :
+    ∀ᵐ ω ∂μ, Tendsto
+      (fun T : ℕ => (T : ℝ)⁻¹ * ∑ i ∈ Finset.range T, blockResid π ψ ε m i ω ^ 2) atTop
+      (𝓝 (∫ ω, blockResid π ψ ε m 0 ω ^ 2 ∂μ)) := by
+  classical
+  have hwn := hε.isWhiteNoise
+  have hL : 0 < 2 * m := by omega
+  set M : ℝ := ∫ ω, blockResid π ψ ε m 0 ω ^ 2 ∂μ with hMdef
+  have hMi : ∀ i : ℕ, ∫ ω, blockResid π ψ ε m i ω ^ 2 ∂μ = M := by
+    intro i
+    rw [hMdef, integral_blockResid_sq_eq hwn π ψ m i, integral_blockResid_sq_eq hwn π ψ m 0]
+  have hprog : ∀ k : ℕ, ∀ᵐ ω ∂μ, Tendsto
+      (fun N : ℕ => (N : ℝ)⁻¹ * ∑ j ∈ Finset.range N,
+        blockResid π ψ ε m (k + j * (2 * m)) ω ^ 2) atTop (𝓝 M) := by
+    intro k
+    have hkey : ∀ u v : ℕ, u < v → IndepFun
+        (fun ω => blockResid π ψ ε m (k + u * (2 * m)) ω ^ 2)
+        (fun ω => blockResid π ψ ε m (k + v * (2 * m)) ω ^ 2) μ := by
+      intro u v huv
+      refine indepFun_blockResid_sq hε π ψ ?_
+      have h2 : (u + 1) * (2 * m) ≤ v * (2 * m) := Nat.mul_le_mul_right _ (by omega)
+      have e : k + u * (2 * m) + 2 * m = k + (u + 1) * (2 * m) := by ring
+      rw [e]
+      exact Nat.add_le_add_left h2 k
+    have hsl := ProbabilityTheory.strong_law_ae
+      (fun j : ℕ => fun ω => blockResid π ψ ε m (k + j * (2 * m)) ω ^ 2)
+      (integrable_blockResid_sq hwn π ψ m (k + 0 * (2 * m)))
+      (by
+        intro j j' hjj'
+        simp only [Function.onFun]
+        rcases lt_or_gt_of_ne hjj' with h | h
+        · exact hkey j j' h
+        · exact (hkey j' j h).symm)
+      (fun j => identDistrib_blockResid_sq hε π ψ m _ _)
+    have hM0 : (μ[fun ω => blockResid π ψ ε m (k + 0 * (2 * m)) ω ^ 2]) = M := hMi _
+    rw [hM0] at hsl
+    filter_upwards [hsl] with ω hω
+    simpa using hω
+  have hall : ∀ᵐ ω ∂μ, ∀ k : ℕ, Tendsto
+      (fun N : ℕ => (N : ℝ)⁻¹ * ∑ j ∈ Finset.range N,
+        blockResid π ψ ε m (k + j * (2 * m)) ω ^ 2) atTop (𝓝 M) := ae_all_iff.2 hprog
+  filter_upwards [hall] with ω hω
+  set f : ℕ → ℝ := fun i => blockResid π ψ ε m i ω ^ 2 with hfdef
+  have hf0 : ∀ i, 0 ≤ f i := fun i => sq_nonneg _
+  have hmono : Monotone (fun T : ℕ => ∑ i ∈ Finset.range T, f i) := by
+    intro T1 T2 h
+    exact Finset.sum_le_sum_of_subset_of_nonneg (Finset.range_mono h) fun i _ _ => hf0 i
+  have hpos : ∀ n : ℕ, 0 ≤ ∑ i ∈ Finset.range n, f i := fun n =>
+    Finset.sum_nonneg fun i _ => hf0 i
+  refine tendsto_avg_of_tendsto_block (S := fun T : ℕ => ∑ i ∈ Finset.range T, f i)
+    hL hmono hpos ?_
+  have hgs : Tendsto (fun N : ℕ => ∑ k ∈ Finset.range (2 * m),
+      (N : ℝ)⁻¹ * ∑ j ∈ Finset.range N, f (k + j * (2 * m))) atTop
+      (𝓝 (∑ _k ∈ Finset.range (2 * m), M)) :=
+    tendsto_finset_sum _ fun k _ => hω k
+  have hsum : ∑ _k ∈ Finset.range (2 * m), M = ((2 * m : ℕ) : ℝ) * M := by
+    rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+  rw [hsum] at hgs
+  have hmne : ((2 * m : ℕ) : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
+  have hfin : Tendsto (fun N : ℕ => ((2 * m : ℕ) : ℝ)⁻¹ * ∑ k ∈ Finset.range (2 * m),
+      (N : ℝ)⁻¹ * ∑ j ∈ Finset.range N, f (k + j * (2 * m))) atTop (𝓝 M) := by
+    have h := hgs.const_mul (((2 * m : ℕ) : ℝ)⁻¹)
+    have he : ((2 * m : ℕ) : ℝ)⁻¹ * (((2 * m : ℕ) : ℝ) * M) = M := by
+      field_simp
+    rw [he] at h
+    exact h
+  refine hfin.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with N hN
+  have hcast : ((N * (2 * m) : ℕ) : ℝ) = (N : ℝ) * ((2 * m : ℕ) : ℝ) := by push_cast; ring
+  have hNne : (N : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
+  have hsplit := sum_range_mul_split hL N f
+  show ((2 * m : ℕ) : ℝ)⁻¹ * ∑ k ∈ Finset.range (2 * m),
+      (N : ℝ)⁻¹ * ∑ j ∈ Finset.range N, f (k + j * (2 * m))
+    = ((N * (2 * m) : ℕ) : ℝ)⁻¹ * ∑ i ∈ Finset.range (N * (2 * m)), f i
+  rw [hsplit, hcast, ← Finset.mul_sum, mul_inv]
+  ring
+
 open Matrix in
 /-- **DEBT — step (C) of the `armaProfileS_tendstoInProb` route**: the residual
 sum-of-squares LLN `T⁻¹‖Π_T x‖² →p σ² · Σ_j c_j²`.
