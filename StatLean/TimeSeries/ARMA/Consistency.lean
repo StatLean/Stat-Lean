@@ -2611,6 +2611,92 @@ private lemma l2n_row_sub_blockResid [IsProbabilityMeasure μ] {ψ π : ℕ → 
   · exact l2n_icoResid_diff_le hmemX hc hπ K m i
   · exact l2n_icoResid_sub_blockResid hX hψ hε hmeas hπ m i
 
+/-- **The `L¹` comparison**: the Cesàro sum of the squared rows of `Π_T` and its
+finite-noise-window surrogate differ, in mean, by the coefficient tails plus an edge term
+supported on the last `m` rows. Cauchy–Schwarz is applied row by row, so only *second*
+moments of the noise are used — this is the point at which the recorded "fourth
+cumulants" obstruction to a direct `L²` law is bypassed. -/
+private lemma integral_defect_le [IsProbabilityMeasure μ] {ψ π : ℕ → ℝ} {σ2 c0 : ℝ}
+    {X ε : ℤ → Ω → ℝ} (hX : IsLinearProcessOf ψ X ε μ) (hψ : Summable fun j => |ψ j|)
+    (hε : IsWhiteNoise ε σ2 μ) (hmeas : ∀ t, Measurable (X t))
+    (hπ : Summable fun n => |π n|) (hc : ∀ t : ℤ, l2n μ (X t) = c0) (m T : ℕ) :
+    ∫ ω, ∑ i ∈ Finset.range T,
+        |icoResid π X 0 (T - i) i ω ^ 2 - blockResid π ψ ε m i ω ^ 2| ∂μ
+      ≤ ((T : ℝ) * ((∑' k : ℕ, |π (k + m)|) * c0
+            + (∑' n : ℕ, |π n|) * ((∑' k : ℕ, |ψ (k + m)|) * Real.sqrt σ2))
+          + (m : ℝ) * ((∑' n : ℕ, |π n|) * c0))
+        * ((∑' n : ℕ, |π n|) * c0
+            + (∑' n : ℕ, |π n|) * ((∑' n : ℕ, |ψ n|) * Real.sqrt σ2)) := by
+  classical
+  have hmemX : ∀ t : ℤ, MemLp (X t) 2 μ := fun t => hX.memLp hψ hε hmeas t
+  have hc0 : 0 ≤ c0 := by rw [← hc 0]; exact l2n_nonneg _ _
+  have hP0 : (0 : ℝ) ≤ ∑' n : ℕ, |π n| := tsum_nonneg fun n => abs_nonneg _
+  have hQ0 : (0 : ℝ) ≤ ∑' n : ℕ, |ψ n| := tsum_nonneg fun n => abs_nonneg _
+  have hs0 : (0 : ℝ) ≤ Real.sqrt σ2 := Real.sqrt_nonneg _
+  set G : ℝ := (∑' n : ℕ, |π n|) * c0
+      + (∑' n : ℕ, |π n|) * ((∑' n : ℕ, |ψ n|) * Real.sqrt σ2) with hGdef
+  have hG0 : 0 ≤ G := by rw [hGdef]; positivity
+  set rho : ℝ := (∑' k : ℕ, |π (k + m)|) * c0
+      + (∑' n : ℕ, |π n|) * ((∑' k : ℕ, |ψ (k + m)|) * Real.sqrt σ2) with hrhodef
+  have hint : ∀ i : ℕ, Integrable (fun ω =>
+      |icoResid π X 0 (T - i) i ω ^ 2 - blockResid π ψ ε m i ω ^ 2|) μ := by
+    intro i
+    have h1 : Integrable (fun ω => icoResid π X 0 (T - i) i ω ^ 2) μ := by
+      have h := (memLp_icoResid hmemX π 0 (T - i) i).integrable_mul
+        (memLp_icoResid hmemX π 0 (T - i) i)
+      exact h.congr (Filter.Eventually.of_forall fun ω => by simp [Pi.mul_apply, sq])
+    exact (h1.sub (integrable_blockResid_sq hε π ψ m i)).abs
+  rw [integral_finset_sum _ fun i _ => hint i]
+  have hper : ∀ i ∈ Finset.range T,
+      ∫ ω, |icoResid π X 0 (T - i) i ω ^ 2 - blockResid π ψ ε m i ω ^ 2| ∂μ
+        ≤ (rho + (if T - i < m then (∑' n : ℕ, |π n|) else 0) * c0) * G := by
+    intro i _
+    have hfac : ∀ ω, |icoResid π X 0 (T - i) i ω ^ 2 - blockResid π ψ ε m i ω ^ 2|
+        = |(icoResid π X 0 (T - i) i ω - blockResid π ψ ε m i ω)
+            * (icoResid π X 0 (T - i) i ω + blockResid π ψ ε m i ω)| := by
+      intro ω
+      congr 1
+      ring
+    rw [integral_congr_ae (Filter.Eventually.of_forall hfac)]
+    have hd : l2n μ (fun ω => icoResid π X 0 (T - i) i ω - blockResid π ψ ε m i ω)
+        ≤ rho + (if T - i < m then (∑' n : ℕ, |π n|) else 0) * c0 := by
+      refine le_trans (l2n_row_sub_blockResid hX hψ hε hmeas hπ hc (T - i) m i) ?_
+      have h3 := mul_le_mul_of_nonneg_right (tail_min_le hπ (T - i) m) hc0
+      rw [add_mul] at h3
+      rw [hrhodef]
+      linarith
+    have hsm : l2n μ (fun ω => icoResid π X 0 (T - i) i ω + blockResid π ψ ε m i ω) ≤ G := by
+      refine le_trans (l2n_add_le (memLp_icoResid hmemX π 0 (T - i) i)
+        (memLp_blockResid hε π ψ m i)) ?_
+      have h1 : l2n μ (icoResid π X 0 (T - i) i) ≤ (∑' n : ℕ, |π n|) * c0 := by
+        have h := l2n_icoResid_le hmemX hc hπ 0 (T - i) i
+        simpa using h
+      have h2 := l2n_blockResid_le hψ hε hπ m i
+      rw [hGdef]
+      linarith
+    have hd0 : 0 ≤ rho + (if T - i < m then (∑' n : ℕ, |π n|) else 0) * c0 :=
+      le_trans (l2n_nonneg μ _) hd
+    refine le_trans (integral_abs_mul_le
+      ((memLp_icoResid hmemX π 0 (T - i) i).sub (memLp_blockResid hε π ψ m i))
+      ((memLp_icoResid hmemX π 0 (T - i) i).add (memLp_blockResid hε π ψ m i))) ?_
+    exact mul_le_mul hd hsm (l2n_nonneg _ _) hd0
+  refine le_trans (Finset.sum_le_sum hper) ?_
+  rw [← Finset.sum_mul]
+  refine mul_le_mul_of_nonneg_right ?_ hG0
+  have hsplit : ∑ i ∈ Finset.range T,
+      (rho + (if T - i < m then (∑' n : ℕ, |π n|) else 0) * c0)
+      = (T : ℝ) * rho + ∑ i ∈ Finset.range T,
+          (if T - i < m then (∑' n : ℕ, |π n|) * c0 else 0) := by
+    rw [Finset.sum_add_distrib, Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+    congr 1
+    refine Finset.sum_congr rfl fun i _ => ?_
+    by_cases hi : T - i < m
+    · rw [if_pos hi, if_pos hi]
+    · rw [if_neg hi, if_neg hi, zero_mul]
+  rw [hsplit]
+  have hedge := sum_edge_le T m (c := (∑' n : ℕ, |π n|) * c0) (by positivity)
+  linarith
+
 open Matrix in
 /-- **DEBT — step (C) of the `armaProfileS_tendstoInProb` route**: the residual
 sum-of-squares LLN `T⁻¹‖Π_T x‖² →p σ² · Σ_j c_j²`.
