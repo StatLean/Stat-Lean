@@ -56,8 +56,8 @@ family. -/
 theorem samplesOfCard_nonempty {n : ℕ}
     -- USER-INPUT: the sample size does not exceed the population size; Mead §9.3
     (hn : n ≤ Fintype.card U) :
-    (Finset.powersetCard n (Finset.univ : Finset U)).Nonempty := by
-  sorry
+    (Finset.powersetCard n (Finset.univ : Finset U)).Nonempty :=
+  Finset.powersetCard_nonempty.2 (by simpa using hn)
 
 /-- **Simple random sampling without replacement** of size `n`: the uniform
 distribution on the `n`-element subsets of the population (`Mead §9.3`). -/
@@ -68,7 +68,8 @@ noncomputable def simpleRandomSampling (n : ℕ) (hn : n ≤ Fintype.card U) :
 theorem mem_support_simpleRandomSampling {n : ℕ} {hn : n ≤ Fintype.card U}
     {s : Finset U} :
     s ∈ (simpleRandomSampling n hn).support ↔ s.card = n := by
-  sorry
+  rw [simpleRandomSampling, PMF.mem_support_uniformOfFinset_iff, Finset.mem_powersetCard]
+  exact and_iff_right (Finset.subset_univ s)
 
 /-- **Sampling symmetry**: SRSWOR is invariant under relabelling the units by any
 permutation. -/
@@ -76,13 +77,89 @@ theorem simpleRandomSampling_map_image (n : ℕ) (hn : n ≤ Fintype.card U)
     (σ : Equiv.Perm U) :
     (simpleRandomSampling n hn).map (fun s => s.image (σ : U → U))
       = simpleRandomSampling n hn := by
-  sorry
+  ext u
+  rw [PMF.map_apply]
+  have himg : ∀ t : Finset U, (t.image (σ.symm : U → U)).image (σ : U → U) = t := by
+    intro t; rw [Finset.image_image]; simp
+  refine (tsum_eq_single (u.image (σ.symm : U → U)) ?_).trans ?_
+  · intro t ht
+    refine if_neg fun h => ht ?_
+    rw [h, Finset.image_image]
+    simp
+  · rw [himg u, if_pos rfl]
+    simp only [simpleRandomSampling, PMF.uniformOfFinset_apply, Finset.mem_powersetCard,
+      Finset.subset_univ, true_and, Finset.card_image_of_injective _ σ.symm.injective]
+
+omit [Fintype U] in
+/-- Membership in a permuted sample: `a ∈ σ(s) ↔ σ⁻¹(a) ∈ s`. -/
+private lemma mem_image_perm {σ : Equiv.Perm U} {s : Finset U} {a : U} :
+    a ∈ s.image (σ : U → U) ↔ σ.symm a ∈ s := by
+  rw [Finset.mem_image]
+  constructor
+  · rintro ⟨x, hx, rfl⟩; simpa using hx
+  · intro h; exact ⟨σ.symm a, h, by simp⟩
+
+omit [Fintype U] in
+private lemma inclusionIndicator_image_perm (σ : Equiv.Perm U) (a : U) (s : Finset U) :
+    inclusionIndicator a (s.image (σ : U → U)) = inclusionIndicator (σ.symm a) s := by
+  simp only [inclusionIndicator, mem_image_perm]
+
+/-- Relabelling invariance of SRS expectations: the design expectation of `f` equals
+that of `f ∘ σ`, for any permutation `σ` of the population. -/
+private lemma srs_expect_perm (n : ℕ) (hn : n ≤ Fintype.card U) (σ : Equiv.Perm U)
+    (f : Finset U → ℝ) :
+    pmfExpect (simpleRandomSampling n hn) f
+      = pmfExpect (simpleRandomSampling n hn) (fun s => f (s.image (σ : U → U))) := by
+  conv_lhs => rw [← simpleRandomSampling_map_image n hn σ]
+  rw [pmfExpect_map]
+
+/-- Two statistics agreeing on the `n`-subsets have the same SRS expectation. -/
+private lemma srs_expect_congr (n : ℕ) (hn : n ≤ Fintype.card U) {f g : Finset U → ℝ}
+    (h : ∀ s : Finset U, s.card = n → f s = g s) :
+    pmfExpect (simpleRandomSampling n hn) f = pmfExpect (simpleRandomSampling n hn) g := by
+  rw [simpleRandomSampling, pmfExpect_uniformOfFinset, pmfExpect_uniformOfFinset]
+  congr 1
+  exact Finset.sum_congr rfl fun s hs => h s (Finset.mem_powersetCard.1 hs).2
+
+/-- Two statistics agreeing on the `n`-subsets have the same SRS variance. -/
+private lemma srs_var_congr (n : ℕ) (hn : n ≤ Fintype.card U) {f g : Finset U → ℝ}
+    (h : ∀ s : Finset U, s.card = n → f s = g s) :
+    pmfVar (simpleRandomSampling n hn) f = pmfVar (simpleRandomSampling n hn) g := by
+  unfold pmfVar
+  rw [srs_expect_congr n hn h]
+  exact srs_expect_congr n hn fun s hs => by rw [h s hs]
+
+/-- The SRS sample size is deterministically `n`. -/
+private lemma srs_expect_card (n : ℕ) (hn : n ≤ Fintype.card U) :
+    pmfExpect (simpleRandomSampling n hn) (fun s => (s.card : ℝ)) = (n : ℝ) := by
+  rw [srs_expect_congr n hn (g := fun _ => (n : ℝ)) fun s hs => by rw [hs]]
+  exact pmfExpect_const _ _
+
+/-- Inclusion probabilities are constant across units, by relabelling symmetry. -/
+private lemma srs_inclusionProb_eq (n : ℕ) (hn : n ≤ Fintype.card U) (i j : U) :
+    inclusionProb (simpleRandomSampling n hn) i
+      = inclusionProb (simpleRandomSampling n hn) j := by
+  unfold inclusionProb
+  rw [srs_expect_perm n hn (Equiv.swap i j) (inclusionIndicator i)]
+  congr 1
+  funext s
+  rw [inclusionIndicator_image_perm, Equiv.symm_swap, Equiv.swap_apply_left]
 
 /-- **First-order inclusion probability under SRS**: `πᵢ = n/N`. -/
 theorem srs_inclusionProb (n : ℕ) (hn : n ≤ Fintype.card U) (i : U) :
     inclusionProb (simpleRandomSampling n hn) i
       = (n : ℝ) / (Fintype.card U : ℝ) := by
-  sorry
+  have hcard : 0 < Fintype.card U := Fintype.card_pos_iff.2 ⟨i⟩
+  have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hcard.ne'
+  have hsum : ∑ k, inclusionProb (simpleRandomSampling n hn) k = (n : ℝ) := by
+    rw [← expect_sampleCard]; exact srs_expect_card n hn
+  have hconst : ∑ k, inclusionProb (simpleRandomSampling n hn) k
+      = (Fintype.card U : ℝ) * inclusionProb (simpleRandomSampling n hn) i := by
+    rw [Finset.sum_congr rfl fun k _ => srs_inclusionProb_eq n hn k i, Finset.sum_const,
+      Finset.card_univ, nsmul_eq_mul]
+  rw [hconst] at hsum
+  rw [eq_div_iff hN]
+  linear_combination hsum
 
 /-- **Second-order inclusion probability under SRS**:
 `π_{ij} = n(n−1)/(N(N−1))` for distinct units. -/
