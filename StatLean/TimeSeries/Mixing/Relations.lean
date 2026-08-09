@@ -1468,15 +1468,109 @@ theorem garch_alphaCoeff_exponential_debt [IsProbabilityMeasure μ]
       ∀ n : ℕ, alphaCoeff X μ n ≤ C * r ^ n := by
   sorry
 
+/-! #### The Gaussian comparison `ρ ≤ 2π α` (Kolmogorov–Rozanov)
+
+The theorem is assembled from the two genuine literature inputs, isolated as the named
+bricks `gaussian_rho_linear_brick` and `gaussian_pair_corr_le_alpha_brick`; the
+`sSup`/monotonicity plumbing between them is proved. -/
+
+/-- The linear functional `∑_{s ∈ S} a s · X_s` of the process. -/
+private noncomputable def linComb (X : ℤ → Ω → ℝ) (S : Finset ℤ) (a : ℤ → ℝ) : Ω → ℝ :=
+  fun ω => ∑ s ∈ S, a s * X s ω
+
+omit [MeasurableSpace Ω] in
+/-- A linear functional of the past is measurable for the past σ-algebra. -/
+private lemma measurable_linComb_sigmaLE {X : ℤ → Ω → ℝ} {S : Finset ℤ}
+    (hS : ∀ s ∈ S, s ≤ (0:ℤ)) (a : ℤ → ℝ) : Measurable[sigmaLE X 0] (linComb X S a) := by
+  refine Finset.measurable_sum S fun s hs => ?_
+  have hcs : MeasurableSpace.comap (X s) inferInstance ≤ sigmaLE X 0 :=
+    le_iSup₂_of_le s (Set.mem_Iic.mpr (hS s hs)) le_rfl
+  exact measurable_const.mul (Measurable.of_comap_le hcs)
+
+omit [MeasurableSpace Ω] in
+/-- A linear functional of the future is measurable for the future σ-algebra. -/
+private lemma measurable_linComb_sigmaGE {X : ℤ → Ω → ℝ} {T : Finset ℤ} {c : ℤ}
+    (hT : ∀ s ∈ T, c ≤ s) (b : ℤ → ℝ) : Measurable[sigmaGE X c] (linComb X T b) := by
+  refine Finset.measurable_sum T fun s hs => ?_
+  have hcs : MeasurableSpace.comap (X s) inferInstance ≤ sigmaGE X c :=
+    le_iSup₂_of_le s (Set.mem_Ici.mpr (hT s hs)) le_rfl
+  exact measurable_const.mul (Measurable.of_comap_le hcs)
+
+/-- **BRICK 1 — Gaussian maximal correlation is carried by the linear span.**
+
+For a Gaussian process the supremum defining `ρ(𝓕_{-∞}^0, 𝓕_n^∞)` is already achieved (up
+to `ε`) on pairs of *finite linear combinations* of the flanking coordinates.
+
+**Intended proof.** The closed `L²`-span `H` of `{X_s}` is a Gaussian Hilbert space; `L²` of
+the σ-algebra `σ{X_s : s ≤ 0}` decomposes as the orthogonal Wiener–Itô sum
+`⊕_{k ≥ 0} H_k^{(≤0)}` of the Hermite chaoses, and the same on the future side. The
+covariance operator maps the `k`-th chaos to the `k`-th chaos and acts there as the `k`-th
+tensor power of its action on `H_1`, so the correlation of two chaos-`k` variables is at
+most `ρ_1^k ≤ ρ_1`, where `ρ_1` is the maximal correlation of the *first* chaoses, i.e. of
+the linear parts (Mehler's formula / Lancaster's theorem). Hence `ρ = ρ_1` and the
+supremum over the whole of `L²` reduces to the supremum over `H_1`, whose elements are
+`L²`-limits of finite linear combinations. Formalising this needs the Hermite/Wiener chaos
+decomposition of a Gaussian Hilbert space, which Mathlib does not yet have; it is left as a
+single named debt. -/
+private lemma gaussian_rho_linear_brick [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
+    (hmeas : ∀ t, Measurable (X t)) (hgauss : ProbabilityTheory.IsGaussianProcess X μ) (n : ℕ)
+    {f g : Ω → ℝ} (hf : Measurable[sigmaLE X 0] f) (hg : Measurable[sigmaGE X (n : ℤ)] g)
+    (hfL : MemLp f 2 μ) (hgL : MemLp g 2 μ) {ε : ℝ} (hε : 0 < ε) :
+    ∃ (S T : Finset ℤ) (a b : ℤ → ℝ), (∀ s ∈ S, s ≤ (0:ℤ)) ∧ (∀ s ∈ T, (n : ℤ) ≤ s) ∧
+      |cov[f, g; μ]| / (Real.sqrt (variance f μ) * Real.sqrt (variance g μ))
+        ≤ |cov[linComb X S a, linComb X T b; μ]|
+            / (Real.sqrt (variance (linComb X S a) μ)
+               * Real.sqrt (variance (linComb X T b) μ)) + ε := by
+  sorry
+
+/-- **BRICK 2 — the two-variable Kolmogorov–Rozanov bound (Gaussian orthant identity).**
+
+For a *jointly Gaussian* pair `(U, V)` with correlation `r`, the standardised pair has
+`P(U > E U, V > E V) = 1/4 + arcsin r / (2π)` (Sheppard's orthant formula), so the
+α-coefficient of the two generated σ-algebras is at least
+`|P(U > EU, V > EV) − P(U > EU)P(V > EV)| = |arcsin r| / (2π) ≥ |r| / (2π)`, which is the
+claim. (Degenerate pairs contribute the junk value `0` on the left.)
+
+Formalising this needs the bivariate-normal orthant probability, i.e. the polar-coordinate
+evaluation of `∫∫_{x,y>0} exp(−(x² − 2rxy + y²)/(2(1−r²))) dx dy`, which Mathlib does not
+have; it is left as a single named debt. -/
+private lemma gaussian_pair_corr_le_alpha_brick [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
+    (hmeas : ∀ t, Measurable (X t)) (hgauss : ProbabilityTheory.IsGaussianProcess X μ)
+    (S T : Finset ℤ) (a b : ℤ → ℝ) :
+    |cov[linComb X S a, linComb X T b; μ]|
+        / (Real.sqrt (variance (linComb X S a) μ) * Real.sqrt (variance (linComb X T b) μ))
+      ≤ 2 * Real.pi * alphaMixCoeff μ (MeasurableSpace.comap (linComb X S a) inferInstance)
+          (MeasurableSpace.comap (linComb X T b) inferInstance) := by
+  sorry
+
 /-- **DEBT (Kolmogorov–Rozanov 1960; FY §2.6.1(viii))**: for a (strictly stationary)
 Gaussian process, α-mixing already implies ρ-mixing (the coefficients are comparable:
-`ρ(n) ≤ 2π α(n)`). -/
+`ρ(n) ≤ 2π α(n)`).
+**Status (2026-08-09).** PROVED over two named bricks — `gaussian_rho_linear_brick`
+(Gaussian maximal correlation is carried by the linear span) and
+`gaussian_pair_corr_le_alpha_brick` (the two-variable arcsin/orthant bound). The
+`sSup`-plumbing, the `ε`-limit and the monotonicity of `α` along
+`σ(∑ a_s X_s) ≤ 𝓕_{-∞}^0`, `σ(∑ b_s X_s) ≤ 𝓕_n^∞` are proved here. -/
 theorem gaussian_rho_le_alpha_debt [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     (hmeas : ∀ t, Measurable (X t))
     -- USER-INPUT: Gaussian process; Kolmogorov–Rozanov
     (hgauss : ProbabilityTheory.IsGaussianProcess X μ) (n : ℕ) :
     rhoCoeff X μ n ≤ 2 * Real.pi * alphaCoeff X μ n := by
-  sorry
+  have hα0 : 0 ≤ alphaCoeff X μ n := alphaMixCoeff_nonneg (mΩ := inferInstance)
+  have hπ : (0:ℝ) ≤ 2 * Real.pi := by positivity
+  refine Real.sSup_le ?_ (by positivity)
+  rintro r ⟨f, g, hfm, hgm, hfL, hgL, rfl⟩
+  refine le_of_forall_pos_le_add fun ε hε => ?_
+  obtain ⟨S, T, a, b, hS, hT, hle⟩ :=
+    gaussian_rho_linear_brick hmeas hgauss n hfm hgm hfL hgL hε
+  have hmain : |cov[linComb X S a, linComb X T b; μ]|
+      / (Real.sqrt (variance (linComb X S a) μ) * Real.sqrt (variance (linComb X T b) μ))
+      ≤ 2 * Real.pi * alphaCoeff X μ n := by
+    refine (gaussian_pair_corr_le_alpha_brick hmeas hgauss S T a b).trans ?_
+    refine mul_le_mul_of_nonneg_left ?_ hπ
+    exact alphaMixCoeff_mono (mΩ := inferInstance)
+      (measurable_linComb_sigmaLE hS a).comap_le (measurable_linComb_sigmaGE hT b).comap_le
+  linarith
 
 end Process2
 
