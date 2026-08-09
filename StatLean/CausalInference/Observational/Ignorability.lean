@@ -100,10 +100,9 @@ private theorem cellMean_obs_eq' (hZ : Measurable Z) (z : Bool) (x : 𝒳) :
     ae_mono hle (ae_restrict_mem hZs)
   have hae : ∀ᵐ ω ∂(μ[|armCell Z X z x]), ω ∈ {ω | Z ω = z} := by
     rw [ProbabilityTheory.cond]
-    exact ae_smul_measure hae0 _
+    exact Measure.ae_smul_measure hae0 _
   refine integral_congr_ae ?_
   filter_upwards [hae] with ω hω
-  simp only [Set.mem_setOf_eq] at hω
   simp only [obs, hω]
   cases z <;> simp
 
@@ -216,8 +215,8 @@ theorem MeanIgnorable_of_ignorable [IsProbabilityMeasure μ]
     have hC : (μ[|cell X x]) {ω | Z ω = false} ≠ 0 := by
       have hcompl : {ω | Z ω = false} = {ω | Z ω = true}ᶜ := by ext ω; simp
       intro h
-      have hsum := measure_add_measure_compl (μ := μ[|cell X x])
-        (hZ (measurableSet_singleton true))
+      have hZt : MeasurableSet {ω | Z ω = true} := hZ (measurableSet_singleton true)
+      have hsum := measure_add_measure_compl (μ := μ[|cell X x]) hZt
       rw [← hcompl, h, add_zero, measure_univ] at hsum
       have hone : propensity μ Z X x = 1 := by
         unfold propensity treatedEvent
