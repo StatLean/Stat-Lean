@@ -1,4 +1,10 @@
 import StatLean.CausalInference.Core.FiniteDefs
+import Mathlib.Logic.Equiv.Prod
+import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Tactic.Ring
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Positivity
 
 /-!
 # The matched-pair experiment — unbiasedness, exact variance, conservativeness
@@ -96,11 +102,55 @@ noncomputable def pairExpect (f : (Fin m → Bool) → ℝ) : ℝ :=
 noncomputable def pairVar (f : (Fin m → Bool) → ℝ) : ℝ :=
   pairExpect fun c => (f c - pairExpect f) ^ 2
 
+section CoordinateSplit
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- Summing a function of the `j`-th coordinate over all `Bool`-valued patterns: split the
+pattern into its `j`-th entry and the rest (`Equiv.funSplitAt`). -/
+private lemma sum_coord (j : ι) (g : Bool → ℝ) :
+    ∑ c : ι → Bool, g (c j)
+      = (Fintype.card ({i : ι // i ≠ j} → Bool) : ℝ) * (g true + g false) := by
+  have hsplit :
+      (∑ c : ι → Bool, g (c j))
+        = ∑ p : Bool × ({i : ι // i ≠ j} → Bool), g p.1 :=
+    Equiv.sum_comp (Equiv.funSplitAt j Bool)
+      (fun p : Bool × ({i : ι // i ≠ j} → Bool) => g p.1)
+  rw [hsplit]
+  simp only [Fintype.sum_prod_type, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
+    Fintype.sum_bool]
+  ring
+
+/-- The number of `Bool`-valued patterns on `ι` is twice the number on `ι` minus one point. -/
+private lemma card_fun_bool_split (j : ι) :
+    (Fintype.card (ι → Bool) : ℝ) = 2 * (Fintype.card ({i : ι // i ≠ j} → Bool) : ℝ) := by
+  have h := sum_coord j (fun _ => (1 : ℝ))
+  rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one] at h
+  rw [h]; ring
+
+private lemma card_sub_ne_zero (j : ι) :
+    (Fintype.card ({i : ι // i ≠ j} → Bool) : ℝ) ≠ 0 := by
+  have : 0 < Fintype.card ({i : ι // i ≠ j} → Bool) := Fintype.card_pos
+  exact_mod_cast this.ne'
+
+/-- The uniform average of a function of one coordinate is the two-point average. -/
+private lemma avg_coord (j : ι) (g : Bool → ℝ) :
+    (Fintype.card (ι → Bool) : ℝ)⁻¹ * ∑ c : ι → Bool, g (c j) = (g true + g false) / 2 := by
+  have hA := card_sub_ne_zero j
+  rw [sum_coord j g, card_fun_bool_split j]
+  field_simp
+
+end CoordinateSplit
+
+private lemma card_fun_bool_fin (m : ℕ) : (Fintype.card (Fin m → Bool) : ℝ) = (2 : ℝ) ^ m := by
+  simp
+
 /-- The design average of a function of a single coordinate is the two-point average — the
 fair-coin property. -/
 theorem pairExpect_single (j : Fin m) (g : Bool → ℝ) :
     pairExpect (fun c => g (c j)) = (g true + g false) / 2 := by
-  sorry
+  unfold pairExpect
+  rw [← card_fun_bool_fin m, avg_coord j g]
 
 /-- The design average of a product of functions of *distinct* coordinates factorizes:
 pairs are independently randomized. -/
