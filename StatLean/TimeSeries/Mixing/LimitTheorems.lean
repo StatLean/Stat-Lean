@@ -897,6 +897,160 @@ private lemma norm_integral_remainder_le [IsProbabilityMeasure μ] {B : Ω → �
     _ ≤ 4 * |v| ^ 3 * T * (∫ ω, B ω ^ 2 ∂μ) + 4 * v ^ 2 * ∫ ω in S, B ω ^ 2 ∂μ := by
         linarith
 
+/-- Cauchy–Schwarz for the Bochner integral, discriminant form. -/
+private lemma sq_integral_mul_le [IsProbabilityMeasure μ] {f g : Ω → ℝ}
+    (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    (∫ ω, f ω * g ω ∂μ) ^ 2 ≤ (∫ ω, f ω ^ 2 ∂μ) * ∫ ω, g ω ^ 2 ∂μ := by
+  have hf2 : Integrable (fun ω => f ω ^ 2) μ := hf.integrable_sq
+  have hg2 : Integrable (fun ω => g ω ^ 2) μ := hg.integrable_sq
+  have hfg : Integrable (fun ω => f ω * g ω) μ := by
+    have := MemLp.integrable_mul (p := 2) (q := 2) hf hg
+    simpa using this
+  set A : ℝ := ∫ ω, f ω ^ 2 ∂μ with hA
+  set Bq : ℝ := ∫ ω, g ω ^ 2 ∂μ with hBq
+  set Cc : ℝ := ∫ ω, f ω * g ω ∂μ with hCc
+  have hA0 : 0 ≤ A := integral_nonneg fun ω => sq_nonneg _
+  have hB0 : 0 ≤ Bq := integral_nonneg fun ω => sq_nonneg _
+  have hkey : ∀ t : ℝ, 0 ≤ A - 2 * t * Cc + t ^ 2 * Bq := by
+    intro t
+    have hi1 : Integrable (fun ω => f ω ^ 2 - 2 * t * (f ω * g ω)) μ :=
+      hf2.sub (hfg.const_mul (2 * t))
+    have hi2 : Integrable (fun ω => t ^ 2 * g ω ^ 2) μ := hg2.const_mul (t ^ 2)
+    have hnn : 0 ≤ ∫ ω, (f ω - t * g ω) ^ 2 ∂μ := integral_nonneg fun ω => sq_nonneg _
+    have e1 : (∫ ω, (f ω ^ 2 - 2 * t * (f ω * g ω) + t ^ 2 * g ω ^ 2) ∂μ)
+        = (∫ ω, (f ω ^ 2 - 2 * t * (f ω * g ω)) ∂μ) + ∫ ω, t ^ 2 * g ω ^ 2 ∂μ :=
+      integral_add hi1 hi2
+    have e2 : (∫ ω, (f ω ^ 2 - 2 * t * (f ω * g ω)) ∂μ)
+        = (∫ ω, f ω ^ 2 ∂μ) - ∫ ω, 2 * t * (f ω * g ω) ∂μ :=
+      integral_sub hf2 (hfg.const_mul (2 * t))
+    have e3 : (∫ ω, 2 * t * (f ω * g ω) ∂μ) = 2 * t * Cc := integral_const_mul _ _
+    have e4 : (∫ ω, t ^ 2 * g ω ^ 2 ∂μ) = t ^ 2 * Bq := integral_const_mul _ _
+    have heq : ∫ ω, (f ω - t * g ω) ^ 2 ∂μ = A - 2 * t * Cc + t ^ 2 * Bq := by
+      rw [integral_congr_ae (Eventually.of_forall
+        (fun ω => by ring : ∀ ω, (f ω - t * g ω) ^ 2
+          = f ω ^ 2 - 2 * t * (f ω * g ω) + t ^ 2 * g ω ^ 2)), e1, e2, e3, e4, ← hA]
+    rwa [heq] at hnn
+  rcases eq_or_lt_of_le hB0 with hB | hB
+  · have hgz : (fun ω => g ω ^ 2) =ᵐ[μ] 0 :=
+      (integral_eq_zero_iff_of_nonneg (fun ω => sq_nonneg (g ω)) hg2).1 hB.symm
+    have hC0 : Cc = 0 := by
+      rw [hCc]
+      refine integral_eq_zero_of_ae ?_
+      filter_upwards [hgz] with ω hω
+      have : g ω = 0 := by
+        have h2 : g ω ^ 2 = 0 := hω
+        nlinarith [sq_nonneg (g ω), h2]
+      simp [this]
+    rw [hC0, ← hB]
+    simp
+  · have h := hkey (Cc / Bq)
+    have hBne : Bq ≠ 0 := ne_of_gt hB
+    have hrw : A - 2 * (Cc / Bq) * Cc + (Cc / Bq) ^ 2 * Bq = A - Cc ^ 2 / Bq := by
+      field_simp
+      ring
+    rw [hrw, sub_nonneg, div_le_iff₀ hB] at h
+    linarith
+
+/-- Boundedness gives membership in every `L^q`. -/
+private lemma memLp_of_abs_bdd [IsProbabilityMeasure μ] {h : Ω → ℝ} (hh : Measurable h)
+    {M : ℝ} (hbd : ∀ᵐ ω ∂μ, |h ω| ≤ M) (q : ℝ≥0∞) : MemLp h q μ := by
+  refine MemLp.mono_exponent ?_ le_top
+  refine memLp_top_of_bound hh.aestronglyMeasurable M ?_
+  filter_upwards [hbd] with ω hω
+  simpa [Real.norm_eq_abs] using hω
+
+/-- **The cubic (Lindeberg-free) remainder bound.**  The global cubic half of
+`norm_expI_taylor` bounds the third-order Taylor remainder of `E e^{i v B}` by
+`4 |v|³ E|B|³`, and Cauchy–Schwarz turns `E|B|³ = E(|B| · B²)` into
+`√(E B² · E B⁴)`.  This is the estimate that replaces the Lindeberg split
+`norm_integral_remainder_le` in the cubic/adaptive route: no truncation level appears,
+so no uniform-integrability input is needed. -/
+private lemma norm_integral_remainder_cubic_le [IsProbabilityMeasure μ] {B : Ω → ℝ}
+    (hB : Measurable B) {K : ℝ} (hbd : ∀ᵐ ω ∂μ, |B ω| ≤ K) (v : ℝ) :
+    ‖∫ ω, (Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I)
+        - (1 + ((v * B ω : ℝ) : ℂ) * Complex.I - ((v * B ω : ℝ) : ℂ) ^ 2 / 2)) ∂μ‖
+      ≤ 4 * |v| ^ 3 * Real.sqrt ((∫ ω, B ω ^ 2 ∂μ) * ∫ ω, B ω ^ 4 ∂μ) := by
+  classical
+  have hK0 : 0 ≤ K := le_trans (abs_nonneg _) hbd.exists.choose_spec
+  have hBmem : ∀ q : ℝ≥0∞, MemLp B q μ := memLp_of_abs_bdd hB hbd
+  have hBi : Integrable B μ := (hBmem 1).integrable le_rfl
+  have hB2 : Integrable (fun ω => B ω ^ 2) μ := (hBmem 2).integrable_sq
+  -- integrability of the Taylor remainder
+  have hexpi : Integrable (fun ω => Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I)) μ := by
+    have hmf : Measurable fun ω => Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I) :=
+      Complex.measurable_exp.comp ((Complex.measurable_ofReal.comp
+        (measurable_const.mul hB)).mul measurable_const)
+    refine MemLp.integrable (q := ⊤) le_top (memLp_top_of_bound hmf.aestronglyMeasurable 1 ?_)
+    filter_upwards with ω
+    rw [Complex.norm_exp_ofReal_mul_I]
+  have ha : Integrable (fun _ : Ω => (1 : ℂ)) μ := integrable_const _
+  have hb : Integrable (fun ω => ((v * B ω : ℝ) : ℂ) * Complex.I) μ :=
+    ((hBi.const_mul v).ofReal).mul_const _
+  have hc : Integrable (fun ω => ((v * B ω : ℝ) : ℂ) ^ 2 / 2) μ := by
+    have h0 : Integrable (fun ω => (((v ^ 2 * B ω ^ 2 : ℝ)) : ℂ)) μ :=
+      ((hB2.const_mul (v ^ 2)).ofReal)
+    refine (h0.div_const 2).congr (Eventually.of_forall fun ω => ?_)
+    push_cast
+    ring
+  have hrem : Integrable (fun ω => Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I)
+      - (1 + ((v * B ω : ℝ) : ℂ) * Complex.I - ((v * B ω : ℝ) : ℂ) ^ 2 / 2)) μ :=
+    hexpi.sub ((ha.add hb).sub hc)
+  -- the cubic pointwise bound
+  have hcube : Integrable (fun ω => 4 * |v| ^ 3 * |B ω| ^ 3) μ := by
+    refine Integrable.mono' (integrable_const (4 * |v| ^ 3 * K ^ 3))
+      (((hB.abs.pow_const 3).const_mul _).aestronglyMeasurable) ?_
+    filter_upwards [hbd] with ω hω
+    have h1 : |B ω| ^ 3 ≤ K ^ 3 := pow_le_pow_left₀ (abs_nonneg _) hω 3
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+    have : (0 : ℝ) ≤ 4 * |v| ^ 3 := by positivity
+    exact mul_le_mul_of_nonneg_left h1 this
+  have hpt : ∀ ω, ‖Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I)
+      - (1 + ((v * B ω : ℝ) : ℂ) * Complex.I - ((v * B ω : ℝ) : ℂ) ^ 2 / 2)‖
+      ≤ 4 * |v| ^ 3 * |B ω| ^ 3 := by
+    intro ω
+    have h1 := (norm_expI_taylor (v * B ω)).1
+    have habs : |v * B ω| ^ 3 = |v| ^ 3 * |B ω| ^ 3 := by rw [abs_mul, mul_pow]
+    calc ‖Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I)
+          - (1 + ((v * B ω : ℝ) : ℂ) * Complex.I - ((v * B ω : ℝ) : ℂ) ^ 2 / 2)‖
+        ≤ 4 * |v * B ω| ^ 3 := h1
+      _ = 4 * |v| ^ 3 * |B ω| ^ 3 := by rw [habs]; ring
+  -- Cauchy–Schwarz on `|B| · B²`
+  have hcs : (∫ ω, |B ω| ^ 3 ∂μ) ≤ Real.sqrt ((∫ ω, B ω ^ 2 ∂μ) * ∫ ω, B ω ^ 4 ∂μ) := by
+    have habs2 : MemLp (fun ω => |B ω|) 2 μ :=
+      memLp_of_abs_bdd hB.abs (by filter_upwards [hbd] with ω hω; simpa using hω) 2
+    have hsq2 : MemLp (fun ω => B ω ^ 2) 2 μ := by
+      refine memLp_of_abs_bdd (hB.pow_const 2) (M := K ^ 2) ?_ 2
+      filter_upwards [hbd] with ω hω
+      rw [abs_of_nonneg (sq_nonneg _)]
+      nlinarith [sq_abs (B ω), abs_nonneg (B ω), hω]
+    have h := sq_integral_mul_le habs2 hsq2
+    have e1 : ∫ ω, |B ω| * B ω ^ 2 ∂μ = ∫ ω, |B ω| ^ 3 ∂μ :=
+      integral_congr_ae (Eventually.of_forall fun ω => by
+        show |B ω| * B ω ^ 2 = |B ω| ^ 3
+        rw [← sq_abs (B ω)]; ring)
+    have e2 : ∫ ω, |B ω| ^ 2 ∂μ = ∫ ω, B ω ^ 2 ∂μ :=
+      integral_congr_ae (Eventually.of_forall fun ω => by
+        show |B ω| ^ 2 = B ω ^ 2
+        rw [sq_abs])
+    have e3 : ∫ ω, (B ω ^ 2) ^ 2 ∂μ = ∫ ω, B ω ^ 4 ∂μ :=
+      integral_congr_ae (Eventually.of_forall fun ω => by
+        show (B ω ^ 2) ^ 2 = B ω ^ 4
+        ring)
+    rw [e1, e2, e3] at h
+    have hnn : (0 : ℝ) ≤ ∫ ω, |B ω| ^ 3 ∂μ :=
+      integral_nonneg fun ω => by positivity
+    calc (∫ ω, |B ω| ^ 3 ∂μ) = Real.sqrt ((∫ ω, |B ω| ^ 3 ∂μ) ^ 2) := (Real.sqrt_sq hnn).symm
+      _ ≤ Real.sqrt ((∫ ω, B ω ^ 2 ∂μ) * ∫ ω, B ω ^ 4 ∂μ) := Real.sqrt_le_sqrt h
+  calc ‖∫ ω, (Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I)
+        - (1 + ((v * B ω : ℝ) : ℂ) * Complex.I - ((v * B ω : ℝ) : ℂ) ^ 2 / 2)) ∂μ‖
+      ≤ ∫ ω, ‖Complex.exp (((v * B ω : ℝ) : ℂ) * Complex.I)
+          - (1 + ((v * B ω : ℝ) : ℂ) * Complex.I - ((v * B ω : ℝ) : ℂ) ^ 2 / 2)‖ ∂μ :=
+        norm_integral_le_integral_norm _
+    _ ≤ ∫ ω, 4 * |v| ^ 3 * |B ω| ^ 3 ∂μ := integral_mono hrem.norm hcube hpt
+    _ = 4 * |v| ^ 3 * ∫ ω, |B ω| ^ 3 ∂μ := integral_const_mul _ _
+    _ ≤ 4 * |v| ^ 3 * Real.sqrt ((∫ ω, B ω ^ 2 ∂μ) * ∫ ω, B ω ^ 4 ∂μ) :=
+        mul_le_mul_of_nonneg_left hcs (by positivity)
+
 /-- **Product-to-exponential comparison.** If `a_n = 1 + z_n` has modulus at most one,
 `Re z_n ≤ 0`, `z_n → 0`, `k_n z_n → w` and `k_n ‖z_n‖² → 0`, then `a_n^{k_n} → e^w`. This
 is the scalar limit that replaces the independent-copy array in the Bernstein scheme:
