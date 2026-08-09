@@ -43,6 +43,20 @@ theorem finiteClass_isAgnosticPACLearnerWith (𝓗 : Finset H)
     (hpos : ∀ h z, 0 ≤ ℓ h z) :
     IsAgnosticPACLearnerWith (↑𝓗 : Set H) ℓ A
       (fun ε δ => ⌈2 * Real.log (2 * 𝓗.card / δ) / ε ^ 2⌉₊) := by
-  sorry
+  -- the `ε ↦ ε/2` substitution of SSBD Corollary 4.4 into the uniform
+  -- convergence half of Corollary 4.6
+  have hUC := finiteClass_hasUniformConvergenceWith 𝓗 h𝓗 hrange hmeas
+  have hPAC := isAgnosticPACLearnerWith_of_hasUniformConvergenceWith hUC hA hpos
+  -- `m^{UC}(ε/2, δ) = ⌈log(2N/δ)/(2(ε/2)²)⌉ = ⌈2 log(2N/δ)/ε²⌉` (the exact
+  -- book constant); the identity also holds at the junk point `ε = 0`
+  have key : ∀ ε L : ℝ, L / (2 * (ε / 2) ^ 2) = 2 * L / ε ^ 2 := by
+    intro ε L
+    rcases eq_or_ne ε 0 with rfl | hne
+    · norm_num
+    · field_simp
+  intro D hD ε δ hε hδ hδ1 n hn
+  refine hPAC D hD ε δ hε hδ hδ1 n ?_
+  show ⌈Real.log (2 * 𝓗.card / δ) / (2 * (ε / 2) ^ 2)⌉₊ ≤ n
+  rwa [key]
 
 end StatLean.StatisticalLearning
