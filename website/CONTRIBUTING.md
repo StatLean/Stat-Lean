@@ -47,7 +47,8 @@ then the formalization note and the reference block.
 
 Required: `id`, `category`, `kind`, `leanName`, `fullName`, `title`, `citation`,
 `file`, `docGenUrl`, `informal`, `summary`, `leanSignature`, `hypotheses`,
-`hasGraph`. Optional: `formalizationNotes`, `shortRef`, `reference`, `keywords`.
+`hasGraph`. Optional: `formalizationNotes`, `shortRef`, `reference`, `keywords`,
+`crossListed`.
 
 Anything else is rejected — the validator uses an exact key set, so a typo in a
 field name fails the build rather than silently doing nothing.
@@ -337,7 +338,23 @@ row taller. The twelve current blurbs run 186–211 characters; stay in that ban
 Existing topics: `parametric`, `hypothesistesting`, `pointestimation`,
 `semiparametric`, `concentration` (displayed as "Probability Inequalities"),
 `highdim`, `multipletesting`, `minimaxity`, `optimization`, `bayesian`,
-`nonparametric`, `probability` (displayed as "Miscellaneous Results").
+`nonparametric`, `statisticalmodels`, `probability` (displayed as
+"Miscellaneous Results").
+
+### Cross-listing a result under a second topic
+
+Some results belong to two subjects at once — the exponential-family pages are
+point estimation *and* a class of statistical models. Give such a result an
+optional `crossListed: ["<other-topic>"]`; it then appears on that topic's page
+and in its search filter, and its own page prints "also in <Topic>" beside the
+breadcrumb.
+
+**Never copy the entry instead.** A duplicate would need a second `id` and a
+second `fullName`, and `fullName` must be unique — it is the key that ties a page
+to its Lean declaration, its `targets.txt` row and its dependency graph. One
+declaration, one page, one graph; `crossListed` only changes where it is listed.
+`category` stays the result's home topic and continues to drive its accent
+colour, its graph-node colour and its prev/next navigation.
 
 Note that `id` and display `name` are decoupled — renaming a topic on the front
 page is a `categories.ts` change only. Do **not** rename the id: it appears in
