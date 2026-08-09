@@ -348,7 +348,8 @@ theorem stratumDiffInMeans_unbiased (S : ScienceTable n) {g : Fin n → Fin K} {
       have := card_inter_true_add_false (stratum g k) z
       omega
     rw [stratumDiffInMeans, hct, hcf, hcast, sum_obs_inter_true, sum_obs_inter_false]
-  show (stratifiedDesign g mk h).expect (fun z => stratumDiffInMeans S g k z) = stratumATE S g k
+  change (stratifiedDesign g mk h).expect (fun z => stratumDiffInMeans S g k z)
+    = stratumATE S g k
   rw [expect_congr hpt, expect_arm_affine]
   -- every unit of the stratum has inclusion probability `mk k / n_k`
   have hEl : ∀ l ∈ stratum g k, (stratifiedDesign g mk h).expect (fun z => ind (z l))
