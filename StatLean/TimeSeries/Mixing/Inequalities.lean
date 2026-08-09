@@ -995,8 +995,8 @@ The gap hypothesis is abstract: the α-coefficient between the cumulative past
 applications supply it via `IsStrictlyStationary.alphaMixCoeff_shift` and
 monotonicity.
 
-**Status: PROVED for every `k ≥ 1`; FALSE AS FROZEN at `k = 0`** (verified — the single
-remaining `sorry` below is that corner, and it is not fillable).  At `k = 0` the index
+**Status: PROVED — REPAIRED to `0 < k` (laptop, 2026-08-09).** The original frozen form
+quantified over all `k`, and its `k = 0` corner is FALSE (verified):  At `k = 0` the index
 type `Fin 0` is empty, so every hypothesis is vacuous and `a` is unconstrained; the left
 side is exactly `‖1 − 1‖ = 0` (empty products, `∫ 1 = 1`) while the right side is
 `16 · (0 − 1) · a = −16a`, negative for every `a > 0`.  The claim `0 ≤ −16a` is therefore
@@ -1007,16 +1007,13 @@ available, proved and axiom-clean, as the sibling
 branch below delegates; new consumers should call that one, since no consumer needs
 `k = 0`.
 
-**Repair attempted and reverted (wave `ts/s2b`).**  Replacing this statement by its
-`0 < k` form — one line, with the proof reducing to the `_of_pos` sibling — was carried out
-and then reverted, because it breaks a consumer *outside* that wave's touch-set:
-`StatLean/TimeSeries/Mixing/LimitTheorems.lean:998`, inside the private
-`norm_integral_prod_blocks_sub_prod_le`, applies this lemma at an unconstrained `k`.  That
-consumer is *itself* false at `k = 0`, for exactly the same reason (its left side is `0`,
-its right side `16·(0−1)·α(s)`), so the repair is one line in each of the two files; it
-needs `LimitTheorems.lean` in the touch-set.  Recorded here so the next wave does not
-rediscover the obstruction. -/
-theorem norm_integral_prod_sub_prod_integral_le {k : ℕ}
+**Repair history.** Wave `ts/s2b` carried out this repair and reverted it because
+`LimitTheorems.lean`'s private `norm_integral_prod_blocks_sub_prod_le` consumed the
+unconstrained form (itself false at `k = 0` the same way). Wave `ts/s5b` then rebuilt that
+consumer with its own `0 < k` hypothesis delegating to `_of_pos`, leaving THIS statement
+consumer-free, so the laptop applied the repair.
+-- USER-INPUT: nonempty block family; FY Prop 2.6 (the k = 0 corner is refutable) -/
+theorem norm_integral_prod_sub_prod_integral_le {k : ℕ} (hk : 0 < k)
     {m : Fin k → MeasurableSpace Ω} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ] (hle : ∀ l, m l ≤ mΩ)
     (ξ : Fin k → Ω → ℂ) (hmeas : ∀ l, Measurable[m l] (ξ l))
@@ -1028,16 +1025,7 @@ theorem norm_integral_prod_sub_prod_integral_le {k : ℕ}
       alphaMixCoeff μ (⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ l, m j) (m ⟨(l : ℕ) + 1, hl⟩) ≤ a) :
     ‖(∫ ω, ∏ l, ξ l ω ∂μ) - ∏ l, ∫ ω, ξ l ω ∂μ‖
       ≤ 16 * ((k : ℝ) - 1) * a := by
-  rcases Nat.eq_zero_or_pos k with hk0 | hk
-  · -- **FALSE CORNER OF THE FROZEN STATEMENT.** For `k = 0` every hypothesis is vacuous
-    -- (`Fin 0` is empty), the left-hand side is exactly `‖1 − 1‖ = 0` (empty products,
-    -- `∫ 1 = 1`), and the right-hand side is `16 · (0 − 1) · a = −16 a`, which is
-    -- negative for every `a > 0`. So the claim `0 ≤ −16 a` is refutable; the statement
-    -- is true exactly for `k ≥ 1`, which is what `norm_integral_prod_sub_prod_integral_le_of_pos`
-    -- proves in full. Reported, not repaired: the statement is frozen.
-    subst hk0
-    sorry
-  · exact norm_integral_prod_sub_prod_integral_le_of_pos hk hle ξ hmeas hbdd hgap
+  exact norm_integral_prod_sub_prod_integral_le_of_pos hk hle ξ hmeas hbdd hgap
 
 
 end TwoAlgebras
