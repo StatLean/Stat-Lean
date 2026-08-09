@@ -54,7 +54,12 @@ import Mathlib.MeasureTheory.Measure.LevyConvergence
   and `σ_Y(M)² → σ²` by Minkowski at every `n`. **Now axiom-clean**, since 2.21(ii) is.
 * **Proposition 2.8 (SLLN)** — α-mixing + `E|X| < ∞` ⇒ `S_n/n → EX` a.s.: literature
   DEBT (the cited route is "α-mixing ⇒ ergodic" + Birkhoff; Mathlib has no pointwise
-  ergodic theorem in the pin).
+  ergodic theorem in the pin). Wave `ts/s10` verified that **no moment route exists under
+  the frozen hypotheses** — they give only `E|X_0| < ∞` and `α(n) → 0` *without a rate*,
+  so there is no second moment for Chebyshev, and the file's fourth-moment brick needs
+  `|X| ≤ C` **and** `Σ α < ∞`, neither of which is assumed. The residue is named and
+  itemised in the theorem's docstring (path-space law + shift invariance; `α → 0 ⇒`
+  ergodicity; the maximal ergodic theorem and Birkhoff; transfer back to `Ω`).
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.6.3,
 Prop 2.8, Thms 2.20–2.21, eq. (2.63) (pp. 74–76). (`FY §2.6.3`.)
@@ -4455,7 +4460,52 @@ theorem clt_of_alphaMixing_debt [IsProbabilityMeasure μ]
 /-- **DEBT (Doob 1953 / Ibragimov–Linnik 1971; FY Proposition 2.8)**: the strong law
 for α-mixing strictly stationary sequences with a first moment. The cited route is
 "α-mixing ⇒ ergodicity" + the Birkhoff pointwise ergodic theorem, which the Mathlib
-pin does not provide. -/
+pin does not provide.
+
+**STATUS (wave `ts/s10`): OPEN, with the residue named and the moment routes ruled out.**
+
+**No moment/Borel–Cantelli route exists under the frozen hypotheses.** They are exactly
+`E|X_0| < ∞` (`hL1`) and `α(n) → 0` (`hmix`, i.e. `IsAlphaMixing`, which is *convergence to
+zero with no rate*). In particular:
+* there is **no second moment**, so Chebyshev is unavailable and the subsequence
+  (`n = m²`) + Borel–Cantelli argument cannot even be started. The fourth-moment brick of
+  this file (`m4_moment4_le`, `m4_tendsto_moment4_div_cube`) needs `|X| ≤ C` *and*
+  `Σ α(j) < ∞`; **neither** is assumed here;
+* adding a second moment would not help: with `α(n) → 0` and no rate, Davydov
+  (`Mixing/Inequalities.abs_covariance_le_davydov`) gives `|γ(n)| ≤ 8 α(n)^{1−2/δ} ‖X_0‖_δ²`
+  only under a `δ > 2` moment, and even then `Σ|γ(n)|` need not converge — the ACVF of an
+  `α`-mixing stationary sequence can fail to be summable, so `n⁻¹ Var S_n` need not even
+  be bounded;
+* truncating at level `n` restores all moments but the resulting variance bound is
+  `Σ_{|k|<n} |γ_n(k)|`, which again needs a mixing **rate** to be `o(n)`.
+So the cited ergodic route is not one convenient proof among several: it is the only one
+the hypotheses support, and it is what the statement is *equivalent* to (Birkhoff for an
+ergodic shift is exactly this statement for the coordinate process).
+
+**NAMED RESIDUE: the Birkhoff pointwise ergodic theorem, absent from the pin.**
+`Mathlib/Dynamics/BirkhoffSum/{Basic,Average,NormedSpace,QuasiMeasurePreserving}.lean`
+contain only the algebraic/metric bookkeeping for `birkhoffSum`/`birkhoffAverage` (no a.e.
+convergence statement), and `Mathlib/Analysis/InnerProductSpace/MeanErgodic.lean` is von
+Neumann's **mean** ergodic theorem — `L²` convergence, which does not give the a.e.
+statement asserted here. `Mathlib/Dynamics/Ergodic/` supplies `Ergodic`, `Conservative`
+(Poincaré recurrence) and `MeasurePreserving`, but no maximal ergodic theorem.
+
+**What a closing wave has to build** (four items; only (i) and (iv) are cheap):
+(i) the law of the whole path, `ν = μ.map (fun ω t => X t ω)` on `ℤ → ℝ` with
+    `MeasurableSpace.pi`, and its invariance under the shift — from `IsStrictlyStationary`
+    (finite-dimensional invariance) by a π-system/cylinder uniqueness argument;
+(ii) `α(n) → 0 ⇒ the shift is ergodic for ν`: for a shift-invariant `A`, approximate `A`
+    in measure by a cylinder set `B ∈ σ(X_1,…,X_j)` and use
+    `|ν(A ∩ σ^{-n}A) − ν(A)²| ≤ α(n − j) + 3 ν(A Δ B) → 0`, so `ν(A) = ν(A)²`. The
+    approximation step (measurable sets by algebra elements) is itself not in the pin in
+    usable form;
+(iii) the **maximal ergodic theorem** (Garsia's proof is short) and then Birkhoff —
+    `S_n/n → E[f | invariant σ-field]` a.e.;
+(iv) transport of the a.e. statement back to `Ω` along the path map, which is free because
+    the convergence event is a measurable set of the path σ-algebra.
+Until (ii)+(iii) exist, no partial credit is available here: unlike the Bosq inequalities,
+this statement admits no regime that is trivially true (the conclusion is an a.e. limit,
+not a bound that can be vacuous). -/
 theorem slln_of_alphaMixing_debt [IsProbabilityMeasure μ]
     {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
     (hstat : IsStrictlyStationary X μ)

@@ -29,7 +29,16 @@ The quantitative toolbox for α-mixing processes:
   combinatorial statement (no probability) — is proved by `Tuple.sort` symmetrisation
   (fibres of size `4!`) plus gap parametrisation, see its docstring;
 * **Theorems 2.18/2.19 (Bosq exponential inequalities)** — literature DEBTS (used only
-  by ch. 5 KDE uniform rates, outside the current scope).
+  by ch. 5 KDE uniform rates, outside the current scope). **Brick-decomposed in wave
+  `ts/s10`**: 2.18 is proved in the two regimes `b ≤ ε` (the event is null, since
+  `|S_n/n| ≤ b` a.s.) and "printed bound `≥ 1`" (a probability is `≤ 1`); 2.19 is proved in
+  the vacuous regime (it has no boundedness, hence no null-event regime). The single
+  residue of **both** is **Bradley's coupling lemma** (1983) — the printed constants
+  `22 (1+4b/ε)^{1/2}` and `11 (…) α^{2k/(2k+1)}` are exactly its constants. The
+  Volkonskii–Rozanov decoupling of this file **cannot** substitute for it: its error is
+  proportional to the *product of the sup norms* of the factors, which for `e^{λ S_i}` is
+  exponentially large in the block count at every `λ` reaching the printed exponent. See
+  the two docstrings for the quantitative version of that finding.
 
 **Scope note.** FY's Theorem 2.17 (Doukhan–Louhichi moment bounds via the
 covariance-decay functional `M_{r,q}`) and the general-`q` Proposition 2.7 are *not*
@@ -1873,7 +1882,46 @@ theorem moment4_partial_sum_le [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ
 /-- **DEBT (Bosq 1998 Thm 1.3; FY Theorem 2.18)**: bounded zero-mean strictly
 stationary process; for every `ε > 0` and integer `1 ≤ qb ≤ n/2`,
 `P(|S_n/n| > ε) ≤ 4 exp(−ε² qb/(8 b²)) + 22 (1 + 4b/ε)^{1/2} qb α([n/(2 qb)])`.
-Used only by ch. 5 KDE uniform rates (outside current scope). -/
+Used only by ch. 5 KDE uniform rates (outside current scope).
+
+**STATUS (wave `ts/s10`): brick-decomposed; two regimes proved, one named residue.**
+The proof below discharges, unconditionally:
+* **regime 1** (`b ≤ ε`): `|X_t| ≤ b` a.s. forces `|S_n/n| ≤ b` a.s., so the event is
+  `μ`-null and the left-hand side is `0 ≤` the (nonnegative) right-hand side;
+* **regime 2** (`1 ≤` the printed bound): a probability is `≤ 1`.
+The residue is therefore exactly the regime `ε < b` **and** printed bound `< 1`, i.e.
+`ε² qb > 8 b² log 4` together with `22 (1+4b/ε)^{1/2} qb α([n/(2qb)]) < 1`.
+
+**NAMED RESIDUE: Bradley's coupling lemma** (R. C. Bradley, *Approximation theorems for
+strongly mixing random variables*, Michigan Math. J. 30 (1983) 69–81). Bosq's proof splits
+`{1,…,n}` into `2 qb` Bernstein blocks of length `p = [n/(2qb)]`, replaces the `qb` odd
+block sums one at a time by **independent copies with the same marginal law**, and then
+applies Hoeffding's inequality at level `nε/2` to the independent surrogates. The printed
+constants carry Bradley's signature — `11` and the exponent `1/2` (respectively `11` and
+`2k/(2k+1)` in 2.19) — one factor `11 (1+4b/ε)^{1/2} qb α(p)` per family (odd and even),
+giving `22 (1+4b/ε)^{1/2} qb α(p)`. The exponential term is *implied* by, and strictly
+weaker than, the Hoeffding bound on the surrogates: at level `nε/2` per family, with `qb`
+blocks and `|S_block| ≤ b p`, `p = n/(2qb)`, the optimal `λ = 2ε qb/(b² n)` gives
+`2 exp(−ε² qb/(2b²))` per family, i.e. `4 exp(−ε² qb/(2b²)) ≤ 4 exp(−ε² qb/(8b²))`; the
+printed exponent carries a factor-4 slack (absorbing the remainder block `n − 2 qb p` and
+Bosq's cruder Hoeffding constant). So the *exponential* half of the printed bound is not
+where the difficulty lies — the coupling is.
+
+**FINDING — the integral-level (Volkonskii–Rozanov) decoupling cannot replace the
+coupling here.** `norm_integral_prod_sub_prod_integral_le_of_pos` bounds
+`|E Π f_i − Π E f_i|` by `16 (k−1) α(s) Π ‖f_i‖_∞`, i.e. by the product of the **sup
+norms**. Take `f_i = exp(λ S_i)` over the `qb` odd blocks. To reach the printed exponent,
+Markov's inequality at level `nε/2` needs `λ · nε/2 ≳ ε² qb/(8b²)`, i.e.
+`λ ≳ ε qb/(4 b² n)`; then `λ b p qb = λ b n/2 ≳ ε qb/(8b)`, so the Volkonskii–Rozanov error
+is at least `16 qb α(p) e^{ε qb/(8b)}` — **exponentially large in `qb`**, whereas the
+printed error term is *linear* in `qb`. Normalising the factors by their own means does
+not repair this: `Π E e^{λ S_i} ≈ e^{qb ε²/(2b²)}` and `ε/b > ε²/(2b²)` whenever `ε < 2b`
+(and the residual regime has `ε < b`), so the *relative* error still diverges. The
+decoupling must therefore be performed on the **law** (in total variation), not inside a
+single expectation — which is exactly what Bradley's lemma does and what this file's
+covariance toolbox cannot do. Formalising it needs a regular conditional distribution on a
+standard Borel target plus an auxiliary independent uniform (an enlargement of `Ω`);
+Mathlib's `Measure.condKernel`/disintegration API is the entry point. -/
 theorem bosq_exponential_debt [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     (hmeas : ∀ t, Measurable (X t)) (hstat : IsStrictlyStationary X μ)
     {b : ℝ} (hb : 0 < b)
@@ -1885,7 +1933,50 @@ theorem bosq_exponential_debt [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     (μ {ω | ε < |(n : ℝ)⁻¹ * ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω|}).toReal
       ≤ 4 * Real.exp (-(ε ^ 2 * qb) / (8 * b ^ 2))
         + 22 * (1 + 4 * b / ε) ^ ((1 : ℝ) / 2) * qb * alphaCoeff X μ (n / (2 * qb)) := by
-  sorry
+  classical
+  have hα0 : 0 ≤ alphaCoeff X μ (n / (2 * qb)) := alphaCoeff_nonneg' X _
+  have hfac : (0 : ℝ) ≤ (1 + 4 * b / ε) ^ ((1 : ℝ) / 2) :=
+    Real.rpow_nonneg (by positivity) _
+  have hRHS0 : (0 : ℝ) ≤ 4 * Real.exp (-(ε ^ 2 * qb) / (8 * b ^ 2))
+      + 22 * (1 + 4 * b / ε) ^ ((1 : ℝ) / 2) * qb * alphaCoeff X μ (n / (2 * qb)) := by
+    have h1 : (0 : ℝ) ≤ 4 * Real.exp (-(ε ^ 2 * qb) / (8 * b ^ 2)) := by positivity
+    have h2 : (0 : ℝ) ≤ 22 * (1 + 4 * b / ε) ^ ((1 : ℝ) / 2) * qb
+        * alphaCoeff X μ (n / (2 * qb)) := by
+      have h3 : (0 : ℝ) ≤ 22 * (1 + 4 * b / ε) ^ ((1 : ℝ) / 2) * qb := by positivity
+      exact mul_nonneg h3 hα0
+    linarith
+  -- REGIME 1 (proved): the level exceeds the a.s. bound `|S_n/n| ≤ b`, so the event is null
+  by_cases hεb : b ≤ ε
+  · have hn1 : 1 ≤ n := by omega
+    have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn1
+    have hcoord : ∀ᵐ ω ∂μ, ∀ t : ℕ, |X ((t : ℤ) + 1) ω| ≤ b := by
+      rw [ae_all_iff]; intro t; exact hbdd _
+    have hae : ∀ᵐ ω ∂μ, |(n : ℝ)⁻¹ * ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω| ≤ b := by
+      filter_upwards [hcoord] with ω hω
+      have h1 : |∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω| ≤ b * (n : ℝ) := by
+        calc |∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω|
+            ≤ ∑ t ∈ Finset.range n, |X ((t : ℤ) + 1) ω| := Finset.abs_sum_le_sum_abs _ _
+          _ ≤ ∑ _t ∈ Finset.range n, b := Finset.sum_le_sum fun t _ => hω t
+          _ = b * (n : ℝ) := by rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]; ring
+      rw [abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹)]
+      rw [inv_mul_le_iff₀ hn0]
+      linarith
+    have hnull : μ {ω | ε < |(n : ℝ)⁻¹ * ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω|} = 0 := by
+      refine measure_mono_null ?_ (ae_iff.1 hae)
+      intro ω hω
+      simp only [Set.mem_setOf_eq, not_le] at hω ⊢
+      linarith
+    rw [hnull, ENNReal.toReal_zero]
+    exact hRHS0
+  -- REGIME 2 (proved): the printed bound is vacuous
+  · by_cases hone : (1 : ℝ) ≤ 4 * Real.exp (-(ε ^ 2 * qb) / (8 * b ^ 2))
+        + 22 * (1 + 4 * b / ε) ^ ((1 : ℝ) / 2) * qb * alphaCoeff X μ (n / (2 * qb))
+    · refine le_trans ?_ hone
+      rw [← ENNReal.toReal_one]
+      exact ENNReal.toReal_mono (by simp) prob_le_one
+    -- RESIDUE: `ε < b` and the printed bound `< 1`. Needs Bradley's coupling lemma; see
+    -- the docstring for why the Volkonskii–Rozanov telescope is provably too lossy here.
+    · sorry
 
 /-- **DEBT (Bosq 1998 Thm 1.4; FY Theorem 2.19, eq. (2.62))**: under Cramér's condition
 `E|X_t|^k ≤ C^{k−2} k! E X_t²` (all `k ≥ 3`), for any `n ≥ 2`, `k ≥ 3`,
@@ -1893,7 +1984,26 @@ theorem bosq_exponential_debt [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
 `P(|S_n| > nε) ≤ 2(1 + n/qb + μ(ε)) e^{−qb·μ(ε)}
   + 11 n (1 + 5 ε⁻¹ (E|X_t|^k)^{1/(2k+1)}) α([n/(qb+1)])^{2k/(2k+1)}`.
 (The book prints `E X_t^k` in the second factor; we state the weaker bound with
-`E|X_t|^k ≥ E X_t^k`, which the cited result implies.) -/
+`E|X_t|^k ≥ E X_t^k`, which the cited result implies.)
+
+**STATUS (wave `ts/s10`): brick-decomposed; one regime proved, one named residue.**
+The proof discharges the **vacuous regime** (printed bound `≥ 1`, where a probability is
+`≤ 1`) and leaves the complementary regime open. Note that the boundedness regime available
+to `bosq_exponential_debt` (`b ≤ ε` ⇒ null event) has **no analogue here**: the Cramér
+condition (2.62) does not bound `X` in `L^∞`, so `|S_n/n|` is unbounded and the event is
+never null.
+
+**NAMED RESIDUE: Bradley's coupling lemma, `L^k` form** — the same residue as
+`bosq_exponential_debt`, and again the *only* one. The printed exponents `1/(2k+1)` and
+`2k/(2k+1)` and the constant `11` are exactly Bradley's for a variable coupled in `L^k`;
+`qb+1` blocks are decoupled one at a time (hence `11 n (…) α([n/(qb+1)])^{2k/(2k+1)}`),
+and the Cramér condition then feeds **Bernstein's** inequality (not Hoeffding's) on the
+independent surrogates, producing `μ(ε) = ε²/(25 E X² + 5Cε)` and the prefactor
+`2 (1 + n/qb + μ(ε)) e^{−qb μ(ε)}`. The obstruction to replacing the coupling by this
+file's covariance toolbox is the one recorded on `bosq_exponential_debt`: the
+Volkonskii–Rozanov error is proportional to the *product of the sup norms* of the factors,
+which for `e^{λ S_i}` is exponentially large in the number of blocks at every `λ` reaching
+the printed exponent — and here the factors are not even bounded. -/
 theorem bosq_cramer_debt [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     (hmeas : ∀ t, Measurable (X t)) (hstat : IsStrictlyStationary X μ)
     {C : ℝ} (hC : 0 < C)
@@ -1910,7 +2020,18 @@ theorem bosq_cramer_debt [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
           * Real.exp (-(qb : ℝ) * (ε ^ 2 / (25 * ∫ ω, X 0 ω ^ 2 ∂μ + 5 * C * ε)))
         + 11 * n * (1 + 5 * ε⁻¹ * (∫ ω, |X 0 ω| ^ k ∂μ) ^ ((1 : ℝ) / (2 * k + 1)))
           * alphaCoeff X μ (n / (qb + 1)) ^ ((2 * k : ℝ) / (2 * k + 1)) := by
-  sorry
+  classical
+  -- REGIME (proved): the printed bound is vacuous
+  by_cases hone : (1 : ℝ) ≤
+      2 * (1 + (n : ℝ) / qb + ε ^ 2 / (25 * ∫ ω, X 0 ω ^ 2 ∂μ + 5 * C * ε))
+          * Real.exp (-(qb : ℝ) * (ε ^ 2 / (25 * ∫ ω, X 0 ω ^ 2 ∂μ + 5 * C * ε)))
+        + 11 * n * (1 + 5 * ε⁻¹ * (∫ ω, |X 0 ω| ^ k ∂μ) ^ ((1 : ℝ) / (2 * k + 1)))
+          * alphaCoeff X μ (n / (qb + 1)) ^ ((2 * k : ℝ) / (2 * k + 1))
+  · refine le_trans ?_ hone
+    rw [← ENNReal.toReal_one]
+    exact ENNReal.toReal_mono (by simp) prob_le_one
+  -- RESIDUE: Bradley's coupling lemma in its `L^k` form; see the docstring.
+  · sorry
 
 end Process
 
