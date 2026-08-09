@@ -46,6 +46,15 @@ hypotheses — invariance is only needed for the *reversal* results below). -/
 noncomputable def pairLaw (κ : ProbabilityTheory.Kernel S S) (π : Measure S) :
     Measure (S × S) := π ⊗ₘ κ
 
+instance (κ : ProbabilityTheory.Kernel S S) [ProbabilityTheory.IsMarkovKernel κ]
+    (π : Measure S) [IsProbabilityMeasure π] : IsProbabilityMeasure (pairLaw κ π) := by
+  unfold pairLaw; infer_instance
+
+instance (κ : ProbabilityTheory.Kernel S S) [ProbabilityTheory.IsMarkovKernel κ]
+    (π : Measure S) [IsProbabilityMeasure π] :
+    IsProbabilityMeasure ((pairLaw κ π).map Prod.swap) :=
+  MeasureTheory.isProbabilityMeasure_map measurable_swap.aemeasurable
+
 /-- The **time-reversed transition kernel**: the disintegration in the *second*
 coordinate of the swapped stationary pair law. On a standard Borel space this exists by
 `Measure.condKernel`. Formalizes the backward transition probability
