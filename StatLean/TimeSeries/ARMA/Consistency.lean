@@ -2396,6 +2396,157 @@ private lemma l2n_sub_psum_le [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ2 
   refine le_trans (l2n_sub_le_add (hmemX.sub (hmemP K)) ((hmemP K).sub (hmemP N))) ?_
   linarith [hincr K hK]
 
+/-- A block `Σ_{N ≤ d < K} π_d x_{i+1+d}` of the (time-reversed) residual. The rows of
+`Π_T` are `icoResid π X 0 (T − i) i`. -/
+private noncomputable def icoResid (π : ℕ → ℝ) (X : ℤ → Ω → ℝ) (N K i : ℕ) : Ω → ℝ :=
+  fun ω => ∑ d ∈ Finset.Ico N K, π d * X ((i : ℤ) + 1 + (d : ℕ)) ω
+
+private lemma memLp_icoResid {X : ℤ → Ω → ℝ} (hmem : ∀ t : ℤ, MemLp (X t) 2 μ)
+    (π : ℕ → ℝ) (N K i : ℕ) : MemLp (icoResid π X N K i) 2 μ :=
+  memLp_finset_sum _ fun _ _ => (hmem _).const_mul _
+
+private lemma l2n_icoResid_le {X : ℤ → Ω → ℝ} {π : ℕ → ℝ} {c0 : ℝ}
+    (hmem : ∀ t : ℤ, MemLp (X t) 2 μ) (hc : ∀ t : ℤ, l2n μ (X t) = c0)
+    (hπ : Summable fun n => |π n|) (N K i : ℕ) :
+    l2n μ (icoResid π X N K i) ≤ (∑' k : ℕ, |π (k + N)|) * c0 := by
+  have hc0 : 0 ≤ c0 := by rw [← hc 0]; exact l2n_nonneg _ _
+  refine le_trans (l2n_finset_sum_le _ _ fun d => (hmem _).const_mul _) ?_
+  have hterm : ∀ d ∈ Finset.Ico N K,
+      l2n μ (fun ω => π d * X ((i : ℤ) + 1 + (d : ℕ)) ω) = |π d| * c0 := by
+    intro d _
+    rw [l2n_const_mul, hc]
+  rw [Finset.sum_congr rfl hterm, ← Finset.sum_mul]
+  refine mul_le_mul_of_nonneg_right ?_ hc0
+  rw [Finset.sum_Ico_eq_sum_range]
+  have hre : ∑ k ∈ Finset.range (K - N), |π (N + k)|
+      = ∑ k ∈ Finset.range (K - N), |π (k + N)| :=
+    Finset.sum_congr rfl fun k _ => by rw [Nat.add_comm N k]
+  rw [hre]
+  exact ((summable_nat_add_iff N).2 hπ).sum_le_tsum _ fun k _ => abs_nonneg _
+
+private lemma icoResid_sub {X : ℤ → Ω → ℝ} (π : ℕ → ℝ) {K K' : ℕ} (h : K ≤ K') (i : ℕ) :
+    (fun ω => icoResid π X 0 K' i ω - icoResid π X 0 K i ω) = icoResid π X K K' i := by
+  funext ω
+  simp only [icoResid]
+  rw [← Finset.sum_Ico_consecutive (fun d => π d * X ((i : ℤ) + 1 + (d : ℕ)) ω)
+    (Nat.zero_le K) h]
+  ring
+
+/-- The two truncation levels of the composite filter differ by at most the coefficient
+tail at the smaller level. -/
+private lemma l2n_icoResid_diff_le {X : ℤ → Ω → ℝ} {π : ℕ → ℝ} {c0 : ℝ}
+    (hmem : ∀ t : ℤ, MemLp (X t) 2 μ) (hc : ∀ t : ℤ, l2n μ (X t) = c0)
+    (hπ : Summable fun n => |π n|) (K K' i : ℕ) :
+    l2n μ (fun ω => icoResid π X 0 K i ω - icoResid π X 0 K' i ω)
+      ≤ (∑' k : ℕ, |π (k + min K K')|) * c0 := by
+  rcases le_total K K' with h | h
+  · have hmin : min K K' = K := min_eq_left h
+    rw [hmin]
+    have he : (fun ω => icoResid π X 0 K i ω - icoResid π X 0 K' i ω)
+        = fun ω => -(icoResid π X K K' i ω) := by
+      rw [← icoResid_sub π h i]
+      funext ω
+      ring
+    rw [he, l2n_neg]
+    exact l2n_icoResid_le hmem hc hπ K K' i
+  · have hmin : min K K' = K' := min_eq_right h
+    rw [hmin, icoResid_sub π h i]
+    exact l2n_icoResid_le hmem hc hπ K' K i
+
+private lemma blockResid_eq_sum (π ψ : ℕ → ℝ) (ε : ℤ → Ω → ℝ) (m i : ℕ) (ω : Ω) :
+    blockResid π ψ ε m i ω
+      = ∑ d ∈ Finset.range m,
+          π d * ∑ n ∈ Finset.range m, ψ n * ε ((i : ℤ) + 1 + (d : ℕ) - (n : ℕ)) ω := by
+  have h : (∑ x : Fin m × Fin m, π (x.1 : ℕ) * ψ (x.2 : ℕ) *
+        ε (1 + ((x.1 : ℕ) : ℤ) - ((x.2 : ℕ) : ℤ) + (i : ℤ)) ω)
+      = ∑ d ∈ Finset.range m, ∑ n ∈ Finset.range m,
+          π d * ψ n * ε (1 + (d : ℤ) - (n : ℤ) + (i : ℤ)) ω :=
+    sum_fin_prod_eq m (fun d n => π d * ψ n * ε (1 + (d : ℤ) - (n : ℤ) + (i : ℤ)) ω)
+  rw [blockResid, h]
+  refine Finset.sum_congr rfl fun d _ => ?_
+  rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun n _ => ?_
+  have harg : (1 : ℤ) + (d : ℤ) - (n : ℤ) + (i : ℤ) = (i : ℤ) + 1 + (d : ℕ) - (n : ℕ) := by
+    push_cast
+    ring
+  rw [harg]
+  ring
+
+/-- The `L²` defect between the `m`-truncated residual and its doubly truncated
+(finite-noise-window) version: only the `ψ`-tail survives. -/
+private lemma l2n_icoResid_sub_blockResid [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ2 : ℝ}
+    {X ε : ℤ → Ω → ℝ} (hX : IsLinearProcessOf ψ X ε μ) (hψ : Summable fun j => |ψ j|)
+    (hε : IsWhiteNoise ε σ2 μ) (hmeas : ∀ t, Measurable (X t))
+    {π : ℕ → ℝ} (hπ : Summable fun n => |π n|) (m i : ℕ) :
+    l2n μ (fun ω => icoResid π X 0 m i ω - blockResid π ψ ε m i ω)
+      ≤ (∑' n : ℕ, |π n|) * ((∑' k : ℕ, |ψ (k + m)|) * Real.sqrt σ2) := by
+  have htail0 : 0 ≤ (∑' k : ℕ, |ψ (k + m)|) * Real.sqrt σ2 := by
+    refine mul_nonneg (tsum_nonneg fun k => abs_nonneg _) (Real.sqrt_nonneg _)
+  have hmemX : ∀ t : ℤ, MemLp (X t) 2 μ := fun t => hX.memLp hψ hε hmeas t
+  have hmemP : ∀ (t : ℤ) (K : ℕ),
+      MemLp (fun ω => ∑ n ∈ Finset.range K, ψ n * ε (t - (n : ℕ)) ω) 2 μ :=
+    fun t K => memLp_finset_sum _ fun n _ => (hε.memLp _).const_mul _
+  have hrw : (fun ω => icoResid π X 0 m i ω - blockResid π ψ ε m i ω)
+      = fun ω => ∑ d ∈ Finset.range m, π d *
+          (X ((i : ℤ) + 1 + (d : ℕ)) ω
+            - ∑ n ∈ Finset.range m, ψ n * ε (((i : ℤ) + 1 + (d : ℕ)) - (n : ℕ)) ω) := by
+    funext ω
+    rw [blockResid_eq_sum, icoResid, Finset.range_eq_Ico]
+    rw [← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun d _ => ?_
+    ring
+  rw [hrw]
+  refine le_trans (l2n_finset_sum_le _ _ fun d =>
+    ((hmemX _).sub (hmemP _ m)).const_mul _) ?_
+  have hterm : ∀ d ∈ Finset.range m,
+      l2n μ (fun ω => π d * (X ((i : ℤ) + 1 + (d : ℕ)) ω
+        - ∑ n ∈ Finset.range m, ψ n * ε (((i : ℤ) + 1 + (d : ℕ)) - (n : ℕ)) ω))
+        ≤ |π d| * ((∑' k : ℕ, |ψ (k + m)|) * Real.sqrt σ2) := by
+    intro d _
+    rw [l2n_const_mul]
+    exact mul_le_mul_of_nonneg_left (l2n_sub_psum_le hX hψ hε hmeas _ m) (abs_nonneg _)
+  refine le_trans (Finset.sum_le_sum hterm) ?_
+  rw [← Finset.sum_mul]
+  refine mul_le_mul_of_nonneg_right ?_ htail0
+  exact hπ.sum_le_tsum _ fun n _ => abs_nonneg _
+
+private lemma l2n_blockResid_le [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ2 : ℝ}
+    {ε : ℤ → Ω → ℝ} (hψ : Summable fun j => |ψ j|) (hε : IsWhiteNoise ε σ2 μ)
+    {π : ℕ → ℝ} (hπ : Summable fun n => |π n|) (m i : ℕ) :
+    l2n μ (blockResid π ψ ε m i) ≤ (∑' n : ℕ, |π n|) * ((∑' n : ℕ, |ψ n|) * Real.sqrt σ2) := by
+  have hΨ0 : 0 ≤ (∑' n : ℕ, |ψ n|) * Real.sqrt σ2 :=
+    mul_nonneg (tsum_nonneg fun k => abs_nonneg _) (Real.sqrt_nonneg _)
+  have hmemP : ∀ t : ℤ, MemLp (fun ω => ∑ n ∈ Finset.range m, ψ n * ε (t - (n : ℕ)) ω) 2 μ :=
+    fun t => memLp_finset_sum _ fun n _ => (hε.memLp _).const_mul _
+  have hrw : blockResid π ψ ε m i
+      = fun ω => ∑ d ∈ Finset.range m, π d *
+          ∑ n ∈ Finset.range m, ψ n * ε (((i : ℤ) + 1 + (d : ℕ)) - (n : ℕ)) ω := by
+    funext ω
+    exact blockResid_eq_sum π ψ ε m i ω
+  rw [hrw]
+  refine le_trans (l2n_finset_sum_le _ _ fun d => (hmemP _).const_mul _) ?_
+  have hinner : ∀ t : ℤ, l2n μ (fun ω => ∑ n ∈ Finset.range m, ψ n * ε (t - (n : ℕ)) ω)
+      ≤ (∑' n : ℕ, |ψ n|) * Real.sqrt σ2 := by
+    intro t
+    refine le_trans (l2n_finset_sum_le _ _ fun n => (hε.memLp _).const_mul _) ?_
+    have hterm : ∀ n ∈ Finset.range m, l2n μ (fun ω => ψ n * ε (t - (n : ℕ)) ω)
+        = |ψ n| * Real.sqrt σ2 := by
+      intro n _
+      rw [l2n_const_mul, l2n_noise hε]
+    rw [Finset.sum_congr rfl hterm, ← Finset.sum_mul]
+    exact mul_le_mul_of_nonneg_right (hψ.sum_le_tsum _ fun n _ => abs_nonneg _)
+      (Real.sqrt_nonneg _)
+  have hterm : ∀ d ∈ Finset.range m,
+      l2n μ (fun ω => π d * ∑ n ∈ Finset.range m,
+          ψ n * ε (((i : ℤ) + 1 + (d : ℕ)) - (n : ℕ)) ω)
+        ≤ |π d| * ((∑' n : ℕ, |ψ n|) * Real.sqrt σ2) := by
+    intro d _
+    rw [l2n_const_mul]
+    exact mul_le_mul_of_nonneg_left (hinner _) (abs_nonneg _)
+  refine le_trans (Finset.sum_le_sum hterm) ?_
+  rw [← Finset.sum_mul]
+  exact mul_le_mul_of_nonneg_right (hπ.sum_le_tsum _ fun n _ => abs_nonneg _) hΨ0
+
 open Matrix in
 /-- **DEBT — step (C) of the `armaProfileS_tendstoInProb` route**: the residual
 sum-of-squares LLN `T⁻¹‖Π_T x‖² →p σ² · Σ_j c_j²`.
