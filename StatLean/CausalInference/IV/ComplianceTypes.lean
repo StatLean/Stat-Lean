@@ -111,8 +111,19 @@ theorem ind_d1_sub_ind_d0 (ω : Ω) :
     ind (d1 ω) - ind (d0 ω)
       = Set.indicator (typeSet d1 d0 ComplianceType.complier) (fun _ => (1 : ℝ)) ω
         - Set.indicator (typeSet d1 d0 ComplianceType.defier) (fun _ => (1 : ℝ)) ω := by
-  simp only [Set.indicator_apply, mem_typeSet_complier, mem_typeSet_defier, ind]
-  cases h1 : d1 ω <;> cases h0 : d0 ω <;> norm_num
+  cases h1 : d1 ω <;> cases h0 : d0 ω
+  · rw [Set.indicator_of_notMem (by simp [mem_typeSet_complier, h1]),
+      Set.indicator_of_notMem (by simp [mem_typeSet_defier, h0])]
+    simp [ind]
+  · rw [Set.indicator_of_notMem (by simp [mem_typeSet_complier, h1]),
+      Set.indicator_of_mem (mem_typeSet_defier.2 ⟨h1, h0⟩)]
+    simp [ind]
+  · rw [Set.indicator_of_mem (mem_typeSet_complier.2 ⟨h1, h0⟩),
+      Set.indicator_of_notMem (by simp [mem_typeSet_defier, h1])]
+    simp [ind]
+  · rw [Set.indicator_of_notMem (by simp [mem_typeSet_complier, h0]),
+      Set.indicator_of_notMem (by simp [mem_typeSet_defier, h1])]
+    simp [ind]
 
 /-- In the treated arm the observed treatment equals `D(1)`; in the control arm it equals
 `D(0)` — the observed-treatment analogue of the consistency assumption. -/
