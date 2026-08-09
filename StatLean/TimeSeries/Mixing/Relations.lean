@@ -1444,7 +1444,59 @@ theorem not_isAlphaMixing_of_deterministic [IsProbabilityMeasure μ]
 
 /-- **DEBT (Pham–Tran 1985; FY §2.6.1(v))**: a stationary causal ARMA process with
 iid innovations admitting an (absolutely continuous) density is exponentially
-β-mixing. -/
+β-mixing.
+
+**Status (2026-08-09, wave 4): OBSTRUCTION RECORDED — not closable inside this file's
+touch set.** The statement is *true* (Pham–Tran 1985), and the intended route is standard,
+but three of its four ingredients are unavailable here. The route and the exact gaps:
+
+1. *Identification of the solution.* `hstat` + `hroot` do force `X` to be the causal
+   solution, and — worth recording, because it is often over-assumed — **no invertibility
+   of the MA polynomial is needed**: writing the AR part in companion form `Z_t = A Z_{t-1}`
+   with `A` the companion matrix of `b`, `hroot` gives spectral radius `< 1`, so the
+   difference of two stationary solutions satisfies `Y_t = A^k Y_{t-k} → 0` in probability
+   (tightness of `Y_{t-k}` is strict stationarity), hence `= 0`. This step needs only §2.1
+   material. **Available in principle**, but see (4).
+2. *The Markov chain.* The mixing statement is about the σ-algebras of the **process**;
+   the Markov object is the state `Z_t = (X_t, …, X_{t-p+1}, ε_t, …, ε_{t-q+1})`. Since each
+   `X_s` is a *coordinate* of `Z_s`, `σ{X_s : s ≤ 0} ⊆ σ{Z_s : s ≤ 0}` and
+   `σ{X_s : s ≥ n} ⊆ σ{Z_s : s ≥ n}`, so `β_X(n) ≤ β_Z(n)` by monotonicity — **again no
+   invertibility is required** (the state is *not* recovered from finitely many `X`'s, and
+   it does not have to be). **GAP:** `Mixing/MarkovBridge.lean` supplies `IsMarkovOf` and
+   the Davydov/Bradley bridge only for a **real-valued** kernel `Kernel ℝ ℝ`; the ARMA state
+   lives in `ℝ^{p+q}`. A vector-valued (or `StandardBorelSpace`-valued) restatement of
+   `IsMarkovOf`, `condExp_sigmaGE_indicator_brick`, `betaMixCoeff_two_marginal_brick` and
+   `betaCoeff_eq_integral_tvDist_debt` is a prerequisite. (The proofs there are already
+   state-space-agnostic — they use no property of `ℝ` beyond measurability — so this is a
+   generalisation of *statements*, i.e. outside a `sorry`-filling session's mandate.)
+3. *Geometric ergodicity of the state chain.* **GAP, and the sharp one.** The available
+   engine is `ForMathlib/Markov/HarrisTheorem.lean`'s `nlARKernel_geometricallyErgodic`,
+   which fails here twice over:
+   * its hypotheses on the innovation density are `Measurable g`, **`Continuous g`** and
+     **`∀ x, 0 < g x`** (the continuity is a *documented strengthening* of FY's hypothesis,
+     recorded in that theorem's own docstring). The frozen hypothesis `hdens` here supplies
+     only `Measurable g` — no continuity, and no positivity anywhere. Pham–Tran's theorem
+     is genuinely stronger than what the Harris engine proves: it extracts a minorization
+     from an *arbitrary* absolutely continuous innovation law (via a Lebesgue-point /
+     nonzero-a.c.-component argument on the `(p+q)`-step transition), which the engine's
+     "positive continuous density on a compact window" route cannot see.
+   * `nlARKernel` is the kernel of `X_t = f(X_{t-1}, …, X_{t-p-1}) + ε_t`, i.e. a **pure
+     AR** recursion; for `q ≥ 1` the ARMA state also carries the innovation lags and its
+     transition map is not of `nlARKernel` shape. Even for `q = 0` the drift hypothesis
+     `|f x| ≤ lam * (⨆ i, |x i|) + c` with `lam < 1` is a **sup-norm** contraction, which a
+     stable companion matrix supplies only after passing to a power `A^k` — usable via
+     `IsGeometricallyErgodic.of_pow`, but only once (2) exists.
+4. *Import layer.* This file is the concept layer of §2.6 and imports neither
+   `Stationarity/ARMAExistence` (by the deliberate separation recorded in its own
+   `USER-INPUT` comment below) nor the `ForMathlib/Markov/*` stack. Every ingredient above
+   lives on the other side of that edge.
+
+**Repair.** The statement becomes provable from the existing engine after (a) generalising
+`Mixing/MarkovBridge.lean` to a `StandardBorelSpace` state, and (b) either strengthening
+`hdens` to `∃ g, Continuous g ∧ (∀ x, 0 < g x) ∧ …` (matching every other consumer of
+`nlARKernel_geometricallyErgodic` in this project, e.g. `Threshold/TAR.lean`) with `q = 0`,
+or proving the Pham–Tran minorization for a merely absolutely continuous innovation law as
+a new `ForMathlib/Markov` brick. -/
 theorem arma_betaCoeff_exponential_debt [IsProbabilityMeasure μ]
     {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b a σ2 X ε μ) (hstat : IsStrictlyStationary X μ)
@@ -1462,7 +1514,49 @@ theorem arma_betaCoeff_exponential_debt [IsProbabilityMeasure μ]
 
 /-- **DEBT (Basrak–Davis–Mikosch 2002; FY §2.6.1(x))**: a strictly stationary
 GARCH(p, q) process with `Σᵢ bᵢ + Σⱼ aⱼ < 1` whose iid innovations have a Lebesgue
-density positive in a neighbourhood of `0` is exponentially α-mixing. -/
+density positive in a neighbourhood of `0` is exponentially α-mixing.
+
+**Status (2026-08-09, wave 4): OBSTRUCTION RECORDED.** This is the harder of the two
+model-level mixing debts, and the frozen hypotheses are missing a *specific*, nameable
+ingredient. What is available and what is not:
+
+* **Available.** `hsum : ∑ b + ∑ a < 1` is exactly the second-moment contraction: from
+  `recVol`, `recX` and `indep_past` (which give `E[X_{t-i}² | past] = σ_{t-i}²`), the
+  volatility state `V_t = (σ_t², …, σ_{t-q+1}², X_{t-1}², …, X_{t-p+1}²)` satisfies
+  `E[‖V_t‖₁ | V_{t-1}] ≤ (∑ b + ∑ a) ‖V_{t-1}‖₁ + c₀`, a **Foster–Lyapunov drift** with
+  `V(v) = ‖v‖₁` and rate `∑ b + ∑ a < 1`. This is the drift half of Harris' theorem and it
+  *is* supplied by the frozen hypotheses. `2α ≤ β` (`two_mul_alphaMixCoeff_le_betaMixCoeff`, proved
+  above) then makes the β-route admissible.
+* **Missing ingredient (the sharp one): a minorization / small set.** The chain is driven
+  by the *random-coefficient* recursion `σ_t² = c₀ + b₁σ_{t-1}²ε_{t-1}² + … + a₁σ_{t-1}² +
+  …`, in which the innovation enters **multiplicatively through `ε²`**. Two consequences:
+  1. The one-step law of `V_t` given `V_{t-1} = v` is supported on a `q`-dimensional
+     algebraic image of the noise vector, and is *degenerate* whenever `v = 0`; the noise
+     cannot move the state off the ray through `c₀·e₁` when `‖v‖ = 0`. Positivity of `g`
+     only on `|x| < δ` (the frozen `hdens`) therefore gives a lower bound on the transition
+     density only on the shrinking region `{σ_t² ≤ c₀ + δ² · (…)}` — this is the
+     "collapse" region, *not* a small set for the whole level set `{V ≤ R}` that Harris'
+     theorem needs. BDM 2002 instead prove a **`T`-chain / Feller + open-set irreducibility**
+     statement, i.e. they use that `x ↦ g` is positive on a *neighbourhood of the whole
+     support of the stationary law after `k` steps*, together with local continuity.
+  2. `hdens` supplies neither `Continuous g` nor positivity away from `0`, so
+     `ForMathlib/Markov/HarrisTheorem.lean`'s `hasMinorization_nlAR_pow` — which needs
+     `Continuous g` **and** `∀ x, 0 < g x` — is inapplicable; and `nlARKernel` is in any case
+     the *additive* AR kernel `x ↦ f(x) + ε`, not the multiplicative GARCH recursion, so
+     even a strengthened density hypothesis would not connect the two.
+* **Missing infrastructure (shared with `arma_betaCoeff_exponential_debt`).** The state is
+  vector-valued, and `Mixing/MarkovBridge.lean`'s bridge (`IsMarkovOf`, the Bradley
+  reduction, Davydov's identity) is stated only for `Kernel ℝ ℝ`; and the process
+  σ-algebras `σ{X_s}` sit inside the *state* σ-algebras (`X_t = σ_t ε_t` is a function of
+  `(V_t, ε_t)`), so the reduction `α_X(n) ≤ α_V(n-1)` needs the vector-valued form.
+
+**Repair (minimal).** Add to the frozen hypotheses: `Continuous g` and positivity of `g` on
+a *neighbourhood of the support* rather than just near `0` (BDM assume `ε` has a positive
+density on `ℝ`, or at least on a set of full support), and build a
+`ForMathlib/Markov` minorization brick for the multiplicative recursion `v ↦ A(ε) v + c₀`
+(a random-coefficient / iterated-function-system minorization). The drift half then needs
+no new work — `hsum` already gives it — and `harris_theorem` plus the vector-valued bridge
+closes the statement. -/
 theorem garch_alphaCoeff_exponential_debt [IsProbabilityMeasure μ]
     {c0 : ℝ} {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ} {X σvol ε : ℤ → Ω → ℝ}
     (h : IsGARCH c0 b a X σvol ε μ) (hstat : IsStrictlyStationary X μ)
