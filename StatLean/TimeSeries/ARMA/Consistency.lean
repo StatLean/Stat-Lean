@@ -1,4 +1,5 @@
 import StatLean.TimeSeries.ARMA.ScoreAnalysis
+import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Matrix.Spectrum
 import Mathlib.Analysis.Matrix.PosDef
 import Mathlib.Probability.StrongLaw
@@ -92,6 +93,414 @@ private lemma exists_geometric_bound_armaPi {p q : ℕ} {b : Fin p → ℝ} {a :
     exact hB.2 z hz
   obtain ⟨C, hC, r, hr0, hr1, hbnd⟩ := exists_geometric_bound_armaPsi (fun i => -b i) hroot
   exact ⟨C, hC, r, hr0, hr1, fun n => by rw [armaPi_eq_armaPsi]; exact hbnd n⟩
+
+/-! ### The locally uniform geometric bound (the `mle_consistent` brick)
+
+`exists_geometric_bound_armaPsi` (and hence `exists_geometric_bound_armaPi` above) is
+stated *non-quantitatively*: it produces `C` and `r` with no control by the radius or by
+the sup-bound of the transfer function, so it cannot be used as a black box to get a
+bound that is uniform over a compact family of parameters. This block redoes its Cauchy
+estimate carrying the radius and the sup-bound as parameters
+(`abs_armaPsi_le_of_disc_bounds`), and then runs the compactness recipe
+(`exists_radius_nonvanishing`, `exists_disc_bounds`) to obtain the uniform statement
+`exists_uniform_geometric_bound_arma`, which is the single brick both halves of
+`mle_consistent`'s remaining debt — the continuity of `θ ↦ armaContrastVar θ₀ θ` and the
+stochastic-equicontinuity estimate — were reduced to. -/
+
+section GeometricBrick
+
+open Metric Polynomial
+open scoped ENNReal Real
+
+private lemma hasSum_polyEval_mul {c : ℕ → ℂ} {z S : ℂ} (P : Polynomial ℂ)
+    (h : HasSum (fun n => c n * z ^ n) S) :
+    HasSum (fun n => (∑ k ∈ Finset.range (n + 1), P.coeff k * c (n - k)) * z ^ n)
+      (P.eval z * S) := by
+  classical
+  have hcz : ∀ k, P.natDegree < k → P.coeff k = 0 := fun k hk =>
+    Polynomial.coeff_eq_zero_of_natDegree_lt hk
+  have hkey : ∀ k : ℕ, HasSum (fun m => (if k ≤ m then P.coeff k * c (m - k) else 0) * z ^ m)
+      (P.coeff k * z ^ k * S) := by
+    intro k
+    have h1 : HasSum (fun n => P.coeff k * z ^ k * (c n * z ^ n)) (P.coeff k * z ^ k * S) :=
+      h.mul_left _
+    have hg : Function.Injective (fun n : ℕ => k + n) := add_right_injective k
+    have hzero : ∀ x ∉ Set.range (fun n : ℕ => k + n),
+        (if k ≤ x then P.coeff k * c (x - k) else 0) * z ^ x = 0 := by
+      intro x hx
+      rw [if_neg, zero_mul]
+      intro hkx
+      exact hx ⟨x - k, by show k + (x - k) = x; omega⟩
+    refine (hg.hasSum_iff hzero).1 ?_
+    have heq : ((fun m => (if k ≤ m then P.coeff k * c (m - k) else 0) * z ^ m) ∘
+        fun n : ℕ => k + n) = fun n => P.coeff k * z ^ k * (c n * z ^ n) := by
+      funext n
+      simp only [Function.comp_apply, if_pos (Nat.le_add_right k n), Nat.add_sub_cancel_left,
+        pow_add]
+      ring
+    rw [heq]
+    exact h1
+  have hsum := hasSum_sum (s := Finset.range (P.natDegree + 1)) (fun k _ => hkey k)
+  have hrhs : ∑ k ∈ Finset.range (P.natDegree + 1), P.coeff k * z ^ k * S = P.eval z * S := by
+    rw [← Finset.sum_mul, ← Polynomial.eval_eq_sum_range]
+  rw [hrhs] at hsum
+  have hfun : (fun m => ∑ k ∈ Finset.range (P.natDegree + 1),
+        (if k ≤ m then P.coeff k * c (m - k) else 0) * z ^ m)
+      = fun n => (∑ k ∈ Finset.range (n + 1), P.coeff k * c (n - k)) * z ^ n := by
+    funext m
+    rw [← Finset.sum_mul]
+    congr 1
+    obtain ⟨N, hNd, hNm⟩ : ∃ N : ℕ, P.natDegree ≤ N ∧ m ≤ N :=
+      ⟨max P.natDegree m, le_max_left _ _, le_max_right _ _⟩
+    have e1 : ∑ k ∈ Finset.range (P.natDegree + 1),
+          (if k ≤ m then P.coeff k * c (m - k) else 0)
+        = ∑ k ∈ Finset.range (N + 1), (if k ≤ m then P.coeff k * c (m - k) else 0) := by
+      have hsub : Finset.range (P.natDegree + 1) ⊆ Finset.range (N + 1) := by
+        intro k hk; simp only [Finset.mem_range] at hk ⊢; omega
+      refine Finset.sum_subset hsub fun k _ hk => ?_
+      simp only [Finset.mem_range, not_lt] at hk
+      rw [hcz k (by omega)]
+      simp
+    have e2 : ∑ k ∈ Finset.range (m + 1), P.coeff k * c (m - k)
+        = ∑ k ∈ Finset.range (N + 1), (if k ≤ m then P.coeff k * c (m - k) else 0) := by
+      have hsub : Finset.range (m + 1) ⊆ Finset.range (N + 1) := by
+        intro k hk; simp only [Finset.mem_range] at hk ⊢; omega
+      rw [← Finset.sum_subset hsub (fun k _ hk => by
+        simp only [Finset.mem_range, not_lt] at hk
+        rw [if_neg (by omega)])]
+      exact Finset.sum_congr rfl fun k hk => by
+        simp only [Finset.mem_range] at hk
+        rw [if_pos (by omega)]
+    rw [e1, e2]
+  rwa [hfun] at hsum
+
+private lemma hasSum_polyEval (P : Polynomial ℂ) (z : ℂ) :
+    HasSum (fun n => P.coeff n * z ^ n) (P.eval z) := by
+  classical
+  have h : HasSum (fun n => P.coeff n * z ^ n)
+      (∑ n ∈ Finset.range (P.natDegree + 1), P.coeff n * z ^ n) :=
+    hasSum_sum_of_ne_finset_zero (fun n hn => by
+      simp only [Finset.mem_range, not_lt] at hn
+      show P.coeff n * z ^ n = 0
+      rw [Polynomial.coeff_eq_zero_of_natDegree_lt (by omega), zero_mul])
+  rwa [← Polynomial.eval_eq_sum_range] at h
+/-- **Quantitative Cauchy estimate for the ARMA transfer coefficients.** -/
+private lemma abs_armaPsi_le_of_disc_bounds {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ)
+    {R Mnum dlow : ℝ} (hR : 1 < R) (hd : 0 < dlow)
+    (hlow : ∀ z : ℂ, ‖z‖ ≤ R → dlow ≤ ‖Polynomial.aeval z (arPoly b)‖)
+    (hup : ∀ z : ℂ, ‖z‖ ≤ R → ‖Polynomial.aeval z (maPoly a)‖ ≤ Mnum) (n : ℕ) :
+    |armaPsi b a n| ≤ (Mnum / dlow) * (R⁻¹) ^ n := by
+  classical
+  have hR0 : (0:ℝ) < R := lt_trans zero_lt_one hR
+  obtain ⟨A, hAdef⟩ : ∃ A : Polynomial ℂ, A = (maPoly a).map (algebraMap ℝ ℂ) := ⟨_, rfl⟩
+  obtain ⟨B, hBdef⟩ : ∃ B : Polynomial ℂ, B = (arPoly b).map (algebraMap ℝ ℂ) := ⟨_, rfl⟩
+  have hAc : ∀ k, A.coeff k = ((maPoly a).coeff k : ℂ) := by
+    intro k; rw [hAdef, Polynomial.coeff_map]; simp
+  have hBc : ∀ k, B.coeff k = ((arPoly b).coeff k : ℂ) := by
+    intro k; rw [hBdef, Polynomial.coeff_map]; simp
+  have hAev : ∀ z : ℂ, A.eval z = Polynomial.aeval z (maPoly a) := by
+    intro z; rw [hAdef, Polynomial.aeval_def, Polynomial.eval₂_eq_eval_map]
+  have hBev : ∀ z : ℂ, B.eval z = Polynomial.aeval z (arPoly b) := by
+    intro z; rw [hBdef, Polynomial.aeval_def, Polynomial.eval₂_eq_eval_map]
+  have hBne : ∀ z : ℂ, ‖z‖ ≤ R → B.eval z ≠ 0 := by
+    intro z hz h0
+    have := hlow z hz
+    rw [← hBev, h0, norm_zero] at this
+    linarith
+  have hb : NoRootClosedDisc b := by
+    intro z hz
+    rw [← hBev]
+    exact hBne z (le_trans hz (le_of_lt hR))
+  have hsum : Summable fun n => |armaPsi b a n| := summable_abs_armaPsi a hb
+  obtain ⟨g, hgdef⟩ : ∃ g : ℂ → ℂ, g = fun z => A.eval z / B.eval z := ⟨_, rfl⟩
+  obtain ⟨Ψ, hΨ⟩ : ∃ P : FormalMultilinearSeries ℂ ℂ ℂ,
+      P = FormalMultilinearSeries.ofScalars ℂ (fun n => ((armaPsi b a n : ℝ) : ℂ)) := ⟨_, rfl⟩
+  have hΨnorm : ∀ n, ‖Ψ n‖ = |armaPsi b a n| := by
+    intro n; rw [hΨ, FormalMultilinearSeries.ofScalars_norm]; simp
+  have hΨapp : ∀ (n : ℕ) (z : ℂ), Ψ n (fun _ => z) = ((armaPsi b a n : ℝ) : ℂ) * z ^ n := by
+    intro n z; rw [hΨ, FormalMultilinearSeries.ofScalars_apply_eq, smul_eq_mul]
+  have hrad1 : (1 : ℝ≥0∞) ≤ Ψ.radius := by
+    have := Ψ.le_radius_of_bound (∑' n, |armaPsi b a n|) (r := 1) (fun n => by
+      rw [hΨnorm]
+      simpa using hsum.le_tsum n (fun m _ => abs_nonneg _))
+    simpa using this
+  -- the power series sums to `g` on the open unit ball
+  have hHasSum : ∀ z : ℂ, ‖z‖ < 1 → HasSum (fun n => Ψ n (fun _ => z)) (g z) := by
+    intro z hz
+    have hzle : ‖z‖ ≤ 1 := le_of_lt hz
+    have hzR : ‖z‖ ≤ R := le_trans hzle (le_of_lt hR)
+    have hsz : Summable fun n => ((armaPsi b a n : ℝ) : ℂ) * z ^ n := by
+      refine Summable.of_norm (hsum.of_nonneg_of_le (fun n => norm_nonneg _) (fun n => ?_))
+      rw [norm_mul, norm_pow]
+      simp only [Complex.norm_real, Real.norm_eq_abs]
+      have : ‖z‖ ^ n ≤ 1 := pow_le_one₀ (norm_nonneg _) hzle
+      nlinarith [abs_nonneg (armaPsi b a n), pow_nonneg (norm_nonneg z) n]
+    have hS := hsz.hasSum
+    have h1 := hasSum_polyEval_mul (c := fun n => ((armaPsi b a n : ℝ) : ℂ)) B hS
+    have hcoef : ∀ m : ℕ,
+        (∑ k ∈ Finset.range (m + 1), B.coeff k * ((armaPsi b a (m - k) : ℝ) : ℂ))
+          = A.coeff m := by
+      intro m
+      rw [hAc, ← arPoly_conv_armaPsi b a m]
+      push_cast [hBc]
+      rfl
+    simp only [hcoef] at h1
+    have hkey := h1.unique (hasSum_polyEval A z)
+    have hval : g z = ∑' n, ((armaPsi b a n : ℝ) : ℂ) * z ^ n := by
+      rw [hgdef]
+      simp only
+      rw [← hkey]
+      exact mul_div_cancel_left₀ _ (hBne z hzR)
+    simp only [hΨapp]
+    rw [hval]
+    exact hS
+  have hΨball : HasFPowerSeriesOnBall g Ψ 0 1 :=
+    { r_le := hrad1
+      r_pos := by norm_num
+      hasSum := by
+        intro y hy
+        rw [zero_add]
+        refine hHasSum y ?_
+        have h1 : ‖y‖ₑ < 1 := by simpa [edist_eq_enorm_sub] using hy
+        rw [show ((1:ℝ≥0∞)) = ((1:NNReal) : ℝ≥0∞) by simp, enorm_lt_coe] at h1
+        exact_mod_cast h1 }
+  -- differentiability on the larger closed ball
+  have hdiff : DifferentiableOn ℂ g (Metric.closedBall 0 R) := by
+    intro z hz
+    rw [Metric.mem_closedBall, dist_zero_right] at hz
+    refine DifferentiableAt.differentiableWithinAt ?_
+    rw [hgdef]
+    exact A.differentiableAt.div B.differentiableAt (hBne z hz)
+  obtain ⟨R', hR'c⟩ : ∃ R' : NNReal, ((R' : ℝ)) = R :=
+    ⟨R.toNNReal, Real.coe_toNNReal _ hR0.le⟩
+  have hR'pos : (0:NNReal) < R' := by
+    have : (0:ℝ) < (R' : ℝ) := by rw [hR'c]; exact hR0
+    exact_mod_cast this
+  have hdiff' : DifferentiableOn ℂ g (Metric.closedBall 0 (R' : ℝ)) := by
+    rw [hR'c]; exact hdiff
+  have hcauchy := hdiff'.hasFPowerSeriesOnBall hR'pos
+  have heq : Ψ = cauchyPowerSeries g 0 (R' : ℝ) :=
+    hΨball.hasFPowerSeriesAt.eq_formalMultilinearSeries hcauchy.hasFPowerSeriesAt
+  -- the sup bound on the circle
+  have hgbd : ∀ z : ℂ, ‖z‖ ≤ R → ‖g z‖ ≤ Mnum / dlow := by
+    intro z hz
+    have h1 : ‖A.eval z‖ ≤ Mnum := by rw [hAev]; exact hup z hz
+    have h2 : dlow ≤ ‖B.eval z‖ := by rw [hBev]; exact hlow z hz
+    have hBz : 0 < ‖B.eval z‖ := lt_of_lt_of_le hd h2
+    rw [hgdef]
+    simp only [norm_div]
+    rw [div_le_div_iff₀ hBz hd]
+    nlinarith [norm_nonneg (A.eval z)]
+  have hcont : Continuous fun θ : ℝ => ‖g (circleMap 0 R θ)‖ := by
+    refine (hdiff.continuousOn.comp_continuous (continuous_circleMap 0 R) ?_).norm
+    intro θ
+    simp [Metric.mem_closedBall, dist_zero_right, norm_circleMap_zero, abs_of_nonneg hR0.le]
+  have hint : (∫ θ in (0:ℝ)..(2*π), ‖g (circleMap 0 R θ)‖) ≤ 2*π*(Mnum/dlow) := by
+    have hmono := intervalIntegral.integral_mono_on (μ := volume)
+      (le_of_lt Real.two_pi_pos) (hcont.intervalIntegrable 0 (2*π))
+      (intervalIntegrable_const (c := Mnum / dlow))
+      (fun x _ => hgbd _ (by simp [norm_circleMap_zero, abs_of_nonneg hR0.le]))
+    rw [intervalIntegral.integral_const, sub_zero, smul_eq_mul] at hmono
+    exact hmono
+  have hMd : 0 ≤ Mnum / dlow := le_trans (norm_nonneg _) (hgbd 0 (by simp [hR0.le]))
+  have hfin := norm_cauchyPowerSeries_le g 0 (R' : ℝ) n
+  rw [← heq, hΨnorm, hR'c] at hfin
+  refine hfin.trans ?_
+  have hpow : (0:ℝ) ≤ |R|⁻¹ ^ n := by positivity
+  have hfac : (2 * π)⁻¹ * (∫ θ in (0:ℝ)..(2*π), ‖g (circleMap 0 R θ)‖) ≤ Mnum / dlow := by
+    have h2pi : (0:ℝ) < 2 * π := Real.two_pi_pos
+    rw [inv_mul_le_iff₀ h2pi]
+    linarith [hint]
+  have habsR : |R| = R := abs_of_nonneg hR0.le
+  rw [habsR]
+  exact mul_le_mul_of_nonneg_right hfac (by positivity)
+
+
+/-- **Step A of the compactness recipe**: a radius `R > 1` on which a compactly-indexed
+continuous family of denominators, nonvanishing on the closed unit disc, is still
+nonvanishing. -/
+private lemma exists_radius_nonvanishing {ι : Type*} [TopologicalSpace ι] {K : Set ι}
+    (hK : IsCompact K) {den : ι → ℂ → ℂ}
+    (hden : Continuous fun x : ι × ℂ => den x.1 x.2)
+    (hne : ∀ x ∈ K, ∀ z : ℂ, ‖z‖ ≤ 1 → den x z ≠ 0) :
+    ∃ R : ℝ, 1 < R ∧ R ≤ 2 ∧ ∀ x ∈ K, ∀ z : ℂ, ‖z‖ ≤ R → den x z ≠ 0 := by
+  classical
+  -- the "polar" parametrisation `z = s · w`, `‖w‖ ≤ 1`, `s ∈ [1, 2]`
+  have hcont : Continuous fun w : ι × ℂ × ℝ => den w.1 ((w.2.2 : ℂ) * w.2.1) := by
+    have hmap : Continuous fun w : ι × ℂ × ℝ => ((w.1, ((w.2.2 : ℂ) * w.2.1)) : ι × ℂ) :=
+      continuous_fst.prodMk (((Complex.continuous_ofReal.comp
+        (continuous_snd.comp continuous_snd))).mul (continuous_fst.comp continuous_snd))
+    exact hden.comp hmap
+  have hD : IsCompact (K ×ˢ (Metric.closedBall (0:ℂ) 1 ×ˢ Set.Icc (1:ℝ) 2)) :=
+    hK.prod ((isCompact_closedBall _ _).prod isCompact_Icc)
+  have hZ : IsCompact ((K ×ˢ (Metric.closedBall (0:ℂ) 1 ×ˢ Set.Icc (1:ℝ) 2)) ∩
+      {w : ι × ℂ × ℝ | den w.1 ((w.2.2 : ℂ) * w.2.1) = 0}) :=
+    hD.inter_right (isClosed_eq hcont continuous_const)
+  -- the decomposition `z = s · (z / s)` with `s = max ‖z‖ 1`
+  have hdecomp : ∀ (R : ℝ), R ≤ 2 → ∀ (x : ι), x ∈ K → ∀ z : ℂ, ‖z‖ ≤ R →
+      ∃ w : ℂ, ∃ s : ℝ, ‖w‖ ≤ 1 ∧ 1 ≤ s ∧ s ≤ 2 ∧ s ≤ max R 1 ∧ (s : ℂ) * w = z := by
+    intro R hR2 x hx z hz
+    rcases le_or_gt ‖z‖ 1 with h | h
+    · exact ⟨z, 1, h, le_rfl, by norm_num, le_max_right _ _, by norm_num⟩
+    · refine ⟨z / (‖z‖ : ℂ), ‖z‖, ?_, le_of_lt h, le_trans hz hR2, ?_, ?_⟩
+      · rw [norm_div]
+        simp only [Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (norm_nonneg z)]
+        rw [div_self (by positivity)]
+      · exact le_trans hz (le_max_left _ _)
+      · have hzne : ((‖z‖ : ℝ) : ℂ) ≠ 0 := by
+          simp only [ne_eq, Complex.ofReal_eq_zero]
+          exact ne_of_gt (lt_trans zero_lt_one h)
+        field_simp
+  rcases Set.eq_empty_or_nonempty ((K ×ˢ (Metric.closedBall (0:ℂ) 1 ×ˢ Set.Icc (1:ℝ) 2)) ∩
+      {w : ι × ℂ × ℝ | den w.1 ((w.2.2 : ℂ) * w.2.1) = 0}) with hempty | hne'
+  · refine ⟨2, by norm_num, le_rfl, fun x hx z hz => ?_⟩
+    obtain ⟨w, s, hw, hs1, hs2, _, hsw⟩ := hdecomp 2 le_rfl x hx z hz
+    intro h0
+    have : (x, w, s) ∈ (K ×ˢ (Metric.closedBall (0:ℂ) 1 ×ˢ Set.Icc (1:ℝ) 2)) ∩
+        {w : ι × ℂ × ℝ | den w.1 ((w.2.2 : ℂ) * w.2.1) = 0} := by
+      refine ⟨⟨hx, ?_, ?_⟩, ?_⟩
+      · simpa [Metric.mem_closedBall, dist_zero_right] using hw
+      · exact ⟨hs1, hs2⟩
+      · simpa [hsw] using h0
+    rw [hempty] at this
+    exact this
+  · obtain ⟨w0, hw0mem, hw0min⟩ := hZ.exists_isMinOn hne'
+      ((continuous_snd.comp continuous_snd).continuousOn)
+    have hs0 : 1 < w0.2.2 := by
+      rcases lt_or_eq_of_le hw0mem.1.2.2.1 with h | h
+      · exact h
+      · exfalso
+        refine hne w0.1 hw0mem.1.1 w0.2.1 (by
+          simpa [Metric.mem_closedBall, dist_zero_right] using hw0mem.1.2.1) ?_
+        have := hw0mem.2
+        simp only [Set.mem_setOf_eq] at this
+        rwa [← h, Complex.ofReal_one, one_mul] at this
+    refine ⟨min ((1 + w0.2.2) / 2) 2, ?_, min_le_right _ _, fun x hx z hz => ?_⟩
+    · exact lt_min (by linarith) (by norm_num)
+    · obtain ⟨w, s, hw, hs1, hs2, hsR, hsw⟩ :=
+        hdecomp (min ((1 + w0.2.2) / 2) 2) (min_le_right _ _) x hx z hz
+      intro h0
+      have hmem : (x, w, s) ∈ (K ×ˢ (Metric.closedBall (0:ℂ) 1 ×ˢ Set.Icc (1:ℝ) 2)) ∩
+          {w : ι × ℂ × ℝ | den w.1 ((w.2.2 : ℂ) * w.2.1) = 0} := by
+        refine ⟨⟨hx, ?_, ⟨hs1, hs2⟩⟩, ?_⟩
+        · simpa [Metric.mem_closedBall, dist_zero_right] using hw
+        · simpa [hsw] using h0
+      have hmin := hw0min hmem
+      have hlt : s < w0.2.2 := by
+        have h1 : s ≤ max (min ((1 + w0.2.2) / 2) 2) 1 := hsR
+        have h2 : max (min ((1 + w0.2.2) / 2) 2) 1 < w0.2.2 := by
+          refine max_lt ?_ hs0
+          exact lt_of_le_of_lt (min_le_left _ _) (by linarith)
+        linarith
+      exact absurd hmin (not_le.2 hlt)
+
+/-- **Step B of the compactness recipe**: uniform numerator/denominator bounds on a
+closed disc of radius `R > 1`. -/
+private lemma exists_disc_bounds {ι : Type*} [TopologicalSpace ι] {K : Set ι}
+    (hK : IsCompact K) {num den : ι → ℂ → ℂ}
+    (hnum : Continuous fun x : ι × ℂ => num x.1 x.2)
+    (hden : Continuous fun x : ι × ℂ => den x.1 x.2)
+    (hne : ∀ x ∈ K, ∀ z : ℂ, ‖z‖ ≤ 1 → den x z ≠ 0) :
+    ∃ R Mnum dlow : ℝ, 1 < R ∧ 0 < dlow ∧
+      (∀ x ∈ K, ∀ z : ℂ, ‖z‖ ≤ R → dlow ≤ ‖den x z‖) ∧
+      (∀ x ∈ K, ∀ z : ℂ, ‖z‖ ≤ R → ‖num x z‖ ≤ Mnum) := by
+  classical
+  obtain ⟨R, hR1, hR2, hRne⟩ := exists_radius_nonvanishing hK hden hne
+  rcases Set.eq_empty_or_nonempty K with rfl | hKne
+  · exact ⟨R, 0, 1, hR1, one_pos, by simp, by simp⟩
+  have hR0 : (0:ℝ) < R := lt_trans zero_lt_one hR1
+  have hcpt : IsCompact (K ×ˢ Metric.closedBall (0:ℂ) R) :=
+    hK.prod (isCompact_closedBall _ _)
+  have hcne : (K ×ˢ Metric.closedBall (0:ℂ) R).Nonempty :=
+    hKne.prod (Metric.nonempty_closedBall.2 hR0.le)
+  obtain ⟨x0, hx0, hmin⟩ := hcpt.exists_isMinOn hcne
+    (Continuous.continuousOn (hden.norm))
+  obtain ⟨x1, hx1, hmax⟩ := hcpt.exists_isMaxOn hcne
+    (Continuous.continuousOn (hnum.norm))
+  have hmem : ∀ (x : ι), x ∈ K → ∀ z : ℂ, ‖z‖ ≤ R → (x, z) ∈ K ×ˢ Metric.closedBall (0:ℂ) R := by
+    intro x hx z hz
+    exact ⟨hx, by simpa [Metric.mem_closedBall, dist_zero_right] using hz⟩
+  refine ⟨R, ‖num x1.1 x1.2‖, ‖den x0.1 x0.2‖, hR1, ?_, ?_, ?_⟩
+  · refine norm_pos_iff.2 (hRne x0.1 hx0.1 x0.2 ?_)
+    simpa [Metric.mem_closedBall, dist_zero_right] using hx0.2
+  · intro x hx z hz
+    exact hmin (hmem x hx z hz)
+  · intro x hx z hz
+    exact hmax (hmem x hx z hz)
+
+
+private lemma aeval_arPoly_complex {p : ℕ} (b : Fin p → ℝ) (z : ℂ) :
+    Polynomial.aeval z (arPoly b) = 1 - ∑ i : Fin p, (b i : ℂ) * z ^ ((i : ℕ) + 1) := by
+  simp [arPoly]
+
+private lemma aeval_maPoly_complex {q : ℕ} (a : Fin q → ℝ) (z : ℂ) :
+    Polynomial.aeval z (maPoly a) = 1 + ∑ j : Fin q, (a j : ℂ) * z ^ ((j : ℕ) + 1) := by
+  simp [maPoly]
+
+private lemma continuous_aeval_arPoly {p q : ℕ} :
+    Continuous fun x : ((Fin p → ℝ) × (Fin q → ℝ)) × ℂ =>
+      Polynomial.aeval x.2 (arPoly x.1.1) := by
+  simp only [aeval_arPoly_complex]
+  fun_prop
+
+private lemma continuous_aeval_maPoly {p q : ℕ} :
+    Continuous fun x : ((Fin p → ℝ) × (Fin q → ℝ)) × ℂ =>
+      Polynomial.aeval x.2 (maPoly x.1.2) := by
+  simp only [aeval_maPoly_complex]
+  fun_prop
+
+/-- **THE BRICK**: a locally uniform geometric bound on the ARMA transfer and inversion
+coefficients over a compact set of invertible parameters. -/
+theorem exists_uniform_geometric_bound_arma {p q : ℕ}
+    {K : Set ((Fin p → ℝ) × (Fin q → ℝ))} (hK : IsCompact K)
+    (hKB : ∀ ba ∈ K, ARMAInvertibleParams ba.1 ba.2) :
+    ∃ C r : ℝ, 1 ≤ C ∧ 0 ≤ r ∧ r < 1 ∧
+      (∀ ba ∈ K, ∀ n, |armaPsi ba.1 ba.2 n| ≤ C * r ^ n) ∧
+      (∀ ba ∈ K, ∀ n, |armaPi ba.1 ba.2 n| ≤ C * r ^ n) := by
+  classical
+  obtain ⟨R₁, M₁, d₁, hR₁, hd₁, hlow₁, hup₁⟩ :=
+    exists_disc_bounds (num := fun ba : (Fin p → ℝ) × (Fin q → ℝ) => fun z : ℂ =>
+        Polynomial.aeval z (maPoly ba.2))
+      (den := fun ba : (Fin p → ℝ) × (Fin q → ℝ) => fun z : ℂ =>
+        Polynomial.aeval z (arPoly ba.1))
+      hK continuous_aeval_maPoly continuous_aeval_arPoly
+      (fun ba hba z hz => (hKB ba hba).1 z hz)
+  obtain ⟨R₂, M₂, d₂, hR₂, hd₂, hlow₂, hup₂⟩ :=
+    exists_disc_bounds (num := fun ba : (Fin p → ℝ) × (Fin q → ℝ) => fun z : ℂ =>
+        Polynomial.aeval z (arPoly ba.1))
+      (den := fun ba : (Fin p → ℝ) × (Fin q → ℝ) => fun z : ℂ =>
+        Polynomial.aeval z (maPoly ba.2))
+      hK continuous_aeval_arPoly continuous_aeval_maPoly
+      (fun ba hba z hz => (hKB ba hba).2 z hz)
+  have hR : 1 < min R₁ R₂ := lt_min hR₁ hR₂
+  have hRpos : (0:ℝ) < min R₁ R₂ := lt_trans zero_lt_one hR
+  have hC1 : M₁ / d₁ ≤ max 1 (max (M₁ / d₁) (M₂ / d₂)) :=
+    le_trans (le_max_left _ _) (le_max_right _ _)
+  have hC2 : M₂ / d₂ ≤ max 1 (max (M₁ / d₁) (M₂ / d₂)) :=
+    le_trans (le_max_right _ _) (le_max_right _ _)
+  refine ⟨max 1 (max (M₁ / d₁) (M₂ / d₂)), (min R₁ R₂)⁻¹, le_max_left _ _, by positivity,
+    inv_lt_one_of_one_lt₀ hR, ?_, ?_⟩
+  · intro ba hba n
+    refine le_trans (abs_armaPsi_le_of_disc_bounds ba.1 ba.2 hR hd₁
+      (fun z hz => hlow₁ ba hba z (le_trans hz (min_le_left _ _)))
+      (fun z hz => hup₁ ba hba z (le_trans hz (min_le_left _ _))) n) ?_
+    exact mul_le_mul_of_nonneg_right hC1 (by positivity)
+  · intro ba hba n
+    rw [armaPi_eq_armaPsi]
+    have hlow' : ∀ z : ℂ, ‖z‖ ≤ min R₁ R₂ →
+        d₂ ≤ ‖Polynomial.aeval z (arPoly fun j => -ba.2 j)‖ := by
+      intro z hz
+      rw [arPoly_neg]
+      exact hlow₂ ba hba z (le_trans hz (min_le_right _ _))
+    have hup' : ∀ z : ℂ, ‖z‖ ≤ min R₁ R₂ →
+        ‖Polynomial.aeval z (maPoly fun i => -ba.1 i)‖ ≤ M₂ := by
+      intro z hz
+      rw [maPoly_neg]
+      exact hup₂ ba hba z (le_trans hz (min_le_right _ _))
+    refine le_trans (abs_armaPsi_le_of_disc_bounds _ _ hR hd₂ hlow' hup' n) ?_
+    exact mul_le_mul_of_nonneg_right hC2 (by positivity)
+
+end GeometricBrick
 
 /-- A single pair `(C, r)` dominating both filters of the composite. -/
 private lemma exists_common_geometric_bound {p q : ℕ} {b0 b : Fin p → ℝ} {a0 a : Fin q → ℝ}
@@ -524,6 +933,220 @@ theorem armaContrastVar_eq_one_iff {p q : ℕ} {b0 b : Fin p → ℝ} {a0 a : Fi
     exact eq_of_transfer_eq hcop hcopW ((armaContrastVar_eq_one_iff_transfer hB0 hB).1 h)
   · rintro ⟨rfl, rfl⟩
     exact (armaContrastVar_eq_one_iff_transfer hB0 hB).2 rfl
+
+/-! ### Continuity of the contrast in the working parameter, and the uniform gap -/
+
+private lemma maPoly_conv_armaPi {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (n : ℕ) :
+    ∑ k ∈ Finset.range (n + 1), (maPoly a).coeff k * armaPi b a (n - k)
+      = (arPoly b).coeff n := by
+  have h := arPoly_conv_armaPsi (fun j => -a j) (fun i => -b i) n
+  rw [arPoly_neg, maPoly_neg] at h
+  rw [← h]
+  exact Finset.sum_congr rfl fun k _ => by rw [armaPi_eq_armaPsi]
+
+private lemma coeff_maPoly' {q : ℕ} (a : Fin q → ℝ) (m : ℕ) :
+    (maPoly a).coeff m
+      = (if m = 0 then (1 : ℝ) else 0) + ∑ j : Fin q, if m = (j : ℕ) + 1 then a j else 0 := by
+  simp [maPoly, Polynomial.finset_sum_coeff, Polynomial.coeff_X_pow, Polynomial.coeff_one]
+
+private lemma continuous_coeff_maPoly {q : ℕ} (m : ℕ) :
+    Continuous fun a : Fin q → ℝ => (maPoly a).coeff m := by
+  simp only [coeff_maPoly']
+  refine continuous_const.add (continuous_finset_sum _ fun j _ => ?_)
+  by_cases h : m = (j : ℕ) + 1
+  · simpa [h] using (continuous_apply j)
+  · simpa [h] using continuous_const
+
+private lemma continuous_coeff_arPoly {p : ℕ} (m : ℕ) :
+    Continuous fun b : Fin p → ℝ => (arPoly b).coeff m := by
+  simp only [coeff_arPoly']
+  refine continuous_const.sub (continuous_finset_sum _ fun i _ => ?_)
+  by_cases h : m = (i : ℕ) + 1
+  · simpa [h] using (continuous_apply i)
+  · simpa [h] using continuous_const
+
+/-- Each inversion coefficient is a polynomial — in particular continuous — function of
+the parameters (`a(0) = 1` makes the recursion explicit). -/
+private lemma continuous_armaPi {p q : ℕ} (n : ℕ) :
+    Continuous fun ba : (Fin p → ℝ) × (Fin q → ℝ) => armaPi ba.1 ba.2 n := by
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    have hrec : ∀ ba : (Fin p → ℝ) × (Fin q → ℝ), armaPi ba.1 ba.2 n
+        = (arPoly ba.1).coeff n
+          - ∑ i ∈ Finset.range n, (maPoly ba.2).coeff (i + 1) * armaPi ba.1 ba.2 (n - (i + 1)) := by
+      intro ba
+      have h := maPoly_conv_armaPi ba.1 ba.2 n
+      rw [Finset.sum_range_succ', coeff_maPoly_zero', one_mul, Nat.sub_zero] at h
+      linarith
+    simp only [hrec]
+    refine (continuous_coeff_arPoly n).comp continuous_fst |>.sub
+      (continuous_finset_sum _ fun i hi => ?_)
+    have hi' : i < n := Finset.mem_range.1 hi
+    exact ((continuous_coeff_maPoly (i + 1)).comp continuous_snd).mul (ih _ (by omega))
+
+private lemma continuous_contrastCoeff {p q : ℕ} (b0 : Fin p → ℝ) (a0 : Fin q → ℝ) (n : ℕ) :
+    Continuous fun ba : (Fin p → ℝ) × (Fin q → ℝ) => contrastCoeff b0 a0 ba.1 ba.2 n := by
+  unfold contrastCoeff
+  exact continuous_finset_sum _ fun k _ => (continuous_armaPi k).mul continuous_const
+
+private lemma summable_geom_env (C : ℝ) {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1) :
+    Summable fun n : ℕ => C ^ 4 * (((n : ℝ) + 1) ^ 2 * (r ^ 2) ^ n) := by
+  have hr2 : ‖r ^ 2‖ < 1 := by
+    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg r)]
+    nlinarith
+  have h0 : Summable fun n : ℕ => (r ^ 2) ^ n := by
+    simpa using summable_pow_mul_geometric_of_norm_lt_one (R := ℝ) 0 hr2
+  have h1 : Summable fun n : ℕ => (n : ℝ) ^ 1 * (r ^ 2) ^ n :=
+    summable_pow_mul_geometric_of_norm_lt_one (R := ℝ) 1 hr2
+  have h2 : Summable fun n : ℕ => (n : ℝ) ^ 2 * (r ^ 2) ^ n :=
+    summable_pow_mul_geometric_of_norm_lt_one (R := ℝ) 2 hr2
+  refine (((h2.add (h1.mul_left 2)).add h0).mul_left (C ^ 4)).congr fun n => ?_
+  ring
+
+/-- **Continuity of the contrast variance in the working parameter**, on a compact set of
+invertible pairs. Each summand `c_n(θ)²` is a *polynomial* in the entries of `θ`
+(`continuous_armaPi`), and the brick `exists_uniform_geometric_bound_arma` supplies the
+uniform envelope `C⁴(n+1)²(r²)ⁿ` that `continuousOn_tsum` needs. This is the half of
+`mle_consistent`(ii) that was missing. -/
+private lemma continuousOn_armaContrastVar {p q : ℕ} {b0 : Fin p → ℝ} {a0 : Fin q → ℝ}
+    (hB0 : ARMAInvertibleParams b0 a0)
+    {K : Set ((Fin p → ℝ) × (Fin q → ℝ))} (hK : IsCompact K)
+    (hKB : ∀ ba ∈ K, ARMAInvertibleParams ba.1 ba.2) :
+    ContinuousOn (fun ba : (Fin p → ℝ) × (Fin q → ℝ) =>
+      armaContrastVar b0 a0 ba.1 ba.2) K := by
+  obtain ⟨C₁, r₁, hC₁, hr₁0, hr₁1, _, hπK⟩ := exists_uniform_geometric_bound_arma hK hKB
+  obtain ⟨C₂, hC₂, r₂, hr₂0, hr₂1, hψ0⟩ := exists_geometric_bound_armaPsi a0 hB0.1
+  obtain ⟨C, r, hC, hr0, hr1, hπ, hψ⟩ :
+      ∃ C r : ℝ, 1 ≤ C ∧ 0 ≤ r ∧ r < 1 ∧
+        (∀ ba ∈ K, ∀ n, |armaPi ba.1 ba.2 n| ≤ C * r ^ n) ∧
+        (∀ n, |armaPsi b0 a0 n| ≤ C * r ^ n) := by
+    refine ⟨max C₁ (max 1 C₂), max r₁ r₂, le_trans (le_max_left _ _) (le_max_right _ _),
+      le_trans hr₁0 (le_max_left _ _), max_lt hr₁1 hr₂1, fun ba hba n => ?_, fun n => ?_⟩
+    · refine (hπK ba hba n).trans (mul_le_mul (le_max_left _ _)
+        (pow_le_pow_left₀ hr₁0 (le_max_left _ _) n) (by positivity) ?_)
+      exact le_trans zero_le_one (le_trans (le_max_left _ _) (le_max_right _ _))
+    · refine (hψ0 n).trans (mul_le_mul (le_trans (le_max_right _ _) (le_max_right _ _))
+        (pow_le_pow_left₀ hr₂0 (le_max_right _ _) n) (by positivity) ?_)
+      exact le_trans zero_le_one (le_trans (le_max_left _ _) (le_max_right _ _))
+  have hCpos : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC
+  refine continuousOn_tsum (u := fun n : ℕ => C ^ 4 * (((n : ℝ) + 1) ^ 2 * (r ^ 2) ^ n))
+    (fun n => ((continuous_contrastCoeff b0 a0 n).pow 2).continuousOn)
+    (summable_geom_env C hr0 hr1) (fun n ba hba => ?_)
+  have habs := abs_contrastCoeff_le hC hr0 (hπ ba hba) hψ n
+  have hnn : 0 ≤ C ^ 2 * ((n : ℝ) + 1) * r ^ n := by positivity
+  calc ‖contrastCoeff b0 a0 ba.1 ba.2 n ^ 2‖
+      = |contrastCoeff b0 a0 ba.1 ba.2 n| ^ 2 := by
+        rw [Real.norm_eq_abs, abs_pow]
+    _ ≤ (C ^ 2 * ((n : ℝ) + 1) * r ^ n) ^ 2 := pow_le_pow_left₀ (abs_nonneg _) habs 2
+    _ = C ^ 4 * (((n : ℝ) + 1) ^ 2 * (r ^ 2) ^ n) := by
+        rw [← pow_mul, mul_comm 2 n, pow_mul]; ring
+
+/-- **The uniform contrast gap** — `mle_consistent`(ii). Away from the truth the contrast
+variance is bounded away from `1` on the compact identifiable region: pointwise
+strictness is `armaContrastVar_eq_one_iff`, and `continuousOn_armaContrastVar` plus
+compactness of `K ∩ {dist · θ₀ ≥ δ}` turn it into a uniform gap. -/
+private lemma exists_contrast_gap {p q : ℕ} {b0 : Fin p → ℝ} {a0 : Fin q → ℝ}
+    (hB0 : ARMAInvertibleParams b0 a0) (hcop : IsCoprime (arPoly b0) (maPoly a0))
+    {K : Set ((Fin p → ℝ) × (Fin q → ℝ))} (hK : IsCompact K)
+    (hKB : ∀ ba ∈ K, ARMAInvertibleParams ba.1 ba.2)
+    (hcopK : ∀ ba ∈ K, IsCoprime (arPoly ba.1) (maPoly ba.2))
+    {δ : ℝ} (hδ : 0 < δ) :
+    ∃ γ : ℝ, 0 < γ ∧ ∀ ba ∈ K, δ ≤ dist ba (b0, a0) →
+      1 + γ ≤ armaContrastVar b0 a0 ba.1 ba.2 := by
+  classical
+  have hScl : IsCompact (K ∩ {ba : (Fin p → ℝ) × (Fin q → ℝ) | δ ≤ dist ba (b0, a0)}) :=
+    hK.inter_right (isClosed_le continuous_const (continuous_id.dist continuous_const))
+  rcases Set.eq_empty_or_nonempty
+      (K ∩ {ba : (Fin p → ℝ) × (Fin q → ℝ) | δ ≤ dist ba (b0, a0)}) with hemp | hne
+  · refine ⟨1, one_pos, fun ba hba hd => ?_⟩
+    exact absurd (Set.mem_inter hba hd) (by rw [hemp]; exact Set.notMem_empty _)
+  · obtain ⟨ba0, hba0, hmin⟩ := hScl.exists_isMinOn hne
+      ((continuousOn_armaContrastVar hB0 hK hKB).mono Set.inter_subset_left)
+    have hgt : 1 < armaContrastVar b0 a0 ba0.1 ba0.2 := by
+      rcases lt_or_eq_of_le (one_le_armaContrastVar hB0 (hKB ba0 hba0.1)) with h1 | h1
+      · exact h1
+      · exfalso
+        obtain ⟨hb, ha⟩ := (armaContrastVar_eq_one_iff hB0 (hKB ba0 hba0.1) hcop
+          (hcopK ba0 hba0.1)).1 h1.symm
+        have hzero : ba0 = (b0, a0) := Prod.ext hb ha
+        have hd := hba0.2
+        rw [Set.mem_setOf_eq, hzero, dist_self] at hd
+        linarith
+    refine ⟨armaContrastVar b0 a0 ba0.1 ba0.2 - 1, by linarith, fun ba hba hd => ?_⟩
+    have hle := hmin (Set.mem_inter hba hd)
+    simp only [Set.mem_setOf_eq] at hle
+    linarith
+
+
+
+/-- **The `ℓ¹` modulus of continuity of the inversion filter on a compact set** — the
+deterministic first input of the stochastic-equicontinuity estimate `mle_consistent`(iii).
+
+Each `π_n` is a polynomial in the parameters (`continuous_armaPi`) and the brick
+`exists_uniform_geometric_bound_arma` supplies the uniform envelope `2C rⁿ`, so
+`(θ, θ') ↦ Σ_n |π_n(θ) − π_n(θ')|` is continuous on the compact `K × K` and vanishes on
+the diagonal; the modulus is then the minimal distance on the (compact) super-level set. -/
+lemma exists_armaPi_l1_modulus {p q : ℕ}
+    {K : Set ((Fin p → ℝ) × (Fin q → ℝ))} (hK : IsCompact K)
+    (hKB : ∀ ba ∈ K, ARMAInvertibleParams ba.1 ba.2) {ε : ℝ} (hε : 0 < ε) :
+    ∃ ρ : ℝ, 0 < ρ ∧ ∀ ba ∈ K, ∀ ba' ∈ K, dist ba ba' < ρ →
+      ∑' n : ℕ, |armaPi ba.1 ba.2 n - armaPi ba'.1 ba'.2 n| < ε := by
+  classical
+  obtain ⟨C, r, hC, hr0, hr1, _, hπK⟩ := exists_uniform_geometric_bound_arma hK hKB
+  have hCpos : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC
+  have hgeom : Summable fun n : ℕ => 2 * C * r ^ n :=
+    (summable_geometric_of_lt_one hr0 hr1).mul_left (2 * C)
+  have hFcont : ContinuousOn (fun z : ((Fin p → ℝ) × (Fin q → ℝ)) ×
+      ((Fin p → ℝ) × (Fin q → ℝ)) =>
+        ∑' n : ℕ, |armaPi z.1.1 z.1.2 n - armaPi z.2.1 z.2.2 n|) (K ×ˢ K) := by
+    refine continuousOn_tsum (u := fun n : ℕ => 2 * C * r ^ n)
+      (fun n => (((continuous_armaPi n).comp continuous_fst).sub
+        ((continuous_armaPi n).comp continuous_snd)).abs.continuousOn) hgeom
+      (fun n z hz => ?_)
+    have h1 := hπK z.1 hz.1 n
+    have h2 := hπK z.2 hz.2 n
+    have habs : |armaPi z.1.1 z.1.2 n - armaPi z.2.1 z.2.2 n|
+        ≤ |armaPi z.1.1 z.1.2 n| + |armaPi z.2.1 z.2.2 n| := abs_sub _ _
+    rw [Real.norm_eq_abs, abs_abs]
+    linarith
+  haveI : CompactSpace ↥(K ×ˢ K) := isCompact_iff_compactSpace.1 (hK.prod hK)
+  obtain ⟨F, hF⟩ : ∃ F : ↥(K ×ˢ K) → ℝ, F = (K ×ˢ K).restrict
+      (fun z : ((Fin p → ℝ) × (Fin q → ℝ)) × ((Fin p → ℝ) × (Fin q → ℝ)) =>
+        ∑' n : ℕ, |armaPi z.1.1 z.1.2 n - armaPi z.2.1 z.2.2 n|) := ⟨_, rfl⟩
+  have hFc : Continuous F := by
+    rw [hF]; exact continuousOn_iff_continuous_restrict.1 hFcont
+  have hdc : Continuous fun s : ↥(K ×ˢ K) => dist s.1.1 s.1.2 :=
+    (continuous_fst.comp continuous_subtype_val).dist
+      (continuous_snd.comp continuous_subtype_val)
+  have hAcl : IsClosed {s : ↥(K ×ˢ K) | ε ≤ F s} := isClosed_le continuous_const hFc
+  rcases Set.eq_empty_or_nonempty {s : ↥(K ×ˢ K) | ε ≤ F s} with hemp | hAne
+  · refine ⟨1, one_pos, fun ba hba ba' hba' _ => ?_⟩
+    by_contra hcon
+    have : (⟨(ba, ba'), Set.mk_mem_prod hba hba'⟩ : ↥(K ×ˢ K)) ∈ {s | ε ≤ F s} := by
+      simpa [hF, Set.restrict_apply] using not_lt.1 hcon
+    rw [hemp] at this
+    exact this
+  · obtain ⟨s0, hs0, hmin⟩ := hAcl.isCompact.exists_isMinOn hAne hdc.continuousOn
+    have hpos : 0 < dist s0.1.1 s0.1.2 := by
+      rcases (dist_nonneg (x := s0.1.1) (y := s0.1.2)).lt_or_eq with h | h
+      · exact h
+      · exfalso
+        have heq : s0.1.1 = s0.1.2 := dist_eq_zero.1 h.symm
+        have hzero : F s0 = 0 := by
+          rw [hF]
+          show ∑' n : ℕ, |armaPi s0.1.1.1 s0.1.1.2 n - armaPi s0.1.2.1 s0.1.2.2 n| = 0
+          rw [heq]
+          simp
+        have := hs0
+        simp only [Set.mem_setOf_eq, hzero] at this
+        linarith
+    refine ⟨dist s0.1.1 s0.1.2, hpos, fun ba hba ba' hba' hd => ?_⟩
+    by_contra hcon
+    have hmemA : (⟨(ba, ba'), Set.mk_mem_prod hba hba'⟩ : ↥(K ×ˢ K)) ∈ {s | ε ≤ F s} := by
+      simpa [hF, Set.restrict_apply] using not_lt.1 hcon
+    have hge := hmin hmemA
+    simp only [Set.mem_setOf_eq] at hge
+    linarith
 
 section Szego
 
@@ -3250,31 +3873,52 @@ theorem mle_consistent [IsProbabilityMeasure μ] {p q : ℕ}
   --         (B) and (C) of `armaProfileS_tendstoInProb` are all proved
   --         (`armaResidualSS_tendstoInProb` closed the last one), so this item is no
   --         longer debt;
-  --   (ii)  the positive contrast gap `inf {K(θ) − K(θ₀) : θ ∈ K, dist θ θ₀ ≥ δ} > 0`.
-  --         Its *pointwise* half is AVAILABLE: `armaContrastVar_eq_one_iff` (PROVED
-  --         above, using exactly `hcop` and `hcopK`) plus `one_le_armaContrastVar` give
-  --         `armaContrastVar b₀ a₀ ba.1 ba.2 > 1` for every `ba ∈ K` with `ba ≠ θ₀`.
-  --         Still missing: continuity of `θ ↦ armaContrastVar θ₀ θ`, which turns that
-  --         pointwise strictness into a uniform gap on the compact `K` (via
-  --         `IsCompact.exists_forall_le` on the closed subset `{dist · θ₀ ≥ δ} ∩ K`);
+  --   (ii)  the positive contrast gap `inf {K(θ) − K(θ₀) : θ ∈ K, dist θ θ₀ ≥ δ} > 0`
+  --         — **PROVED** (2026-08-09) as `exists_contrast_gap` above. Its pointwise half
+  --         was already available (`armaContrastVar_eq_one_iff` + `one_le_armaContrastVar`
+  --         give `armaContrastVar θ₀ θ > 1` for `θ ∈ K`, `θ ≠ θ₀`); the missing
+  --         continuity of `θ ↦ armaContrastVar θ₀ θ` is `continuousOn_armaContrastVar`,
+  --         which is `continuousOn_tsum` over the brick's envelope `C⁴(n+1)²(r²)ⁿ` with
+  --         each `contrastCoeff` continuous by `continuous_armaPi` (every `π_n` is a
+  --         *polynomial* in the entries of `(b, a)`, by the recursion
+  --         `maPoly_conv_armaPi`, whose leading coefficient `a(0)` is `1`);
   --   (iii) a stochastic-equicontinuity / finite-subcover step making the convergence in
-  --         (i) uniform over `K`. A finite subcover alone does not suffice — (i) is
-  --         pointwise in `θ`, so interpolating between cover centres needs equicontinuity
-  --         of `θ ↦ armaProfileCriterion θ (data_T)` in probability
+  --         (i) uniform over `K` — **THE ONLY ITEM LEFT**. A finite subcover alone does
+  --         not suffice: (i) is pointwise in `θ`, so interpolating between cover centres
+  --         needs equicontinuity of `θ ↦ armaProfileCriterion θ (data_T)` in probability
   --         (`MLEAsymptotics.armaProfileS_equicontinuous`, still open).
   --
-  --  **(ii) and (iii) are ONE brick, not two** (recorded 2026-08-08 after (i) closed).
-  --  Both need exactly the *locally uniform* geometric bound
-  --      `∃ C r, 1 ≤ C ∧ 0 ≤ r ∧ r < 1 ∧ ∀ ba ∈ K, ∀ n, |armaPi ba.1 ba.2 n| ≤ C * r ^ n`
-  --  (and its `∂π/∂θ` companion for (iii)). Given it, (ii) is dominated convergence on
-  --  `∑' n, contrastCoeff θ₀ θ n ^ 2` — each `contrastCoeff` is a *polynomial* in the
-  --  entries of `(b, a)` (the recursion `arPoly_conv_armaPsi` has unit leading
-  --  coefficient), hence continuous, and the uniform envelope `C²(n+1)rⁿ` dominates —
-  --  and (iii) is the θ-Lipschitz estimate on the residual rows. See the note at
-  --  `MLEAsymptotics.armaProfileS_equicontinuous` for the compactness recipe and for why
-  --  `exists_geometric_bound_armaPsi` cannot be used as a black box (it is stated
-  --  non-quantitatively, so its Cauchy-estimate proof must be redone carrying the radius
-  --  and the sup-bound as parameters).
+  --  **The geometric-bound brick is PROVED** (2026-08-09):
+  --  `exists_uniform_geometric_bound_arma` (above) supplies, for any compact `K ⊆ 𝓑`,
+  --  one pair `(C, r)` with `r < 1` bounding `|armaPi θ n|` *and* `|armaPsi θ n|` by
+  --  `C rⁿ` uniformly in `θ ∈ K`. Its proof does what the 2026-08-08 note asked for:
+  --  `exists_geometric_bound_armaPsi` really cannot be used as a black box (it is stated
+  --  non-quantitatively), so its Cauchy estimate is redone carrying the radius and the
+  --  sup-bound as parameters (`abs_armaPsi_le_of_disc_bounds`), and the compactness step
+  --  is `exists_radius_nonvanishing` + `exists_disc_bounds`. **Amendment to that note's
+  --  recipe**: no Lipschitz-in-`z` constant is needed to push the radius past `1`. The
+  --  polar parametrisation `z = s · w` (`‖w‖ ≤ 1`, `s ∈ [1, 2]`) makes the zero set
+  --  compact, so the *minimum of its `s`-coordinate* is already `> 1`.
+  --
+  --  **What (iii) still needs, and what is already in place.** The route is the pathwise
+  --  θ-Lipschitz estimate, not an expectation bound:
+  --  `T⁻¹|S_T(θ) − S_T(θ')| ≤ L(ρ) · Cst · T⁻¹‖x‖²` with `L(ρ) → 0` and `T⁻¹‖x‖²`
+  --  bounded in probability. Write `Γ_T(θ)⁻¹ = Π_Tᵀ(1 + G_T)⁻¹Π_T` and split the
+  --  difference into three terms,
+  --      `[Π−Π′]ᵀ(1+G)⁻¹Π  +  Π′ᵀ[(1+G)⁻¹−(1+G′)⁻¹]Π  +  Π′ᵀ(1+G′)⁻¹[Π−Π′]`,
+  --  using `(1+G)⁻¹ ⪯ 1` and the Schur test (`rowSum_kernel_le`) for the operator
+  --  bounds. The first and third terms are controlled by the **`ℓ¹` modulus of `π`,
+  --  which is PROVED here**: `exists_armaPi_l1_modulus`. The one genuinely missing
+  --  ingredient is the matching modulus for the *Gram tail*, i.e. a bound
+  --  `∑_j |G_T(θ)_{ij} − G_T(θ')_{ij}| ≤ L(ρ)` uniform in `T` and `i`; the entries are
+  --  `G_{ij} = ∑_{m ≥ T} u_i(m)u_j(m)` with `|u_i(m)| ≤ C²(T−i)r^{m−i}`, so this is
+  --  `trace_gramTail_le`'s estimate redone in difference form off the same modulus.
+  --  (Recorded after checking that the shortcuts do **not** work: the pathwise bound
+  --  `T⁻¹ uᵀG u ≤ K P² · T⁻¹‖x‖²` is `O_p(1)`, not `o_p(1)`, and the sandwich's constant
+  --  factor `(1 + K)⁻¹ ⪯ (1+G)⁻¹` costs an `O(1)` additive `log(1+K)` in the criterion,
+  --  so neither replaces the modulus. The `∂π/∂θ` companion the 2026-08-08 note asked
+  --  for is **not** needed: a modulus of continuity suffices, and it is free from
+  --  compactness of `K × K` plus the brick.)
   sorry
 
 end Process
