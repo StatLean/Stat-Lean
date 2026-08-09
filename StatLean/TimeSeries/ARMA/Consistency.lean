@@ -3251,16 +3251,30 @@ theorem mle_consistent [IsProbabilityMeasure μ] {p q : ℕ}
   --         (`armaResidualSS_tendstoInProb` closed the last one), so this item is no
   --         longer debt;
   --   (ii)  the positive contrast gap `inf {K(θ) − K(θ₀) : θ ∈ K, dist θ θ₀ ≥ δ} > 0`.
-  --         Its *pointwise* half is now AVAILABLE: `armaContrastVar_eq_one_iff` (PROVED
+  --         Its *pointwise* half is AVAILABLE: `armaContrastVar_eq_one_iff` (PROVED
   --         above, using exactly `hcop` and `hcopK`) plus `one_le_armaContrastVar` give
   --         `armaContrastVar b₀ a₀ ba.1 ba.2 > 1` for every `ba ∈ K` with `ba ≠ θ₀`.
   --         Still missing: continuity of `θ ↦ armaContrastVar θ₀ θ`, which turns that
-  --         pointwise strictness into a uniform gap on the compact `K`;
+  --         pointwise strictness into a uniform gap on the compact `K` (via
+  --         `IsCompact.exists_forall_le` on the closed subset `{dist · θ₀ ≥ δ} ∩ K`);
   --   (iii) a stochastic-equicontinuity / finite-subcover step making the convergence in
   --         (i) uniform over `K`. A finite subcover alone does not suffice — (i) is
   --         pointwise in `θ`, so interpolating between cover centres needs equicontinuity
-  --         of `θ ↦ armaProfileCriterion θ (data_T)` in probability. This is the largest
-  --         remaining piece and is independent of the (i) debt.
+  --         of `θ ↦ armaProfileCriterion θ (data_T)` in probability
+  --         (`MLEAsymptotics.armaProfileS_equicontinuous`, still open).
+  --
+  --  **(ii) and (iii) are ONE brick, not two** (recorded 2026-08-08 after (i) closed).
+  --  Both need exactly the *locally uniform* geometric bound
+  --      `∃ C r, 1 ≤ C ∧ 0 ≤ r ∧ r < 1 ∧ ∀ ba ∈ K, ∀ n, |armaPi ba.1 ba.2 n| ≤ C * r ^ n`
+  --  (and its `∂π/∂θ` companion for (iii)). Given it, (ii) is dominated convergence on
+  --  `∑' n, contrastCoeff θ₀ θ n ^ 2` — each `contrastCoeff` is a *polynomial* in the
+  --  entries of `(b, a)` (the recursion `arPoly_conv_armaPsi` has unit leading
+  --  coefficient), hence continuous, and the uniform envelope `C²(n+1)rⁿ` dominates —
+  --  and (iii) is the θ-Lipschitz estimate on the residual rows. See the note at
+  --  `MLEAsymptotics.armaProfileS_equicontinuous` for the compactness recipe and for why
+  --  `exists_geometric_bound_armaPsi` cannot be used as a black box (it is stated
+  --  non-quantitatively, so its Cauchy-estimate proof must be redone carrying the radius
+  --  and the sup-bound as parameters).
   sorry
 
 end Process
