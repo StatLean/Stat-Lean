@@ -1868,6 +1868,81 @@ private lemma summable_rpow_of_le [IsProbabilityMeasure μ] {W : ℤ → Ω → 
   hα.of_nonneg_of_le (fun _ => Real.rpow_nonneg alphaMixCoeff_nonneg θ)
     (fun n => Real.rpow_le_rpow alphaMixCoeff_nonneg (hle n) hθ)
 
+/-! #### Partial-sum bookkeeping for a general stationary `L²` process -/
+
+/-- Every coordinate has the law of `W 0`, hence the same `L^p` membership. -/
+private lemma memLp_coord [IsProbabilityMeasure μ] {W : ℤ → Ω → ℝ}
+    (hmW : ∀ t, Measurable (W t)) (hstatW : IsStrictlyStationary W μ) {p : ℝ≥0∞}
+    (hL : MemLp (W 0) p μ) (t : ℤ) : MemLp (W t) p μ :=
+  (hstatW.identDistrib hmW 0 t).memLp_snd hL
+
+/-- Partial sums inherit `L^p` membership. -/
+private lemma memLp_partialSum [IsProbabilityMeasure μ] {W : ℤ → Ω → ℝ}
+    (hmW : ∀ t, Measurable (W t)) (hstatW : IsStrictlyStationary W μ) {p : ℝ≥0∞}
+    (hL : MemLp (W 0) p μ) (D : Finset ℕ) :
+    MemLp (fun ω => ∑ t ∈ D, W ((t : ℤ) + 1) ω) p μ := by
+  have hfun : (fun ω => ∑ t ∈ D, W ((t : ℤ) + 1) ω) = ∑ t ∈ D, W ((t : ℤ) + 1) := by
+    funext ω; simp [Finset.sum_apply]
+  rw [hfun]
+  exact memLp_finset_sum' (μ := μ) D fun t _ => memLp_coord hmW hstatW hL _
+
+/-- Partial sums of a zero-mean stationary process have mean zero. -/
+private lemma integral_partialSum_eq_zero' [IsProbabilityMeasure μ] {W : ℤ → Ω → ℝ}
+    (hmW : ∀ t, Measurable (W t)) (hstatW : IsStrictlyStationary W μ)
+    (hL1 : MemLp (W 0) 1 μ) (hmeanW : ∫ ω, W 0 ω ∂μ = 0) (D : Finset ℕ) :
+    ∫ ω, (∑ t ∈ D, W ((t : ℤ) + 1) ω) ∂μ = 0 := by
+  have hsplit : ∫ ω, (∑ t ∈ D, W ((t : ℤ) + 1) ω) ∂μ
+      = ∑ t ∈ D, ∫ ω, W ((t : ℤ) + 1) ω ∂μ :=
+    integral_finset_sum (f := fun (t : ℕ) ω => W ((t : ℤ) + 1) ω) D
+      (fun t _ => (memLp_coord hmW hstatW hL1 _).integrable le_rfl)
+  rw [hsplit]
+  refine Finset.sum_eq_zero fun t _ => ?_
+  rw [(hstatW.identDistrib hmW ((t : ℤ) + 1) 0).integral_eq, hmeanW]
+
+/-- For a zero-mean stationary `L²` process the variance of a partial sum is its second
+moment. -/
+private lemma variance_partialSum_eq [IsProbabilityMeasure μ] {W : ℤ → Ω → ℝ}
+    (hmW : ∀ t, Measurable (W t)) (hstatW : IsStrictlyStationary W μ)
+    (hL2 : MemLp (W 0) 2 μ) (hmeanW : ∫ ω, W 0 ω ∂μ = 0) (D : Finset ℕ) :
+    variance (fun ω => ∑ t ∈ D, W ((t : ℤ) + 1) ω) μ
+      = ∫ ω, (∑ t ∈ D, W ((t : ℤ) + 1) ω) ^ 2 ∂μ :=
+  variance_of_integral_eq_zero
+    (memLp_partialSum hmW hstatW hL2 D).aestronglyMeasurable.aemeasurable
+    (integral_partialSum_eq_zero' hmW hstatW (hL2.mono_exponent one_le_two) hmeanW D)
+
+/-- The crude bound `|γ_W(k)| ≤ E W_0²` (AM–GM on the product, stationarity on the second
+moment). It is what makes the *discarded* part of the truncation negligible lag by lag. -/
+private lemma abs_acvf_le_integral_sq [IsProbabilityMeasure μ] {W : ℤ → Ω → ℝ}
+    (hmW : ∀ t, Measurable (W t)) (hstatW : IsStrictlyStationary W μ)
+    (hL2 : MemLp (W 0) 2 μ) (hmeanW : ∫ ω, W 0 ω ∂μ = 0) (k : ℤ) :
+    |acvf W μ k| ≤ ∫ ω, (W 0 ω) ^ 2 ∂μ := by
+  have hk2 : MemLp (W k) 2 μ := memLp_coord hmW hstatW hL2 k
+  have hmk : ∫ ω, W k ω ∂μ = 0 := by
+    rw [(hstatW.identDistrib hmW k 0).integral_eq, hmeanW]
+  have hsqk : ∫ ω, (W k ω) ^ 2 ∂μ = ∫ ω, (W 0 ω) ^ 2 ∂μ := by
+    have := ((hstatW.identDistrib hmW k 0).comp (measurable_id.pow_const 2)).integral_eq
+    simpa using this
+  have hprod : Integrable (fun ω => W k ω * W 0 ω) μ := by
+    have h := MemLp.integrable_mul hk2 hL2
+    exact h
+  have hcov : acvf W μ k = ∫ ω, W k ω * W 0 ω ∂μ := by
+    rw [acvf, covariance_eq_sub hk2 hL2, hmk, hmeanW]
+    simp [Pi.mul_apply]
+  rw [hcov]
+  have h1 : |∫ ω, W k ω * W 0 ω ∂μ| ≤ ∫ ω, |W k ω * W 0 ω| ∂μ :=
+    abs_integral_le_integral_abs
+  have h2 : ∫ ω, |W k ω * W 0 ω| ∂μ
+      ≤ ∫ ω, ((W k ω) ^ 2 + (W 0 ω) ^ 2) / 2 ∂μ := by
+    refine integral_mono hprod.abs ((hk2.integrable_sq.add hL2.integrable_sq).div_const 2)
+      fun ω => ?_
+    rw [abs_mul]
+    nlinarith [sq_nonneg (|W k ω| - |W 0 ω|), abs_nonneg (W k ω), abs_nonneg (W 0 ω),
+      sq_abs (W k ω), sq_abs (W 0 ω)]
+  have h3 : ∫ ω, ((W k ω) ^ 2 + (W 0 ω) ^ 2) / 2 ∂μ = ∫ ω, (W 0 ω) ^ 2 ∂μ := by
+    rw [integral_div, integral_add hk2.integrable_sq hL2.integrable_sq, hsqk]
+    ring
+  linarith
+
 /-- The `ℤ`-indexed Davydov dominant is summable. -/
 private lemma summable_int_dominant [IsProbabilityMeasure μ] {θ c : ℝ}
     (hα : Summable fun n : ℕ => alphaCoeff X μ n ^ θ) :
