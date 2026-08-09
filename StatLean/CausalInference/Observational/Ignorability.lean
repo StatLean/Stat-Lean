@@ -51,12 +51,80 @@ theorem cond_cond_eq_cond_inter (s t : Set Ω)
   sorry
 
 /-- On the treated arm the observed outcome is the treated potential outcome. -/
+omit [MeasurableSpace Ω] [MeasurableSpace 𝒳] in
 theorem obs_eqOn_treated : Set.EqOn (obs Z y1 y0) y1 {ω | Z ω = true} := by
-  sorry
+  intro ω hω
+  simp only [Set.mem_setOf_eq] at hω
+  simp only [obs, hω, if_true]
 
 /-- On the control arm the observed outcome is the control potential outcome. -/
+omit [MeasurableSpace Ω] [MeasurableSpace 𝒳] in
 theorem obs_eqOn_control : Set.EqOn (obs Z y1 y0) y0 {ω | Z ω = false} := by
-  sorry
+  intro ω hω
+  simp only [Set.mem_setOf_eq] at hω
+  simp only [obs, hω, Bool.false_eq_true, if_false]
+
+/-! ### Private infrastructure
+
+Two bricks carrying the measurability that the headline statements below supply.
+
+* `cond_armCell_eq'` is the arm-cell instance of "conditioning twice is conditioning on the
+  intersection". It is proved *by hand* rather than through `cond_cond_eq_cond_inter`
+  because only the **arm** `{Z = z}` is known to be measurable here: the covariate cell
+  `X ⁻¹' {x}` is not, `𝒳` carrying no `MeasurableSingletonClass`. Measurability of the arm
+  is exactly what `Measure.restrict_restrict` and `Measure.restrict_apply` need, so the
+  covariate cell never has to be measurable; the scalars then telescope because the cell
+  has finite, nonzero mass.
+* `cellMean_obs_eq'` is `cellMean_obs_eq` with `Measurable Z` supplied. The arm cell itself
+  need not be measurable: it is a subset of the measurable arm, so `μ.restrict (armCell)`
+  is dominated by `μ.restrict {Z = z}` and a.e. membership transfers. -/
+
+/-- Conditioning on a covariate cell and then on an arm is conditioning on the arm cell. -/
+private theorem cond_armCell_eq' [IsProbabilityMeasure μ] (hZ : Measurable Z) (z : Bool)
+    (x : 𝒳) (hcell : μ (cell X x) ≠ 0) :
+    μ[|armCell Z X z x] = (μ[|cell X x])[|{ω | Z ω = z}] := by
+  have hZs : MeasurableSet {ω | Z ω = z} := hZ (measurableSet_singleton z)
+  have hm0 : μ (cell X x) ≠ 0 := hcell
+  have hmtop : μ (cell X x) ≠ ⊤ := measure_ne_top μ _
+  have hcond : ∀ (ν : Measure Ω) (s : Set Ω), ν[|s] = (ν s)⁻¹ • ν.restrict s :=
+    fun _ _ => rfl
+  have harm : armCell Z X z x = {ω | Z ω = z} ∩ cell X x := rfl
+  rw [harm]
+  simp only [hcond, Measure.restrict_smul, Measure.restrict_restrict hZs, Measure.smul_apply,
+    smul_eq_mul, Measure.restrict_apply hZs, smul_smul]
+  congr 1
+  rw [ENNReal.mul_inv (Or.inl (ENNReal.inv_ne_zero.mpr hmtop))
+      (Or.inl (ENNReal.inv_ne_top.mpr hm0)), inv_inv,
+    mul_comm (μ (cell X x)), mul_assoc, ENNReal.mul_inv_cancel hm0 hmtop, mul_one]
+
+/-- Consistency inside an arm cell, with the measurability of the treatment supplied. -/
+private theorem cellMean_obs_eq' (hZ : Measurable Z) (z : Bool) (x : 𝒳) :
+    cellMean μ Z X (obs Z y1 y0) z x = cellMean μ Z X (if z then y1 else y0) z x := by
+  have hZs : MeasurableSet {ω | Z ω = z} := hZ (measurableSet_singleton z)
+  have hle : μ.restrict (armCell Z X z x) ≤ μ.restrict {ω | Z ω = z} :=
+    Measure.restrict_mono Set.inter_subset_left le_rfl
+  have hae0 : ∀ᵐ ω ∂(μ.restrict (armCell Z X z x)), ω ∈ {ω | Z ω = z} :=
+    (ae_restrict_mem hZs).filter_mono (Measure.ae_mono hle)
+  have hae : ∀ᵐ ω ∂(μ[|armCell Z X z x]), ω ∈ {ω | Z ω = z} :=
+    Measure.ae_smul_measure hae0 _
+  refine integral_congr_ae ?_
+  filter_upwards [hae] with ω hω
+  simp only [Set.mem_setOf_eq] at hω
+  simp only [obs, hω]
+  cases z <;> simp
+
+/-- Inside a covariate cell of positive mass, an arm conditional mean of an independent
+integrand is the cell conditional mean. -/
+private theorem integral_cond_armCell_eq [IsProbabilityMeasure μ] {y : Ω → ℝ}
+    (hZ : Measurable Z) (hy : Measurable y) (hint : Integrable y μ) {x : 𝒳} {z : Bool}
+    (hindep : IndepFun y Z (μ[|cell X x])) (hcell : μ (cell X x) ≠ 0)
+    (hpos : (μ[|cell X x]) {ω | Z ω = z} ≠ 0) :
+    ∫ ω, y ω ∂(μ[|armCell Z X z x]) = ∫ ω, y ω ∂(μ[|cell X x]) := by
+  haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
+  have hintc : Integrable y (μ[|cell X x]) :=
+    hint.restrict.smul_measure (ENNReal.inv_ne_top.mpr hcell)
+  rw [cond_armCell_eq' hZ z x hcell]
+  exact integral_cond_arm_eq_of_indepFun hindep hintc hy hZ hpos
 
 /-- The arm regression function of the *observed* outcome is the arm regression function
 of the corresponding *potential* outcome — no assumption needed, just consistency
@@ -81,7 +149,10 @@ theorem cellMean_true_eq_of_unconfounded [IsProbabilityMeasure μ]
     -- USER-INPUT: positivity `e(x) > 0`; Ding §11.2.1 (else the treated arm is empty)
     (hpos : (μ[|cell X x]) (treatedEvent Z) ≠ 0) :
     cellMean μ Z X (obs Z y1 y0) true x = ∫ ω, y1 ω ∂(μ[|cell X x]) := by
-  sorry
+  have hpos' : (μ[|cell X x]) {ω | Z ω = true} ≠ 0 := hpos
+  have hindep : IndepFun y1 Z (μ[|cell X x]) := (hu x).comp measurable_fst measurable_id
+  rw [cellMean_obs_eq' hZ true x, cellMean]
+  simpa using integral_cond_armCell_eq hZ hy1 hint hindep hcell hpos'
 
 /-- **Unconfoundedness identifies the cell means**, control arm (Ding Assumption 10.2 ⇒
 eq. (10.6)). -/
@@ -93,21 +164,21 @@ theorem cellMean_false_eq_of_unconfounded [IsProbabilityMeasure μ]
     -- USER-INPUT: positivity `e(x) < 1`; Ding §11.2.1 (else the control arm is empty)
     (hpos : (μ[|cell X x]) {ω | Z ω = false} ≠ 0) :
     cellMean μ Z X (obs Z y1 y0) false x = ∫ ω, y0 ω ∂(μ[|cell X x]) := by
-  sorry
+  have hindep : IndepFun y0 Z (μ[|cell X x]) := (hu x).comp measurable_snd measurable_id
+  rw [cellMean_obs_eq' hZ false x, cellMean]
+  simpa using integral_cond_armCell_eq hZ hy0 hint hindep hcell hpos
 
 /-- **Strong ignorability implies ignorability for each arm** (Ding Assumption 10.2 ⇒
 Assumption 10.1). -/
 theorem Unconfounded.ignorable_left (hu : Unconfounded μ Z y1 y0 X)
     -- USER-INPUT: measurability of the potential outcomes; needed to project the pair
     (hy1 : Measurable y1) (hy0 : Measurable y0) :
-    Ignorable μ Z y1 X := by
-  sorry
+    Ignorable μ Z y1 X := fun x => (hu x).comp measurable_fst measurable_id
 
 /-- **Strong ignorability implies ignorability for the control arm.** -/
 theorem Unconfounded.ignorable_right (hu : Unconfounded μ Z y1 y0 X)
     (hy1 : Measurable y1) (hy0 : Measurable y0) :
-    Ignorable μ Z y0 X := by
-  sorry
+    Ignorable μ Z y0 X := fun x => (hu x).comp measurable_snd measurable_id
 
 /-- **Ignorability implies mean ignorability** (Ding Assumption 10.1 ⇒ eqs. (10.3)–(10.4)):
 the hypothesis actually used by the standardization theorem is weaker than independence. -/
