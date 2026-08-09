@@ -819,4 +819,135 @@ theorem tendsto_truncArray_variance [IsProbabilityMeasure μ]
   rw [add_zero] at hsum
   exact hsum.congr fun n => by ring
 
+
+section Shift
+
+/-- A Borel isomorphism `ℝ × ℝ ≃ᵐ ℝ`, used to encode the pair series as a real series so
+that the shift lemma of `Mixing/Relations.lean` applies to it. -/
+noncomputable def pairCode : (ℝ × ℝ) ≃ᵐ ℝ :=
+  PolishSpace.measurableEquivOfNotCountable
+    (Uncountable.not_countable) (Uncountable.not_countable)
+
+/-- The coded pair series generates the same one-time σ-algebras as the pair. -/
+theorem comap_pairCode {X e : ℤ → Ω → ℝ} (t : ℤ) :
+    MeasurableSpace.comap (fun ω => pairCode (X t ω, e t ω)) inferInstance
+      = MeasurableSpace.comap (X t) inferInstance ⊔
+        MeasurableSpace.comap (e t) inferInstance := by
+  have h1 : MeasurableSpace.comap (fun ω => pairCode (X t ω, e t ω))
+      (inferInstance : MeasurableSpace ℝ)
+      = MeasurableSpace.comap (fun ω => (X t ω, e t ω))
+        (MeasurableSpace.comap pairCode (inferInstance : MeasurableSpace ℝ)) :=
+    (MeasurableSpace.comap_comp).symm
+  have h2 : MeasurableSpace.comap (pairCode : ℝ × ℝ → ℝ) (inferInstance : MeasurableSpace ℝ)
+      = (inferInstance : MeasurableSpace (ℝ × ℝ)) := by
+    refine le_antisymm pairCode.measurable.comap_le ?_
+    intro s hs
+    refine ⟨pairCode.symm ⁻¹' s, pairCode.symm.measurable hs, ?_⟩
+    ext z
+    simp
+  rw [h1, h2]
+  show MeasurableSpace.comap (fun ω => (X t ω, e t ω))
+      (MeasurableSpace.comap Prod.fst inferInstance ⊔
+        MeasurableSpace.comap Prod.snd inferInstance) = _
+  rw [MeasurableSpace.comap_sup, MeasurableSpace.comap_comp, MeasurableSpace.comap_comp]
+  rfl
+
+/-- Under fdd stationarity of the pair, arbitrary finite tuples of the pair are
+shift-invariant in law. -/
+theorem map_tuple_shift {X e : ℤ → Ω → ℝ}
+    (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
+    (hstat : ∀ (k : ℕ) (t : ℤ),
+      μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
+        = μ.map (fun ω (i : Fin k) => (X ((i : ℕ) : ℤ) ω, e ((i : ℕ) : ℤ) ω)))
+    (n : ℕ) (t : Fin n → ℤ) (a : ℤ) :
+    μ.map (fun ω (i : Fin n) => (X (t i + a) ω, e (t i + a) ω))
+      = μ.map (fun ω (i : Fin n) => (X (t i) ω, e (t i) ω)) := by
+  classical
+  have hwin : ∀ (m : ℕ) (b : ℤ),
+      Measurable (fun ω (i : Fin m) => (X (b + (i : ℕ)) ω, e (b + (i : ℕ)) ω)) :=
+    fun m b => measurable_pi_lambda _ fun i => (hmeasX _).prodMk (hmeasE _)
+  set M : ℕ := Finset.univ.sup (fun i : Fin n => (t i).natAbs) with hM
+  have hMle : ∀ i : Fin n, (t i).natAbs ≤ M := fun i =>
+    Finset.le_sup (f := fun i : Fin n => (t i).natAbs) (Finset.mem_univ i)
+  have hj : ∀ i : Fin n, (t i + (M : ℤ)).toNat < 2 * M + 1 := by
+    intro i; have := hMle i; omega
+  set j : Fin n → Fin (2 * M + 1) := fun i => ⟨(t i + (M : ℤ)).toNat, hj i⟩ with hjdef
+  set proj : (Fin (2 * M + 1) → ℝ × ℝ) → (Fin n → ℝ × ℝ) := fun z i => z (j i) with hprojdef
+  have hprojm : Measurable proj := measurable_pi_lambda _ fun i => measurable_pi_apply _
+  have hcomp : ∀ b : ℤ, (fun ω (i : Fin n) => (X (t i + b) ω, e (t i + b) ω))
+      = proj ∘ (fun ω (i : Fin (2 * M + 1)) =>
+          (X ((b - (M : ℤ)) + (i : ℕ)) ω, e ((b - (M : ℤ)) + (i : ℕ)) ω)) := by
+    intro b
+    funext ω i
+    have hval : (b - (M : ℤ)) + (((j i : Fin (2 * M + 1)) : ℕ) : ℤ) = t i + b := by
+      simp only [hjdef]
+      have := hMle i
+      omega
+    simp only [hprojdef, Function.comp_apply, hval]
+  have h0 : (fun ω (i : Fin n) => (X (t i) ω, e (t i) ω))
+      = (fun ω (i : Fin n) => (X (t i + 0) ω, e (t i + 0) ω)) := by simp
+  rw [hcomp a, h0, hcomp 0,
+    ← Measure.map_map hprojm (hwin (2 * M + 1) (a - (M : ℤ))),
+    ← Measure.map_map hprojm (hwin (2 * M + 1) ((0 : ℤ) - (M : ℤ))),
+    hstat (2 * M + 1) (a - (M : ℤ)), hstat (2 * M + 1) ((0 : ℤ) - (M : ℤ))]
+
+/-- The coded pair series is strictly stationary. -/
+theorem isStrictlyStationary_pairCode {X e : ℤ → Ω → ℝ}
+    (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
+    (hstat : ∀ (k : ℕ) (t : ℤ),
+      μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
+        = μ.map (fun ω (i : Fin k) => (X ((i : ℕ) : ℤ) ω, e ((i : ℕ) : ℤ) ω))) :
+    IsStrictlyStationary (fun t ω => pairCode (X t ω, e t ω)) μ := by
+  intro n t k
+  have hm : ∀ b : ℤ, Measurable (fun ω (i : Fin n) => (X (t i + b) ω, e (t i + b) ω)) :=
+    fun b => measurable_pi_lambda _ fun i => (hmeasX _).prodMk (hmeasE _)
+  have hm0 : Measurable (fun ω (i : Fin n) => (X (t i) ω, e (t i) ω)) :=
+    measurable_pi_lambda _ fun i => (hmeasX _).prodMk (hmeasE _)
+  have hcode : Measurable (fun (z : Fin n → ℝ × ℝ) (i : Fin n) => pairCode (z i)) :=
+    measurable_pi_lambda _ fun i => pairCode.measurable.comp (measurable_pi_apply i)
+  have e1 : (fun ω (i : Fin n) => pairCode (X (t i + k) ω, e (t i + k) ω))
+      = (fun (z : Fin n → ℝ × ℝ) (i : Fin n) => pairCode (z i))
+        ∘ (fun ω (i : Fin n) => (X (t i + k) ω, e (t i + k) ω)) := rfl
+  have e2 : (fun ω (i : Fin n) => pairCode (X (t i) ω, e (t i) ω))
+      = (fun (z : Fin n → ℝ × ℝ) (i : Fin n) => pairCode (z i))
+        ∘ (fun ω (i : Fin n) => (X (t i) ω, e (t i) ω)) := rfl
+  show μ.map (fun ω (i : Fin n) => pairCode (X (t i + k) ω, e (t i + k) ω))
+      = μ.map (fun ω (i : Fin n) => pairCode (X (t i) ω, e (t i) ω))
+  rw [e1, e2, ← Measure.map_map hcode (hm k), ← Measure.map_map hcode hm0,
+    map_tuple_shift hmeasX hmeasE hstat n t k]
+
+/-- **Shift lemma for the pair series.** Under fdd stationarity the α-coefficient between
+the pair past up to `k` and the pair future from `k + d` is `pairAlphaCoeff X e μ d`. -/
+theorem pairAlphaCoeff_shift [IsProbabilityMeasure μ]
+    {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
+    (hstat : ∀ (k : ℕ) (t : ℤ),
+      μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
+        = μ.map (fun ω (i : Fin k) => (X ((i : ℕ) : ℤ) ω, e ((i : ℕ) : ℤ) ω)))
+    (k : ℤ) (d : ℕ) :
+    alphaMixCoeff μ
+        (⨆ s ∈ Set.Iic k, MeasurableSpace.comap (X s) inferInstance ⊔
+          MeasurableSpace.comap (e s) inferInstance)
+        (⨆ s ∈ Set.Ici (k + (d : ℤ)), MeasurableSpace.comap (X s) inferInstance ⊔
+          MeasurableSpace.comap (e s) inferInstance)
+      = pairAlphaCoeff X e μ d := by
+  have hZm : ∀ t : ℤ, Measurable (fun ω => pairCode (X t ω, e t ω)) := fun t =>
+    pairCode.measurable.comp ((hmeasX t).prodMk (hmeasE t))
+  have hLE : ∀ c : ℤ, sigmaLE (fun t ω => pairCode (X t ω, e t ω)) c
+      = ⨆ s ∈ Set.Iic c, MeasurableSpace.comap (X s) inferInstance ⊔
+        MeasurableSpace.comap (e s) inferInstance := fun c =>
+    iSup_congr fun s => iSup_congr fun _ => comap_pairCode s
+  have hGE : ∀ c : ℤ, sigmaGE (fun t ω => pairCode (X t ω, e t ω)) c
+      = ⨆ s ∈ Set.Ici c, MeasurableSpace.comap (X s) inferInstance ⊔
+        MeasurableSpace.comap (e s) inferInstance := fun c =>
+    iSup_congr fun s => iSup_congr fun _ => comap_pairCode s
+  have hsh := (isStrictlyStationary_pairCode hmeasX hmeasE hstat).alphaMixCoeff_shift hZm k d
+  rw [hLE k, hGE (k + (d : ℤ))] at hsh
+  rw [hsh]
+  show alphaMixCoeff μ (sigmaLE (fun t ω => pairCode (X t ω, e t ω)) 0)
+      (sigmaGE (fun t ω => pairCode (X t ω, e t ω)) (d : ℤ)) = _
+  rw [hLE 0, hGE (d : ℤ)]
+  rfl
+
+end Shift
+
 end StatLean.TimeSeries
