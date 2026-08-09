@@ -5,6 +5,7 @@ import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 import Mathlib.MeasureTheory.Integral.MeanInequalities
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import Mathlib.Data.Fin.Tuple.Sort
 
 /-!
 # Covariance and moment inequalities under mixing (FY §2.6.2, pp. 71–73)
@@ -18,14 +19,15 @@ The quantitative toolbox for α-mixing processes:
   Doukhan §1.2.2; truncation of both factors against the bounded case);
 * **Proposition 2.6 (Volkonskii–Rozanov)**: complex unit-bounded blocks with α-gaps,
   `|E ∏ ξ_l − ∏ E ξ_l| ≤ 16 (k − 1) a` — the factorization engine of both CLT proofs
-  (Theorems 2.21(ii) and 2.22);
+  (Theorems 2.21(ii) and 2.22).  Proved for every `k ≥ 1`; **FALSE as frozen at `k = 0`**,
+  where the bound reads `0 ≤ −16a` (see the declaration);
 * the **fourth-moment bound** (the `q = 4` instance of FY Proposition 2.7(ii) that the
   Bernstein-block CLT consumes): bounded, zero-mean, strictly stationary,
-  `α(n) ≤ K n⁻²` ⇒ `E S_n⁴ ≤ C n²`.  Its *probabilistic* half is proved here — the
+  `α(n) ≤ K n⁻²` ⇒ `E S_n⁴ ≤ C n²`.  **Proved in full.**  Its *probabilistic* half is the
   sorted 4-tuple mixing bound `abs_integral_quad_le`, the expansion of `E S_n⁴` over
-  4-tuples, and the assembly.  Its *counting* half is the single remaining DEBT
-  `sum_four_le_of_cut_bound`: a purely combinatorial statement (no probability) whose
-  route is spelled out at its declaration;
+  4-tuples, and the assembly; its *counting* half `sum_four_le_of_cut_bound` — a purely
+  combinatorial statement (no probability) — is proved by `Tuple.sort` symmetrisation
+  (fibres of size `4!`) plus gap parametrisation, see its docstring;
 * **Theorems 2.18/2.19 (Bosq exponential inequalities)** — literature DEBTS (used only
   by ch. 5 KDE uniform rates, outside the current scope).
 
@@ -866,7 +868,17 @@ against an increasing family with α-gaps at most `a` factorize up to `16 (k −
 The gap hypothesis is abstract: the α-coefficient between the cumulative past
 `⨆_{j ≤ l} m j` and the next block `m (l+1)` is at most `a` — process-level
 applications supply it via `IsStrictlyStationary.alphaMixCoeff_shift` and
-monotonicity. -/
+monotonicity.
+
+**Status: PROVED for every `k ≥ 1`; FALSE AS FROZEN at `k = 0`** (verified — the single
+remaining `sorry` below is that corner, and it is not fillable).  At `k = 0` the index
+type `Fin 0` is empty, so every hypothesis is vacuous and `a` is unconstrained; the left
+side is exactly `‖1 − 1‖ = 0` (empty products, `∫ 1 = 1`) while the right side is
+`16 · (0 − 1) · a = −16a`, negative for every `a > 0`.  The claim `0 ≤ −16a` is therefore
+refutable.  **Repair** (not applied — the statement is frozen, and outside this wave's
+authorization): add `1 ≤ k`, or replace the factor `(k − 1)` by `(k − 1 : ℕ)` cast to `ℝ`,
+either of which makes the statement true; the `k ≥ 1` branch below already proves it.  No
+consumer needs `k = 0`. -/
 theorem norm_integral_prod_sub_prod_integral_le {k : ℕ}
     {m : Fin k → MeasurableSpace Ω} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ] (hle : ∀ l, m l ≤ mΩ)
@@ -1215,33 +1227,375 @@ private lemma sum_pow_four_expand {ι : Type*} (s : Finset ι) (f : ι → ℝ) 
   rw [Finset.sum_mul]
   exact Finset.sum_congr rfl fun c _ => Finset.mul_sum _ _ _
 
-/-- **DEBT (the counting half of FY Proposition 2.7(ii) at `q = 4`)** — reported loudly.
+/-- Invariance of a 4-tuple functional under a permutation, from invariance under swaps. -/
+private theorem tuple4_comp_perm_invariant {Gt : (Fin 4 → ℕ) → ℝ}
+    (hs : ∀ (i j : Fin 4) (f : Fin 4 → ℕ), Gt (f ∘ Equiv.swap i j) = Gt f)
+    (σ : Equiv.Perm (Fin 4)) (f : Fin 4 → ℕ) : Gt (f ∘ σ) = Gt f := by
+  have hmem : σ ∈ Submonoid.closure {τ : Equiv.Perm (Fin 4) | τ.IsSwap} := by
+    rw [Equiv.Perm.mclosure_isSwap]; trivial
+  revert f
+  induction hmem using Submonoid.closure_induction with
+  | mem x hx =>
+      obtain ⟨i, j, _, rfl⟩ := hx
+      exact fun f => hs i j f
+  | one => intro f; simp
+  | mul x y hx hy ihx ihy =>
+      intro f
+      have hcomp : f ∘ (x * y) = (f ∘ x) ∘ y := by
+        funext a; simp [Equiv.Perm.mul_apply]
+      rw [hcomp, ihy (f ∘ x), ihx f]
+
+private theorem tuple4_swap_invariant {G : ℕ → ℕ → ℕ → ℕ → ℝ}
+    (hGs1 : ∀ a b c d, G a b c d = G b a c d)
+    (hGs2 : ∀ a b c d, G a b c d = G a c b d)
+    (hGs3 : ∀ a b c d, G a b c d = G a b d c)
+    (i j : Fin 4) (f : Fin 4 → ℕ) :
+    G ((f ∘ Equiv.swap i j) 0) ((f ∘ Equiv.swap i j) 1) ((f ∘ Equiv.swap i j) 2)
+        ((f ∘ Equiv.swap i j) 3)
+      = G (f 0) (f 1) (f 2) (f 3) := by
+  have e02 : ∀ a b c d, G a b c d = G c b a d := fun a b c d =>
+    (hGs1 a b c d).trans ((hGs2 b a c d).trans (hGs1 b c a d))
+  have e13 : ∀ a b c d, G a b c d = G a d c b := fun a b c d =>
+    (hGs2 a b c d).trans ((hGs3 a c b d).trans (hGs2 a c d b))
+  have e03 : ∀ a b c d, G a b c d = G d b c a := fun a b c d =>
+    (hGs1 a b c d).trans ((hGs3 b a c d).trans ((hGs2 b a d c).trans
+      ((hGs1 b d a c).trans (hGs3 d b a c))))
+  fin_cases i <;> fin_cases j <;>
+    simp only [Function.comp_apply, Equiv.swap_apply_def] <;> norm_num <;>
+    first
+      | rfl
+      | exact (hGs1 _ _ _ _).symm
+      | exact (hGs2 _ _ _ _).symm
+      | exact (hGs3 _ _ _ _).symm
+      | exact (e02 _ _ _ _).symm
+      | exact (e13 _ _ _ _).symm
+      | exact (e03 _ _ _ _).symm
+
+/-- Symmetrisation: a permutation-invariant nonnegative functional summed over a
+permutation-closed family is at most `4!` times its sum over the sorted members. -/
+private theorem sum_tuple4_le_sorted {Gt : (Fin 4 → ℕ) → ℝ} (hGt0 : ∀ f, 0 ≤ Gt f)
+    (hperm : ∀ (σ : Equiv.Perm (Fin 4)) (f : Fin 4 → ℕ), Gt (f ∘ σ) = Gt f)
+    (P : Finset (Fin 4 → ℕ))
+    (hP : ∀ f ∈ P, ∀ σ : Equiv.Perm (Fin 4), f ∘ σ ∈ P) :
+    ∑ f ∈ P, Gt f
+      ≤ 24 * ∑ u ∈ P.filter (fun u => u 0 ≤ u 1 ∧ u 1 ≤ u 2 ∧ u 2 ≤ u 3), Gt u := by
+  classical
+  set Φ : (Fin 4 → ℕ) → (Fin 4 → ℕ) := fun f => f ∘ Tuple.sort f with hΦ
+  set Pm := P.filter (fun u => u 0 ≤ u 1 ∧ u 1 ≤ u 2 ∧ u 2 ≤ u 3) with hPm
+  have hmaps : ∀ f ∈ P, Φ f ∈ Pm := by
+    intro f hf
+    have hmono : Monotone (f ∘ Tuple.sort f) := Tuple.monotone_sort f
+    refine Finset.mem_filter.2 ⟨hP f hf _, ?_, ?_, ?_⟩
+    · exact hmono (by decide : (0 : Fin 4) ≤ 1)
+    · exact hmono (by decide : (1 : Fin 4) ≤ 2)
+    · exact hmono (by decide : (2 : Fin 4) ≤ 3)
+  have hcard : ∀ u : Fin 4 → ℕ, (P.filter (fun f => Φ f = u)).card ≤ 24 := by
+    intro u
+    have hsub : P.filter (fun f => Φ f = u)
+        ⊆ (Finset.univ : Finset (Equiv.Perm (Fin 4))).image
+            (fun σ : Equiv.Perm (Fin 4) => u ∘ (σ : Fin 4 → Fin 4)) := by
+      intro f hf
+      obtain ⟨-, hfu⟩ := Finset.mem_filter.1 hf
+      refine Finset.mem_image.2 ⟨(Tuple.sort f)⁻¹, Finset.mem_univ _, ?_⟩
+      rw [← hfu, hΦ]
+      funext a
+      simp
+    refine le_trans (Finset.card_le_card hsub) ?_
+    refine le_trans (Finset.card_image_le) ?_
+    rw [Finset.card_univ, Fintype.card_perm, Fintype.card_fin]
+    decide
+  calc ∑ f ∈ P, Gt f
+      = ∑ u ∈ Pm, ∑ f ∈ P.filter (fun f => Φ f = u), Gt f :=
+        (Finset.sum_fiberwise_of_maps_to hmaps Gt).symm
+    _ ≤ ∑ u ∈ Pm, 24 * Gt u := by
+        refine Finset.sum_le_sum fun u _ => ?_
+        have hval : ∀ f ∈ P.filter (fun f => Φ f = u), Gt f = Gt u := by
+          intro f hf
+          obtain ⟨-, hfu⟩ := Finset.mem_filter.1 hf
+          rw [← hfu, hΦ]
+          exact (hperm (Tuple.sort f) f).symm
+        rw [Finset.sum_congr rfl hval, Finset.sum_const, nsmul_eq_mul]
+        exact mul_le_mul_of_nonneg_right (by exact_mod_cast hcard u) (hGt0 u)
+    _ = 24 * ∑ u ∈ Pm, Gt u := by rw [Finset.mul_sum]
+
+private theorem sum_piFinset_four (s : Finset ℕ) (F : (Fin 4 → ℕ) → ℝ) :
+    ∑ f ∈ Fintype.piFinset (fun _ : Fin 4 => s), F f
+      = ∑ a ∈ s, ∑ b ∈ s, ∑ c ∈ s, ∑ d ∈ s, F ![a, b, c, d] := by
+  classical
+  have hprod : ∑ a ∈ s, ∑ b ∈ s, ∑ c ∈ s, ∑ d ∈ s, F ![a, b, c, d]
+      = ∑ p ∈ s ×ˢ (s ×ˢ (s ×ˢ s)), F ![p.1, p.2.1, p.2.2.1, p.2.2.2] := by
+    rw [Finset.sum_product]
+    refine Finset.sum_congr rfl fun a _ => ?_
+    rw [Finset.sum_product]
+    refine Finset.sum_congr rfl fun b _ => ?_
+    rw [Finset.sum_product]
+  rw [hprod]
+  refine Finset.sum_nbij' (fun f => (f 0, f 1, f 2, f 3))
+    (fun p => ![p.1, p.2.1, p.2.2.1, p.2.2.2]) ?_ ?_ ?_ ?_ ?_
+  · intro f hf
+    rw [Fintype.mem_piFinset] at hf
+    simp only [Finset.mem_product]
+    exact ⟨hf 0, hf 1, hf 2, hf 3⟩
+  · intro p hp
+    simp only [Finset.mem_product] at hp
+    rw [Fintype.mem_piFinset]
+    intro i
+    fin_cases i <;> simp [hp.1, hp.2.1, hp.2.2.1, hp.2.2.2]
+  · intro f _
+    funext i
+    fin_cases i <;> rfl
+  · intro p _
+    rfl
+  · intro f _
+    congr 1
+    funext i
+    fin_cases i <;> rfl
+
+private theorem sum_inv_sq_le_two (m : ℕ) : ∑ g ∈ Finset.Ico 1 m, (1 : ℝ) / (g : ℝ) ^ 2 ≤ 2 := by
+  have aux : ∀ k : ℕ, ∑ g ∈ Finset.Ico 1 (k + 2), (1 : ℝ) / (g : ℝ) ^ 2
+      ≤ 2 - 1 / ((k : ℝ) + 1) := by
+    intro k
+    induction k with
+    | zero => norm_num
+    | succ k ih =>
+        rw [show k + 1 + 2 = (k + 2) + 1 from rfl,
+          Finset.sum_Ico_succ_top (by omega : 1 ≤ k + 2)]
+        have hstep : (1 : ℝ) / ((k : ℝ) + 2) ^ 2
+            ≤ 1 / ((k : ℝ) + 1) - 1 / ((k : ℝ) + 2) := by
+          have heq : (1 : ℝ) / ((k : ℝ) + 1) - 1 / ((k : ℝ) + 2)
+              = 1 / (((k : ℝ) + 1) * ((k : ℝ) + 2)) := by
+            field_simp
+            ring
+          rw [heq]
+          refine one_div_le_one_div_of_le (by positivity) ?_
+          nlinarith [Nat.cast_nonneg (α := ℝ) k]
+        have hcast : (((k + 2 : ℕ) : ℝ)) = (k : ℝ) + 2 := by push_cast; ring
+        rw [hcast]
+        push_cast
+        rw [show ((k : ℝ) + 1 + 1) = (k : ℝ) + 2 from by ring]
+        linarith
+  match m with
+  | 0 => simp
+  | 1 => simp
+  | (k + 2) =>
+      refine (aux k).trans ?_
+      have h : (0 : ℝ) ≤ 1 / ((k : ℝ) + 1) := by positivity
+      linarith
+
+private theorem sum_indicator_le_succ {n m : ℕ} :
+    ∑ g ∈ Finset.range n, (if g ≤ m then (1 : ℝ) else 0) ≤ (m : ℝ) + 1 := by
+  classical
+  rw [← Finset.sum_filter, Finset.sum_const, nsmul_eq_mul, mul_one]
+  have hsub : (Finset.range n).filter (fun g => g ≤ m) ⊆ Finset.range (m + 1) := by
+    intro g hg
+    simp only [Finset.mem_filter, Finset.mem_range] at hg ⊢
+    omega
+  have hc := Finset.card_le_card hsub
+  rw [Finset.card_range] at hc
+  have hc' : (((Finset.range n).filter (fun g => g ≤ m)).card : ℝ) ≤ ((m + 1 : ℕ) : ℝ) := by
+    exact_mod_cast hc
+  push_cast at hc'
+  linarith
+
+private theorem sum_mixing_le {A : ℕ → ℝ} {K : ℝ} (hK : 0 ≤ K)
+    (hA1 : ∀ m, A m ≤ 1)
+    (hAK : ∀ m : ℕ, 1 ≤ m → A m ≤ K / (m : ℝ) ^ 2) (n : ℕ) :
+    ∑ g ∈ Finset.range n, A g ≤ 1 + 2 * K := by
+  match n with
+  | 0 =>
+      rw [Finset.range_zero, Finset.sum_empty]
+      linarith
+  | (m + 1) =>
+      rw [Finset.range_eq_Ico, Finset.sum_eq_sum_Ico_succ_bot (by omega : 0 < m + 1)]
+      have h1 : ∑ g ∈ Finset.Ico 1 (m + 1), A g
+          ≤ ∑ g ∈ Finset.Ico 1 (m + 1), K * (1 / (g : ℝ) ^ 2) := by
+        refine Finset.sum_le_sum fun g hg => ?_
+        have hg1 : 1 ≤ g := (Finset.mem_Ico.1 hg).1
+        rw [mul_one_div]
+        exact hAK g hg1
+      have h2 : ∑ g ∈ Finset.Ico 1 (m + 1), K * (1 / (g : ℝ) ^ 2) ≤ K * 2 := by
+        rw [← Finset.mul_sum]
+        exact mul_le_mul_of_nonneg_left (sum_inv_sq_le_two _) hK
+      have h3 := hA1 0
+      linarith
+
+private theorem sum_mixing_mul_sq_le {A : ℕ → ℝ} {K : ℝ} (hK : 0 ≤ K)
+    (hA1 : ∀ m, A m ≤ 1)
+    (hAK : ∀ m : ℕ, 1 ≤ m → A m ≤ K / (m : ℝ) ^ 2) (n : ℕ) :
+    ∑ g ∈ Finset.range n, A g * ((g : ℝ) + 1) ^ 2 ≤ 1 + 4 * K * (n : ℝ) := by
+  match n with
+  | 0 =>
+      rw [Finset.range_zero, Finset.sum_empty, Nat.cast_zero, mul_zero]
+      linarith
+  | (m + 1) =>
+      rw [Finset.range_eq_Ico, Finset.sum_eq_sum_Ico_succ_bot (by omega : 0 < m + 1)]
+      have h1 : ∑ g ∈ Finset.Ico 1 (m + 1), A g * ((g : ℝ) + 1) ^ 2
+          ≤ ∑ _g ∈ Finset.Ico 1 (m + 1), 4 * K := by
+        refine Finset.sum_le_sum fun g hg => ?_
+        have hg1 : 1 ≤ g := (Finset.mem_Ico.1 hg).1
+        have hgR : (1 : ℝ) ≤ (g : ℝ) := by exact_mod_cast hg1
+        have hb := hAK g hg1
+        have hsq : ((g : ℝ) + 1) ^ 2 ≤ 4 * (g : ℝ) ^ 2 := by nlinarith
+        calc A g * ((g : ℝ) + 1) ^ 2 ≤ (K / (g : ℝ) ^ 2) * ((g : ℝ) + 1) ^ 2 :=
+              mul_le_mul_of_nonneg_right hb (by positivity)
+          _ ≤ (K / (g : ℝ) ^ 2) * (4 * (g : ℝ) ^ 2) :=
+              mul_le_mul_of_nonneg_left hsq (by positivity)
+          _ = 4 * K := by
+              have hgpos : (0 : ℝ) < (g : ℝ) := by linarith
+              field_simp
+      rw [Finset.sum_const, Nat.card_Ico, nsmul_eq_mul] at h1
+      have hm : (((m + 1 - 1 : ℕ)) : ℝ) = (m : ℝ) := by norm_num
+      rw [hm] at h1
+      have h0 : A 0 * (((0 : ℕ) : ℝ) + 1) ^ 2 = A 0 := by norm_num
+      rw [h0]
+      have h3 := hA1 0
+      have hmn : (m : ℝ) * (4 * K) ≤ 4 * K * ((m : ℝ) + 1) := by
+        nlinarith [Nat.cast_nonneg (α := ℝ) m]
+      push_cast
+      linarith
+
+private theorem mixing_max_le_indicators {A : ℕ → ℝ} (hA0 : ∀ m, 0 ≤ A m) (g1 g2 g3 : ℕ) :
+    A (max g1 (max g2 g3))
+      ≤ (if g2 ≤ g1 then (1 : ℝ) else 0) * (if g3 ≤ g1 then (1 : ℝ) else 0) * A g1
+        + (if g1 ≤ g2 then (1 : ℝ) else 0) * (if g3 ≤ g2 then (1 : ℝ) else 0) * A g2
+        + (if g1 ≤ g3 then (1 : ℝ) else 0) * (if g2 ≤ g3 then (1 : ℝ) else 0) * A g3 := by
+  rcases le_total g1 g2 with h12 | h12 <;> rcases le_total g2 g3 with h23 | h23 <;>
+    rcases le_total g1 g3 with h13 | h13 <;>
+    simp_all [max_def] <;>
+    split_ifs <;> linarith [hA0 g1, hA0 g2, hA0 g3]
+
+private theorem sum_triple_indicator_le {A : ℕ → ℝ} {K : ℝ} (hK : 0 ≤ K) (hA0 : ∀ m, 0 ≤ A m)
+    (hA1 : ∀ m, A m ≤ 1) (hAK : ∀ m : ℕ, 1 ≤ m → A m ≤ K / (m : ℝ) ^ 2) (n : ℕ) :
+    ∑ x ∈ Finset.range n, ∑ y ∈ Finset.range n, ∑ z ∈ Finset.range n,
+        (if y ≤ x then (1 : ℝ) else 0) * (if z ≤ x then (1 : ℝ) else 0) * A x
+      ≤ 1 + 4 * K * (n : ℝ) := by
+  have hfac : ∀ x : ℕ, ∑ y ∈ Finset.range n, ∑ z ∈ Finset.range n,
+      (if y ≤ x then (1 : ℝ) else 0) * (if z ≤ x then (1 : ℝ) else 0) * A x
+      = (∑ y ∈ Finset.range n, (if y ≤ x then (1 : ℝ) else 0)) *
+        ((∑ z ∈ Finset.range n, (if z ≤ x then (1 : ℝ) else 0)) * A x) := by
+    intro x
+    have inner : ∀ y : ℕ, ∑ z ∈ Finset.range n,
+        (if y ≤ x then (1 : ℝ) else 0) * (if z ≤ x then (1 : ℝ) else 0) * A x
+        = (if y ≤ x then (1 : ℝ) else 0) *
+          ((∑ z ∈ Finset.range n, (if z ≤ x then (1 : ℝ) else 0)) * A x) := by
+      intro y
+      rw [Finset.sum_mul, Finset.mul_sum]
+      exact Finset.sum_congr rfl fun z _ => mul_assoc _ _ _
+    rw [Finset.sum_congr rfl fun y _ => inner y, ← Finset.sum_mul]
+  have hbound : ∀ x ∈ Finset.range n,
+      (∑ y ∈ Finset.range n, (if y ≤ x then (1 : ℝ) else 0)) *
+        ((∑ z ∈ Finset.range n, (if z ≤ x then (1 : ℝ) else 0)) * A x)
+      ≤ A x * ((x : ℝ) + 1) ^ 2 := by
+    intro x _
+    have hI0 : (0 : ℝ) ≤ ∑ y ∈ Finset.range n, (if y ≤ x then (1 : ℝ) else 0) :=
+      Finset.sum_nonneg fun y _ => by positivity
+    have hI := sum_indicator_le_succ (n := n) (m := x)
+    have hx0 : (0 : ℝ) ≤ (x : ℝ) + 1 := by positivity
+    calc (∑ y ∈ Finset.range n, (if y ≤ x then (1 : ℝ) else 0)) *
+          ((∑ z ∈ Finset.range n, (if z ≤ x then (1 : ℝ) else 0)) * A x)
+        ≤ ((x : ℝ) + 1) * (((x : ℝ) + 1) * A x) := by
+          refine mul_le_mul hI ?_ (mul_nonneg hI0 (hA0 x)) hx0
+          exact mul_le_mul_of_nonneg_right hI (hA0 x)
+      _ = A x * ((x : ℝ) + 1) ^ 2 := by ring
+  calc ∑ x ∈ Finset.range n, ∑ y ∈ Finset.range n, ∑ z ∈ Finset.range n,
+          (if y ≤ x then (1 : ℝ) else 0) * (if z ≤ x then (1 : ℝ) else 0) * A x
+      = ∑ x ∈ Finset.range n, (∑ y ∈ Finset.range n, (if y ≤ x then (1 : ℝ) else 0)) *
+          ((∑ z ∈ Finset.range n, (if z ≤ x then (1 : ℝ) else 0)) * A x) :=
+        Finset.sum_congr rfl fun x _ => hfac x
+    _ ≤ ∑ x ∈ Finset.range n, A x * ((x : ℝ) + 1) ^ 2 := Finset.sum_le_sum hbound
+    _ ≤ 1 + 4 * K * (n : ℝ) := sum_mixing_mul_sq_le hK hA1 hAK n
+
+private theorem sum_triple_max_le {A : ℕ → ℝ} {K : ℝ} (hK : 0 ≤ K) (hA0 : ∀ m, 0 ≤ A m)
+    (hA1 : ∀ m, A m ≤ 1) (hAK : ∀ m : ℕ, 1 ≤ m → A m ≤ K / (m : ℝ) ^ 2) (n : ℕ) :
+    ∑ g1 ∈ Finset.range n, ∑ g2 ∈ Finset.range n, ∑ g3 ∈ Finset.range n,
+        A (max g1 (max g2 g3))
+      ≤ 3 * (1 + 4 * K * (n : ℝ)) := by
+  have hle : ∑ g1 ∈ Finset.range n, ∑ g2 ∈ Finset.range n, ∑ g3 ∈ Finset.range n,
+        A (max g1 (max g2 g3))
+      ≤ ∑ g1 ∈ Finset.range n, ∑ g2 ∈ Finset.range n, ∑ g3 ∈ Finset.range n,
+        ((if g2 ≤ g1 then (1 : ℝ) else 0) * (if g3 ≤ g1 then (1 : ℝ) else 0) * A g1
+          + (if g1 ≤ g2 then (1 : ℝ) else 0) * (if g3 ≤ g2 then (1 : ℝ) else 0) * A g2
+          + (if g1 ≤ g3 then (1 : ℝ) else 0) * (if g2 ≤ g3 then (1 : ℝ) else 0) * A g3) :=
+    Finset.sum_le_sum fun g1 _ => Finset.sum_le_sum fun g2 _ =>
+      Finset.sum_le_sum fun g3 _ => mixing_max_le_indicators hA0 g1 g2 g3
+  refine hle.trans ?_
+  rw [show (3 : ℝ) * (1 + 4 * K * (n : ℝ))
+      = (1 + 4 * K * (n : ℝ)) + (1 + 4 * K * (n : ℝ)) + (1 + 4 * K * (n : ℝ)) from by ring]
+  simp only [Finset.sum_add_distrib]
+  have hT1 : ∑ g1 ∈ Finset.range n, ∑ g2 ∈ Finset.range n, ∑ g3 ∈ Finset.range n,
+      (if g2 ≤ g1 then (1 : ℝ) else 0) * (if g3 ≤ g1 then (1 : ℝ) else 0) * A g1
+      ≤ 1 + 4 * K * (n : ℝ) := sum_triple_indicator_le hK hA0 hA1 hAK n
+  have hT2 : ∑ g1 ∈ Finset.range n, ∑ g2 ∈ Finset.range n, ∑ g3 ∈ Finset.range n,
+      (if g1 ≤ g2 then (1 : ℝ) else 0) * (if g3 ≤ g2 then (1 : ℝ) else 0) * A g2
+      ≤ 1 + 4 * K * (n : ℝ) := by
+    rw [Finset.sum_comm]
+    exact sum_triple_indicator_le hK hA0 hA1 hAK n
+  have hT3 : ∑ g1 ∈ Finset.range n, ∑ g2 ∈ Finset.range n, ∑ g3 ∈ Finset.range n,
+      (if g1 ≤ g3 then (1 : ℝ) else 0) * (if g2 ≤ g3 then (1 : ℝ) else 0) * A g3
+      ≤ 1 + 4 * K * (n : ℝ) := by
+    rw [Finset.sum_congr rfl fun g1 (_ : g1 ∈ Finset.range n) => Finset.sum_comm
+      (s := Finset.range n) (t := Finset.range n)
+      (f := fun g2 g3 => (if g1 ≤ g3 then (1 : ℝ) else 0) *
+        (if g2 ≤ g3 then (1 : ℝ) else 0) * A g3), Finset.sum_comm]
+    exact sum_triple_indicator_le hK hA0 hA1 hAK n
+  linarith
+
+private theorem sum_triple_pair_le {A : ℕ → ℝ} {K : ℝ} (hK : 0 ≤ K) (hA0 : ∀ m, 0 ≤ A m)
+    (hA1 : ∀ m, A m ≤ 1) (hAK : ∀ m : ℕ, 1 ≤ m → A m ≤ K / (m : ℝ) ^ 2) (n : ℕ) :
+    ∑ g1 ∈ Finset.range n, ∑ g2 ∈ Finset.range n, ∑ g3 ∈ Finset.range n, A g1 * A g3
+      ≤ (n : ℝ) * (1 + 2 * K) ^ 2 := by
+  set S : ℝ := ∑ g ∈ Finset.range n, A g with hSdef
+  have hS0 : (0 : ℝ) ≤ S := Finset.sum_nonneg fun g _ => hA0 g
+  have hS := sum_mixing_le hK hA1 hAK n
+  have heq : ∑ g1 ∈ Finset.range n, ∑ g2 ∈ Finset.range n, ∑ g3 ∈ Finset.range n, A g1 * A g3
+      = (n : ℝ) * (S * S) := by
+    have h3 : ∀ g1 : ℕ, ∑ g3 ∈ Finset.range n, A g1 * A g3 = A g1 * S := by
+      intro g1; rw [hSdef, Finset.mul_sum]
+    have h2 : ∀ g1 : ℕ, ∑ g2 ∈ Finset.range n, ∑ g3 ∈ Finset.range n, A g1 * A g3
+        = (n : ℝ) * (A g1 * S) := by
+      intro g1
+      rw [Finset.sum_congr rfl fun g2 _ => h3 g1, Finset.sum_const, Finset.card_range,
+        nsmul_eq_mul]
+    rw [Finset.sum_congr rfl fun g1 _ => h2 g1, ← Finset.mul_sum]
+    rw [show (∑ g1 ∈ Finset.range n, A g1 * S) = S * S from by
+      rw [← Finset.sum_mul, ← hSdef]]
+  rw [heq]
+  have hsq : S * S ≤ (1 + 2 * K) ^ 2 := by nlinarith
+  exact mul_le_mul_of_nonneg_left hsq (Nat.cast_nonneg n)
+
+/-- **The counting half of FY Proposition 2.7(ii) at `q = 4` — PROVED.**
 
 Purely combinatorial: no probability appears.  A symmetric nonnegative kernel `G` on
 `ℕ⁴` whose *sorted* values obey the mixing cut bound against an antitone `A ≤ 1` with
 `A m ≤ K m⁻²` has `O(n²)` four-fold sums over `range n`.  Everything probabilistic that
-feeds this — the cut bound itself — is proved above (`abs_integral_quad_le`).
+feeds this — the cut bound itself — is `abs_integral_quad_le` above.
 
-ROUTE (ledger checked by hand, not yet formalised):
-* **Symmetrisation.**  `G` is invariant under the three adjacent transpositions
-  `hGs1`–`hGs3`, which generate `S₄`, so
-  `∑_{(a,b,c,d) ∈ (range n)⁴} G ≤ 24 · ∑_{a ≤ b ≤ c ≤ d < n} G a b c d`: map each tuple
-  to its sorted representative and bound the fibres by `4! = 24`.  In Lean this is the
-  expensive step — it needs an explicit sorting network on `ℕ⁴` (five comparators) plus
-  the proof that it is a permutation, or `Tuple.sort` with a fibre count.
-* **Gap parametrisation.**  Reindex sorted tuples by `(a, g₁, g₂, g₃)` with
-  `a + g₁ + g₂ + g₃ < n`; the map is a bijection onto its image, and dropping the
-  constraint only increases a sum of nonnegative terms.
-* **First sum.**  `∑_{a<n} ∑_{g₁,g₂,g₃<n} A (max g₁ (max g₂ g₃)) ≤ n · ∑_{g<n} 3 (g+1)² A g`
-  (a triple with maximum `g` has all entries `≤ g` and at least one equal to `g`, so the
-  fibre over `g` has at most `3(g+1)²` elements), and `3(g+1)² A g ≤ 3 · 4 K` for `g ≥ 1`
-  while the `g = 0` term is `≤ 3` by `A ≤ 1`; hence the inner sum is `≤ 3 + 12Kn` and the
-  total is `≤ n(3 + 12Kn) = O(n²)`.
-* **Second sum.**  `∑_{a<n} ∑_{g₁,g₂,g₃<n} A g₁ · A g₃ ≤ n · n · (∑_{g<n} A g)²` and
-  `∑_{g<n} A g ≤ 1 + K · ∑_{g≥1} g⁻² ≤ 1 + 2K` is bounded uniformly in `n`, so this is
-  `O(n²)` as well.
-* `D = 24 · (4C⁴(3 + 12K) + 16C⁴(1 + 2K)²)` works. -/
-private lemma sum_four_le_of_cut_bound {G : ℕ → ℕ → ℕ → ℕ → ℝ} {A : ℕ → ℝ} {C K : ℝ}
+PROOF, as formalised.  It follows the hand ledger, with two simplifications that remove
+the two steps flagged there as expensive:
+* **Symmetrisation** (`sum_tuple4_le_sorted`).  Tuples are taken as `Fin 4 → ℕ` and the
+  sorting map is Mathlib's `Tuple.sort`, so no explicit sorting network is needed.  `G` is
+  invariant under *every* permutation of its arguments — `tuple4_swap_invariant` turns the
+  three adjacent transpositions `hGs1`–`hGs3` into all six transpositions, and
+  `tuple4_comp_perm_invariant` propagates that along `Equiv.Perm.mclosure_isSwap` — so `G`
+  is constant on the fibres of the sort, and each fibre injects into
+  `{u ∘ σ : σ ∈ Perm (Fin 4)}`, of cardinality `4! = 24`.  Hence
+  `∑_{(range n)⁴} G ≤ 24 · ∑_{sorted} G`.
+* **Gap parametrisation.**  `u ↦ (u 0, u 1 − u 0, u 2 − u 1, u 3 − u 2)` is injective on
+  sorted tuples (truncated subtraction is exact there) and lands in `(range n)⁴`, so the
+  sorted sum is dominated by the *free* sum over `(a, g₁, g₂, g₃)`.
+* **First sum** (`sum_triple_max_le`).  Instead of a fibre count over the maximum, the
+  pointwise bound `A(max g₁ g₂ g₃) ≤ Σᵢ ⟦gⱼ ≤ gᵢ for all j⟧ · A(gᵢ)`
+  (`mixing_max_le_indicators`) is used; each of the three resulting triple sums factorises
+  as `∑_g A(g)·(#{y < n : y ≤ g})² ≤ ∑_g A(g)(g+1)² ≤ 1 + 4Kn`
+  (`sum_mixing_mul_sq_le`, via `(g+1)² ≤ 4g²` for `g ≥ 1`).
+* **Second sum** (`sum_triple_pair_le`).  It factorises as `n · (∑_{g<n} A g)²`, and
+  `∑_{g<n} A g ≤ 1 + 2K` (`sum_mixing_le`, from `∑_{g≥1} g⁻² ≤ 2`, `sum_inv_sq_le_two`).
+* `D = 24 · (12C⁴ + 48C⁴K + 16C⁴(1+2K)²)` works; the stray linear term is absorbed by
+  `n ≤ n²`.
+
+`hC` and `hAanti` are not needed by the proof and are kept only because the statement is
+frozen. -/
+private theorem sum_four_le_of_cut_bound {G : ℕ → ℕ → ℕ → ℕ → ℝ} {A : ℕ → ℝ} {C K : ℝ}
     (hC : 0 ≤ C) (hK : 0 ≤ K)
     (hA0 : ∀ m, 0 ≤ A m) (hA1 : ∀ m, A m ≤ 1) (hAanti : Antitone A)
     (hAK : ∀ m : ℕ, 1 ≤ m → A m ≤ K / (m : ℝ) ^ 2)
@@ -1255,7 +1609,141 @@ private lemma sum_four_le_of_cut_bound {G : ℕ → ℕ → ℕ → ℕ → ℝ}
     ∃ D : ℝ, 0 ≤ D ∧ ∀ n : ℕ,
       ∑ a ∈ Finset.range n, ∑ b ∈ Finset.range n, ∑ c ∈ Finset.range n,
         ∑ d ∈ Finset.range n, G a b c d ≤ D * (n : ℝ) ^ 2 := by
-  sorry
+  classical
+  have hC4 : (0 : ℝ) ≤ C ^ 4 := by positivity
+  have hD0 : (0 : ℝ) ≤ 24 * (12 * C ^ 4 + 48 * C ^ 4 * K + 16 * C ^ 4 * (1 + 2 * K) ^ 2) := by
+    nlinarith [sq_nonneg (1 + 2 * K)]
+  refine ⟨_, hD0, fun n => ?_⟩
+  obtain ⟨Gt, hGt⟩ : ∃ Gt : (Fin 4 → ℕ) → ℝ, ∀ f, Gt f = G (f 0) (f 1) (f 2) (f 3) :=
+    ⟨_, fun _ => rfl⟩
+  obtain ⟨B, hB⟩ : ∃ B : (Fin 4 → ℕ) → ℝ, ∀ v,
+      B v = 4 * C ^ 4 * A (max (v 1) (max (v 2) (v 3))) + 16 * C ^ 4 * (A (v 1) * A (v 3)) :=
+    ⟨_, fun _ => rfl⟩
+  obtain ⟨ψ, hψ⟩ : ∃ ψ : (Fin 4 → ℕ) → (Fin 4 → ℕ), ∀ u,
+      ψ u = ![u 0, u 1 - u 0, u 2 - u 1, u 3 - u 2] := ⟨_, fun _ => rfl⟩
+  set P : Finset (Fin 4 → ℕ) := Fintype.piFinset (fun _ : Fin 4 => Finset.range n) with hP
+  set Pm : Finset (Fin 4 → ℕ) :=
+    P.filter (fun u => u 0 ≤ u 1 ∧ u 1 ≤ u 2 ∧ u 2 ≤ u 3) with hPmdef
+  have hB0 : ∀ v, 0 ≤ B v := by
+    intro v
+    rw [hB]
+    have t1 : (0 : ℝ) ≤ 4 * C ^ 4 * A (max (v 1) (max (v 2) (v 3))) :=
+      mul_nonneg (by positivity) (hA0 _)
+    have t2 : (0 : ℝ) ≤ 16 * C ^ 4 * (A (v 1) * A (v 3)) :=
+      mul_nonneg (by positivity) (mul_nonneg (hA0 _) (hA0 _))
+    linarith
+  -- (a) the nested sum is a sum over the tuple family
+  have hLHS : ∑ a ∈ Finset.range n, ∑ b ∈ Finset.range n, ∑ c ∈ Finset.range n,
+      ∑ d ∈ Finset.range n, G a b c d = ∑ f ∈ P, Gt f := by
+    rw [hP, sum_piFinset_four]
+    refine Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun b _ =>
+      Finset.sum_congr rfl fun c _ => Finset.sum_congr rfl fun d _ => ?_
+    rw [hGt]
+    rfl
+  -- (b) symmetrisation
+  have hperm : ∀ (σ : Equiv.Perm (Fin 4)) (f : Fin 4 → ℕ), Gt (f ∘ σ) = Gt f := by
+    refine tuple4_comp_perm_invariant ?_
+    intro i j f
+    rw [hGt, hGt]
+    exact tuple4_swap_invariant hGs1 hGs2 hGs3 i j f
+  have hPclosed : ∀ f ∈ P, ∀ σ : Equiv.Perm (Fin 4), f ∘ σ ∈ P := by
+    intro f hf σ
+    rw [hP, Fintype.mem_piFinset] at hf ⊢
+    exact fun i => hf (σ i)
+  have hsym := sum_tuple4_le_sorted (Gt := Gt) (fun f => by rw [hGt]; exact hG0 _ _ _ _)
+    hperm P hPclosed
+  rw [← hPmdef] at hsym
+  -- (c) the cut bound, in gap coordinates
+  have hcut' : ∀ u ∈ Pm, Gt u ≤ B (ψ u) := by
+    intro u hu
+    obtain ⟨-, h1, h2, h3⟩ := Finset.mem_filter.1 hu
+    rw [hGt, hB, hψ]
+    simpa using hcut (u 0) (u 1) (u 2) (u 3) h1 h2 h3
+  -- (d) the gap map is injective on the sorted tuples and lands in the family
+  have hψmem : ∀ u ∈ Pm, ψ u ∈ P := by
+    intro u hu
+    obtain ⟨huP, -⟩ := Finset.mem_filter.1 hu
+    rw [hP, Fintype.mem_piFinset] at huP ⊢
+    intro i
+    rw [hψ]
+    have h0 := huP 0
+    have h1 := huP 1
+    have h2 := huP 2
+    have h3 := huP 3
+    simp only [Finset.mem_range] at h0 h1 h2 h3 ⊢
+    fin_cases i <;> simp <;> omega
+  have hψinj : ∀ u ∈ Pm, ∀ u' ∈ Pm, ψ u = ψ u' → u = u' := by
+    intro u hu u' hu' heq
+    obtain ⟨-, h1, h2, h3⟩ := Finset.mem_filter.1 hu
+    obtain ⟨-, h1', h2', h3'⟩ := Finset.mem_filter.1 hu'
+    have e0 : u 0 = u' 0 := by
+      have h := congrFun heq 0; rw [hψ, hψ] at h; exact h
+    have e1 : u 1 - u 0 = u' 1 - u' 0 := by
+      have h := congrFun heq 1; rw [hψ, hψ] at h; exact h
+    have e2 : u 2 - u 1 = u' 2 - u' 1 := by
+      have h := congrFun heq 2; rw [hψ, hψ] at h; exact h
+    have e3 : u 3 - u 2 = u' 3 - u' 2 := by
+      have h := congrFun heq 3; rw [hψ, hψ] at h; exact h
+    have q0 : u 0 = u' 0 := by omega
+    have q1 : u 1 = u' 1 := by omega
+    have q2 : u 2 = u' 2 := by omega
+    have q3 : u 3 = u' 3 := by omega
+    funext i
+    fin_cases i <;> assumption
+  -- (e) assemble the chain
+  have hstep : ∑ u ∈ Pm, Gt u ≤ ∑ v ∈ P, B v := by
+    calc ∑ u ∈ Pm, Gt u ≤ ∑ u ∈ Pm, B (ψ u) := Finset.sum_le_sum hcut'
+      _ = ∑ v ∈ Pm.image ψ, B v := (Finset.sum_image hψinj).symm
+      _ ≤ ∑ v ∈ P, B v := by
+          refine Finset.sum_le_sum_of_subset_of_nonneg ?_ (fun v _ _ => hB0 v)
+          intro v hv
+          obtain ⟨u, hu, rfl⟩ := Finset.mem_image.1 hv
+          exact hψmem u hu
+  -- (f) the gap sums
+  have hBsum : ∑ v ∈ P, B v
+      ≤ (n : ℝ) * (12 * C ^ 4 * (1 + 4 * K * (n : ℝ))
+        + 16 * C ^ 4 * ((n : ℝ) * (1 + 2 * K) ^ 2)) := by
+    rw [hP, sum_piFinset_four]
+    have hin : ∀ a : ℕ, ∑ g1 ∈ Finset.range n, ∑ g2 ∈ Finset.range n,
+        ∑ g3 ∈ Finset.range n, B ![a, g1, g2, g3]
+        ≤ 12 * C ^ 4 * (1 + 4 * K * (n : ℝ))
+          + 16 * C ^ 4 * ((n : ℝ) * (1 + 2 * K) ^ 2) := by
+      intro a
+      have hval : ∀ g1 g2 g3 : ℕ, B ![a, g1, g2, g3]
+          = 4 * C ^ 4 * A (max g1 (max g2 g3)) + 16 * C ^ 4 * (A g1 * A g3) := by
+        intro g1 g2 g3; rw [hB]; rfl
+      calc ∑ g1 ∈ Finset.range n, ∑ g2 ∈ Finset.range n, ∑ g3 ∈ Finset.range n,
+              B ![a, g1, g2, g3]
+          = ∑ g1 ∈ Finset.range n, ∑ g2 ∈ Finset.range n, ∑ g3 ∈ Finset.range n,
+              (4 * C ^ 4 * A (max g1 (max g2 g3)) + 16 * C ^ 4 * (A g1 * A g3)) :=
+            Finset.sum_congr rfl fun g1 _ => Finset.sum_congr rfl fun g2 _ =>
+              Finset.sum_congr rfl fun g3 _ => hval g1 g2 g3
+        _ = 4 * C ^ 4 * (∑ g1 ∈ Finset.range n, ∑ g2 ∈ Finset.range n,
+                ∑ g3 ∈ Finset.range n, A (max g1 (max g2 g3)))
+              + 16 * C ^ 4 * (∑ g1 ∈ Finset.range n, ∑ g2 ∈ Finset.range n,
+                ∑ g3 ∈ Finset.range n, A g1 * A g3) := by
+            simp only [Finset.sum_add_distrib, ← Finset.mul_sum]
+        _ ≤ 12 * C ^ 4 * (1 + 4 * K * (n : ℝ))
+              + 16 * C ^ 4 * ((n : ℝ) * (1 + 2 * K) ^ 2) := by
+            have hm := sum_triple_max_le hK hA0 hA1 hAK n
+            have hp := sum_triple_pair_le hK hA0 hA1 hAK n
+            nlinarith
+    calc ∑ a ∈ Finset.range n, ∑ g1 ∈ Finset.range n, ∑ g2 ∈ Finset.range n,
+            ∑ g3 ∈ Finset.range n, B ![a, g1, g2, g3]
+        ≤ ∑ _a ∈ Finset.range n, (12 * C ^ 4 * (1 + 4 * K * (n : ℝ))
+            + 16 * C ^ 4 * ((n : ℝ) * (1 + 2 * K) ^ 2)) := Finset.sum_le_sum fun a _ => hin a
+      _ = (n : ℝ) * (12 * C ^ 4 * (1 + 4 * K * (n : ℝ))
+            + 16 * C ^ 4 * ((n : ℝ) * (1 + 2 * K) ^ 2)) := by
+          rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+  -- (g) numerology
+  have hn2 : (n : ℝ) ≤ (n : ℝ) ^ 2 := by
+    have : n ≤ n ^ 2 := Nat.le_self_pow (by norm_num) n
+    exact_mod_cast this
+  have hn0 : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+  rw [hLHS]
+  refine hsym.trans ?_
+  have hchain := hstep.trans hBsum
+  nlinarith [sq_nonneg (1 + 2 * K), hC4, hK, mul_nonneg hC4 hK]
 
 end Moment4
 
