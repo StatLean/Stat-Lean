@@ -950,4 +950,139 @@ theorem pairAlphaCoeff_shift [IsProbabilityMeasure μ]
 
 end Shift
 
+section Blocks
+
+/-- `l_n / n → 0`. -/
+theorem tendsto_bigBlockLen_div {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
+    (hh : Tendsto h atTop (𝓝 0)) :
+    Tendsto (fun n : ℕ => (bigBlockLen h n : ℝ) / (n : ℝ)) atTop (𝓝 0) := by
+  have hmaj : Tendsto (fun n : ℕ => (Real.sqrt (n : ℝ))⁻¹ + ((n : ℝ))⁻¹) atTop (𝓝 0) := by
+    have t1 : Tendsto (fun n : ℕ => (Real.sqrt (n : ℝ))⁻¹) atTop (𝓝 0) :=
+      (tendsto_inv_atTop_zero.comp
+        (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop))
+    have t2 : Tendsto (fun n : ℕ => ((n : ℝ))⁻¹) atTop (𝓝 0) :=
+      tendsto_inv_atTop_zero.comp tendsto_natCast_atTop_atTop
+    simpa using t1.add t2
+  refine squeeze_zero' ?_ ?_ hmaj
+  · filter_upwards with n
+    positivity
+  have hlogtop : Tendsto (fun n : ℕ => Real.log n) atTop atTop :=
+    Real.tendsto_log_atTop.comp tendsto_natCast_atTop_atTop
+  filter_upwards [eventually_ge_atTop 3, hh.eventually_le_const (by norm_num : (0:ℝ) < 1),
+    hlogtop.eventually_ge_atTop 1] with n hn3 hh1 hΛ1
+  have hn0 : (0 : ℝ) < (n : ℝ) := by
+    have : (3 : ℕ) ≤ n := hn3
+    exact_mod_cast Nat.lt_of_lt_of_le (by norm_num) this
+  have hsq : Real.sqrt ((n : ℝ) * h n) ≤ Real.sqrt (n : ℝ) := by
+    refine Real.sqrt_le_sqrt ?_
+    nlinarith [(hh0 n).le, hn0.le]
+  have hle : (bigBlockLen h n : ℝ) ≤ Real.sqrt ((n : ℝ) * h n) / Real.log n + 1 := by
+    rw [bigBlockLen]
+    exact (Nat.ceil_lt_add_one (by positivity)).le
+  rw [div_le_iff₀ hn0]
+  have hstep : Real.sqrt ((n : ℝ) * h n) / Real.log n ≤ Real.sqrt (n : ℝ) := by
+    rw [div_le_iff₀ (by linarith)]
+    nlinarith [Real.sqrt_nonneg (n : ℝ), hsq]
+  have hsq0 : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hn0
+  have hid : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) := Real.mul_self_sqrt hn0.le
+  calc (bigBlockLen h n : ℝ) ≤ Real.sqrt ((n : ℝ) * h n) / Real.log n + 1 := hle
+    _ ≤ Real.sqrt (n : ℝ) + 1 := by linarith
+    _ = ((Real.sqrt (n : ℝ))⁻¹ + ((n : ℝ))⁻¹) * (n : ℝ) := by
+        field_simp
+        nlinarith [hid]
+
+/-- `s_n / n → 0`. -/
+theorem tendsto_smallBlockLen_div {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
+    (hh : Tendsto h atTop (𝓝 0))
+    (hnh : Tendsto (fun n : ℕ => (n : ℝ) * h n ^ 3) atTop atTop)
+    {δ lam : ℝ} (hδ : 2 < δ) (hlam : 1 - 2 / δ < lam) :
+    Tendsto (fun n : ℕ => (smallBlockLen h δ lam n : ℝ) / (n : ℝ)) atTop (𝓝 0) := by
+  have hδ0 : (0 : ℝ) < δ := by linarith
+  have hβ0 : (0 : ℝ) < 1 - 2 / δ := by rw [sub_pos, div_lt_one hδ0]; linarith
+  have hlam0 : (0 : ℝ) < lam := lt_trans hβ0 hlam
+  set θ : ℝ := (1 - 2 / δ) / (lam + 1) with hθdef
+  have hL1 : (0 : ℝ) < lam + 1 := by linarith
+  have hθ0 : 0 < θ := div_pos hβ0 hL1
+  have hθ1 : θ < 1 / 2 := by
+    rw [hθdef, div_lt_iff₀ hL1]
+    have : (1 : ℝ) - 2 / δ < 1 := by
+      have : (0 : ℝ) < 2 / δ := by positivity
+      linarith
+    linarith
+  have hmaj0 : Tendsto (fun n : ℕ =>
+      Real.log n ^ θ / (n : ℝ) ^ ((1 - 2 * θ) / 3) + ((n : ℝ))⁻¹) atTop (𝓝 0) := by
+    have t1 := tendsto_log_rpow_div_rpow_atTop (α := (1 - 2 * θ) / 3) (β := θ)
+      (by linarith) hθ0
+    have t2 : Tendsto (fun n : ℕ => ((n : ℝ))⁻¹) atTop (𝓝 0) :=
+      tendsto_inv_atTop_zero.comp tendsto_natCast_atTop_atTop
+    simpa using t1.add t2
+  refine squeeze_zero' ?_ ?_ hmaj0
+  · filter_upwards with n
+    positivity
+  filter_upwards [eventually_ge_atTop 2, hnh.eventually_ge_atTop 1,
+    hh.eventually_le_const (by norm_num : (0:ℝ) < 1)] with n hn2 hPH3 hh1
+  set P : ℝ := (n : ℝ) with hPdef
+  set H : ℝ := h n with hHdef
+  set Λ : ℝ := Real.log n with hΛdef
+  have hP1 : (1 : ℝ) ≤ P := by rw [hPdef]; exact_mod_cast Nat.one_le_of_lt hn2
+  have hP0 : (0 : ℝ) < P := by linarith
+  have hH0 : (0 : ℝ) < H := hh0 n
+  have hΛ0 : (0 : ℝ) < Λ := Real.log_pos (by exact_mod_cast hn2)
+  have hPH3' : (0 : ℝ) < P * H ^ 3 := by positivity
+  have hlogP3 : Real.log (P * H ^ 3) = Real.log P + 3 * Real.log H := by
+    rw [Real.log_mul hP0.ne' (by positivity), Real.log_pow]; push_cast; ring
+  have hlogPH : Real.log (P * H) = Real.log P + Real.log H := Real.log_mul hP0.ne' hH0.ne'
+  have hlogPdH : Real.log (P / H) = Real.log P - Real.log H := Real.log_div hP0.ne' hH0.ne'
+  have hone3 : (1 : ℝ) ≤ (P * H ^ 3) ^ ((1 + θ) / 6) := by
+    have := Real.rpow_le_rpow (by norm_num : (0:ℝ) ≤ 1) hPH3 (by linarith : (0:ℝ) ≤ (1 + θ) / 6)
+    rwa [Real.one_rpow] at this
+  have hfact1 : (Real.sqrt (P / H)) ^ θ * P ^ ((1 - 2 * θ) / 3) * (P * H ^ 3) ^ ((1 + θ) / 6)
+      = Real.sqrt (P * H) := by
+    rw [Real.sqrt_eq_rpow, Real.sqrt_eq_rpow, ← Real.rpow_mul (div_pos hP0 hH0).le,
+      Real.rpow_def_of_pos (div_pos hP0 hH0), Real.rpow_def_of_pos hP0,
+      Real.rpow_def_of_pos hPH3', Real.rpow_def_of_pos (mul_pos hP0 hH0),
+      ← Real.exp_add, ← Real.exp_add, hlogPdH, hlogP3, hlogPH]
+    congr 1
+    ring
+  have hcore1 : (Real.sqrt (P / H)) ^ θ * P ^ ((1 - 2 * θ) / 3) ≤ Real.sqrt (P * H) := by
+    rw [← hfact1]
+    exact le_mul_of_one_le_right (by positivity) hone3
+  set A : ℝ := Real.sqrt (P / H) * Λ with hAdef
+  have hA0 : 0 < A := mul_pos (Real.sqrt_pos.2 (div_pos hP0 hH0)) hΛ0
+  have hsle : (smallBlockLen h δ lam n : ℝ) ≤ A ^ θ + 1 := by
+    have hEq : (smallBlockLen h δ lam n : ℝ) = (⌈A ^ θ⌉₊ : ℝ) := by
+      simp only [smallBlockLen, hAdef, hθdef, hPdef, hHdef, hΛdef]
+    rw [hEq]
+    exact le_of_lt (Nat.ceil_lt_add_one (Real.rpow_nonneg hA0.le θ))
+  have hAθ : A ^ θ = (Real.sqrt (P / H)) ^ θ * Λ ^ θ :=
+    Real.mul_rpow (Real.sqrt_nonneg _) hΛ0.le
+  -- `√(PH)/P ≤ 1`
+  have hPH1 : Real.sqrt (P * H) ≤ P := by
+    have h1 : P * H ≤ P * 1 := by nlinarith [hP0.le]
+    have h2 : Real.sqrt (P * H) ≤ Real.sqrt (P * P) := by
+      refine Real.sqrt_le_sqrt ?_
+      nlinarith [hP0.le]
+    rwa [Real.sqrt_mul_self hP0.le] at h2
+  have hden : (0 : ℝ) < P ^ ((1 - 2 * θ) / 3) := Real.rpow_pos_of_pos hP0 _
+  have hAθP : A ^ θ / P ≤ Λ ^ θ / P ^ ((1 - 2 * θ) / 3) := by
+    rw [hAθ, div_le_div_iff₀ hP0 hden]
+    have hs0 : (0 : ℝ) ≤ (Real.sqrt (P / H)) ^ θ := Real.rpow_nonneg (Real.sqrt_nonneg _) _
+    have hΛθ0 : (0 : ℝ) ≤ Λ ^ θ := Real.rpow_nonneg hΛ0.le _
+    calc (Real.sqrt (P / H)) ^ θ * Λ ^ θ * P ^ ((1 - 2 * θ) / 3)
+        = ((Real.sqrt (P / H)) ^ θ * P ^ ((1 - 2 * θ) / 3)) * Λ ^ θ := by ring
+      _ ≤ Real.sqrt (P * H) * Λ ^ θ := by gcongr
+      _ ≤ P * Λ ^ θ := by gcongr
+      _ = Λ ^ θ * P := by ring
+  rw [div_le_iff₀ hP0]
+  have hmajP : (Real.log (n : ℝ) ^ θ / (n : ℝ) ^ ((1 - 2 * θ) / 3) + ((n : ℝ))⁻¹) * P
+      = (Λ ^ θ / P ^ ((1 - 2 * θ) / 3)) * P + 1 := by
+    rw [← hPdef, ← hΛdef, add_mul, inv_mul_cancel₀ hP0.ne']
+  rw [hmajP]
+  have h1 : A ^ θ ≤ (Λ ^ θ / P ^ ((1 - 2 * θ) / 3)) * P := by
+    have := (div_le_iff₀ hP0).1 hAθP
+    linarith
+  linarith [hsle]
+
+end Blocks
+
 end StatLean.TimeSeries
