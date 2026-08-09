@@ -863,6 +863,131 @@ theorem abs_covariance_le_davydov {m₁ m₂ mΩ : MeasurableSpace Ω} {μ : Mea
 
 /-! ### Proposition 2.6: the Volkonskii–Rozanov factorization -/
 
+/-- **FY Proposition 2.6 (Volkonskii–Rozanov), repaired form — PROVED (axiom-clean).**
+Identical to `norm_integral_prod_sub_prod_integral_le` except for the hypothesis `0 < k`,
+which is exactly what that statement is missing: at `k = 0` its right-hand side
+`16 · (0 − 1) · a = −16a` is negative while its left-hand side is `0` (see there).  Every
+consumer has `k ≥ 1` — the number of Bernstein blocks — so this is the form to use.
+
+Complex unit-bounded blocks measured against an increasing family with α-gaps at most `a`
+factorize up to `16 (k − 1) a`.  The gap hypothesis is abstract: the α-coefficient between
+the cumulative past `⨆_{j ≤ l} m j` and the next block `m (l+1)` is at most `a` —
+process-level applications supply it via `IsStrictlyStationary.alphaMixCoeff_shift` and
+monotonicity.
+
+Proof: induction on the number `n` of blocks already multiplied in, the step being the
+telescope `∫ P·ξ − ∏∫ = (∫ P·ξ − (∫P)(∫ξ)) + (∫P − ∏∫)·∫ξ` whose first summand is a
+covariance of two unit-bounded complex variables, measurable for the cumulative past and
+for the next block respectively, hence at most `16 a` by
+`norm_covariance_le_of_bounded_complex`, and whose second is the induction hypothesis
+times a factor of modulus `≤ 1`. -/
+theorem norm_integral_prod_sub_prod_integral_le_of_pos {k : ℕ}
+    {m : Fin k → MeasurableSpace Ω} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsProbabilityMeasure μ] (hk : 0 < k) (hle : ∀ l, m l ≤ mΩ)
+    (ξ : Fin k → Ω → ℂ) (hmeas : ∀ l, Measurable[m l] (ξ l))
+    -- USER-INPUT: unit modulus bound; FY Prop 2.6
+    (hbdd : ∀ l, ∀ᵐ ω ∂μ, ‖ξ l ω‖ ≤ 1)
+    {a : ℝ}
+    -- USER-INPUT: α-gap bound between cumulative past and next block; FY Prop 2.6
+    (hgap : ∀ l : Fin k, ∀ hl : (l : ℕ) + 1 < k,
+      alphaMixCoeff μ (⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ l, m j) (m ⟨(l : ℕ) + 1, hl⟩) ≤ a) :
+    ‖(∫ ω, ∏ l, ξ l ω ∂μ) - ∏ l, ∫ ω, ξ l ω ∂μ‖
+      ≤ 16 * ((k : ℝ) - 1) * a := by
+  classical
+  have hbdd' : ∀ᵐ ω ∂μ, ∀ l, ‖ξ l ω‖ ≤ 1 := ae_all_iff.mpr hbdd
+  set S : ℕ → Finset (Fin k) := fun n => Finset.univ.filter (fun j : Fin k => (j : ℕ) < n)
+    with hSdef
+  -- the cumulative product is bounded by 1
+  have hPbdd : ∀ n : ℕ, ∀ᵐ ω ∂μ, ‖∏ j ∈ S n, ξ j ω‖ ≤ 1 := by
+    intro n
+    filter_upwards [hbdd'] with ω hω
+    rw [norm_prod]
+    exact Finset.prod_le_one (fun i _ => norm_nonneg _) (fun i _ => hω i)
+  have hint : ∀ l : Fin k, ‖∫ ω, ξ l ω ∂μ‖ ≤ 1 := by
+    intro l
+    have h := norm_integral_le_of_norm_le_const (μ := μ) (hbdd l)
+    simpa using h
+  have main : ∀ n : ℕ, 1 ≤ n → n ≤ k →
+      ‖(∫ ω, ∏ j ∈ S n, ξ j ω ∂μ) - ∏ j ∈ S n, ∫ ω, ξ j ω ∂μ‖ ≤ 16 * ((n : ℝ) - 1) * a := by
+    intro n hn
+    induction n, hn using Nat.le_induction with
+    | base =>
+      intro _
+      have h1 : S 1 = ({⟨0, hk⟩} : Finset (Fin k)) := by
+        ext j
+        simp [hSdef, Fin.ext_iff]
+      rw [h1]
+      simp
+    | succ n hn ih =>
+      intro hnk
+      have hnk' : n < k := by omega
+      have ihb := ih (by omega)
+      set l : Fin k := ⟨n - 1, by omega⟩ with hl
+      set l' : Fin k := ⟨n, hnk'⟩ with hl'
+      have hln : (l : ℕ) + 1 = n := by simp [hl]; omega
+      have hMle : (⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ (l : ℕ), m j) ≤ mΩ :=
+        iSup_le fun j => iSup_le fun _ => hle j
+      have hmem : ∀ j ∈ S n, m j ≤ ⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ (l : ℕ), m j := by
+        intro j hj
+        simp only [hSdef, Finset.mem_filter] at hj
+        exact le_iSup₂ (f := fun (j : Fin k) (_ : (j : ℕ) ≤ (l : ℕ)) => m j) j (by omega)
+      have hPmeas : Measurable[⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ (l : ℕ), m j]
+          (fun ω => ∏ j ∈ S n, ξ j ω) :=
+        Finset.measurable_prod _ fun j hj => (hmeas j).mono (hmem j hj) le_rfl
+      -- the α-gap bound transported to the cumulative past and the next block
+      have hα : alphaMixCoeff μ (⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ (l : ℕ), m j) (m l') ≤ a := by
+        have h := hgap l (by omega)
+        have he : (⟨(l : ℕ) + 1, by omega⟩ : Fin k) = l' := by
+          apply Fin.ext; simp [hl', hln]
+        rw [he] at h
+        exact h
+      have hcov := norm_covariance_le_of_bounded_complex
+        (m₁ := ⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ (l : ℕ), m j) (m₂ := m l') (mΩ := mΩ)
+        hMle (hle l') hPmeas (hmeas l') (hPbdd n) (hbdd l')
+      -- the recursion
+      have hnot : (l' : Fin k) ∉ S n := by simp [hSdef, hl']
+      have hins : S (n + 1) = insert l' (S n) := by
+        ext j
+        simp [hSdef, hl', Fin.ext_iff]
+        omega
+      have hP1 : ∀ ω, ∏ j ∈ S (n + 1), ξ j ω = (∏ j ∈ S n, ξ j ω) * ξ l' ω := by
+        intro ω
+        rw [hins, Finset.prod_insert hnot, mul_comm]
+      have hP2 : ∏ j ∈ S (n + 1), (∫ ω, ξ j ω ∂μ)
+          = (∏ j ∈ S n, ∫ ω, ξ j ω ∂μ) * ∫ ω, ξ l' ω ∂μ := by
+        rw [hins, Finset.prod_insert hnot, mul_comm]
+      have hexp : (∫ ω, ∏ j ∈ S (n + 1), ξ j ω ∂μ) - ∏ j ∈ S (n + 1), ∫ ω, ξ j ω ∂μ
+          = ((∫ ω, (∏ j ∈ S n, ξ j ω) * ξ l' ω ∂μ)
+              - (∫ ω, ∏ j ∈ S n, ξ j ω ∂μ) * ∫ ω, ξ l' ω ∂μ)
+            + ((∫ ω, ∏ j ∈ S n, ξ j ω ∂μ) - ∏ j ∈ S n, ∫ ω, ξ j ω ∂μ)
+              * (∫ ω, ξ l' ω ∂μ) := by
+        simp_rw [hP1]
+        rw [hP2]
+        ring
+      rw [hexp]
+      refine (norm_add_le _ _).trans ?_
+      have hb1 : ‖(∫ ω, (∏ j ∈ S n, ξ j ω) * ξ l' ω ∂μ)
+          - (∫ ω, ∏ j ∈ S n, ξ j ω ∂μ) * ∫ ω, ξ l' ω ∂μ‖ ≤ 16 * a := by
+        refine hcov.trans ?_
+        nlinarith [hα]
+      have hb2 : ‖((∫ ω, ∏ j ∈ S n, ξ j ω ∂μ) - ∏ j ∈ S n, ∫ ω, ξ j ω ∂μ)
+          * (∫ ω, ξ l' ω ∂μ)‖ ≤ 16 * ((n : ℝ) - 1) * a := by
+        rw [norm_mul]
+        calc ‖(∫ ω, ∏ j ∈ S n, ξ j ω ∂μ) - ∏ j ∈ S n, ∫ ω, ξ j ω ∂μ‖ * ‖∫ ω, ξ l' ω ∂μ‖
+            ≤ (16 * ((n : ℝ) - 1) * a) * 1 := by
+              refine mul_le_mul ihb (hint l') (norm_nonneg _) ?_
+              exact le_trans (norm_nonneg _) ihb
+          _ = 16 * ((n : ℝ) - 1) * a := by ring
+      have : (16 : ℝ) * (((n : ℝ) + 1) - 1) * a = 16 * a + 16 * ((n : ℝ) - 1) * a := by ring
+      push_cast
+      rw [this]
+      linarith
+  have hSk : S k = Finset.univ := by
+    ext j
+    simp [hSdef]
+  have := main k hk le_rfl
+  rwa [hSk] at this
+
 /-- **FY Proposition 2.6 (Volkonskii–Rozanov)**: complex unit-bounded blocks measured
 against an increasing family with α-gaps at most `a` factorize up to `16 (k − 1) a`.
 The gap hypothesis is abstract: the α-coefficient between the cumulative past
@@ -875,10 +1000,12 @@ remaining `sorry` below is that corner, and it is not fillable).  At `k = 0` the
 type `Fin 0` is empty, so every hypothesis is vacuous and `a` is unconstrained; the left
 side is exactly `‖1 − 1‖ = 0` (empty products, `∫ 1 = 1`) while the right side is
 `16 · (0 − 1) · a = −16a`, negative for every `a > 0`.  The claim `0 ≤ −16a` is therefore
-refutable.  **Repair** (not applied — the statement is frozen, and outside this wave's
-authorization): add `1 ≤ k`, or replace the factor `(k − 1)` by `(k − 1 : ℕ)` cast to `ℝ`,
-either of which makes the statement true; the `k ≥ 1` branch below already proves it.  No
-consumer needs `k = 0`. -/
+refutable.  **Repair** (not applied *here* — this statement is frozen): add `1 ≤ k`, or
+replace the factor `(k − 1)` by `(k − 1 : ℕ)` cast to `ℝ`, either of which makes the
+statement true.  The first of those repairs **is** available, proved and axiom-clean, as
+the sibling `norm_integral_prod_sub_prod_integral_le_of_pos` immediately above, to which
+the `k ≥ 1` branch below delegates; new consumers should call that one, since no consumer
+needs `k = 0`. -/
 theorem norm_integral_prod_sub_prod_integral_le {k : ℕ}
     {m : Fin k → MeasurableSpace Ω} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ] (hle : ∀ l, m l ≤ mΩ)
@@ -896,104 +1023,11 @@ theorem norm_integral_prod_sub_prod_integral_le {k : ℕ}
     -- (`Fin 0` is empty), the left-hand side is exactly `‖1 − 1‖ = 0` (empty products,
     -- `∫ 1 = 1`), and the right-hand side is `16 · (0 − 1) · a = −16 a`, which is
     -- negative for every `a > 0`. So the claim `0 ≤ −16 a` is refutable; the statement
-    -- is true exactly for `k ≥ 1`, which is what the branch below proves in full.
-    -- Reported, not repaired: the statement is frozen.
+    -- is true exactly for `k ≥ 1`, which is what `norm_integral_prod_sub_prod_integral_le_of_pos`
+    -- proves in full. Reported, not repaired: the statement is frozen.
     subst hk0
     sorry
-  · classical
-    have hbdd' : ∀ᵐ ω ∂μ, ∀ l, ‖ξ l ω‖ ≤ 1 := ae_all_iff.mpr hbdd
-    set S : ℕ → Finset (Fin k) := fun n => Finset.univ.filter (fun j : Fin k => (j : ℕ) < n)
-      with hSdef
-    -- the cumulative product is bounded by 1
-    have hPbdd : ∀ n : ℕ, ∀ᵐ ω ∂μ, ‖∏ j ∈ S n, ξ j ω‖ ≤ 1 := by
-      intro n
-      filter_upwards [hbdd'] with ω hω
-      rw [norm_prod]
-      exact Finset.prod_le_one (fun i _ => norm_nonneg _) (fun i _ => hω i)
-    have hint : ∀ l : Fin k, ‖∫ ω, ξ l ω ∂μ‖ ≤ 1 := by
-      intro l
-      have h := norm_integral_le_of_norm_le_const (μ := μ) (hbdd l)
-      simpa using h
-    have main : ∀ n : ℕ, 1 ≤ n → n ≤ k →
-        ‖(∫ ω, ∏ j ∈ S n, ξ j ω ∂μ) - ∏ j ∈ S n, ∫ ω, ξ j ω ∂μ‖ ≤ 16 * ((n : ℝ) - 1) * a := by
-      intro n hn
-      induction n, hn using Nat.le_induction with
-      | base =>
-        intro _
-        have h1 : S 1 = ({⟨0, hk⟩} : Finset (Fin k)) := by
-          ext j
-          simp [hSdef, Fin.ext_iff]
-        rw [h1]
-        simp
-      | succ n hn ih =>
-        intro hnk
-        have hnk' : n < k := by omega
-        have ihb := ih (by omega)
-        set l : Fin k := ⟨n - 1, by omega⟩ with hl
-        set l' : Fin k := ⟨n, hnk'⟩ with hl'
-        have hln : (l : ℕ) + 1 = n := by simp [hl]; omega
-        have hMle : (⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ (l : ℕ), m j) ≤ mΩ :=
-          iSup_le fun j => iSup_le fun _ => hle j
-        have hmem : ∀ j ∈ S n, m j ≤ ⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ (l : ℕ), m j := by
-          intro j hj
-          simp only [hSdef, Finset.mem_filter] at hj
-          exact le_iSup₂ (f := fun (j : Fin k) (_ : (j : ℕ) ≤ (l : ℕ)) => m j) j (by omega)
-        have hPmeas : Measurable[⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ (l : ℕ), m j]
-            (fun ω => ∏ j ∈ S n, ξ j ω) :=
-          Finset.measurable_prod _ fun j hj => (hmeas j).mono (hmem j hj) le_rfl
-        -- the α-gap bound transported to the cumulative past and the next block
-        have hα : alphaMixCoeff μ (⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ (l : ℕ), m j) (m l') ≤ a := by
-          have h := hgap l (by omega)
-          have he : (⟨(l : ℕ) + 1, by omega⟩ : Fin k) = l' := by
-            apply Fin.ext; simp [hl', hln]
-          rw [he] at h
-          exact h
-        have hcov := norm_covariance_le_of_bounded_complex
-          (m₁ := ⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ (l : ℕ), m j) (m₂ := m l') (mΩ := mΩ)
-          hMle (hle l') hPmeas (hmeas l') (hPbdd n) (hbdd l')
-        -- the recursion
-        have hnot : (l' : Fin k) ∉ S n := by simp [hSdef, hl']
-        have hins : S (n + 1) = insert l' (S n) := by
-          ext j
-          simp [hSdef, hl', Fin.ext_iff]
-          omega
-        have hP1 : ∀ ω, ∏ j ∈ S (n + 1), ξ j ω = (∏ j ∈ S n, ξ j ω) * ξ l' ω := by
-          intro ω
-          rw [hins, Finset.prod_insert hnot, mul_comm]
-        have hP2 : ∏ j ∈ S (n + 1), (∫ ω, ξ j ω ∂μ)
-            = (∏ j ∈ S n, ∫ ω, ξ j ω ∂μ) * ∫ ω, ξ l' ω ∂μ := by
-          rw [hins, Finset.prod_insert hnot, mul_comm]
-        have hexp : (∫ ω, ∏ j ∈ S (n + 1), ξ j ω ∂μ) - ∏ j ∈ S (n + 1), ∫ ω, ξ j ω ∂μ
-            = ((∫ ω, (∏ j ∈ S n, ξ j ω) * ξ l' ω ∂μ)
-                - (∫ ω, ∏ j ∈ S n, ξ j ω ∂μ) * ∫ ω, ξ l' ω ∂μ)
-              + ((∫ ω, ∏ j ∈ S n, ξ j ω ∂μ) - ∏ j ∈ S n, ∫ ω, ξ j ω ∂μ)
-                * (∫ ω, ξ l' ω ∂μ) := by
-          simp_rw [hP1]
-          rw [hP2]
-          ring
-        rw [hexp]
-        refine (norm_add_le _ _).trans ?_
-        have hb1 : ‖(∫ ω, (∏ j ∈ S n, ξ j ω) * ξ l' ω ∂μ)
-            - (∫ ω, ∏ j ∈ S n, ξ j ω ∂μ) * ∫ ω, ξ l' ω ∂μ‖ ≤ 16 * a := by
-          refine hcov.trans ?_
-          nlinarith [hα]
-        have hb2 : ‖((∫ ω, ∏ j ∈ S n, ξ j ω ∂μ) - ∏ j ∈ S n, ∫ ω, ξ j ω ∂μ)
-            * (∫ ω, ξ l' ω ∂μ)‖ ≤ 16 * ((n : ℝ) - 1) * a := by
-          rw [norm_mul]
-          calc ‖(∫ ω, ∏ j ∈ S n, ξ j ω ∂μ) - ∏ j ∈ S n, ∫ ω, ξ j ω ∂μ‖ * ‖∫ ω, ξ l' ω ∂μ‖
-              ≤ (16 * ((n : ℝ) - 1) * a) * 1 := by
-                refine mul_le_mul ihb (hint l') (norm_nonneg _) ?_
-                exact le_trans (norm_nonneg _) ihb
-            _ = 16 * ((n : ℝ) - 1) * a := by ring
-        have : (16 : ℝ) * (((n : ℝ) + 1) - 1) * a = 16 * a + 16 * ((n : ℝ) - 1) * a := by ring
-        push_cast
-        rw [this]
-        linarith
-    have hSk : S k = Finset.univ := by
-      ext j
-      simp [hSdef]
-    have := main k hk le_rfl
-    rwa [hSk] at this
+  · exact norm_integral_prod_sub_prod_integral_le_of_pos hk hle ξ hmeas hbdd hgap
 
 
 end TwoAlgebras

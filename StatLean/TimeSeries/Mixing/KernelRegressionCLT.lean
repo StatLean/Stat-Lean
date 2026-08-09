@@ -68,14 +68,29 @@ repair, **the whole of ledger (a)**: `var_localized_sum`, together with its new 
 double-sum estimate `abs_double_sum_sub_diag_le`, the localized δ-moment
 `localized_delta_moment_le` (this is (2.74) itself), and the bandwidth limits
 `tendsto_smallLagCut_mul_bandwidth`, `tendsto_rpow_mul_abs_log_rpow`.
-Open, as named debts, each with an audit verdict in its own docstring:
-`tendsto_smallBlock_variance`
-(2.79)–(2.81) — **FALSE as frozen**: the statement carries no hypotheses at all;
-`charFun_locSum_sub_locTruncSum_le` (2.82)–(2.83) — **FALSE as frozen**: no stationarity,
-and `heLδ` constrains only `e 0`; `tendsto_charFun_locTruncSum` ((b) + (d) at fixed `L`,
-and (2.84)) — statement intact, blocked on those two items plus the open
-`norm_integral_prod_sub_prod_integral_le` in `Mixing/Inequalities.lean` (its ledger-(a)
-input is now discharged).
+Open, as named debts, each with an audit verdict in its own docstring — and, as of this
+wave, **all three of them are false as frozen**, so ledger (d) cannot be closed without
+lifting the statement freeze:
+* `tendsto_smallBlock_variance` (2.79)–(2.81) — **FALSE as frozen**, for two independent
+  reasons: the statement carries no hypotheses at all, and (new) even the fully hypothesized
+  version needs (C2) in its *unweighted* form, because the conditional recentring inside
+  `truncErr` strips both error factors out of the small-lag covariance;
+* `charFun_locSum_sub_locTruncSum_le` (2.82)–(2.83) — **FALSE as frozen**: no stationarity,
+  and `heLδ` constrains only `e 0`;
+* `tendsto_charFun_locTruncSum` ((b) + (d) at fixed `L`, and (2.84)) — **FALSE as frozen**
+  (new this wave; the earlier "statement intact" verdict is superseded). Refutable already
+  for an iid series: at a fixed truncation level the limit needs continuity at `x` of the
+  *truncated* conditional second moment `σ_L² · p`, which (C1) does not supply, and an
+  oscillating conditional law with `σ² ≡ 1` makes the charFun oscillate. Its three
+  blocking *inputs*, by contrast, are now two-thirds discharged: ledger (a) is proved, and
+  Volkonskii–Rozanov is available proved and axiom-clean as
+  `norm_integral_prod_sub_prod_integral_le_of_pos` (`Mixing/Inequalities.lean`), the
+  frozen `norm_integral_prod_sub_prod_integral_le` retaining only its false `k = 0` corner.
+
+The **headline** `kernel_localized_clt` is not itself damaged by any of this: truncation
+and Bernstein blocking are proof-route artifacts, and the variance asymptotics the
+Gaussian limit is read off (`var_localized_sum`) are proved. What the three verdicts say is
+that FY §2.7.7's *route* to it needs four silent readings of (C1)–(C2), not two.
 
 **FALSE AS FROZEN (verified) — REPAIRS APPLIED.** FY (2.73)–(2.76) — hence Theorem 2.22
 itself — does not follow from (C1)–(C5) *as formalized here*. Two independent gaps were
@@ -788,6 +803,109 @@ private theorem abs_double_sum_sub_diag_le (n : ℕ) (c : ℕ → ℕ → ℝ) (
     _ = 2 * n * ∑ j ∈ Finset.Ico 1 n, |g j| := by
         rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]; ring
 
+/-- **The stationary double sum over an arbitrary index set.** Same hypothesis as
+`abs_double_sum_sub_diag_le` — the array `c` depends only on the lag — but the sum runs
+over an arbitrary `I ⊆ range n` rather than over all of `range n`, and the diagonal is
+kept on the right instead of being subtracted off:
+`|Σ_{s,t ∈ I} c s t| ≤ |I| (|g 0| + 2 Σ_{1 ≤ j < n} |g j|)`.
+
+This is the combinatorial half of the small-block estimate (2.79)–(2.81): there `I` is the
+union of the `k_n` small blocks, of total length `N_n = k_n s_n` with `N_n / n → 0`, and
+the two factors are exactly the ones ledger (a) already controls — the diagonal
+`|g 0| = O(h)` and the lag sum `Σ_j |g j| = o(h)` — so that
+`(n h_n)⁻¹ |Σ_{s,t ∈ I}| ≤ (N_n / n) · h_n⁻¹ (|g 0| + 2 Σ_j |g j|) → 0`. The proof is the
+one of `abs_double_sum_sub_diag_le` with `range n` replaced by `I` in the row split; `hI`
+is what keeps the two lag injections landing in `Ico 1 n`.
+
+Note that this brick is *not* the obstruction to (2.79)–(2.81): the analytic half is (see
+`tendsto_smallBlock_variance`, whose summands are the **truncated** ones, for which the
+small-lag input `Σ_j |g j| = o(h)` needs (C2) in its unweighted form). -/
+private theorem abs_double_sum_subset_le {n : ℕ} (I : Finset ℕ) (hI : I ⊆ Finset.range n)
+    (c : ℕ → ℕ → ℝ) (g : ℕ → ℝ)
+    (hc : ∀ s d : ℕ, c s (s + d) = g d) (hc' : ∀ s d : ℕ, c (s + d) s = g d) :
+    |∑ s ∈ I, ∑ t ∈ I, c s t|
+      ≤ (I.card : ℝ) * (|g 0| + 2 * ∑ j ∈ Finset.Ico 1 n, |g j|) := by
+  classical
+  have hS0 : (0 : ℝ) ≤ ∑ j ∈ Finset.Ico 1 n, |g j| :=
+    Finset.sum_nonneg fun j _ => abs_nonneg _
+  have hdiag : ∀ s : ℕ, c s s = g 0 := fun s => by simpa using hc s 0
+  have key : ∀ s ∈ I, |∑ t ∈ I, c s t| ≤ |g 0| + 2 * ∑ j ∈ Finset.Ico 1 n, |g j| := by
+    intro s hs
+    have hsn : s < n := Finset.mem_range.1 (hI hs)
+    have hsplit : (∑ t ∈ I, c s t) = g 0 + ∑ t ∈ I.erase s, c s t := by
+      rw [← Finset.add_sum_erase _ _ hs, hdiag]
+    set A : Finset ℕ := I.filter (fun t => t < s) with hA
+    set B : Finset ℕ := I.filter (fun t => s < t) with hB
+    have hAB : I.erase s = A ∪ B := by
+      ext t
+      simp only [Finset.mem_erase, Finset.mem_union, hA, hB, Finset.mem_filter]
+      constructor
+      · rintro ⟨hts, htI⟩; rcases lt_or_gt_of_ne hts with h | h
+        · exact Or.inl ⟨htI, h⟩
+        · exact Or.inr ⟨htI, h⟩
+      · rintro (⟨htI, h⟩ | ⟨htI, h⟩) <;> exact ⟨by omega, htI⟩
+    have hdisj : Disjoint A B := by
+      rw [Finset.disjoint_left]
+      intro t htA htB
+      simp only [hA, hB, Finset.mem_filter] at htA htB
+      omega
+    have htail : |∑ t ∈ I.erase s, c s t| ≤ 2 * ∑ j ∈ Finset.Ico 1 n, |g j| := by
+      calc |∑ t ∈ I.erase s, c s t|
+          ≤ ∑ t ∈ I.erase s, |c s t| := Finset.abs_sum_le_sum_abs _ _
+        _ = (∑ t ∈ A, |c s t|) + ∑ t ∈ B, |c s t| := by
+            rw [hAB, Finset.sum_union hdisj]
+        _ ≤ (∑ j ∈ Finset.Ico 1 n, |g j|) + ∑ j ∈ Finset.Ico 1 n, |g j| := by
+            gcongr
+            · have hinj : ∀ t₁ ∈ A, ∀ t₂ ∈ A, s - t₁ = s - t₂ → t₁ = t₂ := by
+                intro t₁ h₁ t₂ h₂ he
+                simp only [hA, Finset.mem_filter] at h₁ h₂
+                omega
+              have himg : A.image (fun t => s - t) ⊆ Finset.Ico 1 n := by
+                intro j hj
+                simp only [Finset.mem_image, hA, Finset.mem_filter] at hj
+                obtain ⟨t, ⟨ht1, ht2⟩, rfl⟩ := hj
+                simp only [Finset.mem_Ico]
+                omega
+              have hval : ∀ t ∈ A, |c s t| = |g (s - t)| := by
+                intro t ht
+                simp only [hA, Finset.mem_filter] at ht
+                have : t + (s - t) = s := by omega
+                rw [← hc' t (s - t), this]
+              have himgsum : ∑ j ∈ A.image (fun t => s - t), |g j| = ∑ t ∈ A, |g (s - t)| :=
+                Finset.sum_image hinj
+              rw [Finset.sum_congr rfl hval, ← himgsum]
+              exact Finset.sum_le_sum_of_subset_of_nonneg himg fun j _ _ => abs_nonneg _
+            · have hinj : ∀ t₁ ∈ B, ∀ t₂ ∈ B, t₁ - s = t₂ - s → t₁ = t₂ := by
+                intro t₁ h₁ t₂ h₂ he
+                simp only [hB, Finset.mem_filter] at h₁ h₂
+                omega
+              have himg : B.image (fun t => t - s) ⊆ Finset.Ico 1 n := by
+                intro j hj
+                simp only [Finset.mem_image, hB, Finset.mem_filter] at hj
+                obtain ⟨t, ⟨ht1, ht2⟩, rfl⟩ := hj
+                have : t < n := Finset.mem_range.1 (hI ht1)
+                simp only [Finset.mem_Ico]
+                omega
+              have hval : ∀ t ∈ B, |c s t| = |g (t - s)| := by
+                intro t ht
+                simp only [hB, Finset.mem_filter] at ht
+                have : s + (t - s) = t := by omega
+                rw [← hc s (t - s), this]
+              have himgsum : ∑ j ∈ B.image (fun t => t - s), |g j| = ∑ t ∈ B, |g (t - s)| :=
+                Finset.sum_image hinj
+              rw [Finset.sum_congr rfl hval, ← himgsum]
+              exact Finset.sum_le_sum_of_subset_of_nonneg himg fun j _ _ => abs_nonneg _
+        _ = 2 * ∑ j ∈ Finset.Ico 1 n, |g j| := by ring
+    calc |∑ t ∈ I, c s t| = |g 0 + ∑ t ∈ I.erase s, c s t| := by rw [hsplit]
+      _ ≤ |g 0| + |∑ t ∈ I.erase s, c s t| := abs_add_le _ _
+      _ ≤ |g 0| + 2 * ∑ j ∈ Finset.Ico 1 n, |g j| := by gcongr
+  calc |∑ s ∈ I, ∑ t ∈ I, c s t|
+      ≤ ∑ s ∈ I, |∑ t ∈ I, c s t| := Finset.abs_sum_le_sum_abs _ _
+    _ ≤ ∑ _s ∈ I, (|g 0| + 2 * ∑ j ∈ Finset.Ico 1 n, |g j|) := Finset.sum_le_sum key
+    _ = (I.card : ℝ) * (|g 0| + 2 * ∑ j ∈ Finset.Ico 1 n, |g j|) := by
+        rw [Finset.sum_const, nsmul_eq_mul]
+
+
 /-! #### FY's implicit (2.74): the localized δ-th moment
 
 The one input FY uses without stating it. See `var_localized_sum`'s docstring for the
@@ -920,6 +1038,215 @@ private theorem localized_delta_moment_le [IsProbabilityMeasure μ]
     _ ≤ M * (hn * (Cp * ∫ u, |W u| ^ δ)) :=
         mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hlast hhn.le) hM0
     _ = (M * Cp * ∫ v, |W v| ^ δ) * hn := by ring
+
+/-! #### FY (2.82)–(2.83): the truncation tail
+
+Step (c) truncates `e` at level `L`; what the telescope needs is that the residual
+`e_t − e^L_t` contributes a variance that vanishes as `L → ∞`, *uniformly in `n`*. The two
+bricks below are the diagonal half of that estimate — the half that (C1)–(C5) as
+formalized do support. (The lag half does not close; see `tendsto_smallBlock_variance`.) -/
+
+/-- **Pointwise truncation residual — PROVED.** `(z − clamp_L z)² ≤ L^{2−δ} |z|^δ` for
+`δ > 2`, `L > 0`. Below the clamp the left side is `0`; above it `|z − clamp_L z| ≤ |z|`
+and `|z|² = |z|^{2−δ}|z|^δ ≤ L^{2−δ}|z|^δ`, the exponent `2 − δ` being negative. This is
+where `δ > 2` buys the `L → ∞` decay of the truncation tail. -/
+private theorem sq_sub_clamp_le {δ L z : ℝ} (hδ : 2 < δ) (hL : 0 < L) :
+    (z - clampAt L z) ^ 2 ≤ L ^ (2 - δ) * |z| ^ δ := by
+  have hd : (0 : ℝ) < δ - 2 := by linarith
+  have hLd : (0 : ℝ) < L ^ (2 - δ) := Real.rpow_pos_of_pos hL _
+  rcases le_or_gt |z| L with hz | hz
+  · have h1 : min L z = z := min_eq_right (le_trans (le_abs_self z) hz)
+    have h2 : max (-L) z = z := max_eq_right (by
+      have := neg_abs_le z; linarith)
+    have hz0 : z - clampAt L z = 0 := by simp [clampAt, h1, h2]
+    have hzz : ((0 : ℝ)) ^ 2 = 0 := by norm_num
+    rw [hz0, hzz]
+    positivity
+  · have hzpos : (0 : ℝ) < |z| := lt_trans hL hz
+    -- `|z − clamp| ≤ |z|`
+    have hkey : (z - clampAt L z) ^ 2 ≤ |z| ^ (2 : ℝ) := by
+      have h2 : |z| ^ (2 : ℝ) = z ^ 2 := by
+        rw [show (2 : ℝ) = ((2 : ℕ) : ℝ) from by norm_num, Real.rpow_natCast, sq_abs]
+      rw [h2]
+      have habs : |z - clampAt L z| ≤ |z| := by
+        rcases le_or_gt z 0 with hz0 | hz0
+        · have hzneg : z < -L := by
+            rw [abs_of_nonpos hz0] at hz; linarith
+          have h1 : min L z = z := min_eq_right (by linarith)
+          have h2 : max (-L) z = -L := max_eq_left (by linarith)
+          simp only [clampAt, h1, h2]
+          rw [abs_of_nonpos (by linarith), abs_of_nonpos hz0]
+          linarith
+        · have hzpos' : L < z := by rw [abs_of_pos hz0] at hz; exact hz
+          have h1 : min L z = L := min_eq_left (by linarith)
+          have h2 : max (-L) L = L := max_eq_right (by linarith)
+          simp only [clampAt, h1, h2]
+          rw [abs_of_nonneg (by linarith), abs_of_pos hz0]
+          linarith
+      have h3 : |z - clampAt L z| * |z - clampAt L z| ≤ |z| * |z| :=
+        mul_le_mul habs habs (abs_nonneg _) (abs_nonneg _)
+      calc (z - clampAt L z) ^ 2
+          = |z - clampAt L z| * |z - clampAt L z| := by rw [← sq_abs, pow_two]
+        _ ≤ |z| * |z| := h3
+        _ = z ^ 2 := by rw [← pow_two, sq_abs]
+    refine hkey.trans ?_
+    have hstep : L ^ (δ - 2) ≤ |z| ^ (δ - 2) :=
+      Real.rpow_le_rpow hL.le hz.le hd.le
+    have hsplit : |z| ^ δ = |z| ^ (2 : ℝ) * |z| ^ (δ - 2) := by
+      rw [← Real.rpow_add hzpos]; ring_nf
+    have hmul : |z| ^ (2 : ℝ) * L ^ (δ - 2) ≤ |z| ^ δ := by
+      rw [hsplit]
+      exact mul_le_mul_of_nonneg_left hstep (Real.rpow_nonneg (abs_nonneg _) _)
+    have hone : L ^ (2 - δ) * L ^ (δ - 2) = 1 := by
+      rw [← Real.rpow_add hL]; norm_num
+    have h4 := mul_le_mul_of_nonneg_left hmul hLd.le
+    have h5 : L ^ (2 - δ) * (|z| ^ (2 : ℝ) * L ^ (δ - 2)) = |z| ^ (2 : ℝ) := by
+      rw [← mul_assoc, mul_comm (L ^ (2 - δ)) (|z| ^ (2 : ℝ)), mul_assoc, hone, mul_one]
+    linarith [h4, h5]
+
+/-- **FY (2.82)–(2.83), the diagonal of the truncation tail — PROVED.** The localized
+second moment of the truncation residual carries *both* small factors at once:
+`E[(e_0 − clamp_L e_0)² W((X_0−x)/h)²] ≤ (M · C_p · ∫W²) · L^{2−δ} h`,
+so after the `h⁻¹` of the normalization it is `O(L^{2−δ})` — vanishing as `L → ∞`
+uniformly in `n` and in the bandwidth, which is exactly the uniformity (2.82) needs.
+
+Same three steps as `localized_delta_moment_le`, with the weight `|W|^δ` replaced by `W²`:
+dominate pointwise by `L^{2−δ} |e_0|^δ W²` (`sq_sub_clamp_le`), pull `W²` out of the
+conditional expectation of `|e_0|^δ` and bound the latter by `M`
+(`integral_bdd_comp_mul_eq_of_condExp` with `heδc`), then substitute the density
+(`integral_comp_eq_integral_density`) and rescale (`integral_dilate_translate`), the factor
+`h` being the Jacobian and `C_p` the density bound.
+
+This bounds the residual *before* its conditional recentring; since
+`e_t − e^L_t = r_t − E(r_t | X_t)` with `r_t = e_t − clamp_L(e_t)`, conditional Jensen
+turns it into the same bound for the recentred residual at no cost. What it does **not**
+give — and what blocks (2.82) as a whole — is the corresponding *lag* estimate; see
+`tendsto_smallBlock_variance` for the proof that the frozen (C2) cannot supply it. -/
+private theorem localized_trunc_residual_moment_le [IsProbabilityMeasure μ]
+    {X e : ℤ → Ω → ℝ} (hX : Measurable (X 0)) (hE : Measurable (e 0))
+    {p : ℝ → ℝ} (hmp : Measurable p) (hp0 : ∀ v, 0 ≤ p v)
+    (hpd : μ.map (X 0) = MeasureTheory.volume.withDensity fun v => ENNReal.ofReal (p v))
+    {δ : ℝ} (hδ : 2 < δ) (heLδ : MemLp (e 0) (ENNReal.ofReal δ) μ)
+    {M : ℝ}
+    (heδc : μ[fun ω => |e 0 ω| ^ δ | MeasurableSpace.comap (X 0) inferInstance]
+      ≤ᵐ[μ] fun _ => M)
+    {Cp : ℝ} (hpb : ∀ v, p v ≤ Cp)
+    {W : ℝ → ℝ} {CW : ℝ} (hWm : Measurable W) (hWb : ∀ v, |W v| ≤ CW)
+    (hW2 : Integrable (fun v => W v ^ 2) MeasureTheory.volume)
+    {x hn L : ℝ} (hhn : 0 < hn) (hL : 0 < L) :
+    ∫ ω, (e 0 ω - clampAt L (e 0 ω)) ^ 2 * W ((X 0 ω - x) / hn) ^ 2 ∂μ
+      ≤ (M * Cp * ∫ v, W v ^ 2) * (L ^ (2 - δ) * hn) := by
+  have hδ0 : (0 : ℝ) < δ := by linarith
+  have hLd : (0 : ℝ) < L ^ (2 - δ) := Real.rpow_pos_of_pos hL _
+  have hGm : Measurable (fun v => W ((v - x) / hn) ^ 2) :=
+    ((hWm.comp ((measurable_id.sub measurable_const).div measurable_const)).pow_const 2)
+  have hG0 : ∀ v : ℝ, 0 ≤ W ((v - x) / hn) ^ 2 := fun v => sq_nonneg _
+  have hGb : ∀ v : ℝ, |W ((v - x) / hn) ^ 2| ≤ CW ^ 2 := by
+    intro v
+    rw [abs_of_nonneg (hG0 v)]
+    nlinarith [hWb ((v - x) / hn), abs_nonneg (W ((v - x) / hn)),
+      sq_abs (W ((v - x) / hn))]
+  have hGXm : Measurable (fun ω => W ((X 0 ω - x) / hn) ^ 2) := hGm.comp hX
+  -- `|e_0|^δ` is integrable
+  have hζ : Integrable (fun ω => |e 0 ω| ^ δ) μ := by
+    have hr := heLδ.integrable_norm_rpow (by
+      simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]; exact hδ0) ENNReal.ofReal_ne_top
+    simpa only [Real.norm_eq_abs, ENNReal.toReal_ofReal hδ0.le] using hr
+  have hZ0 : (0 : Ω → ℝ)
+      ≤ᵐ[μ] μ[fun ω => |e 0 ω| ^ δ | MeasurableSpace.comap (X 0) inferInstance] :=
+    condExp_nonneg (Eventually.of_forall fun ω => Real.rpow_nonneg (abs_nonneg _) _)
+  have hM0 : (0 : ℝ) ≤ M := by
+    obtain ⟨ω, h1, h2⟩ := (hZ0.and heδc).exists
+    exact le_trans h1 h2
+  -- Step 1: pointwise domination by `L^{2−δ} |e|^δ W²`
+  have hdom' : Integrable (fun ω => W ((X 0 ω - x) / hn) ^ 2 * |e 0 ω| ^ δ) μ :=
+    hζ.bdd_mul hGXm.aestronglyMeasurable
+      (Eventually.of_forall fun ω => by rw [Real.norm_eq_abs]; exact hGb _)
+  have hdom : Integrable (fun ω => (|e 0 ω| ^ δ) * W ((X 0 ω - x) / hn) ^ 2) μ :=
+    hdom'.congr (Eventually.of_forall fun ω => mul_comm _ _)
+  have hint1 : Integrable
+      (fun ω => (e 0 ω - clampAt L (e 0 ω)) ^ 2 * W ((X 0 ω - x) / hn) ^ 2) μ := by
+    refine Integrable.mono (hdom.const_mul (L ^ (2 - δ)))
+      (((((hE.sub ((measurable_const.max (measurable_const.min hE))))).pow_const
+        2)).mul hGXm).aestronglyMeasurable (Eventually.of_forall fun ω => ?_)
+    rw [Real.norm_eq_abs, Real.norm_eq_abs,
+      abs_of_nonneg (mul_nonneg (sq_nonneg _) (sq_nonneg _)),
+      abs_of_nonneg (by positivity : (0:ℝ) ≤ L ^ (2 - δ) *
+        ((|e 0 ω| ^ δ) * W ((X 0 ω - x) / hn) ^ 2)), ← mul_assoc]
+    exact mul_le_mul_of_nonneg_right (sq_sub_clamp_le hδ hL) (sq_nonneg _)
+  have hstep1 : ∫ ω, (e 0 ω - clampAt L (e 0 ω)) ^ 2 * W ((X 0 ω - x) / hn) ^ 2 ∂μ
+      ≤ L ^ (2 - δ) * ∫ ω, (|e 0 ω| ^ δ) * W ((X 0 ω - x) / hn) ^ 2 ∂μ := by
+    rw [← integral_const_mul]
+    refine integral_mono hint1 (hdom.const_mul _) fun ω => ?_
+    rw [← mul_assoc]
+    exact mul_le_mul_of_nonneg_right (sq_sub_clamp_le hδ hL) (sq_nonneg _)
+  -- Step 2: tower + density + rescaling, exactly as in `localized_delta_moment_le`
+  have htow : ∫ ω, (W ((X 0 ω - x) / hn) ^ 2) * |e 0 ω| ^ δ ∂μ
+      = ∫ ω, (W ((X 0 ω - x) / hn) ^ 2) *
+          (μ[fun ω' => |e 0 ω'| ^ δ | MeasurableSpace.comap (X 0) inferInstance]) ω ∂μ :=
+    integral_bdd_comp_mul_eq_of_condExp hX hζ (Filter.EventuallyEq.refl _ _)
+      (fun v => W ((v - x) / hn) ^ 2) hGm hGb
+  have hmono : ∫ ω, (W ((X 0 ω - x) / hn) ^ 2) *
+        (μ[fun ω' => |e 0 ω'| ^ δ | MeasurableSpace.comap (X 0) inferInstance]) ω ∂μ
+      ≤ ∫ ω, (W ((X 0 ω - x) / hn) ^ 2) * M ∂μ := by
+    refine integral_mono_ae
+      (integrable_condExp.bdd_mul hGXm.aestronglyMeasurable
+        (Eventually.of_forall fun ω => by rw [Real.norm_eq_abs]; exact hGb _))
+      ((integrable_const M).bdd_mul hGXm.aestronglyMeasurable
+        (Eventually.of_forall fun ω => by rw [Real.norm_eq_abs]; exact hGb _)) ?_
+    filter_upwards [heδc] with ω hω
+    exact mul_le_mul_of_nonneg_left hω (hG0 _)
+  have hdens : ∫ ω, (W ((X 0 ω - x) / hn) ^ 2) * M ∂μ
+      = M * ∫ v, p v * W ((v - x) / hn) ^ 2 := by
+    have hsub : ∫ ω, (fun v => W ((v - x) / hn) ^ 2 * M) (X 0 ω) ∂μ
+        = ∫ v, p v * (W ((v - x) / hn) ^ 2 * M) :=
+      integral_comp_eq_integral_density hX hmp hp0 hpd
+        (fun v => W ((v - x) / hn) ^ 2 * M) (hGm.mul_const M)
+    have hpull : ∫ v, p v * (W ((v - x) / hn) ^ 2 * M)
+        = M * ∫ v, p v * W ((v - x) / hn) ^ 2 := by
+      rw [← integral_const_mul]
+      exact integral_congr_ae (Eventually.of_forall fun v => by ring)
+    rw [← hpull, ← hsub]
+  have hcov : ∫ u, W u ^ 2 * p (x + hn * u) = hn⁻¹ * ∫ v, W ((v - x) / hn) ^ 2 * p v :=
+    integral_dilate_translate (fun u => W u ^ 2) p x hhn
+  have hpint : ∫ v, p v * W ((v - x) / hn) ^ 2
+      = hn * ∫ u, W u ^ 2 * p (x + hn * u) := by
+    rw [hcov, ← mul_assoc, mul_inv_cancel₀ hhn.ne', one_mul]
+    exact integral_congr_ae (Eventually.of_forall fun v => by ring)
+  have hlast : ∫ u, W u ^ 2 * p (x + hn * u) ≤ Cp * ∫ u, W u ^ 2 := by
+    have hi : Integrable (fun u => W u ^ 2 * p (x + hn * u)) MeasureTheory.volume := by
+      refine Integrable.mono (hW2.const_mul Cp)
+        (((hWm.pow_const 2)).mul (hmp.comp (measurable_const.add
+          (measurable_const.mul measurable_id)))).aestronglyMeasurable
+        (Eventually.of_forall fun u => ?_)
+      rw [Real.norm_eq_abs, Real.norm_eq_abs,
+        abs_of_nonneg (mul_nonneg (sq_nonneg _) (hp0 _)),
+        abs_of_nonneg (mul_nonneg (le_trans (hp0 0) (hpb 0)) (sq_nonneg _)), mul_comm Cp]
+      exact mul_le_mul_of_nonneg_left (hpb _) (sq_nonneg _)
+    rw [← integral_const_mul]
+    refine integral_mono hi (hW2.const_mul Cp) fun u => ?_
+    rw [mul_comm Cp]
+    exact mul_le_mul_of_nonneg_left (hpb _) (sq_nonneg _)
+  have hcomm : ∫ ω, (|e 0 ω| ^ δ) * W ((X 0 ω - x) / hn) ^ 2 ∂μ
+      = ∫ ω, (W ((X 0 ω - x) / hn) ^ 2) * |e 0 ω| ^ δ ∂μ :=
+    integral_congr_ae (Eventually.of_forall fun ω => mul_comm _ _)
+  have hchain : ∫ ω, (|e 0 ω| ^ δ) * W ((X 0 ω - x) / hn) ^ 2 ∂μ
+      ≤ (M * Cp * ∫ v, W v ^ 2) * hn := by
+    rw [hcomm, htow]
+    calc ∫ ω, (W ((X 0 ω - x) / hn) ^ 2) *
+          (μ[fun ω' => |e 0 ω'| ^ δ | MeasurableSpace.comap (X 0) inferInstance]) ω ∂μ
+        ≤ ∫ ω, (W ((X 0 ω - x) / hn) ^ 2) * M ∂μ := hmono
+      _ = M * ∫ v, p v * W ((v - x) / hn) ^ 2 := hdens
+      _ = M * (hn * ∫ u, W u ^ 2 * p (x + hn * u)) := by rw [hpint]
+      _ ≤ M * (hn * (Cp * ∫ u, W u ^ 2)) :=
+          mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hlast hhn.le) hM0
+      _ = (M * Cp * ∫ v, W v ^ 2) * hn := by ring
+  calc ∫ ω, (e 0 ω - clampAt L (e 0 ω)) ^ 2 * W ((X 0 ω - x) / hn) ^ 2 ∂μ
+      ≤ L ^ (2 - δ) * ∫ ω, (|e 0 ω| ^ δ) * W ((X 0 ω - x) / hn) ^ 2 ∂μ := hstep1
+    _ ≤ L ^ (2 - δ) * ((M * Cp * ∫ v, W v ^ 2) * hn) :=
+        mul_le_mul_of_nonneg_left hchain hLd.le
+    _ = (M * Cp * ∫ v, W v ^ 2) * (L ^ (2 - δ) * hn) := by ring
+
 
 /-! #### Bandwidth limits behind the small/large lag split -/
 
@@ -1622,7 +1949,33 @@ linearly. Witness: `X ≡ 0` (so `σ(X_t)` is trivial), `e_t ≡ ξ` for a singl
 `hC2`, `hlam`/`hα`, `hWm`/`hWb`, `hh0`/`hh`/`hnh`) into this statement, exactly as
 `var_localized_sum` carries it: with mixing the variance is `≍ N_n/n → 0`. Not done here
 — the statement freeze is lifted this wave only for the two (C1) hypotheses listed in the
-module docstring. -/
+module docstring.
+
+**Second obstruction (this wave's finding): the repair above is *not* sufficient.**
+Threading the full (C1)–(C5) package still does not close this statement, because the
+summands here are the **truncated** ones `ζ_t = e^L_t W((X_t − x)/h_n)` with
+`e^L_t = clamp_L(e_t) − E(clamp_L(e_t) | X_t)`, and the ledger-(a) route needs the
+small-lag bound `|E[ζ_0 ζ_j]| = O(h²)` (FY (2.76)) on the whole range `1 ≤ j ≤ m_n`. The
+combinatorial half is fine — `abs_double_sum_sub_diag_le` generalizes verbatim from
+`range n` to an arbitrary index set, which is all the small blocks need, and the diagonal
+and large-lag halves go through unchanged (`|ζ_0| ≤ |e_0 W_0| + M^{1/δ}|W_0|`, so
+`‖ζ_0‖_δ = O(h^{1/δ})` still, by `localized_delta_moment_le` plus the density change of
+variables). The small-lag half is not. Conditioning on `(X_0, X_j)` writes
+`E[ζ_0 ζ_j] = E[ψ_L(X_0, X_j) · W((X_0−x)/h) W((X_j−x)/h)]` with `|ψ_L| ≤ 4 M^{2/δ}`: the
+conditional recentring has removed **both** error factors, so what the estimate needs is
+an *unweighted* bounded joint density for `(X_0, X_j)`. (C2) as formalized supplies only
+the instance weighted by `|e_0 e_j|`, and does not imply it. The two substitutes that are
+available both diverge over the small-lag range: the crude
+`|E[ζ_0 ζ_j]| ≤ 4 M^{2/δ} C_W · E|W((X_0−x)/h)| = O(h)` (bounded density) gives
+`h⁻¹ · m_n · O(h) = O(m_n) → ∞`, and Davydov gives `h^{2/δ−1} Σ_j α(j)^{1−2/δ} → ∞`
+since `2/δ < 1`.
+
+FY's printed (C2) — "the conditional density of `(X_1, X_j)` given `(e_1, e_j)` is
+bounded uniformly in `j`" — *does* give it: integrating the errors out yields
+`E[|f(e_0,e_j)| g(X_0,X_j)] ≤ B · E|f(e_0,e_j)| · ∫∫ g` for **every** `f`, of which the
+frozen hypothesis is the single instance `f = e_0 e_j`. So the second repair needed here
+is to restate (C2) in that form (equivalently: add the unweighted instance `f ≡ 1`).
+Both repairs are outside this wave's authorization. -/
 private theorem tendsto_smallBlock_variance [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} {W : ℝ → ℝ} {x : ℝ} {δ lam : ℝ} {h : ℕ → ℝ} {L : ℝ} :
     Tendsto (fun n : ℕ =>
@@ -1715,13 +2068,66 @@ corollary `tendsto_charFun_rowSum_gaussian_of_uniformly_small` — applicable be
 truncated block summands carry the envelope `l_n L CW / √(n h_n) → 0`, which is exactly
 why `l_n = [√(n h_n)/log n]` is chosen. The block-variance input is ledger (a).
 
-**Status.** This is the one remaining item whose *statement* survives the audit intact (it
-carries the full (C1)–(C5) package). Of its three blocking inputs, (i) is now **cleared**:
-ledger (a) `var_localized_sum` is proved under the authorized (2.74) repair. Still blocked
-on (ii) `tendsto_smallBlock_variance`, whose frozen statement is false for want of
-hypotheses (see there), and (iii) the Volkonskii–Rozanov factorization
-`norm_integral_prod_sub_prod_integral_le`, an open `sorry` in `Mixing/Inequalities.lean`.
-Its *rate* input (2.78) is proved (`tendsto_blockCount_mul_pairAlpha`).
+**Status.** Of its three blocking inputs, (i) is **cleared** (ledger (a)
+`var_localized_sum`, proved under the authorized (2.74) repair) and (iii) is **cleared**
+(the Volkonskii–Rozanov factorization, now available proved and axiom-clean as
+`norm_integral_prod_sub_prod_integral_le_of_pos` in `Mixing/Inequalities.lean`; the
+frozen `norm_integral_prod_sub_prod_integral_le` keeps only its false `k = 0` corner, and
+every consumer here has `k = k_n ≥ 1`). Its *rate* input (2.78) is proved
+(`tendsto_blockCount_mul_pairAlpha`). Input (ii) `tendsto_smallBlock_variance` is still
+blocked, and now for two reasons (see there).
+
+**FALSE AS FROZEN (this wave's finding — this supersedes the previous "statement survives
+the audit intact" verdict).** The obstruction is *independent* of inputs (i)–(iii): the
+conclusion is refutable even for an **iid** series, where the Bernstein blocking is
+unnecessary and every one of (i)–(iii) is trivial. The point is that the hypotheses
+constrain the conditional law of `e_0` given `X_0` only through its first two moments
+(`hce`, `hcv`) and a δ-th moment bound (`heδc`), whereas the conclusion at a **fixed**
+truncation level `L` sees the conditional law of `clamp_L(e_0)` given `X_0` — a different
+functional, on which no regularity at `x` has been assumed.
+
+*Witness.* Take `(X_t, e_t)` iid (so `pairAlphaCoeff X e μ t = 0` for `t ≥ 1` and `hα`
+holds for any `lam`; take `δ = 3`, `lam = 1`, so `hδ`, `hlam` hold), `X_0` uniform on
+`[0,1]` (`p = 1_{[0,1]}`, `x = 1/2`: `hmp`, `hp0`, `hpd`, `hpc`, `hpx`, `hpb` with
+`Cp = 1`), `W = 1_{[1,2]}` (`hWm`, `hWb` with `C_W = 1`, `hW1`, `hW2`, `∫W² = 1`), and let
+the conditional law of `e_0` given `X_0 = v` be `±c(v)` with probability `q(v)/2` each and
+`0` with probability `1 − q(v)`, where `q(v) ∈ [1/4, 1/2]` and `c(v) = q(v)^{−1/2}`. Then
+`E(e_0|X_0) = 0` (`hce`); `E(e_0²|X_0) = c²q = 1`, so `σ² ≡ 1` (`hcv`, `hσm`, `hσc`, and
+`hσpb` with `C = 1`); `E(|e_0|³|X_0) = c³q = q^{−1/2} ≤ 2` (`heLδ`, `heδc` with `M = 2`);
+and (C2) holds with `B = 1`, since for `j ≠ 0` independence factorizes
+`E[|e_0 e_j| g(X_0,X_j)] = ∫∫ m(v) p(v) m(w) p(w) g` with
+`m(v) = E(|e_0| | X_0 = v) = q(v)^{1/2} ≤ 1` and `E[e_0²] = 1`.
+
+Now fix `L = 1`. As `c(v) ≥ √2 > 1`, `clamp_1(e_0)` is `±1` with probability `q(v)` and
+its conditional mean vanishes, so `truncErr` has conditional variance `σ_1²(v) = q(v)` —
+a function the hypotheses pin down only up to `q ∈ [1/4, 1/2]`. The summands of
+`locTruncSum … 1 n` are iid, centred, bounded by `1`, with common variance
+`h_n ∫ q(x + h_n u) W(u)² du`, so `Var (locTruncSum … 1 n) = ∫_1^2 q(x + h_n u) du =: V(h_n)`
+and, the array being uniformly bounded by `2/√(n h_n) → 0`, the Lindeberg CLT gives
+`charFun (μ.map (locTruncSum X e μ W x h 1 n)) u − exp(−u² V(h_n)/2) → 0`. Choose
+`q(v) = 3/8 + (1/8) cos(2π log₂ |v − x|)`. Along `h = 2^{−k}` the phase is an integer
+multiple of `2π`, so `V = 3/8 + (1/8) I`; along `h = 2^{−k−1/2}` the cosine flips sign, so
+`V = 3/8 − (1/8) I`; and
+`I = ∫_1^2 cos(2π log₂ u) du = (log 2)² / ((log 2)² + 4π²) > 0`. Interleaving the two
+scales along a bandwidth sequence with `h_n → 0` and `n h_n³ → ∞` (e.g. `h_n` the nearer
+of `2^{−k}`, `2^{−k−1/2}` to `n^{−1/4}`, alternating on long blocks — (C5) constrains only
+the *rate*, not the scale) makes `V(h_n)` oscillate between two distinct values. Hence
+`charFun (μ.map (locTruncSum … 1 n)) u` has no limit at any `u ≠ 0`, and **no** value of
+`vT 1` can satisfy the first conclusion.
+
+**Missing input, precisely.** FY's step (c) silently needs the diagonal (2.73) *for the
+truncated errors*: continuity at `x` of `σ_L² · p` for each `L`, where
+`σ_L²(v) = Var(clamp_L(e_0) | X_0 = v)`. This is a **fourth** silent reading of (C1),
+independent of `hσm`/`hσpb` (which regularize only `σ² = σ_∞²`) and of `heδc`/`hpb` (which
+bound only a δ-th moment). The economical repair is to assume that the conditional law of
+`e_0` given `X_0 = v` converges weakly to the one at `v = x` as `v → x`, together with
+uniform square-integrability along that limit: this yields continuity at `x` of `σ_L² · p`
+for every `L` *and* FY's (2.84) `σ_L²(x) → σ²(x)` as `L → ∞`, which is the second
+conclusion. Note that the **headline** `kernel_localized_clt` is *not* damaged by this: it
+is an artifact of the truncation route only, and the untruncated variance asymptotics
+`var_localized_sum` — which is what the headline's Gaussian limit is read off — is proved.
+
+Outside this wave's authorization; recorded, not repaired.
 
 **Statement strengthening (documented).** The two (2.74) hypotheses `heδc`/`hpb` are
 carried here solely because this statement consumes ledger (a); see
