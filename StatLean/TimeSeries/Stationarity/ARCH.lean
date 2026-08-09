@@ -1029,6 +1029,186 @@ theorem archInf_memLp_two_debt [IsProbabilityMeasure μ]
   change ∫⁻ ω, ‖archSol a bc ξ t ω ^ 2‖ₑ ∂μ < ∞
   exact lt_of_le_of_lt hle (lintegral_sq_archZ_lt_top hξ hξ2 h16 hbc hsum t)
 
+/-! ### The autocovariance recursion (Giraitis–Kokoszka–Leipus 2000)
+
+The one *dependence*-structure fact that the ARCH(∞) equation delivers on its own. For a
+lag `k ≥ 1` the whole strict past — in particular `Y_0` and the driving series
+`Σ_j b_j Y_{k−1−j}` — is `σ(Y_s : s < k)`-measurable, so `indep_past` factorizes `ξ_k`
+out of `E[Y_k Y_0]` at unit cost:
+`E[Y_k Y_0] = a E Y_0 + Σ_j b_j E[Y_{k−1−j} Y_0]`.
+Subtracting `(E Y)²` and using `E Y = a/(1 − Σ_j b_j)` (`integral_archSol`), i.e.
+`a E Y = (E Y)²(1 − Σ_j b_j)`, turns this into the *homogeneous* recursion
+
+`γ(k) = Σ_j b_j γ(k − 1 − j)`,  `k ≥ 1`,
+
+with `γ` extended to negative lags by evenness. Everything is run in `ℝ≥0∞`: the
+solution and the noise are nonnegative, so the tsum/integral interchanges are Tonelli and
+no summability side condition is needed until the very last step, where the `ℓ¹` bound
+`0 ≤ E[Y_l Y_0] ≤ E Y_0²` (from `2xy ≤ x² + y²` plus stationarity) makes the real series
+absolutely convergent. -/
+
+/-- `E[Y_l Y_0]` is nonnegative and dominated by `E Y_0²`, uniformly in the lag. -/
+private lemma archInf_integral_mul_le [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
+    {Y ξ : ℤ → Ω → ℝ} (h : IsARCHInf a bc Y ξ μ) (hstat : IsStrictlyStationary Y μ)
+    (hL2 : ∀ t, MemLp (Y t) 2 μ) (l : ℤ) :
+    0 ≤ ∫ ω, Y l ω * Y 0 ω ∂μ ∧
+      (∫ ω, Y l ω * Y 0 ω ∂μ) ≤ ∫ ω, Y 0 ω * Y 0 ω ∂μ := by
+  have hsq : ∀ t : ℤ, Integrable (fun ω => Y t ω * Y t ω) μ := fun t => by
+    simpa [← Pi.mul_def] using (hL2 t).integrable_mul (hL2 t)
+  have hmul : ∀ t : ℤ, Integrable (fun ω => Y t ω * Y 0 ω) μ := fun t => by
+    simpa [← Pi.mul_def] using (hL2 t).integrable_mul (hL2 0)
+  have hsqeq : ∫ ω, Y l ω * Y l ω ∂μ = ∫ ω, Y 0 ω * Y 0 ω ∂μ := by
+    have hid : IdentDistrib (fun ω => Y l ω * Y l ω) (fun ω => Y 0 ω * Y 0 ω) μ μ :=
+      ((hstat.identDistrib h.measurableY l 0).comp
+        (measurable_id.mul measurable_id : Measurable fun x : ℝ => x * x))
+    exact hid.integral_eq
+  refine ⟨?_, ?_⟩
+  · refine integral_nonneg_of_ae ?_
+    filter_upwards [h.Y_nonneg l, h.Y_nonneg 0] with ω h1 h2 using mul_nonneg h1 h2
+  · have hpt : ∀ᵐ ω ∂μ, Y l ω * Y 0 ω
+        ≤ (Y l ω * Y l ω + Y 0 ω * Y 0 ω) / 2 := by
+      filter_upwards with ω
+      nlinarith [sq_nonneg (Y l ω - Y 0 ω)]
+    have hadd : Integrable (fun ω => (Y l ω * Y l ω + Y 0 ω * Y 0 ω) / 2) μ := by
+      have hA := ((hsq l).add (hsq 0)).div_const 2
+      simpa [Pi.add_apply] using hA
+    have hle := integral_mono_ae (hmul l) hadd hpt
+    rw [integral_div, integral_add (hsq l) (hsq 0), hsqeq] at hle
+    linarith
+
+/-- **The ARCH(∞) autocovariance recursion** (Giraitis–Kokoszka–Leipus 2000, the
+"dependence structure" half of their title): for every lag `k ≥ 1`,
+`γ(k) = Σ_j b_j γ(k − 1 − j)`, the *same* linear recursion the coefficients define, with
+`γ` read at the (possibly negative) shifted lags. Proved from `indep_past` alone — no
+Volterra expansion, no mixing, and no moment beyond `L²`. -/
+theorem archInf_acvf_recursion [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
+    {Y ξ : ℤ → Ω → ℝ} (hsum : Summable bc) (hlt : ∑' j, bc j < 1)
+    (h : IsARCHInf a bc Y ξ μ) (hstat : IsStrictlyStationary Y μ)
+    (hL2 : ∀ t, MemLp (Y t) 2 μ) {k : ℤ} (hk : 1 ≤ k) :
+    acvf Y μ k = ∑' j : ℕ, bc j * acvf Y μ (k - 1 - (j : ℕ)) := by
+  classical
+  have hint : ∀ t, Integrable (Y t) μ := fun t => (hL2 t).integrable one_le_two
+  have hmul : ∀ t : ℤ, Integrable (fun ω => Y t ω * Y 0 ω) μ := fun t => by
+    simpa [← Pi.mul_def] using (hL2 t).integrable_mul (hL2 0)
+  obtain ⟨m, hmdef⟩ : ∃ x : ℝ, x = ∫ ω, Y 0 ω ∂μ := ⟨_, rfl⟩
+  obtain ⟨C, hCdef⟩ : ∃ f : ℤ → ℝ, f = fun l => ∫ ω, Y l ω * Y 0 ω ∂μ := ⟨_, rfl⟩
+  have hCapp : ∀ l : ℤ, C l = ∫ ω, Y l ω * Y 0 ω ∂μ := fun l => by rw [hCdef]
+  have hmean : ∀ l : ℤ, ∫ ω, Y l ω ∂μ = m := fun l => by
+    rw [hmdef]; exact (hstat.identDistrib h.measurableY l 0).integral_eq
+  have hm0 : 0 ≤ m := by
+    rw [hmdef]; exact integral_nonneg_of_ae (h.Y_nonneg 0)
+  have hC0 : ∀ l : ℤ, 0 ≤ C l := fun l => by
+    rw [hCapp]; exact (archInf_integral_mul_le h hstat hL2 l).1
+  have hCle : ∀ l : ℤ, C l ≤ C 0 := fun l => by
+    rw [hCapp, hCapp]; exact (archInf_integral_mul_le h hstat hL2 l).2
+  -- the autocovariance in terms of `C`
+  have hacvf : ∀ l : ℤ, acvf Y μ l = C l - m * m := fun l => by
+    have h1 : acvf Y μ l = μ[Y l * Y 0] - (∫ ω, Y l ω ∂μ) * ∫ ω, Y 0 ω ∂μ :=
+      covariance_eq_sub (hL2 l) (hL2 0)
+    rw [h1, hmean l, hmean 0, hCapp]
+    simp only [Pi.mul_apply]
+  -- the `ℝ≥0∞` version of `C`
+  have hLC : ∀ l : ℤ, (∫⁻ ω, ENNReal.ofReal (Y l ω) * ENNReal.ofReal (Y 0 ω) ∂μ)
+      = ENNReal.ofReal (C l) := by
+    intro l
+    have hcong : (∫⁻ ω, ENNReal.ofReal (Y l ω) * ENNReal.ofReal (Y 0 ω) ∂μ)
+        = ∫⁻ ω, ENNReal.ofReal (Y l ω * Y 0 ω) ∂μ := by
+      refine lintegral_congr_ae ?_
+      filter_upwards [h.Y_nonneg l] with ω hω
+      rw [ENNReal.ofReal_mul hω]
+    rw [hcong, hCapp, ← ofReal_integral_eq_lintegral_ofReal (hmul l) ?_]
+    filter_upwards [h.Y_nonneg l, h.Y_nonneg 0] with ω h1 h2 using mul_nonneg h1 h2
+  have hM0 : (∫⁻ ω, ENNReal.ofReal (Y 0 ω) ∂μ) = ENNReal.ofReal m := by
+    rw [hmdef, ← ofReal_integral_eq_lintegral_ofReal (hint 0) (h.Y_nonneg 0)]
+  -- one step of the recursion, in `ℝ≥0∞`
+  have hstep : (∫⁻ ω, ENNReal.ofReal (Y k ω) * ENNReal.ofReal (Y 0 ω) ∂μ)
+      = ENNReal.ofReal a * ENNReal.ofReal m
+        + ∑' j : ℕ, ENNReal.ofReal (bc j)
+            * ∫⁻ ω, ENNReal.ofReal (Y (k - 1 - (j : ℕ)) ω) * ENNReal.ofReal (Y 0 ω) ∂μ := by
+    have hlagLT : ∀ j : ℕ, k - 1 - (j : ℕ) < k := fun j => by
+      have : (0 : ℤ) ≤ (j : ℤ) := Int.natCast_nonneg j
+      omega
+    have hmeasLag : ∀ j : ℕ,
+        Measurable[sigmaLT Y k] fun ω => ENNReal.ofReal (Y (k - 1 - (j : ℕ)) ω) := fun j =>
+      ((Measurable.of_comap_le (le_refl
+        (MeasurableSpace.comap (Y (k - 1 - (j : ℕ))) inferInstance))).mono
+          (comap_le_sigmaLT (hlagLT j)) le_rfl).ennreal_ofReal
+    have hmeasY0 : Measurable[sigmaLT Y k] fun ω => ENNReal.ofReal (Y 0 ω) :=
+      ((Measurable.of_comap_le (le_refl
+        (MeasurableSpace.comap (Y 0) inferInstance))).mono
+          (comap_le_sigmaLT (by omega : (0 : ℤ) < k)) le_rfl).ennreal_ofReal
+    have hmeasG : Measurable[sigmaLT Y k] fun ω => (ENNReal.ofReal a
+        + ∑' j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (k - 1 - (j : ℕ)) ω))
+          * ENNReal.ofReal (Y 0 ω) :=
+      (measurable_const.add
+        (Measurable.ennreal_tsum fun j => measurable_const.mul (hmeasLag j))).mul hmeasY0
+    have hcong : (∫⁻ ω, ENNReal.ofReal (Y k ω) * ENNReal.ofReal (Y 0 ω) ∂μ)
+        = ∫⁻ ω, ENNReal.ofReal (ξ k ω) * ((ENNReal.ofReal a
+            + ∑' j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (k - 1 - (j : ℕ)) ω))
+              * ENNReal.ofReal (Y 0 ω)) ∂μ := by
+      refine lintegral_congr_ae ?_
+      filter_upwards [archInf_ofReal_recurrence hsum h hint hstat k] with ω hω
+      rw [hω, mul_assoc]
+    rw [hcong, lintegral_mul_eq_lintegral_mul_lintegral_of_independent_measurableSpace
+        (h.measurableXi k).comap_le (sigmaLT_le h.measurableY k) (h.indep_past k)
+        (Measurable.of_comap_le le_rfl).ennreal_ofReal hmeasG,
+      lintegral_ofReal_xi h.xi_nonneg h.identDistrib h.integrable_xi h.integral_xi k, one_mul]
+    have hsplit : ∀ ω, (ENNReal.ofReal a
+          + ∑' j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (k - 1 - (j : ℕ)) ω))
+            * ENNReal.ofReal (Y 0 ω)
+        = ENNReal.ofReal a * ENNReal.ofReal (Y 0 ω)
+          + ∑' j : ℕ, ENNReal.ofReal (bc j)
+              * (ENNReal.ofReal (Y (k - 1 - (j : ℕ)) ω) * ENNReal.ofReal (Y 0 ω)) := by
+      intro ω
+      rw [add_mul, ← ENNReal.tsum_mul_right]
+      exact congrArg _ (tsum_congr fun j => by ring)
+    simp only [hsplit]
+    rw [lintegral_add_left (measurable_const.mul ((h.measurableY 0).ennreal_ofReal)),
+      lintegral_const_mul _ ((h.measurableY 0).ennreal_ofReal), hM0,
+      lintegral_tsum fun j => (measurable_const.mul
+        (((h.measurableY (k - 1 - (j : ℕ))).ennreal_ofReal).mul
+          ((h.measurableY 0).ennreal_ofReal))).aemeasurable]
+    exact congrArg _ (tsum_congr fun j =>
+      lintegral_const_mul _ (((h.measurableY (k - 1 - (j : ℕ))).ennreal_ofReal).mul
+        ((h.measurableY 0).ennreal_ofReal)))
+  -- back to the reals
+  have hsumC : Summable fun j : ℕ => bc j * C (k - 1 - (j : ℕ)) := by
+    refine Summable.of_nonneg_of_le (fun j => mul_nonneg (h.bc_nonneg j) (hC0 _))
+      (fun j => mul_le_mul_of_nonneg_left (hCle _) (h.bc_nonneg j)) (hsum.mul_right (C 0))
+  have hCrec : C k = a * m + ∑' j : ℕ, bc j * C (k - 1 - (j : ℕ)) := by
+    have h1 := hstep
+    rw [hLC k] at h1
+    simp only [hLC] at h1
+    have h2 : ∀ j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (C (k - 1 - (j : ℕ)))
+        = ENNReal.ofReal (bc j * C (k - 1 - (j : ℕ))) := fun j =>
+      (ENNReal.ofReal_mul (h.bc_nonneg j)).symm
+    simp only [h2] at h1
+    rw [← ENNReal.ofReal_mul h.a_nonneg,
+      ← ENNReal.ofReal_tsum_of_nonneg
+        (fun j => mul_nonneg (h.bc_nonneg j) (hC0 _)) hsumC,
+      ← ENNReal.ofReal_add (mul_nonneg h.a_nonneg hm0)
+        (tsum_nonneg fun j => mul_nonneg (h.bc_nonneg j) (hC0 _))] at h1
+    exact (ENNReal.ofReal_eq_ofReal_iff (hC0 k)
+      (add_nonneg (mul_nonneg h.a_nonneg hm0)
+        (tsum_nonneg fun j => mul_nonneg (h.bc_nonneg j) (hC0 _)))).1 h1
+  -- the mean pins `a` to `(1 − Σ b_j) E Y`
+  have hmval : m = a / (1 - ∑' j, bc j) := by
+    rw [hmdef, integral_congr_ae (archInf_eq_archSol hsum hlt h hint hstat 0)]
+    exact integral_archSol h.a_nonneg h.bc_nonneg hsum hlt (archNoise_of_archInf h) 0
+  have hane : a = m * (1 - ∑' j, bc j) := by
+    rw [hmval, div_mul_cancel₀]
+    exact sub_ne_zero_of_ne (ne_of_gt hlt)
+  -- assemble
+  have hRHS : (∑' j : ℕ, bc j * acvf Y μ (k - 1 - (j : ℕ)))
+      = (∑' j : ℕ, bc j * C (k - 1 - (j : ℕ))) - (∑' j, bc j) * (m * m) := by
+    have e1 : ∀ j : ℕ, bc j * acvf Y μ (k - 1 - (j : ℕ))
+        = bc j * C (k - 1 - (j : ℕ)) - bc j * (m * m) := fun j => by
+      rw [hacvf]; ring
+    rw [tsum_congr e1, hsumC.tsum_sub (hsum.mul_right (m * m)),
+      hsum.tsum_mul_right (m * m)]
+  rw [hacvf k, hCrec, hRHS, hane]
+  ring
+
 /-- **FY Theorem 2.6 — DEBT** (Giraitis–Kokoszka–Leipus 2000; fdd invariance principle):
 under eq. (2.16), the normalized partial sums of a stationary ARCH(∞) process are
 asymptotically `N(0, σ²)` with long-run variance `σ² = Σ_k Cov(Y_k, Y_0)`. Stated at the
