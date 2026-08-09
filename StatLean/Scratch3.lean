@@ -1708,4 +1708,98 @@ theorem norm_charFun_blockSum_sub_prod_le [IsProbabilityMeasure μ]
 
 end VR
 
+section Envelope
+
+/-- `n h_n → ∞` under (C5). -/
+theorem tendsto_mul_bandwidth_atTop {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
+    (hh : Tendsto h atTop (𝓝 0))
+    (hnh : Tendsto (fun n : ℕ => (n : ℝ) * h n ^ 3) atTop atTop) :
+    Tendsto (fun n : ℕ => (n : ℝ) * h n) atTop atTop := by
+  refine tendsto_atTop_mono' _ ?_ hnh
+  filter_upwards [hh.eventually_le_const (by norm_num : (0:ℝ) < 1), eventually_ge_atTop 1]
+    with n hh1 hn1
+  have hn0 : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+  have hhn := hh0 n
+  have hh2 : h n ^ 2 ≤ 1 := by nlinarith
+  nlinarith [mul_nonneg (mul_nonneg hn0 hhn.le) (sub_nonneg.2 hh2)]
+
+/-- The big-block envelope `l_n / √(n h_n) → 0` — this is what `l_n = [√(n h_n)/log n]`
+is chosen for. -/
+theorem tendsto_bigBlockLen_div_sqrt {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
+    (hh : Tendsto h atTop (𝓝 0))
+    (hnh : Tendsto (fun n : ℕ => (n : ℝ) * h n ^ 3) atTop atTop) :
+    Tendsto (fun n : ℕ => (Real.sqrt ((n : ℝ) * h n))⁻¹ * (bigBlockLen h n : ℝ))
+      atTop (𝓝 0) := by
+  have hnh' := tendsto_mul_bandwidth_atTop hh0 hh hnh
+  have hsq : Tendsto (fun n : ℕ => Real.sqrt ((n : ℝ) * h n)) atTop atTop :=
+    Real.tendsto_sqrt_atTop.comp hnh'
+  have hlogtop : Tendsto (fun n : ℕ => Real.log n) atTop atTop :=
+    Real.tendsto_log_atTop.comp tendsto_natCast_atTop_atTop
+  have hmaj : Tendsto (fun n : ℕ =>
+      (Real.log n)⁻¹ + (Real.sqrt ((n : ℝ) * h n))⁻¹) atTop (𝓝 0) := by
+    simpa using hlogtop.inv_tendsto_atTop.add hsq.inv_tendsto_atTop
+  refine squeeze_zero' ?_ ?_ hmaj
+  · filter_upwards with n; positivity
+  filter_upwards [hlogtop.eventually_gt_atTop 0, hsq.eventually_gt_atTop 0] with n hlog hsqn
+  have hle : (bigBlockLen h n : ℝ) ≤ Real.sqrt ((n : ℝ) * h n) / Real.log n + 1 := by
+    rw [bigBlockLen]
+    exact (Nat.ceil_lt_add_one (by positivity)).le
+  have hstep : (Real.sqrt ((n : ℝ) * h n))⁻¹ * (bigBlockLen h n : ℝ)
+      ≤ (Real.sqrt ((n : ℝ) * h n))⁻¹ * (Real.sqrt ((n : ℝ) * h n) / Real.log n + 1) :=
+    mul_le_mul_of_nonneg_left hle (by positivity)
+  refine hstep.trans (le_of_eq ?_)
+  field_simp
+
+end Envelope
+
+section Glue
+
+/-- `truncErr` is measurable (the conditional expectation is `σ(X_t)`-measurable). -/
+theorem measurable_truncErr {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t))
+    (hmeasE : ∀ t, Measurable (e t)) (L : ℝ) (t : ℤ) :
+    Measurable (truncErr X e μ L t) :=
+  ((measurable_clampAt L).comp (hmeasE t)).sub
+    ((stronglyMeasurable_condExp.mono (hmeasX t).comap_le).measurable)
+
+/-- `L²`-negligibility implies `L¹`-negligibility (via `|z| ≤ z²/(2c) + c/2`). -/
+theorem tendsto_integral_abs_of_tendsto_sq [IsProbabilityMeasure μ] {D : ℕ → Ω → ℝ}
+    (hD : ∀ n, MemLp (D n) 2 μ)
+    (h2 : Tendsto (fun n => ∫ ω, (D n ω) ^ 2 ∂μ) atTop (𝓝 0)) :
+    Tendsto (fun n => ∫ ω, |D n ω| ∂μ) atTop (𝓝 0) := by
+  refine Metric.tendsto_atTop.2 fun ε hε => ?_
+  have hc : (0 : ℝ) < ε / 2 := by linarith
+  obtain ⟨N, hN⟩ := eventually_atTop.1
+    (h2.eventually_lt_const (by positivity : (0 : ℝ) < (ε / 2) ^ 2))
+  refine ⟨N, fun n hn => ?_⟩
+  have hi1 : Integrable (fun ω => |D n ω|) μ := ((hD n).integrable (by norm_num)).abs
+  have hi2 : Integrable (fun ω => (D n ω) ^ 2) μ := (hD n).integrable_sq
+  have hptw : ∀ ω, |D n ω| ≤ (D n ω) ^ 2 / (2 * (ε / 2)) + (ε / 2) / 2 := by
+    intro ω
+    set z : ℝ := D n ω with hzdef
+    have hnum : (0 : ℝ) ≤ z ^ 2 + (ε / 2) ^ 2 - 2 * (ε / 2) * |z| := by
+      nlinarith [sq_nonneg (|z| - ε / 2), sq_abs z]
+    have hid : z ^ 2 / (2 * (ε / 2)) + (ε / 2) / 2 - |z|
+        = (z ^ 2 + (ε / 2) ^ 2 - 2 * (ε / 2) * |z|) / (2 * (ε / 2)) := by
+      field_simp
+    have hdiv : (0 : ℝ) ≤ (z ^ 2 + (ε / 2) ^ 2 - 2 * (ε / 2) * |z|) / (2 * (ε / 2)) :=
+      div_nonneg hnum (by linarith)
+    linarith
+  have hmono : ∫ ω, |D n ω| ∂μ
+      ≤ ∫ ω, ((D n ω) ^ 2 / (2 * (ε / 2)) + (ε / 2) / 2) ∂μ :=
+    integral_mono hi1 ((hi2.div_const _).add (integrable_const _)) hptw
+  have heval : ∫ ω, ((D n ω) ^ 2 / (2 * (ε / 2)) + (ε / 2) / 2) ∂μ
+      = (∫ ω, (D n ω) ^ 2 ∂μ) / (2 * (ε / 2)) + (ε / 2) / 2 := by
+    rw [integral_add (hi2.div_const _) (integrable_const _), integral_div, integral_const]
+    simp
+  rw [heval] at hmono
+  have hsq := hN n hn
+  have hlt : (∫ ω, (D n ω) ^ 2 ∂μ) / (2 * (ε / 2)) < (ε / 2) / 2 := by
+    rw [div_lt_div_iff₀ (by linarith) (by norm_num : (0 : ℝ) < 2)]
+    nlinarith
+  have hnn : (0 : ℝ) ≤ ∫ ω, |D n ω| ∂μ := integral_nonneg fun ω => abs_nonneg _
+  rw [Real.dist_eq, sub_zero, abs_of_nonneg hnn]
+  linarith
+
+end Glue
+
 end StatLean.TimeSeries
