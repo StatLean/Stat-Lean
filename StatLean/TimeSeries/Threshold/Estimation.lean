@@ -419,6 +419,402 @@ noncomputable def tarRegimeDesignCov {P : ℕ} (A : Set ℝ) (d : ℕ)
     ∫ ω in {ω | X (-(d : ℤ)) ω ∈ A},
       X (-1 - (j : ℕ)) ω * X (-1 - (l : ℕ)) ω ∂μ
 
+/-! ### The *repaired* eq. (4.8) statement is STILL FALSE — the centering defect
+
+The repairs of wave `ts/s12b-model-repairs` pin `W` to `tarRegimeDesignCov`, i.e. to the
+**uncentered** regime-conditional second-moment matrix `E[Z_0 Z_0ᵀ | X_{−d} ∈ A_i]`.  But
+FY eqs. (4.4)–(4.5) fit an **intercept** alongside the slopes, so what the regime-`i`
+least-squares slope actually sees is the *centered* design covariance
+`Σ_i = E[Z_0 Z_0ᵀ | ·] − E[Z_0 | ·] E[Z_0 | ·]ᵀ`, and the asymptotic covariance is
+`σ_i² Σ_i^{-1}`, not `σ_i² W_i^{-1}`.  The two agree only when the regime-conditional
+regressor mean vanishes.
+
+The witness below drives that gap to its extreme: it exhibits a legitimate TAR instance in
+which the regime-conditional regressor is a.s. **constant**, so `Σ_i = 0` (the slope is
+not identified at all) while `W_i = 1` is positive definite as the repaired hypothesis
+`hW` demands.  Every repaired hypothesis holds — `W` is pinned to the process, `hLS` is
+*joint* minimality over `(β₀, β)`, and the regime carries mass `1/2` — yet the least-squares
+slope may legitimately be taken to be the constant `0`, which is the true value, so the
+scaled statistic is identically `0` and its characteristic function is the constant `1`,
+against the claimed `exp(−1/2)`.
+
+Concretely: i.i.d. **Rademacher** innovations (the atom is what makes a singleton regime
+carry mass), `k = 2`, `d = P = 1`, `A₀ = {1}`, `A₁ = {1}ᶜ`, and zero coefficients, so
+`X = ε`.  With `d = P = 1` the threshold variable `X_{t−d}` and the single regressor
+`X_{t−1}` are the *same* variable, so on regime `0` the regressor is identically `1` and
+the design `(1, X_{t−1}) = (1, 1)` is rank one: the intercept absorbs the slope.
+
+**The repair this points to** is to replace `tarRegimeDesignCov` by its centered version
+(or, equivalently under Chan's fictitious-process reading, to state eq. (4.8) for the
+*mean-corrected* regressors), and to require that centered matrix — not the uncentered one
+— to be positive definite.  Recorded as finding 24 of the campaign. -/
+
+/-- The **Rademacher law** on `ℝ`: the two-point law of mean `0` and variance `1`.  An
+atom is exactly what the witness needs and what `gaussianReal` cannot supply. -/
+private noncomputable def radLaw : Measure ℝ :=
+  (2⁻¹ : ENNReal) • Measure.dirac (-1 : ℝ) + (2⁻¹ : ENNReal) • Measure.dirac (1 : ℝ)
+
+private instance : IsProbabilityMeasure radLaw := by
+  constructor
+  simp only [radLaw, Measure.coe_add, Pi.add_apply, Measure.smul_apply, smul_eq_mul,
+    Measure.dirac_apply' _ MeasurableSet.univ, Set.indicator_univ, Pi.one_apply, mul_one]
+  exact ENNReal.inv_two_add_inv_two
+
+/-- Integration against the Rademacher law: the two-point average. -/
+private lemma integral_radLaw (f : ℝ → ℝ) :
+    ∫ x, f x ∂radLaw = (f (-1) + f 1) / 2 := by
+  have h1 : Integrable f (Measure.dirac (-1 : ℝ)) := integrable_dirac (by finiteness)
+  have h2 : Integrable f (Measure.dirac (1 : ℝ)) := integrable_dirac (by finiteness)
+  rw [radLaw, integral_add_measure (h1.smul_measure (by finiteness))
+      (h2.smul_measure (by finiteness)),
+    integral_smul_measure, integral_smul_measure, integral_dirac, integral_dirac]
+  simp only [ENNReal.toReal_inv, ENNReal.toReal_ofNat, smul_eq_mul]
+  ring
+
+private lemma memLp_id_radLaw : MemLp (id : ℝ → ℝ) 2 radLaw := by
+  refine ⟨measurable_id.aestronglyMeasurable, ?_⟩
+  have hbd : ∀ᵐ x ∂radLaw, ‖(id : ℝ → ℝ) x‖ ≤ 1 := by
+    have h0 : radLaw {x : ℝ | ¬ ‖x‖ ≤ 1} = 0 := by
+      have hsub : {x : ℝ | ¬ ‖x‖ ≤ 1} ⊆ ({-1, 1} : Set ℝ)ᶜ := by
+        intro x hx hmem
+        rcases hmem with h | h <;> (rw [Set.mem_setOf_eq] at hx; apply hx; rw [h]; simp)
+      refine measure_mono_null hsub ?_
+      simp only [radLaw, Measure.coe_add, Pi.add_apply, Measure.smul_apply, smul_eq_mul]
+      rw [Measure.dirac_apply' _ (by measurability), Measure.dirac_apply' _ (by measurability)]
+      simp
+    exact h0
+  exact (eLpNorm_le_of_ae_bound hbd).trans_lt (by finiteness)
+
+private lemma integral_id_radLaw : ∫ x, (x : ℝ) ∂radLaw = 0 := by
+  have := integral_radLaw (fun x : ℝ => x)
+  simpa using this
+
+private lemma variance_id_radLaw : variance (id : ℝ → ℝ) radLaw = 1 := by
+  rw [variance_eq_integral memLp_id_radLaw.aestronglyMeasurable.aemeasurable]
+  have hI : ∫ x, (x : ℝ) ∂radLaw = 0 := integral_id_radLaw
+  simp only [id_eq, hI]
+  have := integral_radLaw (fun x : ℝ => (x - 0) ^ 2)
+  simpa using this
+
+/-! #### The i.i.d. Rademacher coordinate noise on `(ℤ → ℝ, ⊗ Rad)` -/
+
+private noncomputable def radMeasure : Measure (ℤ → ℝ) :=
+  Measure.infinitePi (fun _ : ℤ => radLaw)
+
+private instance : IsProbabilityMeasure radMeasure := by
+  unfold radMeasure; infer_instance
+
+private def radCoord (t : ℤ) (ω : ℤ → ℝ) : ℝ := ω t
+
+private lemma radCoord_measurable (t : ℤ) : Measurable (radCoord t) := measurable_pi_apply t
+
+private lemma radMeasure_map_coord (t : ℤ) : radMeasure.map (radCoord t) = radLaw :=
+  Measure.infinitePi_map_eval _ t
+
+private lemma radCoord_identDistrib (t : ℤ) :
+    IdentDistrib (radCoord t) (id : ℝ → ℝ) radMeasure radLaw :=
+  ⟨(radCoord_measurable t).aemeasurable, aemeasurable_id, by
+    rw [Measure.map_id, radMeasure_map_coord t]⟩
+
+private lemma rad_isIIDNoise : IsIIDNoise radCoord 1 radMeasure := by
+  refine ⟨radCoord_measurable, ?_, ?_, ?_, ?_, ?_⟩
+  · exact iIndepFun_infinitePi (X := fun _ : ℤ => (id : ℝ → ℝ)) (fun _ => measurable_id)
+  · exact fun s t => (radCoord_identDistrib s).trans (radCoord_identDistrib t).symm
+  · exact (radCoord_identDistrib 0).memLp_iff.2 memLp_id_radLaw
+  · rw [(radCoord_identDistrib 0).integral_eq]
+    exact integral_id_radLaw
+  · rw [(radCoord_identDistrib 0).variance_eq]
+    exact variance_id_radLaw
+
+private lemma rad_memLp (t : ℤ) : MemLp (radCoord t) 2 radMeasure :=
+  (rad_isIIDNoise.identDistrib t 0).memLp_iff.2 rad_isIIDNoise.memLp
+
+private lemma radMeasure_shift (k : ℤ) :
+    radMeasure.map (fun (ω : ℤ → ℝ) (s : ℤ) => ω (s + k)) = radMeasure := by
+  unfold radMeasure
+  have h := Measure.infinitePi_map_piCongrLeft (X := fun _ : ℤ => ℝ)
+    (μ := fun _ : ℤ => radLaw) (Equiv.addRight (-k))
+  convert h using 2
+  funext ω s
+  rw [MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply_eq_cast]
+  simp
+
+private lemma rad_strictlyStationary : IsStrictlyStationary radCoord radMeasure := by
+  intro n t k
+  have hshift : Measurable (fun (ω : ℤ → ℝ) (s : ℤ) => ω (s + k)) :=
+    measurable_pi_lambda _ fun s => measurable_pi_apply _
+  have htup : Measurable (fun (ω : ℤ → ℝ) (i : Fin n) => ω (t i)) :=
+    measurable_pi_lambda _ fun i => measurable_pi_apply _
+  have hcomp : (fun (ω : ℤ → ℝ) (i : Fin n) => radCoord (t i + k) ω)
+      = (fun (ω' : ℤ → ℝ) (i : Fin n) => ω' (t i)) ∘ (fun (ω : ℤ → ℝ) (s : ℤ) => ω (s + k)) :=
+    rfl
+  rw [hcomp, ← Measure.map_map htup hshift, radMeasure_shift k]
+  rfl
+
+private lemma rad_indep_past (t : ℤ) :
+    Indep (MeasurableSpace.comap (radCoord t) inferInstance) (sigmaLT radCoord t) radMeasure := by
+  have hdisj : Disjoint ({t} : Set ℤ) (Set.Iio t) :=
+    Set.disjoint_singleton_left.2 (by simp)
+  have := indep_iSup_of_disjoint
+    (m := fun s : ℤ => MeasurableSpace.comap (radCoord s) inferInstance)
+    (fun s => (radCoord_measurable s).comap_le) rad_isIIDNoise.iIndep hdisj
+  simpa using this
+
+/-! #### The singleton-regime TAR instance -/
+
+/-- Two regimes split by the atom `1`: `A₀ = {1}` carries mass `1/2`, and on it the
+`d = P = 1` regressor `X_{t−1}` — which *is* the threshold variable — is identically `1`. -/
+private noncomputable def radA : Fin 2 → Set ℝ := fun i => if i = 0 then {1} else {(1 : ℝ)}ᶜ
+
+private lemma rad_isTAR :
+    IsTAR (fun _ : Fin 2 => (0 : ℝ)) (fun _ : Fin 2 => fun _ : Fin 1 => (0 : ℝ))
+      (fun _ : Fin 2 => (1 : ℝ)) radA 1 radCoord radCoord radMeasure := by
+  refine ⟨le_rfl, fun _ => one_pos, ?_, ?_, ?_, radCoord_measurable, rad_isIIDNoise,
+    rad_indep_past, ?_⟩
+  · intro i
+    by_cases h : i = 0 <;> simp [radA, h]
+  · intro i j hij
+    fin_cases i <;> fin_cases j <;> simp_all [radA]
+  · refine Set.eq_univ_of_univ_subset fun x _ => ?_
+    by_cases hx : x = 1
+    · exact Set.mem_iUnion.2 ⟨0, by simp [radA, hx]⟩
+    · exact Set.mem_iUnion.2 ⟨1, by simp [radA, hx]⟩
+  · intro t
+    filter_upwards with ω
+    rw [Fin.sum_univ_two]
+    have hf0 : (fun _ : ℝ => (0 : ℝ)
+          + (∑ j : Fin 1, (0 : ℝ) * radCoord (t - 1 - (j : ℕ)) ω) + (1 : ℝ) * radCoord t ω)
+        = fun _ : ℝ => radCoord t ω := by
+      funext _; simp
+    rw [hf0]
+    have h0 : radA 0 = ({1} : Set ℝ) := by simp [radA]
+    have h1 : radA 1 = ({(1 : ℝ)} : Set ℝ)ᶜ := by simp [radA]
+    rw [h0, h1]
+    by_cases hx : radCoord (t - ((1 : ℕ) : ℤ)) ω = 1
+    · rw [Set.indicator_of_mem (by simpa using hx),
+        Set.indicator_of_notMem (by simpa using hx), add_zero]
+    · rw [Set.indicator_of_notMem (by simpa using hx),
+        Set.indicator_of_mem (by simpa using hx), zero_add]
+
+/-! #### The regime has mass `1/2` and (uncentered) design covariance `1` -/
+
+private lemma rad_regime_set :
+    {ω : ℤ → ℝ | radCoord (-((1 : ℕ) : ℤ)) ω ∈ radA 0} = radCoord (-1) ⁻¹' ({1} : Set ℝ) := by
+  ext ω
+  simp [radCoord, radA]
+
+private lemma rad_mass_eq : radMeasure (radCoord (-1) ⁻¹' ({1} : Set ℝ)) = 2⁻¹ := by
+  have hmeas : MeasurableSet ({(1 : ℝ)}) := measurableSet_singleton 1
+  rw [← Measure.map_apply (radCoord_measurable _) hmeas, radMeasure_map_coord]
+  simp only [radLaw, Measure.coe_add, Pi.add_apply, Measure.smul_apply, smul_eq_mul,
+    Measure.dirac_apply' _ hmeas]
+  rw [Set.indicator_of_notMem (by norm_num), Set.indicator_of_mem (by simp)]
+  simp
+
+private lemma rad_designCov :
+    tarRegimeDesignCov (P := 1) (radA 0) 1 radCoord radMeasure
+      = (1 : Matrix (Fin 1) (Fin 1) ℝ) := by
+  have hS : MeasurableSet (radCoord (-1) ⁻¹' ({(1 : ℝ)})) :=
+    (radCoord_measurable _) (measurableSet_singleton 1)
+  ext j l
+  fin_cases j
+  fin_cases l
+  simp only [tarRegimeDesignCov, Matrix.of_apply, Matrix.one_apply_eq]
+  rw [rad_regime_set, rad_mass_eq]
+  have hone : ∀ ω ∈ radCoord (-1) ⁻¹' ({(1 : ℝ)}),
+      radCoord (-1 - ((⟨0, by norm_num⟩ : Fin 1) : ℕ)) ω
+        * radCoord (-1 - ((⟨0, by norm_num⟩ : Fin 1) : ℕ)) ω = 1 := by
+    intro ω hω
+    have : radCoord (-1) ω = 1 := hω
+    norm_num [radCoord] at this ⊢
+    rw [this]
+    norm_num
+  rw [setIntegral_congr_fun hS hone, setIntegral_const, measureReal_def, rad_mass_eq]
+  simp only [ENNReal.toReal_inv, ENNReal.toReal_ofNat, smul_eq_mul, mul_one]
+  norm_num
+
+/-! #### A measurable regime-wise least-squares fit with the slope pinned at `0`
+
+Because the regressor is `≡ 1` on the regime, the design `(1, X_{t−1}) = (1, 1)` is rank
+one and the intercept absorbs the slope entirely: the regime sample mean paired with the
+**zero** slope is a genuine joint minimizer of FY eq. (4.4). -/
+
+/-- The regime-`0` sample mean of the responses (junk `0` on an empty regime). -/
+private noncomputable def radMean {T : ℕ} (x : Fin T → ℝ) : ℝ :=
+  (∑ t ∈ tarRegimeIndices x (radA 0) 1 1, x t) / (tarRegimeCount x (radA 0) 1 1 : ℝ)
+
+private lemma measurableSet_radRegime {T : ℕ} (t : Fin T) :
+    MeasurableSet {x : Fin T → ℝ | t ∈ tarRegimeIndices x (radA 0) 1 1} := by
+  classical
+  by_cases ht : 1 < (t : ℕ)
+  · have hset : {x : Fin T → ℝ | t ∈ tarRegimeIndices x (radA 0) 1 1}
+        = (fun x : Fin T → ℝ => x ⟨(t : ℕ) - 1, Nat.lt_of_le_of_lt (Nat.sub_le _ _) t.isLt⟩)
+            ⁻¹' (radA 0) := by
+      ext x
+      simp only [tarRegimeIndices, Finset.mem_filter, Finset.mem_univ, true_and,
+        Set.mem_preimage, Set.mem_setOf_eq]
+      exact ⟨fun h => h.2.choose_spec, fun hx => ⟨ht, le_of_lt ht, hx⟩⟩
+    rw [hset]
+    exact (measurable_pi_apply _) (by simp [radA])
+  · have hset : {x : Fin T → ℝ | t ∈ tarRegimeIndices x (radA 0) 1 1} = ∅ := by
+      ext x
+      simp only [tarRegimeIndices, Finset.mem_filter, Finset.mem_univ, true_and,
+        Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_and]
+      exact fun h => absurd h ht
+    rw [hset]
+    exact MeasurableSet.empty
+
+private lemma measurable_radRegimeSum {T : ℕ} (g : Fin T → (Fin T → ℝ) → ℝ)
+    (hg : ∀ t, Measurable (g t)) :
+    Measurable fun x : Fin T → ℝ => ∑ t ∈ tarRegimeIndices x (radA 0) 1 1, g t x := by
+  classical
+  have heq : (fun x : Fin T → ℝ => ∑ t ∈ tarRegimeIndices x (radA 0) 1 1, g t x)
+      = fun x : Fin T → ℝ =>
+        ∑ t : Fin T, if t ∈ tarRegimeIndices x (radA 0) 1 1 then g t x else 0 := by
+    funext x
+    rw [Finset.sum_ite_mem, Finset.univ_inter]
+  rw [heq]
+  exact Finset.measurable_sum _ fun t _ =>
+    Measurable.ite (measurableSet_radRegime t) (hg t) measurable_const
+
+private lemma measurable_radMean (T : ℕ) : Measurable (radMean : (Fin T → ℝ) → ℝ) := by
+  classical
+  have hnum : Measurable fun x : Fin T → ℝ => ∑ t ∈ tarRegimeIndices x (radA 0) 1 1, x t :=
+    measurable_radRegimeSum (fun t => fun x => x t) fun t => measurable_pi_apply t
+  have hden : Measurable fun x : Fin T → ℝ => (tarRegimeCount x (radA 0) 1 1 : ℝ) := by
+    have heq : (fun x : Fin T → ℝ => (tarRegimeCount x (radA 0) 1 1 : ℝ))
+        = fun x : Fin T → ℝ => ∑ t ∈ tarRegimeIndices x (radA 0) 1 1, (1 : ℝ) := by
+      funext x
+      simp [tarRegimeCount]
+    rw [heq]
+    exact measurable_radRegimeSum (fun _ => fun _ => (1 : ℝ)) fun _ => measurable_const
+  exact hnum.div hden
+
+/-- On the regime the single regressor is `≡ 1`, so the residual sum of squares depends on
+`(γ₀, γ)` only through `γ₀ + γ_0`. -/
+private lemma tarLSResidualSS_rad {T : ℕ} (x : Fin T → ℝ) (γ0 : ℝ) (γ : Fin 1 → ℝ) :
+    tarLSResidualSS x (radA 0) 1 γ0 γ
+      = ∑ t ∈ tarRegimeIndices x (radA 0) 1 1, (x t - (γ0 + γ 0)) ^ 2 := by
+  classical
+  refine Finset.sum_congr rfl fun t ht => ?_
+  simp only [tarRegimeIndices, Finset.mem_filter, Finset.mem_univ, true_and] at ht
+  have hx1 : ∀ h : (t : ℕ) - 1 - ((0 : Fin 1) : ℕ) < T,
+      x ⟨(t : ℕ) - 1 - ((0 : Fin 1) : ℕ), h⟩ = 1 := by
+    intro h
+    have hmem := ht.2.choose_spec
+    have hfin : (⟨(t : ℕ) - 1 - ((0 : Fin 1) : ℕ), h⟩ : Fin T)
+        = ⟨(t : ℕ) - 1, Nat.lt_of_le_of_lt (Nat.sub_le _ _) t.isLt⟩ := by
+      apply Fin.ext
+      simp
+    rw [hfin]
+    simpa [radA] using hmem
+  rw [Fin.sum_univ_one, hx1]
+  ring
+
+/-- The sample mean minimizes the sum of squared deviations. -/
+private lemma sum_sq_sub_mean_le {T : ℕ} (R : Finset (Fin T)) (x : Fin T → ℝ) (u : ℝ) :
+    ∑ t ∈ R, (x t - (∑ s ∈ R, x s) / (R.card : ℝ)) ^ 2 ≤ ∑ t ∈ R, (x t - u) ^ 2 := by
+  rcases Nat.eq_zero_or_pos R.card with hc | hc
+  · rw [Finset.card_eq_zero] at hc
+    subst hc
+    simp
+  · have hn : (0 : ℝ) < (R.card : ℝ) := by exact_mod_cast hc
+    set m : ℝ := (∑ s ∈ R, x s) / (R.card : ℝ) with hm
+    have hsum : ∑ s ∈ R, x s = (R.card : ℝ) * m := by
+      rw [hm]; field_simp
+    have hzero : ∑ t ∈ R, (x t - m) = 0 := by
+      rw [Finset.sum_sub_distrib, Finset.sum_const, hsum, nsmul_eq_mul]
+      ring
+    have hexp : ∀ t : Fin T, (x t - u) ^ 2
+        = (x t - m) ^ 2 + 2 * (m - u) * (x t - m) + (m - u) ^ 2 := fun t => by ring
+    have hrhs : ∑ t ∈ R, (x t - u) ^ 2
+        = (∑ t ∈ R, (x t - m) ^ 2) + (R.card : ℝ) * (m - u) ^ 2 := by
+      simp_rw [hexp]
+      rw [Finset.sum_add_distrib, Finset.sum_add_distrib, Finset.sum_const, nsmul_eq_mul,
+        ← Finset.mul_sum, hzero]
+      ring
+    rw [hrhs]
+    nlinarith [sq_nonneg (m - u)]
+
+private lemma radMean_isLS {T : ℕ} (x : Fin T → ℝ) (γ0 : ℝ) (γ : Fin 1 → ℝ) :
+    tarLSResidualSS x (radA 0) 1 (radMean x) (fun _ : Fin 1 => (0 : ℝ))
+      ≤ tarLSResidualSS x (radA 0) 1 γ0 γ := by
+  rw [tarLSResidualSS_rad, tarLSResidualSS_rad]
+  simpa [radMean, tarRegimeCount] using
+    sum_sq_sub_mean_le (tarRegimeIndices x (radA 0) 1 1) x (γ0 + γ 0)
+
+/-- The regime-`0` least-squares intercept sequence of the witness. -/
+private noncomputable def radBhat0 (T : ℕ) (ω : ℤ → ℝ) : ℝ :=
+  radMean (fun t : Fin T => radCoord (((t : ℕ) : ℤ) + 1) ω)
+
+private lemma radBhat0_measurable (T : ℕ) : Measurable (radBhat0 T) :=
+  (measurable_radMean T).comp
+    (measurable_pi_lambda _ fun t => radCoord_measurable (((t : ℕ) : ℤ) + 1))
+
+/-- **The eq. (4.8) statement REPAIRED by wave `ts/s12b-model-repairs` is STILL FALSE.**
+
+Every repaired hypothesis is supplied: `W` is pinned to `tarRegimeDesignCov` (and equals
+`1`, positive definite), `hLS` is *joint* least-squares minimality over `(β₀, β)`, and the
+regime carries mass `1/2 > 0`.  What survives is the **centering** defect: the fit has an
+intercept, so what the slope sees is the regime-conditional *variance* of the regressor,
+which here is `0`, while `tarRegimeDesignCov` reports the *second moment* `1`.  The slope
+is therefore not identified and may legitimately be taken to be the truth `0`, making the
+scaled statistic identically `0` — characteristic function `1` — against the claimed
+`exp(−1/2)`. -/
+private theorem tarLS_clt_debt_centering_false
+    (H : ∀ {Ω : Type} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ] {k P : ℕ}
+      {b0 : Fin k → ℝ} {b : Fin k → Fin P → ℝ} {σ : Fin k → ℝ} {A : Fin k → Set ℝ}
+      {d : ℕ} {X ε : ℤ → Ω → ℝ},
+      IsTAR b0 b σ A d X ε μ → IsStrictlyStationary X μ → (∀ t, MemLp (X t) 2 μ) →
+      ∀ (i : Fin k) (W : Matrix (Fin P) (Fin P) ℝ), W = tarRegimeDesignCov (A i) d X μ →
+      W.PosDef → 0 < (μ {ω | X (-(d : ℤ)) ω ∈ A i}).toReal →
+      ∀ (bhat0 : (T : ℕ) → Ω → ℝ) (bhat : (T : ℕ) → Ω → Fin P → ℝ),
+      (∀ T, Measurable (bhat0 T)) → (∀ T, Measurable (bhat T)) →
+      (∀ (T : ℕ) (ω : Ω), ∀ γ0 : ℝ, ∀ γ : Fin P → ℝ,
+        tarLSResidualSS (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (A i) d
+            (bhat0 T ω) (bhat T ω)
+          ≤ tarLSResidualSS (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (A i) d γ0 γ) →
+      ∀ (c : Fin P → ℝ) (u : ℝ),
+      Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
+          Real.sqrt (tarRegimeCount (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (A i) d P) *
+            ∑ j, c j * (bhat T ω j - b i j)) u)
+        atTop
+        (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
+          (σ i ^ 2 * (c ⬝ᵥ (W⁻¹ *ᵥ c))))) u))) :
+    False := by
+  classical
+  have hmass : 0 < (radMeasure {ω : ℤ → ℝ | radCoord (-((1 : ℕ) : ℤ)) ω ∈ radA 0}).toReal := by
+    rw [rad_regime_set, rad_mass_eq]
+    norm_num
+  have key := H rad_isTAR rad_strictlyStationary rad_memLp 0
+    (1 : Matrix (Fin 1) (Fin 1) ℝ) rad_designCov.symm Matrix.PosDef.one hmass
+    radBhat0 (fun _ _ _ => 0) radBhat0_measurable (fun _ => measurable_const)
+    (fun T ω γ0 γ => radMean_isLS _ γ0 γ) (fun _ => 1) 1
+  -- the statistic is identically `0`
+  simp only [sub_self, mul_zero, Finset.sum_const_zero] at key
+  have hmapconst : radMeasure.map (fun _ : ℤ → ℝ => (0 : ℝ)) = Measure.dirac 0 := by
+    rw [Measure.map_const]
+    simp
+  rw [hmapconst] at key
+  have hone : charFun (Measure.dirac (0 : ℝ)) (1 : ℝ) = 1 := by
+    rw [charFun_dirac]
+    simp
+  simp only [hone] at key
+  have hvar : ((fun _ : Fin 2 => (1 : ℝ)) 0) ^ 2 *
+      ((fun _ : Fin 1 => (1 : ℝ)) ⬝ᵥ ((1 : Matrix (Fin 1) (Fin 1) ℝ)⁻¹ *ᵥ (fun _ => 1))) = 1 := by
+    rw [inv_one]
+    simp [Matrix.one_mulVec, dotProduct]
+  rw [hvar] at key
+  have hlim : charFun (gaussianReal 0 (Real.toNNReal 1)) (1 : ℝ) = 1 :=
+    tendsto_nhds_unique tendsto_const_nhds key |>.symm
+  rw [charFun_gaussianReal] at hlim
+  norm_num at hlim
+  rw [show ((-(1 / 2) : ℂ)) = (((-(1 / 2) : ℝ)) : ℂ) by push_cast; ring,
+    ← Complex.ofReal_exp] at hlim
+  have hR : Real.exp (-(1 / 2)) = 1 := by exact_mod_cast hlim
+  have hlt : Real.exp (-(1 / 2)) < 1 := Real.exp_lt_one_iff.mpr (by norm_num)
+  linarith
+
 /-- **FY eq. (4.8) — DEBT (Chan 1993a; the book's "can be shown", companion to
 Thm 3.2)**: with a known partition, under strict stationarity, ergodicity and finite
 second moments, the regime-wise LS estimator is `√T_i`-asymptotically normal with
@@ -449,7 +845,40 @@ prescribes, are applied here; each added or changed hypothesis is tagged `USER-I
    mass. Without it the empty-regime instance of the witness survives *any* repair of `W`:
    the statistic is identically `0` while the limit is a nondegenerate Gaussian. Under
    strict stationarity and ergodicity `hmass` is equivalent to `T_i → ∞` a.s., which is
-   the form FY uses. -/
+   the form FY uses.
+
+**STATUS after wave `ts/f1-arma-finale` (2026-08-09): the REPAIRED statement below is
+STILL FALSE — finding 24, formalized as `tarLS_clt_debt_centering_false` above.** The
+three repairs are all genuinely needed and all correct as far as they go, but they miss a
+fourth defect, which is a *modelling* error rather than a quantifier one:
+
+4. **`tarRegimeDesignCov` is UNCENTERED.** FY eqs. (4.4)–(4.5) fit an **intercept**
+   alongside the slopes, so the slope estimator is driven by the regime-conditional
+   *covariance* `Σ_i = E[Z₀Z₀ᵀ | ·] − E[Z₀ | ·]E[Z₀ | ·]ᵀ`, and its asymptotic covariance
+   is `σ_i² Σ_i^{-1}`. Repair 1 pinned `W` to the *second-moment* matrix
+   `E[Z₀Z₀ᵀ | X_{−d} ∈ A_i]` instead. The two agree only when the regime-conditional
+   regressor mean vanishes — which is exactly what a regime constraint destroys, and which
+   the nonzero intercepts `b0 i` destroy anyway.
+
+   The witness drives the gap to its extreme rather than computing a limit law: with
+   i.i.d. **Rademacher** innovations, `k = 2`, `d = P = 1`, `A₀ = {1}`, `A₁ = {1}ᶜ` and
+   zero coefficients (so `X = ε`), the threshold variable `X_{t−d}` and the single
+   regressor `X_{t−1}` are the *same* variable, so on regime `0` the regressor is
+   identically `1`: `Σ₀ = 0` while `W₀ = 1` is positive definite, satisfying `hW`. The
+   design `(1, X_{t−1}) = (1, 1)` is rank one, the intercept absorbs the slope, and the
+   regime sample mean paired with slope `0` is a genuine joint minimizer (`radMean_isLS`)
+   and measurable (`radBhat0_measurable`). The statistic is then identically `0` — its
+   characteristic function is `1`, against the claimed `exp(−1/2)`. The atom is essential:
+   a singleton regime of positive mass is impossible for the Gaussian noise used by the
+   first witness, which is why a new two-point noise is built.
+
+   **The repair this prescribes** is to replace `tarRegimeDesignCov` by its centered
+   version and to require *that* matrix positive definite (equivalently: state eq. (4.8)
+   for mean-corrected regressors). Under Chan 1993a's fictitious-process reading the same
+   correction appears as centering the fictitious AR process at its own mean. Not applied
+   here: repairing a frozen statement twice in successive waves needs the lane owner's
+   call, and the correct centered object is a new definition, not a re-parametrization of
+   an existing one. -/
 theorem tarLS_clt_debt [IsProbabilityMeasure μ] {k P : ℕ}
     {b0 : Fin k → ℝ} {b : Fin k → Fin P → ℝ} {σ : Fin k → ℝ} {A : Fin k → Set ℝ}
     {d : ℕ} {X ε : ℤ → Ω → ℝ}

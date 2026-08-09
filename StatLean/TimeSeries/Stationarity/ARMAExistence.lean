@@ -1163,26 +1163,295 @@ private lemma seq_eq_zero_of_poly {V : Type*} [NormedAddCommGroup V] [NormedSpac
         rw [hQ, Polynomial.eval_mul, hz, mul_zero]
 
 
-/-- **DEBT (Brockwell & Davis 1996, p. 83; FY §2.1.2 cited fact (i))**: an ARMA process
-with a stationary solution is causal **iff** `b` has no roots in the closed unit disc.
-The ⇐ half is `exists_stationary_arma`; the ⇒ half is a literature-level debt. -/
+section CausalityConverse
+
+/-! ### The converse half of FY §2.1.2 (i): causality forces `b(z) ≠ 0` on `|z| ≤ 1`
+
+The route is the `1/b(B)`-filter one recorded at `arma_causal_of_stationary_debt`, run in
+the reverse direction: pairing the ARMA recurrence with the noise turns the *stochastic*
+identity into the **deterministic** convolution `b ∗ ψ = a` on the causal transfer
+coefficients (`conv_of_causal`), after which the transfer function `Ψ(z) = Σ ψ_n z^n` —
+which converges on the *closed* disc because `Σ|ψ_n| < ∞` — factors `a = b · Ψ` there.  A
+root of `b` in the closed disc is then a common root of `b` and `a`, which coprimality
+forbids. -/
+
+/-- The mixed second moment of white noise, both cases at once: `E[ε_u ε_v] = σ² δ_{uv}`. -/
+private lemma integral_noise_mul_eq [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
+    (hε : IsWhiteNoise ε σ2 μ) (u v : ℤ) :
+    ∫ ω, ε u ω * ε v ω ∂μ = if u = v then σ2 else 0 := by
+  rcases eq_or_ne u v with rfl | huv
+  · rw [if_pos rfl]
+    have h := covariance_eq_sub (hε.memLp u) (hε.memLp u)
+    rw [hε.integral_eq_zero u, zero_mul, sub_zero,
+      covariance_self (hε.memLp u).aestronglyMeasurable.aemeasurable, hε.variance_eq u] at h
+    have h2 : μ[ε u * ε u] = ∫ ω, ε u ω * ε u ω ∂μ := by simp [Pi.mul_apply]
+    rw [h2] at h
+    exact h.symm
+  · rw [if_neg huv]
+    exact integral_noise_mul_eq_zero hε huv
+
+/-- **The cross moment of a causal linear process with its noise**: `E[X_t ε_s] = σ² ψ_{t−s}`
+for `s ≤ t`, and `0` for `s > t` (the noise is orthogonal to the strict past of the
+filter).  Both cases come from the *same* computation on the partial sums, which is why
+they are bundled: only the matched index survives, and the `L²` defect is killed by
+Cauchy–Schwarz. -/
+private lemma integral_lin_mul_noise [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ2 : ℝ}
+    {X ε : ℤ → Ω → ℝ} (hlin : IsLinearProcessOf ψ X ε μ) (hε : IsWhiteNoise ε σ2 μ)
+    (hmX : ∀ t, MemLp (X t) 2 μ) (t s : ℤ) :
+    ∫ ω, X t ω * ε s ω ∂μ = if s ≤ t then σ2 * ψ (t - s).toNat else 0 := by
+  classical
+  set R : ℝ := if s ≤ t then σ2 * ψ (t - s).toNat else 0 with hR
+  have hmemP : ∀ N : ℕ, MemLp (fun ω => ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 2 μ :=
+    fun N => memLp_finset_sum _ fun j _ => (hε.memLp _).const_mul _
+  -- the partial sums pair to `R` exactly, as soon as the window reaches the lag
+  have hpsum : ∀ N : ℕ, (t - s).toNat < N →
+      ∫ ω, (∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) * ε s ω ∂μ = R := by
+    intro N hN
+    have hexp : ∀ ω, (∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) * ε s ω
+        = ∑ j ∈ Finset.range N, ψ j * (ε (t - (j : ℕ)) ω * ε s ω) := by
+      intro ω; rw [Finset.sum_mul]; exact Finset.sum_congr rfl fun j _ => by ring
+    have hint : ∀ j : ℕ, Integrable (fun ω => ψ j * (ε (t - (j : ℕ)) ω * ε s ω)) μ := fun j =>
+      ((hε.memLp _).integrable_mul (hε.memLp s)).const_mul _
+    simp_rw [hexp]
+    rw [integral_finset_sum _ fun j _ => hint j]
+    have hterm : ∀ j : ℕ, ∫ ω, ψ j * (ε (t - (j : ℕ)) ω * ε s ω) ∂μ
+        = if t - (j : ℤ) = s then σ2 * ψ j else 0 := by
+      intro j
+      rw [integral_const_mul, integral_noise_mul_eq hε]
+      by_cases hj : t - (j : ℤ) = s
+      · rw [if_pos hj, if_pos hj]; ring
+      · rw [if_neg hj, if_neg hj]; ring
+    simp_rw [hterm]
+    by_cases hst : s ≤ t
+    · rw [hR, if_pos hst]
+      refine Finset.sum_eq_single (t - s).toNat (fun j _ hj => if_neg (by omega))
+        (fun hnot => absurd (Finset.mem_range.2 hN) hnot) |>.trans ?_
+      exact if_pos (by omega)
+    · rw [hR, if_neg hst]
+      exact Finset.sum_eq_zero fun j _ => if_neg (by omega)
+  -- the residual pairing is bounded by the `L²` defect
+  have hsplit : ∀ N : ℕ, (t - s).toNat < N →
+      ∫ ω, X t ω * ε s ω ∂μ - R
+        = ∫ ω, (X t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) * ε s ω ∂μ := by
+    intro N hN
+    have hint1 : Integrable (fun ω => X t ω * ε s ω) μ := (hmX t).integrable_mul (hε.memLp s)
+    have hint2 : Integrable
+        (fun ω => (∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) * ε s ω) μ :=
+      (hmemP N).integrable_mul (hε.memLp s)
+    rw [← hpsum N hN, ← integral_sub hint1 hint2]
+    exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
+  have hbd : ∀ N : ℕ, (t - s).toNat < N → |∫ ω, X t ω * ε s ω ∂μ - R|
+      ≤ (eLpNorm (fun ω => X t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 2 μ).toReal
+        * (eLpNorm (ε s) 2 μ).toReal := by
+    intro N hN
+    rw [hsplit N hN]
+    exact abs_integral_mul_le ((hmX t).sub (hmemP N)) (hε.memLp s)
+  have hlim : Tendsto (fun N : ℕ =>
+      (eLpNorm (fun ω => X t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 2 μ).toReal
+        * (eLpNorm (ε s) 2 μ).toReal) atTop (𝓝 0) := by
+    have hc := (ENNReal.continuousAt_toReal (by simp)).tendsto.comp (hlin t)
+    simpa using hc.mul_const ((eLpNorm (ε s) 2 μ).toReal)
+  have habs : |∫ ω, X t ω * ε s ω ∂μ - R| ≤ 0 := by
+    refine le_of_tendsto_of_tendsto tendsto_const_nhds hlim ?_
+    filter_upwards [eventually_gt_atTop (t - s).toNat] with N hN using hbd N hN
+  have := abs_eq_zero.1 (le_antisymm habs (abs_nonneg _))
+  linarith
+
+/-- **The causal transfer coefficients satisfy the ARMA convolution** `b ∗ ψ = a`.
+
+This is the deterministic shadow of the recurrence: pair `X_0 = Σ b_i X_{−1−i} + ε_0 +
+Σ a_j ε_{−1−j}` with `ε_{−n}` and use `integral_lin_mul_noise` on each term.  The white
+noise's orthogonality collapses every noise pairing to a Kronecker delta and every process
+pairing to `σ² ψ`, and `σ² > 0` cancels. -/
+private lemma conv_of_causal [IsProbabilityMeasure μ] {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
+    {σ2 : ℝ} {X ε : ℤ → Ω → ℝ} {ψ : ℕ → ℝ}
+    (h : IsARMA b a σ2 X ε μ) (hσ : 0 < σ2) (hψ : Summable fun n => |ψ n|)
+    (hlin : IsLinearProcessOf ψ X ε μ) (n : ℕ) :
+    ∑ k ∈ Finset.range (n + 1), (arPoly b).coeff k * ψ (n - k) = (maPoly a).coeff n := by
+  classical
+  have hmX : ∀ t, MemLp (X t) 2 μ := hlin.memLp hψ h.whiteNoise h.measurableX
+  have hε := h.whiteNoise
+  set s : ℤ := -(n : ℤ) with hs
+  -- ## The stochastic identity, paired with `ε_{−n}`
+  have hleft : ∫ ω, X 0 ω * ε s ω ∂μ = σ2 * ψ n := by
+    rw [integral_lin_mul_noise hlin hε hmX 0 s, if_pos (by omega)]
+    congr 2
+    omega
+  have hXi : ∀ i : Fin p, ∫ ω, X (0 - 1 - (i : ℕ)) ω * ε s ω ∂μ
+      = if (i : ℕ) + 1 ≤ n then σ2 * ψ (n - 1 - (i : ℕ)) else 0 := by
+    intro i
+    rw [integral_lin_mul_noise hlin hε hmX _ s]
+    by_cases hi : (i : ℕ) + 1 ≤ n
+    · rw [if_pos (by omega), if_pos hi]
+      congr 2
+      omega
+    · rw [if_neg (by omega), if_neg hi]
+  have hε0 : ∫ ω, ε 0 ω * ε s ω ∂μ = if n = 0 then σ2 else 0 := by
+    rw [integral_noise_mul_eq hε]
+    by_cases hn : n = 0
+    · rw [if_pos (by omega), if_pos hn]
+    · rw [if_neg (by omega), if_neg hn]
+  have hεj : ∀ j : Fin q, ∫ ω, ε (0 - 1 - (j : ℕ)) ω * ε s ω ∂μ
+      = if n = (j : ℕ) + 1 then σ2 else 0 := by
+    intro j
+    rw [integral_noise_mul_eq hε]
+    by_cases hj : n = (j : ℕ) + 1
+    · rw [if_pos (by omega), if_pos hj]
+    · rw [if_neg (by omega), if_neg hj]
+  -- expand the recurrence under the integral sign
+  have hint1 : Integrable (fun ω => X 0 ω * ε s ω) μ := (hmX 0).integrable_mul (hε.memLp s)
+  have hexpand : ∫ ω, X 0 ω * ε s ω ∂μ
+      = (∑ i : Fin p, b i * ∫ ω, X (0 - 1 - (i : ℕ)) ω * ε s ω ∂μ)
+        + (∫ ω, ε 0 ω * ε s ω ∂μ)
+        + ∑ j : Fin q, a j * ∫ ω, ε (0 - 1 - (j : ℕ)) ω * ε s ω ∂μ := by
+    have hae : (fun ω => X 0 ω * ε s ω) =ᵐ[μ] fun ω =>
+        (∑ i : Fin p, b i * (X (0 - 1 - (i : ℕ)) ω * ε s ω)) + (ε 0 ω * ε s ω)
+          + ∑ j : Fin q, a j * (ε (0 - 1 - (j : ℕ)) ω * ε s ω) := by
+      filter_upwards [h.recurrence 0] with ω hω
+      rw [hω]
+      simp only [add_mul, Finset.sum_mul, mul_assoc]
+    rw [integral_congr_ae hae]
+    have hI1 : ∀ i : Fin p, Integrable (fun ω => b i * (X (0 - 1 - (i : ℕ)) ω * ε s ω)) μ :=
+      fun i => ((hmX _).integrable_mul (hε.memLp s)).const_mul _
+    have hI2 : Integrable (fun ω => ε 0 ω * ε s ω) μ := (hε.memLp 0).integrable_mul (hε.memLp s)
+    have hI3 : ∀ j : Fin q, Integrable (fun ω => a j * (ε (0 - 1 - (j : ℕ)) ω * ε s ω)) μ :=
+      fun j => ((hε.memLp _).integrable_mul (hε.memLp s)).const_mul _
+    have hS1 : Integrable (fun ω => ∑ i : Fin p, b i * (X (0 - 1 - (i : ℕ)) ω * ε s ω)) μ :=
+      integrable_finset_sum _ fun i _ => hI1 i
+    have hS3 : Integrable (fun ω => ∑ j : Fin q, a j * (ε (0 - 1 - (j : ℕ)) ω * ε s ω)) μ :=
+      integrable_finset_sum _ fun j _ => hI3 j
+    have hS12 : Integrable (fun ω =>
+        (∑ i : Fin p, b i * (X (0 - 1 - (i : ℕ)) ω * ε s ω)) + ε 0 ω * ε s ω) μ := hS1.add hI2
+    rw [integral_add hS12 hS3, integral_add hS1 hI2,
+      integral_finset_sum _ fun i _ => hI1 i, integral_finset_sum _ fun j _ => hI3 j]
+    simp_rw [integral_const_mul]
+  -- ## Divide by `σ² > 0`
+  rw [hleft] at hexpand
+  simp_rw [hXi, hε0, hεj] at hexpand
+  have hkey : ψ n = (∑ i : Fin p, if (i : ℕ) + 1 ≤ n then b i * ψ (n - 1 - (i : ℕ)) else 0)
+      + (if n = 0 then (1 : ℝ) else 0) + ∑ j : Fin q, if n = (j : ℕ) + 1 then a j else 0 := by
+    refine mul_left_cancel₀ (ne_of_gt hσ) ?_
+    rw [hexpand]
+    have e1 : ∀ i : Fin p, b i * (if (i : ℕ) + 1 ≤ n then σ2 * ψ (n - 1 - (i : ℕ)) else 0)
+        = σ2 * (if (i : ℕ) + 1 ≤ n then b i * ψ (n - 1 - (i : ℕ)) else 0) := by
+      intro i; split_ifs <;> ring
+    have e2 : (if n = 0 then σ2 else 0) = σ2 * (if n = 0 then (1 : ℝ) else 0) := by
+      split_ifs <;> ring
+    have e3 : ∀ j : Fin q, a j * (if n = (j : ℕ) + 1 then σ2 else 0)
+        = σ2 * (if n = (j : ℕ) + 1 then a j else 0) := by
+      intro j; split_ifs <;> ring
+    rw [Finset.sum_congr rfl (fun i _ => e1 i), Finset.sum_congr rfl (fun j _ => e3 j), e2,
+      ← Finset.mul_sum, ← Finset.mul_sum, ← mul_add, ← mul_add]
+  -- ## The algebraic identity relating the convolution to the coefficient shape
+  have hAR : ∑ k ∈ Finset.range (n + 1), (arPoly b).coeff k * ψ (n - k)
+      = ψ n - ∑ i : Fin p, if (i : ℕ) + 1 ≤ n then b i * ψ (n - 1 - (i : ℕ)) else 0 := by
+    have hexp : ∀ k ∈ Finset.range (n + 1), (arPoly b).coeff k * ψ (n - k)
+        = (if k = 0 then ψ (n - k) else 0)
+          - ∑ i : Fin p, (if k = (i : ℕ) + 1 then b i * ψ (n - k) else 0) := by
+      intro k _
+      rw [coeff_arPoly, sub_mul, Finset.sum_mul]
+      congr 1
+      · split_ifs <;> ring
+      · exact Finset.sum_congr rfl fun i _ => by split_ifs <;> ring
+    rw [Finset.sum_congr rfl hexp, Finset.sum_sub_distrib, Finset.sum_comm]
+    congr 1
+    · rw [Finset.sum_eq_single 0 (fun k _ hk => if_neg hk)
+        (fun hnot => absurd (Finset.mem_range.2 (Nat.succ_pos n)) hnot), if_pos rfl]
+      rfl
+    · refine Finset.sum_congr rfl fun i _ => ?_
+      rw [Finset.sum_ite_eq' (Finset.range (n + 1)) ((i : ℕ) + 1)
+        (fun k => b i * ψ (n - k))]
+      by_cases hi : (i : ℕ) + 1 ≤ n
+      · rw [if_pos (Finset.mem_range.2 (by omega)), if_pos hi]
+        congr 2
+        omega
+      · rw [if_neg (by simp only [Finset.mem_range]; omega), if_neg hi]
+  have hMA : (maPoly a).coeff n
+      = (if n = 0 then (1 : ℝ) else 0) + ∑ j : Fin q, if n = (j : ℕ) + 1 then a j else 0 :=
+    coeff_maPoly a n
+  rw [hAR, hMA, hkey]
+  ring
+
+end CausalityConverse
+
+/-- **FY §2.1.2 cited fact (i) (Brockwell & Davis 1996, p. 83), converse half**: for an
+ARMA process with a stationary causal solution and **coprime** AR/MA polynomials, `b` has
+no roots in the closed unit disc.  The ⇐ half is `exists_stationary_arma`.
+
+**Statement repair (wave `ts/f1-arma-finale`, 2026-08-09).** The frozen form — without
+`hcop` — is FALSE, as recorded by wave `ts/s7`: take `p = q = 1`, `b = ![1]`, `a = ![-1]`,
+i.e. `b(z) = 1 − z = a(z)`, whose common root is `z = 1`.  The recurrence
+`X_t = X_{t−1} + ε_t − ε_{t−1}` is solved exactly by `X = ε`, which is stationary and
+causal (`ψ = δ₀`, so `IsCausalFor X ε μ` holds) for *any* white noise, including one with
+`σ² > 0`; yet `aeval 1 (arPoly ![1]) = 0` with `‖(1 : ℂ)‖ ≤ 1`, so `NoRootClosedDisc ![1]`
+fails.  The repair is exactly Brockwell & Davis's standing assumption for their Thm 3.1.1,
+"`φ(z)` and `θ(z)` have no common zeroes", tagged `USER-INPUT` below; with it the recorded
+`1/b(B)`-filter route goes through, and it is what is proved here.
+
+**The route, as executed.** Causality gives `ψ` with `Σ|ψ_n| < ∞` and `X_t = Σ ψ_n ε_{t−n}`
+in `L²`.  Pairing the recurrence with `ε_{−n}` and using orthogonality of the innovations
+(`integral_lin_mul_noise`) turns the stochastic identity into the deterministic convolution
+`Σ_{k≤n} b_k ψ_{n−k} = a_n` (`conv_of_causal`) — this is where `σ² > 0` is used, to cancel
+the common factor.  Absolute summability makes `Ψ(z) = Σ ψ_n z^n` converge on the *closed*
+disc, and the Cauchy product (`hasSum_poly_mul`) upgrades the convolution to
+`a(z) = b(z) Ψ(z)` for every `‖z‖ ≤ 1`.  A root of `b` there is therefore a root of `a`,
+i.e. a common root — which `hcop` forbids by evaluating a Bézout identity.
+
+Note `hstat` is not used: causality (with `σ² > 0`) already carries the whole argument, the
+`L²` limit defining `ψ` being all that the pairing needs.  It is kept because it is the
+form in which the book states the equivalence. -/
 theorem arma_causal_of_stationary_debt [IsProbabilityMeasure μ] {p q : ℕ}
     {b : Fin p → ℝ} {a : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b a σ2 X ε μ) (hstat : IsStationary X μ)
-    (hσ : 0 < σ2) (hcausal : IsCausalFor X ε μ) :
+    (hσ : 0 < σ2)
+    -- USER-INPUT: `b(z)` and `a(z)` have no common zero (B&D's standing assumption for
+    -- Thm 3.1.1); without it the statement is FALSE — see the docstring's witness
+    (hcop : IsCoprime (arPoly b) (maPoly a))
+    (hcausal : IsCausalFor X ε μ) :
     NoRootClosedDisc b := by
-  -- FALSE AS FROZEN (machine-checked witness, ts/s7 wave 3): the hypothesis that `a` and
-  -- `b` have **no common root** — Brockwell & Davis's standing assumption for Thm 3.1.1,
-  -- "φ(z) and θ(z) have no common zeroes" — is missing.  Counterexample: `p = q = 1`,
-  -- `b = ![1]`, `a = ![-1]`, i.e. `b(z) = 1 - z = a(z)`, whose common root is `z = 1`.
-  -- The recurrence `X_t = X_{t-1} + ε_t - ε_{t-1}` is solved exactly by `X = ε`, which is
-  -- stationary and causal (`ψ = δ_0`, so `IsCausalFor X ε μ` holds) for *any* white noise,
-  -- including one with `σ² > 0`; yet `aeval 1 (arPoly ![1]) = 0` with `‖(1 : ℂ)‖ ≤ 1`, so
-  -- `NoRootClosedDisc ![1]` fails.  With the coprimality hypothesis added the statement is
-  -- provable along the route: causality + `σ² > 0` forces `ψ ∗ b = a` coefficientwise (the
-  -- innovations are orthogonal and `Σ|ψ_j| < ∞`), so `a(z) = ψ(z) b(z)` on `|z| ≤ 1`, and a
-  -- root of `b` there would be a common root of `a` and `b`.
-  sorry
+  classical
+  obtain ⟨ψ, hψ, hlin⟩ := hcausal
+  intro z hz hzero
+  -- ## The transfer function converges on the closed disc
+  have hsummable : Summable fun n : ℕ => (ψ n : ℂ) * z ^ n := by
+    refine Summable.of_norm_bounded (g := fun n => |ψ n|) hψ fun n => ?_
+    rw [norm_mul, norm_pow, Complex.norm_real, Real.norm_eq_abs]
+    calc |ψ n| * ‖z‖ ^ n ≤ |ψ n| * 1 ^ n := by gcongr
+      _ = |ψ n| := by ring
+  set S : ℂ := ∑' n : ℕ, (ψ n : ℂ) * z ^ n with hSdef
+  have hS : HasSum (fun n : ℕ => (ψ n : ℂ) * z ^ n) S := hsummable.hasSum
+  -- ## `b ∗ ψ = a`, upgraded to `a(z) = b(z) Ψ(z)` by the Cauchy product
+  have hconv := conv_of_causal h hσ hψ hlin
+  have hmul := hasSum_poly_mul ((arPoly b).map (algebraMap ℝ ℂ)) hS
+  have hcoeffs : ∀ n : ℕ,
+      (∑ k ∈ Finset.range (n + 1),
+          ((arPoly b).map (algebraMap ℝ ℂ)).coeff k * (ψ (n - k) : ℂ))
+        = ((maPoly a).map (algebraMap ℝ ℂ)).coeff n := by
+    intro n
+    have hpush : (∑ k ∈ Finset.range (n + 1),
+        ((arPoly b).map (algebraMap ℝ ℂ)).coeff k * (ψ (n - k) : ℂ))
+        = ((∑ k ∈ Finset.range (n + 1), (arPoly b).coeff k * ψ (n - k) : ℝ) : ℂ) := by
+      push_cast
+      exact Finset.sum_congr rfl fun k _ => by
+        rw [Polynomial.coeff_map]
+        norm_num
+    rw [hpush, hconv n, Polynomial.coeff_map]
+    norm_num
+  simp_rw [hcoeffs] at hmul
+  have hpoly := hasSum_poly ((maPoly a).map (algebraMap ℝ ℂ)) z
+  have hmaeval : ((maPoly a).map (algebraMap ℝ ℂ)).eval z
+      = ((arPoly b).map (algebraMap ℝ ℂ)).eval z * S := hpoly.unique hmul
+  -- ## A root of `b` in the disc is a common root, contradicting coprimality
+  have hbz : ((arPoly b).map (algebraMap ℝ ℂ)).eval z = 0 := by
+    rw [Polynomial.eval_map, ← Polynomial.aeval_def]
+    exact hzero
+  have haz : Polynomial.aeval z (maPoly a) = 0 := by
+    rw [Polynomial.aeval_def, ← Polynomial.eval_map, hmaeval, hbz, zero_mul]
+  obtain ⟨u, v, huv⟩ := hcop
+  have := congrArg (fun P : Polynomial ℝ => Polynomial.aeval z P) huv
+  simp only [map_add, map_mul, map_one] at this
+  rw [hzero, haz, mul_zero, mul_zero, add_zero] at this
+  exact zero_ne_one this
 
 /-- **DEBT (Brockwell & Davis 1996, p. 82; FY §2.1.2 cited fact (ii))**: uniqueness of
 the stationary solution when `b` has no roots on the unit circle: two stationary

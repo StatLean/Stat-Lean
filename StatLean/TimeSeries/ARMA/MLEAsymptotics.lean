@@ -424,7 +424,18 @@ original sketch names:
    the average is the single term `E[ξ_0² 1{|ξ_0| ≥ η√n}]`" needs the `ξ_i` to be
    identically distributed. Finite-block shift invariance is available
    (`Consistency`'s `map_noise_block'` device), but transferring it through the `L²`
-   limit defining `U`, `V` is a separate step, with the same flavour as item 1. -/
+   limit defining `U`, `V` is a separate step, with the same flavour as item 1.
+
+**STATUS after wave `ts/f1-arma-finale` (2026-08-09): NOT attempted; the three-item residue
+above is unchanged and remains accurate.** One brick built elsewhere by this wave is worth
+naming because it is the *moment* half of items 1-2 and is now available in the import
+closure: `Stationarity/ARMAExistence.lean`'s new (private) `integral_lin_mul_noise` gives
+`E[W_t ε_s] = σ² ψ_{t−s}` for `s ≤ t` and `0` for `s > t`, for any linear process `W` of
+`ψ` over white noise — i.e. exactly the orthogonality that turns an `L²`-limit filter into
+its coefficient sequence, with no past-measurability input. It does **not** dissolve item 1:
+the obstacle there is the *conditional* identity `E[ξ_i²|𝓕_i] = σ²⟨d, Z_i⟩²`, which needs an
+a.e.-equal `σ(ε_s : s < i)`-measurable representative of `Z_i`, not a moment identity. It is
+`private`, so a relocation would be needed to cite it. -/
 private theorem hannanScore_brownInputs [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -519,7 +530,10 @@ Taylor/sandwich analysis itself, whose two inputs are:
   the derivative filters instead of `π` itself. Neither is attempted here.
 
 Not attempted in this wave: the first-order condition from `hδTfast` (the
-`o(1/T)`-approximate minimality) and the mean-value expansion, which are the substance. -/
+`o(1/T)`-approximate minimality) and the mean-value expansion, which are the substance.
+
+**STATUS after wave `ts/f1-arma-finale` (2026-08-09): NOT attempted; the two-input residue
+above is unchanged.** -/
 private theorem armaMLE_linearization [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -1022,7 +1036,10 @@ costs one further application of the same brick plus a Markov step.
 What is left here is therefore the delta-method bookkeeping itself: the differentiability
 of `γ̂ ↦ (Γ̂_k⁻¹ γ̂_k)_k` at the population point (Cramer's rule plus `Γ_k` invertible),
 the propagation through the exact AR(k) recursion, and the reciprocal-variance identity
-`(Γ_k⁻¹)_{kk} = σ⁻²` for `k > p`. Not attempted in this wave. -/
+`(Γ_k⁻¹)_{kk} = σ⁻²` for `k > p`. Not attempted in this wave.
+
+**STATUS after wave `ts/f1-arma-finale` (2026-08-09): NOT attempted; the residue above is
+unchanged.** -/
 private theorem samplePACF_linearization [IsProbabilityMeasure μ] {p k : ℕ}
     {b0 : Fin p → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
     (h : IsAR b0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -1307,7 +1324,22 @@ name. Two repairs, exactly the ones that witness's docstring prescribes:
 The conclusion is correspondingly the pair of `√T`-equivalences LS ↔ YW and YW ↔ MLE;
 LS ↔ MLE follows from them by the triangle inequality. The residue is the one recorded at
 `armaMLE_linearization` (for the MLE leg) together with the standard YW-vs-LS edge-effect
-bookkeeping (the two differ only by the `O_p(1)` boundary terms of the two windows). -/
+bookkeeping (the two differ only by the `O_p(1)` boundary terms of the two windows).
+
+**STATUS after wave `ts/f1-arma-finale` (2026-08-09): NOT attempted, but the repair was
+audited for NON-VACUITY, since a repair that adds hypotheses can silently make a statement
+unsatisfiable.** It is not vacuous: `hLS` asks for a solution of the *normal equations* of
+the regression of `X_{s+1}` on `(X_{s−i})_{i<p}` over `s ∈ [p, T)`, and normal equations
+`Aβ = c` with `A` the (symmetric positive-semidefinite) design Gram matrix always have a
+solution, since `c` is the vector of inner products of the response with the columns and
+therefore lies in the range of `A`; a *measurable* selection exists as the pointwise limit
+`lim_{ε↓0} (A + εI)⁻¹ c` (the Moore-Penrose solution), each term being measurable in `ω` by
+`measurable_inv_mulVec` above. So `hLSmeas`/`hLS` are jointly satisfiable, and the a.s.
+nonsingularity of `A` for large `T` makes the selection a.s. unique. The two remaining
+mathematical items are unchanged: the MLE leg (via `armaMLE_linearization`) and the YW-vs-LS
+edge-effect bookkeeping, where note the two windows genuinely differ — `hLS` reaches back to
+`X_0`, one step outside the `X_1, …, X_T` window that `sampleACVF` sees, an `O_p(1)`
+boundary term that dies after `√T`-scaling but must be discarded explicitly. -/
 theorem ls_yw_mle_equivalent_debt [IsProbabilityMeasure μ] {p : ℕ}
     {b0 : Fin p → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsAR b0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
