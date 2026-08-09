@@ -53,46 +53,76 @@ of units (`HT52`).  Diagonal convention: `π_{ii} = πᵢ`
 noncomputable def pairInclusionProb (D : SamplingDesign U) (i j : U) : ℝ :=
   pmfExpect D fun s => inclusionIndicator i s * inclusionIndicator j s
 
+omit [Fintype U] in
+/-- Pointwise bounds on an inclusion indicator. -/
+private lemma inclusionIndicator_nonneg (i : U) (s : Finset U) :
+    0 ≤ inclusionIndicator i s := by
+  simp only [inclusionIndicator]; split <;> norm_num
+
+omit [Fintype U] in
+private lemma inclusionIndicator_le_one (i : U) (s : Finset U) :
+    inclusionIndicator i s ≤ 1 := by
+  simp only [inclusionIndicator]; split <;> norm_num
+
 /-- Inclusion probabilities are nonnegative. -/
 theorem inclusionProb_nonneg (D : SamplingDesign U) (i : U) :
-    0 ≤ inclusionProb D i := by
-  sorry
+    0 ≤ inclusionProb D i :=
+  pmfExpect_nonneg D fun s => inclusionIndicator_nonneg i s
 
 /-- Inclusion probabilities are at most one. -/
 theorem inclusionProb_le_one (D : SamplingDesign U) (i : U) :
     inclusionProb D i ≤ 1 := by
-  sorry
+  refine le_trans (pmfExpect_mono D (g := fun _ => (1 : ℝ)) ?_) ?_
+  · exact fun s => inclusionIndicator_le_one i s
+  · exact le_of_eq (pmfExpect_const D 1)
 
 /-- Symmetry of the second-order inclusion probability. -/
 theorem pairInclusionProb_comm (D : SamplingDesign U) (i j : U) :
     pairInclusionProb D i j = pairInclusionProb D j i := by
-  sorry
+  unfold pairInclusionProb
+  congr 1
+  funext s
+  ring
 
 /-- Diagonal of the second-order inclusion probability: `π_{ii} = πᵢ`. -/
 theorem pairInclusionProb_self (D : SamplingDesign U) (i : U) :
     pairInclusionProb D i i = inclusionProb D i := by
-  sorry
+  unfold pairInclusionProb inclusionProb
+  congr 1
+  funext s
+  exact inclusionIndicator_mul_self i s
 
 /-- Second-order inclusion probabilities are nonnegative. -/
 theorem pairInclusionProb_nonneg (D : SamplingDesign U) (i j : U) :
-    0 ≤ pairInclusionProb D i j := by
-  sorry
+    0 ≤ pairInclusionProb D i j :=
+  pmfExpect_nonneg D fun s =>
+    mul_nonneg (inclusionIndicator_nonneg i s) (inclusionIndicator_nonneg j s)
 
 /-- A pair is included no more often than either of its members. -/
 theorem pairInclusionProb_le_left (D : SamplingDesign U) (i j : U) :
     pairInclusionProb D i j ≤ inclusionProb D i := by
-  sorry
+  refine pmfExpect_mono D (f := fun s => inclusionIndicator i s * inclusionIndicator j s)
+    (g := inclusionIndicator i) fun s => ?_
+  calc inclusionIndicator i s * inclusionIndicator j s
+      ≤ inclusionIndicator i s * 1 :=
+        mul_le_mul_of_nonneg_left (inclusionIndicator_le_one j s) (inclusionIndicator_nonneg i s)
+    _ = inclusionIndicator i s := mul_one _
 
 /-- **Expected sample size**: `E_D|S| = ∑ᵢ πᵢ` (`HT52`). -/
 theorem expect_sampleCard (D : SamplingDesign U) :
     pmfExpect D (fun s => (s.card : ℝ)) = ∑ i, inclusionProb D i := by
-  sorry
+  have h : (fun s : Finset U => (s.card : ℝ))
+      = fun s => ∑ i, inclusionIndicator i s := by
+    funext s; exact card_sample_eq_sum_indicator s
+  rw [h, pmfExpect_sum]
+  rfl
 
 /-- The covariance of two inclusion indicators: `Cov(𝟙ᵢ, 𝟙ⱼ) = π_{ij} − πᵢ πⱼ`
 (`HT52`; the kernel of the Horvitz–Thompson variance). -/
 theorem cov_inclusionIndicator (D : SamplingDesign U) (i j : U) :
     pmfCov D (inclusionIndicator i) (inclusionIndicator j)
       = pairInclusionProb D i j - inclusionProb D i * inclusionProb D j := by
-  sorry
+  rw [pmfCov_eq_expect_mul_sub_mul]
+  rfl
 
 end StatLean.ExperimentalDesign
