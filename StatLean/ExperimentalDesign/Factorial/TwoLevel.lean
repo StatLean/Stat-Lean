@@ -281,7 +281,6 @@ theorem factorialCoeff_eq_of_expansion (y : (ι → Bool) → ℝ) (c : Finset �
   unfold factorialCoeff
   rw [key]
   field_simp
-  ring
 
 /-- **Parseval for the factorial expansion**: `∑ₓ y(x)² = 2^k ∑_S ŷ(S)²` — the exact
 sum-of-squares decomposition of a `2^k` response into effect components
