@@ -41,12 +41,21 @@ listed here with their exact blockers.
 * The **variance algebra** of the sandwich is carried out symbolically in the
   `ScoreCLT` section docstring; it collapses to `W⁻¹ = (hannanVarZ b₀ a₀)⁻¹` exactly as
   the frozen statement demands.
-* Debts: `armaProfileS_atTruth_tendstoInProb`, `armaProfileS_equicontinuous`,
-  `hannanScore_brownInputs`, `armaMLE_linearization`, `samplePACF_linearization`.
-  Every one of them reduces to the *same two* missing bricks: the **pointwise ergodic
-  theorem** (absent from Mathlib; this is also what blocks `ARMA/Consistency.lean`'s
-  `armaProfileS_tendstoInProb`) and `ARMA/ScoreAnalysis.lean`'s `indep_noise_sigmaLT`,
-  which is `private` there and hence not citeable from this module.
+* Debts: `armaProfileS_equicontinuous`, `hannanScore_brownInputs`,
+  `armaMLE_linearization`, `samplePACF_linearization`
+  (`armaProfileS_atTruth_tendstoInProb` is CLOSED — it is a two-line corollary of
+  Consistency's now-public `armaProfileS_tendstoInProb`).
+  The "**pointwise ergodic theorem**" diagnosis is **WITHDRAWN** (2026-08-08/09):
+  `ARMA/Consistency.lean`'s `armaResidualSS_tendstoInProb` proved the pointwise LLN
+  ergodic-theorem-free, and the *uniform* half is a deterministic θ-modulus estimate,
+  not an ergodic statement — see `armaProfileS_equicontinuous` below, where the
+  geometric-bound brick and the `ℓ¹` modulus of `π` are now available as
+  `Consistency.exists_uniform_geometric_bound_arma` and
+  `Consistency.exists_armaPi_l1_modulus`.
+  What remains a genuine *scope* blocker is `ARMA/ScoreAnalysis.lean`'s
+  `indep_noise_sigmaLT`, still `private` there and hence not citeable from this module;
+  `hannanScore_brownInputs` (1) and (3) both consume it, so closing them needs either
+  that file opened for editing or the independence statement re-proved here.
 
 **Two findings reported by this wave.**
 1. `criterion_tendsto_contrast` is *strictly weaker* than the `S_T/T`-level LLN the
@@ -660,23 +669,38 @@ finite-`T` half of the *oscillation* statement is not an ergodic statement at al
 is the `θ`-Lipschitz estimate above, uniform in `T`, which needs a locally uniform
 geometric bound on `π(θ)` and on `∂π(θ)` over the compact `K`.
 
-**That uniformity is the whole of what is left here** (the pointwise LLN it was paired
-with is now PROVED: `Consistency.armaResidualSS_tendstoInProb` closes
-`armaProfileS_tendstoInProb` and `criterion_tendsto_contrast` unconditionally). It is the
-*same* brick `mle_consistent`(ii) needs for the continuity of `θ ↦ armaContrastVar θ₀ θ`.
-Its shape:
+**The brick itself is now PROVED** (2026-08-09, wave `ts/s1-arma-endgame`):
+`Consistency.exists_uniform_geometric_bound_arma` (public) gives, for any compact
+`K ⊆ 𝓑`, one `(C, r)` with `r < 1` bounding `|armaPi θ n|` *and* `|armaPsi θ n|` by
+`C rⁿ` uniformly in `θ ∈ K`. Two amendments to the recipe recorded above:
 
-  `∃ C r, 1 ≤ C ∧ 0 ≤ r ∧ r < 1 ∧ ∀ ba ∈ K, ∀ n, |armaPi ba.1 ba.2 n| ≤ C * r ^ n`.
+* the Lipschitz-in-`z` step is **unnecessary**. Pushing the radius past `1` is done by
+  the polar parametrisation `z = s · w` (`‖w‖ ≤ 1`, `s ∈ [1, 2]`): the zero set of
+  `(θ, w, s) ↦ aeval (s·w) (maPoly θ.2)` is compact, so the minimum of its
+  `s`-coordinate is already `> 1`. The rest is `IsCompact.exists_isMinOn` /
+  `exists_isMaxOn` for `inf |den|` and `sup |num|` on `K × closedBall 0 R`;
+* the diagnosis that `exists_geometric_bound_armaPsi` cannot be used as a black box was
+  correct — its Cauchy estimate is redone carrying the radius and the sup-bound
+  (`Consistency.abs_armaPsi_le_of_disc_bounds`, via `norm_cauchyPowerSeries_le` plus
+  uniqueness of power series).
 
-The compactness step is cheap: `(ba, z) ↦ ‖aeval z (maPoly ba.2)‖` is continuous and
-positive on the compact `K × closedBall 0 1`, hence `≥ δ > 0` there; the coefficients are
-bounded on `K`, so with a uniform Lipschitz constant `L` in `z` the same polynomial stays
-`≥ δ/2` on the strictly larger disc of radius `1 + δ/(2L)`, and a Cauchy estimate on that
-*fixed* radius is uniform in `ba ∈ K`. What is **not** free is that
-`exists_geometric_bound_armaPsi` is stated non-quantitatively (it produces `C`, `r` with
-no control by the radius or the sup-bound), so the uniform statement cannot be derived
-from it as a black box: its `HasFPowerSeriesOnBall` proof has to be redone carrying the
-radius and the sup-bound as parameters. -/
+**No `∂π/∂θ` companion is needed.** What the oscillation estimate actually consumes is a
+*modulus of continuity*, `∀ ε > 0, ∃ ρ > 0, ∀ θ θ' ∈ K, dist θ θ' < ρ →
+∑' n, |π_n(θ) − π_n(θ')| < ε`, and that is free from the brick plus compactness of
+`K × K`: it is PROVED as `Consistency.exists_armaPi_l1_modulus` (public).
+
+**What is left here** is the matching modulus for the Gram tail. Writing
+`Γ_T(θ)⁻¹ = Π_Tᵀ(1 + G_T)⁻¹Π_T` and splitting
+
+  `[Π−Π′]ᵀ(1+G)⁻¹Π  +  Π′ᵀ[(1+G)⁻¹−(1+G′)⁻¹]Π  +  Π′ᵀ(1+G′)⁻¹[Π−Π′]`,
+
+the outer two terms are handled by `exists_armaPi_l1_modulus`, `(1+G)⁻¹ ⪯ 1` and the
+Schur test (`rowSum_kernel_le`); the middle term needs
+`∑_j |G_T(θ)_{ij} − G_T(θ′)_{ij}| ≤ L(ρ)` uniformly in `T` and `i`, i.e.
+`trace_gramTail_le`'s estimate redone in difference form off the same modulus. The two
+apparent shortcuts do not work: the pathwise bound `T⁻¹uᵀG u ≤ K P² · T⁻¹‖x‖²` is
+`O_p(1)`, not `o_p(1)`, and using `(1+K)⁻¹ ⪯ (1+G)⁻¹` in the sandwich costs an additive
+`O(1)` term `log(1+K)` in the criterion. -/
 private theorem armaProfileS_equicontinuous [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
