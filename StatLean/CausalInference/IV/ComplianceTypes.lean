@@ -53,14 +53,14 @@ theorem mem_typeSet_defier {ω : Ω} :
   sorry
 
 /-- **Monotonicity is exactly the absence of defiers** (Ding Assumption 21.2). -/
-theorem monotone_iff_typeSet_defier_eq_empty :
-    Monotone d1 d0 ↔ typeSet d1 d0 ComplianceType.defier = ∅ := by
+theorem noDefiers_iff_typeSet_defier_eq_empty :
+    NoDefiers d1 d0 ↔ typeSet d1 d0 ComplianceType.defier = ∅ := by
   sorry
 
 /-- **One-sided noncompliance removes always takers and defiers** (`IR` ch. 23): if nobody
 can take the treatment without being assigned it, only compliers and never takers remain.
 In particular monotonicity holds automatically. -/
-theorem oneSided_monotone (h : OneSidedNoncompliance d0) : Monotone d1 d0 := by
+theorem oneSided_noDefiers (h : OneSidedNoncompliance d0) : NoDefiers d1 d0 := by
   sorry
 
 /-- Under one-sided noncompliance there are no always takers. -/
@@ -82,14 +82,14 @@ theorem obsTreat_eq (ω : Ω) : obsTreat Z d1 d0 ω = if Z ω then d1 ω else d0
 
 /-- Under monotonicity, a unit takes the treatment when assigned to it exactly when it is
 a complier or an always taker. -/
-theorem d1_eq_true_iff (h : Monotone d1 d0) (ω : Ω) :
+theorem d1_eq_true_iff (h : NoDefiers d1 d0) (ω : Ω) :
     d1 ω = true ↔ ω ∈ typeSet d1 d0 ComplianceType.complier
                     ∪ typeSet d1 d0 ComplianceType.alwaysTaker := by
   sorry
 
 /-- A unit takes the treatment when *not* assigned to it exactly when it is an always
 taker, under monotonicity. -/
-theorem d0_eq_true_iff (h : Monotone d1 d0) (ω : Ω) :
+theorem d0_eq_true_iff (h : NoDefiers d1 d0) (ω : Ω) :
     d0 ω = true ↔ ω ∈ typeSet d1 d0 ComplianceType.alwaysTaker := by
   sorry
 

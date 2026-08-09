@@ -118,7 +118,7 @@ theorem beta_eq_cace {Z d1 d0 : Ω → Bool} {y1 y0 : Ω → ℝ} {α β : ℝ} 
     (hmodel : LinearIVModel μ (fun ω => ind (Z ω)) (fun ω => ind (obsTreat Z d1 d0 ω))
       (obs Z y1 y0) α β)
     -- USER-INPUT: the three potential-outcome IV assumptions; Ding Assumptions 21.1–21.3
-    (hrand : IVRandomized μ Z d1 d0 y1 y0) (hmono : Monotone d1 d0)
+    (hrand : IVRandomized μ Z d1 d0 y1 y0) (hmono : NoDefiers d1 d0)
     (hexcl : ExclusionRestriction d1 d0 y1 y0)
     (hZm : Measurable Z) (hd1 : Measurable d1) (hd0 : Measurable d0)
     (hy1 : Measurable y1) (hy0 : Measurable y0)

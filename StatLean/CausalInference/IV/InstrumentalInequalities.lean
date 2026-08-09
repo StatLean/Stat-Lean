@@ -53,7 +53,7 @@ theorem ittContrast_treat_mul_outcome [IsProbabilityMeasure μ]
     -- USER-INPUT: random assignment; Ding Assumption 21.1
     (hrand : IVRandomized μ Z d1 d0 (fun ω => ind (b1 ω)) (fun ω => ind (b0 ω)))
     -- USER-INPUT: monotonicity; Ding Assumption 21.2
-    (hmono : Monotone d1 d0)
+    (hmono : NoDefiers d1 d0)
     -- USER-INPUT: the exclusion restriction; Ding Assumption 21.3
     (hexcl : ExclusionRestriction d1 d0 (fun ω => ind (b1 ω)) (fun ω => ind (b0 ω)))
     -- USER-INPUT: measurability of the model variables; user-supplied data
@@ -69,7 +69,7 @@ theorem ittContrast_treat_mul_outcome [IsProbabilityMeasure μ]
 /-- **First instrumental inequality** (Ding Theorem 22.2, eq. (22.1), `Q = DY`). -/
 theorem instrumentalInequality_DY [IsProbabilityMeasure μ]
     (hrand : IVRandomized μ Z d1 d0 (fun ω => ind (b1 ω)) (fun ω => ind (b0 ω)))
-    (hmono : Monotone d1 d0)
+    (hmono : NoDefiers d1 d0)
     (hexcl : ExclusionRestriction d1 d0 (fun ω => ind (b1 ω)) (fun ω => ind (b0 ω)))
     (hZ : Measurable Z) (hd1 : Measurable d1) (hd0 : Measurable d0)
     (hb1 : Measurable b1) (hb0 : Measurable b0)
@@ -80,7 +80,7 @@ theorem instrumentalInequality_DY [IsProbabilityMeasure μ]
 /-- **Second instrumental inequality** (Ding Theorem 22.2, `Q = D(1-Y)`). -/
 theorem instrumentalInequality_D_one_sub_Y [IsProbabilityMeasure μ]
     (hrand : IVRandomized μ Z d1 d0 (fun ω => ind (b1 ω)) (fun ω => ind (b0 ω)))
-    (hmono : Monotone d1 d0)
+    (hmono : NoDefiers d1 d0)
     (hexcl : ExclusionRestriction d1 d0 (fun ω => ind (b1 ω)) (fun ω => ind (b0 ω)))
     (hZ : Measurable Z) (hd1 : Measurable d1) (hd0 : Measurable d0)
     (hb1 : Measurable b1) (hb0 : Measurable b0)
@@ -92,7 +92,7 @@ theorem instrumentalInequality_D_one_sub_Y [IsProbabilityMeasure μ]
 /-- **Third instrumental inequality** (Ding Theorem 22.2, `Q = (D-1)Y`). -/
 theorem instrumentalInequality_D_sub_one_Y [IsProbabilityMeasure μ]
     (hrand : IVRandomized μ Z d1 d0 (fun ω => ind (b1 ω)) (fun ω => ind (b0 ω)))
-    (hmono : Monotone d1 d0)
+    (hmono : NoDefiers d1 d0)
     (hexcl : ExclusionRestriction d1 d0 (fun ω => ind (b1 ω)) (fun ω => ind (b0 ω)))
     (hZ : Measurable Z) (hd1 : Measurable d1) (hd0 : Measurable d0)
     (hb1 : Measurable b1) (hb0 : Measurable b0)
@@ -104,7 +104,7 @@ theorem instrumentalInequality_D_sub_one_Y [IsProbabilityMeasure μ]
 /-- **Fourth instrumental inequality** (Ding Theorem 22.2, `Q = D + Y - DY`). -/
 theorem instrumentalInequality_D_add_Y_sub_DY [IsProbabilityMeasure μ]
     (hrand : IVRandomized μ Z d1 d0 (fun ω => ind (b1 ω)) (fun ω => ind (b0 ω)))
-    (hmono : Monotone d1 d0)
+    (hmono : NoDefiers d1 d0)
     (hexcl : ExclusionRestriction d1 d0 (fun ω => ind (b1 ω)) (fun ω => ind (b0 ω)))
     (hZ : Measurable Z) (hd1 : Measurable d1) (hd0 : Measurable d0)
     (hb1 : Measurable b1) (hb0 : Measurable b0)
@@ -125,7 +125,7 @@ theorem not_ivModel_of_neg [IsProbabilityMeasure μ]
     (hviol : ittContrast μ Z
         (fun ω => ind (obsTreat Z d1 d0 ω) * ind (obsBool Z b1 b0 ω)) < 0) :
     ¬ (IVRandomized μ Z d1 d0 (fun ω => ind (b1 ω)) (fun ω => ind (b0 ω))
-        ∧ Monotone d1 d0
+        ∧ NoDefiers d1 d0
         ∧ ExclusionRestriction d1 d0 (fun ω => ind (b1 ω)) (fun ω => ind (b0 ω))) := by
   sorry
 

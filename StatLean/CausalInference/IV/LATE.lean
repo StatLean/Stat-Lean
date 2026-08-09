@@ -84,7 +84,7 @@ theorem firstStage_eq_prob_complier [IsProbabilityMeasure μ]
     -- USER-INPUT: random assignment; Ding Assumption 21.1
     (hrand : IVRandomized μ Z d1 d0 y1 y0)
     -- USER-INPUT: monotonicity / no defiers; Ding Assumption 21.2
-    (hmono : Monotone d1 d0)
+    (hmono : NoDefiers d1 d0)
     (hZ : Measurable Z) (hd1 : Measurable d1) (hd0 : Measurable d0)
     (hy1 : Measurable y1) (hy0 : Measurable y0)
     (hZ1 : μ {ω | Z ω = true} ≠ 0) (hZ0 : μ {ω | Z ω = false} ≠ 0) :
@@ -99,7 +99,7 @@ theorem reducedForm_eq_prob_complier_mul_cace [IsProbabilityMeasure μ]
     -- USER-INPUT: random assignment; Ding Assumption 21.1
     (hrand : IVRandomized μ Z d1 d0 y1 y0)
     -- USER-INPUT: monotonicity; Ding Assumption 21.2
-    (hmono : Monotone d1 d0)
+    (hmono : NoDefiers d1 d0)
     -- USER-INPUT: the exclusion restriction; Ding Assumption 21.3
     (hexcl : ExclusionRestriction d1 d0 y1 y0)
     (hZ : Measurable Z) (hd1 : Measurable d1) (hd0 : Measurable d0)
@@ -115,7 +115,7 @@ relevant, the ratio of the reduced form to the first stage is the complier avera
 effect. -/
 theorem cace_eq_ittContrast_div [IsProbabilityMeasure μ]
     -- USER-INPUT: the three IV assumptions; Ding Assumptions 21.1–21.3
-    (hrand : IVRandomized μ Z d1 d0 y1 y0) (hmono : Monotone d1 d0)
+    (hrand : IVRandomized μ Z d1 d0 y1 y0) (hmono : NoDefiers d1 d0)
     (hexcl : ExclusionRestriction d1 d0 y1 y0)
     (hZ : Measurable Z) (hd1 : Measurable d1) (hd0 : Measurable d0)
     (hy1 : Measurable y1) (hy0 : Measurable y0)
@@ -132,7 +132,7 @@ theorem cace_eq_ittContrast_div [IsProbabilityMeasure μ]
 identification formula uses only the observed outcome and treatment in the two instrument
 arms. -/
 theorem cace_eq_wald_ratio [IsProbabilityMeasure μ]
-    (hrand : IVRandomized μ Z d1 d0 y1 y0) (hmono : Monotone d1 d0)
+    (hrand : IVRandomized μ Z d1 d0 y1 y0) (hmono : NoDefiers d1 d0)
     (hexcl : ExclusionRestriction d1 d0 y1 y0)
     (hZ : Measurable Z) (hd1 : Measurable d1) (hd0 : Measurable d0)
     (hy1 : Measurable y1) (hy0 : Measurable y0)
@@ -149,7 +149,7 @@ theorem cace_eq_wald_ratio [IsProbabilityMeasure μ]
 /-- **Identification of the never-taker proportion** (Ding Theorem 22.1, p. 302):
 `π_n = P(D = 0 | Z = 1)`. -/
 theorem prob_neverTaker_eq [IsProbabilityMeasure μ]
-    (hrand : IVRandomized μ Z d1 d0 y1 y0) (hmono : Monotone d1 d0)
+    (hrand : IVRandomized μ Z d1 d0 y1 y0) (hmono : NoDefiers d1 d0)
     (hZ : Measurable Z) (hd1 : Measurable d1) (hd0 : Measurable d0)
     (hy1 : Measurable y1) (hy0 : Measurable y0)
     (hZ1 : μ {ω | Z ω = true} ≠ 0) :
@@ -160,7 +160,7 @@ theorem prob_neverTaker_eq [IsProbabilityMeasure μ]
 /-- **Identification of the always-taker proportion** (Ding Theorem 22.1, p. 302):
 `π_a = P(D = 1 | Z = 0)`. -/
 theorem prob_alwaysTaker_eq [IsProbabilityMeasure μ]
-    (hrand : IVRandomized μ Z d1 d0 y1 y0) (hmono : Monotone d1 d0)
+    (hrand : IVRandomized μ Z d1 d0 y1 y0) (hmono : NoDefiers d1 d0)
     (hZ : Measurable Z) (hd1 : Measurable d1) (hd0 : Measurable d0)
     (hy1 : Measurable y1) (hy0 : Measurable y0)
     (hZ0 : μ {ω | Z ω = false} ≠ 0) :

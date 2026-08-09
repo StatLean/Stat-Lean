@@ -93,7 +93,7 @@ def IVRandomized (μ : Measure Ω) (Z d1 d0 : Ω → Bool) (y1 y0 : Ω → ℝ) 
 
 /-- **Monotonicity / no defiers** (Ding Assumption 21.2): `Dᵢ(1) ≥ Dᵢ(0)` for every
 unit. -/
-def Monotone (d1 d0 : Ω → Bool) : Prop := ∀ ω, d0 ω = true → d1 ω = true
+def NoDefiers (d1 d0 : Ω → Bool) : Prop := ∀ ω, d0 ω = true → d1 ω = true
 
 /-- **The exclusion restriction** (Ding Assumption 21.3): the instrument affects the
 outcome only through the treatment received, so units whose treatment is unaffected by the
