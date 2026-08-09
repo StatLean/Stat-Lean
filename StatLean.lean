@@ -11,6 +11,7 @@ import StatLean.HypothesisTesting
 import StatLean.StatisticalModels
 import StatLean.TimeSeries
 import StatLean.CausalInference
+import StatLean.ExperimentalDesign
 
 /-!
 # StatLean
@@ -53,6 +54,14 @@ theory, organized into per-area sublibraries.
   polynomial regression (pointwise/L²/sup-norm rates over Hölder classes), and
   projection estimators on the trigonometric basis (exact MISE decomposition and
   Sobolev-ellipsoid rates).
+* `StatLean.ExperimentalDesign` — design of experiments and design-based survey
+  sampling in the finite randomisation model: finite-population summaries,
+  randomization/sampling designs as PMFs, the completely randomised design with
+  exact assignment probabilities, arm means as simple random samples, blocked
+  randomization, inclusion probabilities and Horvitz–Thompson estimation,
+  stratified estimators, contrast algebra, two-level factorial characters, and
+  the one-way ANOVA identity (Mead, *The Design of Experiments*; Horvitz–Thompson
+  1952; Cochran 1977).
 * `StatLean.PointEstimation` — point estimation: exponential families (natural
   parameters, differentiability of the log-partition function), sufficiency,
   minimal sufficiency and completeness, unbiased estimation and UMVU
