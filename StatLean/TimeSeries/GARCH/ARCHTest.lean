@@ -101,6 +101,65 @@ closing them calls for a *time-series* likelihood theorem — a martingale CLT f
 conditional score of the ARCH quasi-likelihood, valid over the whole `(c₀, b)` space —
 rather than an instance of the iid one.
 
+## ⚠ The `hMLE` repair OVERSHOT: `archLRStat_chiSq_debt` and `archWaldStat_chiSq_debt` are VACUOUS
+
+The `2026-08-09` amendment above (added to repair the falsity diagnosed in item (1)) pins
+the estimators by requiring them to *globally maximize* `archLogLik` over **all** of
+`ℝ × ℝᵖ`. No such maximizer exists, so `hMLE` and `hMLE0` are unsatisfiable and the two
+statements carry no statistical content: both are proved below **by deriving `False` from
+their own hypotheses**, not by any asymptotic argument. The two `sorry`s are gone; the
+mathematics of FY eqs. (4.50), (4.54) is *not* formalized. Reading the module as
+`1 sorry` would be a mistake — the honest count is one debt plus two vacuities.
+
+The witness is `archLogLik_unbounded` (machine-checked): with `b = 0` the truncated
+volatility is the *constant* `c₀` (`truncVol_const`, no positivity used, because the
+presample value of `archLogLik` is `c₀` itself), so at `c₀ = −δ < 0`
+
+  `archLogLik (−δ) 0 x ν = −½·(T−ν)·log δ + (Σ_{t=ν}^{T−1} x_t²)/(2δ) → +∞`  as `δ ↓ 0`,
+
+using `Real.log (−δ) = Real.log δ` and the *sign flip* of the `x_t²/σ̃_t²` term at a
+negative `σ̃_t²`: both summands of `−½(log σ̃_t² + x_t²/σ̃_t²)` diverge to `+∞` together.
+`hνT` forces `νseq T < T` for all large `T`, so the sum is nonempty at some `T` and
+`hMLE`/`hMLE0` are contradicted there (`false_of_bddAbove_archLogLik`). This is not an
+artefact of `Real.log`'s totalization: restricting to `c₀ > 0` does not help either, since
+negative `b` coordinates drive `σ̃_t² = c₀ + Σ b_i x_{t−i}²` negative just the same.
+
+**The next amendment.** Maximization must be over the *admissible* set, on which the
+criterion is bounded above — FY's `{c₀ > 0, b_j ≥ 0}`, or any constraint forcing
+`σ̃_t² ≥ κ > 0` along the sample — or, better (item (2) above), the estimators should be
+pinned in the trinity's currency: asymptotically linear with the ARCH score and
+information. Either way it is a *statement* change, out of scope for a `sorry`-filling
+lane. `archTR2Stat_chiSq_debt`'s `hrss`/`htss` do **not** have this defect: a
+least-squares minimum is always attained, so its hypotheses are consistent and it remains
+an honest debt.
+
+## `archTR2Stat_chiSq_debt`: the limit law is now identified, the LM limit is what is left
+
+Two of the five mismatches listed above are **discharged**, both concerning the *statement*
+of the limit rather than the statistic:
+
+* the χ² **character identity** — recorded above as "not proved anywhere in the repo at
+  present" — is proved here as `charFun_map_sum_sq_gaussian`:
+  `charFun (law of Σ_{i<p} Z_i²) u = (1 − 2iu)^{−p/2}`, from the complex Gaussian integral
+  `∫ exp(−b x²) = (π/b)^{1/2}` at `b = (1 − 2iu)/2` tensored over the `p` coordinates;
+* the **conclusion form** — `eq_map_sum_sq_gaussian_of_charFun` turns `hchi` into
+  `chiSq = (Measure.pi (gaussianReal 0 1)).map (Σ_i x_i²)` outright, so neither a χ²
+  construction nor a `WeakConverges → charFun` bridge is needed anywhere. The debt's proof
+  uses this to rewrite its goal into convergence towards that concrete law.
+
+What the single remaining `sorry` still needs is exactly Engle's LM limit: under `H₀` with
+Gaussian innovations the squared data `Y_t = X_t²` are iid with mean `c₀` and variance
+`2c₀² > 0`, `hrss`/`htss` make the statistic the auxiliary regression's `T·R²`, and the
+normal equations turn it into a quadratic form in the lag-`1..p` sample autocovariances of
+`Y`; the LLN sends the Gram matrix to `Var(Y)·I_p`, the iid CLT sends `√T γ̂` to
+`N(0, Var(Y)²I_p)`, and continuous mapping finishes. Three bricks are missing: the
+least-squares/`R²` algebra out of `hrss`, the `p`-dimensional CLT for the autocovariance
+vector, and the continuous-mapping step. Note `p = 0` is consistent (both sides are `δ₀`).
+Also, `hgauss` is not decoration *(this remark is documented, not formalized)*: with `ε`
+Rademacher, `X_t² = c₀` a.s., so response and regressors are all equal, `rss = tss = 0`, and
+the statistic is the constant `T` — a law `δ_T` with no limit. Nondegeneracy of `Var(X_t²)`
+is therefore needed, and `hgauss` is what supplies it.
+
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §4.2.6,
 eqs. (4.48)–(4.54) (pp. 165–168). (`FY §4.2.6`.)
 
@@ -176,10 +235,97 @@ regression's residual and total sums of squares. -/
 noncomputable def archTR2Stat {T : ℕ} (rss tss : ℝ) : ℝ :=
   (T : ℝ) * (1 - rss / tss)
 
+/-! ### The unrestricted ARCH quasi-likelihood has no maximizer
+
+The witness announced in the module docstring: `hMLE`/`hMLE0` of the two likelihood-based
+debts below are unsatisfiable, so those debts are vacuous. -/
+
+/-- At `b = 0` — and with the presample value `archLogLik` uses, namely `c₀` itself — the
+truncated ARCH volatility is the *constant* `c₀`, for **every** real `c₀`. No positivity
+is available here and none is needed: with `q = 0` the recursion has no volatility
+feedback, so a single case split on `t` replaces the induction. -/
+private lemma truncVol_const {p T : ℕ} (c : ℝ) (x : Fin T → ℝ) (t : ℕ) :
+    garchTruncVol c (fun _ : Fin p => (0 : ℝ)) (Fin.elim0 : Fin 0 → ℝ) c x t = c := by
+  cases t with
+  | zero => simp [garchTruncVol]
+  | succ n => simp [garchTruncVol]
+
+/-- The closed form of the null log-likelihood at a **negative** variance parameter `−δ`:
+`Real.log (−δ) = Real.log δ`, and the quadratic term keeps the factor `(−δ)⁻¹ < 0`, whose
+sign the outer `−½` flips to `+`. So both summands push the criterion *up*. -/
+private lemma archLogLik_neg {p T : ℕ} (δ : ℝ) (x : Fin T → ℝ) (ν : ℕ) :
+    archLogLik (-δ) (fun _ : Fin p => (0 : ℝ)) x ν
+      = -(1 / 2) * (((T - ν : ℕ) : ℝ) * Real.log δ
+          + (∑ t ∈ Finset.Ico ν T, (if h : t < T then x ⟨t, h⟩ else 0) ^ 2) * (-δ)⁻¹) := by
+  rw [archLogLik, garchQuasiLik]
+  simp only [truncVol_const, Real.log_neg_eq_log, div_eq_mul_inv]
+  rw [Finset.sum_add_distrib, Finset.sum_const, ← Finset.sum_mul, Nat.card_Ico]
+  simp
+
+/-- **The witness.** As soon as the criterion's index set `Ico ν T` is nonempty, the null
+ARCH log-likelihood is unbounded above on the unrestricted parameter space: take
+`c₀ = −δ` with `δ = exp(−(2|M| + 2)/(T − ν))`, which makes the logarithmic part alone
+equal `|M| + 1 > M` while the quadratic part is nonnegative. Hence no `(c₀, b)` maximizes
+it, over the unrestricted set or over any set containing the negative axis. -/
+private lemma archLogLik_unbounded {p T : ℕ} (x : Fin T → ℝ) {ν : ℕ} (hν : ν < T) (M : ℝ) :
+    ∃ c : ℝ, M < archLogLik c (fun _ : Fin p => (0 : ℝ)) x ν := by
+  have hn : 0 < T - ν := Nat.sub_pos_of_lt hν
+  have hnR : (0 : ℝ) < ((T - ν : ℕ) : ℝ) := Nat.cast_pos.2 hn
+  set δ : ℝ := Real.exp (-(2 * |M| + 2) / ((T - ν : ℕ) : ℝ)) with hδdef
+  have hδ0 : 0 < δ := Real.exp_pos _
+  refine ⟨-δ, ?_⟩
+  rw [archLogLik_neg]
+  have hlog : Real.log δ = -(2 * |M| + 2) / ((T - ν : ℕ) : ℝ) := Real.log_exp _
+  have hS : 0 ≤ ∑ t ∈ Finset.Ico ν T, (if h : t < T then x ⟨t, h⟩ else 0) ^ 2 :=
+    Finset.sum_nonneg fun t _ => sq_nonneg _
+  have hkey : ((T - ν : ℕ) : ℝ) * Real.log δ = -(2 * |M| + 2) := by
+    rw [hlog]; field_simp
+  have hinv : (∑ t ∈ Finset.Ico ν T, (if h : t < T then x ⟨t, h⟩ else 0) ^ 2) * (-δ)⁻¹ ≤ 0 :=
+    mul_nonpos_of_nonneg_of_nonpos hS (inv_nonpos.2 (by linarith))
+  have hM : M ≤ |M| := le_abs_self M
+  rw [hkey]
+  nlinarith [hinv, hM]
+
+/-- The frozen `hMLE`/`hMLE0` shape — a global maximizer of the null log-likelihood, at
+every sample size — is contradictory under `νseq T / T → 0`, which forces `νseq T < T` for
+all large `T` and hence a nonempty criterion sum at some `T`. -/
+private lemma false_of_bddAbove_archLogLik {p : ℕ} {νseq : ℕ → ℕ}
+    (hνT : Tendsto (fun T : ℕ => (νseq T : ℝ) / T) atTop (𝓝 0))
+    (data : (T : ℕ) → Fin T → ℝ) (F : ℕ → ℝ)
+    (hmax : ∀ (T : ℕ) (c : ℝ),
+      archLogLik c (fun _ : Fin p => (0 : ℝ)) (data T) (νseq T) ≤ F T) : False := by
+  have h1 : ∀ᶠ T : ℕ in atTop, (νseq T : ℝ) / T < 1 / 2 :=
+    hνT.eventually_lt_const (by norm_num)
+  obtain ⟨T, hT, hT1⟩ := (h1.and (eventually_ge_atTop 1)).exists
+  have hTpos : (0 : ℝ) < T := by exact_mod_cast hT1
+  have hlt : νseq T < T := by
+    have : (νseq T : ℝ) < T := by
+      have := (div_lt_iff₀ hTpos).1 hT
+      linarith
+    exact_mod_cast this
+  obtain ⟨c, hc⟩ := archLogLik_unbounded (p := p) (data T) hlt (F T)
+  exact absurd (hmax T c) (not_le.2 hc)
+
+/-- A probability space is nonempty — needed to evaluate the contradictory hypotheses at a
+sample point. -/
+private lemma nonempty_of_isProbabilityMeasure {Ω : Type*} [MeasurableSpace Ω]
+    (μ : Measure Ω) [IsProbabilityMeasure μ] : Nonempty Ω := by
+  rcases isEmpty_or_nonempty Ω with hE | hE
+  · have h1 : μ (Set.univ : Set Ω) = 1 := measure_univ
+    rw [Set.univ_eq_empty_iff.2 hE, measure_empty] at h1
+    exact absurd h1 (by norm_num)
+  · exact hE
+
 /-- **FY eq. (4.50) — DEBT** (Serfling §4.4.4 via the iid structure under `H₀`): the
 likelihood-ratio statistic has the `χ²_p` null limit. Recorded through the
 distribution function of the limit (`chiSqLimitCDF` supplied as the comparison law, so
-the statement does not depend on which χ² construction the repo settles on). -/
+the statement does not depend on which χ² construction the repo settles on).
+
+⚠ **VACUOUS as frozen, and the proof below says so.** `hMLE0` (equally `hMLE`) asks the
+null-restricted estimator to maximize `archLogLik` over all of `ℝ`, and no maximizer
+exists: `archLogLik_unbounded`. The proof is a derivation of `False` from the hypotheses;
+it establishes nothing about FY eq. (4.50). See the module docstring for the amendment
+this needs. -/
 theorem archLRStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     {X ε : ℤ → Ω → ℝ}
     -- USER-INPUT: the null model; FY §4.2.6 H₀
@@ -212,11 +358,180 @@ theorem archLRStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
         archLRStat (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
           (c0hat T ω) (bhat T ω) (c0null T ω)) u)
       atTop (𝓝 (charFun chiSq u)) := by
-  sorry
+  -- The hypotheses are contradictory: `hMLE0` asserts a global maximizer of a criterion
+  -- that `archLogLik_unbounded` shows is unbounded above.
+  obtain ⟨ω₀⟩ := nonempty_of_isProbabilityMeasure μ
+  exact (false_of_bddAbove_archLogLik (p := p) hνT
+    (fun T => fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω₀)
+    (fun T => archLogLik (c0null T ω₀) (fun _ : Fin p => (0 : ℝ))
+      (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω₀) (νseq T))
+    (fun T c => hMLE0 T ω₀ c)).elim
+
+/-! ### The χ²_p character identity and the identification of the abstract limit law
+
+The three debts take their limit law abstractly, pinned only by
+`hchi : charFun chiSq u = (1 − 2iu)^{−p/2}`. That normalisation is *exactly* the
+characteristic function of a Gaussian quadratic form `Σ_{i<p} Z_i²`, which is proved here
+(`charFun_map_sum_sq_gaussian`) and used to identify `chiSq` outright
+(`eq_map_sum_sq_gaussian_of_charFun`). This discharges two of the mismatches listed in the
+module docstring — the χ² character identity, recorded there as "not proved anywhere in the
+repo at present", and the "conclusion form" item: no χ² *construction* is needed, and no
+`WeakConverges → charFun` bridge either. The route is the Fresnel-type Gaussian integral
+`∫ exp(−b x²) = (π/b)^{1/2}` at `b = (1 − 2iu)/2`, tensored over the `p` coordinates by
+Fubini. These belong in `MultipleTesting/ForMathlib/ChiSquared.lean` (whose `chiSquared p`
+is `Gamma(p/2, 1/2)`, and where `map_sum_sq_eq_chiSquared` already identifies the law of
+`Σ Z_i²`); they are `private` here only because that file is outside this lane's touch set. -/
+
+/-- The principal square root of a right-half-plane point has positive real part: its
+argument is halved into `(−π/4, π/4)`, where the cosine is positive. -/
+private lemma re_cpow_half_pos {w : ℂ} (hw : 0 < w.re) : 0 < (w ^ (1 / 2 : ℂ)).re := by
+  have hw0 : w ≠ 0 := by
+    intro h; rw [h] at hw; simp at hw
+  rw [Complex.cpow_def_of_ne_zero hw0, Complex.exp_re]
+  have him : (Complex.log w * (1 / 2 : ℂ)).im = w.arg / 2 := by
+    simp [Complex.mul_im, Complex.log_im]
+    ring
+  rw [him]
+  have harg : |w.arg| < Real.pi / 2 := Complex.abs_arg_lt_pi_div_two_iff.2 (Or.inl hw)
+  rw [abs_lt] at harg
+  have hcos : 0 < Real.cos (w.arg / 2) :=
+    Real.cos_pos_of_mem_Ioo ⟨by linarith [harg.1], by linarith [harg.2]⟩
+  exact mul_pos (Real.exp_pos _) hcos
+
+/-- Two right-half-plane points with the same square agree — the branch-free way to compare
+two square roots, used instead of `cpow` argument arithmetic. -/
+private lemma eq_of_sq_eq_of_re_pos {z w : ℂ} (hz : 0 < z.re) (hw : 0 < w.re)
+    (h : z ^ 2 = w ^ 2) : z = w := by
+  have h0 : (z - w) * (z + w) = 0 := by ring_nf; linear_combination h
+  rcases mul_eq_zero.1 h0 with h1 | h1
+  · exact sub_eq_zero.1 h1
+  · exfalso
+    have hre : z.re + w.re = 0 := by
+      have h2 := congrArg Complex.re h1
+      simp only [Complex.add_re, Complex.zero_re] at h2
+      exact h2
+    linarith
+
+/-- `(w^{1/2})² = w` for the principal branch. -/
+private lemma sq_cpow_half (w : ℂ) : (w ^ ((1 : ℂ) / 2)) ^ 2 = w := by
+  have h := Complex.cpow_nat_inv_pow w (n := 2) (by norm_num)
+  norm_num at h
+  exact h
+
+/-- **The one-dimensional χ² character**: `E[exp(i u Z²)] = (1 − 2iu)^{−1/2}` for
+`Z ∼ N(0,1)`. The Gaussian density folds the phase into the complex Gaussian integral at
+rate `b = 1/2 − iu`, whose real part is `1/2 > 0`; the two candidate square roots are then
+matched by `eq_of_sq_eq_of_re_pos` rather than by tracking arguments. -/
+private lemma integral_cexp_sq_gaussianReal (u : ℝ) :
+    ∫ y : ℝ, Complex.exp ((u : ℂ) * (y : ℂ) ^ 2 * Complex.I) ∂(gaussianReal 0 1)
+      = (1 - 2 * Complex.I * u) ^ (-(1 : ℂ) / 2) := by
+  have hb : (0 : ℝ) < ((1 / 2 : ℂ) - u * Complex.I).re := by norm_num
+  have hint : ∀ y : ℝ, gaussianPDFReal 0 1 y • Complex.exp ((u : ℂ) * (y : ℂ) ^ 2 * Complex.I)
+      = ((Real.sqrt (2 * Real.pi))⁻¹ : ℝ)
+        * Complex.exp (-((1 / 2 : ℂ) - u * Complex.I) * (y : ℂ) ^ 2) := by
+    intro y
+    rw [Complex.real_smul, gaussianPDFReal]
+    push_cast
+    have h1 : (2 : ℝ) * Real.pi * 1 = 2 * Real.pi := by ring
+    rw [mul_assoc, ← Complex.exp_add, h1]
+    congr 2
+    ring
+  have hc : ∫ y : ℝ, ((Real.sqrt (2 * Real.pi))⁻¹ : ℝ) *
+        Complex.exp (-((1 / 2 : ℂ) - u * Complex.I) * (y : ℂ) ^ 2)
+      = ((Real.sqrt (2 * Real.pi))⁻¹ : ℝ) *
+        ∫ y : ℝ, Complex.exp (-((1 / 2 : ℂ) - u * Complex.I) * (y : ℂ) ^ 2) :=
+    integral_const_mul _ _
+  rw [integral_gaussianReal_eq_integral_smul one_ne_zero]
+  refine (integral_congr_ae (ae_of_all _ hint)).trans ?_
+  rw [hc, integral_gaussian_complex hb]
+  -- what is left is `(2π)^{-1/2}·(π/b)^{1/2} = (1−2iu)^{−1/2}` at `b = (1−2iu)/2`
+  have hbne : ((1 / 2 : ℂ) - (u : ℂ) * Complex.I) ≠ 0 := by
+    intro h
+    have h1 : ((1 / 2 : ℂ) - (u : ℂ) * Complex.I).re = 1 / 2 := by simp
+    rw [h] at h1; norm_num at h1
+  have hzre : (0 : ℝ) < (1 - 2 * Complex.I * (u : ℂ)).re := by simp
+  have hzne : (1 - 2 * Complex.I * (u : ℂ)) ≠ 0 := by
+    intro h; rw [h] at hzre; simp at hzre
+  have hw : (0 : ℝ) < ((Real.pi : ℂ) / ((1 / 2 : ℂ) - (u : ℂ) * Complex.I)).re := by
+    rw [div_eq_mul_inv, Complex.re_ofReal_mul, Complex.inv_re]
+    have h1 : ((1 / 2 : ℂ) - (u : ℂ) * Complex.I).re = 1 / 2 := by simp
+    rw [h1]
+    exact mul_pos Real.pi_pos (div_pos (by norm_num) (Complex.normSq_pos.2 hbne))
+  have hneg : (-(1 : ℂ) / 2) = -((1 : ℂ) / 2) := by ring
+  refine eq_of_sq_eq_of_re_pos ?_ ?_ ?_
+  · rw [Complex.re_ofReal_mul]
+    exact mul_pos (by positivity) (re_cpow_half_pos hw)
+  · rw [hneg, Complex.cpow_neg, Complex.inv_re]
+    have hnz : ((1 - 2 * Complex.I * (u : ℂ)) ^ ((1 : ℂ) / 2)) ≠ 0 := by
+      intro h
+      have hp := re_cpow_half_pos hzre
+      rw [h] at hp; simp at hp
+    exact div_pos (re_cpow_half_pos hzre) (Complex.normSq_pos.2 hnz)
+  · rw [hneg, Complex.cpow_neg, mul_pow, inv_pow, sq_cpow_half, sq_cpow_half]
+    have h2pi : (((Real.sqrt (2 * Real.pi) : ℝ) : ℂ))⁻¹ ^ 2 = (((2 * Real.pi : ℝ) : ℂ))⁻¹ := by
+      rw [inv_pow, ← Complex.ofReal_pow, Real.sq_sqrt (by positivity)]
+    push_cast at h2pi ⊢
+    rw [h2pi]
+    have hpi : ((Real.pi : ℂ)) ≠ 0 := by simp
+    field_simp
+
+/-- **The χ²_p character identity, in the quadratic-form-of-Gaussians form**: the law of
+`‖Z‖² = Σ_{i<p} Z_i²` for a standard Gaussian vector `Z` has characteristic function
+`(1 − 2iu)^{−p/2}` — exactly the `hchi` normalisation of the frozen ARCH debts. The `p`
+coordinates factor by Fubini (`integral_fintype_prod_eq_pow`), so the identity is the
+one-dimensional character raised to the `p`-th power, and `x^(p·y) = (x^y)^p` needs no
+branch side condition. -/
+private lemma charFun_map_sum_sq_gaussian (p : ℕ) (u : ℝ) :
+    charFun ((Measure.pi fun _ : Fin p => gaussianReal 0 1).map
+        (fun x : Fin p → ℝ => ∑ i, x i ^ 2)) u
+      = (1 - 2 * Complex.I * u) ^ (-(p : ℂ) / 2) := by
+  have hφ : Measurable fun x : Fin p → ℝ => ∑ i, x i ^ 2 := by fun_prop
+  rw [charFun_apply_real, integral_map hφ.aemeasurable]
+  · have hpt : ∀ x : Fin p → ℝ,
+        Complex.exp ((u : ℂ) * ((∑ i, x i ^ 2 : ℝ) : ℂ) * Complex.I)
+          = ∏ i, Complex.exp ((u : ℂ) * ((x i : ℂ)) ^ 2 * Complex.I) := by
+      intro x
+      rw [← Complex.exp_sum]
+      congr 1
+      push_cast
+      rw [Finset.mul_sum, Finset.sum_mul]
+    have hprod := integral_fintype_prod_eq_pow (ι := Fin p)
+      (fun y : ℝ => Complex.exp ((u : ℂ) * (y : ℂ) ^ 2 * Complex.I))
+      (μ := gaussianReal 0 1)
+    rw [integral_congr_ae (ae_of_all _ hpt)]
+    refine hprod.trans ?_
+    -- `rw` cannot see through the integral's instance path here, so close by `congrArg`
+    rw [Fintype.card_fin, show (-(p : ℂ) / 2) = (p : ℂ) * (-(1 : ℂ) / 2) by ring,
+      Complex.cpow_nat_mul]
+    exact congrArg (· ^ p) (integral_cexp_sq_gaussianReal u)
+  · exact (Complex.continuous_exp.comp (by fun_prop)).aestronglyMeasurable
+
+/-- **The frozen `hchi` pins the limit law**: a probability measure on `ℝ` whose
+characteristic function is `(1 − 2iu)^{−p/2}` *is* the law of `Σ_{i<p} Z_i²` for a standard
+Gaussian vector, by `Measure.ext_of_charFun`. So the debts' abstract `chiSq` argument
+carries no freedom, and their conclusions may be read as convergence to that concrete
+law. -/
+private lemma eq_map_sum_sq_gaussian_of_charFun {p : ℕ} (chiSq : Measure ℝ)
+    [IsProbabilityMeasure chiSq]
+    (hchi : ∀ u : ℝ, charFun chiSq u = (1 - 2 * Complex.I * u) ^ (-(p : ℂ) / 2)) :
+    chiSq = (Measure.pi fun _ : Fin p => gaussianReal 0 1).map
+      (fun x : Fin p → ℝ => ∑ i, x i ^ 2) := by
+  have hφ : Measurable fun x : Fin p → ℝ => ∑ i, x i ^ 2 := by fun_prop
+  haveI : IsProbabilityMeasure ((Measure.pi fun _ : Fin p => gaussianReal 0 1).map
+      (fun x : Fin p → ℝ => ∑ i, x i ^ 2)) := Measure.isProbabilityMeasure_map hφ.aemeasurable
+  exact Measure.ext_of_charFun (funext fun u => by
+    rw [hchi u, charFun_map_sum_sq_gaussian])
 
 /-- **FY eqs. (4.52)–(4.53) — DEBT**: the score/LM statistic (equivalently, for normal
 errors, Engle's `TR²`) has the same `χ²_p` null limit as the likelihood-ratio
-statistic. -/
+statistic.
+
+Unlike its two companions this statement is **consistent** — a least-squares minimum is
+always attained, so `hrss` is satisfiable — and it is the one honest debt of the file. The
+proof below discharges the limit-law bookkeeping (the goal is rewritten to convergence
+towards the *concrete* Gaussian quadratic form `Σ_{i<p} Z_i²` via
+`charFun_map_sum_sq_gaussian`), leaving one `sorry` on the reduced goal: Engle's LM limit
+itself. See the module docstring for what that residual still needs. -/
 theorem archTR2Stat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     {X ε : ℤ → Ω → ℝ}
     (h : IsARCH c0 (fun _ : Fin p => (0 : ℝ)) X ε μ) (hc0 : 0 < c0)
@@ -244,10 +559,28 @@ theorem archTR2Stat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
         archTR2Stat (T := T) (rss T ω) (tss T ω)) u)
       atTop (𝓝 (charFun chiSq u)) := by
+  -- Identify the abstract limit law: `hchi` says `chiSq` has the characteristic function of
+  -- `Σ_{i<p} Z_i²`, so the goal is convergence to that concrete Gaussian quadratic form.
+  rw [hchi u, ← charFun_map_sum_sq_gaussian p u]
+  -- REMAINING (the whole probabilistic content of FY eq. (4.53); one named residual):
+  -- Engle's LM limit for the auxiliary regression. Under `h`, `hc0` and `hgauss` the
+  -- squared observations `Y_t = X_t²` are iid `c₀·χ²₁` (`IsARCH.iid_of_b_eq_zero` plus
+  -- `hgauss`), with mean `c₀` and variance `2c₀² > 0`; `hrss`/`htss` make `T(1 − rss/tss)`
+  -- the auxiliary regression's `T·R²`, whose normal equations turn it into the quadratic
+  -- form `√T γ̂ᵀ Γ̂⁻¹ √T γ̂ / (tss/T)` in the lag-`1..p` sample autocovariances `γ̂` of `Y`.
+  -- `Γ̂ → Var(Y)·I_p` and `tss/T → Var(Y)` (LLN, second moments of `Y` — this is where
+  -- `hε4` enters), while `√T γ̂ ⇒ N(0, Var(Y)²·I_p)` (iid CLT), so the form converges in law
+  -- to `Σ_{i<p} Z_i²`. Missing bricks: the least-squares/`R²` algebra out of `hrss`, the
+  -- `p`-dimensional iid CLT for the autocovariance vector, and continuous mapping.
   sorry
 
 /-- **FY eq. (4.54) — DEBT**: the Wald statistic (through the Schur-complement block
-`I²²` of the information matrix) has the `χ²_p` null limit. -/
+`I²²` of the information matrix) has the `χ²_p` null limit.
+
+⚠ **VACUOUS as frozen, for the same reason as `archLRStat_chiSq_debt`**: `hMLE` asks for a
+global maximizer of `archLogLik` over `ℝ × ℝᵖ`, which `archLogLik_unbounded` refutes. The
+proof derives `False`; the consistency hypothesis `hIhat` on the information block is
+never used, and FY eq. (4.54) is not formalized. -/
 theorem archWaldStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     {X ε : ℤ → Ω → ℝ}
     (h : IsARCH c0 (fun _ : Fin p => (0 : ℝ)) X ε μ) (hc0 : 0 < c0)
@@ -274,6 +607,12 @@ theorem archWaldStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
         (T : ℝ) * ∑ i, ∑ j, bhat T ω i * Ihat T ω i j * bhat T ω j) u)
       atTop (𝓝 (charFun chiSq u)) := by
-  sorry
+  -- Contradictory hypotheses again: instantiate `hMLE` at the null direction `bb = 0`.
+  obtain ⟨ω₀⟩ := nonempty_of_isProbabilityMeasure μ
+  exact (false_of_bddAbove_archLogLik (p := p) hνT
+    (fun T => fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω₀)
+    (fun T => archLogLik (c0hat T ω₀) (bhat T ω₀)
+      (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω₀) (νseq T))
+    (fun T c => hMLE T ω₀ c (fun _ : Fin p => (0 : ℝ)))).elim
 
 end StatLean.TimeSeries
