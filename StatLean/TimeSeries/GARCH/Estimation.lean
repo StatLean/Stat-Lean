@@ -592,8 +592,12 @@ are cleanly separated.
 that vanishes in `L¹`. Summing against `c` gives
 `∫ |Z_T − V_T| ≤ Σ_i |c_i| · (the i-th `hlin` sequence) → 0`, and
 `‖E e^{iuZ} − E e^{iuW}‖ ≤ |u| E|Z − W|` (`Process/SampleACF.lean`'s
-`norm_charFun_map_sub_le`, ~25 lines, needs re-proving here or promoting out of that file)
-transports the limit. **This is bookkeeping only.**
+`norm_charFun_map_sub_le`, `private` there) transports the limit. **This step is now
+CLOSED**, as the reusable brick `tendsto_charFun_map_of_l1` just below, together with the
+`norm_charFun_map_sub_le` it needs. What remains of (S1) is the two-line integrability
+side condition, which is *derivable* rather than assumed: `hK` compact makes `est` — hence
+`θhat` — uniformly bounded, so `Z_T` is bounded and measurable, and `V_T` is a finite
+linear combination of `L²` variables.
 
 **(S2) The martingale CLT for `V_T` — `mds_clt_sequence`, three of four inputs free.**
 Instantiate `ForMathlib/Probability/MartingaleCLT/BrownCLT.lean`'s `mds_clt_sequence` at
@@ -636,6 +640,68 @@ different in the two cases:
 Note the asymmetry: **LAD's score CLT is essentially free here** (bounded MDS), while
 Whittle's is a genuine quadratic-form CLT. If only one of the two is to be pushed further,
 LAD is much the cheaper. -/
+
+/-! #### Residue (S1), CLOSED: `L¹`-Slutsky at the characteristic-function level -/
+
+private lemma charFun_map_eq_integral' {f : Ω → ℝ} (hf : AEMeasurable f μ) (u : ℝ) :
+    charFun (μ.map f) u = ∫ ω, Complex.exp (Complex.I * (u * f ω : ℝ)) ∂μ := by
+  rw [charFun_apply_real, integral_map hf (by fun_prop)]
+  simp only [Complex.ofReal_mul]
+  congr 1 with ω
+  ring_nf
+
+private lemma integrable_cexp_mul_I' [IsFiniteMeasure μ] {f : Ω → ℝ} (hf : Measurable f) :
+    Integrable (fun ω => Complex.exp (Complex.I * (f ω : ℝ))) μ := by
+  refine (integrable_const (1 : ℝ)).mono'
+    (Complex.measurable_exp.comp (by fun_prop)).aestronglyMeasurable ?_
+  filter_upwards with ω
+  simp [Complex.norm_exp]
+
+/-- **The `L¹` charFun comparison**: `‖E e^{iuZ} − E e^{iuW}‖ ≤ |u| E|Z − W|`. (The same
+brick as `Process/SampleACF.lean`'s `norm_charFun_map_sub_le`, which is `private` there.) -/
+private lemma norm_charFun_map_sub_le [IsProbabilityMeasure μ] {Z W : Ω → ℝ}
+    (hZ : Measurable Z) (hW : Measurable W)
+    (hint : Integrable (fun ω => |Z ω - W ω|) μ) (u : ℝ) :
+    ‖charFun (μ.map Z) u - charFun (μ.map W) u‖ ≤ |u| * ∫ ω, |Z ω - W ω| ∂μ := by
+  rw [charFun_map_eq_integral' hZ.aemeasurable u, charFun_map_eq_integral' hW.aemeasurable u,
+    ← integral_sub (integrable_cexp_mul_I' (hZ.const_mul u))
+      (integrable_cexp_mul_I' (hW.const_mul u))]
+  refine (norm_integral_le_integral_norm _).trans ?_
+  rw [show |u| * ∫ ω, |Z ω - W ω| ∂μ = ∫ ω, |u| * |Z ω - W ω| ∂μ from
+    (integral_const_mul _ _).symm]
+  refine integral_mono (((integrable_cexp_mul_I' (hZ.const_mul u)).sub
+    (integrable_cexp_mul_I' (hW.const_mul u))).norm) (hint.const_mul _) fun ω => ?_
+  have hfact : Complex.exp (Complex.I * ((u * Z ω : ℝ)))
+        - Complex.exp (Complex.I * ((u * W ω : ℝ)))
+      = Complex.exp (Complex.I * ((u * W ω : ℝ))) *
+        (Complex.exp (Complex.I * ((u * Z ω - u * W ω : ℝ))) - 1) := by
+    rw [mul_sub, mul_one, ← Complex.exp_add]
+    push_cast
+    ring_nf
+  rw [hfact, norm_mul,
+    show ‖Complex.exp (Complex.I * ((u * W ω : ℝ)))‖ = 1 from by simp [Complex.norm_exp],
+    one_mul]
+  refine le_trans (by simpa using
+      Real.norm_exp_I_mul_ofReal_sub_one_le (x := u * Z ω - u * W ω)) ?_
+  rw [show u * Z ω - u * W ω = u * (Z ω - W ω) from by ring, abs_mul]
+
+/-- **Residue (S1) of `whittle_clt_debt`/`lad_clt_debt`, discharged**: a sequence of laws
+whose `L¹` distance to a convergent sequence of laws vanishes has the same limiting
+characteristic function. This is the step that transports the martingale CLT for the
+influence sum `V_T` across the asymptotically linear representation `hlin`. -/
+private lemma tendsto_charFun_map_of_l1 [IsProbabilityMeasure μ] {u : ℝ}
+    {Z W : ℕ → Ω → ℝ} (hZ : ∀ T, Measurable (Z T)) (hW : ∀ T, Measurable (W T))
+    (hint : ∀ T, Integrable (fun ω => |Z T ω - W T ω|) μ)
+    (h0 : Tendsto (fun T => ∫ ω, |Z T ω - W T ω| ∂μ) atTop (𝓝 0))
+    {L : ℂ} (hlim : Tendsto (fun T => charFun (μ.map (W T)) u) atTop (𝓝 L)) :
+    Tendsto (fun T => charFun (μ.map (Z T)) u) atTop (𝓝 L) := by
+  have hd : Tendsto (fun T => charFun (μ.map (Z T)) u - charFun (μ.map (W T)) u)
+      atTop (𝓝 0) := by
+    rw [tendsto_zero_iff_norm_tendsto_zero]
+    refine squeeze_zero (fun T => norm_nonneg _)
+      (fun T => norm_charFun_map_sub_le (hZ T) (hW T) (hint T) u) ?_
+    simpa using h0.const_mul |u|
+  simpa using hd.add hlim
 
 /-- The **coordinate packing of a GARCH parameter** `(c₀, b, a)` into the vector the
 asymptotic statements are indexed by: slots `0, …, p−1` carry `b`, slots `p, …, p+q−1`
