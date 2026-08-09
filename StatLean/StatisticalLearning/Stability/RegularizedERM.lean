@@ -260,28 +260,29 @@ private theorem rlm_replaceOne_dist_le_aux {s : Sample Z n} {i : Fin n} {z' : Z}
     nlinarith [hmain, hx]
 
 /-- **RLM sensitivity** (SSBD Eqs. (13.7)–(13.11)): for a convex `ρ`-Lipschitz
-loss, replace-one RLM minimizers are `2ρ/(λn)`-close. -/
+loss, replace-one RLM minimizers are `2ρ/(λn)`-close.
+
+The hypothesis `0 ≤ ρ` was added at the verification gate (statement repair,
+2026-08-10): without it the statement is false on a trivial (subsingleton) `W`,
+where `hlip` degenerates to `0 ≤ ρ·0` and carries no sign information while the
+goal still asserts `0 ≤ 2ρ/(λn)` — witness `W := EuclideanSpace ℝ (Fin 0)`,
+`ℓ := 0`, `ρ := -1`, `lam := 1`, `n := 1`. The book's `ρ` (SSBD Def. 12.6) is a
+Lipschitz constant, hence implicitly nonnegative. -/
 theorem rlm_replaceOne_dist_le {s : Sample Z n} {i : Fin n} {z' : Z}
     {w w' : W}
     (hconv : ∀ z, ConvexOn ℝ Set.univ (fun w : W => ℓ w z))
     -- USER-INPUT: `ρ`-Lipschitz loss in `w`; SSBD Cor. 13.6 hypothesis
     (hlip : ∀ z (v v' : W), |ℓ v z - ℓ v' z| ≤ ρ * ‖v - v'‖)
+    -- USER-INPUT: `ρ ≥ 0`; SSBD Def. 12.6 (a Lipschitz constant — see
+    -- docstring for why this cannot be derived from `hlip` alone)
+    (hρ : 0 ≤ ρ)
     (hlam : 0 < lam)
     -- USER-INPUT: `w` is RLM on `s`, `w'` is RLM on `s^{(i)}`; SSBD §13.3
     (hw : IsRLMMin ℓ lam s w) (hw' : IsRLMMin ℓ lam (replaceOne s i z') w')
     -- USER-INPUT: at least one example; SSBD §13.2 (implicit)
     (hn : 1 ≤ n) :
-    ‖w' - w‖ ≤ 2 * ρ / (lam * n) := by
-  rcases subsingleton_or_nontrivial W with hW | hW
-  · -- FALSE AS FROZEN.  If `W` is the trivial space the hypotheses carry no
-    -- sign information about `ρ` (`hlip` reads `0 ≤ ρ * 0`), while the goal
-    -- reduces to `0 ≤ 2ρ/(λn)`.  Witness: `W := EuclideanSpace ℝ (Fin 0)`,
-    -- `Z := ℝ`, `ℓ := 0`, `ρ := -1`, `lam := 1`, `n := 1`.  The statement needs
-    -- the hypothesis `0 ≤ ρ` that every downstream statement in this file
-    -- already carries; with it the proof is `rlm_replaceOne_dist_le_aux`.
-    sorry
-  · exact rlm_replaceOne_dist_le_aux hconv hlip
-      (lipschitz_const_nonneg (s i) hlip) hlam hw hw' hn
+    ‖w' - w‖ ≤ 2 * ρ / (lam * n) :=
+  rlm_replaceOne_dist_le_aux hconv hlip hρ hlam hw hw' hn
 
 /-- **SSBD Corollary 13.6, pointwise form**: the replace-one loss increment of
 RLM is at most `2ρ²/(λn)` at every sample, index, and replacement point. -/
