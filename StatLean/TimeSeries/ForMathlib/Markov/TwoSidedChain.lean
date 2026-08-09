@@ -65,6 +65,15 @@ noncomputable def reverseKernel (κ : ProbabilityTheory.Kernel S S) (π : Measur
     ProbabilityTheory.Kernel S S :=
   ((pairLaw κ π).map Prod.swap).condKernel
 
+-- The `Fin.snoc` glue that appends the new coordinate to a window is measurable.
+private lemma measurable_finSnoc (S : Type*) [MeasurableSpace S] (k : ℕ) :
+    Measurable fun wx : ((Fin (k + 1) → S) × S) =>
+      (Fin.snoc wx.1 wx.2 : Fin (k + 1 + 1) → S) := by
+  rw [measurable_pi_iff]
+  refine Fin.lastCases ?_ ?_
+  · simpa using measurable_snd
+  · exact fun i => by simpa using (measurable_pi_apply i).comp measurable_fst
+
 /-- The **iterated-`compProd` chain window law** on `Fin (k+1) → S`: the law of
 `(X₀, …, X_k)` for the chain started from `π`. Formalizes the finite-dimensional
 distributions of the stationary chain; `k = 0` is the marginal `π` itself. -/
@@ -82,7 +91,13 @@ theorem isProbabilityMeasure_chainWindowLaw
     (κ : ProbabilityTheory.Kernel S S) [ProbabilityTheory.IsMarkovKernel κ]
     (π : Measure S) [IsProbabilityMeasure π] (k : ℕ) :
     IsProbabilityMeasure (chainWindowLaw κ π k) := by
-  sorry
+  induction k with
+  | zero =>
+    exact Measure.isProbabilityMeasure_map
+      (measurable_pi_lambda _ fun _ => measurable_id).aemeasurable
+  | succ k ih =>
+    haveI := ih
+    exact Measure.isProbabilityMeasure_map (measurable_finSnoc S k).aemeasurable
 
 /-- **Reversal disintegration**: under invariance, the swapped pair law disintegrates
 through `reverseKernel` with first marginal `π` again.
@@ -92,7 +107,16 @@ theorem pairLaw_swap_eq_compProd_reverseKernel
     (π : Measure S) [IsProbabilityMeasure π]
     (hinv : ProbabilityTheory.Kernel.Invariant κ π) :
     (pairLaw κ π).map Prod.swap = π ⊗ₘ reverseKernel κ π := by
-  sorry
+  have hfst : ((pairLaw κ π).map Prod.swap).fst = π := by
+    rw [Measure.fst_map_swap]
+    show (π ⊗ₘ κ).snd = π
+    rw [Measure.snd_compProd]
+    exact hinv
+  conv_lhs =>
+    rw [← Measure.disintegrate ((pairLaw κ π).map Prod.swap)
+      ((pairLaw κ π).map Prod.swap).condKernel]
+  rw [hfst]
+  rfl
 
 /-- **Two-sided stationary realization** (natural extension, no Kolmogorov-over-`ℤ`).
 Given an invariant probability `π` of a Markov kernel `κ` on a standard Borel space,
