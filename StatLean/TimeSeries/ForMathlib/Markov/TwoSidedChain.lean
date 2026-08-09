@@ -61,7 +61,7 @@ coordinate of the swapped stationary pair law. On a standard Borel space this ex
 `P(X₀ ∈ · | X₁ = x)` of the stationary chain (edge behavior: for non-invariant `π` it is
 still a Markov kernel, just not a chain reversal). -/
 noncomputable def reverseKernel (κ : ProbabilityTheory.Kernel S S) (π : Measure S)
-    [IsFiniteMeasure π] [ProbabilityTheory.IsMarkovKernel κ] :
+    [IsProbabilityMeasure π] [ProbabilityTheory.IsMarkovKernel κ] :
     ProbabilityTheory.Kernel S S :=
   ((pairLaw κ π).map Prod.swap).condKernel
 
