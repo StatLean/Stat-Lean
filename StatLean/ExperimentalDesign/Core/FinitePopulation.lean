@@ -62,63 +62,126 @@ sampling `N − 1` normalisation.  Edge behaviour: `0` when `N ≤ 1`. -/
 noncomputable def populationVariance (y : U → ℝ) : ℝ :=
   ((Fintype.card U : ℝ) - 1)⁻¹ * ∑ i, (y i - populationMean y) ^ 2
 
+/-- The population size is a nonzero real when the population is nonempty. -/
+private theorem card_ne_zero_real (U : Type*) [Fintype U] [Nonempty U] :
+    (Fintype.card U : ℝ) ≠ 0 := by
+  exact_mod_cast Fintype.card_ne_zero (α := U)
+
 /-- The total is `N` times the mean (degenerately `0 = 0` for the empty population). -/
 theorem populationTotal_eq_card_mul_mean (y : U → ℝ) :
     populationTotal y = (Fintype.card U : ℝ) * populationMean y := by
-  sorry
+  rcases isEmpty_or_nonempty U with hU | hU
+  · simp [populationTotal, populationMean, Fintype.card_eq_zero]
+  · rw [populationMean, populationTotal, ← mul_assoc,
+      mul_inv_cancel₀ (card_ne_zero_real U), one_mul]
 
 /-- Centered population values sum to zero. -/
 theorem sum_sub_populationMean [Nonempty U] (y : U → ℝ) :
     ∑ i, (y i - populationMean y) = 0 := by
-  sorry
+  rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
+    populationMean, ← mul_assoc, mul_inv_cancel₀ (card_ne_zero_real U), one_mul, sub_self]
 
 /-- The population mean of a constant is that constant. -/
 theorem populationMean_const [Nonempty U] (c : ℝ) :
     populationMean (fun _ : U => c) = c := by
-  sorry
+  rw [populationMean, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← mul_assoc,
+    inv_mul_cancel₀ (card_ne_zero_real U), one_mul]
 
 /-- Additivity of the population mean. -/
 theorem populationMean_add (y z : U → ℝ) :
     populationMean (fun i => y i + z i) = populationMean y + populationMean z := by
-  sorry
+  rw [populationMean, populationMean, populationMean, Finset.sum_add_distrib, mul_add]
 
 /-- Homogeneity of the population mean. -/
 theorem populationMean_smul (c : ℝ) (y : U → ℝ) :
     populationMean (fun i => c * y i) = c * populationMean y := by
-  sorry
+  rw [populationMean, populationMean, ← Finset.mul_sum]
+  ring
 
 /-- Computational form of the centered sum of squares:
 `∑ (yᵢ − ȳ)² = ∑ yᵢ² − N ȳ²`. -/
 theorem sum_sq_sub_populationMean [Nonempty U] (y : U → ℝ) :
     ∑ i, (y i - populationMean y) ^ 2
       = ∑ i, y i ^ 2 - (Fintype.card U : ℝ) * populationMean y ^ 2 := by
-  sorry
+  have hexp : ∀ i : U, (y i - populationMean y) ^ 2
+      = y i ^ 2 + ((-2 * populationMean y) * y i + populationMean y ^ 2) := by
+    intro i; ring
+  have hsum : ∑ i, y i = (Fintype.card U : ℝ) * populationMean y :=
+    populationTotal_eq_card_mul_mean y
+  rw [Finset.sum_congr rfl fun i _ => hexp i, Finset.sum_add_distrib, Finset.sum_add_distrib,
+    ← Finset.mul_sum, hsum, Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+  ring
 
 /-- The finite-population variance is nonnegative (including the degenerate `N ≤ 1`
 cases, where it is `0` by convention). -/
 theorem populationVariance_nonneg (y : U → ℝ) : 0 ≤ populationVariance y := by
-  sorry
+  rcases isEmpty_or_nonempty U with hU | hU
+  · simp [populationVariance]
+  · refine mul_nonneg (inv_nonneg.mpr ?_) (Finset.sum_nonneg fun i _ => sq_nonneg _)
+    have h1 : (1 : ℝ) ≤ (Fintype.card U : ℝ) := by
+      exact_mod_cast Fintype.card_pos (α := U)
+    linarith
 
 /-- The finite-population variance of a constant vanishes. -/
 theorem populationVariance_const (c : ℝ) :
     populationVariance (fun _ : U => c) = 0 := by
-  sorry
+  rcases isEmpty_or_nonempty U with hU | hU
+  · simp [populationVariance]
+  · have hterm : ∀ i ∈ (Finset.univ : Finset U),
+        (c - populationMean (fun _ : U => c)) ^ 2 = (0 : ℝ) := by
+      intro i _; rw [populationMean_const]; ring
+    rw [populationVariance, Finset.sum_congr rfl hterm, Finset.sum_const_zero, mul_zero]
 
 /-- For a population with at least two units, zero variance characterises constancy. -/
 theorem populationVariance_eq_zero_iff
     -- LEAN-ONLY: rules out the `N ≤ 1` convention cases; no scope change
     (h2 : 2 ≤ Fintype.card U) (y : U → ℝ) :
     populationVariance y = 0 ↔ ∀ i j, y i = y j := by
-  sorry
+  have hne : Nonempty U := Fintype.card_pos_iff.mp (by omega)
+  have hNpos : (0 : ℝ) < (Fintype.card U : ℝ) - 1 := by
+    have : (2 : ℝ) ≤ (Fintype.card U : ℝ) := by exact_mod_cast h2
+    linarith
+  constructor
+  · intro h i j
+    rw [populationVariance] at h
+    have hS : ∑ k, (y k - populationMean y) ^ 2 = 0 :=
+      (mul_eq_zero.mp h).resolve_left (inv_ne_zero (ne_of_gt hNpos))
+    have hzero := (Finset.sum_eq_zero_iff_of_nonneg fun k _ => sq_nonneg
+      (y k - populationMean y)).mp hS
+    have hi : y i = populationMean y :=
+      sub_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp (hzero i (Finset.mem_univ i)))
+    have hj : y j = populationMean y :=
+      sub_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp (hzero j (Finset.mem_univ j)))
+    rw [hi, hj]
+  · intro h
+    have hmean : ∀ i : U, populationMean y = y i := by
+      intro i
+      rw [populationMean, Finset.sum_congr rfl fun j (_ : j ∈ Finset.univ) => h j i,
+        Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← mul_assoc,
+        inv_mul_cancel₀ (card_ne_zero_real U), one_mul]
+    have hterm : ∀ i ∈ (Finset.univ : Finset U), (y i - populationMean y) ^ 2 = (0 : ℝ) := by
+      intro i _; rw [hmean i]; ring
+    rw [populationVariance, Finset.sum_congr rfl hterm, Finset.sum_const_zero, mul_zero]
 
 /-- Quadratic scaling of the finite-population variance. -/
 theorem populationVariance_smul (c : ℝ) (y : U → ℝ) :
     populationVariance (fun i => c * y i) = c ^ 2 * populationVariance y := by
-  sorry
+  simp only [populationVariance, populationMean_smul]
+  have hterm : ∀ i ∈ (Finset.univ : Finset U), (c * y i - c * populationMean y) ^ 2
+      = c ^ 2 * (y i - populationMean y) ^ 2 := fun i _ => by ring
+  rw [Finset.sum_congr rfl hterm, ← Finset.mul_sum]
+  ring
 
 /-- Translation invariance of the finite-population variance. -/
 theorem populationVariance_add_const (y : U → ℝ) (c : ℝ) :
     populationVariance (fun i => y i + c) = populationVariance y := by
-  sorry
+  rcases isEmpty_or_nonempty U with hU | hU
+  · simp [populationVariance]
+  · have hm : populationMean (fun i => y i + c) = populationMean y + c := by
+      rw [populationMean_add, populationMean_const]
+    have hs : ∑ i, (y i + c - (populationMean y + c)) ^ 2
+        = ∑ i, (y i - populationMean y) ^ 2 :=
+      Finset.sum_congr rfl fun i _ => by ring
+    simp only [populationVariance, hm, hs]
 
 end StatLean.ExperimentalDesign

@@ -50,12 +50,15 @@ abbrev Stratum (st : U → B) (b : B) := {i : U // st i = b}
 /-- Stratum sizes partition the population size. -/
 theorem sum_card_stratum (st : U → B) :
     ∑ b, Fintype.card (Stratum st b) = Fintype.card U := by
-  sorry
+  simp only [Stratum, Fintype.card_subtype]
+  rw [← Finset.card_univ (α := U)]
+  exact (Finset.card_eq_sum_card_fiberwise fun i _ => Finset.mem_univ (st i)).symm
 
 /-- The population total decomposes as the sum of stratum totals. -/
 theorem populationTotal_stratified (st : U → B) (y : U → ℝ) :
     populationTotal y = ∑ b, populationTotal (fun i : Stratum st b => y i) := by
-  sorry
+  rw [populationTotal]
+  exact (Fintype.sum_fiberwise st y).symm
 
 /-- The population mean is the size-weighted average of the stratum means:
 `ȳ = ∑_b (N_b / N) ȳ_b`.  Empty strata contribute `0` through their vanishing
@@ -66,6 +69,14 @@ theorem populationMean_stratified
     populationMean y
       = ∑ b, (Fintype.card (Stratum st b) : ℝ) / (Fintype.card U : ℝ)
           * populationMean (fun i : Stratum st b => y i) := by
-  sorry
+  have h : ∀ b ∈ (Finset.univ : Finset B),
+      (Fintype.card (Stratum st b) : ℝ) / (Fintype.card U : ℝ)
+          * populationMean (fun i : Stratum st b => y i)
+        = (Fintype.card U : ℝ)⁻¹ * populationTotal (fun i : Stratum st b => y i) := by
+    intro b _
+    rw [populationTotal_eq_card_mul_mean]
+    ring
+  rw [Finset.sum_congr rfl h, ← Finset.mul_sum, ← populationTotal_stratified,
+    populationTotal, populationMean]
 
 end StatLean.ExperimentalDesign
