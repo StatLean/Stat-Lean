@@ -57,7 +57,7 @@ theorem horvitzThompson_eq_sum_indicator (D : SamplingDesign U) (y : U → ℝ)
     (s : Finset U) :
     horvitzThompson D y s
       = ∑ i, inclusionIndicator i s * (y i / inclusionProb D i) := by
-  sorry
+  exact sum_sample_eq_sum_indicator (fun i => y i / inclusionProb D i) s
 
 /-- **Design unbiasedness of Horvitz–Thompson** (`HT52`, Theorem 1): if every unit
 has positive inclusion probability, the estimator's design expectation is the
@@ -66,7 +66,15 @@ theorem horvitzThompson_unbiased (D : SamplingDesign U) (y : U → ℝ)
     -- USER-INPUT: strictly positive inclusion probabilities (measurable design); HT52
     (hpos : ∀ i, 0 < inclusionProb D i) :
     pmfExpect D (horvitzThompson D y) = populationTotal y := by
-  sorry
+  have h : horvitzThompson D y
+      = fun s => ∑ i, (y i / inclusionProb D i) * inclusionIndicator i s := by
+    funext s
+    rw [horvitzThompson_eq_sum_indicator]
+    exact Finset.sum_congr rfl fun i _ => mul_comm _ _
+  rw [h, pmfExpect_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [pmfExpect_smul]
+  exact div_mul_cancel₀ _ (hpos i).ne'
 
 /-- **Exact design variance of Horvitz–Thompson** (`HT52`, §5):
 `Var(Ŷ_HT) = ∑ᵢ ∑ⱼ ((π_{ij} − πᵢ πⱼ)/(πᵢ πⱼ)) yᵢ yⱼ`, diagonal `π_{ii} = πᵢ`. -/
@@ -77,6 +85,16 @@ theorem horvitzThompson_variance (D : SamplingDesign U) (y : U → ℝ)
       = ∑ i, ∑ j,
           (pairInclusionProb D i j - inclusionProb D i * inclusionProb D j)
             / (inclusionProb D i * inclusionProb D j) * (y i * y j) := by
-  sorry
+  have h : horvitzThompson D y
+      = fun s => ∑ i, (y i / inclusionProb D i) * inclusionIndicator i s := by
+    funext s
+    rw [horvitzThompson_eq_sum_indicator]
+    exact Finset.sum_congr rfl fun i _ => mul_comm _ _
+  rw [h, pmfVar_sum]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  rw [pmfCov_smul_smul, cov_inclusionIndicator]
+  have hi := (hpos i).ne'
+  have hj := (hpos j).ne'
+  field_simp
 
 end StatLean.ExperimentalDesign
