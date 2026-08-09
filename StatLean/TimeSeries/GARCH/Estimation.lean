@@ -3,6 +3,8 @@ import StatLean.TimeSeries.Spectral.Periodogram
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.LinearAlgebra.Matrix.PosDef
+import Mathlib.Probability.Independence.InfinitePi
+import Mathlib.Data.Real.StarOrdered
 
 /-!
 # GARCH estimation: QMLE, general-density MLE, Whittle, LAD (FY §4.2.3)
@@ -40,7 +42,7 @@ ARCH models* (Econometric Theory 17 (2001), 608–631); the LAD estimator is Pen
 -/
 
 open MeasureTheory ProbabilityTheory Filter
-open scoped ProbabilityTheory Topology Real
+open scoped ProbabilityTheory Topology Real ENNReal
 
 namespace StatLean.TimeSeries
 
@@ -311,21 +313,455 @@ theorem garchTruncVol_presample_stable {p q : ℕ} {c0 : ℝ} {b : Fin p → ℝ
           exact mul_le_mul_of_nonneg_left
             (pow_le_pow_of_le_one hρ0.le hρ1.le (by omega)) (abs_nonneg _)
 
+/-! ### The frozen `whittle_clt_debt` / `lad_clt_debt` statements are FALSE — a witness
+
+Both statements were frozen at a granularity that leaves **three** of their objects
+completely unlinked to the model, which is one more than the `tarLS_clt_debt` defect list
+of wave `ts/s12`:
+
+1. **`W` is a free parameter.** The docstrings call it "the limiting covariance matrix of
+   the Whittle (LAD) estimator", but formally it ranges over *all* positive-definite
+   matrices with no tie to `(c₀, b, a, X, μ)`. `W` and `2W` are both admissible and force
+   two different Gaussian limits for one and the same sequence.
+2. **`θhat` has no defining property.** It is any measurable array of parameter vectors.
+   Neither `garchWhittle` (eq. (4.41)) nor `garchLAD` (eq. (4.42)) — both *defined in this
+   very file* — appears anywhere in either statement, so nothing says `θhat` is the
+   estimator the theorem is about.
+3. **`θ0` is a free parameter too.** It is an arbitrary vector, not the true parameter of
+   the `IsGARCH` instance in the hypotheses. Even a perfect estimator would not be
+   centred at it.
+
+Any one of the three is fatal, and the cheapest satisfiable instance exhibits all three at
+once: take the **degenerate GARCH** `p = q = 0`, `c₀ = 0`, so `σ_t ≡ 0` and `X ≡ 0`, and
+take `θhat ≡ θ0 ≡ 0`. The scaled statistic is then identically `0`, its characteristic
+function is the constant `1`, while the frozen limit at `W = 1`, `c = 1`, `u = 1` is
+`exp(−1/2)`.
+
+The instance is built from scratch on `(ℤ → ℝ, ⊗ Rademacher)`, so the witness is
+**axiom-clean** and independent of `exists_stationary_garch`. The **Rademacher** noise
+(rather than the Gaussian of `Threshold/Estimation.lean`) is forced by `lad_clt_debt`'s
+median hypothesis `hmed`: it asks the median of `ε₀²` to be `1`, which for a mean-zero
+unit-variance law means `ε₀² = 1` a.s. up to the two-sided tail balance — the two-point
+law is the simple solution, whereas a standard Gaussian has `P(ε₀² ≤ 1) ≈ 0.683 ≠ 0.317`.
+`X ≡ 0` makes strict stationarity and `L⁴` free, and makes `σ(X_s : s < t)` the trivial
+σ-algebra, so `indep_past` is `indep_bot_right`; no shift-invariance of the noise law is
+needed anywhere. -/
+
+/-- The **Rademacher law** `(δ₋₁ + δ₁)/2`: mean `0`, variance `1`, and `x² = 1` a.s., the
+last being what `lad_clt_debt`'s median hypothesis needs. -/
+private noncomputable def radLaw : Measure ℝ :=
+  (2 : ℝ≥0∞)⁻¹ • (Measure.dirac (-1) + Measure.dirac 1)
+
+private lemma radLaw_apply (s : Set ℝ) :
+    radLaw s = (2 : ℝ≥0∞)⁻¹ * (s.indicator 1 (-1) + s.indicator 1 1) := by
+  simp [radLaw, Measure.smul_apply, Measure.add_apply, Measure.dirac_apply, mul_add]
+
+private lemma radLaw_eq_one {s : Set ℝ} (h1 : (-1 : ℝ) ∈ s) (h2 : (1 : ℝ) ∈ s) :
+    radLaw s = 1 := by
+  rw [radLaw_apply, Set.indicator_of_mem h1, Set.indicator_of_mem h2]
+  simp only [Pi.one_apply]
+  rw [show (1 : ℝ≥0∞) + 1 = 2 by norm_num]
+  exact ENNReal.inv_mul_cancel (by norm_num) (by norm_num)
+
+private lemma radLaw_eq_zero {s : Set ℝ} (h1 : (-1 : ℝ) ∉ s) (h2 : (1 : ℝ) ∉ s) :
+    radLaw s = 0 := by
+  rw [radLaw_apply, Set.indicator_of_notMem h1, Set.indicator_of_notMem h2]
+  simp
+
+private instance : IsProbabilityMeasure radLaw :=
+  ⟨radLaw_eq_one (Set.mem_univ _) (Set.mem_univ _)⟩
+
+private lemma radLaw_ae {p : ℝ → Prop} (h1 : p (-1)) (h2 : p 1) : ∀ᵐ x ∂radLaw, p x := by
+  rw [Filter.eventually_iff, mem_ae_iff]
+  exact radLaw_eq_zero (by simpa using h1) (by simpa using h2)
+
+private lemma integral_radLaw (f : ℝ → ℝ) :
+    ∫ x, f x ∂radLaw = (f (-1) + f 1) / 2 := by
+  have hi1 : Integrable f (Measure.dirac (-1 : ℝ)) := integrable_dirac (by finiteness)
+  have hi2 : Integrable f (Measure.dirac (1 : ℝ)) := integrable_dirac (by finiteness)
+  rw [radLaw, integral_smul_measure, integral_add_measure hi1 hi2, integral_dirac,
+    integral_dirac]
+  rw [show ((2 : ℝ≥0∞)⁻¹).toReal = 1 / 2 by
+    rw [ENNReal.toReal_inv]; norm_num]
+  simp only [smul_eq_mul]
+  ring
+
+/-! #### The i.i.d. Rademacher noise on `ℤ` -/
+
+private noncomputable def radMeasure : Measure (ℤ → ℝ) :=
+  Measure.infinitePi fun _ : ℤ => radLaw
+
+private instance : IsProbabilityMeasure radMeasure := by
+  unfold radMeasure; infer_instance
+
+private def radCoord (t : ℤ) (ω : ℤ → ℝ) : ℝ := ω t
+
+private lemma radCoord_measurable (t : ℤ) : Measurable (radCoord t) := measurable_pi_apply t
+
+private lemma radMeasure_map_coord (t : ℤ) : radMeasure.map (radCoord t) = radLaw :=
+  Measure.infinitePi_map_eval _ t
+
+private lemma radCoord_identDistrib (t : ℤ) :
+    IdentDistrib (radCoord t) (id : ℝ → ℝ) radMeasure radLaw :=
+  ⟨(radCoord_measurable t).aemeasurable, aemeasurable_id, by
+    rw [Measure.map_id, radMeasure_map_coord t]⟩
+
+private lemma memLp_id_radLaw : MemLp (id : ℝ → ℝ) 2 radLaw := by
+  refine MemLp.of_bound aemeasurable_id.aestronglyMeasurable 1 ?_
+  exact radLaw_ae (by norm_num) (by norm_num)
+
+private lemma rad_isIIDNoise : IsIIDNoise radCoord 1 radMeasure := by
+  refine ⟨radCoord_measurable, ?_, ?_, ?_, ?_, ?_⟩
+  · exact iIndepFun_infinitePi (X := fun _ : ℤ => (id : ℝ → ℝ)) (fun _ => measurable_id)
+  · exact fun s t => (radCoord_identDistrib s).trans (radCoord_identDistrib t).symm
+  · exact (radCoord_identDistrib 0).memLp_iff.2 memLp_id_radLaw
+  · rw [(radCoord_identDistrib 0).integral_eq]
+    have h := integral_radLaw (fun x : ℝ => x)
+    simpa using h
+  · rw [(radCoord_identDistrib 0).variance_eq, variance_eq_sub memLp_id_radLaw]
+    have h1 : (∫ x, ((id : ℝ → ℝ) ^ 2) x ∂radLaw) = 1 := by
+      have h := integral_radLaw (fun x : ℝ => x ^ 2)
+      simpa using h
+    have h2 : (∫ x, (id : ℝ → ℝ) x ∂radLaw) = 0 := by
+      have h := integral_radLaw (fun x : ℝ => x)
+      simpa using h
+    rw [h1, h2]
+    norm_num
+
+/-! #### The degenerate GARCH instance -/
+
+private def zeroProc : ℤ → (ℤ → ℝ) → ℝ := fun _ _ => 0
+
+private lemma sigmaLT_zeroProc (t : ℤ) : sigmaLT zeroProc t = ⊥ := by
+  refine le_antisymm (iSup₂_le fun s _ => ?_) bot_le
+  exact le_of_eq (MeasurableSpace.comap_const (0 : ℝ))
+
+private lemma rad_isGARCH :
+    IsGARCH (0 : ℝ) (fun _ : Fin 0 => (0 : ℝ)) (fun _ : Fin 0 => (0 : ℝ))
+      zeroProc zeroProc radCoord radMeasure := by
+  refine ⟨le_rfl, fun i => i.elim0, fun j => j.elim0, fun _ => measurable_const,
+    fun _ => measurable_const, fun _ => Filter.Eventually.of_forall fun _ => le_rfl,
+    fun _ => measurable_const, rad_isIIDNoise, fun t => ?_, fun t => ?_, fun t => ?_⟩
+  · rw [sigmaLT_zeroProc]
+    exact ProbabilityTheory.indep_bot_right _
+  · filter_upwards with ω
+    simp [zeroProc]
+  · filter_upwards with ω
+    simp [zeroProc]
+
+private lemma zeroProc_strictlyStationary : IsStrictlyStationary zeroProc radMeasure :=
+  fun _ _ _ => rfl
+
+private lemma zeroProc_memLp (r : ℝ≥0∞) (t : ℤ) : MemLp (zeroProc t) r radMeasure :=
+  memLp_const 0
+
+private lemma rad_hmed :
+    radMeasure {ω | radCoord 0 ω ^ 2 ≤ 1} = radMeasure {ω | 1 ≤ radCoord 0 ω ^ 2} := by
+  have hset1 : MeasurableSet {x : ℝ | x ^ 2 ≤ 1} :=
+    measurableSet_le (by fun_prop) measurable_const
+  have hset2 : MeasurableSet {x : ℝ | 1 ≤ x ^ 2} :=
+    measurableSet_le measurable_const (by fun_prop)
+  have e1 : radMeasure {ω | radCoord 0 ω ^ 2 ≤ 1} = radLaw {x : ℝ | x ^ 2 ≤ 1} := by
+    rw [← radMeasure_map_coord 0, Measure.map_apply (radCoord_measurable 0) hset1]
+    rfl
+  have e2 : radMeasure {ω | 1 ≤ radCoord 0 ω ^ 2} = radLaw {x : ℝ | 1 ≤ x ^ 2} := by
+    rw [← radMeasure_map_coord 0, Measure.map_apply (radCoord_measurable 0) hset2]
+    rfl
+  rw [e1, e2, radLaw_eq_one (by norm_num) (by norm_num),
+    radLaw_eq_one (by norm_num) (by norm_num)]
+
+/-! #### The refutations -/
+
+/-- The common tail of both refutations: on the degenerate instance the scaled statistic
+is identically `0`, whose characteristic function is the constant `1`, while the frozen
+limit at `W = 1`, `c = 1`, `u = 1` is `exp(−1/2)`. -/
+private lemma dirac_charFun_ne_gaussian
+    (key : Tendsto (fun _ : ℕ => charFun (radMeasure.map fun _ : ℤ → ℝ => (0 : ℝ)) (1 : ℝ))
+      atTop (𝓝 (charFun (gaussianReal 0 (Real.toNNReal (1 : ℝ))) 1))) :
+    False := by
+  have hmapconst : radMeasure.map (fun _ : ℤ → ℝ => (0 : ℝ)) = Measure.dirac 0 := by
+    rw [Measure.map_const]
+    simp
+  rw [hmapconst] at key
+  have hone : charFun (Measure.dirac (0 : ℝ)) (1 : ℝ) = 1 := by
+    rw [charFun_dirac]; simp
+  simp only [hone] at key
+  have hlim : charFun (gaussianReal 0 (Real.toNNReal 1)) (1 : ℝ) = 1 :=
+    (tendsto_nhds_unique tendsto_const_nhds key).symm
+  rw [charFun_gaussianReal] at hlim
+  norm_num at hlim
+  rw [show ((-(1 / 2) : ℂ)) = (((-(1 / 2) : ℝ)) : ℂ) by push_cast; ring,
+    ← Complex.ofReal_exp] at hlim
+  have hR : Real.exp (-(1 / 2)) = 1 := by exact_mod_cast hlim
+  have hlt : Real.exp (-(1 / 2)) < 1 := Real.exp_lt_one_iff.mpr (by norm_num)
+  linarith
+
+/-- **The frozen `whittle_clt_debt` statement is FALSE.** -/
+private theorem whittle_clt_debt_false
+    (H : ∀ {Ω : Type} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ] {c0 : ℝ}
+      {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ} {X σvol ε : ℤ → Ω → ℝ},
+      IsGARCH c0 b a X σvol ε μ → IsStrictlyStationary X μ → (∀ t, MemLp (X t) 4 μ) →
+      ∀ (W : Matrix (Fin (p + q + 1)) (Fin (p + q + 1)) ℝ), Matrix.PosDef W →
+      ∀ (θhat : (T : ℕ) → Ω → Fin (p + q + 1) → ℝ), (∀ T, Measurable (θhat T)) →
+      ∀ (θ0 c : Fin (p + q + 1) → ℝ) (u : ℝ),
+      Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
+          Real.sqrt T * ∑ i, c i * (θhat T ω i - θ0 i)) u)
+        atTop
+        (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
+          (∑ i, ∑ j, c i * c j * W i j))) u))) :
+    False := by
+  have key := H rad_isGARCH zeroProc_strictlyStationary (zeroProc_memLp 4)
+    (1 : Matrix (Fin 1) (Fin 1) ℝ) Matrix.PosDef.one (fun _ _ _ => 0)
+    (fun _ => measurable_const) (fun _ => 0) (fun _ => 1) 1
+  simp only [sub_self, mul_zero, Finset.sum_const_zero] at key
+  rw [show (∑ i : Fin 1, ∑ j : Fin 1,
+      (1 : ℝ) * 1 * (1 : Matrix (Fin 1) (Fin 1) ℝ) i j) = 1 from by simp] at key
+  exact dirac_charFun_ne_gaussian key
+
+/-- **The frozen `lad_clt_debt` statement is FALSE.** The median hypothesis is satisfied
+outright by the Rademacher noise (`ε₀² = 1` a.s.). -/
+private theorem lad_clt_debt_false
+    (H : ∀ {Ω : Type} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ] {c0 : ℝ}
+      {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ} {X σvol ε : ℤ → Ω → ℝ},
+      IsGARCH c0 b a X σvol ε μ → IsStrictlyStationary X μ →
+      μ {ω | ε 0 ω ^ 2 ≤ 1} = μ {ω | 1 ≤ ε 0 ω ^ 2} →
+      ∀ (W : Matrix (Fin (p + q + 1)) (Fin (p + q + 1)) ℝ), Matrix.PosDef W →
+      ∀ (θhat : (T : ℕ) → Ω → Fin (p + q + 1) → ℝ), (∀ T, Measurable (θhat T)) →
+      ∀ (θ0 c : Fin (p + q + 1) → ℝ) (u : ℝ),
+      Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
+          Real.sqrt T * ∑ i, c i * (θhat T ω i - θ0 i)) u)
+        atTop
+        (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
+          (∑ i, ∑ j, c i * c j * W i j))) u))) :
+    False := by
+  have key := H rad_isGARCH zeroProc_strictlyStationary rad_hmed
+    (1 : Matrix (Fin 1) (Fin 1) ℝ) Matrix.PosDef.one (fun _ _ _ => 0)
+    (fun _ => measurable_const) (fun _ => 0) (fun _ => 1) 1
+  simp only [sub_self, mul_zero, Finset.sum_const_zero] at key
+  rw [show (∑ i : Fin 1, ∑ j : Fin 1,
+      (1 : ℝ) * 1 * (1 : Matrix (Fin 1) (Fin 1) ℝ) i j) = 1 from by simp] at key
+  exact dirac_charFun_ne_gaussian key
+
+/-! ### The repaired asymptotic statements
+
+**Statement strengthening (wave `ts/s13-whittle-lad`, 2026-08-09).** Both frozen forms are
+FALSE — see `whittle_clt_debt_false` / `lad_clt_debt_false` above, kept verbatim against
+the *frozen* shapes as the permanent record. Four repairs are applied to each, in the
+`tarLS_clt_debt` house style; every added or changed hypothesis is tagged `USER-INPUT`.
+
+1. **`θ₀` is the true parameter.** `hθ0` pins it to `garchParamVec c₀ b a`, the coordinate
+   packing of the `IsGARCH` instance's own `(c₀, b, a)`. Without this even a perfect
+   estimator is not centred at `θ₀`.
+2. **`θhat` is a genuine minimizer of the criterion the theorem is named after.** The
+   frozen statements never mentioned `garchWhittle` (4.41) or `garchLAD` (4.42). The
+   repair introduces the unpacked estimator `est` (with `hpack` tying `θhat` to it, as in
+   `hannan_mle_clt`'s `(Fin p → ℝ) × (Fin q → ℝ)`-valued `θ`), a compact search region `K`
+   with the truth in its interior, and exact minimization over `K` at every sample.
+3. **`W` is pinned to the process** — the defect that killed the frozen form outright
+   (`W` and `2W` both admissible). Unlike `tarLS_clt_debt`, whose `W_i` is a plain
+   conditional second-moment matrix (`tarRegimeDesignCov`), the Whittle and LAD limiting
+   covariances are *sandwiches* that the repo cannot yet write down: Giraitis–Robinson's
+   is `A⁻¹BA⁻¹` with `A` an integral of `∂_θ log g(λ; θ)` against Lebesgue measure on
+   `[−π, π]` and `B` carrying the **fourth-cumulant (tri-)spectral density** of the
+   squared process; Peng–Yao's is `(4f²(0))⁻¹ Ω⁻¹` with `f` the density of `log ε₀²` at its
+   median and `Ω = E[∂_θ log σ_t² (∂_θ log σ_t²)ᵀ]`. Both need a **differentiable
+   parametrized volatility/spectral density**, which does not exist in the repo (the file
+   only has `garchTruncVol` as a function of the data), and GR's `B` additionally needs the
+   trispectrum. So `W` is pinned the other way round, through what GR and PY actually
+   *prove* on the way to their covariance formula: an **asymptotically linear
+   representation** of the estimator with an influence process `ψ`, and `W = E[ψ₀ψ₀ᵀ]`
+   (`hWdef`). This is a faithful relocation, not a weakening: the covariance formulas are
+   read off `ψ` and nothing else.
+4. **The Brown-CLT hypothesis on the influence process** (`hvar`) is carried explicitly.
+   It is not decoration: a strictly stationary square-integrable martingale-difference
+   sequence that is *not ergodic* has a variance-mixture limit, not a Gaussian one, so
+   without `hvar` even the repaired statement would be false. See the residue note.
+
+**Deliberately NOT repaired.** `hL4` (Whittle) and `hmed` (LAD) are left exactly as
+frozen: they are the genuine model-side hypotheses of GR 2001 and PY 2003 and neither
+participates in any of the four defects. `hW : Matrix.PosDef W` is also kept, now as a
+nondegeneracy assumption on `E[ψ₀ψ₀ᵀ]`.
+
+### Residue note: what is left to prove
+
+With the repairs in place both theorems have the *same* two-step proof, and the two steps
+are cleanly separated.
+
+**(S1) `L¹`-Slutsky at the characteristic-function level — routine.** `hlin` says the
+`i`-th coordinate of `√T(θ̂_T − θ₀)` differs from `T^{−1/2} Σ_{t<T} ψ_i(t+1)` by something
+that vanishes in `L¹`. Summing against `c` gives
+`∫ |Z_T − V_T| ≤ Σ_i |c_i| · (the i-th `hlin` sequence) → 0`, and
+`‖E e^{iuZ} − E e^{iuW}‖ ≤ |u| E|Z − W|` (`Process/SampleACF.lean`'s
+`norm_charFun_map_sub_le`, `private` there) transports the limit. **This step is now
+CLOSED**, as the reusable brick `tendsto_charFun_map_of_l1` just below, together with the
+`norm_charFun_map_sub_le` it needs. What remains of (S1) is the two-line integrability
+side condition, which is *derivable* rather than assumed: `hK` compact makes `est` — hence
+`θhat` — uniformly bounded, so `Z_T` is bounded and measurable, and `V_T` is a finite
+linear combination of `L²` variables.
+
+**(S2) The martingale CLT for `V_T` — `mds_clt_sequence`, three of four inputs free.**
+Instantiate `ForMathlib/Probability/MartingaleCLT/BrownCLT.lean`'s `mds_clt_sequence` at
+`ξ t := Σ_i c_i ψ_i(t+1)` and `G t := sigmaLT X ((t : ℤ) + 1)`:
+* `hle`/`hmono` — `IsGARCH.measurableX` and `sigmaLT` monotonicity;
+* `hadapted` — `hpsiAdapted`; `hmds` — `hpsiMDS`, both linear in `c`;
+* `hL2` — `hpsiL2`, finite linear combination;
+* `hσ : 0 ≤ σ²` — `hW.posSemidef` applied to `c`, after matching
+  `∑ i, ∑ j, c i * c j * W i j` to `c ⬝ᵥ (W *ᵥ c)`;
+* `hvar` — **hypothesis** (repair 4);
+* `hlind` — free from `hpsiId`: every summand equals `∫_{|ξ₀| ≥ ε√n} ξ₀²`, so the average
+  *is* that single term, and it vanishes because `ξ₀ ∈ L²` (dominated convergence on the
+  tail of a square-integrable variable — the one small analytic lemma missing here;
+  everything else in (S2) is instantiation).
+
+**The relocated debts.** After the repairs the *literature* content of GR 2001 and PY 2003
+is exactly the pair `(hlin, hWdef)`: the expansion of the criterion around `θ₀` producing
+the influence process. That is where the genuinely hard analysis lives, and it is
+different in the two cases:
+* **Whittle (GR 2001).** `hlin` comes from a Taylor expansion of `garchWhittle` in `θ`
+  plus a **CLT for a weighted quadratic form of the squared process**,
+  `T^{−1/2} Σ_{j,k} w_{j−k} (Y_j − EY)(Y_k − EY)`. The reduction of the periodogram average
+  to such a quadratic form is *available*: `Spectral/DFT.lean`'s Parseval layer (batch B,
+  proved) does exactly that. The quadratic-form CLT for a non-linear, non-Gaussian,
+  long-memory-capable process is the open piece; GR get it from their own
+  `Σ_h |Cov(Y_0, Y_h)| < ∞` bookkeeping plus a fourth-cumulant condition — which is why
+  `hL4` is there and why `B ≠ A` in their sandwich.
+* **LAD (PY 2003).** `hlin` comes from Pollard's convexity argument: `garchLAD` is convex
+  in the reparametrized `θ`, its subgradient at `θ₀` is `Σ_t sign(log ε_t²) ∂_θ log σ_t²`,
+  a **bounded** martingale difference (the signs are `±1`), so the *score* half is
+  immediate — it is `mds_clt_sequence` again, with no moment condition at all, which is
+  precisely FY's point that LAD needs no moments. The hard half is the **quadratic
+  approximation of the criterion over a shrinking `T^{−1/2}`-neighbourhood** — an
+  empirical-process/stochastic-equicontinuity statement — plus the differentiability of
+  `θ ↦ log σ̃_t²(θ)` that `garchTruncVol` would have to be shown to have. Convexity
+  (Pollard's lemma: pointwise convergence of convex random functions is automatically
+  uniform on compacta) is what makes the neighbourhood argument affordable; it is not in
+  the repo.
+
+Note the asymmetry: **LAD's score CLT is essentially free here** (bounded MDS), while
+Whittle's is a genuine quadratic-form CLT. If only one of the two is to be pushed further,
+LAD is much the cheaper. -/
+
+/-! #### Residue (S1), CLOSED: `L¹`-Slutsky at the characteristic-function level -/
+
+private lemma charFun_map_eq_integral' {f : Ω → ℝ} (hf : AEMeasurable f μ) (u : ℝ) :
+    charFun (μ.map f) u = ∫ ω, Complex.exp (Complex.I * (u * f ω : ℝ)) ∂μ := by
+  rw [charFun_apply_real, integral_map hf (by fun_prop)]
+  simp only [Complex.ofReal_mul]
+  congr 1 with ω
+  ring_nf
+
+private lemma integrable_cexp_mul_I' [IsFiniteMeasure μ] {f : Ω → ℝ} (hf : Measurable f) :
+    Integrable (fun ω => Complex.exp (Complex.I * (f ω : ℝ))) μ := by
+  refine (integrable_const (1 : ℝ)).mono'
+    (Complex.measurable_exp.comp (by fun_prop)).aestronglyMeasurable ?_
+  filter_upwards with ω
+  simp [Complex.norm_exp]
+
+/-- **The `L¹` charFun comparison**: `‖E e^{iuZ} − E e^{iuW}‖ ≤ |u| E|Z − W|`. (The same
+brick as `Process/SampleACF.lean`'s `norm_charFun_map_sub_le`, which is `private` there.) -/
+private lemma norm_charFun_map_sub_le [IsProbabilityMeasure μ] {Z W : Ω → ℝ}
+    (hZ : Measurable Z) (hW : Measurable W)
+    (hint : Integrable (fun ω => |Z ω - W ω|) μ) (u : ℝ) :
+    ‖charFun (μ.map Z) u - charFun (μ.map W) u‖ ≤ |u| * ∫ ω, |Z ω - W ω| ∂μ := by
+  rw [charFun_map_eq_integral' hZ.aemeasurable u, charFun_map_eq_integral' hW.aemeasurable u,
+    ← integral_sub (integrable_cexp_mul_I' (hZ.const_mul u))
+      (integrable_cexp_mul_I' (hW.const_mul u))]
+  refine (norm_integral_le_integral_norm _).trans ?_
+  rw [show |u| * ∫ ω, |Z ω - W ω| ∂μ = ∫ ω, |u| * |Z ω - W ω| ∂μ from
+    (integral_const_mul _ _).symm]
+  refine integral_mono (((integrable_cexp_mul_I' (hZ.const_mul u)).sub
+    (integrable_cexp_mul_I' (hW.const_mul u))).norm) (hint.const_mul _) fun ω => ?_
+  have hfact : Complex.exp (Complex.I * ((u * Z ω : ℝ)))
+        - Complex.exp (Complex.I * ((u * W ω : ℝ)))
+      = Complex.exp (Complex.I * ((u * W ω : ℝ))) *
+        (Complex.exp (Complex.I * ((u * Z ω - u * W ω : ℝ))) - 1) := by
+    rw [mul_sub, mul_one, ← Complex.exp_add]
+    push_cast
+    ring_nf
+  rw [hfact, norm_mul,
+    show ‖Complex.exp (Complex.I * ((u * W ω : ℝ)))‖ = 1 from by simp [Complex.norm_exp],
+    one_mul]
+  refine le_trans (by simpa using
+      Real.norm_exp_I_mul_ofReal_sub_one_le (x := u * Z ω - u * W ω)) ?_
+  rw [show u * Z ω - u * W ω = u * (Z ω - W ω) from by ring, abs_mul]
+
+/-- **Residue (S1) of `whittle_clt_debt`/`lad_clt_debt`, discharged**: a sequence of laws
+whose `L¹` distance to a convergent sequence of laws vanishes has the same limiting
+characteristic function. This is the step that transports the martingale CLT for the
+influence sum `V_T` across the asymptotically linear representation `hlin`. -/
+private lemma tendsto_charFun_map_of_l1 [IsProbabilityMeasure μ] {u : ℝ}
+    {Z W : ℕ → Ω → ℝ} (hZ : ∀ T, Measurable (Z T)) (hW : ∀ T, Measurable (W T))
+    (hint : ∀ T, Integrable (fun ω => |Z T ω - W T ω|) μ)
+    (h0 : Tendsto (fun T => ∫ ω, |Z T ω - W T ω| ∂μ) atTop (𝓝 0))
+    {L : ℂ} (hlim : Tendsto (fun T => charFun (μ.map (W T)) u) atTop (𝓝 L)) :
+    Tendsto (fun T => charFun (μ.map (Z T)) u) atTop (𝓝 L) := by
+  have hd : Tendsto (fun T => charFun (μ.map (Z T)) u - charFun (μ.map (W T)) u)
+      atTop (𝓝 0) := by
+    rw [tendsto_zero_iff_norm_tendsto_zero]
+    refine squeeze_zero (fun T => norm_nonneg _)
+      (fun T => norm_charFun_map_sub_le (hZ T) (hW T) (hint T) u) ?_
+    simpa using h0.const_mul |u|
+  simpa using hd.add hlim
+
+/-- The **coordinate packing of a GARCH parameter** `(c₀, b, a)` into the vector the
+asymptotic statements are indexed by: slots `0, …, p−1` carry `b`, slots `p, …, p+q−1`
+carry `a`, and the last slot carries `c₀`. -/
+noncomputable def garchParamVec {p q : ℕ} (c0 : ℝ) (b : Fin p → ℝ) (a : Fin q → ℝ) :
+    Fin (p + q + 1) → ℝ := fun i =>
+  if h1 : (i : ℕ) < p then b ⟨i, h1⟩
+  else if h2 : (i : ℕ) - p < q then a ⟨(i : ℕ) - p, h2⟩
+  else c0
+
 /-- **DEBT (Giraitis & Robinson 2001; FY §4.2.3)**: `√T`-asymptotic normality of the
-Whittle estimator of a GARCH model under fourth-order stationarity. Recorded at the
-granularity FY cites (Cramér–Wold/charFun form against an assumed limiting covariance
-matrix). -/
+Whittle estimator of a GARCH model under fourth-order stationarity, in Cramér–Wold/charFun
+form.
+
+**Repaired 2026-08-09** — the frozen form is refuted by `whittle_clt_debt_false` above;
+see the section note for the four repairs and for the residue map. -/
 theorem whittle_clt_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     {b : Fin p → ℝ} {a : Fin q → ℝ} {X σvol ε : ℤ → Ω → ℝ}
     (h : IsGARCH c0 b a X σvol ε μ) (hstat : IsStrictlyStationary X μ)
     -- USER-INPUT: fourth-order stationarity; FY §4.2.3 / GR 2001
     (hL4 : ∀ t, MemLp (X t) 4 μ)
-    -- USER-INPUT: the limiting covariance matrix of the Whittle estimator; GR 2001
+    -- USER-INPUT: nondegenerate intercept; GR 2001 standing assumption
+    (hc0 : 0 < c0)
+    -- USER-INPUT: the limiting covariance matrix, now pinned by `hWdef` below; GR 2001
     (W : Matrix (Fin (p + q + 1)) (Fin (p + q + 1)) ℝ) (hW : Matrix.PosDef W)
-    -- USER-INPUT: a measurable Whittle-minimizing estimator sequence; FY eq. (4.41)
     (θhat : (T : ℕ) → Ω → Fin (p + q + 1) → ℝ) (hmeas : ∀ T, Measurable (θhat T))
     (θ0 : Fin (p + q + 1) → ℝ)
-    (c : Fin (p + q + 1) → ℝ) (u : ℝ) :
+    -- USER-INPUT (repair 1): `θ₀` is the parameter of the model in `h`
+    (hθ0 : θ0 = garchParamVec c0 b a)
+    -- USER-INPUT (repair 2): `θhat` minimizes the Whittle criterion (4.41) over a compact
+    -- identifiable search region containing the truth in its interior; `gmodel ϑ` is the
+    -- model spectral density of the squared process at the candidate `ϑ`
+    (gmodel : ℝ × (Fin p → ℝ) × (Fin q → ℝ) → ℝ → ℝ)
+    (est : (T : ℕ) → Ω → ℝ × (Fin p → ℝ) × (Fin q → ℝ))
+    (hpack : ∀ (T : ℕ) (ω : Ω),
+      θhat T ω = garchParamVec (est T ω).1 (est T ω).2.1 (est T ω).2.2)
+    (K : Set (ℝ × (Fin p → ℝ) × (Fin q → ℝ))) (hK : IsCompact K)
+    (hK0 : (c0, b, a) ∈ interior K)
+    (hmin : ∀ (T : ℕ) (ω : Ω), est T ω ∈ K ∧ ∀ ϑ ∈ K,
+      garchWhittle (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (gmodel (est T ω))
+        ≤ garchWhittle (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (gmodel ϑ))
+    -- USER-INPUT (repair 3): the asymptotically linear representation GR 2001 prove, with
+    -- influence process `ψ` — a square-integrable, strict-past-adapted martingale
+    -- difference with time-invariant joint law — and `W = E[ψ₀ψ₀ᵀ]`
+    (psi : Fin (p + q + 1) → ℤ → Ω → ℝ)
+    (hpsiL2 : ∀ i t, MemLp (psi i t) 2 μ)
+    (hpsiAdapted : ∀ i t, Measurable[sigmaLT X (t + 1)] (psi i t))
+    (hpsiMDS : ∀ i t, μ[psi i t | sigmaLT X t] =ᵐ[μ] 0)
+    (hpsiId : ∀ t : ℤ, IdentDistrib (fun ω i => psi i t ω) (fun ω i => psi i 0 ω) μ μ)
+    (hWdef : ∀ i j, W i j = ∫ ω, psi i 0 ω * psi j 0 ω ∂μ)
+    (hlin : ∀ i, Tendsto (fun T : ℕ => ∫ ω, |Real.sqrt T * (θhat T ω i - θ0 i)
+        - (Real.sqrt T)⁻¹ * ∑ t ∈ Finset.range T, psi i ((t : ℤ) + 1) ω| ∂μ) atTop (𝓝 0))
+    (c : Fin (p + q + 1) → ℝ)
+    -- USER-INPUT (repair 4): Brown's conditional-variance hypothesis for the influence
+    -- process — the ergodicity brick; see the residue note
+    (hvar : ∀ δ : ℝ, 0 < δ → Tendsto (fun T : ℕ => (μ {ω | δ ≤ |(T : ℝ)⁻¹ *
+        (∑ t ∈ Finset.range T, μ[fun ω' => (∑ i, c i * psi i ((t : ℤ) + 1) ω') ^ 2
+          | sigmaLT X ((t : ℤ) + 1)] ω) - ∑ i, ∑ j, c i * c j * W i j|}).toReal)
+      atTop (𝓝 0))
+    (u : ℝ) :
     Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
         Real.sqrt T * ∑ i, c i * (θhat T ω i - θ0 i)) u)
       atTop
@@ -335,16 +771,58 @@ theorem whittle_clt_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
 
 /-- **DEBT (Peng & Yao 2002/2003; FY §4.2.3)**: `√T`-asymptotic normality of the LAD
 estimator, which unlike the QMLE needs no moment condition beyond the model's own —
-the heavy-tail-robust alternative FY highlights. -/
+the heavy-tail-robust alternative FY highlights.
+
+**Repaired 2026-08-09** — the frozen form is refuted by `lad_clt_debt_false` above; see the
+section note for the four repairs and for the residue map. Note that the LAD score is a
+*bounded* martingale difference (the signs `sign(log ε_t²)` are `±1`), so `hpsiL2` is
+automatic for the true influence process and the whole (S2) half is free of moment
+conditions — which is exactly FY's stated reason for preferring LAD. -/
 theorem lad_clt_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     {b : Fin p → ℝ} {a : Fin q → ℝ} {X σvol ε : ℤ → Ω → ℝ}
     (h : IsGARCH c0 b a X σvol ε μ) (hstat : IsStrictlyStationary X μ)
     -- USER-INPUT: median-1 normalization of the squared innovations; Peng & Yao
     (hmed : μ {ω | ε 0 ω ^ 2 ≤ 1} = μ {ω | 1 ≤ ε 0 ω ^ 2})
+    -- USER-INPUT: nondegenerate intercept; Peng & Yao standing assumption
+    (hc0 : 0 < c0)
+    -- USER-INPUT: the limiting covariance matrix, now pinned by `hWdef` below; PY 2003
     (W : Matrix (Fin (p + q + 1)) (Fin (p + q + 1)) ℝ) (hW : Matrix.PosDef W)
     (θhat : (T : ℕ) → Ω → Fin (p + q + 1) → ℝ) (hmeas : ∀ T, Measurable (θhat T))
     (θ0 : Fin (p + q + 1) → ℝ)
-    (c : Fin (p + q + 1) → ℝ) (u : ℝ) :
+    -- USER-INPUT (repair 1): `θ₀` is the parameter of the model in `h`
+    (hθ0 : θ0 = garchParamVec c0 b a)
+    -- USER-INPUT (repair 2): `θhat` minimizes the LAD criterion (4.42) over a compact
+    -- identifiable search region containing the truth in its interior, from the presample
+    -- value `v₀` and burn-in `ν`
+    (v0 : ℝ) (ν : ℕ)
+    (est : (T : ℕ) → Ω → ℝ × (Fin p → ℝ) × (Fin q → ℝ))
+    (hpack : ∀ (T : ℕ) (ω : Ω),
+      θhat T ω = garchParamVec (est T ω).1 (est T ω).2.1 (est T ω).2.2)
+    (K : Set (ℝ × (Fin p → ℝ) × (Fin q → ℝ))) (hK : IsCompact K)
+    (hK0 : (c0, b, a) ∈ interior K)
+    (hmin : ∀ (T : ℕ) (ω : Ω), est T ω ∈ K ∧ ∀ ϑ ∈ K,
+      garchLAD (est T ω).1 (est T ω).2.1 (est T ω).2.2 v0
+          (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ν
+        ≤ garchLAD ϑ.1 ϑ.2.1 ϑ.2.2 v0 (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ν)
+    -- USER-INPUT (repair 3): the asymptotically linear representation PY 2003 prove, with
+    -- influence process `ψ` (their sign-score, a *bounded* martingale difference) and
+    -- `W = E[ψ₀ψ₀ᵀ]`
+    (psi : Fin (p + q + 1) → ℤ → Ω → ℝ)
+    (hpsiL2 : ∀ i t, MemLp (psi i t) 2 μ)
+    (hpsiAdapted : ∀ i t, Measurable[sigmaLT X (t + 1)] (psi i t))
+    (hpsiMDS : ∀ i t, μ[psi i t | sigmaLT X t] =ᵐ[μ] 0)
+    (hpsiId : ∀ t : ℤ, IdentDistrib (fun ω i => psi i t ω) (fun ω i => psi i 0 ω) μ μ)
+    (hWdef : ∀ i j, W i j = ∫ ω, psi i 0 ω * psi j 0 ω ∂μ)
+    (hlin : ∀ i, Tendsto (fun T : ℕ => ∫ ω, |Real.sqrt T * (θhat T ω i - θ0 i)
+        - (Real.sqrt T)⁻¹ * ∑ t ∈ Finset.range T, psi i ((t : ℤ) + 1) ω| ∂μ) atTop (𝓝 0))
+    (c : Fin (p + q + 1) → ℝ)
+    -- USER-INPUT (repair 4): Brown's conditional-variance hypothesis for the influence
+    -- process — the ergodicity brick; see the residue note
+    (hvar : ∀ δ : ℝ, 0 < δ → Tendsto (fun T : ℕ => (μ {ω | δ ≤ |(T : ℝ)⁻¹ *
+        (∑ t ∈ Finset.range T, μ[fun ω' => (∑ i, c i * psi i ((t : ℤ) + 1) ω') ^ 2
+          | sigmaLT X ((t : ℤ) + 1)] ω) - ∑ i, ∑ j, c i * c j * W i j|}).toReal)
+      atTop (𝓝 0))
+    (u : ℝ) :
     Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
         Real.sqrt T * ∑ i, c i * (θhat T ω i - θ0 i)) u)
       atTop
