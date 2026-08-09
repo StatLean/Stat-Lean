@@ -429,4 +429,409 @@ theorem trajKernel_map_window (n : ℕ) :
 
 end Traj
 
+section SubWindow
+variable (κ : Kernel S S) [IsMarkovKernel κ] (π : Measure S) [IsProbabilityMeasure π]
+
+lemma measurable_finInit (N : ℕ) :
+    Measurable (Fin.init : (Fin (N + 1) → S) → (Fin N → S)) :=
+  measurable_pi_lambda _ fun _ => measurable_pi_apply _
+
+/-- Dropping the last coordinate of a window law. -/
+theorem chainWindowLaw_map_init (N : ℕ) :
+    (chainWindowLaw κ π (N + 1)).map Fin.init = chainWindowLaw κ π N := by
+  haveI := isProbabilityMeasure_chainWindowLaw κ π N
+  rw [show chainWindowLaw κ π (N + 1) = ((chainWindowLaw κ π N) ⊗ₘ
+      (κ.comap (fun w : Fin (N + 1) → S => w (Fin.last N)) (measurable_pi_apply _))).map
+      (fun wx => (Fin.snoc wx.1 wx.2 : Fin (N + 1 + 1) → S)) from rfl,
+    Measure.map_map (measurable_finInit (N + 1)) (measurable_finSnoc' (N + 1))]
+  have hfac : (Fin.init ∘ fun wx : (Fin (N + 1) → S) × S =>
+      (Fin.snoc wx.1 wx.2 : Fin (N + 1 + 1) → S)) = Prod.fst :=
+    funext fun wx => by simp
+  rw [hfac]
+  exact Measure.fst_compProd _ _
+
+/-- Dropping the first coordinate of a *stationary* window law. -/
+theorem chainWindowLaw_map_tail (hinv : Kernel.Invariant κ π) (N : ℕ) :
+    (chainWindowLaw κ π (N + 1)).map Fin.tail = chainWindowLaw κ π N := by
+  have hG : Measurable fun p : (S × S) × (Fin N → S) =>
+      (Fin.cons p.1.1 (Fin.cons p.1.2 p.2) : Fin (N + 1 + 1) → S) :=
+    (measurable_finCons (N + 1)).comp
+      (measurable_fst.fst.prodMk ((measurable_finCons N).comp
+        (measurable_fst.snd.prodMk measurable_snd)))
+  have hH : Measurable fun p : (S × S) × (Fin N → S) =>
+      (Fin.cons p.1.2 p.2 : Fin (N + 1) → S) :=
+    (measurable_finCons N).comp (measurable_fst.snd.prodMk measurable_snd)
+  rw [chainWindowLaw_succ_front κ π N, Measure.map_map (measurable_finTail (N + 1)) hG]
+  have hfac : (Fin.tail ∘ fun p : (S × S) × (Fin N → S) =>
+      (Fin.cons p.1.1 (Fin.cons p.1.2 p.2) : Fin (N + 1 + 1) → S))
+      = fun p => (Fin.cons p.1.2 p.2 : Fin (N + 1) → S) :=
+    funext fun p => Fin.tail_cons _ _
+  rw [hfac, show (fun p : (S × S) × (Fin N → S) => (Fin.cons p.1.2 p.2 : Fin (N + 1) → S))
+      = (fun q : S × (Fin N → S) => (Fin.cons q.1 q.2 : Fin (N + 1) → S)) ∘
+        (Prod.map Prod.snd id) from rfl,
+    ← Measure.map_map (measurable_finCons N) (measurable_snd.prodMap measurable_id),
+    ← compProd_map_left _ measurable_snd]
+  have hsnd : (π ⊗ₘ κ).map Prod.snd = π := by
+    show (π ⊗ₘ κ).snd = π
+    rw [Measure.snd_compProd]; exact hinv
+  rw [hsnd, ← chainWindowLaw_eq_compProd]
+
+/-- Every sub-window of a stationary window law is again a window law. -/
+theorem chainWindowLaw_map_sub (hinv : Kernel.Invariant κ π) :
+    ∀ (N j k : ℕ) (h : j + k ≤ N),
+      (chainWindowLaw κ π N).map
+          (fun w (i : Fin (k + 1)) => w ⟨j + (i : ℕ), by omega⟩)
+        = chainWindowLaw κ π k := by
+  intro N
+  induction N with
+  | zero =>
+    intro j k h
+    obtain ⟨rfl, rfl⟩ : j = 0 ∧ k = 0 := by omega
+    have hid : (fun (w : Fin 1 → S) (i : Fin 1) => w ⟨0 + (i : ℕ), by omega⟩) = id :=
+      funext fun w => funext fun i => congrArg w (Fin.ext (by simp))
+    rw [hid, Measure.map_id]
+  | succ N ih =>
+    intro j k h
+    have hmeas : ∀ (M m : ℕ) (hM : m + k ≤ M),
+        Measurable fun (w : Fin (M + 1) → S) (i : Fin (k + 1)) => w ⟨m + (i : ℕ), by omega⟩ :=
+      fun M m hM => measurable_pi_lambda _ fun _ => measurable_pi_apply _
+    cases j with
+    | succ j =>
+      have hle : j + k ≤ N := by omega
+      have hfac : (fun (w : Fin (N + 1) → S) (i : Fin (k + 1)) => w ⟨j + (i : ℕ), by omega⟩)
+          ∘ (Fin.tail : (Fin (N + 1 + 1) → S) → (Fin (N + 1) → S))
+          = fun (w : Fin (N + 1 + 1) → S) (i : Fin (k + 1)) => w ⟨j + 1 + (i : ℕ), by omega⟩ :=
+        funext fun w => funext fun i => congrArg w (Fin.ext (by simp; omega))
+      rw [← hfac, ← Measure.map_map (hmeas N j hle) (measurable_finTail (N + 1)),
+        chainWindowLaw_map_tail κ π hinv N]
+      exact ih j k hle
+    | zero =>
+      by_cases hk : k ≤ N
+      · have hfac : (fun (w : Fin (N + 1) → S) (i : Fin (k + 1)) => w ⟨0 + (i : ℕ), by omega⟩)
+            ∘ (Fin.init : (Fin (N + 1 + 1) → S) → (Fin (N + 1) → S))
+            = fun (w : Fin (N + 1 + 1) → S) (i : Fin (k + 1)) => w ⟨0 + (i : ℕ), by omega⟩ :=
+          funext fun w => funext fun i => rfl
+        rw [← hfac, ← Measure.map_map (hmeas N 0 (by omega)) (measurable_finInit (N + 1)),
+          chainWindowLaw_map_init κ π N]
+        exact ih 0 k (by omega)
+      · have hkN : k = N + 1 := by omega
+        subst hkN
+        have hid : (fun (w : Fin (N + 1 + 1) → S) (i : Fin (N + 1 + 1)) =>
+            w ⟨0 + (i : ℕ), by omega⟩) = id :=
+          funext fun w => funext fun i => congrArg w (Fin.ext (by simp))
+        rw [hid, Measure.map_id]
+
+end SubWindow
+
+section Assembly
+variable (κ : Kernel S S) [IsMarkovKernel κ] (π : Measure S) [IsProbabilityMeasure π]
+
+lemma prod_compProd_measure {A B C : Type*} [MeasurableSpace A] [MeasurableSpace B]
+    [MeasurableSpace C] (μ : Measure A) [SFinite μ] (ν : Measure B) [SFinite ν]
+    (ζ : Kernel B C) [IsSFiniteKernel ζ] :
+    (μ.prod ν) ⊗ₘ (ζ.comap Prod.snd measurable_snd)
+      = (μ.prod (ν ⊗ₘ ζ)).map MeasurableEquiv.prodAssoc.symm := by
+  have hconst : (Kernel.const A ν) ⊗ₖ (ζ.comap Prod.snd measurable_snd)
+      = Kernel.const A (ν ⊗ₘ ζ) :=
+    Kernel.ext fun a => by rw [kernel_compProd_apply, Kernel.const_apply]; rfl
+  rw [← Measure.compProd_const, ← Measure.compProd_assoc, hconst, Measure.compProd_const]
+
+lemma prod_map_right {A B C D : Type*} [MeasurableSpace A] [MeasurableSpace B]
+    [MeasurableSpace C] [MeasurableSpace D] (κ₁ : Kernel A B) [IsMarkovKernel κ₁]
+    (κ₂ : Kernel A C) [IsMarkovKernel κ₂] {f : C → D} (hf : Measurable f) :
+    κ₁ ×ₖ (κ₂.map f) = (κ₁ ×ₖ κ₂).map (Prod.map id f) :=
+  Kernel.ext fun a => by
+    rw [Kernel.prod_apply, Kernel.map_apply _ hf, Kernel.map_apply _ (measurable_id.prodMap hf),
+      Kernel.prod_apply, ← Measure.map_prod_map _ _ measurable_id hf, Measure.map_id]
+
+lemma prod_compProd_kernel {A B C D : Type*} [MeasurableSpace A] [MeasurableSpace B]
+    [MeasurableSpace C] [MeasurableSpace D] (κ₁ : Kernel A B) [IsMarkovKernel κ₁]
+    (κ₂ : Kernel A C) [IsMarkovKernel κ₂] (η : Kernel (A × C) D) [IsMarkovKernel η]
+    (η' : Kernel (A × (B × C)) D) [IsMarkovKernel η'] (hη' : ∀ p, η' p = η (p.1, p.2.2)) :
+    κ₁ ×ₖ (κ₂ ⊗ₖ η) = ((κ₁ ×ₖ κ₂) ⊗ₖ η').map MeasurableEquiv.prodAssoc := by
+  refine Kernel.ext fun a => ?_
+  have hcc : η'.comap (Prod.mk a) measurable_prodMk_left
+      = (η.comap (Prod.mk a) measurable_prodMk_left).comap Prod.snd measurable_snd :=
+    Kernel.ext fun q => by
+      rw [Kernel.comap_apply, Kernel.comap_apply, Kernel.comap_apply, hη']
+  rw [Kernel.prod_apply, kernel_compProd_apply,
+    Kernel.map_apply _ MeasurableEquiv.prodAssoc.measurable, kernel_compProd_apply,
+    Kernel.prod_apply, hcc,
+    prod_compProd_measure (κ₁ a) (κ₂ a) (η.comap (Prod.mk a) measurable_prodMk_left),
+    Measure.map_map MeasurableEquiv.prodAssoc.measurable
+      MeasurableEquiv.prodAssoc.symm.measurable]
+  simp
+
+/-- The two-sided window glue: past coordinates (reversed) then the time-`0` value then the
+future coordinates. -/
+def twoSidedGlue (n : ℕ) : (m : ℕ) → (S × ((Fin n → S) × (Fin m → S))) → (Fin (n + m + 1) → S)
+  | 0 => fun p => Fin.cons p.1 p.2.1
+  | (m + 1) => fun p =>
+      Fin.cons (p.2.2 (Fin.last m)) (twoSidedGlue n m (p.1, (p.2.1, Fin.init p.2.2)))
+
+lemma measurable_twoSidedGlue (n m : ℕ) : Measurable (twoSidedGlue (S := S) n m) := by
+  induction m with
+  | zero => exact (measurable_finCons n).comp (measurable_fst.prodMk measurable_snd.fst)
+  | succ m ih =>
+      exact (measurable_finCons (n + m + 1)).comp
+        (((measurable_pi_apply _).comp measurable_snd.snd).prodMk
+          (ih.comp (measurable_fst.prodMk (measurable_snd.fst.prodMk
+            ((measurable_finInit m).comp measurable_snd.snd)))))
+
+lemma twoSidedGlue_zero (n m : ℕ) (p : S × ((Fin n → S) × (Fin m → S))) :
+    twoSidedGlue n m p 0 = (Fin.cons p.1 p.2.2 : Fin (m + 1) → S) (Fin.last m) := by
+  cases m with
+  | zero => rfl
+  | succ m =>
+    show (Fin.cons (p.2.2 (Fin.last m))
+        (twoSidedGlue n m (p.1, (p.2.1, Fin.init p.2.2))) : Fin (n + m + 1 + 1) → S) 0
+      = (Fin.cons p.1 p.2.2 : Fin (m + 1 + 1) → S) (Fin.last (m + 1))
+    rw [Fin.cons_zero, ← Fin.succ_last, Fin.cons_succ]
+
+lemma twoSidedGlue_snoc (n m : ℕ) (x : S) (f : Fin n → S) (b : Fin m → S) (z : S) :
+    twoSidedGlue n (m + 1) (x, (f, Fin.snoc b z))
+      = Fin.cons z (twoSidedGlue n m (x, (f, b))) := by
+  rw [twoSidedGlue]
+  simp
+
+/-- (J) **Two-sided window law**: the forward and backward trajectory windows, glued through the
+shared time-`0` value, carry the stationary chain window law. -/
+theorem twoSided_window_law (hinv : Kernel.Invariant κ π) (n : ℕ) :
+    ∀ m : ℕ, (π ⊗ₘ (chainWindowKernel κ n ×ₖ chainWindowKernel (reverseKernel κ π) m)).map
+        (twoSidedGlue n m) = chainWindowLaw κ π (n + m) := by
+  intro m
+  induction m with
+  | zero =>
+    have hfac : (twoSidedGlue (S := S) n 0)
+        = (fun q : S × (Fin n → S) => (Fin.cons q.1 q.2 : Fin (n + 1) → S)) ∘
+          (Prod.map id Prod.fst) := rfl
+    rw [hfac, ← Measure.map_map (measurable_finCons n) (measurable_id.prodMap measurable_fst),
+      ← Measure.compProd_map measurable_fst]
+    rw [show (chainWindowKernel κ n ×ₖ chainWindowKernel (reverseKernel κ π) 0).map Prod.fst
+        = chainWindowKernel κ n from by
+      rw [← Kernel.fst_eq]; exact Kernel.fst_prod _ _]
+    exact (chainWindowLaw_eq_compProd κ π n).symm
+  | succ m ih =>
+    set ρ := reverseKernel κ π with hρ
+    set K1 := chainWindowKernel κ n with hK1
+    set K2 := chainWindowKernel ρ m with hK2
+    set ηm : Kernel (S × (Fin m → S)) S :=
+      ρ.comap (fun q : S × (Fin m → S) => (Fin.cons q.1 q.2 : Fin (m + 1) → S) (Fin.last m))
+        (measurable_consLast m) with hηm
+    set ηm' : Kernel (S × ((Fin n → S) × (Fin m → S))) S :=
+      ηm.comap (fun p : S × ((Fin n → S) × (Fin m → S)) => (p.1, p.2.2))
+        (measurable_fst.prodMk measurable_snd.snd) with hηm'
+    have hker : K1 ×ₖ chainWindowKernel ρ (m + 1)
+        = ((K1 ×ₖ K2) ⊗ₖ ηm').map (fun q => (q.1.1, (Fin.snoc q.1.2 q.2 : Fin (m + 1) → S))) := by
+      rw [show chainWindowKernel ρ (m + 1) = (K2 ⊗ₖ ηm).map
+            (fun q => (Fin.snoc q.1 q.2 : Fin (m + 1) → S)) from rfl,
+        prod_map_right K1 _ (measurable_finSnoc' m), prod_compProd_kernel K1 K2 ηm ηm' (fun p => rfl),
+        ← Kernel.map_comp_right _ MeasurableEquiv.prodAssoc.measurable
+          (measurable_id.prodMap (measurable_finSnoc' m))]
+      rfl
+    have hglue : ∀ r : S × (((Fin n → S) × (Fin m → S)) × S),
+        twoSidedGlue n (m + 1) (r.1, (r.2.1.1, Fin.snoc r.2.1.2 r.2.2))
+          = Fin.cons r.2.2 (twoSidedGlue n m (r.1, r.2.1)) := by
+      rintro ⟨x, ⟨f, b⟩, z⟩
+      exact twoSidedGlue_snoc n m x f b z
+    have hcond : (ρ.comap (fun w : Fin (n + m + 1) → S => w 0) (measurable_pi_apply 0)).comap
+        (twoSidedGlue n m) (measurable_twoSidedGlue n m) = ηm' :=
+      Kernel.ext fun p => by
+        rw [Kernel.comap_apply, Kernel.comap_apply, hηm', Kernel.comap_apply, hηm,
+          Kernel.comap_apply, twoSidedGlue_zero]
+    have hq : Measurable fun q : ((Fin n → S) × (Fin m → S)) × S =>
+        (q.1.1, (Fin.snoc q.1.2 q.2 : Fin (m + 1) → S)) :=
+      measurable_fst.fst.prodMk ((measurable_finSnoc' m).comp
+        (measurable_fst.snd.prodMk measurable_snd))
+    have hSC : Measurable fun t : (Fin (n + m + 1) → S) × S =>
+        (Fin.cons t.2 t.1 : Fin (n + m + 1 + 1) → S) :=
+      (measurable_finCons (n + m + 1)).comp (measurable_snd.prodMk measurable_fst)
+    have hFR : Measurable fun r : S × (((Fin n → S) × (Fin m → S)) × S) =>
+        (Fin.cons r.2.2 (twoSidedGlue n m (r.1, r.2.1)) : Fin (n + m + 1 + 1) → S) :=
+      (measurable_finCons (n + m + 1)).comp
+        (measurable_snd.snd.prodMk ((measurable_twoSidedGlue n m).comp
+          (measurable_fst.prodMk measurable_snd.fst)))
+    have hFC : Measurable fun s : (S × ((Fin n → S) × (Fin m → S))) × S =>
+        (Fin.cons s.2 (twoSidedGlue n m s.1) : Fin (n + m + 1 + 1) → S) :=
+      (measurable_finCons (n + m + 1)).comp
+        (measurable_snd.prodMk ((measurable_twoSidedGlue n m).comp measurable_fst))
+    calc (π ⊗ₘ (K1 ×ₖ chainWindowKernel ρ (m + 1))).map (twoSidedGlue n (m + 1))
+        = ((π ⊗ₘ ((K1 ×ₖ K2) ⊗ₖ ηm')).map (Prod.map id
+            (fun q : ((Fin n → S) × (Fin m → S)) × S =>
+              (q.1.1, (Fin.snoc q.1.2 q.2 : Fin (m + 1) → S))))).map
+            (twoSidedGlue n (m + 1)) := by
+            rw [hker, ← Measure.compProd_map hq]
+      _ = (π ⊗ₘ ((K1 ×ₖ K2) ⊗ₖ ηm')).map
+            (fun r => Fin.cons r.2.2 (twoSidedGlue n m (r.1, r.2.1))) := by
+            rw [Measure.map_map (measurable_twoSidedGlue n (m + 1))
+              (measurable_id.prodMap hq)]
+            exact congrArg (fun g => Measure.map g (π ⊗ₘ ((K1 ×ₖ K2) ⊗ₖ ηm')))
+              (funext fun r => hglue r)
+      _ = (((π ⊗ₘ (K1 ×ₖ K2)) ⊗ₘ ηm').map MeasurableEquiv.prodAssoc).map
+            (fun r => Fin.cons r.2.2 (twoSidedGlue n m (r.1, r.2.1))) := by
+            rw [← Measure.compProd_assoc, Measure.map_map
+              MeasurableEquiv.prodAssoc.measurable MeasurableEquiv.prodAssoc.symm.measurable]
+            simp
+      _ = ((π ⊗ₘ (K1 ×ₖ K2)) ⊗ₘ ηm').map
+            (fun s => (Fin.cons s.2 (twoSidedGlue n m s.1) : Fin (n + m + 1 + 1) → S)) := by
+            rw [Measure.map_map hFR MeasurableEquiv.prodAssoc.measurable]; rfl
+      _ = (((π ⊗ₘ (K1 ×ₖ K2)) ⊗ₘ ηm').map (Prod.map (twoSidedGlue n m) id)).map
+            (fun t : (Fin (n + m + 1) → S) × S =>
+              (Fin.cons t.2 t.1 : Fin (n + m + 1 + 1) → S)) := by
+            rw [Measure.map_map hSC ((measurable_twoSidedGlue n m).prodMap measurable_id)]
+            rfl
+      _ = ((chainWindowLaw κ π (n + m)) ⊗ₘ (ρ.comap
+            (fun w : Fin (n + m + 1) → S => w 0) (measurable_pi_apply 0))).map
+            (fun t => (Fin.cons t.2 t.1 : Fin (n + m + 1 + 1) → S)) := by
+            rw [← ih, compProd_map_left _ (measurable_twoSidedGlue n m), hcond]
+      _ = chainWindowLaw κ π (n + m + 1) :=
+            chainWindowLaw_cons_reverseKernel κ π hinv (n + m)
+
+end Assembly
+
+section Final
+variable (κ : Kernel S S) [IsMarkovKernel κ] (π : Measure S) [IsProbabilityMeasure π]
+
+lemma prod_map_map {A B C B' C' : Type*} [MeasurableSpace A] [MeasurableSpace B]
+    [MeasurableSpace C] [MeasurableSpace B'] [MeasurableSpace C'] (κ₁ : Kernel A B)
+    [IsMarkovKernel κ₁] (κ₂ : Kernel A C) [IsMarkovKernel κ₂] {f : B → B'} (hf : Measurable f)
+    {g : C → C'} (hg : Measurable g) :
+    (κ₁.map f) ×ₖ (κ₂.map g) = (κ₁ ×ₖ κ₂).map (Prod.map f g) :=
+  Kernel.ext fun a => by
+    rw [Kernel.prod_apply, Kernel.map_apply _ hf, Kernel.map_apply _ hg,
+      Kernel.map_apply _ (hf.prodMap hg), Kernel.prod_apply, Measure.map_prod_map _ _ hf hg]
+
+/-- The two-sided process on the concrete model `S × (ℕ → S) × (ℕ → S)`. -/
+noncomputable def twoSidedProc (ω : S × ((ℕ → S) × (ℕ → S))) (t : ℤ) : S :=
+  if t = 0 then ω.1 else if 0 < t then ω.2.1 t.toNat else ω.2.2 (-t).toNat
+
+lemma measurable_twoSidedProc (t : ℤ) :
+    Measurable fun ω : S × ((ℕ → S) × (ℕ → S)) => twoSidedProc ω t := by
+  unfold twoSidedProc
+  split_ifs
+  · exact measurable_fst
+  · exact (measurable_pi_apply _).comp (measurable_fst.comp measurable_snd)
+  · exact (measurable_pi_apply _).comp (measurable_snd.comp measurable_snd)
+
+lemma twoSidedProc_glue (n : ℕ) :
+    ∀ (m : ℕ) (ω : S × ((ℕ → S) × (ℕ → S))) (j : Fin (n + m + 1)),
+      twoSidedProc ω ((j : ℕ) - (m : ℤ))
+        = twoSidedGlue n m (ω.1, ((fun i : Fin n => ω.2.1 ((i : ℕ) + 1)),
+            (fun i : Fin m => ω.2.2 ((i : ℕ) + 1)))) j := by
+  intro m
+  induction m with
+  | zero =>
+    intro ω j
+    refine Fin.cases ?_ (fun i => ?_) j
+    · simp [twoSidedProc, twoSidedGlue]
+    · have : ((i.succ : Fin (n + 1)) : ℕ) - ((0 : ℕ) : ℤ) = ((i : ℕ) + 1 : ℤ) := by
+        simp
+      rw [twoSidedGlue]
+      simp only [Fin.cons_succ]
+      rw [show ((i.succ : Fin (n + 1)) : ℕ) - ((0 : ℕ) : ℤ) = ((i : ℕ) + 1 : ℤ) from this]
+      rw [twoSidedProc]
+      have h1 : ((i : ℕ) + 1 : ℤ) ≠ 0 := by positivity
+      have h2 : (0 : ℤ) < ((i : ℕ) + 1 : ℤ) := by positivity
+      rw [if_neg h1, if_pos h2]
+      congr 1
+  | succ m ih =>
+    intro ω j
+    refine Fin.cases ?_ (fun i => ?_) j
+    · rw [twoSidedGlue]
+      simp only [Fin.cons_zero]
+      rw [twoSidedProc]
+      have h1 : ((0 : Fin (n + (m + 1) + 1)) : ℕ) - ((m + 1 : ℕ) : ℤ) ≠ 0 := by simp; omega
+      have h2 : ¬ (0 : ℤ) < ((0 : Fin (n + (m + 1) + 1)) : ℕ) - ((m + 1 : ℕ) : ℤ) := by simp
+      rw [if_neg h1, if_neg h2]
+      congr 1
+    · rw [twoSidedGlue]
+      simp only [Fin.cons_succ]
+      rw [show ((i.succ : Fin (n + (m + 1) + 1)) : ℕ) - ((m + 1 : ℕ) : ℤ)
+          = ((i : ℕ) : ℤ) - (m : ℤ) by push_cast [Fin.val_succ]; ring]
+      exact ih ω i
+
+/-- (F) **Two-sided realization**, on the `S`-valued model. -/
+theorem twoSidedProc_window_law (hinv : Kernel.Invariant κ π) (n m : ℕ) :
+    (π ⊗ₘ ((trajKernel κ) ×ₖ (trajKernel (reverseKernel κ π)))).map
+        (fun ω (j : Fin (n + m + 1)) => twoSidedProc ω ((j : ℕ) - (m : ℤ)))
+      = chainWindowLaw κ π (n + m) := by
+  have hwinF : Measurable fun ω : ℕ → S => fun i : Fin n => ω ((i : ℕ) + 1) :=
+    measurable_pi_lambda _ fun _ => measurable_pi_apply _
+  have hwinB : Measurable fun ω : ℕ → S => fun i : Fin m => ω ((i : ℕ) + 1) :=
+    measurable_pi_lambda _ fun _ => measurable_pi_apply _
+  have hE : Measurable fun ω : S × ((ℕ → S) × (ℕ → S)) =>
+      (ω.1, ((fun i : Fin n => ω.2.1 ((i : ℕ) + 1)), (fun i : Fin m => ω.2.2 ((i : ℕ) + 1)))) :=
+    measurable_fst.prodMk ((hwinF.comp (measurable_fst.comp measurable_snd)).prodMk
+      (hwinB.comp (measurable_snd.comp measurable_snd)))
+  have hfac : (fun (ω : S × ((ℕ → S) × (ℕ → S))) (j : Fin (n + m + 1)) =>
+        twoSidedProc ω ((j : ℕ) - (m : ℤ)))
+      = (twoSidedGlue n m) ∘ (fun ω => (ω.1,
+          ((fun i : Fin n => ω.2.1 ((i : ℕ) + 1)), (fun i : Fin m => ω.2.2 ((i : ℕ) + 1))))) :=
+    funext fun ω => funext fun j => twoSidedProc_glue n m ω j
+  rw [hfac, ← Measure.map_map (measurable_twoSidedGlue n m) hE,
+    show (fun ω : S × ((ℕ → S) × (ℕ → S)) => (ω.1,
+        ((fun i : Fin n => ω.2.1 ((i : ℕ) + 1)), (fun i : Fin m => ω.2.2 ((i : ℕ) + 1)))))
+      = Prod.map id (Prod.map (fun ω : ℕ → S => fun i : Fin n => ω ((i : ℕ) + 1))
+          (fun ω : ℕ → S => fun i : Fin m => ω ((i : ℕ) + 1))) from rfl,
+    ← Measure.compProd_map (hwinF.prodMap hwinB), ← prod_map_map _ _ hwinF hwinB,
+    trajKernel_map_window κ n, trajKernel_map_window (reverseKernel κ π) m]
+  exact twoSided_window_law κ π hinv n m
+
+/-- **Two-sided stationary realization** (the frozen interface). -/
+theorem twoSided_chain_exists (hinv : Kernel.Invariant κ π) :
+    ∃ (Ω' : Type) (_ : MeasurableSpace Ω') (μ' : Measure Ω') (Y : ℤ → Ω' → S),
+      IsProbabilityMeasure μ' ∧ (∀ t, Measurable (Y t)) ∧
+      ∀ (t : ℤ) (k : ℕ),
+        μ'.map (fun ω (i : Fin (k + 1)) => Y (t + (i : ℕ)) ω) = chainWindowLaw κ π k := by
+  classical
+  obtain ⟨F, hFmeas, hFe⟩ :=
+    (MeasureTheory.measurableEmbedding_embeddingReal S).exists_measurable_extend
+      (measurable_id : Measurable (id : S → S)) (fun _ => ⟨Classical.arbitrary S⟩)
+  have hFe' : ∀ x, F (MeasureTheory.embeddingReal S x) = x := fun x => congrFun hFe x
+  have hemeas : Measurable (MeasureTheory.embeddingReal S) :=
+    MeasureTheory.measurable_embeddingReal S
+  set μ0 : Measure (S × ((ℕ → S) × (ℕ → S))) :=
+    π ⊗ₘ ((trajKernel κ) ×ₖ (trajKernel (reverseKernel κ π))) with hμ0
+  haveI : IsProbabilityMeasure μ0 := by rw [hμ0]; infer_instance
+  have hEnc : Measurable fun ω : S × ((ℕ → S) × (ℕ → S)) =>
+      fun t : ℤ => MeasureTheory.embeddingReal S (twoSidedProc ω t) :=
+    measurable_pi_lambda _ fun t => hemeas.comp (measurable_twoSidedProc t)
+  refine ⟨ℤ → ℝ, inferInstance,
+    μ0.map (fun ω t => MeasureTheory.embeddingReal S (twoSidedProc ω t)),
+    fun t ω => F (ω t), Measure.isProbabilityMeasure_map hEnc.aemeasurable,
+    fun t => hFmeas.comp (measurable_pi_apply t), ?_⟩
+  intro t k
+  have hsmall : Measurable fun ω' : ℤ → ℝ => fun i : Fin (k + 1) => F (ω' (t + (i : ℕ))) :=
+    measurable_pi_lambda _ fun _ => hFmeas.comp (measurable_pi_apply _)
+  rw [Measure.map_map hsmall hEnc]
+  have hcomp : ((fun ω' : ℤ → ℝ => fun i : Fin (k + 1) => F (ω' (t + (i : ℕ)))) ∘
+      (fun ω : S × ((ℕ → S) × (ℕ → S)) =>
+        fun s : ℤ => MeasureTheory.embeddingReal S (twoSidedProc ω s)))
+      = fun ω (i : Fin (k + 1)) => twoSidedProc ω (t + (i : ℕ)) :=
+    funext fun ω => funext fun i => hFe' _
+  rw [hcomp]
+  set m := (-t).toNat with hm
+  set n := (t + k).toNat with hn
+  set j := (t + (m : ℤ)).toNat with hj
+  have hjk : j + k ≤ n + m := by omega
+  have hbig : Measurable fun ω : S × ((ℕ → S) × (ℕ → S)) =>
+      fun jj : Fin (n + m + 1) => twoSidedProc ω ((jj : ℕ) - (m : ℤ)) :=
+    measurable_pi_lambda _ fun _ => measurable_twoSidedProc _
+  have hsub : Measurable fun w : Fin (n + m + 1) → S =>
+      fun i : Fin (k + 1) => w ⟨j + (i : ℕ), by omega⟩ :=
+    measurable_pi_lambda _ fun _ => measurable_pi_apply _
+  have hfac2 : (fun (ω : S × ((ℕ → S) × (ℕ → S))) (i : Fin (k + 1)) =>
+        twoSidedProc ω (t + (i : ℕ)))
+      = (fun w : Fin (n + m + 1) → S => fun i : Fin (k + 1) => w ⟨j + (i : ℕ), by omega⟩) ∘
+        (fun ω => fun jj : Fin (n + m + 1) => twoSidedProc ω ((jj : ℕ) - (m : ℤ))) := by
+    refine funext fun ω => funext fun i => ?_
+    show twoSidedProc ω (t + (i : ℕ)) = twoSidedProc ω ((↑(j + (i : ℕ)) : ℤ) - (m : ℤ))
+    congr 1
+    push_cast
+    omega
+  rw [hfac2, ← Measure.map_map hsub hbig, hμ0, twoSidedProc_window_law κ π hinv n m]
+  exact chainWindowLaw_map_sub κ π hinv (n + m) j k hjk
+
+end Final
+
 end StatLean.TimeSeries
