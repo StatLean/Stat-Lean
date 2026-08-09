@@ -306,6 +306,188 @@ private lemma false_of_bddAbove_archLogLik {p : ℕ} {νseq : ℕ → ℕ}
   obtain ⟨c, hc⟩ := archLogLik_unbounded (p := p) (data T) hlt (F T)
   exact absurd (hmax T c) (not_le.2 hc)
 
+/-! ### The repair: a data-adapted admissible set on which the maximizer exists
+
+`false_of_bddAbove_archLogLik` above is **retained as the justification** for what follows:
+it is the machine-checked reason the earlier `hMLE`/`hMLE0` shape (a global maximizer over
+all of `ℝ × ℝᵖ`) had to go. The replacement keeps FY's *unconstrained* parametrization for
+`b` — which is what the `χ²_p` limit needs (see the boundary caveat in the module
+docstring) — and instead cuts the parameter space by the **data-adapted admissible set**
+
+  `archAdmissible κ x ν = {(c₀, b) : σ̃_t²(c₀, b) ≥ κ for every t in the criterion's range}`,
+
+the exact locus on which the criterion's `log σ̃_t²` and `x_t²/σ̃_t²` are defined and
+continuous. Two facts make this the minimal fix rather than another guess:
+
+* it is **closed** — with `q = 0` the truncated volatility is *affine* in `(c₀, b)`
+  (`continuous_truncVol`), so no recursion estimate is needed — hence `K ∩ archAdmissible`
+  is compact for compact `K` and `archLogLik` attains its maximum there
+  (`exists_isMaxOn_archLogLik`);
+* it is **nonempty at the truth**: `(c₀, 0)` is admissible as soon as `κ ≤ c₀`
+  (`mem_archAdmissible_of_b_eq_zero`, via `truncVol_const`), and `b` is *not* sign
+  constrained, so the truth can sit in the **interior** of `K`. Constraining `K ⊆ {b ≥ 0}`
+  instead — FY's own admissible set — would put the null on the *boundary* of `K` and so
+  contradict `hK0`; that is the boundary problem FY flags, and avoiding it is why the
+  variance floor is imposed on the *data-adapted* set rather than on `K`.
+
+`exists_archMLE_sequences` then produces estimator sequences satisfying the repaired
+hypotheses verbatim, so the repaired statements are **not** vacuous. -/
+
+/-- The **data-adapted admissible set** at variance floor `κ`: the parameters `(c₀, b)` at
+which the truncated conditional variance the ARCH criterion divides by stays `≥ κ`
+throughout the criterion's own index range `Ico ν T`. -/
+def archAdmissible (κ : ℝ) {p T : ℕ} (x : Fin T → ℝ) (ν : ℕ) : Set (ℝ × (Fin p → ℝ)) :=
+  {θ | ∀ t ∈ Finset.Ico ν T, κ ≤ garchTruncVol θ.1 θ.2 (Fin.elim0 : Fin 0 → ℝ) θ.1 x t}
+
+/-- The **null slice** `{b = 0}` of a search region — the restricted parameter space of
+`H₀ : b₁ = ⋯ = b_p = 0`. -/
+def archNullSlice {p : ℕ} (K : Set (ℝ × (Fin p → ℝ))) : Set (ℝ × (Fin p → ℝ)) :=
+  K ∩ {θ | θ.2 = fun _ => (0 : ℝ)}
+
+/-- With no volatility feedback (`q = 0`) the truncated conditional variance is an *affine*
+function of `(c₀, b)`: `σ̃₀² = c₀` and `σ̃_{n+1}² = c₀ + Σᵢ bᵢ x_{n−i}²`. Hence it is
+continuous, with no recursion estimate and no positivity assumption. -/
+private lemma continuous_truncVol {p T : ℕ} (x : Fin T → ℝ) (t : ℕ) :
+    Continuous fun θ : ℝ × (Fin p → ℝ) =>
+      garchTruncVol θ.1 θ.2 (Fin.elim0 : Fin 0 → ℝ) θ.1 x t := by
+  cases t with
+  | zero => simpa [garchTruncVol] using continuous_fst
+  | succ n =>
+      have hrw : (fun θ : ℝ × (Fin p → ℝ) =>
+            garchTruncVol θ.1 θ.2 (Fin.elim0 : Fin 0 → ℝ) θ.1 x (n + 1))
+          = fun θ : ℝ × (Fin p → ℝ) => θ.1 + ∑ i : Fin p, θ.2 i *
+              (if h : n - (i : ℕ) < T then x ⟨n - (i : ℕ), h⟩ else 0) ^ 2 := by
+        funext θ; rw [garchTruncVol]; simp
+      rw [hrw]
+      exact continuous_fst.add (continuous_finset_sum _ fun i _ =>
+        ((continuous_apply i).comp continuous_snd).mul continuous_const)
+
+/-- The admissible set is closed — a finite intersection of closed half-spaces. -/
+private lemma isClosed_archAdmissible {p T : ℕ} (κ : ℝ) (x : Fin T → ℝ) (ν : ℕ) :
+    IsClosed (archAdmissible (p := p) κ x ν) := by
+  have hrw : archAdmissible (p := p) κ x ν
+      = ⋂ t ∈ Finset.Ico ν T,
+          {θ : ℝ × (Fin p → ℝ) |
+            κ ≤ garchTruncVol θ.1 θ.2 (Fin.elim0 : Fin 0 → ℝ) θ.1 x t} := by
+    ext θ; simp [archAdmissible]
+  rw [hrw]
+  exact isClosed_iInter fun t => isClosed_iInter fun _ =>
+    isClosed_le continuous_const (continuous_truncVol x t)
+
+/-- The null slice of a compact region is compact. -/
+private lemma isCompact_archNullSlice {p : ℕ} {K : Set (ℝ × (Fin p → ℝ))} (hK : IsCompact K) :
+    IsCompact (archNullSlice K) :=
+  hK.inter_right (isClosed_eq continuous_snd continuous_const)
+
+/-- **The truth is admissible.** At `b = 0` the truncated volatility is the constant `c₀`
+(`truncVol_const`), so `(c₀, 0)` clears the floor exactly when `κ ≤ c₀`. -/
+theorem mem_archAdmissible_of_b_eq_zero {p T : ℕ} {κ c : ℝ} (hc : κ ≤ c)
+    (x : Fin T → ℝ) (ν : ℕ) :
+    ((c, fun _ : Fin p => (0 : ℝ)) : ℝ × (Fin p → ℝ)) ∈ archAdmissible κ x ν := by
+  intro t _
+  rw [show ((c, fun _ : Fin p => (0 : ℝ)) : ℝ × (Fin p → ℝ)).1 = c from rfl,
+    show ((c, fun _ : Fin p => (0 : ℝ)) : ℝ × (Fin p → ℝ)).2 = fun _ : Fin p => (0 : ℝ) from rfl,
+    truncVol_const]
+  exact hc
+
+/-- On the admissible set the criterion is continuous: the floor `κ > 0` keeps the
+volatility away from the singularity of both `log` and the reciprocal. -/
+private lemma continuousOn_archLogLik {p T : ℕ} {κ : ℝ} (hκ : 0 < κ) (x : Fin T → ℝ) (ν : ℕ) :
+    ContinuousOn (fun θ : ℝ × (Fin p → ℝ) => archLogLik θ.1 θ.2 x ν)
+      (archAdmissible κ x ν) := by
+  have hne : ∀ t ∈ Finset.Ico ν T, ∀ θ ∈ archAdmissible (p := p) κ x ν,
+      garchTruncVol θ.1 θ.2 (Fin.elim0 : Fin 0 → ℝ) θ.1 x t ≠ 0 := by
+    intro t ht θ hθ
+    exact ne_of_gt (lt_of_lt_of_le hκ (hθ t ht))
+  simp only [archLogLik, garchQuasiLik]
+  refine continuousOn_const.mul (continuousOn_finset_sum _ fun t ht => ?_)
+  exact ((continuous_truncVol x t).continuousOn.log (hne t ht)).add
+    (continuousOn_const.div (continuous_truncVol x t).continuousOn (hne t ht))
+
+/-- **The repaired pinning is satisfiable** — the ARCH criterion *does* attain its maximum
+over `K ∩ archAdmissible κ x ν` whenever that set is nonempty and `K` is compact. Contrast
+`false_of_bddAbove_archLogLik`, which refutes the same demand made over all of `ℝ × ℝᵖ`. -/
+theorem exists_isMaxOn_archLogLik {p T : ℕ} {κ : ℝ} (hκ : 0 < κ)
+    {K : Set (ℝ × (Fin p → ℝ))} (hK : IsCompact K) (x : Fin T → ℝ) (ν : ℕ)
+    (hne : (K ∩ archAdmissible κ x ν).Nonempty) :
+    ∃ θ ∈ K ∩ archAdmissible κ x ν, ∀ θ' ∈ K ∩ archAdmissible κ x ν,
+      archLogLik θ'.1 θ'.2 x ν ≤ archLogLik θ.1 θ.2 x ν := by
+  have hc : IsCompact (K ∩ archAdmissible κ x ν) :=
+    hK.inter_right (isClosed_archAdmissible κ x ν)
+  obtain ⟨θ, hθ, hmax⟩ := hc.exists_isMaxOn hne
+    ((continuousOn_archLogLik hκ x ν).mono Set.inter_subset_right)
+  exact ⟨θ, hθ, fun θ' hθ' => hmax hθ'⟩
+
+/-- The null-restricted companion of `exists_isMaxOn_archLogLik`. -/
+theorem exists_isMaxOn_archLogLik_null {p T : ℕ} {κ : ℝ} (hκ : 0 < κ)
+    {K : Set (ℝ × (Fin p → ℝ))} (hK : IsCompact K) (x : Fin T → ℝ) (ν : ℕ)
+    (hne : (archNullSlice K ∩ archAdmissible κ x ν).Nonempty) :
+    ∃ θ ∈ archNullSlice K ∩ archAdmissible κ x ν,
+      ∀ θ' ∈ archNullSlice K ∩ archAdmissible κ x ν,
+        archLogLik θ'.1 θ'.2 x ν ≤ archLogLik θ.1 θ.2 x ν := by
+  have hc : IsCompact (archNullSlice K ∩ archAdmissible κ x ν) :=
+    (isCompact_archNullSlice hK).inter_right (isClosed_archAdmissible κ x ν)
+  obtain ⟨θ, hθ, hmax⟩ := hc.exists_isMaxOn hne
+    ((continuousOn_archLogLik hκ x ν).mono Set.inter_subset_right)
+  exact ⟨θ, hθ, fun θ' hθ' => hmax hθ'⟩
+
+/-- **Non-vacuity certificate for the repaired statements.** Given a variance floor
+`κ ≤ c₀`, a compact search region `K` containing `(c₀, 0)`, and any data, there *exist*
+unrestricted and null-restricted maximizing sequences — i.e. `hMLE` and `hMLE0` of
+`archLRStat_chiSq_debt` / `archWaldStat_chiSq_debt` below are jointly satisfiable, exactly
+what `false_of_bddAbove_archLogLik` denies for the superseded unconstrained shape.
+
+*(Measurability of the selection is a separate matter: the theorems below still carry
+`hmeas` as a `USER-INPUT`, and this certificate produces the sequences by pointwise choice,
+not by a measurable-selection theorem. The repo's `exists_measurable_argmin_of_convex`
+(`EstimationTheory/.../MeasurableArgmin.lean`) is the tool for upgrading it, and does not
+apply off the shelf: the ARCH criterion is not convex in `(c₀, b)`.)* -/
+theorem exists_archMLE_sequences {p : ℕ} {κ c : ℝ} (hκ : 0 < κ) (hc : κ ≤ c)
+    {K : Set (ℝ × (Fin p → ℝ))} (hK : IsCompact K)
+    (hK0 : ((c, fun _ : Fin p => (0 : ℝ)) : ℝ × (Fin p → ℝ)) ∈ K)
+    (X : ℤ → Ω → ℝ) (νseq : ℕ → ℕ) :
+    ∃ (c0hat : (T : ℕ) → Ω → ℝ) (bhat : (T : ℕ) → Ω → Fin p → ℝ)
+      (c0null : (T : ℕ) → Ω → ℝ),
+      (∀ (T : ℕ) (ω : Ω),
+        ((c0hat T ω, bhat T ω) : ℝ × (Fin p → ℝ)) ∈
+            K ∩ archAdmissible κ (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T) ∧
+          ∀ θ ∈ K ∩ archAdmissible κ (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T),
+            archLogLik θ.1 θ.2 (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
+              ≤ archLogLik (c0hat T ω) (bhat T ω)
+                  (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)) ∧
+      (∀ (T : ℕ) (ω : Ω),
+        ((c0null T ω, fun _ : Fin p => (0 : ℝ)) : ℝ × (Fin p → ℝ)) ∈
+            archNullSlice K ∩
+              archAdmissible κ (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T) ∧
+          ∀ θ ∈ archNullSlice K ∩
+              archAdmissible κ (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T),
+            archLogLik θ.1 θ.2 (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
+              ≤ archLogLik (c0null T ω) (fun _ : Fin p => (0 : ℝ))
+                  (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)) := by
+  -- the truth `(c, 0)` is feasible for both problems, so both are nonempty
+  have hmem : ∀ (T : ℕ) (ω : Ω),
+      ((c, fun _ : Fin p => (0 : ℝ)) : ℝ × (Fin p → ℝ)) ∈
+        K ∩ archAdmissible κ (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T) :=
+    fun T ω => ⟨hK0, mem_archAdmissible_of_b_eq_zero hc _ _⟩
+  have hmem0 : ∀ (T : ℕ) (ω : Ω),
+      ((c, fun _ : Fin p => (0 : ℝ)) : ℝ × (Fin p → ℝ)) ∈
+        archNullSlice K ∩ archAdmissible κ (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T) :=
+    fun T ω => ⟨⟨hK0, rfl⟩, mem_archAdmissible_of_b_eq_zero hc _ _⟩
+  choose θ hθ hθmax using fun (T : ℕ) (ω : Ω) =>
+    exists_isMaxOn_archLogLik hκ hK (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
+      ⟨_, hmem T ω⟩
+  choose η hη hηmax using fun (T : ℕ) (ω : Ω) =>
+    exists_isMaxOn_archLogLik_null hκ hK (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
+      ⟨_, hmem0 T ω⟩
+  refine ⟨fun T ω => (θ T ω).1, fun T ω => (θ T ω).2, fun T ω => (η T ω).1, ?_, ?_⟩
+  · exact fun T ω => ⟨hθ T ω, hθmax T ω⟩
+  · refine fun T ω => ⟨?_, ?_⟩
+    · have h2 : (η T ω).2 = fun _ : Fin p => (0 : ℝ) := (hη T ω).1.2
+      exact h2 ▸ hη T ω
+    · intro ξ hξ
+      have h2 : (η T ω).2 = fun _ : Fin p => (0 : ℝ) := (hη T ω).1.2
+      simpa [h2] using hηmax T ω ξ hξ
+
 /-- A probability space is nonempty — needed to evaluate the contradictory hypotheses at a
 sample point. -/
 private lemma nonempty_of_isProbabilityMeasure {Ω : Type*} [MeasurableSpace Ω]
