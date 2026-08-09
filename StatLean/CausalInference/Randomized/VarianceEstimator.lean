@@ -356,7 +356,32 @@ theorem neymanVarEst_expectation (S : ScienceTable n) (hsum : n₁ + n₀ = n)
     (h1 : 2 ≤ n₁) (h0 : 2 ≤ n₀) :
     (completeDesign n n₁ (by omega)).expect (neymanVarEst S)
       = popVar S.y1 / (n₁ : ℝ) + popVar S.y0 / (n₀ : ℝ) := by
-  sorry
+  have hle : n₁ ≤ n := by omega
+  have hE1 : (completeDesign n n₁ hle).expect (fun z => armVar S z true) = popVar S.y1 :=
+    armVar_true_unbiased S hsum h1 (by omega)
+  have hE0 : (completeDesign n n₁ hle).expect (fun z => armVar S z false) = popVar S.y0 :=
+    armVar_false_unbiased S hsum (by omega) h0
+  -- the arm sizes are constant on the support, so `V̂` is a fixed linear combination there
+  have hcongr : (completeDesign n n₁ hle).expect (neymanVarEst S)
+      = (completeDesign n n₁ hle).expect
+          (fun z => (n₁ : ℝ)⁻¹ * armVar S z true + (n₀ : ℝ)⁻¹ * armVar S z false) := by
+    refine expect_congr _ fun z hz => ?_
+    rw [neymanVarEst, card_armIdx_true hle hz, card_armIdx_false hle hz,
+      show n - n₁ = n₀ from by omega]
+    ring
+  have hsplit : (completeDesign n n₁ hle).expect
+        (fun z => (n₁ : ℝ)⁻¹ * armVar S z true + (n₀ : ℝ)⁻¹ * armVar S z false)
+      = (completeDesign n n₁ hle).expect (fun z => (n₁ : ℝ)⁻¹ * armVar S z true)
+        + (completeDesign n n₁ hle).expect (fun z => (n₀ : ℝ)⁻¹ * armVar S z false) :=
+    expect_add _ _ _
+  have hc1 : (completeDesign n n₁ hle).expect (fun z => (n₁ : ℝ)⁻¹ * armVar S z true)
+      = (n₁ : ℝ)⁻¹ * (completeDesign n n₁ hle).expect (fun z => armVar S z true) :=
+    expect_const_mul _ _ _
+  have hc0 : (completeDesign n n₁ hle).expect (fun z => (n₀ : ℝ)⁻¹ * armVar S z false)
+      = (n₀ : ℝ)⁻¹ * (completeDesign n n₁ hle).expect (fun z => armVar S z false) :=
+    expect_const_mul _ _ _
+  rw [hcongr, hsplit, hc1, hc0, hE1, hE0]
+  ring
 
 /-- **The exact bias of Neyman's variance estimator** (Ding Theorem 4.1(3)): the estimator
 exceeds the true randomization variance by exactly `S²(τ)/n`. -/
@@ -368,7 +393,9 @@ theorem neymanVarEst_bias (S : ScienceTable n) (hsum : n₁ + n₀ = n)
     (completeDesign n n₁ (by omega)).expect (neymanVarEst S)
         - (completeDesign n n₁ (by omega)).var (diffInMeans S)
       = popVar S.unitEffect / (n : ℝ) := by
-  sorry
+  rw [neymanVarEst_expectation S hsum h1 h0,
+    differenceInMeans_variance S hsum (by omega) (by omega) hn]
+  ring
 
 /-- **Conservativeness** (Ding Theorem 4.1(3)): Neyman's variance estimator is unbiased
 *upward* — its expectation never underestimates the true randomization variance. Hence
@@ -377,7 +404,11 @@ theorem neymanVarEst_conservative (S : ScienceTable n) (hsum : n₁ + n₀ = n)
     (h1 : 2 ≤ n₁) (h0 : 2 ≤ n₀) (hn : 2 ≤ n) :
     (completeDesign n n₁ (by omega)).var (diffInMeans S)
       ≤ (completeDesign n n₁ (by omega)).expect (neymanVarEst S) := by
-  sorry
+  have hb := neymanVarEst_bias S hsum h1 h0 hn
+  have hnR : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hpos : 0 ≤ popVar S.unitEffect / (n : ℝ) :=
+    div_nonneg (popVar_nonneg S.unitEffect hn) (by linarith)
+  linarith
 
 /-- **Exactness under a constant effect** (Ding Theorem 4.1(3)): the bias `S²(τ)/n`
 vanishes exactly when the individual effects are constant, and then `V̂` is unbiased. -/
@@ -387,6 +418,17 @@ theorem neymanVarEst_unbiased_of_constantEffect (S : ScienceTable n) {τ : ℝ}
     (h1 : 2 ≤ n₁) (h0 : 2 ≤ n₀) (hn : 2 ≤ n) :
     (completeDesign n n₁ (by omega)).expect (neymanVarEst S)
       = (completeDesign n n₁ (by omega)).var (diffInMeans S) := by
-  sorry
+  have hb := neymanVarEst_bias S hsum h1 h0 hn
+  have hc : ∀ i, S.unitEffect i = τ := hconst
+  have hnR : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hnne : (n : ℝ) ≠ 0 := ne_of_gt (by linarith)
+  have hpm : popMean S.unitEffect = τ := by
+    simp only [popMean, hc, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+      ← mul_assoc, inv_mul_cancel₀ hnne, one_mul]
+  have hzero : popVar S.unitEffect = 0 := by
+    simp [popVar, hpm, hc]
+  rw [hzero] at hb
+  simp only [zero_div] at hb
+  linarith
 
 end StatLean.CausalInference
