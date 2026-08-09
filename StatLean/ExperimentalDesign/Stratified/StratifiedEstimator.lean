@@ -54,14 +54,21 @@ designs (`Mead §9.4`). -/
 theorem stratified_expect (D : ∀ b, PMF (Ω b)) (w : B → ℝ) (f : ∀ b, Ω b → ℝ) :
     pmfExpect (productDesign D) (fun ω => ∑ b, w b * f b (ω b))
       = ∑ b, w b * pmfExpect (D b) (f b) := by
-  sorry
+  classical
+  refine (pmfExpect_sum (productDesign D) Finset.univ fun b ω => w b * f b (ω b)).trans ?_
+  refine Finset.sum_congr rfl fun b _ => ?_
+  refine (pmfExpect_smul (productDesign D) (w b) fun ω => f b (ω b)).trans ?_
+  rw [pmfExpect_productDesign_comp]
 
 /-- **Variance of a weighted stratum combination** under independent per-stratum
 designs: no cross-stratum terms (`Mead §9.4`). -/
 theorem stratified_var (D : ∀ b, PMF (Ω b)) (w : B → ℝ) (f : ∀ b, Ω b → ℝ) :
     pmfVar (productDesign D) (fun ω => ∑ b, w b * f b (ω b))
       = ∑ b, w b ^ 2 * pmfVar (D b) (f b) := by
-  sorry
+  classical
+  refine (pmfVar_productDesign_sum D fun b x => w b * f b x).trans ?_
+  refine Finset.sum_congr rfl fun b _ => ?_
+  exact pmfVar_smul (D b) (w b) (f b)
 
 end Abstract
 
@@ -96,7 +103,16 @@ theorem stratifiedSRS_mean_unbiased
     (hpos : ∀ b, n b ≠ 0) (y : U → ℝ) :
     pmfExpect (stratifiedSRS st n hn) (stratifiedMeanEstimator st y)
       = populationMean y := by
-  sorry
+  classical
+  refine (stratified_expect (fun b => simpleRandomSampling (n b) (hn b))
+      (fun b => (Fintype.card (Stratum st b) : ℝ) / (Fintype.card U : ℝ))
+      (fun b => sampleMean fun i : Stratum st b => y i)).trans ?_
+  have h2 : ∀ b, pmfExpect (simpleRandomSampling (n b) (hn b))
+      (sampleMean fun i : Stratum st b => y i)
+      = populationMean fun i : Stratum st b => y i := fun b =>
+    srs_sampleMean_unbiased (n b) (hn b) (hpos b) _
+  refine Eq.trans ?_ (populationMean_stratified st y).symm
+  exact Finset.sum_congr rfl fun b _ => by rw [h2 b]
 
 /-- **Exact variance of the stratified sample mean**:
 `∑_b (N_b/N)² (1 − n_b/N_b) S_b²/n_b` (Cochran ch. 5, Theorem 5.3; no cross-stratum
@@ -109,7 +125,12 @@ theorem stratifiedSRS_mean_variance (st : U → B) (n : B → ℕ)
       = ∑ b, ((Fintype.card (Stratum st b) : ℝ) / (Fintype.card U : ℝ)) ^ 2
           * ((1 - (n b : ℝ) / (Fintype.card (Stratum st b) : ℝ))
               * populationVariance (fun i : Stratum st b => y i) / (n b : ℝ)) := by
-  sorry
+  classical
+  refine (stratified_var (fun b => simpleRandomSampling (n b) (hn b))
+      (fun b => (Fintype.card (Stratum st b) : ℝ) / (Fintype.card U : ℝ))
+      (fun b => sampleMean fun i : Stratum st b => y i)).trans ?_
+  refine Finset.sum_congr rfl fun b _ => ?_
+  rw [srs_sampleMean_variance (n b) (hn b) (hpos b)]
 
 end StratifiedSRS
 

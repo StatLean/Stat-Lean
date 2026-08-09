@@ -69,34 +69,108 @@ def levelSign (b : Bool) : ℝ := if b then 1 else -1
 noncomputable def character (S : Finset ι) (x : ι → Bool) : ℝ :=
   ∏ j ∈ S, levelSign (x j)
 
+/-- The square of a level sign is one. -/
+private lemma levelSign_mul_self (b : Bool) : levelSign b * levelSign b = 1 := by
+  cases b <;> norm_num [levelSign]
+
 @[simp]
 theorem character_empty (x : ι → Bool) : character (∅ : Finset ι) x = 1 := by
-  sorry
+  simp [character]
 
 /-- Characters square to one pointwise. -/
 theorem character_mul_self (S : Finset ι) (x : ι → Bool) :
     character S x * character S x = 1 := by
-  sorry
+  unfold character
+  rw [← Finset.prod_mul_distrib]
+  exact Finset.prod_eq_one fun j _ => levelSign_mul_self (x j)
 
 /-- **Multiplicativity**: `χ_S · χ_T = χ_{S Δ T}` — Mead's product rule for effect
 rows (`Mead §13.1`; the group law behind confounding, `Mead §16.2`). -/
 theorem character_mul (S T : Finset ι) (x : ι → Bool) :
     character S x * character T x = character (symmDiff S T) x := by
-  sorry
+  classical
+  have hchi : character (symmDiff S T) x
+      = (∏ j ∈ S \ T, levelSign (x j)) * ∏ j ∈ T \ S, levelSign (x j) := by
+    unfold character
+    rw [symmDiff_def, Finset.sup_eq_union, Finset.prod_union disjoint_sdiff_sdiff]
+  have hS : (∏ j ∈ S, levelSign (x j))
+      = (∏ j ∈ S \ T, levelSign (x j)) * ∏ j ∈ S ∩ T, levelSign (x j) := by
+    rw [← Finset.prod_union (Finset.sdiff_disjoint.mono_right Finset.inter_subset_right),
+      Finset.sdiff_union_inter]
+  have hT : (∏ j ∈ T, levelSign (x j))
+      = (∏ j ∈ T \ S, levelSign (x j)) * ∏ j ∈ S ∩ T, levelSign (x j) := by
+    rw [Finset.inter_comm,
+      ← Finset.prod_union (Finset.sdiff_disjoint.mono_right Finset.inter_subset_right),
+      Finset.sdiff_union_inter]
+  have hsq : (∏ j ∈ S ∩ T, levelSign (x j)) * ∏ j ∈ S ∩ T, levelSign (x j) = 1 := by
+    rw [← Finset.prod_mul_distrib]
+    exact Finset.prod_eq_one fun j _ => levelSign_mul_self (x j)
+  rw [hchi]
+  unfold character
+  rw [hS, hT]
+  calc ((∏ j ∈ S \ T, levelSign (x j)) * ∏ j ∈ S ∩ T, levelSign (x j))
+        * ((∏ j ∈ T \ S, levelSign (x j)) * ∏ j ∈ S ∩ T, levelSign (x j))
+      = ((∏ j ∈ S \ T, levelSign (x j)) * ∏ j ∈ T \ S, levelSign (x j))
+        * ((∏ j ∈ S ∩ T, levelSign (x j)) * ∏ j ∈ S ∩ T, levelSign (x j)) := by ring
+    _ = (∏ j ∈ S \ T, levelSign (x j)) * ∏ j ∈ T \ S, levelSign (x j) := by
+        rw [hsq, mul_one]
 
 /-- A nonempty-set character sums to zero over the treatment combinations. -/
+/-- Finite Fubini over the Boolean cube: a product-form summand factorizes. -/
+private lemma sum_pi_bool_prod (G : ι → Bool → ℝ) :
+    ∑ x : ι → Bool, ∏ j, G j (x j) = ∏ j, ∑ b, G j b := by
+  classical
+  rw [Finset.prod_univ_sum, Fintype.piFinset_univ]
+
+/-- A character as a full product over the factor index. -/
+private lemma character_eq_prod_univ (S : Finset ι) (x : ι → Bool) :
+    character S x = ∏ j, (if j ∈ S then levelSign (x j) else 1) := by
+  unfold character
+  calc ∏ j ∈ S, levelSign (x j)
+      = ∏ j ∈ S, (if j ∈ S then levelSign (x j) else 1) :=
+        Finset.prod_congr rfl fun j hj => (if_pos hj).symm
+    _ = ∏ j, (if j ∈ S then levelSign (x j) else 1) :=
+        Finset.prod_subset (Finset.subset_univ S) fun j _ hj => if_neg hj
+
 theorem sum_character_eq_zero {S : Finset ι}
     -- LEAN-ONLY: nonempty effect set; the empty character sums to `2^k`
     (hS : S.Nonempty) :
     ∑ x : ι → Bool, character S x = 0 := by
-  sorry
+  classical
+  calc ∑ x : ι → Bool, character S x
+      = ∑ x : ι → Bool, ∏ j, (if j ∈ S then levelSign (x j) else 1) :=
+        Finset.sum_congr rfl fun x _ => character_eq_prod_univ S x
+    _ = ∏ j, ∑ b, (if j ∈ S then levelSign b else 1) := sum_pi_bool_prod _
+    _ = 0 := by
+        obtain ⟨j₀, hj₀⟩ := hS
+        refine Finset.prod_eq_zero (Finset.mem_univ j₀) ?_
+        simp only [if_pos hj₀]
+        norm_num [Fintype.sum_bool, levelSign]
 
 /-- **Character orthogonality** (`Mead §13.1`, orthogonality of the rows of the
 effect matrix): `∑ₓ χ_S(x) χ_T(x)` is `2^k` for `S = T` and `0` otherwise. -/
 theorem sum_character_mul (S T : Finset ι) :
     ∑ x : ι → Bool, character S x * character T x
       = if S = T then (2 : ℝ) ^ Fintype.card ι else 0 := by
-  sorry
+  classical
+  simp only [character_mul]
+  by_cases hST : S = T
+  · subst hST
+    rw [if_pos rfl, symmDiff_self]
+    calc ∑ x : ι → Bool, character (⊥ : Finset ι) x
+        = ∑ _x : ι → Bool, (1 : ℝ) :=
+          Finset.sum_congr rfl fun x _ => character_empty x
+      _ = (Fintype.card (ι → Bool) : ℝ) := by
+          rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one]
+      _ = (2 : ℝ) ^ Fintype.card ι := by
+          rw [Fintype.card_fun, Fintype.card_bool]
+          push_cast
+          ring
+  · rw [if_neg hST]
+    refine sum_character_eq_zero ?_
+    rw [Finset.nonempty_iff_ne_empty]
+    intro h
+    exact hST (symmDiff_eq_bot.mp h)
 
 /-- The **factorial coefficient** of a response function at the effect `S`:
 `ŷ(S) = 2^{−k} ∑ₓ y(x) χ_S(x)`.  Equals half the Mead effect for nonempty `S` and
@@ -107,9 +181,77 @@ noncomputable def factorialCoeff (y : (ι → Bool) → ℝ) (S : Finset ι) : �
 /-- **The factorial expansion** (`Mead §13.1`, the effect representation `y = Ux` in
 matrix form): every response function is the character sum of its factorial
 coefficients. -/
+/-- Dual orthogonality: summing `χ_S(z) χ_S(x)` over the effects `S` detects
+`z = x`. -/
+private lemma sum_character_point (z x : ι → Bool) :
+    ∑ S : Finset ι, character S z * character S x
+      = if z = x then (2 : ℝ) ^ Fintype.card ι else 0 := by
+  classical
+  have h1 : (∑ S : Finset ι, character S z * character S x)
+      = ∑ S : Finset ι, ∏ j ∈ S, (levelSign (z j) * levelSign (x j)) := by
+    refine Finset.sum_congr rfl fun S _ => ?_
+    unfold character
+    rw [Finset.prod_mul_distrib]
+  have key : ∑ S : Finset ι, ∏ j ∈ S, (levelSign (z j) * levelSign (x j))
+      = ∏ j, (levelSign (z j) * levelSign (x j) + 1) := by
+    rw [Finset.prod_add, Finset.powerset_univ]
+    refine Finset.sum_congr rfl fun S _ => ?_
+    rw [Finset.prod_const_one, mul_one]
+  rw [h1, key]
+  by_cases hzx : z = x
+  · subst hzx
+    rw [if_pos rfl]
+    calc ∏ j, (levelSign (z j) * levelSign (z j) + 1)
+        = ∏ _j : ι, (2 : ℝ) :=
+          Finset.prod_congr rfl fun j _ => by rw [levelSign_mul_self]; norm_num
+      _ = (2 : ℝ) ^ Fintype.card ι := by
+          rw [Finset.prod_const, Finset.card_univ]
+  · rw [if_neg hzx]
+    obtain ⟨j₀, hj₀⟩ : ∃ j, z j ≠ x j := by
+      by_contra h
+      push_neg at h
+      exact hzx (funext h)
+    refine Finset.prod_eq_zero (Finset.mem_univ j₀) ?_
+    revert hj₀
+    cases z j₀ <;> cases x j₀ <;> intro hj₀ <;>
+      first
+        | exact absurd rfl hj₀
+        | norm_num [levelSign]
+
 theorem factorialExpansion (y : (ι → Bool) → ℝ) (x : ι → Bool) :
     y x = ∑ S : Finset ι, factorialCoeff y S * character S x := by
-  sorry
+  classical
+  have h2 : ((2 : ℝ) ^ Fintype.card ι) ≠ 0 := pow_ne_zero _ two_ne_zero
+  symm
+  calc ∑ S : Finset ι, factorialCoeff y S * character S x
+      = ∑ S : Finset ι, ((2 : ℝ) ^ Fintype.card ι)⁻¹
+          * ∑ z, y z * character S z * character S x := by
+        refine Finset.sum_congr rfl fun S _ => ?_
+        unfold factorialCoeff
+        rw [mul_assoc]
+        congr 1
+        rw [Finset.sum_mul]
+    _ = ((2 : ℝ) ^ Fintype.card ι)⁻¹
+          * ∑ z, y z * ∑ S : Finset ι, character S z * character S x := by
+        rw [← Finset.mul_sum]
+        congr 1
+        rw [Finset.sum_comm]
+        refine Finset.sum_congr rfl fun z _ => ?_
+        rw [Finset.mul_sum]
+        refine Finset.sum_congr rfl fun S _ => ?_
+        ring
+    _ = ((2 : ℝ) ^ Fintype.card ι)⁻¹ * (y x * (2 : ℝ) ^ Fintype.card ι) := by
+        congr 1
+        calc ∑ z, y z * ∑ S : Finset ι, character S z * character S x
+            = ∑ z, y z * (if z = x then (2 : ℝ) ^ Fintype.card ι else 0) :=
+              Finset.sum_congr rfl fun z _ => by rw [sum_character_point]
+          _ = ∑ z, (if z = x then y z * (2 : ℝ) ^ Fintype.card ι else 0) :=
+              Finset.sum_congr rfl fun z _ => by split <;> simp
+          _ = y x * (2 : ℝ) ^ Fintype.card ι := by
+              rw [Finset.sum_ite_eq' Finset.univ x
+                (fun z => y z * (2 : ℝ) ^ Fintype.card ι), if_pos (Finset.mem_univ x)]
+    _ = y x := by
+        field_simp
 
 /-- **Uniqueness of the factorial coefficients**: any coefficient family reproducing
 `y` through the character expansion is the family of factorial coefficients. -/
@@ -117,7 +259,28 @@ theorem factorialCoeff_eq_of_expansion (y : (ι → Bool) → ℝ) (c : Finset �
     -- USER-INPUT: a character representation of the response; Mead §13.1
     (h : ∀ x, y x = ∑ S : Finset ι, c S * character S x) (S : Finset ι) :
     c S = factorialCoeff y S := by
-  sorry
+  classical
+  have h2 : ((2 : ℝ) ^ Fintype.card ι) ≠ 0 := pow_ne_zero _ two_ne_zero
+  have key : ∑ x, y x * character S x = c S * (2 : ℝ) ^ Fintype.card ι := by
+    calc ∑ x, y x * character S x
+        = ∑ x, ∑ T : Finset ι, c T * (character T x * character S x) := by
+          refine Finset.sum_congr rfl fun x _ => ?_
+          rw [h x, Finset.sum_mul]
+          exact Finset.sum_congr rfl fun T _ => by ring
+      _ = ∑ T : Finset ι, ∑ x, c T * (character T x * character S x) :=
+          Finset.sum_comm
+      _ = ∑ T : Finset ι, c T * (if T = S then (2 : ℝ) ^ Fintype.card ι else 0) := by
+          refine Finset.sum_congr rfl fun T _ => ?_
+          rw [← Finset.mul_sum, sum_character_mul]
+      _ = ∑ T : Finset ι, (if T = S then c T * (2 : ℝ) ^ Fintype.card ι else 0) :=
+          Finset.sum_congr rfl fun T _ => by split <;> simp
+      _ = c S * (2 : ℝ) ^ Fintype.card ι := by
+          rw [Finset.sum_ite_eq' Finset.univ S
+            (fun T => c T * (2 : ℝ) ^ Fintype.card ι), if_pos (Finset.mem_univ S)]
+  unfold factorialCoeff
+  rw [key]
+  field_simp
+  ring
 
 /-- **Parseval for the factorial expansion**: `∑ₓ y(x)² = 2^k ∑_S ŷ(S)²` — the exact
 sum-of-squares decomposition of a `2^k` response into effect components
@@ -125,12 +288,32 @@ sum-of-squares decomposition of a `2^k` response into effect components
 theorem factorialParseval (y : (ι → Bool) → ℝ) :
     ∑ x, y x ^ 2
       = (2 : ℝ) ^ Fintype.card ι * ∑ S : Finset ι, factorialCoeff y S ^ 2 := by
-  sorry
+  classical
+  have h2 : ((2 : ℝ) ^ Fintype.card ι) ≠ 0 := pow_ne_zero _ two_ne_zero
+  calc ∑ x, y x ^ 2
+      = ∑ x, ∑ S : Finset ι, factorialCoeff y S * (y x * character S x) := by
+        refine Finset.sum_congr rfl fun x _ => ?_
+        rw [pow_two]
+        nth_rewrite 1 [factorialExpansion y x]
+        rw [Finset.sum_mul]
+        exact Finset.sum_congr rfl fun S _ => by ring
+    _ = ∑ S : Finset ι, factorialCoeff y S * ∑ x, y x * character S x := by
+        rw [Finset.sum_comm]
+        exact Finset.sum_congr rfl fun S _ => by rw [Finset.mul_sum]
+    _ = ∑ S : Finset ι, factorialCoeff y S
+          * (factorialCoeff y S * (2 : ℝ) ^ Fintype.card ι) := by
+        refine Finset.sum_congr rfl fun S _ => ?_
+        congr 1
+        unfold factorialCoeff
+        field_simp
+    _ = (2 : ℝ) ^ Fintype.card ι * ∑ S : Finset ι, factorialCoeff y S ^ 2 := by
+        rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun S _ => by ring
 
 /-- A nonempty-set character, viewed as a **treatment contrast** on the treatment
 combinations (`Mead §13.3`: factorial effects are contrasts). -/
 noncomputable def characterContrast {S : Finset ι} (hS : S.Nonempty) :
     Contrast (ι → Bool) :=
-  ⟨character S, by sorry⟩
+  ⟨character S, sum_character_eq_zero hS⟩
 
 end StatLean.ExperimentalDesign

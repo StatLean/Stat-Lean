@@ -70,7 +70,10 @@ theorem blocked_expect_armIndicator (bl : U → B) (r : B → T → ℕ)
     pmfExpect (blockedRandomization bl r hr)
         (fun ω => armIndicator t i (glueAllocation bl ω))
       = (r (bl i) t : ℝ) / (Fintype.card (Stratum bl (bl i)) : ℝ) := by
-  sorry
+  classical
+  refine Eq.trans ?_ (expect_armIndicator (r (bl i)) (hr (bl i)) (⟨i, rfl⟩ : Stratum bl (bl i)) t)
+  exact pmfExpect_productDesign_comp (fun b => completeRandomization (r b) (hr b))
+    (bl i) (armIndicator t (⟨i, rfl⟩ : Stratum bl (bl i)))
 
 /-- **Independence across blocks**: assignment indicators of units in different
 blocks are uncorrelated (`Mead §9.4`, independence of the randomisation in different
@@ -83,6 +86,9 @@ theorem blocked_cov_armIndicator_of_ne_block (bl : U → B) (r : B → T → ℕ
     pmfCov (blockedRandomization bl r hr)
         (fun ω => armIndicator t i (glueAllocation bl ω))
         (fun ω => armIndicator s j (glueAllocation bl ω)) = 0 := by
-  sorry
+  classical
+  exact pmfCov_productDesign_of_ne (fun b => completeRandomization (r b) (hr b)) hij
+    (armIndicator t (⟨i, rfl⟩ : Stratum bl (bl i)))
+    (armIndicator s (⟨j, rfl⟩ : Stratum bl (bl j)))
 
 end StatLean.ExperimentalDesign

@@ -74,39 +74,92 @@ noncomputable def residualSS (y : U → ℝ) (g : Allocation U T) : ℝ :=
 of the arm mean; `Mead §2.4`, residuals). -/
 theorem sum_sub_armMean_eq_zero (y : U → ℝ) (g : Allocation U T) (t : T) :
     ∑ i ∈ arm t g, (y i - armMean y t g) = 0 := by
-  sorry
+  classical
+  rcases eq_or_ne ((arm t g).card) 0 with h | h
+  · have he : arm t g = ∅ := Finset.card_eq_zero.mp h
+    simp [he]
+  · have hc : ((arm t g).card : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr h
+    rw [Finset.sum_sub_distrib, Finset.sum_const, nsmul_eq_mul]
+    unfold armMean
+    rw [mul_inv_cancel_left₀ hc, sub_self]
 
 /-- **The one-way analysis of variance identity** (`Mead §2.2`, `Mead §6.2`):
 `SS_Total = SS_Treatment + SS_Residual`. -/
 theorem anova_decomposition (y : U → ℝ) (g : Allocation U T) :
     totalSS y = treatmentSS y g + residualSS y g := by
-  sorry
+  classical
+  have key : ∑ i, (y i - armMean y (g i) g) * (armMean y (g i) g - populationMean y)
+      = 0 := by
+    have hfib : ∑ t, ∑ i ∈ Finset.univ.filter (fun i => g i = t),
+        ((y i - armMean y (g i) g) * (armMean y (g i) g - populationMean y))
+        = ∑ i, (y i - armMean y (g i) g) * (armMean y (g i) g - populationMean y) :=
+      Finset.sum_fiberwise _ _ _
+    rw [← hfib]
+    refine Finset.sum_eq_zero fun t _ => ?_
+    have hfe : Finset.univ.filter (fun i => g i = t) = arm t g := rfl
+    rw [hfe]
+    have hcongr : ∀ i ∈ arm t g,
+        (y i - armMean y (g i) g) * (armMean y (g i) g - populationMean y)
+        = (y i - armMean y t g) * (armMean y t g - populationMean y) := by
+      intro i hi
+      rw [mem_arm_iff.mp hi]
+    rw [Finset.sum_congr rfl hcongr, ← Finset.sum_mul, sum_sub_armMean_eq_zero,
+      zero_mul]
+  unfold totalSS treatmentSS residualSS
+  calc ∑ i, (y i - populationMean y) ^ 2
+      = ∑ i, ((armMean y (g i) g - populationMean y) ^ 2
+          + (y i - armMean y (g i) g) ^ 2
+          + 2 * ((y i - armMean y (g i) g) * (armMean y (g i) g - populationMean y))) :=
+        Finset.sum_congr rfl fun i _ => by ring
+    _ = ∑ i, (armMean y (g i) g - populationMean y) ^ 2
+          + ∑ i, (y i - armMean y (g i) g) ^ 2
+          + 2 * ∑ i, (y i - armMean y (g i) g) * (armMean y (g i) g - populationMean y) := by
+        rw [Finset.sum_add_distrib, Finset.sum_add_distrib, ← Finset.mul_sum]
+    _ = ∑ i, (armMean y (g i) g - populationMean y) ^ 2
+          + ∑ i, (y i - armMean y (g i) g) ^ 2 := by
+        rw [key, mul_zero, add_zero]
 
 /-- The grouped form of the treatment sum of squares:
 `SS_Treatment = ∑_t n_t (ȳ_t − ȳ)²` (`Mead §6.2`, Table 6.1). -/
 theorem treatmentSS_eq_sum_card (y : U → ℝ) (g : Allocation U T) :
     treatmentSS y g
       = ∑ t, ((arm t g).card : ℝ) * (armMean y t g - populationMean y) ^ 2 := by
-  sorry
+  classical
+  unfold treatmentSS
+  have hfib : ∑ t, ∑ i ∈ Finset.univ.filter (fun i => g i = t),
+      (armMean y (g i) g - populationMean y) ^ 2
+      = ∑ i, (armMean y (g i) g - populationMean y) ^ 2 :=
+    Finset.sum_fiberwise _ _ _
+  rw [← hfib]
+  refine Finset.sum_congr rfl fun t _ => ?_
+  have hfe : Finset.univ.filter (fun i => g i = t) = arm t g := rfl
+  rw [hfe]
+  have hcongr : ∀ i ∈ arm t g, (armMean y (g i) g - populationMean y) ^ 2
+      = (armMean y t g - populationMean y) ^ 2 := by
+    intro i hi
+    rw [mem_arm_iff.mp hi]
+  rw [Finset.sum_congr rfl hcongr, Finset.sum_const, nsmul_eq_mul]
 
 /-- The total sum of squares is nonnegative. -/
-theorem totalSS_nonneg (y : U → ℝ) : 0 ≤ totalSS y := by
-  sorry
+theorem totalSS_nonneg (y : U → ℝ) : 0 ≤ totalSS y :=
+  Finset.sum_nonneg fun _ _ => sq_nonneg _
 
 /-- The treatment sum of squares is nonnegative. -/
 theorem treatmentSS_nonneg (y : U → ℝ) (g : Allocation U T) :
-    0 ≤ treatmentSS y g := by
-  sorry
+    0 ≤ treatmentSS y g :=
+  Finset.sum_nonneg fun _ _ => sq_nonneg _
 
 /-- The residual sum of squares is nonnegative. -/
 theorem residualSS_nonneg (y : U → ℝ) (g : Allocation U T) :
-    0 ≤ residualSS y g := by
-  sorry
+    0 ≤ residualSS y g :=
+  Finset.sum_nonneg fun _ _ => sq_nonneg _
 
 /-- Fitting group means never increases the residual variation:
 `SS_Residual ≤ SS_Total`. -/
 theorem residualSS_le_totalSS (y : U → ℝ) (g : Allocation U T) :
     residualSS y g ≤ totalSS y := by
-  sorry
+  have h := anova_decomposition y g
+  have ht := treatmentSS_nonneg y g
+  linarith
 
 end StatLean.ExperimentalDesign
