@@ -43,13 +43,6 @@ namespace StatLean.CausalInference
 variable {Ω : Type*} [MeasurableSpace Ω] {𝒳 : Type*} [MeasurableSpace 𝒳]
   {μ : Measure Ω} {Z : Ω → Bool} {y1 y0 : Ω → ℝ} {X : Ω → 𝒳}
 
-/-- Conditioning twice is conditioning on the intersection. -/
-theorem cond_cond_eq_cond_inter (s t : Set Ω)
-    -- USER-INPUT: measurability of the inner conditioning event
-    (hs : MeasurableSet s) :
-    (μ[|s])[|t] = μ[|t ∩ s] := by
-  sorry
-
 /-- On the treated arm the observed outcome is the treated potential outcome. -/
 omit [MeasurableSpace Ω] [MeasurableSpace 𝒳] in
 theorem obs_eqOn_treated : Set.EqOn (obs Z y1 y0) y1 {ω | Z ω = true} := by
@@ -126,13 +119,29 @@ private theorem integral_cond_armCell_eq [IsProbabilityMeasure μ] {y : Ω → �
   rw [cond_armCell_eq' hZ z x hcell]
   exact integral_cond_arm_eq_of_indepFun hindep hintc hy hZ hpos
 
+/-- **Conditioning on a covariate cell and then on an arm is conditioning on the arm cell.**
+The form of "conditioning twice is conditioning on the intersection" that the identification
+proofs need. Only the *arm* has to be measurable: the covariate cell enters only through its
+mass, which is finite and (by hypothesis) nonzero, so the two normalizing scalars
+telescope. -/
+theorem cond_armCell_eq [IsProbabilityMeasure μ]
+    -- USER-INPUT: the treatment is a random variable; user-supplied data
+    (hZ : Measurable Z) (z : Bool) (x : 𝒳)
+    -- USER-INPUT: a covariate cell of positive probability; on a null cell the scalars no
+    -- longer cancel
+    (hcell : μ (cell X x) ≠ 0) :
+    μ[|armCell Z X z x] = (μ[|cell X x])[|{ω | Z ω = z}] :=
+  cond_armCell_eq' hZ z x hcell
+
 /-- The arm regression function of the *observed* outcome is the arm regression function
-of the corresponding *potential* outcome — no assumption needed, just consistency
-(Ding Assumption 2.2). -/
-theorem cellMean_obs_eq (z : Bool) (x : 𝒳) :
+of the corresponding *potential* outcome — consistency (Ding Assumption 2.2). -/
+theorem cellMean_obs_eq
+    -- USER-INPUT: the treatment is a random variable; needed to know the arm is measurable,
+    -- without which the a.e. consistency step is unavailable
+    (hZ : Measurable Z) (z : Bool) (x : 𝒳) :
     cellMean μ Z X (obs Z y1 y0) z x
-      = cellMean μ Z X (if z then y1 else y0) z x := by
-  sorry
+      = cellMean μ Z X (if z then y1 else y0) z x :=
+  cellMean_obs_eq' hZ z x
 
 /-- **Unconfoundedness identifies the cell means** (Ding Assumption 10.2 ⇒ eq. (10.5)):
 inside a covariate cell of positive probability, the treated arm's regression function
@@ -190,6 +199,29 @@ theorem MeanIgnorable_of_ignorable [IsProbabilityMeasure μ]
     -- Ding §11.2.1
     (hpos : Positive μ Z X) :
     MeanIgnorable μ Z y1 X := by
-  sorry
+  intro x
+  rcases eq_or_ne (μ (cell X x)) 0 with hcell | hcell
+  · -- A null cell has null arms, so both conditional measures are zero and both means are `0`.
+    have harm : ∀ z : Bool, μ (armCell Z X z x) = 0 :=
+      fun z => measure_mono_null Set.inter_subset_right hcell
+    simp [ProbabilityTheory.cond_eq_zero_of_meas_eq_zero (harm true),
+      ProbabilityTheory.cond_eq_zero_of_meas_eq_zero (harm false)]
+  · -- Both arms are non-null by positivity, so each arm mean is the cell mean.
+    haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure hcell
+    obtain ⟨hlt0, hlt1⟩ := hpos x hcell
+    have hT : (μ[|cell X x]) {ω | Z ω = true} ≠ 0 := by
+      have := (ENNReal.toReal_pos_iff.mp hlt0).1
+      exact this.ne'
+    have hC : (μ[|cell X x]) {ω | Z ω = false} ≠ 0 := by
+      have hcompl : {ω | Z ω = false} = {ω | Z ω = true}ᶜ := by ext ω; simp
+      have hsum : ((μ[|cell X x]) {ω | Z ω = true}).toReal
+          + ((μ[|cell X x]) {ω | Z ω = false}).toReal = 1 :=
+        cond_treated_add_cond_control hX hZ hcell
+      intro h
+      rw [h] at hsum
+      simp only [ENNReal.toReal_zero, add_zero] at hsum
+      exact absurd hsum (by unfold propensity treatedEvent at hlt1; linarith)
+    rw [integral_cond_armCell_eq hZ hy1 hint (hi x) hcell hT,
+      integral_cond_armCell_eq hZ hy1 hint (hi x) hcell hC]
 
 end StatLean.CausalInference
