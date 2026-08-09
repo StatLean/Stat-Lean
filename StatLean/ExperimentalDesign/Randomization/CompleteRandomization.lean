@@ -270,13 +270,106 @@ theorem completeRandomization_map_precomp (r : T → ℕ)
     funext i
     simp
 
+/-! ### The moment calculus
+
+Every expectation below is the support average `(|𝒜_r|)⁻¹ ∑_{a ∈ 𝒜_r}` of
+`pmfExpect_uniformOfFinset`; the sums are evaluated by the permutation symmetry (B)
+together with the arm-size identity (C) `∑_i χ_{t,i}(a) = r_t` on the support. -/
+
+/-- Ingredient (A): the design expectation is the average over the valid allocations. -/
+private theorem expect_completeRandomization (r : T → ℕ)
+    (hr : ∑ t, r t = Fintype.card U) (f : Allocation U T → ℝ) :
+    pmfExpect (completeRandomization r hr) f
+      = ((validAllocations (U := U) r).card : ℝ)⁻¹
+          * ∑ a ∈ validAllocations (U := U) r, f a :=
+  pmfExpect_uniformOfFinset _ _ f
+
+/-- The support of a completely randomised design is nonempty, so its cardinality is
+an invertible real. -/
+private theorem card_validAllocations_ne_zero (r : T → ℕ)
+    (hr : ∑ t, r t = Fintype.card U) :
+    ((validAllocations (U := U) r).card : ℝ) ≠ 0 :=
+  Nat.cast_ne_zero.mpr (Finset.card_pos.mpr (validAllocations_nonempty r hr)).ne'
+
+/-- Ingredient (C): on the support, the assignment indicators of treatment `t` sum to
+the replication `r t`. -/
+private theorem sum_armIndicator_of_mem {r : T → ℕ} {a : Allocation U T}
+    (ha : a ∈ validAllocations (U := U) r) (t : T) :
+    ∑ i : U, armIndicator t i a = (r t : ℝ) := by
+  rw [← card_arm_eq_sum_indicator, card_arm_of_mem_validAllocations ha]
+
+/-- The support sum of a single assignment indicator does not depend on the unit. -/
+private theorem sum_armIndicator_const (r : T → ℕ) (t : T) (i j : U) :
+    ∑ a ∈ validAllocations (U := U) r, armIndicator t i a
+      = ∑ a ∈ validAllocations (U := U) r, armIndicator t j a := by
+  refine (sum_validAllocations_precomp r (Equiv.swap i j) (armIndicator t i)).trans ?_
+  refine Finset.sum_congr rfl fun a _ => ?_
+  rw [armIndicator_precomp, Equiv.swap_apply_left]
+
+/-- The marginal support sum, in cleared-denominator form:
+`N · ∑_{a} χ_{t,i}(a) = |𝒜_r| · r_t`. -/
+private theorem card_mul_sum_armIndicator (r : T → ℕ) (t : T) (i : U) :
+    (Fintype.card U : ℝ) * ∑ a ∈ validAllocations (U := U) r, armIndicator t i a
+      = ((validAllocations (U := U) r).card : ℝ) * (r t : ℝ) := by
+  have key : ∑ _j : U, ∑ a ∈ validAllocations (U := U) r, armIndicator t i a
+      = ((validAllocations (U := U) r).card : ℝ) * (r t : ℝ) := by
+    rw [Finset.sum_congr rfl fun j (_ : j ∈ (Finset.univ : Finset U)) =>
+      sum_armIndicator_const r t i j, Finset.sum_comm,
+      Finset.sum_congr rfl fun a ha => sum_armIndicator_of_mem ha t,
+      Finset.sum_const, nsmul_eq_mul]
+  rw [← key, Finset.sum_const, nsmul_eq_mul, Finset.card_univ]
+
 /-- **First-order assignment probability**: each unit receives treatment `t` with
 probability `r_t / N` (`Mead §9.6`, allocation probabilities `n_A/∑n`). -/
 theorem expect_armIndicator (r : T → ℕ) (hr : ∑ t, r t = Fintype.card U)
     (i : U) (t : T) :
     pmfExpect (completeRandomization r hr) (armIndicator t i)
       = (r t : ℝ) / (Fintype.card U : ℝ) := by
-  sorry
+  haveI : Nonempty U := ⟨i⟩
+  have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  have hK := card_validAllocations_ne_zero (U := U) r hr
+  have key := card_mul_sum_armIndicator r t i
+  rw [expect_completeRandomization]
+  field_simp
+  linarith [key]
+
+/-- The support sum of a product of two assignment indicators does not depend on the
+second unit, as long as it stays distinct from the first. -/
+private theorem sum_pair_const (r : T → ℕ) (t s : T) (i : U) {j j' : U}
+    (hj : j ≠ i) (hj' : j' ≠ i) :
+    ∑ a ∈ validAllocations (U := U) r, armIndicator t i a * armIndicator s j a
+      = ∑ a ∈ validAllocations (U := U) r, armIndicator t i a * armIndicator s j' a := by
+  refine (sum_validAllocations_precomp r (Equiv.swap j j')
+    (fun a => armIndicator t i a * armIndicator s j a)).trans ?_
+  refine Finset.sum_congr rfl fun a _ => ?_
+  simp only [armIndicator_precomp, Equiv.swap_apply_of_ne_of_ne hj.symm hj'.symm,
+    Equiv.swap_apply_left]
+
+/-- Summing the pair sums over the second unit collapses by ingredient (C). -/
+private theorem sum_pair_erase (r : T → ℕ) (t s : T) (i : U) :
+    ∑ j ∈ Finset.univ.erase i,
+        (∑ a ∈ validAllocations (U := U) r, armIndicator t i a * armIndicator s j a)
+      = ∑ a ∈ validAllocations (U := U) r,
+          armIndicator t i a * ((r s : ℝ) - armIndicator s i a) := by
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun a ha => ?_
+  rw [← Finset.mul_sum, Finset.sum_erase_eq_sub (Finset.mem_univ i),
+    sum_armIndicator_of_mem ha s]
+
+/-- The same sum, evaluated by constancy: `N − 1` equal terms. -/
+private theorem sum_pair_card_erase (r : T → ℕ) (t s : T) (i : U) {j : U} (hj : j ≠ i) :
+    ∑ j' ∈ Finset.univ.erase i,
+        (∑ a ∈ validAllocations (U := U) r, armIndicator t i a * armIndicator s j' a)
+      = ((Fintype.card U : ℝ) - 1)
+          * ∑ a ∈ validAllocations (U := U) r, armIndicator t i a * armIndicator s j a := by
+  have hc : ∀ j' ∈ Finset.univ.erase i,
+      (∑ a ∈ validAllocations (U := U) r, armIndicator t i a * armIndicator s j' a)
+        = ∑ a ∈ validAllocations (U := U) r, armIndicator t i a * armIndicator s j a :=
+    fun j' hj' => sum_pair_const r t s i (Finset.ne_of_mem_erase hj') hj
+  have h1 : 1 ≤ Fintype.card U := Fintype.card_pos_iff.mpr ⟨i⟩
+  rw [Finset.sum_congr rfl hc, Finset.sum_const, nsmul_eq_mul,
+    Finset.card_erase_of_mem (Finset.mem_univ i), Finset.card_univ,
+    Nat.cast_sub h1, Nat.cast_one]
 
 /-- **Second-order assignment probability, same treatment**: distinct units both
 receive `t` with probability `r_t (r_t − 1) / (N (N−1))` (`Mead §9.4`, the
@@ -289,7 +382,30 @@ theorem expect_armIndicator_pair_same (r : T → ℕ)
         (fun a => armIndicator t i a * armIndicator t j a)
       = (r t : ℝ) * ((r t : ℝ) - 1)
           / ((Fintype.card U : ℝ) * ((Fintype.card U : ℝ) - 1)) := by
-  sorry
+  haveI : Nonempty U := ⟨i⟩
+  have h2 : 2 ≤ Fintype.card U := Fintype.one_lt_card_iff.mpr ⟨i, j, hij⟩
+  have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  have hN1 : (Fintype.card U : ℝ) - 1 ≠ 0 := by
+    have : (2 : ℝ) ≤ (Fintype.card U : ℝ) := by exact_mod_cast h2
+    linarith
+  have hK := card_validAllocations_ne_zero (U := U) r hr
+  have hmarg := card_mul_sum_armIndicator r t i
+  have hrhs : ∑ a ∈ validAllocations (U := U) r,
+        armIndicator t i a * ((r t : ℝ) - armIndicator t i a)
+      = ((r t : ℝ) - 1) * ∑ a ∈ validAllocations (U := U) r, armIndicator t i a := by
+    rw [Finset.mul_sum]
+    refine Finset.sum_congr rfl fun a _ => ?_
+    rw [mul_sub, armIndicator_mul_self]
+    ring
+  have herase := sum_pair_erase r t t i
+  rw [sum_pair_card_erase r t t i hij.symm, hrhs] at herase
+  have hkey : ((Fintype.card U : ℝ) * ((Fintype.card U : ℝ) - 1))
+        * ∑ a ∈ validAllocations (U := U) r, armIndicator t i a * armIndicator t j a
+      = ((validAllocations (U := U) r).card : ℝ) * ((r t : ℝ) * ((r t : ℝ) - 1)) := by
+    linear_combination (Fintype.card U : ℝ) * herase + ((r t : ℝ) - 1) * hmarg
+  rw [expect_completeRandomization]
+  field_simp
+  linarith [hkey]
 
 /-- **Second-order assignment probability, distinct treatments**: distinct units
 receive `t` and `s ≠ t` with probability `r_t r_s / (N (N−1))` (`Mead §9.4`). -/
@@ -303,7 +419,30 @@ theorem expect_armIndicator_pair_distinct (r : T → ℕ)
         (fun a => armIndicator t i a * armIndicator s j a)
       = (r t : ℝ) * (r s : ℝ)
           / ((Fintype.card U : ℝ) * ((Fintype.card U : ℝ) - 1)) := by
-  sorry
+  haveI : Nonempty U := ⟨i⟩
+  have h2 : 2 ≤ Fintype.card U := Fintype.one_lt_card_iff.mpr ⟨i, j, hij⟩
+  have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  have hN1 : (Fintype.card U : ℝ) - 1 ≠ 0 := by
+    have : (2 : ℝ) ≤ (Fintype.card U : ℝ) := by exact_mod_cast h2
+    linarith
+  have hK := card_validAllocations_ne_zero (U := U) r hr
+  have hmarg := card_mul_sum_armIndicator r t i
+  have hrhs : ∑ a ∈ validAllocations (U := U) r,
+        armIndicator t i a * ((r s : ℝ) - armIndicator s i a)
+      = (r s : ℝ) * ∑ a ∈ validAllocations (U := U) r, armIndicator t i a := by
+    rw [Finset.mul_sum]
+    refine Finset.sum_congr rfl fun a _ => ?_
+    rw [mul_sub, armIndicator_mul_armIndicator_of_ne hts i a]
+    ring
+  have herase := sum_pair_erase r t s i
+  rw [sum_pair_card_erase r t s i hij.symm, hrhs] at herase
+  have hkey : ((Fintype.card U : ℝ) * ((Fintype.card U : ℝ) - 1))
+        * ∑ a ∈ validAllocations (U := U) r, armIndicator t i a * armIndicator s j a
+      = ((validAllocations (U := U) r).card : ℝ) * ((r t : ℝ) * (r s : ℝ)) := by
+    linear_combination (Fintype.card U : ℝ) * herase + (r s : ℝ) * hmarg
+  rw [expect_completeRandomization]
+  field_simp
+  linarith [hkey]
 
 /-- **Indicator variance**: `Var(χ_{t,i}) = r_t (N − r_t) / N²` — the Bernoulli
 variance of the assignment (`Mead §9.4`). -/
@@ -311,7 +450,13 @@ theorem var_armIndicator (r : T → ℕ) (hr : ∑ t, r t = Fintype.card U)
     (i : U) (t : T) :
     pmfVar (completeRandomization r hr) (armIndicator t i)
       = (r t : ℝ) * ((Fintype.card U : ℝ) - (r t : ℝ)) / (Fintype.card U : ℝ) ^ 2 := by
-  sorry
+  haveI : Nonempty U := ⟨i⟩
+  have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  have hsq : (fun a => armIndicator t i a ^ 2) = armIndicator t i := by
+    funext a
+    rw [sq, armIndicator_mul_self]
+  rw [pmfVar_eq_expect_sq_sub_sq, hsq, expect_armIndicator]
+  field_simp
 
 /-- **Negative indicator covariance across units**:
 `Cov(χ_{t,i}, χ_{t,j}) = − r_t (N − r_t) / (N² (N−1))` for `i ≠ j` — the fixed arm
@@ -323,6 +468,15 @@ theorem cov_armIndicator_of_ne (r : T → ℕ) (hr : ∑ t, r t = Fintype.card U
     pmfCov (completeRandomization r hr) (armIndicator t i) (armIndicator t j)
       = -((r t : ℝ) * ((Fintype.card U : ℝ) - (r t : ℝ)))
           / ((Fintype.card U : ℝ) ^ 2 * ((Fintype.card U : ℝ) - 1)) := by
-  sorry
+  haveI : Nonempty U := ⟨i⟩
+  have h2 : 2 ≤ Fintype.card U := Fintype.one_lt_card_iff.mpr ⟨i, j, hij⟩
+  have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  have hN1 : (Fintype.card U : ℝ) - 1 ≠ 0 := by
+    have : (2 : ℝ) ≤ (Fintype.card U : ℝ) := by exact_mod_cast h2
+    linarith
+  rw [pmfCov_eq_expect_mul_sub_mul, expect_armIndicator_pair_same r hr hij t,
+    expect_armIndicator, expect_armIndicator]
+  field_simp
+  ring
 
 end StatLean.ExperimentalDesign
