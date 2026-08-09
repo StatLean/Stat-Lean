@@ -161,6 +161,19 @@ theorem srs_inclusionProb (n : ℕ) (hn : n ≤ Fintype.card U) (i : U) :
   rw [eq_div_iff hN]
   linear_combination hsum
 
+/-- Pair inclusion probabilities with a fixed first unit are constant across the
+remaining units, by a swap fixing that unit. -/
+private lemma srs_pairInclusionProb_eq (n : ℕ) (hn : n ≤ Fintype.card U) {i j j' : U}
+    (hj : j ≠ i) (hj' : j' ≠ i) :
+    pairInclusionProb (simpleRandomSampling n hn) i j
+      = pairInclusionProb (simpleRandomSampling n hn) i j' := by
+  unfold pairInclusionProb
+  rw [srs_expect_perm n hn (Equiv.swap j j')]
+  congr 1
+  funext s
+  rw [inclusionIndicator_image_perm, inclusionIndicator_image_perm, Equiv.symm_swap,
+    Equiv.swap_apply_of_ne_of_ne hj.symm hj'.symm, Equiv.swap_apply_left]
+
 /-- **Second-order inclusion probability under SRS**:
 `π_{ij} = n(n−1)/(N(N−1))` for distinct units. -/
 theorem srs_pairInclusionProb (n : ℕ) (hn : n ≤ Fintype.card U) {i j : U}
@@ -169,7 +182,50 @@ theorem srs_pairInclusionProb (n : ℕ) (hn : n ≤ Fintype.card U) {i j : U}
     pairInclusionProb (simpleRandomSampling n hn) i j
       = (n : ℝ) * ((n : ℝ) - 1)
           / ((Fintype.card U : ℝ) * ((Fintype.card U : ℝ) - 1)) := by
-  sorry
+  have hN2 : 1 < Fintype.card U := Fintype.one_lt_card_iff_nontrivial.2 ⟨i, j, hij⟩
+  have hNR : (1 : ℝ) < (Fintype.card U : ℝ) := by exact_mod_cast hN2
+  have hN : (Fintype.card U : ℝ) ≠ 0 := by linarith
+  have hN1 : (Fintype.card U : ℝ) - 1 ≠ 0 := by linarith
+  -- `∑ⱼ π_{ij} = E[𝟙ᵢ · |S|] = n πᵢ`, since `|S| = n` on the support.
+  have htot : ∑ k, pairInclusionProb (simpleRandomSampling n hn) i k
+      = (n : ℝ) * inclusionProb (simpleRandomSampling n hn) i := by
+    have h1 : ∑ k, pairInclusionProb (simpleRandomSampling n hn) i k
+        = pmfExpect (simpleRandomSampling n hn)
+            (fun s => ∑ k, inclusionIndicator i s * inclusionIndicator k s) := by
+      rw [pmfExpect_sum]; rfl
+    have h2 : ∀ s : Finset U, (∑ k, inclusionIndicator i s * inclusionIndicator k s)
+        = inclusionIndicator i s * (s.card : ℝ) := fun s => by
+      rw [← Finset.mul_sum, ← card_sample_eq_sum_indicator]
+    rw [h1]
+    simp_rw [h2]
+    rw [srs_expect_congr n hn (g := fun s => (n : ℝ) * inclusionIndicator i s)
+      fun s hs => by rw [hs]; ring, pmfExpect_smul]
+    rfl
+  -- peel off the diagonal `π_{ii} = πᵢ`
+  have herase : ∑ k ∈ Finset.univ.erase i,
+        pairInclusionProb (simpleRandomSampling n hn) i k
+      = ((n : ℝ) - 1) * inclusionProb (simpleRandomSampling n hn) i := by
+    have hpeel : pairInclusionProb (simpleRandomSampling n hn) i i
+        + ∑ k ∈ Finset.univ.erase i, pairInclusionProb (simpleRandomSampling n hn) i k
+        = ∑ k, pairInclusionProb (simpleRandomSampling n hn) i k :=
+      Finset.add_sum_erase _ _ (Finset.mem_univ i)
+    rw [pairInclusionProb_self, htot] at hpeel
+    linear_combination hpeel
+  -- and the `N − 1` off-diagonal terms are all equal
+  have hconst : ∑ k ∈ Finset.univ.erase i,
+        pairInclusionProb (simpleRandomSampling n hn) i k
+      = ((Fintype.card U : ℝ) - 1) * pairInclusionProb (simpleRandomSampling n hn) i j := by
+    rw [Finset.sum_congr rfl fun k hk =>
+      srs_pairInclusionProb_eq n hn (Finset.ne_of_mem_erase hk) hij.symm,
+      Finset.sum_const, nsmul_eq_mul, Finset.card_erase_of_mem (Finset.mem_univ i),
+      Finset.card_univ, Nat.cast_sub hN2.le, Nat.cast_one]
+  rw [hconst, srs_inclusionProb] at herase
+  have hval : pairInclusionProb (simpleRandomSampling n hn) i j
+      = ((n : ℝ) - 1) * ((n : ℝ) / (Fintype.card U : ℝ)) / ((Fintype.card U : ℝ) - 1) := by
+    rw [eq_div_iff hN1]
+    linear_combination herase
+  rw [hval]
+  field_simp
 
 /-- **Unbiasedness of the SRS sample mean**: `E[ȳ_S] = ȳ` for a positive sample
 size. -/
