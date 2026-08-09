@@ -1000,12 +1000,22 @@ remaining `sorry` below is that corner, and it is not fillable).  At `k = 0` the
 type `Fin 0` is empty, so every hypothesis is vacuous and `a` is unconstrained; the left
 side is exactly `‖1 − 1‖ = 0` (empty products, `∫ 1 = 1`) while the right side is
 `16 · (0 − 1) · a = −16a`, negative for every `a > 0`.  The claim `0 ≤ −16a` is therefore
-refutable.  **Repair** (not applied *here* — this statement is frozen): add `1 ≤ k`, or
-replace the factor `(k − 1)` by `(k − 1 : ℕ)` cast to `ℝ`, either of which makes the
-statement true.  The first of those repairs **is** available, proved and axiom-clean, as
-the sibling `norm_integral_prod_sub_prod_integral_le_of_pos` immediately above, to which
-the `k ≥ 1` branch below delegates; new consumers should call that one, since no consumer
-needs `k = 0`. -/
+refutable.  **Repair**: add `1 ≤ k`, or replace the factor `(k − 1)` by `(k − 1 : ℕ)` cast
+to `ℝ`, either of which makes the statement true.  The first of those repairs **is**
+available, proved and axiom-clean, as the sibling
+`norm_integral_prod_sub_prod_integral_le_of_pos` immediately above, to which the `k ≥ 1`
+branch below delegates; new consumers should call that one, since no consumer needs
+`k = 0`.
+
+**Repair attempted and reverted (wave `ts/s2b`).**  Replacing this statement by its
+`0 < k` form — one line, with the proof reducing to the `_of_pos` sibling — was carried out
+and then reverted, because it breaks a consumer *outside* that wave's touch-set:
+`StatLean/TimeSeries/Mixing/LimitTheorems.lean:998`, inside the private
+`norm_integral_prod_blocks_sub_prod_le`, applies this lemma at an unconstrained `k`.  That
+consumer is *itself* false at `k = 0`, for exactly the same reason (its left side is `0`,
+its right side `16·(0−1)·α(s)`), so the repair is one line in each of the two files; it
+needs `LimitTheorems.lean` in the touch-set.  Recorded here so the next wave does not
+rediscover the obstruction. -/
 theorem norm_integral_prod_sub_prod_integral_le {k : ℕ}
     {m : Fin k → MeasurableSpace Ω} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ] (hle : ∀ l, m l ≤ mΩ)
