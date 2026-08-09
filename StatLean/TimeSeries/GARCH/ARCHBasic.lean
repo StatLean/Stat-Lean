@@ -726,15 +726,52 @@ theorem IsARCH.eq_zero_of_c0_eq_zero [IsProbabilityMeasure μ] {p : ℕ} {b : Fi
   have hz : X t ω ^ 2 = 0 := hω
   exact (pow_eq_zero_iff (by norm_num : (2 : ℕ) ≠ 0)).1 hz
 
-/-- **DEBT (Bollerslev 1986 Thm 1; FY Theorem 4.3(i), necessity half)**: conversely, a
-strictly stationary ARCH(p) solution with finite variance forces `Σ_j b_j < 1`. -/
+/-- **Bollerslev 1986 Thm 1; FY Theorem 4.3(i), necessity half**: conversely, a
+strictly stationary ARCH(p) solution with finite variance forces `Σ_j b_j < 1`.
+
+Proof (Bollerslev's fixed-point argument): take expectations in `X_t² = σ_t² ε_t²`. The
+innovation is independent of the past-measurable `σ_t²` and has unit second moment, so
+`E X_t² = E σ_t² = c₀ + (Σ_j b_j) E X_{t−1−j}²`, and strict stationarity collapses the
+lagged second moments to the common value `m = E X_t² < ∞`. Hence `m = c₀ + (Σ_j b_j) m`
+with `m ≥ 0`, so `c₀ = m(1 − Σ_j b_j)`; as `c₀ > 0` this forces `m > 0` and
+`Σ_j b_j = 1 − c₀/m < 1`. -/
 theorem IsARCH.sum_lt_one_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     {b : Fin p → ℝ} {X ε : ℤ → Ω → ℝ} (h : IsARCH c0 b X ε μ)
     (hstat : IsStrictlyStationary X μ) (hL2 : ∀ t, MemLp (X t) 2 μ)
     -- USER-INPUT: nondegeneracy (c₀ > 0 rules out the trivial solution); FY Thm 4.3(i)
     (hc0 : 0 < c0) :
     (∑ i, b i) < 1 := by
-  sorry
+  classical
+  set t : ℤ := 0 with ht
+  have hsq : Measurable fun x : ℝ => x ^ 2 := measurable_id.pow_const 2
+  -- `E X_t² = E σ_t²` (independence of the innovation from the past, `E ε² = 1`).
+  have e2 : ∫ ω, X t ω ^ 2 ∂μ = ∫ ω, archVol c0 b X t ω ^ 2 ∂μ :=
+    integral_sq_eq_archVol h t
+  -- the second moments of the lags are the common value, by strict stationarity
+  have hstatsq : ∀ s : ℤ, ∫ ω, X s ω ^ 2 ∂μ = ∫ ω, X t ω ^ 2 ∂μ := fun s => by
+    simpa [Function.comp_def] using
+      ((hstat.identDistrib h.measurableX s t).comp hsq).integral_eq
+  -- `E σ_t² = c₀ + (Σ_j b_j) E X_t²`
+  have e3 : ∫ ω, archVol c0 b X t ω ^ 2 ∂μ = c0 + (∑ i, b i) * ∫ ω, X t ω ^ 2 ∂μ := by
+    have hvolsq : (fun ω => archVol c0 b X t ω ^ 2)
+        = fun ω => c0 + ∑ i, b i * X (t - 1 - (i : ℕ)) ω ^ 2 :=
+      funext fun ω => archVol_sq h.c0_nonneg h.b_nonneg t ω
+    have hterm : ∀ i : Fin p, ∫ ω, b i * X (t - 1 - (i : ℕ)) ω ^ 2 ∂μ
+        = b i * ∫ ω, X t ω ^ 2 ∂μ := fun i => by
+      rw [integral_const_mul, hstatsq]
+    have hc : ∫ _ω : Ω, c0 ∂μ = c0 := by simp
+    rw [hvolsq, integral_add (integrable_const c0)
+      (integrable_finset_sum _ fun i _ => ((hL2 _).integrable_sq).const_mul _),
+      integral_finset_sum _ fun i _ => ((hL2 _).integrable_sq).const_mul _, hc,
+      Finset.sum_mul]
+    exact congrArg _ (Finset.sum_congr rfl fun i _ => hterm i)
+  -- the fixed-point equation `m = c₀ + (Σ_j b_j) m`, with `m ≥ 0`
+  have hkey : ∫ ω, X t ω ^ 2 ∂μ = c0 + (∑ i, b i) * ∫ ω, X t ω ^ 2 ∂μ := e2.trans e3
+  have hm0 : 0 ≤ ∫ ω, X t ω ^ 2 ∂μ :=
+    integral_nonneg fun ω => sq_nonneg _
+  by_contra hcon
+  push_neg at hcon
+  nlinarith [hkey, hm0, hcon, hc0]
 
 /-- **EXTRA DEBT — reported loudly** (Giraitis–Kokoszka–Leipus 2000; Vervaat-type
 uniqueness, *not* proved in FY §4.2.1): under `Σ_j b_j < 1` a **strictly stationary**
