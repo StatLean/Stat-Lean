@@ -1,4 +1,6 @@
 import StatLean.TimeSeries.Mixing.KernelRegressionCLT
+import Mathlib.Probability.ProductMeasure
+import Mathlib.Probability.Independence.InfinitePi
 
 open MeasureTheory ProbabilityTheory Filter
 open scoped ProbabilityTheory Topology ENNReal
@@ -1456,5 +1458,111 @@ theorem tendsto_blockVar_sum [IsProbabilityMeasure μ]
   exact hsum.congr fun n => by ring
 
 end Blocks
+
+section Surrogate
+
+open ProbabilityTheory
+
+set_option maxHeartbeats 1000000 in
+/-- **The row-CLT in product-of-charFuns form.** A uniformly negligible bounded array of
+zero-mean rows with converging row variances has `∏ᵢ φ_{Y_{n,i}}(u) → φ_{N(0,σ²)}(u)`, with
+**no independence assumed**: the product is transported to an independent surrogate on the
+infinite product of the individual laws, where
+`tendsto_charFun_rowSum_gaussian_of_uniformly_small` applies. -/
+theorem tendsto_prod_charFun_of_uniformly_small [IsProbabilityMeasure μ]
+    {k : ℕ → ℕ} {Y : (n : ℕ) → Fin (k n) → Ω → ℝ}
+    (hmeas : ∀ n i, Measurable (Y n i))
+    (hmean : ∀ n i, ∫ ω, Y n i ω ∂μ = 0)
+    (hL2 : ∀ n i, MemLp (Y n i) 2 μ)
+    {b : ℕ → ℝ} (hbdd : ∀ n i, ∀ᵐ ω ∂μ, |Y n i ω| ≤ b n)
+    (hb0 : Tendsto b atTop (𝓝 0))
+    {σ2 : ℝ} (hvar : Tendsto (fun n => ∑ i, variance (Y n i) μ) atTop (𝓝 σ2)) (u : ℝ) :
+    Tendsto (fun n => ∏ i, charFun (μ.map (Y n i)) u) atTop
+      (𝓝 (charFun (gaussianReal 0 (Real.toNNReal σ2)) u)) := by
+  classical
+  set Yt : ℕ × ℕ → Ω → ℝ := fun z => if hz : z.2 < k z.1 then Y z.1 ⟨z.2, hz⟩ else 0
+    with hYtdef
+  have hYtm : ∀ z : ℕ × ℕ, Measurable (Yt z) := by
+    intro z
+    simp only [hYtdef]
+    split
+    · exact hmeas _ _
+    · exact measurable_const
+  set P : ℕ × ℕ → Measure ℝ := fun z => μ.map (Yt z) with hPdef
+  haveI hPprob : ∀ z, IsProbabilityMeasure (P z) := fun z =>
+    Measure.isProbabilityMeasure_map (hYtm z).aemeasurable
+  set ν : Measure (ℕ × ℕ → ℝ) := Measure.infinitePi P with hνdef
+  haveI : IsProbabilityMeasure ν := by rw [hνdef]; infer_instance
+  set Z : (n : ℕ) → Fin (k n) → (ℕ × ℕ → ℝ) → ℝ := fun n i z => z (n, (i : ℕ)) with hZdef
+  have hZm : ∀ (n : ℕ) (i : Fin (k n)), Measurable (Z n i) := fun n i => measurable_pi_apply _
+  have hYteq : ∀ (n : ℕ) (i : Fin (k n)), Yt (n, (i : ℕ)) = Y n i := by
+    intro n i
+    simp only [hYtdef]
+    rw [dif_pos i.2]
+  have hlaw : ∀ (n : ℕ) (i : Fin (k n)), ν.map (Z n i) = μ.map (Y n i) := by
+    intro n i
+    have h1 : ν.map (fun z : ℕ × ℕ → ℝ => z (n, (i : ℕ))) = P (n, (i : ℕ)) := by
+      rw [hνdef]; exact Measure.infinitePi_map_eval P (n, (i : ℕ))
+    rw [hZdef]
+    simp only
+    rw [h1, hPdef]
+    simp only
+    rw [hYteq n i]
+  -- independence of the coordinates
+  have hindep : ∀ n : ℕ, iIndepFun (Z n) ν := by
+    intro n
+    have hall : iIndepFun (fun (z : ℕ × ℕ) (ω : ℕ × ℕ → ℝ) => ω z) ν :=
+      ProbabilityTheory.iIndepFun_infinitePi (X := fun _ : ℕ × ℕ => (id : ℝ → ℝ))
+        (fun _ => measurable_id)
+    have hinj : Function.Injective (fun i : Fin (k n) => (n, (i : ℕ))) := by
+      intro i j hij
+      have : (i : ℕ) = (j : ℕ) := congrArg Prod.snd hij
+      exact Fin.ext this
+    exact hall.precomp hinj
+  -- transport of the hypotheses
+  have hmeanZ : ∀ (n : ℕ) (i : Fin (k n)), ∫ z, Z n i z ∂ν = 0 := by
+    intro n i
+    have h1 : ∫ y, y ∂(ν.map (Z n i)) = ∫ z, Z n i z ∂ν :=
+      integral_map (hZm n i).aemeasurable (f := fun y : ℝ => y) aestronglyMeasurable_id
+    have h2 : ∫ y, y ∂(μ.map (Y n i)) = ∫ ω, Y n i ω ∂μ :=
+      integral_map (hmeas n i).aemeasurable (f := fun y : ℝ => y) aestronglyMeasurable_id
+    rw [← h1, hlaw n i, h2, hmean n i]
+  have hL2Z : ∀ (n : ℕ) (i : Fin (k n)), MemLp (Z n i) 2 ν := by
+    intro n i
+    have h1 : MemLp (fun y : ℝ => y) 2 (ν.map (Z n i)) := by
+      rw [hlaw n i]
+      exact (memLp_map_measure_iff aestronglyMeasurable_id
+        (hmeas n i).aemeasurable).2 (hL2 n i)
+    exact (memLp_map_measure_iff aestronglyMeasurable_id (hZm n i).aemeasurable).1 h1
+  have hbddZ : ∀ (n : ℕ) (i : Fin (k n)), ∀ᵐ z ∂ν, |Z n i z| ≤ b n := by
+    intro n i
+    have hset : MeasurableSet {y : ℝ | |y| ≤ b n} :=
+      measurableSet_le measurable_id.abs measurable_const
+    have h1 : ∀ᵐ y ∂(μ.map (Y n i)), |y| ≤ b n :=
+      (ae_map_iff (hmeas n i).aemeasurable hset).2 (hbdd n i)
+    rw [← hlaw n i] at h1
+    exact (ae_map_iff (hZm n i).aemeasurable hset).1 h1
+  have hvarZ : ∀ (n : ℕ) (i : Fin (k n)), variance (Z n i) ν = variance (Y n i) μ := by
+    intro n i
+    have h1 : variance (fun y : ℝ => y) (ν.map (Z n i)) = variance (Z n i) ν := by
+      have := variance_map (X := fun y : ℝ => y) (Y := Z n i) (μ := ν)
+        aemeasurable_id (hZm n i).aemeasurable
+      simpa [Function.comp_def] using this
+    have h2 : variance (fun y : ℝ => y) (μ.map (Y n i)) = variance (Y n i) μ := by
+      have := variance_map (X := fun y : ℝ => y) (Y := Y n i) (μ := μ)
+        aemeasurable_id (hmeas n i).aemeasurable
+      simpa [Function.comp_def] using this
+    rw [← h1, hlaw n i, h2]
+  have hvarZ' : Tendsto (fun n => ∑ i, variance (Z n i) ν) atTop (𝓝 σ2) := by
+    refine hvar.congr fun n => ?_
+    exact (Finset.sum_congr rfl fun i _ => (hvarZ n i).symm)
+  have hCLT := tendsto_charFun_rowSum_gaussian_of_uniformly_small (μ := ν) hZm hindep hmeanZ
+    hL2Z hbddZ hb0 hvarZ' u
+  refine hCLT.congr fun n => ?_
+  rw [iIndepFun.charFun_map_fun_sum_eq_prod (fun i => (hZm n i).aemeasurable) (hindep n),
+    Finset.prod_apply]
+  exact Finset.prod_congr rfl fun i _ => by rw [hlaw n i]
+
+end Surrogate
 
 end StatLean.TimeSeries
