@@ -2282,6 +2282,120 @@ private lemma ae_tendsto_avg_blockResid_sq [IsProbabilityMeasure μ] {σ2 : ℝ}
   rw [hsplit, hcast, ← Finset.mul_sum, mul_inv]
   ring
 
+private lemma l2n_abs (f : Ω → ℝ) : l2n μ (fun ω => |f ω|) = l2n μ f := by
+  simp only [l2n, sq_abs]
+
+private lemma l2n_neg (f : Ω → ℝ) : l2n μ (fun ω => -f ω) = l2n μ f := by
+  simp only [l2n, neg_pow, even_two.neg_pow]
+
+private lemma l2n_sub_le_add {f g h : Ω → ℝ} (hfh : MemLp (fun ω => f ω - h ω) 2 μ)
+    (hhg : MemLp (fun ω => h ω - g ω) 2 μ) :
+    l2n μ (fun ω => f ω - g ω)
+      ≤ l2n μ (fun ω => f ω - h ω) + l2n μ (fun ω => h ω - g ω) := by
+  have he : (fun ω => f ω - g ω) = fun ω => (f ω - h ω) + (h ω - g ω) := by
+    funext ω; ring
+  rw [he]
+  exact l2n_add_le hfh hhg
+
+private lemma l2n_eq_eLpNorm_toReal {f : Ω → ℝ} (hf : MemLp f 2 μ) :
+    l2n μ f = (eLpNorm f 2 μ).toReal := by
+  rw [l2n_eq_norm_toLp hf, Lp.norm_def]
+  congr 1
+  exact eLpNorm_congr_ae hf.coeFn_toLp
+
+/-- Cauchy–Schwarz in the form used below. -/
+private lemma integral_abs_mul_le [IsProbabilityMeasure μ] {f g : Ω → ℝ}
+    (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    ∫ ω, |f ω * g ω| ∂μ ≤ l2n μ f * l2n μ g := by
+  have hfa : MemLp (fun ω => |f ω|) 2 μ := hf.abs
+  have hga : MemLp (fun ω => |g ω|) 2 μ := hg.abs
+  have h := real_inner_le_norm (hfa.toLp _) (hga.toLp _)
+  rw [inner_toLp' hfa hga] at h
+  have heq : ∫ ω, |f ω * g ω| ∂μ = ∫ ω, |f ω| * |g ω| ∂μ := by
+    exact integral_congr_ae (Filter.Eventually.of_forall fun ω => abs_mul (f ω) (g ω))
+  rw [heq, ← l2n_abs f, ← l2n_abs g, l2n_eq_norm_toLp hfa, l2n_eq_norm_toLp hga]
+  exact h
+
+private lemma l2n_noise [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
+    (hε : IsWhiteNoise ε σ2 μ) (t : ℤ) : l2n μ (ε t) = Real.sqrt σ2 := by
+  have h : ∫ ω, ε t ω ^ 2 ∂μ = σ2 := by
+    have h1 : ∫ ω, ε t ω ^ 2 ∂μ = ∫ ω, ε t ω * ε t ω ∂μ :=
+      integral_congr_ae (Filter.Eventually.of_forall fun ω => sq (ε t ω))
+    rw [h1, integral_noise_mul' hε, if_pos rfl]
+  rw [l2n, h]
+
+private lemma l2n_linearProcess_eq [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ2 : ℝ}
+    {X ε : ℤ → Ω → ℝ} (hX : IsLinearProcessOf ψ X ε μ) (hψ : Summable fun j => |ψ j|)
+    (hε : IsWhiteNoise ε σ2 μ) (hmeas : ∀ t, Measurable (X t)) (s t : ℤ) :
+    l2n μ (X s) = l2n μ (X t) := by
+  have hsq : ∀ r : ℤ, ∫ ω, X r ω ^ 2 ∂μ = σ2 * ∑' j : ℕ, ψ j * ψ (j + (0 : ℤ).natAbs) := by
+    intro r
+    have h1 : ∫ ω, X r ω ^ 2 ∂μ = ∫ ω, X r ω * X r ω ∂μ :=
+      integral_congr_ae (Filter.Eventually.of_forall fun ω => sq (X r ω))
+    rw [h1, integral_mul_linearProcess hX hψ hε hmeas r r, sub_self]
+  rw [l2n, l2n, hsq s, hsq t]
+
+/-- **Uniform `L²` control of the `ψ`-truncation defect**: `‖X_t − Σ_{n<N} ψ_n ε_{t−n}‖₂ ≤
+(Σ_{n ≥ N}|ψ_n|)·√σ²`, the bound being independent of `t`. This is what lets the
+progression device use a *finite* window of the noise. -/
+private lemma l2n_sub_psum_le [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ2 : ℝ}
+    {X ε : ℤ → Ω → ℝ} (hX : IsLinearProcessOf ψ X ε μ) (hψ : Summable fun j => |ψ j|)
+    (hε : IsWhiteNoise ε σ2 μ) (hmeas : ∀ t, Measurable (X t)) (t : ℤ) (N : ℕ) :
+    l2n μ (fun ω => X t ω - ∑ n ∈ Finset.range N, ψ n * ε (t - (n : ℕ)) ω)
+      ≤ (∑' k : ℕ, |ψ (k + N)|) * Real.sqrt σ2 := by
+  classical
+  have hσ0 : 0 ≤ Real.sqrt σ2 := Real.sqrt_nonneg _
+  have hmemX : MemLp (X t) 2 μ := hX.memLp hψ hε hmeas t
+  have hmemP : ∀ K : ℕ, MemLp (fun ω => ∑ n ∈ Finset.range K, ψ n * ε (t - (n : ℕ)) ω) 2 μ :=
+    fun K => memLp_finset_sum _ fun n _ => (hε.memLp _).const_mul _
+  have hshift : Summable fun k : ℕ => |ψ (k + N)| := (summable_nat_add_iff N).2 hψ
+  -- the increment between two truncation levels is controlled by the coefficient tail
+  have hincr : ∀ K : ℕ, N ≤ K →
+      l2n μ (fun ω => (∑ n ∈ Finset.range K, ψ n * ε (t - (n : ℕ)) ω)
+          - ∑ n ∈ Finset.range N, ψ n * ε (t - (n : ℕ)) ω)
+        ≤ (∑' k : ℕ, |ψ (k + N)|) * Real.sqrt σ2 := by
+    intro K hK
+    have hdiff : (fun ω => (∑ n ∈ Finset.range K, ψ n * ε (t - (n : ℕ)) ω)
+        - ∑ n ∈ Finset.range N, ψ n * ε (t - (n : ℕ)) ω)
+        = fun ω => ∑ n ∈ Finset.Ico N K, ψ n * ε (t - (n : ℕ)) ω := by
+      funext ω
+      rw [Finset.range_eq_Ico,
+        ← Finset.sum_Ico_consecutive (fun n => ψ n * ε (t - (n : ℕ)) ω) (Nat.zero_le N) hK]
+      ring
+    rw [hdiff]
+    refine le_trans (l2n_finset_sum_le _ _ fun n => (hε.memLp _).const_mul _) ?_
+    have hterm : ∀ n ∈ Finset.Ico N K, l2n μ (fun ω => ψ n * ε (t - (n : ℕ)) ω)
+        ≤ |ψ n| * Real.sqrt σ2 := by
+      intro n _
+      rw [l2n_const_mul, l2n_noise hε]
+    refine le_trans (Finset.sum_le_sum hterm) ?_
+    rw [← Finset.sum_mul]
+    refine mul_le_mul_of_nonneg_right ?_ hσ0
+    rw [Finset.sum_Ico_eq_sum_range]
+    have hre : ∑ k ∈ Finset.range (K - N), |ψ (N + k)|
+        = ∑ k ∈ Finset.range (K - N), |ψ (k + N)| :=
+      Finset.sum_congr rfl fun k _ => by rw [Nat.add_comm N k]
+    rw [hre]
+    exact hshift.sum_le_tsum _ fun k _ => abs_nonneg _
+  -- pass to the limit in the truncation level
+  have hlim : Tendsto (fun K : ℕ =>
+      l2n μ (fun ω => X t ω - ∑ n ∈ Finset.range K, ψ n * ε (t - (n : ℕ)) ω)
+        + (∑' k : ℕ, |ψ (k + N)|) * Real.sqrt σ2) atTop
+      (𝓝 (0 + (∑' k : ℕ, |ψ (k + N)|) * Real.sqrt σ2)) := by
+    refine Filter.Tendsto.add ?_ tendsto_const_nhds
+    have h1 : ∀ K : ℕ,
+        l2n μ (fun ω => X t ω - ∑ n ∈ Finset.range K, ψ n * ε (t - (n : ℕ)) ω)
+          = (eLpNorm (fun ω => X t ω - ∑ n ∈ Finset.range K, ψ n * ε (t - (n : ℕ)) ω)
+              2 μ).toReal := fun K =>
+      l2n_eq_eLpNorm_toReal (hmemX.sub (hmemP K))
+    simp only [h1]
+    simpa using (ENNReal.continuousAt_toReal (by simp)).tendsto.comp (hX t)
+  rw [zero_add] at hlim
+  refine ge_of_tendsto hlim ?_
+  filter_upwards [eventually_ge_atTop N] with K hK
+  refine le_trans (l2n_sub_le_add (hmemX.sub (hmemP K)) ((hmemP K).sub (hmemP N))) ?_
+  linarith [hincr K hK]
+
 open Matrix in
 /-- **DEBT — step (C) of the `armaProfileS_tendstoInProb` route**: the residual
 sum-of-squares LLN `T⁻¹‖Π_T x‖² →p σ² · Σ_j c_j²`.
