@@ -2068,6 +2068,132 @@ private lemma tendsto_sum_sq_cTrunc {p q : ℕ} {b0 b : Fin p → ℝ} {a0 a : F
   rw [add_zero] at hfin
   exact Filter.Tendsto.congr (fun m => (hsplit m).symm) hfin
 
+private lemma inv_mul_le_inv_mul {c t x y : ℝ} (hc : 0 < c) (hct : c ≤ t) (hx : 0 ≤ x)
+    (hxy : x ≤ y) : t⁻¹ * x ≤ c⁻¹ * y := by
+  have ht : 0 < t := lt_of_lt_of_le hc hct
+  have hpos : 0 < t * c := mul_pos ht hc
+  refine le_of_mul_le_mul_right ?_ hpos
+  have e1 : t⁻¹ * x * (t * c) = x * c := by field_simp <;> ring
+  have e2 : c⁻¹ * y * (t * c) = y * t := by field_simp <;> ring
+  rw [e1, e2]
+  nlinarith
+
+/-- Splitting `range (N·L)` into the `L` arithmetic progressions of step `L`. -/
+private lemma sum_range_mul_split {M : Type*} [AddCommMonoid M] {L : ℕ} (hL : 0 < L) (N : ℕ)
+    (F : ℕ → M) :
+    ∑ i ∈ Finset.range (N * L), F i
+      = ∑ k ∈ Finset.range L, ∑ j ∈ Finset.range N, F (k + j * L) := by
+  classical
+  rw [← Finset.sum_product']
+  refine (Finset.sum_nbij' (fun x : ℕ × ℕ => x.1 + x.2 * L) (fun i : ℕ => (i % L, i / L))
+    ?_ ?_ ?_ ?_ ?_).symm
+  · intro x hx
+    simp only [Finset.mem_product, Finset.mem_range] at hx
+    simp only [Finset.mem_range]
+    calc x.1 + x.2 * L < L + x.2 * L := by omega
+      _ = (x.2 + 1) * L := by ring
+      _ ≤ N * L := Nat.mul_le_mul_right L (by omega)
+  · intro i hi
+    rw [Finset.mem_range] at hi
+    simp only [Finset.mem_product, Finset.mem_range]
+    exact ⟨Nat.mod_lt _ hL, (Nat.div_lt_iff_lt_mul hL).2 hi⟩
+  · intro x hx
+    simp only [Finset.mem_product, Finset.mem_range] at hx
+    have h1 : (x.1 + x.2 * L) % L = x.1 := by
+      rw [Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hx.1]
+    have h2 : (x.1 + x.2 * L) / L = x.2 := by
+      rw [Nat.add_mul_div_right _ _ hL, Nat.div_eq_of_lt hx.1, zero_add]
+    show ((x.1 + x.2 * L) % L, (x.1 + x.2 * L) / L) = x
+    rw [h1, h2]
+  · intro i _
+    exact Nat.mod_add_div' i L
+  · intro x _
+    rfl
+
+/-- **From the block subsequence to the full sequence**: for a monotone nonnegative
+partial-sum sequence, convergence of `S_{NL}/(NL)` upgrades to convergence of `S_T/T`.
+The two comparison sequences differ from the block averages by the factors
+`(N+1)/N` and `N/(N+1)`, both of which tend to `1`. -/
+private lemma tendsto_avg_of_tendsto_block {L : ℕ} (hL : 0 < L) {S : ℕ → ℝ} {M : ℝ}
+    (hmono : Monotone S) (hpos : ∀ n, 0 ≤ S n)
+    (hA : Tendsto (fun N : ℕ => ((N * L : ℕ) : ℝ)⁻¹ * S (N * L)) atTop (𝓝 M)) :
+    Tendsto (fun T : ℕ => (T : ℝ)⁻¹ * S T) atTop (𝓝 M) := by
+  set A : ℕ → ℝ := fun N => ((N * L : ℕ) : ℝ)⁻¹ * S (N * L) with hAdef
+  have hφ : Tendsto (fun T : ℕ => T / L) atTop atTop := by
+    refine tendsto_atTop_atTop.2 fun c => ⟨c * L, fun T hT => ?_⟩
+    exact (Nat.le_div_iff_mul_le hL).2 hT
+  have hratio : Tendsto (fun N : ℕ => ((N : ℝ) + 1) / (N : ℝ)) atTop (𝓝 1) := by
+    have h1 : Tendsto (fun N : ℕ => 1 + 1 / (N : ℝ)) atTop (𝓝 (1 + 0)) :=
+      tendsto_const_nhds.add tendsto_one_div_atTop_nhds_zero_nat
+    rw [add_zero] at h1
+    refine h1.congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with N hN
+    have hN0 : (N : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
+    field_simp
+  have hratio' : Tendsto (fun N : ℕ => (N : ℝ) / ((N : ℝ) + 1)) atTop (𝓝 1) := by
+    have h1 : Tendsto (fun N : ℕ => (((N : ℝ) + 1) / (N : ℝ))⁻¹) atTop (𝓝 (1 : ℝ)⁻¹) :=
+      hratio.inv₀ one_ne_zero
+    rw [inv_one] at h1
+    refine h1.congr' ?_
+    filter_upwards with N
+    rw [inv_div]
+  have hupN : Tendsto (fun N : ℕ => A (N + 1) * (((N : ℝ) + 1) / (N : ℝ))) atTop (𝓝 M) := by
+    have h1 : Tendsto (fun N : ℕ => A (N + 1)) atTop (𝓝 M) :=
+      hA.comp (tendsto_atTop_atTop.2 fun c => ⟨c, fun n hn => by omega⟩)
+    simpa using h1.mul hratio
+  have hloN : Tendsto (fun N : ℕ => A N * ((N : ℝ) / ((N : ℝ) + 1))) atTop (𝓝 M) := by
+    simpa using hA.mul hratio'
+  have hup := hupN.comp hφ
+  have hlo := hloN.comp hφ
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' hlo hup ?_ ?_
+  · filter_upwards [eventually_ge_atTop L] with T hT
+    have hTpos : 0 < T := lt_of_lt_of_le hL hT
+    set N := T / L with hNdef
+    have hN1 : 1 ≤ N := (Nat.one_le_div_iff hL).2 hT
+    have hlow : N * L ≤ T := Nat.div_mul_le_self T L
+    have hhigh : T < (N + 1) * L := (Nat.div_lt_iff_lt_mul hL).1 (Nat.lt_succ_self N)
+    have hNR : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN1
+    have hLR : (0 : ℝ) < (L : ℝ) := by exact_mod_cast hL
+    have hcast : ((N * L : ℕ) : ℝ) = (N : ℝ) * (L : ℝ) := by push_cast; ring
+    have hcast' : (((N + 1) * L : ℕ) : ℝ) = ((N : ℝ) + 1) * (L : ℝ) := by push_cast; ring
+    have hrewrite : A N * ((N : ℝ) / ((N : ℝ) + 1))
+        = (((N + 1) * L : ℕ) : ℝ)⁻¹ * S (N * L) := by
+      have h1 : (N : ℝ) ≠ 0 := ne_of_gt hNR
+      have h2 : (L : ℝ) ≠ 0 := ne_of_gt hLR
+      have h3 : ((N : ℝ) + 1) ≠ 0 := by positivity
+      simp only [hAdef, hcast, hcast']
+      field_simp <;> ring
+    show A N * ((N : ℝ) / ((N : ℝ) + 1)) ≤ (T : ℝ)⁻¹ * S T
+    rw [hrewrite]
+    refine inv_mul_le_inv_mul (by exact_mod_cast hTpos) ?_ (hpos _) (hmono hlow)
+    rw [hcast']
+    calc (T : ℝ) ≤ (((N + 1) * L : ℕ) : ℝ) := by exact_mod_cast hhigh.le
+      _ = ((N : ℝ) + 1) * (L : ℝ) := hcast'
+  · filter_upwards [eventually_ge_atTop L] with T hT
+    have hTpos : 0 < T := lt_of_lt_of_le hL hT
+    set N := T / L with hNdef
+    have hN1 : 1 ≤ N := (Nat.one_le_div_iff hL).2 hT
+    have hlow : N * L ≤ T := Nat.div_mul_le_self T L
+    have hhigh : T < (N + 1) * L := (Nat.div_lt_iff_lt_mul hL).1 (Nat.lt_succ_self N)
+    have hNR : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN1
+    have hLR : (0 : ℝ) < (L : ℝ) := by exact_mod_cast hL
+    have hcast : ((N * L : ℕ) : ℝ) = (N : ℝ) * (L : ℝ) := by push_cast; ring
+    have hcast' : (((N + 1) * L : ℕ) : ℝ) = ((N : ℝ) + 1) * (L : ℝ) := by push_cast; ring
+    have hrewrite : A (N + 1) * (((N : ℝ) + 1) / (N : ℝ))
+        = ((N * L : ℕ) : ℝ)⁻¹ * S ((N + 1) * L) := by
+      have h1 : (N : ℝ) ≠ 0 := ne_of_gt hNR
+      have h2 : (L : ℝ) ≠ 0 := ne_of_gt hLR
+      have h3 : ((N : ℝ) + 1) ≠ 0 := by positivity
+      simp only [hAdef, hcast, hcast']
+      field_simp <;> ring
+    show (T : ℝ)⁻¹ * S T ≤ A (N + 1) * (((N : ℝ) + 1) / (N : ℝ))
+    rw [hrewrite]
+    refine inv_mul_le_inv_mul ?_ ?_ (hpos _) (hmono hhigh.le)
+    · rw [hcast]; positivity
+    · rw [hcast]
+      calc (N : ℝ) * (L : ℝ) = ((N * L : ℕ) : ℝ) := hcast.symm
+        _ ≤ (T : ℝ) := by exact_mod_cast hlow
+
 open Matrix in
 /-- **DEBT — step (C) of the `armaProfileS_tendstoInProb` route**: the residual
 sum-of-squares LLN `T⁻¹‖Π_T x‖² →p σ² · Σ_j c_j²`.
