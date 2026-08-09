@@ -1519,17 +1519,26 @@ innovation-side limit survives unchanged.
 (truncation) piece is geometric in `t` by `Consistency.exists_uniform_geometric_bound_arma`,
 so it contributes `O_p(1/T)` to `γ̂` and dies after `√T`-scaling. The first needs
 `‖π(θ̂) − π(θ₀)‖_{ℓ¹} = O_p(dist(θ̂, θ₀)) = o_p(T^{−1/2})`, i.e. a **Lipschitz** bound for
-`θ ↦ π(θ)` in `ℓ¹` on a neighbourhood of `θ₀`. The project has only
-`Consistency.exists_armaPi_l1_modulus` (a *modulus of continuity*, from compactness),
-which converts `o_p(T^{−1/2})` into `o_p(1)` — one full factor of `√T` short. The
-Lipschitz brick is true (each `π_n` is a polynomial in `θ`, and Cauchy estimates in `θ`
-on a complex polydisc give `|∂π_n/∂θ| ≤ C rⁿ` uniformly on a compact `K ⊆ 𝓑`), but it
-does not exist yet; `exists_uniform_geometric_bound_arma` bounds `π` and `ψ`, not their
-`θ`-derivatives.
+`θ ↦ π(θ)` in `ℓ¹` on a neighbourhood of `θ₀`. When this note was written the project
+had only `Consistency.exists_armaPi_l1_modulus` (a *modulus of continuity*, from
+compactness), which converts `o_p(T^{−1/2})` into `o_p(1)` — one full factor of `√T`
+short.
+
+**STATUS after wave `ts/s12b-model-repairs` (2026-08-09): the missing brick now EXISTS**,
+as `Consistency.exists_armaPi_l1_lipschitz` (public, axiom-clean), and `Consistency` is
+now in this file's import closure. Two predictions of the paragraph above are
+**overturned** by how it was proved: no Cauchy estimate and no `∂π_n/∂θ` is involved — the
+bound comes from the **resolvent identity**
+`π − π′ = ((b − b′) + (a′ − a)·π′)·a⁻¹` together with the `ℓ¹` convolution inequality, the
+two polynomial differences being finitely supported with the parameter differences as
+coefficients. So this residue is now purely the *stochastic* half: turning
+`‖π(θ̂) − π(θ₀)‖_{ℓ¹} ≤ L·dist(θ̂, θ₀) = o_p(T^{−1/2})` into the `√T`-scaled sample-ACF
+difference (a Cauchy–Schwarz/Markov bookkeeping over the window, plus the geometric
+truncation piece), and the measurability half.
 
 **Scope items** (neither mathematical): `Consistency.continuous_armaPi` and
 `maPoly_conv_armaPi` are `private`, so the measurability half must be re-derived here or
-they must be un-`private`d; and `Consistency` is not in this file's import closure. -/
+they must be un-`private`d. -/
 private theorem residual_acf_transfer_residue [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
