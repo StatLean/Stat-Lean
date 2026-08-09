@@ -390,6 +390,41 @@ theorem mem_archAdmissible_of_b_eq_zero {p T : ℕ} {κ c : ℝ} (hc : κ ≤ c)
     truncVol_const]
   exact hc
 
+/-- **The truth is *interior* to the admissible set** as soon as the floor is *strict*,
+`κ < c₀`. This is the second half of the de-vacuation and it is what keeps FY's boundary
+problem out: the variance constraint does not bind at the null, so the maximizer is a free
+(score-equation) maximizer near the truth rather than a constrained one, and the `χ²_p`
+limit — as opposed to the one-sided mixture — is the right target. It is also why the
+statements below carry `κ < c₀` and not `κ ≤ c₀`: at `κ = c₀` the null sits *on* the
+boundary of `archAdmissible κ` and the strengthening would have re-created, on the
+`c₀` axis, exactly the defect it was introduced to remove. -/
+theorem mem_interior_archAdmissible {p T : ℕ} {κ c : ℝ} (hc : κ < c) (x : Fin T → ℝ) (ν : ℕ) :
+    ((c, fun _ : Fin p => (0 : ℝ)) : ℝ × (Fin p → ℝ)) ∈
+      interior (archAdmissible κ x ν) := by
+  refine mem_interior.2 ⟨⋂ t ∈ Finset.Ico ν T,
+    {θ : ℝ × (Fin p → ℝ) |
+      κ < garchTruncVol θ.1 θ.2 (Fin.elim0 : Fin 0 → ℝ) θ.1 x t}, ?_, ?_, ?_⟩
+  · intro θ hθ t ht
+    simp only [Set.mem_iInter] at hθ
+    exact (hθ t ht).le
+  · exact isOpen_biInter_finset fun t _ =>
+      isOpen_lt continuous_const (continuous_truncVol x t)
+  · simp only [Set.mem_iInter, Set.mem_setOf_eq]
+    intro t _
+    rw [truncVol_const]
+    exact hc
+
+/-- The truth is interior to the whole **feasible set** `K ∩ archAdmissible κ`: neither the
+search region nor the variance floor binds at the null. -/
+theorem mem_interior_arch_feasible {p T : ℕ} {κ c : ℝ} (hc : κ < c)
+    {K : Set (ℝ × (Fin p → ℝ))}
+    (hK0 : ((c, fun _ : Fin p => (0 : ℝ)) : ℝ × (Fin p → ℝ)) ∈ interior K)
+    (x : Fin T → ℝ) (ν : ℕ) :
+    ((c, fun _ : Fin p => (0 : ℝ)) : ℝ × (Fin p → ℝ)) ∈
+      interior (K ∩ archAdmissible κ x ν) := by
+  rw [interior_inter]
+  exact ⟨hK0, mem_interior_archAdmissible hc x ν⟩
+
 /-- On the admissible set the criterion is continuous: the floor `κ > 0` keeps the
 volatility away from the singularity of both `log` and the reciprocal. -/
 private lemma continuousOn_archLogLik {p T : ℕ} {κ : ℝ} (hκ : 0 < κ) (x : Fin T → ℝ) (ν : ℕ) :
@@ -540,7 +575,7 @@ theorem archLRStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     -- by, and a compact search region containing the truth in its interior; FY §4.2.6 /
     -- Serfling §4.4.4, in the `mle_consistent` (Hannan §2) `hargmin`-over-`K` pattern.
     -- Replaces (2026-08-09b) the unsatisfiable global-maximizer shape of 2026-08-09.
-    {κ : ℝ} (hκ : 0 < κ) (hκc0 : κ ≤ c0)
+    {κ : ℝ} (hκ : 0 < κ) (hκc0 : κ < c0)
     {K : Set (ℝ × (Fin p → ℝ))} (hK : IsCompact K)
     (hK0 : ((c0, fun _ : Fin p => (0 : ℝ)) : ℝ × (Fin p → ℝ)) ∈ interior K)
     -- USER-INPUT: `(c0hat, bhat)` maximizes the ARCH conditional log-likelihood over the
@@ -848,7 +883,7 @@ theorem archWaldStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     -- USER-INPUT: variance floor and compact search region with the truth interior to it;
     -- FY §4.2.6 / Serfling §4.4.4, `mle_consistent`'s `hargmin`-over-`K` pattern.
     -- Replaces (2026-08-09b) the unsatisfiable global-maximizer shape of 2026-08-09.
-    {κ : ℝ} (hκ : 0 < κ) (hκc0 : κ ≤ c0)
+    {κ : ℝ} (hκ : 0 < κ) (hκc0 : κ < c0)
     {K : Set (ℝ × (Fin p → ℝ))} (hK : IsCompact K)
     (hK0 : ((c0, fun _ : Fin p => (0 : ℝ)) : ℝ × (Fin p → ℝ)) ∈ interior K)
     -- USER-INPUT: `(c0hat, bhat)` maximizes the ARCH conditional log-likelihood over the
