@@ -4353,6 +4353,253 @@ theorem armaProfileS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
         refine le_trans (ENNReal.toReal_mono (by finiteness) (measure_union_le _ _)) ?_
         exact le_of_eq (ENNReal.toReal_add (measure_ne_top μ _) (measure_ne_top μ _))
 
+/-! ### The data's own second moment, and local stochastic equicontinuity
+
+The oscillation estimate `abs_residSS_sub_le` prices the `θ`-dependence of `‖Π_T(θ)x‖²`
+against the **random** factor `T⁻¹‖x‖²`, so the assembly needs that factor to be
+`O_p(1)` with a *deterministic* bound — a bound "with probability `1 − κ`" would not
+survive the `T → ∞` limit at a fixed radius `ρ`. It is: `T⁻¹‖x‖²` is the residual sum of
+squares at the **zero parameter** `(0, 0)`, whose inversion filter is the identity, so
+`armaResidualSS_tendstoInProb` applies verbatim. -/
+
+private lemma arPoly_zero_fun {p : ℕ} : arPoly (fun _ : Fin p => (0 : ℝ)) = 1 := by
+  simp [arPoly]
+
+private lemma maPoly_zero_fun {q : ℕ} : maPoly (fun _ : Fin q => (0 : ℝ)) = 1 := by
+  simp [maPoly]
+
+private lemma invertible_zero_fun {p q : ℕ} :
+    ARMAInvertibleParams (fun _ : Fin p => (0 : ℝ)) (fun _ : Fin q => (0 : ℝ)) := by
+  constructor
+  · intro z _
+    rw [arPoly_zero_fun]
+    simp
+  · intro z _
+    rw [maPoly_zero_fun]
+    simp
+
+private lemma armaPi_zero_fun {p q : ℕ} (n : ℕ) :
+    armaPi (fun _ : Fin p => (0 : ℝ)) (fun _ : Fin q => (0 : ℝ)) n
+      = if n = 0 then 1 else 0 := by
+  rw [armaPi, arPoly_zero_fun, maPoly_zero_fun]
+  simp [PowerSeries.coeff_one]
+
+open Matrix in
+/-- At the zero parameter the inversion matrix is the identity. -/
+private lemma piMat_zero_fun {p q : ℕ} (T : ℕ) :
+    piMat (fun _ : Fin p => (0 : ℝ)) (fun _ : Fin q => (0 : ℝ)) T = 1 := by
+  ext i j
+  show piK (fun _ : Fin p => (0 : ℝ)) (fun _ : Fin q => (0 : ℝ)) (i : ℕ) (j : ℕ)
+      = (1 : Matrix (Fin T) (Fin T) ℝ) i j
+  rw [piK, Matrix.one_apply]
+  by_cases hij : i = j
+  · subst hij
+    rw [if_pos le_rfl, if_pos rfl, armaPi_zero_fun, if_pos (by omega)]
+  · by_cases hle : (i : ℕ) ≤ (j : ℕ)
+    · have hne : (j : ℕ) - (i : ℕ) ≠ 0 := by
+        have : (i : ℕ) ≠ (j : ℕ) := fun hc => hij (Fin.ext hc)
+        omega
+      rw [if_pos hle, if_neg hij, armaPi_zero_fun, if_neg hne]
+    · rw [if_neg hle, if_neg hij]
+
+open Matrix in
+/-- **`T⁻¹‖x‖²` is bounded in probability by a deterministic constant.** -/
+private lemma normSq_bounded_inProb [IsProbabilityMeasure μ] {p q : ℕ}
+    {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
+    (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
+    (hB0 : ARMAInvertibleParams b0 a0)
+    (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
+    (hmeas : ∀ t, Measurable (X t)) :
+    ∃ M : ℝ, 0 < M ∧ Tendsto (fun T : ℕ => (μ {ω | M ≤ (T : ℝ)⁻¹ *
+        ∑ k : Fin T, X (((k : ℕ) : ℤ) + 1) ω ^ 2}).toReal) atTop (𝓝 0) := by
+  have hlim := armaResidualSS_tendstoInProb (b := fun _ : Fin p => (0 : ℝ))
+    (a := fun _ : Fin q => (0 : ℝ)) h hiid hσ hB0 invertible_zero_fun hcausal hmeas
+    (η' := 1) one_pos
+  have hcv : (1 : ℝ) ≤ armaContrastVar b0 a0
+      (fun _ : Fin p => (0 : ℝ)) (fun _ : Fin q => (0 : ℝ)) :=
+    one_le_armaContrastVar hB0 invertible_zero_fun
+  refine ⟨σ2 * armaContrastVar b0 a0 (fun _ : Fin p => (0 : ℝ))
+      (fun _ : Fin q => (0 : ℝ)) + 1, by nlinarith, ?_⟩
+  refine squeeze_zero' (Eventually.of_forall fun T => ENNReal.toReal_nonneg) ?_ hlim
+  filter_upwards with T
+  refine ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono fun ω hω => ?_)
+  simp only [Set.mem_setOf_eq] at hω ⊢
+  have hq : ((piMat (fun _ : Fin p => (0 : ℝ)) (fun _ : Fin q => (0 : ℝ)) T *ᵥ
+        fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+      (piMat (fun _ : Fin p => (0 : ℝ)) (fun _ : Fin q => (0 : ℝ)) T *ᵥ
+        fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+      = ∑ k : Fin T, X (((k : ℕ) : ℤ) + 1) ω ^ 2 := by
+    rw [piMat_zero_fun, Matrix.one_mulVec]
+    exact Finset.sum_congr rfl fun k _ => (sq _).symm
+  rw [hq]
+  rw [le_abs]
+  left
+  linarith
+
+open Matrix in
+/-- **Local stochastic equicontinuity of the profiled sum of squares** — ingredient (iii)
+of `mle_consistent`, and the content of `MLEAsymptotics.armaProfileS_equicontinuous`.
+
+The proof needs **no** `∂π/∂θ` and **no** difference modulus for the Gram tail. Writing
+`Γ_T(θ)⁻¹ = Π_Tᵀ(1 + G_T)⁻¹Π_T` and using the two-sided sandwich
+`‖Π_T(θ)x‖² − uᵀG_Tu ≤ S_T(θ) ≤ ‖Π_T(θ)x‖²` (`armaProfileS_sandwich`), the oscillation
+splits into
+
+* the **residual** part `T⁻¹|‖Π_T(θ)x‖² − ‖Π_T(θ₀)x‖²|`, which `abs_residSS_sub_le`
+  bounds *pathwise* by `(Σ_n|π_n(θ) − π_n(θ₀)|)·(Σ|π(θ)| + Σ|π(θ₀)|)·T⁻¹‖x‖²`, the first
+  factor being the `ℓ¹` modulus `exists_armaPi_l1_modulus` and the last one `O_p(1)` by
+  `normSq_bounded_inProb`;
+* the **Gram-tail** parts `T⁻¹uᵀG_T(θ)u` at `θ` and at `θ₀`, both `o_p(1)` *uniformly*
+  over the compact `K ∪ {θ₀}` by `gramTail_uniform_tendstoInProb`.
+
+The two shortcuts recorded as dead at `mle_consistent` really are dead — but they are
+not needed: the uniform `o_p(1)` bound on the correction term replaces them. -/
+theorem armaProfileS_locallyEquicontinuous [IsProbabilityMeasure μ] {p q : ℕ}
+    {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
+    (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
+    (hB0 : ARMAInvertibleParams b0 a0)
+    (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
+    (hmeas : ∀ t, Measurable (X t))
+    {K : Set ((Fin p → ℝ) × (Fin q → ℝ))} (hK : IsCompact K)
+    (hKB : ∀ ba ∈ K, ARMAInvertibleParams ba.1 ba.2) {η : ℝ} (hη : 0 < η) :
+    ∃ ρ : ℝ, 0 < ρ ∧
+      Tendsto (fun T : ℕ => (μ {ω | ∃ ba ∈ K, dist ba (b0, a0) < ρ ∧
+          η ≤ |armaProfileS ba.1 ba.2 (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) / T
+            - armaProfileS b0 a0 (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) / T|}).toReal)
+        atTop (𝓝 0) := by
+  classical
+  have hK'c : IsCompact (insert ((b0, a0) : (Fin p → ℝ) × (Fin q → ℝ)) K) := hK.insert _
+  have hK'B : ∀ ba ∈ insert ((b0, a0) : (Fin p → ℝ) × (Fin q → ℝ)) K,
+      ARMAInvertibleParams ba.1 ba.2 := by
+    intro ba hba
+    rcases hba with rfl | hba
+    · exact hB0
+    · exact hKB ba hba
+  have h0K' : ((b0, a0) : (Fin p → ℝ) × (Fin q → ℝ))
+      ∈ insert ((b0, a0) : (Fin p → ℝ) × (Fin q → ℝ)) K := Set.mem_insert _ _
+  have hKK' : K ⊆ insert ((b0, a0) : (Fin p → ℝ) × (Fin q → ℝ)) K := Set.subset_insert _ _
+  obtain ⟨C, r, hC, hr0, hr1, hψK, hπK⟩ := exists_uniform_geometric_bound_arma hK'c hK'B
+  have hCpos : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC
+  have hr1' : (0 : ℝ) < 1 - r := by linarith
+  have hPpos : (0 : ℝ) < C / (1 - r) := by positivity
+  have hPbd : ∀ ba ∈ insert ((b0, a0) : (Fin p → ℝ) × (Fin q → ℝ)) K,
+      ∑' n : ℕ, |armaPi ba.1 ba.2 n| ≤ C / (1 - r) := by
+    intro ba hba
+    have hs : Summable fun n => |armaPi ba.1 ba.2 n| := summable_abs_armaPi (hK'B ba hba)
+    have hg : Summable fun n : ℕ => C * r ^ n :=
+      (summable_geometric_of_lt_one hr0 hr1).mul_left C
+    refine le_trans (hs.tsum_le_tsum (fun n => hπK ba hba n) hg) ?_
+    rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1, div_eq_mul_inv]
+  obtain ⟨M, hM0, hMt⟩ := normSq_bounded_inProb h hiid hσ hB0 hcausal hmeas
+  obtain ⟨ρ, hρ, hmod⟩ := exists_armaPi_l1_modulus hK'c hK'B
+    (ε := η / (3 * (2 * (C / (1 - r))) * M)) (by positivity)
+  refine ⟨ρ, hρ, ?_⟩
+  have hG := gramTail_uniform_tendstoInProb (b0 := b0) (a0 := a0) h.whiteNoise hB0
+    hcausal hmeas hK'c hK'B (η := η / 3) (by linarith)
+  have hsum : Tendsto (fun T : ℕ =>
+      (μ {ω | M ≤ (T : ℝ)⁻¹ * ∑ k : Fin T, X (((k : ℕ) : ℤ) + 1) ω ^ 2}).toReal
+      + (μ {ω | ∃ ba ∈ insert ((b0, a0) : (Fin p → ℝ) × (Fin q → ℝ)) K, η / 3 ≤
+          (T : ℝ)⁻¹ *
+            ((piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+              (gramTail ba.1 ba.2 T *ᵥ
+                (piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)))}).toReal)
+      atTop (𝓝 0) := by simpa using hMt.add hG
+  refine squeeze_zero' (Eventually.of_forall fun T => ENNReal.toReal_nonneg) ?_ hsum
+  filter_upwards [eventually_ge_atTop 1] with T hT
+  have hTpos : (0 : ℝ) < T := by exact_mod_cast hT
+  have hTnn : (0 : ℝ) ≤ (T : ℝ)⁻¹ := by positivity
+  have hsub : {ω | ∃ ba ∈ K, dist ba (b0, a0) < ρ ∧
+        η ≤ |armaProfileS ba.1 ba.2 (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) / T
+          - armaProfileS b0 a0 (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) / T|}
+      ⊆ {ω | M ≤ (T : ℝ)⁻¹ * ∑ k : Fin T, X (((k : ℕ) : ℤ) + 1) ω ^ 2}
+        ∪ {ω | ∃ ba ∈ insert ((b0, a0) : (Fin p → ℝ) × (Fin q → ℝ)) K, η / 3 ≤
+            (T : ℝ)⁻¹ *
+              ((piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+                (gramTail ba.1 ba.2 T *ᵥ
+                  (piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)))} := by
+    intro ω hω
+    simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+    obtain ⟨ba, hba, hd, hbig⟩ := hω
+    by_contra hcon
+    push_neg at hcon
+    obtain ⟨hE1, hE2⟩ := hcon
+    have hQ0 : (0 : ℝ) ≤ (T : ℝ)⁻¹ * ∑ k : Fin T, X (((k : ℕ) : ℤ) + 1) ω ^ 2 :=
+      mul_nonneg hTnn (Finset.sum_nonneg fun k _ => sq_nonneg _)
+    have hD1 := hE2 ba (hKK' hba)
+    have hD0 := hE2 (b0, a0) h0K'
+    obtain ⟨hup1, hlow1⟩ := armaProfileS_sandwich (hKB ba hba) T
+      (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+    obtain ⟨hup0, hlow0⟩ := armaProfileS_sandwich hB0 T
+      (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+    -- the residual-part oscillation, priced by the `ℓ¹` modulus
+    have hosc := abs_residSS_sub_le (b1 := ba.1) (a1 := ba.2) (b2 := b0) (a2 := a0)
+      (summable_abs_armaPi (hKB ba hba)) (summable_abs_armaPi hB0)
+      (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+    have hDl1 : ∑' n : ℕ, |armaPi ba.1 ba.2 n - armaPi b0 a0 n|
+        ≤ η / (3 * (2 * (C / (1 - r))) * M) :=
+      le_of_lt (hmod ba (hKK' hba) (b0, a0) h0K' hd)
+    have hDl0 : (0 : ℝ) ≤ ∑' n : ℕ, |armaPi ba.1 ba.2 n - armaPi b0 a0 n| :=
+      tsum_nonneg fun n => abs_nonneg _
+    have hPP : (∑' n : ℕ, |armaPi ba.1 ba.2 n|) + (∑' n : ℕ, |armaPi b0 a0 n|)
+        ≤ 2 * (C / (1 - r)) := by
+      have h1 := hPbd ba (hKK' hba)
+      have h2 := hPbd (b0, a0) h0K'
+      linarith
+    have hPP0 : (0 : ℝ) ≤ (∑' n : ℕ, |armaPi ba.1 ba.2 n|) + (∑' n : ℕ, |armaPi b0 a0 n|) :=
+      add_nonneg (tsum_nonneg fun n => abs_nonneg _) (tsum_nonneg fun n => abs_nonneg _)
+    have hprod1 : (∑' n : ℕ, |armaPi ba.1 ba.2 n - armaPi b0 a0 n|) *
+          ((∑' n : ℕ, |armaPi ba.1 ba.2 n|) + (∑' n : ℕ, |armaPi b0 a0 n|))
+        ≤ η / (3 * (2 * (C / (1 - r))) * M) * (2 * (C / (1 - r))) :=
+      mul_le_mul hDl1 hPP hPP0 (by positivity)
+    have hprod2 : (∑' n : ℕ, |armaPi ba.1 ba.2 n - armaPi b0 a0 n|) *
+          ((∑' n : ℕ, |armaPi ba.1 ba.2 n|) + (∑' n : ℕ, |armaPi b0 a0 n|)) *
+          ((T : ℝ)⁻¹ * ∑ k : Fin T, X (((k : ℕ) : ℤ) + 1) ω ^ 2)
+        ≤ η / (3 * (2 * (C / (1 - r))) * M) * (2 * (C / (1 - r))) * M :=
+      mul_le_mul hprod1 (le_of_lt hE1) hQ0 (by positivity)
+    have hval : η / (3 * (2 * (C / (1 - r))) * M) * (2 * (C / (1 - r))) * M = η / 3 := by
+      field_simp
+    have hoscT : |(T : ℝ)⁻¹ * ((piMat ba.1 ba.2 T *ᵥ
+          fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+            (piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+        - (T : ℝ)⁻¹ * ((piMat b0 a0 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+            (piMat b0 a0 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))| ≤ η / 3 := by
+      rw [← mul_sub, abs_mul, abs_of_nonneg hTnn]
+      have hstep := mul_le_mul_of_nonneg_left hosc hTnn
+      calc (T : ℝ)⁻¹ * |(piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+              (piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+            - (piMat b0 a0 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+              (piMat b0 a0 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)|
+          ≤ (T : ℝ)⁻¹ * ((∑' n : ℕ, |armaPi ba.1 ba.2 n - armaPi b0 a0 n|) *
+              ((∑' n : ℕ, |armaPi ba.1 ba.2 n|) + (∑' n : ℕ, |armaPi b0 a0 n|)) *
+              ∑ k : Fin T, X (((k : ℕ) : ℤ) + 1) ω ^ 2) := hstep
+        _ = (∑' n : ℕ, |armaPi ba.1 ba.2 n - armaPi b0 a0 n|) *
+              ((∑' n : ℕ, |armaPi ba.1 ba.2 n|) + (∑' n : ℕ, |armaPi b0 a0 n|)) *
+              ((T : ℝ)⁻¹ * ∑ k : Fin T, X (((k : ℕ) : ℤ) + 1) ω ^ 2) := by ring
+        _ ≤ η / 3 := by rw [← hval]; exact hprod2
+    -- assemble: the sandwich turns the three pieces into a strict `< η`
+    have hs1u := mul_le_mul_of_nonneg_left hup1 hTnn
+    have hs1l := mul_le_mul_of_nonneg_left hlow1 hTnn
+    have hs0u := mul_le_mul_of_nonneg_left hup0 hTnn
+    have hs0l := mul_le_mul_of_nonneg_left hlow0 hTnn
+    rw [mul_sub] at hs1l hs0l
+    have habs := abs_le.1 hoscT
+    rw [div_eq_inv_mul, div_eq_inv_mul] at hbig
+    rcases le_abs.1 hbig with hcase | hcase <;> linarith [habs.1, habs.2]
+  calc (μ {ω | ∃ ba ∈ K, dist ba (b0, a0) < ρ ∧
+        η ≤ |armaProfileS ba.1 ba.2 (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) / T
+          - armaProfileS b0 a0 (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) / T|}).toReal
+      ≤ (μ ({ω | M ≤ (T : ℝ)⁻¹ * ∑ k : Fin T, X (((k : ℕ) : ℤ) + 1) ω ^ 2}
+          ∪ {ω | ∃ ba ∈ insert ((b0, a0) : (Fin p → ℝ) × (Fin q → ℝ)) K, η / 3 ≤
+              (T : ℝ)⁻¹ *
+                ((piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+                  (gramTail ba.1 ba.2 T *ᵥ
+                    (piMat ba.1 ba.2 T *ᵥ
+                      fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)))})).toReal :=
+        ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono hsub)
+    _ ≤ _ := by
+        refine le_trans (ENNReal.toReal_mono (by finiteness) (measure_union_le _ _)) ?_
+        exact le_of_eq (ENNReal.toReal_add (measure_ne_top μ _) (measure_ne_top μ _))
+
 /-- **Pointwise LLN for the profiled criterion**: at each fixed `θ` in the constraint
 set, `armaProfileCriterion θ (data_T) →p log(σ² · armaContrastVar θ₀ θ)` under the
 true ARMA law. -/
