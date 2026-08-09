@@ -184,9 +184,18 @@ Gaussian innovations the squared data `Y_t = X_t²` are iid with mean `c₀` and
 `2c₀² > 0`, `hrss`/`htss` make the statistic the auxiliary regression's `T·R²`, and the
 normal equations turn it into a quadratic form in the lag-`1..p` sample autocovariances of
 `Y`; the LLN sends the Gram matrix to `Var(Y)·I_p`, the iid CLT sends `√T γ̂` to
-`N(0, Var(Y)²I_p)`, and continuous mapping finishes. Three bricks are missing: the
-least-squares/`R²` algebra out of `hrss`, the `p`-dimensional CLT for the autocovariance
-vector, and the continuous-mapping step. Note `p = 0` is consistent (both sides are `δ₀`).
+`N(0, Var(Y)²I_p)`, and continuous mapping finishes. Of the three bricks originally listed,
+**(a) the least-squares/`R²` algebra out of `hrss` is now closed** (2026-08-09b):
+`archLS_normalEq` reads the normal equations off minimality alone, `archLS_anova` gives the
+split `tss = rss + ess` at an *arbitrary* centring constant (the sample mean is not needed,
+which is why `htss`'s `((T:ℝ) − p)⁻¹` normalisation costs nothing), and
+`archTR2Stat_eq_ess_div_tss` delivers `TR² = T · ess/tss`, with `arch_rss_le_tss` confirming
+`R² ∈ [0,1]`. Two bricks remain, both probabilistic: **(b)** the `p`-dimensional iid CLT for
+the autocovariance vector of `Y`, and **(c)** the continuous-mapping step (its limit-law
+target is already available here). Note `p = 0` is consistent (both sides are `δ₀`); it is
+*not* proved for this statement, unlike its two companions, because at `p = 0` the identity
+`rss = tss` only gives `TR² = 0` on `{tss ≠ 0}`, and `tss ≠ 0` a.s. is itself the
+nondegeneracy fact recorded in the next paragraph.
 Also, `hgauss` is not decoration *(this remark is documented, not formalized)*: with `ε`
 Rademacher, `X_t² = c₀` a.s., so response and regressors are all equal, `rss = tss = 0`, and
 the statistic is the constant `T` — a law `δ_T` with no limit. Nondegeneracy of `Var(X_t²)`
@@ -1042,12 +1051,16 @@ theorem archTR2Stat_eq_ess_div_tss {p : ℕ} {X : ℤ → Ω → ℝ} {rss tss :
 errors, Engle's `TR²`) has the same `χ²_p` null limit as the likelihood-ratio
 statistic.
 
-Unlike its two companions this statement is **consistent** — a least-squares minimum is
-always attained, so `hrss` is satisfiable — and it is the one honest debt of the file. The
-proof below discharges the limit-law bookkeeping (the goal is rewritten to convergence
-towards the *concrete* Gaussian quadratic form `Σ_{i<p} Z_i²` via
-`charFun_map_sum_sq_gaussian`), leaving one `sorry` on the reduced goal: Engle's LM limit
-itself. See the module docstring for what that residual still needs. -/
+This statement never had the vacuity defect of its two companions — a least-squares minimum
+is always attained, so `hrss` is satisfiable. The proof below discharges the limit-law
+bookkeeping (the goal is rewritten to convergence towards the *concrete* Gaussian quadratic
+form `Σ_{i<p} Z_i²` via `charFun_map_sum_sq_gaussian`), leaving one `sorry` on the reduced
+goal: Engle's LM limit itself.
+
+**Brick (a) of that residue is now closed** (2026-08-09b): `archTR2Stat_eq_ess_div_tss`
+turns `hrss`'s `IsLeast` package into `T · ess/tss`, and `arch_rss_le_tss` confirms the
+statistic really is `T` times an `R² ∈ [0,1]`. What is left is purely probabilistic —
+bricks (b) and (c) of the module docstring's ledger. -/
 theorem archTR2Stat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
     {X ε : ℤ → Ω → ℝ}
     (h : IsARCH c0 (fun _ : Fin p => (0 : ℝ)) X ε μ) (hc0 : 0 < c0)
