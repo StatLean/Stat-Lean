@@ -3,6 +3,9 @@ import StatLean.TimeSeries.Mixing.Relations
 import StatLean.TimeSeries.ForMathlib.Probability.TriangularCLT
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.MeasureTheory.Measure.LevyConvergence
+import Mathlib.MeasureTheory.Measure.MeasuredSets
+import Mathlib.MeasureTheory.Constructions.ProjectiveFamilyContent
+import StatLean.TimeSeries.ForMathlib.Ergodic.Birkhoff
 
 /-!
 # Limit theorems for α-mixing processes (FY §2.6.3, pp. 74–76)
@@ -52,14 +55,15 @@ import Mathlib.MeasureTheory.Measure.LevyConvergence
   convergence over the lags (dominant: Davydov on `Z^M` with the `M`-uniform envelope
   `|Z^M_0| ≤ |X_0| + E|X_0|`; per-lag limit: the AM–GM bound `|γ_{Z^M}(k)| ≤ E(Z^M_0)²`),
   and `σ_Y(M)² → σ²` by Minkowski at every `n`. **Now axiom-clean**, since 2.21(ii) is.
-* **Proposition 2.8 (SLLN)** — α-mixing + `E|X| < ∞` ⇒ `S_n/n → EX` a.s.: literature
-  DEBT (the cited route is "α-mixing ⇒ ergodic" + Birkhoff; Mathlib has no pointwise
-  ergodic theorem in the pin). Wave `ts/s10` verified that **no moment route exists under
-  the frozen hypotheses** — they give only `E|X_0| < ∞` and `α(n) → 0` *without a rate*,
-  so there is no second moment for Chebyshev, and the file's fourth-moment brick needs
-  `|X| ≤ C` **and** `Σ α < ∞`, neither of which is assumed. The residue is named and
-  itemised in the theorem's docstring (path-space law + shift invariance; `α → 0 ⇒`
-  ergodicity; the maximal ergodic theorem and Birkhoff; transfer back to `Ω`).
+* **Proposition 2.8 (SLLN)** — α-mixing + `E|X| < ∞` ⇒ `S_n/n → EX` a.s.: **PROVED**
+  (wave `ts/s10b`) and axiom-clean, by the cited route, which wave `ts/s10` had shown to be
+  the *only* one the frozen hypotheses support (`E|X_0| < ∞` and `α(n) → 0` with no rate
+  give no second moment for Chebyshev, and the file's fourth-moment brick needs `|X| ≤ C`
+  **and** `Σ α < ∞`). The four steps — shift invariance of the path law on `ℤ → ℝ`,
+  `α(n) → 0 ⇒` ergodicity of the shift, Birkhoff, transport back to `Ω` — are executed in
+  the `BirkhoffSLLN` section below; the pointwise ergodic theorem itself is the new
+  `ForMathlib/Ergodic/Birkhoff.lean` (Garsia's maximal inequality ⇒ a.e. convergence to the
+  conditional expectation on the invariant σ-algebra ⇒ the ergodic corollary).
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.6.3,
 Prop 2.8, Thms 2.20–2.21, eq. (2.63) (pp. 74–76). (`FY §2.6.3`.)
@@ -80,7 +84,7 @@ SLLN via ergodicity is Doob (1953) ch. X / Ibragimov–Linnik (1971) ch. 17.
 -/
 
 open MeasureTheory ProbabilityTheory Filter
-open scoped ProbabilityTheory Topology ENNReal
+open scoped ProbabilityTheory Topology ENNReal symmDiff
 
 namespace StatLean.TimeSeries
 
@@ -4457,12 +4461,371 @@ theorem clt_of_alphaMixing_debt [IsProbabilityMeasure μ]
                 (Complex.exp (-((σ2 : ℂ) * (u : ℂ) ^ 2 / 2))) := dist_triangle _ _ _
         linarith
 
+/-! ### α-mixing ⇒ ergodicity of the shift, and the SLLN (FY Proposition 2.8)
+
+The route the book cites: the path law `ν = μ ∘ (ω ↦ (X_t ω)_t)⁻¹` on `ℤ → ℝ` is shift
+invariant by strict stationarity, `α(n) → 0` makes the shift ergodic for `ν`, and Birkhoff's
+pointwise ergodic theorem (`ForMathlib/Ergodic/Birkhoff.lean`) applied to the coordinate
+observable gives the strong law. The bricks below rebuild, privately, the path-space
+machinery of `Mixing/Relations.lean` (which is `private` there) and add the ergodicity step.
+-/
+
+section BirkhoffSLLN
+
+omit [MeasurableSpace Ω] in
+private lemma comap_path_cyl (X : ℤ → Ω → ℝ) (k : ℤ) (S : Set ℤ) :
+    MeasurableSpace.comap (fun ω (t : ℤ) => X (t + k) ω) (cylinderEvents S)
+      = ⨆ s ∈ S, MeasurableSpace.comap (X (s + k)) inferInstance := by
+  unfold cylinderEvents
+  rw [MeasurableSpace.comap_iSup]
+  refine iSup_congr fun s => ?_
+  rw [MeasurableSpace.comap_iSup]
+  refine iSup_congr fun _ => ?_
+  rw [MeasurableSpace.comap_comp]
+  rfl
+
+omit [MeasurableSpace Ω] in
+private lemma iSup_Iic_sh (X : ℤ → Ω → ℝ) (c k : ℤ) :
+    (⨆ s ∈ Set.Iic c, MeasurableSpace.comap (X (s + k)) inferInstance) = sigmaLE X (c + k) := by
+  refine le_antisymm (iSup₂_le fun s hs => ?_) (iSup₂_le fun u hu => ?_)
+  · exact le_iSup₂_of_le (s + k) (Set.mem_Iic.mpr (by have : s ≤ c := hs; omega)) le_rfl
+  · refine le_iSup₂_of_le (u - k) (Set.mem_Iic.mpr (by have : u ≤ c + k := hu; omega)) ?_
+    exact le_of_eq (by rw [sub_add_cancel])
+
+omit [MeasurableSpace Ω] in
+private lemma iSup_Ici_sh (X : ℤ → Ω → ℝ) (c k : ℤ) :
+    (⨆ s ∈ Set.Ici c, MeasurableSpace.comap (X (s + k)) inferInstance) = sigmaGE X (c + k) := by
+  refine le_antisymm (iSup₂_le fun s hs => ?_) (iSup₂_le fun u hu => ?_)
+  · exact le_iSup₂_of_le (s + k) (Set.mem_Ici.mpr (by have : c ≤ s := hs; omega)) le_rfl
+  · refine le_iSup₂_of_le (u - k) (Set.mem_Ici.mpr (by have : c + k ≤ u := hu; omega)) ?_
+    exact le_of_eq (by rw [sub_add_cancel])
+
+private lemma alphaMix_comap {V : Ω → (ℤ → ℝ)} (hV : Measurable V)
+    {ν : Measure (ℤ → ℝ)} (hν : μ.map V = ν)
+    (m₁ m₂ : MeasurableSpace (ℤ → ℝ)) (h₁ : m₁ ≤ MeasurableSpace.pi)
+    (h₂ : m₂ ≤ MeasurableSpace.pi) :
+    alphaMixCoeff μ (m₁.comap V) (m₂.comap V)
+      = @alphaMixCoeff (ℤ → ℝ) MeasurableSpace.pi ν m₁ m₂ := by
+  have hval : ∀ {S : Set (ℤ → ℝ)},
+      @MeasurableSet (ℤ → ℝ) MeasurableSpace.pi S → ν S = μ (V ⁻¹' S) := by
+    intro S hS
+    rw [← hν]
+    exact Measure.map_apply hV hS
+  unfold alphaMixCoeff
+  refine congrArg sSup (Set.ext fun r => ?_)
+  constructor
+  · rintro ⟨A, B, ⟨A', hA', rfl⟩, ⟨B', hB', rfl⟩, rfl⟩
+    refine ⟨A', B', hA', hB', ?_⟩
+    have e3 : ν (A' ∩ B') = μ (V ⁻¹' A' ∩ V ⁻¹' B') := by
+      rw [hval (@MeasurableSet.inter (ℤ → ℝ) MeasurableSpace.pi _ _ (h₁ _ hA') (h₂ _ hB')),
+        Set.preimage_inter]
+    rw [hval (h₁ _ hA'), hval (h₂ _ hB'), e3]
+  · rintro ⟨A', B', hA', hB', rfl⟩
+    refine ⟨V ⁻¹' A', V ⁻¹' B', ⟨A', hA', rfl⟩, ⟨B', hB', rfl⟩, ?_⟩
+    have e3 : ν (A' ∩ B') = μ (V ⁻¹' A' ∩ V ⁻¹' B') := by
+      rw [hval (@MeasurableSet.inter (ℤ → ℝ) MeasurableSpace.pi _ _ (h₁ _ hA') (h₂ _ hB')),
+        Set.preimage_inter]
+    rw [hval (h₁ _ hA'), hval (h₂ _ hB'), e3]
+
+private lemma map_fintuple_sh {X : ℤ → Ω → ℝ} (hstat : IsStrictlyStationary X μ)
+    (hmeas : ∀ t, Measurable (X t)) (k : ℤ) (s : Finset ℤ) :
+    (μ.map fun ω (i : s) => X ((i : ℤ) + k) ω)
+      = μ.map fun ω (i : s) => X (i : ℤ) ω := by
+  classical
+  set e : s ≃ Fin s.card := s.equivFin with he
+  set t : Fin s.card → ℤ := fun j => ((e.symm j : s) : ℤ) with ht
+  set Φ : (Fin s.card → ℝ) → (∀ _ : s, ℝ) := fun p i => p (e i) with hΦdef
+  have hΦ : Measurable Φ := measurable_pi_lambda _ fun i => measurable_pi_apply (e i)
+  have hte : ∀ i : s, t (e i) = (i : ℤ) := by
+    intro i; simp [ht]
+  have hcomp : ∀ c : ℤ, Measurable fun ω (j : Fin s.card) => X (t j + c) ω :=
+    fun c => measurable_pi_lambda _ fun j => hmeas _
+  have hpush : ∀ c : ℤ,
+      (μ.map fun ω (j : Fin s.card) => X (t j + c) ω).map Φ
+        = μ.map fun ω (i : s) => X ((i : ℤ) + c) ω := by
+    intro c
+    rw [Measure.map_map hΦ (hcomp c)]
+    congr 1
+    funext ω i
+    simp [hΦdef, hte i]
+  have h0 : (μ.map fun ω (j : Fin s.card) => X (t j + 0) ω)
+      = μ.map fun ω (j : Fin s.card) => X (t j) ω := by simp
+  calc (μ.map fun ω (i : s) => X ((i : ℤ) + k) ω)
+      = (μ.map fun ω (j : Fin s.card) => X (t j + k) ω).map Φ := (hpush k).symm
+    _ = (μ.map fun ω (j : Fin s.card) => X (t j) ω).map Φ := by rw [hstat s.card t k]
+    _ = (μ.map fun ω (j : Fin s.card) => X (t j + 0) ω).map Φ := by rw [h0]
+    _ = μ.map fun ω (i : s) => X ((i : ℤ) + 0) ω := hpush 0
+    _ = μ.map fun ω (i : s) => X (i : ℤ) ω := by simp
+
+private lemma map_path_sh {X : ℤ → Ω → ℝ} [IsProbabilityMeasure μ]
+    (hstat : IsStrictlyStationary X μ) (hmeas : ∀ t, Measurable (X t)) (k : ℤ) :
+    (μ.map fun ω (u : ℤ) => X (u + k) ω) = μ.map fun ω (u : ℤ) => X u ω := by
+  have hTm : Measurable fun ω (u : ℤ) => X (u + k) ω :=
+    measurable_pi_lambda _ fun _ => hmeas _
+  have hUm : Measurable fun ω (u : ℤ) => X u ω := measurable_pi_lambda _ fun _ => hmeas _
+  refine ext_of_generate_finite (measurableCylinders fun _ : ℤ => ℝ)
+    generateFrom_measurableCylinders.symm isPiSystem_measurableCylinders ?_ ?_
+  · intro C hC
+    obtain ⟨s, S, hSm, rfl⟩ := (mem_measurableCylinders C).mp hC
+    have hcyl : MeasurableSet (cylinder s S) := MeasurableSet.cylinder (α := fun _ : ℤ => ℝ) s hSm
+    have hT : Measurable fun ω (i : s) => X ((i : ℤ) + k) ω :=
+      measurable_pi_lambda _ fun _ => hmeas _
+    have hU : Measurable fun ω (i : s) => X (i : ℤ) ω :=
+      measurable_pi_lambda _ fun _ => hmeas _
+    have eT : (μ.map fun ω (u : ℤ) => X (u + k) ω) (cylinder s S)
+        = (μ.map fun ω (i : s) => X ((i : ℤ) + k) ω) S := by
+      rw [Measure.map_apply hTm hcyl, Measure.map_apply hT hSm]
+      rfl
+    have eU : (μ.map fun ω (u : ℤ) => X u ω) (cylinder s S)
+        = (μ.map fun ω (i : s) => X (i : ℤ) ω) S := by
+      rw [Measure.map_apply hUm hcyl, Measure.map_apply hU hSm]
+      rfl
+    rw [eT, eU, map_fintuple_sh hstat hmeas k s]
+  · rw [Measure.map_apply hTm MeasurableSet.univ, Measure.map_apply hUm MeasurableSet.univ]
+    simp
+
+
+/-! ### Path law and shift -/
+
+private noncomputable def pathLaw (X : ℤ → Ω → ℝ) (μ : Measure Ω) : Measure (ℤ → ℝ) :=
+  μ.map fun ω (u : ℤ) => X u ω
+
+private def shiftPath : (ℤ → ℝ) → (ℤ → ℝ) := fun y u => y (u + 1)
+
+private lemma measurable_shiftPath : Measurable shiftPath :=
+  measurable_pi_lambda _ fun u => measurable_pi_apply (u + 1)
+
+private lemma shiftPath_iterate : ∀ (n : ℕ) (y : ℤ → ℝ) (u : ℤ),
+    shiftPath^[n] y u = y (u + n) := by
+  intro n
+  induction n with
+  | zero => intro y u; simp
+  | succ n ih =>
+      intro y u
+      rw [Function.iterate_succ_apply, ih (shiftPath y) u]
+      change y (u + n + 1) = y (u + ((n : ℤ) + 1))
+      congr 1
+      ring
+
+private lemma measurePreserving_shiftPath [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
+    (hmeas : ∀ t, Measurable (X t)) (hstat : IsStrictlyStationary X μ) :
+    MeasurePreserving shiftPath (pathLaw X μ) (pathLaw X μ) := by
+  have hUm : Measurable fun ω (u : ℤ) => X u ω := measurable_pi_lambda _ fun _ => hmeas _
+  refine ⟨measurable_shiftPath, ?_⟩
+  simp only [pathLaw]
+  rw [Measure.map_map measurable_shiftPath hUm]
+  exact map_path_sh hstat hmeas 1
+
+private lemma symmDiff_inter_subset {γ : Type*} (P Q P' Q' : Set γ) :
+    (P ∩ Q) ∆ (P' ∩ Q') ⊆ (P ∆ P') ∪ (Q ∆ Q') := by
+  intro x hx
+  simp only [Set.mem_symmDiff, Set.mem_inter_iff, Set.mem_union] at *
+  tauto
+
+private lemma preimage_symmDiff' {γ δ : Type*} (f : γ → δ) (s t : Set δ) :
+    f ⁻¹' (s ∆ t) = (f ⁻¹' s) ∆ (f ⁻¹' t) := by
+  ext x; simp only [Set.mem_preimage, Set.mem_symmDiff]
+
+private lemma measurableSet_cylinder_Iic (s : Finset ℤ) (S : Set (∀ _ : s, ℝ))
+    (hS : MeasurableSet S) (p : ℤ) (hp : ∀ i ∈ s, i ≤ p) :
+    MeasurableSet[cylinderEvents (Set.Iic p)]
+      (cylinder (α := fun _ : ℤ => ℝ) s S) := by
+  letI : MeasurableSpace (ℤ → ℝ) := cylinderEvents (Set.Iic p)
+  have hmap : Measurable fun (y : ℤ → ℝ) (i : s) => y (i : ℤ) :=
+    measurable_pi_iff.2 fun i => measurable_cylinderEvent_apply (Set.mem_Iic.2 (hp i i.2))
+  exact hmap hS
+
+private lemma measurableSet_shift_cylinder_Ici (s : Finset ℤ) (S : Set (∀ _ : s, ℝ))
+    (hS : MeasurableSet S) (c : ℤ) (k : ℕ) (hc : ∀ i ∈ s, c ≤ (i : ℤ) + k) :
+    MeasurableSet[cylinderEvents (Set.Ici c)]
+      (shiftPath^[k] ⁻¹' cylinder (α := fun _ : ℤ => ℝ) s S) := by
+  have heq : shiftPath^[k] ⁻¹' cylinder (α := fun _ : ℤ => ℝ) s S
+      = (fun (y : ℤ → ℝ) (i : s) => y ((i : ℤ) + k)) ⁻¹' S := by
+    ext y
+    have hfun : s.restrict (shiftPath^[k] y) = fun i : s => y ((i : ℤ) + k) := by
+      funext i; exact shiftPath_iterate k y _
+    simp only [Set.mem_preimage, mem_cylinder, hfun]
+  rw [heq]
+  letI : MeasurableSpace (ℤ → ℝ) := cylinderEvents (Set.Ici c)
+  have hmap : Measurable fun (y : ℤ → ℝ) (i : s) => y ((i : ℤ) + k) :=
+    measurable_pi_iff.2 fun i => measurable_cylinderEvent_apply (Set.mem_Ici.2 (hc i i.2))
+  exact hmap hS
+
+private lemma preErgodic_shiftPath [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
+    (hmeas : ∀ t, Measurable (X t)) (hstat : IsStrictlyStationary X μ)
+    (hmix : IsAlphaMixing X μ) :
+    PreErgodic shiftPath (pathLaw X μ) := by
+  classical
+  have hUm : Measurable fun ω (u : ℤ) => X u ω := measurable_pi_lambda _ fun _ => hmeas _
+  have hνeq : (μ.map fun ω (u : ℤ) => X u ω) = pathLaw X μ := rfl
+  haveI hνP : IsProbabilityMeasure (pathLaw X μ) := by
+    rw [← hνeq]; exact Measure.isProbabilityMeasure_map hUm.aemeasurable
+  have hMP : MeasurePreserving shiftPath (pathLaw X μ) (pathLaw X μ) :=
+    measurePreserving_shiftPath hmeas hstat
+  -- the α-coefficient of the path law between two cylinder σ-algebras is the process one
+  have hcoef : ∀ (p : ℤ) (m : ℕ),
+      @alphaMixCoeff (ℤ → ℝ) MeasurableSpace.pi (pathLaw X μ) (cylinderEvents (Set.Iic p))
+          (cylinderEvents (Set.Ici (p + (m : ℤ)))) = alphaCoeff X μ m := by
+    intro p m
+    have hL : MeasurableSpace.comap (fun ω (u : ℤ) => X u ω) (cylinderEvents (Set.Iic p))
+        = sigmaLE X p := by
+      have h := comap_path_cyl X 0 (Set.Iic p)
+      simp only [add_zero] at h
+      exact h
+    have hG : MeasurableSpace.comap (fun ω (u : ℤ) => X u ω)
+        (cylinderEvents (Set.Ici (p + (m : ℤ)))) = sigmaGE X (p + (m : ℤ)) := by
+      have h := comap_path_cyl X 0 (Set.Ici (p + (m : ℤ)))
+      simp only [add_zero] at h
+      exact h
+    rw [← alphaMix_comap hUm hνeq (cylinderEvents (Set.Iic p))
+      (cylinderEvents (Set.Ici (p + (m : ℤ)))) cylinderEvents_le_pi cylinderEvents_le_pi,
+      hL, hG]
+    exact hstat.alphaMixCoeff_shift hmeas p m
+  refine ⟨fun A hA hinv => ?_⟩
+  set a : ℝ := (pathLaw X μ).real A with hadef
+  have ha0 : 0 ≤ a := measureReal_nonneg
+  have ha1 : a ≤ 1 := by
+    rw [hadef]
+    simpa using measureReal_mono (μ := pathLaw X μ) (Set.subset_univ A)
+  have hAn : ∀ n : ℕ, shiftPath^[n] ⁻¹' A = A := by
+    intro n
+    induction n with
+    | zero => simp
+    | succ n ih => rw [Function.iterate_succ, Set.preimage_comp, ih, hinv]
+  -- the approximation-plus-mixing estimate
+  have key : ∀ δ : ℝ, 0 < δ → ∀ m : ℕ, |a - a * a| ≤ 4 * δ + alphaCoeff X μ m := by
+    intro δ hδ m
+    obtain ⟨B, hBc, hBA⟩ := exists_measure_symmDiff_lt_of_generateFrom_isSetRing
+      (μ := pathLaw X μ) isSetRing_measurableCylinders
+      ⟨{Set.univ}, Set.countable_singleton _,
+        by simpa using univ_mem_measurableCylinders fun _ : ℤ => ℝ, by simp⟩
+      generateFrom_measurableCylinders.symm hA (ENNReal.ofReal_pos.2 hδ)
+    obtain ⟨s, S, hSm, rfl⟩ := (mem_measurableCylinders B).mp hBc
+    set p : ℤ := if h : s.Nonempty then s.max' h else 0 with hp
+    set q : ℤ := if h : s.Nonempty then s.min' h else 0 with hq
+    have hple : ∀ i ∈ s, i ≤ p := by
+      intro i hi
+      have hne : s.Nonempty := ⟨i, hi⟩
+      rw [hp, dif_pos hne]
+      exact Finset.le_max' s i hi
+    have hqle : ∀ i ∈ s, q ≤ i := by
+      intro i hi
+      have hne : s.Nonempty := ⟨i, hi⟩
+      rw [hq, dif_pos hne]
+      exact Finset.min'_le s i hi
+    have hqp : q ≤ p := by
+      by_cases hne : s.Nonempty
+      · obtain ⟨i, hi⟩ := hne
+        exact le_trans (hqle i hi) (hple i hi)
+      · rw [hp, hq, dif_neg hne, dif_neg hne]
+    set n : ℕ := (p - q + (m : ℤ)).toNat with hndef
+    have hn : (n : ℤ) = p - q + (m : ℤ) := Int.toNat_of_nonneg (by omega)
+    have hci : ∀ i ∈ s, p + (m : ℤ) ≤ (i : ℤ) + (n : ℤ) := by
+      intro i hi
+      have := hqle i hi
+      omega
+    have hB1 : MeasurableSet[cylinderEvents (Set.Iic p)]
+        (cylinder (α := fun _ : ℤ => ℝ) s S) :=
+      measurableSet_cylinder_Iic s S hSm p hple
+    have hB2 : MeasurableSet[cylinderEvents (Set.Ici (p + (m : ℤ)))]
+        (shiftPath^[n] ⁻¹' cylinder (α := fun _ : ℤ => ℝ) s S) :=
+      measurableSet_shift_cylinder_Ici s S hSm (p + (m : ℤ)) n hci
+    set Cy : Set (ℤ → ℝ) := cylinder (α := fun _ : ℤ => ℝ) s S with hCy
+    set Cn : Set (ℤ → ℝ) := shiftPath^[n] ⁻¹' Cy with hCn
+    have hCyM : MeasurableSet Cy := MeasurableSet.cylinder (α := fun _ : ℤ => ℝ) s hSm
+    have hCnM : MeasurableSet Cn := ((hMP.iterate n).measurable) hCyM
+    set b : ℝ := (pathLaw X μ).real Cy with hbdef
+    have hb0 : 0 ≤ b := measureReal_nonneg
+    have hb1 : b ≤ 1 := by
+      rw [hbdef]; simpa using measureReal_mono (μ := pathLaw X μ) (Set.subset_univ Cy)
+    have hCnval : (pathLaw X μ) Cn = (pathLaw X μ) Cy :=
+      (hMP.iterate n).measure_preimage hCyM.nullMeasurableSet
+    have hCnreal : (pathLaw X μ).real Cn = b := by rw [hbdef, measureReal_def, measureReal_def,
+      hCnval]
+    -- the approximation bound
+    have hdelta : (pathLaw X μ).real (Cy ∆ A) ≤ δ := by
+      rw [measureReal_def]
+      exact ENNReal.toReal_le_of_le_ofReal hδ.le hBA.le
+    have hba : |b - a| ≤ δ :=
+      le_trans (abs_measureReal_sub_le_measureReal_symmDiff hCyM.nullMeasurableSet
+        hA.nullMeasurableSet) hdelta
+    -- the intersection bound
+    have hsymm2 : (pathLaw X μ).real ((Cy ∩ Cn) ∆ (A ∩ A)) ≤ 2 * δ := by
+      have hsub : (Cy ∩ Cn) ∆ (A ∩ A) ⊆ (Cy ∆ A) ∪ (Cn ∆ (shiftPath^[n] ⁻¹' A)) := by
+        rw [hAn n]
+        exact symmDiff_inter_subset _ _ _ _
+      have hpre : Cn ∆ (shiftPath^[n] ⁻¹' A) = shiftPath^[n] ⁻¹' (Cy ∆ A) := by
+        rw [hCn, preimage_symmDiff']
+      have hmm : (pathLaw X μ).real (shiftPath^[n] ⁻¹' (Cy ∆ A))
+          = (pathLaw X μ).real (Cy ∆ A) := by
+        rw [measureReal_def, measureReal_def,
+          (hMP.iterate n).measure_preimage (hCyM.symmDiff hA).nullMeasurableSet]
+      calc (pathLaw X μ).real ((Cy ∩ Cn) ∆ (A ∩ A))
+          ≤ (pathLaw X μ).real ((Cy ∆ A) ∪ (Cn ∆ (shiftPath^[n] ⁻¹' A))) :=
+            measureReal_mono hsub
+        _ ≤ (pathLaw X μ).real (Cy ∆ A)
+              + (pathLaw X μ).real (Cn ∆ (shiftPath^[n] ⁻¹' A)) := measureReal_union_le _ _
+        _ = 2 * (pathLaw X μ).real (Cy ∆ A) := by rw [hpre, hmm]; ring
+        _ ≤ 2 * δ := by linarith
+    have hAA : A ∩ A = A := Set.inter_self A
+    have b1 : |a - (pathLaw X μ).real (Cy ∩ Cn)| ≤ 2 * δ := by
+      rw [hAA] at hsymm2
+      rw [abs_sub_comm, hadef]
+      exact le_trans (abs_measureReal_sub_le_measureReal_symmDiff
+        (hCyM.inter hCnM).nullMeasurableSet hA.nullMeasurableSet) hsymm2
+    have b2 : |(pathLaw X μ).real (Cy ∩ Cn) - b * b| ≤ alphaCoeff X μ m := by
+      have hle : |((pathLaw X μ) (Cy ∩ Cn)).toReal
+            - ((pathLaw X μ) Cy).toReal * ((pathLaw X μ) Cn).toReal|
+          ≤ @alphaMixCoeff (ℤ → ℝ) MeasurableSpace.pi (pathLaw X μ)
+              (cylinderEvents (Set.Iic p)) (cylinderEvents (Set.Ici (p + (m : ℤ)))) :=
+        le_csSup alphaMixCoeff_set_bddAbove ⟨Cy, Cn, hB1, hB2, rfl⟩
+      rw [hcoef p m] at hle
+      have e1 : ((pathLaw X μ) Cy).toReal * ((pathLaw X μ) Cn).toReal = b * b := by
+        rw [hCnval, hbdef, measureReal_def]
+      rw [measureReal_def, ← e1]
+      exact hle
+    have b3 : |b * b - a * a| ≤ 2 * δ := by
+      have hfac : b * b - a * a = (b - a) * (b + a) := by ring
+      rw [hfac, abs_mul]
+      have h1 : |b + a| ≤ 2 := by rw [abs_of_nonneg (by linarith)]; linarith
+      have h2 : (0 : ℝ) ≤ |b - a| := abs_nonneg _
+      nlinarith [abs_nonneg (b + a)]
+    have t1 : |a - a * a| ≤ |a - (pathLaw X μ).real (Cy ∩ Cn)|
+        + |(pathLaw X μ).real (Cy ∩ Cn) - a * a| := abs_sub_le _ _ _
+    have t2 : |(pathLaw X μ).real (Cy ∩ Cn) - a * a|
+        ≤ |(pathLaw X μ).real (Cy ∩ Cn) - b * b| + |b * b - a * a| := abs_sub_le _ _ _
+    linarith
+  -- let δ → 0 and m → ∞
+  have hzero : a - a * a = 0 := by
+    by_contra hne
+    have hpos : 0 < |a - a * a| := abs_pos.2 hne
+    obtain ⟨m, hm⟩ : ∃ m : ℕ, alphaCoeff X μ m < |a - a * a| / 2 :=
+      (hmix.eventually (gt_mem_nhds (by linarith))).exists
+    have := key (|a - a * a| / 8) (by linarith) m
+    linarith
+  have hcases : a = 0 ∨ a = 1 := by
+    rcases mul_eq_zero.1 (show a * (1 - a) = 0 by nlinarith) with h | h
+    · exact Or.inl h
+    · exact Or.inr (by linarith)
+  have hAval : (pathLaw X μ) A = ENNReal.ofReal a := by
+    rw [hadef, measureReal_def, ENNReal.ofReal_toReal (measure_ne_top _ _)]
+  rw [eventuallyConst_set']
+  rcases hcases with h | h
+  · exact Or.inl (ae_eq_empty.2 (by rw [hAval, h]; simp))
+  · refine Or.inr (ae_eq_univ.2 ?_)
+    rw [prob_compl_eq_one_sub hA, hAval, h]
+    simp
+
+end BirkhoffSLLN
+
 /-- **DEBT (Doob 1953 / Ibragimov–Linnik 1971; FY Proposition 2.8)**: the strong law
 for α-mixing strictly stationary sequences with a first moment. The cited route is
 "α-mixing ⇒ ergodicity" + the Birkhoff pointwise ergodic theorem, which the Mathlib
 pin does not provide.
 
-**STATUS (wave `ts/s10`): OPEN, with the residue named and the moment routes ruled out.**
+**STATUS (wave `ts/s10b`): PROVED, axiom-clean**, by exactly the cited route. The wave-`ts/s10`
+four-item build list below is executed in full; the moment-route analysis that follows it is
+still the reason this is the *only* available route, and is kept.
 
 **No moment/Borel–Cantelli route exists under the frozen hypotheses.** They are exactly
 `E|X_0| < ∞` (`hL1`) and `α(n) → 0` (`hmix`, i.e. `IsAlphaMixing`, which is *convergence to
@@ -4482,30 +4845,45 @@ So the cited ergodic route is not one convenient proof among several: it is the 
 the hypotheses support, and it is what the statement is *equivalent* to (Birkhoff for an
 ergodic shift is exactly this statement for the coordinate process).
 
-**NAMED RESIDUE: the Birkhoff pointwise ergodic theorem, absent from the pin.**
-`Mathlib/Dynamics/BirkhoffSum/{Basic,Average,NormedSpace,QuasiMeasurePreserving}.lean`
-contain only the algebraic/metric bookkeeping for `birkhoffSum`/`birkhoffAverage` (no a.e.
-convergence statement), and `Mathlib/Analysis/InnerProductSpace/MeanErgodic.lean` is von
-Neumann's **mean** ergodic theorem — `L²` convergence, which does not give the a.e.
-statement asserted here. `Mathlib/Dynamics/Ergodic/` supplies `Ergodic`, `Conservative`
-(Poincaré recurrence) and `MeasurePreserving`, but no maximal ergodic theorem.
+**The former named residue — the Birkhoff pointwise ergodic theorem — is now supplied by
+`StatLean/TimeSeries/ForMathlib/Ergodic/Birkhoff.lean`** (`maximal_ergodic`,
+`birkhoffAverage_ae_tendsto_condexp`, `birkhoffAverage_ae_tendsto_integral`; that file is
+`0`-sorry and axiom-clean). The pin's own `Mathlib/Dynamics/BirkhoffSum/*` still carry only
+the algebraic bookkeeping for `birkhoffSum`/`birkhoffAverage`, and
+`Mathlib/Analysis/InnerProductSpace/MeanErgodic.lean` is von Neumann's **mean** (`L²`)
+ergodic theorem, which does not give the a.e. statement.
 
-**What a closing wave has to build** (four items; only (i) and (iv) are cheap):
-(i) the law of the whole path, `ν = μ.map (fun ω t => X t ω)` on `ℤ → ℝ` with
-    `MeasurableSpace.pi`, and its invariance under the shift — from `IsStrictlyStationary`
-    (finite-dimensional invariance) by a π-system/cylinder uniqueness argument;
-(ii) `α(n) → 0 ⇒ the shift is ergodic for ν`: for a shift-invariant `A`, approximate `A`
-    in measure by a cylinder set `B ∈ σ(X_1,…,X_j)` and use
-    `|ν(A ∩ σ^{-n}A) − ν(A)²| ≤ α(n − j) + 3 ν(A Δ B) → 0`, so `ν(A) = ν(A)²`. The
-    approximation step (measurable sets by algebra elements) is itself not in the pin in
-    usable form;
-(iii) the **maximal ergodic theorem** (Garsia's proof is short) and then Birkhoff —
-    `S_n/n → E[f | invariant σ-field]` a.e.;
-(iv) transport of the a.e. statement back to `Ω` along the path map, which is free because
-    the convergence event is a measurable set of the path σ-algebra.
-Until (ii)+(iii) exist, no partial credit is available here: unlike the Bosq inequalities,
-this statement admits no regime that is trivially true (the conclusion is an a.e. limit,
-not a bound that can be vacuous). -/
+**How the four items were executed.**
+(i) The path law `ν = μ.map (fun ω t => X t ω)` on `ℤ → ℝ` is shift invariant: `map_path_sh`
+    above (`ext_of_generate_finite` over `measurableCylinders`, reducing to the
+    finite-dimensional invariance of `IsStrictlyStationary` through `s ≃ Fin s.card`).
+(ii) `α(n) → 0 ⇒ the shift is ergodic for ν`: `preErgodic_shiftPath`. For measurable
+    shift-invariant `A` and any `δ > 0`, a cylinder `B = cylinder s S` with
+    `ν (B Δ A) < δ` exists — **the approximation step *is* in the pin**, contrary to what
+    wave `ts/s10` recorded: `MeasureTheory.exists_measure_symmDiff_lt_of_generateFrom_isSetRing`
+    (`Mathlib/MeasureTheory/Measure/MeasuredSets.lean`) applied to the set ring
+    `MeasureTheory.isSetRing_measurableCylinders`
+    (`Mathlib/MeasureTheory/Constructions/ProjectiveFamilyContent.lean`) with
+    `generateFrom_measurableCylinders`. With `p = max s`, `q = min s` and `n` chosen so that
+    `q + n = p + m`, the cylinder is `cylinderEvents (Iic p)`-measurable and `σ^{-n}B` is
+    `cylinderEvents (Ici (p+m))`-measurable, so the α-bound `le_csSup` gives
+    `|ν(B ∩ σ^{-n}B) − ν(B) ν(σ^{-n}B)| ≤ α(m)`, using the transfer of the coefficient to the
+    path law (`alphaMix_comap`) and the **re-anchoring lemma**
+    `IsStrictlyStationary.alphaMixCoeff_shift` of `Mixing/Relations.lean` — a cylinder sits in
+    an arbitrary finite window, not in `(−∞, 0]`, so re-anchoring is genuinely needed.
+    Together with `|ν(A) − ν(A)²| ≤ 4δ + α(m)` this forces `ν(A) ∈ {0,1}`.
+(iii) `maximal_ergodic` (Garsia) and `birkhoffAverage_ae_tendsto_integral` in the new file.
+(iv) Transport back to `Ω` along the path map, free via `MeasureTheory.ae_of_ae_map`.
+**Indexing note.** The statement sums `X_1, …, X_n`, while `birkhoffSum shiftPath (· 0) n`
+sums `y_0, …, y_{n−1}`; the two are matched by evaluating the a.e. statement at `σ y` rather
+than by changing the observable, which is free because `σ` is measure preserving.
+
+**Duplication note.** `Mixing/Relations.lean` proves items of the path-space machinery
+(`comap_path_cylinderEvents`, `iSup_Iic_shift`, `iSup_Ici_shift`, `alphaMixCoeff_comap`,
+`map_finsetTuple_shift`, `map_path_shift`) but keeps them `private`, i.e. file-scoped, so
+they are re-proved verbatim above as `comap_path_cyl`, `iSup_Iic_sh`, `iSup_Ici_sh`,
+`alphaMix_comap`, `map_fintuple_sh`, `map_path_sh`. Un-privatizing them in `Relations.lean`
+would let this file drop ~130 lines. -/
 theorem slln_of_alphaMixing_debt [IsProbabilityMeasure μ]
     {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
     (hstat : IsStrictlyStationary X μ)
@@ -4515,6 +4893,44 @@ theorem slln_of_alphaMixing_debt [IsProbabilityMeasure μ]
     ∀ᵐ ω ∂μ, Tendsto (fun n : ℕ =>
         (n : ℝ)⁻¹ * ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) atTop
       (𝓝 (∫ ω', X 0 ω' ∂μ)) := by
-  sorry
+  have hUm : Measurable fun ω (u : ℤ) => X u ω := measurable_pi_lambda _ fun _ => hmeas _
+  have hνeq : (μ.map fun ω (u : ℤ) => X u ω) = pathLaw X μ := rfl
+  haveI hνP : IsProbabilityMeasure (pathLaw X μ) := by
+    rw [← hνeq]; exact Measure.isProbabilityMeasure_map hUm.aemeasurable
+  have herg : Ergodic shiftPath (pathLaw X μ) :=
+    ⟨measurePreserving_shiftPath hmeas hstat, preErgodic_shiftPath hmeas hstat hmix⟩
+  have hgm : Measurable fun y : ℤ → ℝ => y 0 := measurable_pi_apply 0
+  have hgint : Integrable (fun y : ℤ → ℝ => y 0) (pathLaw X μ) := by
+    rw [← hνeq, integrable_map_measure hgm.aestronglyMeasurable hUm.aemeasurable]
+    exact hL1
+  have hgintegral : ∫ y, (fun y : ℤ → ℝ => y 0) y ∂(pathLaw X μ) = ∫ ω, X 0 ω ∂μ := by
+    rw [← hνeq, integral_map hUm.aemeasurable hgm.aestronglyMeasurable]
+  have hbirk := birkhoffAverage_ae_tendsto_integral herg measurable_shiftPath hgint
+  rw [hgintegral] at hbirk
+  have hshifted : ∀ᵐ y ∂(pathLaw X μ), Tendsto
+      (fun n => birkhoffAverage ℝ shiftPath (fun y : ℤ → ℝ => y 0) n (shiftPath y)) atTop
+      (𝓝 (∫ ω, X 0 ω ∂μ)) :=
+    (measurePreserving_shiftPath hmeas hstat).quasiMeasurePreserving.ae hbirk
+  have hform : ∀ (y : ℤ → ℝ) (n : ℕ),
+      birkhoffAverage ℝ shiftPath (fun y : ℤ → ℝ => y 0) n (shiftPath y)
+        = (n : ℝ)⁻¹ * ∑ t ∈ Finset.range n, y ((t : ℤ) + 1) := by
+    intro y n
+    simp only [birkhoffAverage, birkhoffSum, smul_eq_mul]
+    congr 1
+    refine Finset.sum_congr rfl fun k _ => ?_
+    have h1 : shiftPath^[k] (shiftPath y) = shiftPath^[k + 1] y :=
+      (Function.iterate_succ_apply shiftPath k y).symm
+    rw [h1]
+    have h2 := shiftPath_iterate (k + 1) y 0
+    rw [h2]
+    congr 1
+    push_cast
+    ring
+  refine ae_of_ae_map (p := fun y : ℤ → ℝ => Tendsto (fun n : ℕ =>
+      (n : ℝ)⁻¹ * ∑ t ∈ Finset.range n, y ((t : ℤ) + 1)) atTop (𝓝 (∫ ω', X 0 ω' ∂μ)))
+    hUm.aemeasurable ?_
+  rw [hνeq]
+  filter_upwards [hshifted] with y hy
+  simpa only [hform y] using hy
 
 end StatLean.TimeSeries
