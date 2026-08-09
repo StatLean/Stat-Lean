@@ -195,11 +195,11 @@ theorem ate_eq_sum_cellMean_of_meanIgnorable [IsProbabilityMeasure μ]
           * (cellMean μ Z X (obs Z y1 y0) true x - cellMean μ Z X (obs Z y1 y0) false x) := by
   have e1 : ∀ x : 𝒳, cellMean μ Z X (obs Z y1 y0) true x = cellMean μ Z X y1 true x := by
     intro x
-    rw [cellMean_obs_eq]
+    rw [cellMean_obs_eq hZ hX]
     simp
   have e0 : ∀ x : 𝒳, cellMean μ Z X (obs Z y1 y0) false x = cellMean μ Z X y0 false x := by
     intro x
-    rw [cellMean_obs_eq]
+    rw [cellMean_obs_eq hZ hX]
     simp
   rw [ate, integral_sub hi1 hi0, integral_eq_sum_cell (μ := μ) hX hi1,
     integral_eq_sum_cell (μ := μ) hX hi0, ← Finset.sum_sub_distrib]
