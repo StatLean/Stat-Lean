@@ -1,6 +1,6 @@
 import StatLean.ExperimentalDesign
 
-/-! Temporary FULL axiom audit: every public declaration of the area. Removed after the audit. -/
+/-! Temporary FULL axiom audit over every public declaration. Removed after the audit. -/
 
 #print axioms StatLean.ExperimentalDesign.Allocation
 #print axioms StatLean.ExperimentalDesign.Contrast.IsOrthogonal
@@ -22,14 +22,17 @@ import StatLean.ExperimentalDesign
 #print axioms StatLean.ExperimentalDesign.anova_decomposition
 #print axioms StatLean.ExperimentalDesign.arm
 #print axioms StatLean.ExperimentalDesign.armIndicator
+#print axioms StatLean.ExperimentalDesign.armIndicator_eq_inclusionIndicator
 #print axioms StatLean.ExperimentalDesign.armIndicator_mul_armIndicator_of_ne
 #print axioms StatLean.ExperimentalDesign.armIndicator_mul_self
 #print axioms StatLean.ExperimentalDesign.armMean
+#print axioms StatLean.ExperimentalDesign.armMean_eq_sampleMean_arm
 #print axioms StatLean.ExperimentalDesign.blockedRandomization
 #print axioms StatLean.ExperimentalDesign.blocked_cov_armIndicator_of_ne_block
 #print axioms StatLean.ExperimentalDesign.blocked_expect_armIndicator
 #print axioms StatLean.ExperimentalDesign.card_arm_eq_sum_indicator
 #print axioms StatLean.ExperimentalDesign.card_arm_of_mem_validAllocations
+#print axioms StatLean.ExperimentalDesign.card_sample_eq_sum_indicator
 #print axioms StatLean.ExperimentalDesign.character
 #print axioms StatLean.ExperimentalDesign.characterContrast
 #print axioms StatLean.ExperimentalDesign.character_empty
@@ -55,6 +58,8 @@ import StatLean.ExperimentalDesign
 #print axioms StatLean.ExperimentalDesign.horvitzThompson_eq_sum_indicator
 #print axioms StatLean.ExperimentalDesign.horvitzThompson_unbiased
 #print axioms StatLean.ExperimentalDesign.horvitzThompson_variance
+#print axioms StatLean.ExperimentalDesign.inclusionIndicator
+#print axioms StatLean.ExperimentalDesign.inclusionIndicator_mul_self
 #print axioms StatLean.ExperimentalDesign.inclusionProb
 #print axioms StatLean.ExperimentalDesign.inclusionProb_le_one
 #print axioms StatLean.ExperimentalDesign.inclusionProb_nonneg
@@ -117,6 +122,7 @@ import StatLean.ExperimentalDesign
 #print axioms StatLean.ExperimentalDesign.residualSS
 #print axioms StatLean.ExperimentalDesign.residualSS_le_totalSS
 #print axioms StatLean.ExperimentalDesign.residualSS_nonneg
+#print axioms StatLean.ExperimentalDesign.sampleMean
 #print axioms StatLean.ExperimentalDesign.samplesOfCard_nonempty
 #print axioms StatLean.ExperimentalDesign.simpleRandomSampling
 #print axioms StatLean.ExperimentalDesign.simpleRandomSampling_map_image
@@ -125,6 +131,10 @@ import StatLean.ExperimentalDesign
 #print axioms StatLean.ExperimentalDesign.srs_pairInclusionProb
 #print axioms StatLean.ExperimentalDesign.srs_sampleMean_unbiased
 #print axioms StatLean.ExperimentalDesign.srs_sampleMean_variance
+#print axioms StatLean.ExperimentalDesign.stratifiedMeanEstimator
+#print axioms StatLean.ExperimentalDesign.stratifiedSRS
+#print axioms StatLean.ExperimentalDesign.stratifiedSRS_mean_unbiased
+#print axioms StatLean.ExperimentalDesign.stratifiedSRS_mean_variance
 #print axioms StatLean.ExperimentalDesign.stratified_expect
 #print axioms StatLean.ExperimentalDesign.stratified_var
 #print axioms StatLean.ExperimentalDesign.sum_armIndicator
@@ -135,6 +145,7 @@ import StatLean.ExperimentalDesign
 #print axioms StatLean.ExperimentalDesign.sum_character_mul
 #print axioms StatLean.ExperimentalDesign.sum_pmf_toReal
 #print axioms StatLean.ExperimentalDesign.sum_prod_pmf
+#print axioms StatLean.ExperimentalDesign.sum_sample_eq_sum_indicator
 #print axioms StatLean.ExperimentalDesign.sum_sq_sub_populationMean
 #print axioms StatLean.ExperimentalDesign.sum_sub_armMean_eq_zero
 #print axioms StatLean.ExperimentalDesign.sum_sub_populationMean
@@ -147,14 +158,3 @@ import StatLean.ExperimentalDesign
 #print axioms StatLean.ExperimentalDesign.validAllocations_nonempty
 #print axioms StatLean.ExperimentalDesign.var_armIndicator
 #print axioms StatLean.ExperimentalDesign.var_armMean
-#print axioms armIndicator_eq_inclusionIndicator
-#print axioms armMean_eq_sampleMean_arm
-#print axioms card_sample_eq_sum_indicator
-#print axioms inclusionIndicator
-#print axioms inclusionIndicator_mul_self
-#print axioms sampleMean
-#print axioms stratifiedMeanEstimator
-#print axioms stratifiedSRS
-#print axioms stratifiedSRS_mean_unbiased
-#print axioms stratifiedSRS_mean_variance
-#print axioms sum_sample_eq_sum_indicator
