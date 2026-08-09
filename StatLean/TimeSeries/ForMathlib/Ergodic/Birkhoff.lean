@@ -236,6 +236,20 @@ theorem birkhoffAverage_ae_tendsto_condexp [IsProbabilityMeasure μ]
 theorem birkhoffAverage_ae_tendsto_integral [IsProbabilityMeasure μ]
     (hf : Ergodic f μ) (hfm : Measurable f) {g : α → ℝ} (hg : Integrable g μ) :
     ∀ᵐ x ∂μ, Tendsto (fun n => birkhoffAverage ℝ f g n x) atTop (𝓝 (∫ x, g x ∂μ)) := by
-  sorry
+  -- for an ergodic map every `invariantSigma`-measurable set is null or conull, so the
+  -- conditional expectation on `invariantSigma f` is a.e. the space mean
+  have hconst : (fun _ : α => ∫ x, g x ∂μ) =ᵐ[μ] μ[g | invariantSigma f] := by
+    refine ae_eq_condExp_of_forall_setIntegral_eq (invariantSigma_le f) hg
+      (fun s _ _ => (integrable_const _).integrableOn) (fun s hs _ => ?_)
+      aestronglyMeasurable_const
+    have hs' : MeasurableSet s ∧ f ⁻¹' s = s := hs
+    rcases hf.ae_empty_or_univ hs'.1 hs'.2 with h | h
+    · rw [setIntegral_congr_set h, setIntegral_congr_set h]
+      simp
+    · rw [setIntegral_congr_set h, setIntegral_congr_set h]
+      simp
+  filter_upwards [birkhoffAverage_ae_tendsto_condexp hf.toMeasurePreserving hfm hg, hconst]
+    with x h1 h2
+  rwa [h2]
 
 end StatLean.TimeSeries
