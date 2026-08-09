@@ -908,6 +908,55 @@ private lemma eLpNorm_windowSum_le [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : �
     field_simp
   linarith
 
+/-- **The head remainder is `L²`-null**: at a *fixed* sample size `T`, the normalized
+partial sum of the filter defects `X_t − m − Σ_{|k|≤M} a_k ε_{t−k}` is a finite sum of
+`L²`-null terms, hence vanishes as the truncation level `M` grows. -/
+private lemma tendsto_eLpNorm_headRemainder [IsProbabilityMeasure μ] {a : ℤ → ℝ} {m σ2 : ℝ}
+    {X ε : ℤ → Ω → ℝ} (hε : IsIIDNoise ε σ2 μ) (hmeas : ∀ t, Measurable (X t))
+    (hfil : ∀ t : ℤ, Tendsto (fun M : ℕ =>
+      eLpNorm (fun ω => X t ω - m -
+        ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε (t - k) ω) 2 μ) atTop (𝓝 0))
+    (T : ℕ) :
+    Tendsto (fun M : ℕ => eLpNorm (fun ω => (Real.sqrt (T : ℝ))⁻¹ *
+      ∑ t ∈ Finset.range T, (X ((t : ℤ) + 1) ω - m -
+        ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω)) 2 μ)
+      atTop (𝓝 0) := by
+  have hsmul : ∀ (c : ℝ) (g : Ω → ℝ),
+      eLpNorm (fun ω => c * g ω) 2 μ = ‖c‖ₑ * eLpNorm g 2 μ := by
+    intro c g
+    rw [show (fun ω => c * g ω) = c • g from by funext ω; simp, eLpNorm_const_smul]
+  have hbound : ∀ M : ℕ,
+      eLpNorm (fun ω => (Real.sqrt (T : ℝ))⁻¹ * ∑ t ∈ Finset.range T,
+        (X ((t : ℤ) + 1) ω - m -
+          ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω)) 2 μ
+        ≤ ‖(Real.sqrt (T : ℝ))⁻¹‖ₑ * ∑ t ∈ Finset.range T,
+            eLpNorm (fun ω => X ((t : ℤ) + 1) ω - m -
+              ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω) 2 μ := by
+    intro M
+    rw [hsmul]
+    gcongr
+    rw [show (fun ω => ∑ t ∈ Finset.range T, (X ((t : ℤ) + 1) ω - m -
+          ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω))
+        = ∑ t ∈ Finset.range T, (fun ω => X ((t : ℤ) + 1) ω - m -
+          ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω) from by
+      funext ω; simp]
+    exact eLpNorm_sum_le (fun t _ =>
+      (((hmeas _).sub measurable_const).sub
+        (Finset.measurable_sum _ fun k _ =>
+          (hε.measurable _).const_mul _)).aestronglyMeasurable) one_le_two
+  have hsum0 : Tendsto (fun M : ℕ => ∑ t ∈ Finset.range T,
+      eLpNorm (fun ω => X ((t : ℤ) + 1) ω - m -
+        ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω) 2 μ)
+      atTop (𝓝 0) := by
+    have := tendsto_finset_sum (Finset.range T)
+      (fun t (_ : t ∈ Finset.range T) => hfil ((t : ℤ) + 1))
+    simpa using this
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_
+    (fun M => zero_le _) hbound
+  have := (ENNReal.Tendsto.const_mul hsum0
+    (Or.inr (enorm_ne_top (x := (Real.sqrt (T : ℝ))⁻¹))))
+  simpa using this
+
 /-! ### The truncation defect, uniformly in the sample size -/
 
 set_option maxHeartbeats 1000000 in
@@ -1016,44 +1065,7 @@ private lemma integral_abs_defect_le [IsProbabilityMeasure μ] {a : ℤ → ℝ}
         ≤ ENNReal.ofReal (Real.sqrt σ2 * B) := fun M hNM =>
     eLpNorm_windowSum_le hwn hσ.le bco hBnn T M hT (hbcomass M hNM)
   -- the head piece vanishes as the truncation level grows
-  have hsmul : ∀ (c : ℝ) (g : Ω → ℝ), eLpNorm (fun ω => c * g ω) 2 μ = ‖c‖ₑ * eLpNorm g 2 μ := by
-    intro c g
-    rw [show (fun ω => c * g ω) = c • g from by funext ω; simp, eLpNorm_const_smul]
-  have hE0 : Tendsto (fun M : ℕ => eLpNorm (fun ω => (Real.sqrt (T : ℝ))⁻¹ *
-      ∑ t ∈ Finset.range T, (X ((t : ℤ) + 1) ω - m -
-        ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω)) 2 μ)
-      atTop (𝓝 0) := by
-    have hbound : ∀ M : ℕ,
-        eLpNorm (fun ω => (Real.sqrt (T : ℝ))⁻¹ * ∑ t ∈ Finset.range T,
-          (X ((t : ℤ) + 1) ω - m -
-            ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω)) 2 μ
-          ≤ ‖(Real.sqrt (T : ℝ))⁻¹‖ₑ * ∑ t ∈ Finset.range T,
-              eLpNorm (fun ω => X ((t : ℤ) + 1) ω - m -
-                ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω) 2 μ := by
-      intro M
-      rw [hsmul]
-      gcongr
-      rw [show (fun ω => ∑ t ∈ Finset.range T, (X ((t : ℤ) + 1) ω - m -
-            ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω))
-          = ∑ t ∈ Finset.range T, (fun ω => X ((t : ℤ) + 1) ω - m -
-            ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω) from by
-        funext ω; simp]
-      exact eLpNorm_sum_le (fun t _ =>
-        (((hmeas _).sub measurable_const).sub
-          (Finset.measurable_sum _ fun k _ =>
-            (hε.measurable _).const_mul _)).aestronglyMeasurable) one_le_two
-    have hsum0 : Tendsto (fun M : ℕ => ∑ t ∈ Finset.range T,
-        eLpNorm (fun ω => X ((t : ℤ) + 1) ω - m -
-          ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω) 2 μ)
-        atTop (𝓝 0) := by
-      have := tendsto_finset_sum (Finset.range T)
-        (fun t (_ : t ∈ Finset.range T) => hfil ((t : ℤ) + 1))
-      simpa using this
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_
-      (fun M => zero_le _) hbound
-    have := (ENNReal.Tendsto.const_mul hsum0
-      (Or.inr (enorm_ne_top (x := (Real.sqrt (T : ℝ))⁻¹))))
-    simpa using this
+  have hE0 := tendsto_eLpNorm_headRemainder hε hmeas hfil T
   -- pass to the limit `M → ∞`
   have hDle : eLpNorm (fun ω => (Real.sqrt (T : ℝ))⁻¹ * ∑ t ∈ Finset.range T,
       (X ((t : ℤ) + 1) ω - m)
@@ -1239,6 +1251,164 @@ theorem sampleMean_clt_debt [IsProbabilityMeasure μ] {a : ℤ → ℝ} {m σ2 :
   rw [← hR, ← hS] at hN2
   rw [← hP, ← hS]
   linarith [dist_triangle P Q S, dist_triangle Q R S]
+
+/-! ### Bricks for the lag-0 and Bartlett debts
+
+The **mean correction** in `γ̂(0)` is asymptotically negligible, and this is already a
+consequence of the sample-mean layer above: the same ℓ¹ energy budget that produced the
+`T`-free `L²` bound of `eLpNorm_windowSum_le` bounds the whole normalized centred partial
+sum by `√σ² Σ_k|a_k|` uniformly in `T` (`eLpNorm_normalizedSum_le`), whence
+`E|√T X̄_T²| ≤ σ² (Σ_k|a_k|)² / √T → 0` (`tendsto_integral_sqrt_mul_sampleMean_sq`).
+So `√T (γ̂(0) − γ(0))` and `√T (T⁻¹ Σ_t X_t² − γ(0))` have the same limit law, which is
+the reduction the remaining debts start from. -/
+
+/-- The `L²` bound implied by an `eLpNorm` bound (converse of
+`eLpNorm_two_le_of_integral_sq_le`). -/
+private lemma integral_sq_le_of_eLpNorm_two {f : Ω → ℝ} {C : ℝ} (hC : 0 ≤ C)
+    (hf : AEStronglyMeasurable f μ) (h : eLpNorm f 2 μ ≤ ENNReal.ofReal C) :
+    ∫ ω, f ω ^ 2 ∂μ ≤ C ^ 2 := by
+  have hmem : MemLp f 2 μ := ⟨hf, lt_of_le_of_lt h ENNReal.ofReal_lt_top⟩
+  rw [hmem.eLpNorm_eq_integral_rpow_norm two_ne_zero (by norm_num)] at h
+  have hpow : ∀ ω, ‖f ω‖ ^ ((2 : ENNReal).toReal) = f ω ^ 2 := by
+    intro ω
+    rw [show ((2 : ENNReal).toReal) = ((2 : ℕ) : ℝ) by norm_num, Real.rpow_natCast,
+      Real.norm_eq_abs, sq_abs]
+  rw [integral_congr_ae (Eventually.of_forall hpow),
+    show ((2 : ENNReal).toReal)⁻¹ = 1 / (2 : ℝ) by norm_num, ← Real.sqrt_eq_rpow] at h
+  have hnn : (0 : ℝ) ≤ ∫ ω, f ω ^ 2 ∂μ := integral_nonneg fun ω => sq_nonneg _
+  have h2 : Real.sqrt (∫ ω, f ω ^ 2 ∂μ) ≤ C := (ENNReal.ofReal_le_ofReal_iff hC).1 h
+  nlinarith [Real.sq_sqrt hnn, Real.sqrt_nonneg (∫ ω, f ω ^ 2 ∂μ)]
+
+/-- **The `T`-free `L²` bound for the normalized centred partial sum**:
+`‖T^{-1/2} Σ_{t≤T}(X_t − m)‖₂ ≤ √σ² Σ_k |a_k|`. This is the ℓ¹ energy budget of
+`eLpNorm_windowSum_le` applied to the full filter, with the truncation level removed by
+`tendsto_eLpNorm_headRemainder`. -/
+private lemma eLpNorm_normalizedSum_le [IsProbabilityMeasure μ] {a : ℤ → ℝ} {m σ2 : ℝ}
+    {X ε : ℤ → Ω → ℝ} (hε : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
+    (ha : Summable fun k : ℤ => |a k|)
+    (hmeas : ∀ t, Measurable (X t))
+    (hfil : ∀ t : ℤ, Tendsto (fun M : ℕ =>
+      eLpNorm (fun ω => X t ω - m -
+        ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε (t - k) ω) 2 μ) atTop (𝓝 0))
+    (T : ℕ) (hT : 1 ≤ T) :
+    eLpNorm (fun ω => (Real.sqrt (T : ℝ))⁻¹ *
+        ∑ t ∈ Finset.range T, (X ((t : ℤ) + 1) ω - m)) 2 μ
+      ≤ ENNReal.ofReal (Real.sqrt σ2 * ∑' k : ℤ, |a k|) := by
+  classical
+  have hwn := hε.isWhiteNoise
+  have hAnn : (0 : ℝ) ≤ ∑' k : ℤ, |a k| := tsum_nonneg fun k => abs_nonneg _
+  have hmG : ∀ M : ℕ, Measurable (fun ω => (Real.sqrt (T : ℝ))⁻¹ * ∑ t ∈ Finset.range T,
+      ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω) := fun M =>
+    Measurable.const_mul (Finset.measurable_sum _ fun t _ =>
+      Finset.measurable_sum _ fun k _ => (hε.measurable _).const_mul _) _
+  have hmE : ∀ M : ℕ, Measurable (fun ω => (Real.sqrt (T : ℝ))⁻¹ * ∑ t ∈ Finset.range T,
+      (X ((t : ℤ) + 1) ω - m -
+        ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω)) := fun M =>
+    Measurable.const_mul (Finset.measurable_sum _ fun t _ =>
+      ((hmeas _).sub measurable_const).sub
+        (Finset.measurable_sum _ fun k _ => (hε.measurable _).const_mul _)) _
+  have hsplit : ∀ (M : ℕ) (ω : Ω),
+      (Real.sqrt (T : ℝ))⁻¹ * ∑ t ∈ Finset.range T, (X ((t : ℤ) + 1) ω - m)
+        = ((Real.sqrt (T : ℝ))⁻¹ * ∑ t ∈ Finset.range T,
+            (X ((t : ℤ) + 1) ω - m -
+              ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω))
+          + ((Real.sqrt (T : ℝ))⁻¹ * ∑ t ∈ Finset.range T,
+              ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω) := by
+    intro M ω
+    have hA : ∑ t ∈ Finset.range T, (X ((t : ℤ) + 1) ω - m)
+        = ∑ t ∈ Finset.range T, (X ((t : ℤ) + 1) ω - m -
+            ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω)
+          + ∑ t ∈ Finset.range T,
+              ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω := by
+      rw [← Finset.sum_add_distrib]
+      exact Finset.sum_congr rfl fun t _ => by ring
+    linear_combination (Real.sqrt (T : ℝ))⁻¹ * hA
+  have hGbound : ∀ M : ℕ,
+      eLpNorm (fun ω => (Real.sqrt (T : ℝ))⁻¹ * ∑ t ∈ Finset.range T,
+        ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω) 2 μ
+        ≤ ENNReal.ofReal (Real.sqrt σ2 * ∑' k : ℤ, |a k|) := fun M =>
+    eLpNorm_windowSum_le hwn hσ.le a hAnn T M hT
+      (ha.sum_le_tsum (Finset.Icc (-(M : ℤ)) (M : ℤ)) (fun k _ => abs_nonneg (a k)))
+  have hE0 := tendsto_eLpNorm_headRemainder hε hmeas hfil (m := m) T
+  have hlim : Tendsto (fun M : ℕ =>
+      eLpNorm (fun ω => (Real.sqrt (T : ℝ))⁻¹ * ∑ t ∈ Finset.range T,
+        (X ((t : ℤ) + 1) ω - m -
+          ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε ((t : ℤ) + 1 - k) ω)) 2 μ
+        + ENNReal.ofReal (Real.sqrt σ2 * ∑' k : ℤ, |a k|)) atTop
+      (𝓝 (ENNReal.ofReal (Real.sqrt σ2 * ∑' k : ℤ, |a k|))) := by
+    have h := hE0.add
+      (tendsto_const_nhds (x := ENNReal.ofReal (Real.sqrt σ2 * ∑' k : ℤ, |a k|)))
+    simpa using h
+  refine ge_of_tendsto hlim (Eventually.of_forall fun M => ?_)
+  refine le_trans (le_of_eq (eLpNorm_congr_ae (Eventually.of_forall (hsplit M)))) ?_
+  exact le_trans (eLpNorm_add_le (hmE M).aestronglyMeasurable (hmG M).aestronglyMeasurable
+    one_le_two) (add_le_add le_rfl (hGbound M))
+
+/-- **The mean correction of `γ̂(0)` is asymptotically negligible** (zero-mean case):
+`E|√T X̄_T²| ≤ σ² (Σ_k |a_k|)² / √T → 0`. Hence `√T (γ̂(0) − γ(0))` and
+`√T (T⁻¹ Σ_t X_t² − γ(0))` have the same limit law. -/
+private lemma tendsto_integral_sqrt_mul_sampleMean_sq [IsProbabilityMeasure μ] {a : ℤ → ℝ}
+    {σ2 : ℝ} {X ε : ℤ → Ω → ℝ} (hε : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
+    (ha : Summable fun k : ℤ => |a k|)
+    (hmeas : ∀ t, Measurable (X t))
+    (hfil : ∀ t : ℤ, Tendsto (fun M : ℕ =>
+      eLpNorm (fun ω => X t ω -
+        ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε (t - k) ω) 2 μ) atTop (𝓝 0)) :
+    Tendsto (fun T : ℕ => ∫ ω, |Real.sqrt (T : ℝ) *
+        (sampleMean fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ^ 2| ∂μ) atTop (𝓝 0) := by
+  classical
+  have hAnn : (0 : ℝ) ≤ ∑' k : ℤ, |a k| := tsum_nonneg fun k => abs_nonneg _
+  have hfil' : ∀ t : ℤ, Tendsto (fun M : ℕ =>
+      eLpNorm (fun ω => X t ω - 0 -
+        ∑ k ∈ Finset.Icc (-(M : ℤ)) (M : ℤ), a k * ε (t - k) ω) 2 μ) atTop (𝓝 0) := by
+    intro t
+    simpa using hfil t
+  have hmZ : ∀ T : ℕ, Measurable (fun ω => (Real.sqrt (T : ℝ))⁻¹ *
+      ∑ t ∈ Finset.range T, (X ((t : ℤ) + 1) ω - 0)) := fun T =>
+    Measurable.const_mul (Finset.measurable_sum _ fun t _ =>
+      (hmeas _).sub measurable_const) _
+  -- the pointwise rewriting `√T X̄² = T^{-1/2} (T^{-1/2} Σ_t X_t)²`
+  have hpt : ∀ (T : ℕ), 1 ≤ T → ∀ ω,
+      |Real.sqrt (T : ℝ) * (sampleMean fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ^ 2|
+        = (Real.sqrt (T : ℝ))⁻¹ *
+          ((Real.sqrt (T : ℝ))⁻¹ * ∑ t ∈ Finset.range T, (X ((t : ℤ) + 1) ω - 0)) ^ 2 := by
+    intro T hT ω
+    have hTpos : (0 : ℝ) < (T : ℝ) := by exact_mod_cast hT
+    obtain ⟨s, hspos, hsdef⟩ : ∃ s : ℝ, 0 < s ∧ Real.sqrt (T : ℝ) = s :=
+      ⟨_, Real.sqrt_pos.2 hTpos, rfl⟩
+    have hs2 : s * s = (T : ℝ) := by rw [← hsdef]; exact Real.mul_self_sqrt hTpos.le
+    have hval : Real.sqrt (T : ℝ) *
+          (sampleMean fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ^ 2
+        = (Real.sqrt (T : ℝ))⁻¹ *
+          ((Real.sqrt (T : ℝ))⁻¹ * ∑ t ∈ Finset.range T, (X ((t : ℤ) + 1) ω - 0)) ^ 2 := by
+      rw [sampleMean, Fin.sum_univ_eq_sum_range (fun t => X ((t : ℤ) + 1) ω) T, hsdef,
+        ← hs2]
+      simp only [sub_zero]
+      field_simp
+    rw [hval, abs_of_nonneg (by positivity)]
+  -- the uniform second-moment bound
+  have hbound : ∀ T : ℕ, 1 ≤ T →
+      ∫ ω, |Real.sqrt (T : ℝ) *
+          (sampleMean fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ^ 2| ∂μ
+        ≤ (Real.sqrt (T : ℝ))⁻¹ * (Real.sqrt σ2 * ∑' k : ℤ, |a k|) ^ 2 := by
+    intro T hT
+    rw [integral_congr_ae (Eventually.of_forall (hpt T hT)), integral_const_mul]
+    refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+    exact integral_sq_le_of_eLpNorm_two (by positivity) (hmZ T).aestronglyMeasurable
+      (eLpNorm_normalizedSum_le hε hσ ha hmeas hfil' T hT)
+  -- and it tends to zero
+  have hsq0 : Tendsto (fun T : ℕ => (Real.sqrt (T : ℝ))⁻¹ *
+      (Real.sqrt σ2 * ∑' k : ℤ, |a k|) ^ 2) atTop (𝓝 0) := by
+    have h1 : Tendsto (fun T : ℕ => Real.sqrt (T : ℝ)) atTop atTop :=
+      Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
+    have h2 : Tendsto (fun T : ℕ => (Real.sqrt (T : ℝ))⁻¹) atTop (𝓝 0) :=
+      tendsto_inv_atTop_zero.comp h1
+    simpa using h2.mul_const ((Real.sqrt σ2 * ∑' k : ℤ, |a k|) ^ 2)
+  refine squeeze_zero' ?_ ?_ hsq0
+  · filter_upwards with T
+    exact integral_nonneg fun ω => abs_nonneg _
+  · filter_upwards [eventually_ge_atTop 1] with T hT
+    exact hbound T hT
 
 /-- **FY Theorem 2.8(ii) — DEBT (ledger (b); B&D 1991 Prop 7.3.4)**, with the variance
 **corrected** from the misprinted eq. (2.25): for a zero-mean two-sided linear process
