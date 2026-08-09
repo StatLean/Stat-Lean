@@ -1,0 +1,490 @@
+import StatLean.TimeSeries.Threshold.TAR
+import StatLean.TimeSeries.ARMA.Likelihood
+import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
+import Mathlib.Probability.Distributions.Gaussian.Real
+-- Consumed only by the falsity witness for eq. (4.8) (`tarLS_clt_debt_false` below):
+-- the coordinate white noise on `(ℤ → ℝ, ⊗ N(0,1))`, and `Matrix.PosDef.one`.
+import Mathlib.Probability.Independence.InfinitePi
+import Mathlib.Data.Real.StarOrdered
+
+/-!
+# TAR estimation with a known partition (FY §4.1.2, eqs. (4.4)–(4.8))
+
+Least-squares fitting of a TAR model when the regime partition (and hence the regime
+memberships of the observations) is known:
+
+* `tarRegimeIndices` — the time indices falling in regime `i`, and `tarRegimeCount`
+  `T_i = #{t : X_{t−d} ∈ A_i}`;
+* `tarLSResidualSS` — the regime-`i` residual sum of squares (FY eq. (4.4)) and
+  `tarSigmaHatSq` — the regime variance estimate `σ̂_i²` (eq. (4.6));
+* `tarGeneralizedAIC` — the order/delay-selection criterion
+  `Σ_i [T_i log σ̂_i²(p_i) + 2(p_i + 1)]` (eq. (4.7); the delay `d` is profiled by
+  minimizing over the candidate grid, ties broken by the smallest `d` — recorded as
+  the definition's tie-break convention);
+* **eq. (4.8)** — the known-partition asymptotic normality
+  `T_i^{1/2}(b̃_i − b_i) →d N(0, σ_i² W_i^{-1})`, a literature DEBT (the book says
+  "can be shown", pointing at Theorem 3.2). **Caution recorded in the inventory**: the
+  printed `W_i` is built from the moments of the *fictitious global regime-`i` AR
+  process*, not from moments conditional on `X_{t−d} ∈ A_i`. The frozen statement left
+  `W_i` a free positive-definite matrix and was therefore FALSE
+  (`tarLS_clt_debt_false`); it is now **pinned to the process** as the regime-conditional
+  design covariance `tarRegimeDesignCov` — see the Statement-strengthening paragraph at
+  `tarLS_clt_debt`.
+
+**Scope.** FY Theorems 4.1/4.2 (Chan 1993a) and their consumers are **descoped**
+(user, 2026-08-04); nothing here estimates the threshold `r` itself.
+
+**Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §4.1.2,
+eqs. (4.4)–(4.8) (pp. 131–134). (`FY §4.1.2`.)
+
+**Bibliographic comments.** Regime-wise least squares for TAR is Tong & Lim (1980);
+the known-partition asymptotics are Chan (1993a, Ann. Statist.); the generalized AIC
+is Tong (1990) §5.
+-/
+
+open MeasureTheory ProbabilityTheory Filter Matrix
+open scoped ProbabilityTheory Topology
+
+namespace StatLean.TimeSeries
+
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+
+open Classical in
+/-- Time indices (within the usable window `P + 1 ≤ t < T`) whose threshold variable
+falls in regime `i` (FY §4.1.2). -/
+noncomputable def tarRegimeIndices {T : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d P : ℕ) :
+    Finset (Fin T) :=
+  Finset.univ.filter fun t : Fin T => P < (t : ℕ) ∧ ∃ h : d ≤ (t : ℕ),
+    x ⟨(t : ℕ) - d, Nat.lt_of_le_of_lt (Nat.sub_le _ _) t.isLt⟩ ∈ A
+
+/-- The regime-`i` sample size `T_i` (FY §4.1.2). -/
+noncomputable def tarRegimeCount {T : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d P : ℕ) : ℕ :=
+  (tarRegimeIndices x A d P).card
+
+/-- The regime-`i` **residual sum of squares** at coefficients `(β₀, β)`
+(FY eq. (4.4)): `Σ_{t ∈ regime i} (x_t − β₀ − Σ_j β_j x_{t−1−j})²`. -/
+noncomputable def tarLSResidualSS {T P : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d : ℕ)
+    (β0 : ℝ) (β : Fin P → ℝ) : ℝ :=
+  ∑ t ∈ tarRegimeIndices x A d P,
+    (x t - β0 - ∑ j : Fin P, β j *
+      x ⟨(t : ℕ) - 1 - (j : ℕ), Nat.lt_of_le_of_lt (by omega) t.isLt⟩) ^ 2
+
+/-- The regime-`i` variance estimate `σ̂_i² = RSS_i / T_i` (FY eq. (4.6); junk `0` when
+the regime is empty). -/
+noncomputable def tarSigmaHatSq {T P : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d : ℕ)
+    (β0 : ℝ) (β : Fin P → ℝ) : ℝ :=
+  tarLSResidualSS x A d β0 β / (tarRegimeCount x A d P : ℝ)
+
+/-- The **generalized AIC** for TAR order selection (FY eq. (4.7)):
+`Σ_i [T_i log σ̂_i²(p_i) + 2(p_i + 1)]`, evaluated at given regime fits. -/
+noncomputable def tarGeneralizedAIC {k T P : ℕ} (x : Fin T → ℝ) (A : Fin k → Set ℝ)
+    (d : ℕ) (β0 : Fin k → ℝ) (β : Fin k → Fin P → ℝ) (porder : Fin k → ℕ) : ℝ :=
+  ∑ i, ((tarRegimeCount x (A i) d P : ℝ) *
+      Real.log (tarSigmaHatSq x (A i) d (β0 i) (β i))
+    + 2 * ((porder i : ℝ) + 1))
+
+/-! ### Existence of a regime-wise least-squares fit
+
+The regime-`i` residual sum of squares is `‖v − Lθ‖²` for the (finite-dimensional) linear
+regressor map `L = tarFit` sending the coefficient vector `θ = (β₀, β)` to the fitted
+values, extended by zero outside the regime window. Its range is a finite-dimensional —
+hence closed — subspace of `Fin T → ℝ` whose elements vanish off the window, so the
+sublevel set `{w ∈ range L | ‖v − w‖² ≤ ‖v‖²}` is closed and *bounded*, therefore compact:
+the objective attains its minimum there, and that minimum is global on the range. -/
+
+/-- The **regressor map** of the regime-`i` least-squares problem: `(β₀, β)` is sent to the
+vector of fitted values `β₀ + Σ_j β_j x_{t−1−j}` on the regime window, extended by `0`
+off it. -/
+private noncomputable def tarFit {T P : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d : ℕ) :
+    (ℝ × (Fin P → ℝ)) →ₗ[ℝ] (Fin T → ℝ) where
+  toFun θ := fun t =>
+    if t ∈ tarRegimeIndices x A d P then
+      θ.1 + ∑ j : Fin P, θ.2 j *
+        x ⟨(t : ℕ) - 1 - (j : ℕ), Nat.lt_of_le_of_lt (by omega) t.isLt⟩
+    else 0
+  map_add' θ η := by
+    funext t
+    by_cases h : t ∈ tarRegimeIndices x A d P
+    · simp only [h, if_true, Prod.fst_add, Prod.snd_add, Pi.add_apply, add_mul,
+        Finset.sum_add_distrib]
+      ring
+    · simp [h]
+  map_smul' c θ := by
+    funext t
+    by_cases h : t ∈ tarRegimeIndices x A d P
+    · simp only [h, if_true, Prod.smul_fst, Prod.smul_snd, Pi.smul_apply, smul_eq_mul,
+        RingHom.id_apply, Pi.smul_apply]
+      simp only [mul_add, Finset.mul_sum, mul_assoc]
+    · simp [h]
+
+private lemma tarFit_apply_of_mem {T P : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d : ℕ)
+    (θ : ℝ × (Fin P → ℝ)) {t : Fin T} (ht : t ∈ tarRegimeIndices x A d P) :
+    tarFit x A d θ t = θ.1 + ∑ j : Fin P, θ.2 j *
+      x ⟨(t : ℕ) - 1 - (j : ℕ), Nat.lt_of_le_of_lt (by omega) t.isLt⟩ :=
+  if_pos ht
+
+private lemma tarFit_apply_of_not_mem {T P : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d : ℕ)
+    (θ : ℝ × (Fin P → ℝ)) {t : Fin T} (ht : t ∉ tarRegimeIndices x A d P) :
+    tarFit x A d θ t = 0 :=
+  if_neg ht
+
+/-- The least-squares objective as a function of the fitted-value vector. -/
+private noncomputable def tarObj {T : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d P : ℕ)
+    (w : Fin T → ℝ) : ℝ :=
+  ∑ t ∈ tarRegimeIndices x A d P, (x t - w t) ^ 2
+
+private lemma tarObj_continuous {T : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d P : ℕ) :
+    Continuous (tarObj x A d P) :=
+  continuous_finset_sum _ fun t _ => ((continuous_const.sub (continuous_apply t)).pow 2)
+
+private lemma tarObj_nonneg {T : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d P : ℕ)
+    (w : Fin T → ℝ) : 0 ≤ tarObj x A d P w :=
+  Finset.sum_nonneg fun _ _ => sq_nonneg _
+
+private lemma tarLSResidualSS_eq_tarObj {T P : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d : ℕ)
+    (β0 : ℝ) (β : Fin P → ℝ) :
+    tarLSResidualSS x A d β0 β = tarObj x A d P (tarFit x A d (β0, β)) := by
+  refine Finset.sum_congr rfl fun t ht => ?_
+  rw [tarFit_apply_of_mem x A d (β0, β) ht]
+  ring_nf
+
+/-- The regime-`i` least-squares fit is characterized by its normal equations
+(the finite-dimensional projection; no invertibility needed for existence). -/
+theorem exists_tarLS_minimizer {T P : ℕ} (x : Fin T → ℝ) (A : Set ℝ) (d : ℕ) :
+    ∃ (β0 : ℝ) (β : Fin P → ℝ), ∀ (γ0 : ℝ) (γ : Fin P → ℝ),
+      tarLSResidualSS x A d β0 β ≤ tarLSResidualSS x A d γ0 γ := by
+  classical
+  -- the sublevel set of the objective inside the range of the regressor map
+  obtain ⟨C, hC⟩ : ∃ C : Set (Fin T → ℝ),
+      C = ((LinearMap.range (tarFit (P := P) x A d) : Submodule ℝ (Fin T → ℝ)) :
+            Set (Fin T → ℝ))
+          ∩ {w | tarObj x A d P w ≤ tarObj x A d P 0} := ⟨_, rfl⟩
+  have h0C : (0 : Fin T → ℝ) ∈ C := by
+    rw [hC]
+    refine ⟨⟨0, map_zero _⟩, ?_⟩
+    simp only [Set.mem_setOf_eq]
+    exact le_rfl
+  have hCclosed : IsClosed C := by
+    rw [hC]
+    exact (Submodule.closed_of_finiteDimensional _).inter
+      (isClosed_le (tarObj_continuous x A d P) continuous_const)
+  -- boundedness: on the window the objective controls each coordinate, off the window
+  -- every element of the range vanishes
+  have hCbdd : Bornology.IsBounded C := by
+    refine isBounded_iff_forall_norm_le.mpr
+      ⟨(∑ s : Fin T, |x s|) + Real.sqrt (tarObj x A d P 0), fun w hw => ?_⟩
+    have hR : (0 : ℝ) ≤ (∑ s : Fin T, |x s|) + Real.sqrt (tarObj x A d P 0) :=
+      add_nonneg (Finset.sum_nonneg fun _ _ => abs_nonneg _) (Real.sqrt_nonneg _)
+    rw [pi_norm_le_iff_of_nonneg hR]
+    intro t
+    rw [hC] at hw
+    by_cases ht : t ∈ tarRegimeIndices x A d P
+    · have hw2 : tarObj x A d P w ≤ tarObj x A d P 0 := hw.2
+      have hterm : (x t - w t) ^ 2 ≤ tarObj x A d P 0 :=
+        le_trans (Finset.single_le_sum (f := fun s => (x s - w s) ^ 2)
+          (fun s _ => sq_nonneg _) ht) hw2
+      have habs : |x t - w t| ≤ Real.sqrt (tarObj x A d P 0) := by
+        rw [← Real.sqrt_sq_eq_abs]
+        exact Real.sqrt_le_sqrt hterm
+      have hxt : |x t| ≤ ∑ s : Fin T, |x s| :=
+        Finset.single_le_sum (f := fun s => |x s|) (fun s _ => abs_nonneg _)
+          (Finset.mem_univ t)
+      have hsplit : |w t| ≤ |x t| + |x t - w t| := by
+        rcases abs_cases (w t) with ⟨h1, _⟩ | ⟨h1, _⟩ <;>
+          rcases abs_cases (x t) with ⟨h2, _⟩ | ⟨h2, _⟩ <;>
+            rcases abs_cases (x t - w t) with ⟨h3, _⟩ | ⟨h3, _⟩ <;> linarith
+      calc ‖w t‖ = |w t| := rfl
+        _ ≤ |x t| + |x t - w t| := hsplit
+        _ ≤ (∑ s : Fin T, |x s|) + Real.sqrt (tarObj x A d P 0) := add_le_add hxt habs
+    · obtain ⟨θ, hθ⟩ := hw.1
+      have : w t = 0 := by rw [← hθ]; exact tarFit_apply_of_not_mem x A d θ ht
+      rw [this]
+      simpa using hR
+  -- a minimizer on the compact sublevel set is a global minimizer on the range
+  obtain ⟨w0, hw0C, hw0min⟩ :=
+    (Metric.isCompact_of_isClosed_isBounded hCclosed hCbdd).exists_isMinOn ⟨0, h0C⟩
+      (tarObj_continuous x A d P).continuousOn
+  rw [hC] at hw0C
+  obtain ⟨θ, hθ⟩ := hw0C.1
+  refine ⟨θ.1, θ.2, fun γ0 γ => ?_⟩
+  rw [tarLSResidualSS_eq_tarObj, tarLSResidualSS_eq_tarObj]
+  have hθ' : tarFit x A d (θ.1, θ.2) = w0 := by rw [← hθ]
+  rw [hθ']
+  by_cases hcase : tarObj x A d P (tarFit x A d (γ0, γ)) ≤ tarObj x A d P 0
+  · refine isMinOn_iff.mp hw0min _ ?_
+    rw [hC]
+    refine ⟨⟨(γ0, γ), rfl⟩, ?_⟩
+    simpa only [Set.mem_setOf_eq] using hcase
+  · have hw0le : tarObj x A d P w0 ≤ tarObj x A d P 0 := hw0C.2
+    exact le_trans hw0le (le_of_not_ge hcase)
+
+/-! ### The frozen eq. (4.8) statement is FALSE — a formalized witness
+
+Two independent defects of the frozen statement, found in wave `ts/s12-model-selection`
+(2026-08-09):
+
+1. **`W` is a free parameter.** The docstring says `W_i` is the second-moment matrix of
+   the fictitious regime-`i` AR process, but formally `W` is universally quantified over
+   *all* positive-definite matrices with no link to `(b, σ, A, X)`. Two admissible values
+   `W` and `2W` force two different Gaussian limits for the same sequence, so the
+   conclusion cannot hold whenever `c ≠ 0` and the hypotheses are satisfiable.
+2. **`hLS` pins the intercept at the truth.** The minimality is asserted for the pair
+   `(b0 i, bhat T ω)` against *all* `(γ0, γ)`, i.e. the true intercept `b0 i` is required
+   to be the least-squares intercept at every `ω` and every `T`. That is a
+   probability-zero constraint on the data as soon as the regime window is non-empty and
+   the noise is non-degenerate; it is not what FY eqs. (4.4)-(4.5) define.
+
+The witness below exploits neither pathology directly: it takes the **degenerate-regime**
+route, which is the cheapest satisfiable instance. `IsTAR` allows an empty regime
+(`A = ![univ, ∅]` is a measurable partition), the regime-`1` least-squares problem is then
+vacuous (`hLS` reads `0 ≤ 0`), `T_1 = 0`, and the scaled statistic is identically `0`;
+its characteristic function is the constant `1`, while the frozen limit at `W = 1`,
+`c = 1` is `exp(-1/2)`. The instance is built from scratch on `(ℤ → ℝ, ⊗ N(0,1))` so the
+witness is **axiom-clean** — in particular it does not go through
+`exists_stationary_tar`, whose path-space input is itself an open debt.
+
+Repairing the statement needs (i) `W` tied to the process (Chan 1993a's
+`E[Z_t Z_tᵀ]` for the fictitious regime-`i` AR process), (ii) `hLS` re-stated as joint
+minimality over `(β₀, β)` with `bhat` the `β`-component, and (iii) a non-degeneracy
+hypothesis `T_i → ∞` (equivalently `P(X_{t-d} ∈ A_i) > 0`), without which even a repaired
+`W` leaves the degenerate instance a counterexample.
+
+**All three repairs are applied** to `tarLS_clt_debt` below (wave
+`ts/s12b-model-repairs`, 2026-08-09): see the Statement-strengthening paragraph there.
+This witness is kept verbatim, quantified over the *frozen* shape `H`, as the permanent
+record of what the repairs are for. -/
+
+/-! ### A concrete standard-Gaussian white noise on `ℤ` -/
+
+private noncomputable def wnMeasure : Measure (ℤ → ℝ) :=
+  Measure.infinitePi (fun _ : ℤ => gaussianReal 0 1)
+
+private instance : IsProbabilityMeasure wnMeasure := by
+  unfold wnMeasure; infer_instance
+
+private def wnCoord (t : ℤ) (ω : ℤ → ℝ) : ℝ := ω t
+
+private lemma wnCoord_measurable (t : ℤ) : Measurable (wnCoord t) := measurable_pi_apply t
+
+private lemma wnMeasure_map_coord (t : ℤ) : wnMeasure.map (wnCoord t) = gaussianReal 0 1 :=
+  Measure.infinitePi_map_eval _ t
+
+private lemma wnCoord_identDistrib (t : ℤ) :
+    IdentDistrib (wnCoord t) (id : ℝ → ℝ) wnMeasure (gaussianReal 0 1) :=
+  ⟨(wnCoord_measurable t).aemeasurable, aemeasurable_id, by
+    rw [Measure.map_id, wnMeasure_map_coord t]⟩
+
+private lemma wn_isIIDNoise : IsIIDNoise wnCoord 1 wnMeasure := by
+  refine ⟨wnCoord_measurable, ?_, ?_, ?_, ?_, ?_⟩
+  · exact iIndepFun_infinitePi (X := fun _ : ℤ => (id : ℝ → ℝ)) (fun _ => measurable_id)
+  · exact fun s t => (wnCoord_identDistrib s).trans (wnCoord_identDistrib t).symm
+  · exact (wnCoord_identDistrib 0).memLp_iff.2 (memLp_id_gaussianReal 2)
+  · rw [(wnCoord_identDistrib 0).integral_eq]
+    simp only [id_eq]
+    exact (integral_id_gaussianReal (μ := (0 : ℝ)) (v := (1 : NNReal)))
+  · rw [(wnCoord_identDistrib 0).variance_eq, variance_id_gaussianReal]
+    simp
+
+private lemma wn_memLp (t : ℤ) : MemLp (wnCoord t) 2 wnMeasure :=
+  (wn_isIIDNoise.identDistrib t 0).memLp_iff.2 wn_isIIDNoise.memLp
+
+private lemma wnMeasure_shift (k : ℤ) :
+    wnMeasure.map (fun (ω : ℤ → ℝ) (s : ℤ) => ω (s + k)) = wnMeasure := by
+  unfold wnMeasure
+  have h := Measure.infinitePi_map_piCongrLeft (X := fun _ : ℤ => ℝ)
+    (μ := fun _ : ℤ => gaussianReal 0 1) (Equiv.addRight (-k))
+  convert h using 2
+  funext ω s
+  rw [MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply_eq_cast]
+  simp
+
+private lemma wn_strictlyStationary : IsStrictlyStationary wnCoord wnMeasure := by
+  intro n t k
+  have hshift : Measurable (fun (ω : ℤ → ℝ) (s : ℤ) => ω (s + k)) :=
+    measurable_pi_lambda _ fun s => measurable_pi_apply _
+  have htup : Measurable (fun (ω : ℤ → ℝ) (i : Fin n) => ω (t i)) :=
+    measurable_pi_lambda _ fun i => measurable_pi_apply _
+  have hcomp : (fun (ω : ℤ → ℝ) (i : Fin n) => wnCoord (t i + k) ω)
+      = (fun (ω' : ℤ → ℝ) (i : Fin n) => ω' (t i)) ∘ (fun (ω : ℤ → ℝ) (s : ℤ) => ω (s + k)) :=
+    rfl
+  rw [hcomp, ← Measure.map_map htup hshift, wnMeasure_shift k]
+  rfl
+
+private lemma wn_indep_past (t : ℤ) :
+    Indep (MeasurableSpace.comap (wnCoord t) inferInstance) (sigmaLT wnCoord t) wnMeasure := by
+  have hdisj : Disjoint ({t} : Set ℤ) (Set.Iio t) :=
+    Set.disjoint_singleton_left.2 (by simp)
+  have := indep_iSup_of_disjoint
+    (m := fun s : ℤ => MeasurableSpace.comap (wnCoord s) inferInstance)
+    (fun s => (wnCoord_measurable s).comap_le) wn_isIIDNoise.iIndep hdisj
+  simpa using this
+
+
+/-! ### The degenerate two-regime TAR witness -/
+
+/-- Two regimes, the second of which is **empty**: a legitimate `IsTAR` partition. -/
+private noncomputable def wnA : Fin 2 → Set ℝ := fun i => if i = 0 then Set.univ else ∅
+
+private lemma wn_isTAR :
+    IsTAR (fun _ : Fin 2 => (0 : ℝ)) (fun _ : Fin 2 => fun _ : Fin 1 => (0 : ℝ))
+      (fun _ : Fin 2 => (1 : ℝ)) wnA 1 wnCoord wnCoord wnMeasure := by
+  refine ⟨le_rfl, fun _ => one_pos, ?_, ?_, ?_, wnCoord_measurable, wn_isIIDNoise,
+    wn_indep_past, ?_⟩
+  · intro i
+    by_cases h : i = 0 <;> simp [wnA, h]
+  · intro i j hij
+    fin_cases i <;> fin_cases j <;> simp_all [wnA]
+  · refine Set.eq_univ_of_univ_subset ?_
+    have h0 : wnA 0 ⊆ ⋃ i, wnA i := Set.subset_iUnion (fun i => wnA i) 0
+    simpa [wnA] using h0
+  · intro t
+    filter_upwards with ω
+    rw [Fin.sum_univ_two]
+    simp [wnA, wnCoord]
+
+
+/-! ### The falsity of the frozen eq. (4.8) statement -/
+
+private lemma tarRegimeIndices_empty {T : ℕ} (x : Fin T → ℝ) (d P : ℕ) :
+    tarRegimeIndices x (∅ : Set ℝ) d P = (∅ : Finset (Fin T)) := by
+  classical
+  ext t
+  simp [tarRegimeIndices]
+
+private lemma wnA_one : wnA 1 = (∅ : Set ℝ) := by
+  simp [wnA]
+
+/-- **The frozen `tarLS_clt_debt` statement is FALSE.** -/
+private theorem tarLS_clt_debt_false
+    (H : ∀ {Ω : Type} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ] {k P : ℕ}
+      {b0 : Fin k → ℝ} {b : Fin k → Fin P → ℝ} {σ : Fin k → ℝ} {A : Fin k → Set ℝ}
+      {d : ℕ} {X ε : ℤ → Ω → ℝ},
+      IsTAR b0 b σ A d X ε μ → IsStrictlyStationary X μ → (∀ t, MemLp (X t) 2 μ) →
+      ∀ (i : Fin k) (W : Matrix (Fin P) (Fin P) ℝ), W.PosDef →
+      ∀ (bhat : (T : ℕ) → Ω → Fin P → ℝ), (∀ T, Measurable (bhat T)) →
+      (∀ (T : ℕ) (ω : Ω) (γ0 : ℝ) (γ : Fin P → ℝ),
+        tarLSResidualSS (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (A i) d (b0 i) (bhat T ω)
+          ≤ tarLSResidualSS (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (A i) d γ0 γ) →
+      ∀ (c : Fin P → ℝ) (u : ℝ),
+      Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
+          Real.sqrt (tarRegimeCount (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (A i) d P) *
+            ∑ j, c j * (bhat T ω j - b i j)) u)
+        atTop
+        (𝓝 (charFun (gaussianReal 0 (Real.toNNReal (σ i ^ 2 * (c ⬝ᵥ (W⁻¹ *ᵥ c))))) u))) :
+    False := by
+  classical
+  have hLS : ∀ (T : ℕ) (ω : ℤ → ℝ) (γ0 : ℝ) (γ : Fin 1 → ℝ),
+      tarLSResidualSS (fun t : Fin T => wnCoord (((t : ℕ) : ℤ) + 1) ω) (wnA 1) 1
+          ((fun _ : Fin 2 => (0 : ℝ)) 1) ((fun _ _ _ => 0 : (T : ℕ) → (ℤ → ℝ) → Fin 1 → ℝ) T ω)
+        ≤ tarLSResidualSS (fun t : Fin T => wnCoord (((t : ℕ) : ℤ) + 1) ω) (wnA 1) 1 γ0 γ := by
+    intro T ω γ0 γ
+    simp only [tarLSResidualSS, wnA_one, tarRegimeIndices_empty, Finset.sum_empty]
+    exact le_rfl
+  have key := H wn_isTAR wn_strictlyStationary wn_memLp 1 (1 : Matrix (Fin 1) (Fin 1) ℝ)
+    Matrix.PosDef.one (fun _ _ _ => 0) (fun _ => measurable_const) hLS (fun _ => 1) 1
+  -- the regime is empty, so the scaled statistic is identically `0`
+  simp only [sub_self, mul_zero, Finset.sum_const_zero] at key
+  -- the law is `δ₀`, whose characteristic function is identically `1`
+  have hmapconst : wnMeasure.map (fun _ : ℤ → ℝ => (0 : ℝ)) = Measure.dirac 0 := by
+    rw [Measure.map_const]
+    simp
+  rw [hmapconst] at key
+  have hone : charFun (Measure.dirac (0 : ℝ)) (1 : ℝ) = 1 := by
+    rw [charFun_dirac]
+    simp
+  simp only [hone] at key
+  -- the alleged limit is `exp(−1/2) ≠ 1`
+  have hvar : ((fun _ : Fin 2 => (1 : ℝ)) 1) ^ 2 *
+      ((fun _ : Fin 1 => (1 : ℝ)) ⬝ᵥ ((1 : Matrix (Fin 1) (Fin 1) ℝ)⁻¹ *ᵥ (fun _ => 1))) = 1 := by
+    rw [inv_one]
+    simp [Matrix.one_mulVec, dotProduct]
+  rw [hvar] at key
+  have hlim : charFun (gaussianReal 0 (Real.toNNReal 1)) (1 : ℝ) = 1 :=
+    tendsto_nhds_unique tendsto_const_nhds key |>.symm
+  rw [charFun_gaussianReal] at hlim
+  norm_num at hlim
+  rw [show ((-(1 / 2) : ℂ)) = (((-(1 / 2) : ℝ)) : ℂ) by push_cast; ring,
+    ← Complex.ofReal_exp] at hlim
+  have hR : Real.exp (-(1 / 2)) = 1 := by exact_mod_cast hlim
+  have hlt : Real.exp (-(1 / 2)) < 1 := Real.exp_lt_one_iff.mpr (by norm_num)
+  linarith
+
+/-- The **regime-`i` conditional design covariance** `W_i`: the second-moment matrix of
+the regressor vector `Z_t = (X_{t−1−j})_{j<P}` **conditional on the regime event**
+`{X_{t−d} ∈ A_i}`, evaluated at `t = 0` (under strict stationarity the choice of `t` is
+immaterial). Junk `0` on a null regime event, by the `⁻¹`/`toReal` conventions. -/
+noncomputable def tarRegimeDesignCov {P : ℕ} (A : Set ℝ) (d : ℕ)
+    (X : ℤ → Ω → ℝ) (μ : Measure Ω) : Matrix (Fin P) (Fin P) ℝ :=
+  Matrix.of fun j l => ((μ {ω | X (-(d : ℤ)) ω ∈ A}).toReal)⁻¹ *
+    ∫ ω in {ω | X (-(d : ℤ)) ω ∈ A},
+      X (-1 - (j : ℕ)) ω * X (-1 - (l : ℕ)) ω ∂μ
+
+/-- **FY eq. (4.8) — DEBT (Chan 1993a; the book's "can be shown", companion to
+Thm 3.2)**: with a known partition, under strict stationarity, ergodicity and finite
+second moments, the regime-wise LS estimator is `√T_i`-asymptotically normal with
+covariance `σ_i² W_i^{-1}`. Stated in Cramér–Wold/charFun form over the coefficient
+vector.
+
+**Statement strengthening (wave `ts/s12b-model-repairs`, 2026-08-09).** The frozen form
+of this statement is FALSE — see `tarLS_clt_debt_false` above, which is kept verbatim as
+the record of the refutation. Three repairs, exactly the ones that witness's docstring
+prescribes, are applied here; each added or changed hypothesis is tagged `USER-INPUT`:
+
+1. **`W` is no longer a free parameter.** It is pinned by `hWdef` to
+   `tarRegimeDesignCov (A i) d X μ`, i.e. to `E[Z_0 Z_0ᵀ | X_{−d} ∈ A_i]`, a functional of
+   `(A, d, X, μ)` alone. This kills defect 1 of the witness (two admissible values `W`,
+   `2W` forcing two different limits). Note this is the **regime-conditional** reading,
+   which is what the task of estimating `b_i` from the regime-`i` subsample actually
+   produces; the inventory's earlier note that the printed `W_i` should be read as the
+   moments of the *fictitious global regime-`i` AR process* (Chan 1993a) is a different
+   normalization of the same object — under the fictitious-process reading the two agree
+   up to the regime mass, which is absorbed by the `√T_i` (rather than `√T`) scaling.
+2. **`bhat` has a genuine least-squares characterization.** The frozen `hLS` asserted
+   minimality of the pair `(b0 i, bhat T ω)` — pinning the *intercept at the truth*, a
+   probability-zero constraint (defect 2). The repair introduces the estimated intercept
+   sequence `bhat0` and asks for **joint** minimality of `(bhat0 T ω, bhat T ω)` over all
+   `(γ₀, γ)`, which is FY eqs. (4.4)–(4.5) verbatim, and which is *satisfiable* at every
+   sample by `exists_tarLS_minimizer` above.
+3. **The regime is non-degenerate.** `hmass` asks the regime event to carry positive
+   mass. Without it the empty-regime instance of the witness survives *any* repair of `W`:
+   the statistic is identically `0` while the limit is a nondegenerate Gaussian. Under
+   strict stationarity and ergodicity `hmass` is equivalent to `T_i → ∞` a.s., which is
+   the form FY uses. -/
+theorem tarLS_clt_debt [IsProbabilityMeasure μ] {k P : ℕ}
+    {b0 : Fin k → ℝ} {b : Fin k → Fin P → ℝ} {σ : Fin k → ℝ} {A : Fin k → Set ℝ}
+    {d : ℕ} {X ε : ℤ → Ω → ℝ}
+    (h : IsTAR b0 b σ A d X ε μ)
+    -- USER-INPUT: strict stationarity of the fitted process; FY §4.1.2 standing assumption
+    (hstat : IsStrictlyStationary X μ)
+    -- USER-INPUT: finite second moments; FY §4.1.2 standing assumption
+    (hL2 : ∀ t, MemLp (X t) 2 μ)
+    (i : Fin k)
+    -- USER-INPUT: the regime-`i` design covariance is the conditional second-moment
+    -- matrix of the regressors, *defined from the process* (no longer a free parameter);
+    -- FY §4.1.2, eq. (4.8) / Chan 1993a
+    (W : Matrix (Fin P) (Fin P) ℝ) (hWdef : W = tarRegimeDesignCov (A i) d X μ)
+    -- USER-INPUT: the design covariance is invertible (no exact linear relation among the
+    -- regime-`i` regressors); Chan 1993a
+    (hW : Matrix.PosDef W)
+    -- USER-INPUT: the regime carries positive mass — equivalently `T_i → ∞`; FY §4.1.2
+    (hmass : 0 < (μ {ω | X (-(d : ℤ)) ω ∈ A i}).toReal)
+    -- USER-INPUT: a measurable regime-wise LS estimator sequence, intercept included;
+    -- FY eqs. (4.4)-(4.5)
+    (bhat0 : (T : ℕ) → Ω → ℝ) (bhat : (T : ℕ) → Ω → Fin P → ℝ)
+    (hmeas0 : ∀ T, Measurable (bhat0 T)) (hmeas : ∀ T, Measurable (bhat T))
+    -- USER-INPUT: joint least-squares minimality over `(β₀, β)` (satisfiable at every
+    -- sample: `exists_tarLS_minimizer`); FY eqs. (4.4)-(4.5)
+    (hLS : ∀ (T : ℕ) (ω : Ω), ∀ γ0 : ℝ, ∀ γ : Fin P → ℝ,
+      tarLSResidualSS (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (A i) d
+          (bhat0 T ω) (bhat T ω)
+        ≤ tarLSResidualSS (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (A i) d γ0 γ)
+    (c : Fin P → ℝ) (u : ℝ) :
+    Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
+        Real.sqrt (tarRegimeCount (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (A i) d P) *
+          ∑ j, c j * (bhat T ω j - b i j)) u)
+      atTop
+      (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
+        (σ i ^ 2 * (c ⬝ᵥ (W⁻¹ *ᵥ c))))) u)) := by
+  sorry
+
+end StatLean.TimeSeries

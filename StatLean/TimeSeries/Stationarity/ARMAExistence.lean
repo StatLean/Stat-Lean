@@ -6,6 +6,7 @@ import Mathlib.Analysis.Analytic.OfScalars
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
+import Mathlib.Analysis.Complex.Polynomial.Basic
 
 /-!
 # Stationary ARMA processes: existence, causality, Yule–Walker (FY §2.1.2, §2.2.1)
@@ -990,6 +991,178 @@ theorem IsARMA.acvf_exponential_decay [IsProbabilityMeasure μ] {p q : ℕ}
     _ = |σ2| * C ^ 2 * (1 - r ^ 2)⁻¹ * r ^ m := by ring
 
 
+section Homogeneous
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+
+/-- A bounded two-sided sequence contracted along a fixed shift by a factor of norm `< 1`
+vanishes identically. -/
+private lemma eq_zero_of_geom (u : ℤ → V) (M : ℝ) (hbd : ∀ t, ‖u t‖ ≤ M) (β : ℂ)
+    (hβ : ‖β‖ < 1) (c : ℤ) (heq : ∀ t, u t = β • u (t + c)) (t : ℤ) : u t = 0 := by
+  have hpow : ∀ (n : ℕ) (s : ℤ), u s = β ^ n • u (s + (n : ℤ) * c) := by
+    intro n
+    induction n with
+    | zero => intro s; simp
+    | succ n ih =>
+        intro s
+        rw [heq s, ih (s + c), smul_smul, ← pow_succ']
+        congr 2
+        push_cast
+        ring
+  have hM : 0 ≤ M := le_trans (norm_nonneg _) (hbd t)
+  have hle : ∀ n : ℕ, ‖u t‖ ≤ ‖β‖ ^ n * M := by
+    intro n
+    rw [hpow n t, norm_smul, norm_pow]
+    exact mul_le_mul_of_nonneg_left (hbd _) (by positivity)
+  have hlim : Tendsto (fun n : ℕ => ‖β‖ ^ n * M) atTop (𝓝 0) := by
+    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg β) hβ).mul_const M
+  have hz : ‖u t‖ ≤ 0 := le_of_tendsto_of_tendsto' tendsto_const_nhds hlim hle
+  exact norm_le_zero_iff.1 hz
+
+/-- The one-step homogeneous recursion `u_t = α u_{t-1}` with `‖α‖ ≠ 1` kills every
+bounded two-sided solution. -/
+private lemma eq_zero_of_shift (u : ℤ → V) (M : ℝ) (hbd : ∀ t, ‖u t‖ ≤ M) (α : ℂ)
+    (hα : ‖α‖ ≠ 1) (heq : ∀ t, u t = α • u (t - 1)) (t : ℤ) : u t = 0 := by
+  rcases lt_or_gt_of_ne hα with hlt | hgt
+  · refine eq_zero_of_geom u M hbd α hlt (-1) (fun s => ?_) t
+    simpa [sub_eq_add_neg] using heq s
+  · have hpos : (0 : ℝ) < ‖α‖ := lt_trans zero_lt_one hgt
+    have hα0 : α ≠ 0 := by
+      intro h0
+      rw [h0, norm_zero] at hpos
+      exact lt_irrefl _ hpos
+    refine eq_zero_of_geom u M hbd α⁻¹ ?_ 1 (fun s => ?_) t
+    · rw [norm_inv]
+      have hmul : ‖α‖⁻¹ * ‖α‖ = 1 := inv_mul_cancel₀ (ne_of_gt hpos)
+      nlinarith [inv_pos.2 hpos]
+    · have hs := heq (s + 1)
+      rw [add_sub_cancel_right] at hs
+      rw [hs, smul_smul, inv_mul_cancel₀ hα0, one_smul]
+
+end Homogeneous
+
+/-- A non-constant complex polynomial with constant coefficient `1` splits off a factor
+`1 - α X` with `α ≠ 0` and `α⁻¹` a root. -/
+private lemma exists_linear_factor (Q : Polynomial ℂ) (h0 : Q.coeff 0 = 1)
+    (hd : 0 < Q.natDegree) :
+    ∃ (α : ℂ) (R : Polynomial ℂ), α ≠ 0 ∧ Q.eval α⁻¹ = 0 ∧ R.coeff 0 = 1 ∧
+      R.natDegree < Q.natDegree ∧ Q = (1 - Polynomial.C α * Polynomial.X) * R := by
+  classical
+  obtain ⟨z, hz⟩ := Complex.exists_root (f := Q) (Polynomial.natDegree_pos_iff_degree_pos.1 hd)
+  have hev : Q.eval z = 0 := hz
+  have hz0 : z ≠ 0 := by
+    intro hzz
+    rw [hzz, ← Polynomial.coeff_zero_eq_eval_zero, h0] at hev
+    exact one_ne_zero hev
+  obtain ⟨S, hS⟩ := Polynomial.dvd_iff_isRoot.2 hz
+  have hfac : (1 - Polynomial.C z⁻¹ * Polynomial.X) * Polynomial.C (-z)
+      = Polynomial.X - Polynomial.C z := by
+    have hz1 : z⁻¹ * (-z) = -1 := by field_simp
+    calc (1 - Polynomial.C z⁻¹ * Polynomial.X) * Polynomial.C (-z)
+        = Polynomial.C (-z) - (Polynomial.C z⁻¹ * Polynomial.C (-z)) * Polynomial.X := by ring
+      _ = Polynomial.C (-z) - Polynomial.C (z⁻¹ * (-z)) * Polynomial.X := by
+          rw [← Polynomial.C_mul]
+      _ = Polynomial.C (-z) - Polynomial.C (-1 : ℂ) * Polynomial.X := by rw [hz1]
+      _ = Polynomial.X - Polynomial.C z := by simp; ring
+  have hQ : Q = (1 - Polynomial.C z⁻¹ * Polynomial.X) * (Polynomial.C (-z) * S) := by
+    rw [← mul_assoc, hfac, hS]
+  have hlin0 : (1 - Polynomial.C z⁻¹ * Polynomial.X).coeff 0 = 1 := by simp
+  have hR0 : (Polynomial.C (-z) * S).coeff 0 = 1 := by
+    have hcg := congrArg (fun P : Polynomial ℂ => P.coeff 0) hQ
+    simp only [Polynomial.mul_coeff_zero, hlin0, one_mul] at hcg
+    rw [Polynomial.mul_coeff_zero, ← hcg, h0]
+  refine ⟨z⁻¹, Polynomial.C (-z) * S, inv_ne_zero hz0, by rw [inv_inv]; exact hev, hR0, ?_, hQ⟩
+  have hRne : Polynomial.C (-z) * S ≠ 0 := by
+    intro hzero
+    rw [hzero] at hR0
+    simp at hR0
+  have hdeg1 : (1 - Polynomial.C z⁻¹ * Polynomial.X).natDegree = 1 := by
+    have h1 : (Polynomial.C z⁻¹ * Polynomial.X).natDegree = 1 :=
+      Polynomial.natDegree_C_mul_X _ (inv_ne_zero hz0)
+    rw [Polynomial.natDegree_sub_eq_right_of_natDegree_lt (by simp [h1]), h1]
+  have hlinne : (1 - Polynomial.C z⁻¹ * Polynomial.X) ≠ 0 := by
+    intro hzero
+    rw [hzero] at hdeg1
+    simp at hdeg1
+  have := Polynomial.natDegree_mul hlinne hRne
+  rw [← hQ, hdeg1] at this
+  omega
+
+/-- **The homogeneous ARMA equation has only the zero bounded solution** when the AR
+polynomial has no roots on the unit circle: repeated splitting of the AR polynomial into
+linear factors `1 - αX` with `‖α‖ ≠ 1`. -/
+private lemma seq_eq_zero_of_poly {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] :
+    ∀ (n : ℕ) (Q : Polynomial ℂ) (u : ℤ → V) (M : ℝ), Q.coeff 0 = 1 → Q.natDegree ≤ n →
+      (∀ z : ℂ, Q.eval z = 0 → ‖z‖ ≠ 1) → (∀ t, ‖u t‖ ≤ M) →
+      (∀ t : ℤ, ∑ k ∈ Finset.range (n + 1), Q.coeff k • u (t - (k : ℕ)) = 0) →
+      ∀ t, u t = 0 := by
+  intro n
+  induction n with
+  | zero =>
+      intro Q u M h0 _ _ _ heq t
+      have h := heq t
+      simpa [h0] using h
+  | succ n ih =>
+      intro Q u M h0 hdeg hroot hbd heq t
+      rcases Nat.eq_zero_or_pos Q.natDegree with hd | hd
+      · have h := heq t
+        rw [Finset.sum_eq_single 0] at h
+        · simpa [h0] using h
+        · intro k _ hk
+          rw [Polynomial.coeff_eq_zero_of_natDegree_lt (by omega), zero_smul]
+        · intro hmem
+          exact absurd (Finset.mem_range.2 (by omega)) hmem
+      · obtain ⟨α, R, hα0, hrootα, hR0, hRdeg, hQ⟩ := exists_linear_factor Q h0 hd
+        have hcoefS : ∀ k : ℕ, Q.coeff (k + 1) = R.coeff (k + 1) - α * R.coeff k := by
+          intro k
+          rw [hQ, sub_mul, one_mul, Polynomial.coeff_sub, mul_assoc, Polynomial.coeff_C_mul,
+            Polynomial.coeff_X_mul]
+        have hcoef0 : Q.coeff 0 = R.coeff 0 := by rw [h0, hR0]
+        have hRn : R.coeff (n + 1) = 0 :=
+          Polynomial.coeff_eq_zero_of_natDegree_lt (by omega)
+        set Y : ℤ → V := fun s => ∑ k ∈ Finset.range (n + 1), R.coeff k • u (s - (k : ℕ))
+          with hYdef
+        have hstep : ∀ s : ℤ, Y s = α • Y (s - 1) := by
+          intro s
+          have h := heq s
+          rw [Finset.sum_range_succ'] at h
+          have e1 : ∀ k ∈ Finset.range (n + 1),
+              Q.coeff (k + 1) • u (s - ((k + 1 : ℕ) : ℤ))
+                = R.coeff (k + 1) • u (s - ((k + 1 : ℕ) : ℤ))
+                  - α • (R.coeff k • u (s - 1 - (k : ℕ))) := by
+            intro k _
+            rw [hcoefS k, sub_smul, smul_smul]
+            congr 3
+            push_cast
+            ring
+          rw [Finset.sum_congr rfl e1, Finset.sum_sub_distrib, ← Finset.smul_sum, hcoef0] at h
+          have e2 : (∑ k ∈ Finset.range (n + 1), R.coeff (k + 1) • u (s - ((k + 1 : ℕ) : ℤ)))
+              + R.coeff 0 • u (s - ((0 : ℕ) : ℤ)) = Y s := by
+            rw [← Finset.sum_range_succ' (fun k => R.coeff k • u (s - (k : ℕ))) (n + 1),
+              Finset.sum_range_succ, hRn, zero_smul, add_zero]
+          have hzero : Y s - α • Y (s - 1) = 0 := by
+            calc Y s - α • Y (s - 1)
+                = ((∑ k ∈ Finset.range (n + 1), R.coeff (k + 1) • u (s - ((k + 1 : ℕ) : ℤ)))
+                    - α • Y (s - 1)) + R.coeff 0 • u (s - ((0 : ℕ) : ℤ)) := by
+                  rw [← e2]; abel
+              _ = 0 := h
+          exact sub_eq_zero.1 hzero
+        have hYbd : ∀ s : ℤ, ‖Y s‖ ≤ ∑ k ∈ Finset.range (n + 1), ‖R.coeff k‖ * |M| := by
+          intro s
+          refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ => ?_)
+          rw [norm_smul]
+          exact mul_le_mul_of_nonneg_left ((hbd _).trans (le_abs_self M)) (norm_nonneg _)
+        have hαne : ‖α‖ ≠ 1 := by
+          intro hone
+          refine hroot α⁻¹ hrootα ?_
+          rw [norm_inv, hone, inv_one]
+        have hY0 : ∀ s, Y s = 0 :=
+          eq_zero_of_shift Y _ hYbd α hαne hstep
+        refine ih R u M hR0 (by omega) (fun z hz => ?_) hbd (fun s => hY0 s) t
+        refine hroot z ?_
+        rw [hQ, Polynomial.eval_mul, hz, mul_zero]
+
+
 /-- **DEBT (Brockwell & Davis 1996, p. 83; FY §2.1.2 cited fact (i))**: an ARMA process
 with a stationary solution is causal **iff** `b` has no roots in the closed unit disc.
 The ⇐ half is `exists_stationary_arma`; the ⇒ half is a literature-level debt. -/
@@ -998,6 +1171,17 @@ theorem arma_causal_of_stationary_debt [IsProbabilityMeasure μ] {p q : ℕ}
     (h : IsARMA b a σ2 X ε μ) (hstat : IsStationary X μ)
     (hσ : 0 < σ2) (hcausal : IsCausalFor X ε μ) :
     NoRootClosedDisc b := by
+  -- FALSE AS FROZEN (machine-checked witness, ts/s7 wave 3): the hypothesis that `a` and
+  -- `b` have **no common root** — Brockwell & Davis's standing assumption for Thm 3.1.1,
+  -- "φ(z) and θ(z) have no common zeroes" — is missing.  Counterexample: `p = q = 1`,
+  -- `b = ![1]`, `a = ![-1]`, i.e. `b(z) = 1 - z = a(z)`, whose common root is `z = 1`.
+  -- The recurrence `X_t = X_{t-1} + ε_t - ε_{t-1}` is solved exactly by `X = ε`, which is
+  -- stationary and causal (`ψ = δ_0`, so `IsCausalFor X ε μ` holds) for *any* white noise,
+  -- including one with `σ² > 0`; yet `aeval 1 (arPoly ![1]) = 0` with `‖(1 : ℂ)‖ ≤ 1`, so
+  -- `NoRootClosedDisc ![1]` fails.  With the coprimality hypothesis added the statement is
+  -- provable along the route: causality + `σ² > 0` forces `ψ ∗ b = a` coefficientwise (the
+  -- innovations are orthogonal and `Σ|ψ_j| < ∞`), so `a(z) = ψ(z) b(z)` on `|z| ≤ 1`, and a
+  -- root of `b` there would be a common root of `a` and `b`.
   sorry
 
 /-- **DEBT (Brockwell & Davis 1996, p. 82; FY §2.1.2 cited fact (ii))**: uniqueness of
@@ -1010,6 +1194,169 @@ theorem arma_stationary_unique_debt [IsProbabilityMeasure μ] {p q : ℕ}
     (h : IsARMA b a σ2 X ε μ) (hstat : IsStationary X μ)
     (h' : IsARMA b a σ2 X' ε μ) (hstat' : IsStationary X' μ) (t : ℤ) :
     X t =ᵐ[μ] X' t := by
-  sorry
+  classical
+  -- the difference process, in complex `L²`
+  have hmemD : ∀ s : ℤ, MemLp (fun ω => X s ω - X' s ω) 2 μ :=
+    fun s => (hstat.memLp s).sub (hstat'.memLp s)
+  have hmemC : ∀ s : ℤ, MemLp (fun ω => ((X s ω - X' s ω : ℝ) : ℂ)) 2 μ :=
+    fun s => (hmemD s).ofReal
+  set u : ℤ → Lp ℂ 2 μ := fun s => (hmemC s).toLp _ with hudef
+  -- uniform second moments from stationarity
+  have hmom : ∀ (Z : ℤ → Ω → ℝ), IsStationary Z μ → ∀ s : ℤ,
+      ∫ ω, Z s ω * Z s ω ∂μ = ∫ ω, Z 0 ω * Z 0 ω ∂μ := by
+    intro Z hZ s
+    have e1 := covariance_eq_sub (hZ.memLp s) (hZ.memLp s)
+    have e2 := covariance_eq_sub (hZ.memLp 0) (hZ.memLp 0)
+    have hcov : cov[Z s, Z s; μ] = cov[Z 0, Z 0; μ] := by
+      have hh := hZ.cov_shift s 0
+      rwa [add_zero] at hh
+    have hint : ∫ ω, Z s ω ∂μ = ∫ ω, Z 0 ω ∂μ := hZ.integral_eq s 0
+    have hp1 : μ[Z s * Z s] = ∫ ω, Z s ω * Z s ω ∂μ := by simp [Pi.mul_apply]
+    have hp2 : μ[Z 0 * Z 0] = ∫ ω, Z 0 ω * Z 0 ω ∂μ := by simp [Pi.mul_apply]
+    rw [hp1, hint] at e1
+    rw [hp2] at e2
+    rw [hcov, e2] at e1
+    linarith
+  have hnormZ : ∀ (Z : ℤ → Ω → ℝ) (hZ : IsStationary Z μ) (s : ℤ),
+      ‖(hZ.memLp s).toLp (Z s)‖ = ‖(hZ.memLp 0).toLp (Z 0)‖ := by
+    intro Z hZ s
+    have hs : ‖(hZ.memLp s).toLp (Z s)‖ ^ 2 = ∫ ω, Z s ω * Z s ω ∂μ := by
+      rw [← real_inner_self_eq_norm_sq, inner_toLp]
+    have h0 : ‖(hZ.memLp 0).toLp (Z 0)‖ ^ 2 = ∫ ω, Z 0 ω * Z 0 ω ∂μ := by
+      rw [← real_inner_self_eq_norm_sq, inner_toLp]
+    have := hmom Z hZ s
+    rw [← hs, ← h0] at this
+    nlinarith [norm_nonneg ((hZ.memLp s).toLp (Z s)), norm_nonneg ((hZ.memLp 0).toLp (Z 0))]
+  -- hence the complex difference is bounded in `L²`
+  have hbd : ∀ s : ℤ, ‖u s‖
+      ≤ ‖(hstat.memLp 0).toLp (X 0)‖ + ‖(hstat'.memLp 0).toLp (X' 0)‖ := by
+    intro s
+    have hnorm : ‖u s‖ = (eLpNorm (fun ω => X s ω - X' s ω) 2 μ).toReal := by
+      rw [hudef, Lp.norm_toLp]
+      congr 1
+      refine eLpNorm_congr_norm_ae (Eventually.of_forall fun ω => ?_)
+      rw [Complex.norm_real]
+    have hsub : eLpNorm (fun ω => X s ω - X' s ω) 2 μ
+        ≤ eLpNorm (X s) 2 μ + eLpNorm (X' s) 2 μ :=
+      eLpNorm_sub_le (hstat.memLp s).aestronglyMeasurable
+        (hstat'.memLp s).aestronglyMeasurable one_le_two
+    have hfin : eLpNorm (X s) 2 μ + eLpNorm (X' s) 2 μ ≠ ⊤ :=
+      ENNReal.add_ne_top.2 ⟨(hstat.memLp s).2.ne, (hstat'.memLp s).2.ne⟩
+    rw [hnorm]
+    calc (eLpNorm (fun ω => X s ω - X' s ω) 2 μ).toReal
+        ≤ (eLpNorm (X s) 2 μ + eLpNorm (X' s) 2 μ).toReal :=
+          ENNReal.toReal_mono hfin hsub
+      _ = (eLpNorm (X s) 2 μ).toReal + (eLpNorm (X' s) 2 μ).toReal :=
+          ENNReal.toReal_add (hstat.memLp s).2.ne (hstat'.memLp s).2.ne
+      _ = ‖(hstat.memLp s).toLp (X s)‖ + ‖(hstat'.memLp s).toLp (X' s)‖ := by
+          rw [Lp.norm_toLp, Lp.norm_toLp]
+      _ = ‖(hstat.memLp 0).toLp (X 0)‖ + ‖(hstat'.memLp 0).toLp (X' 0)‖ := by
+          rw [hnormZ X hstat s, hnormZ X' hstat' s]
+  -- the AR polynomial over ℂ
+  set B : Polynomial ℂ := (arPoly b).map (algebraMap ℝ ℂ) with hBdef
+  have hBc : ∀ k, B.coeff k = (((arPoly b).coeff k : ℝ) : ℂ) := by
+    intro k; rw [hBdef, Polynomial.coeff_map]; simp
+  have hcz : ∀ k, p < k → (arPoly b).coeff k = 0 := by
+    intro k hk
+    rw [arPoly, Polynomial.coeff_sub, Polynomial.coeff_one, if_neg (by omega),
+      Polynomial.finset_sum_coeff]
+    have : ∀ i : Fin p, (Polynomial.C (b i) * Polynomial.X ^ ((i : ℕ) + 1)).coeff k = 0 := by
+      intro i
+      rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, if_neg (by have := i.isLt; omega),
+        mul_zero]
+    simp [this]
+  have hB0 : B.coeff 0 = 1 := by
+    rw [hBc 0]
+    have : (arPoly b).coeff 0 = 1 := by
+      rw [arPoly, Polynomial.coeff_sub, Polynomial.coeff_one, if_pos rfl,
+        Polynomial.finset_sum_coeff]
+      have : ∀ i : Fin p, (Polynomial.C (b i) * Polynomial.X ^ ((i : ℕ) + 1)).coeff 0 = 0 := by
+        intro i
+        rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, if_neg (by omega), mul_zero]
+      simp [this]
+    rw [this]; norm_num
+  have hBdeg : B.natDegree ≤ p := by
+    refine Polynomial.natDegree_le_iff_coeff_eq_zero.2 fun k hk => ?_
+    rw [hBc k, hcz k (by exact_mod_cast hk)]
+    norm_num
+  have hBroot : ∀ z : ℂ, B.eval z = 0 → ‖z‖ ≠ 1 := by
+    intro z hz hnorm
+    refine hb z hnorm ?_
+    rw [hBdef, Polynomial.aeval_def, Polynomial.eval₂_eq_eval_map] at *
+    exact hz
+  -- the homogeneous equation in `L²`
+  have hcoeFnSum : ∀ (s : ℤ),
+      ⇑(∑ k ∈ Finset.range (p + 1), B.coeff k • u (s - (k : ℕ)))
+        =ᵐ[μ] fun ω => ∑ k ∈ Finset.range (p + 1), B.coeff k * (u (s - (k : ℕ)) : Ω → ℂ) ω := by
+    intro s
+    induction (p + 1) with
+    | zero => simpa using Lp.coeFn_zero (E := ℂ) (p := 2) (μ := μ)
+    | succ m ihm =>
+        rw [Finset.sum_range_succ]
+        filter_upwards [Lp.coeFn_add (∑ k ∈ Finset.range m, B.coeff k • u (s - (k : ℕ)))
+          (B.coeff m • u (s - (m : ℕ))), ihm,
+          Lp.coeFn_smul (B.coeff m) (u (s - (m : ℕ)))] with ω e1 e2 e3
+        rw [e1]
+        simp only [Pi.add_apply, e2, e3, Pi.smul_apply, smul_eq_mul, Finset.sum_range_succ]
+  have heq : ∀ s : ℤ, ∑ k ∈ Finset.range (p + 1), B.coeff k • u (s - (k : ℕ)) = 0 := by
+    intro s
+    refine Lp.ext ?_
+    filter_upwards [hcoeFnSum s, Lp.coeFn_zero (E := ℂ) (p := 2) (μ := μ),
+      h.recurrence s, h'.recurrence s,
+      ae_all_iff.2 (fun k : Fin (p + 1) => (hmemC (s - (k : ℕ))).coeFn_toLp)] with
+      ω hsum hzero hrec hrec' hcoe
+    rw [hsum, hzero]
+    have hD : ∀ k : ℕ, k < p + 1 → (u (s - (k : ℕ)) : Ω → ℂ) ω
+        = ((X (s - (k : ℕ)) ω - X' (s - (k : ℕ)) ω : ℝ) : ℂ) := by
+      intro k hk
+      exact hcoe ⟨k, hk⟩
+    have hreal : ∑ k ∈ Finset.range (p + 1),
+        (arPoly b).coeff k * (X (s - (k : ℕ)) ω - X' (s - (k : ℕ)) ω) = 0 := by
+      have hG := arPoly_apply b (fun k => X (s - (k : ℕ)) ω - X' (s - (k : ℕ)) ω)
+      rw [hG]
+      have hshift : ∀ i : Fin p,
+          X (s - ((i : ℕ) + 1 : ℕ)) ω - X' (s - ((i : ℕ) + 1 : ℕ)) ω
+            = X (s - 1 - (i : ℕ)) ω - X' (s - 1 - (i : ℕ)) ω := by
+        intro i
+        have hidx : (s - (((i : ℕ) + 1 : ℕ) : ℤ)) = s - 1 - ((i : ℕ) : ℤ) := by
+          push_cast; ring
+        rw [hidx]
+      simp only [Nat.cast_zero, sub_zero]
+      rw [Finset.sum_congr rfl (fun i _ => by rw [hshift i] : ∀ i ∈ Finset.univ,
+        b i * (X (s - ((i : ℕ) + 1 : ℕ)) ω - X' (s - ((i : ℕ) + 1 : ℕ)) ω)
+          = b i * (X (s - 1 - (i : ℕ)) ω - X' (s - 1 - (i : ℕ)) ω))]
+      rw [hrec, hrec']
+      have hexp : ∑ i : Fin p, b i * (X (s - 1 - (i : ℕ)) ω - X' (s - 1 - (i : ℕ)) ω)
+          = (∑ i : Fin p, b i * X (s - 1 - (i : ℕ)) ω)
+            - ∑ i : Fin p, b i * X' (s - 1 - (i : ℕ)) ω := by
+        rw [← Finset.sum_sub_distrib]
+        exact Finset.sum_congr rfl fun i _ => by ring
+      rw [hexp]
+      ring
+    calc ∑ k ∈ Finset.range (p + 1), B.coeff k * (u (s - (k : ℕ)) : Ω → ℂ) ω
+        = ∑ k ∈ Finset.range (p + 1),
+            (((arPoly b).coeff k * (X (s - (k : ℕ)) ω - X' (s - (k : ℕ)) ω) : ℝ) : ℂ) := by
+          refine Finset.sum_congr rfl fun k hk => ?_
+          rw [hBc k, hD k (Finset.mem_range.1 hk)]
+          push_cast
+          ring
+      _ = ((∑ k ∈ Finset.range (p + 1),
+            ((arPoly b).coeff k * (X (s - (k : ℕ)) ω - X' (s - (k : ℕ)) ω)) : ℝ) : ℂ) := by
+          push_cast
+          ring
+      _ = 0 := by rw [hreal]; norm_num
+  -- conclude
+  have hu0 : u t = 0 := seq_eq_zero_of_poly p B u _ hB0 hBdeg hBroot hbd heq t
+  have hcoe := (hmemC t).coeFn_toLp
+  have hzero := Lp.coeFn_zero (E := ℂ) (p := 2) (μ := μ)
+  have : (fun ω => ((X t ω - X' t ω : ℝ) : ℂ)) =ᵐ[μ] 0 := by
+    filter_upwards [hcoe, hzero] with ω e1 e2
+    have : (u t : Ω → ℂ) ω = 0 := by rw [hu0]; exact e2
+    rw [← e1]
+    exact this
+  filter_upwards [this] with ω hω
+  have : ((X t ω - X' t ω : ℝ) : ℂ) = 0 := hω
+  have hr : X t ω - X' t ω = 0 := by exact_mod_cast this
+  linarith
 
 end StatLean.TimeSeries

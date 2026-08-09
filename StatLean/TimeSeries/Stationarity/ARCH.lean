@@ -137,6 +137,30 @@ private lemma measurable_archFun (a : ℝ) (bc : ℕ → ℝ) : Measurable (arch
   (((measurable_const.mul ((measurable_pi_apply _).ennreal_ofReal)).mul
     (Measurable.ennreal_tsum fun k => measurable_archLayer bc k)).ennreal_toReal)
 
+/-- **Causality of a Volterra layer**: `archLayer bc k p` reads `p` only at coordinates
+`≤ 0` (indeed only at `< 0` for `k ≥ 1`), because every recursion step steps back by at
+least one unit of time. -/
+private lemma archLayer_congr (bc : ℕ → ℝ) (k : ℕ) : ∀ {r r' : ℤ → ℝ},
+    (∀ s ≤ (0 : ℤ), r s = r' s) → archLayer bc k r = archLayer bc k r' := by
+  induction k with
+  | zero => intro r r' _; rfl
+  | succ k ih =>
+    intro r r' h
+    simp only [archLayer]
+    refine tsum_congr fun j => ?_
+    have h1 : r (-1 - (j : ℤ)) = r' (-1 - (j : ℤ)) := h _ (by omega)
+    have h2 : (archLayer bc k fun s => r (s + (-1 - (j : ℤ))))
+        = archLayer bc k fun s => r' (s + (-1 - (j : ℤ))) :=
+      ih fun s hs => h _ (by omega)
+    rw [h1, h2]
+
+/-- **Causality of the Volterra functional**: `archFun a bc p` depends only on the
+coordinates `p s` with `s ≤ 0`. -/
+private lemma archFun_congr (a : ℝ) (bc : ℕ → ℝ) {r r' : ℤ → ℝ}
+    (h : ∀ s ≤ (0 : ℤ), r s = r' s) : archFun a bc r = archFun a bc r' := by
+  simp only [archFun, h 0 le_rfl]
+  rw [tsum_congr fun k => archLayer_congr bc k h]
+
 private lemma measurable_archPath {ξ : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ξ t)) (t : ℤ) :
     Measurable (archPath ξ t) :=
   measurable_pi_lambda _ fun s => hm (s + t)
@@ -162,7 +186,7 @@ private lemma sigmaLT_le {X : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (X t))
   iSup₂_le fun _ _ => (hm _).comap_le
 
 /-- **One-vs-past independence of the noise**: `ξ_t` is independent of `σ(ξ_s : s < t)`. -/
-private lemma indep_xi_sigmaLT {ξ : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ξ t))
+theorem indep_xi_sigmaLT {ξ : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ξ t))
     (hi : iIndepFun ξ μ) (t : ℤ) :
     Indep (MeasurableSpace.comap (ξ t) inferInstance) (sigmaLT ξ t) μ := by
   have hdisj : Disjoint ({t} : Set ℤ) (Set.Iio t) :=
@@ -324,9 +348,47 @@ private lemma map_path_shift [IsProbabilityMeasure μ] {ξ : ℤ → Ω → ℝ}
     (iIndepFun_iff_map_fun_eq_infinitePi_map hm).1 hi]
   exact congrArg Measure.infinitePi (funext fun s => (hid (s + c) s).map_eq)
 
+/-- **Strict stationarity of a path functional of an i.i.d. family** — the reusable brick
+behind FY Thm 2.5(i)'s stationarity claim (and behind FY Thm 4.4's, through the ARCH(∞)
+reduction): if `X_t = F(ξ_{·+t})` for one fixed measurable `F`, then `X` is strictly
+stationary, because the shifted path laws all coincide (`map_path_shift`). -/
+theorem isStrictlyStationary_of_shift_comp [IsProbabilityMeasure μ] {ξ : ℤ → Ω → ℝ}
+    (hm : ∀ t, Measurable (ξ t)) (hi : iIndepFun ξ μ)
+    (hid : ∀ s t, IdentDistrib (ξ s) (ξ t) μ μ) {F : (ℤ → ℝ) → ℝ} (hF : Measurable F) :
+    IsStrictlyStationary (fun t ω => F fun s => ξ (s + t) ω) μ := by
+  intro n tt k
+  obtain ⟨Ψ, hΨ⟩ : ∃ Ψ : (ℤ → ℝ) → (Fin n → ℝ),
+      Ψ = fun p i => F fun s => p (s + tt i) := ⟨_, rfl⟩
+  have hΨm : Measurable Ψ := by
+    rw [hΨ]
+    exact measurable_pi_lambda _ fun i => hF.comp
+      (measurable_pi_lambda _ fun s => measurable_pi_apply (s + tt i))
+  have hmb : ∀ c : ℤ, Measurable fun ω (s : ℤ) => ξ (s + c) ω :=
+    fun c => measurable_pi_lambda _ fun s => hm (s + c)
+  have hfac : ∀ c : ℤ, (fun ω (i : Fin n) => F fun s => ξ (s + (tt i + c)) ω)
+      = Ψ ∘ fun ω (s : ℤ) => ξ (s + c) ω := by
+    intro c
+    funext ω i
+    simp only [hΨ, Function.comp_apply, add_assoc]
+  have h0 : (fun ω (i : Fin n) => F fun s => ξ (s + tt i) ω)
+      = Ψ ∘ fun ω (s : ℤ) => ξ s ω := by simpa using hfac 0
+  rw [hfac k, h0, ← Measure.map_map hΨm (hmb k),
+    ← Measure.map_map hΨm (measurable_pi_lambda _ fun s : ℤ => hm s),
+    map_path_shift hm hi hid k]
+
 /-- **FY Theorem 2.5(i), existence** (proof: §2.7.1 Volterra series): if
 `Σ_j bc j < 1`, there is a strictly stationary, integrable, a.e.-nonnegative solution of
-the ARCH(∞) equation over the given noise, with `E Y_t = a / (1 − Σ_j bc j)`. -/
+the ARCH(∞) equation over the given noise, with `E Y_t = a / (1 − Σ_j bc j)`.
+
+The final clause exposes the solution as a **measurable causal path functional** of the
+noise: `Y_t = G(ξ_{·+t})` for one fixed measurable `G` that reads its argument only at
+coordinates `≤ 0`. Everything the §2.7.1 construction knows about the solution's
+*dependence structure* is in that clause: causality gives `σ(Y_s : s < t) ≤ σ(ξ_u : u < t)`
+and shift-equivariance gives strict stationarity of any further functional built from
+`Y` and `ξ` jointly (`isStrictlyStationary_of_shift_comp`). This is what makes the
+theorem reusable — e.g. FY Thm 4.4's GARCH construction needs `X_t = σ_t ε_t` to be
+independent of its own past and strictly stationary, neither of which follows from
+`IsARCHInf`/`IsStrictlyStationary Y` alone. -/
 theorem exists_stationary_archInf [IsProbabilityMeasure μ]
     {a : ℝ} {bc : ℕ → ℝ} {ξ : ℤ → Ω → ℝ}
     -- USER-INPUT: coefficients; FY eq. (2.15)
@@ -336,7 +398,9 @@ theorem exists_stationary_archInf [IsProbabilityMeasure μ]
     -- USER-INPUT: the noise; FY eq. (2.15)
     (hξ : IsARCHNoise ξ μ) :
     ∃ Y : ℤ → Ω → ℝ, IsARCHInf a bc Y ξ μ ∧ IsStrictlyStationary Y μ ∧
-      (∀ t, Integrable (Y t) μ) ∧ ∀ t, ∫ ω, Y t ω ∂μ = a / (1 - ∑' j, bc j) := by
+      (∀ t, Integrable (Y t) μ) ∧ (∀ t, ∫ ω, Y t ω ∂μ = a / (1 - ∑' j, bc j)) ∧
+      ∃ G : (ℤ → ℝ) → ℝ, Measurable G ∧ (∀ t ω, Y t ω = G fun s => ξ (s + t) ω) ∧
+        ∀ r r' : ℤ → ℝ, (∀ s ≤ (0 : ℤ), r s = r' s) → G r = G r' := by
   obtain ⟨hm, hnn, hi, hid, hint, hmean⟩ := hξ
   -- The contraction constant, in `ℝ≥0∞`.
   have hSeq : archS bc = ENNReal.ofReal (∑' j, bc j) := archS_eq hbc hsum
@@ -415,27 +479,8 @@ theorem exists_stationary_archInf [IsProbabilityMeasure μ]
       (le_refl (MeasurableSpace.comap (ξ s) inferInstance))).mono
         (comap_le_sigmaLT hst) le_rfl).ennreal_ofReal
   -- Strict stationarity: the solution is a fixed functional of the shifted noise path.
-  have hstat : IsStrictlyStationary (archSol a bc ξ) μ := by
-    intro n tt k
-    obtain ⟨Ψ, hΨ⟩ : ∃ Ψ : (ℤ → ℝ) → (Fin n → ℝ),
-        Ψ = fun p i => archFun a bc fun s => p (s + tt i) := ⟨_, rfl⟩
-    have hΨm : Measurable Ψ := by
-      rw [hΨ]
-      exact measurable_pi_lambda _ fun i => (measurable_archFun a bc).comp
-        (measurable_pi_lambda _ fun s => measurable_pi_apply (s + tt i))
-    have hmb : ∀ c : ℤ, Measurable fun ω (s : ℤ) => ξ (s + c) ω :=
-      fun c => measurable_pi_lambda _ fun s => hm (s + c)
-    have hfac : ∀ c : ℤ, (fun ω (i : Fin n) => archSol a bc ξ (tt i + c) ω)
-        = Ψ ∘ fun ω (s : ℤ) => ξ (s + c) ω := by
-      intro c
-      funext ω i
-      simp only [hΨ, Function.comp_apply, archSol, add_assoc]
-      rfl
-    have h0 : (fun ω (i : Fin n) => archSol a bc ξ (tt i) ω)
-        = Ψ ∘ fun ω (s : ℤ) => ξ s ω := by simpa using hfac 0
-    rw [hfac k, h0, ← Measure.map_map hΨm (hmb k),
-      ← Measure.map_map hΨm (measurable_pi_lambda _ fun s : ℤ => hm s),
-      map_path_shift hm hi hid k]
+  have hstat : IsStrictlyStationary (archSol a bc ξ) μ :=
+    isStrictlyStationary_of_shift_comp hm hi hid (measurable_archFun a bc)
   exact ⟨archSol a bc ξ,
     { a_nonneg := ha
       bc_nonneg := hbc
@@ -451,7 +496,9 @@ theorem exists_stationary_archInf [IsProbabilityMeasure μ]
       Y_nonneg := fun t => Filter.Eventually.of_forall fun ω => by
         rw [hSolZ]; exact ENNReal.toReal_nonneg
       recurrence := hrec },
-    hstat, hintY, hmeanY⟩
+    hstat, hintY, hmeanY,
+    archFun a bc, measurable_archFun a bc, fun _ _ => rfl,
+    fun _ _ h => archFun_congr a bc h⟩
 
 /-! ### Uniqueness (FY §2.7.1)
 
@@ -535,7 +582,7 @@ private lemma lintegral_ofReal_sol [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ
 
 /-- The driving series `Σ_j b_j Y_{t−1−j}` is a.e. finite for any integrable stationary
 solution — the summability side condition the real-valued recurrence needs. -/
-private lemma archInf_tsum_ae_lt_top [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
+theorem archInf_tsum_ae_lt_top [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
     {Y ξ : ℤ → Ω → ℝ} (hsum : Summable bc) (h : IsARCHInf a bc Y ξ μ)
     (hint : ∀ t, Integrable (Y t) μ) (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
     ∀ᵐ ω ∂μ, (∑' j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω)) < ∞ := by
@@ -552,7 +599,7 @@ private lemma archInf_tsum_ae_lt_top [IsProbabilityMeasure μ] {a : ℝ} {bc : �
   exact ENNReal.mul_ne_top (archS_ne_top h.bc_nonneg hsum) ENNReal.ofReal_ne_top
 
 /-- The ARCH(∞) recurrence in `ℝ≥0∞`, for an arbitrary integrable stationary solution. -/
-private lemma archInf_ofReal_recurrence [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
+theorem archInf_ofReal_recurrence [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
     {Y ξ : ℤ → Ω → ℝ} (hsum : Summable bc) (h : IsARCHInf a bc Y ξ μ)
     (hint : ∀ t, Integrable (Y t) μ) (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
     ∀ᵐ ω ∂μ, ENNReal.ofReal (Y t ω) = ENNReal.ofReal (ξ t ω)
@@ -734,7 +781,226 @@ theorem archInf_eq_zero_of_a_eq_zero [IsProbabilityMeasure μ]
     simp [archSol, archFun]
   exact (archInf_eq_archSol hsum hlt h hint hstat t).trans h0
 
-/-- **FY Theorem 2.5(ii) — DEBT** (Giraitis–Kokoszka–Leipus 2000; not proved in FY):
+/-! ### The second moment (FY Theorem 2.5(ii))
+
+Under eq. (2.16) the Volterra series is square-integrable, by a Minkowski estimate on its
+layers: the `ξ`-factors of layer `k` sit at strictly decreasing times, so each recursion
+step multiplies the `L²` norm by exactly `‖ξ‖₂ Σ_j b_j`, giving `‖Λ_k‖₂ ≤ (‖ξ‖₂ Σ_j b_j)^k`
+and a geometric total. Since every integrable stationary solution *is* the Volterra series
+(`archInf_eq_archSol`), the bound transfers to an arbitrary solution.
+
+Everything is done in `ℝ≥0∞`, where the layers live; the two `rpow` bricks below are the
+square root and its inverse. -/
+
+omit [MeasurableSpace Ω] in
+private lemma ennreal_sq_rpow_half (x : ℝ≥0∞) : (x ^ 2) ^ ((1 : ℝ) / 2) = x := by
+  rw [← ENNReal.rpow_natCast x 2, ← ENNReal.rpow_mul]
+  norm_num
+
+omit [MeasurableSpace Ω] in
+private lemma ennreal_rpow_half_sq (x : ℝ≥0∞) : (x ^ ((1 : ℝ) / 2)) ^ 2 = x := by
+  rw [← ENNReal.rpow_natCast (x ^ ((1 : ℝ) / 2)) 2, ← ENNReal.rpow_mul]
+  norm_num
+
+/-- **Countable Minkowski inequality in `ℝ≥0∞`, at exponent `2`**: the `L²` norm of a sum
+of nonnegative functions is at most the sum of their `L²` norms (stated in squared form,
+so that no square root has to be extracted from the conclusion). -/
+private lemma lintegral_sq_tsum_le {f : ℕ → Ω → ℝ≥0∞} (hf : ∀ n, Measurable (f n)) :
+    ∫⁻ ω, (∑' n : ℕ, f n ω) ^ 2 ∂μ
+      ≤ (∑' n : ℕ, (∫⁻ ω, f n ω ^ 2 ∂μ) ^ ((1 : ℝ) / 2)) ^ 2 := by
+  have hcast : ∀ x : ℝ≥0∞, x ^ (2 : ℝ) = x ^ 2 := fun x => by
+    rw [← ENNReal.rpow_natCast x 2]; norm_num
+  have hFmeas : ∀ N : ℕ, Measurable fun ω => ∑ n ∈ Finset.range N, f n ω := fun N =>
+    Finset.measurable_sum _ fun n _ => hf n
+  have hmono : ∀ ω, Monotone fun N : ℕ => ∑ n ∈ Finset.range N, f n ω := by
+    intro ω a b hab
+    exact Finset.sum_le_sum_of_subset (Finset.range_subset_range.2 hab)
+  -- finite Minkowski, by induction on the number of summands
+  have hfin : ∀ N : ℕ, (∫⁻ ω, (∑ n ∈ Finset.range N, f n ω) ^ 2 ∂μ) ^ ((1 : ℝ) / 2)
+      ≤ ∑ n ∈ Finset.range N, (∫⁻ ω, f n ω ^ 2 ∂μ) ^ ((1 : ℝ) / 2) := by
+    intro N
+    induction N with
+    | zero => simp
+    | succ N ih =>
+      have hle := ENNReal.lintegral_Lp_add_le (μ := μ) (p := 2)
+        (f := fun ω => ∑ n ∈ Finset.range N, f n ω) (g := f N)
+        (hFmeas N).aemeasurable (hf N).aemeasurable (by norm_num)
+      simp only [Pi.add_apply, hcast] at hle
+      have hrw : (∫⁻ ω, (∑ n ∈ Finset.range (N + 1), f n ω) ^ 2 ∂μ)
+          = ∫⁻ ω, ((∑ n ∈ Finset.range N, f n ω) + f N ω) ^ 2 ∂μ :=
+        lintegral_congr fun ω => by rw [Finset.sum_range_succ]
+      rw [hrw, Finset.sum_range_succ]
+      exact le_trans hle (add_le_add ih le_rfl)
+  -- the squared partial sums increase to the squared series
+  have hpt : ∀ ω, (∑' n : ℕ, f n ω) ^ 2
+      = ⨆ N : ℕ, (∑ n ∈ Finset.range N, f n ω) ^ 2 := by
+    intro ω
+    rw [ENNReal.tsum_eq_iSup_nat]
+    refine le_antisymm ?_ (iSup_le fun N => by
+      gcongr
+      exact le_iSup (fun M : ℕ => ∑ n ∈ Finset.range M, f n ω) N)
+    rw [sq, ENNReal.iSup_mul]
+    refine iSup_le fun N => ?_
+    rw [ENNReal.mul_iSup]
+    refine iSup_le fun M => le_iSup_of_le (max N M) ?_
+    rw [sq]
+    exact mul_le_mul' (hmono ω (le_max_left N M)) (hmono ω (le_max_right N M))
+  rw [lintegral_congr hpt,
+    lintegral_iSup (fun N => (hFmeas N).pow_const 2)
+      (fun a b hab ω => pow_le_pow_left' (hmono ω hab) 2)]
+  refine iSup_le fun N => ?_
+  calc ∫⁻ ω, (∑ n ∈ Finset.range N, f n ω) ^ 2 ∂μ
+      = ((∫⁻ ω, (∑ n ∈ Finset.range N, f n ω) ^ 2 ∂μ) ^ ((1 : ℝ) / 2)) ^ 2 :=
+        (ennreal_rpow_half_sq _).symm
+    _ ≤ (∑' n : ℕ, (∫⁻ ω, f n ω ^ 2 ∂μ) ^ ((1 : ℝ) / 2)) ^ 2 := by
+        gcongr
+        exact (hfin N).trans (ENNReal.sum_le_tsum _)
+
+/-- The noise has the same `ℝ≥0∞`-second moment at every time. -/
+private lemma lintegral_sq_ofReal_xi {ξ : ℤ → Ω → ℝ}
+    (hid : ∀ s t, IdentDistrib (ξ s) (ξ t) μ μ) (s : ℤ) :
+    ∫⁻ ω, ENNReal.ofReal (ξ s ω) ^ 2 ∂μ = ∫⁻ ω, ENNReal.ofReal (ξ 0 ω) ^ 2 ∂μ := by
+  have hu : Measurable fun x : ℝ => ENNReal.ofReal x ^ 2 :=
+    ENNReal.measurable_ofReal.pow_const 2
+  simpa [Function.comp_def] using ((hid s 0).comp hu).lintegral_eq
+
+/-- The independence factorization at exponent `2`: the current noise is independent of
+every functional of its strict past. -/
+private lemma lintegral_sq_xi_mul {ξ : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ξ t))
+    (hi : iIndepFun ξ μ) (s : ℤ) {g : Ω → ℝ≥0∞} (hg : Measurable[sigmaLT ξ s] g) :
+    ∫⁻ ω, ENNReal.ofReal (ξ s ω) ^ 2 * g ω ∂μ
+      = (∫⁻ ω, ENNReal.ofReal (ξ s ω) ^ 2 ∂μ) * ∫⁻ ω, g ω ∂μ :=
+  lintegral_mul_eq_lintegral_mul_lintegral_of_independent_measurableSpace
+    (hm s).comap_le (sigmaLT_le hm s) (indep_xi_sigmaLT hm hi s)
+    ((Measurable.of_comap_le le_rfl).ennreal_ofReal.pow_const 2) hg
+
+/-- **The layer `L²` estimate** (FY eq. (2.16)): `‖Λ_k‖₂ ≤ (‖ξ‖₂ Σ_j b_j)^k`. -/
+private lemma lintegral_sq_archLayer_le [IsProbabilityMeasure μ] {ξ : ℤ → Ω → ℝ} {bc : ℕ → ℝ}
+    (hm : ∀ t, Measurable (ξ t)) (hi : iIndepFun ξ μ)
+    (hid : ∀ s t, IdentDistrib (ξ s) (ξ t) μ μ) (k : ℕ) : ∀ t : ℤ,
+    (∫⁻ ω, archLayer bc k (archPath ξ t ω) ^ 2 ∂μ) ^ ((1 : ℝ) / 2)
+      ≤ ((∫⁻ ω, ENNReal.ofReal (ξ 0 ω) ^ 2 ∂μ) ^ ((1 : ℝ) / 2) * archS bc) ^ k := by
+  obtain ⟨r, hr⟩ : ∃ r : ℝ≥0∞,
+      (∫⁻ ω, ENNReal.ofReal (ξ 0 ω) ^ 2 ∂μ) ^ ((1 : ℝ) / 2) = r := ⟨_, rfl⟩
+  simp only [hr]
+  induction k with
+  | zero => intro t; simp [archLayer]
+  | succ k ih =>
+    intro t
+    -- each summand of the layer recursion, in `L²`
+    have hstep : ∀ j : ℕ,
+        (∫⁻ ω, (ENNReal.ofReal (bc j) * ENNReal.ofReal (ξ (t - 1 - (j : ℕ)) ω)
+              * archLayer bc k (archPath ξ (t - 1 - (j : ℕ)) ω)) ^ 2 ∂μ) ^ ((1 : ℝ) / 2)
+          ≤ ENNReal.ofReal (bc j) * (r * (r * archS bc) ^ k) := by
+      intro j
+      have hlt : t - 1 - (j : ℕ) < t := by
+        have : (0 : ℤ) ≤ (j : ℤ) := Int.natCast_nonneg j
+        omega
+      have hexp : ∀ ω, (ENNReal.ofReal (bc j) * ENNReal.ofReal (ξ (t - 1 - (j : ℕ)) ω)
+            * archLayer bc k (archPath ξ (t - 1 - (j : ℕ)) ω)) ^ 2
+          = ENNReal.ofReal (bc j) ^ 2 * (ENNReal.ofReal (ξ (t - 1 - (j : ℕ)) ω) ^ 2
+              * archLayer bc k (archPath ξ (t - 1 - (j : ℕ)) ω) ^ 2) := fun ω => by
+        rw [mul_pow, mul_pow, mul_assoc]
+      have hI : (∫⁻ ω, (ENNReal.ofReal (bc j) * ENNReal.ofReal (ξ (t - 1 - (j : ℕ)) ω)
+            * archLayer bc k (archPath ξ (t - 1 - (j : ℕ)) ω)) ^ 2 ∂μ)
+          = ENNReal.ofReal (bc j) ^ 2 * ((∫⁻ ω, ENNReal.ofReal (ξ 0 ω) ^ 2 ∂μ)
+              * ∫⁻ ω, archLayer bc k (archPath ξ (t - 1 - (j : ℕ)) ω) ^ 2 ∂μ) := by
+        simp only [hexp]
+        rw [lintegral_const_mul _ (((hm _).ennreal_ofReal.pow_const 2).mul
+            ((measurable_archLayer_path hm bc k _).pow_const 2)),
+          lintegral_sq_xi_mul hm hi (t - 1 - (j : ℕ))
+            ((measurable_archLayer_sigmaLT bc k (t - 1 - (j : ℕ))).pow_const 2),
+          lintegral_sq_ofReal_xi hid]
+      rw [hI, ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0:ℝ) ≤ (1:ℝ)/2),
+        ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0:ℝ) ≤ (1:ℝ)/2),
+        ennreal_sq_rpow_half, hr]
+      gcongr
+      exact ih (t - 1 - (j : ℕ))
+    -- Minkowski over the summands
+    have hminko := lintegral_sq_tsum_le (μ := μ)
+      (f := fun (j : ℕ) ω => ENNReal.ofReal (bc j) * ENNReal.ofReal (ξ (t - 1 - (j : ℕ)) ω)
+        * archLayer bc k (archPath ξ (t - 1 - (j : ℕ)) ω))
+      (fun j => (measurable_const.mul ((hm _).ennreal_ofReal)).mul
+        (measurable_archLayer_path hm bc k _))
+    have hsumle : (∑' j : ℕ, (∫⁻ ω, (ENNReal.ofReal (bc j)
+            * ENNReal.ofReal (ξ (t - 1 - (j : ℕ)) ω)
+            * archLayer bc k (archPath ξ (t - 1 - (j : ℕ)) ω)) ^ 2 ∂μ) ^ ((1 : ℝ) / 2))
+        ≤ (r * archS bc) ^ (k + 1) := by
+      refine le_trans (ENNReal.tsum_le_tsum hstep) ?_
+      rw [ENNReal.tsum_mul_right, ← archS]
+      rw [pow_succ']
+      ring_nf
+      rfl
+    have hlayer : ∫⁻ ω, archLayer bc (k + 1) (archPath ξ t ω) ^ 2 ∂μ
+        ≤ ((r * archS bc) ^ (k + 1)) ^ 2 := by
+      have hcongr : (∫⁻ ω, archLayer bc (k + 1) (archPath ξ t ω) ^ 2 ∂μ)
+          = ∫⁻ ω, (∑' j : ℕ, ENNReal.ofReal (bc j)
+              * ENNReal.ofReal (ξ (t - 1 - (j : ℕ)) ω)
+              * archLayer bc k (archPath ξ (t - 1 - (j : ℕ)) ω)) ^ 2 ∂μ :=
+        lintegral_congr fun ω => by rw [archLayer_succ_path]
+      rw [hcongr]
+      exact hminko.trans (by gcongr)
+    calc (∫⁻ ω, archLayer bc (k + 1) (archPath ξ t ω) ^ 2 ∂μ) ^ ((1 : ℝ) / 2)
+        ≤ (((r * archS bc) ^ (k + 1)) ^ 2) ^ ((1 : ℝ) / 2) :=
+          ENNReal.rpow_le_rpow hlayer (by norm_num)
+      _ = (r * archS bc) ^ (k + 1) := ennreal_sq_rpow_half _
+
+/-- **The Volterra series is square-integrable** under eq. (2.16). -/
+private lemma lintegral_sq_archZ_lt_top [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
+    {ξ : ℤ → Ω → ℝ} (hξ : IsARCHNoise ξ μ) (hξ2 : MemLp (ξ 0) 2 μ)
+    (h16 : max 1 (Real.sqrt (∫ ω, ξ 0 ω ^ 2 ∂μ)) * ∑' j, bc j < 1)
+    (hbc : ∀ j, 0 ≤ bc j) (hsum : Summable bc) (t : ℤ) :
+    ∫⁻ ω, archZ a bc ξ t ω ^ 2 ∂μ < ∞ := by
+  -- the second moment of the noise, as an `ℝ≥0∞` scalar
+  have hnn0 : ∀ᵐ ω ∂μ, 0 ≤ ξ 0 ω := hξ.nonneg 0
+  have hν : (∫⁻ ω, ENNReal.ofReal (ξ 0 ω) ^ 2 ∂μ) = ENNReal.ofReal (∫ ω, ξ 0 ω ^ 2 ∂μ) := by
+    have hpt : ∀ᵐ ω ∂μ, ENNReal.ofReal (ξ 0 ω) ^ 2 = ENNReal.ofReal (ξ 0 ω ^ 2) := by
+      filter_upwards [hnn0] with ω hω
+      rw [ENNReal.ofReal_pow hω]
+    rw [lintegral_congr_ae hpt,
+      ← ofReal_integral_eq_lintegral_ofReal hξ2.integrable_sq
+        (Filter.Eventually.of_forall fun ω => sq_nonneg _)]
+  have hI0 : 0 ≤ ∫ ω, ξ 0 ω ^ 2 ∂μ := integral_nonneg fun ω => sq_nonneg _
+  have hr : (∫⁻ ω, ENNReal.ofReal (ξ 0 ω) ^ 2 ∂μ) ^ ((1 : ℝ) / 2)
+      = ENNReal.ofReal (Real.sqrt (∫ ω, ξ 0 ω ^ 2 ∂μ)) := by
+    rw [hν, ENNReal.ofReal_rpow_of_nonneg hI0 (by norm_num), Real.sqrt_eq_rpow]
+  -- eq. (2.16) as a contraction in `ℝ≥0∞`
+  have hbc0 : 0 ≤ ∑' j, bc j := tsum_nonneg hbc
+  have hmax : (1 : ℝ) ≤ max 1 (Real.sqrt (∫ ω, ξ 0 ω ^ 2 ∂μ)) := le_max_left _ _
+  have hsq : Real.sqrt (∫ ω, ξ 0 ω ^ 2 ∂μ) * ∑' j, bc j < 1 := by
+    nlinarith [le_max_right (1 : ℝ) (Real.sqrt (∫ ω, ξ 0 ω ^ 2 ∂μ)), Real.sqrt_nonneg
+      (∫ ω, ξ 0 ω ^ 2 ∂μ)]
+  have hcontract : (∫⁻ ω, ENNReal.ofReal (ξ 0 ω) ^ 2 ∂μ) ^ ((1 : ℝ) / 2) * archS bc < 1 := by
+    rw [hr, archS_eq hbc hsum, ← ENNReal.ofReal_mul (Real.sqrt_nonneg _)]
+    exact ENNReal.ofReal_lt_one.2 hsq
+  -- the series' `L²` norm is geometric
+  have hW : ∫⁻ ω, (∑' k : ℕ, archLayer bc k (archPath ξ t ω)) ^ 2 ∂μ
+      ≤ ((1 - (∫⁻ ω, ENNReal.ofReal (ξ 0 ω) ^ 2 ∂μ) ^ ((1 : ℝ) / 2) * archS bc)⁻¹) ^ 2 := by
+    refine (lintegral_sq_tsum_le
+      (fun k => measurable_archLayer_path hξ.measurable bc k t)).trans ?_
+    gcongr
+    refine le_trans (ENNReal.tsum_le_tsum fun k =>
+      lintegral_sq_archLayer_le hξ.measurable hξ.iIndep hξ.identDistrib k t) ?_
+    exact le_of_eq (ENNReal.tsum_geometric _)
+  have hWtop : (∫⁻ ω, (∑' k : ℕ, archLayer bc k (archPath ξ t ω)) ^ 2 ∂μ) ≠ ∞ := by
+    refine ne_top_of_le_ne_top ?_ hW
+    exact ENNReal.pow_ne_top (ENNReal.inv_ne_top.2 (tsub_pos_of_lt hcontract).ne')
+  -- factor the current noise out of `archZ`
+  have hexp : ∀ ω, archZ a bc ξ t ω ^ 2
+      = ENNReal.ofReal a ^ 2 * (ENNReal.ofReal (ξ t ω) ^ 2
+          * (∑' k : ℕ, archLayer bc k (archPath ξ t ω)) ^ 2) := fun ω => by
+    simp only [archZ]
+    rw [mul_pow, mul_pow, mul_assoc]
+  rw [funext hexp, lintegral_const_mul _ ((((hξ.measurable t).ennreal_ofReal).pow_const 2).mul
+      ((Measurable.ennreal_tsum fun k =>
+        measurable_archLayer_path hξ.measurable bc k t).pow_const 2)),
+    lintegral_sq_xi_mul hξ.measurable hξ.iIndep t
+      ((Measurable.ennreal_tsum fun k => measurable_archLayer_sigmaLT bc k t).pow_const 2),
+    lintegral_sq_ofReal_xi hξ.identDistrib, hν]
+  exact ENNReal.mul_lt_top (ENNReal.pow_lt_top ENNReal.ofReal_lt_top)
+    (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hWtop.lt_top)
+
+/-- **FY Theorem 2.5(ii)** (Giraitis–Kokoszka–Leipus 2000; not proved in FY):
 under the second-moment contraction (FY eq. (2.16)) the stationary solution has a finite
 second moment. -/
 theorem archInf_memLp_two_debt [IsProbabilityMeasure μ]
@@ -746,7 +1012,22 @@ theorem archInf_memLp_two_debt [IsProbabilityMeasure μ]
     (h : IsARCHInf a bc Y ξ μ) (hstat : IsStrictlyStationary Y μ)
     (hint : ∀ t, Integrable (Y t) μ) (t : ℤ) :
     MemLp (Y t) 2 μ := by
-  sorry
+  have hbc0 : 0 ≤ ∑' j, bc j := tsum_nonneg hbc
+  have hmax : (1 : ℝ) ≤ max 1 (Real.sqrt (∫ ω, ξ 0 ω ^ 2 ∂μ)) := le_max_left _ _
+  have hlt : ∑' j, bc j < 1 := by nlinarith
+  -- the solution *is* the Volterra series (FY Thm 2.5(i))
+  have heq : Y t =ᵐ[μ] archSol a bc ξ t := archInf_eq_archSol hsum hlt h hint hstat t
+  refine MemLp.ae_eq heq.symm ?_
+  refine (memLp_two_iff_integrable_sq
+    (measurable_archSol hξ.measurable a bc t).aestronglyMeasurable).2
+    ⟨((measurable_archSol hξ.measurable a bc t).pow_const 2).aestronglyMeasurable, ?_⟩
+  have hle : ∫⁻ ω, ‖archSol a bc ξ t ω ^ 2‖ₑ ∂μ ≤ ∫⁻ ω, archZ a bc ξ t ω ^ 2 ∂μ := by
+    refine lintegral_mono fun ω => ?_
+    rw [archSol_eq_toReal, Real.enorm_eq_ofReal (sq_nonneg _),
+      ENNReal.ofReal_pow ENNReal.toReal_nonneg]
+    exact pow_le_pow_left' ENNReal.ofReal_toReal_le 2
+  change ∫⁻ ω, ‖archSol a bc ξ t ω ^ 2‖ₑ ∂μ < ∞
+  exact lt_of_le_of_lt hle (lintegral_sq_archZ_lt_top hξ hξ2 h16 hbc hsum t)
 
 /-- **FY Theorem 2.6 — DEBT** (Giraitis–Kokoszka–Leipus 2000; fdd invariance principle):
 under eq. (2.16), the normalized partial sums of a stationary ARCH(∞) process are
