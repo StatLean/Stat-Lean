@@ -90,7 +90,8 @@ theorem pmfExpect_productDesign_comp (D : ∀ b, PMF (Ω b)) (b₀ : B)
           rw [Finset.prod_eq_single b₀ (fun b _ hb => by rw [hFne b hb])
             (fun h => absurd (Finset.mem_univ b₀) h), hFb₀]
         rw [productDesign_apply, ENNReal.toReal_prod, Finset.prod_mul_distrib, hprodF]
-    _ = ∏ b, ∑ x, (D b x).toReal * F b x := sum_pi_prod _
+    _ = ∏ b, ∑ x, (D b x).toReal * F b x :=
+        sum_pi_prod fun b x => (D b x).toReal * F b x
     _ = ∑ x, (D b₀ x).toReal * f x := by
         rw [Finset.prod_eq_single b₀ (fun b _ hb => by
             rw [hFne b hb]
@@ -109,10 +110,9 @@ theorem pmfExpect_productDesign_prod (D : ∀ b, PMF (Ω b))
       = ∑ ω : ∀ b, Ω b, ∏ b, ((D b (ω b)).toReal * f b (ω b)) := by
         refine Finset.sum_congr rfl fun ω _ => ?_
         rw [productDesign_apply, ENNReal.toReal_prod, Finset.prod_mul_distrib]
-    _ = ∏ b, ∑ x, (D b x).toReal * f b x := sum_pi_prod _
+    _ = ∏ b, ∑ x, (D b x).toReal * f b x :=
+        sum_pi_prod fun b x => (D b x).toReal * f b x
 
-/-- **Independence across strata**: statistics of distinct strata are
-uncorrelated. -/
 /-- Factorization of the joint expectation of two statistics of distinct strata. -/
 private lemma pmfExpect_productDesign_mul (D : ∀ b, PMF (Ω b)) {b b' : B}
     (hbb' : b ≠ b') (f : Ω b → ℝ) (g : Ω b' → ℝ) :
@@ -155,6 +155,8 @@ private lemma pmfExpect_productDesign_mul (D : ∀ b, PMF (Ω b)) {b b' : B}
           exact pmfExpect_const (D c) 1
         rw [hrest, mul_one, hFb, hFb']
 
+/-- **Independence across strata**: statistics of distinct strata are
+uncorrelated. -/
 theorem pmfCov_productDesign_of_ne (D : ∀ b, PMF (Ω b)) {b b' : B}
     -- LEAN-ONLY: distinct strata; within one stratum the covariance is unconstrained
     (hbb' : b ≠ b') (f : Ω b → ℝ) (g : Ω b' → ℝ) :
@@ -174,7 +176,8 @@ theorem pmfCov_productDesign_of_ne (D : ∀ b, PMF (Ω b)) {b b' : B}
         (fun ω => (f (ω b) - pmfExpect (D b) f) * (g (ω b') - pmfExpect (D b') g))
       = pmfExpect (D b) (fun x => f x - pmfExpect (D b) f)
           * pmfExpect (D b') (fun x => g x - pmfExpect (D b') g) :=
-        pmfExpect_productDesign_mul D hbb' _ _
+        pmfExpect_productDesign_mul D hbb' (fun x => f x - pmfExpect (D b) f)
+          (fun x => g x - pmfExpect (D b') g)
     _ = 0 := by
         rw [pmfExpect_sub, pmfExpect_const, sub_self, zero_mul]
 
