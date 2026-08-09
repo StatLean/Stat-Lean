@@ -38,6 +38,42 @@ namespace StatLean.CausalInference
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {Z : Ω → Bool} {y1 y0 : Ω → ℝ}
 
+/-! ### Private infrastructure
+
+The consistency step "the observed outcome may be replaced by the relevant potential
+outcome inside an arm" is an a.e. statement under the conditional measure, and a
+conditional measure is a scalar multiple of a restriction; the a.e. membership in the
+conditioning event needs that event to be measurable, i.e. `Measurable Z`. -/
+
+/-- Replacing the integrand by a function agreeing with it on a measurable conditioning
+event does not change the conditional integral. -/
+private theorem integral_cond_congr_eqOn {s : Set Ω} (hs : MeasurableSet s) {f g : Ω → ℝ}
+    (hfg : Set.EqOn f g s) : ∫ ω, f ω ∂(μ[|s]) = ∫ ω, g ω ∂(μ[|s]) := by
+  refine integral_congr_ae ?_
+  filter_upwards [ProbabilityTheory.ae_cond_mem (μ := μ) hs] with ω hω using hfg hω
+
+omit [MeasurableSpace Ω] in
+private theorem obs_eqOn_treated_aux : Set.EqOn (obs Z y1 y0) y1 (treatedEvent Z) := by
+  intro ω hω
+  simp only [treatedEvent, Set.mem_setOf_eq] at hω
+  simp only [obs, hω, if_true]
+
+omit [MeasurableSpace Ω] in
+private theorem obs_eqOn_control_aux : Set.EqOn (obs Z y1 y0) y0 {ω | Z ω = false} := by
+  intro ω hω
+  simp only [Set.mem_setOf_eq] at hω
+  simp only [obs, hω, Bool.false_eq_true, if_false]
+
+/-- Consistency on the treated arm, with the measurability of the treatment supplied. -/
+private theorem integral_cond_treated_obs_eq' (hZ : Measurable Z) :
+    ∫ ω, obs Z y1 y0 ω ∂(μ[|treatedEvent Z]) = ∫ ω, y1 ω ∂(μ[|treatedEvent Z]) :=
+  integral_cond_congr_eqOn (hZ (measurableSet_singleton true)) obs_eqOn_treated_aux
+
+/-- Consistency on the control arm, with the measurability of the treatment supplied. -/
+private theorem integral_cond_control_obs_eq' (hZ : Measurable Z) :
+    ∫ ω, obs Z y1 y0 ω ∂(μ[|{ω | Z ω = false}]) = ∫ ω, y0 ω ∂(μ[|{ω | Z ω = false}]) :=
+  integral_cond_congr_eqOn (hZ (measurableSet_singleton false)) obs_eqOn_control_aux
+
 /-- On the treated arm the observed outcome has the treated potential outcome's
 conditional mean (consistency, Ding Assumption 2.2). -/
 theorem integral_cond_treated_obs_eq :
@@ -81,7 +117,15 @@ theorem primaFacie_eq_ate_of_indep [IsProbabilityMeasure μ]
     -- USER-INPUT: both arms have positive probability; else a conditional mean is a junk value
     (hT : μ (treatedEvent Z) ≠ 0) (hC : μ {ω | Z ω = false} ≠ 0) :
     primaFacie μ Z (obs Z y1 y0) = ate μ y1 y0 := by
-  sorry
+  have hT' : μ {ω | Z ω = true} ≠ 0 := hT
+  have h1 : IndepFun y1 Z μ := hindep.comp measurable_fst measurable_id
+  have h0 : IndepFun y0 Z μ := hindep.comp measurable_snd measurable_id
+  have e1 : ∫ ω, y1 ω ∂(μ[|treatedEvent Z]) = ∫ ω, y1 ω ∂μ :=
+    integral_cond_arm_eq_of_indepFun h1 hi1 hy1 hZ hT'
+  have e0 : ∫ ω, y0 ω ∂(μ[|{ω | Z ω = false}]) = ∫ ω, y0 ω ∂μ :=
+    integral_cond_arm_eq_of_indepFun h0 hi0 hy0 hZ hC
+  rw [primaFacie, integral_cond_treated_obs_eq' hZ, integral_cond_control_obs_eq' hZ, e1, e0,
+    ate, integral_sub hi1 hi0]
 
 /-- Under randomization the three estimands coincide (Ding eq. (10.2)). -/
 theorem att_eq_ate_of_indep [IsProbabilityMeasure μ]
@@ -90,7 +134,10 @@ theorem att_eq_ate_of_indep [IsProbabilityMeasure μ]
     (hi1 : Integrable y1 μ) (hi0 : Integrable y0 μ)
     (hT : μ (treatedEvent Z) ≠ 0) :
     att μ Z y1 y0 = ate μ y1 y0 := by
-  sorry
+  have hT' : μ {ω | Z ω = true} ≠ 0 := hT
+  have hd : IndepFun (fun ω => y1 ω - y0 ω) Z μ :=
+    hindep.comp (measurable_fst.sub measurable_snd) measurable_id
+  exact integral_cond_arm_eq_of_indepFun hd (hi1.sub hi0) (hy1.sub hy0) hZ hT'
 
 /-- **`ATE` as the prevalence-weighted average of `ATT` and `ATC`** (Ding §10.2):
 `τ = P(Z = 1)·τ_T + P(Z = 0)·τ_C`. -/
@@ -102,6 +149,12 @@ theorem ate_eq_prob_smul_att_add_atc [IsProbabilityMeasure μ]
     ate μ y1 y0
       = (μ (treatedEvent Z)).toReal * att μ Z y1 y0
         + (μ {ω | Z ω = false}).toReal * atc μ Z y1 y0 := by
-  sorry
+  have hTs : MeasurableSet (treatedEvent Z) := hZ (measurableSet_singleton true)
+  have hcompl : {ω | Z ω = false} = (treatedEvent Z)ᶜ := by
+    ext ω
+    simp [treatedEvent]
+  rw [att, atc, measureReal_mul_integral_cond (measure_ne_top μ _),
+    measureReal_mul_integral_cond (measure_ne_top μ _), hcompl, ate]
+  exact (integral_add_compl hTs hint).symm
 
 end StatLean.CausalInference
