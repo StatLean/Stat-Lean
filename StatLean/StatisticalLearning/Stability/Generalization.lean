@@ -45,7 +45,53 @@ theorem integral_risk_sub_empRisk_eq_stabilityGap (A : Sample Z n → H)
     (hn : 1 ≤ n) :
     ∫ s, (risk D ℓ (A s) - empRisk ℓ s (A s)) ∂(sampleLaw D n) =
       stabilityGap D ℓ A := by
-  sorry
+  have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
+  -- the in-sample losses are integrable on the joint law, through `Prod.fst`
+  have hfst : MeasurePreserving (Prod.fst : Sample Z n × Z → Sample Z n)
+      ((sampleLaw D n).prod D) (sampleLaw D n) := measurePreserving_fst
+  have hint₃' : ∀ i : Fin n, Integrable
+      (fun p : Sample Z n × Z => ℓ (A p.1) (p.1 i)) ((sampleLaw D n).prod D) := by
+    intro i
+    simpa [Function.comp_def] using hfst.integrable_comp_of_integrable (hint₃ i)
+  have hrisk : Integrable (fun s => risk D ℓ (A s)) (sampleLaw D n) :=
+    hint₁.integral_prod_left
+  have hemp : Integrable (fun s => empRisk ℓ s (A s)) (sampleLaw D n) := by
+    simp only [empRisk]
+    exact (integrable_finset_sum _ fun i _ => hint₃ i).const_mul _
+  -- the two coordinate-wise identities
+  have hcoord : ∀ i : Fin n,
+      ∫ p : Sample Z n × Z, ℓ (A p.1) (p.1 i) ∂((sampleLaw D n).prod D) =
+        ∫ s, ℓ (A s) (s i) ∂(sampleLaw D n) := by
+    intro i
+    have h := integral_map (φ := (Prod.fst : Sample Z n × Z → Sample Z n))
+      (f := fun s : Sample Z n => ℓ (A s) (s i)) hfst.measurable.aemeasurable
+      (by rw [hfst.map_eq]; exact (hint₃ i).aestronglyMeasurable)
+    rw [hfst.map_eq] at h
+    exact h.symm
+  have hswap : ∀ i : Fin n,
+      ∫ p : Sample Z n × Z, ℓ (A (replaceOne p.1 i p.2)) (p.1 i) ∂((sampleLaw D n).prod D) =
+        ∫ p : Sample Z n × Z, ℓ (A p.1) p.2 ∂((sampleLaw D n).prod D) := by
+    intro i
+    have hT := measurePreserving_replaceOne_swap (D := D) i
+    have h := integral_map
+      (φ := fun p : Sample Z n × Z => (replaceOne p.1 i p.2, p.1 i))
+      (f := fun q : Sample Z n × Z => ℓ (A q.1) q.2) hT.measurable.aemeasurable
+      (by rw [hT.map_eq]; exact hint₁.aestronglyMeasurable)
+    rw [hT.map_eq] at h
+    exact h.symm
+  -- per-index evaluation of the stability gap summands
+  have key : ∀ i : Fin n,
+      ∫ p : Sample Z n × Z,
+          (ℓ (A (replaceOne p.1 i p.2)) (p.1 i) - ℓ (A p.1) (p.1 i)) ∂((sampleLaw D n).prod D) =
+        (∫ p : Sample Z n × Z, ℓ (A p.1) p.2 ∂((sampleLaw D n).prod D)) -
+          ∫ s, ℓ (A s) (s i) ∂(sampleLaw D n) := by
+    intro i
+    rw [integral_sub (hint₂ i) (hint₃' i), hswap i, hcoord i]
+  rw [integral_sub hrisk hemp, ← integral_loss_fresh_eq_integral_risk ℓ A hint₁,
+    ← sum_integral_loss_at_coord_eq_integral_empRisk ℓ A hint₃ hn, stabilityGap]
+  simp only [key, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ,
+    Fintype.card_fin, nsmul_eq_mul]
+  field_simp
 
 /-- **SSBD Theorem 13.12** (stability + AERM ⇒ learnability, in expectation,
 fixed `n` form): if `A`'s replace-one gap is `≤ ε₁` and `A` is an
@@ -78,6 +124,25 @@ theorem integral_risk_le_bestRisk_add_of_stable_of_aerm
     -- USER-INPUT: at least one example; SSBD §13.2 (implicit)
     (hn : 1 ≤ n) :
     ∫ s, risk D ℓ (A s) ∂(sampleLaw D n) ≤ bestRisk D 𝓗 ℓ + ε₁ + ε₂ := by
-  sorry
+  -- (13.15): decompose the expected risk into the empirical part and the gap
+  have hrisk : Integrable (fun s => risk D ℓ (A s)) (sampleLaw D n) :=
+    hint₁.integral_prod_left
+  have hemp : Integrable (fun s => empRisk ℓ s (A s)) (sampleLaw D n) := by
+    simp only [empRisk]
+    exact (integrable_finset_sum _ fun i _ => hint₃ i).const_mul _
+  have h132 := integral_risk_sub_empRisk_eq_stabilityGap A hint₁ hint₂ hint₃ hn
+  rw [integral_sub hrisk hemp] at h132
+  -- against every competitor in the class
+  have hkey : ∀ b ∈ risk D ℓ '' 𝓗,
+      (∫ s, risk D ℓ (A s) ∂(sampleLaw D n)) - ε₁ - ε₂ ≤ b := by
+    rintro b ⟨h, hh, rfl⟩
+    have h1 := haerm h hh
+    have h2 : ∫ s, empRisk ℓ s h ∂(sampleLaw D n) = risk D ℓ h :=
+      integral_empRisk (hint h hh) hn
+    rw [h2] at h1
+    linarith
+  have := le_csInf (h𝓗.image (risk D ℓ)) hkey
+  simp only [bestRisk] at *
+  linarith
 
 end StatLean.StatisticalLearning
