@@ -421,6 +421,62 @@ lemma hannanVarZBack_quadForm {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ
   rw [hfac, hannanVarZBack_gram]
   ring
 
+/-- The cross-ACVF is symmetric under swapping the filters and negating the lag. -/
+lemma maCrossACVF_symm (ψ φ : ℕ → ℝ) (k : ℤ) :
+    maCrossACVF ψ φ k = maCrossACVF φ ψ (-k) := by
+  have key : ∀ (u v : ℕ → ℝ) (m : ℕ), maCrossACVF u v (m : ℤ) = maCrossACVF v u (-(m : ℤ)) := by
+    intro u v m
+    have h1 := tsum_hannanShiftSeq_mul u v m 0
+    have h2 := tsum_hannanShiftSeq_mul v u 0 m
+    have h3 : (∑' n : ℕ, hannanShiftSeq u m n * hannanShiftSeq v 0 n)
+        = ∑' n : ℕ, hannanShiftSeq v 0 n * hannanShiftSeq u m n :=
+      tsum_congr fun n => mul_comm _ _
+    rw [h1, h2] at h3
+    simpa using h3
+  rcases le_or_gt 0 k with hk | hk
+  · lift k to ℕ using hk with m
+    exact key ψ φ m
+  · obtain ⟨m, hm⟩ : ∃ m : ℕ, k = -(m : ℤ) := ⟨(-k).toNat, by omega⟩
+    subst hm
+    rw [neg_neg]
+    exact (key φ ψ m).symm
+
+/-- An autocovariance is even. -/
+lemma maCrossACVF_self_neg (ψ : ℕ → ℝ) (k : ℤ) :
+    maCrossACVF ψ ψ k = maCrossACVF ψ ψ (-k) := maCrossACVF_symm ψ ψ k
+
+/-- **The damage of finding 26 is confined to genuinely mixed models.** With no MA part
+(`q = 0`) the forward and backward Grams coincide: only the AR–AR block survives, and an
+autocovariance is even. Hence `samplePACF_linearization` and `ls_yw_mle_equivalent_debt`,
+both of which instantiate `q = 0`, are unaffected by finding 26. -/
+theorem hannanVarZ_eq_back_of_pure_ar {p : ℕ} (b : Fin p → ℝ) :
+    hannanVarZ b (Fin.elim0 : Fin 0 → ℝ) = hannanVarZBack b (Fin.elim0 : Fin 0 → ℝ) := by
+  ext s t
+  match s, t with
+  | .inl i, .inl i' =>
+    simp only [hannanVarZ, hannanVarZBack, hannanSeq, hannanShiftBack, Matrix.of_apply]
+    rw [maCrossACVF_self_neg (armaPsi b (Fin.elim0 : Fin 0 → ℝ)) ((i' : ℤ) - (i : ℤ))]
+    congr 1
+    push_cast
+    ring
+  | .inl i, .inr j => exact absurd j.isLt (by omega)
+  | .inr j, _ => exact absurd j.isLt (by omega)
+
+/-- The mirror statement with no AR part (`p = 0`). -/
+theorem hannanVarZ_eq_back_of_pure_ma {q : ℕ} (a : Fin q → ℝ) :
+    hannanVarZ (Fin.elim0 : Fin 0 → ℝ) a = hannanVarZBack (Fin.elim0 : Fin 0 → ℝ) a := by
+  ext s t
+  match s, t with
+  | .inr j, .inr j' =>
+    simp only [hannanVarZ, hannanVarZBack, hannanSeq, hannanShiftBack, Matrix.of_apply]
+    rw [maCrossACVF_self_neg (armaPsi (fun j'' => -a j'') (Fin.elim0 : Fin 0 → ℝ))
+      ((j' : ℤ) - (j : ℤ))]
+    congr 1
+    push_cast
+    ring
+  | .inr j, .inl i => exact absurd i.isLt (by omega)
+  | .inl i, _ => exact absurd i.isLt (by omega)
+
 /-! #### FINDING 26 — the forward and backward Grams genuinely differ (ARMA(2,1))
 
 The witness is the smallest possible: `p = 2`, `q = 1`, `b(z) = 1 − z/2` (padded with a
@@ -447,10 +503,10 @@ private lemma findB_arPoly :
   simp [arPoly, findB, Fin.sum_univ_two]
 
 private lemma findA_maPoly : maPoly findA = 1 := by
-  simp [maPoly, findA, Fin.sum_univ_one]
+  simp [maPoly, findA]
 
 private lemma findA_neg_arPoly : arPoly (fun j => -findA j) = 1 := by
-  simp [arPoly, findA, Fin.sum_univ_one]
+  simp [arPoly, findA]
 
 /-- `ψᵃ = δ₀`: the MA side of the witness inverts the constant polynomial. -/
 private lemma findA_psi (n : ℕ) :
