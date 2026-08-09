@@ -72,8 +72,8 @@ theorem oneSided_typeSet_alwaysTaker_eq_empty (h : OneSidedNoncompliance d0) :
 complier indicator minus the defier indicator. -/
 theorem ind_d1_sub_ind_d0 (ω : Ω) :
     ind (d1 ω) - ind (d0 ω)
-      = (if ω ∈ typeSet d1 d0 ComplianceType.complier then (1 : ℝ) else 0)
-        - (if ω ∈ typeSet d1 d0 ComplianceType.defier then (1 : ℝ) else 0) := by
+      = Set.indicator (typeSet d1 d0 ComplianceType.complier) (fun _ => (1 : ℝ)) ω
+        - Set.indicator (typeSet d1 d0 ComplianceType.defier) (fun _ => (1 : ℝ)) ω := by
   sorry
 
 /-- In the treated arm the observed treatment equals `D(1)`; in the control arm it equals
