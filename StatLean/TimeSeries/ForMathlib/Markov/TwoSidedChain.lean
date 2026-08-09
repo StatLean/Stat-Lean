@@ -53,7 +53,7 @@ instance (κ : ProbabilityTheory.Kernel S S) [ProbabilityTheory.IsMarkovKernel �
 instance (κ : ProbabilityTheory.Kernel S S) [ProbabilityTheory.IsMarkovKernel κ]
     (π : Measure S) [IsProbabilityMeasure π] :
     IsProbabilityMeasure ((pairLaw κ π).map Prod.swap) :=
-  MeasureTheory.isProbabilityMeasure_map measurable_swap.aemeasurable
+  Measure.isProbabilityMeasure_map measurable_swap.aemeasurable
 
 /-- The **time-reversed transition kernel**: the disintegration in the *second*
 coordinate of the swapped stationary pair law. On a standard Borel space this exists by
