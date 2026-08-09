@@ -296,7 +296,59 @@ Un-`private`ing changes nothing about either. What is missing is a **lower** bou
 beat. A spectral (Parseval) representation of `armaContrastVar` — absent from the project —
 is the natural source of such a bound, since it exhibits the contrast as
 `(2π)⁻¹∫|b(e^{iλ})a₀(e^{iλ})/(a(e^{iλ})b₀(e^{iλ}))|²dλ`, which blows up along both escapes.
-Recorded as the honest shape of (U) rather than closed. -/
+Recorded as the honest shape of (U) rather than closed.
+
+**RE-READ in the light of finding 25 (wave `ts/f1b-arma-deep`, 2026-08-09) — FINDING 27:
+the boundary is NOT a blow-up regime, so the "boundary-approaching exhaustion" strategy
+does not work; lower semicontinuity on the compact CLOSURE does.**
+
+Finding 25 makes `𝓑_{p,q}` bounded, hence its closure `𝓑̄_{p,q}` — polynomials with
+constant coefficient `1` and no root in the *open* unit disc, roots on the circle allowed —
+compact. The natural next move is the exhaustion the brief suggests: take
+`K_ρ = {(b,a) ∈ 𝓑 : every root is at distance ≥ ρ from the circle}`, get a gap `γ(ρ) > 0` on
+each compact `K_ρ` from `Consistency.exists_contrast_gap`, and argue separately that the
+criterion is *large* on `𝓑 ∖ K_ρ`. **That second half is false**, and the reason is
+asymmetric between the two polynomials:
+
+* if the fitted **MA** polynomial `a` has a root approaching the unit circle, `a` sits in
+  the *denominator* of the composite transfer `(b·a₀)/(a·b₀)`, its inverse filter blows up,
+  and `armaContrastVar → ∞` — the good case;
+* if the fitted **AR** polynomial `b` has a root approaching the circle, `b` sits in the
+  *numerator*. The composite filter stays `ℓ²`-bounded and `armaContrastVar` stays
+  **bounded**. Nothing blows up. So no uniform lower bound can come from a blow-up
+  argument on `𝓑 ∖ K_ρ`, and a gap `γ(ρ)` that degrades as `ρ ↓ 0` is all the exhaustion
+  gives.
+
+What is true at such a boundary point is *separation without blow-up*, and it is purely
+algebraic: `armaContrastVar = 1` iff the transfer functions agree
+(`Consistency.armaContrastVar_eq_one_iff_transfer`), i.e. iff `b·a₀ = a·b₀`; with
+`IsCoprime (arPoly b₀) (maPoly a₀)` this forces `arPoly b₀ ∣ arPoly b`, impossible when
+`deg (arPoly b) ≤ p < p₀ = deg (arPoly b₀)` and `arPoly b ≠ 0` — and `arPoly b` is never
+`0`, its constant coefficient being `1`. Nothing in that argument uses openness, so it
+holds verbatim on `𝓑̄`.
+
+**The route this points to**, therefore, is not an exhaustion but:
+
+1. extend `armaContrastVar b₀ a₀ · ·` to `𝓑̄_{p,q}` with values in `[1, ∞]` (the same
+   `∑' c_n²`, now allowed to diverge — it diverges exactly on the `a`-boundary);
+2. prove that extension **lower semicontinuous** on `𝓑̄` (Fatou for the `tsum`, each
+   partial sum being continuous in the coefficients — this is the one genuinely new
+   analytic ingredient, and it is much weaker than the spectral/Parseval representation
+   the previous note asks for);
+3. `> 1` pointwise on `𝓑̄` by the algebraic argument above, together with
+   `Consistency.one_le_armaContrastVar` on the interior;
+4. an lsc function `> 1` on a compact set attains its infimum, which is therefore `> 1`:
+   the uniform gap `γ`, on the whole of `𝓑_{p,q}` up to its boundary, as the frozen `iInf`
+   demands.
+
+Only steps 1–2 are missing from the project; step 3 needs no new lemma and step 4 is
+`IsCompact.exists_isMinOn` for lsc functions. Note also that the underfit comparison is
+between models of **different** orders while `armaContrastVar` is stated at a *common*
+`(p,q)`; the padding `b ↦ (b, 0, …, 0)` embeds the smaller family as a closed subset of the
+larger `𝓑̄`, and the degree count above is exactly what survives the padding. The previous
+note's diagnosis ("what is missing is a lower bound along both escapes") is thereby
+**refined**: there is only one escape left after finding 25, and along it what is needed is
+semicontinuity, not a lower bound that grows. -/
 private theorem bic_underfit_residue [IsProbabilityMeasure μ] {p0 q0 : ℕ}
     {b0 : Fin p0 → ℝ} {a0 : Fin q0 → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -354,7 +406,22 @@ obstructions (the measurable selection producing `θ`, and the compact-`K`-vs-op
 mismatch) stand.** The boundedness correction recorded at `bic_underfit_residue`
 (finding 25) applies here too: `𝓑_{p,q}` *is* bounded, so the mismatch with
 `armaMLE_linearization`'s compact `K` is only about the boundary, not about escape to
-infinity. -/
+infinity.
+
+**STATUS after wave `ts/f1b-arma-deep` (2026-08-09): NOT attempted; both obstructions
+stand, and a THIRD is now on record.** `MLEAsymptotics.armaMLE_linearization`, the source
+of the `O_p(1)` tightness this residue needs, is itself now known to carry the wrong
+information matrix (finding 26: `hannanVarZ` is the *forward* Gram, the score contracts the
+*backward* one, and the two differ for `p, q ≥ 1` with `max (p, q) ≥ 2` — exactly the
+regime a BIC grid explores). Since (O) only consumes the *tightness* of the likelihood
+ratio and not its limit law, the wrong matrix does not by itself make (O) unprovable —
+tightness is insensitive to which positive-definite matrix appears — but any proof written
+by literally citing `armaMLE_linearization` inherits a false input. The clean order of work
+is therefore: repair `hannanVarZ` first, then (O).
+
+The boundary control (O) shares with (U) is refined by finding 27 recorded at
+`bic_underfit_residue`: what is missing there is lower semicontinuity of the contrast on
+the compact closure `𝓑̄`, not a growth estimate. -/
 private theorem bic_overfit_residue [IsProbabilityMeasure μ] {p0 q0 : ℕ}
     {b0 : Fin p0 → ℝ} {a0 : Fin q0 → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)

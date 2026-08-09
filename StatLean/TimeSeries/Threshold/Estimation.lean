@@ -27,9 +27,12 @@ memberships of the observations) is known:
   printed `W_i` is built from the moments of the *fictitious global regime-`i` AR
   process*, not from moments conditional on `X_{t−d} ∈ A_i`. The frozen statement left
   `W_i` a free positive-definite matrix and was therefore FALSE
-  (`tarLS_clt_debt_false`); it is now **pinned to the process** as the regime-conditional
-  design covariance `tarRegimeDesignCov` — see the Statement-strengthening paragraph at
-  `tarLS_clt_debt`.
+  (`tarLS_clt_debt_false`); pinning it to the *uncentered* regime-conditional design
+  covariance `tarRegimeDesignCov` was still FALSE (`tarLS_clt_debt_centering_false`,
+  finding 24); it is now pinned to the **centered** one,
+  `tarRegimeDesignCovCentered` — see the two Statement-strengthening paragraphs at
+  `tarLS_clt_debt`, and `rad_designCovCentered_not_posDef` for the audit that the third
+  repair is what kills the second witness.
 
 **Scope.** FY Theorems 4.1/4.2 (Chan 1993a) and their consumers are **descoped**
 (user, 2026-08-04); nothing here estimates the threshold `r` itself.
@@ -419,6 +422,34 @@ noncomputable def tarRegimeDesignCov {P : ℕ} (A : Set ℝ) (d : ℕ)
     ∫ ω in {ω | X (-(d : ℤ)) ω ∈ A},
       X (-1 - (j : ℕ)) ω * X (-1 - (l : ℕ)) ω ∂μ
 
+/-- The **regime-`i` conditional design mean** `m_i = E[Z_0 | X_{−d} ∈ A_i]`, the
+regime-conditional mean of the regressor vector `Z_t = (X_{t−1−j})_{j<P}` at `t = 0`.
+Junk `0` on a null regime event, by the `⁻¹`/`toReal` conventions.
+
+Introduced by wave `ts/f1b-arma-deep` for the third repair of eq. (4.8) — see
+`tarRegimeDesignCovCentered`. -/
+noncomputable def tarRegimeDesignMean {P : ℕ} (A : Set ℝ) (d : ℕ)
+    (X : ℤ → Ω → ℝ) (μ : Measure Ω) : Fin P → ℝ :=
+  fun j => ((μ {ω | X (-(d : ℤ)) ω ∈ A}).toReal)⁻¹ *
+    ∫ ω in {ω | X (-(d : ℤ)) ω ∈ A}, X (-1 - (j : ℕ)) ω ∂μ
+
+/-- The **centered** regime-`i` conditional design covariance
+
+  `Σ_i = E[Z₀ Z₀ᵀ | X_{−d} ∈ A_i] − E[Z₀ | X_{−d} ∈ A_i] E[Z₀ | X_{−d} ∈ A_i]ᵀ`,
+
+i.e. the regime-conditional *covariance* — as opposed to *second-moment* — matrix of the
+regressor vector. This is the matrix the regime-wise least-squares **slope** actually
+sees, because FY eqs. (4.4)–(4.5) fit an intercept alongside the slopes and the intercept
+absorbs the regime-conditional regressor mean.
+
+Introduced by wave `ts/f1b-arma-deep` as the object prescribed by finding 24
+(`tarLS_clt_debt_centering_false`), whose witness has `tarRegimeDesignCov = 1` positive
+definite while `tarRegimeDesignCovCentered = 0` (`rad_designCovCentered` below). -/
+noncomputable def tarRegimeDesignCovCentered {P : ℕ} (A : Set ℝ) (d : ℕ)
+    (X : ℤ → Ω → ℝ) (μ : Measure Ω) : Matrix (Fin P) (Fin P) ℝ :=
+  tarRegimeDesignCov A d X μ -
+    Matrix.of fun j l => tarRegimeDesignMean A d X μ j * tarRegimeDesignMean A d X μ l
+
 /-! ### The *repaired* eq. (4.8) statement is STILL FALSE — the centering defect
 
 The repairs of wave `ts/s12b-model-repairs` pin `W` to `tarRegimeDesignCov`, i.e. to the
@@ -632,6 +663,46 @@ private lemma rad_designCov :
   rw [setIntegral_congr_fun hS hone, setIntegral_const, measureReal_def, rad_mass_eq]
   simp only [ENNReal.toReal_inv, ENNReal.toReal_ofNat, smul_eq_mul, mul_one]
   norm_num
+
+/-- The regime-conditional design **mean** of the witness is `1`: on regime `0` the single
+regressor is a.s. the constant `1`. -/
+private lemma rad_designMean :
+    tarRegimeDesignMean (P := 1) (radA 0) 1 radCoord radMeasure = fun _ => (1 : ℝ) := by
+  have hS : MeasurableSet (radCoord (-1) ⁻¹' ({(1 : ℝ)})) :=
+    (radCoord_measurable _) (measurableSet_singleton 1)
+  funext j
+  fin_cases j
+  simp only [tarRegimeDesignMean]
+  rw [rad_regime_set, rad_mass_eq]
+  have hone : ∀ ω ∈ radCoord (-1) ⁻¹' ({(1 : ℝ)}),
+      radCoord (-1 - ((⟨0, by norm_num⟩ : Fin 1) : ℕ)) ω = 1 := by
+    intro ω hω
+    have : radCoord (-1) ω = 1 := hω
+    norm_num [radCoord] at this ⊢
+    exact this
+  rw [setIntegral_congr_fun hS hone, setIntegral_const, measureReal_def, rad_mass_eq]
+  simp only [ENNReal.toReal_inv, ENNReal.toReal_ofNat, smul_eq_mul, mul_one]
+  norm_num
+
+/-- **The third repair is exactly the right one.** On the finding-24 witness the *centered*
+design covariance is `0` — so the repaired hypothesis `hW : W.PosDef` of the restated
+`tarLS_clt_debt` below is **not** satisfiable there, and the witness no longer applies. -/
+private lemma rad_designCovCentered :
+    tarRegimeDesignCovCentered (P := 1) (radA 0) 1 radCoord radMeasure = 0 := by
+  rw [tarRegimeDesignCovCentered, rad_designCov, rad_designMean]
+  ext j l
+  fin_cases j
+  fin_cases l
+  simp
+
+/-- ... hence the witness's regime fails the repaired positive-definiteness hypothesis. -/
+private lemma rad_designCovCentered_not_posDef :
+    ¬ (tarRegimeDesignCovCentered (P := 1) (radA 0) 1 radCoord radMeasure).PosDef := by
+  rw [rad_designCovCentered]
+  intro hpd
+  have hunit := hpd.isUnit
+  rw [Matrix.isUnit_iff_isUnit_det] at hunit
+  simp at hunit
 
 /-! #### A measurable regime-wise least-squares fit with the slope pinned at `0`
 
@@ -875,10 +946,58 @@ fourth defect, which is a *modelling* error rather than a quantifier one:
    **The repair this prescribes** is to replace `tarRegimeDesignCov` by its centered
    version and to require *that* matrix positive definite (equivalently: state eq. (4.8)
    for mean-corrected regressors). Under Chan 1993a's fictitious-process reading the same
-   correction appears as centering the fictitious AR process at its own mean. Not applied
-   here: repairing a frozen statement twice in successive waves needs the lane owner's
-   call, and the correct centered object is a new definition, not a re-parametrization of
-   an existing one. -/
+   correction appears as centering the fictitious AR process at its own mean.
+
+**Statement strengthening, third repair (wave `ts/f1b-arma-deep`, 2026-08-09) — APPLIED
+below, on the laptop's authorization.** Defect 4 is repaired exactly as its own
+prescription says, by one further changed hypothesis, again tagged `USER-INPUT`:
+
+5. **`W` is pinned to the CENTERED design covariance.** `hWdef` now reads
+   `W = tarRegimeDesignCovCentered (A i) d X μ`, the new definition
+   `E[Z₀Z₀ᵀ | ·] − E[Z₀ | ·]E[Z₀ | ·]ᵀ` introduced above, and `hW : W.PosDef` is asked of
+   *that* matrix. Repair 1 of the previous wave is thereby superseded, not undone: `W` is
+   still a functional of `(A, d, X, μ)` alone, so defect 1 of the first witness stays
+   killed; repairs 2 and 3 are untouched.
+
+   The finding-24 witness is **blocked by exactly this hypothesis and by nothing else**:
+   `rad_designCovCentered` proves that on that instance the centered matrix is `0`, and
+   `rad_designCovCentered_not_posDef` that `0` is not positive definite, so `hW` fails
+   there while every other hypothesis of the witness continues to hold verbatim. That is
+   the sharpest available audit that the third repair is neither too weak (it kills the
+   witness) nor a re-parametrization (the killed hypothesis is the new one).
+
+   Both witnesses are kept: `tarLS_clt_debt_false` (defects 1–3, wave
+   `ts/s12b-model-repairs`) and `tarLS_clt_debt_centering_false` (defect 4, wave
+   `ts/f1-arma-finale`), each stated against the frozen form it refutes, so the record of
+   what each repair buys is preserved verbatim.
+
+**STATUS after wave `ts/f1b-arma-deep`: the repaired statement is a DEBT, not attempted to
+completion.** No fourth defect is known, and the two recorded witnesses are both dead
+against it. What the proof needs, in the order a formalization would build it:
+
+* the per-regime **normal equations**. `hLS` gives joint minimality of `(β̂₀, β̂)`; the
+  first-order conditions on the regime index set `tarRegimeIndices` are
+  `Σ_{t ∈ R_i} (x_t − β̂₀ − ⟨β̂, z_t⟩) = 0` and `Σ_{t ∈ R_i} z_t (x_t − β̂₀ − ⟨β̂, z_t⟩) = 0`;
+  eliminating `β̂₀` between them turns the slope equation into the *centered* one,
+  `Ŝ_i (β̂ − b_i) = Σ_{t ∈ R_i} (z_t − z̄_i) ε_t` with `Ŝ_i = Σ_{t∈R_i}(z_t − z̄_i)(z_t − z̄_i)ᵀ`.
+  This algebraic step is what makes `tarRegimeDesignCovCentered` — and not
+  `tarRegimeDesignCov` — the matrix in the limit, and it is the reason the repair is
+  forced rather than chosen; it is a finite-sample identity and needs no probability;
+* `T_i⁻¹ Ŝ_i →p Σ_i` and `T_i/T →p` the regime mass: two regime-restricted LLNs. Under
+  `hstat` + `hL2` these are the `Threshold/TAR.lean` ergodic averages restricted to the
+  regime event, i.e. the same shape as the ARMA lane's
+  `Consistency.linearProcess_avgSq_tendstoInProb` with an indicator weight;
+* the **MDS CLT** for `T_i^{−1/2} Σ_{t∈R_i} (z_t − z̄_i) ε_t`. The summands are a
+  martingale-difference sequence along the natural filtration (the regime membership and
+  `z_t` are past-measurable, `ε_t` is not), so `mds_clt_sequence` applies once the
+  conditional-variance LLN of the previous item is in hand; the random index set is
+  handled by carrying the indicator inside the summand rather than by a random-time
+  argument;
+* Slutsky, to replace `Ŝ_i` by `Σ_i` and to move from `√T_i` to the stated scaling.
+
+The three ARMA-lane inputs this reuses (`mds_clt_sequence`, the indicator-weighted LLN,
+and the charFun form of Slutsky) all exist in the project; the regime-restricted LLN and
+the normal-equation algebra do not, and are the honest cost of closing this. -/
 theorem tarLS_clt_debt [IsProbabilityMeasure μ] {k P : ℕ}
     {b0 : Fin k → ℝ} {b : Fin k → Fin P → ℝ} {σ : Fin k → ℝ} {A : Fin k → Set ℝ}
     {d : ℕ} {X ε : ℤ → Ω → ℝ}
@@ -888,12 +1007,14 @@ theorem tarLS_clt_debt [IsProbabilityMeasure μ] {k P : ℕ}
     -- USER-INPUT: finite second moments; FY §4.1.2 standing assumption
     (hL2 : ∀ t, MemLp (X t) 2 μ)
     (i : Fin k)
-    -- USER-INPUT: the regime-`i` design covariance is the conditional second-moment
-    -- matrix of the regressors, *defined from the process* (no longer a free parameter);
+    -- USER-INPUT (third repair, wave `ts/f1b-arma-deep`): the regime-`i` design covariance
+    -- is the *centered* conditional covariance matrix of the regressors, *defined from the
+    -- process* (no longer a free parameter, and no longer the uncentered second-moment
+    -- matrix — the intercept of eqs. (4.4)-(4.5) absorbs the conditional regressor mean);
     -- FY §4.1.2, eq. (4.8) / Chan 1993a
-    (W : Matrix (Fin P) (Fin P) ℝ) (hWdef : W = tarRegimeDesignCov (A i) d X μ)
-    -- USER-INPUT: the design covariance is invertible (no exact linear relation among the
-    -- regime-`i` regressors); Chan 1993a
+    (W : Matrix (Fin P) (Fin P) ℝ) (hWdef : W = tarRegimeDesignCovCentered (A i) d X μ)
+    -- USER-INPUT: the *centered* design covariance is invertible (no exact affine relation
+    -- among the regime-`i` regressors); Chan 1993a
     (hW : Matrix.PosDef W)
     -- USER-INPUT: the regime carries positive mass — equivalently `T_i → ∞`; FY §4.1.2
     (hmass : 0 < (μ {ω | X (-(d : ℤ)) ω ∈ A i}).toReal)

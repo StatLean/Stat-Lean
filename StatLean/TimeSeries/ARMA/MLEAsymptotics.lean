@@ -46,6 +46,16 @@ listed here with their exact blockers.
   the frozen statement demands.
 * Debts (after wave `ts/s1b-arma-finish`, 2026-08-09): `hannanScore_brownInputs`,
   `armaMLE_linearization`, `samplePACF_linearization`.
+  **FINDING 26 (wave `ts/f1b-arma-deep`, 2026-08-09): `hannanVarZ` is the covariance of
+  the FORWARD auxiliary vector, while the score contracts the BACKWARD one `Z_t =
+  (U_{t−1−i}, V_{t−1−j})`; the two Grams read the AR–MA cross-block at opposite lags and
+  differ whenever `p, q ≥ 1` and `max (p, q) ≥ 2`.** So `hannanScore_brownInputs`(2),
+  `hannanScore_clt`, `armaMLE_linearization` and the headline `hannan_mle_clt` all carry
+  the wrong asymptotic variance in the genuinely mixed case; `samplePACF_linearization`
+  and `ls_yw_mle_equivalent_debt` (both `q = 0`) are immune. Items (1) and (2) of the Brown
+  inputs are PROVED with the corrected matrix as `hannanScore_brownInputs_back`. Full
+  detail, the ARMA(2,1) witness, and the one-line repair are recorded at
+  `hannanScore_brownInputs`.
   **CLOSED**: `armaProfileS_atTruth_tendstoInProb` (a two-line corollary of Consistency's
   now-public `armaProfileS_tendstoInProb`) and `armaProfileS_equicontinuous` (a one-line
   corollary of `Consistency.armaProfileS_locallyEquicontinuous`).
@@ -342,6 +352,466 @@ private noncomputable def scoreSeq {p q : ℕ} (ε U V : ℤ → Ω → ℝ)
   ε t ω * ((∑ i : Fin p, d (.inl i) * U (t - 1 - (i : ℕ)) ω)
     + ∑ j : Fin q, d (.inr j) * V (t - 1 - (j : ℕ)) ω)
 
+/-! ### The three Brown inputs, built (finding 26)
+
+The machinery below discharges items (1) and (2) of `hannanScore_brownInputs`, and
+overturns two of the three residual sub-items its status note records — at the cost of a
+new finding about the *constant* in item (2). In order:
+
+* `isLinearProcessOf_unique` — two linear processes of the **same** coefficient sequence
+  over the same noise agree a.e. (the `L²` limit is unique). Combined with the file's own
+  `exists_adapted_isLinearProcessOf`, this **dissolves residual item 1** ("the `L²`-limit
+  past-measurability"): `U t` is a.e. equal to the *adapted* copy `μ[U t | σ(ε_s : s<t+1)]`,
+  which is past-measurable by construction. No subsequence extraction, no
+  `aestronglyMeasurable_of_tendsto_ae` for a sub-σ-algebra, and no strengthening of the
+  frozen statement is needed. The status note's "it is not free" is correct only in the
+  sense that one has to notice the adapted copy is *the same process*.
+* `isLinearProcessOf_comb` — **closure of linear processes under finite linear
+  combinations of shifts**, with `hannanShiftSeq` bookkeeping. This is residual item 2's
+  "mechanical" half, and it really is mechanical: the `N`-term partial sum of the combined
+  filter is exactly the combination of the `(N − m_s)`-term partial sums of the pieces.
+* `hannanVarZBack` and its quadratic form (`ARMA/ScoreAnalysis.lean`, un-`private`d by
+  this wave, which also removes the *scope* blocker residual item 2 records).
+
+**FINDING 26, recorded at `hannanScore_brownInputs` below.** Carrying (1) and (2) through
+shows that the constant in the frozen item (2) is **wrong**: the limit is
+`σ² · (σ² · dᵀ Σ_back d)` with `Σ_back = hannanVarZBack b₀ a₀`, the covariance of the
+**backward** score vector `Z_t = (U_{t−1−i}, V_{t−1−j})`, and not `hannanVarZ b₀ a₀`,
+which is the covariance of the *forward* vector. See the section docstring at
+`ScoreAnalysis.hannanVarZBack` for why the two differ, and
+`ScoreAnalysis.hannanVarZ_quadForm_ne_back` for an ARMA(2,1) witness. -/
+
+
+/-- Reindexing a shifted filter's partial sum. -/
+private lemma sum_range_shiftSeq_mul (ψ : ℕ → ℝ) (m : ℕ) (ε : ℤ → Ω → ℝ) (t : ℤ) (ω : Ω) (N : ℕ) :
+    ∑ j ∈ Finset.range N, hannanShiftSeq ψ m j * ε (t - (j : ℕ)) ω
+      = ∑ k ∈ Finset.range (N - m), ψ k * ε (t - (m : ℕ) - (k : ℕ)) ω := by
+  induction N with
+  | zero => simp
+  | succ N ih =>
+    rw [Finset.sum_range_succ, ih]
+    rcases lt_or_ge N m with h | h
+    · rw [hannanShiftSeq_of_lt h, zero_mul, add_zero]
+      have h1 : N - m = 0 := by omega
+      have h2 : N + 1 - m = 0 := by omega
+      rw [h1, h2]
+    · have h2 : N + 1 - m = (N - m) + 1 := by omega
+      have harg : t - ((N : ℕ) : ℤ) = t - ((m : ℕ) : ℤ) - (((N - m : ℕ) : ℤ)) := by
+        have hc : ((N - m : ℕ) : ℤ) = (N : ℤ) - (m : ℤ) := by
+          rw [Nat.cast_sub h]
+        omega
+      rw [h2, Finset.sum_range_succ, hannanShiftSeq, if_pos h, harg]
+
+/-- **Closure of linear processes under finite linear combinations of shifts.** -/
+private lemma isLinearProcessOf_comb [IsProbabilityMeasure μ] {ι : Type*} [Fintype ι]
+    {σ2 : ℝ} {ε : ℤ → Ω → ℝ} (hε : IsWhiteNoise ε σ2 μ)
+    (x : ι → ℝ) (m : ι → ℕ) (ψ : ι → ℕ → ℝ) (W : ι → ℤ → Ω → ℝ)
+    (hWmeas : ∀ s t, Measurable (W s t))
+    (hW : ∀ s, IsLinearProcessOf (ψ s) (W s) ε μ) :
+    IsLinearProcessOf (fun n => ∑ s, x s * hannanShiftSeq (ψ s) (m s) n)
+      (fun t ω => ∑ s, x s * W s (t - (m s : ℕ)) ω) ε μ := by
+  classical
+  intro t
+  set g : ι → ℕ → Ω → ℝ := fun s M ω =>
+    W s (t - (m s : ℕ)) ω - ∑ k ∈ Finset.range M, ψ s k * ε (t - (m s : ℕ) - (k : ℕ)) ω with hg
+  have hgmeas : ∀ s M, Measurable (g s M) := by
+    intro s M
+    exact (hWmeas s _).sub (Finset.measurable_sum _ fun k _ => measurable_const.mul (hε.measurable _))
+  -- the defect of the combination is the combination of the defects
+  have hkey : ∀ N : ℕ, (fun ω => (∑ s, x s * W s (t - (m s : ℕ)) ω)
+        - ∑ j ∈ Finset.range N,
+            (∑ s, x s * hannanShiftSeq (ψ s) (m s) j) * ε (t - (j : ℕ)) ω)
+      = fun ω => ∑ s, x s * g s (N - m s) ω := by
+    intro N
+    funext ω
+    have h1 : ∑ j ∈ Finset.range N,
+          (∑ s, x s * hannanShiftSeq (ψ s) (m s) j) * ε (t - (j : ℕ)) ω
+        = ∑ s, x s * ∑ k ∈ Finset.range (N - m s),
+            ψ s k * ε (t - (m s : ℕ) - (k : ℕ)) ω := by
+      calc ∑ j ∈ Finset.range N,
+              (∑ s, x s * hannanShiftSeq (ψ s) (m s) j) * ε (t - (j : ℕ)) ω
+          = ∑ j ∈ Finset.range N, ∑ s,
+              x s * (hannanShiftSeq (ψ s) (m s) j * ε (t - (j : ℕ)) ω) := by
+            refine Finset.sum_congr rfl fun j _ => ?_
+            rw [Finset.sum_mul]
+            exact Finset.sum_congr rfl fun s _ => by ring
+        _ = ∑ s, ∑ j ∈ Finset.range N,
+              x s * (hannanShiftSeq (ψ s) (m s) j * ε (t - (j : ℕ)) ω) := Finset.sum_comm
+        _ = ∑ s, x s * ∑ k ∈ Finset.range (N - m s),
+              ψ s k * ε (t - (m s : ℕ) - (k : ℕ)) ω := by
+            refine Finset.sum_congr rfl fun s _ => ?_
+            rw [← Finset.mul_sum, sum_range_shiftSeq_mul]
+    rw [h1, ← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun s _ => by rw [hg]; ring
+  -- and its `L²` norm is dominated by the sum of the individual defects
+  have hbd : ∀ N : ℕ, eLpNorm (fun ω => ∑ s, x s * g s (N - m s) ω) 2 μ
+      ≤ ∑ s, ‖x s‖ₑ * eLpNorm (g s (N - m s)) 2 μ := by
+    intro N
+    have hsm : ∀ s ∈ (Finset.univ : Finset ι),
+        AEStronglyMeasurable (fun ω => x s * g s (N - m s) ω) μ :=
+      fun s _ => ((hgmeas s _).const_mul (x s)).aestronglyMeasurable
+    have hfun : (fun ω => ∑ s, x s * g s (N - m s) ω)
+        = ∑ s : ι, (x s • (g s (N - m s)) : Ω → ℝ) := by
+      funext ω
+      rw [Finset.sum_apply]
+      exact Finset.sum_congr rfl fun s _ => rfl
+    rw [hfun]
+    refine (eLpNorm_sum_le (p := 2) (fun s _ =>
+      ((hgmeas s (N - m s)).const_smul (x s)).aestronglyMeasurable) one_le_two).trans_eq ?_
+    exact Finset.sum_congr rfl fun s _ => eLpNorm_const_smul (x s) (g s (N - m s)) 2 μ
+  -- each individual defect vanishes
+  have htend : ∀ s : ι, Tendsto (fun N : ℕ => eLpNorm (g s (N - m s)) 2 μ) atTop (𝓝 0) := by
+    intro s
+    have hsub : Tendsto (fun N : ℕ => N - m s) atTop atTop :=
+      tendsto_atTop_atTop.2 fun b => ⟨b + m s, fun a ha => by omega⟩
+    exact (hW s (t - (m s : ℕ))).comp hsub
+  have hmul : ∀ s : ι,
+      Tendsto (fun N : ℕ => ‖x s‖ₑ * eLpNorm (g s (N - m s)) 2 μ) atTop (𝓝 0) := by
+    intro s
+    have h0 : ‖x s‖ₑ * (0 : ENNReal) = 0 := by simp
+    have hc := ENNReal.Tendsto.const_mul (a := ‖x s‖ₑ) (htend s) (Or.inr enorm_ne_top)
+    rwa [h0] at hc
+  have hsum : Tendsto (fun N : ℕ => ∑ s, ‖x s‖ₑ * eLpNorm (g s (N - m s)) 2 μ) atTop (𝓝 0) := by
+    have := tendsto_finset_sum (Finset.univ : Finset ι) (fun s _ => hmul s)
+    simpa using this
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsum
+    (fun N => zero_le _) (fun N => ?_)
+  rw [hkey N]
+  exact hbd N
+
+/-- **`L²`-limit uniqueness for linear processes.** -/
+private lemma isLinearProcessOf_unique [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {ε U U' : ℤ → Ω → ℝ}
+    (hU : IsLinearProcessOf ψ U ε μ) (hU' : IsLinearProcessOf ψ U' ε μ)
+    (hUm : ∀ t, Measurable (U t)) (hU'm : ∀ t, Measurable (U' t))
+    (hεm : ∀ t, Measurable (ε t)) (t : ℤ) : U t =ᵐ[μ] U' t := by
+  have hSm : ∀ N : ℕ, Measurable fun ω => ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω :=
+    fun N => Finset.measurable_sum _ fun j _ => measurable_const.mul (hεm _)
+  have hle : ∀ N : ℕ, eLpNorm (fun ω => U t ω - U' t ω) 2 μ
+      ≤ eLpNorm (fun ω => U t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 2 μ
+        + eLpNorm (fun ω => U' t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 2 μ := by
+    intro N
+    have hfun : (fun ω => U t ω - U' t ω)
+        = (fun ω => U t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω)
+          + fun ω => (∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) - U' t ω := by
+      funext ω; simp only [Pi.add_apply]; ring
+    have hswap : (fun ω => (∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) - U' t ω)
+        = -fun ω => U' t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω := by
+      funext ω; simp only [Pi.neg_apply]; ring
+    rw [hfun]
+    refine (eLpNorm_add_le ((hUm t).sub (hSm N)).aestronglyMeasurable
+      ((hSm N).sub (hU'm t)).aestronglyMeasurable one_le_two).trans ?_
+    rw [hswap, eLpNorm_neg]
+  have hlim : Tendsto (fun N : ℕ =>
+      eLpNorm (fun ω => U t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 2 μ
+        + eLpNorm (fun ω => U' t ω - ∑ j ∈ Finset.range N, ψ j * ε (t - (j : ℕ)) ω) 2 μ)
+      atTop (𝓝 0) := by
+    simpa using (hU t).add (hU' t)
+  have hzero : eLpNorm (fun ω => U t ω - U' t ω) 2 μ ≤ 0 :=
+    ge_of_tendsto hlim (Eventually.of_forall hle)
+  have heq0 := le_antisymm hzero (zero_le _)
+  have hae := (eLpNorm_eq_zero_iff ((hUm t).sub (hU'm t)).aestronglyMeasurable two_ne_zero).1 heq0
+  filter_upwards [hae] with ω hω
+  have h0 : U t ω - U' t ω = 0 := hω
+  linarith
+
+/-- `E[ε_t²] = σ²` for i.i.d. noise. -/
+private lemma integral_noise_sq [IsProbabilityMeasure μ] {ε : ℤ → Ω → ℝ} {σ2 : ℝ}
+    (hiid : IsIIDNoise ε σ2 μ) (t : ℤ) : ∫ ω, ε t ω ^ 2 ∂μ = σ2 := by
+  have hid := hiid.identDistrib t 0
+  have hmem : MemLp (ε t) 2 μ := (hid.memLp_iff).2 hiid.memLp
+  have hmean : ∫ ω, ε t ω ∂μ = 0 := by rw [hid.integral_eq, hiid.integral_eq_zero]
+  have hvar : variance (ε t) μ = σ2 := by rw [hid.variance_eq, hiid.variance_eq]
+  rw [variance_eq_integral hmem.aestronglyMeasurable.aemeasurable, hmean] at hvar
+  simpa using hvar
+
+/-- **The conditional-variance identity for the score.** -/
+private lemma condExp_noise_mul_sq [IsProbabilityMeasure μ] {ε : ℤ → Ω → ℝ} {σ2 : ℝ}
+    (hiid : IsIIDNoise ε σ2 μ) (t : ℤ) {Y : Ω → ℝ} (hYmem : MemLp Y 2 μ)
+    (hYmeas : Measurable[sigmaLT ε t] Y) :
+    μ[fun ω => (ε t ω * Y ω) ^ 2 | sigmaLT ε t] =ᵐ[μ] fun ω => σ2 * Y ω ^ 2 := by
+  have hle : sigmaLT ε t ≤ (inferInstance : MeasurableSpace Ω) :=
+    iSup₂_le fun _ _ => (hiid.measurable _).comap_le
+  have hεmem : MemLp (ε t) 2 μ := ((hiid.identDistrib t 0).memLp_iff).2 hiid.memLp
+  -- independence of `ε_t²` from the past
+  have hind : Indep (MeasurableSpace.comap (ε t) inferInstance) (sigmaLT ε t) μ :=
+    indep_noise_sigmaLT hiid.measurable hiid.iIndep t
+  have hIF : IndepFun (fun ω => ε t ω ^ 2) (fun ω => Y ω ^ 2) μ := by
+    have h0 : IndepFun (ε t) Y μ := indep_of_indep_of_le_right hind hYmeas.comap_le
+    exact h0.comp (measurable_id.pow_const 2) (measurable_id.pow_const 2)
+  have hεsq : Integrable (fun ω => ε t ω ^ 2) μ := by
+    simpa [sq] using hεmem.integrable_mul hεmem
+  have hYsq : Integrable (fun ω => Y ω ^ 2) μ := by
+    simpa [sq] using hYmem.integrable_mul hYmem
+  have hprod : Integrable ((fun ω => ε t ω ^ 2) * fun ω => Y ω ^ 2) μ :=
+    hIF.integrable_mul hεsq hYsq
+  have hfun : (fun ω => (ε t ω * Y ω) ^ 2)
+      = (fun ω => ε t ω ^ 2) * fun ω => Y ω ^ 2 := by
+    funext ω; simp [Pi.mul_apply, mul_pow]
+  rw [hfun]
+  have hpull := condExp_mul_of_stronglyMeasurable_right
+    (hYmeas.pow_const 2).stronglyMeasurable hprod hεsq
+  have hconst := condExp_indep_eq (hiid.measurable t).comap_le hle
+    (Measurable.stronglyMeasurable
+      ((Measurable.of_comap_le
+        (le_refl (MeasurableSpace.comap (ε t) inferInstance))).pow_const 2))
+    hind
+  filter_upwards [hpull, hconst] with ω h1 h2
+  rw [h1, Pi.mul_apply, h2, integral_noise_sq hiid t]
+
+/-- The score's auxiliary vector, contracted against `d`. -/
+private noncomputable def scoreVec {p q : ℕ} (U V : ℤ → Ω → ℝ) (d : Fin p ⊕ Fin q → ℝ)
+    (t : ℤ) (ω : Ω) : ℝ :=
+  (∑ i : Fin p, d (.inl i) * U (t - 1 - (i : ℕ)) ω)
+    + ∑ j : Fin q, d (.inr j) * V (t - 1 - (j : ℕ)) ω
+
+private lemma scoreVec_eq_comb {p q : ℕ} (U V : ℤ → Ω → ℝ) (d : Fin p ⊕ Fin q → ℝ) (t : ℤ) (ω : Ω) :
+    scoreVec U V d t ω
+      = ∑ s : Fin p ⊕ Fin q, d s *
+          (Sum.elim (fun _ : Fin p => U) (fun _ : Fin q => V) s)
+            (t - ((hannanShiftBack p q s : ℕ) : ℤ)) ω := by
+  rw [Fintype.sum_sum_type]
+  simp only [Sum.elim_inl, Sum.elim_inr, hannanShiftBack, scoreVec]
+  congr 1
+  · refine Finset.sum_congr rfl fun i _ => ?_
+    congr 2
+    push_cast
+    ring
+  · refine Finset.sum_congr rfl fun j _ => ?_
+    congr 2
+    push_cast
+    ring
+
+private lemma measurable_scoreVec {p q : ℕ} {U V : ℤ → Ω → ℝ} (hUmeas : ∀ t, Measurable (U t))
+    (hVmeas : ∀ t, Measurable (V t)) (d : Fin p ⊕ Fin q → ℝ) (t : ℤ) :
+    Measurable (scoreVec U V d t) :=
+  (Finset.measurable_sum _ fun i _ => measurable_const.mul (hUmeas _)).add
+    (Finset.measurable_sum _ fun j _ => measurable_const.mul (hVmeas _))
+
+/-- The contracted score vector is a linear process with the **backward** coefficients. -/
+private lemma isLinearProcessOf_scoreVec [IsProbabilityMeasure μ] {p q : ℕ}
+    {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {ε U V : ℤ → Ω → ℝ}
+    (hε : IsWhiteNoise ε σ2 μ)
+    (hU : IsLinearProcessOf (armaPsi b0 (Fin.elim0 : Fin 0 → ℝ)) U ε μ)
+    (hV : IsLinearProcessOf (armaPsi (fun j => -a0 j) (Fin.elim0 : Fin 0 → ℝ)) V ε μ)
+    (hUmeas : ∀ t, Measurable (U t)) (hVmeas : ∀ t, Measurable (V t))
+    (d : Fin p ⊕ Fin q → ℝ) :
+    IsLinearProcessOf (fun n => ∑ s, d s * hannanVecBack b0 a0 s n) (scoreVec U V d) ε μ := by
+  have hcomb := isLinearProcessOf_comb (μ := μ) hε d (hannanShiftBack p q)
+    (fun s => hannanSeq b0 a0 s)
+    (Sum.elim (fun _ : Fin p => U) (fun _ : Fin q => V))
+    (by rintro (i | j) t; exacts [hUmeas t, hVmeas t])
+    (by rintro (i | j); exacts [hU, hV])
+  have hfun : scoreVec U V d
+      = fun t ω => ∑ s, d s *
+          (Sum.elim (fun _ : Fin p => U) (fun _ : Fin q => V) s)
+            (t - ((hannanShiftBack p q s : ℕ) : ℤ)) ω := by
+    funext t ω
+    exact scoreVec_eq_comb U V d t ω
+  rw [hfun]
+  exact hcomb
+
+/-- **The corrected conditional-variance LLN** — item (2) of `hannanScore_brownInputs`,
+with the **backward** Gram `hannanVarZBack` in place of the frozen `hannanVarZ`. -/
+private theorem hannanScore_condVar_lln [IsProbabilityMeasure μ] {p q : ℕ}
+    {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {ε U V U' V' : ℤ → Ω → ℝ}
+    (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2) (hB0 : ARMAInvertibleParams b0 a0)
+    (hU : IsLinearProcessOf (armaPsi b0 (Fin.elim0 : Fin 0 → ℝ)) U ε μ)
+    (hV : IsLinearProcessOf (armaPsi (fun j => -a0 j) (Fin.elim0 : Fin 0 → ℝ)) V ε μ)
+    (hUmeas : ∀ t, Measurable (U t)) (hVmeas : ∀ t, Measurable (V t))
+    (hU' : IsLinearProcessOf (armaPsi b0 (Fin.elim0 : Fin 0 → ℝ)) U' ε μ)
+    (hV' : IsLinearProcessOf (armaPsi (fun j => -a0 j) (Fin.elim0 : Fin 0 → ℝ)) V' ε μ)
+    (hU'meas : ∀ t, Measurable (U' t)) (hV'meas : ∀ t, Measurable (V' t))
+    (hU'adapt : ∀ t, Measurable[sigmaLT ε (t + 1)] (U' t))
+    (hV'adapt : ∀ t, Measurable[sigmaLT ε (t + 1)] (V' t))
+    (d : Fin p ⊕ Fin q → ℝ) {δ : ℝ} (hδ : 0 < δ) :
+    Tendsto (fun n : ℕ => (μ {ω | δ ≤ |(n : ℝ)⁻¹ *
+        (∑ i ∈ Finset.range n,
+          μ[fun ω' => (ε ((i : ℤ) + 1) ω' * scoreVec U V d ((i : ℤ) + 1) ω') ^ 2
+            | sigmaLT ε ((i : ℤ) + 1)] ω)
+        - σ2 * (σ2 * (d ⬝ᵥ (hannanVarZBack b0 a0 *ᵥ d)))|}).toReal) atTop (𝓝 0) := by
+  classical
+  have hwn := hiid.isWhiteNoise
+  have hc : Summable fun n => |∑ s, d s * hannanVecBack b0 a0 s n| :=
+    summable_abs_hannanComboBack hB0 d
+  have hY := isLinearProcessOf_scoreVec hwn hU hV hUmeas hVmeas d
+  have hY2 := isLinearProcessOf_scoreVec hwn hU' hV' hU'meas hV'meas d
+  have hYm := measurable_scoreVec hUmeas hVmeas d
+  have hY2m := measurable_scoreVec hU'meas hV'meas d
+  have hae : ∀ t : ℤ, scoreVec U V d t =ᵐ[μ] scoreVec U' V' d t :=
+    fun t => isLinearProcessOf_unique hY hY2 hYm hY2m hiid.measurable t
+  -- the adapted copy is past-measurable
+  have hadapt : ∀ i : ℕ,
+      Measurable[sigmaLT ε ((i : ℤ) + 1)] (scoreVec U' V' d ((i : ℤ) + 1)) := by
+    intro i
+    refine Measurable.add (Finset.measurable_sum _ fun k _ => measurable_const.mul ?_)
+      (Finset.measurable_sum _ fun k _ => measurable_const.mul ?_)
+    · exact (hU'adapt _).mono (sigmaLT_mono' (by push_cast; omega)) le_rfl
+    · exact (hV'adapt _).mono (sigmaLT_mono' (by push_cast; omega)) le_rfl
+  -- the quadratic form
+  have hQ : ∑' n : ℕ, (∑ s, d s * hannanVecBack b0 a0 s n) ^ 2
+      = d ⬝ᵥ (hannanVarZBack b0 a0 *ᵥ d) := by
+    rw [← hannanVarZBack_quadForm hB0 d]
+    simp only [dotProduct, Matrix.mulVec]
+  -- the conditional-variance identity
+  have hcond : ∀ i : ℕ,
+      μ[fun ω' => (ε ((i : ℤ) + 1) ω' * scoreVec U V d ((i : ℤ) + 1) ω') ^ 2
+        | sigmaLT ε ((i : ℤ) + 1)]
+      =ᵐ[μ] fun ω => σ2 * scoreVec U V d ((i : ℤ) + 1) ω ^ 2 := by
+    intro i
+    have h1 : (fun ω' => (ε ((i : ℤ) + 1) ω' * scoreVec U V d ((i : ℤ) + 1) ω') ^ 2)
+        =ᵐ[μ] fun ω' => (ε ((i : ℤ) + 1) ω' * scoreVec U' V' d ((i : ℤ) + 1) ω') ^ 2 := by
+      filter_upwards [hae ((i : ℤ) + 1)] with ω hω
+      rw [hω]
+    have h2 := condExp_noise_mul_sq hiid ((i : ℤ) + 1)
+      (hY2.memLp hc hwn hY2m ((i : ℤ) + 1)) (hadapt i)
+    have h3 := condExp_congr_ae (m := sigmaLT ε ((i : ℤ) + 1)) h1
+    filter_upwards [h3, h2, hae ((i : ℤ) + 1)] with ω e1 e2 e3
+    rw [e1, e2, e3]
+  -- the running average collapses to `σ² ·` the average of the squares
+  have hsum_ae : ∀ n : ℕ,
+      (fun ω => (n : ℝ)⁻¹ * ∑ i ∈ Finset.range n,
+          μ[fun ω' => (ε ((i : ℤ) + 1) ω' * scoreVec U V d ((i : ℤ) + 1) ω') ^ 2
+            | sigmaLT ε ((i : ℤ) + 1)] ω)
+        =ᵐ[μ] fun ω => σ2 * ((n : ℝ)⁻¹ *
+          ∑ i ∈ Finset.range n, scoreVec U V d ((i : ℤ) + 1) ω ^ 2) := by
+    intro n
+    have hall : ∀ᵐ ω ∂μ, ∀ i ∈ (Finset.range n : Finset ℕ),
+        μ[fun ω' => (ε ((i : ℤ) + 1) ω' * scoreVec U V d ((i : ℤ) + 1) ω') ^ 2
+          | sigmaLT ε ((i : ℤ) + 1)] ω = σ2 * scoreVec U V d ((i : ℤ) + 1) ω ^ 2 := by
+      rw [Filter.eventually_all_finset]
+      intro i _
+      exact hcond i
+    filter_upwards [hall] with ω hω
+    rw [Finset.sum_congr rfl fun i hi => hω i hi, ← Finset.mul_sum]
+    ring
+  -- and the two bad events coincide up to a null set
+  have hset : ∀ n : ℕ,
+      μ {ω | δ ≤ |(n : ℝ)⁻¹ * (∑ i ∈ Finset.range n,
+          μ[fun ω' => (ε ((i : ℤ) + 1) ω' * scoreVec U V d ((i : ℤ) + 1) ω') ^ 2
+            | sigmaLT ε ((i : ℤ) + 1)] ω)
+          - σ2 * (σ2 * (d ⬝ᵥ (hannanVarZBack b0 a0 *ᵥ d)))|}
+        = μ {ω | δ / σ2 ≤ |(n : ℝ)⁻¹ *
+            ∑ i ∈ Finset.range n, scoreVec U V d ((i : ℤ) + 1) ω ^ 2
+            - σ2 * ∑' m : ℕ, (∑ s, d s * hannanVecBack b0 a0 s m) ^ 2|} := by
+    intro n
+    refine measure_congr ?_
+    filter_upwards [hsum_ae n] with ω hω
+    have habs : |σ2 * ((n : ℝ)⁻¹ *
+          ∑ i ∈ Finset.range n, scoreVec U V d ((i : ℤ) + 1) ω ^ 2)
+          - σ2 * (σ2 * (d ⬝ᵥ (hannanVarZBack b0 a0 *ᵥ d)))|
+        = σ2 * |(n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, scoreVec U V d ((i : ℤ) + 1) ω ^ 2
+            - σ2 * (d ⬝ᵥ (hannanVarZBack b0 a0 *ᵥ d))| := by
+      rw [← mul_sub, abs_mul, abs_of_pos hσ]
+    have hiff : (δ ≤ |(n : ℝ)⁻¹ * (∑ i ∈ Finset.range n,
+          μ[fun ω' => (ε ((i : ℤ) + 1) ω' * scoreVec U V d ((i : ℤ) + 1) ω') ^ 2
+            | sigmaLT ε ((i : ℤ) + 1)] ω)
+          - σ2 * (σ2 * (d ⬝ᵥ (hannanVarZBack b0 a0 *ᵥ d)))|)
+        ↔ (δ / σ2 ≤ |(n : ℝ)⁻¹ *
+            ∑ i ∈ Finset.range n, scoreVec U V d ((i : ℤ) + 1) ω ^ 2
+            - σ2 * ∑' m : ℕ, (∑ s, d s * hannanVecBack b0 a0 s m) ^ 2|) := by
+      rw [hQ, hω, habs, div_le_iff₀ hσ]
+      constructor
+      · intro h; linarith
+      · intro h; linarith
+    exact propext hiff
+  have hlln := linearProcess_avgSq_tendstoInProb hiid hc hY hYm
+    (show (0 : ℝ) < δ / σ2 by positivity)
+  exact hlln.congr fun n => congrArg ENNReal.toReal (hset n).symm
+
+/-- **Item (1)**: the score is in `L²`, by noise/past independence (Hölder is unavailable
+— only two moments are assumed). -/
+private lemma memLp_noise_mul_of_adapted [IsProbabilityMeasure μ] {ε : ℤ → Ω → ℝ} {σ2 : ℝ}
+    (hiid : IsIIDNoise ε σ2 μ) (t : ℤ) {Y : Ω → ℝ} (hYmem : MemLp Y 2 μ)
+    (hYmeas : Measurable[sigmaLT ε t] Y) :
+    MemLp (fun ω => ε t ω * Y ω) 2 μ := by
+  have hεmem : MemLp (ε t) 2 μ := ((hiid.identDistrib t 0).memLp_iff).2 hiid.memLp
+  have hind : Indep (MeasurableSpace.comap (ε t) inferInstance) (sigmaLT ε t) μ :=
+    indep_noise_sigmaLT hiid.measurable hiid.iIndep t
+  have hIF : IndepFun (fun ω => ε t ω ^ 2) (fun ω => Y ω ^ 2) μ := by
+    have h0 : IndepFun (ε t) Y μ := indep_of_indep_of_le_right hind hYmeas.comap_le
+    exact h0.comp (measurable_id.pow_const 2) (measurable_id.pow_const 2)
+  have hεsq : Integrable (fun ω => ε t ω ^ 2) μ := by
+    simpa [sq] using hεmem.integrable_mul hεmem
+  have hYsq : Integrable (fun ω => Y ω ^ 2) μ := by
+    simpa [sq] using hYmem.integrable_mul hYmem
+  have hprod : Integrable ((fun ω => ε t ω ^ 2) * fun ω => Y ω ^ 2) μ :=
+    hIF.integrable_mul hεsq hYsq
+  refine (memLp_two_iff_integrable_sq
+    (hεmem.aestronglyMeasurable.mul hYmem.aestronglyMeasurable)).2 ?_
+  refine hprod.congr ?_
+  filter_upwards with ω
+  simp [Pi.mul_apply, mul_pow]
+
+/-- **Item (1) for the score sequence**, stated for the given (not necessarily adapted)
+`U`, `V`: the adapted copies carry the independence and `L²` membership transfers along
+the a.e. equality of `L²` limits. -/
+private lemma memLp_scoreSeqS [IsProbabilityMeasure μ] {p q : ℕ}
+    {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {ε U V U' V' : ℤ → Ω → ℝ}
+    (hiid : IsIIDNoise ε σ2 μ) (hB0 : ARMAInvertibleParams b0 a0)
+    (hU : IsLinearProcessOf (armaPsi b0 (Fin.elim0 : Fin 0 → ℝ)) U ε μ)
+    (hV : IsLinearProcessOf (armaPsi (fun j => -a0 j) (Fin.elim0 : Fin 0 → ℝ)) V ε μ)
+    (hUmeas : ∀ t, Measurable (U t)) (hVmeas : ∀ t, Measurable (V t))
+    (hU' : IsLinearProcessOf (armaPsi b0 (Fin.elim0 : Fin 0 → ℝ)) U' ε μ)
+    (hV' : IsLinearProcessOf (armaPsi (fun j => -a0 j) (Fin.elim0 : Fin 0 → ℝ)) V' ε μ)
+    (hU'meas : ∀ t, Measurable (U' t)) (hV'meas : ∀ t, Measurable (V' t))
+    (hU'adapt : ∀ t, Measurable[sigmaLT ε (t + 1)] (U' t))
+    (hV'adapt : ∀ t, Measurable[sigmaLT ε (t + 1)] (V' t))
+    (d : Fin p ⊕ Fin q → ℝ) (i : ℕ) :
+    MemLp (fun ω => ε ((i : ℤ) + 1) ω * scoreVec U V d ((i : ℤ) + 1) ω) 2 μ := by
+  have hwn := hiid.isWhiteNoise
+  have hc : Summable fun n => |∑ s, d s * hannanVecBack b0 a0 s n| :=
+    summable_abs_hannanComboBack hB0 d
+  have hY := isLinearProcessOf_scoreVec hwn hU hV hUmeas hVmeas d
+  have hY2 := isLinearProcessOf_scoreVec hwn hU' hV' hU'meas hV'meas d
+  have hYm := measurable_scoreVec hUmeas hVmeas d
+  have hY2m := measurable_scoreVec hU'meas hV'meas d
+  have hadapt : Measurable[sigmaLT ε ((i : ℤ) + 1)] (scoreVec U' V' d ((i : ℤ) + 1)) := by
+    refine Measurable.add (Finset.measurable_sum _ fun k _ => measurable_const.mul ?_)
+      (Finset.measurable_sum _ fun k _ => measurable_const.mul ?_)
+    · exact (hU'adapt _).mono (sigmaLT_mono' (by push_cast; omega)) le_rfl
+    · exact (hV'adapt _).mono (sigmaLT_mono' (by push_cast; omega)) le_rfl
+  have hmem := memLp_noise_mul_of_adapted hiid ((i : ℤ) + 1)
+    (hY2.memLp hc hwn hY2m ((i : ℤ) + 1)) hadapt
+  refine hmem.ae_eq ?_
+  filter_upwards [isLinearProcessOf_unique hY hY2 hYm hY2m hiid.measurable ((i : ℤ) + 1)]
+    with ω hω
+  rw [hω]
+
+
+/-- **Items (1) and (2) of `hannanScore_brownInputs`, PROVED — with the CORRECTED
+constant.** The `L²` membership of the score and the conditional-variance LLN, over
+i.i.d. noise, with no adaptedness hypothesis on `U`, `V` (the adapted copies are produced
+internally by `exists_adapted_isLinearProcessOf` and are a.e. equal to `U`, `V` by
+`isLinearProcessOf_unique`).
+
+The limit is `σ² · (σ² · dᵀ Σ_back d)` with `Σ_back = hannanVarZBack b₀ a₀` — **not**
+`hannanVarZ b₀ a₀`. See finding 26 at `hannanScore_brownInputs` below. -/
+private theorem hannanScore_brownInputs_back [IsProbabilityMeasure μ] {p q : ℕ}
+    {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {ε U V : ℤ → Ω → ℝ}
+    (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2) (hB0 : ARMAInvertibleParams b0 a0)
+    (hU : IsLinearProcessOf (armaPsi b0 (Fin.elim0 : Fin 0 → ℝ)) U ε μ)
+    (hV : IsLinearProcessOf (armaPsi (fun j => -a0 j) (Fin.elim0 : Fin 0 → ℝ)) V ε μ)
+    (hUmeas : ∀ t, Measurable (U t)) (hVmeas : ∀ t, Measurable (V t))
+    (d : Fin p ⊕ Fin q → ℝ) :
+    (∀ i : ℕ, MemLp (scoreSeq ε U V d ((i : ℤ) + 1)) 2 μ) ∧
+    (∀ δ : ℝ, 0 < δ → Tendsto (fun n : ℕ => (μ {ω | δ ≤ |(n : ℝ)⁻¹ *
+        (∑ i ∈ Finset.range n,
+          μ[fun ω' => scoreSeq ε U V d ((i : ℤ) + 1) ω' ^ 2 | sigmaLT ε ((i : ℤ) + 1)] ω)
+        - σ2 * (σ2 * (d ⬝ᵥ (hannanVarZBack b0 a0 *ᵥ d)))|}).toReal) atTop (𝓝 0)) := by
+  have hψb : Summable fun n => |armaPsi b0 (Fin.elim0 : Fin 0 → ℝ) n| :=
+    summable_abs_armaPsi (Fin.elim0 : Fin 0 → ℝ) hB0.1
+  have hψa : Summable fun n => |armaPsi (fun j => -a0 j) (Fin.elim0 : Fin 0 → ℝ) n| :=
+    summable_abs_armaPsi (Fin.elim0 : Fin 0 → ℝ) (noRootClosedDisc_neg' hB0)
+  obtain ⟨U', hU'meas, hU'adapt, hU'⟩ :=
+    exists_adapted_isLinearProcessOf hψb hiid.isWhiteNoise hUmeas hU
+  obtain ⟨V', hV'meas, hV'adapt, hV'⟩ :=
+    exists_adapted_isLinearProcessOf hψa hiid.isWhiteNoise hVmeas hV
+  refine ⟨fun i => ?_, fun δ hδ => ?_⟩
+  · exact memLp_scoreSeqS hiid hB0 hU hV hUmeas hVmeas hU' hV' hU'meas hV'meas
+      hU'adapt hV'adapt d i
+  · exact hannanScore_condVar_lln hiid hσ hB0 hU hV hUmeas hVmeas hU' hV' hU'meas hV'meas
+      hU'adapt hV'adapt d hδ
+
 /-- **DEBT — the three analytic inputs Brown's CLT needs for the ARMA score.**
 
 Given the martingale-difference property (which is PROVED upstream:
@@ -435,7 +905,78 @@ closure: `Stationarity/ARMAExistence.lean`'s new (private) `integral_lin_mul_noi
 its coefficient sequence, with no past-measurability input. It does **not** dissolve item 1:
 the obstacle there is the *conditional* identity `E[ξ_i²|𝓕_i] = σ²⟨d, Z_i⟩²`, which needs an
 a.e.-equal `σ(ε_s : s < i)`-measurable representative of `Z_i`, not a moment identity. It is
-`private`, so a relocation would be needed to cite it. -/
+`private`, so a relocation would be needed to cite it.
+
+**STATUS after wave `ts/f1b-arma-deep` (2026-08-09): items (1) and (2) are PROVED — but
+this statement is FALSE as frozen, because its item (2) carries the wrong matrix. That is
+FINDING 26 of the campaign.**
+
+*What was built.* `hannanScore_brownInputs_back` above proves items (1) and (2) verbatim
+except for the matrix, over the machinery inserted after `scoreSeq`. Two of the three
+residual sub-items recorded above are **overturned**:
+
+1. Residual item 1 (the `L²`-limit past-measurability) is **not** an obstacle and needs no
+   subsequence extraction. `exists_adapted_isLinearProcessOf` — already in this file —
+   produces an *adapted* linear process `U'` of the same coefficient sequence, and
+   `isLinearProcessOf_unique` (new; the `L²` limit of a fixed sequence of partial sums is
+   unique) gives `U t =ᵐ U' t`. So `Z_i` **does** have an a.e.-equal past-measurable
+   representative, for free, and the frozen statement needs no `hUadapt`/`hVadapt`.
+2. Residual item 2's scope blocker is gone (`ScoreAnalysis`'s Gram chain is now public),
+   and its "mechanical" half is `isLinearProcessOf_comb` (new): a finite linear
+   combination of shifted linear processes is a linear process, because the `N`-term
+   partial sum of the combined filter is exactly the combination of the `(N − m_s)`-term
+   partial sums of the pieces. With it, item (2) is a direct instance of
+   `Consistency.linearProcess_avgSq_tendstoInProb`, as the note predicted.
+3. Residual item 3 (the Lindeberg input) is **not** attempted. Its recorded blocker — an
+   identical-distribution transfer through the `L²` limit — is now much cheaper than the
+   note suggests, because `Process/LinearProcess.lean`'s
+   `IsLinearProcessOf.isStrictlyStationary` gives strict stationarity of the *combined*
+   process `⟨d, Z_t⟩` directly from `isLinearProcessOf_comb`. The remaining step is the
+   split `{|ε_t Y_t| ≥ λ} ⊆ {|ε_t| ≥ √λ} ∪ {|Y_t| ≥ √λ}` followed by the same
+   independence factorisation used in (1)–(2): the two resulting terms are
+   `E[ε² 1_{|ε|≥√λ}]·E[Y²]` and `σ²·E[Y² 1_{|Y|≥√λ}]`, both independent of `i` and both
+   `→ 0` by dominated convergence. That is a bounded amount of work, not a gap.
+
+*FINDING 26 — the frozen constant is wrong.* Item (2)'s limit is
+`σ² · (σ² · dᵀ Σ_back d)` with `Σ_back = hannanVarZBack b₀ a₀`, and **not** with
+`hannanVarZ b₀ a₀`. The reason is a shift-alignment error in `hannanVarZ`, not an
+arithmetic slip:
+
+* `ScoreAnalysis.hannanVarZ` is proved (`hannanVarZ_gram`) to be the Gram matrix of the
+  filter family with shifts `p + q − i`, which **decrease** in `i`: it is the covariance
+  matrix of the *forward* vector `(U_{t−(p+q)+i}, V_{t−(p+q)+j})`, whose two blocks are
+  right-aligned;
+* the vector `scoreSeq` actually contracts is `Z_t = (U_{t−1−i})_{i<p} ⌢ (V_{t−1−j})_{j<q}`,
+  with shifts `1 + i`, which **increase** in `i`: left-aligned blocks. Its Gram matrix is
+  `hannanVarZBack`.
+* Both Grams have the same diagonal blocks (an autocovariance is even) but read the AR–MA
+  cross-block at **opposite** lags, `i − j` versus `j − i`, and a cross-covariance is not
+  even. They coincide when `p = 0`, when `q = 0`, and (up to the block-wise reversal
+  permutation, which the frozen statement's free vector `c` does not apply) when `p = q`.
+  They differ for `p, q ≥ 1` with `max (p, q) ≥ 2`.
+* `ScoreAnalysis.hannanVarZ_quadForm_ne_back` is a formalized ARMA(2,1) witness:
+  `b(z) = 1 − z/2`, `a(z) = 1`, `x = (0, 1) ⌢ (1)`, where the two quadratic forms differ by
+  exactly `1`. The parameter point satisfies `ARMAInvertibleParams`.
+
+*Scope of the finding.* The wrong matrix propagates: `hannanScore_clt` (proved *from* this
+debt), `armaMLE_linearization`, and the frozen headline `hannan_mle_clt` — whose asymptotic
+variance is `cᵀ (hannanVarZ b₀ a₀)⁻¹ c` — all carry it. The correct variance is
+`cᵀ (hannanVarZBack b₀ a₀)⁻¹ c`. `hannan_mle_clt` is therefore expected to be FALSE as
+stated for `p, q ≥ 1` with `max (p, q) ≥ 2`; ARMA(1,1), pure AR and pure MA are unaffected,
+which is presumably how the error survived, ARMA(1,1) being the case textbooks print. A
+*complete* refutation of the headline would additionally need a formalized instance
+carrying the MLE asymptotics themselves, which is out of reach here; what is formalized is
+the matrix identity together with the corrected item (2), which pin the error to
+`hannanVarZ`'s shift convention and nothing else.
+
+*What was deliberately NOT done.* `hannanVarZ` is consumed by `hannanVarZ_posDef` and by
+the frozen statements; changing it, or restating `hannanScore_brownInputs` with `Σ_back`,
+would silently repair a frozen theorem and break the `hannan_mle_clt` assembly. The debt is
+therefore left at this `sorry`, which is now the *only* place the error is located, with
+the corrected version proved beside it as `hannanScore_brownInputs_back`. Repairing
+`hannanVarZ` — either by changing `hannanShift p q` to `fun s => 1 + s`, which makes
+`hannanVarZ = hannanVarZBack` definitionally, or by transposing the cross-blocks — is a
+one-line change to `ScoreAnalysis` that needs the lane owner's call. -/
 private theorem hannanScore_brownInputs [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -533,7 +1074,24 @@ Not attempted in this wave: the first-order condition from `hδTfast` (the
 `o(1/T)`-approximate minimality) and the mean-value expansion, which are the substance.
 
 **STATUS after wave `ts/f1-arma-finale` (2026-08-09): NOT attempted; the two-input residue
-above is unchanged.** -/
+above is unchanged.**
+
+**STATUS after wave `ts/f1b-arma-deep` (2026-08-09): NOT attempted, and this statement
+carries FINDING 26** — its `(hannanVarZ b0 a0)⁻¹ *ᵥ c` is the *forward* Gram, whereas the
+score direction the sandwich produces is `(hannanVarZBack b0 a0)⁻¹ *ᵥ c`; see the finding
+paragraph at `hannanScore_brownInputs`. For `p, q ≥ 1` with `max (p, q) ≥ 2` the two differ,
+so the statement is expected to be FALSE as frozen; for `q = 0` (the instantiation used by
+`ls_yw_mle_equivalent_debt`) it is unaffected, by
+`ScoreAnalysis.hannanVarZ_eq_back_of_pure_ar`.
+
+Of the two recorded inputs, the first is now discharged in its corrected form
+(`hannanScore_brownInputs_back`: items (1) and (2)), so the honest residue here is
+(a) the Hessian ULLN, (b) the first-order condition from `hδTfast` and the mean-value
+expansion, and (c) the matrix repair. Note that (a)'s pointwise half now has a second
+route besides the one recorded above: the derivative filters are finite combinations of
+shifted linear processes, so `isLinearProcessOf_comb` puts them in the exact shape
+`Consistency.linearProcess_avgSq_tendstoInProb` consumes, with no ad-hoc coefficient
+bookkeeping. -/
 private theorem armaMLE_linearization [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -1039,7 +1597,23 @@ the propagation through the exact AR(k) recursion, and the reciprocal-variance i
 `(Γ_k⁻¹)_{kk} = σ⁻²` for `k > p`. Not attempted in this wave.
 
 **STATUS after wave `ts/f1-arma-finale` (2026-08-09): NOT attempted; the residue above is
-unchanged.** -/
+unchanged.**
+
+**STATUS after wave `ts/f1b-arma-deep` (2026-08-09): NOT attempted, but this statement is
+IMMUNE to finding 26** — it instantiates the MA order at `0`, and
+`ScoreAnalysis.hannanVarZ_eq_back_of_pure_ar` proves `hannanVarZ b elim0 = hannanVarZBack b
+elim0` (only the AR–AR block survives, and an autocovariance is even). So its
+`d ⬝ᵥ (hannanVarZ … *ᵥ d) = 1` normalization is the right one and the residue is exactly
+the three delta-method items listed above, with none of the matrix repair
+`armaMLE_linearization` needs.
+
+One brick the residue list does not name is now available and is the right entry point for
+the `√T` half: `hannanScore_brownInputs_back` supplies items (1) and (2) of the Brown
+inputs (in the pure-AR case with the correct matrix, by the immunity just quoted), so what
+is left really is only the delta-method bookkeeping — the Jacobian of
+`γ̂ ↦ (Γ̂_k⁻¹ γ̂_k)_k`, the AR(k) recursion, and `(Γ_k⁻¹)_{kk} = σ⁻²`. The brief's suggestion
+to cite `sampleACF_bartlett_clt_debt` remains available but is not needed for the *matrix*
+side of the statement; it is needed only to feed the joint CLT of `γ̂`. -/
 private theorem samplePACF_linearization [IsProbabilityMeasure μ] {p k : ℕ}
     {b0 : Fin p → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
     (h : IsAR b0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -1339,7 +1913,16 @@ nonsingularity of `A` for large `T` makes the selection a.s. unique. The two rem
 mathematical items are unchanged: the MLE leg (via `armaMLE_linearization`) and the YW-vs-LS
 edge-effect bookkeeping, where note the two windows genuinely differ — `hLS` reaches back to
 `X_0`, one step outside the `X_1, …, X_T` window that `sampleACVF` sees, an `O_p(1)`
-boundary term that dies after `√T`-scaling but must be discarded explicitly. -/
+boundary term that dies after `√T`-scaling but must be discarded explicitly.
+
+**STATUS after wave `ts/f1b-arma-deep` (2026-08-09): NOT attempted; IMMUNE to finding 26.**
+The MLE leg goes through `armaMLE_linearization`, which finding 26 shows carries the wrong
+information matrix in general — but only for genuinely mixed models. Here the MA order is
+`0`, and `ScoreAnalysis.hannanVarZ_eq_back_of_pure_ar` gives
+`hannanVarZ b₀ elim0 = hannanVarZBack b₀ elim0`, so the instantiation this debt needs is
+unaffected and the two mathematical items recorded above stand verbatim. In particular this
+debt does **not** have to wait on the `hannanVarZ` repair; it waits only on the
+Taylor/sandwich analysis and on the `X_0` boundary discard. -/
 theorem ls_yw_mle_equivalent_debt [IsProbabilityMeasure μ] {p : ℕ}
     {b0 : Fin p → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsAR b0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)

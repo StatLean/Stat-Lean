@@ -154,13 +154,13 @@ private lemma hannanMaPolyElim0 : maPoly (Fin.elim0 : Fin 0 → ℝ) = 1 := by s
 /-! ## Step 1: shifted sequences and the cross-ACVF -/
 
 /-- Right shift of a coefficient sequence by `d` (zero on the first `d` slots). -/
-private def hannanShiftSeq (ψ : ℕ → ℝ) (d n : ℕ) : ℝ := if d ≤ n then ψ (n - d) else 0
+def hannanShiftSeq (ψ : ℕ → ℝ) (d n : ℕ) : ℝ := if d ≤ n then ψ (n - d) else 0
 
-private lemma hannanShiftSeq_of_lt {ψ : ℕ → ℝ} {d n : ℕ} (h : n < d) :
+lemma hannanShiftSeq_of_lt {ψ : ℕ → ℝ} {d n : ℕ} (h : n < d) :
     hannanShiftSeq ψ d n = 0 := by
   simp [hannanShiftSeq, Nat.not_le.2 h]
 
-private lemma hannanShiftSeq_add (ψ : ℕ → ℝ) (d j : ℕ) : hannanShiftSeq ψ d (j + d) = ψ j := by
+lemma hannanShiftSeq_add (ψ : ℕ → ℝ) (d j : ℕ) : hannanShiftSeq ψ d (j + d) = ψ j := by
   simp [hannanShiftSeq]
 
 private lemma coeff_X_pow_mul_eq_hannanShiftSeq (Φ : PowerSeries ℝ) (d n : ℕ) :
@@ -170,7 +170,7 @@ private lemma coeff_X_pow_mul_eq_hannanShiftSeq (Φ : PowerSeries ℝ) (d n : �
 
 /-- The `ℓ²` inner product of two shifted sequences is the cross-ACVF at the lag
 given by the difference of the shifts. -/
-private lemma tsum_hannanShiftSeq_mul (ψ φ : ℕ → ℝ) (d e : ℕ) :
+lemma tsum_hannanShiftSeq_mul (ψ φ : ℕ → ℝ) (d e : ℕ) :
     ∑' n : ℕ, hannanShiftSeq ψ d n * hannanShiftSeq φ e n
       = maCrossACVF ψ φ ((d : ℤ) - (e : ℤ)) := by
   have hinj : Function.Injective (fun j : ℕ => j + d) := fun u v h => by
@@ -195,7 +195,7 @@ private lemma tsum_hannanShiftSeq_mul (ψ φ : ℕ → ℝ) (d e : ℕ) :
   · rw [if_neg h, dif_neg (by omega)]
 
 /-- Absolute summability is preserved by shifting. -/
-private lemma summable_abs_hannanShiftSeq {ψ : ℕ → ℝ} (hψ : Summable fun n => |ψ n|) (d : ℕ) :
+lemma summable_abs_hannanShiftSeq {ψ : ℕ → ℝ} (hψ : Summable fun n => |ψ n|) (d : ℕ) :
     Summable fun n => |hannanShiftSeq ψ d n| := by
   have hinj : Function.Injective (fun j : ℕ => j + d) := fun u v h => by
     dsimp only at h; omega
@@ -210,12 +210,12 @@ private lemma summable_abs_hannanShiftSeq {ψ : ℕ → ℝ} (hψ : Summable fun
     rw [hcomp]
     exact hψ
 
-private lemma hannanAbsLeTsumAbs {u : ℕ → ℝ} (hu : Summable fun n => |u n|) (n : ℕ) :
+lemma hannanAbsLeTsumAbs {u : ℕ → ℝ} (hu : Summable fun n => |u n|) (n : ℕ) :
     |u n| ≤ ∑' m, |u m| :=
   hu.le_tsum n fun _ _ => abs_nonneg _
 
 /-- A product of two absolutely summable sequences is summable. -/
-private lemma hannanSummableMul {u v : ℕ → ℝ} (hu : Summable fun n => |u n|)
+lemma hannanSummableMul {u v : ℕ → ℝ} (hu : Summable fun n => |u n|)
     (hv : Summable fun n => |v n|) : Summable fun n => u n * v n := by
   refine Summable.of_norm_bounded (g := fun n => (∑' m, |v m|) * |u n|)
     (hu.mul_left _) fun n => ?_
@@ -228,26 +228,26 @@ private lemma hannanSummableMul {u v : ℕ → ℝ} (hu : Summable fun n => |u n
 
 /-- The common shift base: any `K` with `K ≥ p − 1` and `K ≥ q − 1` works; `p + q` is
 the convenient uniform choice. -/
-private def hannanShift (p q : ℕ) : Fin p ⊕ Fin q → ℕ
+def hannanShift (p q : ℕ) : Fin p ⊕ Fin q → ℕ
   | .inl i => p + q - (i : ℕ)
   | .inr j => p + q - (j : ℕ)
 
 /-- The `ℓ²` vector attached to a coordinate: the `1/b`-filter for an AR slot, the
 `1/a`-filter for an MA slot. -/
-private noncomputable def hannanSeq {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) :
+noncomputable def hannanSeq {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) :
     Fin p ⊕ Fin q → ℕ → ℝ
   | .inl _ => armaPsi b (Fin.elim0 : Fin 0 → ℝ)
   | .inr _ => armaPsi (fun j => -a j) (Fin.elim0 : Fin 0 → ℝ)
 
-private noncomputable def hannanVec {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ)
+noncomputable def hannanVec {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ)
     (s : Fin p ⊕ Fin q) (n : ℕ) : ℝ :=
   hannanShiftSeq (hannanSeq b a s) (hannanShift p q s) n
 
-private lemma hannanVec_apply {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ)
+lemma hannanVec_apply {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ)
     (s : Fin p ⊕ Fin q) (n : ℕ) :
     hannanVec b a s n = hannanShiftSeq (hannanSeq b a s) (hannanShift p q s) n := rfl
 
-private lemma hannanVarZ_gram {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (s t : Fin p ⊕ Fin q) :
+lemma hannanVarZ_gram {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (s t : Fin p ⊕ Fin q) :
     hannanVarZ b a s t = ∑' n : ℕ, hannanVec b a s n * hannanVec b a t n := by
   cases s with
   | inl i =>
@@ -287,14 +287,14 @@ private lemma hannanVarZ_gram {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ
       rw [tsum_hannanShiftSeq_mul, hlag]
       rfl
 
-private lemma summable_abs_hannanVec {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
+lemma summable_abs_hannanVec {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
     (hB : ARMAInvertibleParams b a) (s : Fin p ⊕ Fin q) :
     Summable fun n => |hannanVec b a s n| := by
   cases s with
   | inl i => exact summable_abs_hannanShiftSeq (summable_abs_armaPsi _ hB.1) _
   | inr j => exact summable_abs_hannanShiftSeq (summable_abs_armaPsi _ (noRootClosedDisc_neg hB)) _
 
-private lemma summable_abs_hannanCombo {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
+lemma summable_abs_hannanCombo {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
     (hB : ARMAInvertibleParams b a) (x : Fin p ⊕ Fin q → ℝ) :
     Summable fun n => |∑ s, x s * hannanVec b a s n| := by
   refine Summable.of_norm_bounded
@@ -306,7 +306,7 @@ private lemma summable_abs_hannanCombo {p q : ℕ} {b : Fin p → ℝ} {a : Fin 
 
 /-! ## Step 3: the quadratic form is a sum of squares -/
 
-private lemma hannanVarZ_quadForm {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
+lemma hannanVarZ_quadForm {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
     (hB : ARMAInvertibleParams b a) (x : Fin p ⊕ Fin q → ℝ) :
     ∑ s, x s * ∑ t, hannanVarZ b a s t * x t
       = ∑' n : ℕ, (∑ s, x s * hannanVec b a s n) ^ 2 := by
@@ -329,6 +329,275 @@ private lemma hannanVarZ_quadForm {p q : ℕ} {b : Fin p → ℝ} {a : Fin q →
     rw [← tsum_mul_left]
     exact tsum_congr fun n => by ring
   rw [hfac, hannanVarZ_gram]
+  ring
+
+/-! ### The **backward** Gram — the covariance of the score vector (finding 26)
+
+`hannanVarZ` is the Gram matrix of the family with shifts `p + q − i` (`hannanShift`),
+which decrease in `i`: it is the covariance matrix of the **forward** auxiliary vector
+`(U_{t−(p+q)+i})_{i<p} ⌢ (V_{t−(p+q)+j})_{j<q}`, i.e. of a vector whose two blocks are
+*right*-aligned at the common time `t − (p+q)`.
+
+The vector the ARMA score actually contracts against is the **backward** one,
+`Z_t = (U_{t−1−i})_{i<p} ⌢ (V_{t−1−j})_{j<q}` (`MLEAsymptotics.scoreSeq`): its shifts
+`1 + i` *increase* in `i`, so its two blocks are *left*-aligned at the common time
+`t − 1`. Both matrices are Gram matrices of the same two filter families, so their
+diagonal blocks agree (an autocovariance is even), but the AR–MA cross-blocks are read at
+the **opposite lag**, and a cross-covariance is not even. They therefore differ whenever
+`p, q ≥ 1` and `max (p, q) ≥ 2` — the smallest case is ARMA(2,1), and
+`hannanVarZ_quadForm_ne_back` below is a two-line witness there.
+
+For `p = q` the two are conjugate by the block-wise reversal permutation, and for
+`q = 0` or `p = 0` they are equal; ARMA(1,1) — the case every textbook prints — is the
+largest case in which nothing goes wrong, which is presumably why the discrepancy
+survived. -/
+
+/-- The **backward** shift base `1 + i`: the shifts of the score vector `Z_t`. -/
+def hannanShiftBack (p q : ℕ) : Fin p ⊕ Fin q → ℕ
+  | .inl i => 1 + (i : ℕ)
+  | .inr j => 1 + (j : ℕ)
+
+/-- The `ℓ²` vector attached to a coordinate of the **score** vector `Z_t`. -/
+noncomputable def hannanVecBack {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ)
+    (s : Fin p ⊕ Fin q) (n : ℕ) : ℝ :=
+  hannanShiftSeq (hannanSeq b a s) (hannanShiftBack p q s) n
+
+/-- **The covariance matrix of the ARMA score vector** `Z_t = (U_{t−1−i}, V_{t−1−j})`,
+i.e. the true Hannan information matrix. Compare `hannanVarZ`, which is the same Gram
+with the *forward* shifts; see the section docstring and finding 26. -/
+noncomputable def hannanVarZBack {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) :
+    Matrix (Fin p ⊕ Fin q) (Fin p ⊕ Fin q) ℝ :=
+  Matrix.of fun s t => maCrossACVF (hannanSeq b a s) (hannanSeq b a t)
+    ((hannanShiftBack p q s : ℤ) - (hannanShiftBack p q t : ℤ))
+
+lemma hannanVarZBack_gram {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ)
+    (s t : Fin p ⊕ Fin q) :
+    hannanVarZBack b a s t = ∑' n : ℕ, hannanVecBack b a s n * hannanVecBack b a t n := by
+  simp only [hannanVecBack]
+  rw [tsum_hannanShiftSeq_mul]
+  rfl
+
+lemma summable_abs_hannanVecBack {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
+    (hB : ARMAInvertibleParams b a) (s : Fin p ⊕ Fin q) :
+    Summable fun n => |hannanVecBack b a s n| := by
+  cases s with
+  | inl i => exact summable_abs_hannanShiftSeq (summable_abs_armaPsi _ hB.1) _
+  | inr j => exact summable_abs_hannanShiftSeq (summable_abs_armaPsi _ (noRootClosedDisc_neg hB)) _
+
+lemma summable_abs_hannanComboBack {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
+    (hB : ARMAInvertibleParams b a) (x : Fin p ⊕ Fin q → ℝ) :
+    Summable fun n => |∑ s, x s * hannanVecBack b a s n| := by
+  refine Summable.of_norm_bounded
+    (g := fun n => ∑ s, |x s| * |hannanVecBack b a s n|) ?_ fun n => ?_
+  · exact summable_sum fun s _ => ((summable_abs_hannanVecBack hB s).mul_left _)
+  · rw [Real.norm_eq_abs, abs_abs]
+    refine (Finset.abs_sum_le_sum_abs _ _).trans_eq ?_
+    exact Finset.sum_congr rfl fun s _ => abs_mul _ _
+
+/-- The backward quadratic form is the `ℓ²` norm of the combined filter — the same
+computation as `hannanVarZ_quadForm`, with the score's shifts. -/
+lemma hannanVarZBack_quadForm {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
+    (hB : ARMAInvertibleParams b a) (x : Fin p ⊕ Fin q → ℝ) :
+    ∑ s, x s * ∑ t, hannanVarZBack b a s t * x t
+      = ∑' n : ℕ, (∑ s, x s * hannanVecBack b a s n) ^ 2 := by
+  have hsum : ∀ s t : Fin p ⊕ Fin q,
+      Summable fun n => (x s * hannanVecBack b a s n) * (x t * hannanVecBack b a t n) := by
+    intro s t
+    have h0 := hannanSummableMul
+      (summable_abs_hannanVecBack hB s) (summable_abs_hannanVecBack hB t)
+    exact (h0.mul_left (x s * x t)).congr fun n => by ring
+  have hstep : ∀ n : ℕ, (∑ s, x s * hannanVecBack b a s n) ^ 2
+      = ∑ s, ∑ t, (x s * hannanVecBack b a s n) * (x t * hannanVecBack b a t n) := by
+    intro n; rw [sq, Finset.sum_mul_sum]
+  rw [tsum_congr hstep,
+    Summable.tsum_finsetSum (fun s _ => summable_sum fun t _ => hsum s t)]
+  refine Finset.sum_congr rfl fun s _ => ?_
+  rw [Summable.tsum_finsetSum (fun t _ => hsum s t), Finset.mul_sum]
+  refine Finset.sum_congr rfl fun t _ => ?_
+  have hfac : (∑' n : ℕ, (x s * hannanVecBack b a s n) * (x t * hannanVecBack b a t n))
+      = (x s * x t) * ∑' n : ℕ, hannanVecBack b a s n * hannanVecBack b a t n := by
+    rw [← tsum_mul_left]
+    exact tsum_congr fun n => by ring
+  rw [hfac, hannanVarZBack_gram]
+  ring
+
+/-- The cross-ACVF is symmetric under swapping the filters and negating the lag. -/
+lemma maCrossACVF_symm (ψ φ : ℕ → ℝ) (k : ℤ) :
+    maCrossACVF ψ φ k = maCrossACVF φ ψ (-k) := by
+  have key : ∀ (u v : ℕ → ℝ) (m : ℕ), maCrossACVF u v (m : ℤ) = maCrossACVF v u (-(m : ℤ)) := by
+    intro u v m
+    have h1 := tsum_hannanShiftSeq_mul u v m 0
+    have h2 := tsum_hannanShiftSeq_mul v u 0 m
+    have h3 : (∑' n : ℕ, hannanShiftSeq u m n * hannanShiftSeq v 0 n)
+        = ∑' n : ℕ, hannanShiftSeq v 0 n * hannanShiftSeq u m n :=
+      tsum_congr fun n => mul_comm _ _
+    rw [h1, h2] at h3
+    simpa using h3
+  rcases le_or_gt 0 k with hk | hk
+  · lift k to ℕ using hk with m
+    exact key ψ φ m
+  · obtain ⟨m, hm⟩ : ∃ m : ℕ, k = -(m : ℤ) := ⟨(-k).toNat, by omega⟩
+    subst hm
+    rw [neg_neg]
+    exact (key φ ψ m).symm
+
+/-- An autocovariance is even. -/
+lemma maCrossACVF_self_neg (ψ : ℕ → ℝ) (k : ℤ) :
+    maCrossACVF ψ ψ k = maCrossACVF ψ ψ (-k) := maCrossACVF_symm ψ ψ k
+
+/-- **The damage of finding 26 is confined to genuinely mixed models.** With no MA part
+(`q = 0`) the forward and backward Grams coincide: only the AR–AR block survives, and an
+autocovariance is even. Hence `samplePACF_linearization` and `ls_yw_mle_equivalent_debt`,
+both of which instantiate `q = 0`, are unaffected by finding 26. -/
+theorem hannanVarZ_eq_back_of_pure_ar {p : ℕ} (b : Fin p → ℝ) :
+    hannanVarZ b (Fin.elim0 : Fin 0 → ℝ) = hannanVarZBack b (Fin.elim0 : Fin 0 → ℝ) := by
+  ext s t
+  match s, t with
+  | .inl i, .inl i' =>
+    simp only [hannanVarZ, hannanVarZBack, hannanSeq, hannanShiftBack, Matrix.of_apply]
+    rw [maCrossACVF_self_neg (armaPsi b (Fin.elim0 : Fin 0 → ℝ)) ((i' : ℤ) - (i : ℤ))]
+    congr 1
+    push_cast
+    ring
+  | .inl i, .inr j => exact absurd j.isLt (by omega)
+  | .inr j, _ => exact absurd j.isLt (by omega)
+
+/-- The mirror statement with no AR part (`p = 0`). -/
+theorem hannanVarZ_eq_back_of_pure_ma {q : ℕ} (a : Fin q → ℝ) :
+    hannanVarZ (Fin.elim0 : Fin 0 → ℝ) a = hannanVarZBack (Fin.elim0 : Fin 0 → ℝ) a := by
+  ext s t
+  match s, t with
+  | .inr j, .inr j' =>
+    simp only [hannanVarZ, hannanVarZBack, hannanSeq, hannanShiftBack, Matrix.of_apply]
+    rw [maCrossACVF_self_neg (armaPsi (fun j'' => -a j'') (Fin.elim0 : Fin 0 → ℝ))
+      ((j' : ℤ) - (j : ℤ))]
+    congr 1
+    push_cast
+    ring
+  | .inr j, .inl i => exact absurd i.isLt (by omega)
+  | .inl i, _ => exact absurd i.isLt (by omega)
+
+/-! #### FINDING 26 — the forward and backward Grams genuinely differ (ARMA(2,1))
+
+The witness is the smallest possible: `p = 2`, `q = 1`, `b(z) = 1 − z/2` (padded with a
+zero second coefficient, so the *order* is 2), `a(z) = 1` (padded likewise). Then
+`ψᵇ_n = 2^{−n}` and `ψᵃ = δ₀`, so the AR–MA cross-correlation is one-sided:
+`C(k) = Σ_m ψᵇ_m ψᵃ_{m+k}` is `ψᵇ_{−k}` for `k ≤ 0` and `0` for `k > 0` — as asymmetric
+as a cross-correlation can be.
+
+Contracting against `x = (0, 1) ⌢ (1)` picks out exactly the `(inl 1, inr 0)` cross-entry,
+at lag `j − i = −1` in `hannanVarZ` (value `ψᵇ_1 = 1/2`) and at lag
+`(1+i) − (1+j) = +1` in `hannanVarZBack` (value `0`). Both quadratic forms contain the
+same — and, for this statement, uncomputed — diagonal contributions
+`maCrossACVF ψᵇ ψᵇ 0` and `maCrossACVF ψᵃ ψᵃ 0`, so the difference of the two forms is
+exactly `2 · 1/2 = 1`. -/
+
+/-- Witness AR side: `b(z) = 1 − z/2`, order `2`. -/
+private noncomputable def findB : Fin 2 → ℝ := ![1/2, 0]
+
+/-- Witness MA side: `a(z) = 1`, order `1`. -/
+private def findA : Fin 1 → ℝ := ![0]
+
+private lemma findB_arPoly :
+    arPoly findB = 1 - Polynomial.C (1/2 : ℝ) * Polynomial.X := by
+  simp [arPoly, findB, Fin.sum_univ_two]
+
+private lemma findA_maPoly : maPoly findA = 1 := by
+  simp [maPoly, findA]
+
+private lemma findA_neg_arPoly : arPoly (fun j => -findA j) = 1 := by
+  simp [arPoly, findA]
+
+/-- `ψᵃ = δ₀`: the MA side of the witness inverts the constant polynomial. -/
+private lemma findA_psi (n : ℕ) :
+    armaPsi (fun j => -findA j) (Fin.elim0 : Fin 0 → ℝ) n = if n = 0 then 1 else 0 := by
+  unfold armaPsi
+  rw [hannanMaPolyElim0, findA_neg_arPoly]
+  simp [PowerSeries.coeff_one]
+
+private lemma findB_psi_zero : armaPsi findB (Fin.elim0 : Fin 0 → ℝ) 0 = 1 :=
+  armaPsi_zero _ _
+
+/-- `ψᵇ_1 = 1/2`, read off the convolution identity `b ∗ ψ = a` at `n = 1`. -/
+private lemma findB_psi_one : armaPsi findB (Fin.elim0 : Fin 0 → ℝ) 1 = 1 / 2 := by
+  have hconv := arPoly_conv_armaPsi findB (Fin.elim0 : Fin 0 → ℝ) 1
+  rw [Finset.sum_range_succ, Finset.sum_range_one, hannanMaPolyElim0] at hconv
+  rw [findB_arPoly] at hconv
+  simp only [Polynomial.coeff_sub, Polynomial.coeff_one, Polynomial.coeff_C_mul,
+    Polynomial.coeff_X] at hconv
+  norm_num [findB_psi_zero] at hconv
+  linarith [hconv]
+
+/-- Pairing a filter with `δ₀` on the right: only the lag `≤ 0` side survives. -/
+private lemma maCrossACVF_delta_right (ψ : ℕ → ℝ) (φ : ℕ → ℝ)
+    (hφ : ∀ n, φ n = if n = 0 then 1 else 0) (m : ℕ) :
+    maCrossACVF ψ φ (-(m : ℤ)) = ψ m ∧ maCrossACVF ψ φ ((m : ℤ) + 1) = 0 := by
+  constructor
+  · rw [maCrossACVF]
+    refine tsum_eq_single m ?_ |>.trans ?_
+    · intro j hj
+      by_cases h : 0 ≤ (j : ℤ) + -(m : ℤ)
+      · rw [dif_pos h, hφ]
+        rw [if_neg (by omega), mul_zero]
+      · rw [dif_neg h, mul_zero]
+    · rw [dif_pos (by omega), hφ]
+      simp
+  · rw [maCrossACVF]
+    refine (tsum_congr fun j => ?_).trans tsum_zero
+    rw [dif_pos (by omega), hφ, if_neg (by omega), mul_zero]
+
+/-- Pairing `δ₀` with a filter on the left: the mirror statement. -/
+private lemma maCrossACVF_delta_left (ψ : ℕ → ℝ) (φ : ℕ → ℝ)
+    (hφ : ∀ n, φ n = if n = 0 then 1 else 0) (m : ℕ) :
+    maCrossACVF φ ψ ((m : ℤ)) = ψ m ∧ maCrossACVF φ ψ (-((m : ℤ) + 1)) = 0 := by
+  constructor
+  · rw [maCrossACVF]
+    refine tsum_eq_single 0 ?_ |>.trans ?_
+    · intro j hj
+      rw [hφ, if_neg hj, zero_mul]
+    · rw [dif_pos (by omega), hφ]
+      simp
+  · rw [maCrossACVF]
+    refine (tsum_congr fun j => ?_).trans tsum_zero
+    by_cases h : 0 ≤ (j : ℤ) + -((m : ℤ) + 1)
+    · rw [hφ, if_neg (by omega), zero_mul]
+    · rw [dif_neg h, mul_zero]
+
+/-- **FINDING 26.** The forward Gram `hannanVarZ` — the matrix the frozen Hannan
+statements use — and the backward Gram `hannanVarZBack` — the covariance of the score
+vector `Z_t` that `MLEAsymptotics.scoreSeq` actually contracts — have **different**
+quadratic forms already at ARMA(2,1), the smallest order at which the AR–MA cross-block
+can be read at two different lags. The gap here is exactly `1`. -/
+theorem hannanVarZ_quadForm_ne_back :
+    ∃ (x : Fin 2 ⊕ Fin 1 → ℝ),
+      (∑ s, x s * ∑ t, hannanVarZ findB findA s t * x t)
+        = (∑ s, x s * ∑ t, hannanVarZBack findB findA s t * x t) + 1 := by
+  classical
+  refine ⟨Sum.elim ![0, 1] ![1], ?_⟩
+  have hd := findA_psi
+  -- the four cross-entries, at the two opposite lags
+  have h1 : maCrossACVF (armaPsi findB (Fin.elim0 : Fin 0 → ℝ))
+      (armaPsi (fun j => -findA j) (Fin.elim0 : Fin 0 → ℝ)) (-(1 : ℤ)) = 1 / 2 := by
+    have := (maCrossACVF_delta_right (armaPsi findB (Fin.elim0 : Fin 0 → ℝ)) _ hd 1).1
+    rw [show ((1 : ℕ) : ℤ) = (1 : ℤ) from rfl] at this
+    rw [this, findB_psi_one]
+  have h2 : maCrossACVF (armaPsi findB (Fin.elim0 : Fin 0 → ℝ))
+      (armaPsi (fun j => -findA j) (Fin.elim0 : Fin 0 → ℝ)) (1 : ℤ) = 0 := by
+    have := (maCrossACVF_delta_right (armaPsi findB (Fin.elim0 : Fin 0 → ℝ)) _ hd 0).2
+    simpa using this
+  have h3 : maCrossACVF (armaPsi (fun j => -findA j) (Fin.elim0 : Fin 0 → ℝ))
+      (armaPsi findB (Fin.elim0 : Fin 0 → ℝ)) (1 : ℤ) = 1 / 2 := by
+    have := (maCrossACVF_delta_left (armaPsi findB (Fin.elim0 : Fin 0 → ℝ)) _ hd 1).1
+    rw [show ((1 : ℕ) : ℤ) = (1 : ℤ) from rfl] at this
+    rw [this, findB_psi_one]
+  have h4 : maCrossACVF (armaPsi (fun j => -findA j) (Fin.elim0 : Fin 0 → ℝ))
+      (armaPsi findB (Fin.elim0 : Fin 0 → ℝ)) (-(1 : ℤ)) = 0 := by
+    have := (maCrossACVF_delta_left (armaPsi findB (Fin.elim0 : Fin 0 → ℝ)) _ hd 0).2
+    simpa using this
+  simp only [Fintype.sum_sum_type, Fin.sum_univ_two, Fin.sum_univ_one, Sum.elim_inl,
+    Sum.elim_inr, hannanVarZ, hannanVarZBack, hannanSeq, hannanShiftBack, Matrix.of_apply,
+    Matrix.cons_val_zero, Matrix.cons_val_one]
+  norm_num [h1, h2, h3, h4]
   ring
 
 /-! ## Step 4: a vanishing combination forces a polynomial identity -/
