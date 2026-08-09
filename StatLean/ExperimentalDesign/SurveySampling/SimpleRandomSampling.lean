@@ -233,7 +233,28 @@ theorem srs_sampleMean_unbiased (n : ℕ) (hn : n ≤ Fintype.card U)
     -- USER-INPUT: positive sample size, so the sample mean is well defined; Mead §9.3
     (hn0 : n ≠ 0) (y : U → ℝ) :
     pmfExpect (simpleRandomSampling n hn) (sampleMean y) = populationMean y := by
-  sorry
+  have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn0
+  have hcard : 0 < Fintype.card U := lt_of_lt_of_le (Nat.pos_of_ne_zero hn0) hn
+  have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hcard.ne'
+  -- on the support the sample mean is the linear statistic `n⁻¹ ∑ₖ 𝟙ₖ yₖ`
+  have hcong : ∀ s : Finset U, s.card = n →
+      sampleMean y s = (n : ℝ)⁻¹ * ∑ k, inclusionIndicator k s * y k := by
+    intro s hs
+    unfold sampleMean
+    rw [hs, sum_sample_eq_sum_indicator]
+  have hterm : ∀ k : U,
+      pmfExpect (simpleRandomSampling n hn) (fun s => inclusionIndicator k s * y k)
+        = y k * ((n : ℝ) / (Fintype.card U : ℝ)) := by
+    intro k
+    have hcomm : (fun s => inclusionIndicator k s * y k)
+        = fun s => y k * inclusionIndicator k s := by funext s; ring
+    have hik : pmfExpect (simpleRandomSampling n hn) (inclusionIndicator k)
+        = (n : ℝ) / (Fintype.card U : ℝ) := srs_inclusionProb n hn k
+    rw [hcomm, pmfExpect_smul, hik]
+  rw [srs_expect_congr n hn hcong, pmfExpect_smul, pmfExpect_sum,
+    Finset.sum_congr rfl fun k _ => hterm k, ← Finset.sum_mul]
+  unfold populationMean
+  field_simp
 
 /-- **Exact variance of the SRS sample mean with finite-population correction**:
 `Var(ȳ_S) = (1 − n/N) S²_y / n` (`HT52`; Cochran ch. 2, Theorem 2.2). -/
@@ -251,6 +272,15 @@ theorem srs_horvitzThompson_eq (n : ℕ) (hn : n ≤ Fintype.card U) (y : U → 
     (s : Finset U) :
     horvitzThompson (simpleRandomSampling n hn) y s
       = (Fintype.card U : ℝ) / (n : ℝ) * ∑ i ∈ s, y i := by
-  sorry
+  unfold horvitzThompson
+  rcases eq_or_ne n 0 with rfl | hn0
+  · simp [srs_inclusionProb]
+  · have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn0
+    have hcard : 0 < Fintype.card U := lt_of_lt_of_le (Nat.pos_of_ne_zero hn0) hn
+    have hN : (Fintype.card U : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hcard.ne'
+    rw [Finset.mul_sum]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [srs_inclusionProb]
+    field_simp
 
 end StatLean.ExperimentalDesign
