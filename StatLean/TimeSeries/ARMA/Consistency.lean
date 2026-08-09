@@ -2547,6 +2547,70 @@ private lemma l2n_blockResid_le [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ
   rw [← Finset.sum_mul]
   exact mul_le_mul_of_nonneg_right (hπ.sum_le_tsum _ fun n _ => abs_nonneg _) hΨ0
 
+private lemma tail_le_tsum {π : ℕ → ℝ} (hπ : Summable fun n => |π n|) (N : ℕ) :
+    (∑' k : ℕ, |π (k + N)|) ≤ ∑' n : ℕ, |π n| := by
+  have h := hπ.sum_add_tsum_nat_add N
+  have h0 : 0 ≤ ∑ n ∈ Finset.range N, |π n| := Finset.sum_nonneg fun n _ => abs_nonneg _
+  linarith
+
+private lemma tendsto_tail_zero {f : ℕ → ℝ} (hf : Summable fun n => |f n|) :
+    Tendsto (fun m : ℕ => ∑' k : ℕ, |f (k + m)|) atTop (𝓝 0) := by
+  have h1 : ∀ m : ℕ, (∑' k : ℕ, |f (k + m)|)
+      = (∑' n : ℕ, |f n|) - ∑ n ∈ Finset.range m, |f n| := by
+    intro m
+    have h := hf.sum_add_tsum_nat_add m
+    linarith
+  simp only [h1]
+  have h3 : Tendsto (fun m : ℕ => (∑' n : ℕ, |f n|) - ∑ n ∈ Finset.range m, |f n|) atTop
+      (𝓝 ((∑' n : ℕ, |f n|) - ∑' n : ℕ, |f n|)) :=
+    tendsto_const_nhds.sub hf.hasSum.tendsto_sum_nat
+  simpa using h3
+
+private lemma tail_min_le {π : ℕ → ℝ} (hπ : Summable fun n => |π n|) (K m : ℕ) :
+    (∑' k : ℕ, |π (k + min K m)|)
+      ≤ (∑' k : ℕ, |π (k + m)|) + (if K < m then ∑' n : ℕ, |π n| else 0) := by
+  by_cases hKm : K < m
+  · rw [if_pos hKm, min_eq_left (le_of_lt hKm)]
+    have h1 := tail_le_tsum hπ K
+    have h2 : (0 : ℝ) ≤ ∑' k : ℕ, |π (k + m)| := tsum_nonneg fun k => abs_nonneg _
+    linarith
+  · rw [if_neg hKm, min_eq_right (by omega), add_zero]
+
+/-- The edge correction is supported on the last `m` indices. -/
+private lemma sum_edge_le (T m : ℕ) {c : ℝ} (hc : 0 ≤ c) :
+    ∑ i ∈ Finset.range T, (if T - i < m then c else 0) ≤ (m : ℝ) * c := by
+  classical
+  have hsub : (Finset.range T).filter (fun i => T - i < m) ⊆ Finset.Ico (T - m) T := by
+    intro i hi
+    simp only [Finset.mem_filter, Finset.mem_range] at hi
+    simp only [Finset.mem_Ico]
+    omega
+  have hcard : ((Finset.range T).filter (fun i => T - i < m)).card ≤ m := by
+    refine le_trans (Finset.card_le_card hsub) ?_
+    rw [Nat.card_Ico]
+    omega
+  rw [← Finset.sum_filter, Finset.sum_const, nsmul_eq_mul]
+  exact mul_le_mul_of_nonneg_right (by exact_mod_cast hcard) hc
+
+/-- **The per-row defect estimate**: the row of `Π_T` at `i` and the finite-noise-window
+residual `z_i^{(m)}` differ in `L²` by the `π`-tail at `min(T − i, m)` plus the
+`ψ`-tail at `m`. -/
+private lemma l2n_row_sub_blockResid [IsProbabilityMeasure μ] {ψ π : ℕ → ℝ} {σ2 c0 : ℝ}
+    {X ε : ℤ → Ω → ℝ} (hX : IsLinearProcessOf ψ X ε μ) (hψ : Summable fun j => |ψ j|)
+    (hε : IsWhiteNoise ε σ2 μ) (hmeas : ∀ t, Measurable (X t))
+    (hπ : Summable fun n => |π n|) (hc : ∀ t : ℤ, l2n μ (X t) = c0) (K m i : ℕ) :
+    l2n μ (fun ω => icoResid π X 0 K i ω - blockResid π ψ ε m i ω)
+      ≤ (∑' k : ℕ, |π (k + min K m)|) * c0
+        + (∑' n : ℕ, |π n|) * ((∑' k : ℕ, |ψ (k + m)|) * Real.sqrt σ2) := by
+  have hmemX : ∀ t : ℤ, MemLp (X t) 2 μ := fun t => hX.memLp hψ hε hmeas t
+  have h1 : MemLp (fun ω => icoResid π X 0 K i ω - icoResid π X 0 m i ω) 2 μ :=
+    (memLp_icoResid hmemX π 0 K i).sub (memLp_icoResid hmemX π 0 m i)
+  have h2 : MemLp (fun ω => icoResid π X 0 m i ω - blockResid π ψ ε m i ω) 2 μ :=
+    (memLp_icoResid hmemX π 0 m i).sub (memLp_blockResid hε π ψ m i)
+  refine le_trans (l2n_sub_le_add h1 h2) (add_le_add ?_ ?_)
+  · exact l2n_icoResid_diff_le hmemX hc hπ K m i
+  · exact l2n_icoResid_sub_blockResid hX hψ hε hmeas hπ m i
+
 open Matrix in
 /-- **DEBT — step (C) of the `armaProfileS_tendstoInProb` route**: the residual
 sum-of-squares LLN `T⁻¹‖Π_T x‖² →p σ² · Σ_j c_j²`.
