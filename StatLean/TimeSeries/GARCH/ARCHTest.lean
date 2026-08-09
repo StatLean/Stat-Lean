@@ -154,9 +154,11 @@ normal equations turn it into a quadratic form in the lag-`1..p` sample autocova
 `Y`; the LLN sends the Gram matrix to `Var(Y)·I_p`, the iid CLT sends `√T γ̂` to
 `N(0, Var(Y)²I_p)`, and continuous mapping finishes. Three bricks are missing: the
 least-squares/`R²` algebra out of `hrss`, the `p`-dimensional CLT for the autocovariance
-vector, and the continuous-mapping step. Note `p = 0` is consistent (both sides are `δ₀`),
-and `hgauss` is not decoration — with `ε` Rademacher, `X_t²` is a.s. constant, `rss = tss =
-0`, and the statistic is the constant `T`, whose law `δ_T` has no limit.
+vector, and the continuous-mapping step. Note `p = 0` is consistent (both sides are `δ₀`).
+Also, `hgauss` is not decoration *(this remark is documented, not formalized)*: with `ε`
+Rademacher, `X_t² = c₀` a.s., so response and regressors are all equal, `rss = tss = 0`, and
+the statistic is the constant `T` — a law `δ_T` with no limit. Nondegeneracy of `Var(X_t²)`
+is therefore needed, and `hgauss` is what supplies it.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §4.2.6,
 eqs. (4.48)–(4.54) (pp. 165–168). (`FY §4.2.6`.)
