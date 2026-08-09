@@ -101,19 +101,17 @@ closing them calls for a *time-series* likelihood theorem — a martingale CLT f
 conditional score of the ARCH quasi-likelihood, valid over the whole `(c₀, b)` space —
 rather than an instance of the iid one.
 
-## ⚠ The `hMLE` repair OVERSHOT: `archLRStat_chiSq_debt` and `archWaldStat_chiSq_debt` are VACUOUS
+## The `hMLE` vacuity and its repair (2026-08-09b) — EXECUTED
 
-The `2026-08-09` amendment above (added to repair the falsity diagnosed in item (1)) pins
-the estimators by requiring them to *globally maximize* `archLogLik` over **all** of
-`ℝ × ℝᵖ`. No such maximizer exists, so `hMLE` and `hMLE0` are unsatisfiable and the two
-statements carry no statistical content: both are proved below **by deriving `False` from
-their own hypotheses**, not by any asymptotic argument. The two `sorry`s are gone; the
-mathematics of FY eqs. (4.50), (4.54) is *not* formalized. Reading the module as
-`1 sorry` would be a mistake — the honest count is one debt plus two vacuities.
+**The finding (retained).** The `2026-08-09` amendment above, added to repair the falsity
+diagnosed in item (1), overshot: it pinned the estimators by requiring them to *globally
+maximize* `archLogLik` over **all** of `ℝ × ℝᵖ`. No such maximizer exists, so `hMLE` and
+`hMLE0` were unsatisfiable and the two statements carried no statistical content — both
+were proved by deriving `False` from their own hypotheses.
 
-The witness is `archLogLik_unbounded` (machine-checked): with `b = 0` the truncated
-volatility is the *constant* `c₀` (`truncVol_const`, no positivity used, because the
-presample value of `archLogLik` is `c₀` itself), so at `c₀ = −δ < 0`
+The witness is `archLogLik_unbounded` (machine-checked, **kept below**): with `b = 0` the
+truncated volatility is the *constant* `c₀` (`truncVol_const`, no positivity used, because
+the presample value of `archLogLik` is `c₀` itself), so at `c₀ = −δ < 0`
 
   `archLogLik (−δ) 0 x ν = −½·(T−ν)·log δ + (Σ_{t=ν}^{T−1} x_t²)/(2δ) → +∞`  as `δ ↓ 0`,
 
@@ -123,15 +121,49 @@ negative `σ̃_t²`: both summands of `−½(log σ̃_t² + x_t²/σ̃_t²)` div
 `hMLE`/`hMLE0` are contradicted there (`false_of_bddAbove_archLogLik`). This is not an
 artefact of `Real.log`'s totalization: restricting to `c₀ > 0` does not help either, since
 negative `b` coordinates drive `σ̃_t² = c₀ + Σ b_i x_{t−i}²` negative just the same.
+Both lemmas are retained below as the *justification* for the amendment that follows.
 
-**The next amendment.** Maximization must be over the *admissible* set, on which the
-criterion is bounded above — FY's `{c₀ > 0, b_j ≥ 0}`, or any constraint forcing
-`σ̃_t² ≥ κ > 0` along the sample — or, better (item (2) above), the estimators should be
-pinned in the trinity's currency: asymptotically linear with the ARCH score and
-information. Either way it is a *statement* change, out of scope for a `sorry`-filling
-lane. `archTR2Stat_chiSq_debt`'s `hrss`/`htss` do **not** have this defect: a
-least-squares minimum is always attained, so its hypotheses are consistent and it remains
-an honest debt.
+**The repair, as executed.** `hMLE`/`hMLE0` now demand maximization over the **feasible
+set** `K ∩ archAdmissible κ`, where
+
+* `archAdmissible κ x ν = {(c₀, b) : σ̃_t²(c₀, b) ≥ κ for all t ∈ Ico ν T}` is the
+  *data-adapted* locus on which the criterion is even defined, and
+* `K` is a compact search region with the truth `(c₀, 0)` in its **interior** — the
+  `hargmin`-over-`K` pattern of `ARMA/Consistency.lean`'s `mle_consistent` (Hannan §2);
+* the null problem is posed on the slice `archNullSlice K = K ∩ {b = 0}`;
+* the floor is **strict**, `0 < κ < c₀`.
+
+Three certificates make this a repair rather than another guess, all proved here:
+
+1. `exists_isMaxOn_archLogLik` (and its null companion) — the maximum *is attained*:
+   `archAdmissible` is closed because with `q = 0` the truncated volatility is **affine**
+   in `(c₀, b)` (`continuous_truncVol` — no recursion estimate needed), so the feasible set
+   is compact, and `continuousOn_archLogLik` gives continuity there off the singularity.
+2. `exists_archMLE_sequences` — estimator sequences satisfying `hMLE` *and* `hMLE0`
+   verbatim **exist**, jointly. This is the exact converse of
+   `false_of_bddAbove_archLogLik` and is what removes the vacuity. (It builds them by
+   pointwise choice; measurability is still carried as the separate `USER-INPUT` `hmeas`,
+   see the note at that theorem.)
+3. `mem_interior_arch_feasible` — the truth is **interior** to the feasible set, so no
+   constraint binds at the null. This is the reason the floor is imposed on the
+   *data-adapted* set and not on `K`: FY's own admissible set `{b_j ≥ 0}` would put the
+   null on the boundary of `K`, contradicting the interiority hypothesis and re-opening
+   the one-sided boundary problem flagged above; and `κ = c₀` would do the same on the
+   `c₀` axis, which is why the floor is strict.
+
+**What is proved and what is owed.** With the repaired hypotheses, `p = 0` is *proved* for
+both statements (the two feasible sets coincide, the LR statistic is identically `0`, the
+Wald form is an empty sum, and `χ²₀ = δ₀` — this fixes the degrees-of-freedom
+bookkeeping). `p ≥ 1` is an honest, satisfiable **debt**: the ARCH MLE asymptotics. Its
+three bricks — (a) consistency of the constrained maximizer (the ARCH analogue of
+`mle_consistent`), (b) the local quadratic expansion around the interior truth, (c) the
+martingale CLT for the ARCH conditional score plus continuous mapping — are listed at the
+theorems. The limit-law side of (c) is already discharged here
+(`charFun_map_sum_sq_gaussian`, `eq_map_sum_sq_gaussian_of_charFun`).
+
+`archTR2Stat_chiSq_debt`'s `hrss`/`htss` never had this defect: a least-squares minimum is
+always attained, so its hypotheses were consistent throughout and it remains an honest
+debt.
 
 ## `archTR2Stat_chiSq_debt`: the limit law is now identified, the LM limit is what is left
 
@@ -147,7 +179,7 @@ of the limit rather than the statistic:
   construction nor a `WeakConverges → charFun` bridge is needed anywhere. The debt's proof
   uses this to rewrite its goal into convergence towards that concrete law.
 
-What the single remaining `sorry` still needs is exactly Engle's LM limit: under `H₀` with
+What this statement's `sorry` still needs is exactly Engle's LM limit: under `H₀` with
 Gaussian innovations the squared data `Y_t = X_t²` are iid with mean `c₀` and variance
 `2c₀² > 0`, `hrss`/`htss` make the statistic the auxiliary regression's `T·R²`, and the
 normal equations turn it into a quadratic form in the lag-`1..p` sample autocovariances of
