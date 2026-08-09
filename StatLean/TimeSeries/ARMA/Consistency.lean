@@ -1898,6 +1898,176 @@ private lemma integral_blockResid_sq_eq [IsProbabilityMeasure μ] {σ2 : ℝ} {�
       = σ2 * ∑ r ∈ Finset.range (2 * m), cTrunc π ψ m r ^ 2 := by
   rw [integral_blockResid_sq hε π ψ m i, sum_pairs_swap π ψ m, sum_sq_cTrunc π ψ m]
 
+private lemma sum_fin_prod_eq {M : Type*} [AddCommMonoid M] (m : ℕ) (F : ℕ → ℕ → M) :
+    ∑ x : Fin m × Fin m, F (x.1 : ℕ) (x.2 : ℕ)
+      = ∑ d ∈ Finset.range m, ∑ n ∈ Finset.range m, F d n := by
+  have h1 : ∑ x : Fin m × Fin m, F (x.1 : ℕ) (x.2 : ℕ)
+      = ∑ d : Fin m, ∑ n : Fin m, F (d : ℕ) (n : ℕ) := Fintype.sum_prod_type _
+  rw [h1, ← Fin.sum_univ_eq_sum_range (fun d => ∑ n ∈ Finset.range m, F d n) m]
+  exact Finset.sum_congr rfl fun d _ => Fin.sum_univ_eq_sum_range (fun n => F d n) m
+
+private lemma sum_ite_add_eq (π ψ : ℕ → ℝ) (m r d : ℕ) :
+    ∑ n ∈ Finset.range m, (if d + n = r then π d * ψ n else 0)
+      = if d ≤ r ∧ r - d < m then π d * ψ (r - d) else 0 := by
+  by_cases h : d ≤ r ∧ r - d < m
+  · rw [if_pos h, Finset.sum_eq_single (r - d)]
+    · rw [if_pos (by omega)]
+    · intro n _ hn
+      rw [if_neg (by omega)]
+    · intro hnot
+      exact absurd (Finset.mem_range.2 h.2) hnot
+  · rw [if_neg h]
+    refine Finset.sum_eq_zero fun n hn => ?_
+    rw [Finset.mem_range] at hn
+    rcases not_and_or.1 h with h1 | h1 <;> exact if_neg (by omega)
+
+private lemma cTrunc_eq_sum_range (π ψ : ℕ → ℝ) (m r : ℕ) :
+    cTrunc π ψ m r
+      = ∑ d ∈ Finset.range m, (if d ≤ r ∧ r - d < m then π d * ψ (r - d) else 0) := by
+  have h : (∑ x : Fin m × Fin m,
+        if (x.1 : ℕ) + (x.2 : ℕ) = r then π (x.1 : ℕ) * ψ (x.2 : ℕ) else 0)
+      = ∑ d ∈ Finset.range m, ∑ n ∈ Finset.range m, (if d + n = r then π d * ψ n else 0) :=
+    sum_fin_prod_eq m (fun d n => if d + n = r then π d * ψ n else 0)
+  rw [cTrunc, h]
+  exact Finset.sum_congr rfl fun d _ => sum_ite_add_eq π ψ m r d
+
+/-- Below the truncation level the truncated composite filter is the composite filter. -/
+private lemma cTrunc_eq_of_lt (π ψ : ℕ → ℝ) {m r : ℕ} (hr : r < m) :
+    cTrunc π ψ m r = ∑ d ∈ Finset.range (r + 1), π d * ψ (r - d) := by
+  rw [cTrunc_eq_sum_range]
+  have hsub : Finset.range (r + 1) ⊆ Finset.range m := Finset.range_mono hr
+  have hz : ∀ d ∈ Finset.range m, d ∉ Finset.range (r + 1) →
+      (if d ≤ r ∧ r - d < m then π d * ψ (r - d) else 0) = 0 := by
+    intro d hd hd'
+    simp only [Finset.mem_range] at hd hd'
+    rw [if_neg (by omega)]
+  rw [← Finset.sum_subset hsub hz]
+  refine Finset.sum_congr rfl fun d hd => ?_
+  rw [Finset.mem_range] at hd
+  rw [if_pos (⟨by omega, by omega⟩ : d ≤ r ∧ r - d < m)]
+
+private lemma abs_cTrunc_le (π ψ : ℕ → ℝ) (m r : ℕ) :
+    |cTrunc π ψ m r| ≤ ∑ d ∈ Finset.range (r + 1), |π d| * |ψ (r - d)| := by
+  classical
+  rw [cTrunc_eq_sum_range]
+  have hstep : ∀ d ∈ Finset.range m,
+      |if d ≤ r ∧ r - d < m then π d * ψ (r - d) else 0|
+        ≤ if d ∈ Finset.range (r + 1) then |π d| * |ψ (r - d)| else 0 := by
+    intro d _
+    by_cases hdr : d ∈ Finset.range (r + 1)
+    · rw [if_pos hdr]
+      by_cases hcond : d ≤ r ∧ r - d < m
+      · rw [if_pos hcond, abs_mul]
+      · rw [if_neg hcond, abs_zero]
+        positivity
+    · rw [if_neg hdr]
+      rw [Finset.mem_range] at hdr
+      rw [if_neg (by omega), abs_zero]
+  refine le_trans (Finset.abs_sum_le_sum_abs _ _) (le_trans (Finset.sum_le_sum hstep) ?_)
+  rw [Finset.sum_ite_mem]
+  exact Finset.sum_le_sum_of_subset_of_nonneg Finset.inter_subset_right
+    fun i _ _ => by positivity
+
+private lemma sum_abs_conv_le {π ψ : ℕ → ℝ} {C r0 : ℝ} (hC : 1 ≤ C) (hr0 : 0 ≤ r0)
+    (hπ : ∀ n, |π n| ≤ C * r0 ^ n) (hψ : ∀ n, |ψ n| ≤ C * r0 ^ n) (r : ℕ) :
+    ∑ d ∈ Finset.range (r + 1), |π d| * |ψ (r - d)| ≤ C ^ 2 * ((r : ℝ) + 1) * r0 ^ r := by
+  have hterm : ∀ d ∈ Finset.range (r + 1), |π d| * |ψ (r - d)| ≤ C ^ 2 * r0 ^ r := by
+    intro d hd
+    rw [Finset.mem_range] at hd
+    calc |π d| * |ψ (r - d)| ≤ (C * r0 ^ d) * (C * r0 ^ (r - d)) :=
+          mul_le_mul (hπ d) (hψ _) (abs_nonneg _) (by positivity)
+      _ = C ^ 2 * (r0 ^ d * r0 ^ (r - d)) := by ring
+      _ = C ^ 2 * r0 ^ r := by rw [← pow_add]; congr 2; omega
+  calc ∑ d ∈ Finset.range (r + 1), |π d| * |ψ (r - d)|
+      ≤ ∑ _d ∈ Finset.range (r + 1), C ^ 2 * r0 ^ r := Finset.sum_le_sum hterm
+    _ = C ^ 2 * ((r : ℝ) + 1) * r0 ^ r := by
+        rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+        push_cast
+        ring
+
+private lemma summable_sq_geom_poly {C r0 : ℝ} (hr0 : 0 ≤ r0) (hr1 : r0 < 1) :
+    Summable fun n : ℕ => (C ^ 2 * ((n : ℝ) + 1) * r0 ^ n) ^ 2 := by
+  have hr2 : ‖r0 ^ 2‖ < 1 := by
+    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg r0)]
+    nlinarith
+  have hgeom : Summable fun n : ℕ => ((n : ℝ) + 1) ^ 2 * (r0 ^ 2) ^ n := by
+    have h0 : Summable fun n : ℕ => (r0 ^ 2) ^ n := by
+      simpa using summable_pow_mul_geometric_of_norm_lt_one (R := ℝ) 0 hr2
+    have h1 : Summable fun n : ℕ => (n : ℝ) ^ 1 * (r0 ^ 2) ^ n :=
+      summable_pow_mul_geometric_of_norm_lt_one (R := ℝ) 1 hr2
+    have h2 : Summable fun n : ℕ => (n : ℝ) ^ 2 * (r0 ^ 2) ^ n :=
+      summable_pow_mul_geometric_of_norm_lt_one (R := ℝ) 2 hr2
+    exact ((h2.add (h1.mul_left 2)).add h0).congr fun n => by ring
+  refine (hgeom.mul_left (C ^ 4)).congr fun n => ?_
+  rw [← pow_mul, mul_comm 2 n, pow_mul]
+  ring
+
+/-- **The truncated second moment converges to the contrast variance.** Below the
+truncation level the truncated filter *is* the composite filter, and the `m` extra terms
+are dominated by the (summable) geometric envelope's tail. -/
+private lemma tendsto_sum_sq_cTrunc {p q : ℕ} {b0 b : Fin p → ℝ} {a0 a : Fin q → ℝ}
+    (hB0 : ARMAInvertibleParams b0 a0) (hB : ARMAInvertibleParams b a) :
+    Tendsto (fun m : ℕ =>
+        ∑ r ∈ Finset.range (2 * m), cTrunc (armaPi b a) (armaPsi b0 a0) m r ^ 2)
+      atTop (𝓝 (armaContrastVar b0 a0 b a)) := by
+  obtain ⟨C, r0, hC, hr0, hr1, hπ, hψ⟩ := exists_common_geometric_bound hB0 hB
+  set B : ℕ → ℝ := fun r => C ^ 2 * ((r : ℝ) + 1) * r0 ^ r with hBdef
+  have hB0' : ∀ r : ℕ, 0 ≤ B r := by
+    intro r
+    have : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC
+    rw [hBdef]
+    positivity
+  have hBsum : Summable fun r : ℕ => B r ^ 2 := summable_sq_geom_poly hr0 hr1
+  have hcT : ∀ m r : ℕ, |cTrunc (armaPi b a) (armaPsi b0 a0) m r| ≤ B r := fun m r =>
+    le_trans (abs_cTrunc_le _ _ m r) (sum_abs_conv_le hC hr0 hπ hψ r)
+  -- the head of the truncated sum is the exact composite filter
+  have hsplit : ∀ m : ℕ,
+      ∑ r ∈ Finset.range (2 * m), cTrunc (armaPi b a) (armaPsi b0 a0) m r ^ 2
+        = (∑ r ∈ Finset.range m, contrastCoeff b0 a0 b a r ^ 2)
+          + ∑ r ∈ Finset.Ico m (2 * m), cTrunc (armaPi b a) (armaPsi b0 a0) m r ^ 2 := by
+    intro m
+    rw [← Finset.sum_range_add_sum_Ico _ (by omega : m ≤ 2 * m)]
+    congr 1
+    refine Finset.sum_congr rfl fun r hr => ?_
+    rw [cTrunc_eq_of_lt _ _ (Finset.mem_range.1 hr)]
+    rfl
+  have hP : Tendsto (fun m : ℕ => ∑ r ∈ Finset.range m, contrastCoeff b0 a0 b a r ^ 2) atTop
+      (𝓝 (armaContrastVar b0 a0 b a)) := by
+    rw [armaContrastVar_eq_tsum]
+    exact (summable_sq_contrastCoeff hB0 hB).hasSum.tendsto_sum_nat
+  -- the tail is dominated by the envelope's tail
+  have htail : Tendsto (fun m : ℕ => ∑' k : ℕ, B (k + m) ^ 2) atTop (𝓝 0) := by
+    have h1 : ∀ m : ℕ, (∑' k : ℕ, B (k + m) ^ 2)
+        = (∑' r : ℕ, B r ^ 2) - ∑ r ∈ Finset.range m, B r ^ 2 := by
+      intro m
+      have h := hBsum.sum_add_tsum_nat_add m
+      linarith
+    simp only [h1]
+    have h2 := hBsum.hasSum.tendsto_sum_nat
+    have h3 : Tendsto (fun m : ℕ => (∑' r : ℕ, B r ^ 2) - ∑ r ∈ Finset.range m, B r ^ 2) atTop
+        (𝓝 ((∑' r : ℕ, B r ^ 2) - ∑' r : ℕ, B r ^ 2)) := tendsto_const_nhds.sub h2
+    simpa using h3
+  have hR : Tendsto (fun m : ℕ =>
+      ∑ r ∈ Finset.Ico m (2 * m), cTrunc (armaPi b a) (armaPsi b0 a0) m r ^ 2) atTop (𝓝 0) := by
+    refine squeeze_zero (fun m => Finset.sum_nonneg fun r _ => sq_nonneg _) (fun m => ?_) htail
+    have hshift : Summable fun k : ℕ => B (k + m) ^ 2 :=
+      (summable_nat_add_iff m).2 hBsum
+    rw [Finset.sum_Ico_eq_sum_range]
+    have hterm : ∀ k ∈ Finset.range (2 * m - m),
+        cTrunc (armaPi b a) (armaPsi b0 a0) m (m + k) ^ 2 ≤ B (k + m) ^ 2 := by
+      intro k _
+      have h := hcT m (m + k)
+      have h0 := hB0' (m + k)
+      have habs : |cTrunc (armaPi b a) (armaPsi b0 a0) m (m + k)| ^ 2
+          = cTrunc (armaPi b a) (armaPsi b0 a0) m (m + k) ^ 2 := sq_abs _
+      rw [show k + m = m + k by omega]
+      nlinarith [abs_nonneg (cTrunc (armaPi b a) (armaPsi b0 a0) m (m + k))]
+    refine le_trans (Finset.sum_le_sum hterm) ?_
+    exact hshift.sum_le_tsum _ (fun k _ => sq_nonneg _)
+  have hfin := hP.add hR
+  rw [add_zero] at hfin
+  exact Filter.Tendsto.congr (fun m => (hsplit m).symm) hfin
+
 open Matrix in
 /-- **DEBT — step (C) of the `armaProfileS_tendstoInProb` route**: the residual
 sum-of-squares LLN `T⁻¹‖Π_T x‖² →p σ² · Σ_j c_j²`.
