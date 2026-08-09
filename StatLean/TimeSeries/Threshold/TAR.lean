@@ -278,6 +278,165 @@ private lemma compProd_map_left' {α β γ : Type*} [MeasurableSpace α] [Measur
     lintegral_map (Kernel.measurable_kernel_prodMk_left hs) hg]
   rfl
 
+/-! ### The innovation-coordinate window law
+
+Both independence clauses of `exists_stationary_nlAR_of_invariant` below reduce to one
+identity: read in the **innovation coordinates** `e_i = w_{i+1}(0) − f(w_i)`, the window law
+`chainWindowLaw (nlARKernel f ν) F k` of the vectorized nonlinear-AR chain is the plain
+`k`-fold product `ν^{⊗k}` (`chainWindowLaw_map_innov`), and the one-step refinement
+`chainWindowLaw_map_init_innov` additionally records that the *last* innovation is
+independent of the whole preceding window. -/
+
+/-- `Fin.snoc` carries `ν^{⊗n} ⊗ ν` to `ν^{⊗(n+1)}`. -/
+private lemma map_snoc_prod_pi (n : ℕ) (ν : Measure ℝ) [IsProbabilityMeasure ν] :
+    ((Measure.pi fun _ : Fin n => ν).prod ν).map
+        (fun p : (Fin n → ℝ) × ℝ => (Fin.snoc p.1 p.2 : Fin (n + 1) → ℝ))
+      = Measure.pi (fun _ : Fin (n + 1) => ν) := by
+  have hsnoc : Measurable fun p : (Fin n → ℝ) × ℝ => (Fin.snoc p.1 p.2 : Fin (n + 1) → ℝ) := by
+    rw [measurable_pi_iff]
+    refine Fin.lastCases ?_ ?_
+    · simpa using measurable_snd
+    · exact fun i => by simpa using (measurable_pi_apply i).comp measurable_fst
+  refine (Measure.pi_eq fun s hs => ?_).symm
+  rw [Measure.map_apply hsnoc (MeasurableSet.univ_pi hs)]
+  have hpre : (fun p : (Fin n → ℝ) × ℝ => (Fin.snoc p.1 p.2 : Fin (n + 1) → ℝ)) ⁻¹'
+      (Set.univ.pi s) = (Set.univ.pi fun i : Fin n => s i.castSucc) ×ˢ s (Fin.last n) := by
+    ext p
+    simp only [Set.mem_preimage, Set.mem_pi, Set.mem_univ, forall_const, Set.mem_prod]
+    constructor
+    · exact fun h => ⟨fun i => by simpa using h i.castSucc, by simpa using h (Fin.last n)⟩
+    · rintro ⟨h1, h2⟩ i
+      refine Fin.lastCases ?_ (fun j => ?_) i
+      · simpa using h2
+      · simpa using h1 j
+  rw [hpre, Measure.prod_prod, Measure.pi_pi]
+  exact (Fin.prod_univ_castSucc fun i => ν (s i)).symm
+
+/-- **One `nlARKernel` step in innovation coordinates.** Conditionally on the current state
+`g a`, the increment `y 0 − f (g a)` is a fresh `ν`-draw, so the joint law of the state and
+the increment is the product `μ ⊗ ν`. -/
+private lemma nlAR_compProd_innov {α : Type*} [MeasurableSpace α] {P : ℕ}
+    {f : (Fin (P + 1) → ℝ) → ℝ} (hf : Measurable f) {ν : Measure ℝ} [IsProbabilityMeasure ν]
+    (μ : Measure α) [IsProbabilityMeasure μ] {g : α → (Fin (P + 1) → ℝ)} (hg : Measurable g) :
+    (μ ⊗ₘ ((nlARKernel f ν).comap g hg)).map (fun p => (p.1, p.2 0 - f (g p.1)))
+      = μ.prod ν := by
+  haveI := isMarkovKernel_nlARKernel hf ν
+  have hΦ : Measurable fun p : α × (Fin (P + 1) → ℝ) => (p.1, p.2 0 - f (g p.1)) :=
+    measurable_fst.prodMk (((measurable_pi_apply 0).comp measurable_snd).sub
+      (hf.comp (hg.comp measurable_fst)))
+  ext s hs
+  rw [Measure.map_apply hΦ hs, Measure.compProd_apply (hΦ hs), Measure.prod_apply hs]
+  refine lintegral_congr fun a => ?_
+  have hmc : Measurable fun e : ℝ =>
+      (Fin.cons (f (g a) + e) (fun i => (g a) i.castSucc) : Fin (P + 1) → ℝ) := by
+    rw [measurable_pi_iff]
+    refine Fin.cases ?_ ?_
+    · simpa using measurable_const.add measurable_id
+    · exact fun i => by simp
+  rw [Kernel.comap_apply, nlARKernel_apply hf ν (g a),
+    Measure.map_apply hmc (measurable_prodMk_left (hΦ hs))]
+  congr 1
+  ext e
+  simp only [Set.mem_preimage, Fin.cons_zero, add_sub_cancel_left]
+
+/-- **One-step innovation split of the window law.** Peeling the last coordinate off a
+`nlARKernel` window law leaves the shorter window law together with an *independent*
+`ν`-distributed innovation. -/
+private lemma chainWindowLaw_map_init_innov {P : ℕ} {f : (Fin (P + 1) → ℝ) → ℝ}
+    (hf : Measurable f) {ν : Measure ℝ} [IsProbabilityMeasure ν]
+    (F : Measure (Fin (P + 1) → ℝ)) [IsProbabilityMeasure F] (k : ℕ) :
+    (chainWindowLaw (nlARKernel f ν) F (k + 1)).map
+        (fun w : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ) =>
+          (Fin.init w, w (Fin.last (k + 1)) 0 - f (w (Fin.last k).castSucc)))
+      = (chainWindowLaw (nlARKernel f ν) F k).prod ν := by
+  haveI := isMarkovKernel_nlARKernel hf ν
+  haveI := isProbabilityMeasure_chainWindowLaw (nlARKernel f ν) F k
+  have hsnoc : Measurable fun wx : (Fin (k + 1) → (Fin (P + 1) → ℝ)) × (Fin (P + 1) → ℝ) =>
+      (Fin.snoc wx.1 wx.2 : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ)) := by
+    rw [measurable_pi_iff]
+    refine Fin.lastCases ?_ ?_
+    · simpa using measurable_snd
+    · exact fun i => by simpa using (measurable_pi_apply i).comp measurable_fst
+  have hΘ : Measurable fun w : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ) =>
+      (Fin.init w, w (Fin.last (k + 1)) 0 - f (w (Fin.last k).castSucc)) :=
+    (measurable_pi_lambda _ fun _ => measurable_pi_apply _).prodMk
+      (((measurable_pi_apply 0).comp (measurable_pi_apply _)).sub
+        (hf.comp (measurable_pi_apply _)))
+  have hstep : chainWindowLaw (nlARKernel f ν) F (k + 1)
+      = ((chainWindowLaw (nlARKernel f ν) F k) ⊗ₘ
+          ((nlARKernel f ν).comap (fun w : Fin (k + 1) → (Fin (P + 1) → ℝ) => w (Fin.last k))
+            (measurable_pi_apply _))).map
+        (fun wx => (Fin.snoc wx.1 wx.2 : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ))) := rfl
+  rw [hstep, Measure.map_map hΘ hsnoc]
+  have hfac : ((fun w : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ) =>
+        (Fin.init w, w (Fin.last (k + 1)) 0 - f (w (Fin.last k).castSucc))) ∘
+      (fun wx : (Fin (k + 1) → (Fin (P + 1) → ℝ)) × (Fin (P + 1) → ℝ) =>
+        (Fin.snoc wx.1 wx.2 : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ))))
+      = fun wx => (wx.1, wx.2 0 - f (wx.1 (Fin.last k))) := by
+    funext wx
+    simp
+  rw [hfac]
+  exact nlAR_compProd_innov hf (chainWindowLaw (nlARKernel f ν) F k)
+    (g := fun w : Fin (k + 1) → (Fin (P + 1) → ℝ) => w (Fin.last k))
+    (measurable_pi_apply (Fin.last k))
+
+/-- **The innovation-coordinate window law.** In the coordinates
+`e_i = w_{i+1}(0) − f(w_i)` the `nlARKernel` window law is the `k`-fold product `ν^{⊗k}`:
+the innovations of a stationary window are i.i.d. `ν`. -/
+private lemma chainWindowLaw_map_innov {P : ℕ} {f : (Fin (P + 1) → ℝ) → ℝ}
+    (hf : Measurable f) {ν : Measure ℝ} [IsProbabilityMeasure ν]
+    (F : Measure (Fin (P + 1) → ℝ)) [IsProbabilityMeasure F] (k : ℕ) :
+    (chainWindowLaw (nlARKernel f ν) F k).map
+        (fun w (i : Fin k) => w i.succ 0 - f (w i.castSucc))
+      = Measure.pi (fun _ : Fin k => ν) := by
+  haveI := isMarkovKernel_nlARKernel hf ν
+  induction k with
+  | zero =>
+    haveI := isProbabilityMeasure_chainWindowLaw (nlARKernel f ν) F 0
+    have hconst : (fun (w : Fin 1 → (Fin (P + 1) → ℝ)) (i : Fin 0) =>
+        w i.succ 0 - f (w i.castSucc)) = fun _ => (fun i : Fin 0 => (0 : ℝ)) := by
+      funext w
+      funext i
+      exact i.elim0
+    rw [hconst, Measure.map_const, measure_univ, one_smul,
+      Measure.pi_of_empty (fun _ : Fin 0 => ν) (fun _ : Fin 0 => (0 : ℝ))]
+  | succ k ih =>
+    haveI := isProbabilityMeasure_chainWindowLaw (nlARKernel f ν) F k
+    have hinnovk : Measurable fun w : Fin (k + 1) → (Fin (P + 1) → ℝ) =>
+        fun i : Fin k => w i.succ 0 - f (w i.castSucc) :=
+      measurable_pi_lambda _ fun _ =>
+        ((measurable_pi_apply 0).comp (measurable_pi_apply _)).sub
+          (hf.comp (measurable_pi_apply _))
+    have hΘ : Measurable fun w : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ) =>
+        (Fin.init w, w (Fin.last (k + 1)) 0 - f (w (Fin.last k).castSucc)) :=
+      (measurable_pi_lambda _ fun _ => measurable_pi_apply _).prodMk
+        (((measurable_pi_apply 0).comp (measurable_pi_apply _)).sub
+          (hf.comp (measurable_pi_apply _)))
+    have hsnocR : Measurable fun q : (Fin k → ℝ) × ℝ =>
+        (Fin.snoc q.1 q.2 : Fin (k + 1) → ℝ) := by
+      rw [measurable_pi_iff]
+      refine Fin.lastCases ?_ ?_
+      · simpa using measurable_snd
+      · exact fun i => by simpa using (measurable_pi_apply i).comp measurable_fst
+    have hfac : (fun (w : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ)) (i : Fin (k + 1)) =>
+          w i.succ 0 - f (w i.castSucc))
+        = ((fun q : (Fin k → ℝ) × ℝ => (Fin.snoc q.1 q.2 : Fin (k + 1) → ℝ)) ∘
+            (Prod.map (fun w : Fin (k + 1) → (Fin (P + 1) → ℝ) =>
+              fun i : Fin k => w i.succ 0 - f (w i.castSucc)) id)) ∘
+          (fun w : Fin (k + 1 + 1) → (Fin (P + 1) → ℝ) =>
+            (Fin.init w, w (Fin.last (k + 1)) 0 - f (w (Fin.last k).castSucc))) := by
+      funext w
+      funext i
+      refine Fin.lastCases ?_ (fun j => ?_) i
+      · simp
+      · simp only [Function.comp_apply, Prod.map_apply, id_eq, Fin.snoc_castSucc, Fin.init]
+        rw [Fin.succ_castSucc]
+    rw [hfac, ← Measure.map_map (hsnocR.comp (hinnovk.prodMap measurable_id)) hΘ,
+      chainWindowLaw_map_init_innov hf F k,
+      ← Measure.map_map hsnocR (hinnovk.prodMap measurable_id),
+      ← Measure.map_prod_map _ _ hinnovk measurable_id, Measure.map_id, ih]
+    exact map_snoc_prod_pi k ν
+
 /-- The set of state pairs `(x, y)` in which `y` is `x` shifted by one coordinate. -/
 private def shiftSet (P : ℕ) : Set ((Fin (P + 1) → ℝ) × (Fin (P + 1) → ℝ)) :=
   {p | ∀ j : Fin P, p.2 j.succ = p.1 j.castSucc}
@@ -360,16 +519,18 @@ supplies the process `X'_t = (Y_t)_0` and the innovations
   **recursion** clause;
 * **strict stationarity**, through `isStrictlyStationary_iff_window`.
 
-**Remaining debt (2 sorries below).** Both are the *independence* clauses, and both
-reduce to one missing ingredient: the window law in **innovation coordinates**, i.e.
-`chainWindowLaw (nlARKernel f ν) F k = (F ×ˢ ν^{⊗k}).map Ψ_k` with
-`Ψ_k (x, e) = (x, …)` the deterministic recursion. That single identity (an induction on
-`k` over the definition of `chainWindowLaw`, using `nlARKernel_apply` at each step) yields
-(i) `IsIIDNoise ε' 1 μ'` — mutual independence follows because every finite subset of `ℤ`
-sits inside a consecutive window, on which the innovations are an i.i.d. `ν`-vector,
-rescaled by `σ₀` to variance one by `hνvar`; and (ii) independence of `ε'_t` from
-`sigmaLT X' t` — `ε'_t` is independent of every finite past window, and `sigmaLT` is the
-`⨆` of those, so a π-system/monotone-class step (`IndepSets.indep`) finishes it. -/
+The two *independence* clauses come from the **innovation-coordinate window law**
+`chainWindowLaw_map_innov` above: read in the coordinates `e_i = w_{i+1}(0) − f(w_i)`, the
+window law is the plain product `ν^{⊗k}`. From it:
+
+* `IsIIDNoise ε' 1 μ'` — every finite set of times embeds injectively into a consecutive
+  window (`iIndepFun_iff_finset` + `iIndepFun.precomp`), on which the innovations are the
+  coordinates of a `Measure.pi`; the moment clauses follow from `IdentDistrib` against `ν`
+  itself, so the variance is `σ₀²/σ₀² = 1` by `hνvar`;
+* independence of `ε'_t` from `sigmaLT X' t` — `ε'_t` is independent of every finite past
+  window (the one-step refinement `chainWindowLaw_map_init_innov`), and those windows form
+  a *monotone* `ℕ`-indexed family whose `⨆` dominates `sigmaLT X' t`, so
+  `indep_iSup_of_monotone` lifts it; no π-system/monotone-class step is needed. -/
 private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
     {f : (Fin (P + 1) → ℝ) → ℝ} (hf : Measurable f)
     {ν : Measure ℝ} [IsProbabilityMeasure ν]
@@ -439,18 +600,226 @@ private theorem exists_stationary_nlAR_of_invariant {P : ℕ}
     intro t j
     have := key (j : ℕ) j.isLt t
     simpa using this
+  -- ### the innovations
+  haveI := hprob
+  have hσ0 : σ0 ≠ 0 := ne_of_gt hσ
+  have hZmeas : ∀ t : ℤ, Measurable fun ω => Y t ω 0 - f (Y (t - 1) ω) :=
+    fun t => (hX'meas t).sub (hf.comp (hYmeas _))
+  have hεmeas : ∀ t : ℤ, Measurable fun ω => (Y t ω 0 - f (Y (t - 1) ω)) / σ0 :=
+    fun t => (hZmeas t).div_const σ0
+  have hdivmeas : Measurable fun e : ℝ => e / σ0 := measurable_id.div_const σ0
+  -- consecutive innovations are i.i.d. `ν`: the innovation-coordinate window law
+  have hinnovwin : ∀ (a : ℤ) (k : ℕ),
+      μ'.map (fun ω (i : Fin k) => Y (a + (i : ℕ)) ω 0 - f (Y (a + (i : ℕ) - 1) ω))
+        = Measure.pi (fun _ : Fin k => ν) := by
+    intro a k
+    have hbig : Measurable fun ω (i : Fin (k + 1)) => Y (a - 1 + (i : ℕ)) ω :=
+      measurable_pi_lambda _ fun _ => hYmeas _
+    have hinnov : Measurable fun w : Fin (k + 1) → (Fin (P + 1) → ℝ) =>
+        fun i : Fin k => w i.succ 0 - f (w i.castSucc) :=
+      measurable_pi_lambda _ fun _ =>
+        ((measurable_pi_apply 0).comp (measurable_pi_apply _)).sub
+          (hf.comp (measurable_pi_apply _))
+    have h2 := congrArg (fun mm => Measure.map (fun w : Fin (k + 1) → (Fin (P + 1) → ℝ) =>
+      fun i : Fin k => w i.succ 0 - f (w i.castSucc)) mm) (hwin (a - 1) k)
+    simp only at h2
+    rw [Measure.map_map hinnov hbig, chainWindowLaw_map_innov hf F k] at h2
+    rw [← h2]
+    congr 1
+    funext ω
+    funext i
+    have h3 : a - 1 + (((i.succ : Fin (k + 1)) : ℕ) : ℤ) = a + ((i : ℕ) : ℤ) := by
+      simp only [Fin.val_succ]
+      push_cast
+      ring
+    have h4 : a - 1 + (((i.castSucc : Fin (k + 1)) : ℕ) : ℤ) = a + ((i : ℕ) : ℤ) - 1 := by
+      simp only [Fin.val_castSucc]
+      ring
+    simp only [Function.comp_apply]
+    rw [h3, h4]
+  -- the law of a single innovation
+  have hZlaw : ∀ t : ℤ, μ'.map (fun ω => Y t ω 0 - f (Y (t - 1) ω)) = ν := by
+    intro t
+    have hwin1 : Measurable fun ω (i : Fin 1) =>
+        Y (t + (i : ℕ)) ω 0 - f (Y (t + (i : ℕ) - 1) ω) :=
+      measurable_pi_lambda _ fun _ => hZmeas _
+    have hev : ((Measure.pi fun _ : Fin 1 => ν).map fun v : Fin 1 → ℝ => v 0) = ν :=
+      (MeasureTheory.measurePreserving_eval (fun _ : Fin 1 => ν) 0).map_eq
+    have h2 := congrArg (fun mm : Measure (Fin 1 → ℝ) => mm.map fun v : Fin 1 → ℝ => v 0)
+      (hinnovwin t 1)
+    simp only at h2
+    rw [Measure.map_map (measurable_pi_apply 0) hwin1, hev] at h2
+    rw [← h2]
+    congr 1
+    funext ω
+    simp
+  have hεlaw : ∀ t : ℤ, μ'.map (fun ω => (Y t ω 0 - f (Y (t - 1) ω)) / σ0)
+      = ν.map (fun e : ℝ => e / σ0) := by
+    intro t
+    rw [← hZlaw t, Measure.map_map hdivmeas (hZmeas t)]
+    rfl
+  -- the innovation at time `0` is distributed as `ν` itself
+  have hidZ : IdentDistrib (fun ω => Y 0 ω 0 - f (Y ((0 : ℤ) - 1) ω)) (id : ℝ → ℝ) μ' ν :=
+    ⟨(hZmeas 0).aemeasurable, aemeasurable_id, by rw [Measure.map_id]; exact hZlaw 0⟩
+  have hmemZ : MemLp (fun ω => Y 0 ω 0 - f (Y ((0 : ℤ) - 1) ω)) 2 μ' :=
+    hidZ.symm.memLp_snd hν2
+  have hmemLp : MemLp (fun ω => (Y 0 ω 0 - f (Y ((0 : ℤ) - 1) ω)) / σ0) 2 μ' := by
+    simpa [div_eq_inv_mul] using hmemZ.const_mul σ0⁻¹
   refine ⟨Ω', mΩ', μ', (fun t ω => Y t ω 0),
     (fun t ω => (Y t ω 0 - f (Y (t - 1) ω)) / σ0), hprob, hX'meas, ?_, ?_, ?_, ?_⟩
-  · -- MISSING: `IsIIDNoise ε' 1 μ'`.  Needs the innovation-coordinate window law
-    -- `chainWindowLaw (nlARKernel f ν) F k = (F ×ˢ ν^{⊗k}).map Ψ_k` (see the docstring):
-    -- from it, every finite subfamily of `ε'` sits in a consecutive window whose law is
-    -- a product, giving `iIndepFun`, `IdentDistrib`, `MemLp`, mean `0` and variance
-    -- `σ₀²/σ₀² = 1` (by `hνmean`, `hνvar`, `hν2`, `hσ`).
-    sorry
-  · -- MISSING: `Indep (comap (ε' t)) (sigmaLT X' t) μ'`.  Same input: `ε'_t` is
-    -- independent of every finite past window `(Y_{t-1-m}, …, Y_{t-1})`; `sigmaLT X' t`
-    -- is the `⨆` of the π-system these generate, so `IndepSets.indep` lifts it.
-    sorry
+  · -- `IsIIDNoise ε' 1 μ'`
+    refine ⟨hεmeas, ?_, fun s t => ⟨(hεmeas s).aemeasurable, (hεmeas t).aemeasurable,
+      by rw [hεlaw s, hεlaw t]⟩, hmemLp, ?_, ?_⟩
+    · -- mutual independence: every finite set of times sits in a consecutive window,
+      -- on which the innovations are the coordinates of a product measure
+      have hfin : ∀ (a : ℤ) (k : ℕ), iIndepFun
+          (fun (i : Fin k) (ω : Ω') =>
+            (Y (a + (i : ℕ)) ω 0 - f (Y (a + (i : ℕ) - 1) ω)) / σ0) μ' := by
+        intro a k
+        have hbase : iIndepFun
+            (fun (i : Fin k) (ω : Ω') =>
+              Y (a + (i : ℕ)) ω 0 - f (Y (a + (i : ℕ) - 1) ω)) μ' := by
+          rw [iIndepFun_iff_map_fun_eq_pi_map
+              fun i : Fin k => (hZmeas (a + ((i : ℕ) : ℤ))).aemeasurable,
+            hinnovwin a k]
+          exact congrArg Measure.pi (funext fun i : Fin k => (hZlaw (a + ((i : ℕ) : ℤ))).symm)
+        exact hbase.comp (fun _ => fun e : ℝ => e / σ0) fun _ => hdivmeas
+      rw [iIndepFun_iff_finset]
+      intro s
+      obtain ⟨N, hN⟩ : ∃ N : ℕ, ∀ i ∈ s, (i : ℤ).natAbs ≤ N :=
+        ⟨s.sup Int.natAbs, fun i hi => Finset.le_sup hi⟩
+      have hginj : Function.Injective (fun i : ↥s =>
+          (⟨((i : ℤ) + (N : ℤ)).toNat, by have := hN i i.2; omega⟩ : Fin (2 * N + 1))) := by
+        intro i j hij
+        have h0 : ((i : ℤ) + (N : ℤ)).toNat = ((j : ℤ) + (N : ℤ)).toNat := congrArg Fin.val hij
+        have h1 := hN i i.2
+        have h2 := hN j j.2
+        exact Subtype.ext (by omega)
+      have hres := (hfin (-(N : ℤ)) (2 * N + 1)).precomp hginj
+      have heq : (fun (i : ↥s) (ω : Ω') =>
+            (Y (-(N : ℤ) + ((((i : ℤ) + (N : ℤ)).toNat : ℕ) : ℤ)) ω 0
+              - f (Y (-(N : ℤ) + ((((i : ℤ) + (N : ℤ)).toNat : ℕ) : ℤ) - 1) ω)) / σ0)
+          = fun (i : ↥s) (ω : Ω') => (Y (i : ℤ) ω 0 - f (Y ((i : ℤ) - 1) ω)) / σ0 := by
+        funext i
+        funext ω
+        have h1 := hN i i.2
+        have hi : -(N : ℤ) + ((((i : ℤ) + (N : ℤ)).toNat : ℕ) : ℤ) = (i : ℤ) := by omega
+        rw [hi]
+      show iIndepFun (fun (i : ↥s) (ω : Ω') =>
+        (Y (i : ℤ) ω 0 - f (Y ((i : ℤ) - 1) ω)) / σ0) μ'
+      rw [← heq]
+      exact hres
+    · -- mean zero
+      rw [integral_div, hidZ.integral_eq]
+      simp only [id_eq]
+      rw [hνmean, zero_div]
+    · -- variance one
+      have h1 : (fun ω => (Y 0 ω 0 - f (Y ((0 : ℤ) - 1) ω)) / σ0)
+          = fun ω => σ0⁻¹ * (Y 0 ω 0 - f (Y ((0 : ℤ) - 1) ω)) :=
+        funext fun ω => div_eq_inv_mul _ _
+      rw [h1, variance_const_mul, hidZ.variance_eq, hνvar]
+      field_simp
+  · -- `Indep (comap (ε' t)) (sigmaLT X' t) μ'`: `ε'_t` is independent of every finite past
+    -- window of `Y`, and those windows generate an increasing family whose `⨆` dominates
+    -- `sigmaLT X' t`
+    intro t
+    obtain ⟨m, hmdef⟩ : ∃ m : ℕ → MeasurableSpace Ω', ∀ j : ℕ,
+        m j = MeasurableSpace.comap
+          (fun ω (i : Fin (j + 1)) => Y (t - 1 - (j : ℤ) + (i : ℕ)) ω) inferInstance :=
+      ⟨_, fun _ => rfl⟩
+    have hWmeas : ∀ j : ℕ,
+        Measurable fun ω (i : Fin (j + 1)) => Y (t - 1 - (j : ℤ) + (i : ℕ)) ω :=
+      fun j => measurable_pi_lambda _ fun _ => hYmeas _
+    have hmle : ∀ j : ℕ, m j ≤ mΩ' := fun j => by
+      rw [hmdef j]; exact (hWmeas j).comap_le
+    have hmono : Monotone m := by
+      refine monotone_nat_of_le_succ fun j => ?_
+      have hφ : Measurable fun w : Fin (j + 1 + 1) → (Fin (P + 1) → ℝ) =>
+          fun i : Fin (j + 1) => w i.succ :=
+        measurable_pi_lambda _ fun _ => measurable_pi_apply _
+      have hcomp : (fun ω (i : Fin (j + 1)) => Y (t - 1 - (j : ℤ) + (i : ℕ)) ω)
+          = (fun w : Fin (j + 1 + 1) → (Fin (P + 1) → ℝ) =>
+              fun i : Fin (j + 1) => w i.succ) ∘
+            (fun ω (i : Fin (j + 1 + 1)) =>
+              Y (t - 1 - ((j + 1 : ℕ) : ℤ) + (i : ℕ)) ω) := by
+        funext ω
+        funext i
+        simp only [Function.comp_apply, Fin.val_succ]
+        congr 1
+        push_cast
+        ring
+      rw [hmdef j, hmdef (j + 1), hcomp, ← MeasurableSpace.comap_comp]
+      exact MeasurableSpace.comap_mono hφ.comap_le
+    -- the strict past of `X'` sits inside the window family
+    have hsig : sigmaLT (fun s (ω : Ω') => Y s ω 0) t ≤ ⨆ j : ℕ, m j := by
+      refine iSup₂_le fun s hs => ?_
+      have hslt : s < t := hs
+      obtain ⟨j, hj⟩ : ∃ j : ℕ, t - 1 - (j : ℤ) = s := ⟨(t - 1 - s).toNat, by omega⟩
+      show MeasurableSpace.comap (fun ω : Ω' => Y s ω 0) inferInstance ≤ ⨆ j : ℕ, m j
+      refine le_trans ?_ (le_iSup m j)
+      have hcomp : (fun ω : Ω' => Y s ω 0)
+          = (fun w : Fin (j + 1) → (Fin (P + 1) → ℝ) => w 0 0) ∘
+            (fun ω (i : Fin (j + 1)) => Y (t - 1 - (j : ℤ) + (i : ℕ)) ω) := by
+        funext ω
+        simp only [Function.comp_apply, Fin.val_zero, Nat.cast_zero, add_zero, hj]
+      have hev : Measurable fun w : Fin (j + 1) → (Fin (P + 1) → ℝ) => w 0 0 :=
+        (measurable_pi_apply (0 : Fin (P + 1))).comp (measurable_pi_apply (0 : Fin (j + 1)))
+      rw [hmdef j, hcomp, ← MeasurableSpace.comap_comp]
+      exact MeasurableSpace.comap_mono hev.comap_le
+    -- `ε'_t` is independent of each window
+    have hindepj : ∀ j : ℕ, Indep (m j)
+        (MeasurableSpace.comap
+          (fun ω : Ω' => (Y t ω 0 - f (Y (t - 1) ω)) / σ0) inferInstance) μ' := by
+      intro j
+      have hVmeas : Measurable fun ω (i : Fin (j + 1 + 1)) =>
+          Y (t - 1 - (j : ℤ) + (i : ℕ)) ω :=
+        measurable_pi_lambda _ fun _ => hYmeas _
+      have hΘ : Measurable fun w : Fin (j + 1 + 1) → (Fin (P + 1) → ℝ) =>
+          (Fin.init w, w (Fin.last (j + 1)) 0 - f (w (Fin.last j).castSucc)) :=
+        (measurable_pi_lambda _ fun _ => measurable_pi_apply _).prodMk
+          (((measurable_pi_apply 0).comp (measurable_pi_apply _)).sub
+            (hf.comp (measurable_pi_apply _)))
+      have hjoint : μ'.map (fun ω : Ω' =>
+            ((fun i : Fin (j + 1) => Y (t - 1 - (j : ℤ) + (i : ℕ)) ω),
+              Y t ω 0 - f (Y (t - 1) ω)))
+          = (chainWindowLaw (nlARKernel f ν) F j).prod ν := by
+        have h2 := congrArg (fun mm =>
+          Measure.map (fun w : Fin (j + 1 + 1) → (Fin (P + 1) → ℝ) =>
+            (Fin.init w, w (Fin.last (j + 1)) 0 - f (w (Fin.last j).castSucc))) mm)
+          (hwin (t - 1 - (j : ℤ)) (j + 1))
+        simp only at h2
+        rw [Measure.map_map hΘ hVmeas, chainWindowLaw_map_init_innov hf F j] at h2
+        rw [← h2]
+        congr 1
+        funext ω
+        simp only [Function.comp_apply, Prod.mk.injEq]
+        refine ⟨?_, ?_⟩
+        · funext i
+          simp only [Fin.init, Fin.val_castSucc]
+        · have ha : t - 1 - (j : ℤ)
+              + (((Fin.last (j + 1) : Fin (j + 1 + 1)) : ℕ) : ℤ) = t := by
+            simp only [Fin.val_last]
+            push_cast
+            ring
+          have hb : t - 1 - (j : ℤ)
+              + ((((Fin.last j).castSucc : Fin (j + 1 + 1)) : ℕ) : ℤ) = t - 1 := by
+            simp only [Fin.val_castSucc, Fin.val_last]
+            ring
+          rw [ha, hb]
+      have hindepfun : IndepFun
+          (fun ω : Ω' => fun i : Fin (j + 1) => Y (t - 1 - (j : ℤ) + (i : ℕ)) ω)
+          (fun ω : Ω' => Y t ω 0 - f (Y (t - 1) ω)) μ' :=
+        (indepFun_iff_map_prod_eq_prod_map_map (hWmeas j).aemeasurable
+          (hZmeas t).aemeasurable).mpr (by
+            rw [hwin (t - 1 - (j : ℤ)) j, hZlaw t]
+            exact hjoint)
+      rw [hmdef j]
+      exact hindepfun.comp measurable_id hdivmeas
+    have hbig : Indep (⨆ j : ℕ, m j)
+        (MeasurableSpace.comap
+          (fun ω : Ω' => (Y t ω 0 - f (Y (t - 1) ω)) / σ0) inferInstance) μ' :=
+      indep_iSup_of_monotone hindepj hmle (hεmeas t).comap_le hmono
+    exact (indep_of_indep_of_le_left hbig hsig).symm
   · -- the recursion
     intro t
     filter_upwards [hcons] with ω hω
