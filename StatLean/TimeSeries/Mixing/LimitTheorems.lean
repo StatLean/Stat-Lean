@@ -316,6 +316,33 @@ private lemma sum_sub_double_eq (f : ℤ → ℝ) : ∀ n : ℕ,
 
 end Triangular
 
+/-- The two-sided ACVF series is the book's `σ² = γ(0) + 2 Σ_{j ≥ 1} γ(j)` (evenness of the
+ACVF folds the negative lags onto the positive ones). -/
+private lemma tsum_acvf_eq [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
+    (hws : IsStationary X μ) (hsum : Summable fun k : ℤ => |acvf X μ k|) :
+    (∑' k : ℤ, acvf X μ k) = acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) := by
+  have hsumZ : Summable fun k : ℤ => acvf X μ k := hsum.of_abs
+  have hsumN : Summable fun n : ℕ => acvf X μ (n : ℤ) := hsumZ.comp_injective Nat.cast_injective
+  have hsumN1 : Summable fun n : ℕ => acvf X μ ((n : ℤ) + 1) := by
+    have h := (summable_nat_add_iff 1).mpr hsumN
+    refine h.congr fun n => ?_
+    have e : ((n + 1 : ℕ) : ℤ) = (n : ℤ) + 1 := by push_cast; ring
+    rw [e]
+  have hneg : Summable fun n : ℕ => acvf X μ (-((n : ℤ) + 1)) := by
+    simpa only [acvf_neg hws] using hsumN1
+  have hnegeq : (∑' n : ℕ, acvf X μ (-((n : ℤ) + 1))) = ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) :=
+    tsum_congr fun n => acvf_neg hws _
+  have hshift : (∑' n : ℕ, acvf X μ ((n + 1 : ℕ) : ℤ))
+      = ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) :=
+    tsum_congr fun n => by
+      rw [show ((n + 1 : ℕ) : ℤ) = (n : ℤ) + 1 by push_cast; ring]
+  have hpos : (∑' n : ℕ, acvf X μ (n : ℤ))
+      = acvf X μ 0 + ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) := by
+    rw [hsumN.tsum_eq_zero_add, hshift]
+    norm_num
+  rw [tsum_of_nat_of_neg_add_one hsumN hneg, hnegeq, hpos]
+  ring
+
 /-- **The variance rate from summability alone.** For a weakly stationary process whose
 ACVF is absolutely summable, `n⁻¹ Var(S_n) → Σ_{k ∈ ℤ} γ(k) = γ(0) + 2 Σ_{j ≥ 1} γ(j)`:
 the exact triangular-weight expansion turns `n⁻¹ Var(S_n)` into the Fejér-weighted series
@@ -331,30 +358,9 @@ private lemma tendsto_var_rate_of_summable [IsProbabilityMeasure μ] {X : ℤ �
         variance (fun ω => ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) μ) atTop
       (𝓝 (acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1))) := by
   classical
-  have hsumZ : Summable fun k : ℤ => acvf X μ k := hsum.of_abs
-  have hsumN : Summable fun n : ℕ => acvf X μ (n : ℤ) := hsumZ.comp_injective Nat.cast_injective
-  have hsumN1 : Summable fun n : ℕ => acvf X μ ((n : ℤ) + 1) := by
-    have h := (summable_nat_add_iff 1).mpr hsumN
-    refine h.congr fun n => ?_
-    have e : ((n + 1 : ℕ) : ℤ) = (n : ℤ) + 1 := by push_cast; ring
-    rw [e]
   -- (a) the `ℤ`-series of the ACVF is the book's `σ² = γ(0) + 2 Σ_{j≥1} γ(j)`
   have hσeq : (∑' k : ℤ, acvf X μ k)
-      = acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) := by
-    have hneg : Summable fun n : ℕ => acvf X μ (-((n : ℤ) + 1)) := by
-      simpa only [acvf_neg hws] using hsumN1
-    have hnegeq : (∑' n : ℕ, acvf X μ (-((n : ℤ) + 1))) = ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) :=
-      tsum_congr fun n => acvf_neg hws _
-    have hshift : (∑' n : ℕ, acvf X μ ((n + 1 : ℕ) : ℤ))
-        = ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) :=
-      tsum_congr fun n => by
-        rw [show ((n + 1 : ℕ) : ℤ) = (n : ℤ) + 1 by push_cast; ring]
-    have hpos : (∑' n : ℕ, acvf X μ (n : ℤ))
-        = acvf X μ 0 + ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) := by
-      rw [hsumN.tsum_eq_zero_add, hshift]
-      norm_num
-    rw [tsum_of_nat_of_neg_add_one hsumN hneg, hnegeq, hpos]
-    ring
+      = acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) := tsum_acvf_eq hws hsum
   -- (b) the exact triangular-weight expansion of `Var S_n`
   have hvar : ∀ n : ℕ, variance (fun ω => ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) μ
       = ∑ k ∈ Finset.Ioo (-(n : ℤ)) (n : ℤ), ((n : ℝ) - |(k : ℝ)|) * acvf X μ k := by
@@ -1805,6 +1811,70 @@ private lemma sqrt_integral_sq_add_le [IsProbabilityMeasure μ] {f g : Ω → �
   rw [eLpNorm_two_eq_sqrt hfg, eLpNorm_two_eq_sqrt hf, eLpNorm_two_eq_sqrt hg,
     ← ENNReal.ofReal_add (Real.sqrt_nonneg _) (Real.sqrt_nonneg _)] at hmink
   exact (ENNReal.ofReal_le_ofReal_iff (by positivity)).mp hmink
+
+/-! #### Clamping arithmetic -/
+
+/-- The clamp `x ↦ max (−M) (min M x)` is measurable. -/
+private lemma measurable_clamp (M : ℝ) : Measurable fun x : ℝ => max (-M) (min M x) :=
+  measurable_const.max (measurable_const.min measurable_id)
+
+/-- Clamping to `[−M, M]` is bounded by `M`. -/
+private lemma abs_clamp_le'' {M x : ℝ} (hM : 0 ≤ M) : |max (-M) (min M x)| ≤ M := by
+  rw [abs_le]
+  exact ⟨le_max_left _ _, max_le (by linarith) (min_le_left _ _)⟩
+
+/-- Clamping only moves a point towards the origin, so the discarded part is no larger than
+the point itself. -/
+private lemma abs_sub_clamp_le'' {M x : ℝ} (hM : 0 ≤ M) :
+    |x - max (-M) (min M x)| ≤ |x| := by
+  rcases le_total x (-M) with h | h
+  · rw [min_eq_right (by linarith), max_eq_left h]
+    rw [abs_of_nonpos (by linarith : x ≤ 0), abs_of_nonpos (by linarith : x - -M ≤ 0)]
+    linarith
+  · rcases le_total x M with h2 | h2
+    · rw [min_eq_right h2, max_eq_right h]
+      simp
+    · rw [min_eq_left h2, max_eq_right (by linarith)]
+      rw [abs_of_nonneg (by linarith : (0 : ℝ) ≤ x), abs_of_nonneg (by linarith : (0 : ℝ) ≤ x - M)]
+      linarith
+
+/-- Below the clamping level nothing is discarded. -/
+private lemma sub_clamp_eq_zero'' {M x : ℝ} (h : |x| ≤ M) : x - max (-M) (min M x) = 0 := by
+  rw [abs_le] at h
+  rw [min_eq_right h.2, max_eq_right h.1, sub_self]
+
+/-! #### Davydov over `ℤ`-lags, and transfer of the mixing hypothesis -/
+
+/-- The Davydov ACVF bound at an arbitrary (signed) lag. -/
+private lemma abs_acvf_int_le_davydov [IsProbabilityMeasure μ] {W : ℤ → Ω → ℝ}
+    (hmW : ∀ t, Measurable (W t)) (hstatW : IsStrictlyStationary W μ)
+    (hwsW : IsStationary W μ) (hδ : 2 < δ) (hLδW : MemLp (W 0) (ENNReal.ofReal δ) μ) (k : ℤ) :
+    |acvf W μ k| ≤ 8 * alphaCoeff W μ k.natAbs ^ (1 - 2 / δ)
+      * (eLpNorm (W 0) (ENNReal.ofReal δ) μ).toReal ^ 2 := by
+  set m : ℕ := k.natAbs with hm
+  rcases le_or_gt 0 k with h | h
+  · have hk : k = (m : ℤ) := by omega
+    rw [hk]
+    exact abs_acvf_le_alphaCoeff_davydov hmW hstatW hδ hLδW m
+  · have hk : k = -((m : ℤ)) := by omega
+    rw [hk, acvf_neg hwsW]
+    exact abs_acvf_le_alphaCoeff_davydov hmW hstatW hδ hLδW m
+
+/-- `Σ α_X^θ < ∞` transfers to any process whose coefficients are dominated by `α_X`. -/
+private lemma summable_rpow_of_le [IsProbabilityMeasure μ] {W : ℤ → Ω → ℝ} {θ : ℝ} (hθ : 0 ≤ θ)
+    (hle : ∀ n : ℕ, alphaCoeff W μ n ≤ alphaCoeff X μ n)
+    (hα : Summable fun n : ℕ => alphaCoeff X μ n ^ θ) :
+    Summable fun n : ℕ => alphaCoeff W μ n ^ θ :=
+  hα.of_nonneg_of_le (fun _ => Real.rpow_nonneg alphaMixCoeff_nonneg θ)
+    (fun n => Real.rpow_le_rpow alphaMixCoeff_nonneg (hle n) hθ)
+
+/-- The `ℤ`-indexed Davydov dominant is summable. -/
+private lemma summable_int_dominant [IsProbabilityMeasure μ] {θ c : ℝ}
+    (hα : Summable fun n : ℕ => alphaCoeff X μ n ^ θ) :
+    Summable fun k : ℤ => 8 * alphaCoeff X μ k.natAbs ^ θ * c := by
+  refine Summable.of_nat_of_neg ?_ ?_
+  · simpa using (hα.mul_left 8).mul_right c
+  · simpa using (hα.mul_left 8).mul_right c
 
 end Delta
 
