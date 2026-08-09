@@ -302,6 +302,15 @@ theorem pairEstimator_variance (P : PairedTable m) :
   funext c
   ring
 
+/-- Expansion of a sum of squared deviations about an arbitrary centre. -/
+private lemma sum_sq_shift (D : Fin m → ℝ) (a : ℝ) :
+    ∑ j, (D j - a) ^ 2 = (∑ j, (D j) ^ 2) - 2 * a * (∑ j, D j) + (m : ℝ) * a ^ 2 := by
+  have hexp : ∀ j : Fin m, (D j - a) ^ 2 = (D j) ^ 2 - 2 * a * D j + a ^ 2 := by
+    intro j; ring
+  rw [Finset.sum_congr rfl (fun j (_ : j ∈ Finset.univ) => hexp j), Finset.sum_add_distrib,
+    Finset.sum_sub_distrib, ← Finset.mul_sum, Finset.sum_const, Finset.card_univ,
+    Fintype.card_fin, nsmul_eq_mul]
+
 /-- **Theorem 7.1** (Ding §7.3, p. 104): the paired variance estimator overestimates the
 true variance by exactly the dispersion of the pair effects. -/
 theorem pairVarEst_bias (P : PairedTable m)
@@ -309,13 +318,67 @@ theorem pairVarEst_bias (P : PairedTable m)
     (hm : 2 ≤ m) :
     pairExpect P.pairVarEst - pairVar P.pairEstimator
       = ((m : ℝ) * ((m : ℝ) - 1))⁻¹ * ∑ j, (P.pairEffect j - P.ate) ^ 2 := by
-  sorry
+  have hmR : (2 : ℝ) ≤ (m : ℝ) := by exact_mod_cast hm
+  have hm0 : (m : ℝ) ≠ 0 := ne_of_gt (by linarith)
+  have hm1 : (m : ℝ) - 1 ≠ 0 := ne_of_gt (by linarith)
+  -- The bias–variance regrouping of the observed sum of squares, pointwise in `c`.
+  have hid : ∀ c : Fin m → Bool,
+      (∑ j, (P.pairDiff c j - P.pairEstimator c) ^ 2)
+        = (∑ j, (P.pairDiff c j - P.ate) ^ 2)
+          - (m : ℝ) * (P.pairEstimator c - P.ate) ^ 2 := by
+    intro c
+    have hsum : ∑ j, P.pairDiff c j = (m : ℝ) * P.pairEstimator c := by
+      unfold PairedTable.pairEstimator
+      field_simp
+    rw [sum_sq_shift, sum_sq_shift, hsum]
+    ring
+  -- `τ̂` is centred at `τ`, so its mean square deviation from `τ` is its variance.
+  have hpv : pairExpect (fun c => (P.pairEstimator c - P.ate) ^ 2)
+      = pairVar P.pairEstimator := by
+    unfold pairVar
+    rw [pairEstimator_unbiased]
+  have hVE : pairExpect P.pairVarEst
+      = ((m : ℝ) * ((m : ℝ) - 1))⁻¹
+        * ((∑ j, pairExpect (fun c => (P.pairDiff c j - P.ate) ^ 2))
+            - (m : ℝ) * pairVar P.pairEstimator) := by
+    have hfun : P.pairVarEst
+        = fun c : Fin m → Bool => ((m : ℝ) * ((m : ℝ) - 1))⁻¹
+            * ((∑ j, (P.pairDiff c j - P.ate) ^ 2)
+              - (m : ℝ) * (P.pairEstimator c - P.ate) ^ 2) := by
+      funext c
+      unfold PairedTable.pairVarEst
+      rw [hid c]
+    rw [hfun, pairExpect_const_mul, pairExpect_sub, pairExpect_sum, pairExpect_const_mul, hpv]
+  -- Each pair contributes its own variance plus the squared deviation of its effect.
+  have hj : ∀ j : Fin m, pairExpect (fun c => (P.pairDiff c j - P.ate) ^ 2)
+      = pairVar (fun c => P.pairDiff c j) + (P.pairEffect j - P.ate) ^ 2 := by
+    intro j
+    have hexp : (fun c : Fin m → Bool => (P.pairDiff c j - P.ate) ^ 2)
+        = fun c : Fin m → Bool =>
+            ((P.pairDiff c j - P.pairEffect j) ^ 2
+              + (2 * (P.pairEffect j - P.ate)) * (P.pairDiff c j - P.pairEffect j))
+            + (P.pairEffect j - P.ate) ^ 2 := by
+      funext c; ring
+    rw [hexp, pairExpect_add, pairExpect_add, pairExpect_const, pairExpect_const_mul,
+      pairExpect_centred, mul_zero, add_zero]
+    congr 1
+    unfold pairVar
+    rw [pairExpect_pairDiff]
+  rw [hVE, Finset.sum_congr rfl (fun j (_ : j ∈ Finset.univ) => hj j), Finset.sum_add_distrib,
+    pairEstimator_variance]
+  field_simp
+  ring
 
 /-- **Conservativeness** (Ding Theorem 7.1): the paired variance estimator is unbiased
 upward. -/
 theorem pairVarEst_conservative (P : PairedTable m) (hm : 2 ≤ m) :
     pairVar P.pairEstimator ≤ pairExpect P.pairVarEst := by
-  sorry
+  have hmR : (2 : ℝ) ≤ (m : ℝ) := by exact_mod_cast hm
+  have hbias := pairVarEst_bias P hm
+  have hnn : 0 ≤ ((m : ℝ) * ((m : ℝ) - 1))⁻¹ * ∑ j, (P.pairEffect j - P.ate) ^ 2 := by
+    refine mul_nonneg (le_of_lt (inv_pos.mpr ?_)) (Finset.sum_nonneg fun j _ => sq_nonneg _)
+    nlinarith
+  linarith
 
 /-- **Exactness under constant pair effects** (Ding Theorem 7.1): the bias vanishes exactly
 when all pair-level effects agree. -/
@@ -323,6 +386,19 @@ theorem pairVarEst_unbiased_of_constant (P : PairedTable m) {τ : ℝ}
     -- USER-INPUT: constant pair-level effects; Ding Theorem 7.1
     (hconst : ∀ j, P.pairEffect j = τ) (hm : 2 ≤ m) :
     pairExpect P.pairVarEst = pairVar P.pairEstimator := by
-  sorry
+  have hmR : (2 : ℝ) ≤ (m : ℝ) := by exact_mod_cast hm
+  have hm0 : (m : ℝ) ≠ 0 := ne_of_gt (by linarith)
+  have hate : P.ate = τ := by
+    unfold PairedTable.ate
+    rw [Finset.sum_congr rfl (fun j (_ : j ∈ Finset.univ) => hconst j), Finset.sum_const,
+      Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    field_simp
+  have hzero : ∑ j, (P.pairEffect j - P.ate) ^ 2 = 0 := by
+    refine Finset.sum_eq_zero fun j _ => ?_
+    rw [hconst j, hate, sub_self]
+    ring
+  have hbias := pairVarEst_bias P hm
+  rw [hzero, mul_zero] at hbias
+  linarith
 
 end StatLean.CausalInference
