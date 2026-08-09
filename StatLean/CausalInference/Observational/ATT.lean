@@ -29,6 +29,17 @@ weighted-estimand theorem is stated with the normalizing denominator `E[h(X)]` e
 so no positivity of `E[h]` is needed for the statement; the four special cases carry the
 hypotheses that make their denominators nonzero.
 
+**Open items.** `weightedATE_propensity` and `weightedATE_one_sub_propensity` are *false as
+frozen*: both are stated without any ignorability hypothesis, so nothing connects the
+conditional effect `τ(x)` that `weightedATE` averages to the arm-specific mean that `τ_T`
+(resp. `τ_C`) averages. Ding's table row `h = e ↦ τ_T` lives inside Theorem 13.4, whose
+standing hypothesis is Assumption 10.2. A machine-checked witness is `Ω = Bool` with the
+uniform measure, `𝒳 = Unit`, `Z = id`, `Y(1) = 1{Z = 1}`, `Y(0) = 0`: there `e ≡ 1/2`, the
+tilt cancels, and `weightedATE = E[Y(1) - Y(0)] = 1/2` while `τ_T = 1` and `τ_C = 0`. The
+repair is to add `Unconfounded μ Z y1 y0 X` (and, for `τ_T`, `μ(Z = 1) ≠ 0`) to the
+hypotheses; the proof is then `att_eq_sub_sum_cellMean` together with
+`cond_cell_given_treated`, exactly as sketched for the identified version.
+
 **Bibliographic comments.** The overlap weight `h = e(1-e)` and its optimality properties
 are from F. Li, K. L. Morgan and A. M. Zaslavsky, "Balancing covariates via propensity
 score weighting," *J. Amer. Statist. Assoc.* **113** (2018), 390–400.
@@ -459,6 +470,16 @@ theorem weightedATE_propensity [IsProbabilityMeasure μ]
     -- USER-INPUT: some unit is treated; Ding ch. 13
     (hT : μ (treatedEvent Z) ≠ 0) :
     weightedATE μ X y1 y0 (propensity μ Z X) = att μ Z y1 y0 := by
+  -- FALSE AS FROZEN.  The statement carries no ignorability hypothesis, and without one
+  -- the two sides are genuinely different functionals: the left side averages
+  -- `τ(x) = E[Y(1) - Y(0) | X = x]` against the `e`-tilted covariate law, while the right
+  -- side averages `E[Y(1) - Y(0) | X = x, Z = 1]` against the same law.  Ding's
+  -- Theorem 13.4 identifies them via `τ(x) = E[Y(1) - Y(0) | X = x, Z = 1]`, which is
+  -- exactly Assumption 10.2 / 13.1; the repaired statement needs `Unconfounded μ Z y1 y0 X`
+  -- (or `Assumption131` plus ignorability of `y1`) among the hypotheses.
+  -- Witness (machine-checked): `Ω = Bool` with the uniform measure, `𝒳 = Unit`, `Z = id`,
+  -- `y1 = 1{Z = 1}`, `y0 = 0`.  Then `e ≡ 1/2`, so the tilt cancels and the left side is
+  -- `E[Y(1) - Y(0)] = 1/2`, whereas `τ_T = E[Y(1) - Y(0) | Z = 1] = 1`.
   sorry
 
 /-- **The weight `h = 1 - e` gives the effect on the controls** (Ding Theorem 13.4, third
@@ -469,6 +490,11 @@ theorem weightedATE_one_sub_propensity [IsProbabilityMeasure μ]
     -- USER-INPUT: some unit is untreated; Ding ch. 13
     (hC : μ {ω | Z ω = false} ≠ 0) :
     weightedATE μ X y1 y0 (fun x => 1 - propensity μ Z X x) = atc μ Z y1 y0 := by
+  -- FALSE AS FROZEN, for the same reason as `weightedATE_propensity`: no ignorability
+  -- hypothesis is available, so `τ(x)` cannot be replaced by `E[Y(1) - Y(0) | X = x, Z = 0]`.
+  -- Witness (machine-checked): the same `Ω = Bool`, `𝒳 = Unit`, `Z = id`, `y1 = 1{Z = 1}`,
+  -- `y0 = 0` model.  There `1 - e ≡ 1/2`, so the left side is `E[Y(1) - Y(0)] = 1/2`,
+  -- whereas `τ_C = E[Y(1) - Y(0) | Z = 0] = 0`.
   sorry
 
 end StatLean.CausalInference
