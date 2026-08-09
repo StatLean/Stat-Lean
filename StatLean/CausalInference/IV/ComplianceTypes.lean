@@ -114,16 +114,16 @@ theorem ind_d1_sub_ind_d0 (ω : Ω) :
   cases h1 : d1 ω <;> cases h0 : d0 ω
   · rw [Set.indicator_of_notMem (by simp [mem_typeSet_complier, h1]),
       Set.indicator_of_notMem (by simp [mem_typeSet_defier, h0])]
-    simp [ind, h1, h0]
+    simp [ind]
   · rw [Set.indicator_of_notMem (by simp [mem_typeSet_complier, h1]),
       Set.indicator_of_mem (mem_typeSet_defier.2 ⟨h1, h0⟩)]
-    simp [ind, h1, h0]
+    simp [ind]
   · rw [Set.indicator_of_mem (mem_typeSet_complier.2 ⟨h1, h0⟩),
       Set.indicator_of_notMem (by simp [mem_typeSet_defier, h1])]
-    simp [ind, h1, h0]
+    simp [ind]
   · rw [Set.indicator_of_notMem (by simp [mem_typeSet_complier, h0]),
       Set.indicator_of_notMem (by simp [mem_typeSet_defier, h1])]
-    simp [ind, h1, h0]
+    simp [ind]
 
 /-- In the treated arm the observed treatment equals `D(1)`; in the control arm it equals
 `D(0)` — the observed-treatment analogue of the consistency assumption. -/
