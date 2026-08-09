@@ -457,6 +457,113 @@ theorem weightedATE_one [IsProbabilityMeasure μ]
   rw [weightedATE, ate]
   simp
 
+/-! ### Private toolkit for the weighted estimands
+
+The tilts `h = e` and `h = 1 - e` are exactly the two arm masses of a covariate cell, so
+the normalizing denominator `E[h(X)]` is the mass of the corresponding arm
+(`integral_propensity_comp`) and the tilted cell weights are the cell weights *under that
+arm* (`cond_cell_given_treated`, `cond_cell_given_control`). That is the whole content of
+the two table rows: both sides decompose over the cells with the same coefficients. -/
+
+/-- The mass of a measurable set is the sum of the masses of its traces on the cells. -/
+private lemma measure_eq_sum_inter_cell {ν : Measure Ω} [IsFiniteMeasure ν] (hX : Measurable X)
+    {A : Set Ω} (hA : MeasurableSet A) : ν A = ∑ x : 𝒳, ν (A ∩ cell X x) := by
+  have hmeas : ∀ x : 𝒳, MeasurableSet (A ∩ cell X x) := fun x =>
+    hA.inter (hX (measurableSet_singleton x))
+  have hdisj : Pairwise (Function.onFun Disjoint fun x : 𝒳 => A ∩ cell X x) := by
+    intro a b hab
+    simp only [Function.onFun, Set.disjoint_left]
+    rintro ω ⟨-, ha⟩ ⟨-, hb⟩
+    simp only [cell, Set.mem_preimage, Set.mem_singleton_iff] at ha hb
+    exact hab (ha.symm.trans hb)
+  have hcover : (⋃ x : 𝒳, A ∩ cell X x) = A := by
+    rw [← Set.inter_iUnion]
+    have hu : (⋃ x : 𝒳, cell X x) = (Set.univ : Set Ω) := by
+      ext ω
+      simp only [Set.mem_iUnion, cell, Set.mem_preimage, Set.mem_singleton_iff, Set.mem_univ,
+        iff_true]
+      exact ⟨X ω, rfl⟩
+    rw [hu, Set.inter_univ]
+  calc ν A = ν (⋃ x : 𝒳, A ∩ cell X x) := by rw [hcover]
+    _ = ∑' x : 𝒳, ν (A ∩ cell X x) := measure_iUnion hdisj hmeas
+    _ = ∑ x : 𝒳, ν (A ∩ cell X x) := tsum_fintype _
+
+/-- The treated part of a cell carries mass `e(x)` times the cell — the definition of the
+propensity score read backwards. Null cells included, both sides being `0` there. -/
+private lemma measureReal_cell_inter_treated [IsFiniteMeasure μ] (hX : Measurable X) (x : 𝒳) :
+    (μ (cell X x ∩ treatedEvent Z)).toReal
+      = (μ (cell X x)).toReal * propensity μ Z X x := by
+  have hc : MeasurableSet (cell X x) := hX (measurableSet_singleton x)
+  rcases eq_or_ne (μ (cell X x)) 0 with h0 | h0
+  · rw [measure_mono_null Set.inter_subset_left h0, h0]
+    simp
+  · have hne : (μ (cell X x)).toReal ≠ 0 := by
+      simp [ENNReal.toReal_eq_zero_iff, h0, measure_ne_top μ _]
+    rw [propensity, cond_apply hc, ENNReal.toReal_mul, ENNReal.toReal_inv, ← mul_assoc,
+      mul_inv_cancel₀ hne, one_mul]
+
+/-- The control part of a cell carries mass `1 - e(x)` times the cell: the two arms of a
+cell partition it. -/
+private lemma measureReal_cell_inter_control [IsFiniteMeasure μ] (hZ : Measurable Z)
+    (hX : Measurable X) (x : 𝒳) :
+    (μ (cell X x ∩ {ω | Z ω = false})).toReal
+      = (μ (cell X x)).toReal * (1 - propensity μ Z X x) := by
+  have hTm : MeasurableSet (treatedEvent Z) := hZ (measurableSet_singleton true)
+  have hdiff : cell X x ∩ {ω | Z ω = false} = cell X x \ treatedEvent Z := by
+    ext ω; simp [treatedEvent]
+  have hsplit : μ (cell X x ∩ treatedEvent Z) + μ (cell X x ∩ {ω | Z ω = false})
+      = μ (cell X x) := by
+    rw [hdiff]
+    exact measure_inter_add_diff _ hTm
+  have h2 : (μ (cell X x ∩ treatedEvent Z)).toReal
+      + (μ (cell X x ∩ {ω | Z ω = false})).toReal = (μ (cell X x)).toReal := by
+    rw [← ENNReal.toReal_add (measure_ne_top μ _) (measure_ne_top μ _), hsplit]
+  rw [measureReal_cell_inter_treated hX x] at h2
+  have hring : (μ (cell X x)).toReal * (1 - propensity μ Z X x)
+      = (μ (cell X x)).toReal - (μ (cell X x)).toReal * propensity μ Z X x := by ring
+  rw [hring]
+  linarith
+
+/-- **The propensity score has mean the treated fraction**, `E[e(X)] = P(Z = 1)`: the law
+of total probability over the covariate cells. -/
+private lemma integral_propensity_comp [IsProbabilityMeasure μ] (hZ : Measurable Z)
+    (hX : Measurable X) :
+    ∫ ω, propensity μ Z X (X ω) ∂μ = (μ (treatedEvent Z)).toReal := by
+  have hTm : MeasurableSet (treatedEvent Z) := hZ (measurableSet_singleton true)
+  have hR : (μ (treatedEvent Z)).toReal
+      = ∑ x : 𝒳, (μ (cell X x)).toReal * propensity μ Z X x := by
+    rw [measure_eq_sum_inter_cell (ν := μ) hX hTm,
+      ENNReal.toReal_sum fun x _ => measure_ne_top μ _]
+    refine Finset.sum_congr rfl fun x _ => ?_
+    rw [Set.inter_comm, measureReal_cell_inter_treated hX x]
+  rw [hR, integral_eq_sum_cell' (ν := μ) hX (integrable_comp' hX (propensity μ Z X))]
+  refine Finset.sum_congr rfl fun x _ => ?_
+  rcases eq_or_ne (μ (cell X x)) 0 with h0 | h0
+  · simp [h0]
+  · haveI : IsProbabilityMeasure (μ[|cell X x]) := cond_isProbabilityMeasure h0
+    have hc : MeasurableSet (cell X x) := hX (measurableSet_singleton x)
+    congr 1
+    have hcongr : ∫ ω, propensity μ Z X (X ω) ∂(μ[|cell X x])
+        = ∫ _ω, propensity μ Z X x ∂(μ[|cell X x]) := by
+      refine integral_congr_ae ?_
+      filter_upwards [ae_cond_mem (μ := μ) hc] with ω hω
+      have hXω : X ω = x := hω
+      rw [hXω]
+    rw [hcongr, integral_const]
+    simp
+
+/-- **Bayes in a covariate cell, control arm**: the covariate distribution among the
+controls reweights the marginal by `1 - e(x)`. -/
+private lemma cond_cell_given_control [IsProbabilityMeasure μ] (hZ : Measurable Z)
+    (hX : Measurable X) (x : 𝒳) :
+    ((μ[|{ω | Z ω = false}]) (cell X x)).toReal
+      = (μ (cell X x)).toReal * (1 - propensity μ Z X x)
+          / (μ {ω | Z ω = false}).toReal := by
+  have hCm : MeasurableSet {ω | Z ω = false} := hZ (measurableSet_singleton false)
+  rw [cond_apply hCm, ENNReal.toReal_mul, ENNReal.toReal_inv,
+    Set.inter_comm {ω | Z ω = false} (cell X x), measureReal_cell_inter_control hZ hX x]
+  ring
+
 /-- **The weight `h = e` gives the effect on the treated** (Ding Theorem 13.4, second table
 row): under ignorability, tilting the covariate distribution by the propensity score
 reproduces the treated population. The ignorability hypothesis is Theorem 13.4's standing
@@ -471,7 +578,66 @@ theorem weightedATE_propensity [IsProbabilityMeasure μ]
     -- USER-INPUT: some unit is treated; Ding ch. 13
     (hT : μ (treatedEvent Z) ≠ 0) :
     weightedATE μ X y1 y0 (propensity μ Z X) = att μ Z y1 y0 := by
-  sorry
+  have hTm : MeasurableSet (treatedEvent Z) := hZ (measurableSet_singleton true)
+  have hTR : (μ (treatedEvent Z)).toReal ≠ 0 := by
+    simp [ENNReal.toReal_eq_zero_iff, hT, measure_ne_top μ _]
+  haveI : IsProbabilityMeasure (μ[|treatedEvent Z]) := cond_isProbabilityMeasure hT
+  have hmsub : Measurable fun ω => y1 ω - y0 ω := hy1.sub hy0
+  have hisub : Integrable (fun ω => y1 ω - y0 ω) μ := hi1.sub hi0
+  -- Strong ignorability of the pair gives ignorability of the individual effect.
+  have hig : Ignorable μ Z (fun ω => y1 ω - y0 ω) X := fun x =>
+    (hu x).comp (measurable_fst.sub measurable_snd) measurable_id
+  -- The tilted numerator, cell by cell.
+  have hNum : ∫ ω, propensity μ Z X (X ω) * (y1 ω - y0 ω) ∂μ
+      = ∑ x : 𝒳, (μ (cell X x)).toReal * propensity μ Z X x
+          * ∫ ω, (y1 ω - y0 ω) ∂(μ[|cell X x]) := by
+    rw [integral_eq_sum_cell' (ν := μ) hX (integrable_comp_mul' hX (propensity μ Z X) hisub)]
+    refine Finset.sum_congr rfl fun x _ => ?_
+    have hc : MeasurableSet (cell X x) := hX (measurableSet_singleton x)
+    have hcongr : ∫ ω, propensity μ Z X (X ω) * (y1 ω - y0 ω) ∂(μ[|cell X x])
+        = ∫ ω, propensity μ Z X x * (y1 ω - y0 ω) ∂(μ[|cell X x]) := by
+      refine integral_congr_ae ?_
+      filter_upwards [ae_cond_mem (μ := μ) hc] with ω hω
+      have hXω : X ω = x := hω
+      rw [hXω]
+    rw [hcongr, integral_const_mul, ← mul_assoc]
+  -- The effect on the treated, cell by cell under the treated conditional law.
+  have hAtt : att μ Z y1 y0 * (μ (treatedEvent Z)).toReal
+      = ∑ x : 𝒳, (μ (cell X x)).toReal * propensity μ Z X x
+          * ∫ ω, (y1 ω - y0 ω) ∂(μ[|cell X x]) := by
+    rw [att, integral_eq_sum_cell' (ν := μ[|treatedEvent Z]) hX (integrable_cond' hisub),
+      Finset.sum_mul]
+    refine Finset.sum_congr rfl fun x _ => ?_
+    have hc : MeasurableSet (cell X x) := hX (measurableSet_singleton x)
+    rcases eq_or_ne ((μ[|treatedEvent Z]) (cell X x)) 0 with h | h
+    · -- A cell absent from the treated population has coefficient `0` on both sides.
+      have hTc : μ (treatedEvent Z ∩ cell X x) = 0 := by
+        rw [cond_apply hTm] at h
+        rcases mul_eq_zero.mp h with h' | h'
+        · exact absurd h' (ENNReal.inv_ne_zero.2 (measure_ne_top μ _))
+        · exact h'
+      have hzero : (μ (cell X x)).toReal * propensity μ Z X x = 0 := by
+        rw [← measureReal_cell_inter_treated hX x, Set.inter_comm, hTc]
+        simp
+      rw [h, hzero]
+      simp
+    · have hTc : μ (treatedEvent Z ∩ cell X x) ≠ 0 := fun hz =>
+        h (by rw [cond_apply hTm, hz, mul_zero])
+      have hcell : μ (cell X x) ≠ 0 := fun hz =>
+        hTc (measure_mono_null Set.inter_subset_right hz)
+      have harmT : (μ[|cell X x]) {ω | Z ω = true} ≠ 0 := by
+        rw [cond_apply hc]
+        refine mul_ne_zero (ENNReal.inv_ne_zero.2 (measure_ne_top μ _)) ?_
+        rw [Set.inter_comm]
+        exact hTc
+      have hcc : (μ[|treatedEvent Z])[|cell X x] = μ[|armCell Z X true x] := by
+        rw [cond_cond_eq_cond_inter' hTm hc (measure_ne_top μ _)]
+        rfl
+      rw [hcc, integral_arm_eq_of_ignorable hig hmsub hZ hX hisub hcell harmT,
+        cond_cell_given_treated hZ hX x hT]
+      field_simp
+  simp only [weightedATE]
+  rw [integral_propensity_comp hZ hX, div_eq_iff hTR, hNum, hAtt]
 
 /-- **The weight `h = 1 - e` gives the effect on the controls** (Ding Theorem 13.4, third
 table row), under the same standing ignorability hypothesis. -/
@@ -484,6 +650,76 @@ theorem weightedATE_one_sub_propensity [IsProbabilityMeasure μ]
     -- USER-INPUT: some unit is untreated; Ding ch. 13
     (hC : μ {ω | Z ω = false} ≠ 0) :
     weightedATE μ X y1 y0 (fun x => 1 - propensity μ Z X x) = atc μ Z y1 y0 := by
-  sorry
+  have hTm : MeasurableSet (treatedEvent Z) := hZ (measurableSet_singleton true)
+  have hCm : MeasurableSet {ω | Z ω = false} := hZ (measurableSet_singleton false)
+  have hCR : (μ {ω | Z ω = false}).toReal ≠ 0 := by
+    simp [ENNReal.toReal_eq_zero_iff, hC, measure_ne_top μ _]
+  haveI : IsProbabilityMeasure (μ[|{ω | Z ω = false}]) := cond_isProbabilityMeasure hC
+  have hmsub : Measurable fun ω => y1 ω - y0 ω := hy1.sub hy0
+  have hisub : Integrable (fun ω => y1 ω - y0 ω) μ := hi1.sub hi0
+  have hig : Ignorable μ Z (fun ω => y1 ω - y0 ω) X := fun x =>
+    (hu x).comp (measurable_fst.sub measurable_snd) measurable_id
+  -- The control arm is the complement of the treated arm, so its mass is `1 - E[e(X)]`.
+  have hcompl : (μ {ω | Z ω = false}).toReal = 1 - (μ (treatedEvent Z)).toReal := by
+    have h1 : ((treatedEvent Z)ᶜ : Set Ω) = {ω | Z ω = false} := by
+      ext ω; simp [treatedEvent]
+    rw [← h1, prob_compl_eq_one_sub hTm,
+      ENNReal.toReal_sub_of_le prob_le_one ENNReal.one_ne_top]
+    simp
+  have hden : ∫ ω, (1 - propensity μ Z X (X ω)) ∂μ = (μ {ω | Z ω = false}).toReal := by
+    rw [integral_sub (integrable_const (1 : ℝ)) (integrable_comp' hX (propensity μ Z X)),
+      integral_propensity_comp hZ hX, integral_const, hcompl]
+    simp
+  -- The tilted numerator, cell by cell.
+  have hNum : ∫ ω, (1 - propensity μ Z X (X ω)) * (y1 ω - y0 ω) ∂μ
+      = ∑ x : 𝒳, (μ (cell X x)).toReal * (1 - propensity μ Z X x)
+          * ∫ ω, (y1 ω - y0 ω) ∂(μ[|cell X x]) := by
+    rw [integral_eq_sum_cell' (ν := μ) hX
+      (integrable_comp_mul' hX (fun x => 1 - propensity μ Z X x) hisub)]
+    refine Finset.sum_congr rfl fun x _ => ?_
+    have hc : MeasurableSet (cell X x) := hX (measurableSet_singleton x)
+    have hcongr : ∫ ω, (1 - propensity μ Z X (X ω)) * (y1 ω - y0 ω) ∂(μ[|cell X x])
+        = ∫ ω, (1 - propensity μ Z X x) * (y1 ω - y0 ω) ∂(μ[|cell X x]) := by
+      refine integral_congr_ae ?_
+      filter_upwards [ae_cond_mem (μ := μ) hc] with ω hω
+      have hXω : X ω = x := hω
+      rw [hXω]
+    rw [hcongr, integral_const_mul, ← mul_assoc]
+  -- The effect on the controls, cell by cell under the control conditional law.
+  have hAtc : atc μ Z y1 y0 * (μ {ω | Z ω = false}).toReal
+      = ∑ x : 𝒳, (μ (cell X x)).toReal * (1 - propensity μ Z X x)
+          * ∫ ω, (y1 ω - y0 ω) ∂(μ[|cell X x]) := by
+    rw [atc, integral_eq_sum_cell' (ν := μ[|{ω | Z ω = false}]) hX (integrable_cond' hisub),
+      Finset.sum_mul]
+    refine Finset.sum_congr rfl fun x _ => ?_
+    have hc : MeasurableSet (cell X x) := hX (measurableSet_singleton x)
+    rcases eq_or_ne ((μ[|{ω | Z ω = false}]) (cell X x)) 0 with h | h
+    · have hCc : μ ({ω | Z ω = false} ∩ cell X x) = 0 := by
+        rw [cond_apply hCm] at h
+        rcases mul_eq_zero.mp h with h' | h'
+        · exact absurd h' (ENNReal.inv_ne_zero.2 (measure_ne_top μ _))
+        · exact h'
+      have hzero : (μ (cell X x)).toReal * (1 - propensity μ Z X x) = 0 := by
+        rw [← measureReal_cell_inter_control hZ hX x, Set.inter_comm, hCc]
+        simp
+      rw [h, hzero]
+      simp
+    · have hCc : μ ({ω | Z ω = false} ∩ cell X x) ≠ 0 := fun hz =>
+        h (by rw [cond_apply hCm, hz, mul_zero])
+      have hcell : μ (cell X x) ≠ 0 := fun hz =>
+        hCc (measure_mono_null Set.inter_subset_right hz)
+      have harmC : (μ[|cell X x]) {ω | Z ω = false} ≠ 0 := by
+        rw [cond_apply hc]
+        refine mul_ne_zero (ENNReal.inv_ne_zero.2 (measure_ne_top μ _)) ?_
+        rw [Set.inter_comm]
+        exact hCc
+      have hcc : (μ[|{ω | Z ω = false}])[|cell X x] = μ[|armCell Z X false x] := by
+        rw [cond_cond_eq_cond_inter' hCm hc (measure_ne_top μ _)]
+        rfl
+      rw [hcc, integral_arm_eq_of_ignorable hig hmsub hZ hX hisub hcell harmC,
+        cond_cell_given_control hZ hX x]
+      field_simp
+  simp only [weightedATE]
+  rw [hden, div_eq_iff hCR, hNum, hAtc]
 
 end StatLean.CausalInference
