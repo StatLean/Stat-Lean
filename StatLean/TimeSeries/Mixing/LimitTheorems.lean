@@ -1713,6 +1713,99 @@ private lemma summable_abs_acvf_davydov [IsProbabilityMeasure μ]
   refine Summable.of_nat_of_neg hpos ?_
   simpa only [acvf_neg hws] using hpos
 
+/-! #### Transfer bricks for the truncation argument
+
+`clt_of_alphaMixing_debt` is reduced to `clt_of_bounded_alphaMixing` by truncating the
+coordinates. Every structural hypothesis has to be transported along a *common measurable
+transform* `X_t ↦ g(X_t)`: strict stationarity (the finite-dimensional laws compose), the
+past/future σ-algebras (they shrink) and hence the α-coefficients. -/
+
+/-- Strict stationarity is preserved by a common measurable transform of the coordinates:
+the finite-dimensional law of `(g ∘ X_{t_i + k})_i` is the pushforward of that of
+`(X_{t_i + k})_i` along the fixed map `v ↦ g ∘ v`. -/
+private lemma isStrictlyStationary_comp (hmeas : ∀ t, Measurable (X t))
+    (hstat : IsStrictlyStationary X μ) {g : ℝ → ℝ} (hg : Measurable g) :
+    IsStrictlyStationary (fun t ω => g (X t ω)) μ := by
+  intro n t k
+  have hG : Measurable fun (v : Fin n → ℝ) (i : Fin n) => g (v i) :=
+    measurable_pi_lambda _ fun i => hg.comp (measurable_pi_apply i)
+  have hXk : Measurable fun ω (i : Fin n) => X (t i + k) ω :=
+    measurable_pi_lambda _ fun i => hmeas _
+  have hX0 : Measurable fun ω (i : Fin n) => X (t i) ω :=
+    measurable_pi_lambda _ fun i => hmeas _
+  show (μ.map fun ω (i : Fin n) => g (X (t i + k) ω))
+      = μ.map fun ω (i : Fin n) => g (X (t i) ω)
+  have e1 : (fun ω (i : Fin n) => g (X (t i + k) ω))
+      = (fun (v : Fin n → ℝ) (i : Fin n) => g (v i)) ∘ fun ω (i : Fin n) => X (t i + k) ω := rfl
+  have e2 : (fun ω (i : Fin n) => g (X (t i) ω))
+      = (fun (v : Fin n → ℝ) (i : Fin n) => g (v i)) ∘ fun ω (i : Fin n) => X (t i) ω := rfl
+  rw [e1, e2, ← Measure.map_map hG hXk, ← Measure.map_map hG hX0, hstat n t k]
+
+/-- The past σ-algebra of a transformed process is contained in that of the original. -/
+private lemma sigmaLE_comp_le (hmeas : ∀ t, Measurable (X t)) {g : ℝ → ℝ} (hg : Measurable g)
+    (n : ℤ) : sigmaLE (fun t ω => g (X t ω)) n ≤ sigmaLE X n := by
+  refine iSup₂_le fun s hs => ?_
+  have hm : Measurable[sigmaLE X n] fun ω => g (X s ω) :=
+    hg.comp ((measurable_comap_self X s).mono (comap_le_sigmaLE X hs) le_rfl)
+  exact hm.comap_le
+
+/-- The future σ-algebra of a transformed process is contained in that of the original. -/
+private lemma sigmaGE_comp_le (hmeas : ∀ t, Measurable (X t)) {g : ℝ → ℝ} (hg : Measurable g)
+    (n : ℤ) : sigmaGE (fun t ω => g (X t ω)) n ≤ sigmaGE X n := by
+  refine iSup₂_le fun s hs => ?_
+  have hm : Measurable[sigmaGE X n] fun ω => g (X s ω) :=
+    hg.comp ((measurable_comap_self X s).mono (comap_le_sigmaGE X hs) le_rfl)
+  exact hm.comap_le
+
+/-- Transformed coordinates are *at most* as dependent: `α_{g∘X}(n) ≤ α_X(n)`. -/
+private lemma alphaCoeff_comp_le [IsProbabilityMeasure μ] (hmeas : ∀ t, Measurable (X t))
+    {g : ℝ → ℝ} (hg : Measurable g) (n : ℕ) :
+    alphaCoeff (fun t ω => g (X t ω)) μ n ≤ alphaCoeff X μ n :=
+  alphaMixCoeff_mono (sigmaLE_comp_le hmeas hg 0) (sigmaGE_comp_le hmeas hg (n : ℤ))
+
+/-- `Σ α^θ < ∞` with `0 < θ ≤ 1` forces `Σ α < ∞`: the coefficients lie in `[0, 1]`, where
+raising to a smaller exponent can only increase them. -/
+private lemma summable_alphaCoeff_of_rpow [IsProbabilityMeasure μ] {θ : ℝ} (hθ0 : 0 < θ)
+    (hθ1 : θ ≤ 1) (hα : Summable fun n : ℕ => alphaCoeff X μ n ^ θ) :
+    Summable fun n : ℕ => alphaCoeff X μ n := by
+  refine hα.of_nonneg_of_le (fun n => alphaMixCoeff_nonneg) (fun n => ?_)
+  have h0 : 0 ≤ alphaCoeff X μ n := alphaMixCoeff_nonneg
+  have h1 : alphaCoeff X μ n ≤ 1 := alphaMixCoeff_le_one (mΩ := inferInstance)
+  rcases eq_or_lt_of_le h0 with h | h
+  · rw [← h, Real.zero_rpow hθ0.ne']
+  · calc alphaCoeff X μ n = alphaCoeff X μ n ^ (1 : ℝ) := (Real.rpow_one _).symm
+      _ ≤ alphaCoeff X μ n ^ θ := Real.rpow_le_rpow_of_exponent_ge h h1 hθ1
+
+/-! #### `L²` bricks: the `√∫f²` form of the `L²` norm and Minkowski's inequality -/
+
+/-- `‖f‖_{L²}` in the `√∫f²` form. -/
+private lemma eLpNorm_two_eq_sqrt [IsProbabilityMeasure μ] {f : Ω → ℝ} (hf : MemLp f 2 μ) :
+    eLpNorm f 2 μ = ENNReal.ofReal (Real.sqrt (∫ ω, f ω ^ 2 ∂μ)) := by
+  rw [hf.eLpNorm_eq_integral_rpow_norm (by norm_num) (by norm_num)]
+  have hint : (∫ ω, ‖f ω‖ ^ ((2 : ℝ≥0∞).toReal) ∂μ) = ∫ ω, f ω ^ 2 ∂μ := by
+    refine integral_congr_ae (Eventually.of_forall fun ω => ?_)
+    show ‖f ω‖ ^ ((2 : ℝ≥0∞).toReal) = f ω ^ 2
+    have h2 : ((2 : ℝ≥0∞).toReal) = ((2 : ℕ) : ℝ) := by norm_num
+    rw [h2, Real.rpow_natCast, Real.norm_eq_abs, sq_abs]
+  rw [hint]
+  congr 1
+  rw [Real.sqrt_eq_rpow]
+  norm_num
+
+/-- **Minkowski** in the only form the truncation argument consumes. -/
+private lemma sqrt_integral_sq_add_le [IsProbabilityMeasure μ] {f g : Ω → ℝ}
+    (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    Real.sqrt (∫ ω, (f ω + g ω) ^ 2 ∂μ)
+      ≤ Real.sqrt (∫ ω, f ω ^ 2 ∂μ) + Real.sqrt (∫ ω, g ω ^ 2 ∂μ) := by
+  have hfg : MemLp (fun ω => f ω + g ω) 2 μ := hf.add hg
+  have hmink : eLpNorm (fun ω => f ω + g ω) 2 μ ≤ eLpNorm f 2 μ + eLpNorm g 2 μ := by
+    have h := eLpNorm_add_le (μ := μ) (p := 2) hf.aestronglyMeasurable hg.aestronglyMeasurable
+      one_le_two
+    exact h
+  rw [eLpNorm_two_eq_sqrt hfg, eLpNorm_two_eq_sqrt hf, eLpNorm_two_eq_sqrt hg,
+    ← ENNReal.ofReal_add (Real.sqrt_nonneg _) (Real.sqrt_nonneg _)] at hmink
+  exact (ENNReal.ofReal_le_ofReal_iff (by positivity)).mp hmink
+
 end Delta
 
 /-- **FY Theorem 2.20(i)** (Bosq 1998 §1.5) — the `δ`-moment version of the variance rate:
