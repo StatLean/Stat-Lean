@@ -64,48 +64,52 @@ noncomputable def eval (c : Contrast T) (μ : T → ℝ) : ℝ :=
 
 /-- A contrast annihilates constants. -/
 theorem eval_const (c : Contrast T) (a : ℝ) : c.eval (fun _ => a) = 0 := by
-  sorry
+  rw [eval, ← Finset.sum_mul, c.sum_coeff_eq_zero, zero_mul]
 
 /-- A contrast is insensitive to a shift of the overall level (`Mead §4.7`). -/
 theorem eval_add_const (c : Contrast T) (μ : T → ℝ) (a : ℝ) :
     c.eval (fun t => μ t + a) = c.eval μ := by
-  sorry
+  simp only [eval, mul_add, Finset.sum_add_distrib, ← Finset.sum_mul, c.sum_coeff_eq_zero,
+    zero_mul, add_zero]
 
 /-- Additivity of the comparison in the treatment means. -/
 theorem eval_add (c : Contrast T) (μ ν : T → ℝ) :
     c.eval (fun t => μ t + ν t) = c.eval μ + c.eval ν := by
-  sorry
+  simp only [eval, mul_add, Finset.sum_add_distrib]
 
 /-- Homogeneity of the comparison in the treatment means. -/
 theorem eval_smul (c : Contrast T) (b : ℝ) (μ : T → ℝ) :
     c.eval (fun t => b * μ t) = b * c.eval μ := by
-  sorry
+  simp only [eval, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun t _ => by ring
 
 /-- The zero contrast. -/
 noncomputable def zero : Contrast T :=
-  ⟨fun _ => 0, by sorry⟩
+  ⟨fun _ => 0, by simp⟩
 
 /-- The sum of two contrasts. -/
 noncomputable def add (c d : Contrast T) : Contrast T :=
-  ⟨fun t => c.coeff t + d.coeff t, by sorry⟩
+  ⟨fun t => c.coeff t + d.coeff t, by
+    rw [Finset.sum_add_distrib, c.sum_coeff_eq_zero, d.sum_coeff_eq_zero, add_zero]⟩
 
 /-- The negation of a contrast. -/
 noncomputable def neg (c : Contrast T) : Contrast T :=
-  ⟨fun t => -c.coeff t, by sorry⟩
+  ⟨fun t => -c.coeff t, by rw [Finset.sum_neg_distrib, c.sum_coeff_eq_zero, neg_zero]⟩
 
 /-- A scalar multiple of a contrast (`Mead §4.7`: comparisons are scale-free). -/
 noncomputable def smul (b : ℝ) (c : Contrast T) : Contrast T :=
-  ⟨fun t => b * c.coeff t, by sorry⟩
+  ⟨fun t => b * c.coeff t, by rw [← Finset.mul_sum, c.sum_coeff_eq_zero, mul_zero]⟩
 
 /-- Evaluation is additive in the contrast. -/
 theorem add_eval (c d : Contrast T) (μ : T → ℝ) :
     (c.add d).eval μ = c.eval μ + d.eval μ := by
-  sorry
+  simp only [eval, add, add_mul, Finset.sum_add_distrib]
 
 /-- Evaluation is homogeneous in the contrast. -/
 theorem smul_eval (b : ℝ) (c : Contrast T) (μ : T → ℝ) :
     (c.smul b).eval μ = b * c.eval μ := by
-  sorry
+  simp only [eval, smul, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun t _ => by ring
 
 /-- **Orthogonality** of two treatment comparisons: `∑ⱼ lⱼ l'ⱼ = 0` (`Mead §4.7`). -/
 def IsOrthogonal (c d : Contrast T) : Prop :=
@@ -114,7 +118,8 @@ def IsOrthogonal (c d : Contrast T) : Prop :=
 /-- Orthogonality is symmetric. -/
 theorem IsOrthogonal.symm {c d : Contrast T} (h : c.IsOrthogonal d) :
     d.IsOrthogonal c := by
-  sorry
+  rw [IsOrthogonal, ← h]
+  exact Finset.sum_congr rfl fun t _ => mul_comm _ _
 
 end Contrast
 
@@ -130,12 +135,14 @@ noncomputable def pairwiseContrast (t₁ t₂ : T)
     -- zero contrast and the evaluation lemma below would still hold trivially
     (h : t₁ ≠ t₂) : Contrast T :=
   ⟨fun t => (if t = t₁ then (1 : ℝ) else 0) - (if t = t₂ then (1 : ℝ) else 0),
-    by sorry⟩
+    by rw [Finset.sum_sub_distrib, Finset.sum_ite_eq' Finset.univ t₁ (fun _ => (1 : ℝ)),
+      Finset.sum_ite_eq' Finset.univ t₂ (fun _ => (1 : ℝ))]; simp⟩
 
 /-- The pairwise contrast evaluates to the difference of the two treatment means. -/
 theorem eval_pairwiseContrast (t₁ t₂ : T) (h : t₁ ≠ t₂) (μ : T → ℝ) :
     (pairwiseContrast t₁ t₂ h).eval μ = μ t₁ - μ t₂ := by
-  sorry
+  simp only [Contrast.eval, pairwiseContrast, sub_mul, ite_mul, one_mul, zero_mul,
+    Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ, if_pos]
 
 end Pairwise
 

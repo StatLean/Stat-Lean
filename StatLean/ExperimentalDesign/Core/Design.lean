@@ -92,18 +92,19 @@ noncomputable def armMean (y : U → ℝ) (t : T) (a : Allocation U T) : ℝ :=
 @[simp]
 theorem mem_arm_iff {t : T} {a : Allocation U T} {i : U} :
     i ∈ arm t a ↔ a i = t := by
-  sorry
+  simp [arm]
 
 /-- Arm sizes partition the population size. -/
 theorem sum_arm_card (a : Allocation U T) :
     ∑ t, (arm t a).card = Fintype.card U := by
-  sorry
+  rw [← Finset.card_univ (α := U)]
+  exact (Finset.card_eq_sum_card_fiberwise fun i _ => Finset.mem_univ (a i)).symm
 
 /-- Every unit lies in exactly one arm: the assignment indicators over treatments sum
 to one. -/
 theorem sum_armIndicator (a : Allocation U T) (i : U) :
     ∑ t, armIndicator t i a = 1 := by
-  sorry
+  simp [armIndicator]
 
 /-- Arms are mutually exclusive: indicators of distinct treatments at the same unit
 have vanishing product (`Mead §9.4`, the joint properties of the `δ` indicators). -/
@@ -111,22 +112,28 @@ theorem armIndicator_mul_armIndicator_of_ne {t s : T}
     -- LEAN-ONLY: distinct treatments; the case `t = s` is the idempotency below
     (hts : t ≠ s) (i : U) (a : Allocation U T) :
     armIndicator t i a * armIndicator s i a = 0 := by
-  sorry
+  unfold armIndicator
+  rcases eq_or_ne (a i) t with h | h
+  · rw [if_neg fun hs => hts (h.symm.trans hs), mul_zero]
+  · rw [if_neg h, zero_mul]
 
 /-- Assignment indicators are idempotent (`0/1`-valued). -/
 theorem armIndicator_mul_self (t : T) (i : U) (a : Allocation U T) :
     armIndicator t i a * armIndicator t i a = armIndicator t i a := by
-  sorry
+  unfold armIndicator
+  split <;> ring
 
 /-- Indicator representation of a sum over one arm. -/
 theorem sum_arm_eq_sum_indicator (y : U → ℝ) (t : T) (a : Allocation U T) :
     ∑ i ∈ arm t a, y i = ∑ i, armIndicator t i a * y i := by
-  sorry
+  rw [arm, Finset.sum_filter]
+  exact Finset.sum_congr rfl fun i _ => by unfold armIndicator; split <;> simp
 
 /-- The arm size as the sum of assignment indicators. -/
 theorem card_arm_eq_sum_indicator (t : T) (a : Allocation U T) :
     ((arm t a).card : ℝ) = ∑ i, armIndicator t i a := by
-  sorry
+  rw [arm, Finset.card_filter, Nat.cast_sum]
+  exact Finset.sum_congr rfl fun i _ => by unfold armIndicator; split <;> simp
 
 end Allocation
 
@@ -147,17 +154,28 @@ noncomputable def sampleMean (y : U → ℝ) (s : Finset U) : ℝ :=
 /-- Inclusion indicators are idempotent (`0/1`-valued). -/
 theorem inclusionIndicator_mul_self (i : U) (s : Finset U) :
     inclusionIndicator i s * inclusionIndicator i s = inclusionIndicator i s := by
-  sorry
+  unfold inclusionIndicator
+  split <;> ring
 
 /-- Indicator representation of a sum over the sample. -/
 theorem sum_sample_eq_sum_indicator (y : U → ℝ) (s : Finset U) :
     ∑ i ∈ s, y i = ∑ i, inclusionIndicator i s * y i := by
-  sorry
+  rw [← Finset.sum_filter_add_sum_filter_not (Finset.univ : Finset U) (· ∈ s)
+    fun i => inclusionIndicator i s * y i]
+  have h₁ : ∑ i ∈ Finset.univ.filter (· ∈ s), inclusionIndicator i s * y i = ∑ i ∈ s, y i := by
+    rw [Finset.filter_mem_eq_inter, Finset.univ_inter]
+    exact Finset.sum_congr rfl fun i hi => by
+      rw [inclusionIndicator, if_pos hi, one_mul]
+  have h₂ : ∑ i ∈ Finset.univ.filter (¬ · ∈ s), inclusionIndicator i s * y i = 0 :=
+    Finset.sum_eq_zero fun i hi => by
+      rw [inclusionIndicator, if_neg (Finset.mem_filter.mp hi).2, zero_mul]
+  rw [h₁, h₂, add_zero]
 
 /-- The sample size as the sum of inclusion indicators. -/
 theorem card_sample_eq_sum_indicator (s : Finset U) :
     ((s.card : ℝ)) = ∑ i, inclusionIndicator i s := by
-  sorry
+  have h := sum_sample_eq_sum_indicator (fun _ : U => (1 : ℝ)) s
+  simpa using h
 
 end Sampling
 
@@ -168,13 +186,13 @@ variable {U T : Type*} [Fintype U] [DecidableEq U] [Fintype T] [DecidableEq T]
 /-- The assignment indicator is the inclusion indicator of the arm. -/
 theorem armIndicator_eq_inclusionIndicator (t : T) (i : U) (a : Allocation U T) :
     armIndicator t i a = inclusionIndicator i (arm t a) := by
-  sorry
+  rw [armIndicator, inclusionIndicator]
+  simp only [mem_arm_iff]
 
 /-- The arm mean is the sample mean of the arm — the bridge along which arm-mean
 moments are inherited from sampling-design moments. -/
 theorem armMean_eq_sampleMean_arm (y : U → ℝ) (t : T) (a : Allocation U T) :
-    armMean y t a = sampleMean y (arm t a) := by
-  sorry
+    armMean y t a = sampleMean y (arm t a) := rfl
 
 end Bridge
 
