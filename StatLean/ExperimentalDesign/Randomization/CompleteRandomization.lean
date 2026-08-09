@@ -76,14 +76,94 @@ def validAllocations (r : T → ℕ) : Finset (Allocation U T) :=
 
 theorem mem_validAllocations {r : T → ℕ} {a : Allocation U T} :
     a ∈ validAllocations (U := U) r ↔ ∀ t, (arm t a).card = r t := by
-  sorry
+  simp [validAllocations]
+
+/-- Existence of an allocation with prescribed fibre sizes, in the form needed for the
+induction: over a finset `s` of treatments and a finset `V` of available units whose
+sizes match, one can assign each unit of `V` a treatment from `s` realising the fibre
+sizes `r`.  Units outside `V` receive an arbitrary treatment. -/
+private theorem exists_allocation_aux [Nonempty T] (r : T → ℕ) :
+    ∀ (s : Finset T) (V : Finset U), ∑ t ∈ s, r t = V.card →
+      ∃ f : U → T, (∀ i ∈ V, f i ∈ s) ∧
+        ∀ t ∈ s, (V.filter fun i => f i = t).card = r t := by
+  intro s
+  induction s using Finset.induction_on with
+  | empty =>
+      intro V hV
+      rw [Finset.sum_empty] at hV
+      have hVe : V = ∅ := Finset.card_eq_zero.mp hV.symm
+      refine ⟨fun _ => Classical.arbitrary T, ?_, ?_⟩
+      · intro i hi
+        rw [hVe] at hi
+        exact absurd hi (Finset.notMem_empty i)
+      · intro t ht
+        exact absurd ht (Finset.notMem_empty t)
+  | insert t₀ s' ht₀ ih =>
+      intro V hV
+      rw [Finset.sum_insert ht₀] at hV
+      have hle : r t₀ ≤ V.card := by omega
+      obtain ⟨W, hWV, hWcard⟩ := Finset.exists_subset_card_eq hle
+      have hVW : ∑ t ∈ s', r t = (V \ W).card := by
+        rw [Finset.card_sdiff_of_subset hWV, hWcard]; omega
+      obtain ⟨f', hf'mem, hf'card⟩ := ih (V \ W) hVW
+      refine ⟨fun i => if i ∈ W then t₀ else f' i, ?_, ?_⟩
+      · intro i hi
+        by_cases hiW : i ∈ W
+        · simp [hiW]
+        · simp only [hiW, if_false]
+          exact Finset.mem_insert_of_mem (hf'mem i (Finset.mem_sdiff.mpr ⟨hi, hiW⟩))
+      · intro t ht
+        rcases Finset.mem_insert.mp ht with heq | hts'
+        · rw [heq]
+          have hfil : (V.filter fun i => (if i ∈ W then t₀ else f' i) = t₀) = W := by
+            ext i
+            simp only [Finset.mem_filter]
+            constructor
+            · rintro ⟨hiV, hi⟩
+              by_contra hiW
+              rw [if_neg hiW] at hi
+              exact ht₀ (hi ▸ hf'mem i (Finset.mem_sdiff.mpr ⟨hiV, hiW⟩))
+            · intro hiW
+              exact ⟨hWV hiW, by rw [if_pos hiW]⟩
+          rw [hfil, hWcard]
+        · have hne : t ≠ t₀ := fun h => ht₀ (h ▸ hts')
+          have hfil : (V.filter fun i => (if i ∈ W then t₀ else f' i) = t)
+              = (V \ W).filter fun i => f' i = t := by
+            ext i
+            simp only [Finset.mem_filter, Finset.mem_sdiff]
+            constructor
+            · rintro ⟨hiV, hi⟩
+              by_cases hiW : i ∈ W
+              · rw [if_pos hiW] at hi
+                exact absurd hi.symm hne
+              · rw [if_neg hiW] at hi
+                exact ⟨⟨hiV, hiW⟩, hi⟩
+            · rintro ⟨⟨hiV, hiW⟩, hi⟩
+              exact ⟨hiV, by rw [if_neg hiW]; exact hi⟩
+          rw [hfil]
+          exact hf'card t hts'
 
 /-- A replication pattern summing to the population size admits a valid allocation. -/
 theorem validAllocations_nonempty (r : T → ℕ)
     -- USER-INPUT: the replications exhaust the units; Mead §6.2
     (hr : ∑ t, r t = Fintype.card U) :
     (validAllocations (U := U) r).Nonempty := by
-  sorry
+  rcases isEmpty_or_nonempty T with hT | hT
+  · haveI := hT
+    have hU : Fintype.card U = 0 := by
+      rw [← hr]; simp
+    haveI : IsEmpty U := Fintype.card_eq_zero_iff.mp hU
+    refine ⟨fun i => isEmptyElim i, ?_⟩
+    rw [mem_validAllocations]
+    exact fun t => isEmptyElim t
+  · haveI := hT
+    obtain ⟨f, -, hf⟩ :=
+      exists_allocation_aux (U := U) r Finset.univ Finset.univ
+        (by rw [Finset.card_univ]; exact hr)
+    refine ⟨f, ?_⟩
+    rw [mem_validAllocations]
+    intro t
+    exact hf t (Finset.mem_univ t)
 
 /-- The **completely randomised design** with replication pattern `r`: the uniform
 distribution on the valid allocations (`Mead §6.2`, `Mead §9.2`). -/
