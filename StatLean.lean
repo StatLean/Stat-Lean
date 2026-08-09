@@ -10,6 +10,7 @@ import StatLean.PointEstimation
 import StatLean.HypothesisTesting
 import StatLean.StatisticalModels
 import StatLean.TimeSeries
+import StatLean.StatisticalLearning
 
 /-!
 # StatLean
