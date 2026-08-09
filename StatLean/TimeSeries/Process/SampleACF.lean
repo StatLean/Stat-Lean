@@ -1260,7 +1260,37 @@ consequence of the sample-mean layer above: the same ℓ¹ energy budget that pr
 sum by `√σ² Σ_k|a_k|` uniformly in `T` (`eLpNorm_normalizedSum_le`), whence
 `E|√T X̄_T²| ≤ σ² (Σ_k|a_k|)² / √T → 0` (`tendsto_integral_sqrt_mul_sampleMean_sq`).
 So `√T (γ̂(0) − γ(0))` and `√T (T⁻¹ Σ_t X_t² − γ(0))` have the same limit law, which is
-the reduction the remaining debts start from. -/
+the reduction the remaining debts start from.
+
+**Named residues of `sampleACVF_zero_clt_debt` (after this reduction).**
+* (R1) the CLT for `T^{-1/2} Σ_{t≤T}(X_t² − γ(0))` at a *fixed* truncation level `N`.
+  The truncated square is `2N`-dependent, so Bernstein-block `[1,T]` into big blocks of
+  a fixed length `L` separated by guard blocks of length `2N`: the big-block sums are
+  functions of **disjoint** innovation blocks, hence independent, and identically
+  distributed because the joint law of an i.i.d. family is a product measure and so is
+  shift-invariant. Constant weights `T^{-1/2}` then feed the *already present*
+  `tendsto_charFun_weighted_iid` — **no new CLT engine is needed**, in contrast with the
+  MDS route; `L → ∞` after `T → ∞` removes the guard-block loss.
+* (R2) the fourth-moment covariance `Cov(X_s^{(N)2}, X_t^{(N)2})`, i.e. the partition
+  formula for `E[ε_i ε_j ε_k ε_l]` over i.i.d. innovations (`η σ⁴` on the diagonal,
+  `σ⁴` on each pairing, `0` otherwise). This is the only genuinely *missing analytic
+  input* — everything else in (R1)/(R3) reuses machinery in this file.
+* (R3) the truncation transfer at the squared level,
+  `‖T^{-1/2} Σ_t ((X_t² − EX_t²) − (X_t^{(N)2} − EX_t^{(N)2}))‖₂ → 0` as `N → ∞`,
+  uniformly in `T`: factor `X² − X^{(N)2} = (X − X^{(N)})(X + X^{(N)})` and apply
+  Cauchy–Schwarz against (R2) together with the ℓ¹ energy budget of
+  `eLpNorm_windowSum_le` at the bilinear level.
+* (R4) the series identity `Σ_h γ(h)² = σ⁴ Σ_h (Σ_k a_k a_{k+h})²` matching the limit
+  produced by (R1)+(R2) to the frozen `(η−3)γ(0)² + 2 Σ_{j∈ℤ} γ(j)²`.
+  (The frozen constant is *confirmed* against B&D (1991) Prop 7.3.4: the printed FY
+  (2.25) is indeed a misprint, and the docstring's correction is the right one — no
+  further amendment is called for.)
+
+**Named residue of `sampleACF_bartlett_clt_debt`.** the joint (lags `0..M`) version of
+(R1)–(R4) — the same blocks, assembled through the Cramér–Wold linear combination that
+the frozen statement already exhibits — followed by the ratio delta method
+`ρ̂(i) = γ̂(i)/γ̂(0)`. Its `bartlettW` covariance is the standard Bartlett formula; no
+misprint watch fires there either. -/
 
 /-- The `L²` bound implied by an `eLpNorm` bound (converse of
 `eLpNorm_two_le_of_integral_sq_le`). -/
