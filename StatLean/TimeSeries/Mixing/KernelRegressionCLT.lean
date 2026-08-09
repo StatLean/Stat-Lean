@@ -1984,14 +1984,14 @@ private theorem tendsto_blockCount_mul_pairAlpha [IsProbabilityMeasure μ]
       exact ht
     exact hcont.comp hcomp
 
-/-- **FY (2.79)–(2.81) — DEBT, and FALSE AS FROZEN (this wave's finding).** The small
-blocks (and the terminal remainder) are `L²`-negligible: their contribution to
-`locTruncSum` has variance `→ 0`. The intended proof is ledger (a) applied to the
-small-block index sets, whose total length is `k_n s_n / n → 0` by the choice of `l_n`,
-`s_n` (that ratio is `s_n/(l_n+s_n) → 0`, which is exactly (C5)).
+/-- **FY (2.79)–(2.81) — FALSE AS FROZEN (verified), REPAIRED.** The small blocks (and the
+terminal remainder) are `L²`-negligible: their contribution to `locTruncSum` has variance
+`→ 0`. The proof is ledger (a) applied to the small-block index sets, whose total length is
+`N_n = k_n s_n` with `N_n / n → 0` by the choice of `l_n`, `s_n` (that ratio is
+`s_n/(l_n+s_n) → 0`, which is exactly what (C5) buys).
 
-**The statement as frozen carries no hypotheses at all** — `X`, `e`, `W`, `x`, `δ`, `lam`,
-`h`, `L` are all free — so it is false, and not for a pathological reason: without
+**The statement as frozen carried no hypotheses at all** — `X`, `e`, `W`, `x`, `δ`, `lam`,
+`h`, `L` were all free — so it was false, and not for a pathological reason: without
 independence/mixing the small-block sum grows *quadratically* in its length instead of
 linearly. Witness: `X ≡ 0` (so `σ(X_t)` is trivial), `e_t ≡ ξ` for a single Rademacher
 `ξ`, `W ≡ 1`, `h ≡ 1`, `L ≥ 1`, `δ = 3`, `lam = 1`. Then
@@ -2000,39 +2000,76 @@ linearly. Witness: `X ≡ 0` (so `σ(X_t)` is trivial), `e_t ≡ ξ` for a singl
 `l_n = ⌈√n/log n⌉`, `s_n = ⌈(√n log n)^{1/6}⌉`, `k_n ≍ √n log n`, so
 `N_n ≍ n^{7/12+o(1)}` and `N_n²/n ≍ n^{1/6} → ∞`.
 
-**Repair.** Thread the whole (C1)–(C5) package (`hstat`, `hce`, `hcv`, `hδ`/`heLδ`,
-`hC2`, `hlam`/`hα`, `hWm`/`hWb`, `hh0`/`hh`/`hnh`) into this statement, exactly as
-`var_localized_sum` carries it: with mixing the variance is `≍ N_n/n → 0`. Not done here
-— the statement freeze is lifted this wave only for the two (C1) hypotheses listed in the
-module docstring.
-
-**Second obstruction (this wave's finding): the repair above is *not* sufficient.**
-Threading the full (C1)–(C5) package still does not close this statement, because the
-summands here are the **truncated** ones `ζ_t = e^L_t W((X_t − x)/h_n)` with
+**Second obstruction (verified): threading (C1)–(C5) as frozen is *not* sufficient
+either.** The summands here are the **truncated** ones `ζ_t = e^L_t W((X_t − x)/h_n)` with
 `e^L_t = clamp_L(e_t) − E(clamp_L(e_t) | X_t)`, and the ledger-(a) route needs the
 small-lag bound `|E[ζ_0 ζ_j]| = O(h²)` (FY (2.76)) on the whole range `1 ≤ j ≤ m_n`. The
-combinatorial half is fine — `abs_double_sum_sub_diag_le` generalizes verbatim from
-`range n` to an arbitrary index set, which is all the small blocks need, and the diagonal
-and large-lag halves go through unchanged (`|ζ_0| ≤ |e_0 W_0| + M^{1/δ}|W_0|`, so
-`‖ζ_0‖_δ = O(h^{1/δ})` still, by `localized_delta_moment_le` plus the density change of
-variables). The small-lag half is not. Conditioning on `(X_0, X_j)` writes
-`E[ζ_0 ζ_j] = E[ψ_L(X_0, X_j) · W((X_0−x)/h) W((X_j−x)/h)]` with `|ψ_L| ≤ 4 M^{2/δ}`: the
+combinatorial half is fine — `abs_double_sum_subset_le` is `abs_double_sum_sub_diag_le`
+with `range n` replaced by an arbitrary index set, which is all the small blocks need — and
+the diagonal and large-lag halves go through unchanged (`|ζ_0| ≤ 2L |W_0|`, so
+`‖ζ_0‖_δ = O(h^{1/δ})` by the density change of variables). The small-lag half is not.
+Conditioning on `(X_0, X_j)` writes
+`E[ζ_0 ζ_j] = E[ψ_L(X_0, X_j) · W((X_0−x)/h) W((X_j−x)/h)]` with `|ψ_L| ≤ 4 L²`: the
 conditional recentring has removed **both** error factors, so what the estimate needs is
-an *unweighted* bounded joint density for `(X_0, X_j)`. (C2) as formalized supplies only
-the instance weighted by `|e_0 e_j|`, and does not imply it. The two substitutes that are
-available both diverge over the small-lag range: the crude
-`|E[ζ_0 ζ_j]| ≤ 4 M^{2/δ} C_W · E|W((X_0−x)/h)| = O(h)` (bounded density) gives
+an *unweighted* bounded joint density for `(X_0, X_j)`. The **frozen** (C2) — the single
+instance weighted by `|e_0 e_j|` — supplies only the weighted one, and does not imply it.
+The two substitutes available from the frozen package both diverge over the small-lag
+range: the crude `|E[ζ_0 ζ_j]| ≤ 4 L² C_W · E|W((X_0−x)/h)| = O(h)` (bounded density) gives
 `h⁻¹ · m_n · O(h) = O(m_n) → ∞`, and Davydov gives `h^{2/δ−1} Σ_j α(j)^{1−2/δ} → ∞`
 since `2/δ < 1`.
 
-FY's printed (C2) — "the conditional density of `(X_1, X_j)` given `(e_1, e_j)` is
-bounded uniformly in `j`" — *does* give it: integrating the errors out yields
-`E[|f(e_0,e_j)| g(X_0,X_j)] ≤ B · E|f(e_0,e_j)| · ∫∫ g` for **every** `f`, of which the
-frozen hypothesis is the single instance `f = e_0 e_j`. So the second repair needed here
-is to restate (C2) in that form (equivalently: add the unweighted instance `f ≡ 1`).
-Both repairs are outside this wave's authorization. -/
+**Statement strengthening (documented).** Two repairs, both authorized:
+(i) the whole (C1)–(C5) package is threaded, exactly as `var_localized_sum` carries it
+(`hstat`, `hce`, `hcv`, `hδ`/`heLδ`, the (2.73)/(2.74) readings `hσm`/`hσpb`/`heδc`/`hpb`,
+`hC2`, `hlam`/`hα`, `hWm`/`hWb`/`hW1`/`hW2`, `hh0`/`hh`/`hnh`), plus `0 < L`; the witness
+above shows each of the mixing and moment inputs is load-bearing.
+(ii) (C2) is now carried in FY's **printed** form — the bound at an arbitrary error weight
+`f`, not just at `f = e_0 e_j` — which is exactly what the second obstruction identifies as
+missing; see the module docstring. The instance used here is `f ≡ 1` (unweighted), together
+with `f = ` the two singly-weighted ones produced by expanding the recentring.
+As in `var_localized_sum`, `hpx`, `hσc`, `hσpb` and `hσm` are carried for uniformity with
+the rest of the ledger and are not consumed by this estimate. -/
 private theorem tendsto_smallBlock_variance [IsProbabilityMeasure μ]
-    {X e : ℤ → Ω → ℝ} {W : ℝ → ℝ} {x : ℝ} {δ lam : ℝ} {h : ℕ → ℝ} {L : ℝ} :
+    {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
+    -- (C1) USER-INPUT: joint strict stationarity (fdd form); FY (C1)
+    (hstat : ∀ (k : ℕ) (t : ℤ),
+      μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
+        = μ.map (fun ω (i : Fin k) => (X ((i : ℕ) : ℤ) ω, e ((i : ℕ) : ℤ) ω)))
+    {σsq p : ℝ → ℝ} {δ x : ℝ}
+    (hce : μ[e 0 | MeasurableSpace.comap (X 0) inferInstance] =ᵐ[μ] 0)
+    (hcv : μ[fun ω => e 0 ω ^ 2 | MeasurableSpace.comap (X 0) inferInstance]
+      =ᵐ[μ] fun ω => σsq (X 0 ω))
+    (hδ : 2 < δ) (heLδ : MemLp (e 0) (ENNReal.ofReal δ) μ)
+    -- USER-INPUT (authorized (C1) repair): σ² measurable; FY §2.6.4
+    (hσm : Measurable σsq)
+    (hmp : Measurable p) (hp0 : ∀ v, 0 ≤ p v)
+    (hpd : μ.map (X 0) = MeasureTheory.volume.withDensity fun v => ENNReal.ofReal (p v))
+    (hσc : ContinuousAt σsq x) (hpc : ContinuousAt p x) (hpx : 0 < p x)
+    -- USER-INPUT: σ²·p bounded (the textbook's silent reading of (C1)); FY §2.6.4
+    (hσpb : ∃ C : ℝ, ∀ v : ℝ, σsq v * p v ≤ C)
+    {M Cp : ℝ}
+    -- USER-INPUT: (2.74) δ-th conditional moment of the error, FY's silent reading of
+    -- (C1); FY §2.6.4
+    (heδc : μ[fun ω => |e 0 ω| ^ δ | MeasurableSpace.comap (X 0) inferInstance]
+      ≤ᵐ[μ] fun _ => M)
+    -- USER-INPUT: (2.74) δ-th conditional moment of the error, FY's silent reading of
+    -- (C1); FY §2.6.4
+    (hpb : ∀ v, p v ≤ Cp)
+    -- (C2) USER-INPUT: (C2) as printed (conditional joint density bounded); FY §2.6.4
+    (hC2 : ∃ B : ℝ, 0 ≤ B ∧ ∀ j : ℤ, j ≠ 0 → ∀ f : ℝ × ℝ → ℝ, Measurable f →
+      ∀ g : ℝ × ℝ → ℝ, Measurable g → (∀ v, 0 ≤ g v) →
+      ∫ ω, |f (e 0 ω, e j ω)| * g (X 0 ω, X j ω) ∂μ
+        ≤ B * (∫ ω, |f (e 0 ω, e j ω)| ∂μ) *
+          ∫ v, g v ∂(MeasureTheory.volume.prod MeasureTheory.volume))
+    {lam : ℝ} (hlam : 1 - 2 / δ < lam)
+    (hα : Summable fun t : ℕ => (t : ℝ) ^ lam * pairAlphaCoeff X e μ t ^ (1 - 2 / δ))
+    {W : ℝ → ℝ} {CW : ℝ} (hWm : Measurable W) (hWb : ∀ v, |W v| ≤ CW)
+    (hW1 : Integrable W MeasureTheory.volume)
+    (hW2 : Integrable (fun v => W v ^ 2) MeasureTheory.volume)
+    {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n) (hh : Tendsto h atTop (𝓝 0))
+    (hnh : Tendsto (fun n : ℕ => (n : ℝ) * h n ^ 3) atTop atTop)
+    -- USER-INPUT: positive truncation level (the `L = 0` corner is degenerate); FY §2.6.4
+    {L : ℝ} (hL : 0 < L) :
     Tendsto (fun n : ℕ =>
         ((n : ℝ) * h n)⁻¹ *
           ∫ ω, (∑ i ∈ Finset.range (blockCount h δ lam n),
@@ -2074,15 +2111,16 @@ private theorem tendsto_of_uniform_approx {f : ℕ → ℂ} {g : ℝ → ℕ →
         gcongr; exact norm_add_le _ _
     _ < ε := by linarith
 
-/-- **FY (2.82)–(2.83), truncation tail — DEBT.** Uniformly in `n`, the charFun of the
-localized sum is within `ε` of the charFun of its truncated companion once the
-truncation level `L` is large. Proof: `|e^{iuS} − e^{iuS^L}| ≤ |u| E|S − S^L|`, and the
-variance of `S − S^L` obeys the ledger-(a) bound with the factor `E[e²1_{|e|>L}]`,
-which vanishes as `L → ∞` by `δ`-moment uniform integrability (`heLδ`, `δ > 2`).
+/-- **FY (2.82)–(2.83), truncation tail — FALSE AS FROZEN (verified), REPAIRED.**
+Uniformly in `n`, the charFun of the localized sum is within `ε` of the charFun of its
+truncated companion once the truncation level `L` is large. Proof:
+`|e^{iuS} − e^{iuS^L}| ≤ |u| E|S − S^L|`, and the variance of `S − S^L` obeys the
+ledger-(a) bound with the factor `E[e²1_{|e|>L}]`, which vanishes as `L → ∞` by
+`δ`-moment uniform integrability (`heLδ`, `δ > 2`).
 
-**FALSE AS FROZEN (this wave's finding).** The hypotheses below omit (C1)'s stationarity
-and *every* moment condition beyond time `0`: `heLδ` constrains `e 0` only, and there is
-no `hstat`, `hce`, `hcv`, `hC2` or `hα`. Witness: `x = 0`, `X ≡ 0`, `W = 1_{[0,1]}` (so
+**FALSE AS FROZEN (verified).** The frozen hypotheses omitted (C1)'s stationarity and
+*every* moment condition beyond time `0`: `heLδ` constrains `e 0` only, and there was no
+`hstat`, `hce`, `hcv`, `hC2` or `hα`. Witness: `x = 0`, `X ≡ 0`, `W = 1_{[0,1]}` (so
 `W((X_t − x)/h_n) ≡ W 0 = 1`, and `W` is bounded, integrable and square-integrable as
 (C4) demands), `h_n = n^{−1/4}` (so `h_n → 0` and `n h_n³ = n^{1/4} → ∞`, as (C5)
 demands), `e_0 = 0` (so `heLδ` holds for every `δ`) and `e_t = t·ζ` for `t ≥ 1` with
@@ -2093,17 +2131,62 @@ demands), `e_0 = 0` (so `heLδ` holds for every `δ`) and `e_t = t·ζ` for `t �
 diverges, so its residues mod `2π` are dense: `|cos| ≥ 1/2` for infinitely many `n`, at
 **every** fixed `L`. So `ε = 1/4` admits no `L` at all.
 
-**Repair.** Thread (C1)'s `hstat` (which forces `e_t ≡ e_0` in law, hence a uniform
-`δ`-moment) together with `hce`, `hcv`, `hC2`, `hlam`/`hα` — i.e. the same package
-`var_localized_sum` carries — after which the `L¹` route above applies. That route is in
-any case downstream of ledger (a), which is itself blocked (see `var_localized_sum`). -/
+**Statement strengthening (documented).** The full (C1)–(C5) package that
+`var_localized_sum` carries is threaded — in particular `hstat`, which is what upgrades
+`heLδ` from time `0` to *every* `t` (through `memLp_comp_pair`) and so kills the witness —
+together with the (C2) repair (the printed form: the recentred residual
+`e_t − e^L_t = r_t − E(r_t|X_t)` again has its error factors stripped by the conditioning,
+so the small-lag half needs weights other than `f = e_0 e_j`; see
+`tendsto_smallBlock_variance`). The `L¹` route then applies: the diagonal is
+`localized_trunc_residual_moment_le` (`O(L^{2−δ} h)`, so `O(L^{2−δ})` after the `h⁻¹`,
+uniformly in `n` — this is the half that (C1)–(C5) as frozen already supported), and the
+lag halves are the (C2)/Davydov pair of ledger (a) applied to the residual array.
+
+Note that the uniformity in `n` is genuine work: the small-lag and large-lag totals carry
+the factors `m_n h_n` and `h_n^{2/δ−1+λ}|log h_n|^λ`, which tend to `0` but must be
+*bounded over all `n`*, and the large-lag δ-moment constant does **not** decay in `L`
+(`heδc` gives only `E(|e_0|^δ|X_0) ≤ M`, with no tail refinement), so the large-`n` and
+small-`n` ranges have to be separated: for `n ≥ N` the large-lag factor is itself small,
+and for the finitely many `n < N` the crude `L¹` bound
+`E|S_n − S^L_n| ≤ √(n/h_n) C_W · 2 L^{1−δ} M` closes at fixed `n`. -/
 private theorem charFun_locSum_sub_locTruncSum_le [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
-    {δ : ℝ} (hδ : 2 < δ) (heLδ : MemLp (e 0) (ENNReal.ofReal δ) μ)
+    -- (C1) USER-INPUT: joint strict stationarity (fdd form); FY (C1)
+    (hstat : ∀ (k : ℕ) (t : ℤ),
+      μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
+        = μ.map (fun ω (i : Fin k) => (X ((i : ℕ) : ℤ) ω, e ((i : ℕ) : ℤ) ω)))
+    {σsq p : ℝ → ℝ} {δ x : ℝ}
+    (hce : μ[e 0 | MeasurableSpace.comap (X 0) inferInstance] =ᵐ[μ] 0)
+    (hcv : μ[fun ω => e 0 ω ^ 2 | MeasurableSpace.comap (X 0) inferInstance]
+      =ᵐ[μ] fun ω => σsq (X 0 ω))
+    (hδ : 2 < δ) (heLδ : MemLp (e 0) (ENNReal.ofReal δ) μ)
+    -- USER-INPUT (authorized (C1) repair): σ² measurable; FY §2.6.4
+    (hσm : Measurable σsq)
+    (hmp : Measurable p) (hp0 : ∀ v, 0 ≤ p v)
+    (hpd : μ.map (X 0) = MeasureTheory.volume.withDensity fun v => ENNReal.ofReal (p v))
+    (hσc : ContinuousAt σsq x) (hpc : ContinuousAt p x) (hpx : 0 < p x)
+    -- USER-INPUT: σ²·p bounded (the textbook's silent reading of (C1)); FY §2.6.4
+    (hσpb : ∃ C : ℝ, ∀ v : ℝ, σsq v * p v ≤ C)
+    {M Cp : ℝ}
+    -- USER-INPUT: (2.74) δ-th conditional moment of the error, FY's silent reading of
+    -- (C1); FY §2.6.4
+    (heδc : μ[fun ω => |e 0 ω| ^ δ | MeasurableSpace.comap (X 0) inferInstance]
+      ≤ᵐ[μ] fun _ => M)
+    -- USER-INPUT: (2.74) δ-th conditional moment of the error, FY's silent reading of
+    -- (C1); FY §2.6.4
+    (hpb : ∀ v, p v ≤ Cp)
+    -- (C2) USER-INPUT: (C2) as printed (conditional joint density bounded); FY §2.6.4
+    (hC2 : ∃ B : ℝ, 0 ≤ B ∧ ∀ j : ℤ, j ≠ 0 → ∀ f : ℝ × ℝ → ℝ, Measurable f →
+      ∀ g : ℝ × ℝ → ℝ, Measurable g → (∀ v, 0 ≤ g v) →
+      ∫ ω, |f (e 0 ω, e j ω)| * g (X 0 ω, X j ω) ∂μ
+        ≤ B * (∫ ω, |f (e 0 ω, e j ω)| ∂μ) *
+          ∫ v, g v ∂(MeasureTheory.volume.prod MeasureTheory.volume))
+    {lam : ℝ} (hlam : 1 - 2 / δ < lam)
+    (hα : Summable fun t : ℕ => (t : ℝ) ^ lam * pairAlphaCoeff X e μ t ^ (1 - 2 / δ))
     {W : ℝ → ℝ} {CW : ℝ} (hWm : Measurable W) (hWb : ∀ v, |W v| ≤ CW)
     (hW1 : Integrable W MeasureTheory.volume)
     (hW2 : Integrable (fun v => W v ^ 2) MeasureTheory.volume)
-    {x : ℝ} {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n) (hh : Tendsto h atTop (𝓝 0))
+    {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n) (hh : Tendsto h atTop (𝓝 0))
     (hnh : Tendsto (fun n : ℕ => (n : ℝ) * h n ^ 3) atTop atTop) (u : ℝ) :
     ∀ ε : ℝ, 0 < ε → ∀ᶠ L in atTop, ∀ n : ℕ,
       ‖charFun (μ.map (locSum X e W x h n)) u
@@ -2132,8 +2215,8 @@ every consumer here has `k = k_n ≥ 1`). Its *rate* input (2.78) is proved
 (`tendsto_blockCount_mul_pairAlpha`). Input (ii) `tendsto_smallBlock_variance` is still
 blocked, and now for two reasons (see there).
 
-**FALSE AS FROZEN (this wave's finding — this supersedes the previous "statement survives
-the audit intact" verdict).** The obstruction is *independent* of inputs (i)–(iii): the
+**FALSE AS FROZEN (verified) — REPAIRED.** (This superseded the earlier "statement
+survives the audit intact" verdict.) The obstruction is *independent* of inputs (i)–(iii): the
 conclusion is refutable even for an **iid** series, where the Bernstein blocking is
 unnecessary and every one of (i)–(iii) is trivial. The point is that the hypotheses
 constrain the conditional law of `e_0` given `X_0` only through its first two moments
@@ -2182,12 +2265,22 @@ conclusion. Note that the **headline** `kernel_localized_clt` is *not* damaged b
 is an artifact of the truncation route only, and the untruncated variance asymptotics
 `var_localized_sum` — which is what the headline's Gaussian limit is read off — is proved.
 
-Outside this wave's authorization; recorded, not repaired.
-
-**Statement strengthening (documented).** The two (2.74) hypotheses `heδc`/`hpb` are
-carried here solely because this statement consumes ledger (a); see
-`var_localized_sum`'s docstring for the proof that they are not derivable from
-(C1)–(C5) as formalized. -/
+**Statement strengthening (documented).** The repair applied is exactly the missing input
+above, in its most economical Lean form: measurable versions `mL L`, `sL L` of
+`v ↦ E(clamp_L e_0 | X_0 = v)` and `v ↦ E(clamp_L(e_0)² | X_0 = v)` — whose existence is
+Doob–Dynkin (`StronglyMeasurable.exists_eq_measurable_comp`), not an assumption — together
+with the three genuine hypotheses on `σ_L² := sL L − (mL L)²`:
+`hσLc` (continuity at `x` of `σ_L²·p`, which is the (2.73)-for-truncated-errors that the
+witness above refutes as underivable), `hσLb` (`σ_L²·p` bounded, the level-`L` form of the
+already-authorized `hσpb`), and `hσL84` (FY's (2.84) `σ_L²(x) → σ²(x)`, which is the second
+conclusion; it is *not* implied by `hσLc` — a.e.-in-`v` convergence `σ_L² → σ²` plus
+continuity of each factor at `x` says nothing about the value at the single point `x`).
+All three are consequences of the one conceptual repair the witness identifies, namely that
+the conditional law of `e_0` given `X_0 = v` converges weakly to the one at `v = x` as
+`v → x` with uniform square-integrability; they are stated directly because that weak-limit
+formulation is heavier and buys nothing else. The two (2.74) hypotheses `heδc`/`hpb` are
+carried here solely because this statement consumes ledger (a); see `var_localized_sum`'s
+docstring for the proof that they are not derivable from (C1)–(C5) as formalized. -/
 private theorem tendsto_charFun_locTruncSum [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
@@ -2213,6 +2306,24 @@ private theorem tendsto_charFun_locTruncSum [IsProbabilityMeasure μ]
     -- USER-INPUT: (2.74) δ-th conditional moment of the error, FY's silent reading of
     -- (C1); FY §2.6.4
     (hpb : ∀ v, p v ≤ Cp)
+    -- USER-INPUT ((C1)-family — the **fourth** silent reading, identified by the witness
+    -- in `tendsto_charFun_locTruncSum`'s docstring): the conditional law of `e_0` given
+    -- `X_0 = v` is regular at `v = x` at *every* truncation level. `mL L` and `sL L` are
+    -- measurable versions of `v ↦ E(clamp_L e_0 | X_0 = v)` and
+    -- `v ↦ E(clamp_L(e_0)² | X_0 = v)` — their mere existence is Doob–Dynkin, not an
+    -- assumption; the content is `hσLc` (continuity at `x` of `σ_L²·p`), `hσLb` (`σ_L²·p`
+    -- bounded, the level-`L` form of `hσpb`) and `hσL84` (FY's (2.84)). FY §2.6.4
+    (mL sL : ℝ → ℝ → ℝ)
+    (hmLm : ∀ L : ℝ, Measurable (mL L)) (hsLm : ∀ L : ℝ, Measurable (sL L))
+    (hmLv : ∀ L : ℝ, 0 < L →
+      μ[fun ω => max (-L) (min L (e 0 ω)) | MeasurableSpace.comap (X 0) inferInstance]
+        =ᵐ[μ] fun ω => mL L (X 0 ω))
+    (hsLv : ∀ L : ℝ, 0 < L →
+      μ[fun ω => max (-L) (min L (e 0 ω)) ^ 2 | MeasurableSpace.comap (X 0) inferInstance]
+        =ᵐ[μ] fun ω => sL L (X 0 ω))
+    (hσLc : ∀ L : ℝ, 0 < L → ContinuousAt (fun v => (sL L v - mL L v ^ 2) * p v) x)
+    (hσLb : ∀ L : ℝ, 0 < L → ∃ C : ℝ, ∀ v : ℝ, (sL L v - mL L v ^ 2) * p v ≤ C)
+    (hσL84 : Tendsto (fun L : ℝ => sL L x - mL L x ^ 2) atTop (𝓝 (σsq x)))
     -- (C2) USER-INPUT: (C2) as printed (conditional joint density bounded); FY §2.6.4
     (hC2 : ∃ B : ℝ, 0 ≤ B ∧ ∀ j : ℤ, j ≠ 0 → ∀ f : ℝ × ℝ → ℝ, Measurable f →
       ∀ g : ℝ × ℝ → ℝ, Measurable g → (∀ v, 0 ≤ g v) →
@@ -2239,17 +2350,30 @@ end Ledger
 /-- **FY Theorem 2.22** (charFun form): under (C1)–(C5),
 `(n h_n)^{-1/2} Σ_{t=1}^n e_t W((X_t − x)/h_n) →d N(0, σ²(x) p(x) ∫ W²)`.
 
-**Statement strengthening (documented).** Three hypotheses beyond the printed (C1)–(C5)
-are carried, all of them silent readings of (C1) that FY's own proof uses:
-`hσm` (`σ²` measurable — the printed (C1) constrains `σ²` only through `hcv`, hence only
-`μ.map (X 0)`-a.e.) and `hσpb` (`σ²·p` bounded), needed for the diagonal (2.73); and the
-pair `heδc`/`hpb` — FY's implicit (2.74), the *conditional* δ-th moment
-`E(|e_0|^δ | X_0) ≤ M` together with a bounded density — needed for the large-lag half of
-the variance asymptotics. Each is documented with an explicit proof that it is *not*
-derivable from the frozen (C1)–(C5): see `tendsto_localized_second_moment_debt` for the
-first two (spike/kernel counterexample) and `var_localized_sum` for the third
-(interpolation of the available inputs converges only for `λ > 1`, whereas (C3) allows
-`λ ∈ (1 − 2/δ, 1]`). -/
+**Statement strengthening (documented).** Four groups of hypotheses beyond the printed
+(C1)–(C5) are carried, each a silent reading of (C1)–(C2) that FY's own proof uses, and
+each documented with an explicit proof that it is *not* derivable from the frozen
+conditions:
+* `hσm` (`σ²` measurable — the printed (C1) constrains `σ²` only through `hcv`, hence only
+  `μ.map (X 0)`-a.e.) and `hσpb` (`σ²·p` bounded), needed for the diagonal (2.73); see
+  `tendsto_localized_second_moment_debt` (spike/kernel counterexample).
+* `heδc`/`hpb` — FY's implicit (2.74), the *conditional* δ-th moment
+  `E(|e_0|^δ | X_0) ≤ M` together with a bounded density — needed for the large-lag half of
+  the variance asymptotics; see `var_localized_sum` (interpolation of the available inputs
+  converges only for `λ > 1`, whereas (C3) allows `λ ∈ (1 − 2/δ, 1]`).
+* (C2) is carried **as printed** — the integrated bounded-conditional-density inequality at
+  an *arbitrary* error weight `f`, not just at `f = e_0 e_j`. The frozen single instance is
+  strictly weaker and does not close steps (b)–(c): the conditional recentring inside
+  `truncErr` strips both error factors out of the small-lag covariance. See
+  `tendsto_smallBlock_variance` for the proof.
+* `mL`/`sL` with `hσLc`, `hσLb`, `hσL84` — the *truncated* conditional second moment
+  `σ_L² = sL L − (mL L)²` is regular at `x`, and FY's (2.84) holds. This is a **fourth**
+  reading of (C1), independent of the first two (which regularize `σ² = σ_∞²` only), and it
+  is what step (c) needs at each fixed truncation level; see
+  `tendsto_charFun_locTruncSum` for the iid witness that refutes the statement without it.
+
+Note that the *Gaussian limit itself* is untouched by the last item: it is read off the
+untruncated variance asymptotics `var_localized_sum`, which is proved. -/
 theorem kernel_localized_clt [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     -- (C1) USER-INPUT: joint strict stationarity (fdd form); FY (C1)
@@ -2281,6 +2405,24 @@ theorem kernel_localized_clt [IsProbabilityMeasure μ]
     -- USER-INPUT: (2.74) δ-th conditional moment of the error, FY's silent reading of
     -- (C1); FY §2.6.4
     (hpb : ∀ v, p v ≤ Cp)
+    -- USER-INPUT ((C1)-family — the **fourth** silent reading, identified by the witness
+    -- in `tendsto_charFun_locTruncSum`'s docstring): the conditional law of `e_0` given
+    -- `X_0 = v` is regular at `v = x` at *every* truncation level. `mL L` and `sL L` are
+    -- measurable versions of `v ↦ E(clamp_L e_0 | X_0 = v)` and
+    -- `v ↦ E(clamp_L(e_0)² | X_0 = v)` — their mere existence is Doob–Dynkin, not an
+    -- assumption; the content is `hσLc` (continuity at `x` of `σ_L²·p`), `hσLb` (`σ_L²·p`
+    -- bounded, the level-`L` form of `hσpb`) and `hσL84` (FY's (2.84)). FY §2.6.4
+    (mL sL : ℝ → ℝ → ℝ)
+    (hmLm : ∀ L : ℝ, Measurable (mL L)) (hsLm : ∀ L : ℝ, Measurable (sL L))
+    (hmLv : ∀ L : ℝ, 0 < L →
+      μ[fun ω => max (-L) (min L (e 0 ω)) | MeasurableSpace.comap (X 0) inferInstance]
+        =ᵐ[μ] fun ω => mL L (X 0 ω))
+    (hsLv : ∀ L : ℝ, 0 < L →
+      μ[fun ω => max (-L) (min L (e 0 ω)) ^ 2 | MeasurableSpace.comap (X 0) inferInstance]
+        =ᵐ[μ] fun ω => sL L (X 0 ω))
+    (hσLc : ∀ L : ℝ, 0 < L → ContinuousAt (fun v => (sL L v - mL L v ^ 2) * p v) x)
+    (hσLb : ∀ L : ℝ, 0 < L → ∃ C : ℝ, ∀ v : ℝ, (sL L v - mL L v ^ 2) * p v ≤ C)
+    (hσL84 : Tendsto (fun L : ℝ => sL L x - mL L x ^ 2) atTop (𝓝 (σsq x)))
     -- (C2) USER-INPUT: (C2) as printed (conditional joint density bounded); FY §2.6.4
     (hC2 : ∃ B : ℝ, 0 ≤ B ∧ ∀ j : ℤ, j ≠ 0 → ∀ f : ℝ × ℝ → ℝ, Measurable f →
       ∀ g : ℝ × ℝ → ℝ, Measurable g → (∀ v, 0 ≤ g v) →
@@ -2314,10 +2456,11 @@ theorem kernel_localized_clt [IsProbabilityMeasure μ]
   -- (2.77)–(2.81), and their `L → ∞` limit is the variance continuity (2.84).
   obtain ⟨vT, hvT1, hvT2⟩ :=
     tendsto_charFun_locTruncSum hmeasX hmeasE hstat (σsq := σsq) (p := p) hce hcv hδ heLδ
-      hσm hmp hp0 hpd hσc hpc hpx hσpb heδc hpb hC2 hlam hα hWm hWb hW1 hW2 hh0 hh hnh u
+      hσm hmp hp0 hpd hσc hpc hpx hσpb heδc hpb mL sL hmLm hsLm hmLv hsLv hσLc hσLb
+      hσL84 hC2 hlam hα hWm hWb hW1 hW2 hh0 hh hnh u
   exact tendsto_of_uniform_approx
-    (charFun_locSum_sub_locTruncSum_le hmeasX hmeasE hδ heLδ hWm hWb hW1 hW2
-      (x := x) hh0 hh hnh u)
+    (charFun_locSum_sub_locTruncSum_le hmeasX hmeasE hstat (σsq := σsq) (p := p) hce hcv hδ
+      heLδ hσm hmp hp0 hpd hσc hpc hpx hσpb heδc hpb hC2 hlam hα hWm hWb hW1 hW2 hh0 hh hnh u)
     hvT1 hvT2
 
 end StatLean.TimeSeries
