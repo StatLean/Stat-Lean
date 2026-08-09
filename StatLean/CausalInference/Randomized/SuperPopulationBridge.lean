@@ -67,7 +67,9 @@ theorem indepFun_sampledEffect {Y1 Y0 : ℕ → Ω → ℝ}
     (hindep : Pairwise fun i j =>
       IndepFun (fun ω => (Y1 i ω, Y0 i ω)) (fun ω => (Y1 j ω, Y0 j ω)) μ) :
     Pairwise fun i j => IndepFun (sampledEffect Y1 Y0 i) (sampledEffect Y1 Y0 j) μ := by
-  sorry
+  intro i j hij
+  exact (hindep hij).comp (φ := fun p : ℝ × ℝ => p.1 - p.2) (ψ := fun p : ℝ × ℝ => p.1 - p.2)
+    (measurable_fst.sub measurable_snd) (measurable_fst.sub measurable_snd)
 
 /-- **Unbiasedness of the sampled finite-population effect** (Ding ch. 9): its expectation
 over the sampling of units is the superpopulation average causal effect. -/
@@ -79,7 +81,20 @@ theorem integral_sampledFiniteATE [IsProbabilityMeasure μ] {Y1 Y0 : ℕ → Ω 
     -- LEAN-ONLY: a nonempty sample, else `n⁻¹` is a junk value
     (hn : 0 < n) :
     ∫ ω, sampledFiniteATE Y1 Y0 n ω ∂μ = ate μ (Y1 0) (Y0 0) := by
-  sorry
+  have hintI : ∀ i, Integrable (sampledEffect Y1 Y0 i) μ :=
+    fun i => (hident i).integrable_iff.mpr hint
+  have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
+  have hstep : ∫ ω, sampledFiniteATE Y1 Y0 n ω ∂μ
+      = (n : ℝ)⁻¹ * ∫ ω, (∑ i ∈ Finset.range n, sampledEffect Y1 Y0 i ω) ∂μ := by
+    simp only [sampledFiniteATE]
+    exact integral_const_mul _ _
+  rw [hstep, integral_finset_sum _ fun i _ => hintI i]
+  have hterm : ∀ i ∈ Finset.range n,
+      ∫ ω, sampledEffect Y1 Y0 i ω ∂μ = ∫ ω, sampledEffect Y1 Y0 0 ω ∂μ :=
+    fun i _ => (hident i).integral_eq
+  rw [Finset.sum_congr rfl hterm, Finset.sum_const, Finset.card_range, nsmul_eq_mul,
+    ← mul_assoc, inv_mul_cancel₀ hn0, one_mul]
+  rfl
 
 /-- **Convergence of the sampled finite-population effect** (Ding ch. 9): as the sample
 grows, the finite-population effect of the sampled units converges almost surely to the
@@ -94,6 +109,13 @@ theorem tendsto_sampledFiniteATE [IsProbabilityMeasure μ] {Y1 Y0 : ℕ → Ω �
     (hint : Integrable (sampledEffect Y1 Y0 0) μ) :
     ∀ᵐ ω ∂μ, Tendsto (fun n => sampledFiniteATE Y1 Y0 n ω) atTop
       (𝓝 (ate μ (Y1 0) (Y0 0))) := by
-  sorry
+  have hlaw := strong_law_ae_real (μ := μ) (sampledEffect Y1 Y0) hint
+    (indepFun_sampledEffect hindep) hident
+  have hate : ate μ (Y1 0) (Y0 0) = ∫ ω, sampledEffect Y1 Y0 0 ω ∂μ := rfl
+  rw [hate]
+  filter_upwards [hlaw] with ω hω
+  refine hω.congr fun m => ?_
+  simp only [sampledFiniteATE]
+  rw [div_eq_inv_mul]
 
 end StatLean.CausalInference
