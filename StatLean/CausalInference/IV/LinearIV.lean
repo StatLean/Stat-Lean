@@ -65,6 +65,19 @@ structure LinearIVModel (μ : Measure Ω) (Zr D Y : Ω → ℝ) (α β : ℝ) : 
   exclusion restriction in linear-model form. -/
   exogenous : cov[Zr, fun ω => Y ω - α - β * D ω; μ] = 0
 
+/-- Bilinearity of the covariance along the structural equation, proved here so that it is
+available to `LinearIVModel.beta_eq_cov_div_cov` below; it is restated as
+`cov_structural_decomp`. -/
+private lemma cov_structural_decomp_aux {Zr D Y : Ω → ℝ} {α β : ℝ} [IsProbabilityMeasure μ]
+    (hZ : MemLp Zr 2 μ) (hD : MemLp D 2 μ) (hY : MemLp Y 2 μ) :
+    cov[Zr, Y; μ] = β * cov[Zr, D; μ] + cov[Zr, fun ω => Y ω - α - β * D ω; μ] := by
+  have hYc : MemLp (fun ω => Y ω - α) 2 μ := hY.sub (memLp_const α)
+  have hDc : MemLp (fun ω => β * D ω) 2 μ := hD.const_mul β
+  rw [covariance_fun_sub_right hZ hYc hDc,
+    covariance_sub_const_right (hY.integrable (by norm_num)) α,
+    covariance_const_mul_right]
+  ring
+
 /-- **The just-identified IV solution** (Ding Example 23.7): under the linear IV model with
 a relevant instrument, the structural coefficient is the ratio of covariances. -/
 theorem LinearIVModel.beta_eq_cov_div_cov {Zr D Y : Ω → ℝ} {α β : ℝ} [IsProbabilityMeasure μ]
@@ -75,14 +88,15 @@ theorem LinearIVModel.beta_eq_cov_div_cov {Zr D Y : Ω → ℝ} {α β : ℝ} [I
     -- USER-INPUT: instrument relevance `Cov(Z, D) ≠ 0`; Ding §23.4
     (hrel : cov[Zr, D; μ] ≠ 0) :
     β = cov[Zr, Y; μ] / cov[Zr, D; μ] := by
-  sorry
+  rw [eq_div_iff hrel, cov_structural_decomp_aux (α := α) (β := β) hZ hD hY, hmodel.exogenous,
+    add_zero, mul_comm]
 
 /-- Bilinearity consequence used above, recorded on its own: the covariance of the
 instrument with the outcome decomposes along the structural equation. -/
 theorem cov_structural_decomp {Zr D Y : Ω → ℝ} {α β : ℝ} [IsProbabilityMeasure μ]
     (hZ : MemLp Zr 2 μ) (hD : MemLp D 2 μ) (hY : MemLp Y 2 μ) :
     cov[Zr, Y; μ] = β * cov[Zr, D; μ] + cov[Zr, fun ω => Y ω - α - β * D ω; μ] := by
-  sorry
+  exact cov_structural_decomp_aux hZ hD hY
 
 /-- **Covariance with a binary instrument** is the arm contrast scaled by the arm
 probabilities: `Cov(Z, W) = P(Z=1)P(Z=0)(E[W|Z=1] - E[W|Z=0])`. -/
@@ -96,7 +110,41 @@ theorem cov_bool_eq_prob_mul_ittContrast {Z : Ω → Bool} {W : Ω → ℝ} [IsP
     cov[fun ω => ind (Z ω), W; μ]
       = (μ {ω | Z ω = true}).toReal * (μ {ω | Z ω = false}).toReal
           * ittContrast μ Z W := by
-  sorry
+  have hT : MeasurableSet {ω | Z ω = true} := hZ (measurableSet_singleton true)
+  have hcompl : {ω | Z ω = true}ᶜ = {ω | Z ω = false} := by ext ω; simp
+  have hiW : Integrable W μ := hW.integrable (by norm_num)
+  have hindm : Measurable fun ω => ind (Z ω) := (measurable_of_countable ind).comp hZ
+  have hindb : ∀ ω, ‖ind (Z ω)‖ ≤ 1 := by
+    intro ω; cases h : Z ω <;> simp [ind]
+  have hindL : MemLp (fun ω => ind (Z ω)) 2 μ :=
+    MemLp.of_bound hindm.aestronglyMeasurable 1 (Filter.Eventually.of_forall hindb)
+  have hpq : (μ {ω | Z ω = true}).toReal + (μ {ω | Z ω = false}).toReal = 1 := by
+    rw [← hcompl, ← ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _),
+      measure_add_measure_compl hT]
+    simp
+  have hmul : ∫ ω, (fun ω => ind (Z ω)) ω * W ω ∂μ = ∫ ω in {ω | Z ω = true}, W ω ∂μ := by
+    rw [← integral_indicator hT]
+    congr 1
+    funext ω
+    by_cases h : Z ω = true <;> simp [ind, h]
+  have hone : ∫ ω, ind (Z ω) ∂μ = (μ {ω | Z ω = true}).toReal := by
+    have hfe : (fun ω => ind (Z ω)) = Set.indicator {ω | Z ω = true} 1 := by
+      funext ω
+      by_cases h : Z ω = true <;> simp [ind, h]
+    rw [hfe, integral_indicator_one hT, measureReal_def]
+  have hsplit : ∫ ω, W ω ∂μ
+      = (μ {ω | Z ω = true}).toReal * ∫ ω, W ω ∂(μ[|{ω | Z ω = true}])
+        + (μ {ω | Z ω = false}).toReal * ∫ ω, W ω ∂(μ[|{ω | Z ω = false}]) := by
+    rw [measureReal_mul_integral_cond (measure_ne_top μ _),
+      measureReal_mul_integral_cond (measure_ne_top μ _), ← hcompl,
+      integral_add_compl hT hiW]
+  rw [covariance_eq_sub hindL hW]
+  simp only [Pi.mul_apply]
+  rw [hmul, hone, hsplit, ← measureReal_mul_integral_cond (measure_ne_top μ _) W,
+    ittContrast, primaFacie, treatedEvent]
+  have hq : (μ {ω | Z ω = false}).toReal = 1 - (μ {ω | Z ω = true}).toReal := by linarith
+  rw [hq]
+  ring
 
 /-- **Indirect least squares = the Wald ratio** (Ding Example 23.7, §23.6.2): for a binary
 instrument the covariance ratio equals the ratio of the two intention-to-treat contrasts —
@@ -108,7 +156,13 @@ theorem cov_ratio_eq_ittContrast_ratio {Z : Ω → Bool} {D Y : Ω → ℝ} [IsP
     (hrel : ittContrast μ Z D ≠ 0) :
     cov[fun ω => ind (Z ω), Y; μ] / cov[fun ω => ind (Z ω), D; μ]
       = ittContrast μ Z Y / ittContrast μ Z D := by
-  sorry
+  have hp : (μ {ω | Z ω = true}).toReal ≠ 0 := by
+    simp [ENNReal.toReal_eq_zero_iff, hZ1, measure_ne_top μ _]
+  have hq : (μ {ω | Z ω = false}).toReal ≠ 0 := by
+    simp [ENNReal.toReal_eq_zero_iff, hZ0, measure_ne_top μ _]
+  rw [cov_bool_eq_prob_mul_ittContrast hZ hY hZ1 hZ0,
+    cov_bool_eq_prob_mul_ittContrast hZ hD hZ1 hZ0]
+  exact mul_div_mul_left _ _ (mul_ne_zero hp hq)
 
 /-- **The two routes to IV agree** (Ding Example 23.7 vs Theorem 21.1): with a binary
 instrument and a binary treatment satisfying the potential-outcome IV assumptions, the
@@ -130,6 +184,12 @@ theorem beta_eq_cace {Z d1 d0 : Ω → Bool} {y1 y0 : Ω → ℝ} {α β : ℝ} 
     (hrel : ittContrast μ Z (fun ω => ind (obsTreat Z d1 d0 ω)) ≠ 0)
     (hrelcov : cov[fun ω => ind (Z ω), fun ω => ind (obsTreat Z d1 d0 ω); μ] ≠ 0) :
     β = cace μ d1 d0 y1 y0 := by
-  sorry
+  have hindm : Measurable fun ω => ind (Z ω) := (measurable_of_countable ind).comp hZm
+  have hindL : MemLp (fun ω => ind (Z ω)) 2 μ :=
+    MemLp.of_bound hindm.aestronglyMeasurable 1
+      (Filter.Eventually.of_forall fun ω => by cases h : Z ω <;> simp [ind])
+  rw [LinearIVModel.beta_eq_cov_div_cov hmodel hindL hD hY hrelcov,
+    cov_ratio_eq_ittContrast_ratio hZm hD hY hZ1 hZ0 hrel,
+    ← cace_eq_ittContrast_div hrand hmono hexcl hZm hd1 hd0 hy1 hy0 hi1 hi0 hZ1 hZ0 hrel]
 
 end StatLean.CausalInference

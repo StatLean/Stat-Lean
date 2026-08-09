@@ -71,6 +71,7 @@ private def dZeroOf : ComplianceType → Bool
   | .defier => true
   | .neverTaker => false
 
+omit [MeasurableSpace Ω] in
 /-- A compliance-type event is the intersection of the two potential-treatment level sets
 prescribed by the type. -/
 private lemma typeSet_eq_inter (d1 d0 : Ω → Bool) (t : ComplianceType) :
@@ -96,7 +97,7 @@ private lemma integrable_boolComp [IsFiniteMeasure μ] (φ₀ : Bool × Bool →
     Integrable (fun ω => φ₀ (d1 ω, d0 ω)) μ :=
   Integrable.mono' (integrable_const C)
     (measurable_boolComp φ₀ hd1 hd0).aestronglyMeasurable
-    (Filter.Eventually.of_forall fun ω => hC _)
+    (Filter.Eventually.of_forall fun _ => hC _)
 
 /-- Two integrands agreeing on the conditioning event have the same conditional integral. -/
 private lemma integral_cond_congr {s : Set Ω} (hs : MeasurableSet s) {f g : Ω → ℝ}
@@ -325,7 +326,7 @@ theorem prob_neverTaker_eq [IsProbabilityMeasure μ]
     have hfe : (fun ω => if d1 ω = false then (1 : ℝ) else 0)
         = Set.indicator {ω | d1 ω = false} 1 := by
       funext ω
-      by_cases h : d1 ω = false <;> simp [h, Set.indicator_apply]
+      by_cases h : d1 ω = false <;> simp [h]
     have hs1 : MeasurableSet {ω | d1 ω = false} := hd1 (measurableSet_singleton false)
     rw [hfe, integral_indicator_one hs1, measureReal_def, hNeq]
   have hB : ∫ ω, (if d1 ω = false then (1 : ℝ) else 0) ∂(μ[|{ω | Z ω = true}])
@@ -334,7 +335,7 @@ theorem prob_neverTaker_eq [IsProbabilityMeasure μ]
       (fun ω hω => by
         simp only [Set.mem_setOf_eq] at hω
         by_cases h : d1 ω = false <;>
-          simp [h, Set.indicator_apply, obsTreat, hω]),
+          simp [h, obsTreat, hω]),
       integral_indicator_one hS, measureReal_def]
   rw [← hA, ← integral_cond_arm_eq_of_indepFun hindep hif hmf hZ hZ1, hB]
 
@@ -371,7 +372,7 @@ theorem prob_alwaysTaker_eq [IsProbabilityMeasure μ]
     have hfe : (fun ω => if d0 ω = true then (1 : ℝ) else 0)
         = Set.indicator {ω | d0 ω = true} 1 := by
       funext ω
-      by_cases h : d0 ω = true <;> simp [h, Set.indicator_apply]
+      by_cases h : d0 ω = true <;> simp [h]
     have hs0 : MeasurableSet {ω | d0 ω = true} := hd0 (measurableSet_singleton true)
     rw [hfe, integral_indicator_one hs0, measureReal_def, hAeq]
   have hB : ∫ ω, (if d0 ω = true then (1 : ℝ) else 0) ∂(μ[|{ω | Z ω = false}])
@@ -380,7 +381,7 @@ theorem prob_alwaysTaker_eq [IsProbabilityMeasure μ]
       (fun ω hω => by
         simp only [Set.mem_setOf_eq] at hω
         by_cases h : d0 ω = true <;>
-          simp [h, Set.indicator_apply, obsTreat, hω]),
+          simp [h, obsTreat, hω]),
       integral_indicator_one hS, measureReal_def]
   rw [← hA, ← integral_cond_arm_eq_of_indepFun hindep hif hmf hZ hZ0, hB]
 
