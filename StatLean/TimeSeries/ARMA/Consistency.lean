@@ -2697,8 +2697,11 @@ private lemma integral_defect_le [IsProbabilityMeasure μ] {ψ π : ℕ → ℝ}
   have hedge := sum_edge_le T m (c := (∑' n : ℕ, |π n|) * c0) (by positivity)
   linarith
 
+-- The residual-row identity below re-unifies the full `piMat`/`dotProduct` statement at
+-- width `T` several times, which exceeds the default heartbeat budget at `whnf`.
+set_option maxHeartbeats 1600000 in
 open Matrix in
-/-- **DEBT — step (C) of the `armaProfileS_tendstoInProb` route**: the residual
+/-- **Step (C) of the `armaProfileS_tendstoInProb` route — PROVED**: the residual
 sum-of-squares LLN `T⁻¹‖Π_T x‖² →p σ² · Σ_j c_j²`.
 
 This is the **only** remaining gap in `armaProfileS_tendstoInProb`; steps (A) and (B) are
@@ -2731,7 +2734,264 @@ theorem armaResidualSS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
             (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
           - σ2 * armaContrastVar b0 a0 b a|}).toReal)
       atTop (𝓝 0) := by
-  sorry
+  classical
+  have hπs : Summable fun n => |armaPi b a n| := summable_abs_armaPi hB
+  have hψs : Summable fun n => |armaPsi b0 a0 n| := summable_abs_armaPsi a0 hB0.1
+  have hwn : IsWhiteNoise ε σ2 μ := h.whiteNoise
+  have hmemX : ∀ t : ℤ, MemLp (X t) 2 μ := fun t => hcausal.memLp hψs hwn hmeas t
+  obtain ⟨c0, hc⟩ : ∃ c0 : ℝ, ∀ t : ℤ, l2n μ (X t) = c0 :=
+    ⟨l2n μ (X 0), fun t => l2n_linearProcess_eq hcausal hψs hwn hmeas t 0⟩
+  have hc0 : 0 ≤ c0 := by rw [← hc 0]; exact l2n_nonneg _ _
+  have hs0 : (0 : ℝ) ≤ Real.sqrt σ2 := Real.sqrt_nonneg _
+  obtain ⟨P, hPdef⟩ : ∃ x : ℝ, x = ∑' n : ℕ, |armaPi b a n| := ⟨_, rfl⟩
+  obtain ⟨Q, hQdef⟩ : ∃ x : ℝ, x = ∑' n : ℕ, |armaPsi b0 a0 n| := ⟨_, rfl⟩
+  obtain ⟨tp, htpdef⟩ : ∃ f : ℕ → ℝ, f = fun m => ∑' k : ℕ, |armaPi b a (k + m)| := ⟨_, rfl⟩
+  obtain ⟨tq, htqdef⟩ : ∃ f : ℕ → ℝ, f = fun m => ∑' k : ℕ, |armaPsi b0 a0 (k + m)| :=
+    ⟨_, rfl⟩
+  obtain ⟨G, hGdef⟩ : ∃ x : ℝ, x = P * c0 + P * (Q * Real.sqrt σ2) := ⟨_, rfl⟩
+  obtain ⟨rho, hrhodef⟩ : ∃ f : ℕ → ℝ,
+      f = fun m => tp m * c0 + P * (tq m * Real.sqrt σ2) := ⟨_, rfl⟩
+  obtain ⟨Mm, hMmdef⟩ : ∃ f : ℕ → ℝ,
+      f = fun m => σ2 * ∑ r ∈ Finset.range (2 * m),
+        cTrunc (armaPi b a) (armaPsi b0 a0) m r ^ 2 := ⟨_, rfl⟩
+  have hP0 : 0 ≤ P := by rw [hPdef]; exact tsum_nonneg fun n => abs_nonneg _
+  have hQ0 : 0 ≤ Q := by rw [hQdef]; exact tsum_nonneg fun n => abs_nonneg _
+  have hG0 : 0 ≤ G := by rw [hGdef]; positivity
+  -- **(0)** the quadratic form is the sum of the squared (time-reversed) residual rows
+  have hquad : ∀ (T : ℕ) (ω : Ω),
+      ((piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+        (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+        = ∑ i ∈ Finset.range T, icoResid (armaPi b a) X 0 (T - i) i ω ^ 2 := by
+    intro T ω
+    have hrow : ∀ i : Fin T,
+        (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) i
+          = icoResid (armaPi b a) X 0 (T - (i : ℕ)) (i : ℕ) ω := by
+      intro i
+      have h1 : (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) i
+          = ∑ k : Fin T, piK b a (i : ℕ) (k : ℕ) * X (((k : ℕ) : ℤ) + 1) ω := rfl
+      rw [h1, Fin.sum_univ_eq_sum_range
+        (fun k => piK b a (i : ℕ) k * X ((k : ℤ) + 1) ω) T]
+      have hzero : ∑ k ∈ Finset.Ico 0 (i : ℕ),
+          piK b a (i : ℕ) k * X ((k : ℤ) + 1) ω = 0 :=
+        Finset.sum_eq_zero fun k hk => by
+          rw [Finset.mem_Ico] at hk
+          rw [piK_eq_zero b a hk.2, zero_mul]
+      rw [Finset.range_eq_Ico,
+        ← Finset.sum_Ico_consecutive (fun k => piK b a (i : ℕ) k * X ((k : ℤ) + 1) ω)
+          (Nat.zero_le (i : ℕ)) (le_of_lt i.isLt), hzero, zero_add,
+        Finset.sum_Ico_eq_sum_range, icoResid, ← Finset.range_eq_Ico]
+      refine Finset.sum_congr rfl fun d _ => ?_
+      have hp : piK b a (i : ℕ) ((i : ℕ) + d) = armaPi b a d := by
+        rw [piK, if_pos (Nat.le_add_right _ _)]
+        congr 1
+        omega
+      have hx : ((((i : ℕ) + d : ℕ)) : ℤ) + 1 = ((i : ℕ) : ℤ) + 1 + (d : ℕ) := by
+        push_cast
+        ring
+      rw [hp, hx]
+    have hdot : ((piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+        (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+        = ∑ i : Fin T, icoResid (armaPi b a) X 0 (T - (i : ℕ)) (i : ℕ) ω ^ 2 := by
+      have hd : ((piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+          (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+          = ∑ i : Fin T, (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) i
+              * (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) i := rfl
+      rw [hd]
+      exact Finset.sum_congr rfl fun i _ => by rw [hrow i]; ring
+    rw [hdot]
+    exact Fin.sum_univ_eq_sum_range
+      (fun i => icoResid (armaPi b a) X 0 (T - i) i ω ^ 2) T
+  -- **(1)** the `L¹` comparison with the finite-window surrogate
+  have hIle : ∀ m T : ℕ, ∫ ω, ∑ i ∈ Finset.range T,
+      |icoResid (armaPi b a) X 0 (T - i) i ω ^ 2
+        - blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2| ∂μ
+      ≤ ((T : ℝ) * rho m + (m : ℝ) * (P * c0)) * G := by
+    intro m T
+    rw [hrhodef, hGdef, hPdef, hQdef, htpdef, htqdef]
+    exact integral_defect_le hcausal hψs hwn hmeas hπs hc m T
+  -- **(2)** Markov
+  have hmarkov : ∀ (m T : ℕ), 0 < T →
+      (μ {ω | η' / 3 ≤
+        |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T, icoResid (armaPi b a) X 0 (T - i) i ω ^ 2
+          - (T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+              blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2|}).toReal
+        ≤ 3 / η' * (rho m * G) + 3 / η' * ((m : ℝ) * (P * c0) * G / T) := by
+    intro m T hT
+    have hTpos : (0 : ℝ) < T := by exact_mod_cast hT
+    have hintD : Integrable (fun ω => ∑ i ∈ Finset.range T,
+        |icoResid (armaPi b a) X 0 (T - i) i ω ^ 2
+          - blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2|) μ := by
+      refine integrable_finset_sum _ fun i _ => ?_
+      have h1 : Integrable (fun ω => icoResid (armaPi b a) X 0 (T - i) i ω ^ 2) μ := by
+        have hh := (memLp_icoResid hmemX (armaPi b a) 0 (T - i) i).integrable_mul
+          (memLp_icoResid hmemX (armaPi b a) 0 (T - i) i)
+        exact hh.congr (Filter.Eventually.of_forall fun ω => by simp [Pi.mul_apply, sq])
+      exact (h1.sub (integrable_blockResid_sq hwn _ _ m i)).abs
+    have hDnn : 0 ≤ᵐ[μ] fun ω => (T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+        |icoResid (armaPi b a) X 0 (T - i) i ω ^ 2
+          - blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2| := by
+      filter_upwards with ω
+      exact mul_nonneg (by positivity) (Finset.sum_nonneg fun i _ => abs_nonneg _)
+    have hsubset : {ω | η' / 3 ≤
+          |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T, icoResid (armaPi b a) X 0 (T - i) i ω ^ 2
+            - (T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+                blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2|}
+        ⊆ {ω | η' / 3 ≤ (T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+            |icoResid (armaPi b a) X 0 (T - i) i ω ^ 2
+              - blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2|} := by
+      intro ω hω
+      simp only [Set.mem_setOf_eq] at hω ⊢
+      refine le_trans hω ?_
+      rw [← mul_sub, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (T : ℝ)⁻¹),
+        ← Finset.sum_sub_distrib]
+      exact mul_le_mul_of_nonneg_left (Finset.abs_sum_le_sum_abs _ _) (by positivity)
+    have hmark := mul_meas_ge_le_integral_of_nonneg hDnn (hintD.const_mul (T : ℝ)⁻¹) (η' / 3)
+    rw [integral_const_mul] at hmark
+    rw [measureReal_def] at hmark
+    have hstep : (T : ℝ)⁻¹ * ∫ ω, ∑ i ∈ Finset.range T,
+        |icoResid (armaPi b a) X 0 (T - i) i ω ^ 2
+          - blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2| ∂μ
+        ≤ rho m * G + (m : ℝ) * (P * c0) * G / T := by
+      have h1 := mul_le_mul_of_nonneg_left (hIle m T) (by positivity : (0 : ℝ) ≤ (T : ℝ)⁻¹)
+      have h2 : (T : ℝ)⁻¹ * (((T : ℝ) * rho m + (m : ℝ) * (P * c0)) * G)
+          = rho m * G + (m : ℝ) * (P * c0) * G / T := by
+        field_simp <;> ring
+      linarith [h1, h2.le, h2.ge]
+    have hkey : η' / 3 * (μ {ω | η' / 3 ≤ (T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+        |icoResid (armaPi b a) X 0 (T - i) i ω ^ 2
+          - blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2|}).toReal
+        ≤ rho m * G + (m : ℝ) * (P * c0) * G / T := le_trans hmark hstep
+    have hmono := ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono hsubset)
+    have hinv : (3 : ℝ) / η' * (η' / 3) = 1 := by field_simp
+    have hscale := mul_le_mul_of_nonneg_left hkey
+      (le_of_lt (show (0 : ℝ) < 3 / η' by positivity))
+    rw [← mul_assoc, hinv, one_mul, mul_add] at hscale
+    linarith [hmono, hscale]
+  -- **(3)** the `m`-dependent law of large numbers, in probability
+  have hLLN : ∀ m : ℕ, 0 < m → Tendsto (fun T : ℕ => (μ {ω | η' / 3 ≤
+      |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+          blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2 - Mm m|}).toReal)
+      atTop (𝓝 0) := by
+    intro m hm
+    have hae := ae_tendsto_avg_blockResid_sq hiid (armaPi b a) (armaPsi b0 a0) hm
+    have heq : (∫ ω, blockResid (armaPi b a) (armaPsi b0 a0) ε m 0 ω ^ 2 ∂μ) = Mm m := by
+      rw [hMmdef]
+      exact integral_blockResid_sq_eq hwn _ _ m 0
+    rw [heq] at hae
+    have hmf : ∀ T : ℕ, AEStronglyMeasurable (fun ω => (T : ℝ)⁻¹ *
+        ∑ i ∈ Finset.range T, blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2) μ := by
+      intro T
+      refine AEStronglyMeasurable.const_mul ?_ _
+      exact (Finset.measurable_sum _ fun i _ =>
+        ((measurable_blockResid hiid.measurable _ _ m i).pow_const 2)).aestronglyMeasurable
+    have htim := MeasureTheory.tendstoInMeasure_of_tendsto_ae (g := fun _ : Ω => Mm m) hmf
+      (by filter_upwards [hae] with ω hω using hω)
+    have hz := htim (ENNReal.ofReal (η' / 3)) (ENNReal.ofReal_pos.2 (by linarith))
+    have hset : ∀ T : ℕ,
+        {ω | ENNReal.ofReal (η' / 3) ≤ edist ((T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+            blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2) (Mm m)}
+        = {ω | η' / 3 ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+            blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2 - Mm m|} := by
+      intro T
+      ext ω
+      simp only [Set.mem_setOf_eq, edist_dist, Real.dist_eq,
+        ENNReal.ofReal_le_ofReal_iff (abs_nonneg _)]
+    have hz2 : Tendsto (fun T : ℕ => (μ {ω | ENNReal.ofReal (η' / 3) ≤
+        edist ((T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+          blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2) (Mm m)}).toReal)
+        atTop (𝓝 0) := by
+      simpa using (ENNReal.tendsto_toReal (by simp)).comp hz
+    exact hz2.congr fun T => congrArg ENNReal.toReal (congrArg μ (hset T))
+  -- **(4)** the deterministic limits
+  have hrhoT : Tendsto rho atTop (𝓝 0) := by
+    rw [hrhodef]
+    have h1 : Tendsto tp atTop (𝓝 0) := by rw [htpdef]; exact tendsto_tail_zero hπs
+    have h2 : Tendsto tq atTop (𝓝 0) := by rw [htqdef]; exact tendsto_tail_zero hψs
+    have h3 := (h1.mul_const c0).add ((h2.mul_const (Real.sqrt σ2)).const_mul P)
+    simpa using h3
+  have hMmT : Tendsto Mm atTop (𝓝 (σ2 * armaContrastVar b0 a0 b a)) := by
+    rw [hMmdef]
+    exact (tendsto_sum_sq_cTrunc hB0 hB).const_mul σ2
+  -- **(5)** assembly
+  have hgoalset : ∀ T : ℕ,
+      {ω | η' ≤ |(T : ℝ)⁻¹ * ((piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+          (piMat b a T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+        - σ2 * armaContrastVar b0 a0 b a|}
+      = {ω | η' ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+          icoResid (armaPi b a) X 0 (T - i) i ω ^ 2 - σ2 * armaContrastVar b0 a0 b a|} := by
+    intro T
+    ext ω
+    simp only [Set.mem_setOf_eq, hquad T ω]
+  simp only [hgoalset]
+  refine Metric.tendsto_atTop.2 fun ζ hζ => ?_
+  obtain ⟨m, hm1, hmb, hmM⟩ : ∃ m : ℕ, 0 < m ∧ 3 / η' * (rho m * G) < ζ / 3 ∧
+      |Mm m - σ2 * armaContrastVar b0 a0 b a| < η' / 3 := by
+    have e1 : ∀ᶠ m : ℕ in atTop, 3 / η' * (rho m * G) < ζ / 3 := by
+      have h0 : Tendsto (fun m : ℕ => 3 / η' * (rho m * G)) atTop (𝓝 0) := by
+        simpa using (hrhoT.mul_const G).const_mul (3 / η')
+      exact h0.eventually (gt_mem_nhds (by linarith))
+    have e2 : ∀ᶠ m : ℕ in atTop, |Mm m - σ2 * armaContrastVar b0 a0 b a| < η' / 3 := by
+      have h1 : Tendsto (fun m : ℕ => Mm m - σ2 * armaContrastVar b0 a0 b a) atTop (𝓝 0) := by
+        simpa using hMmT.sub (tendsto_const_nhds (x := σ2 * armaContrastVar b0 a0 b a))
+      have h0 : Tendsto (fun m : ℕ => |Mm m - σ2 * armaContrastVar b0 a0 b a|) atTop (𝓝 0) := by
+        simpa using h1.abs
+      exact h0.eventually (gt_mem_nhds (by linarith))
+    obtain ⟨m, ⟨⟨h1, h2⟩, h3⟩⟩ := ((e1.and e2).and (eventually_gt_atTop 0)).exists
+    exact ⟨m, h3, h1, h2⟩
+  have hTterm : Tendsto (fun T : ℕ => 3 / η' * ((m : ℝ) * (P * c0) * G / T)) atTop (𝓝 0) := by
+    have h1 : Tendsto (fun T : ℕ => ((m : ℝ) * (P * c0) * G) / (T : ℝ)) atTop (𝓝 0) :=
+      tendsto_const_div_atTop_nhds_zero_nat _
+    simpa using h1.const_mul (3 / η')
+  obtain ⟨N, hN⟩ := Filter.eventually_atTop.1
+    (((hTterm.eventually (gt_mem_nhds (show (0 : ℝ) < ζ / 3 by linarith))).and
+      ((hLLN m hm1).eventually (gt_mem_nhds (show (0 : ℝ) < ζ / 3 by linarith)))).and
+      (eventually_gt_atTop 0))
+  refine ⟨N, fun T hT => ?_⟩
+  obtain ⟨⟨hT1, hT2⟩, hT3⟩ := hN T hT
+  rw [Real.dist_eq, sub_zero, abs_of_nonneg ENNReal.toReal_nonneg]
+  have hsub : {ω | η' ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+        icoResid (armaPi b a) X 0 (T - i) i ω ^ 2 - σ2 * armaContrastVar b0 a0 b a|}
+      ⊆ {ω | η' / 3 ≤
+          |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T, icoResid (armaPi b a) X 0 (T - i) i ω ^ 2
+            - (T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+                blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2|}
+        ∪ {ω | η' / 3 ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+              blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2 - Mm m|} := by
+    intro ω hω
+    simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+    by_contra hcon
+    push Not at hcon
+    obtain ⟨h1, h2⟩ := hcon
+    have e1 := abs_sub_le
+      ((T : ℝ)⁻¹ * ∑ i ∈ Finset.range T, icoResid (armaPi b a) X 0 (T - i) i ω ^ 2)
+      ((T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+        blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2)
+      (σ2 * armaContrastVar b0 a0 b a)
+    have e2 := abs_sub_le
+      ((T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+        blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2)
+      (Mm m) (σ2 * armaContrastVar b0 a0 b a)
+    linarith
+  calc (μ {ω | η' ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+        icoResid (armaPi b a) X 0 (T - i) i ω ^ 2 - σ2 * armaContrastVar b0 a0 b a|}).toReal
+      ≤ (μ ({ω | η' / 3 ≤
+          |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T, icoResid (armaPi b a) X 0 (T - i) i ω ^ 2
+            - (T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+                blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2|}
+        ∪ {ω | η' / 3 ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+              blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2 - Mm m|})).toReal :=
+        ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono hsub)
+    _ ≤ (μ {ω | η' / 3 ≤
+          |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T, icoResid (armaPi b a) X 0 (T - i) i ω ^ 2
+            - (T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+                blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2|}).toReal
+        + (μ {ω | η' / 3 ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+              blockResid (armaPi b a) (armaPsi b0 a0) ε m i ω ^ 2 - Mm m|}).toReal := by
+        refine le_trans (ENNReal.toReal_mono (by finiteness) (measure_union_le _ _)) ?_
+        exact le_of_eq (ENNReal.toReal_add (measure_ne_top μ _) (measure_ne_top μ _))
+    _ < ζ := by
+        have hmk := hmarkov m T hT3
+        linarith
 
 -- The `have hCLLN := armaResidualSS_tendstoInProb …` application below re-unifies the
 -- full matrix statement (piMat/dotProduct at width `T`), which exceeds the default
