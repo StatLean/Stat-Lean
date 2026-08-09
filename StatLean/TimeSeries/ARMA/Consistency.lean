@@ -1842,6 +1842,211 @@ private lemma armaProfileS_sandwich (hB : ARMAInvertibleParams b a) (T : ℕ)
   exact quadForm_one_add_inv_bounds (gramTail_posSemidef hB T)
     (one_add_gramTail_det_isUnit hB T) _
 
+/-! ### Uniform-in-`θ` control of the Gram tail
+
+`trace_gramTail_le` bounds `tr G_T(θ)` for **one** `θ`; the uniform law of large numbers
+that `mle_consistent`(iii) consumes must instead dominate the quadratic form
+`uᵀ G_T(θ) u` for *every* `θ` in the compact `K` at once, by a single `θ`-free random
+variable — one Markov inequality then controls the whole supremum. The route:
+
+* the entrywise bound `|G_{ij}| ≤ (1 − r²)⁻¹ h_i h_j`, `h_i = C²(T − i) r^{T−i}`
+  (`abs_gramTail_entry_le`), factorises the quadratic form as
+  `uᵀ G u ≤ (1 − r²)⁻¹ (Σ_i h_i |u_i|)²` (`quadForm_gramTail_le_sq`) — no eigenvalues and
+  no operator norm are involved;
+* `|u_i| = |Σ_k π̃(i,k) x_k|` is dominated by the `θ`-free envelope
+  `Σ_k C r^{k−i}|x_k|` (`residEnv`, `abs_mulVec_piMat_le`);
+* `Σ_i h_i ≤ C² Σ_{d ≥ 1} d r^d` is bounded uniformly in `T` (`sum_weight_le`).
+
+Both `C` and `r` come from the locally uniform brick
+`exists_uniform_geometric_bound_arma`, which is exactly why the envelope is `θ`-free.
+This **supersedes** the 2026-08-09 route note at `mle_consistent`, which asked for the
+Gram tail's *difference* modulus `Σ_j |G_T(θ)_{ij} − G_T(θ′)_{ij}| ≤ L(ρ)`: no such
+modulus is needed, because a uniform `o_p(1)` bound on the correction term itself is
+enough for the one-sided (lower) estimate that consistency uses. -/
+
+/-- **Entrywise geometric bound on the tail Gram matrix**: `|G_{ij}| ≤ (1 − r²)⁻¹ h_i h_j`
+with `h_i = C²(T − i) r^{T−i}` the same weight that `trace_gramTail_le` sums on the
+diagonal. -/
+private lemma abs_gramTail_entry_le {C r : ℝ} (hC : 1 ≤ C) (hr0 : 0 ≤ r) (hr1 : r < 1)
+    (hπ : ∀ n, |armaPi b a n| ≤ C * r ^ n) (hψ : ∀ n, |armaPsi b a n| ≤ C * r ^ n)
+    (hB : ARMAInvertibleParams b a) {T : ℕ} (i j : Fin T) :
+    |gramTail b a T i j| ≤ (1 - r ^ 2)⁻¹ *
+      ((C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ))) *
+        (C ^ 2 * ((T : ℝ) - (j : ℕ)) * r ^ (T - (j : ℕ)))) := by
+  have hC0 : (0 : ℝ) ≤ C := le_trans zero_le_one hC
+  have hr2 : (0 : ℝ) ≤ r ^ 2 := sq_nonneg r
+  have hr2lt : r ^ 2 < 1 := by nlinarith
+  have hgeom : Summable fun m : ℕ => (r ^ 2) ^ m := summable_geometric_of_lt_one hr2 hr2lt
+  have hsum : Summable fun m : ℕ =>
+      uSeq b a T (i : ℕ) (m + T) * uSeq b a T (j : ℕ) (m + T) :=
+    (summable_nat_add_iff T).2 (summable_uSeq_mul (a := a) hB.1 T (i : ℕ) (j : ℕ))
+  have habs : Summable fun m : ℕ =>
+      |uSeq b a T (i : ℕ) (m + T) * uSeq b a T (j : ℕ) (m + T)| := hsum.abs
+  have hTi : (0 : ℝ) ≤ (T : ℝ) - (i : ℕ) := by
+    have : ((i : ℕ) : ℝ) ≤ (T : ℝ) := by exact_mod_cast le_of_lt i.isLt
+    linarith
+  have hterm : ∀ m : ℕ, |uSeq b a T (i : ℕ) (m + T) * uSeq b a T (j : ℕ) (m + T)|
+      ≤ (C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ))) *
+          (C ^ 2 * ((T : ℝ) - (j : ℕ)) * r ^ (T - (j : ℕ))) * (r ^ 2) ^ m := by
+    intro m
+    have hbi := abs_uSeq_le hC hr0 hπ hψ i.isLt (Nat.le_add_left T m)
+    have hbj := abs_uSeq_le hC hr0 hπ hψ j.isLt (Nat.le_add_left T m)
+    have hei : r ^ (m + T - (i : ℕ)) = r ^ m * r ^ (T - (i : ℕ)) := by
+      rw [← pow_add]; congr 1; omega
+    have hej : r ^ (m + T - (j : ℕ)) = r ^ m * r ^ (T - (j : ℕ)) := by
+      rw [← pow_add]; congr 1; omega
+    rw [hei] at hbi
+    rw [hej] at hbj
+    have hnn : (0 : ℝ) ≤ C ^ 2 * ((T : ℝ) - (i : ℕ)) * (r ^ m * r ^ (T - (i : ℕ))) := by
+      positivity
+    have hrm : (r ^ 2) ^ m = r ^ m * r ^ m := by rw [sq, mul_pow]
+    rw [abs_mul]
+    calc |uSeq b a T (i : ℕ) (m + T)| * |uSeq b a T (j : ℕ) (m + T)|
+        ≤ (C ^ 2 * ((T : ℝ) - (i : ℕ)) * (r ^ m * r ^ (T - (i : ℕ)))) *
+            (C ^ 2 * ((T : ℝ) - (j : ℕ)) * (r ^ m * r ^ (T - (j : ℕ)))) :=
+          mul_le_mul hbi hbj (abs_nonneg _) hnn
+      _ = _ := by rw [hrm]; ring
+  show |∑' m : ℕ, uSeq b a T (i : ℕ) (m + T) * uSeq b a T (j : ℕ) (m + T)| ≤ _
+  calc |∑' m : ℕ, uSeq b a T (i : ℕ) (m + T) * uSeq b a T (j : ℕ) (m + T)|
+      ≤ ∑' m : ℕ, |uSeq b a T (i : ℕ) (m + T) * uSeq b a T (j : ℕ) (m + T)| := by
+        simpa [Real.norm_eq_abs] using
+          norm_tsum_le_tsum_norm (f := fun m : ℕ =>
+            uSeq b a T (i : ℕ) (m + T) * uSeq b a T (j : ℕ) (m + T))
+            (by simpa [Real.norm_eq_abs] using habs)
+    _ ≤ ∑' _m : ℕ, (C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ))) *
+          (C ^ 2 * ((T : ℝ) - (j : ℕ)) * r ^ (T - (j : ℕ))) * (r ^ 2) ^ _m :=
+        habs.tsum_le_tsum hterm (hgeom.mul_left _)
+    _ = _ := by rw [tsum_mul_left, tsum_geometric_of_lt_one hr2 hr2lt]; ring
+
+/-- **The Gram-tail quadratic form factorises** through the same weight: the entrywise
+bound is a rank-one dominance, so the double sum collapses to a square. -/
+private lemma quadForm_gramTail_le_sq {C r : ℝ} (hC : 1 ≤ C) (hr0 : 0 ≤ r) (hr1 : r < 1)
+    (hπ : ∀ n, |armaPi b a n| ≤ C * r ^ n) (hψ : ∀ n, |armaPsi b a n| ≤ C * r ^ n)
+    (hB : ARMAInvertibleParams b a) {T : ℕ} (v : Fin T → ℝ) :
+    v ⬝ᵥ (gramTail b a T *ᵥ v) ≤ (1 - r ^ 2)⁻¹ *
+      (∑ i : Fin T, C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ)) * |v i|) ^ 2 := by
+  have hr2lt : r ^ 2 < 1 := by nlinarith [sq_nonneg r]
+  have hinv : (0 : ℝ) ≤ (1 - r ^ 2)⁻¹ := by
+    have h : (0 : ℝ) < 1 - r ^ 2 := by linarith
+    positivity
+  have hexp : v ⬝ᵥ (gramTail b a T *ᵥ v)
+      = ∑ i : Fin T, ∑ j : Fin T, v i * (gramTail b a T i j * v j) := by
+    simp only [dotProduct, mulVec, Finset.mul_sum]
+  have hstep : ∀ i j : Fin T, v i * (gramTail b a T i j * v j)
+      ≤ (1 - r ^ 2)⁻¹ *
+        ((C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ)) * |v i|) *
+          (C ^ 2 * ((T : ℝ) - (j : ℕ)) * r ^ (T - (j : ℕ)) * |v j|)) := by
+    intro i j
+    have hE := abs_gramTail_entry_le hC hr0 hr1 hπ hψ hB i j
+    have h1 : |v i| * |gramTail b a T i j|
+        ≤ |v i| * ((1 - r ^ 2)⁻¹ *
+            ((C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ))) *
+              (C ^ 2 * ((T : ℝ) - (j : ℕ)) * r ^ (T - (j : ℕ))))) :=
+      mul_le_mul_of_nonneg_left hE (abs_nonneg _)
+    have h2 := mul_le_mul_of_nonneg_right h1 (abs_nonneg (v j))
+    calc v i * (gramTail b a T i j * v j)
+        ≤ |v i * (gramTail b a T i j * v j)| := le_abs_self _
+      _ = |v i| * |gramTail b a T i j| * |v j| := by rw [abs_mul, abs_mul]; ring
+      _ ≤ _ := h2
+      _ = _ := by ring
+  rw [hexp]
+  calc ∑ i : Fin T, ∑ j : Fin T, v i * (gramTail b a T i j * v j)
+      ≤ ∑ i : Fin T, ∑ j : Fin T, (1 - r ^ 2)⁻¹ *
+          ((C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ)) * |v i|) *
+            (C ^ 2 * ((T : ℝ) - (j : ℕ)) * r ^ (T - (j : ℕ)) * |v j|)) :=
+        Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ => hstep i j
+    _ = _ := by
+        have hprod : (∑ i : Fin T, C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ)) * |v i|) *
+            (∑ j : Fin T, C ^ 2 * ((T : ℝ) - (j : ℕ)) * r ^ (T - (j : ℕ)) * |v j|)
+            = ∑ i : Fin T, ∑ j : Fin T,
+              (C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ)) * |v i|) *
+                (C ^ 2 * ((T : ℝ) - (j : ℕ)) * r ^ (T - (j : ℕ)) * |v j|) :=
+          Finset.sum_mul_sum _ _ _ _
+        have hsq : ∀ S : ℝ, S ^ 2 = S * S := fun S => sq S
+        rw [hsq (∑ i : Fin T, C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ)) * |v i|),
+          hprod, Finset.mul_sum]
+        exact Finset.sum_congr rfl fun i _ => (Finset.mul_sum _ _ _).symm
+
+/-- The **`θ`-free envelope** of a truncated residual row: with `|π_n(θ)| ≤ C rⁿ` valid
+uniformly over the compact parameter set, every row of `Π_T(θ) x` is dominated by it. -/
+private noncomputable def residEnv (C r : ℝ) {T : ℕ} (x : Fin T → ℝ) (i : Fin T) : ℝ :=
+  ∑ k : Fin T, (if (i : ℕ) ≤ (k : ℕ) then C * r ^ ((k : ℕ) - (i : ℕ)) else 0) * |x k|
+
+private lemma residEnv_nonneg {C r : ℝ} (hC : 0 ≤ C) (hr0 : 0 ≤ r) {T : ℕ}
+    (x : Fin T → ℝ) (i : Fin T) : 0 ≤ residEnv C r x i := by
+  refine Finset.sum_nonneg fun k _ => mul_nonneg ?_ (abs_nonneg _)
+  split_ifs <;> positivity
+
+private lemma abs_mulVec_piMat_le {C r : ℝ}
+    (hπ : ∀ n, |armaPi b a n| ≤ C * r ^ n) {T : ℕ} (x : Fin T → ℝ) (i : Fin T) :
+    |(piMat b a T *ᵥ x) i| ≤ residEnv C r x i := by
+  have hexp : (piMat b a T *ᵥ x) i = ∑ k : Fin T, piK b a (i : ℕ) (k : ℕ) * x k := rfl
+  rw [hexp, residEnv]
+  refine le_trans (Finset.abs_sum_le_sum_abs _ _) (Finset.sum_le_sum fun k _ => ?_)
+  rw [abs_mul]
+  by_cases hik : (i : ℕ) ≤ (k : ℕ)
+  · rw [if_pos hik, piK, if_pos hik]
+    exact mul_le_mul_of_nonneg_right (hπ _) (abs_nonneg _)
+  · rw [if_neg hik, piK, if_neg hik, abs_zero, zero_mul]
+
+/-- The Gram weight `h_i = (T − i) r^{T−i}` has bounded total mass, uniformly in `T`. -/
+private lemma sum_weight_le {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r < 1) (T : ℕ) :
+    ∑ i : Fin T, ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ))
+      ≤ ∑' d : ℕ, ((d : ℝ) + 1) * r ^ (d + 1) := by
+  have hmaj : Summable fun d : ℕ => ((d : ℝ) + 1) * r ^ (d + 1) := by
+    have h1 : Summable fun n : ℕ => (n : ℝ) ^ 1 * r ^ n :=
+      summable_pow_mul_geometric_of_norm_lt_one (R := ℝ) 1
+        (by rw [Real.norm_eq_abs, abs_of_nonneg hr0]; exact hr1)
+    have h0 : Summable fun n : ℕ => r ^ n := summable_geometric_of_lt_one hr0 hr1
+    have hsum := (h1.add h0).mul_right r
+    refine hsum.congr fun n => ?_
+    rw [pow_succ]
+    ring
+  have hstep : ∑ i : Fin T, ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ))
+      = ∑ d ∈ Finset.range T, ((d : ℝ) + 1) * r ^ (d + 1) := by
+    rw [Fin.sum_univ_eq_sum_range (fun n : ℕ => ((T : ℝ) - n) * r ^ (T - n)) T,
+      ← Finset.sum_range_reflect (fun d => ((d : ℝ) + 1) * r ^ (d + 1)) T]
+    refine Finset.sum_congr rfl fun i hi => ?_
+    rw [Finset.mem_range] at hi
+    have h1 : T - 1 - i + 1 = T - i := by omega
+    rw [h1]
+    congr 1
+    rw [Nat.cast_sub (by omega : i ≤ T - 1), Nat.cast_sub (by omega : 1 ≤ T)]
+    push_cast
+    ring
+  rw [hstep]
+  exact hmaj.sum_le_tsum _ fun d _ => mul_nonneg (by positivity) (pow_nonneg hr0 _)
+
+/-- **The `θ`-free domination of the Gram-tail correction.** -/
+private lemma quadForm_gramTail_le_env {C r : ℝ} (hC : 1 ≤ C) (hr0 : 0 ≤ r) (hr1 : r < 1)
+    (hπ : ∀ n, |armaPi b a n| ≤ C * r ^ n) (hψ : ∀ n, |armaPsi b a n| ≤ C * r ^ n)
+    (hB : ARMAInvertibleParams b a) {T : ℕ} (x : Fin T → ℝ) :
+    (piMat b a T *ᵥ x) ⬝ᵥ (gramTail b a T *ᵥ (piMat b a T *ᵥ x))
+      ≤ (1 - r ^ 2)⁻¹ *
+        (∑ i : Fin T, C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ)) *
+          residEnv C r x i) ^ 2 := by
+  have hC0 : (0 : ℝ) ≤ C := le_trans zero_le_one hC
+  have hr2lt : r ^ 2 < 1 := by nlinarith [sq_nonneg r]
+  have hinv : (0 : ℝ) ≤ (1 - r ^ 2)⁻¹ := by
+    have h : (0 : ℝ) < 1 - r ^ 2 := by linarith
+    positivity
+  refine le_trans (quadForm_gramTail_le_sq hC hr0 hr1 hπ hψ hB _) ?_
+  refine mul_le_mul_of_nonneg_left ?_ hinv
+  have hwnn : ∀ i : Fin T, (0 : ℝ) ≤ C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ)) := by
+    intro i
+    have hle : ((i : ℕ) : ℝ) ≤ (T : ℝ) := by exact_mod_cast le_of_lt i.isLt
+    have h1 : (0 : ℝ) ≤ (T : ℝ) - (i : ℕ) := by linarith
+    positivity
+  have hmono : ∑ i : Fin T, C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ)) *
+        |(piMat b a T *ᵥ x) i|
+      ≤ ∑ i : Fin T, C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ)) * residEnv C r x i :=
+    Finset.sum_le_sum fun i _ =>
+      mul_le_mul_of_nonneg_left (abs_mulVec_piMat_le hπ x i) (hwnn i)
+  have hnn0 : (0 : ℝ) ≤ ∑ i : Fin T, C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ)) *
+      |(piMat b a T *ᵥ x) i| :=
+    Finset.sum_nonneg fun i _ => mul_nonneg (hwnn i) (abs_nonneg _)
+  exact pow_le_pow_left₀ hnn0 hmono 2
+
 end Szego
 
 /-- **Szegő-type limit**: on the constraint set, `T⁻¹ log det Γ_T(b, a) → 0`
@@ -1965,6 +2170,225 @@ private lemma sum_abs_piK_col {T : ℕ} (hπ : Summable fun n => |armaPi b a n|)
   · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj hk
     have hjk' : (l : ℕ) - (j : ℕ) = (l : ℕ) - (k : ℕ) := hjk
     exact Fin.ext (by omega)
+
+/-- The `θ`-free envelope's coefficient row (see `residEnv`) has `ℓ¹` norm at most
+`C/(1 − r)`, uniformly in `T` and in the row. -/
+private lemma sum_geomCoeff_le {C r : ℝ} (hC : 0 ≤ C) (hr0 : 0 ≤ r) (hr1 : r < 1)
+    {T : ℕ} (i : Fin T) :
+    ∑ k : Fin T, (if (i : ℕ) ≤ (k : ℕ) then C * r ^ ((k : ℕ) - (i : ℕ)) else 0)
+      ≤ C / (1 - r) := by
+  classical
+  have hs : Summable fun n : ℕ => C * r ^ n :=
+    (summable_geometric_of_lt_one hr0 hr1).mul_left C
+  have hval : ∑' n : ℕ, C * r ^ n = C / (1 - r) := by
+    rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1, div_eq_mul_inv]
+  have habs : ∑ k : Fin T,
+      |(if (i : ℕ) ≤ (k : ℕ) then C * r ^ ((k : ℕ) - (i : ℕ)) else 0)|
+      = ∑ k : Fin T, (if (i : ℕ) ≤ (k : ℕ) then C * r ^ ((k : ℕ) - (i : ℕ)) else 0) := by
+    refine Finset.sum_congr rfl fun k _ => abs_of_nonneg ?_
+    split_ifs <;> positivity
+  rw [← habs, ← hval]
+  refine finsum_abs_le_tsum _ (fun n : ℕ => C * r ^ n) (fun k => (k : ℕ) - (i : ℕ)) hs
+    (fun n => by positivity)
+    (Finset.univ.filter fun k : Fin T => (i : ℕ) ≤ (k : ℕ)) (fun k hk => ?_)
+    (fun k hk => ?_) (fun k hk l hl hkl => ?_)
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_le] at hk
+    rw [if_neg (by omega)]
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk
+    rw [if_pos hk, abs_of_nonneg (by positivity)]
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk hl
+    have hkl' : (k : ℕ) - (i : ℕ) = (l : ℕ) - (i : ℕ) := hkl
+    exact Fin.ext (by omega)
+
+/-! #### The `θ`-oscillation of the residual sum of squares
+
+The second deterministic input of `mle_consistent`(iii): a *pathwise* Lipschitz-type
+estimate for `θ ↦ ‖Π_T(θ) x‖²` whose constant is the `ℓ¹` modulus of `π`
+(`exists_armaPi_l1_modulus`) — no derivative `∂π/∂θ` and no expectation. The Schur test
+is applied in the bilinear form `Σ_i |(Ax)_i| |(Bx)_i| ≤ D_A D_B ‖x‖²`; the elementary
+`|x_k||x_l| ≤ (x_k² + x_l²)/2` is what turns the double kernel sum into the plain
+`‖x‖²`, so only row *and* column sums of both kernels are needed. -/
+
+private lemma sum_triple_le {T : ℕ} (A B : Fin T → Fin T → ℝ) (y : Fin T → ℝ)
+    (hy : ∀ k, 0 ≤ y k) {DA DB : ℝ}
+    (hAcol : ∀ k : Fin T, ∑ i : Fin T, |A i k| ≤ DA)
+    (hBrow : ∀ i : Fin T, ∑ l : Fin T, |B i l| ≤ DB) (hDB : 0 ≤ DB) :
+    ∑ i : Fin T, ∑ k : Fin T, ∑ l : Fin T, |A i k| * |B i l| * y k
+      ≤ DA * DB * ∑ k : Fin T, y k := by
+  have h1 : ∀ i k : Fin T, ∑ l : Fin T, |A i k| * |B i l| * y k ≤ |A i k| * y k * DB := by
+    intro i k
+    have hrw : ∑ l : Fin T, |A i k| * |B i l| * y k
+        = (|A i k| * y k) * ∑ l : Fin T, |B i l| := by
+      rw [Finset.mul_sum]
+      exact Finset.sum_congr rfl fun l _ => by ring
+    rw [hrw]
+    exact mul_le_mul_of_nonneg_left (hBrow i) (mul_nonneg (abs_nonneg _) (hy k))
+  calc ∑ i : Fin T, ∑ k : Fin T, ∑ l : Fin T, |A i k| * |B i l| * y k
+      ≤ ∑ i : Fin T, ∑ k : Fin T, |A i k| * y k * DB :=
+        Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun k _ => h1 i k
+    _ = ∑ k : Fin T, (∑ i : Fin T, |A i k|) * (y k * DB) := by
+        rw [Finset.sum_comm]
+        refine Finset.sum_congr rfl fun k _ => ?_
+        rw [Finset.sum_mul]
+        exact Finset.sum_congr rfl fun i _ => by ring
+    _ ≤ ∑ k : Fin T, DA * (y k * DB) :=
+        Finset.sum_le_sum fun k _ =>
+          mul_le_mul_of_nonneg_right (hAcol k) (mul_nonneg (hy k) hDB)
+    _ = DA * DB * ∑ k : Fin T, y k := by
+        rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun k _ => by ring
+
+/-- **The bilinear Schur test**: two doubly summable kernels applied to the same vector
+pair up to `‖x‖²` with the product of their `ℓ¹` bounds. -/
+private lemma sum_abs_bilin_le {T : ℕ} (A B : Fin T → Fin T → ℝ) (x : Fin T → ℝ)
+    {DA DB : ℝ} (hArow : ∀ i : Fin T, ∑ k : Fin T, |A i k| ≤ DA)
+    (hAcol : ∀ k : Fin T, ∑ i : Fin T, |A i k| ≤ DA)
+    (hBrow : ∀ i : Fin T, ∑ l : Fin T, |B i l| ≤ DB)
+    (hBcol : ∀ l : Fin T, ∑ i : Fin T, |B i l| ≤ DB) (hDA : 0 ≤ DA) (hDB : 0 ≤ DB) :
+    ∑ i : Fin T, |∑ k : Fin T, A i k * x k| * |∑ l : Fin T, B i l * x l|
+      ≤ DA * DB * ∑ k : Fin T, x k ^ 2 := by
+  have hstep : ∀ i : Fin T, |∑ k : Fin T, A i k * x k| * |∑ l : Fin T, B i l * x l|
+      ≤ ∑ k : Fin T, ∑ l : Fin T, |A i k| * |B i l| * ((x k ^ 2 + x l ^ 2) / 2) := by
+    intro i
+    have h1 : |∑ k : Fin T, A i k * x k| ≤ ∑ k : Fin T, |A i k| * |x k| := by
+      refine le_trans (Finset.abs_sum_le_sum_abs _ _) (Finset.sum_le_sum fun k _ => ?_)
+      rw [abs_mul]
+    have h2 : |∑ l : Fin T, B i l * x l| ≤ ∑ l : Fin T, |B i l| * |x l| := by
+      refine le_trans (Finset.abs_sum_le_sum_abs _ _) (Finset.sum_le_sum fun l _ => ?_)
+      rw [abs_mul]
+    have hn1 : (0 : ℝ) ≤ ∑ k : Fin T, |A i k| * |x k| :=
+      Finset.sum_nonneg fun k _ => mul_nonneg (abs_nonneg _) (abs_nonneg _)
+    calc |∑ k : Fin T, A i k * x k| * |∑ l : Fin T, B i l * x l|
+        ≤ (∑ k : Fin T, |A i k| * |x k|) * (∑ l : Fin T, |B i l| * |x l|) :=
+          mul_le_mul h1 h2 (abs_nonneg _) hn1
+      _ = ∑ k : Fin T, ∑ l : Fin T, (|A i k| * |x k|) * (|B i l| * |x l|) :=
+          Finset.sum_mul_sum _ _ _ _
+      _ ≤ ∑ k : Fin T, ∑ l : Fin T, |A i k| * |B i l| * ((x k ^ 2 + x l ^ 2) / 2) := by
+          refine Finset.sum_le_sum fun k _ => Finset.sum_le_sum fun l _ => ?_
+          have hxx : |x k| * |x l| ≤ (x k ^ 2 + x l ^ 2) / 2 := by
+            nlinarith [sq_nonneg (|x k| - |x l|), sq_abs (x k), sq_abs (x l)]
+          have hre : (|A i k| * |x k|) * (|B i l| * |x l|)
+              = (|A i k| * |B i l|) * (|x k| * |x l|) := by ring
+          rw [hre]
+          exact mul_le_mul_of_nonneg_left hxx (by positivity)
+  have hsplit : ∑ i : Fin T, ∑ k : Fin T, ∑ l : Fin T,
+        |A i k| * |B i l| * ((x k ^ 2 + x l ^ 2) / 2)
+      = (∑ i : Fin T, ∑ k : Fin T, ∑ l : Fin T, |A i k| * |B i l| * (x k ^ 2 / 2))
+        + ∑ i : Fin T, ∑ l : Fin T, ∑ k : Fin T, |B i l| * |A i k| * (x l ^ 2 / 2) := by
+    rw [← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [Finset.sum_comm (s := (Finset.univ : Finset (Fin T)))
+      (t := (Finset.univ : Finset (Fin T)))
+      (f := fun l k => |B i l| * |A i k| * (x l ^ 2 / 2)), ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun k _ => ?_
+    rw [← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun l _ => by ring
+  refine le_trans (Finset.sum_le_sum fun i _ => hstep i) ?_
+  rw [hsplit]
+  have hy : ∀ k : Fin T, (0 : ℝ) ≤ x k ^ 2 / 2 := fun k => by positivity
+  have hA := sum_triple_le A B (fun k => x k ^ 2 / 2) hy hAcol hBrow hDB
+  have hB' := sum_triple_le B A (fun l => x l ^ 2 / 2) hy hBcol hArow hDA
+  have hhalf : ∑ k : Fin T, x k ^ 2 / 2 = (∑ k : Fin T, x k ^ 2) / 2 := by
+    rw [Finset.sum_div]
+  rw [hhalf] at hA hB'
+  linarith
+
+/-- Row sums of the difference of two inversion kernels are bounded by the `ℓ¹` modulus
+of `π` — the input supplied by `exists_armaPi_l1_modulus`. -/
+private lemma sum_abs_piK_sub_row {p q : ℕ} {b1 b2 : Fin p → ℝ} {a1 a2 : Fin q → ℝ}
+    {T : ℕ} (hd : Summable fun n => |armaPi b1 a1 n - armaPi b2 a2 n|) (i : Fin T) :
+    ∑ k : Fin T, |piK b1 a1 (i : ℕ) (k : ℕ) - piK b2 a2 (i : ℕ) (k : ℕ)|
+      ≤ ∑' n : ℕ, |armaPi b1 a1 n - armaPi b2 a2 n| := by
+  classical
+  refine finsum_abs_le_tsum _ (fun n => |armaPi b1 a1 n - armaPi b2 a2 n|)
+    (fun k => (k : ℕ) - (i : ℕ)) hd (fun n => abs_nonneg _)
+    (Finset.univ.filter fun k : Fin T => (i : ℕ) ≤ (k : ℕ)) (fun k hk => ?_)
+    (fun k hk => ?_) (fun k hk l hl hkl => ?_)
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_le] at hk
+    rw [piK_eq_zero b1 a1 hk, piK_eq_zero b2 a2 hk, sub_zero]
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk
+    rw [piK, if_pos hk, piK, if_pos hk]
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk hl
+    have hkl' : (k : ℕ) - (i : ℕ) = (l : ℕ) - (i : ℕ) := hkl
+    exact Fin.ext (by omega)
+
+/-- Column sums of the difference of two inversion kernels. -/
+private lemma sum_abs_piK_sub_col {p q : ℕ} {b1 b2 : Fin p → ℝ} {a1 a2 : Fin q → ℝ}
+    {T : ℕ} (hd : Summable fun n => |armaPi b1 a1 n - armaPi b2 a2 n|) (l : Fin T) :
+    ∑ i : Fin T, |piK b1 a1 (i : ℕ) (l : ℕ) - piK b2 a2 (i : ℕ) (l : ℕ)|
+      ≤ ∑' n : ℕ, |armaPi b1 a1 n - armaPi b2 a2 n| := by
+  classical
+  refine finsum_abs_le_tsum _ (fun n => |armaPi b1 a1 n - armaPi b2 a2 n|)
+    (fun j => (l : ℕ) - (j : ℕ)) hd (fun n => abs_nonneg _)
+    (Finset.univ.filter fun j : Fin T => (j : ℕ) ≤ (l : ℕ)) (fun j hj => ?_)
+    (fun j hj => ?_) (fun j hj k hk hjk => ?_)
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_le] at hj
+    rw [piK_eq_zero b1 a1 hj, piK_eq_zero b2 a2 hj, sub_zero]
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj
+    rw [piK, if_pos hj, piK, if_pos hj]
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj hk
+    have hjk' : (l : ℕ) - (j : ℕ) = (l : ℕ) - (k : ℕ) := hjk
+    exact Fin.ext (by omega)
+
+open Matrix in
+/-- **The pathwise `θ`-oscillation of the residual sum of squares**: the whole `θ`
+dependence is carried by the `ℓ¹` modulus of `π`, and the random factor is `‖x‖²`. -/
+private lemma abs_residSS_sub_le {p q : ℕ} {b1 b2 : Fin p → ℝ} {a1 a2 : Fin q → ℝ}
+    (h1 : Summable fun n => |armaPi b1 a1 n|) (h2 : Summable fun n => |armaPi b2 a2 n|)
+    {T : ℕ} (x : Fin T → ℝ) :
+    |(piMat b1 a1 T *ᵥ x) ⬝ᵥ (piMat b1 a1 T *ᵥ x)
+        - (piMat b2 a2 T *ᵥ x) ⬝ᵥ (piMat b2 a2 T *ᵥ x)|
+      ≤ (∑' n : ℕ, |armaPi b1 a1 n - armaPi b2 a2 n|) *
+          ((∑' n : ℕ, |armaPi b1 a1 n|) + (∑' n : ℕ, |armaPi b2 a2 n|)) *
+          ∑ k : Fin T, x k ^ 2 := by
+  have hd : Summable fun n => |armaPi b1 a1 n - armaPi b2 a2 n| := by
+    refine Summable.of_nonneg_of_le (fun n => abs_nonneg _) (fun n => abs_sub _ _) (h1.add h2)
+  have hD0 : (0 : ℝ) ≤ ∑' n : ℕ, |armaPi b1 a1 n - armaPi b2 a2 n| :=
+    tsum_nonneg fun n => abs_nonneg _
+  have hP1 : (0 : ℝ) ≤ ∑' n : ℕ, |armaPi b1 a1 n| := tsum_nonneg fun n => abs_nonneg _
+  have hP2 : (0 : ℝ) ≤ ∑' n : ℕ, |armaPi b2 a2 n| := tsum_nonneg fun n => abs_nonneg _
+  have hid : ∀ i : Fin T, (piMat b1 a1 T *ᵥ x) i - (piMat b2 a2 T *ᵥ x) i
+      = ∑ k : Fin T, (piK b1 a1 (i : ℕ) (k : ℕ) - piK b2 a2 (i : ℕ) (k : ℕ)) * x k := by
+    intro i
+    show (∑ k : Fin T, piK b1 a1 (i : ℕ) (k : ℕ) * x k)
+        - (∑ k : Fin T, piK b2 a2 (i : ℕ) (k : ℕ) * x k) = _
+    rw [← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun k _ => by ring
+  have hdiff : (piMat b1 a1 T *ᵥ x) ⬝ᵥ (piMat b1 a1 T *ᵥ x)
+        - (piMat b2 a2 T *ᵥ x) ⬝ᵥ (piMat b2 a2 T *ᵥ x)
+      = ∑ i : Fin T, ((piMat b1 a1 T *ᵥ x) i - (piMat b2 a2 T *ᵥ x) i) *
+          ((piMat b1 a1 T *ᵥ x) i + (piMat b2 a2 T *ᵥ x) i) := by
+    simp only [dotProduct]
+    rw [← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun i _ => by ring
+  have hterm : ∀ i : Fin T,
+      |((piMat b1 a1 T *ᵥ x) i - (piMat b2 a2 T *ᵥ x) i) *
+          ((piMat b1 a1 T *ᵥ x) i + (piMat b2 a2 T *ᵥ x) i)|
+        ≤ |∑ k : Fin T, (piK b1 a1 (i : ℕ) (k : ℕ) - piK b2 a2 (i : ℕ) (k : ℕ)) * x k| *
+            |∑ l : Fin T, piK b1 a1 (i : ℕ) (l : ℕ) * x l|
+          + |∑ k : Fin T, (piK b1 a1 (i : ℕ) (k : ℕ) - piK b2 a2 (i : ℕ) (k : ℕ)) * x k| *
+            |∑ l : Fin T, piK b2 a2 (i : ℕ) (l : ℕ) * x l| := by
+    intro i
+    rw [abs_mul, hid i, ← mul_add]
+    refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)
+    exact abs_add_le _ _
+  rw [hdiff]
+  refine le_trans (Finset.abs_sum_le_sum_abs _ _) ?_
+  refine le_trans (Finset.sum_le_sum fun i _ => hterm i) ?_
+  rw [Finset.sum_add_distrib]
+  have hb1 := sum_abs_bilin_le
+    (fun i k => piK b1 a1 (i : ℕ) (k : ℕ) - piK b2 a2 (i : ℕ) (k : ℕ))
+    (fun i l => piK b1 a1 (i : ℕ) (l : ℕ)) x
+    (sum_abs_piK_sub_row hd) (sum_abs_piK_sub_col hd)
+    (sum_abs_piK_row h1) (sum_abs_piK_col h1) hD0 hP1
+  have hb2 := sum_abs_bilin_le
+    (fun i k => piK b1 a1 (i : ℕ) (k : ℕ) - piK b2 a2 (i : ℕ) (k : ℕ))
+    (fun i l => piK b2 a2 (i : ℕ) (l : ℕ)) x
+    (sum_abs_piK_sub_row hd) (sum_abs_piK_sub_col hd)
+    (sum_abs_piK_row h2) (sum_abs_piK_col h2) hD0 hP2
+  have hsum0 : (0 : ℝ) ≤ ∑ k : Fin T, x k ^ 2 :=
+    Finset.sum_nonneg fun k _ => sq_nonneg _
+  nlinarith [hb1, hb2]
 
 /-- Row sums of the (absolutely summable) model ACVF kernel. -/
 private lemma sum_abs_acvfK {p' q' : ℕ} {b' : Fin p' → ℝ} {a' : Fin q' → ℝ} {T : ℕ}
@@ -2198,6 +2622,7 @@ private lemma gramTail_quadForm_tendstoInProb [IsProbabilityMeasure μ] {p q : �
     rw [h3] at h4
     nlinarith [h4]
   exact key _ ENNReal.toReal_nonneg hle
+
 
 /-! ### Step (C): the residual sum-of-squares LLN
 
@@ -3018,6 +3443,161 @@ private lemma l2n_sub_psum_le [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ2 
   filter_upwards [eventually_ge_atTop N] with K hK
   refine le_trans (l2n_sub_le_add (hmemX.sub (hmemP K)) ((hmemP K).sub (hmemP N))) ?_
   linarith [hincr K hK]
+
+/-- The `L²` norm of the `θ`-free envelope row is `≤ C(1 − r)⁻¹ c₀`, uniformly in `T`
+and in the row index. -/
+private lemma l2n_residEnv_le [IsProbabilityMeasure μ] {C r c0 : ℝ} (hC : 0 ≤ C)
+    (hr0 : 0 ≤ r) (hr1 : r < 1) {X : ℤ → Ω → ℝ} (hmem : ∀ t : ℤ, MemLp (X t) 2 μ)
+    (hc : ∀ t : ℤ, l2n μ (X t) = c0) {T : ℕ} (i : Fin T) :
+    l2n μ (fun ω => residEnv C r (fun k : Fin T => X (((k : ℕ) : ℤ) + 1) ω) i)
+      ≤ C / (1 - r) * c0 := by
+  have hc0 : 0 ≤ c0 := by rw [← hc 0]; exact l2n_nonneg _ _
+  have hmemk : ∀ k : Fin T, MemLp (fun ω =>
+      (if (i : ℕ) ≤ (k : ℕ) then C * r ^ ((k : ℕ) - (i : ℕ)) else 0) *
+        |X (((k : ℕ) : ℤ) + 1) ω|) 2 μ := fun k => (hmem _).abs.const_mul _
+  have hEq : (fun ω => residEnv C r (fun k : Fin T => X (((k : ℕ) : ℤ) + 1) ω) i)
+      = fun ω => ∑ k : Fin T,
+        (if (i : ℕ) ≤ (k : ℕ) then C * r ^ ((k : ℕ) - (i : ℕ)) else 0) *
+          |X (((k : ℕ) : ℤ) + 1) ω| := rfl
+  have hval : ∀ k : Fin T, l2n μ (fun ω =>
+      (if (i : ℕ) ≤ (k : ℕ) then C * r ^ ((k : ℕ) - (i : ℕ)) else 0) *
+        |X (((k : ℕ) : ℤ) + 1) ω|)
+      = (if (i : ℕ) ≤ (k : ℕ) then C * r ^ ((k : ℕ) - (i : ℕ)) else 0) * c0 := by
+    intro k
+    rw [l2n_const_mul, l2n_abs, hc, abs_of_nonneg]
+    split_ifs <;> positivity
+  rw [hEq]
+  refine le_trans (l2n_finset_sum_le _ _ hmemk) ?_
+  rw [Finset.sum_congr rfl fun k _ => hval k, ← Finset.sum_mul]
+  exact mul_le_mul_of_nonneg_right (sum_geomCoeff_le hC hr0 hr1 i) hc0
+
+open Matrix in
+/-- **Step (B), uniformly over the compact parameter set** — the widened form of
+`gramTail_quadForm_tendstoInProb` that `mle_consistent`(iii) needs.
+
+The correction term `T⁻¹ uᵀ G_T(θ) u` is `o_p(1)` *simultaneously* for all `θ ∈ K`,
+because `quadForm_gramTail_le_env` dominates it by `(1 − r²)⁻¹ W_T²` with a `θ`-free
+`W_T` whose `L²` norm is `O(1)` (`l2n_residEnv_le`, `sum_weight_le`, Minkowski). One
+Markov inequality then gives the rate `O(1/T)` for the whole supremum — which is why no
+*difference* modulus for the Gram tail is required. -/
+private lemma gramTail_uniform_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
+    {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
+    (hwn : IsWhiteNoise ε σ2 μ) (hB0 : ARMAInvertibleParams b0 a0)
+    (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ) (hmeas : ∀ t, Measurable (X t))
+    {K : Set ((Fin p → ℝ) × (Fin q → ℝ))} (hK : IsCompact K)
+    (hKB : ∀ ba ∈ K, ARMAInvertibleParams ba.1 ba.2) {η : ℝ} (hη : 0 < η) :
+    Tendsto (fun T : ℕ => (μ {ω | ∃ ba ∈ K, η ≤ (T : ℝ)⁻¹ *
+        ((piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+          (gramTail ba.1 ba.2 T *ᵥ
+            (piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)))}).toReal)
+      atTop (𝓝 0) := by
+  obtain ⟨C, r, hC, hr0, hr1, hψK, hπK⟩ := exists_uniform_geometric_bound_arma hK hKB
+  have hC0 : (0 : ℝ) ≤ C := le_trans zero_le_one hC
+  have hr2lt : r ^ 2 < 1 := by nlinarith [sq_nonneg r]
+  have hpos : (0 : ℝ) < 1 - r ^ 2 := by linarith
+  have hψs : Summable fun n => |armaPsi b0 a0 n| := summable_abs_armaPsi a0 hB0.1
+  have hmemX : ∀ t : ℤ, MemLp (X t) 2 μ := fun t => hcausal.memLp hψs hwn hmeas t
+  obtain ⟨c0, hc⟩ : ∃ c0 : ℝ, ∀ t : ℤ, l2n μ (X t) = c0 :=
+    ⟨l2n μ (X 0), fun t => l2n_linearProcess_eq hcausal hψs hwn hmeas t 0⟩
+  have hc0 : 0 ≤ c0 := by rw [← hc 0]; exact l2n_nonneg _ _
+  obtain ⟨W, hWdef⟩ : ∃ W : (T : ℕ) → Ω → ℝ, W = fun T ω =>
+      ∑ i : Fin T, C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ)) *
+        residEnv C r (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) i := ⟨_, rfl⟩
+  obtain ⟨A, hAdef⟩ : ∃ A : ℝ, A = C ^ 2 * (∑' d : ℕ, ((d : ℝ) + 1) * r ^ (d + 1)) *
+      (C / (1 - r) * c0) := ⟨_, rfl⟩
+  have hH0 : (0 : ℝ) ≤ ∑' d : ℕ, ((d : ℝ) + 1) * r ^ (d + 1) :=
+    le_trans (sum_weight_le hr0 hr1 0) (by simp)
+  have hA0 : 0 ≤ A := by
+    rw [hAdef]
+    have hr1' : (0 : ℝ) < 1 - r := by linarith
+    have : (0 : ℝ) ≤ C / (1 - r) * c0 := by positivity
+    positivity
+  have hEmem : ∀ (T : ℕ) (i : Fin T), MemLp
+      (fun ω => residEnv C r (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) i) 2 μ :=
+    fun T i => memLp_finset_sum _ fun k _ => (hmemX _).abs.const_mul _
+  have hwnn : ∀ (T : ℕ) (i : Fin T),
+      (0 : ℝ) ≤ C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ)) := by
+    intro T i
+    have hle : ((i : ℕ) : ℝ) ≤ (T : ℝ) := by exact_mod_cast le_of_lt i.isLt
+    have h1 : (0 : ℝ) ≤ (T : ℝ) - (i : ℕ) := by linarith
+    positivity
+  have hWmem : ∀ T : ℕ, MemLp (W T) 2 μ := by
+    intro T
+    rw [hWdef]
+    exact memLp_finset_sum _ fun i _ => (hEmem T i).const_mul _
+  have hWl2 : ∀ T : ℕ, l2n μ (W T) ≤ A := by
+    intro T
+    rw [hWdef]
+    refine le_trans (l2n_finset_sum_le _ _ fun i => (hEmem T i).const_mul _) ?_
+    have hval : ∀ i : Fin T,
+        l2n μ (fun ω => C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ)) *
+          residEnv C r (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) i)
+          ≤ C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ)) * (C / (1 - r) * c0) := by
+      intro i
+      rw [l2n_const_mul, abs_of_nonneg (hwnn T i)]
+      exact mul_le_mul_of_nonneg_left (l2n_residEnv_le hC0 hr0 hr1 hmemX hc i) (hwnn T i)
+    refine le_trans (Finset.sum_le_sum fun i _ => hval i) ?_
+    rw [← Finset.sum_mul, hAdef]
+    have hcoef : ∑ i : Fin T, C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ))
+        ≤ C ^ 2 * ∑' d : ℕ, ((d : ℝ) + 1) * r ^ (d + 1) := by
+      have hrw : ∑ i : Fin T, C ^ 2 * ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ))
+          = C ^ 2 * ∑ i : Fin T, ((T : ℝ) - (i : ℕ)) * r ^ (T - (i : ℕ)) := by
+        rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun i _ => by ring
+      rw [hrw]
+      exact mul_le_mul_of_nonneg_left (sum_weight_le hr0 hr1 T) (by positivity)
+    refine mul_le_mul_of_nonneg_right hcoef ?_
+    have hr1' : (0 : ℝ) < 1 - r := by linarith
+    positivity
+  refine squeeze_zero' (Eventually.of_forall fun T => ENNReal.toReal_nonneg) ?_
+    (tendsto_const_div_atTop_nhds_zero_nat ((1 - r ^ 2)⁻¹ * A ^ 2 / η))
+  filter_upwards [eventually_ge_atTop 1] with T hT
+  have hTpos : (0 : ℝ) < T := by exact_mod_cast hT
+  have hsub : {ω | ∃ ba ∈ K, η ≤ (T : ℝ)⁻¹ *
+      ((piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ⬝ᵥ
+        (gramTail ba.1 ba.2 T *ᵥ
+          (piMat ba.1 ba.2 T *ᵥ fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)))}
+      ⊆ {ω | η ≤ (T : ℝ)⁻¹ * ((1 - r ^ 2)⁻¹ * (W T ω) ^ 2)} := by
+    intro ω hω
+    simp only [Set.mem_setOf_eq] at hω ⊢
+    obtain ⟨ba, hba, hle⟩ := hω
+    refine le_trans hle (mul_le_mul_of_nonneg_left ?_ (by positivity))
+    have hdom := quadForm_gramTail_le_env (b := ba.1) (a := ba.2) hC hr0 hr1
+      (hπK ba hba) (hψK ba hba) (hKB ba hba)
+      (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+    rw [hWdef]
+    exact hdom
+  have hZnn : 0 ≤ᵐ[μ] fun ω => (T : ℝ)⁻¹ * ((1 - r ^ 2)⁻¹ * (W T ω) ^ 2) := by
+    filter_upwards with ω
+    have h1 : (0 : ℝ) ≤ (1 - r ^ 2)⁻¹ := le_of_lt (by positivity)
+    have h2 : (0 : ℝ) ≤ (T : ℝ)⁻¹ := by positivity
+    have h3 : (0 : ℝ) ≤ (W T ω) ^ 2 := sq_nonneg _
+    exact mul_nonneg h2 (mul_nonneg h1 h3)
+  have hWsq : Integrable (fun ω => (W T ω) ^ 2) μ := by
+    have hmul := (hWmem T).integrable_mul (hWmem T)
+    exact hmul.congr (Filter.Eventually.of_forall fun ω => (sq (W T ω)).symm)
+  have hZint : Integrable (fun ω => (1 - r ^ 2)⁻¹ * (W T ω) ^ 2) μ := hWsq.const_mul _
+  have hbnd : ∫ ω, (1 - r ^ 2)⁻¹ * (W T ω) ^ 2 ∂μ ≤ (1 - r ^ 2)⁻¹ * A ^ 2 := by
+    rw [integral_const_mul]
+    exact mul_le_mul_of_nonneg_left (integral_sq_le_of_l2n_le hA0 (hWl2 T))
+      (le_of_lt (by positivity))
+  have hmark := mul_meas_ge_le_integral_of_nonneg hZnn (hZint.const_mul (T : ℝ)⁻¹) η
+  rw [integral_const_mul] at hmark
+  have hle2 : η * (μ.real {ω | η ≤ (T : ℝ)⁻¹ * ((1 - r ^ 2)⁻¹ * (W T ω) ^ 2)})
+      ≤ (T : ℝ)⁻¹ * ((1 - r ^ 2)⁻¹ * A ^ 2) :=
+    hmark.trans (mul_le_mul_of_nonneg_left hbnd (by positivity))
+  rw [measureReal_def] at hle2
+  have key : ∀ M : ℝ, 0 ≤ M → η * M ≤ (T : ℝ)⁻¹ * ((1 - r ^ 2)⁻¹ * A ^ 2) →
+      M ≤ (1 - r ^ 2)⁻¹ * A ^ 2 / η / T := by
+    intro M hM0 hM
+    rw [div_div, le_div_iff₀ (by positivity)]
+    have h3 : (T : ℝ)⁻¹ * ((1 - r ^ 2)⁻¹ * A ^ 2) * T = (1 - r ^ 2)⁻¹ * A ^ 2 := by
+      field_simp
+    have h4 := mul_le_mul_of_nonneg_right hM (le_of_lt hTpos)
+    rw [h3] at h4
+    nlinarith [h4]
+  refine le_trans (ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono hsub)) ?_
+  exact key _ ENNReal.toReal_nonneg hle2
 
 /-- A block `Σ_{N ≤ d < K} π_d x_{i+1+d}` of the (time-reversed) residual. The rows of
 `Π_T` are `icoResid π X 0 (T − i) i`. -/
