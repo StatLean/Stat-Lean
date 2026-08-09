@@ -1,6 +1,7 @@
 import StatLean.StatisticalLearning.Rademacher.Defs
 import StatLean.StatisticalLearning.Core.SampleLaw
 import StatLean.ConcentrationInequalities.VC.SauerShelah
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Boolean classifiers ↔ set classes: the VC dictionary
@@ -50,20 +51,93 @@ theorem risk_zeroOneLoss_eq [MeasurableSpace X] (D : Measure (X × Bool))
     -- USER-INPUT: measurable error set; SSBD Remark 3.1 (0–1-loss form)
     (hmeas : MeasurableSet (errSet h)) :
     risk D zeroOneLoss h = D.real (errSet h) := by
-  sorry
+  have hfun : (fun p : X × Bool => zeroOneLoss h p) = (errSet h).indicator 1 := by
+    funext p
+    by_cases hp : h p.1 = p.2
+    · have : p ∉ errSet h := by simpa [errSet] using hp
+      simp [zeroOneLoss, hp, this]
+    · have : p ∈ errSet h := by simpa [errSet] using hp
+      simp [zeroOneLoss, hp, this]
+  rw [risk, hfun, integral_indicator_one hmeas]
 
 /-- Empirical-risk dictionary: the empirical 0–1 risk is the empirical
 fraction of the error set (SSBD Eq. (2.2) vs `empFrac`); pure algebra. -/
 theorem empRisk_zeroOneLoss_eq (s : Sample (X × Bool) n) (h : X → Bool) :
     empRisk zeroOneLoss s h = empFrac s (errSet h) := by
-  sorry
+  rw [empRisk, empFrac]
+  congr 1
+  refine Finset.sum_congr rfl fun i _ => ?_
+  by_cases hp : h (s i).1 = (s i).2
+  · have : s i ∉ errSet h := by simpa [errSet] using hp
+    simp [zeroOneLoss, hp, this]
+  · have : s i ∈ errSet h := by simpa [errSet] using hp
+    simp [zeroOneLoss, hp, this]
 
 /-- The evaluated 0–1 loss family is finite: loss vectors take values in
 `{0,1}ⁿ` (LEAN-ONLY; feeds the `Finset`-typed Massart lemma). -/
 theorem finite_evalFamily_zeroOneLoss (𝓗 : Set (X → Bool))
     (s : Sample (X × Bool) n) :
     (evalFamily zeroOneLoss 𝓗 s).Finite := by
-  sorry
+  classical
+  refine Set.Finite.subset
+    (Set.finite_range (fun (b : Fin n → Bool) => fun i => if b i then (1 : ℝ) else 0)) ?_
+  rintro v ⟨h, -, rfl⟩
+  refine ⟨fun i => decide (h (s i).1 ≠ (s i).2), ?_⟩
+  funext i
+  by_cases hp : h (s i).1 = (s i).2 <;> simp [zeroOneLoss, hp]
+
+/-- The instance points of a sample, and the identification of loss vectors
+with traces on them (LEAN-ONLY packaging of SSBD §28.1 step 1: on the
+instance set `Λ`, `h` is determined by `Λ ∩ {h = true}`, and the label mask
+`y` is common to all `h`, so distinct loss vectors need distinct traces). -/
+private theorem exists_traceFamily_card_bound (𝓗 : Set (X → Bool))
+    (s : Sample (X × Bool) n) :
+    ∃ Λ : Finset X, Λ.card ≤ n ∧
+      (evalFamily zeroOneLoss 𝓗 s).ncard ≤
+        (traceFamily (setClassOf 𝓗) Λ).card := by
+  classical
+  refine ⟨Finset.image (fun i => (s i).1) Finset.univ, ?_, ?_⟩
+  · calc (Finset.image (fun i => (s i).1) Finset.univ).card
+        ≤ (Finset.univ : Finset (Fin n)).card := Finset.card_image_le
+      _ = n := by simp
+  · set Λ : Finset X := Finset.image (fun i => (s i).1) Finset.univ with hΛdef
+    set φ : Finset X → Fin n → ℝ :=
+      fun T i => if ((s i).1 ∈ T ↔ (s i).2 = true) then 0 else 1 with hφdef
+    have hsub : evalFamily zeroOneLoss 𝓗 s ⊆
+        ↑((traceFamily (setClassOf 𝓗) Λ).image φ) := by
+      rintro v ⟨h, hh, rfl⟩
+      have hS : {x | h x = true} ∈ setClassOf 𝓗 := ⟨h, hh, rfl⟩
+      obtain ⟨T, hTΛ, hTeq⟩ := exists_finset_coe_of_subset_coe
+        (Set.inter_subset_left : (↑Λ : Set X) ∩ {x | h x = true} ⊆ ↑Λ)
+      have hTmem : T ∈ traceFamily (setClassOf 𝓗) Λ :=
+        mem_traceFamily.mpr ⟨hTΛ, _, hS, hTeq.symm⟩
+      refine Finset.mem_coe.mpr (Finset.mem_image.mpr ⟨T, hTmem, ?_⟩)
+      funext i
+      have hxΛ : (s i).1 ∈ Λ :=
+        Finset.mem_image.mpr ⟨i, Finset.mem_univ i, rfl⟩
+      have hmemT : ((s i).1 ∈ T) ↔ (h (s i).1 = true) := by
+        constructor
+        · intro hx
+          have hx' : (s i).1 ∈ (↑Λ : Set X) ∩ {x | h x = true} := by
+            rw [← hTeq]; exact hx
+          exact hx'.2
+        · intro hx
+          have hx' : (s i).1 ∈ (↑T : Set X) := by
+            rw [hTeq]; exact ⟨hxΛ, hx⟩
+          exact hx'
+      simp only [hφdef]
+      by_cases hp : h (s i).1 = (s i).2
+      · rw [if_pos, zeroOneLoss, if_pos hp]
+        rw [hmemT, hp]
+      · rw [if_neg, zeroOneLoss, if_neg hp]
+        rw [hmemT]
+        intro hq
+        exact hp (Bool.eq_iff_iff.mpr hq)
+    calc (evalFamily zeroOneLoss 𝓗 s).ncard
+        ≤ (↑((traceFamily (setClassOf 𝓗) Λ).image φ) : Set (Fin n → ℝ)).ncard :=
+          Set.ncard_le_ncard hsub (Finset.finite_toSet _)
+      _ = ((traceFamily (setClassOf 𝓗) Λ).image φ).card := Set.ncard_coe_finset _
+      _ ≤ (traceFamily (setClassOf 𝓗) Λ).card := Finset.card_image_le
 
 /-- **Loss-pattern count via Sauer–Shelah** (SSBD §28.1 step 1): if
 `vcDim (setClassOf 𝓗) ≤ d`, the number of distinct loss vectors
@@ -76,7 +150,17 @@ theorem ncard_evalFamily_zeroOneLoss_le (𝓗 : Set (X → Bool)) {d : ℕ}
     (hd : vcDim (setClassOf 𝓗) ≤ (d : ℕ∞)) :
     (evalFamily zeroOneLoss 𝓗 s).ncard ≤
       ∑ j ∈ Finset.range (d + 1), n.choose j := by
-  sorry
+  obtain ⟨Λ, hΛn, hle⟩ := exists_traceFamily_card_bound 𝓗 s
+  calc (evalFamily zeroOneLoss 𝓗 s).ncard
+      ≤ (traceFamily (setClassOf 𝓗) Λ).card := hle
+    _ ≤ ∑ k ∈ Finset.Iic d, Λ.card.choose k :=
+        card_traceFamily_le_sum_choose hd Λ
+    _ ≤ ∑ k ∈ Finset.Iic d, n.choose k :=
+        Finset.sum_le_sum fun k _ => Nat.choose_le_choose k hΛn
+    _ = ∑ j ∈ Finset.range (d + 1), n.choose j := by
+        refine Finset.sum_congr ?_ fun _ _ => rfl
+        ext k
+        simp
 
 /-- **Polynomial loss-pattern count** (SSBD Lemma 6.10 second half /
 Lemma A.5): for `1 ≤ d` and `d + 1 < n`, the loss-pattern count is at most
@@ -90,6 +174,9 @@ theorem ncard_evalFamily_zeroOneLoss_le_pow (𝓗 : Set (X → Bool)) {d : ℕ}
     (hn : d + 1 < n) :
     ((evalFamily zeroOneLoss 𝓗 s).ncard : ℝ) ≤
       (Real.exp 1 * n / d) ^ d := by
-  sorry
+  obtain ⟨Λ, hΛn, hle⟩ := exists_traceFamily_card_bound 𝓗 s
+  have hcast : ((evalFamily zeroOneLoss 𝓗 s).ncard : ℝ) ≤
+      ((traceFamily (setClassOf 𝓗) Λ).card : ℝ) := by exact_mod_cast hle
+  exact hcast.trans (card_traceFamily_le_pow hd hd1 hΛn (by omega))
 
 end StatLean.StatisticalLearning
