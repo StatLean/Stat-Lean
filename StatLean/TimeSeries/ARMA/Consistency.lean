@@ -4353,6 +4353,337 @@ theorem armaProfileS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
         refine le_trans (ENNReal.toReal_mono (by finiteness) (measure_union_le _ _)) ?_
         exact le_of_eq (ENNReal.toReal_add (measure_ne_top μ _) (measure_ne_top μ _))
 
+/-! ### The generic linear-process second-moment LLN
+
+`armaResidualSS_tendstoInProb` is stated for the *composite* filter `π(θ) ∗ ψ(θ₀)` of the
+ARMA problem; the ingredient that the rest of the Hannan program consumes
+(`MLEAsymptotics.hannanScore_brownInputs`(2), `samplePACF_linearization`) is the plain
+one-filter statement for an **arbitrary** absolutely summable coefficient sequence, which
+is *not* an instance of it (a general `c` is not an ARMA transfer sequence). It is proved
+here by the same ergodic-theorem-free device, and is strictly simpler: with `π = δ` the
+`min(T − i, m)` edge term of `integral_defect_le` disappears, so the `L¹` defect is
+`O(T · tail_m)` with no `O(m)` correction. -/
+
+/-- The Kronecker filter `δ`, whose `blockResid` surrogate is the plain truncation
+`Σ_{n < m} c_n ε_{t−n}`. -/
+private noncomputable def deltaFilter : ℕ → ℝ := fun n => if n = 0 then 1 else 0
+
+private lemma summable_abs_deltaFilter : Summable fun n => |deltaFilter n| := by
+  refine summable_of_ne_finset_zero (s := ({0} : Finset ℕ)) fun n hn => ?_
+  simp only [Finset.mem_singleton] at hn
+  simp [deltaFilter, hn]
+
+private lemma tsum_abs_deltaFilter : ∑' n : ℕ, |deltaFilter n| = 1 := by
+  have h : (fun n : ℕ => |deltaFilter n|) = fun n : ℕ => if n = 0 then (1 : ℝ) else 0 := by
+    funext n
+    by_cases hn : n = 0 <;> simp [deltaFilter, hn]
+  rw [h]
+  simpa using tsum_ite_eq (0 : ℕ) (1 : ℝ)
+
+omit [MeasurableSpace Ω] in
+/-- With `π = δ` the doubly truncated surrogate is the plain `m`-truncation of the
+linear process. -/
+private lemma blockResid_deltaFilter {ε : ℤ → Ω → ℝ} (c : ℕ → ℝ) {m : ℕ} (hm : 0 < m)
+    (i : ℕ) (ω : Ω) :
+    blockResid deltaFilter c ε m i ω
+      = ∑ n ∈ Finset.range m, c n * ε (((i : ℤ) + 1) - (n : ℕ)) ω := by
+  classical
+  rw [blockResid, Fintype.sum_prod_type]
+  rw [Finset.sum_eq_single (⟨0, hm⟩ : Fin m)]
+  · rw [← Fin.sum_univ_eq_sum_range (fun n : ℕ => c n * ε (((i : ℤ) + 1) - (n : ℕ)) ω) m]
+    refine Finset.sum_congr rfl fun n _ => ?_
+    have hd : deltaFilter ((⟨0, hm⟩ : Fin m) : ℕ) = 1 := by simp [deltaFilter]
+    rw [hd, one_mul]
+    congr 2
+    push_cast
+    ring
+  · intro d _ hd
+    refine Finset.sum_eq_zero fun n _ => ?_
+    have hd0 : (d : ℕ) ≠ 0 := fun hc => hd (Fin.ext hc)
+    simp [deltaFilter, hd0]
+  · intro hc
+    exact absurd (Finset.mem_univ _) hc
+
+/-- With `π = δ` the truncated composite filter is the truncation of `c` itself. -/
+private lemma cTrunc_deltaFilter (c : ℕ → ℝ) {m : ℕ} (hm : 0 < m) (r : ℕ) :
+    cTrunc deltaFilter c m r = if r < m then c r else 0 := by
+  classical
+  rw [cTrunc, Fintype.sum_prod_type]
+  rw [Finset.sum_eq_single (⟨0, hm⟩ : Fin m)]
+  · have hd : deltaFilter ((⟨0, hm⟩ : Fin m) : ℕ) = 1 := by simp [deltaFilter]
+    by_cases hr : r < m
+    · rw [if_pos hr, Finset.sum_eq_single (⟨r, hr⟩ : Fin m)]
+      · simp [hd]
+      · intro n _ hn
+        have : (n : ℕ) ≠ r := fun hc => hn (Fin.ext hc)
+        simp [this]
+      · intro hc
+        exact absurd (Finset.mem_univ _) hc
+    · rw [if_neg hr]
+      refine Finset.sum_eq_zero fun n _ => ?_
+      refine if_neg ?_
+      have hnlt := n.isLt
+      simp only [Fin.val_mk, zero_add]
+      omega
+  · intro d _ hd
+    refine Finset.sum_eq_zero fun n _ => ?_
+    have hd0 : (d : ℕ) ≠ 0 := fun hc => hd (Fin.ext hc)
+    simp [deltaFilter, hd0]
+  · intro hc
+    exact absurd (Finset.mem_univ _) hc
+
+private lemma sum_sq_cTrunc_deltaFilter (c : ℕ → ℝ) {m : ℕ} (hm : 0 < m) :
+    ∑ r ∈ Finset.range (2 * m), cTrunc deltaFilter c m r ^ 2
+      = ∑ r ∈ Finset.range m, c r ^ 2 := by
+  classical
+  rw [Finset.sum_congr rfl fun r _ => by rw [cTrunc_deltaFilter c hm r]]
+  rw [← Finset.sum_filter_add_sum_filter_not (Finset.range (2 * m)) (fun r => r < m)]
+  have h1 : ((Finset.range (2 * m)).filter fun r => r < m) = Finset.range m := by
+    ext r
+    simp only [Finset.mem_filter, Finset.mem_range]
+    omega
+  have h2 : ∑ r ∈ (Finset.range (2 * m)).filter (fun r => ¬ r < m),
+      (if r < m then c r else 0) ^ 2 = 0 :=
+    Finset.sum_eq_zero fun r hr => by
+      rw [if_neg (Finset.mem_filter.1 hr).2]
+      ring
+  rw [h1, h2, add_zero]
+  exact Finset.sum_congr rfl fun r hr => by rw [if_pos (Finset.mem_range.1 hr)]
+
+/-- **The second-moment LLN for a linear process** (the one-filter form of
+`armaResidualSS_tendstoInProb`): for i.i.d. noise and any absolutely summable `c`,
+
+  `T⁻¹ Σ_{t < T} W_{t+1}² →p σ² Σ_n c_n²`.
+
+Ergodic-theorem-free: the surrogate `z_i^{(m)} = Σ_{n<m} c_n ε_{i+1−n}` is a fixed linear
+functional of a *finite* block of the noise, so along `i ≡ k (mod 2m)` the squares are
+i.i.d. and `L¹` and Etemadi's `strong_law_ae` applies progression by progression; the
+`m → ∞` transfer is the row-by-row `∫|u² − z²| ≤ ‖u − z‖₂(‖u‖₂ + ‖z‖₂)`, which uses second
+moments only. -/
+theorem linearProcess_avgSq_tendstoInProb [IsProbabilityMeasure μ] {c : ℕ → ℝ} {σ2 : ℝ}
+    {W ε : ℤ → Ω → ℝ} (hiid : IsIIDNoise ε σ2 μ)
+    (hc : Summable fun n => |c n|) (hW : IsLinearProcessOf c W ε μ)
+    (hWmeas : ∀ t, Measurable (W t)) {η : ℝ} (hη : 0 < η) :
+    Tendsto (fun T : ℕ => (μ {ω | η ≤ |(T : ℝ)⁻¹ *
+        ∑ i ∈ Finset.range T, W ((i : ℤ) + 1) ω ^ 2 - σ2 * ∑' n : ℕ, c n ^ 2|}).toReal)
+      atTop (𝓝 0) := by
+  classical
+  have hwn : IsWhiteNoise ε σ2 μ := hiid.isWhiteNoise
+  have hmemW : ∀ t : ℤ, MemLp (W t) 2 μ := fun t => hW.memLp hc hwn hWmeas t
+  have hs0 : (0 : ℝ) ≤ Real.sqrt σ2 := Real.sqrt_nonneg _
+  obtain ⟨c0, hc0⟩ : ∃ c0 : ℝ, ∀ t : ℤ, l2n μ (W t) = c0 :=
+    ⟨l2n μ (W 0), fun t => l2n_linearProcess_eq hW hc hwn hWmeas t 0⟩
+  have hc0nn : 0 ≤ c0 := by rw [← hc0 0]; exact l2n_nonneg _ _
+  obtain ⟨P, hPdef⟩ : ∃ P : ℝ, P = ∑' n : ℕ, |c n| := ⟨_, rfl⟩
+  have hP0 : 0 ≤ P := by rw [hPdef]; exact tsum_nonneg fun n => abs_nonneg _
+  obtain ⟨tl, htldef⟩ : ∃ f : ℕ → ℝ, f = fun m => ∑' k : ℕ, |c (k + m)| := ⟨_, rfl⟩
+  have htl0 : ∀ m, 0 ≤ tl m := by
+    intro m; rw [htldef]; exact tsum_nonneg fun k => abs_nonneg _
+  obtain ⟨G, hGdef⟩ : ∃ G : ℝ, G = c0 + P * Real.sqrt σ2 := ⟨_, rfl⟩
+  have hG0 : 0 ≤ G := by rw [hGdef]; positivity
+  have hsqsum : Summable fun n : ℕ => c n ^ 2 := by
+    refine Summable.of_norm_bounded_eventually (g := fun n => |c n|) hc ?_
+    rw [Nat.cofinite_eq_atTop]
+    filter_upwards [(hc.tendsto_atTop_zero.eventually
+      (gt_mem_nhds (show (0 : ℝ) < 1 by norm_num)))] with n hn
+    have h1 : |c n| ≤ 1 := le_of_lt hn
+    have h2 : |c n ^ 2| = |c n| * |c n| := by rw [sq, abs_mul]
+    rw [Real.norm_eq_abs, h2]
+    nlinarith [abs_nonneg (c n)]
+  obtain ⟨Mm, hMmdef⟩ : ∃ f : ℕ → ℝ, f = fun m => σ2 * ∑ r ∈ Finset.range m, c r ^ 2 :=
+    ⟨_, rfl⟩
+  -- **(1)** the `L¹` comparison with the finite-window surrogate: no edge term
+  have hIle : ∀ m T : ℕ, 0 < m →
+      ∫ ω, ∑ i ∈ Finset.range T,
+        |W ((i : ℤ) + 1) ω ^ 2 - blockResid deltaFilter c ε m i ω ^ 2| ∂μ
+      ≤ (T : ℝ) * (tl m * Real.sqrt σ2 * G) := by
+    intro m T hm
+    have hint : ∀ i : ℕ, Integrable (fun ω =>
+        |W ((i : ℤ) + 1) ω ^ 2 - blockResid deltaFilter c ε m i ω ^ 2|) μ := by
+      intro i
+      have h1 : Integrable (fun ω => W ((i : ℤ) + 1) ω ^ 2) μ := by
+        have hh := (hmemW ((i : ℤ) + 1)).integrable_mul (hmemW ((i : ℤ) + 1))
+        exact hh.congr (Filter.Eventually.of_forall fun ω => by simp [Pi.mul_apply, sq])
+      exact (h1.sub (integrable_blockResid_sq hwn _ _ m i)).abs
+    rw [integral_finset_sum _ fun i _ => hint i]
+    have hper : ∀ i ∈ Finset.range T,
+        ∫ ω, |W ((i : ℤ) + 1) ω ^ 2 - blockResid deltaFilter c ε m i ω ^ 2| ∂μ
+          ≤ tl m * Real.sqrt σ2 * G := by
+      intro i _
+      have hfac : ∀ ω, |W ((i : ℤ) + 1) ω ^ 2 - blockResid deltaFilter c ε m i ω ^ 2|
+          = |(W ((i : ℤ) + 1) ω - blockResid deltaFilter c ε m i ω)
+              * (W ((i : ℤ) + 1) ω + blockResid deltaFilter c ε m i ω)| := by
+        intro ω
+        congr 1
+        ring
+      rw [integral_congr_ae (Filter.Eventually.of_forall hfac)]
+      have hdiff : l2n μ (fun ω =>
+          W ((i : ℤ) + 1) ω - blockResid deltaFilter c ε m i ω) ≤ tl m * Real.sqrt σ2 := by
+        have hrw : (fun ω => W ((i : ℤ) + 1) ω - blockResid deltaFilter c ε m i ω)
+            = fun ω => W ((i : ℤ) + 1) ω
+              - ∑ n ∈ Finset.range m, c n * ε (((i : ℤ) + 1) - (n : ℕ)) ω := by
+          funext ω
+          rw [blockResid_deltaFilter c hm i ω]
+        rw [hrw, htldef]
+        exact l2n_sub_psum_le hW hc hwn hWmeas ((i : ℤ) + 1) m
+      have hsm : l2n μ (fun ω =>
+          W ((i : ℤ) + 1) ω + blockResid deltaFilter c ε m i ω) ≤ G := by
+        refine le_trans (l2n_add_le (hmemW _) (memLp_blockResid hwn deltaFilter c m i)) ?_
+        have h2 := l2n_blockResid_le hc hwn summable_abs_deltaFilter m i
+        rw [tsum_abs_deltaFilter, one_mul] at h2
+        rw [hGdef, hc0, hPdef]
+        linarith
+      refine le_trans (integral_abs_mul_le ((hmemW _).sub (memLp_blockResid hwn _ _ m i))
+        ((hmemW _).add (memLp_blockResid hwn _ _ m i))) ?_
+      exact mul_le_mul hdiff hsm (l2n_nonneg _ _)
+        (mul_nonneg (htl0 m) hs0)
+    refine le_trans (Finset.sum_le_sum hper) ?_
+    rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+  -- **(2)** Markov
+  have hmarkov : ∀ (m T : ℕ), 0 < m → 0 < T →
+      (μ {ω | η / 3 ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T, W ((i : ℤ) + 1) ω ^ 2
+        - (T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+            blockResid deltaFilter c ε m i ω ^ 2|}).toReal
+        ≤ 3 / η * (tl m * Real.sqrt σ2 * G) := by
+    intro m T hm hT
+    have hTpos : (0 : ℝ) < T := by exact_mod_cast hT
+    have hintD : Integrable (fun ω => ∑ i ∈ Finset.range T,
+        |W ((i : ℤ) + 1) ω ^ 2 - blockResid deltaFilter c ε m i ω ^ 2|) μ := by
+      refine integrable_finset_sum _ fun i _ => ?_
+      have h1 : Integrable (fun ω => W ((i : ℤ) + 1) ω ^ 2) μ := by
+        have hh := (hmemW ((i : ℤ) + 1)).integrable_mul (hmemW ((i : ℤ) + 1))
+        exact hh.congr (Filter.Eventually.of_forall fun ω => by simp [Pi.mul_apply, sq])
+      exact (h1.sub (integrable_blockResid_sq hwn _ _ m i)).abs
+    have hDnn : 0 ≤ᵐ[μ] fun ω => (T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+        |W ((i : ℤ) + 1) ω ^ 2 - blockResid deltaFilter c ε m i ω ^ 2| := by
+      filter_upwards with ω
+      exact mul_nonneg (by positivity) (Finset.sum_nonneg fun i _ => abs_nonneg _)
+    have hsubset : {ω | η / 3 ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T, W ((i : ℤ) + 1) ω ^ 2
+          - (T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+              blockResid deltaFilter c ε m i ω ^ 2|}
+        ⊆ {ω | η / 3 ≤ (T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+            |W ((i : ℤ) + 1) ω ^ 2 - blockResid deltaFilter c ε m i ω ^ 2|} := by
+      intro ω hω
+      simp only [Set.mem_setOf_eq] at hω ⊢
+      refine le_trans hω ?_
+      rw [← mul_sub, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (T : ℝ)⁻¹),
+        ← Finset.sum_sub_distrib]
+      exact mul_le_mul_of_nonneg_left (Finset.abs_sum_le_sum_abs _ _) (by positivity)
+    have hmark := mul_meas_ge_le_integral_of_nonneg hDnn (hintD.const_mul (T : ℝ)⁻¹) (η / 3)
+    rw [integral_const_mul, measureReal_def] at hmark
+    have hstep : (T : ℝ)⁻¹ * ∫ ω, ∑ i ∈ Finset.range T,
+        |W ((i : ℤ) + 1) ω ^ 2 - blockResid deltaFilter c ε m i ω ^ 2| ∂μ
+        ≤ tl m * Real.sqrt σ2 * G := by
+      have h1 := mul_le_mul_of_nonneg_left (hIle m T hm)
+        (by positivity : (0 : ℝ) ≤ (T : ℝ)⁻¹)
+      have h2 : (T : ℝ)⁻¹ * ((T : ℝ) * (tl m * Real.sqrt σ2 * G))
+          = tl m * Real.sqrt σ2 * G := by field_simp
+      linarith [h1, h2.le, h2.ge]
+    have hkey : η / 3 * (μ {ω | η / 3 ≤ (T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+        |W ((i : ℤ) + 1) ω ^ 2 - blockResid deltaFilter c ε m i ω ^ 2|}).toReal
+        ≤ tl m * Real.sqrt σ2 * G := le_trans hmark hstep
+    have hmono := ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono hsubset)
+    have hinv : (3 : ℝ) / η * (η / 3) = 1 := by field_simp
+    have hscale := mul_le_mul_of_nonneg_left hkey
+      (le_of_lt (show (0 : ℝ) < 3 / η by positivity))
+    rw [← mul_assoc, hinv, one_mul] at hscale
+    linarith [hmono, hscale]
+  -- **(3)** the `m`-dependent law of large numbers, in probability
+  have hLLN : ∀ m : ℕ, 0 < m → Tendsto (fun T : ℕ => (μ {ω | η / 3 ≤
+      |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+          blockResid deltaFilter c ε m i ω ^ 2 - Mm m|}).toReal) atTop (𝓝 0) := by
+    intro m hm
+    have hae := ae_tendsto_avg_blockResid_sq hiid deltaFilter c hm
+    have heq : (∫ ω, blockResid deltaFilter c ε m 0 ω ^ 2 ∂μ) = Mm m := by
+      rw [hMmdef, integral_blockResid_sq_eq hwn _ _ m 0, sum_sq_cTrunc_deltaFilter c hm]
+    rw [heq] at hae
+    have hmf : ∀ T : ℕ, AEStronglyMeasurable (fun ω => (T : ℝ)⁻¹ *
+        ∑ i ∈ Finset.range T, blockResid deltaFilter c ε m i ω ^ 2) μ := by
+      intro T
+      refine AEStronglyMeasurable.const_mul ?_ _
+      exact (Finset.measurable_sum _ fun i _ =>
+        ((measurable_blockResid hiid.measurable _ _ m i).pow_const 2)).aestronglyMeasurable
+    have htim := MeasureTheory.tendstoInMeasure_of_tendsto_ae (g := fun _ : Ω => Mm m) hmf
+      (by filter_upwards [hae] with ω hω using hω)
+    have hz := htim (ENNReal.ofReal (η / 3)) (ENNReal.ofReal_pos.2 (by linarith))
+    have hset : ∀ T : ℕ,
+        {ω | ENNReal.ofReal (η / 3) ≤ edist ((T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+            blockResid deltaFilter c ε m i ω ^ 2) (Mm m)}
+        = {ω | η / 3 ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+            blockResid deltaFilter c ε m i ω ^ 2 - Mm m|} := by
+      intro T
+      ext ω
+      simp only [Set.mem_setOf_eq, edist_dist, Real.dist_eq,
+        ENNReal.ofReal_le_ofReal_iff (abs_nonneg _)]
+    have hz2 : Tendsto (fun T : ℕ => (μ {ω | ENNReal.ofReal (η / 3) ≤
+        edist ((T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+          blockResid deltaFilter c ε m i ω ^ 2) (Mm m)}).toReal) atTop (𝓝 0) := by
+      simpa using (ENNReal.tendsto_toReal (by simp)).comp hz
+    exact hz2.congr fun T => congrArg ENNReal.toReal (congrArg μ (hset T))
+  -- **(4)** the deterministic limits
+  have htlT : Tendsto tl atTop (𝓝 0) := by rw [htldef]; exact tendsto_tail_zero hc
+  have hMmT : Tendsto Mm atTop (𝓝 (σ2 * ∑' n : ℕ, c n ^ 2)) := by
+    rw [hMmdef]
+    exact (hsqsum.hasSum.tendsto_sum_nat).const_mul σ2
+  -- **(5)** assembly
+  refine Metric.tendsto_atTop.2 fun ζ hζ => ?_
+  obtain ⟨m, hm1, hmb, hmM⟩ : ∃ m : ℕ, 0 < m ∧
+      3 / η * (tl m * Real.sqrt σ2 * G) < ζ / 3 ∧
+      |Mm m - σ2 * ∑' n : ℕ, c n ^ 2| < η / 3 := by
+    have e1 : ∀ᶠ m : ℕ in atTop, 3 / η * (tl m * Real.sqrt σ2 * G) < ζ / 3 := by
+      have h0 : Tendsto (fun m : ℕ => 3 / η * (tl m * Real.sqrt σ2 * G)) atTop (𝓝 0) := by
+        simpa using ((htlT.mul_const (Real.sqrt σ2)).mul_const G).const_mul (3 / η)
+      exact h0.eventually (gt_mem_nhds (by linarith))
+    have e2 : ∀ᶠ m : ℕ in atTop, |Mm m - σ2 * ∑' n : ℕ, c n ^ 2| < η / 3 := by
+      have h1 : Tendsto (fun m : ℕ => Mm m - σ2 * ∑' n : ℕ, c n ^ 2) atTop (𝓝 0) := by
+        have := hMmT.sub (tendsto_const_nhds (x := σ2 * ∑' n : ℕ, c n ^ 2))
+        rwa [sub_self] at this
+      have h0 : Tendsto (fun m : ℕ => |Mm m - σ2 * ∑' n : ℕ, c n ^ 2|) atTop (𝓝 0) := by
+        simpa using h1.abs
+      exact h0.eventually (gt_mem_nhds (by linarith))
+    obtain ⟨m, ⟨⟨h1, h2⟩, h3⟩⟩ := ((e1.and e2).and (eventually_gt_atTop 0)).exists
+    exact ⟨m, h3, h1, h2⟩
+  obtain ⟨N, hN⟩ := Filter.eventually_atTop.1
+    (((hLLN m hm1).eventually (gt_mem_nhds (show (0 : ℝ) < ζ / 3 by linarith))).and
+      (eventually_gt_atTop 0))
+  refine ⟨N, fun T hT => ?_⟩
+  obtain ⟨hT2, hT3⟩ := hN T hT
+  rw [Real.dist_eq, sub_zero, abs_of_nonneg ENNReal.toReal_nonneg]
+  have hsub : {ω | η ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T, W ((i : ℤ) + 1) ω ^ 2
+        - σ2 * ∑' n : ℕ, c n ^ 2|}
+      ⊆ {ω | η / 3 ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T, W ((i : ℤ) + 1) ω ^ 2
+            - (T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+                blockResid deltaFilter c ε m i ω ^ 2|}
+        ∪ {ω | η / 3 ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+              blockResid deltaFilter c ε m i ω ^ 2 - Mm m|} := by
+    intro ω hω
+    simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+    by_contra hcon
+    push_neg at hcon
+    obtain ⟨h1, h2⟩ := hcon
+    have h3 := abs_lt.1 hmM
+    have h4 := abs_lt.1 h1
+    have h5 := abs_lt.1 h2
+    rcases le_abs.1 hω with hcase | hcase <;> linarith
+  calc (μ {ω | η ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T, W ((i : ℤ) + 1) ω ^ 2
+        - σ2 * ∑' n : ℕ, c n ^ 2|}).toReal
+      ≤ (μ ({ω | η / 3 ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T, W ((i : ℤ) + 1) ω ^ 2
+            - (T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+                blockResid deltaFilter c ε m i ω ^ 2|}
+          ∪ {ω | η / 3 ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+                blockResid deltaFilter c ε m i ω ^ 2 - Mm m|})).toReal :=
+        ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono hsub)
+    _ ≤ (μ {ω | η / 3 ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T, W ((i : ℤ) + 1) ω ^ 2
+            - (T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+                blockResid deltaFilter c ε m i ω ^ 2|}).toReal
+        + (μ {ω | η / 3 ≤ |(T : ℝ)⁻¹ * ∑ i ∈ Finset.range T,
+              blockResid deltaFilter c ε m i ω ^ 2 - Mm m|}).toReal := by
+        refine le_trans (ENNReal.toReal_mono (by finiteness) (measure_union_le _ _)) ?_
+        exact le_of_eq (ENNReal.toReal_add (measure_ne_top μ _) (measure_ne_top μ _))
+    _ < ζ := by
+        have := hmarkov m T hm1 hT3
+        linarith
+
 /-! ### The data's own second moment, and local stochastic equicontinuity
 
 The oscillation estimate `abs_residSS_sub_le` prices the `θ`-dependence of `‖Π_T(θ)x‖²`
