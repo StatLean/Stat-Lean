@@ -1,0 +1,40 @@
+{
+  "root": "StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator",
+  "nodes": [
+    {"id":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","label":"covMatrix_geeEstimator","full":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","kind":"root","decl":"thm","module":"StatLean.StatisticalModels.Longitudinal.Sandwich"},
+    {"id":"StatLean.StatisticalModels.covMatrix","label":"covMatrix","full":"StatLean.StatisticalModels.covMatrix","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.ForMathlib.CovarianceMatrix"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"StatLean.StatisticalModels.Longitudinal.geeEstimatorMap","label":"geeEstimatorMap","full":"StatLean.StatisticalModels.Longitudinal.geeEstimatorMap","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Longitudinal.Sandwich"},
+    {"id":"StatLean.StatisticalModels.Longitudinal.geeBread","label":"geeBread","full":"StatLean.StatisticalModels.Longitudinal.geeBread","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Longitudinal.Sandwich"},
+    {"id":"StatLean.StatisticalModels.Longitudinal.geeMeat","label":"geeMeat","full":"StatLean.StatisticalModels.Longitudinal.geeMeat","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Longitudinal.Sandwich"},
+    {"id":"Matrix.transpose_nonsing_inv","label":"transpose_nonsing_inv","full":"Matrix.transpose_nonsing_inv","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.NonsingularInverse"},
+    {"id":"RingHomInvPair.ids","label":"ids","full":"RingHomInvPair.ids","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.CompTypeclasses"},
+    {"id":"Function.smulCommClass","label":"smulCommClass","full":"Function.smulCommClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Action.Pi"},
+    {"id":"Algebra.to_smulCommClass","label":"to_smulCommClass","full":"Algebra.to_smulCommClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Algebra.Basic"},
+    {"id":"Finset.mul_sum","label":"mul_sum","full":"Finset.mul_sum","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Ring.Finset"},
+    {"id":"Finset.sum_mul","label":"sum_mul","full":"Finset.sum_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Ring.Finset"},
+    {"id":"Finset.sum_congr","label":"sum_congr","full":"Finset.sum_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
+    {"id":"Matrix.transpose_mul","label":"transpose_mul","full":"Matrix.transpose_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Matrix.Mul"},
+    {"id":"Matrix.transpose_transpose","label":"transpose_transpose","full":"Matrix.transpose_transpose","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.Defs"},
+    {"id":"Matrix.mul_assoc","label":"mul_assoc","full":"Matrix.mul_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Matrix.Mul"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","target":"StatLean.StatisticalModels.covMatrix"},
+    {"source":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","target":"fact_one_le_two_ennreal"},
+    {"source":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","target":"StatLean.StatisticalModels.Longitudinal.geeEstimatorMap"},
+    {"source":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","target":"StatLean.StatisticalModels.Longitudinal.geeBread"},
+    {"source":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","target":"StatLean.StatisticalModels.Longitudinal.geeMeat"},
+    {"source":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","target":"Matrix.transpose_nonsing_inv"},
+    {"source":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","target":"RingHomInvPair.ids"},
+    {"source":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","target":"Function.smulCommClass"},
+    {"source":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","target":"Algebra.to_smulCommClass"},
+    {"source":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","target":"Finset.mul_sum"},
+    {"source":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","target":"Finset.sum_mul"},
+    {"source":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","target":"Finset.sum_congr"},
+    {"source":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","target":"Matrix.transpose_mul"},
+    {"source":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","target":"Matrix.transpose_transpose"},
+    {"source":"StatLean.StatisticalModels.Longitudinal.covMatrix_geeEstimator","target":"Matrix.mul_assoc"},
+    {"source":"StatLean.StatisticalModels.Longitudinal.geeEstimatorMap","target":"fact_one_le_two_ennreal"},
+    {"source":"StatLean.StatisticalModels.Longitudinal.geeEstimatorMap","target":"StatLean.StatisticalModels.Longitudinal.geeBread"}
+  ]
+}

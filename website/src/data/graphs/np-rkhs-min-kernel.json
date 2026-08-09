@@ -1,0 +1,28 @@
+{
+  "root": "StatLean.NonparametricStatistics.isKernelFun_min",
+  "nodes": [
+    {"id":"StatLean.NonparametricStatistics.isKernelFun_min","label":"isKernelFun_min","full":"StatLean.NonparametricStatistics.isKernelFun_min","kind":"root","decl":"thm","module":"StatLean.NonparametricStatistics.RKHS.MinKernel"},
+    {"id":"StatLean.NonparametricStatistics.IsKernelFun","label":"IsKernelFun","full":"StatLean.NonparametricStatistics.IsKernelFun","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.RKHS.KernelFunction"},
+    {"id":"SeminormedAddCommGroup.toIsTopologicalAddGroup","label":"toIsTopologicalAddGroup","full":"SeminormedAddCommGroup.toIsTopologicalAddGroup","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Uniform"},
+    {"id":"measurableSet_Icc","label":"measurableSet_Icc","full":"measurableSet_Icc","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Order"},
+    {"id":"BorelSpace.opensMeasurable","label":"opensMeasurable","full":"BorelSpace.opensMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"Real.borelSpace","label":"borelSpace","full":"Real.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"MeasureTheory.L2.real_inner_indicatorConstLp_one_indicatorConstLp_one","label":"real_inner_indicatorConstLp_one_indicatorConstLp_one","full":"MeasureTheory.L2.real_inner_indicatorConstLp_one_indicatorConstLp_one","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L2Space"},
+    {"id":"le_min","label":"le_min","full":"le_min","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
+    {"id":"Set.mem_Ici","label":"mem_Ici","full":"Set.mem_Ici","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Interval.Set.Defs"},
+    {"id":"StatLean.NonparametricStatistics.featureKernel","label":"featureKernel","full":"StatLean.NonparametricStatistics.featureKernel","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.RKHS.KernelFunction"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.NonparametricStatistics.isKernelFun_min","target":"StatLean.NonparametricStatistics.IsKernelFun"},
+    {"source":"StatLean.NonparametricStatistics.isKernelFun_min","target":"SeminormedAddCommGroup.toIsTopologicalAddGroup"},
+    {"source":"StatLean.NonparametricStatistics.isKernelFun_min","target":"measurableSet_Icc"},
+    {"source":"StatLean.NonparametricStatistics.isKernelFun_min","target":"BorelSpace.opensMeasurable"},
+    {"source":"StatLean.NonparametricStatistics.isKernelFun_min","target":"Real.borelSpace"},
+    {"source":"StatLean.NonparametricStatistics.isKernelFun_min","target":"MeasureTheory.L2.real_inner_indicatorConstLp_one_indicatorConstLp_one"},
+    {"source":"StatLean.NonparametricStatistics.isKernelFun_min","target":"le_min"},
+    {"source":"StatLean.NonparametricStatistics.isKernelFun_min","target":"Set.mem_Ici"},
+    {"source":"StatLean.NonparametricStatistics.isKernelFun_min","target":"StatLean.NonparametricStatistics.featureKernel"},
+    {"source":"StatLean.NonparametricStatistics.isKernelFun_min","target":"fact_one_le_two_ennreal"}
+  ]
+}

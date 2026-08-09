@@ -22,6 +22,7 @@ const categories = new Set([
   "optimization",
   "bayesian",
   "nonparametric",
+  "statisticalmodels",
   "probability",
 ]);
 const resultKinds = new Set(["definition", "theorem", "lemma", "proposition", "corollary", "equation"]);
@@ -269,7 +270,7 @@ const resultFullNames = new Set();
 for (let index = 0; index < results.length; index += 1) {
   const result = results[index];
   const location = `results.json[${index}]`;
-  if (!exactKeys(result, resultRequiredKeys, ["formalizationNotes", "shortRef", "reference", "keywords"], location)) continue;
+  if (!exactKeys(result, resultRequiredKeys, ["formalizationNotes", "shortRef", "reference", "keywords", "crossListed"], location)) continue;
 
   for (const field of ["id", "category", "kind", "leanName", "fullName", "title", "citation", "file", "docGenUrl", "informal", "summary", "leanSignature"]) {
     nonemptyString(result[field], `${location}.${field}`);
@@ -279,6 +280,20 @@ for (let index = 0; index < results.length; index += 1) {
   resultIds.add(result.id);
   if (!categories.has(result.category)) fail(`${location}.category`, `unknown category ${JSON.stringify(result.category)}`);
   if (!resultKinds.has(result.kind)) fail(`${location}.kind`, `unknown result kind ${JSON.stringify(result.kind)}`);
+  if (Object.hasOwn(result, "crossListed")) {
+    const extra = result.crossListed;
+    if (!Array.isArray(extra) || extra.length === 0) {
+      fail(`${location}.crossListed`, "expected a non-empty array of category ids");
+    } else {
+      const seenCats = new Set();
+      for (let i = 0; i < extra.length; i += 1) {
+        if (!categories.has(extra[i])) fail(`${location}.crossListed[${i}]`, `unknown category ${JSON.stringify(extra[i])}`);
+        if (extra[i] === result.category) fail(`${location}.crossListed[${i}]`, "must differ from the result's own category");
+        if (seenCats.has(extra[i])) fail(`${location}.crossListed[${i}]`, `duplicate category ${JSON.stringify(extra[i])}`);
+        seenCats.add(extra[i]);
+      }
+    }
+  }
   if (!leanName.test(result.fullName)) fail(`${location}.fullName`, "is not a valid dotted Lean name");
   if (resultFullNames.has(result.fullName)) fail(`${location}.fullName`, `duplicate fullName ${JSON.stringify(result.fullName)}`);
   resultFullNames.add(result.fullName);

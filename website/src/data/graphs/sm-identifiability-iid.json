@@ -1,0 +1,23 @@
+{
+  "root": "StatLean.StatisticalModels.identifiesTarget_iid_iff",
+  "nodes": [
+    {"id":"StatLean.StatisticalModels.identifiesTarget_iid_iff","label":"identifiesTarget_iid_iff","full":"StatLean.StatisticalModels.identifiesTarget_iid_iff","kind":"root","decl":"thm","module":"StatLean.StatisticalModels.Identifiability.Transfer"},
+    {"id":"StatLean.StatisticalModels.IdentifiesTarget","label":"IdentifiesTarget","full":"StatLean.StatisticalModels.IdentifiesTarget","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Identifiability.Defs"},
+    {"id":"StatLean.StatisticalModels.iid","label":"iid","full":"StatLean.StatisticalModels.iid","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Calculus.Defs"},
+    {"id":"StatLean.StatisticalModels.identifiesTarget_of_comp","label":"identifiesTarget_of_comp","full":"StatLean.StatisticalModels.identifiesTarget_of_comp","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.Identifiability.Transfer"},
+    {"id":"StatLean.StatisticalModels.pushforward","label":"pushforward","full":"StatLean.StatisticalModels.pushforward","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Calculus.Defs"},
+    {"id":"StatLean.StatisticalModels.pushforward_iid_eval","label":"pushforward_iid_eval","full":"StatLean.StatisticalModels.pushforward_iid_eval","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.Calculus.Marginal"},
+    {"id":"MeasureTheory.measurePreserving_eval","label":"measurePreserving_eval","full":"MeasureTheory.measurePreserving_eval","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.Pi"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalModels.identifiesTarget_iid_iff","target":"StatLean.StatisticalModels.IdentifiesTarget"},
+    {"source":"StatLean.StatisticalModels.identifiesTarget_iid_iff","target":"StatLean.StatisticalModels.iid"},
+    {"source":"StatLean.StatisticalModels.identifiesTarget_iid_iff","target":"StatLean.StatisticalModels.identifiesTarget_of_comp"},
+    {"source":"StatLean.StatisticalModels.identifiesTarget_iid_iff","target":"StatLean.StatisticalModels.pushforward"},
+    {"source":"StatLean.StatisticalModels.identifiesTarget_iid_iff","target":"StatLean.StatisticalModels.pushforward_iid_eval"},
+    {"source":"StatLean.StatisticalModels.identifiesTarget_of_comp","target":"StatLean.StatisticalModels.IdentifiesTarget"},
+    {"source":"StatLean.StatisticalModels.pushforward_iid_eval","target":"StatLean.StatisticalModels.pushforward"},
+    {"source":"StatLean.StatisticalModels.pushforward_iid_eval","target":"StatLean.StatisticalModels.iid"},
+    {"source":"StatLean.StatisticalModels.pushforward_iid_eval","target":"MeasureTheory.measurePreserving_eval"}
+  ]
+}

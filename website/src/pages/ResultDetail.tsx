@@ -72,6 +72,15 @@ export function ResultDetail() {
               <Link to={`/category/${r.category}`} className="ulink accent">
                 {meta.name}
               </Link>
+              {r.crossListed?.map((c) => (
+                <span key={c} className="flex items-center gap-2">
+                  <span aria-hidden>·</span>
+                  <span>also in</span>
+                  <Link to={`/category/${c}`} className="ulink accent">
+                    {CATEGORY_BY_ID[c]?.name ?? c}
+                  </Link>
+                </span>
+              ))}
             </div>
 
             <div className="flex items-center gap-3 mb-3">

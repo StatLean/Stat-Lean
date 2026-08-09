@@ -1,0 +1,38 @@
+{
+  "root": "StatLean.NonparametricStatistics.exists_isometryEquiv_of_scalarKernel_eq",
+  "nodes": [
+    {"id":"StatLean.NonparametricStatistics.exists_isometryEquiv_of_scalarKernel_eq","label":"exists_isometryEquiv_of_scalarKernel_eq","full":"StatLean.NonparametricStatistics.exists_isometryEquiv_of_scalarKernel_eq","kind":"root","decl":"thm","module":"StatLean.NonparametricStatistics.RKHS.Uniqueness"},
+    {"id":"StatLean.NonparametricStatistics.scalarKernel","label":"scalarKernel","full":"StatLean.NonparametricStatistics.scalarKernel","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.RKHS.Basic"},
+    {"id":"RingHomInvPair.ids","label":"ids","full":"RingHomInvPair.ids","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.CompTypeclasses"},
+    {"id":"inner_self_eq_norm_sq_to_K","label":"inner_self_eq_norm_sq_to_K","full":"inner_self_eq_norm_sq_to_K","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
+    {"id":"RCLike.ofReal_inj","label":"ofReal_inj","full":"RCLike.ofReal_inj","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
+    {"id":"algebraMap.coe_pow","label":"coe_pow","full":"algebraMap.coe_pow","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Algebra.Defs"},
+    {"id":"Real.sqrt_sq","label":"sqrt_sq","full":"Real.sqrt_sq","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Real.Sqrt"},
+    {"id":"norm_nonneg","label":"norm_nonneg","full":"norm_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Basic"},
+    {"id":"DenseRange.equalizer","label":"equalizer","full":"DenseRange.equalizer","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.DenseEmbedding"},
+    {"id":"TopologicalSpace.t2Space_of_metrizableSpace","label":"t2Space_of_metrizableSpace","full":"TopologicalSpace.t2Space_of_metrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Basic"},
+    {"id":"EMetricSpace.metrizableSpace","label":"metrizableSpace","full":"EMetricSpace.metrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Uniformity"},
+    {"id":"Continuous.comp","label":"comp","full":"Continuous.comp","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Continuous"},
+    {"id":"RKHS.continuous_eval","label":"continuous_eval","full":"RKHS.continuous_eval","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Reproducing"},
+    {"id":"LinearIsometryEquiv.continuous","label":"continuous","full":"LinearIsometryEquiv.continuous","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Operator.LinearIsometry"},
+    {"id":"LinearEquiv.extendOfIsometry_eq","label":"extendOfIsometry_eq","full":"LinearEquiv.extendOfIsometry_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Operator.Extend"},
+    {"id":"StatLean.NonparametricStatistics.kernelFun","label":"kernelFun","full":"StatLean.NonparametricStatistics.kernelFun","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.RKHS.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.NonparametricStatistics.exists_isometryEquiv_of_scalarKernel_eq","target":"StatLean.NonparametricStatistics.scalarKernel"},
+    {"source":"StatLean.NonparametricStatistics.exists_isometryEquiv_of_scalarKernel_eq","target":"RingHomInvPair.ids"},
+    {"source":"StatLean.NonparametricStatistics.exists_isometryEquiv_of_scalarKernel_eq","target":"inner_self_eq_norm_sq_to_K"},
+    {"source":"StatLean.NonparametricStatistics.exists_isometryEquiv_of_scalarKernel_eq","target":"RCLike.ofReal_inj"},
+    {"source":"StatLean.NonparametricStatistics.exists_isometryEquiv_of_scalarKernel_eq","target":"algebraMap.coe_pow"},
+    {"source":"StatLean.NonparametricStatistics.exists_isometryEquiv_of_scalarKernel_eq","target":"Real.sqrt_sq"},
+    {"source":"StatLean.NonparametricStatistics.exists_isometryEquiv_of_scalarKernel_eq","target":"norm_nonneg"},
+    {"source":"StatLean.NonparametricStatistics.exists_isometryEquiv_of_scalarKernel_eq","target":"DenseRange.equalizer"},
+    {"source":"StatLean.NonparametricStatistics.exists_isometryEquiv_of_scalarKernel_eq","target":"TopologicalSpace.t2Space_of_metrizableSpace"},
+    {"source":"StatLean.NonparametricStatistics.exists_isometryEquiv_of_scalarKernel_eq","target":"EMetricSpace.metrizableSpace"},
+    {"source":"StatLean.NonparametricStatistics.exists_isometryEquiv_of_scalarKernel_eq","target":"Continuous.comp"},
+    {"source":"StatLean.NonparametricStatistics.exists_isometryEquiv_of_scalarKernel_eq","target":"RKHS.continuous_eval"},
+    {"source":"StatLean.NonparametricStatistics.exists_isometryEquiv_of_scalarKernel_eq","target":"LinearIsometryEquiv.continuous"},
+    {"source":"StatLean.NonparametricStatistics.exists_isometryEquiv_of_scalarKernel_eq","target":"LinearEquiv.extendOfIsometry_eq"},
+    {"source":"StatLean.NonparametricStatistics.scalarKernel","target":"StatLean.NonparametricStatistics.kernelFun"}
+  ]
+}

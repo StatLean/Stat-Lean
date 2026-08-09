@@ -13,6 +13,7 @@ export const TEXTBOOK_KEYS = new Set([
   "robert2007",
   "gelman2014",
   "tsybakov2009",
+  "paulsen-raghupathi2016",
   "lehmann-romano2022",
   "lehmann-casella1998",
 ]);
@@ -115,6 +116,20 @@ const CHAPTER_TITLES: Record<string, Record<number, string>> = {
     1: "Nonparametric Estimators",
     2: "Lower Bounds on the Minimax Risk",
     3: "Asymptotic Efficiency and Adaptation",
+  },
+  "paulsen-raghupathi2016": {
+    1: "Introduction",
+    2: "Fundamental Results",
+    3: "Interpolation and Approximation",
+    4: "Cholesky and Schur",
+    5: "Operations on Kernels",
+    6: "Vector-Valued Spaces",
+    7: "Power Series on Balls and Pull-Backs",
+    8: "Statistics and Machine Learning",
+    9: "Negative Definite Functions",
+    10: "Positive Definite Functions on Groups",
+    11: "Applications of RKHS to Integral Operators",
+    12: "Stochastic Processes",
   },
   gelman2014: {
     1: "Probability and Inference",

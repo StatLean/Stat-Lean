@@ -81,9 +81,16 @@ export const CATEGORIES: CategoryMeta[] = [
   {
     id: "nonparametric",
     name: "Nonparametric Statistics",
-    tagline: "Kernel, local polynomial & projection estimators",
+    tagline: "Kernel estimators, projections & RKHS",
     blurb:
-      "Kernel density estimation with bias–variance analysis over Hölder classes, exact asymptotic MISE, Nadaraya–Watson and local polynomial regression, and projection estimators on the trigonometric basis.",
+      "Kernel density estimation over Hölder classes, local polynomial regression, projection estimators, and reproducing-kernel Hilbert spaces from Moore–Aronszajn to Mercer's theorem and the representer theorem.",
+  },
+  {
+    id: "statisticalmodels",
+    name: "Statistical Models",
+    tagline: "Survival, mixed effects, GEE & missing data",
+    blurb:
+      "Statistical models over an abstract parameter space: survival analysis with censoring, Kaplan–Meier and the Cox model, linear mixed effects and BLUP, GEE sandwich covariance, and missing-data mechanisms with IPW.",
   },
   {
     id: "probability",

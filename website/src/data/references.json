@@ -1638,5 +1638,345 @@
     "key": "shaffer1991",
     "sortKey": "Shaffer",
     "html": "J. P. Shaffer, “The Gauss–Markov theorem and random regressors,” *The American Statistician* **45** (1991), 269–273."
+  },
+  {
+    "key": "paulsen-raghupathi2016",
+    "sortKey": "Paulsen",
+    "html": "V. I. Paulsen and M. Raghupathi, *An Introduction to the Theory of Reproducing Kernel Hilbert Spaces*, Cambridge Studies in Advanced Mathematics 152, Cambridge University Press, 2016."
+  },
+  {
+    "key": "aronszajn1950",
+    "sortKey": "Aronszajn",
+    "html": "N. Aronszajn, \"Theory of reproducing kernels,\" *Transactions of the American Mathematical Society* **68**(3), 1950, pp. 337–404."
+  },
+  {
+    "key": "szego1921",
+    "sortKey": "Szegő",
+    "html": "G. Szegő, \"Über orthogonale Polynome, die zu einer gegebenen Kurve der komplexen Ebene gehören,\" *Mathematische Zeitschrift* **9**, 1921, pp. 218–270."
+  },
+  {
+    "key": "bergman1922",
+    "sortKey": "Bergman",
+    "html": "S. Bergman, \"Über die Entwicklung der harmonischen Funktionen der Ebene und des Raumes nach Orthogonalfunktionen,\" *Mathematische Annalen* **86**, 1922, pp. 238–271."
+  },
+  {
+    "key": "riesz1907",
+    "sortKey": "Riesz",
+    "html": "F. Riesz, \"Sur une espèce de géométrie analytique des systèmes de fonctions sommables,\" *Comptes Rendus de l'Académie des Sciences, Paris* **144**, 1907, pp. 1409–1411."
+  },
+  {
+    "key": "frechet1907",
+    "sortKey": "Fréchet",
+    "html": "M. Fréchet, \"Sur les ensembles de fonctions et les opérations linéaires,\" *Comptes Rendus de l'Académie des Sciences, Paris* **144**, 1907, pp. 1414–1416."
+  },
+  {
+    "key": "moore1935",
+    "sortKey": "Moore",
+    "html": "E. H. Moore, *General Analysis, Part I*, Memoirs of the American Philosophical Society, Philadelphia, 1935."
+  },
+  {
+    "key": "mercer1909",
+    "sortKey": "Mercer",
+    "html": "J. Mercer, \"Functions of positive and negative type, and their connection with the theory of integral equations,\" *Philosophical Transactions of the Royal Society of London, Series A* **209**, 1909, pp. 415–446."
+  },
+  {
+    "key": "gram1883",
+    "sortKey": "Gram",
+    "html": "J. P. Gram, \"Ueber die Entwickelung reeller Functionen in Reihen mittelst der Methode der kleinsten Quadrate,\" *Journal für die reine und angewandte Mathematik* **94**, 1883, pp. 41–73."
+  },
+  {
+    "key": "duffin-schaeffer1952",
+    "sortKey": "Duffin",
+    "html": "R. J. Duffin and A. C. Schaeffer, \"A class of nonharmonic Fourier series,\" *Transactions of the American Mathematical Society* **72**, 1952, pp. 341–366."
+  },
+  {
+    "key": "han-larson2000",
+    "sortKey": "Han",
+    "html": "D. Han and D. R. Larson, \"Frames, bases and group representations,\" *Memoirs of the American Mathematical Society* **147**(697), 2000."
+  },
+  {
+    "key": "papadakis2000",
+    "sortKey": "Papadakis",
+    "html": "M. Papadakis, \"On the dimension function of orthonormal wavelets,\" *Proceedings of the American Mathematical Society* **128**(7), 2000, pp. 2043–2049."
+  },
+  {
+    "key": "wiener1923",
+    "sortKey": "Wiener",
+    "html": "N. Wiener, \"Differential-space,\" *Journal of Mathematics and Physics* **2**, 1923, pp. 131–174."
+  },
+  {
+    "key": "cameron-martin1947",
+    "sortKey": "Cameron",
+    "html": "R. H. Cameron and W. T. Martin, \"Transformations of Wiener integrals under a general class of linear transformations,\" *Annals of Mathematics* **48**(2), 1947, pp. 385–392."
+  },
+  {
+    "key": "parzen1959",
+    "sortKey": "Parzen",
+    "html": "E. Parzen, *Statistical Inference on Time Series by Hilbert Space Methods, I*, Technical Report 23, Department of Statistics, Stanford University, 1959."
+  },
+  {
+    "key": "hilbert1904",
+    "sortKey": "Hilbert",
+    "html": "D. Hilbert, \"Grundzüge einer allgemeinen Theorie der linearen Integralgleichungen (Erste Mitteilung),\" *Nachrichten von der Gesellschaft der Wissenschaften zu Göttingen, Mathematisch-Physikalische Klasse* **1904**, pp. 49–91."
+  },
+  {
+    "key": "schmidt1907",
+    "sortKey": "Schmidt",
+    "html": "E. Schmidt, \"Zur Theorie der linearen und nichtlinearen Integralgleichungen. I. Teil,\" *Mathematische Annalen* **63**, 1907, pp. 433–476."
+  },
+  {
+    "key": "smithies1958",
+    "sortKey": "Smithies",
+    "html": "F. Smithies, *Integral Equations*, Cambridge Tracts in Mathematics and Mathematical Physics 49, Cambridge University Press, 1958."
+  },
+  {
+    "key": "konig1986",
+    "sortKey": "König",
+    "html": "H. König, *Eigenvalue Distribution of Compact Operators*, Operator Theory: Advances and Applications 16, Birkhäuser, Basel, 1986."
+  },
+  {
+    "key": "aizerman-braverman-rozonoer1964",
+    "sortKey": "Aizerman",
+    "html": "M. A. Aizerman, E. M. Braverman and L. I. Rozonoer, \"Theoretical foundations of the potential function method in pattern recognition learning,\" *Automation and Remote Control* **25**, 1964, pp. 821–837."
+  },
+  {
+    "key": "boser-guyon-vapnik1992",
+    "sortKey": "Boser",
+    "html": "B. E. Boser, I. M. Guyon and V. N. Vapnik, \"A training algorithm for optimal margin classifiers,\" *Proceedings of the 5th Annual Workshop on Computational Learning Theory (COLT)*, 1992, pp. 144–152."
+  },
+  {
+    "key": "kimeldorf-wahba1971",
+    "sortKey": "Kimeldorf",
+    "html": "G. Kimeldorf and G. Wahba, \"Some results on Tchebycheffian spline functions,\" *Journal of Mathematical Analysis and Applications* **33**(1), 1971, pp. 82–95."
+  },
+  {
+    "key": "scholkopf-herbrich-smola2001",
+    "sortKey": "Schölkopf",
+    "html": "B. Schölkopf, R. Herbrich and A. J. Smola, \"A generalized representer theorem,\" *Proceedings of the 14th Annual Conference on Computational Learning Theory (COLT)*, Lecture Notes in Computer Science 2111, Springer, 2001, pp. 416–426."
+  },
+  {
+    "key": "vapnik-chervonenkis1964",
+    "sortKey": "Vapnik",
+    "html": "V. N. Vapnik and A. Ya. Chervonenkis, \"A note on one class of perceptrons,\" *Automation and Remote Control* **25**, 1964."
+  },
+  {
+    "key": "vapnik1995",
+    "sortKey": "Vapnik",
+    "html": "V. N. Vapnik, *The Nature of Statistical Learning Theory*, Springer, New York, 1995."
+  },
+  {
+    "key": "kaplan-meier1958",
+    "sortKey": "Kaplan",
+    "html": "E. L. Kaplan and P. Meier, \"Nonparametric estimation from incomplete observations,\" *Journal of the American Statistical Association* **53**(282), 1958, pp. 457–481."
+  },
+  {
+    "key": "nelson1969",
+    "sortKey": "Nelson",
+    "html": "W. Nelson, \"Hazard plotting for incomplete failure data,\" *Journal of Quality Technology* **1**(1), 1969, pp. 27–52."
+  },
+  {
+    "key": "aalen1978",
+    "sortKey": "Aalen",
+    "html": "O. O. Aalen, \"Nonparametric inference for a family of counting processes,\" *The Annals of Statistics* **6**(4), 1978, pp. 701–726."
+  },
+  {
+    "key": "cox1972",
+    "sortKey": "Cox",
+    "html": "D. R. Cox, \"Regression models and life-tables (with discussion),\" *Journal of the Royal Statistical Society, Series B* **34**(2), 1972, pp. 187–220."
+  },
+  {
+    "key": "cox1975",
+    "sortKey": "Cox",
+    "html": "D. R. Cox, \"Partial likelihood,\" *Biometrika* **62**(2), 1975, pp. 269–276."
+  },
+  {
+    "key": "tsiatis1975",
+    "sortKey": "Tsiatis",
+    "html": "A. Tsiatis, \"A nonidentifiability aspect of the problem of competing risks,\" *Proceedings of the National Academy of Sciences USA* **72**(1), 1975, pp. 20–22."
+  },
+  {
+    "key": "gray1988",
+    "sortKey": "Gray",
+    "html": "R. J. Gray, \"A class of K-sample tests for comparing the cumulative incidence of a competing risk,\" *The Annals of Statistics* **16**(3), 1988, pp. 1141–1154."
+  },
+  {
+    "key": "abgk1993",
+    "sortKey": "Andersen",
+    "html": "P. K. Andersen, Ø. Borgan, R. D. Gill, and N. Keiding, *Statistical Models Based on Counting Processes*, Springer Series in Statistics, Springer-Verlag, New York, 1993."
+  },
+  {
+    "key": "breslow-crowley1974",
+    "sortKey": "Breslow",
+    "html": "N. Breslow and J. Crowley, \"A large sample study of the life table and product limit estimates under random censorship,\" *The Annals of Statistics* **2**(3), 1974, pp. 437–453."
+  },
+  {
+    "key": "gill-johansen1990",
+    "sortKey": "Gill",
+    "html": "R. D. Gill and S. Johansen, \"A survey of product-integration with a view toward application in survival analysis,\" *The Annals of Statistics* **18**(4), 1990, pp. 1501–1555."
+  },
+  {
+    "key": "kalbfleisch-prentice2002",
+    "sortKey": "Kalbfleisch",
+    "html": "J. D. Kalbfleisch and R. L. Prentice, *The Statistical Analysis of Failure Time Data*, 2nd ed., Wiley Series in Probability and Statistics, John Wiley & Sons, Hoboken, 2002."
+  },
+  {
+    "key": "prentice1978",
+    "sortKey": "Prentice",
+    "html": "R. L. Prentice, J. D. Kalbfleisch, A. V. Peterson, N. Flournoy, V. T. Farewell, and N. E. Breslow, \"The analysis of failure times in the presence of competing risks,\" *Biometrics* **34**(4), 1978, pp. 541–554."
+  },
+  {
+    "key": "tsiatis2006",
+    "sortKey": "Tsiatis",
+    "html": "A. A. Tsiatis, *Semiparametric Theory and Missing Data*, Springer Series in Statistics, Springer, New York, 2006."
+  },
+  {
+    "key": "efron1967",
+    "sortKey": "Efron",
+    "html": "B. Efron, \"The two sample problem with censored data,\" in *Proceedings of the Fifth Berkeley Symposium on Mathematical Statistics and Probability*, Vol. 4, University of California Press, Berkeley, 1967, pp. 831–853."
+  },
+  {
+    "key": "gompertz1825",
+    "sortKey": "Gompertz",
+    "html": "B. Gompertz, \"On the nature of the function expressive of the law of human mortality, and on a new mode of determining the value of life contingencies,\" *Philosophical Transactions of the Royal Society of London* **115**, 1825, pp. 513–583."
+  },
+  {
+    "key": "murphy-vandervaart2000",
+    "sortKey": "Murphy",
+    "html": "S. A. Murphy and A. W. van der Vaart, \"On profile likelihood,\" *Journal of the American Statistical Association* **95**(450), 2000, pp. 449–465."
+  },
+  {
+    "key": "davison2003",
+    "sortKey": "Davison",
+    "html": "A. C. Davison, *Statistical Models*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 2003."
+  },
+  {
+    "key": "koopmans-reiersol1950",
+    "sortKey": "Koopmans",
+    "html": "T. C. Koopmans and O. Reiersøl, \"The identification of structural characteristics,\" *The Annals of Mathematical Statistics* **21**(2), 1950, pp. 165–181."
+  },
+  {
+    "key": "vonmises1947",
+    "sortKey": "Mises",
+    "html": "R. von Mises, \"On the asymptotic distribution of differentiable statistical functions,\" *The Annals of Mathematical Statistics* **18**(3), 1947, pp. 309–348."
+  },
+  {
+    "key": "lecam1964",
+    "sortKey": "Le Cam",
+    "html": "L. Le Cam, \"Sufficiency and approximate sufficiency,\" *The Annals of Mathematical Statistics* **35**(4), 1964, pp. 1419–1455."
+  },
+  {
+    "key": "anderson1958",
+    "sortKey": "Anderson",
+    "html": "T. W. Anderson, *An Introduction to Multivariate Statistical Analysis*, Wiley Publications in Statistics, John Wiley & Sons, New York, 1958."
+  },
+  {
+    "key": "eaton1983",
+    "sortKey": "Eaton",
+    "html": "M. L. Eaton, *Multivariate Statistics: A Vector Space Approach*, Wiley Series in Probability and Mathematical Statistics, John Wiley & Sons, New York, 1983."
+  },
+  {
+    "key": "schur1917",
+    "sortKey": "Schur",
+    "html": "I. Schur, \"Über Potenzreihen, die im Innern des Einheitskreises beschränkt sind,\" *Journal für die reine und angewandte Mathematik* **147**, 1917, pp. 205–232."
+  },
+  {
+    "key": "laird-ware1982",
+    "sortKey": "Laird",
+    "html": "N. M. Laird and J. H. Ware, \"Random-effects models for longitudinal data,\" *Biometrics* **38**(4), 1982, pp. 963–974."
+  },
+  {
+    "key": "henderson1950",
+    "sortKey": "Henderson",
+    "html": "C. R. Henderson, \"Estimation of genetic parameters,\" *The Annals of Mathematical Statistics* **21**(2), 1950, pp. 309–310 (abstract)."
+  },
+  {
+    "key": "henderson1959",
+    "sortKey": "Henderson",
+    "html": "C. R. Henderson, O. Kempthorne, S. R. Searle, and C. M. von Krosigk, \"The estimation of environmental and genetic trends from records subject to culling,\" *Biometrics* **15**(2), 1959, pp. 192–218."
+  },
+  {
+    "key": "henderson1975",
+    "sortKey": "Henderson",
+    "html": "C. R. Henderson, \"Best linear unbiased estimation and prediction under a selection model,\" *Biometrics* **31**(2), 1975, pp. 423–447."
+  },
+  {
+    "key": "harville1976",
+    "sortKey": "Harville",
+    "html": "D. A. Harville, \"Extension of the Gauss–Markov theorem to include the estimation of random effects,\" *The Annals of Statistics* **4**(2), 1976, pp. 384–395."
+  },
+  {
+    "key": "robinson1991",
+    "sortKey": "Robinson",
+    "html": "G. K. Robinson, \"That BLUP is a good thing: the estimation of random effects,\" *Statistical Science* **6**(1), 1991, pp. 15–51."
+  },
+  {
+    "key": "mcculloch-searle-neuhaus2008",
+    "sortKey": "McCulloch",
+    "html": "C. E. McCulloch, S. R. Searle, and J. M. Neuhaus, *Generalized, Linear, and Mixed Models*, 2nd ed., Wiley Series in Probability and Statistics, John Wiley & Sons, Hoboken, 2008."
+  },
+  {
+    "key": "searle-casella-mcculloch1992",
+    "sortKey": "Searle",
+    "html": "S. R. Searle, G. Casella, and C. E. McCulloch, *Variance Components*, Wiley Series in Probability and Mathematical Statistics, John Wiley & Sons, New York, 1992."
+  },
+  {
+    "key": "liang-zeger1986",
+    "sortKey": "Liang",
+    "html": "K.-Y. Liang and S. L. Zeger, \"Longitudinal data analysis using generalized linear models,\" *Biometrika* **73**(1), 1986, pp. 13–22."
+  },
+  {
+    "key": "godambe1960",
+    "sortKey": "Godambe",
+    "html": "V. P. Godambe, \"An optimum property of regular maximum likelihood estimation,\" *The Annals of Mathematical Statistics* **31**(4), 1960, pp. 1208–1211."
+  },
+  {
+    "key": "godambe-heyde1987",
+    "sortKey": "Godambe",
+    "html": "V. P. Godambe and C. C. Heyde, \"Quasi-likelihood and optimal estimation,\" *International Statistical Review* **55**(3), 1987, pp. 231–244."
+  },
+  {
+    "key": "hansen1982",
+    "sortKey": "Hansen",
+    "html": "L. P. Hansen, \"Large sample properties of generalized method of moments estimators,\" *Econometrica* **50**(4), 1982, pp. 1029–1054."
+  },
+  {
+    "key": "white1980",
+    "sortKey": "White",
+    "html": "H. White, \"A heteroskedasticity-consistent covariance matrix estimator and a direct test for heteroskedasticity,\" *Econometrica* **48**(4), 1980, pp. 817–838."
+  },
+  {
+    "key": "rubin1976",
+    "sortKey": "Rubin",
+    "html": "D. B. Rubin, \"Inference and missing data,\" *Biometrika* **63**(3), 1976, pp. 581–592."
+  },
+  {
+    "key": "little-rubin2019",
+    "sortKey": "Little",
+    "html": "R. J. A. Little and D. B. Rubin, *Statistical Analysis with Missing Data*, 3rd ed., Wiley Series in Probability and Statistics, John Wiley & Sons, Hoboken, 2019."
+  },
+  {
+    "key": "rosenbaum-rubin1983",
+    "sortKey": "Rosenbaum",
+    "html": "P. R. Rosenbaum and D. B. Rubin, \"The central role of the propensity score in observational studies for causal effects,\" *Biometrika* **70**(1), 1983, pp. 41–55."
+  },
+  {
+    "key": "horvitz-thompson1952",
+    "sortKey": "Horvitz",
+    "html": "D. G. Horvitz and D. J. Thompson, \"A generalization of sampling without replacement from a finite universe,\" *Journal of the American Statistical Association* **47**(260), 1952, pp. 663–685."
+  },
+  {
+    "key": "robins-rotnitzky-zhao1994",
+    "sortKey": "Robins",
+    "html": "J. M. Robins, A. Rotnitzky, and L. P. Zhao, \"Estimation of regression coefficients when some regressors are not always observed,\" *Journal of the American Statistical Association* **89**(427), 1994, pp. 846–866."
+  },
+  {
+    "key": "fuller1987",
+    "sortKey": "Fuller",
+    "html": "W. A. Fuller, *Measurement Error Models*, Wiley Series in Probability and Mathematical Statistics, John Wiley & Sons, New York, 1987."
+  },
+  {
+    "key": "spearman1904",
+    "sortKey": "Spearman",
+    "html": "C. Spearman, \"The proof and measurement of association between two things,\" *The American Journal of Psychology* **15**(1), 1904, pp. 72–101."
   }
 ]

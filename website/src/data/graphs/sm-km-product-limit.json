@@ -1,0 +1,24 @@
+{
+  "root": "StatLean.StatisticalModels.Survival.nelsonAalen_eq_partial_add_jump",
+  "nodes": [
+    {"id":"StatLean.StatisticalModels.Survival.nelsonAalen_eq_partial_add_jump","label":"nelsonAalen_eq_partial_add_jump","full":"StatLean.StatisticalModels.Survival.nelsonAalen_eq_partial_add_jump","kind":"root","decl":"thm","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
+    {"id":"StatLean.StatisticalModels.Survival.eventTimes","label":"eventTimes","full":"StatLean.StatisticalModels.Survival.eventTimes","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
+    {"id":"StatLean.StatisticalModels.Survival.nelsonAalen","label":"nelsonAalen","full":"StatLean.StatisticalModels.Survival.nelsonAalen","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
+    {"id":"StatLean.StatisticalModels.Survival.naJump","label":"naJump","full":"StatLean.StatisticalModels.Survival.naJump","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
+    {"id":"Finset.sum_insert","label":"sum_insert","full":"Finset.sum_insert","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
+    {"id":"add_comm","label":"add_comm","full":"add_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"StatLean.StatisticalModels.Survival.eventCount","label":"eventCount","full":"StatLean.StatisticalModels.Survival.eventCount","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
+    {"id":"StatLean.StatisticalModels.Survival.atRisk","label":"atRisk","full":"StatLean.StatisticalModels.Survival.atRisk","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalModels.Survival.nelsonAalen_eq_partial_add_jump","target":"StatLean.StatisticalModels.Survival.eventTimes"},
+    {"source":"StatLean.StatisticalModels.Survival.nelsonAalen_eq_partial_add_jump","target":"StatLean.StatisticalModels.Survival.nelsonAalen"},
+    {"source":"StatLean.StatisticalModels.Survival.nelsonAalen_eq_partial_add_jump","target":"StatLean.StatisticalModels.Survival.naJump"},
+    {"source":"StatLean.StatisticalModels.Survival.nelsonAalen_eq_partial_add_jump","target":"Finset.sum_insert"},
+    {"source":"StatLean.StatisticalModels.Survival.nelsonAalen_eq_partial_add_jump","target":"add_comm"},
+    {"source":"StatLean.StatisticalModels.Survival.nelsonAalen","target":"StatLean.StatisticalModels.Survival.eventTimes"},
+    {"source":"StatLean.StatisticalModels.Survival.nelsonAalen","target":"StatLean.StatisticalModels.Survival.naJump"},
+    {"source":"StatLean.StatisticalModels.Survival.naJump","target":"StatLean.StatisticalModels.Survival.eventCount"},
+    {"source":"StatLean.StatisticalModels.Survival.naJump","target":"StatLean.StatisticalModels.Survival.atRisk"}
+  ]
+}

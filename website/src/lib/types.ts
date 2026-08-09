@@ -10,6 +10,7 @@ export type CategoryId =
   | "optimization"
   | "bayesian"
   | "nonparametric"
+  | "statisticalmodels"
   | "probability";
 
 export type ResultKind = "definition" | "theorem" | "lemma" | "proposition" | "corollary" | "equation";
@@ -71,6 +72,14 @@ export interface ResultEntry {
   /** url-safe id, e.g. "eif_eq_orthogonalProjection" */
   id: string;
   category: CategoryId;
+  /**
+   * Extra topics this result is listed under. The page itself, its id, its
+   * dependency graph and its `category` are unchanged — cross-listing only
+   * makes the result appear on another topic's page, for results that belong
+   * to two subjects at once (exponential families, say, are both point
+   * estimation and a class of statistical models).
+   */
+  crossListed?: CategoryId[];
   kind: ResultKind;
   /** 1-3 index terms for the Index page (standard textbook terminology). */
   keywords?: string[];
