@@ -927,14 +927,59 @@ theorem IsGARCH.sq_arma_recursion [IsProbabilityMeasure μ] {c0 : ℝ} {p q : �
     Finset.sum_congr rfl fun j (_ : j ∈ Finset.univ) => hsig j, Finset.sum_sub_distrib]
   ring
 
-/-- **DEBT (Bollerslev 1986; FY Theorem 4.4, necessity half)**: a strictly stationary
-GARCH solution with finite variance and `c₀ > 0` forces `Σ b + Σ a < 1`. -/
+/-- **Bollerslev 1986; FY Theorem 4.4, necessity half**: a strictly stationary
+GARCH solution with finite variance and `c₀ > 0` forces `Σ b + Σ a < 1`.
+
+Same fixed-point argument as `IsARCH.sum_lt_one_debt`, with the extra `Σ_j a_j E σ²`
+terms folded in by `garch_integral_vol_sq` (`E σ_s² = E X_s²`, since `σ_s²` is the
+conditional variance): `m = E X_t²` satisfies `m = c₀ + (Σ b + Σ a) m` with `m ≥ 0`, and
+`c₀ > 0` forces `m > 0` and `Σ b + Σ a = 1 − c₀/m < 1`. -/
 theorem IsGARCH.sum_lt_one_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p q : ℕ}
     {b : Fin p → ℝ} {a : Fin q → ℝ} {X σvol ε : ℤ → Ω → ℝ}
     (h : IsGARCH c0 b a X σvol ε μ) (hstat : IsStrictlyStationary X μ)
     (hL2 : ∀ t, MemLp (X t) 2 μ) (hc0 : 0 < c0) :
     (∑ i, b i) + (∑ j, a j) < 1 := by
-  sorry
+  classical
+  set t : ℤ := 0 with ht
+  have hXsq_eq : ∀ s : ℤ, (∫ ω, X s ω ^ 2 ∂μ) = ∫ ω, X t ω ^ 2 ∂μ := fun s =>
+    ((hstat.identDistrib h.measurableX s t).comp
+      (measurable_id.pow_const 2 : Measurable fun x : ℝ => x ^ 2)).integral_eq
+  have hIb : Integrable (fun ω => ∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω ^ 2) μ :=
+    integrable_finset_sum _ fun i _ => (hL2 _).integrable_sq.const_mul (b i)
+  have hIa : Integrable (fun ω => ∑ j : Fin q, a j * σvol (t - 1 - (j : ℕ)) ω ^ 2) μ :=
+    integrable_finset_sum _ fun j _ => (garch_integral_vol_sq h hL2 _).1.const_mul (a j)
+  have hc : Integrable (fun _ : Ω => c0) μ := integrable_const c0
+  have e1 : (∫ ω, (c0 + (∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω ^ 2)
+        + ∑ j : Fin q, a j * σvol (t - 1 - (j : ℕ)) ω ^ 2) ∂μ)
+      = (∫ ω, (c0 + ∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω ^ 2) ∂μ)
+        + ∫ ω, (∑ j : Fin q, a j * σvol (t - 1 - (j : ℕ)) ω ^ 2) ∂μ :=
+    integral_add (hc.add hIb) hIa
+  have e2 : (∫ ω, (c0 + ∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω ^ 2) ∂μ)
+      = (∫ _ω : Ω, c0 ∂μ) + ∫ ω, (∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω ^ 2) ∂μ :=
+    integral_add hc hIb
+  have e3 : (∫ ω, (∑ i : Fin p, b i * X (t - 1 - (i : ℕ)) ω ^ 2) ∂μ)
+      = (∑ i : Fin p, b i) * ∫ ω, X t ω ^ 2 ∂μ := by
+    rw [integral_finset_sum (Finset.univ : Finset (Fin p)) fun i _ =>
+      (hL2 (t - 1 - (i : ℕ))).integrable_sq.const_mul (b i), Finset.sum_mul]
+    exact Finset.sum_congr rfl fun i _ => by rw [integral_const_mul, hXsq_eq]
+  have e4 : (∫ ω, (∑ j : Fin q, a j * σvol (t - 1 - (j : ℕ)) ω ^ 2) ∂μ)
+      = (∑ j : Fin q, a j) * ∫ ω, X t ω ^ 2 ∂μ := by
+    rw [integral_finset_sum (Finset.univ : Finset (Fin q)) fun j _ =>
+      (garch_integral_vol_sq h hL2 (t - 1 - (j : ℕ))).1.const_mul (a j), Finset.sum_mul]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    rw [integral_const_mul, (garch_integral_vol_sq h hL2 (t - 1 - (j : ℕ))).2, hXsq_eq]
+  have hcv : (∫ _ω : Ω, c0 ∂μ) = c0 := by simp
+  have hfix0 : (∫ ω, σvol t ω ^ 2 ∂μ)
+      = c0 + ((∑ i : Fin p, b i) + ∑ j : Fin q, a j) * ∫ ω, X t ω ^ 2 ∂μ := by
+    rw [integral_congr_ae (h.recVol t), e1, e2, e3, e4, hcv]
+    ring
+  have hfix : (∫ ω, X t ω ^ 2 ∂μ)
+      = c0 + ((∑ i : Fin p, b i) + ∑ j : Fin q, a j) * ∫ ω, X t ω ^ 2 ∂μ :=
+    (garch_integral_vol_sq h hL2 t).2.symm.trans hfix0
+  have hm0 : 0 ≤ ∫ ω, X t ω ^ 2 ∂μ := integral_nonneg fun ω => sq_nonneg _
+  by_contra hcon
+  push_neg at hcon
+  nlinarith [hfix, hm0, hcon, hc0]
 
 /-! ### Fourth-moment bricks for the GARCH(1,1) squared-process ACF
 
