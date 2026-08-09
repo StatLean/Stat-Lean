@@ -58,10 +58,10 @@ theorem integral_risk_sub_empRisk_le_two_mul_integral_empRad
   sorry
 
 /-- **SSBD Theorem 26.3 (second display)**: for an ERM selector `A` and any
-competitor `k⋆ ∈ K`,
-`E_S[L_D(A(S))] − L_D(k⋆) ≤ 2 E_S R(F∘S)`. -/
+competitor `kStar ∈ K`,
+`E_S[L_D(A(S))] − L_D(kStar) ≤ 2 E_S R(F∘S)`. -/
 theorem integral_risk_erm_sub_risk_le_two_mul_integral_empRad
-    {A : Sample Z n → ι} {k⋆ : ι}
+    {A : Sample Z n → ι} {kStar : ι}
     -- LEAN-ONLY: countable family per the batch sup policy
     (hKc : K.Countable)
     (hK : K.Nonempty)
@@ -70,12 +70,12 @@ theorem integral_risk_erm_sub_risk_le_two_mul_integral_empRad
     -- USER-INPUT: `A` is an ERM selector over `K`; SSBD Thm 26.3
     (hA : ∀ s, A s ∈ K ∧ ∀ k ∈ K, empRisk F s (A s) ≤ empRisk F s k)
     -- USER-INPUT: the competitor lies in the family; SSBD Thm 26.3
-    (hk⋆ : k⋆ ∈ K)
+    (hkStar : kStar ∈ K)
     -- LEAN-ONLY: a.e.-strong measurability of the selected risk
     (hAmeas : AEStronglyMeasurable
       (fun s => risk D F (A s)) (sampleLaw D n))
     (hn : 1 ≤ n) :
-    ∫ s, risk D F (A s) ∂(sampleLaw D n) - risk D F k⋆ ≤
+    ∫ s, risk D F (A s) ∂(sampleLaw D n) - risk D F kStar ≤
       2 * ∫ s, empRad F K s ∂(sampleLaw D n) := by
   sorry
 
@@ -83,23 +83,23 @@ theorem integral_risk_erm_sub_risk_le_two_mul_integral_empRad
 the ERM excess risk over the best competitor is at most
 `2 E_{S'} R(F∘S')/δ`. -/
 theorem measure_erm_excess_le_two_mul_integral_empRad_div
-    {A : Sample Z n → ι} {k⋆ : ι} {δ : ℝ}
+    {A : Sample Z n → ι} {kStar : ι} {δ : ℝ}
     -- LEAN-ONLY: countable family per the batch sup policy
     (hKc : K.Countable)
     (hK : K.Nonempty)
     (hmeas : ∀ k, Measurable (F k))
     (hbdd : ∀ k ∈ K, ∀ z, |F k z| ≤ c)
     (hA : ∀ s, A s ∈ K ∧ ∀ k ∈ K, empRisk F s (A s) ≤ empRisk F s k)
-    -- USER-INPUT: `k⋆` is a risk minimizer of the family (so the excess is
+    -- USER-INPUT: `kStar` is a risk minimizer of the family (so the excess is
     -- nonnegative and Markov applies); SSBD Thm 26.3
-    (hk⋆ : k⋆ ∈ K) (hmin : ∀ k ∈ K, risk D F k⋆ ≤ risk D F k)
+    (hkStar : kStar ∈ K) (hmin : ∀ k ∈ K, risk D F kStar ≤ risk D F k)
     (hAmeas : AEStronglyMeasurable
       (fun s => risk D F (A s)) (sampleLaw D n))
     (hn : 1 ≤ n)
     -- USER-INPUT: `δ ∈ (0,1)`; SSBD Thm 26.3
     (hδ : 0 < δ) (hδ1 : δ < 1) :
     ENNReal.ofReal (1 - δ) ≤
-      sampleLaw D n {s | risk D F (A s) - risk D F k⋆ ≤
+      sampleLaw D n {s | risk D F (A s) - risk D F kStar ≤
         2 * (∫ s', empRad F K s' ∂(sampleLaw D n)) / δ} := by
   sorry
 
@@ -141,9 +141,9 @@ theorem rademacher_generalization_empirical {δ : ℝ}
   sorry
 
 /-- **SSBD Theorem 26.5, part 3** (ERM excess risk, data-dependent): for an
-ERM selector `A` and any fixed `k⋆ ∈ K`, with probability `≥ 1 − δ`,
-`L_D(A(S)) − L_D(k⋆) ≤ 2 R(F∘S) + 5c √(2 ln(8/δ)/n)`. -/
-theorem rademacher_erm_excess {A : Sample Z n → ι} {k⋆ : ι} {δ : ℝ}
+ERM selector `A` and any fixed `kStar ∈ K`, with probability `≥ 1 − δ`,
+`L_D(A(S)) − L_D(kStar) ≤ 2 R(F∘S) + 5c √(2 ln(8/δ)/n)`. -/
+theorem rademacher_erm_excess {A : Sample Z n → ι} {kStar : ι} {δ : ℝ}
     -- LEAN-ONLY: countable family per the batch sup policy
     (hKc : K.Countable)
     (hK : K.Nonempty)
@@ -152,12 +152,12 @@ theorem rademacher_erm_excess {A : Sample Z n → ι} {k⋆ : ι} {δ : ℝ}
     -- USER-INPUT: `A` is an ERM selector over `K`; SSBD Thm 26.5(3)
     (hA : ∀ s, A s ∈ K ∧ ∀ k ∈ K, empRisk F s (A s) ≤ empRisk F s k)
     -- USER-INPUT: fixed competitor; SSBD Thm 26.5(3) ("for any h⋆")
-    (hk⋆ : k⋆ ∈ K)
+    (hkStar : kStar ∈ K)
     (hn : 1 ≤ n)
     (hδ : 0 < δ) (hδ1 : δ < 1) :
     ENNReal.ofReal (1 - δ) ≤
       sampleLaw D n {s |
-        risk D F (A s) - risk D F k⋆ ≤
+        risk D F (A s) - risk D F kStar ≤
           2 * empRad F K s + 5 * c * Real.sqrt (2 * Real.log (8 / δ) / n)} := by
   sorry
 

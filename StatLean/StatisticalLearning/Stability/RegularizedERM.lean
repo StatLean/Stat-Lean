@@ -7,7 +7,7 @@ The Lipschitz track of SSBD §13.3–§13.4: strong convexity of the Tikhonov
 objective (SSBD Lemma 13.5, parts 1–3), the RLM sensitivity bound
 `‖A(S^{(i)}) − A(S)‖ ≤ 2ρ/(λn)` (SSBD Eqs. (13.7)–(13.11)), the pointwise and
 on-average stability rate `2ρ²/(λn)` (SSBD Corollary 13.6), the oracle
-inequality `E[L_D(A(S))] ≤ L_D(w⋆) + λ‖w⋆‖² + 2ρ²/(λn)` (SSBD Corollary
+inequality `E[L_D(A(S))] ≤ L_D(wStar) + λ‖wStar‖² + 2ρ²/(λn)` (SSBD Corollary
 13.8), and the tuned rate `ρB√(8/n)` at `λ = √(2ρ²/(B²n))` for
 convex-Lipschitz-bounded problems (SSBD Corollary 13.9).
 
@@ -119,16 +119,16 @@ theorem rlm_stabilityGap_le (D : Measure Z) [IsProbabilityMeasure D]
   sorry
 
 /-- **SSBD Corollary 13.8** (oracle inequality for RLM): for every competitor
-`w⋆`, `E_S[L_D(A(S))] ≤ L_D(w⋆) + λ‖w⋆‖² + 2ρ²/(λn)`. -/
+`wStar`, `E_S[L_D(A(S))] ≤ L_D(wStar) + λ‖wStar‖² + 2ρ²/(λn)`. -/
 theorem rlm_oracle (D : Measure Z) [IsProbabilityMeasure D]
-    {A : Sample Z n → W} (w⋆ : W)
+    {A : Sample Z n → W} (wStar : W)
     (hconv : ∀ z, ConvexOn ℝ Set.univ (fun w : W => ℓ w z))
     (hlip : ∀ z (v v' : W), |ℓ v z - ℓ v' z| ≤ ρ * ‖v - v'‖)
     (hρ : 0 ≤ ρ)
     (hlam : 0 < lam)
     (hA : ∀ s : Sample Z n, IsRLMMin ℓ lam s (A s))
     -- USER-INPUT: integrable competitor loss; SSBD Remark 3.1
-    (hw⋆int : Integrable (ℓ w⋆) D)
+    (hwStarInt : Integrable (ℓ wStar) D)
     -- LEAN-ONLY: integrability bundle for Theorem 13.2 and Eq. (13.16)
     (hint₁ : Integrable
       (fun p : Sample Z n × Z => ℓ (A p.1) p.2) ((sampleLaw D n).prod D))
@@ -141,7 +141,7 @@ theorem rlm_oracle (D : Measure Z) [IsProbabilityMeasure D]
       (fun s : Sample Z n => empRisk ℓ s (A s)) (sampleLaw D n))
     (hn : 1 ≤ n) :
     ∫ s, risk D ℓ (A s) ∂(sampleLaw D n) ≤
-      risk D ℓ w⋆ + lam * ‖w⋆‖ ^ 2 + 2 * ρ ^ 2 / (lam * n) := by
+      risk D ℓ wStar + lam * ‖wStar‖ ^ 2 + 2 * ρ ^ 2 / (lam * n) := by
   sorry
 
 /-- **SSBD Corollary 13.9** (convex-Lipschitz-bounded learnability via RLM):

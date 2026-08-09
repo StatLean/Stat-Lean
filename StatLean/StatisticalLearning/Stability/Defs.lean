@@ -1,4 +1,5 @@
 import StatLean.StatisticalLearning.Core.Defs
+import Mathlib.Analysis.InnerProductSpace.Basic
 
 /-!
 # Algorithmic stability — replace-one data model
