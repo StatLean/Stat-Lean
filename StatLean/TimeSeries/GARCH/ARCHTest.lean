@@ -665,7 +665,7 @@ theorem archLRStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
       rw [show (fun ω => archLRStat (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
           (c0hat T ω) (bhat T ω) (c0null T ω)) = fun _ : Ω => (0 : ℝ) from
         funext fun ω => hzero T ω]
-      simp [Measure.map_const, charFun_apply_real]
+      simp [Measure.map_const]
     rw [hchi1, hfun]
     exact tendsto_const_nhds
   · -- REMAINING DEBT (`p ≥ 1`): the ARCH MLE asymptotics behind FY eq. (4.50). With the
@@ -958,11 +958,11 @@ theorem archLS_anova {ι : Type*} {p : ℕ} {s : Finset ι} {y : ι → ℝ} {z 
   rw [Finset.sum_congr rfl hpt, Finset.sum_add_distrib, Finset.sum_add_distrib,
     ← Finset.mul_sum, hcross, mul_zero, add_zero]
 
-/-- **`archTR2Stat` really is `T` times an `R²`.** Under the frozen `hrss`/`htss` the
-residual sum of squares never exceeds the total: `1 − rss/tss ∈ [0, 1]` whenever
-`tss > 0`. This is the sanity fact the LM limit needs before any distributional step, and
-it is exactly the ANOVA split at the centring constant `htss` uses. -/
-theorem arch_rss_le_tss {p : ℕ} {X : ℤ → Ω → ℝ} {rss tss : (T : ℕ) → Ω → ℝ}
+/-- **The ANOVA split at the level of the frozen `hrss`/`htss` package**: the auxiliary
+regression's total sum of squares splits as `tss = rss + ess`, with `ess` the explained sum
+of squares of *some* least-squares fit `(β̂₀, β̂)` — the fit itself need not be unique, and
+nothing here assumes the Gram matrix is invertible. -/
+theorem arch_tss_eq_rss_add_ess {p : ℕ} {X : ℤ → Ω → ℝ} {rss tss : (T : ℕ) → Ω → ℝ}
     (hrss : ∀ (T : ℕ) (ω : Ω), IsLeast
       {r : ℝ | ∃ (β0 : ℝ) (β : Fin p → ℝ), r = ∑ t ∈ Finset.Ico p T,
         (X ((t : ℤ) + 1) ω ^ 2 - β0
@@ -970,8 +970,13 @@ theorem arch_rss_le_tss {p : ℕ} {X : ℤ → Ω → ℝ} {rss tss : (T : ℕ) 
     (htss : ∀ (T : ℕ) (ω : Ω), tss T ω = ∑ t ∈ Finset.Ico p T,
       (X ((t : ℤ) + 1) ω ^ 2
         - ((T : ℝ) - p)⁻¹ * ∑ u ∈ Finset.Ico p T, X ((u : ℤ) + 1) ω ^ 2) ^ 2)
-    (T : ℕ) (ω : Ω) : rss T ω ≤ tss T ω := by
+    (T : ℕ) (ω : Ω) :
+    ∃ (β0 : ℝ) (β : Fin p → ℝ),
+      tss T ω = rss T ω + ∑ t ∈ Finset.Ico p T,
+        ((β0 + ∑ j : Fin p, β j * X ((t : ℤ) - (j : ℕ)) ω ^ 2)
+          - ((T : ℝ) - p)⁻¹ * ∑ u ∈ Finset.Ico p T, X ((u : ℤ) + 1) ω ^ 2) ^ 2 := by
   obtain ⟨β0, β, hval⟩ := (hrss T ω).1
+  refine ⟨β0, β, ?_⟩
   have hmin : ∀ (γ0 : ℝ) (γ : Fin p → ℝ),
       ∑ t ∈ Finset.Ico p T,
           (X ((t : ℤ) + 1) ω ^ 2 - β0 - ∑ j : Fin p, β j * X ((t : ℤ) - (j : ℕ)) ω ^ 2) ^ 2
@@ -984,12 +989,54 @@ theorem arch_rss_le_tss {p : ℕ} {X : ℤ → Ω → ℝ} {rss tss : (T : ℕ) 
     (y := fun t : ℕ => X ((t : ℤ) + 1) ω ^ 2)
     (z := fun (t : ℕ) (j : Fin p) => X ((t : ℤ) - (j : ℕ)) ω ^ 2) hmin
     (((T : ℝ) - p)⁻¹ * ∑ u ∈ Finset.Ico p T, X ((u : ℤ) + 1) ω ^ 2)
+  rw [htss T ω, hano, ← hval]
+
+/-- **`archTR2Stat` really is `T` times an `R²`.** Under the frozen `hrss`/`htss` the
+residual sum of squares never exceeds the total, so `1 − rss/tss ∈ [0, 1]` whenever
+`tss > 0`. This is the sanity fact the LM limit needs before any distributional step. -/
+theorem arch_rss_le_tss {p : ℕ} {X : ℤ → Ω → ℝ} {rss tss : (T : ℕ) → Ω → ℝ}
+    (hrss : ∀ (T : ℕ) (ω : Ω), IsLeast
+      {r : ℝ | ∃ (β0 : ℝ) (β : Fin p → ℝ), r = ∑ t ∈ Finset.Ico p T,
+        (X ((t : ℤ) + 1) ω ^ 2 - β0
+          - ∑ j : Fin p, β j * X ((t : ℤ) - (j : ℕ)) ω ^ 2) ^ 2} (rss T ω))
+    (htss : ∀ (T : ℕ) (ω : Ω), tss T ω = ∑ t ∈ Finset.Ico p T,
+      (X ((t : ℤ) + 1) ω ^ 2
+        - ((T : ℝ) - p)⁻¹ * ∑ u ∈ Finset.Ico p T, X ((u : ℤ) + 1) ω ^ 2) ^ 2)
+    (T : ℕ) (ω : Ω) : rss T ω ≤ tss T ω := by
+  obtain ⟨β0, β, hsplit⟩ := arch_tss_eq_rss_add_ess hrss htss T ω
   have hess : 0 ≤ ∑ t ∈ Finset.Ico p T,
       ((β0 + ∑ j : Fin p, β j * X ((t : ℤ) - (j : ℕ)) ω ^ 2)
         - ((T : ℝ) - p)⁻¹ * ∑ u ∈ Finset.Ico p T, X ((u : ℤ) + 1) ω ^ 2) ^ 2 :=
     Finset.sum_nonneg fun _ _ => sq_nonneg _
-  rw [htss T ω, hano, ← hval]
   linarith
+
+/-- **Brick (a) of the `TR²` residue, in its deliverable form**: Engle's statistic *is*
+`T · ess/tss`, the explained sum of squares of the auxiliary regression normalised by the
+total. This is the object the LM limit theory acts on — the normal equations turn `ess`
+into the quadratic form `γ̂ᵀ Γ̂⁻¹ γ̂` in the lag-`1..p` sample autocovariances — so with this
+identity the residual `sorry` below is purely probabilistic (bricks (b) and (c)). -/
+theorem archTR2Stat_eq_ess_div_tss {p : ℕ} {X : ℤ → Ω → ℝ} {rss tss : (T : ℕ) → Ω → ℝ}
+    (hrss : ∀ (T : ℕ) (ω : Ω), IsLeast
+      {r : ℝ | ∃ (β0 : ℝ) (β : Fin p → ℝ), r = ∑ t ∈ Finset.Ico p T,
+        (X ((t : ℤ) + 1) ω ^ 2 - β0
+          - ∑ j : Fin p, β j * X ((t : ℤ) - (j : ℕ)) ω ^ 2) ^ 2} (rss T ω))
+    (htss : ∀ (T : ℕ) (ω : Ω), tss T ω = ∑ t ∈ Finset.Ico p T,
+      (X ((t : ℤ) + 1) ω ^ 2
+        - ((T : ℝ) - p)⁻¹ * ∑ u ∈ Finset.Ico p T, X ((u : ℤ) + 1) ω ^ 2) ^ 2)
+    (T : ℕ) (ω : Ω) (hne : tss T ω ≠ 0) :
+    ∃ (β0 : ℝ) (β : Fin p → ℝ),
+      archTR2Stat (T := T) (rss T ω) (tss T ω)
+        = (T : ℝ) * ((∑ t ∈ Finset.Ico p T,
+            ((β0 + ∑ j : Fin p, β j * X ((t : ℤ) - (j : ℕ)) ω ^ 2)
+              - ((T : ℝ) - p)⁻¹ * ∑ u ∈ Finset.Ico p T, X ((u : ℤ) + 1) ω ^ 2) ^ 2)
+            / tss T ω) := by
+  obtain ⟨β0, β, hsplit⟩ := arch_tss_eq_rss_add_ess hrss htss T ω
+  refine ⟨β0, β, ?_⟩
+  have key : ∀ a b e : ℝ, b ≠ 0 → b = a + e → 1 - a / b = e / b := by
+    intro a b e hb hbe
+    field_simp
+    linarith
+  rw [archTR2Stat, key _ _ _ hne hsplit]
 
 /-- **FY eqs. (4.52)–(4.53) — DEBT**: the score/LM statistic (equivalently, for normal
 errors, Engle's `TR²`) has the same `χ²_p` null limit as the likelihood-ratio
@@ -1103,7 +1150,7 @@ theorem archWaldStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
       funext T
       rw [show (fun ω => (T : ℝ) * ∑ i, ∑ j, bhat T ω i * Ihat T ω i j * bhat T ω j)
           = fun _ : Ω => (0 : ℝ) by funext ω; simp]
-      simp [Measure.map_const, charFun_apply_real]
+      simp [Measure.map_const]
     rw [hchi1, hfun]
     exact tendsto_const_nhds
   · -- REMAINING DEBT (`p ≥ 1`): FY eq. (4.54). With the repaired pinning the missing input
