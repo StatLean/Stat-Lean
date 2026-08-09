@@ -1,4 +1,5 @@
 import StatLean.TimeSeries.Mixing.Inequalities
+import Mathlib.MeasureTheory.Function.FactorsThrough
 import StatLean.TimeSeries.Mixing.Relations
 import StatLean.TimeSeries.ForMathlib.Probability.TriangularCLT
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
@@ -731,6 +732,146 @@ private theorem memLp_comp_pair {X e : ℤ → Ω → ℝ}
     MemLp (fun ω => F (X t ω, e t ω)) q μ :=
   ⟨(hF.comp ((hmeasX t).prodMk (hmeasE t))).aestronglyMeasurable, by
     rw [eLpNorm_comp_pair_eq hmeasX hmeasE hstat t hF q]; exact h0.2⟩
+
+/-- One-time marginal of `X` alone: `X_t ~ X_0`. -/
+private theorem map_fst_eq_of_stat {X e : ℤ → Ω → ℝ}
+    (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
+    (hstat : ∀ (k : ℕ) (t : ℤ),
+      μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
+        = μ.map (fun ω (i : Fin k) => (X ((i : ℕ) : ℤ) ω, e ((i : ℕ) : ℤ) ω)))
+    (t : ℤ) : μ.map (X t) = μ.map (X 0) := by
+  have hpt : Measurable (fun ω => (X t ω, e t ω)) := (hmeasX t).prodMk (hmeasE t)
+  have hp0 : Measurable (fun ω => (X 0 ω, e 0 ω)) := (hmeasX 0).prodMk (hmeasE 0)
+  have h := congrArg (fun ν : Measure (ℝ × ℝ) => ν.map Prod.fst)
+    (map_pair_eq_of_stat hmeasX hmeasE hstat t)
+  simp only at h
+  rwa [Measure.map_map measurable_fst hpt, Measure.map_map measurable_fst hp0] at h
+
+/-- An a.e. property of `X_0` is an a.e. property of `X_t`. -/
+private theorem ae_comp_X_of_stat {X e : ℤ → Ω → ℝ}
+    (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
+    (hstat : ∀ (k : ℕ) (t : ℤ),
+      μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
+        = μ.map (fun ω (i : Fin k) => (X ((i : ℕ) : ℤ) ω, e ((i : ℕ) : ℤ) ω)))
+    (t : ℤ) {S : Set ℝ} (hS : MeasurableSet S) (h0 : ∀ᵐ ω ∂μ, X 0 ω ∈ S) :
+    ∀ᵐ ω ∂μ, X t ω ∈ S := by
+  have h1 : ∀ᵐ v ∂(μ.map (X 0)), v ∈ S :=
+    (ae_map_iff (hmeasX 0).aemeasurable hS).2 h0
+  rw [← map_fst_eq_of_stat hmeasX hmeasE hstat t] at h1
+  exact (ae_map_iff (hmeasX t).aemeasurable hS).1 h1
+
+/-- **Conditional expectations transport across time — PROVED.** Under the fdd form of
+stationarity, the conditional expectation `E(φ(e_t) | X_t)` is, for *every* `t`, the same
+measurable function `m` of `X_t`. This is the brick steps (b)–(c) need but ledger (a) did
+not: `truncErr` is built from `E(clamp_L(e_t) | X_t)` at each time separately, so the
+truncated array is a fixed function of the pair `(X_t, e_t)` only once these versions are
+identified.
+
+Two ingredients: Doob–Dynkin (`StronglyMeasurable.exists_eq_measurable_comp`) produces the
+factorization `m` at `t = 0`, and the defining set-integral characterization of the
+conditional expectation transports to time `t` because both sides of
+`∫_{X_t ∈ A} m(X_t) = ∫_{X_t ∈ A} φ(e_t)` are integrals of a *fixed* function of the pair,
+namely `Prod.fst ⁻¹' A`-indicators, so `integral_comp_pair_eq` applies to each. -/
+private theorem exists_condExp_repr_of_stat [IsProbabilityMeasure μ]
+    {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
+    (hstat : ∀ (k : ℕ) (t : ℤ),
+      μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
+        = μ.map (fun ω (i : Fin k) => (X ((i : ℕ) : ℤ) ω, e ((i : ℕ) : ℤ) ω)))
+    {φ : ℝ → ℝ} (hφ : Measurable φ) (hφi : Integrable (fun ω => φ (e 0 ω)) μ) :
+    ∃ m : ℝ → ℝ, Measurable m ∧ ∀ t : ℤ,
+      μ[fun ω => φ (e t ω) | MeasurableSpace.comap (X t) inferInstance]
+        =ᵐ[μ] fun ω => m (X t ω) := by
+  classical
+  have hsm : StronglyMeasurable[MeasurableSpace.comap (X 0) inferInstance]
+      (μ[fun ω => φ (e 0 ω) | MeasurableSpace.comap (X 0) inferInstance]) :=
+    stronglyMeasurable_condExp
+  obtain ⟨m, hmsm, hmeq⟩ := MeasureTheory.StronglyMeasurable.exists_eq_measurable_comp hsm
+  refine ⟨m, hmsm.measurable, fun t => ?_⟩
+  have hmle : MeasurableSpace.comap (X t) inferInstance ≤ ‹MeasurableSpace Ω› :=
+    (hmeasX t).comap_le
+  have hφt : Integrable (fun ω => φ (e t ω)) μ := by
+    have h0 : MemLp (fun ω => (fun z : ℝ × ℝ => φ z.2) (X 0 ω, e 0 ω)) 1 μ :=
+      memLp_one_iff_integrable.2 hφi
+    exact memLp_one_iff_integrable.1
+      (memLp_comp_pair hmeasX hmeasE hstat t (hφ.comp measurable_snd) h0)
+  have hmi0 : Integrable (fun ω => m (X 0 ω)) μ := by
+    have := integrable_condExp (μ := μ) (m := MeasurableSpace.comap (X 0) inferInstance)
+      (f := fun ω => φ (e 0 ω))
+    rwa [hmeq] at this
+  have hmit : Integrable (fun ω => m (X t ω)) μ := by
+    have h0 : MemLp (fun ω => (fun z : ℝ × ℝ => m z.1) (X 0 ω, e 0 ω)) 1 μ :=
+      memLp_one_iff_integrable.2 hmi0
+    exact memLp_one_iff_integrable.1
+      (memLp_comp_pair hmeasX hmeasE hstat t (hmsm.measurable.comp measurable_fst) h0)
+  refine (MeasureTheory.ae_eq_condExp_of_forall_setIntegral_eq hmle hφt
+    (fun s _ _ => hmit.integrableOn) (fun s hs _ => ?_)
+    ((hmsm.measurable.comp (Measurable.of_comap_le le_rfl)).aestronglyMeasurable)).symm
+  obtain ⟨A, hA, rfl⟩ := hs
+  set F1 : ℝ × ℝ → ℝ := Set.indicator (Prod.fst ⁻¹' A) (fun z => m z.1) with hF1def
+  set F2 : ℝ × ℝ → ℝ := Set.indicator (Prod.fst ⁻¹' A) (fun z => φ z.2) with hF2def
+  have hF1m : Measurable F1 :=
+    (hmsm.measurable.comp measurable_fst).indicator (measurable_fst hA)
+  have hF2m : Measurable F2 :=
+    (hφ.comp measurable_snd).indicator (measurable_fst hA)
+  have hind1 : ∀ s : ℤ, ∫ ω in X s ⁻¹' A, m (X s ω) ∂μ
+      = ∫ ω, F1 (X s ω, e s ω) ∂μ := by
+    intro s
+    rw [← integral_indicator ((hmeasX s) hA)]
+    refine integral_congr_ae (Eventually.of_forall fun ω => ?_)
+    by_cases hω : X s ω ∈ A <;> simp [hF1def, Set.mem_preimage, hω]
+  have hind2 : ∀ s : ℤ, ∫ ω in X s ⁻¹' A, φ (e s ω) ∂μ
+      = ∫ ω, F2 (X s ω, e s ω) ∂μ := by
+    intro s
+    rw [← integral_indicator ((hmeasX s) hA)]
+    refine integral_congr_ae (Eventually.of_forall fun ω => ?_)
+    by_cases hω : X s ω ∈ A <;> simp [hF2def, Set.mem_preimage, hω]
+  have hA0 : MeasurableSet[MeasurableSpace.comap (X 0) inferInstance] (X 0 ⁻¹' A) :=
+    ⟨A, hA, rfl⟩
+  have hcond : ∫ ω in X 0 ⁻¹' A, m (X 0 ω) ∂μ = ∫ ω in X 0 ⁻¹' A, φ (e 0 ω) ∂μ := by
+    have hrw : ∀ ω, m (X 0 ω)
+        = (μ[fun ω' => φ (e 0 ω') | MeasurableSpace.comap (X 0) inferInstance]) ω := by
+      intro ω; rw [hmeq]; rfl
+    calc ∫ ω in X 0 ⁻¹' A, m (X 0 ω) ∂μ
+        = ∫ ω in X 0 ⁻¹' A,
+            (μ[fun ω' => φ (e 0 ω') | MeasurableSpace.comap (X 0) inferInstance]) ω ∂μ :=
+          setIntegral_congr_fun ((hmeasX 0) hA) (fun ω _ => hrw ω)
+      _ = ∫ ω in X 0 ⁻¹' A, φ (e 0 ω) ∂μ :=
+          setIntegral_condExp ((hmeasX 0).comap_le) hφi hA0
+  calc ∫ ω in X t ⁻¹' A, m (X t ω) ∂μ
+      = ∫ ω, F1 (X t ω, e t ω) ∂μ := hind1 t
+    _ = ∫ ω, F1 (X 0 ω, e 0 ω) ∂μ := integral_comp_pair_eq hmeasX hmeasE hstat t hF1m
+    _ = ∫ ω in X 0 ⁻¹' A, m (X 0 ω) ∂μ := (hind1 0).symm
+    _ = ∫ ω in X 0 ⁻¹' A, φ (e 0 ω) ∂μ := hcond
+    _ = ∫ ω, F2 (X 0 ω, e 0 ω) ∂μ := hind2 0
+    _ = ∫ ω, F2 (X t ω, e t ω) ∂μ := (integral_comp_pair_eq hmeasX hmeasE hstat t hF2m).symm
+    _ = ∫ ω in X t ⁻¹' A, φ (e t ω) ∂μ := (hind2 t).symm
+
+/-- **(C1)'s `E(e | X) = 0` holds at every time — PROVED.** The frozen (C1) states it at
+`t = 0` only; `exists_condExp_repr_of_stat` plus the transport of a.e. statements along
+`μ.map (X t) = μ.map (X 0)` propagates it. This is what keeps *every* summand of `locSum`
+centred, and what makes `e_t − e^L_t = r_t − E(r_t | X_t)` with `r_t = e_t − clamp_L(e_t)`
+— the identity the truncation tail (2.82) is built on. -/
+private theorem condExp_eq_zero_of_stat [IsProbabilityMeasure μ]
+    {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
+    (hstat : ∀ (k : ℕ) (t : ℤ),
+      μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
+        = μ.map (fun ω (i : Fin k) => (X ((i : ℕ) : ℤ) ω, e ((i : ℕ) : ℤ) ω)))
+    (he1 : Integrable (e 0) μ)
+    (hce : μ[e 0 | MeasurableSpace.comap (X 0) inferInstance] =ᵐ[μ] 0) (t : ℤ) :
+    μ[e t | MeasurableSpace.comap (X t) inferInstance] =ᵐ[μ] 0 := by
+  obtain ⟨m, hm, hrep⟩ :=
+    exists_condExp_repr_of_stat hmeasX hmeasE hstat (φ := fun z => z) measurable_id he1
+  have hrep' : ∀ s : ℤ, μ[e s | MeasurableSpace.comap (X s) inferInstance]
+      =ᵐ[μ] fun ω => m (X s ω) := fun s => hrep s
+  have h0 : ∀ᵐ ω ∂μ, X 0 ω ∈ {v : ℝ | m v = 0} := by
+    filter_upwards [hrep' 0, hce] with ω h1 h2
+    show m (X 0 ω) = 0
+    rw [← h1]; exact h2
+  have hS : MeasurableSet {v : ℝ | m v = 0} := hm (measurableSet_singleton 0)
+  filter_upwards [hrep' t, ae_comp_X_of_stat hmeasX hmeasE hstat t hS h0] with ω h1 h2
+  have h2' : m (X t ω) = 0 := h2
+  rw [h1, h2']
+  rfl
 
 /-- **The stationary double sum, off the diagonal.** If a doubly-indexed array `c` depends
 only on the lag (`c s (s+d) = c (s+d) s = g d`), then its full `n × n` sum differs from the
