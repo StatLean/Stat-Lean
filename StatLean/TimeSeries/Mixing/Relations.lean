@@ -27,7 +27,7 @@ classical implication chain `ψ-mixing ⇒ φ-mixing ⇒ {β-, ρ-mixing} ⇒ α
   in every block argument);
 * the in-text non-example (ix): a deterministic recursion `X_{t+1} = m(X_t)` with a
   non-degenerate event is not α-mixing;
-* literature statement DEBTS: Pham–Tran (causal ARMA is exponentially mixing),
+* literature statement DEBTS: Pham–Tran (causal ARMA is exponentially β-mixing),
   Basrak–Davis–Mikosch (GARCH is exponentially α-mixing), Kolmogorov–Rozanov (Gaussian:
   ρ-mixing ⇔ α-mixing).
 
@@ -36,12 +36,14 @@ named model-side brick each** — `arma_stateChain_brick` and `garch_stateChain_
 common conclusion is `HasGeometricStateChain`: the model has a state chain that is Markov
 for a kernel with a geometric total-variation envelope. Everything downstream of that (the
 process-vs-state σ-algebra comparison, the two-marginal reduction at an arbitrary anchor,
-the α-envelope, and the `C · r^n` bookkeeping) is proved, in
-`Mixing/MarkovBridge.lean` and in `alphaCoeff_exponential_of_hasGeometricStateChain` below.
-Wave 4's flagged prerequisites — the vector-valued Markov bridge, the import edge, and the
-GARCH minorization — are closed; see the long status block at the head of the DEBTS section
-and the individual brick docstrings for the two hypothesis strengthenings, the conclusion
-calibration (α rather than β for the ARMA statement) and the three named follow-ups.
+the α- and β-envelopes, and the `C · r^n` bookkeeping) is proved, in
+`Mixing/MarkovBridge.lean` and in `alphaCoeff_exponential_of_hasGeometricStateChain` /
+`betaCoeff_exponential_of_hasGeometricStateChain` below — both frozen conclusions
+(β for ARMA, α for GARCH) are delivered as stated. Wave 4's flagged prerequisites — the
+vector-valued Markov bridge, the import edge, and the GARCH minorization — are closed; see
+the long status block at the head of the DEBTS section and the individual brick docstrings
+for the three hypothesis strengthenings and the one remaining named follow-up (a
+quantitative Lyapunov envelope for `harris_theorem`).
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.6.1
 (pp. 68–71). (`FY §2.6.1`.)
@@ -1551,14 +1553,52 @@ theorem alphaCoeff_exponential_of_hasGeometricStateChain [IsProbabilityMeasure �
     rw [hpr]
     field_simp
 
+/-- **From a geometrically ergodic state chain to exponential β-mixing of the observed
+series** — the β-analogue of `alphaCoeff_exponential_of_hasGeometricStateChain`, proved
+from `MarkovBridge.betaCoeff_le_of_state_envelope`. It became available once the `≤` half
+of Davydov's identity (`MarkovBridge.betaMixCoeff_two_marginal_le_of_envelope`) was proved;
+the still-open `≥` half is not needed. -/
+theorem betaCoeff_exponential_of_hasGeometricStateChain [IsProbabilityMeasure μ]
+    {X : ℤ → Ω → ℝ} (hchain : HasGeometricStateChain X μ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∃ r : ℝ, 0 ≤ r ∧ r < 1 ∧
+      ∀ n : ℕ, betaCoeff X μ n ≤ C * r ^ n := by
+  obtain ⟨k, V, κ, hκ, hVm, hmarg, hmarkov, hXV, A, ρ, hA0, hAint, hρ0, hρ1, henv⟩ := hchain
+  haveI := hκ
+  obtain ⟨I, hIdef⟩ : ∃ t : ℝ, t = ∫ x, A x ∂(μ.map (V 0)) := ⟨_, rfl⟩
+  have hI0 : 0 ≤ I := hIdef ▸ integral_nonneg hA0
+  obtain ⟨r, hrdef⟩ : ∃ t : ℝ, t = max ρ (1 / 2) := ⟨_, rfl⟩
+  have hr0 : 0 < r := hrdef ▸ lt_of_lt_of_le (by norm_num) (le_max_right _ _)
+  have hr1 : r < 1 := hrdef ▸ max_lt hρ1 (by norm_num)
+  have hρr : ρ ≤ r := hrdef ▸ le_max_left _ _
+  refine ⟨max (I / r) 1, le_trans zero_le_one (le_max_right _ _), r, hr0.le, hr1, fun n => ?_⟩
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · have hXm : ∀ s : ℤ, Measurable (X s) := fun s =>
+      (hXV s).mono (hVm (s + 1)).comap_le le_rfl
+    refine le_trans (betaMixCoeff_le_one (mΩ := (inferInstance : MeasurableSpace Ω))
+      (iSup₂_le fun s _ => (hXm s).comap_le) (iSup₂_le fun s _ => (hXm s).comap_le)) ?_
+    simpa using le_max_right (I / r) 1
+  · have hstep := betaCoeff_le_of_state_envelope hVm hXV hmarg hmarkov hA0 hAint hρ0 henv hn
+    rw [← hIdef] at hstep
+    refine hstep.trans (le_trans ?_ (mul_le_mul_of_nonneg_right (le_max_left (I / r) 1)
+      (pow_nonneg hr0.le n)))
+    have hpow : I * ρ ^ (n - 1) ≤ I * r ^ (n - 1) :=
+      mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hρ0 hρr _) hI0
+    refine hpow.trans (le_of_eq ?_)
+    have hn1 : n - 1 + 1 = n := Nat.succ_pred_eq_of_pos hn
+    have hpr : r ^ n = r ^ (n - 1) * r := by
+      conv_lhs => rw [← hn1]
+      rw [pow_succ]
+    rw [hpr]
+    field_simp
+
 /-- **DEBT (Pham–Tran 1985; FY §2.6.1(v))**: a stationary causal ARMA process with
 iid innovations admitting an (absolutely continuous) density is exponentially
 β-mixing.
 
 **Status (2026-08-09, wave 5): reduced to ONE named model-side brick**
-(`arma_stateChain_brick`), from which the frozen statement is proved below — but the
-conclusion had to be **weakened from β to α**, see the calibration paragraph. What changed
-since wave 4, item by item against that wave's four-point obstruction list:
+(`arma_stateChain_brick`), from which the frozen statement — the **β** conclusion, not a
+weakened α surrogate — is proved below. What changed since wave 4, item by item against
+that wave's four-point obstruction list:
 
 1. *Identification of the causal solution.* Unchanged, and still an input: `hstat` +
    `hroot` force `X` to be the causal solution (companion form, `‖A^k‖ → 0`, tightness),
@@ -1568,7 +1608,9 @@ since wave 4, item by item against that wave's four-point obstruction list:
    now stated over an arbitrary measurable state space, and
    `MarkovBridge.betaMixCoeff_le_of_measurable_state` /
    `MarkovBridge.alphaMixCoeff_le_of_measurable_state` supply the process-vs-state
-   comparison. This was wave 4's flagged prerequisite; it is no longer a gap.
+   comparison, and `MarkovBridge.betaMixCoeff_two_marginal_of_markov_anchor` /
+   `MarkovBridge.betaMixCoeff_two_marginal_le_of_envelope` complete the β chain. This was
+   wave 4's flagged prerequisite; it is no longer a gap.
 3. *Geometric ergodicity of the state chain.* Half closed. `hdens` is now strengthened to
    continuity + positivity (see the strengthening paragraph), which is exactly what
    `nlARKernel_geometricallyErgodic` consumes; and for `q = 0` the companion form is an
@@ -1601,18 +1643,18 @@ argument on the `(p+q)`-step transition — so the strengthening is not removabl
 bookkeeping; it is a change of theorem. The original obstruction analysis is kept above as
 the justification.
 
-**Conclusion calibration (documented).** The frozen conclusion is about `betaCoeff`. The
-`sorry`-free route built in wave 5 bounds `alphaCoeff`: the β-route needs the *equality*
-form of Davydov's identity, whose `≥` half
-(`MarkovBridge.betaMixCoeff_two_marginal_eq_integral_tvDist_brick`) is still open, while
-the α-route needs only the `≤` inequality, which wave 5 proved. Since `2α ≤ β`
-(`two_mul_alphaMixCoeff_le_betaMixCoeff`, proved above) runs the *wrong* way for an upper
-bound on β, the two conclusions are not interchangeable. The statement below is therefore
-the α-form; the β-form is exactly the α-form plus the β-analogue of
-`alphaMixCoeff_two_marginal_le_of_envelope`, i.e. the `≤` half of (2.58) at the β level —
-a third named follow-up (its proof is the sign-split
-`Σ_j |P(V_j) − Q(V_j)| ≤ 2 tvDist P Q` over a disjointified family, sketched in
-`MarkovBridge.betaMixCoeff_two_marginal_eq_integral_tvDist_brick`'s docstring). -/
+**Conclusion calibration (resolved).** The frozen conclusion is about `betaCoeff`, and it
+is delivered as such. The route needs only the `≤` half of Davydov's identity — the
+*equality* (whose `≥` half needs a jointly measurable Hahn selection and is still open as
+`MarkovBridge.betaMixCoeff_two_marginal_eq_integral_tvDist_brick`) is **not** required.
+That `≤` half was proved in the same wave as
+`MarkovBridge.betaMixCoeff_two_marginal_le_of_envelope`, with two simplifications over the
+wave-4 sketch: the past-side sets need no disjointification (the `Ω`-partition is used
+directly against a `σ(X_k)`-measurable integrand), and the future-side disjointification
+uses only `X_{k+n}⁻¹(W_j \\ ⋃_{j' < j} W_{j'}) = B_j`. The normalization comes out with
+**no factor 2**, as the module docstring of `MarkovBridge.lean` predicted. Note for the
+record that `2α ≤ β` (`two_mul_alphaMixCoeff_le_betaMixCoeff`, proved above) runs the
+*wrong* way and could not have been used to transfer an α bound to β. -/
 private lemma arma_stateChain_brick [IsProbabilityMeasure μ]
     {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b a σ2 X ε μ) (hstat : IsStrictlyStationary X μ)
@@ -1624,15 +1666,17 @@ private lemma arma_stateChain_brick [IsProbabilityMeasure μ]
     HasGeometricStateChain X μ := by
   sorry
 
-/-- **DEBT (Pham–Tran 1985; FY §2.6.1(v))**, in the α-form the wave-5 engine supports:
-a stationary causal ARMA process with iid innovations admitting a continuous positive
-density is exponentially α-mixing.
+/-- **DEBT (Pham–Tran 1985; FY §2.6.1(v))**: a stationary causal ARMA process with iid
+innovations admitting a continuous positive density is exponentially **β-mixing** — the
+frozen conclusion.
 
 **PROVED over the single brick `arma_stateChain_brick`**; see that brick's docstring for
-the full status, the hypothesis strengthening and the two named follow-ups (the Harris
-envelope, and the β-level `≤` half of Davydov's identity, which upgrades the conclusion
-from α to β). -/
-theorem arma_alphaCoeff_exponential_debt [IsProbabilityMeasure μ]
+the full status, the hypothesis strengthening, and the one remaining named follow-up (the
+quantitative Harris envelope). The β-level `≤` half of Davydov's identity, listed there as
+a follow-up, was proved in the same wave
+(`MarkovBridge.betaMixCoeff_two_marginal_le_of_envelope`), which is what allows the frozen
+β conclusion rather than an α surrogate. -/
+theorem arma_betaCoeff_exponential_debt [IsProbabilityMeasure μ]
     {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b a σ2 X ε μ) (hstat : IsStrictlyStationary X μ)
     (hmeas : ∀ t, Measurable (X t))
@@ -1646,8 +1690,8 @@ theorem arma_alphaCoeff_exponential_debt [IsProbabilityMeasure μ]
     -- USER-INPUT: no roots of b on the closed unit disc (causality; stated inline); FY §2.1
     (hroot : ∀ z : ℂ, ‖z‖ ≤ 1 → Polynomial.aeval z (arPoly b) ≠ 0) :
     ∃ C : ℝ, 0 ≤ C ∧ ∃ r : ℝ, 0 ≤ r ∧ r < 1 ∧
-      ∀ n : ℕ, alphaCoeff X μ n ≤ C * r ^ n :=
-  alphaCoeff_exponential_of_hasGeometricStateChain
+      ∀ n : ℕ, betaCoeff X μ n ≤ C * r ^ n :=
+  betaCoeff_exponential_of_hasGeometricStateChain
     (arma_stateChain_brick h hstat hmeas hiid hdens hroot)
 
 /-- **DEBT (Basrak–Davis–Mikosch 2002; FY §2.6.1(x))**: a strictly stationary
