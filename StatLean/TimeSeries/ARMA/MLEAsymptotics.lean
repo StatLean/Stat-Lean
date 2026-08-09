@@ -41,10 +41,19 @@ listed here with their exact blockers.
 * The **variance algebra** of the sandwich is carried out symbolically in the
   `ScoreCLT` section docstring; it collapses to `W⁻¹ = (hannanVarZ b₀ a₀)⁻¹` exactly as
   the frozen statement demands.
-* Debts: `armaProfileS_equicontinuous`, `hannanScore_brownInputs`,
-  `armaMLE_linearization`, `samplePACF_linearization`
-  (`armaProfileS_atTruth_tendstoInProb` is CLOSED — it is a two-line corollary of
-  Consistency's now-public `armaProfileS_tendstoInProb`).
+* Debts (after wave `ts/s1b-arma-finish`, 2026-08-09): `hannanScore_brownInputs`,
+  `armaMLE_linearization`, `samplePACF_linearization`.
+  **CLOSED**: `armaProfileS_atTruth_tendstoInProb` (a two-line corollary of Consistency's
+  now-public `armaProfileS_tendstoInProb`) and `armaProfileS_equicontinuous` (a one-line
+  corollary of `Consistency.armaProfileS_locallyEquicontinuous`).
+  `ARMA/Consistency.lean` is now `sorry`-free — `mle_consistent` is PROVED — and it
+  exports the generic one-filter LLN `linearProcess_avgSq_tendstoInProb`, which is the
+  analytic brick all three remaining debts were blocked on. Each of them now carries a
+  status note naming exactly what is left; the short version is: an `L²`-limit
+  past-measurability step (score `L²` and the conditional-variance identity), the
+  `private` `hannanVec`/`hannanVarZ_quadForm` chain in `ARMA/ScoreAnalysis.lean` (a new
+  scope blocker), an identical-distribution transfer for the Lindeberg input, and the
+  Taylor/delta-method bookkeeping of the last two debts.
   The "**pointwise ergodic theorem**" diagnosis is **WITHDRAWN** (2026-08-08/09):
   `ARMA/Consistency.lean`'s `armaResidualSS_tendstoInProb` proved the pointwise LLN
   ergodic-theorem-free, and the *uniform* half is a deterministic θ-modulus estimate,
@@ -52,10 +61,10 @@ listed here with their exact blockers.
   geometric-bound brick and the `ℓ¹` modulus of `π` are now available as
   `Consistency.exists_uniform_geometric_bound_arma` and
   `Consistency.exists_armaPi_l1_modulus`.
-  What remains a genuine *scope* blocker is `ARMA/ScoreAnalysis.lean`'s
-  `indep_noise_sigmaLT`, still `private` there and hence not citeable from this module;
-  `hannanScore_brownInputs` (1) and (3) both consume it, so closing them needs either
-  that file opened for editing or the independence statement re-proved here.
+  The scope blocker that used to sit here — `ARMA/ScoreAnalysis.lean`'s
+  `indep_noise_sigmaLT`, `private` and hence not citeable — is **gone**: wave
+  `ts/s1b-arma-finish` made it public. (Its replacement, narrower, is the still-`private`
+  `hannanVarZ_quadForm` chain; see `hannanScore_brownInputs`.)
 
 **Two findings reported by this wave.**
 1. `criterion_tendsto_contrast` is *strictly weaker* than the `S_T/T`-level LLN the
@@ -357,21 +366,62 @@ Given the martingale-difference property (which is PROVED upstream:
      term-by-term one, `∫|u² − z²| ≤ ‖u − z‖₂(‖u‖₂ + ‖z‖₂)`, followed by one Markov
      inequality. (The `L²` route really does need fourth cumulants; that part of the note
      stands, and it is exactly why the route goes through `L¹` + a.e. convergence.)
-   **Scope blocker.** Consistency's implementation (`blockResid`, `cTrunc`,
-   `ae_tendsto_avg_blockResid_sq`, `tendsto_avg_of_tendsto_block`, `integral_defect_le`,
-   the `l2n` toolkit) is `private` to that file, so it cannot be imported here. Reusing it
-   requires relocating the reusable core to a file both can see (`Process/LinearProcess`
-   or a new `ForMathlib` module); otherwise it must be duplicated. Note also that here the
-   filter is applied to *two* linear processes (`U` and `V`) with different coefficient
-   sequences, so the surrogate is a sum of two `blockResid`-type windows and the
-   combinatorial Parseval identity is needed in a bilinear form.
+   **Scope blocker DISSOLVED (2026-08-09, wave `ts/s1b-arma-finish`).** The relocation
+   this note asked for is unnecessary: the reusable core has been used, inside
+   `ARMA/Consistency.lean`, to prove the *generic one-filter* statement
+
+     `Consistency.linearProcess_avgSq_tendstoInProb` (public, axiom-clean):
+     for i.i.d. noise and any absolutely summable `c` with `W` a linear process of `c`,
+     `T⁻¹ Σ_{t<T} W_{t+1}² →p σ² Σ_n c_n²`,
+
+   which is exactly what (2) consumes. Two predictions of the note above are
+   **overturned**: (a) the *bilinear* Parseval identity is **not** needed — one collapses
+   `U` and `V` into a **single** coefficient sequence *first*, namely
+   `c_n = Σ_s d_s · hannanVec b₀ a₀ s n` (`ScoreAnalysis`), after which only the
+   one-filter LLN is used; (b) with `π = δ` the `min(T − i, m)` edge term of
+   `integral_defect_le` disappears, so the transfer is `O(T · tail_m)` with no `O(m)`
+   correction — the generic statement is strictly *simpler* than (C), not a duplicate
+   of it.
 3. The **averaged Lindeberg condition**. Under stationarity the average collapses to the
    single term `E[ξ_0² 1{|ξ_0| ≥ η√n}] → 0`, which is dominated convergence once (1) is
    available; it is bundled here because it shares (1)'s independence input.
 
 Recorded as one named debt rather than three, since (1)–(3) all reduce to the same two
-inputs: noise/past independence (`indep_noise_sigmaLT`, `private` upstream) and the
-`m`-dependent LLN described in (2). -/
+inputs: noise/past independence and the `m`-dependent LLN described in (2).
+
+**STATUS after wave `ts/s1b-arma-finish` (2026-08-09).** Both recorded blockers are gone:
+
+* `ScoreAnalysis.indep_noise_sigmaLT` is now **public** (un-`private`d by this wave), so
+  the independence input is citeable here;
+* the LLN of (2) is now **proved and public** as
+  `Consistency.linearProcess_avgSq_tendstoInProb`.
+
+The residue is therefore three *new*, precisely identified sub-items, none of which the
+original sketch names:
+
+1. **The `L²`-limit past-measurability.** `Z_t` is only given as an `L²` limit of the
+   `σ(ε_s : s < t)`-measurable partial sums `Σ_{n<N} ψ_n ε_{t−1−i−n}`; it is **not**
+   assumed measurable for the past (`hannanScore_brownInputs` deliberately does not carry
+   `hUadapt`/`hVadapt` — those appear only in `hannanScore_clt`). Every use of "by the
+   same independence" in (1) and (2) silently needs an a.e.-equal `σ(ε_s : s < t)`-
+   measurable representative of `Z_t`, i.e. a subsequence-a.e. extraction from the `L²`
+   convergence plus `aestronglyMeasurable_of_tendsto_ae` **for the sub-σ-algebra**. This
+   is the real obstacle in (1) and in the identity `E[ξ_i²|𝓕_i] = σ²⟨d, Z_i⟩²`, and it is
+   not free. (Alternatively: strengthen the statement with `hUadapt`/`hVadapt`, which
+   `hannanScore_clt` already has available — but the statement is frozen.)
+2. **Linear-process closure plus the variance identity.** `⟨d, Z_t⟩ = Σ_n c_n ε_{t−n}`
+   with `c_n = Σ_s d_s · hannanVec b₀ a₀ s n` needs "a finite combination of shifted
+   linear processes is a linear process" (an `L²` triangle inequality; mechanical), and
+   then `Σ_n c_n² = dᵀ (hannanVarZ b₀ a₀) d` is **exactly**
+   `ScoreAnalysis.hannanVarZ_quadForm`. That lemma — and the whole
+   `hannanVec`/`hannanSeq`/`hannanShiftSeq` chain appearing in its *statement* — is still
+   `private` to `ARMA/ScoreAnalysis.lean`: a **new, sharper scope blocker** than the one
+   this note originally recorded, and the only one left for (2).
+3. **Identical distribution for the Lindeberg input.** (3)'s collapse "under stationarity
+   the average is the single term `E[ξ_0² 1{|ξ_0| ≥ η√n}]`" needs the `ξ_i` to be
+   identically distributed. Finite-block shift invariance is available
+   (`Consistency`'s `map_noise_block'` device), but transferring it through the `L²`
+   limit defining `U`, `V` is a separate step, with the same flavour as item 1. -/
 private theorem hannanScore_brownInputs [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -446,12 +496,27 @@ around `θ₀` then yields `0 = ∇Q_T(θ₀) + H_T(θ̄_T)(θ̂_T − θ₀) + 
   `√T·cᵀ(θ̂_T − θ₀) = σ⁻²·T^{−1/2} Σ_t ε_t ⟨W⁻¹c, Z_t⟩ + o_p(1)`,
 
 which is the statement below (the constant is fixed by the variance algebra recorded at
-the head of this section; `hannanVarZ_posDef` — itself an open `sorry` upstream — is what
-makes `W⁻¹` meaningful, whence the `hcop`/`hbdeg`/`hadeg` hypotheses).
+the head of this section; `hannanVarZ_posDef` is what makes `W⁻¹` meaningful, whence the
+`hcop`/`hbdeg`/`hadeg` hypotheses — and it is **PROVED** upstream, contrary to the
+now-stale remark that it was an open `sorry`).
 
-Blocked on the same two missing bricks as the rest of the lane: a *uniform* (in `θ` near
-`θ₀`) law of large numbers for the residual filters — the pointwise ergodic theorem — and
-Consistency's `mle_consistent`, still `sorry` upstream. -/
+**STATUS after wave `ts/s1b-arma-finish` (2026-08-09).** Two of the three recorded
+blockers are gone: `Consistency.mle_consistent` is **PROVED** (0-sorry, axiom-clean), and
+so is the local stochastic equicontinuity `armaProfileS_equicontinuous` above. The
+"pointwise ergodic theorem" diagnosis stays withdrawn. What is left is genuinely the
+Taylor/sandwich analysis itself, whose two inputs are:
+
+* `hannanScore_brownInputs` above (see its own status note for the three residual items);
+* the **Hessian ULLN** `H_T(θ̄_T) →p 2σ²W` uniformly on a ball. Its pointwise half is now
+  a direct instance of `Consistency.linearProcess_avgSq_tendstoInProb` applied to the
+  first/second-derivative filters of the residual (each is again a linear process of the
+  noise, with an absolutely summable coefficient sequence by
+  `Consistency.exists_uniform_geometric_bound_arma`); its uniform half is the same
+  `ℓ¹`-modulus argument as `Consistency.armaProfileS_locallyEquicontinuous`, applied to
+  the derivative filters instead of `π` itself. Neither is attempted here.
+
+Not attempted in this wave: the first-order condition from `hδTfast` (the
+`o(1/T)`-approximate minimality) and the mean-value expansion, which are the substance. -/
 private theorem armaMLE_linearization [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -942,8 +1007,19 @@ Two classical facts are bundled, because they are proved together (B&D §8.10, �
   (the AR(p) one-step predictor is already exact from `p` lags, so no further lag reduces
   the prediction variance).
 
-Blocked on the same missing brick as the rest of the lane — the ergodic LLN for
-`Γ̂_k →p Γ_k`, which is what makes the linearization's remainder `o_p(1)`. -/
+**STATUS after wave `ts/s1b-arma-finish` (2026-08-09).** The recorded blocker — "the
+ergodic LLN for `Γ̂_k →p Γ_k`" — is **available**. Each entry of `Γ̂_k` is a sample
+autocovariance `T⁻¹ Σ_t X_t X_{t+m}`, and polarization
+`X_t X_{t+m} = ¼((X_t + X_{t+m})² − (X_t − X_{t+m})²)` writes it as a difference of two
+instances of `Consistency.linearProcess_avgSq_tendstoInProb`, since `X_· ± X_{·+m}` is
+again a linear process of the noise with coefficient sequence
+`ψ_n ± ψ_{n−m}1{n ≥ m}` (absolutely summable). The sample-mean centring in `sampleACVF`
+costs one further application of the same brick plus a Markov step.
+
+What is left here is therefore the delta-method bookkeeping itself: the differentiability
+of `γ̂ ↦ (Γ̂_k⁻¹ γ̂_k)_k` at the population point (Cramer's rule plus `Γ_k` invertible),
+the propagation through the exact AR(k) recursion, and the reciprocal-variance identity
+`(Γ_k⁻¹)_{kk} = σ⁻²` for `k > p`. Not attempted in this wave. -/
 private theorem samplePACF_linearization [IsProbabilityMeasure μ] {p k : ℕ}
     {b0 : Fin p → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
     (h : IsAR b0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)

@@ -30,6 +30,23 @@ parameter, so approximate minimizers converge in probability.
   `StatLean/Bayesian` `ArgminConsistency` pattern; compactness supplied by
   restricting to a compact `𝓑`-subset containing `θ₀`, as Hannan does).
 
+**Status (2026-08-09, wave `ts/s1b-arma-finish`): this module is `sorry`-free and
+axiom-clean.** `mle_consistent` is proved; its last ingredient — local stochastic
+equicontinuity — is the public `armaProfileS_locallyEquicontinuous`. Two further public
+bricks were produced on the way and are meant to be cited downstream:
+
+* `linearProcess_avgSq_tendstoInProb` — the *generic* one-filter second-moment LLN
+  `T⁻¹ Σ_{t<T} W_{t+1}² →p σ² Σ_n c_n²` for any absolutely summable `c`, proved by the
+  same ergodic-theorem-free progression device as `armaResidualSS_tendstoInProb` (of
+  which it is **not** an instance: a general `c` is not an ARMA transfer sequence);
+* `exists_uniform_geometric_bound_arma` and `exists_armaPi_l1_modulus` (from the previous
+  wave), the deterministic uniformity inputs.
+
+The Gram-tail *difference* modulus that the 2026-08-09 route note demanded turned out to
+be unnecessary: consistency only needs a one-sided bound, so a `θ`-uniform `o_p(1)` bound
+on the correction term suffices, and that follows from the entrywise rank-one dominance
+`|G_{ij}| ≤ (1 − r²)⁻¹h_ih_j` — see `gramTail_uniform_tendstoInProb`.
+
 **Reference.** Hannan (1973) §2; Brockwell & Davis (1991) §10.8 (Props 10.8.1–10.8.3);
 FY Theorem 3.2 cites both. (`Hannan 1973 / B&D §10.8`.)
 -/
