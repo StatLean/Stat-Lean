@@ -44,7 +44,9 @@ theorem signAvg_eq_integral_signVec (g : (Fin n → ℝ) → ℝ) :
 countable index type and a uniformly bounded measurable family `F`,
 `E_{S∼Dⁿ} sup_{k∈K} (L_D(F k) − L_S(F k)) ≤ 2 E_{S∼Dⁿ} R(F ∘ S)`. -/
 theorem integral_sup_risk_sub_empRisk_le_two_mul_integral_empRad
-    [Countable ι] (F : ι → Z → ℝ) (K : Set ι) {c : ℝ}
+    (F : ι → Z → ℝ) (K : Set ι) {c : ℝ}
+    -- LEAN-ONLY: countable family per the batch sup policy
+    (hKc : K.Countable)
     -- USER-INPUT: nonempty family; SSBD §26.1 (implicit)
     (hK : K.Nonempty)
     -- USER-INPUT: measurability of the family; SSBD Remark 3.1

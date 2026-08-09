@@ -29,7 +29,7 @@ open scoped ENNReal BigOperators
 namespace StatLean.StatisticalLearning
 
 variable {Z ι : Type*} [MeasurableSpace Z] [StandardBorelSpace Z] [Nonempty Z]
-  {D : Measure Z} [IsProbabilityMeasure D] {n : ℕ} [Countable ι]
+  {D : Measure Z} [IsProbabilityMeasure D] {n : ℕ}
   {F : ι → Z → ℝ} {K : Set ι} {c : ℝ}
 
 /-- **SSBD Theorem 26.3 (first display)**: an ERM-style selector's expected
@@ -38,6 +38,8 @@ overfitting gap is at most twice the expected Rademacher complexity:
 theorem integral_risk_sub_empRisk_le_two_mul_integral_empRad
     {A : Sample Z n → ι}
     -- USER-INPUT: nonempty family; SSBD §26.1 (implicit)
+    -- LEAN-ONLY: countable family per the batch sup policy
+    (hKc : K.Countable)
     (hK : K.Nonempty)
     -- USER-INPUT: measurability of the family; SSBD Remark 3.1
     (hmeas : ∀ k, Measurable (F k))
@@ -60,6 +62,8 @@ competitor `k⋆ ∈ K`,
 `E_S[L_D(A(S))] − L_D(k⋆) ≤ 2 E_S R(F∘S)`. -/
 theorem integral_risk_erm_sub_risk_le_two_mul_integral_empRad
     {A : Sample Z n → ι} {k⋆ : ι}
+    -- LEAN-ONLY: countable family per the batch sup policy
+    (hKc : K.Countable)
     (hK : K.Nonempty)
     (hmeas : ∀ k, Measurable (F k))
     (hbdd : ∀ k ∈ K, ∀ z, |F k z| ≤ c)
@@ -80,6 +84,8 @@ the ERM excess risk over the best competitor is at most
 `2 E_{S'} R(F∘S')/δ`. -/
 theorem measure_erm_excess_le_two_mul_integral_empRad_div
     {A : Sample Z n → ι} {k⋆ : ι} {δ : ℝ}
+    -- LEAN-ONLY: countable family per the batch sup policy
+    (hKc : K.Countable)
     (hK : K.Nonempty)
     (hmeas : ∀ k, Measurable (F k))
     (hbdd : ∀ k ∈ K, ∀ z, |F k z| ≤ c)
@@ -101,6 +107,8 @@ theorem measure_erm_excess_le_two_mul_integral_empRad_div
 for every `k ∈ K`,
 `L_D(F k) − L_S(F k) ≤ 2 E_{S'∼Dⁿ} R(F∘S') + c √(2 ln(2/δ)/n)`. -/
 theorem rademacher_generalization_expected {δ : ℝ}
+    -- LEAN-ONLY: countable family per the batch sup policy
+    (hKc : K.Countable)
     (hK : K.Nonempty)
     (hmeas : ∀ k, Measurable (F k))
     -- USER-INPUT: uniform bound `|ℓ(h,z)| ≤ c`; SSBD Thm 26.5
@@ -119,6 +127,8 @@ theorem rademacher_generalization_expected {δ : ℝ}
 `≥ 1 − δ`, simultaneously for every `k ∈ K`,
 `L_D(F k) − L_S(F k) ≤ 2 R(F∘S) + 4c √(2 ln(4/δ)/n)`. -/
 theorem rademacher_generalization_empirical {δ : ℝ}
+    -- LEAN-ONLY: countable family per the batch sup policy
+    (hKc : K.Countable)
     (hK : K.Nonempty)
     (hmeas : ∀ k, Measurable (F k))
     (hbdd : ∀ k ∈ K, ∀ z, |F k z| ≤ c)
@@ -134,6 +144,8 @@ theorem rademacher_generalization_empirical {δ : ℝ}
 ERM selector `A` and any fixed `k⋆ ∈ K`, with probability `≥ 1 − δ`,
 `L_D(A(S)) − L_D(k⋆) ≤ 2 R(F∘S) + 5c √(2 ln(8/δ)/n)`. -/
 theorem rademacher_erm_excess {A : Sample Z n → ι} {k⋆ : ι} {δ : ℝ}
+    -- LEAN-ONLY: countable family per the batch sup policy
+    (hKc : K.Countable)
     (hK : K.Nonempty)
     (hmeas : ∀ k, Measurable (F k))
     (hbdd : ∀ k ∈ K, ∀ z, |F k z| ≤ c)
