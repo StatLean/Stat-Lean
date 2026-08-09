@@ -727,6 +727,451 @@ private lemma exists_block_scheme [IsProbabilityMeasure μ] {X : ℤ → Ω → 
     exact mul_le_mul_of_nonneg_right this (hnn _)
   exact ⟨l, s, k, hs1, hl1, hfit, hltop, hln0, hkl, hkα⟩
 
+/-- **The Bernstein block scheme, parametrised by the small block.**  Given any small-block
+length `s_n ≥ 1` with `s_n → ∞` and `s_n²/n → 0`, the big blocks `l_n = ⌊n/s_n⌋ + 1` and the
+count `k_n = ⌊n/(l_n + s_n)⌋` satisfy every constraint the Bernstein argument uses.  The
+choice `l_n s_n > n` forces `k_n ≤ s_n`, which is what turns `m α(m) → 0` into the
+Volkonskii–Rozanov budget `k_n α(s_n) → 0`. -/
+private lemma exists_block_scheme_of_small [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
+    (hα : Summable fun n : ℕ => alphaCoeff X μ n)
+    (s : ℕ → ℕ) (hs1 : ∀ n, 1 ≤ s n) (hstopN : Tendsto s atTop atTop)
+    (hsqn : Tendsto (fun n : ℕ => (s n : ℝ) ^ 2 / (n : ℝ)) atTop (𝓝 0)) :
+    ∃ l k : ℕ → ℕ,
+      (∀ n, l n = n / s n + 1) ∧ (∀ n, k n = n / (l n + s n)) ∧
+      (∀ n, 1 ≤ l n) ∧ (∀ n, k n * (l n + s n) ≤ n) ∧
+      Tendsto (fun n : ℕ => (l n : ℝ)) atTop atTop ∧
+      Tendsto (fun n : ℕ => (l n : ℝ) / (n : ℝ)) atTop (𝓝 0) ∧
+      Tendsto (fun n : ℕ => ((k n * l n : ℕ) : ℝ) / (n : ℝ)) atTop (𝓝 1) ∧
+      Tendsto (fun n : ℕ => (k n : ℝ) * alphaCoeff X μ (s n)) atTop (𝓝 0) := by
+  classical
+  obtain ⟨l, hldef⟩ : ∃ l : ℕ → ℕ, ∀ n, l n = n / s n + 1 := ⟨_, fun _ => rfl⟩
+  obtain ⟨k, hkdef⟩ : ∃ k : ℕ → ℕ, ∀ n, k n = n / (l n + s n) := ⟨_, fun _ => rfl⟩
+  have hl1 : ∀ n, 1 ≤ l n := fun n => by rw [hldef]; exact Nat.le_add_left 1 _
+  have hfit : ∀ n, k n * (l n + s n) ≤ n := fun n => by rw [hkdef]; exact Nat.div_mul_le_self _ _
+  have hsl : ∀ n, n < s n * l n := by
+    intro n
+    have h1 := Nat.div_add_mod n (s n)
+    have h2 : n % s n < s n := Nat.mod_lt _ (hs1 n)
+    have h3 : s n * l n = s n * (n / s n) + s n := by rw [hldef]; ring
+    omega
+  have hks : ∀ n, k n ≤ s n := by
+    intro n
+    by_contra hcon
+    rw [not_le] at hcon
+    have h1 : k n * l n ≤ n :=
+      le_trans (Nat.mul_le_mul_left (k n) (Nat.le_add_right (l n) (s n))) (hfit n)
+    have h2 : (s n + 1) * l n ≤ k n * l n := Nat.mul_le_mul_right _ hcon
+    have h3 : (s n + 1) * l n = s n * l n + l n := by ring
+    have h4 := hsl n
+    have h5 := hl1 n
+    omega
+  have hinvs : Tendsto (fun n : ℕ => (1 : ℝ) / (s n : ℝ)) atTop (𝓝 0) :=
+    tendsto_one_div_atTop_nhds_zero_nat.comp hstopN
+  have hinvn : Tendsto (fun n : ℕ => (1 : ℝ) / (n : ℝ)) atTop (𝓝 0) :=
+    tendsto_one_div_atTop_nhds_zero_nat
+  -- `l_n / n → 0`
+  have hln0 : Tendsto (fun n : ℕ => (l n : ℝ) / (n : ℝ)) atTop (𝓝 0) := by
+    refine squeeze_zero' (Eventually.of_forall fun n => by positivity) ?_
+      (by simpa only [add_zero] using hinvs.add hinvn)
+    filter_upwards [eventually_ge_atTop 1] with n hn
+    have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hs0 : (0 : ℝ) < (s n : ℝ) := by exact_mod_cast hs1 n
+    have hdiv : ((n / s n : ℕ) : ℝ) ≤ (n : ℝ) / (s n : ℝ) := Nat.cast_div_le
+    have hlc : (l n : ℝ) ≤ (n : ℝ) / (s n : ℝ) + 1 := by
+      rw [hldef]; push_cast; linarith
+    calc (l n : ℝ) / (n : ℝ) ≤ ((n : ℝ) / (s n : ℝ) + 1) / (n : ℝ) := by gcongr
+      _ = 1 / (s n : ℝ) + 1 / (n : ℝ) := by field_simp
+  -- `n / s_n² → ∞`, hence `l_n → ∞`
+  have hnsq : Tendsto (fun n : ℕ => (n : ℝ) / (s n : ℝ) ^ 2) atTop atTop := by
+    rw [tendsto_atTop]
+    intro b
+    by_cases hb : 0 < b
+    swap
+    · rw [not_lt] at hb
+      filter_upwards [eventually_ge_atTop 1] with n hn
+      have : (0 : ℝ) ≤ (n : ℝ) / (s n : ℝ) ^ 2 := by positivity
+      linarith
+    · filter_upwards [hsqn.eventually_le_const (show (0 : ℝ) < 1 / b by positivity),
+        eventually_ge_atTop 1] with n hle hn
+      have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+      have hs0 : (0 : ℝ) < (s n : ℝ) := by exact_mod_cast hs1 n
+      have hs2 : (0 : ℝ) < (s n : ℝ) ^ 2 := by positivity
+      rw [le_div_iff₀ hs2]
+      rw [div_le_div_iff₀ hn0 hb] at hle
+      linarith
+  have hltop : Tendsto (fun n : ℕ => (l n : ℝ)) atTop atTop := by
+    refine tendsto_atTop_mono' _ ?_ hnsq
+    filter_upwards [eventually_ge_atTop 1] with n hn
+    have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hs0 : (0 : ℝ) < (s n : ℝ) := by exact_mod_cast hs1 n
+    have hs1' : (1 : ℝ) ≤ (s n : ℝ) := by exact_mod_cast hs1 n
+    have hnl : (n : ℝ) < (s n : ℝ) * (l n : ℝ) := by exact_mod_cast hsl n
+    have hstep : (n : ℝ) / (s n : ℝ) ^ 2 ≤ (n : ℝ) / (s n : ℝ) := by
+      rw [div_le_div_iff₀ (by positivity) hs0]
+      nlinarith [mul_nonneg (mul_nonneg hn0.le hs0.le) (sub_nonneg.2 hs1')]
+    refine hstep.trans ?_
+    rw [div_le_iff₀ hs0]
+    nlinarith
+  -- `s_n / n → 0`
+  have hsn0 : Tendsto (fun n : ℕ => (s n : ℝ) / (n : ℝ)) atTop (𝓝 0) := by
+    refine squeeze_zero' (Eventually.of_forall fun n => by positivity) ?_ hsqn
+    filter_upwards [eventually_ge_atTop 1] with n hn
+    have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hs1' : (1 : ℝ) ≤ (s n : ℝ) := by exact_mod_cast hs1 n
+    gcongr
+    nlinarith
+  -- `k_n l_n / n → 1`
+  have hkl : Tendsto (fun n : ℕ => ((k n * l n : ℕ) : ℝ) / (n : ℝ)) atTop (𝓝 1) := by
+    have hlow : Tendsto (fun n : ℕ => 1 - (s n : ℝ) ^ 2 / (n : ℝ) - (l n : ℝ) / (n : ℝ)
+        - (s n : ℝ) / (n : ℝ)) atTop (𝓝 1) := by
+      simpa using ((tendsto_const_nhds.sub hsqn).sub hln0).sub hsn0
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' hlow tendsto_const_nhds ?_ ?_
+    · filter_upwards [eventually_ge_atTop 1] with n hn
+      have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+      have hkq : (l n + s n) * k n + n % (l n + s n) = n := by
+        rw [hkdef]; exact Nat.div_add_mod n (l n + s n)
+      have hmlt : n % (l n + s n) < l n + s n := Nat.mod_lt _ (by have := hl1 n; omega)
+      have hexp : (l n + s n) * k n = k n * l n + k n * s n := by ring
+      have hks' : k n * s n ≤ s n * s n := Nat.mul_le_mul_right _ (hks n)
+      have hnat : n ≤ k n * l n + s n * s n + l n + s n := by omega
+      have hcast : (n : ℝ) ≤ ((k n * l n : ℕ) : ℝ) + (s n : ℝ) ^ 2 + (l n : ℝ) + (s n : ℝ) := by
+        have h2 : ((n : ℕ) : ℝ) ≤ ((k n * l n + s n * s n + l n + s n : ℕ) : ℝ) := by
+          exact_mod_cast hnat
+        push_cast at h2 ⊢
+        nlinarith [h2]
+      have hne : (n : ℝ) ≠ 0 := ne_of_gt hn0
+      calc 1 - (s n : ℝ) ^ 2 / (n : ℝ) - (l n : ℝ) / (n : ℝ) - (s n : ℝ) / (n : ℝ)
+          = ((n : ℝ) - (s n : ℝ) ^ 2 - (l n : ℝ) - (s n : ℝ)) / (n : ℝ) := by field_simp
+        _ ≤ ((k n * l n : ℕ) : ℝ) / (n : ℝ) := by gcongr; linarith
+    · filter_upwards [eventually_ge_atTop 1] with n hn
+      have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+      have h1 : k n * l n ≤ n :=
+        le_trans (Nat.mul_le_mul_left (k n) (Nat.le_add_right (l n) (s n))) (hfit n)
+      rw [div_le_one hn0]
+      exact_mod_cast h1
+  -- `k_n α(s_n) → 0`
+  have hkα : Tendsto (fun n : ℕ => (k n : ℝ) * alphaCoeff X μ (s n)) atTop (𝓝 0) := by
+    have hnn : ∀ m : ℕ, 0 ≤ alphaCoeff X μ m := fun _ => alphaMixCoeff_nonneg
+    refine squeeze_zero (fun n => mul_nonneg (Nat.cast_nonneg _) (hnn _)) (fun n => ?_)
+      ((tendsto_mul_alphaCoeff hα).comp hstopN)
+    have : (k n : ℝ) ≤ (s n : ℝ) := by exact_mod_cast hks n
+    exact mul_le_mul_of_nonneg_right this (hnn _)
+  exact ⟨l, k, hldef, hkdef, hl1, hfit, hltop, hln0, hkl, hkα⟩
+
+/-- **The adaptive small block.**  Given a nonnegative bounded `η_l → 0`, there is a
+small-block length `s_n` admissible for the Bernstein scheme
+(`s_n ≥ 1`, `s_n → ∞`, `s_n²/n → 0`) whose companion big block `l_n = ⌊n/s_n⌋ + 1`
+satisfies `l_n² η(l_n) = o(n)`. -/
+private lemma exists_adaptive_small {η : ℕ → ℝ} (hη0 : ∀ l, 0 ≤ η l) {B0 : ℝ}
+    (hηB : ∀ l, η l ≤ B0) (hηlim : Tendsto η atTop (𝓝 0)) :
+    ∃ s : ℕ → ℕ, (∀ n, 1 ≤ s n) ∧ Tendsto s atTop atTop ∧
+      Tendsto (fun n : ℕ => (s n : ℝ) ^ 2 / (n : ℝ)) atTop (𝓝 0) ∧
+      Tendsto (fun n : ℕ => ((n / s n + 1 : ℕ) : ℝ) ^ 2 * η (n / s n + 1) / (n : ℝ))
+        atTop (𝓝 0) := by
+  classical
+  have hB0 : 0 ≤ B0 := le_trans (hη0 0) (hηB 0)
+  -- the antitone envelope of `η`
+  obtain ⟨θ, hθdef⟩ : ∃ θ : ℕ → ℝ, ∀ m, θ m = sSup (Set.range fun j : ℕ => η (j + m)) :=
+    ⟨_, fun _ => rfl⟩
+  have hbddA : ∀ m, BddAbove (Set.range fun j : ℕ => η (j + m)) := by
+    intro m
+    exact ⟨B0, by rintro x ⟨j, rfl⟩; exact hηB _⟩
+  have hne : ∀ m, (Set.range fun j : ℕ => η (j + m)).Nonempty := fun m => ⟨η m, ⟨0, by simp⟩⟩
+  have hθge : ∀ m l : ℕ, m ≤ l → η l ≤ θ m := by
+    intro m l hml
+    rw [hθdef]
+    refine le_csSup (hbddA m) ⟨l - m, ?_⟩
+    show η (l - m + m) = η l
+    rw [Nat.sub_add_cancel hml]
+  have hθ0 : ∀ m, 0 ≤ θ m := fun m => le_trans (hη0 m) (hθge m m le_rfl)
+  have hθlim : Tendsto θ atTop (𝓝 0) := by
+    refine NormedAddGroup.tendsto_nhds_zero.2 fun ε hε => ?_
+    obtain ⟨N, hN⟩ := eventually_atTop.1 (hηlim.eventually_le_const (half_pos hε))
+    filter_upwards [eventually_ge_atTop N] with m hm
+    rw [Real.norm_eq_abs, abs_of_nonneg (hθ0 m)]
+    have hle : θ m ≤ ε / 2 := by
+      rw [hθdef]
+      refine csSup_le (hne m) ?_
+      rintro x ⟨j, rfl⟩
+      exact hN _ (by omega)
+    linarith
+  -- the envelope evaluated at `⌊√n⌋/3`
+  obtain ⟨d, hddef⟩ : ∃ d : ℕ → ℝ, ∀ n, d n = θ (Nat.sqrt n / 3) := ⟨_, fun _ => rfl⟩
+  have hd0 : ∀ n, 0 ≤ d n := fun n => by rw [hddef]; exact hθ0 _
+  have hsqrt3top : Tendsto (fun n : ℕ => Nat.sqrt n / 3) atTop atTop := by
+    refine tendsto_atTop_atTop.2 fun b => ⟨(3 * b + 3) * (3 * b + 3), fun a ha => ?_⟩
+    have h1 : 3 * b + 3 ≤ Nat.sqrt a := by
+      calc 3 * b + 3 = Nat.sqrt ((3 * b + 3) * (3 * b + 3)) := (Nat.sqrt_eq _).symm
+        _ ≤ Nat.sqrt a := Nat.sqrt_le_sqrt ha
+    omega
+  have hdlim : Tendsto d atTop (𝓝 0) := by
+    have := hθlim.comp hsqrt3top
+    refine this.congr fun n => ?_
+    rw [hddef]
+    rfl
+  -- a strictly positive perturbation, its reciprocal, and the fourth root
+  obtain ⟨e, hedef⟩ : ∃ e : ℕ → ℝ, ∀ n, e n = d n + 1 / ((n : ℝ) + 1) := ⟨_, fun _ => rfl⟩
+  have he0 : ∀ n, 0 < e n := by
+    intro n
+    rw [hedef]
+    have : (0 : ℝ) < 1 / ((n : ℝ) + 1) := by positivity
+    linarith [hd0 n]
+  have helim : Tendsto e atTop (𝓝 0) := by
+    have h1 : Tendsto (fun n : ℕ => 1 / ((n : ℝ) + 1)) atTop (𝓝 0) :=
+      tendsto_one_div_add_atTop_nhds_zero_nat
+    have := hdlim.add h1
+    rw [add_zero] at this
+    exact this.congr fun n => (hedef n).symm
+  have hinv : Tendsto (fun n : ℕ => 1 / e n) atTop atTop := by
+    rw [tendsto_atTop]
+    intro b
+    by_cases hb : 0 < b
+    swap
+    · rw [not_lt] at hb
+      filter_upwards with n
+      have : (0 : ℝ) < 1 / e n := one_div_pos.2 (he0 n)
+      linarith
+    · filter_upwards [helim.eventually_le_const (show (0 : ℝ) < 1 / b by positivity)] with n hle
+      rw [le_div_iff₀ (he0 n)]
+      rw [le_div_iff₀ hb] at hle
+      linarith
+  obtain ⟨q, hqdef⟩ : ∃ q : ℕ → ℕ, ∀ n, q n = ⌊1 / e n⌋₊ := ⟨_, fun _ => rfl⟩
+  have hqtop : Tendsto q atTop atTop := by
+    have := tendsto_nat_floor_atTop (α := ℝ) |>.comp hinv
+    exact this.congr fun n => (hqdef n).symm
+  have hqd : ∀ n, (q n : ℝ) * d n ≤ 1 := by
+    intro n
+    have h1 : (q n : ℝ) ≤ 1 / e n := by
+      rw [hqdef]; exact Nat.floor_le (one_div_pos.2 (he0 n)).le
+    have h2 : d n ≤ e n := by rw [hedef]; nlinarith [(show (0:ℝ) < 1/((n:ℝ)+1) by positivity)]
+    calc (q n : ℝ) * d n ≤ (1 / e n) * d n := mul_le_mul_of_nonneg_right h1 (hd0 n)
+      _ ≤ (1 / e n) * e n := mul_le_mul_of_nonneg_left h2 (one_div_pos.2 (he0 n)).le
+      _ = 1 := one_div_mul_cancel (ne_of_gt (he0 n))
+  obtain ⟨c, hcdef⟩ : ∃ c : ℕ → ℕ, ∀ n, c n = Nat.sqrt (Nat.sqrt (q n)) := ⟨_, fun _ => rfl⟩
+  have hc4 : ∀ n, c n ^ 4 ≤ q n := by
+    intro n
+    have h1 : c n * c n ≤ Nat.sqrt (q n) := by rw [hcdef]; exact Nat.sqrt_le _
+    have h2 : Nat.sqrt (q n) * Nat.sqrt (q n) ≤ q n := Nat.sqrt_le _
+    calc c n ^ 4 = (c n * c n) * (c n * c n) := by ring
+      _ ≤ Nat.sqrt (q n) * Nat.sqrt (q n) := Nat.mul_le_mul h1 h1
+      _ ≤ q n := h2
+  have hctop : Tendsto c atTop atTop := by
+    have : Tendsto (fun m : ℕ => Nat.sqrt (Nat.sqrt m)) atTop atTop := by
+      have hs : Tendsto Nat.sqrt atTop atTop :=
+        tendsto_atTop_atTop.2 fun b => ⟨b * b, fun a ha => by
+          calc b = Nat.sqrt (b * b) := (Nat.sqrt_eq b).symm
+            _ ≤ Nat.sqrt a := Nat.sqrt_le_sqrt ha⟩
+      exact hs.comp hs
+    exact (this.comp hqtop).congr fun n => (hcdef n).symm
+  obtain ⟨a, hadef⟩ : ∃ a : ℕ → ℕ, ∀ n, a n = c n + 1 := ⟨_, fun _ => rfl⟩
+  have ha1 : ∀ n, 1 ≤ a n := fun n => by rw [hadef]; omega
+  have hatop : Tendsto (fun n : ℕ => (a n : ℝ)) atTop atTop := by
+    refine tendsto_natCast_atTop_atTop.comp ?_
+    exact tendsto_atTop_mono (fun n => by rw [hadef]; omega) hctop
+  -- the key budget `a_n² d_n → 0`
+  have hbudget : Tendsto (fun n : ℕ => (a n : ℝ) ^ 2 * d n) atTop (𝓝 0) := by
+    have hlim : Tendsto (fun n : ℕ => 4 / (c n : ℝ) ^ 2) atTop (𝓝 0) := by
+      have hcR : Tendsto (fun n : ℕ => (c n : ℝ) ^ 2) atTop atTop :=
+        (tendsto_pow_atTop (n := 2) (by norm_num)).comp
+          (tendsto_natCast_atTop_atTop.comp hctop)
+      exact hcR.const_div_atTop 4
+    refine squeeze_zero' (Eventually.of_forall fun n =>
+      mul_nonneg (by positivity) (hd0 n)) ?_ hlim
+    filter_upwards [hctop.eventually_ge_atTop 1] with n hcn
+    have hc0 : (0 : ℝ) < (c n : ℝ) := by exact_mod_cast hcn
+    have hcd : (c n : ℝ) ^ 4 * d n ≤ 1 := by
+      have h1 : ((c n ^ 4 : ℕ) : ℝ) ≤ ((q n : ℕ) : ℝ) := by exact_mod_cast hc4 n
+      push_cast at h1
+      calc (c n : ℝ) ^ 4 * d n ≤ (q n : ℝ) * d n := mul_le_mul_of_nonneg_right h1 (hd0 n)
+        _ ≤ 1 := hqd n
+    have haR : (a n : ℝ) = (c n : ℝ) + 1 := by rw [hadef]; push_cast; ring
+    have hc1 : (1 : ℝ) ≤ (c n : ℝ) := by exact_mod_cast hcn
+    have hle : (a n : ℝ) ^ 2 ≤ 4 * (c n : ℝ) ^ 2 := by
+      rw [haR]; nlinarith [hc1]
+    calc (a n : ℝ) ^ 2 * d n ≤ (4 * (c n : ℝ) ^ 2) * d n :=
+          mul_le_mul_of_nonneg_right hle (hd0 n)
+      _ ≤ 4 / (c n : ℝ) ^ 2 := by
+          rw [le_div_iff₀ (by positivity : (0 : ℝ) < (c n : ℝ) ^ 2)]
+          nlinarith [hcd]
+  -- the small block
+  obtain ⟨s, hsdef⟩ : ∃ s : ℕ → ℕ, ∀ n,
+      s n = Nat.sqrt n / a n + Nat.sqrt (Nat.sqrt (Nat.sqrt n)) + 1 := ⟨_, fun _ => rfl⟩
+  have hs1 : ∀ n, 1 ≤ s n := fun n => by rw [hsdef]; exact Nat.le_add_left 1 _
+  have hsqrttop : Tendsto Nat.sqrt atTop atTop :=
+    tendsto_atTop_atTop.2 fun b => ⟨b * b, fun a ha => by
+      calc b = Nat.sqrt (b * b) := (Nat.sqrt_eq b).symm
+        _ ≤ Nat.sqrt a := Nat.sqrt_le_sqrt ha⟩
+  have hsqrtdiv : Tendsto (fun n : ℕ => (Nat.sqrt n : ℝ) / (n : ℝ)) atTop (𝓝 0) := by
+    have hone : Tendsto (fun n : ℕ => (1 : ℝ) / (Nat.sqrt n : ℝ)) atTop (𝓝 0) :=
+      tendsto_one_div_atTop_nhds_zero_nat.comp hsqrttop
+    refine squeeze_zero' (Eventually.of_forall fun n => by positivity) ?_ hone
+    filter_upwards [eventually_ge_atTop 1] with n hn
+    have hs : 1 ≤ Nat.sqrt n := Nat.sqrt_pos.mpr hn
+    have hsq : (Nat.sqrt n : ℝ) * (Nat.sqrt n : ℝ) ≤ (n : ℝ) := by exact_mod_cast Nat.sqrt_le n
+    have hs0 : (0 : ℝ) < (Nat.sqrt n : ℝ) := by exact_mod_cast hs
+    rw [div_le_div_iff₀ (by positivity) hs0]
+    nlinarith
+  have hstop : Tendsto s atTop atTop := by
+    refine tendsto_atTop_mono (fun n => ?_) ((hsqrttop.comp hsqrttop).comp hsqrttop)
+    simp only [Function.comp_apply]
+    rw [hsdef]
+    exact Nat.le_succ_of_le (Nat.le_add_left _ _)
+  -- `s_n² / n → 0`
+  have hsq : Tendsto (fun n : ℕ => (s n : ℝ) ^ 2 / (n : ℝ)) atTop (𝓝 0) := by
+    have hlim : Tendsto (fun n : ℕ => 3 / (a n : ℝ) ^ 2
+        + 3 * ((Nat.sqrt n : ℝ) / (n : ℝ)) + 3 * (1 / (n : ℝ))) atTop (𝓝 0) := by
+      have h1 : Tendsto (fun n : ℕ => 3 / (a n : ℝ) ^ 2) atTop (𝓝 0) :=
+        ((tendsto_pow_atTop (n := 2) (by norm_num)).comp hatop).const_div_atTop 3
+      have h2 := hsqrtdiv.const_mul (3 : ℝ)
+      have h3 := tendsto_one_div_atTop_nhds_zero_nat.const_mul (3 : ℝ)
+      simpa using (h1.add h2).add h3
+    refine squeeze_zero' (Eventually.of_forall fun n => by positivity) ?_ hlim
+    filter_upwards [eventually_ge_atTop 1] with n hn
+    have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have ha0 : (0 : ℝ) < (a n : ℝ) := by exact_mod_cast ha1 n
+    have hr1 : (Nat.sqrt n : ℝ) * (Nat.sqrt n : ℝ) ≤ (n : ℝ) := by exact_mod_cast Nat.sqrt_le n
+    have hr3 : (Nat.sqrt (Nat.sqrt (Nat.sqrt n)) : ℝ) * (Nat.sqrt (Nat.sqrt (Nat.sqrt n)) : ℝ)
+        ≤ (Nat.sqrt n : ℝ) := by
+      have h1 : Nat.sqrt (Nat.sqrt (Nat.sqrt n)) * Nat.sqrt (Nat.sqrt (Nat.sqrt n))
+          ≤ Nat.sqrt (Nat.sqrt n) := Nat.sqrt_le _
+      have h2 : Nat.sqrt (Nat.sqrt n) ≤ Nat.sqrt n := Nat.sqrt_le_self _
+      have : Nat.sqrt (Nat.sqrt (Nat.sqrt n)) * Nat.sqrt (Nat.sqrt (Nat.sqrt n)) ≤ Nat.sqrt n :=
+        le_trans h1 h2
+      exact_mod_cast this
+    have hdvd : ((Nat.sqrt n / a n : ℕ) : ℝ) ≤ (Nat.sqrt n : ℝ) / (a n : ℝ) := Nat.cast_div_le
+    have hsc : (s n : ℝ) = ((Nat.sqrt n / a n : ℕ) : ℝ)
+        + (Nat.sqrt (Nat.sqrt (Nat.sqrt n)) : ℝ) + 1 := by
+      rw [hsdef]; push_cast; ring
+    have hx0 : (0 : ℝ) ≤ ((Nat.sqrt n / a n : ℕ) : ℝ) := Nat.cast_nonneg _
+    have hy0 : (0 : ℝ) ≤ (Nat.sqrt (Nat.sqrt (Nat.sqrt n)) : ℝ) := Nat.cast_nonneg _
+    have hxsq : ((Nat.sqrt n / a n : ℕ) : ℝ) ^ 2 * (a n : ℝ) ^ 2 ≤ (n : ℝ) := by
+      have h1 : ((Nat.sqrt n / a n : ℕ) : ℝ) * (a n : ℝ) ≤ (Nat.sqrt n : ℝ) :=
+        (le_div_iff₀ ha0).1 hdvd
+      have h2 := mul_self_le_mul_self (mul_nonneg hx0 ha0.le) h1
+      nlinarith [h2, hr1]
+    rw [div_le_iff₀ hn0, hsc]
+    have hexp : (3 / (a n : ℝ) ^ 2 + 3 * ((Nat.sqrt n : ℝ) / (n : ℝ)) + 3 * (1 / (n : ℝ)))
+        * (n : ℝ) = 3 * (n : ℝ) / (a n : ℝ) ^ 2 + 3 * (Nat.sqrt n : ℝ) + 3 := by
+      field_simp
+    rw [hexp]
+    have hxb : ((Nat.sqrt n / a n : ℕ) : ℝ) ^ 2 ≤ (n : ℝ) / (a n : ℝ) ^ 2 := by
+      rw [le_div_iff₀ (by positivity)]
+      exact hxsq
+    have hY2 : (Nat.sqrt (Nat.sqrt (Nat.sqrt n)) : ℝ) ^ 2 ≤ (Nat.sqrt n : ℝ) := by
+      nlinarith [hr3]
+    have hcomb : (((Nat.sqrt n / a n : ℕ) : ℝ) + (Nat.sqrt (Nat.sqrt (Nat.sqrt n)) : ℝ) + 1) ^ 2
+        ≤ 3 * ((Nat.sqrt n / a n : ℕ) : ℝ) ^ 2
+          + 3 * (Nat.sqrt (Nat.sqrt (Nat.sqrt n)) : ℝ) ^ 2 + 3 := by
+      nlinarith [sq_nonneg (((Nat.sqrt n / a n : ℕ) : ℝ)
+          - (Nat.sqrt (Nat.sqrt (Nat.sqrt n)) : ℝ)),
+        sq_nonneg (((Nat.sqrt n / a n : ℕ) : ℝ) - 1),
+        sq_nonneg ((Nat.sqrt (Nat.sqrt (Nat.sqrt n)) : ℝ) - 1)]
+    have hd1 : 3 * ((Nat.sqrt n / a n : ℕ) : ℝ) ^ 2 ≤ 3 * ((n : ℝ) / (a n : ℝ) ^ 2) := by
+      linarith
+    have hd2 : 3 * ((n : ℝ) / (a n : ℝ) ^ 2) = 3 * (n : ℝ) / (a n : ℝ) ^ 2 := by ring
+    linarith
+  -- the cubic budget for the companion big block
+  refine ⟨s, hs1, hstop, hsq, ?_⟩
+  have hlim : Tendsto (fun n : ℕ => 8 * (a n : ℝ) ^ 2 * d n + 2 * (d n * (1 / (n : ℝ))))
+      atTop (𝓝 0) := by
+    have h1 := hbudget.const_mul (8 : ℝ)
+    have h2 := (hdlim.mul tendsto_one_div_atTop_nhds_zero_nat).const_mul (2 : ℝ)
+    have := h1.add h2
+    simpa [mul_assoc] using this
+  refine squeeze_zero' (Eventually.of_forall fun n => ?_) ?_ hlim
+  · exact div_nonneg (mul_nonneg (by positivity) (hη0 _)) (Nat.cast_nonneg _)
+  filter_upwards [eventually_ge_atTop 1] with n hn
+  have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hr1n : 1 ≤ Nat.sqrt n := Nat.sqrt_pos.mpr hn
+  -- (F1) `s_n ≤ 3 ⌊√n⌋`
+  have hF1 : s n ≤ 3 * Nat.sqrt n := by
+    have h1 : Nat.sqrt n / a n ≤ Nat.sqrt n := Nat.div_le_self _ _
+    have h2 : Nat.sqrt (Nat.sqrt (Nat.sqrt n)) ≤ Nat.sqrt n :=
+      le_trans (Nat.sqrt_le_self _) (Nat.sqrt_le_self _)
+    rw [hsdef]
+    omega
+  -- (F2) `⌊√n⌋/3 ≤ l_n`
+  have hF2 : Nat.sqrt n / 3 ≤ n / s n + 1 := by
+    have h0 : 0 < 3 * Nat.sqrt n := by omega
+    have h1 : n / (3 * Nat.sqrt n) ≤ n / s n := Nat.div_le_div_left hF1 (hs1 n)
+    have h2 : Nat.sqrt n / 3 ≤ n / (3 * Nat.sqrt n) := by
+      rw [Nat.le_div_iff_mul_le h0]
+      have h3 : Nat.sqrt n / 3 * 3 ≤ Nat.sqrt n := Nat.div_mul_le_self _ _
+      have h4 : Nat.sqrt n * Nat.sqrt n ≤ n := Nat.sqrt_le n
+      calc Nat.sqrt n / 3 * (3 * Nat.sqrt n) = (Nat.sqrt n / 3 * 3) * Nat.sqrt n := by ring
+        _ ≤ Nat.sqrt n * Nat.sqrt n := Nat.mul_le_mul_right _ h3
+        _ ≤ n := h4
+    omega
+  -- (F3) `(n/s_n) ⌊√n⌋ ≤ n a_n`
+  have hF3 : (n / s n) * Nat.sqrt n ≤ n * a n := by
+    have hsa : Nat.sqrt n < s n * a n := by
+      have h1 := Nat.div_add_mod (Nat.sqrt n) (a n)
+      have h2 : Nat.sqrt n % a n < a n := Nat.mod_lt _ (ha1 n)
+      have h3 : s n * a n = (Nat.sqrt n / a n) * a n
+          + (Nat.sqrt (Nat.sqrt (Nat.sqrt n)) + 1) * a n := by rw [hsdef]; ring
+      have h4 : a n ≤ (Nat.sqrt (Nat.sqrt (Nat.sqrt n)) + 1) * a n := Nat.le_mul_of_pos_left _ (by omega)
+      nlinarith [h1, h2, h3, h4]
+    calc (n / s n) * Nat.sqrt n ≤ (n / s n) * (s n * a n) :=
+          Nat.mul_le_mul_left _ (le_of_lt hsa)
+      _ = ((n / s n) * s n) * a n := by ring
+      _ ≤ n * a n := Nat.mul_le_mul_right _ (Nat.div_mul_le_self _ _)
+  -- (F4) `n ≤ 4 ⌊√n⌋²`
+  have hF4 : n ≤ 4 * (Nat.sqrt n * Nat.sqrt n) := by
+    have h1 : n < (Nat.sqrt n + 1) * (Nat.sqrt n + 1) := Nat.lt_succ_sqrt n
+    nlinarith [hr1n]
+  -- assemble
+  have hR0 : (0 : ℝ) < (Nat.sqrt n : ℝ) := by exact_mod_cast hr1n
+  have hA1 : (1 : ℝ) ≤ (a n : ℝ) := by exact_mod_cast ha1 n
+  have hηd : η (n / s n + 1) ≤ d n := by
+    rw [hddef]
+    exact hθge _ _ hF2
+  have hL : ((n / s n + 1 : ℕ) : ℝ) ≤ (n : ℝ) * (a n : ℝ) / (Nat.sqrt n : ℝ) + 1 := by
+    have h3 : ((n / s n : ℕ) : ℝ) * (Nat.sqrt n : ℝ) ≤ (n : ℝ) * (a n : ℝ) := by
+      exact_mod_cast hF3
+    have : ((n / s n : ℕ) : ℝ) ≤ (n : ℝ) * (a n : ℝ) / (Nat.sqrt n : ℝ) := by
+      rw [le_div_iff₀ hR0]; exact h3
+    push_cast
+    linarith
+  have hL0 : (0 : ℝ) ≤ ((n / s n + 1 : ℕ) : ℝ) := Nat.cast_nonneg _
+  have hNR : (n : ℝ) ≤ 4 * ((Nat.sqrt n : ℝ) * (Nat.sqrt n : ℝ)) := by exact_mod_cast hF4
+  have hLsq : ((n / s n + 1 : ℕ) : ℝ) ^ 2
+      ≤ 2 * ((n : ℝ) * (a n : ℝ) / (Nat.sqrt n : ℝ)) ^ 2 + 2 := by
+    have hb0 : (0 : ℝ) ≤ (n : ℝ) * (a n : ℝ) / (Nat.sqrt n : ℝ) := by positivity
+    nlinarith [hL, hL0, hb0, sq_nonneg ((n : ℝ) * (a n : ℝ) / (Nat.sqrt n : ℝ) - 1)]
+  rw [div_le_iff₀ hn0]
+  have hstep : ((n / s n + 1 : ℕ) : ℝ) ^ 2 * η (n / s n + 1)
+      ≤ (2 * ((n : ℝ) * (a n : ℝ) / (Nat.sqrt n : ℝ)) ^ 2 + 2) * d n := by
+    have h1 : ((n / s n + 1 : ℕ) : ℝ) ^ 2 * η (n / s n + 1)
+        ≤ ((n / s n + 1 : ℕ) : ℝ) ^ 2 * d n :=
+      mul_le_mul_of_nonneg_left hηd (by positivity)
+    have h2 : ((n / s n + 1 : ℕ) : ℝ) ^ 2 * d n
+        ≤ (2 * ((n : ℝ) * (a n : ℝ) / (Nat.sqrt n : ℝ)) ^ 2 + 2) * d n :=
+      mul_le_mul_of_nonneg_right hLsq (hd0 n)
+    linarith
+  refine hstep.trans ?_
+  have hsqr : ((n : ℝ) * (a n : ℝ) / (Nat.sqrt n : ℝ)) ^ 2
+      = (n : ℝ) ^ 2 * (a n : ℝ) ^ 2 / ((Nat.sqrt n : ℝ) * (Nat.sqrt n : ℝ)) := by
+    field_simp
+  rw [hsqr]
+  have hkey : (n : ℝ) ^ 2 * (a n : ℝ) ^ 2 / ((Nat.sqrt n : ℝ) * (Nat.sqrt n : ℝ))
+      ≤ 4 * ((n : ℝ) * (a n : ℝ) ^ 2) := by
+    rw [div_le_iff₀ (by positivity)]
+    nlinarith [hNR, sq_nonneg ((a n : ℝ)), hn0.le, mul_nonneg hn0.le (sq_nonneg ((a n : ℝ)))]
+  have hd0n := hd0 n
+  have hfin : (2 * ((n : ℝ) ^ 2 * (a n : ℝ) ^ 2
+        / ((Nat.sqrt n : ℝ) * (Nat.sqrt n : ℝ))) + 2) * d n
+      ≤ (8 * (a n : ℝ) ^ 2 * d n + 2 * (d n * (1 / (n : ℝ)))) * (n : ℝ) := by
+    have h1 : 2 * ((n : ℝ) ^ 2 * (a n : ℝ) ^ 2 / ((Nat.sqrt n : ℝ) * (Nat.sqrt n : ℝ)))
+        ≤ 8 * ((n : ℝ) * (a n : ℝ) ^ 2) := by linarith
+    have h2 := mul_le_mul_of_nonneg_right h1 hd0n
+    have hne : (n : ℝ) ≠ 0 := ne_of_gt hn0
+    have h3 : (8 * (a n : ℝ) ^ 2 * d n + 2 * (d n * (1 / (n : ℝ)))) * (n : ℝ)
+        = 8 * ((n : ℝ) * (a n : ℝ) ^ 2) * d n + 2 * d n := by
+      field_simp
+    rw [h3]
+    linarith
+  exact hfin
+
 /-! #### Window laws, phase increments, and the Lindeberg input -/
 
 /-- `‖e^{ix} − 1‖ ≤ |x| + 5x²` — the crude phase-increment bound, read off the
