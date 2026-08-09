@@ -176,7 +176,12 @@ def completeSupport (n n₁ : ℕ) : Finset (Assignment n) :=
 theorem completeSupport_nonempty {n n₁ : ℕ}
     -- USER-INPUT: at most `n` units can be treated; Ding Definition 3.1
     (h : n₁ ≤ n) : (completeSupport n n₁).Nonempty := by
-  sorry
+  obtain ⟨t, -, ht⟩ := Finset.exists_subset_card_eq (s := (Finset.univ : Finset (Fin n)))
+    (n := n₁) (by simpa using h)
+  refine ⟨fun i => decide (i ∈ t), ?_⟩
+  have harm : armIdx (fun i => decide (i ∈ t)) true = t := by
+    ext i; simp [armIdx]
+  simp only [completeSupport, Finset.mem_filter, Finset.mem_univ, true_and, numTreated, harm, ht]
 
 /-- The **completely randomized experiment** (CRE) with `n₁` treated of `n` units: the
 uniform distribution on the `C(n, n₁)` assignment vectors with `n₁` ones
