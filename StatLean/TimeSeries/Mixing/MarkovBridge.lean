@@ -1958,6 +1958,22 @@ theorem alphaMixCoeff_le_of_measurable_state [IsProbabilityMeasure μ]
   · exact iSup₂_le fun s hs => (hYV s).comap_le.trans
       (le_iSup₂_of_le (s + d) (Set.mem_Ici.mpr (by have := Set.mem_Ici.mp hs; omega)) le_rfl)
 
+/-- **Process-vs-state comparison, β version.** Same statement as
+`alphaMixCoeff_le_of_measurable_state` for the β-coefficient; the proof is again pure
+monotonicity in the two σ-algebra arguments. -/
+theorem betaMixCoeff_le_of_measurable_state [IsProbabilityMeasure μ]
+    {Y : ℤ → Ω → ℝ} {V : ℤ → Ω → E} (hV : ∀ t, Measurable (V t)) {d : ℤ}
+    (hYV : ∀ s : ℤ, Measurable[MeasurableSpace.comap (V (s + d)) inferInstance] (Y s))
+    {n m : ℤ} (hnm : m ≤ n + d) :
+    betaMixCoeff μ (sigmaLE Y 0) (sigmaGE Y n)
+      ≤ betaMixCoeff μ (sigmaLE' V d) (sigmaGE' V m) := by
+  refine betaMixCoeff_mono' (mΩ := (inferInstance : MeasurableSpace Ω))
+    (iSup₂_le fun s _ => (hV s).comap_le) (iSup₂_le fun s _ => (hV s).comap_le) ?_ ?_
+  · exact iSup₂_le fun s hs => (hYV s).comap_le.trans
+      (le_iSup₂_of_le (s + d) (Set.mem_Iic.mpr (by have := Set.mem_Iic.mp hs; omega)) le_rfl)
+  · exact iSup₂_le fun s hs => (hYV s).comap_le.trans
+      (le_iSup₂_of_le (s + d) (Set.mem_Ici.mpr (by have := Set.mem_Ici.mp hs; omega)) le_rfl)
+
 theorem alphaCoeff_le_of_state_envelope [IsProbabilityMeasure μ]
     {Y : ℤ → Ω → ℝ} {V : ℤ → Ω → E} (hV : ∀ t, Measurable (V t))
     (hYV : ∀ s : ℤ, Measurable[MeasurableSpace.comap (V (s + 1)) inferInstance] (Y s))
