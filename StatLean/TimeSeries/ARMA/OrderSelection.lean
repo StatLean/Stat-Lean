@@ -150,10 +150,191 @@ noncomputable def armaBICmin (p q : ℕ) {T : ℕ} (x : Fin T → ℝ) : ℝ :=
   ⨅ ba : {ba : (Fin p → ℝ) × (Fin q → ℝ) // ARMAInvertibleParams ba.1 ba.2},
     armaBIC ba.val.1 ba.val.2 x
 
+/-! ### Assembly of BIC consistency over the grid cells
+
+`P(selection = (p₀,q₀)) → 1` is equivalent to the finitely many wrong cells each having
+vanishing probability: `tendsto_sel_of_cells` (**proved**) does the union bound, and the
+cells split into the two genuinely different mechanisms — the contrast gap (underfitting)
+and the penalty-vs-likelihood-ratio race (overfitting) — recorded as residues (U) and (O).
+No measurability of `armaBICmin` is needed anywhere in the assembly, since the cells are
+events of the *selection*, which is measurable by hypothesis. -/
+
+section BICAssembly
+
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+
+private lemma measurableSet_sel {psel qsel : ℕ → Ω → ℕ}
+    (hmeassel : ∀ T, Measurable (psel T) ∧ Measurable (qsel T)) (T p q : ℕ) :
+    MeasurableSet {ω | psel T ω = p ∧ qsel T ω = q} :=
+  ((hmeassel T).1 (measurableSet_singleton p)).inter ((hmeassel T).2 (measurableSet_singleton q))
+
+/-- The order-selection event decomposes over the grid: outside the true cell the
+selection lands in one of the finitely many remaining cells. -/
+private lemma tendsto_sel_of_cells [IsProbabilityMeasure μ] {P Q p0 q0 : ℕ}
+    {psel qsel : ℕ → Ω → ℕ}
+    (hmeassel : ∀ T, Measurable (psel T) ∧ Measurable (qsel T))
+    (hgrid : ∀ (T : ℕ) (ω : Ω), psel T ω ≤ P ∧ qsel T ω ≤ Q)
+    (hcells : ∀ p ≤ P, ∀ q ≤ Q, (p, q) ≠ (p0, q0) →
+      Tendsto (fun T : ℕ => (μ {ω | psel T ω = p ∧ qsel T ω = q}).toReal) atTop (𝓝 0)) :
+    Tendsto (fun T : ℕ => (μ {ω | psel T ω = p0 ∧ qsel T ω = q0}).toReal) atTop (𝓝 1) := by
+  classical
+  set S : Finset (ℕ × ℕ) :=
+    (Finset.range (P + 1) ×ˢ Finset.range (Q + 1)).erase (p0, q0) with hS
+  have hbadmeas : ∀ T : ℕ, MeasurableSet {ω | psel T ω = p0 ∧ qsel T ω = q0}ᶜ :=
+    fun T => (measurableSet_sel hmeassel T p0 q0).compl
+  -- the complement of the true cell is covered by the remaining grid cells
+  have hsub : ∀ T : ℕ, {ω | psel T ω = p0 ∧ qsel T ω = q0}ᶜ ⊆
+      ⋃ s ∈ S, {ω | psel T ω = s.1 ∧ qsel T ω = s.2} := by
+    intro T ω hω
+    have hgw := hgrid T ω
+    have hmem : (psel T ω, qsel T ω) ∈ S := by
+      rw [hS, Finset.mem_erase]
+      refine ⟨fun hc => hω ⟨?_, ?_⟩,
+        Finset.mem_product.2 ⟨Finset.mem_range.2 (by omega), Finset.mem_range.2 (by omega)⟩⟩
+      · exact congrArg Prod.fst hc
+      · exact congrArg Prod.snd hc
+    exact Set.mem_biUnion hmem (Set.mem_setOf.2 ⟨rfl, rfl⟩)
+  -- Markov/subadditivity bound on the bad event
+  have hbound : ∀ T : ℕ, (μ {ω | psel T ω = p0 ∧ qsel T ω = q0}ᶜ).toReal
+      ≤ ∑ s ∈ S, (μ {ω | psel T ω = s.1 ∧ qsel T ω = s.2}).toReal := by
+    intro T
+    have h1 : μ {ω | psel T ω = p0 ∧ qsel T ω = q0}ᶜ
+        ≤ ∑ s ∈ S, μ {ω | psel T ω = s.1 ∧ qsel T ω = s.2} :=
+      le_trans (measure_mono (hsub T)) (measure_biUnion_finset_le _ _)
+    have h2 : (∑ s ∈ S, μ {ω | psel T ω = s.1 ∧ qsel T ω = s.2}).toReal
+        = ∑ s ∈ S, (μ {ω | psel T ω = s.1 ∧ qsel T ω = s.2}).toReal :=
+      ENNReal.toReal_sum fun s _ => measure_ne_top _ _
+    rw [← h2]
+    refine ENNReal.toReal_mono ?_ h1
+    exact ENNReal.sum_ne_top.2 fun s _ => measure_ne_top _ _
+  -- each cell dies, so the finite sum does
+  have hsum : Tendsto (fun T : ℕ =>
+      ∑ s ∈ S, (μ {ω | psel T ω = s.1 ∧ qsel T ω = s.2}).toReal) atTop (𝓝 0) := by
+    have hstep : ∀ s ∈ S, Tendsto
+        (fun T : ℕ => (μ {ω | psel T ω = s.1 ∧ qsel T ω = s.2}).toReal) atTop (𝓝 0) := by
+      intro s hs
+      rw [hS, Finset.mem_erase, Finset.mem_product] at hs
+      exact hcells s.1 (by have := hs.2.1; simp only [Finset.mem_range] at this; omega)
+        s.2 (by have := hs.2.2; simp only [Finset.mem_range] at this; omega)
+        (by simpa using hs.1)
+    simpa using tendsto_finset_sum (x := atTop) S hstep
+  have hbad : Tendsto (fun T : ℕ => (μ {ω | psel T ω = p0 ∧ qsel T ω = q0}ᶜ).toReal)
+      atTop (𝓝 0) :=
+    squeeze_zero (fun T => ENNReal.toReal_nonneg) hbound hsum
+  have heq : ∀ T : ℕ, (μ {ω | psel T ω = p0 ∧ qsel T ω = q0}).toReal
+      = 1 - (μ {ω | psel T ω = p0 ∧ qsel T ω = q0}ᶜ).toReal := by
+    intro T
+    rw [prob_compl_eq_one_sub (measurableSet_sel hmeassel T p0 q0),
+      ENNReal.toReal_sub_of_le prob_le_one ENNReal.one_ne_top]
+    simp
+  simp only [heq]
+  simpa using (tendsto_const_nhds (x := (1 : ℝ)) (f := atTop)).sub hbad
+
+
+/-- **RESIDUE (U) — the underfitting cells** `p < p₀` or `q < q₀`.
+
+**Mechanism.** On `{psel = p, qsel = q}` the selection hypothesis gives
+`BICmin(p,q) ≤ BICmin(p₀,q₀) ≤ armaBIC b₀ a₀ x = T·ℓ*(b₀,a₀) + (p₀+q₀) log T`
+(the truth is admissible by `hB`), while
+`BICmin(p,q) ≥ T·(inf_{𝓑_{p,q}} ℓ*) + (p+q) log T`. So the cell dies as soon as
+`inf_{(b,a) ∈ 𝓑_{p,q}} [ℓ*(b,a,x) − ℓ*(b₀,a₀,x)] ≥ γ > 0` with probability `→ 1`, the
+penalty difference being `O(log T) = o(T)`.
+
+**What is missing, precisely.** The infimum in `armaBICmin` runs over the **whole open**
+region `𝓑_{p,q}`, up to its boundary. `Consistency.exists_contrast_gap` delivers exactly
+this gap — but only on a **compact** `K ⊆ 𝓑`, which is all `mle_consistent` needs and
+strictly less than what the frozen `iInf` asks for; the boundary regime (roots
+approaching the unit circle) is uncontrolled. That, not the contrast gap itself, is the
+content of (U).
+
+**Well-posedness caveat.** `armaBICmin` is a real `iInf`: on a sample where `armaBIC` is
+unbounded below on `𝓑_{p,q}` it takes the junk value `0` and `hminsel` becomes vacuous at
+that `ω`. This is not hypothetical — for constant data `x ≡ c ≠ 0` and the AR(1) family,
+`det Γ_T = (1−φ²)^{-1}` and `S = (1−φ²)c² + (T−1)(1−φ)²c²`, so
+`armaBIC = T log(S/T) + log det Γ_T + pen ∼ (T−1) log(1−φ) → −∞` as `φ → 1⁻` for `T ≥ 2`.
+Under the model this is a null event, but any proof has to discard it explicitly.
+
+**Scope.** `ARMA/Consistency.lean` is **not** in this file's import closure
+(`OrderSelection` imports only `ARMA/Likelihood`), and `exists_contrast_gap`,
+`armaContrastVar` and `criterion_tendsto_contrast` are `private` or unreachable here. So
+(U) cannot even be *stated* in contrast-variance terms without an import edge plus an
+un-`private`ing. -/
+private theorem bic_underfit_residue [IsProbabilityMeasure μ] {p0 q0 : ℕ}
+    {b0 : Fin p0 → ℝ} {a0 : Fin q0 → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
+    (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
+    (hB : ARMAInvertibleParams b0 a0)
+    (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
+    (hmeas : ∀ t, Measurable (X t))
+    {P Q : ℕ} (hpP : p0 ≤ P) (hqQ : q0 ≤ Q)
+    (psel qsel : ℕ → Ω → ℕ)
+    (hmeassel : ∀ T, Measurable (psel T) ∧ Measurable (qsel T))
+    (hminsel : ∀ (T : ℕ) (ω : Ω), psel T ω ≤ P ∧ qsel T ω ≤ Q ∧
+      ∀ p ≤ P, ∀ q ≤ Q,
+        armaBICmin (psel T ω) (qsel T ω) (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+          ≤ armaBICmin p q (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+    (p q : ℕ) (hp : p ≤ P) (hq : q ≤ Q) (hunder : p < p0 ∨ q < q0) :
+    Tendsto (fun T : ℕ => (μ {ω | psel T ω = p ∧ qsel T ω = q}).toReal) atTop (𝓝 0) := by
+  sorry
+
+/-- **RESIDUE (O) — the overfitting cells** `p₀ ≤ p`, `q₀ ≤ q`, `(p,q) ≠ (p₀,q₀)`.
+
+**Mechanism.** Here the contrast gap is *zero* — the larger model contains the truth — so
+the whole margin is the penalty: the cell dies iff
+`T·(ℓ*_min(p₀,q₀) − ℓ*_min(p,q)) < (p+q−p₀−q₀)·log T` with probability `→ 1`, i.e. iff the
+profiled likelihood-ratio statistic is `O_p(1)`.
+
+**What is missing, precisely.** `O_p(1)`-tightness of the likelihood ratio is a
+*second-order* statement: it is the quadratic expansion of `ℓ*` around `θ₀`, i.e. the
+score CLT together with the Hessian ULLN — exactly the content that
+`MLEAsymptotics.armaMLE_linearization` leaves open (its own status note names the two
+inputs). Consistency (`mle_consistent`, PROVED) is strictly weaker and cannot see this
+scale. On top of that, the infimum is again over the open `𝓑_{p,q}`, so the boundary
+control demanded by residue (U) is needed here too.
+
+Note this is where the frozen statement's `in probability` reading matters: an a.s.
+version would additionally need a summability/Borel-Cantelli upgrade of the same
+expansion, which nothing in the project supplies. -/
+private theorem bic_overfit_residue [IsProbabilityMeasure μ] {p0 q0 : ℕ}
+    {b0 : Fin p0 → ℝ} {a0 : Fin q0 → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
+    (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
+    (hB : ARMAInvertibleParams b0 a0)
+    (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
+    (hmeas : ∀ t, Measurable (X t))
+    {P Q : ℕ} (hpP : p0 ≤ P) (hqQ : q0 ≤ Q)
+    (psel qsel : ℕ → Ω → ℕ)
+    (hmeassel : ∀ T, Measurable (psel T) ∧ Measurable (qsel T))
+    (hminsel : ∀ (T : ℕ) (ω : Ω), psel T ω ≤ P ∧ qsel T ω ≤ Q ∧
+      ∀ p ≤ P, ∀ q ≤ Q,
+        armaBICmin (psel T ω) (qsel T ω) (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+          ≤ armaBICmin p q (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω))
+    (p q : ℕ) (hp : p ≤ P) (hq : q ≤ Q) (hover : p0 ≤ p) (hover' : q0 ≤ q)
+    (hne : (p, q) ≠ (p0, q0)) :
+    Tendsto (fun T : ℕ => (μ {ω | psel T ω = p ∧ qsel T ω = q}).toReal) atTop (𝓝 0) := by
+  sorry
+
+end BICAssembly
+
 /-- **DEBT (Hannan 1980; FY §3.4.3)**: BIC order-selection consistency. If the data
 are a stationary causal invertible ARMA(p₀, q₀) with iid noise, any measurable
 selection minimizing the BIC value function over a fixed grid containing `(p₀, q₀)`
-picks the true orders with probability tending to one. -/
+picks the true orders with probability tending to one.
+
+**STATUS after wave `ts/s12-model-selection` (2026-08-09).** PROVED over the two named
+residues `bic_underfit_residue` (U) and `bic_overfit_residue` (O) above; the grid union
+bound (`tendsto_sel_of_cells`) is proved and needs no measurability of `armaBICmin`.
+Three findings recorded at the residues:
+
+* the wave brief's expectation that underfitting "is killed by the contrast gap
+  (`exists_contrast_gap`, PROVED)" is **overturned twice over**: that lemma gives the gap
+  only on a **compact** `K ⊆ 𝓑`, whereas `armaBICmin` is an `iInf` over the whole *open*
+  `𝓑_{p,q}` up to its boundary; and it is `private` to `ARMA/Consistency.lean`, which is
+  not in this file's import closure at all;
+* overfitting is not "only the criterion LLN plus a quadratic bound": it is `O_p(1)`
+  tightness of the profiled likelihood ratio, i.e. precisely the second-order expansion
+  left open at `MLEAsymptotics.armaMLE_linearization`;
+* `armaBICmin` is a real `iInf` and *is* `−∞`-junk (hence `0`, making `hminsel` vacuous)
+  on some samples — explicitly, constant data in the AR(1) family. Null under the model,
+  but it has to be discarded by hand. -/
 theorem bic_consistency_debt {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
     [IsProbabilityMeasure μ] {p0 q0 : ℕ} {b0 : Fin p0 → ℝ} {a0 : Fin q0 → ℝ}
     {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
@@ -171,6 +352,16 @@ theorem bic_consistency_debt {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
           ≤ armaBICmin p q (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)) :
     Tendsto (fun T : ℕ =>
         (μ {ω | psel T ω = p0 ∧ qsel T ω = q0}).toReal) atTop (𝓝 1) := by
-  sorry
+  refine tendsto_sel_of_cells hmeassel
+    (fun T ω => ⟨(hminsel T ω).1, (hminsel T ω).2.1⟩) ?_
+  intro p hpP q hqQ hne
+  rcases lt_or_ge p p0 with hlt | hge
+  · exact bic_underfit_residue h hiid hσ hB hcausal hmeas hp hq psel qsel hmeassel hminsel
+      p q hpP hqQ (Or.inl hlt)
+  · rcases lt_or_ge q q0 with hlt' | hge'
+    · exact bic_underfit_residue h hiid hσ hB hcausal hmeas hp hq psel qsel hmeassel hminsel
+        p q hpP hqQ (Or.inr hlt')
+    · exact bic_overfit_residue h hiid hσ hB hcausal hmeas hp hq psel qsel hmeassel hminsel
+        p q hpP hqQ hge hge' hne
 
 end StatLean.TimeSeries
