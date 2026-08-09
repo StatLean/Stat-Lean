@@ -20,11 +20,16 @@ template for Theorem 6.3 (local-polynomial fitting) and the ch. 10 results.
 * (C1) joint strict stationarity (finite-dimensional-distribution form);
   `E(e_1 | X_1) = 0`, `E(e_1² | X_1) = σ²(X_1)`, `E|e_1|^δ < ∞` (δ > 2); the marginal
   `X_1` has a Lebesgue density `p`; `σ²`, `p` continuous at `x`, `p(x) > 0`.
-* (C2) stated in its **operative integrated form**: uniformly in the lag `j ≠ 0`,
-  `E[|e_0 e_j| g(X_0, X_j)] ≤ B · E[e_0²] · ∫∫ g` for nonnegative test functions `g` —
-  this is exactly what FY's "conditional density of `(X_1, X_{j})` given `(e_1, e_j)`
-  bounded uniformly in `j`" is used for (small-lag variance bound (2.76)), combined
-  with Cauchy–Schwarz on `E|e_1 e_j|`.
+* (C2) **as printed**, in its operative integrated form: uniformly in the lag `j ≠ 0`,
+  `E[|f(e_0, e_j)| g(X_0, X_j)] ≤ B · E|f(e_0, e_j)| · ∫∫ g` for **every** measurable `f`
+  and every nonnegative measurable `g`. This is exactly what "the conditional density of
+  `(X_1, X_j)` given `(e_1, e_j)` is bounded uniformly in `j`" gives: condition on the
+  errors, bound the conditional density of the `X`-pair by `B`, integrate the errors back
+  out. The single instance `f = e_0 e_j` (plus `2|ab| ≤ a² + b²` and stationarity, which
+  replace `E|e_0 e_j|` by `E[e_0²]`) is the small-lag variance bound (2.76); the *other*
+  instances are what steps (b)–(c) need, because the conditional recentring inside
+  `truncErr` strips the error factors out of the small-lag covariance (see
+  `tendsto_smallBlock_variance`).
 * (C3) α-mixing of the bivariate series (`pairAlphaCoeff`) with
   `Σ_t t^λ α(t)^{1−2/δ} < ∞` for some `λ > 1 − 2/δ`.
 * (C4) `W` bounded and measurable with `∫|W| < ∞`, `∫ W² < ∞`.
@@ -630,6 +635,23 @@ private theorem map_pair_eq_of_stat {X e : ℤ → Ω → ℝ}
   simp only at h
   rw [Measure.map_map hev (hmΦ t), Measure.map_map hev hmΨ] at h
   simpa [Function.comp] using h
+
+/-- Transport of a one-time integral: `E[F(X_t, e_t)] = E[F(X_0, e_0)]`. Used to move the
+error moments off the time index — in particular `E e_t² = E e_0²`, which is what turns
+FY's printed (C2) into the `E[e_0²]`-normalized instance (2.76) uses. -/
+private theorem integral_comp_pair_eq {X e : ℤ → Ω → ℝ}
+    (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
+    (hstat : ∀ (k : ℕ) (t : ℤ),
+      μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
+        = μ.map (fun ω (i : Fin k) => (X ((i : ℕ) : ℤ) ω, e ((i : ℕ) : ℤ) ω)))
+    (t : ℤ) {F : ℝ × ℝ → ℝ} (hF : Measurable F) :
+    ∫ ω, F (X t ω, e t ω) ∂μ = ∫ ω, F (X 0 ω, e 0 ω) ∂μ := by
+  have hmt : AEMeasurable (fun ω => (X t ω, e t ω)) μ :=
+    ((hmeasX t).prodMk (hmeasE t)).aemeasurable
+  have hm0 : AEMeasurable (fun ω => (X 0 ω, e 0 ω)) μ :=
+    ((hmeasX 0).prodMk (hmeasE 0)).aemeasurable
+  rw [← integral_map hmt hF.aestronglyMeasurable, map_pair_eq_of_stat hmeasX hmeasE hstat t,
+    integral_map hm0 hF.aestronglyMeasurable]
 
 /-- Two-time marginal transport: `((X_t, e_t), (X_{t+d}, e_{t+d})) ~ ((X_0, e_0), (X_d, e_d))`.
 Obtained from the `(d+1)`-window by evaluating at the first and last coordinates. -/
@@ -1391,10 +1413,11 @@ private theorem var_localized_sum [IsProbabilityMeasure μ]
     -- USER-INPUT: (2.74) δ-th conditional moment of the error, FY's silent reading of
     -- (C1); FY §2.6.4
     (hpb : ∀ v, p v ≤ Cp)
-    (hC2 : ∃ B : ℝ, 0 ≤ B ∧ ∀ j : ℤ, j ≠ 0 → ∀ g : ℝ × ℝ → ℝ, Measurable g →
-      (∀ v, 0 ≤ g v) →
-      ∫ ω, |e 0 ω * e j ω| * g (X 0 ω, X j ω) ∂μ
-        ≤ B * (∫ ω, e 0 ω ^ 2 ∂μ) *
+    -- (C2) USER-INPUT: (C2) as printed (conditional joint density bounded); FY §2.6.4
+    (hC2 : ∃ B : ℝ, 0 ≤ B ∧ ∀ j : ℤ, j ≠ 0 → ∀ f : ℝ × ℝ → ℝ, Measurable f →
+      ∀ g : ℝ × ℝ → ℝ, Measurable g → (∀ v, 0 ≤ g v) →
+      ∫ ω, |f (e 0 ω, e j ω)| * g (X 0 ω, X j ω) ∂μ
+        ≤ B * (∫ ω, |f (e 0 ω, e j ω)| ∂μ) *
           ∫ v, g v ∂(MeasureTheory.volume.prod MeasureTheory.volume))
     {lam : ℝ} (hlam : 1 - 2 / δ < lam)
     (hα : Summable fun t : ℕ => (t : ℝ) ^ lam * pairAlphaCoeff X e μ t ^ (1 - 2 / δ))
@@ -1407,7 +1430,7 @@ private theorem var_localized_sum [IsProbabilityMeasure μ]
         ∫ ω, (∑ t ∈ Finset.range n,
           e ((t : ℤ) + 1) ω * W ((X ((t : ℤ) + 1) ω - x) / h n)) ^ 2 ∂μ)
       atTop (𝓝 (σsq x * p x * ∫ v, W v ^ 2 ∂MeasureTheory.volume)) := by
-  obtain ⟨B, hB0, hB⟩ := hC2
+  obtain ⟨B, hB0, hC2gen⟩ := hC2
   -- (2.74), in the form FY actually uses it: `E|ξ_0|^δ ≤ K h`.
   obtain ⟨K, hK⟩ : ∃ K : ℝ, ∀ n : ℕ,
       ∫ ω, |e 0 ω * W ((X 0 ω - x) / h n)| ^ δ ∂μ ≤ K * h n :=
@@ -1537,6 +1560,38 @@ private theorem var_localized_sum [IsProbabilityMeasure μ]
     have hnn : ∫ a, ‖e 0 a * W ((X 0 a - x) / h n)‖ ^ δ ∂μ ≤ K * h n := by
       simpa only [Real.norm_eq_abs] using hK n
     exact Real.rpow_le_rpow hbase hnn (by positivity)
+  -- (C2) as printed, at the weight `f = e_0 e_j`: this is FY's (2.76) instance. The
+  -- normalization `E|e_0 e_j| ≤ E e_0²` is `2|ab| ≤ a² + b²` plus stationarity.
+  have hL2e : ∀ t : ℤ, MemLp (e t) 2 μ := by
+    intro t
+    have h0 : MemLp (fun ω => (fun z : ℝ × ℝ => z.2) (X 0 ω, e 0 ω)) 2 μ :=
+      heLδ.mono_exponent hδ2
+    exact memLp_comp_pair hmeasX hmeasE hstat t measurable_snd h0
+  have he2t : ∀ t : ℤ, ∫ ω, e t ω ^ 2 ∂μ = ∫ ω, e 0 ω ^ 2 ∂μ := fun t =>
+    integral_comp_pair_eq hmeasX hmeasE hstat t
+      (F := fun z : ℝ × ℝ => z.2 ^ 2) (by fun_prop)
+  have hB : ∀ j : ℤ, j ≠ 0 → ∀ g : ℝ × ℝ → ℝ, Measurable g → (∀ v, 0 ≤ g v) →
+      ∫ ω, |e 0 ω * e j ω| * g (X 0 ω, X j ω) ∂μ
+        ≤ B * (∫ ω, e 0 ω ^ 2 ∂μ) *
+          ∫ v, g v ∂(MeasureTheory.volume.prod MeasureTheory.volume) := by
+    intro j hj g hgm hg0
+    have hkey := hC2gen j hj (fun z : ℝ × ℝ => z.1 * z.2) (by fun_prop) g hgm hg0
+    simp only at hkey
+    refine hkey.trans ?_
+    have hgint : (0 : ℝ) ≤ ∫ v, g v ∂(MeasureTheory.volume.prod MeasureTheory.volume) :=
+      integral_nonneg hg0
+    refine mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left ?_ hB0) hgint
+    have habs : Integrable (fun ω => |e 0 ω * e j ω|) μ :=
+      ((hL2e 0).integrable_mul (hL2e j)).abs
+    have hsq0 : Integrable (fun ω => e 0 ω ^ 2) μ := (hL2e 0).integrable_sq
+    have hsqj : Integrable (fun ω => e j ω ^ 2) μ := (hL2e j).integrable_sq
+    have hmid : ∫ ω, |e 0 ω * e j ω| ∂μ ≤ ∫ ω, (e 0 ω ^ 2 + e j ω ^ 2) / 2 ∂μ := by
+      refine integral_mono habs ((hsq0.add hsqj).div_const 2) fun ω => ?_
+      nlinarith [sq_nonneg (|e 0 ω| - |e j ω|), sq_abs (e 0 ω), sq_abs (e j ω),
+        abs_mul (e 0 ω) (e j ω), abs_nonneg (e 0 ω), abs_nonneg (e j ω)]
+    refine hmid.trans (le_of_eq ?_)
+    rw [integral_div, integral_add hsq0 hsqj, he2t j]
+    ring
   -- (2.76): the small-lag bound
   have hsmall : ∀ (n j : ℕ), 1 ≤ j →
       |Gl n j| ≤ B * (∫ ω, e 0 ω ^ 2 ∂μ) * ((∫ v, |W v|) * h n) ^ 2 := by
@@ -2158,10 +2213,11 @@ private theorem tendsto_charFun_locTruncSum [IsProbabilityMeasure μ]
     -- USER-INPUT: (2.74) δ-th conditional moment of the error, FY's silent reading of
     -- (C1); FY §2.6.4
     (hpb : ∀ v, p v ≤ Cp)
-    (hC2 : ∃ B : ℝ, 0 ≤ B ∧ ∀ j : ℤ, j ≠ 0 → ∀ g : ℝ × ℝ → ℝ, Measurable g →
-      (∀ v, 0 ≤ g v) →
-      ∫ ω, |e 0 ω * e j ω| * g (X 0 ω, X j ω) ∂μ
-        ≤ B * (∫ ω, e 0 ω ^ 2 ∂μ) *
+    -- (C2) USER-INPUT: (C2) as printed (conditional joint density bounded); FY §2.6.4
+    (hC2 : ∃ B : ℝ, 0 ≤ B ∧ ∀ j : ℤ, j ≠ 0 → ∀ f : ℝ × ℝ → ℝ, Measurable f →
+      ∀ g : ℝ × ℝ → ℝ, Measurable g → (∀ v, 0 ≤ g v) →
+      ∫ ω, |f (e 0 ω, e j ω)| * g (X 0 ω, X j ω) ∂μ
+        ≤ B * (∫ ω, |f (e 0 ω, e j ω)| ∂μ) *
           ∫ v, g v ∂(MeasureTheory.volume.prod MeasureTheory.volume))
     {lam : ℝ} (hlam : 1 - 2 / δ < lam)
     (hα : Summable fun t : ℕ => (t : ℝ) ^ lam * pairAlphaCoeff X e μ t ^ (1 - 2 / δ))
@@ -2225,12 +2281,11 @@ theorem kernel_localized_clt [IsProbabilityMeasure μ]
     -- USER-INPUT: (2.74) δ-th conditional moment of the error, FY's silent reading of
     -- (C1); FY §2.6.4
     (hpb : ∀ v, p v ≤ Cp)
-    -- (C2) USER-INPUT: operative integrated form of the bounded conditional density
-    -- of (X₁, X_j) given the errors; FY (C2), see the module docstring
-    (hC2 : ∃ B : ℝ, 0 ≤ B ∧ ∀ j : ℤ, j ≠ 0 → ∀ g : ℝ × ℝ → ℝ, Measurable g →
-      (∀ v, 0 ≤ g v) →
-      ∫ ω, |e 0 ω * e j ω| * g (X 0 ω, X j ω) ∂μ
-        ≤ B * (∫ ω, e 0 ω ^ 2 ∂μ) *
+    -- (C2) USER-INPUT: (C2) as printed (conditional joint density bounded); FY §2.6.4
+    (hC2 : ∃ B : ℝ, 0 ≤ B ∧ ∀ j : ℤ, j ≠ 0 → ∀ f : ℝ × ℝ → ℝ, Measurable f →
+      ∀ g : ℝ × ℝ → ℝ, Measurable g → (∀ v, 0 ≤ g v) →
+      ∫ ω, |f (e 0 ω, e j ω)| * g (X 0 ω, X j ω) ∂μ
+        ≤ B * (∫ ω, |f (e 0 ω, e j ω)| ∂μ) *
           ∫ v, g v ∂(MeasureTheory.volume.prod MeasureTheory.volume))
     {lam : ℝ}
     -- (C3) USER-INPUT: α-mixing rate of the pair series; FY (C3)
