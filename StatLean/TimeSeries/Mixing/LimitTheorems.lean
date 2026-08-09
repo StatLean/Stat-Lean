@@ -316,27 +316,21 @@ private lemma sum_sub_double_eq (f : ℤ → ℝ) : ∀ n : ℕ,
 
 end Triangular
 
-/-- **FY Theorem 2.20(ii)** (in-text; erratum `4α(j)C²` applied): bounded zero-mean
-strictly stationary + summable α ⇒ summable ACVF and the variance-rate identity
-(2.63). -/
-theorem summable_acvf_and_var_rate_of_bounded [IsProbabilityMeasure μ]
-    {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
-    (hstat : IsStrictlyStationary X μ)
-    {C : ℝ}
-    -- USER-INPUT: uniform bound; FY Thm 2.20(ii)
-    (hbdd : ∀ t, ∀ᵐ ω ∂μ, |X t ω| ≤ C)
-    -- USER-INPUT: zero mean; FY §2.6.3 setup
-    (hmean : ∫ ω, X 0 ω ∂μ = 0)
-    -- USER-INPUT: summable mixing coefficients; FY Thm 2.20(ii)
-    (hα : Summable fun n : ℕ => alphaCoeff X μ n) :
-    (Summable fun k : ℤ => |acvf X μ k|) ∧
-      Tendsto (fun n : ℕ => (n : ℝ)⁻¹ *
-          variance (fun ω => ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) μ) atTop
-        (𝓝 (acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1))) := by
+/-- **The variance rate from summability alone.** For a weakly stationary process whose
+ACVF is absolutely summable, `n⁻¹ Var(S_n) → Σ_{k ∈ ℤ} γ(k) = γ(0) + 2 Σ_{j ≥ 1} γ(j)`:
+the exact triangular-weight expansion turns `n⁻¹ Var(S_n)` into the Fejér-weighted series
+`Σ_k (1 − |k|/n) γ(k)`, and Tannery's theorem (dominated convergence for series, dominant
+`|γ|`) passes to the limit.
+
+This is the analytic core shared by FY Theorem 2.20(ii) (bounded, `Σ α < ∞`) and its
+`δ`-moment counterpart 2.20(i) (`L^δ`, `Σ α^{1−2/δ} < ∞`) — the two differ only in how
+absolute summability of the ACVF is obtained (Billingsley vs. Davydov). -/
+private lemma tendsto_var_rate_of_summable [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
+    (hws : IsStationary X μ) (hsum : Summable fun k : ℤ => |acvf X μ k|) :
+    Tendsto (fun n : ℕ => (n : ℝ)⁻¹ *
+        variance (fun ω => ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) μ) atTop
+      (𝓝 (acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1))) := by
   classical
-  have hws : IsStationary X μ := hstat.isStationary hmeas (memLp_of_bdd hmeas hbdd 0 2)
-  have hsum : Summable fun k : ℤ => |acvf X μ k| := summable_abs_acvf' hmeas hstat hbdd hα
-  refine ⟨hsum, ?_⟩
   have hsumZ : Summable fun k : ℤ => acvf X μ k := hsum.of_abs
   have hsumN : Summable fun n : ℕ => acvf X μ (n : ℤ) := hsumZ.comp_injective Nat.cast_injective
   have hsumN1 : Summable fun n : ℕ => acvf X μ ((n : ℤ) + 1) := by
@@ -370,7 +364,7 @@ theorem summable_acvf_and_var_rate_of_bounded [IsProbabilityMeasure μ]
         = ∑ s ∈ Finset.range n, ∑ t ∈ Finset.range n, acvf X μ ((s : ℤ) - (t : ℤ)) :=
       Finset.sum_congr rfl fun s _ => Finset.sum_congr rfl fun t _ => cov_shift_pair hws s t
     have h0 := variance_fun_sum' (μ := μ) (X := fun t : ℕ => X ((t : ℤ) + 1))
-      (s := Finset.range n) (fun t _ => memLp_of_bdd hmeas hbdd ((t : ℤ) + 1) 2)
+      (s := Finset.range n) (fun t _ => hws.memLp _)
     rw [h0, h1, sum_sub_double_eq]
   -- (c) the Fejér-weighted family, extended by zero to all of `ℤ`
   set g : ℕ → ℤ → ℝ := fun n k =>
@@ -420,6 +414,28 @@ theorem summable_acvf_and_var_rate_of_bounded [IsProbabilityMeasure μ]
         exact abs_nonneg _
   rw [← hσeq]
   exact (Tendsto.congr (fun n => (hns n).symm) hdom)
+
+/-- **FY Theorem 2.20(ii)** (in-text; erratum `4α(j)C²` applied): bounded zero-mean
+strictly stationary + summable α ⇒ summable ACVF and the variance-rate identity
+(2.63). -/
+theorem summable_acvf_and_var_rate_of_bounded [IsProbabilityMeasure μ]
+    {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
+    (hstat : IsStrictlyStationary X μ)
+    {C : ℝ}
+    -- USER-INPUT: uniform bound; FY Thm 2.20(ii)
+    (hbdd : ∀ t, ∀ᵐ ω ∂μ, |X t ω| ≤ C)
+    -- USER-INPUT: zero mean; FY §2.6.3 setup
+    (hmean : ∫ ω, X 0 ω ∂μ = 0)
+    -- USER-INPUT: summable mixing coefficients; FY Thm 2.20(ii)
+    (hα : Summable fun n : ℕ => alphaCoeff X μ n) :
+    (Summable fun k : ℤ => |acvf X μ k|) ∧
+      Tendsto (fun n : ℕ => (n : ℝ)⁻¹ *
+          variance (fun ω => ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) μ) atTop
+        (𝓝 (acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1))) := by
+  classical
+  have hws : IsStationary X μ := hstat.isStationary hmeas (memLp_of_bdd hmeas hbdd 0 2)
+  have hsum : Summable fun k : ℤ => |acvf X μ k| := summable_abs_acvf' hmeas hstat hbdd hα
+  exact ⟨hsum, tendsto_var_rate_of_summable hws hsum⟩
 
 /-! ### Analytic bricks for the Bernstein-block CLT -/
 
@@ -1634,8 +1650,76 @@ theorem clt_of_bounded_alphaMixing [IsProbabilityMeasure μ]
   refine hfin.congr fun n => ?_
   ring
 
-/-- **DEBT (Bosq 1998 §1.5; FY Theorem 2.20(i))**: the `δ`-moment version of the
-variance rate: `E|X|^δ < ∞` (δ > 2) and `Σ_j α(j)^{1−2/δ} < ∞` suffice. -/
+/-! ### The `δ`-moment versions (FY Theorems 2.20(i)/2.21(i))
+
+The `L^δ` route replaces the Billingsley bound `|γ(n)| ≤ 4α(n)C²` by the **Davydov** bound
+`|γ(n)| ≤ 8 α(n)^{1−2/δ} ‖X_0‖_δ²` (`Mixing/Inequalities.abs_covariance_le_davydov` at
+`p = q = δ`); absolute summability of the ACVF then follows from `Σ α^{1−2/δ} < ∞`, and the
+variance rate is the shared analytic core `tendsto_var_rate_of_summable`. -/
+
+section Delta
+
+variable {X : ℤ → Ω → ℝ} {δ : ℝ}
+
+/-- `2 ≤ ENNReal.ofReal δ` for `2 < δ`. -/
+private lemma two_le_ofReal (hδ : 2 < δ) : (2 : ℝ≥0∞) ≤ ENNReal.ofReal δ := by
+  rw [show (2 : ℝ≥0∞) = ENNReal.ofReal 2 by simp]
+  exact ENNReal.ofReal_le_ofReal hδ.le
+
+/-- **Davydov bound on the ACVF** (FY Thm 2.20(i)), taken at `p = q = δ`: the lag-`n`
+covariance pairs the anchored past `σ{X_s : s ≤ 0}` (holding `X_0`) with the future
+`σ{X_s : s ≥ n}` (holding `X_n`), and strict stationarity makes the two `L^δ` norms equal.
+The `1/p + 1/q < 1` side condition of Davydov's inequality is exactly `δ > 2`. -/
+private lemma abs_acvf_le_alphaCoeff_davydov [IsProbabilityMeasure μ]
+    (hmeas : ∀ t, Measurable (X t)) (hstat : IsStrictlyStationary X μ)
+    (hδ : 2 < δ) (hLδ : MemLp (X 0) (ENNReal.ofReal δ) μ) (n : ℕ) :
+    |acvf X μ (n : ℤ)| ≤ 8 * alphaCoeff X μ n ^ (1 - 2 / δ)
+      * (eLpNorm (X 0) (ENNReal.ofReal δ) μ).toReal ^ 2 := by
+  have hδ0 : (0 : ℝ) < δ := by linarith
+  have hδ1 : (1 : ℝ) < δ := by linarith
+  have hpq : 1 / δ + 1 / δ < 1 := by
+    have h2 : 1 / δ + 1 / δ = 2 / δ := by ring
+    rw [h2, div_lt_one hδ0]; linarith
+  have h1 : sigmaLE X 0 ≤ (inferInstance : MeasurableSpace Ω) := sigmaLE_le hmeas 0
+  have h2 : sigmaGE X (n : ℤ) ≤ (inferInstance : MeasurableSpace Ω) := sigmaGE_le hmeas _
+  have hf : Measurable[sigmaLE X 0] (X 0) :=
+    (measurable_comap_self X 0).mono (comap_le_sigmaLE X le_rfl) le_rfl
+  have hg : Measurable[sigmaGE X (n : ℤ)] (X (n : ℤ)) :=
+    (measurable_comap_self X _).mono (comap_le_sigmaGE X le_rfl) le_rfl
+  have hid : IdentDistrib (X 0) (X (n : ℤ)) μ μ := hstat.identDistrib hmeas 0 (n : ℤ)
+  have hLδn : MemLp (X (n : ℤ)) (ENNReal.ofReal δ) μ := hid.memLp_snd hLδ
+  have hnorm : eLpNorm (X (n : ℤ)) (ENNReal.ofReal δ) μ
+      = eLpNorm (X 0) (ENNReal.ofReal δ) μ := (hid.eLpNorm_eq (ENNReal.ofReal δ)).symm
+  have key := abs_covariance_le_davydov h1 h2 hf hg hδ1 hδ1 hpq hLδ hLδn
+  rw [acvf, covariance_comm]
+  refine key.trans (le_of_eq ?_)
+  rw [hnorm, alphaCoeff]
+  have he : (1 : ℝ) - 1 / δ - 1 / δ = 1 - 2 / δ := by ring
+  rw [he]
+  ring
+
+/-- Absolute summability of the ACVF under the `δ`-moment hypotheses (first half of FY
+Theorem 2.20(i)): Davydov per lag, `Σ α^{1−2/δ} < ∞` over lags, and evenness of the ACVF
+to fold the negative lags in. -/
+private lemma summable_abs_acvf_davydov [IsProbabilityMeasure μ]
+    (hmeas : ∀ t, Measurable (X t)) (hstat : IsStrictlyStationary X μ)
+    (hδ : 2 < δ) (hLδ : MemLp (X 0) (ENNReal.ofReal δ) μ) (hws : IsStationary X μ)
+    (hα : Summable fun n : ℕ => alphaCoeff X μ n ^ (1 - 2 / δ)) :
+    Summable fun k : ℤ => |acvf X μ k| := by
+  have hpos : Summable fun n : ℕ => |acvf X μ (n : ℤ)| :=
+    Summable.of_nonneg_of_le (fun n => abs_nonneg _)
+      (fun n => abs_acvf_le_alphaCoeff_davydov hmeas hstat hδ hLδ n)
+      ((hα.mul_left 8).mul_right _)
+  refine Summable.of_nat_of_neg hpos ?_
+  simpa only [acvf_neg hws] using hpos
+
+end Delta
+
+/-- **FY Theorem 2.20(i)** (Bosq 1998 §1.5) — the `δ`-moment version of the variance rate:
+`E|X|^δ < ∞` (`δ > 2`) and `Σ_j α(j)^{1−2/δ} < ∞` give an absolutely summable ACVF and
+`n⁻¹ Var(S_n) → γ(0) + 2 Σ_{j ≥ 1} γ(j)`. Davydov's covariance inequality supplies the
+per-lag bound; the limit itself is the shared Fejér/Tannery core
+`tendsto_var_rate_of_summable`. -/
 theorem summable_acvf_and_var_rate_debt [IsProbabilityMeasure μ]
     {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
     (hstat : IsStrictlyStationary X μ)
@@ -1650,7 +1734,11 @@ theorem summable_acvf_and_var_rate_debt [IsProbabilityMeasure μ]
       Tendsto (fun n : ℕ => (n : ℝ)⁻¹ *
           variance (fun ω => ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) μ) atTop
         (𝓝 (acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1))) := by
-  sorry
+  have hws : IsStationary X μ :=
+    hstat.isStationary hmeas (hLδ.mono_exponent (two_le_ofReal hδ))
+  have hsum : Summable fun k : ℤ => |acvf X μ k| :=
+    summable_abs_acvf_davydov hmeas hstat hδ hLδ hws hα
+  exact ⟨hsum, tendsto_var_rate_of_summable hws hsum⟩
 
 /-- **DEBT (Peligrad; FY Theorem 2.21(i))**: the `δ`-moment CLT under the Thm 2.20(i)
 hypotheses and positive long-run variance. -/
