@@ -2709,20 +2709,37 @@ proved. It is stated here as a named theorem rather than left as an anonymous `h
 that proof, so that a sorry census names it (project charter §2, "`sorry` is a planned
 debt": lift it to a top-level lemma so future sessions see the gap).
 
-**Route (ergodic-theorem-free — see the full discussion at
-`armaProfileS_tendstoInProb`).** Truncate the composite filter at lag `m`. Along each
-arithmetic progression `t ≡ k (mod m)` the truncated squares `(r_t^{(m)})²` depend on
-*disjoint* windows of the iid noise, hence are genuinely i.i.d. and integrable (two moments
-on `ε` suffice), so `ProbabilityTheory.strong_law_ae` (Etemadi: pairwise independence and
-`L¹` only) applies to each progression; summing the `m` of them gives the `m`-dependent
-LLN, and `m → ∞` transfers by Cauchy–Schwarz. The Mathlib pin has **no** pointwise
+**The route, as executed (ergodic-theorem-free).** The Mathlib pin has **no** pointwise
 (Birkhoff) ergodic theorem — only von Neumann's mean ergodic theorem, an `L²` statement
-that does not reach the `L¹` variable `r_t(θ)²` — but this route does not need one. A
-*direct* `L²` LLN for `r_t(θ)²` is genuinely blocked by fourth cumulants.
+that does not reach the `L¹` variable `r_t(θ)²` — and a *direct* `L²` LLN for `r_t(θ)²`
+is genuinely blocked by fourth cumulants. Neither is needed:
+
+* **the finite-window surrogate** `blockResid`: `z_i^{(m)} = Σ_{d,n<m} π_d ψ_n ε_{i+1+d−n}`
+  truncates *both* the composite filter and the linear process, so it is a fixed linear
+  functional of the noise over the window `[i+1−m, i+m]` — the double truncation is what
+  makes the window finite (truncating only the filter still leaves the whole noise past);
+* **the progression device**: along `i ≡ k (mod 2m)` the windows are disjoint, so
+  `(z_i^{(m)})²` is i.i.d. (shift invariance of finite i.i.d. blocks for the law,
+  `iIndepFun.indepFun_finset` for the independence) and `L¹`, and Etemadi's
+  `ProbabilityTheory.strong_law_ae` applies progression by progression. Summing the `2m`
+  progressions handles `T` of the form `N·(2m)`; the general `T` follows from monotonicity
+  of the partial sums (`tendsto_avg_of_tendsto_block`);
+* **the second moment is exactly right**, by a *combinatorial* Parseval identity rather
+  than a Fourier one: the involution `((d,n),(d′,n′)) ↦ ((d,n′),(d′,n))` carries the
+  difference constraint `d − n = d′ − n′` (which is what `E[ε_a ε_b] = σ²δ_{ab}` produces
+  on the *reversed* window) to the sum constraint `d + n = d′ + n′` (which is the square of
+  the composite filter), leaving the summand fixed. Hence
+  `E[(z_i^{(m)})²] = σ² Σ_r (c_r^{(m)})² → σ² Σ_r c_r²`;
+* **the `m → ∞` transfer uses second moments only**: row by row,
+  `∫|u_i² − z_i²| = ∫|(u_i − z_i)(u_i + z_i)| ≤ ‖u_i − z_i‖₂ (‖u_i‖₂ + ‖z_i‖₂)`, and
+  `‖u_i − z_i‖₂` is bounded by the `π`-tail at `min(T − i, m)` plus `Σ|π| ·` the `ψ`-tail
+  at `m`. The `min` produces an edge term supported on the last `m` rows only, which costs
+  `O(m/T)`. Markov then gives the `L¹` half and the three-`ε` split finishes.
 
 **Orientation.** `Π_T` is *upper* triangular, so its rows are the **time-reversed**
-residuals `u_i = Σ_{j ≥ 0} π_j(θ) x_{i+j}` truncated at `x_T`; an implementation must
-truncate the composite filter *forwards* in `i`. -/
+residuals `u_i = Σ_{j ≥ 0} π_j(θ) x_{i+j}` truncated at `x_T` (`icoResid`); the composite
+filter is therefore truncated *forwards* in `i`, and the surrogate's window is centred at
+`i + 1`, not at `1`. -/
 theorem armaResidualSS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 b : Fin p → ℝ} {a0 a : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -3033,19 +3050,24 @@ statistic does not need it. The route, and what is actually left:
     (`rowSum_kernel_le`). Since `Cov u` never appears as an operator, no bound on it is
     needed; the second-moment matrix is used directly, and its mean-zero input
     (`integral_linearProcess_eq_zero`, `integral_mul_linearProcess`) is proved here.
-* **(C) — THE ONLY REMAINING GAP**, isolated below as the single `sorry` `hCLLN`:
-  `T⁻¹‖u‖² →p σ² Σ_j c_j²` — ergodic-theorem-free. Truncate the composite
-  filter at lag `m`. Along each arithmetic progression `t ≡ k (mod m)` the truncated
-  squares `(r_t^{(m)})²` depend on *disjoint* windows of the iid noise, so they are
-  genuinely independent and identically distributed, and integrable (two moments on
-  `ε` suffice). Mathlib's `ProbabilityTheory.strong_law_ae` (Etemadi: pairwise
-  independence and `L¹` only) therefore applies to each of the `m` progressions, and
-  summing them gives the `m`-dependent LLN. The `m → ∞` transfer is Cauchy–Schwarz,
-  `|T⁻¹Σ r² − T⁻¹Σ (r^{(m)})²| ≤ (T⁻¹Σ(r − r^{(m)})²)^{1/2} (T⁻¹Σ(|r| + |r^{(m)}|)²)^{1/2}`,
-  whose first factor has mean `σ² Σ_{j ≥ m} c_j² → 0`. The recorded "fourth cumulants"
-  obstruction is real, but it only blocks a *direct* `L²` LLN for `r_t(θ)²`; it does
-  not touch this route, which uses second moments only. The same device also absorbs
-  the edge effect of the truncation versus the two-sided residual.
+* **(C) — PROVED** as the named lemma `armaResidualSS_tendstoInProb` above:
+  `T⁻¹‖u‖² →p σ² Σ_j c_j²`, ergodic-theorem-free. See its docstring for the executed
+  route. Two amendments to the plan recorded here were needed:
+  - the truncation must be *double* (`blockResid`): truncating only the composite filter
+    at lag `m` leaves each `r_t^{(m)}` a function of the *entire* noise past, so the
+    progressions are not independent. Truncating the linear process at `m` as well makes
+    the window `[i+1−m, i+m]` finite, and the progression step is `2m`, not `m`;
+  - the `m → ∞` transfer is *not* the two-factor Cauchy–Schwarz recorded above but the
+    row-by-row one, `∫|u_i² − z_i²| ≤ ‖u_i − z_i‖₂ (‖u_i‖₂ + ‖z_i‖₂)`, followed by a
+    single Markov inequality. Both use second moments only, so the recorded "fourth
+    cumulants" obstruction (real, but only against a *direct* `L²` LLN for `r_t(θ)²`)
+    is untouched. The edge effect appears as the `min(T − i, m)` in the `π`-tail and
+    costs `O(m/T)`.
+  Its second-moment computation goes through a **combinatorial** Parseval identity — the
+  involution `((d,n),(d′,n′)) ↦ ((d,n′),(d′,n))` — rather than a Fourier argument; the
+  time-reversal of `Π_T` is exactly what turns the sum constraint into the difference
+  constraint, so the reversal is not merely harmless bookkeeping but the reason the
+  identity is needed.
 
   **Orientation (correcting the note at `armaProfileS_eq_gramTail_quadForm`).** `Π_T`
   is *upper* triangular (`det_piMat` proves determinant one from
@@ -3224,9 +3246,10 @@ theorem mle_consistent [IsProbabilityMeasure μ] {p q : ℕ}
   -- `hcopK : ∀ ba ∈ K, IsCoprime (arPoly ba.1) (maPoly ba.2)` — is now a hypothesis, and
   -- it excludes that witness. What remains is analytic debt, not falsity:
   --
-  --   (i)   `criterion_tendsto_contrast` — PROVED here, modulo `armaProfileS_tendstoInProb`,
-  --         whose steps (A) and (B) are now PROVED and whose only residue is the named
-  --         item (C) inside it (`hCLLN`: `T⁻¹‖u‖² →p σ² Σ_j c_j²`); see its docstring;
+  --   (i)   `criterion_tendsto_contrast` — PROVED here and now UNCONDITIONAL: steps (A),
+  --         (B) and (C) of `armaProfileS_tendstoInProb` are all proved
+  --         (`armaResidualSS_tendstoInProb` closed the last one), so this item is no
+  --         longer debt;
   --   (ii)  the positive contrast gap `inf {K(θ) − K(θ₀) : θ ∈ K, dist θ θ₀ ≥ δ} > 0`.
   --         Its *pointwise* half is now AVAILABLE: `armaContrastVar_eq_one_iff` (PROVED
   --         above, using exactly `hcop` and `hcopK`) plus `one_le_armaContrastVar` give
