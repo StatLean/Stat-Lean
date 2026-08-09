@@ -43,6 +43,7 @@ namespace StatLean.CausalInference
 variable {Ω : Type*} [MeasurableSpace Ω] {𝒳 : Type*} [MeasurableSpace 𝒳] [Fintype 𝒳]
   [MeasurableSingletonClass 𝒳] {μ : Measure Ω} {Z : Ω → Bool} {y1 y0 : Ω → ℝ} {X : Ω → 𝒳}
 
+omit [MeasurableSpace Ω] [MeasurableSpace 𝒳] [Fintype 𝒳] [MeasurableSingletonClass 𝒳] in
 /-- Auxiliary: the covariate cell is the preimage of a singleton — used to fold the
 `X ⁻¹' {x}` produced by the `ForMathlib.CondAlgebra` decomposition lemmas back into
 `cell`. -/
@@ -55,6 +56,7 @@ private lemma integrable_cond' [IsFiniteMeasure μ] {c : Set Ω} {f : Ω → ℝ
   · simp [cond_eq_zero_of_meas_eq_zero h]
   · exact (hf.integrableOn (s := c)).smul_measure (by simp [h])
 
+omit [MeasurableSpace 𝒳] [Fintype 𝒳] [MeasurableSingletonClass 𝒳] in
 /-- Auxiliary: a positive propensity says exactly that the treated arm of the cell is
 non-null — the form in which `Ignorability` consumes positivity. -/
 private lemma cond_treated_ne_zero {x : 𝒳} (h : 0 < propensity μ Z X x) :
@@ -63,6 +65,7 @@ private lemma cond_treated_ne_zero {x : 𝒳} (h : 0 < propensity μ Z X x) :
   rw [propensity, hm] at h
   simp at h
 
+omit [Fintype 𝒳] in
 /-- Auxiliary: a propensity below one says exactly that the control arm of the cell is
 non-null, the two arm probabilities inside a cell summing to one. -/
 private lemma cond_control_ne_zero [IsProbabilityMeasure μ] {x : 𝒳} (hX : Measurable X)
@@ -70,12 +73,10 @@ private lemma cond_control_ne_zero [IsProbabilityMeasure μ] {x : 𝒳} (hX : Me
     (μ[|cell X x]) {ω | Z ω = false} ≠ 0 := by
   intro hm
   have hsum := cond_treated_add_cond_control (μ := μ) (X := X) (Z := Z) hX hZ hcell
-  rw [show ((μ[|X ⁻¹' {x}]) {ω | Z ω = false}) = 0 from hm] at hsum
-  simp at hsum
-  rw [propensity, treatedEvent] at h
-  simp only [cell] at h
-  rw [hsum] at h
-  norm_num at h
+  simp only [cell_eq] at hsum
+  rw [hm, ENNReal.toReal_zero, add_zero] at hsum
+  simp only [propensity, treatedEvent] at h
+  linarith
 
 /-- **Standardization identifies the treated mean** (Ding Theorem 10.1, eq. (10.5)):
 `E[Y(1)] = ∑ₓ P(X = x)·m₁(x)`. -/
@@ -159,6 +160,7 @@ theorem cate_eq_cellMean_sub [IsProbabilityMeasure μ]
     cellMean_false_eq_of_unconfounded hu hy1 hy0 hZ hX hi0 hcell
       (cond_control_ne_zero hX hZ hcell (hpos x hcell).2)]
 
+omit [Fintype 𝒳] in
 /-- Auxiliary: under mean ignorability the within-cell mean of a potential outcome is the
 regression function of *either* arm — the two arm means are equal and their probabilities
 sum to one. -/
