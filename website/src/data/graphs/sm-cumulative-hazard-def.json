@@ -1,0 +1,22 @@
+{
+  "root": "StatLean.StatisticalModels.Survival.cumHazard",
+  "nodes": [
+    {"id":"StatLean.StatisticalModels.Survival.cumHazard","label":"cumHazard","full":"StatLean.StatisticalModels.Survival.cumHazard","kind":"root","decl":"def","module":"StatLean.StatisticalModels.Survival.Defs"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Real.measurableSpace","label":"measurableSpace","full":"Real.measurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"MeasureTheory.Measure.withDensity","label":"withDensity","full":"MeasureTheory.Measure.withDensity","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.WithDensity"},
+    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"Set","label":"Set","full":"Set","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"Set.Ici","label":"Ici","full":"Set.Ici","kind":"mathlib","decl":"def","module":"Mathlib.Order.Interval.Set.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalModels.Survival.cumHazard","target":"MeasureTheory.Measure"},
+    {"source":"StatLean.StatisticalModels.Survival.cumHazard","target":"Real"},
+    {"source":"StatLean.StatisticalModels.Survival.cumHazard","target":"Real.measurableSpace"},
+    {"source":"StatLean.StatisticalModels.Survival.cumHazard","target":"MeasureTheory.Measure.withDensity"},
+    {"source":"StatLean.StatisticalModels.Survival.cumHazard","target":"ENNReal"},
+    {"source":"StatLean.StatisticalModels.Survival.cumHazard","target":"Set"},
+    {"source":"StatLean.StatisticalModels.Survival.cumHazard","target":"Set.Ici"}
+  ]
+}

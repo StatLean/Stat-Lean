@@ -1,0 +1,34 @@
+{
+  "root": "StatLean.StatisticalModels.Survival.cumHazardJump_kaplanMeierMeasure",
+  "nodes": [
+    {"id":"StatLean.StatisticalModels.Survival.cumHazardJump_kaplanMeierMeasure","label":"cumHazardJump_kaplanMeierMeasure","full":"StatLean.StatisticalModels.Survival.cumHazardJump_kaplanMeierMeasure","kind":"root","decl":"thm","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
+    {"id":"StatLean.StatisticalModels.Survival.eventTimes","label":"eventTimes","full":"StatLean.StatisticalModels.Survival.eventTimes","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
+    {"id":"StatLean.StatisticalModels.Survival.naJump","label":"naJump","full":"StatLean.StatisticalModels.Survival.naJump","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
+    {"id":"StatLean.StatisticalModels.Survival.kmLimit","label":"kmLimit","full":"StatLean.StatisticalModels.Survival.kmLimit","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
+    {"id":"StatLean.StatisticalModels.Survival.cumHazardJump","label":"cumHazardJump","full":"StatLean.StatisticalModels.Survival.cumHazardJump","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.Defs"},
+    {"id":"StatLean.StatisticalModels.Survival.kaplanMeierMeasure","label":"kaplanMeierMeasure","full":"StatLean.StatisticalModels.Survival.kaplanMeierMeasure","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
+    {"id":"StatLean.StatisticalModels.Survival.eventCount","label":"eventCount","full":"StatLean.StatisticalModels.Survival.eventCount","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
+    {"id":"StatLean.StatisticalModels.Survival.atRisk","label":"atRisk","full":"StatLean.StatisticalModels.Survival.atRisk","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
+    {"id":"StatLean.StatisticalModels.Survival.cumHazard","label":"cumHazard","full":"StatLean.StatisticalModels.Survival.cumHazard","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.Defs"},
+    {"id":"StatLean.StatisticalModels.Survival.kaplanMeierSF","label":"kaplanMeierSF","full":"StatLean.StatisticalModels.Survival.kaplanMeierSF","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
+    {"id":"Real.borelSpace","label":"borelSpace","full":"Real.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"StatLean.StatisticalModels.Survival.kaplanMeier","label":"kaplanMeier","full":"StatLean.StatisticalModels.Survival.kaplanMeier","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalModels.Survival.cumHazardJump_kaplanMeierMeasure","target":"StatLean.StatisticalModels.Survival.eventTimes"},
+    {"source":"StatLean.StatisticalModels.Survival.cumHazardJump_kaplanMeierMeasure","target":"StatLean.StatisticalModels.Survival.naJump"},
+    {"source":"StatLean.StatisticalModels.Survival.cumHazardJump_kaplanMeierMeasure","target":"StatLean.StatisticalModels.Survival.kmLimit"},
+    {"source":"StatLean.StatisticalModels.Survival.cumHazardJump_kaplanMeierMeasure","target":"StatLean.StatisticalModels.Survival.cumHazardJump"},
+    {"source":"StatLean.StatisticalModels.Survival.cumHazardJump_kaplanMeierMeasure","target":"StatLean.StatisticalModels.Survival.kaplanMeierMeasure"},
+    {"source":"StatLean.StatisticalModels.Survival.naJump","target":"StatLean.StatisticalModels.Survival.eventCount"},
+    {"source":"StatLean.StatisticalModels.Survival.naJump","target":"StatLean.StatisticalModels.Survival.atRisk"},
+    {"source":"StatLean.StatisticalModels.Survival.kmLimit","target":"StatLean.StatisticalModels.Survival.eventTimes"},
+    {"source":"StatLean.StatisticalModels.Survival.kmLimit","target":"StatLean.StatisticalModels.Survival.naJump"},
+    {"source":"StatLean.StatisticalModels.Survival.cumHazardJump","target":"StatLean.StatisticalModels.Survival.cumHazard"},
+    {"source":"StatLean.StatisticalModels.Survival.kaplanMeierMeasure","target":"StatLean.StatisticalModels.Survival.kaplanMeierSF"},
+    {"source":"StatLean.StatisticalModels.Survival.kaplanMeierMeasure","target":"Real.borelSpace"},
+    {"source":"StatLean.StatisticalModels.Survival.kaplanMeierSF","target":"StatLean.StatisticalModels.Survival.kaplanMeier"},
+    {"source":"StatLean.StatisticalModels.Survival.kaplanMeier","target":"StatLean.StatisticalModels.Survival.eventTimes"},
+    {"source":"StatLean.StatisticalModels.Survival.kaplanMeier","target":"StatLean.StatisticalModels.Survival.naJump"}
+  ]
+}

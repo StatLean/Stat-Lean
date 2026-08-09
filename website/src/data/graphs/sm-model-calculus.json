@@ -1,0 +1,16 @@
+{
+  "root": "StatLean.StatisticalModels.observe",
+  "nodes": [
+    {"id":"StatLean.StatisticalModels.observe","label":"observe","full":"StatLean.StatisticalModels.observe","kind":"root","decl":"def","module":"StatLean.StatisticalModels.Calculus.Defs"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"ProbabilityTheory.Kernel","label":"Kernel","full":"ProbabilityTheory.Kernel","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Kernel.Defs"},
+    {"id":"MeasureTheory.Measure.bind","label":"bind","full":"MeasureTheory.Measure.bind","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.GiryMonad"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalModels.observe","target":"MeasurableSpace"},
+    {"source":"StatLean.StatisticalModels.observe","target":"MeasureTheory.Measure"},
+    {"source":"StatLean.StatisticalModels.observe","target":"ProbabilityTheory.Kernel"},
+    {"source":"StatLean.StatisticalModels.observe","target":"MeasureTheory.Measure.bind"}
+  ]
+}
