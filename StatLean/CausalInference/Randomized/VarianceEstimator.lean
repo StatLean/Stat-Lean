@@ -38,6 +38,211 @@ namespace StatLean.CausalInference
 
 variable {n n₁ n₀ : ℕ}
 
+/-! ### LEAN-ONLY private helpers: `Design.expect` algebra and raw-moment identities
+
+`Design.expect` is a normalized `Finset` sum, so linearity is bookkeeping; the four
+`expect_*` lemmas below and `var_eq` carry no mathematical content. (`CompleteRandomization`
+has a private `dvar_eq` of the same shape; private names do not cross files, so the
+two-line derivation is repeated here.) -/
+
+/-- Expectations only see the support. -/
+private lemma expect_congr (D : Design n) {f g : Assignment n → ℝ}
+    (h : ∀ z ∈ D.support, f z = g z) : D.expect f = D.expect g := by
+  simp only [Design.expect]
+  rw [Finset.sum_congr rfl h]
+
+/-- The expectation of a constant. -/
+private lemma expect_const (D : Design n) (c : ℝ) : D.expect (fun _ => c) = c := by
+  have hc : ((D.support.card : ℝ)) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (Finset.card_pos.mpr D.support_nonempty).ne'
+  simp only [Design.expect, Finset.sum_const, nsmul_eq_mul]
+  field_simp
+
+/-- Additivity of the expectation. -/
+private lemma expect_add (D : Design n) (f g : Assignment n → ℝ) :
+    D.expect (fun z => f z + g z) = D.expect f + D.expect g := by
+  simp only [Design.expect, Finset.sum_add_distrib, mul_add]
+
+/-- Subtractivity of the expectation. -/
+private lemma expect_sub (D : Design n) (f g : Assignment n → ℝ) :
+    D.expect (fun z => f z - g z) = D.expect f - D.expect g := by
+  simp only [Design.expect, Finset.sum_sub_distrib, mul_sub]
+
+/-- Scalars pull out of the expectation. -/
+private lemma expect_const_mul (D : Design n) (c : ℝ) (f : Assignment n → ℝ) :
+    D.expect (fun z => c * f z) = c * D.expect f := by
+  simp only [Design.expect, ← Finset.mul_sum]
+  ring
+
+/-- Finite sums pull out of the expectation. -/
+private lemma expect_sum {ι : Type*} (D : Design n) (s : Finset ι)
+    (F : ι → Assignment n → ℝ) :
+    D.expect (fun z => ∑ i ∈ s, F i z) = ∑ i ∈ s, D.expect (F i) := by
+  simp only [Design.expect, Finset.mul_sum]
+  rw [Finset.sum_comm]
+
+/-- `Var(f) = E[f²] - (E f)²`. -/
+private lemma var_eq (D : Design n) (f : Assignment n → ℝ) :
+    D.var f = D.expect (fun z => f z ^ 2) - (D.expect f) ^ 2 := by
+  have h2 : D.var f = D.expect (fun z => (f z - D.expect f) ^ 2) := rfl
+  have h3 : D.expect (fun z => (f z - D.expect f) ^ 2)
+      = D.expect (fun z => (f z ^ 2 - (2 * D.expect f) * f z) + (D.expect f) ^ 2) :=
+    expect_congr D fun z _ => by ring
+  have h4 : D.expect (fun z => (f z ^ 2 - (2 * D.expect f) * f z) + (D.expect f) ^ 2)
+      = D.expect (fun z => f z ^ 2 - (2 * D.expect f) * f z)
+        + D.expect (fun _ => (D.expect f) ^ 2) := expect_add D _ _
+  have h5 : D.expect (fun z => f z ^ 2 - (2 * D.expect f) * f z)
+      = D.expect (fun z => f z ^ 2) - D.expect (fun z => (2 * D.expect f) * f z) :=
+    expect_sub D _ _
+  have h6 : D.expect (fun z => (2 * D.expect f) * f z) = (2 * D.expect f) * D.expect f :=
+    expect_const_mul D _ _
+  rw [h2, h3, h4, h5, h6, expect_const]
+  ring
+
+/-- Subtracting a random variable from a constant does not change the variance. -/
+private lemma var_const_sub (D : Design n) (a : ℝ) (f : Assignment n → ℝ) :
+    D.var (fun z => a - f z) = D.var f := by
+  have hE : D.expect (fun z => a - f z) = a - D.expect f := by
+    have h1 : D.expect (fun z => (fun _ : Assignment n => a) z - f z)
+        = D.expect (fun _ : Assignment n => a) - D.expect f := expect_sub D _ _
+    rwa [expect_const] at h1
+  have h2 : D.var (fun z => a - f z)
+      = D.expect (fun z => ((a - f z) - D.expect (fun z => a - f z)) ^ 2) := rfl
+  rw [h2, hE, show D.var f = D.expect (fun z => (f z - D.expect f) ^ 2) from rfl]
+  exact expect_congr D fun z _ => by ring
+
+/-- Expansion of a sum of squared deviations from an arbitrary centre. -/
+private lemma sum_sq_sub {ι : Type*} (T : Finset ι) (f : ι → ℝ) (m : ℝ) :
+    ∑ i ∈ T, (f i - m) ^ 2
+      = (∑ i ∈ T, f i ^ 2) - 2 * m * (∑ i ∈ T, f i) + (T.card : ℝ) * m ^ 2 := by
+  calc ∑ i ∈ T, (f i - m) ^ 2
+      = ∑ i ∈ T, (f i ^ 2 - (2 * m) * f i + m ^ 2) :=
+        Finset.sum_congr rfl fun i _ => by ring
+    _ = (∑ i ∈ T, f i ^ 2) - (2 * m) * (∑ i ∈ T, f i) + (T.card : ℝ) * m ^ 2 := by
+        rw [Finset.sum_add_distrib, Finset.sum_sub_distrib, Finset.sum_const, nsmul_eq_mul,
+          ← Finset.mul_sum]
+    _ = _ := by ring
+
+/-- The population total in terms of the population mean. -/
+private lemma sum_eq_mul_popMean (v : Fin n → ℝ) (hn : 2 ≤ n) :
+    ∑ i, v i = (n : ℝ) * popMean v := by
+  have hnR : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hn0 : (n : ℝ) ≠ 0 := ne_of_gt (by linarith)
+  rw [popMean, ← mul_assoc, mul_inv_cancel₀ hn0, one_mul]
+
+/-- The total sum of squared deviations is `(n-1)S²`. -/
+private lemma sum_sq_dev (v : Fin n → ℝ) (hn : 2 ≤ n) :
+    ∑ i, (v i - popMean v) ^ 2 = ((n : ℝ) - 1) * popVar v := by
+  have hnR : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hn1 : (n : ℝ) - 1 ≠ 0 := ne_of_gt (by linarith)
+  rw [popVar, ← mul_assoc, mul_inv_cancel₀ hn1, one_mul]
+
+/-- The raw-moment identity `∑ vᵢ² = (n-1)S²(v) + n v̄²`. -/
+private lemma sum_sq_eq (v : Fin n → ℝ) (hn : 2 ≤ n) :
+    ∑ i, v i ^ 2 = ((n : ℝ) - 1) * popVar v + (n : ℝ) * popMean v ^ 2 := by
+  have hexp := sum_sq_sub (Finset.univ : Finset (Fin n)) v (popMean v)
+  simp only [Finset.card_univ, Fintype.card_fin] at hexp
+  rw [sum_sq_dev v hn, sum_eq_mul_popMean v hn] at hexp
+  linarith
+
+/-- The population mean commutes with division by a scalar. -/
+private lemma popMean_div (v : Fin n → ℝ) (c : ℝ) :
+    popMean (fun i => v i / c) = popMean v / c := by
+  simp only [popMean, ← Finset.sum_div]
+  ring
+
+/-- The sum of squared deviations of a rescaled vector. -/
+private lemma sum_sq_dev_div (v : Fin n → ℝ) (c : ℝ) (hn : 2 ≤ n) :
+    ∑ i, (v i / c - popMean (fun j => v j / c)) ^ 2 = (((n : ℝ) - 1) * popVar v) / c ^ 2 := by
+  rw [popMean_div v c, ← sum_sq_dev v hn, Finset.sum_div]
+  exact Finset.sum_congr rfl fun i _ => by rw [div_sub_div_same, div_pow]
+
+/-- A finite-population variance is nonnegative. -/
+private lemma popVar_nonneg (v : Fin n → ℝ) (hn : 2 ≤ n) : 0 ≤ popVar v := by
+  have hnR : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  simp only [popVar]
+  exact mul_nonneg (inv_nonneg.mpr (by linarith))
+    (Finset.sum_nonneg fun i _ => sq_nonneg _)
+
+/-! ### LEAN-ONLY private helper: the common core of the two arms
+
+Both arms of Lemma C.3 are the same computation for a weight function `W` with
+`E[Wᵢ] = m/n` (`W = Z` and `m = n₁` for the treated arm, `W = 1 - Z` and `m = n₀` for the
+control arm). Isolating it here avoids running the argument twice. -/
+
+/-- **The engine of Lemma C.3.** If the arm sample variance `A` has, on the support, the
+raw-moment form `(m-1)⁻¹(∑ᵢ vᵢ²Wᵢ - m(∑ᵢ(vᵢ/m)Wᵢ)²)`, the weights have mean `m/n`, and the
+arm mean `∑ᵢ(vᵢ/m)Wᵢ` has variance `(n-m)/(nm)·S²(v)`, then `E[A] = S²(v)`. -/
+private lemma armVar_unbiased_core (D : Design n) (m : ℕ) (v : Fin n → ℝ)
+    (W : Assignment n → Fin n → ℝ) (A : Assignment n → ℝ) (hn : 2 ≤ n) (hm : 2 ≤ m)
+    (hE : ∀ i, D.expect (fun z => W z i) = (m : ℝ) / (n : ℝ))
+    (hV : D.var (fun z => ∑ i, (v i / (m : ℝ)) * W z i)
+            = ((n : ℝ) - (m : ℝ)) / ((n : ℝ) * (m : ℝ)) * popVar v)
+    (hA : ∀ z ∈ D.support, A z = ((m : ℝ) - 1)⁻¹ *
+            ((∑ i, v i ^ 2 * W z i) - (m : ℝ) * (∑ i, (v i / (m : ℝ)) * W z i) ^ 2)) :
+    D.expect A = popVar v := by
+  have hnR : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hmR : (2 : ℝ) ≤ (m : ℝ) := by exact_mod_cast hm
+  have hn0 : (n : ℝ) ≠ 0 := ne_of_gt (by linarith)
+  have hn1 : (n : ℝ) - 1 ≠ 0 := ne_of_gt (by linarith)
+  have hm0 : (m : ℝ) ≠ 0 := ne_of_gt (by linarith)
+  have hm1 : (m : ℝ) - 1 ≠ 0 := ne_of_gt (by linarith)
+  -- the arm mean is unbiased for the population mean
+  have hEg : D.expect (fun z => ∑ i, (v i / (m : ℝ)) * W z i) = popMean v := by
+    have h1 : D.expect (fun z => ∑ i, (v i / (m : ℝ)) * W z i)
+        = ∑ i, D.expect (fun z => (v i / (m : ℝ)) * W z i) :=
+      expect_sum D Finset.univ fun i z => (v i / (m : ℝ)) * W z i
+    have h2 : ∀ i : Fin n, D.expect (fun z => (v i / (m : ℝ)) * W z i) = v i / (n : ℝ) := by
+      intro i
+      rw [expect_const_mul D (v i / (m : ℝ)) fun z => W z i, hE i]
+      field_simp
+    have h3 : ∑ i, D.expect (fun z => (v i / (m : ℝ)) * W z i) = ∑ i : Fin n, v i / (n : ℝ) :=
+      Finset.sum_congr rfl fun i _ => h2 i
+    rw [h1, h3, popMean, ← Finset.sum_div]
+    ring
+  -- the arm raw second moment
+  have hEsq : D.expect (fun z => ∑ i, v i ^ 2 * W z i) = (m : ℝ) / (n : ℝ) * ∑ i, v i ^ 2 := by
+    have h1 : D.expect (fun z => ∑ i, v i ^ 2 * W z i)
+        = ∑ i, D.expect (fun z => v i ^ 2 * W z i) :=
+      expect_sum D Finset.univ fun i z => v i ^ 2 * W z i
+    have h2 : ∀ i : Fin n,
+        D.expect (fun z => v i ^ 2 * W z i) = v i ^ 2 * ((m : ℝ) / (n : ℝ)) := by
+      intro i
+      rw [expect_const_mul D (v i ^ 2) fun z => W z i, hE i]
+    have h3 : ∑ i, D.expect (fun z => v i ^ 2 * W z i)
+        = ∑ i : Fin n, v i ^ 2 * ((m : ℝ) / (n : ℝ)) :=
+      Finset.sum_congr rfl fun i _ => h2 i
+    rw [h1, h3, ← Finset.sum_mul]
+    ring
+  -- `E[Ȳ²] = Var(Ȳ) + (E Ȳ)²`
+  have hEg2 : D.expect (fun z => (∑ i, (v i / (m : ℝ)) * W z i) ^ 2)
+      = ((n : ℝ) - (m : ℝ)) / ((n : ℝ) * (m : ℝ)) * popVar v + popMean v ^ 2 := by
+    have hve : D.var (fun z => ∑ i, (v i / (m : ℝ)) * W z i)
+        = D.expect (fun z => (∑ i, (v i / (m : ℝ)) * W z i) ^ 2)
+          - (D.expect (fun z => ∑ i, (v i / (m : ℝ)) * W z i)) ^ 2 := var_eq D _
+    rw [hV, hEg] at hve
+    linarith
+  -- assemble
+  have step : D.expect A = D.expect (fun z => ((m : ℝ) - 1)⁻¹ *
+      ((∑ i, v i ^ 2 * W z i) - (m : ℝ) * (∑ i, (v i / (m : ℝ)) * W z i) ^ 2)) :=
+    expect_congr D hA
+  have hlin : D.expect (fun z => ((m : ℝ) - 1)⁻¹ *
+        ((∑ i, v i ^ 2 * W z i) - (m : ℝ) * (∑ i, (v i / (m : ℝ)) * W z i) ^ 2))
+      = ((m : ℝ) - 1)⁻¹ * D.expect (fun z =>
+          (∑ i, v i ^ 2 * W z i) - (m : ℝ) * (∑ i, (v i / (m : ℝ)) * W z i) ^ 2) :=
+    expect_const_mul D _ _
+  have hsub : D.expect (fun z =>
+        (∑ i, v i ^ 2 * W z i) - (m : ℝ) * (∑ i, (v i / (m : ℝ)) * W z i) ^ 2)
+      = D.expect (fun z => ∑ i, v i ^ 2 * W z i)
+        - D.expect (fun z => (m : ℝ) * (∑ i, (v i / (m : ℝ)) * W z i) ^ 2) :=
+    expect_sub D _ _
+  have hcm : D.expect (fun z => (m : ℝ) * (∑ i, (v i / (m : ℝ)) * W z i) ^ 2)
+      = (m : ℝ) * D.expect (fun z => (∑ i, (v i / (m : ℝ)) * W z i) ^ 2) :=
+    expect_const_mul D _ _
+  rw [step, hlin, hsub, hcm, hEsq, hEg2, sum_sq_eq v hn]
+  field_simp
+  ring
+
 /-- **Unbiasedness of the treated arm sample variance** (Ding Lemma C.3): under complete
 randomization, `E[ŝ²(1)] = S²(1)`. -/
 theorem armVar_true_unbiased (S : ScienceTable n) (hsum : n₁ + n₀ = n)
@@ -46,7 +251,42 @@ theorem armVar_true_unbiased (S : ScienceTable n) (hsum : n₁ + n₀ = n)
     -- USER-INPUT: a nonempty control arm; Ding Definition 3.1
     (h0 : 0 < n₀) :
     (completeDesign n n₁ (by omega)).expect (fun z => armVar S z true) = popVar S.y1 := by
-  sorry
+  have hle : n₁ ≤ n := by omega
+  have hn : 2 ≤ n := by omega
+  have hn1R : (2 : ℝ) ≤ (n₁ : ℝ) := by exact_mod_cast h1
+  have hnR : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hn1ne : (n₁ : ℝ) ≠ 0 := ne_of_gt (by linarith)
+  have hn0ne : (n : ℝ) ≠ 0 := ne_of_gt (by linarith)
+  have hnm1 : (n : ℝ) - 1 ≠ 0 := ne_of_gt (by linarith)
+  refine armVar_unbiased_core _ n₁ _ (fun z i => ind (z i)) _ hn h1 ?_ ?_ ?_
+  · intro i
+    exact completeDesign_expect_ind hle i
+  · rw [completeDesign_var_linear hle hn fun i => S.y1 i / (n₁ : ℝ),
+      sum_sq_dev_div S.y1 (n₁ : ℝ) hn]
+    field_simp
+  · intro z hz
+    have hcard : (armIdx z true).card = n₁ := card_armIdx_true hle hz
+    have hM : armMean S z true = (n₁ : ℝ)⁻¹ * ∑ i, S.y1 i * ind (z i) :=
+      armMean_true_eq S hle hz (by omega)
+    have hobs : ∑ i ∈ armIdx z true, (S.observed z i - armMean S z true) ^ 2
+        = ∑ i ∈ armIdx z true, (S.y1 i - armMean S z true) ^ 2 :=
+      Finset.sum_congr rfl fun i hi => by
+        rw [observed_eq_y1 S (by simpa [armIdx] using hi)]
+    have hsum1 : ∑ i ∈ armIdx z true, S.y1 i = ∑ i, S.y1 i * ind (z i) :=
+      sum_armIdx_true_eq_sum_ind z S.y1
+    have hsum2 : ∑ i ∈ armIdx z true, S.y1 i ^ 2 = ∑ i, S.y1 i ^ 2 * ind (z i) :=
+      sum_armIdx_true_eq_sum_ind z fun i => S.y1 i ^ 2
+    have hsumM : ∑ i, S.y1 i * ind (z i) = (n₁ : ℝ) * armMean S z true := by
+      rw [hM, ← mul_assoc, mul_inv_cancel₀ hn1ne, one_mul]
+    have hgM : ∑ i, (S.y1 i / (n₁ : ℝ)) * ind (z i) = armMean S z true := by
+      have hr : ∑ i, (S.y1 i / (n₁ : ℝ)) * ind (z i)
+          = (n₁ : ℝ)⁻¹ * ∑ i, S.y1 i * ind (z i) := by
+        rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun i _ => by ring
+      rw [hr, hM]
+    rw [armVar, hobs, sum_sq_sub (armIdx z true) S.y1 (armMean S z true), hcard, hsum1,
+      hsum2, hgM, hsumM]
+    ring
 
 /-- **Unbiasedness of the control arm sample variance** (Ding Lemma C.3):
 `E[ŝ²(0)] = S²(0)`. -/
