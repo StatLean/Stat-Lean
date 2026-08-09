@@ -652,9 +652,12 @@ private theorem armaProfileS_atTruth_tendstoInProb [IsProbabilityMeasure μ] {p 
   refine congrArg _ (Set.ext fun ω => ?_)
   simp only [Set.mem_setOf_eq, armaContrastVar_self, mul_one, div_eq_inv_mul]
 
-/-- **DEBT — local stochastic equicontinuity of the profiled sum of squares**: the
-oscillation of `θ ↦ T⁻¹ S_T(θ)` over a small ball around `θ₀` is uniformly (in `T`)
-negligible in probability.
+/-- **Local stochastic equicontinuity of the profiled sum of squares — PROVED**
+(2026-08-09, wave `ts/s1b-arma-finish`): the oscillation of `θ ↦ T⁻¹ S_T(θ)` over a small
+ball around `θ₀` is uniformly (in `T`) negligible in probability. It is a one-line
+corollary of `Consistency.armaProfileS_locallyEquicontinuous`, where the estimate is
+carried out; the note below is kept because two of its predictions were **overturned**
+there (see the last paragraph).
 
 Hannan's ergodic route proves this together with the pointwise LLN: `T⁻¹ S_T(θ)` is,
 up to the `O(1/T)` edge effect controlled by `logdet_armaToeplitz_vanishes`'s
@@ -689,7 +692,15 @@ geometric bound on `π(θ)` and on `∂π(θ)` over the compact `K`.
 ∑' n, |π_n(θ) − π_n(θ')| < ε`, and that is free from the brick plus compactness of
 `K × K`: it is PROVED as `Consistency.exists_armaPi_l1_modulus` (public).
 
-**What is left here** is the matching modulus for the Gram tail. Writing
+**AMENDMENT (2026-08-09).** The Gram-tail *difference* modulus asked for below is **not
+needed**, and the two "shortcuts" declared dead below are indeed dead but irrelevant.
+What the oscillation estimate actually consumes is a bound on the correction term
+`T⁻¹uᵀG_T(θ)u` that is `o_p(1)` *uniformly over `θ ∈ K`* — and that is available from the
+entrywise bound `|G_{ij}| ≤ (1−r²)⁻¹h_ih_j`, which factorises the quadratic form into a
+square of a **`θ`-free** envelope (`Consistency.quadForm_gramTail_le_env`). One Markov
+inequality then covers the whole supremum at rate `O(1/T)`. The superseded plan follows.
+
+**What was thought to be left here** was the matching modulus for the Gram tail. Writing
 `Γ_T(θ)⁻¹ = Π_Tᵀ(1 + G_T)⁻¹Π_T` and splitting
 
   `[Π−Π′]ᵀ(1+G)⁻¹Π  +  Π′ᵀ[(1+G)⁻¹−(1+G′)⁻¹]Π  +  Π′ᵀ(1+G′)⁻¹[Π−Π′]`,
@@ -714,8 +725,8 @@ private theorem armaProfileS_equicontinuous [IsProbabilityMeasure μ] {p q : ℕ
       Tendsto (fun T : ℕ => (μ {ω | ∃ ba ∈ K, dist ba (b0, a0) < ρ ∧
           η ≤ |armaProfileS ba.1 ba.2 (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) / T
             - armaProfileS b0 a0 (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) / T|}).toReal)
-        atTop (𝓝 0) := by
-  sorry
+        atTop (𝓝 0) :=
+  armaProfileS_locallyEquicontinuous h hiid hσ hB0 hcausal hmeas hK hKB hη
 
 end Sigma2
 
