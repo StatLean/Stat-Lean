@@ -385,53 +385,53 @@ items are named debts, one per FY display. -/
 section Ledger
 
 /-- FY's localized statistic `(n h_n)^{-1/2} Σ_{t=1}^n e_t W((X_t − x)/h_n)`. -/
-private noncomputable def locSum (X e : ℤ → Ω → ℝ) (W : ℝ → ℝ) (x : ℝ) (h : ℕ → ℝ)
+noncomputable def locSum (X e : ℤ → Ω → ℝ) (W : ℝ → ℝ) (x : ℝ) (h : ℕ → ℝ)
     (n : ℕ) (ω : Ω) : ℝ :=
   (Real.sqrt ((n : ℝ) * h n))⁻¹ *
     ∑ t ∈ Finset.range n, e ((t : ℤ) + 1) ω * W ((X ((t : ℤ) + 1) ω - x) / h n)
 
 /-- Two-sided clamp at level `L`. -/
-private noncomputable def clampAt (L z : ℝ) : ℝ := max (-L) (min L z)
+noncomputable def clampAt (L z : ℝ) : ℝ := max (-L) (min L z)
 
 /-- FY's truncated, conditionally recentred error `e^L_t = e_t^{(L)} − E(e_t^{(L)}|X_t)`
 (step (c), (2.82)); the recentring keeps `E(e^L | X) = 0`, hence keeps every summand
 of `locTruncSum` centred. -/
-private noncomputable def truncErr (X e : ℤ → Ω → ℝ) (μ : Measure Ω) (L : ℝ) (t : ℤ)
+noncomputable def truncErr (X e : ℤ → Ω → ℝ) (μ : Measure Ω) (L : ℝ) (t : ℤ)
     (ω : Ω) : ℝ :=
   clampAt L (e t ω) -
     (μ[fun ω' => clampAt L (e t ω') | MeasurableSpace.comap (X t) inferInstance]) ω
 
 /-- The truncated statistic of step (c). -/
-private noncomputable def locTruncSum (X e : ℤ → Ω → ℝ) (μ : Measure Ω) (W : ℝ → ℝ)
+noncomputable def locTruncSum (X e : ℤ → Ω → ℝ) (μ : Measure Ω) (W : ℝ → ℝ)
     (x : ℝ) (h : ℕ → ℝ) (L : ℝ) (n : ℕ) (ω : Ω) : ℝ :=
   (Real.sqrt ((n : ℝ) * h n))⁻¹ *
     ∑ t ∈ Finset.range n,
       truncErr X e μ L ((t : ℤ) + 1) ω * W ((X ((t : ℤ) + 1) ω - x) / h n)
 
 /-- The clamp is measurable in the clamped variable. -/
-private theorem measurable_clampAt (L : ℝ) : Measurable (clampAt L) := by
+theorem measurable_clampAt (L : ℝ) : Measurable (clampAt L) := by
   unfold clampAt; fun_prop
 
 /-- The clamp is bounded by its level. -/
-private theorem abs_clampAt_le {L : ℝ} (hL : 0 ≤ L) (z : ℝ) : |clampAt L z| ≤ L := by
+theorem abs_clampAt_le {L : ℝ} (hL : 0 ≤ L) (z : ℝ) : |clampAt L z| ≤ L := by
   unfold clampAt
   rw [abs_le]
   exact ⟨le_max_left _ _, max_le (by linarith) (min_le_left _ _)⟩
 
 /-- FY's big-block length `l_n = [√(n h_n) / log n]` (step (b), (2.77)). -/
-private noncomputable def bigBlockLen (h : ℕ → ℝ) (n : ℕ) : ℕ :=
+noncomputable def bigBlockLen (h : ℕ → ℝ) (n : ℕ) : ℕ :=
   ⌈Real.sqrt ((n : ℝ) * h n) / Real.log n⌉₊
 
 /-- FY's small-block length `s_n = [(√(n/h_n) log n)^{(1−2/δ)/(λ+1)}]` (step (b)). -/
-private noncomputable def smallBlockLen (h : ℕ → ℝ) (δ lam : ℝ) (n : ℕ) : ℕ :=
+noncomputable def smallBlockLen (h : ℕ → ℝ) (δ lam : ℝ) (n : ℕ) : ℕ :=
   ⌈(Real.sqrt ((n : ℝ) / h n) * Real.log n) ^ ((1 - 2 / δ) / (lam + 1))⌉₊
 
 /-- FY's number of block pairs `k_n = [n / (l_n + s_n)]` (step (b)). -/
-private noncomputable def blockCount (h : ℕ → ℝ) (δ lam : ℝ) (n : ℕ) : ℕ :=
+noncomputable def blockCount (h : ℕ → ℝ) (δ lam : ℝ) (n : ℕ) : ℕ :=
   n / (bigBlockLen h n + smallBlockLen h δ lam n)
 
 /-- FY's small/large lag cut `m_n = [1 / (h_n |log h_n|)]` (step (a), before (2.75)). -/
-private noncomputable def smallLagCut (h : ℕ → ℝ) (n : ℕ) : ℕ :=
+noncomputable def smallLagCut (h : ℕ → ℝ) (n : ℕ) : ℕ :=
   ⌈(h n * |Real.log (h n)|)⁻¹⌉₊
 
 /-! #### σ-algebra transport for the pair series
@@ -440,7 +440,7 @@ The past/future σ-algebras of `pairAlphaCoeff` are `⨆`-sups over index sets; 
 lemmas are all the transport the Davydov step needs. -/
 
 /-- Every pair σ-algebra sits below the ambient one. -/
-private theorem pairSigma_le {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t))
+theorem pairSigma_le {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t))
     (hmeasE : ∀ t, Measurable (e t)) (S : Set ℤ) :
     (⨆ s ∈ S, MeasurableSpace.comap (X s) inferInstance ⊔
       MeasurableSpace.comap (e s) inferInstance) ≤ ‹MeasurableSpace Ω› :=
@@ -448,14 +448,14 @@ private theorem pairSigma_le {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measura
 
 omit [MeasurableSpace Ω] in
 /-- `X t` is measurable for the pair σ-algebra of any index set containing `t`. -/
-private theorem measurable_X_pairSigma {X e : ℤ → Ω → ℝ} {S : Set ℤ} {t : ℤ} (ht : t ∈ S) :
+theorem measurable_X_pairSigma {X e : ℤ → Ω → ℝ} {S : Set ℤ} {t : ℤ} (ht : t ∈ S) :
     Measurable[⨆ s ∈ S, MeasurableSpace.comap (X s) inferInstance ⊔
       MeasurableSpace.comap (e s) inferInstance] (X t) :=
   (Measurable.of_comap_le le_rfl).mono (le_iSup₂_of_le t ht le_sup_left) le_rfl
 
 omit [MeasurableSpace Ω] in
 /-- `e t` is measurable for the pair σ-algebra of any index set containing `t`. -/
-private theorem measurable_e_pairSigma {X e : ℤ → Ω → ℝ} {S : Set ℤ} {t : ℤ} (ht : t ∈ S) :
+theorem measurable_e_pairSigma {X e : ℤ → Ω → ℝ} {S : Set ℤ} {t : ℤ} (ht : t ∈ S) :
     Measurable[⨆ s ∈ S, MeasurableSpace.comap (X s) inferInstance ⊔
       MeasurableSpace.comap (e s) inferInstance] (e t) :=
   (Measurable.of_comap_le le_rfl).mono (le_iSup₂_of_le t ht le_sup_right) le_rfl
@@ -467,7 +467,7 @@ private theorem measurable_e_pairSigma {X e : ℤ → Ω → ℝ} {S : Set ℤ} 
 exactly the operative content of (C2): bound `|ξ_0 ξ_j|` by `|e_0 e_j| g(X_0, X_j)`
 with `g(v,w) = |W((v−x)/h)| |W((w−x)/h)|`, apply (C2), and evaluate
 `∫∫ g = (h ∫|W|)²` by the affine change of variables. -/
-private theorem small_lag_covariance_bound {X e : ℤ → Ω → ℝ} {W : ℝ → ℝ} {x : ℝ}
+theorem small_lag_covariance_bound {X e : ℤ → Ω → ℝ} {W : ℝ → ℝ} {x : ℝ}
     (hWm : Measurable W) {B : ℝ}
     (hC2 : ∀ j : ℤ, j ≠ 0 → ∀ g : ℝ × ℝ → ℝ, Measurable g → (∀ v, 0 ≤ g v) →
       ∫ ω, |e 0 ω * e j ω| * g (X 0 ω, X j ω) ∂μ
@@ -510,7 +510,7 @@ continuous at `x` and `0 ≤ g` Lebesgue-a.e., then `0 ≤ g x`: otherwise `g < 
 ball around `x`, which has positive Lebesgue measure. Used to evaluate the repaired
 diagonal limit at the point `x` itself, where `σ²` is *not* pinned down by `hcv` (which
 constrains it only `μ.map (X 0)`-a.e.). -/
-private theorem nonneg_of_continuousAt_of_ae_nonneg {g : ℝ → ℝ} {x : ℝ}
+theorem nonneg_of_continuousAt_of_ae_nonneg {g : ℝ → ℝ} {x : ℝ}
     (hgc : ContinuousAt g x)
     (hae : ∀ᵐ v ∂(MeasureTheory.volume : Measure ℝ), 0 ≤ g v) : 0 ≤ g x := by
   by_contra hx
@@ -559,7 +559,7 @@ argument), or strengthen (C1) to `σ²·p` bounded — which is what the textboo
 "(C1) with `σ²` and `p` bounded" silently supplies. The second route is the one taken:
 `hσpb` below, together with the measurability `hσm` that the frozen (C1) also omitted
 (only `hcv` constrains `σsq`, and only `μ.map (X 0)`-a.e.). -/
-private theorem tendsto_localized_second_moment_debt [IsProbabilityMeasure μ]
+theorem tendsto_localized_second_moment_debt [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hX : Measurable (X 0)) {σsq p : ℝ → ℝ}
     -- USER-INPUT: σ² measurable (the frozen (C1) omits it); FY §2.6.4
     (hσm : Measurable σsq)
@@ -635,7 +635,7 @@ What remains for ledger (a) — and is *not* part of this lemma — is the kerne
 localization of the δ-norms, `‖ξ_0‖_δ² ≤ C h^{2/δ}`, and the summation
 `Σ_{j > m_n} α^{1−2/δ}(j) ≤ m_n^{−λ} Σ_j j^λ α^{1−2/δ}(j)` from (C3), whose `h`-powers
 close against (C5); those live in `var_localized_sum`'s assembly. -/
-private theorem large_lag_covariance_bound [IsProbabilityMeasure μ]
+theorem large_lag_covariance_bound [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     {δ : ℝ} (hδ : 2 < δ) {W : ℝ → ℝ} {x : ℝ} (hWm : Measurable W)
     {hn : ℝ} (hhn : 0 < hn) (j : ℕ) (hj : 1 ≤ j)
@@ -678,7 +678,7 @@ transport of integrals, `eLpNorm`s and `MemLp` of a fixed function of the pair. 
 obtained by pushing the `hstat` identity forward along a coordinate evaluation. -/
 
 /-- One-time marginal transport: `(X_t, e_t) ~ (X_0, e_0)`. -/
-private theorem map_pair_eq_of_stat {X e : ℤ → Ω → ℝ}
+theorem map_pair_eq_of_stat {X e : ℤ → Ω → ℝ}
     (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
       μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
@@ -698,7 +698,7 @@ private theorem map_pair_eq_of_stat {X e : ℤ → Ω → ℝ}
 /-- Transport of a one-time integral: `E[F(X_t, e_t)] = E[F(X_0, e_0)]`. Used to move the
 error moments off the time index — in particular `E e_t² = E e_0²`, which is what turns
 FY's printed (C2) into the `E[e_0²]`-normalized instance (2.76) uses. -/
-private theorem integral_comp_pair_eq {X e : ℤ → Ω → ℝ}
+theorem integral_comp_pair_eq {X e : ℤ → Ω → ℝ}
     (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
       μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
@@ -714,7 +714,7 @@ private theorem integral_comp_pair_eq {X e : ℤ → Ω → ℝ}
 
 /-- Two-time marginal transport: `((X_t, e_t), (X_{t+d}, e_{t+d})) ~ ((X_0, e_0), (X_d, e_d))`.
 Obtained from the `(d+1)`-window by evaluating at the first and last coordinates. -/
-private theorem map_pair2_eq_of_stat {X e : ℤ → Ω → ℝ}
+theorem map_pair2_eq_of_stat {X e : ℤ → Ω → ℝ}
     (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
       μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
@@ -739,7 +739,7 @@ private theorem map_pair2_eq_of_stat {X e : ℤ → Ω → ℝ}
 
 /-- Transport of a two-time integral: `E[G((X_t,e_t),(X_{t+d},e_{t+d}))] = E[G((X_0,e_0),(X_d,e_d))]`.
 This is what turns the double covariance sum of ledger (a) into a single lag sum. -/
-private theorem integral_comp_pair2_eq {X e : ℤ → Ω → ℝ}
+theorem integral_comp_pair2_eq {X e : ℤ → Ω → ℝ}
     (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
       μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
@@ -759,7 +759,7 @@ private theorem integral_comp_pair2_eq {X e : ℤ → Ω → ℝ}
     map_pair2_eq_of_stat hmeasX hmeasE hstat t d, integral_map hm0 hG.aestronglyMeasurable]
 
 /-- Transport of an `eLpNorm` of a fixed function of the pair. -/
-private theorem eLpNorm_comp_pair_eq {X e : ℤ → Ω → ℝ}
+theorem eLpNorm_comp_pair_eq {X e : ℤ → Ω → ℝ}
     (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
       μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
@@ -780,7 +780,7 @@ private theorem eLpNorm_comp_pair_eq {X e : ℤ → Ω → ℝ}
   rw [← h1, ← h2, map_pair_eq_of_stat hmeasX hmeasE hstat t]
 
 /-- Transport of `MemLp` of a fixed function of the pair. -/
-private theorem memLp_comp_pair {X e : ℤ → Ω → ℝ}
+theorem memLp_comp_pair {X e : ℤ → Ω → ℝ}
     (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
       μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
@@ -792,7 +792,7 @@ private theorem memLp_comp_pair {X e : ℤ → Ω → ℝ}
     rw [eLpNorm_comp_pair_eq hmeasX hmeasE hstat t hF q]; exact h0.2⟩
 
 /-- One-time marginal of `X` alone: `X_t ~ X_0`. -/
-private theorem map_fst_eq_of_stat {X e : ℤ → Ω → ℝ}
+theorem map_fst_eq_of_stat {X e : ℤ → Ω → ℝ}
     (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
       μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
@@ -806,7 +806,7 @@ private theorem map_fst_eq_of_stat {X e : ℤ → Ω → ℝ}
   rwa [Measure.map_map measurable_fst hpt, Measure.map_map measurable_fst hp0] at h
 
 /-- An a.e. property of `X_0` is an a.e. property of `X_t`. -/
-private theorem ae_comp_X_of_stat {X e : ℤ → Ω → ℝ}
+theorem ae_comp_X_of_stat {X e : ℤ → Ω → ℝ}
     (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
       μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
@@ -830,7 +830,7 @@ factorization `m` at `t = 0`, and the defining set-integral characterization of 
 conditional expectation transports to time `t` because both sides of
 `∫_{X_t ∈ A} m(X_t) = ∫_{X_t ∈ A} φ(e_t)` are integrals of a *fixed* function of the pair,
 namely `Prod.fst ⁻¹' A`-indicators, so `integral_comp_pair_eq` applies to each. -/
-private theorem exists_condExp_repr_of_stat [IsProbabilityMeasure μ]
+theorem exists_condExp_repr_of_stat [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
       μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
@@ -909,7 +909,7 @@ private theorem exists_condExp_repr_of_stat [IsProbabilityMeasure μ]
 `μ.map (X t) = μ.map (X 0)` propagates it. This is what keeps *every* summand of `locSum`
 centred, and what makes `e_t − e^L_t = r_t − E(r_t | X_t)` with `r_t = e_t − clamp_L(e_t)`
 — the identity the truncation tail (2.82) is built on. -/
-private theorem condExp_eq_zero_of_stat [IsProbabilityMeasure μ]
+theorem condExp_eq_zero_of_stat [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
       μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
@@ -941,7 +941,7 @@ the lag alone.
 `exists_condExp_repr_of_stat` at `φ = clamp_L` gives a common measurable version `m`;
 `|E(clamp_L e_0 | X_0)| ≤ L` a.e. (conditional monotonicity against the constants `±L`), so
 re-clamping `m` at level `L` changes it on a null set only and makes the bound pointwise. -/
-private theorem exists_truncErr_repr [IsProbabilityMeasure μ]
+theorem exists_truncErr_repr [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
       μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
@@ -989,7 +989,7 @@ only on the lag (`c s (s+d) = c (s+d) s = g d`), then its full `n × n` sum diff
 diagonal contribution `n · g 0` by at most `2 n Σ_{1 ≤ j < n} |g j|`. This is the purely
 combinatorial half of FY (2.73): each row contributes `g 0` plus a lag sum in both
 directions, each of which injects into `Finset.Ico 1 n`. -/
-private theorem abs_double_sum_sub_diag_le (n : ℕ) (c : ℕ → ℕ → ℝ) (g : ℕ → ℝ)
+theorem abs_double_sum_sub_diag_le (n : ℕ) (c : ℕ → ℕ → ℝ) (g : ℕ → ℝ)
     (hc : ∀ s d : ℕ, c s (s + d) = g d) (hc' : ∀ s d : ℕ, c (s + d) s = g d) :
     |(∑ s ∈ Finset.range n, ∑ t ∈ Finset.range n, c s t) - n * g 0|
       ≤ 2 * n * ∑ j ∈ Finset.Ico 1 n, |g j| := by
@@ -1094,7 +1094,7 @@ is what keeps the two lag injections landing in `Ico 1 n`.
 Note that this brick is *not* the obstruction to (2.79)–(2.81): the analytic half is (see
 `tendsto_smallBlock_variance`, whose summands are the **truncated** ones, for which the
 small-lag input `Σ_j |g j| = o(h)` needs (C2) in its unweighted form). -/
-private theorem abs_double_sum_subset_le {n : ℕ} (I : Finset ℕ) (hI : I ⊆ Finset.range n)
+theorem abs_double_sum_subset_le {n : ℕ} (I : Finset ℕ) (hI : I ⊆ Finset.range n)
     (c : ℕ → ℕ → ℝ) (g : ℕ → ℝ)
     (hc : ∀ s d : ℕ, c s (s + d) = g d) (hc' : ∀ s d : ℕ, c (s + d) s = g d) :
     |∑ s ∈ I, ∑ t ∈ I, c s t|
@@ -1191,7 +1191,7 @@ nonnegative integrable weight `G`: the density substitution
 (`integral_dilate_translate`), the factor `h` being the Jacobian. Used at `G = |W|^δ` (the
 δ-th moment of the *truncated* localized summand, where the error factor is bounded by `2L`
 and so contributes no conditional moment) and at `G = W²` (its variance). -/
-private theorem localized_weight_integral_le [IsProbabilityMeasure μ]
+theorem localized_weight_integral_le [IsProbabilityMeasure μ]
     {X : ℤ → Ω → ℝ} (hX : Measurable (X 0))
     {p : ℝ → ℝ} (hmp : Measurable p) (hp0 : ∀ v, 0 ≤ p v)
     (hpd : μ.map (X 0) = MeasureTheory.volume.withDensity fun v => ENNReal.ofReal (p v))
@@ -1237,7 +1237,7 @@ Three steps: pull `|W((X_0−x)/h)|^δ` out of the conditional expectation of `|
 substitute the density (`integral_comp_eq_integral_density`), and rescale
 (`integral_dilate_translate`); the factor `h` is the Jacobian. Integrability of `|W|^δ`
 comes from `|W|^δ ≤ CW^{δ−2} W²` — the only place `δ > 2` is used here. -/
-private theorem localized_delta_moment_le [IsProbabilityMeasure μ]
+theorem localized_delta_moment_le [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hX : Measurable (X 0))
     {p : ℝ → ℝ} (hmp : Measurable p) (hp0 : ∀ v, 0 ≤ p v)
     (hpd : μ.map (X 0) = MeasureTheory.volume.withDensity fun v => ENNReal.ofReal (p v))
@@ -1364,7 +1364,7 @@ formalized do support. (The lag half does not close; see `tendsto_smallBlock_var
 `δ > 2`, `L > 0`. Below the clamp the left side is `0`; above it `|z − clamp_L z| ≤ |z|`
 and `|z|² = |z|^{2−δ}|z|^δ ≤ L^{2−δ}|z|^δ`, the exponent `2 − δ` being negative. This is
 where `δ > 2` buys the `L → ∞` decay of the truncation tail. -/
-private theorem sq_sub_clamp_le {δ L z : ℝ} (hδ : 2 < δ) (hL : 0 < L) :
+theorem sq_sub_clamp_le {δ L z : ℝ} (hδ : 2 < δ) (hL : 0 < L) :
     (z - clampAt L z) ^ 2 ≤ L ^ (2 - δ) * |z| ^ δ := by
   have hd : (0 : ℝ) < δ - 2 := by linarith
   have hLd : (0 : ℝ) < L ^ (2 - δ) := Real.rpow_pos_of_pos hL _
@@ -1436,7 +1436,7 @@ This bounds the residual *before* its conditional recentring; since
 turns it into the same bound for the recentred residual at no cost. What it does **not**
 give — and what blocks (2.82) as a whole — is the corresponding *lag* estimate; see
 `tendsto_smallBlock_variance` for the proof that the frozen (C2) cannot supply it. -/
-private theorem localized_trunc_residual_moment_le [IsProbabilityMeasure μ]
+theorem localized_trunc_residual_moment_le [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hX : Measurable (X 0)) (hE : Measurable (e 0))
     {p : ℝ → ℝ} (hmp : Measurable p) (hp0 : ∀ v, 0 ≤ p v)
     (hpd : μ.map (X 0) = MeasureTheory.volume.withDensity fun v => ENNReal.ofReal (p v))
@@ -1565,13 +1565,13 @@ private theorem localized_trunc_residual_moment_le [IsProbabilityMeasure μ]
 /-! #### Bandwidth limits behind the small/large lag split -/
 
 /-- `h_n → 0⁺` in the punctured-right sense. -/
-private theorem tendsto_nhdsGT_of_pos {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
+theorem tendsto_nhdsGT_of_pos {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
     (hh : Tendsto h atTop (𝓝 0)) : Tendsto h atTop (𝓝[>] 0) :=
   tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within h hh
     (Eventually.of_forall fun n => hh0 n)
 
 /-- `|log h_n| → ∞`. -/
-private theorem tendsto_abs_log_atTop {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
+theorem tendsto_abs_log_atTop {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
     (hh : Tendsto h atTop (𝓝 0)) :
     Tendsto (fun n => |Real.log (h n)|) atTop atTop :=
   tendsto_abs_atBot_atTop.comp
@@ -1579,7 +1579,7 @@ private theorem tendsto_abs_log_atTop {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
 
 /-- **FY's `m_n h_n → 0`.** The small-lag cut `m_n = [1/(h|log h|)]` costs only
 `1/|log h|` after multiplication by `h`; this is exactly why FY cuts there. -/
-private theorem tendsto_smallLagCut_mul_bandwidth {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
+theorem tendsto_smallLagCut_mul_bandwidth {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
     (hh : Tendsto h atTop (𝓝 0)) :
     Tendsto (fun n => (smallLagCut h n : ℝ) * h n) atTop (𝓝 0) := by
   have hL := tendsto_abs_log_atTop hh0 hh
@@ -1599,7 +1599,7 @@ private theorem tendsto_smallLagCut_mul_bandwidth {h : ℕ → ℝ} (hh0 : ∀ n
   field_simp
 
 /-- `h^a |log h|^λ → 0` for `a, λ > 0`: the large-lag remainder's shape. -/
-private theorem tendsto_rpow_mul_abs_log_rpow {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
+theorem tendsto_rpow_mul_abs_log_rpow {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
     (hh : Tendsto h atTop (𝓝 0)) {a lam : ℝ} (ha : 0 < a) (hlam : 0 < lam) :
     Tendsto (fun n => h n ^ a * |Real.log (h n)| ^ lam) atTop (𝓝 0) := by
   -- the base sequence `h^{a/λ} |log h| → 0`
@@ -1680,7 +1680,7 @@ propagate to `tendsto_charFun_locTruncSum` and to the Theorem 2.22 headline
 `kernel_localized_clt`, which consume ledger (a). Note that `hnh` ((C5)'s `n h³ → ∞`),
 `hpx`, and `hW1` are *not* needed for the variance asymptotics — only `h_n → 0` is — and
 are kept because they are part of the frozen (C1)–(C5) package. -/
-private theorem var_localized_sum [IsProbabilityMeasure μ]
+theorem var_localized_sum [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
       μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
@@ -2084,7 +2084,7 @@ gives only `t^λ a(t)^β → 0`; the extra power comes from the dyadic block
 `Σ_{j ∈ [T/2, T)} j^λ a(j)^β ≥ (T/2)^{λ+1} a(T)^β`, whose left side is a difference of two
 partial sums and hence vanishes. This is the form of (C3) that FY's (2.78) actually
 uses. -/
-private theorem tendsto_weighted_antitone_of_summable {a : ℕ → ℝ} {lam beta : ℝ}
+theorem tendsto_weighted_antitone_of_summable {a : ℕ → ℝ} {lam beta : ℝ}
     (hlam : 0 < lam) (hbeta : 0 < beta)
     (ha0 : ∀ t, 0 ≤ a t) (hanti : Antitone a)
     (hsum : Summable fun t : ℕ => (t : ℝ) ^ lam * a t ^ beta) :
@@ -2165,7 +2165,7 @@ continuity of `y ↦ y^{1/β}` at `0`.
 Note that (C5) (`hnh`) is **not needed**: (2.78) holds for any bandwidth sequence with
 `h_n → 0`. (C5) is what makes `s_n = o(l_n)`, which is used elsewhere in step (b), not
 here. -/
-private theorem tendsto_blockCount_mul_pairAlpha [IsProbabilityMeasure μ]
+theorem tendsto_blockCount_mul_pairAlpha [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} {δ lam : ℝ} (hδ : 2 < δ) (hlam : 1 - 2 / δ < lam)
     (hα : Summable fun t : ℕ => (t : ℝ) ^ lam * pairAlphaCoeff X e μ t ^ (1 - 2 / δ))
     {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n) (hh : Tendsto h atTop (𝓝 0))
@@ -2277,7 +2277,7 @@ private theorem tendsto_blockCount_mul_pairAlpha [IsProbabilityMeasure μ]
     exact hcont.comp hcomp
 
 /-- `(log n)^β / n^α → 0` for `α, β > 0`. -/
-private theorem tendsto_log_rpow_div_rpow_atTop {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) :
+theorem tendsto_log_rpow_div_rpow_atTop {α β : ℝ} (hα : 0 < α) (hβ : 0 < β) :
     Tendsto (fun n : ℕ => Real.log n ^ β / (n : ℝ) ^ α) atTop (𝓝 0) := by
   have hh0 : ∀ n : ℕ, (0 : ℝ) < ((n : ℝ) + 1)⁻¹ := fun n => by positivity
   have hh : Tendsto (fun n : ℕ => ((n : ℝ) + 1)⁻¹) atTop (𝓝 0) :=
@@ -2297,7 +2297,7 @@ private theorem tendsto_log_rpow_div_rpow_atTop {α β : ℝ} (hα : 0 < α) (h�
   norm_num
 
 /-- The block numerology `k_n s_n / n → 0`. -/
-private theorem tendsto_blockCount_mul_smallBlockLen_div {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
+theorem tendsto_blockCount_mul_smallBlockLen_div {h : ℕ → ℝ} (hh0 : ∀ n, 0 < h n)
     (hnh : Tendsto (fun n : ℕ => (n : ℝ) * h n ^ 3) atTop atTop)
     {δ lam : ℝ} (hδ : 2 < δ) (hlam : 1 - 2 / δ < lam) :
     Tendsto (fun n : ℕ =>
@@ -2430,7 +2430,7 @@ private theorem tendsto_blockCount_mul_smallBlockLen_div {h : ℕ → ℝ} (hh0 
     _ = maj n := by rw [hmajdef]
 
 /-- Davydov for a fixed measurable function of the pair `(X_t, e_t)`. -/
-private theorem large_lag_covariance_bound' [IsProbabilityMeasure μ]
+theorem large_lag_covariance_bound' [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     {δ : ℝ} (hδ : 2 < δ) {F : ℝ × ℝ → ℝ} (hFm : Measurable F) (j : ℕ) (hj : 1 ≤ j)
     (hL0 : MemLp (fun ω => F (X 0 ω, e 0 ω)) (ENNReal.ofReal δ) μ)
@@ -2461,7 +2461,7 @@ private theorem large_lag_covariance_bound' [IsProbabilityMeasure μ]
 
 set_option maxHeartbeats 1000000 in
 /-- **The small-block variance estimate, over an arbitrary index family.** -/
-private theorem tendsto_truncIndex_variance [IsProbabilityMeasure μ]
+theorem tendsto_truncIndex_variance [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
       μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
@@ -2964,13 +2964,13 @@ private theorem tendsto_truncIndex_variance [IsProbabilityMeasure μ]
     simpa using h2
 
 /-- The small-block index set: the union of the `k_n` small blocks. -/
-private noncomputable def smallBlockIdx (h : ℕ → ℝ) (δ lam : ℝ) (n : ℕ) : Finset ℕ :=
+noncomputable def smallBlockIdx (h : ℕ → ℝ) (δ lam : ℝ) (n : ℕ) : Finset ℕ :=
   (Finset.range (blockCount h δ lam n)).biUnion fun i =>
     Finset.Ico (i * (bigBlockLen h n + smallBlockLen h δ lam n) + bigBlockLen h n)
       ((i + 1) * (bigBlockLen h n + smallBlockLen h δ lam n))
 
 /-- The small blocks are pairwise disjoint. -/
-private theorem smallBlockIdx_pairwiseDisjoint (h : ℕ → ℝ) (δ lam : ℝ) (n : ℕ) :
+theorem smallBlockIdx_pairwiseDisjoint (h : ℕ → ℝ) (δ lam : ℝ) (n : ℕ) :
     (↑(Finset.range (blockCount h δ lam n)) : Set ℕ).PairwiseDisjoint fun i =>
       Finset.Ico (i * (bigBlockLen h n + smallBlockLen h δ lam n) + bigBlockLen h n)
         ((i + 1) * (bigBlockLen h n + smallBlockLen h δ lam n)) := by
@@ -2991,7 +2991,7 @@ private theorem smallBlockIdx_pairwiseDisjoint (h : ℕ → ℝ) (δ lam : ℝ) 
   · exact (key i' i hlt).symm
 
 /-- The small blocks live inside `range n`. -/
-private theorem smallBlockIdx_subset (h : ℕ → ℝ) (δ lam : ℝ) (n : ℕ) :
+theorem smallBlockIdx_subset (h : ℕ → ℝ) (δ lam : ℝ) (n : ℕ) :
     smallBlockIdx h δ lam n ⊆ Finset.range n := by
   intro a ha
   simp only [smallBlockIdx, Finset.mem_biUnion, Finset.mem_range, Finset.mem_Ico] at ha ⊢
@@ -3004,7 +3004,7 @@ private theorem smallBlockIdx_subset (h : ℕ → ℝ) (δ lam : ℝ) (n : ℕ) 
   omega
 
 /-- The total small-block length is `k_n s_n`. -/
-private theorem smallBlockIdx_card (h : ℕ → ℝ) (δ lam : ℝ) (n : ℕ) :
+theorem smallBlockIdx_card (h : ℕ → ℝ) (δ lam : ℝ) (n : ℕ) :
     (smallBlockIdx h δ lam n).card = blockCount h δ lam n * smallBlockLen h δ lam n := by
   classical
   rw [smallBlockIdx, Finset.card_biUnion (fun i hi i' hi' hne =>
@@ -3072,7 +3072,7 @@ the rest of the ledger and are not consumed by this estimate.
 **Status: PROVED**, over `tendsto_truncIndex_variance` (the covariance assembly, at an
 arbitrary index family) and `tendsto_blockCount_mul_smallBlockLen_div` (the numerology),
 applied to the small-block index set `smallBlockIdx`. -/
-private theorem tendsto_smallBlock_variance [IsProbabilityMeasure μ]
+theorem tendsto_smallBlock_variance [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     -- (C1) USER-INPUT: joint strict stationarity (fdd form); FY (C1)
     (hstat : ∀ (k : ℕ) (t : ℤ),
@@ -3154,7 +3154,7 @@ and `a L → A`, then `f n → A`. This is the outer skeleton of FY's four-term 
 `L` is the truncation level, the uniform approximation is the truncation tail (2.82),
 `a L` is the level-`L` Gaussian charFun, and `a L → A` is the variance continuity in
 `L` (2.84). -/
-private theorem tendsto_of_uniform_approx {f : ℕ → ℂ} {g : ℝ → ℕ → ℂ} {a : ℝ → ℂ} {A : ℂ}
+theorem tendsto_of_uniform_approx {f : ℕ → ℂ} {g : ℝ → ℕ → ℂ} {a : ℝ → ℂ} {A : ℂ}
     (happrox : ∀ ε : ℝ, 0 < ε → ∀ᶠ L in atTop, ∀ n, ‖f n - g L n‖ ≤ ε)
     (hg : ∀ L, Tendsto (g L) atTop (𝓝 (a L)))
     (ha : Tendsto a atTop (𝓝 A)) :
@@ -3214,7 +3214,7 @@ the factors `m_n h_n` and `h_n^{2/δ−1+λ}|log h_n|^λ`, which tend to `0` but
 small-`n` ranges have to be separated: for `n ≥ N` the large-lag factor is itself small,
 and for the finitely many `n < N` the crude `L¹` bound
 `E|S_n − S^L_n| ≤ √(n/h_n) C_W · 2 L^{1−δ} M` closes at fixed `n`. -/
-private theorem charFun_locSum_sub_locTruncSum_le [IsProbabilityMeasure μ]
+theorem charFun_locSum_sub_locTruncSum_le [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     -- (C1) USER-INPUT: joint strict stationarity (fdd form); FY (C1)
     (hstat : ∀ (k : ℕ) (t : ℤ),
@@ -3346,7 +3346,7 @@ the conditional law of `e_0` given `X_0 = v` converges weakly to the one at `v =
 formulation is heavier and buys nothing else. The two (2.74) hypotheses `heδc`/`hpb` are
 carried here solely because this statement consumes ledger (a); see `var_localized_sum`'s
 docstring for the proof that they are not derivable from (C1)–(C5) as formalized. -/
-private theorem tendsto_charFun_locTruncSum [IsProbabilityMeasure μ]
+theorem tendsto_charFun_locTruncSum [IsProbabilityMeasure μ]
     {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
     (hstat : ∀ (k : ℕ) (t : ℤ),
       μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
