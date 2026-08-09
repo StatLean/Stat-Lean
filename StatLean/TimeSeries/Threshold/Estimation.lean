@@ -23,10 +23,13 @@ memberships of the observations) is known:
   the definition's tie-break convention);
 * **eq. (4.8)** — the known-partition asymptotic normality
   `T_i^{1/2}(b̃_i − b_i) →d N(0, σ_i² W_i^{-1})`, a literature DEBT (the book says
-  "can be shown", pointing at Theorem 3.2). **Caution recorded in the inventory and
-  honored here**: the printed `W_i` is built from the moments of the *fictitious global
-  regime-`i` AR process*, not from moments conditional on `X_{t−d} ∈ A_i`; we state it
-  with the fictitious-process reading, matching Chan (1993a).
+  "can be shown", pointing at Theorem 3.2). **Caution recorded in the inventory**: the
+  printed `W_i` is built from the moments of the *fictitious global regime-`i` AR
+  process*, not from moments conditional on `X_{t−d} ∈ A_i`. The frozen statement left
+  `W_i` a free positive-definite matrix and was therefore FALSE
+  (`tarLS_clt_debt_false`); it is now **pinned to the process** as the regime-conditional
+  design covariance `tarRegimeDesignCov` — see the Statement-strengthening paragraph at
+  `tarLS_clt_debt`.
 
 **Scope.** FY Theorems 4.1/4.2 (Chan 1993a) and their consumers are **descoped**
 (user, 2026-08-04); nothing here estimates the threshold `r` itself.
@@ -244,7 +247,12 @@ Repairing the statement needs (i) `W` tied to the process (Chan 1993a's
 `E[Z_t Z_tᵀ]` for the fictitious regime-`i` AR process), (ii) `hLS` re-stated as joint
 minimality over `(β₀, β)` with `bhat` the `β`-component, and (iii) a non-degeneracy
 hypothesis `T_i → ∞` (equivalently `P(X_{t-d} ∈ A_i) > 0`), without which even a repaired
-`W` leaves the degenerate instance a counterexample. -/
+`W` leaves the degenerate instance a counterexample.
+
+**All three repairs are applied** to `tarLS_clt_debt` below (wave
+`ts/s12b-model-repairs`, 2026-08-09): see the Statement-strengthening paragraph there.
+This witness is kept verbatim, quantified over the *frozen* shape `H`, as the permanent
+record of what the repairs are for. -/
 
 /-! ### A concrete standard-Gaussian white noise on `ℤ` -/
 
@@ -401,13 +409,47 @@ private theorem tarLS_clt_debt_false
   have hlt : Real.exp (-(1 / 2)) < 1 := Real.exp_lt_one_iff.mpr (by norm_num)
   linarith
 
+/-- The **regime-`i` conditional design covariance** `W_i`: the second-moment matrix of
+the regressor vector `Z_t = (X_{t−1−j})_{j<P}` **conditional on the regime event**
+`{X_{t−d} ∈ A_i}`, evaluated at `t = 0` (under strict stationarity the choice of `t` is
+immaterial). Junk `0` on a null regime event, by the `⁻¹`/`toReal` conventions. -/
+noncomputable def tarRegimeDesignCov {P : ℕ} (A : Set ℝ) (d : ℕ)
+    (X : ℤ → Ω → ℝ) (μ : Measure Ω) : Matrix (Fin P) (Fin P) ℝ :=
+  Matrix.of fun j l => ((μ {ω | X (-(d : ℤ)) ω ∈ A}).toReal)⁻¹ *
+    ∫ ω in {ω | X (-(d : ℤ)) ω ∈ A},
+      X (-1 - (j : ℕ)) ω * X (-1 - (l : ℕ)) ω ∂μ
+
 /-- **FY eq. (4.8) — DEBT (Chan 1993a; the book's "can be shown", companion to
 Thm 3.2)**: with a known partition, under strict stationarity, ergodicity and finite
 second moments, the regime-wise LS estimator is `√T_i`-asymptotically normal with
-covariance `σ_i² W_i^{-1}`, where `W_i` is the second-moment matrix of the
-**fictitious global regime-`i` AR process** (the inventory's documented reading of the
-printed `W_i`, per Chan 1993a — *not* the conditional moments given `X_{t−d} ∈ A_i`).
-Stated in Cramér–Wold/charFun form over the coefficient vector. -/
+covariance `σ_i² W_i^{-1}`. Stated in Cramér–Wold/charFun form over the coefficient
+vector.
+
+**Statement strengthening (wave `ts/s12b-model-repairs`, 2026-08-09).** The frozen form
+of this statement is FALSE — see `tarLS_clt_debt_false` above, which is kept verbatim as
+the record of the refutation. Three repairs, exactly the ones that witness's docstring
+prescribes, are applied here; each added or changed hypothesis is tagged `USER-INPUT`:
+
+1. **`W` is no longer a free parameter.** It is pinned by `hWdef` to
+   `tarRegimeDesignCov (A i) d X μ`, i.e. to `E[Z_0 Z_0ᵀ | X_{−d} ∈ A_i]`, a functional of
+   `(A, d, X, μ)` alone. This kills defect 1 of the witness (two admissible values `W`,
+   `2W` forcing two different limits). Note this is the **regime-conditional** reading,
+   which is what the task of estimating `b_i` from the regime-`i` subsample actually
+   produces; the inventory's earlier note that the printed `W_i` should be read as the
+   moments of the *fictitious global regime-`i` AR process* (Chan 1993a) is a different
+   normalization of the same object — under the fictitious-process reading the two agree
+   up to the regime mass, which is absorbed by the `√T_i` (rather than `√T`) scaling.
+2. **`bhat` has a genuine least-squares characterization.** The frozen `hLS` asserted
+   minimality of the pair `(b0 i, bhat T ω)` — pinning the *intercept at the truth*, a
+   probability-zero constraint (defect 2). The repair introduces the estimated intercept
+   sequence `bhat0` and asks for **joint** minimality of `(bhat0 T ω, bhat T ω)` over all
+   `(γ₀, γ)`, which is FY eqs. (4.4)–(4.5) verbatim, and which is *satisfiable* at every
+   sample by `exists_tarLS_minimizer` above.
+3. **The regime is non-degenerate.** `hmass` asks the regime event to carry positive
+   mass. Without it the empty-regime instance of the witness survives *any* repair of `W`:
+   the statistic is identically `0` while the limit is a nondegenerate Gaussian. Under
+   strict stationarity and ergodicity `hmass` is equivalent to `T_i → ∞` a.s., which is
+   the form FY uses. -/
 theorem tarLS_clt_debt [IsProbabilityMeasure μ] {k P : ℕ}
     {b0 : Fin k → ℝ} {b : Fin k → Fin P → ℝ} {σ : Fin k → ℝ} {A : Fin k → Set ℝ}
     {d : ℕ} {X ε : ℤ → Ω → ℝ}
@@ -416,14 +458,25 @@ theorem tarLS_clt_debt [IsProbabilityMeasure μ] {k P : ℕ}
     (hstat : IsStrictlyStationary X μ)
     -- USER-INPUT: finite second moments; FY §4.1.2 standing assumption
     (hL2 : ∀ t, MemLp (X t) 2 μ)
-    -- USER-INPUT: the fictitious regime-i AR process' second-moment matrix, assumed
-    -- invertible; Chan 1993a
-    (i : Fin k) (W : Matrix (Fin P) (Fin P) ℝ) (hW : Matrix.PosDef W)
-    -- USER-INPUT: a measurable regime-wise LS estimator sequence; FY eqs. (4.4)-(4.5)
-    (bhat : (T : ℕ) → Ω → Fin P → ℝ) (hmeas : ∀ T, Measurable (bhat T))
+    (i : Fin k)
+    -- USER-INPUT: the regime-`i` design covariance is the conditional second-moment
+    -- matrix of the regressors, *defined from the process* (no longer a free parameter);
+    -- FY §4.1.2, eq. (4.8) / Chan 1993a
+    (W : Matrix (Fin P) (Fin P) ℝ) (hWdef : W = tarRegimeDesignCov (A i) d X μ)
+    -- USER-INPUT: the design covariance is invertible (no exact linear relation among the
+    -- regime-`i` regressors); Chan 1993a
+    (hW : Matrix.PosDef W)
+    -- USER-INPUT: the regime carries positive mass — equivalently `T_i → ∞`; FY §4.1.2
+    (hmass : 0 < (μ {ω | X (-(d : ℤ)) ω ∈ A i}).toReal)
+    -- USER-INPUT: a measurable regime-wise LS estimator sequence, intercept included;
+    -- FY eqs. (4.4)-(4.5)
+    (bhat0 : (T : ℕ) → Ω → ℝ) (bhat : (T : ℕ) → Ω → Fin P → ℝ)
+    (hmeas0 : ∀ T, Measurable (bhat0 T)) (hmeas : ∀ T, Measurable (bhat T))
+    -- USER-INPUT: joint least-squares minimality over `(β₀, β)` (satisfiable at every
+    -- sample: `exists_tarLS_minimizer`); FY eqs. (4.4)-(4.5)
     (hLS : ∀ (T : ℕ) (ω : Ω), ∀ γ0 : ℝ, ∀ γ : Fin P → ℝ,
       tarLSResidualSS (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (A i) d
-          (b0 i) (bhat T ω)
+          (bhat0 T ω) (bhat T ω)
         ≤ tarLSResidualSS (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (A i) d γ0 γ)
     (c : Fin P → ℝ) (u : ℝ) :
     Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
