@@ -69,7 +69,7 @@ noncomputable def risk [MeasurableSpace Z] (D : Measure Z) (ℓ : H → Z → �
 
 /-- **Empirical risk** (SSBD Eq. (3.4)): the average loss `n⁻¹ ∑ᵢ ℓ(h, zᵢ)` of
 `h` on the sample `s`. Edge behavior: `n = 0` gives junk `0` (`(0:ℝ)⁻¹ = 0`). -/
-def empRisk {n : ℕ} (ℓ : H → Z → ℝ) (s : Sample Z n) (h : H) : ℝ :=
+noncomputable def empRisk {n : ℕ} (ℓ : H → Z → ℝ) (s : Sample Z n) (h : H) : ℝ :=
   (n : ℝ)⁻¹ * ∑ i, ℓ h (s i)
 
 /-- **Best-in-class risk** `inf_{g ∈ 𝓗} L_D(g)` (SSBD Definition 3.3 RHS), in

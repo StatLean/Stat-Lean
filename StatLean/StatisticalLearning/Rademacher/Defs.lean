@@ -41,7 +41,7 @@ def signOf (σ : Fin n → Bool) : Fin n → ℝ :=
 
 /-- Average of `g` over all `2ⁿ` sign vectors — the finite-sum reading of
 `E_{σ ∼ {±1}ⁿ}[g(σ)]` (SSBD §26.1). -/
-def signAvg (n : ℕ) (g : (Fin n → ℝ) → ℝ) : ℝ :=
+noncomputable def signAvg (n : ℕ) (g : (Fin n → ℝ) → ℝ) : ℝ :=
   (2 ^ n : ℝ)⁻¹ * ∑ σ : Fin n → Bool, g (signOf σ)
 
 /-- **Rademacher complexity of a set of vectors** `A ⊆ ℝⁿ` (SSBD Eq. (26.5)):
