@@ -4,6 +4,7 @@ import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Independence.InfinitePi
 import Mathlib.Probability.Independence.Integration
+import Mathlib.Probability.ConditionalExpectation
 
 /-!
 # Stationary ARCH(∞) processes: the Volterra construction (FY §2.1.5, Theorem 2.5)
@@ -1209,12 +1210,223 @@ theorem archInf_acvf_recursion [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ →
   rw [hacvf k, hCrec, hRHS, hane]
   ring
 
+/-! ### The martingale-difference decomposition
+
+The ARCH(∞) equation is *itself* an exact martingale decomposition, which is why no
+`m`-dependent approximation of the Volterra series is needed for the CLT. Write
+`ρ_t = a + Σ_j b_j Y_{t−1−j}`, the conditional-mean field of FY eq. (2.15). Then
+`ρ_t` is `σ(Y_s : s < t)`-measurable, `ξ_t` is independent of that σ-algebra
+(`IsARCHInf.indep_past`) and has mean one, so
+
+`E[Y_t | σ(Y_s : s < t)] = ρ_t`,  `d_t := Y_t − ρ_t = ρ_t(ξ_t − 1)`
+
+is a strictly stationary martingale-difference sequence for the filtration
+`G_t = σ(Y_s : s ≤ t)`.
+
+One technical point: the *real* `tsum` `Σ_j b_j Y_{t−1−j}` carries no measurability of its
+own (Lean's `tsum` is a junk-valued `dite` off the summable set), so the strict-past
+representative has to be built in `ℝ≥0∞`, where every term is nonnegative and the sum is
+unconditional. That is `archInfDrift`; it agrees a.e. with the printed `ρ_t`
+(`archInfDrift_ae_eq`). -/
+
+/-- **The conditional-mean field `ρ_t = a + Σ_j b_j Y_{t−1−j}` of FY eq. (2.15)**, built
+in `ℝ≥0∞` so that it is a genuine `σ(Y_s : s < t)`-measurable function rather than only an
+a.e. class. Agrees a.e. with the real series (`archInfDrift_ae_eq`). -/
+noncomputable def archInfDrift (a : ℝ) (bc : ℕ → ℝ) (Y : ℤ → Ω → ℝ) (t : ℤ) (ω : Ω) : ℝ :=
+  (ENNReal.ofReal a
+    + ∑' j : ℕ, ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω)).toReal
+
+omit [MeasurableSpace Ω] in
+/-- `archInfDrift` is measurable for the **strict past** of the solution. -/
+theorem measurable_archInfDrift_sigmaLT {a : ℝ} {bc : ℕ → ℝ} {Y : ℤ → Ω → ℝ} (t : ℤ) :
+    Measurable[sigmaLT Y t] (archInfDrift a bc Y t) := by
+  refine (measurable_const.add (Measurable.ennreal_tsum fun j =>
+    measurable_const.mul ?_)).ennreal_toReal
+  have hlt : t - 1 - (j : ℕ) < t := by
+    have : (0 : ℤ) ≤ (j : ℤ) := Int.natCast_nonneg j
+    omega
+  exact ((Measurable.of_comap_le (le_refl
+    (MeasurableSpace.comap (Y (t - 1 - (j : ℕ))) inferInstance))).mono
+      (comap_le_sigmaLT hlt) le_rfl).ennreal_ofReal
+
+/-- `archInfDrift` is the printed `ρ_t = a + Σ_j b_j Y_{t−1−j}` up to a null set. -/
+theorem archInfDrift_ae_eq [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ} {Y ξ : ℤ → Ω → ℝ}
+    (hsum : Summable bc) (h : IsARCHInf a bc Y ξ μ) (hint : ∀ t, Integrable (Y t) μ)
+    (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
+    archInfDrift a bc Y t =ᵐ[μ] fun ω => a + ∑' j : ℕ, bc j * Y (t - 1 - (j : ℕ)) ω := by
+  filter_upwards [archInf_tsum_ae_lt_top hsum h hint hstat t,
+    ae_all_iff.2 fun j : ℕ => h.Y_nonneg (t - 1 - (j : ℕ))] with ω hT hYω
+  have hterm : ∀ j : ℕ,
+      (ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω)).toReal
+        = bc j * Y (t - 1 - (j : ℕ)) ω := fun j => by
+    rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (h.bc_nonneg j),
+      ENNReal.toReal_ofReal (hYω j)]
+  have hne : ∀ j : ℕ,
+      ENNReal.ofReal (bc j) * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω) ≠ ∞ := fun j =>
+    ENNReal.mul_ne_top ENNReal.ofReal_ne_top ENNReal.ofReal_ne_top
+  have hTt : (∑' j : ℕ, ENNReal.ofReal (bc j)
+        * ENNReal.ofReal (Y (t - 1 - (j : ℕ)) ω)).toReal
+      = ∑' j : ℕ, bc j * Y (t - 1 - (j : ℕ)) ω := by
+    rw [ENNReal.tsum_toReal_eq hne]
+    exact tsum_congr hterm
+  simp only [archInfDrift]
+  rw [ENNReal.toReal_add ENNReal.ofReal_ne_top hT.ne, ENNReal.toReal_ofReal h.a_nonneg, hTt]
+
+/-- The model equation with the measurable representative: `Y_t = ρ_t ξ_t` a.e. -/
+private lemma archInf_rec_drift [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
+    {Y ξ : ℤ → Ω → ℝ} (hsum : Summable bc) (h : IsARCHInf a bc Y ξ μ)
+    (hint : ∀ t, Integrable (Y t) μ) (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
+    Y t =ᵐ[μ] fun ω => archInfDrift a bc Y t ω * ξ t ω := by
+  filter_upwards [h.recurrence t, archInfDrift_ae_eq hsum h hint hstat t] with ω h1 h2
+  rw [h1, h2]
+
+/-- **The conditional mean of an ARCH(∞) solution given its strict past** is the driving
+series `ρ_t = a + Σ_j b_j Y_{t−1−j}` (FY eq. (2.15) read as a conditional-mean model).
+Proved from `indep_past` and `E ξ = 1` alone. -/
+theorem archInf_condexp_strict_past [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
+    {Y ξ : ℤ → Ω → ℝ} (hsum : Summable bc) (h : IsARCHInf a bc Y ξ μ)
+    (hint : ∀ t, Integrable (Y t) μ) (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
+    μ[Y t | sigmaLT Y t] =ᵐ[μ] fun ω => a + ∑' j : ℕ, bc j * Y (t - 1 - (j : ℕ)) ω := by
+  have hFle := sigmaLT_le h.measurableY t
+  haveI : SigmaFinite (μ.trim hFle) := by
+    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+    infer_instance
+  have hrec := archInf_rec_drift hsum h hint hstat t
+  have hprodint : Integrable (fun ω => archInfDrift a bc Y t ω * ξ t ω) μ :=
+    (hint t).congr hrec
+  have hξint : Integrable (ξ t) μ := (h.identDistrib 0 t).integrable_snd h.integrable_xi
+  have hpull : μ[fun ω => archInfDrift a bc Y t ω * ξ t ω | sigmaLT Y t]
+      =ᵐ[μ] fun ω => archInfDrift a bc Y t ω * (μ[ξ t | sigmaLT Y t]) ω :=
+    condExp_mul_of_stronglyMeasurable_left
+      (measurable_archInfDrift_sigmaLT t).stronglyMeasurable hprodint hξint
+  have hcondξ : μ[ξ t | sigmaLT Y t] =ᵐ[μ] fun _ => (1 : ℝ) := by
+    have hind := condExp_indep_eq (h.measurableXi t).comap_le hFle
+      (Measurable.of_comap_le
+        (le_refl (MeasurableSpace.comap (ξ t) inferInstance))).stronglyMeasurable
+      (h.indep_past t)
+    filter_upwards [hind] with ω hω
+    rw [hω, (h.identDistrib t 0).integral_eq, h.integral_xi]
+  refine ((condExp_congr_ae hrec).trans hpull).trans ?_
+  filter_upwards [hcondξ, archInfDrift_ae_eq hsum h hint hstat t] with ω e1 e2
+  rw [e1, mul_one, e2]
+
+/-- **The ARCH(∞) martingale-difference sequence**: `d_t = Y_t − ρ_t` has zero conditional
+mean given the strict past. This is the exact decomposition that replaces the
+`m`-dependent approximation of the Volterra series in the CLT; see the residue note on
+`archInf_clt_debt`. -/
+theorem archInf_mds [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
+    {Y ξ : ℤ → Ω → ℝ} (hsum : Summable bc) (h : IsARCHInf a bc Y ξ μ)
+    (hint : ∀ t, Integrable (Y t) μ) (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
+    μ[fun ω => Y t ω - archInfDrift a bc Y t ω | sigmaLT Y t] =ᵐ[μ] 0 := by
+  have hFle := sigmaLT_le h.measurableY t
+  haveI : SigmaFinite (μ.trim hFle) := by
+    haveI : IsFiniteMeasure (μ.trim hFle) := MeasureTheory.isFiniteMeasure_trim hFle
+    infer_instance
+  have hdae := archInfDrift_ae_eq hsum h hint hstat t
+  have hdint : Integrable (archInfDrift a bc Y t) μ := by
+    refine Integrable.congr (integrable_condExp (m := sigmaLT Y t) (f := Y t)) ?_
+    exact ((archInf_condexp_strict_past hsum h hint hstat t).trans hdae.symm)
+  have hsub : μ[fun ω => Y t ω - archInfDrift a bc Y t ω | sigmaLT Y t]
+      =ᵐ[μ] fun ω => (μ[Y t | sigmaLT Y t]) ω - (μ[archInfDrift a bc Y t | sigmaLT Y t]) ω :=
+    condExp_sub (hint t) hdint _
+  have hself : μ[archInfDrift a bc Y t | sigmaLT Y t] =ᵐ[μ] archInfDrift a bc Y t :=
+    Filter.EventuallyEq.of_eq (condExp_of_stronglyMeasurable hFle
+      (measurable_archInfDrift_sigmaLT t).stronglyMeasurable hdint)
+  filter_upwards [hsub, hself, archInf_condexp_strict_past hsum h hint hstat t, hdae]
+    with ω e1 e2 e3 e4
+  rw [e1, e2, e3, e4]
+  simp
+
 /-- **FY Theorem 2.6 — DEBT** (Giraitis–Kokoszka–Leipus 2000; fdd invariance principle):
 under eq. (2.16), the normalized partial sums of a stationary ARCH(∞) process are
 asymptotically `N(0, σ²)` with long-run variance `σ² = Σ_k Cov(Y_k, Y_0)`. Stated at the
 level of one-dimensional marginals through characteristic functions (Lévy-equivalent to
 convergence in distribution; the full Brownian fdd statement of FY Thm 2.6 refines this
-and can be layered on once a Brownian process is available). -/
+and can be layered on once a Brownian process is available).
+
+### Residue note (wave `ts/s13-whittle-lad`, 2026-08-09)
+
+**The `m`-dependent-approximation route is unnecessary, and is overturned here.** The
+standing plan for this debt was: truncate the Volterra series at Volterra order *and* lag,
+observe that the truncation is `m`-dependent, run the Bernstein-block device on it, and
+control the tail in `L²` through the coefficient bound `lintegral_sq_archLayer_le`. That
+plan is sound but strictly harder than necessary. The ARCH(∞) *equation* already carries
+an **exact** martingale decomposition, with no truncation and no blocking:
+
+`d_t := Y_t − ρ_t = ρ_t (ξ_t − 1)`,  `ρ_t = a + Σ_j b_j Y_{t−1−j}`,
+
+is a martingale-difference sequence for `G_t = σ(Y_s : s ≤ t)` — this is now **PROVED**
+(`archInf_mds`, over `archInf_condexp_strict_past`), from `IsARCHInf.indep_past` and
+`E ξ = 1` alone. Brown's martingale CLT is already in the repo
+(`ForMathlib/Probability/MartingaleCLT/BrownCLT.lean`, `mds_clt_sequence`) and its
+conclusion is *literally* the shape of the goal above, with `ξ i := d_i` and
+`G i := sigmaLT Y (i : ℤ)`. So the debt reduces to the four inputs of that theorem plus
+one algebraic reduction. The truncated Volterra apparatus is not built, and should not be.
+
+**(A) The algebraic reduction — `(1 − B) S_n = D_n + O_{L²}(1)`, `B := Σ_j b_j`.** Write
+`S_n = Σ_{t<n}(Y_t − m)`, `D_n = Σ_{t<n} d_t`, `m = E Y_0`. Because `m = a/(1 − B)`
+(`integral_archSol`), the constant cancels: `ρ_t − m = Σ_j b_j (Y_{t−1−j} − m)`, so
+`S_n − D_n = Σ_j b_j S_n^{(−1−j)}` with `S_n^{(s)} := Σ_{t<n}(Y_{t+s} − m)`.
+Two facts finish it, for *any* cut `J`:
+* `‖S_n^{(−1−j)} − S_n‖₂ ≤ 2(j+1)‖Y_0 − m‖₂` — the two index blocks differ in at most
+  `2(j+1)` slots — which handles `j < J` at a cost `2J B ‖Y_0 − m‖₂`, **free of `n`**;
+* `‖S_n^{(s)}‖₂ = ‖S_n‖₂ ≤ √(n Γ)`, `Γ := Σ_k |γ(k)| < ∞` (this is exactly what `hσ2`
+  buys: a `HasSum` over `ℤ` in `ℝ` is unconditional, hence absolute), which handles
+  `j ≥ J` at a cost `2√(nΓ) Σ_{j≥J} b_j`.
+  Dividing by `√n` and letting `n → ∞` then `J → ∞` gives
+  `‖n^{−1/2}((1 − B) S_n − D_n)‖₂ → 0`, hence the two characteristic functions merge
+  (`|E e^{iuZ} − E e^{iuW}| ≤ |u| E|Z − W|`, the pattern of
+  `Process/SampleACF.lean`'s `norm_charFun_map_sub_le`). **No decay rate on `b_j` is
+  needed** — the `J`-cut absorbs it. This is bookkeeping only; it is the largest *routine*
+  piece left.
+
+**(B) `mds_clt_sequence`'s inputs, one by one.**
+* `hadapted`, `hmds` — **CLOSED** (`archInf_mds`; adaptedness is `Y_i` plus
+  `measurable_archInfDrift_sigmaLT`, both `sigmaLT Y (i+1)`-measurable).
+* `hL2` — `MemLp d_i 2`: free from `hL2` for `Y` and the `L²` contraction property of
+  conditional expectation (`ρ_i = μ[Y_i | sigmaLT Y i]` a.e., so `MemLp.condExp`).
+* `hlind` (averaged Lindeberg) — free *given* that the `d_i` are identically distributed:
+  every summand then equals `∫_{|d_0| ≥ ε√n} d_0²`, which vanishes by dominated
+  convergence since `d_0 ∈ L²`. See (C) for the identical-distribution transfer.
+* `hvar` (averaged conditional variance) — **the one genuinely open analytic input.**
+  Since `d_i = ρ_i(ξ_i − 1)` with `ρ_i` strict-past measurable and `ξ_i` independent of it,
+  `E[d_i² | G_i] = v ρ_i²` with `v := Var(ξ_0)`, so the hypothesis is exactly the
+  **`L¹` law of large numbers** `n⁻¹ Σ_{i<n} ρ_i² →p E[ρ_0²]`. Strict stationarity alone
+  does *not* give this; it needs **ergodicity** of the stationary sequence `ρ_i²`. That is
+  true — `ρ_t` is a fixed measurable functional of the i.i.d. noise path
+  (`archFun_congr`-style causality), and the shift on an i.i.d. product law is ergodic —
+  but the transfer is not in the repo at this granularity. Note that the frozen statement
+  does **not** hypothesize ergodicity, so this must be *derived*, from
+  `IsARCHInf.iIndep` + `Probability/ProductMeasure`, not assumed. `ForMathlib/Ergodic` is
+  where it belongs.
+
+**(C) The infinite-past transfer.** `IsStrictlyStationary Y μ` is a *finite-dimensional*
+statement (`isStrictlyStationary_iff_window`), while `d_i` and `ρ_i` read the whole past.
+Upgrading fdd-stationarity to identical distribution of `(d_i)` is a π-system/Dynkin
+argument on the path law — the same step the file's own uniqueness proof avoided by
+staying inside `archInf_eq_archSol`. The cheap route here is to *not* upgrade it: replace
+`Y` by `archSol a bc ξ` (they agree a.e., `archInf_eq_archSol`), which is by construction
+`archFun a bc ∘ archPath ξ t`, and transport along the shift-invariance of
+`Measure.infinitePi` directly, exactly as `Threshold/Estimation.lean`'s `wnMeasure_shift`
+does. This also delivers (B)'s ergodicity input.
+
+**(D) Variance identification.** `mds_clt_sequence` produces `N(0, σ_d²)` for
+`n^{−1/2} D_n` with `σ_d² = v E[ρ_0²]`; (A) then gives `N(0, σ_d²/(1 − B)²)` for
+`n^{−1/2} S_n`. Matching this to the frozen `σ² = Σ_k γ(k)` is *not* an extra input: (A)
+already forces `σ²(1 − B)² = lim n⁻¹ E D_n² = σ_d²` by the orthogonality of martingale
+increments. So `hσ2`/`hσpos` are consumed only through `Γ < ∞` in (A) and through
+`0 ≤ σ2` in `mds_clt_sequence`.
+
+**What the acvf recursion is for.** `archInf_acvf_recursion` (`γ(k) = Σ_j b_j γ(k−1−j)`,
+`k ≥ 1`, proved above) is the *dependence-structure* half of Giraitis–Kokoszka–Leipus. It
+is **not** on the critical path of the route above — the `J`-cut in (A) makes the CLT
+insensitive to the decay of `γ`. It is what one needs instead to *discharge* the
+hypothesis `hσ2` rather than assume it, and it shows why `hσ2` cannot be dropped:
+iterating the recursion gives `|γ(k)| ≤ B · sup_{|l| < k} |γ(l)|`, which is dominated by
+`γ(0)` at every lag and therefore yields **no** decay from `Summable bc` alone. Summable
+autocovariances genuinely require a *rate* on `b_j` (GKL take `b_j = O(j^{−1−δ})` or
+geometric); this is a correction to any reading of FY Thm 2.6 in which eq. (2.16) alone is
+supposed to imply `Σ_k |γ(k)| < ∞`. -/
 theorem archInf_clt_debt [IsProbabilityMeasure μ]
     {a : ℝ} {bc : ℕ → ℝ} {Y ξ : ℤ → Ω → ℝ}
     (ha : 0 ≤ a) (hbc : ∀ j, 0 ≤ bc j) (hsum : Summable bc)
