@@ -150,7 +150,8 @@ theorem sum_character_eq_zero {S : Finset ι}
   calc ∑ x : ι → Bool, character S x
       = ∑ x : ι → Bool, ∏ j, (if j ∈ S then levelSign (x j) else 1) :=
         Finset.sum_congr rfl fun x _ => character_eq_prod_univ S x
-    _ = ∏ j, ∑ b, (if j ∈ S then levelSign b else 1) := sum_pi_bool_prod _
+    _ = ∏ j, ∑ b, (if j ∈ S then levelSign b else 1) :=
+        sum_pi_bool_prod fun j b => if j ∈ S then levelSign b else 1
     _ = 0 := by
         obtain ⟨j₀, hj₀⟩ := hS
         refine Finset.prod_eq_zero (Finset.mem_univ j₀) ?_
