@@ -839,6 +839,158 @@ private lemma eq_map_sum_sq_gaussian_of_charFun {p : ℕ} (chiSq : Measure ℝ)
   exact Measure.ext_of_charFun (funext fun u => by
     rw [hchi u, charFun_map_sum_sq_gaussian])
 
+/-! ### The `R²` algebra of the auxiliary regression
+
+Brick (a) of the `TR²` residue: turn the `IsLeast` package `hrss` into usable algebra. The
+whole content is that a least-squares fit is *orthogonal to its own design*, which for a
+design containing the intercept gives the ANOVA split `tss = rss + ess` for **any** centring
+constant — the sample mean is not needed. Two consequences that the LM limit will use:
+`archTR2Stat` is genuinely `T` times an `R² ∈ [0, 1]`, and its numerator is the explained
+sum of squares, the quadratic form the CLT acts on. -/
+
+/-- **The scalar normal equation.** If perturbing the residual vector `r` along a direction
+`g` cannot decrease the sum of squares, then `r ⟂ g`. The `B = 0` branch is not a
+degeneracy to be excluded — it says `g` vanishes on the index set, where orthogonality is
+free. -/
+private lemma sum_mul_eq_zero_of_isMin {ι : Type*} {s : Finset ι} {r g : ι → ℝ}
+    (h : ∀ lam : ℝ, ∑ t ∈ s, r t ^ 2 ≤ ∑ t ∈ s, (r t - lam * g t) ^ 2) :
+    ∑ t ∈ s, r t * g t = 0 := by
+  set A := ∑ t ∈ s, r t * g t with hA
+  set B := ∑ t ∈ s, g t ^ 2 with hBdef
+  have hB : 0 ≤ B := Finset.sum_nonneg fun _ _ => sq_nonneg _
+  have hexp : ∀ lam : ℝ, ∑ t ∈ s, (r t - lam * g t) ^ 2
+      = (∑ t ∈ s, r t ^ 2) - 2 * lam * A + lam ^ 2 * B := by
+    intro lam
+    simp only [hA, hBdef, Finset.mul_sum, ← Finset.sum_add_distrib, ← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun t _ => by ring
+  have key : ∀ lam : ℝ, 0 ≤ -(2 * lam * A) + lam ^ 2 * B := by
+    intro lam
+    have := h lam
+    rw [hexp lam] at this
+    linarith
+  rcases eq_or_lt_of_le hB with hB0 | hBpos
+  · -- the direction vanishes on `s`, so the inner product does too
+    have hg : ∀ t ∈ s, g t = 0 := by
+      intro t ht
+      have hz := (Finset.sum_eq_zero_iff_of_nonneg fun t _ => sq_nonneg (g t)).1 hB0.symm t ht
+      exact pow_eq_zero_iff (two_ne_zero) |>.1 hz
+    exact Finset.sum_eq_zero fun t ht => by rw [hg t ht, mul_zero]
+  · by_contra hAne
+    have hstep := key (A / B)
+    have hrw : -(2 * (A / B) * A) + (A / B) ^ 2 * B = -(A ^ 2) / B := by
+      field_simp; ring
+    rw [hrw] at hstep
+    have hA2 : 0 < A ^ 2 := by positivity
+    have : -(A ^ 2) / B < 0 := div_neg_of_neg_of_pos (by linarith) hBpos
+    linarith
+
+/-- **The least-squares normal equations**, read off the minimality property alone: the
+residuals are orthogonal to the constant regressor and to each lagged regressor. -/
+theorem archLS_normalEq {ι : Type*} {p : ℕ} {s : Finset ι} {y : ι → ℝ} {z : ι → Fin p → ℝ}
+    {β0 : ℝ} {β : Fin p → ℝ}
+    (hmin : ∀ (γ0 : ℝ) (γ : Fin p → ℝ),
+      ∑ t ∈ s, (y t - β0 - ∑ j, β j * z t j) ^ 2
+        ≤ ∑ t ∈ s, (y t - γ0 - ∑ j, γ j * z t j) ^ 2) :
+    (∑ t ∈ s, (y t - β0 - ∑ j, β j * z t j) = 0) ∧
+      ∀ k, ∑ t ∈ s, (y t - β0 - ∑ j, β j * z t j) * z t k = 0 := by
+  classical
+  -- the general one-parameter perturbation `(β0 + λ d0, β + λ d)`
+  have hpert : ∀ (d0 : ℝ) (d : Fin p → ℝ),
+      ∑ t ∈ s, (y t - β0 - ∑ j, β j * z t j) * (d0 + ∑ j, d j * z t j) = 0 := by
+    intro d0 d
+    refine sum_mul_eq_zero_of_isMin (r := fun t => y t - β0 - ∑ j, β j * z t j)
+      (g := fun t => d0 + ∑ j, d j * z t j) fun lam => ?_
+    have hshift : ∀ t ∈ s,
+        (y t - (β0 + lam * d0) - ∑ j, (β j + lam * d j) * z t j)
+          = (y t - β0 - ∑ j, β j * z t j) - lam * (d0 + ∑ j, d j * z t j) := by
+      intro t _
+      have : ∑ j, (β j + lam * d j) * z t j
+          = (∑ j, β j * z t j) + lam * ∑ j, d j * z t j := by
+        rw [Finset.mul_sum, ← Finset.sum_add_distrib]
+        exact Finset.sum_congr rfl fun j _ => by ring
+      rw [this]; ring
+    calc ∑ t ∈ s, (y t - β0 - ∑ j, β j * z t j) ^ 2
+        ≤ ∑ t ∈ s, (y t - (β0 + lam * d0) - ∑ j, (β j + lam * d j) * z t j) ^ 2 :=
+          hmin _ _
+      _ = ∑ t ∈ s, ((y t - β0 - ∑ j, β j * z t j)
+            - lam * (d0 + ∑ j, d j * z t j)) ^ 2 :=
+          Finset.sum_congr rfl fun t ht => by rw [hshift t ht]
+  constructor
+  · have h1 := hpert 1 0
+    simpa using h1
+  · intro k
+    have h1 := hpert 0 (fun j => if j = k then 1 else 0)
+    simpa using h1
+
+/-- **The ANOVA split of the auxiliary regression**, for an *arbitrary* centring constant
+`c`: `Σ(y − c)² = rss + Σ(ŷ − c)²`. The cross term vanishes by `archLS_normalEq` because
+`ŷ − c` is a combination of the constant regressor and the lags; in particular the split
+does **not** need `c` to be the sample mean. -/
+theorem archLS_anova {ι : Type*} {p : ℕ} {s : Finset ι} {y : ι → ℝ} {z : ι → Fin p → ℝ}
+    {β0 : ℝ} {β : Fin p → ℝ}
+    (hmin : ∀ (γ0 : ℝ) (γ : Fin p → ℝ),
+      ∑ t ∈ s, (y t - β0 - ∑ j, β j * z t j) ^ 2
+        ≤ ∑ t ∈ s, (y t - γ0 - ∑ j, γ j * z t j) ^ 2) (c : ℝ) :
+    ∑ t ∈ s, (y t - c) ^ 2
+      = (∑ t ∈ s, (y t - β0 - ∑ j, β j * z t j) ^ 2)
+        + ∑ t ∈ s, ((β0 + ∑ j, β j * z t j) - c) ^ 2 := by
+  obtain ⟨hconst, hlag⟩ := archLS_normalEq hmin
+  -- the cross term, expanded along the design
+  have hcross : ∑ t ∈ s,
+      (y t - β0 - ∑ j, β j * z t j) * ((β0 + ∑ j, β j * z t j) - c) = 0 := by
+    have hsplit : ∀ t ∈ s,
+        (y t - β0 - ∑ j, β j * z t j) * ((β0 + ∑ j, β j * z t j) - c)
+          = (β0 - c) * (y t - β0 - ∑ j, β j * z t j)
+            + ∑ j, β j * ((y t - β0 - ∑ j, β j * z t j) * z t j) := by
+      intro t _
+      have hS : ∑ j, β j * ((y t - β0 - ∑ j, β j * z t j) * z t j)
+          = (y t - β0 - ∑ j, β j * z t j) * ∑ j, β j * z t j := by
+        rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun j _ => by ring
+      rw [hS]; ring
+    rw [Finset.sum_congr rfl hsplit, Finset.sum_add_distrib, ← Finset.mul_sum, hconst,
+      mul_zero, zero_add, Finset.sum_comm]
+    exact Finset.sum_eq_zero fun j _ => by rw [← Finset.mul_sum, hlag j, mul_zero]
+  have hpt : ∀ t ∈ s, (y t - c) ^ 2
+      = (y t - β0 - ∑ j, β j * z t j) ^ 2 + ((β0 + ∑ j, β j * z t j) - c) ^ 2
+        + 2 * ((y t - β0 - ∑ j, β j * z t j) * ((β0 + ∑ j, β j * z t j) - c)) := by
+    intro t _; ring
+  rw [Finset.sum_congr rfl hpt, Finset.sum_add_distrib, Finset.sum_add_distrib,
+    ← Finset.mul_sum, hcross, mul_zero, add_zero]
+
+/-- **`archTR2Stat` really is `T` times an `R²`.** Under the frozen `hrss`/`htss` the
+residual sum of squares never exceeds the total: `1 − rss/tss ∈ [0, 1]` whenever
+`tss > 0`. This is the sanity fact the LM limit needs before any distributional step, and
+it is exactly the ANOVA split at the centring constant `htss` uses. -/
+theorem arch_rss_le_tss {p : ℕ} {X : ℤ → Ω → ℝ} {rss tss : (T : ℕ) → Ω → ℝ}
+    (hrss : ∀ (T : ℕ) (ω : Ω), IsLeast
+      {r : ℝ | ∃ (β0 : ℝ) (β : Fin p → ℝ), r = ∑ t ∈ Finset.Ico p T,
+        (X ((t : ℤ) + 1) ω ^ 2 - β0
+          - ∑ j : Fin p, β j * X ((t : ℤ) - (j : ℕ)) ω ^ 2) ^ 2} (rss T ω))
+    (htss : ∀ (T : ℕ) (ω : Ω), tss T ω = ∑ t ∈ Finset.Ico p T,
+      (X ((t : ℤ) + 1) ω ^ 2
+        - ((T : ℝ) - p)⁻¹ * ∑ u ∈ Finset.Ico p T, X ((u : ℤ) + 1) ω ^ 2) ^ 2)
+    (T : ℕ) (ω : Ω) : rss T ω ≤ tss T ω := by
+  obtain ⟨β0, β, hval⟩ := (hrss T ω).1
+  have hmin : ∀ (γ0 : ℝ) (γ : Fin p → ℝ),
+      ∑ t ∈ Finset.Ico p T,
+          (X ((t : ℤ) + 1) ω ^ 2 - β0 - ∑ j : Fin p, β j * X ((t : ℤ) - (j : ℕ)) ω ^ 2) ^ 2
+        ≤ ∑ t ∈ Finset.Ico p T,
+          (X ((t : ℤ) + 1) ω ^ 2 - γ0 - ∑ j : Fin p, γ j * X ((t : ℤ) - (j : ℕ)) ω ^ 2) ^ 2 := by
+    intro γ0 γ
+    rw [← hval]
+    exact (hrss T ω).2 ⟨γ0, γ, rfl⟩
+  have hano := archLS_anova (s := Finset.Ico p T)
+    (y := fun t : ℕ => X ((t : ℤ) + 1) ω ^ 2)
+    (z := fun (t : ℕ) (j : Fin p) => X ((t : ℤ) - (j : ℕ)) ω ^ 2) hmin
+    (((T : ℝ) - p)⁻¹ * ∑ u ∈ Finset.Ico p T, X ((u : ℤ) + 1) ω ^ 2)
+  have hess : 0 ≤ ∑ t ∈ Finset.Ico p T,
+      ((β0 + ∑ j : Fin p, β j * X ((t : ℤ) - (j : ℕ)) ω ^ 2)
+        - ((T : ℝ) - p)⁻¹ * ∑ u ∈ Finset.Ico p T, X ((u : ℤ) + 1) ω ^ 2) ^ 2 :=
+    Finset.sum_nonneg fun _ _ => sq_nonneg _
+  rw [htss T ω, hano, ← hval]
+  linarith
+
 /-- **FY eqs. (4.52)–(4.53) — DEBT**: the score/LM statistic (equivalently, for normal
 errors, Engle's `TR²`) has the same `χ²_p` null limit as the likelihood-ratio
 statistic.
