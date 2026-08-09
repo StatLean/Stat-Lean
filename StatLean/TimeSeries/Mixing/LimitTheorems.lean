@@ -2,6 +2,7 @@ import StatLean.TimeSeries.Mixing.Inequalities
 import StatLean.TimeSeries.Mixing.Relations
 import StatLean.TimeSeries.ForMathlib.Probability.TriangularCLT
 import Mathlib.Analysis.Normed.Group.Tannery
+import Mathlib.MeasureTheory.Measure.LevyConvergence
 
 /-!
 # Limit theorems for α-mixing processes (FY §2.6.3, pp. 74–76)
@@ -31,9 +32,12 @@ import Mathlib.Analysis.Normed.Group.Tannery
   sorted-4-tuple largest-gap split plus a Cesàro count), and the block lengths by
   `exists_block_scheme_adaptive` (an `α`-dependent `l_n ≍ √n a_n`, `s_n ≍ k_n ≍ √n/a_n`,
   with `a_n → ∞` slowly enough that `E S_{l_n}⁴ = o(l_n n)`).
-  The former named debt `lindeberg_blocks_debt` is **no longer used by anything**; see its
-  docstring for why the Lindeberg-level statement is *not* removable this way (it is
-  equivalent to the theorem it served).
+  The former named debt `lindeberg_blocks_debt` is **no longer used by anything**, and is
+  itself now **PROVED** (wave `ts/s10`): being *equivalent* to 2.21(ii) (see its docstring),
+  it cannot be closed by the cubic route, but it *is* a corollary of the finished CLT —
+  `S_l/√l →d N(0,σ²)` plus `E S_l²/l → σ²` makes `S_l²/l` uniformly integrable. That
+  derivation (`tail_le_sub_min`, `exists_tail_threshold`) goes through Lévy continuity,
+  which is why this file now imports `MeasureTheory.Measure.LevyConvergence`.
 * **Theorem 2.20(i)** (Bosq 1998 §1.5) — the `δ`-moment variance rate: **PROVED**, and
   axiom-clean. The Billingsley bound `|γ(n)| ≤ 4α(n)C²` is replaced by **Davydov**
   (`Mixing/Inequalities.abs_covariance_le_davydov` at `p = q = δ`), whose side condition
@@ -50,7 +54,12 @@ import Mathlib.Analysis.Normed.Group.Tannery
   and `σ_Y(M)² → σ²` by Minkowski at every `n`. **Now axiom-clean**, since 2.21(ii) is.
 * **Proposition 2.8 (SLLN)** — α-mixing + `E|X| < ∞` ⇒ `S_n/n → EX` a.s.: literature
   DEBT (the cited route is "α-mixing ⇒ ergodic" + Birkhoff; Mathlib has no pointwise
-  ergodic theorem in the pin).
+  ergodic theorem in the pin). Wave `ts/s10` verified that **no moment route exists under
+  the frozen hypotheses** — they give only `E|X_0| < ∞` and `α(n) → 0` *without a rate*,
+  so there is no second moment for Chebyshev, and the file's fourth-moment brick needs
+  `|X| ≤ C` **and** `Σ α < ∞`, neither of which is assumed. The residue is named and
+  itemised in the theorem's docstring (path-space law + shift invariance; `α → 0 ⇒`
+  ergodicity; the maximal ergodic theorem and Birkhoff; transfer back to `Ω`).
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.6.3,
 Prop 2.8, Thms 2.20–2.21, eq. (2.63) (pp. 74–76). (`FY §2.6.3`.)
@@ -2562,129 +2571,6 @@ private lemma exists_block_scheme_adaptive [IsProbabilityMeasure μ] {X : ℤ �
   have hl0 : (0 : ℝ) < (l n : ℝ) := by exact_mod_cast hl1 n
   field_simp
 
-/-- **NAMED PRIVATE DEBT** (Ibragimov–Linnik, *Independent and Stationary Sequences of
-Random Variables*, 1971, Theorem 18.5.3; the technical lemma behind FY Theorem 2.21(ii)).
-
-Under `|X| ≤ C`, strict stationarity, zero mean and `Σ α(j) < ∞`, the normalised block
-sums `S_l²/l` are **uniformly integrable**, so the Lindeberg mass at a level `ε√n` with
-`l_n/n → 0` vanishes.
-
-**STATUS (wave `ts/s5b`): DEAD BRICK — nothing depends on it any more.**
-`clt_of_bounded_alphaMixing` (2.21(ii)) and `clt_of_alphaMixing_debt` (2.21(i)) are now
-**axiom-clean**, proved by the cubic/adaptive-block route recorded at the end of this
-docstring, which bypasses the Lindeberg split entirely. This statement is retained (frozen)
-with its `sorry`, and the analysis below explains why it is *not* the thing that route
-removes.
-
-Two corrections to the previous status. (i) `clt_of_bounded_alphaMixing` did **not** reach
-`sorryAx` "only through this lemma": it also reached it through the `k = 0` corner of
-`Mixing/Inequalities.norm_integral_prod_sub_prod_integral_le` (false as frozen there, and
-`sorry`-ed). That leak is now closed here — `norm_integral_prod_blocks_sub_prod_le` carries
-a `0 < k` hypothesis and delegates to the proved sibling
-`norm_integral_prod_sub_prod_integral_le_of_pos`; the CLT supplies `0 < k_n` eventually
-from `k_n l_n / n → 1`. (ii) The route below closes **the theorem**, not this lemma.
-
-**The statement is exactly asymptotic uniform integrability of `S_l²/l`** — *not* something
-weaker. In the variable `Y_l = S_l²/l` the Lindeberg level `ε√n` is the threshold
-`K_n = ε² n / l_n`, and `l_n/n → 0` says precisely `K_n → ∞`; conversely every sequence
-`K_n → ∞` is realised by the admissible choice `l_n = ⌈ε² n / K_n⌉`. So quantifying over all
-`l` with `l_n/n → 0` is quantifying over all thresholds, i.e.
-`lim_{K→∞} limsup_l ∫_{S_l²/l ≥ K} S_l²/l = 0`.
-
-**Consequently the debt is *equivalent* to the theorem it serves, not a weaker ingredient
-— which is exactly why the cubic/adaptive route cannot close it.** That route proves the
-CLT; it does not produce this uniform-integrability statement as a by-product. Concretely,
-the best the fourth moment gives here is
-`l_n⁻¹ ∫_{|S_{l_n}| ≥ ε√n} S_{l_n}² ≤ E S_{l_n}⁴/(ε² l_n n) = l_n² η_{l_n}/(ε² n)`, and
-`l_n/n → 0` alone does **not** force `l_n² η_{l_n} = o(n)`: take `l_n = n/log n` and an `η`
-tending to `0` slowly (`η_l ≍ 1/log² l` is realised by `α(g) ≍ (g log² g)⁻¹`), and the
-right-hand side diverges. The *adaptive* `l_n` is admissible for the CLT precisely because
-the CLT gets to choose `l_n`; this lemma quantifies over **every** admissible `l_n`.
-What *would* close it, now that the CLT is proved: `S_l/√l →d N(0, σ²)` (Lévy continuity,
-`ProbabilityMeasure.tendsto_iff_tendsto_charFun`) together with `E S_l²/l → σ²` makes
-`Y_l = S_l²/l` a nonnegative sequence converging in distribution with converging means,
-hence uniformly integrable — via `∫_{Y ≥ K} Y ≤ 2(E Y − E[Y ∧ K/2])` and
-`E[σ²Z² ∧ K/2] ↑ σ²`. That is a measure-theoretic exercise on the *conclusion* of 2.21(ii),
-not a mixing estimate, and it was left undone in this lane.
-
-`S_l/√l →d N(0, σ²)` (Theorem 2.21(ii)) together with `E S_l²/l → σ²`
-(Theorem 2.20(ii), proved here) gives `Y_l ≥ 0`, `Y_l →d σ²Z²`, `E Y_l → σ² = E σ²Z²`, and a
-nonnegative sequence converging in distribution with converging means is uniformly
-integrable. Any derivation of this lemma from the CLT is therefore circular, and — the
-point — **no strengthening of the local moment toolbox can close it**: it carries the full
-content of the CLT. Removing it requires a genuinely different proof of Theorem 2.21(ii),
-namely the cubic/adaptive-block route recorded below.
-
-**Why the second-moment toolbox cannot close it.** The two facts this file supplies about
-one big block are `E S_l² ≤ Λ l` (`integral_sq_partialSum_le`) and `|S_l| ≤ C l` a.s.
-Every interpolation they support has the shape
-`∫_{|S_l| ≥ T} S_l² ≤ (C l)^γ · E S_l² / T^γ`, i.e. after dividing by `l` and taking
-`T = ε√n`, the bound `Λ · (C l_n / (ε √n))^γ` — which vanishes only when `l_n = o(√n)`.
-But the Bernstein constraints *force* `l_n ≫ √n` at **every** admissible scheme: the
-Volkonskii–Rozanov budget needs `k_n ≤ s_n` (all `Σ α < ∞` gives is `m α(m) → 0`, see
-`tendsto_mul_alphaCoeff`), the small blocks must be negligible so `s_n = o(l_n)`, and
-`k_n ≍ n / l_n`; together `n / l_n ≲ s_n = o(l_n)`, i.e. `l_n² ≫ n`. So no choice of
-block lengths makes the Lindeberg event empty or Chebyshev-negligible.
-
-**The route that does close the theorem** (now FORMALIZED, wave `ts/s5b`; the "not
-formalized here" of the previous wave is withdrawn). Do *not* split
-the remainder at a Lindeberg level at all — use the global cubic half of
-`norm_expI_taylor` directly. With `v_n = u n^{-1/2}` and `k_n ≍ n / l_n`,
-`k_n ‖R n‖ ≤ 4 |u|³ · E|S_{l_n}|³ / (l_n √n)`, so it suffices that
-`E|S_l|³ = o(l √n)`; Cauchy–Schwarz turns this into `E S_l⁴ = o(l n)`. And
-`E S_l⁴ = o(l³)` **is** available from `Σ α < ∞` alone: splitting a sorted 4-tuple at its
-largest gap `G` gives `E S_l⁴ ≤ 12 C⁴ l Σ_{G ≤ l} (G+1)² α(G) + l (Σ_d |γ(d)|)²`, and
-`Σ_{G ≤ l} (G+1)² α(G) = Σ_{G ≤ l} (G+1) · ((G+1) α(G)) = o(l²)` by Cesàro from
-`tendsto_mul_alphaCoeff`. Writing `E S_l⁴ = l³ η_l` with `η_l → 0`, the requirement
-`E S_l⁴ = o(l n)` reads `l_n² η_{l_n} = o(n)`, which holds for an **adaptively** chosen
-`l_n = ⌈√n · a_n⌉` with `a_n → ∞` slowly enough that `a_n² η_{l_n} → 0` (and then
-`s_n ≍ k_n ≍ √n / a_n` keeps `k_n ≤ s_n`, `k_n s_n ≍ n / a_n² = o(n)`, `k_n l_n / n → 1`).
-
-**What was actually built** (all in this file, all axiom-clean):
-`m4_quad_le` (sorted-4-tuple largest-gap split) → `m4_sum_four_le` (the counting half under
-*summability*) → `m4_moment4_le` → `m4_tendsto_moment4_div_cube` (`E S_l⁴ = o(l³)`);
-`sq_integral_mul_le` (Bochner Cauchy–Schwarz) → `norm_integral_remainder_cubic_le`;
-`exists_block_scheme_of_small` (the scheme parametrised by the small block) +
-`exists_adaptive_small` (the diagonal choice of `a_n` from the antitone envelope of `η`) →
-`exists_block_scheme_adaptive`.  Erratum to the display above: the largest-gap split's
-second term is `l² (Σ_d |γ(d)|)²`, not `l (Σ_d |γ(d)|)²` (the middle gap is unconstrained,
-so the free coordinate contributes a factor `l`); `O(l²)` is still `o(l³)`, so nothing else
-changes. The constant delivered is `E S_l⁴ ≤ 24 l (12 C⁴ W_l + 16 C⁴ l Λ_α²)` with
-`W_l = Σ_{g<l} α(g)(g+1)²` and `Λ_α = Σ' α`.
-
-Two consequences worth recording. (i) The previous verdict in this docstring — "the
-fourth-moment route needs `Σ_j (j+1) α(j) < ∞`" — is **too pessimistic**: that hypothesis
-buys the *rate* `E S_l⁴ = O(l²)` (Yokoyama), but only `o(l³)` is needed, and `o(l³)`
-follows from `Σ α < ∞`. (ii) Removing this debt therefore costs a 4-fold sorted-tuple
-moment expansion *plus* a diagonal rebuild of `exists_block_scheme` with an `α`-dependent
-`l_n` — both now **done**, and both needed for the *theorem*, not for this lemma.
-**Erratum to (ii)**:
-`Mixing/Inequalities.moment4_partial_sum_le` is now proved, but it is *not* the brick this
-route needs — its hypothesis is the decay **rate** `α(n) ≤ K n⁻²`, which delivers the
-Yokoyama bound `E S_n⁴ ≤ C' n²`. Under `Σ α < ∞` alone no such rate is available (all one
-gets is `n α(n) → 0`), and the `o(l³)` bound has to be re-derived from the
-largest-gap split with a *summability* rather than a rate hypothesis; the counting lemma
-`sum_four_le_of_cut_bound` that `Inequalities` supplies is stated against `α(m) ≤ K/m²`
-and does not cover it.
-
-The statement below is the weakest form that closed the Bernstein scheme as it was
-assembled before wave `ts/s5b`; the scheme no longer calls it. -/
-private theorem lindeberg_blocks_debt [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
-    (hmeas : ∀ t, Measurable (X t)) (hstat : IsStrictlyStationary X μ) {C : ℝ}
-    -- USER-INPUT: uniform bound; FY Thm 2.21(ii)
-    (hbdd : ∀ t, ∀ᵐ ω ∂μ, |X t ω| ≤ C)
-    -- USER-INPUT: zero mean; FY §2.6.3 setup
-    (hmean : ∫ ω, X 0 ω ∂μ = 0)
-    -- USER-INPUT: summable mixing coefficients; FY Thm 2.21(ii)
-    (hα : Summable fun n : ℕ => alphaCoeff X μ n)
-    (l : ℕ → ℕ) (hl1 : ∀ n, 1 ≤ l n)
-    (hln : Tendsto (fun n : ℕ => (l n : ℝ) / (n : ℝ)) atTop (𝓝 0))
-    {ε : ℝ} (hε : 0 < ε) :
-    Tendsto (fun n : ℕ => ((l n : ℝ))⁻¹ *
-        ∫ ω in {ω | ε * Real.sqrt n ≤ |∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω|},
-          (∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω) ^ 2 ∂μ) atTop (𝓝 0) := by
-  sorry
-
 end Bernstein
 
 /-- **FY Theorem 2.21(ii)** (full in-text proof, Bernstein blocks): bounded zero-mean
@@ -3257,6 +3143,431 @@ theorem clt_of_bounded_alphaMixing [IsProbabilityMeasure μ]
   rw [zero_add, zero_add] at hfin
   refine hfin.congr fun n => ?_
   ring
+
+/-! ### The Lindeberg-level debt, closed as a corollary of Theorem 2.21(ii)
+
+The statement `lindeberg_blocks_debt` below is *asymptotic uniform integrability of the
+normalised block squares* `Y_l = S_l²/l` — see its docstring for why that is **equivalent
+to** Theorem 2.21(ii) and hence unreachable from the local moment toolbox. Now that
+2.21(ii) is proved (the cubic/adaptive route), the equivalence can be run in the other
+direction, and that is what the two bricks here do: `tail_le_sub_min` is the elementary
+inequality `∫_{Y ≥ 2c} Y ≤ 2 (E Y − E (Y ∧ c))` for `Y ≥ 0`, and `exists_tail_threshold`
+feeds it the two limits the CLT and the variance rate supply (`E Y_l → σ²` and, by Lévy
+continuity, `E (Y_l ∧ c) → E (σ²Z² ∧ c)`) to produce a threshold that works
+**uniformly in `l`**. -/
+
+/-- **A tail integral bounded by a truncation defect.** For `Y ≥ 0` integrable and `c > 0`,
+`∫_{2c ≤ Y} Y ≤ 2 (E Y − E (Y ∧ c))`: on `{Y ≥ 2c}` one has `Y ≤ 2 (Y − c) = 2(Y − Y ∧ c)`,
+and the integrand `2 (Y − Y ∧ c)` is nonnegative everywhere, so the set integral is at most
+the full one. -/
+private lemma tail_le_sub_min [IsProbabilityMeasure μ] {Y : Ω → ℝ}
+    (hYm : Measurable Y) (hY0 : ∀ ω, 0 ≤ Y ω) (hYi : Integrable Y μ) {c : ℝ} (hc : 0 < c) :
+    ∫ ω in {ω | 2 * c ≤ Y ω}, Y ω ∂μ ≤ 2 * ((∫ ω, Y ω ∂μ) - ∫ ω, min (Y ω) c ∂μ) := by
+  have hmini : Integrable (fun ω => min (Y ω) c) μ := by
+    refine hYi.mono ((hYm.min measurable_const).aestronglyMeasurable) ?_
+    filter_upwards with ω
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (le_min (hY0 ω) hc.le),
+      abs_of_nonneg (hY0 ω)]
+    exact min_le_left _ _
+  have hA : MeasurableSet {ω | 2 * c ≤ Y ω} := measurableSet_le measurable_const hYm
+  have hg0 : (0 : Ω → ℝ) ≤ᵐ[μ] fun ω => 2 * (Y ω - min (Y ω) c) := by
+    filter_upwards with ω
+    have h := min_le_left (Y ω) c
+    simp only [Pi.zero_apply]
+    linarith
+  have hgi : Integrable (fun ω => 2 * (Y ω - min (Y ω) c)) μ := (hYi.sub hmini).const_mul 2
+  have h1 : ∫ ω in {ω | 2 * c ≤ Y ω}, Y ω ∂μ
+      ≤ ∫ ω in {ω | 2 * c ≤ Y ω}, 2 * (Y ω - min (Y ω) c) ∂μ := by
+    refine setIntegral_mono_on hYi.integrableOn hgi.integrableOn hA ?_
+    intro ω hω
+    have hω' : 2 * c ≤ Y ω := hω
+    have hmin : min (Y ω) c = c := min_eq_right (by linarith)
+    rw [hmin]
+    linarith
+  have h2 : ∫ ω in {ω | 2 * c ≤ Y ω}, 2 * (Y ω - min (Y ω) c) ∂μ
+      ≤ ∫ ω, 2 * (Y ω - min (Y ω) c) ∂μ := setIntegral_le_integral hgi hg0
+  have h3 : ∫ ω, 2 * (Y ω - min (Y ω) c) ∂μ
+      = 2 * ((∫ ω, Y ω ∂μ) - ∫ ω, min (Y ω) c ∂μ) := by
+    have e1 : ∫ ω, 2 * (Y ω - min (Y ω) c) ∂μ = 2 * ∫ ω, (Y ω - min (Y ω) c) ∂μ :=
+      integral_const_mul _ _
+    rw [e1, integral_sub hYi hmini]
+  linarith
+
+/-- **Uniform integrability of the normalised block squares `S_m²/m`.** For every `δ > 0`
+there is a level `K` such that, at **every** block length `m ≥ 1` and every threshold
+`T ≥ K m`, `∫_{S_m² ≥ T} S_m² ≤ δ m`.
+
+Route. Write `Y_m = S_m²/m`. Theorem 2.20(ii) gives `E Y_m → σ²`. If `σ² = 0` the bound is
+immediate from `∫_{A} Y_m ≤ E Y_m`. If `σ² > 0`, Theorem 2.21(ii) gives `S_m/√m →d N(0,σ²)`
+in characteristic-function form, hence — by Lévy continuity
+(`ProbabilityMeasure.tendsto_of_tendsto_charFun`) — weakly, so
+`E (Y_m ∧ c) = E h_c(S_m/√m) → ∫ (x² ∧ c) dN(0,σ²)` for the bounded continuous
+`h_c(x) = x² ∧ c`; and `∫ (x² ∧ c) dN(0,σ²) ↑ σ²` by dominated convergence. Feeding
+`tail_le_sub_min` a `c` with `σ² − ∫(x² ∧ c) < δ/4` gives the bound for all large `m`.
+The finitely many small `m` are absorbed by raising `K` above `C² M₀`, since `|S_m| ≤ C m`
+makes the event `{S_m² ≥ K m}` null there. -/
+private lemma exists_tail_threshold [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
+    (hmeas : ∀ t, Measurable (X t)) (hstat : IsStrictlyStationary X μ) {C : ℝ}
+    (hbdd : ∀ t, ∀ᵐ ω ∂μ, |X t ω| ≤ C) (hmean : ∫ ω, X 0 ω ∂μ = 0)
+    (hα : Summable fun n : ℕ => alphaCoeff X μ n) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ K : ℝ, 0 < K ∧ ∀ m : ℕ, 1 ≤ m → ∀ T : ℝ, K * m ≤ T →
+      ∫ ω in {ω | T ≤ (∑ t ∈ Finset.range m, X ((t : ℤ) + 1) ω) ^ 2},
+        (∑ t ∈ Finset.range m, X ((t : ℤ) + 1) ω) ^ 2 ∂μ ≤ δ * m := by
+  classical
+  obtain ⟨S, hS⟩ : ∃ S : ℕ → Ω → ℝ,
+      ∀ m : ℕ, S m = fun ω => ∑ t ∈ Finset.range m, X ((t : ℤ) + 1) ω := ⟨_, fun _ => rfl⟩
+  have hSapp : ∀ (m : ℕ) (ω : Ω), S m ω = ∑ t ∈ Finset.range m, X ((t : ℤ) + 1) ω := by
+    intro m ω; rw [hS]
+  simp only [← hSapp]
+  have hC0 : 0 ≤ C := bound_nonneg hbdd
+  have hSmeas : ∀ m, Measurable (S m) := by
+    intro m; rw [hS]; exact Finset.measurable_sum _ fun t _ => hmeas _
+  have hcoord : ∀ᵐ ω ∂μ, ∀ t : ℕ, |X ((t : ℤ) + 1) ω| ≤ C := by
+    rw [ae_all_iff]; intro t; exact hbdd _
+  have hSbdd : ∀ m : ℕ, ∀ᵐ ω ∂μ, |S m ω| ≤ C * (m : ℝ) := by
+    intro m
+    filter_upwards [hcoord] with ω hω
+    rw [hSapp]
+    calc |∑ t ∈ Finset.range m, X ((t : ℤ) + 1) ω|
+        ≤ ∑ t ∈ Finset.range m, |X ((t : ℤ) + 1) ω| := Finset.abs_sum_le_sum_abs _ _
+      _ ≤ ∑ _t ∈ Finset.range m, C := Finset.sum_le_sum fun t _ => hω t
+      _ = C * (m : ℝ) := by rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]; ring
+  have hSmem : ∀ m : ℕ, MemLp (S m) 2 μ := by
+    intro m
+    refine MemLp.mono_exponent
+      (memLp_top_of_bound (hSmeas m).aestronglyMeasurable (C * (m : ℝ)) ?_) le_top
+    filter_upwards [hSbdd m] with ω hω
+    simpa [Real.norm_eq_abs] using hω
+  have hSsq : ∀ m, Integrable (fun ω => (S m ω) ^ 2) μ := fun m => (hSmem m).integrable_sq
+  have hSsq0 : ∀ m, 0 ≤ ∫ ω, (S m ω) ^ 2 ∂μ := fun m =>
+    integral_nonneg fun ω => sq_nonneg _
+  have hSint0 : ∀ m : ℕ, ∫ ω, S m ω ∂μ = 0 := by
+    intro m
+    simp only [hSapp]
+    exact integral_partialSum_eq_zero hmeas hstat hbdd hmean (Finset.range m)
+  obtain ⟨σ2, hσ2def⟩ : ∃ s : ℝ, s = acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) :=
+    ⟨_, rfl⟩
+  have hvr := summable_acvf_and_var_rate_of_bounded hmeas hstat hbdd hmean hα
+  have hvareq : ∀ m : ℕ, variance (fun ω => ∑ t ∈ Finset.range m, X ((t : ℤ) + 1) ω) μ
+      = ∫ ω, (S m ω) ^ 2 ∂μ := by
+    intro m
+    rw [← hS m, variance_of_integral_eq_zero (hSmeas m).aemeasurable (hSint0 m)]
+  have hEY : Tendsto (fun m : ℕ => (m : ℝ)⁻¹ * ∫ ω, (S m ω) ^ 2 ∂μ) atTop (𝓝 σ2) := by
+    rw [hσ2def]
+    exact hvr.2.congr fun m => by rw [hvareq m]
+  have hσ0 : 0 ≤ σ2 :=
+    ge_of_tendsto' hEY fun m => mul_nonneg (by positivity) (hSsq0 m)
+  -- the uniform statement for large `m`
+  have hmain : ∃ (K0 : ℝ) (M0 : ℕ), 0 < K0 ∧ 1 ≤ M0 ∧ ∀ m : ℕ, M0 ≤ m →
+      ∫ ω in {ω | K0 * (m : ℝ) ≤ (S m ω) ^ 2}, (S m ω) ^ 2 ∂μ ≤ δ * m := by
+    rcases eq_or_lt_of_le hσ0 with hz | hpos
+    · -- degenerate long-run variance: the whole second moment is eventually small
+      have hlim : Tendsto (fun m : ℕ => (m : ℝ)⁻¹ * ∫ ω, (S m ω) ^ 2 ∂μ) atTop (𝓝 0) := by
+        rw [← hz] at hEY; exact hEY
+      obtain ⟨M0, hM0⟩ := eventually_atTop.1
+        ((hlim.eventually (gt_mem_nhds hδ)).and (eventually_ge_atTop 1))
+      refine ⟨1, max M0 1, one_pos, le_max_right _ _, fun m hm => ?_⟩
+      obtain ⟨hm1, hm2⟩ := hM0 m (le_trans (le_max_left _ _) hm)
+      have hmpos : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hm2
+      calc ∫ ω in {ω | (1 : ℝ) * (m : ℝ) ≤ (S m ω) ^ 2}, (S m ω) ^ 2 ∂μ
+          ≤ ∫ ω, (S m ω) ^ 2 ∂μ :=
+            setIntegral_le_integral (hSsq m) (Eventually.of_forall fun ω => sq_nonneg _)
+        _ ≤ δ * m := by
+            have h := (mul_lt_mul_of_pos_right hm1 hmpos).le
+            have h3 : ((m : ℝ)⁻¹ * ∫ ω, (S m ω) ^ 2 ∂μ) * (m : ℝ)
+                = ∫ ω, (S m ω) ^ 2 ∂μ := by field_simp
+            linarith [h, h3]
+    · -- the non-degenerate case: Lévy + the truncated Gaussian second moment
+      have hpos' : 0 < acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) := by
+        rw [← hσ2def]; exact hpos
+      have hclt := clt_of_bounded_alphaMixing hmeas hstat hbdd hmean hα hpos'
+      have hmapmeas : ∀ m : ℕ, AEMeasurable (fun ω => (Real.sqrt m)⁻¹ * S m ω) μ :=
+        fun m => (measurable_const.mul (hSmeas m)).aemeasurable
+      obtain ⟨P, hP⟩ : ∃ P : ℕ → ProbabilityMeasure ℝ, ∀ m : ℕ,
+          (P m : Measure ℝ) = μ.map (fun ω => (Real.sqrt m)⁻¹ * S m ω) :=
+        ⟨fun m => ⟨μ.map (fun ω => (Real.sqrt m)⁻¹ * S m ω),
+          Measure.isProbabilityMeasure_map (hmapmeas m)⟩, fun _ => rfl⟩
+      obtain ⟨P0, hP0⟩ : ∃ P0 : ProbabilityMeasure ℝ,
+          (P0 : Measure ℝ) = gaussianReal 0 (Real.toNNReal σ2) :=
+        ⟨⟨gaussianReal 0 (Real.toNNReal σ2), inferInstance⟩, rfl⟩
+      have hweak : Tendsto P atTop (𝓝 P0) := by
+        refine ProbabilityMeasure.tendsto_of_tendsto_charFun ?_
+        intro u
+        simp only [hP, hP0]
+        have := hclt u
+        rw [hσ2def]
+        simpa only [hS] using this
+      -- convergence of the truncated normalised squares
+      have hmin_conv : ∀ c : ℝ, 0 ≤ c →
+          Tendsto (fun m : ℕ => ∫ ω, min ((m : ℝ)⁻¹ * (S m ω) ^ 2) c ∂μ) atTop
+            (𝓝 (∫ x : ℝ, min (x ^ 2) c ∂(gaussianReal 0 (Real.toNNReal σ2)))) := by
+        intro c hc0
+        have hcont : Continuous fun x : ℝ => min (x ^ 2) c :=
+          (continuous_pow 2).min continuous_const
+        obtain ⟨f, hf⟩ : ∃ f : BoundedContinuousFunction ℝ ℝ, ∀ x, f x = min (x ^ 2) c :=
+          ⟨BoundedContinuousFunction.ofNormedAddCommGroup (fun x : ℝ => min (x ^ 2) c) hcont c
+            (fun x => by
+              rw [Real.norm_eq_abs, abs_of_nonneg (le_min (sq_nonneg x) hc0)]
+              exact min_le_right _ _), fun _ => rfl⟩
+        have h := (ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 hweak) f
+        simp only [hP, hP0] at h
+        have hR : ∫ x : ℝ, f x ∂(gaussianReal 0 (Real.toNNReal σ2))
+            = ∫ x : ℝ, min (x ^ 2) c ∂(gaussianReal 0 (Real.toNNReal σ2)) := by
+          exact integral_congr_ae (Eventually.of_forall fun x => hf x)
+        rw [hR] at h
+        refine h.congr fun m => ?_
+        rw [integral_map (hmapmeas m) f.continuous.aestronglyMeasurable]
+        refine integral_congr_ae (Eventually.of_forall fun ω => ?_)
+        simp only [hf]
+        congr 1
+        have hm0 : (0 : ℝ) ≤ (m : ℝ) := by positivity
+        rw [mul_pow, inv_pow, Real.sq_sqrt hm0]
+      -- the truncated Gaussian second moment increases to `σ²`
+      have hgauss : Tendsto (fun j : ℕ =>
+          ∫ x : ℝ, min (x ^ 2) (j : ℝ) ∂(gaussianReal 0 (Real.toNNReal σ2))) atTop (𝓝 σ2) := by
+        have hintb : Integrable (fun x : ℝ => x ^ 2) (gaussianReal 0 (Real.toNNReal σ2)) := by
+          simpa using (memLp_id_gaussianReal' (μ := 0) (v := Real.toNNReal σ2) 2
+            (by simp)).integrable_sq
+        have hI : ∫ x : ℝ, x ^ 2 ∂(gaussianReal 0 (Real.toNNReal σ2)) = σ2 := by
+          have h1 : Var[fun x : ℝ => x; gaussianReal 0 (Real.toNNReal σ2)]
+              = (Real.toNNReal σ2 : ℝ) := variance_fun_id_gaussianReal
+          rw [variance_of_integral_eq_zero (X := fun x : ℝ => x) measurable_id.aemeasurable
+            (integral_id_gaussianReal (μ := 0) (v := Real.toNNReal σ2))] at h1
+          rw [h1, Real.coe_toNNReal _ hσ0]
+        have hdom : Tendsto (fun j : ℕ =>
+            ∫ x : ℝ, min (x ^ 2) (j : ℝ) ∂(gaussianReal 0 (Real.toNNReal σ2))) atTop
+            (𝓝 (∫ x : ℝ, x ^ 2 ∂(gaussianReal 0 (Real.toNNReal σ2)))) := by
+          refine tendsto_integral_of_dominated_convergence (fun x : ℝ => x ^ 2)
+            (fun j => ((continuous_pow 2).min continuous_const).aestronglyMeasurable) hintb
+            (fun j => Eventually.of_forall fun x => ?_) (Eventually.of_forall fun x => ?_)
+          · rw [Real.norm_eq_abs, abs_of_nonneg (le_min (sq_nonneg x) (by positivity))]
+            exact min_le_left _ _
+          · have hev : (fun j : ℕ => min (x ^ 2) (j : ℝ)) =ᶠ[atTop] fun _ : ℕ => x ^ 2 := by
+              filter_upwards [tendsto_natCast_atTop_atTop.eventually_ge_atTop (x ^ 2)] with j hj
+              exact min_eq_left hj
+            exact tendsto_const_nhds.congr' hev.symm
+        rw [hI] at hdom
+        exact hdom
+      -- choose the truncation level
+      obtain ⟨j, hj1, hjδ⟩ : ∃ j : ℕ, 1 ≤ j ∧
+          σ2 - δ / 4 < ∫ x : ℝ, min (x ^ 2) (j : ℝ) ∂(gaussianReal 0 (Real.toNNReal σ2)) := by
+        obtain ⟨j, hj⟩ := ((hgauss.eventually (lt_mem_nhds (show σ2 - δ / 4 < σ2 by linarith))).and
+          (eventually_ge_atTop 1)).exists
+        exact ⟨j, hj.2, hj.1⟩
+      have hcpos : (0 : ℝ) < (j : ℝ) := by exact_mod_cast hj1
+      have hdiff : Tendsto (fun m : ℕ => 2 * (((m : ℝ)⁻¹ * ∫ ω, (S m ω) ^ 2 ∂μ)
+            - ∫ ω, min ((m : ℝ)⁻¹ * (S m ω) ^ 2) (j : ℝ) ∂μ)) atTop
+          (𝓝 (2 * (σ2 - ∫ x : ℝ, min (x ^ 2) (j : ℝ)
+            ∂(gaussianReal 0 (Real.toNNReal σ2))))) :=
+        ((hEY.sub (hmin_conv (j : ℝ) hcpos.le)).const_mul 2)
+      have hlt : 2 * (σ2 - ∫ x : ℝ, min (x ^ 2) (j : ℝ)
+          ∂(gaussianReal 0 (Real.toNNReal σ2))) < δ := by linarith
+      obtain ⟨M0, hM0⟩ := eventually_atTop.1
+        ((hdiff.eventually (gt_mem_nhds hlt)).and (eventually_ge_atTop 1))
+      refine ⟨2 * (j : ℝ), max M0 1, by positivity, le_max_right _ _, fun m hm => ?_⟩
+      obtain ⟨hm1, hm2⟩ := hM0 m (le_trans (le_max_left _ _) hm)
+      have hmpos : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hm2
+      have hmne : ((m : ℝ)) ≠ 0 := ne_of_gt hmpos
+      have hY := tail_le_sub_min (μ := μ) (Y := fun ω => (m : ℝ)⁻¹ * (S m ω) ^ 2)
+        (measurable_const.mul ((hSmeas m).pow_const 2)) (fun ω => by positivity)
+        ((hSsq m).const_mul _) hcpos
+      have hset : {ω | 2 * (j : ℝ) ≤ (m : ℝ)⁻¹ * (S m ω) ^ 2}
+          = {ω | 2 * (j : ℝ) * (m : ℝ) ≤ (S m ω) ^ 2} := by
+        ext ω
+        simp only [Set.mem_setOf_eq]
+        constructor
+        · intro h
+          have h2 := mul_le_mul_of_nonneg_right h hmpos.le
+          have h3 : (m : ℝ)⁻¹ * (S m ω) ^ 2 * (m : ℝ) = (S m ω) ^ 2 := by field_simp
+          linarith [h2, h3]
+        · intro h
+          have h2 := mul_le_mul_of_nonneg_left h (inv_nonneg.2 hmpos.le)
+          have h3 : (m : ℝ)⁻¹ * (2 * (j : ℝ) * (m : ℝ)) = 2 * (j : ℝ) := by field_simp
+          linarith [h2, h3]
+      rw [hset] at hY
+      have hsplit : ∫ ω in {ω | 2 * (j : ℝ) * (m : ℝ) ≤ (S m ω) ^ 2},
+            (m : ℝ)⁻¹ * (S m ω) ^ 2 ∂μ
+          = (m : ℝ)⁻¹ * ∫ ω in {ω | 2 * (j : ℝ) * (m : ℝ) ≤ (S m ω) ^ 2}, (S m ω) ^ 2 ∂μ :=
+        integral_const_mul _ _
+      rw [hsplit] at hY
+      have hEfun : ∫ ω, (m : ℝ)⁻¹ * (S m ω) ^ 2 ∂μ = (m : ℝ)⁻¹ * ∫ ω, (S m ω) ^ 2 ∂μ :=
+        integral_const_mul _ _
+      rw [hEfun] at hY
+      have hfinal : (m : ℝ)⁻¹ * ∫ ω in {ω | 2 * (j : ℝ) * (m : ℝ) ≤ (S m ω) ^ 2},
+          (S m ω) ^ 2 ∂μ ≤ δ := le_trans hY hm1.le
+      have h4 := mul_le_mul_of_nonneg_right hfinal hmpos.le
+      have h5 : ((m : ℝ)⁻¹ * ∫ ω in {ω | 2 * (j : ℝ) * (m : ℝ) ≤ (S m ω) ^ 2},
+            (S m ω) ^ 2 ∂μ) * (m : ℝ)
+          = ∫ ω in {ω | 2 * (j : ℝ) * (m : ℝ) ≤ (S m ω) ^ 2}, (S m ω) ^ 2 ∂μ := by
+        field_simp
+      linarith [h4, h5]
+  -- assemble: raise the threshold above the trivial bound for the small `m`
+  obtain ⟨K0, M0, hK0, hM01, hbig⟩ := hmain
+  refine ⟨max K0 (C ^ 2 * M0 + 1), lt_of_lt_of_le hK0 (le_max_left _ _), fun m hm1 T hT => ?_⟩
+  have hm1' : (1 : ℝ) ≤ (m : ℝ) := by exact_mod_cast hm1
+  have hmpos : (0 : ℝ) < (m : ℝ) := by linarith
+  by_cases hm : M0 ≤ m
+  · have hsub : {ω | T ≤ (S m ω) ^ 2} ⊆ {ω | K0 * (m : ℝ) ≤ (S m ω) ^ 2} := by
+      intro ω hω
+      have h1 : K0 * (m : ℝ) ≤ max K0 (C ^ 2 * M0 + 1) * (m : ℝ) :=
+        mul_le_mul_of_nonneg_right (le_max_left _ _) hmpos.le
+      exact le_trans (le_trans h1 hT) hω
+    calc ∫ ω in {ω | T ≤ (S m ω) ^ 2}, (S m ω) ^ 2 ∂μ
+        ≤ ∫ ω in {ω | K0 * (m : ℝ) ≤ (S m ω) ^ 2}, (S m ω) ^ 2 ∂μ :=
+          setIntegral_mono_set ((hSsq m).integrableOn)
+            (Eventually.of_forall fun ω => sq_nonneg _) (Eventually.of_forall hsub)
+      _ ≤ δ * m := hbig m hm
+  · -- `m < M0`: the level `T` is above the a.s. bound on `S_m²`
+    rw [not_le] at hm
+    have hae : ∀ᵐ ω ∂μ, (S m ω) ^ 2 < T := by
+      filter_upwards [hSbdd m] with ω hω
+      have hsq : (S m ω) ^ 2 ≤ (C * (m : ℝ)) ^ 2 := by
+        rw [← sq_abs]
+        exact pow_le_pow_left₀ (abs_nonneg _) hω 2
+      have hmM : (m : ℝ) ≤ (M0 : ℝ) := by exact_mod_cast hm.le
+      have h1 : (C * (m : ℝ)) ^ 2 ≤ C ^ 2 * (M0 : ℝ) * (m : ℝ) := by nlinarith [sq_nonneg C]
+      have h2 : C ^ 2 * (M0 : ℝ) * (m : ℝ) < (C ^ 2 * M0 + 1) * (m : ℝ) := by nlinarith
+      have h3 : (C ^ 2 * M0 + 1) * (m : ℝ) ≤ max K0 (C ^ 2 * M0 + 1) * (m : ℝ) :=
+        mul_le_mul_of_nonneg_right (le_max_right _ _) hmpos.le
+      linarith
+    have hnull : μ {ω | T ≤ (S m ω) ^ 2} = 0 := by
+      have h := ae_iff.1 hae
+      simpa only [not_lt] using h
+    rw [setIntegral_measure_zero _ hnull]
+    positivity
+
+/-- **FORMER NAMED PRIVATE DEBT — now PROVED** (Ibragimov–Linnik, *Independent and
+Stationary Sequences of Random Variables*, 1971, Theorem 18.5.3; the technical lemma
+behind FY Theorem 2.21(ii)).
+
+Under `|X| ≤ C`, strict stationarity, zero mean and `Σ α(j) < ∞`, the normalised block
+sums `S_l²/l` are **uniformly integrable**, so the Lindeberg mass at a level `ε√n` with
+`l_n/n → 0` vanishes.
+
+**STATUS (wave `ts/s10`): PROVED, as a corollary of Theorem 2.21(ii).** Nothing depends on
+it — `clt_of_bounded_alphaMixing` (2.21(ii)) and `clt_of_alphaMixing_debt` (2.21(i)) were
+closed in wave `ts/s5b` by the cubic/adaptive-block route, which bypasses the Lindeberg
+split entirely. The analysis below (retained) explains why that route does **not** deliver
+this statement, and why the only way to close it is to run the equivalence backwards, from
+the finished CLT. That is what `exists_tail_threshold` above does.
+
+**The statement is exactly asymptotic uniform integrability of `S_l²/l`** — *not* something
+weaker. In the variable `Y_l = S_l²/l` the Lindeberg level `ε√n` is the threshold
+`K_n = ε² n / l_n`, and `l_n/n → 0` says precisely `K_n → ∞`; conversely every sequence
+`K_n → ∞` is realised by the admissible choice `l_n = ⌈ε² n / K_n⌉`. So quantifying over all
+`l` with `l_n/n → 0` is quantifying over all thresholds, i.e.
+`lim_{K→∞} sup_l ∫_{S_l²/l ≥ K} S_l²/l = 0`. (Note `sup_l`, not `limsup_l`: the frozen
+statement allows a *bounded* `l_n` — e.g. `l ≡ 1` — so the uniformity must be over **all**
+`l ≥ 1`, which is why `exists_tail_threshold` absorbs the small block lengths separately
+through the a.s. bound `|S_m| ≤ C m`.)
+
+**Consequently the debt is *equivalent* to the theorem it serves, not a weaker ingredient
+— which is exactly why the cubic/adaptive route cannot close it.** That route proves the
+CLT; it does not produce this uniform-integrability statement as a by-product. Concretely,
+the best the fourth moment gives here is
+`l_n⁻¹ ∫_{|S_{l_n}| ≥ ε√n} S_{l_n}² ≤ E S_{l_n}⁴/(ε² l_n n) = l_n² η_{l_n}/(ε² n)`, and
+`l_n/n → 0` alone does **not** force `l_n² η_{l_n} = o(n)`: take `l_n = n/log n` and an `η`
+tending to `0` slowly (`η_l ≍ 1/log² l` is realised by `α(g) ≍ (g log² g)⁻¹`), and the
+right-hand side diverges. The *adaptive* `l_n` is admissible for the CLT precisely because
+the CLT gets to choose `l_n`; this lemma quantifies over **every** admissible `l_n`.
+
+**What closes it** (executed here): `S_l/√l →d N(0, σ²)` (Theorem 2.21(ii)) together with
+`E S_l²/l → σ²` (Theorem 2.20(ii)) makes `Y_l = S_l²/l` a nonnegative sequence converging
+in distribution with converging means, hence uniformly integrable — via
+`∫_{Y ≥ 2c} Y ≤ 2 (E Y − E[Y ∧ c])` (`tail_le_sub_min`) and `E[σ²Z² ∧ c] ↑ σ²`. The
+distributional step needs Lévy continuity
+(`MeasureTheory.ProbabilityMeasure.tendsto_of_tendsto_charFun`), since 2.21(ii) is stated
+in characteristic-function form; that is the one import this file gained in wave `ts/s10`.
+The degenerate case `σ² = 0` never reaches the CLT (which requires `σ² > 0`): there
+`E Y_l → 0` bounds the tail integral directly.
+
+**Why the second-moment toolbox cannot close it.** The two facts this file supplies about
+one big block are `E S_l² ≤ Λ l` (`integral_sq_partialSum_le`) and `|S_l| ≤ C l` a.s.
+Every interpolation they support has the shape
+`∫_{|S_l| ≥ T} S_l² ≤ (C l)^γ · E S_l² / T^γ`, i.e. after dividing by `l` and taking
+`T = ε√n`, the bound `Λ · (C l_n / (ε √n))^γ` — which vanishes only when `l_n = o(√n)`.
+But the Bernstein constraints *force* `l_n ≫ √n` at **every** admissible scheme: the
+Volkonskii–Rozanov budget needs `k_n ≤ s_n` (all `Σ α < ∞` gives is `m α(m) → 0`, see
+`tendsto_mul_alphaCoeff`), the small blocks must be negligible so `s_n = o(l_n)`, and
+`k_n ≍ n / l_n`; together `n / l_n ≲ s_n = o(l_n)`, i.e. `l_n² ≫ n`. So no choice of
+block lengths makes the Lindeberg event empty or Chebyshev-negligible — and this is *not*
+what the proof below does: it never chooses block lengths at all.
+
+**The route that closes the theorem** (wave `ts/s5b`, recorded here for context). Do *not*
+split the remainder at a Lindeberg level — use the global cubic half of `norm_expI_taylor`.
+With `v_n = u n^{-1/2}` and `k_n ≍ n / l_n`,
+`k_n ‖R n‖ ≤ 4 |u|³ · E|S_{l_n}|³ / (l_n √n)`, so it suffices that `E|S_l|³ = o(l √n)`;
+Cauchy–Schwarz turns this into `E S_l⁴ = o(l n)`. And `E S_l⁴ = o(l³)` **is** available
+from `Σ α < ∞` alone: splitting a sorted 4-tuple at its largest gap `G` gives
+`E S_l⁴ ≤ 24 l (12 C⁴ W_l + 16 C⁴ l Λ_α²)` with `W_l = Σ_{g<l} α(g)(g+1)²` and
+`Λ_α = Σ' α`, and `W_l = o(l²)` by Cesàro from `tendsto_mul_alphaCoeff`. Writing
+`E S_l⁴ = l³ η_l` with `η_l → 0`, the requirement `E S_l⁴ = o(l n)` reads
+`l_n² η_{l_n} = o(n)`, which holds for an **adaptively** chosen `l_n = ⌈√n · a_n⌉` with
+`a_n → ∞` slowly enough (`exists_adaptive_small`, `exists_block_scheme_adaptive`). -/
+private theorem lindeberg_blocks_debt [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
+    (hmeas : ∀ t, Measurable (X t)) (hstat : IsStrictlyStationary X μ) {C : ℝ}
+    -- USER-INPUT: uniform bound; FY Thm 2.21(ii)
+    (hbdd : ∀ t, ∀ᵐ ω ∂μ, |X t ω| ≤ C)
+    -- USER-INPUT: zero mean; FY §2.6.3 setup
+    (hmean : ∫ ω, X 0 ω ∂μ = 0)
+    -- USER-INPUT: summable mixing coefficients; FY Thm 2.21(ii)
+    (hα : Summable fun n : ℕ => alphaCoeff X μ n)
+    (l : ℕ → ℕ) (hl1 : ∀ n, 1 ≤ l n)
+    (hln : Tendsto (fun n : ℕ => (l n : ℝ) / (n : ℝ)) atTop (𝓝 0))
+    {ε : ℝ} (hε : 0 < ε) :
+    Tendsto (fun n : ℕ => ((l n : ℝ))⁻¹ *
+        ∫ ω in {ω | ε * Real.sqrt n ≤ |∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω|},
+          (∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω) ^ 2 ∂μ) atTop (𝓝 0) := by
+  classical
+  rw [Metric.tendsto_atTop]
+  intro δ hδ
+  obtain ⟨K, hK0, hK⟩ := exists_tail_threshold hmeas hstat hbdd hmean hα (half_pos hδ)
+  have hev : ∀ᶠ n : ℕ in atTop, K * (l n : ℝ) ≤ ε ^ 2 * (n : ℝ) := by
+    have h1 : Tendsto (fun n : ℕ => K * ((l n : ℝ) / (n : ℝ))) atTop (𝓝 0) := by
+      simpa using hln.const_mul K
+    have h2 : ∀ᶠ n : ℕ in atTop, K * ((l n : ℝ) / (n : ℝ)) < ε ^ 2 :=
+      h1.eventually (gt_mem_nhds (by positivity))
+    filter_upwards [h2, eventually_ge_atTop 1] with n hn hn1
+    have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn1
+    have h3 := (mul_lt_mul_of_pos_right hn hn0).le
+    have h4 : K * ((l n : ℝ) / (n : ℝ)) * (n : ℝ) = K * (l n : ℝ) := by field_simp
+    linarith [h3, h4]
+  obtain ⟨N, hN⟩ := eventually_atTop.1 hev
+  refine ⟨N, fun n hn => ?_⟩
+  have hnn : (0 : ℝ) ≤ (n : ℝ) := by positivity
+  have hSmn : Measurable fun ω => (∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω) ^ 2 :=
+    (Finset.measurable_sum _ fun t _ => hmeas _).pow_const 2
+  have hsetEq : {ω | ε * Real.sqrt n ≤ |∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω|}
+      = {ω | ε ^ 2 * (n : ℝ) ≤ (∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω) ^ 2} := by
+    ext ω
+    simp only [Set.mem_setOf_eq]
+    constructor
+    · intro h
+      have h1 : (ε * Real.sqrt n) ^ 2
+          ≤ |∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω| ^ 2 :=
+        pow_le_pow_left₀ (by positivity) h 2
+      rw [sq_abs, mul_pow, Real.sq_sqrt hnn] at h1
+      exact h1
+    · intro h
+      by_contra hcon
+      rw [not_le] at hcon
+      have h1 : |∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω| ^ 2 < (ε * Real.sqrt n) ^ 2 :=
+        pow_lt_pow_left₀ hcon (abs_nonneg _) two_ne_zero
+      rw [sq_abs, mul_pow, Real.sq_sqrt hnn] at h1
+      linarith
+  rw [hsetEq]
+  have hbound := hK (l n) (hl1 n) (ε ^ 2 * (n : ℝ)) (hN n hn)
+  have hl0 : (0 : ℝ) < (l n : ℝ) := by exact_mod_cast hl1 n
+  have hnonneg : 0 ≤ ((l n : ℝ))⁻¹ *
+      ∫ ω in {ω | ε ^ 2 * (n : ℝ) ≤ (∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω) ^ 2},
+        (∑ t ∈ Finset.range (l n), X ((t : ℤ) + 1) ω) ^ 2 ∂μ :=
+    mul_nonneg (by positivity)
+      (setIntegral_nonneg (measurableSet_le measurable_const hSmn) fun ω _ => sq_nonneg _)
+  rw [Real.dist_eq, sub_zero, abs_of_nonneg hnonneg]
+  have h5 := mul_le_mul_of_nonneg_left hbound (le_of_lt (inv_pos.2 hl0))
+  have h6 : ((l n : ℝ))⁻¹ * (δ / 2 * (l n : ℝ)) = δ / 2 := by field_simp
+  linarith [h5, h6]
+
 
 /-! ### The `δ`-moment versions (FY Theorems 2.20(i)/2.21(i))
 
@@ -4149,7 +4460,52 @@ theorem clt_of_alphaMixing_debt [IsProbabilityMeasure μ]
 /-- **DEBT (Doob 1953 / Ibragimov–Linnik 1971; FY Proposition 2.8)**: the strong law
 for α-mixing strictly stationary sequences with a first moment. The cited route is
 "α-mixing ⇒ ergodicity" + the Birkhoff pointwise ergodic theorem, which the Mathlib
-pin does not provide. -/
+pin does not provide.
+
+**STATUS (wave `ts/s10`): OPEN, with the residue named and the moment routes ruled out.**
+
+**No moment/Borel–Cantelli route exists under the frozen hypotheses.** They are exactly
+`E|X_0| < ∞` (`hL1`) and `α(n) → 0` (`hmix`, i.e. `IsAlphaMixing`, which is *convergence to
+zero with no rate*). In particular:
+* there is **no second moment**, so Chebyshev is unavailable and the subsequence
+  (`n = m²`) + Borel–Cantelli argument cannot even be started. The fourth-moment brick of
+  this file (`m4_moment4_le`, `m4_tendsto_moment4_div_cube`) needs `|X| ≤ C` *and*
+  `Σ α(j) < ∞`; **neither** is assumed here;
+* adding a second moment would not help: with `α(n) → 0` and no rate, Davydov
+  (`Mixing/Inequalities.abs_covariance_le_davydov`) gives `|γ(n)| ≤ 8 α(n)^{1−2/δ} ‖X_0‖_δ²`
+  only under a `δ > 2` moment, and even then `Σ|γ(n)|` need not converge — the ACVF of an
+  `α`-mixing stationary sequence can fail to be summable, so `n⁻¹ Var S_n` need not even
+  be bounded;
+* truncating at level `n` restores all moments but the resulting variance bound is
+  `Σ_{|k|<n} |γ_n(k)|`, which again needs a mixing **rate** to be `o(n)`.
+So the cited ergodic route is not one convenient proof among several: it is the only one
+the hypotheses support, and it is what the statement is *equivalent* to (Birkhoff for an
+ergodic shift is exactly this statement for the coordinate process).
+
+**NAMED RESIDUE: the Birkhoff pointwise ergodic theorem, absent from the pin.**
+`Mathlib/Dynamics/BirkhoffSum/{Basic,Average,NormedSpace,QuasiMeasurePreserving}.lean`
+contain only the algebraic/metric bookkeeping for `birkhoffSum`/`birkhoffAverage` (no a.e.
+convergence statement), and `Mathlib/Analysis/InnerProductSpace/MeanErgodic.lean` is von
+Neumann's **mean** ergodic theorem — `L²` convergence, which does not give the a.e.
+statement asserted here. `Mathlib/Dynamics/Ergodic/` supplies `Ergodic`, `Conservative`
+(Poincaré recurrence) and `MeasurePreserving`, but no maximal ergodic theorem.
+
+**What a closing wave has to build** (four items; only (i) and (iv) are cheap):
+(i) the law of the whole path, `ν = μ.map (fun ω t => X t ω)` on `ℤ → ℝ` with
+    `MeasurableSpace.pi`, and its invariance under the shift — from `IsStrictlyStationary`
+    (finite-dimensional invariance) by a π-system/cylinder uniqueness argument;
+(ii) `α(n) → 0 ⇒ the shift is ergodic for ν`: for a shift-invariant `A`, approximate `A`
+    in measure by a cylinder set `B ∈ σ(X_1,…,X_j)` and use
+    `|ν(A ∩ σ^{-n}A) − ν(A)²| ≤ α(n − j) + 3 ν(A Δ B) → 0`, so `ν(A) = ν(A)²`. The
+    approximation step (measurable sets by algebra elements) is itself not in the pin in
+    usable form;
+(iii) the **maximal ergodic theorem** (Garsia's proof is short) and then Birkhoff —
+    `S_n/n → E[f | invariant σ-field]` a.e.;
+(iv) transport of the a.e. statement back to `Ω` along the path map, which is free because
+    the convergence event is a measurable set of the path σ-algebra.
+Until (ii)+(iii) exist, no partial credit is available here: unlike the Bosq inequalities,
+this statement admits no regime that is trivially true (the conclusion is an a.e. limit,
+not a bound that can be vacuous). -/
 theorem slln_of_alphaMixing_debt [IsProbabilityMeasure μ]
     {X : ℤ → Ω → ℝ} (hmeas : ∀ t, Measurable (X t))
     (hstat : IsStrictlyStationary X μ)
