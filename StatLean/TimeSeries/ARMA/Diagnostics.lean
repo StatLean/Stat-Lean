@@ -1538,7 +1538,16 @@ truncation piece), and the measurability half.
 
 **Scope items** (neither mathematical): `Consistency.continuous_armaPi` and
 `maPoly_conv_armaPi` are `private`, so the measurability half must be re-derived here or
-they must be un-`private`d. -/
+they must be un-`private`d.
+
+**STATUS after wave `ts/f1-arma-finale` (2026-08-09): NOT attempted; the residue above is
+unchanged and remains accurate.** Note for the next wave that the two halves are *not*
+equally sized: the measurability half is plumbing over the two `private` scope items named
+above, while the stochastic half has to control a **ratio** — `sampleACF = γ̂(k)/γ̂(0)` — so
+the Lipschitz bound has to be pushed through both the numerator and the denominator, i.e.
+through a quotient-Slutsky step of the shape already available in this file as
+`tendstoInProb_ratio` (used by residue (A)). That is the natural entry point and is not
+mentioned by the note above. -/
 private theorem residual_acf_transfer_residue [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)

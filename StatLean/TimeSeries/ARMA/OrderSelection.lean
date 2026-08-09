@@ -273,6 +273,23 @@ genuinely different ways:
   `exists_uniform_geometric_bound_arma`, on which every bound in the file rests, degenerates
   there: its `r ↑ 1`).
 
+**CORRECTION (wave `ts/f1-arma-finale`, 2026-08-09) — finding 25: the first bullet is
+FALSE. `𝓑_{p,q}` is BOUNDED**, so `𝓑` fails compactness *once*, not twice over, and its
+closure is compact. Proof (three lines, not formalized here — recorded as an unformalized
+finding): `ARMAInvertibleParams b a` says `arPoly b` and `maPoly a` have no zero in the
+closed unit disc, and both have constant coefficient `1`. Over `ℂ`, a polynomial `P` of
+degree `m` with `P(0) = 1` and all zeros `z_k` outside the closed disc factors as
+`P(z) = Π_{k≤m} (1 − α_k z)` with `α_k = 1/z_k`, `|α_k| < 1` (the constant `1` fixes the
+leading constant of the factorization). Hence `|P.coeff j| = |e_j(α)| ≤ C(m, j) ≤ 2^p`,
+since each elementary symmetric function is a sum of `C(m, j)` products of numbers of
+modulus `< 1`. Applied coordinatewise, `|b i| ≤ 2^p` and `|a j| ≤ 2^q` on all of `𝓑`.
+
+So the honest residual obstruction for (U) is *only* the boundary: the escape to roots on
+the unit circle, where `armaContrastVar` is undefined and the geometric brick degenerates.
+That is genuinely one obstruction rather than two, and it is the one a spectral (Parseval)
+lower bound would remove. (The `≥ 1` bound `one_le_armaContrastVar` remains the only lower
+bound the project supplies, so the gap itself is unchanged in substance.)
+
 Un-`private`ing changes nothing about either. What is missing is a **lower** bound for
 `armaContrastVar b₀ a₀ b a` along both escapes; the project supplies only
 `one_le_armaContrastVar`, i.e. the bound `1`, and `1` is exactly the value the gap has to
@@ -330,7 +347,14 @@ two reasons that are visible in the two statements side by side:
   two do not match without exactly the boundary control that residue (U) is missing.
 
 The headline `bic_consistency_debt` is unaffected: it is proved over (U) and (O), so the
-grid union bound and the cell decomposition are not part of this residue. -/
+grid union bound and the cell decomposition are not part of this residue.
+
+**STATUS after wave `ts/f1-arma-finale` (2026-08-09): NOT attempted; both recorded
+obstructions (the measurable selection producing `θ`, and the compact-`K`-vs-open-`𝓑`
+mismatch) stand.** The boundedness correction recorded at `bic_underfit_residue`
+(finding 25) applies here too: `𝓑_{p,q}` *is* bounded, so the mismatch with
+`armaMLE_linearization`'s compact `K` is only about the boundary, not about escape to
+infinity. -/
 private theorem bic_overfit_residue [IsProbabilityMeasure μ] {p0 q0 : ℕ}
     {b0 : Fin p0 → ℝ} {a0 : Fin q0 → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
