@@ -1141,7 +1141,12 @@ and `bMLE` is the translate, whose measurability comes from `measurable_inv_mulV
 sequence `bLS`, currently absent) must carry their defining hypotheses — for `bMLE` the
 `hargmin`/`hδTfast` pair of `hannan_mle_clt`, for `bLS` the normal equations. With those
 in place the statement becomes a genuine `√T`-equivalence and the residue is the one
-recorded at `armaMLE_linearization`. -/
+recorded at `armaMLE_linearization`.
+
+**The repair is applied** to `ls_yw_mle_equivalent_debt` below (wave
+`ts/s12b-model-repairs`, 2026-08-09); see the Statement-strengthening paragraph there.
+This witness is kept verbatim, quantified over the *frozen* shape `H`, as the permanent
+record. -/
 
 private noncomputable def wnMeasure : Measure (ℤ → ℝ) :=
   Measure.infinitePi (fun _ : ℤ => gaussianReal 0 1)
@@ -1280,15 +1285,36 @@ private theorem ls_yw_mle_equivalent_debt_false
 /-- **DEBT (B&D Thm 10.8.2; FY §3.3.2 remark)**: least-squares, Yule–Walker, and
 Gaussian-MLE estimator sequences of a causal AR(p) are asymptotically equivalent
 (`√T`-differences vanish in probability). Statement recorded at the coarse level FY
-cites. -/
+cites.
+
+**Statement strengthening (wave `ts/s12b-model-repairs`, 2026-08-09).** The frozen form
+was FALSE — see `ls_yw_mle_equivalent_debt_false` above, kept verbatim as the record: it
+quantified over an *arbitrary measurable* `bMLE`, so the constant translate
+`bMLE := b̂_YW + 1` refuted it, and no least-squares sequence appeared at all despite the
+name. Two repairs, exactly the ones that witness's docstring prescribes:
+
+1. **`bMLE` is an MLE.** It carries `hannan_mle_clt`'s defining package verbatim: a
+   compact identifiable search region `K` of invertible parameters with `θ₀` interior, and
+   `o(1/T)`-approximate minimization `hargmin`/`hδTfast` of the profiled criterion
+   (`q = 0`, so the parameter is the pair `(b, Fin.elim0)`). Exact minimizers qualify
+   (`δT = 0`). This is what makes the statement citable against `hannan_mle_clt` and
+   `armaMLE_linearization`.
+2. **The least-squares sequence is present**, introduced through its **normal equations**
+   `hLS`: for each coordinate `i`, the regressor `X_{s−i}` is orthogonal to the fitted
+   residual over the usable window `p ≤ s < T`. This is B&D's third estimator, the one the
+   theorem's name promises.
+
+The conclusion is correspondingly the pair of `√T`-equivalences LS ↔ YW and YW ↔ MLE;
+LS ↔ MLE follows from them by the triangle inequality. The residue is the one recorded at
+`armaMLE_linearization` (for the MLE leg) together with the standard YW-vs-LS edge-effect
+bookkeeping (the two differ only by the `O_p(1)` boundary terms of the two windows). -/
 theorem ls_yw_mle_equivalent_debt [IsProbabilityMeasure μ] {p : ℕ}
     {b0 : Fin p → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsAR b0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
     (hroot : NoRootClosedDisc b0)
     (hcausal : IsLinearProcessOf (armaPsi b0 (Fin.elim0 : Fin 0 → ℝ)) X ε μ)
     (hmeas : ∀ t, Measurable (X t))
-    -- USER-INPUT: the Yule–Walker estimator (sample-YW solution) and any
-    -- MLE sequence as in `hannan_mle_clt`; B&D Thm 10.8.2
+    -- USER-INPUT: the Yule–Walker estimator (sample-YW solution); B&D Thm 10.8.2
     (bYW : (T : ℕ) → Ω → Fin p → ℝ)
     (hYW : ∀ (T : ℕ) (ω : Ω) (i : Fin p),
       bYW T ω i = (((Matrix.of fun i' j : Fin p =>
@@ -1296,10 +1322,34 @@ theorem ls_yw_mle_equivalent_debt [IsProbabilityMeasure μ] {p : ℕ}
             ((i' : ℤ) - (j : ℤ)).natAbs)⁻¹) *ᵥ
         fun i' : Fin p => sampleACVF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
           ((i' : ℕ) + 1)) i)
+    -- USER-INPUT: the least-squares estimator, through its normal equations on the
+    -- usable window `p ≤ s < T`; B&D Thm 10.8.2 (absent from the frozen statement)
+    (bLS : (T : ℕ) → Ω → Fin p → ℝ) (hLSmeas : ∀ T, Measurable (bLS T))
+    (hLS : ∀ (T : ℕ) (ω : Ω) (i : Fin p),
+      ∑ s ∈ Finset.Ico p T, X ((s : ℤ) - (i : ℕ)) ω *
+          (X ((s : ℤ) + 1) ω
+            - ∑ j : Fin p, bLS T ω j * X ((s : ℤ) - (j : ℕ)) ω) = 0)
+    -- USER-INPUT: the Gaussian-MLE sequence, with `hannan_mle_clt`'s defining package
+    -- (compact identifiable region, θ₀ interior, o(1/T)-approximate minimization);
+    -- B&D Thm 10.8.2 / Hannan 1973 §2
     (bMLE : (T : ℕ) → Ω → Fin p → ℝ) (hMLEmeas : ∀ T, Measurable (bMLE T))
+    {K : Set ((Fin p → ℝ) × (Fin 0 → ℝ))}
+    (hK : IsCompact K) (hKB : ∀ ba ∈ K, ARMAInvertibleParams ba.1 ba.2)
+    (hcopK : ∀ ba ∈ K, IsCoprime (arPoly ba.1) (maPoly ba.2))
+    (hK0 : (b0, (Fin.elim0 : Fin 0 → ℝ)) ∈ interior K)
+    {δT : ℕ → ℝ} (hδT0 : ∀ T, 0 ≤ δT T)
+    (hδTfast : Tendsto (fun T : ℕ => (T : ℝ) * δT T) atTop (𝓝 0))
+    (hargmin : ∀ (T : ℕ) (ω : Ω),
+      (bMLE T ω, (Fin.elim0 : Fin 0 → ℝ)) ∈ K ∧ ∀ ba ∈ K,
+        armaProfileCriterion (bMLE T ω) (Fin.elim0 : Fin 0 → ℝ)
+            (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω)
+          ≤ armaProfileCriterion ba.1 ba.2
+              (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) + δT T)
     {δ : ℝ} (hδ : 0 < δ) :
     Tendsto (fun T : ℕ => (μ {ω | δ ≤
-        Real.sqrt T * dist (bYW T ω) (bMLE T ω)}).toReal) atTop (𝓝 0) := by
+        Real.sqrt T * dist (bYW T ω) (bMLE T ω)}).toReal) atTop (𝓝 0) ∧
+    Tendsto (fun T : ℕ => (μ {ω | δ ≤
+        Real.sqrt T * dist (bYW T ω) (bLS T ω)}).toReal) atTop (𝓝 0) := by
   sorry
 
 end StatLean.TimeSeries
