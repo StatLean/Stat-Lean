@@ -360,6 +360,16 @@ private noncomputable def locTruncSum (X e : ℤ → Ω → ℝ) (μ : Measure �
     ∑ t ∈ Finset.range n,
       truncErr X e μ L ((t : ℤ) + 1) ω * W ((X ((t : ℤ) + 1) ω - x) / h n)
 
+/-- The clamp is measurable in the clamped variable. -/
+private theorem measurable_clampAt (L : ℝ) : Measurable (clampAt L) := by
+  unfold clampAt; fun_prop
+
+/-- The clamp is bounded by its level. -/
+private theorem abs_clampAt_le {L : ℝ} (hL : 0 ≤ L) (z : ℝ) : |clampAt L z| ≤ L := by
+  unfold clampAt
+  rw [abs_le]
+  exact ⟨le_max_left _ _, max_le (by linarith) (min_le_left _ _)⟩
+
 /-- FY's big-block length `l_n = [√(n h_n) / log n]` (step (b), (2.77)). -/
 private noncomputable def bigBlockLen (h : ℕ → ℝ) (n : ℕ) : ℕ :=
   ⌈Real.sqrt ((n : ℝ) * h n) / Real.log n⌉₊
@@ -873,6 +883,59 @@ private theorem condExp_eq_zero_of_stat [IsProbabilityMeasure μ]
   rw [h1, h2']
   rfl
 
+/-- **`truncErr` is a fixed function of the pair, up to a null set — PROVED.** There is
+one bounded measurable `mL` with `e^L_t = clamp_L(e_t) − mL(X_t)` a.e., simultaneously for
+every `t`. This is what steps (b)–(c) need in order to run the ledger-(a) machinery on the
+*truncated* array: the frozen `truncErr` is built from a separate conditional expectation at
+each time, and without the identification its covariance array would not be a function of
+the lag alone.
+
+`exists_condExp_repr_of_stat` at `φ = clamp_L` gives a common measurable version `m`;
+`|E(clamp_L e_0 | X_0)| ≤ L` a.e. (conditional monotonicity against the constants `±L`), so
+re-clamping `m` at level `L` changes it on a null set only and makes the bound pointwise. -/
+private theorem exists_truncErr_repr [IsProbabilityMeasure μ]
+    {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
+    (hstat : ∀ (k : ℕ) (t : ℤ),
+      μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
+        = μ.map (fun ω (i : Fin k) => (X ((i : ℕ) : ℤ) ω, e ((i : ℕ) : ℤ) ω)))
+    {L : ℝ} (hL : 0 < L) :
+    ∃ mL : ℝ → ℝ, Measurable mL ∧ (∀ v, |mL v| ≤ L) ∧
+      ∀ t : ℤ, truncErr X e μ L t =ᵐ[μ] fun ω => clampAt L (e t ω) - mL (X t ω) := by
+  classical
+  have hcm : Measurable (clampAt L) := measurable_clampAt L
+  have hbd : ∀ ω, |clampAt L (e 0 ω)| ≤ L := fun ω => abs_clampAt_le hL.le _
+  have hint : Integrable (fun ω => clampAt L (e 0 ω)) μ := by
+    refine (integrable_const L).mono' (hcm.comp (hmeasE 0)).aestronglyMeasurable
+      (Eventually.of_forall fun ω => ?_)
+    rw [Real.norm_eq_abs]; exact hbd ω
+  obtain ⟨m, hm, hrep⟩ := exists_condExp_repr_of_stat hmeasX hmeasE hstat hcm hint
+  refine ⟨clampAt L ∘ m, hcm.comp hm, fun v => abs_clampAt_le hL.le _, fun t => ?_⟩
+  have hle0 : ∀ᵐ ω ∂μ, X 0 ω ∈ {v : ℝ | |m v| ≤ L} := by
+    have hup : μ[fun ω' => clampAt L (e 0 ω') | MeasurableSpace.comap (X 0) inferInstance]
+        ≤ᵐ[μ] fun _ => L := by
+      have h1 := condExp_mono (m := MeasurableSpace.comap (X 0) inferInstance) hint
+        (integrable_const L)
+        (Eventually.of_forall fun ω => (abs_le.1 (hbd ω)).2)
+      rwa [condExp_const ((hmeasX 0).comap_le) L] at h1
+    have hlo : (fun _ : Ω => -L)
+        ≤ᵐ[μ] μ[fun ω' => clampAt L (e 0 ω') | MeasurableSpace.comap (X 0) inferInstance] := by
+      have h1 := condExp_mono (m := MeasurableSpace.comap (X 0) inferInstance)
+        (integrable_const (-L)) hint
+        (Eventually.of_forall fun ω => (abs_le.1 (hbd ω)).1)
+      rwa [condExp_const ((hmeasX 0).comap_le) (-L)] at h1
+    filter_upwards [hrep 0, hup, hlo] with ω h1 h2 h3
+    show |m (X 0 ω)| ≤ L
+    rw [← h1]; exact abs_le.2 ⟨h3, h2⟩
+  have hS : MeasurableSet {v : ℝ | |m v| ≤ L} := measurableSet_le hm.abs measurable_const
+  filter_upwards [hrep t, ae_comp_X_of_stat hmeasX hmeasE hstat t hS hle0] with ω h1 h2
+  have h2' : |m (X t ω)| ≤ L := h2
+  show clampAt L (e t ω) - _ = _
+  rw [h1]
+  have hcl : clampAt L (m (X t ω)) = m (X t ω) := by
+    unfold clampAt
+    rw [min_eq_right (abs_le.1 h2').2, max_eq_right (abs_le.1 h2').1]
+  simp only [Function.comp_apply, hcl]
+
 /-- **The stationary double sum, off the diagonal.** If a doubly-indexed array `c` depends
 only on the lag (`c s (s+d) = c (s+d) s = g d`), then its full `n × n` sum differs from the
 diagonal contribution `n · g 0` by at most `2 n Σ_{1 ≤ j < n} |g j|`. This is the purely
@@ -1073,6 +1136,46 @@ private theorem abs_double_sum_subset_le {n : ℕ} (I : Finset ℕ) (hI : I ⊆ 
 
 The one input FY uses without stating it. See `var_localized_sum`'s docstring for the
 proof that it is not derivable from (C1)–(C5) as formalized. -/
+
+/-- **The localized weight integral — PROVED.** `E[G((X_0 − x)/h)] ≤ (C_p ∫G) h` for a
+nonnegative integrable weight `G`: the density substitution
+(`integral_comp_eq_integral_density`) followed by the affine change of variables
+(`integral_dilate_translate`), the factor `h` being the Jacobian. Used at `G = |W|^δ` (the
+δ-th moment of the *truncated* localized summand, where the error factor is bounded by `2L`
+and so contributes no conditional moment) and at `G = W²` (its variance). -/
+private theorem localized_weight_integral_le [IsProbabilityMeasure μ]
+    {X : ℤ → Ω → ℝ} (hX : Measurable (X 0))
+    {p : ℝ → ℝ} (hmp : Measurable p) (hp0 : ∀ v, 0 ≤ p v)
+    (hpd : μ.map (X 0) = MeasureTheory.volume.withDensity fun v => ENNReal.ofReal (p v))
+    {Cp : ℝ} (hpb : ∀ v, p v ≤ Cp)
+    {G : ℝ → ℝ} (hGm : Measurable G) (hG0 : ∀ v, 0 ≤ G v)
+    (hGi : Integrable G MeasureTheory.volume) {x hn : ℝ} (hhn : 0 < hn) :
+    ∫ ω, G ((X 0 ω - x) / hn) ∂μ ≤ (Cp * ∫ v, G v) * hn := by
+  have hGxm : Measurable (fun v => G ((v - x) / hn)) :=
+    hGm.comp ((measurable_id.sub measurable_const).div measurable_const)
+  have hdens : ∫ ω, G ((X 0 ω - x) / hn) ∂μ = ∫ v, p v * G ((v - x) / hn) :=
+    integral_comp_eq_integral_density hX hmp hp0 hpd (fun v => G ((v - x) / hn)) hGxm
+  have hcov : ∫ u, G u * p (x + hn * u) = hn⁻¹ * ∫ v, G ((v - x) / hn) * p v :=
+    integral_dilate_translate G p x hhn
+  have hpint : ∫ v, p v * G ((v - x) / hn) = hn * ∫ u, G u * p (x + hn * u) := by
+    rw [hcov, ← mul_assoc, mul_inv_cancel₀ hhn.ne', one_mul]
+    exact integral_congr_ae (Eventually.of_forall fun v => by ring)
+  have hlast : ∫ u, G u * p (x + hn * u) ≤ Cp * ∫ u, G u := by
+    have hi : Integrable (fun u => G u * p (x + hn * u)) MeasureTheory.volume := by
+      refine Integrable.mono (hGi.const_mul Cp)
+        (hGm.mul (hmp.comp (measurable_const.add
+          (measurable_const.mul measurable_id)))).aestronglyMeasurable
+        (Eventually.of_forall fun u => ?_)
+      rw [Real.norm_eq_abs, Real.norm_eq_abs,
+        abs_of_nonneg (mul_nonneg (hG0 u) (hp0 _)),
+        abs_of_nonneg (mul_nonneg (le_trans (hp0 0) (hpb 0)) (hG0 u)), mul_comm Cp]
+      exact mul_le_mul_of_nonneg_left (hpb _) (hG0 u)
+    rw [← integral_const_mul]
+    refine integral_mono hi (hGi.const_mul Cp) fun u => ?_
+    rw [mul_comm Cp]
+    exact mul_le_mul_of_nonneg_left (hpb _) (hG0 u)
+  rw [hdens, hpint, mul_comm ((Cp * ∫ v, G v)) hn]
+  exact mul_le_mul_of_nonneg_left hlast hhn.le
 
 -- the tower/density/change-of-variables chain below is elaboration-heavy
 set_option maxHeartbeats 400000 in
