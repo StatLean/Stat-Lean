@@ -40,7 +40,21 @@ theorem risk_le_bestRisk_add_of_isERM_of_uniformDeviation {s : Sample Z n}
     -- LEAN-ONLY: bounded-below risk image, so the `sInf` is genuine
     (hbdd : BddBelow (risk D ℓ '' 𝓗)) :
     risk D ℓ h ≤ bestRisk D 𝓗 ℓ + ε := by
-  sorry
+  have key : risk D ℓ h - ε ≤ bestRisk D 𝓗 ℓ := by
+    refine le_csInf ⟨risk D ℓ h, ⟨h, hERM.1, rfl⟩⟩ ?_
+    rintro x ⟨g, hg, rfl⟩
+    -- `L_D(h) ≤ L_S(h) + ε/2`
+    have h1 : risk D ℓ h ≤ empRisk ℓ s h + ε / 2 := by
+      have := (abs_sub_le_iff.mp (hrep h hERM.1)).2
+      linarith
+    -- `L_S(h) ≤ L_S(g)`
+    have h2 : empRisk ℓ s h ≤ empRisk ℓ s g := hERM.2 g hg
+    -- `L_S(g) ≤ L_D(g) + ε/2`
+    have h3 : empRisk ℓ s g ≤ risk D ℓ g + ε / 2 := by
+      have := (abs_sub_le_iff.mp (hrep g hg)).1
+      linarith
+    linarith
+  linarith
 
 /-- **SSBD Lemma 4.2, approximate-ERM form**: an `η`-approximate empirical risk
 minimizer on an `ε/2`-representative sample is `(ε + η)`-optimal. -/
@@ -53,7 +67,18 @@ theorem risk_le_bestRisk_add_of_isApproxERM_of_uniformDeviation
     -- LEAN-ONLY: bounded-below risk image, so the `sInf` is genuine
     (hbdd : BddBelow (risk D ℓ '' 𝓗)) :
     risk D ℓ h ≤ bestRisk D 𝓗 ℓ + (ε + η) := by
-  sorry
+  have key : risk D ℓ h - (ε + η) ≤ bestRisk D 𝓗 ℓ := by
+    refine le_csInf ⟨risk D ℓ h, ⟨h, hERM.1, rfl⟩⟩ ?_
+    rintro x ⟨g, hg, rfl⟩
+    have h1 : risk D ℓ h ≤ empRisk ℓ s h + ε / 2 := by
+      have := (abs_sub_le_iff.mp (hrep h hERM.1)).2
+      linarith
+    have h2 : empRisk ℓ s h ≤ empRisk ℓ s g + η := hERM.2 g hg
+    have h3 : empRisk ℓ s g ≤ risk D ℓ g + ε / 2 := by
+      have := (abs_sub_le_iff.mp (hrep g hg)).1
+      linarith
+    linarith
+  linarith
 
 /-- **SSBD Corollary 4.4** (uniform convergence ⇒ agnostic PAC via ERM): if
 `𝓗` has the uniform convergence property with witness `mUC`, then any ERM
@@ -70,6 +95,18 @@ theorem isAgnosticPACLearnerWith_of_hasUniformConvergenceWith
     -- supplies `BddBelow` of every risk image
     (hpos : ∀ h z, 0 ≤ ℓ h z) :
     IsAgnosticPACLearnerWith 𝓗 ℓ A (fun ε δ => mUC (ε / 2) δ) := by
-  sorry
+  intro D hD ε δ hε hδ hδ1 m hm
+  haveI := hD
+  -- the risk image is bounded below by `0`, so the `sInf` is genuine
+  have hbdd : BddBelow (risk D ℓ '' 𝓗) := by
+    refine ⟨0, ?_⟩
+    rintro x ⟨g, _, rfl⟩
+    exact risk_nonneg (hpos g)
+  -- every `ε/2`-representative sample makes the ERM output `ε`-optimal
+  have hsub : {s : Sample Z m | UniformDeviationLE D 𝓗 ℓ s (ε / 2)} ⊆
+      {s : Sample Z m | risk D ℓ (A m s) ≤ bestRisk D 𝓗 ℓ + ε} := fun s hs =>
+    risk_le_bestRisk_add_of_isERM_of_uniformDeviation hs (hA m s) hbdd
+  exact le_trans (hUC D hD (ε / 2) δ (by linarith) hδ hδ1 m hm)
+    (measure_mono hsub)
 
 end StatLean.StatisticalLearning
