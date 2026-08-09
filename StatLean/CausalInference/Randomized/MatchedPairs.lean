@@ -157,23 +157,117 @@ pairs are independently randomized. -/
 theorem pairExpect_mul_of_ne {j k : Fin m} (hjk : j ≠ k) (g h : Bool → ℝ) :
     pairExpect (fun c => g (c j) * h (c k))
       = pairExpect (fun c => g (c j)) * pairExpect (fun c => h (c k)) := by
-  sorry
+  have hsplit :
+      (∑ c : Fin m → Bool, g (c j) * h (c k))
+        = ∑ p : Bool × ({i : Fin m // i ≠ j} → Bool),
+            g p.1 * h (p.2 (⟨k, hjk.symm⟩ : {i : Fin m // i ≠ j})) :=
+    Equiv.sum_comp (Equiv.funSplitAt j Bool)
+      (fun p : Bool × ({i : Fin m // i ≠ j} → Bool) =>
+        g p.1 * h (p.2 (⟨k, hjk.symm⟩ : {i : Fin m // i ≠ j})))
+  have hinner : ∀ b : Bool,
+      (∑ r : ({i : Fin m // i ≠ j} → Bool), g b * h (r (⟨k, hjk.symm⟩ : {i : Fin m // i ≠ j})))
+        = g b * ((Fintype.card
+              ({i' : {i : Fin m // i ≠ j} // i' ≠ (⟨k, hjk.symm⟩ : {i : Fin m // i ≠ j})} → Bool)
+              : ℝ) * (h true + h false)) := by
+    intro b
+    rw [← Finset.mul_sum, sum_coord (⟨k, hjk.symm⟩ : {i : Fin m // i ≠ j}) h]
+  have hA' : (Fintype.card
+      ({i' : {i : Fin m // i ≠ j} // i' ≠ (⟨k, hjk.symm⟩ : {i : Fin m // i ≠ j})} → Bool) : ℝ)
+        ≠ 0 := card_sub_ne_zero _
+  have h2m : (2 : ℝ) ^ m = 4 * (Fintype.card
+      ({i' : {i : Fin m // i ≠ j} // i' ≠ (⟨k, hjk.symm⟩ : {i : Fin m // i ≠ j})} → Bool) : ℝ) := by
+    rw [← card_fun_bool_fin m, card_fun_bool_split (ι := Fin m) j,
+      card_fun_bool_split (ι := {i : Fin m // i ≠ j}) (⟨k, hjk.symm⟩ : {i : Fin m // i ≠ j})]
+    ring
+  conv_rhs => rw [pairExpect_single, pairExpect_single]
+  unfold pairExpect
+  rw [hsplit]
+  simp only [Fintype.sum_prod_type, hinner, Fintype.sum_bool]
+  rw [h2m]
+  field_simp
+  ring
 
 /-- `pairExpect` is linear on finite sums. -/
 theorem pairExpect_sum {K : Type*} [Fintype K] (F : K → (Fin m → Bool) → ℝ) :
     pairExpect (fun c => ∑ k, F k c) = ∑ k, pairExpect (F k) := by
-  sorry
+  unfold pairExpect
+  rw [Finset.sum_comm, Finset.mul_sum]
+
+/-- `pairExpect` commutes with scalar multiples. -/
+private lemma pairExpect_const_mul (a : ℝ) (f : (Fin m → Bool) → ℝ) :
+    pairExpect (fun c => a * f c) = a * pairExpect f := by
+  unfold pairExpect
+  rw [← Finset.mul_sum]
+  ring
+
+/-- `pairExpect` is additive. -/
+private lemma pairExpect_add (f g : (Fin m → Bool) → ℝ) :
+    pairExpect (fun c => f c + g c) = pairExpect f + pairExpect g := by
+  unfold pairExpect
+  rw [Finset.sum_add_distrib]
+  ring
+
+/-- `pairExpect` is subtractive. -/
+private lemma pairExpect_sub (f g : (Fin m → Bool) → ℝ) :
+    pairExpect (fun c => f c - g c) = pairExpect f - pairExpect g := by
+  unfold pairExpect
+  rw [Finset.sum_sub_distrib]
+  ring
+
+/-- `pairExpect` of a constant. -/
+private lemma pairExpect_const (a : ℝ) : pairExpect (fun _ : Fin m → Bool => a) = a := by
+  unfold pairExpect
+  rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, card_fun_bool_fin]
+  have h2 : ((2 : ℝ) ^ m) ≠ 0 := by positivity
+  field_simp
 
 /-- **The expected pair difference is the pair effect** (Ding §7.3): each pair's observed
 difference is unbiased for that pair's average causal effect. -/
 theorem pairExpect_pairDiff (P : PairedTable m) (j : Fin m) :
     pairExpect (fun c => P.pairDiff c j) = P.pairEffect j := by
-  sorry
+  have key : pairExpect (fun c => P.pairDiff c j)
+      = ((P.y1 j true - P.y0 j false) + (P.y1 j false - P.y0 j true)) / 2 :=
+    pairExpect_single j
+      (fun b : Bool => if b then P.y1 j true - P.y0 j false else P.y1 j false - P.y0 j true)
+  rw [key]
+  unfold PairedTable.pairEffect PairedTable.unitEffect
+  ring
 
 /-- **Unbiasedness of the matched-pair estimator** (Ding §7.3, p. 103). -/
 theorem pairEstimator_unbiased (P : PairedTable m) :
     pairExpect P.pairEstimator = P.ate := by
-  sorry
+  have hfun : P.pairEstimator
+      = fun c : Fin m → Bool => (m : ℝ)⁻¹ * ∑ j, P.pairDiff c j := rfl
+  rw [hfun, pairExpect_const_mul, pairExpect_sum]
+  simp only [pairExpect_pairDiff]
+  rfl
+
+/-- The centred pair difference has design mean zero. -/
+private lemma pairExpect_centred (P : PairedTable m) (j : Fin m) :
+    pairExpect (fun c => P.pairDiff c j - P.pairEffect j) = 0 := by
+  have key : pairExpect (fun c => P.pairDiff c j - P.pairEffect j)
+      = (((P.y1 j true - P.y0 j false) - P.pairEffect j)
+          + ((P.y1 j false - P.y0 j true) - P.pairEffect j)) / 2 :=
+    pairExpect_single j (fun b : Bool =>
+      (if b then P.y1 j true - P.y0 j false else P.y1 j false - P.y0 j true) - P.pairEffect j)
+  rw [key]
+  unfold PairedTable.pairEffect PairedTable.unitEffect
+  ring
+
+/-- Centred pair differences from *distinct* pairs are uncorrelated. -/
+private lemma pairExpect_centred_mul_eq_zero (P : PairedTable m) {j k : Fin m} (hjk : j ≠ k) :
+    pairExpect (fun c => (P.pairDiff c j - P.pairEffect j) * (P.pairDiff c k - P.pairEffect k))
+      = 0 := by
+  have key : pairExpect
+        (fun c => (P.pairDiff c j - P.pairEffect j) * (P.pairDiff c k - P.pairEffect k))
+      = pairExpect (fun c => P.pairDiff c j - P.pairEffect j)
+        * pairExpect (fun c => P.pairDiff c k - P.pairEffect k) :=
+    pairExpect_mul_of_ne hjk
+      (fun b : Bool =>
+        (if b then P.y1 j true - P.y0 j false else P.y1 j false - P.y0 j true) - P.pairEffect j)
+      (fun b : Bool =>
+        (if b then P.y1 k true - P.y0 k false else P.y1 k false - P.y0 k true) - P.pairEffect k)
+  rw [key, pairExpect_centred, zero_mul]
 
 /-- **Exact variance of the matched-pair estimator** (Ding, Problem 7.1): the pair
 differences are independent, so the variance is the average of the per-pair variances,
@@ -181,7 +275,32 @@ each of which is the squared half-difference of the two members' effects. -/
 theorem pairEstimator_variance (P : PairedTable m) :
     pairVar P.pairEstimator
       = ((m : ℝ) ^ 2)⁻¹ * ∑ j, pairVar (fun c => P.pairDiff c j) := by
-  sorry
+  have hstep : ∀ c : Fin m → Bool,
+      (P.pairEstimator c - pairExpect P.pairEstimator) ^ 2
+        = ((m : ℝ) ^ 2)⁻¹ * ∑ j, ∑ k,
+            (P.pairDiff c j - P.pairEffect j) * (P.pairDiff c k - P.pairEffect k) := by
+    intro c
+    rw [pairEstimator_unbiased]
+    have hd : P.pairEstimator c - P.ate
+        = (m : ℝ)⁻¹ * ∑ j, (P.pairDiff c j - P.pairEffect j) := by
+      unfold PairedTable.pairEstimator PairedTable.ate
+      rw [Finset.sum_sub_distrib]
+      ring
+    rw [hd, ← Finset.sum_mul_sum]
+    ring
+  unfold pairVar
+  simp only [hstep]
+  rw [pairExpect_const_mul]
+  congr 1
+  rw [pairExpect_sum]
+  refine Finset.sum_congr rfl ?_
+  intro j _
+  rw [pairExpect_sum, Finset.sum_eq_single_of_mem j (Finset.mem_univ j)
+    (fun k _ hk => pairExpect_centred_mul_eq_zero P (Ne.symm hk))]
+  rw [pairExpect_pairDiff]
+  congr 1
+  funext c
+  ring
 
 /-- **Theorem 7.1** (Ding §7.3, p. 104): the paired variance estimator overestimates the
 true variance by exactly the dispersion of the pair effects. -/
