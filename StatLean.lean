@@ -10,6 +10,7 @@ import StatLean.PointEstimation
 import StatLean.HypothesisTesting
 import StatLean.StatisticalModels
 import StatLean.TimeSeries
+import StatLean.CausalInference
 
 /-!
 # StatLean
@@ -58,6 +59,18 @@ theory, organized into per-area sublibraries.
   (Rao–Blackwell, Lehmann–Scheffé), the information inequality (Fisher
   information, Cramér–Rao), equivariance (location and scale minimum-risk
   equivariant estimators, Pitman's estimator), and normal linear models.
+
+* `StatLean.CausalInference` — causal inference in the potential-outcomes framework:
+  the design-based half (science tables, assignment designs, complete randomization,
+  Fisher's randomization test, Neyman's unbiasedness/variance, stratified and
+  matched-pair experiments, regression adjustment, the superpopulation bridge) and the
+  observational half over a discrete covariate (selection bias, unconfoundedness,
+  standardization, the propensity score, IPW, the doubly robust AIPW functional, the
+  effect on the treated, subclassification/matching/trimming), plus sensitivity analysis
+  (Manski bounds, the E-value, Rosenbaum's model) and instrumental variables (compliance
+  types, LATE/CACE, the instrumental inequalities, linear IV) — Ding, *A First Course in
+  Causal Inference*; Imbens & Rubin, *Causal Inference for Statistics, Social, and
+  Biomedical Sciences*.
 
 Per-area umbrellas are imported above as each area lands.
 -/
