@@ -65,38 +65,84 @@ full: the four analytic bricks (`integral_dilate_translate`,
 `small_lag_covariance_bound`, the large-lag Davydov bound (2.75)
 `large_lag_covariance_bound`, the pair-σ-algebra transport, and the `pairAlphaCoeff`
 basics; and, under the authorized (C1) repair, the diagonal (2.73) itself
-(`tendsto_localized_second_moment_debt`, with `nonneg_of_continuousAt_of_ae_nonneg`).
+(`tendsto_localized_second_moment_debt`, with `nonneg_of_continuousAt_of_ae_nonneg`);
 and the Volkonskii–Rozanov rate (2.78) `tendsto_blockCount_mul_pairAlpha`, with its
 (C3) input `tendsto_weighted_antitone_of_summable`; and, under the authorized (2.74)
-repair, **the whole of ledger (a)**: `var_localized_sum`, together with its new apparatus
-— the fdd-stationarity law transport (`map_pair_eq_of_stat`, `map_pair2_eq_of_stat`,
-`integral_comp_pair2_eq`, `eLpNorm_comp_pair_eq`, `memLp_comp_pair`), the stationary
-double-sum estimate `abs_double_sum_sub_diag_le`, the localized δ-moment
-`localized_delta_moment_le` (this is (2.74) itself), and the bandwidth limits
+repair, **the whole of ledger (a)**: `var_localized_sum`, together with its apparatus
+— the fdd-stationarity law transport (`map_pair_eq_of_stat`, `integral_comp_pair_eq`,
+`map_pair2_eq_of_stat`, `integral_comp_pair2_eq`, `eLpNorm_comp_pair_eq`,
+`memLp_comp_pair`), the stationary double-sum estimates `abs_double_sum_sub_diag_le` and
+`abs_double_sum_subset_le`, the localized δ-moment `localized_delta_moment_le` (this is
+(2.74) itself), the truncation-tail diagonal `sq_sub_clamp_le` /
+`localized_trunc_residual_moment_le`, and the bandwidth limits
 `tendsto_smallLagCut_mul_bandwidth`, `tendsto_rpow_mul_abs_log_rpow`.
-Open, as named debts, each with an audit verdict in its own docstring — and, as of this
-wave, **all three of them are false as frozen**, so ledger (d) cannot be closed without
-lifting the statement freeze:
-* `tendsto_smallBlock_variance` (2.79)–(2.81) — **FALSE as frozen**, for two independent
-  reasons: the statement carries no hypotheses at all, and (new) even the fully hypothesized
-  version needs (C2) in its *unweighted* form, because the conditional recentring inside
-  `truncErr` strips both error factors out of the small-lag covariance;
-* `charFun_locSum_sub_locTruncSum_le` (2.82)–(2.83) — **FALSE as frozen**: no stationarity,
-  and `heLδ` constrains only `e 0`;
-* `tendsto_charFun_locTruncSum` ((b) + (d) at fixed `L`, and (2.84)) — **FALSE as frozen**
-  (new this wave; the earlier "statement intact" verdict is superseded). Refutable already
+
+**New this wave** — the *time-transport* apparatus that steps (b)–(c) need and ledger (a)
+did not, all proved and axiom-clean:
+* `map_fst_eq_of_stat`, `ae_comp_X_of_stat` — the `X`-marginal and a.e. statements about it
+  move across time;
+* `exists_condExp_repr_of_stat` — under fdd stationarity `E(φ(e_t) | X_t)` is the **same**
+  measurable function of `X_t` at every `t` (Doob–Dynkin at `t = 0`, then the set-integral
+  characterization transports because both sides are integrals of a fixed function of the
+  pair);
+* `condExp_eq_zero_of_stat` — (C1)'s `E(e | X) = 0` at *every* time, not just `t = 0`;
+* `measurable_clampAt`, `abs_clampAt_le`, `exists_truncErr_repr` — one bounded measurable
+  `mL` with `e^L_t = clamp_L(e_t) − mL(X_t)` a.e. simultaneously in `t`, so that the
+  truncated covariance array is a function of the lag alone;
+* `localized_weight_integral_le` — `E[G((X_0 − x)/h)] ≤ (C_p ∫G) h`, the `Y ≡ 1` case of the
+  density change of variables (at `G = |W|^δ` it is the truncated summand's δ-th moment: no
+  conditional moment is needed there, the error factor being bounded by `2L`).
+
+Open, as named debts, each with its verified falsity witness and its
+**Statement strengthening (documented)** paragraph in its own docstring. All three were
+**false as frozen**; all three statements have now been **repaired** (this wave), and the
+repairs are exactly the ones the witnesses prescribe:
+* `tendsto_smallBlock_variance` (2.79)–(2.81) — was hypothesis-free; now carries the full
+  (C1)–(C5) package plus `0 < L`, and (C2) in its printed form (the second obstruction: the
+  conditional recentring inside `truncErr` strips both error factors out of the small-lag
+  covariance, so the *unweighted* instance `f ≡ 1` is what closes it). **Proof still open.**
+  What remains is (i) the covariance assembly for the truncated array — diagonal
+  `|G_ζ(0)| ≤ 4L² C_p (∫W²) h` from `localized_weight_integral_le`, small lags from (C2) at
+  `f ≡ 1`, large lags from Davydov as in ledger (a) — and (ii) the numerology
+  `k_n s_n / n → 0`, which reduces to `s_n / l_n → 0` and thence to
+  `n^{1−θ} h^{1+θ} / (log n)^{2+2θ} → ∞` with `θ = (1−2/δ)/(λ+1) < 1/2`; that in turn is
+  `(n h³)^{(1+θ)/3} · n^{(2−4θ)/3} / (log n)^{2+2θ} → ∞`, i.e. exactly (C5) with room to
+  spare. Every *input* to (i) is now proved; only the assembly is missing.
+* `charFun_locSum_sub_locTruncSum_le` (2.82)–(2.83) — was missing stationarity and every
+  moment condition beyond time `0`; now carries the same package. **Proof still open.**
+  Route: `‖e^{iuS} − e^{iuT}‖ ≤ |u| E|S − T|` and `|z| ≤ z²/(2c) + c/2` (no square root
+  needed), then the residual array `ρ_t = (r_t − E(r_t|X_t)) W_t`, `r_t = e_t − clamp_L e_t`,
+  with `E(e_t|X_t) = 0` supplied at every `t` by `condExp_eq_zero_of_stat`. Diagonal:
+  `localized_trunc_residual_moment_le`, `O(L^{2−δ})` after the `h⁻¹`, uniformly in `n`.
+  Small lags: (C2) at `f(z) = (|r(z.1)| + c)(|r(z.2)| + c)` with `c = L^{1−δ}M` (the pointwise
+  bound `|r_0| ≤ L^{1−δ}|e_0|^δ` is what makes the recentring constant decay in `L`).
+  Large lags: Davydov; note the δ-moment constant there does **not** decay in `L` under
+  `heδc`, so the uniformity in `n` has to be obtained by splitting at some `N` (large `n`:
+  the factor `h^{2/δ−1+λ}|log h|^λ` is itself small; small `n`: the crude bound
+  `E|S_n − T_n| ≤ √(n/h_n) C_W · 2L^{1−δ}M` closes at fixed `n`). This is recorded because it
+  is *not* a further silent reading — the frozen package suffices, but only after the split.
+* `tendsto_charFun_locTruncSum` ((b) + (d) at fixed `L`, and (2.84)) — was refutable already
   for an iid series: at a fixed truncation level the limit needs continuity at `x` of the
-  *truncated* conditional second moment `σ_L² · p`, which (C1) does not supply, and an
-  oscillating conditional law with `σ² ≡ 1` makes the charFun oscillate. Its three
-  blocking *inputs*, by contrast, are now two-thirds discharged: ledger (a) is proved, and
-  Volkonskii–Rozanov is available proved and axiom-clean as
-  `norm_integral_prod_sub_prod_integral_le_of_pos` (`Mixing/Inequalities.lean`), the
-  frozen `norm_integral_prod_sub_prod_integral_le` retaining only its false `k = 0` corner.
+  *truncated* conditional second moment `σ_L²·p`, which (C1) does not supply. Repaired by the
+  `mL`/`sL` family with `hσLc`, `hσLb`, `hσL84`. **Proof still open**; of its three blocking
+  inputs, (i) ledger (a) and (iii) Volkonskii–Rozanov
+  (`norm_integral_prod_sub_prod_integral_le_of_pos`, proved and axiom-clean, and every
+  consumer here has `k = k_n ≥ 1`) are cleared, and (ii) is `tendsto_smallBlock_variance`.
 
 The **headline** `kernel_localized_clt` is not itself damaged by any of this: truncation
 and Bernstein blocking are proof-route artifacts, and the variance asymptotics the
-Gaussian limit is read off (`var_localized_sum`) are proved. What the three verdicts say is
-that FY §2.7.7's *route* to it needs four silent readings of (C1)–(C2), not two.
+Gaussian limit is read off (`var_localized_sum`) are proved. What the verdicts say is
+that FY §2.7.7's *route* to it needs four silent readings of (C1) and (C2) as printed, not
+two.
+
+**Note on `Mixing/Inequalities.lean`.** The sibling repair — making the frozen
+`norm_integral_prod_sub_prod_integral_le` the `0 < k` statement (its `k = 0` corner is
+false: `‖1 − 1‖ = 0 ≤ 16·(0−1)·a` fails for `a > 0`) — was attempted this wave and
+**reverted**: `StatLean/TimeSeries/Mixing/LimitTheorems.lean:998`
+(`norm_integral_prod_blocks_sub_prod_le`, private, and itself false at `k = 0` for the same
+reason) consumes the frozen name at unconstrained `k`, and that file is outside this wave's
+touch-set. The repair is one line in each of the two files; the content is already available
+as `norm_integral_prod_sub_prod_integral_le_of_pos`.
 
 **FALSE AS FROZEN (verified) — REPAIRS APPLIED.** FY (2.73)–(2.76) — hence Theorem 2.22
 itself — does not follow from (C1)–(C5) *as formalized here*. Two independent gaps were
