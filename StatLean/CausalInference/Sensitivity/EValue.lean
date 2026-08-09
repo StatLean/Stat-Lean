@@ -68,34 +68,72 @@ noncomputable def eValue (rr : ℝ) : ℝ := rr + Real.sqrt (rr * (rr - 1))
 (Ding Lemma 17.1). -/
 theorem one_le_boundingFactor {w₁ w₂ : ℝ} (h₁ : 1 ≤ w₁) (h₂ : 1 ≤ w₂) :
     1 ≤ boundingFactor w₁ w₂ := by
-  sorry
+  have hpos : (0:ℝ) < w₁ + w₂ - 1 := by linarith
+  rw [boundingFactor, le_div_iff₀ hpos]
+  nlinarith [mul_nonneg (sub_nonneg.2 h₁) (sub_nonneg.2 h₂)]
 
 /-- The bounding factor is monotone in each argument (Ding Lemma 17.1). -/
 theorem boundingFactor_le_of_le {w₁ w₂ w₁' : ℝ} (h₁ : 1 ≤ w₁) (h₂ : 1 ≤ w₂) (h : w₁ ≤ w₁') :
     boundingFactor w₁ w₂ ≤ boundingFactor w₁' w₂ := by
-  sorry
+  have h₁' : (1:ℝ) ≤ w₁' := h₁.trans h
+  have hp : (0:ℝ) < w₁ + w₂ - 1 := by linarith
+  have hp' : (0:ℝ) < w₁' + w₂ - 1 := by linarith
+  rw [boundingFactor, boundingFactor, div_le_div_iff₀ hp hp']
+  nlinarith [mul_nonneg (mul_nonneg (zero_le_one.trans h₂) (sub_nonneg.2 h)) (sub_nonneg.2 h₂)]
 
 /-- **Lemma 17.1** (Ding p. 235): the bounding factor is controlled by the *larger* of the
 two confounding associations, `β(w₁,w₂) ≤ w²/(2w-1)` with `w = max(w₁,w₂)`. This is what
 reduces a two-parameter sensitivity analysis to one number. -/
 theorem boundingFactor_le_sq_div {w₁ w₂ : ℝ} (h₁ : 1 ≤ w₁) (h₂ : 1 ≤ w₂) :
     boundingFactor w₁ w₂ ≤ max w₁ w₂ ^ 2 / (2 * max w₁ w₂ - 1) := by
-  sorry
+  have hcomm : ∀ a b : ℝ, boundingFactor a b = boundingFactor b a := by
+    intro a b; unfold boundingFactor; ring_nf
+  have hw₁ : w₁ ≤ max w₁ w₂ := le_max_left _ _
+  have hw₂ : w₂ ≤ max w₁ w₂ := le_max_right _ _
+  have hw1 : (1:ℝ) ≤ max w₁ w₂ := h₁.trans hw₁
+  have hself : boundingFactor (max w₁ w₂) (max w₁ w₂)
+      = max w₁ w₂ ^ 2 / (2 * max w₁ w₂ - 1) := by
+    unfold boundingFactor; ring_nf
+  rw [← hself]
+  calc boundingFactor w₁ w₂ ≤ boundingFactor (max w₁ w₂) w₂ :=
+        boundingFactor_le_of_le h₁ h₂ hw₁
+    _ = boundingFactor w₂ (max w₁ w₂) := hcomm _ _
+    _ ≤ boundingFactor (max w₁ w₂) (max w₁ w₂) := boundingFactor_le_of_le h₂ hw1 hw₂
 
 /-- The E-value is at least one, and at least the observed risk ratio. -/
 theorem le_eValue {rr : ℝ} (h : 1 ≤ rr) : rr ≤ eValue rr := by
-  sorry
+  unfold eValue
+  linarith [Real.sqrt_nonneg (rr * (rr - 1))]
 
 /-- The E-value is at least `1`. -/
-theorem one_le_eValue {rr : ℝ} (h : 1 ≤ rr) : 1 ≤ eValue rr := by
-  sorry
+theorem one_le_eValue {rr : ℝ} (h : 1 ≤ rr) : 1 ≤ eValue rr :=
+  h.trans (le_eValue h)
+
+/-- The square of the E-value's radical, restated for `nlinarith`/`linear_combination`. -/
+private lemma sq_sqrt_rr {rr : ℝ} (h : 1 ≤ rr) :
+    Real.sqrt (rr * (rr - 1)) ^ 2 = rr * (rr - 1) :=
+  Real.sq_sqrt (mul_nonneg (by linarith) (by linarith))
+
+/-- The smaller root `rr - √(rr(rr-1))` of `x² - 2·rr·x + rr` never exceeds `1`. -/
+private lemma sub_one_le_sqrt_rr {rr : ℝ} (h : 1 ≤ rr) :
+    rr - 1 ≤ Real.sqrt (rr * (rr - 1)) := by
+  have h1 : Real.sqrt ((rr - 1) ^ 2) ≤ Real.sqrt (rr * (rr - 1)) :=
+    Real.sqrt_le_sqrt (by nlinarith)
+  rwa [Real.sqrt_sq (by linarith : (0:ℝ) ≤ rr - 1)] at h1
 
 /-- **The defining identity of the E-value** (Ding §17.2): at `w₁ = w₂ = E` the bounding
 factor is exactly the observed risk ratio — `E` is the point at which confounding could
 just barely explain the association away. -/
 theorem boundingFactor_eValue_self {rr : ℝ} (h : 1 ≤ rr) :
     boundingFactor (eValue rr) (eValue rr) = rr := by
-  sorry
+  have hE : (1:ℝ) ≤ eValue rr := one_le_eValue h
+  have hden : (0:ℝ) < eValue rr + eValue rr - 1 := by linarith
+  have hkey : eValue rr * eValue rr = rr * (eValue rr + eValue rr - 1) := by
+    simp only [eValue]
+    linear_combination sq_sqrt_rr h
+  unfold boundingFactor
+  rw [div_eq_iff (ne_of_gt hden)]
+  exact hkey
 
 /-- **The E-value is a valid threshold** (Ding §17.2): if both confounding associations are
 below the E-value, they cannot produce the observed risk ratio — so explaining the
@@ -105,23 +143,44 @@ theorem lt_of_boundingFactor_ge {rr w₁ w₂ : ℝ} (hrr : 1 ≤ rr) (h₁ : 1 
     -- Ding Theorem 17.1
     (hexplain : rr ≤ boundingFactor w₁ w₂) :
     eValue rr ≤ max w₁ w₂ := by
-  sorry
+  have hw1 : (1:ℝ) ≤ max w₁ w₂ := h₁.trans (le_max_left _ _)
+  have hden : (0:ℝ) < 2 * max w₁ w₂ - 1 := by linarith
+  -- The one-parameter form of Cornfield's bound, cleared of its denominator.
+  have hq : rr * (2 * max w₁ w₂ - 1) ≤ max w₁ w₂ ^ 2 := by
+    rw [← le_div_iff₀ hden]
+    exact hexplain.trans (boundingFactor_le_sq_div h₁ h₂)
+  have hs2 := sq_sqrt_rr hrr
+  have hlow := sub_one_le_sqrt_rr hrr
+  unfold eValue
+  rcases lt_or_ge (rr - Real.sqrt (rr * (rr - 1))) (max w₁ w₂) with hcase | hcase
+  · -- `max w₁ w₂` lies strictly above the smaller root, so it must lie above the larger one:
+    -- otherwise `(w - (rr - s))·(w - (rr + s)) = w² - 2·rr·w + rr` would be negative.
+    nlinarith [hq, hs2, hcase]
+  · -- Degenerate branch: `1 ≤ max w₁ w₂ ≤ rr - s ≤ 1` forces `rr = 1` and `s = 0`.
+    have hs : Real.sqrt (rr * (rr - 1)) = rr - 1 := le_antisymm (by linarith) hlow
+    have hrr1 : rr = 1 := by rw [hs] at hs2; nlinarith [hs2]
+    rw [hrr1] at hs ⊢
+    linarith [hw1, hs]
 
 /-- **The E-value is the *least* such threshold** (Ding §17.2): it is attained, so no
 smaller number has the previous property. Together with `lt_of_boundingFactor_ge` this
 characterizes the E-value. -/
 theorem exists_boundingFactor_eq {rr : ℝ} (h : 1 ≤ rr) :
-    ∃ w₁ w₂ : ℝ, 1 ≤ w₁ ∧ 1 ≤ w₂ ∧ max w₁ w₂ = eValue rr ∧ boundingFactor w₁ w₂ = rr := by
-  sorry
+    ∃ w₁ w₂ : ℝ, 1 ≤ w₁ ∧ 1 ≤ w₂ ∧ max w₁ w₂ = eValue rr ∧ boundingFactor w₁ w₂ = rr :=
+  ⟨eValue rr, eValue rr, one_le_eValue h, one_le_eValue h, max_self _,
+    boundingFactor_eValue_self h⟩
 
 /-- The E-value of a null association is `1`: no confounding is needed to explain away an
 association that is not there (Ding §17.2). -/
 theorem eValue_one : eValue 1 = 1 := by
-  sorry
+  norm_num [eValue]
 
 /-- The E-value is monotone in the observed risk ratio: stronger observed associations are
 harder to explain away (Ding §17.2). -/
 theorem eValue_mono {rr rr' : ℝ} (h : 1 ≤ rr) (hle : rr ≤ rr') : eValue rr ≤ eValue rr' := by
-  sorry
+  unfold eValue
+  have hmono : rr * (rr - 1) ≤ rr' * (rr' - 1) := by
+    nlinarith [mul_nonneg (sub_nonneg.2 hle) (by linarith : (0:ℝ) ≤ rr' + rr - 1)]
+  exact add_le_add hle (Real.sqrt_le_sqrt hmono)
 
 end StatLean.CausalInference
