@@ -1812,6 +1812,22 @@ private lemma sqrt_integral_sq_add_le [IsProbabilityMeasure μ] {f g : Ω → �
     ← ENNReal.ofReal_add (Real.sqrt_nonneg _) (Real.sqrt_nonneg _)] at hmink
   exact (ENNReal.ofReal_le_ofReal_iff (by positivity)).mp hmink
 
+/-- **Minkowski**, difference form. -/
+private lemma sqrt_integral_sq_sub_le [IsProbabilityMeasure μ] {f g : Ω → ℝ}
+    (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    Real.sqrt (∫ ω, (f ω - g ω) ^ 2 ∂μ)
+      ≤ Real.sqrt (∫ ω, f ω ^ 2 ∂μ) + Real.sqrt (∫ ω, g ω ^ 2 ∂μ) := by
+  have hgn : MemLp (fun ω => -g ω) 2 μ := hg.neg
+  have h : Real.sqrt (∫ ω, (f ω + -g ω) ^ 2 ∂μ)
+      ≤ Real.sqrt (∫ ω, f ω ^ 2 ∂μ) + Real.sqrt (∫ ω, (-g ω) ^ 2 ∂μ) :=
+    sqrt_integral_sq_add_le hf hgn
+  have e1 : (∫ ω, (f ω + -g ω) ^ 2 ∂μ) = ∫ ω, (f ω - g ω) ^ 2 ∂μ :=
+    integral_congr_ae (Eventually.of_forall fun ω => by ring)
+  have e2 : (∫ ω, (-g ω) ^ 2 ∂μ) = ∫ ω, g ω ^ 2 ∂μ :=
+    integral_congr_ae (Eventually.of_forall fun ω => by ring)
+  rw [e1, e2] at h
+  exact h
+
 /-! #### Clamping arithmetic -/
 
 /-- The clamp `x ↦ max (−M) (min M x)` is measurable. -/
@@ -1943,6 +1959,37 @@ private lemma abs_acvf_le_integral_sq [IsProbabilityMeasure μ] {W : ℤ → Ω 
     ring
   linarith
 
+/-- Clamping never increases the modulus. -/
+private lemma abs_clamp_le_abs {M x : ℝ} (hM : 0 ≤ M) : |max (-M) (min M x)| ≤ |x| := by
+  rcases le_total x (-M) with h | h
+  · rw [min_eq_right (by linarith), max_eq_left h]
+    rw [abs_of_nonpos (by linarith : (-M : ℝ) ≤ 0), abs_of_nonpos (by linarith : x ≤ 0)]
+    linarith
+  · rcases le_total x M with h2 | h2
+    · rw [min_eq_right h2, max_eq_right h]
+    · rw [min_eq_left h2, max_eq_right (by linarith)]
+      rw [abs_of_nonneg hM, abs_of_nonneg (by linarith : (0 : ℝ) ≤ x)]
+      linarith
+
+/-- Below the clamping level the clamp is the identity. -/
+private lemma clamp_eq_self'' {M x : ℝ} (h : |x| ≤ M) : max (-M) (min M x) = x := by
+  have := sub_clamp_eq_zero'' h
+  linarith
+
+/-- The characteristic function of the law of a scaled statistic, as an integral over `Ω`. -/
+private lemma charFun_map_scaled [IsProbabilityMeasure μ] {S : Ω → ℝ} (hS : Measurable S)
+    (a u : ℝ) :
+    charFun (μ.map fun ω => a * S ω) u
+      = ∫ ω, Complex.exp (((u * a * S ω : ℝ) : ℂ) * Complex.I) ∂μ := by
+  have hae : AEMeasurable (fun ω => a * S ω) μ := (measurable_const.mul hS).aemeasurable
+  have hsm : AEStronglyMeasurable (fun x : ℝ => Complex.exp ((u : ℂ) * (x : ℂ) * Complex.I))
+      (μ.map fun ω => a * S ω) :=
+    (Complex.continuous_exp.comp (by fun_prop)).aestronglyMeasurable
+  rw [charFun_apply_real, integral_map hae hsm]
+  refine integral_congr_ae (Eventually.of_forall fun ω => ?_)
+  push_cast
+  ring
+
 /-- The `ℤ`-indexed Davydov dominant is summable. -/
 private lemma summable_int_dominant [IsProbabilityMeasure μ] {θ c : ℝ}
     (hα : Summable fun n : ℕ => alphaCoeff X μ n ^ θ) :
@@ -1992,7 +2039,510 @@ theorem clt_of_alphaMixing_debt [IsProbabilityMeasure μ]
         (Real.sqrt n)⁻¹ * ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) u) atTop
       (𝓝 (charFun (gaussianReal 0
         (Real.toNNReal (acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1)))) u)) := by
-  sorry
+  classical
+  -- ### 0. Exponent bookkeeping and the `X`-side variance rate
+  have hδ0 : (0 : ℝ) < δ := by linarith
+  have hθ0 : (0 : ℝ) < 1 - 2 / δ := by
+    have h : 2 / δ < 1 := (div_lt_one hδ0).mpr (by linarith)
+    linarith
+  have hθ1 : (1 : ℝ) - 2 / δ ≤ 1 := by
+    have h : (0 : ℝ) < 2 / δ := by positivity
+    linarith
+  have hmem2 : MemLp (X 0) 2 μ := hLδ.mono_exponent (two_le_ofReal hδ)
+  have hXint : Integrable (X 0) μ := hmem2.integrable one_le_two
+  obtain ⟨hsumX, hrateX⟩ := summable_acvf_and_var_rate_debt hmeas hstat hδ hLδ hmean hα
+  set σ2 : ℝ := acvf X μ 0 + 2 * ∑' j : ℕ, acvf X μ ((j : ℤ) + 1) with hσ2def
+  -- ### 1. The truncated (`gY`) and discarded (`gZ`) coordinate maps
+  obtain ⟨c, hc⟩ : ∃ c : ℕ → ℝ, ∀ M : ℕ,
+      c M = ∫ ω, max (-(M : ℝ)) (min (M : ℝ) (X 0 ω)) ∂μ := ⟨_, fun _ => rfl⟩
+  obtain ⟨gY, hgY⟩ : ∃ gY : ℕ → ℝ → ℝ, ∀ M : ℕ,
+      gY M = fun x : ℝ => max (-(M : ℝ)) (min (M : ℝ) x) - c M := ⟨_, fun _ => rfl⟩
+  obtain ⟨gZ, hgZ⟩ : ∃ gZ : ℕ → ℝ → ℝ, ∀ M : ℕ,
+      gZ M = fun x : ℝ => x - gY M x := ⟨_, fun _ => rfl⟩
+  have hgYm : ∀ M : ℕ, Measurable (gY M) := fun M => by
+    rw [hgY M]; exact (measurable_clamp _).sub_const _
+  have hgZm : ∀ M : ℕ, Measurable (gZ M) := fun M => by
+    rw [hgZ M]; exact measurable_id.sub (hgYm M)
+  have hsplitYZ : ∀ (M : ℕ) (x : ℝ), gY M x + gZ M x = x := by
+    intro M x; simp only [hgZ M]; ring
+  have hclampInt : ∀ M : ℕ, Integrable (fun ω => max (-(M : ℝ)) (min (M : ℝ) (X 0 ω))) μ := by
+    intro M
+    refine MemLp.integrable (q := ⊤) le_top (memLp_top_of_bound
+      ((measurable_clamp _).comp (hmeas 0)).aestronglyMeasurable (M : ℝ) ?_)
+    filter_upwards with ω
+    simpa [Real.norm_eq_abs] using abs_clamp_le'' (M := (M : ℝ)) (Nat.cast_nonneg M)
+  set b : ℝ := ∫ ω, |X 0 ω| ∂μ with hbdef
+  have hb0 : (0 : ℝ) ≤ b := integral_nonneg fun _ => abs_nonneg _
+  have hcb : ∀ M : ℕ, |c M| ≤ b := by
+    intro M
+    have hz : c M = ∫ ω, (max (-(M : ℝ)) (min (M : ℝ) (X 0 ω)) - X 0 ω) ∂μ := by
+      rw [hc M, integral_sub (hclampInt M) hXint, hmean, sub_zero]
+    rw [hz]
+    refine abs_integral_le_integral_abs.trans ?_
+    refine integral_mono ((hclampInt M).sub hXint).abs hXint.abs fun ω => ?_
+    rw [abs_sub_comm]
+    exact abs_sub_clamp_le'' (M := (M : ℝ)) (Nat.cast_nonneg M)
+  -- pointwise size of the two parts
+  have hYbound : ∀ (M : ℕ) (x : ℝ), |gY M x| ≤ (M : ℝ) + b := by
+    intro M x
+    have h1 := abs_clamp_le'' (M := (M : ℝ)) (x := x) (Nat.cast_nonneg M)
+    have h2 := hcb M
+    rw [hgY M]
+    rw [abs_le] at h1 h2 ⊢
+    constructor <;> [linarith; linarith]
+  have hZbound : ∀ (M : ℕ) (x : ℝ), |gZ M x| ≤ |x| + b := by
+    intro M x
+    have h1 := abs_sub_clamp_le'' (M := (M : ℝ)) (x := x) (Nat.cast_nonneg M)
+    have h2 := hcb M
+    have hx : gZ M x = (x - max (-(M : ℝ)) (min (M : ℝ) x)) + c M := by
+      simp only [hgZ M, hgY M]; ring
+    rw [hx]
+    rw [abs_le] at h1 h2 ⊢
+    constructor <;> [linarith; linarith]
+  -- ### 2. Structural facts for the two derived processes
+  have hmY : ∀ (M : ℕ) (t : ℤ), Measurable fun ω => gY M (X t ω) :=
+    fun M t => (hgYm M).comp (hmeas t)
+  have hmZ : ∀ (M : ℕ) (t : ℤ), Measurable fun ω => gZ M (X t ω) :=
+    fun M t => (hgZm M).comp (hmeas t)
+  have hstatY : ∀ M : ℕ, IsStrictlyStationary (fun t ω => gY M (X t ω)) μ :=
+    fun M => isStrictlyStationary_comp hmeas hstat (hgYm M)
+  have hstatZ : ∀ M : ℕ, IsStrictlyStationary (fun t ω => gZ M (X t ω)) μ :=
+    fun M => isStrictlyStationary_comp hmeas hstat (hgZm M)
+  have hαYle : ∀ (M n : ℕ), alphaCoeff (fun t ω => gY M (X t ω)) μ n ≤ alphaCoeff X μ n :=
+    fun M n => alphaCoeff_comp_le hmeas (hgYm M) n
+  have hαZle : ∀ (M n : ℕ), alphaCoeff (fun t ω => gZ M (X t ω)) μ n ≤ alphaCoeff X μ n :=
+    fun M n => alphaCoeff_comp_le hmeas (hgZm M) n
+  have hbddY : ∀ (M : ℕ) (t : ℤ), ∀ᵐ ω ∂μ, |gY M (X t ω)| ≤ (M : ℝ) + b := by
+    intro M t; filter_upwards with ω; exact hYbound M _
+  have hYtop : ∀ M : ℕ, MemLp (fun ω => gY M (X 0 ω)) ⊤ μ := by
+    intro M
+    refine memLp_top_of_bound (hmY M 0).aestronglyMeasurable ((M : ℝ) + b) ?_
+    filter_upwards with ω
+    simpa [Real.norm_eq_abs] using hYbound M (X 0 ω)
+  have hδY : ∀ M : ℕ, MemLp (fun ω => gY M (X 0 ω)) (ENNReal.ofReal δ) μ :=
+    fun M => (hYtop M).mono_exponent le_top
+  have hY2 : ∀ M : ℕ, MemLp (fun ω => gY M (X 0 ω)) 2 μ :=
+    fun M => (hYtop M).mono_exponent le_top
+  have hYint : ∀ M : ℕ, Integrable (fun ω => gY M (X 0 ω)) μ :=
+    fun M => (hY2 M).integrable one_le_two
+  have hmeanY : ∀ M : ℕ, ∫ ω, gY M (X 0 ω) ∂μ = 0 := by
+    intro M
+    have heq : (fun ω => gY M (X 0 ω))
+        = fun ω => max (-(M : ℝ)) (min (M : ℝ) (X 0 ω)) - c M := by
+      funext ω; rw [hgY M]
+    rw [heq, integral_sub (hclampInt M) (integrable_const _), integral_const, ← hc M]
+    simp
+  have hmeanZ : ∀ M : ℕ, ∫ ω, gZ M (X 0 ω) ∂μ = 0 := by
+    intro M
+    have heq : (fun ω => gZ M (X 0 ω)) = fun ω => X 0 ω - gY M (X 0 ω) := by
+      funext ω; simp only [hgZ M]
+    rw [heq, integral_sub hXint (hYint M), hmean, hmeanY M, sub_zero]
+  -- the dominating envelope of the discarded coordinate
+  have hEnvδ : MemLp (fun ω => |X 0 ω| + b) (ENNReal.ofReal δ) μ := by
+    have h1 : MemLp (fun ω => |X 0 ω|) (ENNReal.ofReal δ) μ := by
+      simpa only [Real.norm_eq_abs] using hLδ.norm
+    exact h1.add (memLp_const b)
+  have hEnv2 : MemLp (fun ω => |X 0 ω| + b) 2 μ := by
+    have h1 : MemLp (fun ω => |X 0 ω|) 2 μ := by
+      simpa only [Real.norm_eq_abs] using hmem2.norm
+    exact h1.add (memLp_const b)
+  have hδZ : ∀ M : ℕ, MemLp (fun ω => gZ M (X 0 ω)) (ENNReal.ofReal δ) μ := by
+    intro M
+    refine hEnvδ.mono (hmZ M 0).aestronglyMeasurable ?_
+    filter_upwards with ω
+    rw [Real.norm_eq_abs, Real.norm_eq_abs,
+      abs_of_nonneg (add_nonneg (abs_nonneg (X 0 ω)) hb0)]
+    exact hZbound M (X 0 ω)
+  have hZ2 : ∀ M : ℕ, MemLp (fun ω => gZ M (X 0 ω)) 2 μ := by
+    intro M
+    refine hEnv2.mono (hmZ M 0).aestronglyMeasurable ?_
+    filter_upwards with ω
+    rw [Real.norm_eq_abs, Real.norm_eq_abs,
+      abs_of_nonneg (add_nonneg (abs_nonneg (X 0 ω)) hb0)]
+    exact hZbound M (X 0 ω)
+  have hαYsum : ∀ M : ℕ,
+      Summable fun n : ℕ => alphaCoeff (fun t ω => gY M (X t ω)) μ n ^ (1 - 2 / δ) :=
+    fun M => summable_rpow_of_le hθ0.le (hαYle M) hα
+  have hαZsum : ∀ M : ℕ,
+      Summable fun n : ℕ => alphaCoeff (fun t ω => gZ M (X t ω)) μ n ^ (1 - 2 / δ) :=
+    fun M => summable_rpow_of_le hθ0.le (hαZle M) hα
+  -- ### 3. Variance rates for the two derived processes
+  obtain ⟨sY, hsY⟩ : ∃ sY : ℕ → ℝ, ∀ M : ℕ, sY M = acvf (fun t ω => gY M (X t ω)) μ 0
+      + 2 * ∑' j : ℕ, acvf (fun t ω => gY M (X t ω)) μ ((j : ℤ) + 1) := ⟨_, fun _ => rfl⟩
+  obtain ⟨sZ, hsZ⟩ : ∃ sZ : ℕ → ℝ, ∀ M : ℕ, sZ M = acvf (fun t ω => gZ M (X t ω)) μ 0
+      + 2 * ∑' j : ℕ, acvf (fun t ω => gZ M (X t ω)) μ ((j : ℤ) + 1) := ⟨_, fun _ => rfl⟩
+  have hYpack := fun M : ℕ =>
+    summable_acvf_and_var_rate_debt (hmY M) (hstatY M) hδ (hδY M) (hmeanY M) (hαYsum M)
+  have hZpack := fun M : ℕ =>
+    summable_acvf_and_var_rate_debt (hmZ M) (hstatZ M) hδ (hδZ M) (hmeanZ M) (hαZsum M)
+  have hrateY : ∀ M : ℕ, Tendsto (fun n : ℕ => (n : ℝ)⁻¹ *
+      variance (fun ω => ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)) μ) atTop
+      (𝓝 (sY M)) := by
+    intro M; rw [hsY M]; exact (hYpack M).2
+  have hrateZ : ∀ M : ℕ, Tendsto (fun n : ℕ => (n : ℝ)⁻¹ *
+      variance (fun ω => ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) μ) atTop
+      (𝓝 (sZ M)) := by
+    intro M; rw [hsZ M]; exact (hZpack M).2
+  -- ### 4. The discarded part vanishes: `σ_Z(M)² → 0`
+  have hcM0 : Tendsto c atTop (𝓝 0) := by
+    have hconv : ∀ᵐ ω ∂μ, Tendsto (fun M : ℕ => max (-(M : ℝ)) (min (M : ℝ) (X 0 ω)))
+        atTop (𝓝 (X 0 ω)) := by
+      filter_upwards with ω
+      refine Tendsto.congr' ?_ tendsto_const_nhds
+      filter_upwards [eventually_ge_atTop (Nat.ceil |X 0 ω|)] with M hM
+      have hle : |X 0 ω| ≤ (M : ℝ) := le_trans (Nat.le_ceil _) (by exact_mod_cast hM)
+      exact (clamp_eq_self'' hle).symm
+    have hdct := tendsto_integral_of_dominated_convergence (μ := μ)
+      (F := fun (M : ℕ) ω => max (-(M : ℝ)) (min (M : ℝ) (X 0 ω))) (f := fun ω => X 0 ω)
+      (bound := fun ω => |X 0 ω|)
+      (fun M => ((measurable_clamp _).comp (hmeas 0)).aestronglyMeasurable)
+      hXint.abs
+      (fun M => Eventually.of_forall fun ω => by
+        simpa [Real.norm_eq_abs] using abs_clamp_le_abs (M := (M : ℝ)) (Nat.cast_nonneg M))
+      hconv
+    rw [hmean] at hdct
+    exact hdct.congr fun M => (hc M).symm
+  have heZ : Tendsto (fun M : ℕ => ∫ ω, (gZ M (X 0 ω)) ^ 2 ∂μ) atTop (𝓝 0) := by
+    have hconv : ∀ᵐ ω ∂μ, Tendsto (fun M : ℕ => (gZ M (X 0 ω)) ^ 2) atTop (𝓝 0) := by
+      filter_upwards with ω
+      have hEq : ∀ᶠ M : ℕ in atTop, c M = gZ M (X 0 ω) := by
+        filter_upwards [eventually_ge_atTop (Nat.ceil |X 0 ω|)] with M hM
+        have hle : |X 0 ω| ≤ (M : ℝ) := le_trans (Nat.le_ceil _) (by exact_mod_cast hM)
+        have := sub_clamp_eq_zero'' hle
+        simp only [hgZ M, hgY M]
+        linarith
+      have h1 : Tendsto (fun M : ℕ => gZ M (X 0 ω)) atTop (𝓝 0) := Tendsto.congr' hEq hcM0
+      simpa using h1.pow 2
+    have hdomint : Integrable (fun ω => (|X 0 ω| + b) ^ 2) μ := hEnv2.integrable_sq
+    have hdct := tendsto_integral_of_dominated_convergence (μ := μ)
+      (F := fun (M : ℕ) ω => (gZ M (X 0 ω)) ^ 2) (f := fun _ => (0 : ℝ))
+      (bound := fun ω => (|X 0 ω| + b) ^ 2)
+      (fun M => ((hmZ M 0).pow_const 2).aestronglyMeasurable)
+      hdomint
+      (fun M => Eventually.of_forall fun ω => by
+        rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+        have hb := hZbound M (X 0 ω)
+        have h0 : (0 : ℝ) ≤ |gZ M (X 0 ω)| := abs_nonneg _
+        nlinarith [sq_abs (gZ M (X 0 ω)), abs_nonneg (X 0 ω)])
+      hconv
+    simpa using hdct
+  have hptZ : ∀ k : ℤ,
+      Tendsto (fun M : ℕ => acvf (fun t ω => gZ M (X t ω)) μ k) atTop (𝓝 0) := by
+    intro k
+    refine squeeze_zero_norm (fun M => ?_) heZ
+    rw [Real.norm_eq_abs]
+    exact abs_acvf_le_integral_sq (hmZ M) (hstatZ M) (hZ2 M) (hmeanZ M) k
+  set A2 : ℝ := (eLpNorm (fun ω => |X 0 ω| + b) (ENNReal.ofReal δ) μ).toReal with hA2def
+  have hA20 : (0 : ℝ) ≤ A2 := ENNReal.toReal_nonneg
+  have hZδle : ∀ M : ℕ,
+      (eLpNorm (fun ω => gZ M (X 0 ω)) (ENNReal.ofReal δ) μ).toReal ≤ A2 := by
+    intro M
+    refine ENNReal.toReal_mono hEnvδ.eLpNorm_ne_top (eLpNorm_mono_ae ?_)
+    filter_upwards with ω
+    rw [Real.norm_eq_abs, Real.norm_eq_abs,
+      abs_of_nonneg (add_nonneg (abs_nonneg (X 0 ω)) hb0)]
+    exact hZbound M (X 0 ω)
+  have hdomk : ∀ (M : ℕ) (k : ℤ), |acvf (fun t ω => gZ M (X t ω)) μ k|
+      ≤ 8 * alphaCoeff X μ k.natAbs ^ (1 - 2 / δ) * A2 ^ 2 := by
+    intro M k
+    have hwsZ : IsStationary (fun t ω => gZ M (X t ω)) μ :=
+      (hstatZ M).isStationary (hmZ M) (hZ2 M)
+    refine (abs_acvf_int_le_davydov (hmZ M) (hstatZ M) hwsZ hδ (hδZ M) k).trans ?_
+    have h1 : alphaCoeff (fun t ω => gZ M (X t ω)) μ k.natAbs ^ (1 - 2 / δ)
+        ≤ alphaCoeff X μ k.natAbs ^ (1 - 2 / δ) :=
+      Real.rpow_le_rpow alphaMixCoeff_nonneg (hαZle M _) hθ0.le
+    have h0 : (0 : ℝ) ≤ alphaCoeff (fun t ω => gZ M (X t ω)) μ k.natAbs ^ (1 - 2 / δ) :=
+      Real.rpow_nonneg alphaMixCoeff_nonneg _
+    have h2 : (eLpNorm (fun ω => gZ M (X 0 ω)) (ENNReal.ofReal δ) μ).toReal ^ 2 ≤ A2 ^ 2 := by
+      have h := hZδle M
+      nlinarith [ENNReal.toReal_nonneg
+        (a := eLpNorm (fun ω => gZ M (X 0 ω)) (ENNReal.ofReal δ) μ)]
+    have h3 : (0 : ℝ) ≤ (eLpNorm (fun ω => gZ M (X 0 ω)) (ENNReal.ofReal δ) μ).toReal ^ 2 :=
+      sq_nonneg _
+    nlinarith [Real.rpow_nonneg (alphaMixCoeff_nonneg (μ := μ)
+      (m₁ := sigmaLE X 0) (m₂ := sigmaGE X (k.natAbs : ℤ))) (1 - 2 / δ)]
+  have hK1 : Tendsto sZ atTop (𝓝 0) := by
+    have htsum : ∀ M : ℕ, sZ M = ∑' k : ℤ, acvf (fun t ω => gZ M (X t ω)) μ k := by
+      intro M
+      rw [hsZ M]
+      exact (tsum_acvf_eq ((hstatZ M).isStationary (hmZ M) (hZ2 M)) (hZpack M).1).symm
+    have hdc := tendsto_tsum_of_dominated_convergence
+      (f := fun (M : ℕ) (k : ℤ) => acvf (fun t ω => gZ M (X t ω)) μ k)
+      (g := fun _ : ℤ => (0 : ℝ))
+      (summable_int_dominant (X := X) (c := A2 ^ 2) hα) hptZ
+      (Eventually.of_forall fun M k => by rw [Real.norm_eq_abs]; exact hdomk M k)
+    rw [tsum_zero] at hdc
+    exact hdc.congr fun M => (htsum M).symm
+  -- ### 5. The truncated variance converges: `σ_Y(M)² → σ²`
+  have hsqX : Tendsto (fun n : ℕ => Real.sqrt ((n : ℝ)⁻¹ *
+      ∫ ω, (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) ^ 2 ∂μ)) atTop (𝓝 (Real.sqrt σ2)) := by
+    refine (Real.continuous_sqrt.tendsto _).comp (hrateX.congr fun n => ?_)
+    rw [variance_partialSum_eq hmeas hstat hmem2 hmean (Finset.range n)]
+  have hsqY : ∀ M : ℕ, Tendsto (fun n : ℕ => Real.sqrt ((n : ℝ)⁻¹ *
+      ∫ ω, (∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ)) atTop
+      (𝓝 (Real.sqrt (sY M))) := by
+    intro M
+    refine (Real.continuous_sqrt.tendsto _).comp ((hrateY M).congr fun n => ?_)
+    rw [variance_partialSum_eq (hmY M) (hstatY M) (hY2 M) (hmeanY M) (Finset.range n)]
+  have hsqZ : ∀ M : ℕ, Tendsto (fun n : ℕ => Real.sqrt ((n : ℝ)⁻¹ *
+      ∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ)) atTop
+      (𝓝 (Real.sqrt (sZ M))) := by
+    intro M
+    refine (Real.continuous_sqrt.tendsto _).comp ((hrateZ M).congr fun n => ?_)
+    rw [variance_partialSum_eq (hmZ M) (hstatZ M) (hZ2 M) (hmeanZ M) (Finset.range n)]
+  have hsumsplit : ∀ (M n : ℕ) (ω : Ω), (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω)
+      = (∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω))
+        + ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω) := by
+    intro M n ω
+    rw [← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun t _ => (hsplitYZ M (X ((t : ℤ) + 1) ω)).symm
+  have hmink : ∀ M n : ℕ, Real.sqrt ((n : ℝ)⁻¹ *
+      ∫ ω, (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) ^ 2 ∂μ)
+      ≤ Real.sqrt ((n : ℝ)⁻¹ *
+          ∫ ω, (∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ)
+        + Real.sqrt ((n : ℝ)⁻¹ *
+          ∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ) := by
+    intro M n
+    have hX : (∫ ω, (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) ^ 2 ∂μ)
+        = ∫ ω, ((∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω))
+            + ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ :=
+      integral_congr_ae (Eventually.of_forall fun ω => by
+        show (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) ^ 2
+            = ((∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω))
+              + ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2
+        rw [hsumsplit M n ω])
+    have hmk := sqrt_integral_sq_add_le
+      (memLp_partialSum (hmY M) (hstatY M) (hY2 M) (Finset.range n))
+      (memLp_partialSum (hmZ M) (hstatZ M) (hZ2 M) (Finset.range n))
+    have hc0 : (0 : ℝ) ≤ (n : ℝ)⁻¹ := by positivity
+    rw [hX, Real.sqrt_mul hc0, Real.sqrt_mul hc0, Real.sqrt_mul hc0]
+    have := mul_le_mul_of_nonneg_left hmk (Real.sqrt_nonneg ((n : ℝ)⁻¹))
+    linarith [this]
+  have hmink' : ∀ M n : ℕ, Real.sqrt ((n : ℝ)⁻¹ *
+      ∫ ω, (∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ)
+      ≤ Real.sqrt ((n : ℝ)⁻¹ * ∫ ω, (∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) ^ 2 ∂μ)
+        + Real.sqrt ((n : ℝ)⁻¹ *
+          ∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ) := by
+    intro M n
+    have hY : (∫ ω, (∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ)
+        = ∫ ω, ((∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω)
+            - ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ :=
+      integral_congr_ae (Eventually.of_forall fun ω => by
+        show (∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)) ^ 2
+            = ((∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω)
+              - ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2
+        rw [hsumsplit M n ω]; ring)
+    have hmk := sqrt_integral_sq_sub_le
+      (memLp_partialSum hmeas hstat hmem2 (Finset.range n))
+      (memLp_partialSum (hmZ M) (hstatZ M) (hZ2 M) (Finset.range n))
+    have hc0 : (0 : ℝ) ≤ (n : ℝ)⁻¹ := by positivity
+    rw [hY, Real.sqrt_mul hc0, Real.sqrt_mul hc0, Real.sqrt_mul hc0]
+    have := mul_le_mul_of_nonneg_left hmk (Real.sqrt_nonneg ((n : ℝ)⁻¹))
+    linarith [this]
+  have hsqrtZ0 : Tendsto (fun M : ℕ => Real.sqrt (sZ M)) atTop (𝓝 0) := by
+    have := (Real.continuous_sqrt.tendsto 0).comp hK1
+    simpa using this
+  have hcmp1 : ∀ M : ℕ, Real.sqrt σ2 ≤ Real.sqrt (sY M) + Real.sqrt (sZ M) := fun M =>
+    le_of_tendsto_of_tendsto' hsqX ((hsqY M).add (hsqZ M)) (fun n => hmink M n)
+  have hcmp2 : ∀ M : ℕ, Real.sqrt (sY M) ≤ Real.sqrt σ2 + Real.sqrt (sZ M) := fun M =>
+    le_of_tendsto_of_tendsto' (hsqY M) (hsqX.add (hsqZ M)) (fun n => hmink' M n)
+  have hsY0 : ∀ M : ℕ, 0 ≤ sY M := by
+    intro M
+    refine ge_of_tendsto' (hrateY M) fun n => ?_
+    have : (0 : ℝ) ≤ variance (fun ω => ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)) μ :=
+      variance_nonneg _ _
+    positivity
+  have hsqrtY : Tendsto (fun M : ℕ => Real.sqrt (sY M)) atTop (𝓝 (Real.sqrt σ2)) := by
+    have hd : Tendsto (fun M : ℕ => Real.sqrt (sY M) - Real.sqrt σ2) atTop (𝓝 0) := by
+      refine squeeze_zero_norm (fun M => ?_) hsqrtZ0
+      rw [Real.norm_eq_abs, abs_le]
+      exact ⟨by linarith [hcmp1 M], by linarith [hcmp2 M]⟩
+    have := hd.add_const (Real.sqrt σ2)
+    simpa using this
+  have hK2 : Tendsto sY atTop (𝓝 σ2) := by
+    have h := hsqrtY.pow 2
+    rw [Real.sq_sqrt hσ.le] at h
+    exact h.congr fun M => Real.sq_sqrt (hsY0 M)
+  -- ### 6. Assembly: three-term `ε`-argument
+  have hRHS : charFun (gaussianReal 0 (Real.toNNReal σ2)) u
+      = Complex.exp (-((σ2 : ℂ) * (u : ℂ) ^ 2 / 2)) := by
+    rw [charFun_gaussianReal, Real.coe_toNNReal _ hσ.le]
+    congr 1
+    push_cast
+    ring
+  have hSmeasX : ∀ n : ℕ, Measurable fun ω => ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω :=
+    fun n => Finset.measurable_sum _ fun t _ => hmeas _
+  have hSmeasY : ∀ M n : ℕ,
+      Measurable fun ω => ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) :=
+    fun M n => Finset.measurable_sum _ fun t _ => hmY M _
+  have hSmeasZ : ∀ M n : ℕ,
+      Measurable fun ω => ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω) :=
+    fun M n => Finset.measurable_sum _ fun t _ => hmZ M _
+  have hcfX : ∀ n : ℕ, charFun (μ.map fun ω =>
+      (Real.sqrt n)⁻¹ * ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω) u
+      = ∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+          ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω : ℝ) : ℂ) * Complex.I) ∂μ :=
+    fun n => charFun_map_scaled (hSmeasX n) _ u
+  have hcfY : ∀ M n : ℕ, charFun (μ.map fun ω =>
+      (Real.sqrt n)⁻¹ * ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)) u
+      = ∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+          ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) : ℝ) : ℂ) * Complex.I) ∂μ :=
+    fun M n => charFun_map_scaled (hSmeasY M n) _ u
+  simp only [hcfX, hRHS]
+  -- the truncated central limit theorem, in integral form
+  have hCLTY : ∀ M : ℕ, 0 < sY M → Tendsto (fun n : ℕ => ∫ ω, Complex.exp
+      (((u * (Real.sqrt n)⁻¹ * ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) : ℝ) : ℂ)
+        * Complex.I) ∂μ) atTop (𝓝 (Complex.exp (-((sY M : ℂ) * (u : ℂ) ^ 2 / 2)))) := by
+    intro M hpos
+    have hpos' : 0 < acvf (fun t ω => gY M (X t ω)) μ 0
+        + 2 * ∑' j : ℕ, acvf (fun t ω => gY M (X t ω)) μ ((j : ℤ) + 1) := by
+      rw [← hsY M]; exact hpos
+    have h := clt_of_bounded_alphaMixing (hmY M) (hstatY M) (hbddY M) (hmeanY M)
+      (summable_alphaCoeff_of_rpow hθ0 hθ1 (hαYsum M)) hpos' u
+    have hR : charFun (gaussianReal 0 (Real.toNNReal (acvf (fun t ω => gY M (X t ω)) μ 0
+        + 2 * ∑' j : ℕ, acvf (fun t ω => gY M (X t ω)) μ ((j : ℤ) + 1)))) u
+        = Complex.exp (-((sY M : ℂ) * (u : ℂ) ^ 2 / 2)) := by
+      rw [charFun_gaussianReal, Real.coe_toNNReal _ hpos'.le, ← hsY M]
+      congr 1
+      push_cast
+      ring
+    rw [hR] at h
+    simpa only [hcfY] using h
+  -- the truncation error, uniformly in `n`
+  have hdiff : ∀ (M n : ℕ), 1 ≤ n →
+      dist (∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+            ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω : ℝ) : ℂ) * Complex.I) ∂μ)
+        (∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+            ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) : ℝ) : ℂ) * Complex.I) ∂μ)
+      ≤ |u| * Real.sqrt ((n : ℝ)⁻¹ *
+          ∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ) := by
+    intro M n hn
+    have hn0 : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hs0 : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hn0
+    have hiX := integrable_expI_block (μ := μ) (hSmeasX n) (u * (Real.sqrt n)⁻¹)
+    have hiY := integrable_expI_block (μ := μ) (hSmeasY M n) (u * (Real.sqrt n)⁻¹)
+    rw [dist_eq_norm, ← integral_sub hiX hiY]
+    refine (norm_integral_le_integral_norm _).trans ?_
+    have hptw : ∀ ω : Ω, ‖Complex.exp (((u * (Real.sqrt n)⁻¹ *
+          ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω : ℝ) : ℂ) * Complex.I)
+        - Complex.exp (((u * (Real.sqrt n)⁻¹ *
+          ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) : ℝ) : ℂ) * Complex.I)‖
+        ≤ |u| * (Real.sqrt (n : ℝ))⁻¹ *
+          |∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)| := by
+      intro ω
+      set aX : ℝ := u * (Real.sqrt n)⁻¹ * ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω with haX
+      set aY : ℝ := u * (Real.sqrt n)⁻¹ * ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω)
+        with haY
+      have harg : (aX : ℂ) * Complex.I
+          = (aY : ℂ) * Complex.I + Complex.I * ((aX - aY : ℝ) : ℂ) := by
+        push_cast; ring
+      have hfac : Complex.exp ((aX : ℂ) * Complex.I) - Complex.exp ((aY : ℂ) * Complex.I)
+          = Complex.exp ((aY : ℂ) * Complex.I) *
+            (Complex.exp (Complex.I * ((aX - aY : ℝ) : ℂ)) - 1) := by
+        rw [mul_sub, mul_one, ← Complex.exp_add, ← harg]
+      rw [hfac, norm_mul, Complex.norm_exp_ofReal_mul_I, one_mul]
+      refine le_trans Real.norm_exp_I_mul_ofReal_sub_one_le ?_
+      have hd : aX - aY
+          = u * (Real.sqrt (n : ℝ))⁻¹ * ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω) := by
+        rw [haX, haY, ← mul_sub, hsumsplit M n ω]
+        ring
+      have habs : |u * (Real.sqrt (n : ℝ))⁻¹ *
+            ∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)|
+          = |u| * (Real.sqrt (n : ℝ))⁻¹ *
+            |∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)| := by
+        rw [abs_mul, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (Real.sqrt (n : ℝ))⁻¹)]
+      rw [Real.norm_eq_abs, hd, habs]
+    refine (integral_mono ((hiX.sub hiY).norm) ?_ hptw).trans ?_
+    · exact (((memLp_partialSum (hmZ M) (hstatZ M) (hZ2 M) (Finset.range n)).integrable
+        one_le_two).abs.const_mul _)
+    · have hIC : ∫ ω, |u| * (Real.sqrt (n : ℝ))⁻¹ *
+            |∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)| ∂μ
+          = |u| * (Real.sqrt (n : ℝ))⁻¹ *
+            ∫ ω, |∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)| ∂μ := integral_const_mul _ _
+      rw [hIC]
+      have hcs : ∫ ω, |∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)| ∂μ
+          ≤ Real.sqrt (∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ) := by
+        have h0 : (0 : ℝ) ≤ ∫ ω, |∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)| ∂μ :=
+          integral_nonneg fun _ => abs_nonneg _
+        calc ∫ ω, |∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)| ∂μ
+            = Real.sqrt ((∫ ω, |∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)| ∂μ) ^ 2) :=
+              (Real.sqrt_sq h0).symm
+          _ ≤ Real.sqrt (∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ) :=
+              Real.sqrt_le_sqrt (sq_integral_abs_le
+                (memLp_partialSum (hmZ M) (hstatZ M) (hZ2 M) (Finset.range n)))
+      have hsq : Real.sqrt ((n : ℝ)⁻¹ *
+          ∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ)
+          = (Real.sqrt (n : ℝ))⁻¹ *
+            Real.sqrt (∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ) := by
+        rw [Real.sqrt_mul (by positivity), Real.sqrt_inv]
+      rw [hsq]
+      have hu0 : (0 : ℝ) ≤ |u| := abs_nonneg _
+      have hinv0 : (0 : ℝ) ≤ (Real.sqrt (n : ℝ))⁻¹ := by positivity
+      calc |u| * (Real.sqrt (n : ℝ))⁻¹ *
+            ∫ ω, |∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)| ∂μ
+          ≤ |u| * (Real.sqrt (n : ℝ))⁻¹ *
+            Real.sqrt (∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ) := by
+            have : (0 : ℝ) ≤ |u| * (Real.sqrt (n : ℝ))⁻¹ := by positivity
+            exact mul_le_mul_of_nonneg_left hcs this
+        _ = |u| * ((Real.sqrt (n : ℝ))⁻¹ *
+            Real.sqrt (∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ)) := by
+            ring
+  -- choose the truncation level
+  rw [Metric.tendsto_atTop]
+  intro ε hε
+  have hε4 : (0 : ℝ) < ε / 4 := by linarith
+  have hExp : Tendsto (fun M : ℕ => Complex.exp (-((sY M : ℂ) * (u : ℂ) ^ 2 / 2))) atTop
+      (𝓝 (Complex.exp (-((σ2 : ℂ) * (u : ℂ) ^ 2 / 2)))) := by
+    refine (Complex.continuous_exp.tendsto _).comp ?_
+    have h1 : Tendsto (fun M : ℕ => ((sY M : ℝ) : ℂ)) atTop (𝓝 ((σ2 : ℝ) : ℂ)) :=
+      (Complex.continuous_ofReal.tendsto _).comp hK2
+    exact ((h1.mul tendsto_const_nhds).div_const 2).neg
+  have hf1 : ∀ᶠ M : ℕ in atTop, |u| * Real.sqrt (sZ M) < ε / 4 := by
+    have h0 : Tendsto (fun M : ℕ => |u| * Real.sqrt (sZ M)) atTop (𝓝 0) := by
+      simpa using hsqrtZ0.const_mul |u|
+    exact h0.eventually (gt_mem_nhds hε4)
+  have hf2 : ∀ᶠ M : ℕ in atTop, 0 < sY M := hK2.eventually (lt_mem_nhds hσ)
+  have hf3 : ∀ᶠ M : ℕ in atTop,
+      dist (Complex.exp (-((sY M : ℂ) * (u : ℂ) ^ 2 / 2)))
+        (Complex.exp (-((σ2 : ℂ) * (u : ℂ) ^ 2 / 2))) < ε / 4 := by
+    have h := hExp.eventually (Metric.ball_mem_nhds
+      (Complex.exp (-((σ2 : ℂ) * (u : ℂ) ^ 2 / 2))) hε4)
+    simpa only [Metric.mem_ball] using h
+  obtain ⟨M, h1, h2, h3⟩ := (hf1.and (hf2.and hf3)).exists
+  -- with `M` fixed, both remaining terms are eventually small
+  have he1 : ∀ᶠ n : ℕ in atTop, |u| * Real.sqrt ((n : ℝ)⁻¹ *
+      ∫ ω, (∑ t ∈ Finset.range n, gZ M (X ((t : ℤ) + 1) ω)) ^ 2 ∂μ) < ε / 4 :=
+    ((hsqZ M).const_mul |u|).eventually (gt_mem_nhds h1)
+  have he2 : ∀ᶠ n : ℕ in atTop, dist (∫ ω, Complex.exp
+      (((u * (Real.sqrt n)⁻¹ * ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) : ℝ) : ℂ)
+        * Complex.I) ∂μ) (Complex.exp (-((sY M : ℂ) * (u : ℂ) ^ 2 / 2))) < ε / 4 := by
+    have h := (hCLTY M h2).eventually (Metric.ball_mem_nhds
+      (Complex.exp (-((sY M : ℂ) * (u : ℂ) ^ 2 / 2))) hε4)
+    simpa only [Metric.mem_ball] using h
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (he1.and (he2.and (eventually_ge_atTop 1)))
+  refine ⟨N, fun n hn => ?_⟩
+  obtain ⟨hn1, hn2, hn3⟩ := hN n hn
+  have hstep := hdiff M n hn3
+  calc dist (∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+          ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω : ℝ) : ℂ) * Complex.I) ∂μ)
+        (Complex.exp (-((σ2 : ℂ) * (u : ℂ) ^ 2 / 2)))
+      ≤ dist (∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+            ∑ t ∈ Finset.range n, X ((t : ℤ) + 1) ω : ℝ) : ℂ) * Complex.I) ∂μ)
+          (∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+            ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) : ℝ) : ℂ) * Complex.I) ∂μ)
+        + dist (∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+            ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) : ℝ) : ℂ) * Complex.I) ∂μ)
+          (Complex.exp (-((σ2 : ℂ) * (u : ℂ) ^ 2 / 2))) := dist_triangle _ _ _
+    _ < ε := by
+        have h4 : dist (∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+              ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) : ℝ) : ℂ) * Complex.I) ∂μ)
+            (Complex.exp (-((σ2 : ℂ) * (u : ℂ) ^ 2 / 2)))
+            ≤ dist (∫ ω, Complex.exp (((u * (Real.sqrt n)⁻¹ *
+              ∑ t ∈ Finset.range n, gY M (X ((t : ℤ) + 1) ω) : ℝ) : ℂ) * Complex.I) ∂μ)
+              (Complex.exp (-((sY M : ℂ) * (u : ℂ) ^ 2 / 2)))
+              + dist (Complex.exp (-((sY M : ℂ) * (u : ℂ) ^ 2 / 2)))
+                (Complex.exp (-((σ2 : ℂ) * (u : ℂ) ^ 2 / 2))) := dist_triangle _ _ _
+        linarith
 
 /-- **DEBT (Doob 1953 / Ibragimov–Linnik 1971; FY Proposition 2.8)**: the strong law
 for α-mixing strictly stationary sequences with a first moment. The cited route is
