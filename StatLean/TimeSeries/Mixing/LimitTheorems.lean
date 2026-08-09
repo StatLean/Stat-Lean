@@ -29,8 +29,21 @@ import Mathlib.Analysis.Normed.Group.Tannery
   docstring records both the exact obstruction and a concrete route that would remove it
   (a `E S_l⁴ = o(l³)` bound — which `Σ α(j) < ∞` *does* buy — together with an
   adaptively chosen big-block length `l_n = ⌈√n a_n⌉`).
-* **Theorem 2.20(i)/2.21(i)** — the `δ`-moment versions (cited Bosq / Peligrad):
-  literature DEBTS.
+* **Theorem 2.20(i)** (Bosq 1998 §1.5) — the `δ`-moment variance rate: **PROVED**, and
+  axiom-clean. The Billingsley bound `|γ(n)| ≤ 4α(n)C²` is replaced by **Davydov**
+  (`Mixing/Inequalities.abs_covariance_le_davydov` at `p = q = δ`), whose side condition
+  `1/p + 1/q < 1` is exactly `δ > 2`: `|γ(n)| ≤ 8 α(n)^{1−2/δ} ‖X_0‖_δ²`. The limit itself
+  is the shared Fejér/Tannery core `tendsto_var_rate_of_summable`, which 2.20(ii) also uses.
+* **Theorem 2.21(i)** (Peligrad; the `δ`-moment CLT) — **PROVED** by **truncation onto
+  2.21(ii)**. Clamp and re-centre, `Y^M_t = clamp_M(X_t) − E clamp_M(X_0)`,
+  `Z^M_t = X_t − Y^M_t`; both are common measurable transforms of `X`, hence strictly
+  stationary with `α_{Y^M}, α_{Z^M} ≤ α_X` (`isStrictlyStationary_comp`,
+  `alphaCoeff_comp_le`), and `Σ α^{1−2/δ} < ∞` forces `Σ α < ∞` because `α ≤ 1`. The two
+  limits in `M` both come from 2.20(i): `σ_Z(M)² = Σ_k γ_{Z^M}(k) → 0` by dominated
+  convergence over the lags (dominant: Davydov on `Z^M` with the `M`-uniform envelope
+  `|Z^M_0| ≤ |X_0| + E|X_0|`; per-lag limit: the AM–GM bound `|γ_{Z^M}(k)| ≤ E(Z^M_0)²`),
+  and `σ_Y(M)² → σ²` by Minkowski at every `n`. It inherits `sorryAx` only through
+  `lindeberg_blocks_debt` inside 2.21(ii).
 * **Proposition 2.8 (SLLN)** — α-mixing + `E|X| < ∞` ⇒ `S_n/n → EX` a.s.: literature
   DEBT (the cited route is "α-mixing ⇒ ergodic" + Birkhoff; Mathlib has no pointwise
   ergodic theorem in the pin).
@@ -1054,6 +1067,24 @@ sums `S_l²/l` are **uniformly integrable**, so the Lindeberg mass at a level `�
 **This is the single unproved brick of `clt_of_bounded_alphaMixing`** (everything else in
 Theorems 2.20(ii) and 2.21(ii) is now proved; `summable_acvf_and_var_rate_of_bounded` is
 axiom-clean and `clt_of_bounded_alphaMixing` reaches `sorryAx` only through this lemma).
+Theorems 2.20(i) and 2.21(i) are proved too, and 2.21(i)
+(`clt_of_alphaMixing_debt`) inherits `sorryAx` through this same lemma and no other.
+
+**The statement is exactly asymptotic uniform integrability of `S_l²/l`** — *not* something
+weaker. In the variable `Y_l = S_l²/l` the Lindeberg level `ε√n` is the threshold
+`K_n = ε² n / l_n`, and `l_n/n → 0` says precisely `K_n → ∞`; conversely every sequence
+`K_n → ∞` is realised by the admissible choice `l_n = ⌈ε² n / K_n⌉`. So quantifying over all
+`l` with `l_n/n → 0` is quantifying over all thresholds, i.e.
+`lim_{K→∞} limsup_l ∫_{S_l²/l ≥ K} S_l²/l = 0`.
+
+**Consequently the debt is *equivalent* to the theorem it serves, not a weaker ingredient.**
+`S_l/√l →d N(0, σ²)` (Theorem 2.21(ii)) together with `E S_l²/l → σ²`
+(Theorem 2.20(ii), proved here) gives `Y_l ≥ 0`, `Y_l →d σ²Z²`, `E Y_l → σ² = E σ²Z²`, and a
+nonnegative sequence converging in distribution with converging means is uniformly
+integrable. Any derivation of this lemma from the CLT is therefore circular, and — the
+point — **no strengthening of the local moment toolbox can close it**: it carries the full
+content of the CLT. Removing it requires a genuinely different proof of Theorem 2.21(ii),
+namely the cubic/adaptive-block route recorded below.
 
 **Why the second-moment toolbox cannot close it.** The two facts this file supplies about
 one big block are `E S_l² ≤ Λ l` (`integral_sq_partialSum_le`) and `|S_l| ≤ C l` a.s.
@@ -1083,9 +1114,15 @@ Two consequences worth recording. (i) The previous verdict in this docstring —
 fourth-moment route needs `Σ_j (j+1) α(j) < ∞`" — is **too pessimistic**: that hypothesis
 buys the *rate* `E S_l⁴ = O(l²)` (Yokoyama), but only `o(l³)` is needed, and `o(l³)`
 follows from `Σ α < ∞`. (ii) Removing this debt therefore costs a 4-fold sorted-tuple
-moment expansion inside this file (the combinatorial half that
-`Mixing/Inequalities.moment4_partial_sum_le` also leaves open) *plus* a diagonal rebuild
-of `exists_block_scheme` with an `α`-dependent `l_n`; both are out of this lane's budget.
+moment expansion *plus* a diagonal rebuild of `exists_block_scheme` with an `α`-dependent
+`l_n`; both are out of this lane's budget. **Erratum to (ii)**:
+`Mixing/Inequalities.moment4_partial_sum_le` is now proved, but it is *not* the brick this
+route needs — its hypothesis is the decay **rate** `α(n) ≤ K n⁻²`, which delivers the
+Yokoyama bound `E S_n⁴ ≤ C' n²`. Under `Σ α < ∞` alone no such rate is available (all one
+gets is `n α(n) → 0`), and the `o(l³)` bound has to be re-derived from the
+largest-gap split with a *summability* rather than a rate hypothesis; the counting lemma
+`sum_four_le_of_cut_bound` that `Inequalities` supplies is stated against `α(m) ≤ K/m²`
+and does not cover it.
 
 The statement below is the weakest form that closes the Bernstein scheme as currently
 assembled. -/
