@@ -1565,4 +1565,147 @@ theorem tendsto_prod_charFun_of_uniformly_small [IsProbabilityMeasure μ]
 
 end Surrogate
 
+section VR
+
+set_option maxHeartbeats 1000000 in
+/-- **FY's Volkonskii–Rozanov step (2.77).** The charFun of the sum of the big blocks is
+within `16(k_n − 1) α_pair(s_n)` of the product of the block charFuns. -/
+theorem norm_charFun_blockSum_sub_prod_le [IsProbabilityMeasure μ]
+    {X e : ℤ → Ω → ℝ} (hmeasX : ∀ t, Measurable (X t)) (hmeasE : ∀ t, Measurable (e t))
+    (hstat : ∀ (k : ℕ) (t : ℤ),
+      μ.map (fun ω (i : Fin k) => (X (t + (i : ℕ)) ω, e (t + (i : ℕ)) ω))
+        = μ.map (fun ω (i : Fin k) => (X ((i : ℕ) : ℤ) ω, e ((i : ℕ) : ℤ) ω)))
+    {W : ℝ → ℝ} (hWm : Measurable W) {x : ℝ} {h : ℕ → ℝ} {L : ℝ} {δ lam : ℝ}
+    (n : ℕ) (hk : 0 < blockCount h δ lam n) (u : ℝ) :
+    ‖charFun (μ.map (fun ω => ∑ i : Fin (blockCount h δ lam n),
+          (Real.sqrt ((n : ℝ) * h n))⁻¹ *
+            ∑ t ∈ Finset.Ico ((i : ℕ) * (bigBlockLen h n + smallBlockLen h δ lam n))
+              ((i : ℕ) * (bigBlockLen h n + smallBlockLen h δ lam n) + bigBlockLen h n),
+              truncErr X e μ L ((t : ℤ) + 1) ω * W ((X ((t : ℤ) + 1) ω - x) / h n))) u
+        - ∏ i : Fin (blockCount h δ lam n),
+            charFun (μ.map (fun ω => (Real.sqrt ((n : ℝ) * h n))⁻¹ *
+              ∑ t ∈ Finset.Ico ((i : ℕ) * (bigBlockLen h n + smallBlockLen h δ lam n))
+                ((i : ℕ) * (bigBlockLen h n + smallBlockLen h δ lam n) + bigBlockLen h n),
+                truncErr X e μ L ((t : ℤ) + 1) ω * W ((X ((t : ℤ) + 1) ω - x) / h n))) u‖
+      ≤ 16 * ((blockCount h δ lam n : ℝ) - 1) *
+          pairAlphaCoeff X e μ (smallBlockLen h δ lam n) := by
+  classical
+  set k : ℕ := blockCount h δ lam n with hkdef
+  set q : ℕ := bigBlockLen h n + smallBlockLen h δ lam n with hqdef
+  set lb : ℕ := bigBlockLen h n with hlbdef
+  set sb : ℕ := smallBlockLen h δ lam n with hsbdef
+  set V : Fin k → Ω → ℝ := fun i ω => (Real.sqrt ((n : ℝ) * h n))⁻¹ *
+    ∑ t ∈ Finset.Ico ((i : ℕ) * q) ((i : ℕ) * q + lb),
+      truncErr X e μ L ((t : ℤ) + 1) ω * W ((X ((t : ℤ) + 1) ω - x) / h n) with hVdef
+  set S : Fin k → Set ℤ := fun i =>
+    Set.Icc (((i : ℕ) * q : ℕ) + 1 : ℤ) ((((i : ℕ) * q + lb : ℕ)) : ℤ) with hSdef
+  set m : Fin k → MeasurableSpace Ω := fun i =>
+    ⨆ s ∈ S i, MeasurableSpace.comap (X s) inferInstance ⊔
+      MeasurableSpace.comap (e s) inferInstance with hmdef
+  have hmle : ∀ i, m i ≤ (inferInstance : MeasurableSpace Ω) := fun i =>
+    pairSigma_le hmeasX hmeasE (S i)
+  -- each block statistic is measurable for its own σ-algebra
+  have hVm : ∀ i : Fin k, Measurable[m i] (V i) := by
+    intro i
+    refine Measurable.const_mul ?_ _
+    refine Finset.measurable_sum _ fun t ht => ?_
+    have hts : ((t : ℤ) + 1) ∈ S i := by
+      simp only [hSdef, Set.mem_Icc]
+      rw [Finset.mem_Ico] at ht
+      omega
+    have hXt : Measurable[m i] (X ((t : ℤ) + 1)) :=
+      measurable_X_pairSigma (X := X) (e := e) hts
+    have hEt : Measurable[m i] (e ((t : ℤ) + 1)) :=
+      measurable_e_pairSigma (X := X) (e := e) hts
+    have hcle : MeasurableSpace.comap (X ((t : ℤ) + 1)) inferInstance ≤ m i :=
+      le_iSup₂_of_le ((t : ℤ) + 1) hts le_sup_left
+    have hcond : Measurable[m i]
+        (μ[fun ω' => clampAt L (e ((t : ℤ) + 1) ω') |
+          MeasurableSpace.comap (X ((t : ℤ) + 1)) inferInstance]) :=
+      (stronglyMeasurable_condExp.mono hcle).measurable
+    have h1 : Measurable[m i] (truncErr X e μ L ((t : ℤ) + 1)) :=
+      ((measurable_clampAt L).comp hEt).sub hcond
+    exact h1.mul (hWm.comp ((hXt.sub measurable_const).div measurable_const))
+  set ξ : Fin k → Ω → ℂ := fun i ω => Complex.exp ((u : ℂ) * (V i ω : ℂ) * Complex.I)
+    with hξdef
+  have hc : Continuous fun z : ℝ => Complex.exp ((u : ℂ) * (z : ℂ) * Complex.I) := by fun_prop
+  have hξm : ∀ i, Measurable[m i] (ξ i) := fun i => hc.measurable.comp (hVm i)
+  have hξb : ∀ i, ∀ᵐ ω ∂μ, ‖ξ i ω‖ ≤ 1 := by
+    intro i
+    filter_upwards with ω
+    rw [hξdef]
+    simp only
+    rw [show ((u : ℂ) * (V i ω : ℂ) * Complex.I) = ((u * V i ω : ℝ) : ℂ) * Complex.I by
+      push_cast; ring, Complex.norm_exp_ofReal_mul_I]
+  -- the α-gap between the cumulative past and the next block
+  have hgap : ∀ i : Fin k, ∀ _hi : (i : ℕ) + 1 < k,
+      alphaMixCoeff μ (⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ (i : ℕ), m j) (m ⟨(i : ℕ) + 1, ‹_›⟩)
+        ≤ pairAlphaCoeff X e μ sb := by
+    intro i hi
+    set c : ℤ := (((i : ℕ) * q + lb : ℕ) : ℤ) with hcdef
+    have hpast : (⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ (i : ℕ), m j)
+        ≤ ⨆ s ∈ Set.Iic c, MeasurableSpace.comap (X s) inferInstance ⊔
+          MeasurableSpace.comap (e s) inferInstance := by
+      refine iSup₂_le fun j hj => ?_
+      refine iSup₂_le fun s hs => ?_
+      refine le_iSup₂_of_le s ?_ le_rfl
+      simp only [hSdef, Set.mem_Icc] at hs
+      simp only [Set.mem_Iic, hcdef]
+      have hjq : (j : ℕ) * q + lb ≤ (i : ℕ) * q + lb := by
+        have := Nat.mul_le_mul_right q hj
+        omega
+      have : ((((j : ℕ) * q + lb : ℕ)) : ℤ) ≤ ((((i : ℕ) * q + lb : ℕ)) : ℤ) := by
+        exact_mod_cast hjq
+      linarith [hs.2]
+    have hfut : m ⟨(i : ℕ) + 1, hi⟩
+        ≤ ⨆ s ∈ Set.Ici (c + (sb : ℤ)), MeasurableSpace.comap (X s) inferInstance ⊔
+          MeasurableSpace.comap (e s) inferInstance := by
+      refine iSup₂_le fun s hs => ?_
+      refine le_iSup₂_of_le s ?_ le_rfl
+      simp only [hSdef, Set.mem_Icc] at hs
+      simp only [Set.mem_Ici, hcdef]
+      have hstep : ((i : ℕ) * q + lb) + sb ≤ (((i : ℕ) + 1) * q) + 1 := by
+        have hq : q = lb + sb := by rw [hqdef, hlbdef, hsbdef]
+        have : ((i : ℕ) + 1) * q = (i : ℕ) * q + q := by ring
+        omega
+      have : ((((i : ℕ) * q + lb : ℕ)) : ℤ) + (sb : ℤ)
+          ≤ (((((i : ℕ) + 1) * q : ℕ)) : ℤ) + 1 := by exact_mod_cast hstep
+      have hs1 : ((((⟨(i : ℕ) + 1, hi⟩ : Fin k) : ℕ) * q : ℕ) : ℤ) + 1 ≤ s := hs.1
+      simp only at hs1
+      linarith
+    calc alphaMixCoeff μ (⨆ j : Fin k, ⨆ _ : (j : ℕ) ≤ (i : ℕ), m j) (m ⟨(i : ℕ) + 1, hi⟩)
+        ≤ alphaMixCoeff μ
+            (⨆ s ∈ Set.Iic c, MeasurableSpace.comap (X s) inferInstance ⊔
+              MeasurableSpace.comap (e s) inferInstance)
+            (⨆ s ∈ Set.Ici (c + (sb : ℤ)), MeasurableSpace.comap (X s) inferInstance ⊔
+              MeasurableSpace.comap (e s) inferInstance) :=
+          alphaMixCoeff_mono (mΩ := inferInstance) hpast hfut
+      _ = pairAlphaCoeff X e μ sb := pairAlphaCoeff_shift hmeasX hmeasE hstat c sb
+  have hVR := norm_integral_prod_sub_prod_integral_le_of_pos (μ := μ) hk hmle ξ hξm hξb
+    (a := pairAlphaCoeff X e μ sb) (fun i hi => hgap i hi)
+  -- identify the two sides
+  have hVmeas : ∀ i : Fin k, Measurable (V i) := fun i => (hVm i).mono (hmle i) le_rfl
+  have hsumm : Measurable (fun ω => ∑ i : Fin k, V i ω) :=
+    Finset.measurable_sum _ fun i _ => hVmeas i
+  have hprodξ : ∀ ω, ∏ i : Fin k, ξ i ω
+      = Complex.exp ((u : ℂ) * ((∑ i : Fin k, V i ω : ℝ) : ℂ) * Complex.I) := by
+    intro ω
+    rw [hξdef]
+    simp only
+    rw [← Complex.exp_sum]
+    congr 1
+    push_cast
+    rw [Finset.mul_sum, Finset.sum_mul]
+  have hleft : ∫ ω, ∏ i : Fin k, ξ i ω ∂μ
+      = charFun (μ.map (fun ω => ∑ i : Fin k, V i ω)) u := by
+    rw [charFun_apply_real, integral_map hsumm.aemeasurable hc.aestronglyMeasurable]
+    exact (integral_congr_ae (Eventually.of_forall hprodξ))
+  have hright : ∀ i : Fin k, ∫ ω, ξ i ω ∂μ = charFun (μ.map (V i)) u := by
+    intro i
+    rw [charFun_apply_real, integral_map (hVmeas i).aemeasurable hc.aestronglyMeasurable]
+  rw [hleft, Finset.prod_congr rfl (fun i _ => hright i)] at hVR
+  exact hVR
+
+end VR
+
 end StatLean.TimeSeries
