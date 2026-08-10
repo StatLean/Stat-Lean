@@ -171,6 +171,49 @@ theorem lintegral_sq_div_optimalImportance {f : 𝓧 → ℝ≥0∞}
     -- LEAN-ONLY: measurability of the integrand (regularity)
     (hf : Measurable f) :
     ∫⁻ z, f z ^ 2 / (f z / ∫⁻ y, f y ∂ν) ∂ν = (∫⁻ z, f z ∂ν) ^ 2 := by
-  sorry
+  set c := ∫⁻ y, f y ∂ν with hc
+  have hmeas : Measurable fun z => f z ^ 2 / (f z / c) :=
+    (hf.pow_const 2).div (hf.div_const c)
+  have hcf : c = ∫⁻ z, f z ∂ν := hc
+  rcases eq_or_ne c 0 with hc0 | hc0
+  · -- Degenerate: `f = 0` a.e., both sides vanish.
+    have hf0 : f =ᵐ[ν] 0 := (lintegral_eq_zero_iff hf).mp (hcf ▸ hc0)
+    have hLHS : ∫⁻ z, f z ^ 2 / (f z / c) ∂ν = 0 := by
+      refine (lintegral_eq_zero_iff hmeas).mpr ?_
+      filter_upwards [hf0] with z hz
+      simp only [Pi.zero_apply] at hz
+      simp [hz]
+    rw [hLHS, hc0]
+    simp
+  rcases eq_or_ne c ∞ with hcT | hcT
+  · -- Degenerate: `∫⁻ f = ∞`, and the integrand is `∞` on a positive-measure set.
+    have hne : ¬ f =ᵐ[ν] 0 := fun h => hc0 (hcf ▸ (lintegral_eq_zero_iff hf).mpr h)
+    have hLHS : ∫⁻ z, f z ^ 2 / (f z / c) ∂ν = ∞ := by
+      refine lintegral_eq_top_of_measure_eq_top_ne_zero hmeas.aemeasurable fun h => hne ?_
+      rw [Filter.EventuallyEq, ae_iff]
+      refine measure_mono_null (fun z hz => ?_) h
+      simp only [Set.mem_setOf_eq, Pi.zero_apply] at hz ⊢
+      rw [hcT, ENNReal.div_top, ENNReal.div_zero (pow_ne_zero 2 hz)]
+    rw [hLHS, hcT]
+    simp
+  · -- The generic case: the integrand is a.e. `f · c`.
+    have hffin : ∀ᵐ z ∂ν, f z ≠ ∞ := by
+      filter_upwards [ae_lt_top hf (hcf ▸ hcT)] with z hz
+      exact hz.ne
+    have hkey : ∀ᵐ z ∂ν, f z ^ 2 / (f z / c) = f z * c := by
+      filter_upwards [hffin] with z hzT
+      rcases eq_or_ne (f z) 0 with hz0 | hz0
+      · simp [hz0]
+      have hd0 : f z / c ≠ 0 := by
+        simp only [ne_eq, ENNReal.div_eq_zero_iff, not_or]
+        exact ⟨hz0, hcT⟩
+      have hdT : f z / c ≠ ∞ := by
+        simp only [ne_eq, ENNReal.div_eq_top, not_or, not_and_or]
+        exact ⟨Or.inr hc0, Or.inl hzT⟩
+      have hstep : f z * c = f z ^ 2 / (f z / c) := by
+        rw [ENNReal.eq_div_iff hd0 hdT, mul_comm (f z) c, ← mul_assoc,
+          ENNReal.div_mul_cancel hc0 hcT, pow_two]
+      exact hstep.symm
+    rw [lintegral_congr_ae hkey, lintegral_mul_const' c f hcT, ← hcf, pow_two]
 
 end StatLean.ComputationalStatistics
