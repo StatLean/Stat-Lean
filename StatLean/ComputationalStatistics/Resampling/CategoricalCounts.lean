@@ -232,6 +232,47 @@ private theorem card_counts_fiber :
     rw [Finset.sum_congr rfl hterm]
     exact sum_multinomial_update v n hv
 
+/-! ### The product law on index samples -/
+
+/-- Total mass of the categorical law (no simplex hypothesis). -/
+private theorem categorical_univ (q : Fin m → ℝ) :
+    categorical q Set.univ = ∑ i, ENNReal.ofReal (q i) := by
+  simp [categorical]
+
+/-- The categorical law is a finite measure for any real weight vector; this is
+what feeds the `Measure.pi` machinery below. -/
+private instance isFiniteMeasure_categorical (q : Fin m → ℝ) :
+    IsFiniteMeasure (categorical q) := by
+  refine ⟨?_⟩
+  rw [categorical_univ]
+  exact ENNReal.sum_lt_top.mpr fun i _ => ENNReal.ofReal_lt_top
+
+/-- Singleton mass of the categorical law. -/
+private theorem categorical_apply_singleton (q : Fin m → ℝ) (j : Fin m) :
+    categorical q {j} = ENNReal.ofReal (q j) := by
+  simp [categorical, Pi.single_apply, mul_ite]
+
+/-- Singleton mass of the i.i.d. index law: a product over the coordinates. -/
+private theorem pi_categorical_apply_singleton (q : Fin m → ℝ) (a : Fin n → Fin m) :
+    (Measure.pi fun _ : Fin n => categorical q) {a} = ∏ i, ENNReal.ofReal (q (a i)) := by
+  rw [← Set.univ_pi_singleton a, Measure.pi_pi]
+  exact Finset.prod_congr rfl fun i _ => categorical_apply_singleton q (a i)
+
+/-- Regrouping the coordinate product by category turns it into the multinomial
+monomial `∏ⱼ qⱼ^{vⱼ}` at the counts `v` of the sample. -/
+private theorem prod_eval_eq_prod_pow (q : Fin m → ℝ) (a : Fin n → Fin m) :
+    ∏ i, ENNReal.ofReal (q (a i))
+      = ∏ j, ENNReal.ofReal (q j) ^ categoricalCounts a j := by
+  rw [← Finset.prod_fiberwise_of_maps_to (g := a) (t := Finset.univ)
+    (fun i _ => Finset.mem_univ (a i)) fun i => ENNReal.ofReal (q (a i))]
+  refine Finset.prod_congr rfl fun j _ => ?_
+  have hval : ∀ i ∈ Finset.univ.filter fun i => a i = j,
+      ENNReal.ofReal (q (a i)) = ENNReal.ofReal (q j) := by
+    intro i hi
+    rw [(Finset.mem_filter.mp hi).2]
+  rw [Finset.prod_congr rfl hval, Finset.prod_const]
+  rfl
+
 /-- **Counts of i.i.d. categorical draws are multinomial** (ECS ch. 4, p. 84):
 the pushforward of `(categorical q)^{⊗n}` under the count statistic is the
 multinomial law `ℳ_m(n; q)` of `StatLean.Bayesian.multinomialKernel`. -/
@@ -242,6 +283,34 @@ theorem map_categoricalCounts_pi {q : Fin m → ℝ}
     (hq1 : ∑ i, q i = 1) :
     (Measure.pi fun _ : Fin n => categorical q).map categoricalCounts
       = StatLean.Bayesian.multinomialKernel m n q := by
-  sorry
+  refine Measure.ext_of_singleton fun v => ?_
+  rw [Measure.map_apply measurable_categoricalCounts (measurableSet_singleton v),
+    StatLean.Bayesian.multinomialKernel_apply_singleton]
+  -- the fiber mass is a sum of coordinate products over the fiber
+  have hfiber : (Measure.pi fun _ : Fin n => categorical q) (categoricalCounts ⁻¹' {v})
+      = ∑ _a ∈ Finset.univ.filter fun a : Fin n → Fin m => categoricalCounts a = v,
+          ∏ j, ENNReal.ofReal (q j) ^ v j := by
+    rw [← Measure.tsum_indicator_apply_singleton _ _
+      (measurable_categoricalCounts (measurableSet_singleton v)), tsum_fintype,
+      Finset.sum_filter]
+    refine Finset.sum_congr rfl fun a _ => ?_
+    by_cases ha : categoricalCounts a = v
+    · rw [if_pos ha, Set.indicator_of_mem (by simpa using ha),
+        pi_categorical_apply_singleton, prod_eval_eq_prod_pow, ha]
+    · rw [if_neg ha, Set.indicator_of_notMem (by simpa using ha)]
+  rw [hfiber, Finset.sum_const, StatLean.Bayesian.multinomialWeight]
+  by_cases hvn : ∑ j, v j = n
+  · rw [if_pos ⟨hq0, hq1, hvn⟩, card_counts_fiber n v hvn]
+    rw [ENNReal.ofReal_mul (Nat.cast_nonneg _),
+      ENNReal.ofReal_prod_of_nonneg fun j _ => pow_nonneg (hq0 j) (v j),
+      ENNReal.ofReal_natCast, nsmul_eq_mul]
+    exact congrArg _ (Finset.prod_congr rfl fun j _ => (ENNReal.ofReal_pow (hq0 j) (v j)).symm)
+  · rw [if_neg (fun h => hvn h.2.2)]
+    have hempty : (Finset.univ.filter fun a : Fin n → Fin m => categoricalCounts a = v)
+        = ∅ := by
+      refine Finset.filter_eq_empty_iff.mpr fun a _ hav => hvn ?_
+      rw [← hav, sum_categoricalCounts]
+    rw [hempty]
+    simp
 
 end StatLean.ComputationalStatistics
