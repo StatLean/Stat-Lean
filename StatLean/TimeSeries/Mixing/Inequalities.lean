@@ -1921,7 +1921,30 @@ decoupling must therefore be performed on the **law** (in total variation), not 
 single expectation — which is exactly what Bradley's lemma does and what this file's
 covariance toolbox cannot do. Formalising it needs a regular conditional distribution on a
 standard Borel target plus an auxiliary independent uniform (an enlargement of `Ω`);
-Mathlib's `Measure.condKernel`/disintegration API is the entry point. -/
+Mathlib's `Measure.condKernel`/disintegration API is the entry point.
+
+**CONFIRMED and SHARPENED (2026-08-09, wave 6). The wave-`ts/s10` finding is correct, and
+no *polynomial* route can substitute for the coupling either.** Write `u := ε² qb / b²`, so
+the printed exponential term is `4 e^{−u/8}`.
+
+* The already-proved *vacuous* regime covers exactly `4 e^{−u/8} ≥ 1`, i.e.
+  `u ≤ 8 log 4 ≈ 11.09` (when `α([n/(2qb)]) = 0`; the α-term only helps).
+* The best **Chebyshev** bound this file's toolbox supports uses only the *one* lag at
+  which `α` is known, plus monotonicity and `α ≤ 1/4`:
+  `Var S_n ≤ 4b² n (1 + 2Σ_{k≥1} α(k)) ≤ 4b² n (1 + p/2 + 2n α(p))` with `p = [n/(2qb)]`,
+  so at `α(p) = 0` it gives `P ≤ 4b²(1 + p/2)/(nε²) ≈ 1/u`. That beats `4 e^{−u/8}` only
+  while `4u e^{−u/8} ≥ 1`, i.e. for `u ≲ 40.5`. The band `u > 40.5` is **not** covered.
+* The **fourth-moment** route of `abs_integral_quad_le` / `sum_four_le_of_cut_bound` is no
+  better in the relevant limit: it is polynomial in `n` (`≈ D/(n²ε⁴)` when the α-series is
+  summable), whereas at the extreme admissible block count `qb = [n/2]` the printed bound
+  is `4 exp(−ε² n/(16 b²))`, exponentially small in `n`. No moment bound of any fixed order
+  can dominate it.
+
+So the residue is *exactly* an exponential inequality for a dependent sum, at block counts
+`qb ≳ 40 b²/ε²`. Volkonskii–Rozanov is provably too lossy (above), moments are provably too
+weak (here), and Bradley's coupling is therefore not one route among several but the only
+one. The same verdict applies verbatim to `bosq_cramer_debt`, whose regime list is strictly
+smaller (no boundedness regime). -/
 theorem bosq_exponential_debt [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     (hmeas : ∀ t, Measurable (X t)) (hstat : IsStrictlyStationary X μ)
     {b : ℝ} (hb : 0 < b)

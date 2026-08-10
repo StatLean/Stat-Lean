@@ -1630,6 +1630,39 @@ Harris' theorem also gives `∫ V dπ < ∞` — but that derivation belongs in
 `ForMathlib/Markov/HarrisTheorem.lean`, which is outside this lane's touch set. It is a
 named, self-contained follow-up: *"`IsGeometricallyErgodic` with a Lyapunov envelope"*.
 
+**AMENDMENT (2026-08-09, wave 6): the follow-up has TWO parts, and wave 5's costing of the
+second one is WRONG.** Checked against `ForMathlib/Markov/HarrisTheorem.lean` and
+`ForMathlib/Markov/GeometricErgodicity.lean` as they stand:
+
+* *(a) the envelope itself is already proved, just discarded.* Inside `harris_theorem`'s
+  proof the local step `hbound` reads, verbatim,
+  `∀ x n, tvDist ((κ ^ n) x) π ≤ ENNReal.ofReal ᾱ ^ n * (weightedTV β V (δ x) (δ x₀) + C)`,
+  and `weightedTV_le_add` bounds `weightedTV β V (δ x) (δ x₀)` by
+  `(1 + βV(x)) + (1 + βV(x₀))`. So part (a) is a **statement change** to
+  `harris_theorem` (widen its existential to carry the envelope), not new mathematics: no
+  lemma is missing, the two it needs (`tvDist_le_weightedTV`, `weightedTV_le_add`) are
+  present in that file, merely `private`.
+* *(b) `∫ V dπ < ∞` is NOT an output of Harris' theorem.* Wave 5's clause "which is
+  measurable and `π`-integrable because Harris' theorem also gives `∫ V dπ < ∞`" is
+  **false as written**: `harris_theorem` returns
+  `∃ π, IsProbabilityMeasure π ∧ Kernel.Invariant κ π ∧ IsGeometricallyErgodic κ π`, and
+  `IsErgodicWithRate` (the only content of `IsGeometricallyErgodic`) carries just the
+  pointwise limit `ρ⁻ⁿ · tvDist (κⁿ x) π → 0`. No moment bound on `π` is proved anywhere in
+  `HarrisTheorem.lean`.
+
+  Worse, the moment bound is **not** a formal consequence of the drift plus invariance by
+  the naive truncation argument: from `π(V ∧ n) = π(P(V ∧ n)) ≤ π((γV + K) ∧ n)` one would
+  want `(γV + K) ∧ n ≤ γ(V ∧ n) + K`, which **fails** on `{V > n}` as soon as
+  `n > K/(1 − γ)` (there the left side is `n` and the right side is `γn + K < n`). The
+  bound `∫⁻ V dπ ≤ K/(1 − γ)` is nevertheless true and provable *from the ergodicity
+  already in hand*: for each `n`, `V ∧ n` is bounded, so
+  `StatLean.Bayesian.lintegral_le_lintegral_add_tvDist` transfers it along
+  `tvDist ((κ^m) x₀) π → 0`, `HasLyapunovDrift.lintegral_pow_le` bounds
+  `∫⁻ V d((κ^m) x₀) ≤ ofReal (γ^m V(x₀) + K/(1 − γ))` uniformly in `m`, and monotone
+  convergence in `n` finishes. **This is the genuinely new item**, and it is the reason the
+  follow-up cannot be dismissed as bookkeeping: it consumes the ergodic limit, not just the
+  drift.
+
 **Statement strengthening (documented, USER-INPUT).** `hdens` is strengthened from
 "`ε_0` has *some* Lebesgue density" to "`ε_0` has a **continuous, everywhere positive**
 Lebesgue density". This matches every other consumer of
@@ -1729,7 +1762,17 @@ wave 4's obstruction list:
 * *Quantitative envelope.* Same **new** gap as recorded in `arma_stateChain_brick`'s
   docstring: Harris' theorem gives a pointwise rate, not `‖κⁿ(x,·) − F‖ ≤ A(x)ρⁿ` with
   `A` integrable; the derivation from `harris_contraction` is a named follow-up in
-  `HarrisTheorem.lean`, outside this lane's touch set.
+  `HarrisTheorem.lean`, outside this lane's touch set. See that docstring's **wave-6
+  amendment**: the follow-up splits into (a) exporting the envelope, which is already
+  proved inside `harris_theorem` and is a pure statement change, and (b) the invariant
+  moment bound `∫⁻ V dπ ≤ K/(1 − γ)`, which is *not* an output of Harris' theorem, is not
+  reachable by the naive truncation argument, and is the one genuinely new item.
+* *Verified (wave 6): `hsum` really is a drift condition here.* `IsGARCH` carries
+  `iid : IsIIDNoise ε 1 μ`, i.e. `E ε₀ = 0` and `Var ε₀ = 1`, so
+  `E[X_t² | past] = σ_t²` and the volatility recursion contracts at rate `Σb + Σa`
+  exactly as the drift bullet above assumes. (Had the noise variance been a free
+  parameter `σ²`, `Σb + Σa < 1` would have been the wrong condition — the contraction
+  factor is `σ²Σb + Σa` — and the brick would have been false as frozen. It is not.)
 
 **Statement strengthening (documented, USER-INPUT).** `hdens` is strengthened from
 "positive on `|x| < δ`" to "**continuous** and positive on all of `ℝ`". This is BDM's own
@@ -1818,7 +1861,32 @@ the linear parts (Mehler's formula / Lancaster's theorem). Hence `ρ = ρ_1` and
 supremum over the whole of `L²` reduces to the supremum over `H_1`, whose elements are
 `L²`-limits of finite linear combinations. Formalising this needs the Hermite/Wiener chaos
 decomposition of a Gaussian Hilbert space, which Mathlib does not yet have; it is left as a
-single named debt. -/
+single named debt.
+
+**Status (2026-08-09, wave 6): TRUE as frozen, and the pin survey is confirmed — this is
+research-grade at this pin.**
+
+* *No statement defect.* `ProbabilityTheory.IsGaussianProcess` is genuine **joint**
+  Gaussianity (`hasGaussianLaw : ∀ I : Finset T, HasGaussianLaw (I.restrict (X · ω)) P`,
+  i.e. every finite-dimensional distribution is Gaussian), not "each `X_t` is Gaussian", so
+  the Kolmogorov–Rozanov hypothesis is really in force and the brick is not refutable the
+  way the Davydov brick of `MarkovBridge.lean` was. The degenerate corners are harmless:
+  when `variance f μ = 0` the left-hand side is the junk value `0` (division by zero) and
+  `S = T = ∅` already witnesses the conclusion; a non-centred process is handled because
+  `σ(X_s)` and every covariance/variance are invariant under recentring.
+* *What the pin actually has.* `Mathlib/RingTheory/Polynomial/Hermite/{Basic,Gaussian}` —
+  the Hermite polynomials as *algebraic* objects together with the Rodrigues formula
+  `deriv_gaussian_eq_hermite_mul_gaussian`. That is all. There is **no** `L²(γ)`
+  orthogonality of the Hermite system, **no** completeness (`Wiener chaos`/`WienerChaos`
+  matches nothing in the pin), **no** Mehler kernel, and no Gaussian-Hilbert-space
+  machinery. Three separate `ForMathlib` developments therefore stand between this brick
+  and a proof: (i) `∫ H_m H_n dγ = n! δ_{mn}`; (ii) density of the polynomials in `L²(γ)`
+  (the usual route is via the analyticity of `t ↦ ∫ e^{tx} f dγ`); (iii) the tensorisation
+  step — the chaos grading is preserved by the covariance operator and acts on the `k`-th
+  chaos as the `k`-th tensor power, which is what forces `ρ = ρ₁`.
+
+  Only (iii) is specific to this theorem; (i) and (ii) are standard `Mathlib`-shaped
+  analysis. This is the honest costing: not a `sorry`-filling task, and not a small one. -/
 private lemma gaussian_rho_linear_brick [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     (hmeas : ∀ t, Measurable (X t)) (hgauss : ProbabilityTheory.IsGaussianProcess X μ) (n : ℕ)
     {f g : Ω → ℝ} (hf : Measurable[sigmaLE X 0] f) (hg : Measurable[sigmaGE X (n : ℤ)] g)
@@ -1840,7 +1908,37 @@ claim. (Degenerate pairs contribute the junk value `0` on the left.)
 
 Formalising this needs the bivariate-normal orthant probability, i.e. the polar-coordinate
 evaluation of `∫∫_{x,y>0} exp(−(x² − 2rxy + y²)/(2(1−r²))) dx dy`, which Mathlib does not
-have; it is left as a single named debt. -/
+have; it is left as a single named debt.
+
+**Status (2026-08-09, wave 6): TRUE as frozen; the "polar coordinates" plan above is
+UNNECESSARY — the orthant identity is a ONE-dimensional Gaussian integral.** Write the
+standardised pair as `U`, `V = rU + √(1−r²) Z` with `U, Z` iid `N(0,1)` (2×2 Cholesky —
+available from `hgauss` and the covariance of the two linear functionals), and put
+`c := r/√(1−r²)`. Then Fubini in `Z` first gives, with no two-dimensional change of
+variables and no bivariate density,
+
+  `P(U > 0, V > 0) = ∫_0^∞ φ(u) Φ(cu) du = 1/4 + G(c)`,
+  `G(c) := ∫_0^∞ φ(u) (Φ(cu) − 1/2) du`,
+
+and differentiating under the integral sign in `c` leaves a *single* elementary Gaussian
+integral,
+
+  `G'(c) = ∫_0^∞ u φ(u) φ(cu) du = (2π)⁻¹ ∫_0^∞ u e^{−u²(1+c²)/2} du = 1/(2π(1+c²))`,
+
+so `G(c) = arctan c / (2π)` from `G(0) = 0`, i.e. `P(U>0, V>0) − 1/4 = arcsin r / (2π)`
+(Sheppard). Only `|arcsin r| ≥ |r|` is then needed, which is `Real.le_arcsin`-level. This
+replaces a 2-D polar computation Mathlib does not support by: a 2×2 Cholesky
+factorisation, one Fubini, one `∫_0^∞ u e^{−au²} du = 1/(2a)`, and
+`HasDerivAt.arctan` — all present in the pin. The degenerate corners are again free
+(`variance = 0` gives the junk value `0` on the left; `|r| = 1` gives `1 ≤ 2π · α` and
+`α ≥ 1/4` for a σ-algebra against itself).
+
+The remaining genuine work is the **transfer from the two linear functionals to the pair
+`(U, V)`**: extracting the Cholesky representation of a jointly Gaussian pair out of
+`IsGaussianProcess` (Mathlib has `hasGaussianLaw_prodMk` and `HasGaussianLaw` under
+continuous linear maps, but no "standardise a Gaussian pair" lemma) and the differentiation
+under the integral sign. That is a self-contained `ForMathlib` brick of moderate size —
+strictly smaller than `gaussian_rho_linear_brick`'s chaos development. -/
 private lemma gaussian_pair_corr_le_alpha_brick [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     (hmeas : ∀ t, Measurable (X t)) (hgauss : ProbabilityTheory.IsGaussianProcess X μ)
     (S T : Finset ℤ) (a b : ℤ → ℝ) :
