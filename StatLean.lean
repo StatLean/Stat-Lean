@@ -13,6 +13,7 @@ import StatLean.TimeSeries
 import StatLean.CausalInference
 import StatLean.ExperimentalDesign
 import StatLean.StatisticalLearning
+import StatLean.ComputationalStatistics
 
 /-!
 # StatLean
@@ -88,6 +89,13 @@ theory, organized into per-area sublibraries.
   fundamental theorem for finite VC dimension, algorithmic stability with
   Tikhonov regularization, and PAC-Bayes (Shalev-Shwartz & Ben-David,
   *Understanding Machine Learning*).
+* `StatLean.ComputationalStatistics` — correctness of sampling and resampling
+  algorithms: empirical/weighted/categorical measures, Monte Carlo estimation,
+  importance sampling (with the optimal importance function), rejection
+  sampling, multinomial particle resampling and the multinomial-counts bridge,
+  finite-sample bootstrap identities, the jackknife with exact first-order
+  bias annihilation, and holdout / K-fold / leave-one-out cross validation
+  (Gentle, *Elements of Computational Statistics*).
 
 Per-area umbrellas are imported above as each area lands.
 -/
