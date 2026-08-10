@@ -146,10 +146,10 @@ listed here with their exact blockers.
    variance part needs: `Real.log 0 = 0`, so at `σ² = 1` the degenerate event
    `{S_T = 0}` is invisible at the `log` level and the `exp`-transfer fails. The
    project-level fix is to un-`private` Consistency's `armaProfileS_tendstoInProb`.
-2. The commissioned Bartlett route to `samplePACF_clt` is **closed**:
-   `sampleACF_bartlett_clt_debt` carries `MemLp (ε 0) 4 μ`, which `samplePACF_clt` —
-   correctly, FY Prop 3.1 needs two moments — does not assume. The martingale route
-   taken instead is documented in the `PACF` section.
+2. The commissioned Bartlett route to the PACF CLT was **closed**: `Process/SampleACF.lean`'s
+   Bartlett debt (since removed) carried `MemLp (ε 0) 4 μ`, which the PACF CLT —
+   correctly, FY Prop 3.1 needs two moments — did not assume. The martingale route
+   taken instead was documented in the `PACF` section.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §3.3.2,
 Theorem 3.2, eq. (3.14), Prop 3.1 (pp. 96–99); E. J. Hannan, J. Appl. Probab. 10

@@ -16,12 +16,30 @@ autocorrelation `ρ̂` (divisor-`T`, mean-corrected — FY eq. (2.23), defined i
 * the divisor-`T` sample ACVF is a **positive semidefinite sequence** (FY §2.2.2's
   "may be shown" claim; false for the `1/(T−k)` divisor);
 * **FY Theorem 2.8** for two-sided linear processes (eq. (2.24)) with IID innovations —
-  (i) the sample-mean CLT [ledger-(a) debt: B&D §7.3 m-dependent route],
-  (ii) the CLT for `γ̂(0)` [ledger-(b) debt], (iii) **Bartlett's formula** (eq. (2.26)),
-  stated in Cramér–Wold form [ledger-(b) debt];
-* **FY eq. (2.27)**, *proved* from the Bartlett statement: for an MA(q) process and lag
-  `j > q`, `√T ρ̂(j) →d N(0, 1 + 2Σ_{t=1}^q ρ(t)²)` — the basis of the ±1.96/√T
-  confidence bands and the §3.4.4 ACF order-identification rule.
+  (i) the sample-mean CLT [ledger-(a) debt: B&D §7.3 m-dependent route]. Parts (ii) and
+  (iii), and FY eq. (2.27) which was proved from (iii), have been removed; see **Removed**
+  below.
+
+**Removed (2026-08-10, user directive).** The module's two sorried declarations, the
+theorem proved from one of them, and six `private` helpers left with no surviving consumer
+were deleted. Everything else — the positive-semidefiniteness of the sample ACVF, the whole
+(R1)–(R4) reduction ledger with its Cesàro/covariance-kernel machinery, and all the
+`acvf`/`acf` identities — is untouched and remains proved.
+* `sampleACVF_zero_clt_debt` — FY Theorem 2.8(ii) (B&D 1991 Prop 7.3.4): the CLT for
+  `γ̂(0)`, with the corrected limiting variance `(η − 3)γ(0)² + 2 Σ_{j∈ℤ} γ(j)²`.
+* `sampleACF_bartlett_clt_debt` — FY Theorem 2.8(iii): **Bartlett's formula** (eq. (2.26))
+  in Cramér–Wold form, `√T Σ_i c_i (ρ̂(i) − ρ(i)) →d N(0, cᵀ W c)` with `W = bartlettW`.
+* `IsMA.sampleACF_clt` (**consumer**) — **FY eq. (2.27)**: for an MA(q) process and lag
+  `j > q`, `√T ρ̂(j) →d N(0, 1 + 2Σ_{t=1}^q ρ(t)²)`, the basis of the ±1.96/√T confidence
+  bands and the §3.4.4 ACF order-identification rule. Its proof consumed the Bartlett debt.
+* `private`, proved, left without a consumer: the whole `Degenerate`/`Degenerate2` split-off
+  of the `a ≡ 0` corner — `ae_eq_zero_of_filter_zero`, `acvf_eq_zero_of_ae_zero`,
+  `acf_eq_zero_of_ae_zero`, `sampleACVF_ae_eq_zero`, `acvf_zero_pos_of_ne`,
+  `bartlettW_eq_zero_of_ae_zero`.
+
+`bartlettW` itself (FY eq. (2.26)) is **kept**: it is a public definition, not a helper.
+
+Recover from `bdc8143f`.
 
 **Misprint corrections (stated as provable, per project policy).**
 * FY eq. (2.25) prints `ν₂² = 2σ⁴ Σ_j ρ(j)²`; dimensional analysis and
@@ -1263,7 +1281,7 @@ sum by `√σ² Σ_k|a_k|` uniformly in `T` (`eLpNorm_normalizedSum_le`), whence
 So `√T (γ̂(0) − γ(0))` and `√T (T⁻¹ Σ_t X_t² − γ(0))` have the same limit law, which is
 the reduction the remaining debts start from.
 
-**Named residues of `sampleACVF_zero_clt_debt` (after this reduction).**
+**Named residues of the (since removed) FY Thm 2.8(ii) debt (after this reduction).**
 * (R1) the CLT for `T^{-1/2} Σ_{t≤T}(X_t² − γ(0))` at a *fixed* truncation level `N`.
   The truncated square is `2N`-dependent, so Bernstein-block `[1,T]` into big blocks of
   a fixed length `L` separated by guard blocks of length `2N`: the big-block sums are
@@ -1356,7 +1374,7 @@ the reduction the remaining debts start from.
   series converge". So (R1) may now be proved against a *known* target constant: what it
   owes is the CLT, not the variance.
 
-**Named residue of `sampleACF_bartlett_clt_debt`.** the joint (lags `0..M`) version of
+**Named residue of the (since removed) Bartlett debt.** the joint (lags `0..M`) version of
 (R1)–(R4) — the same blocks, assembled through the Cramér–Wold linear combination that
 the frozen statement already exhibits — followed by the ratio delta method
 `ρ̂(i) = γ̂(i)/γ̂(0)`. Its `bartlettW` covariance is the standard Bartlett formula; no
@@ -1379,14 +1397,14 @@ are both junk `0/0 = 0`, and the limit is `δ₀` rather than the stated Gaussia
 consistent only because `bartlettW` is then also `0`. So the statement survives, but the
 delta method cannot be the route in that degenerate corner and must be split off.
 
-**Executed (wave `ts/f4b-garch-last`, 2026-08-09).** Both debts now `by_cases` on
-`∀ k, a k = 0` and **prove** the degenerate branch outright (section `Degenerate`): `hfil`
-with `a ≡ 0` forces `eLpNorm (X t) 2 μ = 0`, so `X` is a.e. `0`
-(`ae_eq_zero_of_filter_zero`), whence `acvf`, `acf`, `sampleACVF`, `sampleACF` and
-`bartlettW` are all the junk value `0` and both sides of both statements are `δ₀`'s
-character. In the surviving branch `0 < γ(0)` is now *supplied* rather than assumed
-(`acvf_zero_pos_of_ne`, from `acvf_eq_tsum_of_filter` at `h = 0` plus one nonzero
-coefficient), so the delta method's nondegeneracy input is no longer part of the residue.
+**Executed (wave `ts/f4b-garch-last`, 2026-08-09; the two debts and the `Degenerate`
+sections have since been removed).** Both debts `by_cases`d on `∀ k, a k = 0` and **proved**
+the degenerate branch outright: `hfil` with `a ≡ 0` forces `eLpNorm (X t) 2 μ = 0`, so `X`
+is a.e. `0`, whence `acvf`, `acf`, `sampleACVF`, `sampleACF` and `bartlettW` are all the
+junk value `0` and both sides of both statements are `δ₀`'s character. In the surviving
+branch `0 < γ(0)` was *supplied* rather than assumed (from `acvf_eq_tsum_of_filter` at
+`h = 0` plus one nonzero coefficient), so the delta method's nondegeneracy input was no
+longer part of the residue.
 One correction to the reading above: `a ≡ 0` does **not** need `hσ` or any moment
 hypothesis to be handled — it is a statement about `hfil` alone, and the collapse happens
 already at the level of `eLpNorm`, not through the limiting variance. -/
@@ -1542,7 +1560,7 @@ private lemma tendsto_integral_sqrt_mul_sampleMean_sq [IsProbabilityMeasure μ] 
 /-! ### (R2): the fourth-moment identity for weighted sums of the innovations
 
 This is the analytic input named as **(R2)** in the residue ledger above — the only piece
-of `sampleACVF_zero_clt_debt`'s reduction that was not already available in this file.
+of the FY Thm 2.8(ii) reduction that was not already available in this file.
 For an i.i.d. family `ε` with `E ε = 0`, `Var ε = σ²` and a finite fourth moment,
 and for finitely supported weights `c`, `d`,
 
@@ -2410,7 +2428,7 @@ identification.  (R2) (`cov_sq_noiseComb`) makes `Cov(X_s², X_t²)` a function 
 `h = s − t` alone — the kernel `covKernel a σ² (Eε⁴) h` — so the variance of the
 normalized sum `T^{-1/2} Σ_{t<T} X_t²` is `T⁻¹ Σ_{s,t<T} covKernel (s − t)`, and
 `tendsto_cesaro_covKernel` evaluates its limit as **exactly** the frozen constant
-`(η − 3)γ(0)² + 2 Σ_{j∈ℤ} γ(j)²` of `sampleACVF_zero_clt_debt`.
+`(η − 3)γ(0)² + 2 Σ_{j∈ℤ} γ(j)²` of FY Thm 2.8(ii).
 
 Two inputs feed it, both already available in this file: `acvf_eq_tsum_of_filter`
 (`γ(h) = σ² Σ_k a_k a_{k−h}`, which turns the coefficient-level kernel into the ACVF-level
@@ -2632,7 +2650,7 @@ private lemma summable_abs_covKernel (ha : Summable fun k : ℤ => |a k|) (σ2 m
 
 /-- **(R4) discharged, in the shape (R1) must produce it.** The `T`-normalized double sum
 of the (R2) covariance kernel over the sampling window converges to the frozen limiting
-variance of `sampleACVF_zero_clt_debt`. -/
+variance of FY Thm 2.8(ii). -/
 private theorem tendsto_cesaro_covKernel [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ)
     (hσ : 0 < σ2)
     (hfil : ∀ t : ℤ, Tendsto (fun N : ℕ => eLpNorm (fun ω => X t ω -
@@ -2770,132 +2788,6 @@ end CesaroKernel
 
 
 
-/-! ### The degenerate corner `a ≡ 0`
-
-Both remaining debts are stated without any nondegeneracy hypothesis on the filter, and at
-`a ≡ 0` the process is a.e. `0`, every `acvf`/`acf`/`sampleACVF` is the junk value `0`, and
-both limits collapse to `δ₀`. The corner is therefore **true but outside the route** — the
-ratio delta method behind Bartlett's formula divides by `γ(0)` — so it is split off here
-and discharged, and `acvf_zero_pos_of_ne` supplies the `0 < γ(0)` that the nondegenerate
-branch needs and the frozen statements do not hypothesize. -/
-
-section Degenerate
-
-variable {a : ℤ → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
-
-/-- With a vanishing filter the process is a.e. `0`. -/
-private lemma ae_eq_zero_of_filter_zero (ha0 : ∀ k, a k = 0)
-    (hfil : ∀ t : ℤ, Tendsto (fun N : ℕ => eLpNorm (fun ω => X t ω -
-      ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) 2 μ) atTop (𝓝 0))
-    (hmeas : ∀ t, Measurable (X t)) (t : ℤ) : X t =ᵐ[μ] fun _ => (0 : ℝ) := by
-  have hcongr : ∀ N : ℕ, eLpNorm (fun ω => X t ω -
-      ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) 2 μ = eLpNorm (X t) 2 μ := by
-    intro N
-    refine congrArg (fun f : Ω → ℝ => eLpNorm f 2 μ) (funext fun ω => ?_)
-    simp [ha0]
-  have hzero : eLpNorm (X t) 2 μ = 0 :=
-    tendsto_nhds_unique (f := fun _ : ℕ => eLpNorm (X t) 2 μ) tendsto_const_nhds
-      ((hfil t).congr hcongr)
-  exact (eLpNorm_eq_zero_iff (hmeas t).aestronglyMeasurable (by norm_num)).1 hzero
-
-private lemma acvf_eq_zero_of_ae_zero (hX : ∀ t, X t =ᵐ[μ] fun _ => (0 : ℝ)) (h : ℤ) :
-    acvf X μ h = 0 := by
-  have h1 : ∫ ω, X h ω ∂μ = 0 := by rw [integral_congr_ae (hX h)]; simp
-  rw [acvf, covariance, h1]
-  refine integral_eq_zero_of_ae ?_
-  filter_upwards [hX h] with ω hω
-  simp [hω]
-
-private lemma acf_eq_zero_of_ae_zero (hX : ∀ t, X t =ᵐ[μ] fun _ => (0 : ℝ)) (h : ℤ) :
-    acf X μ h = 0 := by
-  rw [acf, acvf_eq_zero_of_ae_zero hX h, zero_div]
-
-private lemma sampleACVF_ae_eq_zero (hX : ∀ t, X t =ᵐ[μ] fun _ => (0 : ℝ)) (T : ℕ) (k : ℕ) :
-    ∀ᵐ ω ∂μ, sampleACVF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) k = 0 := by
-  have hall : ∀ᵐ ω ∂μ, ∀ t : Fin T, X (((t : ℕ) : ℤ) + 1) ω = 0 := by
-    rw [ae_all_iff]
-    intro t
-    exact hX _
-  filter_upwards [hall] with ω hω
-  simp [sampleACVF, sampleMean, hω]
-
-/-- `0 < γ(0)` in the nondegenerate corner. -/
-private lemma acvf_zero_pos_of_ne [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
-    (hfil : ∀ t : ℤ, Tendsto (fun N : ℕ => eLpNorm (fun ω => X t ω -
-      ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) 2 μ) atTop (𝓝 0))
-    (ha : Summable fun k : ℤ => |a k|) (hmeas : ∀ t, Measurable (X t))
-    {k0 : ℤ} (hk0 : a k0 ≠ 0) : 0 < acvf X μ 0 := by
-  have hsq := summable_sq_of_abs (a := a) ha
-  have hpos : 0 < ∑' k : ℤ, a k ^ 2 :=
-    lt_of_lt_of_le (pow_pos (abs_pos.2 hk0) 2 |>.trans_le (le_of_eq (sq_abs (a k0))))
-      (hsq.le_tsum k0 fun j _ => sq_nonneg _)
-  rw [acvf_eq_tsum_of_filter hε hfil ha hmeas 0]
-  have : (∑' k : ℤ, a k * a (k - 0)) = ∑' k : ℤ, a k ^ 2 :=
-    tsum_congr fun k => by rw [sub_zero, sq]
-  rw [this]
-  positivity
-
-end Degenerate
-
-/-- **FY Theorem 2.8(ii) — DEBT (ledger (b); B&D 1991 Prop 7.3.4)**, with the variance
-**corrected** from the misprinted eq. (2.25): for a zero-mean two-sided linear process
-with IID innovations having finite fourth moment,
-`√T (γ̂(0) − γ(0)) →d N(0, (η−3)γ(0)² + 2Σ_{j∈ℤ} γ(j)²)`, `η = Eε⁴/σ⁴`. -/
-theorem sampleACVF_zero_clt_debt [IsProbabilityMeasure μ] {a : ℤ → ℝ} {σ2 : ℝ}
-    {X ε : ℤ → Ω → ℝ}
-    -- USER-INPUT: IID(0, σ²) innovations; FY Thm 2.8 / eq. (2.24)
-    (hε : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
-    -- USER-INPUT: finite fourth moment; FY Thm 2.8(ii)
-    (hε4 : MemLp (ε 0) 4 μ)
-    -- USER-INPUT: absolutely summable coefficients; FY Thm 2.8
-    (ha : Summable fun k : ℤ => |a k|)
-    -- LEAN-ONLY: measurability of the process; implicit in FY
-    (hmeas : ∀ t, Measurable (X t))
-    -- USER-INPUT: zero-mean two-sided linear representation (FY eq. (2.24), m = 0)
-    (hfil : ∀ t : ℤ, Tendsto (fun N : ℕ =>
-      eLpNorm (fun ω => X t ω -
-        ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) 2 μ) atTop (𝓝 0))
-    (u : ℝ) :
-    Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
-        Real.sqrt T *
-          (sampleACVF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) 0 - acvf X μ 0)) u)
-      atTop
-      (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
-        (((∫ ω, ε 0 ω ^ 4 ∂μ) / σ2 ^ 2 - 3) * acvf X μ 0 ^ 2
-          + 2 * ∑' j : ℤ, acvf X μ j ^ 2))) u)) := by
-  by_cases ha0 : ∀ k, a k = 0
-  · -- **Degenerate corner `a ≡ 0`**: the process is a.e. `0`, `γ̂(0)`, `γ(0)` and the
-    -- limiting variance are all the junk value `0`, and both sides are `δ₀`'s character.
-    have hX : ∀ t, X t =ᵐ[μ] fun _ => (0 : ℝ) :=
-      fun t => ae_eq_zero_of_filter_zero ha0 hfil hmeas t
-    have hvar : ((∫ ω, ε 0 ω ^ 4 ∂μ) / σ2 ^ 2 - 3) * acvf X μ 0 ^ 2
-        + 2 * ∑' j : ℤ, acvf X μ j ^ 2 = 0 := by
-      simp [acvf_eq_zero_of_ae_zero hX]
-    have hlim : charFun (gaussianReal 0 (Real.toNNReal
-        (((∫ ω, ε 0 ω ^ 4 ∂μ) / σ2 ^ 2 - 3) * acvf X μ 0 ^ 2
-          + 2 * ∑' j : ℤ, acvf X μ j ^ 2))) u = 1 := by
-      rw [hvar]; simp
-    have hseq : (fun T : ℕ => charFun (μ.map fun ω =>
-        Real.sqrt T *
-          (sampleACVF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) 0 - acvf X μ 0)) u)
-        = fun _ : ℕ => (1 : ℂ) := by
-      funext T
-      have hae : (fun ω => Real.sqrt T *
-          (sampleACVF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) 0 - acvf X μ 0))
-          =ᵐ[μ] fun _ : Ω => (0 : ℝ) := by
-        filter_upwards [sampleACVF_ae_eq_zero hX T 0] with ω hω
-        rw [hω, acvf_eq_zero_of_ae_zero hX 0]; ring
-      rw [Measure.map_congr hae]
-      simp [Measure.map_const]
-    rw [hlim, hseq]
-    exact tendsto_const_nhds
-  · -- **Nondegenerate corner** — the residue proper. `0 < γ(0)` is available
-    -- (`acvf_zero_pos_of_ne`); what is owed is (R1) and (R3).
-    push_neg at ha0
-    obtain ⟨k0, hk0⟩ := ha0
-    have _hpos : 0 < acvf X μ 0 := acvf_zero_pos_of_ne hε hσ hfil ha hmeas hk0
-    sorry
-
 /-- **Bartlett's asymptotic covariance** (FY eq. (2.26)):
 `w_{ij} = Σ_{k=1}^∞ [ρ(k+i) + ρ(k−i) − 2ρ(i)ρ(k)]·[ρ(k+j) + ρ(k−j) − 2ρ(j)ρ(k)]`
 (the sum over `k ≥ 1` realized as a `tsum` over `ℕ` shifted by one; junk `0` when not
@@ -2906,271 +2798,5 @@ noncomputable def bartlettW (X : ℤ → Ω → ℝ) (μ : Measure Ω) (i j : �
         - 2 * acf X μ (i : ℤ) * acf X μ ((k : ℤ) + 1)) *
       (acf X μ ((k : ℤ) + 1 + (j : ℤ)) + acf X μ ((k : ℤ) + 1 - (j : ℤ))
         - 2 * acf X μ (j : ℤ) * acf X μ ((k : ℤ) + 1))
-
-section Degenerate2
-
-variable {X : ℤ → Ω → ℝ}
-
-private lemma bartlettW_eq_zero_of_ae_zero (hX : ∀ t, X t =ᵐ[μ] fun _ => (0 : ℝ)) (i j : ℕ) :
-    bartlettW X μ i j = 0 := by
-  simp [bartlettW, acf_eq_zero_of_ae_zero hX]
-
-end Degenerate2
-
-/-- **FY Theorem 2.8(iii) — DEBT (ledger (b); B&D 1991 §7.3)**: Bartlett's formula,
-in Cramér–Wold form: for every coefficient vector `c` over the lag window `1..M`,
-`√T Σ_i c_i (ρ̂(i) − ρ(i)) →d N(0, cᵀ W c)` with `W` from `bartlettW` (FY eq. (2.26)). -/
-theorem sampleACF_bartlett_clt_debt [IsProbabilityMeasure μ] {a : ℤ → ℝ} {σ2 : ℝ}
-    {X ε : ℤ → Ω → ℝ} {M : ℕ}
-    -- USER-INPUT: IID(0, σ²) innovations; FY Thm 2.8 / eq. (2.24)
-    (hε : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
-    -- USER-INPUT: finite fourth moment; FY Thm 2.8(iii)
-    (hε4 : MemLp (ε 0) 4 μ)
-    -- USER-INPUT: absolutely summable coefficients; FY Thm 2.8
-    (ha : Summable fun k : ℤ => |a k|)
-    -- LEAN-ONLY: measurability of the process; implicit in FY
-    (hmeas : ∀ t, Measurable (X t))
-    -- USER-INPUT: zero-mean two-sided linear representation (FY eq. (2.24), m = 0)
-    (hfil : ∀ t : ℤ, Tendsto (fun N : ℕ =>
-      eLpNorm (fun ω => X t ω -
-        ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) 2 μ) atTop (𝓝 0))
-    (c : Fin M → ℝ) (u : ℝ) :
-    Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
-        Real.sqrt T * ∑ i : Fin M, c i *
-          (sampleACF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ((i : ℕ) + 1)
-            - acf X μ (((i : ℕ) : ℤ) + 1))) u)
-      atTop
-      (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
-        (∑ i : Fin M, ∑ j : Fin M,
-          c i * c j * bartlettW X μ ((i : ℕ) + 1) ((j : ℕ) + 1)))) u)) := by
-  by_cases ha0 : ∀ k, a k = 0
-  · -- **Degenerate corner `a ≡ 0`**: `ρ̂` and `ρ` are both the junk value `0`, `W = 0`,
-    -- and both sides are `δ₀`'s character. The ratio delta method is *not* available here
-    -- (it divides by `γ(0) = 0`), which is why the corner is split off.
-    have hX : ∀ t, X t =ᵐ[μ] fun _ => (0 : ℝ) :=
-      fun t => ae_eq_zero_of_filter_zero ha0 hfil hmeas t
-    have hW : (∑ i : Fin M, ∑ j : Fin M,
-        c i * c j * bartlettW X μ ((i : ℕ) + 1) ((j : ℕ) + 1)) = 0 := by
-      simp [bartlettW_eq_zero_of_ae_zero hX]
-    have hlim : charFun (gaussianReal 0 (Real.toNNReal
-        (∑ i : Fin M, ∑ j : Fin M,
-          c i * c j * bartlettW X μ ((i : ℕ) + 1) ((j : ℕ) + 1)))) u = 1 := by
-      rw [hW]; simp
-    have hseq : (fun T : ℕ => charFun (μ.map fun ω =>
-        Real.sqrt T * ∑ i : Fin M, c i *
-          (sampleACF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ((i : ℕ) + 1)
-            - acf X μ (((i : ℕ) : ℤ) + 1))) u) = fun _ : ℕ => (1 : ℂ) := by
-      funext T
-      have hae : (fun ω => Real.sqrt T * ∑ i : Fin M, c i *
-          (sampleACF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ((i : ℕ) + 1)
-            - acf X μ (((i : ℕ) : ℤ) + 1))) =ᵐ[μ] fun _ : Ω => (0 : ℝ) := by
-        have hall : ∀ᵐ ω ∂μ, ∀ i : Fin M,
-            sampleACVF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ((i : ℕ) + 1) = 0 := by
-          rw [ae_all_iff]
-          intro i
-          exact sampleACVF_ae_eq_zero hX T ((i : ℕ) + 1)
-        filter_upwards [hall, sampleACVF_ae_eq_zero hX T 0] with ω hω hω0
-        simp [sampleACF, hω, hω0, acf_eq_zero_of_ae_zero hX]
-      rw [Measure.map_congr hae]
-      simp [Measure.map_const]
-    rw [hlim, hseq]
-    exact tendsto_const_nhds
-  · -- **Nondegenerate corner** — the residue proper: the joint (lags `1..M`) version of
-    -- (R1)/(R3) plus the ratio delta method, for which `0 < γ(0)` is now available.
-    push_neg at ha0
-    obtain ⟨k0, hk0⟩ := ha0
-    have _hpos : 0 < acvf X μ 0 := acvf_zero_pos_of_ne hε hσ hfil ha hmeas hk0
-    sorry
-
-/-- **FY eq. (2.27)** (misprint corrected: the summand is `ρ(t)²`, not `ρ(q)²`): for an
-MA(q) process with IID innovations and a lag `j > q`,
-`√T ρ̂(j) →d N(0, 1 + 2 Σ_{t=1}^q ρ(t)²)`. In particular for white noise (`q = 0`) the
-limit is `N(0,1)`, giving the ±1.96/√T confidence bands. **Proved** from the Bartlett
-debt statement: for `j > q` the MA(q) ACF cutoff collapses `w_{jj}` to
-`Σ_{|m|≤q} ρ(m)² = 1 + 2Σ_{t=1}^q ρ(t)²`. -/
-theorem IsMA.sampleACF_clt [IsProbabilityMeasure μ] {q : ℕ} {a : Fin q → ℝ} {σ2 : ℝ}
-    {X ε : ℤ → Ω → ℝ} {j : ℕ}
-    (h : IsMA a σ2 X ε μ)
-    -- USER-INPUT: IID innovations (upgrades the MA white noise); FY Thm 2.8 context
-    (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
-    -- USER-INPUT: finite fourth moment; FY Thm 2.8(iii)
-    (hε4 : MemLp (ε 0) 4 μ)
-    -- LEAN-ONLY: measurability of the process; implicit in FY
-    (hmeas : ∀ t, Measurable (X t))
-    -- USER-INPUT: the lag exceeds the MA order; FY eq. (2.27)
-    (hq : q < j) (u : ℝ) :
-    Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
-        Real.sqrt T * sampleACF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) j) u)
-      atTop
-      (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
-        (1 + 2 * ∑ t ∈ Finset.Icc 1 q, acf X μ (t : ℤ) ^ 2))) u)) := by
-  classical
-  -- ## The MA(q) second-order data feeding the Bartlett statement
-  have hstat : IsStationary X μ := h.isStationary hmeas
-  have hacvf0 : 0 < acvf X μ 0 := by
-    rw [h.acvf_zero_eq]
-    have : (0 : ℝ) ≤ ∑ i, a i ^ 2 := Finset.sum_nonneg fun i _ => sq_nonneg _
-    nlinarith
-  have hacf0 : acf X μ 0 = 1 := acf_zero (ne_of_gt hacvf0)
-  have hacfeven : ∀ m : ℤ, acf X μ (-m) = acf X μ m := fun m => by
-    rw [acf, acf, hstat.acvf_even]
-  -- the MA(q) ACF cutoff: `ρ(m) = 0` beyond lag `q`
-  have hcut : ∀ m : ℤ, ((q : ℤ) < m ∨ m < -(q : ℤ)) → acf X μ m = 0 := by
-    intro m hm
-    have habs : (q : ℤ) < |m| := by
-      rcases hm with hm | hm
-      · rw [abs_of_pos (by omega)]; omega
-      · rw [abs_of_neg (by omega)]; omega
-    have hz : acvf X μ m = 0 := h.cov_eq_zero (by simpa using habs)
-    rw [acf, hz, zero_div]
-  have hρj : acf X μ (j : ℤ) = 0 := hcut _ (Or.inl (by omega))
-  -- ## The Cramér–Wold selector `c` and the two-sided coefficient sequence `a'`
-  obtain ⟨i₀, hi₀⟩ : ∃ i₀ : Fin j, (i₀ : ℕ) + 1 = j :=
-    ⟨⟨j - 1, by omega⟩, show j - 1 + 1 = j from by omega⟩
-  obtain ⟨c, hcval⟩ : ∃ c : Fin j → ℝ, ∀ i, c i = if (i : ℕ) + 1 = j then 1 else 0 :=
-    ⟨_, fun _ => rfl⟩
-  have hci₀ : c i₀ = 1 := by rw [hcval, if_pos hi₀]
-  have hcne : ∀ i : Fin j, i ≠ i₀ → c i = 0 := by
-    intro i hne
-    refine (hcval i).trans (if_neg fun hc' => hne (Fin.ext ?_))
-    omega
-  obtain ⟨a', ha'val, ha'zero⟩ : ∃ a' : ℤ → ℝ,
-      (∀ i : Fin (q + 1), a' ((i : ℕ) : ℤ) = maCoeff a i) ∧
-      (∀ k : ℤ, k ∉ Finset.Icc (0 : ℤ) (q : ℤ) → a' k = 0) := by
-    refine ⟨fun k => if hk : 0 ≤ k ∧ k.toNat < q + 1 then maCoeff a ⟨k.toNat, hk.2⟩ else 0,
-      fun i => ?_, fun k hk => ?_⟩
-    · have hk : (0 : ℤ) ≤ ((i : ℕ) : ℤ) ∧ (((i : ℕ) : ℤ)).toNat < q + 1 :=
-        ⟨Int.natCast_nonneg _, by simpa using i.isLt⟩
-      dsimp only
-      rw [dif_pos hk]
-      exact congrArg (maCoeff a) (Fin.ext (by simp))
-    · simp only [Finset.mem_Icc, not_and, not_le] at hk
-      dsimp only
-      refine dif_neg fun hc' => ?_
-      have := hk hc'.1
-      omega
-  have ha'sum : Summable fun k : ℤ => |a' k| :=
-    summable_of_ne_finset_zero (s := Finset.Icc (0 : ℤ) (q : ℤ))
-      fun k hk => by rw [ha'zero k hk, abs_zero]
-  -- ## `X` is the (finitely supported) two-sided linear filter of `ε` with weights `a'`
-  have hpartial : ∀ (t : ℤ) (N : ℕ), q ≤ N → ∀ ω,
-      ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a' k * ε (t - k) ω
-        = ∑ i : Fin (q + 1), maCoeff a i * ε (t - ((i : ℕ) : ℤ)) ω := by
-    intro t N hN ω
-    have hsub : Finset.Icc (0 : ℤ) (q : ℤ) ⊆ Finset.Icc (-(N : ℤ)) (N : ℤ) := by
-      intro k hk; simp only [Finset.mem_Icc] at *; omega
-    rw [← Finset.sum_subset hsub (fun k _ hk => by rw [ha'zero k hk, zero_mul])]
-    have hr : ∑ k ∈ Finset.Icc (0 : ℤ) (q : ℤ), a' k * ε (t - k) ω
-        = ∑ n ∈ Finset.range (q + 1), a' ((n : ℕ) : ℤ) * ε (t - ((n : ℕ) : ℤ)) ω := by
-      refine Finset.sum_nbij' (fun k => k.toNat) (fun n => (n : ℤ)) ?_ ?_ ?_ ?_ ?_
-      · intro k hk; simp only [Finset.mem_Icc] at hk; simp only [Finset.mem_range]; omega
-      · intro n hn; simp only [Finset.mem_range] at hn; simp only [Finset.mem_Icc]; omega
-      · intro k hk; simp only [Finset.mem_Icc] at hk; dsimp only; omega
-      · intro n hn; simp only [Finset.mem_range] at hn; dsimp only; omega
-      · intro k hk
-        simp only [Finset.mem_Icc] at hk
-        dsimp only
-        rw [show ((k.toNat : ℕ) : ℤ) = k from by omega]
-    rw [hr, ← Fin.sum_univ_eq_sum_range
-      (fun n => a' ((n : ℕ) : ℤ) * ε (t - ((n : ℕ) : ℤ)) ω) (q + 1)]
-    exact Finset.sum_congr rfl fun i _ => by rw [ha'val i]
-  have hfil : ∀ t : ℤ, Tendsto (fun N : ℕ =>
-      eLpNorm (fun ω => X t ω -
-        ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a' k * ε (t - k) ω) 2 μ) atTop (𝓝 0) := by
-    intro t
-    refine Tendsto.congr' ?_ (tendsto_const_nhds (x := (0 : ENNReal)))
-    filter_upwards [eventually_ge_atTop q] with N hN
-    have hzero : (fun ω => X t ω -
-        ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a' k * ε (t - k) ω) =ᵐ[μ] 0 := by
-      filter_upwards [h.rec_sum t] with ω hω
-      rw [Pi.zero_apply, hω, hpartial t N hN ω, sub_self]
-    rw [eLpNorm_congr_ae hzero, eLpNorm_zero]
-  -- ## The Bartlett statement, instantiated at the single lag `j`
-  have hbart := sampleACF_bartlett_clt_debt (μ := μ) (a := a') (σ2 := σ2) (X := X) (ε := ε)
-    (M := j) hiid hσ hε4 ha'sum hmeas hfil c u
-  -- ## `w_{jj}` collapses to `Σ_{|m| ≤ q} ρ(m)² = 1 + 2 Σ_{t=1}^q ρ(t)²`
-  have hIcc : ∑ t ∈ Finset.Icc 1 q, acf X μ (t : ℤ) ^ 2
-      = ∑ i ∈ Finset.range q, acf X μ ((i : ℤ) + 1) ^ 2 := by
-    rw [← Finset.Ico_add_one_right_eq_Icc, Finset.sum_Ico_eq_sum_range,
-      show q + 1 - 1 = q from by omega]
-    exact Finset.sum_congr rfl fun i _ =>
-      by rw [show (((1 + i : ℕ)) : ℤ) = (i : ℤ) + 1 from by push_cast; ring]
-  have hbw : bartlettW X μ j j = 1 + 2 * ∑ t ∈ Finset.Icc 1 q, acf X μ (t : ℤ) ^ 2 := by
-    -- only the `ρ(k+1−j)` slot survives the cutoff
-    have hterm : ∀ k : ℕ,
-        (acf X μ ((k : ℤ) + 1 + (j : ℤ)) + acf X μ ((k : ℤ) + 1 - (j : ℤ))
-            - 2 * acf X μ (j : ℤ) * acf X μ ((k : ℤ) + 1)) *
-          (acf X μ ((k : ℤ) + 1 + (j : ℤ)) + acf X μ ((k : ℤ) + 1 - (j : ℤ))
-            - 2 * acf X μ (j : ℤ) * acf X μ ((k : ℤ) + 1))
-          = acf X μ ((k : ℤ) + 1 - (j : ℤ)) ^ 2 := by
-      intro k
-      rw [hcut ((k : ℤ) + 1 + (j : ℤ)) (Or.inl (by omega)), hρj]
-      ring
-    -- the survivor is supported on the window `k ∈ [j−1−q, j−1+q]`
-    obtain ⟨d, hd⟩ : ∃ d : ℕ, d = j - 1 - q := ⟨_, rfl⟩
-    have hsupp : ∀ k : ℕ, k ∉ Finset.Ico d (d + (2 * q + 1)) →
-        acf X μ ((k : ℤ) + 1 - (j : ℤ)) ^ 2 = 0 := by
-      intro k hk
-      simp only [Finset.mem_Ico, not_and, not_lt] at hk
-      have hcase : k < d ∨ d + (2 * q + 1) ≤ k := by
-        by_cases hkd : d ≤ k
-        · exact Or.inr (hk hkd)
-        · exact Or.inl (by omega)
-      have : acf X μ ((k : ℤ) + 1 - (j : ℤ)) = 0 := by
-        refine hcut _ ?_
-        rcases hcase with hc | hc
-        · exact Or.inr (by omega)
-        · exact Or.inl (by omega)
-      rw [this]; ring
-    rw [bartlettW, tsum_congr hterm,
-      tsum_eq_sum (s := Finset.Ico d (d + (2 * q + 1))) hsupp,
-      Finset.sum_Ico_eq_sum_range, Nat.add_sub_cancel_left]
-    have hre : ∀ i ∈ Finset.range (2 * q + 1),
-        acf X μ ((((d + i : ℕ)) : ℤ) + 1 - (j : ℤ)) ^ 2 = acf X μ ((i : ℤ) - (q : ℤ)) ^ 2 := by
-      intro i _
-      rw [show (((d + i : ℕ)) : ℤ) + 1 - (j : ℤ) = (i : ℤ) - (q : ℤ) from by omega]
-    rw [Finset.sum_congr rfl hre]
-    -- split the symmetric window `[−q, q]` at its centre and fold by evenness
-    have hlow : ∑ i ∈ Finset.range q, acf X μ ((i : ℤ) - (q : ℤ)) ^ 2
-        = ∑ i ∈ Finset.range q, acf X μ ((i : ℤ) + 1) ^ 2 := by
-      rw [← Finset.sum_range_reflect (fun i => acf X μ ((i : ℤ) - (q : ℤ)) ^ 2) q]
-      refine Finset.sum_congr rfl fun i hi => ?_
-      simp only [Finset.mem_range] at hi
-      rw [show (((q - 1 - i : ℕ)) : ℤ) - (q : ℤ) = -((i : ℤ) + 1) from by omega, hacfeven]
-    have hhigh : ∑ i ∈ Finset.Ico (q + 1) (2 * q + 1), acf X μ ((i : ℤ) - (q : ℤ)) ^ 2
-        = ∑ i ∈ Finset.range q, acf X μ ((i : ℤ) + 1) ^ 2 := by
-      rw [Finset.sum_Ico_eq_sum_range, show 2 * q + 1 - (q + 1) = q from by omega]
-      exact Finset.sum_congr rfl fun i _ =>
-        by rw [show (((q + 1 + i : ℕ)) : ℤ) - (q : ℤ) = (i : ℤ) + 1 from by push_cast; ring]
-    have hmid : acf X μ (((q : ℕ) : ℤ) - (q : ℤ)) ^ 2 = 1 := by
-      rw [sub_self, hacf0]; norm_num
-    rw [← Finset.sum_range_add_sum_Ico (fun i => acf X μ ((i : ℤ) - (q : ℤ)) ^ 2)
-      (show q + 1 ≤ 2 * q + 1 from by omega), Finset.sum_range_succ, hlow, hhigh, hmid, hIcc]
-    ring
-  -- ## The `c`-collapse of the statement and of Bartlett's variance
-  have hvar : (∑ i : Fin j, ∑ i' : Fin j,
-        c i * c i' * bartlettW X μ ((i : ℕ) + 1) ((i' : ℕ) + 1))
-      = 1 + 2 * ∑ t ∈ Finset.Icc 1 q, acf X μ (t : ℤ) ^ 2 := by
-    have hinner : ∀ i : Fin j,
-        (∑ i' : Fin j, c i * c i' * bartlettW X μ ((i : ℕ) + 1) ((i' : ℕ) + 1))
-          = c i * bartlettW X μ ((i : ℕ) + 1) j := by
-      intro i
-      rw [Finset.sum_eq_single i₀ (fun i' _ hne => by rw [hcne i' hne]; ring) (by simp),
-        hci₀, hi₀]
-      ring
-    rw [Finset.sum_congr rfl (fun i _ => hinner i),
-      Finset.sum_eq_single i₀ (fun i _ hne => by rw [hcne i hne]; ring) (by simp),
-      hci₀, hi₀, one_mul, hbw]
-  have hmapeq : ∀ (T : ℕ) (ω : Ω),
-      Real.sqrt T * ∑ i : Fin j, c i *
-          (sampleACF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ((i : ℕ) + 1)
-            - acf X μ (((i : ℕ) : ℤ) + 1))
-        = Real.sqrt T * sampleACF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) j := by
-    intro T ω
-    congr 1
-    rw [Finset.sum_eq_single i₀ (fun i _ hne => by rw [hcne i hne]; ring) (by simp), hci₀,
-      one_mul, hi₀, show (((i₀ : ℕ) : ℤ) + 1) = (j : ℤ) from by omega, hρj, sub_zero]
-  rw [← hvar]
-  exact Tendsto.congr (fun T => by rw [funext (hmapeq T)]) hbart
 
 end StatLean.TimeSeries
