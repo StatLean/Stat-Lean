@@ -1,7 +1,6 @@
 import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Convex.Deriv
-import Mathlib.Order.Filter.Cocompact
 
 /-!
 # The Huber loss and score

@@ -11,10 +11,10 @@ equivariance is the right invariance frame). This file states the population-lev
 `StatLean.PointEstimation.IsLocEquivariant` / `IsLocInvariant` already exist and are reused
 by the breakdown files.
 
-* `IsLocationEquivariantOn T 𝒫` — `T((·+a)_#P) = T(P) + a` on a domain class `𝒫`.
-* `IsLocationInvariantOn S 𝒫` — `S((·+a)_#P) = S(P)`.
-* `IsScaleEquivariantOn S 𝒫` — `S((c·)_#P) = |c| S(P)` for `c ≠ 0`.
-* `IsDispersionFunctionalOn S 𝒫` — the conjunction, the population form of `MMY` (2.58).
+* `IsLocationEquivariantOn T 𝒟` — `T((·+a)_#P) = T(P) + a` on a domain class `𝒟`.
+* `IsLocationInvariantOn S 𝒟` — `S((·+a)_#P) = S(P)`.
+* `IsScaleEquivariantOn S 𝒟` — `S((c·)_#P) = |c| S(P)` for `c ≠ 0`.
+* `IsDispersionFunctionalOn S 𝒟` — the conjunction, the population form of `MMY` (2.58).
 * `IsDispersionEstimator S` — the finite-sample form of (2.58).
 * `map_add_grossErrorNbhd` — shifts map contamination neighbourhoods to contamination
   neighbourhoods of the shifted center (the equivariance step of `MMY §3.8.2`).
@@ -22,7 +22,7 @@ by the breakdown files.
 **Design note (domain classes).** Functionals such as the mean are only shift-equivariant
 on integrable inputs — on a non-integrable `P` both sides degenerate to Lean's junk value
 `0` and the identity fails. The predicates therefore quantify over an explicit domain
-`𝒫 : Set (Measure Ω)`; each concrete functional registers the class on which its
+`𝒟 : Set (Measure Ω)`; each concrete functional registers the class on which its
 equivariance actually holds.
 
 **Reference.** R. A. Maronna, R. D. Martin, V. J. Yohai and M. Salibián-Barrera, *Robust
@@ -36,26 +36,26 @@ namespace StatLean.RobustStatistics
 
 /-! ### Population-level predicates -/
 
-/-- **Location equivariance** of a functional on a domain class `𝒫`
+/-- **Location equivariance** of a functional on a domain class `𝒟`
 (`MMY §2.3`): shifting the distribution shifts the value, `T((·+a)_#P) = T(P) + a`. -/
-def IsLocationEquivariantOn (T : Measure ℝ → ℝ) (𝒫 : Set (Measure ℝ)) : Prop :=
-  ∀ P ∈ 𝒫, ∀ a : ℝ, T (P.map (· + a)) = T P + a
+def IsLocationEquivariantOn (T : Measure ℝ → ℝ) (𝒟 : Set (Measure ℝ)) : Prop :=
+  ∀ P ∈ 𝒟, ∀ a : ℝ, T (P.map (· + a)) = T P + a
 
-/-- **Location invariance** of a functional on a domain class `𝒫` (`MMY` eq. (2.58),
+/-- **Location invariance** of a functional on a domain class `𝒟` (`MMY` eq. (2.58),
 first condition): shifting the distribution does not change the value. -/
-def IsLocationInvariantOn (S : Measure ℝ → ℝ) (𝒫 : Set (Measure ℝ)) : Prop :=
-  ∀ P ∈ 𝒫, ∀ a : ℝ, S (P.map (· + a)) = S P
+def IsLocationInvariantOn (S : Measure ℝ → ℝ) (𝒟 : Set (Measure ℝ)) : Prop :=
+  ∀ P ∈ 𝒟, ∀ a : ℝ, S (P.map (· + a)) = S P
 
-/-- **Absolute scale equivariance** of a functional on a domain class `𝒫` (`MMY` eq.
+/-- **Absolute scale equivariance** of a functional on a domain class `𝒟` (`MMY` eq.
 (2.58), second condition): rescaling the distribution by `c ≠ 0` multiplies the value
 by `|c|`. -/
-def IsScaleEquivariantOn (S : Measure ℝ → ℝ) (𝒫 : Set (Measure ℝ)) : Prop :=
-  ∀ P ∈ 𝒫, ∀ c : ℝ, c ≠ 0 → S (P.map (c * ·)) = |c| * S P
+def IsScaleEquivariantOn (S : Measure ℝ → ℝ) (𝒟 : Set (Measure ℝ)) : Prop :=
+  ∀ P ∈ 𝒟, ∀ c : ℝ, c ≠ 0 → S (P.map (c * ·)) = |c| * S P
 
 /-- **Dispersion functional** on a domain class (`MMY` eq. (2.58), population form):
 location invariant and absolutely scale equivariant. -/
-def IsDispersionFunctionalOn (S : Measure ℝ → ℝ) (𝒫 : Set (Measure ℝ)) : Prop :=
-  IsLocationInvariantOn S 𝒫 ∧ IsScaleEquivariantOn S 𝒫
+def IsDispersionFunctionalOn (S : Measure ℝ → ℝ) (𝒟 : Set (Measure ℝ)) : Prop :=
+  IsLocationInvariantOn S 𝒟 ∧ IsScaleEquivariantOn S 𝒟
 
 /-! ### Finite-sample dispersion (`MMY` eq. (2.58))
 

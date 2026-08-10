@@ -27,15 +27,15 @@ variable {d : ℕ}
 /-- **Affine equivariance of a multivariate location functional** on a domain class
 (`MMY §6.17.1`): `T((Ax+b)_#P) = A T(P) + b` for every invertible `A`. -/
 def IsAffineEquivariantLocation (T : Measure (Fin d → ℝ) → (Fin d → ℝ))
-    (𝒫 : Set (Measure (Fin d → ℝ))) : Prop :=
-  ∀ P ∈ 𝒫, ∀ A : Matrix (Fin d) (Fin d) ℝ, IsUnit A.det → ∀ b : Fin d → ℝ,
+    (𝒟 : Set (Measure (Fin d → ℝ))) : Prop :=
+  ∀ P ∈ 𝒟, ∀ A : Matrix (Fin d) (Fin d) ℝ, IsUnit A.det → ∀ b : Fin d → ℝ,
     T (P.map fun x => A.mulVec x + b) = A.mulVec (T P) + b
 
 /-- **Affine equivariance of a scatter functional** on a domain class (`MMY §6.17.1`):
 `S((Ax+b)_#P) = A S(P) Aᵀ`. -/
 def IsAffineEquivariantScatter (S : Measure (Fin d → ℝ) → Matrix (Fin d) (Fin d) ℝ)
-    (𝒫 : Set (Measure (Fin d → ℝ))) : Prop :=
-  ∀ P ∈ 𝒫, ∀ A : Matrix (Fin d) (Fin d) ℝ, IsUnit A.det → ∀ b : Fin d → ℝ,
+    (𝒟 : Set (Measure (Fin d → ℝ))) : Prop :=
+  ∀ P ∈ 𝒟, ∀ A : Matrix (Fin d) (Fin d) ℝ, IsUnit A.det → ∀ b : Fin d → ℝ,
     S (P.map fun x => A.mulVec x + b) = A * S P * A.transpose
 
 /-- The **mean vector functional**, coordinatewise (`MMY §6.1` context). Junk value `0`

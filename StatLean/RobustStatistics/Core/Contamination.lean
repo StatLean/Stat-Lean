@@ -67,8 +67,10 @@ theorem isProbabilityMeasure_contaminate (P Q : Measure Ω) [IsProbabilityMeasur
     IsProbabilityMeasure (contaminate P Q ε) := by
   sorry
 
-/-- Integrability passes to the contaminated mixture. -/
-theorem Integrable.contaminate {P Q : Measure Ω} {f : Ω → ℝ} (hfP : Integrable f P)
+/-- Integrability passes to the contaminated mixture. (Named without the `Integrable.`
+prefix: inside a declaration `Integrable.contaminate`, the bare name `contaminate` would
+resolve recursively to the theorem itself.) -/
+theorem integrable_contaminate {P Q : Measure Ω} {f : Ω → ℝ} (hfP : Integrable f P)
     (hfQ : Integrable f Q) (ε : ℝ) : Integrable f (contaminate P Q ε) := by
   sorry
 
