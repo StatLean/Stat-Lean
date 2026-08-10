@@ -44,3 +44,4 @@
 + '[' comp/r1-resampling '!=' comp/r1-resampling ']'
 + cat .claude/prompts/compr1-_common.md .claude/prompts/compr1-resampling.md
 + claude -p --dangerously-skip-permissions
++ git add -A
