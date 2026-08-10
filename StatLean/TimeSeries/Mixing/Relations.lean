@@ -2136,7 +2136,34 @@ The remaining genuine work is the **transfer from the two linear functionals to 
 `IsGaussianProcess` (Mathlib has `hasGaussianLaw_prodMk` and `HasGaussianLaw` under
 continuous linear maps, but no "standardise a Gaussian pair" lemma) and the differentiation
 under the integral sign. That is a self-contained `ForMathlib` brick of moderate size —
-strictly smaller than `gaussian_rho_linear_brick`'s chaos development. -/
+strictly smaller than `gaussian_rho_linear_brick`'s chaos development.
+
+**Status (2026-08-09, wave 7): the wave-6 route is RE-VERIFIED arithmetically and NOT
+attempted (out of budget for this lane).** Checked, and recorded so the next lane does not
+re-derive it:
+
+* the constants are right — `φ(u)φ(cu) = (2π)⁻¹ exp(−u²(1+c²)/2)`, so
+  `G'(c) = (2π)⁻¹∫_0^∞ u e^{−u²(1+c²)/2} du = 1/(2π(1+c²))`, `G(0) = 0`, and
+  `arctan(r/√(1−r²)) = arcsin r`; the orthant value is `1/4 + arcsin r/(2π)` and the
+  covariance of the two indicators is `arcsin r/(2π)`, giving `|r|/(2π) ≤ α` from
+  `|r| ≤ |arcsin r|`;
+* the `variance = 0` corner really is free, and for the Lean-specific reason that
+  `Real.sqrt 0 = 0` and `x / 0 = 0`: the left-hand side is *literally* `0`, so no
+  nondegeneracy side condition has to be threaded;
+* the `|r| = 1` corner is **not** covered by the Cholesky route (`c = r/√(1−r²)` is a
+  division by zero there) and needs the separate branch wave 6 named: `g` is then an
+  increasing affine function of `f` a.e., the two half-line events coincide, and
+  `α ≥ 1/2 − 1/4 = 1/4`, whence `1 ≤ π/2 ≤ 2π α`.
+
+Two Lean-side inputs remain, and both are larger than "plumbing": (i) identifying the law
+of the standardised pair with the law of `(U, rU + √(1−r²)Z)` — available in principle from
+`Measure.ext_of_charFun` / `gaussian_charFun_congr` (two Gaussians with equal mean and
+covariance form coincide), which the pin does have; and (ii) `G' = 1/(2π(1+c²))`, i.e.
+differentiation under an integral over `Set.Ioi 0` with a dominated derivative. The
+alternative for (ii) — reading `G(c)` as the standard bivariate Gaussian measure of the
+sector of angle `arctan c` and invoking rotation invariance — was considered and is *not*
+cheaper in the pin: it needs "sector measure is proportional to angle", i.e. the
+construction of the uniform measure on the circle. -/
 private lemma gaussian_pair_corr_le_alpha_brick [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     (hmeas : ∀ t, Measurable (X t)) (hgauss : ProbabilityTheory.IsGaussianProcess X μ)
     (S T : Finset ℤ) (a b : ℤ → ℝ) :
