@@ -1384,6 +1384,25 @@ theorem IsARCHNoise.isAlphaMixing [IsProbabilityMeasure μ] {ξ : ℤ → Ω →
   filter_upwards [eventually_ge_atTop 1] with n hn
   exact (alphaCoeff_eq_zero_of_iIndep hξ.measurable hξ.iIndep hn).symm
 
+/-- **Strict stationarity of the i.i.d. noise itself** — residue item 4 of the
+`archInf_clt_debt` ledger (see the `(B″)` note there).
+
+It is *free* from `isStrictlyStationary_of_shift_comp` at the coordinate functional
+`F p = p 0`: `ξ_t = F(ξ_{·+t})`, so `map_path_shift` does all the work. In particular the
+route recorded in `(B″)` — "prove it for injective `t` from `iIndepFun` + `identDistrib`,
+then obtain the general tuple by pushing the injective-tuple law forward along the fixed
+coordinate-selection map … that is a self-contained lemma … and belongs next to
+`isStrictlyStationary_iff_window` in `Process/Stationary.lean`, outside this lane's touch
+set" — is **overturned**: no tuple analysis and no injectivity split is needed, because
+`map_path_shift` compares the *whole* path laws (two infinite product measures) rather than
+finite-dimensional marginals, and repeats in the index tuple are then irrelevant. The brick
+was already in this file. -/
+theorem IsARCHNoise.isStrictlyStationary [IsProbabilityMeasure μ] {ξ : ℤ → Ω → ℝ}
+    (hξ : IsARCHNoise ξ μ) : IsStrictlyStationary ξ μ := by
+  have h := isStrictlyStationary_of_shift_comp hξ.measurable hξ.iIndep hξ.identDistrib
+    (F := fun p : ℤ → ℝ => p 0) (measurable_pi_apply 0)
+  simpa using h
+
 /-- **FY Theorem 2.6 — DEBT** (Giraitis–Kokoszka–Leipus 2000; fdd invariance principle):
 under eq. (2.16), the normalized partial sums of a stationary ARCH(∞) process are
 asymptotically `N(0, σ²)` with long-run variance `σ² = Σ_k Cov(Y_k, Y_0)`. Stated at the
@@ -1506,6 +1525,14 @@ closing item 1 and both concerning the `Mixing/LimitTheorems.lean` end of the ro
   which does not depend on the shift `k`. That is a self-contained lemma about i.i.d.
   families and belongs next to `isStrictlyStationary_iff_window` in
   `Process/Stationary.lean`, outside this lane's touch set.
+  **CLOSED, and the reading above is overturned** (wave `ts/f4b-garch-last`, 2026-08-09):
+  `IsARCHNoise.isStrictlyStationary`, proved above in **four lines** from this file's own
+  `isStrictlyStationary_of_shift_comp` at the coordinate functional `F p = p 0`. No
+  injective-tuple analysis, no coordinate-selection pushforward, and nothing in
+  `Process/Stationary.lean`: `map_path_shift` already compares the two *whole* path laws
+  (`Measure.infinitePi` before and after the shift), so repeats in the index tuple never
+  arise. The item should never have been priced as new work — the general brick was in the
+  file before this lane opened.
 
 Everything downstream of `hvar` — `hL2`, `hlind`, `hadapted`, `hmds` — is unchanged and
 still free/proved. The α-mixing SLLN `slln_of_alphaMixing_debt` itself is *not* on the
