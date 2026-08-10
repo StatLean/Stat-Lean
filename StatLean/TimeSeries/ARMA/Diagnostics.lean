@@ -2640,6 +2640,136 @@ private lemma toReal_measure_sampleACVF_sub_le [IsProbabilityMeasure μ] {T : �
     (integrable_acvfDom k Y Z hY hZ) hc) ?_
   exact div_le_div_of_nonneg_right (integral_acvfDom_le k Y Z hY hZ hBY hBZ hBY0 hBZ0) hc.le
 
+
+/-! #### The truncation leg of residue (B) -/
+
+/-- **The truncation leg**: `√T (γ̂_{ε̂(θ₀)}(k) − γ̂_ε(k)) →p 0`. This is finding 28's
+item, in the `L¹` form the note prescribes: the summed `L²` size of the residual defect is
+`O(1)` (`exists_sum_l2n_residDefect_le`), so the `L¹` perturbation bound gives `O(1/T)` on
+the autocovariance and `O(T^{−1/2})` after the `√T` scaling. -/
+private lemma tendstoInProb_residACVF_sub [IsProbabilityMeasure μ]
+    (hB0 : ARMAInvertibleParams b0 a0)
+    (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
+    (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2) (hmeas : ∀ t, Measurable (X t))
+    (k : ℕ) {δ : ℝ} (hδ : 0 < δ) :
+    Tendsto (fun T : ℕ => (μ {ω | δ ≤ Real.sqrt T *
+        |sampleACVF (fun t : Fin T => sampleResiduals b0 a0
+            (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k
+          - sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k|}).toReal)
+      atTop (𝓝 0) := by
+  classical
+  have hwn := hiid.isWhiteNoise
+  obtain ⟨S, hS0, hS⟩ := exists_sum_l2n_residDefect_le hB0 hcausal hwn hmeas
+  -- each defect is bounded by `S`
+  have hterm_le : ∀ t : ℕ, l2n μ (residDefect b0 a0 X ε t) ≤ S := by
+    intro t
+    refine le_trans ?_ (hS (t + 1))
+    refine Finset.single_le_sum (f := fun i => l2n μ (residDefect b0 a0 X ε i))
+      (fun i _ => l2n_nonneg _ _) (Finset.self_mem_range_succ t)
+  have hsqrtσ : (0:ℝ) ≤ Real.sqrt σ2 := Real.sqrt_nonneg _
+  -- the bound, at each `T ≥ 1`
+  have hbound : ∀ T : ℕ, 1 ≤ T →
+      (μ {ω | δ ≤ Real.sqrt T *
+          |sampleACVF (fun t : Fin T => sampleResiduals b0 a0
+              (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k
+            - sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k|}).toReal
+        ≤ 4 * S * (2 * Real.sqrt σ2 + S) / (δ * Real.sqrt T) := by
+    intro T hT
+    have hTpos : (0 : ℝ) < (T : ℝ) := by exact_mod_cast hT
+    have hsq : (0 : ℝ) < Real.sqrt T := Real.sqrt_pos.2 hTpos
+    set Y : Fin T → Ω → ℝ := fun t ω => sampleResiduals b0 a0
+      (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t with hY
+    set Z : Fin T → Ω → ℝ := fun t ω => ε (((t : ℕ) : ℤ) + 1) ω with hZdef
+    have hid : ∀ (t : Fin T) (ω : Ω), Y t ω - Z t ω = residDefect b0 a0 X ε (t : ℕ) ω := by
+      intro t ω
+      rw [hY, hZdef]
+      simp only
+      rw [sampleResiduals_eq_noise_add (b0 := b0) (a0 := a0) (X := X) (ε := ε) t ω]
+      ring
+    have hZmem : ∀ t : Fin T, MemLp (Z t) 2 μ := fun t => hwn.memLp _
+    have hDmem : ∀ t : Fin T, MemLp (fun ω => Y t ω - Z t ω) 2 μ := by
+      intro t
+      have : (fun ω => Y t ω - Z t ω) = residDefect b0 a0 X ε (t : ℕ) :=
+        funext fun ω => hid t ω
+      rw [this]
+      exact memLp_residDefect hcausal (summable_abs_armaPsi a0 hB0.1) hwn hmeas _
+    have hYmem : ∀ t : Fin T, MemLp (Y t) 2 μ := by
+      intro t
+      have : Y t = fun ω => Z t ω + (Y t ω - Z t ω) := funext fun ω => by ring
+      rw [this]
+      exact (hZmem t).add (hDmem t)
+    have hBZ : ∀ t : Fin T, l2n μ (Z t) ≤ Real.sqrt σ2 := by
+      intro t
+      exact le_of_eq (l2n_noise hwn _)
+    have hDS : ∀ t : Fin T, l2n μ (fun ω => Y t ω - Z t ω) ≤ S := by
+      intro t
+      have : (fun ω => Y t ω - Z t ω) = residDefect b0 a0 X ε (t : ℕ) :=
+        funext fun ω => hid t ω
+      rw [this]
+      exact hterm_le _
+    have hBY : ∀ t : Fin T, l2n μ (Y t) ≤ Real.sqrt σ2 + S := by
+      intro t
+      have hsplit : Y t = fun ω => Z t ω + (Y t ω - Z t ω) := funext fun ω => by ring
+      have := l2n_add_le (μ := μ) (hZmem t) (hDmem t)
+      rw [← hsplit] at this
+      have h1 := hBZ t
+      have h2 := hDS t
+      linarith
+    have hΔ : ∑ t : Fin T, l2n μ (fun ω => Y t ω - Z t ω) ≤ S := by
+      have hcongr : ∀ t : Fin T, l2n μ (fun ω => Y t ω - Z t ω)
+          = l2n μ (residDefect b0 a0 X ε (t : ℕ)) := by
+        intro t
+        exact congrArg (l2n μ) (funext fun ω => hid t ω)
+      rw [Finset.sum_congr rfl fun t _ => hcongr t]
+      have : ∑ t : Fin T, l2n μ (residDefect b0 a0 X ε (t : ℕ))
+          = ∑ i ∈ Finset.range T, l2n μ (residDefect b0 a0 X ε i) :=
+        Fin.sum_univ_eq_sum_range (fun i => l2n μ (residDefect b0 a0 X ε i)) T
+      rw [this]
+      exact hS T
+    -- rewrite the event as a `|·| ≥ δ/√T` event and apply the Markov bound
+    have hset : {ω | δ ≤ Real.sqrt T *
+        |sampleACVF (fun t : Fin T => Y t ω) k
+          - sampleACVF (fun t : Fin T => Z t ω) k|}
+        = {ω | δ / Real.sqrt T ≤
+            |sampleACVF (fun t : Fin T => Y t ω) k
+              - sampleACVF (fun t : Fin T => Z t ω) k|} := by
+      ext ω
+      simp only [Set.mem_setOf_eq]
+      rw [div_le_iff₀ hsq, mul_comm]
+    have hmk := toReal_measure_sampleACVF_sub_le (μ := μ) k Y Z hYmem hZmem
+      (BY := Real.sqrt σ2 + S) (BZ := Real.sqrt σ2) hBY hBZ (by linarith) hsqrtσ
+      (c := δ / Real.sqrt T) (by positivity)
+    rw [← hset] at hmk
+    refine le_trans hmk ?_
+    have hTsq : Real.sqrt T * Real.sqrt T = (T : ℝ) := Real.mul_self_sqrt hTpos.le
+    set N : ℝ := 4 * (∑ t : Fin T, l2n μ (fun ω => Y t ω - Z t ω)) *
+      ((Real.sqrt σ2 + S) + Real.sqrt σ2) with hN
+    have hN0 : 0 ≤ N := by
+      have : (0:ℝ) ≤ ∑ t : Fin T, l2n μ (fun ω => Y t ω - Z t ω) :=
+        Finset.sum_nonneg fun t _ => l2n_nonneg _ _
+      rw [hN]; positivity
+    have hkey : ((T : ℝ)⁻¹ * N) / (δ / Real.sqrt T) = N / (δ * Real.sqrt T) := by
+      rw [div_div_eq_mul_div]
+      field_simp
+      nlinarith [hTsq, hsq, hTpos]
+    rw [hkey]
+    have hNle : N ≤ 4 * S * (2 * Real.sqrt σ2 + S) := by
+      rw [hN]
+      have h1 : ∑ t : Fin T, l2n μ (fun ω => Y t ω - Z t ω) ≤ S := hΔ
+      nlinarith [hS0, hsqrtσ,
+        Finset.sum_nonneg (fun (t : Fin T) (_ : t ∈ Finset.univ) =>
+          l2n_nonneg μ (fun ω => Y t ω - Z t ω))]
+    exact div_le_div_of_nonneg_right hNle (by positivity)
+  -- and the bound tends to zero
+  have hlim : Tendsto (fun T : ℕ =>
+      4 * S * (2 * Real.sqrt σ2 + S) / (δ * Real.sqrt T)) atTop (𝓝 0) := by
+    refine Filter.Tendsto.div_atTop tendsto_const_nhds ?_
+    exact Filter.Tendsto.const_mul_atTop hδ
+      (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
+  refine squeeze_zero' (Eventually.of_forall fun T => ENNReal.toReal_nonneg) ?_ hlim
+  filter_upwards [eventually_ge_atTop 1] with T hT
+  exact hbound T hT
+
 end TransferBricks
 
 /-- **RESIDUE (B) — the residual-vs-innovation transfer**, bundled with the
