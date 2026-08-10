@@ -12,6 +12,7 @@ import StatLean.StatisticalModels
 import StatLean.TimeSeries
 import StatLean.CausalInference
 import StatLean.ExperimentalDesign
+import StatLean.StatisticalLearning
 
 /-!
 # StatLean
@@ -80,6 +81,13 @@ theory, organized into per-area sublibraries.
   types, LATE/CACE, the instrumental inequalities, linear IV) — Ding, *A First Course in
   Causal Inference*; Imbens & Rubin, *Causal Inference for Statistics, Social, and
   Biomedical Sciences*.
+* `StatLean.StatisticalLearning` — statistical learning theory: risk, empirical
+  risk minimization and the PAC / agnostic-PAC / uniform-convergence models,
+  finite-class bounds, Rademacher complexity (Massart, contraction,
+  symmetrization, generalization bounds), the agnostic upper bound of the
+  fundamental theorem for finite VC dimension, algorithmic stability with
+  Tikhonov regularization, and PAC-Bayes (Shalev-Shwartz & Ben-David,
+  *Understanding Machine Learning*).
 
 Per-area umbrellas are imported above as each area lands.
 -/
