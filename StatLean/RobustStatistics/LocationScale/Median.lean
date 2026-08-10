@@ -36,18 +36,20 @@ noncomputable def sampleMedian (x : Fin n → ℝ) : ℝ :=
 /-- Unfolding lemma for nonempty samples. -/
 theorem sampleMedian_eq_orderStat (hn : n ≠ 0) (x : Fin n → ℝ) :
     sampleMedian x = orderStat x ⟨(n - 1) / 2, by omega⟩ := by
-  sorry
+  rw [sampleMedian, dif_neg hn]
 
 /-- For odd `n = 2k+1` the median is the `(k+1)`-th smallest observation (index `k`,
 `0`-indexed). -/
 theorem sampleMedian_odd {k : ℕ} (hn : n = 2 * k + 1) (x : Fin n → ℝ) :
     sampleMedian x = orderStat x ⟨k, by omega⟩ := by
-  sorry
+  rw [sampleMedian_eq_orderStat (by omega)]
+  exact congrArg (orderStat x) (Fin.ext (show (n - 1) / 2 = k by omega))
 
 /-- The median is one of the data values. -/
 theorem sampleMedian_mem_range (hn : n ≠ 0) (x : Fin n → ℝ) :
     sampleMedian x ∈ Set.range x := by
-  sorry
+  rw [sampleMedian_eq_orderStat hn]
+  exact orderStat_mem_range x _
 
 /-! ### Counting characterizations (`MMY §2.3.1`, eq. (2.21) context) -/
 
@@ -55,16 +57,34 @@ theorem sampleMedian_mem_range (hn : n ≠ 0) (x : Fin n → ℝ) :
 are `≤` the median. -/
 theorem card_le_sampleMedian (hn : n ≠ 0) (x : Fin n → ℝ) :
     (n - 1) / 2 + 1 ≤ (univ.filter fun j => x j ≤ sampleMedian x).card := by
-  sorry
+  rw [sampleMedian_eq_orderStat hn]
+  exact card_le_orderStat_le x ⟨(n - 1) / 2, by omega⟩
 
 /-- At least half the observations are `≥` the median. -/
 theorem card_sampleMedian_le (hn : n ≠ 0) (x : Fin n → ℝ) :
     n - (n - 1) / 2 ≤ (univ.filter fun j => sampleMedian x ≤ x j).card := by
-  sorry
+  rw [sampleMedian_eq_orderStat hn]
+  exact card_orderStat_le x ⟨(n - 1) / 2, by omega⟩
 
 /-! ### Equivariance -/
 
-/-- **The sample median is location equivariant** (`MMY §2.3.1`). -/
+/-- The sample median is location equivariant on **nonempty** samples: this is the honest
+content of `sampleMedian_locEquivariant` (see the falsity note there). -/
+private theorem sampleMedian_locEquivariant_of_ne_zero (hn : n ≠ 0) :
+    PointEstimation.IsLocEquivariant (sampleMedian (n := n)) := by
+  intro a x
+  have hx : (x + a • (1 : Fin n → ℝ)) = fun j => x j + a := by
+    funext j; simp
+  rw [hx, sampleMedian_eq_orderStat hn, sampleMedian_eq_orderStat hn, orderStat_add_const]
+
+/-- **The sample median is location equivariant** (`MMY §2.3.1`).
+
+**FALSE AS FROZEN at `n = 0`.** The statement quantifies over all `n : ℕ` with no
+nonemptiness hypothesis, but `sampleMedian` carries the junk value `0` on `Fin 0 → ℝ`, so
+`IsLocEquivariant` demands `0 = 0 + a` for every `a : ℝ` — take `a = 1`. The intended
+theorem is `sampleMedian_locEquivariant_of_ne_zero` (proved, just above): with `hn : n ≠ 0`
+the proof is `orderStat_add_const` after `x + a • 1 = fun j => x j + a`. Repair: add
+`(hn : n ≠ 0)` to the frozen statement. -/
 theorem sampleMedian_locEquivariant :
     PointEstimation.IsLocEquivariant (sampleMedian (n := n)) := by
   sorry
@@ -72,7 +92,10 @@ theorem sampleMedian_locEquivariant :
 /-- For nonnegative scalars the median is scale equivariant (any `n`). -/
 theorem sampleMedian_const_mul_of_nonneg {c : ℝ} (hc : 0 ≤ c) (x : Fin n → ℝ) :
     sampleMedian (fun i => c * x i) = c * sampleMedian x := by
-  sorry
+  by_cases hn : n = 0
+  · subst hn; simp [sampleMedian]
+  · rw [sampleMedian_eq_orderStat hn, sampleMedian_eq_orderStat hn,
+      orderStat_const_mul_of_nonneg x hc]
 
 /-- **For odd `n` the median is fully scale equivariant**, `Med(cx) = c·Med(x)` for every
 `c : ℝ` (`MMY §2.3.1`): negation reverses the order statistics, and for odd `n` the middle
@@ -80,11 +103,27 @@ index is a fixed point of the reversal. -/
 theorem sampleMedian_const_mul_of_odd {k : ℕ} (hn : n = 2 * k + 1) (c : ℝ)
     (x : Fin n → ℝ) :
     sampleMedian (fun i => c * x i) = c * sampleMedian x := by
-  sorry
+  by_cases hc : 0 ≤ c
+  · exact sampleMedian_const_mul_of_nonneg hc x
+  replace hc : c < 0 := not_le.mp hc
+  -- The middle index of an odd-length sample is fixed by the index reversal `Fin.rev`.
+  have hmid : ∀ h : k < n, (⟨k, h⟩ : Fin n).rev = ⟨k, h⟩ := by
+    intro h
+    refine Fin.ext ?_
+    rw [Fin.val_rev]
+    change n - (k + 1) = k
+    omega
+  obtain ⟨w, hw⟩ : ∃ w : Fin n → ℝ, w = fun i => (-c) * x i := ⟨_, rfl⟩
+  have hcw : (fun i => c * x i) = fun j => -w j := by
+    funext i; rw [hw]; ring
+  rw [sampleMedian_odd hn, sampleMedian_odd hn, hcw, orderStat_neg w, hmid, hw,
+    orderStat_const_mul_of_nonneg x (by linarith : (0:ℝ) ≤ -c)]
+  ring
 
 /-- Median of a constant sample. -/
 theorem sampleMedian_const (hn : n ≠ 0) (a : ℝ) :
     sampleMedian (fun _ : Fin n => a) = a := by
-  sorry
+  rw [sampleMedian_eq_orderStat hn]
+  rfl
 
 end StatLean.RobustStatistics
