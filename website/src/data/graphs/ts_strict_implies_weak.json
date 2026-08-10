@@ -1,0 +1,40 @@
+{
+  "root": "StatLean.TimeSeries.IsStrictlyStationary.isStationary",
+  "nodes": [
+    {"id":"StatLean.TimeSeries.IsStrictlyStationary.isStationary","label":"isStationary","full":"StatLean.TimeSeries.IsStrictlyStationary.isStationary","kind":"root","decl":"thm","module":"StatLean.TimeSeries.Process.Stationary"},
+    {"id":"StatLean.TimeSeries.IsStrictlyStationary","label":"IsStrictlyStationary","full":"StatLean.TimeSeries.IsStrictlyStationary","kind":"repo","decl":"def","module":"StatLean.TimeSeries.Process.Defs"},
+    {"id":"StatLean.TimeSeries.IsStationary","label":"IsStationary","full":"StatLean.TimeSeries.IsStationary","kind":"repo","decl":"def","module":"StatLean.TimeSeries.Process.Defs"},
+    {"id":"StatLean.TimeSeries.IsStrictlyStationary.identDistrib","label":"identDistrib","full":"StatLean.TimeSeries.IsStrictlyStationary.identDistrib","kind":"repo","decl":"thm","module":"StatLean.TimeSeries.Process.Stationary"},
+    {"id":"ProbabilityTheory.IdentDistrib.memLp_snd","label":"memLp_snd","full":"ProbabilityTheory.IdentDistrib.memLp_snd","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.IdentDistrib"},
+    {"id":"Real.borelSpace","label":"borelSpace","full":"Real.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"StatLean.TimeSeries.IsStationary.mk","label":"mk","full":"StatLean.TimeSeries.IsStationary.mk","kind":"repo","decl":"def","module":"StatLean.TimeSeries.Process.Defs"},
+    {"id":"ProbabilityTheory.IdentDistrib.integral_eq","label":"integral_eq","full":"ProbabilityTheory.IdentDistrib.integral_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.IdentDistrib"},
+    {"id":"add_comm","label":"add_comm","full":"add_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"Matrix.cons_val_fin_one","label":"cons_val_fin_one","full":"Matrix.cons_val_fin_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fin.VecNotation"},
+    {"id":"zero_add","label":"zero_add","full":"zero_add","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"ProbabilityTheory.covariance_eq_sub","label":"covariance_eq_sub","full":"ProbabilityTheory.covariance_eq_sub","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.Covariance"},
+    {"id":"measurable_pi_apply","label":"measurable_pi_apply","full":"measurable_pi_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
+    {"id":"measurable_pi_lambda","label":"measurable_pi_lambda","full":"measurable_pi_lambda","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
+    {"id":"MeasureTheory.Measure.map_map","label":"map_map","full":"MeasureTheory.Measure.map_map","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Map"},
+    {"id":"Measurable.aemeasurable","label":"aemeasurable","full":"Measurable.aemeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"}
+  ],
+  "edges": [
+    {"source":"StatLean.TimeSeries.IsStrictlyStationary.isStationary","target":"StatLean.TimeSeries.IsStrictlyStationary"},
+    {"source":"StatLean.TimeSeries.IsStrictlyStationary.isStationary","target":"StatLean.TimeSeries.IsStationary"},
+    {"source":"StatLean.TimeSeries.IsStrictlyStationary.isStationary","target":"StatLean.TimeSeries.IsStrictlyStationary.identDistrib"},
+    {"source":"StatLean.TimeSeries.IsStrictlyStationary.isStationary","target":"ProbabilityTheory.IdentDistrib.memLp_snd"},
+    {"source":"StatLean.TimeSeries.IsStrictlyStationary.isStationary","target":"Real.borelSpace"},
+    {"source":"StatLean.TimeSeries.IsStrictlyStationary.isStationary","target":"StatLean.TimeSeries.IsStationary.mk"},
+    {"source":"StatLean.TimeSeries.IsStrictlyStationary.isStationary","target":"ProbabilityTheory.IdentDistrib.integral_eq"},
+    {"source":"StatLean.TimeSeries.IsStrictlyStationary.isStationary","target":"add_comm"},
+    {"source":"StatLean.TimeSeries.IsStrictlyStationary.isStationary","target":"Matrix.cons_val_fin_one"},
+    {"source":"StatLean.TimeSeries.IsStrictlyStationary.isStationary","target":"zero_add"},
+    {"source":"StatLean.TimeSeries.IsStrictlyStationary.isStationary","target":"ProbabilityTheory.covariance_eq_sub"},
+    {"source":"StatLean.TimeSeries.IsStrictlyStationary.identDistrib","target":"StatLean.TimeSeries.IsStrictlyStationary"},
+    {"source":"StatLean.TimeSeries.IsStrictlyStationary.identDistrib","target":"measurable_pi_apply"},
+    {"source":"StatLean.TimeSeries.IsStrictlyStationary.identDistrib","target":"measurable_pi_lambda"},
+    {"source":"StatLean.TimeSeries.IsStrictlyStationary.identDistrib","target":"MeasureTheory.Measure.map_map"},
+    {"source":"StatLean.TimeSeries.IsStrictlyStationary.identDistrib","target":"Measurable.aemeasurable"},
+    {"source":"StatLean.TimeSeries.IsStationary.mk","target":"StatLean.TimeSeries.IsStationary"}
+  ]
+}

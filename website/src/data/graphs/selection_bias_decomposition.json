@@ -1,0 +1,22 @@
+{
+  "root": "StatLean.CausalInference.primaFacie_eq_att_add_selectionBias",
+  "nodes": [
+    {"id":"StatLean.CausalInference.primaFacie_eq_att_add_selectionBias","label":"primaFacie_eq_att_add_selectionBias","full":"StatLean.CausalInference.primaFacie_eq_att_add_selectionBias","kind":"root","decl":"thm","module":"StatLean.CausalInference.Observational.SelectionBias"},
+    {"id":"StatLean.CausalInference.primaFacie","label":"primaFacie","full":"StatLean.CausalInference.primaFacie","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.PopulationDefs"},
+    {"id":"StatLean.CausalInference.obs","label":"obs","full":"StatLean.CausalInference.obs","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.PopulationDefs"},
+    {"id":"StatLean.CausalInference.att","label":"att","full":"StatLean.CausalInference.att","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.PopulationDefs"},
+    {"id":"StatLean.CausalInference.treatedEvent","label":"treatedEvent","full":"StatLean.CausalInference.treatedEvent","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.PopulationDefs"},
+    {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
+    {"id":"MeasureTheory.integral_sub","label":"integral_sub","full":"MeasureTheory.integral_sub","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.CausalInference.primaFacie_eq_att_add_selectionBias","target":"StatLean.CausalInference.primaFacie"},
+    {"source":"StatLean.CausalInference.primaFacie_eq_att_add_selectionBias","target":"StatLean.CausalInference.obs"},
+    {"source":"StatLean.CausalInference.primaFacie_eq_att_add_selectionBias","target":"StatLean.CausalInference.att"},
+    {"source":"StatLean.CausalInference.primaFacie_eq_att_add_selectionBias","target":"StatLean.CausalInference.treatedEvent"},
+    {"source":"StatLean.CausalInference.primaFacie_eq_att_add_selectionBias","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
+    {"source":"StatLean.CausalInference.primaFacie_eq_att_add_selectionBias","target":"MeasureTheory.integral_sub"},
+    {"source":"StatLean.CausalInference.primaFacie","target":"StatLean.CausalInference.treatedEvent"},
+    {"source":"StatLean.CausalInference.att","target":"StatLean.CausalInference.treatedEvent"}
+  ]
+}

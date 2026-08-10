@@ -1,0 +1,9 @@
+{
+  "root": "StatLean.CausalInference.ScienceTable",
+  "nodes": [
+    {"id":"StatLean.CausalInference.ScienceTable","label":"ScienceTable","full":"StatLean.CausalInference.ScienceTable","kind":"root","decl":"def","module":"StatLean.CausalInference.Core.FiniteDefs"}
+  ],
+  "edges": [
+
+  ]
+}

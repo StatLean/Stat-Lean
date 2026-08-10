@@ -1,0 +1,39 @@
+{
+  "root": "StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation",
+  "nodes": [
+    {"id":"StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation","label":"risk_le_bestRisk_add_of_isERM_of_uniformDeviation","full":"StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation","kind":"root","decl":"thm","module":"StatLean.StatisticalLearning.Core.ERM"},
+    {"id":"StatLean.StatisticalLearning.Sample","label":"Sample","full":"StatLean.StatisticalLearning.Sample","kind":"repo","decl":"def","module":"StatLean.StatisticalLearning.Core.Defs"},
+    {"id":"StatLean.StatisticalLearning.UniformDeviationLE","label":"UniformDeviationLE","full":"StatLean.StatisticalLearning.UniformDeviationLE","kind":"repo","decl":"def","module":"StatLean.StatisticalLearning.Core.Defs"},
+    {"id":"StatLean.StatisticalLearning.IsERM","label":"IsERM","full":"StatLean.StatisticalLearning.IsERM","kind":"repo","decl":"def","module":"StatLean.StatisticalLearning.Core.Defs"},
+    {"id":"StatLean.StatisticalLearning.risk","label":"risk","full":"StatLean.StatisticalLearning.risk","kind":"repo","decl":"def","module":"StatLean.StatisticalLearning.Core.Defs"},
+    {"id":"StatLean.StatisticalLearning.bestRisk","label":"bestRisk","full":"StatLean.StatisticalLearning.bestRisk","kind":"repo","decl":"def","module":"StatLean.StatisticalLearning.Core.Defs"},
+    {"id":"le_csInf","label":"le_csInf","full":"le_csInf","kind":"mathlib","decl":"thm","module":"Mathlib.Order.ConditionallyCompleteLattice.Basic"},
+    {"id":"StatLean.StatisticalLearning.empRisk","label":"empRisk","full":"StatLean.StatisticalLearning.empRisk","kind":"repo","decl":"def","module":"StatLean.StatisticalLearning.Core.Defs"},
+    {"id":"abs_sub_le_iff","label":"abs_sub_le_iff","full":"abs_sub_le_iff","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Abs"},
+    {"id":"le_of_not_gt","label":"le_of_not_gt","full":"le_of_not_gt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
+    {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
+    {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
+    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation","target":"StatLean.StatisticalLearning.Sample"},
+    {"source":"StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation","target":"StatLean.StatisticalLearning.UniformDeviationLE"},
+    {"source":"StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation","target":"StatLean.StatisticalLearning.IsERM"},
+    {"source":"StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation","target":"StatLean.StatisticalLearning.risk"},
+    {"source":"StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation","target":"StatLean.StatisticalLearning.bestRisk"},
+    {"source":"StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation","target":"le_csInf"},
+    {"source":"StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation","target":"StatLean.StatisticalLearning.empRisk"},
+    {"source":"StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation","target":"abs_sub_le_iff"},
+    {"source":"StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation","target":"le_of_not_gt"},
+    {"source":"StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation","target":"Nat.cast_one"},
+    {"source":"StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation","target":"Nat.cast_zero"},
+    {"source":"StatLean.StatisticalLearning.risk_le_bestRisk_add_of_isERM_of_uniformDeviation","target":"RCLike.charZero_rclike"},
+    {"source":"StatLean.StatisticalLearning.UniformDeviationLE","target":"StatLean.StatisticalLearning.Sample"},
+    {"source":"StatLean.StatisticalLearning.UniformDeviationLE","target":"StatLean.StatisticalLearning.empRisk"},
+    {"source":"StatLean.StatisticalLearning.UniformDeviationLE","target":"StatLean.StatisticalLearning.risk"},
+    {"source":"StatLean.StatisticalLearning.IsERM","target":"StatLean.StatisticalLearning.Sample"},
+    {"source":"StatLean.StatisticalLearning.IsERM","target":"StatLean.StatisticalLearning.empRisk"},
+    {"source":"StatLean.StatisticalLearning.bestRisk","target":"StatLean.StatisticalLearning.risk"},
+    {"source":"StatLean.StatisticalLearning.empRisk","target":"StatLean.StatisticalLearning.Sample"}
+  ]
+}

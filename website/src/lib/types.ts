@@ -11,7 +11,11 @@ export type CategoryId =
   | "bayesian"
   | "nonparametric"
   | "statisticalmodels"
-  | "probability";
+  | "probability"
+  | "timeseries"
+  | "causal"
+  | "statlearning"
+  | "expdesign";
 
 export type ResultKind = "definition" | "theorem" | "lemma" | "proposition" | "corollary" | "equation";
 

@@ -1,0 +1,33 @@
+{
+  "root": "StatLean.StatisticalLearning.radComplexity",
+  "nodes": [
+    {"id":"StatLean.StatisticalLearning.radComplexity","label":"radComplexity","full":"StatLean.StatisticalLearning.radComplexity","kind":"root","decl":"def","module":"StatLean.StatisticalLearning.Rademacher.Defs"},
+    {"id":"Set","label":"Set","full":"Set","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"StatLean.StatisticalLearning.signAvg","label":"signAvg","full":"StatLean.StatisticalLearning.signAvg","kind":"repo","decl":"def","module":"StatLean.StatisticalLearning.Rademacher.Defs"},
+    {"id":"Set.image","label":"image","full":"Set.image","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"Finset.sum","label":"sum","full":"Finset.sum","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.BigOperators.Group.Finset.Defs"},
+    {"id":"Finset.univ","label":"univ","full":"Finset.univ","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
+    {"id":"Fin.fintype","label":"fintype","full":"Fin.fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Basic"},
+    {"id":"Monoid.toPow","label":"toPow","full":"Monoid.toPow","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"Bool.fintype","label":"fintype","full":"Bool.fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
+    {"id":"StatLean.StatisticalLearning.signOf","label":"signOf","full":"StatLean.StatisticalLearning.signOf","kind":"repo","decl":"def","module":"StatLean.StatisticalLearning.Rademacher.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalLearning.radComplexity","target":"Set"},
+    {"source":"StatLean.StatisticalLearning.radComplexity","target":"Real"},
+    {"source":"StatLean.StatisticalLearning.radComplexity","target":"StatLean.StatisticalLearning.signAvg"},
+    {"source":"StatLean.StatisticalLearning.radComplexity","target":"Set.image"},
+    {"source":"StatLean.StatisticalLearning.radComplexity","target":"Finset.sum"},
+    {"source":"StatLean.StatisticalLearning.radComplexity","target":"Finset.univ"},
+    {"source":"StatLean.StatisticalLearning.radComplexity","target":"Fin.fintype"},
+    {"source":"StatLean.StatisticalLearning.signAvg","target":"Real"},
+    {"source":"StatLean.StatisticalLearning.signAvg","target":"Monoid.toPow"},
+    {"source":"StatLean.StatisticalLearning.signAvg","target":"Finset.sum"},
+    {"source":"StatLean.StatisticalLearning.signAvg","target":"Finset.univ"},
+    {"source":"StatLean.StatisticalLearning.signAvg","target":"Fin.fintype"},
+    {"source":"StatLean.StatisticalLearning.signAvg","target":"Bool.fintype"},
+    {"source":"StatLean.StatisticalLearning.signAvg","target":"StatLean.StatisticalLearning.signOf"},
+    {"source":"StatLean.StatisticalLearning.signOf","target":"Real"}
+  ]
+}

@@ -99,6 +99,34 @@ export const CATEGORIES: CategoryMeta[] = [
     blurb:
       "Standard theorems — Prékopa–Leindler, Anderson's lemma, Le Cam's first and third lemmas, the multivariate CLT, Cramér–Wold, Slutsky, Pólya's theorem and Halmos–Savage — formalized as infrastructure.",
   },
+  {
+    id: "timeseries",
+    name: "Time Series",
+    tagline: "Spectra, mixing & nonlinear models",
+    blurb:
+      "Stationarity and autocovariance, the Herglotz representation and spectral density, linear filters and ARMA, strong-mixing coefficients and their limit theorems, and the ARCH, GARCH and volatility models.",
+  },
+  {
+    id: "causal",
+    name: "Causal Inference",
+    tagline: "Potential outcomes, IV & double robustness",
+    blurb:
+      "Potential outcomes and estimands, randomized experiments and Neyman inference, identification by adjustment and matching, augmented inverse-probability weighting and double robustness, and instrumental variables.",
+  },
+  {
+    id: "statlearning",
+    name: "Statistical Learning",
+    tagline: "PAC learning, VC dimension & Rademacher",
+    blurb:
+      "Empirical risk minimization and uniform convergence, PAC and agnostic learnability of finite classes, VC dimension and growth functions, Rademacher complexity and symmetrization, stability and PAC-Bayes bounds.",
+  },
+  {
+    id: "expdesign",
+    name: "Experimental Design",
+    tagline: "Randomization, ANOVA & survey sampling",
+    blurb:
+      "Randomization and sampling designs as distributions over allocations, completely randomized and blocked experiments, the analysis-of-variance identity, factorial characters, and Horvitz-Thompson estimation.",
+  },
 ];
 
 export const CATEGORY_BY_ID: Record<CategoryId, CategoryMeta> = Object.fromEntries(

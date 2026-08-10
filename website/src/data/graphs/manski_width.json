@@ -1,0 +1,36 @@
+{
+  "root": "StatLean.CausalInference.manski_width",
+  "nodes": [
+    {"id":"StatLean.CausalInference.manski_width","label":"manski_width","full":"StatLean.CausalInference.manski_width","kind":"root","decl":"thm","module":"StatLean.CausalInference.Sensitivity.ManskiBounds"},
+    {"id":"StatLean.CausalInference.manskiUpperATE","label":"manskiUpperATE","full":"StatLean.CausalInference.manskiUpperATE","kind":"repo","decl":"def","module":"StatLean.CausalInference.Sensitivity.ManskiBounds"},
+    {"id":"StatLean.CausalInference.manskiLowerATE","label":"manskiLowerATE","full":"StatLean.CausalInference.manskiLowerATE","kind":"repo","decl":"def","module":"StatLean.CausalInference.Sensitivity.ManskiBounds"},
+    {"id":"StatLean.CausalInference.treatedEvent","label":"treatedEvent","full":"StatLean.CausalInference.treatedEvent","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.PopulationDefs"},
+    {"id":"contravariant_swap_add_of_contravariant_add","label":"contravariant_swap_add_of_contravariant_add","full":"contravariant_swap_add_of_contravariant_add","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Defs"},
+    {"id":"IsLeftCancelAdd.addLeftReflectLE_of_addLeftReflectLT","label":"addLeftReflectLE_of_addLeftReflectLT","full":"IsLeftCancelAdd.addLeftReflectLE_of_addLeftReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Defs"},
+    {"id":"IsOrderedCancelAddMonoid.toAddLeftReflectLE","label":"toAddLeftReflectLE","full":"IsOrderedCancelAddMonoid.toAddLeftReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
+    {"id":"contravariant_lt_of_covariant_le","label":"contravariant_lt_of_covariant_le","full":"contravariant_lt_of_covariant_le","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Defs"},
+    {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
+    {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
+    {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
+    {"id":"StatLean.CausalInference.manskiUpperY1","label":"manskiUpperY1","full":"StatLean.CausalInference.manskiUpperY1","kind":"repo","decl":"def","module":"StatLean.CausalInference.Sensitivity.ManskiBounds"},
+    {"id":"StatLean.CausalInference.manskiLowerY1","label":"manskiLowerY1","full":"StatLean.CausalInference.manskiLowerY1","kind":"repo","decl":"def","module":"StatLean.CausalInference.Sensitivity.ManskiBounds"}
+  ],
+  "edges": [
+    {"source":"StatLean.CausalInference.manski_width","target":"StatLean.CausalInference.manskiUpperATE"},
+    {"source":"StatLean.CausalInference.manski_width","target":"StatLean.CausalInference.manskiLowerATE"},
+    {"source":"StatLean.CausalInference.manski_width","target":"StatLean.CausalInference.treatedEvent"},
+    {"source":"StatLean.CausalInference.manski_width","target":"contravariant_swap_add_of_contravariant_add"},
+    {"source":"StatLean.CausalInference.manski_width","target":"IsLeftCancelAdd.addLeftReflectLE_of_addLeftReflectLT"},
+    {"source":"StatLean.CausalInference.manski_width","target":"IsOrderedCancelAddMonoid.toAddLeftReflectLE"},
+    {"source":"StatLean.CausalInference.manski_width","target":"contravariant_lt_of_covariant_le"},
+    {"source":"StatLean.CausalInference.manski_width","target":"IsOrderedAddMonoid.toAddLeftMono"},
+    {"source":"StatLean.CausalInference.manski_width","target":"Nat.cast_one"},
+    {"source":"StatLean.CausalInference.manski_width","target":"Nat.cast_zero"},
+    {"source":"StatLean.CausalInference.manskiUpperATE","target":"StatLean.CausalInference.manskiUpperY1"},
+    {"source":"StatLean.CausalInference.manskiUpperATE","target":"StatLean.CausalInference.treatedEvent"},
+    {"source":"StatLean.CausalInference.manskiLowerATE","target":"StatLean.CausalInference.manskiLowerY1"},
+    {"source":"StatLean.CausalInference.manskiLowerATE","target":"StatLean.CausalInference.treatedEvent"},
+    {"source":"StatLean.CausalInference.manskiUpperY1","target":"StatLean.CausalInference.treatedEvent"},
+    {"source":"StatLean.CausalInference.manskiLowerY1","target":"StatLean.CausalInference.treatedEvent"}
+  ]
+}

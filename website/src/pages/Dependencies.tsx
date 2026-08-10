@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import cytoscape from "cytoscape";
-import fcose from "cytoscape-fcose";
 import { getGlobalGraph } from "../lib/globalGraph";
 import { RESULTS } from "../lib/data";
 import { CATEGORIES } from "../lib/categories";
@@ -16,11 +15,38 @@ import {
 } from "../lib/graphArea";
 import { triplet, rgb, rgba, areaTriplets } from "../lib/cyStyle";
 import { docUrlForNode } from "../lib/site";
+import layoutData from "../data/layout.json";
 import type { CategoryId } from "../lib/types";
 
-cytoscape.use(fcose);
 
 const FULL_TO_ID = new Map(RESULTS.map((r) => [r.fullName, r.id]));
+
+/**
+ * Node positions precomputed by `scripts/precompute-layout.mjs`, which runs the
+ * same seeded fcose recipe this page used to run in the browser (~2.8 s for the
+ * default view, minutes with Mathlib shown). Applying them with a `preset`
+ * layout is instant; the drift animation below still gives the graph its motion.
+ */
+const PRESET = (layoutData as unknown as {
+  positions: Record<string, [number, number]>;
+}).positions;
+
+/** Stable fallback for a node added since the last precompute run. */
+function fallbackPos(id: string): { x: number; y: number } {
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  const a = ((h >>> 0) % 3600) / 3600 * Math.PI * 2;
+  const r = 400 + (((h >>> 8) >>> 0) % 700);
+  return { x: Math.cos(a) * r, y: Math.sin(a) * r };
+}
+
+function posOf(id: string): { x: number; y: number } {
+  const p = PRESET[id];
+  return p ? { x: p[0], y: p[1] } : fallbackPos(id);
+}
 
 type DeclFilter = "thm" | "def";
 
@@ -201,32 +227,20 @@ export function Dependencies() {
       drift.active = true;
     };
 
-    // explode-from-center + organic settle, then hand off to the drift loop
+    // Apply the precomputed positions and hand straight off to the drift loop.
+    // No layout runs in the browser: the arrangement is the seeded build-time
+    // fcose result, so this is the same picture the old in-page layout produced,
+    // minus the seconds (or minutes) of blocked main thread.
     const runLayout = (eles: cytoscape.Collection) => {
       drift.active = false;
-      eles.nodes().positions(() => ({
-        x: (Math.random() - 0.5) * 40,
-        y: (Math.random() - 0.5) * 40,
-      }));
-      const l = eles.layout({
-        name: "fcose",
-        quality: "default",
-        animate: true,
-        animationDuration: 1100,
-        animationEasing: "ease-out-cubic",
-        randomize: false, // start from the central cluster → explode outward
-        fit: true,
-        padding: 50,
-        packComponents: false,
-        nodeSeparation: 60,
-        idealEdgeLength: 42,
-        nodeRepulsion: 7000,
-        gravity: 0.4,
-        gravityRange: 3,
-        numIter: 600,
-      } as any);
-      l.one("layoutstop", startDrift);
-      l.run();
+      const nodes = eles.nodes();
+      cy.batch(() => {
+        nodes.positions((n: cytoscape.NodeSingular) => posOf(n.id()));
+      });
+      cy.animate(
+        { fit: { eles: nodes, padding: 50 } },
+        { duration: 420, easing: "ease-out-cubic", complete: startDrift },
+      );
     };
     runLayoutRef.current = runLayout;
     tick(); // the filter effect (runs on mount too) performs the initial layout

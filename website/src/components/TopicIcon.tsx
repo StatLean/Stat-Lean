@@ -145,6 +145,53 @@ export function TopicIcon({
           <circle cx="30" cy="18.5" r="2.5" fill="currentColor" stroke="none" />
         </svg>
       );
+    case "timeseries":
+      // A sampled path with a marked lag (autocovariance / spectrum)
+      return (
+        <svg {...common}>
+          <path d="M5 38h38" />
+          <path d="M6 30c3-8 5 6 8-2s5 10 8 1 5 7 8-3 5 5 7 1" opacity={0.85} />
+          <path d="M16 38v4M32 38v4" opacity={0.6} />
+          <path d="M16 42h16" strokeDasharray="2 3" opacity={0.7} />
+        </svg>
+      );
+    case "causal":
+      // Treatment → outcome with a confounder arrow (a DAG)
+      return (
+        <svg {...common}>
+          <circle cx="11" cy="34" r="4" />
+          <circle cx="37" cy="34" r="4" />
+          <circle cx="24" cy="12" r="4" />
+          <path d="M15 34h18" />
+          <path d="M21 15 14 30" opacity={0.7} />
+          <path d="M27 15 34 30" opacity={0.7} />
+        </svg>
+      );
+    case "statlearning":
+      // A separating boundary between two point clouds (classification)
+      return (
+        <svg {...common}>
+          <path d="M8 40 40 8" />
+          <circle cx="15" cy="16" r="2.4" opacity={0.85} />
+          <circle cx="23" cy="12" r="2.4" opacity={0.85} />
+          <circle cx="14" cy="25" r="2.4" opacity={0.85} />
+          <path d="M31 33h4M33 31v4" opacity={0.85} />
+          <path d="M22 38h4M24 36v4" opacity={0.85} />
+          <path d="M34 23h4M36 21v4" opacity={0.85} />
+        </svg>
+      );
+    case "expdesign":
+      // A blocked design grid with randomized allocation marks
+      return (
+        <svg {...common}>
+          <rect x="7" y="10" width="34" height="28" rx="2" />
+          <path d="M18 10v28M29 10v28M7 19h34M7 29h34" opacity={0.5} />
+          <circle cx="12.5" cy="14.5" r="1.8" opacity={0.9} />
+          <circle cx="23.5" cy="24" r="1.8" opacity={0.9} />
+          <circle cx="34.5" cy="33.5" r="1.8" opacity={0.9} />
+          <circle cx="34.5" cy="14.5" r="1.8" opacity={0.9} />
+        </svg>
+      );
     default:
       // Never render an empty card: fall back to a neutral mark for any new topic.
       return (

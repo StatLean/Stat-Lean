@@ -1,0 +1,27 @@
+{
+  "root": "StatLean.ExperimentalDesign.populationVariance",
+  "nodes": [
+    {"id":"StatLean.ExperimentalDesign.populationVariance","label":"populationVariance","full":"StatLean.ExperimentalDesign.populationVariance","kind":"root","decl":"def","module":"StatLean.ExperimentalDesign.Core.FinitePopulation"},
+    {"id":"Fintype","label":"Fintype","full":"Fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Fintype.card","label":"card","full":"Fintype.card","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Card"},
+    {"id":"Finset.sum","label":"sum","full":"Finset.sum","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.BigOperators.Group.Finset.Defs"},
+    {"id":"Finset.univ","label":"univ","full":"Finset.univ","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
+    {"id":"Monoid.toPow","label":"toPow","full":"Monoid.toPow","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"StatLean.ExperimentalDesign.populationMean","label":"populationMean","full":"StatLean.ExperimentalDesign.populationMean","kind":"repo","decl":"def","module":"StatLean.ExperimentalDesign.Core.FinitePopulation"}
+  ],
+  "edges": [
+    {"source":"StatLean.ExperimentalDesign.populationVariance","target":"Fintype"},
+    {"source":"StatLean.ExperimentalDesign.populationVariance","target":"Real"},
+    {"source":"StatLean.ExperimentalDesign.populationVariance","target":"Fintype.card"},
+    {"source":"StatLean.ExperimentalDesign.populationVariance","target":"Finset.sum"},
+    {"source":"StatLean.ExperimentalDesign.populationVariance","target":"Finset.univ"},
+    {"source":"StatLean.ExperimentalDesign.populationVariance","target":"Monoid.toPow"},
+    {"source":"StatLean.ExperimentalDesign.populationVariance","target":"StatLean.ExperimentalDesign.populationMean"},
+    {"source":"StatLean.ExperimentalDesign.populationMean","target":"Fintype"},
+    {"source":"StatLean.ExperimentalDesign.populationMean","target":"Real"},
+    {"source":"StatLean.ExperimentalDesign.populationMean","target":"Fintype.card"},
+    {"source":"StatLean.ExperimentalDesign.populationMean","target":"Finset.sum"},
+    {"source":"StatLean.ExperimentalDesign.populationMean","target":"Finset.univ"}
+  ]
+}
