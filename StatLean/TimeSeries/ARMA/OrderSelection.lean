@@ -366,7 +366,28 @@ mathematics:
   roots outside the closed disc as `Π(1 − α_k z)` over `ℂ` with `|α_k| < 1`, i.e. the
   complex root multiset plus an elementary-symmetric-function bound. It is a prerequisite
   of step 4 (compactness of `𝓑̄`), so it should be budgeted as its own item rather than as
-  a remark. -/
+  a remark.
+
+**STATUS after wave `ts/f4a-arma-last` (2026-08-09): NOT attempted; the finding-27 route
+stands, with one correction to the previous wave's scoping remark.**
+
+**FINDING 36 (this wave).** The remark above treats the finding-25 boundedness of `𝓑` as a
+prerequisite "budgeted as its own item". It is a prerequisite of *compactness of the
+closure*, which is what step 4 consumes — but the route does **not** need the closure of the
+whole of `𝓑`. `𝓑` is **open** (proved this wave as
+`Diagnostics.exists_ball_invertible`: a ball around an invertible parameter consists of
+invertible parameters, by a uniform Lipschitz bound in the coefficients against
+`min_{|z| ≤ 1}|b(z)| > 0`), so the escape that step 1–2 have to control is the escape to
+`∂𝓑`, and openness plus finding 25's boundedness gives exactly the statement step 4 wants:
+`𝓑̄` is compact and `𝓑` is its interior. Openness was not on any previous residue list and
+is now available; the elementary-symmetric-function bound of finding 25 is still the missing
+half, and it is still unformalized.
+
+Note also what this residue does **not** inherit from wave `ts/f4a-arma-last`'s closure of
+`Diagnostics.residual_acf_transfer_residue`: nothing. That closure is entirely about the
+`√T`-scale behaviour of the *residual* statistic at a fixed true parameter, whereas (U) is
+about the *criterion* at parameters far from the truth. The two share bricks
+(`exists_uniform_geometric_bound_arma`, `exists_armaPi_l1_lipschitz`) but no estimate. -/
 private theorem bic_underfit_residue [IsProbabilityMeasure μ] {p0 q0 : ℕ}
     {b0 : Fin p0 → ℝ} {a0 : Fin q0 → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -462,7 +483,16 @@ recording because it changes which item is the bottleneck:
   `Consistency.continuous_armaPi`), so on a *compact* `K` a measurable selection exists by
   the standard argmin-measurability lemma — but the `iInf` in `armaBICmin` is over the
   open `𝓑`, so this again reduces to residue (U)'s boundary control rather than being
-  independent of it. -/
+  independent of it.
+
+**STATUS after wave `ts/f4a-arma-last` (2026-08-09): NOT attempted; both obstructions
+stand.** One remark on the first (the measurable selection), in the light of finding 36 at
+`bic_underfit_residue`: `𝓑` is now known to be **open** (`Diagnostics.exists_ball_invertible`),
+so the candidate route above — "on a compact `K` a measurable selection exists" — can be run
+on any closed ball inside `𝓑`, and the reduction to (U)'s boundary control is *only* about
+whether the `iInf` over `𝓑` is attained near the boundary, not about whether a selection
+exists at all. That is a genuinely smaller gap than "reduces to residue (U)", but it is
+still a gap: without (U) there is no way to confine the `iInf` to a fixed ball. -/
 private theorem bic_overfit_residue [IsProbabilityMeasure μ] {p0 q0 : ℕ}
     {b0 : Fin p0 → ℝ} {a0 : Fin q0 → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)

@@ -1485,7 +1485,31 @@ the deterministic-analysis half of the sandwich, and this wave sharpens the ledg
   score layer bears on it.
 
 The two are independent of each other and of the orientation repair; neither is blocked
-on a missing analytic theory, both are bounded but substantial formalization. -/
+on a missing analytic theory, both are bounded but substantial formalization.
+
+**STATUS after wave `ts/f4a-arma-last` (2026-08-09): NOT attempted; items (a) and (b)
+stand.** Two entries for the ledger, both produced while closing
+`Diagnostics.residual_acf_transfer_residue` (which is now PROVED) and both bearing on (a):
+
+* the search region of (a)'s uniform half no longer has to be assumed: invertibility is an
+  **open** condition, `Diagnostics.exists_ball_invertible` (`private` there; it is four
+  short lemmas — a uniform Lipschitz bound of `z ↦ b(z)` in the coefficients against the
+  minimum of `|b(z)|` over the closed disc — and should be relocated next to
+  `Consistency.exists_uniform_geometric_bound_arma` when a wave needs it here). This is what
+  lets a `√T`-consistency hypothesis alone produce the compact `K` the `ℓ¹` bricks want; the
+  present statement carries its own `K`, so it does not need this, but the Hessian ULLN's
+  *pointwise* half at a moving `θ̄_T` does;
+* **FINDING 35 (this wave).** The note above says (a)'s missing input is "the `∂π/∂θ`
+  analogue of `Consistency.exists_armaPi_l1_modulus`". For the part of the argument that
+  compares filters at two parameter values, that is **not** what is needed: the `ℓ¹`
+  *Lipschitz* bound `Consistency.exists_armaPi_l1_lipschitz` plus Young's inequality on the
+  triangular convolution (`Diagnostics.sum_sq_truncConv_le`, proved this wave) already
+  converts a parameter difference into an `ℓ²` bound on the *window* of fitted residuals,
+  with no derivative of `π` anywhere. What genuinely needs `∂π/∂θ` is only the *second*
+  derivative filter appearing in `H_T` itself, i.e. the object being averaged — not the
+  modulus that controls its oscillation. A next wave should re-scope item (a) accordingly:
+  the oscillation half is now brick-complete, the missing input is the identification of
+  `∂²/∂θ²` of the residual as a finite combination of shifted linear processes. -/
 private theorem armaMLE_linearization [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -2024,7 +2048,22 @@ matrices are *literally equal* at `q = 0`, so this is the same statement as befo
 re-stated only so that the whole chain speaks about the object the score contracts, and so
 that the repaired `hannanScore_clt` (which now consumes the backward Gram) can be applied
 to it verbatim — as `samplePACF_clt` below in fact does, unchanged. The residue is
-unchanged: the three delta-method items above. -/
+unchanged: the three delta-method items above.
+
+**STATUS after wave `ts/f4a-arma-last` (2026-08-09): NOT attempted; the three delta-method
+items stand, and one of them is now cheaper than the note suggests.** The wave closed
+`Diagnostics.residual_acf_transfer_residue`, whose machinery covers the *first* half of
+item 1's "propagating the derivative through the exact AR(k) recursion": the passage from a
+perturbation of the filter to a perturbation of the sample autocovariance is now a named
+deterministic brick (`Diagnostics.abs_sampleACVF_sub_le`, an `ℓ²`-modulus bound on
+`|γ̂_y(k) − γ̂_z(k)|`, together with Young's inequality
+`Diagnostics.sum_sq_truncConv_le` for the triangular convolution). Both are `private` to
+`ARMA/Diagnostics.lean` and would have to be relocated — they use nothing from that file.
+
+What that does **not** touch, and what remains the substance here, is the Jacobian of
+`γ̂ ↦ (Γ̂_k⁻¹ γ̂_k)_k` (Cramer's rule at the population point) and the reciprocal-variance
+identity `(Γ_k⁻¹)_{kk} = σ⁻²`; the second is pure linear algebra (Schur complement) and is
+the one item of this debt that needs no probability at all. -/
 private theorem samplePACF_linearization [IsProbabilityMeasure μ] {p k : ℕ}
     {b0 : Fin p → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
     (h : IsAR b0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -2352,7 +2391,25 @@ can sharpen from the audit it did of the first:
   and it enters quadratically — so the leg is still `o_p(T^{−1/2})` as claimed, but a proof
   has to discard *three* things, not one: the `X_0` endpoint, the `s = T−1` endpoint, and
   the centring. The same remark applies to any future comparison of `samplePACF` (also
-  `sampleACVF`-based, hence centred) with a normal-equation estimator. -/
+  `sampleACVF`-based, hence centred) with a normal-equation estimator.
+
+**STATUS after wave `ts/f4a-arma-last` (2026-08-09): NOT attempted. Note the two legs are
+now of very different maturity**, which a next wave should exploit rather than treating the
+conjunction as one item:
+
+* the **YW-vs-LS** leg (second conjunct) is independent of `armaMLE_linearization`
+  altogether. Its three discards are exactly the `O_p(1/T)` bookkeeping this wave carried
+  out for the residual-vs-innovation transfer, and the missing input it does *not* share
+  with that transfer is the **invertibility of the sample Gram in probability** — the
+  population Toeplitz `Γ_p` is positive definite, so `Γ̂_p⁻¹ = O_p(1)`, but nothing in the
+  project turns `Γ̂_p →p Γ_p` plus `Γ_p ≻ 0` into a statement about `Γ̂_p⁻¹`. That is the
+  honest cost of the second conjunct and it is a self-contained item;
+* the **YW-vs-MLE** leg is still blocked on `armaMLE_linearization` items (a) and (b), for
+  which see finding 35 recorded there.
+
+A wave that wants partial credit here should prove the second conjunct first: it closes
+half of the statement over one new brick, whereas the first conjunct closes over the whole
+of the Hannan sandwich. -/
 theorem ls_yw_mle_equivalent_debt [IsProbabilityMeasure μ] {p : ℕ}
     {b0 : Fin p → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsAR b0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)

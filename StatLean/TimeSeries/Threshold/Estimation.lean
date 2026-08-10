@@ -1250,7 +1250,20 @@ Of the four bullets above, bullets 2–4 remain, and this wave sharpens one of t
 regime-restricted LLN must deliver `T_i⁻¹ Ŝ_i →p Σ_i` for the **centered** `Ŝ_i`, i.e. it
 must also cover the sample regime mean `z̄_i` — a second indicator-weighted LLN (for
 `T_i⁻¹ Σ_{t∈R_i} z_t →p m_i`) plus one Slutsky step, not a single application as the
-bullet suggests. The `√T_i`-versus-`√T` bookkeeping in the last bullet is unaffected. -/
+bullet suggests. The `√T_i`-versus-`√T` bookkeeping in the last bullet is unaffected.
+
+**STATUS after wave `ts/f4a-arma-last` (2026-08-09): NOT attempted; bullets 2–4 stand.**
+One transferable item from that wave, which closed `ARMA/Diagnostics`'s residual-ACF
+transfer: the union-bound/Markov plumbing that turns a *summed `L²`* estimate into a
+`→p 0` statement is now a named brick there (`tendstoInProb_of_le_add`, plus the
+`markov_toReal` pattern), and the last bullet's Slutsky step has exactly that shape. It is
+plumbing, not mathematics, but it is the part of bullet 4 that is otherwise re-derived by
+hand in every lane.
+
+The genuinely missing inputs are unchanged and are both *regime-restricted*: an
+indicator-weighted LLN (twice — for `Ŝ_i` and for `z̄_i`) and the MDS CLT along the regime
+index set. Nothing in the ARMA lane's `f4a` work bears on either, because the ARMA
+estimates are all over the full window with no random index set. -/
 theorem tarLS_clt_debt [IsProbabilityMeasure μ] {k P : ℕ}
     {b0 : Fin k → ℝ} {b : Fin k → Fin P → ℝ} {σ : Fin k → ℝ} {A : Fin k → Set ℝ}
     {d : ℕ} {X ε : ℤ → Ω → ℝ}
