@@ -2,6 +2,7 @@ import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.Probability.Moments.Variance
 import Mathlib.Probability.StrongLaw
 import Mathlib.Probability.ProductMeasure
+import Mathlib.Probability.Independence.InfinitePi
 
 /-!
 # Moments and limits of coordinate averages under product measures
@@ -48,6 +49,27 @@ namespace StatLean.ComputationalStatistics
 variable {𝓧 : Type*} [MeasurableSpace 𝓧] {P : Measure 𝓧} [IsProbabilityMeasure P]
   {n : ℕ} {g : 𝓧 → ℝ}
 
+/-- The coordinate reads of the product law are measure preserving. -/
+private lemma mp_eval (i : Fin n) :
+    MeasurePreserving (fun x : Fin n → 𝓧 => x i) (Measure.pi fun _ : Fin n => P) P :=
+  measurePreserving_eval (fun _ : Fin n => P) i
+
+/-- Each summand of the coordinate average is integrable. -/
+private lemma integrable_eval_pi (i : Fin n) (hg : Integrable g P) :
+    Integrable (fun x : Fin n → 𝓧 => g (x i)) (Measure.pi fun _ : Fin n => P) :=
+  (mp_eval i).integrable_comp_of_integrable hg
+
+/-- Each summand of the coordinate average has the same integral as `g`. -/
+private lemma integral_eval_pi (i : Fin n) (hg : Integrable g P) :
+    ∫ x, g (x i) ∂(Measure.pi fun _ : Fin n => P) = ∫ z, g z ∂P := by
+  have hmp := mp_eval (P := P) i
+  have h1 : AEStronglyMeasurable g
+      ((Measure.pi fun _ : Fin n => P).map fun x : Fin n → 𝓧 => x i) := by
+    rw [hmp.map_eq]; exact hg.aestronglyMeasurable
+  refine .symm ?_
+  conv_lhs => rw [← hmp.map_eq]
+  exact integral_map hmp.measurable.aemeasurable h1
+
 /-- **Unbiasedness of the coordinate average** (ECS §2.2, eq. (2.8)): under the
 i.i.d. product law, the average of `g` over the coordinates integrates to
 `∫ g dP`. -/
@@ -56,7 +78,12 @@ theorem integral_avg_eval_pi [NeZero n]
     (hg : Integrable g P) :
     ∫ x, (n : ℝ)⁻¹ * ∑ i, g (x i) ∂(Measure.pi fun _ : Fin n => P)
       = ∫ z, g z ∂P := by
-  sorry
+  have hn : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
+  rw [integral_const_mul,
+    integral_finset_sum _ fun i _ => integrable_eval_pi i hg]
+  simp only [integral_eval_pi _ hg, Finset.sum_const, Finset.card_univ,
+    Fintype.card_fin, nsmul_eq_mul]
+  field_simp
 
 /-- **Variance of the coordinate average** (ECS §2.2, eq. (2.9) discussion):
 `Var(X̄) = Var_P(g)/n` under the i.i.d. product law. -/
@@ -66,7 +93,16 @@ theorem variance_avg_eval_pi [NeZero n]
     variance (fun x : Fin n → 𝓧 => (n : ℝ)⁻¹ * ∑ i, g (x i))
         (Measure.pi fun _ : Fin n => P)
       = variance g P / n := by
-  sorry
+  have hn : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
+  have hsum := variance_sum_pi (μ := fun _ : Fin n => P) (X := fun _ : Fin n => g)
+    fun _ => hg
+  have hfun : (∑ _i : Fin n, fun x : Fin n → 𝓧 => g (x _i))
+      = fun x : Fin n → 𝓧 => ∑ i, g (x i) := by
+    funext x; simp
+  rw [hfun] at hsum
+  rw [variance_const_mul, hsum]
+  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  field_simp
 
 /-- **Mean-squared error of the coordinate average** (ECS §2.2): since the
 average is unbiased, its mean-squared deviation from `∫ g dP` is `Var_P(g)/n`. -/
@@ -76,7 +112,15 @@ theorem integral_sq_dev_avg_eval_pi [NeZero n]
     ∫ x, ((n : ℝ)⁻¹ * ∑ i, g (x i) - ∫ z, g z ∂P) ^ 2
         ∂(Measure.pi fun _ : Fin n => P)
       = variance g P / n := by
-  sorry
+  have hgi : Integrable g P := hg.integrable (by norm_num)
+  have hmem : MemLp (fun x : Fin n → 𝓧 => ∑ i, g (x i)) 2
+      (Measure.pi fun _ : Fin n => P) :=
+    memLp_finset_sum Finset.univ fun i _ => hg.comp_measurePreserving (mp_eval i)
+  have hae : AEMeasurable (fun x : Fin n → 𝓧 => (n : ℝ)⁻¹ * ∑ i, g (x i))
+      (Measure.pi fun _ : Fin n => P) :=
+    hmem.aestronglyMeasurable.aemeasurable.const_mul _
+  rw [← variance_avg_eval_pi hg, variance_eq_integral hae,
+    integral_avg_eval_pi hgi]
 
 /-- **Strong law for coordinate averages** (ECS §2.2, p. 53): on the canonical
 sequence space, the running averages of `g` over the coordinates converge to
@@ -89,6 +133,33 @@ theorem tendsto_avg_eval_infinitePi
     ∀ᵐ ω ∂(Measure.infinitePi fun _ : ℕ => P),
       Tendsto (fun n : ℕ => (n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, g (ω i))
         atTop (𝓝 (∫ z, g z ∂P)) := by
-  sorry
+  have hmp : ∀ i : ℕ, MeasurePreserving (fun ω : ℕ → 𝓧 => ω i)
+      (Measure.infinitePi fun _ : ℕ => P) P :=
+    fun i => measurePreserving_eval_infinitePi (fun _ : ℕ => P) i
+  set X : ℕ → (ℕ → 𝓧) → ℝ := fun i ω => g (ω i) with hXdef
+  have hint : Integrable (X 0) (Measure.infinitePi fun _ : ℕ => P) :=
+    (hmp 0).integrable_comp_of_integrable hg
+  have hiIndep : iIndepFun X (Measure.infinitePi fun _ : ℕ => P) :=
+    iIndepFun_infinitePi (X := fun _ : ℕ => g) fun _ => hgm
+  have hlaw : ∀ i : ℕ, (Measure.infinitePi fun _ : ℕ => P).map (X i) = P.map g := by
+    intro i
+    have hcomp : X i = g ∘ fun ω : ℕ → 𝓧 => ω i := rfl
+    rw [hcomp, ← Measure.map_map hgm (hmp i).measurable, (hmp i).map_eq]
+  have hident : ∀ i, IdentDistrib (X i) (X 0)
+      (Measure.infinitePi fun _ : ℕ => P) (Measure.infinitePi fun _ : ℕ => P) := fun i =>
+    { aemeasurable_fst := (hgm.comp (measurable_pi_apply i)).aemeasurable
+      aemeasurable_snd := (hgm.comp (measurable_pi_apply 0)).aemeasurable
+      map_eq := by rw [hlaw i, hlaw 0] }
+  have hmean : ∫ ω, X 0 ω ∂(Measure.infinitePi fun _ : ℕ => P) = ∫ z, g z ∂P := by
+    have h1 : AEStronglyMeasurable g
+        ((Measure.infinitePi fun _ : ℕ => P).map fun ω : ℕ → 𝓧 => ω 0) := by
+      rw [(hmp 0).map_eq]; exact hg.aestronglyMeasurable
+    refine .symm ?_
+    conv_lhs => rw [← (hmp 0).map_eq]
+    exact integral_map (hmp 0).measurable.aemeasurable h1
+  have hsl := strong_law_ae_real X hint (fun _ _ hij => hiIndep.indepFun hij) hident
+  rw [hmean] at hsl
+  filter_upwards [hsl] with ω hω
+  simpa [hXdef, div_eq_inv_mul] using hω
 
 end StatLean.ComputationalStatistics

@@ -1,0 +1,47 @@
++ L=core
++ ENVF=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/lean-on-fasrc/env.Stat-Lean.sh
++ WT=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/comp-r1-core
++ source /n/holylabs/LABS/junweil_lab/Lab/Users/junweil/lean-on-fasrc/env.Stat-Lean.sh
+++ LAB_ROOT=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil
+++ PROJECT_NAME=Stat-Lean
+++ LEAN_VERSION=v4.29.1
+++ MATHLIB_REV=5e932f97dd25535344f80f9dd8da3aab83df0fe6
+++ PROJECTS_DIR=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/Projects
+++ BARE_REPO=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.git
+++ PRIMARY_WT=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean
+++ WORKTREES_DIR=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees
+++ LAKE_SHARED_ROOT=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/lake-shared
+++ LAKE_SHARED=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/lake-shared/mathlib/5e932f97dd25535344f80f9dd8da3aab83df0fe6
+++ export ELAN_HOME=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/elan
+++ ELAN_HOME=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/elan
+++ export PATH=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/elan/bin:/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/Tools/codex-npm/bin:/n/home13/junweil/.nvm/versions/node/v22.18.0/bin:/n/home13/junweil/.local/bin:/n/home13/junweil/.pyenv/shims:/n/home13/junweil/.pyenv/bin:/n/home13/junweil/rc_admin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/opt/mellanox/doca/tools/:/opt/puppetlabs/bin:/usr/local/bin
+++ PATH=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/elan/bin:/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/Tools/codex-npm/bin:/n/home13/junweil/.nvm/versions/node/v22.18.0/bin:/n/home13/junweil/.local/bin:/n/home13/junweil/.pyenv/shims:/n/home13/junweil/.pyenv/bin:/n/home13/junweil/rc_admin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/opt/mellanox/doca/tools/:/opt/puppetlabs/bin:/usr/local/bin
+++ LEAN_TC_LIB=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/elan/toolchains/leanprover--lean4---v4.29.1/lib
+++ export LEAN_CC=gcc
+++ LEAN_CC=gcc
+++ export LIBRARY_PATH=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/elan/toolchains/leanprover--lean4---v4.29.1/lib:/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/elan/toolchains/leanprover--lean4---v4.29.1/lib/lean:
+++ LIBRARY_PATH=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/elan/toolchains/leanprover--lean4---v4.29.1/lib:/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/elan/toolchains/leanprover--lean4---v4.29.1/lib/lean:
+++ export LD_LIBRARY_PATH=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/elan/toolchains/leanprover--lean4---v4.29.1/lib:/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/elan/toolchains/leanprover--lean4---v4.29.1/lib/lean:
+++ LD_LIBRARY_PATH=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/elan/toolchains/leanprover--lean4---v4.29.1/lib:/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/elan/toolchains/leanprover--lean4---v4.29.1/lib/lean:
+++ export LANG=en_US.UTF-8
+++ LANG=en_US.UTF-8
+++ export LC_ALL=en_US.UTF-8
+++ LC_ALL=en_US.UTF-8
+++ unset ANTHROPIC_API_KEY
+++ export CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000
+++ CLAUDE_CODE_MAX_OUTPUT_TOKENS=64000
+++ export ANTHROPIC_MODEL=claude-opus-5
+++ ANTHROPIC_MODEL=claude-opus-5
+++ export MAX_THINKING_TOKENS=31999
+++ MAX_THINKING_TOKENS=31999
+++ export CLAUDE_CODE_OAUTH_TOKEN=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
+++ CLAUDE_CODE_OAUTH_TOKEN=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
+++ export CLAUDE_CODE_EFFORT_LEVEL=high
+++ CLAUDE_CODE_EFFORT_LEVEL=high
++ cd /n/holylabs/LABS/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/comp-r1-core
+++ git rev-parse --abbrev-ref HEAD
++ BR=comp/r1-core
++ '[' comp/r1-core '!=' comp/r1-core ']'
++ cat .claude/prompts/compr1-_common.md .claude/prompts/compr1-core.md
++ claude -p --dangerously-skip-permissions
++ git add -A
