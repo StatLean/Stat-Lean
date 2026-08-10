@@ -13,9 +13,15 @@ The head of the commissioned Hannan program (ledger (a), batches C–D): for a
 stationary causal invertible ARMA(p, q) with **iid** noise and coprime minimal orders,
 any measurable approximate-MLE sequence over a compact identifiable region satisfies
 
-`√T (θ̂_T − θ₀) →d N(0, W)`, `W = (hannanVarZ b₀ a₀)⁻¹` (FY eq. (3.14)),
+`√T (θ̂_T − θ₀) →d N(0, W)`, `W = (hannanVarZBack b₀ a₀)⁻¹` (FY eq. (3.14)),
 
-stated in Cramér–Wold/charFun form, together with `σ̂² →p σ²`. FY's remarks are
+where `hannanVarZBack` is the covariance of the score vector `Z_t = (U_{t−1−i},
+V_{t−1−j})` — see FINDING 26 at `hannanScore_brownInputs` and the orientation repair
+recorded there (wave `ts/f1c-hannan-orientation`): the file used to write the *forward*
+Gram `hannanVarZ` here, which is a different quadratic form as soon as `p, q ≥ 1` and
+`max (p, q) ≥ 2`.
+
+Stated in Cramér–Wold/charFun form, together with `σ̂² →p σ²`. FY's remarks are
 honored: **no fourth moment is required**, and the noise assumption is exactly iid
 (the martingale-difference weakening is future work, not stated).
 
@@ -42,20 +48,26 @@ listed here with their exact blockers.
   wired along the noise filtration), the padding lemmas and measurability of
   `samplePACF`, and the three assemblies.
 * The **variance algebra** of the sandwich is carried out symbolically in the
-  `ScoreCLT` section docstring; it collapses to `W⁻¹ = (hannanVarZ b₀ a₀)⁻¹` exactly as
-  the frozen statement demands.
-* Debts (after wave `ts/s1b-arma-finish`, 2026-08-09): `hannanScore_brownInputs`,
-  `armaMLE_linearization`, `samplePACF_linearization`.
+  `ScoreCLT` section docstring; it collapses to `W⁻¹ = (hannanVarZBack b₀ a₀)⁻¹`.
+* Debts (after wave `ts/f1c-hannan-orientation`, 2026-08-09): `armaMLE_linearization`,
+  `samplePACF_linearization`. **`hannanScore_brownInputs` is CLOSED** (see below).
   **FINDING 26 (wave `ts/f1b-arma-deep`, 2026-08-09): `hannanVarZ` is the covariance of
   the FORWARD auxiliary vector, while the score contracts the BACKWARD one `Z_t =
   (U_{t−1−i}, V_{t−1−j})`; the two Grams read the AR–MA cross-block at opposite lags and
-  differ whenever `p, q ≥ 1` and `max (p, q) ≥ 2`.** So `hannanScore_brownInputs`(2),
-  `hannanScore_clt`, `armaMLE_linearization` and the headline `hannan_mle_clt` all carry
-  the wrong asymptotic variance in the genuinely mixed case; `samplePACF_linearization`
-  and `ls_yw_mle_equivalent_debt` (both `q = 0`) are immune. Items (1) and (2) of the Brown
-  inputs are PROVED with the corrected matrix as `hannanScore_brownInputs_back`. Full
-  detail, the ARMA(2,1) witness, and the one-line repair are recorded at
-  `hannanScore_brownInputs`.
+  differ whenever `p, q ≥ 1` and `max (p, q) ≥ 2`** (machine witness:
+  `ScoreAnalysis.hannanVarZ_quadForm_ne_back`, at ARMA(2,1)).
+  **ORIENTATION REPAIR APPLIED (wave `ts/f1c-hannan-orientation`, 2026-08-09).** Every
+  statement in the chain that asserted a `hannanVarZ` covariance for the score now
+  asserts the `hannanVarZBack` one: `hannanScore_brownInputs`(2), `hannanScore_clt`,
+  `armaMLE_linearization`, `samplePACF_linearization`, and the headline
+  `hannan_mle_clt`, whose asymptotic covariance is now `(hannanVarZBack b₀ a₀)⁻¹`.
+  `hannanVarZ` itself is untouched (it is a correct object — the forward Gram — and
+  `hannanVarZ_posDef` stands); what the repair supplies is its twin
+  `ScoreAnalysis.hannanVarZBack_posDef`, proved by re-running the Bézout/degree argument
+  at the score's shifts. The pure-AR and pure-MA instantiations are unaffected either way
+  (`hannanVarZ_eq_back_of_pure_ar`, `..._of_pure_ma`).
+  **`hannanScore_brownInputs` is now PROVED**: items (1) and (2) are
+  `hannanScore_brownInputs_back`, item (3) is the new `hannanScore_lindeberg`.
   **CLOSED**: `armaProfileS_atTruth_tendstoInProb` (a two-line corollary of Consistency's
   now-public `armaProfileS_tendstoInProb`) and `armaProfileS_equicontinuous` (a one-line
   corollary of `Consistency.armaProfileS_locallyEquicontinuous`).
@@ -231,7 +243,7 @@ section ScoreCLT
 /-! ### The score martingale and its CLT
 
 **The variance algebra, done symbolically first** (this is what forces the frozen
-`W = (hannanVarZ b₀ a₀)⁻¹`). Write `Q_T(θ) = T⁻¹ Σ_t r_t(θ)²` for the residual sum of
+`W = (hannanVarZBack b₀ a₀)⁻¹`). Write `Q_T(θ) = T⁻¹ Σ_t r_t(θ)²` for the residual sum of
 squares (`S_T(θ)/T` up to the edge effect) and `θ₀ = (b₀, a₀)`.
 
 *Score.* With `b(z) = 1 − Σ b_i z^{i+1}`, `a(z) = 1 + Σ a_j z^{j+1}` and
@@ -243,17 +255,25 @@ at `θ₀` is `−V_{t−1−j}` for `a₀(B) V = ε`. So with
 
   `∇Q_T(θ₀) = −2 T⁻¹ Σ_t ε_t Z_t`.
 
-*Information.* `Cov(Z_t) = σ² · hannanVarZ b₀ a₀`. (`hannanVarZ` is literally the
-covariance matrix of the *forward* vector `(U_{t+i}, V_{t+j})`; the backward `Z_t` used
-here has the transposed cross-blocks, and a covariance matrix is symmetric, so the two
-coincide.) Hence `H := ∇²Q_T(θ₀) →p 2 σ² · hannanVarZ` (the `ε_t ∂²r_t` part is itself a
+*Information.* `Cov(Z_t) = σ² · hannanVarZBack b₀ a₀`.
+
+**This is the sentence FINDING 26 corrected.** It used to read `hannanVarZ b₀ a₀`, with
+the parenthetical "the backward `Z_t` used here has the transposed cross-blocks, and a
+covariance matrix is symmetric, so the two coincide". That is **false**, and it is the
+whole error: transposing the cross-blocks of a Gram matrix is *not* the same as
+symmetrising it — `hannanVarZ` and `hannanVarZBack` are both symmetric, and they still
+differ, because their `(inl i, inr j)` entries are the cross-covariance read at the
+opposite lags `j − i` and `i − j`, and a cross-covariance is not even. The ARMA(2,1)
+witness is `ScoreAnalysis.hannanVarZ_quadForm_ne_back`.
+
+Hence `H := ∇²Q_T(θ₀) →p 2 σ² · hannanVarZBack` (the `ε_t ∂²r_t` part is itself a
 martingale difference and vanishes), and
-`√T ∇Q_T(θ₀) →d N(0, 4·Var(ε Z)) = N(0, 4 σ⁴ · hannanVarZ)` by independence of `ε_t`
+`√T ∇Q_T(θ₀) →d N(0, 4·Var(ε Z)) = N(0, 4 σ⁴ · hannanVarZBack)` by independence of `ε_t`
 from its past.
 
 *Sandwich.* `√T(θ̂ − θ₀) = −H⁻¹ √T ∇Q_T(θ₀) + o_p(1)` has limit variance
 
-  `(2σ²W)⁻¹ (4σ⁴ W) (2σ²W)⁻¹ = W⁻¹`,  `W := hannanVarZ b₀ a₀`,
+  `(2σ²W)⁻¹ (4σ⁴ W) (2σ²W)⁻¹ = W⁻¹`,  `W := hannanVarZBack b₀ a₀`,
 
 exactly the frozen `cᵀ W⁻¹ c`. Coordinate-wise, with `d := W⁻¹ c`,
 
@@ -778,6 +798,329 @@ private lemma memLp_scoreSeqS [IsProbabilityMeasure μ] {p q : ℕ}
   rw [hω]
 
 
+/-! ### Item (3): the averaged Lindeberg condition
+
+The recipe the status note at `hannanScore_brownInputs` predicts, carried out. Everything
+is phrased through the **Lindeberg truncation as a function of the value**,
+`lindTrunc l y = y² · 1{|y| ≥ l}`, which turns every set integral in sight into an
+ordinary integral of a fixed measurable function of one random variable — so the two
+transfers the argument needs (the a.e. swap to the adapted copy, and identical
+distribution along `t`) are both just `integral_congr_ae` / `IdentDistrib.integral_eq`.
+
+**FINDING 30 (wave `ts/f1c-hannan-orientation`, 2026-08-09).** Two things the residual
+note at `hannanScore_brownInputs` does not say. First, the set-splitting it prescribes
+(`{|ε Y| ≥ λ} ⊆ {|ε| ≥ √λ} ∪ {|Y| ≥ √λ}`) never has to be done at the level of sets: it is
+a *pointwise real inequality* between three values of `lindTrunc`, after which the whole
+argument is `integral_mono` plus two independence factorisations, with no measure-theoretic
+set algebra at all. Second, item (3) is the only one of the three Brown inputs that
+consumes **identical distribution** of the score vector, hence the only one that needs
+`IsLinearProcessOf.isStrictlyStationary` and therefore the *iid* (not merely white-noise)
+hypothesis on `ε`; items (1) and (2) use only noise/past independence and the one-filter
+LLN. Anyone weakening `IsIIDNoise` to a martingale-difference assumption — FY's stated
+future direction — will hit item (3) first, and will need a uniform-integrability
+substitute for stationarity there.
+
+The estimate itself is the pointwise inequality
+
+  `lindTrunc l (e·y) ≤ lindTrunc √l e · y² + e² · lindTrunc √l y`
+
+(if `|e·y| ≥ l` then at least one of `|e|, |y|` is `≥ √l`), integrated and factorised by
+noise/past independence into `E[ε² 1{|ε|≥√l}]·E[Y²] + σ²·E[Y² 1{|Y|≥√l}]`. Both factors
+are free of the time index by identical distribution — for `ε` from `IsIIDNoise`, for `Y`
+from `IsLinearProcessOf.isStrictlyStationary`, which applies because
+`isLinearProcessOf_comb` exhibits `⟨d, Z_t⟩` as a linear process of a summable filter.
+With `l = η√n → ∞` both vanish by dominated convergence, and the average of `n` terms
+each bounded by the same vanishing quantity vanishes. -/
+
+/-- Lindeberg truncation, as a function of the value. -/
+private noncomputable def lindTrunc (l y : ℝ) : ℝ := if l ≤ |y| then y ^ 2 else 0
+
+private lemma lindTrunc_nonneg (l y : ℝ) : 0 ≤ lindTrunc l y := by
+  unfold lindTrunc; split_ifs
+  · positivity
+  · exact le_rfl
+
+private lemma lindTrunc_le_sq (l y : ℝ) : lindTrunc l y ≤ y ^ 2 := by
+  unfold lindTrunc; split_ifs
+  · exact le_rfl
+  · positivity
+
+private lemma measurable_lindTrunc (l : ℝ) : Measurable (lindTrunc l) := by
+  unfold lindTrunc
+  refine Measurable.ite ?_ (by fun_prop) measurable_const
+  exact measurableSet_le measurable_const measurable_norm
+
+private lemma lindTrunc_mul_le {l : ℝ} (hl : 0 ≤ l) (e y : ℝ) :
+    lindTrunc l (e * y)
+      ≤ lindTrunc (Real.sqrt l) e * y ^ 2 + e ^ 2 * lindTrunc (Real.sqrt l) y := by
+  have h1 : 0 ≤ lindTrunc (Real.sqrt l) e * y ^ 2 :=
+    mul_nonneg (lindTrunc_nonneg _ _) (sq_nonneg _)
+  have h2 : 0 ≤ e ^ 2 * lindTrunc (Real.sqrt l) y :=
+    mul_nonneg (sq_nonneg _) (lindTrunc_nonneg _ _)
+  by_cases hcase : l ≤ |e * y|
+  · have hL : lindTrunc l (e * y) = e ^ 2 * y ^ 2 := by
+      unfold lindTrunc; rw [if_pos hcase]; ring
+    rcases le_or_gt (Real.sqrt l) |e| with h | h
+    · have he : lindTrunc (Real.sqrt l) e = e ^ 2 := if_pos h
+      rw [hL, he]
+      nlinarith
+    · have hy : Real.sqrt l ≤ |y| := by
+        by_contra hy
+        push Not at hy
+        have hs : Real.sqrt l * Real.sqrt l = l := Real.mul_self_sqrt hl
+        have hab : |e * y| = |e| * |y| := abs_mul e y
+        nlinarith [abs_nonneg e, abs_nonneg y, Real.sqrt_nonneg l]
+      have hey : lindTrunc (Real.sqrt l) y = y ^ 2 := if_pos hy
+      rw [hL, hey]
+      nlinarith
+  · have hL : lindTrunc l (e * y) = 0 := if_neg hcase
+    rw [hL]
+    linarith
+
+private lemma setIntegral_sq_eq_integral_lindTrunc {Z : Ω → ℝ} (hZ : Measurable Z) (l : ℝ) :
+    ∫ ω in {ω | l ≤ |Z ω|}, (Z ω) ^ 2 ∂μ = ∫ ω, lindTrunc l (Z ω) ∂μ := by
+  have hs : MeasurableSet {ω | l ≤ |Z ω|} :=
+    measurableSet_le measurable_const hZ.norm
+  rw [← integral_indicator hs]
+  refine integral_congr_ae (Eventually.of_forall fun ω => ?_)
+  simp only [Set.indicator_apply, Set.mem_setOf_eq, lindTrunc]
+
+private lemma tendsto_integral_lindTrunc {Z : Ω → ℝ} (hZ : Measurable Z)
+    (hint : Integrable (fun ω => Z ω ^ 2) μ) {l : ℕ → ℝ} (hl : Tendsto l atTop atTop) :
+    Tendsto (fun n : ℕ => ∫ ω, lindTrunc (l n) (Z ω) ∂μ) atTop (𝓝 0) := by
+  have hlim : ∀ᵐ ω ∂μ, Tendsto (fun n => lindTrunc (l n) (Z ω)) atTop (𝓝 0) := by
+    filter_upwards with ω
+    refine Tendsto.congr' ?_ tendsto_const_nhds
+    filter_upwards [hl.eventually_gt_atTop (|Z ω|)] with n hn
+    exact (if_neg (not_le.2 hn)).symm
+  have := tendsto_integral_of_dominated_convergence (F := fun n ω => lindTrunc (l n) (Z ω))
+    (f := fun _ : Ω => (0 : ℝ)) (bound := fun ω => Z ω ^ 2)
+    (fun n => ((measurable_lindTrunc (l n)).comp hZ).aestronglyMeasurable)
+    hint
+    (fun n => Eventually.of_forall fun ω => by
+      rw [Real.norm_eq_abs, abs_of_nonneg (lindTrunc_nonneg _ _)]
+      exact lindTrunc_le_sq _ _)
+    hlim
+  simpa using this
+
+private lemma identDistrib_of_isStrictlyStationary {Y : ℤ → Ω → ℝ}
+    (hstat : IsStrictlyStationary Y μ) (hmeas : ∀ t, Measurable (Y t)) (s t : ℤ) :
+    IdentDistrib (Y s) (Y t) μ μ := by
+  refine ⟨(hmeas s).aemeasurable, (hmeas t).aemeasurable, ?_⟩
+  have h := hstat 1 (fun _ => t) (s - t)
+  have hts : t + (s - t) = s := by ring
+  rw [hts] at h
+  have hmap : ∀ u : ℤ, μ.map (Y u)
+      = (μ.map fun ω (_ : Fin 1) => Y u ω).map (fun f : Fin 1 → ℝ => f 0) := by
+    intro u
+    rw [Measure.map_map (measurable_pi_apply 0)
+      (measurable_pi_lambda _ fun _ => hmeas u)]
+    rfl
+  rw [hmap s, hmap t, h]
+
+/-- **The averaged Lindeberg condition for a noise-times-past product.** -/
+private theorem lindeberg_noise_mul [IsProbabilityMeasure μ] {ε Y : ℤ → Ω → ℝ} {σ2 : ℝ}
+    (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
+    (hYmeas : ∀ t, Measurable (Y t))
+    (hYadapt : ∀ t, Measurable[sigmaLT ε t] (Y t))
+    (hYmem : ∀ t, MemLp (Y t) 2 μ)
+    (hprodmem : ∀ t, MemLp (fun ω => ε t ω * Y t ω) 2 μ)
+    (hstat : IsStrictlyStationary Y μ)
+    {η : ℝ} (hη : 0 < η) :
+    Tendsto (fun n : ℕ => (n : ℝ)⁻¹ * ∑ i ∈ Finset.range n,
+        ∫ ω in {ω | η * Real.sqrt n ≤ |ε ((i : ℤ) + 1) ω * Y ((i : ℤ) + 1) ω|},
+          (ε ((i : ℤ) + 1) ω * Y ((i : ℤ) + 1) ω) ^ 2 ∂μ) atTop (𝓝 0) := by
+  classical
+  -- ## notation: the truncation level, and the three `i`-free constants
+  set r : ℕ → ℝ := fun n => Real.sqrt (η * Real.sqrt n) with hr
+  set M : ℝ := ∫ ω, Y 1 ω ^ 2 ∂μ with hM
+  set A : ℕ → ℝ := fun n => ∫ ω, lindTrunc (r n) (ε 0 ω) ∂μ with hA
+  set B : ℕ → ℝ := fun n => ∫ ω, lindTrunc (r n) (Y 1 ω) ∂μ with hB
+  -- ## integrability facts
+  have hεmem : ∀ t : ℤ, MemLp (ε t) 2 μ :=
+    fun t => ((hiid.identDistrib t 0).memLp_iff).2 hiid.memLp
+  have hεsq : ∀ t : ℤ, Integrable (fun ω => ε t ω ^ 2) μ := by
+    intro t; simpa [sq] using (hεmem t).integrable_mul (hεmem t)
+  have hYsq : ∀ t : ℤ, Integrable (fun ω => Y t ω ^ 2) μ := by
+    intro t; simpa [sq] using (hYmem t).integrable_mul (hYmem t)
+  have hprodsq : ∀ t : ℤ, Integrable (fun ω => (ε t ω * Y t ω) ^ 2) μ := by
+    intro t
+    have := (hprodmem t).integrable_mul (hprodmem t)
+    simpa [sq] using this
+  have hMnn : 0 ≤ M := integral_nonneg fun ω => sq_nonneg _
+  have hAnn : ∀ n, 0 ≤ A n := fun n => integral_nonneg fun ω => lindTrunc_nonneg _ _
+  have hBnn : ∀ n, 0 ≤ B n := fun n => integral_nonneg fun ω => lindTrunc_nonneg _ _
+  -- ## the identically-distributed transfer
+  have hidY : ∀ i : ℕ, IdentDistrib (Y ((i : ℤ) + 1)) (Y 1) μ μ :=
+    fun i => identDistrib_of_isStrictlyStationary hstat hYmeas _ _
+  -- ## the per-index bound
+  have hterm : ∀ (n : ℕ) (i : ℕ),
+      ∫ ω in {ω | η * Real.sqrt n ≤ |ε ((i : ℤ) + 1) ω * Y ((i : ℤ) + 1) ω|},
+        (ε ((i : ℤ) + 1) ω * Y ((i : ℤ) + 1) ω) ^ 2 ∂μ ≤ A n * M + σ2 * B n := by
+    intro n i
+    set t : ℤ := (i : ℤ) + 1 with ht
+    have hmul : Measurable fun ω => ε t ω * Y t ω := (hiid.measurable t).mul (hYmeas t)
+    rw [setIntegral_sq_eq_integral_lindTrunc hmul]
+    -- independence of the noise from the past
+    have hind : Indep (MeasurableSpace.comap (ε t) inferInstance) (sigmaLT ε t) μ :=
+      indep_noise_sigmaLT hiid.measurable hiid.iIndep t
+    have hIF : IndepFun (ε t) (Y t) μ :=
+      indep_of_indep_of_le_right hind (hYadapt t).comap_le
+    -- the two products, and their integrability
+    have hIF1 : IndepFun (fun ω => lindTrunc (r n) (ε t ω)) (fun ω => Y t ω ^ 2) μ :=
+      hIF.comp (measurable_lindTrunc (r n)) (measurable_id.pow_const 2)
+    have hIF2 : IndepFun (fun ω => ε t ω ^ 2) (fun ω => lindTrunc (r n) (Y t ω)) μ :=
+      hIF.comp (measurable_id.pow_const 2) (measurable_lindTrunc (r n))
+    have hint1 : Integrable (fun ω => lindTrunc (r n) (ε t ω)) μ := by
+      refine Integrable.mono' (hεsq t)
+        ((measurable_lindTrunc (r n)).comp (hiid.measurable t)).aestronglyMeasurable
+        (Eventually.of_forall fun ω => ?_)
+      rw [Real.norm_eq_abs, abs_of_nonneg (lindTrunc_nonneg _ _)]
+      exact lindTrunc_le_sq _ _
+    have hint2 : Integrable (fun ω => lindTrunc (r n) (Y t ω)) μ := by
+      refine Integrable.mono' (hYsq t)
+        ((measurable_lindTrunc (r n)).comp (hYmeas t)).aestronglyMeasurable
+        (Eventually.of_forall fun ω => ?_)
+      rw [Real.norm_eq_abs, abs_of_nonneg (lindTrunc_nonneg _ _)]
+      exact lindTrunc_le_sq _ _
+    have hg1 : Integrable (fun ω => lindTrunc (r n) (ε t ω) * Y t ω ^ 2) μ :=
+      hIF1.integrable_mul hint1 (hYsq t)
+    have hg2 : Integrable (fun ω => ε t ω ^ 2 * lindTrunc (r n) (Y t ω)) μ :=
+      hIF2.integrable_mul (hεsq t) hint2
+    have hf : Integrable (fun ω => lindTrunc (η * Real.sqrt n) (ε t ω * Y t ω)) μ := by
+      refine Integrable.mono' (hprodsq t)
+        ((measurable_lindTrunc _).comp hmul).aestronglyMeasurable
+        (Eventually.of_forall fun ω => ?_)
+      rw [Real.norm_eq_abs, abs_of_nonneg (lindTrunc_nonneg _ _)]
+      exact lindTrunc_le_sq _ _
+    -- the pointwise truncation inequality, integrated
+    have hle : ∫ ω, lindTrunc (η * Real.sqrt n) (ε t ω * Y t ω) ∂μ
+        ≤ (∫ ω, lindTrunc (r n) (ε t ω) * Y t ω ^ 2 ∂μ)
+          + ∫ ω, ε t ω ^ 2 * lindTrunc (r n) (Y t ω) ∂μ := by
+      rw [← integral_add hg1 hg2]
+      refine integral_mono hf (hg1.add hg2) fun ω => ?_
+      have := lindTrunc_mul_le (l := η * Real.sqrt n)
+        (by positivity) (ε t ω) (Y t ω)
+      simpa [hr, Pi.add_apply] using this
+    -- factorisation by independence
+    have hfac1 : ∫ ω, lindTrunc (r n) (ε t ω) * Y t ω ^ 2 ∂μ
+        = (∫ ω, lindTrunc (r n) (ε t ω) ∂μ) * ∫ ω, Y t ω ^ 2 ∂μ :=
+      hIF1.integral_fun_mul_eq_mul_integral hint1.aestronglyMeasurable
+        (hYsq t).aestronglyMeasurable
+    have hfac2 : ∫ ω, ε t ω ^ 2 * lindTrunc (r n) (Y t ω) ∂μ
+        = (∫ ω, ε t ω ^ 2 ∂μ) * ∫ ω, lindTrunc (r n) (Y t ω) ∂μ :=
+      hIF2.integral_fun_mul_eq_mul_integral (hεsq t).aestronglyMeasurable
+        hint2.aestronglyMeasurable
+    -- and the transfer to time `0` / time `1`
+    have he0 : ∫ ω, lindTrunc (r n) (ε t ω) ∂μ = A n :=
+      ((hiid.identDistrib t 0).comp (measurable_lindTrunc (r n))).integral_eq
+    have hy1 : ∫ ω, lindTrunc (r n) (Y t ω) ∂μ = B n :=
+      ((hidY i).comp (measurable_lindTrunc (r n))).integral_eq
+    have hy2 : ∫ ω, Y t ω ^ 2 ∂μ = M :=
+      ((hidY i).comp (measurable_id.pow_const 2)).integral_eq
+    rw [hfac1, hfac2, he0, hy1, hy2, integral_noise_sq hiid t] at hle
+    exact hle
+  -- ## the average is squeezed between `0` and the `i`-free bound
+  have hnn : ∀ n : ℕ, 0 ≤ (n : ℝ)⁻¹ * ∑ i ∈ Finset.range n,
+      ∫ ω in {ω | η * Real.sqrt n ≤ |ε ((i : ℤ) + 1) ω * Y ((i : ℤ) + 1) ω|},
+        (ε ((i : ℤ) + 1) ω * Y ((i : ℤ) + 1) ω) ^ 2 ∂μ := by
+    intro n
+    refine mul_nonneg (by positivity) (Finset.sum_nonneg fun i _ => ?_)
+    exact setIntegral_nonneg (measurableSet_le measurable_const
+      (((hiid.measurable _).mul (hYmeas _)).norm)) fun ω _ => sq_nonneg _
+  have hub : ∀ n : ℕ, (n : ℝ)⁻¹ * ∑ i ∈ Finset.range n,
+      (∫ ω in {ω | η * Real.sqrt n ≤ |ε ((i : ℤ) + 1) ω * Y ((i : ℤ) + 1) ω|},
+        (ε ((i : ℤ) + 1) ω * Y ((i : ℤ) + 1) ω) ^ 2 ∂μ) ≤ A n * M + σ2 * B n := by
+    intro n
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · simp only [Nat.cast_zero, _root_.inv_zero, Finset.range_zero, Finset.sum_empty, mul_zero]
+      exact add_nonneg (mul_nonneg (hAnn 0) hMnn) (mul_nonneg hσ.le (hBnn 0))
+    have hsum : (∑ i ∈ Finset.range n,
+        ∫ ω in {ω | η * Real.sqrt n ≤ |ε ((i : ℤ) + 1) ω * Y ((i : ℤ) + 1) ω|},
+          (ε ((i : ℤ) + 1) ω * Y ((i : ℤ) + 1) ω) ^ 2 ∂μ)
+        ≤ (n : ℝ) * (A n * M + σ2 * B n) := by
+      calc (∑ i ∈ Finset.range n, _) ≤ ∑ _i ∈ Finset.range n, (A n * M + σ2 * B n) :=
+            Finset.sum_le_sum fun i _ => hterm n i
+        _ = (n : ℝ) * (A n * M + σ2 * B n) := by
+            rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+    have hnpos : (0 : ℝ) < n := by exact_mod_cast hn
+    calc (n : ℝ)⁻¹ * _ ≤ (n : ℝ)⁻¹ * ((n : ℝ) * (A n * M + σ2 * B n)) := by
+          exact mul_le_mul_of_nonneg_left hsum (by positivity)
+      _ = A n * M + σ2 * B n := by field_simp
+  -- ## the bound vanishes
+  have hrtop : Tendsto r atTop atTop := by
+    refine Real.tendsto_sqrt_atTop.comp ?_
+    exact Filter.Tendsto.const_mul_atTop hη
+      (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
+  have hA0 : Tendsto A atTop (𝓝 0) :=
+    tendsto_integral_lindTrunc (hiid.measurable 0) (hεsq 0) hrtop
+  have hB0 : Tendsto B atTop (𝓝 0) :=
+    tendsto_integral_lindTrunc (hYmeas 1) (hYsq 1) hrtop
+  have hbound : Tendsto (fun n => A n * M + σ2 * B n) atTop (𝓝 0) := by
+    have h1 : Tendsto (fun n => A n * M) atTop (𝓝 0) := by
+      simpa using hA0.mul_const M
+    have h2 : Tendsto (fun n => σ2 * B n) atTop (𝓝 0) := by
+      simpa using hB0.const_mul σ2
+    simpa using h1.add h2
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hbound hnn hub
+
+/-- **Item (3) of `hannanScore_brownInputs`, PROVED**: the averaged Lindeberg condition
+for the ARMA score, obtained from `lindeberg_noise_mul` at the adapted copy of the score
+vector and transferred back along `isLinearProcessOf_unique`. -/
+private theorem hannanScore_lindeberg [IsProbabilityMeasure μ] {p q : ℕ}
+    {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {ε U V U' V' : ℤ → Ω → ℝ}
+    (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2) (hB0 : ARMAInvertibleParams b0 a0)
+    (hU : IsLinearProcessOf (armaPsi b0 (Fin.elim0 : Fin 0 → ℝ)) U ε μ)
+    (hV : IsLinearProcessOf (armaPsi (fun j => -a0 j) (Fin.elim0 : Fin 0 → ℝ)) V ε μ)
+    (hUmeas : ∀ t, Measurable (U t)) (hVmeas : ∀ t, Measurable (V t))
+    (hU' : IsLinearProcessOf (armaPsi b0 (Fin.elim0 : Fin 0 → ℝ)) U' ε μ)
+    (hV' : IsLinearProcessOf (armaPsi (fun j => -a0 j) (Fin.elim0 : Fin 0 → ℝ)) V' ε μ)
+    (hU'meas : ∀ t, Measurable (U' t)) (hV'meas : ∀ t, Measurable (V' t))
+    (hU'adapt : ∀ t, Measurable[sigmaLT ε (t + 1)] (U' t))
+    (hV'adapt : ∀ t, Measurable[sigmaLT ε (t + 1)] (V' t))
+    (d : Fin p ⊕ Fin q → ℝ) {η : ℝ} (hη : 0 < η) :
+    Tendsto (fun n : ℕ => (n : ℝ)⁻¹ * ∑ i ∈ Finset.range n,
+        ∫ ω in {ω | η * Real.sqrt n ≤ |scoreSeq ε U V d ((i : ℤ) + 1) ω|},
+          (scoreSeq ε U V d ((i : ℤ) + 1) ω) ^ 2 ∂μ) atTop (𝓝 0) := by
+  have hwn := hiid.isWhiteNoise
+  have hc : Summable fun n => |∑ s, d s * hannanVecBack b0 a0 s n| :=
+    summable_abs_hannanComboBack hB0 d
+  have hY := isLinearProcessOf_scoreVec hwn hU hV hUmeas hVmeas d
+  have hY2 := isLinearProcessOf_scoreVec hwn hU' hV' hU'meas hV'meas d
+  have hYm := measurable_scoreVec hUmeas hVmeas d
+  have hY2m := measurable_scoreVec hU'meas hV'meas d
+  have hae : ∀ t : ℤ, scoreVec U V d t =ᵐ[μ] scoreVec U' V' d t :=
+    fun t => isLinearProcessOf_unique hY hY2 hYm hY2m hiid.measurable t
+  -- the adapted copy of the score vector is measurable for the *strict* past
+  have hadapt : ∀ t : ℤ, Measurable[sigmaLT ε t] (scoreVec U' V' d t) := by
+    intro t
+    refine Measurable.add (Finset.measurable_sum _ fun k _ => measurable_const.mul ?_)
+      (Finset.measurable_sum _ fun k _ => measurable_const.mul ?_)
+    · exact (hU'adapt _).mono (sigmaLT_mono' (by omega)) le_rfl
+    · exact (hV'adapt _).mono (sigmaLT_mono' (by omega)) le_rfl
+  have hmem : ∀ t : ℤ, MemLp (scoreVec U' V' d t) 2 μ := fun t => hY2.memLp hc hwn hY2m t
+  have hprod : ∀ t : ℤ, MemLp (fun ω => ε t ω * scoreVec U' V' d t ω) 2 μ :=
+    fun t => memLp_noise_mul_of_adapted hiid t (hmem t) (hadapt t)
+  have hstat : IsStrictlyStationary (scoreVec U' V' d) μ :=
+    hY2.isStrictlyStationary hc hiid hY2m
+  have hbase := lindeberg_noise_mul hiid hσ hY2m hadapt hmem hprod hstat hη
+  refine hbase.congr fun n => ?_
+  refine congrArg (fun z => (n : ℝ)⁻¹ * z) (Finset.sum_congr rfl fun i _ => ?_)
+  have h1 : Measurable fun ω => ε ((i : ℤ) + 1) ω * scoreVec U V d ((i : ℤ) + 1) ω :=
+    (hiid.measurable _).mul (hYm _)
+  have h2 : Measurable fun ω => ε ((i : ℤ) + 1) ω * scoreVec U' V' d ((i : ℤ) + 1) ω :=
+    (hiid.measurable _).mul (hY2m _)
+  show ∫ ω in {ω | η * Real.sqrt n ≤
+        |ε ((i : ℤ) + 1) ω * scoreVec U' V' d ((i : ℤ) + 1) ω|},
+      (ε ((i : ℤ) + 1) ω * scoreVec U' V' d ((i : ℤ) + 1) ω) ^ 2 ∂μ
+    = ∫ ω in {ω | η * Real.sqrt n ≤
+        |ε ((i : ℤ) + 1) ω * scoreVec U V d ((i : ℤ) + 1) ω|},
+      (ε ((i : ℤ) + 1) ω * scoreVec U V d ((i : ℤ) + 1) ω) ^ 2 ∂μ
+  rw [setIntegral_sq_eq_integral_lindTrunc h1, setIntegral_sq_eq_integral_lindTrunc h2]
+  refine integral_congr_ae ?_
+  filter_upwards [hae ((i : ℤ) + 1)] with ω hω
+  rw [hω]
+
 /-- **Items (1) and (2) of `hannanScore_brownInputs`, PROVED — with the CORRECTED
 constant.** The `L²` membership of the score and the conditional-variance LLN, over
 i.i.d. noise, with no adaptedness hypothesis on `U`, `V` (the adapted copies are produced
@@ -969,14 +1312,31 @@ carrying the MLE asymptotics themselves, which is out of reach here; what is for
 the matrix identity together with the corrected item (2), which pin the error to
 `hannanVarZ`'s shift convention and nothing else.
 
-*What was deliberately NOT done.* `hannanVarZ` is consumed by `hannanVarZ_posDef` and by
-the frozen statements; changing it, or restating `hannanScore_brownInputs` with `Σ_back`,
-would silently repair a frozen theorem and break the `hannan_mle_clt` assembly. The debt is
-therefore left at this `sorry`, which is now the *only* place the error is located, with
-the corrected version proved beside it as `hannanScore_brownInputs_back`. Repairing
-`hannanVarZ` — either by changing `hannanShift p q` to `fun s => 1 + s`, which makes
-`hannanVarZ = hannanVarZBack` definitionally, or by transposing the cross-blocks — is a
-one-line change to `ScoreAnalysis` that needs the lane owner's call. -/
+*What wave `ts/f1b-arma-deep` deliberately did NOT do* was change the statement: with the
+lane owner's call outstanding, the debt was left at a `sorry` carrying the wrong matrix,
+with the corrected version proved beside it as `hannanScore_brownInputs_back`.
+
+**REPAIR APPLIED and DEBT CLOSED (wave `ts/f1c-hannan-orientation`, 2026-08-09).** The
+laptop authorized re-stating the frozen Hannan chain with the object the score actually
+contracts. Item (2) below now reads `hannanVarZBack b₀ a₀`, and with that the whole
+statement is **PROVED**: items (1) and (2) are `hannanScore_brownInputs_back`, and item
+(3) — the averaged Lindeberg condition, the one piece wave `ts/f1b-arma-deep` did not
+attempt — is `hannanScore_lindeberg` above, exactly along the route its residual note
+predicted (split the level set, factorise by noise/past independence, kill both halves by
+dominated convergence, uniformly in the time index by strict stationarity of `⟨d, Z_t⟩`).
+
+Note what the repair is *not*: it is not a change to `hannanVarZ`, which stays exactly as
+FY prints it, and not a re-typographing of Hannan's paper. `hannanVarZ` is a correct
+object — the Gram matrix of the forward auxiliary vector, proved as such by
+`hannanVarZ_gram` — and Hannan's own convention is stated for a vector whose alignment
+matches it. What was wrong was the *pairing*: the Lean score process `scoreSeq` contracts
+`Z_t = (U_{t−1−i}, V_{t−1−j})`, whose Gram is `hannanVarZBack`, and the machine witness
+`ScoreAnalysis.hannanVarZ_quadForm_ne_back` shows at ARMA(2,1) that these are different
+quadratic forms. The repair aligns the statements with the process in the file, and the
+witness — not a reading of the paper's typography — is what forces it. Invertibility of
+the replacement is `ScoreAnalysis.hannanVarZBack_posDef` (new; proved by re-running the
+Bézout/degree argument at the score's shifts, since the two Grams are conjugate by a
+permutation only when `p = q`). -/
 private theorem hannanScore_brownInputs [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -989,14 +1349,25 @@ private theorem hannanScore_brownInputs [IsProbabilityMeasure μ] {p q : ℕ}
     (∀ δ : ℝ, 0 < δ → Tendsto (fun n : ℕ => (μ {ω | δ ≤ |(n : ℝ)⁻¹ *
         (∑ i ∈ Finset.range n,
           μ[fun ω' => scoreSeq ε U V d ((i : ℤ) + 1) ω' ^ 2 | sigmaLT ε ((i : ℤ) + 1)] ω)
-        - σ2 * (σ2 * (d ⬝ᵥ (hannanVarZ b0 a0 *ᵥ d)))|}).toReal) atTop (𝓝 0)) ∧
+        - σ2 * (σ2 * (d ⬝ᵥ (hannanVarZBack b0 a0 *ᵥ d)))|}).toReal) atTop (𝓝 0)) ∧
     (∀ η : ℝ, 0 < η → Tendsto (fun n : ℕ => (n : ℝ)⁻¹ * ∑ i ∈ Finset.range n,
         ∫ ω in {ω | η * Real.sqrt n ≤ |scoreSeq ε U V d ((i : ℤ) + 1) ω|},
           (scoreSeq ε U V d ((i : ℤ) + 1) ω) ^ 2 ∂μ) atTop (𝓝 0)) := by
-  sorry
+  have hψb : Summable fun n => |armaPsi b0 (Fin.elim0 : Fin 0 → ℝ) n| :=
+    summable_abs_armaPsi (Fin.elim0 : Fin 0 → ℝ) hB0.1
+  have hψa : Summable fun n => |armaPsi (fun j => -a0 j) (Fin.elim0 : Fin 0 → ℝ) n| :=
+    summable_abs_armaPsi (Fin.elim0 : Fin 0 → ℝ) (noRootClosedDisc_neg' hB0)
+  obtain ⟨U', hU'meas, hU'adapt, hU'⟩ :=
+    exists_adapted_isLinearProcessOf hψb hiid.isWhiteNoise hUmeas hU
+  obtain ⟨V', hV'meas, hV'adapt, hV'⟩ :=
+    exists_adapted_isLinearProcessOf hψa hiid.isWhiteNoise hVmeas hV
+  obtain ⟨h1, h2⟩ := hannanScore_brownInputs_back hiid hσ hB0 hU hV hUmeas hVmeas d
+  exact ⟨h1, h2, fun η hη => hannanScore_lindeberg hiid hσ hB0 hU hV hUmeas hVmeas
+    hU' hV' hU'meas hV'meas hU'adapt hV'adapt d hη⟩
 
 /-- **The score CLT** (step 3 of the assembly): the normalized partial sums of the
-score martingale are asymptotically `N(0, σ⁴ dᵀ W d)`, `W = hannanVarZ b₀ a₀`. Proved by
+score martingale are asymptotically `N(0, σ⁴ dᵀ W d)`, `W = hannanVarZBack b₀ a₀` (the
+score's own Gram; finding 26). Proved by
 feeding `armaScore_condexp_zero` (the martingale-difference property) and
 `hannanScore_brownInputs` into Brown's martingale CLT `mds_clt_sequence`, along the
 noise filtration `𝓕_t = σ(ε_s : s < t)`. -/
@@ -1011,12 +1382,12 @@ private theorem hannanScore_clt [IsProbabilityMeasure μ] {p q : ℕ}
     (hUmeas : ∀ t, Measurable (U t)) (hVmeas : ∀ t, Measurable (V t))
     (hUadapt : ∀ t, Measurable[sigmaLT ε (t + 1)] (U t))
     (hVadapt : ∀ t, Measurable[sigmaLT ε (t + 1)] (V t))
-    (d : Fin p ⊕ Fin q → ℝ) (hnn : 0 ≤ d ⬝ᵥ (hannanVarZ b0 a0 *ᵥ d)) (u : ℝ) :
+    (d : Fin p ⊕ Fin q → ℝ) (hnn : 0 ≤ d ⬝ᵥ (hannanVarZBack b0 a0 *ᵥ d)) (u : ℝ) :
     Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
         (Real.sqrt T)⁻¹ * ∑ i ∈ Finset.range T, scoreSeq ε U V d ((i : ℤ) + 1) ω) u)
       atTop
       (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
-        (σ2 * (σ2 * (d ⬝ᵥ (hannanVarZ b0 a0 *ᵥ d)))))) u)) := by
+        (σ2 * (σ2 * (d ⬝ᵥ (hannanVarZBack b0 a0 *ᵥ d)))))) u)) := by
   obtain ⟨hL2, hvar, hlind⟩ :=
     hannanScore_brownInputs h hiid hσ hB0 hU hV hUmeas hVmeas d
   refine mds_clt_sequence (G := fun i : ℕ => sigmaLT ε ((i : ℤ) + 1))
@@ -1091,7 +1462,30 @@ expansion, and (c) the matrix repair. Note that (a)'s pointwise half now has a s
 route besides the one recorded above: the derivative filters are finite combinations of
 shifted linear processes, so `isLinearProcessOf_comb` puts them in the exact shape
 `Consistency.linearProcess_avgSq_tendstoInProb` consumes, with no ad-hoc coefficient
-bookkeeping. -/
+bookkeeping.
+
+**STATUS after wave `ts/f1c-hannan-orientation` (2026-08-09): item (c) DONE, items (a)
+and (b) NOT closed — this remains the one substantive debt of the Hannan chain.** The
+statement above now reads `(hannanVarZBack b0 a0)⁻¹ *ᵥ c`, so it is no longer expected to
+be false, and its score input `hannanScore_brownInputs` is fully PROVED (item (3), the
+averaged Lindeberg condition, closed by `hannanScore_lindeberg`). What is left is exactly
+the deterministic-analysis half of the sandwich, and this wave sharpens the ledger for it:
+
+* **(a) Hessian ULLN.** Pointwise: an instance of
+  `Consistency.linearProcess_avgSq_tendstoInProb` per second-derivative filter, via
+  `isLinearProcessOf_comb` (no new brick). Uniform: the `ℓ¹`-modulus argument of
+  `Consistency.armaProfileS_locallyEquicontinuous` applied to the derivative filters —
+  the modulus brick `Consistency.exists_armaPi_l1_modulus` is stated for `π` itself, so
+  its `∂π/∂θ` analogue is the *one genuinely missing input* of (a). This wave did not
+  build it; note the amendment recorded at `armaProfileS_equicontinuous` ("no `∂π/∂θ`
+  companion is needed") applies to the *criterion*, not to the Hessian, so it does not
+  dissolve this item.
+* **(b) First-order condition + mean-value expansion.** Untouched, and it is the part
+  that needs a genuine `o(1/T)`-to-`o_p(T^{−1/2})` argument on `hδTfast`; nothing in the
+  score layer bears on it.
+
+The two are independent of each other and of the orientation repair; neither is blocked
+on a missing analytic theory, both are bounded but substantial formalization. -/
 private theorem armaMLE_linearization [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -1121,7 +1515,7 @@ private theorem armaMLE_linearization [IsProbabilityMeasure μ] {p q : ℕ}
             ((∑ i : Fin p, c (.inl i) * ((θ T ω).1 i - b0 i)) +
               ∑ j : Fin q, c (.inr j) * ((θ T ω).2 j - a0 j))
           - σ2⁻¹ * ((Real.sqrt T)⁻¹ * ∑ i ∈ Finset.range T,
-              scoreSeq ε U V ((hannanVarZ b0 a0)⁻¹ *ᵥ c) ((i : ℤ) + 1) ω)|}).toReal)
+              scoreSeq ε U V ((hannanVarZBack b0 a0)⁻¹ *ᵥ c) ((i : ℤ) + 1) ω)|}).toReal)
       atTop (𝓝 0) := by
   sorry
 
@@ -1129,7 +1523,15 @@ end ScoreCLT
 
 /-- **FY Theorem 3.2 (Hannan), Cramér–Wold/charFun form**: under the `mle_consistent`
 setting, every linear combination of `√T (θ̂_T − θ₀)` is asymptotically
-`N(0, cᵀ W c)` with `W = (hannanVarZ b₀ a₀)⁻¹`. -/
+`N(0, cᵀ W c)` with `W = (hannanVarZBack b₀ a₀)⁻¹` — the inverse of the covariance of the
+score vector `Z_t = (U_{t−1−i}, V_{t−1−j})`.
+
+**Statement repaired (wave `ts/f1c-hannan-orientation`, 2026-08-09).** The frozen form
+wrote the *forward* Gram `hannanVarZ b₀ a₀` here and was FALSE for `p, q ≥ 1` with
+`max (p, q) ≥ 2`; see FINDING 26 and the repair paragraph at `hannanScore_brownInputs`.
+ARMA(1,1), pure AR and pure MA are unaffected by the change (`hannanVarZ_eq_back_of_pure_ar`,
+`..._of_pure_ma`, and the reversal permutation at `p = q`), which is why the error
+survived: those are the cases textbooks print. -/
 theorem hannan_mle_clt [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ)
@@ -1139,8 +1541,8 @@ theorem hannan_mle_clt [IsProbabilityMeasure μ] {p q : ℕ}
     (hB0 : ARMAInvertibleParams b0 a0)
     -- USER-INPUT: coprime minimal orders; Hannan 1973 (FY implicit)
     (hcop : IsCoprime (arPoly b0) (maPoly a0))
-    -- USER-INPUT: exact orders (see `hannanVarZ_posDef`'s docstring — coprimality alone
-    -- does not make the information matrix invertible); Hannan 1973 §2
+    -- USER-INPUT: exact orders (see `hannanVarZBack_posDef`'s docstring — coprimality
+    -- alone does not make the information matrix invertible); Hannan 1973 §2
     (hbdeg : (arPoly b0).natDegree = p) (hadeg : (maPoly a0).natDegree = q)
     (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
     (hmeas : ∀ t, Measurable (X t))
@@ -1169,19 +1571,19 @@ theorem hannan_mle_clt [IsProbabilityMeasure μ] {p q : ℕ}
             ∑ j : Fin q, c (.inr j) * ((θ T ω).2 j - a0 j))) u)
       atTop
       (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
-        (c ⬝ᵥ ((hannanVarZ b0 a0)⁻¹ *ᵥ c)))) u)) := by
+        (c ⬝ᵥ ((hannanVarZBack b0 a0)⁻¹ *ᵥ c)))) u)) := by
   classical
   -- ## The information matrix, the sandwich direction `d = W⁻¹c`, and the limit variance
-  have hWpd : (hannanVarZ b0 a0).PosDef := hannanVarZ_posDef hB0 hcop hbdeg hadeg
-  have hWdet : IsUnit (hannanVarZ b0 a0).det := Matrix.isUnit_iff_isUnit_det _ |>.1 hWpd.isUnit
-  have hWd : hannanVarZ b0 a0 *ᵥ ((hannanVarZ b0 a0)⁻¹ *ᵥ c) = c := by
+  have hWpd : (hannanVarZBack b0 a0).PosDef := hannanVarZBack_posDef hB0 hcop hbdeg hadeg
+  have hWdet : IsUnit (hannanVarZBack b0 a0).det := Matrix.isUnit_iff_isUnit_det _ |>.1 hWpd.isUnit
+  have hWd : hannanVarZBack b0 a0 *ᵥ ((hannanVarZBack b0 a0)⁻¹ *ᵥ c) = c := by
     rw [Matrix.mulVec_mulVec, Matrix.mul_nonsing_inv _ hWdet, Matrix.one_mulVec]
   -- `dᵀ W d = cᵀ W⁻¹ c` — the collapse `(2σ²W)⁻¹(4σ⁴W)(2σ²W)⁻¹ = W⁻¹` in coordinates
-  have hdv : ((hannanVarZ b0 a0)⁻¹ *ᵥ c) ⬝ᵥ
-      (hannanVarZ b0 a0 *ᵥ ((hannanVarZ b0 a0)⁻¹ *ᵥ c))
-        = c ⬝ᵥ ((hannanVarZ b0 a0)⁻¹ *ᵥ c) := by
+  have hdv : ((hannanVarZBack b0 a0)⁻¹ *ᵥ c) ⬝ᵥ
+      (hannanVarZBack b0 a0 *ᵥ ((hannanVarZBack b0 a0)⁻¹ *ᵥ c))
+        = c ⬝ᵥ ((hannanVarZBack b0 a0)⁻¹ *ᵥ c) := by
     rw [hWd, dotProduct_comm]
-  have hvnn : 0 ≤ c ⬝ᵥ ((hannanVarZ b0 a0)⁻¹ *ᵥ c) := by
+  have hvnn : 0 ≤ c ⬝ᵥ ((hannanVarZBack b0 a0)⁻¹ *ᵥ c) := by
     have := hWpd.inv.posSemidef.dotProduct_mulVec_nonneg c
     simpa using this
   -- ## The auxiliary AR processes `b₀(B)U = ε`, `a₀(B)V = ε`, in adapted form
@@ -1197,12 +1599,12 @@ theorem hannan_mle_clt [IsProbabilityMeasure μ] {p q : ℕ}
     exists_adapted_isLinearProcessOf hψa h.whiteNoise hV0meas hV0
   -- ## Step 3: the score CLT
   have hscore := hannanScore_clt h hiid hσ hB0 hcausal hmeas hU hV hUmeas hVmeas
-    hUadapt hVadapt ((hannanVarZ b0 a0)⁻¹ *ᵥ c) (hdv ▸ hvnn) (σ2⁻¹ * u)
+    hUadapt hVadapt ((hannanVarZBack b0 a0)⁻¹ *ᵥ c) (hdv ▸ hvnn) (σ2⁻¹ * u)
   rw [hdv] at hscore
   -- ## The multiplier `σ⁻²` acts on the Gaussian scale, not on the random variable
   have hgauss : charFun (gaussianReal 0 (Real.toNNReal
-        (σ2 * (σ2 * (c ⬝ᵥ ((hannanVarZ b0 a0)⁻¹ *ᵥ c)))))) (σ2⁻¹ * u)
-      = charFun (gaussianReal 0 (Real.toNNReal (c ⬝ᵥ ((hannanVarZ b0 a0)⁻¹ *ᵥ c)))) u := by
+        (σ2 * (σ2 * (c ⬝ᵥ ((hannanVarZBack b0 a0)⁻¹ *ᵥ c)))))) (σ2⁻¹ * u)
+      = charFun (gaussianReal 0 (Real.toNNReal (c ⬝ᵥ ((hannanVarZBack b0 a0)⁻¹ *ᵥ c)))) u := by
     rw [charFun_gaussianReal, charFun_gaussianReal,
       Real.coe_toNNReal _ (by positivity), Real.coe_toNNReal _ hvnn]
     congr 1
@@ -1214,7 +1616,7 @@ theorem hannan_mle_clt [IsProbabilityMeasure μ] {p q : ℕ}
   -- ## The two sequences of the Slutsky step, and their measurability
   have hUVmeas : ∀ (T : ℕ), Measurable
       (fun ω => σ2⁻¹ * ((Real.sqrt T)⁻¹ * ∑ i ∈ Finset.range T,
-        scoreSeq ε U V ((hannanVarZ b0 a0)⁻¹ *ᵥ c) ((i : ℤ) + 1) ω)) := by
+        scoreSeq ε U V ((hannanVarZBack b0 a0)⁻¹ *ᵥ c) ((i : ℤ) + 1) ω)) := by
     intro T
     refine measurable_const.mul (measurable_const.mul (Finset.measurable_sum _ fun i _ => ?_))
     exact (hiid.measurable _).mul
@@ -1613,7 +2015,16 @@ inputs (in the pure-AR case with the correct matrix, by the immunity just quoted
 is left really is only the delta-method bookkeeping — the Jacobian of
 `γ̂ ↦ (Γ̂_k⁻¹ γ̂_k)_k`, the AR(k) recursion, and `(Γ_k⁻¹)_{kk} = σ⁻²`. The brief's suggestion
 to cite `sampleACF_bartlett_clt_debt` remains available but is not needed for the *matrix*
-side of the statement; it is needed only to feed the joint CLT of `γ̂`. -/
+side of the statement; it is needed only to feed the joint CLT of `γ̂`.
+
+**STATUS after wave `ts/f1c-hannan-orientation` (2026-08-09): NOT closed; statement
+re-stated with `hannanVarZBack`, which changes nothing here.** The normalisation now reads
+`d ⬝ᵥ (hannanVarZBack (pad b₀) elim0 *ᵥ d) = 1`. By `hannanVarZ_eq_back_of_pure_ar` the two
+matrices are *literally equal* at `q = 0`, so this is the same statement as before; it is
+re-stated only so that the whole chain speaks about the object the score contracts, and so
+that the repaired `hannanScore_clt` (which now consumes the backward Gram) can be applied
+to it verbatim — as `samplePACF_clt` below in fact does, unchanged. The residue is
+unchanged: the three delta-method items above. -/
 private theorem samplePACF_linearization [IsProbabilityMeasure μ] {p k : ℕ}
     {b0 : Fin p → ℝ} {σ2 : ℝ} {X ε U V : ℤ → Ω → ℝ}
     (h : IsAR b0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -1627,7 +2038,7 @@ private theorem samplePACF_linearization [IsProbabilityMeasure μ] {p k : ℕ}
       (Fin.elim0 : Fin 0 → ℝ)) V ε μ)
     (hUmeas : ∀ t, Measurable (U t)) (hVmeas : ∀ t, Measurable (V t)) :
     ∃ d : Fin k ⊕ Fin 0 → ℝ,
-      d ⬝ᵥ (hannanVarZ (fun i : Fin k => if hi : (i : ℕ) < p then b0 ⟨i, hi⟩ else 0)
+      d ⬝ᵥ (hannanVarZBack (fun i : Fin k => if hi : (i : ℕ) < p then b0 ⟨i, hi⟩ else 0)
         (Fin.elim0 : Fin 0 → ℝ) *ᵥ d) = 1 ∧
       ∀ δ : ℝ, 0 < δ → Tendsto (fun T : ℕ => (μ {ω | δ ≤
         |Real.sqrt T * samplePACF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) k
@@ -1922,7 +2333,26 @@ information matrix in general — but only for genuinely mixed models. Here the 
 `hannanVarZ b₀ elim0 = hannanVarZBack b₀ elim0`, so the instantiation this debt needs is
 unaffected and the two mathematical items recorded above stand verbatim. In particular this
 debt does **not** have to wait on the `hannanVarZ` repair; it waits only on the
-Taylor/sandwich analysis and on the `X_0` boundary discard. -/
+Taylor/sandwich analysis and on the `X_0` boundary discard.
+
+**STATUS after wave `ts/f1c-hannan-orientation` (2026-08-09): NOT attempted; audit of the
+two items refreshed.** The orientation repair is applied upstream, and as predicted it
+changes nothing here (`q = 0`). The two items stand, and the second is the one this wave
+can sharpen from the audit it did of the first:
+
+* **MLE leg.** Blocked on `armaMLE_linearization`, whose residue is now precisely (a) the
+  Hessian ULLN and (b) the first-order condition/mean-value expansion — the score input is
+  PROVED. Nothing else stands between this debt and that one.
+* **YW-vs-LS leg — FINDING 33 (wave `ts/f1c-hannan-orientation`, 2026-08-09).** The `X_0`
+  boundary discard recorded above is correct but is not the only window mismatch, and the
+  second one is easy to miss: `bYW` is built from
+  `sampleACVF`, which is **mean-corrected** (`Process/Defs.lean`), whereas `hLS`'s normal
+  equations are *uncentered*. So the two systems differ by the sample-mean terms as well as
+  by the endpoints. Both differences are `O_p(1/T)` after the LLN — `X̄_T = O_p(T^{−1/2})`
+  and it enters quadratically — so the leg is still `o_p(T^{−1/2})` as claimed, but a proof
+  has to discard *three* things, not one: the `X_0` endpoint, the `s = T−1` endpoint, and
+  the centring. The same remark applies to any future comparison of `samplePACF` (also
+  `sampleACVF`-based, hence centred) with a normal-equation estimator. -/
 theorem ls_yw_mle_equivalent_debt [IsProbabilityMeasure μ] {p : ℕ}
     {b0 : Fin p → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsAR b0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)

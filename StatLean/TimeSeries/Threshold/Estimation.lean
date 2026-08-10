@@ -886,6 +886,228 @@ private theorem tarLS_clt_debt_centering_false
   have hlt : Real.exp (-(1 / 2)) < 1 := Real.exp_lt_one_iff.mpr (by norm_num)
   linarith
 
+/-! ### The regime-wise normal equations and the centered identity (deterministic)
+
+The first bullet of the residue list at `tarLS_clt_debt` below — "the per-regime **normal
+equations** … this algebraic step is what makes `tarRegimeDesignCovCentered` — and not
+`tarRegimeDesignCov` — the matrix in the limit … it is a finite-sample identity and needs
+no probability" — is discharged here, in the form the CLT proof consumes.
+
+`tarLS_normalEquations` differentiates the joint minimality `hLS` along the two families
+of directions (intercept, and each slope coordinate), and
+`tarLS_centered_normalEquation` eliminates the intercept between them, producing
+
+  `Ŝ_i (β̂ − γ) = Σ_{t ∈ R_i} (z_t − z̄_i)(x_t − γ₀ − ⟨γ, z_t⟩)`   (one row at a time)
+
+for an **arbitrary** reference point `(γ₀, γ)`, with `Ŝ_i` the *centered* sample design
+matrix `Σ_{t ∈ R_i}(z_t − z̄_i)(z_t − z̄_i)ᵀ`. Instantiated at the truth `(b0 i, b i)` the
+right-hand side becomes `Σ_{t ∈ R_i}(z_t − z̄_i)·σ_i ε_t`, the martingale-difference sum of
+the CLT; and the matrix on the left is centered whatever the reference point is. That is
+the precise sense in which the third repair of eq. (4.8) (defect 4 / finding 24) is
+*forced by the finite-sample algebra* and not chosen: the uncentered
+`tarRegimeDesignCov` never appears in the identity at all.
+
+Everything here is deterministic — no measure, no model, not even a regime assumption:
+the statements hold for an arbitrary window `x`, an arbitrary index set of the shape
+`tarRegimeIndices`, and an arbitrary joint minimizer. The empty-regime case is included
+(both sides are `0`; `sum_tarRegressor_sub_mean` is proved with no cardinality
+hypothesis, the junk `card⁻¹ = 0` doing the work). -/
+
+section LSNormalEquations
+
+variable {T P : ℕ}
+
+/-- The regime-`i` **regressor vector** `z_t = (x_{t−1−j})_{j<P}`. -/
+noncomputable def tarRegressor (x : Fin T → ℝ) (P : ℕ) (t : Fin T) (j : Fin P) : ℝ :=
+  x ⟨(t : ℕ) - 1 - (j : ℕ), Nat.lt_of_le_of_lt (by omega) t.isLt⟩
+
+lemma tarLSResidualSS_eq (x : Fin T → ℝ) (A : Set ℝ) (d : ℕ) (β0 : ℝ) (β : Fin P → ℝ) :
+    tarLSResidualSS x A d β0 β
+      = ∑ t ∈ tarRegimeIndices x A d P,
+          (x t - β0 - ∑ j : Fin P, β j * tarRegressor x P t j) ^ 2 := rfl
+
+/-- A quadratic that is minimized at `0` has vanishing linear coefficient. -/
+private lemma eq_zero_of_quadratic_min {A B : ℝ} (h : ∀ s : ℝ, 2 * s * A ≤ s ^ 2 * B) :
+    A = 0 := by
+  by_contra hA
+  have hA2 : 0 < A ^ 2 := by positivity
+  set c := min 1 (1 / (|B| + 1)) with hc
+  have hB1 : (0 : ℝ) < |B| + 1 := by positivity
+  have hc0 : 0 < c := lt_min one_pos (by positivity)
+  have h1 := h (c * A)
+  have hpos : 0 < c * A ^ 2 := by positivity
+  have hkey : 2 * (c * A ^ 2) ≤ (c * B) * (c * A ^ 2) := by nlinarith [h1]
+  have h2 : 2 ≤ c * B := le_of_mul_le_mul_right (by linarith [hkey]) hpos
+  have h3 : c * B < 2 := by
+    have hle : c ≤ 1 / (|B| + 1) := min_le_right _ _
+    have habs : c * B ≤ c * |B| := by nlinarith [le_abs_self B, hc0.le]
+    have : c * |B| ≤ 1 := by
+      calc c * |B| ≤ (1 / (|B| + 1)) * |B| := by nlinarith [abs_nonneg B]
+        _ ≤ 1 := by
+            rw [div_mul_eq_mul_div, one_mul, div_le_one hB1]
+            linarith
+    linarith
+  linarith
+
+/-- The first-order condition of a least-squares fit along one direction. -/
+private lemma sum_mul_eq_zero_of_min {ι : Type*} (s : Finset ι) (r v : ι → ℝ)
+    (h : ∀ c : ℝ, ∑ t ∈ s, (r t) ^ 2 ≤ ∑ t ∈ s, (r t - c * v t) ^ 2) :
+    ∑ t ∈ s, r t * v t = 0 := by
+  refine eq_zero_of_quadratic_min (B := ∑ t ∈ s, (v t) ^ 2) fun c => ?_
+  have hexp : ∑ t ∈ s, (r t - c * v t) ^ 2
+      = (∑ t ∈ s, (r t) ^ 2) - 2 * c * (∑ t ∈ s, r t * v t)
+        + c ^ 2 * ∑ t ∈ s, (v t) ^ 2 := by
+    rw [Finset.mul_sum, Finset.mul_sum, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun t _ => by ring
+  have := h c
+  rw [hexp] at this
+  linarith
+
+/-- **The regime-wise normal equations.** -/
+theorem tarLS_normalEquations (x : Fin T → ℝ) (A : Set ℝ) (d : ℕ)
+    {β0 : ℝ} {β : Fin P → ℝ}
+    (hLS : ∀ (γ0 : ℝ) (γ : Fin P → ℝ),
+      tarLSResidualSS x A d β0 β ≤ tarLSResidualSS x A d γ0 γ) :
+    (∑ t ∈ tarRegimeIndices x A d P,
+        (x t - β0 - ∑ j : Fin P, β j * tarRegressor x P t j) = 0) ∧
+    (∀ l : Fin P, ∑ t ∈ tarRegimeIndices x A d P,
+        (x t - β0 - ∑ j : Fin P, β j * tarRegressor x P t j) * tarRegressor x P t l = 0) := by
+  classical
+  set R := tarRegimeIndices x A d P with hR
+  set r : Fin T → ℝ := fun t => x t - β0 - ∑ j : Fin P, β j * tarRegressor x P t j with hr
+  constructor
+  · have h1 : ∑ t ∈ R, r t * (1 : ℝ) = 0 := by
+      refine sum_mul_eq_zero_of_min R r (fun _ => 1) fun c => ?_
+      have hlhs : ∑ t ∈ R, (r t) ^ 2 = tarLSResidualSS x A d β0 β := rfl
+      have hrhs : ∑ t ∈ R, (r t - c * 1) ^ 2 = tarLSResidualSS x A d (β0 + c) β := by
+        rw [tarLSResidualSS_eq]
+        exact Finset.sum_congr rfl fun t _ => by rw [hr]; ring_nf
+      rw [hlhs, hrhs]
+      exact hLS (β0 + c) β
+    simpa using h1
+  · intro l
+    refine sum_mul_eq_zero_of_min R r (fun t => tarRegressor x P t l) fun c => ?_
+    have hlhs : ∑ t ∈ R, (r t) ^ 2 = tarLSResidualSS x A d β0 β := rfl
+    have hrhs : ∑ t ∈ R, (r t - c * tarRegressor x P t l) ^ 2
+        = tarLSResidualSS x A d β0 (fun j => β j + if j = l then c else 0) := by
+      rw [tarLSResidualSS_eq]
+      refine Finset.sum_congr rfl fun t _ => ?_
+      have hstep : ∀ j ∈ (Finset.univ : Finset (Fin P)),
+          (β j + if j = l then c else 0) * tarRegressor x P t j
+            = β j * tarRegressor x P t j
+              + (if j = l then c else 0) * tarRegressor x P t j := fun j _ => by ring
+      have hsum : ∑ j : Fin P, (β j + if j = l then c else 0) * tarRegressor x P t j
+          = (∑ j : Fin P, β j * tarRegressor x P t j) + c * tarRegressor x P t l := by
+        rw [Finset.sum_congr rfl hstep, Finset.sum_add_distrib]
+        congr 1
+        rw [Finset.sum_eq_single l]
+        · rw [if_pos rfl]
+        · intro j _ hj; rw [if_neg hj, zero_mul]
+        · intro h; exact absurd (Finset.mem_univ l) h
+      rw [hsum, hr]
+      ring_nf
+    rw [hlhs, hrhs]
+    exact hLS β0 _
+
+/-- The regime-`i` sample mean of the regressor vector. -/
+noncomputable def tarRegressorMean (x : Fin T → ℝ) (A : Set ℝ) (d P : ℕ) (j : Fin P) : ℝ :=
+  ((tarRegimeIndices x A d P).card : ℝ)⁻¹ *
+    ∑ t ∈ tarRegimeIndices x A d P, tarRegressor x P t j
+
+/-- The regime-`i` **centered sample design matrix** `Ŝ`. -/
+noncomputable def tarSampleDesignCentered (x : Fin T → ℝ) (A : Set ℝ) (d P : ℕ) :
+    Matrix (Fin P) (Fin P) ℝ :=
+  Matrix.of fun l j => ∑ t ∈ tarRegimeIndices x A d P,
+    (tarRegressor x P t l - tarRegressorMean x A d P l) *
+      (tarRegressor x P t j - tarRegressorMean x A d P j)
+
+/-- Centered regressors sum to zero over the regime. -/
+lemma sum_tarRegressor_sub_mean (x : Fin T → ℝ) (A : Set ℝ) (d P : ℕ) (l : Fin P) :
+    ∑ t ∈ tarRegimeIndices x A d P,
+      (tarRegressor x P t l - tarRegressorMean x A d P l) = 0 := by
+  classical
+  rw [Finset.sum_sub_distrib, Finset.sum_const, nsmul_eq_mul, tarRegressorMean]
+  rcases Nat.eq_zero_or_pos (tarRegimeIndices x A d P).card with hcard | hcard
+  · rw [hcard]
+    simp [Finset.card_eq_zero.1 hcard]
+  · have hne : ((tarRegimeIndices x A d P).card : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hcard.ne'
+    field_simp
+    ring
+
+/-- **The centered normal equation** (the finite-sample identity that forces the
+*centered* design covariance into eq. (4.8)). -/
+theorem tarLS_centered_normalEquation (x : Fin T → ℝ) (A : Set ℝ) (d : ℕ)
+    {β0 : ℝ} {β : Fin P → ℝ}
+    (hLS : ∀ (γ0 : ℝ) (γ : Fin P → ℝ),
+      tarLSResidualSS x A d β0 β ≤ tarLSResidualSS x A d γ0 γ)
+    (γ0 : ℝ) (γ : Fin P → ℝ) (l : Fin P) :
+    ∑ j : Fin P, tarSampleDesignCentered x A d P l j * (β j - γ j)
+      = ∑ t ∈ tarRegimeIndices x A d P,
+          (tarRegressor x P t l - tarRegressorMean x A d P l) *
+            (x t - γ0 - ∑ j : Fin P, γ j * tarRegressor x P t j) := by
+  classical
+  obtain ⟨h0, h1⟩ := tarLS_normalEquations x A d hLS
+  have hsum0 := sum_tarRegressor_sub_mean x A d P l
+  have hcent : ∑ t ∈ tarRegimeIndices x A d P,
+      (tarRegressor x P t l - tarRegressorMean x A d P l) *
+        (x t - β0 - ∑ j : Fin P, β j * tarRegressor x P t j) = 0 := by
+    have hexp : ∀ t ∈ tarRegimeIndices x A d P,
+        (tarRegressor x P t l - tarRegressorMean x A d P l) *
+          (x t - β0 - ∑ j : Fin P, β j * tarRegressor x P t j)
+        = (x t - β0 - ∑ j : Fin P, β j * tarRegressor x P t j) * tarRegressor x P t l
+          - tarRegressorMean x A d P l *
+              (x t - β0 - ∑ j : Fin P, β j * tarRegressor x P t j) := fun t _ => by ring
+    rw [Finset.sum_congr rfl hexp, Finset.sum_sub_distrib, ← Finset.mul_sum, h1 l, h0]
+    ring
+  have hcol : ∀ j : Fin P, ∑ t ∈ tarRegimeIndices x A d P,
+      (tarRegressor x P t l - tarRegressorMean x A d P l) * tarRegressor x P t j
+      = tarSampleDesignCentered x A d P l j := by
+    intro j
+    rw [tarSampleDesignCentered]
+    simp only [Matrix.of_apply]
+    have hexp : ∀ t ∈ tarRegimeIndices x A d P,
+        (tarRegressor x P t l - tarRegressorMean x A d P l) *
+          (tarRegressor x P t j - tarRegressorMean x A d P j)
+        = (tarRegressor x P t l - tarRegressorMean x A d P l) * tarRegressor x P t j
+          - tarRegressorMean x A d P j *
+              (tarRegressor x P t l - tarRegressorMean x A d P l) := fun t _ => by ring
+    rw [Finset.sum_congr rfl hexp, Finset.sum_sub_distrib, ← Finset.mul_sum, hsum0]
+    ring
+  have hRHS : ∑ t ∈ tarRegimeIndices x A d P,
+        (tarRegressor x P t l - tarRegressorMean x A d P l) *
+          (x t - γ0 - ∑ j : Fin P, γ j * tarRegressor x P t j)
+      = ∑ t ∈ tarRegimeIndices x A d P,
+          ((tarRegressor x P t l - tarRegressorMean x A d P l) *
+              (x t - β0 - ∑ j : Fin P, β j * tarRegressor x P t j)
+            + (β0 - γ0) * (tarRegressor x P t l - tarRegressorMean x A d P l)
+            + ∑ j : Fin P, (β j - γ j) *
+                ((tarRegressor x P t l - tarRegressorMean x A d P l)
+                  * tarRegressor x P t j)) := by
+    refine Finset.sum_congr rfl fun t _ => ?_
+    have hs : ∑ j : Fin P, (β j - γ j) *
+          ((tarRegressor x P t l - tarRegressorMean x A d P l) * tarRegressor x P t j)
+        = (tarRegressor x P t l - tarRegressorMean x A d P l) *
+            ((∑ j : Fin P, β j * tarRegressor x P t j)
+              - ∑ j : Fin P, γ j * tarRegressor x P t j) := by
+      rw [← Finset.sum_sub_distrib, Finset.mul_sum]
+      exact Finset.sum_congr rfl fun j _ => by ring
+    rw [hs]
+    ring
+  have hswap : ∑ t ∈ tarRegimeIndices x A d P, ∑ j : Fin P, (β j - γ j) *
+        ((tarRegressor x P t l - tarRegressorMean x A d P l) * tarRegressor x P t j)
+      = ∑ j : Fin P, tarSampleDesignCentered x A d P l j * (β j - γ j) := by
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    rw [← Finset.mul_sum, hcol j]
+    ring
+  have hmid : ∑ t ∈ tarRegimeIndices x A d P,
+      (β0 - γ0) * (tarRegressor x P t l - tarRegressorMean x A d P l) = 0 := by
+    rw [← Finset.mul_sum, hsum0, mul_zero]
+  rw [hRHS, Finset.sum_add_distrib, Finset.sum_add_distrib, hcent, hmid, hswap]
+  ring
+
+end LSNormalEquations
+
 /-- **FY eq. (4.8) — DEBT (Chan 1993a; the book's "can be shown", companion to
 Thm 3.2)**: with a known partition, under strict stationarity, ergodicity and finite
 second moments, the regime-wise LS estimator is `√T_i`-asymptotically normal with
@@ -997,7 +1219,38 @@ against it. What the proof needs, in the order a formalization would build it:
 
 The three ARMA-lane inputs this reuses (`mds_clt_sequence`, the indicator-weighted LLN,
 and the charFun form of Slutsky) all exist in the project; the regime-restricted LLN and
-the normal-equation algebra do not, and are the honest cost of closing this. -/
+the normal-equation algebra do not, and are the honest cost of closing this.
+
+**STATUS after wave `ts/f1c-hannan-orientation` (2026-08-09): the first bullet is DONE;
+the debt is not.** The normal-equation algebra now exists, in the section above:
+
+* `tarLS_normalEquations` — the two first-order conditions on the regime index set,
+  obtained from `hLS` by differentiating along the intercept and along each slope
+  coordinate (`sum_mul_eq_zero_of_min`, a one-direction quadratic-minimum lemma);
+* `tarLS_centered_normalEquation` — the elimination of the intercept, giving
+  `Ŝ_i (β̂ − γ) = Σ_{t∈R_i}(z_t − z̄_i)(x_t − γ₀ − ⟨γ, z_t⟩)` row by row, for an arbitrary
+  reference `(γ₀, γ)`, with `Ŝ_i = tarSampleDesignCentered` the **centered** sample design
+  matrix.
+
+Instantiating the second at `(γ₀, γ) = (b0 i, b i)` and using the TAR recurrence turns the
+right-hand side into `σ_i Σ_{t∈R_i}(z_t − z̄_i) ε_t`, which is the martingale-difference sum
+the CLT needs; the left-hand side is `Ŝ_i (β̂ − b_i)`. So the deterministic reduction of the
+statement is complete and it confirms the third repair from the algebra rather than from
+the witness: no uncentered `tarRegimeDesignCov` occurs anywhere in the identity.
+
+**FINDING 31 (wave `ts/f1c-hannan-orientation`, 2026-08-09).** The centered design matrix
+appears in the normal equation for an **arbitrary** reference point `(γ₀, γ)`, not just at
+the truth — the intercept elimination is what produces it, and it happens before any
+probability enters. So defect 4 (finding 24) is not a fact about the limit at the true
+parameter that a witness happened to expose; it is visible in the finite-sample algebra of
+*any* intercept-fitting least-squares problem, and the uncentered `tarRegimeDesignCov`
+cannot appear in a correct eq. (4.8) under any reading.
+
+Of the four bullets above, bullets 2–4 remain, and this wave sharpens one of them: the
+regime-restricted LLN must deliver `T_i⁻¹ Ŝ_i →p Σ_i` for the **centered** `Ŝ_i`, i.e. it
+must also cover the sample regime mean `z̄_i` — a second indicator-weighted LLN (for
+`T_i⁻¹ Σ_{t∈R_i} z_t →p m_i`) plus one Slutsky step, not a single application as the
+bullet suggests. The `√T_i`-versus-`√T` bookkeeping in the last bullet is unaffected. -/
 theorem tarLS_clt_debt [IsProbabilityMeasure μ] {k P : ℕ}
     {b0 : Fin k → ℝ} {b : Fin k → Fin P → ℝ} {σ : Fin k → ℝ} {A : Fin k → Set ℝ}
     {d : ℕ} {X ε : ℤ → Ω → ℝ}
