@@ -3053,9 +3053,9 @@ of the blocks along an arithmetic progression of step `2m`. -/
 
 /-- The `L²(μ)` norm of a real function, as a real number. A bookkeeping device: the
 defect estimates below are triangle inequalities, and this makes them one-liners. -/
-private noncomputable def l2n (μ : Measure Ω) (f : Ω → ℝ) : ℝ := Real.sqrt (∫ ω, f ω ^ 2 ∂μ)
+noncomputable def l2n (μ : Measure Ω) (f : Ω → ℝ) : ℝ := Real.sqrt (∫ ω, f ω ^ 2 ∂μ)
 
-private lemma l2n_nonneg (μ : Measure Ω) (f : Ω → ℝ) : 0 ≤ l2n μ f := Real.sqrt_nonneg _
+lemma l2n_nonneg (μ : Measure Ω) (f : Ω → ℝ) : 0 ≤ l2n μ f := Real.sqrt_nonneg _
 
 private lemma real_inner_mul' (x y : ℝ) : inner ℝ x y = x * y := by
   rw [real_inner_eq_re_inner ℝ, RCLike.inner_apply]
@@ -3074,7 +3074,7 @@ private lemma l2n_eq_norm_toLp {f : Ω → ℝ} (hf : MemLp f 2 μ) : l2n μ f =
     exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
   rw [l2n, ← h, Real.sqrt_sq (norm_nonneg _)]
 
-private lemma l2n_add_le {f g : Ω → ℝ} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+lemma l2n_add_le {f g : Ω → ℝ} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
     l2n μ (fun ω => f ω + g ω) ≤ l2n μ f + l2n μ g := by
   have hfg : MemLp (fun ω => f ω + g ω) 2 μ := hf.add hg
   rw [l2n_eq_norm_toLp hfg, l2n_eq_norm_toLp hf, l2n_eq_norm_toLp hg]
@@ -3082,7 +3082,7 @@ private lemma l2n_add_le {f g : Ω → ℝ} (hf : MemLp f 2 μ) (hg : MemLp g 2 
   rw [hsum]
   exact norm_add_le _ _
 
-private lemma l2n_finset_sum_le {ι : Type*} (s : Finset ι) (F : ι → Ω → ℝ)
+lemma l2n_finset_sum_le {ι : Type*} (s : Finset ι) (F : ι → Ω → ℝ)
     (hF : ∀ i, MemLp (F i) 2 μ) :
     l2n μ (fun ω => ∑ i ∈ s, F i ω) ≤ ∑ i ∈ s, l2n μ (F i) := by
   classical
@@ -3096,7 +3096,7 @@ private lemma l2n_finset_sum_le {ι : Type*} (s : Finset ι) (F : ι → Ω → 
       have := l2n_add_le (hF i) (memLp_finset_sum (μ := μ) s fun j _ => hF j)
       linarith [ih]
 
-private lemma l2n_const_mul (c : ℝ) (f : Ω → ℝ) :
+lemma l2n_const_mul (c : ℝ) (f : Ω → ℝ) :
     l2n μ (fun ω => c * f ω) = |c| * l2n μ f := by
   have hpt : ∀ ω : Ω, (c * f ω) ^ 2 = c ^ 2 * f ω ^ 2 := fun ω => by ring
   have hint : ∫ ω, (c * f ω) ^ 2 ∂μ = c ^ 2 * ∫ ω, f ω ^ 2 ∂μ := by
@@ -3104,7 +3104,7 @@ private lemma l2n_const_mul (c : ℝ) (f : Ω → ℝ) :
     exact integral_const_mul _ _
   rw [l2n, l2n, hint, Real.sqrt_mul (sq_nonneg c), Real.sqrt_sq_eq_abs]
 
-private lemma integral_sq_le_of_l2n_le {f : Ω → ℝ} {c : ℝ} (hc : 0 ≤ c) (h : l2n μ f ≤ c) :
+lemma integral_sq_le_of_l2n_le {f : Ω → ℝ} {c : ℝ} (hc : 0 ≤ c) (h : l2n μ f ≤ c) :
     ∫ ω, f ω ^ 2 ∂μ ≤ c ^ 2 := by
   have h0 : 0 ≤ ∫ ω, f ω ^ 2 ∂μ := integral_nonneg fun ω => sq_nonneg _
   have hsq : l2n μ f ^ 2 = ∫ ω, f ω ^ 2 ∂μ := Real.sq_sqrt h0
@@ -3749,7 +3749,7 @@ private lemma ae_tendsto_avg_blockResid_sq [IsProbabilityMeasure μ] {σ2 : ℝ}
   rw [hsplit, hcast, ← Finset.mul_sum, mul_inv]
   ring
 
-private lemma l2n_abs (f : Ω → ℝ) : l2n μ (fun ω => |f ω|) = l2n μ f := by
+lemma l2n_abs (f : Ω → ℝ) : l2n μ (fun ω => |f ω|) = l2n μ f := by
   simp only [l2n, sq_abs]
 
 private lemma l2n_neg (f : Ω → ℝ) : l2n μ (fun ω => -f ω) = l2n μ f := by
@@ -3771,7 +3771,7 @@ private lemma l2n_eq_eLpNorm_toReal {f : Ω → ℝ} (hf : MemLp f 2 μ) :
   exact eLpNorm_congr_ae hf.coeFn_toLp
 
 /-- Cauchy–Schwarz in the form used below. -/
-private lemma integral_abs_mul_le [IsProbabilityMeasure μ] {f g : Ω → ℝ}
+lemma integral_abs_mul_le [IsProbabilityMeasure μ] {f g : Ω → ℝ}
     (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
     ∫ ω, |f ω * g ω| ∂μ ≤ l2n μ f * l2n μ g := by
   have hfa : MemLp (fun ω => |f ω|) 2 μ := hf.abs
@@ -3783,7 +3783,7 @@ private lemma integral_abs_mul_le [IsProbabilityMeasure μ] {f g : Ω → ℝ}
   rw [heq, ← l2n_abs f, ← l2n_abs g, l2n_eq_norm_toLp hfa, l2n_eq_norm_toLp hga]
   exact h
 
-private lemma l2n_noise [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
+lemma l2n_noise [IsProbabilityMeasure μ] {σ2 : ℝ} {ε : ℤ → Ω → ℝ}
     (hε : IsWhiteNoise ε σ2 μ) (t : ℤ) : l2n μ (ε t) = Real.sqrt σ2 := by
   have h : ∫ ω, ε t ω ^ 2 ∂μ = σ2 := by
     have h1 : ∫ ω, ε t ω ^ 2 ∂μ = ∫ ω, ε t ω * ε t ω ∂μ :=
@@ -3805,7 +3805,7 @@ private lemma l2n_linearProcess_eq [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} 
 /-- **Uniform `L²` control of the `ψ`-truncation defect**: `‖X_t − Σ_{n<N} ψ_n ε_{t−n}‖₂ ≤
 (Σ_{n ≥ N}|ψ_n|)·√σ²`, the bound being independent of `t`. This is what lets the
 progression device use a *finite* window of the noise. -/
-private lemma l2n_sub_psum_le [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ2 : ℝ}
+lemma l2n_sub_psum_le [IsProbabilityMeasure μ] {ψ : ℕ → ℝ} {σ2 : ℝ}
     {X ε : ℤ → Ω → ℝ} (hX : IsLinearProcessOf ψ X ε μ) (hψ : Summable fun j => |ψ j|)
     (hε : IsWhiteNoise ε σ2 μ) (hmeas : ∀ t, Measurable (X t)) (t : ℤ) (N : ℕ) :
     l2n μ (fun ω => X t ω - ∑ n ∈ Finset.range N, ψ n * ε (t - (n : ℕ)) ω)
@@ -5154,7 +5154,7 @@ private lemma piMat_zero_fun {p q : ℕ} (T : ℕ) :
 
 open Matrix in
 /-- **`T⁻¹‖x‖²` is bounded in probability by a deterministic constant.** -/
-private lemma normSq_bounded_inProb [IsProbabilityMeasure μ] {p q : ℕ}
+lemma normSq_bounded_inProb [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
     (hB0 : ARMAInvertibleParams b0 a0)
