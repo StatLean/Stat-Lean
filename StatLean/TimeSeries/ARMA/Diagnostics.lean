@@ -1616,6 +1616,664 @@ theorem measurable_residual_sampleACF {p q T : ℕ} {X : ℤ → Ω → ℝ}
 
 end ResidualMeasurability
 
+/-! ### Deterministic and `L²` bricks for the residual-vs-innovation transfer (residue (B))
+
+The stochastic half of residue (B) needs four things that the project did not have, all
+proved here (wave `ts/f4a-arma-last`):
+
+* a **perturbation bound for the lag-`k` sample autocovariance** in the `ℓ²` modulus of
+  the window (`abs_sampleACVF_sub_le`, and its un-Cauchy-Schwarzed form
+  `abs_sampleACVF_sub_le_sum`, which is what the `L¹` leg needs);
+* **Young's inequality for the truncated convolution** that defines the fitted residuals
+  (`sum_sq_truncConv_le`), which converts the `ℓ¹` Lipschitz bound
+  `Consistency.exists_armaPi_l1_lipschitz` into an `ℓ²` bound on the residual window;
+* the fact that **invertibility is an open condition** (`exists_ball_invertible`) — needed
+  because the frozen statement supplies no compact search region, only
+  `√T(θ̂_T − θ₀) →p 0`, so the compact set on which the Lipschitz brick lives has to be
+  produced from `hB0` alone;
+* the **residual/innovation identity** `ε̂_t(θ₀) = ε_{t+1} + (π ∗ truncation defect)_t`
+  (`sampleResiduals_eq_noise_add`) together with the summed `L²` bound
+  `exists_sum_l2n_residDefect_le`. The identity is exact and finite — it is the
+  convolution identity `π ∗ ψ = δ` (`Consistency.armaPi_conv_armaPsi`) applied inside the
+  window — so no a.e. rearrangement of a double series is involved, and the defect is
+  summable in `t` because the `ψ`-truncation defect at time `t` is geometric in `t`.
+
+Note the last item is why the truncation leg cannot go through
+`abs_sampleACVF_sub_le`: `Σ_t (ε̂_t(θ₀) − ε_{t+1})²` is `O_p(1)`, **not** `o_p(1)`, so the
+`ℓ²`-modulus route loses exactly the factor `√T` that has to be won. The leg is an `L¹`
+estimate summed over the window instead (`Σ_t ‖·‖₂ = O(1)`, giving `O(T^{-1/2})` after
+`√T`-scaling), which is the shape recorded at the residue's finding-28 note. -/
+
+section TransferBricks
+
+variable {p q : ℕ} {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
+
+/-- The centred window. -/
+private noncomputable def cent {T : ℕ} (y : Fin T → ℝ) : Fin T → ℝ := fun t => y t - sampleMean y
+
+/-- The `k`-shift of a window, padded with zeros past the end. -/
+private noncomputable def shiftPad {T : ℕ} (k : ℕ) (y : Fin T → ℝ) : Fin T → ℝ :=
+  fun t => if h : (t : ℕ) + k < T then y ⟨(t : ℕ) + k, h⟩ else 0
+
+private lemma cent_sub {T : ℕ} (y z : Fin T → ℝ) (t : Fin T) :
+    cent (fun s => y s - z s) t = cent y t - cent z t := by
+  simp only [cent, sampleMean, Finset.sum_sub_distrib, mul_sub]
+  ring
+
+private lemma shiftPad_sub {T : ℕ} (k : ℕ) (y z : Fin T → ℝ) (t : Fin T) :
+    shiftPad k (fun s => y s - z s) t = shiftPad k y t - shiftPad k z t := by
+  simp only [shiftPad]
+  by_cases h : (t : ℕ) + k < T <;> simp [h]
+
+private lemma sampleACVF_eq_cent {T : ℕ} (y : Fin T → ℝ) (k : ℕ) :
+    sampleACVF y k = (T : ℝ)⁻¹ * ∑ t : Fin T, cent y t * shiftPad k (cent y) t := by
+  simp only [sampleACVF, cent, shiftPad]
+  congr 1
+  refine Finset.sum_congr rfl fun t _ => ?_
+  by_cases h : (t : ℕ) + k < T <;> simp [h]
+
+private lemma sum_sq_cent_le {T : ℕ} (y : Fin T → ℝ) :
+    ∑ t : Fin T, cent y t ^ 2 ≤ ∑ t : Fin T, y t ^ 2 := by
+  rcases Nat.eq_zero_or_pos T with hT | hT
+  · subst hT; simp
+  have hTpos : (0 : ℝ) < (T : ℝ) := by exact_mod_cast hT
+  have hexp : ∑ t : Fin T, cent y t ^ 2
+      = (∑ t : Fin T, y t ^ 2) - (T : ℝ) * sampleMean y ^ 2 := by
+    have hsum : ∑ t : Fin T, y t = (T : ℝ) * sampleMean y := by
+      simp only [sampleMean]
+      field_simp
+    have : ∑ t : Fin T, cent y t ^ 2
+        = (∑ t : Fin T, y t ^ 2) - 2 * sampleMean y * (∑ t : Fin T, y t)
+          + (T : ℝ) * sampleMean y ^ 2 := by
+      have hpt : ∀ t : Fin T, cent y t ^ 2
+          = y t ^ 2 - 2 * sampleMean y * y t + sampleMean y ^ 2 := by
+        intro t; simp only [cent]; ring
+      rw [Finset.sum_congr rfl fun t (_ : t ∈ Finset.univ) => hpt t,
+        Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
+        Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    rw [this, hsum]; ring
+  rw [hexp]
+  nlinarith [sq_nonneg (sampleMean y)]
+
+private lemma sum_sq_shiftPad_le {T : ℕ} (k : ℕ) (y : Fin T → ℝ) :
+    ∑ t : Fin T, shiftPad k y t ^ 2 ≤ ∑ t : Fin T, y t ^ 2 := by
+  classical
+  set S : Finset (Fin T) := Finset.univ.filter (fun t : Fin T => (t : ℕ) + k < T) with hS
+  set S' : Finset (Fin T) := Finset.univ.filter (fun s : Fin T => k ≤ (s : ℕ)) with hS'
+  have h1 : ∑ t : Fin T, shiftPad k y t ^ 2 = ∑ t ∈ S, shiftPad k y t ^ 2 := by
+    refine (Finset.sum_subset (Finset.subset_univ S) ?_).symm
+    intro t _ ht
+    have : ¬ ((t : ℕ) + k < T) := by simpa [hS] using ht
+    simp [shiftPad, this]
+  have h2 : ∑ t ∈ S, shiftPad k y t ^ 2 = ∑ s ∈ S', y s ^ 2 := by
+    refine Finset.sum_bij (fun t ht => (⟨(t : ℕ) + k, (Finset.mem_filter.1 ht).2⟩ : Fin T))
+      ?_ ?_ ?_ ?_
+    · intro t ht
+      simp [hS']
+    · intro t ht t' ht' hEq
+      have : (t : ℕ) + k = (t' : ℕ) + k := by simpa using congrArg (Fin.val) hEq
+      exact Fin.ext (by omega)
+    · intro s hs
+      have hks : k ≤ (s : ℕ) := by simpa [hS'] using hs
+      refine ⟨⟨(s : ℕ) - k, lt_of_le_of_lt (Nat.sub_le _ _) s.isLt⟩, ?_, ?_⟩
+      · simp only [hS, Finset.mem_filter, Finset.mem_univ, true_and]
+        have := s.isLt
+        omega
+      · exact Fin.ext (by simp; omega)
+    · intro t ht
+      have h : (t : ℕ) + k < T := (Finset.mem_filter.1 ht).2
+      simp [shiftPad, h]
+  rw [h1, h2]
+  exact Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ S')
+    (fun s _ _ => sq_nonneg _)
+
+/-- Discrete Cauchy–Schwarz in the form used below. -/
+private lemma sum_abs_mul_le_sqrt {T : ℕ} (u v : Fin T → ℝ) :
+    ∑ t : Fin T, |u t| * |v t|
+      ≤ Real.sqrt (∑ t : Fin T, u t ^ 2) * Real.sqrt (∑ t : Fin T, v t ^ 2) := by
+  have hcs := Finset.sum_mul_sq_le_sq_mul_sq Finset.univ (fun t : Fin T => |u t|)
+    (fun t : Fin T => |v t|)
+  have hu : ∑ t : Fin T, |u t| ^ 2 = ∑ t : Fin T, u t ^ 2 :=
+    Finset.sum_congr rfl fun t _ => sq_abs _
+  have hv : ∑ t : Fin T, |v t| ^ 2 = ∑ t : Fin T, v t ^ 2 :=
+    Finset.sum_congr rfl fun t _ => sq_abs _
+  rw [hu, hv] at hcs
+  have h0 : (0 : ℝ) ≤ ∑ t : Fin T, |u t| * |v t| :=
+    Finset.sum_nonneg fun t _ => mul_nonneg (abs_nonneg _) (abs_nonneg _)
+  have hru : (0 : ℝ) ≤ ∑ t : Fin T, u t ^ 2 := Finset.sum_nonneg fun t _ => sq_nonneg _
+  have hrv : (0 : ℝ) ≤ ∑ t : Fin T, v t ^ 2 := Finset.sum_nonneg fun t _ => sq_nonneg _
+  have := Real.sqrt_le_sqrt hcs
+  rwa [Real.sqrt_sq h0, Real.sqrt_mul hru] at this
+
+/-- **The deterministic ACVF perturbation bound**: the lag-`k` sample autocovariance is
+Lipschitz in the window, with the `ℓ²` modulus. -/
+private lemma abs_sampleACVF_sub_le {T : ℕ} (k : ℕ) (y z : Fin T → ℝ) :
+    |sampleACVF y k - sampleACVF z k|
+      ≤ (T : ℝ)⁻¹ * (Real.sqrt (∑ t : Fin T, (y t - z t) ^ 2) *
+          (Real.sqrt (∑ t : Fin T, y t ^ 2) + Real.sqrt (∑ t : Fin T, z t ^ 2))) := by
+  classical
+  set d : Fin T → ℝ := fun t => y t - z t with hd
+  have hsplit : ∀ t : Fin T,
+      cent y t * shiftPad k (cent y) t - cent z t * shiftPad k (cent z) t
+        = cent d t * shiftPad k (cent y) t + cent z t * shiftPad k (cent d) t := by
+    intro t
+    have h1 : cent d t = cent y t - cent z t := cent_sub y z t
+    have h2 : shiftPad k (cent d) t = shiftPad k (cent y) t - shiftPad k (cent z) t := by
+      have : (cent d) = fun s => cent y s - cent z s := funext fun s => cent_sub y z s
+      rw [this, shiftPad_sub]
+    rw [h1, h2]; ring
+  have hdiff : sampleACVF y k - sampleACVF z k
+      = (T : ℝ)⁻¹ * ∑ t : Fin T, (cent d t * shiftPad k (cent y) t
+          + cent z t * shiftPad k (cent d) t) := by
+    rw [sampleACVF_eq_cent y k, sampleACVF_eq_cent z k, ← mul_sub, ← Finset.sum_sub_distrib]
+    congr 1
+    exact Finset.sum_congr rfl fun t _ => hsplit t
+  rw [hdiff, abs_mul, abs_of_nonneg (by positivity : (0:ℝ) ≤ (T:ℝ)⁻¹)]
+  refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+  refine le_trans (Finset.abs_sum_le_sum_abs _ _) ?_
+  have hbd : ∀ t : Fin T, |cent d t * shiftPad k (cent y) t + cent z t * shiftPad k (cent d) t|
+      ≤ |cent d t| * |shiftPad k (cent y) t| + |cent z t| * |shiftPad k (cent d) t| := by
+    intro t
+    refine le_trans (abs_add_le _ _) ?_
+    rw [abs_mul, abs_mul]
+  refine le_trans (Finset.sum_le_sum fun t _ => hbd t) ?_
+  rw [Finset.sum_add_distrib]
+  have hA := sum_abs_mul_le_sqrt (cent d) (shiftPad k (cent y))
+  have hB := sum_abs_mul_le_sqrt (cent z) (shiftPad k (cent d))
+  have hd2 : Real.sqrt (∑ t : Fin T, cent d t ^ 2) ≤ Real.sqrt (∑ t : Fin T, d t ^ 2) :=
+    Real.sqrt_le_sqrt (sum_sq_cent_le d)
+  have hy2 : Real.sqrt (∑ t : Fin T, shiftPad k (cent y) t ^ 2)
+      ≤ Real.sqrt (∑ t : Fin T, y t ^ 2) :=
+    Real.sqrt_le_sqrt (le_trans (sum_sq_shiftPad_le k (cent y)) (sum_sq_cent_le y))
+  have hz2 : Real.sqrt (∑ t : Fin T, cent z t ^ 2) ≤ Real.sqrt (∑ t : Fin T, z t ^ 2) :=
+    Real.sqrt_le_sqrt (sum_sq_cent_le z)
+  have hdd2 : Real.sqrt (∑ t : Fin T, shiftPad k (cent d) t ^ 2)
+      ≤ Real.sqrt (∑ t : Fin T, d t ^ 2) :=
+    Real.sqrt_le_sqrt (le_trans (sum_sq_shiftPad_le k (cent d)) (sum_sq_cent_le d))
+  have h1 : ∑ t : Fin T, |cent d t| * |shiftPad k (cent y) t|
+      ≤ Real.sqrt (∑ t : Fin T, d t ^ 2) * Real.sqrt (∑ t : Fin T, y t ^ 2) := by
+    refine le_trans hA (mul_le_mul hd2 hy2 (Real.sqrt_nonneg _) (Real.sqrt_nonneg _))
+  have h2 : ∑ t : Fin T, |cent z t| * |shiftPad k (cent d) t|
+      ≤ Real.sqrt (∑ t : Fin T, z t ^ 2) * Real.sqrt (∑ t : Fin T, d t ^ 2) := by
+    refine le_trans hB (mul_le_mul hz2 hdd2 (Real.sqrt_nonneg _) (Real.sqrt_nonneg _))
+  have : Real.sqrt (∑ t : Fin T, d t ^ 2) * Real.sqrt (∑ t : Fin T, y t ^ 2)
+      + Real.sqrt (∑ t : Fin T, z t ^ 2) * Real.sqrt (∑ t : Fin T, d t ^ 2)
+      = Real.sqrt (∑ t : Fin T, d t ^ 2) *
+        (Real.sqrt (∑ t : Fin T, y t ^ 2) + Real.sqrt (∑ t : Fin T, z t ^ 2)) := by ring
+  linarith [h1, h2, this.le, this.ge]
+
+/-- Young's inequality `‖π ∗ x‖₂ ≤ ‖π‖₁‖x‖₂` for the *truncated* (triangular) convolution
+that defines the fitted residuals. -/
+private lemma sum_sq_truncConv_le {π : ℕ → ℝ} (hπ : Summable fun n => |π n|) (xx : ℕ → ℝ) (T : ℕ) :
+    ∑ t ∈ Finset.range T, (∑ j ∈ Finset.range (t + 1), π j * xx (t - j)) ^ 2
+      ≤ (∑' n : ℕ, |π n|) ^ 2 * ∑ s ∈ Finset.range T, xx s ^ 2 := by
+  classical
+  set P : ℝ := ∑' n : ℕ, |π n| with hP
+  have hP0 : 0 ≤ P := tsum_nonneg fun n => abs_nonneg _
+  have hpart : ∀ m : ℕ, ∑ j ∈ Finset.range m, |π j| ≤ P :=
+    fun m => sum_le_hasSum _ (fun i _ => abs_nonneg _) hπ.hasSum
+  -- pointwise Cauchy–Schwarz with the weights `|π j|`
+  have hpt : ∀ t : ℕ, (∑ j ∈ Finset.range (t + 1), π j * xx (t - j)) ^ 2
+      ≤ P * ∑ j ∈ Finset.range (t + 1), |π j| * xx (t - j) ^ 2 := by
+    intro t
+    have hcs := Finset.sum_sq_le_sum_mul_sum_of_sq_eq_mul (Finset.range (t + 1))
+      (r := fun j => |π j| * |xx (t - j)|) (f := fun j => |π j|)
+      (g := fun j => |π j| * xx (t - j) ^ 2)
+      (fun j _ => abs_nonneg _)
+      (fun j _ => mul_nonneg (abs_nonneg _) (sq_nonneg _))
+      (fun j _ => by
+        rw [mul_pow, sq_abs (xx (t - j))]
+        ring)
+    have habs : |∑ j ∈ Finset.range (t + 1), π j * xx (t - j)|
+        ≤ ∑ j ∈ Finset.range (t + 1), |π j| * |xx (t - j)| := by
+      refine le_trans (Finset.abs_sum_le_sum_abs _ _) (Finset.sum_le_sum fun j _ => ?_)
+      rw [abs_mul]
+    have hsq : (∑ j ∈ Finset.range (t + 1), π j * xx (t - j)) ^ 2
+        ≤ (∑ j ∈ Finset.range (t + 1), |π j| * |xx (t - j)|) ^ 2 := by
+      have h0 : (0 : ℝ) ≤ ∑ j ∈ Finset.range (t + 1), |π j| * |xx (t - j)| :=
+        Finset.sum_nonneg fun j _ => mul_nonneg (abs_nonneg _) (abs_nonneg _)
+      calc (∑ j ∈ Finset.range (t + 1), π j * xx (t - j)) ^ 2
+          = |∑ j ∈ Finset.range (t + 1), π j * xx (t - j)| ^ 2 := (sq_abs _).symm
+        _ ≤ _ := by nlinarith [abs_nonneg (∑ j ∈ Finset.range (t + 1), π j * xx (t - j))]
+    have hg0 : (0 : ℝ) ≤ ∑ j ∈ Finset.range (t + 1), |π j| * xx (t - j) ^ 2 :=
+      Finset.sum_nonneg fun j _ => mul_nonneg (abs_nonneg _) (sq_nonneg _)
+    have := hpart (t + 1)
+    nlinarith [hcs, hsq]
+  refine le_trans (Finset.sum_le_sum fun t _ => hpt t) ?_
+  rw [← Finset.mul_sum]
+  have hswap : ∑ t ∈ Finset.range T, ∑ j ∈ Finset.range (t + 1), |π j| * xx (t - j) ^ 2
+      ≤ P * ∑ s ∈ Finset.range T, xx s ^ 2 := by
+    have hext : ∀ t ∈ Finset.range T,
+        ∑ j ∈ Finset.range (t + 1), |π j| * xx (t - j) ^ 2
+          = ∑ j ∈ Finset.range T, (if j ≤ t then |π j| * xx (t - j) ^ 2 else 0) := by
+      intro t ht
+      have htT : t < T := Finset.mem_range.1 ht
+      rw [← Finset.sum_filter]
+      refine Finset.sum_congr ?_ fun j _ => rfl
+      ext j
+      simp only [Finset.mem_filter, Finset.mem_range]
+      omega
+    rw [Finset.sum_congr rfl hext, Finset.sum_comm]
+    have hinner : ∀ j ∈ Finset.range T,
+        ∑ t ∈ Finset.range T, (if j ≤ t then |π j| * xx (t - j) ^ 2 else 0)
+          ≤ |π j| * ∑ s ∈ Finset.range T, xx s ^ 2 := by
+      intro j hj
+      have hjT : j < T := Finset.mem_range.1 hj
+      rw [← Finset.sum_filter]
+      have hfil : (Finset.range T).filter (fun t => j ≤ t) = Finset.Ico j T := by
+        ext t
+        simp only [Finset.mem_filter, Finset.mem_range, Finset.mem_Ico]
+        omega
+      rw [hfil, Finset.sum_Ico_eq_sum_range, ← Finset.mul_sum]
+      refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)
+      have hcongr : ∀ i ∈ Finset.range (T - j), xx (j + i - j) ^ 2 = xx i ^ 2 := by
+        intro i _
+        congr 2
+        omega
+      rw [Finset.sum_congr rfl hcongr]
+      exact Finset.sum_le_sum_of_subset_of_nonneg
+        (Finset.range_mono (Nat.sub_le T j)) (fun s _ _ => sq_nonneg _)
+    refine le_trans (Finset.sum_le_sum hinner) ?_
+    rw [← Finset.sum_mul]
+    exact mul_le_mul_of_nonneg_right (hpart T)
+      (Finset.sum_nonneg fun s _ => sq_nonneg _)
+  have hx0 : (0 : ℝ) ≤ ∑ s ∈ Finset.range T, xx s ^ 2 :=
+    Finset.sum_nonneg fun s _ => sq_nonneg _
+  calc P * ∑ t ∈ Finset.range T, ∑ j ∈ Finset.range (t + 1), |π j| * xx (t - j) ^ 2
+      ≤ P * (P * ∑ s ∈ Finset.range T, xx s ^ 2) :=
+        mul_le_mul_of_nonneg_left hswap hP0
+    _ = P ^ 2 * ∑ s ∈ Finset.range T, xx s ^ 2 := by ring
+
+/-- Triangle swap: `Σ_{j≤t} Σ_{n≤t−j} G j n = Σ_{r≤t} Σ_{j≤r} G j (r−j)`. -/
+private lemma sum_triangle_swap {M : Type*} [AddCommMonoid M] (G : ℕ → ℕ → M) (t : ℕ) :
+    ∑ j ∈ Finset.range (t + 1), ∑ n ∈ Finset.range (t + 1 - j), G j n
+      = ∑ r ∈ Finset.range (t + 1), ∑ j ∈ Finset.range (r + 1), G j (r - j) := by
+  induction t with
+  | zero => simp
+  | succ t ih =>
+      have hL : ∑ j ∈ Finset.range (t + 2), ∑ n ∈ Finset.range (t + 2 - j), G j n
+          = (∑ j ∈ Finset.range (t + 1), ∑ n ∈ Finset.range (t + 1 - j), G j n)
+            + ∑ j ∈ Finset.range (t + 2), G j (t + 1 - j) := by
+        rw [Finset.sum_range_succ (fun j => ∑ n ∈ Finset.range (t + 2 - j), G j n),
+          Finset.sum_range_succ (fun j => G j (t + 1 - j))]
+        have hsplit : ∀ j ∈ Finset.range (t + 1),
+            ∑ n ∈ Finset.range (t + 2 - j), G j n
+              = (∑ n ∈ Finset.range (t + 1 - j), G j n) + G j (t + 1 - j) := by
+          intro j hj
+          have hj' : j < t + 1 := Finset.mem_range.1 hj
+          have : t + 2 - j = (t + 1 - j) + 1 := by omega
+          rw [this, Finset.sum_range_succ]
+        rw [Finset.sum_congr rfl hsplit, Finset.sum_add_distrib]
+        have : t + 2 - (t + 1) = 1 := by omega
+        rw [this]
+        simp only [Finset.sum_range_one, Nat.sub_self]
+        abel
+      have hR : ∑ r ∈ Finset.range (t + 2), ∑ j ∈ Finset.range (r + 1), G j (r - j)
+          = (∑ r ∈ Finset.range (t + 1), ∑ j ∈ Finset.range (r + 1), G j (r - j))
+            + ∑ j ∈ Finset.range (t + 2), G j (t + 1 - j) :=
+        Finset.sum_range_succ _ _
+      rw [hL, hR, ih]
+
+
+private lemma aeval_arPoly_eq (b : Fin p → ℝ) (z : ℂ) :
+    Polynomial.aeval z (arPoly b) = 1 - ∑ i : Fin p, (b i : ℂ) * z ^ ((i : ℕ) + 1) := by
+  simp [arPoly]
+
+private lemma aeval_maPoly_eq (a : Fin q → ℝ) (z : ℂ) :
+    Polynomial.aeval z (maPoly a) = 1 + ∑ j : Fin q, (a j : ℂ) * z ^ ((j : ℕ) + 1) := by
+  simp [maPoly]
+
+private lemma continuous_aeval_arPoly' (b : Fin p → ℝ) :
+    Continuous fun z : ℂ => Polynomial.aeval z (arPoly b) := by
+  simp only [aeval_arPoly_eq]
+  fun_prop
+
+private lemma continuous_aeval_maPoly' (a : Fin q → ℝ) :
+    Continuous fun z : ℂ => Polynomial.aeval z (maPoly a) := by
+  simp only [aeval_maPoly_eq]
+  fun_prop
+
+/-- A nonvanishing AR polynomial is bounded away from zero on the closed disc. -/
+private lemma exists_pos_lower_arPoly {b : Fin p → ℝ} (hb : NoRootClosedDisc b) :
+    ∃ δ : ℝ, 0 < δ ∧ ∀ z : ℂ, ‖z‖ ≤ 1 → δ ≤ ‖Polynomial.aeval z (arPoly b)‖ := by
+  have hcpt : IsCompact (Metric.closedBall (0 : ℂ) 1) := isCompact_closedBall _ _
+  have hne : (Metric.closedBall (0 : ℂ) 1).Nonempty := ⟨0, by simp⟩
+  obtain ⟨z0, hz0, hmin⟩ := hcpt.exists_isMinOn hne
+    ((continuous_aeval_arPoly' b).norm.continuousOn)
+  refine ⟨‖Polynomial.aeval z0 (arPoly b)‖, ?_, ?_⟩
+  · have : Polynomial.aeval z0 (arPoly b) ≠ 0 := hb z0 (by simpa using hz0)
+    positivity
+  · intro z hz
+    exact hmin (by simpa using hz)
+
+private lemma exists_pos_lower_maPoly {a : Fin q → ℝ}
+    (ha : ∀ z : ℂ, ‖z‖ ≤ 1 → Polynomial.aeval z (maPoly a) ≠ 0) :
+    ∃ δ : ℝ, 0 < δ ∧ ∀ z : ℂ, ‖z‖ ≤ 1 → δ ≤ ‖Polynomial.aeval z (maPoly a)‖ := by
+  have hcpt : IsCompact (Metric.closedBall (0 : ℂ) 1) := isCompact_closedBall _ _
+  have hne : (Metric.closedBall (0 : ℂ) 1).Nonempty := ⟨0, by simp⟩
+  obtain ⟨z0, hz0, hmin⟩ := hcpt.exists_isMinOn hne
+    ((continuous_aeval_maPoly' a).norm.continuousOn)
+  refine ⟨‖Polynomial.aeval z0 (maPoly a)‖, ?_, ?_⟩
+  · have : Polynomial.aeval z0 (maPoly a) ≠ 0 := ha z0 (by simpa using hz0)
+    positivity
+  · intro z hz
+    exact hmin (by simpa using hz)
+
+private lemma norm_aeval_arPoly_sub_le (b b' : Fin p → ℝ) {z : ℂ} (hz : ‖z‖ ≤ 1) :
+    ‖Polynomial.aeval z (arPoly b) - Polynomial.aeval z (arPoly b')‖ ≤ p * dist b b' := by
+  rw [aeval_arPoly_eq, aeval_arPoly_eq]
+  have hid : (1 - ∑ i : Fin p, (b i : ℂ) * z ^ ((i : ℕ) + 1))
+      - (1 - ∑ i : Fin p, (b' i : ℂ) * z ^ ((i : ℕ) + 1))
+      = ∑ i : Fin p, ((b' i : ℂ) - (b i : ℂ)) * z ^ ((i : ℕ) + 1) := by
+    rw [show (1 : ℂ) - (∑ i : Fin p, (b i : ℂ) * z ^ ((i : ℕ) + 1))
+          - (1 - ∑ i : Fin p, (b' i : ℂ) * z ^ ((i : ℕ) + 1))
+        = (∑ i : Fin p, (b' i : ℂ) * z ^ ((i : ℕ) + 1))
+          - ∑ i : Fin p, (b i : ℂ) * z ^ ((i : ℕ) + 1) from by ring,
+      ← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun i _ => by ring
+  rw [hid]
+  refine le_trans (norm_sum_le _ _) ?_
+  have hterm : ∀ i : Fin p, ‖((b' i : ℂ) - (b i : ℂ)) * z ^ ((i : ℕ) + 1)‖ ≤ dist b b' := by
+    intro i
+    rw [norm_mul, norm_pow]
+    have h1 : ‖(b' i : ℂ) - (b i : ℂ)‖ = |b' i - b i| := by
+      rw [← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
+    have h2 : |b' i - b i| ≤ dist b b' := by
+      rw [abs_sub_comm]
+      exact le_trans (le_of_eq (Real.dist_eq _ _).symm) (dist_le_pi_dist b b' i)
+    have h3 : ‖z‖ ^ ((i : ℕ) + 1) ≤ 1 := pow_le_one₀ (norm_nonneg _) hz
+    calc ‖(b' i : ℂ) - (b i : ℂ)‖ * ‖z‖ ^ ((i : ℕ) + 1)
+        ≤ ‖(b' i : ℂ) - (b i : ℂ)‖ * 1 :=
+          mul_le_mul_of_nonneg_left h3 (norm_nonneg _)
+      _ = |b' i - b i| := by rw [mul_one, h1]
+      _ ≤ dist b b' := h2
+  refine le_trans (Finset.sum_le_sum fun i _ => hterm i) ?_
+  simp [Finset.sum_const, Finset.card_univ]
+
+private lemma norm_aeval_maPoly_sub_le (a a' : Fin q → ℝ) {z : ℂ} (hz : ‖z‖ ≤ 1) :
+    ‖Polynomial.aeval z (maPoly a) - Polynomial.aeval z (maPoly a')‖ ≤ q * dist a a' := by
+  rw [aeval_maPoly_eq, aeval_maPoly_eq]
+  have hid : (1 + ∑ j : Fin q, (a j : ℂ) * z ^ ((j : ℕ) + 1))
+      - (1 + ∑ j : Fin q, (a' j : ℂ) * z ^ ((j : ℕ) + 1))
+      = ∑ j : Fin q, ((a j : ℂ) - (a' j : ℂ)) * z ^ ((j : ℕ) + 1) := by
+    rw [show (1 : ℂ) + (∑ j : Fin q, (a j : ℂ) * z ^ ((j : ℕ) + 1))
+          - (1 + ∑ j : Fin q, (a' j : ℂ) * z ^ ((j : ℕ) + 1))
+        = (∑ j : Fin q, (a j : ℂ) * z ^ ((j : ℕ) + 1))
+          - ∑ j : Fin q, (a' j : ℂ) * z ^ ((j : ℕ) + 1) from by ring,
+      ← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun j _ => by ring
+  rw [hid]
+  refine le_trans (norm_sum_le _ _) ?_
+  have hterm : ∀ j : Fin q, ‖((a j : ℂ) - (a' j : ℂ)) * z ^ ((j : ℕ) + 1)‖ ≤ dist a a' := by
+    intro j
+    rw [norm_mul, norm_pow]
+    have h1 : ‖(a j : ℂ) - (a' j : ℂ)‖ = |a j - a' j| := by
+      rw [← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
+    have h2 : |a j - a' j| ≤ dist a a' :=
+      le_trans (le_of_eq (Real.dist_eq _ _).symm) (dist_le_pi_dist a a' j)
+    have h3 : ‖z‖ ^ ((j : ℕ) + 1) ≤ 1 := pow_le_one₀ (norm_nonneg _) hz
+    calc ‖(a j : ℂ) - (a' j : ℂ)‖ * ‖z‖ ^ ((j : ℕ) + 1)
+        ≤ ‖(a j : ℂ) - (a' j : ℂ)‖ * 1 :=
+          mul_le_mul_of_nonneg_left h3 (norm_nonneg _)
+      _ = |a j - a' j| := by rw [mul_one, h1]
+      _ ≤ dist a a' := h2
+  refine le_trans (Finset.sum_le_sum fun j _ => hterm j) ?_
+  simp [Finset.sum_const, Finset.card_univ]
+
+/-- **Invertibility is an open condition**: a small enough closed ball around an
+invertible parameter consists of invertible parameters. -/
+private theorem exists_ball_invertible {b0 : Fin p → ℝ} {a0 : Fin q → ℝ}
+    (hB0 : ARMAInvertibleParams b0 a0) :
+    ∃ ρ : ℝ, 0 < ρ ∧ ∀ ba : (Fin p → ℝ) × (Fin q → ℝ),
+      dist ba (b0, a0) ≤ ρ → ARMAInvertibleParams ba.1 ba.2 := by
+  obtain ⟨δ1, hδ1, hlow1⟩ := exists_pos_lower_arPoly hB0.1
+  obtain ⟨δ2, hδ2, hlow2⟩ := exists_pos_lower_maPoly hB0.2
+  refine ⟨min δ1 δ2 / (2 * (p + q + 1)), by positivity, ?_⟩
+  rintro ⟨b, a⟩ hdist
+  have hb : dist b b0 ≤ min δ1 δ2 / (2 * (p + q + 1)) :=
+    le_trans (by rw [Prod.dist_eq]; exact le_max_left _ _) hdist
+  have ha : dist a a0 ≤ min δ1 δ2 / (2 * (p + q + 1)) :=
+    le_trans (by rw [Prod.dist_eq]; exact le_max_right _ _) hdist
+  have hpq : (0 : ℝ) < 2 * (p + q + 1) := by positivity
+  constructor
+  · intro z hz hzero
+    have h1 : ‖Polynomial.aeval z (arPoly b0) - Polynomial.aeval z (arPoly b)‖
+        ≤ p * dist b0 b := norm_aeval_arPoly_sub_le b0 b hz
+    rw [hzero, sub_zero] at h1
+    have h2 : δ1 ≤ ‖Polynomial.aeval z (arPoly b0)‖ := hlow1 z hz
+    have h3 : (p : ℝ) * dist b0 b ≤ (p : ℝ) * (min δ1 δ2 / (2 * (p + q + 1))) := by
+      rw [dist_comm]
+      exact mul_le_mul_of_nonneg_left hb (Nat.cast_nonneg p)
+    have h4 : (p : ℝ) * (min δ1 δ2 / (2 * (p + q + 1))) < δ1 := by
+      rw [mul_div_assoc'] at *
+      rw [div_lt_iff₀ hpq]
+      have hm1 : min δ1 δ2 ≤ δ1 := min_le_left _ _
+      nlinarith [Nat.cast_nonneg (α := ℝ) p, Nat.cast_nonneg (α := ℝ) q, hδ1]
+    linarith
+  · intro z hz hzero
+    have h1 : ‖Polynomial.aeval z (maPoly a0) - Polynomial.aeval z (maPoly a)‖
+        ≤ q * dist a0 a := norm_aeval_maPoly_sub_le a0 a hz
+    rw [hzero, sub_zero] at h1
+    have h2 : δ2 ≤ ‖Polynomial.aeval z (maPoly a0)‖ := hlow2 z hz
+    have h3 : (q : ℝ) * dist a0 a ≤ (q : ℝ) * (min δ1 δ2 / (2 * (p + q + 1))) := by
+      rw [dist_comm]
+      exact mul_le_mul_of_nonneg_left ha (Nat.cast_nonneg q)
+    have h4 : (q : ℝ) * (min δ1 δ2 / (2 * (p + q + 1))) < δ2 := by
+      rw [mul_div_assoc'] at *
+      rw [div_lt_iff₀ hpq]
+      have hm2 : min δ1 δ2 ≤ δ2 := min_le_right _ _
+      nlinarith [Nat.cast_nonneg (α := ℝ) p, Nat.cast_nonneg (α := ℝ) q, hδ2]
+    linarith
+
+
+/-- The `ψ`-truncation defect at time `s + 1`. -/
+private noncomputable def truncDefect (b0 : Fin p → ℝ) (a0 : Fin q → ℝ) (X ε : ℤ → Ω → ℝ)
+    (s : ℕ) : Ω → ℝ :=
+  fun ω => X ((s : ℤ) + 1) ω - ∑ n ∈ Finset.range (s + 1),
+    armaPsi b0 a0 n * ε ((s : ℤ) + 1 - (n : ℕ)) ω
+
+/-- The residual defect `π-filtered truncation error`. -/
+private noncomputable def residDefect (b0 : Fin p → ℝ) (a0 : Fin q → ℝ) (X ε : ℤ → Ω → ℝ)
+    (t : ℕ) : Ω → ℝ :=
+  fun ω => ∑ j ∈ Finset.range (t + 1),
+    armaPi b0 a0 j * truncDefect b0 a0 X ε (t - j) ω
+
+/-- **The residual/noise identity**: the truncated residual at the true parameter is the
+innovation plus the `π`-filtered truncation defect. -/
+private lemma sampleResiduals_eq_noise_add {T : ℕ} (t : Fin T) (ω : Ω) :
+    sampleResiduals b0 a0 (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t
+      = ε (((t : ℕ) : ℤ) + 1) ω + residDefect b0 a0 X ε (t : ℕ) ω := by
+  classical
+  have hsub : ∀ j ∈ Finset.range ((t : ℕ) + 1),
+      X (((((t : ℕ) - j : ℕ)) : ℤ) + 1) ω
+        = truncDefect b0 a0 X ε ((t : ℕ) - j) ω
+          + ∑ n ∈ Finset.range (((t : ℕ) - j) + 1),
+              armaPsi b0 a0 n * ε (((((t : ℕ) - j : ℕ)) : ℤ) + 1 - (n : ℕ)) ω := by
+    intro j _
+    simp [truncDefect]
+  have hL : sampleResiduals b0 a0 (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t
+      = ∑ j ∈ Finset.range ((t : ℕ) + 1),
+          armaPi b0 a0 j * X (((((t : ℕ) - j : ℕ)) : ℤ) + 1) ω := rfl
+  rw [hL, Finset.sum_congr rfl (fun j hj => by rw [hsub j hj]), ]
+  have hexpand : ∑ j ∈ Finset.range ((t : ℕ) + 1), armaPi b0 a0 j *
+        (truncDefect b0 a0 X ε ((t : ℕ) - j) ω
+          + ∑ n ∈ Finset.range (((t : ℕ) - j) + 1),
+              armaPsi b0 a0 n * ε (((((t : ℕ) - j : ℕ)) : ℤ) + 1 - (n : ℕ)) ω)
+      = residDefect b0 a0 X ε (t : ℕ) ω
+        + ∑ j ∈ Finset.range ((t : ℕ) + 1), ∑ n ∈ Finset.range ((t : ℕ) + 1 - j),
+            armaPi b0 a0 j * armaPsi b0 a0 n * ε (((t : ℕ) : ℤ) + 1 - (j : ℕ) - (n : ℕ)) ω := by
+    rw [residDefect]
+    rw [← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun j hj => ?_
+    have hjt : j ≤ (t : ℕ) := Nat.lt_succ_iff.1 (Finset.mem_range.1 hj)
+    have hrange : ((t : ℕ) - j) + 1 = (t : ℕ) + 1 - j := by omega
+    rw [mul_add, hrange, Finset.mul_sum]
+    congr 1
+    refine Finset.sum_congr rfl fun n _ => ?_
+    have hidx : (((((t : ℕ) - j : ℕ)) : ℤ) + 1 - (n : ℕ))
+        = ((t : ℕ) : ℤ) + 1 - (j : ℕ) - (n : ℕ) := by
+      have : ((((t : ℕ) - j : ℕ)) : ℤ) = ((t : ℕ) : ℤ) - (j : ℤ) := by
+        push_cast [Nat.cast_sub hjt]
+        ring
+      rw [this]; push_cast; ring
+    rw [hidx, mul_assoc]
+  rw [hexpand]
+  have hswap := sum_triangle_swap
+    (fun j n => armaPi b0 a0 j * armaPsi b0 a0 n * ε (((t : ℕ) : ℤ) + 1 - (j : ℕ) - (n : ℕ)) ω)
+    (t : ℕ)
+  rw [hswap]
+  have hinner : ∀ r ∈ Finset.range ((t : ℕ) + 1),
+      ∑ j ∈ Finset.range (r + 1), armaPi b0 a0 j * armaPsi b0 a0 (r - j) *
+          ε (((t : ℕ) : ℤ) + 1 - (j : ℕ) - ((r - j : ℕ) : ℕ)) ω
+        = (if r = 0 then 1 else 0) * ε (((t : ℕ) : ℤ) + 1 - (r : ℕ)) ω := by
+    intro r _
+    have hcongr : ∀ j ∈ Finset.range (r + 1),
+        armaPi b0 a0 j * armaPsi b0 a0 (r - j) *
+            ε (((t : ℕ) : ℤ) + 1 - (j : ℕ) - ((r - j : ℕ) : ℕ)) ω
+          = (armaPi b0 a0 j * armaPsi b0 a0 (r - j)) *
+              ε (((t : ℕ) : ℤ) + 1 - (r : ℕ)) ω := by
+      intro j hj
+      have hjr : j ≤ r := Nat.lt_succ_iff.1 (Finset.mem_range.1 hj)
+      have hidx : (((t : ℕ) : ℤ) + 1 - (j : ℕ) - ((r - j : ℕ) : ℕ))
+          = ((t : ℕ) : ℤ) + 1 - (r : ℕ) := by
+        have : ((r - j : ℕ) : ℤ) = (r : ℤ) - (j : ℤ) := by
+          push_cast [Nat.cast_sub hjr]; ring
+        rw [this]; ring
+      rw [hidx]
+    rw [Finset.sum_congr rfl hcongr, ← Finset.sum_mul, armaPi_conv_armaPsi]
+  rw [Finset.sum_congr rfl hinner]
+  have hpick : ∑ r ∈ Finset.range ((t : ℕ) + 1),
+      (if r = 0 then (1 : ℝ) else 0) * ε (((t : ℕ) : ℤ) + 1 - (r : ℕ)) ω
+        = ε (((t : ℕ) : ℤ) + 1) ω := by
+    rw [Finset.sum_eq_single 0]
+    · simp
+    · intro r _ hr; simp [hr]
+    · intro h; simp at h
+  rw [hpick]
+  ring
+
+private lemma memLp_truncDefect [IsProbabilityMeasure μ]
+    (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
+    (hψ : Summable fun n => |armaPsi b0 a0 n|)
+    (hwn : IsWhiteNoise ε σ2 μ) (hmeas : ∀ t, Measurable (X t)) (s : ℕ) :
+    MemLp (truncDefect b0 a0 X ε s) 2 μ := by
+  refine MemLp.sub (hcausal.memLp hψ hwn hmeas _) ?_
+  exact memLp_finset_sum _ fun n _ => (hwn.memLp _).const_mul _
+
+private lemma memLp_residDefect [IsProbabilityMeasure μ]
+    (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
+    (hψ : Summable fun n => |armaPsi b0 a0 n|)
+    (hwn : IsWhiteNoise ε σ2 μ) (hmeas : ∀ t, Measurable (X t)) (t : ℕ) :
+    MemLp (residDefect b0 a0 X ε t) 2 μ :=
+  memLp_finset_sum _ fun j _ =>
+    (memLp_truncDefect hcausal hψ hwn hmeas (t - j)).const_mul _
+
+/-- Geometric control of the coefficient tail. -/
+private lemma tsum_abs_shift_le {ψ : ℕ → ℝ} {C r : ℝ} (hC : 0 ≤ C) (hr0 : 0 ≤ r) (hr1 : r < 1)
+    (hψ : Summable fun n => |ψ n|) (hb : ∀ n, |ψ n| ≤ C * r ^ n) (N : ℕ) :
+    ∑' k : ℕ, |ψ (k + N)| ≤ C * r ^ N * (1 - r)⁻¹ := by
+  have hshift : Summable fun k : ℕ => |ψ (k + N)| := (summable_nat_add_iff N).2 hψ
+  have hgeom : Summable fun k : ℕ => C * r ^ N * r ^ k :=
+    (summable_geometric_of_lt_one hr0 hr1).mul_left _
+  refine le_trans (hshift.tsum_le_tsum (fun k => ?_) hgeom) ?_
+  · calc |ψ (k + N)| ≤ C * r ^ (k + N) := hb _
+      _ = C * r ^ N * r ^ k := by rw [pow_add]; ring
+  · rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1]
+
+/-- The `L²` size of the truncation defect. -/
+private lemma l2n_truncDefect_le [IsProbabilityMeasure μ]
+    (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
+    (hψ : Summable fun n => |armaPsi b0 a0 n|)
+    (hwn : IsWhiteNoise ε σ2 μ) (hmeas : ∀ t, Measurable (X t)) (s : ℕ) :
+    l2n μ (truncDefect b0 a0 X ε s)
+      ≤ (∑' k : ℕ, |armaPsi b0 a0 (k + (s + 1))|) * Real.sqrt σ2 :=
+  l2n_sub_psum_le hcausal hψ hwn hmeas ((s : ℤ) + 1) (s + 1)
+
+/-- **The summed `L²` size of the residual defect is bounded uniformly in the window
+length**: the truncation error of the fitted residuals is `O_p(1/T)` at the level of the
+sample autocovariance. -/
+private theorem exists_sum_l2n_residDefect_le [IsProbabilityMeasure μ]
+    (hB0 : ARMAInvertibleParams b0 a0)
+    (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
+    (hwn : IsWhiteNoise ε σ2 μ) (hmeas : ∀ t, Measurable (X t)) :
+    ∃ S : ℝ, 0 ≤ S ∧ ∀ T : ℕ,
+      ∑ t ∈ Finset.range T, l2n μ (residDefect b0 a0 X ε t) ≤ S := by
+  classical
+  obtain ⟨C, r, hC, hr0, hr1, hψb, hπb⟩ :=
+    exists_uniform_geometric_bound_arma (K := {((b0, a0) : (Fin p → ℝ) × (Fin q → ℝ))})
+      isCompact_singleton (by rintro ba rfl; exact hB0)
+  have hψ : ∀ n, |armaPsi b0 a0 n| ≤ C * r ^ n := fun n => hψb _ rfl n
+  have hπ : ∀ n, |armaPi b0 a0 n| ≤ C * r ^ n := fun n => hπb _ rfl n
+  have hCpos : (0 : ℝ) < C := lt_of_lt_of_le zero_lt_one hC
+  have hgeomS : Summable fun n : ℕ => C * r ^ n :=
+    (summable_geometric_of_lt_one hr0 hr1).mul_left _
+  have hψsum : Summable fun n => |armaPsi b0 a0 n| :=
+    Summable.of_nonneg_of_le (fun n => abs_nonneg _) hψ hgeomS
+  -- the per-`t` bound
+  set K : ℝ := C ^ 2 * (1 - r)⁻¹ * Real.sqrt σ2 * r with hK
+  have hK0 : 0 ≤ K := by
+    have : (0 : ℝ) < 1 - r := by linarith
+    positivity
+  have hterm : ∀ t : ℕ, l2n μ (residDefect b0 a0 X ε t) ≤ K * (((t : ℝ) + 1) * r ^ t) := by
+    intro t
+    have hsum := l2n_finset_sum_le (μ := μ) (Finset.range (t + 1))
+      (fun j => fun ω => armaPi b0 a0 j * truncDefect b0 a0 X ε (t - j) ω)
+      (fun j => (memLp_truncDefect hcausal hψsum hwn hmeas (t - j)).const_mul _)
+    have hconst : ∀ j : ℕ, l2n μ (fun ω => armaPi b0 a0 j * truncDefect b0 a0 X ε (t - j) ω)
+        = |armaPi b0 a0 j| * l2n μ (truncDefect b0 a0 X ε (t - j)) :=
+      fun j => l2n_const_mul _ _
+    have hbd : ∀ j ∈ Finset.range (t + 1),
+        |armaPi b0 a0 j| * l2n μ (truncDefect b0 a0 X ε (t - j))
+          ≤ (C * r ^ j) * (C * r ^ (t - j + 1) * (1 - r)⁻¹ * Real.sqrt σ2) := by
+      intro j hj
+      have h1 : |armaPi b0 a0 j| ≤ C * r ^ j := hπ j
+      have h2 : l2n μ (truncDefect b0 a0 X ε (t - j))
+          ≤ C * r ^ (t - j + 1) * (1 - r)⁻¹ * Real.sqrt σ2 := by
+        refine le_trans (l2n_truncDefect_le hcausal hψsum hwn hmeas (t - j)) ?_
+        have := tsum_abs_shift_le (ψ := armaPsi b0 a0) hCpos.le hr0 hr1 hψsum hψ (t - j + 1)
+        exact mul_le_mul_of_nonneg_right this (Real.sqrt_nonneg _)
+      exact mul_le_mul h1 h2 (l2n_nonneg _ _) (by positivity)
+    have hcollapse : ∀ j ∈ Finset.range (t + 1),
+        (C * r ^ j) * (C * r ^ (t - j + 1) * (1 - r)⁻¹ * Real.sqrt σ2)
+          = K * r ^ t := by
+      intro j hj
+      have hjt : j ≤ t := Nat.lt_succ_iff.1 (Finset.mem_range.1 hj)
+      have hidx : j + (t - j + 1) = t + 1 := by omega
+      have hpow : r ^ j * r ^ (t - j + 1) = r ^ t * r := by
+        rw [← pow_add, hidx, pow_succ]
+      rw [hK]
+      calc (C * r ^ j) * (C * r ^ (t - j + 1) * (1 - r)⁻¹ * Real.sqrt σ2)
+          = C ^ 2 * (1 - r)⁻¹ * Real.sqrt σ2 * (r ^ j * r ^ (t - j + 1)) := by ring
+        _ = C ^ 2 * (1 - r)⁻¹ * Real.sqrt σ2 * (r ^ t * r) := by rw [hpow]
+        _ = C ^ 2 * (1 - r)⁻¹ * Real.sqrt σ2 * r * r ^ t := by ring
+    have : l2n μ (residDefect b0 a0 X ε t)
+        ≤ ∑ j ∈ Finset.range (t + 1), K * r ^ t := by
+      refine le_trans ?_ (le_of_eq (Finset.sum_congr rfl hcollapse))
+      refine le_trans ?_ (Finset.sum_le_sum hbd)
+      simpa only [residDefect, hconst] using hsum
+    simpa [Finset.sum_const, Finset.card_range, mul_comm, mul_left_comm, mul_assoc]
+      using this
+  -- sum the bound
+  have hsummable : Summable fun t : ℕ => K * (((t : ℝ) + 1) * r ^ t) := by
+    have h1 : Summable fun t : ℕ => (t : ℝ) * r ^ t := by
+      simpa using summable_pow_mul_geometric_of_norm_lt_one (R := ℝ) 1
+        (by rwa [Real.norm_eq_abs, abs_of_nonneg hr0])
+    have h2 : Summable fun t : ℕ => r ^ t := summable_geometric_of_lt_one hr0 hr1
+    have : Summable fun t : ℕ => ((t : ℝ) + 1) * r ^ t := by
+      simpa [add_mul] using h1.add h2
+    exact this.mul_left _
+  refine ⟨∑' t : ℕ, K * (((t : ℝ) + 1) * r ^ t), ?_, ?_⟩
+  · refine tsum_nonneg fun t => ?_
+    have : (0 : ℝ) ≤ r ^ t := pow_nonneg hr0 t
+    positivity
+  · intro T
+    refine le_trans (Finset.sum_le_sum fun t _ => hterm t) ?_
+    refine sum_le_hasSum _ (fun t _ => ?_) hsummable.hasSum
+    have : (0 : ℝ) ≤ r ^ t := pow_nonneg hr0 t
+    positivity
+
+end TransferBricks
+
 /-- **RESIDUE (B) — the residual-vs-innovation transfer**, bundled with the
 measurability of the residual statistic (the two are the same plumbing).
 
