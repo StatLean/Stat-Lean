@@ -208,3 +208,4 @@ theorem bootstrapCounts_multinomial [NeZero n] :
     mul_inv_cancel₀ (Nat.cast_ne_zero.mpr (NeZero.ne n))]
 
 end StatLean.ComputationalStatistics
+

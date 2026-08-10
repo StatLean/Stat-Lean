@@ -71,3 +71,4 @@ theorem pi_map_deleteSplit (i : Fin (n + 1)) :
   map_deleteSplit_aux i
 
 end StatLean.ComputationalStatistics
+

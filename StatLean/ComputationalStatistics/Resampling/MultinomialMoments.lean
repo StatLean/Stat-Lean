@@ -109,9 +109,8 @@ private theorem cov_coord_same (hq0 : ∀ i, 0 ≤ q i) (hq1 : ∑ i, q i = 1)
     simp only [Pi.mul_apply]
     by_cases h1 : a i = j
     · by_cases h2 : j = k
-      · simp [h1, h1.trans h2, h2]
-      · have h3 : a i ≠ k := fun h => h2 (h1.symm.trans h)
-        simp [h1, h3, h2]
+      · simp [h1, h2]
+      · simp [h1, h2]
     · simp [h1]
   simp only [hprod]
   rw [integral_coord_ite hq0 hq1 i j (if j = k then (1 : ℝ) else 0),
