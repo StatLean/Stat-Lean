@@ -32,18 +32,19 @@ def ContaminationBiasLE (T : Measure Ω → ℝ) (P : Measure Ω) (ε b : ℝ) :
 
 /-- A bias bound remains valid for any larger bound. -/
 theorem ContaminationBiasLE.mono {T : Measure Ω → ℝ} {P : Measure Ω} {ε b b' : ℝ}
-    (h : ContaminationBiasLE T P ε b) (hb : b ≤ b') : ContaminationBiasLE T P ε b' := by
-  sorry
+    (h : ContaminationBiasLE T P ε b) (hb : b ≤ b') : ContaminationBiasLE T P ε b' :=
+  fun Q hQ => (h Q hQ).trans hb
 
 /-- At contamination level `0` the bias vanishes. -/
 theorem contaminationBiasLE_zero (T : Measure Ω → ℝ) (P : Measure Ω) :
     ContaminationBiasLE T P 0 0 := by
-  sorry
+  intro Q _
+  rw [contaminate_zero, sub_self, abs_zero]
 
 /-- A bias bound specializes to point-mass contamination. -/
 theorem ContaminationBiasLE.dirac [MeasurableSingletonClass Ω] {T : Measure Ω → ℝ}
     {P : Measure Ω} {ε b : ℝ} (h : ContaminationBiasLE T P ε b) (x : Ω) :
-    |T (contaminate P (Measure.dirac x) ε) - T P| ≤ b := by
-  sorry
+    |T (contaminate P (Measure.dirac x) ε) - T P| ≤ b :=
+  h (Measure.dirac x) Measure.dirac.isProbabilityMeasure
 
 end StatLean.RobustStatistics

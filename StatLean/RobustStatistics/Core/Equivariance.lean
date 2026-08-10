@@ -76,6 +76,10 @@ neighbourhood of the shifted `P` (the equivariance step in the maximal-breakdown
 theorem map_add_grossErrorNbhd (P : Measure ℝ) (a ε : ℝ) :
     (fun R : Measure ℝ => R.map (· + a)) '' grossErrorNbhd P ε ⊆
       grossErrorNbhd (P.map (· + a)) ε := by
-  sorry
+  rintro R ⟨S, ⟨Q, hQ, rfl⟩, rfl⟩
+  haveI := hQ
+  have hmeas : Measurable (fun x : ℝ => x + a) := measurable_add_const a
+  exact ⟨Q.map (· + a), Measure.isProbabilityMeasure_map hmeas.aemeasurable,
+    map_contaminate hmeas ε⟩
 
 end StatLean.RobustStatistics
