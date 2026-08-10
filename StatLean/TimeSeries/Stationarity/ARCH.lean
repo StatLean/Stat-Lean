@@ -1,4 +1,5 @@
 import StatLean.TimeSeries.Models.WhiteNoise
+import StatLean.TimeSeries.Mixing.Defs
 import StatLean.TimeSeries.Process.Stationary
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.Probability.Distributions.Gaussian.Real
@@ -1337,6 +1338,52 @@ theorem archInf_mds [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
   rw [e1, e2, e3, e4]
   simp
 
+/-! ### The noise family is α-mixing (residue item 1 of `archInf_clt_debt`)
+
+An i.i.d. family is α-mixing in the strongest possible way: `α(n) = 0` outright for every
+`n ≥ 1`, because `σ{ξ_s : s ≤ 0}` and `σ{ξ_s : s ≥ n}` are *independent*, so every element
+of the α description set is `0` and its supremum is `sup {0}`. No rate, no moment and no
+property of `Y` itself enters — this is the only mixing input the ergodicity route behind
+`archInf_clt_debt`'s `hvar` needs (see the residue note there). -/
+
+/-- Disjoint index blocks of an independent family generate independent σ-algebras. -/
+private lemma indep_sigmaLE_sigmaGE_of_iIndep {ξ : ℤ → Ω → ℝ}
+    (hmeas : ∀ t, Measurable (ξ t)) (hind : iIndepFun ξ μ) {n : ℤ} (hn : 0 < n) :
+    Indep (sigmaLE ξ 0) (sigmaGE ξ n) μ := by
+  refine indep_iSup_of_disjoint (fun i => (hmeas i).comap_le) hind ?_
+  rw [Set.disjoint_left]
+  intro a ha hb
+  simp only [Set.mem_Iic] at ha
+  simp only [Set.mem_Ici] at hb
+  omega
+
+/-- **`α(n) = 0` for an independent family at every lag `n ≥ 1`.** -/
+private lemma alphaCoeff_eq_zero_of_iIndep [IsProbabilityMeasure μ] {ξ : ℤ → Ω → ℝ}
+    (hmeas : ∀ t, Measurable (ξ t)) (hind : iIndepFun ξ μ) {n : ℕ} (hn : 1 ≤ n) :
+    alphaCoeff ξ μ n = 0 := by
+  have hI : Indep (sigmaLE ξ 0) (sigmaGE ξ (n : ℤ)) μ :=
+    indep_sigmaLE_sigmaGE_of_iIndep hmeas hind (by exact_mod_cast hn)
+  have hmul := (Indep_iff _ _ μ).1 hI
+  have hset : {r : ℝ | ∃ A B : Set Ω, MeasurableSet[sigmaLE ξ 0] A ∧
+      MeasurableSet[sigmaGE ξ (n : ℤ)] B ∧
+      r = |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal|} = {(0 : ℝ)} := by
+    ext r
+    constructor
+    · rintro ⟨A, B, hA, hB, rfl⟩
+      rw [Set.mem_singleton_iff, hmul A B hA hB, ENNReal.toReal_mul, sub_self, abs_zero]
+    · rintro rfl
+      exact ⟨∅, ∅, @MeasurableSet.empty Ω (sigmaLE ξ 0),
+        @MeasurableSet.empty Ω (sigmaGE ξ (n : ℤ)), by simp⟩
+  rw [alphaCoeff, alphaMixCoeff, hset, csSup_singleton]
+
+/-- **The ARCH(∞) noise family is α-mixing** (FY Definition 2.11), with `α ≡ 0` past
+lag `0`. -/
+theorem IsARCHNoise.isAlphaMixing [IsProbabilityMeasure μ] {ξ : ℤ → Ω → ℝ}
+    (hξ : IsARCHNoise ξ μ) : IsAlphaMixing ξ μ := by
+  refine Tendsto.congr' ?_ (tendsto_const_nhds (x := (0 : ℝ)) (f := atTop (α := ℕ)))
+  filter_upwards [eventually_ge_atTop 1] with n hn
+  exact (alphaCoeff_eq_zero_of_iIndep hξ.measurable hξ.iIndep hn).symm
+
 /-- **FY Theorem 2.6 — DEBT** (Giraitis–Kokoszka–Leipus 2000; fdd invariance principle):
 under eq. (2.16), the normalized partial sums of a stationary ARCH(∞) process are
 asymptotically `N(0, σ²)` with long-run variance `σ² = Σ_k Cov(Y_k, Y_0)`. Stated at the
@@ -1422,11 +1469,43 @@ So the residue of `hvar` is now three named items, none of them a missing theory
    (`Mixing/Relations.lean` has `IsAlphaMixing.comp` — heredity under an instantaneous
    transform — but no i.i.d. instance), and it is the *only* mixing input the route needs:
    no rate on `bc`, no mixing property of `Y` itself.
+   **CLOSED** (wave `ts/f3b-tail`, 2026-08-09): `IsARCHNoise.isAlphaMixing`, over
+   `alphaCoeff_eq_zero_of_iIndep`, proved above. It cost one new import
+   (`Mixing/Defs.lean` — *not* `Mixing/Relations.lean`: `α = 0` is `csSup {0}` after
+   showing the whole α description set is `{0}`, so neither `alphaMixCoeff_nonneg` nor
+   `alphaMixCoeff_le_one` is needed) and `Mathlib`'s `indep_iSup_of_disjoint`, which is
+   exactly the disjoint-index-blocks statement for `iIndep`. Nothing here uses
+   `IsARCHNoise.nonneg` or `integral_eq_one`; the brick is stated at the level of
+   `iIndepFun` + measurability, so it transfers verbatim to `IsIIDNoise`.
 2. the **causal-functional representation** `ρ_t = g ∘ shiftPath^t` on the noise path space,
    which is what `archInf_eq_archSol` (`Y = archSol a bc ξ`, and `archSol` is by
    construction `archFun a bc ∘ archPath ξ t`) is for. This is (C) below, and is the one
    item with real work in it.
 3. `E[ρ_0²] = v⁻¹σ_d²` bookkeeping, free once 1–2 are in place.
+
+**(B″) Wave `ts/f3b-tail` (2026-08-09) — two corrections to (B′)'s inventory**, found while
+closing item 1 and both concerning the `Mixing/LimitTheorems.lean` end of the route:
+
+* **`preErgodic_shiftPath` is not the only `private` declaration in the way.** Its
+  *statement* mentions `shiftPath` and `pathLaw`, and its use needs
+  `measurePreserving_shiftPath` (to upgrade `PreErgodic` to `Ergodic`, which is what
+  `birkhoffAverage_ae_tendsto_integral` consumes) and `measurable_shiftPath`. All four are
+  `private` in that file, so the un-privatisation is a four-declaration change, not a
+  one-line one. The alternative — re-proving the chain inside `Stationarity/ARCH.lean` —
+  is not cheaper: `preErgodic_shiftPath`'s proof is a π-system/cylinder argument on the
+  path law running to some eighty lines, on top of `comap_path_cyl` and the fintuple
+  shift-invariance lemmas, all of them also `private`.
+* **A fourth item is needed: `IsStrictlyStationary ξ μ` for the i.i.d. noise.** It is a
+  hypothesis of `preErgodic_shiftPath` alongside the mixing one, and (B′) did not list it.
+  It is *not* free from `IsARCHNoise`: `IsStrictlyStationary` quantifies over arbitrary
+  index tuples `t : Fin n → ℤ`, and for a tuple with **repeats** the joint law is not a
+  product measure, so the direct `iIndepFun`-to-`Measure.pi` route (which needs `t`
+  injective) does not apply as stated. The honest shape is: prove it for injective `t`
+  from `iIndepFun` + `identDistrib`, then obtain the general tuple by pushing the
+  injective-tuple law forward along the fixed coordinate-selection map `y ↦ (y_{t i})_i`,
+  which does not depend on the shift `k`. That is a self-contained lemma about i.i.d.
+  families and belongs next to `isStrictlyStationary_iff_window` in
+  `Process/Stationary.lean`, outside this lane's touch set.
 
 Everything downstream of `hvar` — `hL2`, `hlind`, `hadapted`, `hmds` — is unchanged and
 still free/proved. The α-mixing SLLN `slln_of_alphaMixing_debt` itself is *not* on the

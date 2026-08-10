@@ -1273,8 +1273,20 @@ the reduction the remaining debts start from.
   MDS route; `L → ∞` after `T → ∞` removes the guard-block loss.
 * (R2) the fourth-moment covariance `Cov(X_s^{(N)2}, X_t^{(N)2})`, i.e. the partition
   formula for `E[ε_i ε_j ε_k ε_l]` over i.i.d. innovations (`η σ⁴` on the diagonal,
-  `σ⁴` on each pairing, `0` otherwise). This is the only genuinely *missing analytic
-  input* — everything else in (R1)/(R3) reuses machinery in this file.
+  `σ⁴` on each pairing, `0` otherwise). This was the only genuinely *missing analytic
+  input* — everything else in (R1)/(R3) reuses machinery in this file. **CLOSED**
+  (wave `ts/f3b-tail`, 2026-08-09): `integral_sq_mul_sq_noiseComb` and its covariance
+  form `cov_sq_noiseComb`, in the `FourthMoment` section below, at arbitrary finitely
+  supported weights `c`, `d` — so at *every* pair of lags `(s, t)` and every truncation
+  level `N` at once, which is what the joint (Bartlett) version needs as well. Two
+  corrections to the plan as stated here are worth recording. First, the *partition
+  formula* is not the right intermediate object: proving it means a four-fold sum split
+  over equality patterns of `(i, j, k, l)`, and the one-coordinate induction of
+  `integral_sq_mul_sq_step` replaces it entirely (the pattern bookkeeping becomes a
+  `ring` identity in one new innovation). Second, no third moment of `ε` is needed and
+  none is available from the hypotheses of the two debts — the `A³` block is killed by
+  `E Q = E R = 0` rather than by `E ε³ = 0`, and the `A¹` block by `E ε = 0`; a route
+  that *did* need `E ε³` would be unprovable from `MemLp (ε 0) 4 μ` alone.
 * (R3) the truncation transfer at the squared level,
   `‖T^{-1/2} Σ_t ((X_t² − EX_t²) − (X_t^{(N)2} − EX_t^{(N)2}))‖₂ → 0` as `N → ∞`,
   uniformly in `T`: factor `X² − X^{(N)2} = (X − X^{(N)})(X + X^{(N)})` and apply
@@ -1285,12 +1297,50 @@ the reduction the remaining debts start from.
   (The frozen constant is *confirmed* against B&D (1991) Prop 7.3.4: the printed FY
   (2.25) is indeed a misprint, and the docstring's correction is the right one — no
   further amendment is called for.)
+  **Its dependence input is CLOSED** (wave `ts/f3b-tail`, 2026-08-09):
+  `acvf_eq_tsum_of_filter` gives `γ(h) = σ² Σ_k a_k a_{k−h}` at every lag, and at `h = 0`
+  `γ(0) = σ² Σ_k a_k²`, so the frozen constant *is* the (R1)+(R2) constant term by term —
+  squaring and summing the identity is all (R4) is. Three things about it are worth
+  recording, because they change the ledger:
+  - the identity needs **neither `hσ` nor stationarity nor a decay rate**: it comes out of
+    `hfil` and `IsIIDNoise` alone, with `ha` used only to make `k ↦ a_k a_{k−h}` summable;
+  - `E X_t = 0` is **derived**, not assumed (`integral_eq_zero_of_filter`), and so is
+    `MemLp (X t) 2 μ` (`memLp_two_of_filter`) — the frozen statement supplies neither, and
+    both are needed before `acvf` can be manipulated at all;
+  - the pairing `Σ_h γ(h)² < ∞` is a *separate* step — the identity alone does not give it.
+    It is **also CLOSED** (`summable_acvf_sq_of_filter`), by Young's inequality
+    (`ℓ¹ * ℓ¹ ⊆ ℓ¹ ⊆ ℓ²`): the reindexing `(h, k) ↦ (k, k − h)` of `ℤ × ℤ`
+    (`shiftPairEquiv`) turns the coefficient double series into a product of two copies of
+    `ha`, so it is summable on `ℤ × ℤ` and its `h`-sections sum (`summable_absConv`); then
+    `|Σ_k a_k a_{k−h}| ≤ Σ_k |a_k||a_{k−h}| ≤ (Σ|a|)²` upgrades `ℓ¹` to `ℓ²` in `h`
+    (`summable_acvfCoeff_sq`). This is what stops the frozen `2 Σ_{j∈ℤ} γ(j)²` from being a
+    junk `tsum`, and it is the only place in the whole reduction where the `ℓ¹` hypothesis
+    `ha` is used for anything other than making a single series converge.
+  So (R4) now has no analytic content left; the residual bookkeeping cannot be written
+  down until (R1) fixes the exact shape of the limit it produces.
 
 **Named residue of `sampleACF_bartlett_clt_debt`.** the joint (lags `0..M`) version of
 (R1)–(R4) — the same blocks, assembled through the Cramér–Wold linear combination that
 the frozen statement already exhibits — followed by the ratio delta method
 `ρ̂(i) = γ̂(i)/γ̂(0)`. Its `bartlettW` covariance is the standard Bartlett formula; no
-misprint watch fires there either. -/
+misprint watch fires there either.
+
+**Update (wave `ts/f3b-tail`, 2026-08-09).** Two of the four blocks are shared with the
+lag-`0` debt *at full strength*, i.e. nothing lag-`0`-specific was used in closing them:
+`integral_sq_mul_sq_noiseComb`/`cov_sq_noiseComb` take **arbitrary** weight vectors
+`c`, `d`, so (R2) is already the joint statement — the Cramér–Wold combination
+`Σ_i c_i γ̂(i)` is again a quadratic form in the innovations and its fourth moment is the
+same formula; and `acvf_eq_tsum_of_filter` is stated at an arbitrary lag `h`, so it feeds
+`bartlettW`'s `acf` entries directly. What is genuinely joint, and still open, is the
+lag-`0..M` version of (R1) (one Bernstein-block CLT for the *vector* of lag products,
+i.e. the same blocks with the Cramér–Wold coefficient carried through) and the ratio
+delta method, which additionally needs `0 < γ(0)` — available from
+`acvf_eq_tsum_of_filter` at `h = 0` as `σ² Σ_k a_k² > 0`, but only once `a ≠ 0` is
+assumed, which the frozen statement does *not* hypothesize. That is a genuine gap in the
+frozen statement of the Bartlett debt: with `a ≡ 0` the process is `0` a.s., `ρ̂` and `ρ`
+are both junk `0/0 = 0`, and the limit is `δ₀` rather than the stated Gaussian — which is
+consistent only because `bartlettW` is then also `0`. So the statement survives, but the
+delta method cannot be the route in that degenerate corner and must be split off. -/
 
 /-- The `L²` bound implied by an `eLpNorm` bound (converse of
 `eLpNorm_two_le_of_integral_sq_le`). -/
@@ -1439,6 +1489,699 @@ private lemma tendsto_integral_sqrt_mul_sampleMean_sq [IsProbabilityMeasure μ] 
     exact integral_nonneg fun ω => abs_nonneg _
   · filter_upwards [eventually_ge_atTop 1] with T hT
     exact hbound T hT
+
+/-! ### (R2): the fourth-moment identity for weighted sums of the innovations
+
+This is the analytic input named as **(R2)** in the residue ledger above — the only piece
+of `sampleACVF_zero_clt_debt`'s reduction that was not already available in this file.
+For an i.i.d. family `ε` with `E ε = 0`, `Var ε = σ²` and a finite fourth moment,
+and for finitely supported weights `c`, `d`,
+
+`E[(Σ cᵢ εᵢ)² (Σ dᵢ εᵢ)²] = (η σ⁴ − 3σ⁴) Σ cᵢ²dᵢ² + σ⁴[(Σ cᵢ²)(Σ dᵢ²) + 2(Σ cᵢdᵢ)²]`,
+
+equivalently `Cov((Σ cᵢ εᵢ)², (Σ dᵢ εᵢ)²) = (ησ⁴ − 3σ⁴) Σ cᵢ²dᵢ² + 2σ⁴ (Σ cᵢdᵢ)²`
+(`cov_sq_noiseComb`). Taking `c i = a (s − i)` and `d i = a (t − i)` on the window
+`|s − i| ≤ N` this *is* `Cov(X_s^{(N)2}, X_t^{(N)2})`.
+
+The proof is a **one-coordinate induction** on the support (`integral_sq_mul_sq_step`),
+not a four-fold sum over the partition lattice: adjoining one innovation `A = ε a`,
+independent of the two partial sums `Q`, `R` already built, expands the integrand as a
+polynomial in `A` whose coefficients are polynomials in `(Q, R)`,
+
+`(cA + Q)²(dA + R)² = c²d²A⁴ + A³·G₃(Q,R) + A²·G₂(Q,R) + A·G₁(Q,R) + Q²R²`,
+
+and independence factorises each block. The odd blocks die for free — `E G₃ = 0` because
+`E Q = E R = 0`, and `E A = 0` kills the `A¹` block whatever `G₁` is — so **no third
+moment of `ε` is ever needed**, which is what makes a bare `MemLp (ε 0) 4` hypothesis
+enough. This also explains the shape of the answer: `η` enters only through the diagonal
+`A⁴` term, and the `3σ⁴` correction is the diagonal that the two `σ⁴` products
+double-count.
+-/
+
+section FourthMoment
+
+variable {ε : ℤ → Ω → ℝ} {σ2 : ℝ}
+
+private lemma holderTriple_four_four_two : ENNReal.HolderTriple 4 4 2 :=
+  ⟨by rw [← two_mul, show (4 : ENNReal) = 2 * 2 by norm_num,
+      ENNReal.mul_inv (by norm_num) (by norm_num), ← mul_assoc,
+      ENNReal.mul_inv_cancel (by norm_num) (by norm_num), one_mul]⟩
+
+private lemma memLp_two_mul_of_memLp_four {f g : Ω → ℝ} (hf : MemLp f 4 μ) (hg : MemLp g 4 μ) :
+    MemLp (fun ω => f ω * g ω) 2 μ := by
+  haveI := holderTriple_four_four_two
+  exact hg.mul' hf
+
+private lemma integrable_mul_of_memLp_two {f g : Ω → ℝ} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    Integrable (fun ω => f ω * g ω) μ :=
+  hf.integrable_mul hg
+
+/-! #### Moments of the innovations -/
+
+private lemma IsIIDNoise.memLp_four (hε : IsIIDNoise ε σ2 μ) (hε4 : MemLp (ε 0) 4 μ) (i : ℤ) :
+    MemLp (ε i) 4 μ := (hε.identDistrib 0 i).memLp_snd hε4
+
+private lemma IsIIDNoise.memLp_two_of_iid (hε : IsIIDNoise ε σ2 μ) (i : ℤ) : MemLp (ε i) 2 μ :=
+  (hε.identDistrib 0 i).memLp_snd hε.memLp
+
+private lemma IsIIDNoise.integral_zero' [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ) (i : ℤ) :
+    ∫ ω, ε i ω ∂μ = 0 := ((hε.identDistrib i 0).integral_eq).trans hε.integral_eq_zero
+
+private lemma IsIIDNoise.integral_sq' [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ) (i : ℤ) :
+    ∫ ω, ε i ω ^ 2 ∂μ = σ2 := by
+  have h0 : ∫ ω, ε 0 ω ^ 2 ∂μ = σ2 := by
+    have hv := variance_eq_sub hε.memLp
+    rw [hε.variance_eq, hε.integral_eq_zero] at hv
+    simp only [Pi.pow_apply] at hv
+    linarith
+  have ht := ((hε.identDistrib i 0).comp (measurable_id.pow_const 2)).integral_eq
+  simp only [Function.comp, id_eq] at ht
+  rw [ht, h0]
+
+private lemma IsIIDNoise.integral_four' [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ) (i : ℤ) :
+    ∫ ω, ε i ω ^ 4 ∂μ = ∫ ω, ε 0 ω ^ 4 ∂μ := by
+  have ht := ((hε.identDistrib i 0).comp (measurable_id.pow_const 4)).integral_eq
+  simpa only [Function.comp, id_eq] using ht
+
+private lemma integral_noise_mul_noise [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ) (i j : ℤ) :
+    ∫ ω, ε i ω * ε j ω ∂μ = if i = j then σ2 else 0 := by
+  by_cases h : i = j
+  · subst h
+    rw [if_pos rfl, ← hε.integral_sq' i]
+    exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
+  · rw [if_neg h]
+    have hind : IndepFun (ε i) (ε j) μ := hε.iIndep.indepFun h
+    rw [hind.integral_fun_mul_eq_mul_integral (hε.measurable i).aestronglyMeasurable
+      (hε.measurable j).aestronglyMeasurable, hε.integral_zero' i, zero_mul]
+
+/-! #### Linear combinations of the innovations -/
+
+private lemma integral_noiseComb [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ) (c : ℤ → ℝ)
+    (s : Finset ℤ) : ∫ ω, ∑ i ∈ s, c i * ε i ω ∂μ = 0 := by
+  rw [integral_finset_sum s
+    (fun i _ => ((hε.memLp_two_of_iid i).integrable one_le_two).const_mul (c i))]
+  simp only [integral_const_mul, hε.integral_zero', mul_zero, Finset.sum_const_zero]
+
+private lemma integral_noiseComb_mul [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ) (c d : ℤ → ℝ)
+    (s : Finset ℤ) :
+    ∫ ω, (∑ i ∈ s, c i * ε i ω) * (∑ j ∈ s, d j * ε j ω) ∂μ = σ2 * ∑ i ∈ s, c i * d i := by
+  have hI : ∀ i j : ℤ, Integrable (fun ω => (c i * d j) * (ε i ω * ε j ω)) μ :=
+    fun i j => (integrable_mul_of_memLp_two (hε.memLp_two_of_iid i)
+      (hε.memLp_two_of_iid j)).const_mul _
+  have hpt : ∀ ω, (∑ i ∈ s, c i * ε i ω) * (∑ j ∈ s, d j * ε j ω)
+      = ∑ i ∈ s, ∑ j ∈ s, (c i * d j) * (ε i ω * ε j ω) := by
+    intro ω
+    rw [Finset.sum_mul_sum]
+    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+  rw [integral_congr_ae (Eventually.of_forall hpt),
+    integral_finset_sum s (fun i _ => integrable_finset_sum s fun j _ => hI i j)]
+  have hstep : ∀ i ∈ s, ∫ ω, ∑ j ∈ s, (c i * d j) * (ε i ω * ε j ω) ∂μ
+      = σ2 * (c i * d i) := by
+    intro i hi
+    rw [integral_finset_sum s (fun j _ => hI i j)]
+    simp only [integral_const_mul, integral_noise_mul_noise hε]
+    simp only [mul_ite, mul_zero]
+    rw [Finset.sum_ite_eq s i (fun j => c i * d j * σ2), if_pos hi]
+    ring
+  rw [Finset.sum_congr rfl hstep, ← Finset.mul_sum]
+
+
+/-! #### The coordinate-by-coordinate induction step -/
+
+set_option maxHeartbeats 1000000 in
+-- the nine-term expansion stresses `ring`/`integral_add` bookkeeping; the default budget
+-- is not enough for the assembly `rw` chain
+private lemma integral_sq_mul_sq_step [IsProbabilityMeasure μ] {A Q R : Ω → ℝ}
+    {v2 v4 q r m P ca da : ℝ}
+    (hA4 : MemLp A 4 μ) (hQ4 : MemLp Q 4 μ) (hR4 : MemLp R 4 μ)
+    (hind : IndepFun A (fun ω => (Q ω, R ω)) μ)
+    (hA1 : ∫ ω, A ω ∂μ = 0) (hA2 : ∫ ω, A ω ^ 2 ∂μ = v2) (hA4i : ∫ ω, A ω ^ 4 ∂μ = v4)
+    (hQ1 : ∫ ω, Q ω ∂μ = 0) (hR1 : ∫ ω, R ω ∂μ = 0)
+    (hQQ : ∫ ω, Q ω ^ 2 ∂μ = q) (hRR : ∫ ω, R ω ^ 2 ∂μ = r)
+    (hQR : ∫ ω, Q ω * R ω ∂μ = m)
+    (hP : ∫ ω, Q ω ^ 2 * R ω ^ 2 ∂μ = P) :
+    ∫ ω, (ca * A ω + Q ω) ^ 2 * (da * A ω + R ω) ^ 2 ∂μ
+      = ca ^ 2 * da ^ 2 * v4 + v2 * (ca ^ 2 * r + 4 * (ca * da) * m + da ^ 2 * q) + P := by
+  have hA2' : MemLp A 2 μ := hA4.mono_exponent (by norm_num)
+  have hQ2 : MemLp Q 2 μ := hQ4.mono_exponent (by norm_num)
+  have hR2 : MemLp R 2 μ := hR4.mono_exponent (by norm_num)
+  have hAA : MemLp (fun ω => A ω * A ω) 2 μ := memLp_two_mul_of_memLp_four hA4 hA4
+  have hAQ : MemLp (fun ω => A ω * Q ω) 2 μ := memLp_two_mul_of_memLp_four hA4 hQ4
+  have hAR : MemLp (fun ω => A ω * R ω) 2 μ := memLp_two_mul_of_memLp_four hA4 hR4
+  have hQQm : MemLp (fun ω => Q ω * Q ω) 2 μ := memLp_two_mul_of_memLp_four hQ4 hQ4
+  have hRRm : MemLp (fun ω => R ω * R ω) 2 μ := memLp_two_mul_of_memLp_four hR4 hR4
+  have hQRm : MemLp (fun ω => Q ω * R ω) 2 μ := memLp_two_mul_of_memLp_four hQ4 hR4
+  -- integrable squares and products
+  have hIQsq : Integrable (fun ω => Q ω ^ 2) μ :=
+    (integrable_mul_of_memLp_two hQ2 hQ2).congr (Eventually.of_forall fun ω => by ring)
+  have hIRsq : Integrable (fun ω => R ω ^ 2) μ :=
+    (integrable_mul_of_memLp_two hR2 hR2).congr (Eventually.of_forall fun ω => by ring)
+  have hIQR : Integrable (fun ω => Q ω * R ω) μ := integrable_mul_of_memLp_two hQ2 hR2
+  have hIA4 : Integrable (fun ω => A ω ^ 4) μ :=
+    (integrable_mul_of_memLp_two hAA hAA).congr (Eventually.of_forall fun ω => by ring)
+  -- the coefficient functions of the powers of `A`
+  have hG3m : Measurable fun z : ℝ × ℝ => 2 * ca ^ 2 * da * z.2 + 2 * ca * da ^ 2 * z.1 := by
+    fun_prop
+  have hG2m : Measurable fun z : ℝ × ℝ =>
+      ca ^ 2 * z.2 ^ 2 + 4 * (ca * da) * (z.1 * z.2) + da ^ 2 * z.1 ^ 2 := by fun_prop
+  have hG1m : Measurable fun z : ℝ × ℝ =>
+      2 * ca * (z.1 * z.2 ^ 2) + 2 * da * (z.1 ^ 2 * z.2) := by fun_prop
+  have hind3 : IndepFun (fun ω => A ω ^ 3)
+      (fun ω => 2 * ca ^ 2 * da * R ω + 2 * ca * da ^ 2 * Q ω) μ :=
+    hind.comp (measurable_id.pow_const 3) hG3m
+  have hind2 : IndepFun (fun ω => A ω ^ 2)
+      (fun ω => ca ^ 2 * R ω ^ 2 + 4 * (ca * da) * (Q ω * R ω) + da ^ 2 * Q ω ^ 2) μ :=
+    hind.comp (measurable_id.pow_const 2) hG2m
+  have hind1 : IndepFun A
+      (fun ω => 2 * ca * (Q ω * R ω ^ 2) + 2 * da * (Q ω ^ 2 * R ω)) μ :=
+    hind.comp measurable_id hG1m
+  -- L⁴/L² membership of the coefficient functions
+  have hG3four : MemLp (fun ω => 2 * ca ^ 2 * da * R ω + 2 * ca * da ^ 2 * Q ω) 4 μ :=
+    (hR4.const_mul _).add (hQ4.const_mul _)
+  have hRsq2 : MemLp (fun ω => R ω ^ 2) 2 μ :=
+    MemLp.ae_eq (Eventually.of_forall fun ω => (by ring : R ω * R ω = R ω ^ 2)) hRRm
+  have hQsq2 : MemLp (fun ω => Q ω ^ 2) 2 μ :=
+    MemLp.ae_eq (Eventually.of_forall fun ω => (by ring : Q ω * Q ω = Q ω ^ 2)) hQQm
+  have hG2two : MemLp
+      (fun ω => ca ^ 2 * R ω ^ 2 + 4 * (ca * da) * (Q ω * R ω) + da ^ 2 * Q ω ^ 2) 2 μ :=
+    ((hRsq2.const_mul _).add (hQRm.const_mul _)).add (hQsq2.const_mul _)
+  -- integrability of the five blocks
+  have hIT4 : Integrable (fun ω => ca ^ 2 * da ^ 2 * A ω ^ 4) μ := hIA4.const_mul _
+  have hIT3 : Integrable
+      (fun ω => A ω ^ 3 * (2 * ca ^ 2 * da * R ω + 2 * ca * da ^ 2 * Q ω)) μ := by
+    refine (integrable_mul_of_memLp_two hAA (memLp_two_mul_of_memLp_four hA4 hG3four)).congr
+      (Eventually.of_forall fun ω => by ring)
+  have hIT2 : Integrable (fun ω => A ω ^ 2 *
+      (ca ^ 2 * R ω ^ 2 + 4 * (ca * da) * (Q ω * R ω) + da ^ 2 * Q ω ^ 2)) μ := by
+    refine (integrable_mul_of_memLp_two hAA hG2two).congr (Eventually.of_forall fun ω => by ring)
+  have hIT1 : Integrable
+      (fun ω => A ω * (2 * ca * (Q ω * R ω ^ 2) + 2 * da * (Q ω ^ 2 * R ω))) μ := by
+    have h1 : Integrable (fun ω => 2 * ca * ((A ω * Q ω) * (R ω * R ω))) μ :=
+      (integrable_mul_of_memLp_two hAQ hRRm).const_mul _
+    have h2 : Integrable (fun ω => 2 * da * ((A ω * R ω) * (Q ω * Q ω))) μ :=
+      (integrable_mul_of_memLp_two hAR hQQm).const_mul _
+    exact (h1.add h2).congr (Eventually.of_forall fun ω => by
+      simp only [Pi.add_apply]; ring)
+  have hIT0 : Integrable (fun ω => Q ω ^ 2 * R ω ^ 2) μ :=
+    (integrable_mul_of_memLp_two hQRm hQRm).congr (Eventually.of_forall fun ω => by ring)
+  -- the values of the five blocks
+  have hIG3 : ∫ ω, (2 * ca ^ 2 * da * R ω + 2 * ca * da ^ 2 * Q ω) ∂μ = 0 := by
+    rw [integral_add ((hR2.integrable one_le_two).const_mul _)
+        ((hQ2.integrable one_le_two).const_mul _),
+      integral_const_mul, integral_const_mul, hQ1, hR1]
+    ring
+  have hIG2 : ∫ ω, (ca ^ 2 * R ω ^ 2 + 4 * (ca * da) * (Q ω * R ω) + da ^ 2 * Q ω ^ 2) ∂μ
+      = ca ^ 2 * r + 4 * (ca * da) * m + da ^ 2 * q := by
+    have ha1 : Integrable (fun ω => ca ^ 2 * R ω ^ 2 + 4 * (ca * da) * (Q ω * R ω)) μ :=
+      (hIRsq.const_mul _).add (hIQR.const_mul _)
+    rw [integral_add ha1 (hIQsq.const_mul _),
+      integral_add (hIRsq.const_mul _) (hIQR.const_mul _),
+      integral_const_mul, integral_const_mul, integral_const_mul, hQQ, hRR, hQR]
+  have hA3m : AEStronglyMeasurable (fun ω => A ω ^ 3) μ :=
+    (hA4.aestronglyMeasurable.aemeasurable.pow_const 3).aestronglyMeasurable
+  have hA2m : AEStronglyMeasurable (fun ω => A ω ^ 2) μ :=
+    (hA4.aestronglyMeasurable.aemeasurable.pow_const 2).aestronglyMeasurable
+  have hV4 : ∫ ω, ca ^ 2 * da ^ 2 * A ω ^ 4 ∂μ = ca ^ 2 * da ^ 2 * v4 := by
+    rw [integral_const_mul, hA4i]
+  have hV3 : ∫ ω, A ω ^ 3 * (2 * ca ^ 2 * da * R ω + 2 * ca * da ^ 2 * Q ω) ∂μ = 0 := by
+    rw [hind3.integral_fun_mul_eq_mul_integral hA3m hG3four.aestronglyMeasurable, hIG3, mul_zero]
+  have hV2 : ∫ ω, A ω ^ 2 *
+      (ca ^ 2 * R ω ^ 2 + 4 * (ca * da) * (Q ω * R ω) + da ^ 2 * Q ω ^ 2) ∂μ
+      = v2 * (ca ^ 2 * r + 4 * (ca * da) * m + da ^ 2 * q) := by
+    rw [hind2.integral_fun_mul_eq_mul_integral hA2m hG2two.aestronglyMeasurable, hIG2, hA2]
+  have hV1 : ∫ ω, A ω * (2 * ca * (Q ω * R ω ^ 2) + 2 * da * (Q ω ^ 2 * R ω)) ∂μ = 0 := by
+    have hQam : AEStronglyMeasurable Q μ := hQ4.aestronglyMeasurable
+    have hRam : AEStronglyMeasurable R μ := hR4.aestronglyMeasurable
+    have hQ2am : AEStronglyMeasurable (fun ω => Q ω ^ 2) μ :=
+      (hQam.aemeasurable.pow_const 2).aestronglyMeasurable
+    have hR2am : AEStronglyMeasurable (fun ω => R ω ^ 2) μ :=
+      (hRam.aemeasurable.pow_const 2).aestronglyMeasurable
+    have hG1am : AEStronglyMeasurable
+        (fun ω => 2 * ca * (Q ω * R ω ^ 2) + 2 * da * (Q ω ^ 2 * R ω)) μ :=
+      ((hQam.mul hR2am).const_mul _).add ((hQ2am.mul hRam).const_mul _)
+    rw [hind1.integral_fun_mul_eq_mul_integral hA4.aestronglyMeasurable hG1am, hA1, zero_mul]
+  -- assembly
+  have hpt : ∀ ω, (ca * A ω + Q ω) ^ 2 * (da * A ω + R ω) ^ 2
+      = (ca ^ 2 * da ^ 2 * A ω ^ 4
+          + A ω ^ 3 * (2 * ca ^ 2 * da * R ω + 2 * ca * da ^ 2 * Q ω)
+          + A ω ^ 2 * (ca ^ 2 * R ω ^ 2 + 4 * (ca * da) * (Q ω * R ω) + da ^ 2 * Q ω ^ 2)
+          + A ω * (2 * ca * (Q ω * R ω ^ 2) + 2 * da * (Q ω ^ 2 * R ω)))
+        + Q ω ^ 2 * R ω ^ 2 := fun ω => by ring
+  have hb1 : Integrable (fun ω => ca ^ 2 * da ^ 2 * A ω ^ 4
+      + A ω ^ 3 * (2 * ca ^ 2 * da * R ω + 2 * ca * da ^ 2 * Q ω)) μ := hIT4.add hIT3
+  have hb2 : Integrable (fun ω => (ca ^ 2 * da ^ 2 * A ω ^ 4
+      + A ω ^ 3 * (2 * ca ^ 2 * da * R ω + 2 * ca * da ^ 2 * Q ω))
+      + A ω ^ 2 * (ca ^ 2 * R ω ^ 2 + 4 * (ca * da) * (Q ω * R ω) + da ^ 2 * Q ω ^ 2)) μ :=
+    hb1.add hIT2
+  have hb3 : Integrable (fun ω => ((ca ^ 2 * da ^ 2 * A ω ^ 4
+      + A ω ^ 3 * (2 * ca ^ 2 * da * R ω + 2 * ca * da ^ 2 * Q ω))
+      + A ω ^ 2 * (ca ^ 2 * R ω ^ 2 + 4 * (ca * da) * (Q ω * R ω) + da ^ 2 * Q ω ^ 2))
+      + A ω * (2 * ca * (Q ω * R ω ^ 2) + 2 * da * (Q ω ^ 2 * R ω))) μ := hb2.add hIT1
+  rw [integral_congr_ae (Eventually.of_forall hpt),
+    integral_add hb3 hIT0, integral_add hb2 hIT1, integral_add hb1 hIT2,
+    integral_add hIT4 hIT3, hV4, hV3, hV2, hV1, hP]
+  ring
+
+/-! #### The fourth-moment identity itself -/
+
+private lemma indepFun_noise_pair [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ)
+    (c d : ℤ → ℝ) {a : ℤ} {s : Finset ℤ} (ha : a ∉ s) :
+    IndepFun (ε a) (fun ω => ((∑ i ∈ s, c i * ε i ω), (∑ i ∈ s, d i * ε i ω))) μ := by
+  have hbig : IndepFun (ε a) (fun ω (i : s) => ε (i : ℤ) ω) μ := by
+    have h := hε.iIndep.indepFun_finset ({a} : Finset ℤ) s
+      (Finset.disjoint_singleton_left.2 ha) hε.measurable
+    exact h.comp (measurable_pi_apply ⟨a, Finset.mem_singleton_self a⟩) measurable_id
+  have hψ : Measurable
+      (fun y : (i : s) → ℝ => ((∑ i : s, c i * y i), (∑ i : s, d i * y i))) := by
+    refine Measurable.prodMk ?_ ?_ <;>
+      exact Finset.measurable_sum Finset.univ fun i _ => (measurable_pi_apply i).const_mul _
+  have h2 := hbig.comp measurable_id hψ
+  refine h2.congr (Eventually.of_forall fun ω => rfl) (Eventually.of_forall fun ω => ?_)
+  simp only [Function.comp_apply]
+  rw [Finset.sum_coe_sort s (fun i => c i * ε i ω),
+    Finset.sum_coe_sort s (fun i => d i * ε i ω)]
+
+private theorem integral_sq_mul_sq_noiseComb [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ)
+    (hε4 : MemLp (ε 0) 4 μ) (c d : ℤ → ℝ) (s : Finset ℤ) :
+    ∫ ω, (∑ i ∈ s, c i * ε i ω) ^ 2 * (∑ i ∈ s, d i * ε i ω) ^ 2 ∂μ
+      = ((∫ ω, ε 0 ω ^ 4 ∂μ) - 3 * σ2 ^ 2) * (∑ i ∈ s, c i ^ 2 * d i ^ 2)
+        + σ2 ^ 2 * ((∑ i ∈ s, c i ^ 2) * (∑ i ∈ s, d i ^ 2)
+          + 2 * (∑ i ∈ s, c i * d i) ^ 2) := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons a s ha ih =>
+    have hQ4 : MemLp (fun ω => ∑ i ∈ s, c i * ε i ω) 4 μ :=
+      memLp_finset_sum s fun i _ => (hε.memLp_four hε4 i).const_mul (c i)
+    have hR4 : MemLp (fun ω => ∑ i ∈ s, d i * ε i ω) 4 μ :=
+      memLp_finset_sum s fun i _ => (hε.memLp_four hε4 i).const_mul (d i)
+    have hQQ : ∫ ω, (∑ i ∈ s, c i * ε i ω) ^ 2 ∂μ = σ2 * ∑ i ∈ s, c i ^ 2 := by
+      rw [show (∑ i ∈ s, c i ^ 2) = ∑ i ∈ s, c i * c i from
+          Finset.sum_congr rfl fun i _ => pow_two (c i),
+        ← integral_noiseComb_mul hε c c s]
+      exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
+    have hRR : ∫ ω, (∑ i ∈ s, d i * ε i ω) ^ 2 ∂μ = σ2 * ∑ i ∈ s, d i ^ 2 := by
+      rw [show (∑ i ∈ s, d i ^ 2) = ∑ i ∈ s, d i * d i from
+          Finset.sum_congr rfl fun i _ => pow_two (d i),
+        ← integral_noiseComb_mul hε d d s]
+      exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
+    have hstep := integral_sq_mul_sq_step (μ := μ) (A := ε a)
+      (Q := fun ω => ∑ i ∈ s, c i * ε i ω) (R := fun ω => ∑ i ∈ s, d i * ε i ω)
+      (ca := c a) (da := d a) (hε.memLp_four hε4 a) hQ4 hR4
+      (indepFun_noise_pair hε c d ha) (hε.integral_zero' a) (hε.integral_sq' a)
+      (hε.integral_four' a) (integral_noiseComb hε c s) (integral_noiseComb hε d s) hQQ hRR
+      (integral_noiseComb_mul hε c d s) ih
+    simp only [Finset.sum_cons]
+    rw [hstep]
+    ring
+
+/-- **(R2), covariance form.** -/
+private theorem cov_sq_noiseComb [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ)
+    (hε4 : MemLp (ε 0) 4 μ) (c d : ℤ → ℝ) (s : Finset ℤ) :
+    cov[fun ω => (∑ i ∈ s, c i * ε i ω) ^ 2, fun ω => (∑ i ∈ s, d i * ε i ω) ^ 2; μ]
+      = ((∫ ω, ε 0 ω ^ 4 ∂μ) - 3 * σ2 ^ 2) * (∑ i ∈ s, c i ^ 2 * d i ^ 2)
+        + 2 * σ2 ^ 2 * (∑ i ∈ s, c i * d i) ^ 2 := by
+  have hQ4 : MemLp (fun ω => ∑ i ∈ s, c i * ε i ω) 4 μ :=
+    memLp_finset_sum s fun i _ => (hε.memLp_four hε4 i).const_mul (c i)
+  have hR4 : MemLp (fun ω => ∑ i ∈ s, d i * ε i ω) 4 μ :=
+    memLp_finset_sum s fun i _ => (hε.memLp_four hε4 i).const_mul (d i)
+  have hQsq : MemLp (fun ω => (∑ i ∈ s, c i * ε i ω) ^ 2) 2 μ :=
+    MemLp.ae_eq (Eventually.of_forall fun ω => (by ring :
+      (∑ i ∈ s, c i * ε i ω) * (∑ i ∈ s, c i * ε i ω) = (∑ i ∈ s, c i * ε i ω) ^ 2))
+      (memLp_two_mul_of_memLp_four hQ4 hQ4)
+  have hRsq : MemLp (fun ω => (∑ i ∈ s, d i * ε i ω) ^ 2) 2 μ :=
+    MemLp.ae_eq (Eventually.of_forall fun ω => (by ring :
+      (∑ i ∈ s, d i * ε i ω) * (∑ i ∈ s, d i * ε i ω) = (∑ i ∈ s, d i * ε i ω) ^ 2))
+      (memLp_two_mul_of_memLp_four hR4 hR4)
+  have hQQ : ∫ ω, (∑ i ∈ s, c i * ε i ω) ^ 2 ∂μ = σ2 * ∑ i ∈ s, c i ^ 2 := by
+    rw [show (∑ i ∈ s, c i ^ 2) = ∑ i ∈ s, c i * c i from
+        Finset.sum_congr rfl fun i _ => pow_two (c i), ← integral_noiseComb_mul hε c c s]
+    exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
+  have hRR : ∫ ω, (∑ i ∈ s, d i * ε i ω) ^ 2 ∂μ = σ2 * ∑ i ∈ s, d i ^ 2 := by
+    rw [show (∑ i ∈ s, d i ^ 2) = ∑ i ∈ s, d i * d i from
+        Finset.sum_congr rfl fun i _ => pow_two (d i), ← integral_noiseComb_mul hε d d s]
+    exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
+  rw [covariance_eq_sub hQsq hRsq]
+  have hprod : ∫ ω, ((fun ω => (∑ i ∈ s, c i * ε i ω) ^ 2) *
+      (fun ω => (∑ i ∈ s, d i * ε i ω) ^ 2)) ω ∂μ
+      = ∫ ω, (∑ i ∈ s, c i * ε i ω) ^ 2 * (∑ i ∈ s, d i * ε i ω) ^ 2 ∂μ := rfl
+  simp only [hprod, integral_sq_mul_sq_noiseComb hε hε4 c d s, hQQ, hRR]
+  ring
+
+end FourthMoment
+
+/-! ### (R4)'s dependence input: the autocovariance of the two-sided linear process
+
+`γ(h) = σ² Σ_k a_k a_{k−h}` (`acvf_eq_tsum_of_filter`), derived from the `L²`
+representation `hfil` alone — no rate on `a`, no stationarity input, and no separate
+mean hypothesis (`E X_t = 0` is *derived* here, `integral_eq_zero_of_filter`). This is
+the identity (R4) needs to match the limiting variance produced by (R1)+(R2) to the
+frozen `(η−3)γ(0)² + 2 Σ_j γ(j)²`, and it is also what turns `bartlettW`'s `acf`
+entries into the coefficient series of FY eq. (2.26).
+
+The route: the two truncated filters have an *exact* second moment
+(`integral_truncFilter_mul`, a double sum over the two windows collapsed by
+`integral_noise_mul_noise` — no reindexing of the innovations is needed, the Kronecker
+delta `s − k = t − l` does the bookkeeping), the bilinear form `(U, V) ↦ ∫ U V` is
+`L²`-continuous (`abs_integral_mul_sub_le`, from the Cauchy–Schwarz brick
+`abs_integral_mul_le_sqrt`), and the window constraint `k ∈ A ∧ k − h ∈ A` exhausts `ℤ`,
+so the partial sums converge to the `tsum` (`tendsto_partial_shift`). The `ℓ¹`
+hypothesis `ha` enters *only* in the last of these, and only to make
+`k ↦ a_k a_{k−h}` summable — `|a_{k−h}| ≤ Σ_j |a_j|` bounds one factor.
+-/
+
+section LinearAcvf
+
+variable {a : ℤ → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
+
+private lemma abs_integral_mul_le_sqrt [IsProbabilityMeasure μ] {U V : Ω → ℝ}
+    (hU : MemLp U 2 μ) (hV : MemLp V 2 μ) :
+    |∫ ω, U ω * V ω ∂μ| ≤ Real.sqrt (∫ ω, U ω ^ 2 ∂μ) * Real.sqrt (∫ ω, V ω ^ 2 ∂μ) := by
+  have habs : ∀ f : Ω → ℝ, MemLp f 2 μ → MemLp (fun ω => |f ω|) (ENNReal.ofReal (2 : ℝ)) μ := by
+    intro f hf
+    rw [show ENNReal.ofReal (2 : ℝ) = 2 by norm_num]
+    exact hf.abs
+  have hpt : ∀ (f : Ω → ℝ) (ω : Ω), |f ω| ^ (2 : ℝ) = f ω ^ 2 := by
+    intro f ω
+    rw [show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num, Real.rpow_natCast, sq_abs]
+  have h2 := integral_mul_le_Lp_mul_Lq_of_nonneg Real.HolderConjugate.two_two
+    (Filter.Eventually.of_forall fun ω => abs_nonneg (U ω))
+    (Filter.Eventually.of_forall fun ω => abs_nonneg (V ω)) (habs U hU) (habs V hV)
+  rw [integral_congr_ae (Filter.Eventually.of_forall (hpt U)),
+    integral_congr_ae (Filter.Eventually.of_forall (hpt V)),
+    ← Real.sqrt_eq_rpow, ← Real.sqrt_eq_rpow] at h2
+  refine le_trans ?_ h2
+  calc |∫ ω, U ω * V ω ∂μ| ≤ ∫ ω, |U ω * V ω| ∂μ := abs_integral_le_integral_abs
+  _ = ∫ ω, |U ω| * |V ω| ∂μ :=
+      integral_congr_ae (Filter.Eventually.of_forall fun ω => abs_mul _ _)
+
+
+/-- `L²`-convergence in the `eLpNorm` currency gives convergence of the root second
+moments. -/
+private lemma tendsto_sqrt_integral_sq_of_eLpNorm {f : ℕ → Ω → ℝ}
+    (hm : ∀ N, AEStronglyMeasurable (f N) μ)
+    (h : Tendsto (fun N => eLpNorm (f N) 2 μ) atTop (𝓝 0)) :
+    Tendsto (fun N => Real.sqrt (∫ ω, f N ω ^ 2 ∂μ)) atTop (𝓝 0) := by
+  rw [Metric.tendsto_atTop]
+  intro δ hδ
+  have hev : ∀ᶠ N in atTop, eLpNorm (f N) 2 μ < ENNReal.ofReal (δ / 2) :=
+    h.eventually (eventually_lt_nhds (by simpa using half_pos hδ))
+  obtain ⟨N0, hN0⟩ := eventually_atTop.1 hev
+  refine ⟨N0, fun N hN => ?_⟩
+  have hb := integral_sq_le_of_eLpNorm_two (half_pos hδ).le (hm N) (hN0 N hN).le
+  have hnn : (0 : ℝ) ≤ ∫ ω, f N ω ^ 2 ∂μ := integral_nonneg fun ω => sq_nonneg _
+  have : Real.sqrt (∫ ω, f N ω ^ 2 ∂μ) ≤ δ / 2 := by
+    calc Real.sqrt (∫ ω, f N ω ^ 2 ∂μ) ≤ Real.sqrt ((δ / 2) ^ 2) := Real.sqrt_le_sqrt hb
+    _ = δ / 2 := Real.sqrt_sq (half_pos hδ).le
+  rw [Real.dist_eq, sub_zero, abs_of_nonneg (Real.sqrt_nonneg _)]
+  linarith
+
+section Acvf
+variable {a : ℤ → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
+
+/-- The exact second moment of a pair of truncated filters. -/
+private lemma integral_truncFilter_mul [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ)
+    (A : Finset ℤ) (h : ℤ) :
+    ∫ ω, (∑ k ∈ A, a k * ε (h - k) ω) * (∑ l ∈ A, a l * ε (0 - l) ω) ∂μ
+      = σ2 * ∑ k ∈ A, (if k - h ∈ A then a k * a (k - h) else 0) := by
+  have hI : ∀ k l : ℤ, Integrable (fun ω => (a k * a l) * (ε (h - k) ω * ε (0 - l) ω)) μ :=
+    fun k l => (integrable_mul_of_memLp_two (hε.memLp_two_of_iid _)
+      (hε.memLp_two_of_iid _)).const_mul _
+  have hpt : ∀ ω, (∑ k ∈ A, a k * ε (h - k) ω) * (∑ l ∈ A, a l * ε (0 - l) ω)
+      = ∑ k ∈ A, ∑ l ∈ A, (a k * a l) * (ε (h - k) ω * ε (0 - l) ω) := by
+    intro ω
+    rw [Finset.sum_mul_sum]
+    exact Finset.sum_congr rfl fun k _ => Finset.sum_congr rfl fun l _ => by ring
+  rw [integral_congr_ae (Eventually.of_forall hpt),
+    integral_finset_sum A (fun k _ => integrable_finset_sum A fun l _ => hI k l)]
+  have hstep : ∀ k ∈ A, ∫ ω, ∑ l ∈ A, (a k * a l) * (ε (h - k) ω * ε (0 - l) ω) ∂μ
+      = σ2 * (if k - h ∈ A then a k * a (k - h) else 0) := by
+    intro k _
+    rw [integral_finset_sum A (fun l _ => hI k l)]
+    simp only [integral_const_mul, integral_noise_mul_noise hε]
+    rw [Finset.sum_congr rfl (fun l _ =>
+      show a k * a l * (if h - k = 0 - l then σ2 else 0)
+        = a k * a l * (if k - h = l then σ2 else 0) from
+      congrArg (fun z => a k * a l * z) (if_congr (by omega) rfl rfl))]
+    simp only [mul_ite, mul_zero]
+    rw [Finset.sum_ite_eq A (k - h) (fun l => a k * a l * σ2)]
+    split_ifs <;> ring
+  rw [Finset.sum_congr rfl hstep, ← Finset.mul_sum]
+
+variable (hε : IsIIDNoise ε σ2 μ)
+  (hfil : ∀ t : ℤ, Tendsto (fun N : ℕ => eLpNorm (fun ω => X t ω -
+    ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) 2 μ) atTop (𝓝 0))
+
+include hε in
+private lemma memLp_truncFilter (A : Finset ℤ) (t : ℤ) :
+    MemLp (fun ω => ∑ k ∈ A, a k * ε (t - k) ω) 2 μ :=
+  memLp_finset_sum A fun k _ => (hε.memLp_two_of_iid (t - k)).const_mul (a k)
+
+include hε in
+private lemma integral_truncFilter_eq_zero [IsProbabilityMeasure μ] (A : Finset ℤ) (t : ℤ) :
+    ∫ ω, ∑ k ∈ A, a k * ε (t - k) ω ∂μ = 0 := by
+  rw [integral_finset_sum A
+    (fun k _ => ((hε.memLp_two_of_iid (t - k)).integrable one_le_two).const_mul (a k))]
+  simp only [integral_const_mul, hε.integral_zero', mul_zero, Finset.sum_const_zero]
+
+include hε hfil in
+private lemma memLp_two_of_filter [IsProbabilityMeasure μ] (hmeas : ∀ t, Measurable (X t)) (t : ℤ) :
+    MemLp (X t) 2 μ := by
+  obtain ⟨N, hN⟩ := ((hfil t).eventually_lt_const (by norm_num : (0 : ENNReal) < 1)).exists
+  have hmd : AEStronglyMeasurable (fun ω => X t ω -
+      ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) μ :=
+    (((hmeas t).sub (Finset.measurable_sum _ fun k _ =>
+      (hε.measurable (t - k)).const_mul (a k)))).aestronglyMeasurable
+  have hd : MemLp (fun ω => X t ω -
+      ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) 2 μ :=
+    ⟨hmd, lt_of_lt_of_le hN (by norm_num)⟩
+  have := hd.add (memLp_truncFilter (a := a) hε (Finset.Icc (-(N : ℤ)) (N : ℤ)) t)
+  refine MemLp.ae_eq (Eventually.of_forall fun ω => ?_) this
+  simp only [Pi.add_apply]
+  ring
+
+include hε hfil in
+private lemma tendsto_sqrt_defect (hmeas : ∀ t, Measurable (X t)) (t : ℤ) :
+    Tendsto (fun N : ℕ => Real.sqrt (∫ ω, (X t ω -
+      ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) ^ 2 ∂μ)) atTop (𝓝 0) :=
+  tendsto_sqrt_integral_sq_of_eLpNorm
+    (fun _ => (((hmeas t).sub (Finset.measurable_sum _ fun k _ =>
+      (hε.measurable (t - k)).const_mul (a k)))).aestronglyMeasurable) (hfil t)
+
+include hε hfil in
+private lemma integral_eq_zero_of_filter [IsProbabilityMeasure μ] (hmeas : ∀ t, Measurable (X t))
+    (t : ℤ) : ∫ ω, X t ω ∂μ = 0 := by
+  have hXm := memLp_two_of_filter hε hfil hmeas t
+  have hbound : ∀ N : ℕ, |∫ ω, X t ω ∂μ| ≤ Real.sqrt (∫ ω, (X t ω -
+      ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) ^ 2 ∂μ) := by
+    intro N
+    have hd : MemLp (fun ω => X t ω -
+        ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) 2 μ :=
+      hXm.sub (memLp_truncFilter (a := a) hε (Finset.Icc (-(N : ℤ)) (N : ℤ)) t)
+    have hcs := abs_integral_mul_le_sqrt hd (memLp_const (μ := μ) (1 : ℝ))
+    have he1 : ∫ ω, (X t ω -
+        ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) * (1 : ℝ) ∂μ
+        = ∫ ω, X t ω ∂μ := by
+      rw [integral_congr_ae (Eventually.of_forall fun ω => mul_one _),
+        integral_sub (hXm.integrable one_le_two)
+          ((memLp_truncFilter (a := a) hε (Finset.Icc (-(N : ℤ)) (N : ℤ)) t).integrable one_le_two),
+        integral_truncFilter_eq_zero (a := a) hε (Finset.Icc (-(N : ℤ)) (N : ℤ)) t, sub_zero]
+    rw [he1] at hcs
+    simpa using hcs
+  have := ge_of_tendsto (tendsto_sqrt_defect hε hfil hmeas t)
+    (Eventually.of_forall hbound)
+  exact abs_eq_zero.1 (le_antisymm this (abs_nonneg _))
+
+end Acvf
+
+/-- `L²` continuity of the bilinear form `(U, V) ↦ ∫ U V`. -/
+private lemma abs_integral_mul_sub_le [IsProbabilityMeasure μ] {U V U' V' : Ω → ℝ}
+    (hU : MemLp U 2 μ) (hV : MemLp V 2 μ) (hU' : MemLp U' 2 μ) (hV' : MemLp V' 2 μ) :
+    |∫ ω, U ω * V ω ∂μ - ∫ ω, U' ω * V' ω ∂μ|
+      ≤ Real.sqrt (∫ ω, (U ω - U' ω) ^ 2 ∂μ) * Real.sqrt (∫ ω, V ω ^ 2 ∂μ)
+        + Real.sqrt (∫ ω, U ω ^ 2 ∂μ) * Real.sqrt (∫ ω, (V ω - V' ω) ^ 2 ∂μ)
+        + Real.sqrt (∫ ω, (U ω - U' ω) ^ 2 ∂μ) * Real.sqrt (∫ ω, (V ω - V' ω) ^ 2 ∂μ) := by
+  have hdU : MemLp (fun ω => U ω - U' ω) 2 μ := hU.sub hU'
+  have hdV : MemLp (fun ω => V ω - V' ω) 2 μ := hV.sub hV'
+  have i1 : Integrable (fun ω => (U ω - U' ω) * V ω) μ := integrable_mul_of_memLp_two hdU hV
+  have i2 : Integrable (fun ω => U ω * (V ω - V' ω)) μ := integrable_mul_of_memLp_two hU hdV
+  have i3 : Integrable (fun ω => (U ω - U' ω) * (V ω - V' ω)) μ :=
+    integrable_mul_of_memLp_two hdU hdV
+  have iUV : Integrable (fun ω => U ω * V ω) μ := integrable_mul_of_memLp_two hU hV
+  have iUV' : Integrable (fun ω => U' ω * V' ω) μ := integrable_mul_of_memLp_two hU' hV'
+  have h12 : Integrable (fun ω => (U ω - U' ω) * V ω + U ω * (V ω - V' ω)) μ := i1.add i2
+  have e : ∫ ω, U ω * V ω ∂μ - ∫ ω, U' ω * V' ω ∂μ
+      = (∫ ω, (U ω - U' ω) * V ω ∂μ + ∫ ω, U ω * (V ω - V' ω) ∂μ)
+        - ∫ ω, (U ω - U' ω) * (V ω - V' ω) ∂μ := by
+    rw [← integral_sub iUV iUV', ← integral_add i1 i2, ← integral_sub h12 i3]
+    exact integral_congr_ae (Eventually.of_forall fun ω => by ring)
+  have key : ∀ x y z : ℝ, |x + y - z| ≤ |x| + |y| + |z| := by
+    intro x y z
+    rw [abs_le]
+    constructor
+    · linarith [neg_abs_le x, neg_abs_le y, le_abs_self z]
+    · linarith [le_abs_self x, le_abs_self y, neg_abs_le z]
+  have t1 := abs_integral_mul_le_sqrt hdU hV
+  have t2 := abs_integral_mul_le_sqrt hU hdV
+  have t3 := abs_integral_mul_le_sqrt hdU hdV
+  rw [e]
+  linarith [key (∫ ω, (U ω - U' ω) * V ω ∂μ) (∫ ω, U ω * (V ω - V' ω) ∂μ)
+    (∫ ω, (U ω - U' ω) * (V ω - V' ω) ∂μ)]
+
+
+private lemma summable_acoef_shift (ha : Summable fun k : ℤ => |a k|) (h : ℤ) :
+    Summable fun k : ℤ => a k * a (k - h) := by
+  refine Summable.of_norm_bounded (g := fun k : ℤ => (∑' j : ℤ, |a j|) * |a k|)
+    (ha.mul_left _) fun k => ?_
+  have hb : |a (k - h)| ≤ ∑' j : ℤ, |a j| :=
+    ha.le_tsum (k - h) (fun j _ => abs_nonneg _)
+  calc ‖a k * a (k - h)‖ = |a (k - h)| * |a k| := by
+        rw [Real.norm_eq_abs, abs_mul]; ring
+  _ ≤ (∑' j : ℤ, |a j|) * |a k| := by
+        exact mul_le_mul_of_nonneg_right hb (abs_nonneg _)
+
+private lemma tendsto_partial_shift (ha : Summable fun k : ℤ => |a k|) (h : ℤ) :
+    Tendsto (fun N : ℕ => ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ),
+        (if k - h ∈ Finset.Icc (-(N : ℤ)) (N : ℤ) then a k * a (k - h) else 0))
+      atTop (𝓝 (∑' k : ℤ, a k * a (k - h))) := by
+  classical
+  have hF : ∀ N : ℕ, ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ),
+      (if k - h ∈ Finset.Icc (-(N : ℤ)) (N : ℤ) then a k * a (k - h) else 0)
+      = ∑ k ∈ (Finset.Icc (-(N : ℤ)) (N : ℤ)).filter
+          (fun k => k - h ∈ Finset.Icc (-(N : ℤ)) (N : ℤ)), a k * a (k - h) :=
+    fun N => (Finset.sum_filter _ _).symm
+  simp only [hF]
+  refine (summable_acoef_shift ha h).hasSum.comp (tendsto_atTop_finset_of_monotone ?_ ?_)
+  · intro p q hpq k hk
+    simp only [Finset.mem_filter, Finset.mem_Icc] at *
+    have : (p : ℤ) ≤ (q : ℤ) := by exact_mod_cast hpq
+    omega
+  · intro k
+    refine ⟨max k.natAbs (k - h).natAbs, ?_⟩
+    simp only [Finset.mem_filter, Finset.mem_Icc]
+    have h1 : (k.natAbs : ℤ) ≤ (max k.natAbs (k - h).natAbs : ℕ) := by
+      exact_mod_cast Nat.le_max_left _ _
+    have h2 : ((k - h).natAbs : ℤ) ≤ (max k.natAbs (k - h).natAbs : ℕ) := by
+      exact_mod_cast Nat.le_max_right _ _
+    have e1 := Int.natAbs_eq k
+    have e2 := Int.natAbs_eq (k - h)
+    omega
+
+private lemma tendsto_integral_truncFilter [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ)
+    (hfil : ∀ t : ℤ, Tendsto (fun N : ℕ => eLpNorm (fun ω => X t ω -
+      ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) 2 μ) atTop (𝓝 0))
+    (hmeas : ∀ t, Measurable (X t)) (h : ℤ) :
+    Tendsto (fun N : ℕ => ∫ ω,
+        (∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (h - k) ω) *
+        (∑ l ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a l * ε (0 - l) ω) ∂μ)
+      atTop (𝓝 (∫ ω, X h ω * X 0 ω ∂μ)) := by
+  have hXh := memLp_two_of_filter hε hfil hmeas h
+  have hX0 := memLp_two_of_filter hε hfil hmeas 0
+  refine tendsto_iff_dist_tendsto_zero.2 ?_
+  refine squeeze_zero (g := fun N : ℕ =>
+      Real.sqrt (∫ ω, (X h ω -
+          ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (h - k) ω) ^ 2 ∂μ) *
+        Real.sqrt (∫ ω, X 0 ω ^ 2 ∂μ)
+      + Real.sqrt (∫ ω, X h ω ^ 2 ∂μ) *
+        Real.sqrt (∫ ω, (X 0 ω -
+          ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (0 - k) ω) ^ 2 ∂μ)
+      + Real.sqrt (∫ ω, (X h ω -
+          ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (h - k) ω) ^ 2 ∂μ) *
+        Real.sqrt (∫ ω, (X 0 ω -
+          ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (0 - k) ω) ^ 2 ∂μ))
+    (fun N => dist_nonneg) (fun N => ?_) ?_
+  · rw [Real.dist_eq, abs_sub_comm]
+    exact abs_integral_mul_sub_le hXh hX0
+      (memLp_truncFilter (a := a) hε (Finset.Icc (-(N : ℤ)) (N : ℤ)) h)
+      (memLp_truncFilter (a := a) hε (Finset.Icc (-(N : ℤ)) (N : ℤ)) 0)
+  · have d1 := tendsto_sqrt_defect hε hfil hmeas h
+    have d0 := tendsto_sqrt_defect hε hfil hmeas 0
+    have := ((d1.mul_const (Real.sqrt (∫ ω, X 0 ω ^ 2 ∂μ))).add
+      ((d0.const_mul (Real.sqrt (∫ ω, X h ω ^ 2 ∂μ))))).add (d1.mul d0)
+    simpa using this
+
+private theorem acvf_eq_tsum_of_filter [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ)
+    (hfil : ∀ t : ℤ, Tendsto (fun N : ℕ => eLpNorm (fun ω => X t ω -
+      ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) 2 μ) atTop (𝓝 0))
+    (ha : Summable fun k : ℤ => |a k|) (hmeas : ∀ t, Measurable (X t)) (h : ℤ) :
+    acvf X μ h = σ2 * ∑' k : ℤ, a k * a (k - h) := by
+  have hXh := memLp_two_of_filter hε hfil hmeas h
+  have hX0 := memLp_two_of_filter hε hfil hmeas 0
+  have hlim1 := tendsto_integral_truncFilter hε hfil hmeas h
+  have hlim2 : Tendsto (fun N : ℕ => ∫ ω,
+      (∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (h - k) ω) *
+      (∑ l ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a l * ε (0 - l) ω) ∂μ)
+      atTop (𝓝 (σ2 * ∑' k : ℤ, a k * a (k - h))) := by
+    have heq : ∀ N : ℕ, ∫ ω,
+        (∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (h - k) ω) *
+        (∑ l ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a l * ε (0 - l) ω) ∂μ
+        = σ2 * ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ),
+            (if k - h ∈ Finset.Icc (-(N : ℤ)) (N : ℤ) then a k * a (k - h) else 0) :=
+      fun N => integral_truncFilter_mul hε _ h
+    simp only [heq]
+    exact (tendsto_partial_shift ha h).const_mul σ2
+  have hval : ∫ ω, X h ω * X 0 ω ∂μ = σ2 * ∑' k : ℤ, a k * a (k - h) :=
+    tendsto_nhds_unique hlim1 hlim2
+  rw [acvf, covariance_eq_sub hXh hX0, integral_eq_zero_of_filter hε hfil hmeas h,
+    integral_eq_zero_of_filter hε hfil hmeas 0]
+  simpa using hval
+
+/-- The reindexing `(h, k) ↦ (k, k − h)` of `ℤ × ℤ`. -/
+private def shiftPairEquiv : ℤ × ℤ ≃ ℤ × ℤ where
+  toFun x := (x.2, x.2 - x.1)
+  invFun y := (y.1 - y.2, y.1)
+  left_inv x := by simp
+  right_inv y := by simp
+
+private lemma summable_absConv (ha : Summable fun k : ℤ => |a k|) :
+    Summable fun x : ℤ × ℤ => |a x.2| * |a (x.2 - x.1)| := by
+  have hprod : Summable fun x : ℤ × ℤ => |a x.1| * |a x.2| :=
+    ha.mul_of_nonneg ha (fun k => abs_nonneg _) (fun k => abs_nonneg _)
+  have := (shiftPairEquiv.summable_iff (f := fun x : ℤ × ℤ => |a x.1| * |a x.2|)).2 hprod
+  simpa [Function.comp, shiftPairEquiv] using this
+
+/-- **Young's inequality for the autocovariance series**: the lag-`h` coefficient series of a
+two-sided `ℓ¹` filter is itself `ℓ¹` in `h`, hence `ℓ²`. -/
+private lemma summable_acvfCoeff_sq (ha : Summable fun k : ℤ => |a k|) :
+    Summable fun h : ℤ => (∑' k : ℤ, a k * a (k - h)) ^ 2 := by
+  classical
+  set S : ℝ := ∑' j : ℤ, |a j| with hS
+  have hSnn : 0 ≤ S := tsum_nonneg fun j => abs_nonneg _
+  have hF := summable_absConv (a := a) ha
+  have hsec : ∀ h : ℤ, Summable fun k : ℤ => |a k| * |a (k - h)| := fun h => hF.prod_factor h
+  have hc : Summable fun h : ℤ => ∑' k : ℤ, |a k| * |a (k - h)| := hF.prod
+  have hcnn : ∀ h : ℤ, 0 ≤ ∑' k : ℤ, |a k| * |a (k - h)| :=
+    fun h => tsum_nonneg fun k => mul_nonneg (abs_nonneg _) (abs_nonneg _)
+  have hcle : ∀ h : ℤ, (∑' k : ℤ, |a k| * |a (k - h)|) ≤ S * S := by
+    intro h
+    have hb : ∀ k : ℤ, |a k| * |a (k - h)| ≤ |a k| * S := by
+      intro k
+      exact mul_le_mul_of_nonneg_left (ha.le_tsum (k - h) fun j _ => abs_nonneg _) (abs_nonneg _)
+    calc (∑' k : ℤ, |a k| * |a (k - h)|) ≤ ∑' k : ℤ, |a k| * S :=
+          (hsec h).tsum_le_tsum hb (ha.mul_right S)
+    _ = S * S := by rw [tsum_mul_right]
+  have habs : ∀ h : ℤ, |∑' k : ℤ, a k * a (k - h)| ≤ ∑' k : ℤ, |a k| * |a (k - h)| := by
+    intro h
+    have hnorm : Summable fun k : ℤ => ‖a k * a (k - h)‖ := by
+      simpa [Real.norm_eq_abs, abs_mul] using hsec h
+    have := norm_tsum_le_tsum_norm hnorm
+    simpa [Real.norm_eq_abs, abs_mul] using this
+  refine Summable.of_nonneg_of_le (fun h => sq_nonneg _) (fun h => ?_) (hc.mul_left (S * S))
+  have h1 := habs h
+  have h2 := hcle h
+  have h3 := hcnn h
+  nlinarith [abs_nonneg (∑' k : ℤ, a k * a (k - h)), sq_abs (∑' k : ℤ, a k * a (k - h))]
+
+/-- **The frozen limiting variance is not a junk `tsum`**: `Σ_h γ(h)² < ∞`. -/
+private lemma summable_acvf_sq_of_filter [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ)
+    (hfil : ∀ t : ℤ, Tendsto (fun N : ℕ => eLpNorm (fun ω => X t ω -
+      ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) 2 μ) atTop (𝓝 0))
+    (ha : Summable fun k : ℤ => |a k|) (hmeas : ∀ t, Measurable (X t)) :
+    Summable fun h : ℤ => acvf X μ h ^ 2 := by
+  refine Summable.congr ((summable_acvfCoeff_sq (a := a) ha).mul_left (σ2 ^ 2)) fun h => ?_
+  rw [acvf_eq_tsum_of_filter hε hfil ha hmeas h]
+  ring
+
+end LinearAcvf
 
 /-- **FY Theorem 2.8(ii) — DEBT (ledger (b); B&D 1991 Prop 7.3.4)**, with the variance
 **corrected** from the misprinted eq. (2.25): for a zero-mean two-sided linear process
