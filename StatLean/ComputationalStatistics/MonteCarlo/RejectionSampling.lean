@@ -171,6 +171,66 @@ private lemma not_rejectionSampling_conditionalLaw :
   rw [rejectionAccept_unit_top_eq_zero] at h1
   simp at h1
 
+/-!
+### The pointwise section computation
+
+The whole content of the three identities is one pointwise fact: for a proposal
+value `y` with `q y ≠ ∞`, the `uniform01`-measure of the acceptance section
+above `y`, weighted by `q y`, is exactly `c⁻¹ · p y`.
+-/
+
+set_option linter.unusedSectionVars false in
+/-- The `y`-section of the acceptance region is the interval `Iic r` with
+`ENNReal.ofReal r = p y / (c * q y)`, so `q y · uniform01 (section) = c⁻¹ · p y`.
+This is where `q y ≠ ∞` (a consequence of `∫⁻ q dν = 1`) is used. -/
+private lemma uniform01_section_mul (henv : ∀ y, p y ≤ c * q y) (hc0 : c ≠ 0)
+    (hcT : c ≠ ∞) {y : 𝓧} (hy : q y ≠ ∞) :
+    q y * uniform01 {u : ℝ | ENNReal.ofReal u * (c * q y) ≤ p y} = c⁻¹ * p y := by
+  rcases eq_or_ne (q y) 0 with h0 | h0
+  · have hp0 : p y = 0 := le_antisymm (by simpa [h0] using henv y) (zero_le _)
+    simp [h0, hp0]
+  · have hA0 : c * q y ≠ 0 := mul_ne_zero hc0 h0
+    have hAT : c * q y ≠ ∞ := ENNReal.mul_ne_top hcT hy
+    have hpA : p y ≤ c * q y := henv y
+    have hpT : p y ≠ ∞ := ne_top_of_le_ne_top hAT hpA
+    have hdivT : p y / (c * q y) ≠ ∞ := ENNReal.div_ne_top hpT hA0
+    have hdiv1 : p y / (c * q y) ≤ 1 := ENNReal.div_le_of_le_mul (by simpa using hpA)
+    set r : ℝ := (p y / (c * q y)).toReal with hr
+    have hr0 : 0 ≤ r := ENNReal.toReal_nonneg
+    have hr1 : r ≤ 1 := by
+      rw [hr, ← ENNReal.toReal_one]
+      exact ENNReal.toReal_mono ENNReal.one_ne_top hdiv1
+    have hofReal : ENNReal.ofReal r = p y / (c * q y) := ENNReal.ofReal_toReal hdivT
+    -- the section is `Iic r`
+    have hsec : {u : ℝ | ENNReal.ofReal u * (c * q y) ≤ p y} = Set.Iic r := by
+      ext u
+      simp only [Set.mem_setOf_eq, Set.mem_Iic]
+      constructor
+      · intro hu
+        rcases le_or_gt u 0 with hu0 | hu0
+        · exact hu0.trans hr0
+        · have h1 : ENNReal.ofReal u ≤ p y / (c * q y) :=
+            ENNReal.le_div_iff_mul_le (Or.inl hA0) (Or.inl hAT) |>.mpr hu
+          rw [← hofReal] at h1
+          exact (ENNReal.ofReal_le_ofReal_iff hr0).mp h1
+      · intro hu
+        have h1 : ENNReal.ofReal u ≤ p y / (c * q y) := by
+          rw [← hofReal]; exact ENNReal.ofReal_le_ofReal hu
+        calc ENNReal.ofReal u * (c * q y) ≤ p y / (c * q y) * (c * q y) := by gcongr
+          _ = p y := ENNReal.div_mul_cancel hA0 hAT
+    -- and `uniform01 (Iic r) = ofReal r`
+    have huni : uniform01 (Set.Iic r) = ENNReal.ofReal r := by
+      rw [uniform01, Measure.restrict_apply measurableSet_Iic]
+      have hset : Set.Iic r ∩ Set.Icc (0 : ℝ) 1 = Set.Icc 0 r := by
+        ext x
+        simp only [Set.mem_inter_iff, Set.mem_Iic, Set.mem_Icc]
+        exact ⟨fun h => ⟨h.2.1, h.1⟩, fun h => ⟨h.2, h.1, h.2.trans hr1⟩⟩
+      rw [hset, Real.volume_Icc, sub_zero]
+    rw [hsec, huni, hofReal, div_eq_mul_inv, ENNReal.mul_inv (Or.inl hc0) (Or.inl hcT)]
+    have hcalc : q y * (p y * (c⁻¹ * (q y)⁻¹)) = q y * (q y)⁻¹ * (c⁻¹ * p y) := by ring
+    rw [hcalc, ENNReal.mul_inv_cancel h0 hy, one_mul]
+
+set_option linter.unusedSectionVars false in
 /-- **Accepted-restricted marginal identity**: restricting the joint proposal
 `(Y, U) ~ (ν.withDensity q) ⊗ U(0,1)` to the acceptance region, the law of `Y`
 is `c⁻¹ · (ν.withDensity p)`.  This is the workhorse behind both the
@@ -189,7 +249,44 @@ theorem rejectionSampling_restrict_map
     (((ν.withDensity q).prod uniform01).restrict (rejectionAccept p q c)).map
         Prod.fst
       = c⁻¹ • ν.withDensity p := by
-  sorry
+  have hA : MeasurableSet (rejectionAccept p q c) := measurableSet_rejectionAccept hp hq
+  have hqae : ∀ᵐ y ∂ν, q y ≠ ∞ := by
+    have hfin : ∫⁻ z, q z ∂ν ≠ ∞ := by rw [hq1]; exact ENNReal.one_ne_top
+    filter_upwards [ae_lt_top hq hfin] with y hy using hy.ne
+  refine Measure.ext fun S hS => ?_
+  have hSm : MeasurableSet (Prod.fst ⁻¹' S : Set (𝓧 × ℝ)) := measurable_fst hS
+  -- the `y`-section of the accepted part of the cylinder over `S`
+  have hsec : ∀ y : 𝓧,
+      uniform01 (Prod.mk y ⁻¹' ((Prod.fst ⁻¹' S : Set (𝓧 × ℝ)) ∩ rejectionAccept p q c))
+        = S.indicator
+            (fun y => uniform01 {u : ℝ | ENNReal.ofReal u * (c * q y) ≤ p y}) y := by
+    intro y
+    by_cases hyS : y ∈ S
+    · have he : Prod.mk y ⁻¹' ((Prod.fst ⁻¹' S : Set (𝓧 × ℝ)) ∩ rejectionAccept p q c)
+          = {u : ℝ | ENNReal.ofReal u * (c * q y) ≤ p y} := by
+        ext u; simp [rejectionAccept, hyS]
+      rw [he, Set.indicator_of_mem hyS]
+    · have he : Prod.mk y ⁻¹' ((Prod.fst ⁻¹' S : Set (𝓧 × ℝ)) ∩ rejectionAccept p q c)
+          = (∅ : Set ℝ) := by
+        ext u; simp [hyS]
+      rw [he, Set.indicator_of_notMem hyS, measure_empty]
+  rw [Measure.map_apply measurable_fst hS, Measure.restrict_apply hSm,
+    Measure.prod_apply (hSm.inter hA),
+    lintegral_withDensity_eq_lintegral_mul _ hq
+      (measurable_measure_prodMk_left (hSm.inter hA)),
+    Measure.smul_apply, smul_eq_mul, withDensity_apply _ hS]
+  simp only [Pi.mul_apply]
+  have key : ∀ᵐ y ∂ν,
+      q y * uniform01 (Prod.mk y ⁻¹' ((Prod.fst ⁻¹' S : Set (𝓧 × ℝ)) ∩ rejectionAccept p q c))
+        = S.indicator (fun y => c⁻¹ * p y) y := by
+    filter_upwards [hqae] with y hy
+    rw [hsec y]
+    by_cases hyS : y ∈ S
+    · rw [Set.indicator_of_mem hyS, Set.indicator_of_mem hyS]
+      exact uniform01_section_mul henv hc0 hcT hy
+    · rw [Set.indicator_of_notMem hyS, Set.indicator_of_notMem hyS, mul_zero]
+  rw [lintegral_congr_ae key, lintegral_indicator hS,
+    lintegral_const_mul' _ _ (ENNReal.inv_ne_top.mpr hc0)]
 
 /-- **Acceptance probability of rejection sampling** (ECS §2.1, p. 40): the
 joint proposal puts mass exactly `1/c` on the acceptance region. -/
@@ -207,7 +304,12 @@ theorem rejectionSampling_acceptProb
     -- USER-INPUT: a positive, finite envelope constant; ECS §2.1
     (hc0 : c ≠ 0) (hcT : c ≠ ∞) :
     ((ν.withDensity q).prod uniform01) (rejectionAccept p q c) = c⁻¹ := by
-  sorry
+  have h := congrArg (fun μ : Measure 𝓧 => μ Set.univ)
+    (rejectionSampling_restrict_map hp hq hq1 henv hc0 hcT)
+  simp only [Measure.map_apply measurable_fst MeasurableSet.univ, Set.preimage_univ,
+    Measure.restrict_apply MeasurableSet.univ, Set.univ_inter, Measure.smul_apply,
+    smul_eq_mul, withDensity_apply _ MeasurableSet.univ, setLIntegral_univ] at h
+  rw [h, hp1, mul_one]
 
 /-- **Rejection sampling returns exactly the target law** (ECS §2.1,
 Algorithm 2.1 and the display on p. 40): conditionally on acceptance, the
@@ -228,6 +330,9 @@ theorem rejectionSampling_conditionalLaw
     (ProbabilityTheory.cond ((ν.withDensity q).prod uniform01)
         (rejectionAccept p q c)).map Prod.fst
       = ν.withDensity p := by
-  sorry
+  rw [ProbabilityTheory.cond, Measure.map_smul,
+    rejectionSampling_restrict_map hp hq hq1 henv hc0 hcT,
+    rejectionSampling_acceptProb hp hq hq1 hp1 henv hc0 hcT, smul_smul,
+    inv_inv, ENNReal.mul_inv_cancel hc0 hcT, one_smul]
 
 end StatLean.ComputationalStatistics
