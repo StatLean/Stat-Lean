@@ -52,8 +52,8 @@ namespace StatLean.ComputationalStatistics
 unit interval.  The auxiliary randomization of the acceptance step. -/
 noncomputable def uniform01 : Measure ℝ := volume.restrict (Set.Icc 0 1)
 
-instance isProbabilityMeasure_uniform01 : IsProbabilityMeasure uniform01 := by
-  sorry
+instance isProbabilityMeasure_uniform01 : IsProbabilityMeasure uniform01 :=
+  ⟨by simp [uniform01, Real.volume_Icc]⟩
 
 variable {𝓧 : Type*} [MeasurableSpace 𝓧] {ν : Measure 𝓧} [SigmaFinite ν]
   {p q : 𝓧 → ℝ≥0∞} {c : ℝ≥0∞}
@@ -70,8 +70,10 @@ theorem measurableSet_rejectionAccept
     (hp : Measurable p)
     -- LEAN-ONLY: measurability of the proposal density (regularity)
     (hq : Measurable q) :
-    MeasurableSet (rejectionAccept p q c) := by
-  sorry
+    MeasurableSet (rejectionAccept p q c) :=
+  measurableSet_le
+    ((ENNReal.measurable_ofReal.comp measurable_snd).mul ((hq.comp measurable_fst).const_mul c))
+    (hp.comp measurable_fst)
 
 /-- **Accepted-restricted marginal identity**: restricting the joint proposal
 `(Y, U) ~ (ν.withDensity q) ⊗ U(0,1)` to the acceptance region, the law of `Y`
