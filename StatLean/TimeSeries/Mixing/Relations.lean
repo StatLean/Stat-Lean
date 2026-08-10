@@ -1702,6 +1702,53 @@ private theorem integrable_lyap_of_isErgodicWithRate {S : Type*} [MeasurableSpac
   exact lt_of_le_of_lt (lintegral_lyap_le_of_isErgodicWithRate hdrift herg x₀)
     ENNReal.ofReal_lt_top
 
+/-- **The quantitative Harris envelope, in the form `HasGeometricStateChain` consumes.**
+
+Drift + minorization give an invariant probability measure `π` together with an
+**`π`-integrable** dominating constant `A` and a rate `r < 1` such that
+`‖κᵐ(x, ·) − π‖_TV ≤ A(x) rᵐ` for every state `x` and every `m`.
+
+This closes, as one theorem, the named follow-up *"`IsGeometricallyErgodic` with a Lyapunov
+envelope"* that both `arma_stateChain_brick` and `garch_stateChain_brick` list as an open
+input. Its two parts:
+
+* the envelope itself — `harris_theorem_envelope`, the statement-level export (added in
+  `ForMathlib/Markov/HarrisTheorem.lean`) of the step `hbound` that Harris' theorem already
+  proves internally and then discards. It returns `A` **affine in the Lyapunov function**,
+  `A x = c + b · V x`;
+* the integrability of that `A` — `integrable_lyap_of_isErgodicWithRate` above, i.e.
+  `∫ V dπ < ∞`, which is *not* an output of Harris' theorem and is not reachable from drift
+  plus invariance by the naive truncation (see `lintegral_lyap_le_of_isErgodicWithRate`).
+
+`IsGeometricallyErgodic` alone is strictly weaker than this: it carries only the pointwise
+rate `ρ⁻ᵐ ‖κᵐ(x, ·) − π‖_TV → 0`, with no `x`-uniform integrable constant, and FY eq. (2.59)
+cannot be integrated against it. -/
+theorem exists_invariant_geometric_envelope_of_harris {S : Type*} [MeasurableSpace S]
+    {κ : ProbabilityTheory.Kernel S S} [ProbabilityTheory.IsMarkovKernel κ]
+    {V : S → ℝ} {γ K : ℝ} (hdrift : HasLyapunovDrift κ V γ K)
+    {R α : ℝ} {ν : Measure S} (hmin : HasMinorization κ V R α ν)
+    (hR : 2 * K / (1 - γ) < R) :
+    ∃ π : Measure S, IsProbabilityMeasure π ∧ ProbabilityTheory.Kernel.Invariant κ π ∧
+      ∃ (A : S → ℝ) (r : ℝ), (∀ x, 0 ≤ A x) ∧ Integrable A π ∧ 0 ≤ r ∧ r < 1 ∧
+        ∀ (x : S) (m : ℕ),
+          StatLean.Minimaxity.tvDist ((κ ^ m) x) π ≤ ENNReal.ofReal (A x * r ^ m) := by
+  haveI := hmin.isProbability
+  -- the state space is nonempty: it carries the minorizing probability measure
+  haveI hne : Nonempty S := by
+    rcases isEmpty_or_nonempty S with h | h
+    · exact absurd (measure_univ (μ := ν))
+        (by rw [Set.univ_eq_empty_iff.2 h, measure_empty]; exact zero_ne_one)
+    · exact h
+  obtain ⟨x₀⟩ := id hne
+  obtain ⟨π, hπprob, hinv, hge, b, c, r, hb0, hc0, hr0, hr1, henv⟩ :=
+    harris_theorem_envelope hdrift hmin hR
+  haveI := hπprob
+  obtain ⟨ρ, _, herg⟩ := hge
+  have hVint : Integrable V π := integrable_lyap_of_isErgodicWithRate hdrift herg x₀
+  refine ⟨π, hπprob, hinv, fun x => c + b * V x, r, fun x =>
+    add_nonneg hc0 (mul_nonneg hb0 (hdrift.V_nonneg x)), ?_, hr0, hr1, henv⟩
+  exact (integrable_const c).add (hVint.const_mul b)
+
 /-- **DEBT (Pham–Tran 1985; FY §2.6.1(v))**: a stationary causal ARMA process with
 iid innovations admitting an (absolutely continuous) density is exponentially
 β-mixing.
@@ -1780,6 +1827,31 @@ second one is WRONG.** Checked against `ForMathlib/Markov/HarrisTheorem.lean` an
   `HasGeometricStateChain`'s integrable constant `A` needs. So of the two parts of the
   follow-up, (b) is closed here and (a) is a pure statement change to `harris_theorem`,
   outside this lane's touch set. Neither is any longer an open mathematical question.
+
+**RESOLVED (2026-08-09, wave 7): the whole follow-up is CLOSED**, as the single theorem
+`exists_invariant_geometric_envelope_of_harris` above. Part (a) was performed as the
+authorized statement addition `harris_theorem_envelope` in
+`ForMathlib/Markov/HarrisTheorem.lean` (`harris_theorem` keeps its exact statement and is
+now its two-line corollary), and it is composed there with part (b). The envelope comes out
+**affine in the Lyapunov function**, `A x = c + b · V x`, which is exactly why part (b)
+(`∫ V dπ < ∞`) is the thing that makes it integrable.
+
+**What the brick still needs is NOT the envelope.** With the follow-up closed, the residue
+of `arma_stateChain_brick` is entirely model-side, and it is bigger than the envelope was:
+
+1. *The causal representation.* `HasGeometricStateChain` asks for `IsMarkovOf V κ μ` for the
+   companion state `V_t = (X_t, …, X_{t−p+1}, ε_t, …, ε_{t−q+1})` **on the given `Ω` and
+   `μ`**. That needs `ε_{t+1}` to be independent of `σ{V_s : s ≤ t}`, which `hiid` supplies
+   only once every `V_s` is known to be a function of `{ε_u : u ≤ s}` — i.e. only after the
+   identification of `X` as *the causal solution*, from `hstat` + `hroot`. `IsARMA` itself
+   carries `IsWhiteNoise` (uncorrelated), not independence, so this step cannot be skipped;
+   it is FY §2.1 material and is item 1 of the wave-5 list, still open.
+2. *The two-block state update for `q ≥ 1`* (item 3 of the wave-5 list, still open): the
+   ARMA state carries the innovation lags, so its update is not of `shiftPush` shape and
+   `nlARKernel_geometricallyErgodic` does not apply verbatim.
+
+Neither is a `sorry`-filling task. The `sorry` therefore stays, and its content is now
+exactly items 1 and 3 above — no longer anything about Harris' theorem.
 
 **Statement strengthening (documented, USER-INPUT).** `hdens` is strengthened from
 "`ε_0` has *some* Lebesgue density" to "`ε_0` has a **continuous, everywhere positive**
@@ -1885,6 +1957,14 @@ wave 4's obstruction list:
   proved inside `harris_theorem` and is a pure statement change, and (b) the invariant
   moment bound `∫⁻ V dπ ≤ K/(1 − γ)`, which is *not* an output of Harris' theorem, is not
   reachable by the naive truncation argument, and is the one genuinely new item.
+  **RESOLVED (wave 7): both parts are closed**, packaged as
+  `exists_invariant_geometric_envelope_of_harris` above; see the corresponding paragraph in
+  `arma_stateChain_brick`'s docstring. As there, the residue of this brick is now entirely
+  model-side: the `(p+1)`-step minorization is available only for the `shiftPush`-shaped
+  recursion, so **GARCH(p, q) with `q ≥ 1` still needs the two-block state update**, and
+  `IsMarkovOf` for the volatility state still needs `ε_{t+1} ⫫ σ{V_s : s ≤ t}`, which
+  `IsGARCH.indep_past` supplies only against the `X`-past. Neither is a `sorry`-filling
+  task.
 * *Verified (wave 6): `hsum` really is a drift condition here.* `IsGARCH` carries
   `iid : IsIIDNoise ε 1 μ`, i.e. `E ε₀ = 0` and `Var ε₀ = 1`, so
   `E[X_t² | past] = σ_t²` and the volatility recursion contracts at rate `Σb + Σa`
@@ -2056,7 +2136,34 @@ The remaining genuine work is the **transfer from the two linear functionals to 
 `IsGaussianProcess` (Mathlib has `hasGaussianLaw_prodMk` and `HasGaussianLaw` under
 continuous linear maps, but no "standardise a Gaussian pair" lemma) and the differentiation
 under the integral sign. That is a self-contained `ForMathlib` brick of moderate size —
-strictly smaller than `gaussian_rho_linear_brick`'s chaos development. -/
+strictly smaller than `gaussian_rho_linear_brick`'s chaos development.
+
+**Status (2026-08-09, wave 7): the wave-6 route is RE-VERIFIED arithmetically and NOT
+attempted (out of budget for this lane).** Checked, and recorded so the next lane does not
+re-derive it:
+
+* the constants are right — `φ(u)φ(cu) = (2π)⁻¹ exp(−u²(1+c²)/2)`, so
+  `G'(c) = (2π)⁻¹∫_0^∞ u e^{−u²(1+c²)/2} du = 1/(2π(1+c²))`, `G(0) = 0`, and
+  `arctan(r/√(1−r²)) = arcsin r`; the orthant value is `1/4 + arcsin r/(2π)` and the
+  covariance of the two indicators is `arcsin r/(2π)`, giving `|r|/(2π) ≤ α` from
+  `|r| ≤ |arcsin r|`;
+* the `variance = 0` corner really is free, and for the Lean-specific reason that
+  `Real.sqrt 0 = 0` and `x / 0 = 0`: the left-hand side is *literally* `0`, so no
+  nondegeneracy side condition has to be threaded;
+* the `|r| = 1` corner is **not** covered by the Cholesky route (`c = r/√(1−r²)` is a
+  division by zero there) and needs the separate branch wave 6 named: `g` is then an
+  increasing affine function of `f` a.e., the two half-line events coincide, and
+  `α ≥ 1/2 − 1/4 = 1/4`, whence `1 ≤ π/2 ≤ 2π α`.
+
+Two Lean-side inputs remain, and both are larger than "plumbing": (i) identifying the law
+of the standardised pair with the law of `(U, rU + √(1−r²)Z)` — available in principle from
+`Measure.ext_of_charFun` / `gaussian_charFun_congr` (two Gaussians with equal mean and
+covariance form coincide), which the pin does have; and (ii) `G' = 1/(2π(1+c²))`, i.e.
+differentiation under an integral over `Set.Ioi 0` with a dominated derivative. The
+alternative for (ii) — reading `G(c)` as the standard bivariate Gaussian measure of the
+sector of angle `arctan c` and invoking rotation invariance — was considered and is *not*
+cheaper in the pin: it needs "sector measure is proportional to angle", i.e. the
+construction of the uniform measure on the circle. -/
 private lemma gaussian_pair_corr_le_alpha_brick [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
     (hmeas : ∀ t, Measurable (X t)) (hgauss : ProbabilityTheory.IsGaussianProcess X μ)
     (S T : Finset ℤ) (a b : ℤ → ℝ) :
