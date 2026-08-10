@@ -16,9 +16,18 @@ mean `a/(1 − Σ_j b_j)` — the **Volterra series**
 `Y_t = a ξ_t (1 + Σ_{k≥1} Σ_{j₁,…,j_k} b_{j₁} ⋯ b_{j_k} ξ_{t−ℓ₁} ⋯ ξ_{t−ℓ_k})`
 (`ℓ_m = (j₁+1) + ⋯ + (j_m+1)` partial sums of lags) — and it is the a.e.-unique
 integrable solution; if `a = 0`, the only solution is `Y ≡ 0`.
-Also: FY Theorem 2.5(ii) (finite second moment under eq. (2.16)) and Theorem 2.6 (the
-finite-dimensional invariance principle) as statement-level DEBTS (FY cites both to
-Giraitis–Kokoszka–Leipus 2000 without in-book proofs).
+Also: FY Theorem 2.5(ii) (finite second moment under eq. (2.16)). FY Theorem 2.6 (the
+finite-dimensional invariance principle) was carried here as a statement-level DEBT and
+has been removed — see **Removed** below.
+
+**Removed (2026-08-10, user directive).** The one sorried declaration of this module was
+deleted; all of its supporting machinery (the α-mixing, strict-stationarity and acvf-recursion
+bricks below) is kept and remains proved.
+* `archInf_clt_debt` — asserted FY Theorem 2.6: under eq. (2.16) the normalized partial sums
+  of a stationary ARCH(∞) process converge (at the level of characteristic functions) to
+  `N(0, σ²)` with long-run variance `σ² = Σ_k γ(k)`.
+
+Recover from `bdc8143f`.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.1.5
 (Theorem 2.5, eqs. (2.15)–(2.16), Theorem 2.6, pp. 37–38) and §2.7.1 (proof of Thm
@@ -1313,8 +1322,8 @@ theorem archInf_condexp_strict_past [IsProbabilityMeasure μ] {a : ℝ} {bc : �
 
 /-- **The ARCH(∞) martingale-difference sequence**: `d_t = Y_t − ρ_t` has zero conditional
 mean given the strict past. This is the exact decomposition that replaces the
-`m`-dependent approximation of the Volterra series in the CLT; see the residue note on
-`archInf_clt_debt`. -/
+`m`-dependent approximation of the Volterra series in the CLT (the FY Thm 2.6 statement
+that consumed it has since been removed; see **Removed** in the module docstring). -/
 theorem archInf_mds [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
     {Y ξ : ℤ → Ω → ℝ} (hsum : Summable bc) (h : IsARCHInf a bc Y ξ μ)
     (hint : ∀ t, Integrable (Y t) μ) (hstat : IsStrictlyStationary Y μ) (t : ℤ) :
@@ -1338,13 +1347,13 @@ theorem archInf_mds [IsProbabilityMeasure μ] {a : ℝ} {bc : ℕ → ℝ}
   rw [e1, e2, e3, e4]
   simp
 
-/-! ### The noise family is α-mixing (residue item 1 of `archInf_clt_debt`)
+/-! ### The noise family is α-mixing (residue item 1 of the removed FY Thm 2.6 debt)
 
 An i.i.d. family is α-mixing in the strongest possible way: `α(n) = 0` outright for every
 `n ≥ 1`, because `σ{ξ_s : s ≤ 0}` and `σ{ξ_s : s ≥ n}` are *independent*, so every element
 of the α description set is `0` and its supremum is `sup {0}`. No rate, no moment and no
 property of `Y` itself enters — this is the only mixing input the ergodicity route behind
-`archInf_clt_debt`'s `hvar` needs (see the residue note there). -/
+the removed FY Thm 2.6 debt's `hvar` needed. -/
 
 /-- Disjoint index blocks of an independent family generate independent σ-algebras. -/
 private lemma indep_sigmaLE_sigmaGE_of_iIndep {ξ : ℤ → Ω → ℝ}
@@ -1384,8 +1393,8 @@ theorem IsARCHNoise.isAlphaMixing [IsProbabilityMeasure μ] {ξ : ℤ → Ω →
   filter_upwards [eventually_ge_atTop 1] with n hn
   exact (alphaCoeff_eq_zero_of_iIndep hξ.measurable hξ.iIndep hn).symm
 
-/-- **Strict stationarity of the i.i.d. noise itself** — residue item 4 of the
-`archInf_clt_debt` ledger (see the `(B″)` note there).
+/-- **Strict stationarity of the i.i.d. noise itself** — residue item 4 of the ledger of
+the removed FY Thm 2.6 debt.
 
 It is *free* from `isStrictlyStationary_of_shift_comp` at the coordinate functional
 `F p = p 0`: `ξ_t = F(ξ_{·+t})`, so `map_path_shift` does all the work. In particular the
@@ -1402,183 +1411,5 @@ theorem IsARCHNoise.isStrictlyStationary [IsProbabilityMeasure μ] {ξ : ℤ →
   have h := isStrictlyStationary_of_shift_comp hξ.measurable hξ.iIndep hξ.identDistrib
     (F := fun p : ℤ → ℝ => p 0) (measurable_pi_apply 0)
   simpa using h
-
-/-- **FY Theorem 2.6 — DEBT** (Giraitis–Kokoszka–Leipus 2000; fdd invariance principle):
-under eq. (2.16), the normalized partial sums of a stationary ARCH(∞) process are
-asymptotically `N(0, σ²)` with long-run variance `σ² = Σ_k Cov(Y_k, Y_0)`. Stated at the
-level of one-dimensional marginals through characteristic functions (Lévy-equivalent to
-convergence in distribution; the full Brownian fdd statement of FY Thm 2.6 refines this
-and can be layered on once a Brownian process is available).
-
-### Residue note (wave `ts/s13-whittle-lad`, 2026-08-09)
-
-**The `m`-dependent-approximation route is unnecessary, and is overturned here.** The
-standing plan for this debt was: truncate the Volterra series at Volterra order *and* lag,
-observe that the truncation is `m`-dependent, run the Bernstein-block device on it, and
-control the tail in `L²` through the coefficient bound `lintegral_sq_archLayer_le`. That
-plan is sound but strictly harder than necessary. The ARCH(∞) *equation* already carries
-an **exact** martingale decomposition, with no truncation and no blocking:
-
-`d_t := Y_t − ρ_t = ρ_t (ξ_t − 1)`,  `ρ_t = a + Σ_j b_j Y_{t−1−j}`,
-
-is a martingale-difference sequence for `G_t = σ(Y_s : s ≤ t)` — this is now **PROVED**
-(`archInf_mds`, over `archInf_condexp_strict_past`), from `IsARCHInf.indep_past` and
-`E ξ = 1` alone. Brown's martingale CLT is already in the repo
-(`ForMathlib/Probability/MartingaleCLT/BrownCLT.lean`, `mds_clt_sequence`) and its
-conclusion is *literally* the shape of the goal above, with `ξ i := d_i` and
-`G i := sigmaLT Y (i : ℤ)`. So the debt reduces to the four inputs of that theorem plus
-one algebraic reduction. The truncated Volterra apparatus is not built, and should not be.
-
-**(A) The algebraic reduction — `(1 − B) S_n = D_n + O_{L²}(1)`, `B := Σ_j b_j`.** Write
-`S_n = Σ_{t<n}(Y_t − m)`, `D_n = Σ_{t<n} d_t`, `m = E Y_0`. Because `m = a/(1 − B)`
-(`integral_archSol`), the constant cancels: `ρ_t − m = Σ_j b_j (Y_{t−1−j} − m)`, so
-`S_n − D_n = Σ_j b_j S_n^{(−1−j)}` with `S_n^{(s)} := Σ_{t<n}(Y_{t+s} − m)`.
-Two facts finish it, for *any* cut `J`:
-* `‖S_n^{(−1−j)} − S_n‖₂ ≤ 2(j+1)‖Y_0 − m‖₂` — the two index blocks differ in at most
-  `2(j+1)` slots — which handles `j < J` at a cost `2J B ‖Y_0 − m‖₂`, **free of `n`**;
-* `‖S_n^{(s)}‖₂ = ‖S_n‖₂ ≤ √(n Γ)`, `Γ := Σ_k |γ(k)| < ∞` (this is exactly what `hσ2`
-  buys: a `HasSum` over `ℤ` in `ℝ` is unconditional, hence absolute), which handles
-  `j ≥ J` at a cost `2√(nΓ) Σ_{j≥J} b_j`.
-  Dividing by `√n` and letting `n → ∞` then `J → ∞` gives
-  `‖n^{−1/2}((1 − B) S_n − D_n)‖₂ → 0`, hence the two characteristic functions merge
-  (`|E e^{iuZ} − E e^{iuW}| ≤ |u| E|Z − W|`, the pattern of
-  `Process/SampleACF.lean`'s `norm_charFun_map_sub_le`). **No decay rate on `b_j` is
-  needed** — the `J`-cut absorbs it. This is bookkeeping only; it is the largest *routine*
-  piece left.
-
-**(B) `mds_clt_sequence`'s inputs, one by one.**
-* `hadapted`, `hmds` — **CLOSED** (`archInf_mds`; adaptedness is `Y_i` plus
-  `measurable_archInfDrift_sigmaLT`, both `sigmaLT Y (i+1)`-measurable).
-* `hL2` — `MemLp d_i 2`: free from `hL2` for `Y` and the `L²` contraction property of
-  conditional expectation (`ρ_i = μ[Y_i | sigmaLT Y i]` a.e., so `MemLp.condExp`).
-* `hlind` (averaged Lindeberg) — free *given* that the `d_i` are identically distributed:
-  every summand then equals `∫_{|d_0| ≥ ε√n} d_0²`, which vanishes by dominated
-  convergence since `d_0 ∈ L²`. See (C) for the identical-distribution transfer.
-* `hvar` (averaged conditional variance) — **the one genuinely open analytic input.**
-  Since `d_i = ρ_i(ξ_i − 1)` with `ρ_i` strict-past measurable and `ξ_i` independent of it,
-  `E[d_i² | G_i] = v ρ_i²` with `v := Var(ξ_0)`, so the hypothesis is exactly the
-  **`L¹` law of large numbers** `n⁻¹ Σ_{i<n} ρ_i² →p E[ρ_0²]`. Strict stationarity alone
-  does *not* give this; it needs **ergodicity** of the stationary sequence `ρ_i²`. That is
-  true — `ρ_t` is a fixed measurable functional of the i.i.d. noise path
-  (`archFun_congr`-style causality), and the shift on an i.i.d. product law is ergodic —
-  but the transfer is not in the repo at this granularity. Note that the frozen statement
-  does **not** hypothesize ergodicity, so this must be *derived*, from
-  `IsARCHInf.iIndep` + `Probability/ProductMeasure`, not assumed. `ForMathlib/Ergodic` is
-  where it belongs.
-
-**(B′) Wave `ts/f3-spectral-garch-finale` (2026-08-09) — the ergodicity input, relocated
-precisely.** Wave `ts/s13`'s reading that this transfer "is not in the repo at this
-granularity" and that "`ForMathlib/Ergodic` is where it belongs" is **out of date**, and the
-correction matters because it shortens the item considerably:
-
-* `ForMathlib/Ergodic/Birkhoff.lean` **exists, is `0`-sorry and axiom-clean**, and supplies
-  exactly the consumer needed: `birkhoffAverage_ae_tendsto_integral` (a.e. convergence of
-  the Birkhoff averages of any integrable observable to its mean, for an `Ergodic` map).
-  Note `ρ_i²` is *not* a coordinate of the process, so the plain SLLN shape is useless here
-  — Birkhoff at an arbitrary observable on the **noise path space** is what applies.
-* `Mixing/LimitTheorems.lean` already executes the step above it — `α(n) → 0 ⇒ the shift is
-  ergodic for the path law` (`preErgodic_shiftPath`, together with
-  `measurePreserving_shiftPath`, `pathLaw`, `shiftPath`). It is **`private`**, i.e.
-  file-scoped, so it must either be un-privatised or re-proved; and `Stationarity/ARCH.lean`
-  imports neither that file nor `Birkhoff.lean` today.
-
-So the residue of `hvar` is now three named items, none of them a missing theory:
-1. **`IsAlphaMixing ξ μ` for an i.i.d. family** — `α(n) = 0` for `n ≥ 1` outright, from
-   independence of `⨆_{s ≤ 0} σ(ξ_s)` and `⨆_{s ≥ n} σ(ξ_s)`. This is not in the repo
-   (`Mixing/Relations.lean` has `IsAlphaMixing.comp` — heredity under an instantaneous
-   transform — but no i.i.d. instance), and it is the *only* mixing input the route needs:
-   no rate on `bc`, no mixing property of `Y` itself.
-   **CLOSED** (wave `ts/f3b-tail`, 2026-08-09): `IsARCHNoise.isAlphaMixing`, over
-   `alphaCoeff_eq_zero_of_iIndep`, proved above. It cost one new import
-   (`Mixing/Defs.lean` — *not* `Mixing/Relations.lean`: `α = 0` is `csSup {0}` after
-   showing the whole α description set is `{0}`, so neither `alphaMixCoeff_nonneg` nor
-   `alphaMixCoeff_le_one` is needed) and `Mathlib`'s `indep_iSup_of_disjoint`, which is
-   exactly the disjoint-index-blocks statement for `iIndep`. Nothing here uses
-   `IsARCHNoise.nonneg` or `integral_eq_one`; the brick is stated at the level of
-   `iIndepFun` + measurability, so it transfers verbatim to `IsIIDNoise`.
-2. the **causal-functional representation** `ρ_t = g ∘ shiftPath^t` on the noise path space,
-   which is what `archInf_eq_archSol` (`Y = archSol a bc ξ`, and `archSol` is by
-   construction `archFun a bc ∘ archPath ξ t`) is for. This is (C) below, and is the one
-   item with real work in it.
-3. `E[ρ_0²] = v⁻¹σ_d²` bookkeeping, free once 1–2 are in place.
-
-**(B″) Wave `ts/f3b-tail` (2026-08-09) — two corrections to (B′)'s inventory**, found while
-closing item 1 and both concerning the `Mixing/LimitTheorems.lean` end of the route:
-
-* **`preErgodic_shiftPath` is not the only `private` declaration in the way.** Its
-  *statement* mentions `shiftPath` and `pathLaw`, and its use needs
-  `measurePreserving_shiftPath` (to upgrade `PreErgodic` to `Ergodic`, which is what
-  `birkhoffAverage_ae_tendsto_integral` consumes) and `measurable_shiftPath`. All four are
-  `private` in that file, so the un-privatisation is a four-declaration change, not a
-  one-line one. The alternative — re-proving the chain inside `Stationarity/ARCH.lean` —
-  is not cheaper: `preErgodic_shiftPath`'s proof is a π-system/cylinder argument on the
-  path law running to some eighty lines, on top of `comap_path_cyl` and the fintuple
-  shift-invariance lemmas, all of them also `private`.
-* **A fourth item is needed: `IsStrictlyStationary ξ μ` for the i.i.d. noise.** It is a
-  hypothesis of `preErgodic_shiftPath` alongside the mixing one, and (B′) did not list it.
-  It is *not* free from `IsARCHNoise`: `IsStrictlyStationary` quantifies over arbitrary
-  index tuples `t : Fin n → ℤ`, and for a tuple with **repeats** the joint law is not a
-  product measure, so the direct `iIndepFun`-to-`Measure.pi` route (which needs `t`
-  injective) does not apply as stated. The honest shape is: prove it for injective `t`
-  from `iIndepFun` + `identDistrib`, then obtain the general tuple by pushing the
-  injective-tuple law forward along the fixed coordinate-selection map `y ↦ (y_{t i})_i`,
-  which does not depend on the shift `k`. That is a self-contained lemma about i.i.d.
-  families and belongs next to `isStrictlyStationary_iff_window` in
-  `Process/Stationary.lean`, outside this lane's touch set.
-  **CLOSED, and the reading above is overturned** (wave `ts/f4b-garch-last`, 2026-08-09):
-  `IsARCHNoise.isStrictlyStationary`, proved above in **four lines** from this file's own
-  `isStrictlyStationary_of_shift_comp` at the coordinate functional `F p = p 0`. No
-  injective-tuple analysis, no coordinate-selection pushforward, and nothing in
-  `Process/Stationary.lean`: `map_path_shift` already compares the two *whole* path laws
-  (`Measure.infinitePi` before and after the shift), so repeats in the index tuple never
-  arise. The item should never have been priced as new work — the general brick was in the
-  file before this lane opened.
-
-Everything downstream of `hvar` — `hL2`, `hlind`, `hadapted`, `hmds` — is unchanged and
-still free/proved. The α-mixing SLLN `slln_of_alphaMixing_debt` itself is *not* on the
-critical path: it is Birkhoff at the coordinate observable, and the coordinate observable is
-the wrong one here.
-
-**(C) The infinite-past transfer.** `IsStrictlyStationary Y μ` is a *finite-dimensional*
-statement (`isStrictlyStationary_iff_window`), while `d_i` and `ρ_i` read the whole past.
-Upgrading fdd-stationarity to identical distribution of `(d_i)` is a π-system/Dynkin
-argument on the path law — the same step the file's own uniqueness proof avoided by
-staying inside `archInf_eq_archSol`. The cheap route here is to *not* upgrade it: replace
-`Y` by `archSol a bc ξ` (they agree a.e., `archInf_eq_archSol`), which is by construction
-`archFun a bc ∘ archPath ξ t`, and transport along the shift-invariance of
-`Measure.infinitePi` directly, exactly as `Threshold/Estimation.lean`'s `wnMeasure_shift`
-does. This also delivers (B)'s ergodicity input.
-
-**(D) Variance identification.** `mds_clt_sequence` produces `N(0, σ_d²)` for
-`n^{−1/2} D_n` with `σ_d² = v E[ρ_0²]`; (A) then gives `N(0, σ_d²/(1 − B)²)` for
-`n^{−1/2} S_n`. Matching this to the frozen `σ² = Σ_k γ(k)` is *not* an extra input: (A)
-already forces `σ²(1 − B)² = lim n⁻¹ E D_n² = σ_d²` by the orthogonality of martingale
-increments. So `hσ2`/`hσpos` are consumed only through `Γ < ∞` in (A) and through
-`0 ≤ σ2` in `mds_clt_sequence`.
-
-**What the acvf recursion is for.** `archInf_acvf_recursion` (`γ(k) = Σ_j b_j γ(k−1−j)`,
-`k ≥ 1`, proved above) is the *dependence-structure* half of Giraitis–Kokoszka–Leipus. It
-is **not** on the critical path of the route above — the `J`-cut in (A) makes the CLT
-insensitive to the decay of `γ`. It is what one needs instead to *discharge* the
-hypothesis `hσ2` rather than assume it, and it shows why `hσ2` cannot be dropped:
-iterating the recursion gives `|γ(k)| ≤ B · sup_{|l| < k} |γ(l)|`, which is dominated by
-`γ(0)` at every lag and therefore yields **no** decay from `Summable bc` alone. Summable
-autocovariances genuinely require a *rate* on `b_j` (GKL take `b_j = O(j^{−1−δ})` or
-geometric); this is a correction to any reading of FY Thm 2.6 in which eq. (2.16) alone is
-supposed to imply `Σ_k |γ(k)| < ∞`. -/
-theorem archInf_clt_debt [IsProbabilityMeasure μ]
-    {a : ℝ} {bc : ℕ → ℝ} {Y ξ : ℤ → Ω → ℝ}
-    (ha : 0 ≤ a) (hbc : ∀ j, 0 ≤ bc j) (hsum : Summable bc)
-    (hξ : IsARCHNoise ξ μ) (hξ2 : MemLp (ξ 0) 2 μ)
-    (h16 : max 1 (Real.sqrt (∫ ω, ξ 0 ω ^ 2 ∂μ)) * ∑' j, bc j < 1)
-    (h : IsARCHInf a bc Y ξ μ) (hstat : IsStrictlyStationary Y μ)
-    (hL2 : ∀ t, MemLp (Y t) 2 μ)
-    {σ2 : ℝ} (hσ2 : HasSum (fun k : ℤ => acvf Y μ k) σ2) (hσpos : 0 < σ2) (u : ℝ) :
-    Tendsto
-      (fun n : ℕ => charFun
-        (μ.map fun ω => (Real.sqrt n)⁻¹ *
-          ∑ t ∈ Finset.range n, (Y t ω - ∫ ω', Y t ω' ∂μ)) u)
-      atTop (nhds (charFun (gaussianReal 0 (Real.toNNReal σ2)) u)) := by
-  sorry
 
 end StatLean.TimeSeries
