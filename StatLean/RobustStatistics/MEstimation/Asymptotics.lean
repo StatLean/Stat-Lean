@@ -64,7 +64,7 @@ theorem mLocation_consistent
     (hsign_gt : ∀ θ, θ₀ < θ → mLocationScore ψ P θ < 0)
     -- USER-INPUT: θ̂ₙ nearly solves the empirical M-equation (in probability); MMY (10.1)
     (hnear : TendstoInMeasure μ
-      (fun n ξ => (n : ℝ)⁻¹ * ∑ i : Fin n, ψ (X i ξ - θhat n ξ)) atTop
+      (fun (n : ℕ) ξ => (n : ℝ)⁻¹ * ∑ i : Fin n, ψ (X i ξ - θhat n ξ)) atTop
       (fun _ => (0 : ℝ))) :
     ∀ ε > (0 : ℝ), Tendsto (fun n => μ {ξ | ε ≤ |θhat n ξ - θ₀|}) atTop (𝓝 0) := by
   sorry
@@ -85,7 +85,7 @@ theorem huberLocation_consistent
     (hsign_gt : ∀ θ, θ₀ < θ → mLocationScore (huberPsi c) P θ < 0)
     -- USER-INPUT: near-root sequence; MMY (10.1)
     (hnear : TendstoInMeasure μ
-      (fun n ξ => (n : ℝ)⁻¹ * ∑ i : Fin n, huberPsi c (X i ξ - θhat n ξ)) atTop
+      (fun (n : ℕ) ξ => (n : ℝ)⁻¹ * ∑ i : Fin n, huberPsi c (X i ξ - θhat n ξ)) atTop
       (fun _ => (0 : ℝ))) :
     ∀ ε > (0 : ℝ), Tendsto (fun n => μ {ξ | ε ≤ |θhat n ξ - θ₀|}) atTop (𝓝 0) := by
   sorry
@@ -113,7 +113,7 @@ theorem huberLocation_asymptoticNormal
     -- USER-INPUT: θ₀ solves the population Huber equation; MMY (2.22)
     (hroot : IsMLocationRoot (huberPsi c) P θ₀)
     -- USER-INPUT: no atoms at the clipping knots; MMY §10.3 (Example 10.4: F continuous)
-    (h_atom₊ : P {θ₀ + c} = 0) (h_atom₋ : P {θ₀ - c} = 0)
+    (h_atom_add : P {θ₀ + c} = 0) (h_atom_sub : P {θ₀ - c} = 0)
     -- USER-INPUT: nondegenerate central mass (B ≠ 0 in Thm 10.7)
     (hmass : 0 < P.real {x | |x - θ₀| < c})
     -- LEAN-ONLY: measurable estimator sequence, for the image laws to exist
@@ -124,7 +124,7 @@ theorem huberLocation_asymptoticNormal
     -- USER-INPUT: the estimating equation is solved at rate o_P(n^{-1/2}); MMY (10.1),
     -- vdV Thm 5.21 estimating-equation condition
     (h_est_eq : TendstoInMeasure μ
-      (fun n ξ => Real.sqrt n * ((n : ℝ)⁻¹ * ∑ i : Fin n, huberPsi c (X i ξ - θhat n ξ)))
+      (fun (n : ℕ) ξ => Real.sqrt n * ((n : ℝ)⁻¹ * ∑ i : Fin n, huberPsi c (X i ξ - θhat n ξ)))
       atTop (fun _ => (0 : ℝ))) :
     WeakConverges
       (fun n => μ.map (fun ξ => Real.sqrt n * (θhat n ξ - θ₀)))
@@ -138,7 +138,7 @@ integral. Named separately because it is the analytic heart of the normality pro
 theorem hasDerivAt_mLocationScore_huber {P : Measure ℝ} [IsProbabilityMeasure P] {c θ₀ : ℝ}
     (hc : 0 < c)
     -- USER-INPUT: no atoms at the clipping knots; MMY §10.3
-    (h_atom₊ : P {θ₀ + c} = 0) (h_atom₋ : P {θ₀ - c} = 0) :
+    (h_atom_add : P {θ₀ + c} = 0) (h_atom_sub : P {θ₀ - c} = 0) :
     HasDerivAt (mLocationScore (huberPsi c) P) (-(P.real {x | |x - θ₀| < c})) θ₀ := by
   sorry
 

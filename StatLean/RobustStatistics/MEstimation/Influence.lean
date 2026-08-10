@@ -136,7 +136,7 @@ theorem huberLocation_influence {P : Measure ℝ} [IsProbabilityMeasure P] {c : 
     (hc : 0 < c) {θ : ℝ → ℝ} {θ₀ x₀ d : ℝ}
     -- USER-INPUT: no atoms at the clipping knots (a.e. differentiability of ψ_c along the
     -- shifted data); MMY §10.3 (F continuous at the relevant points)
-    (h_atom₊ : P {θ₀ + c} = 0) (h_atom₋ : P {θ₀ - c} = 0)
+    (h_atom_add : P {θ₀ + c} = 0) (h_atom_sub : P {θ₀ - c} = 0)
     -- USER-INPUT: θ t solves the contaminated Huber equation for small t ≥ 0; MMY (3.58)
     (hroot : ∀ᶠ t in 𝓝[Set.Ici (0 : ℝ)] 0,
       IsMLocationRoot (huberPsi c) (contaminate P (Measure.dirac x₀) t) (θ t))
@@ -153,7 +153,7 @@ value at any contamination point is bounded by `c / P(|x - θ₀| < c)`. Contras
 unbounded influence of the mean (`LocationScale/Mean.lean`). -/
 theorem huberLocation_influence_bounded {P : Measure ℝ} [IsProbabilityMeasure P] {c : ℝ}
     (hc : 0 < c) {θ : ℝ → ℝ} {θ₀ x₀ d : ℝ}
-    (h_atom₊ : P {θ₀ + c} = 0) (h_atom₋ : P {θ₀ - c} = 0)
+    (h_atom_add : P {θ₀ + c} = 0) (h_atom_sub : P {θ₀ - c} = 0)
     (hroot : ∀ᶠ t in 𝓝[Set.Ici (0 : ℝ)] 0,
       IsMLocationRoot (huberPsi c) (contaminate P (Measure.dirac x₀) t) (θ t))
     (hθ0 : θ 0 = θ₀)
