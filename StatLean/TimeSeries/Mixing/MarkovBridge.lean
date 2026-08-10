@@ -68,6 +68,18 @@ only; the frozen real-valued theorems (`alphaCoeff_eq_two_marginal_debt`,
   at time `n`, sums to `1`, and is nonnegative), so **no reverse Markov property is
   needed**. Both steps only *increase* the partition sum, so the sup collapses.
 
+**Status (2026-08-09, wave 6): the one open brick is FALSE AS FROZEN.**
+`betaMixCoeff_two_marginal_eq_integral_tvDist_brick`, and with it the public
+`betaMixCoeff_eq_integral_tvDist_of_markov`, are refuted at a general state space by the
+countable–cocountable witness of `section DavydovWitness`
+(`betaMixCoeff_two_marginal_eq_integral_tvDist_false`,
+`betaMixCoeff_eq_integral_tvDist_of_markov_false`, both axiom-clean): the two sides come
+out `0` and `1`. The repair is to add `[MeasurableSpace.CountablyGenerated E]` — the
+hypothesis under which the `≥` half's jointly measurable Hahn selection exists. Since the
+statements are frozen the `sorry` stays; it is a statement debt, not a proof debt. Nothing
+downstream uses the identity (the model routes use the *inequality*
+`betaMixCoeff_two_marginal_le_of_envelope`, which is correct at a general `E`).
+
 **The one open brick** is `betaMixCoeff_two_marginal_eq_integral_tvDist_brick` (Davydov's
 identity proper — note that wave 5's `betaMixCoeff_two_marginal_le_of_envelope` proves its
 `≤` half in envelope form, so nothing downstream depends on it any more; its docstring records the *verified* calibration demanded below and the
@@ -1368,6 +1380,294 @@ theorem betaMixCoeff_two_marginal_of_markov [IsProbabilityMeasure μ]
     hstepA.trans hstepB
   linarith
 
+/-! ### REFUTATION of Davydov's identity at a general state space (2026-08-09, wave 6)
+
+Davydov's identity is **false** as frozen: at an arbitrary measurable state space `E` the
+`≥` half fails, and it fails by the maximal amount (`0 = β` against `1 = ∫ tvDist dF`).
+
+**The witness.** Take `E = Ω = Set ℕ` with the **countable–cocountable** σ-algebra
+`{A | A countable ∨ Aᶜ countable}`, `μ = F` the `0`–`1` measure (`F A = 0` if `A` is
+countable, `= 1` if `Aᶜ` is), `X_t = id` for every `t`, and `κ = Kernel.id`, so
+`κⁿ = Kernel.id` and `κⁿ(x, ·) = δ_x`. Then:
+
+* `IsMarkovOf X κ μ` holds — every `sigmaLE' X t` is the whole σ-algebra, so the
+  conditional expectation is the identity and `(κⁿ(X_t ω))(B) = 1_B(ω)` on the nose;
+* the one-dimensional marginals are all `F`, so `hmarg` holds;
+* **`tvDist (δ_x) F = 1` for every `x`** — the singleton `{x}` is measurable (countable)
+  and separates `δ_x` from `F` — hence the right-hand side is `1`;
+* **every finite measurable partition sum vanishes**, hence `β = 0`. Indeed `F` is a
+  `0`–`1` measure, so in each partition exactly one cell `A_{i₀}` is cocountable and all
+  the others are countable (`exists_big_cell` below); every product
+  `F(A_i)·F(B_j)` and every `F(A_i ∩ B_j)` is then `0` except at `(i₀, j₀)`, where both
+  are `1` (an intersection of two cocountable sets is cocountable). So each summand
+  `|F(A_i ∩ B_j) − F(A_i)F(B_j)|` is `0`.
+
+**Diagnosis.** `β` is a supremum over *finite* partitions of the two marginal
+σ-algebras, i.e. over the algebra of measurable *rectangles*; `∫ tvDist dF` is the
+`F`-average of a supremum taken **pointwise in `x`**, i.e. over the (much larger) product
+σ-algebra of `E × E`. Turning the second into the first needs two things that hold only
+for a countably generated (e.g. standard Borel) `E`: a **jointly measurable Hahn
+selection** for `κⁿ(x,·) − F` (this is `ProbabilityTheory.Kernel.rnDerivAux`, which
+Mathlib provides exactly under `[MeasurableSpace.CountablyGenerated]`), and the
+**approximation of a product-measurable set by finite unions of rectangles**. In the
+witness the Hahn set is the diagonal `{(x, x)}`, which the rectangle algebra of the
+countable–cocountable σ-algebra cannot see at all.
+
+**REPAIR (frozen, so not applied here).** Add `[MeasurableSpace.CountablyGenerated E]`
+to `betaMixCoeff_two_marginal_eq_integral_tvDist_brick` and to its consumer
+`betaMixCoeff_eq_integral_tvDist_of_markov`. The scalar corollary
+`betaCoeff_eq_integral_tvDist_debt` (`E = ℝ`) is **unaffected in substance** — `ℝ` is
+countably generated — but as long as it is derived from the general theorem it inherits
+the defect, so the repair must be made upstream. Nothing else in this file, or in
+`Mixing/Relations.lean`, depends on the identity: the model routes go through the
+*inequality* `betaMixCoeff_two_marginal_le_of_envelope`, whose proof (a `≤` bound against
+a supplied envelope) never inspects `tvDist` pointwise and is therefore correct at a
+general `E`.
+
+The two `theorem`s at the end of this section are the formalized witness. -/
+
+section DavydovWitness
+
+/-- Carrier of the Davydov witness: `Set ℕ` (uncountable, by Cantor's theorem), equipped
+below with the countable–cocountable σ-algebra. -/
+private def Cocnt : Type := Set ℕ
+
+private instance instCocnt : MeasurableSpace Cocnt where
+  MeasurableSet' A := A.Countable ∨ Aᶜ.Countable
+  measurableSet_empty := Or.inl Set.countable_empty
+  measurableSet_compl A h := by
+    rcases h with h | h
+    · exact Or.inr (by rwa [compl_compl])
+    · exact Or.inl h
+  measurableSet_iUnion f hf := by
+    by_cases h : ∀ i, (f i).Countable
+    · exact Or.inl (Set.countable_iUnion h)
+    · push_neg at h
+      obtain ⟨i, hi⟩ := h
+      rcases hf i with h' | h'
+      · exact absurd h' hi
+      · refine Or.inr (Set.Countable.mono ?_ h')
+        rw [Set.compl_iUnion]
+        exact Set.iInter_subset _ i
+
+private lemma not_countable_univ_cocnt : ¬ (Set.univ : Set Cocnt).Countable := by
+  rw [Set.countable_univ_iff]
+  intro h
+  obtain ⟨f, hf⟩ := exists_injective_nat Cocnt
+  exact Function.cantor_injective f hf
+
+private lemma not_countable_of_compl {A : Set Cocnt} (h : Aᶜ.Countable) : ¬ A.Countable := by
+  intro hA
+  refine not_countable_univ_cocnt ?_
+  have hu : (Set.univ : Set Cocnt) = A ∪ Aᶜ := by simp
+  rw [hu]
+  exact hA.union h
+
+open Classical in
+/-- The `0`–`1` measure of the countable–cocountable σ-algebra. -/
+private noncomputable def cocnt : Measure Cocnt :=
+  Measure.ofMeasurable (fun A _ => if A.Countable then 0 else 1)
+    (by simp)
+    (by
+      intro f hf hd
+      show (if (⋃ i, f i).Countable then (0 : ℝ≥0∞) else 1)
+        = ∑' i, (if (f i).Countable then (0 : ℝ≥0∞) else 1)
+      by_cases h : ∀ i, (f i).Countable
+      · rw [if_pos (Set.countable_iUnion h)]
+        have hz : ∀ i, (if (f i).Countable then (0 : ℝ≥0∞) else 1) = 0 := fun i => if_pos (h i)
+        simp [hz]
+      · push_neg at h
+        obtain ⟨i, hi⟩ := h
+        have hci : (f i)ᶜ.Countable := (hf i).resolve_left hi
+        have h1 : ¬ (⋃ j, f j).Countable := fun hc => hi (hc.mono (Set.subset_iUnion f i))
+        rw [if_neg h1]
+        have hsingle : ∀ j, j ≠ i → (if (f j).Countable then (0 : ℝ≥0∞) else 1) = 0 := by
+          intro j hj
+          have hsub : f j ⊆ (f i)ᶜ := fun x hx => Set.disjoint_left.mp (hd hj) hx
+          exact if_pos (hci.mono hsub)
+        rw [tsum_eq_single i hsingle, if_neg hi])
+
+open Classical in
+private lemma cocnt_apply {A : Set Cocnt} (hA : MeasurableSet A) :
+    cocnt A = if A.Countable then 0 else 1 :=
+  Measure.ofMeasurable_apply A hA
+
+private lemma cocnt_of_countable {A : Set Cocnt} (hA : A.Countable) : cocnt A = 0 := by
+  classical
+  rw [cocnt_apply (Or.inl hA), if_pos hA]
+
+private lemma cocnt_of_cocountable {A : Set Cocnt} (hA : Aᶜ.Countable) : cocnt A = 1 := by
+  classical
+  rw [cocnt_apply (Or.inr hA), if_neg (not_countable_of_compl hA)]
+
+private instance : IsProbabilityMeasure cocnt :=
+  ⟨cocnt_of_cocountable (by simp)⟩
+
+/-- The `n`-step law `δ_x` is at total-variation distance `1` from the witness marginal:
+the singleton `{x}` is measurable and separates them. -/
+private lemma tvDist_dirac_cocnt (x : Cocnt) :
+    StatLean.Minimaxity.tvDist (Measure.dirac x) cocnt = 1 := by
+  refine le_antisymm (StatLean.Minimaxity.tvDist_le_one _ _) ?_
+  have hs : MeasurableSet ({x} : Set Cocnt) := Or.inl (Set.countable_singleton x)
+  have h1 : (Measure.dirac x) ({x} : Set Cocnt) = 1 :=
+    Measure.dirac_apply_of_mem (Set.mem_singleton x)
+  have h2 : cocnt ({x} : Set Cocnt) = 0 := cocnt_of_countable (Set.countable_singleton x)
+  have hle : (Measure.dirac x) ({x} : Set Cocnt) - cocnt ({x} : Set Cocnt)
+      ≤ StatLean.Minimaxity.tvDist (Measure.dirac x) cocnt :=
+    le_iSup₂ (f := fun s (_ : MeasurableSet s) => (Measure.dirac x) s - cocnt s) {x} hs
+  rw [h1, h2] at hle
+  simpa using hle
+
+/-- In a finite measurable partition of the witness space exactly one cell is
+cocountable; all the others are countable. -/
+private lemma exists_big_cell {I : ℕ} {A : Fin I → Set Cocnt}
+    (hA : ∀ i, MeasurableSet (A i)) (hd : Pairwise fun i i' => Disjoint (A i) (A i'))
+    (hc : (⋃ i, A i) = Set.univ) :
+    ∃ i₀, (A i₀)ᶜ.Countable ∧ ∀ i, i ≠ i₀ → (A i).Countable := by
+  by_cases h : ∀ i, (A i).Countable
+  · exact absurd (hc ▸ Set.countable_iUnion h) not_countable_univ_cocnt
+  · push_neg at h
+    obtain ⟨i₀, hi₀⟩ := h
+    have hci : (A i₀)ᶜ.Countable := (hA i₀).resolve_left hi₀
+    refine ⟨i₀, hci, fun i hi => hci.mono fun x hx => ?_⟩
+    exact Set.disjoint_left.mp (hd hi) hx
+
+/-- **Every** finite partition sum of the witness vanishes: its β-coefficient is `0`. -/
+private lemma betaMixCoeff_cocnt_eq_zero :
+    betaMixCoeff cocnt instCocnt instCocnt = 0 := by
+  have hdef : betaMixCoeff cocnt instCocnt instCocnt
+      = sSup {r : ℝ | ∃ (I J : ℕ) (A : Fin I → Set Cocnt) (B : Fin J → Set Cocnt),
+        (∀ i, MeasurableSet[instCocnt] (A i)) ∧ (∀ j, MeasurableSet[instCocnt] (B j)) ∧
+        (Pairwise fun i i' => Disjoint (A i) (A i')) ∧
+        (Pairwise fun j j' => Disjoint (B j) (B j')) ∧
+        (⋃ i, A i) = Set.univ ∧ (⋃ j, B j) = Set.univ ∧
+        r = (1 / 2) * ∑ i, ∑ j,
+          |(cocnt (A i ∩ B j)).toReal - (cocnt (A i)).toReal * (cocnt (B j)).toReal|} := rfl
+  have hset : {r : ℝ | ∃ (I J : ℕ) (A : Fin I → Set Cocnt) (B : Fin J → Set Cocnt),
+      (∀ i, MeasurableSet[instCocnt] (A i)) ∧ (∀ j, MeasurableSet[instCocnt] (B j)) ∧
+      (Pairwise fun i i' => Disjoint (A i) (A i')) ∧
+      (Pairwise fun j j' => Disjoint (B j) (B j')) ∧
+      (⋃ i, A i) = Set.univ ∧ (⋃ j, B j) = Set.univ ∧
+      r = (1 / 2) * ∑ i, ∑ j,
+        |(cocnt (A i ∩ B j)).toReal - (cocnt (A i)).toReal * (cocnt (B j)).toReal|}
+      = {(0 : ℝ)} := by
+    ext r
+    simp only [Set.mem_setOf_eq, Set.mem_singleton_iff]
+    constructor
+    · rintro ⟨I, J, A, B, hA, hB, hdA, hdB, hcA, hcB, rfl⟩
+      obtain ⟨i₀, hi₀, hiz⟩ := exists_big_cell hA hdA hcA
+      obtain ⟨j₀, hj₀, hjz⟩ := exists_big_cell hB hdB hcB
+      have hterm : ∀ i j, |(cocnt (A i ∩ B j)).toReal
+          - (cocnt (A i)).toReal * (cocnt (B j)).toReal| = 0 := by
+        intro i j
+        by_cases hi : i = i₀
+        · by_cases hj : j = j₀
+          · subst hi; subst hj
+            have hab : (A i ∩ B j)ᶜ.Countable := by
+              rw [Set.compl_inter]; exact hi₀.union hj₀
+            rw [cocnt_of_cocountable hab, cocnt_of_cocountable hi₀,
+              cocnt_of_cocountable hj₀]
+            simp
+          · have hBj : (B j).Countable := hjz j hj
+            rw [cocnt_of_countable hBj,
+              cocnt_of_countable (hBj.mono Set.inter_subset_right)]
+            simp
+        · have hAi : (A i).Countable := hiz i hi
+          rw [cocnt_of_countable hAi,
+            cocnt_of_countable (hAi.mono Set.inter_subset_left)]
+          simp
+      rw [Finset.sum_congr rfl fun i (_ : i ∈ Finset.univ) =>
+        Finset.sum_eq_zero fun j _ => hterm i j]
+      simp
+    · rintro rfl
+      refine ⟨1, 1, fun _ => Set.univ, fun _ => Set.univ, fun _ => MeasurableSet.univ,
+        fun _ => MeasurableSet.univ, ?_, ?_, Set.iUnion_const _, Set.iUnion_const _, ?_⟩
+      · exact fun i i' h => absurd (Subsingleton.elim i i') h
+      · exact fun j j' h => absurd (Subsingleton.elim j j') h
+      · simp
+  rw [hdef, hset, csSup_singleton]
+
+/-- The witness process: the identity at every time. -/
+private def Xw : ℤ → Cocnt → Cocnt := fun _ => id
+
+private lemma comap_Xw (t : ℤ) :
+    MeasurableSpace.comap (Xw t) instCocnt = instCocnt := MeasurableSpace.comap_id
+
+private lemma sigmaLE'_Xw (t : ℤ) : sigmaLE' Xw t = instCocnt :=
+  le_antisymm (iSup₂_le fun s _ => le_of_eq (comap_Xw s))
+    (le_iSup₂_of_le t (Set.mem_Iic.mpr le_rfl) (le_of_eq (comap_Xw t).symm))
+
+private lemma sigmaGE'_Xw (t : ℤ) : sigmaGE' Xw t = instCocnt :=
+  le_antisymm (iSup₂_le fun s _ => le_of_eq (comap_Xw s))
+    (le_iSup₂_of_le t (Set.mem_Ici.mpr le_rfl) (le_of_eq (comap_Xw t).symm))
+
+private lemma kernelId_pow (n : ℕ) :
+    ((Kernel.id : Kernel Cocnt Cocnt) ^ n) = Kernel.id := one_pow n
+
+private lemma markov_Xw : IsMarkovOf Xw (Kernel.id : Kernel Cocnt Cocnt) cocnt := by
+  intro t n B hB
+  have hrhs : (fun ω => (((Kernel.id : Kernel Cocnt Cocnt) ^ n) (Xw t ω) B).toReal)
+      = B.indicator (fun _ => (1 : ℝ)) := by
+    funext ω
+    rw [kernelId_pow, Kernel.id_apply]
+    by_cases hw : ω ∈ B <;>
+      simp [Xw, Measure.dirac_apply' _ hB, Set.indicator_apply, hw]
+  have hlhs : (fun ω => B.indicator (fun _ => (1 : ℝ)) (Xw (t + n) ω))
+      = B.indicator (fun _ => (1 : ℝ)) := rfl
+  have hsm : StronglyMeasurable[sigmaLE' Xw t] (B.indicator (fun _ => (1 : ℝ))) := by
+    rw [sigmaLE'_Xw]
+    exact (measurable_const.indicator hB).stronglyMeasurable
+  have hint : Integrable (B.indicator (fun _ => (1 : ℝ))) cocnt :=
+    (integrable_const (1 : ℝ)).indicator hB
+  rw [hrhs, hlhs, condExp_of_stronglyMeasurable (le_of_eq (sigmaLE'_Xw t)) hsm hint]
+
+private lemma map_Xw (t : ℤ) : cocnt.map (Xw t) = cocnt := Measure.map_id
+
+private lemma davydov_rhs_eq_one (n : ℕ) :
+    (∫⁻ x, StatLean.Minimaxity.tvDist (((Kernel.id : Kernel Cocnt Cocnt) ^ n) x)
+      (cocnt.map (Xw 0)) ∂(cocnt.map (Xw 0))) = 1 := by
+  simp_rw [map_Xw, kernelId_pow, Kernel.id_apply, tvDist_dirac_cocnt]
+  simp
+
+/-- **REFUTATION (formalized witness).** `betaMixCoeff_two_marginal_eq_integral_tvDist_brick`
+is FALSE as frozen: at a general measurable state space its two sides are `0` and `1`.
+See the section docstring for the diagnosis and the repair
+(`[MeasurableSpace.CountablyGenerated E]`). -/
+theorem betaMixCoeff_two_marginal_eq_integral_tvDist_false :
+    ¬ ∀ {Ω : Type} [MeasurableSpace Ω] {E : Type} [MeasurableSpace E] {μ : Measure Ω}
+        [IsProbabilityMeasure μ] {X : ℤ → Ω → E}, (∀ t, Measurable (X t)) →
+        (∀ s t : ℤ, μ.map (X s) = μ.map (X t)) →
+        ∀ {κ : Kernel E E} [IsMarkovKernel κ], IsMarkovOf X κ μ → ∀ n : ℕ,
+        betaMixCoeff μ (MeasurableSpace.comap (X 0) inferInstance)
+            (MeasurableSpace.comap (X ((n : ℤ))) inferInstance)
+          = (∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0))
+              ∂(μ.map (X 0))).toReal := by
+  intro h
+  have hkey := h (μ := cocnt) (X := Xw) (fun _ => measurable_id) (fun _ _ => rfl)
+    (κ := (Kernel.id : Kernel Cocnt Cocnt)) markov_Xw 1
+  rw [comap_Xw, comap_Xw, betaMixCoeff_cocnt_eq_zero, davydov_rhs_eq_one] at hkey
+  norm_num at hkey
+
+/-- **REFUTATION (formalized witness).** The same witness refutes the *public* theorem
+`betaMixCoeff_eq_integral_tvDist_of_markov` at a general state space — that theorem is
+proved *over* the open brick, so nothing is unsound, but its statement needs the same
+`[MeasurableSpace.CountablyGenerated E]` repair. -/
+theorem betaMixCoeff_eq_integral_tvDist_of_markov_false :
+    ¬ ∀ {Ω : Type} [MeasurableSpace Ω] {E : Type} [MeasurableSpace E] {μ : Measure Ω}
+        [IsProbabilityMeasure μ] {X : ℤ → Ω → E}, (∀ t, Measurable (X t)) →
+        (∀ s t : ℤ, μ.map (X s) = μ.map (X t)) →
+        ∀ {κ : Kernel E E} [IsMarkovKernel κ], IsMarkovOf X κ μ → ∀ n : ℕ,
+        betaMixCoeff μ (sigmaLE' X 0) (sigmaGE' X ((n : ℤ)))
+          = (∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0))
+              ∂(μ.map (X 0))).toReal := by
+  intro h
+  have hkey := h (μ := cocnt) (X := Xw) (fun _ => measurable_id) (fun _ _ => rfl)
+    (κ := (Kernel.id : Kernel Cocnt Cocnt)) markov_Xw 1
+  rw [sigmaLE'_Xw, sigmaGE'_Xw, betaMixCoeff_cocnt_eq_zero, davydov_rhs_eq_one] at hkey
+  norm_num at hkey
+
+end DavydovWitness
+
 /-- **BRICK — Davydov's identity at the two-marginal level** (FY eq. (2.58) proper).
 
 `β(σ(X_0), σ(X_n)) = ∫ tvDist (κⁿ x) F dF(x)`.
@@ -1394,6 +1694,20 @@ statement carries **no factor 2**, confirming the module docstring's warning.
   approximated in `F ⊗ F`-measure by finite unions of rectangles `U_i × V_j`, whose
   induced two-cell partitions realise the supremum in the limit. This half is the genuinely
   hard one (it is where the finite-partition formula meets the disintegration).
+
+**Status (2026-08-09, wave 6): FALSE AS FROZEN — see the section
+`REFUTATION of Davydov's identity at a general state space` immediately above, and the
+formalized witness `betaMixCoeff_two_marginal_eq_integral_tvDist_false` (axiom-clean).**
+At `E = Set ℕ` with the countable–cocountable σ-algebra, `μ = F` the `0`–`1` measure,
+`X_t = id` and `κ = Kernel.id`, every hypothesis holds, the left-hand side is `0` and the
+right-hand side is `1`. The `≤` half (the display below) is *not* what fails; the `≥` half
+does, and it fails maximally. The repair is `[MeasurableSpace.CountablyGenerated E]` on
+this brick and on `betaMixCoeff_eq_integral_tvDist_of_markov` — the hypothesis under which
+Mathlib supplies the jointly measurable Hahn selection (`Kernel.rnDerivAux`) that the `≥`
+half needs. Nothing downstream is affected: the model routes of `Mixing/Relations.lean`
+go through the *inequality* `betaMixCoeff_two_marginal_le_of_envelope`, which is correct
+at a general `E`. The `sorry` therefore stays, and it is not a debt of *proof* but of
+*statement*. The wave-4/5 analysis is kept below as the record of the two halves.
 
 **Status (2026-08-09, wave 4): the sole remaining `sorry` of this file.** The other two
 bricks are now proved, so this is exactly what stands between the file and a `sorry`-free
@@ -1439,6 +1753,13 @@ first is now **PROVED**: `betaMixCoeff_two_marginal_of_markov` (Bradley's collap
 two marginals) and `betaMixCoeff_two_marginal_eq_integral_tvDist_brick` (Davydov's identity
 proper — the only remaining `sorry` of this file; its docstring records the verified
 calibration and the proof of each direction).
+
+**Status (2026-08-09, wave 6): FALSE AS FROZEN at a general `E`** — formalized witness
+`betaMixCoeff_eq_integral_tvDist_of_markov_false` above. It is proved *over* the open
+brick, so nothing is unsound; the statement needs
+`[MeasurableSpace.CountablyGenerated E]`, which `ℝ` has, so the scalar corollary
+`betaCoeff_eq_integral_tvDist_debt` is true in substance and only inherits the defect
+through this general form.
 
 Stated for a general state space `E`; the scalar form is
 `betaCoeff_eq_integral_tvDist_debt` below. -/
