@@ -1377,7 +1377,19 @@ assumed, which the frozen statement does *not* hypothesize. That is a genuine ga
 frozen statement of the Bartlett debt: with `a ≡ 0` the process is `0` a.s., `ρ̂` and `ρ`
 are both junk `0/0 = 0`, and the limit is `δ₀` rather than the stated Gaussian — which is
 consistent only because `bartlettW` is then also `0`. So the statement survives, but the
-delta method cannot be the route in that degenerate corner and must be split off. -/
+delta method cannot be the route in that degenerate corner and must be split off.
+
+**Executed (wave `ts/f4b-garch-last`, 2026-08-09).** Both debts now `by_cases` on
+`∀ k, a k = 0` and **prove** the degenerate branch outright (section `Degenerate`): `hfil`
+with `a ≡ 0` forces `eLpNorm (X t) 2 μ = 0`, so `X` is a.e. `0`
+(`ae_eq_zero_of_filter_zero`), whence `acvf`, `acf`, `sampleACVF`, `sampleACF` and
+`bartlettW` are all the junk value `0` and both sides of both statements are `δ₀`'s
+character. In the surviving branch `0 < γ(0)` is now *supplied* rather than assumed
+(`acvf_zero_pos_of_ne`, from `acvf_eq_tsum_of_filter` at `h = 0` plus one nonzero
+coefficient), so the delta method's nondegeneracy input is no longer part of the residue.
+One correction to the reading above: `a ≡ 0` does **not** need `hσ` or any moment
+hypothesis to be handled — it is a statement about `hfil` alone, and the collapse happens
+already at the level of `eLpNorm`, not through the limiting variance. -/
 
 /-- The `L²` bound implied by an `eLpNorm` bound (converse of
 `eLpNorm_two_le_of_integral_sq_le`). -/
@@ -2757,6 +2769,74 @@ private lemma tendsto_cov_sq_truncFilter [IsProbabilityMeasure μ] (hε : IsIIDN
 end CesaroKernel
 
 
+
+/-! ### The degenerate corner `a ≡ 0`
+
+Both remaining debts are stated without any nondegeneracy hypothesis on the filter, and at
+`a ≡ 0` the process is a.e. `0`, every `acvf`/`acf`/`sampleACVF` is the junk value `0`, and
+both limits collapse to `δ₀`. The corner is therefore **true but outside the route** — the
+ratio delta method behind Bartlett's formula divides by `γ(0)` — so it is split off here
+and discharged, and `acvf_zero_pos_of_ne` supplies the `0 < γ(0)` that the nondegenerate
+branch needs and the frozen statements do not hypothesize. -/
+
+section Degenerate
+
+variable {a : ℤ → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
+
+/-- With a vanishing filter the process is a.e. `0`. -/
+private lemma ae_eq_zero_of_filter_zero (ha0 : ∀ k, a k = 0)
+    (hfil : ∀ t : ℤ, Tendsto (fun N : ℕ => eLpNorm (fun ω => X t ω -
+      ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) 2 μ) atTop (𝓝 0))
+    (hmeas : ∀ t, Measurable (X t)) (t : ℤ) : X t =ᵐ[μ] fun _ => (0 : ℝ) := by
+  have hcongr : ∀ N : ℕ, eLpNorm (fun ω => X t ω -
+      ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) 2 μ = eLpNorm (X t) 2 μ := by
+    intro N
+    refine congrArg (fun f : Ω → ℝ => eLpNorm f 2 μ) (funext fun ω => ?_)
+    simp [ha0]
+  have hzero : eLpNorm (X t) 2 μ = 0 :=
+    tendsto_nhds_unique (f := fun _ : ℕ => eLpNorm (X t) 2 μ) tendsto_const_nhds
+      ((hfil t).congr hcongr)
+  exact (eLpNorm_eq_zero_iff (hmeas t).aestronglyMeasurable (by norm_num)).1 hzero
+
+private lemma acvf_eq_zero_of_ae_zero (hX : ∀ t, X t =ᵐ[μ] fun _ => (0 : ℝ)) (h : ℤ) :
+    acvf X μ h = 0 := by
+  have h1 : ∫ ω, X h ω ∂μ = 0 := by rw [integral_congr_ae (hX h)]; simp
+  rw [acvf, covariance, h1]
+  refine integral_eq_zero_of_ae ?_
+  filter_upwards [hX h] with ω hω
+  simp [hω]
+
+private lemma acf_eq_zero_of_ae_zero (hX : ∀ t, X t =ᵐ[μ] fun _ => (0 : ℝ)) (h : ℤ) :
+    acf X μ h = 0 := by
+  rw [acf, acvf_eq_zero_of_ae_zero hX h, zero_div]
+
+private lemma sampleACVF_ae_eq_zero (hX : ∀ t, X t =ᵐ[μ] fun _ => (0 : ℝ)) (T : ℕ) (k : ℕ) :
+    ∀ᵐ ω ∂μ, sampleACVF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) k = 0 := by
+  have hall : ∀ᵐ ω ∂μ, ∀ t : Fin T, X (((t : ℕ) : ℤ) + 1) ω = 0 := by
+    rw [ae_all_iff]
+    intro t
+    exact hX _
+  filter_upwards [hall] with ω hω
+  simp [sampleACVF, sampleMean, hω]
+
+/-- `0 < γ(0)` in the nondegenerate corner. -/
+private lemma acvf_zero_pos_of_ne [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
+    (hfil : ∀ t : ℤ, Tendsto (fun N : ℕ => eLpNorm (fun ω => X t ω -
+      ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) 2 μ) atTop (𝓝 0))
+    (ha : Summable fun k : ℤ => |a k|) (hmeas : ∀ t, Measurable (X t))
+    {k0 : ℤ} (hk0 : a k0 ≠ 0) : 0 < acvf X μ 0 := by
+  have hsq := summable_sq_of_abs (a := a) ha
+  have hpos : 0 < ∑' k : ℤ, a k ^ 2 :=
+    lt_of_lt_of_le (pow_pos (abs_pos.2 hk0) 2 |>.trans_le (le_of_eq (sq_abs (a k0))))
+      (hsq.le_tsum k0 fun j _ => sq_nonneg _)
+  rw [acvf_eq_tsum_of_filter hε hfil ha hmeas 0]
+  have : (∑' k : ℤ, a k * a (k - 0)) = ∑' k : ℤ, a k ^ 2 :=
+    tsum_congr fun k => by rw [sub_zero, sq]
+  rw [this]
+  positivity
+
+end Degenerate
+
 /-- **FY Theorem 2.8(ii) — DEBT (ledger (b); B&D 1991 Prop 7.3.4)**, with the variance
 **corrected** from the misprinted eq. (2.25): for a zero-mean two-sided linear process
 with IID innovations having finite fourth moment,
@@ -2783,7 +2863,38 @@ theorem sampleACVF_zero_clt_debt [IsProbabilityMeasure μ] {a : ℤ → ℝ} {σ
       (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
         (((∫ ω, ε 0 ω ^ 4 ∂μ) / σ2 ^ 2 - 3) * acvf X μ 0 ^ 2
           + 2 * ∑' j : ℤ, acvf X μ j ^ 2))) u)) := by
-  sorry
+  by_cases ha0 : ∀ k, a k = 0
+  · -- **Degenerate corner `a ≡ 0`**: the process is a.e. `0`, `γ̂(0)`, `γ(0)` and the
+    -- limiting variance are all the junk value `0`, and both sides are `δ₀`'s character.
+    have hX : ∀ t, X t =ᵐ[μ] fun _ => (0 : ℝ) :=
+      fun t => ae_eq_zero_of_filter_zero ha0 hfil hmeas t
+    have hvar : ((∫ ω, ε 0 ω ^ 4 ∂μ) / σ2 ^ 2 - 3) * acvf X μ 0 ^ 2
+        + 2 * ∑' j : ℤ, acvf X μ j ^ 2 = 0 := by
+      simp [acvf_eq_zero_of_ae_zero hX]
+    have hlim : charFun (gaussianReal 0 (Real.toNNReal
+        (((∫ ω, ε 0 ω ^ 4 ∂μ) / σ2 ^ 2 - 3) * acvf X μ 0 ^ 2
+          + 2 * ∑' j : ℤ, acvf X μ j ^ 2))) u = 1 := by
+      rw [hvar]; simp
+    have hseq : (fun T : ℕ => charFun (μ.map fun ω =>
+        Real.sqrt T *
+          (sampleACVF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) 0 - acvf X μ 0)) u)
+        = fun _ : ℕ => (1 : ℂ) := by
+      funext T
+      have hae : (fun ω => Real.sqrt T *
+          (sampleACVF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) 0 - acvf X μ 0))
+          =ᵐ[μ] fun _ : Ω => (0 : ℝ) := by
+        filter_upwards [sampleACVF_ae_eq_zero hX T 0] with ω hω
+        rw [hω, acvf_eq_zero_of_ae_zero hX 0]; ring
+      rw [Measure.map_congr hae]
+      simp [Measure.map_const]
+    rw [hlim, hseq]
+    exact tendsto_const_nhds
+  · -- **Nondegenerate corner** — the residue proper. `0 < γ(0)` is available
+    -- (`acvf_zero_pos_of_ne`); what is owed is (R1) and (R3).
+    push_neg at ha0
+    obtain ⟨k0, hk0⟩ := ha0
+    have _hpos : 0 < acvf X μ 0 := acvf_zero_pos_of_ne hε hσ hfil ha hmeas hk0
+    sorry
 
 /-- **Bartlett's asymptotic covariance** (FY eq. (2.26)):
 `w_{ij} = Σ_{k=1}^∞ [ρ(k+i) + ρ(k−i) − 2ρ(i)ρ(k)]·[ρ(k+j) + ρ(k−j) − 2ρ(j)ρ(k)]`
@@ -2795,6 +2906,16 @@ noncomputable def bartlettW (X : ℤ → Ω → ℝ) (μ : Measure Ω) (i j : �
         - 2 * acf X μ (i : ℤ) * acf X μ ((k : ℤ) + 1)) *
       (acf X μ ((k : ℤ) + 1 + (j : ℤ)) + acf X μ ((k : ℤ) + 1 - (j : ℤ))
         - 2 * acf X μ (j : ℤ) * acf X μ ((k : ℤ) + 1))
+
+section Degenerate2
+
+variable {X : ℤ → Ω → ℝ}
+
+private lemma bartlettW_eq_zero_of_ae_zero (hX : ∀ t, X t =ᵐ[μ] fun _ => (0 : ℝ)) (i j : ℕ) :
+    bartlettW X μ i j = 0 := by
+  simp [bartlettW, acf_eq_zero_of_ae_zero hX]
+
+end Degenerate2
 
 /-- **FY Theorem 2.8(iii) — DEBT (ledger (b); B&D 1991 §7.3)**: Bartlett's formula,
 in Cramér–Wold form: for every coefficient vector `c` over the lag window `1..M`,
@@ -2822,7 +2943,44 @@ theorem sampleACF_bartlett_clt_debt [IsProbabilityMeasure μ] {a : ℤ → ℝ} 
       (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
         (∑ i : Fin M, ∑ j : Fin M,
           c i * c j * bartlettW X μ ((i : ℕ) + 1) ((j : ℕ) + 1)))) u)) := by
-  sorry
+  by_cases ha0 : ∀ k, a k = 0
+  · -- **Degenerate corner `a ≡ 0`**: `ρ̂` and `ρ` are both the junk value `0`, `W = 0`,
+    -- and both sides are `δ₀`'s character. The ratio delta method is *not* available here
+    -- (it divides by `γ(0) = 0`), which is why the corner is split off.
+    have hX : ∀ t, X t =ᵐ[μ] fun _ => (0 : ℝ) :=
+      fun t => ae_eq_zero_of_filter_zero ha0 hfil hmeas t
+    have hW : (∑ i : Fin M, ∑ j : Fin M,
+        c i * c j * bartlettW X μ ((i : ℕ) + 1) ((j : ℕ) + 1)) = 0 := by
+      simp [bartlettW_eq_zero_of_ae_zero hX]
+    have hlim : charFun (gaussianReal 0 (Real.toNNReal
+        (∑ i : Fin M, ∑ j : Fin M,
+          c i * c j * bartlettW X μ ((i : ℕ) + 1) ((j : ℕ) + 1)))) u = 1 := by
+      rw [hW]; simp
+    have hseq : (fun T : ℕ => charFun (μ.map fun ω =>
+        Real.sqrt T * ∑ i : Fin M, c i *
+          (sampleACF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ((i : ℕ) + 1)
+            - acf X μ (((i : ℕ) : ℤ) + 1))) u) = fun _ : ℕ => (1 : ℂ) := by
+      funext T
+      have hae : (fun ω => Real.sqrt T * ∑ i : Fin M, c i *
+          (sampleACF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ((i : ℕ) + 1)
+            - acf X μ (((i : ℕ) : ℤ) + 1))) =ᵐ[μ] fun _ : Ω => (0 : ℝ) := by
+        have hall : ∀ᵐ ω ∂μ, ∀ i : Fin M,
+            sampleACVF (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) ((i : ℕ) + 1) = 0 := by
+          rw [ae_all_iff]
+          intro i
+          exact sampleACVF_ae_eq_zero hX T ((i : ℕ) + 1)
+        filter_upwards [hall, sampleACVF_ae_eq_zero hX T 0] with ω hω hω0
+        simp [sampleACF, hω, hω0, acf_eq_zero_of_ae_zero hX]
+      rw [Measure.map_congr hae]
+      simp [Measure.map_const]
+    rw [hlim, hseq]
+    exact tendsto_const_nhds
+  · -- **Nondegenerate corner** — the residue proper: the joint (lags `1..M`) version of
+    -- (R1)/(R3) plus the ratio delta method, for which `0 < γ(0)` is now available.
+    push_neg at ha0
+    obtain ⟨k0, hk0⟩ := ha0
+    have _hpos : 0 < acvf X μ 0 := acvf_zero_pos_of_ne hε hσ hfil ha hmeas hk0
+    sorry
 
 /-- **FY eq. (2.27)** (misprint corrected: the summand is `ρ(t)²`, not `ρ(q)²`): for an
 MA(q) process with IID innovations and a lag `j > q`,
