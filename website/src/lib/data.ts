@@ -3,8 +3,13 @@ import rawResults from "../data/results.json";
 
 export const RESULTS = rawResults as unknown as ResultEntry[];
 
+/** True when a result is listed under `cat`, primarily or via `alsoIn`. */
+export function inCategory(r: ResultEntry, cat: CategoryId): boolean {
+  return r.category === cat || (r.alsoIn?.includes(cat) ?? false);
+}
+
 export function resultsByCategory(cat: CategoryId): ResultEntry[] {
-  return RESULTS.filter((r) => r.category === cat);
+  return RESULTS.filter((r) => inCategory(r, cat));
 }
 
 export function getResult(id: string): ResultEntry | undefined {
@@ -12,7 +17,7 @@ export function getResult(id: string): ResultEntry | undefined {
 }
 
 export function countByCategory(cat: CategoryId): number {
-  return RESULTS.reduce((n, r) => (r.category === cat ? n + 1 : n), 0);
+  return RESULTS.reduce((n, r) => (inCategory(r, cat) ? n + 1 : n), 0);
 }
 
 // Lazy-load generated dependency graphs (one JSON per result id).

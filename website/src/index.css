@@ -52,6 +52,10 @@
   --c-prob: 162 164 208;
   --c-htest: 240 158 96;
   --c-pest: 130 190 172;
+  --c-ts: 96 196 212;
+  --c-causal: 226 148 104;
+  --c-slearn: 178 146 244;
+  --c-exp: 194 200 104;
   --c-ext: 232 206 96;     /* yellow — Mathlib / external */
 
   --grain-opacity: 0.05;
@@ -103,6 +107,10 @@ body::before {
 [data-cat="probability"] { --accent: var(--c-prob); }
 [data-cat="hypothesistesting"] { --accent: var(--c-htest); }
 [data-cat="pointestimation"] { --accent: var(--c-pest); }
+[data-cat="timeseries"] { --accent: var(--c-ts); }
+[data-cat="causal"] { --accent: var(--c-causal); }
+[data-cat="statlearning"] { --accent: var(--c-slearn); }
+[data-cat="expdesign"] { --accent: var(--c-exp); }
 
 /* bare `accent` className = active-accent text color (not a Tailwind utility) */
 .accent { color: rgb(var(--accent)); }

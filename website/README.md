@@ -70,6 +70,10 @@ Results are organized into twelve categories (defined in `src/lib/categories.ts`
 | Bayesian Statistics | `bayesian` | Posteriors, conjugacy, hierarchical/empirical Bayes, MCMC, posterior contraction |
 | Nonparametric Statistics | `nonparametric` | Kernel density estimation, local polynomial regression, projection estimators |
 | Miscellaneous Results | `probability` | Prékopa–Leindler, Anderson's lemma, Le Cam lemmas, multivariate CLT |
+| Time Series | `timeseries` | Stationarity, Herglotz & spectra, mixing limit theorems, ARMA/ARCH/GARCH/TAR |
+| Causal Inference | `causal` | Potential outcomes, Neyman randomization, adjustment & matching, AIPW, IV/LATE |
+| Statistical Learning | `statlearning` | ERM & uniform convergence, PAC learnability, VC dimension, Rademacher, stability, PAC-Bayes |
+| Experimental Design | `expdesign` | Randomization designs, blocking, ANOVA identity, factorial characters, Horvitz–Thompson |
 
 ## Key features
 

@@ -23,7 +23,8 @@ const categories = new Set([
   "bayesian",
   "nonparametric",
   "probability",
-]);
+,
+  "timeseries", "causal", "statlearning", "expdesign",]);
 const resultKinds = new Set(["definition", "theorem", "lemma", "proposition", "corollary", "equation"]);
 const nodeKinds = new Set(["root", "repo", "mathlib"]);
 const declarationKinds = new Set(["thm", "def"]);

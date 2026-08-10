@@ -10,7 +10,11 @@ export type CategoryId =
   | "optimization"
   | "bayesian"
   | "nonparametric"
-  | "probability";
+  | "probability"
+  | "timeseries"
+  | "causal"
+  | "statlearning"
+  | "expdesign";
 
 export type ResultKind = "definition" | "theorem" | "lemma" | "proposition" | "corollary" | "equation";
 
@@ -71,6 +75,15 @@ export interface ResultEntry {
   /** url-safe id, e.g. "eif_eq_orthogonalProjection" */
   id: string;
   category: CategoryId;
+  /**
+   * Additional topics this result is listed under. The primary `category`
+   * decides the accent colour, the breadcrumb and the graph area; `alsoIn`
+   * only makes the result appear in another topic's listing, search filter and
+   * count. Used where one theorem genuinely belongs to two literatures
+   * (e.g. VC / symmetrization bounds, which are both probability inequalities
+   * and statistical-learning theory).
+   */
+  alsoIn?: CategoryId[];
   kind: ResultKind;
   /** 1-3 index terms for the Index page (standard textbook terminology). */
   keywords?: string[];

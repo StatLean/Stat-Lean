@@ -9412,6 +9412,9 @@
     "hasGraph": true,
     "keywords": [
       "symmetrization"
+    ],
+    "alsoIn": [
+      "statlearning"
     ]
   },
   {
@@ -9443,6 +9446,9 @@
     "hasGraph": true,
     "keywords": [
       "contraction principle"
+    ],
+    "alsoIn": [
+      "statlearning"
     ]
   },
   {
@@ -9492,6 +9498,9 @@
     "hasGraph": true,
     "keywords": [
       "symmetrization"
+    ],
+    "alsoIn": [
+      "statlearning"
     ]
   },
   {
@@ -9543,6 +9552,9 @@
     "keywords": [
       "symmetrization",
       "empirical process"
+    ],
+    "alsoIn": [
+      "statlearning"
     ]
   },
   {
@@ -9965,6 +9977,9 @@
     "keywords": [
       "VC dimension",
       "law of large numbers"
+    ],
+    "alsoIn": [
+      "statlearning"
     ]
   },
   {
@@ -10018,6 +10033,9 @@
     "keywords": [
       "Glivenko–Cantelli theorem",
       "empirical process"
+    ],
+    "alsoIn": [
+      "statlearning"
     ]
   },
   {
@@ -10086,6 +10104,9 @@
     "keywords": [
       "VC dimension",
       "empirical risk minimization"
+    ],
+    "alsoIn": [
+      "statlearning"
     ]
   },
   {
@@ -10118,6 +10139,9 @@
     "hasGraph": true,
     "keywords": [
       "VC dimension"
+    ],
+    "alsoIn": [
+      "statlearning"
     ]
   },
   {
@@ -10148,6 +10172,9 @@
     "hasGraph": true,
     "keywords": [
       "VC dimension"
+    ],
+    "alsoIn": [
+      "statlearning"
     ]
   },
   {
