@@ -63,7 +63,8 @@ theorem holdout_unbiased {k : ℕ} [NeZero k] (h : H)
     (hint : Integrable (ℓ h) D) :
     ∫ t, mcEstimate (ℓ h) t ∂(Measure.pi fun _ : Fin k => D)
       = predictionRisk D ℓ h := by
-  sorry
+  unfold mcEstimate predictionRisk
+  exact integral_avg_eval_pi hint
 
 /-- **Integrated holdout identity** (ECS §3.2): averaging also over the
 training sample, the holdout estimate has expectation the *expected risk of
@@ -78,6 +79,8 @@ theorem holdout_integrated {m k : ℕ} [NeZero k] (A : (Fin m → Z) → H)
     ∫ p, mcEstimate (ℓ (A p.1)) p.2
         ∂((Measure.pi fun _ : Fin m => D).prod (Measure.pi fun _ : Fin k => D))
       = ∫ s, predictionRisk D ℓ (A s) ∂(Measure.pi fun _ : Fin m => D) := by
-  sorry
+  rw [integral_prod _ hint]
+  exact integral_congr_ae (Filter.Eventually.of_forall fun s =>
+    holdout_unbiased (A s) (hloss s))
 
 end StatLean.ComputationalStatistics
