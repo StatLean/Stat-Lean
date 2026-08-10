@@ -37,6 +37,7 @@ Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.) §3.1 (
 -/
 
 open MeasureTheory Filter Topology
+open scoped NNReal
 
 namespace StatLean.RobustStatistics
 
