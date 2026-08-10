@@ -49,6 +49,9 @@ theorem mLocationRoot_influence_of_lipschitz {P : Measure ℝ} [IsProbabilityMea
     {ψ ψd : ℝ → ℝ} {L : ℝ≥0} {θ : ℝ → ℝ} {θ₀ x₀ d A : ℝ}
     -- USER-INPUT: Lipschitz score; MMY §3.8.1 (regularity for the interchange)
     (hψlip : LipschitzWith L ψ)
+    -- USER-INPUT: the score is integrable at the uncontaminated root — automatic for the
+    -- bounded ψ-functions of MMY Def 2.2, a genuine moment condition beyond them
+    (hint : Integrable (fun x => ψ (x - θ₀)) P)
     -- USER-INPUT: ψ differentiable P-a.e. along the θ₀-shifted data, with derivative ψd;
     -- MMY §3.8.1 ("assume ψ' exists"), weakened to the a.e. form the Huber score satisfies
     (hae : ∀ᵐ x ∂P, HasDerivAt ψ (ψd x) (x - θ₀))
@@ -77,6 +80,8 @@ theorem mLocationRoot_influence {P : Measure ℝ} [IsProbabilityMeasure P]
     (hψ : ∀ u, HasDerivAt ψ (ψ' u) u)
     -- USER-INPUT: bounded score derivative (dominates the interchange); MMY (10.8)
     (hψ'b : ∀ u, |ψ' u| ≤ C)
+    -- USER-INPUT: the score is integrable at the uncontaminated root; MMY §3.8.1 context
+    (hint : Integrable (fun x => ψ (x - θ₀)) P)
     -- LEAN-ONLY: measurability of ψ'; automatic for continuous derivatives
     (hψ'_meas : Measurable ψ')
     -- USER-INPUT: θ t solves the contaminated M-equation for small t ≥ 0; MMY (3.58)
@@ -97,6 +102,8 @@ the point-mass path: `HasInfluenceAt T P x₀ (ψ(x₀ - T P)/A)`. -/
 theorem mLocationFunctional_hasInfluenceAt {P : Measure ℝ} [IsProbabilityMeasure P]
     {T : Measure ℝ → ℝ} {ψ ψd : ℝ → ℝ} {L : ℝ≥0} {x₀ A : ℝ}
     (hψlip : LipschitzWith L ψ)
+    -- USER-INPUT: the score is integrable at the uncontaminated value; MMY §3.8.1 context
+    (hint : Integrable (fun x => ψ (x - T P)) P)
     (hae : ∀ᵐ x ∂P, HasDerivAt ψ (ψd x) (x - T P))
     (hψd_meas : AEStronglyMeasurable ψd P)
     -- USER-INPUT: T tracks roots of the contaminated M-equation near 0; MMY §3.7 (3.51)
