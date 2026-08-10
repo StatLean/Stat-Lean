@@ -139,6 +139,19 @@ hypothesis, is `huberPsi_tendsto_atTop_of_nonneg` above and is proved there. -/
 theorem huberPsi_tendsto_atTop (c : ℝ) : Tendsto (huberPsi c) atTop (𝓝 c) := by
   sorry
 
+/-- Machine-checked refutation of the statement above at `c = -1`: the score is the
+constant `1` there, so it does not tend to `-1`. -/
+example : ¬ Tendsto (huberPsi (-1 : ℝ)) atTop (𝓝 (-1)) := by
+  intro h
+  have hconst : huberPsi (-1 : ℝ) = fun _ => (1 : ℝ) := by
+    funext u
+    unfold huberPsi
+    rw [max_eq_left ((min_le_left (-1 : ℝ) u).trans (by norm_num))]
+    norm_num
+  rw [hconst] at h
+  have := tendsto_nhds_unique h (tendsto_const_nhds (x := (1 : ℝ)) (f := atTop))
+  norm_num at this
+
 /-- **The Huber loss is differentiable with derivative the Huber score**
 (`MMY` eq. (2.29)): `ρ_c' = ψ_c`, including at the knots `u = ±c`. -/
 theorem hasDerivAt_huberRho {c : ℝ} (hc : 0 ≤ c) (u : ℝ) :

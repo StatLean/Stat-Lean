@@ -229,12 +229,75 @@ theorem isMLocationEstimate_sq_iff {x : Fin n → ℝ} {θ : ℝ} (hn : 0 < n) :
     rw [key t]
     nlinarith [sq_nonneg (sampleMean x - t)]
 
+/-- Auxiliary counting step for the L¹ objective: moving the location from `m` to a larger
+`t` cannot decrease the objective as soon as at least half the observations are `≤ m`.
+
+Each observation `≤ m` pays exactly `t - m` for the move, while every observation pays at
+most `t - m` in the other direction (the reverse triangle inequality), so the net change is
+at least `(t - m)·(#{yⱼ ≤ m} - #{yⱼ > m}) ≥ 0`. -/
+private theorem sum_abs_le_of_card_le (y : Fin n → ℝ) {m t : ℝ} (hmt : m < t)
+    (hcnt : n ≤ 2 * (Finset.univ.filter fun j => y j ≤ m).card) :
+    ∑ i, |y i - m| ≤ ∑ i, |y i - t| := by
+  have hterm : ∀ i : Fin n,
+      |y i - m| - |y i - t| ≤ (if y i ≤ m then -(t - m) else t - m) := by
+    intro i
+    by_cases hi : y i ≤ m
+    · rw [if_pos hi, abs_of_nonpos (by linarith), abs_of_nonpos (by linarith)]
+      linarith
+    · rw [if_neg hi]
+      have h1 := abs_sub_abs_le_abs_sub (y i - m) (y i - t)
+      have h2 : |y i - m - (y i - t)| = t - m := by
+        rw [show y i - m - (y i - t) = t - m by ring, abs_of_pos (by linarith)]
+      linarith
+  have hsum : ∑ i, (|y i - m| - |y i - t|)
+      ≤ ∑ i, (if y i ≤ m then -(t - m) else t - m) :=
+    Finset.sum_le_sum fun i _ => hterm i
+  rw [Finset.sum_sub_distrib, Finset.sum_ite, Finset.sum_const, Finset.sum_const,
+    nsmul_eq_mul, nsmul_eq_mul] at hsum
+  have hcard : (Finset.univ.filter fun j : Fin n => y j ≤ m).card
+      + (Finset.univ.filter fun j : Fin n => ¬ y j ≤ m).card = n := by
+    rw [Finset.card_filter_add_card_filter_not, Finset.card_univ, Fintype.card_fin]
+  have hle : ((Finset.univ.filter fun j : Fin n => ¬ y j ≤ m).card : ℝ)
+      ≤ ((Finset.univ.filter fun j : Fin n => y j ≤ m).card : ℝ) := by
+    have : (Finset.univ.filter fun j : Fin n => ¬ y j ≤ m).card
+        ≤ (Finset.univ.filter fun j : Fin n => y j ≤ m).card := by omega
+    exact_mod_cast this
+  nlinarith [hsum, hle, sub_pos.2 hmt]
+
 /-- **The median minimizes the L¹ objective** (`MMY §2.3.1`, eq. (2.18), (2.21)): the
 sample median is an M-estimate for the absolute-value loss. (For even `n` the low median
 is one of the minimizers.) -/
 theorem isMLocationEstimate_abs_sampleMedian (x : Fin n → ℝ) :
     IsMLocationEstimate (fun u => |u|) x (sampleMedian x) := by
-  sorry
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · intro t; simp
+  intro t
+  change (∑ i, |x i - sampleMedian x|) ≤ ∑ i, |x i - t|
+  rcases lt_trichotomy t (sampleMedian x) with ht | ht | ht
+  · -- Below the median: reflect and use the count of observations `≥ m`.
+    have hset : (Finset.univ.filter fun j : Fin n => -x j ≤ -sampleMedian x)
+        = (Finset.univ.filter fun j : Fin n => sampleMedian x ≤ x j) := by
+      ext j
+      simp [neg_le_neg_iff]
+    have hcnt : n ≤ 2 * (Finset.univ.filter fun j : Fin n => -x j ≤ -sampleMedian x).card := by
+      rw [hset]
+      have h := card_sampleMedian_le hn.ne' x
+      omega
+    have hmain := sum_abs_le_of_card_le (fun i => -x i)
+      (m := -sampleMedian x) (t := -t) (by linarith) hcnt
+    calc ∑ i, |x i - sampleMedian x| = ∑ i, |(-x i) - (-sampleMedian x)| :=
+          Finset.sum_congr rfl fun i _ => by
+            rw [show -x i - -sampleMedian x = -(x i - sampleMedian x) by ring, abs_neg]
+      _ ≤ ∑ i, |(-x i) - (-t)| := hmain
+      _ = ∑ i, |x i - t| :=
+          Finset.sum_congr rfl fun i _ => by
+            rw [show -x i - -t = -(x i - t) by ring, abs_neg]
+  · rw [ht]
+  · -- Above the median: the count of observations `≤ m` is at least half.
+    have hcnt : n ≤ 2 * (Finset.univ.filter fun j : Fin n => x j ≤ sampleMedian x).card := by
+      have h := card_le_sampleMedian hn.ne' x
+      omega
+    exact sum_abs_le_of_card_le x ht hcnt
 
 /-! ### Huber location estimates (`MMY §2.3.2`) -/
 
