@@ -865,6 +865,230 @@ theorem hannanVarZ_posDef {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
     rw [hgoal]
     linarith
 
+/-! ### Positive-definiteness of the **backward** Gram (finding 26)
+
+`hannanVarZBack` is the Gram matrix of the *same* two filter families as `hannanVarZ`,
+read at the score's shifts `1 + i` instead of the forward shifts `p + q − i`, so the
+identifiability argument of `hannanVarZ_posDef` runs verbatim with
+
+  `C(z) = Σ_i cᵢ z^{1+i}`,  `D(z) = Σ_j dⱼ z^{1+j}`
+
+in place of the forward pair. The reduced factors `C₀(z) = Σ_i cᵢ zⁱ`,
+`D₀(z) = Σ_j dⱼ z^j` are one power of `z` lighter than the forward ones, so the degree
+count that closes the argument (`deg C₀ ≤ p − 1 < p = deg b`, under `hbdeg`) is if
+anything more comfortable; the hypotheses are exactly those of `hannanVarZ_posDef`.
+
+This has to be **proved**, not transported: the two Grams are conjugate by the block-wise
+reversal permutation only when `p = q`, and `hannanVarZ_quadForm_ne_back` witnesses that
+they are genuinely different quadratic forms at ARMA(2,1). (For `q = 0` or `p = 0` the
+transport is available — `hannanVarZ_eq_back_of_pure_ar`, `hannanVarZ_eq_back_of_pure_ma`
+— but that covers none of the mixed cases the repair is for.) -/
+
+private noncomputable def hannanPolyCBack {p q : ℕ} (x : Fin p ⊕ Fin q → ℝ) : Polynomial ℝ :=
+  ∑ i : Fin p, Polynomial.C (x (Sum.inl i)) * Polynomial.X ^ (1 + (i : ℕ))
+
+private noncomputable def hannanPolyDBack {p q : ℕ} (x : Fin p ⊕ Fin q → ℝ) : Polynomial ℝ :=
+  ∑ j : Fin q, Polynomial.C (x (Sum.inr j)) * Polynomial.X ^ (1 + (j : ℕ))
+
+private noncomputable def hannanPolyC0Back {p q : ℕ} (x : Fin p ⊕ Fin q → ℝ) : Polynomial ℝ :=
+  ∑ i : Fin p, Polynomial.C (x (Sum.inl i)) * Polynomial.X ^ (i : ℕ)
+
+private noncomputable def hannanPolyD0Back {p q : ℕ} (x : Fin p ⊕ Fin q → ℝ) : Polynomial ℝ :=
+  ∑ j : Fin q, Polynomial.C (x (Sum.inr j)) * Polynomial.X ^ (j : ℕ)
+
+private lemma hannanPolyCBack_factor {p q : ℕ} (x : Fin p ⊕ Fin q → ℝ) :
+    hannanPolyCBack x = Polynomial.X * hannanPolyC0Back x := by
+  rw [hannanPolyCBack, hannanPolyC0Back, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [pow_add, pow_one]
+  ring
+
+private lemma hannanPolyDBack_factor {p q : ℕ} (x : Fin p ⊕ Fin q → ℝ) :
+    hannanPolyDBack x = Polynomial.X * hannanPolyD0Back x := by
+  rw [hannanPolyDBack, hannanPolyD0Back, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [pow_add, pow_one]
+  ring
+
+private lemma coe_hannanPolyCBack {p q : ℕ} (x : Fin p ⊕ Fin q → ℝ) :
+    ((hannanPolyCBack x : Polynomial ℝ) : PowerSeries ℝ)
+      = ∑ i : Fin p, PowerSeries.C (x (Sum.inl i)) * PowerSeries.X ^ (1 + (i : ℕ)) := by
+  rw [hannanPolyCBack, ← Polynomial.coeToPowerSeries.ringHom_apply, map_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [map_mul, map_pow, Polynomial.coeToPowerSeries.ringHom_apply,
+    Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_C, Polynomial.coe_X]
+
+private lemma coe_hannanPolyDBack {p q : ℕ} (x : Fin p ⊕ Fin q → ℝ) :
+    ((hannanPolyDBack x : Polynomial ℝ) : PowerSeries ℝ)
+      = ∑ j : Fin q, PowerSeries.C (x (Sum.inr j)) * PowerSeries.X ^ (1 + (j : ℕ)) := by
+  rw [hannanPolyDBack, ← Polynomial.coeToPowerSeries.ringHom_apply, map_sum]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [map_mul, map_pow, Polynomial.coeToPowerSeries.ringHom_apply,
+    Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_C, Polynomial.coe_X]
+
+private lemma coeff_hannanPolyCBack_mul {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ)
+    (x : Fin p ⊕ Fin q → ℝ) (n : ℕ) :
+    PowerSeries.coeff n (((hannanPolyCBack x : Polynomial ℝ) : PowerSeries ℝ)
+        * (((arPoly b : Polynomial ℝ) : PowerSeries ℝ))⁻¹)
+      = ∑ i : Fin p, x (Sum.inl i) * hannanVecBack b a (Sum.inl i) n := by
+  rw [coe_hannanPolyCBack, Finset.sum_mul, map_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  have hseq : (fun m => PowerSeries.coeff m
+      ((((arPoly b : Polynomial ℝ) : PowerSeries ℝ))⁻¹)) = hannanSeq b a (Sum.inl i) :=
+    funext fun m => coeff_arPolyInv b m
+  rw [mul_assoc, PowerSeries.coeff_C_mul, coeff_X_pow_mul_eq_hannanShiftSeq]
+  simp only [hannanVecBack, hannanShiftBack, hseq]
+
+private lemma coeff_hannanPolyDBack_mul {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ)
+    (x : Fin p ⊕ Fin q → ℝ) (n : ℕ) :
+    PowerSeries.coeff n (((hannanPolyDBack x : Polynomial ℝ) : PowerSeries ℝ)
+        * (((maPoly a : Polynomial ℝ) : PowerSeries ℝ))⁻¹)
+      = ∑ j : Fin q, x (Sum.inr j) * hannanVecBack b a (Sum.inr j) n := by
+  rw [coe_hannanPolyDBack, Finset.sum_mul, map_sum]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  have hseq : (fun m => PowerSeries.coeff m
+      ((((maPoly a : Polynomial ℝ) : PowerSeries ℝ))⁻¹)) = hannanSeq b a (Sum.inr j) :=
+    funext fun m => coeff_maPolyInv a m
+  rw [mul_assoc, PowerSeries.coeff_C_mul, coeff_X_pow_mul_eq_hannanShiftSeq]
+  simp only [hannanVecBack, hannanShiftBack, hseq]
+
+/-- The identifiability core at the **score's** shifts: no nontrivial combination of the
+two filter families, left-aligned at `t − 1`, vanishes. -/
+private lemma eq_zero_of_hannanVecBack_combo {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
+    (hcop : IsCoprime (arPoly b) (maPoly a)) (hbdeg : (arPoly b).natDegree = p)
+    (x : Fin p ⊕ Fin q → ℝ)
+    (hx : ∀ n : ℕ, ∑ s, x s * hannanVecBack b a s n = 0) : x = 0 := by
+  have hbne : PowerSeries.constantCoeff (((arPoly b : Polynomial ℝ) : PowerSeries ℝ)) ≠ 0 := by
+    rw [Polynomial.constantCoeff_coe, hannanCoeffArPolyZero]; exact one_ne_zero
+  have hane : PowerSeries.constantCoeff (((maPoly a : Polynomial ℝ) : PowerSeries ℝ)) ≠ 0 := by
+    rw [Polynomial.constantCoeff_coe, hannanCoeffMaPolyZero]; exact one_ne_zero
+  have hb1 := PowerSeries.mul_inv_cancel _ hbne
+  have ha1 := PowerSeries.mul_inv_cancel _ hane
+  have hzero : ((hannanPolyCBack x : Polynomial ℝ) : PowerSeries ℝ)
+        * (((arPoly b : Polynomial ℝ) : PowerSeries ℝ))⁻¹
+      + ((hannanPolyDBack x : Polynomial ℝ) : PowerSeries ℝ)
+        * (((maPoly a : Polynomial ℝ) : PowerSeries ℝ))⁻¹ = 0 := by
+    refine PowerSeries.ext fun n => ?_
+    rw [map_add, coeff_hannanPolyCBack_mul b a, coeff_hannanPolyDBack_mul b a, map_zero]
+    have hn := hx n
+    rwa [Fintype.sum_sum_type] at hn
+  have hkey : ((hannanPolyCBack x : Polynomial ℝ) : PowerSeries ℝ)
+        * ((maPoly a : Polynomial ℝ) : PowerSeries ℝ)
+      + ((hannanPolyDBack x : Polynomial ℝ) : PowerSeries ℝ)
+        * ((arPoly b : Polynomial ℝ) : PowerSeries ℝ) = 0 := by
+    have h2 : (((arPoly b : Polynomial ℝ) : PowerSeries ℝ)
+          * ((maPoly a : Polynomial ℝ) : PowerSeries ℝ))
+        * (((hannanPolyCBack x : Polynomial ℝ) : PowerSeries ℝ)
+            * (((arPoly b : Polynomial ℝ) : PowerSeries ℝ))⁻¹
+          + ((hannanPolyDBack x : Polynomial ℝ) : PowerSeries ℝ)
+            * (((maPoly a : Polynomial ℝ) : PowerSeries ℝ))⁻¹)
+        = ((hannanPolyCBack x : Polynomial ℝ) : PowerSeries ℝ)
+            * ((maPoly a : Polynomial ℝ) : PowerSeries ℝ)
+            * (((arPoly b : Polynomial ℝ) : PowerSeries ℝ)
+              * (((arPoly b : Polynomial ℝ) : PowerSeries ℝ))⁻¹)
+          + ((hannanPolyDBack x : Polynomial ℝ) : PowerSeries ℝ)
+            * ((arPoly b : Polynomial ℝ) : PowerSeries ℝ)
+            * (((maPoly a : Polynomial ℝ) : PowerSeries ℝ)
+              * (((maPoly a : Polynomial ℝ) : PowerSeries ℝ))⁻¹) := by ring
+    rw [hzero, mul_zero, hb1, ha1, mul_one, mul_one] at h2
+    exact h2.symm
+  have hpoly : hannanPolyCBack x * maPoly a + hannanPolyDBack x * arPoly b = 0 := by
+    apply Polynomial.coe_injective ℝ
+    simpa using hkey
+  have hdvdC : arPoly b ∣ hannanPolyCBack x :=
+    hcop.dvd_of_dvd_mul_right ⟨-hannanPolyDBack x, by linear_combination hpoly⟩
+  have hdvdC0 : arPoly b ∣ hannanPolyC0Back x := by
+    rw [hannanPolyCBack_factor] at hdvdC
+    exact (isCoprime_arPoly_X b).dvd_of_dvd_mul_left hdvdC
+  have hC0 : hannanPolyC0Back x = 0 := by
+    by_contra hne
+    have hp : p ≠ 0 := by
+      rintro rfl
+      exact hne (by simp [hannanPolyC0Back])
+    have h1 : (arPoly b).natDegree ≤ (hannanPolyC0Back x).natDegree :=
+      Polynomial.natDegree_le_of_dvd hdvdC0 hne
+    have h2 : (hannanPolyC0Back x).natDegree ≤ p - 1 := by
+      refine Polynomial.natDegree_sum_le_of_forall_le _ _ fun i _ => ?_
+      refine (Polynomial.natDegree_C_mul_le _ _).trans ?_
+      rw [Polynomial.natDegree_X_pow]
+      have := i.isLt
+      omega
+    omega
+  have hCz : hannanPolyCBack x = 0 := by rw [hannanPolyCBack_factor, hC0, mul_zero]
+  have hDz : hannanPolyDBack x = 0 := by
+    rw [hCz, zero_mul, zero_add] at hpoly
+    rcases mul_eq_zero.1 hpoly with h | h
+    · exact h
+    · exact absurd h (hannanArPolyNeZero b)
+  have hD0 : hannanPolyD0Back x = 0 := by
+    rw [hannanPolyDBack_factor] at hDz
+    rcases mul_eq_zero.1 hDz with h | h
+    · exact absurd h Polynomial.X_ne_zero
+    · exact h
+  funext s
+  cases s with
+  | inl i =>
+    have hcoeff : (hannanPolyC0Back x).coeff (i : ℕ) = x (Sum.inl i) := by
+      rw [hannanPolyC0Back, Polynomial.finset_sum_coeff, Finset.sum_eq_single i]
+      · rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, if_pos rfl, mul_one]
+      · intro i' _ hne'
+        rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, if_neg, mul_zero]
+        exact fun h => hne' (Fin.ext h.symm)
+      · intro h; exact absurd (Finset.mem_univ i) h
+    rw [hC0] at hcoeff
+    simpa using hcoeff.symm
+  | inr j =>
+    have hcoeff : (hannanPolyD0Back x).coeff (j : ℕ) = x (Sum.inr j) := by
+      rw [hannanPolyD0Back, Polynomial.finset_sum_coeff, Finset.sum_eq_single j]
+      · rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, if_pos rfl, mul_one]
+      · intro j' _ hne'
+        rw [Polynomial.coeff_C_mul, Polynomial.coeff_X_pow, if_neg, mul_zero]
+        exact fun h => hne' (Fin.ext h.symm)
+      · intro h; exact absurd (Finset.mem_univ j) h
+    rw [hD0] at hcoeff
+    simpa using hcoeff.symm
+
+/-- **Positive-definiteness of the true (score) information matrix** — the backward twin
+of `hannanVarZ_posDef`, under exactly the same hypotheses (finding 26). This is the
+invertibility statement the repaired Hannan chain consumes: `hannan_mle_clt`'s asymptotic
+covariance is `(hannanVarZBack b₀ a₀)⁻¹`. -/
+theorem hannanVarZBack_posDef {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
+    (hB : ARMAInvertibleParams b a)
+    -- USER-INPUT: coprime lag polynomials; FY §3.3.2 implicit, explicit in Hannan 1973
+    (hcop : IsCoprime (arPoly b) (maPoly a))
+    -- USER-INPUT: FY's minimal-orders convention in full (`deg b = p`, `deg a = q`).
+    -- `hbdeg` cannot be dropped here either: the counterexample recorded at
+    -- `hannanVarZ_posDef` (`p = q = 2`, `b = (1/2, 0)`, `a = (1/3, 0)`) refutes the
+    -- backward Gram as well — at `p = q` the two matrices are conjugate by the
+    -- block-wise reversal permutation, so one is positive definite iff the other is,
+    -- and the singular direction is the reversal of `c = (-1/2, 1, -1/3, -1)`.
+    (hbdeg : (arPoly b).natDegree = p) (hadeg : (maPoly a).natDegree = q) :
+    (hannanVarZBack b a).PosDef := by
+  refine Matrix.PosDef.of_dotProduct_mulVec_pos ?_ ?_
+  · ext s t
+    simp only [Matrix.conjTranspose_apply, star_trivial]
+    rw [hannanVarZBack_gram, hannanVarZBack_gram]
+    exact tsum_congr fun n => mul_comm _ _
+  · intro x hx
+    have hsq : Summable fun n : ℕ => (∑ s, x s * hannanVecBack b a s n) ^ 2 := by
+      have h0 := hannanSummableMul (summable_abs_hannanComboBack hB x)
+        (summable_abs_hannanComboBack hB x)
+      exact h0.congr fun n => by rw [sq]
+    obtain ⟨n, hn⟩ : ∃ n : ℕ, (∑ s, x s * hannanVecBack b a s n) ≠ 0 := by
+      by_contra hall
+      push Not at hall
+      exact hx (eq_zero_of_hannanVecBack_combo hcop hbdeg x hall)
+    have hpos : 0 < (∑ s, x s * hannanVecBack b a s n) ^ 2 := by positivity
+    have hle : (∑ s, x s * hannanVecBack b a s n) ^ 2
+        ≤ ∑' m : ℕ, (∑ s, x s * hannanVecBack b a s m) ^ 2 :=
+      hsq.le_tsum n fun m _ => sq_nonneg _
+    have hgoal : dotProduct (star x) (Matrix.mulVec (hannanVarZBack b a) x)
+        = ∑' m : ℕ, (∑ s, x s * hannanVecBack b a s m) ^ 2 := by
+      rw [← hannanVarZBack_quadForm hB x]
+      simp only [dotProduct, Matrix.mulVec, Pi.star_apply, star_trivial]
+    rw [hgoal]
+    linarith
+
 section Process
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
