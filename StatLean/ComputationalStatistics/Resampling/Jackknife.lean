@@ -1,4 +1,5 @@
 import StatLean.ComputationalStatistics.Core.Defs
+import Mathlib.Algebra.BigOperators.Fin
 
 /-!
 # The jackknife: pseudovalues and the basic algebra
@@ -93,27 +94,55 @@ noncomputable def jackknifeVarianceEstimate (T : (Fin (n + 1) → 𝓧) → ℝ)
 theorem jackknifed_eq (T : (Fin (n + 1) → 𝓧) → ℝ) (T' : (Fin n → 𝓧) → ℝ)
     (x : Fin (n + 1) → 𝓧) :
     jackknifed T T' x = ((n : ℝ) + 1) * T x - n * jackknifeMean T' x := by
-  sorry
+  have hn : ((n : ℝ) + 1) ≠ 0 := by positivity
+  have hsum : ∑ i : Fin (n + 1), jackknifePseudoValue T T' i x
+      = ((n : ℝ) + 1) * (((n : ℝ) + 1) * T x)
+        - n * ∑ i : Fin (n + 1), T' (jackknifeDelete i x) := by
+    simp only [jackknifePseudoValue, Finset.sum_sub_distrib, Finset.sum_const,
+      Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, ← Finset.mul_sum]
+    push_cast
+    ring
+  unfold jackknifed jackknifeMean
+  rw [hsum]
+  field_simp
 
 /-- **The jackknifed statistic is the bias-corrected statistic** (ECS §3.3,
 eq. (3.12)): `J(T) = T − B_J`. -/
 theorem jackknifed_eq_sub_biasEstimate (T : (Fin (n + 1) → 𝓧) → ℝ)
     (T' : (Fin n → 𝓧) → ℝ) (x : Fin (n + 1) → 𝓧) :
     jackknifed T T' x = T x - jackknifeBiasEstimate T T' x := by
-  sorry
+  rw [jackknifed_eq]
+  unfold jackknifeBiasEstimate
+  ring
 
 /-- **Pseudovalues of a plug-in average are the observations** (ECS §3.3,
 p. 75: "if `T` is a linear functional of the ECDF, then `T*ⱼ = T(xⱼ)`"). -/
 theorem jackknifePseudoValue_mcEstimate (g : 𝓧 → ℝ) (i : Fin (n + 1))
     (x : Fin (n + 1) → 𝓧) :
     jackknifePseudoValue (mcEstimate g) (mcEstimate g) i x = g (x i) := by
-  sorry
+  have hn : ((n : ℝ) + 1) ≠ 0 := by positivity
+  have hsum : ∑ j : Fin (n + 1), g (x j)
+      = g (x i) + ∑ j : Fin n, g (x (i.succAbove j)) :=
+    Fin.sum_univ_succAbove (fun j => g (x j)) i
+  unfold jackknifePseudoValue mcEstimate jackknifeDelete
+  push_cast
+  rw [mul_inv_cancel_left₀ hn, hsum]
+  rcases Nat.eq_zero_or_pos n with hn0 | hn0
+  · subst hn0
+    simp
+  · have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn0.ne'
+    rw [mul_inv_cancel_left₀ hn']
+    simp
 
 /-- **The jackknife does not move a plug-in average** (ECS §3.3, p. 75):
 `J(T) = T` for `T = mcEstimate g`. -/
 theorem jackknifed_mcEstimate (g : 𝓧 → ℝ) (x : Fin (n + 1) → 𝓧) :
     jackknifed (mcEstimate g) (mcEstimate g) x = mcEstimate g x := by
-  sorry
+  unfold jackknifed
+  simp only [jackknifePseudoValue_mcEstimate]
+  unfold mcEstimate
+  push_cast
+  ring
 
 /-- **The jackknife variance estimate of the sample mean is `s²/n`**
 (ECS §3.3, remark after eq. (3.9)): for the plug-in average of `g` over the
@@ -123,6 +152,8 @@ Bessel-corrected sample variance of the `g`-values. -/
 theorem jackknifeVariance_mcEstimate (g : 𝓧 → ℝ) (x : Fin (n + 1) → 𝓧) :
     jackknifeVarianceEstimate (mcEstimate g) (mcEstimate g) x
       = (((n : ℝ) + 1) * n)⁻¹ * ∑ i, (g (x i) - mcEstimate g x) ^ 2 := by
-  sorry
+  unfold jackknifeVarianceEstimate
+  simp only [jackknifePseudoValue_mcEstimate, jackknifed_mcEstimate]
 
 end StatLean.ComputationalStatistics
+
