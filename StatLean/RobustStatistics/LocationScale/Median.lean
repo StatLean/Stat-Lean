@@ -81,10 +81,13 @@ private theorem sampleMedian_locEquivariant_of_ne_zero (hn : n ≠ 0) :
 
 **FALSE AS FROZEN at `n = 0`.** The statement quantifies over all `n : ℕ` with no
 nonemptiness hypothesis, but `sampleMedian` carries the junk value `0` on `Fin 0 → ℝ`, so
-`IsLocEquivariant` demands `0 = 0 + a` for every `a : ℝ` — take `a = 1`. The intended
-theorem is `sampleMedian_locEquivariant_of_ne_zero` (proved, just above): with `hn : n ≠ 0`
-the proof is `orderStat_add_const` after `x + a • 1 = fun j => x j + a`. Repair: add
-`(hn : n ≠ 0)` to the frozen statement. -/
+`IsLocEquivariant` demands `0 = 0 + a` for every `a : ℝ`. The counterexample
+`¬ IsLocEquivariant (sampleMedian (n := 0))` is machine-checked (`a = 1`, `x = 0`;
+`intro h; have := h 1 (fun _ => 0); simp [sampleMedian] at this`).
+
+The intended theorem is `sampleMedian_locEquivariant_of_ne_zero` (proved, just above):
+with `hn : n ≠ 0` the proof is `orderStat_add_const` after
+`x + a • 1 = fun j => x j + a`. Repair: add `(hn : n ≠ 0)` to the frozen statement. -/
 theorem sampleMedian_locEquivariant :
     PointEstimation.IsLocEquivariant (sampleMedian (n := n)) := by
   sorry
