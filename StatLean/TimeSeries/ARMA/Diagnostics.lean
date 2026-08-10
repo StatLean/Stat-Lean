@@ -2770,6 +2770,248 @@ private lemma tendstoInProb_residACVF_sub [IsProbabilityMeasure μ]
   filter_upwards [eventually_ge_atTop 1] with T hT
   exact hbound T hT
 
+
+/-! #### From Young's inequality to the fitted-residual window -/
+
+/-- The zero-padded window. -/
+private noncomputable def padWin {T : ℕ} (x : Fin T → ℝ) : ℕ → ℝ :=
+  fun s => if h : s < T then x ⟨s, h⟩ else 0
+
+private lemma sum_sq_padWin {T : ℕ} (x : Fin T → ℝ) :
+    ∑ s ∈ Finset.range T, padWin x s ^ 2 = ∑ t : Fin T, x t ^ 2 := by
+  rw [← Fin.sum_univ_eq_sum_range (fun s => padWin x s ^ 2) T]
+  refine Finset.sum_congr rfl fun t _ => ?_
+  simp [padWin, t.isLt]
+
+private lemma sampleResiduals_eq_truncConv {T : ℕ} {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ)
+    (x : Fin T → ℝ) (t : Fin T) :
+    sampleResiduals b a x t
+      = ∑ j ∈ Finset.range ((t : ℕ) + 1), armaPi b a j * padWin x ((t : ℕ) - j) := by
+  refine Finset.sum_congr rfl fun j hj => ?_
+  have hlt : (t : ℕ) - j < T := lt_of_le_of_lt (Nat.sub_le _ _) t.isLt
+  simp [padWin, hlt]
+
+/-- **Young's inequality on the residual window**: the `ℓ²` size of a *difference* of two
+fitted-residual windows is controlled by the `ℓ¹` distance of the two inversion filters —
+the brick that turns `Consistency.exists_armaPi_l1_lipschitz` into a statement about the
+sample autocovariance. -/
+private lemma sum_sq_sampleResiduals_sub_le {T : ℕ} {p q : ℕ} (b b' : Fin p → ℝ)
+    (a a' : Fin q → ℝ) (hs : Summable fun n => |armaPi b a n - armaPi b' a' n|)
+    (x : Fin T → ℝ) :
+    ∑ t : Fin T, (sampleResiduals b a x t - sampleResiduals b' a' x t) ^ 2
+      ≤ (∑' n : ℕ, |armaPi b a n - armaPi b' a' n|) ^ 2 * ∑ t : Fin T, x t ^ 2 := by
+  have hpt : ∀ t : Fin T, sampleResiduals b a x t - sampleResiduals b' a' x t
+      = ∑ j ∈ Finset.range ((t : ℕ) + 1),
+          (armaPi b a j - armaPi b' a' j) * padWin x ((t : ℕ) - j) := by
+    intro t
+    rw [sampleResiduals_eq_truncConv b a x t, sampleResiduals_eq_truncConv b' a' x t,
+      ← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun j _ => by ring
+  rw [Finset.sum_congr rfl fun t (_ : t ∈ Finset.univ) => by rw [hpt t]]
+  rw [Fin.sum_univ_eq_sum_range (fun t =>
+    (∑ j ∈ Finset.range (t + 1), (armaPi b a j - armaPi b' a' j) * padWin x (t - j)) ^ 2) T,
+    ← sum_sq_padWin x]
+  exact sum_sq_truncConv_le hs (padWin x) T
+
+private lemma sum_sq_sampleResiduals_le {T : ℕ} {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ)
+    (hs : Summable fun n => |armaPi b a n|) (x : Fin T → ℝ) :
+    ∑ t : Fin T, sampleResiduals b a x t ^ 2
+      ≤ (∑' n : ℕ, |armaPi b a n|) ^ 2 * ∑ t : Fin T, x t ^ 2 := by
+  rw [Finset.sum_congr rfl fun t (_ : t ∈ Finset.univ) => by
+    rw [sampleResiduals_eq_truncConv b a x t]]
+  rw [Fin.sum_univ_eq_sum_range (fun t =>
+    (∑ j ∈ Finset.range (t + 1), armaPi b a j * padWin x (t - j)) ^ 2) T,
+    ← sum_sq_padWin x]
+  exact sum_sq_truncConv_le hs (padWin x) T
+
+
+/-! #### The Lipschitz leg of residue (B) -/
+
+-- the pathwise chain below multiplies six inequalities; the default budget is not enough
+set_option maxHeartbeats 1000000 in
+/-- **The Lipschitz leg**: `√T (γ̂_{ε̂(θ̂_T)}(k) − γ̂_{ε̂(θ₀)}(k)) →p 0`. This is finding
+28's item 1: the `ℓ¹` Lipschitz bound `Consistency.exists_armaPi_l1_lipschitz` converts the
+**super**-consistency `√T(θ̂_T − θ₀) →p 0` into an `o_p(1)` bound on the `√T`-scaled
+autocovariance, against the `O_p(1)` window energy `Consistency.normSq_bounded_inProb`.
+The compact region the Lipschitz brick needs is produced from `hB0` alone, by
+`exists_ball_invertible`. -/
+private lemma tendstoInProb_estACVF_sub [IsProbabilityMeasure μ]
+    (h : IsARMA b0 a0 σ2 X ε μ) (hB0 : ARMAInvertibleParams b0 a0)
+    (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
+    (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2) (hmeas : ∀ t, Measurable (X t))
+    (θ : (T : ℕ) → Ω → (Fin p → ℝ) × (Fin q → ℝ))
+    (hcons : ∀ δ : ℝ, 0 < δ → Tendsto (fun T : ℕ =>
+      (μ {ω | δ ≤ Real.sqrt T * dist (θ T ω) (b0, a0)}).toReal) atTop (𝓝 0))
+    (k : ℕ) {δ : ℝ} (hδ : 0 < δ) :
+    Tendsto (fun T : ℕ => (μ {ω | δ ≤ Real.sqrt T *
+        |sampleACVF (fun t : Fin T => sampleResiduals (θ T ω).1 (θ T ω).2
+            (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k
+          - sampleACVF (fun t : Fin T => sampleResiduals b0 a0
+              (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k|}).toReal)
+      atTop (𝓝 0) := by
+  classical
+  obtain ⟨ρ, hρ0, hρ⟩ := exists_ball_invertible hB0
+  set K : Set ((Fin p → ℝ) × (Fin q → ℝ)) := Metric.closedBall ((b0, a0)) ρ with hK
+  have hKc : IsCompact K := isCompact_closedBall _ _
+  have hKB : ∀ ba ∈ K, ARMAInvertibleParams ba.1 ba.2 := by
+    intro ba hba
+    exact hρ ba (by simpa [hK, Metric.mem_closedBall] using hba)
+  have h0K : ((b0, a0) : (Fin p → ℝ) × (Fin q → ℝ)) ∈ K := by
+    simp [hK, Metric.mem_closedBall, hρ0.le]
+  obtain ⟨L0, hL00, hLip0⟩ := exists_armaPi_l1_lipschitz hKc hKB
+  -- a strictly positive Lipschitz constant (the bound is vacuous at `L = 0`)
+  set L : ℝ := L0 + 1 with hLdef
+  have hL0 : (0:ℝ) < L := by rw [hLdef]; linarith
+  have hLip : ∀ ba ∈ K, ∀ ba' ∈ K,
+      (∑' n : ℕ, |armaPi ba.1 ba.2 n - armaPi ba'.1 ba'.2 n|) ≤ L * dist ba ba' := by
+    intro ba hba ba' hba'
+    refine le_trans (hLip0 ba hba ba' hba') ?_
+    exact mul_le_mul_of_nonneg_right (by rw [hLdef]; linarith) dist_nonneg
+  obtain ⟨C, r, hC, hr0, hr1, _, hπK⟩ := exists_uniform_geometric_bound_arma hKc hKB
+  have hr1' : (0:ℝ) < 1 - r := by linarith
+  set Cπ : ℝ := C * (1 - r)⁻¹ with hCπ
+  have hCπ0 : 0 ≤ Cπ := by
+    have : (0:ℝ) < C := lt_of_lt_of_le zero_lt_one hC
+    positivity
+  have hsum : ∀ ba ∈ K, Summable fun n => |armaPi ba.1 ba.2 n| := fun ba hba =>
+    Summable.of_nonneg_of_le (fun n => abs_nonneg _) (hπK ba hba)
+      ((summable_geometric_of_lt_one hr0 hr1).mul_left _)
+  have htsum : ∀ ba ∈ K, (∑' n : ℕ, |armaPi ba.1 ba.2 n|) ≤ Cπ := by
+    intro ba hba
+    refine le_trans ((hsum ba hba).tsum_le_tsum (fun n => hπK ba hba n)
+      ((summable_geometric_of_lt_one hr0 hr1).mul_left _)) ?_
+    rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1, hCπ]
+  have hsum0 : Summable fun n => |armaPi b0 a0 n| := by
+    simpa using hsum ((b0, a0) : (Fin p → ℝ) × (Fin q → ℝ)) h0K
+  have htsum0 : (∑' n : ℕ, |armaPi b0 a0 n|) ≤ Cπ := by
+    simpa using htsum ((b0, a0) : (Fin p → ℝ) × (Fin q → ℝ)) h0K
+  obtain ⟨M, hM0, hMlim⟩ := normSq_bounded_inProb h hiid hσ hB0 hcausal hmeas
+  set η : ℝ := δ / (2 * Cπ * L * M + 1) with hη
+  have hη0 : 0 < η := by
+    have hden : (0:ℝ) < 2 * Cπ * L * M + 1 := by positivity
+    rw [hη]
+    exact div_pos hδ hden
+  -- the three-event inclusion
+  have hsub : ∀ T : ℕ, 1 ≤ T →
+      {ω | δ ≤ Real.sqrt T *
+        |sampleACVF (fun t : Fin T => sampleResiduals (θ T ω).1 (θ T ω).2
+            (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k
+          - sampleACVF (fun t : Fin T => sampleResiduals b0 a0
+              (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k|}
+        ⊆ {ω | ρ ≤ Real.sqrt T * dist (θ T ω) (b0, a0)}
+          ∪ {ω | M ≤ (T : ℝ)⁻¹ * ∑ t : Fin T, X (((t : ℕ) : ℤ) + 1) ω ^ 2}
+          ∪ {ω | η ≤ Real.sqrt T * dist (θ T ω) (b0, a0)} := by
+    intro T hT ω hω
+    by_contra hcon
+    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    obtain ⟨⟨hρ', hM'⟩, hη'⟩ := hcon
+    have hTpos : (0 : ℝ) < (T : ℝ) := by exact_mod_cast hT
+    have hsq1 : (1:ℝ) ≤ Real.sqrt T := by
+      rw [show (1:ℝ) = Real.sqrt 1 by simp]
+      exact Real.sqrt_le_sqrt (by exact_mod_cast hT)
+    have hsqpos : (0:ℝ) < Real.sqrt T := by linarith
+    have hd0 : 0 ≤ dist (θ T ω) (b0, a0) := dist_nonneg
+    -- the estimator is in the compact region
+    have hdlt : dist (θ T ω) (b0, a0) < ρ := by
+      nlinarith [hρ', hd0, hsq1]
+    have hθK : θ T ω ∈ K := by
+      simp only [hK, Metric.mem_closedBall]
+      exact hdlt.le
+    -- the deterministic chain
+    set x : Fin T → ℝ := fun s => X (((s : ℕ) : ℤ) + 1) ω with hx
+    set Q : ℝ := ∑ t : Fin T, x t ^ 2 with hQ
+    have hQ0 : 0 ≤ Q := Finset.sum_nonneg fun t _ => sq_nonneg _
+    set A : ℝ := ∑' n : ℕ, |armaPi (θ T ω).1 (θ T ω).2 n - armaPi b0 a0 n| with hA
+    have hA0 : 0 ≤ A := tsum_nonneg fun n => abs_nonneg _
+    have hAL : A ≤ L * dist (θ T ω) (b0, a0) := by
+      have hLL := hLip (θ T ω) hθK ((b0, a0) : (Fin p → ℝ) × (Fin q → ℝ)) h0K
+      rw [hA]
+      exact hLL
+    have hsumθ : Summable fun n => |armaPi (θ T ω).1 (θ T ω).2 n| := hsum _ hθK
+    have htsumθ : (∑' n : ℕ, |armaPi (θ T ω).1 (θ T ω).2 n|) ≤ Cπ := htsum _ hθK
+    have hssub : Summable fun n => |armaPi (θ T ω).1 (θ T ω).2 n - armaPi b0 a0 n| :=
+      Summable.of_nonneg_of_le (fun n => abs_nonneg _) (fun n => abs_sub _ _)
+        (hsumθ.add hsum0)
+    have hsqQ : Real.sqrt Q * Real.sqrt Q = Q := Real.mul_self_sqrt hQ0
+    have hd1 : Real.sqrt (∑ t : Fin T, (sampleResiduals (θ T ω).1 (θ T ω).2 x t
+        - sampleResiduals b0 a0 x t) ^ 2) ≤ A * Real.sqrt Q := by
+      refine le_trans (Real.sqrt_le_sqrt
+        (sum_sq_sampleResiduals_sub_le _ _ _ _ hssub x)) ?_
+      rw [Real.sqrt_mul (by positivity), Real.sqrt_sq hA0]
+    have hd2 : ∀ (b : Fin p → ℝ) (a : Fin q → ℝ), (Summable fun n => |armaPi b a n|) →
+        (∑' n : ℕ, |armaPi b a n|) ≤ Cπ →
+        Real.sqrt (∑ t : Fin T, sampleResiduals b a x t ^ 2) ≤ Cπ * Real.sqrt Q := by
+      intro b a hsb htb
+      refine le_trans (Real.sqrt_le_sqrt (sum_sq_sampleResiduals_le _ _ hsb x)) ?_
+      rw [Real.sqrt_mul (by positivity), Real.sqrt_sq (tsum_nonneg fun n => abs_nonneg _)]
+      exact mul_le_mul_of_nonneg_right htb (Real.sqrt_nonneg _)
+    have hmain := abs_sampleACVF_sub_le (T := T) k
+      (fun t => sampleResiduals (θ T ω).1 (θ T ω).2 x t)
+      (fun t => sampleResiduals b0 a0 x t)
+    -- collect
+    have hb1 : Real.sqrt (∑ t : Fin T, sampleResiduals (θ T ω).1 (θ T ω).2 x t ^ 2)
+        ≤ Cπ * Real.sqrt Q := hd2 _ _ hsumθ htsumθ
+    have hb2 : Real.sqrt (∑ t : Fin T, sampleResiduals b0 a0 x t ^ 2)
+        ≤ Cπ * Real.sqrt Q := hd2 _ _ hsum0 htsum0
+    have hprod : Real.sqrt (∑ t : Fin T, (sampleResiduals (θ T ω).1 (θ T ω).2 x t
+          - sampleResiduals b0 a0 x t) ^ 2) *
+        (Real.sqrt (∑ t : Fin T, sampleResiduals (θ T ω).1 (θ T ω).2 x t ^ 2)
+          + Real.sqrt (∑ t : Fin T, sampleResiduals b0 a0 x t ^ 2))
+        ≤ (A * Real.sqrt Q) * (2 * Cπ * Real.sqrt Q) := by
+      refine mul_le_mul hd1 (by linarith) (by positivity) (by positivity)
+    have hQm : (T : ℝ)⁻¹ * Q < M := hM'
+    have hAd : Real.sqrt T * A < L * η := by
+      have h1 : Real.sqrt T * A ≤ Real.sqrt T * (L * dist (θ T ω) (b0, a0)) :=
+        mul_le_mul_of_nonneg_left hAL (le_of_lt hsqpos)
+      have h2 : Real.sqrt T * (L * dist (θ T ω) (b0, a0))
+          = L * (Real.sqrt T * dist (θ T ω) (b0, a0)) := by ring
+      have h3 : L * (Real.sqrt T * dist (θ T ω) (b0, a0)) < L * η :=
+        mul_lt_mul_of_pos_left hη' hL0
+      linarith [h1, h2.le, h2.ge]
+    -- the numeric conclusion
+    have hfin : Real.sqrt T * |sampleACVF (fun t : Fin T =>
+          sampleResiduals (θ T ω).1 (θ T ω).2 x t) k
+        - sampleACVF (fun t : Fin T => sampleResiduals b0 a0 x t) k| < δ := by
+      have hstep : Real.sqrt T * |sampleACVF (fun t : Fin T =>
+            sampleResiduals (θ T ω).1 (θ T ω).2 x t) k
+          - sampleACVF (fun t : Fin T => sampleResiduals b0 a0 x t) k|
+          ≤ 2 * Cπ * (Real.sqrt T * A) * ((T : ℝ)⁻¹ * Q) := by
+        have hle := mul_le_mul_of_nonneg_left
+          (le_trans hmain (mul_le_mul_of_nonneg_left hprod (by positivity)))
+          (le_of_lt hsqpos)
+        refine le_trans hle (le_of_eq ?_)
+        linear_combination (2 * Cπ * A * Real.sqrt T * (T : ℝ)⁻¹) * hsqQ
+      have hpos1 : 0 ≤ 2 * Cπ * (Real.sqrt T * A) := by positivity
+      have hchain : 2 * Cπ * (Real.sqrt T * A) * ((T : ℝ)⁻¹ * Q)
+          ≤ 2 * Cπ * (L * η) * M := by
+        have hq0 : 0 ≤ (T : ℝ)⁻¹ * Q := by positivity
+        have h1 : 2 * Cπ * (Real.sqrt T * A) * ((T : ℝ)⁻¹ * Q)
+            ≤ 2 * Cπ * (Real.sqrt T * A) * M :=
+          mul_le_mul_of_nonneg_left hQm.le hpos1
+        have h2 : 2 * Cπ * (Real.sqrt T * A) * M ≤ 2 * Cπ * (L * η) * M :=
+          mul_le_mul_of_nonneg_right
+            (mul_le_mul_of_nonneg_left hAd.le (by positivity : (0:ℝ) ≤ 2 * Cπ)) hM0.le
+        linarith
+      have hlast : 2 * Cπ * (L * η) * M < δ := by
+        have hden : (0:ℝ) < 2 * Cπ * L * M + 1 := by positivity
+        have : 2 * Cπ * (L * η) * M = (2 * Cπ * L * M) * (δ / (2 * Cπ * L * M + 1)) := by
+          rw [hη]; ring
+        rw [this]
+        rw [mul_div_assoc'] at *
+        rw [div_lt_iff₀ hden]
+        nlinarith [hCπ0, hL0, hM0, hδ]
+      linarith
+    exact absurd hω (not_le.2 hfin)
+  -- conclude
+  have hlim : Tendsto (fun T : ℕ =>
+      (μ {ω | ρ ≤ Real.sqrt T * dist (θ T ω) (b0, a0)}).toReal
+        + (μ {ω | M ≤ (T : ℝ)⁻¹ * ∑ t : Fin T, X (((t : ℕ) : ℤ) + 1) ω ^ 2}).toReal
+        + (μ {ω | η ≤ Real.sqrt T * dist (θ T ω) (b0, a0)}).toReal) atTop (𝓝 0) := by
+    simpa using ((hcons ρ hρ0).add hMlim).add (hcons η hη0)
+  refine squeeze_zero' (Eventually.of_forall fun T => ENNReal.toReal_nonneg) ?_ hlim
+  filter_upwards [eventually_ge_atTop 1] with T hT
+  exact toReal_measure_le_union₃ (hsub T hT)
+
 end TransferBricks
 
 /-- **RESIDUE (B) — the residual-vs-innovation transfer**, bundled with the
