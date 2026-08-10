@@ -1,7 +1,6 @@
 import StatLean.ComputationalStatistics.Core.Defs
 import StatLean.ComputationalStatistics.ForMathlib.PiMoments
 import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
-import Mathlib.MeasureTheory.Decomposition.Lebesgue
 
 /-!
 # Importance sampling
