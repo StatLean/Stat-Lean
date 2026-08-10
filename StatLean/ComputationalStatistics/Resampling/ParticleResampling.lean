@@ -59,7 +59,12 @@ theorem particleResampling_unbiased [NeZero N]
     (hw1 : ∑ i, w i = 1) :
     ∫ a, mcEstimate g (x ∘ a) ∂(Measure.pi fun _ : Fin N => categorical w)
       = ∑ i, w i * g (x i) := by
-  sorry
+  haveI : IsProbabilityMeasure (categorical w) := isProbabilityMeasure_categorical hw0 hw1
+  have hrw : (fun a : Fin N → Fin m => mcEstimate g (x ∘ a))
+      = fun a : Fin N → Fin m => (N : ℝ)⁻¹ * ∑ i, g (x (a i)) := rfl
+  rw [hrw]
+  exact (integral_avg_eval_pi (P := categorical w) (g := fun k => g (x k))
+    Integrable.of_finite).trans (integral_categorical (fun k => g (x k)) hw0)
 
 /-- **Multinomial resampling preserves the weighted measure in expectation**,
 integral form: `E[(1/N)·Σⱼ g(x_{Aⱼ})] = ∫ g d(Σᵢ wᵢ δ_{xᵢ})`. -/
@@ -72,7 +77,7 @@ theorem particleResampling_unbiased_integral [NeZero N]
     (hg : StronglyMeasurable g) :
     ∫ a, mcEstimate g (x ∘ a) ∂(Measure.pi fun _ : Fin N => categorical w)
       = ∫ z, g z ∂(weightedMeasure w x) := by
-  sorry
+  rw [particleResampling_unbiased hw0 hw1, integral_weightedMeasure hw0 hg]
 
 /-- **Setwise form**: the resampled empirical measure of any measurable set is,
 in expectation, the weighted measure of the set. -/
@@ -86,6 +91,25 @@ theorem particleResampling_measure_unbiased [NeZero N]
     ∫ a, (empiricalMeasure (x ∘ a) s).toReal
         ∂(Measure.pi fun _ : Fin N => categorical w)
       = (weightedMeasure w x s).toReal := by
-  sorry
+  have hind : StronglyMeasurable (s.indicator fun _ : 𝓧 => (1 : ℝ)) :=
+    stronglyMeasurable_const.indicator hs
+  -- the resampled measure of `s` is the Monte Carlo estimate of its indicator
+  have hpoint : ∀ a : Fin N → Fin m,
+      (empiricalMeasure (x ∘ a) s).toReal
+        = mcEstimate (s.indicator fun _ : 𝓧 => (1 : ℝ)) (x ∘ a) := by
+    intro a
+    rw [empiricalMeasure_apply s hs, mcEstimate, ENNReal.toReal_mul, ENNReal.toReal_inv,
+      ENNReal.toReal_natCast, ENNReal.toReal_sum fun i _ => ?_]
+    · refine congrArg _ (Finset.sum_congr rfl fun i _ => ?_)
+      by_cases hxi : (x ∘ a) i ∈ s
+      · rw [Set.indicator_of_mem hxi, Set.indicator_of_mem hxi, ENNReal.toReal_one]
+      · rw [Set.indicator_of_notMem hxi, Set.indicator_of_notMem hxi, ENNReal.toReal_zero]
+    · by_cases hxi : (x ∘ a) i ∈ s
+      · rw [Set.indicator_of_mem hxi]; exact ENNReal.one_ne_top
+      · rw [Set.indicator_of_notMem hxi]; exact ENNReal.zero_ne_top
+  simp only [hpoint]
+  rw [particleResampling_unbiased hw0 hw1, ← integral_weightedMeasure hw0 hind,
+    ← measureReal_def]
+  exact integral_indicator_one hs
 
 end StatLean.ComputationalStatistics
