@@ -1272,6 +1272,15 @@ the reduction the remaining debts start from.
   shift-invariant. Constant weights `T^{-1/2}` then feed the *already present*
   `tendsto_charFun_weighted_iid` — **no new CLT engine is needed**, in contrast with the
   MDS route; `L → ∞` after `T → ∞` removes the guard-block loss.
+  **Status (wave `ts/f4b-garch-last`, 2026-08-09): (R1) is the *only* item of the four
+  still carrying analytic content, and it may now be proved against a known target.**
+  Its second-moment side is fully supplied: `cov_sq_truncFilter` shows the truncated
+  covariance depends on `(s, t)` only through the lag `s − t` (so the block scheme's
+  variance bookkeeping is a one-variable computation), `tendsto_cov_sq_truncFilter` sends
+  that lag kernel to `covKernel` as `N → ∞`, and `tendsto_cesaro_covKernel` evaluates the
+  Cesàro mass of `covKernel` as the frozen constant. What (R1) still owes is the
+  *distributional* step alone — the block construction, the independence of the
+  big-block sums, and the guard-block `L²` loss.
 * (R2) the fourth-moment covariance `Cov(X_s^{(N)2}, X_t^{(N)2})`, i.e. the partition
   formula for `E[ε_i ε_j ε_k ε_l]` over i.i.d. innovations (`η σ⁴` on the diagonal,
   `σ⁴` on each pairing, `0` otherwise). This was the only genuinely *missing analytic
@@ -2652,6 +2661,98 @@ private theorem tendsto_cesaro_covKernel [IsProbabilityMeasure μ] (hε : IsIIDN
     field_simp
   rw [← hmass]
   exact tendsto_cesaro_kernel (summable_abs_covKernel (a := a) ha _ _)
+
+
+/-! #### The truncated covariance is a function of the lag
+
+`cov_sq_truncFilter` is what makes (R2) and the Cesàro brick above compose: at any window
+`A`, `Cov((X_u^{A})², (X_v^{A})²)` depends on `(u, v)` only through `u − v` — the change of
+index `i = u − k` in `cov_sq_noiseComb`'s two coefficient sums (`sum_window_reindex`).
+At `A = [−N, N]` the resulting lag kernel converges, as `N → ∞`, to `covKernel`
+(`tendsto_cov_sq_truncFilter`), through the *same* window-exhaustion lemma
+`tendsto_partial_shift` used for the ACVF — applied twice, once at `a` and once at `a²`
+(the latter is `ℓ¹` by `summable_sq_of_abs`). -/
+
+/-- Reindexing a window sum: `i ↦ u − i` carries `{i ∈ S : u − i ∈ A}` onto `A`. -/
+private lemma sum_window_reindex {A S : Finset ℤ} {u : ℤ} (hS : ∀ k ∈ A, u - k ∈ S)
+    (F : ℤ → ℝ) :
+    ∑ i ∈ S, (if u - i ∈ A then F (u - i) else 0) = ∑ k ∈ A, F k := by
+  classical
+  rw [← Finset.sum_filter]
+  refine Finset.sum_nbij' (i := fun i => u - i) (j := fun k => u - k) ?_ ?_ ?_ ?_ ?_
+  · intro i hi
+    simpa using (Finset.mem_filter.1 hi).2
+  · intro k hk
+    exact Finset.mem_filter.2 ⟨hS k hk, by simpa using hk⟩
+  · intro i _; simp
+  · intro k _; simp
+  · intro i _; rfl
+
+
+/-- **The truncated fourth-moment covariance depends on the lag alone.** -/
+private theorem cov_sq_truncFilter [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ)
+    (hε4 : MemLp (ε 0) 4 μ) (A : Finset ℤ) (u v : ℤ) :
+    cov[fun ω => (∑ k ∈ A, a k * ε (u - k) ω) ^ 2,
+        fun ω => (∑ k ∈ A, a k * ε (v - k) ω) ^ 2; μ]
+      = ((∫ ω, ε 0 ω ^ 4 ∂μ) - 3 * σ2 ^ 2) *
+          (∑ k ∈ A, if k - (u - v) ∈ A then a k ^ 2 * a (k - (u - v)) ^ 2 else 0)
+        + 2 * σ2 ^ 2 *
+          (∑ k ∈ A, if k - (u - v) ∈ A then a k * a (k - (u - v)) else 0) ^ 2 := by
+  classical
+  set S : Finset ℤ := (A.image fun k => u - k) ∪ (A.image fun k => v - k) with hSdef
+  set c : ℤ → ℝ := fun i => if u - i ∈ A then a (u - i) else 0 with hc
+  set d : ℤ → ℝ := fun i => if v - i ∈ A then a (v - i) else 0 with hd
+  have hSu : ∀ k ∈ A, u - k ∈ S := fun k hk =>
+    Finset.mem_union_left _ (Finset.mem_image_of_mem _ hk)
+  have hSv : ∀ k ∈ A, v - k ∈ S := fun k hk =>
+    Finset.mem_union_right _ (Finset.mem_image_of_mem _ hk)
+  have hidx : ∀ i : ℤ, u - i - (u - v) = v - i := by intro i; omega
+  -- the two truncated filters, as linear forms over the common index set `S`
+  have hLu : ∀ ω, ∑ i ∈ S, c i * ε i ω = ∑ k ∈ A, a k * ε (u - k) ω := by
+    intro ω
+    rw [← sum_window_reindex hSu (fun k => a k * ε (u - k) ω)]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    by_cases h : u - i ∈ A <;> simp [hc, h]
+  have hLv : ∀ ω, ∑ i ∈ S, d i * ε i ω = ∑ k ∈ A, a k * ε (v - k) ω := by
+    intro ω
+    rw [← sum_window_reindex hSv (fun k => a k * ε (v - k) ω)]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    by_cases h : v - i ∈ A <;> simp [hd, h]
+  -- the two coefficient sums, reindexed to the lag `u − v`
+  have hquad : ∑ i ∈ S, c i ^ 2 * d i ^ 2
+      = ∑ k ∈ A, if k - (u - v) ∈ A then a k ^ 2 * a (k - (u - v)) ^ 2 else 0 := by
+    rw [← sum_window_reindex hSu
+      (fun k => if k - (u - v) ∈ A then a k ^ 2 * a (k - (u - v)) ^ 2 else 0)]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    simp only [hidx]
+    by_cases h1 : u - i ∈ A <;> by_cases h2 : v - i ∈ A <;> simp [hc, hd, h1, h2]
+  have hlin : ∑ i ∈ S, c i * d i
+      = ∑ k ∈ A, if k - (u - v) ∈ A then a k * a (k - (u - v)) else 0 := by
+    rw [← sum_window_reindex hSu
+      (fun k => if k - (u - v) ∈ A then a k * a (k - (u - v)) else 0)]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    simp only [hidx]
+    by_cases h1 : u - i ∈ A <;> by_cases h2 : v - i ∈ A <;> simp [hc, hd, h1, h2]
+  have hcov := cov_sq_noiseComb hε hε4 c d S
+  simp only [hLu, hLv] at hcov
+  rw [hcov, hquad, hlin]
+
+
+/-- **(R2) meets (R4)**: at the window `[−N, N]` the lag kernel converges to `covKernel`. -/
+private lemma tendsto_cov_sq_truncFilter [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ)
+    (hε4 : MemLp (ε 0) 4 μ) (ha : Summable fun k : ℤ => |a k|) (u v : ℤ) :
+    Tendsto (fun N : ℕ =>
+        cov[fun ω => (∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (u - k) ω) ^ 2,
+          fun ω => (∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (v - k) ω) ^ 2; μ])
+      atTop (𝓝 (covKernel a σ2 (∫ ω, ε 0 ω ^ 4 ∂μ) (u - v))) := by
+  have hasq : Summable fun k : ℤ => |a k ^ 2| := by
+    simpa only [abs_sq] using summable_sq_of_abs ha
+  have h1 := tendsto_partial_shift (a := fun k : ℤ => a k ^ 2) hasq (u - v)
+  have h2 := tendsto_partial_shift (a := a) ha (u - v)
+  have := ((h1.const_mul ((∫ ω, ε 0 ω ^ 4 ∂μ) - 3 * σ2 ^ 2)).add
+    ((h2.pow 2).const_mul (2 * σ2 ^ 2)))
+  refine this.congr fun N => ?_
+  rw [cov_sq_truncFilter hε hε4 (Finset.Icc (-(N : ℤ)) (N : ℤ)) u v]
 
 end CesaroKernel
 
