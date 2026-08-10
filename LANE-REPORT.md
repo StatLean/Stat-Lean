@@ -11,12 +11,14 @@
 | `lintegral_sq_div_optimalImportance` | **closed**, axiom-clean |
 | `isProbabilityMeasure_uniform01` | **closed**, axiom-clean |
 | `measurableSet_rejectionAccept` | **closed**, axiom-clean |
-| `rejectionSampling_restrict_map` | **left as debt — FALSE as frozen** (witness below) |
-| `rejectionSampling_acceptProb` | **left as debt — FALSE as frozen** (witness below) |
-| `rejectionSampling_conditionalLaw` | **left as debt — FALSE as frozen** (witness below) |
+| `rejectionSampling_restrict_map` | **closed**, axiom-clean (after the `hq1` repair) |
+| `rejectionSampling_acceptProb` | **closed**, axiom-clean (after the `hq1` repair) |
+| `rejectionSampling_conditionalLaw` | **closed**, axiom-clean (after the `hq1` repair) |
 
-`ImportanceSampling.lean` is **0-sorry**.  `RejectionSampling.lean` carries **3
-sorries**, all three of them the refuted statements.
+`ImportanceSampling.lean` and `RejectionSampling.lean` are both **0-sorry**.
+The obstruction section below is retained as the record of why the three
+rejection-sampling statements carry `hq1 : ∫⁻ z, q z ∂ν = 1`; see the
+follow-up section at the end for how they were closed once it was added.
 
 ---
 
@@ -137,3 +139,70 @@ absorb is at `q y = ∞`, which is where the statements break.
   heartbeat bomb (higher-order unification against `mcEstimate`); insert the
   `rfl`-level `have hfun : mcEstimate _ = fun x => (n:ℝ)⁻¹ * ∑ i, _` and `rw` it
   first.  The `integral` sibling does not need this.
+
+---
+
+## Follow-up session — the three rejection-sampling identities are CLOSED
+
+The laptop session added `hq1 : ∫⁻ z, q z ∂ν = 1` to all three statements (the
+repair recommended above).  With it, the route sketched in "The repair" section
+goes through verbatim; all three are now proved and **axiom-clean**
+(`propext`, `Classical.choice`, `Quot.sound` only).  `RejectionSampling.lean`
+is **0-sorry**.
+
+### What was built
+
+One new `private` helper carries the entire mathematical content:
+
+* `uniform01_section_mul (henv) (hc0) (hcT) (hy : q y ≠ ∞) :`
+  `q y * uniform01 {u | ofReal u * (c * q y) ≤ p y} = c⁻¹ * p y`.
+
+Its proof is the two-case analysis predicted above:
+
+* `q y = 0`: the envelope forces `p y = 0`, both sides are `0` (the section is
+  all of `ℝ`, but it is multiplied by `q y = 0`).
+* `0 < q y < ∞`: with `r := (p y / (c * q y)).toReal ∈ [0, 1]` (`≤ 1` from
+  `ENNReal.div_le_of_le_mul` applied to `p y ≤ 1 * (c * q y)`, `≠ ∞` from
+  `ENNReal.div_ne_top`), the section is **exactly** `Set.Iic r`
+  (`ENNReal.le_div_iff_mul_le` one way, `ENNReal.div_mul_cancel` the other; the
+  `u ≤ 0` sub-case is absorbed by `0 ≤ r`), and
+  `uniform01 (Iic r) = volume (Icc 0 r) = ofReal r = p y / (c * q y)`.
+  Finish with `ENNReal.mul_inv` + `ENNReal.mul_inv_cancel`.
+
+The third case `q y = ∞` is the one killed by `hq1`, via
+`ae_lt_top hq (hq1 ▸ ENNReal.one_ne_top)`; it is the only place `hq1` is used
+in `rejectionSampling_restrict_map`.
+
+### Assembly (all three)
+
+* `rejectionSampling_restrict_map` — `Measure.ext fun S hS` →
+  `Measure.map_apply measurable_fst hS` → `Measure.restrict_apply` →
+  `Measure.prod_apply` → `lintegral_withDensity_eq_lintegral_mul` (measurability
+  of the section function from `measurable_measure_prodMk_left`) →
+  a `hsec` lemma identifying the `y`-section of
+  `Prod.fst ⁻¹' S ∩ rejectionAccept p q c` as `S.indicator (section y)` →
+  `lintegral_congr_ae` against `uniform01_section_mul` →
+  `lintegral_indicator hS` + `lintegral_const_mul' _ _ (ENNReal.inv_ne_top.mpr hc0)`
+  + `withDensity_apply _ hS`.
+* `rejectionSampling_acceptProb` — literally the `S = univ` instance of the
+  above (`congrArg (fun μ => μ univ)`), then `setLIntegral_univ` and `hp1`.
+* `rejectionSampling_conditionalLaw` — unfold `ProbabilityTheory.cond`,
+  `Measure.map_smul`, plug in the two previous theorems, `smul_smul`,
+  `inv_inv` (note: **not** `ENNReal.inv_inv`, which does not exist in the pin —
+  the general `inv_inv` applies), `ENNReal.mul_inv_cancel hc0 hcT`, `one_smul`.
+
+### Notes / gotchas
+
+* `SigmaFinite ν` is never used: `Measure.prod_apply` and
+  `measurable_measure_prodMk_left` only ask `SFinite` of the **second** factor,
+  which `uniform01` has as a probability measure.  Since the statement is
+  frozen, the resulting `linter.unusedSectionVars` warning is silenced with a
+  `set_option linter.unusedSectionVars false in` line placed *before* the
+  docstring (same for the `[MeasurableSpace 𝓧]` warning on the helper).
+* `ENNReal.one_toReal` does not exist in the pin; the name is
+  `ENNReal.toReal_one`.  Likewise there is no `ENNReal.inv_inv`.
+* `set r := … with hr` does not fold occurrences created by later `have`s, so
+  the `r ≤ 1` step has to `rw [hr]` first rather than `simpa`.
+* The falsity witnesses (`rejectionAccept_unit_top_eq_zero`,
+  `not_rejectionSampling_*`) are untouched and still compile: they now document
+  that `hq1` (or some `q < ∞` a.e. surrogate) is **not removable**.
