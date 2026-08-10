@@ -107,6 +107,16 @@ export function TopicIcon({
           <path d="M11 39v3M17 39v3M23 39v3M30 39v3M34 39v3M38 39v3" opacity={0.7} />
         </svg>
       );
+    case "statisticalmodels":
+      // Kaplan–Meier survival curve — descending step function with a censoring tick
+      return (
+        <svg {...common}>
+          <path d="M5 40h38" />
+          <path d="M6 9h8v7h7v7h7v8h8v5h7" />
+          <path d="M25 20v-4" opacity={0.7} />
+          <path d="M34 28v-4" opacity={0.7} />
+        </svg>
+      );
     case "probability":
       // compass star — assorted foundational results (miscellaneous)
       return (

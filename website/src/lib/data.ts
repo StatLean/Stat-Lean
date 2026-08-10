@@ -3,13 +3,20 @@ import rawResults from "../data/results.json";
 
 export const RESULTS = rawResults as unknown as ResultEntry[];
 
-/** True when a result is listed under `cat`, primarily or via `alsoIn`. */
+/** Is this result listed under `cat` — as its own topic or by cross-listing? */
 export function inCategory(r: ResultEntry, cat: CategoryId): boolean {
-  return r.category === cat || (r.alsoIn?.includes(cat) ?? false);
+  return r.category === cat || (r.crossListed?.includes(cat) ?? false);
 }
 
+/**
+ * The results listed under `cat`: the topic's own results first, in file order,
+ * then the ones cross-listed into it. A topic should lead with the results it is
+ * about — cross-listed pages are related material, not its headline content.
+ */
 export function resultsByCategory(cat: CategoryId): ResultEntry[] {
-  return RESULTS.filter((r) => inCategory(r, cat));
+  const own = RESULTS.filter((r) => r.category === cat);
+  const borrowed = RESULTS.filter((r) => r.category !== cat && inCategory(r, cat));
+  return [...own, ...borrowed];
 }
 
 export function getResult(id: string): ResultEntry | undefined {

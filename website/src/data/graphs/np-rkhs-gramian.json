@@ -1,0 +1,36 @@
+{
+  "root": "StatLean.NonparametricStatistics.gramian_posDef_iff_linearIndependent",
+  "nodes": [
+    {"id":"StatLean.NonparametricStatistics.gramian_posDef_iff_linearIndependent","label":"gramian_posDef_iff_linearIndependent","full":"StatLean.NonparametricStatistics.gramian_posDef_iff_linearIndependent","kind":"root","decl":"thm","module":"StatLean.NonparametricStatistics.RKHS.KernelFunction"},
+    {"id":"StatLean.NonparametricStatistics.gramian","label":"gramian","full":"StatLean.NonparametricStatistics.gramian","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.RKHS.KernelFunction"},
+    {"id":"linearIndependent_iff","label":"linearIndependent_iff","full":"linearIndependent_iff","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.LinearIndependent.Defs"},
+    {"id":"lt_irrefl","label":"lt_irrefl","full":"lt_irrefl","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
+    {"id":"inner_zero_left","label":"inner_zero_left","full":"inner_zero_left","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
+    {"id":"StatLean.NonparametricStatistics.gramian_posSemidef","label":"gramian_posSemidef","full":"StatLean.NonparametricStatistics.gramian_posSemidef","kind":"repo","decl":"thm","module":"StatLean.NonparametricStatistics.RKHS.KernelFunction"},
+    {"id":"lt_of_le_of_ne","label":"lt_of_le_of_ne","full":"lt_of_le_of_ne","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
+    {"id":"RCLike.nonneg_iff","label":"nonneg_iff","full":"RCLike.nonneg_iff","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
+    {"id":"inner_self_nonneg","label":"inner_self_nonneg","full":"inner_self_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
+    {"id":"inner_self_im","label":"inner_self_im","full":"inner_self_im","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
+    {"id":"inner_self_eq_zero","label":"inner_self_eq_zero","full":"inner_self_eq_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
+    {"id":"Matrix.ext","label":"ext","full":"Matrix.ext","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.Defs"},
+    {"id":"inner_conj_symm","label":"inner_conj_symm","full":"inner_conj_symm","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.NonparametricStatistics.gramian_posDef_iff_linearIndependent","target":"StatLean.NonparametricStatistics.gramian"},
+    {"source":"StatLean.NonparametricStatistics.gramian_posDef_iff_linearIndependent","target":"linearIndependent_iff"},
+    {"source":"StatLean.NonparametricStatistics.gramian_posDef_iff_linearIndependent","target":"lt_irrefl"},
+    {"source":"StatLean.NonparametricStatistics.gramian_posDef_iff_linearIndependent","target":"inner_zero_left"},
+    {"source":"StatLean.NonparametricStatistics.gramian_posDef_iff_linearIndependent","target":"StatLean.NonparametricStatistics.gramian_posSemidef"},
+    {"source":"StatLean.NonparametricStatistics.gramian_posDef_iff_linearIndependent","target":"lt_of_le_of_ne"},
+    {"source":"StatLean.NonparametricStatistics.gramian_posDef_iff_linearIndependent","target":"RCLike.nonneg_iff"},
+    {"source":"StatLean.NonparametricStatistics.gramian_posDef_iff_linearIndependent","target":"inner_self_nonneg"},
+    {"source":"StatLean.NonparametricStatistics.gramian_posDef_iff_linearIndependent","target":"inner_self_im"},
+    {"source":"StatLean.NonparametricStatistics.gramian_posDef_iff_linearIndependent","target":"inner_self_eq_zero"},
+    {"source":"StatLean.NonparametricStatistics.gramian_posSemidef","target":"StatLean.NonparametricStatistics.gramian"},
+    {"source":"StatLean.NonparametricStatistics.gramian_posSemidef","target":"Matrix.ext"},
+    {"source":"StatLean.NonparametricStatistics.gramian_posSemidef","target":"inner_conj_symm"},
+    {"source":"StatLean.NonparametricStatistics.gramian_posSemidef","target":"RCLike.nonneg_iff"},
+    {"source":"StatLean.NonparametricStatistics.gramian_posSemidef","target":"inner_self_nonneg"},
+    {"source":"StatLean.NonparametricStatistics.gramian_posSemidef","target":"inner_self_im"}
+  ]
+}

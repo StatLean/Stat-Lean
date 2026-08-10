@@ -10,6 +10,7 @@ export type CategoryId =
   | "optimization"
   | "bayesian"
   | "nonparametric"
+  | "statisticalmodels"
   | "probability"
   | "timeseries"
   | "causal"
@@ -76,14 +77,13 @@ export interface ResultEntry {
   id: string;
   category: CategoryId;
   /**
-   * Additional topics this result is listed under. The primary `category`
-   * decides the accent colour, the breadcrumb and the graph area; `alsoIn`
-   * only makes the result appear in another topic's listing, search filter and
-   * count. Used where one theorem genuinely belongs to two literatures
-   * (e.g. VC / symmetrization bounds, which are both probability inequalities
-   * and statistical-learning theory).
+   * Extra topics this result is listed under. The page itself, its id, its
+   * dependency graph and its `category` are unchanged — cross-listing only
+   * makes the result appear on another topic's page, for results that belong
+   * to two subjects at once (exponential families, say, are both point
+   * estimation and a class of statistical models).
    */
-  alsoIn?: CategoryId[];
+  crossListed?: CategoryId[];
   kind: ResultKind;
   /** 1-3 index terms for the Index page (standard textbook terminology). */
   keywords?: string[];

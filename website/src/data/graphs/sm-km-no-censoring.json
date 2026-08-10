@@ -1,0 +1,34 @@
+{
+  "root": "StatLean.StatisticalModels.Survival.kaplanMeier_of_no_censoring",
+  "nodes": [
+    {"id":"StatLean.StatisticalModels.Survival.kaplanMeier_of_no_censoring","label":"kaplanMeier_of_no_censoring","full":"StatLean.StatisticalModels.Survival.kaplanMeier_of_no_censoring","kind":"root","decl":"thm","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
+    {"id":"StatLean.StatisticalModels.Survival.kaplanMeier","label":"kaplanMeier","full":"StatLean.StatisticalModels.Survival.kaplanMeier","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
+    {"id":"StatLean.StatisticalModels.Survival.eventTimes","label":"eventTimes","full":"StatLean.StatisticalModels.Survival.eventTimes","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
+    {"id":"Finset.mem_image","label":"mem_image","full":"Finset.mem_image","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Image"},
+    {"id":"Finset.mem_filter","label":"mem_filter","full":"Finset.mem_filter","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Filter"},
+    {"id":"Finset.mem_univ","label":"mem_univ","full":"Finset.mem_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Defs"},
+    {"id":"StatLean.StatisticalModels.Survival.naJump","label":"naJump","full":"StatLean.StatisticalModels.Survival.naJump","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
+    {"id":"Finset.filter_subset","label":"filter_subset","full":"Finset.filter_subset","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Filter"},
+    {"id":"LE.le.trans","label":"trans","full":"LE.le.trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
+    {"id":"Finset.ext","label":"ext","full":"Finset.ext","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Defs"},
+    {"id":"Finset.filter.congr_simp","label":"congr_simp","full":"Finset.filter.congr_simp","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Filter"},
+    {"id":"StatLean.StatisticalModels.Survival.eventCount","label":"eventCount","full":"StatLean.StatisticalModels.Survival.eventCount","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"},
+    {"id":"StatLean.StatisticalModels.Survival.atRisk","label":"atRisk","full":"StatLean.StatisticalModels.Survival.atRisk","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.KaplanMeier"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalModels.Survival.kaplanMeier_of_no_censoring","target":"StatLean.StatisticalModels.Survival.kaplanMeier"},
+    {"source":"StatLean.StatisticalModels.Survival.kaplanMeier_of_no_censoring","target":"StatLean.StatisticalModels.Survival.eventTimes"},
+    {"source":"StatLean.StatisticalModels.Survival.kaplanMeier_of_no_censoring","target":"Finset.mem_image"},
+    {"source":"StatLean.StatisticalModels.Survival.kaplanMeier_of_no_censoring","target":"Finset.mem_filter"},
+    {"source":"StatLean.StatisticalModels.Survival.kaplanMeier_of_no_censoring","target":"Finset.mem_univ"},
+    {"source":"StatLean.StatisticalModels.Survival.kaplanMeier_of_no_censoring","target":"StatLean.StatisticalModels.Survival.naJump"},
+    {"source":"StatLean.StatisticalModels.Survival.kaplanMeier_of_no_censoring","target":"Finset.filter_subset"},
+    {"source":"StatLean.StatisticalModels.Survival.kaplanMeier_of_no_censoring","target":"LE.le.trans"},
+    {"source":"StatLean.StatisticalModels.Survival.kaplanMeier_of_no_censoring","target":"Finset.ext"},
+    {"source":"StatLean.StatisticalModels.Survival.kaplanMeier_of_no_censoring","target":"Finset.filter.congr_simp"},
+    {"source":"StatLean.StatisticalModels.Survival.kaplanMeier","target":"StatLean.StatisticalModels.Survival.eventTimes"},
+    {"source":"StatLean.StatisticalModels.Survival.kaplanMeier","target":"StatLean.StatisticalModels.Survival.naJump"},
+    {"source":"StatLean.StatisticalModels.Survival.naJump","target":"StatLean.StatisticalModels.Survival.eventCount"},
+    {"source":"StatLean.StatisticalModels.Survival.naJump","target":"StatLean.StatisticalModels.Survival.atRisk"}
+  ]
+}

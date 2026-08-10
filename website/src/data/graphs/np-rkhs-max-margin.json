@@ -1,0 +1,36 @@
+{
+  "root": "StatLean.NonparametricStatistics.isMaxMarginHyperplane_of_min_norm",
+  "nodes": [
+    {"id":"StatLean.NonparametricStatistics.isMaxMarginHyperplane_of_min_norm","label":"isMaxMarginHyperplane_of_min_norm","full":"StatLean.NonparametricStatistics.isMaxMarginHyperplane_of_min_norm","kind":"root","decl":"thm","module":"StatLean.NonparametricStatistics.RKHS.MaxMargin"},
+    {"id":"StatLean.NonparametricStatistics.marginFeasible","label":"marginFeasible","full":"StatLean.NonparametricStatistics.marginFeasible","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.RKHS.MaxMargin"},
+    {"id":"StatLean.NonparametricStatistics.IsMaxMarginHyperplane","label":"IsMaxMarginHyperplane","full":"StatLean.NonparametricStatistics.IsMaxMarginHyperplane","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.RKHS.MaxMargin"},
+    {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
+    {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
+    {"id":"neg_neg_of_pos","label":"neg_neg_of_pos","full":"neg_neg_of_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Defs"},
+    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
+    {"id":"inner_zero_right","label":"inner_zero_right","full":"inner_zero_right","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
+    {"id":"zero_sub","label":"zero_sub","full":"zero_sub","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"neg_one_mul","label":"neg_one_mul","full":"neg_one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Defs"},
+    {"id":"neg_neg","label":"neg_neg","full":"neg_neg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"StatLean.NonparametricStatistics.SeparatesData","label":"SeparatesData","full":"StatLean.NonparametricStatistics.SeparatesData","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.RKHS.Separation"},
+    {"id":"StatLean.NonparametricStatistics.dataMargin","label":"dataMargin","full":"StatLean.NonparametricStatistics.dataMargin","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.RKHS.MaxMargin"},
+    {"id":"StatLean.NonparametricStatistics.hyperplane","label":"hyperplane","full":"StatLean.NonparametricStatistics.hyperplane","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.RKHS.Separation"}
+  ],
+  "edges": [
+    {"source":"StatLean.NonparametricStatistics.isMaxMarginHyperplane_of_min_norm","target":"StatLean.NonparametricStatistics.marginFeasible"},
+    {"source":"StatLean.NonparametricStatistics.isMaxMarginHyperplane_of_min_norm","target":"StatLean.NonparametricStatistics.IsMaxMarginHyperplane"},
+    {"source":"StatLean.NonparametricStatistics.isMaxMarginHyperplane_of_min_norm","target":"Nat.cast_one"},
+    {"source":"StatLean.NonparametricStatistics.isMaxMarginHyperplane_of_min_norm","target":"Nat.cast_zero"},
+    {"source":"StatLean.NonparametricStatistics.isMaxMarginHyperplane_of_min_norm","target":"neg_neg_of_pos"},
+    {"source":"StatLean.NonparametricStatistics.isMaxMarginHyperplane_of_min_norm","target":"RCLike.charZero_rclike"},
+    {"source":"StatLean.NonparametricStatistics.isMaxMarginHyperplane_of_min_norm","target":"inner_zero_right"},
+    {"source":"StatLean.NonparametricStatistics.isMaxMarginHyperplane_of_min_norm","target":"zero_sub"},
+    {"source":"StatLean.NonparametricStatistics.isMaxMarginHyperplane_of_min_norm","target":"one_mul"},
+    {"source":"StatLean.NonparametricStatistics.isMaxMarginHyperplane_of_min_norm","target":"neg_one_mul"},
+    {"source":"StatLean.NonparametricStatistics.isMaxMarginHyperplane_of_min_norm","target":"neg_neg"},
+    {"source":"StatLean.NonparametricStatistics.IsMaxMarginHyperplane","target":"StatLean.NonparametricStatistics.SeparatesData"},
+    {"source":"StatLean.NonparametricStatistics.IsMaxMarginHyperplane","target":"StatLean.NonparametricStatistics.dataMargin"},
+    {"source":"StatLean.NonparametricStatistics.dataMargin","target":"StatLean.NonparametricStatistics.hyperplane"}
+  ]
+}

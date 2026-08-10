@@ -27,7 +27,7 @@ export function Search() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return RESULTS.filter((r) => {
-      if (topic !== "all" && !inCategory(r, topic as CategoryId)) return false;
+      if (topic !== "all" && !inCategory(r, topic)) return false;
       if (kind !== "all" && r.kind !== kind) return false;
       if (!q) return true;
       return (

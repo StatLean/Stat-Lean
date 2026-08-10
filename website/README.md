@@ -68,7 +68,8 @@ Results are organized into twelve categories (defined in `src/lib/categories.ts`
 | Minimaxity | `minimaxity` | Le Cam, Fano, local packing, minimax lower bounds |
 | Optimization | `optimization` | Gradient, proximal, Frank–Wolfe & accelerated methods |
 | Bayesian Statistics | `bayesian` | Posteriors, conjugacy, hierarchical/empirical Bayes, MCMC, posterior contraction |
-| Nonparametric Statistics | `nonparametric` | Kernel density estimation, local polynomial regression, projection estimators |
+| Nonparametric Statistics | `nonparametric` | Kernel density estimation, local polynomial regression, projection estimators, RKHS & Mercer theory |
+| Statistical Models | `statisticalmodels` | Survival analysis & the Cox model, mixed effects & BLUP, GEE, missing data & coarsening |
 | Miscellaneous Results | `probability` | Prékopa–Leindler, Anderson's lemma, Le Cam lemmas, multivariate CLT |
 | Time Series | `timeseries` | Stationarity, Herglotz & spectra, mixing limit theorems, ARMA/ARCH/GARCH/TAR |
 | Causal Inference | `causal` | Potential outcomes, Neyman randomization, adjustment & matching, AIPW, IV/LATE |
