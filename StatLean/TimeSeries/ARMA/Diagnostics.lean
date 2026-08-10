@@ -13,7 +13,9 @@ import StatLean.TimeSeries.Process.SampleACF
   model with `√T`-consistent parameter estimates, the residual sample ACF at a fixed
   lag admits the same `±1.96/√T` bands as white noise — recorded as a literature
   DEBT at the granularity FY asserts it ("approximate validity from
-  √T-consistency"; the exact Box–Pierce correction is cited only).
+  √T-consistency"; the exact Box–Pierce correction is cited only). **PROVED as of wave
+  `ts/f4a-arma-last` (2026-08-09): this module is `sorry`-free and the headline
+  `residual_acf_asymptotically_standard_debt` is axiom-clean.**
 
 FY §3.5.3's formal whiteness tests live in ch. 7 (outside the current scope); no
 portmanteau statistic appears in ch. 3, so none is stated here.
@@ -3014,6 +3016,102 @@ private lemma tendstoInProb_estACVF_sub [IsProbabilityMeasure μ]
 
 end TransferBricks
 
+/-! #### Assembling residue (B) -/
+
+section TransferAssembly
+
+variable {p q : ℕ} {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
+
+/-- Union bound for two `→p 0` sequences dominating a third. -/
+private lemma tendstoInProb_of_le_add [IsFiniteMeasure μ] {f g F : ℕ → Ω → ℝ}
+    (hle : ∀ T ω, |F T ω| ≤ |f T ω| + |g T ω|)
+    (hf : ∀ δ : ℝ, 0 < δ → Tendsto (fun T => (μ {ω | δ ≤ |f T ω|}).toReal) atTop (𝓝 0))
+    (hg : ∀ δ : ℝ, 0 < δ → Tendsto (fun T => (μ {ω | δ ≤ |g T ω|}).toReal) atTop (𝓝 0))
+    {δ : ℝ} (hδ : 0 < δ) :
+    Tendsto (fun T => (μ {ω | δ ≤ |F T ω|}).toReal) atTop (𝓝 0) := by
+  have hsub : ∀ T : ℕ, {ω | δ ≤ |F T ω|}
+      ⊆ {ω | δ / 2 ≤ |f T ω|} ∪ {ω | δ / 2 ≤ |g T ω|} := by
+    intro T ω hω
+    by_contra hcon
+    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    obtain ⟨h1, h2⟩ := hcon
+    have := hle T ω
+    have hω' : δ ≤ |F T ω| := hω
+    linarith
+  have hbound : ∀ T : ℕ, (μ {ω | δ ≤ |F T ω|}).toReal
+      ≤ (μ {ω | δ / 2 ≤ |f T ω|}).toReal + (μ {ω | δ / 2 ≤ |g T ω|}).toReal := by
+    intro T
+    refine le_trans (ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono (hsub T))) ?_
+    calc (μ ({ω | δ / 2 ≤ |f T ω|} ∪ {ω | δ / 2 ≤ |g T ω|})).toReal
+        ≤ (μ {ω | δ / 2 ≤ |f T ω|} + μ {ω | δ / 2 ≤ |g T ω|}).toReal :=
+          ENNReal.toReal_mono
+            (ENNReal.add_ne_top.2 ⟨measure_ne_top _ _, measure_ne_top _ _⟩)
+            (measure_union_le _ _)
+      _ = _ := ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)
+  refine squeeze_zero' (Eventually.of_forall fun T => ENNReal.toReal_nonneg)
+    (Eventually.of_forall hbound) ?_
+  simpa using (hf (δ / 2) (by linarith)).add (hg (δ / 2) (by linarith))
+
+/-- **The residual/innovation ACVF transfer**: `√T (γ̂_{ε̂(θ̂_T)}(k) − γ̂_ε(k)) →p 0`, the
+sum of the two legs. -/
+private lemma tendstoInProb_residACVF_transfer [IsProbabilityMeasure μ]
+    (h : IsARMA b0 a0 σ2 X ε μ) (hB0 : ARMAInvertibleParams b0 a0)
+    (hcausal : IsLinearProcessOf (armaPsi b0 a0) X ε μ)
+    (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2) (hmeas : ∀ t, Measurable (X t))
+    (θ : (T : ℕ) → Ω → (Fin p → ℝ) × (Fin q → ℝ))
+    (hcons : ∀ δ : ℝ, 0 < δ → Tendsto (fun T : ℕ =>
+      (μ {ω | δ ≤ Real.sqrt T * dist (θ T ω) (b0, a0)}).toReal) atTop (𝓝 0))
+    (k : ℕ) {δ : ℝ} (hδ : 0 < δ) :
+    Tendsto (fun T : ℕ => (μ {ω | δ ≤
+        |Real.sqrt T * sampleACVF (fun t : Fin T => sampleResiduals (θ T ω).1 (θ T ω).2
+            (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k
+          - Real.sqrt T * sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k|}).toReal)
+      atTop (𝓝 0) := by
+  refine tendstoInProb_of_le_add (μ := μ)
+    (f := fun T ω => Real.sqrt T *
+      (sampleACVF (fun t : Fin T => sampleResiduals (θ T ω).1 (θ T ω).2
+          (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k
+        - sampleACVF (fun t : Fin T => sampleResiduals b0 a0
+            (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k))
+    (g := fun T ω => Real.sqrt T *
+      (sampleACVF (fun t : Fin T => sampleResiduals b0 a0
+          (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k
+        - sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k))
+    (fun T ω => by
+      have : Real.sqrt T * sampleACVF (fun t : Fin T => sampleResiduals (θ T ω).1 (θ T ω).2
+            (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k
+          - Real.sqrt T * sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k
+          = Real.sqrt T *
+              (sampleACVF (fun t : Fin T => sampleResiduals (θ T ω).1 (θ T ω).2
+                  (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k
+                - sampleACVF (fun t : Fin T => sampleResiduals b0 a0
+                    (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k)
+            + Real.sqrt T *
+              (sampleACVF (fun t : Fin T => sampleResiduals b0 a0
+                  (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k
+                - sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k) := by ring
+      rw [this]
+      exact abs_add_le _ _)
+    (fun δ' hδ' => by
+      have hL := tendstoInProb_estACVF_sub h hB0 hcausal hiid hσ hmeas θ hcons k hδ'
+      refine hL.congr fun T => ?_
+      congr 1
+      congr 1
+      ext ω
+      simp only [Set.mem_setOf_eq]
+      rw [abs_mul, abs_of_nonneg (Real.sqrt_nonneg _)])
+    (fun δ' hδ' => by
+      have hR := tendstoInProb_residACVF_sub hB0 hcausal hiid hσ hmeas k hδ'
+      refine hR.congr fun T => ?_
+      congr 1
+      congr 1
+      ext ω
+      simp only [Set.mem_setOf_eq]
+      rw [abs_mul, abs_of_nonneg (Real.sqrt_nonneg _)])
+    hδ
+
+end TransferAssembly
+
 /-- **RESIDUE (B) — the residual-vs-innovation transfer**, bundled with the
 measurability of the residual statistic (the two are the same plumbing).
 
@@ -3128,7 +3226,33 @@ not name, and that the newly formalized measurability half makes visible: the *w
 `sampleResiduals` is `Σ_{j≤t} π_j x_{t−j}` with a **`t`-dependent truncation**, so the
 geometric truncation piece is not uniform in `t` over the window and has to be summed as
 `Σ_{t<T} r^t = O(1)` — an `O_p(1/T)` contribution to `γ̂`, as the route paragraph says, but
-the estimate is a sum over the window rather than a single tail bound. -/
+the estimate is a sum over the window rather than a single tail bound.
+
+**STATUS after wave `ts/f4a-arma-last` (2026-08-09): CLOSED — this residue is PROVED, and
+with it the headline `residual_acf_asymptotically_standard_debt` (0-sorry, axiom-clean).**
+The route is finding 28's, with one correction and one addition that the previous notes did
+not have:
+
+* **FINDING 34 (this wave).** Finding 28's item 2 (`γ̂_ε̂(0) − γ̂_ε(0) →p 0`, said to need
+  "only `exists_armaPi_l1_modulus`") does **not** have to be proved separately: the lag-`0`
+  statement is the `√T`-scaled item 1 at `k = 0` divided by `√T ≥ 1`, so a single lemma
+  (`tendstoInProb_residACVF_transfer`, stated at every lag) discharges both, and the
+  modulus brick is never used. What the two items really share is the *decomposition*
+  (Lipschitz leg + truncation leg), not the pair of bricks the note names.
+* **The truncation leg is not an `ℓ²` estimate.** `Σ_{t<T}(ε̂_t(θ₀) − ε_{t+1})²` is
+  `O_p(1)` and **not** `o_p(1)` — the `ψ`-truncation defect at time `t` is only geometric
+  in `t`, so its squares are summable, not vanishing. Feeding that into the `ℓ²` modulus
+  `abs_sampleACVF_sub_le` gives `O_p(1)` for the `√T`-scaled ACVF difference, one factor of
+  `√T` short. The leg has to be run in `L¹` instead (`integral_acvfDom_le`), where
+  `Σ_t ‖·‖₂ = O(1)` gives `O(1/T)` on the ACVF and `O(T^{−1/2})` after scaling. This is the
+  one place where the frozen `hcons` (super-consistency) is *not* what does the work: the
+  truncation leg is deterministic in `θ` and holds at `θ₀` itself.
+* **A compact region had to be built.** The statement supplies no search region, so the
+  `ℓ¹` Lipschitz brick's compact `K` is produced from `hB0` alone, by the new
+  `exists_ball_invertible` (invertibility is an open condition — proved here by a uniform
+  Lipschitz bound in the coefficients against the minimum of `|b(z)|` on the closed disc,
+  no continuity-of-roots argument). The Lipschitz constant is replaced by `L + 1`: at
+  `L = 0` the bound `√T‖Δπ‖₁ < L·η` is vacuous and the pathwise chain fails. -/
 private theorem residual_acf_transfer_residue [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -3148,9 +3272,175 @@ private theorem residual_acf_transfer_residue [IsProbabilityMeasure μ] {p q : �
             (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k
           - Real.sqrt T * sampleACF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k|}).toReal)
       atTop (𝓝 0)) := by
+  classical
   refine ⟨fun T => measurable_const.mul
     (measurable_residual_sampleACF hmeas (θ T) (hθmeas T) k), ?_⟩
-  sorry
+  intro δ hδ
+  -- the common linear surrogate of the numerator
+  set A : ℕ → Ω → ℝ := fun T ω => (Real.sqrt T)⁻¹ * ∑ i ∈ Finset.range T, acfProd ε k i ω
+    with hAdef
+  have hAmeas : ∀ T : ℕ, Measurable (A T) := fun T =>
+    measurable_const.mul (Finset.measurable_sum _ fun i _ => measurable_acfProd hiid k i)
+  have hAint : ∀ T : ℕ, Integrable (fun ω => A T ω ^ 2) μ := fun T =>
+    (memLp_two_iff_integrable_sq (memLp_scaledCross hiid hk T).aestronglyMeasurable).1
+      (memLp_scaledCross hiid hk T)
+  have hAsq : ∀ T : ℕ, ∫ ω, A T ω ^ 2 ∂μ ≤ σ2 * σ2 + 1 := fun T =>
+    le_trans (integral_scaledCross_sq_le hiid hσ hk T) (by linarith)
+  -- the ACVF transfer, at lag `k` and at lag `0`
+  have hKEY := tendstoInProb_residACVF_transfer h hB0 hcausal hiid hσ hmeas θ hcons
+  -- the residual-side numerator
+  have hΔ : ∀ δ' : ℝ, 0 < δ' → Tendsto (fun T : ℕ => (μ {ω | δ' ≤
+      |(Real.sqrt T * sampleACVF (fun t : Fin T => sampleResiduals (θ T ω).1 (θ T ω).2
+          (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k - A T ω)|}).toReal)
+      atTop (𝓝 0) := by
+    intro δ' hδ'
+    refine tendstoInProb_of_le_add (μ := μ)
+      (f := fun T ω => Real.sqrt T * sampleACVF (fun t : Fin T =>
+          sampleResiduals (θ T ω).1 (θ T ω).2
+            (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k
+        - Real.sqrt T * sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k)
+      (g := fun T ω => Real.sqrt T *
+          sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k - A T ω)
+      (fun T ω => by
+        have hid : Real.sqrt T * sampleACVF (fun t : Fin T =>
+              sampleResiduals (θ T ω).1 (θ T ω).2
+                (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k - A T ω
+            = (Real.sqrt T * sampleACVF (fun t : Fin T =>
+                  sampleResiduals (θ T ω).1 (θ T ω).2
+                    (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k
+                - Real.sqrt T * sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k)
+              + (Real.sqrt T * sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k
+                - A T ω) := by ring
+        rw [hid]
+        exact abs_add_le _ _)
+      (fun δ'' hδ'' => hKEY k hδ'')
+      (fun δ'' hδ'' => tendstoInProb_sampleACVF_sub hiid hσ hk hδ'') hδ'
+  -- the residual-side denominator
+  have hD : ∀ η : ℝ, 0 < η → Tendsto (fun T : ℕ => (μ {ω | η ≤
+      |sampleACVF (fun t : Fin T => sampleResiduals (θ T ω).1 (θ T ω).2
+          (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) 0 - σ2|}).toReal) atTop (𝓝 0) := by
+    intro η hη
+    refine tendstoInProb_of_le_add (μ := μ)
+      (f := fun T ω => sampleACVF (fun t : Fin T => sampleResiduals (θ T ω).1 (θ T ω).2
+          (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) 0
+        - sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) 0)
+      (g := fun T ω => sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) 0 - σ2)
+      (fun T ω => by
+        have hid : sampleACVF (fun t : Fin T => sampleResiduals (θ T ω).1 (θ T ω).2
+              (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) 0 - σ2
+            = (sampleACVF (fun t : Fin T => sampleResiduals (θ T ω).1 (θ T ω).2
+                  (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) 0
+                - sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) 0)
+              + (sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) 0 - σ2) := by ring
+        rw [hid]
+        exact abs_add_le _ _)
+      (fun δ'' hδ'' => by
+        -- strip the `√T ≥ 1` factor
+        have hbig := hKEY 0 hδ''
+        refine squeeze_zero' (Eventually.of_forall fun T => ENNReal.toReal_nonneg) ?_ hbig
+        filter_upwards [eventually_ge_atTop 1] with T hT
+        refine ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono fun ω hω => ?_)
+        simp only [Set.mem_setOf_eq] at hω ⊢
+        have hsq1 : (1:ℝ) ≤ Real.sqrt T := by
+          rw [show (1:ℝ) = Real.sqrt 1 by simp]
+          exact Real.sqrt_le_sqrt (by exact_mod_cast hT)
+        have hid : Real.sqrt T * sampleACVF (fun t : Fin T =>
+              sampleResiduals (θ T ω).1 (θ T ω).2
+                (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) 0
+            - Real.sqrt T * sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) 0
+            = Real.sqrt T * (sampleACVF (fun t : Fin T =>
+                sampleResiduals (θ T ω).1 (θ T ω).2
+                  (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) 0
+              - sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) 0) := by ring
+        rw [hid, abs_mul, abs_of_nonneg (Real.sqrt_nonneg _)]
+        nlinarith [abs_nonneg (sampleACVF (fun t : Fin T =>
+          sampleResiduals (θ T ω).1 (θ T ω).2
+            (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) 0
+          - sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) 0)])
+      (fun δ'' hδ'' => tendstoInProb_sampleACVF_zero hiid hσ hδ'') hη
+  -- the two quotient-Slutsky steps
+  have hleg2 : ∀ δ' : ℝ, 0 < δ' → Tendsto (fun T : ℕ => (μ {ω | δ' ≤
+      |Real.sqrt T * sampleACF (fun t : Fin T => sampleResiduals (θ T ω).1 (θ T ω).2
+          (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k
+        - σ2⁻¹ * A T ω|}).toReal) atTop (𝓝 0) := by
+    intro δ' hδ'
+    have hratio := tendstoInProb_ratio (μ := μ) (σ2 := σ2) (A := A)
+      (Δ := fun T ω => Real.sqrt T * sampleACVF (fun t : Fin T =>
+          sampleResiduals (θ T ω).1 (θ T ω).2
+            (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k - A T ω)
+      (D := fun T ω => sampleACVF (fun t : Fin T => sampleResiduals (θ T ω).1 (θ T ω).2
+          (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) 0)
+      (K := σ2 * σ2 + 1) hσ (by positivity) hAint hAsq hΔ hD hδ'
+    refine hratio.congr fun T => ?_
+    congr 1
+    congr 1
+    ext ω
+    simp only [Set.mem_setOf_eq]
+    have hpt : (A T ω + (Real.sqrt T * sampleACVF (fun t : Fin T =>
+            sampleResiduals (θ T ω).1 (θ T ω).2
+              (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k - A T ω))
+          / sampleACVF (fun t : Fin T => sampleResiduals (θ T ω).1 (θ T ω).2
+            (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) 0 - A T ω / σ2
+        = Real.sqrt T * sampleACF (fun t : Fin T => sampleResiduals (θ T ω).1 (θ T ω).2
+            (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k - σ2⁻¹ * A T ω := by
+      simp only [sampleACF]
+      rw [show A T ω + (Real.sqrt T * sampleACVF (fun t : Fin T =>
+          sampleResiduals (θ T ω).1 (θ T ω).2
+            (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k - A T ω)
+          = Real.sqrt T * sampleACVF (fun t : Fin T =>
+            sampleResiduals (θ T ω).1 (θ T ω).2
+              (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k from by ring]
+      field_simp
+    rw [hpt]
+  -- the innovation side: residue (A)'s last step
+  have hleg1 : ∀ δ' : ℝ, 0 < δ' → Tendsto (fun T : ℕ => (μ {ω | δ' ≤
+      |Real.sqrt T * sampleACF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k
+        - σ2⁻¹ * A T ω|}).toReal) atTop (𝓝 0) := by
+    intro δ' hδ'
+    have hratio := tendstoInProb_ratio (μ := μ) (σ2 := σ2) (A := A)
+      (Δ := fun T ω => Real.sqrt T *
+        sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k - A T ω)
+      (D := fun T ω => sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) 0)
+      (K := σ2 * σ2 + 1) hσ (by positivity) hAint hAsq
+      (fun δ'' hδ'' => tendstoInProb_sampleACVF_sub hiid hσ hk hδ'')
+      (fun η hη => tendstoInProb_sampleACVF_zero hiid hσ hη) hδ'
+    refine hratio.congr fun T => ?_
+    congr 1
+    congr 1
+    ext ω
+    simp only [Set.mem_setOf_eq]
+    have hpt : (A T ω + (Real.sqrt T *
+            sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k - A T ω))
+          / sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) 0 - A T ω / σ2
+        = Real.sqrt T * sampleACF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k
+          - σ2⁻¹ * A T ω := by
+      simp only [sampleACF]
+      rw [show A T ω + (Real.sqrt T *
+          sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k - A T ω)
+          = Real.sqrt T * sampleACVF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k
+          from by ring]
+      field_simp
+    rw [hpt]
+  -- subtract the two
+  refine tendstoInProb_of_le_add (μ := μ)
+    (f := fun T ω => Real.sqrt T * sampleACF (fun t : Fin T =>
+        sampleResiduals (θ T ω).1 (θ T ω).2
+          (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k - σ2⁻¹ * A T ω)
+    (g := fun T ω => Real.sqrt T * sampleACF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k
+      - σ2⁻¹ * A T ω)
+    (fun T ω => by
+      have hid : Real.sqrt T * sampleACF (fun t : Fin T =>
+            sampleResiduals (θ T ω).1 (θ T ω).2
+              (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k
+          - Real.sqrt T * sampleACF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k
+          = (Real.sqrt T * sampleACF (fun t : Fin T =>
+                sampleResiduals (θ T ω).1 (θ T ω).2
+                  (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k - σ2⁻¹ * A T ω)
+            - (Real.sqrt T * sampleACF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k
+              - σ2⁻¹ * A T ω) := by ring
+      rw [hid]
+      exact le_trans (abs_sub _ _) (le_of_eq rfl))
+    hleg2 hleg1 hδ
 
 end Assembly
 
