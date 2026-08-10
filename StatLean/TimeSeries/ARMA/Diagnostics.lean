@@ -1498,6 +1498,124 @@ private theorem sampleACF_whiteNoise_clt_residue [IsProbabilityMeasure μ]
 
 end Final
 
+/-! ### Measurability of the fitted-residual statistic (the plumbing half of residue (B))
+
+Residue (B) bundles a measurability claim with the stochastic transfer. The measurability
+half is discharged here. Its only real content is that each inversion coefficient
+`armaPi b a n` is a *polynomial* in `(b, a)` — visible from the convolution recursion
+`Σ_{k≤n} (maPoly a)_k · π_{n−k} = (arPoly b)_n` together with `(maPoly a)_0 = 1`, which
+solves for `π_n` in terms of `π_{<n}` — hence continuous, hence measurable, so the fitted
+residuals are measurable in `ω` through the estimator `θ_T`.
+
+The recursion and the continuity statement are re-derived here rather than imported: the
+note at residue (B) records `Consistency.continuous_armaPi` and `Consistency.maPoly_conv_armaPi`
+as `private` **scope items**, and this section is exactly the price of that (about forty
+lines, no mathematics). The public input is `Stationarity.arPoly_conv_armaPsi`. -/
+
+section ResidualMeasurability
+
+private lemma maPolyNeg {p : ℕ} (b : Fin p → ℝ) : maPoly (fun i => -b i) = arPoly b := by
+  simp only [maPoly, arPoly, map_neg, neg_mul, Finset.sum_neg_distrib, ← sub_eq_add_neg]
+
+private lemma arPolyNeg {q : ℕ} (a : Fin q → ℝ) : arPoly (fun j => -a j) = maPoly a := by
+  simp only [maPoly, arPoly, map_neg, neg_mul, Finset.sum_neg_distrib, sub_neg_eq_add]
+
+private lemma armaPiEqPsi {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (n : ℕ) :
+    armaPi b a n = armaPsi (fun j => -a j) (fun i => -b i) n := by
+  rw [armaPi, armaPsi, maPolyNeg, arPolyNeg]
+
+private lemma maPolyConvPi {p q : ℕ} (b : Fin p → ℝ) (a : Fin q → ℝ) (n : ℕ) :
+    ∑ k ∈ Finset.range (n + 1), (maPoly a).coeff k * armaPi b a (n - k)
+      = (arPoly b).coeff n := by
+  have h := arPoly_conv_armaPsi (fun j => -a j) (fun i => -b i) n
+  rw [arPolyNeg, maPolyNeg] at h
+  rw [← h]
+  exact Finset.sum_congr rfl fun k _ => by rw [armaPiEqPsi]
+
+private lemma coeffMaPoly {q : ℕ} (a : Fin q → ℝ) (m : ℕ) :
+    (maPoly a).coeff m
+      = (if m = 0 then (1 : ℝ) else 0) + ∑ j : Fin q, if m = (j : ℕ) + 1 then a j else 0 := by
+  simp [maPoly, Polynomial.finset_sum_coeff, Polynomial.coeff_X_pow, Polynomial.coeff_one]
+
+private lemma coeffArPoly {p : ℕ} (b : Fin p → ℝ) (m : ℕ) :
+    (arPoly b).coeff m
+      = (if m = 0 then (1 : ℝ) else 0) - ∑ i : Fin p, if m = (i : ℕ) + 1 then b i else 0 := by
+  simp [arPoly, Polynomial.coeff_one, Polynomial.finset_sum_coeff, Polynomial.coeff_C_mul,
+    Polynomial.coeff_X_pow]
+
+private lemma continuousCoeffMaPoly {q : ℕ} (m : ℕ) :
+    Continuous fun a : Fin q → ℝ => (maPoly a).coeff m := by
+  simp only [coeffMaPoly]
+  refine continuous_const.add (continuous_finset_sum _ fun j _ => ?_)
+  by_cases h : m = (j : ℕ) + 1
+  · simpa [h] using (continuous_apply j)
+  · simpa [h] using continuous_const
+
+private lemma continuousCoeffArPoly {p : ℕ} (m : ℕ) :
+    Continuous fun b : Fin p → ℝ => (arPoly b).coeff m := by
+  simp only [coeffArPoly]
+  refine continuous_const.sub (continuous_finset_sum _ fun i _ => ?_)
+  by_cases h : m = (i : ℕ) + 1
+  · simpa [h] using (continuous_apply i)
+  · simpa [h] using continuous_const
+
+/-- Each inversion coefficient is a polynomial — hence continuous — in the parameters. -/
+theorem continuous_armaPi_pair {p q : ℕ} (n : ℕ) :
+    Continuous fun ba : (Fin p → ℝ) × (Fin q → ℝ) => armaPi ba.1 ba.2 n := by
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    have hrec : ∀ ba : (Fin p → ℝ) × (Fin q → ℝ), armaPi ba.1 ba.2 n
+        = (arPoly ba.1).coeff n
+          - ∑ i ∈ Finset.range n,
+              (maPoly ba.2).coeff (i + 1) * armaPi ba.1 ba.2 (n - (i + 1)) := by
+      intro ba
+      have h := maPolyConvPi ba.1 ba.2 n
+      have h0 : (maPoly ba.2).coeff 0 = 1 := by simp [coeffMaPoly]
+      rw [Finset.sum_range_succ', h0, one_mul, Nat.sub_zero] at h
+      linarith
+    simp only [hrec]
+    refine (continuousCoeffArPoly n).comp continuous_fst |>.sub
+      (continuous_finset_sum _ fun i hi => ?_)
+    have hi' : i < n := Finset.mem_range.1 hi
+    exact ((continuousCoeffMaPoly (i + 1)).comp continuous_snd).mul (ih _ (by omega))
+
+/-- Sample ACVF of a measurable random window. -/
+private lemma measurable_sampleACVF_win {T : ℕ} {y : Ω → Fin T → ℝ}
+    (hy : ∀ t, Measurable fun ω => y ω t) (m : ℕ) :
+    Measurable fun ω => sampleACVF (y ω) m := by
+  classical
+  have hmean : Measurable fun ω => sampleMean (y ω) := by
+    simp only [sampleMean]
+    exact (Finset.measurable_sum _ fun t _ => hy t).const_mul _
+  simp only [sampleACVF]
+  refine Measurable.const_mul (Finset.measurable_sum _ fun t _ => ?_) _
+  rcases eq_or_ne (decide ((t : ℕ) + m < T)) true with hlt | hlt
+  · have hlt' : (t : ℕ) + m < T := of_decide_eq_true hlt
+    simpa [dif_pos hlt'] using ((hy t).sub hmean).mul ((hy _).sub hmean)
+  · have hlt' : ¬ ((t : ℕ) + m < T) := by simpa using hlt
+    simp [dif_neg hlt']
+
+private lemma measurable_sampleACF_win {T : ℕ} {y : Ω → Fin T → ℝ}
+    (hy : ∀ t, Measurable fun ω => y ω t) (m : ℕ) :
+    Measurable fun ω => sampleACF (y ω) m := by
+  simp only [sampleACF]
+  exact (measurable_sampleACVF_win hy m).div (measurable_sampleACVF_win hy 0)
+
+/-- **Measurability of the fitted-residual sample ACF.** -/
+theorem measurable_residual_sampleACF {p q T : ℕ} {X : ℤ → Ω → ℝ}
+    (hmeas : ∀ t, Measurable (X t))
+    (θ : Ω → (Fin p → ℝ) × (Fin q → ℝ)) (hθmeas : Measurable θ) (k : ℕ) :
+    Measurable fun ω => sampleACF
+      (fun t : Fin T => sampleResiduals (θ ω).1 (θ ω).2
+        (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k := by
+  classical
+  refine measurable_sampleACF_win (fun t => ?_) k
+  simp only [sampleResiduals]
+  refine Finset.measurable_sum _ fun j _ => ?_
+  exact ((continuous_armaPi_pair j).measurable.comp hθmeas).mul (hmeas _)
+
+end ResidualMeasurability
+
 /-- **RESIDUE (B) — the residual-vs-innovation transfer**, bundled with the
 measurability of the residual statistic (the two are the same plumbing).
 
@@ -1585,7 +1703,27 @@ already-proved `integral_scaledCross_sq_le`. So of the lemma's five inputs, four
 hand and only item 1 above is new mathematics.
 
 The measurability half and the two `private` scope items (`Consistency.continuous_armaPi`,
-`maPoly_conv_armaPi`) are unchanged. -/
+`maPoly_conv_armaPi`) are unchanged.
+
+**STATUS after wave `ts/f1c-hannan-orientation` (2026-08-09): the MEASURABILITY HALF is
+CLOSED; the stochastic half is not.** The first conjunct below is now proved by
+`measurable_residual_sampleACF` (section above), so the `sorry` covers the transfer only.
+Both scope items are dissolved by re-derivation, not by a relocation: the recursion
+`Σ_{k≤n}(maPoly a)_k π_{n−k} = (arPoly b)_n` and the continuity of `(b,a) ↦ armaPi b a n`
+are re-proved locally from the public `Stationarity.arPoly_conv_armaPsi`, so no
+un-`private`ing of `ARMA/Consistency.lean` is needed for this file after all — the note's
+"must be re-derived here or they must be un-`private`d" is answered by the first branch,
+at a cost of about forty mechanical lines.
+
+The stochastic half is unchanged and is exactly finding 28's item 1 plus item 2:
+`√T(γ̂_ε̂(k) − γ̂_ε(k)) →p 0` (needs `Consistency.exists_armaPi_l1_lipschitz`) and
+`γ̂_ε̂(0) − γ̂_ε(0) →p 0` (needs only `exists_armaPi_l1_modulus`), after which the two
+`tendstoInProb_ratio` applications finish. One bookkeeping item that finding 28's list does
+not name, and that the newly formalized measurability half makes visible: the *window* of
+`sampleResiduals` is `Σ_{j≤t} π_j x_{t−j}` with a **`t`-dependent truncation**, so the
+geometric truncation piece is not uniform in `t` over the window and has to be summed as
+`Σ_{t<T} r^t = O(1)` — an `O_p(1/T)` contribution to `γ̂`, as the route paragraph says, but
+the estimate is a sum over the window rather than a single tail bound. -/
 private theorem residual_acf_transfer_residue [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -1605,6 +1743,8 @@ private theorem residual_acf_transfer_residue [IsProbabilityMeasure μ] {p q : �
             (fun s : Fin T => X (((s : ℕ) : ℤ) + 1) ω) t) k
           - Real.sqrt T * sampleACF (fun t : Fin T => ε (((t : ℕ) : ℤ) + 1) ω) k|}).toReal)
       atTop (𝓝 0)) := by
+  refine ⟨fun T => measurable_const.mul
+    (measurable_residual_sampleACF hmeas (θ T) (hθmeas T) k), ?_⟩
   sorry
 
 end Assembly
