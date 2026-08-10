@@ -1103,14 +1103,34 @@ private theorem weightedTV_le_add {β : ℝ} {V : S → ℝ} (hVm : Measurable V
   exact add_le_add (lintegral_mono' (jPos_le_left μ ν) le_rfl)
     (lintegral_mono' (jPos_le_left ν μ) le_rfl)
 
-/-- **Harris' theorem** (Hairer–Mattingly): drift + minorization give a unique invariant
-probability measure and a geometric total-variation rate from every starting point —
-packaged exactly as `IsGeometricallyErgodic` needs it. -/
-theorem harris_theorem {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ} {γ K : ℝ}
+/-- **Harris' theorem with its quantitative Lyapunov envelope.**
+
+Same hypotheses and same construction as `harris_theorem` (which is the corollary
+immediately below, with its statement unchanged); the conclusion additionally *exports* the
+pointwise geometric bound
+
+`‖κⁿ(x, ·) − π‖_TV ≤ (c + b · V x) · rⁿ`,   `b, c ≥ 0`,  `0 ≤ r < 1`,
+
+which the proof of `harris_theorem` already establishes internally (the step `hbound`) and
+then discards when it packages the weaker pointwise-rate statement `IsGeometricallyErgodic`.
+The affine-in-`V` envelope is exactly what a `π`-**integrable** dominating constant needs:
+combined with `∫ V dπ < ∞` (which is *not* an output of Harris' theorem — see
+`Mixing/Relations.lean`'s `lintegral_lyap_le_of_isErgodicWithRate`, which derives it from
+the ergodic limit) it supplies the integrable envelope `A` of FY eq. (2.59) and of
+`Mixing/Relations.lean`'s `HasGeometricStateChain`.
+
+Concretely the proof returns `b = β`, `r = ᾱ` (the Harris contraction parameters of
+`harris_contraction`) and `c = 2 + β V(x₀) + C`, where `x₀` is the arbitrary base point and
+`C` the summed telescoping mass; the bound is `hbound` composed with `weightedTV_le_add` on
+the two Dirac measures. -/
+theorem harris_theorem_envelope {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ} {γ K : ℝ}
     (hdrift : HasLyapunovDrift κ V γ K) {R α : ℝ} {ρ : Measure S}
     (hmin : HasMinorization κ V R α ρ) (hR : 2 * K / (1 - γ) < R) :
     ∃ π : Measure S, IsProbabilityMeasure π ∧ Kernel.Invariant κ π ∧
-      IsGeometricallyErgodic κ π := by
+      IsGeometricallyErgodic κ π ∧
+      ∃ b c r : ℝ, 0 ≤ b ∧ 0 ≤ c ∧ 0 ≤ r ∧ r < 1 ∧
+        ∀ (x : S) (n : ℕ),
+          tvDist ((κ ^ n) x) π ≤ ENNReal.ofReal ((c + b * V x) * r ^ n) := by
   haveI := hmin.isProbability
   have hVnn := hdrift.V_nonneg
   have hVm := hdrift.V_measurable
@@ -1341,7 +1361,40 @@ theorem harris_theorem {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ} {γ
           rw [← hDdef]; exact mul_le_mul_right (hbound x n) _
       _ = (ENNReal.ofReal ᾱ * (ENNReal.ofReal r)⁻¹) ^ n * D := by rw [mul_pow]; ring
       _ = ENNReal.ofReal (ᾱ / r) ^ n * D := by rw [hq]
-  exact ⟨π, hπprob, hge.isErgodicKernel.invariant, hge⟩
+  -- ## Step 6: export the envelope carried by `hbound`
+  have hCt : (0:ℝ) ≤ C.toReal := ENNReal.toReal_nonneg
+  have hVx₀ : (0:ℝ) ≤ β * V x₀ := mul_nonneg hβpos.le (hVnn x₀)
+  refine ⟨π, hπprob, hge.isErgodicKernel.invariant, hge, β, 2 + β * V x₀ + C.toReal, ᾱ,
+    hβpos.le, by linarith, hᾱpos.le, hᾱlt, fun x n => ?_⟩
+  have hVx : (0:ℝ) ≤ β * V x := mul_nonneg hβpos.le (hVnn x)
+  have hdir : weightedTV β V (Measure.dirac x) (Measure.dirac x₀)
+      ≤ ENNReal.ofReal (1 + β * V x) + ENNReal.ofReal (1 + β * V x₀) := by
+    refine (weightedTV_le_add (β := β) hVm (Measure.dirac x) (Measure.dirac x₀)).trans ?_
+    rw [lintegral_dirac' _ hwm, lintegral_dirac' _ hwm]
+  have hsum : weightedTV β V (Measure.dirac x) (Measure.dirac x₀) + C
+      ≤ ENNReal.ofReal ((2 + β * V x₀ + C.toReal) + β * V x) := by
+    refine le_trans (add_le_add hdir (le_of_eq (ENNReal.ofReal_toReal hCne).symm)) ?_
+    rw [← ENNReal.ofReal_add (by linarith) (by linarith), ← ENNReal.ofReal_add (by linarith) hCt]
+    exact ENNReal.ofReal_le_ofReal (by linarith)
+  calc tvDist ((κ ^ n) x) π
+      ≤ ENNReal.ofReal ᾱ ^ n * (weightedTV β V (Measure.dirac x) (Measure.dirac x₀) + C) :=
+        hbound x n
+    _ ≤ ENNReal.ofReal ᾱ ^ n * ENNReal.ofReal ((2 + β * V x₀ + C.toReal) + β * V x) :=
+        mul_le_mul_right hsum _
+    _ = ENNReal.ofReal ((2 + β * V x₀ + C.toReal + β * V x) * ᾱ ^ n) := by
+        rw [ENNReal.ofReal_mul (by linarith), ← ENNReal.ofReal_pow hᾱpos.le, mul_comm]
+
+/-- **Harris' theorem** (Hairer–Mattingly): drift + minorization give a unique invariant
+probability measure and a geometric total-variation rate from every starting point —
+packaged exactly as `IsGeometricallyErgodic` needs it. The quantitative envelope that the
+proof establishes on the way is exported separately as `harris_theorem_envelope`. -/
+theorem harris_theorem {κ : Kernel S S} [IsMarkovKernel κ] {V : S → ℝ} {γ K : ℝ}
+    (hdrift : HasLyapunovDrift κ V γ K) {R α : ℝ} {ρ : Measure S}
+    (hmin : HasMinorization κ V R α ρ) (hR : 2 * K / (1 - γ) < R) :
+    ∃ π : Measure S, IsProbabilityMeasure π ∧ Kernel.Invariant κ π ∧
+      IsGeometricallyErgodic κ π := by
+  obtain ⟨π, hπ, hinv, hge, -⟩ := harris_theorem_envelope hdrift hmin hR
+  exact ⟨π, hπ, hinv, hge⟩
 
 -- Since the repair of `HasLyapunovDrift.drift` (2026-08-09) the drift is *already* the `∫⁻`
 -- statement, so this wrapper is now a one-liner; it is kept (with its hypotheses inert) so that
