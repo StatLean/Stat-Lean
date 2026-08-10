@@ -41,6 +41,44 @@ open scoped NNReal
 
 namespace StatLean.RobustStatistics
 
+/-! ### Private analytic bricks -/
+
+/-- A Lipschitz score integrable at one shift is integrable at every shift: the difference
+of two shifted scores is bounded by `L * |θ₀ - θ'|`, integrable against a finite measure. -/
+private theorem integrable_shift_of_lipschitz {P : Measure ℝ} [IsFiniteMeasure P]
+    {ψ : ℝ → ℝ} {L : ℝ≥0} (hψlip : LipschitzWith L ψ) {θ₀ : ℝ}
+    (hint : Integrable (fun x => ψ (x - θ₀)) P) (θ' : ℝ) :
+    Integrable (fun x => ψ (x - θ')) P := by
+  have hcont : Continuous fun x : ℝ => ψ (x - θ') :=
+    hψlip.continuous.comp (continuous_id.sub continuous_const)
+  have hmeas : AEStronglyMeasurable (fun x : ℝ => ψ (x - θ')) P := hcont.aestronglyMeasurable
+  have hdiff : Integrable (fun x : ℝ => ψ (x - θ') - ψ (x - θ₀)) P := by
+    refine Integrable.mono' (g := fun _ : ℝ => (L : ℝ) * |θ₀ - θ'|) (integrable_const _)
+      (hmeas.sub hint.aestronglyMeasurable) ?_
+    filter_upwards with x
+    have h := hψlip.dist_le_mul (x - θ') (x - θ₀)
+    rw [Real.dist_eq, Real.dist_eq] at h
+    have he : x - θ' - (x - θ₀) = θ₀ - θ' := by ring
+    rw [he] at h
+    simpa [Real.norm_eq_abs] using h
+  refine (hdiff.add hint).congr ?_
+  filter_upwards with x
+  simp
+
+/-- The one-sided product rule at `0` for a factor that is merely *continuous*: if `q` is
+continuous within `s` at `0` then `t ↦ t * q t` has right derivative `q 0` there. This is
+the honest form of the `t·ψ(x₀ - θ_t)` term of the contaminated M-equation, whose second
+factor need not be differentiable. -/
+private theorem hasDerivWithinAt_id_mul {q : ℝ → ℝ} {s : Set ℝ}
+    (hq : ContinuousWithinAt q s 0) :
+    HasDerivWithinAt (fun t : ℝ => t * q t) (q 0) s 0 := by
+  rw [hasDerivWithinAt_iff_tendsto_slope]
+  refine Filter.Tendsto.congr' ?_ (hq.mono_left (nhdsWithin_mono _ Set.diff_subset))
+  filter_upwards [self_mem_nhdsWithin] with t ht
+  have ht0 : t ≠ 0 := by simpa using ht.2
+  rw [slope_def_field, sub_zero, zero_mul, sub_zero, mul_comm, mul_div_assoc, div_self ht0,
+    mul_one]
+
 /-- **The influence-function formula for M-functionals, Lipschitz engine**
 (`MMY §3.8.1`): if `θ t` solves the `δ_{x₀}`-contaminated M-equation for small `t ≥ 0`
 and is right-differentiable at `0` with derivative `d`, then
@@ -70,7 +108,85 @@ theorem mLocationRoot_influence_of_lipschitz {P : Measure ℝ} [IsProbabilityMea
     -- USER-INPUT: nondegenerate denominator; MMY Thm 10.7 (B ≠ 0)
     (hA0 : A ≠ 0) :
     d = ψ (x₀ - θ₀) / A := by
-  sorry
+  -- Every shift of the score is integrable, so the mixture split below is honest.
+  have hshift : ∀ θ' : ℝ, Integrable (fun x => ψ (x - θ')) P := fun θ' =>
+    integrable_shift_of_lipschitz hψlip hint θ'
+  -- Step 1: the population score `θ' ↦ ∫ ψ(x - θ') dP` has derivative `-A` at `θ₀`.
+  have hGderiv : HasDerivAt (fun θ' : ℝ => ∫ x, ψ (x - θ') ∂P) (-A) θ₀ := by
+    have hlip : ∀ᵐ x ∂P, LipschitzOnWith (Real.nnabs ((L : ℝ)))
+        (fun θ' : ℝ => ψ (x - θ')) Set.univ := by
+      filter_upwards with x
+      rw [Real.nnabs_coe]
+      refine LipschitzWith.lipschitzOnWith ?_
+      refine LipschitzWith.of_dist_le_mul fun a b => ?_
+      have h := hψlip.dist_le_mul (x - a) (x - b)
+      rw [Real.dist_eq, Real.dist_eq] at h ⊢
+      have he : x - a - (x - b) = b - a := by ring
+      rw [he, abs_sub_comm b a] at h
+      exact h
+    have hdiff : ∀ᵐ x ∂P, HasDerivAt (fun θ' : ℝ => ψ (x - θ')) (-(ψd x)) θ₀ := by
+      filter_upwards [hae] with x hx
+      simpa [Function.comp_def] using hx.comp θ₀ ((hasDerivAt_id θ₀).const_sub x)
+    have key := hasDerivAt_integral_of_dominated_loc_of_lip (𝕜 := ℝ)
+      (F := fun (θ' : ℝ) (x : ℝ) => ψ (x - θ')) (x₀ := θ₀) (bound := fun _ : ℝ => (L : ℝ))
+      (F' := fun x => -(ψd x)) (s := Set.univ) Filter.univ_mem
+      (Filter.Eventually.of_forall fun θ' => (hshift θ').aestronglyMeasurable)
+      hint hψd_meas.neg hlip (integrable_const _) hdiff
+    have hneg : (∫ x, -(ψd x) ∂P) = -A := by rw [integral_neg, hA]
+    rw [hneg] at key
+    exact key.2
+  -- Step 2: the contaminated M-equation, split by the point-mass mixture formula.
+  have hIco : Set.Ico (0 : ℝ) 1 ∈ 𝓝[Set.Ici (0 : ℝ)] (0 : ℝ) := by
+    filter_upwards [self_mem_nhdsWithin,
+      mem_nhdsWithin_of_mem_nhds (Iio_mem_nhds (by norm_num : (0 : ℝ) < 1))] with t h1 h2
+    exact ⟨h1, h2⟩
+  have hΦ0 : ∀ᶠ t in 𝓝[Set.Ici (0 : ℝ)] (0 : ℝ),
+      (∫ x, ψ (x - θ t) ∂P) + t * (ψ (x₀ - θ t) - ∫ x, ψ (x - θ t) ∂P) = 0 := by
+    filter_upwards [hroot, hIco] with t ht htI
+    have hti : ∫ x, ψ (x - θ t) ∂(contaminate P (Measure.dirac x₀) t) = 0 := ht
+    rw [integral_contaminate_dirac htI.1 htI.2.le (hshift (θ t)) x₀] at hti
+    have hring : (∫ x, ψ (x - θ t) ∂P) + t * (ψ (x₀ - θ t) - ∫ x, ψ (x - θ t) ∂P)
+        = (1 - t) * (∫ x, ψ (x - θ t) ∂P) + t * ψ (x₀ - θ t) := by ring
+    rw [hring]
+    exact hti
+  -- `t = 0` belongs to every `𝓝[Ici 0] 0`-set: the uncontaminated equation.
+  have hzero : (∫ x, ψ (x - θ₀) ∂P) = 0 := by
+    have h00 := mem_of_mem_nhdsWithin (Set.self_mem_Ici (a := (0 : ℝ))) hΦ0
+    simp only [Set.mem_setOf_eq, zero_mul, add_zero, hθ0] at h00
+    exact h00
+  -- Step 3: differentiate the two pieces within `Ici 0` at `0`.
+  have hcomp : HasDerivWithinAt (fun t : ℝ => ∫ x, ψ (x - θ t) ∂P) (-A * d)
+      (Set.Ici 0) 0 := by
+    simpa [Function.comp_def] using
+      HasDerivAt.comp_hasDerivWithinAt_of_eq (x := (0 : ℝ)) hGderiv hθd hθ0.symm
+  have hqcont : ContinuousWithinAt
+      (fun t : ℝ => ψ (x₀ - θ t) - ∫ x, ψ (x - θ t) ∂P) (Set.Ici (0 : ℝ)) 0 := by
+    have hψc : ContinuousWithinAt (fun t : ℝ => ψ (x₀ - θ t)) (Set.Ici (0 : ℝ)) 0 := by
+      have hat : ContinuousAt (fun u : ℝ => ψ (x₀ - u)) (θ 0) :=
+        (hψlip.continuous.comp (continuous_const.sub continuous_id)).continuousAt
+      simpa [Function.comp_def] using hat.comp_continuousWithinAt hθd.continuousWithinAt
+    exact hψc.sub hcomp.continuousWithinAt
+  have h2 : HasDerivWithinAt (fun t : ℝ => t * (ψ (x₀ - θ t) - ∫ x, ψ (x - θ t) ∂P))
+      (ψ (x₀ - θ₀) - 0) (Set.Ici (0 : ℝ)) 0 := by
+    have := hasDerivWithinAt_id_mul hqcont
+    rwa [hθ0, hzero] at this
+  have hΦderiv : HasDerivWithinAt
+      (fun t : ℝ => (∫ x, ψ (x - θ t) ∂P) + t * (ψ (x₀ - θ t) - ∫ x, ψ (x - θ t) ∂P))
+      (-A * d + (ψ (x₀ - θ₀) - 0)) (Set.Ici (0 : ℝ)) 0 := hcomp.fun_add h2
+  -- Step 4: the same function is eventually `0`, so its within-derivative is `0`.
+  have hΦconst : HasDerivWithinAt
+      (fun t : ℝ => (∫ x, ψ (x - θ t) ∂P) + t * (ψ (x₀ - θ t) - ∫ x, ψ (x - θ t) ∂P))
+      0 (Set.Ici (0 : ℝ)) 0 := by
+    refine HasDerivWithinAt.congr_of_eventuallyEq
+      (f := fun _ : ℝ => (0 : ℝ)) (hasDerivWithinAt_const (c := (0 : ℝ))
+        (x := (0 : ℝ)) (s := Set.Ici (0 : ℝ))) ?_ ?_
+    · filter_upwards [hΦ0] with t ht using ht
+    · simp [hθ0, hzero]
+  have huniq : -A * d + (ψ (x₀ - θ₀) - 0) = 0 :=
+    (hΦderiv.derivWithin (uniqueDiffWithinAt_Ici 0)).symm.trans
+      (hΦconst.derivWithin (uniqueDiffWithinAt_Ici 0))
+  rw [eq_div_iff hA0]
+  linarith
 
 /-- **The influence-function formula for M-functionals, smooth scores**
 (`MMY §3.1`, eq. (3.7)): the specialization of the Lipschitz engine to scores with an
