@@ -148,3 +148,4 @@ theorem jackknife_bias_reduction [NeZero n] {θ a₁ a₂ : ℝ}
   ring
 
 end StatLean.ComputationalStatistics
+
