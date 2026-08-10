@@ -2405,16 +2405,56 @@ private lemma l2n_cent_le {T : ℕ} (W : Fin T → Ω → ℝ) (hW : ∀ s, MemL
     mul_le_mul_of_nonneg_left h3 (by positivity)
   linarith
 
+/-- The dominating function of the ACVF perturbation: the sum form of
+`abs_sampleACVF_sub_le_sum`, kept as a named object because both the `L¹` bound and the
+Markov step of residue (B)'s truncation leg need it. -/
+private noncomputable def acvfDom {T : ℕ} (k : ℕ) (Y Z : Fin T → Ω → ℝ) : Ω → ℝ :=
+  fun ω => (T : ℝ)⁻¹ * ∑ t : Fin T,
+    (|cent (fun s => Y s ω - Z s ω) t| * |shiftPad k (cent (fun s => Y s ω)) t|
+      + |cent (fun s => Z s ω) t| * |shiftPad k (cent (fun s => Y s ω - Z s ω)) t|)
+
+private lemma acvfDom_nonneg {T : ℕ} (k : ℕ) (Y Z : Fin T → Ω → ℝ) (ω : Ω) :
+    0 ≤ acvfDom k Y Z ω := by
+  refine mul_nonneg (by positivity) (Finset.sum_nonneg fun t _ => ?_)
+  positivity
+
+private lemma abs_sampleACVF_sub_le_dom {T : ℕ} (k : ℕ) (Y Z : Fin T → Ω → ℝ) (ω : Ω) :
+    |sampleACVF (fun t : Fin T => Y t ω) k - sampleACVF (fun t : Fin T => Z t ω) k|
+      ≤ acvfDom k Y Z ω :=
+  abs_sampleACVF_sub_le_sum k (fun t => Y t ω) (fun t => Z t ω)
+
+private lemma integrable_acvfDom [IsProbabilityMeasure μ] {T : ℕ} (k : ℕ)
+    (Y Z : Fin T → Ω → ℝ) (hY : ∀ t, MemLp (Y t) 2 μ) (hZ : ∀ t, MemLp (Z t) 2 μ) :
+    Integrable (acvfDom k Y Z) μ := by
+  classical
+  have hD : ∀ t : Fin T, MemLp (fun ω => Y t ω - Z t ω) 2 μ := fun t => (hY t).sub (hZ t)
+  have hint : ∀ t : Fin T, Integrable (fun ω =>
+      |cent (fun s => Y s ω - Z s ω) t| * |shiftPad k (cent (fun s => Y s ω)) t|
+        + |cent (fun s => Z s ω) t| * |shiftPad k (cent (fun s => Y s ω - Z s ω)) t|) μ := by
+    intro t
+    have hmemcD : MemLp (fun ω => cent (fun s => Y s ω - Z s ω) t) 2 μ :=
+      memLp_cent (fun s => fun ω => Y s ω - Z s ω) hD t
+    have hmemcZ : MemLp (fun ω => cent (fun s => Z s ω) t) 2 μ := memLp_cent Z hZ t
+    have hmemsY : MemLp (fun ω => shiftPad k (cent (fun s => Y s ω)) t) 2 μ :=
+      memLp_shiftPad_cent k Y hY t
+    have hmemsD : MemLp (fun ω => shiftPad k (cent (fun s => Y s ω - Z s ω)) t) 2 μ :=
+      memLp_shiftPad_cent k (fun s => fun ω => Y s ω - Z s ω) hD t
+    refine Integrable.add ?_ ?_
+    · have := (hmemcD.abs.integrable_mul hmemsY.abs)
+      exact this.congr (Filter.Eventually.of_forall fun ω => rfl)
+    · have := (hmemcZ.abs.integrable_mul hmemsD.abs)
+      exact this.congr (Filter.Eventually.of_forall fun ω => rfl)
+  exact (integrable_finset_sum _ fun t _ => hint t).const_mul _
+
 /-- **The `L¹` perturbation bound for the sample autocovariance.** The `√T`-scaled
 difference of two windowed ACVFs is controlled by the *summed* `L²` sizes of the
 discrepancy — the estimate the truncation leg of residue (B) needs, and the one the
 `ℓ²`-modulus bound `abs_sampleACVF_sub_le` cannot give (it would lose a factor `√T`). -/
-private lemma integral_abs_sampleACVF_sub_le [IsProbabilityMeasure μ] {T : ℕ} (k : ℕ)
+private lemma integral_acvfDom_le [IsProbabilityMeasure μ] {T : ℕ} (k : ℕ)
     (Y Z : Fin T → Ω → ℝ) (hY : ∀ t, MemLp (Y t) 2 μ) (hZ : ∀ t, MemLp (Z t) 2 μ)
     {BY BZ : ℝ} (hBY : ∀ t, l2n μ (Y t) ≤ BY) (hBZ : ∀ t, l2n μ (Z t) ≤ BZ)
     (hBY0 : 0 ≤ BY) (hBZ0 : 0 ≤ BZ) :
-    ∫ ω, |sampleACVF (fun t : Fin T => Y t ω) k
-        - sampleACVF (fun t : Fin T => Z t ω) k| ∂μ
+    ∫ ω, acvfDom k Y Z ω ∂μ
       ≤ (T : ℝ)⁻¹ * (4 * (∑ t : Fin T, l2n μ (fun ω => Y t ω - Z t ω)) * (BY + BZ)) := by
   classical
   have hD : ∀ t : Fin T, MemLp (fun ω => Y t ω - Z t ω) 2 μ := fun t => (hY t).sub (hZ t)
@@ -2568,20 +2608,7 @@ private lemma integral_abs_sampleACVF_sub_le [IsProbabilityMeasure μ] {T : ℕ}
         ≤ (2 * BZ) * shiftPad k e t :=
       mul_le_mul (hcentZ t) hsD (l2n_nonneg _ _) (by linarith)
     linarith
-  -- assemble
-  have hpt : ∀ ω : Ω, |sampleACVF (fun t : Fin T => Y t ω) k
-      - sampleACVF (fun t : Fin T => Z t ω) k|
-      ≤ (T : ℝ)⁻¹ * ∑ t : Fin T,
-        (|cent (fun s => Y s ω - Z s ω) t| * |shiftPad k (cent (fun s => Y s ω)) t|
-          + |cent (fun s => Z s ω) t| * |shiftPad k (cent (fun s => Y s ω - Z s ω)) t|) :=
-    fun ω => abs_sampleACVF_sub_le_sum k (fun t => Y t ω) (fun t => Z t ω)
-  have hIntRHS : Integrable (fun ω => (T : ℝ)⁻¹ * ∑ t : Fin T,
-      (|cent (fun s => Y s ω - Z s ω) t| * |shiftPad k (cent (fun s => Y s ω)) t|
-        + |cent (fun s => Z s ω) t| * |shiftPad k (cent (fun s => Y s ω - Z s ω)) t|)) μ :=
-    (integrable_finset_sum _ fun t _ => hint t).const_mul _
-  refine le_trans (integral_mono_of_nonneg
-    (Filter.Eventually.of_forall fun ω => abs_nonneg _) hIntRHS
-    (Filter.Eventually.of_forall hpt)) ?_
+  simp only [acvfDom]
   rw [integral_const_mul, integral_finset_sum _ (fun t _ => hint t)]
   have hsum : ∑ t : Fin T, ∫ ω,
       (|cent (fun s => Y s ω - Z s ω) t| * |shiftPad k (cent (fun s => Y s ω)) t|
@@ -2596,6 +2623,22 @@ private lemma integral_abs_sampleACVF_sub_le [IsProbabilityMeasure μ] {T : ℕ}
     nlinarith [hA, hB]
   have hTinv : (0:ℝ) ≤ (T : ℝ)⁻¹ := by positivity
   exact mul_le_mul_of_nonneg_left hsum hTinv
+
+/-- The Markov step: the `L¹` bound as a bound on the deviation probability. -/
+private lemma toReal_measure_sampleACVF_sub_le [IsProbabilityMeasure μ] {T : ℕ} (k : ℕ)
+    (Y Z : Fin T → Ω → ℝ) (hY : ∀ t, MemLp (Y t) 2 μ) (hZ : ∀ t, MemLp (Z t) 2 μ)
+    {BY BZ : ℝ} (hBY : ∀ t, l2n μ (Y t) ≤ BY) (hBZ : ∀ t, l2n μ (Z t) ≤ BZ)
+    (hBY0 : 0 ≤ BY) (hBZ0 : 0 ≤ BZ) {c : ℝ} (hc : 0 < c) :
+    (μ {ω | c ≤ |sampleACVF (fun t : Fin T => Y t ω) k
+        - sampleACVF (fun t : Fin T => Z t ω) k|}).toReal
+      ≤ ((T : ℝ)⁻¹ * (4 * (∑ t : Fin T, l2n μ (fun ω => Y t ω - Z t ω)) * (BY + BZ))) / c := by
+  have hsub : {ω | c ≤ |sampleACVF (fun t : Fin T => Y t ω) k
+      - sampleACVF (fun t : Fin T => Z t ω) k|} ⊆ {ω | c ≤ acvfDom k Y Z ω} :=
+    fun ω hω => le_trans hω (abs_sampleACVF_sub_le_dom k Y Z ω)
+  refine le_trans (ENNReal.toReal_mono (measure_ne_top μ _) (measure_mono hsub)) ?_
+  refine le_trans (markov_toReal (acvfDom_nonneg k Y Z)
+    (integrable_acvfDom k Y Z hY hZ) hc) ?_
+  exact div_le_div_of_nonneg_right (integral_acvfDom_le k Y Z hY hZ hBY hBZ hBY0 hBZ0) hc.le
 
 end TransferBricks
 
