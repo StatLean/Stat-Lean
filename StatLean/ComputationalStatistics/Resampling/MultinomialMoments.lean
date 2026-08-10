@@ -1,6 +1,6 @@
 import StatLean.ComputationalStatistics.Resampling.CategoricalCounts
 import StatLean.ComputationalStatistics.Core.EmpiricalMeasure
-import Mathlib.Probability.Variance
+import Mathlib.Probability.Moments.Variance
 import Mathlib.Probability.Moments.Covariance
 
 /-!

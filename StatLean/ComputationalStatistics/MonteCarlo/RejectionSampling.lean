@@ -1,5 +1,6 @@
 import StatLean.ComputationalStatistics.Core.Defs
 import Mathlib.MeasureTheory.Measure.Prod
+import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Probability.ConditionalProbability
 

@@ -50,12 +50,13 @@ instance isProbabilityMeasure_empiricalMeasure [NeZero n] :
   sorry
 
 /-- **Counting form of the empirical measure**: on a measurable set,
-`𝔽ₙ(s) = #{i | xᵢ ∈ s}/n`. -/
+`𝔽ₙ(s) = #{i | xᵢ ∈ s}/n`, the count written as an indicator sum (avoiding a
+decidability instance on membership). -/
 theorem empiricalMeasure_apply
     -- LEAN-ONLY: measurability of the event (regularity)
     (s : Set 𝓧) (hs : MeasurableSet s) :
     empiricalMeasure x s
-      = (n : ℝ≥0∞)⁻¹ * (Finset.univ.filter fun i => x i ∈ s).card := by
+      = (n : ℝ≥0∞)⁻¹ * ∑ i, s.indicator (fun _ => (1 : ℝ≥0∞)) (x i) := by
   sorry
 
 /-- **Integral against the empirical measure is the sample average**

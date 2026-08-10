@@ -1,5 +1,5 @@
 import Mathlib.MeasureTheory.Constructions.Pi
-import Mathlib.Probability.Variance
+import Mathlib.Probability.Moments.Variance
 import Mathlib.Probability.StrongLaw
 import Mathlib.Probability.ProductMeasure
 
