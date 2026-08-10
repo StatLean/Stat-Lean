@@ -1745,6 +1745,37 @@ private lemma sum_abs_mul_le_sqrt {T : ℕ} (u v : Fin T → ℝ) :
   have := Real.sqrt_le_sqrt hcs
   rwa [Real.sqrt_sq h0, Real.sqrt_mul hru] at this
 
+/-- **The ACVF perturbation bound, before Cauchy–Schwarz**: the form the `L¹` (truncation)
+leg of residue (B) consumes, where the `ℓ²` modulus would lose a factor `√T`. -/
+private lemma abs_sampleACVF_sub_le_sum {T : ℕ} (k : ℕ) (y z : Fin T → ℝ) :
+    |sampleACVF y k - sampleACVF z k|
+      ≤ (T : ℝ)⁻¹ * ∑ t : Fin T,
+          (|cent (fun s => y s - z s) t| * |shiftPad k (cent y) t|
+            + |cent z t| * |shiftPad k (cent (fun s => y s - z s)) t|) := by
+  classical
+  set d : Fin T → ℝ := fun t => y t - z t with hd
+  have hsplit : ∀ t : Fin T,
+      cent y t * shiftPad k (cent y) t - cent z t * shiftPad k (cent z) t
+        = cent d t * shiftPad k (cent y) t + cent z t * shiftPad k (cent d) t := by
+    intro t
+    have h1 : cent d t = cent y t - cent z t := cent_sub y z t
+    have h2 : shiftPad k (cent d) t = shiftPad k (cent y) t - shiftPad k (cent z) t := by
+      have : (cent d) = fun s => cent y s - cent z s := funext fun s => cent_sub y z s
+      rw [this, shiftPad_sub]
+    rw [h1, h2]; ring
+  have hdiff : sampleACVF y k - sampleACVF z k
+      = (T : ℝ)⁻¹ * ∑ t : Fin T, (cent d t * shiftPad k (cent y) t
+          + cent z t * shiftPad k (cent d) t) := by
+    rw [sampleACVF_eq_cent y k, sampleACVF_eq_cent z k, ← mul_sub, ← Finset.sum_sub_distrib]
+    congr 1
+    exact Finset.sum_congr rfl fun t _ => hsplit t
+  rw [hdiff, abs_mul, abs_of_nonneg (by positivity : (0:ℝ) ≤ (T:ℝ)⁻¹)]
+  refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+  refine le_trans (Finset.abs_sum_le_sum_abs _ _) ?_
+  refine Finset.sum_le_sum fun t _ => ?_
+  refine le_trans (abs_add_le _ _) ?_
+  rw [abs_mul, abs_mul]
+
 /-- **The deterministic ACVF perturbation bound**: the lag-`k` sample autocovariance is
 Lipschitz in the window, with the `ℓ²` modulus. -/
 private lemma abs_sampleACVF_sub_le {T : ℕ} (k : ℕ) (y z : Fin T → ℝ) :
@@ -2271,6 +2302,300 @@ private theorem exists_sum_l2n_residDefect_le [IsProbabilityMeasure μ]
     refine sum_le_hasSum _ (fun t _ => ?_) hsummable.hasSum
     have : (0 : ℝ) ≤ r ^ t := pow_nonneg hr0 t
     positivity
+
+
+/-! #### `L²` bookkeeping for the windowed statistics -/
+
+private lemma l2n_zero_fun : l2n μ (fun _ : Ω => (0:ℝ)) = 0 := by
+  simp [l2n]
+
+private lemma shiftPad_le {T : ℕ} {k : ℕ} (g : Fin T → ℝ) {B : ℝ} (hg : ∀ s, g s ≤ B)
+    (hB : 0 ≤ B) (t : Fin T) : shiftPad k g t ≤ B := by
+  simp only [shiftPad]
+  split
+  · exact hg _
+  · exact hB
+
+private lemma sum_shiftPad_le {T : ℕ} (k : ℕ) (g : Fin T → ℝ) (hg : ∀ t, 0 ≤ g t) :
+    ∑ t : Fin T, shiftPad k g t ≤ ∑ s : Fin T, g s := by
+  classical
+  set S : Finset (Fin T) := Finset.univ.filter (fun t : Fin T => (t : ℕ) + k < T) with hS
+  set S' : Finset (Fin T) := Finset.univ.filter (fun s : Fin T => k ≤ (s : ℕ)) with hS'
+  have h1 : ∑ t : Fin T, shiftPad k g t = ∑ t ∈ S, shiftPad k g t := by
+    refine (Finset.sum_subset (Finset.subset_univ S) ?_).symm
+    intro t _ ht
+    have : ¬ ((t : ℕ) + k < T) := by simpa [hS] using ht
+    simp [shiftPad, this]
+  have h2 : ∑ t ∈ S, shiftPad k g t = ∑ s ∈ S', g s := by
+    refine Finset.sum_bij (fun t ht => (⟨(t : ℕ) + k, (Finset.mem_filter.1 ht).2⟩ : Fin T))
+      ?_ ?_ ?_ ?_
+    · intro t ht
+      simp [hS']
+    · intro t ht t' ht' hEq
+      have : (t : ℕ) + k = (t' : ℕ) + k := by simpa using congrArg (Fin.val) hEq
+      exact Fin.ext (by omega)
+    · intro s hs
+      have hks : k ≤ (s : ℕ) := by simpa [hS'] using hs
+      refine ⟨⟨(s : ℕ) - k, lt_of_le_of_lt (Nat.sub_le _ _) s.isLt⟩, ?_, ?_⟩
+      · simp only [hS, Finset.mem_filter, Finset.mem_univ, true_and]
+        have := s.isLt
+        omega
+      · exact Fin.ext (by simp; omega)
+    · intro t ht
+      have h : (t : ℕ) + k < T := (Finset.mem_filter.1 ht).2
+      simp [shiftPad, h]
+  rw [h1, h2]
+  exact Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ S') (fun s _ _ => hg s)
+
+private lemma shiftPad_mono {T : ℕ} {k : ℕ} {g h : Fin T → ℝ} (hgh : ∀ s, g s ≤ h s)
+    (t : Fin T) : shiftPad k g t ≤ shiftPad k h t := by
+  simp only [shiftPad]
+  split
+  · exact hgh _
+  · exact le_rfl
+
+private lemma l2n_shiftPad_eq {T : ℕ} (k : ℕ) (W : Fin T → Ω → ℝ) (t : Fin T) :
+    l2n μ (fun ω => shiftPad k (fun s => W s ω) t)
+      = shiftPad k (fun s => l2n μ (W s)) t := by
+  simp only [shiftPad]
+  split
+  · rfl
+  · exact l2n_zero_fun
+
+private lemma memLp_cent {T : ℕ} (W : Fin T → Ω → ℝ) (hW : ∀ s, MemLp (W s) 2 μ)
+    (t : Fin T) : MemLp (fun ω => cent (fun s => W s ω) t) 2 μ := by
+  have hrw : (fun ω => cent (fun s => W s ω) t)
+      = fun ω => W t ω + (-(T:ℝ)⁻¹) * ∑ s : Fin T, W s ω := by
+    funext ω
+    simp only [cent, sampleMean]
+    ring
+  rw [hrw]
+  exact (hW t).add ((memLp_finset_sum _ fun s _ => hW s).const_mul _)
+
+private lemma memLp_shiftPad_cent [IsFiniteMeasure μ] {T : ℕ} (k : ℕ) (W : Fin T → Ω → ℝ)
+    (hW : ∀ s, MemLp (W s) 2 μ) (t : Fin T) :
+    MemLp (fun ω => shiftPad k (cent (fun s => W s ω)) t) 2 μ := by
+  simp only [shiftPad]
+  split
+  · exact memLp_cent W hW _
+  · exact memLp_const 0
+
+private lemma l2n_cent_le {T : ℕ} (W : Fin T → Ω → ℝ) (hW : ∀ s, MemLp (W s) 2 μ)
+    (t : Fin T) :
+    l2n μ (fun ω => cent (fun s => W s ω) t)
+      ≤ l2n μ (W t) + (T : ℝ)⁻¹ * ∑ s : Fin T, l2n μ (W s) := by
+  have hrw : (fun ω => cent (fun s => W s ω) t)
+      = fun ω => W t ω + (-(T:ℝ)⁻¹) * ∑ s : Fin T, W s ω := by
+    funext ω
+    simp only [cent, sampleMean]
+    ring
+  rw [hrw]
+  have hmem : MemLp (fun ω => ∑ s : Fin T, W s ω) 2 μ :=
+    memLp_finset_sum _ fun s _ => hW s
+  have h1 := l2n_add_le (μ := μ) (hW t) (hmem.const_mul (-(T:ℝ)⁻¹))
+  have h2 : l2n μ (fun ω => (-(T:ℝ)⁻¹) * ∑ s : Fin T, W s ω)
+      = |(-(T:ℝ)⁻¹)| * l2n μ (fun ω => ∑ s : Fin T, W s ω) := l2n_const_mul _ _
+  have h3 : l2n μ (fun ω => ∑ s : Fin T, W s ω) ≤ ∑ s : Fin T, l2n μ (W s) :=
+    l2n_finset_sum_le _ _ hW
+  have habs : |(-(T:ℝ)⁻¹)| = (T:ℝ)⁻¹ := by
+    rw [abs_neg, abs_of_nonneg (by positivity)]
+  rw [h2, habs] at h1
+  have h4 : (T:ℝ)⁻¹ * l2n μ (fun ω => ∑ s : Fin T, W s ω)
+      ≤ (T:ℝ)⁻¹ * ∑ s : Fin T, l2n μ (W s) :=
+    mul_le_mul_of_nonneg_left h3 (by positivity)
+  linarith
+
+/-- **The `L¹` perturbation bound for the sample autocovariance.** The `√T`-scaled
+difference of two windowed ACVFs is controlled by the *summed* `L²` sizes of the
+discrepancy — the estimate the truncation leg of residue (B) needs, and the one the
+`ℓ²`-modulus bound `abs_sampleACVF_sub_le` cannot give (it would lose a factor `√T`). -/
+private lemma integral_abs_sampleACVF_sub_le [IsProbabilityMeasure μ] {T : ℕ} (k : ℕ)
+    (Y Z : Fin T → Ω → ℝ) (hY : ∀ t, MemLp (Y t) 2 μ) (hZ : ∀ t, MemLp (Z t) 2 μ)
+    {BY BZ : ℝ} (hBY : ∀ t, l2n μ (Y t) ≤ BY) (hBZ : ∀ t, l2n μ (Z t) ≤ BZ)
+    (hBY0 : 0 ≤ BY) (hBZ0 : 0 ≤ BZ) :
+    ∫ ω, |sampleACVF (fun t : Fin T => Y t ω) k
+        - sampleACVF (fun t : Fin T => Z t ω) k| ∂μ
+      ≤ (T : ℝ)⁻¹ * (4 * (∑ t : Fin T, l2n μ (fun ω => Y t ω - Z t ω)) * (BY + BZ)) := by
+  classical
+  have hD : ∀ t : Fin T, MemLp (fun ω => Y t ω - Z t ω) 2 μ := fun t => (hY t).sub (hZ t)
+  set Δ : ℝ := ∑ t : Fin T, l2n μ (fun ω => Y t ω - Z t ω) with hΔ
+  have hΔ0 : 0 ≤ Δ := Finset.sum_nonneg fun t _ => l2n_nonneg _ _
+  -- the `L²` sizes of the centred windows
+  have hcentY : ∀ t : Fin T, l2n μ (fun ω => cent (fun s => Y s ω) t) ≤ 2 * BY := by
+    intro t
+    refine le_trans (l2n_cent_le Y hY t) ?_
+    have h1 : (T : ℝ)⁻¹ * ∑ s : Fin T, l2n μ (Y s) ≤ (T : ℝ)⁻¹ * ((T : ℝ) * BY) := by
+      refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+      calc ∑ s : Fin T, l2n μ (Y s) ≤ ∑ _s : Fin T, BY := Finset.sum_le_sum fun s _ => hBY s
+        _ = (T : ℝ) * BY := by
+            simp [Finset.sum_const, Finset.card_univ, mul_comm]
+    rcases Nat.eq_zero_or_pos T with hT | hT
+    · subst hT
+      simp only [Nat.cast_zero, inv_zero, zero_mul] at *
+      have := hBY t
+      linarith
+    · have hTpos : (0 : ℝ) < (T : ℝ) := by exact_mod_cast hT
+      have h2 : (T : ℝ)⁻¹ * ((T : ℝ) * BY) = BY := by field_simp
+      have := hBY t
+      linarith
+  have hcentZ : ∀ t : Fin T, l2n μ (fun ω => cent (fun s => Z s ω) t) ≤ 2 * BZ := by
+    intro t
+    refine le_trans (l2n_cent_le Z hZ t) ?_
+    have h1 : (T : ℝ)⁻¹ * ∑ s : Fin T, l2n μ (Z s) ≤ (T : ℝ)⁻¹ * ((T : ℝ) * BZ) := by
+      refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+      calc ∑ s : Fin T, l2n μ (Z s) ≤ ∑ _s : Fin T, BZ := Finset.sum_le_sum fun s _ => hBZ s
+        _ = (T : ℝ) * BZ := by
+            simp [Finset.sum_const, Finset.card_univ, mul_comm]
+    rcases Nat.eq_zero_or_pos T with hT | hT
+    · subst hT
+      simp only [Nat.cast_zero, inv_zero, zero_mul] at *
+      have := hBZ t
+      linarith
+    · have hTpos : (0 : ℝ) < (T : ℝ) := by exact_mod_cast hT
+      have h2 : (T : ℝ)⁻¹ * ((T : ℝ) * BZ) = BZ := by field_simp
+      have := hBZ t
+      linarith
+  -- the centred discrepancy, summed
+  set e : Fin T → ℝ := fun t => l2n μ (fun ω => Y t ω - Z t ω) + (T : ℝ)⁻¹ * Δ with he
+  have he0 : ∀ t, 0 ≤ e t := fun t => by
+    have := l2n_nonneg μ (fun ω => Y t ω - Z t ω)
+    have : (0:ℝ) ≤ (T : ℝ)⁻¹ * Δ := by positivity
+    simp only [he]
+    positivity
+  have hcentD : ∀ t : Fin T,
+      l2n μ (fun ω => cent (fun s => Y s ω - Z s ω) t) ≤ e t :=
+    fun t => l2n_cent_le (fun s => fun ω => Y s ω - Z s ω) hD t
+  have hesum : ∑ t : Fin T, e t ≤ 2 * Δ := by
+    have hsplit : ∑ t : Fin T, e t = Δ + (T : ℝ) * ((T : ℝ)⁻¹ * Δ) := by
+      simp only [he, Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ,
+        Fintype.card_fin, nsmul_eq_mul, hΔ]
+    rcases Nat.eq_zero_or_pos T with hT | hT
+    · subst hT
+      simp only [Nat.cast_zero, inv_zero, zero_mul, mul_zero] at hsplit
+      simp [hsplit] at *
+      linarith
+    · have hTpos : (0 : ℝ) < (T : ℝ) := by exact_mod_cast hT
+      have : (T : ℝ) * ((T : ℝ)⁻¹ * Δ) = Δ := by field_simp
+      rw [hsplit, this]
+      linarith
+  -- integrate the pointwise bound
+  have hint : ∀ t : Fin T, Integrable (fun ω =>
+      |cent (fun s => Y s ω - Z s ω) t| * |shiftPad k (cent (fun s => Y s ω)) t|
+        + |cent (fun s => Z s ω) t| * |shiftPad k (cent (fun s => Y s ω - Z s ω)) t|) μ := by
+    intro t
+    have hmemcD : MemLp (fun ω => cent (fun s => Y s ω - Z s ω) t) 2 μ :=
+      memLp_cent (fun s => fun ω => Y s ω - Z s ω) hD t
+    have hmemcZ : MemLp (fun ω => cent (fun s => Z s ω) t) 2 μ := memLp_cent Z hZ t
+    have hmemsY : MemLp (fun ω => shiftPad k (cent (fun s => Y s ω)) t) 2 μ :=
+      memLp_shiftPad_cent k Y hY t
+    have hmemsD : MemLp (fun ω => shiftPad k (cent (fun s => Y s ω - Z s ω)) t) 2 μ :=
+      memLp_shiftPad_cent k (fun s => fun ω => Y s ω - Z s ω) hD t
+    refine Integrable.add ?_ ?_
+    · have := (hmemcD.abs.integrable_mul hmemsY.abs)
+      exact this.congr (Filter.Eventually.of_forall fun ω => rfl)
+    · have := (hmemcZ.abs.integrable_mul hmemsD.abs)
+      exact this.congr (Filter.Eventually.of_forall fun ω => rfl)
+  -- the per-`t` `L²` bound on the two products
+  have hterm : ∀ t : Fin T, ∫ ω,
+      (|cent (fun s => Y s ω - Z s ω) t| * |shiftPad k (cent (fun s => Y s ω)) t|
+        + |cent (fun s => Z s ω) t| * |shiftPad k (cent (fun s => Y s ω - Z s ω)) t|) ∂μ
+      ≤ e t * (2 * BY) + (2 * BZ) * shiftPad k e t := by
+    intro t
+    have hmemcD : MemLp (fun ω => cent (fun s => Y s ω - Z s ω) t) 2 μ :=
+      memLp_cent (fun s => fun ω => Y s ω - Z s ω) hD t
+    have hmemcZ : MemLp (fun ω => cent (fun s => Z s ω) t) 2 μ := memLp_cent Z hZ t
+    have hmemsY : MemLp (fun ω => shiftPad k (cent (fun s => Y s ω)) t) 2 μ :=
+      memLp_shiftPad_cent k Y hY t
+    have hmemsD : MemLp (fun ω => shiftPad k (cent (fun s => Y s ω - Z s ω)) t) 2 μ :=
+      memLp_shiftPad_cent k (fun s => fun ω => Y s ω - Z s ω) hD t
+    have hi1 : Integrable (fun ω => |cent (fun s => Y s ω - Z s ω) t| *
+        |shiftPad k (cent (fun s => Y s ω)) t|) μ :=
+      (hmemcD.abs.integrable_mul hmemsY.abs).congr (Filter.Eventually.of_forall fun ω => rfl)
+    have hi2 : Integrable (fun ω => |cent (fun s => Z s ω) t| *
+        |shiftPad k (cent (fun s => Y s ω - Z s ω)) t|) μ :=
+      (hmemcZ.abs.integrable_mul hmemsD.abs).congr (Filter.Eventually.of_forall fun ω => rfl)
+    rw [integral_add hi1 hi2]
+    have hb1 : ∫ ω, |cent (fun s => Y s ω - Z s ω) t| *
+        |shiftPad k (cent (fun s => Y s ω)) t| ∂μ
+        ≤ l2n μ (fun ω => cent (fun s => Y s ω - Z s ω) t) *
+          l2n μ (fun ω => shiftPad k (cent (fun s => Y s ω)) t) := by
+      have hcongr : ∫ ω, |cent (fun s => Y s ω - Z s ω) t| *
+          |shiftPad k (cent (fun s => Y s ω)) t| ∂μ
+          = ∫ ω, |cent (fun s => Y s ω - Z s ω) t *
+              shiftPad k (cent (fun s => Y s ω)) t| ∂μ :=
+        integral_congr_ae (Filter.Eventually.of_forall fun ω => (abs_mul _ _).symm)
+      rw [hcongr]
+      exact integral_abs_mul_le hmemcD hmemsY
+    have hb2 : ∫ ω, |cent (fun s => Z s ω) t| *
+        |shiftPad k (cent (fun s => Y s ω - Z s ω)) t| ∂μ
+        ≤ l2n μ (fun ω => cent (fun s => Z s ω) t) *
+          l2n μ (fun ω => shiftPad k (cent (fun s => Y s ω - Z s ω)) t) := by
+      have hcongr : ∫ ω, |cent (fun s => Z s ω) t| *
+          |shiftPad k (cent (fun s => Y s ω - Z s ω)) t| ∂μ
+          = ∫ ω, |cent (fun s => Z s ω) t *
+              shiftPad k (cent (fun s => Y s ω - Z s ω)) t| ∂μ :=
+        integral_congr_ae (Filter.Eventually.of_forall fun ω => (abs_mul _ _).symm)
+      rw [hcongr]
+      exact integral_abs_mul_le hmemcZ hmemsD
+    -- now bound the four `l2n` factors
+    have hsY : l2n μ (fun ω => shiftPad k (cent (fun s => Y s ω)) t) ≤ 2 * BY := by
+      have heq := l2n_shiftPad_eq (μ := μ) k
+        (fun s => fun ω => cent (fun s' => Y s' ω) s) t
+      have : l2n μ (fun ω => shiftPad k (cent (fun s => Y s ω)) t)
+          = shiftPad k (fun s => l2n μ (fun ω => cent (fun s' => Y s' ω) s)) t := heq
+      rw [this]
+      exact shiftPad_le _ hcentY (by linarith) t
+    have hsD : l2n μ (fun ω => shiftPad k (cent (fun s => Y s ω - Z s ω)) t)
+        ≤ shiftPad k e t := by
+      have heq := l2n_shiftPad_eq (μ := μ) k
+        (fun s => fun ω => cent (fun s' => Y s' ω - Z s' ω) s) t
+      have : l2n μ (fun ω => shiftPad k (cent (fun s => Y s ω - Z s ω)) t)
+          = shiftPad k (fun s => l2n μ (fun ω => cent (fun s' => Y s' ω - Z s' ω) s)) t := heq
+      rw [this]
+      exact shiftPad_mono hcentD t
+    have hn1 : 0 ≤ l2n μ (fun ω => cent (fun s => Y s ω - Z s ω) t) := l2n_nonneg _ _
+    have hn2 : 0 ≤ l2n μ (fun ω => cent (fun s => Z s ω) t) := l2n_nonneg _ _
+    have hn3 : 0 ≤ shiftPad k e t := by
+      simp only [shiftPad]
+      split
+      · exact he0 _
+      · exact le_rfl
+    have h1 : l2n μ (fun ω => cent (fun s => Y s ω - Z s ω) t) *
+        l2n μ (fun ω => shiftPad k (cent (fun s => Y s ω)) t) ≤ e t * (2 * BY) :=
+      mul_le_mul (hcentD t) hsY (l2n_nonneg _ _) (he0 t)
+    have h2 : l2n μ (fun ω => cent (fun s => Z s ω) t) *
+        l2n μ (fun ω => shiftPad k (cent (fun s => Y s ω - Z s ω)) t)
+        ≤ (2 * BZ) * shiftPad k e t :=
+      mul_le_mul (hcentZ t) hsD (l2n_nonneg _ _) (by linarith)
+    linarith
+  -- assemble
+  have hpt : ∀ ω : Ω, |sampleACVF (fun t : Fin T => Y t ω) k
+      - sampleACVF (fun t : Fin T => Z t ω) k|
+      ≤ (T : ℝ)⁻¹ * ∑ t : Fin T,
+        (|cent (fun s => Y s ω - Z s ω) t| * |shiftPad k (cent (fun s => Y s ω)) t|
+          + |cent (fun s => Z s ω) t| * |shiftPad k (cent (fun s => Y s ω - Z s ω)) t|) :=
+    fun ω => abs_sampleACVF_sub_le_sum k (fun t => Y t ω) (fun t => Z t ω)
+  have hIntRHS : Integrable (fun ω => (T : ℝ)⁻¹ * ∑ t : Fin T,
+      (|cent (fun s => Y s ω - Z s ω) t| * |shiftPad k (cent (fun s => Y s ω)) t|
+        + |cent (fun s => Z s ω) t| * |shiftPad k (cent (fun s => Y s ω - Z s ω)) t|)) μ :=
+    (integrable_finset_sum _ fun t _ => hint t).const_mul _
+  refine le_trans (integral_mono_of_nonneg
+    (Filter.Eventually.of_forall fun ω => abs_nonneg _) hIntRHS
+    (Filter.Eventually.of_forall hpt)) ?_
+  rw [integral_const_mul, integral_finset_sum _ (fun t _ => hint t)]
+  have hsum : ∑ t : Fin T, ∫ ω,
+      (|cent (fun s => Y s ω - Z s ω) t| * |shiftPad k (cent (fun s => Y s ω)) t|
+        + |cent (fun s => Z s ω) t| * |shiftPad k (cent (fun s => Y s ω - Z s ω)) t|) ∂μ
+      ≤ 4 * Δ * (BY + BZ) := by
+    refine le_trans (Finset.sum_le_sum fun t _ => hterm t) ?_
+    rw [Finset.sum_add_distrib, ← Finset.sum_mul, ← Finset.mul_sum]
+    have hA : (∑ t : Fin T, e t) * (2 * BY) ≤ (2 * Δ) * (2 * BY) :=
+      mul_le_mul_of_nonneg_right hesum (by linarith)
+    have hB : (2 * BZ) * ∑ t : Fin T, shiftPad k e t ≤ (2 * BZ) * (2 * Δ) :=
+      mul_le_mul_of_nonneg_left (le_trans (sum_shiftPad_le k e he0) hesum) (by linarith)
+    nlinarith [hA, hB]
+  have hTinv : (0:ℝ) ≤ (T : ℝ)⁻¹ := by positivity
+  exact mul_le_mul_of_nonneg_left hsum hTinv
 
 end TransferBricks
 
