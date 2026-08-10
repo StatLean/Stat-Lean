@@ -75,6 +75,96 @@ theorem measurableSet_rejectionAccept
     ((ENNReal.measurable_ofReal.comp measurable_snd).mul ((hq.comp measurable_fst).const_mul c))
     (hp.comp measurable_fst)
 
+/-!
+### Falsity witnesses for the `q = ∞` corner
+
+The three correctness identities below are **false as frozen**: nothing in their
+hypotheses excludes `q y = ∞` on a set of positive `ν`-measure.  At such a `y`
+the acceptance section is `{u | ofReal u · ∞ ≤ p y} = Iic 0`, which is
+`uniform01`-null, so the accepted mass contributed by `y` is `q y · 0 = 0`,
+whereas the claimed right-hand side contributes `c⁻¹ · p y > 0`.
+
+The witness is `𝓧 = Unit`, `ν = δ`, `p ≡ 1`, `q ≡ ∞`, `c = 1`: every hypothesis
+of all three theorems holds, but the acceptance region is a null set.  See
+`LANE-REPORT.md`.
+-/
+
+/-- The acceptance region of the `q ≡ ∞` witness is a null set for the joint
+proposal, even though `p ≡ 1` is a probability density majorized by `1 · q`. -/
+private lemma rejectionAccept_unit_top_eq_zero :
+    (((Measure.dirac (() : Unit)).withDensity fun _ => ∞).prod uniform01)
+        (rejectionAccept (fun _ : Unit => 1) (fun _ : Unit => ∞) 1) = 0 := by
+  have hsec : ∀ y : Unit,
+      Prod.mk y ⁻¹' rejectionAccept (fun _ : Unit => 1) (fun _ : Unit => ∞) 1
+        = Set.Iic (0 : ℝ) := by
+    intro y
+    ext u
+    simp only [Set.mem_preimage, rejectionAccept, Set.mem_setOf_eq, one_mul, Set.mem_Iic]
+    rcases le_or_gt u 0 with hu | hu
+    · simp [ENNReal.ofReal_eq_zero.mpr hu, hu]
+    · have hne : ENNReal.ofReal u ≠ 0 := by
+        simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]
+        exact hu
+      simp [ENNReal.mul_top hne, hu.not_ge]
+  have huni : uniform01 (Set.Iic (0 : ℝ)) = 0 := by
+    rw [uniform01, Measure.restrict_apply measurableSet_Iic]
+    refine measure_mono_null (fun x hx => ?_) (measure_singleton (0 : ℝ))
+    simp only [Set.mem_inter_iff, Set.mem_Iic, Set.mem_Icc] at hx
+    exact Set.mem_singleton_iff.mpr (le_antisymm hx.1 hx.2.1)
+  rw [Measure.prod_apply (measurableSet_rejectionAccept measurable_const measurable_const)]
+  simp [hsec, huni]
+
+/-- **Falsity witness** for `rejectionSampling_acceptProb`: at `q ≡ ∞` the
+acceptance probability is `0`, not `c⁻¹ = 1`. -/
+private lemma not_rejectionSampling_acceptProb :
+    ¬ ∀ (p q : Unit → ℝ≥0∞) (c : ℝ≥0∞), Measurable p → Measurable q →
+        (∫⁻ z, p z ∂(Measure.dirac (() : Unit)) = 1) → (∀ y, p y ≤ c * q y) →
+        c ≠ 0 → c ≠ ∞ →
+        (((Measure.dirac (() : Unit)).withDensity q).prod uniform01)
+            (rejectionAccept p q c) = c⁻¹ := by
+  intro h
+  have h1 := h (fun _ => 1) (fun _ => ∞) 1 measurable_const measurable_const (by simp)
+    (by simp) one_ne_zero ENNReal.one_ne_top
+  rw [rejectionAccept_unit_top_eq_zero] at h1
+  simp at h1
+
+/-- **Falsity witness** for `rejectionSampling_restrict_map`: at `q ≡ ∞` the
+accepted-restricted first marginal is the zero measure, not `c⁻¹ · δ`. -/
+private lemma not_rejectionSampling_restrict_map :
+    ¬ ∀ (p q : Unit → ℝ≥0∞) (c : ℝ≥0∞), Measurable p → Measurable q →
+        (∀ y, p y ≤ c * q y) → c ≠ 0 → c ≠ ∞ →
+        ((((Measure.dirac (() : Unit)).withDensity q).prod uniform01).restrict
+            (rejectionAccept p q c)).map Prod.fst
+          = c⁻¹ • (Measure.dirac (() : Unit)).withDensity p := by
+  intro h
+  have h1 := congrArg (fun μ : Measure Unit => μ Set.univ)
+    (h (fun _ => 1) (fun _ => ∞) 1 measurable_const measurable_const (by simp)
+      one_ne_zero ENNReal.one_ne_top)
+  simp only [Measure.map_apply measurable_fst MeasurableSet.univ, Set.preimage_univ,
+    Measure.restrict_apply MeasurableSet.univ, Set.univ_inter, Measure.smul_apply,
+    withDensity_apply _ MeasurableSet.univ] at h1
+  rw [rejectionAccept_unit_top_eq_zero] at h1
+  simp at h1
+
+/-- **Falsity witness** for `rejectionSampling_conditionalLaw`: at `q ≡ ∞` the
+conditioning set is null, so the conditional law is the zero measure. -/
+private lemma not_rejectionSampling_conditionalLaw :
+    ¬ ∀ (p q : Unit → ℝ≥0∞) (c : ℝ≥0∞), Measurable p → Measurable q →
+        (∫⁻ z, p z ∂(Measure.dirac (() : Unit)) = 1) → (∀ y, p y ≤ c * q y) →
+        c ≠ 0 → c ≠ ∞ →
+        (ProbabilityTheory.cond (((Measure.dirac (() : Unit)).withDensity q).prod uniform01)
+            (rejectionAccept p q c)).map Prod.fst
+          = (Measure.dirac (() : Unit)).withDensity p := by
+  intro h
+  have h1 := congrArg (fun μ : Measure Unit => μ Set.univ)
+    (h (fun _ => 1) (fun _ => ∞) 1 measurable_const measurable_const (by simp) (by simp)
+      one_ne_zero ENNReal.one_ne_top)
+  simp only [Measure.map_apply measurable_fst MeasurableSet.univ, Set.preimage_univ,
+    ProbabilityTheory.cond_apply' MeasurableSet.univ, Set.inter_univ,
+    withDensity_apply _ MeasurableSet.univ] at h1
+  rw [rejectionAccept_unit_top_eq_zero] at h1
+  simp at h1
+
 /-- **Accepted-restricted marginal identity**: restricting the joint proposal
 `(Y, U) ~ (ν.withDensity q) ⊗ U(0,1)` to the acceptance region, the law of `Y`
 is `c⁻¹ · (ν.withDensity p)`.  This is the workhorse behind both the
