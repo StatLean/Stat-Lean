@@ -68,29 +68,20 @@ theorem card_sampleMedian_le (hn : n ≠ 0) (x : Fin n → ℝ) :
 
 /-! ### Equivariance -/
 
-/-- The sample median is location equivariant on **nonempty** samples: this is the honest
-content of `sampleMedian_locEquivariant` (see the falsity note there). -/
-private theorem sampleMedian_locEquivariant_of_ne_zero (hn : n ≠ 0) :
+/-- **The sample median is location equivariant** on nonempty samples (`MMY §2.3.1`).
+
+The nonemptiness hypothesis is not removable: at `n = 0` the junk value
+`sampleMedian = 0` would force `0 = 0 + a` for every `a`, and the counterexample
+`¬ IsLocEquivariant (sampleMedian (n := 0))` is machine-checked
+(`intro h; have := h 1 (fun _ => 0); simp [sampleMedian] at this`). The round-1 stub
+omitted the guard; repaired at wave-A merge. -/
+theorem sampleMedian_locEquivariant (hn : n ≠ 0) :
+    -- LEAN-ONLY: nonempty sample — the n = 0 junk median is not equivariant (see docstring)
     PointEstimation.IsLocEquivariant (sampleMedian (n := n)) := by
   intro a x
   have hx : (x + a • (1 : Fin n → ℝ)) = fun j => x j + a := by
     funext j; simp
   rw [hx, sampleMedian_eq_orderStat hn, sampleMedian_eq_orderStat hn, orderStat_add_const]
-
-/-- **The sample median is location equivariant** (`MMY §2.3.1`).
-
-**FALSE AS FROZEN at `n = 0`.** The statement quantifies over all `n : ℕ` with no
-nonemptiness hypothesis, but `sampleMedian` carries the junk value `0` on `Fin 0 → ℝ`, so
-`IsLocEquivariant` demands `0 = 0 + a` for every `a : ℝ`. The counterexample
-`¬ IsLocEquivariant (sampleMedian (n := 0))` is machine-checked (`a = 1`, `x = 0`;
-`intro h; have := h 1 (fun _ => 0); simp [sampleMedian] at this`).
-
-The intended theorem is `sampleMedian_locEquivariant_of_ne_zero` (proved, just above):
-with `hn : n ≠ 0` the proof is `orderStat_add_const` after
-`x + a • 1 = fun j => x j + a`. Repair: add `(hn : n ≠ 0)` to the frozen statement. -/
-theorem sampleMedian_locEquivariant :
-    PointEstimation.IsLocEquivariant (sampleMedian (n := n)) := by
-  sorry
 
 /-- For nonnegative scalars the median is scale equivariant (any `n`). -/
 theorem sampleMedian_const_mul_of_nonneg {c : ℝ} (hc : 0 ≤ c) (x : Fin n → ℝ) :
