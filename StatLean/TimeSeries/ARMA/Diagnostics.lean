@@ -1715,6 +1715,13 @@ un-`private`ing of `ARMA/Consistency.lean` is needed for this file after all —
 "must be re-derived here or they must be un-`private`d" is answered by the first branch,
 at a cost of about forty mechanical lines.
 
+**FINDING 32 (wave `ts/f1c-hannan-orientation`, 2026-08-09).** A recorded "scope blocker"
+that was not one: both `private` items are re-derivable in about forty mechanical lines
+from the public `Stationarity.arPoly_conv_armaPsi`, because the only content is that
+`armaPi` satisfies a *finite* recursion with `(maPoly a)_0 = 1` — no analysis, no
+invertibility, no `𝓑`. Scope notes of the form "X is `private`, so this needs a relocation"
+should be checked against the cost of re-deriving X before they are treated as blockers.
+
 The stochastic half is unchanged and is exactly finding 28's item 1 plus item 2:
 `√T(γ̂_ε̂(k) − γ̂_ε(k)) →p 0` (needs `Consistency.exists_armaPi_l1_lipschitz`) and
 `γ̂_ε̂(0) − γ̂_ε(0) →p 0` (needs only `exists_armaPi_l1_modulus`), after which the two

@@ -1238,6 +1238,14 @@ the CLT needs; the left-hand side is `Ŝ_i (β̂ − b_i)`. So the deterministic
 statement is complete and it confirms the third repair from the algebra rather than from
 the witness: no uncentered `tarRegimeDesignCov` occurs anywhere in the identity.
 
+**FINDING 31 (wave `ts/f1c-hannan-orientation`, 2026-08-09).** The centered design matrix
+appears in the normal equation for an **arbitrary** reference point `(γ₀, γ)`, not just at
+the truth — the intercept elimination is what produces it, and it happens before any
+probability enters. So defect 4 (finding 24) is not a fact about the limit at the true
+parameter that a witness happened to expose; it is visible in the finite-sample algebra of
+*any* intercept-fitting least-squares problem, and the uncentered `tarRegimeDesignCov`
+cannot appear in a correct eq. (4.8) under any reading.
+
 Of the four bullets above, bullets 2–4 remain, and this wave sharpens one of them: the
 regime-restricted LLN must deliver `T_i⁻¹ Ŝ_i →p Σ_i` for the **centered** `Ŝ_i`, i.e. it
 must also cover the sample regime mean `z̄_i` — a second indicator-weighted LLN (for

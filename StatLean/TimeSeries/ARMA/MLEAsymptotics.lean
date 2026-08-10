@@ -807,6 +807,19 @@ ordinary integral of a fixed measurable function of one random variable — so t
 transfers the argument needs (the a.e. swap to the adapted copy, and identical
 distribution along `t`) are both just `integral_congr_ae` / `IdentDistrib.integral_eq`.
 
+**FINDING 30 (wave `ts/f1c-hannan-orientation`, 2026-08-09).** Two things the residual
+note at `hannanScore_brownInputs` does not say. First, the set-splitting it prescribes
+(`{|ε Y| ≥ λ} ⊆ {|ε| ≥ √λ} ∪ {|Y| ≥ √λ}`) never has to be done at the level of sets: it is
+a *pointwise real inequality* between three values of `lindTrunc`, after which the whole
+argument is `integral_mono` plus two independence factorisations, with no measure-theoretic
+set algebra at all. Second, item (3) is the only one of the three Brown inputs that
+consumes **identical distribution** of the score vector, hence the only one that needs
+`IsLinearProcessOf.isStrictlyStationary` and therefore the *iid* (not merely white-noise)
+hypothesis on `ε`; items (1) and (2) use only noise/past independence and the one-filter
+LLN. Anyone weakening `IsIIDNoise` to a martingale-difference assumption — FY's stated
+future direction — will hit item (3) first, and will need a uniform-integrability
+substitute for stationarity there.
+
 The estimate itself is the pointwise inequality
 
   `lindTrunc l (e·y) ≤ lindTrunc √l e · y² + e² · lindTrunc √l y`
@@ -2320,7 +2333,26 @@ information matrix in general — but only for genuinely mixed models. Here the 
 `hannanVarZ b₀ elim0 = hannanVarZBack b₀ elim0`, so the instantiation this debt needs is
 unaffected and the two mathematical items recorded above stand verbatim. In particular this
 debt does **not** have to wait on the `hannanVarZ` repair; it waits only on the
-Taylor/sandwich analysis and on the `X_0` boundary discard. -/
+Taylor/sandwich analysis and on the `X_0` boundary discard.
+
+**STATUS after wave `ts/f1c-hannan-orientation` (2026-08-09): NOT attempted; audit of the
+two items refreshed.** The orientation repair is applied upstream, and as predicted it
+changes nothing here (`q = 0`). The two items stand, and the second is the one this wave
+can sharpen from the audit it did of the first:
+
+* **MLE leg.** Blocked on `armaMLE_linearization`, whose residue is now precisely (a) the
+  Hessian ULLN and (b) the first-order condition/mean-value expansion — the score input is
+  PROVED. Nothing else stands between this debt and that one.
+* **YW-vs-LS leg — FINDING 33 (wave `ts/f1c-hannan-orientation`, 2026-08-09).** The `X_0`
+  boundary discard recorded above is correct but is not the only window mismatch, and the
+  second one is easy to miss: `bYW` is built from
+  `sampleACVF`, which is **mean-corrected** (`Process/Defs.lean`), whereas `hLS`'s normal
+  equations are *uncentered*. So the two systems differ by the sample-mean terms as well as
+  by the endpoints. Both differences are `O_p(1/T)` after the LLN — `X̄_T = O_p(T^{−1/2})`
+  and it enters quadratically — so the leg is still `o_p(T^{−1/2})` as claimed, but a proof
+  has to discard *three* things, not one: the `X_0` endpoint, the `s = T−1` endpoint, and
+  the centring. The same remark applies to any future comparison of `samplePACF` (also
+  `sampleACVF`-based, hence centred) with a normal-equation estimator. -/
 theorem ls_yw_mle_equivalent_debt [IsProbabilityMeasure μ] {p : ℕ}
     {b0 : Fin p → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsAR b0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)

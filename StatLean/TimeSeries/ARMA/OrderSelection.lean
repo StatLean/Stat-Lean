@@ -348,7 +348,25 @@ between models of **different** orders while `armaContrastVar` is stated at a *c
 larger `𝓑̄`, and the degree count above is exactly what survives the padding. The previous
 note's diagnosis ("what is missing is a lower bound along both escapes") is thereby
 **refined**: there is only one escape left after finding 25, and along it what is needed is
-semicontinuity, not a lower bound that grows. -/
+semicontinuity, not a lower bound that grows.
+
+**STATUS after wave `ts/f1c-hannan-orientation` (2026-08-09): NOT attempted; the finding-27
+route above is unchanged and is still the recommended one.** Two remarks a next wave should
+have, both about *where* the missing steps would have to live rather than about their
+mathematics:
+
+* steps 1–2 (extend `armaContrastVar` to `𝓑̄` with values in `[1, ∞]`, and prove that
+  extension lower semicontinuous) cannot be stated in this file: `armaContrastVar` lives in
+  `ARMA/Consistency.lean`, which is **not** in `OrderSelection`'s import closure — the scope
+  note above records this for `exists_contrast_gap` but it applies to the whole route.
+  Closing (U) therefore starts with an import edge, and the natural home for steps 1–2 is
+  `Consistency` itself, next to `continuousOn_armaContrastVar`;
+* the finding-25 boundedness argument (`|b i| ≤ 2^p` on `𝓑`) is still unformalized, and it
+  is *not* three lines in Lean: it needs the factorization of a real polynomial with all
+  roots outside the closed disc as `Π(1 − α_k z)` over `ℂ` with `|α_k| < 1`, i.e. the
+  complex root multiset plus an elementary-symmetric-function bound. It is a prerequisite
+  of step 4 (compactness of `𝓑̄`), so it should be budgeted as its own item rather than as
+  a remark. -/
 private theorem bic_underfit_residue [IsProbabilityMeasure μ] {p0 q0 : ℕ}
     {b0 : Fin p0 → ℝ} {a0 : Fin q0 → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)
@@ -421,7 +439,30 @@ is therefore: repair `hannanVarZ` first, then (O).
 
 The boundary control (O) shares with (U) is refined by finding 27 recorded at
 `bic_underfit_residue`: what is missing there is lower semicontinuity of the contrast on
-the compact closure `𝓑̄`, not a growth estimate. -/
+the compact closure `𝓑̄`, not a growth estimate.
+
+**STATUS after wave `ts/f1c-hannan-orientation` (2026-08-09): NOT attempted; the THIRD
+obstruction is DISCHARGED, the first two stand.** The orientation repair has been applied
+in `ARMA/MLEAsymptotics.lean`: `armaMLE_linearization` now carries
+`(hannanVarZBack b₀ a₀)⁻¹`, the covariance of the score vector, so citing it no longer
+inherits a false input, and the "repair first, then (O)" ordering is satisfied. Note the
+paragraph above is right that (O) would not have needed the repair anyway — it consumes
+only tightness — so what changed is the citation hygiene, not the mathematics.
+
+Two of the three residues (O) waits on are also now in better shape, which is worth
+recording because it changes which item is the bottleneck:
+
+* `armaMLE_linearization`'s *score* input is now fully PROVED
+  (`MLEAsymptotics.hannanScore_brownInputs`, all three Brown inputs); what it still lacks
+  is the Hessian ULLN and the mean-value expansion, i.e. deterministic analysis;
+* the measurable-selection obstruction (first bullet above) is untouched and is now the
+  **only** obstruction that is specific to (O) rather than inherited: `armaBICmin` is an
+  `iInf`, and no measurable minimizer is produced anywhere in the project. A candidate
+  route, not attempted: the criterion is continuous in `(b,a)` on `𝓑` (through
+  `Consistency.continuous_armaPi`), so on a *compact* `K` a measurable selection exists by
+  the standard argmin-measurability lemma — but the `iInf` in `armaBICmin` is over the
+  open `𝓑`, so this again reduces to residue (U)'s boundary control rather than being
+  independent of it. -/
 private theorem bic_overfit_residue [IsProbabilityMeasure μ] {p0 q0 : ℕ}
     {b0 : Fin p0 → ℝ} {a0 : Fin q0 → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
     (h : IsARMA b0 a0 σ2 X ε μ) (hiid : IsIIDNoise ε σ2 μ) (hσ : 0 < σ2)

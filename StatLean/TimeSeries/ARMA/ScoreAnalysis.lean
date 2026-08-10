@@ -878,9 +878,16 @@ in place of the forward pair. The reduced factors `C₀(z) = Σ_i cᵢ zⁱ`,
 count that closes the argument (`deg C₀ ≤ p − 1 < p = deg b`, under `hbdeg`) is if
 anything more comfortable; the hypotheses are exactly those of `hannanVarZ_posDef`.
 
-This has to be **proved**, not transported: the two Grams are conjugate by the block-wise
-reversal permutation only when `p = q`, and `hannanVarZ_quadForm_ne_back` witnesses that
-they are genuinely different quadratic forms at ARMA(2,1). (For `q = 0` or `p = 0` the
+**FINDING 29 (wave `ts/f1c-hannan-orientation`, 2026-08-09).** This has to be **proved**,
+not transported: the two Grams are conjugate by the block-wise reversal permutation only
+when `p = q`, and `hannanVarZ_quadForm_ne_back` witnesses that they are genuinely different
+quadratic forms at ARMA(2,1). The permutation route fails for a reason worth recording,
+since it is what makes finding 26 possible at all: a *common* shift of all coordinates
+leaves a Gram matrix unchanged, and the reversal `i ↦ p−1−i` turns the backward AR shifts
+`1+i` into `p−i` and the backward MA shifts `1+j` into `q−j`, whereas the forward shifts
+are `p+q−i` and `p+q−j`. The two offsets are `q−1` and `p`, which agree only when `p = q`
+— the shift is common within each block but *not across the blocks*, and that is exactly
+the misalignment of the cross-block. (For `q = 0` or `p = 0` the
 transport is available — `hannanVarZ_eq_back_of_pure_ar`, `hannanVarZ_eq_back_of_pure_ma`
 — but that covers none of the mixed cases the repair is for.) -/
 
