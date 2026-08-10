@@ -33,6 +33,11 @@ Then
 * `c ≠ 0` is required for the marginal identity (at `c = 0` the accept region
   is everything and the claim is false); `c ≥ 1` is *derivable* from the
   majorization plus `∫⁻ p dν = 1` and is not assumed.
+* The proposal-normalization hypothesis `∫⁻ q dν = 1` is genuinely needed (the
+  book's `g_Y` *is* a probability density): the first frozen statements omitted
+  it and were **refuted** at the `q ≡ ∞` corner — the machine-checked falsity
+  witnesses for the unrepaired statements are retained below as `private`
+  lemmas documenting why the hypothesis is there.
 * The geometric law of the number of trials to first acceptance (ECS §2.1,
   p. 40) is deferred to a later round: it needs the infinite i.i.d. proposal
   stream and a hitting-time construction, orthogonal to the correctness core.
@@ -78,8 +83,9 @@ theorem measurableSet_rejectionAccept
 /-!
 ### Falsity witnesses for the `q = ∞` corner
 
-The three correctness identities below are **false as frozen**: nothing in their
-hypotheses excludes `q y = ∞` on a set of positive `ν`-measure.  At such a `y`
+The three correctness identities below were **false as first frozen** (before
+the `∫⁻ q dν = 1` hypothesis was added): nothing in the original hypotheses
+excluded `q y = ∞` on a set of positive `ν`-measure.  At such a `y`
 the acceptance section is `{u | ofReal u · ∞ ≤ p y} = Iic 0`, which is
 `uniform01`-null, so the accepted mass contributed by `y` is `q y · 0 = 0`,
 whereas the claimed right-hand side contributes `c⁻¹ · p y > 0`.
@@ -174,6 +180,8 @@ theorem rejectionSampling_restrict_map
     (hp : Measurable p)
     -- LEAN-ONLY: measurability of the proposal density (regularity)
     (hq : Measurable q)
+    -- USER-INPUT: the proposal density integrates to one; ECS §2.1
+    (hq1 : ∫⁻ z, q z ∂ν = 1)
     -- USER-INPUT: the scaled proposal majorizes the target, `p ≤ c·q`; ECS §2.1
     (henv : ∀ y, p y ≤ c * q y)
     -- USER-INPUT: a positive, finite envelope constant; ECS §2.1
@@ -190,6 +198,8 @@ theorem rejectionSampling_acceptProb
     (hp : Measurable p)
     -- LEAN-ONLY: measurability of the proposal density (regularity)
     (hq : Measurable q)
+    -- USER-INPUT: the proposal density integrates to one; ECS §2.1
+    (hq1 : ∫⁻ z, q z ∂ν = 1)
     -- USER-INPUT: the target density integrates to one; ECS §2.1
     (hp1 : ∫⁻ z, p z ∂ν = 1)
     -- USER-INPUT: the scaled proposal majorizes the target, `p ≤ c·q`; ECS §2.1
@@ -207,6 +217,8 @@ theorem rejectionSampling_conditionalLaw
     (hp : Measurable p)
     -- LEAN-ONLY: measurability of the proposal density (regularity)
     (hq : Measurable q)
+    -- USER-INPUT: the proposal density integrates to one; ECS §2.1
+    (hq1 : ∫⁻ z, q z ∂ν = 1)
     -- USER-INPUT: the target density integrates to one; ECS §2.1
     (hp1 : ∫⁻ z, p z ∂ν = 1)
     -- USER-INPUT: the scaled proposal majorizes the target, `p ≤ c·q`; ECS §2.1
