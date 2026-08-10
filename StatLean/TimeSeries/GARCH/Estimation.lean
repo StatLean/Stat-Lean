@@ -558,7 +558,8 @@ hypothesis is tagged `USER-INPUT`.
 2. **`θhat` is a genuine minimizer of the criterion the theorem is named after.** The
    frozen statements never mentioned `garchWhittle` (4.41) or `garchLAD` (4.42). The
    repair introduces the unpacked estimator `est` (with `hpack` tying `θhat` to it, as in
-   `hannan_mle_clt`'s `(Fin p → ℝ) × (Fin q → ℝ)`-valued `θ`), a compact search region `K`
+   the `(Fin p → ℝ) × (Fin q → ℝ)`-valued `θ` of the removed FY Thm 3.2 headline), a
+   compact search region `K`
    with the truth in its interior, and exact minimization over `K` at every sample.
 3. **`W` is pinned to the process** — the defect that killed the frozen form outright
    (`W` and `2W` both admissible). Unlike the removed eq. (4.8) debt, whose `W_i` is a
