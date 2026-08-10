@@ -29,21 +29,46 @@ classical implication chain `ψ-mixing ⇒ φ-mixing ⇒ {β-, ρ-mixing} ⇒ α
   non-degenerate event is not α-mixing;
 * literature statement DEBTS: Pham–Tran (causal ARMA is exponentially β-mixing),
   Basrak–Davis–Mikosch (GARCH is exponentially α-mixing), Kolmogorov–Rozanov (Gaussian:
-  ρ-mixing ⇔ α-mixing).
+  ρ-mixing ⇔ α-mixing) — **all three removed**; see **Removed** below.
 
-**Status of the two model debts (2026-08-09, wave 5).** Both are now **PROVED over one
-named model-side brick each** — `arma_stateChain_brick` and `garch_stateChain_brick`, whose
-common conclusion is `HasGeometricStateChain`: the model has a state chain that is Markov
-for a kernel with a geometric total-variation envelope. Everything downstream of that (the
-process-vs-state σ-algebra comparison, the two-marginal reduction at an arbitrary anchor,
-the α- and β-envelopes, and the `C · r^n` bookkeeping) is proved, in
-`Mixing/MarkovBridge.lean` and in `alphaCoeff_exponential_of_hasGeometricStateChain` /
-`betaCoeff_exponential_of_hasGeometricStateChain` below — both frozen conclusions
-(β for ARMA, α for GARCH) are delivered as stated. Wave 4's flagged prerequisites — the
-vector-valued Markov bridge, the import edge, and the GARCH minorization — are closed; see
-the long status block at the head of the DEBTS section and the individual brick docstrings
-for the three hypothesis strengthenings and the one remaining named follow-up (a
-quantitative Lyapunov envelope for `harris_theorem`).
+**Removed (2026-08-10, user directive).** The module's four sorried bricks and the three
+headline debts proved from them were deleted, together with three `private` helpers left
+with no surviving consumer. This removes the whole of the module's literature-debt tail; the
+mixing-coefficient theory above it — every inequality, the shift lemma, the non-example, the
+Bradley `ρ ≤ 2√φ` relation — is untouched, as is the Harris/Lyapunov apparatus that was
+built to feed the deleted bricks.
+
+*Sorried bricks (the four listed in the directive):*
+* `arma_stateChain_brick` — a stationary causal ARMA with iid innovations of continuous
+  positive density has `HasGeometricStateChain`; residue was model-side (the causal
+  representation, and the two-block state update for `q ≥ 1`).
+* `garch_stateChain_brick` — the same conclusion for a strictly stationary GARCH(p, q).
+* `gaussian_rho_linear_brick` — BRICK 1 of the Gaussian comparison: Gaussian maximal
+  correlation is carried by the linear span (Wiener–Itô/Hermite reduction).
+* `gaussian_pair_corr_le_alpha_brick` — BRICK 2: the two-variable Kolmogorov–Rozanov bound
+  via Sheppard's bivariate orthant identity.
+
+*Headline consumers, deleted because their proofs consume a deleted brick:*
+* `arma_betaCoeff_exponential_debt` — **Pham–Tran 1985 / FY §2.6.1(v)**: a stationary causal
+  ARMA process with iid innovations admitting a continuous positive density is exponentially
+  **β-mixing**.
+* `garch_alphaCoeff_exponential_debt` — **Basrak–Davis–Mikosch 2002 / FY §2.6.1(x)**: a
+  strictly stationary GARCH(p, q) is exponentially **α-mixing**.
+* `gaussian_rho_le_alpha_debt` — **Kolmogorov–Rozanov 1960 / FY §2.6.1(viii)**: for a
+  stationary Gaussian process, `ρ(k) ≤ 2π α(k)`.
+
+*`private`, proved, left without a consumer:* `linComb` (the linear functional
+`∑_{s ∈ S} a_s X_s`) and its two measurability lemmas `measurable_linComb_sigmaLE`,
+`measurable_linComb_sigmaGE`.
+
+*Kept:* the entire coefficient theory, the state-chain transfer machinery
+`alphaCoeff_exponential_of_hasGeometricStateChain` /
+`betaCoeff_exponential_of_hasGeometricStateChain` (which the deleted headlines were the only
+callers of, but which are public and remain usable), and the quantitative Harris envelope
+`exists_invariant_geometric_envelope_of_harris` with
+`lintegral_lyap_le_of_isErgodicWithRate` / `integrable_lyap_of_isErgodicWithRate`.
+
+Recover from `bdc8143f`.
 
 **Reference.** J. Fan and Q. Yao, *Nonlinear Time Series*, Springer, 2003, §2.6.1
 (pp. 68–71). (`FY §2.6.1`.)
@@ -69,10 +94,10 @@ in R. C. Bradley, *Basic properties of strong mixing conditions* (in Eberlein–
 1986) and his 2005 survey; `ρ ≤ 2√φ` is due to Peligrad (after Cogburn and Ibragimov).
 Pham & Tran, *Some mixing properties of time series models*, SPA 1985; Basrak, Davis &
 Mikosch, *Regular variation of GARCH processes*, SPA 2002; Kolmogorov & Rozanov 1960
-for the Gaussian ρ ⇔ α equivalence. The Gaussian comparison `ρ ≤ 2π α` is reduced here
-to two named bricks (`gaussian_rho_linear_brick`, the Wiener–Itô/Hermite reduction of the
-maximal correlation to the linear span, and `gaussian_pair_corr_le_alpha_brick`,
-Sheppard's bivariate orthant identity).
+for the Gaussian ρ ⇔ α equivalence. The Gaussian comparison `ρ ≤ 2π α` had been reduced
+here to two named bricks — the Wiener–Itô/Hermite reduction of the maximal correlation to
+the linear span, and Sheppard's bivariate orthant identity — both removed with the debt they
+served.
 -/
 
 open MeasureTheory ProbabilityTheory Filter
@@ -1594,11 +1619,11 @@ theorem betaCoeff_exponential_of_hasGeometricStateChain [IsProbabilityMeasure μ
 /-! #### The invariant moment bound of a Lyapunov drift (wave 6)
 
 The one *genuinely new* ingredient of the named follow-up
-*"`IsGeometricallyErgodic` with a Lyapunov envelope"* — see the amendment in
-`arma_stateChain_brick`'s docstring for why the other ingredient (the envelope proper) is
-already proved inside `harris_theorem` and only needs exporting, and for why wave 5 was
-wrong to treat this one as free. Proved here, axiom-clean, so that only the *export* is
-left outside this lane's touch set. -/
+*"`IsGeometricallyErgodic` with a Lyapunov envelope"*, which the two (since removed)
+state-chain bricks listed as an open input. The other ingredient — the envelope proper — is
+already proved inside `harris_theorem` and only needs exporting; wave 5 was wrong to treat
+this one as free. Proved here, axiom-clean, so that only the *export* is left outside this
+lane's touch set. -/
 
 /-- Truncations of a finite `ℝ≥0∞` value exhaust it. -/
 private lemma iSup_min_natCast_of_ne_top {a : ENNReal} (ha : a ≠ ⊤) :
@@ -1709,8 +1734,8 @@ Drift + minorization give an invariant probability measure `π` together with an
 `‖κᵐ(x, ·) − π‖_TV ≤ A(x) rᵐ` for every state `x` and every `m`.
 
 This closes, as one theorem, the named follow-up *"`IsGeometricallyErgodic` with a Lyapunov
-envelope"* that both `arma_stateChain_brick` and `garch_stateChain_brick` list as an open
-input. Its two parts:
+envelope"* that the two (since removed) state-chain bricks, for ARMA and for GARCH, listed
+as an open input. Its two parts:
 
 * the envelope itself — `harris_theorem_envelope`, the statement-level export (added in
   `ForMathlib/Markov/HarrisTheorem.lean`) of the step `hbound` that Harris' theorem already
@@ -1748,459 +1773,6 @@ theorem exists_invariant_geometric_envelope_of_harris {S : Type*} [MeasurableSpa
   refine ⟨π, hπprob, hinv, fun x => c + b * V x, r, fun x =>
     add_nonneg hc0 (mul_nonneg hb0 (hdrift.V_nonneg x)), ?_, hr0, hr1, henv⟩
   exact (integrable_const c).add (hVint.const_mul b)
-
-/-- **DEBT (Pham–Tran 1985; FY §2.6.1(v))**: a stationary causal ARMA process with
-iid innovations admitting an (absolutely continuous) density is exponentially
-β-mixing.
-
-**Status (2026-08-09, wave 5): reduced to ONE named model-side brick**
-(`arma_stateChain_brick`), from which the frozen statement — the **β** conclusion, not a
-weakened α surrogate — is proved below. What changed since wave 4, item by item against
-that wave's four-point obstruction list:
-
-1. *Identification of the causal solution.* Unchanged, and still an input: `hstat` +
-   `hroot` force `X` to be the causal solution (companion form, `‖A^k‖ → 0`, tightness),
-   and — worth re-recording — **no invertibility of the MA polynomial is needed**. This is
-   §2.1 material; it is one of the two things `arma_stateChain_brick` still packages.
-2. *The vector-valued Markov bridge.* **CLOSED** (wave 5). `Mixing/MarkovBridge.lean` is
-   now stated over an arbitrary measurable state space, and
-   `MarkovBridge.betaMixCoeff_le_of_measurable_state` /
-   `MarkovBridge.alphaMixCoeff_le_of_measurable_state` supply the process-vs-state
-   comparison, and `MarkovBridge.betaMixCoeff_two_marginal_of_markov_anchor` /
-   `MarkovBridge.betaMixCoeff_two_marginal_le_of_envelope` complete the β chain. This was
-   wave 4's flagged prerequisite; it is no longer a gap.
-3. *Geometric ergodicity of the state chain.* Half closed. `hdens` is now strengthened to
-   continuity + positivity (see the strengthening paragraph), which is exactly what
-   `nlARKernel_geometricallyErgodic` consumes; and for `q = 0` the companion form is an
-   `nlARKernel`, with the sup-norm contraction obtained from a **power** `‖A^k‖_∞ < 1` and
-   `IsGeometricallyErgodic.of_pow`. What remains inside the brick: for `q ≥ 1` the ARMA
-   state carries the innovation lags, so its update is not of `shiftPush` shape (the same
-   two-block issue as GARCH — see `ForMathlib/Markov/IFSMinorization.lean`'s docstring).
-4. *Import layer.* **CLOSED** — see the import note above.
-
-**NEW gap found in wave 5 (not on wave 4's list).** `harris_theorem` /
-`IsGeometricallyErgodic` deliver only the *pointwise* rate `ρ⁻ⁿ ‖κⁿ(x,·) − F‖ → 0`, not
-the **quantitative envelope** `‖κⁿ(x,·) − F‖ ≤ A(x) ρⁿ` with `A` `F`-integrable that
-(2.59) and `HasGeometricStateChain` need. The envelope *is* derivable from
-`harris_contraction` — its conclusion `weightedTV β V (μ ∘ κⁿ) π ≤ ᾱⁿ weightedTV β V μ π`
-at `μ = δ_x` gives `A(x) = C(1 + βV(x))`, which is measurable and `π`-integrable because
-Harris' theorem also gives `∫ V dπ < ∞` — but that derivation belongs in
-`ForMathlib/Markov/HarrisTheorem.lean`, which is outside this lane's touch set. It is a
-named, self-contained follow-up: *"`IsGeometricallyErgodic` with a Lyapunov envelope"*.
-
-**AMENDMENT (2026-08-09, wave 6): the follow-up has TWO parts, and wave 5's costing of the
-second one is WRONG.** Checked against `ForMathlib/Markov/HarrisTheorem.lean` and
-`ForMathlib/Markov/GeometricErgodicity.lean` as they stand:
-
-* *(a) the envelope itself is already proved, just discarded.* Inside `harris_theorem`'s
-  proof the local step `hbound` reads, verbatim,
-  `∀ x n, tvDist ((κ ^ n) x) π ≤ ENNReal.ofReal ᾱ ^ n * (weightedTV β V (δ x) (δ x₀) + C)`,
-  and `weightedTV_le_add` bounds `weightedTV β V (δ x) (δ x₀)` by
-  `(1 + βV(x)) + (1 + βV(x₀))`. So part (a) is a **statement change** to
-  `harris_theorem` (widen its existential to carry the envelope), not new mathematics: no
-  lemma is missing, the two it needs (`tvDist_le_weightedTV`, `weightedTV_le_add`) are
-  present in that file, merely `private`.
-* *(b) `∫ V dπ < ∞` is NOT an output of Harris' theorem.* Wave 5's clause "which is
-  measurable and `π`-integrable because Harris' theorem also gives `∫ V dπ < ∞`" is
-  **false as written**: `harris_theorem` returns
-  `∃ π, IsProbabilityMeasure π ∧ Kernel.Invariant κ π ∧ IsGeometricallyErgodic κ π`, and
-  `IsErgodicWithRate` (the only content of `IsGeometricallyErgodic`) carries just the
-  pointwise limit `ρ⁻ⁿ · tvDist (κⁿ x) π → 0`. No moment bound on `π` is proved anywhere in
-  `HarrisTheorem.lean`.
-
-  Worse, the moment bound is **not** a formal consequence of the drift plus invariance by
-  the naive truncation argument: from `π(V ∧ n) = π(P(V ∧ n)) ≤ π((γV + K) ∧ n)` one would
-  want `(γV + K) ∧ n ≤ γ(V ∧ n) + K`, which **fails** on `{V > n}` as soon as
-  `n > K/(1 − γ)` (there the left side is `n` and the right side is `γn + K < n`). The
-  bound `∫⁻ V dπ ≤ K/(1 − γ)` is nevertheless true and provable *from the ergodicity
-  already in hand*: for each `n`, `V ∧ n` is bounded, so
-  `StatLean.Bayesian.lintegral_le_lintegral_add_tvDist` transfers it along
-  `tvDist ((κ^m) x₀) π → 0`, `HasLyapunovDrift.lintegral_pow_le` bounds
-  `∫⁻ V d((κ^m) x₀) ≤ ofReal (γ^m V(x₀) + K/(1 − γ))` uniformly in `m`, and monotone
-  convergence in `n` finishes. **This is the genuinely new item**, and it is the reason the
-  follow-up cannot be dismissed as bookkeeping: it consumes the ergodic limit, not just the
-  drift.
-
-  **It is now PROVED, in this file and axiom-clean**, as
-  `lintegral_lyap_le_of_isErgodicWithRate` (`∫⁻ V dπ ≤ K/(1 − γ)`) together with its
-  packaging `integrable_lyap_of_isErgodicWithRate` (`Integrable V π`) — the exact shape
-  `HasGeometricStateChain`'s integrable constant `A` needs. So of the two parts of the
-  follow-up, (b) is closed here and (a) is a pure statement change to `harris_theorem`,
-  outside this lane's touch set. Neither is any longer an open mathematical question.
-
-**RESOLVED (2026-08-09, wave 7): the whole follow-up is CLOSED**, as the single theorem
-`exists_invariant_geometric_envelope_of_harris` above. Part (a) was performed as the
-authorized statement addition `harris_theorem_envelope` in
-`ForMathlib/Markov/HarrisTheorem.lean` (`harris_theorem` keeps its exact statement and is
-now its two-line corollary), and it is composed there with part (b). The envelope comes out
-**affine in the Lyapunov function**, `A x = c + b · V x`, which is exactly why part (b)
-(`∫ V dπ < ∞`) is the thing that makes it integrable.
-
-**What the brick still needs is NOT the envelope.** With the follow-up closed, the residue
-of `arma_stateChain_brick` is entirely model-side, and it is bigger than the envelope was:
-
-1. *The causal representation.* `HasGeometricStateChain` asks for `IsMarkovOf V κ μ` for the
-   companion state `V_t = (X_t, …, X_{t−p+1}, ε_t, …, ε_{t−q+1})` **on the given `Ω` and
-   `μ`**. That needs `ε_{t+1}` to be independent of `σ{V_s : s ≤ t}`, which `hiid` supplies
-   only once every `V_s` is known to be a function of `{ε_u : u ≤ s}` — i.e. only after the
-   identification of `X` as *the causal solution*, from `hstat` + `hroot`. `IsARMA` itself
-   carries `IsWhiteNoise` (uncorrelated), not independence, so this step cannot be skipped;
-   it is FY §2.1 material and is item 1 of the wave-5 list, still open.
-2. *The two-block state update for `q ≥ 1`* (item 3 of the wave-5 list, still open): the
-   ARMA state carries the innovation lags, so its update is not of `shiftPush` shape and
-   `nlARKernel_geometricallyErgodic` does not apply verbatim.
-
-Neither is a `sorry`-filling task. The `sorry` therefore stays, and its content is now
-exactly items 1 and 3 above — no longer anything about Harris' theorem.
-
-**Statement strengthening (documented, USER-INPUT).** `hdens` is strengthened from
-"`ε_0` has *some* Lebesgue density" to "`ε_0` has a **continuous, everywhere positive**
-Lebesgue density". This matches every other consumer of
-`nlARKernel_geometricallyErgodic` in this project (`Threshold/TAR.lean`'s
-`exists_stationary_tar` and `exists_stationary_toy_setar`) and is the same documented
-strengthening recorded in that theorem's own docstring: without continuity the density has
-no positive lower bound on a compact window, and the minorization route dies. Pham–Tran's
-theorem is genuinely stronger than what the Harris engine proves — they extract a
-minorization from an *arbitrary* absolutely continuous innovation law via a Lebesgue-point
-argument on the `(p+q)`-step transition — so the strengthening is not removable by
-bookkeeping; it is a change of theorem. The original obstruction analysis is kept above as
-the justification.
-
-**Conclusion calibration (resolved).** The frozen conclusion is about `betaCoeff`, and it
-is delivered as such. The route needs only the `≤` half of Davydov's identity — the
-*equality* (whose `≥` half needs a jointly measurable Hahn selection and is still open as
-`MarkovBridge.betaMixCoeff_two_marginal_eq_integral_tvDist_brick`) is **not** required.
-That `≤` half was proved in the same wave as
-`MarkovBridge.betaMixCoeff_two_marginal_le_of_envelope`, with two simplifications over the
-wave-4 sketch: the past-side sets need no disjointification (the `Ω`-partition is used
-directly against a `σ(X_k)`-measurable integrand), and the future-side disjointification
-uses only `X_{k+n}⁻¹(W_j \\ ⋃_{j' < j} W_{j'}) = B_j`. The normalization comes out with
-**no factor 2**, as the module docstring of `MarkovBridge.lean` predicted. Note for the
-record that `2α ≤ β` (`two_mul_alphaMixCoeff_le_betaMixCoeff`, proved above) runs the
-*wrong* way and could not have been used to transfer an α bound to β. -/
-private lemma arma_stateChain_brick [IsProbabilityMeasure μ]
-    {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
-    (h : IsARMA b a σ2 X ε μ) (hstat : IsStrictlyStationary X μ)
-    (hmeas : ∀ t, Measurable (X t))
-    (hiid : IsIIDNoise ε σ2 μ)
-    (hdens : ∃ g : ℝ → ℝ, Measurable g ∧ Continuous g ∧ (∀ x, 0 < g x) ∧
-      μ.map (ε 0) = MeasureTheory.volume.withDensity fun x => ENNReal.ofReal (g x))
-    (hroot : ∀ z : ℂ, ‖z‖ ≤ 1 → Polynomial.aeval z (arPoly b) ≠ 0) :
-    HasGeometricStateChain X μ := by
-  sorry
-
-/-- **DEBT (Pham–Tran 1985; FY §2.6.1(v))**: a stationary causal ARMA process with iid
-innovations admitting a continuous positive density is exponentially **β-mixing** — the
-frozen conclusion.
-
-**PROVED over the single brick `arma_stateChain_brick`**; see that brick's docstring for
-the full status, the hypothesis strengthening, and the one remaining named follow-up (the
-quantitative Harris envelope). The β-level `≤` half of Davydov's identity, listed there as
-a follow-up, was proved in the same wave
-(`MarkovBridge.betaMixCoeff_two_marginal_le_of_envelope`), which is what allows the frozen
-β conclusion rather than an α surrogate. -/
-theorem arma_betaCoeff_exponential_debt [IsProbabilityMeasure μ]
-    {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
-    (h : IsARMA b a σ2 X ε μ) (hstat : IsStrictlyStationary X μ)
-    (hmeas : ∀ t, Measurable (X t))
-    -- USER-INPUT: iid innovations with a Lebesgue density; Pham–Tran 1985
-    (hiid : IsIIDNoise ε σ2 μ)
-    -- USER-INPUT (**strengthened**, wave 5): the innovation density is continuous and
-    -- everywhere positive — the documented strengthening of Pham–Tran's hypothesis, shared
-    -- with every consumer of `nlARKernel_geometricallyErgodic`; see the brick's docstring
-    (hdens : ∃ g : ℝ → ℝ, Measurable g ∧ Continuous g ∧ (∀ x, 0 < g x) ∧
-      μ.map (ε 0) = MeasureTheory.volume.withDensity fun x => ENNReal.ofReal (g x))
-    -- USER-INPUT: no roots of b on the closed unit disc (causality; stated inline); FY §2.1
-    (hroot : ∀ z : ℂ, ‖z‖ ≤ 1 → Polynomial.aeval z (arPoly b) ≠ 0) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∃ r : ℝ, 0 ≤ r ∧ r < 1 ∧
-      ∀ n : ℕ, betaCoeff X μ n ≤ C * r ^ n :=
-  betaCoeff_exponential_of_hasGeometricStateChain
-    (arma_stateChain_brick h hstat hmeas hiid hdens hroot)
-
-/-- **DEBT (Basrak–Davis–Mikosch 2002; FY §2.6.1(x))**: a strictly stationary
-GARCH(p, q) process with `Σᵢ bᵢ + Σⱼ aⱼ < 1` whose iid innovations have a Lebesgue
-density positive in a neighbourhood of `0` is exponentially α-mixing.
-
-**Status (2026-08-09, wave 5): reduced to ONE named model-side brick**
-(`garch_stateChain_brick`), from which the frozen statement is proved below. Against
-wave 4's obstruction list:
-
-* *Drift.* Unchanged and still supplied by `hsum`: from `recVol`, `recX` and `indep_past`,
-  the volatility state satisfies `E[‖V_t‖₁ | V_{t−1}] ≤ (Σb + Σa)‖V_{t−1}‖₁ + c₀`, a
-  Foster–Lyapunov drift with rate `Σb + Σa < 1`. **Warning recorded in wave 5:** this must
-  be run with a *squared* Lyapunov function (`⨆ᵢ θⁱ xᵢ²`, equivalently `‖·‖₁` on the
-  squared state). The additive-recursion drift `hasLyapunovDrift_nlAR` does **not**
-  transfer: under a multiplicative innovation it yields contraction
-  `θ + λ_s E|ε| θ^{−p} ≥ θ`, which is never `< 1`. See
-  `ForMathlib/Markov/IFSMinorization.lean`'s docstring.
-* *Minorization / small set.* **CLOSED as an analytic problem** (wave 5):
-  `ForMathlib/Markov/IFSMinorization.lean`'s `hasMinorization_sclAR_pow` proves the
-  `(p+1)`-step minorization for the multiplicative recursion
-  `X_t = f(𝐗_{t−1}) + s(𝐗_{t−1})·ε_t` on a Lyapunov level set, by value-coordinate peeling
-  (the only "Jacobian" is the scalar `1/s(𝐱)`). Wave 4's diagnosis is confirmed and made
-  precise: the obstruction was **not** the multiplicativity but the *degeneracy at
-  `v = 0`*, and it is removed by a uniform positive floor `s₀ ≤ s`, which for
-  `σ_t = √(c₀ + ⋯)` is `√c₀ > 0` — i.e. by `c₀ > 0`. Two further precisions:
-  the state must use the **signed** `X`-coordinates (in squared coordinates the noise
-  enters through `ε²`, the new value is not a bijective reparametrization of the noise, and
-  the one-step law is supported on a curve); and the brick covers **ARCH(p) verbatim**,
-  while **GARCH(p, q) with `q ≥ 1`** additionally needs the state
-  `(X_{t−1},…,X_{t−p}, σ_{t−1}²,…,σ_{t−q+1}²)`, whose update shifts only the `X`-block —
-  a `shiftPush`/`iterPush` generalisation ("shift one block, recompute the other"), which
-  is state bookkeeping, not analysis. That generalisation is the residue inside the brick.
-* *Vector-valued bridge.* **CLOSED** (wave 5), exactly as for the ARMA debt.
-* *Quantitative envelope.* Same **new** gap as recorded in `arma_stateChain_brick`'s
-  docstring: Harris' theorem gives a pointwise rate, not `‖κⁿ(x,·) − F‖ ≤ A(x)ρⁿ` with
-  `A` integrable; the derivation from `harris_contraction` is a named follow-up in
-  `HarrisTheorem.lean`, outside this lane's touch set. See that docstring's **wave-6
-  amendment**: the follow-up splits into (a) exporting the envelope, which is already
-  proved inside `harris_theorem` and is a pure statement change, and (b) the invariant
-  moment bound `∫⁻ V dπ ≤ K/(1 − γ)`, which is *not* an output of Harris' theorem, is not
-  reachable by the naive truncation argument, and is the one genuinely new item.
-  **RESOLVED (wave 7): both parts are closed**, packaged as
-  `exists_invariant_geometric_envelope_of_harris` above; see the corresponding paragraph in
-  `arma_stateChain_brick`'s docstring. As there, the residue of this brick is now entirely
-  model-side: the `(p+1)`-step minorization is available only for the `shiftPush`-shaped
-  recursion, so **GARCH(p, q) with `q ≥ 1` still needs the two-block state update**, and
-  `IsMarkovOf` for the volatility state still needs `ε_{t+1} ⫫ σ{V_s : s ≤ t}`, which
-  `IsGARCH.indep_past` supplies only against the `X`-past. Neither is a `sorry`-filling
-  task.
-* *Verified (wave 6): `hsum` really is a drift condition here.* `IsGARCH` carries
-  `iid : IsIIDNoise ε 1 μ`, i.e. `E ε₀ = 0` and `Var ε₀ = 1`, so
-  `E[X_t² | past] = σ_t²` and the volatility recursion contracts at rate `Σb + Σa`
-  exactly as the drift bullet above assumes. (Had the noise variance been a free
-  parameter `σ²`, `Σb + Σa < 1` would have been the wrong condition — the contraction
-  factor is `σ²Σb + Σa` — and the brick would have been false as frozen. It is not.)
-
-**Statement strengthening (documented, USER-INPUT).** `hdens` is strengthened from
-"positive on `|x| < δ`" to "**continuous** and positive on all of `ℝ`". This is BDM's own
-standing assumption (they assume `ε` has a positive density on `ℝ`, or at least on a set of
-full support) and it is what `hasMinorization_sclAR_pow` consumes: continuity buys the
-positive lower bound `γ = min_{|t| ≤ T} g(t) > 0` on the compact window that the
-`(p+1)`-step peeling visits, and positivity away from `0` is needed because the window is
-`[−R_b, R_b]` with `R_b` the Lyapunov box radius, not a neighbourhood of the origin.
-Wave 4's analysis of why the frozen `|x| < δ` version fails (the lower bound would only
-hold on the shrinking "collapse region") is kept above as the justification. -/
-private lemma garch_stateChain_brick [IsProbabilityMeasure μ]
-    {c0 : ℝ} {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ} {X σvol ε : ℤ → Ω → ℝ}
-    (h : IsGARCH c0 b a X σvol ε μ) (hstat : IsStrictlyStationary X μ)
-    (hc0 : 0 < c0)
-    (hsum : ∑ i, b i + ∑ j, a j < 1)
-    (hdens : ∃ g : ℝ → ℝ, Measurable g ∧ Continuous g ∧ (∀ x, 0 < g x) ∧
-      μ.map (ε 0) = MeasureTheory.volume.withDensity (fun x => ENNReal.ofReal (g x))) :
-    HasGeometricStateChain X μ := by
-  sorry
-
-/-- **DEBT (Basrak–Davis–Mikosch 2002; FY §2.6.1(x))**: a strictly stationary GARCH(p, q)
-process with `Σᵢ bᵢ + Σⱼ aⱼ < 1` and a continuous positive innovation density is
-exponentially α-mixing.
-
-**PROVED over the single brick `garch_stateChain_brick`**; see that brick's docstring for
-the status of each ingredient and for the two hypothesis strengthenings (`c₀ > 0`, and
-continuity + global positivity of the density). -/
-theorem garch_alphaCoeff_exponential_debt [IsProbabilityMeasure μ]
-    {c0 : ℝ} {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ} {X σvol ε : ℤ → Ω → ℝ}
-    (h : IsGARCH c0 b a X σvol ε μ) (hstat : IsStrictlyStationary X μ)
-    -- USER-INPUT (**strengthened**, wave 5): a strictly positive intercept, which is what
-    -- gives the scale `σ_t ≥ √c₀ > 0` the uniform floor that `hasMinorization_sclAR_pow`
-    -- needs; at `c₀ = 0` the chain really does have a degenerate (collapse) region
-    (hc0 : 0 < c0)
-    -- USER-INPUT: contraction of the GARCH coefficients; BDM 2002 / FY §2.6.1(x)
-    (hsum : ∑ i, b i + ∑ j, a j < 1)
-    -- USER-INPUT (**strengthened**, wave 5): continuous, everywhere positive innovation
-    -- density (BDM's own assumption); see the brick's docstring
-    (hdens : ∃ g : ℝ → ℝ, Measurable g ∧ Continuous g ∧ (∀ x, 0 < g x) ∧
-      μ.map (ε 0) = MeasureTheory.volume.withDensity (fun x => ENNReal.ofReal (g x))) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∃ r : ℝ, 0 ≤ r ∧ r < 1 ∧
-      ∀ n : ℕ, alphaCoeff X μ n ≤ C * r ^ n :=
-  alphaCoeff_exponential_of_hasGeometricStateChain
-    (garch_stateChain_brick h hstat hc0 hsum hdens)
-
-/-! #### The Gaussian comparison `ρ ≤ 2π α` (Kolmogorov–Rozanov)
-
-The theorem is assembled from the two genuine literature inputs, isolated as the named
-bricks `gaussian_rho_linear_brick` and `gaussian_pair_corr_le_alpha_brick`; the
-`sSup`/monotonicity plumbing between them is proved. -/
-
-/-- The linear functional `∑_{s ∈ S} a s · X_s` of the process. -/
-private noncomputable def linComb (X : ℤ → Ω → ℝ) (S : Finset ℤ) (a : ℤ → ℝ) : Ω → ℝ :=
-  fun ω => ∑ s ∈ S, a s * X s ω
-
-omit [MeasurableSpace Ω] in
-/-- A linear functional of the past is measurable for the past σ-algebra. -/
-private lemma measurable_linComb_sigmaLE {X : ℤ → Ω → ℝ} {S : Finset ℤ}
-    (hS : ∀ s ∈ S, s ≤ (0:ℤ)) (a : ℤ → ℝ) : Measurable[sigmaLE X 0] (linComb X S a) := by
-  refine Finset.measurable_sum S fun s hs => ?_
-  have hcs : MeasurableSpace.comap (X s) inferInstance ≤ sigmaLE X 0 :=
-    le_iSup₂_of_le s (Set.mem_Iic.mpr (hS s hs)) le_rfl
-  exact measurable_const.mul (Measurable.of_comap_le hcs)
-
-omit [MeasurableSpace Ω] in
-/-- A linear functional of the future is measurable for the future σ-algebra. -/
-private lemma measurable_linComb_sigmaGE {X : ℤ → Ω → ℝ} {T : Finset ℤ} {c : ℤ}
-    (hT : ∀ s ∈ T, c ≤ s) (b : ℤ → ℝ) : Measurable[sigmaGE X c] (linComb X T b) := by
-  refine Finset.measurable_sum T fun s hs => ?_
-  have hcs : MeasurableSpace.comap (X s) inferInstance ≤ sigmaGE X c :=
-    le_iSup₂_of_le s (Set.mem_Ici.mpr (hT s hs)) le_rfl
-  exact measurable_const.mul (Measurable.of_comap_le hcs)
-
-/-- **BRICK 1 — Gaussian maximal correlation is carried by the linear span.**
-
-For a Gaussian process the supremum defining `ρ(𝓕_{-∞}^0, 𝓕_n^∞)` is already achieved (up
-to `ε`) on pairs of *finite linear combinations* of the flanking coordinates.
-
-**Intended proof.** The closed `L²`-span `H` of `{X_s}` is a Gaussian Hilbert space; `L²` of
-the σ-algebra `σ{X_s : s ≤ 0}` decomposes as the orthogonal Wiener–Itô sum
-`⊕_{k ≥ 0} H_k^{(≤0)}` of the Hermite chaoses, and the same on the future side. The
-covariance operator maps the `k`-th chaos to the `k`-th chaos and acts there as the `k`-th
-tensor power of its action on `H_1`, so the correlation of two chaos-`k` variables is at
-most `ρ_1^k ≤ ρ_1`, where `ρ_1` is the maximal correlation of the *first* chaoses, i.e. of
-the linear parts (Mehler's formula / Lancaster's theorem). Hence `ρ = ρ_1` and the
-supremum over the whole of `L²` reduces to the supremum over `H_1`, whose elements are
-`L²`-limits of finite linear combinations. Formalising this needs the Hermite/Wiener chaos
-decomposition of a Gaussian Hilbert space, which Mathlib does not yet have; it is left as a
-single named debt.
-
-**Status (2026-08-09, wave 6): TRUE as frozen, and the pin survey is confirmed — this is
-research-grade at this pin.**
-
-* *No statement defect.* `ProbabilityTheory.IsGaussianProcess` is genuine **joint**
-  Gaussianity (`hasGaussianLaw : ∀ I : Finset T, HasGaussianLaw (I.restrict (X · ω)) P`,
-  i.e. every finite-dimensional distribution is Gaussian), not "each `X_t` is Gaussian", so
-  the Kolmogorov–Rozanov hypothesis is really in force and the brick is not refutable the
-  way the Davydov brick of `MarkovBridge.lean` was. The degenerate corners are harmless:
-  when `variance f μ = 0` the left-hand side is the junk value `0` (division by zero) and
-  `S = T = ∅` already witnesses the conclusion; a non-centred process is handled because
-  `σ(X_s)` and every covariance/variance are invariant under recentring.
-* *What the pin actually has.* `Mathlib/RingTheory/Polynomial/Hermite/{Basic,Gaussian}` —
-  the Hermite polynomials as *algebraic* objects together with the Rodrigues formula
-  `deriv_gaussian_eq_hermite_mul_gaussian`. That is all. There is **no** `L²(γ)`
-  orthogonality of the Hermite system, **no** completeness (`Wiener chaos`/`WienerChaos`
-  matches nothing in the pin), **no** Mehler kernel, and no Gaussian-Hilbert-space
-  machinery. Three separate `ForMathlib` developments therefore stand between this brick
-  and a proof: (i) `∫ H_m H_n dγ = n! δ_{mn}`; (ii) density of the polynomials in `L²(γ)`
-  (the usual route is via the analyticity of `t ↦ ∫ e^{tx} f dγ`); (iii) the tensorisation
-  step — the chaos grading is preserved by the covariance operator and acts on the `k`-th
-  chaos as the `k`-th tensor power, which is what forces `ρ = ρ₁`.
-
-  Only (iii) is specific to this theorem; (i) and (ii) are standard `Mathlib`-shaped
-  analysis. This is the honest costing: not a `sorry`-filling task, and not a small one. -/
-private lemma gaussian_rho_linear_brick [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
-    (hmeas : ∀ t, Measurable (X t)) (hgauss : ProbabilityTheory.IsGaussianProcess X μ) (n : ℕ)
-    {f g : Ω → ℝ} (hf : Measurable[sigmaLE X 0] f) (hg : Measurable[sigmaGE X (n : ℤ)] g)
-    (hfL : MemLp f 2 μ) (hgL : MemLp g 2 μ) {ε : ℝ} (hε : 0 < ε) :
-    ∃ (S T : Finset ℤ) (a b : ℤ → ℝ), (∀ s ∈ S, s ≤ (0:ℤ)) ∧ (∀ s ∈ T, (n : ℤ) ≤ s) ∧
-      |cov[f, g; μ]| / (Real.sqrt (variance f μ) * Real.sqrt (variance g μ))
-        ≤ |cov[linComb X S a, linComb X T b; μ]|
-            / (Real.sqrt (variance (linComb X S a) μ)
-               * Real.sqrt (variance (linComb X T b) μ)) + ε := by
-  sorry
-
-/-- **BRICK 2 — the two-variable Kolmogorov–Rozanov bound (Gaussian orthant identity).**
-
-For a *jointly Gaussian* pair `(U, V)` with correlation `r`, the standardised pair has
-`P(U > E U, V > E V) = 1/4 + arcsin r / (2π)` (Sheppard's orthant formula), so the
-α-coefficient of the two generated σ-algebras is at least
-`|P(U > EU, V > EV) − P(U > EU)P(V > EV)| = |arcsin r| / (2π) ≥ |r| / (2π)`, which is the
-claim. (Degenerate pairs contribute the junk value `0` on the left.)
-
-Formalising this needs the bivariate-normal orthant probability, i.e. the polar-coordinate
-evaluation of `∫∫_{x,y>0} exp(−(x² − 2rxy + y²)/(2(1−r²))) dx dy`, which Mathlib does not
-have; it is left as a single named debt.
-
-**Status (2026-08-09, wave 6): TRUE as frozen; the "polar coordinates" plan above is
-UNNECESSARY — the orthant identity is a ONE-dimensional Gaussian integral.** Write the
-standardised pair as `U`, `V = rU + √(1−r²) Z` with `U, Z` iid `N(0,1)` (2×2 Cholesky —
-available from `hgauss` and the covariance of the two linear functionals), and put
-`c := r/√(1−r²)`. Then Fubini in `Z` first gives, with no two-dimensional change of
-variables and no bivariate density,
-
-  `P(U > 0, V > 0) = ∫_0^∞ φ(u) Φ(cu) du = 1/4 + G(c)`,
-  `G(c) := ∫_0^∞ φ(u) (Φ(cu) − 1/2) du`,
-
-and differentiating under the integral sign in `c` leaves a *single* elementary Gaussian
-integral,
-
-  `G'(c) = ∫_0^∞ u φ(u) φ(cu) du = (2π)⁻¹ ∫_0^∞ u e^{−u²(1+c²)/2} du = 1/(2π(1+c²))`,
-
-so `G(c) = arctan c / (2π)` from `G(0) = 0`, i.e. `P(U>0, V>0) − 1/4 = arcsin r / (2π)`
-(Sheppard). Only `|arcsin r| ≥ |r|` is then needed, which is `Real.le_arcsin`-level. This
-replaces a 2-D polar computation Mathlib does not support by: a 2×2 Cholesky
-factorisation, one Fubini, one `∫_0^∞ u e^{−au²} du = 1/(2a)`, and
-`HasDerivAt.arctan` — all present in the pin. The degenerate corners are again free
-(`variance = 0` gives the junk value `0` on the left; `|r| = 1` gives `1 ≤ 2π · α` and
-`α ≥ 1/4` for a σ-algebra against itself).
-
-The remaining genuine work is the **transfer from the two linear functionals to the pair
-`(U, V)`**: extracting the Cholesky representation of a jointly Gaussian pair out of
-`IsGaussianProcess` (Mathlib has `hasGaussianLaw_prodMk` and `HasGaussianLaw` under
-continuous linear maps, but no "standardise a Gaussian pair" lemma) and the differentiation
-under the integral sign. That is a self-contained `ForMathlib` brick of moderate size —
-strictly smaller than `gaussian_rho_linear_brick`'s chaos development.
-
-**Status (2026-08-09, wave 7): the wave-6 route is RE-VERIFIED arithmetically and NOT
-attempted (out of budget for this lane).** Checked, and recorded so the next lane does not
-re-derive it:
-
-* the constants are right — `φ(u)φ(cu) = (2π)⁻¹ exp(−u²(1+c²)/2)`, so
-  `G'(c) = (2π)⁻¹∫_0^∞ u e^{−u²(1+c²)/2} du = 1/(2π(1+c²))`, `G(0) = 0`, and
-  `arctan(r/√(1−r²)) = arcsin r`; the orthant value is `1/4 + arcsin r/(2π)` and the
-  covariance of the two indicators is `arcsin r/(2π)`, giving `|r|/(2π) ≤ α` from
-  `|r| ≤ |arcsin r|`;
-* the `variance = 0` corner really is free, and for the Lean-specific reason that
-  `Real.sqrt 0 = 0` and `x / 0 = 0`: the left-hand side is *literally* `0`, so no
-  nondegeneracy side condition has to be threaded;
-* the `|r| = 1` corner is **not** covered by the Cholesky route (`c = r/√(1−r²)` is a
-  division by zero there) and needs the separate branch wave 6 named: `g` is then an
-  increasing affine function of `f` a.e., the two half-line events coincide, and
-  `α ≥ 1/2 − 1/4 = 1/4`, whence `1 ≤ π/2 ≤ 2π α`.
-
-Two Lean-side inputs remain, and both are larger than "plumbing": (i) identifying the law
-of the standardised pair with the law of `(U, rU + √(1−r²)Z)` — available in principle from
-`Measure.ext_of_charFun` / `gaussian_charFun_congr` (two Gaussians with equal mean and
-covariance form coincide), which the pin does have; and (ii) `G' = 1/(2π(1+c²))`, i.e.
-differentiation under an integral over `Set.Ioi 0` with a dominated derivative. The
-alternative for (ii) — reading `G(c)` as the standard bivariate Gaussian measure of the
-sector of angle `arctan c` and invoking rotation invariance — was considered and is *not*
-cheaper in the pin: it needs "sector measure is proportional to angle", i.e. the
-construction of the uniform measure on the circle. -/
-private lemma gaussian_pair_corr_le_alpha_brick [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
-    (hmeas : ∀ t, Measurable (X t)) (hgauss : ProbabilityTheory.IsGaussianProcess X μ)
-    (S T : Finset ℤ) (a b : ℤ → ℝ) :
-    |cov[linComb X S a, linComb X T b; μ]|
-        / (Real.sqrt (variance (linComb X S a) μ) * Real.sqrt (variance (linComb X T b) μ))
-      ≤ 2 * Real.pi * alphaMixCoeff μ (MeasurableSpace.comap (linComb X S a) inferInstance)
-          (MeasurableSpace.comap (linComb X T b) inferInstance) := by
-  sorry
-
-/-- **DEBT (Kolmogorov–Rozanov 1960; FY §2.6.1(viii))**: for a (strictly stationary)
-Gaussian process, α-mixing already implies ρ-mixing (the coefficients are comparable:
-`ρ(n) ≤ 2π α(n)`).
-**Status (2026-08-09).** PROVED over two named bricks — `gaussian_rho_linear_brick`
-(Gaussian maximal correlation is carried by the linear span) and
-`gaussian_pair_corr_le_alpha_brick` (the two-variable arcsin/orthant bound). The
-`sSup`-plumbing, the `ε`-limit and the monotonicity of `α` along
-`σ(∑ a_s X_s) ≤ 𝓕_{-∞}^0`, `σ(∑ b_s X_s) ≤ 𝓕_n^∞` are proved here. -/
-theorem gaussian_rho_le_alpha_debt [IsProbabilityMeasure μ] {X : ℤ → Ω → ℝ}
-    (hmeas : ∀ t, Measurable (X t))
-    -- USER-INPUT: Gaussian process; Kolmogorov–Rozanov
-    (hgauss : ProbabilityTheory.IsGaussianProcess X μ) (n : ℕ) :
-    rhoCoeff X μ n ≤ 2 * Real.pi * alphaCoeff X μ n := by
-  have hα0 : 0 ≤ alphaCoeff X μ n := alphaMixCoeff_nonneg (mΩ := inferInstance)
-  have hπ : (0:ℝ) ≤ 2 * Real.pi := by positivity
-  refine Real.sSup_le ?_ (by positivity)
-  rintro r ⟨f, g, hfm, hgm, hfL, hgL, rfl⟩
-  refine le_of_forall_pos_le_add fun ε hε => ?_
-  obtain ⟨S, T, a, b, hS, hT, hle⟩ :=
-    gaussian_rho_linear_brick hmeas hgauss n hfm hgm hfL hgL hε
-  have hmain : |cov[linComb X S a, linComb X T b; μ]|
-      / (Real.sqrt (variance (linComb X S a) μ) * Real.sqrt (variance (linComb X T b) μ))
-      ≤ 2 * Real.pi * alphaCoeff X μ n := by
-    refine (gaussian_pair_corr_le_alpha_brick hmeas hgauss S T a b).trans ?_
-    refine mul_le_mul_of_nonneg_left ?_ hπ
-    exact alphaMixCoeff_mono (mΩ := inferInstance)
-      (measurable_linComb_sigmaLE hS a).comap_le (measurable_linComb_sigmaGE hT b).comap_le
-  linarith
 
 end Process2
 

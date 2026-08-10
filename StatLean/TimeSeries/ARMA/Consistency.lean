@@ -4775,9 +4775,10 @@ theorem armaProfileS_tendstoInProb [IsProbabilityMeasure μ] {p q : ℕ}
 /-! ### The generic linear-process second-moment LLN
 
 `armaResidualSS_tendstoInProb` is stated for the *composite* filter `π(θ) ∗ ψ(θ₀)` of the
-ARMA problem; the ingredient that the rest of the Hannan program consumes
-(`MLEAsymptotics.hannanScore_brownInputs`(2), `samplePACF_linearization`) is the plain
-one-filter statement for an **arbitrary** absolutely summable coefficient sequence, which
+ARMA problem; the ingredient that the rest of the Hannan program consumed (the Brown
+input (2) and the sample-PACF linearization of `ARMA/MLEAsymptotics.lean`, both since
+removed) is the plain one-filter statement for an **arbitrary** absolutely summable
+coefficient sequence, which
 is *not* an instance of it (a general `c` is not an ARMA transfer sequence). It is proved
 here by the same ergodic-theorem-free device, and is strictly simpler: with `π = δ` the
 `min(T − i, m)` edge term of `integral_defect_le` disappears, so the `L¹` defect is

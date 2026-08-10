@@ -1416,9 +1416,9 @@ private lemma integral_scaledCross_sq_le [IsProbabilityMeasure μ] (hiid : IsIID
 
 `√T ρ̂_ε(k) →d N(0, 1)` for i.i.d. `ε` with `0 < σ² < ∞` and `k ≥ 1`.
 
-**Why it is not citable from what exists.** `Process/SampleACF.lean` has two statements
-of this shape — `sampleACF_bartlett_clt_debt` (FY Thm 2.8(iii)) and `IsMA.sampleACF_clt`
-(eq. (2.27), whose `q = 0` case is exactly this) — but **both require a finite fourth
+**Why it is not citable from what exists.** `Process/SampleACF.lean` had two statements
+of this shape — its FY Thm 2.8(iii) Bartlett debt and FY eq. (2.27), whose `q = 0` case is
+exactly this, both since removed — but **both required a finite fourth
 moment** (`MemLp (ε 0) 4 μ`), and the frozen residual-correlogram statement supplies only
 `IsIIDNoise ε σ2 μ`, i.e. two moments. The fourth moment is genuinely unnecessary, which
 is why this was a separate residue rather than a citation, and why the proof is the
@@ -3462,9 +3462,9 @@ to the reading recorded above, both detailed at the residues:
   makes the conclusion true: under mere `O_p(T^{−1/2})` it is FALSE, and not by the
   "strictly finer" Box–Pierce correction alone — the limit law is then not determined by
   the rate at all, since it depends on the limit law of `√T(θ̂_T − θ₀)`;
-* residue (A) cannot cite `sampleACF_bartlett_clt_debt` or `IsMA.sampleACF_clt`: both
-  demand a finite fourth moment, which `IsIIDNoise` does not supply and which the
-  martingale-difference route does not need. -/
+* residue (A) could not cite `Process/SampleACF.lean`'s Bartlett debt or its FY eq. (2.27)
+  corollary (both since removed): both demanded a finite fourth moment, which `IsIIDNoise`
+  does not supply and which the martingale-difference route does not need. -/
 theorem residual_acf_asymptotically_standard_debt {Ω : Type*} [MeasurableSpace Ω]
     {μ : Measure Ω} [IsProbabilityMeasure μ] {p q : ℕ}
     {b0 : Fin p → ℝ} {a0 : Fin q → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}

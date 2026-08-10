@@ -23,16 +23,26 @@ memberships of the observations) is known:
   the definition's tie-break convention);
 * **eq. (4.8)** — the known-partition asymptotic normality
   `T_i^{1/2}(b̃_i − b_i) →d N(0, σ_i² W_i^{-1})`, a literature DEBT (the book says
-  "can be shown", pointing at Theorem 3.2). **Caution recorded in the inventory**: the
-  printed `W_i` is built from the moments of the *fictitious global regime-`i` AR
-  process*, not from moments conditional on `X_{t−d} ∈ A_i`. The frozen statement left
-  `W_i` a free positive-definite matrix and was therefore FALSE
+  "can be shown", pointing at Theorem 3.2). The debt statement itself has been removed
+  (see **Removed** below); its two machine-checked falsity witnesses and the whole
+  deterministic reduction it was built on are kept. **Caution recorded in the
+  inventory**: the printed `W_i` is built from the moments of the *fictitious global
+  regime-`i` AR process*, not from moments conditional on `X_{t−d} ∈ A_i`. The frozen
+  statement left `W_i` a free positive-definite matrix and was therefore FALSE
   (`tarLS_clt_debt_false`); pinning it to the *uncentered* regime-conditional design
   covariance `tarRegimeDesignCov` was still FALSE (`tarLS_clt_debt_centering_false`,
-  finding 24); it is now pinned to the **centered** one,
-  `tarRegimeDesignCovCentered` — see the two Statement-strengthening paragraphs at
-  `tarLS_clt_debt`, and `rad_designCovCentered_not_posDef` for the audit that the third
-  repair is what kills the second witness.
+  finding 24); the repaired form pinned it to the **centered** one,
+  `tarRegimeDesignCovCentered` — see `rad_designCovCentered_not_posDef` for the audit
+  that the third repair is what kills the second witness.
+
+**Removed (2026-08-10, user directive).** The module's single sorried declaration was
+deleted; every proved declaration around it — both falsity witnesses, the normal-equation
+section, and the design-covariance apparatus — is kept.
+* `tarLS_clt_debt` — asserted FY eq. (4.8) in repaired form: the charFun/Cramér–Wold
+  statement that the regime-wise LS estimator is `√T_i`-asymptotically normal with
+  covariance `σ_i² W⁻¹`, `W = tarRegimeDesignCovCentered (A i) d X μ`.
+
+Recover from `bdc8143f`.
 
 **Scope.** FY Theorems 4.1/4.2 (Chan 1993a) and their consumers are **descoped**
 (user, 2026-08-04); nothing here estimates the threshold `r` itself.
@@ -252,8 +262,8 @@ minimality over `(β₀, β)` with `bhat` the `β`-component, and (iii) a non-de
 hypothesis `T_i → ∞` (equivalently `P(X_{t-d} ∈ A_i) > 0`), without which even a repaired
 `W` leaves the degenerate instance a counterexample.
 
-**All three repairs are applied** to `tarLS_clt_debt` below (wave
-`ts/s12b-model-repairs`, 2026-08-09): see the Statement-strengthening paragraph there.
+**All three repairs were applied** to the (since removed) repaired debt statement, wave
+`ts/s12b-model-repairs`, 2026-08-09.
 This witness is kept verbatim, quantified over the *frozen* shape `H`, as the permanent
 record of what the repairs are for. -/
 
@@ -686,7 +696,8 @@ private lemma rad_designMean :
 
 /-- **The third repair is exactly the right one.** On the finding-24 witness the *centered*
 design covariance is `0` — so the repaired hypothesis `hW : W.PosDef` of the restated
-`tarLS_clt_debt` below is **not** satisfiable there, and the witness no longer applies. -/
+(and since removed) eq. (4.8) debt is **not** satisfiable there, and the witness no longer
+applies. -/
 private lemma rad_designCovCentered :
     tarRegimeDesignCovCentered (P := 1) (radA 0) 1 radCoord radMeasure = 0 := by
   rw [tarRegimeDesignCovCentered, rad_designCov, rad_designMean]
@@ -888,7 +899,7 @@ private theorem tarLS_clt_debt_centering_false
 
 /-! ### The regime-wise normal equations and the centered identity (deterministic)
 
-The first bullet of the residue list at `tarLS_clt_debt` below — "the per-regime **normal
+The first bullet of the removed eq. (4.8) debt's residue list — "the per-regime **normal
 equations** … this algebraic step is what makes `tarRegimeDesignCovCentered` — and not
 `tarRegimeDesignCov` — the matrix in the limit … it is a finite-sample identity and needs
 no probability" — is discharged here, in the form the CLT proof consumes.
@@ -1107,200 +1118,5 @@ theorem tarLS_centered_normalEquation (x : Fin T → ℝ) (A : Set ℝ) (d : ℕ
   ring
 
 end LSNormalEquations
-
-/-- **FY eq. (4.8) — DEBT (Chan 1993a; the book's "can be shown", companion to
-Thm 3.2)**: with a known partition, under strict stationarity, ergodicity and finite
-second moments, the regime-wise LS estimator is `√T_i`-asymptotically normal with
-covariance `σ_i² W_i^{-1}`. Stated in Cramér–Wold/charFun form over the coefficient
-vector.
-
-**Statement strengthening (wave `ts/s12b-model-repairs`, 2026-08-09).** The frozen form
-of this statement is FALSE — see `tarLS_clt_debt_false` above, which is kept verbatim as
-the record of the refutation. Three repairs, exactly the ones that witness's docstring
-prescribes, are applied here; each added or changed hypothesis is tagged `USER-INPUT`:
-
-1. **`W` is no longer a free parameter.** It is pinned by `hWdef` to
-   `tarRegimeDesignCov (A i) d X μ`, i.e. to `E[Z_0 Z_0ᵀ | X_{−d} ∈ A_i]`, a functional of
-   `(A, d, X, μ)` alone. This kills defect 1 of the witness (two admissible values `W`,
-   `2W` forcing two different limits). Note this is the **regime-conditional** reading,
-   which is what the task of estimating `b_i` from the regime-`i` subsample actually
-   produces; the inventory's earlier note that the printed `W_i` should be read as the
-   moments of the *fictitious global regime-`i` AR process* (Chan 1993a) is a different
-   normalization of the same object — under the fictitious-process reading the two agree
-   up to the regime mass, which is absorbed by the `√T_i` (rather than `√T`) scaling.
-2. **`bhat` has a genuine least-squares characterization.** The frozen `hLS` asserted
-   minimality of the pair `(b0 i, bhat T ω)` — pinning the *intercept at the truth*, a
-   probability-zero constraint (defect 2). The repair introduces the estimated intercept
-   sequence `bhat0` and asks for **joint** minimality of `(bhat0 T ω, bhat T ω)` over all
-   `(γ₀, γ)`, which is FY eqs. (4.4)–(4.5) verbatim, and which is *satisfiable* at every
-   sample by `exists_tarLS_minimizer` above.
-3. **The regime is non-degenerate.** `hmass` asks the regime event to carry positive
-   mass. Without it the empty-regime instance of the witness survives *any* repair of `W`:
-   the statistic is identically `0` while the limit is a nondegenerate Gaussian. Under
-   strict stationarity and ergodicity `hmass` is equivalent to `T_i → ∞` a.s., which is
-   the form FY uses.
-
-**STATUS after wave `ts/f1-arma-finale` (2026-08-09): the REPAIRED statement below is
-STILL FALSE — finding 24, formalized as `tarLS_clt_debt_centering_false` above.** The
-three repairs are all genuinely needed and all correct as far as they go, but they miss a
-fourth defect, which is a *modelling* error rather than a quantifier one:
-
-4. **`tarRegimeDesignCov` is UNCENTERED.** FY eqs. (4.4)–(4.5) fit an **intercept**
-   alongside the slopes, so the slope estimator is driven by the regime-conditional
-   *covariance* `Σ_i = E[Z₀Z₀ᵀ | ·] − E[Z₀ | ·]E[Z₀ | ·]ᵀ`, and its asymptotic covariance
-   is `σ_i² Σ_i^{-1}`. Repair 1 pinned `W` to the *second-moment* matrix
-   `E[Z₀Z₀ᵀ | X_{−d} ∈ A_i]` instead. The two agree only when the regime-conditional
-   regressor mean vanishes — which is exactly what a regime constraint destroys, and which
-   the nonzero intercepts `b0 i` destroy anyway.
-
-   The witness drives the gap to its extreme rather than computing a limit law: with
-   i.i.d. **Rademacher** innovations, `k = 2`, `d = P = 1`, `A₀ = {1}`, `A₁ = {1}ᶜ` and
-   zero coefficients (so `X = ε`), the threshold variable `X_{t−d}` and the single
-   regressor `X_{t−1}` are the *same* variable, so on regime `0` the regressor is
-   identically `1`: `Σ₀ = 0` while `W₀ = 1` is positive definite, satisfying `hW`. The
-   design `(1, X_{t−1}) = (1, 1)` is rank one, the intercept absorbs the slope, and the
-   regime sample mean paired with slope `0` is a genuine joint minimizer (`radMean_isLS`)
-   and measurable (`radBhat0_measurable`). The statistic is then identically `0` — its
-   characteristic function is `1`, against the claimed `exp(−1/2)`. The atom is essential:
-   a singleton regime of positive mass is impossible for the Gaussian noise used by the
-   first witness, which is why a new two-point noise is built.
-
-   **The repair this prescribes** is to replace `tarRegimeDesignCov` by its centered
-   version and to require *that* matrix positive definite (equivalently: state eq. (4.8)
-   for mean-corrected regressors). Under Chan 1993a's fictitious-process reading the same
-   correction appears as centering the fictitious AR process at its own mean.
-
-**Statement strengthening, third repair (wave `ts/f1b-arma-deep`, 2026-08-09) — APPLIED
-below, on the laptop's authorization.** Defect 4 is repaired exactly as its own
-prescription says, by one further changed hypothesis, again tagged `USER-INPUT`:
-
-5. **`W` is pinned to the CENTERED design covariance.** `hWdef` now reads
-   `W = tarRegimeDesignCovCentered (A i) d X μ`, the new definition
-   `E[Z₀Z₀ᵀ | ·] − E[Z₀ | ·]E[Z₀ | ·]ᵀ` introduced above, and `hW : W.PosDef` is asked of
-   *that* matrix. Repair 1 of the previous wave is thereby superseded, not undone: `W` is
-   still a functional of `(A, d, X, μ)` alone, so defect 1 of the first witness stays
-   killed; repairs 2 and 3 are untouched.
-
-   The finding-24 witness is **blocked by exactly this hypothesis and by nothing else**:
-   `rad_designCovCentered` proves that on that instance the centered matrix is `0`, and
-   `rad_designCovCentered_not_posDef` that `0` is not positive definite, so `hW` fails
-   there while every other hypothesis of the witness continues to hold verbatim. That is
-   the sharpest available audit that the third repair is neither too weak (it kills the
-   witness) nor a re-parametrization (the killed hypothesis is the new one).
-
-   Both witnesses are kept: `tarLS_clt_debt_false` (defects 1–3, wave
-   `ts/s12b-model-repairs`) and `tarLS_clt_debt_centering_false` (defect 4, wave
-   `ts/f1-arma-finale`), each stated against the frozen form it refutes, so the record of
-   what each repair buys is preserved verbatim.
-
-**STATUS after wave `ts/f1b-arma-deep`: the repaired statement is a DEBT, not attempted to
-completion.** No fourth defect is known, and the two recorded witnesses are both dead
-against it. What the proof needs, in the order a formalization would build it:
-
-* the per-regime **normal equations**. `hLS` gives joint minimality of `(β̂₀, β̂)`; the
-  first-order conditions on the regime index set `tarRegimeIndices` are
-  `Σ_{t ∈ R_i} (x_t − β̂₀ − ⟨β̂, z_t⟩) = 0` and `Σ_{t ∈ R_i} z_t (x_t − β̂₀ − ⟨β̂, z_t⟩) = 0`;
-  eliminating `β̂₀` between them turns the slope equation into the *centered* one,
-  `Ŝ_i (β̂ − b_i) = Σ_{t ∈ R_i} (z_t − z̄_i) ε_t` with `Ŝ_i = Σ_{t∈R_i}(z_t − z̄_i)(z_t − z̄_i)ᵀ`.
-  This algebraic step is what makes `tarRegimeDesignCovCentered` — and not
-  `tarRegimeDesignCov` — the matrix in the limit, and it is the reason the repair is
-  forced rather than chosen; it is a finite-sample identity and needs no probability;
-* `T_i⁻¹ Ŝ_i →p Σ_i` and `T_i/T →p` the regime mass: two regime-restricted LLNs. Under
-  `hstat` + `hL2` these are the `Threshold/TAR.lean` ergodic averages restricted to the
-  regime event, i.e. the same shape as the ARMA lane's
-  `Consistency.linearProcess_avgSq_tendstoInProb` with an indicator weight;
-* the **MDS CLT** for `T_i^{−1/2} Σ_{t∈R_i} (z_t − z̄_i) ε_t`. The summands are a
-  martingale-difference sequence along the natural filtration (the regime membership and
-  `z_t` are past-measurable, `ε_t` is not), so `mds_clt_sequence` applies once the
-  conditional-variance LLN of the previous item is in hand; the random index set is
-  handled by carrying the indicator inside the summand rather than by a random-time
-  argument;
-* Slutsky, to replace `Ŝ_i` by `Σ_i` and to move from `√T_i` to the stated scaling.
-
-The three ARMA-lane inputs this reuses (`mds_clt_sequence`, the indicator-weighted LLN,
-and the charFun form of Slutsky) all exist in the project; the regime-restricted LLN and
-the normal-equation algebra do not, and are the honest cost of closing this.
-
-**STATUS after wave `ts/f1c-hannan-orientation` (2026-08-09): the first bullet is DONE;
-the debt is not.** The normal-equation algebra now exists, in the section above:
-
-* `tarLS_normalEquations` — the two first-order conditions on the regime index set,
-  obtained from `hLS` by differentiating along the intercept and along each slope
-  coordinate (`sum_mul_eq_zero_of_min`, a one-direction quadratic-minimum lemma);
-* `tarLS_centered_normalEquation` — the elimination of the intercept, giving
-  `Ŝ_i (β̂ − γ) = Σ_{t∈R_i}(z_t − z̄_i)(x_t − γ₀ − ⟨γ, z_t⟩)` row by row, for an arbitrary
-  reference `(γ₀, γ)`, with `Ŝ_i = tarSampleDesignCentered` the **centered** sample design
-  matrix.
-
-Instantiating the second at `(γ₀, γ) = (b0 i, b i)` and using the TAR recurrence turns the
-right-hand side into `σ_i Σ_{t∈R_i}(z_t − z̄_i) ε_t`, which is the martingale-difference sum
-the CLT needs; the left-hand side is `Ŝ_i (β̂ − b_i)`. So the deterministic reduction of the
-statement is complete and it confirms the third repair from the algebra rather than from
-the witness: no uncentered `tarRegimeDesignCov` occurs anywhere in the identity.
-
-**FINDING 31 (wave `ts/f1c-hannan-orientation`, 2026-08-09).** The centered design matrix
-appears in the normal equation for an **arbitrary** reference point `(γ₀, γ)`, not just at
-the truth — the intercept elimination is what produces it, and it happens before any
-probability enters. So defect 4 (finding 24) is not a fact about the limit at the true
-parameter that a witness happened to expose; it is visible in the finite-sample algebra of
-*any* intercept-fitting least-squares problem, and the uncentered `tarRegimeDesignCov`
-cannot appear in a correct eq. (4.8) under any reading.
-
-Of the four bullets above, bullets 2–4 remain, and this wave sharpens one of them: the
-regime-restricted LLN must deliver `T_i⁻¹ Ŝ_i →p Σ_i` for the **centered** `Ŝ_i`, i.e. it
-must also cover the sample regime mean `z̄_i` — a second indicator-weighted LLN (for
-`T_i⁻¹ Σ_{t∈R_i} z_t →p m_i`) plus one Slutsky step, not a single application as the
-bullet suggests. The `√T_i`-versus-`√T` bookkeeping in the last bullet is unaffected.
-
-**STATUS after wave `ts/f4a-arma-last` (2026-08-09): NOT attempted; bullets 2–4 stand.**
-One transferable item from that wave, which closed `ARMA/Diagnostics`'s residual-ACF
-transfer: the union-bound/Markov plumbing that turns a *summed `L²`* estimate into a
-`→p 0` statement is now a named brick there (`tendstoInProb_of_le_add`, plus the
-`markov_toReal` pattern), and the last bullet's Slutsky step has exactly that shape. It is
-plumbing, not mathematics, but it is the part of bullet 4 that is otherwise re-derived by
-hand in every lane.
-
-The genuinely missing inputs are unchanged and are both *regime-restricted*: an
-indicator-weighted LLN (twice — for `Ŝ_i` and for `z̄_i`) and the MDS CLT along the regime
-index set. Nothing in the ARMA lane's `f4a` work bears on either, because the ARMA
-estimates are all over the full window with no random index set. -/
-theorem tarLS_clt_debt [IsProbabilityMeasure μ] {k P : ℕ}
-    {b0 : Fin k → ℝ} {b : Fin k → Fin P → ℝ} {σ : Fin k → ℝ} {A : Fin k → Set ℝ}
-    {d : ℕ} {X ε : ℤ → Ω → ℝ}
-    (h : IsTAR b0 b σ A d X ε μ)
-    -- USER-INPUT: strict stationarity of the fitted process; FY §4.1.2 standing assumption
-    (hstat : IsStrictlyStationary X μ)
-    -- USER-INPUT: finite second moments; FY §4.1.2 standing assumption
-    (hL2 : ∀ t, MemLp (X t) 2 μ)
-    (i : Fin k)
-    -- USER-INPUT (third repair, wave `ts/f1b-arma-deep`): the regime-`i` design covariance
-    -- is the *centered* conditional covariance matrix of the regressors, *defined from the
-    -- process* (no longer a free parameter, and no longer the uncentered second-moment
-    -- matrix — the intercept of eqs. (4.4)-(4.5) absorbs the conditional regressor mean);
-    -- FY §4.1.2, eq. (4.8) / Chan 1993a
-    (W : Matrix (Fin P) (Fin P) ℝ) (hWdef : W = tarRegimeDesignCovCentered (A i) d X μ)
-    -- USER-INPUT: the *centered* design covariance is invertible (no exact affine relation
-    -- among the regime-`i` regressors); Chan 1993a
-    (hW : Matrix.PosDef W)
-    -- USER-INPUT: the regime carries positive mass — equivalently `T_i → ∞`; FY §4.1.2
-    (hmass : 0 < (μ {ω | X (-(d : ℤ)) ω ∈ A i}).toReal)
-    -- USER-INPUT: a measurable regime-wise LS estimator sequence, intercept included;
-    -- FY eqs. (4.4)-(4.5)
-    (bhat0 : (T : ℕ) → Ω → ℝ) (bhat : (T : ℕ) → Ω → Fin P → ℝ)
-    (hmeas0 : ∀ T, Measurable (bhat0 T)) (hmeas : ∀ T, Measurable (bhat T))
-    -- USER-INPUT: joint least-squares minimality over `(β₀, β)` (satisfiable at every
-    -- sample: `exists_tarLS_minimizer`); FY eqs. (4.4)-(4.5)
-    (hLS : ∀ (T : ℕ) (ω : Ω), ∀ γ0 : ℝ, ∀ γ : Fin P → ℝ,
-      tarLSResidualSS (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (A i) d
-          (bhat0 T ω) (bhat T ω)
-        ≤ tarLSResidualSS (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (A i) d γ0 γ)
-    (c : Fin P → ℝ) (u : ℝ) :
-    Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
-        Real.sqrt (tarRegimeCount (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (A i) d P) *
-          ∑ j, c j * (bhat T ω j - b i j)) u)
-      atTop
-      (𝓝 (charFun (gaussianReal 0 (Real.toNNReal
-        (σ i ^ 2 * (c ⬝ᵥ (W⁻¹ *ᵥ c))))) u)) := by
-  sorry
 
 end StatLean.TimeSeries

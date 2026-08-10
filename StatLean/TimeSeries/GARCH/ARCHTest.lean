@@ -15,11 +15,29 @@ asymptotics and each has a `χ²_p` null limit.
 * `archLRStat` (**eq. (4.50)**), `archScoreStat` (**eq. (4.52)**), `archWaldStat`
   (**eq. (4.54)**) and Engle's `archTR2Stat` (**eq. (4.53)**), the auxiliary-regression
   form asymptotically equivalent to the score test for normal errors;
-* the **Fisher information** (eq. (4.51)) of the ARCH likelihood at the null, and the
-  three `χ²_p` limit statements. The intended route is to reuse the in-repo iid
-  likelihood trinity, `StatLean/HypothesisTesting/LikelihoodMethods/
-  TrinityChiSquared.lean`; where the wiring does not fit the ARCH parametrization the
-  limits stay as named debts.
+* the **Fisher information** (eq. (4.51)) of the ARCH likelihood at the null. The three
+  `χ²_p` limit statements were carried here as named debts and have been removed; see
+  **Removed** immediately below.
+
+**Removed (2026-08-10, user directive).** The module's three sorried declarations were
+deleted. Nothing consumed them, and every proved declaration in the file is kept — in
+particular the whole χ² character apparatus and the entire `R²`/ANOVA algebra of the
+auxiliary regression, which were built *for* these debts and remain available.
+* `archLRStat_chiSq_debt` — FY eq. (4.50): the likelihood-ratio statistic has the `χ²_p`
+  null limit (repaired, de-vacuated form with a variance floor and a compact search region).
+* `archTR2Stat_chiSq_debt` — FY eqs. (4.52)–(4.53): Engle's `T·R²` / score statistic has
+  the `χ²_p` null limit.
+* `archWaldStat_chiSq_debt` — FY eq. (4.54): the Wald statistic, through the
+  Schur-complement block `I²²` of the information matrix, has the `χ²_p` null limit.
+
+Everything below this point — the analysis of why the in-repo trinity does not discharge
+them, the de-vacuation record, and the brick lists — is kept verbatim as history.
+
+Recover from `bdc8143f`.
+
+The intended route had been to reuse the in-repo iid likelihood trinity,
+`StatLean/HypothesisTesting/LikelihoodMethods/TrinityChiSquared.lean`; where the wiring
+does not fit the ARCH parametrization the limits stayed as named debts.
 
 **Boundary caveat (documented, not formalized).** The alternative constrains
 `b_j ≥ 0`, so under `H₀` the parameter sits on the boundary of the admissible set and
@@ -37,9 +55,9 @@ severity.
 
 **(1) The three frozen statements are false as they stand, for every `p ≥ 1`, so no
 proof of them exists.** None of them constrains its estimator arguments to the data:
-`archLRStat_chiSq_debt` takes `c0hat`, `bhat`, `c0null` merely measurable,
-`archTR2Stat_chiSq_debt` takes `rss`, `tss` merely measurable, and
-`archWaldStat_chiSq_debt` takes `bhat` measurable and `Ihat` entirely free. Choosing the
+the LR debt took `c0hat`, `bhat`, `c0null` merely measurable, the `TR²` debt took
+`rss`, `tss` merely measurable, and the Wald debt took `bhat` measurable and `Ihat`
+entirely free. Choosing the
 constants `c0hat = c0null = c0`, `bhat = 0` (resp. `rss = tss = 1`, resp. `bhat = 0`)
 makes each statistic *identically zero*, so its law is `δ₀`, whose characteristic
 function is the constant `1`; the conclusion then forces `charFun chiSq u = 1` for
@@ -68,7 +86,7 @@ each mismatch is to bridge:
   structure makes classical is the behaviour of the score and information *averages* at
   `b = 0`, not the likelihood itself.
 * *Fatal — no truncation parameter.* `archLRStat` carries the presample index `ν`, and
-  `archLRStat_chiSq_debt` carries `νseq` with `ν → ∞`, `ν/T → 0`. The trinity has no such
+  the LR debt carried `νseq` with `ν → ∞`, `ν/T → 0`. The trinity has no such
   parameter, so the truncated-versus-exact conditional-likelihood bookkeeping that those
   hypotheses exist to control lies entirely outside its statement.
 * *Serious — regularity currency.* The trinity consumes `IsPDFOf`, joint measurability of
@@ -157,15 +175,15 @@ Wald form is an empty sum, and `χ²₀ = δ₀` — this fixes the degrees-of-f
 bookkeeping). `p ≥ 1` is an honest, satisfiable **debt**: the ARCH MLE asymptotics. Its
 three bricks — (a) consistency of the constrained maximizer (the ARCH analogue of
 `mle_consistent`), (b) the local quadratic expansion around the interior truth, (c) the
-martingale CLT for the ARCH conditional score plus continuous mapping — are listed at the
+martingale CLT for the ARCH conditional score plus continuous mapping — were listed at the
 theorems. The limit-law side of (c) is already discharged here
 (`charFun_map_sum_sq_gaussian`, `eq_map_sum_sq_gaussian_of_charFun`).
 
-`archTR2Stat_chiSq_debt`'s `hrss`/`htss` never had this defect: a least-squares minimum is
-always attained, so its hypotheses were consistent throughout and it remains an honest
+The `TR²` debt's `hrss`/`htss` never had this defect: a least-squares minimum is
+always attained, so its hypotheses were consistent throughout and it remained an honest
 debt.
 
-## `archTR2Stat_chiSq_debt`: the limit law is now identified, the LM limit is what is left
+## The `TR²` debt: the limit law is now identified, the LM limit is what was left
 
 Two of the five mismatches listed above are **discharged**, both concerning the *statement*
 of the limit rather than the statistic:
@@ -179,7 +197,7 @@ of the limit rather than the statistic:
   construction nor a `WeakConverges → charFun` bridge is needed anywhere. The debt's proof
   uses this to rewrite its goal into convergence towards that concrete law.
 
-What this statement's `sorry` still needs is exactly Engle's LM limit: under `H₀` with
+What that statement's `sorry` still needed is exactly Engle's LM limit: under `H₀` with
 Gaussian innovations the squared data `Y_t = X_t²` are iid with mean `c₀` and variance
 `2c₀² > 0`, `hrss`/`htss` make the statistic the auxiliary regression's `T·R²`, and the
 normal equations turn it into a quadratic form in the lag-`1..p` sample autocovariances of
@@ -509,11 +527,11 @@ theorem exists_isMaxOn_archLogLik_null {p T : ℕ} {κ : ℝ} (hκ : 0 < κ)
 
 /-- **Non-vacuity certificate for the repaired statements.** Given a variance floor
 `κ ≤ c₀`, a compact search region `K` containing `(c₀, 0)`, and any data, there *exist*
-unrestricted and null-restricted maximizing sequences — i.e. `hMLE` and `hMLE0` of
-`archLRStat_chiSq_debt` / `archWaldStat_chiSq_debt` below are jointly satisfiable, exactly
-what `false_of_bddAbove_archLogLik` denies for the superseded unconstrained shape.
+unrestricted and null-restricted maximizing sequences — i.e. the `hMLE` and `hMLE0` of the
+removed LR and Wald debts were jointly satisfiable, exactly what
+`false_of_bddAbove_archLogLik` denies for the superseded unconstrained shape.
 
-*(Measurability of the selection is a separate matter: the theorems below still carry
+*(Measurability of the selection is a separate matter: those theorems carried
 `hmeas` as a `USER-INPUT`, and this certificate produces the sequences by pointwise choice,
 not by a measurable-selection theorem. The repo's `exists_measurable_argmin_of_convex`
 (`EstimationTheory/.../MeasurableArgmin.lean`) is the tool for upgrading it, and does not
@@ -573,125 +591,6 @@ private lemma nonempty_of_isProbabilityMeasure {Ω : Type*} [MeasurableSpace Ω]
     rw [Set.univ_eq_empty_iff.2 hE, measure_empty] at h1
     exact absurd h1 (by norm_num)
   · exact hE
-
-/-- **FY eq. (4.50) — DEBT** (Serfling §4.4.4 via the iid structure under `H₀`): the
-likelihood-ratio statistic has the `χ²_p` null limit.
-
-**Statement strengthening (documented), 2026-08-09b — the de-vacuation.** The previous
-`hMLE`/`hMLE0` asked for a maximizer of `archLogLik` over *all* of `ℝ × ℝᵖ`; no such point
-exists (`archLogLik_unbounded`, `false_of_bddAbove_archLogLik`, both retained above), so
-the statement was vacuous and its proof was a derivation of `False`. The hypotheses are now
-
-* a **variance floor** `κ > 0` with `κ ≤ c₀`, and maximization over the *data-adapted*
-  admissible set `archAdmissible κ` — the locus where the criterion is even defined;
-* a **compact search region** `K` with the truth `(c₀, 0)` in its **interior** (the
-  `hargmin`-over-`K` pattern of `ARMA/Consistency.lean`'s `mle_consistent`), the null
-  problem being posed on the slice `archNullSlice K = K ∩ {b = 0}`.
-
-Both `hMLE` and `hMLE0` are now **satisfiable**, and jointly so, by
-`exists_archMLE_sequences`; the criterion attains its maximum on `K ∩ archAdmissible κ`
-because that set is compact (`isClosed_archAdmissible`) and the criterion is continuous on
-it (`continuousOn_archLogLik`). The floor is imposed on the *data-adapted* set and **not**
-on `K`, deliberately: FY's own admissible set `{b_j ≥ 0}` would place the null on the
-boundary of `K` and contradict `hK0`, which is exactly the boundary problem flagged in the
-module docstring. `b` therefore stays unconstrained, as the `χ²_p` limit requires.
-
-**Proved here:** the `p = 0` case (the statistic is then identically `0` — both problems
-have the same feasible set — and `χ²₀ = δ₀`), which fixes the degrees-of-freedom
-bookkeeping. **Debt:** `p ≥ 1`, i.e. the ARCH MLE asymptotics themselves; see the module
-docstring for the ledger. -/
-theorem archLRStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
-    {X ε : ℤ → Ω → ℝ}
-    -- USER-INPUT: the null model; FY §4.2.6 H₀
-    (h : IsARCH c0 (fun _ : Fin p => (0 : ℝ)) X ε μ) (hc0 : 0 < c0)
-    -- USER-INPUT: finite fourth moment (the iid-likelihood regularity); Serfling §4.4.4
-    (hε4 : MemLp (ε 0) 4 μ)
-    -- USER-INPUT: measurable unconstrained/null MLE sequences; FY eqs. (4.37), (4.50)
-    (c0hat : (T : ℕ) → Ω → ℝ) (bhat : (T : ℕ) → Ω → Fin p → ℝ)
-    (c0null : (T : ℕ) → Ω → ℝ)
-    (hmeas : ∀ T, Measurable (c0hat T) ∧ Measurable (bhat T) ∧ Measurable (c0null T))
-    (νseq : ℕ → ℕ) (hν : Tendsto νseq atTop atTop)
-    (hνT : Tendsto (fun T : ℕ => (νseq T : ℝ) / T) atTop (𝓝 0))
-    -- USER-INPUT: variance floor `κ` for the conditional variance the criterion divides
-    -- by, and a compact search region containing the truth in its interior; FY §4.2.6 /
-    -- Serfling §4.4.4, in the `mle_consistent` (Hannan §2) `hargmin`-over-`K` pattern.
-    -- Replaces (2026-08-09b) the unsatisfiable global-maximizer shape of 2026-08-09.
-    {κ : ℝ} (hκ : 0 < κ) (hκc0 : κ < c0)
-    {K : Set (ℝ × (Fin p → ℝ))} (hK : IsCompact K)
-    (hK0 : ((c0, fun _ : Fin p => (0 : ℝ)) : ℝ × (Fin p → ℝ)) ∈ interior K)
-    -- USER-INPUT: `(c0hat, bhat)` maximizes the ARCH conditional log-likelihood over the
-    -- feasible set `K ∩ archAdmissible κ`; FY eqs. (4.37), (4.50)
-    (hMLE : ∀ (T : ℕ) (ω : Ω),
-      ((c0hat T ω, bhat T ω) : ℝ × (Fin p → ℝ)) ∈
-          K ∩ archAdmissible κ (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T) ∧
-        ∀ θ ∈ K ∩ archAdmissible κ (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T),
-          archLogLik θ.1 θ.2 (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
-            ≤ archLogLik (c0hat T ω) (bhat T ω)
-                (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T))
-    -- USER-INPUT: `c0null` maximizes it over the null slice `{b = 0}` of the same region
-    (hMLE0 : ∀ (T : ℕ) (ω : Ω),
-      ((c0null T ω, fun _ : Fin p => (0 : ℝ)) : ℝ × (Fin p → ℝ)) ∈
-          archNullSlice K ∩
-            archAdmissible κ (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T) ∧
-        ∀ θ ∈ archNullSlice K ∩
-            archAdmissible κ (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T),
-          archLogLik θ.1 θ.2 (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
-            ≤ archLogLik (c0null T ω) (fun _ : Fin p => (0 : ℝ))
-                (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T))
-    -- USER-INPUT: the χ²_p limit law as a measure on ℝ; Serfling §4.4.4
-    (chiSq : Measure ℝ) [IsProbabilityMeasure chiSq]
-    (hchi : ∀ u : ℝ, charFun chiSq u = (1 - 2 * Complex.I * u) ^ (-(p : ℂ) / 2))
-    (u : ℝ) :
-    Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
-        archLRStat (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
-          (c0hat T ω) (bhat T ω) (c0null T ω)) u)
-      atTop (𝓝 (charFun chiSq u)) := by
-  rcases Nat.eq_zero_or_pos p with hp | hp
-  · -- `p = 0`: the null slice is the whole region (every `b : Fin 0 → ℝ` is `0`), so the
-    -- two maximization problems coincide and the statistic is identically `0`; and
-    -- `χ²₀ = δ₀`, whose character is the constant `1`.
-    subst hp
-    have hchi1 : charFun chiSq u = 1 := by
-      rw [hchi u, show (-((0 : ℕ) : ℂ) / 2) = 0 by norm_num, Complex.cpow_zero]
-    have hslice : archNullSlice K = K := by
-      ext θ
-      exact ⟨fun hθ => hθ.1, fun hθ => ⟨hθ, funext fun i => i.elim0⟩⟩
-    have hzero : ∀ (T : ℕ) (ω : Ω),
-        archLRStat (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
-          (c0hat T ω) (bhat T ω) (c0null T ω) = 0 := by
-      intro T ω
-      obtain ⟨hmem, hmax⟩ := hMLE T ω
-      obtain ⟨hmem0, hmax0⟩ := hMLE0 T ω
-      rw [hslice] at hmem0 hmax0
-      have h1 := hmax _ hmem0
-      have h2 := hmax0 _ hmem
-      simp only [archLRStat]
-      linarith
-    have hfun : (fun T : ℕ => charFun (μ.map fun ω =>
-        archLRStat (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
-          (c0hat T ω) (bhat T ω) (c0null T ω)) u) = fun _ : ℕ => (1 : ℂ) := by
-      funext T
-      rw [show (fun ω => archLRStat (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
-          (c0hat T ω) (bhat T ω) (c0null T ω)) = fun _ : Ω => (0 : ℝ) from
-        funext fun ω => hzero T ω]
-      simp [Measure.map_const]
-    rw [hchi1, hfun]
-    exact tendsto_const_nhds
-  · -- REMAINING DEBT (`p ≥ 1`): the ARCH MLE asymptotics behind FY eq. (4.50). With the
-    -- repaired pinning the classical route is now *stateable*: on the interior of `K` the
-    -- maximizer solves the score equation, so a Taylor expansion of `archLogLik` around
-    -- `(c₀, 0)` gives `2(l(θ̂) − l(θ̂₀)) = S_Tᵀ I⁻¹ S_T /T + o_P(1)` on the `p` free
-    -- coordinates, and `S_T/√T ⇒ N(0, I)` by the martingale CLT for the ARCH conditional
-    -- score (`mds_clt_sequence`). Three bricks are missing, none of them a statement
-    -- issue any more: (a) consistency `(c0hat, bhat) → (c₀, 0)` in probability — the ARCH
-    -- analogue of `mle_consistent`, which needs a uniform LLN for `archLogLik/T` over `K`
-    -- and an identifiability gap at the truth; (b) the local quadratic expansion with the
-    -- `o_P` remainder, which needs the second derivative of `archLogLik` and its LLN;
-    -- (c) the score CLT plus continuous mapping into the χ² character, for which the
-    -- limit-law side is already available here (`charFun_map_sum_sq_gaussian`,
-    -- `eq_map_sum_sq_gaussian_of_charFun`). Note `hνT`/`hν` enter only through (a)–(b),
-    -- as the truncation bookkeeping between `archLogLik` and the exact likelihood.
-    sorry
 
 /-! ### The χ²_p character identity and the identification of the abstract limit law
 
@@ -1046,133 +945,5 @@ theorem archTR2Stat_eq_ess_div_tss {p : ℕ} {X : ℤ → Ω → ℝ} {rss tss :
     field_simp
     linarith
   rw [archTR2Stat, key _ _ _ hne hsplit]
-
-/-- **FY eqs. (4.52)–(4.53) — DEBT**: the score/LM statistic (equivalently, for normal
-errors, Engle's `TR²`) has the same `χ²_p` null limit as the likelihood-ratio
-statistic.
-
-This statement never had the vacuity defect of its two companions — a least-squares minimum
-is always attained, so `hrss` is satisfiable. The proof below discharges the limit-law
-bookkeeping (the goal is rewritten to convergence towards the *concrete* Gaussian quadratic
-form `Σ_{i<p} Z_i²` via `charFun_map_sum_sq_gaussian`), leaving one `sorry` on the reduced
-goal: Engle's LM limit itself.
-
-**Brick (a) of that residue is now closed** (2026-08-09b): `archTR2Stat_eq_ess_div_tss`
-turns `hrss`'s `IsLeast` package into `T · ess/tss`, and `arch_rss_le_tss` confirms the
-statistic really is `T` times an `R² ∈ [0,1]`. What is left is purely probabilistic —
-bricks (b) and (c) of the module docstring's ledger. -/
-theorem archTR2Stat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
-    {X ε : ℤ → Ω → ℝ}
-    (h : IsARCH c0 (fun _ : Fin p => (0 : ℝ)) X ε μ) (hc0 : 0 < c0)
-    (hε4 : MemLp (ε 0) 4 μ)
-    -- USER-INPUT: normal innovations (the case in which TR² ≡ score asymptotically);
-    -- FY eq. (4.53)
-    (hgauss : μ.map (ε 0) = gaussianReal 0 1)
-    -- USER-INPUT: the auxiliary-regression sums of squares of the squared data;
-    -- FY eq. (4.53)
-    (rss tss : (T : ℕ) → Ω → ℝ)
-    (hmeas : ∀ T, Measurable (rss T) ∧ Measurable (tss T))
-    -- USER-INPUT: `rss`/`tss` are the residual and centered total sums of squares of the
-    -- auxiliary regression of `X_t²` on its `p` lags. Added 2026-08-09: without pinning
-    -- them to the data the statement is FALSE (free reals carry no information).
-    (hrss : ∀ (T : ℕ) (ω : Ω), IsLeast
-      {r : ℝ | ∃ (β0 : ℝ) (β : Fin p → ℝ), r = ∑ t ∈ Finset.Ico p T,
-        (X ((t : ℤ) + 1) ω ^ 2 - β0
-          - ∑ j : Fin p, β j * X ((t : ℤ) - (j : ℕ)) ω ^ 2) ^ 2} (rss T ω))
-    (htss : ∀ (T : ℕ) (ω : Ω), tss T ω = ∑ t ∈ Finset.Ico p T,
-      (X ((t : ℤ) + 1) ω ^ 2
-        - ((T : ℝ) - p)⁻¹ * ∑ u ∈ Finset.Ico p T, X ((u : ℤ) + 1) ω ^ 2) ^ 2)
-    (chiSq : Measure ℝ) [IsProbabilityMeasure chiSq]
-    (hchi : ∀ u : ℝ, charFun chiSq u = (1 - 2 * Complex.I * u) ^ (-(p : ℂ) / 2))
-    (u : ℝ) :
-    Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
-        archTR2Stat (T := T) (rss T ω) (tss T ω)) u)
-      atTop (𝓝 (charFun chiSq u)) := by
-  -- Identify the abstract limit law: `hchi` says `chiSq` has the characteristic function of
-  -- `Σ_{i<p} Z_i²`, so the goal is convergence to that concrete Gaussian quadratic form.
-  rw [hchi u, ← charFun_map_sum_sq_gaussian p u]
-  -- REMAINING (the whole probabilistic content of FY eq. (4.53); one named residual):
-  -- Engle's LM limit for the auxiliary regression. Under `h`, `hc0` and `hgauss` the
-  -- squared observations `Y_t = X_t²` are iid `c₀·χ²₁` (`IsARCH.iid_of_b_eq_zero` plus
-  -- `hgauss`), with mean `c₀` and variance `2c₀² > 0`; `hrss`/`htss` make `T(1 − rss/tss)`
-  -- the auxiliary regression's `T·R²`, whose normal equations turn it into the quadratic
-  -- form `√T γ̂ᵀ Γ̂⁻¹ √T γ̂ / (tss/T)` in the lag-`1..p` sample autocovariances `γ̂` of `Y`.
-  -- `Γ̂ → Var(Y)·I_p` and `tss/T → Var(Y)` (LLN, second moments of `Y` — this is where
-  -- `hε4` enters), while `√T γ̂ ⇒ N(0, Var(Y)²·I_p)` (iid CLT), so the form converges in law
-  -- to `Σ_{i<p} Z_i²`. Missing bricks: the least-squares/`R²` algebra out of `hrss`, the
-  -- `p`-dimensional iid CLT for the autocovariance vector, and continuous mapping.
-  sorry
-
-/-- **FY eq. (4.54) — DEBT**: the Wald statistic (through the Schur-complement block
-`I²²` of the information matrix) has the `χ²_p` null limit.
-
-**Statement strengthening (documented), 2026-08-09b — the de-vacuation.** As for
-`archLRStat_chiSq_debt`, the global-maximizer `hMLE` is replaced by maximization over
-`K ∩ archAdmissible κ` — compact, and nonempty at the truth — which
-`exists_archMLE_sequences` shows is satisfiable. The superseded shape's refutation
-(`archLogLik_unbounded`, `false_of_bddAbove_archLogLik`) is retained above as the
-justification. Only the `hMLE` block changes: `hIhat`, `hI0` and the conclusion are as
-frozen.
-
-**Proved here:** the `p = 0` case (`χ²₀ = δ₀`, and the Wald form is an empty sum, hence
-identically `0` — no hypothesis needed). **Debt:** `p ≥ 1`. -/
-theorem archWaldStat_chiSq_debt [IsProbabilityMeasure μ] {c0 : ℝ} {p : ℕ}
-    {X ε : ℤ → Ω → ℝ}
-    (h : IsARCH c0 (fun _ : Fin p => (0 : ℝ)) X ε μ) (hc0 : 0 < c0)
-    (hε4 : MemLp (ε 0) 4 μ)
-    (bhat : (T : ℕ) → Ω → Fin p → ℝ) (hmeas : ∀ T, Measurable (bhat T))
-    (c0hat : (T : ℕ) → Ω → ℝ)
-    (νseq : ℕ → ℕ) (hν : Tendsto νseq atTop atTop)
-    (hνT : Tendsto (fun T : ℕ => (νseq T : ℝ) / T) atTop (𝓝 0))
-    -- USER-INPUT: variance floor and compact search region with the truth interior to it;
-    -- FY §4.2.6 / Serfling §4.4.4, `mle_consistent`'s `hargmin`-over-`K` pattern.
-    -- Replaces (2026-08-09b) the unsatisfiable global-maximizer shape of 2026-08-09.
-    {κ : ℝ} (hκ : 0 < κ) (hκc0 : κ < c0)
-    {K : Set (ℝ × (Fin p → ℝ))} (hK : IsCompact K)
-    (hK0 : ((c0, fun _ : Fin p => (0 : ℝ)) : ℝ × (Fin p → ℝ)) ∈ interior K)
-    -- USER-INPUT: `(c0hat, bhat)` maximizes the ARCH conditional log-likelihood over the
-    -- feasible set `K ∩ archAdmissible κ`; FY eqs. (4.37), (4.54)
-    (hMLE : ∀ (T : ℕ) (ω : Ω),
-      ((c0hat T ω, bhat T ω) : ℝ × (Fin p → ℝ)) ∈
-          K ∩ archAdmissible κ (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T) ∧
-        ∀ θ ∈ K ∩ archAdmissible κ (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T),
-          archLogLik θ.1 θ.2 (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T)
-            ≤ archLogLik (c0hat T ω) (bhat T ω)
-                (fun t : Fin T => X (((t : ℕ) : ℤ) + 1) ω) (νseq T))
-    -- USER-INPUT: the estimated information block I²² (Schur complement), assumed
-    -- consistent for a positive-definite limit; FY eq. (4.54)
-    (Ihat : (T : ℕ) → Ω → Matrix (Fin p) (Fin p) ℝ)
-    (I0 : Matrix (Fin p) (Fin p) ℝ) (hI0 : Matrix.PosDef I0)
-    (hIhat : ∀ δ : ℝ, 0 < δ → Tendsto (fun T : ℕ =>
-      (μ {ω | δ ≤ ∑ i, ∑ j, |Ihat T ω i j - I0 i j|}).toReal) atTop (𝓝 0))
-    (chiSq : Measure ℝ) [IsProbabilityMeasure chiSq]
-    (hchi : ∀ u : ℝ, charFun chiSq u = (1 - 2 * Complex.I * u) ^ (-(p : ℂ) / 2))
-    (u : ℝ) :
-    Tendsto (fun T : ℕ => charFun (μ.map fun ω =>
-        (T : ℝ) * ∑ i, ∑ j, bhat T ω i * Ihat T ω i j * bhat T ω j) u)
-      atTop (𝓝 (charFun chiSq u)) := by
-  rcases Nat.eq_zero_or_pos p with hp | hp
-  · -- `p = 0`: the quadratic form is an empty sum, so the statistic is identically `0`,
-    -- and `χ²₀ = δ₀` has the constant character `1`.
-    subst hp
-    have hchi1 : charFun chiSq u = 1 := by
-      rw [hchi u, show (-((0 : ℕ) : ℂ) / 2) = 0 by norm_num, Complex.cpow_zero]
-    have hfun : (fun T : ℕ => charFun (μ.map fun ω =>
-        (T : ℝ) * ∑ i, ∑ j, bhat T ω i * Ihat T ω i j * bhat T ω j) u)
-          = fun _ : ℕ => (1 : ℂ) := by
-      funext T
-      rw [show (fun ω => (T : ℝ) * ∑ i, ∑ j, bhat T ω i * Ihat T ω i j * bhat T ω j)
-          = fun _ : Ω => (0 : ℝ) by funext ω; simp]
-      simp [Measure.map_const]
-    rw [hchi1, hfun]
-    exact tendsto_const_nhds
-  · -- REMAINING DEBT (`p ≥ 1`): FY eq. (4.54). With the repaired pinning the missing input
-    -- is the ARCH MLE limit law `√T · bhat ⇒ N(0, (I²²)⁻¹)` on the free `b` block — the
-    -- same bricks (a)–(c) listed at `archLRStat_chiSq_debt`. Given it, `hIhat` upgrades
-    -- `Ihat` to `I0` by Slutsky and the statistic is the Gaussian quadratic form
-    -- `Zᵀ Z` with `Z ∼ N(0, I_p)`, whose law is identified here by
-    -- `eq_map_sum_sq_gaussian_of_charFun`. Note `hIhat` is genuinely used only in that
-    -- last step, and is *not* what is missing.
-    sorry
 
 end StatLean.TimeSeries

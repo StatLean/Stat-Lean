@@ -447,8 +447,9 @@ lemma maCrossACVF_self_neg (ψ : ℕ → ℝ) (k : ℤ) :
 
 /-- **The damage of finding 26 is confined to genuinely mixed models.** With no MA part
 (`q = 0`) the forward and backward Grams coincide: only the AR–AR block survives, and an
-autocovariance is even. Hence `samplePACF_linearization` and `ls_yw_mle_equivalent_debt`,
-both of which instantiate `q = 0`, are unaffected by finding 26. -/
+autocovariance is even. Hence the two `q = 0` members of the Hannan chain — the sample-PACF
+linearization and the LS = YW = MLE equivalence, both since removed from
+`ARMA/MLEAsymptotics.lean` — were unaffected by finding 26. -/
 theorem hannanVarZ_eq_back_of_pure_ar {p : ℕ} (b : Fin p → ℝ) :
     hannanVarZ b (Fin.elim0 : Fin 0 → ℝ) = hannanVarZBack b (Fin.elim0 : Fin 0 → ℝ) := by
   ext s t
@@ -1057,8 +1058,8 @@ private lemma eq_zero_of_hannanVecBack_combo {p q : ℕ} {b : Fin p → ℝ} {a 
 
 /-- **Positive-definiteness of the true (score) information matrix** — the backward twin
 of `hannanVarZ_posDef`, under exactly the same hypotheses (finding 26). This is the
-invertibility statement the repaired Hannan chain consumes: `hannan_mle_clt`'s asymptotic
-covariance is `(hannanVarZBack b₀ a₀)⁻¹`. -/
+invertibility statement the repaired Hannan chain consumed: the asymptotic covariance of
+the (since removed) FY Thm 3.2 headline was `(hannanVarZBack b₀ a₀)⁻¹`. -/
 theorem hannanVarZBack_posDef {p q : ℕ} {b : Fin p → ℝ} {a : Fin q → ℝ}
     (hB : ARMAInvertibleParams b a)
     -- USER-INPUT: coprime lag polynomials; FY §3.3.2 implicit, explicit in Hannan 1973
@@ -1572,8 +1573,9 @@ private lemma measurable_sigmaLT {Z : ℤ → Ω → ℝ} {s t : ℤ} (hst : s <
 `σ(ε_s : s < t)` (the `Stationarity/ARCH.lean` pull, replayed here).
 
 **Made public 2026-08-09** (wave `ts/s1b-arma-finish`), as the cross-file scope blocker
-recorded at `MLEAsymptotics.hannanScore_brownInputs`: inputs (1) and (3) of that debt
-both consume this independence, and it was not citeable while `private`. -/
+recorded at what was then `MLEAsymptotics.hannanScore_brownInputs` (since removed): inputs
+(1) and (3) of that debt both consumed this independence, and it was not citeable while
+`private`. -/
 lemma indep_noise_sigmaLT {ε : ℤ → Ω → ℝ} (hm : ∀ t, Measurable (ε t))
     (hi : iIndepFun ε μ) (t : ℤ) :
     Indep (MeasurableSpace.comap (ε t) inferInstance) (sigmaLT ε t) μ := by

@@ -317,8 +317,9 @@ theorem garchTruncVol_presample_stable {p q : ℕ} {c0 : ℝ} {b : Fin p → ℝ
 /-! ### The frozen `whittle_clt_debt` / `lad_clt_debt` statements are FALSE — a witness
 
 Both statements were frozen at a granularity that leaves **three** of their objects
-completely unlinked to the model, which is one more than the `tarLS_clt_debt` defect list
-of wave `ts/s12`:
+completely unlinked to the model, which is one more than the defect list of wave `ts/s12`
+for `Threshold/Estimation`'s eq. (4.8) debt (that debt has since been removed; its witness
+`tarLS_clt_debt_false` is kept there):
 
 1. **`W` is a free parameter.** The docstrings call it "the limiting covariance matrix of
    the Whittle (LAD) estimator", but formally it ranges over *all* positive-definite
@@ -547,8 +548,9 @@ private theorem lad_clt_debt_false
 
 **Statement strengthening (wave `ts/s13-whittle-lad`, 2026-08-09).** Both frozen forms are
 FALSE — see `whittle_clt_debt_false` / `lad_clt_debt_false` above, kept verbatim against
-the *frozen* shapes as the permanent record. Four repairs are applied to each, in the
-`tarLS_clt_debt` house style; every added or changed hypothesis is tagged `USER-INPUT`.
+the *frozen* shapes as the permanent record. Four repairs are applied to each, in the house
+style of `Threshold/Estimation`'s eq. (4.8) debt (since removed); every added or changed
+hypothesis is tagged `USER-INPUT`.
 
 1. **`θ₀` is the true parameter.** `hθ0` pins it to `garchParamVec c₀ b a`, the coordinate
    packing of the `IsGARCH` instance's own `(c₀, b, a)`. Without this even a perfect
@@ -556,11 +558,12 @@ the *frozen* shapes as the permanent record. Four repairs are applied to each, i
 2. **`θhat` is a genuine minimizer of the criterion the theorem is named after.** The
    frozen statements never mentioned `garchWhittle` (4.41) or `garchLAD` (4.42). The
    repair introduces the unpacked estimator `est` (with `hpack` tying `θhat` to it, as in
-   `hannan_mle_clt`'s `(Fin p → ℝ) × (Fin q → ℝ)`-valued `θ`), a compact search region `K`
+   the `(Fin p → ℝ) × (Fin q → ℝ)`-valued `θ` of the removed FY Thm 3.2 headline), a
+   compact search region `K`
    with the truth in its interior, and exact minimization over `K` at every sample.
 3. **`W` is pinned to the process** — the defect that killed the frozen form outright
-   (`W` and `2W` both admissible). Unlike `tarLS_clt_debt`, whose `W_i` is a plain
-   conditional second-moment matrix (`tarRegimeDesignCov`), the Whittle and LAD limiting
+   (`W` and `2W` both admissible). Unlike the removed eq. (4.8) debt, whose `W_i` is a
+   plain conditional second-moment matrix (`tarRegimeDesignCov`), the Whittle and LAD limiting
    covariances are *sandwiches* that the repo cannot yet write down: Giraitis–Robinson's
    is `A⁻¹BA⁻¹` with `A` an integral of `∂_θ log g(λ; θ)` against Lebesgue measure on
    `[−π, π]` and `B` carrying the **fourth-cumulant (tri-)spectral density** of the
