@@ -12,8 +12,10 @@ The bridge between the Markov layer (`ForMathlib/Markov/*`) and the mixing coeff
 * **eq. (2.58) (Davydov 1973)** — for a strictly stationary Markov process with kernel
   `κ` and marginal `F`, the β-coefficient is the mean total-variation distance of the
   `n`-step transition law from the marginal: `β(n) = ∫ ‖κⁿ(x, ·) − F‖_TV dF(x)`.
-  Literature DEBT (needs the conditional-probability description of β against
-  `condDistrib`).
+  **PROVED (2026-08-09, wave 7)**, at any **countably generated** state space — a
+  hypothesis that is not removable (formalized witness
+  `betaMixCoeff_eq_integral_tvDist_of_markov_false`) and that `ℝ` satisfies, so the scalar
+  form `betaCoeff_eq_integral_tvDist_debt` is closed as frozen.
 * **eq. (2.59)** — a geometric-ergodicity envelope `‖κⁿ(x,·) − F‖_TV ≤ A(x) ρⁿ` with
   `∫ A dF < ∞` gives exponential β-mixing: `β(n) ≤ ρⁿ ∫ A dF`. **Derived here** from
   the (2.58) debt by monotone integration.
@@ -2216,6 +2218,276 @@ private lemma betaMixCoeff_two_marginal_le_of_envelope_at [IsProbabilityMeasure 
       _ ≤ 2 * ∫ x, A x ∂(μ.map (X 0)) := hcol
   linarith
 
+/-- The two-marginal covariance of a Markov process, as a set integral of the kernel
+discrepancy — the identity that both halves of Davydov's identity run on. It is the step
+`hcov` of `betaMixCoeff_two_marginal_le_of_envelope_at`, isolated because the `≥` half needs
+it against a *different* family of past-side sets. -/
+private lemma markov_cov_eq_setIntegral [IsProbabilityMeasure μ]
+    {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
+    (hmarg : ∀ s t : ℤ, μ.map (X s) = μ.map (X t))
+    {κ : Kernel E E} [IsMarkovKernel κ] (hmarkov : IsMarkovOf X κ μ)
+    (k : ℤ) (n : ℕ) {W : Set E} (hW : MeasurableSet W)
+    {S : Set Ω} (hS : MeasurableSet[sigmaLE' X k] S) :
+    (μ (S ∩ X (k + (n : ℤ)) ⁻¹' W)).toReal
+        - (μ S).toReal * (μ (X (k + (n : ℤ)) ⁻¹' W)).toReal
+      = ∫ ω in S, ((((κ ^ n) (X k ω)) W).toReal - ((μ.map (X 0)) W).toReal) ∂μ := by
+  haveI := isMarkovKernel_pow' κ n
+  have hm : sigmaLE' X k ≤ (inferInstance : MeasurableSpace Ω) :=
+    iSup₂_le fun s _ => (hmeas s).comap_le
+  have hSΩ : MeasurableSet S := hm _ hS
+  have hBΩ : MeasurableSet (X (k + (n : ℤ)) ⁻¹' W) := (hmeas _) hW
+  have hmuB : (μ (X (k + (n : ℤ)) ⁻¹' W)).toReal = ((μ.map (X 0)) W).toReal := by
+    rw [← Measure.map_apply (hmeas _) hW, hmarg (k + (n : ℤ)) 0]
+  have hfe : (fun ω => W.indicator (fun _ => (1 : ℝ)) (X (k + (n : ℤ)) ω))
+      = (X (k + (n : ℤ)) ⁻¹' W).indicator (fun _ => (1 : ℝ)) := by
+    funext ω
+    by_cases hy : X (k + (n : ℤ)) ω ∈ W
+    · rw [Set.indicator_of_mem hy, Set.indicator_of_mem (a := ω) hy]
+    · rw [Set.indicator_of_notMem hy, Set.indicator_of_notMem (a := ω) hy]
+  have hint : Integrable (fun ω => W.indicator (fun _ => (1 : ℝ)) (X (k + (n : ℤ)) ω)) μ := by
+    rw [hfe]; exact (integrable_const (1 : ℝ)).indicator hBΩ
+  have e1 : ∫ ω in S, (μ[fun ω => W.indicator (fun _ => (1 : ℝ)) (X (k + (n : ℤ)) ω)
+        | sigmaLE' X k]) ω ∂μ
+      = ∫ ω in S, W.indicator (fun _ => (1 : ℝ)) (X (k + (n : ℤ)) ω) ∂μ :=
+    setIntegral_condExp hm hint hS
+  have e2 : ∫ ω in S, (μ[fun ω => W.indicator (fun _ => (1 : ℝ)) (X (k + (n : ℤ)) ω)
+        | sigmaLE' X k]) ω ∂μ
+      = ∫ ω in S, (((κ ^ n) (X k ω)) W).toReal ∂μ :=
+    setIntegral_congr_ae hSΩ
+      (by filter_upwards [hmarkov k n W hW] with ω hω using fun _ => hω)
+  have e3 : ∫ ω in S, W.indicator (fun _ => (1 : ℝ)) (X (k + (n : ℤ)) ω) ∂μ
+      = (μ (S ∩ X (k + (n : ℤ)) ⁻¹' W)).toReal := by
+    rw [hfe, integral_indicator_const (1 : ℝ) hBΩ]
+    simp [Measure.real, Measure.restrict_apply hBΩ, Set.inter_comm]
+  have hgint : IntegrableOn (fun ω => (((κ ^ n) (X k ω)) W).toReal) S μ := by
+    have hgm : Measurable fun ω => (((κ ^ n) (X k ω)) W).toReal :=
+      (((κ ^ n).measurable_coe hW).ennreal_toReal).comp (hmeas k)
+    refine Integrable.mono (integrable_const (1 : ℝ)) hgm.aestronglyMeasurable.restrict
+      (Filter.Eventually.of_forall fun ω => ?_)
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg zero_le_one,
+      abs_of_nonneg ENNReal.toReal_nonneg]
+    simpa using ENNReal.toReal_mono (measure_ne_top ((κ ^ n) (X k ω)) Set.univ)
+      (measure_mono (Set.subset_univ W))
+  rw [integral_sub hgint (integrable_const _).integrableOn, setIntegral_const,
+    ← e2, e1, e3, hmuB]
+  simp [Measure.real]
+
+/-- **The `≥` half of Davydov's identity, at a fixed partition level.**
+
+For every `m` the partition-`m` surrogate `∫ pdist (κⁿ x) F m dF(x)` of the mean
+total-variation discrepancy is a legitimate `β`-partition sum, hence bounded by `β`. The
+partition pair is: on the future side, `𝒫ₘ` pulled back along `X_n`; on the past side, the
+**sign cells** of the finitely many discrepancies `x ↦ (κⁿ x)(V) − F(V)`, `V ∈ 𝒫ₘ`, pulled
+back along `X_0`. On a sign cell every covariance integral has a constant sign, so the
+absolute values come out of the integrals and the double sum collapses to `∫ pdist dF`.
+
+This is where wave 4's "jointly measurable Hahn selection" is avoided: the future-side sets
+are a *fixed* partition of `E`, so no `x`-dependent Hahn set is ever selected. -/
+private lemma integral_pdist_le_betaMixCoeff [IsProbabilityMeasure μ]
+    [MeasurableSpace.CountablyGenerated E]
+    {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
+    (hmarg : ∀ s t : ℤ, μ.map (X s) = μ.map (X t))
+    {κ : Kernel E E} [IsMarkovKernel κ] (hmarkov : IsMarkovOf X κ μ) (n m : ℕ) :
+    ∫ x, pdist ((κ ^ n) x) (μ.map (X 0)) m ∂(μ.map (X 0))
+      ≤ betaMixCoeff μ (MeasurableSpace.comap (X 0) inferInstance)
+          (MeasurableSpace.comap (X ((n : ℤ))) inferInstance) := by
+  classical
+  haveI hFprob : IsProbabilityMeasure (μ.map (X 0)) :=
+    Measure.isProbabilityMeasure_map (hmeas 0).aemeasurable
+  haveI := isMarkovKernel_pow' κ n
+  have hzn : (0 : ℤ) + (n : ℤ) = (n : ℤ) := zero_add _
+  -- ## the future-side partition, enumerated
+  obtain ⟨eV⟩ : Nonempty (Fin (cpF E m).card ≃ {W // W ∈ cpF E m}) := ⟨(cpF E m).equivFin.symm⟩
+  obtain ⟨V, hVdef⟩ : ∃ f : Fin (cpF E m).card → Set E,
+      f = fun j => ((eV j : {W // W ∈ cpF E m}) : Set E) := ⟨_, rfl⟩
+  have hVmem : ∀ j, V j ∈ cpF E m := by intro j; rw [hVdef]; exact (eV j).2
+  have hVm : ∀ j, MeasurableSet (V j) := fun j => measurableSet_of_mem_cpF (hVmem j)
+  have hVinj : Function.Injective V := by
+    rw [hVdef]; exact fun a b h => eV.injective (Subtype.ext h)
+  have hVd : Pairwise fun j j' => Disjoint (V j) (V j') := fun j j' hjj =>
+    MeasurableSpace.disjoint_countablePartition (mem_cpF.mp (hVmem j)) (mem_cpF.mp (hVmem j'))
+      (fun hc => hjj (hVinj hc))
+  have hVc : (⋃ j, V j) = Set.univ := by
+    refine Set.eq_univ_of_univ_subset ?_
+    rw [← sUnion_cpF (E := E) m, sUnion_coe_eq]
+    refine Set.iUnion₂_subset fun W hW => ?_
+    have hj : V (eV.symm ⟨W, hW⟩) = W := by rw [hVdef]; simp
+    exact hj ▸ Set.subset_iUnion V (eV.symm ⟨W, hW⟩)
+  have hsumV : ∀ f : Set E → ℝ, ∑ j, f (V j) = ∑ W ∈ cpF E m, f W := by
+    intro f
+    rw [hVdef, Fintype.sum_equiv eV (fun j => f ((eV j : {W // W ∈ cpF E m}) : Set E))
+      (fun w : {W // W ∈ cpF E m} => f (w : Set E)) (fun _ => rfl)]
+    exact Finset.sum_coe_sort (cpF E m) (fun W => f W)
+  -- ## the discrepancies and their sign cells
+  obtain ⟨φ, hφdef⟩ : ∃ f : Fin (cpF E m).card → E → ℝ, f = fun j x =>
+      (((κ ^ n) x) (V j)).toReal - ((μ.map (X 0)) (V j)).toReal := ⟨_, rfl⟩
+  have hφm : ∀ j, Measurable (φ j) := by
+    intro j; rw [hφdef]
+    exact (((κ ^ n).measurable_coe (hVm j)).ennreal_toReal).sub measurable_const
+  have hφb : ∀ j x, |φ j x| ≤ 2 := by
+    intro j x
+    have h1 : (((κ ^ n) x) (V j)).toReal ≤ 1 := by
+      simpa using ENNReal.toReal_mono (measure_ne_top ((κ ^ n) x) Set.univ)
+        (measure_mono (Set.subset_univ (V j)))
+    have h2 : ((μ.map (X 0)) (V j)).toReal ≤ 1 := by
+      simpa using ENNReal.toReal_mono (measure_ne_top (μ.map (X 0)) Set.univ)
+        (measure_mono (Set.subset_univ (V j)))
+    have h3 : (0 : ℝ) ≤ (((κ ^ n) x) (V j)).toReal := ENNReal.toReal_nonneg
+    have h4 : (0 : ℝ) ≤ ((μ.map (X 0)) (V j)).toReal := ENNReal.toReal_nonneg
+    rw [hφdef, abs_le]; constructor <;> simp <;> linarith
+  obtain ⟨U, hUdef⟩ : ∃ f : (Fin (cpF E m).card → Bool) → Set E,
+      f = fun σ => ⋂ j, (if σ j = true then {x | 0 ≤ φ j x} else {x | φ j x < 0}) := ⟨_, rfl⟩
+  have hUmem : ∀ (σ : Fin (cpF E m).card → Bool) (x : E), x ∈ U σ →
+      ∀ j, (σ j = true → 0 ≤ φ j x) ∧ (σ j = false → φ j x < 0) := by
+    intro σ x hx j
+    rw [hUdef] at hx
+    have hj := Set.mem_iInter.mp hx j
+    constructor
+    · intro h; rw [if_pos h] at hj; exact hj
+    · intro h; rw [if_neg (by simp [h])] at hj; exact hj
+  have hUm : ∀ σ, MeasurableSet (U σ) := by
+    intro σ; rw [hUdef]
+    refine MeasurableSet.iInter fun j => ?_
+    by_cases h : σ j = true
+    · rw [if_pos h]; exact measurableSet_le measurable_const (hφm j)
+    · rw [if_neg h]; exact measurableSet_lt (hφm j) measurable_const
+  have hUd : Pairwise fun σ σ' => Disjoint (U σ) (U σ') := by
+    intro σ σ' hσ
+    obtain ⟨j, hj⟩ := Function.ne_iff.mp hσ
+    refine Set.disjoint_left.mpr fun x hx hx' => ?_
+    have h1 := hUmem σ x hx j
+    have h2 := hUmem σ' x hx' j
+    rcases Bool.eq_false_or_eq_true (σ j) with h | h
+    · have h' : σ' j = false := by
+        rcases Bool.eq_false_or_eq_true (σ' j) with h' | h'
+        · exact absurd (h.trans h'.symm) hj
+        · exact h'
+      exact absurd (h1.1 h) (not_le.mpr (h2.2 h'))
+    · have h' : σ' j = true := by
+        rcases Bool.eq_false_or_eq_true (σ' j) with h' | h'
+        · exact h'
+        · exact absurd (h.trans h'.symm) hj
+      exact absurd (h2.1 h') (not_le.mpr (h1.2 h))
+  have hUc : (⋃ σ, U σ) = Set.univ := by
+    refine Set.eq_univ_of_forall fun x => ?_
+    refine Set.mem_iUnion.mpr ⟨fun j => decide (0 ≤ φ j x), ?_⟩
+    rw [hUdef]
+    refine Set.mem_iInter.mpr fun j => ?_
+    by_cases h : 0 ≤ φ j x
+    · rw [if_pos (by simp [h])]; exact h
+    · rw [if_neg (by simp [h])]; exact not_le.mp h
+  -- ## the past-side partition, indexed by `Fin`
+  obtain ⟨eS⟩ : Nonempty (Fin (Fintype.card (Fin (cpF E m).card → Bool))
+      ≃ (Fin (cpF E m).card → Bool)) := ⟨(Fintype.equivFin _).symm⟩
+  obtain ⟨Aset, hAsetdef⟩ : ∃ f : Fin (Fintype.card (Fin (cpF E m).card → Bool)) → Set Ω,
+      f = fun i => X 0 ⁻¹' (U (eS i)) := ⟨_, rfl⟩
+  obtain ⟨Bset, hBsetdef⟩ : ∃ f : Fin (cpF E m).card → Set Ω,
+      f = fun j => X ((n : ℤ)) ⁻¹' (V j) := ⟨_, rfl⟩
+  have hAm : ∀ i, MeasurableSet[MeasurableSpace.comap (X 0) inferInstance] (Aset i) := by
+    intro i; rw [hAsetdef]; exact ⟨U (eS i), hUm _, rfl⟩
+  have hBm : ∀ j, MeasurableSet[MeasurableSpace.comap (X ((n : ℤ))) inferInstance] (Bset j) := by
+    intro j; rw [hBsetdef]; exact ⟨V j, hVm j, rfl⟩
+  have hAd : Pairwise fun i i' => Disjoint (Aset i) (Aset i') := by
+    intro i i' hii
+    rw [hAsetdef]
+    exact (hUd (fun hc => hii (eS.injective hc))).preimage _
+  have hBd : Pairwise fun j j' => Disjoint (Bset j) (Bset j') := by
+    intro j j' hjj
+    rw [hBsetdef]
+    exact (hVd hjj).preimage _
+  have hAc : (⋃ i, Aset i) = Set.univ := by
+    rw [hAsetdef, ← Set.preimage_iUnion]
+    have : (⋃ i, U (eS i)) = ⋃ σ, U σ :=
+      le_antisymm (Set.iUnion_subset fun i => Set.subset_iUnion U (eS i))
+        (Set.iUnion_subset fun σ => by
+          have h : U (eS (eS.symm σ)) = U σ := by rw [Equiv.apply_symm_apply]
+          exact h ▸ Set.subset_iUnion (fun i => U (eS i)) (eS.symm σ))
+    rw [this, hUc, Set.preimage_univ]
+  have hBc : (⋃ j, Bset j) = Set.univ := by
+    rw [hBsetdef, ← Set.preimage_iUnion, hVc, Set.preimage_univ]
+  -- ## the covariance identity, cell by cell
+  obtain ⟨hh, hhdef⟩ : ∃ f : Fin (cpF E m).card → Ω → ℝ, f = fun j ω => φ j (X 0 ω) := ⟨_, rfl⟩
+  have hhm : ∀ j, Measurable (hh j) := by
+    intro j; rw [hhdef]; exact (hφm j).comp (hmeas 0)
+  have hhi : ∀ j, Integrable (hh j) μ := by
+    intro j
+    refine Integrable.mono (integrable_const (2 : ℝ)) (hhm j).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun ω => ?_)
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (by norm_num : (0:ℝ) ≤ 2), hhdef]
+    exact hφb j _
+  have hcovij : ∀ i j, (μ (Aset i ∩ Bset j)).toReal
+      - (μ (Aset i)).toReal * (μ (Bset j)).toReal = ∫ ω in Aset i, hh j ω ∂μ := by
+    intro i j
+    have hle0 : MeasurableSpace.comap (X 0) inferInstance ≤ sigmaLE' X 0 :=
+      le_iSup₂_of_le (0 : ℤ) (Set.mem_Iic.mpr le_rfl) le_rfl
+    have hSA : MeasurableSet[sigmaLE' X 0] (Aset i) := hle0 _ (hAm i)
+    have h := markov_cov_eq_setIntegral hmeas hmarg hmarkov 0 n (hVm j) hSA
+    rw [hzn] at h
+    rw [hhdef, hφdef, hBsetdef]
+    exact h
+  -- ## on a sign cell the covariance integral has a constant sign
+  have hsign : ∀ i j, |∫ ω in Aset i, hh j ω ∂μ| = ∫ ω in Aset i, |hh j ω| ∂μ := by
+    intro i j
+    have hAmeas : MeasurableSet (Aset i) := (hmeas 0).comap_le _ (hAm i)
+    have hmem : ∀ ω ∈ Aset i, X 0 ω ∈ U (eS i) := by
+      intro ω hω; rw [hAsetdef] at hω; exact hω
+    by_cases hb : eS i j = true
+    · have heq : ∫ ω in Aset i, |hh j ω| ∂μ = ∫ ω in Aset i, hh j ω ∂μ :=
+        setIntegral_congr_ae hAmeas (Filter.Eventually.of_forall fun ω hω => by
+          rw [hhdef]; exact abs_of_nonneg ((hUmem _ _ (hmem ω hω) j).1 hb))
+      rw [heq, abs_of_nonneg]
+      rw [← heq]
+      exact setIntegral_nonneg hAmeas fun ω _ => abs_nonneg _
+    · have hb' : eS i j = false := by
+        rcases Bool.eq_false_or_eq_true (eS i j) with h | h
+        · exact absurd h hb
+        · exact h
+      have heq : ∫ ω in Aset i, |hh j ω| ∂μ = ∫ ω in Aset i, (-(hh j ω)) ∂μ :=
+        setIntegral_congr_ae hAmeas (Filter.Eventually.of_forall fun ω hω => by
+          rw [hhdef]; exact abs_of_neg ((hUmem _ _ (hmem ω hω) j).2 hb'))
+      have hneg : ∫ ω in Aset i, (-(hh j ω)) ∂μ = -∫ ω in Aset i, hh j ω ∂μ := integral_neg _
+      rw [heq, hneg, abs_of_nonpos]
+      have : (0:ℝ) ≤ -∫ ω in Aset i, hh j ω ∂μ := by
+        rw [← hneg, ← heq]
+        exact setIntegral_nonneg hAmeas fun ω _ => abs_nonneg _
+      linarith
+  -- ## assemble
+  have hAmeas : ∀ i, MeasurableSet[MeasurableSpace.comap (X 0) inferInstance] (Aset i) := hAm
+  have hrow : ∀ j, ∑ i, |∫ ω in Aset i, hh j ω ∂μ| = ∫ ω, |hh j ω| ∂μ := by
+    intro j
+    rw [Finset.sum_congr rfl fun i (_ : i ∈ Finset.univ) => hsign i j]
+    exact sum_setIntegral_partition (hmeas 0).comap_le hAmeas hAd hAc (hhi j).abs
+  have hpdm : Measurable fun x => pdist ((κ ^ n) x) (μ.map (X 0)) m := by
+    simp only [pdist]
+    refine measurable_const.mul (Finset.measurable_sum _ fun W hW => ?_)
+    have hsm : Measurable fun x : E =>
+        (((κ ^ n) x) W).toReal - ((μ.map (X 0)) W).toReal :=
+      (((κ ^ n).measurable_coe (measurableSet_of_mem_cpF hW)).ennreal_toReal).sub
+        measurable_const
+    exact (_root_.continuous_abs.measurable).comp hsm
+  have hptw : ∀ ω, (1 / 2 : ℝ) * ∑ j, |hh j ω| = pdist ((κ ^ n) (X 0 ω)) (μ.map (X 0)) m := by
+    intro ω
+    rw [pdist]
+    congr 1
+    refine hsumV (fun W => |(((κ ^ n) (X 0 ω)) W).toReal - ((μ.map (X 0)) W).toReal|) ▸ ?_
+    exact Finset.sum_congr rfl fun j _ => by rw [hhdef, hφdef]
+  have hfinal : (1 / 2 : ℝ) * ∑ i, ∑ j, |(μ (Aset i ∩ Bset j)).toReal
+      - (μ (Aset i)).toReal * (μ (Bset j)).toReal|
+      = ∫ x, pdist ((κ ^ n) x) (μ.map (X 0)) m ∂(μ.map (X 0)) := by
+    have e1 : ∑ i, ∑ j, |(μ (Aset i ∩ Bset j)).toReal
+        - (μ (Aset i)).toReal * (μ (Bset j)).toReal| = ∑ j, ∫ ω, |hh j ω| ∂μ := by
+      rw [Finset.sum_comm]
+      exact Finset.sum_congr rfl fun j _ => by
+        rw [← hrow j]
+        exact Finset.sum_congr rfl fun i _ => by rw [hcovij i j]
+    rw [e1, ← integral_finset_sum _ (fun j _ => (hhi j).abs), ← integral_const_mul]
+    rw [integral_congr_ae (Filter.Eventually.of_forall hptw)]
+    exact (integral_map (hmeas 0).aemeasurable hpdm.aestronglyMeasurable).symm
+  rw [← hfinal]
+  exact le_betaMixCoeff (mΩ := (inferInstance : MeasurableSpace Ω)) (hmeas 0).comap_le
+    (hmeas ((n : ℤ))).comap_le hAm hBm hAd hAc hBd hBc
+
+
 
 /-- **BRICK — Davydov's identity at the two-marginal level** (FY eq. (2.58) proper).
 
@@ -2244,6 +2516,31 @@ statement carries **no factor 2**, confirming the module docstring's warning.
   induced two-cell partitions realise the supremum in the limit. This half is the genuinely
   hard one (it is where the finite-partition formula meets the disintegration).
 
+**Status (2026-08-09, wave 7): PROVED, with the wave-6 repair applied.** The hypothesis
+`[MeasurableSpace.CountablyGenerated E]` is now on the statement (and on the public
+`betaMixCoeff_eq_integral_tvDist_of_markov`); the two refutation witnesses stay, and are
+exactly the record that the hypothesis is not removable. The proof runs the two halves as
+follows.
+
+* `≤` — `betaMixCoeff_two_marginal_le_of_envelope_at` applied with the envelope
+  `A x = ‖κⁿ(x, ·) − F‖_TV` itself. (This is why that lemma had to be split off from the
+  geometric form `betaMixCoeff_two_marginal_le_of_envelope`: the TV discrepancy is an
+  envelope only at the one lag `n`, never of the product shape `A x · ρⁿ`.) Its
+  integrability, and the measurability of `x ↦ ‖κⁿ(x, ·) − F‖_TV` that it presupposes, come
+  from the same countable-generation input as the `≥` half — this is the second, quieter
+  place where a general `E` fails, since a sup over *all* measurable sets is not measurable.
+* `≥` — `integral_pdist_le_betaMixCoeff` at every partition level `m`, then
+  `lintegral_iSup` along `tvDist_eq_iSup_pdist` (whose `pdist` is monotone in `m`).
+
+**Wave 4's costing of the `≥` half is superseded and was too pessimistic.** Neither of the
+two ingredients it named is used: no *jointly measurable Hahn selection* (the future-side
+sets of the `β`-partition pair are a **fixed** partition of `E`, so nothing `x`-dependent is
+ever selected) and no *rectangle approximation of a product-measurable set* (the past-side
+sets are the **sign cells** of the finitely many discrepancies, which are honest measurable
+subsets of `E`). What is really needed is one classical fact — the density of the algebra
+generated by a countable generating family — which Mathlib already has as
+`MeasureTheory.exists_measure_symmDiff_lt_of_generateFrom_isSetRing`.
+
 **Status (2026-08-09, wave 6): FALSE AS FROZEN — see the section
 `REFUTATION of Davydov's identity at a general state space` immediately above, and the
 formalized witness `betaMixCoeff_two_marginal_eq_integral_tvDist_false` (axiom-clean).**
@@ -2257,6 +2554,7 @@ half needs. Nothing downstream is affected: the model routes of `Mixing/Relation
 go through the *inequality* `betaMixCoeff_two_marginal_le_of_envelope`, which is correct
 at a general `E`. The `sorry` therefore stays, and it is not a debt of *proof* but of
 *statement*. The wave-4/5 analysis is kept below as the record of the two halves.
+(Wave 7: the repair has now been applied and the `sorry` is gone.)
 
 **Status (2026-08-09, wave 4): the sole remaining `sorry` of this file.** The other two
 bricks are now proved, so this is exactly what stands between the file and a `sorry`-free
@@ -2280,6 +2578,9 @@ bricks are now proved, so this is exactly what stands between the file and a `so
   *partition pair* (the finite algebra generated by the `U`'s and the `V`'s). Neither is
   a `sorry`-filling task; both are new `ForMathlib` bricks. -/
 private lemma betaMixCoeff_two_marginal_eq_integral_tvDist_brick [IsProbabilityMeasure μ]
+    -- REPAIR (wave 7, 2026-08-09): the hypothesis wave 6 prescribed. Without it the
+    -- statement is FALSE — see `betaMixCoeff_two_marginal_eq_integral_tvDist_false` above.
+    [MeasurableSpace.CountablyGenerated E]
     {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
     -- only the equality of the one-dimensional marginals is used (wave 5: this replaces
     -- the frozen `IsStrictlyStationary`, which is unavailable for a vector state)
@@ -2290,7 +2591,87 @@ private lemma betaMixCoeff_two_marginal_eq_integral_tvDist_brick [IsProbabilityM
         (MeasurableSpace.comap (X (n : ℤ)) inferInstance)
       = (∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0))
           ∂(μ.map (X 0))).toReal := by
-  sorry
+  classical
+  haveI hFprob : IsProbabilityMeasure (μ.map (X 0)) :=
+    Measure.isProbabilityMeasure_map (hmeas 0).aemeasurable
+  haveI := isMarkovKernel_pow' κ n
+  -- ## the partition surrogates, as functions of the starting state
+  have hpdm : ∀ m, Measurable fun x => pdist ((κ ^ n) x) (μ.map (X 0)) m := by
+    intro m
+    simp only [pdist]
+    refine measurable_const.mul (Finset.measurable_sum _ fun W hW => ?_)
+    have hsm : Measurable fun x : E =>
+        (((κ ^ n) x) W).toReal - ((μ.map (X 0)) W).toReal :=
+      (((κ ^ n).measurable_coe (measurableSet_of_mem_cpF hW)).ennreal_toReal).sub
+        measurable_const
+    exact (_root_.continuous_abs.measurable).comp hsm
+  have hpd1 : ∀ (m : ℕ) (x : E), pdist ((κ ^ n) x) (μ.map (X 0)) m ≤ 1 := fun m x =>
+    (pdist_le_tvDist _ _ m).trans (ENNReal.toReal_le_of_le_ofReal zero_le_one
+      (by rw [ENNReal.ofReal_one]; exact StatLean.Minimaxity.tvDist_le_one _ _))
+  have hpdi : ∀ m, Integrable (fun x => pdist ((κ ^ n) x) (μ.map (X 0)) m) (μ.map (X 0)) := by
+    intro m
+    refine Integrable.mono (integrable_const (1 : ℝ)) (hpdm m).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg zero_le_one,
+      abs_of_nonneg (pdist_nonneg _ _ m)]
+    exact hpd1 m x
+  have hgsup : ∀ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0))
+      = ⨆ m, ENNReal.ofReal (pdist ((κ ^ n) x) (μ.map (X 0)) m) := fun x =>
+    tvDist_eq_iSup_pdist _ _
+  have htvm : Measurable fun x => StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0)) := by
+    simp only [hgsup]
+    exact Measurable.iSup fun m => ENNReal.measurable_ofReal.comp (hpdm m)
+  have htvne : ∀ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0)) ≠ ⊤ := fun x =>
+    ne_top_of_le_ne_top ENNReal.one_ne_top (StatLean.Minimaxity.tvDist_le_one _ _)
+  have htvA : Integrable
+      (fun x => (StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0))).toReal)
+      (μ.map (X 0)) := by
+    refine Integrable.mono (integrable_const (1 : ℝ))
+      htvm.ennreal_toReal.aestronglyMeasurable (Filter.Eventually.of_forall fun x => ?_)
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg zero_le_one,
+      abs_of_nonneg ENNReal.toReal_nonneg]
+    exact ENNReal.toReal_le_of_le_ofReal zero_le_one
+      (by rw [ENNReal.ofReal_one]; exact StatLean.Minimaxity.tvDist_le_one _ _)
+  have hint_eq : ∫ x, (StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0))).toReal
+        ∂(μ.map (X 0))
+      = (∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0)) ∂(μ.map (X 0))).toReal :=
+    integral_toReal htvm.aemeasurable (Filter.Eventually.of_forall fun x =>
+      lt_of_le_of_ne le_top (htvne x))
+  have hβ0 : 0 ≤ betaMixCoeff μ (MeasurableSpace.comap (X 0) inferInstance)
+      (MeasurableSpace.comap (X (n : ℤ)) inferInstance) :=
+    betaMixCoeff_nonneg' (mΩ := (inferInstance : MeasurableSpace Ω)) (hmeas 0).comap_le
+      (hmeas ((n : ℤ))).comap_le
+  refine le_antisymm ?_ ?_
+  · -- ## the `≤` half: `‖κⁿ(x, ·) − F‖_TV` is itself an integrable envelope at the lag `n`
+    have h := betaMixCoeff_two_marginal_le_of_envelope_at hmeas hmarg hmarkov
+      (A := fun x => (StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0))).toReal)
+      (fun _ => ENNReal.toReal_nonneg) htvA 0 n
+      (fun x => le_of_eq (ENNReal.ofReal_toReal (htvne x)).symm)
+    rw [zero_add] at h
+    exact h.trans (le_of_eq hint_eq)
+  · -- ## the `≥` half: the partition surrogates are legitimate `β`-partition sums
+    have hlin : ∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0)) ∂(μ.map (X 0))
+        = ⨆ m, ∫⁻ x, ENNReal.ofReal (pdist ((κ ^ n) x) (μ.map (X 0)) m) ∂(μ.map (X 0)) := by
+      simp only [hgsup]
+      exact lintegral_iSup (fun m => ENNReal.measurable_ofReal.comp (hpdm m))
+        (fun a b hab x => ENNReal.ofReal_le_ofReal (pdist_mono _ _ hab))
+    have hstep : ∀ m, ∫⁻ x, ENNReal.ofReal (pdist ((κ ^ n) x) (μ.map (X 0)) m) ∂(μ.map (X 0))
+        ≤ ENNReal.ofReal (betaMixCoeff μ (MeasurableSpace.comap (X 0) inferInstance)
+            (MeasurableSpace.comap (X (n : ℤ)) inferInstance)) := by
+      intro m
+      rw [← ofReal_integral_eq_lintegral_ofReal (hpdi m)
+        (Filter.Eventually.of_forall fun x => pdist_nonneg _ _ m)]
+      exact ENNReal.ofReal_le_ofReal
+        (integral_pdist_le_betaMixCoeff hmeas hmarg hmarkov n m)
+    have hle : (∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0)) ∂(μ.map (X 0)))
+        ≤ ENNReal.ofReal (betaMixCoeff μ (MeasurableSpace.comap (X 0) inferInstance)
+            (MeasurableSpace.comap (X (n : ℤ)) inferInstance)) := by
+      rw [hlin]; exact iSup_le hstep
+    calc (∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0)) ∂(μ.map (X 0))).toReal
+        ≤ (ENNReal.ofReal (betaMixCoeff μ (MeasurableSpace.comap (X 0) inferInstance)
+            (MeasurableSpace.comap (X (n : ℤ)) inferInstance))).toReal :=
+          ENNReal.toReal_mono ENNReal.ofReal_ne_top hle
+      _ = _ := ENNReal.toReal_ofReal hβ0
 
 /-- **DEBT (Davydov 1973; FY eq. (2.58))**: for a strictly stationary Markov process
 with kernel `κ` and time-`0` marginal `F = μ ∘ X_0⁻¹`,
@@ -2303,6 +2684,12 @@ two marginals) and `betaMixCoeff_two_marginal_eq_integral_tvDist_brick` (Davydov
 proper — the only remaining `sorry` of this file; its docstring records the verified
 calibration and the proof of each direction).
 
+**Status (2026-08-09, wave 7): PROVED**, with the wave-6 repair
+`[MeasurableSpace.CountablyGenerated E]` applied — see the brick's docstring. The witness
+`betaMixCoeff_eq_integral_tvDist_of_markov_false` above stays as the record that the
+hypothesis is not removable. `ℝ` has the instance, so the scalar corollary
+`betaCoeff_eq_integral_tvDist_debt` is closed with no hypothesis change at all.
+
 **Status (2026-08-09, wave 6): FALSE AS FROZEN at a general `E`** — formalized witness
 `betaMixCoeff_eq_integral_tvDist_of_markov_false` above. It is proved *over* the open
 brick, so nothing is unsound; the statement needs
@@ -2313,6 +2700,10 @@ through this general form.
 Stated for a general state space `E`; the scalar form is
 `betaCoeff_eq_integral_tvDist_debt` below. -/
 theorem betaMixCoeff_eq_integral_tvDist_of_markov [IsProbabilityMeasure μ]
+    -- REPAIR (wave 7, 2026-08-09): the hypothesis wave 6 prescribed. Without it the
+    -- statement is FALSE — see `betaMixCoeff_eq_integral_tvDist_of_markov_false` above.
+    -- `ℝ` has it, so the scalar corollary `betaCoeff_eq_integral_tvDist_debt` is unaffected.
+    [MeasurableSpace.CountablyGenerated E]
     {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
     (hmarg : ∀ s t : ℤ, μ.map (X s) = μ.map (X t))
     {κ : ProbabilityTheory.Kernel E E} [ProbabilityTheory.IsMarkovKernel κ]
@@ -2341,25 +2732,15 @@ theorem betaMixCoeff_le_of_geometric_envelope [IsProbabilityMeasure μ]
         ≤ ENNReal.ofReal (A x * ρ ^ n)) :
     ∀ n : ℕ, betaMixCoeff μ (sigmaLE' X 0) (sigmaGE' X (n : ℤ))
       ≤ (∫ x, A x ∂(μ.map (X 0))) * ρ ^ n := by
-  set F : Measure E := μ.map (X 0) with hF
-  have hnn : ∀ n : ℕ, (0 : ℝ) ≤ (∫ x, A x ∂F) * ρ ^ n := fun n =>
-    mul_nonneg (integral_nonneg hA0) (pow_nonneg hρ0 n)
-  -- (2.59): integrate the pointwise envelope of (2.58).
-  · intro n
-    rw [betaMixCoeff_eq_integral_tvDist_of_markov hmeas hmarg hmarkov n]
-    have hmono : (∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) F ∂F)
-        ≤ ∫⁻ x, ENNReal.ofReal (A x * ρ ^ n) ∂F :=
-      lintegral_mono fun x => henv x n
-    have heq : (∫⁻ x, ENNReal.ofReal (A x * ρ ^ n) ∂F)
-        = ENNReal.ofReal ((∫ x, A x ∂F) * ρ ^ n) := by
-      rw [← ofReal_integral_eq_lintegral_ofReal (hAint.mul_const _)
-        (Filter.Eventually.of_forall fun x => mul_nonneg (hA0 x) (pow_nonneg hρ0 n)),
-        integral_mul_const]
-    have hfin : (∫⁻ x, ENNReal.ofReal (A x * ρ ^ n) ∂F) ≠ ∞ := by
-      rw [heq]; exact ENNReal.ofReal_ne_top
-    calc (∫⁻ x, StatLean.Minimaxity.tvDist ((κ ^ n) x) F ∂F).toReal
-        ≤ (∫⁻ x, ENNReal.ofReal (A x * ρ ^ n) ∂F).toReal := ENNReal.toReal_mono hfin hmono
-      _ = (∫ x, A x ∂F) * ρ ^ n := by rw [heq, ENNReal.toReal_ofReal (hnn n)]
+  -- (2.59) needs only the *inequality* half of (2.58), which is available at a general `E`
+  -- (wave 7: this route replaces the old one through the identity, which since the wave-6
+  -- refutation carries a `CountablyGenerated` hypothesis this statement does not need).
+  intro n
+  rw [betaMixCoeff_two_marginal_of_markov hmeas hmarkov n]
+  have h := betaMixCoeff_two_marginal_le_of_envelope_at hmeas hmarg hmarkov
+    (A := fun x => A x * ρ ^ n) (fun x => mul_nonneg (hA0 x) (pow_nonneg hρ0 n))
+    (hAint.mul_const _) 0 n (fun x => henv x n)
+  rwa [integral_mul_const, zero_add] at h
 
 /-! ### Scalar corollaries (`E = ℝ`)
 
