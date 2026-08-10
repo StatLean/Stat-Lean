@@ -1307,10 +1307,15 @@ the reduction the remaining debts start from.
   - `E X_t = 0` is **derived**, not assumed (`integral_eq_zero_of_filter`), and so is
     `MemLp (X t) 2 μ` (`memLp_two_of_filter`) — the frozen statement supplies neither, and
     both are needed before `acvf` can be manipulated at all;
-  - what it does **not** give is the pairing `Σ_h γ(h)² < ∞`. That needs
-    `Σ_h (Σ_k a_k a_{k−h})² < ∞`, which follows from `ha` by Young's inequality
-    (`ℓ¹ * ℓ¹ ⊆ ℓ¹ ⊆ ℓ²`) but is a separate step and is *not* proved here. It is the one
-    place where the frozen `2 Σ_{j∈ℤ} γ(j)²` could otherwise be a junk `tsum`.
+  - the pairing `Σ_h γ(h)² < ∞` is a *separate* step — the identity alone does not give it.
+    It is **also CLOSED** (`summable_acvf_sq_of_filter`), by Young's inequality
+    (`ℓ¹ * ℓ¹ ⊆ ℓ¹ ⊆ ℓ²`): the reindexing `(h, k) ↦ (k, k − h)` of `ℤ × ℤ`
+    (`shiftPairEquiv`) turns the coefficient double series into a product of two copies of
+    `ha`, so it is summable on `ℤ × ℤ` and its `h`-sections sum (`summable_absConv`); then
+    `|Σ_k a_k a_{k−h}| ≤ Σ_k |a_k||a_{k−h}| ≤ (Σ|a|)²` upgrades `ℓ¹` to `ℓ²` in `h`
+    (`summable_acvfCoeff_sq`). This is what stops the frozen `2 Σ_{j∈ℤ} γ(j)²` from being a
+    junk `tsum`, and it is the only place in the whole reduction where the `ℓ¹` hypothesis
+    `ha` is used for anything other than making a single series converge.
   So (R4) now has no analytic content left; the residual bookkeeping cannot be written
   down until (R1) fixes the exact shape of the limit it produces.
 
@@ -2119,6 +2124,62 @@ private theorem acvf_eq_tsum_of_filter [IsProbabilityMeasure μ] (hε : IsIIDNoi
   rw [acvf, covariance_eq_sub hXh hX0, integral_eq_zero_of_filter hε hfil hmeas h,
     integral_eq_zero_of_filter hε hfil hmeas 0]
   simpa using hval
+
+/-- The reindexing `(h, k) ↦ (k, k − h)` of `ℤ × ℤ`. -/
+private def shiftPairEquiv : ℤ × ℤ ≃ ℤ × ℤ where
+  toFun x := (x.2, x.2 - x.1)
+  invFun y := (y.1 - y.2, y.1)
+  left_inv x := by simp
+  right_inv y := by simp
+
+private lemma summable_absConv (ha : Summable fun k : ℤ => |a k|) :
+    Summable fun x : ℤ × ℤ => |a x.2| * |a (x.2 - x.1)| := by
+  have hprod : Summable fun x : ℤ × ℤ => |a x.1| * |a x.2| :=
+    ha.mul_of_nonneg ha (fun k => abs_nonneg _) (fun k => abs_nonneg _)
+  have := (shiftPairEquiv.summable_iff (f := fun x : ℤ × ℤ => |a x.1| * |a x.2|)).2 hprod
+  simpa [Function.comp, shiftPairEquiv] using this
+
+/-- **Young's inequality for the autocovariance series**: the lag-`h` coefficient series of a
+two-sided `ℓ¹` filter is itself `ℓ¹` in `h`, hence `ℓ²`. -/
+private lemma summable_acvfCoeff_sq (ha : Summable fun k : ℤ => |a k|) :
+    Summable fun h : ℤ => (∑' k : ℤ, a k * a (k - h)) ^ 2 := by
+  classical
+  set S : ℝ := ∑' j : ℤ, |a j| with hS
+  have hSnn : 0 ≤ S := tsum_nonneg fun j => abs_nonneg _
+  have hF := summable_absConv (a := a) ha
+  have hsec : ∀ h : ℤ, Summable fun k : ℤ => |a k| * |a (k - h)| := fun h => hF.prod_factor h
+  have hc : Summable fun h : ℤ => ∑' k : ℤ, |a k| * |a (k - h)| := hF.prod
+  have hcnn : ∀ h : ℤ, 0 ≤ ∑' k : ℤ, |a k| * |a (k - h)| :=
+    fun h => tsum_nonneg fun k => mul_nonneg (abs_nonneg _) (abs_nonneg _)
+  have hcle : ∀ h : ℤ, (∑' k : ℤ, |a k| * |a (k - h)|) ≤ S * S := by
+    intro h
+    have hb : ∀ k : ℤ, |a k| * |a (k - h)| ≤ |a k| * S := by
+      intro k
+      exact mul_le_mul_of_nonneg_left (ha.le_tsum (k - h) fun j _ => abs_nonneg _) (abs_nonneg _)
+    calc (∑' k : ℤ, |a k| * |a (k - h)|) ≤ ∑' k : ℤ, |a k| * S :=
+          (hsec h).tsum_le_tsum hb (ha.mul_right S)
+    _ = S * S := by rw [tsum_mul_right]
+  have habs : ∀ h : ℤ, |∑' k : ℤ, a k * a (k - h)| ≤ ∑' k : ℤ, |a k| * |a (k - h)| := by
+    intro h
+    have hnorm : Summable fun k : ℤ => ‖a k * a (k - h)‖ := by
+      simpa [Real.norm_eq_abs, abs_mul] using hsec h
+    have := norm_tsum_le_tsum_norm hnorm
+    simpa [Real.norm_eq_abs, abs_mul] using this
+  refine Summable.of_nonneg_of_le (fun h => sq_nonneg _) (fun h => ?_) (hc.mul_left (S * S))
+  have h1 := habs h
+  have h2 := hcle h
+  have h3 := hcnn h
+  nlinarith [abs_nonneg (∑' k : ℤ, a k * a (k - h)), sq_abs (∑' k : ℤ, a k * a (k - h))]
+
+/-- **The frozen limiting variance is not a junk `tsum`**: `Σ_h γ(h)² < ∞`. -/
+private lemma summable_acvf_sq_of_filter [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ)
+    (hfil : ∀ t : ℤ, Tendsto (fun N : ℕ => eLpNorm (fun ω => X t ω -
+      ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) 2 μ) atTop (𝓝 0))
+    (ha : Summable fun k : ℤ => |a k|) (hmeas : ∀ t, Measurable (X t)) :
+    Summable fun h : ℤ => acvf X μ h ^ 2 := by
+  refine Summable.congr ((summable_acvfCoeff_sq (a := a) ha).mul_left (σ2 ^ 2)) fun h => ?_
+  rw [acvf_eq_tsum_of_filter hε hfil ha hmeas h]
+  ring
 
 end LinearAcvf
 
