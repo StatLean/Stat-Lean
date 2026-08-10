@@ -66,7 +66,8 @@ theorem integral_importanceWeight_mul [SigmaFinite P] [SigmaFinite Q] {g : 𝓧 
     -- USER-INPUT: the target is dominated by the proposal; ECS §2.6
     (hPQ : P ≪ Q) :
     ∫ z, g z * importanceWeight P Q z ∂Q = ∫ z, g z ∂P := by
-  sorry
+  rw [← MeasureTheory.integral_toReal_rnDeriv_mul (μ := P) (ν := Q) hPQ (f := g)]
+  exact integral_congr_ae (Filter.Eventually.of_forall fun z => mul_comm _ _)
 
 /-- **Unbiasedness of the importance-sampling estimator** (ECS §2.6,
 eq. (2.11)): sampling i.i.d. from the proposal `Q` and averaging `g·w` has
@@ -80,7 +81,7 @@ theorem importanceSampling_unbiased [IsProbabilityMeasure Q] [SigmaFinite P]
     ∫ x, mcEstimate (fun z => g z * importanceWeight P Q z) x
         ∂(Measure.pi fun _ : Fin n => Q)
       = ∫ z, g z ∂P := by
-  sorry
+  exact (integral_avg_eval_pi (P := Q) hgw).trans (integral_importanceWeight_mul hPQ)
 
 /-- **Variance of the importance-sampling estimator** (ECS §2.6):
 `Var(Î_IS) = Var_Q(g·w)/n`. -/
@@ -91,7 +92,11 @@ theorem importanceSampling_variance [IsProbabilityMeasure Q] {n : ℕ} [NeZero n
     variance (mcEstimate fun z => g z * importanceWeight P Q z)
         (Measure.pi fun _ : Fin n => Q)
       = variance (fun z => g z * importanceWeight P Q z) Q / n := by
-  sorry
+  have hfun : (mcEstimate fun z => g z * importanceWeight P Q z)
+      = fun x : Fin n → 𝓧 => (n : ℝ)⁻¹ * ∑ i, (fun z => g z * importanceWeight P Q z) (x i) :=
+    rfl
+  rw [hfun]
+  exact variance_avg_eval_pi (P := Q) (g := fun z => g z * importanceWeight P Q z) hgw
 
 variable {ν : Measure 𝓧}
 
