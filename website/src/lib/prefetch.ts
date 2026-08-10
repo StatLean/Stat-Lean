@@ -1,4 +1,5 @@
-// Warm the heavy graph chunks (Cytoscape + fcose) before they're navigated to,
+// Warm the Cytoscape route chunk before it is navigated to. The compact graph
+// JSON remains a separate cacheable request and Mathlib data stays on demand,
 // so opening the Dependencies / graph pages feels instant.
 export const prefetchDependencies = () => import("../pages/Dependencies");
 export const prefetchGraphView = () => import("../pages/GraphView");

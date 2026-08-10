@@ -4,7 +4,7 @@ import { getResult, resultsByCategory } from "../lib/data";
 import { CATEGORY_BY_ID } from "../lib/categories";
 import { renderLean } from "../lib/render";
 import { docUrl, sourceUrl, refUrl } from "../lib/site";
-import { linkifyBiblio } from "../lib/refCite";
+import { linkifyBiblio, referenceLinks } from "../lib/refCite";
 import { MathText } from "../components/MathText";
 import { ConvergenceMark } from "../components/ConvergenceMark";
 import { Logo } from "../components/Logo";
@@ -208,6 +208,20 @@ export function ResultDetail() {
                   )}`}
                   className="font-serif text-[0.98rem] text-ink-soft leading-relaxed"
                 />
+                <div className="mt-3 flex flex-wrap items-center gap-2 font-sans text-xs">
+                  <span className="text-ink-faint uppercase tracking-widest">
+                    Cited works
+                  </span>
+                  {referenceLinks(r.reference.keys).map(({ key, label }) => (
+                    <a
+                      key={key}
+                      href={refUrl(key)}
+                      className="rounded-full border hairline px-2.5 py-1 text-ink-soft transition-colors hover:border-accent hover:text-[rgb(var(--accent))]"
+                    >
+                      {label} →
+                    </a>
+                  ))}
+                </div>
               </div>
             )}
           </div>

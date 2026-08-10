@@ -195,7 +195,8 @@ crowds out the original sources that the paragraph exists to record.
 
 Point the paragraph *outward*, to Wald (1949), Huber (1967), Pearson (1894) —
 the papers a reader would go to next. Every work named in `biblio` should also
-appear in `keys` so it is linked and listed.
+appear in `keys` so it is linked inline when author matching succeeds, listed
+explicitly under **Cited works**, and present on the References page.
 
 > **Known backlog:** 113 of 432 bibliographic paragraphs currently re-name their
 > own primary textbook (vdV 40, Lehmann–Romano 27, Wainwright 22,
@@ -214,6 +215,8 @@ Graphs are **generated, never authored**. One file per result with
 # on the cluster, from the repository root (this laptop cannot `lake build`)
 lake build
 lake exe deps
+cd website
+npm run layout
 ```
 
 `lake exe deps` reads `website/targets.txt`, resolves each name against the
@@ -235,17 +238,19 @@ Node invariants worth knowing, because the compact global graph relies on them:
 `id === full`, `label === full.split(".").at(-1)`, repo nodes come from a
 `StatLean` module, Mathlib nodes do not, and Mathlib nodes are always leaves.
 
-**The global graph page needs nothing extra** — `src/lib/globalGraph.ts` unions
-the per-result graphs at load time. Adding results grows it automatically.
+`npm run layout` unions the per-result files into two compact assets and
+precomputes collision-free positions with the older force-directed recipe.
+The StatLean-only graph loads first; Mathlib nodes, their edges and the larger
+layout are separate assets fetched only when the visitor enables them. Commit
+`global-core.json`, `global-external.json`, `layout-core.json` and
+`layout-full.json` whenever the generated per-result graphs change.
 
-> **Performance note for anyone touching `Dependencies.tsx`:** the layout is
-> computed in the browser. Measured cost is ~2.8 s of blocked main thread for
-> the 1531-node default view and **over ten minutes** for the 3682-node view
-> with Mathlib shown. Precomputing the layout at build time was tried and
-> reverted — it was fast but the arrangement was worse. If you retry it, seed
-> node positions at the centre and keep `randomize: false`, which is what gives
-> the current layout its shape; a build-time run with `randomize: true` produces
-> a visibly different graph.
+> **Performance note for anyone touching `Dependencies.tsx`:** never import all
+> files in `src/data/graphs/` into the browser or run fcose there. With 651
+> results that means parsing 7.8 MB of repeated data and unioning 4,871 nodes /
+> 21,204 edges on the main thread. Keep the centre-seeded, `randomize: false`
+> force layout in `scripts/precompute-layout.mjs`; the post-layout separation
+> pass is what guarantees rendered nodes do not overlap.
 
 ---
 

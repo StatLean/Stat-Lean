@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import cytoscape from "cytoscape";
-import { getGlobalGraph } from "../lib/globalGraph";
+import { getExternalGraph, getGlobalGraph, type GlobalNode } from "../lib/globalGraph";
 import { RESULTS } from "../lib/data";
 import { CATEGORIES } from "../lib/categories";
 import {
   isUserFacing,
-  nodeArea,
   nodeShape,
   AREA_VAR,
   AREA_LABEL,
@@ -15,7 +14,7 @@ import {
 } from "../lib/graphArea";
 import { triplet, rgb, rgba, areaTriplets } from "../lib/cyStyle";
 import { docUrlForNode } from "../lib/site";
-import layoutData from "../data/layout.json";
+import layoutData from "../data/layout-core.json";
 import type { CategoryId } from "../lib/types";
 
 
@@ -23,11 +22,10 @@ const FULL_TO_ID = new Map(RESULTS.map((r) => [r.fullName, r.id]));
 
 /**
  * Node positions precomputed by `scripts/precompute-layout.mjs`, which runs the
- * same seeded fcose recipe this page used to run in the browser (~2.8 s for the
- * default view, minutes with Mathlib shown). Applying them with a `preset`
- * layout is instant; the drift animation below still gives the graph its motion.
+ * same seeded fcose recipe the older page ran in the browser. Applying these
+ * positions is immediate; Mathlib's larger layout is fetched only on request.
  */
-const PRESET = (layoutData as unknown as {
+const CORE_PRESET = (layoutData as unknown as {
   positions: Record<string, [number, number]>;
 }).positions;
 
@@ -43,8 +41,11 @@ function fallbackPos(id: string): { x: number; y: number } {
   return { x: Math.cos(a) * r, y: Math.sin(a) * r };
 }
 
-function posOf(id: string): { x: number; y: number } {
-  const p = PRESET[id];
+function posOf(
+  id: string,
+  positions: Record<string, [number, number]>,
+): { x: number; y: number } {
+  const p = positions[id];
   return p ? { x: p[0], y: p[1] } : fallbackPos(id);
 }
 
@@ -54,11 +55,13 @@ export function Dependencies() {
   const elRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<cytoscape.Core | null>(null);
   const runLayoutRef = useRef<((eles: cytoscape.Collection) => void) | null>(null);
-  const extElsRef = useRef<any[]>([]); // Mathlib elements, added to cy on demand
+  const ensureExternalRef = useRef<(() => Promise<void>) | null>(null);
+  const fullPositionsRef = useRef<Record<string, [number, number]> | null>(null);
+  const positionsRef = useRef(CORE_PRESET);
   const extAddedRef = useRef(false);
   const navigate = useNavigate();
 
-  const graph = useMemo(() => getGlobalGraph(), []);
+  const [graph, setGraph] = useState<Awaited<ReturnType<typeof getGlobalGraph>> | null>(null);
   const [topics, setTopics] = useState<Set<CategoryId>>(
     () => new Set(CATEGORIES.map((c) => c.id)),
   );
@@ -66,15 +69,32 @@ export function Dependencies() {
     () => new Set<DeclFilter>(["thm", "def"]),
   );
   const [showMathlib, setShowMathlib] = useState(false);
+  const [mathlibLoading, setMathlibLoading] = useState(false);
+  const [graphRevision, setGraphRevision] = useState(0);
+  const [graphError, setGraphError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getGlobalGraph()
+      .then((value) => {
+        if (!cancelled) setGraph(value);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setGraphError(error instanceof Error ? error.message : "Cannot load dependency graph");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // ---- build the graph once ----
   useEffect(() => {
-    if (!elRef.current) return;
+    if (!elRef.current || !graph) return;
     const ats = areaTriplets();
     const ink = triplet("--ink");
 
-    const mkNode = (n: (typeof graph.nodes)[number]) => {
-      const area = nodeArea(n, "semiparametric");
+    const mkNode = (n: GlobalNode) => {
+      const area = n.area;
       const at = ats[area];
       const emph = isUserFacing(n.full);
       const size = emph ? 19 : area === "external" ? 7 : 10;
@@ -93,21 +113,14 @@ export function Dependencies() {
         },
       };
     };
-    // Split Mathlib (external) elements out — they're added on demand so the
-    // initial graph (the ~198 repo + result nodes) mounts fast.
-    const extIds = new Set(
-      graph.nodes.filter((n) => nodeArea(n, "semiparametric") === "external").map((n) => n.id),
-    );
-    const repoNodeEls = graph.nodes.filter((n) => !extIds.has(n.id)).map(mkNode);
-    const extNodeEls = graph.nodes.filter((n) => extIds.has(n.id)).map(mkNode);
-    const repoEdgeEls: any[] = [];
-    const extEdgeEls: any[] = [];
-    for (const e of graph.edges) {
-      const el = { data: { id: `${e.target}~${e.source}`, source: e.target, target: e.source } };
-      (extIds.has(e.source) || extIds.has(e.target) ? extEdgeEls : repoEdgeEls).push(el);
-    }
-    extElsRef.current = [...extNodeEls, ...extEdgeEls];
     extAddedRef.current = false;
+    fullPositionsRef.current = null;
+    positionsRef.current = CORE_PRESET;
+
+    const repoNodeEls = graph.nodes.map(mkNode);
+    const repoEdgeEls = graph.edges.map((e) => ({
+      data: { id: `${e.target}~${e.source}`, source: e.target, target: e.source },
+    }));
 
     const cy = cytoscape({
       container: elRef.current,
@@ -136,10 +149,10 @@ export function Dependencies() {
         {
           selector: "edge",
           style: {
-            width: 0.6,
+            width: 1.1,
             "line-color": rgb(triplet("--rule")),
             "curve-style": "straight",
-            opacity: 0.28,
+            opacity: 0.34,
           },
         },
         { selector: ".faded", style: { opacity: 0.05, "text-opacity": 0 } },
@@ -149,6 +162,20 @@ export function Dependencies() {
       wheelSensitivity: 0.2,
     });
     cyRef.current = cy;
+
+    let disposed = false;
+    ensureExternalRef.current = async () => {
+      if (extAddedRef.current) return;
+      const assets = await getExternalGraph();
+      if (disposed || extAddedRef.current) return;
+      const nodeEls = assets.graph.nodes.map(mkNode);
+      const edgeEls = assets.graph.edges.map((e) => ({
+        data: { id: `${e.target}~${e.source}`, source: e.target, target: e.source },
+      }));
+      cy.add([...nodeEls, ...edgeEls]);
+      fullPositionsRef.current = assets.positions;
+      extAddedRef.current = true;
+    };
 
     // floating name tooltip
     const tip = document.createElement("div");
@@ -190,6 +217,7 @@ export function Dependencies() {
       raf: 0,
       active: false,
       last: 0,
+      until: 0,
       nodes: cy.collection() as cytoscape.NodeCollection,
       anchors: new Map<string, { x: number; y: number }>(),
       vel: new Map<string, { x: number; y: number }>(),
@@ -198,7 +226,11 @@ export function Dependencies() {
       drift.raf = requestAnimationFrame(tick);
       if (!drift.active || document.hidden) return;
       const now = performance.now();
-      if (now - drift.last < 32) return; // ~30fps
+      if (now >= drift.until) {
+        drift.active = false;
+        return;
+      }
+      if (now - drift.last < 90) return; // a brief, low-cost organic settle
       drift.last = now;
       cy.batch(() => {
         drift.nodes.forEach((n) => {
@@ -224,18 +256,18 @@ export function Dependencies() {
         drift.anchors.set(n.id(), { x: p.x, y: p.y });
         drift.vel.set(n.id(), { x: 0, y: 0 });
       });
-      drift.active = true;
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      drift.active = !reducedMotion && drift.nodes.length <= 2500;
+      drift.until = performance.now() + 4500;
     };
 
-    // Apply the precomputed positions and hand straight off to the drift loop.
-    // No layout runs in the browser: the arrangement is the seeded build-time
-    // fcose result, so this is the same picture the old in-page layout produced,
-    // minus the seconds (or minutes) of blocked main thread.
+    // Apply the offline force positions and hand off to a short organic settle.
+    // No force layout or graph union runs in the browser.
     const runLayout = (eles: cytoscape.Collection) => {
       drift.active = false;
       const nodes = eles.nodes();
       cy.batch(() => {
-        nodes.positions((n: cytoscape.NodeSingular) => posOf(n.id()));
+        nodes.positions((n: cytoscape.NodeSingular) => posOf(n.id(), positionsRef.current));
       });
       cy.animate(
         { fit: { eles: nodes, padding: 50 } },
@@ -246,23 +278,46 @@ export function Dependencies() {
     tick(); // the filter effect (runs on mount too) performs the initial layout
 
     return () => {
+      disposed = true;
       cancelAnimationFrame(drift.raf);
       cy.destroy();
       cyRef.current = null;
       runLayoutRef.current = null;
+      ensureExternalRef.current = null;
       tip.remove();
     };
   }, [graph, navigate]);
+
+  // Materialize the deferred Mathlib asset on first request.  The core graph
+  // stays interactive while the separate JSON and layout files download.
+  useEffect(() => {
+    if (!showMathlib || extAddedRef.current || !ensureExternalRef.current) return;
+    let cancelled = false;
+    setMathlibLoading(true);
+    setGraphError(null);
+    ensureExternalRef.current()
+      .then(() => {
+        if (!cancelled) setGraphRevision((revision) => revision + 1);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setGraphError(error instanceof Error ? error.message : "Cannot load Mathlib graph");
+      })
+      .finally(() => {
+        if (!cancelled) setMathlibLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showMathlib]);
 
   // ---- apply filters + (re)run the exploding layout ----
   useEffect(() => {
     const cy = cyRef.current;
     if (!cy) return;
-    // lazily materialize Mathlib nodes the first time they're requested
-    if (showMathlib && !extAddedRef.current) {
-      cy.add(extElsRef.current);
-      extAddedRef.current = true;
-    }
+    if (showMathlib && !extAddedRef.current) return;
+    positionsRef.current = showMathlib && fullPositionsRef.current
+      ? fullPositionsRef.current
+      : CORE_PRESET;
     cy.batch(() => {
       cy.nodes().forEach((n) => {
         const area = n.data("area") as Area;
@@ -282,7 +337,7 @@ export function Dependencies() {
       if (cyRef.current === cy) runLayoutRef.current?.(visible.closedNeighborhood());
     });
     return () => cancelAnimationFrame(raf);
-  }, [topics, decls, showMathlib]);
+  }, [graph, topics, decls, showMathlib, graphRevision]);
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col">
@@ -323,12 +378,19 @@ export function Dependencies() {
             varName={AREA_VAR.external}
             onClick={() => setShowMathlib((v) => !v)}
           >
-            {AREA_LABEL.external}
+            {mathlibLoading ? "Loading Mathlib…" : AREA_LABEL.external}
           </Toggle>
+          {graphError && <span className="text-red-700 dark:text-red-300">{graphError}</span>}
         </div>
       </div>
 
-      <div ref={elRef} className="relative flex-1 min-h-0 bg-parchment-sunk" />
+      {graph ? (
+        <div ref={elRef} className="relative flex-1 min-h-0 bg-parchment-sunk" />
+      ) : (
+        <div className="relative flex-1 min-h-0 bg-parchment-sunk grid place-items-center text-sm font-sans text-ink-faint">
+          {graphError ?? "Loading StatLean dependencies…"}
+        </div>
+      )}
 
       {/* legend */}
       <div className="shrink-0 border-t hairline px-5 sm:px-7 py-2.5 flex flex-wrap gap-x-5 gap-y-1.5 text-xs font-sans text-ink-soft">
