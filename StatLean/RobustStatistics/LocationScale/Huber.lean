@@ -48,59 +48,94 @@ noncomputable def huberPsi (c u : ℝ) : ℝ :=
 
 /-- On the central region the Huber loss is the (half) squared loss. -/
 theorem huberRho_of_abs_le {c u : ℝ} (h : |u| ≤ c) : huberRho c u = u ^ 2 / 2 := by
-  sorry
+  unfold huberRho
+  rw [if_pos h]
 
 /-- Outside the central region the Huber loss is linear in `|u|`. -/
 theorem huberRho_of_lt_abs {c u : ℝ} (h : c < |u|) : huberRho c u = c * |u| - c ^ 2 / 2 := by
-  sorry
+  unfold huberRho
+  rw [if_neg (not_le.mpr h)]
 
 /-- On the central region the Huber score is the identity. -/
 theorem huberPsi_of_abs_le {c u : ℝ} (hc : 0 ≤ c) (h : |u| ≤ c) : huberPsi c u = u := by
-  sorry
+  rw [abs_le] at h
+  unfold huberPsi
+  rw [min_eq_right h.2, max_eq_right h.1]
 
 @[simp] theorem huberRho_zero {c : ℝ} (hc : 0 ≤ c) : huberRho c 0 = 0 := by
-  sorry
+  rw [huberRho_of_abs_le (by simpa using hc)]
+  ring
 
-@[simp] theorem huberPsi_zero {c : ℝ} (hc : 0 ≤ c) : huberPsi c 0 = 0 := by
-  sorry
+@[simp] theorem huberPsi_zero {c : ℝ} (hc : 0 ≤ c) : huberPsi c 0 = 0 :=
+  huberPsi_of_abs_le hc (by simpa using hc)
 
 /-- The Huber loss is nonnegative (`MMY` Definition 2.1, R1–R2 context). -/
 theorem huberRho_nonneg {c : ℝ} (hc : 0 ≤ c) (u : ℝ) : 0 ≤ huberRho c u := by
-  sorry
+  unfold huberRho
+  split_ifs with h
+  · positivity
+  · rw [not_le] at h
+    nlinarith [mul_le_mul_of_nonneg_left h.le hc]
 
 /-- The Huber loss is even (`MMY` Definition 2.1: a function of `|u|`). -/
 theorem huberRho_even (c u : ℝ) : huberRho c (-u) = huberRho c u := by
-  sorry
+  unfold huberRho
+  rw [abs_neg]
+  split_ifs <;> ring
 
 /-- The Huber score is odd (`MMY` Definition 2.2, Ψ1). -/
 theorem huberPsi_odd {c : ℝ} (hc : 0 ≤ c) (u : ℝ) : huberPsi c (-u) = -huberPsi c u := by
-  sorry
+  unfold huberPsi
+  simp only [min_def, max_def]
+  split_ifs <;> linarith
 
 /-- **The Huber score is bounded by the clipping constant** (`MMY §2.3.2`): `|ψ_c| ≤ c`.
 This is the property that transfers to a bounded influence function. -/
 theorem abs_huberPsi_le {c : ℝ} (hc : 0 ≤ c) (u : ℝ) : |huberPsi c u| ≤ c := by
-  sorry
+  rw [abs_le]
+  refine ⟨le_max_left _ _, max_le (by linarith) ((min_le_left c u).trans le_rfl)⟩
 
 /-- The Huber score is monotone (`MMY §2.3.1`: monotone ψ gives a well-posed estimating
 equation). -/
-theorem huberPsi_monotone (c : ℝ) : Monotone (huberPsi c) := by
-  sorry
+theorem huberPsi_monotone (c : ℝ) : Monotone (huberPsi c) := fun _ _ hab =>
+  max_le_max le_rfl (min_le_min le_rfl hab)
 
 /-- The Huber score is `1`-Lipschitz. -/
-theorem huberPsi_lipschitz (c : ℝ) : LipschitzWith 1 (huberPsi c) := by
-  sorry
+theorem huberPsi_lipschitz (c : ℝ) : LipschitzWith 1 (huberPsi c) :=
+  (LipschitzWith.id.const_min c).const_max (-c)
 
 /-- The Huber score is continuous. -/
-theorem huberPsi_continuous (c : ℝ) : Continuous (huberPsi c) := by
-  sorry
+theorem huberPsi_continuous (c : ℝ) : Continuous (huberPsi c) :=
+  continuous_const.max (continuous_const.min continuous_id)
 
 /-- The Huber score tends to `-c` at `-∞` (the lower clamp; `MMY §3.2.1`,
 `k₁ = -ψ(-∞)`). -/
 theorem huberPsi_tendsto_atBot (c : ℝ) : Tendsto (huberPsi c) atBot (𝓝 (-c)) := by
-  sorry
+  refine Filter.Tendsto.congr' ?_ (tendsto_const_nhds (x := -c) (f := atBot))
+  filter_upwards [eventually_le_atBot (-c)] with u hu
+  unfold huberPsi
+  rw [max_eq_left ((min_le_right c u).trans hu)]
+
+/-- The Huber score tends to `c` at `+∞`, for a nonnegative clipping constant (the upper
+clamp; `MMY §3.2.1`, `k₂ = ψ(∞)`).
+
+This is the repaired form of `huberPsi_tendsto_atTop` below, which is stated without the
+hypothesis `0 ≤ c` and is *false* for `c < 0`; see the note there. -/
+theorem huberPsi_tendsto_atTop_of_nonneg {c : ℝ} (hc : 0 ≤ c) :
+    Tendsto (huberPsi c) atTop (𝓝 c) := by
+  refine Filter.Tendsto.congr' ?_ (tendsto_const_nhds (x := c) (f := atTop))
+  filter_upwards [eventually_ge_atTop c] with u hu
+  unfold huberPsi
+  rw [min_eq_left hu, max_eq_right (by linarith)]
 
 /-- The Huber score tends to `c` at `+∞` (the upper clamp; `MMY §3.2.1`,
-`k₂ = ψ(∞)`). -/
+`k₂ = ψ(∞)`).
+
+**FALSE AS FROZEN — named debt.** The statement omits the standing hypothesis `0 ≤ c`.
+For `c < 0` one has `min c u ≤ c < 0 < -c`, so `huberPsi c` is the *constant* `-c`, hence
+tends to `-c ≠ c`. Explicit witness: `c = -1`, `huberPsi (-1) u = max 1 (min (-1) u) = 1`
+for every `u`, while the claimed limit is `-1`. The repaired statement, with the missing
+hypothesis, is `huberPsi_tendsto_atTop_of_nonneg` above and is proved there. -/
 theorem huberPsi_tendsto_atTop (c : ℝ) : Tendsto (huberPsi c) atTop (𝓝 c) := by
   sorry
 
@@ -108,25 +143,136 @@ theorem huberPsi_tendsto_atTop (c : ℝ) : Tendsto (huberPsi c) atTop (𝓝 c) :
 (`MMY` eq. (2.29)): `ρ_c' = ψ_c`, including at the knots `u = ±c`. -/
 theorem hasDerivAt_huberRho {c : ℝ} (hc : 0 ≤ c) (u : ℝ) :
     HasDerivAt (huberRho c) (huberPsi c u) u := by
-  sorry
+  rcases hc.eq_or_lt with rfl | hcpos
+  · -- Degenerate clipping constant: `ρ_0 ≡ 0` and `ψ_0 ≡ 0`.
+    have h0 : huberRho (0 : ℝ) = fun _ : ℝ => (0 : ℝ) := by
+      funext v
+      unfold huberRho
+      split_ifs with h
+      · rw [abs_eq_zero.mp (le_antisymm h (abs_nonneg v))]; ring
+      · ring
+    have h1 : huberPsi (0 : ℝ) u = 0 := by
+      unfold huberPsi
+      rw [neg_zero, max_eq_left (min_le_left (0 : ℝ) u)]
+    rw [h0, h1]
+    exact hasDerivAt_const _ _
+  · -- Global branch formulas, valid at the knots as well.
+    have hIci : ∀ v : ℝ, c ≤ v → huberRho c v = c * v - c ^ 2 / 2 := by
+      intro v hv
+      rcases eq_or_lt_of_le hv with heq | hlt
+      · rw [← heq, huberRho_of_abs_le (abs_of_nonneg hcpos.le).le]; ring
+      · have hv0 : (0 : ℝ) ≤ v := hcpos.le.trans hv
+        rw [huberRho_of_lt_abs (by rwa [abs_of_nonneg hv0]), abs_of_nonneg hv0]
+    have hIic : ∀ v : ℝ, v ≤ -c → huberRho c v = -(c * v) - c ^ 2 / 2 := by
+      intro v hv
+      rcases eq_or_lt_of_le hv with heq | hlt
+      · rw [heq, huberRho_of_abs_le (by rw [abs_neg, abs_of_nonneg hcpos.le])]; ring
+      · have hv0 : v < 0 := hlt.trans_le (by linarith)
+        rw [huberRho_of_lt_abs (by rw [abs_of_neg hv0]; linarith), abs_of_neg hv0]; ring
+    -- Derivatives of the three branch formulas.
+    have hlin : ∀ w : ℝ, HasDerivAt (fun v : ℝ => c * v - c ^ 2 / 2) c w := by
+      intro w
+      simpa using ((hasDerivAt_id w).const_mul c).sub_const (c ^ 2 / 2)
+    have hlin' : ∀ w : ℝ, HasDerivAt (fun v : ℝ => -(c * v) - c ^ 2 / 2) (-c) w := by
+      intro w
+      simpa using (((hasDerivAt_id w).const_mul c).neg).sub_const (c ^ 2 / 2)
+    have hsq : ∀ w : ℝ, HasDerivAt (fun v : ℝ => v ^ 2 / 2) w w := by
+      intro w
+      have h : HasDerivAt (fun v : ℝ => v * v / 2) w w := by
+        simpa using ((hasDerivAt_id w).mul (hasDerivAt_id w)).div_const 2
+      simpa only [pow_two] using h
+    rcases lt_trichotomy u (-c) with hu | hu | hu
+    · -- Left linear region.
+      have hpsi : huberPsi c u = -c := by
+        unfold huberPsi
+        rw [min_eq_right (by linarith), max_eq_left hu.le]
+      rw [hpsi]
+      exact (hlin' u).congr_of_eventuallyEq
+        (Filter.eventuallyEq_of_mem (Iio_mem_nhds hu) fun v hv => hIic v (le_of_lt hv))
+    · -- Left knot `u = -c`: glue the two one-sided derivatives.
+      subst hu
+      have hpsi : huberPsi c (-c) = -c := by
+        unfold huberPsi
+        rw [min_eq_right (by linarith), max_eq_left le_rfl]
+      rw [hpsi]
+      have hleft : HasDerivWithinAt (huberRho c) (-c) (Set.Iic (-c)) (-c) :=
+        (hlin' (-c)).hasDerivWithinAt.congr_of_eventuallyEq
+          (Filter.eventuallyEq_of_mem self_mem_nhdsWithin fun v hv => hIic v hv)
+          (hIic (-c) le_rfl)
+      have hright : HasDerivWithinAt (huberRho c) (-c) (Set.Ici (-c)) (-c) := by
+        refine ((hsq (-c)).hasDerivWithinAt).congr_of_eventuallyEq ?_
+          (huberRho_of_abs_le (by rw [abs_neg, abs_of_nonneg hcpos.le]))
+        filter_upwards [self_mem_nhdsWithin,
+          nhdsWithin_le_nhds (Iio_mem_nhds (by linarith : -c < c))] with v hv1 hv2
+        exact huberRho_of_abs_le (abs_le.2 ⟨hv1, hv2.le⟩)
+      have := hleft.union hright
+      rw [Set.Iic_union_Ici] at this
+      exact hasDerivWithinAt_univ.mp this
+    · rcases lt_trichotomy u c with hu2 | hu2 | hu2
+      · -- Central quadratic region.
+        rw [huberPsi_of_abs_le hcpos.le (abs_le.2 ⟨hu.le, hu2.le⟩)]
+        exact (hsq u).congr_of_eventuallyEq
+          (Filter.eventuallyEq_of_mem (Ioo_mem_nhds hu hu2) fun v hv =>
+            huberRho_of_abs_le (abs_le.2 ⟨hv.1.le, hv.2.le⟩))
+      · -- Right knot `u = c`.
+        rw [hu2]
+        have hpsi : huberPsi c c = c := by
+          unfold huberPsi
+          rw [min_eq_left le_rfl, max_eq_right (by linarith)]
+        rw [hpsi]
+        have hright : HasDerivWithinAt (huberRho c) c (Set.Ici c) c :=
+          (hlin c).hasDerivWithinAt.congr_of_eventuallyEq
+            (Filter.eventuallyEq_of_mem self_mem_nhdsWithin fun v hv => hIci v hv)
+            (hIci c le_rfl)
+        have hleft : HasDerivWithinAt (huberRho c) c (Set.Iic c) c := by
+          refine ((hsq c).hasDerivWithinAt).congr_of_eventuallyEq ?_
+            (huberRho_of_abs_le (abs_of_nonneg hcpos.le).le)
+          filter_upwards [self_mem_nhdsWithin,
+            nhdsWithin_le_nhds (Ioi_mem_nhds (by linarith : -c < c))] with v hv1 hv2
+          exact huberRho_of_abs_le (abs_le.2 ⟨hv2.le, hv1⟩)
+        have := hleft.union hright
+        rw [Set.Iic_union_Ici] at this
+        exact hasDerivWithinAt_univ.mp this
+      · -- Right linear region.
+        have hpsi : huberPsi c u = c := by
+          unfold huberPsi
+          rw [min_eq_left hu2.le, max_eq_right (by linarith)]
+        rw [hpsi]
+        exact (hlin u).congr_of_eventuallyEq
+          (Filter.eventuallyEq_of_mem (Ioi_mem_nhds hu2) fun v hv => hIci v (le_of_lt hv))
 
 theorem deriv_huberRho {c : ℝ} (hc : 0 ≤ c) (u : ℝ) :
-    deriv (huberRho c) u = huberPsi c u := by
-  sorry
+    deriv (huberRho c) u = huberPsi c u :=
+  (hasDerivAt_huberRho hc u).deriv
 
 /-- The Huber loss is continuous. -/
-theorem huberRho_continuous {c : ℝ} (hc : 0 ≤ c) : Continuous (huberRho c) := by
-  sorry
+theorem huberRho_continuous {c : ℝ} (hc : 0 ≤ c) : Continuous (huberRho c) :=
+  continuous_iff_continuousAt.2 fun u => (hasDerivAt_huberRho hc u).continuousAt
 
 /-- **The Huber loss is convex** (`MMY §2.4`, eq. (2.40) context: ρ with nondecreasing
 derivative). -/
 theorem huberRho_convex {c : ℝ} (hc : 0 ≤ c) : ConvexOn ℝ Set.univ (huberRho c) := by
-  sorry
+  refine MonotoneOn.convexOn_of_deriv convex_univ (huberRho_continuous hc).continuousOn
+    ?_ ?_
+  · rw [interior_univ]
+    exact fun v _ => ((hasDerivAt_huberRho hc v).differentiableAt).differentiableWithinAt
+  · rw [interior_univ]
+    intro a _ b _ hab
+    rw [deriv_huberRho hc, deriv_huberRho hc]
+    exact huberPsi_monotone c hab
 
 /-- The Huber loss is coercive for `c > 0`: it grows without bound as `|u| → ∞` (used for
 the existence of Huber M-estimates). -/
 theorem huberRho_tendsto_cocompact {c : ℝ} (hc : 0 < c) :
     Tendsto (huberRho c) (cocompact ℝ) atTop := by
-  sorry
+  have habs : Tendsto (fun u : ℝ => |u|) (cocompact ℝ) atTop := by
+    simpa only [Real.norm_eq_abs] using (tendsto_norm_cocompact_atTop (E := ℝ))
+  have h1 : Tendsto (fun u : ℝ => c * |u| + -(c ^ 2 / 2)) (cocompact ℝ) atTop :=
+    tendsto_atTop_add_const_right _ _ ((tendsto_const_mul_atTop_of_pos hc).2 habs)
+  refine tendsto_atTop_mono (fun u => ?_) h1
+  unfold huberRho
+  split_ifs with h
+  · nlinarith [sq_nonneg (|u| - c), sq_abs u]
+  · linarith
 
 end StatLean.RobustStatistics
