@@ -44,3 +44,4 @@
 + '[' comp/r1-measure '!=' comp/r1-measure ']'
 + cat .claude/prompts/compr1-_common.md .claude/prompts/compr1-measure.md
 + claude -p --dangerously-skip-permissions
++ git add -A
