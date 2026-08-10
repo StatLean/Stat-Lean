@@ -60,12 +60,20 @@ def categoricalCounts (a : Fin n → Fin m) : Fin m → ℕ :=
 /-- The counts of any index sample sum to the sample size. -/
 theorem sum_categoricalCounts (a : Fin n → Fin m) :
     ∑ j, categoricalCounts a j = n := by
-  sorry
+  simp only [categoricalCounts]
+  rw [← Finset.card_eq_sum_card_fiberwise (f := a) (t := Finset.univ)
+    fun i _ => Finset.mem_univ (a i)]
+  simp
 
 /-- The count statistic is measurable (both spaces are discrete). -/
 theorem measurable_categoricalCounts :
-    Measurable (categoricalCounts (m := m) (n := n)) := by
-  sorry
+    Measurable (categoricalCounts (m := m) (n := n)) :=
+  .of_discrete
+
+/-- Indicator form of the count statistic: `#{i | aᵢ = j} = Σᵢ 1{aᵢ = j}`. -/
+private theorem categoricalCounts_eq_sum_ite (a : Fin n → Fin m) (j : Fin m) :
+    categoricalCounts a j = ∑ i, if a i = j then 1 else 0 :=
+  Finset.card_filter _ _
 
 /-- **Counts of i.i.d. categorical draws are multinomial** (ECS ch. 4, p. 84):
 the pushforward of `(categorical q)^{⊗n}` under the count statistic is the
