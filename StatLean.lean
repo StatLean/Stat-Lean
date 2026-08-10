@@ -10,6 +10,9 @@ import StatLean.PointEstimation
 import StatLean.HypothesisTesting
 import StatLean.StatisticalModels
 import StatLean.TimeSeries
+import StatLean.CausalInference
+import StatLean.ExperimentalDesign
+import StatLean.StatisticalLearning
 
 /-!
 # StatLean
@@ -52,12 +55,39 @@ theory, organized into per-area sublibraries.
   polynomial regression (pointwise/L²/sup-norm rates over Hölder classes), and
   projection estimators on the trigonometric basis (exact MISE decomposition and
   Sobolev-ellipsoid rates).
+* `StatLean.ExperimentalDesign` — design of experiments and design-based survey
+  sampling in the finite randomisation model: finite-population summaries,
+  randomization/sampling designs as PMFs, the completely randomised design with
+  exact assignment probabilities, arm means as simple random samples, blocked
+  randomization, inclusion probabilities and Horvitz–Thompson estimation,
+  stratified estimators, contrast algebra, two-level factorial characters, and
+  the one-way ANOVA identity (Mead, *The Design of Experiments*; Horvitz–Thompson
+  1952; Cochran 1977).
 * `StatLean.PointEstimation` — point estimation: exponential families (natural
   parameters, differentiability of the log-partition function), sufficiency,
   minimal sufficiency and completeness, unbiased estimation and UMVU
   (Rao–Blackwell, Lehmann–Scheffé), the information inequality (Fisher
   information, Cramér–Rao), equivariance (location and scale minimum-risk
   equivariant estimators, Pitman's estimator), and normal linear models.
+
+* `StatLean.CausalInference` — causal inference in the potential-outcomes framework:
+  the design-based half (science tables, assignment designs, complete randomization,
+  Fisher's randomization test, Neyman's unbiasedness/variance, stratified and
+  matched-pair experiments, regression adjustment, the superpopulation bridge) and the
+  observational half over a discrete covariate (selection bias, unconfoundedness,
+  standardization, the propensity score, IPW, the doubly robust AIPW functional, the
+  effect on the treated, subclassification/matching/trimming), plus sensitivity analysis
+  (Manski bounds, the E-value, Rosenbaum's model) and instrumental variables (compliance
+  types, LATE/CACE, the instrumental inequalities, linear IV) — Ding, *A First Course in
+  Causal Inference*; Imbens & Rubin, *Causal Inference for Statistics, Social, and
+  Biomedical Sciences*.
+* `StatLean.StatisticalLearning` — statistical learning theory: risk, empirical
+  risk minimization and the PAC / agnostic-PAC / uniform-convergence models,
+  finite-class bounds, Rademacher complexity (Massart, contraction,
+  symmetrization, generalization bounds), the agnostic upper bound of the
+  fundamental theorem for finite VC dimension, algorithmic stability with
+  Tikhonov regularization, and PAC-Bayes (Shalev-Shwartz & Ben-David,
+  *Understanding Machine Learning*).
 
 Per-area umbrellas are imported above as each area lands.
 -/
