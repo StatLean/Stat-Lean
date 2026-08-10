@@ -41,18 +41,34 @@ namespace StatLean.ComputationalStatistics
 variable {𝓧 : Type*} [MeasurableSpace 𝓧] {P : Measure 𝓧} [IsProbabilityMeasure P]
   {n : ℕ}
 
+/-- The delete-and-split map is measurable. -/
+private theorem measurable_deleteSplit (i : Fin (n + 1)) :
+    Measurable fun x : Fin (n + 1) → 𝓧 => (x i, x ∘ i.succAbove) :=
+  (measurable_pi_apply i).prodMk (measurable_pi_iff.2 fun _ => measurable_pi_apply _)
+
+/-- Delete-and-split is `MeasurableEquiv.piFinSuccAbove` at a constant family, so
+Mathlib's measure preservation applies verbatim. -/
+private theorem map_deleteSplit_aux (i : Fin (n + 1)) :
+    (Measure.pi fun _ : Fin (n + 1) => P).map (fun x => (x i, x ∘ i.succAbove))
+      = P.prod (Measure.pi fun _ : Fin n => P) :=
+  (measurePreserving_piFinSuccAbove (fun _ : Fin (n + 1) => P) i).map_eq
+
 /-- **Coordinate deletion preserves the i.i.d. product law**: deleting the
 `i`-th coordinate of a `P^{n+1}` sample yields a `P^n` sample. -/
 theorem pi_map_precomp_succAbove (i : Fin (n + 1)) :
     (Measure.pi fun _ : Fin (n + 1) => P).map (fun x => x ∘ i.succAbove)
       = Measure.pi fun _ : Fin n => P := by
-  sorry
+  have hcomp : (fun x : Fin (n + 1) → 𝓧 => x ∘ i.succAbove)
+      = Prod.snd ∘ fun x : Fin (n + 1) → 𝓧 => (x i, x ∘ i.succAbove) := rfl
+  rw [hcomp, ← Measure.map_map measurable_snd (measurable_deleteSplit i),
+    map_deleteSplit_aux i, Measure.map_snd_prod, measure_univ, one_smul]
 
 /-- **Delete-and-split**: the deleted coordinate and the remaining sample are
 independent, `(x_i, x_{(−i)}) ~ P ⊗ P^n` under `x ~ P^{n+1}`. -/
 theorem pi_map_deleteSplit (i : Fin (n + 1)) :
     (Measure.pi fun _ : Fin (n + 1) => P).map (fun x => (x i, x ∘ i.succAbove))
-      = P.prod (Measure.pi fun _ : Fin n => P) := by
-  sorry
+      = P.prod (Measure.pi fun _ : Fin n => P) :=
+  map_deleteSplit_aux i
 
 end StatLean.ComputationalStatistics
+
