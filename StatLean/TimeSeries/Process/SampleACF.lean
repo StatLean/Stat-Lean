@@ -4,6 +4,7 @@ import StatLean.TimeSeries.Models.Linear
 import StatLean.TimeSeries.Process.Stationary
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.Probability.Distributions.Gaussian.Real
+import Mathlib.Analysis.Normed.Group.Tannery
 
 /-!
 # Sampling theory of the ACVF/ACF (FY §2.2.2, Theorem 2.8, eqs. (2.23)–(2.27))
@@ -1316,8 +1317,24 @@ the reduction the remaining debts start from.
     (`summable_acvfCoeff_sq`). This is what stops the frozen `2 Σ_{j∈ℤ} γ(j)²` from being a
     junk `tsum`, and it is the only place in the whole reduction where the `ℓ¹` hypothesis
     `ha` is used for anything other than making a single series converge.
-  So (R4) now has no analytic content left; the residual bookkeeping cannot be written
-  down until (R1) fixes the exact shape of the limit it produces.
+  **(R4) is now CLOSED outright** (wave `ts/f4b-garch-last`, 2026-08-09):
+  `tendsto_cesaro_covKernel` (section `CesaroKernel` below). The previous reading — "the
+  residual bookkeeping cannot be written down until (R1) fixes the exact shape of the
+  limit it produces" — is **overturned**: the shape is forced by (R2) alone and does not
+  wait on (R1). (R2)'s covariance depends on `(s, t)` only through `h = s − t`, so the
+  variance of the normalized sum is `T⁻¹ Σ_{s,t<T} covKernel(s − t)`, and a Cesàro/Fejér
+  limit at an absolutely summable kernel (`tendsto_cesaro_kernel`, proved there at an
+  abstract `K : ℤ → ℝ`) evaluates it as `Σ_{h∈ℤ} covKernel h`, which is *exactly* the
+  frozen `(η−3)γ(0)² + 2 Σ_{j∈ℤ} γ(j)²`. Two things this settled that the plan above had
+  not: the `η`-block needs its own reindexing `Σ_h Σ_i a_i² a_{i−h}² = (Σ_i a_i²)²`
+  (`tsum_sqConv`, Tonelli on `ℤ × ℤ` through `shiftPairEquiv`) — it is *not* a corollary
+  of `summable_acvfCoeff_sq`, which only covers the `γ(h)²` block; and absolute
+  summability of the kernel (`summable_abs_covKernel`) is what licenses the Fejér weights
+  to be dropped, so `ha` is used here a *second* time, contradicting the reading recorded
+  at `summable_acvfCoeff_sq` that Young's inequality is "the only place in the whole
+  reduction where the `ℓ¹` hypothesis `ha` is used for anything other than making a single
+  series converge". So (R1) may now be proved against a *known* target constant: what it
+  owes is the CLT, not the variance.
 
 **Named residue of `sampleACF_bartlett_clt_debt`.** the joint (lags `0..M`) version of
 (R1)–(R4) — the same blocks, assembled through the Cramér–Wold linear combination that
@@ -2182,6 +2199,280 @@ private lemma summable_acvf_sq_of_filter [IsProbabilityMeasure μ] (hε : IsIIDN
   ring
 
 end LinearAcvf
+
+/-! ### (R4): the limiting variance the block CLT (R1) must produce
+
+The Cesàro/Fejér brick below is the deterministic half of the lag-`0` debt's variance
+identification.  (R2) (`cov_sq_noiseComb`) makes `Cov(X_s², X_t²)` a function of the lag
+`h = s − t` alone — the kernel `covKernel a σ² (Eε⁴) h` — so the variance of the
+normalized sum `T^{-1/2} Σ_{t<T} X_t²` is `T⁻¹ Σ_{s,t<T} covKernel (s − t)`, and
+`tendsto_cesaro_covKernel` evaluates its limit as **exactly** the frozen constant
+`(η − 3)γ(0)² + 2 Σ_{j∈ℤ} γ(j)²` of `sampleACVF_zero_clt_debt`.
+
+Two inputs feed it, both already available in this file: `acvf_eq_tsum_of_filter`
+(`γ(h) = σ² Σ_k a_k a_{k−h}`, which turns the coefficient-level kernel into the ACVF-level
+constant) and `summable_acvfCoeff_sq` (Young, which makes the `2 Σ_j γ(j)²` block a
+genuine number).  The `η`-block needs one more reindexing, `tsum_sqConv`
+(`Σ_h Σ_i a_i² a_{i−h}² = (Σ_i a_i²)²`, Tonelli on `ℤ × ℤ` through `shiftPairEquiv`),
+which is where `(Σ_i a_i²)² = (γ(0)/σ²)²` comes from.
+
+The triangular-weight identity and the Tannery step are re-proved here at an **abstract
+kernel** `K : ℤ → ℝ`; `Mixing/LimitTheorems.lean` runs the same argument, but only at
+`K = acvf X μ` and behind `private`. -/
+
+section CesaroKernel
+
+variable {a : ℤ → ℝ} {σ2 : ℝ} {X ε : ℤ → Ω → ℝ}
+
+/-- `{s − n : s < n} = [−n, 0)`. -/
+private lemma sum_range_sub_last (f : ℤ → ℝ) (n : ℕ) :
+    ∑ s ∈ Finset.range n, f ((s : ℤ) - (n : ℤ)) = ∑ k ∈ Finset.Ico (-(n : ℤ)) 0, f k := by
+  have hinj : Function.Injective fun s : ℕ => (s : ℤ) - (n : ℤ) := by
+    intro a b h; dsimp only at h; omega
+  have hmap : (Finset.range n).map ⟨fun s : ℕ => (s : ℤ) - (n : ℤ), hinj⟩
+      = Finset.Ico (-(n : ℤ)) 0 := by
+    ext k
+    simp only [Finset.mem_map, Finset.mem_range, Function.Embedding.coeFn_mk, Finset.mem_Ico]
+    constructor
+    · rintro ⟨a, ha, rfl⟩; omega
+    · intro hk; exact ⟨(k + n).toNat, by omega, by omega⟩
+  rw [← hmap, Finset.sum_map]
+  rfl
+
+/-- `{n − t : t ≤ n} = [0, n]`. -/
+private lemma sum_range_last_sub (f : ℤ → ℝ) (n : ℕ) :
+    ∑ t ∈ Finset.range (n + 1), f ((n : ℤ) - (t : ℤ)) = ∑ k ∈ Finset.Icc (0 : ℤ) (n : ℤ), f k := by
+  have hinj : Function.Injective fun t : ℕ => (n : ℤ) - (t : ℤ) := by
+    intro a b h; dsimp only at h; omega
+  have hmap : (Finset.range (n + 1)).map ⟨fun t : ℕ => (n : ℤ) - (t : ℤ), hinj⟩
+      = Finset.Icc (0 : ℤ) (n : ℤ) := by
+    ext k
+    simp only [Finset.mem_map, Finset.mem_range, Function.Embedding.coeFn_mk, Finset.mem_Icc]
+    constructor
+    · rintro ⟨a, ha, rfl⟩; omega
+    · intro hk; exact ⟨((n : ℤ) - k).toNat, by omega, by omega⟩
+  rw [← hmap, Finset.sum_map]
+  rfl
+
+/-- **Triangular-weight identity**: `∑_{s,t<n} f(s−t) = ∑_{|k|<n} (n − |k|) f(k)`. -/
+private lemma sum_sub_double_eq (f : ℤ → ℝ) : ∀ n : ℕ,
+    ∑ s ∈ Finset.range n, ∑ t ∈ Finset.range n, f ((s : ℤ) - (t : ℤ))
+      = ∑ k ∈ Finset.Ioo (-(n : ℤ)) (n : ℤ), ((n : ℝ) - |(k : ℝ)|) * f k := by
+  intro n
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have hIoo : Finset.Ioo (-((n : ℤ) + 1)) ((n : ℤ) + 1) = Finset.Icc (-(n : ℤ)) (n : ℤ) := by
+      ext k; simp only [Finset.mem_Ioo, Finset.mem_Icc]; omega
+    have hsplit : Finset.Icc (-(n : ℤ)) (n : ℤ)
+        = Finset.Ico (-(n : ℤ)) 0 ∪ Finset.Icc (0 : ℤ) (n : ℤ) := by
+      ext k; simp only [Finset.mem_Icc, Finset.mem_union, Finset.mem_Ico]; omega
+    have hdisj : Disjoint (Finset.Ico (-(n : ℤ)) 0) (Finset.Icc (0 : ℤ) (n : ℤ)) := by
+      rw [Finset.disjoint_left]
+      intro k hk hk'
+      simp only [Finset.mem_Ico] at hk
+      simp only [Finset.mem_Icc] at hk'
+      omega
+    have hL : ∑ s ∈ Finset.range (n + 1), ∑ t ∈ Finset.range (n + 1), f ((s : ℤ) - (t : ℤ))
+        = (∑ s ∈ Finset.range n, ∑ t ∈ Finset.range n, f ((s : ℤ) - (t : ℤ)))
+          + ∑ k ∈ Finset.Icc (-(n : ℤ)) (n : ℤ), f k := by
+      rw [Finset.sum_range_succ]
+      have hrow : ∀ s ∈ Finset.range n, ∑ t ∈ Finset.range (n + 1), f ((s : ℤ) - (t : ℤ))
+          = (∑ t ∈ Finset.range n, f ((s : ℤ) - (t : ℤ))) + f ((s : ℤ) - (n : ℤ)) := by
+        intro s _
+        rw [Finset.sum_range_succ]
+      rw [Finset.sum_congr rfl hrow, Finset.sum_add_distrib, sum_range_sub_last,
+        sum_range_last_sub, hsplit, Finset.sum_union hdisj]
+      ring
+    have hR : ∑ k ∈ Finset.Ioo (-((n : ℤ) + 1)) ((n : ℤ) + 1), (((n : ℝ) + 1) - |(k : ℝ)|) * f k
+        = (∑ k ∈ Finset.Ioo (-(n : ℤ)) (n : ℤ), ((n : ℝ) - |(k : ℝ)|) * f k)
+          + ∑ k ∈ Finset.Icc (-(n : ℤ)) (n : ℤ), f k := by
+      rw [hIoo]
+      have hshrink : ∑ k ∈ Finset.Icc (-(n : ℤ)) (n : ℤ), ((n : ℝ) - |(k : ℝ)|) * f k
+          = ∑ k ∈ Finset.Ioo (-(n : ℤ)) (n : ℤ), ((n : ℝ) - |(k : ℝ)|) * f k := by
+        refine (Finset.sum_subset ?_ ?_).symm
+        · intro k hk
+          simp only [Finset.mem_Ioo] at hk
+          simp only [Finset.mem_Icc]
+          omega
+        · intro k hk hk'
+          simp only [Finset.mem_Icc] at hk
+          simp only [Finset.mem_Ioo, not_and_or, not_lt] at hk'
+          have : |(k : ℝ)| = (n : ℝ) := by
+            rcases hk' with h | h
+            · have : k = -(n : ℤ) := by omega
+              subst this; push_cast; simp
+            · have : k = (n : ℤ) := by omega
+              subst this; push_cast; simp
+          rw [this]; ring
+      rw [← hshrink, ← Finset.sum_add_distrib]
+      refine Finset.sum_congr rfl fun k _ => ?_
+      ring
+    rw [hL, ih]
+    push_cast
+    push_cast at hR
+    rw [hR]
+
+/-- **Cesàro/Fejér limit at an absolutely summable kernel.** -/
+private lemma tendsto_cesaro_kernel {K : ℤ → ℝ} (hK : Summable fun k : ℤ => |K k|) :
+    Tendsto (fun n : ℕ => (n : ℝ)⁻¹ *
+        ∑ s ∈ Finset.range n, ∑ t ∈ Finset.range n, K ((s : ℤ) - (t : ℤ)))
+      atTop (𝓝 (∑' k : ℤ, K k)) := by
+  classical
+  set g : ℕ → ℤ → ℝ := fun n k =>
+    if k ∈ Finset.Ioo (-(n : ℤ)) (n : ℤ) then (1 - |(k : ℝ)| / (n : ℝ)) * K k else 0
+    with hgdef
+  have hns : ∀ n : ℕ, (n : ℝ)⁻¹ *
+      ∑ s ∈ Finset.range n, ∑ t ∈ Finset.range n, K ((s : ℤ) - (t : ℤ)) = ∑' k : ℤ, g n k := by
+    intro n
+    have hz : ∑' k : ℤ, g n k = ∑ k ∈ Finset.Ioo (-(n : ℤ)) (n : ℤ), g n k :=
+      tsum_eq_sum fun k hk => by simp only [hgdef, if_neg hk]
+    rw [sum_sub_double_eq K n, hz]
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · simp
+    · rw [Finset.mul_sum]
+      refine Finset.sum_congr rfl fun k hk => ?_
+      have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
+      simp only [hgdef, if_pos hk]
+      field_simp
+  have hdom : Tendsto (fun n : ℕ => ∑' k : ℤ, g n k) atTop (𝓝 (∑' k : ℤ, K k)) := by
+    refine tendsto_tsum_of_dominated_convergence hK (fun k => ?_) (Eventually.of_forall ?_)
+    · have hk : ∀ᶠ n : ℕ in atTop, g n k = (1 - |(k : ℝ)| / (n : ℝ)) * K k := by
+        filter_upwards [eventually_ge_atTop (k.natAbs + 1)] with n hn
+        have hmem : k ∈ Finset.Ioo (-(n : ℤ)) (n : ℤ) := by
+          simp only [Finset.mem_Ioo]
+          have : (k.natAbs : ℤ) + 1 ≤ (n : ℤ) := by exact_mod_cast hn
+          omega
+        simp only [hgdef, if_pos hmem]
+      refine Tendsto.congr' (hk.mono fun n h => h.symm) ?_
+      have h1 : Tendsto (fun n : ℕ => (1 : ℝ) - |(k : ℝ)| / (n : ℝ)) atTop (𝓝 1) := by
+        simpa using tendsto_const_nhds.sub (tendsto_const_div_atTop_nhds_zero_nat |(k : ℝ)|)
+      simpa using h1.mul_const (K k)
+    · intro n k
+      by_cases hk : k ∈ Finset.Ioo (-(n : ℤ)) (n : ℤ)
+      · simp only [hgdef, if_pos hk, Real.norm_eq_abs, abs_mul]
+        refine mul_le_of_le_one_left (abs_nonneg _) ?_
+        simp only [Finset.mem_Ioo] at hk
+        have hklt : |(k : ℝ)| < (n : ℝ) := by
+          rw [abs_lt]
+          exact ⟨by exact_mod_cast hk.1, by exact_mod_cast hk.2⟩
+        have hnpos : (0 : ℝ) < (n : ℝ) := lt_of_le_of_lt (abs_nonneg _) hklt
+        have hd0 : 0 ≤ |(k : ℝ)| / (n : ℝ) := div_nonneg (abs_nonneg _) hnpos.le
+        have hd1 : |(k : ℝ)| / (n : ℝ) < 1 := (div_lt_one hnpos).mpr hklt
+        rw [abs_le]
+        constructor <;> linarith
+      · simp only [hgdef, if_neg hk, norm_zero]
+        exact abs_nonneg _
+  exact (Tendsto.congr (fun n => (hns n).symm) hdom)
+
+
+
+/-- `ℓ¹ ⊆ ℓ²` for the coefficient sequence. -/
+private lemma summable_sq_of_abs (ha : Summable fun k : ℤ => |a k|) :
+    Summable fun k : ℤ => a k ^ 2 := by
+  refine Summable.of_nonneg_of_le (fun k => sq_nonneg _) (fun k => ?_)
+    (ha.mul_left (∑' j : ℤ, |a j|))
+  have hb : |a k| ≤ ∑' j : ℤ, |a j| := ha.le_tsum k fun j _ => abs_nonneg _
+  nlinarith [abs_nonneg (a k), sq_abs (a k)]
+
+/-- The squared-coefficient convolution kernel is summable on `ℤ × ℤ`. -/
+private lemma summable_sqConv (ha : Summable fun k : ℤ => |a k|) :
+    Summable fun x : ℤ × ℤ => a x.2 ^ 2 * a (x.2 - x.1) ^ 2 := by
+  have hsq := summable_sq_of_abs ha
+  have hprod : Summable fun x : ℤ × ℤ => a x.1 ^ 2 * a x.2 ^ 2 :=
+    hsq.mul_of_nonneg hsq (fun k => sq_nonneg _) (fun k => sq_nonneg _)
+  have := (shiftPairEquiv.summable_iff (f := fun x : ℤ × ℤ => a x.1 ^ 2 * a x.2 ^ 2)).2 hprod
+  simpa [Function.comp, shiftPairEquiv] using this
+
+/-- **The `η`-block of the limiting variance**: `Σ_h Σ_i a_i² a_{i−h}² = (Σ_i a_i²)²`. -/
+private lemma tsum_sqConv (ha : Summable fun k : ℤ => |a k|) :
+    (∑' h : ℤ, ∑' i : ℤ, a i ^ 2 * a (i - h) ^ 2) = (∑' i : ℤ, a i ^ 2) ^ 2 := by
+  have hsq := summable_sq_of_abs ha
+  have hF := summable_sqConv (a := a) ha
+  have hprod : Summable fun x : ℤ × ℤ => a x.1 ^ 2 * a x.2 ^ 2 :=
+    hsq.mul_of_nonneg hsq (fun k => sq_nonneg _) (fun k => sq_nonneg _)
+  have e1 : (∑' x : ℤ × ℤ, a x.2 ^ 2 * a (x.2 - x.1) ^ 2)
+      = ∑' x : ℤ × ℤ, a x.1 ^ 2 * a x.2 ^ 2 := by
+    have := shiftPairEquiv.tsum_eq (fun x : ℤ × ℤ => a x.1 ^ 2 * a x.2 ^ 2)
+    simpa [Function.comp, shiftPairEquiv] using this
+  have e2 : (∑' x : ℤ × ℤ, a x.1 ^ 2 * a x.2 ^ 2) = (∑' i : ℤ, a i ^ 2) ^ 2 := by
+    rw [hprod.tsum_prod]
+    rw [show (∑' i : ℤ, ∑' j : ℤ, a i ^ 2 * a j ^ 2)
+        = ∑' i : ℤ, a i ^ 2 * ∑' j : ℤ, a j ^ 2 from tsum_congr fun i => tsum_mul_left]
+    rw [tsum_mul_right]; ring
+  rw [← e2, ← e1, hF.tsum_prod]
+
+
+/-- The lag-`h` covariance kernel produced by (R2) at the two-sided linear filter `a`:
+`Cov(X_s², X_t²)` with `h = s − t`, in terms of the coefficient sequence alone. -/
+private noncomputable def covKernel (a : ℤ → ℝ) (σ2 m4 : ℝ) (h : ℤ) : ℝ :=
+  (m4 - 3 * σ2 ^ 2) * (∑' i : ℤ, a i ^ 2 * a (i - h) ^ 2)
+    + 2 * σ2 ^ 2 * (∑' i : ℤ, a i * a (i - h)) ^ 2
+
+private lemma summable_abs_covKernel (ha : Summable fun k : ℤ => |a k|) (σ2 m4 : ℝ) :
+    Summable fun h : ℤ => |covKernel a σ2 m4 h| := by
+  have hA : Summable fun h : ℤ => ∑' i : ℤ, a i ^ 2 * a (i - h) ^ 2 :=
+    (summable_sqConv (a := a) ha).prod
+  have hB : Summable fun h : ℤ => (∑' k : ℤ, a k * a (k - h)) ^ 2 :=
+    summable_acvfCoeff_sq (a := a) ha
+  have hAnn : ∀ h : ℤ, 0 ≤ ∑' i : ℤ, a i ^ 2 * a (i - h) ^ 2 :=
+    fun h => tsum_nonneg fun i => mul_nonneg (sq_nonneg _) (sq_nonneg _)
+  refine Summable.of_nonneg_of_le (fun h => abs_nonneg _) (fun h => ?_)
+    ((hA.mul_left |m4 - 3 * σ2 ^ 2|).add (hB.mul_left |2 * σ2 ^ 2|))
+  calc |covKernel a σ2 m4 h|
+      ≤ |(m4 - 3 * σ2 ^ 2) * (∑' i : ℤ, a i ^ 2 * a (i - h) ^ 2)|
+        + |2 * σ2 ^ 2 * (∑' i : ℤ, a i * a (i - h)) ^ 2| := abs_add_le _ _
+    _ = |m4 - 3 * σ2 ^ 2| * (∑' i : ℤ, a i ^ 2 * a (i - h) ^ 2)
+        + |2 * σ2 ^ 2| * (∑' k : ℤ, a k * a (k - h)) ^ 2 := by
+        rw [abs_mul, abs_mul, abs_of_nonneg (hAnn h),
+          abs_of_nonneg (sq_nonneg (∑' k : ℤ, a k * a (k - h)))]
+
+/-- **(R4) discharged, in the shape (R1) must produce it.** The `T`-normalized double sum
+of the (R2) covariance kernel over the sampling window converges to the frozen limiting
+variance of `sampleACVF_zero_clt_debt`. -/
+private theorem tendsto_cesaro_covKernel [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ)
+    (hσ : 0 < σ2)
+    (hfil : ∀ t : ℤ, Tendsto (fun N : ℕ => eLpNorm (fun ω => X t ω -
+      ∑ k ∈ Finset.Icc (-(N : ℤ)) (N : ℤ), a k * ε (t - k) ω) 2 μ) atTop (𝓝 0))
+    (ha : Summable fun k : ℤ => |a k|) (hmeas : ∀ t, Measurable (X t)) :
+    Tendsto (fun T : ℕ => (T : ℝ)⁻¹ * ∑ s ∈ Finset.range T, ∑ t ∈ Finset.range T,
+        covKernel a σ2 (∫ ω, ε 0 ω ^ 4 ∂μ) ((s : ℤ) - (t : ℤ))) atTop
+      (𝓝 (((∫ ω, ε 0 ω ^ 4 ∂μ) / σ2 ^ 2 - 3) * acvf X μ 0 ^ 2
+        + 2 * ∑' j : ℤ, acvf X μ j ^ 2)) := by
+  have hσ0 : σ2 ≠ 0 := hσ.ne'
+  have hA : Summable fun h : ℤ => ∑' i : ℤ, a i ^ 2 * a (i - h) ^ 2 :=
+    (summable_sqConv (a := a) ha).prod
+  have hB : Summable fun h : ℤ => (∑' k : ℤ, a k * a (k - h)) ^ 2 :=
+    summable_acvfCoeff_sq (a := a) ha
+  -- the coefficient series in terms of the ACVF
+  have hcoeff : ∀ h : ℤ, (∑' k : ℤ, a k * a (k - h)) = acvf X μ h / σ2 := by
+    intro h
+    rw [acvf_eq_tsum_of_filter hε hfil ha hmeas h]
+    field_simp
+  have hzero : (∑' i : ℤ, a i ^ 2) = acvf X μ 0 / σ2 := by
+    rw [← hcoeff 0]
+    exact tsum_congr fun i => by rw [sub_zero, sq]
+  -- the total mass of the kernel *is* the frozen constant
+  have hmass : (∑' h : ℤ, covKernel a σ2 (∫ ω, ε 0 ω ^ 4 ∂μ) h)
+      = ((∫ ω, ε 0 ω ^ 4 ∂μ) / σ2 ^ 2 - 3) * acvf X μ 0 ^ 2
+        + 2 * ∑' j : ℤ, acvf X μ j ^ 2 := by
+    have hsplit : (∑' h : ℤ, covKernel a σ2 (∫ ω, ε 0 ω ^ 4 ∂μ) h)
+        = ((∫ ω, ε 0 ω ^ 4 ∂μ) - 3 * σ2 ^ 2) * (∑' h : ℤ, ∑' i : ℤ, a i ^ 2 * a (i - h) ^ 2)
+          + 2 * σ2 ^ 2 * ∑' h : ℤ, (∑' k : ℤ, a k * a (k - h)) ^ 2 := by
+      rw [← tsum_mul_left, ← tsum_mul_left,
+        ← (hA.mul_left _).tsum_add (hB.mul_left _)]
+      rfl
+    have hacvf : (∑' h : ℤ, (∑' k : ℤ, a k * a (k - h)) ^ 2)
+        = (∑' j : ℤ, acvf X μ j ^ 2) / σ2 ^ 2 := by
+      rw [eq_div_iff (by positivity), ← tsum_mul_right]
+      exact tsum_congr fun h => by rw [hcoeff h]; field_simp
+    rw [hsplit, tsum_sqConv (a := a) ha, hzero, hacvf]
+    field_simp
+  rw [← hmass]
+  exact tendsto_cesaro_kernel (summable_abs_covKernel (a := a) ha _ _)
+
+end CesaroKernel
+
 
 /-- **FY Theorem 2.8(ii) — DEBT (ledger (b); B&D 1991 Prop 7.3.4)**, with the variance
 **corrected** from the misprinted eq. (2.25): for a zero-mean two-sided linear process
