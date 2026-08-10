@@ -1,0 +1,28 @@
+{
+  "root": "StatLean.TimeSeries.alphaMixCoeff",
+  "nodes": [
+    {"id":"StatLean.TimeSeries.alphaMixCoeff","label":"alphaMixCoeff","full":"StatLean.TimeSeries.alphaMixCoeff","kind":"root","decl":"def","module":"StatLean.TimeSeries.Mixing.Defs"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"setOf","label":"setOf","full":"setOf","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"Set","label":"Set","full":"Set","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"MeasurableSet","label":"MeasurableSet","full":"MeasurableSet","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"abs","label":"abs","full":"abs","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Order.Group.Unbundled.Abs"},
+    {"id":"Real.lattice","label":"lattice","full":"Real.lattice","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"ENNReal.toReal","label":"toReal","full":"ENNReal.toReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.TimeSeries.alphaMixCoeff","target":"MeasurableSpace"},
+    {"source":"StatLean.TimeSeries.alphaMixCoeff","target":"MeasureTheory.Measure"},
+    {"source":"StatLean.TimeSeries.alphaMixCoeff","target":"Real"},
+    {"source":"StatLean.TimeSeries.alphaMixCoeff","target":"setOf"},
+    {"source":"StatLean.TimeSeries.alphaMixCoeff","target":"Set"},
+    {"source":"StatLean.TimeSeries.alphaMixCoeff","target":"MeasurableSet"},
+    {"source":"StatLean.TimeSeries.alphaMixCoeff","target":"abs"},
+    {"source":"StatLean.TimeSeries.alphaMixCoeff","target":"Real.lattice"},
+    {"source":"StatLean.TimeSeries.alphaMixCoeff","target":"ENNReal.toReal"},
+    {"source":"StatLean.TimeSeries.alphaMixCoeff","target":"ENNReal"}
+  ]
+}

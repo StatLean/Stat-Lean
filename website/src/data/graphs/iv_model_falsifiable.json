@@ -1,0 +1,28 @@
+{
+  "root": "StatLean.CausalInference.not_ivModel_of_neg",
+  "nodes": [
+    {"id":"StatLean.CausalInference.not_ivModel_of_neg","label":"not_ivModel_of_neg","full":"StatLean.CausalInference.not_ivModel_of_neg","kind":"root","decl":"thm","module":"StatLean.CausalInference.IV.InstrumentalInequalities"},
+    {"id":"StatLean.CausalInference.ittContrast","label":"ittContrast","full":"StatLean.CausalInference.ittContrast","kind":"repo","decl":"def","module":"StatLean.CausalInference.IV.Defs"},
+    {"id":"StatLean.CausalInference.ind","label":"ind","full":"StatLean.CausalInference.ind","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.FiniteDefs"},
+    {"id":"StatLean.CausalInference.obsTreat","label":"obsTreat","full":"StatLean.CausalInference.obsTreat","kind":"repo","decl":"def","module":"StatLean.CausalInference.IV.Defs"},
+    {"id":"StatLean.CausalInference.obsBool","label":"obsBool","full":"StatLean.CausalInference.obsBool","kind":"repo","decl":"def","module":"StatLean.CausalInference.IV.InstrumentalInequalities"},
+    {"id":"StatLean.CausalInference.IVRandomized","label":"IVRandomized","full":"StatLean.CausalInference.IVRandomized","kind":"repo","decl":"def","module":"StatLean.CausalInference.IV.Defs"},
+    {"id":"StatLean.CausalInference.NoDefiers","label":"NoDefiers","full":"StatLean.CausalInference.NoDefiers","kind":"repo","decl":"def","module":"StatLean.CausalInference.IV.Defs"},
+    {"id":"StatLean.CausalInference.ExclusionRestriction","label":"ExclusionRestriction","full":"StatLean.CausalInference.ExclusionRestriction","kind":"repo","decl":"def","module":"StatLean.CausalInference.IV.Defs"},
+    {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
+    {"id":"StatLean.CausalInference.primaFacie","label":"primaFacie","full":"StatLean.CausalInference.primaFacie","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.PopulationDefs"},
+    {"id":"StatLean.CausalInference.treatedEvent","label":"treatedEvent","full":"StatLean.CausalInference.treatedEvent","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.PopulationDefs"}
+  ],
+  "edges": [
+    {"source":"StatLean.CausalInference.not_ivModel_of_neg","target":"StatLean.CausalInference.ittContrast"},
+    {"source":"StatLean.CausalInference.not_ivModel_of_neg","target":"StatLean.CausalInference.ind"},
+    {"source":"StatLean.CausalInference.not_ivModel_of_neg","target":"StatLean.CausalInference.obsTreat"},
+    {"source":"StatLean.CausalInference.not_ivModel_of_neg","target":"StatLean.CausalInference.obsBool"},
+    {"source":"StatLean.CausalInference.not_ivModel_of_neg","target":"StatLean.CausalInference.IVRandomized"},
+    {"source":"StatLean.CausalInference.not_ivModel_of_neg","target":"StatLean.CausalInference.NoDefiers"},
+    {"source":"StatLean.CausalInference.not_ivModel_of_neg","target":"StatLean.CausalInference.ExclusionRestriction"},
+    {"source":"StatLean.CausalInference.not_ivModel_of_neg","target":"Nat.cast_zero"},
+    {"source":"StatLean.CausalInference.ittContrast","target":"StatLean.CausalInference.primaFacie"},
+    {"source":"StatLean.CausalInference.primaFacie","target":"StatLean.CausalInference.treatedEvent"}
+  ]
+}

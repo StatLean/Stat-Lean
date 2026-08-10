@@ -1,0 +1,36 @@
+{
+  "root": "StatLean.CausalInference.olsCoeff_eq_diffInMeans",
+  "nodes": [
+    {"id":"StatLean.CausalInference.olsCoeff_eq_diffInMeans","label":"olsCoeff_eq_diffInMeans","full":"StatLean.CausalInference.olsCoeff_eq_diffInMeans","kind":"root","decl":"thm","module":"StatLean.CausalInference.Randomized.RegressionAdjustment"},
+    {"id":"StatLean.CausalInference.ScienceTable","label":"ScienceTable","full":"StatLean.CausalInference.ScienceTable","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.FiniteDefs"},
+    {"id":"StatLean.CausalInference.Assignment","label":"Assignment","full":"StatLean.CausalInference.Assignment","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.FiniteDefs"},
+    {"id":"StatLean.CausalInference.IsOLSFit","label":"IsOLSFit","full":"StatLean.CausalInference.IsOLSFit","kind":"repo","decl":"def","module":"StatLean.CausalInference.Randomized.RegressionAdjustment"},
+    {"id":"StatLean.CausalInference.armIdx","label":"armIdx","full":"StatLean.CausalInference.armIdx","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.FiniteDefs"},
+    {"id":"StatLean.CausalInference.diffInMeans","label":"diffInMeans","full":"StatLean.CausalInference.diffInMeans","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.FiniteDefs"},
+    {"id":"StatLean.CausalInference.armMean","label":"armMean","full":"StatLean.CausalInference.armMean","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.FiniteDefs"},
+    {"id":"StatLean.CausalInference.ScienceTable.observed","label":"observed","full":"StatLean.CausalInference.ScienceTable.observed","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.FiniteDefs"},
+    {"id":"StatLean.CausalInference.ind","label":"ind","full":"StatLean.CausalInference.ind","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.FiniteDefs"}
+  ],
+  "edges": [
+    {"source":"StatLean.CausalInference.olsCoeff_eq_diffInMeans","target":"StatLean.CausalInference.ScienceTable"},
+    {"source":"StatLean.CausalInference.olsCoeff_eq_diffInMeans","target":"StatLean.CausalInference.Assignment"},
+    {"source":"StatLean.CausalInference.olsCoeff_eq_diffInMeans","target":"StatLean.CausalInference.IsOLSFit"},
+    {"source":"StatLean.CausalInference.olsCoeff_eq_diffInMeans","target":"StatLean.CausalInference.armIdx"},
+    {"source":"StatLean.CausalInference.olsCoeff_eq_diffInMeans","target":"StatLean.CausalInference.diffInMeans"},
+    {"source":"StatLean.CausalInference.olsCoeff_eq_diffInMeans","target":"StatLean.CausalInference.armMean"},
+    {"source":"StatLean.CausalInference.IsOLSFit","target":"StatLean.CausalInference.ScienceTable"},
+    {"source":"StatLean.CausalInference.IsOLSFit","target":"StatLean.CausalInference.Assignment"},
+    {"source":"StatLean.CausalInference.IsOLSFit","target":"StatLean.CausalInference.ScienceTable.observed"},
+    {"source":"StatLean.CausalInference.IsOLSFit","target":"StatLean.CausalInference.ind"},
+    {"source":"StatLean.CausalInference.armIdx","target":"StatLean.CausalInference.Assignment"},
+    {"source":"StatLean.CausalInference.diffInMeans","target":"StatLean.CausalInference.ScienceTable"},
+    {"source":"StatLean.CausalInference.diffInMeans","target":"StatLean.CausalInference.Assignment"},
+    {"source":"StatLean.CausalInference.diffInMeans","target":"StatLean.CausalInference.armMean"},
+    {"source":"StatLean.CausalInference.armMean","target":"StatLean.CausalInference.ScienceTable"},
+    {"source":"StatLean.CausalInference.armMean","target":"StatLean.CausalInference.Assignment"},
+    {"source":"StatLean.CausalInference.armMean","target":"StatLean.CausalInference.armIdx"},
+    {"source":"StatLean.CausalInference.armMean","target":"StatLean.CausalInference.ScienceTable.observed"},
+    {"source":"StatLean.CausalInference.ScienceTable.observed","target":"StatLean.CausalInference.ScienceTable"},
+    {"source":"StatLean.CausalInference.ScienceTable.observed","target":"StatLean.CausalInference.Assignment"}
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "root": "StatLean.ExperimentalDesign.Contrast",
+  "nodes": [
+    {"id":"StatLean.ExperimentalDesign.Contrast","label":"Contrast","full":"StatLean.ExperimentalDesign.Contrast","kind":"root","decl":"def","module":"StatLean.ExperimentalDesign.Core.Contrast"},
+    {"id":"Fintype","label":"Fintype","full":"Fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.ExperimentalDesign.Contrast","target":"Fintype"}
+  ]
+}

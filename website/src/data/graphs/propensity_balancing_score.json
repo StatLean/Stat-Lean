@@ -1,0 +1,41 @@
+{
+  "root": "StatLean.CausalInference.cond_treated_propensityLevel_eq",
+  "nodes": [
+    {"id":"StatLean.CausalInference.cond_treated_propensityLevel_eq","label":"cond_treated_propensityLevel_eq","full":"StatLean.CausalInference.cond_treated_propensityLevel_eq","kind":"root","decl":"thm","module":"StatLean.CausalInference.Observational.PropensityScore"},
+    {"id":"StatLean.CausalInference.cell","label":"cell","full":"StatLean.CausalInference.cell","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.PopulationDefs"},
+    {"id":"StatLean.CausalInference.propensityLevel","label":"propensityLevel","full":"StatLean.CausalInference.propensityLevel","kind":"repo","decl":"def","module":"StatLean.CausalInference.Observational.PropensityScore"},
+    {"id":"StatLean.CausalInference.propensity","label":"propensity","full":"StatLean.CausalInference.propensity","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.PopulationDefs"},
+    {"id":"StatLean.CausalInference.treatedEvent","label":"treatedEvent","full":"StatLean.CausalInference.treatedEvent","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.PopulationDefs"},
+    {"id":"MeasureTheory.measure_mono_null","label":"measure_mono_null","full":"MeasureTheory.measure_mono_null","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.OuterMeasure.Basic"},
+    {"id":"MeasureTheory.measure_ne_top","label":"measure_ne_top","full":"MeasureTheory.measure_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Finite"},
+    {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
+    {"id":"ProbabilityTheory.cond_apply","label":"cond_apply","full":"ProbabilityTheory.cond_apply","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.ConditionalProbability"},
+    {"id":"ENNReal.toReal_mul","label":"toReal_mul","full":"ENNReal.toReal_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Real"},
+    {"id":"ENNReal.toReal_inv","label":"toReal_inv","full":"ENNReal.toReal_inv","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Inv"},
+    {"id":"Set.inter_comm","label":"inter_comm","full":"Set.inter_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Set.Basic"},
+    {"id":"mul_comm","label":"mul_comm","full":"mul_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"mul_assoc","label":"mul_assoc","full":"mul_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"inv_mul_cancel₀","label":"inv_mul_cancel₀","full":"inv_mul_cancel₀","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.NeZero"},
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.CausalInference.cond_treated_propensityLevel_eq","target":"StatLean.CausalInference.cell"},
+    {"source":"StatLean.CausalInference.cond_treated_propensityLevel_eq","target":"StatLean.CausalInference.propensityLevel"},
+    {"source":"StatLean.CausalInference.cond_treated_propensityLevel_eq","target":"StatLean.CausalInference.propensity"},
+    {"source":"StatLean.CausalInference.cond_treated_propensityLevel_eq","target":"StatLean.CausalInference.treatedEvent"},
+    {"source":"StatLean.CausalInference.cond_treated_propensityLevel_eq","target":"MeasureTheory.measure_mono_null"},
+    {"source":"StatLean.CausalInference.cond_treated_propensityLevel_eq","target":"MeasureTheory.measure_ne_top"},
+    {"source":"StatLean.CausalInference.cond_treated_propensityLevel_eq","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
+    {"source":"StatLean.CausalInference.cond_treated_propensityLevel_eq","target":"ProbabilityTheory.cond_apply"},
+    {"source":"StatLean.CausalInference.cond_treated_propensityLevel_eq","target":"ENNReal.toReal_mul"},
+    {"source":"StatLean.CausalInference.cond_treated_propensityLevel_eq","target":"ENNReal.toReal_inv"},
+    {"source":"StatLean.CausalInference.cond_treated_propensityLevel_eq","target":"Set.inter_comm"},
+    {"source":"StatLean.CausalInference.cond_treated_propensityLevel_eq","target":"mul_comm"},
+    {"source":"StatLean.CausalInference.cond_treated_propensityLevel_eq","target":"mul_assoc"},
+    {"source":"StatLean.CausalInference.cond_treated_propensityLevel_eq","target":"inv_mul_cancel₀"},
+    {"source":"StatLean.CausalInference.cond_treated_propensityLevel_eq","target":"one_mul"},
+    {"source":"StatLean.CausalInference.propensityLevel","target":"StatLean.CausalInference.propensity"},
+    {"source":"StatLean.CausalInference.propensity","target":"StatLean.CausalInference.cell"},
+    {"source":"StatLean.CausalInference.propensity","target":"StatLean.CausalInference.treatedEvent"}
+  ]
+}

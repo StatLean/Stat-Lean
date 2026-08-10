@@ -1,0 +1,38 @@
+{
+  "root": "StatLean.TimeSeries.exists_twoSided_stationary_chain",
+  "nodes": [
+    {"id":"StatLean.TimeSeries.exists_twoSided_stationary_chain","label":"exists_twoSided_stationary_chain","full":"StatLean.TimeSeries.exists_twoSided_stationary_chain","kind":"root","decl":"thm","module":"StatLean.TimeSeries.ForMathlib.Markov.TwoSidedChain"},
+    {"id":"StatLean.TimeSeries.chainWindowLaw","label":"chainWindowLaw","full":"StatLean.TimeSeries.chainWindowLaw","kind":"repo","decl":"def","module":"StatLean.TimeSeries.ForMathlib.Markov.TwoSidedChain"},
+    {"id":"MeasurableEmbedding.exists_measurable_extend","label":"exists_measurable_extend","full":"MeasurableEmbedding.exists_measurable_extend","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Embedding"},
+    {"id":"MeasureTheory.measurableEmbedding_embeddingReal","label":"measurableEmbedding_embeddingReal","full":"MeasureTheory.measurableEmbedding_embeddingReal","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.Polish.EmbeddingReal"},
+    {"id":"measurable_id","label":"measurable_id","full":"measurable_id","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"MeasureTheory.measurable_embeddingReal","label":"measurable_embeddingReal","full":"MeasureTheory.measurable_embeddingReal","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.Polish.EmbeddingReal"},
+    {"id":"StatLean.TimeSeries.reverseKernel","label":"reverseKernel","full":"StatLean.TimeSeries.reverseKernel","kind":"repo","decl":"def","module":"StatLean.TimeSeries.ForMathlib.Markov.TwoSidedChain"},
+    {"id":"measurable_pi_lambda","label":"measurable_pi_lambda","full":"measurable_pi_lambda","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
+    {"id":"Measurable.comp","label":"comp","full":"Measurable.comp","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"MeasureTheory.Measure.isProbabilityMeasure_map","label":"isProbabilityMeasure_map","full":"MeasureTheory.Measure.isProbabilityMeasure_map","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
+    {"id":"ProbabilityTheory.Kernel.IsMarkovKernel.prod","label":"prod","full":"ProbabilityTheory.Kernel.IsMarkovKernel.prod","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Composition.Prod"},
+    {"id":"Measurable.aemeasurable","label":"aemeasurable","full":"Measurable.aemeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"measurable_pi_apply","label":"measurable_pi_apply","full":"measurable_pi_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
+    {"id":"MeasureTheory.Measure.map_map","label":"map_map","full":"MeasureTheory.Measure.map_map","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Map"},
+    {"id":"Nat.cast_add","label":"cast_add","full":"Nat.cast_add","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
+    {"id":"StatLean.TimeSeries.pairLaw","label":"pairLaw","full":"StatLean.TimeSeries.pairLaw","kind":"repo","decl":"def","module":"StatLean.TimeSeries.ForMathlib.Markov.TwoSidedChain"}
+  ],
+  "edges": [
+    {"source":"StatLean.TimeSeries.exists_twoSided_stationary_chain","target":"StatLean.TimeSeries.chainWindowLaw"},
+    {"source":"StatLean.TimeSeries.exists_twoSided_stationary_chain","target":"MeasurableEmbedding.exists_measurable_extend"},
+    {"source":"StatLean.TimeSeries.exists_twoSided_stationary_chain","target":"MeasureTheory.measurableEmbedding_embeddingReal"},
+    {"source":"StatLean.TimeSeries.exists_twoSided_stationary_chain","target":"measurable_id"},
+    {"source":"StatLean.TimeSeries.exists_twoSided_stationary_chain","target":"MeasureTheory.measurable_embeddingReal"},
+    {"source":"StatLean.TimeSeries.exists_twoSided_stationary_chain","target":"StatLean.TimeSeries.reverseKernel"},
+    {"source":"StatLean.TimeSeries.exists_twoSided_stationary_chain","target":"measurable_pi_lambda"},
+    {"source":"StatLean.TimeSeries.exists_twoSided_stationary_chain","target":"Measurable.comp"},
+    {"source":"StatLean.TimeSeries.exists_twoSided_stationary_chain","target":"MeasureTheory.Measure.isProbabilityMeasure_map"},
+    {"source":"StatLean.TimeSeries.exists_twoSided_stationary_chain","target":"ProbabilityTheory.Kernel.IsMarkovKernel.prod"},
+    {"source":"StatLean.TimeSeries.exists_twoSided_stationary_chain","target":"Measurable.aemeasurable"},
+    {"source":"StatLean.TimeSeries.exists_twoSided_stationary_chain","target":"measurable_pi_apply"},
+    {"source":"StatLean.TimeSeries.exists_twoSided_stationary_chain","target":"MeasureTheory.Measure.map_map"},
+    {"source":"StatLean.TimeSeries.exists_twoSided_stationary_chain","target":"Nat.cast_add"},
+    {"source":"StatLean.TimeSeries.reverseKernel","target":"StatLean.TimeSeries.pairLaw"}
+  ]
+}
