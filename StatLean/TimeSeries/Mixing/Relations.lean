@@ -1591,6 +1591,117 @@ theorem betaCoeff_exponential_of_hasGeometricStateChain [IsProbabilityMeasure μ
     rw [hpr]
     field_simp
 
+/-! #### The invariant moment bound of a Lyapunov drift (wave 6)
+
+The one *genuinely new* ingredient of the named follow-up
+*"`IsGeometricallyErgodic` with a Lyapunov envelope"* — see the amendment in
+`arma_stateChain_brick`'s docstring for why the other ingredient (the envelope proper) is
+already proved inside `harris_theorem` and only needs exporting, and for why wave 5 was
+wrong to treat this one as free. Proved here, axiom-clean, so that only the *export* is
+left outside this lane's touch set. -/
+
+/-- Truncations of a finite `ℝ≥0∞` value exhaust it. -/
+private lemma iSup_min_natCast_of_ne_top {a : ENNReal} (ha : a ≠ ⊤) :
+    ⨆ n : ℕ, min a (n : ENNReal) = a := by
+  refine le_antisymm (iSup_le fun n => min_le_left _ _) ?_
+  obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt ha
+  exact le_iSup_of_le n (le_min le_rfl hn.le)
+
+/-- **The invariant measure of a Lyapunov drift has a finite `V`-moment**:
+`∫ V dπ ≤ K/(1 − γ)`.
+
+This is *not* an output of `harris_theorem` (which returns only invariance and
+`IsGeometricallyErgodic`, and `IsErgodicWithRate` carries just a pointwise limit), and it is
+*not* reachable from the drift and invariance alone by the naive truncation: the pointwise
+step `(γV + K) ∧ n ≤ γ(V ∧ n) + K` **fails** on `{V > n}` as soon as `n > K/(1 − γ)`. The
+proof below therefore consumes the *ergodic limit*: each truncation `V ∧ n` is bounded, so
+`StatLean.Bayesian.lintegral_le_lintegral_add_tvDist` transfers its `π`-integral to the
+chain started at any `x₀` at a cost `n · tvDist ((κ^m) x₀) π → 0`, while
+`HasLyapunovDrift.lintegral_pow_le` bounds `∫⁻ V d((κ^m) x₀)` by
+`γ^m V(x₀) + K/(1 − γ)` uniformly in `m`; monotone convergence in `n` finishes. -/
+private theorem lintegral_lyap_le_of_isErgodicWithRate {S : Type*} [MeasurableSpace S]
+    {κ : ProbabilityTheory.Kernel S S} [ProbabilityTheory.IsMarkovKernel κ]
+    {V : S → ℝ} {γ K : ℝ} (hdrift : HasLyapunovDrift κ V γ K)
+    {π : Measure S} [IsProbabilityMeasure π] {ρ : ENNReal}
+    (herg : IsErgodicWithRate κ π ρ) (x₀ : S) :
+    ∫⁻ y, ENNReal.ofReal (V y) ∂π ≤ ENNReal.ofReal (K / (1 - γ)) := by
+  obtain ⟨hγ0, hγ1⟩ := hdrift.gamma_mem
+  have hVm : Measurable V := hdrift.V_measurable
+  have h1γ : (0:ℝ) < 1 - γ := by linarith
+  have hK : (0:ℝ) ≤ K := hdrift.K_nonneg
+  have hprob : ∀ (m : ℕ), IsProbabilityMeasure ((κ ^ m) x₀) := by
+    intro m
+    haveI : ProbabilityTheory.IsMarkovKernel (κ ^ m) := by
+      induction m with
+      | zero =>
+          rw [pow_zero]
+          exact (inferInstance : ProbabilityTheory.IsMarkovKernel
+            (ProbabilityTheory.Kernel.id : ProbabilityTheory.Kernel S S))
+      | succ k ih =>
+          rw [pow_succ]
+          exact ProbabilityTheory.Kernel.IsMarkovKernel.comp (κ ^ k) κ
+    infer_instance
+  have htv : Tendsto (fun m : ℕ => StatLean.Minimaxity.tvDist ((κ ^ m) x₀) π) atTop (𝓝 0) :=
+    herg.tendsto_tvDist x₀
+  have hWm : ∀ n : ℕ, Measurable fun y => min (ENNReal.ofReal (V y)) (n : ENNReal) :=
+    fun n => (hVm.ennreal_ofReal).min measurable_const
+  have key : ∀ n : ℕ, ∫⁻ y, min (ENNReal.ofReal (V y)) (n : ENNReal) ∂π
+      ≤ ENNReal.ofReal (K / (1 - γ)) := by
+    intro n
+    have hstep : ∀ m : ℕ, ∫⁻ y, min (ENNReal.ofReal (V y)) (n : ENNReal) ∂π
+        ≤ ENNReal.ofReal (γ ^ m * V x₀ + K / (1 - γ))
+          + (n : ENNReal) * StatLean.Minimaxity.tvDist ((κ ^ m) x₀) π := by
+      intro m
+      haveI := hprob m
+      have htransfer := StatLean.Bayesian.lintegral_le_lintegral_add_tvDist
+        π ((κ ^ m) x₀) (hWm n) (B := (n : ENNReal)) (fun _ => min_le_right _ _)
+      have hdrm : ∫⁻ y, min (ENNReal.ofReal (V y)) (n : ENNReal) ∂((κ ^ m) x₀)
+          ≤ ENNReal.ofReal (γ ^ m * V x₀ + K / (1 - γ)) :=
+        le_trans (lintegral_mono fun _ => min_le_left _ _) (hdrift.lintegral_pow_le m x₀)
+      refine htransfer.trans ?_
+      rw [StatLean.Minimaxity.tvDist_comm π ((κ ^ m) x₀)]
+      exact add_le_add hdrm le_rfl
+    have hlim : Tendsto (fun m : ℕ => ENNReal.ofReal (γ ^ m * V x₀ + K / (1 - γ))
+        + (n : ENNReal) * StatLean.Minimaxity.tvDist ((κ ^ m) x₀) π) atTop
+        (𝓝 (ENNReal.ofReal (K / (1 - γ)))) := by
+      have h1 : Tendsto (fun m : ℕ => ENNReal.ofReal (γ ^ m * V x₀ + K / (1 - γ))) atTop
+          (𝓝 (ENNReal.ofReal (K / (1 - γ)))) := by
+        have hp : Tendsto (fun m : ℕ => γ ^ m * V x₀ + K / (1 - γ)) atTop
+            (𝓝 (0 * V x₀ + K / (1 - γ))) :=
+          ((tendsto_pow_atTop_nhds_zero_of_lt_one hγ0.le hγ1).mul_const _).add_const _
+        simpa using (ENNReal.continuous_ofReal.tendsto _).comp hp
+      have h2 : Tendsto (fun m : ℕ =>
+          (n : ENNReal) * StatLean.Minimaxity.tvDist ((κ ^ m) x₀) π) atTop (𝓝 0) := by
+        simpa using ENNReal.Tendsto.const_mul htv (Or.inr (by simp))
+      simpa using h1.add h2
+    exact ge_of_tendsto hlim (Eventually.of_forall hstep)
+  have hsup : ∫⁻ y, ENNReal.ofReal (V y) ∂π
+      = ⨆ n : ℕ, ∫⁻ y, min (ENNReal.ofReal (V y)) (n : ENNReal) ∂π := by
+    rw [← lintegral_iSup hWm]
+    · refine lintegral_congr fun y => ?_
+      exact (iSup_min_natCast_of_ne_top (a := ENNReal.ofReal (V y)) ENNReal.ofReal_ne_top).symm
+    · intro m n hmn y
+      exact min_le_min le_rfl (by exact_mod_cast Nat.cast_le.mpr hmn)
+  rw [hsup]
+  exact iSup_le key
+
+/-- The form `HasGeometricStateChain` actually consumes: the Lyapunov function of a drift is
+`π`-**integrable** whenever the kernel is ergodic with a rate. Together with the (already
+proved, not yet exported) envelope of `harris_theorem` this is exactly the integrable
+constant `A` of `HasGeometricStateChain`. -/
+private theorem integrable_lyap_of_isErgodicWithRate {S : Type*} [MeasurableSpace S]
+    {κ : ProbabilityTheory.Kernel S S} [ProbabilityTheory.IsMarkovKernel κ]
+    {V : S → ℝ} {γ K : ℝ} (hdrift : HasLyapunovDrift κ V γ K)
+    {π : Measure S} [IsProbabilityMeasure π] {ρ : ENNReal}
+    (herg : IsErgodicWithRate κ π ρ) (x₀ : S) :
+    Integrable V π := by
+  refine ⟨hdrift.V_measurable.aestronglyMeasurable, ?_⟩
+  have he : ∀ y, ‖V y‖ₑ = ENNReal.ofReal (V y) := fun y => by
+    rw [Real.enorm_eq_ofReal (hdrift.V_nonneg y)]
+  rw [HasFiniteIntegral, lintegral_congr he]
+  exact lt_of_le_of_lt (lintegral_lyap_le_of_isErgodicWithRate hdrift herg x₀)
+    ENNReal.ofReal_lt_top
+
 /-- **DEBT (Pham–Tran 1985; FY §2.6.1(v))**: a stationary causal ARMA process with
 iid innovations admitting an (absolutely continuous) density is exponentially
 β-mixing.
@@ -1662,6 +1773,13 @@ second one is WRONG.** Checked against `ForMathlib/Markov/HarrisTheorem.lean` an
   convergence in `n` finishes. **This is the genuinely new item**, and it is the reason the
   follow-up cannot be dismissed as bookkeeping: it consumes the ergodic limit, not just the
   drift.
+
+  **It is now PROVED, in this file and axiom-clean**, as
+  `lintegral_lyap_le_of_isErgodicWithRate` (`∫⁻ V dπ ≤ K/(1 − γ)`) together with its
+  packaging `integrable_lyap_of_isErgodicWithRate` (`Integrable V π`) — the exact shape
+  `HasGeometricStateChain`'s integrable constant `A` needs. So of the two parts of the
+  follow-up, (b) is closed here and (a) is a pure statement change to `harris_theorem`,
+  outside this lane's touch set. Neither is any longer an open mathematical question.
 
 **Statement strengthening (documented, USER-INPUT).** `hdens` is strengthened from
 "`ε_0` has *some* Lebesgue density" to "`ε_0` has a **continuous, everywhere positive**
