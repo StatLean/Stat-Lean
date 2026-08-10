@@ -2,6 +2,7 @@ import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.Probability.Moments.Variance
 import Mathlib.Probability.StrongLaw
 import Mathlib.Probability.ProductMeasure
+import Mathlib.Probability.Independence.InfinitePi
 
 /-!
 # Moments and limits of coordinate averages under product measures
@@ -48,6 +49,27 @@ namespace StatLean.ComputationalStatistics
 variable {𝓧 : Type*} [MeasurableSpace 𝓧] {P : Measure 𝓧} [IsProbabilityMeasure P]
   {n : ℕ} {g : 𝓧 → ℝ}
 
+/-- The coordinate reads of the product law are measure preserving. -/
+private lemma mp_eval (i : Fin n) :
+    MeasurePreserving (fun x : Fin n → 𝓧 => x i) (Measure.pi fun _ : Fin n => P) P :=
+  measurePreserving_eval (fun _ : Fin n => P) i
+
+/-- Each summand of the coordinate average is integrable. -/
+private lemma integrable_eval_pi (i : Fin n) (hg : Integrable g P) :
+    Integrable (fun x : Fin n → 𝓧 => g (x i)) (Measure.pi fun _ : Fin n => P) :=
+  (mp_eval i).integrable_comp_of_integrable hg
+
+/-- Each summand of the coordinate average has the same integral as `g`. -/
+private lemma integral_eval_pi (i : Fin n) (hg : Integrable g P) :
+    ∫ x, g (x i) ∂(Measure.pi fun _ : Fin n => P) = ∫ z, g z ∂P := by
+  have hmp := mp_eval (P := P) i
+  have h1 : AEStronglyMeasurable g
+      ((Measure.pi fun _ : Fin n => P).map fun x : Fin n → 𝓧 => x i) := by
+    rw [hmp.map_eq]; exact hg.aestronglyMeasurable
+  refine .symm ?_
+  conv_lhs => rw [← hmp.map_eq]
+  exact integral_map hmp.measurable.aemeasurable h1
+
 /-- **Unbiasedness of the coordinate average** (ECS §2.2, eq. (2.8)): under the
 i.i.d. product law, the average of `g` over the coordinates integrates to
 `∫ g dP`. -/
@@ -56,7 +78,12 @@ theorem integral_avg_eval_pi [NeZero n]
     (hg : Integrable g P) :
     ∫ x, (n : ℝ)⁻¹ * ∑ i, g (x i) ∂(Measure.pi fun _ : Fin n => P)
       = ∫ z, g z ∂P := by
-  sorry
+  have hn : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
+  rw [integral_const_mul,
+    integral_finset_sum _ fun i _ => integrable_eval_pi i hg]
+  simp only [integral_eval_pi _ hg, Finset.sum_const, Finset.card_univ,
+    Fintype.card_fin, nsmul_eq_mul]
+  field_simp
 
 /-- **Variance of the coordinate average** (ECS §2.2, eq. (2.9) discussion):
 `Var(X̄) = Var_P(g)/n` under the i.i.d. product law. -/
