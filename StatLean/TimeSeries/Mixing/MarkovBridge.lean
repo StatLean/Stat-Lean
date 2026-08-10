@@ -2,6 +2,7 @@ import StatLean.TimeSeries.Mixing.Defs
 import StatLean.TimeSeries.ForMathlib.Markov.GeometricErgodicity
 import Mathlib.Probability.Kernel.MeasurableIntegral
 import Mathlib.Probability.Kernel.Composition.IntegralCompProd
+import Mathlib.MeasureTheory.Measure.MeasuredSets
 
 /-!
 # Mixing of Markov chains: the Davydov identity and its consequences (FY §2.6.1(vi)–(vii))
@@ -1668,6 +1669,554 @@ theorem betaMixCoeff_eq_integral_tvDist_of_markov_false :
 
 end DavydovWitness
 
+/-- Two probability measures differ on a set by at most their total-variation distance. -/
+private lemma abs_toReal_sub_le_tvDist {P Q : Measure E} [IsProbabilityMeasure P]
+    [IsProbabilityMeasure Q] {W : Set E} (hW : MeasurableSet W) :
+    |(P W).toReal - (Q W).toReal| ≤ (StatLean.Minimaxity.tvDist P Q).toReal := by
+  have hne : StatLean.Minimaxity.tvDist P Q ≠ ⊤ :=
+    ne_top_of_le_ne_top ENNReal.one_ne_top (StatLean.Minimaxity.tvDist_le_one P Q)
+  have hne' : StatLean.Minimaxity.tvDist Q P ≠ ⊤ :=
+    ne_top_of_le_ne_top ENNReal.one_ne_top (StatLean.Minimaxity.tvDist_le_one Q P)
+  have key : ∀ (P' Q' : Measure E), P' W - Q' W ≤ StatLean.Minimaxity.tvDist P' Q' := by
+    intro P' Q'
+    exact le_iSup₂ (f := fun (s : Set E) (_ : MeasurableSet s) => P' s - Q' s) W hW
+  rcases le_total (Q W) (P W) with h | h
+  · have h1 : (P W).toReal - (Q W).toReal = (P W - Q W).toReal :=
+      (ENNReal.toReal_sub_of_le h (measure_ne_top _ _)).symm
+    have h2 : (P W - Q W).toReal ≤ (StatLean.Minimaxity.tvDist P Q).toReal :=
+      ENNReal.toReal_mono hne (key P Q)
+    rw [abs_of_nonneg (by rw [h1]; exact ENNReal.toReal_nonneg), h1]
+    exact h2
+  · have h1 : (Q W).toReal - (P W).toReal = (Q W - P W).toReal :=
+      (ENNReal.toReal_sub_of_le h (measure_ne_top _ _)).symm
+    have h2 : (Q W - P W).toReal ≤ (StatLean.Minimaxity.tvDist Q P).toReal :=
+      ENNReal.toReal_mono hne' (key Q P)
+    rw [StatLean.Minimaxity.tvDist_comm] at h2
+    rw [abs_sub_comm, abs_of_nonneg (by rw [h1]; exact ENNReal.toReal_nonneg), h1]
+    exact h2
+
+/-! ### Countable generation: the total-variation distance as a partition limit
+(wave 7, 2026-08-09)
+
+The repair prescribed by wave 6 for Davydov's identity. On a **countably generated** state
+space the sup-over-events distance of two probability measures is already determined by the
+canonical increasing sequence of finite partitions `MeasurableSpace.countablePartition E n`:
+
+`‖P − Q‖_TV = ⨆ n, ½ Σ_{V ∈ 𝒫ₙ} |P V − Q V|`   (`tvDist_eq_iSup_pdist`).
+
+This is exactly the ingredient the `≥` half of Davydov's identity needs, and it replaces
+wave 4's costing of that half (a *jointly measurable Hahn selection* plus *rectangle
+approximation of a product-measurable set*) by something strictly smaller: the `β`-side
+partition pair is built from a **fixed** partition of the state space on the future side and
+from the **sign cells** of the finitely many kernel discrepancies on the past side, so no
+`x`-dependent Hahn set ever has to be selected measurably. The only genuinely
+measure-theoretic input is the density of the generated algebra, which Mathlib supplies as
+`MeasureTheory.exists_measure_symmDiff_lt_of_generateFrom_isSetRing`.
+
+The countable-generation hypothesis is not removable: `betaMixCoeff_cocnt_eq_zero` above is
+a formalized witness that at a general `E` the left-hand side collapses to `0` while the
+right-hand side is `1`. -/
+
+section CountablyGeneratedTV
+
+variable [MeasurableSpace.CountablyGenerated E]
+
+/-- The `n`-th canonical finite partition of a countably generated space, as a `Finset`. -/
+private noncomputable def cpF (E : Type*) [MeasurableSpace E]
+    [MeasurableSpace.CountablyGenerated E] (n : ℕ) : Finset (Set E) :=
+  (MeasurableSpace.finite_countablePartition E n).toFinset
+
+private lemma coe_cpF (n : ℕ) :
+    (cpF E n : Set (Set E)) = MeasurableSpace.countablePartition E n :=
+  Set.Finite.coe_toFinset _
+
+private lemma mem_cpF {n : ℕ} {V : Set E} :
+    V ∈ cpF E n ↔ V ∈ MeasurableSpace.countablePartition E n := Set.Finite.mem_toFinset _
+
+private lemma measurableSet_of_mem_cpF {n : ℕ} {V : Set E} (h : V ∈ cpF E n) :
+    MeasurableSet V :=
+  MeasurableSpace.measurableSet_countablePartition n (mem_cpF.mp h)
+
+private lemma pairwiseDisjoint_cpF (n : ℕ) :
+    Set.PairwiseDisjoint (cpF E n : Set (Set E)) id := by
+  intro V hV W hW hVW
+  exact MeasurableSpace.disjoint_countablePartition (by rwa [coe_cpF] at hV)
+    (by rwa [coe_cpF] at hW) hVW
+
+private lemma sUnion_cpF (n : ℕ) : ⋃₀ (cpF E n : Set (Set E)) = Set.univ := by
+  rw [coe_cpF]; exact MeasurableSpace.sUnion_countablePartition E n
+
+omit [MeasurableSpace E] [MeasurableSpace.CountablyGenerated E] in
+private lemma sUnion_coe_eq (S : Finset (Set E)) : ⋃₀ (S : Set (Set E)) = ⋃ V ∈ S, V := by
+  rw [Set.sUnion_eq_biUnion, Finset.set_biUnion_coe]
+
+private lemma measure_sUnion_cpF_subset (R : Measure E) {n : ℕ} {S : Finset (Set E)}
+    (hS : S ⊆ cpF E n) : R (⋃₀ (S : Set (Set E))) = ∑ V ∈ S, R V := by
+  rw [sUnion_coe_eq]
+  exact measure_biUnion_finset ((pairwiseDisjoint_cpF n).subset (by exact_mod_cast hS))
+    (fun V hV => measurableSet_of_mem_cpF (hS hV))
+
+private lemma sum_cpF_measure (R : Measure E) [IsProbabilityMeasure R] (n : ℕ) :
+    ∑ V ∈ cpF E n, (R V).toReal = 1 := by
+  have h := measure_sUnion_cpF_subset R (le_refl (cpF E n))
+  rw [sUnion_cpF] at h
+  have h2 := congrArg ENNReal.toReal h
+  rw [measure_univ, ENNReal.toReal_sum (fun V _ => measure_ne_top _ _)] at h2
+  simpa using h2.symm
+
+/-- The discrepancy of two measures across the `n`-th canonical partition — the
+finite-partition surrogate of the total-variation distance. -/
+private noncomputable def pdist (P Q : Measure E) (n : ℕ) : ℝ :=
+  (1 / 2) * ∑ V ∈ cpF E n, |(P V).toReal - (Q V).toReal|
+
+private lemma pdist_nonneg (P Q : Measure E) (n : ℕ) : 0 ≤ pdist P Q n :=
+  mul_nonneg (by norm_num) (Finset.sum_nonneg fun V _ => abs_nonneg _)
+
+/-- The cells of the `n`-th partition on which `P` dominates `Q`. -/
+private noncomputable def posCells (P Q : Measure E) (n : ℕ) : Finset (Set E) :=
+  (cpF E n).filter (fun V => 0 ≤ (P V).toReal - (Q V).toReal)
+
+private lemma posCells_subset (P Q : Measure E) (n : ℕ) : posCells P Q n ⊆ cpF E n :=
+  Finset.filter_subset _ _
+
+/-- The half-sum of absolute discrepancies is the discrepancy on the positive cells (the two
+signed halves cancel because both measures are probabilities). -/
+private lemma sum_posCells (P Q : Measure E) [IsProbabilityMeasure P] [IsProbabilityMeasure Q]
+    (n : ℕ) :
+    ∑ V ∈ posCells P Q n, ((P V).toReal - (Q V).toReal) = pdist P Q n := by
+  classical
+  have hzero : ∑ V ∈ cpF E n, ((P V).toReal - (Q V).toReal) = 0 := by
+    rw [Finset.sum_sub_distrib, sum_cpF_measure P n, sum_cpF_measure Q n]; ring
+  have habs : ∑ V ∈ cpF E n, |(P V).toReal - (Q V).toReal|
+      = (∑ V ∈ posCells P Q n, ((P V).toReal - (Q V).toReal))
+        + ∑ V ∈ (cpF E n).filter (fun V => ¬ 0 ≤ (P V).toReal - (Q V).toReal),
+            (-((P V).toReal - (Q V).toReal)) := by
+    rw [← Finset.sum_filter_add_sum_filter_not (cpF E n)
+      (fun V => 0 ≤ (P V).toReal - (Q V).toReal)
+      (fun V => |(P V).toReal - (Q V).toReal|)]
+    congr 1
+    · exact Finset.sum_congr rfl fun V hV => abs_of_nonneg (Finset.mem_filter.mp hV).2
+    · exact Finset.sum_congr rfl fun V hV =>
+        abs_of_nonpos (by have := (Finset.mem_filter.mp hV).2; linarith [not_le.mp this])
+  have hsplit : (∑ V ∈ posCells P Q n, ((P V).toReal - (Q V).toReal))
+      + ∑ V ∈ (cpF E n).filter (fun V => ¬ 0 ≤ (P V).toReal - (Q V).toReal),
+          ((P V).toReal - (Q V).toReal) = 0 := by
+    rw [posCells, Finset.sum_filter_add_sum_filter_not]; exact hzero
+  rw [pdist, habs, Finset.sum_neg_distrib]
+  linarith
+
+private lemma toReal_sub_toReal_sUnion (P Q : Measure E) [IsFiniteMeasure P] [IsFiniteMeasure Q]
+    {n : ℕ} {S : Finset (Set E)} (hS : S ⊆ cpF E n) :
+    (P (⋃₀ (S : Set (Set E)))).toReal - (Q (⋃₀ (S : Set (Set E)))).toReal
+      = ∑ V ∈ S, ((P V).toReal - (Q V).toReal) := by
+  rw [measure_sUnion_cpF_subset P hS, measure_sUnion_cpF_subset Q hS,
+    ENNReal.toReal_sum (fun V _ => measure_ne_top _ _),
+    ENNReal.toReal_sum (fun V _ => measure_ne_top _ _), Finset.sum_sub_distrib]
+
+/-- Every set of the finite algebra generated by the `n`-th partition has discrepancy at
+most `pdist`. -/
+private lemma sub_le_pdist (P Q : Measure E) [IsProbabilityMeasure P] [IsProbabilityMeasure Q]
+    (n : ℕ) {A : Set E}
+    (hA : MeasurableSet[MeasurableSpace.generateFrom
+      (MeasurableSpace.countablePartition E n)] A) :
+    (P A).toReal - (Q A).toReal ≤ pdist P Q n := by
+  classical
+  obtain ⟨S, hSsub, rfl⟩ :=
+    (MeasurableSpace.measurableSet_generateFrom_countablePartition_iff n A).mp hA
+  have hS : S ⊆ cpF E n := by rw [← Finset.coe_subset, coe_cpF]; exact hSsub
+  rw [toReal_sub_toReal_sUnion P Q hS, ← sum_posCells P Q n]
+  have h1 : ∑ V ∈ S, ((P V).toReal - (Q V).toReal)
+      ≤ ∑ V ∈ S.filter (fun V => 0 ≤ (P V).toReal - (Q V).toReal),
+          ((P V).toReal - (Q V).toReal) := by
+    rw [← Finset.sum_filter_add_sum_filter_not S
+      (fun V => 0 ≤ (P V).toReal - (Q V).toReal) (fun V => (P V).toReal - (Q V).toReal)]
+    have hneg : ∑ V ∈ S.filter (fun V => ¬ 0 ≤ (P V).toReal - (Q V).toReal),
+        ((P V).toReal - (Q V).toReal) ≤ 0 :=
+      Finset.sum_nonpos fun V hV => le_of_lt (not_le.mp (Finset.mem_filter.mp hV).2)
+    linarith
+  refine h1.trans (Finset.sum_le_sum_of_subset_of_nonneg ?_ ?_)
+  · intro V hV
+    rw [posCells, Finset.mem_filter]
+    exact ⟨hS (Finset.mem_filter.mp hV).1, (Finset.mem_filter.mp hV).2⟩
+  · intro V hV _
+    exact (Finset.mem_filter.mp hV).2
+
+/-- …and the bound is attained, on the union of the positive cells. -/
+private lemma exists_eq_pdist (P Q : Measure E) [IsProbabilityMeasure P]
+    [IsProbabilityMeasure Q] (n : ℕ) : ∃ A : Set E,
+      MeasurableSet[MeasurableSpace.generateFrom
+        (MeasurableSpace.countablePartition E n)] A ∧
+        pdist P Q n = (P A).toReal - (Q A).toReal := by
+  classical
+  refine ⟨⋃₀ ((posCells P Q n : Finset (Set E)) : Set (Set E)), ?_, ?_⟩
+  · refine (MeasurableSpace.measurableSet_generateFrom_countablePartition_iff n _).mpr
+      ⟨posCells P Q n, ?_, rfl⟩
+    rw [← coe_cpF]; exact_mod_cast posCells_subset P Q n
+  · rw [toReal_sub_toReal_sUnion P Q (posCells_subset P Q n), sum_posCells]
+
+private lemma generateFrom_cp_mono {n m : ℕ} (h : n ≤ m) :
+    MeasurableSpace.generateFrom (MeasurableSpace.countablePartition E n)
+      ≤ MeasurableSpace.generateFrom (MeasurableSpace.countablePartition E m) := by
+  induction m with
+  | zero => rw [Nat.le_zero.mp h]
+  | succ k ih =>
+      rcases Nat.lt_or_ge n (k + 1) with hlt | hge
+      · exact (ih (Nat.lt_succ_iff.mp hlt)).trans
+          (MeasurableSpace.generateFrom_countablePartition_le_succ E k)
+      · rw [le_antisymm h hge]
+
+/-- The partition discrepancies increase: each is attained on a set of the coarser algebra,
+which sits inside the finer one. -/
+private lemma pdist_mono (P Q : Measure E) [IsProbabilityMeasure P] [IsProbabilityMeasure Q] :
+    Monotone (pdist P Q) := by
+  intro n m hnm
+  obtain ⟨A, hA, hAeq⟩ := exists_eq_pdist P Q n
+  rw [hAeq]
+  exact sub_le_pdist P Q m (generateFrom_cp_mono hnm _ hA)
+
+private lemma pdist_le_tvDist (P Q : Measure E) [IsProbabilityMeasure P]
+    [IsProbabilityMeasure Q] (n : ℕ) :
+    pdist P Q n ≤ (StatLean.Minimaxity.tvDist P Q).toReal := by
+  obtain ⟨A, hA, hAeq⟩ := exists_eq_pdist P Q n
+  rw [hAeq]
+  exact le_trans (le_abs_self _)
+    (abs_toReal_sub_le_tvDist (MeasurableSpace.generateFrom_countablePartition_le E n _ hA))
+
+private lemma ofReal_pdist_le_one (P Q : Measure E) [IsProbabilityMeasure P]
+    [IsProbabilityMeasure Q] (n : ℕ) : ENNReal.ofReal (pdist P Q n) ≤ 1 := by
+  rw [← ENNReal.ofReal_one]
+  exact ENNReal.ofReal_le_ofReal ((pdist_le_tvDist P Q n).trans
+    (ENNReal.toReal_le_of_le_ofReal zero_le_one
+      (by rw [ENNReal.ofReal_one]; exact StatLean.Minimaxity.tvDist_le_one P Q)))
+
+/-- The union over `n` of the finite algebras generated by the canonical partitions, as a
+ring of sets. It generates the whole σ-algebra. -/
+private def cpRing (E : Type*) [MeasurableSpace E] [MeasurableSpace.CountablyGenerated E] :
+    Set (Set E) :=
+  {s | ∃ n, MeasurableSet[MeasurableSpace.generateFrom
+    (MeasurableSpace.countablePartition E n)] s}
+
+private lemma isSetRing_cpRing : MeasureTheory.IsSetRing (cpRing E) where
+  empty_mem := ⟨0, @MeasurableSet.empty _
+    (MeasurableSpace.generateFrom (MeasurableSpace.countablePartition E 0))⟩
+  union_mem := by
+    rintro s t ⟨n, hn⟩ ⟨m, hm⟩
+    exact ⟨max n m, (generateFrom_cp_mono (le_max_left n m) _ hn).union
+      (generateFrom_cp_mono (le_max_right n m) _ hm)⟩
+  diff_mem := by
+    rintro s t ⟨n, hn⟩ ⟨m, hm⟩
+    exact ⟨max n m, (generateFrom_cp_mono (le_max_left n m) _ hn).diff
+      (generateFrom_cp_mono (le_max_right n m) _ hm)⟩
+
+private lemma generateFrom_cpRing :
+    (inferInstance : MeasurableSpace E) = MeasurableSpace.generateFrom (cpRing E) := by
+  refine le_antisymm ?_ ?_
+  · have h1 : MeasurableSpace.generateFrom (⋃ n, MeasurableSpace.countablePartition E n)
+        ≤ MeasurableSpace.generateFrom (cpRing E) :=
+      MeasurableSpace.generateFrom_mono fun s hs => by
+        obtain ⟨n, hn⟩ := Set.mem_iUnion.mp hs
+        exact ⟨n, MeasurableSpace.measurableSet_generateFrom hn⟩
+    rwa [MeasurableSpace.generateFrom_iUnion_countablePartition] at h1
+  · refine MeasurableSpace.generateFrom_le fun s hs => ?_
+    obtain ⟨n, hn⟩ := hs
+    exact MeasurableSpace.generateFrom_countablePartition_le E n _ hn
+
+/-- **Countable determination of the total-variation distance.** On a countably generated
+measurable space the sup-over-events distance of two probability measures is the increasing
+limit of their discrepancies across the canonical finite partitions.
+
+The `≥` half is `pdist_le_tvDist`; the `≤` half is the density of the generated algebra
+(`MeasureTheory.exists_measure_symmDiff_lt_of_generateFrom_isSetRing` applied to `P + Q`)
+together with `sub_le_pdist`. -/
+private lemma tvDist_eq_iSup_pdist (P Q : Measure E) [IsProbabilityMeasure P]
+    [IsProbabilityMeasure Q] :
+    StatLean.Minimaxity.tvDist P Q = ⨆ n, ENNReal.ofReal (pdist P Q n) := by
+  classical
+  obtain ⟨L, hLdef⟩ : ∃ t : ℝ≥0∞, (⨆ n, ENNReal.ofReal (pdist P Q n)) = t := ⟨_, rfl⟩
+  have hL1 : L ≤ 1 := hLdef ▸ iSup_le fun n => ofReal_pdist_le_one P Q n
+  have hLne : L ≠ ⊤ := ne_top_of_le_ne_top ENNReal.one_ne_top hL1
+  have hstep : ∀ n, ENNReal.ofReal (pdist P Q n) ≤ L := by
+    intro n; rw [← hLdef]; exact le_iSup (fun m => ENNReal.ofReal (pdist P Q m)) n
+  rw [hLdef]
+  refine le_antisymm (iSup_le fun s => iSup_le fun hs => ?_) ?_
+  · haveI : IsFiniteMeasure (P + Q) := inferInstance
+    refine tsub_le_iff_left.mpr ?_
+    refine ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_
+    obtain ⟨t, htC, ht⟩ := MeasureTheory.exists_measure_symmDiff_lt_of_generateFrom_isSetRing
+      (μ := P + Q) isSetRing_cpRing ⟨{Set.univ}, Set.countable_singleton _,
+        by rintro u rfl; exact ⟨0, @MeasurableSet.univ _ _⟩, by simp⟩
+      generateFrom_cpRing hs (ε := (ε : ℝ≥0∞) / 2)
+      (ENNReal.div_pos (by simpa using hε.ne') (by simp))
+    obtain ⟨n, hn⟩ := htC
+    have hsymm : (P + Q) (symmDiff t s) < (ε : ℝ≥0∞) / 2 := ht
+    have hsd : P (s \ t) ≤ (ε : ℝ≥0∞) / 2 := by
+      refine le_of_lt (lt_of_le_of_lt ?_ hsymm)
+      calc P (s \ t) ≤ P (symmDiff t s) :=
+            measure_mono (by rw [Set.symmDiff_def]; exact Set.subset_union_right)
+        _ ≤ (P + Q) (symmDiff t s) := by rw [Measure.add_apply]; exact le_self_add
+    have htd : Q (t \ s) ≤ (ε : ℝ≥0∞) / 2 := by
+      refine le_of_lt (lt_of_le_of_lt ?_ hsymm)
+      calc Q (t \ s) ≤ Q (symmDiff t s) :=
+            measure_mono (by rw [Set.symmDiff_def]; exact Set.subset_union_left)
+        _ ≤ (P + Q) (symmDiff t s) := by rw [Measure.add_apply]; exact le_add_self
+    have hPt : P t ≤ Q t + ENNReal.ofReal (pdist P Q n) := by
+      have hle := sub_le_pdist P Q n hn
+      have h1 : (P t).toReal ≤ (Q t).toReal + pdist P Q n := by linarith
+      calc P t = ENNReal.ofReal (P t).toReal := (ENNReal.ofReal_toReal (measure_ne_top _ _)).symm
+        _ ≤ ENNReal.ofReal ((Q t).toReal + pdist P Q n) := ENNReal.ofReal_le_ofReal h1
+        _ = Q t + ENNReal.ofReal (pdist P Q n) := by
+            rw [ENNReal.ofReal_add ENNReal.toReal_nonneg (pdist_nonneg P Q n),
+              ENNReal.ofReal_toReal (measure_ne_top _ _)]
+    have hsub : ∀ u v : Set E, u ⊆ v ∪ (u \ v) := fun u v =>
+      Set.diff_subset_iff.mp Set.Subset.rfl
+    calc P s ≤ P t + P (s \ t) :=
+          (measure_mono (hsub s t)).trans (measure_union_le _ _)
+      _ ≤ (Q t + ENNReal.ofReal (pdist P Q n)) + (ε : ℝ≥0∞) / 2 := add_le_add hPt hsd
+      _ ≤ ((Q s + Q (t \ s)) + L) + (ε : ℝ≥0∞) / 2 := by
+          gcongr
+          · exact (measure_mono (hsub t s)).trans (measure_union_le _ _)
+          · exact hstep n
+      _ ≤ ((Q s + (ε : ℝ≥0∞) / 2) + L) + (ε : ℝ≥0∞) / 2 := by gcongr
+      _ = (Q s + L) + ((ε : ℝ≥0∞) / 2 + (ε : ℝ≥0∞) / 2) := by ring
+      _ = (Q s + L) + (ε : ℝ≥0∞) := by rw [ENNReal.add_halves]
+  · rw [← hLdef]
+    refine iSup_le fun n => ?_
+    have hne : StatLean.Minimaxity.tvDist P Q ≠ ⊤ :=
+      ne_top_of_le_ne_top ENNReal.one_ne_top (StatLean.Minimaxity.tvDist_le_one P Q)
+    calc ENNReal.ofReal (pdist P Q n)
+        ≤ ENNReal.ofReal (StatLean.Minimaxity.tvDist P Q).toReal :=
+          ENNReal.ofReal_le_ofReal (pdist_le_tvDist P Q n)
+      _ = StatLean.Minimaxity.tvDist P Q := ENNReal.ofReal_toReal hne
+
+end CountablyGeneratedTV
+
+
+/-- For a pairwise disjoint finite family, the total discrepancy of two probability
+measures is at most twice their total-variation distance. -/
+private lemma sum_abs_toReal_sub_le_two_tvDist {P Q : Measure E} [IsProbabilityMeasure P]
+    [IsProbabilityMeasure Q] {J : ℕ} {V : Fin J → Set E} (hVm : ∀ j, MeasurableSet (V j))
+    (hVd : Pairwise fun j j' => Disjoint (V j) (V j')) :
+    ∑ j, |(P (V j)).toReal - (Q (V j)).toReal|
+      ≤ 2 * (StatLean.Minimaxity.tvDist P Q).toReal := by
+  classical
+  have key : ∀ (T : Finset (Fin J)) (P' Q' : Measure E), IsProbabilityMeasure P' →
+      IsProbabilityMeasure Q' →
+      ∑ j ∈ T, ((P' (V j)).toReal - (Q' (V j)).toReal)
+        ≤ (StatLean.Minimaxity.tvDist P' Q').toReal := by
+    intro T P' Q' hP' hQ'
+    have hUm : MeasurableSet (⋃ j ∈ T, V j) := Finset.measurableSet_biUnion T fun j _ => hVm j
+    have hsum : ∀ (R : Measure E) [IsProbabilityMeasure R],
+        (R (⋃ j ∈ T, V j)).toReal = ∑ j ∈ T, (R (V j)).toReal := by
+      intro R _
+      rw [measure_biUnion_finset (fun i _ j _ hij => hVd hij) (fun j _ => hVm j)]
+      exact ENNReal.toReal_sum fun j _ => measure_ne_top _ _
+    have hd : ∑ j ∈ T, ((P' (V j)).toReal - (Q' (V j)).toReal)
+        = (∑ j ∈ T, (P' (V j)).toReal) - ∑ j ∈ T, (Q' (V j)).toReal :=
+      Finset.sum_sub_distrib _ _
+    rw [hd, ← hsum P', ← hsum Q']
+    exact le_trans (le_abs_self _) (abs_toReal_sub_le_tvDist hUm)
+  have hsplit : ∑ j, |(P (V j)).toReal - (Q (V j)).toReal|
+      = (∑ j ∈ Finset.univ.filter (fun j => (Q (V j)).toReal ≤ (P (V j)).toReal),
+          ((P (V j)).toReal - (Q (V j)).toReal))
+        + (∑ j ∈ Finset.univ.filter (fun j => ¬ (Q (V j)).toReal ≤ (P (V j)).toReal),
+          ((Q (V j)).toReal - (P (V j)).toReal)) := by
+    rw [← Finset.sum_filter_add_sum_filter_not Finset.univ
+      (fun j => (Q (V j)).toReal ≤ (P (V j)).toReal)
+      (fun j => |(P (V j)).toReal - (Q (V j)).toReal|)]
+    congr 1
+    · exact Finset.sum_congr rfl fun j hj =>
+        abs_of_nonneg (by have := (Finset.mem_filter.mp hj).2; linarith)
+    · exact Finset.sum_congr rfl fun j hj => by
+        have := (Finset.mem_filter.mp hj).2
+        rw [abs_of_nonpos (by rw [not_le] at this; linarith)]; ring
+  rw [hsplit]
+  have h1 := key (Finset.univ.filter (fun j => (Q (V j)).toReal ≤ (P (V j)).toReal)) P Q
+    inferInstance inferInstance
+  have h2 := key (Finset.univ.filter (fun j => ¬ (Q (V j)).toReal ≤ (P (V j)).toReal)) Q P
+    inferInstance inferInstance
+  rw [StatLean.Minimaxity.tvDist_comm Q P] at h2
+  linarith
+
+/-- **The β-envelope at a single lag** (the `≤` half of Davydov's identity, FY (2.58)):
+an integrable envelope `A` for the `n`-step total-variation discrepancy bounds the
+two-marginal β-coefficient at lag `n` by `∫ A dF` — with no factor 2, see the module
+docstring's calibration warning.
+
+This is the shape both consumers need: the geometric form
+`betaMixCoeff_two_marginal_le_of_envelope` below is the case `A x = A₀ x · ρⁿ`, and the `≤`
+half of Davydov's *identity* is the case `A x = ‖κⁿ(x, ·) − F‖_TV` (which is not of the
+product shape and only exists as a genuine envelope at the one lag `n`). -/
+private lemma betaMixCoeff_two_marginal_le_of_envelope_at [IsProbabilityMeasure μ]
+    {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
+    (hmarg : ∀ s t : ℤ, μ.map (X s) = μ.map (X t))
+    {κ : Kernel E E} [IsMarkovKernel κ] (hmarkov : IsMarkovOf X κ μ)
+    {A : E → ℝ} (hA0 : ∀ x, 0 ≤ A x) (hAint : Integrable A (μ.map (X 0)))
+    (k : ℤ) (n : ℕ)
+    (henv : ∀ x : E,
+      StatLean.Minimaxity.tvDist ((κ ^ n) x) (μ.map (X 0)) ≤ ENNReal.ofReal (A x)) :
+    betaMixCoeff μ (MeasurableSpace.comap (X k) inferInstance)
+        (MeasurableSpace.comap (X (k + n)) inferInstance)
+      ≤ ∫ x, A x ∂(μ.map (X 0)) := by
+  classical
+  haveI hFprob : IsProbabilityMeasure (μ.map (X 0)) :=
+    Measure.isProbabilityMeasure_map (hmeas 0).aemeasurable
+  haveI := isMarkovKernel_pow' κ n
+  have hkΩ : MeasurableSpace.comap (X k) inferInstance ≤ (inferInstance : MeasurableSpace Ω) :=
+    (hmeas k).comap_le
+  have hknΩ : MeasurableSpace.comap (X (k + n)) inferInstance
+      ≤ (inferInstance : MeasurableSpace Ω) := (hmeas _).comap_le
+  have hkle : MeasurableSpace.comap (X k) inferInstance ≤ sigmaLE' X k :=
+    le_iSup₂_of_le k (Set.mem_Iic.mpr le_rfl) le_rfl
+  have hm : sigmaLE' X k ≤ (inferInstance : MeasurableSpace Ω) :=
+    iSup₂_le fun s _ => (hmeas s).comap_le
+  -- the integrable envelope, pulled back to `Ω`
+  have hmapk : μ.map (X k) = μ.map (X 0) := hmarg k 0
+  have hAsm : AEStronglyMeasurable A (μ.map (X k)) := by rw [hmapk]; exact hAint.1
+  have hAintk : Integrable A (μ.map (X k)) := by rw [hmapk]; exact hAint
+  have hAc : Integrable (fun ω => A (X k ω)) μ :=
+    (integrable_map_measure hAsm (hmeas k).aemeasurable).mp hAintk
+  have hAint_eq : ∫ ω, A (X k ω) ∂μ = ∫ x, A x ∂(μ.map (X 0)) := by
+    rw [← hmapk]
+    exact (integral_map (hmeas k).aemeasurable hAsm).symm
+  have hTot0 : (0 : ℝ) ≤ ∫ x, A x ∂(μ.map (X 0)) := integral_nonneg hA0
+  refine Real.sSup_le ?_ hTot0
+  rintro r ⟨I, J, Aset, Bset, hAm, hBm, hAd, hBd, hAc', hBc, rfl⟩
+  -- the future-side sets, disjointified in the state space
+  choose W hWm hWpre using hBm
+  obtain ⟨W', hW'def⟩ : ∃ V : Fin J → Set E,
+      V = fun j => W j \ ⋃ j' ∈ Finset.univ.filter (fun j' => j' < j), W j' := ⟨_, rfl⟩
+  have hW'm : ∀ j, MeasurableSet (W' j) := fun j => by
+    rw [hW'def]
+    exact (hWm j).diff (Finset.measurableSet_biUnion _ fun j' _ => hWm j')
+  have hW'sub : ∀ j, W' j ⊆ W j := fun j => by rw [hW'def]; exact Set.diff_subset
+  have hW'd : Pairwise fun j j' => Disjoint (W' j) (W' j') := by
+    intro j j' hjj
+    rcases lt_or_gt_of_ne hjj with hlt | hlt
+    · refine Set.disjoint_left.mpr fun x hx hx' => ?_
+      rw [hW'def] at hx'
+      exact hx'.2 (Set.mem_biUnion (Finset.mem_filter.mpr ⟨Finset.mem_univ _, hlt⟩)
+        (hW'sub j hx))
+    · refine Set.disjoint_left.mpr fun x hx hx' => ?_
+      rw [hW'def] at hx
+      exact hx.2 (Set.mem_biUnion (Finset.mem_filter.mpr ⟨Finset.mem_univ _, hlt⟩)
+        (hW'sub j' hx'))
+  have hW'pre : ∀ j, X (k + n) ⁻¹' (W' j) = Bset j := by
+    intro j
+    rw [hW'def]
+    simp only [Set.preimage_diff, Set.preimage_iUnion, hWpre]
+    refine Set.eq_of_subset_of_subset Set.diff_subset fun ω hω => ⟨hω, ?_⟩
+    simp only [Set.mem_iUnion, not_exists]
+    intro j' hj'
+    have hne : j ≠ j' := fun hc => absurd (Finset.mem_filter.mp hj').2 (by rw [hc]; simp)
+    exact Set.disjoint_left.mp (hBd hne) hω
+  -- the covariance, as a set integral of a `σ(X_k)`-measurable function
+  obtain ⟨hh, hhdef⟩ : ∃ H : Fin J → Ω → ℝ, H = fun j ω =>
+      (((κ ^ n) (X k ω)) (W' j)).toReal - ((μ.map (X 0)) (W' j)).toReal := ⟨_, rfl⟩
+  have hhm : ∀ j, Measurable[MeasurableSpace.comap (X k) inferInstance] (hh j) := by
+    intro j
+    rw [hhdef]
+    refine Measurable.sub ?_ measurable_const
+    exact ((((κ ^ n).measurable_coe (hW'm j)).ennreal_toReal).comp
+      (Measurable.of_comap_le le_rfl))
+  have hhi : ∀ j, Integrable (hh j) μ := by
+    intro j
+    refine Integrable.mono (integrable_const (2 : ℝ))
+      ((hhm j).mono hkΩ le_rfl).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun ω => ?_)
+    simp only [hhdef]
+    have h1 : (((κ ^ n) (X k ω)) (W' j)).toReal ≤ 1 := by
+      simpa using ENNReal.toReal_mono (measure_ne_top ((κ ^ n) (X k ω)) Set.univ)
+        (measure_mono (Set.subset_univ (W' j)))
+    have h2 : ((μ.map (X 0)) (W' j)).toReal ≤ 1 := by
+      simpa using ENNReal.toReal_mono (measure_ne_top (μ.map (X 0)) Set.univ)
+        (measure_mono (Set.subset_univ (W' j)))
+    have h3 : (0:ℝ) ≤ (((κ ^ n) (X k ω)) (W' j)).toReal := ENNReal.toReal_nonneg
+    have h4 : (0:ℝ) ≤ ((μ.map (X 0)) (W' j)).toReal := ENNReal.toReal_nonneg
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (by norm_num : (0:ℝ) ≤ 2), abs_le]
+    constructor <;> linarith
+  have hmuB : ∀ j, (μ (Bset j)).toReal = ((μ.map (X 0)) (W' j)).toReal := by
+    intro j
+    rw [← hW'pre j, ← Measure.map_apply (hmeas _) (hW'm j), hmarg (k + (n : ℤ)) 0]
+  have hcov : ∀ (S : Set Ω), MeasurableSet[sigmaLE' X k] S → ∀ j,
+      (μ (S ∩ Bset j)).toReal - (μ S).toReal * (μ (Bset j)).toReal
+        = ∫ ω in S, hh j ω ∂μ := by
+    intro S hS j
+    have hSΩ : MeasurableSet S := hm _ hS
+    have hBΩ : MeasurableSet (Bset j) := by rw [← hW'pre j]; exact (hmeas _) (hW'm j)
+    have hfe : (fun ω => (W' j).indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω))
+        = (Bset j).indicator (fun _ => (1:ℝ)) := by
+      funext ω
+      by_cases hy : X (k + (n:ℤ)) ω ∈ W' j
+      · rw [Set.indicator_of_mem hy, Set.indicator_of_mem (by rw [← hW'pre j]; exact hy)]
+      · rw [Set.indicator_of_notMem hy,
+          Set.indicator_of_notMem (by rw [← hW'pre j]; exact hy)]
+    have hint : Integrable (fun ω => (W' j).indicator (fun _ => (1:ℝ))
+        (X (k + (n:ℤ)) ω)) μ := by
+      rw [hfe]; exact (integrable_const (1:ℝ)).indicator hBΩ
+    have e1 : ∫ ω in S, (μ[fun ω => (W' j).indicator (fun _ => (1:ℝ))
+          (X (k + (n:ℤ)) ω) | sigmaLE' X k]) ω ∂μ
+        = ∫ ω in S, (W' j).indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω) ∂μ :=
+      setIntegral_condExp hm hint hS
+    have e2 : ∫ ω in S, (μ[fun ω => (W' j).indicator (fun _ => (1:ℝ))
+          (X (k + (n:ℤ)) ω) | sigmaLE' X k]) ω ∂μ
+        = ∫ ω in S, (((κ ^ n) (X k ω)) (W' j)).toReal ∂μ :=
+      setIntegral_congr_ae hSΩ
+        (by filter_upwards [hmarkov k n (W' j) (hW'm j)] with ω hω using fun _ => hω)
+    have e3 : ∫ ω in S, (W' j).indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω) ∂μ
+        = (μ (S ∩ Bset j)).toReal := by
+      rw [hfe, integral_indicator_const (1:ℝ) hBΩ]
+      simp [Measure.real, Measure.restrict_apply hBΩ, Set.inter_comm]
+    have hgint : IntegrableOn (fun ω => (((κ ^ n) (X k ω)) (W' j)).toReal) S μ := by
+      have hgm : Measurable fun ω => (((κ ^ n) (X k ω)) (W' j)).toReal :=
+        (((κ ^ n).measurable_coe (hW'm j)).ennreal_toReal).comp (hmeas k)
+      refine Integrable.mono (integrable_const (1:ℝ)) hgm.aestronglyMeasurable.restrict
+        (Filter.Eventually.of_forall fun ω => ?_)
+      rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg zero_le_one,
+        abs_of_nonneg ENNReal.toReal_nonneg]
+      simpa using ENNReal.toReal_mono (measure_ne_top ((κ ^ n) (X k ω)) Set.univ)
+        (measure_mono (Set.subset_univ (W' j)))
+    simp only [hhdef]
+    rw [integral_sub hgint (integrable_const _).integrableOn, setIntegral_const,
+      ← e2, e1, e3, hmuB j]
+    simp [Measure.real]
+  -- assemble
+  have hrow : ∀ j, ∑ i, |(μ (Aset i ∩ Bset j)).toReal
+      - (μ (Aset i)).toReal * (μ (Bset j)).toReal| ≤ ∫ ω, |hh j ω| ∂μ := by
+    intro j
+    have hL : ∑ i, |(μ (Aset i ∩ Bset j)).toReal
+        - (μ (Aset i)).toReal * (μ (Bset j)).toReal| = ∑ i, |∫ ω in Aset i, hh j ω ∂μ| :=
+      Finset.sum_congr rfl fun i _ => by rw [hcov (Aset i) (hkle _ (hAm i)) j]
+    rw [hL]
+    exact sum_abs_setIntegral_le hkΩ hAm hAd hAc' (hhi j)
+  have hptw : ∀ ω, ∑ j, |hh j ω| ≤ 2 * A (X k ω) := by
+    intro ω
+    have h1 : ∑ j, |hh j ω|
+        ≤ 2 * (StatLean.Minimaxity.tvDist ((κ ^ n) (X k ω)) (μ.map (X 0))).toReal := by
+      rw [hhdef]
+      exact sum_abs_toReal_sub_le_two_tvDist hW'm hW'd
+    have h2 := ENNReal.toReal_mono ENNReal.ofReal_ne_top (henv (X k ω))
+    rw [ENNReal.toReal_ofReal (hA0 _)] at h2
+    linarith
+  have hcol : ∑ j, ∫ ω, |hh j ω| ∂μ ≤ 2 * ∫ x, A x ∂(μ.map (X 0)) := by
+    have hsum : ∑ j, ∫ ω, |hh j ω| ∂μ = ∫ ω, ∑ j, |hh j ω| ∂μ :=
+      (integral_finset_sum _ fun j _ => (hhi j).abs).symm
+    rw [hsum]
+    have hbdd : Integrable (fun ω => 2 * A (X k ω)) μ := hAc.const_mul 2
+    have := integral_mono (integrable_finset_sum _ fun j _ => (hhi j).abs) hbdd hptw
+    refine this.trans (le_of_eq ?_)
+    rw [integral_const_mul, hAint_eq]
+  have hchain : ∑ i, ∑ j, |(μ (Aset i ∩ Bset j)).toReal
+      - (μ (Aset i)).toReal * (μ (Bset j)).toReal|
+      ≤ 2 * ∫ x, A x ∂(μ.map (X 0)) := by
+    calc ∑ i, ∑ j, |(μ (Aset i ∩ Bset j)).toReal
+          - (μ (Aset i)).toReal * (μ (Bset j)).toReal|
+        = ∑ j, ∑ i, |(μ (Aset i ∩ Bset j)).toReal
+            - (μ (Aset i)).toReal * (μ (Bset j)).toReal| := Finset.sum_comm
+      _ ≤ ∑ j, ∫ ω, |hh j ω| ∂μ := Finset.sum_le_sum fun j _ => hrow j
+      _ ≤ 2 * ∫ x, A x ∂(μ.map (X 0)) := hcol
+  linarith
+
+
 /-- **BRICK — Davydov's identity at the two-marginal level** (FY eq. (2.58) proper).
 
 `β(σ(X_0), σ(X_n)) = ∫ tvDist (κⁿ x) F dF(x)`.
@@ -2102,31 +2651,6 @@ depend on the open Davydov identity:
   inputs "the state is a Markov chain with kernel `κ`" and "`κ` has a geometric TV
   envelope". -/
 
-/-- Two probability measures differ on a set by at most their total-variation distance. -/
-private lemma abs_toReal_sub_le_tvDist {P Q : Measure E} [IsProbabilityMeasure P]
-    [IsProbabilityMeasure Q] {W : Set E} (hW : MeasurableSet W) :
-    |(P W).toReal - (Q W).toReal| ≤ (StatLean.Minimaxity.tvDist P Q).toReal := by
-  have hne : StatLean.Minimaxity.tvDist P Q ≠ ⊤ :=
-    ne_top_of_le_ne_top ENNReal.one_ne_top (StatLean.Minimaxity.tvDist_le_one P Q)
-  have hne' : StatLean.Minimaxity.tvDist Q P ≠ ⊤ :=
-    ne_top_of_le_ne_top ENNReal.one_ne_top (StatLean.Minimaxity.tvDist_le_one Q P)
-  have key : ∀ (P' Q' : Measure E), P' W - Q' W ≤ StatLean.Minimaxity.tvDist P' Q' := by
-    intro P' Q'
-    exact le_iSup₂ (f := fun (s : Set E) (_ : MeasurableSet s) => P' s - Q' s) W hW
-  rcases le_total (Q W) (P W) with h | h
-  · have h1 : (P W).toReal - (Q W).toReal = (P W - Q W).toReal :=
-      (ENNReal.toReal_sub_of_le h (measure_ne_top _ _)).symm
-    have h2 : (P W - Q W).toReal ≤ (StatLean.Minimaxity.tvDist P Q).toReal :=
-      ENNReal.toReal_mono hne (key P Q)
-    rw [abs_of_nonneg (by rw [h1]; exact ENNReal.toReal_nonneg), h1]
-    exact h2
-  · have h1 : (Q W).toReal - (P W).toReal = (Q W - P W).toReal :=
-      (ENNReal.toReal_sub_of_le h (measure_ne_top _ _)).symm
-    have h2 : (Q W - P W).toReal ≤ (StatLean.Minimaxity.tvDist Q P).toReal :=
-      ENNReal.toReal_mono hne' (key Q P)
-    rw [StatLean.Minimaxity.tvDist_comm] at h2
-    rw [abs_sub_comm, abs_of_nonneg (by rw [h1]; exact ENNReal.toReal_nonneg), h1]
-    exact h2
 
 
 private theorem markovPow {S : Type*} [MeasurableSpace S] (κ : Kernel S S)
@@ -2349,55 +2873,14 @@ The normalization comes out as promised in the module docstring: `Σ_j |P W_j �
 tvDist P Q` for a disjoint family, and `betaMixCoeff` is the *half*-sum, so the final bound
 carries **no factor 2**. -/
 
-/-- For a pairwise disjoint finite family, the total discrepancy of two probability
-measures is at most twice their total-variation distance. -/
-private lemma sum_abs_toReal_sub_le_two_tvDist {P Q : Measure E} [IsProbabilityMeasure P]
-    [IsProbabilityMeasure Q] {J : ℕ} {V : Fin J → Set E} (hVm : ∀ j, MeasurableSet (V j))
-    (hVd : Pairwise fun j j' => Disjoint (V j) (V j')) :
-    ∑ j, |(P (V j)).toReal - (Q (V j)).toReal|
-      ≤ 2 * (StatLean.Minimaxity.tvDist P Q).toReal := by
-  classical
-  have key : ∀ (T : Finset (Fin J)) (P' Q' : Measure E), IsProbabilityMeasure P' →
-      IsProbabilityMeasure Q' →
-      ∑ j ∈ T, ((P' (V j)).toReal - (Q' (V j)).toReal)
-        ≤ (StatLean.Minimaxity.tvDist P' Q').toReal := by
-    intro T P' Q' hP' hQ'
-    have hUm : MeasurableSet (⋃ j ∈ T, V j) := Finset.measurableSet_biUnion T fun j _ => hVm j
-    have hsum : ∀ (R : Measure E) [IsProbabilityMeasure R],
-        (R (⋃ j ∈ T, V j)).toReal = ∑ j ∈ T, (R (V j)).toReal := by
-      intro R _
-      rw [measure_biUnion_finset (fun i _ j _ hij => hVd hij) (fun j _ => hVm j)]
-      exact ENNReal.toReal_sum fun j _ => measure_ne_top _ _
-    have hd : ∑ j ∈ T, ((P' (V j)).toReal - (Q' (V j)).toReal)
-        = (∑ j ∈ T, (P' (V j)).toReal) - ∑ j ∈ T, (Q' (V j)).toReal :=
-      Finset.sum_sub_distrib _ _
-    rw [hd, ← hsum P', ← hsum Q']
-    exact le_trans (le_abs_self _) (abs_toReal_sub_le_tvDist hUm)
-  have hsplit : ∑ j, |(P (V j)).toReal - (Q (V j)).toReal|
-      = (∑ j ∈ Finset.univ.filter (fun j => (Q (V j)).toReal ≤ (P (V j)).toReal),
-          ((P (V j)).toReal - (Q (V j)).toReal))
-        + (∑ j ∈ Finset.univ.filter (fun j => ¬ (Q (V j)).toReal ≤ (P (V j)).toReal),
-          ((Q (V j)).toReal - (P (V j)).toReal)) := by
-    rw [← Finset.sum_filter_add_sum_filter_not Finset.univ
-      (fun j => (Q (V j)).toReal ≤ (P (V j)).toReal)
-      (fun j => |(P (V j)).toReal - (Q (V j)).toReal|)]
-    congr 1
-    · exact Finset.sum_congr rfl fun j hj =>
-        abs_of_nonneg (by have := (Finset.mem_filter.mp hj).2; linarith)
-    · exact Finset.sum_congr rfl fun j hj => by
-        have := (Finset.mem_filter.mp hj).2
-        rw [abs_of_nonpos (by rw [not_le] at this; linarith)]; ring
-  rw [hsplit]
-  have h1 := key (Finset.univ.filter (fun j => (Q (V j)).toReal ≤ (P (V j)).toReal)) P Q
-    inferInstance inferInstance
-  have h2 := key (Finset.univ.filter (fun j => ¬ (Q (V j)).toReal ≤ (P (V j)).toReal)) Q P
-    inferInstance inferInstance
-  rw [StatLean.Minimaxity.tvDist_comm Q P] at h2
-  linarith
 
 /-- **The β-envelope** (the `≤` half of Davydov's identity, FY (2.58)–(2.59)): a geometric
 total-variation envelope for the kernel bounds the two-marginal β-coefficient by
-`(∫ A dF) ρⁿ` — with no factor 2, see the module docstring's calibration warning. -/
+`(∫ A dF) ρⁿ` — with no factor 2, see the module docstring's calibration warning.
+
+Statement unchanged; since wave 7 it is the geometric specialisation of the single-lag form
+`betaMixCoeff_two_marginal_le_of_envelope_at`, which is what the `≤` half of Davydov's
+*identity* also consumes. -/
 theorem betaMixCoeff_two_marginal_le_of_envelope [IsProbabilityMeasure μ]
     {X : ℤ → Ω → E} (hmeas : ∀ t, Measurable (X t))
     (hmarg : ∀ s t : ℤ, μ.map (X s) = μ.map (X t))
@@ -2411,166 +2894,10 @@ theorem betaMixCoeff_two_marginal_le_of_envelope [IsProbabilityMeasure μ]
     betaMixCoeff μ (MeasurableSpace.comap (X k) inferInstance)
         (MeasurableSpace.comap (X (k + n)) inferInstance)
       ≤ (∫ x, A x ∂(μ.map (X 0))) * ρ ^ n := by
-  classical
-  haveI hFprob : IsProbabilityMeasure (μ.map (X 0)) :=
-    Measure.isProbabilityMeasure_map (hmeas 0).aemeasurable
-  haveI := isMarkovKernel_pow' κ n
-  have hkΩ : MeasurableSpace.comap (X k) inferInstance ≤ (inferInstance : MeasurableSpace Ω) :=
-    (hmeas k).comap_le
-  have hknΩ : MeasurableSpace.comap (X (k + n)) inferInstance
-      ≤ (inferInstance : MeasurableSpace Ω) := (hmeas _).comap_le
-  have hkle : MeasurableSpace.comap (X k) inferInstance ≤ sigmaLE' X k :=
-    le_iSup₂_of_le k (Set.mem_Iic.mpr le_rfl) le_rfl
-  have hm : sigmaLE' X k ≤ (inferInstance : MeasurableSpace Ω) :=
-    iSup₂_le fun s _ => (hmeas s).comap_le
-  -- the integrable envelope, pulled back to `Ω`
-  have hmapk : μ.map (X k) = μ.map (X 0) := hmarg k 0
-  have hAsm : AEStronglyMeasurable A (μ.map (X k)) := by rw [hmapk]; exact hAint.1
-  have hAintk : Integrable A (μ.map (X k)) := by rw [hmapk]; exact hAint
-  have hAc : Integrable (fun ω => A (X k ω)) μ :=
-    (integrable_map_measure hAsm (hmeas k).aemeasurable).mp hAintk
-  have hAint_eq : ∫ ω, A (X k ω) ∂μ = ∫ x, A x ∂(μ.map (X 0)) := by
-    rw [← hmapk]
-    exact (integral_map (hmeas k).aemeasurable hAsm).symm
-  have hTot0 : (0 : ℝ) ≤ (∫ x, A x ∂(μ.map (X 0))) * ρ ^ n :=
-    mul_nonneg (integral_nonneg hA0) (pow_nonneg hρ0 n)
-  refine Real.sSup_le ?_ hTot0
-  rintro r ⟨I, J, Aset, Bset, hAm, hBm, hAd, hBd, hAc', hBc, rfl⟩
-  -- the future-side sets, disjointified in the state space
-  choose W hWm hWpre using hBm
-  obtain ⟨W', hW'def⟩ : ∃ V : Fin J → Set E,
-      V = fun j => W j \ ⋃ j' ∈ Finset.univ.filter (fun j' => j' < j), W j' := ⟨_, rfl⟩
-  have hW'm : ∀ j, MeasurableSet (W' j) := fun j => by
-    rw [hW'def]
-    exact (hWm j).diff (Finset.measurableSet_biUnion _ fun j' _ => hWm j')
-  have hW'sub : ∀ j, W' j ⊆ W j := fun j => by rw [hW'def]; exact Set.diff_subset
-  have hW'd : Pairwise fun j j' => Disjoint (W' j) (W' j') := by
-    intro j j' hjj
-    rcases lt_or_gt_of_ne hjj with hlt | hlt
-    · refine Set.disjoint_left.mpr fun x hx hx' => ?_
-      rw [hW'def] at hx'
-      exact hx'.2 (Set.mem_biUnion (Finset.mem_filter.mpr ⟨Finset.mem_univ _, hlt⟩)
-        (hW'sub j hx))
-    · refine Set.disjoint_left.mpr fun x hx hx' => ?_
-      rw [hW'def] at hx
-      exact hx.2 (Set.mem_biUnion (Finset.mem_filter.mpr ⟨Finset.mem_univ _, hlt⟩)
-        (hW'sub j' hx'))
-  have hW'pre : ∀ j, X (k + n) ⁻¹' (W' j) = Bset j := by
-    intro j
-    rw [hW'def]
-    simp only [Set.preimage_diff, Set.preimage_iUnion, hWpre]
-    refine Set.eq_of_subset_of_subset Set.diff_subset fun ω hω => ⟨hω, ?_⟩
-    simp only [Set.mem_iUnion, not_exists]
-    intro j' hj'
-    have hne : j ≠ j' := fun hc => absurd (Finset.mem_filter.mp hj').2 (by rw [hc]; simp)
-    exact Set.disjoint_left.mp (hBd hne) hω
-  -- the covariance, as a set integral of a `σ(X_k)`-measurable function
-  obtain ⟨hh, hhdef⟩ : ∃ H : Fin J → Ω → ℝ, H = fun j ω =>
-      (((κ ^ n) (X k ω)) (W' j)).toReal - ((μ.map (X 0)) (W' j)).toReal := ⟨_, rfl⟩
-  have hhm : ∀ j, Measurable[MeasurableSpace.comap (X k) inferInstance] (hh j) := by
-    intro j
-    rw [hhdef]
-    refine Measurable.sub ?_ measurable_const
-    exact ((((κ ^ n).measurable_coe (hW'm j)).ennreal_toReal).comp
-      (Measurable.of_comap_le le_rfl))
-  have hhi : ∀ j, Integrable (hh j) μ := by
-    intro j
-    refine Integrable.mono (integrable_const (2 : ℝ))
-      ((hhm j).mono hkΩ le_rfl).aestronglyMeasurable
-      (Filter.Eventually.of_forall fun ω => ?_)
-    simp only [hhdef]
-    have h1 : (((κ ^ n) (X k ω)) (W' j)).toReal ≤ 1 := by
-      simpa using ENNReal.toReal_mono (measure_ne_top ((κ ^ n) (X k ω)) Set.univ)
-        (measure_mono (Set.subset_univ (W' j)))
-    have h2 : ((μ.map (X 0)) (W' j)).toReal ≤ 1 := by
-      simpa using ENNReal.toReal_mono (measure_ne_top (μ.map (X 0)) Set.univ)
-        (measure_mono (Set.subset_univ (W' j)))
-    have h3 : (0:ℝ) ≤ (((κ ^ n) (X k ω)) (W' j)).toReal := ENNReal.toReal_nonneg
-    have h4 : (0:ℝ) ≤ ((μ.map (X 0)) (W' j)).toReal := ENNReal.toReal_nonneg
-    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (by norm_num : (0:ℝ) ≤ 2), abs_le]
-    constructor <;> linarith
-  have hmuB : ∀ j, (μ (Bset j)).toReal = ((μ.map (X 0)) (W' j)).toReal := by
-    intro j
-    rw [← hW'pre j, ← Measure.map_apply (hmeas _) (hW'm j), hmarg (k + (n : ℤ)) 0]
-  have hcov : ∀ (S : Set Ω), MeasurableSet[sigmaLE' X k] S → ∀ j,
-      (μ (S ∩ Bset j)).toReal - (μ S).toReal * (μ (Bset j)).toReal
-        = ∫ ω in S, hh j ω ∂μ := by
-    intro S hS j
-    have hSΩ : MeasurableSet S := hm _ hS
-    have hBΩ : MeasurableSet (Bset j) := by rw [← hW'pre j]; exact (hmeas _) (hW'm j)
-    have hfe : (fun ω => (W' j).indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω))
-        = (Bset j).indicator (fun _ => (1:ℝ)) := by
-      funext ω
-      by_cases hy : X (k + (n:ℤ)) ω ∈ W' j
-      · rw [Set.indicator_of_mem hy, Set.indicator_of_mem (by rw [← hW'pre j]; exact hy)]
-      · rw [Set.indicator_of_notMem hy,
-          Set.indicator_of_notMem (by rw [← hW'pre j]; exact hy)]
-    have hint : Integrable (fun ω => (W' j).indicator (fun _ => (1:ℝ))
-        (X (k + (n:ℤ)) ω)) μ := by
-      rw [hfe]; exact (integrable_const (1:ℝ)).indicator hBΩ
-    have e1 : ∫ ω in S, (μ[fun ω => (W' j).indicator (fun _ => (1:ℝ))
-          (X (k + (n:ℤ)) ω) | sigmaLE' X k]) ω ∂μ
-        = ∫ ω in S, (W' j).indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω) ∂μ :=
-      setIntegral_condExp hm hint hS
-    have e2 : ∫ ω in S, (μ[fun ω => (W' j).indicator (fun _ => (1:ℝ))
-          (X (k + (n:ℤ)) ω) | sigmaLE' X k]) ω ∂μ
-        = ∫ ω in S, (((κ ^ n) (X k ω)) (W' j)).toReal ∂μ :=
-      setIntegral_congr_ae hSΩ
-        (by filter_upwards [hmarkov k n (W' j) (hW'm j)] with ω hω using fun _ => hω)
-    have e3 : ∫ ω in S, (W' j).indicator (fun _ => (1:ℝ)) (X (k + (n:ℤ)) ω) ∂μ
-        = (μ (S ∩ Bset j)).toReal := by
-      rw [hfe, integral_indicator_const (1:ℝ) hBΩ]
-      simp [Measure.real, Measure.restrict_apply hBΩ, Set.inter_comm]
-    have hgint : IntegrableOn (fun ω => (((κ ^ n) (X k ω)) (W' j)).toReal) S μ := by
-      have hgm : Measurable fun ω => (((κ ^ n) (X k ω)) (W' j)).toReal :=
-        (((κ ^ n).measurable_coe (hW'm j)).ennreal_toReal).comp (hmeas k)
-      refine Integrable.mono (integrable_const (1:ℝ)) hgm.aestronglyMeasurable.restrict
-        (Filter.Eventually.of_forall fun ω => ?_)
-      rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg zero_le_one,
-        abs_of_nonneg ENNReal.toReal_nonneg]
-      simpa using ENNReal.toReal_mono (measure_ne_top ((κ ^ n) (X k ω)) Set.univ)
-        (measure_mono (Set.subset_univ (W' j)))
-    simp only [hhdef]
-    rw [integral_sub hgint (integrable_const _).integrableOn, setIntegral_const,
-      ← e2, e1, e3, hmuB j]
-    simp [Measure.real]
-  -- assemble
-  have hrow : ∀ j, ∑ i, |(μ (Aset i ∩ Bset j)).toReal
-      - (μ (Aset i)).toReal * (μ (Bset j)).toReal| ≤ ∫ ω, |hh j ω| ∂μ := by
-    intro j
-    have hL : ∑ i, |(μ (Aset i ∩ Bset j)).toReal
-        - (μ (Aset i)).toReal * (μ (Bset j)).toReal| = ∑ i, |∫ ω in Aset i, hh j ω ∂μ| :=
-      Finset.sum_congr rfl fun i _ => by rw [hcov (Aset i) (hkle _ (hAm i)) j]
-    rw [hL]
-    exact sum_abs_setIntegral_le hkΩ hAm hAd hAc' (hhi j)
-  have hptw : ∀ ω, ∑ j, |hh j ω| ≤ 2 * (A (X k ω) * ρ ^ n) := by
-    intro ω
-    have h1 : ∑ j, |hh j ω|
-        ≤ 2 * (StatLean.Minimaxity.tvDist ((κ ^ n) (X k ω)) (μ.map (X 0))).toReal := by
-      rw [hhdef]
-      exact sum_abs_toReal_sub_le_two_tvDist hW'm hW'd
-    have h2 := ENNReal.toReal_mono ENNReal.ofReal_ne_top (henv (X k ω) n)
-    rw [ENNReal.toReal_ofReal (mul_nonneg (hA0 _) (pow_nonneg hρ0 n))] at h2
-    linarith
-  have hcol : ∑ j, ∫ ω, |hh j ω| ∂μ ≤ 2 * ((∫ x, A x ∂(μ.map (X 0))) * ρ ^ n) := by
-    have hsum : ∑ j, ∫ ω, |hh j ω| ∂μ = ∫ ω, ∑ j, |hh j ω| ∂μ :=
-      (integral_finset_sum _ fun j _ => (hhi j).abs).symm
-    rw [hsum]
-    have hbdd : Integrable (fun ω => 2 * (A (X k ω) * ρ ^ n)) μ := by
-      simpa [mul_comm, mul_assoc, mul_left_comm] using (hAc.const_mul (2 * ρ ^ n))
-    have := integral_mono (integrable_finset_sum _ fun j _ => (hhi j).abs) hbdd hptw
-    refine this.trans (le_of_eq ?_)
-    rw [integral_const_mul, integral_mul_const, hAint_eq]
-  have hchain : ∑ i, ∑ j, |(μ (Aset i ∩ Bset j)).toReal
-      - (μ (Aset i)).toReal * (μ (Bset j)).toReal|
-      ≤ 2 * ((∫ x, A x ∂(μ.map (X 0))) * ρ ^ n) := by
-    calc ∑ i, ∑ j, |(μ (Aset i ∩ Bset j)).toReal
-          - (μ (Aset i)).toReal * (μ (Bset j)).toReal|
-        = ∑ j, ∑ i, |(μ (Aset i ∩ Bset j)).toReal
-            - (μ (Aset i)).toReal * (μ (Bset j)).toReal| := Finset.sum_comm
-      _ ≤ ∑ j, ∫ ω, |hh j ω| ∂μ := Finset.sum_le_sum fun j _ => hrow j
-      _ ≤ 2 * ((∫ x, A x ∂(μ.map (X 0))) * ρ ^ n) := hcol
-  linarith
+  have h := betaMixCoeff_two_marginal_le_of_envelope_at hmeas hmarg hmarkov
+    (A := fun x => A x * ρ ^ n) (fun x => mul_nonneg (hA0 x) (pow_nonneg hρ0 n))
+    (hAint.mul_const _) k n (fun x => henv x n)
+  rwa [integral_mul_const] at h
 
 
 
