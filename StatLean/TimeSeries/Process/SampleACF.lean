@@ -1293,6 +1293,17 @@ the reduction the remaining debts start from.
   uniformly in `T`: factor `X² − X^{(N)2} = (X − X^{(N)})(X + X^{(N)})` and apply
   Cauchy–Schwarz against (R2) together with the ℓ¹ energy budget of
   `eLpNorm_windowSum_le` at the bilinear level.
+  **Correction (wave `ts/f4b-garch-last`, 2026-08-09): (R2) as stated above is not enough
+  for this, and the gap is now filled.** The factorization `(X − X^{(N)})(X + X^{(N)})`
+  produces a product of two *different* linear forms, so what the second moment of
+  `Σ_t (X_t² − X_t^{(N)2})` needs is `Cov(L_c L_d, L_e L_f)` at four independent weight
+  vectors, and `cov_sq_noiseComb` only covers the diagonal `c = d`, `e = f`. It is a
+  genuine strengthening, but a *cheap* one: bilinear polarization
+  (`4 L_c L_d = L_{c+d}² − L_{c−d}²` in each slot) reduces it to four instances of the
+  squared identity, with no new induction and no extra moment hypothesis. Proved as
+  `integral_prod_four_noiseComb`/`cov_prod_noiseComb` (Isserlis/Wick plus the
+  fourth-cumulant diagonal). What is *still* open in (R3) is only the passage from the
+  finite windows to the `L²` limits `X_t` themselves — the covariance algebra is done.
 * (R4) the series identity `Σ_h γ(h)² = σ⁴ Σ_h (Σ_k a_k a_{k+h})²` matching the limit
   produced by (R1)+(R2) to the frozen `(η−3)γ(0)² + 2 Σ_{j∈ℤ} γ(j)²`.
   (The frozen constant is *confirmed* against B&D (1991) Prop 7.3.4: the printed FY
@@ -1842,6 +1853,177 @@ private theorem cov_sq_noiseComb [IsProbabilityMeasure μ] (hε : IsIIDNoise ε 
       (fun ω => (∑ i ∈ s, d i * ε i ω) ^ 2)) ω ∂μ
       = ∫ ω, (∑ i ∈ s, c i * ε i ω) ^ 2 * (∑ i ∈ s, d i * ε i ω) ^ 2 ∂μ := rfl
   simp only [hprod, integral_sq_mul_sq_noiseComb hε hε4 c d s, hQQ, hRR]
+  ring
+
+
+/-! #### (R2) at four linear forms
+
+The squared identity above polarizes: `4 L_c L_d = L_{c+d}² − L_{c−d}²` in each of the two
+slots turns `E[L_c L_d L_e L_f]` into an alternating sum of **four** instances of
+`integral_sq_mul_sq_noiseComb`, with no new induction and no new moment hypothesis. The
+answer is the Isserlis/Wick formula with the fourth-cumulant correction on the diagonal,
+
+`E[L_c L_d L_e L_f] = (Eε⁴ − 3σ⁴) Σ c_i d_i e_i f_i
+      + σ⁴[(Σcd)(Σef) + (Σce)(Σdf) + (Σcf)(Σde)]`,
+
+and its covariance form `cov_prod_noiseComb` drops the `(Σcd)(Σef)` block. Taking
+`c = d`, `e = f` recovers `integral_sq_mul_sq_noiseComb`/`cov_sq_noiseComb`, so this is a
+strict generalization: it is what (R3) needs (there the object is
+`Cov(U_s V_s, U_t V_t)` with `U = X − X^{(N)}`, `V = X + X^{(N)}`, a product of two
+*different* linear forms) and what the joint Bartlett covariances need (products of lagged
+pairs `X_t X_{t−i}`, again never a square). -/
+
+/-- **(R2) at four linear forms**, by bilinear polarization of the squared version. -/
+private theorem integral_prod_four_noiseComb [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ)
+    (hε4 : MemLp (ε 0) 4 μ) (c d e f : ℤ → ℝ) (s : Finset ℤ) :
+    ∫ ω, (∑ i ∈ s, c i * ε i ω) * (∑ i ∈ s, d i * ε i ω) *
+        (∑ i ∈ s, e i * ε i ω) * (∑ i ∈ s, f i * ε i ω) ∂μ
+      = ((∫ ω, ε 0 ω ^ 4 ∂μ) - 3 * σ2 ^ 2) * (∑ i ∈ s, c i * d i * e i * f i)
+        + σ2 ^ 2 * ((∑ i ∈ s, c i * d i) * (∑ i ∈ s, e i * f i)
+          + (∑ i ∈ s, c i * e i) * (∑ i ∈ s, d i * f i)
+          + (∑ i ∈ s, c i * f i) * (∑ i ∈ s, d i * e i)) := by
+  classical
+  -- `L u` is the linear form with weights `u`
+  have hL4 : ∀ u : ℤ → ℝ, MemLp (fun ω => ∑ i ∈ s, u i * ε i ω) 4 μ := fun u =>
+    memLp_finset_sum s fun i _ => (hε.memLp_four hε4 i).const_mul (u i)
+  have hInt : ∀ u v w z : ℤ → ℝ, Integrable (fun ω => (∑ i ∈ s, u i * ε i ω) *
+      (∑ i ∈ s, v i * ε i ω) * ((∑ i ∈ s, w i * ε i ω) * (∑ i ∈ s, z i * ε i ω))) μ :=
+    fun u v w z => integrable_mul_of_memLp_two
+      (memLp_two_mul_of_memLp_four (hL4 u) (hL4 v)) (memLp_two_mul_of_memLp_four (hL4 w) (hL4 z))
+  have hIntSq : ∀ u v : ℤ → ℝ, Integrable (fun ω =>
+      (∑ i ∈ s, u i * ε i ω) ^ 2 * (∑ i ∈ s, v i * ε i ω) ^ 2) μ := by
+    intro u v
+    refine (hInt u u v v).congr (Eventually.of_forall fun ω => by ring)
+  -- the four polarized linear forms
+  have hadd : ∀ u v : ℤ → ℝ, ∀ ω, (∑ i ∈ s, (u i + v i) * ε i ω)
+      = (∑ i ∈ s, u i * ε i ω) + (∑ i ∈ s, v i * ε i ω) := by
+    intro u v ω
+    rw [← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun i _ => by ring
+  have hsub : ∀ u v : ℤ → ℝ, ∀ ω, (∑ i ∈ s, (u i - v i) * ε i ω)
+      = (∑ i ∈ s, u i * ε i ω) - (∑ i ∈ s, v i * ε i ω) := by
+    intro u v ω
+    rw [← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun i _ => by ring
+  -- the pointwise polarization identity
+  have hpt : ∀ ω, (16 : ℝ) * ((∑ i ∈ s, c i * ε i ω) * (∑ i ∈ s, d i * ε i ω) *
+      ((∑ i ∈ s, e i * ε i ω) * (∑ i ∈ s, f i * ε i ω)))
+      = (∑ i ∈ s, (c i + d i) * ε i ω) ^ 2 * (∑ i ∈ s, (e i + f i) * ε i ω) ^ 2
+        - (∑ i ∈ s, (c i + d i) * ε i ω) ^ 2 * (∑ i ∈ s, (e i - f i) * ε i ω) ^ 2
+        - (∑ i ∈ s, (c i - d i) * ε i ω) ^ 2 * (∑ i ∈ s, (e i + f i) * ε i ω) ^ 2
+        + (∑ i ∈ s, (c i - d i) * ε i ω) ^ 2 * (∑ i ∈ s, (e i - f i) * ε i ω) ^ 2 := by
+    intro ω
+    rw [hadd c d ω, hadd e f ω, hsub c d ω, hsub e f ω]
+    ring
+  -- integrate the identity
+  have hint16 : (16 : ℝ) * ∫ ω, (∑ i ∈ s, c i * ε i ω) * (∑ i ∈ s, d i * ε i ω) *
+      ((∑ i ∈ s, e i * ε i ω) * (∑ i ∈ s, f i * ε i ω)) ∂μ
+      = (∫ ω, (∑ i ∈ s, (c i + d i) * ε i ω) ^ 2 * (∑ i ∈ s, (e i + f i) * ε i ω) ^ 2 ∂μ)
+        - (∫ ω, (∑ i ∈ s, (c i + d i) * ε i ω) ^ 2 * (∑ i ∈ s, (e i - f i) * ε i ω) ^ 2 ∂μ)
+        - (∫ ω, (∑ i ∈ s, (c i - d i) * ε i ω) ^ 2 * (∑ i ∈ s, (e i + f i) * ε i ω) ^ 2 ∂μ)
+        + (∫ ω, (∑ i ∈ s, (c i - d i) * ε i ω) ^ 2 * (∑ i ∈ s, (e i - f i) * ε i ω) ^ 2 ∂μ) := by
+    have h0 : (16 : ℝ) * ∫ ω, (∑ i ∈ s, c i * ε i ω) * (∑ i ∈ s, d i * ε i ω) *
+        ((∑ i ∈ s, e i * ε i ω) * (∑ i ∈ s, f i * ε i ω)) ∂μ
+        = ∫ ω, (16 : ℝ) * ((∑ i ∈ s, c i * ε i ω) * (∑ i ∈ s, d i * ε i ω) *
+          ((∑ i ∈ s, e i * ε i ω) * (∑ i ∈ s, f i * ε i ω))) ∂μ :=
+      (integral_const_mul _ _).symm
+    have hquad : ∀ A B C D : Ω → ℝ, Integrable A μ → Integrable B μ → Integrable C μ →
+        Integrable D μ → ∫ ω, (A ω - B ω - C ω + D ω) ∂μ
+          = (∫ ω, A ω ∂μ) - (∫ ω, B ω ∂μ) - (∫ ω, C ω ∂μ) + (∫ ω, D ω ∂μ) := by
+      intro A B C D hA hB hC hD
+      have iAB : Integrable (fun ω => A ω - B ω) μ := hA.sub hB
+      have iABC : Integrable (fun ω => A ω - B ω - C ω) μ := iAB.sub hC
+      rw [integral_add iABC hD, integral_sub iAB hC, integral_sub hA hB]
+    rw [h0, integral_congr_ae (Eventually.of_forall hpt),
+      hquad _ _ _ _ (hIntSq _ _) (hIntSq _ _) (hIntSq _ _) (hIntSq _ _)]
+  rw [integral_sq_mul_sq_noiseComb hε hε4 (fun i => c i + d i) (fun i => e i + f i) s,
+    integral_sq_mul_sq_noiseComb hε hε4 (fun i => c i + d i) (fun i => e i - f i) s,
+    integral_sq_mul_sq_noiseComb hε hε4 (fun i => c i - d i) (fun i => e i + f i) s,
+    integral_sq_mul_sq_noiseComb hε hε4 (fun i => c i - d i) (fun i => e i - f i) s] at hint16
+  -- the four polarized weight vectors, in terms of the ten basic sums
+  have hsqA : ∀ u v : ℤ → ℝ, ∑ i ∈ s, (u i + v i) ^ 2
+      = (∑ i ∈ s, u i ^ 2) + (∑ i ∈ s, v i ^ 2) + 2 * ∑ i ∈ s, u i * v i := by
+    intro u v
+    have h : ∀ i, (u i + v i) ^ 2 = u i ^ 2 + v i ^ 2 + 2 * (u i * v i) := fun i => by ring
+    simp only [h, Finset.sum_add_distrib, ← Finset.mul_sum]
+  have hsqS : ∀ u v : ℤ → ℝ, ∑ i ∈ s, (u i - v i) ^ 2
+      = (∑ i ∈ s, u i ^ 2) + (∑ i ∈ s, v i ^ 2) - 2 * ∑ i ∈ s, u i * v i := by
+    intro u v
+    have h : ∀ i, (u i - v i) ^ 2 = u i ^ 2 + v i ^ 2 - 2 * (u i * v i) := fun i => by ring
+    simp only [h, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum]
+  have hcr : ∀ (u v w z : ℤ → ℝ), ∑ i ∈ s, (u i + v i) * (w i + z i)
+      = (∑ i ∈ s, u i * w i) + (∑ i ∈ s, u i * z i)
+        + (∑ i ∈ s, v i * w i) + (∑ i ∈ s, v i * z i) := by
+    intro u v w z
+    have h : ∀ i, (u i + v i) * (w i + z i)
+        = u i * w i + u i * z i + (v i * w i + v i * z i) := fun i => by ring
+    simp only [h, Finset.sum_add_distrib]
+    ring
+  have hcr2 : ∀ (u v w z : ℤ → ℝ), ∑ i ∈ s, (u i + v i) * (w i - z i)
+      = (∑ i ∈ s, u i * w i) - (∑ i ∈ s, u i * z i)
+        + (∑ i ∈ s, v i * w i) - (∑ i ∈ s, v i * z i) := by
+    intro u v w z
+    have h : ∀ i, (u i + v i) * (w i - z i)
+        = u i * w i - u i * z i + (v i * w i - v i * z i) := fun i => by ring
+    simp only [h, Finset.sum_sub_distrib, Finset.sum_add_distrib]
+    ring
+  have hcr3 : ∀ (u v w z : ℤ → ℝ), ∑ i ∈ s, (u i - v i) * (w i + z i)
+      = (∑ i ∈ s, u i * w i) + (∑ i ∈ s, u i * z i)
+        - (∑ i ∈ s, v i * w i) - (∑ i ∈ s, v i * z i) := by
+    intro u v w z
+    have h : ∀ i, (u i - v i) * (w i + z i)
+        = u i * w i + u i * z i - (v i * w i + v i * z i) := fun i => by ring
+    simp only [h, Finset.sum_add_distrib, Finset.sum_sub_distrib]
+    ring
+  have hcr4 : ∀ (u v w z : ℤ → ℝ), ∑ i ∈ s, (u i - v i) * (w i - z i)
+      = (∑ i ∈ s, u i * w i) - (∑ i ∈ s, u i * z i)
+        - (∑ i ∈ s, v i * w i) + (∑ i ∈ s, v i * z i) := by
+    intro u v w z
+    have h : ∀ i, (u i - v i) * (w i - z i)
+        = u i * w i - u i * z i - (v i * w i - v i * z i) := fun i => by ring
+    simp only [h, Finset.sum_sub_distrib]
+    ring
+  -- the diagonal (`η`) block collapses to `16 Σ c d e f`
+  have hdiag : (∑ i ∈ s, (c i + d i) ^ 2 * (e i + f i) ^ 2)
+      - (∑ i ∈ s, (c i + d i) ^ 2 * (e i - f i) ^ 2)
+      - (∑ i ∈ s, (c i - d i) ^ 2 * (e i + f i) ^ 2)
+      + (∑ i ∈ s, (c i - d i) ^ 2 * (e i - f i) ^ 2)
+      = 16 * ∑ i ∈ s, c i * d i * e i * f i := by
+    have h := Finset.sum_congr (rfl : s = s) fun i (_ : i ∈ s) => (by ring :
+      (c i + d i) ^ 2 * (e i + f i) ^ 2 - (c i + d i) ^ 2 * (e i - f i) ^ 2
+        - (c i - d i) ^ 2 * (e i + f i) ^ 2 + (c i - d i) ^ 2 * (e i - f i) ^ 2
+        = 16 * (c i * d i * e i * f i))
+    simpa only [Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum] using h
+  simp only [hsqA, hsqS, hcr, hcr2, hcr3, hcr4] at hint16
+  have hgoal : ∫ ω, (∑ i ∈ s, c i * ε i ω) * (∑ i ∈ s, d i * ε i ω) *
+      (∑ i ∈ s, e i * ε i ω) * (∑ i ∈ s, f i * ε i ω) ∂μ
+      = ∫ ω, (∑ i ∈ s, c i * ε i ω) * (∑ i ∈ s, d i * ε i ω) *
+        ((∑ i ∈ s, e i * ε i ω) * (∑ i ∈ s, f i * ε i ω)) ∂μ :=
+    integral_congr_ae (Eventually.of_forall fun ω => by ring)
+  rw [hgoal]
+  linear_combination hint16 / 16 + ((∫ ω, ε 0 ω ^ 4 ∂μ) - 3 * σ2 ^ 2) / 16 * hdiag
+
+
+/-- **(R2) at four linear forms, covariance form** — the Isserlis/Wick formula with the
+fourth-cumulant correction on the diagonal. -/
+private theorem cov_prod_noiseComb [IsProbabilityMeasure μ] (hε : IsIIDNoise ε σ2 μ)
+    (hε4 : MemLp (ε 0) 4 μ) (c d e f : ℤ → ℝ) (s : Finset ℤ) :
+    cov[fun ω => (∑ i ∈ s, c i * ε i ω) * (∑ i ∈ s, d i * ε i ω),
+        fun ω => (∑ i ∈ s, e i * ε i ω) * (∑ i ∈ s, f i * ε i ω); μ]
+      = ((∫ ω, ε 0 ω ^ 4 ∂μ) - 3 * σ2 ^ 2) * (∑ i ∈ s, c i * d i * e i * f i)
+        + σ2 ^ 2 * ((∑ i ∈ s, c i * e i) * (∑ i ∈ s, d i * f i)
+          + (∑ i ∈ s, c i * f i) * (∑ i ∈ s, d i * e i)) := by
+  have hL4 : ∀ u : ℤ → ℝ, MemLp (fun ω => ∑ i ∈ s, u i * ε i ω) 4 μ := fun u =>
+    memLp_finset_sum s fun i _ => (hε.memLp_four hε4 i).const_mul (u i)
+  rw [covariance_eq_sub (memLp_two_mul_of_memLp_four (hL4 c) (hL4 d))
+    (memLp_two_mul_of_memLp_four (hL4 e) (hL4 f))]
+  have hprod : ∫ ω, ((fun ω => (∑ i ∈ s, c i * ε i ω) * (∑ i ∈ s, d i * ε i ω)) *
+      (fun ω => (∑ i ∈ s, e i * ε i ω) * (∑ i ∈ s, f i * ε i ω))) ω ∂μ
+      = ∫ ω, (∑ i ∈ s, c i * ε i ω) * (∑ i ∈ s, d i * ε i ω) *
+        (∑ i ∈ s, e i * ε i ω) * (∑ i ∈ s, f i * ε i ω) ∂μ :=
+    integral_congr_ae (Eventually.of_forall fun ω => by simp only [Pi.mul_apply]; ring)
+  rw [hprod, integral_prod_four_noiseComb hε hε4 c d e f s,
+    integral_noiseComb_mul hε c d s, integral_noiseComb_mul hε e f s]
   ring
 
 end FourthMoment
