@@ -44,3 +44,4 @@
 + '[' comp/r1-partitioning '!=' comp/r1-partitioning ']'
 + cat .claude/prompts/compr1-_common.md .claude/prompts/compr1-partitioning.md
 + claude -p --dangerously-skip-permissions
++ git add -A
