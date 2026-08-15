@@ -53,12 +53,17 @@ theorem hasInfluenceAt_iff_hasDerivWithinAt {T : Measure Ω → ℝ} {P : Measur
     HasInfluenceAt T P x v ↔
       HasDerivWithinAt (fun t : ℝ => T (contaminate P (Measure.dirac x) t)) v
         (Set.Ici 0) 0 := by
-  sorry
+  rw [hasDerivWithinAt_iff_tendsto_slope, Set.Ici_diff_left]
+  have hslope : slope (fun t : ℝ => T (contaminate P (Measure.dirac x) t)) 0 =
+      fun t : ℝ => (T (contaminate P (Measure.dirac x) t) - T P) / t := by
+    funext t
+    rw [slope_def_field, contaminate_zero, sub_zero]
+  rw [HasInfluenceAt, ← hslope]
 
 /-- Influence values are unique. -/
 theorem HasInfluenceAt.unique {T : Measure Ω → ℝ} {P : Measure Ω} {x : Ω} {v w : ℝ}
-    (hv : HasInfluenceAt T P x v) (hw : HasInfluenceAt T P x w) : v = w := by
-  sorry
+    (hv : HasInfluenceAt T P x v) (hw : HasInfluenceAt T P x w) : v = w :=
+  tendsto_nhds_unique hv hw
 
 /-- **Influence function** (`MMY §3.1`): `IF` records the influence value of `T` at `P`
 for every contamination point. -/
@@ -72,10 +77,11 @@ is empty (real-`iSup` convention); the boundedness theorems are stated as explic
 noncomputable def grossErrorSensitivity (IF : Ω → ℝ) : ℝ :=
   ⨆ x : Ω, |IF x|
 
+omit [MeasurableSpace Ω] in
 /-- The gross-error sensitivity is the least upper bound: any pointwise bound on `|IF|`
 bounds `γ*` (`MMY §3.3`). -/
 theorem grossErrorSensitivity_le [Nonempty Ω] {IF : Ω → ℝ} {c : ℝ}
-    (h : ∀ x, |IF x| ≤ c) : grossErrorSensitivity IF ≤ c := by
-  sorry
+    (h : ∀ x, |IF x| ≤ c) : grossErrorSensitivity IF ≤ c :=
+  ciSup_le h
 
 end StatLean.RobustStatistics
