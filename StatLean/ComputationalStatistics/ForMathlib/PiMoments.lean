@@ -125,7 +125,7 @@ theorem integral_sq_dev_avg_eval_pi [NeZero n]
 /-- **Strong law for coordinate averages** (ECS §2.2, p. 53): on the canonical
 sequence space, the running averages of `g` over the coordinates converge to
 `∫ g dP` almost surely. -/
-theorem tendsto_avg_eval_infinitePi
+theorem tendsto_avg_eval_infinitePi {g : 𝓧 → ℝ}
     -- USER-INPUT: the integrand has a finite first moment; ECS §2.2
     (hg : Integrable g P)
     -- LEAN-ONLY: measurability of the integrand (regularity)

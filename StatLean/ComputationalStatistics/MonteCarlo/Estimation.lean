@@ -72,7 +72,7 @@ theorem mcEstimate_mse [NeZero n]
 
 /-- **Strong consistency of the Monte Carlo estimator** (ECS §2.2, p. 53):
 along the canonical i.i.d. sequence, `Îₙ → ∫ g dP` almost surely. -/
-theorem mcEstimate_consistent_ae
+theorem mcEstimate_consistent_ae {g : 𝓧 → ℝ}
     -- USER-INPUT: the integrand has a finite first moment; ECS §2.2
     (hg : Integrable g P)
     -- LEAN-ONLY: measurability of the integrand (regularity)
