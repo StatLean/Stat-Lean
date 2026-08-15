@@ -116,31 +116,25 @@ theorem huberPsi_tendsto_atBot (c : ℝ) : Tendsto (huberPsi c) atBot (𝓝 (-c)
   unfold huberPsi
   rw [max_eq_left ((min_le_right c u).trans hu)]
 
-/-- The Huber score tends to `c` at `+∞`, for a nonnegative clipping constant (the upper
-clamp; `MMY §3.2.1`, `k₂ = ψ(∞)`).
+/-- The Huber score tends to `c` at `+∞` (the upper clamp; `MMY §3.2.1`, `k₂ = ψ(∞)`).
 
-This is the repaired form of `huberPsi_tendsto_atTop` below, which is stated without the
-hypothesis `0 ≤ c` and is *false* for `c < 0`; see the note there. -/
-theorem huberPsi_tendsto_atTop_of_nonneg {c : ℝ} (hc : 0 ≤ c) :
+**Statement repair (2026-08-15).** The hypothesis `0 ≤ c` is *not* optional: the original
+stub asserted the limit for every real `c`, which is false for `c < 0`. There
+`min c u ≤ c < 0 < -c`, so `huberPsi c` is the *constant* `-c` and tends to `-c ≠ c`; the
+refutation at `c = -1` is machine-checked immediately below. Since `MMY §2.2` only ever
+uses a positive clipping constant, adding `0 ≤ c` restores the book's statement rather
+than weakening it. The companion limit `huberPsi_tendsto_atBot` needs no such repair: for
+`c < 0` the constant value `-c` *is* the claimed limit there. -/
+theorem huberPsi_tendsto_atTop {c : ℝ} (hc : 0 ≤ c) :
     Tendsto (huberPsi c) atTop (𝓝 c) := by
   refine Filter.Tendsto.congr' ?_ (tendsto_const_nhds (x := c) (f := atTop))
   filter_upwards [eventually_ge_atTop c] with u hu
   unfold huberPsi
   rw [min_eq_left hu, max_eq_right (by linarith)]
 
-/-- The Huber score tends to `c` at `+∞` (the upper clamp; `MMY §3.2.1`,
-`k₂ = ψ(∞)`).
-
-**FALSE AS FROZEN — named debt.** The statement omits the standing hypothesis `0 ≤ c`.
-For `c < 0` one has `min c u ≤ c < 0 < -c`, so `huberPsi c` is the *constant* `-c`, hence
-tends to `-c ≠ c`. Explicit witness: `c = -1`, `huberPsi (-1) u = max 1 (min (-1) u) = 1`
-for every `u`, while the claimed limit is `-1`. The repaired statement, with the missing
-hypothesis, is `huberPsi_tendsto_atTop_of_nonneg` above and is proved there. -/
-theorem huberPsi_tendsto_atTop (c : ℝ) : Tendsto (huberPsi c) atTop (𝓝 c) := by
-  sorry
-
-/-- Machine-checked refutation of the statement above at `c = -1`: the score is the
-constant `1` there, so it does not tend to `-1`. -/
+/-- Machine-checked refutation of the *unrepaired* form of the statement above at
+`c = -1`: the score is the constant `1` there, so it does not tend to `-1`. This is the
+witness that forced the `0 ≤ c` hypothesis. -/
 example : ¬ Tendsto (huberPsi (-1 : ℝ)) atTop (𝓝 (-1)) := by
   intro h
   have hconst : huberPsi (-1 : ℝ) = fun _ => (1 : ℝ) := by
