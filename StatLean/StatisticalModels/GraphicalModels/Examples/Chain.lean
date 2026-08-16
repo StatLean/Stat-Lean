@@ -74,13 +74,14 @@ rewritten along `chain_sdiff_pair_eq_middle`. The negative statement
 `chainWalk : chainGraph.Walk 0 2`.
 
 *Reuse (binding).* Nothing graph-theoretic or probabilistic is re-proved. `Separates`,
-`separates_sdiff_pair`, `IsGlobalMarkov`, `IsLocalMarkov` and `IsPairwiseMarkov` are consumed
-from `Core.Separation` / `Undirected.Markov`; `Walk`, `Walk.support`, `neighborFinset`,
-`pathGraph` and the `Finset` algebra are Mathlib's.
+`separates_sdiff_pair`, `IsGlobalMarkov` and `IsLocalMarkov` are consumed from
+`Core.Separation` / `Undirected.Markov` (in particular `chain_separates_middle` is **not** an
+independent walk induction — it is `separates_sdiff_pair` specialised); `Walk`, `Walk.cons`,
+`Walk.support`, `neighborFinset`, `pathGraph` and the `Finset` algebra are Mathlib's.
 
 **Bibliographic comments.** The chain, the fork and the collider are the three elementary
 "connection types" of J. Pearl, *Probabilistic Reasoning in Intelligent Systems*, Morgan
-Kaufmann, 1988, §3.3 — serial, diverging and converging connections — whose different
+Kaufmann, 1988, ch. 3 — serial, diverging and converging connections — whose different
 conditioning behaviour is the whole content of d-separation. The undirected chain, where only
 the serial/diverging behaviour is visible, is the standard first example in every treatment of
 Markov random fields, going back to J. Besag, "Spatial interaction and the statistical analysis
@@ -183,9 +184,9 @@ remaining vertex `{1}` and be disjoint from each other, so one of them is empty 
 instance is vacuous. This is the precise sense in which `{0, 2}` "separates nothing relevant":
 not that separation fails, but that there is no admissible pair of blocks to separate.
 
-Route: `Finset.disjoint_right`/`Finset.subset_iff` give `A ⊆ {1}` and `B ⊆ {1}` from the two
-disjointness hypotheses; `Finset.subset_singleton_iff` then leaves four cases, of which
-`A = B = {1}` contradicts `hAB` by `Finset.singleton_disjoint`. -/
+Route: `Finset.disjoint_left` plus `Finset.subset_iff` and a `decide` on the three vertices give
+`A ⊆ {1}` and `B ⊆ {1}`; `Finset.subset_singleton_iff` then leaves four cases, of which the only
+non-trivial one, `A = B = {1}`, contradicts `hAB` by `Finset.disjoint_singleton`. -/
 theorem chain_ends_no_admissible_blocks {A B : Finset (Fin 3)}
     -- USER-INPUT: `A` is disjoint from the separator; Lauritzen §3.2 (G), p. 32
     (hA : Disjoint A ({0, 2} : Finset (Fin 3)))
