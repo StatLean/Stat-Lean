@@ -275,7 +275,51 @@ theorem huberLocation_influence {P : Measure ℝ} [IsProbabilityMeasure P] {c : 
     -- USER-INPUT: the central region has positive mass (B ≠ 0); MMY Thm 10.7
     (hmass : 0 < P.real {x | |x - θ₀| < c}) :
     d = huberPsi c (x₀ - θ₀) / P.real {x | |x - θ₀| < c} := by
-  sorry
+  classical
+  -- The central region, and the a.e. derivative of the clipped score along shifted data.
+  have hSmeas : MeasurableSet {x : ℝ | |x - θ₀| < c} :=
+    measurableSet_lt ((continuous_id.sub continuous_const).abs).measurable measurable_const
+  -- `|ψ_c| ≤ c`, so the score is integrable against the probability measure `P`.
+  have hint : Integrable (fun x => huberPsi c (x - θ₀)) P := by
+    refine Integrable.mono' (integrable_const c)
+      ((huberPsi_continuous c).comp (continuous_id.sub continuous_const)).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => ?_)
+    simpa [Real.norm_eq_abs] using abs_huberPsi_le hc.le (x - θ₀)
+  -- Off the two knots `θ₀ ± c` the Huber score is locally the identity or locally constant.
+  have hae : ∀ᵐ x ∂P, HasDerivAt (huberPsi c)
+      (Set.indicator {x : ℝ | |x - θ₀| < c} 1 x) (x - θ₀) := by
+    have hnull : P ({θ₀ + c} ∪ {θ₀ - c}) = 0 := measure_union_null h_atom_add h_atom_sub
+    filter_upwards [compl_mem_ae_iff.mpr hnull] with x hx
+    have habs : |x - θ₀| ≠ c := by
+      intro h
+      rcases (abs_eq hc.le).mp h with h1 | h1
+      · exact hx (Or.inl (by simp only [Set.mem_singleton_iff]; linarith))
+      · exact hx (Or.inr (by simp only [Set.mem_singleton_iff]; linarith))
+    rcases lt_or_gt_of_ne habs with hlt | hgt
+    · -- Interior of the linear branch: `ψ_c` agrees with the identity near `x - θ₀`.
+      have hmem : x ∈ {x : ℝ | |x - θ₀| < c} := hlt
+      rw [Set.indicator_of_mem hmem, Pi.one_apply]
+      refine (hasDerivAt_id (x - θ₀)).congr_of_eventuallyEq ?_
+      filter_upwards [(isOpen_lt continuous_abs continuous_const).mem_nhds hlt] with u hu
+      exact huberPsi_of_abs_le hc.le (le_of_lt hu)
+    · -- Clipped branch: `ψ_c` is locally the constant `±c`.
+      have hnmem : x ∉ {x : ℝ | |x - θ₀| < c} := not_lt.mpr hgt.le
+      rw [Set.indicator_of_notMem hnmem]
+      rcases lt_abs.mp hgt with h1 | h1
+      · refine (hasDerivAt_const (x - θ₀) c).congr_of_eventuallyEq ?_
+        filter_upwards [Ioi_mem_nhds h1] with u hu
+        have hu' : c < u := hu
+        rw [huberPsi, min_eq_left hu'.le, max_eq_right (by linarith : -c ≤ c)]
+      · refine (hasDerivAt_const (x - θ₀) (-c)).congr_of_eventuallyEq ?_
+        filter_upwards [Iio_mem_nhds (by linarith : x - θ₀ < -c)] with u hu
+        have hu' : u < -c := hu
+        rw [huberPsi, min_eq_right (by linarith : u ≤ c), max_eq_left (by linarith : u ≤ -c)]
+  -- The denominator is the mass of the central region.
+  have hA : P.real {x : ℝ | |x - θ₀| < c}
+      = ∫ x, Set.indicator {x : ℝ | |x - θ₀| < c} 1 x ∂P :=
+    (integral_indicator_one hSmeas).symm
+  exact mLocationRoot_influence_of_lipschitz (huberPsi_lipschitz c) hint hae
+    (measurable_one.indicator hSmeas).aestronglyMeasurable hroot hθ0 hθd hA hmass.ne'
 
 /-- **The Huber location functional has bounded influence** (`MMY §3.3`): the influence
 value at any contamination point is bounded by `c / P(|x - θ₀| < c)`. Contrast with the
@@ -289,6 +333,9 @@ theorem huberLocation_influence_bounded {P : Measure ℝ} [IsProbabilityMeasure 
     (hθd : HasDerivWithinAt θ d (Set.Ici 0) 0)
     (hmass : 0 < P.real {x | |x - θ₀| < c}) :
     |d| ≤ c / P.real {x | |x - θ₀| < c} := by
-  sorry
+  rw [huberLocation_influence hc h_atom_add h_atom_sub hroot hθ0 hθd hmass]
+  have hbd := mLocation_influence_bounded (ψ := huberPsi c) (c := c)
+    (A := P.real {x | |x - θ₀| < c}) (u := x₀ - θ₀) (abs_huberPsi_le hc.le) hmass.ne'
+  rwa [abs_of_pos hmass] at hbd
 
 end StatLean.RobustStatistics
