@@ -31,14 +31,17 @@ later lane.
   `globalMarkov_implies_pairwiseMarkov` — Proposition 3.4;
 * `pairwiseMarkov_implies_globalMarkov_of_nonempty` — Theorem 3.7 (Pearl–Paz), proved by the
   book's downward induction on the separator;
-* `pairwiseMarkov_implies_globalMarkov`, `markov_tfae` — Theorem 3.7 as frozen over *all*
-  disjoint triples. **Both are false**, and deliberately keep their `sorry`:
-  `not_forall_pairwiseMarkov_implies_globalMarkov` and `not_forall_markov_tfae` are
-  machine-checked counterexamples. The gap is the empty-block regime only — `IsGlobalMarkov`
-  demands `ci ∅ ∅ ∅` of every instance (via `separates_empty_left`) whereas `IsPairwiseMarkov`
-  says nothing about empty blocks, and every semi-graphoid axiom is a `ci → ci` implication, so
-  the empty relation `ci ≡ False` is a graphoid satisfying (P) but not (G). Lauritzen's own
-  blocks are nonempty, which is why the book is unaffected.
+* `markov_tfae_of_nonempty` — Theorem 3.7 as a cycle, each property read on nonempty blocks.
+  The frozen `pairwiseMarkov_implies_globalMarkov` and `markov_tfae`, which quantified over
+  *all* disjoint triples, were **false** and have been **deleted**;
+  `not_forall_pairwiseMarkov_implies_globalMarkov` and `not_forall_markov_tfae` are the
+  machine-checked counterexamples, kept. The gap is the empty-block regime only —
+  `IsGlobalMarkov` demands `ci ∅ ∅ ∅` of every instance (via `separates_empty_left`) whereas
+  `IsPairwiseMarkov` says nothing about empty blocks, and every semi-graphoid axiom is a
+  `ci → ci` implication, so the empty relation `ci ≡ False` is a graphoid satisfying (P) but not
+  (G). Lauritzen's own blocks are nonempty, which is why the book is unaffected; a model class
+  whose relation *does* hold at empty blocks (as the Gaussian's does) recovers the full
+  `IsGlobalMarkov` by supplying those cases directly.
 
 **Why an abstract `ci`.** This is the book's own observation. Lauritzen remarks immediately
 after Proposition 3.4 (p. 33) that the implications (G) ⇒ (L) ⇒ (P) "only depend on the
@@ -295,21 +298,29 @@ theorem globalMarkov_implies_localMarkov [DecidableRel G.Adj]
       (disjoint_closedNeighborhood_sdiff G v)).symm)
     (separates_neighborFinset G v)
 
-/-- **(L) ⇒ (P)** (Lauritzen Proposition 3.4, p. 32, eq. (3.9)). The one step that needs the
-calculus: weak union (C3) applied at `A = {i}`, `B = {j}`, `C = ne(i)`,
-`D = V ∖ ({i, j} ∪ ne(i))`, using `sdiff_closedNeighborhood_eq_union_far` to present the
-"rest" block of (L) as `{j} ∪ D` and `neighborFinset_union_far_eq_sdiff_pair` to recognise
-`ne(i) ∪ D` as `V ∖ {i, j}`. The pairwise disjointness that (C3) demands of its blocks is
-supplied by `Finset.disjoint_singleton` (from `i ≠ j`),
-`SimpleGraph.singleton_disjoint_neighborFinset` (looplessness),
+/-- **(L) ⇒ (P), with (L) used only where the "rest" block is nonempty** (Lauritzen
+Proposition 3.4, p. 32, eq. (3.9)). The one step that needs the calculus: weak union (C3)
+applied at `A = {i}`, `B = {j}`, `C = ne(i)`, `D = V ∖ ({i, j} ∪ ne(i))`, using
+`sdiff_closedNeighborhood_eq_union_far` to present the "rest" block of (L) as `{j} ∪ D` and
+`neighborFinset_union_far_eq_sdiff_pair` to recognise `ne(i) ∪ D` as `V ∖ {i, j}`. The pairwise
+disjointness that (C3) demands of its blocks is supplied by `Finset.disjoint_singleton` (from
+`i ≠ j`), `SimpleGraph.singleton_disjoint_neighborFinset` (looplessness),
 `disjoint_singleton_neighborFinset_of_not_adj` (non-adjacency) and
-`disjoint_pairNeighborhood_sdiff`. -/
-theorem localMarkov_implies_pairwiseMarkov [DecidableRel G.Adj]
+`disjoint_pairNeighborhood_sdiff`.
+
+The nonemptiness side condition on the hypothesis is **free at the point of use**: the rest
+block `V ∖ cl(i)` is presented as `{j} ∪ D`, so it contains `j`. It is stated this way only so
+that `markov_tfae_of_nonempty` — whose (L) is restricted to non-dominating vertices, the
+empty-block regime being refuted by `not_forall_markov_tfae` — can consume it;
+`localMarkov_implies_pairwiseMarkov` is the corollary at the unrestricted (L). -/
+theorem localMarkovNonempty_implies_pairwiseMarkov [DecidableRel G.Adj]
     -- USER-INPUT: the ambient conditional-independence calculus; Lauritzen §3.1 (C1)–(C4),
     -- p. 29, abstracted per the remark after Proposition 3.4, p. 33
     (hci : IsSemigraphoid ci)
-    -- USER-INPUT: the local Markov property of the law; Lauritzen §3.2 (L), p. 32
-    (h : IsLocalMarkov G ci) :
+    -- USER-INPUT: the local Markov property of the law, at every vertex that does not dominate
+    -- the graph; Lauritzen §3.2 (L), p. 32
+    (h : ∀ v : V, (Finset.univ \ insert v (G.neighborFinset v)).Nonempty →
+      ci {v} (Finset.univ \ insert v (G.neighborFinset v)) (G.neighborFinset v)) :
     IsPairwiseMarkov G ci := by
   intro i j hij hadj
   -- the "far" block `D = V ∖ ({i, j} ∪ ne(i))`
@@ -326,13 +337,28 @@ theorem localMarkov_implies_pairwiseMarkov [DecidableRel G.Adj]
       hfar
   have hnD : Disjoint (G.neighborFinset i) D :=
     Finset.disjoint_of_subset_left Finset.subset_union_right hfar
+  -- the rest block of (L) at `i` is `{j} ∪ D`, and in particular it contains `j`
+  have hrest : Finset.univ \ insert i (G.neighborFinset i) = {j} ∪ D :=
+    sdiff_closedNeighborhood_eq_union_far G i j hij hadj
   have hstart : ci {i} ({j} ∪ D) (G.neighborFinset i) := by
-    have := h i
-    rwa [sdiff_closedNeighborhood_eq_union_far G i j hij hadj] at this
+    have := h i (by rw [hrest]; exact ⟨j, Finset.mem_union_left _ (Finset.mem_singleton_self j)⟩)
+    rwa [hrest] at this
   have := hci.weakUnion (Finset.disjoint_singleton.mpr hij)
     (G.singleton_disjoint_neighborFinset i) hiD
     (disjoint_singleton_neighborFinset_of_not_adj G i j hadj) hjD hnD hstart
   rwa [neighborFinset_union_far_eq_sdiff_pair G i j hadj] at this
+
+/-- **(L) ⇒ (P)** (Lauritzen Proposition 3.4, p. 32, eq. (3.9)) — the corollary of
+`localMarkovNonempty_implies_pairwiseMarkov` at the unrestricted local Markov property, where
+the nonemptiness side condition is discharged by ignoring it. -/
+theorem localMarkov_implies_pairwiseMarkov [DecidableRel G.Adj]
+    -- USER-INPUT: the ambient conditional-independence calculus; Lauritzen §3.1 (C1)–(C4),
+    -- p. 29, abstracted per the remark after Proposition 3.4, p. 33
+    (hci : IsSemigraphoid ci)
+    -- USER-INPUT: the local Markov property of the law; Lauritzen §3.2 (L), p. 32
+    (h : IsLocalMarkov G ci) :
+    IsPairwiseMarkov G ci :=
+  localMarkovNonempty_implies_pairwiseMarkov G hci fun v _ => h v
 
 /-- **(G) ⇒ (P)** (Lauritzen Proposition 3.4, p. 32). Stated **without** any property of `ci`:
 `separates_sdiff_pair` gives the separation directly, so the composite route through (L) —
@@ -623,39 +649,78 @@ theorem not_forall_markov_tfae :
   refine not_forall_pairwiseMarkov_implies_globalMarkov fun c hc hP => ?_
   exact ((hcontra c hc).out 2 0).mp hP
 
-/-- **(P) ⇒ (G) under the intersection property** — Lauritzen **Theorem 3.7** (p. 34),
-credited to Pearl and Paz; condition (3.10) of the book is exactly `IsGraphoid.intersection`.
+/-! ### Theorem 3.7 over *all* blocks — deleted, and why
 
-**FALSE as frozen; the `sorry` is deliberate.** See
-`not_forall_pairwiseMarkov_implies_globalMarkov` for a machine-checked counterexample
-(`V = Fin 1`, `G = ⊥`, `ci ≡ False`): `IsGlobalMarkov` demands `ci ∅ ∅ ∅` of every instance
-while `IsPairwiseMarkov` is vacuous, and the graphoid axioms — all of them `ci → ci`
-implications — cannot bridge that gap. The mathematical content of Theorem 3.7 *is* proved,
-on the book's own nonempty blocks, in `pairwiseMarkov_implies_globalMarkov_of_nonempty`. -/
-theorem pairwiseMarkov_implies_globalMarkov
-    -- USER-INPUT: the ambient calculus *with* intersection; Lauritzen §3.1 (C5), p. 30, and
-    -- condition (3.10), p. 34
-    (hci : IsGraphoid ci)
-    -- USER-INPUT: the pairwise Markov property of the law; Lauritzen §3.2 (P), p. 32
-    (h : IsPairwiseMarkov G ci) :
-    IsGlobalMarkov G ci := by
-  sorry
+There used to be two more declarations here, both carrying a `sorry`:
 
-/-- **The three Markov properties coincide over a graphoid** — Lauritzen **Theorem 3.7**
-(p. 34, Pearl and Paz). Proposition 3.4 gives the forward implications for any semi-graphoid;
-`pairwiseMarkov_implies_globalMarkov` closes the cycle under (C5).
+```
+theorem pairwiseMarkov_implies_globalMarkov (hci : IsGraphoid ci) (h : IsPairwiseMarkov G ci) :
+    IsGlobalMarkov G ci
 
-**FALSE as frozen; the `sorry` is deliberate.** It contains (P) ⇒ (G), which fails — see
-`not_forall_markov_tfae` for the machine-checked counterexample and
-`pairwiseMarkov_implies_globalMarkov` for the analysis. The two forward implications it also
-contains, (G) ⇒ (L) and (L) ⇒ (P), *are* proved above; once `IsGlobalMarkov` is repaired in the
-empty-block regime this becomes those two plus
-`pairwiseMarkov_implies_globalMarkov_of_nonempty`, and carries no debt of its own. -/
-theorem markov_tfae [DecidableRel G.Adj]
+theorem markov_tfae [DecidableRel G.Adj] (hci : IsGraphoid ci) :
+    [IsGlobalMarkov G ci, IsLocalMarkov G ci, IsPairwiseMarkov G ci].TFAE
+```
+
+**Both are false, and have been deleted rather than left `sorry`ed** — a `sorry` on a statement
+known to be false is indistinguishable, in any census, from honest unfinished work. The
+refutations are machine-checked and are kept above:
+`not_forall_pairwiseMarkov_implies_globalMarkov` and `not_forall_markov_tfae`, both witnessed by
+`V = Fin 1`, `G = ⊥`, `ci ≡ False`.
+
+*Where the gap is, and where it is not.* `IsGlobalMarkov` demands `ci ∅ ∅ ∅` of every instance
+(`separates_empty_left` gives `Separates G ∅ ∅ ∅`, and the three `Disjoint` obligations are
+trivial at `∅`), whereas `IsPairwiseMarkov` says nothing whatever about empty blocks and every
+semi-graphoid axiom is a `ci → ci` implication — so the empty relation is a graphoid satisfying
+(P) but not (G). The gap is **only** the empty-block regime: Lauritzen's own blocks are
+nonempty, and the whole mathematical content of Theorem 3.7 is proved above in
+`pairwiseMarkov_implies_globalMarkov_of_nonempty`. The two forward implications that
+`markov_tfae` also contained, (G) ⇒ (L) and (L) ⇒ (P), are `globalMarkov_implies_localMarkov`
+and `localMarkov_implies_pairwiseMarkov`, likewise proved above.
+
+*The replacements.* `markov_tfae_of_nonempty` below is the cycle over the three properties each
+read on nonempty blocks — no extra hypotheses, and the three implications are the three
+theorems just named. A model class that can also discharge the degenerate blocks directly (the
+Gaussian can: see `Core.Coordinates.CondIndepCoords.of_isEmpty_left`) gets the full
+`IsGlobalMarkov` by combining that with `pairwiseMarkov_implies_globalMarkov_of_nonempty`, which
+is how `Gaussian.Model` now proceeds. -/
+
+/-- **The three Markov properties coincide over a graphoid, on nonempty blocks** — Lauritzen
+**Theorem 3.7** (p. 34, Pearl and Paz), the repaired form of the deleted `markov_tfae`.
+
+Each of the three properties is read on the blocks the book actually uses:
+
+1. (G) on **nonempty** `A`, `B` — the frozen `IsGlobalMarkov` with `A.Nonempty`, `B.Nonempty`
+   added, i.e. the conclusion of `pairwiseMarkov_implies_globalMarkov_of_nonempty`;
+2. (L) at those vertices whose closure is not all of `V` — the frozen `IsLocalMarkov` with the
+   "rest" block required nonempty;
+3. (P) verbatim: its blocks `{i}`, `{j}` are nonempty by construction, so nothing is restricted.
+
+The restriction in (1) and (2) is exactly the empty-block regime refuted by
+`not_forall_markov_tfae`, and nothing more: 1 ⇒ 2 is `globalMarkov_implies_localMarkov`'s
+instantiation, 2 ⇒ 3 is `localMarkovNonempty_implies_pairwiseMarkov`, 3 ⇒ 1 is
+`pairwiseMarkov_implies_globalMarkov_of_nonempty`. Consumers holding the *unrestricted*
+`IsGlobalMarkov`/`IsLocalMarkov` get (1)/(2) for free by dropping the extra hypothesis. -/
+theorem markov_tfae_of_nonempty [DecidableRel G.Adj]
     -- USER-INPUT: the ambient calculus *with* intersection; Lauritzen §3.1 (C5), p. 30, and
     -- condition (3.10), p. 34
     (hci : IsGraphoid ci) :
-    [IsGlobalMarkov G ci, IsLocalMarkov G ci, IsPairwiseMarkov G ci].TFAE := by
-  sorry
+    [∀ A B S : Finset V, A.Nonempty → B.Nonempty → Disjoint A B → Disjoint A S → Disjoint B S →
+        Separates G S A B → ci A B S,
+      ∀ v : V, (Finset.univ \ insert v (G.neighborFinset v)).Nonempty →
+        ci {v} (Finset.univ \ insert v (G.neighborFinset v)) (G.neighborFinset v),
+      IsPairwiseMarkov G ci].TFAE := by
+  tfae_have 1 → 2 := by
+    intro h v hv
+    exact h {v} (Finset.univ \ insert v (G.neighborFinset v)) (G.neighborFinset v)
+      (Finset.singleton_nonempty v) hv
+      (Finset.disjoint_of_subset_left (Finset.singleton_subset_iff.mpr (Finset.mem_insert_self _ _))
+        (disjoint_closedNeighborhood_sdiff G v))
+      (G.singleton_disjoint_neighborFinset v)
+      ((Finset.disjoint_of_subset_left (Finset.subset_insert v (G.neighborFinset v))
+        (disjoint_closedNeighborhood_sdiff G v)).symm)
+      (separates_neighborFinset G v)
+  tfae_have 2 → 3 := localMarkovNonempty_implies_pairwiseMarkov G hci.toIsSemigraphoid
+  tfae_have 3 → 1 := pairwiseMarkov_implies_globalMarkov_of_nonempty G hci
+  tfae_finish
 
 end StatLean.StatisticalModels.GraphicalModels

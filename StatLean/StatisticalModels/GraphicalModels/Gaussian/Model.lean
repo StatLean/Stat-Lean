@@ -115,10 +115,10 @@ rewriting in between.
 | `N(m, S)` is a probability measure | `ProbabilityTheory.IsGaussian.toIsProbabilityMeasure` (instance; `Gaussian/Basic.lean:50`) |
 | the feasibility witness `Σ = 1` | `Matrix.PosDef.one`, `Matrix.inv_one`, `Matrix.one_apply_ne` |
 | graph extensionality for `SeparatesTarget` | `SimpleGraph.ext` on `Adj` (the diagonal is covered by `SimpleGraph.irrefl`) |
-| (C1) symmetry, (C2) decomposition of the Gaussian relation | `CondIndepCoords.symm`, `CondIndepCoords.decomposition` (`Core.Coordinates`) — already available, do **not** re-prove |
+| (C1) symmetry, (C2) decomposition of the Gaussian relation | `CondIndepCoords.symm`, `CondIndepCoords.decomposition_of_sfinite` (`Core.Coordinates`) — already available, do **not** re-prove; the hypothesis-free `CondIndepCoords.decomposition` was refuted and deleted |
 | (C3), (C4), (C5) for the Gaussian relation | the three named sub-lemmas of this file; (C5) is Lauritzen Proposition 3.1, p. 29. The pin has no Lebesgue-density lemma for `multivariateGaussian`, so the intended route is block-splitting rather than the book's density argument: reduce to `multivariateGaussian_fromBlocks_prod` (G2.9) on the reindexed sum space, where the premises force the relevant off-diagonal *concentration* blocks to vanish. **Still open**, and all three wait on one brick — the block form (†) of Proposition 5.2 at general disjoint blocks, which `Gaussian.Precision` does not state; (C4) additionally needs a Schur-marginalisation lemma, since its two premises live on *different* index blocks. See the section docstring of "Lauritzen Proposition 3.1 at the Gaussian" below for the full reduction |
 | (G) ⇒ (L), (L) ⇒ (P), (G) ⇒ (P) | `Undirected.Markov.globalMarkov_implies_localMarkov`, `localMarkov_implies_pairwiseMarkov`, `globalMarkov_implies_pairwiseMarkov` — Lauritzen Proposition 3.4; **never** re-derive the hierarchy per model class |
-| (P) ⇒ (G) | `Undirected.Markov.pairwiseMarkov_implies_globalMarkov` (Theorem 3.7, Pearl–Paz) fed by `isGraphoid_condIndepCoords_multivariateGaussian` — this is the whole content of "since the density is positive and continuous, this implies the global and local Markov properties" |
+| (P) ⇒ (G) | `Undirected.Markov.pairwiseMarkov_implies_globalMarkov_of_nonempty` (Theorem 3.7, Pearl–Paz) fed by `isGraphoid_condIndepCoords_multivariateGaussian`, plus `CondIndepCoords.of_isEmpty_left` for the degenerate blocks Theorem 3.7 cannot reach — this is the whole content of "since the density is positive and continuous, this implies the global and local Markov properties" |
 
 **Bibliographic comments.** Covariance selection is A. P. Dempster's, "Covariance selection,"
 *Biometrics* **28** (1972), 157–175 — the name, the model class `S⁺(G)` and the maximum
@@ -335,8 +335,8 @@ theorem multivariateGaussian_mem_gaussianGraphicalModel_iff_pairwise {G : Simple
 /-! ### Lauritzen Proposition 3.1 at the Gaussian — the graphoid instance
 
 The Gaussian's contribution to the `Core.Semigraphoid` abstraction. (C1) and (C2) are already
-available as `CondIndepCoords.symm` and `CondIndepCoords.decomposition`; the three sub-lemmas
-below are the genuine debts, kept named rather than buried inside the instance so that the gap
+available as `CondIndepCoords.symm` and `CondIndepCoords.decomposition_of_sfinite`; the three
+sub-lemmas below are the genuine debts, kept named rather than buried inside the instance so that the gap
 structure stays visible. All three carry the book's pairwise disjointness of the blocks.
 
 ### The reduction, and the one brick all three wait on
@@ -467,12 +467,15 @@ the normal density, which §5.2 (p. 131) invokes when it says "since the density
 continuous, this implies the global and local Markov properties".
 
 This is the single object `Undirected.Markov` needs from the Gaussian side: with it,
-`pairwiseMarkov_implies_globalMarkov` (Theorem 3.7, Pearl–Paz) and `markov_tfae` apply verbatim,
-and no Markov implication has to be re-proved for this model class.
+`pairwiseMarkov_implies_globalMarkov_of_nonempty` (Theorem 3.7, Pearl–Paz) and
+`markov_tfae_of_nonempty` apply verbatim, and no Markov implication has to be re-proved for this
+model class.
 
 Assembly (no new mathematics): `symm := CondIndepCoords.symm`,
-`decomposition := CondIndepCoords.decomposition` at `B ⊆ B ∪ D`, and the three named sub-lemmas
-above for `weakUnion`, `contraction` and `intersection`. -/
+`decomposition := CondIndepCoords.decomposition_of_sfinite` at `B ⊆ B ∪ D` (the frozen
+`CondIndepCoords.decomposition` was refuted and deleted; its s-finiteness hypothesis is an
+instance here, a Gaussian being a probability measure), and the three named sub-lemmas above for
+`weakUnion`, `contraction` and `intersection`. -/
 theorem isGraphoid_condIndepCoords_multivariateGaussian
     (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ}
     -- USER-INPUT: `Σ` regular — positivity and continuity of the density; Lauritzen Prop. 3.1,
@@ -480,7 +483,7 @@ theorem isGraphoid_condIndepCoords_multivariateGaussian
     (hS : S.PosDef) :
     IsGraphoid (CondIndepCoords (multivariateGaussian m S) gaussianCoords) := by
   refine ⟨⟨fun _ _ _ h => h.symm, fun _ _ _ _ _ h =>
-      CondIndepCoords.decomposition Finset.subset_union_left h, ?_, ?_⟩, ?_⟩
+      CondIndepCoords.decomposition_of_sfinite Finset.subset_union_left h, ?_, ?_⟩, ?_⟩
   · intro A B D C hAB hAC hAD hBC hBD hCD h
     exact condIndepCoords_weakUnion_of_disjoint m hS hAB hAC hAD hBC hBD hCD h
   · intro A B D C hAB hAC hAD hBC hBD hCD h₁ h₂
@@ -493,21 +496,36 @@ density is positive and continuous, this implies the global and local Markov pro
 instance of `Undirected.Markov.IsGlobalMarkov`. Separation is `Core.Separation.Separates` and the
 three disjointness conditions are part of that definition; nothing is restated here.
 
-Later lane, and it carries **no debt of its own**: destructure `hP` into a regular
-`multivariateGaussian m S`, then apply
-`pairwiseMarkov_implies_globalMarkov G (isGraphoid_condIndepCoords_multivariateGaussian m hS)`
-to `isPairwiseMarkov_of_mem_gaussianGraphicalModel hP`. The real content sits in Theorem 3.7 (in
+It carries **no debt of its own**: destructure `hP` into a regular `multivariateGaussian m S`,
+then apply `pairwiseMarkov_implies_globalMarkov_of_nonempty G
+(isGraphoid_condIndepCoords_multivariateGaussian m hS)` to
+`isPairwiseMarkov_of_mem_gaussianGraphicalModel hP`. The real content sits in Theorem 3.7 (in
 `Undirected.Markov`) and in the graphoid instance above — which is exactly Lauritzen's own
-argument, and not a fresh Gaussian computation. -/
+argument, and not a fresh Gaussian computation.
+
+**Why the `_of_nonempty` form, and why no hypothesis is added.** Theorem 3.7 as frozen over
+*all* disjoint triples is false (`not_forall_pairwiseMarkov_implies_globalMarkov`) and has been
+deleted: `IsGlobalMarkov` demands `ci ∅ B S` of every instance while (P) says nothing about
+empty blocks, and no graphoid axiom can manufacture a first `ci`-statement. The Gaussian,
+however, *can* supply those degenerate cases directly — `CondIndepCoords.of_isEmpty_left`, the
+subvector on an empty block taking values in a singleton type — so the empty-block regime is
+discharged here rather than assumed, and the frozen signature of this theorem is unchanged. -/
 theorem isGlobalMarkov_of_mem_gaussianGraphicalModel {G : SimpleGraph ι}
     {P : Measure (EuclideanSpace ℝ ι)}
     -- USER-INPUT: a law of the covariance selection model; Lauritzen §5.2, p. 131
     (hP : P ∈ gaussianGraphicalModel G) :
     IsGlobalMarkov G (CondIndepCoords P gaussianCoords) := by
   obtain ⟨m, S, hS, hz, rfl⟩ := mem_gaussianGraphicalModel_iff.mp hP
-  exact pairwiseMarkov_implies_globalMarkov G
+  intro A B T hAB hAT hBT hsep
+  -- the two degenerate blocks, which Theorem 3.7 cannot reach but the Gaussian supplies itself
+  rcases A.eq_empty_or_nonempty with rfl | hA
+  · exact CondIndepCoords.of_isEmpty_left measurable_gaussianCoords B T
+  rcases B.eq_empty_or_nonempty with rfl | hB
+  · exact (CondIndepCoords.of_isEmpty_left measurable_gaussianCoords A T).symm
+  -- and Theorem 3.7 (Pearl–Paz) on the book's own nonempty blocks
+  exact pairwiseMarkov_implies_globalMarkov_of_nonempty G
     (isGraphoid_condIndepCoords_multivariateGaussian m hS)
-    (isPairwiseMarkov_of_mem_gaussianGraphicalModel hP)
+    (isPairwiseMarkov_of_mem_gaussianGraphicalModel hP) A B T hA hB hAB hAT hBT hsep
 
 /-- **The local Markov property** (Lauritzen §3.2, p. 32, property (L)):
 `Y_γ ⫫ Y_{Γ∖cl(γ)} ∣ Y_{bd(γ)}`, as an instance of `Undirected.Markov.IsLocalMarkov`.
