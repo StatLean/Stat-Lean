@@ -1,6 +1,6 @@
 import StatLean.ConcentrationInequalities.Chaining.DyadicNets
 import Mathlib.MeasureTheory.Measure.MeasureSpace
-import Mathlib.Topology.Semicontinuous
+import Mathlib.Topology.Semicontinuity.Basic
 import Mathlib.Topology.Metrizable.Basic
 
 /-!
@@ -78,7 +78,8 @@ theorem IsSeparableProcess.of_countable {E : Type*} {X : E → Ω → ℝ}
     -- LEAN-ONLY: countable index set per the sup policy
     (hcnt : T.Countable) :
     IsSeparableProcess X T μ := by
-  sorry
+  refine ⟨T, subset_rfl, hcnt, Filter.Eventually.of_forall fun ω t ht => ?_⟩
+  exact subset_closure (Set.mem_image_of_mem _ ht)
 
 /-- Finite covering numbers at all positive radii make the index set
 topologically separable: the covering package is exactly total boundedness
@@ -88,8 +89,8 @@ theorem isSeparable_of_coveringNumber_ne_top {E : Type*} [PseudoMetricSpace E]
     {T : Set E}
     -- USER-INPUT: finite covering numbers at all positive radii; HDP §8.1
     (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤) :
-    TopologicalSpace.IsSeparable T := by
-  sorry
+    TopologicalSpace.IsSeparable T :=
+  (totallyBounded_of_coveringNumber_ne_top hcov).isSeparable
 
 /-- **Sample-path continuity criterion** (the standard sufficient condition
 for a separable version; van Handel APM §5.3): a.e. path continuity on a
@@ -104,7 +105,10 @@ theorem IsSeparableProcess.of_continuousOn {E : Type*} [PseudoMetricSpace E]
     -- USER-INPUT: a.e. sample-path continuity on T; van Handel APM §5.3
     (hcont : ∀ᵐ ω ∂μ, ContinuousOn (fun t => X t ω) T) :
     IsSeparableProcess X T μ := by
-  sorry
+  obtain ⟨T₀, hT₀sub, hT₀cnt, hTcl⟩ := hT.exists_countable_dense_subset
+  refine ⟨T₀, hT₀sub, hT₀cnt, ?_⟩
+  filter_upwards [hcont] with ω hω t htT
+  exact ((hω t htT).mono hT₀sub).mem_closure_image (hTcl htT)
 
 /-- Transport of an `ℝ≥0∞`-valued composed supremum through value-space
 closure: if every `T`-value is a closure point of the `C`-values, the `⨆` of
@@ -122,7 +126,12 @@ lemma biSup_ennreal_comp_eq_of_forall_mem_closure {α : Type*} {T C : Set α}
     -- LEAN-ONLY: lower-semicontinuous integrand shape
     (hφ : LowerSemicontinuous φ) :
     ⨆ t ∈ T, φ (x t) = ⨆ t ∈ C, φ (x t) := by
-  sorry
+  refine le_antisymm ?_ (biSup_mono hsub)
+  refine iSup_le fun t => iSup_le fun ht => ?_
+  refine le_of_forall_lt fun y hy => ?_
+  obtain ⟨U, hUsub, hUopen, hUmem⟩ := mem_nhds_iff.mp (hφ (x t) y hy)
+  obtain ⟨w, hwU, s, hsC, rfl⟩ := _root_.mem_closure_iff.mp (hx t ht) U hUopen hUmem
+  exact lt_of_lt_of_le (hUsub hwU) (le_biSup (fun s => φ (x s)) hsC)
 
 /-- Real twin of `biSup_ennreal_comp_eq_of_forall_mem_closure`, for
 NONNEGATIVE continuous shapes. The sign hypothesis is essential: without it
@@ -144,7 +153,71 @@ lemma biSup_real_comp_eq_of_forall_mem_closure {α : Type*} {T C : Set α}
     -- false without it at `T = Set.univ`)
     (hφ0 : ∀ v, 0 ≤ φ v) :
     ⨆ t ∈ T, φ (x t) = ⨆ t ∈ C, φ (x t) := by
-  sorry
+  classical
+  -- Pointwise evaluation of the `Prop`-indexed inner suprema (junk value `0`).
+  have hTval : ∀ t, (⨆ (_ : t ∈ T), φ (x t)) = if t ∈ T then φ (x t) else 0 := by
+    intro t
+    by_cases ht : t ∈ T
+    · rw [if_pos ht]; exact ciSup_pos ht
+    · rw [if_neg ht]; simp [ht]
+  have hCval : ∀ t, (⨆ (_ : t ∈ C), φ (x t)) = if t ∈ C then φ (x t) else 0 := by
+    intro t
+    by_cases ht : t ∈ C
+    · rw [if_pos ht]; exact ciSup_pos ht
+    · rw [if_neg ht]; simp [ht]
+  have hTnn : ∀ t, 0 ≤ (⨆ (_ : t ∈ T), φ (x t)) := by
+    intro t; rw [hTval]; split
+    · exact hφ0 _
+    · exact le_rfl
+  have hCnn : ∀ t, 0 ≤ (⨆ (_ : t ∈ C), φ (x t)) := by
+    intro t; rw [hCval]; split
+    · exact hφ0 _
+    · exact le_rfl
+  have hCT : ∀ t, (⨆ (_ : t ∈ C), φ (x t)) ≤ (⨆ (_ : t ∈ T), φ (x t)) := by
+    intro t
+    by_cases ht : t ∈ C
+    · rw [hCval, hTval, if_pos ht, if_pos (hsub ht)]
+    · rw [hCval, if_neg ht]; exact hTnn t
+  -- Any nonnegative bound on the `C`-values bounds the `T`-values: `{v | φ v ≤ M}`
+  -- is closed and contains `x '' C`, hence its closure.
+  have key : ∀ M : ℝ, (∀ s ∈ C, φ (x s) ≤ M) → ∀ t ∈ T, φ (x t) ≤ M := by
+    intro M hCM t ht
+    have hcl : IsClosed {v : ℝ | φ v ≤ M} := isClosed_le hφ continuous_const
+    have himg : x '' C ⊆ {v : ℝ | φ v ≤ M} := by
+      rintro _ ⟨s, hs, rfl⟩; exact hCM s hs
+    exact hcl.closure_subset_iff.mpr himg (hx t ht)
+  by_cases hb : BddAbove (Set.range fun t => ⨆ (_ : t ∈ C), φ (x t))
+  · -- Bounded case: both suprema are honest, and the density transfer closes it.
+    have hbT : BddAbove (Set.range fun t => ⨆ (_ : t ∈ T), φ (x t)) := by
+      obtain ⟨M, hM⟩ := hb
+      refine ⟨max M 0, ?_⟩
+      rintro _ ⟨t, rfl⟩
+      have hCM : ∀ s ∈ C, φ (x s) ≤ max M 0 := by
+        intro s hs
+        have hs' : (⨆ (_ : s ∈ C), φ (x s)) ≤ M := hM (Set.mem_range_self s)
+        rw [hCval, if_pos hs] at hs'
+        exact hs'.trans (le_max_left _ _)
+      change (⨆ (_ : t ∈ T), φ (x t)) ≤ max M 0
+      rw [hTval]
+      by_cases ht : t ∈ T
+      · rw [if_pos ht]; exact key _ hCM t ht
+      · rw [if_neg ht]; exact le_max_right _ _
+    refine le_antisymm ?_ ?_
+    · refine Real.iSup_le (fun t => ?_) (Real.iSup_nonneg hCnn)
+      change (⨆ (_ : t ∈ T), φ (x t)) ≤ ⨆ t, ⨆ (_ : t ∈ C), φ (x t)
+      rw [hTval]
+      by_cases ht : t ∈ T
+      · rw [if_pos ht]
+        refine key _ (fun s hs => ?_) t ht
+        have hs' : (⨆ (_ : s ∈ C), φ (x s)) ≤ ⨆ t, ⨆ (_ : t ∈ C), φ (x t) := le_ciSup hb s
+        rwa [hCval, if_pos hs] at hs'
+      · rw [if_neg ht]; exact Real.iSup_nonneg hCnn
+    · exact Real.iSup_le (fun t => (hCT t).trans (le_ciSup hbT t)) (Real.iSup_nonneg hTnn)
+  · -- Unbounded case: the `T`-family is unbounded too, so both sides junk to `0`.
+    have hbT : ¬ BddAbove (Set.range fun t => ⨆ (_ : t ∈ T), φ (x t)) := by
+      rintro ⟨M, hM⟩
+      exact hb ⟨M, by rintro _ ⟨t, rfl⟩; exact (hCT t).trans (hM (Set.mem_range_self t))⟩
+    rw [Real.iSup_of_not_bddAbove hbT, Real.iSup_of_not_bddAbove hb]
 
 /-- Pair transport through value-space closure: the nested `ℝ≥0∞` double
 supremum of a separately lower-semicontinuous two-variable shape passes from
@@ -165,7 +238,14 @@ lemma biSup_pair_ennreal_comp_eq_of_forall_mem_closure {α : Type*}
     -- LEAN-ONLY: lower semicontinuity in the second variable
     (hφ₂ : ∀ v, LowerSemicontinuous (φ v)) :
     ⨆ t ∈ T, ⨆ s ∈ T, φ (x t) (x s) = ⨆ t ∈ C, ⨆ s ∈ C, φ (x t) (x s) := by
-  sorry
+  have hinner : ∀ v : ℝ, ⨆ s ∈ T, φ v (x s) = ⨆ s ∈ C, φ v (x s) := fun v =>
+    biSup_ennreal_comp_eq_of_forall_mem_closure hsub hx (hφ₂ v)
+  have houter : LowerSemicontinuous fun v => ⨆ s ∈ C, φ v (x s) :=
+    lowerSemicontinuous_biSup fun s _ => hφ₁ (x s)
+  calc ⨆ t ∈ T, ⨆ s ∈ T, φ (x t) (x s)
+      = ⨆ t ∈ T, ⨆ s ∈ C, φ (x t) (x s) := by simp only [hinner]
+    _ = ⨆ t ∈ C, ⨆ s ∈ C, φ (x t) (x s) :=
+        biSup_ennreal_comp_eq_of_forall_mem_closure hsub hx houter
 
 /-- Strict thresholds survive closure approximation: a closure point whose
 continuous image exceeds `c` has an approximant in the set whose image does.
@@ -180,6 +260,8 @@ lemma exists_lt_comp_of_mem_closure {A : Set ℝ} {v : ℝ}
     -- LEAN-ONLY: the strict threshold at the closure point
     (hlt : c < φ v) :
     ∃ a ∈ A, c < φ a := by
-  sorry
+  obtain ⟨a, haU, haA⟩ :=
+    _root_.mem_closure_iff.mp hv (φ ⁻¹' Set.Ioi c) (isOpen_Ioi.preimage hφ) hlt
+  exact ⟨a, haA, haU⟩
 
 end StatLean.ConcentrationInequalities
