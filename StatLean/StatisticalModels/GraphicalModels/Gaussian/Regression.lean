@@ -121,7 +121,15 @@ theorem condMeanMatrix_eq_neg_mul
     condMeanMatrix S₁₁ S₁₂
       = -(condCovMatrix S₁₁ S₁₂ S₂₂
             * (precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inr Sum.inl) := by
-  sorry
+  have hpd := posDef_condCovMatrix hJ
+  have hdet : IsUnit (condCovMatrix S₁₁ S₁₂ S₂₂).det :=
+    (Matrix.isUnit_iff_isUnit_det _).mp hpd.isUnit
+  rw [submatrix_precisionMatrix_fromBlocks_inr_inl S₁₁ S₁₂ S₂₂ hJ, Matrix.mul_neg,
+    ← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hdet, Matrix.one_mul]
+  -- `neg_neg` does not fire on `Matrix` (the `InvolutiveNeg` instance found is the `Pi` one),
+  -- so the double negation is cancelled entrywise
+  ext i j
+  simp
 
 /-- **`β_{γμ ∣ Γ∖{γ}} = −k_{γμ}/k_{γγ}`** (Lauritzen §5.1.3, p. 130): the scalar form of (C.4)
 when the regressed block is a single coordinate. -/
@@ -135,7 +143,27 @@ theorem condMeanMatrix_apply_eq_neg_precision_div
     condMeanMatrix S₁₁ S₁₂ a u
       = -(precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) (Sum.inr a) (Sum.inl u))
           / precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) (Sum.inr a) (Sum.inr a) := by
-  sorry
+  -- the `(2,2)` principal block of the joint concentration matrix — a `1 × 1` matrix
+  have hMpd : ((precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix
+      Sum.inr Sum.inr).PosDef :=
+    posDef_submatrix_of_injective (precisionMatrix_posDef hJ) Sum.inr_injective
+  -- `M⁻¹ a a = (M a a)⁻¹` on a `1 × 1` matrix: read `M * M⁻¹ = 1` at the single entry
+  have hmul := Matrix.mul_nonsing_inv _ ((Matrix.isUnit_iff_isUnit_det _).mp hMpd.isUnit)
+  have hentry : ((precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix
+        Sum.inr Sum.inr)⁻¹ a a
+      = (precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) (Sum.inr a) (Sum.inr a))⁻¹ := by
+    have h1 := congrFun (congrFun hmul a) a
+    simp only [Matrix.mul_apply, Matrix.one_apply_eq, Matrix.submatrix_apply,
+      Fintype.sum_subsingleton _ a] at h1
+    exact (inv_eq_of_mul_eq_one_right h1).symm
+  have hcond : condCovMatrix S₁₁ S₁₂ S₂₂ a a
+      = (precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) (Sum.inr a) (Sum.inr a))⁻¹ := by
+    rw [condCovMatrix_eq_inv_submatrix_precisionMatrix S₁₁ S₁₂ S₂₂ hJ, hentry]
+  rw [condMeanMatrix_eq_neg_mul S₁₁ S₁₂ S₂₂ hJ]
+  simp only [Matrix.neg_apply, Matrix.mul_apply, Matrix.submatrix_apply,
+    Fintype.sum_subsingleton _ a, hcond]
+  rw [div_eq_inv_mul]
+  ring
 
 /-- **HEADLINE — Lauritzen's regression equation** (§5.1.3, p. 130). The conditional law of `Y_γ`
 given `Y_{Γ∖{γ}} = y` is, by Proposition C.5, univariate normal; its mean — which the repo's
@@ -160,7 +188,16 @@ theorem gaussianCondKernel_mean_coord
           (-(precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) (Sum.inr a) (Sum.inl u))
               / precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) (Sum.inr a) (Sum.inr a))
             * (y u - m₁ u) := by
-  sorry
+  -- coordinates of the matrix action are the row sums (the one-line `simp` of
+  -- `ForMathlib.CovarianceMatrix.toEuclideanLin_coord`, which is `private` there)
+  have hcoord : ∀ (A : Matrix ι₂ ι₁ ℝ) (x : EuclideanSpace ℝ ι₁) (k : ι₂),
+      (Matrix.toEuclideanLin (𝕜 := ℝ) A x) k = ∑ l, A k l * x l := by
+    intro A x k
+    simp [Matrix.toLpLin_apply, Matrix.mulVec, dotProduct]
+  rw [PiLp.add_apply, hcoord]
+  congr 1
+  refine Finset.sum_congr rfl fun u _ => ?_
+  rw [condMeanMatrix_apply_eq_neg_precision_div S₁₁ S₁₂ S₂₂ hJ a u, PiLp.sub_apply]
 
 end BlockIdentity
 
@@ -174,7 +211,9 @@ theorem partialRegressionCoeff_eq_zero_iff
     -- USER-INPUT: `Σ` regular; Lauritzen §5.1.3, p. 130
     (hS : S.PosDef) (i j : ι) :
     partialRegressionCoeff S i j = 0 ↔ precisionMatrix S i j = 0 := by
-  sorry
+  have hpos := precisionMatrix_diag_pos hS i
+  rw [partialRegressionCoeff, div_eq_zero_iff, neg_eq_zero]
+  exact ⟨fun h => h.resolve_right hpos.ne', Or.inl⟩
 
 /-- **Corollary of Lauritzen Proposition 5.2** (§5.1.3, pp. 129–130): the partial regression
 coefficient of `Y_μ` in the regression of `Y_γ` on all the remaining variables vanishes exactly
@@ -189,7 +228,8 @@ theorem condIndepCoords_gaussianCoords_iff_partialRegressionCoeff_eq_zero
     (hij : i ≠ j) :
     CondIndepCoords (multivariateGaussian m S) gaussianCoords {i} {j} (Finset.univ \ {i, j})
       ↔ partialRegressionCoeff S i j = 0 := by
-  sorry
+  rw [condIndepCoords_gaussianCoords_iff_precisionMatrix_eq_zero m hS hij,
+    partialRegressionCoeff_eq_zero_iff hS i j]
 
 /-- Asymmetry of the regression coefficients versus symmetry of the graph: `β_{γμ}` and `β_{μγ}`
 differ (they are scaled by different diagonal entries) but vanish together, which is what makes
@@ -198,7 +238,8 @@ theorem partialRegressionCoeff_eq_zero_comm
     -- USER-INPUT: `Σ` regular; Lauritzen §5.1.3, p. 130
     (hS : S.PosDef) (i j : ι) :
     partialRegressionCoeff S i j = 0 ↔ partialRegressionCoeff S j i = 0 := by
-  sorry
+  rw [partialRegressionCoeff_eq_zero_iff hS i j, partialRegressionCoeff_eq_zero_iff hS j i,
+    precisionMatrix_apply_comm hS i j]
 
 end Corollary
 
