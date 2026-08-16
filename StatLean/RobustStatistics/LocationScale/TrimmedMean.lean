@@ -300,7 +300,8 @@ theorem trimmedMean_breaksUnder {m : ℕ} (hm : 2 * m < n) (x : Fin n → ℝ) :
 /-- **The breakdown count of the `m`-trimmed mean is exactly `m`**
 (`MMY §3.2.5`: `m* = [nα]`). -/
 theorem trimmedMean_breakdownCount {m : ℕ} (hm : 2 * m < n) (x : Fin n → ℝ) :
-    breakdownCount (trimmedMean m) x = m := by
-  sorry
+    breakdownCount (trimmedMean m) x = m :=
+  breakdownCount_eq_of_resists_of_breaksUnder (by omega) (trimmedMean_resists hm x)
+    (trimmedMean_breaksUnder hm x)
 
 end StatLean.RobustStatistics
