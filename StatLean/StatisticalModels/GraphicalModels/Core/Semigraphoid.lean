@@ -147,8 +147,8 @@ theorem IsSemigraphoid.decomposition_right
     (hCD : Disjoint C D)
     -- USER-INPUT: the independence to be weakened; Lauritzen §3.1 (C2)
     (h : ci A (B ∪ D) C) :
-    ci A D C := by
-  sorry
+    ci A D C :=
+  hci.decomposition hAD hAC hAB hCD.symm hBC.symm (by rwa [Finset.union_comm D B])
 
 /-- **(C2) on the left factor**, via (C1): `(X_A, X_D) ⫫ X_B ∣ X_C ⇒ X_A ⫫ X_B ∣ X_C`. Route:
 `Finset.disjoint_union_left` to feed `symm`, then the field, then `symm` back. `Disjoint A D`
@@ -162,7 +162,11 @@ theorem IsSemigraphoid.decomposition_left
     -- USER-INPUT: the independence to be weakened; Lauritzen §3.1 (C2)
     (h : ci (A ∪ D) B C) :
     ci A B C := by
-  sorry
+  have hADB : Disjoint (A ∪ D) B := Finset.disjoint_union_left.2 ⟨hAB, hBD.symm⟩
+  have hADC : Disjoint (A ∪ D) C := Finset.disjoint_union_left.2 ⟨hAC, hCD.symm⟩
+  -- (C1) to put the union on the right, (C2) to drop `D`, (C1) back
+  have h' : ci B (A ∪ D) C := hci.symm hADB hADC hBC h
+  exact hci.symm hAB.symm hBC hAC (hci.decomposition hAB.symm hBC hBD hAC hCD h')
 
 /-- **Monotone form of (C2)**: independence of a block passes to every sub-block. The
 disjointness of the *smaller* block follows from that of the larger one by
@@ -179,7 +183,11 @@ theorem IsSemigraphoid.decomposition_subset
     -- USER-INPUT: the independence to be weakened; Lauritzen §3.1 (C2)
     (h : ci A B' C) :
     ci A B C := by
-  sorry
+  -- split `B' = B ∪ (B' \ B)` and drop the second summand by (C2)
+  refine hci.decomposition (D := B' \ B) (hAB'.mono_right hBB') hAC
+    (hAB'.mono_right Finset.sdiff_subset) (hB'C.mono_left hBB')
+    (hB'C.symm.mono_right Finset.sdiff_subset) ?_
+  rwa [Finset.union_sdiff_of_subset hBB']
 
 /-- **(C3) on the left factor**, via (C1). -/
 theorem IsSemigraphoid.weakUnion_left
@@ -191,7 +199,13 @@ theorem IsSemigraphoid.weakUnion_left
     -- USER-INPUT: the independence to be weakened; Lauritzen §3.1 (C3)
     (h : ci (A ∪ D) B C) :
     ci A B (C ∪ D) := by
-  sorry
+  have hADB : Disjoint (A ∪ D) B := Finset.disjoint_union_left.2 ⟨hAB, hBD.symm⟩
+  have hADC : Disjoint (A ∪ D) C := Finset.disjoint_union_left.2 ⟨hAC, hCD.symm⟩
+  have hACD : Disjoint A (C ∪ D) := Finset.disjoint_union_right.2 ⟨hAC, hAD⟩
+  have hBCD : Disjoint B (C ∪ D) := Finset.disjoint_union_right.2 ⟨hBC, hBD⟩
+  -- (C1), then (C3) with the roles of `A` and `B` swapped, then (C1) back
+  have h' : ci B (A ∪ D) C := hci.symm hADB hADC hBC h
+  exact hci.symm hAB.symm hBCD hACD (hci.weakUnion hAB.symm hBC hBD hAC hAD hCD h')
 
 /-- **(C3) in "move a sub-block into the conditioning set" form**: this is the shape the
 local ⇒ pairwise Markov implication consumes. `Disjoint (B \ D) D` is
@@ -208,7 +222,9 @@ theorem IsSemigraphoid.weakUnion_sdiff
     -- USER-INPUT: the independence to be weakened; Lauritzen §3.1 (C3)
     (h : ci A B C) :
     ci A (B \ D) (C ∪ D) := by
-  sorry
+  refine hci.weakUnion (hAB.mono_right Finset.sdiff_subset) hAC (hAB.mono_right hDB)
+    (hBC.mono_left Finset.sdiff_subset) (Finset.sdiff_disjoint) (hBC.symm.mono_right hDB) ?_
+  rwa [Finset.sdiff_union_of_subset hDB]
 
 /-- **(C4) on the left factor**, via (C1). -/
 theorem IsSemigraphoid.contraction_left
@@ -222,7 +238,14 @@ theorem IsSemigraphoid.contraction_left
     -- USER-INPUT: second premise of contraction; Lauritzen §3.1 (C4)
     (h₂ : ci D A C) :
     ci (B ∪ D) A C := by
-  sorry
+  have hACD : Disjoint A (C ∪ D) := Finset.disjoint_union_right.2 ⟨hAC, hAD⟩
+  have hBCD : Disjoint B (C ∪ D) := Finset.disjoint_union_right.2 ⟨hBC, hBD⟩
+  have hABD : Disjoint A (B ∪ D) := Finset.disjoint_union_right.2 ⟨hAB, hAD⟩
+  have hBDC : Disjoint (B ∪ D) C := Finset.disjoint_union_left.2 ⟨hBC, hCD.symm⟩
+  -- (C1) on both premises, (C4), then (C1) back
+  have h₁' : ci A B (C ∪ D) := hci.symm hAB.symm hBCD hACD h₁
+  have h₂' : ci A D C := hci.symm hAD.symm hCD.symm hAC h₂
+  exact hci.symm hABD hAC hBDC (hci.contraction hAB hAC hAD hBC hBD hCD h₁' h₂')
 
 /-- **Block splitting**: (C2)+(C3)+(C4) packaged as a single equivalence. Independence of a
 union is the conjunction of "one part, given more" and "the other part, given less". This is
@@ -250,7 +273,9 @@ theorem IsSemigraphoid.weakUnion_empty
     -- USER-INPUT: unconditional independence of the union; Lauritzen §3.1 (C3)
     (h : ci A (B ∪ D) ∅) :
     ci A B D := by
-  sorry
+  have := hci.weakUnion hAB (Finset.disjoint_empty_right A) hAD
+    (Finset.disjoint_empty_right B) hBD (Finset.disjoint_empty_left D) h
+  rwa [Finset.empty_union] at this
 
 /-- **`∅`-conditioning corollary of (C4)**: the converse assembly. Together with
 `IsSemigraphoid.weakUnion_empty` and `IsSemigraphoid.decomposition_right` this is
@@ -266,7 +291,9 @@ theorem IsSemigraphoid.contraction_empty
     -- USER-INPUT: second premise; Lauritzen §3.1 (C4)
     (h₂ : ci A D ∅) :
     ci A (B ∪ D) ∅ := by
-  sorry
+  refine hci.contraction hAB (Finset.disjoint_empty_right A) hAD
+    (Finset.disjoint_empty_right B) hBD (Finset.disjoint_empty_left D) ?_ h₂
+  rwa [Finset.empty_union]
 
 /-- **(C5) on the left factor**, via (C1). -/
 theorem IsGraphoid.intersection_left
@@ -280,7 +307,16 @@ theorem IsGraphoid.intersection_left
     -- USER-INPUT: second premise of intersection; Lauritzen §3.1 (C5)
     (h₂ : ci D A (C ∪ B)) :
     ci (B ∪ D) A C := by
-  sorry
+  have hACD : Disjoint A (C ∪ D) := Finset.disjoint_union_right.2 ⟨hAC, hAD⟩
+  have hBCD : Disjoint B (C ∪ D) := Finset.disjoint_union_right.2 ⟨hBC, hBD⟩
+  have hACB : Disjoint A (C ∪ B) := Finset.disjoint_union_right.2 ⟨hAC, hAB⟩
+  have hDCB : Disjoint D (C ∪ B) := Finset.disjoint_union_right.2 ⟨hCD.symm, hBD.symm⟩
+  have hABD : Disjoint A (B ∪ D) := Finset.disjoint_union_right.2 ⟨hAB, hAD⟩
+  have hBDC : Disjoint (B ∪ D) C := Finset.disjoint_union_left.2 ⟨hBC, hCD.symm⟩
+  -- (C1) on both premises, (C5), then (C1) back
+  have h₁' : ci A B (C ∪ D) := hci.symm hAB.symm hBCD hACD h₁
+  have h₂' : ci A D (C ∪ B) := hci.symm hAD.symm hDCB hACB h₂
+  exact hci.symm hABD hAC hBDC (hci.intersection hAB hAC hAD hBC hBD hCD h₁' h₂')
 
 /-- **(C5) verbatim** (Lauritzen p. 30): `X ⫫ Y ∣ Z` and `X ⫫ Z ∣ Y` imply `X ⫫ (Y, Z)`, for
 pairwise disjoint `X, Y, Z`. -/
@@ -294,6 +330,9 @@ theorem IsGraphoid.intersection_empty
     -- USER-INPUT: `X ⫫ Z ∣ Y`; Lauritzen §3.1 (C5)
     (h₂ : ci A D B) :
     ci A (B ∪ D) ∅ := by
-  sorry
+  refine hci.intersection hAB (Finset.disjoint_empty_right A) hAD
+    (Finset.disjoint_empty_right B) hBD (Finset.disjoint_empty_left D) ?_ ?_
+  · rwa [Finset.empty_union]
+  · rwa [Finset.empty_union]
 
 end StatLean.StatisticalModels.GraphicalModels

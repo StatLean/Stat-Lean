@@ -18,7 +18,11 @@ single vocabulary.
   index set gives the smaller subvector;
 * `CondIndepCoords μ X A B C` — `X_A ⫫ X_B ∣ X_C`;
 * `CondIndepCoords.symm` / `CondIndepCoords.decomposition` — the two graphoid properties that
-  are structural at this level, inherited from `CondIndep.symm` / `CondIndep.comp`.
+  are structural at this level, inherited from `CondIndep.symm` / `CondIndep.comp`. **The
+  decomposition statement is false as frozen**, exactly as `CondIndep.comp` is — see its
+  docstring, the machine-checked
+  `CondIndepCoords.DecompositionCounterexample.decomposition_is_false`, and the proved repair
+  `CondIndepCoords.decomposition_of_sfinite`.
 
 **Reference.** S. L. Lauritzen, *Graphical Models*, Oxford Statistical Science Series 17,
 Clarendon Press, Oxford, 1996, §3.1, pp. 28–30 — conditional independence between blocks of a
@@ -100,7 +104,23 @@ theorem CondIndepCoords.symm
 
 /-- **(C2), decomposition** at the coordinate level (Lauritzen p. 29): dropping variables from
 the second block preserves conditional independence. An instance of `CondIndep.comp` with the
-transport map `Finset.restrict₂`. -/
+transport map `Finset.restrict₂`.
+
+**REFUTED AS FROZEN — this statement is FALSE; the `sorry` is deliberate.** Being an instance of
+`CondIndep.comp`, it inherits that theorem's falsity (see its docstring): `⊗ₘ` is `0` by fiat
+when the conditioning law is not s-finite, so the frozen statement equates a possibly nonzero
+law with `0`. `CondIndepCoords.DecompositionCounterexample.decomposition_is_false` is a
+machine-checked derivation of `False` from this very statement; the instance is
+`V := Bool`, `α := Ω := CondIndep.CompCounterexample.Pt`, `μ := mu`, with the random vector
+`XX` whose coordinate `false` is the identity (measurable, and with a non-s-finite law) and
+whose coordinate `true` reads the invisible second coordinate of `Pt` (not a.e. measurable),
+and with the blocks `A = B = ∅ ⊆ D = {true}`, `C = {false}`.
+
+`CondIndepCoords.decomposition_of_sfinite` below is the same theorem with the one missing
+hypothesis `[SFinite (μ.map (coords C X))]` restored, and is fully proved; it is free at every
+intended instance, since `SFinite (μ.map _)` is an instance whenever `μ` is s-finite (in
+particular for any probability measure). Repairing the frozen statement is a scope decision and
+is left to the user. -/
 theorem CondIndepCoords.decomposition
     -- USER-INPUT: the block to be kept is part of the block that is independent;
     -- Lauritzen §3.1 (C2)
@@ -109,5 +129,112 @@ theorem CondIndepCoords.decomposition
     (hci : CondIndepCoords μ X A D C) :
     CondIndepCoords μ X A B C := by
   sorry
+
+/-- **(C2), decomposition at the coordinate level — the repaired statement.** Identical to
+`CondIndepCoords.decomposition` except for the one hypothesis that makes it true; see the
+refutation in that declaration's docstring. An instance of `CondIndep.comp_of_sfinite` with the
+transport map `Finset.restrict₂`, whose defining equation is `restrict₂_comp_coords`. -/
+theorem CondIndepCoords.decomposition_of_sfinite
+    -- LEAN-ONLY: the hypothesis missing from `CondIndepCoords.decomposition`, which is false
+    -- without it; see `CondIndep.comp_of_sfinite`
+    [SFinite (μ.map (coords C X))]
+    -- USER-INPUT: the block to be kept is part of the block that is independent;
+    -- Lauritzen §3.1 (C2)
+    (hBD : B ⊆ D)
+    -- USER-INPUT: the block conditional independence to be weakened; Lauritzen §3.1 (C2)
+    (hci : CondIndepCoords μ X A D C) :
+    CondIndepCoords μ X A B C :=
+  CondIndep.comp_of_sfinite (φ := id) (ψ := Finset.restrict₂ (π := fun _ => α) hBD)
+    measurable_id (Finset.measurable_restrict₂ (X := fun _ => α) hBD) hci
+
+namespace CondIndepCoords.DecompositionCounterexample
+
+/-! ### Refutation of `CondIndepCoords.decomposition` as frozen
+
+The coordinate-level instance of the counterexample in `Core.CondIndep`: a random vector on the
+plane `Pt` whose conditioning coordinate is rich (its law is not s-finite) and whose other
+coordinate is invisible to the σ-algebra. Nothing else in the area depends on this section. -/
+
+open CondIndep.CompCounterexample
+
+/-- The bad coordinate: it reads the second coordinate of `Pt`, which the σ-algebra cannot
+see. -/
+def badCoord : Pt → Pt := fun p => pt (bif snd' p then 1 else 0) true
+
+theorem not_aemeasurable_badCoord : ¬ AEMeasurable badCoord mu := by
+  intro h
+  have hm := measurable_of_aemeasurable h
+  refine not_measurableSet_snd'_true ?_
+  have hpre : badCoord ⁻¹' (fst' ⁻¹' {(1 : ℝ)}) = snd' ⁻¹' {true} := by
+    ext p
+    cases hb : snd' p <;> simp [badCoord, hb, Set.mem_preimage, fst', pt]
+  rw [← hpre]
+  exact hm (measurableSet_iff.2 ⟨{(1 : ℝ)}, rfl⟩)
+
+/-- The random vector: coordinate `false` is the identity, coordinate `true` is the bad map. -/
+def XX : Pt → Bool → Pt := fun p i => bif i then badCoord p else p
+
+theorem coords_false_eq : coords ({false} : Finset Bool) XX = fun p _ => p := by
+  funext p i
+  have hi : (i : Bool) = false := Finset.mem_singleton.1 i.2
+  simp [coords, Finset.restrict, XX, hi]
+
+theorem measurable_coords_false : Measurable (coords ({false} : Finset Bool) XX) := by
+  rw [coords_false_eq]
+  exact measurable_pi_lambda _ fun _ => measurable_id
+
+theorem measurable_coords_empty : Measurable (coords (∅ : Finset Bool) XX) :=
+  measurable_pi_lambda _ fun i => absurd i.2 (Finset.notMem_empty _)
+
+/-- The conditioning block's law is not s-finite: evaluation at the single index is a measurable
+left inverse, and it carries that law back to `mu`. -/
+theorem not_sfinite_map_coords_false :
+    ¬ SFinite (mu.map (coords ({false} : Finset Bool) XX)) := by
+  intro hs
+  have hL : Measurable (fun F : ({false} : Finset Bool) → Pt => F ⟨false, by simp⟩) :=
+    measurable_pi_apply _
+  have hmap : (mu.map (coords ({false} : Finset Bool) XX)).map
+      (fun F : ({false} : Finset Bool) → Pt => F ⟨false, by simp⟩) = mu := by
+    rw [Measure.map_map hL measurable_coords_false, coords_false_eq]
+    exact Measure.map_id
+  exact not_sfinite_mu (hmap ▸ inferInstance)
+
+/-- The (C2) **hypothesis** at the coordinate level: the triple's law is the junk `0` (the block
+`{true}` is not a.e. measurable) and so is the right-hand side (the conditioning law is not
+s-finite). -/
+theorem condIndepCoords_holds : CondIndepCoords mu XX ∅ {true} {false} := by
+  refine ⟨Kernel.const _ (Measure.dirac (fun _ => pt 0 true)),
+    Kernel.const _ (Measure.dirac (fun _ => pt 0 true)), inferInstance, inferInstance, ?_⟩
+  rw [Measure.compProd_of_not_sfinite _ _ not_sfinite_map_coords_false]
+  refine Measure.map_of_not_aemeasurable ?_
+  intro hc
+  have h1 : AEMeasurable (coords ({true} : Finset Bool) XX) mu :=
+    measurable_snd.comp_aemeasurable (measurable_snd.comp_aemeasurable hc)
+  exact not_aemeasurable_badCoord
+    ((measurable_pi_apply (⟨true, by simp⟩ : ({true} : Finset Bool))).comp_aemeasurable h1)
+
+/-- Its (C2) **conclusion** at the smaller block `∅ ⊆ {true}` fails: every remaining block is
+measurable, so the law on the left has mass `mu Set.univ ≠ 0`, while the right-hand side is
+still `0`. -/
+theorem not_condIndepCoords : ¬ CondIndepCoords mu XX ∅ ∅ {false} := by
+  rintro ⟨κ, η, -, -, hmap⟩
+  have hm : Measurable (fun p : Pt => (coords ({false} : Finset Bool) XX p,
+      (coords (∅ : Finset Bool) XX p, coords (∅ : Finset Bool) XX p))) :=
+    measurable_coords_false.prodMk (measurable_coords_empty.prodMk measurable_coords_empty)
+  rw [Measure.compProd_of_not_sfinite _ _ not_sfinite_map_coords_false,
+    Measure.map_eq_zero_iff hm.aemeasurable] at hmap
+  exact mu_ne_zero' hmap
+
+/-- **`CondIndepCoords.decomposition` is false as frozen**: its statement, taken as a hypothesis,
+yields `False`. The missing hypothesis is `SFinite (μ.map (coords C X))`; with it the theorem is
+true, and proved, as `CondIndepCoords.decomposition_of_sfinite`. -/
+theorem decomposition_is_false
+    (decomposition : ∀ {V α Ω : Type} [MeasurableSpace α] [MeasurableSpace Ω] {μ : Measure Ω}
+      {X : Ω → V → α} {A B C D : Finset V},
+      B ⊆ D → CondIndepCoords μ X A D C → CondIndepCoords μ X A B C) :
+    False :=
+  not_condIndepCoords (decomposition (Finset.empty_subset _) condIndepCoords_holds)
+
+end CondIndepCoords.DecompositionCounterexample
 
 end StatLean.StatisticalModels.GraphicalModels
