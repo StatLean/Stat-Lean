@@ -84,7 +84,9 @@ theorem isProperFactorParams_rotateParams (P : FactorParams p q)
     -- USER-INPUT: genuine covariance parameters; BKM Eq. (3.1)–(3.2)
     (hP : IsProperFactorParams P) :
     IsProperFactorParams (rotateParams P A) := by
-  sorry
+  refine ⟨?_, hP.2⟩
+  simpa [rotateParams, Matrix.conjTranspose_eq_transpose_of_trivial] using
+    hP.1.mul_mul_conjTranspose_same A⁻¹
 
 /-- **The common part is rotation invariant**: `(Λ A)(A⁻¹ Φ A⁻ᵀ)(Λ A)ᵀ = Λ Φ Λᵀ`
 (`BKM` §2.11, Eq. (2.26)). -/
@@ -94,7 +96,12 @@ theorem commonCovariance_rotateParams (P : FactorParams p q)
     -- BKM §2.11
     (hA : IsUnit A.det) :
     commonCovariance (rotateParams P A) = commonCovariance P := by
-  sorry
+  have h2 : (A⁻¹)ᵀ * Aᵀ = 1 := by
+    rw [← Matrix.transpose_mul, Matrix.mul_nonsing_inv _ hA, Matrix.transpose_one]
+  simp only [commonCovariance, rotateParams_loading, rotateParams_factorCov,
+    Matrix.transpose_mul, Matrix.mul_assoc]
+  rw [Matrix.mul_nonsing_inv_cancel_left _ _ hA, ← Matrix.mul_assoc (A⁻¹)ᵀ, h2,
+    Matrix.one_mul]
 
 /-- **The factor covariance is rotation invariant**: `Σ` does not change under any
 nonsingular reparameterization of the latent space (`BKM` §2.11, Eq. (2.26); §3.13). -/
@@ -104,7 +111,8 @@ theorem factorCovariance_rotateParams (P : FactorParams p q)
     -- BKM §2.11
     (hA : IsUnit A.det) :
     factorCovariance (rotateParams P A) = factorCovariance P := by
-  sorry
+  rw [factorCovariance_eq_commonCovariance_add, factorCovariance_eq_commonCovariance_add,
+    commonCovariance_rotateParams P hA, rotateParams_uniqueCov]
 
 /-- **The observed law is rotation invariant** — the exact statement, with the latent law
 transported along with the parameters: `y ↦ A⁻¹ y` turns a draw from `F` into a draw from the
@@ -119,7 +127,37 @@ theorem factorLaw_rotateParams (P : FactorParams p q)
     factorLaw (rotateParams P A)
         (F.map fun y => Matrix.toEuclideanLin (𝕜 := ℝ) A⁻¹ y) E
       = factorLaw P F E := by
-  sorry
+  have hg : Measurable fun y : EuclideanSpace ℝ (Fin q) =>
+      Matrix.toEuclideanLin (𝕜 := ℝ) A⁻¹ y :=
+    ((Matrix.toEuclideanLin (𝕜 := ℝ) A⁻¹).continuous_of_finiteDimensional).measurable
+  -- the loading of the rotated tuple undoes the transport of the latent variable
+  have hLA : ∀ y : EuclideanSpace ℝ (Fin q),
+      Matrix.toEuclideanLin (𝕜 := ℝ) (rotateParams P A).loading
+          (Matrix.toEuclideanLin (𝕜 := ℝ) A⁻¹ y)
+        = Matrix.toEuclideanLin (𝕜 := ℝ) P.loading y := by
+    intro y
+    have key : (P.loading * A) *ᵥ (A⁻¹ *ᵥ (WithLp.ofLp y))
+        = P.loading *ᵥ (WithLp.ofLp y) := by
+      rw [Matrix.mulVec_mulVec, Matrix.mul_nonsing_inv_cancel_right _ _ hA]
+    exact congrArg (WithLp.toLp 2) key
+  -- hence the two measurement kernels agree along the transport
+  have hker : ∀ y : EuclideanSpace ℝ (Fin q),
+      measurementKernel (rotateParams P A) E (Matrix.toEuclideanLin (𝕜 := ℝ) A⁻¹ y)
+        = measurementKernel P E y := by
+    intro y
+    by_cases hE : SFinite E
+    · rw [measurementKernel_apply, measurementKernel_apply, hLA y, rotateParams_μ]
+    · -- LEAN-ONLY: junk regime — without `SFinite E` the product kernel, hence the
+      -- measurement kernel, is `0` on both sides
+      have hns : ¬ IsSFiniteKernel (Kernel.const (EuclideanSpace ℝ (Fin q)) E) := by
+        rw [Kernel.isSFiniteKernel_const]; exact hE
+      simp [measurementKernel, affineNoiseKernel,
+        Kernel.prod_of_not_isSFiniteKernel_right _ hns]
+  ext s hs
+  rw [factorLaw, factorLaw, Measure.bind_apply hs (Kernel.aemeasurable _),
+    Measure.bind_apply hs (Kernel.aemeasurable _),
+    lintegral_map (Kernel.measurable_coe _ hs) hg]
+  exact lintegral_congr fun y => by rw [hker y]
 
 /-- The transported latent law realizes the rotated parameters, so the rotated model is a
 *bona fide* factor model with the same observed law. -/
@@ -133,7 +171,16 @@ theorem realizesFactorParams_rotateParams (P : FactorParams p q)
     (hF2 : MemLp id 2 F) :
     RealizesFactorParams (rotateParams P A)
       (F.map fun y => Matrix.toEuclideanLin (𝕜 := ℝ) A⁻¹ y) E := by
-  sorry
+  -- the transport is the affine map `y ↦ A⁻¹ y + 0`
+  have hmapEq : (fun y : EuclideanSpace ℝ (Fin q) => Matrix.toEuclideanLin (𝕜 := ℝ) A⁻¹ y)
+      = fun y => Matrix.toEuclideanLin (𝕜 := ℝ) A⁻¹ y + (0 : EuclideanSpace ℝ (Fin q)) := by
+    funext y; rw [add_zero]
+  refine ⟨?_, hPFE.meanVec_error, ?_, hPFE.covMatrix_error⟩
+  · rw [hmapEq, meanVec_map_affine F A⁻¹ 0 (hF2.integrable (by norm_num)),
+      hPFE.meanVec_latent]
+    simp
+  · rw [hmapEq, covMatrix_map_affine F A⁻¹ 0 hF2, hPFE.covMatrix_latent,
+      rotateParams_factorCov]
 
 /-- **Rotation invariance of the Gaussian factor model**: in the Gaussian instantiation the
 transport of the latent law is automatic (a Gaussian stays Gaussian), so the parameters
@@ -147,7 +194,10 @@ theorem gaussianFactorModel_rotateParams (P : FactorParams p q)
     -- BKM §2.11
     (hA : IsUnit A.det) :
     gaussianFactorModel p q (rotateParams P A) = gaussianFactorModel p q P := by
-  sorry
+  rw [gaussianFactorModel_eq_multivariateGaussian _
+      (isProperFactorParams_rotateParams P A hP),
+    gaussianFactorModel_eq_multivariateGaussian _ hP, rotateParams_μ,
+    factorCovariance_rotateParams P hA]
 
 /-! ### The orthogonal specialization (`BKM` §2.11, §3.13.1)
 
@@ -160,15 +210,15 @@ single hypothesis suffices. -/
 theorem inv_eq_transpose_of_orthogonal {Q : Matrix (Fin q) (Fin q) ℝ}
     -- USER-INPUT: `Q` is orthogonal; BKM §2.11, Eq. (2.24)
     (hQ : Q * Qᵀ = 1) :
-    Q⁻¹ = Qᵀ := by
-  sorry
+    Q⁻¹ = Qᵀ :=
+  Matrix.inv_eq_right_inv hQ
 
 /-- An orthogonal matrix is nonsingular. -/
 theorem isUnit_det_of_orthogonal {Q : Matrix (Fin q) (Fin q) ℝ}
     -- USER-INPUT: `Q` is orthogonal; BKM §2.11, Eq. (2.24)
     (hQ : Q * Qᵀ = 1) :
-    IsUnit Q.det := by
-  sorry
+    IsUnit Q.det :=
+  Matrix.isUnit_det_of_right_inverse hQ
 
 /-- **`BKM` Eq. (2.26)**: an orthogonal rotation of the loadings leaves `Λ Λᵀ` unchanged. -/
 theorem loading_mul_transpose_rotateParams_orthogonal (P : FactorParams p q)
@@ -176,7 +226,7 @@ theorem loading_mul_transpose_rotateParams_orthogonal (P : FactorParams p q)
     -- USER-INPUT: `Q` is orthogonal; BKM §2.11, Eq. (2.24)
     (hQ : Q * Qᵀ = 1) :
     (P.loading * Q) * (P.loading * Q)ᵀ = P.loading * P.loadingᵀ := by
-  sorry
+  rw [Matrix.transpose_mul, Matrix.mul_assoc, ← Matrix.mul_assoc Q, hQ, Matrix.one_mul]
 
 /-- Orthogonal rotation preserves `BKM`'s normalization `Φ = I` (`BKM` §3.13.1). -/
 theorem isStandardized_rotateParams_orthogonal (P : FactorParams p q)
@@ -186,7 +236,10 @@ theorem isStandardized_rotateParams_orthogonal (P : FactorParams p q)
     -- USER-INPUT: `Q` is orthogonal; BKM §2.11, Eq. (2.24)
     (hQ : Q * Qᵀ = 1) :
     IsStandardized (rotateParams P Q) := by
-  sorry
+  have hQinv : Q⁻¹ = Qᵀ := inv_eq_transpose_of_orthogonal hQ
+  change Q⁻¹ * P.factorCov * (Q⁻¹)ᵀ = 1
+  rw [hP, Matrix.mul_one, hQinv, Matrix.transpose_transpose, ← hQinv]
+  exact Matrix.nonsing_inv_mul _ (isUnit_det_of_orthogonal hQ)
 
 /-- **The book's orthogonal-rotation statement** (`BKM` §3.13.1): for standardized factors,
 `Λ` and `Λ Q` give the same covariance `Σ = Λ Λᵀ + Ψ`. -/
@@ -194,8 +247,8 @@ theorem factorCovariance_rotateParams_orthogonal (P : FactorParams p q)
     {Q : Matrix (Fin q) (Fin q) ℝ}
     -- USER-INPUT: `Q` is orthogonal; BKM §2.11, Eq. (2.24)
     (hQ : Q * Qᵀ = 1) :
-    factorCovariance (rotateParams P Q) = factorCovariance P := by
-  sorry
+    factorCovariance (rotateParams P Q) = factorCovariance P :=
+  factorCovariance_rotateParams P (isUnit_det_of_orthogonal hQ)
 
 /-- **Communalities are rotation invariant** — the classical reason communalities, unlike
 loadings, are reportable quantities (`BKM` §2.11 with Eq. (3.10)). -/
@@ -204,7 +257,12 @@ theorem communality_rotateParams_orthogonal (P : FactorParams p q)
     -- USER-INPUT: `Q` is orthogonal; BKM §2.11, Eq. (2.24)
     (hQ : Q * Qᵀ = 1) (i : Fin p) :
     communality (rotateParams P Q) i = communality P i := by
-  sorry
+  -- the communality is the `(i, i)` entry of `Λ Λᵀ`, which orthogonal rotation preserves
+  have key : ∀ M : Matrix (Fin p) (Fin q) ℝ, ∑ k, (M i k) ^ 2 = (M * Mᵀ) i i := by
+    intro M
+    simp [Matrix.mul_apply, Matrix.transpose_apply, sq]
+  rw [communality, communality, key, key, rotateParams_loading,
+    loading_mul_transpose_rotateParams_orthogonal P hQ]
 
 /-- Specific variances are untouched by any reparameterization (definitional). -/
 theorem specificVariance_rotateParams (P : FactorParams p q)
