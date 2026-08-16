@@ -151,7 +151,17 @@ theorem separates_sdiff_pair (i j : V)
     -- USER-INPUT: the non-adjacency of the pair; Lauritzen §3.2 (P), p. 32
     (hadj : ¬ G.Adj i j) :
     Separates G (Finset.univ \ {i, j}) {i} {j} := by
-  sorry
+  intro a ha b hb w
+  rw [Finset.mem_singleton] at ha hb
+  subst ha; subst hb
+  cases w with
+  | nil => exact absurd rfl hij
+  | @cons _ x _ hax p =>
+    refine ⟨x, ?_, ?_⟩
+    · simp only [Finset.mem_sdiff, Finset.mem_univ, true_and, Finset.mem_insert,
+        Finset.mem_singleton, not_or]
+      exact ⟨(G.ne_of_adj hax).symm, fun hxb => hadj (hxb ▸ hax)⟩
+    · exact List.mem_cons_of_mem _ p.start_mem_support
 
 section GraphSide
 
@@ -202,7 +212,18 @@ theorem sdiff_closedNeighborhood_eq_union_far (i j : V)
     (hadj : ¬ G.Adj i j) :
     Finset.univ \ insert i (G.neighborFinset i)
       = {j} ∪ (Finset.univ \ ({i, j} ∪ G.neighborFinset i)) := by
-  sorry
+  have hjn : j ∉ G.neighborFinset i := notMem_neighborFinset_of_not_adj G i j hadj
+  ext x
+  simp only [Finset.mem_union, Finset.mem_sdiff, Finset.mem_univ, true_and,
+    Finset.mem_insert, Finset.mem_singleton, not_or]
+  constructor
+  · rintro ⟨hxi, hxn⟩
+    by_cases hxj : x = j
+    · exact Or.inl hxj
+    · exact Or.inr ⟨⟨hxi, hxj⟩, hxn⟩
+  · rintro (rfl | ⟨⟨hxi, _⟩, hxn⟩)
+    · exact ⟨fun h => hij h.symm, hjn⟩
+    · exact ⟨hxi, hxn⟩
 
 /-- **Second set identity**: after weak union the conditioning set is `ne(i) ∪ D`, and that is
 exactly `V ∖ {i, j}`, the conditioning set (P) asks for. Uses `i ∉ ne(i)` (a `SimpleGraph` is
@@ -213,14 +234,33 @@ theorem neighborFinset_union_far_eq_sdiff_pair (i j : V)
     (hadj : ¬ G.Adj i j) :
     G.neighborFinset i ∪ (Finset.univ \ ({i, j} ∪ G.neighborFinset i))
       = Finset.univ \ {i, j} := by
-  sorry
+  have hjn : j ∉ G.neighborFinset i := notMem_neighborFinset_of_not_adj G i j hadj
+  have hin : i ∉ G.neighborFinset i := G.notMem_neighborFinset_self i
+  ext x
+  simp only [Finset.mem_union, Finset.mem_sdiff, Finset.mem_univ, true_and,
+    Finset.mem_insert, Finset.mem_singleton, not_or]
+  constructor
+  · rintro (hxn | ⟨hx, _⟩)
+    · exact ⟨fun h => hin (h ▸ hxn), fun h => hjn (h ▸ hxn)⟩
+    · exact hx
+  · rintro ⟨hxi, hxj⟩
+    by_cases hxn : x ∈ G.neighborFinset i
+    · exact Or.inl hxn
+    · exact Or.inr ⟨⟨hxi, hxj⟩, hxn⟩
 
 /-- **The graph fact behind (G) ⇒ (L)**: the boundary `ne(v)` separates `{v}` from everything
 outside the closure `cl(v)`. A walk leaving `v` and ending outside `cl(v)` is non-`nil`, so
 its second vertex is a neighbour of `v` lying on it. -/
 theorem separates_neighborFinset (v : V) :
     Separates G (G.neighborFinset v) {v} (Finset.univ \ insert v (G.neighborFinset v)) := by
-  sorry
+  intro a ha b hb w
+  rw [Finset.mem_singleton] at ha
+  subst ha
+  simp only [Finset.mem_sdiff, Finset.mem_univ, true_and, Finset.mem_insert, not_or] at hb
+  cases w with
+  | nil => exact absurd rfl hb.1
+  | @cons _ x _ hax p =>
+    exact ⟨x, by simpa using hax, List.mem_cons_of_mem _ p.start_mem_support⟩
 
 end GraphSide
 
@@ -237,7 +277,14 @@ theorem globalMarkov_implies_localMarkov [DecidableRel G.Adj]
     -- USER-INPUT: the global Markov property of the law; Lauritzen §3.2 (G), p. 32
     (h : IsGlobalMarkov G ci) :
     IsLocalMarkov G ci := by
-  sorry
+  intro v
+  refine h {v} (Finset.univ \ insert v (G.neighborFinset v)) (G.neighborFinset v)
+    (Finset.disjoint_of_subset_left (Finset.singleton_subset_iff.mpr (Finset.mem_insert_self _ _))
+      (disjoint_closedNeighborhood_sdiff G v))
+    (G.singleton_disjoint_neighborFinset v)
+    ((Finset.disjoint_of_subset_left (Finset.subset_insert v (G.neighborFinset v))
+      (disjoint_closedNeighborhood_sdiff G v)).symm)
+    (separates_neighborFinset G v)
 
 /-- **(L) ⇒ (P)** (Lauritzen Proposition 3.4, p. 32, eq. (3.9)). The one step that needs the
 calculus: weak union (C3) applied at `A = {i}`, `B = {j}`, `C = ne(i)`,
@@ -255,7 +302,28 @@ theorem localMarkov_implies_pairwiseMarkov [DecidableRel G.Adj]
     -- USER-INPUT: the local Markov property of the law; Lauritzen §3.2 (L), p. 32
     (h : IsLocalMarkov G ci) :
     IsPairwiseMarkov G ci := by
-  sorry
+  intro i j hij hadj
+  -- the "far" block `D = V ∖ ({i, j} ∪ ne(i))`
+  set D : Finset V := Finset.univ \ ({i, j} ∪ G.neighborFinset i) with hD
+  have hfar : Disjoint ({i, j} ∪ G.neighborFinset i) D := disjoint_pairNeighborhood_sdiff G i j
+  have hiD : Disjoint ({i} : Finset V) D :=
+    Finset.disjoint_of_subset_left
+      (Finset.singleton_subset_iff.mpr (Finset.mem_union_left _ (Finset.mem_insert_self i {j})))
+      hfar
+  have hjD : Disjoint ({j} : Finset V) D :=
+    Finset.disjoint_of_subset_left
+      (Finset.singleton_subset_iff.mpr
+        (Finset.mem_union_left _ (Finset.mem_insert_of_mem (Finset.mem_singleton_self j))))
+      hfar
+  have hnD : Disjoint (G.neighborFinset i) D :=
+    Finset.disjoint_of_subset_left Finset.subset_union_right hfar
+  have hstart : ci {i} ({j} ∪ D) (G.neighborFinset i) := by
+    have := h i
+    rwa [sdiff_closedNeighborhood_eq_union_far G i j hij hadj] at this
+  have := hci.weakUnion (Finset.disjoint_singleton.mpr hij)
+    (G.singleton_disjoint_neighborFinset i) hiD
+    (disjoint_singleton_neighborFinset_of_not_adj G i j hadj) hjD hnD hstart
+  rwa [neighborFinset_union_far_eq_sdiff_pair G i j hadj] at this
 
 /-- **(G) ⇒ (P)** (Lauritzen Proposition 3.4, p. 32). Stated **without** any property of `ci`:
 `separates_sdiff_pair` gives the separation directly, so the composite route through (L) —
@@ -264,7 +332,11 @@ theorem globalMarkov_implies_pairwiseMarkov
     -- USER-INPUT: the global Markov property of the law; Lauritzen §3.2 (G), p. 32
     (h : IsGlobalMarkov G ci) :
     IsPairwiseMarkov G ci := by
-  sorry
+  intro i j hij hadj
+  refine h {i} {j} (Finset.univ \ {i, j}) (Finset.disjoint_singleton.mpr hij) ?_ ?_
+    (separates_sdiff_pair G i j hij hadj)
+  · exact Finset.disjoint_singleton_left.mpr (by simp)
+  · exact Finset.disjoint_singleton_left.mpr (by simp)
 
 /-! ### Theorem 3.7 (Pearl–Paz) — the converse under (C5)
 
