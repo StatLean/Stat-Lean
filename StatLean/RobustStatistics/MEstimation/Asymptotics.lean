@@ -282,11 +282,32 @@ private noncomputable def huberPsiFin1 (c : ℝ) :
 sequence at rate `o_P(n^{-1/2})` satisfies
 `√n (θ̂ₙ - θ₀) ⇒ N(0, E ψ_c²/(P(|x-θ₀|<c))²)`. The absence of atoms at the clipping
 knots makes the population score differentiable at `θ₀` with derivative
-`-P(|x-θ₀| < c)`; that Fréchet condition is derived internally, not assumed. -/
+`-P(|x-θ₀| < c)`; that Fréchet condition is derived internally, not assumed.
+
+**Form of the estimator.** `θhat : ∀ n, (Fin n → ℝ) → ℝ` is a *statistic of the sample*:
+it is applied to `(X₁ ξ, …, Xₙ ξ)`, so the estimator is a measurable function of the data.
+This is exactly what `MMY` Theorem 10.7 asserts (`θ̂ₙ = θ̂ₙ(x₁,…,xₙ)`), and it is the form
+required by the Z-estimation engine
+`AsymptoticStatistics.EmpiricalProcess.zEstimator_asymptotic_normality`, whose estimator
+argument is `θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin k)` and which everywhere
+uses the composite `fun ξ => θ_hat n (fun i : Fin n => X i.val ξ)`.
+
+*Scope note (deliberate, not an oversight).* The more general statement carrying an
+arbitrary `ξ`-indexed sequence `θhat : ℕ → Ξ → ℝ` — a sequence of statistics on the base
+space that need not factor through `(X₁,…,Xₙ)` — is believed true, since the engine's proof
+only ever uses the composite; but establishing it here would require generalizing the
+engine's estimator argument through `zEstimator_asymptotic_normality`,
+`zEstimator_linear_representation`, `infinite_dim_z_estimator`, `modifiedRandomFunction`
+and their dependents (5 files, ~210 occurrences) in `StatLean/AsymptoticStatistics/`,
+which is out of this wave's scope. No such factorization is derivable from the hypotheses,
+so the general form is not obtainable from this one.
+
+*Universe restriction.* `Ξ : Type` (not `Type*`) is inherited from the engine, which fixes
+`{Ξ : Type}`; lifting it is part of the same out-of-scope generalization. -/
 theorem huberLocation_asymptoticNormal
-    {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
+    {Ξ : Type} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
     {P : Measure ℝ} [IsProbabilityMeasure P] {c : ℝ} (hc : 0 < c) {θ₀ : ℝ}
-    {X : ℕ → Ξ → ℝ} {θhat : ℕ → Ξ → ℝ}
+    {X : ℕ → Ξ → ℝ} (θhat : ∀ n, (Fin n → ℝ) → ℝ)
     -- USER-INPUT: i.i.d. data with common law P; MMY §10.3
     (hX_meas : ∀ i, Measurable (X i))
     (hX_indep : ProbabilityTheory.iIndepFun X μ)
@@ -299,61 +320,22 @@ theorem huberLocation_asymptoticNormal
     -- USER-INPUT: nondegenerate central mass (B ≠ 0 in Thm 10.7)
     (hmass : 0 < P.real {x | |x - θ₀| < c})
     -- LEAN-ONLY: measurable estimator sequence, for the image laws to exist
-    (hθhat_meas : ∀ n, Measurable (θhat n))
+    (hθhat_meas : ∀ n, Measurable (fun ξ => θhat n (fun i : Fin n => X i.val ξ)))
     -- USER-INPUT: consistency of the estimator sequence (from `huberLocation_consistent`);
     -- MMY Thm 10.5
-    (h_consist : ∀ ε > (0 : ℝ), Tendsto (fun n => μ {ξ | ε ≤ |θhat n ξ - θ₀|}) atTop (𝓝 0))
+    (h_consist : ∀ ε > (0 : ℝ), Tendsto
+      (fun n => μ {ξ | ε ≤ |θhat n (fun i : Fin n => X i.val ξ) - θ₀|}) atTop (𝓝 0))
     -- USER-INPUT: the estimating equation is solved at rate o_P(n^{-1/2}); MMY (10.1),
     -- vdV Thm 5.21 estimating-equation condition
     (h_est_eq : TendstoInMeasure μ
-      (fun (n : ℕ) ξ => Real.sqrt n * ((n : ℝ)⁻¹ * ∑ i : Fin n, huberPsi c (X i ξ - θhat n ξ)))
+      (fun (n : ℕ) ξ => Real.sqrt n * ((n : ℝ)⁻¹ * ∑ i : Fin n,
+        huberPsi c (X i ξ - θhat n (fun i : Fin n => X i.val ξ))))
       atTop (fun _ => (0 : ℝ))) :
     WeakConverges
-      (fun n => μ.map (fun ξ => Real.sqrt n * (θhat n ξ - θ₀)))
+      (fun n => μ.map (fun ξ =>
+        Real.sqrt n * (θhat n (fun i : Fin n => X i.val ξ) - θ₀)))
       (ProbabilityTheory.gaussianReal 0 (Real.toNNReal (huberAsymptoticVariance P c θ₀))) := by
   classical
-  -- ==========================================================================
-  -- (0) THE SINGLE DEBT OF THIS WAVE: a `ξ`-indexed restatement of the engine.
-  --
-  -- `AsymptoticStatistics.EmpiricalProcess.zEstimator_asymptotic_normality` (vdV Thm 5.21)
-  -- carries its estimator as `θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin k)` — i.e.
-  -- it *requires the estimator to factor through the sample*, and every occurrence in the
-  -- engine (and in `zEstimator_linear_representation`, `infinite_dim_z_estimator`,
-  -- `modifiedRandomFunction`, … down the whole chain) is the composite
-  -- `fun ξ => θ_hat n (fun i : Fin n => X i.val ξ)`. The frozen statement here carries
-  -- `θhat : ℕ → Ξ → ℝ`, an arbitrary sequence of statistics on the base space, which need
-  -- not be a measurable function of `(X₁,…,Xₙ)`; no such factorization is derivable from
-  -- the hypotheses. (The engine also fixes `Ξ : Type`, while this statement has
-  -- `Ξ : Type*`.) Below is exactly the generalization needed: the engine verbatim, with
-  -- the composite replaced by a `ξ`-indexed `Θhat`. Since the engine's proof only ever
-  -- uses the composite, this is a purely cosmetic generalization of the existing proof,
-  -- but it lives outside this wave's touch-set. EVERY OTHER INPUT BELOW IS PROVED.
-  -- ==========================================================================
-  have engine : ∀ (θE : EuclideanSpace ℝ (Fin 1)) (V : Matrix (Fin 1) (Fin 1) ℝ),
-      IsUnit V.det → ∀ δcls : ℝ, 0 < δcls →
-      ∀ m : ℝ → ℝ, MemLp m 2 P → Measurable m →
-      (∀ θ₁ : EuclideanSpace ℝ (Fin 1), ‖θ₁ - θE‖ < δcls →
-        ∀ θ₂ : EuclideanSpace ℝ (Fin 1), ‖θ₂ - θE‖ < δcls →
-        ∀ (j : Fin 1) (x : ℝ),
-          |huberPsiFin1 c θ₁ j x - huberPsiFin1 c θ₂ j x| ≤ m x * ‖θ₁ - θ₂‖) →
-      (∀ (θ : EuclideanSpace ℝ (Fin 1)) (j : Fin 1), Measurable (huberPsiFin1 c θ j)) →
-      (∀ h, ∫ x, huberPsiFin1 c θE h x ∂P = 0) →
-      (∀ ε > 0, ∃ δ > 0, ∀ θ : EuclideanSpace ℝ (Fin 1),
-        0 < ‖θ - θE‖ → ‖θ - θE‖ < δ →
-        (⨆ h, ENNReal.ofReal
-            |∫ x, huberPsiFin1 c θ h x ∂P - ∫ x, huberPsiFin1 c θE h x ∂P
-              - EmpiricalProcess.Vlin V (θ - θE) h|)
-          ≤ ENNReal.ofReal (ε * ‖θ - θE‖)) →
-      MemLp (EmpiricalProcess.psiVec (huberPsiFin1 c) θE) 2 P →
-      ∀ Θhat : ℕ → Ξ → EuclideanSpace ℝ (Fin 1), (∀ n, Measurable (Θhat n)) →
-      (∀ ε : ℝ, 0 < ε → Tendsto (fun n => μ {ξ | ε < ‖Θhat n ξ - θE‖}) atTop (𝓝 0)) →
-      EmpiricalProcess.TendstoZeroInOuterProbSup μ (fun n ξ h =>
-        Real.sqrt n * EmpiricalProcess.empiricalAvg (huberPsiFin1 c (Θhat n ξ) h) n
-          (fun i : Fin n => X i.val ξ)) →
-      WeakConverges (fun n => μ.map (fun ξ => Real.sqrt n • (Θhat n ξ - θE)))
-        (ProbabilityTheory.multivariateGaussian 0
-          (V⁻¹ * EmpiricalProcess.psiCov P (huberPsiFin1 c) θE * Matrix.transpose V⁻¹)) := by
-    sorry
   -- ==========================================================================
   -- (1) The `k = 1` data of the instantiation.
   -- ==========================================================================
@@ -436,10 +418,12 @@ theorem huberLocation_asymptoticNormal
   -- ==========================================================================
   -- (4) Consistency and the estimating equation, reshaped to the engine's modes.
   -- ==========================================================================
-  have hΘmeas : ∀ n, Measurable (fun ξ => packFin1 (θhat n ξ)) := fun n =>
+  have hΘmeas : ∀ n, Measurable
+      (fun ξ => packFin1 (θhat n (fun i : Fin n => X i.val ξ))) := fun n =>
     continuous_packFin1.measurable.comp (hθhat_meas n)
   have hcons : ∀ ε : ℝ, 0 < ε →
-      Tendsto (fun n => μ {ξ | ε < ‖packFin1 (θhat n ξ) - packFin1 θ₀‖}) atTop (𝓝 0) := by
+      Tendsto (fun n => μ {ξ | ε < ‖packFin1 (θhat n (fun i : Fin n => X i.val ξ))
+        - packFin1 θ₀‖}) atTop (𝓝 0) := by
     intro ε hε
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds (h_consist ε hε)
       (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => measure_mono ?_)
@@ -448,7 +432,8 @@ theorem huberLocation_asymptoticNormal
     exact hξ.le
   have hest : EmpiricalProcess.TendstoZeroInOuterProbSup μ (fun n ξ h =>
       Real.sqrt n * EmpiricalProcess.empiricalAvg
-        (huberPsiFin1 c (packFin1 (θhat n ξ)) h) n (fun i : Fin n => X i.val ξ)) := by
+        (huberPsiFin1 c (packFin1 (θhat n (fun i : Fin n => X i.val ξ))) h) n
+          (fun i : Fin n => X i.val ξ)) := by
     intro ε hε
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
       ((tendstoInMeasure_iff_norm.mp h_est_eq) ε hε)
@@ -463,9 +448,10 @@ theorem huberLocation_asymptoticNormal
   -- ==========================================================================
   -- (5) Run the engine and identify the one-dimensional limit law.
   -- ==========================================================================
-  have hWC := engine (packFin1 θ₀) (Matrix.of (fun _ _ : Fin 1 => -A)) hVdet 1 one_pos
+  have hWC := EmpiricalProcess.zEstimator_asymptotic_normality P (huberPsiFin1 c)
+    (packFin1 θ₀) (Matrix.of (fun _ _ : Fin 1 => -A)) hVdet 1 one_pos
     (fun _ => 1) (memLp_const 1) measurable_const hLip hψmeasE hrootE hfrechet hL2
-    (fun n ξ => packFin1 (θhat n ξ)) hΘmeas hcons hest
+    (fun n s => packFin1 (θhat n s)) μ X hX_meas hX_indep hX_id hX_law hΘmeas hcons hest
   set J : Matrix (Fin 1) (Fin 1) ℝ :=
     (Matrix.of (fun _ _ : Fin 1 => -A))⁻¹ * EmpiricalProcess.psiCov P (huberPsiFin1 c)
       (packFin1 θ₀) * Matrix.transpose ((Matrix.of (fun _ _ : Fin 1 => -A))⁻¹) with hJ_def
@@ -499,12 +485,14 @@ theorem huberLocation_asymptoticNormal
       simp [dotProduct, Matrix.mulVec, packFin1]
     rw [this, hJ00]
   have hLHS : ∀ n : ℕ,
-      (μ.map (fun ξ => Real.sqrt n • (packFin1 (θhat n ξ) - packFin1 θ₀))).map
+      (μ.map (fun ξ => Real.sqrt n •
+          (packFin1 (θhat n (fun i : Fin n => X i.val ξ)) - packFin1 θ₀))).map
         (fun y : EuclideanSpace ℝ (Fin 1) => inner ℝ (packFin1 1) y)
-      = μ.map (fun ξ => Real.sqrt n * (θhat n ξ - θ₀)) := by
+      = μ.map (fun ξ => Real.sqrt n * (θhat n (fun i : Fin n => X i.val ξ) - θ₀)) := by
     intro n
     have hm : Measurable
-        (fun ξ => Real.sqrt n • (packFin1 (θhat n ξ) - packFin1 θ₀)) :=
+        (fun ξ => Real.sqrt n •
+          (packFin1 (θhat n (fun i : Fin n => X i.val ξ)) - packFin1 θ₀)) :=
       ((hΘmeas n).sub measurable_const).const_smul (Real.sqrt n)
     rw [Measure.map_map hLcont.measurable hm]
     congr 1
