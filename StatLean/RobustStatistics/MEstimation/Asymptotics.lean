@@ -136,42 +136,6 @@ theorem huberLocation_consistent
 noncomputable def huberAsymptoticVariance (P : Measure ℝ) (c θ₀ : ℝ) : ℝ :=
   (∫ x, huberPsi c (x - θ₀) ^ 2 ∂P) / (P.real {x | |x - θ₀| < c}) ^ 2
 
-/-- **Asymptotic normality of the Huber location estimator** (`MMY` Theorem 10.7 with eq.
-(2.24)–(2.25); via vdV Theorem 5.21, the Lipschitz-score route): a consistent near-root
-sequence at rate `o_P(n^{-1/2})` satisfies
-`√n (θ̂ₙ - θ₀) ⇒ N(0, E ψ_c²/(P(|x-θ₀|<c))²)`. The absence of atoms at the clipping
-knots makes the population score differentiable at `θ₀` with derivative
-`-P(|x-θ₀| < c)`; that Fréchet condition is derived internally, not assumed. -/
-theorem huberLocation_asymptoticNormal
-    {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
-    {P : Measure ℝ} [IsProbabilityMeasure P] {c : ℝ} (hc : 0 < c) {θ₀ : ℝ}
-    {X : ℕ → Ξ → ℝ} {θhat : ℕ → Ξ → ℝ}
-    -- USER-INPUT: i.i.d. data with common law P; MMY §10.3
-    (hX_meas : ∀ i, Measurable (X i))
-    (hX_indep : ProbabilityTheory.iIndepFun X μ)
-    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
-    (hX_law : μ.map (X 0) = P)
-    -- USER-INPUT: θ₀ solves the population Huber equation; MMY (2.22)
-    (hroot : IsMLocationRoot (huberPsi c) P θ₀)
-    -- USER-INPUT: no atoms at the clipping knots; MMY §10.3 (Example 10.4: F continuous)
-    (h_atom_add : P {θ₀ + c} = 0) (h_atom_sub : P {θ₀ - c} = 0)
-    -- USER-INPUT: nondegenerate central mass (B ≠ 0 in Thm 10.7)
-    (hmass : 0 < P.real {x | |x - θ₀| < c})
-    -- LEAN-ONLY: measurable estimator sequence, for the image laws to exist
-    (hθhat_meas : ∀ n, Measurable (θhat n))
-    -- USER-INPUT: consistency of the estimator sequence (from `huberLocation_consistent`);
-    -- MMY Thm 10.5
-    (h_consist : ∀ ε > (0 : ℝ), Tendsto (fun n => μ {ξ | ε ≤ |θhat n ξ - θ₀|}) atTop (𝓝 0))
-    -- USER-INPUT: the estimating equation is solved at rate o_P(n^{-1/2}); MMY (10.1),
-    -- vdV Thm 5.21 estimating-equation condition
-    (h_est_eq : TendstoInMeasure μ
-      (fun (n : ℕ) ξ => Real.sqrt n * ((n : ℝ)⁻¹ * ∑ i : Fin n, huberPsi c (X i ξ - θhat n ξ)))
-      atTop (fun _ => (0 : ℝ))) :
-    WeakConverges
-      (fun n => μ.map (fun ξ => Real.sqrt n * (θhat n ξ - θ₀)))
-      (ProbabilityTheory.gaussianReal 0 (Real.toNNReal (huberAsymptoticVariance P c θ₀))) := by
-  sorry
-
 /-- Above the upper knot the Huber score is the constant `c`. (Branch formula for the
 derivative computation below; `Huber.lean` only exports the central-region formula.) -/
 private theorem huberPsi_of_clip_le {c u : ℝ} (hc : 0 ≤ c) (h : c ≤ u) : huberPsi c u = c := by
@@ -216,13 +180,11 @@ private theorem hasDerivAt_huberPsi_sub {c θ₀ x : ℝ} (hc : 0 < c) (hx : |x 
       filter_upwards [hopen.mem_nhds (show x - θ₀ < -c from by linarith)] with θ hθ
       exact huberPsi_of_le_neg_clip hc.le (le_of_lt hθ)
 
-/-- **The population Huber score is differentiable at `θ₀` with derivative the negative
-central mass** (the `B` of `MMY` Theorem 10.7 for the Huber score): derived from the
-Lipschitz score and the absence of atoms at the knots, via differentiation under the
-integral. Named separately because it is the analytic heart of the normality proof. -/
-theorem hasDerivAt_mLocationScore_huber {P : Measure ℝ} [IsProbabilityMeasure P] {c θ₀ : ℝ}
-    (hc : 0 < c)
-    -- USER-INPUT: no atoms at the clipping knots; MMY §10.3
+/-- Private, earlier-placed copy of `hasDerivAt_mLocationScore_huber` (below): the
+normality theorem needs the population score's derivative *before* the frozen statement's
+position in the file. The frozen theorem is this lemma verbatim. -/
+private theorem hasDerivAt_mLocationScore_huber_aux
+    {P : Measure ℝ} [IsProbabilityMeasure P] {c θ₀ : ℝ} (hc : 0 < c)
     (h_atom_add : P {θ₀ + c} = 0) (h_atom_sub : P {θ₀ - c} = 0) :
     HasDerivAt (mLocationScore (huberPsi c) P) (-(P.real {x | |x - θ₀| < c})) θ₀ := by
   classical
@@ -279,5 +241,87 @@ theorem hasDerivAt_mLocationScore_huber {P : Measure ℝ} [IsProbabilityMeasure 
     simp
   rw [hval] at hderiv
   exact hderiv
+
+/-! ### `ℝ ↔ EuclideanSpace ℝ (Fin 1)` packaging for the `k = 1` instantiation
+
+The Z-estimation engine carries its parameter in `EuclideanSpace ℝ (Fin k)`; the location
+model is `k = 1`. These private helpers are the coordinate dictionary. -/
+
+/-- The `Fin 1` Euclidean packaging of a real parameter. -/
+private noncomputable def packFin1 (t : ℝ) : EuclideanSpace ℝ (Fin 1) :=
+  EuclideanSpace.single (0 : Fin 1) t
+
+@[simp] private theorem packFin1_apply (t : ℝ) : (packFin1 t) 0 = t := by
+  simp [packFin1]
+
+/-- In one dimension the Euclidean norm *is* the absolute value of the single coordinate. -/
+private theorem norm_euclideanFin1 (y : EuclideanSpace ℝ (Fin 1)) : ‖y‖ = |y 0| := by
+  rw [EuclideanSpace.norm_eq]
+  simp [Real.sqrt_sq_eq_abs]
+
+private theorem continuous_packFin1 : Continuous packFin1 :=
+  LipschitzWith.continuous (K := 1)
+    (LipschitzWith.of_dist_le_mul fun a b => by
+      simp [packFin1, EuclideanSpace.dist_single_same])
+
+/-- The coordinate functional as an inner product against `packFin1 1` — the form in which
+`multivariateGaussian_map_inner_eq_gaussianReal` identifies the one-dimensional marginal. -/
+private theorem inner_packFin1_one (y : EuclideanSpace ℝ (Fin 1)) :
+    inner ℝ (packFin1 1) y = y 0 := by
+  have h := EuclideanSpace.inner_single_left (𝕜 := ℝ) (0 : Fin 1) (1 : ℝ) y
+  simpa [packFin1] using h
+
+/-- The Huber estimating function packaged as the `k = 1` criterion family of the
+Z-estimation engine: one coordinate, evaluated at the single parameter coordinate. -/
+private noncomputable def huberPsiFin1 (c : ℝ) :
+    EuclideanSpace ℝ (Fin 1) → Fin 1 → (ℝ → ℝ) :=
+  fun θ _ x => huberPsi c (x - θ 0)
+
+/-- **Asymptotic normality of the Huber location estimator** (`MMY` Theorem 10.7 with eq.
+(2.24)–(2.25); via vdV Theorem 5.21, the Lipschitz-score route): a consistent near-root
+sequence at rate `o_P(n^{-1/2})` satisfies
+`√n (θ̂ₙ - θ₀) ⇒ N(0, E ψ_c²/(P(|x-θ₀|<c))²)`. The absence of atoms at the clipping
+knots makes the population score differentiable at `θ₀` with derivative
+`-P(|x-θ₀| < c)`; that Fréchet condition is derived internally, not assumed. -/
+theorem huberLocation_asymptoticNormal
+    {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]
+    {P : Measure ℝ} [IsProbabilityMeasure P] {c : ℝ} (hc : 0 < c) {θ₀ : ℝ}
+    {X : ℕ → Ξ → ℝ} {θhat : ℕ → Ξ → ℝ}
+    -- USER-INPUT: i.i.d. data with common law P; MMY §10.3
+    (hX_meas : ∀ i, Measurable (X i))
+    (hX_indep : ProbabilityTheory.iIndepFun X μ)
+    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)
+    (hX_law : μ.map (X 0) = P)
+    -- USER-INPUT: θ₀ solves the population Huber equation; MMY (2.22)
+    (hroot : IsMLocationRoot (huberPsi c) P θ₀)
+    -- USER-INPUT: no atoms at the clipping knots; MMY §10.3 (Example 10.4: F continuous)
+    (h_atom_add : P {θ₀ + c} = 0) (h_atom_sub : P {θ₀ - c} = 0)
+    -- USER-INPUT: nondegenerate central mass (B ≠ 0 in Thm 10.7)
+    (hmass : 0 < P.real {x | |x - θ₀| < c})
+    -- LEAN-ONLY: measurable estimator sequence, for the image laws to exist
+    (hθhat_meas : ∀ n, Measurable (θhat n))
+    -- USER-INPUT: consistency of the estimator sequence (from `huberLocation_consistent`);
+    -- MMY Thm 10.5
+    (h_consist : ∀ ε > (0 : ℝ), Tendsto (fun n => μ {ξ | ε ≤ |θhat n ξ - θ₀|}) atTop (𝓝 0))
+    -- USER-INPUT: the estimating equation is solved at rate o_P(n^{-1/2}); MMY (10.1),
+    -- vdV Thm 5.21 estimating-equation condition
+    (h_est_eq : TendstoInMeasure μ
+      (fun (n : ℕ) ξ => Real.sqrt n * ((n : ℝ)⁻¹ * ∑ i : Fin n, huberPsi c (X i ξ - θhat n ξ)))
+      atTop (fun _ => (0 : ℝ))) :
+    WeakConverges
+      (fun n => μ.map (fun ξ => Real.sqrt n * (θhat n ξ - θ₀)))
+      (ProbabilityTheory.gaussianReal 0 (Real.toNNReal (huberAsymptoticVariance P c θ₀))) := by
+  sorry
+
+/-- **The population Huber score is differentiable at `θ₀` with derivative the negative
+central mass** (the `B` of `MMY` Theorem 10.7 for the Huber score): derived from the
+Lipschitz score and the absence of atoms at the knots, via differentiation under the
+integral. Named separately because it is the analytic heart of the normality proof. -/
+theorem hasDerivAt_mLocationScore_huber {P : Measure ℝ} [IsProbabilityMeasure P] {c θ₀ : ℝ}
+    (hc : 0 < c)
+    -- USER-INPUT: no atoms at the clipping knots; MMY §10.3
+    (h_atom_add : P {θ₀ + c} = 0) (h_atom_sub : P {θ₀ - c} = 0) :
+    HasDerivAt (mLocationScore (huberPsi c) P) (-(P.real {x | |x - θ₀| < c})) θ₀ :=
+  hasDerivAt_mLocationScore_huber_aux hc h_atom_add h_atom_sub
 
 end StatLean.RobustStatistics
