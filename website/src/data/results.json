@@ -9546,32 +9546,83 @@
     ]
   },
   {
+    "id": "conc-separable-process",
+    "category": "concentration",
+    "kind": "definition",
+    "leanName": "IsSeparableProcess",
+    "fullName": "StatLean.ConcentrationInequalities.IsSeparableProcess",
+    "title": "Separable Process",
+    "citation": "Vershynin (2018), p. 227",
+    "shortRef": "Vershynin (2018), p. 227",
+    "file": "StatLean/ConcentrationInequalities/Chaining/SeparableProcess.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/SeparableProcess.html#StatLean.ConcentrationInequalities.IsSeparableProcess",
+    "informal": "<p>A real-valued process $(X_t)_{t\\in T}$ on an arbitrary index set $T$ is a <em>separable version</em> if there is a <span data-link=\"h1\">countable subset $T_0\\subseteq T$</span> such that <span data-link=\"h3\">almost surely</span>, <span data-link=\"h2\">every value $X_t(\\omega)$, $t\\in T$, lies in the closure of the countable value family $\\{X_s(\\omega) : s\\in T_0\\}$</span>. This is the version-selection hypothesis that genuine suprema over uncountable index sets require: modifying each $X_t$ on a $t$-dependent null set changes no finite-dimensional quantity — in particular it preserves sub-Gaussian increments — yet can inflate $\\sup_{t\\in T}X_t$ to $+\\infty$. A countable index set is automatically its own witness, and so is any process with almost-surely continuous sample paths on a topologically separable index set; in the Dudley setting, finite covering numbers at every radius already make $T$ separable.</p>",
+    "summary": "Value-space (Doob) separability: a countable subset whose values almost surely capture every value of the process in their closure — the version-selection input behind every genuine supremum over an uncountable index set.",
+    "leanSignature": "def IsSeparableProcess {E : Type*} (X : E → Ω → ℝ) (T : Set E)\n    (μ : Measure Ω := by volume_tac) : Prop :=\n  ∃ T₀ : Set E, T₀ ⊆ T ∧ T₀.Countable ∧\n    ∀ᵐ ω ∂μ, ∀ t ∈ T, X t ω ∈ closure ((fun s => X s ω) '' T₀)",
+    "formalizationNotes": "Value-space (Doob-style) separability: no metric on the index type is needed, and the notion is weaker than metric-dense-subset separability, so the theorems assuming it are stronger. Constructors: IsSeparableProcess.of_countable (a countable index set is its own witness, surely rather than almost surely) and IsSeparableProcess.of_continuousOn (almost-sure sample-path continuity on a topologically separable index set), with isSeparable_of_coveringNumber_ne_top supplying that separability from the Dudley covering package. Edge behaviour: the empty index set is separable with the empty witness; for a nonempty index set every witness is automatically nonempty, since the closure of the empty value family is empty.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "T₀.Countable",
+        "label": "Countable skeleton",
+        "note": "A countable subset $T_0$ of the index set $T$."
+      },
+      {
+        "id": "h2",
+        "leanToken": "closure",
+        "label": "Value-space density",
+        "note": "Every value $X_t(\\omega)$ is a limit of values $X_s(\\omega)$ with $s \\in T_0$."
+      },
+      {
+        "id": "h3",
+        "leanToken": "∀ᵐ ω ∂μ",
+        "label": "Almost surely",
+        "note": "The capture property holds on a single event of full probability."
+      }
+    ],
+    "reference": {
+      "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
+      "pointer": "§8.1, p. 227, footnote 1",
+      "biblio": "Separable versions go back to J. L. Doob, *Stochastic Processes*, Wiley, 1953, Ch. II. The modern treatment in the chaining context is R. van Handel, *Probability in High Dimension*, APC 550 Lecture Notes, Princeton University, 2016, §5.3.",
+      "keys": [
+        "vershynin2018",
+        "doob1953",
+        "vanhandel2016"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "separable process",
+      "separable version"
+    ]
+  },
+  {
     "id": "conc-hdp-discrete-dudley",
     "category": "concentration",
     "kind": "theorem",
-    "leanName": "discrete_dudley",
-    "fullName": "StatLean.ConcentrationInequalities.discrete_dudley",
+    "leanName": "discrete_dudley_anchored_separable",
+    "fullName": "StatLean.ConcentrationInequalities.discrete_dudley_anchored_separable",
     "title": "Discrete Dudley Inequality",
     "citation": "Vershynin (2018), Thm 8.1.4",
     "shortRef": "Vershynin (2018), Thm 8.1.4",
-    "file": "StatLean/ConcentrationInequalities/Chaining/DiscreteDudley.lean",
-    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/DiscreteDudley.html#StatLean.ConcentrationInequalities.discrete_dudley",
-    "informal": "<p>Let $(X_t)_{t\\in T}$ be a random process on an <em>arbitrary</em> subset $T$ of a (pseudo)metric space whose <span data-link=\"h1\">covering numbers are finite at every positive radius</span>, with <span data-link=\"h2\">centered</span> ($\\mathbb{E}[X_t]=0$), <span data-link=\"h4\">integrable</span> coordinates and <span data-link=\"h3\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$ (the <a href=\"#/result/conc-hdp-subgaussian-equiv\">sub-Gaussian norm</a>, $\\lVert Y\\rVert_{\\psi_2} = \\inf\\{c > 0 : \\mathbb{E}\\,e^{Y^2/c^2} \\le 2\\}$). Then for <span data-link=\"h5\">every finite subset $F\\subseteq T$</span> — reading $\\mathbb{E}\\sup_{t\\in T}X_t$ as the supremum over finite subsets of $\\mathbb{E}\\max_{t\\in F}X_t$, which is how an unbounded index set is handled (Remark 7.2.1) — $$\\mathbb{E}\\Big[\\max_{t\\in F} X_t\\Big] \\;\\le\\; 6\\sqrt{3}\\;K \\sum_{k\\in\\mathbb{Z}} 2^{-k}\\sqrt{\\log\\mathcal{N}(T,d,2^{-k})},$$ where $\\mathcal{N}(T,d,\\varepsilon)$ is the <a href=\"#/result/conc-covering-number\">covering number</a> of $T$ at radius $\\varepsilon$, the least number of closed $\\varepsilon$-balls centred in $T$ needed to cover $T$. The dyadic entropy series of the full $T$ is valued in $[0,\\infty]$, a divergent series reading as $+\\infty$, in which case the bound is trivially true.</p>",
-    "summary": "For any index set with finite covering numbers, the expected maximum over every finite subset is bounded by six root three times K times the dyadic entropy series of the whole set.",
-    "leanSignature": "theorem discrete_dudley {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)\n    (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)\n    (hinc : SubGaussianIncrements X K T μ)\n    {F : Finset E}\n    (hF : ↑F ⊆ T)\n    (hFne : F.Nonempty) :\n    ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => X t ω) ∂μ)\n      ≤ ENNReal.ofReal (6 * Real.sqrt 3) * K * dudleyLSum T",
-    "formalizationNotes": "Faithful general-$T$ form of the book's statement. Following the book's convention (Remark 7.2.1), the expected supremum over an arbitrary index set is read as the supremum over all finite subsets of the expected maximum, so the theorem quantifies over a finite subset while the metric entropy is measured on the full index set. The finite maximum uses the junk-free finite-max carrier; the entropy series is carried in $[0,\\infty]$ so divergence is an honest $+\\infty$ rather than a silent real-series junk value. Finiteness of the index set is replaced by finiteness of covering numbers (equivalent to total boundedness — the bridge is proved in the library); the proof truncates the chain through nets of $T$ at an arbitrary level and sends the residual $\\mathbb{E}\\max_{t\\in F}(X_t-X_{\\pi_k t})\\lesssim K\\,2^{-k}\\sqrt{\\log|F|}$ to zero, replacing the finite-$T$ finest-scale stop. The constant $6\\sqrt3$ is unchanged from the finite form, which remains available as discrete_dudley_of_finite.",
+    "file": "StatLean/ConcentrationInequalities/Chaining/DiscreteDudleySup.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/DiscreteDudleySup.html#StatLean.ConcentrationInequalities.discrete_dudley_anchored_separable",
+    "informal": "<p>Let $(X_t)_{t\\in T}$ be a random process on an <em>arbitrary</em> — possibly uncountable — subset $T$ of a metric space, with <span data-link=\"h1\">finite covering numbers at every positive radius</span>, <span data-link=\"h4\">integrable coordinates</span> of <span data-link=\"h2\">mean zero</span>, and <span data-link=\"h3\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$ (the <a href=\"#/result/conc-hdp-subgaussian-equiv\">sub-Gaussian norm</a>, $\\lVert Y\\rVert_{\\psi_2} = \\inf\\{c > 0 : \\mathbb{E}\\,e^{Y^2/c^2} \\le 2\\}$). Assume the process is a <span data-link=\"h5\"><a href=\"#/result/conc-separable-process\">separable version</a></span> and fix an <span data-link=\"h6\">anchor point $t_0\\in T$</span>. Then the supremum over the whole index set satisfies $$\\mathbb{E}\\Bigl[\\,\\sup_{t\\in T}\\,(X_t-X_{t_0})\\Bigr] \\;\\le\\; 6\\sqrt{3}\\;K \\sum_{k\\in\\mathbb{Z}} 2^{-k}\\sqrt{\\log\\mathcal{N}(T,d,2^{-k})},$$ where $\\mathcal{N}(T,d,\\varepsilon)$ is the <a href=\"#/result/conc-covering-number\">covering number</a> of $T$. Since the coordinates are centered, the left side is the book's $\\mathbb{E}\\sup_{t\\in T}X_t$, rendered through the anchored increments so that the supremum is meaningful without any measurability caveat.</p>",
+    "summary": "Genuine-supremum form of the dyadic-series Dudley bound: for a separable version of a mean-zero process with sub-Gaussian increments, the expected anchored supremum over the whole index set is at most six root three times K times the dyadic entropy series.",
+    "leanSignature": "theorem discrete_dudley_anchored_separable {X : E → Ω → ℝ} {K : ℝ≥0}\n    {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)\n    (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)\n    (hinc : SubGaussianIncrements X K T μ)\n    (hsep : IsSeparableProcess X T μ)\n    {t₀ : E} (ht₀ : t₀ ∈ T) :\n    ∫⁻ ω, ⨆ t ∈ T, ENNReal.ofReal (X t ω - X t₀ ω) ∂μ\n      ≤ ENNReal.ofReal (6 * Real.sqrt 3) * K * dudleyLSum T",
+    "formalizationNotes": "Genuine-supremum upgrade of the per-finite-subset reading; the finite-subset form remains as discrete_dudley and the finite-index original as discrete_dudley_of_finite. The left side is the lower integral of the anchored supremum in $[0,\\infty]$; the anchored family contains $0$ (at $t=t_0$), so it is the honest supremum — a bare $\\sup_{t\\in T}X_t$ rendering is false already for a one-point index set, where the positive part inflates the left side while the entropy series vanishes. The separable-version hypothesis cannot be dropped: modifying each coordinate on a $t$-dependent null set preserves the increments but can make the supremum infinite. Countable index sets need no separability input (discrete_dudley_anchored_countable), at the same constant $6\\sqrt3$ — the countable core measures the entropy of the full index set, so no subset-covering loss appears. The series is carried in $[0,\\infty]$ (dudleyLSum): a divergent entropy series is an honest infinity, never a silent zero.",
     "hypotheses": [
       {
         "id": "h1",
         "leanToken": "hcov",
         "label": "Finite covering numbers",
-        "note": "Every positive radius admits a finite internal covering of T (total boundedness)."
+        "note": "Every positive radius admits a finite internal covering of T."
       },
       {
         "id": "h2",
         "leanToken": "hmean",
-        "label": "Mean zero",
-        "note": "Each coordinate is centered."
+        "label": "Mean-zero coordinates",
+        "note": "Every coordinate integrates to zero."
       },
       {
         "id": "h3",
@@ -9582,23 +9633,30 @@
       {
         "id": "h4",
         "leanToken": "hint",
-        "label": "Integrability",
-        "note": "Each coordinate X_t has a finite expectation."
+        "label": "Integrable coordinates",
+        "note": "Each coordinate is integrable, so the mean-zero condition is honest."
       },
       {
         "id": "h5",
-        "leanToken": "hF",
-        "label": "Finite subset",
-        "note": "The maximum runs over an arbitrary finite subset F of T."
+        "leanToken": "hsep",
+        "label": "Separable version",
+        "note": "A countable subset almost surely captures every value in its closure."
+      },
+      {
+        "id": "h6",
+        "leanToken": "ht₀",
+        "label": "Anchor point",
+        "note": "A fixed reference point of T."
       }
     ],
     "reference": {
       "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
-      "pointer": "§8.1, Theorem 8.1.4",
-      "biblio": "R. M. Dudley, \"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *Journal of Functional Analysis* 1 (1967), 290–330, established the entropy bound for Gaussian processes; the sub-Gaussian extension via dyadic chaining is folklore.",
+      "pointer": "§8.1, Theorem 8.1.4, Eq. (8.2)",
+      "biblio": "The dyadic-series chaining bound descends from R. M. Dudley, \"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *Journal of Functional Analysis* 1 (1967), 290–330; separable versions go back to J. L. Doob, *Stochastic Processes*, Wiley, 1953, Ch. II.",
       "keys": [
         "vershynin2018",
-        "dudley1967"
+        "dudley1967",
+        "doob1953"
       ]
     },
     "hasGraph": true,
@@ -9611,17 +9669,17 @@
     "id": "conc-hdp-dudley",
     "category": "concentration",
     "kind": "theorem",
-    "leanName": "dudley_inequality",
-    "fullName": "StatLean.ConcentrationInequalities.dudley_inequality",
+    "leanName": "dudley_inequality_anchored_separable",
+    "fullName": "StatLean.ConcentrationInequalities.dudley_inequality_anchored_separable",
     "title": "Dudley's Integral Inequality",
     "citation": "Vershynin (2018), Thm 8.1.3",
     "shortRef": "Vershynin (2018), Thm 8.1.3",
-    "file": "StatLean/ConcentrationInequalities/Chaining/Dudley.lean",
-    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/Dudley.html#StatLean.ConcentrationInequalities.dudley_inequality",
-    "informal": "<p>Let $(X_t)_{t\\in T}$ be a random process on an <em>arbitrary</em> subset $T$ of a (pseudo)metric space with <span data-link=\"h1\">finite covering numbers at every positive radius</span>, <span data-link=\"h2\">centered</span> and <span data-link=\"h4\">integrable</span> coordinates, and <span data-link=\"h3\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$ (the <a href=\"#/result/conc-hdp-subgaussian-equiv\">sub-Gaussian norm</a>, $\\lVert Y\\rVert_{\\psi_2} = \\inf\\{c > 0 : \\mathbb{E}\\,e^{Y^2/c^2} \\le 2\\}$). If <span data-link=\"h6\">$\\operatorname{diam}(T)\\le D$</span>, then for <span data-link=\"h5\">every finite subset $F\\subseteq T$</span> $$\\mathbb{E}\\Big[\\max_{t\\in F} X_t\\Big] \\;\\le\\; 12\\sqrt{3}\\;K \\int_0^{D}\\sqrt{\\log\\mathcal{N}(T,d,\\varepsilon)}\\,d\\varepsilon,$$ where $\\mathcal{N}(T,d,\\varepsilon)$ is the <a href=\"#/result/conc-covering-number\">covering number</a> of $T$ at radius $\\varepsilon$, the least number of closed $\\varepsilon$-balls centred in $T$ needed to cover $T$. The entropy integral of the full $T$ is valued in $[0,\\infty]$, so a divergent integral makes the bound trivially true.</p>",
-    "summary": "Dudley's entropy-integral bound over an arbitrary totally bounded index set: the expected maximum over every finite subset is at most twelve root three times K times the entropy integral of the whole set.",
-    "leanSignature": "theorem dudley_inequality {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)\n    (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)\n    (hinc : SubGaussianIncrements X K T μ)\n    {D : ℝ} (hD : Metric.diam T ≤ D)\n    (hD0 : 0 < D)\n    {F : Finset E}\n    (hF : ↑F ⊆ T)\n    (hFne : F.Nonempty) :\n    ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => X t ω) ∂μ)\n      ≤ ENNReal.ofReal (12 * Real.sqrt 3) * K * dudleyLIntegral T D",
-    "formalizationNotes": "Faithful general-$T$ form of Theorem 8.1.3 (diameter-capped display, Eq. (8.16)). Following the book's convention (Remark 7.2.1), the expected supremum over an arbitrary index set is read as the supremum over all finite subsets of the expected maximum, so the theorem quantifies over a finite subset while the metric entropy is measured on the full index set. The entropy integral is a lower Lebesgue integral in $[0,\\infty]$; the $\\int_0^\\infty$ display and a countable honest-supremum corollary (constant $40$, improved from $80$ since the per-subset engine measures the entropy of $T$ directly) are proved alongside. Constant $12\\sqrt3=2\\times6\\sqrt3$ unchanged; the finite form remains as dudley_inequality_of_finite.",
+    "file": "StatLean/ConcentrationInequalities/Chaining/DudleySup.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/DudleySup.html#StatLean.ConcentrationInequalities.dudley_inequality_anchored_separable",
+    "informal": "<p>Let $(X_t)_{t\\in T}$ be a random process on an <em>arbitrary</em> — possibly uncountable — subset $T$ of a metric space, with <span data-link=\"h1\">finite covering numbers at every positive radius</span>, <span data-link=\"h4\">integrable coordinates</span> of <span data-link=\"h2\">mean zero</span>, and <span data-link=\"h3\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$ (the <a href=\"#/result/conc-hdp-subgaussian-equiv\">sub-Gaussian norm</a>, $\\lVert Y\\rVert_{\\psi_2} = \\inf\\{c > 0 : \\mathbb{E}\\,e^{Y^2/c^2} \\le 2\\}$). Assume the process is a <span data-link=\"h5\"><a href=\"#/result/conc-separable-process\">separable version</a></span>; fix an <span data-link=\"h6\">anchor point $t_0\\in T$</span> and a <span data-link=\"h7\">bound $D > 0$ on the diameter of $T$</span>. Then the supremum over the whole index set satisfies $$\\mathbb{E}\\Bigl[\\,\\sup_{t\\in T}\\,(X_t-X_{t_0})\\Bigr] \\;\\le\\; 12\\sqrt{3}\\;K \\int_0^{D}\\sqrt{\\log\\mathcal{N}(T,d,\\varepsilon)}\\,d\\varepsilon,$$ where $\\mathcal{N}(T,d,\\varepsilon)$ is the <a href=\"#/result/conc-covering-number\">covering number</a> of $T$. Since the coordinates are centered, the left side is the book's $\\mathbb{E}\\sup_{t\\in T}X_t$ of Theorem 8.1.3.</p>",
+    "summary": "Dudley's integral inequality with a genuine supremum over an arbitrary index set: for a separable version of a mean-zero process with sub-Gaussian increments, the expected anchored supremum is at most twelve root three times K times the entropy integral.",
+    "leanSignature": "theorem dudley_inequality_anchored_separable {X : E → Ω → ℝ} {K : ℝ≥0}\n    {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)\n    (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)\n    (hinc : SubGaussianIncrements X K T μ)\n    (hsep : IsSeparableProcess X T μ)\n    {t₀ : E} (ht₀ : t₀ ∈ T)\n    {D : ℝ} (hD : Metric.diam T ≤ D)\n    (hD0 : 0 < D) :\n    ∫⁻ ω, ⨆ t ∈ T, ENNReal.ofReal (X t ω - X t₀ ω) ∂μ\n      ≤ ENNReal.ofReal (12 * Real.sqrt 3) * K * dudleyLIntegral T D",
+    "formalizationNotes": "Genuine-supremum upgrade of Theorem 8.1.3 in its diameter-capped Eq. (8.16) form; the uncapped $\\int_0^\\infty$ display is dudley_inequality_anchored_separable_Ioi, the per-finite-subset engine remains as dudley_inequality, and the finite-index original as dudley_inequality_of_finite. The left side is the lower integral of the anchored supremum in $[0,\\infty]$; the anchored family contains $0$, so it is the honest supremum (a bare mean-zero supremum rendering is false already at a one-point index set). The separable-version hypothesis is mathematically required for an uncountable supremum and cannot be derived; countable index sets need none (dudley_inequality_anchored_countable). Constant $12\\sqrt3 = 2\\times 6\\sqrt3$, unchanged from the finite form: the countable core measures the entropy of the full index set. The entropy integral is carried in $[0,\\infty]$ (dudleyLIntegral), so divergent entropy is an honest infinity.",
     "hypotheses": [
       {
         "id": "h1",
@@ -9632,8 +9690,8 @@
       {
         "id": "h2",
         "leanToken": "hmean",
-        "label": "Mean zero",
-        "note": "Each coordinate is centered."
+        "label": "Mean-zero coordinates",
+        "note": "Every coordinate integrates to zero."
       },
       {
         "id": "h3",
@@ -9644,17 +9702,23 @@
       {
         "id": "h4",
         "leanToken": "hint",
-        "label": "Integrability",
-        "note": "Each coordinate is integrable."
+        "label": "Integrable coordinates",
+        "note": "Each coordinate is integrable, so the mean-zero condition is honest."
       },
       {
         "id": "h5",
-        "leanToken": "hF",
-        "label": "Finite subset",
-        "note": "The maximum runs over an arbitrary finite subset F of T."
+        "leanToken": "hsep",
+        "label": "Separable version",
+        "note": "A countable subset almost surely captures every value in its closure."
       },
       {
         "id": "h6",
+        "leanToken": "ht₀",
+        "label": "Anchor point",
+        "note": "A fixed reference point of T."
+      },
+      {
+        "id": "h7",
         "leanToken": "hD",
         "label": "Diameter cap",
         "note": "D dominates the diameter of T; positive."
@@ -9662,13 +9726,13 @@
     ],
     "reference": {
       "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
-      "pointer": "§8.1, Theorem 8.1.3",
-      "biblio": "R. M. Dudley, \"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *Journal of Functional Analysis* 1 (1967), 290–330. The entropy-integral formulation for sub-Gaussian processes appears in M. Talagrand, *Upper and Lower Bounds for Stochastic Processes*, Springer, 2014, §2.3, and in M. Ledoux and M. Talagrand, *Probability in Banach Spaces*, Springer, 1991, Ch. 11.",
+      "pointer": "§8.1, Theorem 8.1.3 and Eq. (8.16)",
+      "biblio": "The entropy-integral bound originates with R. M. Dudley, \"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *Journal of Functional Analysis* 1 (1967), 290–330; the modern formulation for sub-Gaussian processes is standard in M. Talagrand, *Upper and Lower Bounds for Stochastic Processes*, Springer, 2014, §2.3. Separable versions go back to J. L. Doob, *Stochastic Processes*, Wiley, 1953, Ch. II.",
       "keys": [
         "vershynin2018",
         "dudley1967",
-        "ledoux-talagrand1991",
-        "talagrand2014"
+        "talagrand2014",
+        "doob1953"
       ]
     },
     "hasGraph": true,
@@ -9681,17 +9745,17 @@
     "id": "conc-hdp-dudley-abs",
     "category": "concentration",
     "kind": "theorem",
-    "leanName": "dudley_inequality_abs",
-    "fullName": "StatLean.ConcentrationInequalities.dudley_inequality_abs",
+    "leanName": "dudley_inequality_abs_separable",
+    "fullName": "StatLean.ConcentrationInequalities.dudley_inequality_abs_separable",
     "title": "Dudley's Inequality (Absolute Form)",
     "citation": "Vershynin (2018), Eq. 8.13",
     "shortRef": "Vershynin (2018), Eq. 8.13",
-    "file": "StatLean/ConcentrationInequalities/Chaining/Dudley.lean",
-    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/Dudley.html#StatLean.ConcentrationInequalities.dudley_inequality_abs",
-    "informal": "<p>Let $(X_t)_{t\\in T}$ be a random process on an <em>arbitrary</em> subset $T$ with <span data-link=\"h1\">finite covering numbers at every positive radius</span> and <span data-link=\"h2\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$ (the <a href=\"#/result/conc-hdp-subgaussian-equiv\">sub-Gaussian norm</a>, $\\lVert Y\\rVert_{\\psi_2} = \\inf\\{c > 0 : \\mathbb{E}\\,e^{Y^2/c^2} \\le 2\\}$) — with no centering assumption on the coordinates. Fix an <span data-link=\"h3\">anchor point $t_0\\in T$</span> and a <span data-link=\"h4\">bound $D > 0$ on the diameter of $T$</span>. Then for <span data-link=\"h5\">every finite subset $F\\subseteq T$</span> $$\\mathbb{E}\\Big[\\max_{t\\in F}\\,\\lvert X_t-X_{t_0}\\rvert\\Big] \\;\\le\\; 40\\,K \\int_0^{D}\\sqrt{\\log\\mathcal{N}(T,d,\\varepsilon)}\\,d\\varepsilon,$$ where $\\mathcal{N}(T,d,\\varepsilon)$ is the <a href=\"#/result/conc-covering-number\">covering number</a> of $T$ at radius $\\varepsilon$, the least number of closed $\\varepsilon$-balls centred in $T$ needed to cover $T$.</p>",
-    "summary": "Anchored absolute form of Dudley's inequality over an arbitrary totally bounded index set, with no mean-zero assumption; constant forty.",
-    "leanSignature": "theorem dudley_inequality_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hinc : SubGaussianIncrements X K T μ)\n    {t₀ : E} (ht₀ : t₀ ∈ T)\n    {D : ℝ} (hD : Metric.diam T ≤ D)\n    (hD0 : 0 < D)\n    {F : Finset E}\n    (hF : ↑F ⊆ T)\n    (hFne : F.Nonempty) :\n    ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => |X t ω - X t₀ ω|) ∂μ)\n      ≤ ENNReal.ofReal 40 * K * dudleyLIntegral T D",
-    "formalizationNotes": "Faithful general-$T$ form of Eq. (8.13) (capped). Following the book's convention (Remark 7.2.1), the expected supremum over an arbitrary index set is read as the supremum over all finite subsets of the expected maximum, so the theorem quantifies over a finite subset while the metric entropy is measured on the full index set. The anchor need not lie in the finite subset. A countable honest-supremum corollary (dudley_inequality_countable) holds at constant $40$ — improved from the previous $80$, because the per-subset statement measures the entropy of $T$ itself and the subset-covering $\\varepsilon/2$ loss disappears. The finite form remains as dudley_inequality_abs_of_finite.",
+    "file": "StatLean/ConcentrationInequalities/Chaining/DudleySup.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/DudleySup.html#StatLean.ConcentrationInequalities.dudley_inequality_abs_separable",
+    "informal": "<p>Let $(X_t)_{t\\in T}$ be a random process on an <em>arbitrary</em> — possibly uncountable — subset $T$ with <span data-link=\"h1\">finite covering numbers at every positive radius</span> and <span data-link=\"h2\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$ (the <a href=\"#/result/conc-hdp-subgaussian-equiv\">sub-Gaussian norm</a>, $\\lVert Y\\rVert_{\\psi_2} = \\inf\\{c > 0 : \\mathbb{E}\\,e^{Y^2/c^2} \\le 2\\}$) — with no centering assumption on the coordinates. Assume the process is a <span data-link=\"h3\"><a href=\"#/result/conc-separable-process\">separable version</a></span>; fix an <span data-link=\"h4\">anchor point $t_0\\in T$</span> and a <span data-link=\"h5\">bound $D > 0$ on the diameter of $T$</span>. Then $$\\mathbb{E}\\Bigl[\\,\\sup_{t\\in T}\\,\\lvert X_t-X_{t_0}\\rvert\\Bigr] \\;\\le\\; 40\\,K \\int_0^{D}\\sqrt{\\log\\mathcal{N}(T,d,\\varepsilon)}\\,d\\varepsilon,$$ where $\\mathcal{N}(T,d,\\varepsilon)$ is the <a href=\"#/result/conc-covering-number\">covering number</a> of $T$ at radius $\\varepsilon$.</p>",
+    "summary": "Anchored absolute form of Dudley's inequality with a genuine supremum over an arbitrary index set: for a separable version, with no mean-zero assumption, the expected supremum of the anchored deviations is at most forty K times the entropy integral.",
+    "leanSignature": "theorem dudley_inequality_abs_separable {X : E → Ω → ℝ} {K : ℝ≥0}\n    {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hinc : SubGaussianIncrements X K T μ)\n    (hsep : IsSeparableProcess X T μ)\n    {t₀ : E} (ht₀ : t₀ ∈ T)\n    {D : ℝ} (hD : Metric.diam T ≤ D)\n    (hD0 : 0 < D) :\n    ∫⁻ ω, ⨆ t ∈ T, ENNReal.ofReal |X t ω - X t₀ ω| ∂μ\n      ≤ ENNReal.ofReal 40 * K * dudleyLIntegral T D",
+    "formalizationNotes": "Genuine-supremum upgrade of Eq. (8.13) (capped); the per-finite-subset engine remains as dudley_inequality_abs and the finite-index original as dudley_inequality_abs_of_finite. The left side is a lower integral in $[0,\\infty]$; under the finite-entropy junk-guard the Bochner real display holds verbatim (dudley_inequality_abs_separable_real), and the two-sided oscillation form of Eq. (8.14) holds at constant $80$ (dudley_inequality_abs_pair_separable). Countable index sets need no separability input (dudley_inequality_abs_countable) at the same constant $40$ — the countable core measures the entropy of the full index set, so the historical subset-covering factor two does not reappear.",
     "hypotheses": [
       {
         "id": "h1",
@@ -9707,30 +9771,31 @@
       },
       {
         "id": "h3",
-        "leanToken": "ht₀",
-        "label": "Anchor point",
-        "note": "A fixed reference point of T (not necessarily in F)."
+        "leanToken": "hsep",
+        "label": "Separable version",
+        "note": "A countable subset almost surely captures every value in its closure."
       },
       {
         "id": "h4",
-        "leanToken": "hD",
-        "label": "Diameter cap",
-        "note": "D dominates the diameter of T; positive."
+        "leanToken": "ht₀",
+        "label": "Anchor point",
+        "note": "A fixed reference point of T."
       },
       {
         "id": "h5",
-        "leanToken": "hF",
-        "label": "Finite subset",
-        "note": "The maximum runs over an arbitrary finite subset F of T."
+        "leanToken": "hD",
+        "label": "Diameter cap",
+        "note": "D dominates the diameter of T; positive."
       }
     ],
     "reference": {
       "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
       "pointer": "§8.1, Eq. (8.13)",
-      "biblio": "The absolute-deviation form requires no centering. It descends from R. M. Dudley, \"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *Journal of Functional Analysis* 1 (1967), 290–330, via the entropy-integral chaining argument.",
+      "biblio": "The absolute-deviation form requires no centering. It descends from R. M. Dudley, \"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *Journal of Functional Analysis* 1 (1967), 290–330, via the entropy-integral chaining argument; separable versions go back to J. L. Doob, *Stochastic Processes*, Wiley, 1953, Ch. II.",
       "keys": [
         "vershynin2018",
-        "dudley1967"
+        "dudley1967",
+        "doob1953"
       ]
     },
     "hasGraph": true,
@@ -9743,17 +9808,17 @@
     "id": "conc-hdp-dudley-tail",
     "category": "concentration",
     "kind": "theorem",
-    "leanName": "dudley_tail_three_term",
-    "fullName": "StatLean.ConcentrationInequalities.dudley_tail_three_term",
+    "leanName": "dudley_tail_three_term_separable",
+    "fullName": "StatLean.ConcentrationInequalities.dudley_tail_three_term_separable",
     "title": "High-Probability Dudley Inequality",
     "citation": "Vershynin (2018), Eq. 8.15",
     "shortRef": "Vershynin (2018), Eq. 8.15",
-    "file": "StatLean/ConcentrationInequalities/Chaining/DudleyTail.lean",
-    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/DudleyTail.html#StatLean.ConcentrationInequalities.dudley_tail_three_term",
-    "informal": "<p>Let $(X_t)_{t\\in T}$ be a random process on an <em>arbitrary</em> subset $T$ with <span data-link=\"h1\">finite covering numbers at every positive radius</span>, <span data-link=\"h2\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$ (the <a href=\"#/result/conc-hdp-subgaussian-equiv\">sub-Gaussian norm</a>, $\\lVert Y\\rVert_{\\psi_2} = \\inf\\{c > 0 : \\mathbb{E}\\,e^{Y^2/c^2} \\le 2\\}$), and a <span data-link=\"h3\">convergent dyadic entropy series $S=\\sum_{k\\in\\mathbb{Z}}2^{-k}\\sqrt{\\log\\mathcal{N}(T,d,2^{-k})} < \\infty$</span>, where $\\mathcal{N}(T,d,\\varepsilon)$ is the <a href=\"#/result/conc-covering-number\">covering number</a> of $T$ at radius $\\varepsilon$, the least number of closed $\\varepsilon$-balls centred in $T$ needed to cover $T$. Then for every <span data-link=\"h4\">$u\\ge 0$</span> and <span data-link=\"h5\">every finite subset $F\\subseteq T$</span>, with probability at least $1-2e^{-u^2}$, $$\\max_{s,t\\in F}\\,\\lvert X_t-X_s\\rvert \\;\\le\\; K\\bigl(9S + 17\\operatorname{diam}T + 12u\\operatorname{diam}T\\bigr).$$</p>",
-    "summary": "High-probability Dudley bound over an arbitrary totally bounded index set: the maximal pair oscillation over every finite subset is controlled by the entropy series plus u times the diameter, with failure probability two e to the minus u squared.",
-    "leanSignature": "theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hinc : SubGaussianIncrements X K T μ)\n    (hS : Summable fun k : ℤ => dudleySummand T k)\n    {u : ℝ} (hu : 0 ≤ u)\n    {F : Finset E}\n    (hF : ↑F ⊆ T)\n    (hFne : F.Nonempty) :\n    μ {ω | K * (9 * dudleySum T + 17 * Metric.diam T + 12 * u * Metric.diam T)\n        < (F ×ˢ F).sup' (hFne.product hFne) (fun p => |X p.1 ω - X p.2 ω|)}\n      ≤ ENNReal.ofReal (2 * Real.exp (-u ^ 2))",
-    "formalizationNotes": "Faithful general-$T$ form of Eq. (8.15), which the book states for finite $T$ with the footnote that the general case follows by approximation — realized here per finite subset, plus a countable-supremum corollary by continuity from below. Following the book's convention (Remark 7.2.1), the expected supremum over an arbitrary index set is read as the supremum over all finite subsets of the expected maximum, so the theorem quantifies over a finite subset while the metric entropy is measured on the full index set. The summability hypothesis is a junk-guard: a real-valued threshold cannot honestly encode an infinite entropy series, and the bound is vacuous there. The proof truncates the chain and kills the truncation residual in probability with a $\\delta\\downarrow 0$ slack. Book's exact failure probability $2e^{-u^2}$ is met; the display form (constant $200$) and the finite forms (*_of_finite) are proved alongside.",
+    "file": "StatLean/ConcentrationInequalities/Chaining/DudleyTailSup.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/DudleyTailSup.html#StatLean.ConcentrationInequalities.dudley_tail_three_term_separable",
+    "informal": "<p>Let $(X_t)_{t\\in T}$ be a random process on an <em>arbitrary</em> — possibly uncountable — subset $T$ with <span data-link=\"h1\">finite covering numbers at every positive radius</span>, <span data-link=\"h2\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$, and a <span data-link=\"h4\">summable dyadic entropy series $\\Sigma = \\sum_{k\\in\\mathbb{Z}}2^{-k}\\sqrt{\\log\\mathcal{N}(T,d,2^{-k})}$</span>; no centering is assumed. Assume the process is a <span data-link=\"h3\"><a href=\"#/result/conc-separable-process\">separable version</a></span>. Then for <span data-link=\"h5\">every deviation parameter $u \\ge 0$</span>, with probability at least $1-2e^{-u^2}$ the two-sided oscillation over the whole index set obeys $$\\sup_{t,s\\in T}\\,\\lvert X_t-X_s\\rvert \\;\\le\\; K\\bigl(9\\,\\Sigma + 17\\operatorname{diam} T + 12\\,u\\operatorname{diam} T\\bigr),$$ where $\\mathcal{N}$ is the <a href=\"#/result/conc-covering-number\">covering number</a> of $T$.</p>",
+    "summary": "High-probability Dudley inequality with a genuine supremum: for a separable version, the two-sided oscillation over the whole index set exceeds the three-term entropy threshold with probability at most two times e to the minus u squared.",
+    "leanSignature": "theorem dudley_tail_three_term_separable {X : E → Ω → ℝ} {K : ℝ≥0}\n    {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hinc : SubGaussianIncrements X K T μ)\n    (hsep : IsSeparableProcess X T μ)\n    (hS : Summable fun k : ℤ => dudleySummand T k)\n    {u : ℝ} (hu : 0 ≤ u) :\n    μ {ω | K * (9 * dudleySum T + 17 * Metric.diam T + 12 * u * Metric.diam T)\n        < ⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω|}\n      ≤ ENNReal.ofReal (2 * Real.exp (-u ^ 2))",
+    "formalizationNotes": "Genuine-supremum upgrade of Eq. (8.15); the per-finite-subset engine remains as dudley_tail_three_term and the finite-index original as dudley_tail_three_term_of_finite. The summability guard is a junk-guard, not a strengthening: a real-valued threshold cannot honestly encode a divergent entropy series, and Eq. (8.15) is vacuous there. The display form with threshold $200\\,K\\,(\\int_0^D\\sqrt{\\log\\mathcal N} + u\\operatorname{diam} T)$ holds under the additional finite-entropy-integral guard (dudley_tail_separable); a countable twin needs no separability input (dudley_tail_countable). The supremum event need not be measurable for an uncountable index set: the statement uses the outer measure, and the proof routes through a junk-free existential event, so nothing is smuggled in.",
     "hypotheses": [
       {
         "id": "h1",
@@ -9769,31 +9834,31 @@
       },
       {
         "id": "h3",
-        "leanToken": "hS",
-        "label": "Summable entropy series",
-        "note": "The dyadic entropy series S of T converges to a finite value."
+        "leanToken": "hsep",
+        "label": "Separable version",
+        "note": "A countable subset almost surely captures every value in its closure."
       },
       {
         "id": "h4",
-        "leanToken": "hu",
-        "label": "Deviation parameter",
-        "note": "u is nonnegative."
+        "leanToken": "hS",
+        "label": "Summable entropy series",
+        "note": "The dyadic entropy series converges, so the real threshold is honest."
       },
       {
         "id": "h5",
-        "leanToken": "hF",
-        "label": "Finite subset",
-        "note": "The pair maximum runs over an arbitrary finite subset F of T."
+        "leanToken": "hu",
+        "label": "Deviation parameter",
+        "note": "The tail is quantified at level u at least zero."
       }
     ],
     "reference": {
       "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
-      "pointer": "§8.1, Eq. (8.15)",
-      "biblio": "The high-probability form of Dudley's bound is a concentration-of-chaining refinement of R. M. Dudley, \"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *Journal of Functional Analysis* 1 (1967), 290–330; see M. Talagrand, *Upper and Lower Bounds for Stochastic Processes*, Springer, 2014, §2.2, where it appears as the tail version of the generic chaining bound specialized to entropy numbers.",
+      "pointer": "§8.1, Remark 8.1.6, Eq. (8.15)",
+      "biblio": "The high-probability form is Exercise 8.1 in the reference (for Gaussian processes it also follows from Gaussian concentration); the chaining tail argument is standard — see M. Talagrand, *Upper and Lower Bounds for Stochastic Processes*, Springer, 2014, §2.2, and S. Boucheron, G. Lugosi and P. Massart, *Concentration Inequalities*, Oxford University Press, 2013, §13.1.",
       "keys": [
         "vershynin2018",
-        "dudley1967",
-        "talagrand2014"
+        "talagrand2014",
+        "blm2013"
       ]
     },
     "hasGraph": true,
@@ -9806,52 +9871,45 @@
     "id": "conc-hdp-generic-chaining",
     "category": "concentration",
     "kind": "theorem",
-    "leanName": "generic_chaining",
-    "fullName": "StatLean.ConcentrationInequalities.generic_chaining",
+    "leanName": "generic_chaining_separable",
+    "fullName": "StatLean.ConcentrationInequalities.generic_chaining_separable",
     "title": "Generic Chaining (γ₂ Bound)",
     "citation": "Vershynin (2018), Thm 8.5.2",
     "shortRef": "Vershynin (2018), Thm 8.5.2",
-    "file": "StatLean/ConcentrationInequalities/Chaining/GenericChaining.lean",
-    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/GenericChaining.html#StatLean.ConcentrationInequalities.generic_chaining",
-    "informal": "<p>Let $(X_t)_{t\\in T}$ be a random process on an <em>arbitrary</em> subset $T$ of a (pseudo)metric space, with <span data-link=\"h1\">centered</span> and <span data-link=\"h3\">integrable</span> coordinates and <span data-link=\"h2\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$ (the <a href=\"#/result/conc-hdp-subgaussian-equiv\">sub-Gaussian norm</a>, $\\lVert Y\\rVert_{\\psi_2} = \\inf\\{c > 0 : \\mathbb{E}\\,e^{Y^2/c^2} \\le 2\\}$) — no finiteness or compactness assumptions of any kind. Then for <span data-link=\"h4\">every finite subset $F\\subseteq T$</span> $$\\mathbb{E}\\Big[\\max_{t\\in F} X_t\\Big] \\;\\le\\; 20\\,K\\,\\gamma_2(T,d),$$ where $\\gamma_2(T,d)=\\inf_{(T_k)}\\sup_{t\\in T}\\sum_{k\\ge 0}2^{k/2}d(t,T_k)\\in[0,\\infty]$ is Talagrand’s functional, the infimum being over admissible sequences $(T_k)$ of subsets of $T$ with $|T_0| = 1$ and $|T_k| \\le 2^{2^k}$. If $\\gamma_2(T,d)=\\infty$ the bound is trivially true.</p>",
-    "summary": "Talagrand's generic chaining bound over a completely arbitrary index set: the expected maximum over every finite subset is at most twenty K times the gamma-two functional of the whole set.",
-    "leanSignature": "theorem generic_chaining {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)\n    (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)\n    (hinc : SubGaussianIncrements X K T μ)\n    {F : Finset E}\n    (hF : ↑F ⊆ T)\n    (hFne : F.Nonempty) :\n    ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => X t ω) ∂μ) ≤\n      20 * K * gammaTwo T",
-    "formalizationNotes": "Faithful general-$T$ form of Theorem 8.5.2. Following the book's convention (Remark 7.2.1), the expected supremum over an arbitrary index set is read as the supremum over all finite subsets of the expected maximum, so the theorem quantifies over a finite subset while the metric entropy is measured on the full index set. Unlike the Dudley family, no covering hypothesis is needed: admissible sequences carry the geometry and $\\gamma_2$ is an honest $[0,\\infty]$ value ($\\infty$ at divergence, a trivial branch). The chain walks the sequence levels inside $T$ and is truncated; each residual distance obeys $d(t,T_k)\\le\\gamma_2\\cdot 2^{-k/2}\\to 0$ uniformly on the finite subset, replacing the finite-$T$ chain-end device. Book's unnamed absolute constant frozen at $C=20$; the tail form $(12+4u)$, the per-sequence form, the real display (under $\\gamma_2<\\infty$), and the finite forms (*_of_finite) are proved alongside.",
+    "file": "StatLean/ConcentrationInequalities/Chaining/GenericChainingSup.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/GenericChainingSup.html#StatLean.ConcentrationInequalities.generic_chaining_separable",
+    "informal": "<p>Let $(X_t)_{t\\in T}$ be a random process on an <em>arbitrary</em> — possibly uncountable — subset $T$ of a metric space with <span data-link=\"h1\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$ (the <a href=\"#/result/conc-hdp-subgaussian-equiv\">sub-Gaussian norm</a>, $\\lVert Y\\rVert_{\\psi_2} = \\inf\\{c > 0 : \\mathbb{E}\\,e^{Y^2/c^2} \\le 2\\}$). Assume the process is a <span data-link=\"h2\"><a href=\"#/result/conc-separable-process\">separable version</a></span> and fix an <span data-link=\"h3\">anchor point $t_0\\in T$</span>. Then the supremum over the whole index set satisfies $$\\mathbb{E}\\Bigl[\\,\\sup_{t\\in T}\\,(X_t-X_{t_0})\\Bigr] \\;\\le\\; 20\\,K\\,\\gamma_2(T,d), \\qquad \\gamma_2(T,d)\\;=\\;\\inf_{(T_k)}\\,\\sup_{t\\in T}\\sum_{k=0}^{\\infty} 2^{k/2}\\,d(t,T_k),$$ the infimum over admissible sequences of subsets ($\\lvert T_0\\rvert = 1$, $\\lvert T_k\\rvert\\le 2^{2^k}$). No centering is needed for the anchored bound; for a mean-zero process the left side is the book's $\\mathbb{E}\\sup_{t\\in T}X_t$ of Theorem 8.5.2.</p>",
+    "summary": "Talagrand's generic chaining bound with a genuine supremum over an arbitrary index set: for a separable version with sub-Gaussian increments, the expected anchored supremum is at most twenty K times the gamma-two functional.",
+    "leanSignature": "theorem generic_chaining_separable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hinc : SubGaussianIncrements X K T μ)\n    (hsep : IsSeparableProcess X T μ)\n    {t₀ : E}\n    (ht₀ : t₀ ∈ T) :\n    ∫⁻ ω, ⨆ t ∈ T, ENNReal.ofReal (X t ω - X t₀ ω) ∂μ\n      ≤ 20 * K * gammaTwo T",
+    "formalizationNotes": "Genuine-supremum upgrade of Theorem 8.5.2; the per-finite-subset engine remains as generic_chaining and the finite-index original as generic_chaining_of_finite. Unlike the Dudley family, no covering package appears anywhere: admissible sequences carry all the geometry, and the gamma-two functional is an honest element of $[0,\\infty]$ (infinite when no admissible sequence works), so no finiteness guard is needed. Lean-side strengthening: no mean-zero or integrability hypotheses — the anchored supremum is dominated by the absolute one (generic_chaining_abs_separable) at the same frozen constant $20$, and under centering it dominates every finite maximum of the process itself. The real display holds under a finite-gamma-two guard (generic_chaining_abs_separable_real), the tail form at threshold $(12+4u)\\,K\\,\\gamma_2$ (generic_chaining_tail_separable), and countable index sets need no separability input (generic_chaining_abs_countable).",
     "hypotheses": [
       {
         "id": "h1",
-        "leanToken": "hmean",
-        "label": "Mean zero",
-        "note": "Each coordinate is centered."
-      },
-      {
-        "id": "h2",
         "leanToken": "hinc",
         "label": "Sub-Gaussian increments",
         "note": "The psi-2 norm of every increment is bounded by K times the distance."
       },
       {
-        "id": "h3",
-        "leanToken": "hint",
-        "label": "Integrability",
-        "note": "Each coordinate X_t has a finite expectation."
+        "id": "h2",
+        "leanToken": "hsep",
+        "label": "Separable version",
+        "note": "A countable subset almost surely captures every value in its closure."
       },
       {
-        "id": "h4",
-        "leanToken": "hF",
-        "label": "Finite subset",
-        "note": "The maximum runs over an arbitrary finite subset F of T."
+        "id": "h3",
+        "leanToken": "ht₀",
+        "label": "Anchor point",
+        "note": "A fixed reference point of T."
       }
     ],
     "reference": {
       "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
-      "pointer": "§8.5, Theorem 8.5.2",
-      "biblio": "Generic chaining and the majorizing-measure theory are due to X. Fernique (\"Régularité des trajectoires des fonctions aléatoires gaussiennes,\" in *École d'Été de Probabilités de Saint-Flour IV–1974*, Lecture Notes in Mathematics 480, Springer, 1975, 1–96) and M. Talagrand (\"Regularity of Gaussian processes,\" *Acta Mathematica* 159 (1987), 99–149; *Upper and Lower Bounds for Stochastic Processes*, Springer, 2014). The admissible-sequence formulation of $\\gamma_2$ is Talagrand's.",
+      "pointer": "§8.5.2, Theorem 8.5.2",
+      "biblio": "The gamma-two functional and the majorizing-measure view of chaining are due to M. Talagrand — see *Upper and Lower Bounds for Stochastic Processes: Modern Methods and Classical Problems*, Springer, 2014, §2.2–2.3; the matching lower bound for Gaussian processes is Talagrand's majorizing measure theorem. Separable versions go back to J. L. Doob, *Stochastic Processes*, Wiley, 1953, Ch. II.",
       "keys": [
         "vershynin2018",
-        "fernique1975",
         "talagrand2014",
-        "talagrand1987"
+        "doob1953"
       ]
     },
     "hasGraph": true,
