@@ -1,4 +1,5 @@
 import StatLean.ConcentrationInequalities.Chaining.Dudley
+import StatLean.ConcentrationInequalities.Chaining.DudleySup
 
 /-!
 # Dudley plug-in corollaries — exponential entropy branch
@@ -146,5 +147,89 @@ theorem dudley_abs_of_cov_le_exp_div {X : E → Ω → ℝ} {K : ℝ≥0} {T : S
     _ ≤ 40 * K * (2 * Real.sqrt (C * D)) := by
         refine mul_le_mul_of_nonneg_left h2 ?_; positivity
     _ = 80 * K * Real.sqrt (C * D) := by ring
+
+/-- **Entropy-integral evaluation, exponential branch, `ℝ≥0∞` twin**
+(HDP §8.2 / Exercise 8.9 shape): `𝒩 ≤ e^{C/ε}` on `(0, D]` gives
+`dudleyLIntegral T D ≤ ENNReal.ofReal (2√(CD))` — in particular the
+lintegral carrier is finite, which is the `hDL` junk-guard the sup-form
+displays need. -/
+theorem dudleyLIntegral_le_of_cov_le_exp_div {T : Set E}
+    -- LEAN-ONLY: nonemptiness
+    (hne : T.Nonempty) {C D : ℝ}
+    -- LEAN-ONLY: nonnegative entropy constant
+    (hC : 0 ≤ C)
+    -- LEAN-ONLY: positive cap
+    (hD : 0 < D)
+    -- USER-INPUT: Lipschitz-type entropy bound 𝒩 ≤ e^{C/ε} with finite
+    -- covering numbers; HDP §8.2 / Exercise 8.9
+    (hcov : ∀ ε ∈ Set.Ioc (0 : ℝ) D, coveringNumber T ε ≠ ⊤ ∧
+      ((coveringNumber T ε).toNat : ℝ) ≤ Real.exp (C / ε)) :
+    dudleyLIntegral T D ≤ ENNReal.ofReal (2 * Real.sqrt (C * D)) := by
+  sorry
+
+/-- **Dudley plug-in, exponential branch, separable supremum** (HDP §8.2,
+Exercise 8.9/8.10 pipeline; general `T`): sub-gaussian increments + entropy
+`𝒩 ≤ e^{C/ε}` give `E sup_{t∈T} |X_t − X_{t₀}| ≤ 80·K·√(CD)` for a
+separable version of the process — the genuine-supremum upgrade of
+`dudley_abs_of_cov_le_exp_div` (which requires `T.Finite`). Frozen headline
+constant `80 = 40 × 2`, as in the finite twin. -/
+theorem dudley_abs_of_cov_le_exp_div_separable {X : E → Ω → ℝ} {K : ℝ≥0}
+    {T : Set E}
+    -- USER-INPUT: probability-space context; HDP §8.1
+    [IsProbabilityMeasure μ]
+    -- LEAN-ONLY: nonemptiness of the carrier
+    (hne : T.Nonempty)
+    -- LEAN-ONLY: a.e.-measurability of the coordinates (Orlicz bridges)
+    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
+    -- USER-INPUT: sub-gaussian increments only (NO mean-zero); HDP §8.1
+    (hinc : SubGaussianIncrements X K T μ)
+    -- USER-INPUT: separable version of the process; HDP p.227 footnote
+    -- (van Handel APM §5.3)
+    (hsep : IsSeparableProcess X T μ)
+    -- USER-INPUT: the anchor point; HDP §8.1, Eq (8.13)
+    {t₀ : E} (ht₀ : t₀ ∈ T) {C D : ℝ}
+    -- LEAN-ONLY: nonnegative entropy constant
+    (hC : 0 ≤ C)
+    -- LEAN-ONLY: positive cap
+    (hD0 : 0 < D)
+    -- USER-INPUT: the cap dominates the diameter; HDP §8.1, Eq (8.16)
+    (hdiam : Metric.diam T ≤ D)
+    -- USER-INPUT: Lipschitz-type entropy bound 𝒩 ≤ e^{C/ε}; HDP §8.2 /
+    -- Exercise 8.9
+    (hcov : ∀ ε ∈ Set.Ioc (0 : ℝ) D, coveringNumber T ε ≠ ⊤ ∧
+      ((coveringNumber T ε).toNat : ℝ) ≤ Real.exp (C / ε)) :
+    ∫ ω, ⨆ t ∈ T, |X t ω - X t₀ ω| ∂μ
+      ≤ 80 * K * Real.sqrt (C * D) := by
+  sorry
+
+/-- **Dudley plug-in, exponential branch, countable supremum** (HDP §8.2):
+the countable-`T` display of `dudley_abs_of_cov_le_exp_div_separable`. -/
+theorem dudley_abs_of_cov_le_exp_div_countable {X : E → Ω → ℝ} {K : ℝ≥0}
+    {T : Set E}
+    -- USER-INPUT: probability-space context; HDP §8.1
+    [IsProbabilityMeasure μ]
+    -- LEAN-ONLY: countable T per the sup policy
+    (hcnt : T.Countable)
+    -- LEAN-ONLY: nonemptiness of the carrier
+    (hne : T.Nonempty)
+    -- LEAN-ONLY: a.e.-measurability of the coordinates (Orlicz bridges)
+    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
+    -- USER-INPUT: sub-gaussian increments only (NO mean-zero); HDP §8.1
+    (hinc : SubGaussianIncrements X K T μ)
+    -- USER-INPUT: the anchor point; HDP §8.1, Eq (8.13)
+    {t₀ : E} (ht₀ : t₀ ∈ T) {C D : ℝ}
+    -- LEAN-ONLY: nonnegative entropy constant
+    (hC : 0 ≤ C)
+    -- LEAN-ONLY: positive cap
+    (hD0 : 0 < D)
+    -- USER-INPUT: the cap dominates the diameter; HDP §8.1, Eq (8.16)
+    (hdiam : Metric.diam T ≤ D)
+    -- USER-INPUT: Lipschitz-type entropy bound 𝒩 ≤ e^{C/ε}; HDP §8.2 /
+    -- Exercise 8.9
+    (hcov : ∀ ε ∈ Set.Ioc (0 : ℝ) D, coveringNumber T ε ≠ ⊤ ∧
+      ((coveringNumber T ε).toNat : ℝ) ≤ Real.exp (C / ε)) :
+    ∫ ω, ⨆ t ∈ T, |X t ω - X t₀ ω| ∂μ
+      ≤ 80 * K * Real.sqrt (C * D) := by
+  sorry
 
 end StatLean.ConcentrationInequalities
