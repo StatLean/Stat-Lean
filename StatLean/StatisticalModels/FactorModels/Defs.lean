@@ -1,5 +1,6 @@
 import StatLean.StatisticalModels.MixedEffects.Defs
 import StatLean.StatisticalModels.Gaussian.Affine
+import Mathlib.LinearAlgebra.Matrix.IsDiag
 
 /-!
 # The linear factor model — the latent-variable data model
