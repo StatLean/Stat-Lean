@@ -107,7 +107,7 @@ theorem trimmedMean_zero (x : Fin n → ℝ) : trimmedMean 0 x = sampleMean x :=
   classical
   have hfilter : (univ.filter (fun i : Fin n => 0 ≤ (i : ℕ) ∧ (i : ℕ) < n - 0)) = univ := by
     refine Finset.filter_true_of_mem fun i _ => ⟨Nat.zero_le _, ?_⟩
-    simpa using i.isLt
+    simp
   simp only [trimmedMean, sampleMean, hfilter, sum_orderStat]
   norm_num
 
@@ -150,7 +150,43 @@ theorem trimmedMean_mem_Icc {m : ℕ} (hm : 2 * m < n) (x : Fin n → ℝ) :
 range of the original data, by the replacement-perturbation bound. -/
 theorem trimmedMean_resists {m : ℕ} (hm : 2 * m < n) (x : Fin n → ℝ) :
     Resists (trimmedMean m) x m := by
-  sorry
+  classical
+  have hbb : BddBelow (Set.range x) := (Set.finite_range x).bddBelow
+  have hba : BddAbove (Set.range x) := (Set.finite_range x).bddAbove
+  refine ⟨max |⨅ i, x i| |⨆ i, x i|, fun y hy => ?_⟩
+  have hy' : hammingDist y x ≤ m := by rwa [hammingDist_comm] at hy
+  -- A retained rank `i` of `y` is squeezed between the ranks `i - m` and `i + m` of `x`,
+  -- both of which are data values of `x`, hence inside its range.
+  have hlow : ∀ i ∈ univ.filter (fun i : Fin n => m ≤ (i : ℕ) ∧ (i : ℕ) < n - m),
+      (⨅ i, x i) ≤ orderStat y i := by
+    intro i hi
+    simp only [mem_filter, mem_univ, true_and] at hi
+    have hjlt : (i : ℕ) - m < n := by omega
+    have hstep : orderStat x ⟨(i : ℕ) - m, hjlt⟩ ≤ orderStat y i :=
+      orderStat_le_of_hammingDist hy (by change (i : ℕ) - m + m ≤ (i : ℕ); omega)
+    refine le_trans ?_ hstep
+    obtain ⟨j, hj⟩ := orderStat_mem_range x ⟨(i : ℕ) - m, hjlt⟩
+    rw [← hj]
+    exact ciInf_le hbb j
+  have hhigh : ∀ i ∈ univ.filter (fun i : Fin n => m ≤ (i : ℕ) ∧ (i : ℕ) < n - m),
+      orderStat y i ≤ ⨆ i, x i := by
+    intro i hi
+    simp only [mem_filter, mem_univ, true_and] at hi
+    have hjlt : (i : ℕ) + m < n := by omega
+    have hstep : orderStat y i ≤ orderStat x ⟨(i : ℕ) + m, hjlt⟩ :=
+      orderStat_le_of_hammingDist hy' (by change (i : ℕ) + m ≤ (i : ℕ) + m; omega)
+    refine le_trans hstep ?_
+    obtain ⟨j, hj⟩ := orderStat_mem_range x ⟨(i : ℕ) + m, hjlt⟩
+    rw [← hj]
+    exact le_ciSup hba j
+  rw [abs_le]
+  constructor
+  · calc -max |⨅ i, x i| |⨆ i, x i| ≤ -|⨅ i, x i| := neg_le_neg (le_max_left _ _)
+      _ ≤ ⨅ i, x i := neg_abs_le _
+      _ ≤ trimmedMean m y := le_trimmedMean_of_forall hm y hlow
+  · calc trimmedMean m y ≤ ⨆ i, x i := trimmedMean_le_of_forall hm y hhigh
+      _ ≤ |⨆ i, x i| := le_abs_self _
+      _ ≤ max |⨅ i, x i| |⨆ i, x i| := le_max_right _ _
 
 /-- **`m+1` replacements break the `m`-trimmed mean** (`MMY §3.2.5`): one extreme value
 survives the trimming. -/
