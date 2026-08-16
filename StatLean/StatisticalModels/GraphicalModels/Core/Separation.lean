@@ -94,7 +94,10 @@ theorem separates_symm
     -- definition is visibly symmetric, being phrased on undirected paths)
     (h : Separates G S A B) :
     Separates G S B A := by
-  sorry
+  intro a ha b hb w
+  obtain ⟨s, hsS, hsw⟩ := h b hb a ha w.reverse
+  refine ⟨s, hsS, ?_⟩
+  rwa [Walk.support_reverse, List.mem_reverse] at hsw
 
 /-- **Symmetry, as an equivalence.** -/
 theorem separates_comm : Separates G S A B ↔ Separates G S B A :=
@@ -164,7 +167,13 @@ theorem separates_iff_forall_path (S A B : Finset V) :
     Separates G S A B ↔
       ∀ a ∈ A, ∀ b ∈ B, ∀ p : G.Path a b,
         ∃ s ∈ S, s ∈ (p : G.Walk a b).support := by
-  sorry
+  -- LEAN-ONLY: `Walk.bypass` needs `DecidableEq V`, which the frozen statement does not carry;
+  -- supplied classically, so the statement is unchanged
+  classical
+  refine ⟨fun h a ha b hb p => h a ha b hb (p : G.Walk a b), fun h a ha b hb w => ?_⟩
+  -- a walk contains a path with the same endpoints and a smaller support
+  obtain ⟨s, hsS, hsw⟩ := h a ha b hb ⟨w.bypass, w.bypass_isPath⟩
+  exact ⟨s, hsS, w.support_bypass_subset hsw⟩
 
 /-- **Bridge to Mathlib's vertex deletion.** `S` separates `A` from `B` exactly when no
 vertex of `A` is reachable from a vertex of `B` in `G` with the vertices of `S` removed.
@@ -182,7 +191,32 @@ theorem separates_iff_not_reachable_deleteVerts (S A B : Finset V) :
       ∀ a b : ((⊤ : G.Subgraph).deleteVerts (S : Set V)).verts,
         (a : V) ∈ A → (b : V) ∈ B →
           ¬ ((⊤ : G.Subgraph).deleteVerts (S : Set V)).coe.Reachable a b := by
-  sorry
+  -- the deleted-vertex subgraph, coerced, *is* the induced graph on its own vertex set:
+  -- the extra conjuncts of `deleteVerts_adj` are discharged by the subtype's own proof
+  have hgraph : ((⊤ : G.Subgraph).deleteVerts (S : Set V)).coe
+      = G.induce (((⊤ : G.Subgraph).deleteVerts (S : Set V)).verts) := by
+    ext u v
+    simp
+  constructor
+  · intro h a b ha hb hreach
+    obtain ⟨w'⟩ := hreach
+    -- stated at the walk's own endpoint indices `⇑hom a`, so that `support_map` matches
+    have key : ∀ x ∈ (w'.map ((⊤ : G.Subgraph).deleteVerts (S : Set V)).hom).support,
+        x ∉ (S : Set V) := by
+      intro x hx
+      rw [Walk.support_map, List.mem_map] at hx
+      obtain ⟨y, -, rfl⟩ := hx
+      exact y.2.2
+    obtain ⟨s, hsS, hsw⟩ := h (a : V) ha (b : V) hb (w'.map (Subgraph.hom _))
+    exact key s hsw (Finset.mem_coe.2 hsS)
+  · intro h a ha b hb w
+    by_contra hcon
+    push Not at hcon
+    have hw : ∀ x ∈ w.support, x ∈ ((⊤ : G.Subgraph).deleteVerts (S : Set V)).verts :=
+      fun x hx => ⟨Set.mem_univ x, fun hxS => hcon x (Finset.mem_coe.1 hxS) hx⟩
+    refine h ⟨a, hw a w.start_mem_support⟩ ⟨b, hw b w.end_mem_support⟩ ha hb ?_
+    rw [hgraph]
+    exact ⟨w.induce _ hw⟩
 
 /-- **Bridge to `SimpleGraph.ComponentCompl`.** Separation says that no vertex of `A` and no
 vertex of `B` lie in a common connected component of the complement of `S`. Stated with
@@ -196,6 +230,24 @@ theorem separates_iff_componentComplMk_ne (S A B : Finset V) :
     Separates G S A B ↔
       ∀ a ∈ A, ∀ b ∈ B, ∀ (ha : a ∉ (S : Set V)) (hb : b ∉ (S : Set V)),
         G.componentComplMk ha ≠ G.componentComplMk hb := by
-  sorry
+  constructor
+  · intro h a ha b hb haS hbS hEq
+    rw [ConnectedComponent.eq] at hEq
+    obtain ⟨w'⟩ := hEq
+    have key : ∀ x ∈ (w'.map (Embedding.induce ((S : Set V))ᶜ).toHom).support,
+        x ∉ (S : Set V) := by
+      intro x hx
+      rw [Walk.support_map, List.mem_map] at hx
+      obtain ⟨y, -, rfl⟩ := hx
+      exact y.2
+    obtain ⟨s, hsS, hsw⟩ := h a ha b hb (w'.map (Embedding.induce _).toHom)
+    exact key s hsw (Finset.mem_coe.2 hsS)
+  · intro h a ha b hb w
+    by_contra hcon
+    push Not at hcon
+    have hw : ∀ x ∈ w.support, x ∈ ((S : Set V))ᶜ :=
+      fun x hx hxS => hcon x (Finset.mem_coe.1 hxS) hx
+    exact h a ha b hb (hw a w.start_mem_support) (hw b w.end_mem_support)
+      (ConnectedComponent.eq.2 ⟨w.induce _ hw⟩)
 
 end StatLean.StatisticalModels.GraphicalModels
