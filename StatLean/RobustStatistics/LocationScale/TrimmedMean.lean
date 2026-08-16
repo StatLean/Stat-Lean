@@ -188,11 +188,114 @@ theorem trimmedMean_resists {m : ℕ} (hm : 2 * m < n) (x : Fin n → ℝ) :
       _ ≤ |⨆ i, x i| := le_abs_self _
       _ ≤ max |⨅ i, x i| |⨆ i, x i| := le_max_right _ _
 
+/-- The `m + 1` lowest-indexed coordinates, the ones replaced in the breakdown witness. -/
+private theorem card_le_index_filter {n m : ℕ} (hmn : m < n) :
+    (univ.filter (fun i : Fin n => (i : ℕ) ≤ m)).card = m + 1 := by
+  classical
+  have h : (univ.filter (fun i : Fin n => (i : ℕ) ≤ m)).card = (Finset.range (m + 1)).card := by
+    refine Finset.card_bij (fun i _ => (i : ℕ)) ?_ ?_ ?_
+    · intro a ha
+      simp only [mem_filter, mem_univ, true_and] at ha
+      simp only [Finset.mem_range]
+      omega
+    · intro a _ b _ hab
+      exact Fin.val_injective hab
+    · intro b hb
+      rw [Finset.mem_range] at hb
+      exact ⟨⟨b, by omega⟩, by simp only [mem_filter, mem_univ, true_and]; omega, rfl⟩
+  rw [h, Finset.card_range]
+
 /-- **`m+1` replacements break the `m`-trimmed mean** (`MMY §3.2.5`): one extreme value
 survives the trimming. -/
 theorem trimmedMean_breaksUnder {m : ℕ} (hm : 2 * m < n) (x : Fin n → ℝ) :
     BreaksUnder (trimmedMean m) x (m + 1) := by
-  sorry
+  classical
+  intro M
+  have hmn : m < n := by omega
+  have hd : (0 : ℝ) < (n : ℝ) - 2 * (m : ℝ) := trim_denom_pos hm
+  have hd1 : (1 : ℝ) ≤ (n : ℝ) - 2 * (m : ℝ) := by
+    have h1 : ((2 * m + 1 : ℕ) : ℝ) ≤ (n : ℝ) := Nat.cast_le.mpr (by omega)
+    push_cast at h1
+    linarith
+  have hdn : (n : ℝ) - 2 * (m : ℝ) ≤ (n : ℝ) := by
+    have := Nat.cast_nonneg (α := ℝ) m
+    linarith
+  -- `L ≤ 0` is a lower bound for every observation, hence (with `C ≥ 0`) for every
+  -- coordinate of the corrupted sample.
+  obtain ⟨L, hLdef⟩ : ∃ L : ℝ, L = min 0 (⨅ i, x i) := ⟨_, rfl⟩
+  have hL0 : L ≤ 0 := hLdef ▸ min_le_left _ _
+  have hLx : ∀ j, L ≤ x j := by
+    intro j
+    have hj := ciInf_le (Set.finite_range x).bddBelow j
+    rw [hLdef]
+    exact le_trans (min_le_right _ _) hj
+  -- The common replacement value, large enough to outweigh the `n - 2m - 1` other terms.
+  obtain ⟨C, hC⟩ : ∃ C : ℝ, C = (n : ℝ) * |M| + (n : ℝ) * |L| + 1 := ⟨_, rfl⟩
+  have hC0 : 0 ≤ C := by
+    rw [hC]; positivity
+  obtain ⟨y, hy⟩ : ∃ y : Fin n → ℝ, y = fun i : Fin n => if (i : ℕ) ≤ m then C else x i :=
+    ⟨_, rfl⟩
+  have hyi : ∀ i : Fin n, y i = if (i : ℕ) ≤ m then C else x i := by intro i; rw [hy]
+  -- Only the `m + 1` coordinates with index `≤ m` are touched.
+  have hdist : hammingDist x y ≤ m + 1 := by
+    have hsub : hammingDist x y ≤ (univ.filter (fun i : Fin n => (i : ℕ) ≤ m)).card := by
+      refine Finset.card_le_card fun i hi => ?_
+      have hne : x i ≠ y i := by simpa using (Finset.mem_filter.mp hi).2
+      simp only [mem_filter, mem_univ, true_and]
+      by_contra hgt
+      exact hne (by rw [hyi i, if_neg hgt])
+    rwa [card_le_index_filter hmn] at hsub
+  -- Those `m + 1` coordinates all carry the value `C`.
+  have hCcount : m + 1 ≤ (univ.filter (fun j : Fin n => C ≤ y j)).card := by
+    rw [← card_le_index_filter (n := n) hmn]
+    refine Finset.card_le_card fun i hi => ?_
+    simp only [mem_filter, mem_univ, true_and] at hi ⊢
+    rw [hyi i, if_pos hi]
+  -- The retained rank `n - m - 1` therefore carries at least `C`.
+  have hi0 : n - m - 1 < n := by omega
+  have hi0mem : (⟨n - m - 1, hi0⟩ : Fin n)
+      ∈ univ.filter (fun i : Fin n => m ≤ (i : ℕ) ∧ (i : ℕ) < n - m) := by
+    simp only [mem_filter, mem_univ, true_and]
+    omega
+  have hbig : C ≤ orderStat y ⟨n - m - 1, hi0⟩ := by
+    refine le_orderStat_of_card_le y ⟨n - m - 1, hi0⟩ C ?_
+    have hval : ((⟨n - m - 1, hi0⟩ : Fin n) : ℕ) = n - m - 1 := rfl
+    rw [hval]
+    omega
+  -- Every rank of `y` is bounded below by `L`, so the remaining retained terms cannot
+  -- cancel the large one.
+  have hylow : ∀ i : Fin n, L ≤ orderStat y i := by
+    intro i
+    obtain ⟨j, hj⟩ := orderStat_mem_range y i
+    rw [← hj, hyi j]
+    split
+    · linarith
+    · exact hLx j
+  have hsum : ((n : ℝ) - 2 * (m : ℝ) - 1) * L + C
+      ≤ ∑ i ∈ univ.filter (fun i : Fin n => m ≤ (i : ℕ) ∧ (i : ℕ) < n - m), orderStat y i := by
+    rw [← Finset.add_sum_erase _ (orderStat y) hi0mem]
+    have hcard : (((univ.filter (fun i : Fin n => m ≤ (i : ℕ) ∧ (i : ℕ) < n - m)).erase
+        ⟨n - m - 1, hi0⟩).card : ℝ) = (n : ℝ) - 2 * (m : ℝ) - 1 := by
+      have h1 : n - 2 * m - 1 = n - (2 * m + 1) := by omega
+      rw [Finset.card_erase_of_mem hi0mem, card_trim_filter, h1,
+        Nat.cast_sub (by omega : 2 * m + 1 ≤ n)]
+      push_cast
+      ring
+    have hrest := Finset.card_nsmul_le_sum
+      ((univ.filter (fun i : Fin n => m ≤ (i : ℕ) ∧ (i : ℕ) < n - m)).erase ⟨n - m - 1, hi0⟩)
+      (orderStat y) L fun i _ => hylow i
+    rw [nsmul_eq_mul, hcard] at hrest
+    linarith
+  refine ⟨y, hdist, lt_of_lt_of_le ?_ (le_abs_self _)⟩
+  simp only [trimmedMean]
+  rw [lt_div_iff₀ hd]
+  nlinarith [hsum, hC, hL0, hd1, hdn, abs_nonneg M, abs_nonneg L,
+    mul_nonneg (sub_nonneg.mpr (le_abs_self M)) hd.le,
+    mul_nonneg (abs_nonneg M) (by linarith : (0 : ℝ) ≤ (n : ℝ) - ((n : ℝ) - 2 * (m : ℝ))),
+    mul_nonneg (by linarith : (0 : ℝ) ≤ (n : ℝ) - 2 * (m : ℝ) - 1)
+      (by linarith [neg_abs_le L] : (0 : ℝ) ≤ L + |L|),
+    mul_nonneg (abs_nonneg L)
+      (by linarith : (0 : ℝ) ≤ (n : ℝ) - ((n : ℝ) - 2 * (m : ℝ) - 1))]
 
 /-- **The breakdown count of the `m`-trimmed mean is exactly `m`**
 (`MMY §3.2.5`: `m* = [nα]`). -/
