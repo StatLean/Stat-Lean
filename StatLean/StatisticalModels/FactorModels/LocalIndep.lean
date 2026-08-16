@@ -178,9 +178,22 @@ theorem latentObsJointLaw_snd (P : FactorParams p q) (F : Measure (EuclideanSpac
     -- `Measure.snd_compProd`
     [IsProbabilityMeasure E] :
     (latentObsJointLaw P F E).snd = factorLaw P F E := by
-  sorry
+  rw [latentObsJointLaw, Measure.snd_compProd, factorLaw]
 
 /-! ### `BKM` Eq. (1.9) — local independence at a fixed factor value -/
+
+/-- LEAN-ONLY: the whole coordinate family of a multivariate Gaussian is *jointly* Gaussian as a
+map into the bare product `Fin n → ℝ`. This is the hypothesis shape that Mathlib's
+`HasGaussianLaw.indepFun_of_covariance_eq_zero` / `.iIndepFun_of_covariance_eq_zero` demand, and
+it is nothing but `IsGaussian.hasGaussianLaw_id` transported along the continuous linear
+equivalence `PiLp.continuousLinearEquiv` that forgets the `L²` norm; no Gaussian theory is
+re-derived. -/
+private theorem hasGaussianLaw_coords {n : ℕ} (m : EuclideanSpace ℝ (Fin n))
+    (S : Matrix (Fin n) (Fin n) ℝ) :
+    HasGaussianLaw (fun (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) => x i)
+      (multivariateGaussian m S) :=
+  (IsGaussian.hasGaussianLaw_id (μ := multivariateGaussian m S)).map_equiv
+    (PiLp.continuousLinearEquiv 2 ℝ fun _ : Fin n => ℝ)
 
 /-- **`BKM` Eq. (1.9), pairwise form.** With Gaussian specific factors and a **diagonal**
 specific-factor covariance `Ψ`, two distinct observed coordinates are independent under the
@@ -202,7 +215,10 @@ theorem indepFun_eval_measurementKernel (P : FactorParams p q)
     (hij : i ≠ j) (y : EuclideanSpace ℝ (Fin q)) :
     IndepFun (fun x : EuclideanSpace ℝ (Fin p) => x i) (fun x : EuclideanSpace ℝ (Fin p) => x j)
       (measurementKernel P (multivariateGaussian 0 P.uniqueCov) y) := by
-  sorry
+  rw [measurementKernel_multivariateGaussian P hΨ y]
+  refine ((hasGaussianLaw_coords _ P.uniqueCov).prodMk i j).indepFun_of_covariance_eq_zero ?_
+  rw [covariance_eval_multivariateGaussian hΨ]
+  exact hΨdiag hij
 
 /-- **`BKM` Eq. (1.9), family form.** All `p` observed coordinates are *jointly* independent
 under the conditional law at a fixed factor value — the statement `BKM` actually makes, since
@@ -218,7 +234,10 @@ theorem iIndepFun_eval_measurementKernel (P : FactorParams p q)
     (hΨ : P.uniqueCov.PosSemidef) (y : EuclideanSpace ℝ (Fin q)) :
     iIndepFun (fun (i : Fin p) (x : EuclideanSpace ℝ (Fin p)) => x i)
       (measurementKernel P (multivariateGaussian 0 P.uniqueCov) y) := by
-  sorry
+  rw [measurementKernel_multivariateGaussian P hΨ y]
+  refine (hasGaussianLaw_coords _ P.uniqueCov).iIndepFun_of_covariance_eq_zero fun i j hij => ?_
+  rw [covariance_eval_multivariateGaussian hΨ]
+  exact hΨdiag hij
 
 /-- **`BKM` Eq. (1.9) verbatim**: `g(x ∣ y) = ∏_{i=1}^{p} gᵢ(xᵢ ∣ y)`, with the univariate
 conditional laws `gᵢ(· ∣ y) = N((μ + Λ y)ᵢ, ψᵢ)` read off the diagonal of `Ψ`. The pushforward
@@ -238,7 +257,15 @@ theorem map_measurementKernel_eq_pi (P : FactorParams p q)
       = Measure.pi fun i : Fin p =>
           gaussianReal ((P.μ + Matrix.toEuclideanLin (𝕜 := ℝ) P.loading y) i)
             (P.uniqueCov i i).toNNReal := by
-  sorry
+  have hiid := iIndepFun_eval_measurementKernel P hΨdiag hΨ y
+  rw [measurementKernel_multivariateGaussian P hΨ y] at hiid ⊢
+  have hmap := (iIndepFun_iff_map_fun_eq_pi_map
+    (fun i : Fin p => (by fun_prop :
+      AEMeasurable (fun x : EuclideanSpace ℝ (Fin p) => x i)
+        (multivariateGaussian
+          (P.μ + Matrix.toEuclideanLin (𝕜 := ℝ) P.loading y) P.uniqueCov)))).1 hiid
+  exact hmap.trans (congrArg Measure.pi (funext fun i =>
+    (measurePreserving_eval_multivariateGaussian hΨ (i := i)).map_eq))
 
 /-! ### The headline — local independence in the graphical vocabulary -/
 
@@ -273,7 +300,30 @@ theorem condIndep_eval_latentObsJointLaw (P : FactorParams p q)
     GraphicalModels.CondIndep
         (latentObsJointLaw P F (multivariateGaussian 0 P.uniqueCov))
         (fun z => z.2 i) (fun z => z.2 j) Prod.fst := by
-  sorry
+  set K := measurementKernel P (multivariateGaussian 0 P.uniqueCov) with hKdef
+  have hmi : Measurable (fun x : EuclideanSpace ℝ (Fin p) => x i) := by fun_prop
+  have hmj : Measurable (fun x : EuclideanSpace ℝ (Fin p) => x j) := by fun_prop
+  have hmij : Measurable (fun x : EuclideanSpace ℝ (Fin p) => (x i, x j)) := hmi.prodMk hmj
+  refine ⟨K.map (fun x => x i), K.map (fun x => x j),
+    Kernel.IsMarkovKernel.map _ hmi, Kernel.IsMarkovKernel.map _ hmj, ?_⟩
+  -- the measurement kernel, read pairwise, *is* the product of its two coordinate marginals:
+  -- that is `indepFun_eval_measurementKernel` in its `Measure.prod` form
+  have hK : K.map (fun x : EuclideanSpace ℝ (Fin p) => (x i, x j))
+      = (K.map fun x => x i) ×ₖ (K.map fun x => x j) := by
+    refine Kernel.ext fun y => ?_
+    rw [Kernel.map_apply _ hmij, Kernel.prod_apply, Kernel.map_apply _ hmi,
+      Kernel.map_apply _ hmj]
+    exact (indepFun_iff_map_prod_eq_prod_map_map hmi.aemeasurable hmj.aemeasurable).1
+      (indepFun_eval_measurementKernel P hΨdiag hΨ hij y)
+  have hfst : (latentObsJointLaw P F (multivariateGaussian 0 P.uniqueCov)).map Prod.fst = F := by
+    rw [latentObsJointLaw, ← Measure.fst, Measure.fst_compProd]
+  calc (latentObsJointLaw P F (multivariateGaussian 0 P.uniqueCov)).map
+        (fun z => (z.1, (z.2 i, z.2 j)))
+      = (F ⊗ₘ K).map (Prod.map id fun x : EuclideanSpace ℝ (Fin p) => (x i, x j)) := rfl
+    _ = F ⊗ₘ (K.map fun x : EuclideanSpace ℝ (Fin p) => (x i, x j)) :=
+        (Measure.compProd_map hmij).symm
+    _ = F ⊗ₘ ((K.map fun x => x i) ×ₖ (K.map fun x => x j)) := by rw [hK]
+    _ = _ := by rw [hfst]
 
 /-! ### The contrast — dependence in the observed marginal
 
@@ -299,7 +349,8 @@ theorem factorCovariance_apply_of_oneFactor (P : FactorParams p 1)
     -- USER-INPUT: two distinct observed coordinates; BKM Eq. (3.12)
     (hij : i ≠ j) :
     factorCovariance P i j = P.loading i 0 * P.factorCov 0 0 * P.loading j 0 := by
-  sorry
+  simp [factorCovariance, Matrix.add_apply, Matrix.mul_apply, Matrix.transpose_apply,
+    hΨdiag hij]
 
 /-- **The common factor induces observed correlation** (`BKM` §1.4, p. 7: "if `x₁` and `x₂` both
 depend on `y₁` we may expect the common influence of `y₁` to induce a correlation between `x₁`
@@ -318,7 +369,9 @@ theorem factorCovariance_apply_ne_zero_of_oneFactor (P : FactorParams p 1)
     -- USER-INPUT: coordinate `j` genuinely loads on the same factor; BKM §1.4, p. 7
     (hj : P.loading j 0 ≠ 0) :
     factorCovariance P i j ≠ 0 := by
-  sorry
+  rw [factorCovariance_apply_of_oneFactor P hΨdiag hij, show P.factorCov = 1 from hΦ]
+  simp only [Matrix.one_apply_eq, mul_one]
+  exact mul_ne_zero hi hj
 
 /-- **The contrast, as a negative statement about the observed law.** In the Gaussian
 one-factor model with two non-zero loadings, the two observed coordinates are **not**
@@ -348,7 +401,12 @@ theorem not_indepFun_eval_gaussianFactorModel (P : FactorParams p 1)
     (hj : P.loading j 0 ≠ 0) :
     ¬ IndepFun (fun x : EuclideanSpace ℝ (Fin p) => x i)
         (fun x : EuclideanSpace ℝ (Fin p) => x j) (gaussianFactorModel p 1 P) := by
-  sorry
+  intro hind
+  rw [gaussianFactorModel_eq_multivariateGaussian P hP] at hind
+  have hcoords := hasGaussianLaw_coords P.μ (factorCovariance P)
+  have hcov := hind.covariance_eq_zero (hcoords.eval i).memLp_two (hcoords.eval j).memLp_two
+  rw [covariance_eval_multivariateGaussian (posSemidef_factorCovariance P hP)] at hcov
+  exact factorCovariance_apply_ne_zero_of_oneFactor P hΦ hΨdiag hij hi hj hcov
 
 end Contrast
 
