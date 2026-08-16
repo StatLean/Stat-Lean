@@ -143,19 +143,31 @@ Lauritzen's `f_A` is a function of `x_A`. Route: `agreeOn A x = agreeOn A y` whe
 `y` agree on `A`. -/
 theorem dependsOn_blockMarginal (A : Finset V) (p : (V → α) → ℝ≥0∞) :
     DependsOn (blockMarginal A p) (A : Set V) := by
-  sorry
+  intro x y hxy
+  have hset : agreeOn A x = agreeOn A y := by
+    ext z
+    simp only [mem_agreeOn]
+    exact ⟨fun hz i hi => (hz i hi).trans (hxy i (by simpa using hi)),
+      fun hz i hi => (hz i hi).trans (hxy i (by simpa using hi)).symm⟩
+  simp only [blockMarginal, hset]
 
 /-- Marginalising over the full vertex set is the identity: `agreeOn univ x = {x}`. This is the
 identity that lets the factorization file feed a factorisation of `p` itself into the
 criterion (3.6), whose subject is `blockMarginal (A ∪ B ∪ C) p`. -/
 theorem blockMarginal_univ (p : (V → α) → ℝ≥0∞) :
     blockMarginal Finset.univ p = p := by
-  sorry
+  funext x
+  have hset : agreeOn Finset.univ x = {x} := by
+    ext y
+    simp [mem_agreeOn, funext_iff]
+  simp [blockMarginal, hset]
 
 /-- Marginalising over the empty block gives the total mass, independently of `x`. -/
 theorem blockMarginal_empty (p : (V → α) → ℝ≥0∞) (x : V → α) :
     blockMarginal ∅ p x = ∑ y, p y := by
-  sorry
+  have hset : agreeOn (∅ : Finset V) x = Finset.univ := by
+    ext y; simp [mem_agreeOn]
+  simp [blockMarginal, hset]
 
 /-- Marginals are **antitone** in the block: enlarging the block shrinks the index set of the
 sum. Route: `agreeOn B x ⊆ agreeOn A x` for `A ⊆ B`, then `Finset.sum_le_sum_of_subset`. This
@@ -165,7 +177,10 @@ theorem blockMarginal_antitone {A B : Finset V} (p : (V → α) → ℝ≥0∞) 
     -- are indexed by subsets and this monotonicity is implicit in his §3.1 manipulations
     (hAB : A ⊆ B) :
     blockMarginal B p x ≤ blockMarginal A p x := by
-  sorry
+  refine Finset.sum_le_sum_of_subset ?_
+  intro y hy
+  simp only [mem_agreeOn] at hy ⊢
+  exact fun i hi => hy i (hAB hi)
 
 /-- A vanishing marginal forces every finer marginal to vanish — `blockMarginal_antitone` in
 the form the `ℝ≥0∞` cancellation branches consume. -/
@@ -175,7 +190,7 @@ theorem blockMarginal_eq_zero_of_subset {A B : Finset V} (p : (V → α) → ℝ
     -- LEAN-ONLY: vanishing of the coarser marginal
     (h : blockMarginal A p x = 0) :
     blockMarginal B p x = 0 := by
-  sorry
+  simpa [h] using blockMarginal_antitone p x hAB
 
 /-- A finite mass function has finite marginals — the side condition that makes `ℝ≥0∞`
 cancellation legitimate in (C3), (C4) and (C5). -/
@@ -183,8 +198,8 @@ theorem blockMarginal_ne_top {p : (V → α) → ℝ≥0∞} (A : Finset V) (x :
     -- LEAN-ONLY: finiteness of the mass function. On a finite configuration space this is
     -- equivalent to finiteness of the total mass; Lauritzen's `f` is a density, hence finite
     (hp : ∀ y, p y ≠ ∞) :
-    blockMarginal A p x ≠ ∞ := by
-  sorry
+    blockMarginal A p x ≠ ∞ :=
+  ENNReal.sum_ne_top.mpr fun y _ => hp y
 
 /-- A strictly positive mass function has strictly positive marginals: `x ∈ agreeOn A x`, so
 every marginal sum has a positive summand. The hypothesis of Lauritzen's Proposition 3.1
@@ -193,7 +208,9 @@ theorem blockMarginal_ne_zero {p : (V → α) → ℝ≥0∞} (A : Finset V) (x 
     -- USER-INPUT: strict positivity of the mass function; Lauritzen Proposition 3.1, p. 29
     (hpos : ∀ y, p y ≠ 0) :
     blockMarginal A p x ≠ 0 := by
-  sorry
+  intro hz
+  rw [blockMarginal, Finset.sum_eq_zero_iff] at hz
+  exact hpos x (hz x (by simp [mem_agreeOn]))
 
 /-- **The block-splitting identity** — the workhorse of every proof in this file. Marginalising
 on `S` is the same as marginalising on the larger block `S ∪ T` and then summing the result
@@ -211,7 +228,25 @@ theorem blockMarginal_eq_sum_updateFinset (p : (V → α) → ℝ≥0∞) (S T :
     blockMarginal S p x
       = ∑ b : ↥T → α,
           blockMarginal (S ∪ T) p (Function.updateFinset (π := fun _ => α) x T b) := by
-  sorry
+  classical
+  have key : ∀ b : ↥T → α,
+      agreeOn (S ∪ T) (Function.updateFinset (π := fun _ => α) x T b)
+        = {y ∈ agreeOn S x | (fun i : ↥T => y (i : V)) = b} := by
+    intro b
+    ext y
+    simp only [Finset.mem_filter, mem_agreeOn, Finset.mem_union, Function.updateFinset,
+      funext_iff]
+    constructor
+    · intro hy
+      refine ⟨fun i hi => ?_, fun i => ?_⟩
+      · simpa [dif_neg (Finset.disjoint_right.mp hTS hi)] using hy i (Or.inl hi)
+      · simpa [dif_pos i.2] using hy (i : V) (Or.inr i.2)
+    · rintro ⟨h1, h2⟩ i (hi | hi)
+      · simpa [dif_neg (Finset.disjoint_right.mp hTS hi)] using h1 i hi
+      · simpa [dif_pos hi] using h2 ⟨i, hi⟩
+  rw [blockMarginal,
+    ← Finset.sum_fiberwise (agreeOn S x) (fun y : V → α => fun i : ↥T => y (i : V)) p]
+  exact Finset.sum_congr rfl fun b _ => by rw [blockMarginal, key b]
 
 /-! ### Lauritzen's identity (3.2) -/
 
@@ -259,7 +294,54 @@ theorem CondIndepMass.decomposition {p : (V → α) → ℝ≥0∞} {A B C D : F
     -- USER-INPUT: the independence to be weakened; Lauritzen §3.1 (C2), p. 29
     (h : CondIndepMass p A (B ∪ D) C) :
     CondIndepMass p A B C := by
-  sorry
+  classical
+  intro x
+  -- The fresh coordinates summed over: the part of `D` not already covered by `A ∪ B ∪ C`.
+  obtain ⟨T, hTdef⟩ : ∃ T : Finset V, T = D \ (A ∪ B ∪ C) := ⟨_, rfl⟩
+  have hTW : Disjoint T (A ∪ B ∪ C) := hTdef ▸ Finset.sdiff_disjoint
+  have hTBC : Disjoint T (B ∪ C) :=
+    hTW.mono_right (fun v hv => by
+      simp only [Finset.mem_union] at hv ⊢; tauto)
+  have hTC : Disjoint T C := hTBC.mono_right (fun v hv => by simp [hv])
+  have hTAC : Disjoint T (A ∪ C) :=
+    hTW.mono_right (fun v hv => by
+      simp only [Finset.mem_union] at hv ⊢; tauto)
+  -- The two set identities that put the summed blocks back in place.
+  have hU : A ∪ B ∪ C ∪ T = A ∪ (B ∪ D) ∪ C := by
+    subst hTdef
+    rw [Finset.union_sdiff_self_eq_union]
+    ext v; simp only [Finset.mem_union]; tauto
+  have hV : B ∪ C ∪ T = B ∪ D ∪ C := by
+    subst hTdef
+    ext v
+    simp only [Finset.mem_union, Finset.mem_sdiff]
+    constructor
+    · rintro ((hv | hv) | ⟨hv, -⟩) <;> tauto
+    · rintro ((hv | hv) | hv)
+      · tauto
+      · by_cases hvA : v ∈ A ∪ B ∪ C
+        · simp only [Finset.mem_union] at hvA
+          rcases hvA with (hvA | hvB) | hvC
+          · exact absurd hv (Finset.disjoint_left.mp hAD hvA)
+          · tauto
+          · tauto
+        · exact Or.inr ⟨hv, by simpa only [Finset.mem_union] using hvA⟩
+      · tauto
+  -- Every factor free of the `T`-coordinates is constant along the sum.
+  have hoff : ∀ (E : Finset V) (b : ↥T → α), Disjoint T E →
+      blockMarginal E p (Function.updateFinset (π := fun _ => α) x T b)
+        = blockMarginal E p x := by
+    intro E b hTE
+    refine dependsOn_blockMarginal E p fun i hi => ?_
+    have hiT : i ∉ T := Finset.disjoint_right.mp hTE (by simpa using hi)
+    simp [Function.updateFinset, dif_neg hiT]
+  have e1 := blockMarginal_eq_sum_updateFinset p (A ∪ B ∪ C) T x hTW
+  have e2 := blockMarginal_eq_sum_updateFinset p (B ∪ C) T x hTBC
+  rw [hU] at e1
+  rw [hV] at e2
+  rw [e1, e2, Finset.sum_mul, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun b _ => ?_
+  rw [← hoff C b hTC, h _, hoff (A ∪ C) b hTAC]
 
 /-- **(C3), weak union** (Lauritzen p. 29; Pearl's *weak union*): a discarded sub-block may be
 moved into the conditioning set.
