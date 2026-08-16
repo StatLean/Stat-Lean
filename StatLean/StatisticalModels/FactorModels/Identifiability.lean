@@ -79,7 +79,24 @@ theorem loadingModel_eq_multivariateGaussian (μ : EuclideanSpace ℝ (Fin p))
     -- USER-INPUT: a genuine specific-factor covariance; BKM Eq. (3.1)
     (hΨ : Ψ.PosSemidef) (Λ : Matrix (Fin p) (Fin q) ℝ) :
     loadingModel p q μ Ψ Λ = multivariateGaussian μ (Λ * Λᵀ + Ψ) := by
-  sorry
+  have hP : IsProperFactorParams (⟨μ, Λ, 1, Ψ⟩ : FactorParams p q) :=
+    ⟨Matrix.PosSemidef.one, hΨ⟩
+  rw [loadingModel, gaussianFactorModel_eq_multivariateGaussian _ hP]
+  congr 1
+  change Λ * 1 * Λᵀ + Ψ = Λ * Λᵀ + Ψ
+  rw [Matrix.mul_one]
+
+/-- LEAN-ONLY: the covariance matrix of the loading model, the representing functional used
+by the positive results below. -/
+private theorem identifiesTarget_loadingModel_covariance_aux
+    (μ : EuclideanSpace ℝ (Fin p)) {Ψ : Matrix (Fin p) (Fin p) ℝ}
+    (hΨ : Ψ.PosSemidef) (Λ : Matrix (Fin p) (Fin q) ℝ) :
+    covMatrix (loadingModel p q μ Ψ Λ) = Λ * Λᵀ + Ψ := by
+  have hPSD : (Λ * Λᵀ + Ψ).PosSemidef := by
+    refine Matrix.PosSemidef.add ?_ hΨ
+    simpa [Matrix.conjTranspose_eq_transpose_of_trivial] using
+      Matrix.posSemidef_self_mul_conjTranspose Λ
+  rw [loadingModel_eq_multivariateGaussian μ hΨ, covMatrix_multivariateGaussian _ _ hPSD]
 
 /-! ### The loadings are not identified -/
 
@@ -93,7 +110,10 @@ theorem loadingModel_mul_orthogonal (μ : EuclideanSpace ℝ (Fin p))
     -- USER-INPUT: `Q` is orthogonal; BKM §2.11, Eq. (2.24)
     (hQ : Q * Qᵀ = 1) :
     loadingModel p q μ Ψ (Λ * Q) = loadingModel p q μ Ψ Λ := by
-  sorry
+  rw [loadingModel_eq_multivariateGaussian μ hΨ, loadingModel_eq_multivariateGaussian μ hΨ]
+  congr 1
+  exact congrArg (· + Ψ)
+    (loading_mul_transpose_rotateParams_orthogonal (⟨μ, Λ, 1, Ψ⟩ : FactorParams p q) hQ)
 
 /-- **The sign flip** — the `q = 1` instance of the rotational indeterminacy, and the witness
 used below at every `q`. -/
@@ -101,7 +121,10 @@ theorem loadingModel_neg (μ : EuclideanSpace ℝ (Fin p)) {Ψ : Matrix (Fin p) 
     -- USER-INPUT: a genuine specific-factor covariance; BKM Eq. (3.1)
     (hΨ : Ψ.PosSemidef) (Λ : Matrix (Fin p) (Fin q) ℝ) :
     loadingModel p q μ Ψ (-Λ) = loadingModel p q μ Ψ Λ := by
-  sorry
+  have hQ : (-1 : Matrix (Fin q) (Fin q) ℝ) * (-1 : Matrix (Fin q) (Fin q) ℝ)ᵀ = 1 := by
+    rw [Matrix.transpose_neg, Matrix.transpose_one, neg_mul_neg, Matrix.one_mul]
+  have h := loadingModel_mul_orthogonal μ hΨ Λ hQ
+  rwa [Matrix.mul_neg, Matrix.mul_one] at h
 
 /-- **HEADLINE (negative) — the loadings of a factor model are not identifiable**
 (`BKM` §3.12.1, pp. 64–65): with at least one observed variable and at least one factor, two
@@ -116,7 +139,16 @@ theorem not_identifiable_loadingModel (μ : EuclideanSpace ℝ (Fin p))
     -- identifiable; BKM §3.12.1
     (hp : 0 < p) (hq : 0 < q) :
     ¬ Identifiable (loadingModel p q μ Ψ) := by
-  sorry
+  intro hid
+  -- the witness pair: the all-ones loading matrix and its negative (the sign flip)
+  have h : -(Matrix.of fun _ _ => (1 : ℝ) : Matrix (Fin p) (Fin q) ℝ)
+      = (Matrix.of fun _ _ => (1 : ℝ) : Matrix (Fin p) (Fin q) ℝ) :=
+    hid (loadingModel_neg μ hΨ _)
+  have h1 : (-(Matrix.of fun _ _ => (1 : ℝ) : Matrix (Fin p) (Fin q) ℝ))
+        ⟨0, hp⟩ ⟨0, hq⟩
+      = (Matrix.of fun _ _ => (1 : ℝ) : Matrix (Fin p) (Fin q) ℝ) ⟨0, hp⟩ ⟨0, hq⟩ := by
+    rw [h]
+  norm_num at h1
 
 /-! ### What *is* identified -/
 
@@ -127,7 +159,8 @@ theorem identifiesTarget_loadingModel_commonCovariance (μ : EuclideanSpace ℝ 
     -- USER-INPUT: a genuine specific-factor covariance; BKM Eq. (3.1)
     (hΨ : Ψ.PosSemidef) :
     IdentifiesTarget (loadingModel p q μ Ψ) fun Λ : Matrix (Fin p) (Fin q) ℝ => Λ * Λᵀ := by
-  sorry
+  refine identifiesTarget_of_rep (fun Q => covMatrix Q - Ψ) fun Λ => ?_
+  simp only [identifiesTarget_loadingModel_covariance_aux μ hΨ Λ, add_sub_cancel_right]
 
 /-- The full covariance `Λ Λᵀ + Ψ` is identified in the loading model. -/
 theorem identifiesTarget_loadingModel_covariance (μ : EuclideanSpace ℝ (Fin p))
@@ -135,8 +168,8 @@ theorem identifiesTarget_loadingModel_covariance (μ : EuclideanSpace ℝ (Fin p
     -- USER-INPUT: a genuine specific-factor covariance; BKM Eq. (3.1)
     (hΨ : Ψ.PosSemidef) :
     IdentifiesTarget (loadingModel p q μ Ψ)
-      fun Λ : Matrix (Fin p) (Fin q) ℝ => Λ * Λᵀ + Ψ := by
-  sorry
+      fun Λ : Matrix (Fin p) (Fin q) ℝ => Λ * Λᵀ + Ψ :=
+  identifiesTarget_of_rep covMatrix (identifiesTarget_loadingModel_covariance_aux μ hΨ)
 
 /-! ### The model over the full (proper) parameter space
 
@@ -153,14 +186,14 @@ noncomputable def properGaussianFactorModel (p q : ℕ) :
 (`BKM` Eq. (3.12), general `Φ`). -/
 theorem identifiesTarget_factorCovariance :
     IdentifiesTarget (properGaussianFactorModel p q)
-      fun P : {P : FactorParams p q // IsProperFactorParams P} => factorCovariance P.1 := by
-  sorry
+      fun P : {P : FactorParams p q // IsProperFactorParams P} => factorCovariance P.1 :=
+  identifiesTarget_of_rep covMatrix fun P => covMatrix_gaussianFactorModel P.1 P.2
 
 /-- **`μ` is identified** — it is the mean vector of the observed law (`BKM` Eq. (3.5)). -/
 theorem identifiesTarget_mean :
     IdentifiesTarget (properGaussianFactorModel p q)
-      fun P : {P : FactorParams p q // IsProperFactorParams P} => P.1.μ := by
-  sorry
+      fun P : {P : FactorParams p q // IsProperFactorParams P} => P.1.μ :=
+  identifiesTarget_of_rep meanVec fun P => meanVec_gaussianFactorModel P.1 P.2
 
 /-- **The parameter tuple itself is not identified** (`BKM` §3.12.1, pp. 64–65) — the
 model-level companion of `not_identifiable_loadingModel`. -/
@@ -169,6 +202,23 @@ theorem not_identifiable_properGaussianFactorModel
     -- BKM §3.12.1
     (hp : 0 < p) (hq : 0 < q) :
     ¬ Identifiable (properGaussianFactorModel p q) := by
-  sorry
+  intro hid
+  have hprop : ∀ M : Matrix (Fin p) (Fin q) ℝ,
+      IsProperFactorParams (⟨0, M, 1, 0⟩ : FactorParams p q) :=
+    fun _ => ⟨Matrix.PosSemidef.one, Matrix.PosSemidef.zero⟩
+  -- the sign flip at `μ = 0`, `Φ = I`, `Ψ = 0` — a proper parameter pair with one law
+  have hlaw : properGaussianFactorModel p q
+        ⟨⟨0, -(Matrix.of fun _ _ => (1 : ℝ)), 1, 0⟩, hprop _⟩
+      = properGaussianFactorModel p q
+        ⟨⟨0, Matrix.of fun _ _ => (1 : ℝ), 1, 0⟩, hprop _⟩ :=
+    loadingModel_neg (0 : EuclideanSpace ℝ (Fin p)) Matrix.PosSemidef.zero _
+  have h : -(Matrix.of fun _ _ => (1 : ℝ) : Matrix (Fin p) (Fin q) ℝ)
+      = (Matrix.of fun _ _ => (1 : ℝ) : Matrix (Fin p) (Fin q) ℝ) :=
+    congrArg (fun P => P.1.loading) (hid hlaw)
+  have h1 : (-(Matrix.of fun _ _ => (1 : ℝ) : Matrix (Fin p) (Fin q) ℝ))
+        ⟨0, hp⟩ ⟨0, hq⟩
+      = (Matrix.of fun _ _ => (1 : ℝ) : Matrix (Fin p) (Fin q) ℝ) ⟨0, hp⟩ ⟨0, hq⟩ := by
+    rw [h]
+  norm_num at h1
 
 end StatLean.StatisticalModels.FactorModels
