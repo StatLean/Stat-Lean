@@ -59,6 +59,15 @@ moved + 1 new; other 445 byte-identical); validator 451/451/451 green;
 vite build + playwright page-render check passed. NOT pushed to
 origin/statlean — GitHub Pages deploy deferred until the user publishes.
 
+GitHub reconciliation: DONE (merge 26a9cdb9, 2026-08-16) — statlean/main
+(10 commits: PR#13 cross-listing, four-area public release 7c751aab,
+website revisions + precomputed layout pipeline) merged into local main.
+Lean tree byte-identical to pre-merge main (gate carries over); website =
+their 651-entry base + the chaining-sup upgrade replayed (652 results,
+validator 652/652/652, layout assets regenerated, build+render checked).
+Local main now strictly contains GitHub main (658 ahead / 0 behind) — the
+eventual origin push is a clean fast-forward.
+
 ## Log
 
 - 2026-08-15: plan approved (separable design / full symmetry / local main
