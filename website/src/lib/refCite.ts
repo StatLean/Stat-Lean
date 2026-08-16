@@ -3,6 +3,26 @@ import rawRefs from "../data/references.json";
 
 const REF_BY_KEY = new Map((rawRefs as unknown as Reference[]).map((r) => [r.key, r]));
 
+export interface ReferenceLink {
+  key: string;
+  label: string;
+}
+
+/**
+ * Return a stable, human-readable link label for every source attached to a
+ * result.  Inline author matching is necessarily heuristic; this list is the
+ * reliable fallback that makes every cited source reachable from the comment.
+ */
+export function referenceLinks(keys: string[]): ReferenceLink[] {
+  return (keys ?? []).flatMap((key) => {
+    const ref = REF_BY_KEY.get(key);
+    if (!ref) return [];
+    const year = key.match(/(?:18|19|20)\d{2}/)?.[0]
+      ?? ref.html.match(/(?:18|19|20)\d{2}/)?.[0];
+    return [{ key, label: `${ref.sortKey}${year ? ` (${year})` : ""}` }];
+  });
+}
+
 /**
  * Turn the works mentioned in a bibliographic-comments paragraph into links to
  * the references page. For each key cited by the result we locate its author's

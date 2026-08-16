@@ -1,0 +1,42 @@
+{
+  "root": "StatLean.NonparametricStatistics.IsKernelFun.exists_rkhs",
+  "nodes": [
+    {"id":"StatLean.NonparametricStatistics.IsKernelFun.exists_rkhs","label":"exists_rkhs","full":"StatLean.NonparametricStatistics.IsKernelFun.exists_rkhs","kind":"root","decl":"thm","module":"StatLean.NonparametricStatistics.RKHS.Moore"},
+    {"id":"StatLean.NonparametricStatistics.IsKernelFun","label":"IsKernelFun","full":"StatLean.NonparametricStatistics.IsKernelFun","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.RKHS.KernelFunction"},
+    {"id":"StatLean.NonparametricStatistics.scalarKernel","label":"scalarKernel","full":"StatLean.NonparametricStatistics.scalarKernel","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.RKHS.Basic"},
+    {"id":"StatLean.NonparametricStatistics.OfScalarKernel","label":"OfScalarKernel","full":"StatLean.NonparametricStatistics.OfScalarKernel","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.RKHS.Moore"},
+    {"id":"StatLean.NonparametricStatistics.toCLMMatrix","label":"toCLMMatrix","full":"StatLean.NonparametricStatistics.toCLMMatrix","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.RKHS.Moore"},
+    {"id":"UniformSpace.Completion.completeSpace","label":"completeSpace","full":"UniformSpace.Completion.completeSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.UniformSpace.Completion"},
+    {"id":"StatLean.NonparametricStatistics.scalarKernel_ofScalarKernel","label":"scalarKernel_ofScalarKernel","full":"StatLean.NonparametricStatistics.scalarKernel_ofScalarKernel","kind":"repo","decl":"thm","module":"StatLean.NonparametricStatistics.RKHS.Moore"},
+    {"id":"StatLean.NonparametricStatistics.kernelFun","label":"kernelFun","full":"StatLean.NonparametricStatistics.kernelFun","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.RKHS.Basic"},
+    {"id":"StatLean.NonparametricStatistics.scalarKernel_eq_kernel_one","label":"scalarKernel_eq_kernel_one","full":"StatLean.NonparametricStatistics.scalarKernel_eq_kernel_one","kind":"repo","decl":"thm","module":"StatLean.NonparametricStatistics.RKHS.Basic"},
+    {"id":"RKHS.OfKernel.kernel_ofKernel","label":"kernel_ofKernel","full":"RKHS.OfKernel.kernel_ofKernel","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Reproducing"},
+    {"id":"StatLean.NonparametricStatistics.toCLMMatrix_apply","label":"toCLMMatrix_apply","full":"StatLean.NonparametricStatistics.toCLMMatrix_apply","kind":"repo","decl":"thm","module":"StatLean.NonparametricStatistics.RKHS.Moore"},
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"RKHS.kerFun_apply","label":"kerFun_apply","full":"RKHS.kerFun_apply","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Reproducing"}
+  ],
+  "edges": [
+    {"source":"StatLean.NonparametricStatistics.IsKernelFun.exists_rkhs","target":"StatLean.NonparametricStatistics.IsKernelFun"},
+    {"source":"StatLean.NonparametricStatistics.IsKernelFun.exists_rkhs","target":"StatLean.NonparametricStatistics.scalarKernel"},
+    {"source":"StatLean.NonparametricStatistics.IsKernelFun.exists_rkhs","target":"StatLean.NonparametricStatistics.OfScalarKernel"},
+    {"source":"StatLean.NonparametricStatistics.IsKernelFun.exists_rkhs","target":"StatLean.NonparametricStatistics.toCLMMatrix"},
+    {"source":"StatLean.NonparametricStatistics.IsKernelFun.exists_rkhs","target":"UniformSpace.Completion.completeSpace"},
+    {"source":"StatLean.NonparametricStatistics.IsKernelFun.exists_rkhs","target":"StatLean.NonparametricStatistics.scalarKernel_ofScalarKernel"},
+    {"source":"StatLean.NonparametricStatistics.scalarKernel","target":"StatLean.NonparametricStatistics.kernelFun"},
+    {"source":"StatLean.NonparametricStatistics.OfScalarKernel","target":"StatLean.NonparametricStatistics.IsKernelFun"},
+    {"source":"StatLean.NonparametricStatistics.OfScalarKernel","target":"StatLean.NonparametricStatistics.toCLMMatrix"},
+    {"source":"StatLean.NonparametricStatistics.scalarKernel_ofScalarKernel","target":"StatLean.NonparametricStatistics.IsKernelFun"},
+    {"source":"StatLean.NonparametricStatistics.scalarKernel_ofScalarKernel","target":"StatLean.NonparametricStatistics.scalarKernel"},
+    {"source":"StatLean.NonparametricStatistics.scalarKernel_ofScalarKernel","target":"StatLean.NonparametricStatistics.OfScalarKernel"},
+    {"source":"StatLean.NonparametricStatistics.scalarKernel_ofScalarKernel","target":"StatLean.NonparametricStatistics.toCLMMatrix"},
+    {"source":"StatLean.NonparametricStatistics.scalarKernel_ofScalarKernel","target":"UniformSpace.Completion.completeSpace"},
+    {"source":"StatLean.NonparametricStatistics.scalarKernel_ofScalarKernel","target":"StatLean.NonparametricStatistics.scalarKernel_eq_kernel_one"},
+    {"source":"StatLean.NonparametricStatistics.scalarKernel_ofScalarKernel","target":"RKHS.OfKernel.kernel_ofKernel"},
+    {"source":"StatLean.NonparametricStatistics.scalarKernel_ofScalarKernel","target":"StatLean.NonparametricStatistics.toCLMMatrix_apply"},
+    {"source":"StatLean.NonparametricStatistics.scalarKernel_ofScalarKernel","target":"mul_one"},
+    {"source":"StatLean.NonparametricStatistics.scalarKernel_eq_kernel_one","target":"StatLean.NonparametricStatistics.scalarKernel"},
+    {"source":"StatLean.NonparametricStatistics.scalarKernel_eq_kernel_one","target":"StatLean.NonparametricStatistics.kernelFun"},
+    {"source":"StatLean.NonparametricStatistics.scalarKernel_eq_kernel_one","target":"RKHS.kerFun_apply"},
+    {"source":"StatLean.NonparametricStatistics.toCLMMatrix_apply","target":"StatLean.NonparametricStatistics.toCLMMatrix"}
+  ]
+}

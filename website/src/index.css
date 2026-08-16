@@ -22,9 +22,14 @@
   --c-opt: 86 140 52;      /* green — Optimization */
   --c-bayes: 88 80 200;    /* indigo — Bayesian */
   --c-nonparam: 8 138 158; /* petrol cyan — Nonparametric */
+  --c-smod: 128 86 48;     /* umber brown — Statistical Models */
   --c-prob: 90 92 130;     /* slate indigo — Miscellaneous */
   --c-htest: 190 96 30;    /* burnt orange — Hypothesis Tests */
   --c-pest: 64 104 92;     /* deep sage — Point Estimation */
+  --c-ts: 0 104 132;       /* ocean blue — Time Series */
+  --c-causal: 205 48 22;   /* vermilion — Causal Inference */
+  --c-slearn: 174 28 170;  /* vivid magenta — Statistical Learning */
+  --c-exp: 93 108 0;       /* olive — Experimental Design */
   --c-ext: 214 178 38;     /* yellow — Mathlib / external */
 
   --grain-opacity: 0.04;
@@ -49,9 +54,14 @@
   --c-opt: 158 206 120;
   --c-bayes: 160 150 240;
   --c-nonparam: 92 202 220;
+  --c-smod: 208 160 116;
   --c-prob: 162 164 208;
   --c-htest: 240 158 96;
   --c-pest: 130 190 172;
+  --c-ts: 96 196 212;
+  --c-causal: 226 148 104;
+  --c-slearn: 178 146 244;
+  --c-exp: 194 200 104;
   --c-ext: 232 206 96;     /* yellow — Mathlib / external */
 
   --grain-opacity: 0.05;
@@ -100,9 +110,14 @@ body::before {
 [data-cat="optimization"] { --accent: var(--c-opt); }
 [data-cat="bayesian"] { --accent: var(--c-bayes); }
 [data-cat="nonparametric"] { --accent: var(--c-nonparam); }
+[data-cat="statisticalmodels"] { --accent: var(--c-smod); }
 [data-cat="probability"] { --accent: var(--c-prob); }
 [data-cat="hypothesistesting"] { --accent: var(--c-htest); }
 [data-cat="pointestimation"] { --accent: var(--c-pest); }
+[data-cat="timeseries"] { --accent: var(--c-ts); }
+[data-cat="causal"] { --accent: var(--c-causal); }
+[data-cat="statlearning"] { --accent: var(--c-slearn); }
+[data-cat="expdesign"] { --accent: var(--c-exp); }
 
 /* bare `accent` className = active-accent text color (not a Tailwind utility) */
 .accent { color: rgb(var(--accent)); }

@@ -47,7 +47,8 @@ then the formalization note and the reference block.
 
 Required: `id`, `category`, `kind`, `leanName`, `fullName`, `title`, `citation`,
 `file`, `docGenUrl`, `informal`, `summary`, `leanSignature`, `hypotheses`,
-`hasGraph`. Optional: `formalizationNotes`, `shortRef`, `reference`, `keywords`.
+`hasGraph`. Optional: `formalizationNotes`, `shortRef`, `reference`, `keywords`,
+`crossListed`, `hidden`.
 
 Anything else is rejected — the validator uses an exact key set, so a typo in a
 field name fails the build rather than silently doing nothing.
@@ -194,7 +195,8 @@ crowds out the original sources that the paragraph exists to record.
 
 Point the paragraph *outward*, to Wald (1949), Huber (1967), Pearson (1894) —
 the papers a reader would go to next. Every work named in `biblio` should also
-appear in `keys` so it is linked and listed.
+appear in `keys` so it is linked inline when author matching succeeds, listed
+explicitly under **Cited works**, and present on the References page.
 
 > **Known backlog:** 113 of 432 bibliographic paragraphs currently re-name their
 > own primary textbook (vdV 40, Lehmann–Romano 27, Wainwright 22,
@@ -213,6 +215,8 @@ Graphs are **generated, never authored**. One file per result with
 # on the cluster, from the repository root (this laptop cannot `lake build`)
 lake build
 lake exe deps
+cd website
+npm run layout
 ```
 
 `lake exe deps` reads `website/targets.txt`, resolves each name against the
@@ -234,17 +238,19 @@ Node invariants worth knowing, because the compact global graph relies on them:
 `id === full`, `label === full.split(".").at(-1)`, repo nodes come from a
 `StatLean` module, Mathlib nodes do not, and Mathlib nodes are always leaves.
 
-**The global graph page needs nothing extra** — `src/lib/globalGraph.ts` unions
-the per-result graphs at load time. Adding results grows it automatically.
+`npm run layout` unions the per-result files into two compact assets and
+precomputes collision-free positions with the older force-directed recipe.
+The StatLean-only graph loads first; Mathlib nodes, their edges and the larger
+layout are separate assets fetched only when the visitor enables them. Commit
+`global-core.json`, `global-external.json`, `layout-core.json` and
+`layout-full.json` whenever the generated per-result graphs change.
 
-> **Performance note for anyone touching `Dependencies.tsx`:** the layout is
-> computed in the browser. Measured cost is ~2.8 s of blocked main thread for
-> the 1531-node default view and **over ten minutes** for the 3682-node view
-> with Mathlib shown. Precomputing the layout at build time was tried and
-> reverted — it was fast but the arrangement was worse. If you retry it, seed
-> node positions at the centre and keep `randomize: false`, which is what gives
-> the current layout its shape; a build-time run with `randomize: true` produces
-> a visibly different graph.
+> **Performance note for anyone touching `Dependencies.tsx`:** never import all
+> files in `src/data/graphs/` into the browser or run fcose there. With 651
+> results that means parsing 7.8 MB of repeated data and unioning 4,871 nodes /
+> 21,204 edges on the main thread. Keep the centre-seeded, `randomize: false`
+> force layout in `scripts/precompute-layout.mjs`; the post-layout separation
+> pass is what guarantees rendered nodes do not overlap.
 
 ---
 
@@ -337,11 +343,39 @@ row taller. The twelve current blurbs run 186–211 characters; stay in that ban
 Existing topics: `parametric`, `hypothesistesting`, `pointestimation`,
 `semiparametric`, `concentration` (displayed as "Probability Inequalities"),
 `highdim`, `multipletesting`, `minimaxity`, `optimization`, `bayesian`,
-`nonparametric`, `probability` (displayed as "Miscellaneous Results").
+`nonparametric`, `statisticalmodels`, `probability` (displayed as
+"Miscellaneous Results").
+
+### Cross-listing a result under a second topic
+
+Some results belong to two subjects at once — the exponential-family pages are
+point estimation *and* a class of statistical models. Give such a result an
+optional `crossListed: ["<other-topic>"]`; it then appears on that topic's page
+and in its search filter, and its own page prints "also in <Topic>" beside the
+breadcrumb.
+
+**Never copy the entry instead.** A duplicate would need a second `id` and a
+second `fullName`, and `fullName` must be unique — it is the key that ties a page
+to its Lean declaration, its `targets.txt` row and its dependency graph. One
+declaration, one page, one graph; `crossListed` only changes where it is listed.
+`category` stays the result's home topic and continues to drive its accent
+colour, its graph-node colour and its prev/next navigation.
 
 Note that `id` and display `name` are decoupled — renaming a topic on the front
 page is a `categories.ts` change only. Do **not** rename the id: it appears in
 every result entry and in `DIR_AREA`.
+
+### Withholding a result from the site
+
+Set `hidden: true` (the only accepted value; drop the key to publish again) on a
+result whose formalization is not ready to show — a Lean proof still carrying
+`sorry`, say. The entry, its graph and its `targets.txt` row all stay in the
+repository, but `RESULTS` in `src/lib/data.ts` filters it out, which is the one
+list every page reads: no card, no search hit, no index entry, and its own URL
+redirects home. `scripts/precompute-layout.mjs` skips its graph file too, so it
+leaves no node in the global dependency graph — **re-run `npm run layout` after
+hiding or unhiding a result**, otherwise the global graph keeps a node whose page
+no longer exists.
 
 ---
 

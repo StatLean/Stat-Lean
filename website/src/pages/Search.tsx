@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { RESULTS } from "../lib/data";
+import { RESULTS, inCategory } from "../lib/data";
 import { CATEGORIES } from "../lib/categories";
 import type { CategoryId, ResultKind } from "../lib/types";
 import { TheoremCard } from "../components/TheoremCard";
@@ -27,7 +27,7 @@ export function Search() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return RESULTS.filter((r) => {
-      if (topic !== "all" && r.category !== topic) return false;
+      if (topic !== "all" && !inCategory(r, topic)) return false;
       if (kind !== "all" && r.kind !== kind) return false;
       if (!q) return true;
       return (

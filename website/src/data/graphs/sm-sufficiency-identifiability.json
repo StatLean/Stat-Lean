@@ -1,0 +1,25 @@
+{
+  "root": "StatLean.StatisticalModels.identifiable_pushforward_iff_of_hasSufficientKernel",
+  "nodes": [
+    {"id":"StatLean.StatisticalModels.identifiable_pushforward_iff_of_hasSufficientKernel","label":"identifiable_pushforward_iff_of_hasSufficientKernel","full":"StatLean.StatisticalModels.identifiable_pushforward_iff_of_hasSufficientKernel","kind":"root","decl":"thm","module":"StatLean.StatisticalModels.Adapters.Sufficiency"},
+    {"id":"StatLean.PointEstimation.HasSufficientKernel","label":"HasSufficientKernel","full":"StatLean.PointEstimation.HasSufficientKernel","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Sufficiency.Defs"},
+    {"id":"StatLean.PointEstimation.Identifiable","label":"Identifiable","full":"StatLean.PointEstimation.Identifiable","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Model.Defs"},
+    {"id":"StatLean.StatisticalModels.pushforward","label":"pushforward","full":"StatLean.StatisticalModels.pushforward","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Calculus.Defs"},
+    {"id":"StatLean.StatisticalModels.identifiable_of_pushforward","label":"identifiable_of_pushforward","full":"StatLean.StatisticalModels.identifiable_of_pushforward","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.Identifiability.Transfer"},
+    {"id":"StatLean.PointEstimation.statLaw","label":"statLaw","full":"StatLean.PointEstimation.statLaw","kind":"repo","decl":"def","module":"StatLean.PointEstimation.Sufficiency.Defs"},
+    {"id":"StatLean.StatisticalModels.identifiesTarget_of_comp","label":"identifiesTarget_of_comp","full":"StatLean.StatisticalModels.identifiesTarget_of_comp","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.Identifiability.Transfer"},
+    {"id":"StatLean.StatisticalModels.IdentifiesTarget","label":"IdentifiesTarget","full":"StatLean.StatisticalModels.IdentifiesTarget","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Identifiability.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalModels.identifiable_pushforward_iff_of_hasSufficientKernel","target":"StatLean.PointEstimation.HasSufficientKernel"},
+    {"source":"StatLean.StatisticalModels.identifiable_pushforward_iff_of_hasSufficientKernel","target":"StatLean.PointEstimation.Identifiable"},
+    {"source":"StatLean.StatisticalModels.identifiable_pushforward_iff_of_hasSufficientKernel","target":"StatLean.StatisticalModels.pushforward"},
+    {"source":"StatLean.StatisticalModels.identifiable_pushforward_iff_of_hasSufficientKernel","target":"StatLean.StatisticalModels.identifiable_of_pushforward"},
+    {"source":"StatLean.StatisticalModels.identifiable_pushforward_iff_of_hasSufficientKernel","target":"StatLean.PointEstimation.statLaw"},
+    {"source":"StatLean.PointEstimation.HasSufficientKernel","target":"StatLean.PointEstimation.statLaw"},
+    {"source":"StatLean.StatisticalModels.identifiable_of_pushforward","target":"StatLean.PointEstimation.Identifiable"},
+    {"source":"StatLean.StatisticalModels.identifiable_of_pushforward","target":"StatLean.StatisticalModels.pushforward"},
+    {"source":"StatLean.StatisticalModels.identifiable_of_pushforward","target":"StatLean.StatisticalModels.identifiesTarget_of_comp"},
+    {"source":"StatLean.StatisticalModels.identifiesTarget_of_comp","target":"StatLean.StatisticalModels.IdentifiesTarget"}
+  ]
+}

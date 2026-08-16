@@ -1,0 +1,23 @@
+{
+  "root": "StatLean.StatisticalModels.Survival.censoredLaw",
+  "nodes": [
+    {"id":"StatLean.StatisticalModels.Survival.censoredLaw","label":"censoredLaw","full":"StatLean.StatisticalModels.Survival.censoredLaw","kind":"root","decl":"def","module":"StatLean.StatisticalModels.Survival.Censoring"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Real.measurableSpace","label":"measurableSpace","full":"Real.measurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"MeasureTheory.Measure.map","label":"map","full":"MeasureTheory.Measure.map","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.Map"},
+    {"id":"StatLean.StatisticalModels.Survival.censorObserve","label":"censorObserve","full":"StatLean.StatisticalModels.Survival.censorObserve","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Survival.Censoring"},
+    {"id":"MeasureTheory.Measure.prod","label":"prod","full":"MeasureTheory.Measure.prod","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.Prod"},
+    {"id":"Real.decidableLE","label":"decidableLE","full":"Real.decidableLE","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalModels.Survival.censoredLaw","target":"MeasureTheory.Measure"},
+    {"source":"StatLean.StatisticalModels.Survival.censoredLaw","target":"Real"},
+    {"source":"StatLean.StatisticalModels.Survival.censoredLaw","target":"Real.measurableSpace"},
+    {"source":"StatLean.StatisticalModels.Survival.censoredLaw","target":"MeasureTheory.Measure.map"},
+    {"source":"StatLean.StatisticalModels.Survival.censoredLaw","target":"StatLean.StatisticalModels.Survival.censorObserve"},
+    {"source":"StatLean.StatisticalModels.Survival.censoredLaw","target":"MeasureTheory.Measure.prod"},
+    {"source":"StatLean.StatisticalModels.Survival.censorObserve","target":"Real"},
+    {"source":"StatLean.StatisticalModels.Survival.censorObserve","target":"Real.decidableLE"}
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "root": "StatLean.TimeSeries.spectralDensityOf",
+  "nodes": [
+    {"id":"StatLean.TimeSeries.spectralDensityOf","label":"spectralDensityOf","full":"StatLean.TimeSeries.spectralDensityOf","kind":"root","decl":"def","module":"StatLean.TimeSeries.Spectral.SpectralDensity"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"AddCircle","label":"AddCircle","full":"AddCircle","kind":"mathlib","decl":"def","module":"Mathlib.Topology.Instances.AddCircle.Defs"},
+    {"id":"Real.pi","label":"pi","full":"Real.pi","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic"},
+    {"id":"tsum","label":"tsum","full":"tsum","kind":"mathlib","decl":"def","module":"Mathlib.Topology.Algebra.InfiniteSum.Defs"},
+    {"id":"Real.pseudoMetricSpace","label":"pseudoMetricSpace","full":"Real.pseudoMetricSpace","kind":"mathlib","decl":"def","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
+    {"id":"StatLean.TimeSeries.acvf","label":"acvf","full":"StatLean.TimeSeries.acvf","kind":"repo","decl":"def","module":"StatLean.TimeSeries.Process.Defs"},
+    {"id":"ContinuousMap","label":"ContinuousMap","full":"ContinuousMap","kind":"mathlib","decl":"def","module":"Mathlib.Topology.ContinuousMap.Defs"},
+    {"id":"Complex","label":"Complex","full":"Complex","kind":"mathlib","decl":"def","module":"Mathlib.Data.Complex.Basic"},
+    {"id":"AddSubgroup.zmultiples","label":"zmultiples","full":"AddSubgroup.zmultiples","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Group.Subgroup.ZPowers.Basic"},
+    {"id":"NormedCommRing.toSeminormedCommRing","label":"toSeminormedCommRing","full":"NormedCommRing.toSeminormedCommRing","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Ring.Basic"},
+    {"id":"NormedField.toNormedCommRing","label":"toNormedCommRing","full":"NormedField.toNormedCommRing","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Field.Basic"},
+    {"id":"fourier","label":"fourier","full":"fourier","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Fourier.AddCircle"},
+    {"id":"SummationFilter.unconditional","label":"unconditional","full":"SummationFilter.unconditional","kind":"mathlib","decl":"def","module":"Mathlib.Topology.Algebra.InfiniteSum.SummationFilter"},
+    {"id":"ProbabilityTheory.covariance","label":"covariance","full":"ProbabilityTheory.covariance","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Moments.Covariance"}
+  ],
+  "edges": [
+    {"source":"StatLean.TimeSeries.spectralDensityOf","target":"MeasurableSpace"},
+    {"source":"StatLean.TimeSeries.spectralDensityOf","target":"Real"},
+    {"source":"StatLean.TimeSeries.spectralDensityOf","target":"MeasureTheory.Measure"},
+    {"source":"StatLean.TimeSeries.spectralDensityOf","target":"AddCircle"},
+    {"source":"StatLean.TimeSeries.spectralDensityOf","target":"Real.pi"},
+    {"source":"StatLean.TimeSeries.spectralDensityOf","target":"tsum"},
+    {"source":"StatLean.TimeSeries.spectralDensityOf","target":"Real.pseudoMetricSpace"},
+    {"source":"StatLean.TimeSeries.spectralDensityOf","target":"StatLean.TimeSeries.acvf"},
+    {"source":"StatLean.TimeSeries.spectralDensityOf","target":"ContinuousMap"},
+    {"source":"StatLean.TimeSeries.spectralDensityOf","target":"Complex"},
+    {"source":"StatLean.TimeSeries.spectralDensityOf","target":"AddSubgroup.zmultiples"},
+    {"source":"StatLean.TimeSeries.spectralDensityOf","target":"NormedCommRing.toSeminormedCommRing"},
+    {"source":"StatLean.TimeSeries.spectralDensityOf","target":"NormedField.toNormedCommRing"},
+    {"source":"StatLean.TimeSeries.spectralDensityOf","target":"fourier"},
+    {"source":"StatLean.TimeSeries.spectralDensityOf","target":"SummationFilter.unconditional"},
+    {"source":"StatLean.TimeSeries.acvf","target":"MeasurableSpace"},
+    {"source":"StatLean.TimeSeries.acvf","target":"Real"},
+    {"source":"StatLean.TimeSeries.acvf","target":"MeasureTheory.Measure"},
+    {"source":"StatLean.TimeSeries.acvf","target":"ProbabilityTheory.covariance"}
+  ]
+}

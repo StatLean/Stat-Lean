@@ -1,0 +1,36 @@
+{
+  "root": "StatLean.ExperimentalDesign.treatmentSS_eq_sum_card",
+  "nodes": [
+    {"id":"StatLean.ExperimentalDesign.treatmentSS_eq_sum_card","label":"treatmentSS_eq_sum_card","full":"StatLean.ExperimentalDesign.treatmentSS_eq_sum_card","kind":"root","decl":"thm","module":"StatLean.ExperimentalDesign.Analysis.OneWayANOVA"},
+    {"id":"StatLean.ExperimentalDesign.Allocation","label":"Allocation","full":"StatLean.ExperimentalDesign.Allocation","kind":"repo","decl":"def","module":"StatLean.ExperimentalDesign.Core.Design"},
+    {"id":"StatLean.ExperimentalDesign.treatmentSS","label":"treatmentSS","full":"StatLean.ExperimentalDesign.treatmentSS","kind":"repo","decl":"def","module":"StatLean.ExperimentalDesign.Analysis.OneWayANOVA"},
+    {"id":"StatLean.ExperimentalDesign.arm","label":"arm","full":"StatLean.ExperimentalDesign.arm","kind":"repo","decl":"def","module":"StatLean.ExperimentalDesign.Core.Design"},
+    {"id":"StatLean.ExperimentalDesign.armMean","label":"armMean","full":"StatLean.ExperimentalDesign.armMean","kind":"repo","decl":"def","module":"StatLean.ExperimentalDesign.Core.Design"},
+    {"id":"StatLean.ExperimentalDesign.populationMean","label":"populationMean","full":"StatLean.ExperimentalDesign.populationMean","kind":"repo","decl":"def","module":"StatLean.ExperimentalDesign.Core.FinitePopulation"},
+    {"id":"Finset.sum_fiberwise","label":"sum_fiberwise","full":"Finset.sum_fiberwise","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
+    {"id":"Finset.sum_congr","label":"sum_congr","full":"Finset.sum_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
+    {"id":"StatLean.ExperimentalDesign.mem_arm_iff","label":"mem_arm_iff","full":"StatLean.ExperimentalDesign.mem_arm_iff","kind":"repo","decl":"thm","module":"StatLean.ExperimentalDesign.Core.Design"},
+    {"id":"Finset.sum_const","label":"sum_const","full":"Finset.sum_const","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
+    {"id":"nsmul_eq_mul","label":"nsmul_eq_mul","full":"nsmul_eq_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.ExperimentalDesign.treatmentSS_eq_sum_card","target":"StatLean.ExperimentalDesign.Allocation"},
+    {"source":"StatLean.ExperimentalDesign.treatmentSS_eq_sum_card","target":"StatLean.ExperimentalDesign.treatmentSS"},
+    {"source":"StatLean.ExperimentalDesign.treatmentSS_eq_sum_card","target":"StatLean.ExperimentalDesign.arm"},
+    {"source":"StatLean.ExperimentalDesign.treatmentSS_eq_sum_card","target":"StatLean.ExperimentalDesign.armMean"},
+    {"source":"StatLean.ExperimentalDesign.treatmentSS_eq_sum_card","target":"StatLean.ExperimentalDesign.populationMean"},
+    {"source":"StatLean.ExperimentalDesign.treatmentSS_eq_sum_card","target":"Finset.sum_fiberwise"},
+    {"source":"StatLean.ExperimentalDesign.treatmentSS_eq_sum_card","target":"Finset.sum_congr"},
+    {"source":"StatLean.ExperimentalDesign.treatmentSS_eq_sum_card","target":"StatLean.ExperimentalDesign.mem_arm_iff"},
+    {"source":"StatLean.ExperimentalDesign.treatmentSS_eq_sum_card","target":"Finset.sum_const"},
+    {"source":"StatLean.ExperimentalDesign.treatmentSS_eq_sum_card","target":"nsmul_eq_mul"},
+    {"source":"StatLean.ExperimentalDesign.treatmentSS","target":"StatLean.ExperimentalDesign.Allocation"},
+    {"source":"StatLean.ExperimentalDesign.treatmentSS","target":"StatLean.ExperimentalDesign.armMean"},
+    {"source":"StatLean.ExperimentalDesign.treatmentSS","target":"StatLean.ExperimentalDesign.populationMean"},
+    {"source":"StatLean.ExperimentalDesign.arm","target":"StatLean.ExperimentalDesign.Allocation"},
+    {"source":"StatLean.ExperimentalDesign.armMean","target":"StatLean.ExperimentalDesign.Allocation"},
+    {"source":"StatLean.ExperimentalDesign.armMean","target":"StatLean.ExperimentalDesign.arm"},
+    {"source":"StatLean.ExperimentalDesign.mem_arm_iff","target":"StatLean.ExperimentalDesign.Allocation"},
+    {"source":"StatLean.ExperimentalDesign.mem_arm_iff","target":"StatLean.ExperimentalDesign.arm"}
+  ]
+}

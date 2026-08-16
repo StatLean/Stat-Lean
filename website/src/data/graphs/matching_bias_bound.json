@@ -1,0 +1,21 @@
+{
+  "root": "StatLean.CausalInference.abs_matchingBias_le",
+  "nodes": [
+    {"id":"StatLean.CausalInference.abs_matchingBias_le","label":"abs_matchingBias_le","full":"StatLean.CausalInference.abs_matchingBias_le","kind":"root","decl":"thm","module":"StatLean.CausalInference.Observational.Matching"},
+    {"id":"StatLean.CausalInference.cellMean","label":"cellMean","full":"StatLean.CausalInference.cellMean","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.PopulationDefs"},
+    {"id":"StatLean.CausalInference.matchingBias","label":"matchingBias","full":"StatLean.CausalInference.matchingBias","kind":"repo","decl":"def","module":"StatLean.CausalInference.Observational.Matching"},
+    {"id":"LipschitzWith.dist_le_mul","label":"dist_le_mul","full":"LipschitzWith.dist_le_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Lipschitz"},
+    {"id":"Real.coe_toNNReal","label":"coe_toNNReal","full":"Real.coe_toNNReal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.NNReal.Defs"},
+    {"id":"Real.dist_eq","label":"dist_eq","full":"Real.dist_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
+    {"id":"StatLean.CausalInference.armCell","label":"armCell","full":"StatLean.CausalInference.armCell","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.PopulationDefs"}
+  ],
+  "edges": [
+    {"source":"StatLean.CausalInference.abs_matchingBias_le","target":"StatLean.CausalInference.cellMean"},
+    {"source":"StatLean.CausalInference.abs_matchingBias_le","target":"StatLean.CausalInference.matchingBias"},
+    {"source":"StatLean.CausalInference.abs_matchingBias_le","target":"LipschitzWith.dist_le_mul"},
+    {"source":"StatLean.CausalInference.abs_matchingBias_le","target":"Real.coe_toNNReal"},
+    {"source":"StatLean.CausalInference.abs_matchingBias_le","target":"Real.dist_eq"},
+    {"source":"StatLean.CausalInference.cellMean","target":"StatLean.CausalInference.armCell"},
+    {"source":"StatLean.CausalInference.matchingBias","target":"StatLean.CausalInference.cellMean"}
+  ]
+}

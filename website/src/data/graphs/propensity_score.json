@@ -1,0 +1,32 @@
+{
+  "root": "StatLean.CausalInference.propensity",
+  "nodes": [
+    {"id":"StatLean.CausalInference.propensity","label":"propensity","full":"StatLean.CausalInference.propensity","kind":"root","decl":"def","module":"StatLean.CausalInference.Core.PopulationDefs"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"ENNReal.toReal","label":"toReal","full":"ENNReal.toReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"Set","label":"Set","full":"Set","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"ProbabilityTheory.cond","label":"cond","full":"ProbabilityTheory.cond","kind":"mathlib","decl":"def","module":"Mathlib.Probability.ConditionalProbability"},
+    {"id":"StatLean.CausalInference.cell","label":"cell","full":"StatLean.CausalInference.cell","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.PopulationDefs"},
+    {"id":"StatLean.CausalInference.treatedEvent","label":"treatedEvent","full":"StatLean.CausalInference.treatedEvent","kind":"repo","decl":"def","module":"StatLean.CausalInference.Core.PopulationDefs"},
+    {"id":"Set.preimage","label":"preimage","full":"Set.preimage","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Operations"},
+    {"id":"setOf","label":"setOf","full":"setOf","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.CausalInference.propensity","target":"MeasurableSpace"},
+    {"source":"StatLean.CausalInference.propensity","target":"MeasureTheory.Measure"},
+    {"source":"StatLean.CausalInference.propensity","target":"Real"},
+    {"source":"StatLean.CausalInference.propensity","target":"ENNReal.toReal"},
+    {"source":"StatLean.CausalInference.propensity","target":"Set"},
+    {"source":"StatLean.CausalInference.propensity","target":"ENNReal"},
+    {"source":"StatLean.CausalInference.propensity","target":"ProbabilityTheory.cond"},
+    {"source":"StatLean.CausalInference.propensity","target":"StatLean.CausalInference.cell"},
+    {"source":"StatLean.CausalInference.propensity","target":"StatLean.CausalInference.treatedEvent"},
+    {"source":"StatLean.CausalInference.cell","target":"Set"},
+    {"source":"StatLean.CausalInference.cell","target":"Set.preimage"},
+    {"source":"StatLean.CausalInference.treatedEvent","target":"Set"},
+    {"source":"StatLean.CausalInference.treatedEvent","target":"setOf"}
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "root": "StatLean.TimeSeries.IsSV.acf_sq_lognormal",
+  "nodes": [
+    {"id":"StatLean.TimeSeries.IsSV.acf_sq_lognormal","label":"acf_sq_lognormal","full":"StatLean.TimeSeries.IsSV.acf_sq_lognormal","kind":"root","decl":"thm","module":"StatLean.TimeSeries.GARCH.StochasticVolatility"},
+    {"id":"StatLean.TimeSeries.IsSV","label":"IsSV","full":"StatLean.TimeSeries.IsSV","kind":"repo","decl":"def","module":"StatLean.TimeSeries.Models.Defs"},
+    {"id":"StatLean.TimeSeries.IsLinearProcessOf","label":"IsLinearProcessOf","full":"StatLean.TimeSeries.IsLinearProcessOf","kind":"repo","decl":"def","module":"StatLean.TimeSeries.Process.LinearProcess"},
+    {"id":"StatLean.TimeSeries.acvf","label":"acvf","full":"StatLean.TimeSeries.acvf","kind":"repo","decl":"def","module":"StatLean.TimeSeries.Process.Defs"},
+    {"id":"StatLean.TimeSeries.IsStrictlyStationary","label":"IsStrictlyStationary","full":"StatLean.TimeSeries.IsStrictlyStationary","kind":"repo","decl":"def","module":"StatLean.TimeSeries.Process.Defs"},
+    {"id":"StatLean.TimeSeries.acf","label":"acf","full":"StatLean.TimeSeries.acf","kind":"repo","decl":"def","module":"StatLean.TimeSeries.Process.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.TimeSeries.IsSV.acf_sq_lognormal","target":"StatLean.TimeSeries.IsSV"},
+    {"source":"StatLean.TimeSeries.IsSV.acf_sq_lognormal","target":"StatLean.TimeSeries.IsLinearProcessOf"},
+    {"source":"StatLean.TimeSeries.IsSV.acf_sq_lognormal","target":"StatLean.TimeSeries.acvf"},
+    {"source":"StatLean.TimeSeries.IsSV.acf_sq_lognormal","target":"StatLean.TimeSeries.IsStrictlyStationary"},
+    {"source":"StatLean.TimeSeries.IsSV.acf_sq_lognormal","target":"StatLean.TimeSeries.acf"},
+    {"source":"StatLean.TimeSeries.acf","target":"StatLean.TimeSeries.acvf"}
+  ]
+}

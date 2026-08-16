@@ -1,0 +1,14 @@
+{
+  "root": "StatLean.TimeSeries.IsGARCH",
+  "nodes": [
+    {"id":"StatLean.TimeSeries.IsGARCH","label":"IsGARCH","full":"StatLean.TimeSeries.IsGARCH","kind":"root","decl":"def","module":"StatLean.TimeSeries.Models.Defs"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"}
+  ],
+  "edges": [
+    {"source":"StatLean.TimeSeries.IsGARCH","target":"MeasurableSpace"},
+    {"source":"StatLean.TimeSeries.IsGARCH","target":"Real"},
+    {"source":"StatLean.TimeSeries.IsGARCH","target":"MeasureTheory.Measure"}
+  ]
+}

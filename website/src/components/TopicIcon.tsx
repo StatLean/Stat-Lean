@@ -48,14 +48,13 @@ export function TopicIcon({
         </svg>
       );
     case "highdim":
-      // sparse signal — a grid with only a few active coordinates
+      // the ℓ¹ ball — a diamond with a corner on each axis, the corner itself
+      // marked: the sparse solutions the ℓ¹ constraint singles out
       return (
         <svg {...common}>
-          <rect x="8" y="8" width="32" height="32" rx="2" />
-          <path d="M8 19h32M8 30h32M19 8v32M30 8v32" opacity={0.4} />
-          <circle cx="13.5" cy="13.5" r="2.1" fill="currentColor" stroke="none" />
-          <circle cx="35" cy="24.5" r="2.1" fill="currentColor" stroke="none" />
-          <circle cx="24" cy="35" r="2.1" fill="currentColor" stroke="none" />
+          <path d="M24 4v40M4 24h40" opacity={0.45} />
+          <path d="M24 9 39 24 24 39 9 24z" />
+          <circle cx="39" cy="24" r="2.4" fill="currentColor" stroke="none" />
         </svg>
       );
     case "multipletesting":
@@ -107,6 +106,16 @@ export function TopicIcon({
           <path d="M11 39v3M17 39v3M23 39v3M30 39v3M34 39v3M38 39v3" opacity={0.7} />
         </svg>
       );
+    case "statisticalmodels":
+      // Kaplan–Meier survival curve — descending step function with a censoring tick
+      return (
+        <svg {...common}>
+          <path d="M5 40h38" />
+          <path d="M6 9h8v7h7v7h7v8h8v5h7" />
+          <path d="M25 20v-4" opacity={0.7} />
+          <path d="M34 28v-4" opacity={0.7} />
+        </svg>
+      );
     case "probability":
       // compass star — assorted foundational results (miscellaneous)
       return (
@@ -133,6 +142,53 @@ export function TopicIcon({
           <circle cx="24" cy="24" r="7.5" opacity={0.7} />
           <path d="M24 20v8M20 24h8" opacity={0.5} />
           <circle cx="30" cy="18.5" r="2.5" fill="currentColor" stroke="none" />
+        </svg>
+      );
+    case "timeseries":
+      // A sampled path with a marked lag (autocovariance / spectrum)
+      return (
+        <svg {...common}>
+          <path d="M5 38h38" />
+          <path d="M6 30c3-8 5 6 8-2s5 10 8 1 5 7 8-3 5 5 7 1" opacity={0.85} />
+          <path d="M16 38v4M32 38v4" opacity={0.6} />
+          <path d="M16 42h16" strokeDasharray="2 3" opacity={0.7} />
+        </svg>
+      );
+    case "causal":
+      // Treatment → outcome with a confounder arrow (a DAG)
+      return (
+        <svg {...common}>
+          <circle cx="11" cy="34" r="4" />
+          <circle cx="37" cy="34" r="4" />
+          <circle cx="24" cy="12" r="4" />
+          <path d="M15 34h18" />
+          <path d="M21 15 14 30" opacity={0.7} />
+          <path d="M27 15 34 30" opacity={0.7} />
+        </svg>
+      );
+    case "statlearning":
+      // A separating boundary between two point clouds (classification)
+      return (
+        <svg {...common}>
+          <path d="M8 40 40 8" />
+          <circle cx="15" cy="16" r="2.4" opacity={0.85} />
+          <circle cx="23" cy="12" r="2.4" opacity={0.85} />
+          <circle cx="14" cy="25" r="2.4" opacity={0.85} />
+          <path d="M31 33h4M33 31v4" opacity={0.85} />
+          <path d="M22 38h4M24 36v4" opacity={0.85} />
+          <path d="M34 23h4M36 21v4" opacity={0.85} />
+        </svg>
+      );
+    case "expdesign":
+      // A blocked design grid with randomized allocation marks
+      return (
+        <svg {...common}>
+          <rect x="7" y="10" width="34" height="28" rx="2" />
+          <path d="M18 10v28M29 10v28M7 19h34M7 29h34" opacity={0.5} />
+          <circle cx="12.5" cy="14.5" r="1.8" opacity={0.9} />
+          <circle cx="23.5" cy="24" r="1.8" opacity={0.9} />
+          <circle cx="34.5" cy="33.5" r="1.8" opacity={0.9} />
+          <circle cx="34.5" cy="14.5" r="1.8" opacity={0.9} />
         </svg>
       );
     default:

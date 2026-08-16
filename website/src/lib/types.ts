@@ -10,7 +10,12 @@ export type CategoryId =
   | "optimization"
   | "bayesian"
   | "nonparametric"
-  | "probability";
+  | "statisticalmodels"
+  | "probability"
+  | "timeseries"
+  | "causal"
+  | "statlearning"
+  | "expdesign";
 
 export type ResultKind = "definition" | "theorem" | "lemma" | "proposition" | "corollary" | "equation";
 
@@ -71,6 +76,21 @@ export interface ResultEntry {
   /** url-safe id, e.g. "eif_eq_orthogonalProjection" */
   id: string;
   category: CategoryId;
+  /**
+   * Extra topics this result is listed under. The page itself, its id, its
+   * dependency graph and its `category` are unchanged — cross-listing only
+   * makes the result appear on another topic's page, for results that belong
+   * to two subjects at once (exponential families, say, are both point
+   * estimation and a class of statistical models).
+   */
+  crossListed?: CategoryId[];
+  /**
+   * Withhold this result from the site: it is dropped from every listing,
+   * search, index, dependency view and from its own page, which then 404s.
+   * Used for entries whose Lean proof is still in progress, so the authored
+   * page can stay in the repository until the formalization is complete.
+   */
+  hidden?: boolean;
   kind: ResultKind;
   /** 1-3 index terms for the Index page (standard textbook terminology). */
   keywords?: string[];

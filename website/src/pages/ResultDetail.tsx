@@ -4,7 +4,7 @@ import { getResult, resultsByCategory } from "../lib/data";
 import { CATEGORY_BY_ID } from "../lib/categories";
 import { renderLean } from "../lib/render";
 import { docUrl, sourceUrl, refUrl } from "../lib/site";
-import { linkifyBiblio } from "../lib/refCite";
+import { linkifyBiblio, referenceLinks } from "../lib/refCite";
 import { MathText } from "../components/MathText";
 import { ConvergenceMark } from "../components/ConvergenceMark";
 import { Logo } from "../components/Logo";
@@ -72,6 +72,15 @@ export function ResultDetail() {
               <Link to={`/category/${r.category}`} className="ulink accent">
                 {meta.name}
               </Link>
+              {r.crossListed?.map((c) => (
+                <span key={c} className="flex items-center gap-2">
+                  <span aria-hidden>·</span>
+                  <span>also in</span>
+                  <Link to={`/category/${c}`} className="ulink accent">
+                    {CATEGORY_BY_ID[c]?.name ?? c}
+                  </Link>
+                </span>
+              ))}
             </div>
 
             <div className="flex items-center gap-3 mb-3">
@@ -199,6 +208,20 @@ export function ResultDetail() {
                   )}`}
                   className="font-serif text-[0.98rem] text-ink-soft leading-relaxed"
                 />
+                <div className="mt-3 flex flex-wrap items-center gap-2 font-sans text-xs">
+                  <span className="text-ink-faint uppercase tracking-widest">
+                    Cited works
+                  </span>
+                  {referenceLinks(r.reference.keys).map(({ key, label }) => (
+                    <a
+                      key={key}
+                      href={refUrl(key)}
+                      className="rounded-full border hairline px-2.5 py-1 text-ink-soft transition-colors hover:border-accent hover:text-[rgb(var(--accent))]"
+                    >
+                      {label} →
+                    </a>
+                  ))}
+                </div>
               </div>
             )}
           </div>

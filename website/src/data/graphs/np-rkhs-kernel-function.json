@@ -1,0 +1,10 @@
+{
+  "root": "StatLean.NonparametricStatistics.IsKernelFun",
+  "nodes": [
+    {"id":"StatLean.NonparametricStatistics.IsKernelFun","label":"IsKernelFun","full":"StatLean.NonparametricStatistics.IsKernelFun","kind":"root","decl":"def","module":"StatLean.NonparametricStatistics.RKHS.KernelFunction"},
+    {"id":"RCLike","label":"RCLike","full":"RCLike","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.RCLike.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.NonparametricStatistics.IsKernelFun","target":"RCLike"}
+  ]
+}

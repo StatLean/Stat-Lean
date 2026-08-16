@@ -14,9 +14,14 @@ export const AREA_VAR: Record<Area, string> = {
   optimization: "--c-opt",
   bayesian: "--c-bayes",
   nonparametric: "--c-nonparam",
+  statisticalmodels: "--c-smod",
   probability: "--c-prob",
   hypothesistesting: "--c-htest",
   pointestimation: "--c-pest",
+  timeseries: "--c-ts",
+  causal: "--c-causal",
+  statlearning: "--c-slearn",
+  expdesign: "--c-exp",
   external: "--c-ext",
 };
 
@@ -30,9 +35,14 @@ export const AREA_LABEL: Record<Area, string> = {
   optimization: "Optimization",
   bayesian: "Bayesian",
   nonparametric: "Nonparametric",
+  statisticalmodels: "Statistical Models",
   probability: "Miscellaneous",
   hypothesistesting: "Hypothesis Tests",
   pointestimation: "Point Estimation",
+  timeseries: "Time Series",
+  causal: "Causal Inference",
+  statlearning: "Statistical Learning",
+  expdesign: "Experimental Design",
   external: "Mathlib / external",
 };
 
@@ -47,9 +57,14 @@ export const AREAS: Area[] = [
   "optimization",
   "bayesian",
   "nonparametric",
+  "statisticalmodels",
   "probability",
   "hypothesistesting",
   "pointestimation",
+  "timeseries",
+  "causal",
+  "statlearning",
+  "expdesign",
   "external",
 ];
 
@@ -62,6 +77,7 @@ export const AREAS: Area[] = [
 const DIR_AREA: Partial<Record<string, CategoryId>> = {
   Bayesian: "bayesian",
   NonparametricStatistics: "nonparametric",
+  StatisticalModels: "statisticalmodels",
   ConcentrationInequalities: "concentration",
   HighDimensionalStatistics: "highdim",
   MultipleTesting: "multipletesting",
@@ -69,6 +85,10 @@ const DIR_AREA: Partial<Record<string, CategoryId>> = {
   Optimization: "optimization",
   HypothesisTesting: "hypothesistesting",
   PointEstimation: "pointestimation",
+  TimeSeries: "timeseries",
+  CausalInference: "causal",
+  StatisticalLearning: "statlearning",
+  ExperimentalDesign: "expdesign",
 };
 
 /** Drop an optional leading `StatLean.` / `StatLean/` root segment. */

@@ -1,0 +1,18 @@
+{
+  "root": "StatLean.StatisticalLearning.empRisk",
+  "nodes": [
+    {"id":"StatLean.StatisticalLearning.empRisk","label":"empRisk","full":"StatLean.StatisticalLearning.empRisk","kind":"root","decl":"def","module":"StatLean.StatisticalLearning.Core.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"StatLean.StatisticalLearning.Sample","label":"Sample","full":"StatLean.StatisticalLearning.Sample","kind":"repo","decl":"def","module":"StatLean.StatisticalLearning.Core.Defs"},
+    {"id":"Finset.sum","label":"sum","full":"Finset.sum","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.BigOperators.Group.Finset.Defs"},
+    {"id":"Finset.univ","label":"univ","full":"Finset.univ","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
+    {"id":"Fin.fintype","label":"fintype","full":"Fin.fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalLearning.empRisk","target":"Real"},
+    {"source":"StatLean.StatisticalLearning.empRisk","target":"StatLean.StatisticalLearning.Sample"},
+    {"source":"StatLean.StatisticalLearning.empRisk","target":"Finset.sum"},
+    {"source":"StatLean.StatisticalLearning.empRisk","target":"Finset.univ"},
+    {"source":"StatLean.StatisticalLearning.empRisk","target":"Fin.fintype"}
+  ]
+}

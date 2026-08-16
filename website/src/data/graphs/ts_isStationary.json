@@ -1,0 +1,14 @@
+{
+  "root": "StatLean.TimeSeries.IsStationary",
+  "nodes": [
+    {"id":"StatLean.TimeSeries.IsStationary","label":"IsStationary","full":"StatLean.TimeSeries.IsStationary","kind":"root","decl":"def","module":"StatLean.TimeSeries.Process.Defs"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"}
+  ],
+  "edges": [
+    {"source":"StatLean.TimeSeries.IsStationary","target":"MeasurableSpace"},
+    {"source":"StatLean.TimeSeries.IsStationary","target":"Real"},
+    {"source":"StatLean.TimeSeries.IsStationary","target":"MeasureTheory.Measure"}
+  ]
+}

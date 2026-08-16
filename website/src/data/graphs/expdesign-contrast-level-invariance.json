@@ -1,0 +1,23 @@
+{
+  "root": "StatLean.ExperimentalDesign.Contrast.eval_add_const",
+  "nodes": [
+    {"id":"StatLean.ExperimentalDesign.Contrast.eval_add_const","label":"eval_add_const","full":"StatLean.ExperimentalDesign.Contrast.eval_add_const","kind":"root","decl":"thm","module":"StatLean.ExperimentalDesign.Core.Contrast"},
+    {"id":"StatLean.ExperimentalDesign.Contrast","label":"Contrast","full":"StatLean.ExperimentalDesign.Contrast","kind":"repo","decl":"def","module":"StatLean.ExperimentalDesign.Core.Contrast"},
+    {"id":"StatLean.ExperimentalDesign.Contrast.eval","label":"eval","full":"StatLean.ExperimentalDesign.Contrast.eval","kind":"repo","decl":"def","module":"StatLean.ExperimentalDesign.Core.Contrast"},
+    {"id":"Finset.sum_congr","label":"sum_congr","full":"Finset.sum_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
+    {"id":"mul_add","label":"mul_add","full":"mul_add","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Defs"},
+    {"id":"Distrib.leftDistribClass","label":"leftDistribClass","full":"Distrib.leftDistribClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Defs"},
+    {"id":"Finset.sum_add_distrib","label":"sum_add_distrib","full":"Finset.sum_add_distrib","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
+    {"id":"add_zero","label":"add_zero","full":"add_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.ExperimentalDesign.Contrast.eval_add_const","target":"StatLean.ExperimentalDesign.Contrast"},
+    {"source":"StatLean.ExperimentalDesign.Contrast.eval_add_const","target":"StatLean.ExperimentalDesign.Contrast.eval"},
+    {"source":"StatLean.ExperimentalDesign.Contrast.eval_add_const","target":"Finset.sum_congr"},
+    {"source":"StatLean.ExperimentalDesign.Contrast.eval_add_const","target":"mul_add"},
+    {"source":"StatLean.ExperimentalDesign.Contrast.eval_add_const","target":"Distrib.leftDistribClass"},
+    {"source":"StatLean.ExperimentalDesign.Contrast.eval_add_const","target":"Finset.sum_add_distrib"},
+    {"source":"StatLean.ExperimentalDesign.Contrast.eval_add_const","target":"add_zero"},
+    {"source":"StatLean.ExperimentalDesign.Contrast.eval","target":"StatLean.ExperimentalDesign.Contrast"}
+  ]
+}
