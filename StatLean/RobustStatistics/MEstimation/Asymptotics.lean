@@ -67,7 +67,47 @@ theorem mLocation_consistent
       (fun (n : ℕ) ξ => (n : ℝ)⁻¹ * ∑ i : Fin n, ψ (X i ξ - θhat n ξ)) atTop
       (fun _ => (0 : ℝ))) :
     ∀ ε > (0 : ℝ), Tendsto (fun n => μ {ξ | ε ≤ |θhat n ξ - θ₀|}) atTop (𝓝 0) := by
-  sorry
+  classical
+  have hψmeas : Measurable ψ := hψc.measurable
+  obtain ⟨C, hC⟩ := hψb
+  -- The *negated* empirical score. `ψ` is nondecreasing and `θ ↦ x − θ` is antitone, so
+  -- `θ ↦ n⁻¹∑ψ(Xᵢ − θ)` is nonincreasing; negating it produces the nondecreasing random
+  -- criterion required by vdV Lemma 5.10, and flips the sign conditions into place.
+  refine Consistency.oneDim_monotone_zEstimator_consistent_univ
+    (Ψn := fun n ξ θ => -((n : ℝ)⁻¹ * ∑ i : Fin n, ψ (X i ξ - θ)))
+    (Ψ := fun θ => -(mLocationScore ψ P θ)) ?_ ?_ ?_ ?_ ?_
+  · -- Monotonicity in `θ` of the negated empirical score.
+    intro n ξ a b hab
+    simp only [neg_le_neg_iff]
+    refine mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun i _ => hψm (by linarith))
+      (by positivity)
+  · -- Pointwise convergence in probability: the i.i.d. weak law at the fixed `θ`.
+    intro θ
+    have hgm : Measurable fun x : ℝ => ψ (x - θ) := hψmeas.comp (measurable_id.sub_const θ)
+    have hgi : Integrable (fun x : ℝ => ψ (x - θ)) P :=
+      Integrable.mono' (integrable_const C) hgm.aestronglyMeasurable
+        (Filter.Eventually.of_forall fun x => by
+          simpa [Real.norm_eq_abs] using hC (x - θ))
+    have hlln := iid_lln_in_prob_seq P (fun x : ℝ => ψ (x - θ)) hgm hgi μ X
+      hX_meas hX_indep hX_id hX_law
+    rw [tendstoInMeasure_iff_measureReal_norm]
+    intro ε hε
+    refine (hlln ε hε).congr fun n => ?_
+    congr 1
+    ext ξ
+    simp only [Set.mem_setOf_eq, EmpiricalProcess.empiricalAvg, mLocationScore]
+    rw [show -((n : ℝ)⁻¹ * ∑ i : Fin n, ψ (X (i : ℕ) ξ - θ)) - -(∫ x, ψ (x - θ) ∂P)
+        = -((n : ℝ)⁻¹ * ∑ i : Fin n, ψ (X (i : ℕ) ξ - θ) - ∫ x, ψ (x - θ) ∂P) from by ring,
+      norm_neg]
+  · -- Near-root condition: negate the hypothesis.
+    rw [tendstoInMeasure_iff_norm]
+    intro ε hε
+    refine ((tendstoInMeasure_iff_norm.mp hnear) ε hε).congr fun n => ?_
+    congr 1
+    ext ξ
+    simp only [Set.mem_setOf_eq, sub_zero, norm_neg]
+  · exact fun θ hθ => neg_lt_zero.mpr (hsign_lt θ hθ)
+  · exact fun θ hθ => neg_pos.mpr (hsign_gt θ hθ)
 
 /-- **Consistency of the Huber location estimator** (`MMY §2.3.2` + Thm 10.5): the Huber
 score is continuous, monotone and bounded, so any near-root sequence tends to the
@@ -87,8 +127,9 @@ theorem huberLocation_consistent
     (hnear : TendstoInMeasure μ
       (fun (n : ℕ) ξ => (n : ℝ)⁻¹ * ∑ i : Fin n, huberPsi c (X i ξ - θhat n ξ)) atTop
       (fun _ => (0 : ℝ))) :
-    ∀ ε > (0 : ℝ), Tendsto (fun n => μ {ξ | ε ≤ |θhat n ξ - θ₀|}) atTop (𝓝 0) := by
-  sorry
+    ∀ ε > (0 : ℝ), Tendsto (fun n => μ {ξ | ε ≤ |θhat n ξ - θ₀|}) atTop (𝓝 0) :=
+  mLocation_consistent hX_meas hX_indep hX_id hX_law (huberPsi_continuous c)
+    (huberPsi_monotone c) ⟨c, abs_huberPsi_le hc.le⟩ hsign_lt hsign_gt hnear
 
 /-- **The asymptotic variance of the Huber location estimator** (`MMY` eq. (2.25)):
 `v = E_P ψ_c(x-θ₀)² / P(|x-θ₀| < c)²`. -/
