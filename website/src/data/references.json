@@ -1638,5 +1638,10 @@
     "key": "shaffer1991",
     "sortKey": "Shaffer",
     "html": "J. P. Shaffer, “The Gauss–Markov theorem and random regressors,” *The American Statistician* **45** (1991), 269–273."
+  },
+  {
+    "key": "vanhandel2016",
+    "sortKey": "van Handel",
+    "html": "R. van Handel, *Probability in High Dimension*, APC 550 Lecture Notes, Princeton University, 2016."
   }
 ]

@@ -1,0 +1,28 @@
+{
+  "root": "StatLean.ConcentrationInequalities.IsSeparableProcess",
+  "nodes": [
+    {"id":"StatLean.ConcentrationInequalities.IsSeparableProcess","label":"IsSeparableProcess","full":"StatLean.ConcentrationInequalities.IsSeparableProcess","kind":"root","decl":"def","module":"StatLean.ConcentrationInequalities.Chaining.SeparableProcess"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Set","label":"Set","full":"Set","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"Set.Countable","label":"Countable","full":"Set.Countable","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Countable"},
+    {"id":"Filter.Eventually","label":"Eventually","full":"Filter.Eventually","kind":"mathlib","decl":"def","module":"Mathlib.Order.Filter.Defs"},
+    {"id":"closure","label":"closure","full":"closure","kind":"mathlib","decl":"def","module":"Mathlib.Topology.Defs.Basic"},
+    {"id":"Real.pseudoMetricSpace","label":"pseudoMetricSpace","full":"Real.pseudoMetricSpace","kind":"mathlib","decl":"def","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
+    {"id":"Set.image","label":"image","full":"Set.image","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"MeasureTheory.ae","label":"ae","full":"MeasureTheory.ae","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.OuterMeasure.AE"}
+  ],
+  "edges": [
+    {"source":"StatLean.ConcentrationInequalities.IsSeparableProcess","target":"MeasurableSpace"},
+    {"source":"StatLean.ConcentrationInequalities.IsSeparableProcess","target":"Real"},
+    {"source":"StatLean.ConcentrationInequalities.IsSeparableProcess","target":"Set"},
+    {"source":"StatLean.ConcentrationInequalities.IsSeparableProcess","target":"MeasureTheory.Measure"},
+    {"source":"StatLean.ConcentrationInequalities.IsSeparableProcess","target":"Set.Countable"},
+    {"source":"StatLean.ConcentrationInequalities.IsSeparableProcess","target":"Filter.Eventually"},
+    {"source":"StatLean.ConcentrationInequalities.IsSeparableProcess","target":"closure"},
+    {"source":"StatLean.ConcentrationInequalities.IsSeparableProcess","target":"Real.pseudoMetricSpace"},
+    {"source":"StatLean.ConcentrationInequalities.IsSeparableProcess","target":"Set.image"},
+    {"source":"StatLean.ConcentrationInequalities.IsSeparableProcess","target":"MeasureTheory.ae"}
+  ]
+}
