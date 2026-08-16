@@ -176,14 +176,16 @@ theorem precisionMatrix_transpose
     -- USER-INPUT: `Σ` regular; Lauritzen §5.1.3, p. 129
     (hS : S.PosDef) :
     (precisionMatrix S)ᵀ = precisionMatrix S := by
-  sorry
+  have hsymm : Sᵀ = S := by
+    rw [← Matrix.conjTranspose_eq_transpose_of_trivial]; exact hS.isHermitian
+  rw [precisionMatrix_def, Matrix.transpose_nonsing_inv, hsymm]
 
 /-- Entrywise form of `precisionMatrix_transpose`: `k_{γμ} = k_{μγ}`. -/
 theorem precisionMatrix_apply_comm
     -- USER-INPUT: `Σ` regular; Lauritzen §5.1.3, p. 129
     (hS : S.PosDef) (i j : ι) :
-    precisionMatrix S i j = precisionMatrix S j i := by
-  sorry
+    precisionMatrix S i j = precisionMatrix S j i :=
+  (congrFun (congrFun (precisionMatrix_transpose hS) i) j).symm
 
 /-- `Σ` is recovered from `K`: the concentration and covariance matrices are mutually inverse
 (Lauritzen §5.1.3, p. 129). -/
@@ -191,7 +193,8 @@ theorem precisionMatrix_precisionMatrix
     -- USER-INPUT: `Σ` regular; Lauritzen §5.1.3, p. 129
     (hS : S.PosDef) :
     precisionMatrix (precisionMatrix S) = S := by
-  sorry
+  rw [precisionMatrix_def, precisionMatrix_def,
+    Matrix.nonsing_inv_nonsing_inv _ (Matrix.isUnit_iff_isUnit_det _ |>.mp hS.isUnit)]
 
 end Basic
 
@@ -209,7 +212,35 @@ theorem posDef_submatrix_of_injective {n m : Type*} [Fintype n] [Fintype m]
     -- LEAN-ONLY: injectivity of the index selection; see the docstring
     (hf : Function.Injective f) :
     (M.submatrix f f).PosDef := by
-  sorry
+  classical
+  rw [Matrix.posDef_iff_dotProduct_mulVec]
+  refine ⟨hM.1.submatrix f, fun x hx => ?_⟩
+  set z : n → ℝ := Function.extend f x 0 with hz
+  have hzf : ∀ a, z (f a) = x a := fun a => hf.extend_apply x 0 a
+  have hz0 : ∀ i, i ∉ Set.range f → z i = 0 := fun i hi => by
+    simp [hz, Function.extend_apply' _ _ _ hi]
+  -- summing a function supported on the range of `f` is summing its pullback
+  have hsum : ∀ g : n → ℝ, (∀ i, i ∉ Set.range f → g i = 0) →
+      ∑ i, g i = ∑ a, g (f a) := by
+    intro g hg
+    rw [← Finset.sum_image (f := g) (g := f) (s := (Finset.univ : Finset m))
+      (fun a _ b _ h => hf h)]
+    refine (Finset.sum_subset (Finset.subset_univ _) ?_).symm
+    intro i _ hi
+    exact hg i (by simpa [Finset.mem_image, Set.mem_range] using hi)
+  have hzne : z ≠ 0 := by
+    intro h
+    refine hx (funext fun a => ?_)
+    have := congrFun h (f a)
+    rwa [hzf a] at this
+  have hpos := (Matrix.posDef_iff_dotProduct_mulVec.mp hM).2 hzne
+  simp only [star_trivial] at hpos ⊢
+  refine lt_of_lt_of_eq hpos ?_
+  simp only [dotProduct, Matrix.mulVec, Matrix.submatrix_apply]
+  rw [hsum (fun i => z i * ∑ j, M i j * z j) (fun i hi => by simp [hz0 i hi])]
+  refine Finset.sum_congr rfl fun a _ => ?_
+  rw [hzf a, hsum (fun j => M (f a) j * z j) (fun j hj => by simp [hz0 j hj])]
+  exact congrArg _ (Finset.sum_congr rfl fun b _ => by rw [hzf b])
 
 variable {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂] [DecidableEq ι₁] [DecidableEq ι₂]
   {S₁₁ : Matrix ι₁ ι₁ ℝ} {S₁₂ : Matrix ι₁ ι₂ ℝ} {S₂₂ : Matrix ι₂ ι₂ ℝ}
@@ -221,14 +252,18 @@ theorem posDef_of_fromBlocks_inl
     -- LEAN-ONLY: regular joint covariance; Lauritzen §5.1.3, p. 129
     (hJ : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).PosDef) :
     S₁₁.PosDef := by
-  sorry
+  have hsub : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).submatrix Sum.inl Sum.inl = S₁₁ := by
+    ext i j; simp
+  exact hsub ▸ posDef_submatrix_of_injective hJ (Sum.inl_injective (β := ι₂))
 
 /-- LEAN-ONLY: the second diagonal block of a regular joint covariance is regular. -/
 theorem posDef_of_fromBlocks_inr
     -- LEAN-ONLY: regular joint covariance; Lauritzen §5.1.3, p. 129
     (hJ : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).PosDef) :
     S₂₂.PosDef := by
-  sorry
+  have hsub : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).submatrix Sum.inr Sum.inr = S₂₂ := by
+    ext i j; simp
+  exact hsub ▸ posDef_submatrix_of_injective hJ (Sum.inr_injective (α := ι₁))
 
 /-- LEAN-ONLY: the Schur complement of a regular block covariance is regular — the conditional
 covariance of a regular joint normal is itself regular, which is what makes the conditional
@@ -237,7 +272,18 @@ theorem posDef_condCovMatrix
     -- LEAN-ONLY: regular joint covariance; Lauritzen App. C, (C.3)
     (hJ : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).PosDef) :
     (condCovMatrix S₁₁ S₁₂ S₂₂).PosDef := by
-  sorry
+  have h₁₁ : S₁₁.PosDef := posDef_of_fromBlocks_inl hJ
+  haveI : Invertible S₁₁ := h₁₁.isUnit.invertible
+  have hconj : S₁₂ᴴ = S₁₂ᵀ := Matrix.conjTranspose_eq_transpose_of_trivial S₁₂
+  rw [Matrix.posDef_iff_dotProduct_mulVec]
+  refine ⟨(posSemidef_condCovMatrix hJ.posSemidef h₁₁).1, fun x hx => ?_⟩
+  have hne : (-((S₁₁⁻¹ * S₁₂) *ᵥ x)) ⊕ᵥ x ≠ 0 := by
+    intro h
+    exact hx (funext fun b => congrFun h (Sum.inr b))
+  have hpos := (Matrix.posDef_iff_dotProduct_mulVec.mp hJ).2 hne
+  rw [dotProduct_mulVec, ← hconj, Matrix.schur_complement_eq₁₁ S₁₂ S₂₂ _ _ h₁₁.1,
+    neg_add_cancel, dotProduct_zero, zero_add, ← dotProduct_mulVec, hconj] at hpos
+  exact hpos
 
 end PosDefPlumbing
 
@@ -259,7 +305,15 @@ theorem submatrix_precisionMatrix_fromBlocks_inr_inr
     (hJ : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).PosDef) :
     (precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inr Sum.inr
       = (condCovMatrix S₁₁ S₁₂ S₂₂)⁻¹ := by
-  sorry
+  have h₁₁ : S₁₁.PosDef := posDef_of_fromBlocks_inl hJ
+  haveI : Invertible S₁₁ := h₁₁.isUnit.invertible
+  haveI : Invertible (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) := hJ.isUnit.invertible
+  haveI : Invertible (S₂₂ - S₁₂ᵀ * ⅟S₁₁ * S₁₂) :=
+    Matrix.invertibleOfFromBlocks₁₁Invertible S₁₁ S₁₂ S₁₂ᵀ S₂₂
+  rw [precisionMatrix_def, ← Matrix.invOf_eq_nonsing_inv, Matrix.invOf_fromBlocks₁₁_eq]
+  simp only [Matrix.invOf_eq_nonsing_inv]
+  ext a b
+  simp only [Matrix.submatrix_apply, Matrix.fromBlocks_apply₂₂, condCovMatrix]
 
 /-- **Lauritzen (C.3) read as (5.10)–(5.11)**: the conditional covariance is the inverse of the
 principal submatrix of the joint concentration matrix on the conditioned block. -/
@@ -269,7 +323,9 @@ theorem condCovMatrix_eq_inv_submatrix_precisionMatrix
     (hJ : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).PosDef) :
     condCovMatrix S₁₁ S₁₂ S₂₂
       = ((precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inr Sum.inr)⁻¹ := by
-  sorry
+  rw [submatrix_precisionMatrix_fromBlocks_inr_inr S₁₁ S₁₂ S₂₂ hJ,
+    Matrix.nonsing_inv_nonsing_inv _
+      (Matrix.isUnit_iff_isUnit_det _ |>.mp (posDef_condCovMatrix hJ).isUnit)]
 
 /-- **Lauritzen (C.4)** (App. C, p. 256: `K₁₁⁻¹K₁₂ = −Σ₁₂Σ₂₂⁻`), transcribed with the blocks
 swapped: the off-diagonal block of the concentration matrix, scaled by the conditional
@@ -281,7 +337,16 @@ theorem submatrix_precisionMatrix_fromBlocks_inr_inl
     (hJ : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).PosDef) :
     (precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inr Sum.inl
       = -((condCovMatrix S₁₁ S₁₂ S₂₂)⁻¹ * condMeanMatrix S₁₁ S₁₂) := by
-  sorry
+  have h₁₁ : S₁₁.PosDef := posDef_of_fromBlocks_inl hJ
+  haveI : Invertible S₁₁ := h₁₁.isUnit.invertible
+  haveI : Invertible (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) := hJ.isUnit.invertible
+  haveI : Invertible (S₂₂ - S₁₂ᵀ * ⅟S₁₁ * S₁₂) :=
+    Matrix.invertibleOfFromBlocks₁₁Invertible S₁₁ S₁₂ S₁₂ᵀ S₂₂
+  rw [precisionMatrix_def, ← Matrix.invOf_eq_nonsing_inv, Matrix.invOf_fromBlocks₁₁_eq]
+  simp only [Matrix.invOf_eq_nonsing_inv]
+  ext a b
+  simp only [Matrix.submatrix_apply, Matrix.fromBlocks_apply₂₁, Matrix.neg_apply,
+    condCovMatrix, condMeanMatrix, ← Matrix.mul_assoc]
 
 /-- **Lauritzen Corollary C.6, matrix half** (p. 257: "If `Σ` is regular, this holds if and only
 if `K₁₂ = 0`"): the cross-concentration block vanishes exactly when the cross-covariance block
@@ -292,7 +357,30 @@ theorem submatrix_precisionMatrix_fromBlocks_inl_inr_eq_zero_iff
     (hJ : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).PosDef) :
     (precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inl Sum.inr = 0
       ↔ S₁₂ = 0 := by
-  sorry
+  have h₁₁ : S₁₁.PosDef := posDef_of_fromBlocks_inl hJ
+  have hcc : (condCovMatrix S₁₁ S₁₂ S₂₂).PosDef := posDef_condCovMatrix hJ
+  haveI : Invertible S₁₁ := h₁₁.isUnit.invertible
+  haveI : Invertible (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) := hJ.isUnit.invertible
+  haveI : Invertible (S₂₂ - S₁₂ᵀ * ⅟S₁₁ * S₁₂) :=
+    Matrix.invertibleOfFromBlocks₁₁Invertible S₁₁ S₁₂ S₁₂ᵀ S₂₂
+  have hblock : (precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inl Sum.inr
+      = -(S₁₁⁻¹ * S₁₂ * (condCovMatrix S₁₁ S₁₂ S₂₂)⁻¹) := by
+    rw [precisionMatrix_def, ← Matrix.invOf_eq_nonsing_inv, Matrix.invOf_fromBlocks₁₁_eq]
+    simp only [Matrix.invOf_eq_nonsing_inv]
+    ext a b
+    simp only [Matrix.submatrix_apply, Matrix.fromBlocks_apply₁₂, Matrix.neg_apply,
+      condCovMatrix]
+  have hu1 : IsUnit S₁₁.det := (Matrix.isUnit_iff_isUnit_det _).mp h₁₁.isUnit
+  have hu2 : IsUnit (condCovMatrix S₁₁ S₁₂ S₂₂).det := (Matrix.isUnit_iff_isUnit_det _).mp hcc.isUnit
+  rw [hblock, neg_eq_zero]
+  constructor
+  · intro h
+    have h2 : S₁₁ * (S₁₁⁻¹ * S₁₂ * (condCovMatrix S₁₁ S₁₂ S₂₂)⁻¹) * condCovMatrix S₁₁ S₁₂ S₂₂
+        = 0 := by rw [h, Matrix.mul_zero, Matrix.zero_mul]
+    rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hu1, Matrix.one_mul,
+      Matrix.mul_assoc, Matrix.nonsing_inv_mul _ hu2, Matrix.mul_one] at h2
+    exact h2
+  · intro h; simp [h]
 
 /-- **Lauritzen Corollary C.6** (p. 257) in the repo's measure-level form: two blocks of a
 regular joint Gaussian are independent — the joint law transported to the product space is the
@@ -311,7 +399,36 @@ theorem map_multivariateGaussian_fromBlocks_eq_prod_iff
           (sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂))
         = (multivariateGaussian m₁ S₁₁).prod (multivariateGaussian m₂ S₂₂)
       ↔ (precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inl Sum.inr = 0 := by
-  sorry
+  have h₁₁ : S₁₁.PosDef := posDef_of_fromBlocks_inl hJ
+  have h₂₂ : S₂₂.PosDef := posDef_of_fromBlocks_inr hJ
+  haveI : Invertible S₁₁ := h₁₁.isUnit.invertible
+  -- the diagonal joint covariance is a genuine covariance
+  have hJ0 : (Matrix.fromBlocks S₁₁ (0 : Matrix ι₁ ι₂ ℝ) (0 : Matrix ι₁ ι₂ ℝ)ᵀ S₂₂).PosSemidef := by
+    have := (Matrix.PosDef.fromBlocks₁₁ (A := S₁₁) (0 : Matrix ι₁ ι₂ ℝ) S₂₂ h₁₁).mpr
+      (by simpa using h₂₂.posSemidef)
+    simpa using this
+  have hsplit : (multivariateGaussian (blockPair m₁ m₂)
+        (Matrix.fromBlocks S₁₁ (0 : Matrix ι₁ ι₂ ℝ) (0 : Matrix ι₁ ι₂ ℝ)ᵀ S₂₂)).map
+          (sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂))
+      = (multivariateGaussian m₁ S₁₁).prod (multivariateGaussian m₂ S₂₂) := by
+    simpa using multivariateGaussian_fromBlocks_prod m₁ m₂ S₁₁ S₂₂ h₁₁.posSemidef h₂₂.posSemidef
+  rw [submatrix_precisionMatrix_fromBlocks_inl_inr_eq_zero_iff S₁₁ S₁₂ S₂₂ hJ]
+  constructor
+  · -- read the covariance off the product law
+    intro hprod
+    have hlaw : multivariateGaussian (blockPair m₁ m₂) (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)
+        = multivariateGaussian (blockPair m₁ m₂)
+            (Matrix.fromBlocks S₁₁ (0 : Matrix ι₁ ι₂ ℝ) (0 : Matrix ι₁ ι₂ ℝ)ᵀ S₂₂) :=
+      ext_of_map_sumMeasEquivProd (hprod.trans hsplit.symm)
+    have hcov := congrArg covMatrix hlaw
+    rw [covMatrix_multivariateGaussian _ _ hJ.posSemidef,
+      covMatrix_multivariateGaussian _ _ hJ0] at hcov
+    ext i j
+    have := congrFun (congrFun hcov (Sum.inl i)) (Sum.inr j)
+    simpa using this
+  · intro h
+    subst h
+    exact hsplit
 
 end BlockIdentities
 
