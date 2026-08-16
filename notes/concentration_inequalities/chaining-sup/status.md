@@ -49,8 +49,15 @@ marginal value); `IsSeparableProcess.mono_ae`; fused
 `of_continuousOn_of_cov` sugar; literal-8.5.2 mean-zero γ₂ wrapper with
 `hint`/`hmean` (the strengthened `generic_chaining_separable` subsumes it).
 
-Website: chaining entries now stale-but-correct (per-F forms still true);
-publication batch deferred until requested.
+Website: UPDATED (web/chaining-sup merged to local main daea431d,
+2026-08-16): the five chaining entries display the *_separable headliners
+(discrete/integral/abs Dudley, three-term tail, generic chaining) with
+rewritten informal statements + hypothesis maps; new Separable Process
+definition page (conc-separable-process) linked from all five; van Handel
+reference added; graphs regenerated via cluster `lake exe deps` (5 roots
+moved + 1 new; other 445 byte-identical); validator 451/451/451 green;
+vite build + playwright page-render check passed. NOT pushed to
+origin/statlean — GitHub Pages deploy deferred until the user publishes.
 
 ## Log
 
