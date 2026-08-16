@@ -1,6 +1,7 @@
 import StatLean.StatisticalModels.FactorModels.Gaussian
 import StatLean.StatisticalModels.MixedEffects.BLUP
 import StatLean.StatisticalModels.MixedEffects.Henderson
+import Mathlib.Data.Matrix.ColumnRowPartitioned
 
 /-!
 # Factor scores — the posterior distribution of the latent factors
@@ -82,7 +83,7 @@ theorem factorJointLaw_fst (P : FactorParams p q)
     (F : Measure (EuclideanSpace ℝ (Fin q))) (E : Measure (EuclideanSpace ℝ (Fin p)))
     [IsProbabilityMeasure F] [IsProbabilityMeasure E] :
     (factorJointLaw P F E).map Prod.fst = factorLaw P F E := by
-  sorry
+  rw [factorJointLaw, MixedEffects.lmmJointLaw_fst, factorLaw_eq_lmmLaw]
 
 /-- **The Gaussian joint law** (`BKM` Eq. (3.1)–(3.3) jointly): `(x, y)` is the block Gaussian
 with `Σ_xx = Λ Φ Λᵀ + Ψ`, `Σ_xy = Λ Φ` and `Σ_yy = Φ`. Transported from
@@ -96,7 +97,9 @@ theorem factorJointLaw_eq_blockGaussian (P : FactorParams p q)
           (Matrix.fromBlocks (factorCovariance P) (P.loading * P.factorCov)
             (P.loading * P.factorCov)ᵀ P.factorCov)).map
             (sumMeasEquivProd (ι₁ := Fin p) (ι₂ := Fin q)) := by
-  sorry
+  rw [factorJointLaw, MixedEffects.lmmJointLaw_eq_blockGaussian _ _ _ _ hΦ hΨ,
+    factorDesign_X, toEuclideanLin_one_apply]
+  rfl
 
 /-! ### The posterior of the factors -/
 
@@ -118,8 +121,8 @@ theorem condMeanMatrix_factorScores (P : FactorParams p q)
     -- USER-INPUT: symmetric latent covariance; BKM Eq. (3.2)
     (hΦ : P.factorCovᵀ = P.factorCov) :
     condMeanMatrix (factorCovariance P) (P.loading * P.factorCov)
-      = P.factorCov * P.loadingᵀ * (factorCovariance P)⁻¹ := by
-  sorry
+      = P.factorCov * P.loadingᵀ * (factorCovariance P)⁻¹ :=
+  MixedEffects.condMeanMatrix_lmm (factorDesign P) P.factorCov P.uniqueCov hΦ
 
 /-- **The posterior covariance is `Φ − Φ Λᵀ Σ⁻¹ Λ Φ`** — the Schur complement of the factor
 model's joint covariance (`BKM` Eq. (3.6), Schur form). -/
@@ -129,7 +132,7 @@ theorem condCovMatrix_factorScores (P : FactorParams p q)
     condCovMatrix (factorCovariance P) (P.loading * P.factorCov) P.factorCov
       = P.factorCov
         - P.factorCov * P.loadingᵀ * (factorCovariance P)⁻¹ * P.loading * P.factorCov := by
-  sorry
+  simp only [condCovMatrix, Matrix.transpose_mul, hΦ, Matrix.mul_assoc]
 
 /-- **HEADLINE — the posterior law of the factors** (`BKM` Eq. (3.6), general `Φ`):
 `y ∣ x ∼ N_q(Φ Λᵀ Σ⁻¹ (x − μ), Φ − Φ Λᵀ Σ⁻¹ Λ Φ)`. -/
@@ -143,7 +146,8 @@ theorem factorScoreKernel_apply (P : FactorParams p q)
           (P.factorCov
             - P.factorCov * P.loadingᵀ * (factorCovariance P)⁻¹ * P.loading
                 * P.factorCov) := by
-  sorry
+  rw [factorScoreKernel, gaussianCondKernel_apply, condMeanMatrix_factorScores P hΦ,
+    condCovMatrix_factorScores P hΦ, zero_add]
 
 /-- **HEADLINE — factor scores as an exact disintegration** (`BKM` Eq. (3.6)): the observed
 law composed with the factor-score kernel is the joint law of `(x, y)`. Transported from
@@ -158,7 +162,11 @@ theorem compProd_factorJointLaw (P : FactorParams p q)
         ⊗ₘ factorScoreKernel P
       = factorJointLaw P (multivariateGaussian 0 P.factorCov)
           (multivariateGaussian 0 P.uniqueCov) := by
-  sorry
+  have h := MixedEffects.compProd_lmmJointLaw (factorDesign P) P.μ P.factorCov P.uniqueCov
+    hΦ hΨ hSig
+  rw [factorDesign_X, toEuclideanLin_one_apply] at h
+  rw [factorLaw_eq_lmmLaw, factorJointLaw, factorScoreKernel]
+  exact h
 
 /-! ### The covariance form and the precision form of the score matrix
 
@@ -186,8 +194,8 @@ theorem condMeanMatrix_factorScores_precision (P : FactorParams p q)
     -- BKM Eq. (3.7)–(3.8)
     (hΦ : P.factorCov.PosDef) (hΨ : P.uniqueCov.PosDef) :
     P.factorCov * P.loadingᵀ * (factorCovariance P)⁻¹
-      = (gammaMatrix P + P.factorCov⁻¹)⁻¹ * P.loadingᵀ * P.uniqueCov⁻¹ := by
-  sorry
+      = (gammaMatrix P + P.factorCov⁻¹)⁻¹ * P.loadingᵀ * P.uniqueCov⁻¹ :=
+  MixedEffects.pushThrough P.loading P.factorCov P.uniqueCov hΦ hΨ
 
 /-- **`BKM` Eq. (3.64) verbatim** — at the book's normalization `Φ = I`, the regression-score
 matrix is `C = Λ′Σ⁻¹ = (I + Γ)⁻¹Λ′Ψ⁻¹`. The `Φ = I` case of
@@ -199,7 +207,59 @@ theorem condMeanMatrix_factorScores_standardized (P : FactorParams p q)
     (hΨ : P.uniqueCov.PosDef) :
     P.loadingᵀ * (factorCovariance P)⁻¹
       = (1 + gammaMatrix P)⁻¹ * P.loadingᵀ * P.uniqueCov⁻¹ := by
-  sorry
+  have hΦ : P.factorCov.PosDef := by rw [hP]; exact Matrix.PosDef.one
+  have h := condMeanMatrix_factorScores_precision P hΦ hΨ
+  rw [hP, inv_one, Matrix.one_mul, add_comm (gammaMatrix P) 1] at h
+  exact h
+
+/-- LEAN-ONLY: the joint covariance of `(x, y)` is positive semidefinite, exhibited as
+`C Φ Cᵀ + D Ψ Dᵀ` with `C = [Λ; I]` and `D = [I; 0]`. (`MixedEffects.BLUP` proves the same
+fact as `posSemidef_lmmJoint`, but that declaration is `private` and therefore unreachable;
+this is the only block-algebra fact restated in this file.) -/
+private theorem posSemidef_factorJoint (P : FactorParams p q)
+    (hΦ : P.factorCov.PosSemidef) (hΨ : P.uniqueCov.PosSemidef) :
+    (Matrix.fromBlocks (factorCovariance P) (P.loading * P.factorCov)
+      (P.loading * P.factorCov)ᵀ P.factorCov).PosSemidef := by
+  have hΦT : P.factorCovᵀ = P.factorCov := by
+    rw [← Matrix.conjTranspose_eq_transpose_of_trivial]; exact hΦ.1
+  have hC : Matrix.PosSemidef
+      (Matrix.fromRows P.loading (1 : Matrix (Fin q) (Fin q) ℝ) * P.factorCov
+        * (Matrix.fromRows P.loading (1 : Matrix (Fin q) (Fin q) ℝ))ᵀ) := by
+    simpa [Matrix.conjTranspose_eq_transpose_of_trivial] using
+      hΦ.mul_mul_conjTranspose_same (Matrix.fromRows P.loading (1 : Matrix (Fin q) (Fin q) ℝ))
+  have hD : Matrix.PosSemidef
+      (Matrix.fromRows (1 : Matrix (Fin p) (Fin p) ℝ) (0 : Matrix (Fin q) (Fin p) ℝ)
+        * P.uniqueCov
+        * (Matrix.fromRows (1 : Matrix (Fin p) (Fin p) ℝ)
+            (0 : Matrix (Fin q) (Fin p) ℝ))ᵀ) := by
+    simpa [Matrix.conjTranspose_eq_transpose_of_trivial] using
+      hΨ.mul_mul_conjTranspose_same
+        (Matrix.fromRows (1 : Matrix (Fin p) (Fin p) ℝ) (0 : Matrix (Fin q) (Fin p) ℝ))
+  have hCeq : Matrix.fromRows P.loading (1 : Matrix (Fin q) (Fin q) ℝ) * P.factorCov
+        * (Matrix.fromRows P.loading (1 : Matrix (Fin q) (Fin q) ℝ))ᵀ
+      = Matrix.fromBlocks (P.loading * P.factorCov * P.loadingᵀ) (P.loading * P.factorCov)
+          (P.factorCov * P.loadingᵀ) P.factorCov := by
+    rw [Matrix.fromRows_mul, Matrix.transpose_fromRows, Matrix.fromRows_mul,
+      Matrix.mul_fromCols, Matrix.mul_fromCols, Matrix.fromRows_fromCols_eq_fromBlocks]
+    simp
+  have hDeq : Matrix.fromRows (1 : Matrix (Fin p) (Fin p) ℝ) (0 : Matrix (Fin q) (Fin p) ℝ)
+        * P.uniqueCov
+        * (Matrix.fromRows (1 : Matrix (Fin p) (Fin p) ℝ) (0 : Matrix (Fin q) (Fin p) ℝ))ᵀ
+      = Matrix.fromBlocks P.uniqueCov 0 0 0 := by
+    rw [Matrix.fromRows_mul, Matrix.transpose_fromRows, Matrix.fromRows_mul,
+      Matrix.mul_fromCols, Matrix.mul_fromCols, Matrix.fromRows_fromCols_eq_fromBlocks]
+    simp
+  have hsum : Matrix.fromRows P.loading (1 : Matrix (Fin q) (Fin q) ℝ) * P.factorCov
+        * (Matrix.fromRows P.loading (1 : Matrix (Fin q) (Fin q) ℝ))ᵀ
+      + Matrix.fromRows (1 : Matrix (Fin p) (Fin p) ℝ) (0 : Matrix (Fin q) (Fin p) ℝ)
+        * P.uniqueCov
+        * (Matrix.fromRows (1 : Matrix (Fin p) (Fin p) ℝ) (0 : Matrix (Fin q) (Fin p) ℝ))ᵀ
+      = Matrix.fromBlocks (factorCovariance P) (P.loading * P.factorCov)
+          (P.loading * P.factorCov)ᵀ P.factorCov := by
+    rw [hCeq, hDeq, Matrix.fromBlocks_add, factorCovariance_eq, Matrix.transpose_mul, hΦT]
+    simp
+  rw [← hsum]
+  exact hC.add hD
 
 /-- The posterior covariance is a genuine covariance (the Schur complement of a joint
 covariance, `Gaussian.posSemidef_condCovMatrix` at the factor model's blocks). -/
@@ -208,7 +268,7 @@ theorem posSemidef_condCovMatrix_factorScores (P : FactorParams p q)
     (hΦ : P.factorCov.PosSemidef) (hΨ : P.uniqueCov.PosSemidef)
     -- USER-INPUT: nondegenerate observed covariance; BKM Eq. (3.6)
     (hSig : (factorCovariance P).PosDef) :
-    (condCovMatrix (factorCovariance P) (P.loading * P.factorCov) P.factorCov).PosSemidef := by
-  sorry
+    (condCovMatrix (factorCovariance P) (P.loading * P.factorCov) P.factorCov).PosSemidef :=
+  posSemidef_condCovMatrix (posSemidef_factorJoint P hΦ hΨ) hSig
 
 end StatLean.StatisticalModels.FactorModels
