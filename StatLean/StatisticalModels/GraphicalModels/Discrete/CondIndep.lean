@@ -794,7 +794,32 @@ theorem condIndepMass_iff_exists_factorization {p : (V → α) → ℝ≥0∞} {
       ∃ h k : (V → α) → ℝ≥0∞, DependsOn h ((A ∪ C : Finset V) : Set V) ∧
         DependsOn k ((B ∪ C : Finset V) : Set V) ∧
         ∀ x, blockMarginal (A ∪ B ∪ C) p x = h x * k x := by
-  sorry
+  constructor
+  · intro hci
+    refine ⟨blockMarginal (A ∪ C) p,
+      fun x => blockMarginal (B ∪ C) p x / blockMarginal C p x,
+      dependsOn_blockMarginal (A ∪ C) p, ?_, ?_⟩
+    · -- numerator on `B ∪ C`, denominator on `C ⊆ B ∪ C`
+      intro y z hyz
+      change blockMarginal (B ∪ C) p y / blockMarginal C p y
+        = blockMarginal (B ∪ C) p z / blockMarginal C p z
+      rw [dependsOn_blockMarginal (B ∪ C) p hyz,
+        dependsOn_blockMarginal C p (fun i hi => hyz i (by
+          simp only [Finset.coe_union, Set.mem_union, Finset.mem_coe] at hi ⊢; tauto))]
+    · intro x
+      change blockMarginal (A ∪ B ∪ C) p x
+        = blockMarginal (A ∪ C) p x * (blockMarginal (B ∪ C) p x / blockMarginal C p x)
+      by_cases hz : blockMarginal C p x = 0
+      · have z1 : blockMarginal (A ∪ B ∪ C) p x = 0 :=
+          blockMarginal_eq_zero_of_subset p x Finset.subset_union_right hz
+        have z2 : blockMarginal (B ∪ C) p x = 0 :=
+          blockMarginal_eq_zero_of_subset p x Finset.subset_union_right hz
+        rw [z1, z2, hz]
+        simp
+      · rw [← mul_div_assoc, ← hci x,
+          ENNReal.mul_div_cancel_right hz (blockMarginal_ne_top _ _ hp)]
+  · rintro ⟨h, k, hh, hk, hfac⟩
+    exact condIndepMass_of_factorization hAB hAC hBC hh hk hfac
 
 /-! ### Bridge to the general conditional-independence predicate -/
 
