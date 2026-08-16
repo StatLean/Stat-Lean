@@ -26,6 +26,8 @@ distribution, we *assert that a product disintegration exists*.
   machine-checked `CondIndep.CompCounterexample.comp_is_false`, and the proved repair;
 * `CondIndep.const_right` / `condIndep_const_of_indepFun` — conditioning on a **constant**
   is ordinary independence, in both directions;
+* `condIndep_congr_law` — the predicate depends only on the **joint law** of the triple, so it
+  transfers across reindexings and marginalisations of a model;
 * `condIndep_of_subsingleton_left` — a **degenerate** argument (subsingleton value space, i.e.
   the subvector on an empty block) is conditionally independent of everything;
 * `condIndepFun_of_condIndep` — the **export bridge** to Mathlib's
@@ -329,6 +331,39 @@ theorem condIndep_const_of_indepFun
     Measure.dirac_prod, ← (indepFun_iff_map_prod_eq_prod_map_map hf.aemeasurable
       hg.aemeasurable).1 hind, Measure.map_map measurable_prodMk_left (hf.prodMk hg)]
   rfl
+
+/-- **Conditional independence depends only on the joint law of the triple.** Two triples
+`(h, (f, g))` and `(h', (f', g'))` — possibly on different sample spaces, under different
+measures — with the *same* joint law satisfy the predicate together.
+
+This is the transfer principle that `Gaussian.Precision` deliberately declined to assume ("that
+is a `Core.CondIndep` statement, is not in this file's scope"): it is what lets a block statement
+about the canonical coordinate vector of `N(m, Σ)` be re-read on a *reindexed* or *marginalised*
+Gaussian, whose coordinate blocks have the same joint law but live on a different sample space.
+
+The only content is that the conditioning law `μ.map h` is itself a marginal of the joint law
+(`Prod.fst`), so both sides of the defining identity are functions of the joint law alone; the
+measurability hypotheses are exactly what `MeasureTheory.Measure.map_map` needs to say so. -/
+theorem condIndep_congr_law {Ω' : Type*} [MeasurableSpace Ω'] {ν : Measure Ω'} {f' : Ω' → α}
+    {g' : Ω' → β} {h' : Ω' → γ}
+    -- LEAN-ONLY: measurability of the first triple, so that its `h`-marginal is `μ.map h`
+    (hT : Measurable fun ω => (h ω, (f ω, g ω)))
+    -- LEAN-ONLY: same for the second triple
+    (hT' : Measurable fun ω => (h' ω, (f' ω, g' ω)))
+    -- USER-INPUT: the two triples have the same joint law
+    (hlaw : μ.map (fun ω => (h ω, (f ω, g ω))) = ν.map (fun ω => (h' ω, (f' ω, g' ω)))) :
+    CondIndep μ f g h ↔ CondIndep ν f' g' h' := by
+  have hh : μ.map h = ν.map h' := by
+    have h1 : μ.map h = (μ.map fun ω => (h ω, (f ω, g ω))).map Prod.fst := by
+      rw [Measure.map_map measurable_fst hT]; rfl
+    have h2 : ν.map h' = (ν.map fun ω => (h' ω, (f' ω, g' ω))).map Prod.fst := by
+      rw [Measure.map_map measurable_fst hT']; rfl
+    rw [h1, h2, hlaw]
+  constructor
+  · rintro ⟨κ, η, hκ, hη, heq⟩
+    exact ⟨κ, η, hκ, hη, by rw [← hlaw, ← hh]; exact heq⟩
+  · rintro ⟨κ, η, hκ, hη, heq⟩
+    exact ⟨κ, η, hκ, hη, by rw [hlaw, hh]; exact heq⟩
 
 /-- **A degenerate argument is conditionally independent of everything.** If the value space of
 `f` is a subsingleton — in the block vocabulary of `Core.Coordinates`, if `f` is the subvector
