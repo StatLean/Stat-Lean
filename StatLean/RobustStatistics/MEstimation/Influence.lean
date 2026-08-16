@@ -242,7 +242,16 @@ theorem mLocationFunctional_hasInfluenceAt {P : Measure ℝ} [IsProbabilityMeasu
       (Set.Ici 0) 0)
     (hA : A = ∫ x, ψd x ∂P) (hA0 : A ≠ 0) :
     HasInfluenceAt T P x₀ (ψ (x₀ - T P) / A) := by
-  sorry
+  obtain ⟨d, hd⟩ := hTd
+  -- The contamination curve of `T` is a root path starting at the uncontaminated value.
+  have hθ0 : (fun t : ℝ => T (contaminate P (Measure.dirac x₀) t)) 0 = T P := by simp
+  -- The engine pins down its one-sided derivative.
+  have key : d = ψ (x₀ - T P) / A :=
+    mLocationRoot_influence_of_lipschitz
+      (θ := fun t : ℝ => T (contaminate P (Measure.dirac x₀) t))
+      hψlip hint hae hψd_meas hroot hθ0 hd hA hA0
+  rw [hasInfluenceAt_iff_hasDerivWithinAt, ← key]
+  exact hd
 
 /-- **Bounded score ⟹ bounded influence** (`MMY §3.3`, eq. (3.30)–(3.31) context): if
 `|ψ| ≤ c` then any influence value produced by the M-functional formula is bounded by
