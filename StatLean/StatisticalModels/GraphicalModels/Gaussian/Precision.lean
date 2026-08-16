@@ -1,4 +1,5 @@
 import StatLean.StatisticalModels.Gaussian.Conditioning
+import StatLean.StatisticalModels.Gaussian.FinCorridor
 import StatLean.StatisticalModels.GraphicalModels.Core.Coordinates
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
@@ -176,14 +177,16 @@ theorem precisionMatrix_transpose
     -- USER-INPUT: `Σ` regular; Lauritzen §5.1.3, p. 129
     (hS : S.PosDef) :
     (precisionMatrix S)ᵀ = precisionMatrix S := by
-  sorry
+  have hsymm : Sᵀ = S := by
+    rw [← Matrix.conjTranspose_eq_transpose_of_trivial]; exact hS.isHermitian
+  rw [precisionMatrix_def, Matrix.transpose_nonsing_inv, hsymm]
 
 /-- Entrywise form of `precisionMatrix_transpose`: `k_{γμ} = k_{μγ}`. -/
 theorem precisionMatrix_apply_comm
     -- USER-INPUT: `Σ` regular; Lauritzen §5.1.3, p. 129
     (hS : S.PosDef) (i j : ι) :
-    precisionMatrix S i j = precisionMatrix S j i := by
-  sorry
+    precisionMatrix S i j = precisionMatrix S j i :=
+  (congrFun (congrFun (precisionMatrix_transpose hS) i) j).symm
 
 /-- `Σ` is recovered from `K`: the concentration and covariance matrices are mutually inverse
 (Lauritzen §5.1.3, p. 129). -/
@@ -191,7 +194,8 @@ theorem precisionMatrix_precisionMatrix
     -- USER-INPUT: `Σ` regular; Lauritzen §5.1.3, p. 129
     (hS : S.PosDef) :
     precisionMatrix (precisionMatrix S) = S := by
-  sorry
+  rw [precisionMatrix_def, precisionMatrix_def,
+    Matrix.nonsing_inv_nonsing_inv _ (Matrix.isUnit_iff_isUnit_det _ |>.mp hS.isUnit)]
 
 end Basic
 
@@ -209,7 +213,35 @@ theorem posDef_submatrix_of_injective {n m : Type*} [Fintype n] [Fintype m]
     -- LEAN-ONLY: injectivity of the index selection; see the docstring
     (hf : Function.Injective f) :
     (M.submatrix f f).PosDef := by
-  sorry
+  classical
+  rw [Matrix.posDef_iff_dotProduct_mulVec]
+  refine ⟨hM.1.submatrix f, fun x hx => ?_⟩
+  set z : n → ℝ := Function.extend f x 0 with hz
+  have hzf : ∀ a, z (f a) = x a := fun a => hf.extend_apply x 0 a
+  have hz0 : ∀ i, i ∉ Set.range f → z i = 0 := fun i hi => by
+    simp [hz, Function.extend_apply' _ _ _ hi]
+  -- summing a function supported on the range of `f` is summing its pullback
+  have hsum : ∀ g : n → ℝ, (∀ i, i ∉ Set.range f → g i = 0) →
+      ∑ i, g i = ∑ a, g (f a) := by
+    intro g hg
+    rw [← Finset.sum_image (f := g) (g := f) (s := (Finset.univ : Finset m))
+      (fun a _ b _ h => hf h)]
+    refine (Finset.sum_subset (Finset.subset_univ _) ?_).symm
+    intro i _ hi
+    exact hg i (by simpa [Finset.mem_image, Set.mem_range] using hi)
+  have hzne : z ≠ 0 := by
+    intro h
+    refine hx (funext fun a => ?_)
+    have := congrFun h (f a)
+    rwa [hzf a] at this
+  have hpos := (Matrix.posDef_iff_dotProduct_mulVec.mp hM).2 hzne
+  simp only [star_trivial] at hpos ⊢
+  refine lt_of_lt_of_eq hpos ?_
+  simp only [dotProduct, Matrix.mulVec, Matrix.submatrix_apply]
+  rw [hsum (fun i => z i * ∑ j, M i j * z j) (fun i hi => by simp [hz0 i hi])]
+  refine Finset.sum_congr rfl fun a _ => ?_
+  rw [hzf a, hsum (fun j => M (f a) j * z j) (fun j hj => by simp [hz0 j hj])]
+  exact congrArg _ (Finset.sum_congr rfl fun b _ => by rw [hzf b])
 
 variable {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂] [DecidableEq ι₁] [DecidableEq ι₂]
   {S₁₁ : Matrix ι₁ ι₁ ℝ} {S₁₂ : Matrix ι₁ ι₂ ℝ} {S₂₂ : Matrix ι₂ ι₂ ℝ}
@@ -221,14 +253,18 @@ theorem posDef_of_fromBlocks_inl
     -- LEAN-ONLY: regular joint covariance; Lauritzen §5.1.3, p. 129
     (hJ : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).PosDef) :
     S₁₁.PosDef := by
-  sorry
+  have hsub : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).submatrix Sum.inl Sum.inl = S₁₁ := by
+    ext i j; simp
+  exact hsub ▸ posDef_submatrix_of_injective hJ (Sum.inl_injective (β := ι₂))
 
 /-- LEAN-ONLY: the second diagonal block of a regular joint covariance is regular. -/
 theorem posDef_of_fromBlocks_inr
     -- LEAN-ONLY: regular joint covariance; Lauritzen §5.1.3, p. 129
     (hJ : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).PosDef) :
     S₂₂.PosDef := by
-  sorry
+  have hsub : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).submatrix Sum.inr Sum.inr = S₂₂ := by
+    ext i j; simp
+  exact hsub ▸ posDef_submatrix_of_injective hJ (Sum.inr_injective (α := ι₁))
 
 /-- LEAN-ONLY: the Schur complement of a regular block covariance is regular — the conditional
 covariance of a regular joint normal is itself regular, which is what makes the conditional
@@ -237,7 +273,18 @@ theorem posDef_condCovMatrix
     -- LEAN-ONLY: regular joint covariance; Lauritzen App. C, (C.3)
     (hJ : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).PosDef) :
     (condCovMatrix S₁₁ S₁₂ S₂₂).PosDef := by
-  sorry
+  have h₁₁ : S₁₁.PosDef := posDef_of_fromBlocks_inl hJ
+  haveI : Invertible S₁₁ := h₁₁.isUnit.invertible
+  have hconj : S₁₂ᴴ = S₁₂ᵀ := Matrix.conjTranspose_eq_transpose_of_trivial S₁₂
+  rw [Matrix.posDef_iff_dotProduct_mulVec]
+  refine ⟨(posSemidef_condCovMatrix hJ.posSemidef h₁₁).1, fun x hx => ?_⟩
+  have hne : (-((S₁₁⁻¹ * S₁₂) *ᵥ x)) ⊕ᵥ x ≠ 0 := by
+    intro h
+    exact hx (funext fun b => congrFun h (Sum.inr b))
+  have hpos := (Matrix.posDef_iff_dotProduct_mulVec.mp hJ).2 hne
+  rw [dotProduct_mulVec, ← hconj, Matrix.schur_complement_eq₁₁ S₁₂ S₂₂ _ _ h₁₁.1,
+    neg_add_cancel, dotProduct_zero, zero_add, ← dotProduct_mulVec, hconj] at hpos
+  exact hpos
 
 end PosDefPlumbing
 
@@ -259,7 +306,15 @@ theorem submatrix_precisionMatrix_fromBlocks_inr_inr
     (hJ : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).PosDef) :
     (precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inr Sum.inr
       = (condCovMatrix S₁₁ S₁₂ S₂₂)⁻¹ := by
-  sorry
+  have h₁₁ : S₁₁.PosDef := posDef_of_fromBlocks_inl hJ
+  haveI : Invertible S₁₁ := h₁₁.isUnit.invertible
+  haveI : Invertible (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) := hJ.isUnit.invertible
+  haveI : Invertible (S₂₂ - S₁₂ᵀ * ⅟S₁₁ * S₁₂) :=
+    Matrix.invertibleOfFromBlocks₁₁Invertible S₁₁ S₁₂ S₁₂ᵀ S₂₂
+  rw [precisionMatrix_def, ← Matrix.invOf_eq_nonsing_inv, Matrix.invOf_fromBlocks₁₁_eq]
+  simp only [Matrix.invOf_eq_nonsing_inv]
+  ext a b
+  simp only [Matrix.submatrix_apply, Matrix.fromBlocks_apply₂₂, condCovMatrix]
 
 /-- **Lauritzen (C.3) read as (5.10)–(5.11)**: the conditional covariance is the inverse of the
 principal submatrix of the joint concentration matrix on the conditioned block. -/
@@ -269,7 +324,9 @@ theorem condCovMatrix_eq_inv_submatrix_precisionMatrix
     (hJ : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).PosDef) :
     condCovMatrix S₁₁ S₁₂ S₂₂
       = ((precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inr Sum.inr)⁻¹ := by
-  sorry
+  rw [submatrix_precisionMatrix_fromBlocks_inr_inr S₁₁ S₁₂ S₂₂ hJ,
+    Matrix.nonsing_inv_nonsing_inv _
+      (Matrix.isUnit_iff_isUnit_det _ |>.mp (posDef_condCovMatrix hJ).isUnit)]
 
 /-- **Lauritzen (C.4)** (App. C, p. 256: `K₁₁⁻¹K₁₂ = −Σ₁₂Σ₂₂⁻`), transcribed with the blocks
 swapped: the off-diagonal block of the concentration matrix, scaled by the conditional
@@ -281,7 +338,16 @@ theorem submatrix_precisionMatrix_fromBlocks_inr_inl
     (hJ : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).PosDef) :
     (precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inr Sum.inl
       = -((condCovMatrix S₁₁ S₁₂ S₂₂)⁻¹ * condMeanMatrix S₁₁ S₁₂) := by
-  sorry
+  have h₁₁ : S₁₁.PosDef := posDef_of_fromBlocks_inl hJ
+  haveI : Invertible S₁₁ := h₁₁.isUnit.invertible
+  haveI : Invertible (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) := hJ.isUnit.invertible
+  haveI : Invertible (S₂₂ - S₁₂ᵀ * ⅟S₁₁ * S₁₂) :=
+    Matrix.invertibleOfFromBlocks₁₁Invertible S₁₁ S₁₂ S₁₂ᵀ S₂₂
+  rw [precisionMatrix_def, ← Matrix.invOf_eq_nonsing_inv, Matrix.invOf_fromBlocks₁₁_eq]
+  simp only [Matrix.invOf_eq_nonsing_inv]
+  ext a b
+  simp only [Matrix.submatrix_apply, Matrix.fromBlocks_apply₂₁, Matrix.neg_apply,
+    condCovMatrix, condMeanMatrix, ← Matrix.mul_assoc]
 
 /-- **Lauritzen Corollary C.6, matrix half** (p. 257: "If `Σ` is regular, this holds if and only
 if `K₁₂ = 0`"): the cross-concentration block vanishes exactly when the cross-covariance block
@@ -292,7 +358,30 @@ theorem submatrix_precisionMatrix_fromBlocks_inl_inr_eq_zero_iff
     (hJ : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).PosDef) :
     (precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inl Sum.inr = 0
       ↔ S₁₂ = 0 := by
-  sorry
+  have h₁₁ : S₁₁.PosDef := posDef_of_fromBlocks_inl hJ
+  have hcc : (condCovMatrix S₁₁ S₁₂ S₂₂).PosDef := posDef_condCovMatrix hJ
+  haveI : Invertible S₁₁ := h₁₁.isUnit.invertible
+  haveI : Invertible (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂) := hJ.isUnit.invertible
+  haveI : Invertible (S₂₂ - S₁₂ᵀ * ⅟S₁₁ * S₁₂) :=
+    Matrix.invertibleOfFromBlocks₁₁Invertible S₁₁ S₁₂ S₁₂ᵀ S₂₂
+  have hblock : (precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inl Sum.inr
+      = -(S₁₁⁻¹ * S₁₂ * (condCovMatrix S₁₁ S₁₂ S₂₂)⁻¹) := by
+    rw [precisionMatrix_def, ← Matrix.invOf_eq_nonsing_inv, Matrix.invOf_fromBlocks₁₁_eq]
+    simp only [Matrix.invOf_eq_nonsing_inv]
+    ext a b
+    simp only [Matrix.submatrix_apply, Matrix.fromBlocks_apply₁₂, Matrix.neg_apply,
+      condCovMatrix]
+  have hu1 : IsUnit S₁₁.det := (Matrix.isUnit_iff_isUnit_det _).mp h₁₁.isUnit
+  have hu2 : IsUnit (condCovMatrix S₁₁ S₁₂ S₂₂).det := (Matrix.isUnit_iff_isUnit_det _).mp hcc.isUnit
+  rw [hblock, neg_eq_zero]
+  constructor
+  · intro h
+    have h2 : S₁₁ * (S₁₁⁻¹ * S₁₂ * (condCovMatrix S₁₁ S₁₂ S₂₂)⁻¹) * condCovMatrix S₁₁ S₁₂ S₂₂
+        = 0 := by rw [h, Matrix.mul_zero, Matrix.zero_mul]
+    rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hu1, Matrix.one_mul,
+      Matrix.mul_assoc, Matrix.nonsing_inv_mul _ hu2, Matrix.mul_one] at h2
+    exact h2
+  · intro h; simp [h]
 
 /-- **Lauritzen Corollary C.6** (p. 257) in the repo's measure-level form: two blocks of a
 regular joint Gaussian are independent — the joint law transported to the product space is the
@@ -311,13 +400,113 @@ theorem map_multivariateGaussian_fromBlocks_eq_prod_iff
           (sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂))
         = (multivariateGaussian m₁ S₁₁).prod (multivariateGaussian m₂ S₂₂)
       ↔ (precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inl Sum.inr = 0 := by
-  sorry
+  have h₁₁ : S₁₁.PosDef := posDef_of_fromBlocks_inl hJ
+  have h₂₂ : S₂₂.PosDef := posDef_of_fromBlocks_inr hJ
+  haveI : Invertible S₁₁ := h₁₁.isUnit.invertible
+  -- the diagonal joint covariance is a genuine covariance
+  have hJ0 : (Matrix.fromBlocks S₁₁ (0 : Matrix ι₁ ι₂ ℝ) (0 : Matrix ι₁ ι₂ ℝ)ᵀ S₂₂).PosSemidef := by
+    have := (Matrix.PosDef.fromBlocks₁₁ (A := S₁₁) (0 : Matrix ι₁ ι₂ ℝ) S₂₂ h₁₁).mpr
+      (by simpa using h₂₂.posSemidef)
+    simpa using this
+  have hsplit : (multivariateGaussian (blockPair m₁ m₂)
+        (Matrix.fromBlocks S₁₁ (0 : Matrix ι₁ ι₂ ℝ) (0 : Matrix ι₁ ι₂ ℝ)ᵀ S₂₂)).map
+          (sumMeasEquivProd (ι₁ := ι₁) (ι₂ := ι₂))
+      = (multivariateGaussian m₁ S₁₁).prod (multivariateGaussian m₂ S₂₂) := by
+    simpa using multivariateGaussian_fromBlocks_prod m₁ m₂ S₁₁ S₂₂ h₁₁.posSemidef h₂₂.posSemidef
+  rw [submatrix_precisionMatrix_fromBlocks_inl_inr_eq_zero_iff S₁₁ S₁₂ S₂₂ hJ]
+  constructor
+  · -- read the covariance off the product law
+    intro hprod
+    have hlaw : multivariateGaussian (blockPair m₁ m₂) (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)
+        = multivariateGaussian (blockPair m₁ m₂)
+            (Matrix.fromBlocks S₁₁ (0 : Matrix ι₁ ι₂ ℝ) (0 : Matrix ι₁ ι₂ ℝ)ᵀ S₂₂) :=
+      ext_of_map_sumMeasEquivProd (hprod.trans hsplit.symm)
+    have hcov := congrArg covMatrix hlaw
+    rw [covMatrix_multivariateGaussian _ _ hJ.posSemidef,
+      covMatrix_multivariateGaussian _ _ hJ0] at hcov
+    ext i j
+    have := congrFun (congrFun hcov (Sum.inl i)) (Sum.inr j)
+    simpa using this
+  · intro h
+    subst h
+    exact hsplit
 
 end BlockIdentities
 
 section Proposition52
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- LEAN-ONLY corridor for Proposition 5.2: the index equivalence
+`(Γ∖{γ,μ}) ⊕ ({γ} ⊕ {μ}) ≃ Γ`. Its three components are the subtype coercions, so the transported
+coordinate vector's blocks are *definitionally* the `coords` sub-vectors of `Core.Coordinates` —
+which is what makes the coordinate identification below a `rfl`. -/
+private noncomputable def propSplit {i j : ι} (hij : i ≠ j) :
+    ↥(Finset.univ \ ({i, j} : Finset ι)) ⊕ (↥({i} : Finset ι) ⊕ ↥({j} : Finset ι)) ≃ ι := by
+  refine Equiv.ofBijective
+    (Sum.elim (fun x => (x : ι)) (Sum.elim (fun a => (a : ι)) (fun b => (b : ι)))) ⟨?_, ?_⟩
+  · have hx : ∀ x : ↥(Finset.univ \ ({i, j} : Finset ι)), (x : ι) ≠ i ∧ (x : ι) ≠ j := by
+      intro x
+      have h := x.2
+      simp only [Finset.mem_sdiff, Finset.mem_univ, true_and, Finset.mem_insert,
+        Finset.mem_singleton, not_or] at h
+      exact h
+    have ha : ∀ a : ↥({i} : Finset ι), (a : ι) = i := fun a => Finset.mem_singleton.mp a.2
+    have hb : ∀ b : ↥({j} : Finset ι), (b : ι) = j := fun b => Finset.mem_singleton.mp b.2
+    rintro (x | (a | a)) (y | (b | b)) h <;> simp only [Sum.elim_inl, Sum.elim_inr] at h
+    · exact congrArg Sum.inl (Subtype.ext h)
+    · exact absurd (h.trans (ha b)) (hx x).1
+    · exact absurd (h.trans (hb b)) (hx x).2
+    · exact absurd ((ha a).symm.trans h).symm (hx y).1
+    · exact congrArg (fun z => Sum.inr (Sum.inl z)) (Subtype.ext h)
+    · exact absurd (((ha a).symm.trans h).trans (hb b)) hij
+    · exact absurd ((hb a).symm.trans h).symm (hx y).2
+    · exact absurd (((hb a).symm.trans h).trans (ha b)).symm hij
+    · exact congrArg (fun z => Sum.inr (Sum.inr z)) (Subtype.ext h)
+  · intro y
+    by_cases hy : y ∈ ({i, j} : Finset ι)
+    · rcases Finset.mem_insert.mp hy with h | h
+      · exact ⟨Sum.inr (Sum.inl ⟨y, Finset.mem_singleton.mpr h⟩), rfl⟩
+      · exact ⟨Sum.inr (Sum.inr ⟨y, h⟩), rfl⟩
+    · exact ⟨Sum.inl ⟨y, Finset.mem_sdiff.mpr ⟨Finset.mem_univ y, hy⟩⟩, rfl⟩
+
+private theorem propSplit_inl {i j : ι} (hij : i ≠ j)
+    (x : ↥(Finset.univ \ ({i, j} : Finset ι))) : propSplit hij (Sum.inl x) = (x : ι) := rfl
+
+private theorem propSplit_inr_inl {i j : ι} (hij : i ≠ j) (a : ↥({i} : Finset ι)) :
+    propSplit hij (Sum.inr (Sum.inl a)) = (a : ι) := rfl
+
+private theorem propSplit_inr_inr {i j : ι} (hij : i ≠ j) (b : ↥({j} : Finset ι)) :
+    propSplit hij (Sum.inr (Sum.inr b)) = (b : ι) := rfl
+
+/-- LEAN-ONLY: pushing a `⊗ₘ` forward along a measurable equivalence of the *first* factor. -/
+private theorem map_compProd_prodMap_left {α α' β : Type*} [MeasurableSpace α]
+    [MeasurableSpace α'] [MeasurableSpace β] (ν : Measure α) [SFinite ν]
+    (κ : Kernel α β) [IsSFiniteKernel κ] (f : α ≃ᵐ α') :
+    (ν ⊗ₘ κ).map (Prod.map f id) = (ν.map f) ⊗ₘ (κ.comap f.symm f.symm.measurable) := by
+  have hfm : Measurable (Prod.map (f : α → α') (id : β → β)) :=
+    f.measurable.prodMap measurable_id
+  ext s hs
+  rw [Measure.map_apply hfm hs, Measure.compProd_apply (hfm hs), Measure.compProd_apply hs,
+    lintegral_map (Kernel.measurable_kernel_prodMk_left hs) f.measurable]
+  refine lintegral_congr fun a => ?_
+  rw [Kernel.comap_apply, MeasurableEquiv.symm_apply_apply]
+  rfl
+
+/-- LEAN-ONLY: a positive definite matrix on a sum index is its own block decomposition, with
+the lower-left block the transpose of the upper-right one. -/
+private theorem eq_fromBlocks_of_posDef {κ₁ κ₂ : Type*} [Fintype κ₁] [Fintype κ₂]
+    {Q : Matrix (κ₁ ⊕ κ₂) (κ₁ ⊕ κ₂) ℝ} (hQ : Q.PosDef) :
+    Q = Matrix.fromBlocks (Q.submatrix Sum.inl Sum.inl) (Q.submatrix Sum.inl Sum.inr)
+      (Q.submatrix Sum.inl Sum.inr)ᵀ (Q.submatrix Sum.inr Sum.inr) := by
+  have hsymm : ∀ x y, Q x y = Q y x := by
+    intro x y
+    have hT : Qᵀ = Q := by
+      rw [← Matrix.conjTranspose_eq_transpose_of_trivial]; exact hQ.isHermitian
+    have h2 : Qᵀ x y = Q x y := congrFun (congrFun hT x) y
+    simpa [Matrix.transpose_apply] using h2.symm
+  ext p q
+  cases p <;> cases q <;> simp [Matrix.transpose_apply, hsymm]
 
 /-- **HEADLINE — Lauritzen Proposition 5.2** (*Graphical Models*, 1996, §5.1.3, p. 129).
 
@@ -346,7 +535,247 @@ theorem condIndepCoords_gaussianCoords_iff_precisionMatrix_eq_zero
     (hij : i ≠ j) :
     CondIndepCoords (multivariateGaussian m S) gaussianCoords {i} {j} (Finset.univ \ {i, j})
       ↔ precisionMatrix S i j = 0 := by
-  sorry
+  classical
+  set C : Finset ι := Finset.univ \ ({i, j} : Finset ι) with hCdef
+  set e : ↥C ⊕ (↥({i} : Finset ι) ⊕ ↥({j} : Finset ι)) ≃ ι := propSplit hij with hedef
+  set T : Matrix (↥C ⊕ (↥({i} : Finset ι) ⊕ ↥({j} : Finset ι)))
+      (↥C ⊕ (↥({i} : Finset ι) ⊕ ↥({j} : Finset ι))) ℝ := S.submatrix e e with hTdef
+  have hT : T.PosDef := posDef_submatrix_of_injective hS e.injective
+  set T₁₁ := T.submatrix Sum.inl Sum.inl with hT₁₁
+  set T₁₂ := T.submatrix Sum.inl Sum.inr with hT₁₂
+  set T₂₂ := T.submatrix Sum.inr Sum.inr with hT₂₂
+  have hTb : T = Matrix.fromBlocks T₁₁ T₁₂ T₁₂ᵀ T₂₂ := eq_fromBlocks_of_posDef hT
+  have hTJ : (Matrix.fromBlocks T₁₁ T₁₂ T₁₂ᵀ T₂₂).PosDef := hTb ▸ hT
+  -- the Gaussian, transported to the sum index
+  set Φ := LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e.symm with hΦdef
+  have hmap : (multivariateGaussian m S).map Φ = multivariateGaussian (Φ m) T := by
+    have h := multivariateGaussian_map_reindex e.symm m S hS.posSemidef
+    simpa [hTdef, hΦdef] using h
+  set m₁ := blockFst (Φ m) with hm₁def
+  set m₂ := blockSnd (Φ m) with hm₂def
+  have hΦm : Φ m = blockPair m₁ m₂ := (blockPair_blockFst_blockSnd _).symm
+  set Kcond := gaussianCondKernel m₁ m₂ T₁₁ T₁₂ T₂₂ with hKconddef
+  have hdisint : multivariateGaussian m₁ T₁₁ ⊗ₘ Kcond
+      = ((multivariateGaussian m S).map Φ).map (sumMeasEquivProd) := by
+    rw [hmap, hΦm, hTb, hKconddef]
+    exact compProd_gaussianCondKernel m₁ m₂ T₁₁ T₁₂ T₂₂ hTJ.posSemidef
+      (posDef_of_fromBlocks_inl hTJ)
+  -- the coordinate blocks are the blocks of the transported vector
+  have hcoordC : coords C gaussianCoords
+      = fun ω => WithLp.ofLp (blockFst (Φ ω)) := rfl
+  have hcoordI : coords ({i} : Finset ι) gaussianCoords
+      = fun ω => WithLp.ofLp (blockFst (blockSnd (Φ ω))) := rfl
+  have hcoordJ : coords ({j} : Finset ι) gaussianCoords
+      = fun ω => WithLp.ofLp (blockSnd (blockSnd (Φ ω))) := rfl
+  -- the measurable-equivalence plumbing between `EuclideanSpace` and the plain function types
+  set fC : EuclideanSpace ℝ ↥C ≃ᵐ (↥C → ℝ) := (MeasurableEquiv.toLp 2 (↥C → ℝ)).symm with hfCdef
+  set Θ₂ : EuclideanSpace ℝ (↥({i} : Finset ι) ⊕ ↥({j} : Finset ι)) →
+      ((↥({i} : Finset ι) → ℝ) × (↥({j} : Finset ι) → ℝ)) :=
+    fun v => (WithLp.ofLp (blockFst v), WithLp.ofLp (blockSnd v)) with hΘ₂def
+  have hΘ₂meas : Measurable Θ₂ :=
+    ((WithLp.measurable_ofLp 2 _).comp blockFst.continuous.measurable).prodMk
+      ((WithLp.measurable_ofLp 2 _).comp blockSnd.continuous.measurable)
+  have hΦmeas : Measurable (Φ : EuclideanSpace ℝ ι → _) := Φ.continuous.measurable
+  have hsum : Measurable
+      (sumMeasEquivProd (ι₁ := ↥C) (ι₂ := ↥({i} : Finset ι) ⊕ ↥({j} : Finset ι))) :=
+    (sumMeasEquivProd (ι₁ := ↥C)
+      (ι₂ := ↥({i} : Finset ι) ⊕ ↥({j} : Finset ι))).measurable
+  have hpm : Measurable (Prod.map (fC : EuclideanSpace ℝ ↥C → (↥C → ℝ)) Θ₂) :=
+    fC.measurable.prodMap hΘ₂meas
+  have hpm1 : Measurable (Prod.map (fC : EuclideanSpace ℝ ↥C → (↥C → ℝ))
+      (id : ((↥({i} : Finset ι) → ℝ) × (↥({j} : Finset ι) → ℝ)) → _)) :=
+    fC.measurable.prodMap measurable_id
+  have hpm2 : Measurable (Prod.map (id : EuclideanSpace ℝ ↥C → _) Θ₂) :=
+    measurable_id.prodMap hΘ₂meas
+  -- MASTER IDENTITY: the joint law of the three coordinate blocks
+  have hmaster : (multivariateGaussian m S).map (fun ω => (coords C gaussianCoords ω,
+        (coords ({i} : Finset ι) gaussianCoords ω, coords ({j} : Finset ι) gaussianCoords ω)))
+      = ((multivariateGaussian m₁ T₁₁).map fC)
+          ⊗ₘ ((Kcond.map Θ₂).comap fC.symm fC.symm.measurable) := by
+    have step1 : (multivariateGaussian m S).map (fun ω => (coords C gaussianCoords ω,
+          (coords ({i} : Finset ι) gaussianCoords ω, coords ({j} : Finset ι) gaussianCoords ω)))
+        = (multivariateGaussian m₁ T₁₁ ⊗ₘ Kcond).map (Prod.map (fC : _ → _) Θ₂) := by
+      rw [hdisint, Measure.map_map hsum hΦmeas, Measure.map_map hpm (hsum.comp hΦmeas)]
+      rfl
+    have step2 : (multivariateGaussian m₁ T₁₁ ⊗ₘ Kcond).map (Prod.map (fC : _ → _) Θ₂)
+        = ((multivariateGaussian m₁ T₁₁ ⊗ₘ Kcond).map (Prod.map id Θ₂)).map
+            (Prod.map (fC : _ → _) id) := by
+      rw [Measure.map_map hpm1 hpm2]
+      rfl
+    rw [step1, step2, ← Measure.compProd_map hΘ₂meas, map_compProd_prodMap_left]
+  -- the conditioning variable's law
+  have hν : (multivariateGaussian m S).map (coords C gaussianCoords)
+      = (multivariateGaussian m₁ T₁₁).map fC := by
+    have h1 : coords C gaussianCoords
+        = (fC : EuclideanSpace ℝ ↥C → (↥C → ℝ)) ∘ (blockFst (ι₁ := ↥C)
+            (ι₂ := ↥({i} : Finset ι) ⊕ ↥({j} : Finset ι))) ∘ Φ := rfl
+    rw [h1, ← Measure.map_map fC.measurable (blockFst.continuous.measurable.comp hΦmeas),
+      ← Measure.map_map blockFst.continuous.measurable hΦmeas, hmap, hΦm, hTb]
+    congr 1
+    exact multivariateGaussian_map_blockFst m₁ m₂ T₁₁ T₁₂ T₂₂ hTJ.posSemidef
+  -- ## the conditional covariance on the pair `{γ, μ}` and its blocks
+  set Q := condCovMatrix T₁₁ T₁₂ T₂₂ with hQdef
+  have hQpd : Q.PosDef := posDef_condCovMatrix hTJ
+  set Q₁₁ := Q.submatrix Sum.inl Sum.inl with hQ₁₁
+  set Q₁₂ := Q.submatrix Sum.inl Sum.inr with hQ₁₂
+  set Q₂₂ := Q.submatrix Sum.inr Sum.inr with hQ₂₂
+  have hQb : Q = Matrix.fromBlocks Q₁₁ Q₁₂ Q₁₂ᵀ Q₂₂ := eq_fromBlocks_of_posDef hQpd
+  have hQJ : (Matrix.fromBlocks Q₁₁ Q₁₂ Q₁₂ᵀ Q₂₂).PosDef := hQb ▸ hQpd
+  -- Lauritzen (5.10): the `(γ,μ)` entry of `K` is an entry of the conditional concentration
+  have hkey : ∀ (a : ↥({i} : Finset ι)) (b : ↥({j} : Finset ι)),
+      precisionMatrix (Matrix.fromBlocks Q₁₁ Q₁₂ Q₁₂ᵀ Q₂₂) (Sum.inl a) (Sum.inr b)
+        = precisionMatrix S i j := by
+    intro a b
+    have hai : (a : ι) = i := Finset.mem_singleton.mp a.2
+    have hbj : (b : ι) = j := Finset.mem_singleton.mp b.2
+    have hea : e (Sum.inr (Sum.inl a)) = i := by rw [hedef, propSplit_inr_inl, hai]
+    have heb : e (Sum.inr (Sum.inr b)) = j := by rw [hedef, propSplit_inr_inr, hbj]
+    have h1 := submatrix_precisionMatrix_fromBlocks_inr_inr T₁₁ T₁₂ T₂₂ hTJ
+    have h2 : precisionMatrix Q (Sum.inl a) (Sum.inr b)
+        = precisionMatrix (Matrix.fromBlocks T₁₁ T₁₂ T₁₂ᵀ T₂₂)
+            (Sum.inr (Sum.inl a)) (Sum.inr (Sum.inr b)) :=
+      (congrFun (congrFun h1 (Sum.inl a)) (Sum.inr b)).symm
+    rw [← hQb, h2, ← hTb, hTdef, precisionMatrix_def, Matrix.inv_submatrix_equiv]
+    simp only [Matrix.submatrix_apply, hea, heb, precisionMatrix_def]
+  have hzeroiff :
+      (precisionMatrix (Matrix.fromBlocks Q₁₁ Q₁₂ Q₁₂ᵀ Q₂₂)).submatrix Sum.inl Sum.inr = 0
+        ↔ precisionMatrix S i j = 0 := by
+    constructor
+    · intro h
+      have h3 := congrFun (congrFun h ⟨i, by simp⟩) ⟨j, by simp⟩
+      rw [← hkey ⟨i, by simp⟩ ⟨j, by simp⟩]
+      simpa using h3
+    · intro h
+      ext a b
+      simp only [Matrix.submatrix_apply, Matrix.zero_apply]
+      rw [hkey a b, h]
+  -- Lauritzen Corollary C.6 inside the conditional law
+  have hgauss : ∀ (n₁ : EuclideanSpace ℝ ↥({i} : Finset ι))
+      (n₂ : EuclideanSpace ℝ ↥({j} : Finset ι)),
+      ((multivariateGaussian (blockPair n₁ n₂) Q).map sumMeasEquivProd
+          = (multivariateGaussian n₁ Q₁₁).prod (multivariateGaussian n₂ Q₂₂))
+        ↔ (precisionMatrix (Matrix.fromBlocks Q₁₁ Q₁₂ Q₁₂ᵀ Q₂₂)).submatrix Sum.inl Sum.inr = 0 := by
+    intro n₁ n₂
+    rw [hQb]
+    exact map_multivariateGaussian_fromBlocks_eq_prod_iff n₁ n₂ Q₁₁ Q₁₂ Q₂₂ hQJ
+  have hKap : ∀ x : EuclideanSpace ℝ ↥C,
+      ∃ n : EuclideanSpace ℝ (↥({i} : Finset ι) ⊕ ↥({j} : Finset ι)),
+        Kcond x = multivariateGaussian n Q := fun x =>
+    ⟨_, by rw [hKconddef, gaussianCondKernel_apply]⟩
+  -- the two coordinate projections of the pair block
+  set fI : EuclideanSpace ℝ ↥({i} : Finset ι) ≃ᵐ (↥({i} : Finset ι) → ℝ) :=
+    (MeasurableEquiv.toLp 2 (↥({i} : Finset ι) → ℝ)).symm with hfIdef
+  set fJ : EuclideanSpace ℝ ↥({j} : Finset ι) ≃ᵐ (↥({j} : Finset ι) → ℝ) :=
+    (MeasurableEquiv.toLp 2 (↥({j} : Finset ι) → ℝ)).symm with hfJdef
+  set pI : EuclideanSpace ℝ (↥({i} : Finset ι) ⊕ ↥({j} : Finset ι)) → (↥({i} : Finset ι) → ℝ) :=
+    fun v => WithLp.ofLp (blockFst v) with hpIdef
+  set pJ : EuclideanSpace ℝ (↥({i} : Finset ι) ⊕ ↥({j} : Finset ι)) → (↥({j} : Finset ι) → ℝ) :=
+    fun v => WithLp.ofLp (blockSnd v) with hpJdef
+  have hpImeas : Measurable pI :=
+    (WithLp.measurable_ofLp 2 _).comp blockFst.continuous.measurable
+  have hpJmeas : Measurable pJ :=
+    (WithLp.measurable_ofLp 2 _).comp blockSnd.continuous.measurable
+  have hsum2 : Measurable
+      (sumMeasEquivProd (ι₁ := ↥({i} : Finset ι)) (ι₂ := ↥({j} : Finset ι))) :=
+    (sumMeasEquivProd (ι₁ := ↥({i} : Finset ι)) (ι₂ := ↥({j} : Finset ι))).measurable
+  have hfIJ : Measurable (Prod.map (fI : _ → _) (fJ : _ → _)) :=
+    fI.measurable.prodMap fJ.measurable
+  have hΘ₂comp : Θ₂ = (Prod.map (fI : _ → _) (fJ : _ → _)) ∘
+      ⇑(sumMeasEquivProd (ι₁ := ↥({i} : Finset ι)) (ι₂ := ↥({j} : Finset ι))) := rfl
+  -- the two block marginals of the conditional law
+  have hmargI : ∀ (n₁ : EuclideanSpace ℝ ↥({i} : Finset ι))
+      (n₂ : EuclideanSpace ℝ ↥({j} : Finset ι)),
+      (multivariateGaussian (blockPair n₁ n₂) Q).map pI
+        = (multivariateGaussian n₁ Q₁₁).map fI := by
+    intro n₁ n₂
+    rw [show pI = (fI : _ → _) ∘ (blockFst (ι₁ := ↥({i} : Finset ι))
+        (ι₂ := ↥({j} : Finset ι))) from rfl,
+      ← Measure.map_map fI.measurable blockFst.continuous.measurable, hQb,
+      multivariateGaussian_map_blockFst n₁ n₂ Q₁₁ Q₁₂ Q₂₂ hQJ.posSemidef]
+  have hmargJ : ∀ (n₁ : EuclideanSpace ℝ ↥({i} : Finset ι))
+      (n₂ : EuclideanSpace ℝ ↥({j} : Finset ι)),
+      (multivariateGaussian (blockPair n₁ n₂) Q).map pJ
+        = (multivariateGaussian n₂ Q₂₂).map fJ := by
+    intro n₁ n₂
+    rw [show pJ = (fJ : _ → _) ∘ (blockSnd (ι₁ := ↥({i} : Finset ι))
+        (ι₂ := ↥({j} : Finset ι))) from rfl,
+      ← Measure.map_map fJ.measurable blockSnd.continuous.measurable, hQb,
+      multivariateGaussian_map_blockSnd n₁ n₂ Q₁₁ Q₁₂ Q₂₂ hQJ.posSemidef]
+  haveI : IsMarkovKernel (Kcond.map pI) := Kernel.IsMarkovKernel.map _ hpImeas
+  haveI : IsMarkovKernel (Kcond.map pJ) := Kernel.IsMarkovKernel.map _ hpJmeas
+  haveI : IsMarkovKernel (Kcond.map Θ₂) := Kernel.IsMarkovKernel.map _ hΘ₂meas
+  haveI : IsProbabilityMeasure ((multivariateGaussian m₁ T₁₁).map fC) :=
+    Measure.isProbabilityMeasure_map fC.measurable.aemeasurable
+  constructor
+  · -- ⟹ : conditional independence forces the concentration entry to vanish
+    rintro ⟨κ, η, hκ, hη, heq⟩
+    rw [hmaster, hν] at heq
+    set ν := (multivariateGaussian m₁ T₁₁).map fC with hνdef
+    set Kbig := (Kcond.map Θ₂).comap fC.symm fC.symm.measurable with hKbigdef
+    have hfst : (ν ⊗ₘ Kbig).fst = ν := Measure.fst_compProd _ _
+    have e1 : ∀ᵐ x ∂(ν ⊗ₘ Kbig).fst, Kbig x = (ν ⊗ₘ Kbig).condKernel x :=
+      eq_condKernel_of_measure_eq_compProd Kbig (by rw [hfst])
+    have e2 : ∀ᵐ x ∂(ν ⊗ₘ Kbig).fst, (κ ×ₖ η) x = (ν ⊗ₘ Kbig).condKernel x :=
+      eq_condKernel_of_measure_eq_compProd (κ ×ₖ η) (by rw [hfst]; exact heq)
+    have hboth := e1.and e2
+    rw [hfst] at hboth
+    obtain ⟨c, hc1, hc2⟩ := hboth.exists
+    have hc : (κ ×ₖ η) c = Kbig c := hc2.trans hc1.symm
+    rw [hKbigdef] at hc
+    rw [Kernel.prod_apply, Kernel.comap_apply, Kernel.map_apply _ hΘ₂meas] at hc
+    obtain ⟨n, hn⟩ := hKap (fC.symm c)
+    have hn' : Kcond (fC.symm c)
+        = multivariateGaussian (blockPair (blockFst n) (blockSnd n)) Q := by
+      rw [hn, blockPair_blockFst_blockSnd]
+    rw [hn', hΘ₂comp, ← Measure.map_map hfIJ hsum2] at hc
+    have hid : (Prod.map (fI.symm : _ → _) (fJ.symm : _ → _)) ∘
+        (Prod.map (fI : _ → _) (fJ : _ → _)) = id := by
+      funext p
+      simp [Prod.map]
+    have hc2 : ((κ c).map fI.symm).prod ((η c).map fJ.symm)
+        = (multivariateGaussian (blockPair (blockFst n) (blockSnd n)) Q).map
+            (sumMeasEquivProd (ι₁ := ↥({i} : Finset ι)) (ι₂ := ↥({j} : Finset ι))) := by
+      have hmapped := congrArg
+        (fun ρ => Measure.map (Prod.map (fI.symm : _ → _) (fJ.symm : _ → _)) ρ) hc
+      simp only at hmapped
+      rw [← Measure.map_prod_map _ _ fI.symm.measurable fJ.symm.measurable,
+        Measure.map_map (fI.symm.measurable.prodMap fJ.symm.measurable) hfIJ, hid,
+        Measure.map_id] at hmapped
+      exact hmapped
+    haveI : IsProbabilityMeasure ((κ c).map fI.symm) :=
+      Measure.isProbabilityMeasure_map fI.symm.measurable.aemeasurable
+    haveI : IsProbabilityMeasure ((η c).map fJ.symm) :=
+      Measure.isProbabilityMeasure_map fJ.symm.measurable.aemeasurable
+    have hA : (κ c).map fI.symm = multivariateGaussian (blockFst n) Q₁₁ := by
+      have hfst : Measure.map Prod.fst (((κ c).map fI.symm).prod ((η c).map fJ.symm))
+          = (κ c).map fI.symm := Measure.fst_prod
+      rw [← hfst, hc2, Measure.map_map measurable_fst hsum2, hQb]
+      exact multivariateGaussian_map_blockFst _ _ Q₁₁ Q₁₂ Q₂₂ hQJ.posSemidef
+    have hB : (η c).map fJ.symm = multivariateGaussian (blockSnd n) Q₂₂ := by
+      have hsnd : Measure.map Prod.snd (((κ c).map fI.symm).prod ((η c).map fJ.symm))
+          = (η c).map fJ.symm := Measure.snd_prod
+      rw [← hsnd, hc2, Measure.map_map measurable_snd hsum2, hQb]
+      exact multivariateGaussian_map_blockSnd _ _ Q₁₁ Q₁₂ Q₂₂ hQJ.posSemidef
+    rw [hA, hB] at hc2
+    exact hzeroiff.mp ((hgauss (blockFst n) (blockSnd n)).mp hc2.symm)
+  · -- ⟸ : a vanishing concentration entry gives an explicit product disintegration
+    intro hzero
+    have hz2 : (precisionMatrix (Matrix.fromBlocks Q₁₁ Q₁₂ Q₁₂ᵀ Q₂₂)).submatrix Sum.inl Sum.inr
+        = 0 := hzeroiff.mpr hzero
+    refine ⟨(Kcond.map pI).comap fC.symm fC.symm.measurable,
+      (Kcond.map pJ).comap fC.symm fC.symm.measurable, inferInstance, inferInstance, ?_⟩
+    rw [hmaster, hν]
+    congr 1
+    refine Kernel.ext fun c => ?_
+    obtain ⟨n, hn⟩ := hKap (fC.symm c)
+    have hn' : Kcond (fC.symm c)
+        = multivariateGaussian (blockPair (blockFst n) (blockSnd n)) Q := by
+      rw [hn, blockPair_blockFst_blockSnd]
+    rw [Kernel.comap_apply, Kernel.prod_apply, Kernel.comap_apply, Kernel.comap_apply,
+      Kernel.map_apply _ hΘ₂meas, Kernel.map_apply _ hpImeas, Kernel.map_apply _ hpJmeas,
+      hn', hmargI, hmargJ, hΘ₂comp, ← Measure.map_map hfIJ hsum2,
+      (hgauss (blockFst n) (blockSnd n)).mpr hz2,
+      ← Measure.map_prod_map _ _ fI.measurable fJ.measurable]
 
 end Proposition52
 
