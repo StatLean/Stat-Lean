@@ -116,7 +116,8 @@ replaces the covering relation of `SimpleGraph.pathGraph` by the arithmetic cond
 Route: `SimpleGraph.ext` (through `ext i j`), then `SimpleGraph.pathGraph_adj`, after which the
 two sides are definitionally the same proposition. -/
 theorem chainGraph_eq_pathGraph : chainGraph = SimpleGraph.pathGraph 3 := by
-  sorry
+  ext i j
+  exact SimpleGraph.pathGraph_adj.symm
 
 /-! ### The adjacency table -/
 
@@ -138,13 +139,19 @@ local Markov property at `0`.
 Route: `Finset.ext` plus `SimpleGraph.mem_neighborFinset`, then `Fin.cases`/`decide` on the
 three vertices. -/
 theorem chain_neighborFinset_zero : chainGraph.neighborFinset 0 = {1} := by
-  sorry
+  ext v
+  simp only [SimpleGraph.mem_neighborFinset, Finset.mem_singleton]
+  revert v
+  decide
 
 /-- The neighbourhood of the middle vertex is the pair of ends — so the local Markov property at
 `1` conditions on *both* ends and is degenerate (its "rest" block `V ∖ cl(1)` is empty). The
 content of the chain sits at the ends, not at the middle. -/
 theorem chain_neighborFinset_one : chainGraph.neighborFinset 1 = {0, 2} := by
-  sorry
+  ext v
+  simp only [SimpleGraph.mem_neighborFinset, Finset.mem_insert, Finset.mem_singleton]
+  revert v
+  decide
 
 /-- On three vertices, **"all the remaining variables" is the middle vertex**:
 `V ∖ {0, 2} = {1}`. This identity is what makes the pairwise Markov property at `(0, 2)` and
@@ -195,7 +202,9 @@ theorem chain_ends_no_admissible_blocks {A B : Finset (Fin 3)}
     -- USER-INPUT: the two separated blocks are disjoint; Lauritzen §3.2 (G), p. 32
     (hAB : Disjoint A B) :
     A = ∅ ∨ B = ∅ := by
-  sorry
+  revert hA hB hAB
+  revert A B
+  decide
 
 /-! ### The moral — the middle variable screens off the ends
 
@@ -233,6 +242,9 @@ theorem chain_condIndep_of_isLocalMarkov
     -- Lauritzen §3.2 (L), p. 32
     (h : IsLocalMarkov chainGraph ci) :
     ci {0} {2} {1} := by
-  sorry
+  have h0 := h 0
+  rw [chain_neighborFinset_zero,
+    show (Finset.univ \ insert (0 : Fin 3) ({1} : Finset (Fin 3))) = {2} by decide] at h0
+  exact h0
 
 end StatLean.StatisticalModels.GraphicalModels
