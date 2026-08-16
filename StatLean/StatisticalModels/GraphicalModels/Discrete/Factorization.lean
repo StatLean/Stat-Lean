@@ -59,9 +59,13 @@ p. 28 that on a discrete space every function is continuous (`Lauritzen §3.2`).
 4. **The extension step in (F) ⇒ (G) is explicit.** The product only splits when the three
    blocks *cover* `V`. For a general separated triple `(A, B, S)` one first enlarges `A` to the
    union of the connected components of `G ∖ S` meeting `A`, sets `B'` to the rest, splits
-   there, and then shrinks back with (C2). The enlargement is Mathlib's `ComponentCompl` (see
-   `separates_iff_componentComplMk_ne` in `Core/Separation.lean`); the shrinking is
-   `CondIndepMass.decomposition`, which needs neither finiteness nor positivity.
+   there, and then shrinks back with (C2); the shrinking is `CondIndepMass.decomposition`,
+   which needs neither finiteness nor positivity. The enlargement is spelled *with walks* —
+   `A' = {v ∉ S | some walk from `A` to `v` avoids `S`}` — rather than with Mathlib's
+   `ComponentCompl` and `separates_iff_componentComplMk_ne`: the two describe the same set, but
+   the walk form needs only `Walk.append` and `Walk.mem_support_append_iff`, so
+   `factorizesOver_implies_globalMarkov` depends on none of the (still open) reachability
+   bridges of `Core/Separation.lean` and comes out axiom-clean.
 
 **Moussouris's example — why Theorem 3.9 needs positivity** (Lauritzen **Example 3.10**,
 pp. 37–38). On the four-cycle `1 − 2 − 3 − 4 − 1` with binary states there is a mass function

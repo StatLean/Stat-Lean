@@ -855,6 +855,78 @@ theorem condIndepMass_of_condIndepCoords {Ω : Type*} [MeasurableSpace Ω] [Meas
     -- USER-INPUT: conditional independence of the coordinate blocks; Lauritzen §3.1, p. 28
     (hci : CondIndepCoords μ X A B C) :
     CondIndepMass (fun x => μ (X ⁻¹' {x})) A B C := by
-  sorry
+  classical
+  obtain ⟨κ, η, _, _, hdis⟩ := hci
+  haveI : IsFiniteMeasure (μ.map (coords C X)) :=
+    Measure.isFiniteMeasure_map μ (coords C X)
+  intro x
+  -- The mass of a `Finset` of configurations is the measure of the corresponding fibre.
+  have hsum : ∀ F : Finset (V → α), ∑ y ∈ F, μ (X ⁻¹' {y}) = μ (X ⁻¹' (F : Set (V → α))) := by
+    intro F
+    have hunion : X ⁻¹' (F : Set (V → α)) = ⋃ y ∈ F, X ⁻¹' {y} := by ext ω; simp
+    rw [hunion]
+    exact (measure_biUnion_finset
+      (fun y _ z _ hyz => Disjoint.preimage X (Set.disjoint_singleton.mpr hyz))
+      (fun y _ => hX (measurableSet_singleton y))).symm
+  have hbm : ∀ E : Finset V,
+      blockMarginal E (fun y => μ (X ⁻¹' {y})) x = μ {ω | ∀ i ∈ E, X ω i = x i} := by
+    intro E
+    rw [blockMarginal, hsum]
+    congr 1
+    ext ω
+    simp [agreeOn]
+  -- Agreement on a block is equality of the corresponding subvector.
+  have hres : ∀ (E : Finset V) (y : V → α),
+      E.restrict y = E.restrict x ↔ ∀ i ∈ E, y i = x i :=
+    fun E y => ⟨fun h i hi => congrFun h ⟨i, hi⟩, fun h => funext fun i => h i i.2⟩
+  have hT : Measurable fun ω => (coords C X ω, (coords A X ω, coords B X ω)) :=
+    (measurable_coords C hX).prodMk ((measurable_coords A hX).prodMk (measurable_coords B hX))
+  -- **The rectangle computation.** Evaluate the disintegration identity at
+  -- `{x_C} ×ˢ (s ×ˢ t)`: `compProd_apply_prod` turns it into an integral over a singleton,
+  -- `lintegral_singleton` evaluates that, and `Kernel.prod_apply_prod` splits the kernel.
+  have key : ∀ (s : Set (↥A → α)) (t : Set (↥B → α)) (E : Finset V), MeasurableSet s →
+      MeasurableSet t →
+      (∀ ω : Ω, (∀ i ∈ E, X ω i = x i) ↔
+        (C.restrict (X ω) = C.restrict x ∧ A.restrict (X ω) ∈ s ∧ B.restrict (X ω) ∈ t)) →
+      blockMarginal E (fun y => μ (X ⁻¹' {y})) x
+        = κ (C.restrict x) s * η (C.restrict x) t * (μ.map (coords C X)) {C.restrict x} := by
+    intro s t E hs ht hiff
+    have hEq : {ω | ∀ i ∈ E, X ω i = x i}
+        = (fun ω => (coords C X ω, (coords A X ω, coords B X ω))) ⁻¹'
+          (({C.restrict x} : Set (↥C → α)) ×ˢ (s ×ˢ t)) := by
+      ext ω
+      simpa only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_prod, Set.mem_singleton_iff,
+        and_assoc] using hiff ω
+    rw [hbm E, hEq, ← Measure.map_apply hT ((measurableSet_singleton _).prod (hs.prod ht)),
+      hdis, Measure.compProd_apply_prod (measurableSet_singleton _) (hs.prod ht),
+      lintegral_singleton, Kernel.prod_apply_prod]
+  -- The four blocks, as four rectangles.
+  have hABC := key {A.restrict x} {B.restrict x} (A ∪ B ∪ C) (measurableSet_singleton _)
+    (measurableSet_singleton _) (fun ω => by
+      simp only [Set.mem_singleton_iff, hres, Finset.mem_union]
+      constructor
+      · exact fun h => ⟨fun i hi => h i (Or.inr hi), fun i hi => h i (Or.inl (Or.inl hi)),
+          fun i hi => h i (Or.inl (Or.inr hi))⟩
+      · rintro ⟨hC, hA, hB⟩ i ((hi | hi) | hi)
+        exacts [hA i hi, hB i hi, hC i hi])
+  have hAC := key {A.restrict x} Set.univ (A ∪ C) (measurableSet_singleton _)
+    MeasurableSet.univ (fun ω => by
+      simp only [Set.mem_singleton_iff, Set.mem_univ, and_true, hres, Finset.mem_union]
+      constructor
+      · exact fun h => ⟨fun i hi => h i (Or.inr hi), fun i hi => h i (Or.inl hi)⟩
+      · rintro ⟨hC, hA⟩ i (hi | hi)
+        exacts [hA i hi, hC i hi])
+  have hBC := key Set.univ {B.restrict x} (B ∪ C) MeasurableSet.univ
+    (measurableSet_singleton _) (fun ω => by
+      simp only [Set.mem_singleton_iff, Set.mem_univ, true_and, hres, Finset.mem_union]
+      constructor
+      · exact fun h => ⟨fun i hi => h i (Or.inr hi), fun i hi => h i (Or.inl hi)⟩
+      · rintro ⟨hC, hB⟩ i (hi | hi)
+        exacts [hB i hi, hC i hi])
+  have hC := key Set.univ Set.univ C MeasurableSet.univ MeasurableSet.univ (fun ω => by
+    simp only [Set.mem_univ, and_true, hres])
+  -- Both sides are `κ{x_A} · η{x_B} · κ(univ) · η(univ) · p_C²`; no Markov property is needed.
+  rw [hABC, hAC, hBC, hC]
+  ring
 
 end StatLean.StatisticalModels.GraphicalModels
