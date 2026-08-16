@@ -135,7 +135,7 @@ Edge behaviour: `blockMarginal Finset.univ p = p` (`blockMarginal_univ`) and
 on the coordinates of `x` inside `A` (`dependsOn_blockMarginal`), which is how it plays the
 role of Lauritzen's function of `x_A`. No normalisation of `p` is assumed anywhere; the
 marginal of an unnormalised mass is the corresponding unnormalised marginal. -/
-def blockMarginal (A : Finset V) (p : (V → α) → ℝ≥0∞) (x : V → α) : ℝ≥0∞ :=
+noncomputable def blockMarginal (A : Finset V) (p : (V → α) → ℝ≥0∞) (x : V → α) : ℝ≥0∞ :=
   ∑ y ∈ agreeOn A x, p y
 
 /-- The marginal on `A` depends on the configuration only through the coordinates in `A` —

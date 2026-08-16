@@ -89,7 +89,7 @@ def IsStandardized (P : FactorParams p q) : Prop :=
 across coordinates — `BKM`'s conditional-independence assumption (Eq. (1.9), §1.4;
 Eq. (3.1)). -/
 def HasDiagonalUniqueness (P : FactorParams p q) : Prop :=
-  P.uniqueCov.IsDiag
+  Matrix.IsDiag P.uniqueCov
 
 /-- **Proper parameters**: `Φ` and `Ψ` are genuine covariance matrices. Regularity, not
 constitutive — hence a predicate on `FactorParams`, not fields of it. -/
