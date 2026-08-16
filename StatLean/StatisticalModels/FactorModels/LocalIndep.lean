@@ -13,16 +13,24 @@ held fixed, the observed coordinates carry no dependence left over. In the linea
 meet: the conclusion is stated with `GraphicalModels.CondIndep`, the conditional-independence
 predicate of the graphical slice, applied to the factor model of `FactorModels.Defs`.
 
-* `factorJointLaw P F E` — the joint law of the pair `(y, x)`, i.e. the latent law composed
-  with the measurement kernel; `factorJointLaw_fst` / `factorJointLaw_snd` identify its two
+* `latentObsJointLaw P F E` — the joint law of the pair `(y, x)`, i.e. the latent law composed
+  with the measurement kernel; `latentObsJointLaw_fst` / `latentObsJointLaw_snd` identify its two
   marginals as `F` and `factorLaw P F E`;
+
+  *Coordinate order.* This is the **latent-first** joint law, because everything here
+  conditions *on* the factor. `FactorScores.factorJointLaw` is the **observation-first** joint
+  law of the same model, because there one conditions on the observation to obtain `y ∣ x`;
+  it is stated in that order so it lands on `MixedEffects.lmmJointLaw` and hence on the
+  existing Gaussian conditioning layer. The two are each other's `Prod.swap` pushforward;
+  neither is redundant, and the names are kept distinct so a reader is never in doubt about
+  which coordinate is being conditioned on.
 * `indepFun_eval_measurementKernel` — at a **fixed** factor value, two distinct observed
   coordinates are independent (`BKM` Eq. (1.9), pairwise form);
 * `iIndepFun_eval_measurementKernel` — the **family** version: at a fixed factor value the
   whole family `(x₁, …, x_p)` is jointly independent;
 * `map_measurementKernel_eq_pi` — `BKM` Eq. (1.9) verbatim, as the product formula
   `g(x ∣ y) = ∏ᵢ gᵢ(xᵢ ∣ y)` with `gᵢ(· ∣ y) = N((μ + Λy)ᵢ, ψᵢ)`;
-* **`condIndep_eval_factorJointLaw` (HEADLINE)** — local independence in the graphical
+* **`condIndep_eval_latentObsJointLaw` (HEADLINE)** — local independence in the graphical
   vocabulary: `xᵢ ⫫ xⱼ ∣ y` under the joint law, for `i ≠ j`;
 * `factorCovariance_apply_of_oneFactor`, `factorCovariance_apply_ne_zero_of_oneFactor`,
   `not_indepFun_eval_gaussianFactorModel` — **the contrast**. After the factor is marginalised
@@ -91,7 +99,7 @@ Nothing about Gaussian independence, and nothing about the covariance decomposit
 re-derived here; the entries above are the whole content of every proof in this file.
 
 *Route for the headline.* `Measure.compProd_map` at `f := fun x => (x i, x j)` turns
-`(factorJointLaw P F E).map (fun z => (z.1, (z.2 i, z.2 j)))` into
+`(latentObsJointLaw P F E).map (fun z => (z.1, (z.2 i, z.2 j)))` into
 `F ⊗ₘ ((measurementKernel P E).map f)`; `Measure.fst_compProd` identifies `μ.map Prod.fst` with
 `F`; and `Kernel.ext` plus `indepFun_eval_measurementKernel` (in its
 `indepFun_iff_map_prod_eq_prod_map_map` form) identifies `(measurementKernel P E).map f` with
@@ -137,18 +145,18 @@ sample space on which "conditionally independent **given the factor**" can be sa
 *Edge behaviour:* a probability measure exactly when `F` and `E` are (instance below); for
 non-s-finite `F` or a non-s-finite kernel, `⊗ₘ` degenerates to `0`, matching the usual junk
 convention of `Measure.compProd`. -/
-noncomputable def factorJointLaw (P : FactorParams p q) (F : Measure (EuclideanSpace ℝ (Fin q)))
+noncomputable def latentObsJointLaw (P : FactorParams p q) (F : Measure (EuclideanSpace ℝ (Fin q)))
     (E : Measure (EuclideanSpace ℝ (Fin p))) :
     Measure (EuclideanSpace ℝ (Fin q) × EuclideanSpace ℝ (Fin p)) :=
   F ⊗ₘ measurementKernel P E
 
 instance (P : FactorParams p q) (F : Measure (EuclideanSpace ℝ (Fin q)))
     (E : Measure (EuclideanSpace ℝ (Fin p))) [IsProbabilityMeasure F]
-    [IsProbabilityMeasure E] : IsProbabilityMeasure (factorJointLaw P F E) := by
-  rw [factorJointLaw]; infer_instance
+    [IsProbabilityMeasure E] : IsProbabilityMeasure (latentObsJointLaw P F E) := by
+  rw [latentObsJointLaw]; infer_instance
 
 /-- The **latent marginal** of the joint law is the latent law `F` (`BKM` Eq. (3.2)). -/
-theorem factorJointLaw_fst (P : FactorParams p q) (F : Measure (EuclideanSpace ℝ (Fin q)))
+theorem latentObsJointLaw_fst (P : FactorParams p q) (F : Measure (EuclideanSpace ℝ (Fin q)))
     (E : Measure (EuclideanSpace ℝ (Fin p)))
     -- LEAN-ONLY: `Measure.fst_compProd` is stated for an s-finite first factor; without it
     -- `⊗ₘ` is junk and the identity carries no content
@@ -156,20 +164,20 @@ theorem factorJointLaw_fst (P : FactorParams p q) (F : Measure (EuclideanSpace �
     -- LEAN-ONLY: makes `measurementKernel P E` a Markov kernel, which is what
     -- `Measure.fst_compProd` needs to leave the first marginal untouched
     [IsProbabilityMeasure E] :
-    (factorJointLaw P F E).fst = F := by
-  rw [factorJointLaw, Measure.fst_compProd]
+    (latentObsJointLaw P F E).fst = F := by
+  rw [latentObsJointLaw, Measure.fst_compProd]
 
 /-- The **observed marginal** of the joint law is `factorLaw P F E` (`BKM` Eq. (3.3)/(1.10)):
 integrating the factor out of the joint law returns the observed law. This is the identity that
 makes the contrast at the end of the file a statement about the *same* model. -/
-theorem factorJointLaw_snd (P : FactorParams p q) (F : Measure (EuclideanSpace ℝ (Fin q)))
+theorem latentObsJointLaw_snd (P : FactorParams p q) (F : Measure (EuclideanSpace ℝ (Fin q)))
     (E : Measure (EuclideanSpace ℝ (Fin p)))
     -- LEAN-ONLY: s-finiteness of the latent law, demanded by `Measure.snd_compProd`
     [SFinite F]
     -- LEAN-ONLY: makes `measurementKernel P E` Markov, hence s-finite — the side condition of
     -- `Measure.snd_compProd`
     [IsProbabilityMeasure E] :
-    (factorJointLaw P F E).snd = factorLaw P F E := by
+    (latentObsJointLaw P F E).snd = factorLaw P F E := by
   sorry
 
 /-! ### `BKM` Eq. (1.9) — local independence at a fixed factor value -/
@@ -240,7 +248,7 @@ Eq. (3.1)). In the Gaussian linear factor model with a **diagonal** specific-fac
 `xᵢ ⫫ xⱼ ∣ y` under the joint law of `(y, x)`.
 
 This is the bridge between the two areas: the conclusion is `GraphicalModels.CondIndep`, the
-disintegration predicate of the graphical slice, and the model is `FactorModels.factorJointLaw`.
+disintegration predicate of the graphical slice, and the model is `FactorModels.latentObsJointLaw`.
 The witnesses `CondIndep` asks for are the two coordinate marginals of the measurement kernel;
 see the module docstring for the route.
 
@@ -249,7 +257,7 @@ arbitrary conditional density; here it is a **theorem** in the Gaussian linear m
 pairwise form that `CondIndep` can express. The family form is
 `iIndepFun_eval_measurementKernel` / `map_measurementKernel_eq_pi`, stated at the kernel level
 because round 1 has no family conditional-independence predicate. -/
-theorem condIndep_eval_factorJointLaw (P : FactorParams p q)
+theorem condIndep_eval_latentObsJointLaw (P : FactorParams p q)
     (F : Measure (EuclideanSpace ℝ (Fin q)))
     -- LEAN-ONLY: the latent law is a probability measure — needed for `⊗ₘ` to be the joint law
     -- of a pair of random variables and for `Measure.fst_compProd` to return `F`
@@ -263,14 +271,14 @@ theorem condIndep_eval_factorJointLaw (P : FactorParams p q)
     -- USER-INPUT: two distinct observed coordinates; BKM Eq. (1.9)
     (hij : i ≠ j) :
     GraphicalModels.CondIndep
-        (factorJointLaw P F (multivariateGaussian 0 P.uniqueCov))
+        (latentObsJointLaw P F (multivariateGaussian 0 P.uniqueCov))
         (fun z => z.2 i) (fun z => z.2 j) Prod.fst := by
   sorry
 
 /-! ### The contrast — dependence in the observed marginal
 
 Local independence says nothing about the *observed* law. Marginalising the factor out
-(`BKM` Eq. (1.10), `factorJointLaw_snd`) leaves `Σ = Λ Φ Λᵀ + Ψ`, whose off-diagonal entries
+(`BKM` Eq. (1.10), `latentObsJointLaw_snd`) leaves `Σ = Λ Φ Λᵀ + Ψ`, whose off-diagonal entries
 are the common part alone — the specific factors contribute only to the diagonal. In the
 one-factor model `Σᵢⱼ = λᵢ φ λⱼ`, so any two coordinates loading on the same factor are
 correlated, hence (being jointly Gaussian) dependent. This is the precise sense in which a
@@ -314,7 +322,7 @@ theorem factorCovariance_apply_ne_zero_of_oneFactor (P : FactorParams p 1)
 
 /-- **The contrast, as a negative statement about the observed law.** In the Gaussian
 one-factor model with two non-zero loadings, the two observed coordinates are **not**
-independent — even though `condIndep_eval_factorJointLaw` makes them conditionally independent
+independent — even though `condIndep_eval_latentObsJointLaw` makes them conditionally independent
 given the factor. Together the two theorems are the conceptual payload of this file.
 
 Route (do not re-derive): `gaussianFactorModel_eq_multivariateGaussian` identifies the observed
