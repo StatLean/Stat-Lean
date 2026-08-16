@@ -165,7 +165,20 @@ theorem dudleyLIntegral_le_of_cov_le_exp_div {T : Set E}
     (hcov : ∀ ε ∈ Set.Ioc (0 : ℝ) D, coveringNumber T ε ≠ ⊤ ∧
       ((coveringNumber T ε).toNat : ℝ) ≤ Real.exp (C / ε)) :
     dudleyLIntegral T D ≤ ENNReal.ofReal (2 * Real.sqrt (C * D)) := by
-  sorry
+  unfold dudleyLIntegral
+  have hmono : ∫⁻ ε in Set.Ioc (0 : ℝ) D, ENNReal.ofReal (sqrtLogCov T ε)
+      ≤ ∫⁻ ε in Set.Ioc (0 : ℝ) D, ENNReal.ofReal (Real.sqrt (C / ε)) := by
+    refine lintegral_mono_ae ?_
+    refine (ae_restrict_iff' measurableSet_Ioc).mpr (ae_of_all _ (fun ε hε => ?_))
+    have hε0 : 0 < ε := hε.1
+    have hexp1 : (1 : ℝ) ≤ Real.exp (C / ε) := Real.one_le_exp (by positivity)
+    have hb := sqrtLogCov_le_sqrt_log_of_le hne (hcov ε hε).1 (hcov ε hε).2 hexp1
+    rw [Real.log_exp] at hb
+    exact ENNReal.ofReal_le_ofReal hb
+  refine hmono.trans ?_
+  rw [← MeasureTheory.ofReal_integral_eq_lintegral_ofReal (integrableOn_sqrt_div hC hD)
+    (Filter.Eventually.of_forall (fun x => Real.sqrt_nonneg _))]
+  exact ENNReal.ofReal_le_ofReal (integral_sqrt_div_le hC hD)
 
 /-- **Dudley plug-in, exponential branch, separable supremum** (HDP §8.2,
 Exercise 8.9/8.10 pipeline; general `T`): sub-gaussian increments + entropy
@@ -200,7 +213,25 @@ theorem dudley_abs_of_cov_le_exp_div_separable {X : E → Ω → ℝ} {K : ℝ�
       ((coveringNumber T ε).toNat : ℝ) ≤ Real.exp (C / ε)) :
     ∫ ω, ⨆ t ∈ T, |X t ω - X t₀ ω| ∂μ
       ≤ 80 * K * Real.sqrt (C * D) := by
-  sorry
+  -- Finite covering numbers at EVERY positive radius: below `D` from `hcov`,
+  -- above `D` by anti-monotonicity of the covering number.
+  have hcovall : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤ := by
+    intro ε hε
+    rcases le_or_gt ε D with h | h
+    · exact (hcov ε ⟨hε, h⟩).1
+    · exact ne_top_of_le_ne_top (hcov D ⟨hD0, le_refl D⟩).1 (coveringNumber_anti h.le)
+  have hb : dudleyLIntegral T D ≤ ENNReal.ofReal (2 * Real.sqrt (C * D)) :=
+    dudleyLIntegral_le_of_cov_le_exp_div hne hC hD0 hcov
+  have hDL : dudleyLIntegral T D ≠ ⊤ := (hb.trans_lt ENNReal.ofReal_lt_top).ne
+  have htr : (dudleyLIntegral T D).toReal ≤ 2 * Real.sqrt (C * D) := by
+    have h := ENNReal.toReal_mono ENNReal.ofReal_ne_top hb
+    rwa [ENNReal.toReal_ofReal (by positivity)] at h
+  calc ∫ ω, ⨆ t ∈ T, |X t ω - X t₀ ω| ∂μ
+      ≤ 40 * K * (dudleyLIntegral T D).toReal :=
+        dudley_inequality_abs_separable_real hcovall hne hmeas hinc hsep ht₀ hDL hdiam hD0
+    _ ≤ 40 * K * (2 * Real.sqrt (C * D)) := by
+        refine mul_le_mul_of_nonneg_left htr ?_; positivity
+    _ = 80 * K * Real.sqrt (C * D) := by ring
 
 /-- **Dudley plug-in, exponential branch, countable supremum** (HDP §8.2):
 the countable-`T` display of `dudley_abs_of_cov_le_exp_div_separable`. -/
@@ -230,6 +261,7 @@ theorem dudley_abs_of_cov_le_exp_div_countable {X : E → Ω → ℝ} {K : ℝ�
       ((coveringNumber T ε).toNat : ℝ) ≤ Real.exp (C / ε)) :
     ∫ ω, ⨆ t ∈ T, |X t ω - X t₀ ω| ∂μ
       ≤ 80 * K * Real.sqrt (C * D) := by
-  sorry
+  exact dudley_abs_of_cov_le_exp_div_separable hne hmeas hinc
+    (IsSeparableProcess.of_countable hcnt) ht₀ hC hD0 hdiam hcov
 
 end StatLean.ConcentrationInequalities
