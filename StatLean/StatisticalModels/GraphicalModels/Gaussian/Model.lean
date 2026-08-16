@@ -151,20 +151,22 @@ model); for the empty graph it is the diagonal positive definite matrices. -/
 def concentrationSet (G : SimpleGraph ι) : Set (Matrix ι ι ℝ) :=
   {A | A.PosDef ∧ ∀ i j, i ≠ j → ¬ G.Adj i j → A i j = 0}
 
+omit [Fintype ι] [DecidableEq ι] in
 /-- Adding edges enlarges `S⁺(G)`: fewer zero constraints. -/
 theorem concentrationSet_mono {G H : SimpleGraph ι}
     -- USER-INPUT: `G` is a subgraph of `H`; Lauritzen §5.2, p. 132
     (hGH : G ≤ H) :
     concentrationSet G ⊆ concentrationSet H := by
-  sorry
+  rintro A ⟨hA, hz⟩
+  exact ⟨hA, fun i j hij hH => hz i j hij fun hG => hH (hGH hG)⟩
 
 /-- A regular concentration matrix comes from a regular covariance matrix. -/
 theorem posDef_of_precisionMatrix_posDef {S : Matrix ι ι ℝ}
     -- LEAN-ONLY: `Matrix.inv` is junk-valued at singular matrices, so this is the statement that
     -- the junk value `0` is not positive definite; `Matrix.posDef_inv_iff`
     (h : (precisionMatrix S).PosDef) :
-    S.PosDef := by
-  sorry
+    S.PosDef :=
+  Matrix.posDef_inv_iff.mp h
 
 end ConcentrationSet
 
@@ -193,7 +195,22 @@ theorem mem_gaussianGraphicalModel_iff {G : SimpleGraph ι}
       ↔ ∃ (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ), S.PosDef ∧
           (∀ i j, i ≠ j → ¬ G.Adj i j → precisionMatrix S i j = 0) ∧
           P = multivariateGaussian m S := by
-  sorry
+  constructor
+  · rintro ⟨m, S, ⟨hK, hz⟩, rfl⟩
+    exact ⟨m, S, posDef_of_precisionMatrix_posDef hK, hz, rfl⟩
+  · rintro ⟨m, S, hS, hz, rfl⟩
+    exact ⟨m, S, ⟨precisionMatrix_posDef hS, hz⟩, rfl⟩
+
+/-- LEAN-ONLY (`private`, file-scope): a regular Gaussian law determines its covariance
+parameter. This is `covMatrix_multivariateGaussian` read as an injectivity statement; it is what
+lets a membership hypothesis stated for *some* `(m', S')` be transported back to the given `S`.
+Not a new mathematical input — the covariance of `N(m, Σ)` is `Σ`. -/
+private theorem posDef_eq_of_multivariateGaussian_eq {m m' : EuclideanSpace ℝ ι}
+    {S S' : Matrix ι ι ℝ} (hS : S.PosDef) (hS' : S'.PosDef)
+    (h : multivariateGaussian m S = multivariateGaussian m' S') : S = S' := by
+  have h1 := covMatrix_multivariateGaussian m S hS.posSemidef
+  rw [h, covMatrix_multivariateGaussian m' S' hS'.posSemidef] at h1
+  exact h1.symm
 
 /-- Membership for an explicitly given regular Gaussian. -/
 theorem multivariateGaussian_mem_gaussianGraphicalModel_iff {G : SimpleGraph ι}
@@ -202,7 +219,12 @@ theorem multivariateGaussian_mem_gaussianGraphicalModel_iff {G : SimpleGraph ι}
     (hS : S.PosDef) :
     multivariateGaussian m S ∈ gaussianGraphicalModel G
       ↔ ∀ i j, i ≠ j → ¬ G.Adj i j → precisionMatrix S i j = 0 := by
-  sorry
+  constructor
+  · rintro ⟨m', S', ⟨hK', hz'⟩, heq⟩
+    rw [posDef_eq_of_multivariateGaussian_eq hS (posDef_of_precisionMatrix_posDef hK') heq]
+    exact hz'
+  · intro hz
+    exact ⟨m, S, ⟨precisionMatrix_posDef hS, hz⟩, rfl⟩
 
 /-- Adding edges enlarges the model — a covariance selection model is a *restriction*. This
 monotonicity is why the book's model does not identify its own graph; see the module docstring. -/
@@ -210,18 +232,26 @@ theorem gaussianGraphicalModel_mono {G H : SimpleGraph ι}
     -- USER-INPUT: `G` is a subgraph of `H`; Lauritzen §5.2, p. 132
     (hGH : G ≤ H) :
     gaussianGraphicalModel G ⊆ gaussianGraphicalModel H := by
-  sorry
+  rintro P ⟨m, S, hK, rfl⟩
+  exact ⟨m, S, concentrationSet_mono hGH hK, rfl⟩
 
 /-- Feasibility of the constraint model: every graph admits a compatible law (take `Σ = I`, whose
 concentration matrix `I` satisfies every zero constraint). -/
 theorem fibersNonempty_gaussianGraphicalModel :
     FibersNonempty (gaussianGraphicalModel (ι := ι)) := by
-  sorry
+  intro G
+  refine ⟨multivariateGaussian 0 1, 0, 1, ⟨?_, ?_⟩, rfl⟩
+  · rw [precisionMatrix_def, inv_one]
+    exact Matrix.PosDef.one
+  · intro i j hij _
+    rw [precisionMatrix_def, inv_one]
+    exact Matrix.one_apply_ne hij
 
 /-- Every compatible law is a probability measure. -/
 theorem fibersProbability_gaussianGraphicalModel :
     FibersProbability (gaussianGraphicalModel (ι := ι)) := by
-  sorry
+  rintro G Q ⟨m, S, -, rfl⟩
+  infer_instance
 
 /-- The **saturated** fibers: the laws whose concentration zero pattern is *exactly* the
 non-edge set of `G`. Lauritzen's model asks for `⊆`; this asks for `=`.
@@ -237,7 +267,8 @@ def gaussianGraphicalModelExact (G : SimpleGraph ι) : Set (Measure (EuclideanSp
 
 theorem gaussianGraphicalModelExact_subset (G : SimpleGraph ι) :
     gaussianGraphicalModelExact G ⊆ gaussianGraphicalModel G := by
-  sorry
+  rintro P ⟨m, S, hS, hz, rfl⟩
+  exact ⟨m, S, ⟨precisionMatrix_posDef hS, fun i j hij hadj => (hz i j hij).mpr hadj⟩, rfl⟩
 
 /-- **The conditional independence graph is identified.** Two graphs whose saturated fibers share
 a law are equal: by Proposition 5.2 the law's concentration zero pattern is its set of
@@ -249,7 +280,14 @@ and hence does **not** separate its graph. -/
 theorem separatesTarget_gaussianGraphicalModelExact :
     SeparatesTarget (gaussianGraphicalModelExact (ι := ι))
       (id : SimpleGraph ι → SimpleGraph ι) := by
-  sorry
+  rintro G H ⟨P, ⟨m, S, hS, hzG, rfl⟩, ⟨m', S', hS', hzH, heq⟩⟩
+  have hSS' : S = S' := posDef_eq_of_multivariateGaussian_eq hS hS' heq
+  subst hSS'
+  simp only [id_eq]
+  ext i j
+  by_cases hij : i = j
+  · subst hij; simp
+  · rw [← not_iff_not, ← hzG i j hij, ← hzH i j hij]
 
 end Model
 
@@ -269,7 +307,10 @@ theorem isPairwiseMarkov_of_mem_gaussianGraphicalModel {G : SimpleGraph ι}
     -- USER-INPUT: a law of the covariance selection model; Lauritzen §5.2, p. 131
     (hP : P ∈ gaussianGraphicalModel G) :
     IsPairwiseMarkov G (CondIndepCoords P gaussianCoords) := by
-  sorry
+  obtain ⟨m, S, hS, hz, rfl⟩ := mem_gaussianGraphicalModel_iff.mp hP
+  intro i j hij hadj
+  exact (condIndepCoords_gaussianCoords_iff_precisionMatrix_eq_zero m hS hij).mpr
+    (hz i j hij hadj)
 
 /-- **The definition and the parametrisation agree** (Lauritzen §5.2, p. 131: "It follows from
 Proposition 5.2 that this is equivalent to assuming the quadratic interactions `k_{γμ}` to be
@@ -285,7 +326,11 @@ theorem multivariateGaussian_mem_gaussianGraphicalModel_iff_pairwise {G : Simple
     (hS : S.PosDef) :
     multivariateGaussian m S ∈ gaussianGraphicalModel G
       ↔ IsPairwiseMarkov G (CondIndepCoords (multivariateGaussian m S) gaussianCoords) := by
-  sorry
+  rw [multivariateGaussian_mem_gaussianGraphicalModel_iff m hS]
+  exact ⟨fun hz i j hij hadj =>
+      (condIndepCoords_gaussianCoords_iff_precisionMatrix_eq_zero m hS hij).mpr (hz i j hij hadj),
+    fun hM i j hij hadj =>
+      (condIndepCoords_gaussianCoords_iff_precisionMatrix_eq_zero m hS hij).mp (hM i j hij hadj)⟩
 
 /-! ### Lauritzen Proposition 3.1 at the Gaussian — the graphoid instance
 
@@ -373,7 +418,14 @@ theorem isGraphoid_condIndepCoords_multivariateGaussian
     -- p. 29, and §5.2, p. 131
     (hS : S.PosDef) :
     IsGraphoid (CondIndepCoords (multivariateGaussian m S) gaussianCoords) := by
-  sorry
+  refine ⟨⟨fun _ _ _ h => h.symm, fun _ _ _ _ _ h =>
+      CondIndepCoords.decomposition Finset.subset_union_left h, ?_, ?_⟩, ?_⟩
+  · intro A B D C hAB hAC hAD hBC hBD hCD h
+    exact condIndepCoords_weakUnion_of_disjoint m hS hAB hAC hAD hBC hBD hCD h
+  · intro A B D C hAB hAC hAD hBC hBD hCD h₁ h₂
+    exact condIndepCoords_contraction_of_disjoint m hS hAB hAC hAD hBC hBD hCD h₁ h₂
+  · intro A B D C hAB hAC hAD hBC hBD hCD h₁ h₂
+    exact condIndepCoords_intersection_of_disjoint m hS hAB hAC hAD hBC hBD hCD h₁ h₂
 
 /-- **The global Markov property** (Lauritzen §3.2, p. 32, property (G); §5.2, p. 131: "Since the
 density is positive and continuous, this implies the global and local Markov properties"), as an
@@ -391,7 +443,10 @@ theorem isGlobalMarkov_of_mem_gaussianGraphicalModel {G : SimpleGraph ι}
     -- USER-INPUT: a law of the covariance selection model; Lauritzen §5.2, p. 131
     (hP : P ∈ gaussianGraphicalModel G) :
     IsGlobalMarkov G (CondIndepCoords P gaussianCoords) := by
-  sorry
+  obtain ⟨m, S, hS, hz, rfl⟩ := mem_gaussianGraphicalModel_iff.mp hP
+  exact pairwiseMarkov_implies_globalMarkov G
+    (isGraphoid_condIndepCoords_multivariateGaussian m hS)
+    (isPairwiseMarkov_of_mem_gaussianGraphicalModel hP)
 
 /-- **The local Markov property** (Lauritzen §3.2, p. 32, property (L)):
 `Y_γ ⫫ Y_{Γ∖cl(γ)} ∣ Y_{bd(γ)}`, as an instance of `Undirected.Markov.IsLocalMarkov`.
@@ -405,8 +460,8 @@ theorem isLocalMarkov_of_mem_gaussianGraphicalModel {G : SimpleGraph ι}
     [DecidableRel G.Adj] {P : Measure (EuclideanSpace ℝ ι)}
     -- USER-INPUT: a law of the covariance selection model; Lauritzen §5.2, p. 131
     (hP : P ∈ gaussianGraphicalModel G) :
-    IsLocalMarkov G (CondIndepCoords P gaussianCoords) := by
-  sorry
+    IsLocalMarkov G (CondIndepCoords P gaussianCoords) :=
+  globalMarkov_implies_localMarkov G (isGlobalMarkov_of_mem_gaussianGraphicalModel hP)
 
 end MarkovProperties
 
