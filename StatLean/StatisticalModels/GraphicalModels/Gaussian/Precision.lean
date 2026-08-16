@@ -27,6 +27,12 @@ all the others is **exactly** a vanishing entry of the inverse covariance matrix
   the cross-concentration vanishes;
 * `gaussianCoords` — the coordinate random vector `(Y_γ)_{γ ∈ ι}` on `EuclideanSpace ℝ ι`, the
   carrier that lets `CondIndepCoords` speak about a Gaussian law;
+* `precisionMatrix_submatrix_inr_inr` and its `Finset` form
+  `precisionMatrix_principalSubmatrix_apply_of_row_eq_zero` — the **dual of (C.3)**:
+  marginalising a block replaces `K` by its Schur complement, and a row of `K` that already
+  vanishes on the deleted block survives marginalisation unchanged. This is what lets a
+  conditional independence read on one index block be compared with one read on a smaller
+  block, and it is the extra ingredient contraction (C4) needs;
 * **`condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero` (HEADLINE, Lauritzen
   Proposition 5.2 in block form)**: for `Σ` regular and **pairwise disjoint** blocks `A`, `B`,
   `C` with union `E`, `Y_A ⫫ Y_B ∣ Y_C ⟺ (K^E)_{AB} = 0`, where `K^E = (Σ_E)⁻¹` is the
@@ -951,5 +957,140 @@ theorem condIndepCoords_gaussianCoords_iff_precisionMatrix_eq_zero
     exact h
 
 end Proposition52
+
+section Marginalisation
+
+/-! ### Marginalisation is Schur complementation of the concentration matrix
+
+The dual of Lauritzen (C.3). (C.3) says the concentration matrix of a **conditional** law is a
+*principal submatrix* of the joint concentration matrix (delete the rows and columns of the
+conditioned-on variables). Applying it to `K` in place of `Σ` gives the companion statement for
+**marginal** laws: the concentration matrix of a marginal is a *Schur complement* of the joint
+concentration matrix. The two together are what make the graphoid axioms of `Gaussian.Model`
+provable — the block form of Proposition 5.2 reads a conditional independence off `K^E` for the
+block `E` carrying the statement, and contraction (C4) is the one axiom whose two premises live
+on *different* blocks, so it needs to compare `K^E` with `K^{E''}` for `E'' ⊆ E`. -/
+
+variable {κ₁ κ₂ : Type*} [Fintype κ₁] [Fintype κ₂] [DecidableEq κ₁] [DecidableEq κ₂]
+
+/-- **Marginalisation is Schur complementation of the concentration matrix** — the dual of
+Lauritzen (C.3), and its immediate consequence: apply
+`submatrix_precisionMatrix_fromBlocks_inr_inr` to `K = Σ⁻¹` instead of to `Σ`, and use
+`precisionMatrix_precisionMatrix` to turn `K⁻¹` back into `Σ`.
+
+In words: deleting the `κ₁` block from a regular joint law replaces `K` by
+`K₂₂ − K₂₁K₁₁⁻¹K₁₂`, the Schur complement of its `κ₁` block. -/
+theorem precisionMatrix_submatrix_inr_inr {M : Matrix (κ₁ ⊕ κ₂) (κ₁ ⊕ κ₂) ℝ}
+    -- USER-INPUT: `Σ` regular; Lauritzen App. C
+    (hM : M.PosDef) :
+    precisionMatrix (M.submatrix Sum.inr Sum.inr)
+      = condCovMatrix ((precisionMatrix M).submatrix Sum.inl Sum.inl)
+          ((precisionMatrix M).submatrix Sum.inl Sum.inr)
+          ((precisionMatrix M).submatrix Sum.inr Sum.inr) := by
+  have hKpd : (precisionMatrix M).PosDef := precisionMatrix_posDef hM
+  set K₁₁ := (precisionMatrix M).submatrix Sum.inl Sum.inl with hK₁₁
+  set K₁₂ := (precisionMatrix M).submatrix Sum.inl Sum.inr with hK₁₂
+  set K₂₂ := (precisionMatrix M).submatrix Sum.inr Sum.inr with hK₂₂
+  have hKb : precisionMatrix M = Matrix.fromBlocks K₁₁ K₁₂ K₁₂ᵀ K₂₂ :=
+    eq_fromBlocks_of_posDef hKpd
+  have hKJ : (Matrix.fromBlocks K₁₁ K₁₂ K₁₂ᵀ K₂₂).PosDef := hKb ▸ hKpd
+  have h1 := submatrix_precisionMatrix_fromBlocks_inr_inr K₁₁ K₁₂ K₂₂ hKJ
+  rw [← hKb, precisionMatrix_precisionMatrix hM] at h1
+  rw [h1, precisionMatrix_def, Matrix.nonsing_inv_nonsing_inv _
+    ((Matrix.isUnit_iff_isUnit_det _).mp (posDef_condCovMatrix hKJ).isUnit)]
+
+/-- **A zero row survives marginalisation.** If row `a` of the joint concentration matrix
+vanishes on the block about to be deleted, then the whole of row `a` is unchanged by the
+deletion: the Schur correction term `K₂₁K₁₁⁻¹K₁₂` has a zero row at `a`.
+
+This is the step that makes contraction (C4) work: its first premise `(K^E)_{AB} = 0` is
+*exactly* the hypothesis that kills the correction term produced by deleting `B`. -/
+theorem precisionMatrix_submatrix_apply_of_row_eq_zero {M : Matrix (κ₁ ⊕ κ₂) (κ₁ ⊕ κ₂) ℝ}
+    -- USER-INPUT: `Σ` regular; Lauritzen App. C
+    (hM : M.PosDef) {a : κ₂}
+    -- USER-INPUT: row `a` of `K` vanishes on the deleted block
+    (hzero : ∀ b : κ₁, precisionMatrix M (Sum.inr a) (Sum.inl b) = 0) (x : κ₂) :
+    precisionMatrix (M.submatrix Sum.inr Sum.inr) a x
+      = precisionMatrix M (Sum.inr a) (Sum.inr x) := by
+  rw [precisionMatrix_submatrix_inr_inr hM, condCovMatrix]
+  have hrow : ∀ y : κ₁, (((precisionMatrix M).submatrix Sum.inl Sum.inr)ᵀ
+      * ((precisionMatrix M).submatrix Sum.inl Sum.inl)⁻¹) a y = 0 := by
+    intro y
+    rw [Matrix.mul_apply]
+    refine Finset.sum_eq_zero fun b _ => ?_
+    have hb : ((precisionMatrix M).submatrix Sum.inl Sum.inr)ᵀ a b = 0 := by
+      have hsymm : precisionMatrix M (Sum.inl b) (Sum.inr a)
+          = precisionMatrix M (Sum.inr a) (Sum.inl b) :=
+        precisionMatrix_apply_comm hM _ _
+      simpa [Matrix.transpose_apply, hsymm] using hzero b
+    rw [hb, zero_mul]
+  have hcorr : (((precisionMatrix M).submatrix Sum.inl Sum.inr)ᵀ
+      * ((precisionMatrix M).submatrix Sum.inl Sum.inl)⁻¹
+      * ((precisionMatrix M).submatrix Sum.inl Sum.inr)) a x = 0 := by
+    rw [Matrix.mul_apply]
+    exact Finset.sum_eq_zero fun y _ => by rw [hrow y, zero_mul]
+  simp only [Matrix.sub_apply, hcorr, sub_zero, Matrix.submatrix_apply]
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- LEAN-ONLY corridor: a sub-block and its relative complement split a `Finset`, with the
+**deleted** block first (matching the orientation of `precisionMatrix_submatrix_inr_inr`). Built
+from subtype coercions, so the induced submatrix identities are `rfl`. -/
+private noncomputable def sdiffSplit {F E : Finset ι} (hFE : F ⊆ E) : ↥(E \ F) ⊕ ↥F ≃ ↥E := by
+  refine Equiv.ofBijective
+    (Sum.elim (fun x : ↥(E \ F) => (⟨(x : ι), (Finset.mem_sdiff.mp x.2).1⟩ : ↥E))
+      (fun x : ↥F => (⟨(x : ι), hFE x.2⟩ : ↥E))) ⟨?_, ?_⟩
+  · rintro (x | x) (y | y) h <;> simp only [Sum.elim_inl, Sum.elim_inr, Subtype.mk.injEq] at h
+    · exact congrArg Sum.inl (Subtype.ext h)
+    · exact absurd (h ▸ y.2) (Finset.mem_sdiff.mp x.2).2
+    · exact absurd (h ▸ x.2) (Finset.mem_sdiff.mp y.2).2
+    · exact congrArg Sum.inr (Subtype.ext h)
+  · rintro ⟨y, hy⟩
+    by_cases h : y ∈ F
+    · exact ⟨Sum.inr ⟨y, h⟩, rfl⟩
+    · exact ⟨Sum.inl ⟨y, Finset.mem_sdiff.mpr ⟨hy, h⟩⟩, rfl⟩
+
+/-- **A zero row survives marginalisation, at index blocks.** The `Finset` form of
+`precisionMatrix_submatrix_apply_of_row_eq_zero`: if row `a` of `K^E` vanishes outside a
+sub-block `F ⊆ E`, then `K^F` and `K^E` agree on the whole of row `a`.
+
+This is what links the two premises of contraction (C4), which live on the different blocks
+`E = A ∪ B ∪ C ∪ D` and `F = A ∪ C ∪ D`. -/
+theorem precisionMatrix_principalSubmatrix_apply_of_row_eq_zero {S : Matrix ι ι ℝ}
+    -- USER-INPUT: `Σ` regular; Lauritzen §5.1.3, p. 129
+    (hS : S.PosDef) {F E : Finset ι}
+    -- USER-INPUT: the surviving block sits inside the ambient one
+    (hFE : F ⊆ E) {a : ι} (ha : a ∈ F)
+    -- USER-INPUT: row `a` of `K^E` vanishes on the deleted part `E ∖ F`
+    (hzero : ∀ b : ↥E, (b : ι) ∉ F →
+      precisionMatrix (principalSubmatrix S E) ⟨a, hFE ha⟩ b = 0)
+    {x : ι} (hx : x ∈ F) :
+    precisionMatrix (principalSubmatrix S F) ⟨a, ha⟩ ⟨x, hx⟩
+      = precisionMatrix (principalSubmatrix S E) ⟨a, hFE ha⟩ ⟨x, hFE hx⟩ := by
+  classical
+  set ep := sdiffSplit hFE with hepdef
+  have hSE : (principalSubmatrix S E).PosDef :=
+    posDef_submatrix_of_injective hS (fun p q h => Subtype.ext h)
+  set M := (principalSubmatrix S E).submatrix ep ep with hMdef
+  have hM : M.PosDef := posDef_submatrix_of_injective hSE ep.injective
+  have hentry : ∀ p q, precisionMatrix M p q
+      = precisionMatrix (principalSubmatrix S E) (ep p) (ep q) := by
+    intro p q
+    rw [hMdef, precisionMatrix_def, Matrix.inv_submatrix_equiv]
+    rfl
+  have hMsub : M.submatrix Sum.inr Sum.inr = principalSubmatrix S F := rfl
+  have hrow : ∀ b : ↥(E \ F), precisionMatrix M (Sum.inr ⟨a, ha⟩) (Sum.inl b) = 0 := by
+    intro b
+    rw [hentry]
+    have h1 : ep (Sum.inr ⟨a, ha⟩) = (⟨a, hFE ha⟩ : ↥E) := Subtype.ext rfl
+    rw [h1]
+    exact hzero _ (Finset.mem_sdiff.mp b.2).2
+  have hstep := precisionMatrix_submatrix_apply_of_row_eq_zero hM hrow (⟨x, hx⟩ : ↥F)
+  rw [hMsub, hentry] at hstep
+  have h1 : ep (Sum.inr ⟨a, ha⟩) = (⟨a, hFE ha⟩ : ↥E) := Subtype.ext rfl
+  have h2 : ep (Sum.inr ⟨x, hx⟩) = (⟨x, hFE hx⟩ : ↥E) := Subtype.ext rfl
+  rw [hstep, h1, h2]
+
+end Marginalisation
 
 end StatLean.StatisticalModels.GraphicalModels
