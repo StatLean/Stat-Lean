@@ -116,7 +116,7 @@ rewriting in between.
 | the feasibility witness `Σ = 1` | `Matrix.PosDef.one`, `Matrix.inv_one`, `Matrix.one_apply_ne` |
 | graph extensionality for `SeparatesTarget` | `SimpleGraph.ext` on `Adj` (the diagonal is covered by `SimpleGraph.irrefl`) |
 | (C1) symmetry, (C2) decomposition of the Gaussian relation | `CondIndepCoords.symm`, `CondIndepCoords.decomposition` (`Core.Coordinates`) — already available, do **not** re-prove |
-| (C3), (C4), (C5) for the Gaussian relation | the three named sub-lemmas of this file; (C5) is Lauritzen Proposition 3.1, p. 29. The pin has no Lebesgue-density lemma for `multivariateGaussian`, so the intended route is block-splitting rather than the book's density argument: reduce to `multivariateGaussian_fromBlocks_prod` (G2.9) on the reindexed sum space, where the premises force the relevant off-diagonal covariance blocks to vanish simultaneously |
+| (C3), (C4), (C5) for the Gaussian relation | the three named sub-lemmas of this file; (C5) is Lauritzen Proposition 3.1, p. 29. The pin has no Lebesgue-density lemma for `multivariateGaussian`, so the intended route is block-splitting rather than the book's density argument: reduce to `multivariateGaussian_fromBlocks_prod` (G2.9) on the reindexed sum space, where the premises force the relevant off-diagonal *concentration* blocks to vanish. **Still open**, and all three wait on one brick — the block form (†) of Proposition 5.2 at general disjoint blocks, which `Gaussian.Precision` does not state; (C4) additionally needs a Schur-marginalisation lemma, since its two premises live on *different* index blocks. See the section docstring of "Lauritzen Proposition 3.1 at the Gaussian" below for the full reduction |
 | (G) ⇒ (L), (L) ⇒ (P), (G) ⇒ (P) | `Undirected.Markov.globalMarkov_implies_localMarkov`, `localMarkov_implies_pairwiseMarkov`, `globalMarkov_implies_pairwiseMarkov` — Lauritzen Proposition 3.4; **never** re-derive the hierarchy per model class |
 | (P) ⇒ (G) | `Undirected.Markov.pairwiseMarkov_implies_globalMarkov` (Theorem 3.7, Pearl–Paz) fed by `isGraphoid_condIndepCoords_multivariateGaussian` — this is the whole content of "since the density is positive and continuous, this implies the global and local Markov properties" |
 
@@ -337,14 +337,64 @@ theorem multivariateGaussian_mem_gaussianGraphicalModel_iff_pairwise {G : Simple
 The Gaussian's contribution to the `Core.Semigraphoid` abstraction. (C1) and (C2) are already
 available as `CondIndepCoords.symm` and `CondIndepCoords.decomposition`; the three sub-lemmas
 below are the genuine debts, kept named rather than buried inside the instance so that the gap
-structure stays visible. All three carry the book's pairwise disjointness of the blocks. -/
+structure stays visible. All three carry the book's pairwise disjointness of the blocks.
+
+### The reduction, and the one brick all three wait on
+
+Write `K^E := (Σ_E)⁻¹` for the concentration matrix of the **principal submatrix** of `Σ` on a
+block `E ⊆ Γ` — equivalently of the marginal law of `Y_E`, a Gaussian marginal being the
+principal submatrix (`multivariateGaussian_map_blockFst`). The block form of Proposition 5.2
+reads
+
+`Y_A ⫫ Y_B ∣ Y_C  ⟺  (K^{A ∪ B ∪ C})_{AB} = 0`   (†)
+
+for pairwise disjoint `A`, `B`, `C`: conditioning on `Y_C` leaves `(Y_A, Y_B)` jointly normal
+with covariance the Schur complement `Σ_{AB} − Σ_{AB,C}Σ_{CC}⁻¹Σ_{C,AB}`; two blocks of a regular
+normal are independent iff that cross-block vanishes (Corollary C.6,
+`map_multivariateGaussian_fromBlocks_eq_prod_iff`), and (C.3)
+(`condCovMatrix_eq_inv_submatrix_precisionMatrix`) identifies the *inverse* of that Schur
+complement with the `A ∪ B` principal block of `K^{A ∪ B ∪ C}`, whose off-diagonal block vanishes
+exactly when the Schur complement's does.
+
+`Gaussian.Precision` states (†) only in the pairwise instance `A = {γ}`, `B = {μ}`,
+`C = Γ ∖ {γ, μ}` (`condIndepCoords_gaussianCoords_iff_precisionMatrix_eq_zero`), which is all
+that `isPairwiseMarkov_of_mem_gaussianGraphicalModel` needs. **(†) at general disjoint blocks is
+not available anywhere in the repo, and it is the single brick the three sub-lemmas below wait
+on.** It belongs next to Proposition 5.2 in `Gaussian.Precision` rather than here: its `⟹`
+direction needs essential uniqueness of the disintegration — identifying the anonymous kernels
+of `CondIndep` with the conditional laws — which is precisely the machinery Proposition 5.2's
+own `⟹` direction must build, and which `Core.CondIndep` declines to provide in general (see
+its module docstring). Re-deriving it here would duplicate that lane's hardest step.
+
+*Granted (†), the three sub-lemmas go as follows.* Every statement of (C3) and (C5), and the
+conclusion of (C4), lives on the **same** index block `E := A ∪ B ∪ C ∪ D`, since
+`A ∪ (B ∪ D) ∪ C = A ∪ B ∪ (C ∪ D) = E`.
+
+* **(C3)** is then pure bookkeeping: `(K^E)_{A, B ∪ D} = 0` gives `(K^E)_{AB} = 0`.
+* **(C5)** is pure bookkeeping too: its second premise's index block is `A ∪ D ∪ C ∪ B = E` as
+  well, so the two premises are `(K^E)_{AB} = 0` and `(K^E)_{AD} = 0`, which together *are* the
+  conclusion `(K^E)_{A, B ∪ D} = 0`.
+* **(C4) is not bookkeeping**, and the route table's "the premises force the relevant
+  off-diagonal covariance blocks to vanish simultaneously" understates it: the second premise
+  `Y_A ⫫ Y_D ∣ Y_C` lives on the strictly smaller block `A ∪ C ∪ D`, so it delivers
+  `(K^{A ∪ C ∪ D})_{AD} = 0` and **not** `(K^E)_{AD} = 0`. The two are linked by marginalisation:
+  deleting `B` from `E` replaces `K^E` by its Schur complement,
+  `K^{A ∪ C ∪ D} = (K^E)_{ACD} − (K^E)_{ACD,B}((K^E)_{BB})⁻¹(K^E)_{B,ACD}`, whose `(A, D)` entry
+  is `(K^E)_{AD} − (K^E)_{AB}((K^E)_{BB})⁻¹(K^E)_{BD}`. The *first* premise `(K^E)_{AB} = 0`
+  kills the correction term, so `(K^E)_{AD} = (K^{A ∪ C ∪ D})_{AD} = 0`. Hence (C4) needs (†)
+  **and** one Schur-marginalisation lemma, and it is the only one of the three whose two
+  premises genuinely interact at the matrix level. -/
 
 /-- **(C3), weak union, for the Gaussian** (Lauritzen §3.1, p. 29): `X_A ⫫ (X_B, X_D) ∣ X_C`
 implies `X_A ⫫ X_B ∣ (X_C, X_D)`.
 
 `Core.CondIndep` deliberately proves only (C1)–(C2) in full generality — weak union needs
 essential uniqueness of disintegrations — so the Gaussian supplies this itself, by block
-splitting rather than through the general calculus. -/
+splitting rather than through the general calculus.
+
+*Open.* Blocked on the block form (†) of Proposition 5.2; see the section docstring. Granted (†),
+this is bookkeeping only: premise and conclusion live on the same index block
+`A ∪ B ∪ C ∪ D` and read `(K^E)_{A, B ∪ D} = 0` and `(K^E)_{AB} = 0`. -/
 theorem condIndepCoords_weakUnion_of_disjoint
     (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ}
     -- USER-INPUT: `Σ` regular; Lauritzen §5.2, p. 131
@@ -358,7 +408,12 @@ theorem condIndepCoords_weakUnion_of_disjoint
   sorry
 
 /-- **(C4), contraction, for the Gaussian** (Lauritzen §3.1, p. 29): `X_A ⫫ X_B ∣ (X_C, X_D)`
-together with `X_A ⫫ X_D ∣ X_C` implies `X_A ⫫ (X_B, X_D) ∣ X_C`. -/
+together with `X_A ⫫ X_D ∣ X_C` implies `X_A ⫫ (X_B, X_D) ∣ X_C`.
+
+*Open.* Blocked on the block form (†) of Proposition 5.2 **and** on one Schur-marginalisation
+lemma; see the section docstring. This is the only one of the three whose two premises interact:
+the second lives on the strictly smaller index block `A ∪ C ∪ D`, and it is the first premise
+`(K^E)_{AB} = 0` that kills the correction term produced by deleting `B`. -/
 theorem condIndepCoords_contraction_of_disjoint
     (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ}
     -- USER-INPUT: `Σ` regular; Lauritzen §5.2, p. 131
@@ -384,7 +439,13 @@ for **pairwise disjoint** blocks. Two hypotheses do real work and neither is rem
 disjointness is Lauritzen's own standing convention — see the module docstring for the
 `B = D`, `C = ∅` counterexample that makes it constitutive. Regularity is what supplies the
 positive density: (C5) fails outright for a degenerate law, by Lauritzen's `X = Y = Z`
-counterexample on p. 30. -/
+counterexample on p. 30.
+
+*Open.* Blocked on the block form (†) of Proposition 5.2; see the section docstring. Granted (†),
+this is bookkeeping only: both premises live on the same index block `E := A ∪ B ∪ C ∪ D` (the
+second because `A ∪ D ∪ C ∪ B = E`) and read `(K^E)_{AB} = 0`, `(K^E)_{AD} = 0`, which together
+are the conclusion. Note where the regularity actually enters on this route: it is `Σ.PosDef`
+that makes `K^E` exist at all, which is the matrix shadow of "the density is positive". -/
 theorem condIndepCoords_intersection_of_disjoint
     (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ}
     -- USER-INPUT: `Σ` regular — this is what makes the density positive and continuous;
