@@ -343,6 +343,20 @@ theorem CondIndepMass.decomposition {p : (V → α) → ℝ≥0∞} {A B C D : F
   refine Finset.sum_congr rfl fun b _ => ?_
   rw [← hoff C b hTC, h _, hoff (A ∪ C) b hTAC]
 
+/-- The single `ℝ≥0∞` cancellation shared by (C3) and (C4): from `a·b = c·d` and `c·e = f·b`,
+divide out the invertible `b` to get `a·e = f·d`. (C3) and (C4) are *the same* algebraic step,
+run in opposite directions — (C4) cancels the marginal on `C ∪ D` and (C3) the one on `C` — so
+they are both instances of this lemma. Not part of the frozen interface: a private helper. -/
+private theorem mul_cancel_cross {a b c d e f : ℝ≥0∞} (hb0 : b ≠ 0) (hbt : b ≠ ∞)
+    (H₁ : a * b = c * d) (H₂ : c * e = f * b) :
+    a * e = f * d := by
+  refine (ENNReal.mul_left_inj hb0 hbt).mp ?_
+  calc a * e * b = a * b * e := by ring
+    _ = c * d * e := by rw [H₁]
+    _ = c * e * d := by ring
+    _ = f * b * d := by rw [H₂]
+    _ = f * d * b := by ring
+
 /-- **(C3), weak union** (Lauritzen p. 29; Pearl's *weak union*): a discarded sub-block may be
 moved into the conditioning set.
 
@@ -362,7 +376,27 @@ theorem CondIndepMass.weakUnion {p : (V → α) → ℝ≥0∞} {A B C D : Finse
     -- USER-INPUT: the independence to be weakened; Lauritzen §3.1 (C3), p. 29
     (h : CondIndepMass p A (B ∪ D) C) :
     CondIndepMass p A B (C ∪ D) := by
-  sorry
+  intro x
+  have hs1 : A ∪ (B ∪ D) ∪ C = A ∪ B ∪ (C ∪ D) := by
+    ext v; simp only [Finset.mem_union]; tauto
+  have hs2 : B ∪ D ∪ C = B ∪ (C ∪ D) := by
+    ext v; simp only [Finset.mem_union]; tauto
+  have hs3 : A ∪ D ∪ C = A ∪ (C ∪ D) := by
+    ext v; simp only [Finset.mem_union]; tauto
+  -- (C2) at the blocks `A`, `D`, `C`, discarding `B`: this is where `Disjoint A B` is used.
+  have h' : CondIndepMass p A (D ∪ B) C := by rwa [Finset.union_comm D B]
+  have H₂ := CondIndepMass.decomposition hAB h' x
+  rw [hs3, Finset.union_comm D C] at H₂
+  have H₁ := h x
+  rw [hs1, hs2] at H₁
+  by_cases hz : blockMarginal C p x = 0
+  · have z1 : blockMarginal (C ∪ D) p x = 0 :=
+      blockMarginal_eq_zero_of_subset p x Finset.subset_union_left hz
+    have z2 : blockMarginal (A ∪ (C ∪ D)) p x = 0 :=
+      blockMarginal_eq_zero_of_subset p x
+        (Finset.subset_union_left.trans Finset.subset_union_right) hz
+    rw [z1, z2, mul_zero, zero_mul]
+  · exact mul_cancel_cross hz (blockMarginal_ne_top _ _ hp) H₁ H₂.symm
 
 /-- **(C4), contraction** (Lauritzen p. 29; Pearl's *contraction*): independence given a larger
 conditioning set, together with independence of the extra block given the smaller one,
@@ -382,7 +416,24 @@ theorem CondIndepMass.contraction {p : (V → α) → ℝ≥0∞} {A B C D : Fin
     -- USER-INPUT: independence of the extra block given the smaller one; Lauritzen §3.1 (C4)
     (h₂ : CondIndepMass p A D C) :
     CondIndepMass p A (B ∪ D) C := by
-  sorry
+  intro x
+  have hs1 : A ∪ (B ∪ D) ∪ C = A ∪ B ∪ (C ∪ D) := by
+    ext v; simp only [Finset.mem_union]; tauto
+  have hs2 : B ∪ D ∪ C = B ∪ (C ∪ D) := by
+    ext v; simp only [Finset.mem_union]; tauto
+  have hs3 : A ∪ D ∪ C = A ∪ (C ∪ D) := by
+    ext v; simp only [Finset.mem_union]; tauto
+  rw [hs1, hs2]
+  have H₁ := h₁ x
+  have H₂ := h₂ x
+  rw [hs3, Finset.union_comm D C] at H₂
+  by_cases hz : blockMarginal (C ∪ D) p x = 0
+  · have z1 : blockMarginal (A ∪ B ∪ (C ∪ D)) p x = 0 :=
+      blockMarginal_eq_zero_of_subset p x Finset.subset_union_right hz
+    have z2 : blockMarginal (B ∪ (C ∪ D)) p x = 0 :=
+      blockMarginal_eq_zero_of_subset p x Finset.subset_union_right hz
+    rw [z1, z2, zero_mul, mul_zero]
+  · exact mul_cancel_cross hz (blockMarginal_ne_top _ _ hp) H₁ H₂
 
 /-- **(C5), intersection, under strict positivity** — Lauritzen **Proposition 3.1**, p. 29.
 
@@ -428,7 +479,10 @@ theorem isSemigraphoid_condIndepMass {p : (V → α) → ℝ≥0∞}
     -- for Lauritzen, whose `f` is a density
     (hp : ∀ y, p y ≠ ∞) :
     IsSemigraphoid (CondIndepMass p) := by
-  sorry
+  exact ⟨fun _ _ _ h => h.symm,
+    fun _ _ hAD _ _ h => CondIndepMass.decomposition hAD h,
+    fun hAB _ _ _ _ _ h => CondIndepMass.weakUnion hp hAB h,
+    fun _ _ _ _ _ _ h₁ h₂ => CondIndepMass.contraction hp h₁ h₂⟩
 
 /-- **Lauritzen Proposition 3.1**, p. 29: a strictly positive (and, on a discrete space,
 automatically continuous — Lauritzen p. 28) mass function satisfies (C5) as well, hence is a
@@ -441,7 +495,9 @@ theorem isGraphoid_condIndepMass_of_pos {p : (V → α) → ℝ≥0∞}
     -- USER-INPUT: strict positivity — the hypothesis of Lauritzen Proposition 3.1, p. 29
     (hpos : ∀ y, p y ≠ 0) :
     IsGraphoid (CondIndepMass p) := by
-  sorry
+  exact ⟨isSemigraphoid_condIndepMass hp,
+    fun hAB hAC hAD hBC hBD hCD h₁ h₂ =>
+      CondIndepMass.intersection hp hpos hAB hAC hAD hBC hBD hCD h₁ h₂⟩
 
 /-! ### The factorisation criterion (3.6) -/
 
@@ -469,7 +525,57 @@ theorem condIndepMass_of_exists_factorization {p : (V → α) → ℝ≥0∞} {A
     -- USER-INPUT: the factorisation itself; Lauritzen eq. (3.6), p. 29
     (hfac : ∀ x, blockMarginal (A ∪ B ∪ C) p x = h x * k x) :
     CondIndepMass p A B C := by
-  sorry
+  intro x
+  -- The three ways of writing the joint block, as they come out of the splitting identity.
+  have hs1 : A ∪ C ∪ B = A ∪ B ∪ C := by ext v; simp only [Finset.mem_union]; tauto
+  have hs2 : B ∪ C ∪ A = A ∪ B ∪ C := by ext v; simp only [Finset.mem_union]; tauto
+  have hs3 : C ∪ A ∪ B = A ∪ B ∪ C := by ext v; simp only [Finset.mem_union]; tauto
+  have hBAC : Disjoint B (A ∪ C) := Finset.disjoint_union_right.mpr ⟨hAB.symm, hBC⟩
+  have hABC : Disjoint A (B ∪ C) := Finset.disjoint_union_right.mpr ⟨hAB, hAC⟩
+  have hBCA : Disjoint B (C ∪ A) := Finset.disjoint_union_right.mpr ⟨hBC, hAB.symm⟩
+  -- A factor free of the updated block is constant along the sum.
+  have hoff : ∀ (f : (V → α) → ℝ≥0∞) (E T : Finset V), DependsOn f (E : Set V) →
+      Disjoint T E → ∀ (y : V → α) (b : ↥T → α),
+        f (Function.updateFinset (π := fun _ => α) y T b) = f y := by
+    intro f E T hf hTE y b
+    refine hf fun i hi => ?_
+    have hiT : i ∉ T := Finset.disjoint_right.mp hTE (by simpa using hi)
+    simp [Function.updateFinset, dif_neg hiT]
+  -- `k` sees the `B`-update but not the `A`-update underneath it.
+  have hk2 : ∀ (a : ↥A → α) (b : ↥B → α),
+      k (Function.updateFinset (π := fun _ => α)
+          (Function.updateFinset (π := fun _ => α) x A a) B b)
+        = k (Function.updateFinset (π := fun _ => α) x B b) := by
+    intro a b
+    refine hk fun i hi => ?_
+    simp only [Finset.coe_union, Set.mem_union, Finset.mem_coe] at hi
+    by_cases hiB : i ∈ B
+    · simp [Function.updateFinset, dif_pos hiB]
+    · have hiA : i ∉ A := Finset.disjoint_right.mp hAC (by tauto)
+      simp [Function.updateFinset, dif_neg hiB, dif_neg hiA]
+  -- Marginal on `A ∪ C`: sum the factorisation over `B`.
+  have eAC : blockMarginal (A ∪ C) p x
+      = h x * ∑ b : ↥B → α, k (Function.updateFinset (π := fun _ => α) x B b) := by
+    rw [blockMarginal_eq_sum_updateFinset p (A ∪ C) B x hBAC, hs1, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun b _ => by
+      rw [hfac _, hoff h (A ∪ C) B hh hBAC x b]
+  -- Marginal on `B ∪ C`: sum the factorisation over `A`.
+  have eBC : blockMarginal (B ∪ C) p x
+      = (∑ a : ↥A → α, h (Function.updateFinset (π := fun _ => α) x A a)) * k x := by
+    rw [blockMarginal_eq_sum_updateFinset p (B ∪ C) A x hABC, hs2, Finset.sum_mul]
+    exact Finset.sum_congr rfl fun a _ => by
+      rw [hfac _, hoff k (B ∪ C) A hk hABC x a]
+  -- Marginal on `C`: sum over `A`, then over `B`.
+  have eC : blockMarginal C p x
+      = (∑ a : ↥A → α, h (Function.updateFinset (π := fun _ => α) x A a))
+        * ∑ b : ↥B → α, k (Function.updateFinset (π := fun _ => α) x B b) := by
+    rw [blockMarginal_eq_sum_updateFinset p C A x hAC, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun a _ => ?_
+    rw [blockMarginal_eq_sum_updateFinset p (C ∪ A) B _ hBCA, hs3, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun b _ => ?_
+    rw [hfac _, hoff h (A ∪ C) B hh hBAC _ b, hk2 a b]
+  rw [hfac x, eC, eAC, eBC]
+  ring
 
 /-- **Lauritzen eq. (3.6)**, p. 29, as an equivalence: for a finite mass function,
 `X_A ⫫ X_B ∣ X_C` holds **iff** the joint marginal factors as `h(x_{A∪C}) · k(x_{B∪C})`.
