@@ -61,7 +61,25 @@ theorem factorLaw_eq_lmmLaw (P : FactorParams p q) (F : Measure (EuclideanSpace 
     -- `Measure.prod` are junk on both sides and the identity carries no content
     [SFinite F] [SFinite E] :
     factorLaw P F E = MixedEffects.lmmLaw (factorDesign P) P.μ F E := by
-  sorry
+  have hA : Measurable fun y : EuclideanSpace ℝ (Fin q) =>
+      Matrix.toEuclideanLin (𝕜 := ℝ) P.loading y :=
+    ((Matrix.toEuclideanLin (𝕜 := ℝ) P.loading).continuous_of_finiteDimensional).measurable
+  have hg : Measurable fun be : EuclideanSpace ℝ (Fin q) × EuclideanSpace ℝ (Fin p) =>
+      Matrix.toEuclideanLin (𝕜 := ℝ) (factorDesign P).X P.μ
+        + Matrix.toEuclideanLin (𝕜 := ℝ) (factorDesign P).Z be.1 + be.2 :=
+    ((hA.comp measurable_fst).const_add _).add measurable_snd
+  -- both sides are `∫⁻ y, E {z ∣ Λ y + μ + z ∈ s} ∂F`: `Measure.bind_apply` on the left,
+  -- `Measure.prod_apply` on the right; the integrands differ only by `add_comm`
+  ext s hs
+  rw [factorLaw, MixedEffects.lmmLaw,
+    Measure.bind_apply hs (Kernel.measurable _).aemeasurable,
+    Measure.map_apply hg hs, Measure.prod_apply (hg hs)]
+  refine lintegral_congr fun y => ?_
+  rw [measurementKernel_apply, Measure.map_apply (by fun_prop) hs]
+  congr 1
+  ext z
+  simp only [Set.mem_preimage, factorDesign_X, factorDesign_Z, toEuclideanLin_one_apply]
+  rw [add_comm (Matrix.toEuclideanLin (𝕜 := ℝ) P.loading y) P.μ]
 
 /-- **First moment** (`BKM` Eq. (3.3); `LW82` Eq. (1.2)): with centered latent and specific
 factors the observed mean is `μ`. Transported from `MixedEffects.meanVec_lmmLaw`. -/
@@ -73,7 +91,8 @@ theorem meanVec_factorLaw (P : FactorParams p q) (F : Measure (EuclideanSpace �
     -- USER-INPUT: first moments exist; BKM Eq. (3.3)
     (hF1 : Integrable id F) (hE1 : Integrable id E) :
     meanVec (factorLaw P F E) = P.μ := by
-  sorry
+  rw [factorLaw_eq_lmmLaw, MixedEffects.meanVec_lmmLaw (factorDesign P) P.μ F E hF hE hF1 hE1,
+    factorDesign_X, toEuclideanLin_one_apply]
 
 /-- **Second moment, latent form** (`LW82` Eq. (1.2) at `Z = Λ`): the observed covariance is
 `Λ · Cov(y) · Λᵀ + Cov(e)`, for **arbitrary** latent and error laws. This is
@@ -86,6 +105,7 @@ theorem covMatrix_factorLaw (P : FactorParams p q) (F : Measure (EuclideanSpace 
     (hF2 : MemLp id 2 F) (hE2 : MemLp id 2 E) :
     covMatrix (factorLaw P F E)
       = P.loading * covMatrix F * P.loadingᵀ + covMatrix E := by
-  sorry
+  rw [factorLaw_eq_lmmLaw, MixedEffects.covMatrix_lmmLaw (factorDesign P) P.μ F E hF2 hE2,
+    factorDesign_Z]
 
 end StatLean.StatisticalModels.FactorModels

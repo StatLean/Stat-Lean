@@ -68,7 +68,8 @@ theorem commonCovariance_diag_eq_communality (P : FactorParams p q)
     -- USER-INPUT: BKM's normalization y ∼ N_q(0, I); BKM Eq. (3.2)
     (hP : IsStandardized P) (i : Fin p) :
     commonCovariance P i i = communality P i := by
-  sorry
+  rw [commonCovariance_eq, hP, Matrix.mul_one, Matrix.mul_apply, communality]
+  exact Finset.sum_congr rfl fun k _ => by rw [Matrix.transpose_apply, sq]
 
 /-- **`BKM` Eq. (3.10) — the variance decomposition**: for standardized orthogonal factors,
 `var(xᵢ) = hᵢ² + ψᵢ`. -/
@@ -76,18 +77,18 @@ theorem variance_eq_communality_add_specificVariance (P : FactorParams p q)
     -- USER-INPUT: BKM's normalization y ∼ N_q(0, I); BKM Eq. (3.2)
     (hP : IsStandardized P) (i : Fin p) :
     factorCovariance P i i = communality P i + specificVariance P i := by
-  sorry
+  rw [variance_eq_common_add_specificVariance, commonCovariance_diag_eq_communality P hP]
 
 /-- Communalities are nonnegative (a sum of squares). -/
-theorem communality_nonneg (P : FactorParams p q) (i : Fin p) : 0 ≤ communality P i := by
-  sorry
+theorem communality_nonneg (P : FactorParams p q) (i : Fin p) : 0 ≤ communality P i :=
+  Finset.sum_nonneg fun _ _ => sq_nonneg _
 
 /-- Specific variances are nonnegative for a genuine `Ψ`. -/
 theorem specificVariance_nonneg (P : FactorParams p q)
     -- USER-INPUT: a genuine specific-factor covariance; BKM Eq. (3.1)
     (hΨ : P.uniqueCov.PosSemidef) (i : Fin p) :
-    0 ≤ specificVariance P i := by
-  sorry
+    0 ≤ specificVariance P i :=
+  hΨ.diag_nonneg
 
 /-- The communality never exceeds the variance it decomposes (`BKM` Eq. (3.10) with
 `ψᵢ ≥ 0`). -/
@@ -97,7 +98,8 @@ theorem communality_le_variance (P : FactorParams p q)
     -- USER-INPUT: a genuine specific-factor covariance; BKM Eq. (3.1)
     (hΨ : P.uniqueCov.PosSemidef) (i : Fin p) :
     communality P i ≤ factorCovariance P i i := by
-  sorry
+  rw [variance_eq_communality_add_specificVariance P hP i]
+  linarith [specificVariance_nonneg P hΨ i]
 
 /-- For **standardized observed variables** — the correlation-matrix scaling in which factor
 analysis is usually reported — the communality is at most `1`. -/
@@ -111,7 +113,8 @@ theorem communality_le_one (P : FactorParams p q)
     -- BKM §3.4
     (hSig : factorCovariance P i i = 1) :
     communality P i ≤ 1 := by
-  sorry
+  rw [← hSig]
+  exact communality_le_variance P hP hΨ i
 
 /-- The observed variance is the communality plus the specific variance, so the specific
 variance is determined by the other two — the "communality problem" of `BKM` §3.12.1 in
@@ -120,6 +123,7 @@ theorem specificVariance_eq_sub (P : FactorParams p q)
     -- USER-INPUT: BKM's normalization y ∼ N_q(0, I); BKM Eq. (3.2)
     (hP : IsStandardized P) (i : Fin p) :
     specificVariance P i = factorCovariance P i i - communality P i := by
-  sorry
+  rw [variance_eq_communality_add_specificVariance P hP i]
+  ring
 
 end StatLean.StatisticalModels.FactorModels
