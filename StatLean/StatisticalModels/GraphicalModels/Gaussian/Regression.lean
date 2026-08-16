@@ -31,9 +31,11 @@ coordinates.
 
 **Reference.** S. L. Lauritzen, *Graphical Models*, Oxford Statistical Science Series 17,
 Clarendon Press, Oxford, **1996 (first edition)**, §5.1.3, p. 130 (the conditional expectation
-display and `β_{γμ ∣ Γ∖{γ}} = −k_{γμ}/k_{γγ}`), deriving it from Appendix C, p. 256, identity
-(C.4) `K₁₁⁻¹K₁₂ = −Σ₁₂Σ₂₂⁻¹`, and Proposition C.5, p. 255 (`Lauritzen §5.1.3`,
-`Lauritzen App. C`).
+display and `β_{γμ ∣ Γ∖{γ}} = −k_{γμ}/k_{γγ}` — both **unnumbered**), deriving it from
+Appendix C, p. 256: Proposition C.5 and the identity (C.4) `K₁₁⁻¹K₁₂ = −Σ₁₂Σ₂₂⁻`
+(`Lauritzen §5.1.3`, `Lauritzen App. C`). Page numbers and item kinds follow
+`notes/factor_graphical/books.md`; on the generalized inverse `Σ₂₂⁻` versus `Σ₂₂⁻¹` see the
+module docstring of `Gaussian.Precision`.
 
 **Proof formalization notes.**
 
@@ -185,7 +187,7 @@ theorem condIndepCoords_gaussianCoords_iff_partialRegressionCoeff_eq_zero
     (hS : S.PosDef) {i j : ι}
     -- USER-INPUT: two distinct coordinates `γ ≠ μ`; Lauritzen Prop. 5.2, p. 129
     (hij : i ≠ j) :
-    CondIndepCoords (multivariateGaussian m S) gaussianCoords {i} {j} ({i, j} : Finset ι)ᶜ
+    CondIndepCoords (multivariateGaussian m S) gaussianCoords {i} {j} (Finset.univ \ {i, j})
       ↔ partialRegressionCoeff S i j = 0 := by
   sorry
 

@@ -37,7 +37,10 @@ whereas `+k_{12}/√(k_{11}k_{22})` would give its negative.
 Clarendon Press, Oxford, **1996 (first edition)**, §5.1.3, pp. 129–130: the identity
 `k_{γγ} = V(Y_γ ∣ Y_{Γ∖{γ}})⁻¹` (unnumbered, foot of p. 129), the definition of `c_{γμ}` and the
 partial correlation `ρ_{γμ ∣ Γ∖{γ,μ}} = −c_{γμ}` (unnumbered displays, p. 130), and the
-determinant identity (5.12) (`Lauritzen §5.1.3`).
+determinant identity **(5.12)**, p. 130 — the only *numbered* item of the three
+(`Lauritzen §5.1.3`). Page numbers and item kinds follow `notes/factor_graphical/books.md`,
+whose "sign trap" entry independently records that the partial correlation is *minus* the
+scaled precision entry.
 
 **Proof formalization notes.**
 
@@ -139,7 +142,7 @@ theorem condIndepCoords_gaussianCoords_iff_partialCorr_eq_zero
     (hS : S.PosDef) {i j : ι}
     -- USER-INPUT: two distinct coordinates `γ ≠ μ`; Lauritzen Prop. 5.2, p. 129
     (hij : i ≠ j) :
-    CondIndepCoords (multivariateGaussian m S) gaussianCoords {i} {j} ({i, j} : Finset ι)ᶜ
+    CondIndepCoords (multivariateGaussian m S) gaussianCoords {i} {j} (Finset.univ \ {i, j})
       ↔ partialCorr S i j = 0 := by
   sorry
 
@@ -235,9 +238,9 @@ theorem partialCorr_sq
     -- USER-INPUT: two distinct coordinates `γ ≠ μ`; Lauritzen (5.12), p. 130
     (hij : i ≠ j) :
     partialCorr S i j ^ 2
-      = 1 - (S.det * (principalSubmatrix S ({i, j} : Finset ι)ᶜ).det)
-            / ((principalSubmatrix S ({i} : Finset ι)ᶜ).det
-                * (principalSubmatrix S ({j} : Finset ι)ᶜ).det) := by
+      = 1 - (S.det * (principalSubmatrix S (Finset.univ \ {i, j})).det)
+            / ((principalSubmatrix S (Finset.univ \ {i})).det
+                * (principalSubmatrix S (Finset.univ \ {j})).det) := by
   sorry
 
 end Identity512

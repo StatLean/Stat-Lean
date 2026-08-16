@@ -32,9 +32,17 @@ all the others is **exactly** a vanishing entry of the inverse covariance matrix
 
 **Reference.** S. L. Lauritzen, *Graphical Models*, Oxford Statistical Science Series 17,
 Clarendon Press, Oxford, **1996 (first edition)**: §5.1.3 "Conditional independence", p. 129 —
-Proposition 5.2 and the displays (5.10), (5.11); Appendix C, pp. 255–257 — Proposition C.5 with
-(C.2), the identities (C.3) `K₁₁⁻¹ = Σ₁₁ − Σ₁₂Σ₂₂⁻¹Σ₂₁` and (C.4) `K₁₁⁻¹K₁₂ = −Σ₁₂Σ₂₂⁻¹`, the
-determinant identity (C.5), and Corollary C.6 (`Lauritzen §5.1.3`, `Lauritzen App. C`).
+Proposition 5.2 and the displays (5.10), (5.11); Appendix C, pp. 256–257 — Proposition C.5 with
+(C.2) and the identities (C.3) `K₁₁⁻¹ = Σ₁₁ − Σ₁₂Σ₂₂⁻Σ₂₁` and (C.4) `K₁₁⁻¹K₁₂ = −Σ₁₂Σ₂₂⁻` on
+p. 256, the determinant identity (C.5) and Corollary C.6 on p. 257
+(`Lauritzen §5.1.3`, `Lauritzen App. C`). Page numbers and item kinds follow
+`notes/factor_graphical/books.md`.
+
+*Generalized versus ordinary inverse.* Lauritzen writes `Σ₂₂⁻`, "an arbitrary generalized
+inverse", in (C.2)–(C.4), but his own proof of Proposition C.5 assumes `Σ` regular and then
+`Σ₂₂⁻ = Σ₂₂⁻¹`. We state the regular case only, matching both his proof and the standing
+hypothesis of §5.1.3; the pseudoinverse form is already a named future debt of the Gaussian
+slice (D-G1 in `Gaussian/Conditioning`).
 
 **Proof formalization notes.**
 
@@ -125,6 +133,10 @@ convention (5.12) needs when `Γ = {γ, μ}`. -/
 noncomputable def principalSubmatrix (S : Matrix ι ι ℝ) (A : Finset ι) : Matrix A A ℝ :=
   S.submatrix (fun a => (a : ι)) (fun a => (a : ι))
 
+end Defs
+
+section CoordinateVector
+
 /-- The **coordinate random vector** `Y = (Y_γ)_{γ ∈ ι}` on `EuclideanSpace ℝ ι` — the identity
 map, read through the `WithLp` type synonym as a function on the index set. This is the carrier
 that turns a Gaussian *measure* into the *random vector* `Y ∼ N_{|Γ|}(ξ, Σ)` of Lauritzen
@@ -138,7 +150,7 @@ theorem measurable_gaussianCoords {ι : Type*} :
     Measurable (gaussianCoords (ι := ι)) :=
   WithLp.measurable_ofLp 2 _
 
-end Defs
+end CoordinateVector
 
 section Basic
 
@@ -199,7 +211,7 @@ theorem posDef_submatrix_of_injective {n m : Type*} [Fintype n] [Fintype m]
     (M.submatrix f f).PosDef := by
   sorry
 
-variable {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
+variable {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂] [DecidableEq ι₁] [DecidableEq ι₂]
   {S₁₁ : Matrix ι₁ ι₁ ℝ} {S₁₂ : Matrix ι₁ ι₂ ℝ} {S₂₂ : Matrix ι₂ ι₂ ℝ}
 
 /-- LEAN-ONLY: the first diagonal block of a regular joint covariance is regular. Derived, not
@@ -221,7 +233,7 @@ theorem posDef_of_fromBlocks_inr
 /-- LEAN-ONLY: the Schur complement of a regular block covariance is regular — the conditional
 covariance of a regular joint normal is itself regular, which is what makes the conditional
 concentration matrix of (C.3) well defined. -/
-theorem posDef_condCovMatrix [DecidableEq ι₁] [DecidableEq ι₂]
+theorem posDef_condCovMatrix
     -- LEAN-ONLY: regular joint covariance; Lauritzen App. C, (C.3)
     (hJ : (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂).PosDef) :
     (condCovMatrix S₁₁ S₁₂ S₂₂).PosDef := by
@@ -233,10 +245,11 @@ section BlockIdentities
 
 variable {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂] [DecidableEq ι₁] [DecidableEq ι₂]
 
-/-- **Lauritzen (C.3), the conditional-concentration identity** (App. C, p. 257: "the
-concentration matrix of the conditional distribution is obtained from the concentration matrix
-of the joint distribution by deleting rows and columns corresponding to the variables
-conditioned upon"; the same matrix is `K_{\{γ,μ\}}` of Lauritzen (5.10), p. 129).
+/-- **Lauritzen (C.3), the conditional-concentration identity** (the equation is in the proof of
+Proposition C.5, App. C, p. 256; the reading quoted here — "the concentration matrix of the
+conditional distribution is obtained from the concentration matrix of the joint distribution by
+deleting rows and columns corresponding to the variables conditioned upon" — is the remark on
+p. 257). The same matrix is `K_{\{γ,μ\}}` of Lauritzen (5.10), p. 129.
 
 In the repo's orientation the conditioned-on block is `ι₁`, so "deleting the rows and columns of
 the conditioning variables" is the principal submatrix at `Sum.inr`. -/
@@ -258,7 +271,7 @@ theorem condCovMatrix_eq_inv_submatrix_precisionMatrix
       = ((precisionMatrix (Matrix.fromBlocks S₁₁ S₁₂ S₁₂ᵀ S₂₂)).submatrix Sum.inr Sum.inr)⁻¹ := by
   sorry
 
-/-- **Lauritzen (C.4)** (App. C, p. 256: `K₁₁⁻¹K₁₂ = −Σ₁₂Σ₂₂⁻¹`), transcribed with the blocks
+/-- **Lauritzen (C.4)** (App. C, p. 256: `K₁₁⁻¹K₁₂ = −Σ₁₂Σ₂₂⁻`), transcribed with the blocks
 swapped: the off-diagonal block of the concentration matrix, scaled by the conditional
 covariance, is minus the Gaussian regression matrix `condMeanMatrix S₁₁ S₁₂ = S₂₁S₁₁⁻¹`. This is
 the identity that `GraphicalModels.Gaussian.Regression` turns into `β_{γμ} = −k_{γμ}/k_{γγ}`. -/
@@ -320,14 +333,18 @@ to zero" (p. 129).
 The conditional independence is stated with the contracted `CondIndepCoords` of
 `Core.Coordinates` for the canonical coordinate vector `gaussianCoords` on the Gaussian's own
 sample space; see the module docstring for why law transfer is deliberately not assumed. The
-degenerate case `Γ = {γ, μ}` (empty conditioning block) is included and is Corollary C.6. -/
+degenerate case `Γ = {γ, μ}` (empty conditioning block) is included and is Corollary C.6.
+
+The conditioning block is written `Finset.univ \ {i, j}` rather than `({i, j} : Finset ι)ᶜ` so
+that this theorem lands **syntactically on the nose** of `Undirected.Markov.IsPairwiseMarkov`,
+which is how `Gaussian.Model` consumes it. -/
 theorem condIndepCoords_gaussianCoords_iff_precisionMatrix_eq_zero
     (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ}
     -- USER-INPUT: `Σ` regular; Lauritzen Prop. 5.2, p. 129
     (hS : S.PosDef) {i j : ι}
     -- USER-INPUT: two distinct coordinates `γ ≠ μ`; Lauritzen Prop. 5.2, p. 129
     (hij : i ≠ j) :
-    CondIndepCoords (multivariateGaussian m S) gaussianCoords {i} {j} ({i, j} : Finset ι)ᶜ
+    CondIndepCoords (multivariateGaussian m S) gaussianCoords {i} {j} (Finset.univ \ {i, j})
       ↔ precisionMatrix S i j = 0 := by
   sorry
 
