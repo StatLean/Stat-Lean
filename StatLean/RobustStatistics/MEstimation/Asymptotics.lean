@@ -262,7 +262,7 @@ private theorem norm_euclideanFin1 (y : EuclideanSpace ℝ (Fin 1)) : ‖y‖ = 
 private theorem continuous_packFin1 : Continuous packFin1 :=
   LipschitzWith.continuous (K := 1)
     (LipschitzWith.of_dist_le_mul fun a b => by
-      simp [packFin1, EuclideanSpace.dist_single_same])
+      simp [packFin1])
 
 /-- The coordinate functional as an inner product against `packFin1 1` — the form in which
 `multivariateGaussian_map_inner_eq_gaussianReal` identifies the one-dimensional marginal. -/
@@ -476,8 +476,9 @@ theorem huberLocation_asymptoticNormal
   have hJ00 : J 0 0 = huberAsymptoticVariance P c θ₀ := by
     have hinv : ∀ i j : Fin 1, (Matrix.of (fun _ _ : Fin 1 => -A))⁻¹ i j = (-A)⁻¹ := by
       intro i j
-      fin_cases i <;> fin_cases j <;>
-        simp [Matrix.det_fin_one, Matrix.adjugate_fin_one]
+      fin_cases i
+      fin_cases j
+      simp
     have hcov : EmpiricalProcess.psiCov P (huberPsiFin1 c) (packFin1 θ₀) 0 0
         = ∫ x, huberPsi c (x - θ₀) ^ 2 ∂P := by
       simp [EmpiricalProcess.psiCov, huberPsiFin1, sq]
