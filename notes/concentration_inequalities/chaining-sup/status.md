@@ -26,10 +26,15 @@ the tree/constants; plan at `~/.claude/plans/i-want-to-fix-eager-snail.md`.
 - [x] Wave 2b closure: tail 5/5 (96d553f8) ‖ discrete 7/7 (f3967c21) — both
       0-sorry fresh-verified, ZERO fallbacks
 - [x] Wave 2c closure: consumers 3/3 (35e598e3) — diff clean
-- [ ] Full verification gate: consumers fresh build; umbrella imports; full-lib
-      build on branch; `#print axioms` on all 54 decls
-- [ ] Merge to local main + full-lib gate on main
-- [ ] lean-fasrc-sync, worktree cleanup, memory write
+- [x] Full verification gate: consumers fresh build 0-sorry; umbrella imports
+      (fc845319); full-library build on branch GREEN — **9198 jobs, 0 errors,
+      0 sorries**; axiom audit **54/54 = {propext, Classical.choice,
+      Quot.sound}**, 0 sorryAx (srun `lake env lean AxiomAudit.lean`)
+- [x] Merged to local main **fa3fbb61** (2026-08-16); merge tree IDENTICAL to
+      the gated branch tip fc845319, so the full-lib gate carries over verbatim.
+      NOT pushed to origin/statlean (per user decision: local main only)
+- [x] lean-fasrc-sync (cannon/main updated), 8 cluster worktrees removed,
+      memory written
 
 Ops notes: laptop wrapper processes were killed mid-run repeatedly — every
 cluster session survived as an orphan and was harvested per
