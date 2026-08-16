@@ -311,7 +311,206 @@ theorem huberLocation_asymptoticNormal
     WeakConverges
       (fun n => μ.map (fun ξ => Real.sqrt n * (θhat n ξ - θ₀)))
       (ProbabilityTheory.gaussianReal 0 (Real.toNNReal (huberAsymptoticVariance P c θ₀))) := by
-  sorry
+  classical
+  -- ==========================================================================
+  -- (0) THE SINGLE DEBT OF THIS WAVE: a `ξ`-indexed restatement of the engine.
+  --
+  -- `AsymptoticStatistics.EmpiricalProcess.zEstimator_asymptotic_normality` (vdV Thm 5.21)
+  -- carries its estimator as `θ_hat : ∀ n, (Fin n → Ω) → EuclideanSpace ℝ (Fin k)` — i.e.
+  -- it *requires the estimator to factor through the sample*, and every occurrence in the
+  -- engine (and in `zEstimator_linear_representation`, `infinite_dim_z_estimator`,
+  -- `modifiedRandomFunction`, … down the whole chain) is the composite
+  -- `fun ξ => θ_hat n (fun i : Fin n => X i.val ξ)`. The frozen statement here carries
+  -- `θhat : ℕ → Ξ → ℝ`, an arbitrary sequence of statistics on the base space, which need
+  -- not be a measurable function of `(X₁,…,Xₙ)`; no such factorization is derivable from
+  -- the hypotheses. (The engine also fixes `Ξ : Type`, while this statement has
+  -- `Ξ : Type*`.) Below is exactly the generalization needed: the engine verbatim, with
+  -- the composite replaced by a `ξ`-indexed `Θhat`. Since the engine's proof only ever
+  -- uses the composite, this is a purely cosmetic generalization of the existing proof,
+  -- but it lives outside this wave's touch-set. EVERY OTHER INPUT BELOW IS PROVED.
+  -- ==========================================================================
+  have engine : ∀ (θE : EuclideanSpace ℝ (Fin 1)) (V : Matrix (Fin 1) (Fin 1) ℝ),
+      IsUnit V.det → ∀ δcls : ℝ, 0 < δcls →
+      ∀ m : ℝ → ℝ, MemLp m 2 P → Measurable m →
+      (∀ θ₁ : EuclideanSpace ℝ (Fin 1), ‖θ₁ - θE‖ < δcls →
+        ∀ θ₂ : EuclideanSpace ℝ (Fin 1), ‖θ₂ - θE‖ < δcls →
+        ∀ (j : Fin 1) (x : ℝ),
+          |huberPsiFin1 c θ₁ j x - huberPsiFin1 c θ₂ j x| ≤ m x * ‖θ₁ - θ₂‖) →
+      (∀ (θ : EuclideanSpace ℝ (Fin 1)) (j : Fin 1), Measurable (huberPsiFin1 c θ j)) →
+      (∀ h, ∫ x, huberPsiFin1 c θE h x ∂P = 0) →
+      (∀ ε > 0, ∃ δ > 0, ∀ θ : EuclideanSpace ℝ (Fin 1),
+        0 < ‖θ - θE‖ → ‖θ - θE‖ < δ →
+        (⨆ h, ENNReal.ofReal
+            |∫ x, huberPsiFin1 c θ h x ∂P - ∫ x, huberPsiFin1 c θE h x ∂P
+              - EmpiricalProcess.Vlin V (θ - θE) h|)
+          ≤ ENNReal.ofReal (ε * ‖θ - θE‖)) →
+      MemLp (EmpiricalProcess.psiVec (huberPsiFin1 c) θE) 2 P →
+      ∀ Θhat : ℕ → Ξ → EuclideanSpace ℝ (Fin 1), (∀ n, Measurable (Θhat n)) →
+      (∀ ε : ℝ, 0 < ε → Tendsto (fun n => μ {ξ | ε < ‖Θhat n ξ - θE‖}) atTop (𝓝 0)) →
+      EmpiricalProcess.TendstoZeroInOuterProbSup μ (fun n ξ h =>
+        Real.sqrt n * EmpiricalProcess.empiricalAvg (huberPsiFin1 c (Θhat n ξ) h) n
+          (fun i : Fin n => X i.val ξ)) →
+      WeakConverges (fun n => μ.map (fun ξ => Real.sqrt n • (Θhat n ξ - θE)))
+        (ProbabilityTheory.multivariateGaussian 0
+          (V⁻¹ * EmpiricalProcess.psiCov P (huberPsiFin1 c) θE * Matrix.transpose V⁻¹)) := by
+    sorry
+  -- ==========================================================================
+  -- (1) The `k = 1` data of the instantiation.
+  -- ==========================================================================
+  set A : ℝ := P.real {x | |x - θ₀| < c} with hA_def
+  have hA0 : A ≠ 0 := ne_of_gt hmass
+  have hcoord_sub : ∀ a b : ℝ, ‖packFin1 a - packFin1 b‖ = |a - b| := by
+    intro a b; rw [norm_euclideanFin1]; simp
+  -- The derivative matrix `V = [-A]` is nonsingular.
+  have hVdet : IsUnit (Matrix.of (fun _ _ : Fin 1 => -A)).det := by
+    rw [Matrix.det_fin_one]
+    exact isUnit_iff_ne_zero.mpr (by simpa using hA0)
+  -- Envelope: the packaged score is `1`-Lipschitz in the parameter, uniformly in `x`.
+  have hLip : ∀ θ₁ : EuclideanSpace ℝ (Fin 1), ‖θ₁ - packFin1 θ₀‖ < 1 →
+      ∀ θ₂ : EuclideanSpace ℝ (Fin 1), ‖θ₂ - packFin1 θ₀‖ < 1 →
+      ∀ (j : Fin 1) (x : ℝ),
+        |huberPsiFin1 c θ₁ j x - huberPsiFin1 c θ₂ j x| ≤ (fun _ : ℝ => (1 : ℝ)) x
+          * ‖θ₁ - θ₂‖ := by
+    intro θ₁ _ θ₂ _ j x
+    have h := (huberPsi_lipschitz c).dist_le_mul (x - θ₁ 0) (x - θ₂ 0)
+    simp only [Real.dist_eq, NNReal.coe_one, one_mul] at h
+    calc |huberPsiFin1 c θ₁ j x - huberPsiFin1 c θ₂ j x|
+        ≤ |x - θ₁ 0 - (x - θ₂ 0)| := h
+      _ = ‖θ₁ - θ₂‖ := by
+          rw [norm_euclideanFin1]
+          have h0 : (θ₁ - θ₂) 0 = θ₁ 0 - θ₂ 0 := by simp
+          rw [h0, show x - θ₁ 0 - (x - θ₂ 0) = -(θ₁ 0 - θ₂ 0) from by ring, abs_neg]
+      _ = (fun _ : ℝ => (1 : ℝ)) x * ‖θ₁ - θ₂‖ := (one_mul _).symm
+  have hψmeasE : ∀ (θ : EuclideanSpace ℝ (Fin 1)) (j : Fin 1),
+      Measurable (huberPsiFin1 c θ j) := fun θ j =>
+    (huberPsi_continuous c).measurable.comp (measurable_id.sub_const _)
+  have hrootE : ∀ h : Fin 1, ∫ x, huberPsiFin1 c (packFin1 θ₀) h x ∂P = 0 := by
+    intro h; simpa [huberPsiFin1] using hroot
+  -- ==========================================================================
+  -- (2) The Fréchet condition, from the derivative of the population score.
+  -- ==========================================================================
+  have hderiv := hasDerivAt_mLocationScore_huber_aux (P := P) hc h_atom_add h_atom_sub
+  have hfrechet : ∀ ε > 0, ∃ δ > 0, ∀ θ : EuclideanSpace ℝ (Fin 1),
+      0 < ‖θ - packFin1 θ₀‖ → ‖θ - packFin1 θ₀‖ < δ →
+      (⨆ h, ENNReal.ofReal
+          |∫ x, huberPsiFin1 c θ h x ∂P - ∫ x, huberPsiFin1 c (packFin1 θ₀) h x ∂P
+            - EmpiricalProcess.Vlin (Matrix.of (fun _ _ : Fin 1 => -A)) (θ - packFin1 θ₀) h|)
+        ≤ ENNReal.ofReal (ε * ‖θ - packFin1 θ₀‖) := by
+    intro ε hε
+    have hlo := Asymptotics.isLittleO_iff.mp (hasDerivAt_iff_isLittleO.mp hderiv) hε
+    obtain ⟨δ, hδpos, hδ⟩ := Metric.eventually_nhds_iff.mp hlo
+    refine ⟨δ, hδpos, fun θ _ hθ => ?_⟩
+    have hnθ : ‖θ - packFin1 θ₀‖ = |θ 0 - θ₀| := by rw [norm_euclideanFin1]; simp
+    have hdist : dist (θ 0) θ₀ < δ := by rw [Real.dist_eq, ← hnθ]; exact hθ
+    have hb := hδ hdist
+    simp only [Real.norm_eq_abs, smul_eq_mul] at hb
+    rw [iSup_unique]
+    refine ENNReal.ofReal_le_ofReal ?_
+    have hV1 : EmpiricalProcess.Vlin (Matrix.of (fun _ _ : Fin 1 => -A))
+        (θ - packFin1 θ₀) default = -A * (θ 0 - θ₀) := by
+      simp [EmpiricalProcess.Vlin, Matrix.mulVec, dotProduct]
+    rw [hV1, hnθ]
+    have hI1 : ∀ t : ℝ, ∫ x, huberPsiFin1 c (packFin1 t) default x ∂P
+        = mLocationScore (huberPsi c) P t := by
+      intro t; simp [huberPsiFin1, mLocationScore]
+    have hIθ : ∫ x, huberPsiFin1 c θ (default : Fin 1) x ∂P
+        = mLocationScore (huberPsi c) P (θ 0) := by
+      simp [huberPsiFin1, mLocationScore]
+    rw [hIθ, hI1 θ₀]
+    calc |mLocationScore (huberPsi c) P (θ 0) - mLocationScore (huberPsi c) P θ₀
+            - -A * (θ 0 - θ₀)|
+        = |mLocationScore (huberPsi c) P (θ 0) - mLocationScore (huberPsi c) P θ₀
+            - (θ 0 - θ₀) * -A| := by ring_nf
+      _ ≤ ε * |θ 0 - θ₀| := hb
+  -- ==========================================================================
+  -- (3) `L²` of the packaged score (bounded by the clipping constant).
+  -- ==========================================================================
+  have hpsiVec_meas : Measurable (EmpiricalProcess.psiVec (huberPsiFin1 c) (packFin1 θ₀)) := by
+    refine (MeasurableEquiv.toLp 2 (Fin 1 → ℝ)).measurable.comp ?_
+    exact measurable_pi_lambda _ fun _ => hψmeasE _ _
+  have hL2 : MemLp (EmpiricalProcess.psiVec (huberPsiFin1 c) (packFin1 θ₀)) 2 P := by
+    refine MemLp.of_bound hpsiVec_meas.aestronglyMeasurable c
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [norm_euclideanFin1]
+    simpa [EmpiricalProcess.psiVec, huberPsiFin1] using abs_huberPsi_le hc.le (x - θ₀)
+  -- ==========================================================================
+  -- (4) Consistency and the estimating equation, reshaped to the engine's modes.
+  -- ==========================================================================
+  have hΘmeas : ∀ n, Measurable (fun ξ => packFin1 (θhat n ξ)) := fun n =>
+    continuous_packFin1.measurable.comp (hθhat_meas n)
+  have hcons : ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n => μ {ξ | ε < ‖packFin1 (θhat n ξ) - packFin1 θ₀‖}) atTop (𝓝 0) := by
+    intro ε hε
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds (h_consist ε hε)
+      (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => measure_mono ?_)
+    intro ξ hξ
+    simp only [Set.mem_setOf_eq, hcoord_sub] at hξ ⊢
+    exact hξ.le
+  have hest : EmpiricalProcess.TendstoZeroInOuterProbSup μ (fun n ξ h =>
+      Real.sqrt n * EmpiricalProcess.empiricalAvg
+        (huberPsiFin1 c (packFin1 (θhat n ξ)) h) n (fun i : Fin n => X i.val ξ)) := by
+    intro ε hε
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+      ((tendstoInMeasure_iff_norm.mp h_est_eq) ε hε)
+      (Eventually.of_forall fun n => zero_le _) (Eventually.of_forall fun n => ?_)
+    refine le_trans (EmpiricalProcess.outerMeasureStar_mono μ ?_)
+      (EmpiricalProcess.outerMeasureStar_le_measure μ _)
+    intro ξ hξ
+    obtain ⟨_h, hh⟩ := hξ
+    simp only [Set.mem_setOf_eq, Real.norm_eq_abs, sub_zero,
+      EmpiricalProcess.empiricalAvg, huberPsiFin1, packFin1_apply] at hh ⊢
+    exact hh.le
+  -- ==========================================================================
+  -- (5) Run the engine and identify the one-dimensional limit law.
+  -- ==========================================================================
+  have hWC := engine (packFin1 θ₀) (Matrix.of (fun _ _ : Fin 1 => -A)) hVdet 1 one_pos
+    (fun _ => 1) (memLp_const 1) measurable_const hLip hψmeasE hrootE hfrechet hL2
+    (fun n ξ => packFin1 (θhat n ξ)) hΘmeas hcons hest
+  set J : Matrix (Fin 1) (Fin 1) ℝ :=
+    (Matrix.of (fun _ _ : Fin 1 => -A))⁻¹ * EmpiricalProcess.psiCov P (huberPsiFin1 c)
+      (packFin1 θ₀) * Matrix.transpose ((Matrix.of (fun _ _ : Fin 1 => -A))⁻¹) with hJ_def
+  have hJpsd : J.PosSemidef := by
+    rw [hJ_def, ← Matrix.conjTranspose_eq_transpose_of_trivial]
+    exact (EmpiricalProcess.psiCov_posSemidef P (huberPsiFin1 c) (packFin1 θ₀)
+      hL2).mul_mul_conjTranspose_same _
+  have hJ00 : J 0 0 = huberAsymptoticVariance P c θ₀ := by
+    have hinv : ∀ i j : Fin 1, (Matrix.of (fun _ _ : Fin 1 => -A))⁻¹ i j = (-A)⁻¹ := by
+      intro i j
+      fin_cases i <;> fin_cases j <;>
+        simp [Matrix.det_fin_one, Matrix.adjugate_fin_one]
+    have hcov : EmpiricalProcess.psiCov P (huberPsiFin1 c) (packFin1 θ₀) 0 0
+        = ∫ x, huberPsi c (x - θ₀) ^ 2 ∂P := by
+      simp [EmpiricalProcess.psiCov, huberPsiFin1, sq]
+    rw [hJ_def, huberAsymptoticVariance, ← hA_def]
+    simp only [Matrix.mul_apply, Fin.sum_univ_one, Matrix.transpose_apply, hinv, hcov]
+    field_simp
+  -- Coordinate functional and its two pushforward identities.
+  have hLcont : Continuous fun y : EuclideanSpace ℝ (Fin 1) => inner ℝ (packFin1 1) y :=
+    continuous_const.inner continuous_id
+  have hmapped := hWC.map hLcont hLcont.measurable
+  have hRHS : (ProbabilityTheory.multivariateGaussian
+      (0 : EuclideanSpace ℝ (Fin 1)) J).map
+        (fun y : EuclideanSpace ℝ (Fin 1) => inner ℝ (packFin1 1) y)
+      = ProbabilityTheory.gaussianReal 0 (Real.toNNReal (huberAsymptoticVariance P c θ₀)) := by
+    rw [ProbabilityTheory.multivariateGaussian_map_inner_eq_gaussianReal (packFin1 1) hJpsd]
+    congr 1
+    have : (packFin1 1).ofLp ⬝ᵥ J.mulVec (packFin1 1).ofLp = J 0 0 := by
+      simp [dotProduct, Matrix.mulVec, packFin1]
+    rw [this, hJ00]
+  have hLHS : ∀ n : ℕ,
+      (μ.map (fun ξ => Real.sqrt n • (packFin1 (θhat n ξ) - packFin1 θ₀))).map
+        (fun y : EuclideanSpace ℝ (Fin 1) => inner ℝ (packFin1 1) y)
+      = μ.map (fun ξ => Real.sqrt n * (θhat n ξ - θ₀)) := by
+    intro n
+    have hm : Measurable
+        (fun ξ => Real.sqrt n • (packFin1 (θhat n ξ) - packFin1 θ₀)) :=
+      ((hΘmeas n).sub measurable_const).const_smul (Real.sqrt n)
+    rw [Measure.map_map hLcont.measurable hm]
+    congr 1
+    funext ξ
+    simp [Function.comp, inner_packFin1_one]
+  rw [hRHS] at hmapped
+  simpa only [hLHS] using hmapped
 
 /-- **The population Huber score is differentiable at `θ₀` with derivative the negative
 central mass** (the `B` of `MMY` Theorem 10.7 for the Huber score): derived from the
