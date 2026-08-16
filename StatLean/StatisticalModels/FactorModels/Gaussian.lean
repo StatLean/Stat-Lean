@@ -67,7 +67,9 @@ theorem measurementKernel_multivariateGaussian (P : FactorParams p q)
     measurementKernel P (multivariateGaussian 0 P.uniqueCov) y
       = multivariateGaussian
           (P.μ + Matrix.toEuclideanLin (𝕜 := ℝ) P.loading y) P.uniqueCov := by
-  sorry
+  rw [measurementKernel_apply, multivariateGaussian_map_const_add 0 _ hΨ, add_zero]
+  congr 1
+  abel
 
 /-- **HEADLINE — `BKM` Eq. (3.5), general `Φ`**: the Gaussian factor model has observed law
 `x ∼ N_p(μ, Λ Φ Λᵀ + Ψ)`. A corollary of `MixedEffects.lmmLaw_multivariateGaussian` through
@@ -77,14 +79,16 @@ theorem factorLaw_multivariateGaussian (P : FactorParams p q)
     (hΦ : P.factorCov.PosSemidef) (hΨ : P.uniqueCov.PosSemidef) :
     factorLaw P (multivariateGaussian 0 P.factorCov) (multivariateGaussian 0 P.uniqueCov)
       = multivariateGaussian P.μ (factorCovariance P) := by
-  sorry
+  rw [factorLaw_eq_lmmLaw, MixedEffects.lmmLaw_multivariateGaussian _ _ _ _ hΦ hΨ,
+    factorDesign_X, toEuclideanLin_one_apply]
+  rfl
 
 /-- The model-map form of the headline. -/
 theorem gaussianFactorModel_eq_multivariateGaussian (P : FactorParams p q)
     -- USER-INPUT: genuine covariance parameters; BKM Eq. (3.1)–(3.2)
     (hP : IsProperFactorParams P) :
     gaussianFactorModel p q P = multivariateGaussian P.μ (factorCovariance P) := by
-  sorry
+  rw [gaussianFactorModel_apply, factorLaw_multivariateGaussian P hP.1 hP.2]
 
 /-- The Gaussian instantiation **realizes** its parameters: `N(0, Φ)` is centered with
 covariance `Φ` and `N(0, Ψ)` is centered with covariance `Ψ`. Hence every theorem of
@@ -93,15 +97,17 @@ theorem realizesFactorParams_gaussian (P : FactorParams p q)
     -- USER-INPUT: genuine covariance parameters; BKM Eq. (3.1)–(3.2)
     (hP : IsProperFactorParams P) :
     RealizesFactorParams P (multivariateGaussian 0 P.factorCov)
-      (multivariateGaussian 0 P.uniqueCov) := by
-  sorry
+      (multivariateGaussian 0 P.uniqueCov) :=
+  ⟨meanVec_multivariateGaussian _ _, meanVec_multivariateGaussian _ _,
+    covMatrix_multivariateGaussian _ _ hP.1, covMatrix_multivariateGaussian _ _ hP.2⟩
 
 /-- The mean of the Gaussian factor model is `μ` (`BKM` Eq. (3.5)). -/
 theorem meanVec_gaussianFactorModel (P : FactorParams p q)
     -- USER-INPUT: genuine covariance parameters; BKM Eq. (3.1)–(3.2)
     (hP : IsProperFactorParams P) :
     meanVec (gaussianFactorModel p q P) = P.μ := by
-  sorry
+  rw [gaussianFactorModel_eq_multivariateGaussian P hP]
+  exact meanVec_multivariateGaussian _ _
 
 /-- The covariance of the Gaussian factor model is `Σ = Λ Φ Λᵀ + Ψ` (`BKM` Eq. (3.12),
 general `Φ`). -/
@@ -109,6 +115,7 @@ theorem covMatrix_gaussianFactorModel (P : FactorParams p q)
     -- USER-INPUT: genuine covariance parameters; BKM Eq. (3.1)–(3.2)
     (hP : IsProperFactorParams P) :
     covMatrix (gaussianFactorModel p q P) = factorCovariance P := by
-  sorry
+  rw [gaussianFactorModel_eq_multivariateGaussian P hP]
+  exact covMatrix_multivariateGaussian _ _ (posSemidef_factorCovariance P hP)
 
 end StatLean.StatisticalModels.FactorModels

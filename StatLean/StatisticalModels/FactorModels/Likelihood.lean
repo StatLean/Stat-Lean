@@ -108,7 +108,7 @@ theorem factorLogLik_congr (P P' : FactorParams p q)
     (hμ : P.μ = P'.μ) (hSig : factorCovariance P = factorCovariance P')
     (x : EuclideanSpace ℝ (Fin p)) :
     factorLogLik P x = factorLogLik P' x := by
-  sorry
+  rw [factorLogLik_eq_gaussianLogDensity, factorLogLik_eq_gaussianLogDensity, hμ, hSig]
 
 /-- **HEADLINE — the likelihood is rotation invariant** (`BKM` §3.3, p. 50; §3.13.1): every
 nonsingular reparameterization `Λ ↦ Λ A`, `Φ ↦ A⁻¹ Φ A⁻ᵀ` of the latent space leaves the
@@ -120,8 +120,8 @@ theorem factorLogLik_rotateParams (P : FactorParams p q) {A : Matrix (Fin q) (Fi
     -- USER-INPUT: the reparameterization is a change of basis of the latent space;
     -- BKM §2.11
     (hA : IsUnit A.det) (x : EuclideanSpace ℝ (Fin p)) :
-    factorLogLik (rotateParams P A) x = factorLogLik P x := by
-  sorry
+    factorLogLik (rotateParams P A) x = factorLogLik P x :=
+  factorLogLik_congr (rotateParams P A) P rfl (factorCovariance_rotateParams P hA) x
 
 /-- The sample log-likelihood inherits rotation invariance. -/
 theorem factorLogLikSample_rotateParams {n : ℕ} (P : FactorParams p q)
@@ -129,8 +129,8 @@ theorem factorLogLikSample_rotateParams {n : ℕ} (P : FactorParams p q)
     -- USER-INPUT: the reparameterization is a change of basis of the latent space;
     -- BKM §2.11
     (hA : IsUnit A.det) (x : Fin n → EuclideanSpace ℝ (Fin p)) :
-    factorLogLikSample (rotateParams P A) x = factorLogLikSample P x := by
-  sorry
+    factorLogLikSample (rotateParams P A) x = factorLogLikSample P x :=
+  Finset.sum_congr rfl fun i _ => factorLogLik_rotateParams P hA (x i)
 
 /-- **Orthogonal rotations leave the likelihood unchanged** — the statement `BKM` §3.13.1
 makes for standardized factors. -/
@@ -138,7 +138,8 @@ theorem factorLogLik_rotateParams_orthogonal (P : FactorParams p q)
     {Q : Matrix (Fin q) (Fin q) ℝ}
     -- USER-INPUT: `Q` is orthogonal; BKM §2.11, Eq. (2.24)
     (hQ : Q * Qᵀ = 1) (x : EuclideanSpace ℝ (Fin p)) :
-    factorLogLik (rotateParams P Q) x = factorLogLik P x := by
-  sorry
+    factorLogLik (rotateParams P Q) x = factorLogLik P x :=
+  factorLogLik_congr (rotateParams P Q) P rfl
+    (factorCovariance_rotateParams_orthogonal P hQ) x
 
 end StatLean.StatisticalModels.FactorModels
