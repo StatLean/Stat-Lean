@@ -172,7 +172,33 @@ theorem isClique_subset_or_of_separates {A B S c : Finset V}
     -- USER-INPUT: completeness of the set being placed; Lauritzen eq. (3.11), p. 34
     (hc : G.IsClique (c : Set V)) :
     c ⊆ A ∪ S ∨ c ⊆ B ∪ S := by
-  sorry
+  by_contra hcon
+  rw [not_or] at hcon
+  obtain ⟨h1, h2⟩ := hcon
+  rw [Finset.not_subset] at h1 h2
+  obtain ⟨u, huc, huAS⟩ := h1
+  obtain ⟨v, hvc, hvBS⟩ := h2
+  simp only [Finset.mem_union, not_or] at huAS hvBS
+  -- the cover hypothesis places `u` in `B` and `v` in `A`
+  have huB : u ∈ B := by
+    have : u ∈ A ∪ B ∪ S := hcover ▸ Finset.mem_univ u
+    simp only [Finset.mem_union] at this; tauto
+  have hvA : v ∈ A := by
+    have : v ∈ A ∪ B ∪ S := hcover ▸ Finset.mem_univ v
+    simp only [Finset.mem_union] at this; tauto
+  rcases eq_or_ne v u with rfl | hne
+  · -- the same vertex lies in `A` and in `B`: the `nil` walk already defeats separation
+    obtain ⟨s, hsS, hsw⟩ := hsep _ hvA _ huB SimpleGraph.Walk.nil
+    simp only [SimpleGraph.Walk.support_nil, List.mem_singleton] at hsw
+    exact hvBS.2 (hsw ▸ hsS)
+  · -- distinct vertices of a complete set are adjacent: the one-edge walk misses `S`
+    have hadj : G.Adj v u := hc (by simpa using hvc) (by simpa using huc) hne
+    obtain ⟨s, hsS, hsw⟩ := hsep v hvA u huB (SimpleGraph.Walk.cons hadj SimpleGraph.Walk.nil)
+    simp only [SimpleGraph.Walk.support_cons, SimpleGraph.Walk.support_nil, List.mem_cons,
+      List.not_mem_nil, or_false] at hsw
+    rcases hsw with rfl | rfl
+    · exact hvBS.2 hsS
+    · exact huAS.2 hsS
 
 /-- **The product splits across a separator.** For a factorizing `p` and a separated triple
 covering `V`, the product over complete sets breaks into the complete sets inside `A ∪ S` and
@@ -195,7 +221,26 @@ theorem exists_factorization_of_separates [DecidableRel G.Adj] {p : (V → α) �
     (hcover : A ∪ B ∪ S = Finset.univ) :
     ∃ h k : (V → α) → ℝ≥0∞, DependsOn h ((A ∪ S : Finset V) : Set V) ∧
       DependsOn k ((B ∪ S : Finset V) : Set V) ∧ ∀ x, p x = h x * k x := by
-  sorry
+  classical
+  obtain ⟨ψ, hψ, hprod⟩ := hfac
+  refine ⟨fun x => ∏ c ∈ (completeSubsets G).filter (fun c => c ⊆ A ∪ S), ψ c x,
+    fun x => ∏ c ∈ (completeSubsets G).filter (fun c => ¬ (c ⊆ A ∪ S)), ψ c x, ?_, ?_, ?_⟩
+  · intro y z hyz
+    refine Finset.prod_congr rfl fun c hc => ?_
+    rw [Finset.mem_filter] at hc
+    exact DependsOn.mono (Finset.coe_subset.mpr hc.2)
+      (hψ c (mem_completeSubsets.mp hc.1)) hyz
+  · intro y z hyz
+    refine Finset.prod_congr rfl fun c hc => ?_
+    rw [Finset.mem_filter] at hc
+    have hcl := mem_completeSubsets.mp hc.1
+    -- a complete set that is not inside `A ∪ S` must be inside `B ∪ S`
+    have hsub : c ⊆ B ∪ S :=
+      (isClique_subset_or_of_separates G hsep hAS hBS hcover hcl).resolve_left hc.2
+    exact DependsOn.mono (Finset.coe_subset.mpr hsub) (hψ c hcl) hyz
+  · intro x
+    rw [hprod x]
+    exact (Finset.prod_filter_mul_prod_filter_not _ _ _).symm
 
 /-- **Lauritzen Proposition 3.8**, p. 35: **(F) ⇒ (G)**. A mass function that factorizes over
 `G` is globally Markov with respect to `G`.
@@ -220,7 +265,70 @@ theorem factorizesOver_implies_globalMarkov [DecidableRel G.Adj] (p : (V → α)
     -- USER-INPUT: property (F); Lauritzen eqs. (3.11)/(3.12), pp. 34–35
     (hfac : FactorizesOver G p) :
     IsGlobalMarkov G (CondIndepMass p) := by
-  sorry
+  classical
+  intro A B S hAB hAS hBS hsep
+  -- **The enlargement.** `A'` is everything reachable from `A` by a walk that never meets `S`
+  -- (Lauritzen's "components of `G ∖ S` meeting `A`", spelled with walks rather than
+  -- `ComponentCompl`, so that the argument is self-contained); `B'` is all the rest.
+  obtain ⟨A', hA'⟩ : ∃ T : Finset V, T = Finset.univ.filter
+      (fun v => v ∉ S ∧ ∃ a ∈ A, ∃ w : G.Walk a v, ∀ s ∈ S, s ∉ w.support) := ⟨_, rfl⟩
+  obtain ⟨B', hB'⟩ : ∃ T : Finset V, T = Finset.univ \ (A' ∪ S) := ⟨_, rfl⟩
+  have hmemA' : ∀ v, v ∈ A' ↔
+      (v ∉ S ∧ ∃ a ∈ A, ∃ w : G.Walk a v, ∀ s ∈ S, s ∉ w.support) := by
+    intro v; rw [hA']; simp
+  have hmemB' : ∀ v, v ∈ B' ↔ (v ∉ A' ∧ v ∉ S) := by
+    intro v; rw [hB']; simp
+  -- the enlarged triple is disjoint, covers `V`, and still contains the original blocks
+  have hA'S : Disjoint A' S := Finset.disjoint_left.mpr fun v hv => ((hmemA' v).mp hv).1
+  have hB'S : Disjoint B' S := Finset.disjoint_left.mpr fun v hv => ((hmemB' v).mp hv).2
+  have hA'B' : Disjoint A' B' := Finset.disjoint_right.mpr fun v hv => ((hmemB' v).mp hv).1
+  have hcover : A' ∪ B' ∪ S = Finset.univ := by
+    ext v
+    simp only [Finset.mem_union, Finset.mem_univ, iff_true]
+    by_cases hvS : v ∈ S
+    · exact Or.inr hvS
+    by_cases hvA' : v ∈ A'
+    · exact Or.inl (Or.inl hvA')
+    · exact Or.inl (Or.inr ((hmemB' v).mpr ⟨hvA', hvS⟩))
+  have hAA' : A ⊆ A' := by
+    intro a ha
+    refine (hmemA' a).mpr ⟨Finset.disjoint_left.mp hAS ha, a, ha, SimpleGraph.Walk.nil, ?_⟩
+    intro s hs hsw
+    simp only [SimpleGraph.Walk.support_nil, List.mem_singleton] at hsw
+    exact Finset.disjoint_left.mp hAS ha (hsw ▸ hs)
+  have hBB' : B ⊆ B' := by
+    intro b hb
+    refine (hmemB' b).mpr ⟨?_, Finset.disjoint_left.mp hBS hb⟩
+    intro hbA'
+    obtain ⟨-, a, haA, w, hw⟩ := (hmemA' b).mp hbA'
+    obtain ⟨s, hsS, hsw⟩ := hsep a haA b hb w
+    exact hw s hsS hsw
+  -- `S` still separates the enlarged blocks: appending an `S`-avoiding walk to an
+  -- `S`-avoiding walk out of `A` would put its endpoint into `A'`.
+  have hsep' : Separates G S A' B' := by
+    intro a' ha' b' hb' w
+    by_contra hno
+    simp only [not_exists, not_and] at hno
+    obtain ⟨-, a, haA, w₀, hw₀⟩ := (hmemA' a').mp ha'
+    refine ((hmemB' b').mp hb').1
+      ((hmemA' b').mpr ⟨((hmemB' b').mp hb').2, a, haA, w₀.append w, ?_⟩)
+    intro s hs hmem
+    rw [SimpleGraph.Walk.mem_support_append_iff] at hmem
+    exact hmem.elim (hw₀ s hs) (hno s hs)
+  -- **The split.** The product breaks across the separator, and (3.6) turns it into (3.2).
+  obtain ⟨h, k, hh, hk, hpk⟩ :=
+    exists_factorization_of_separates G hfac hsep' hA'S hB'S hcover
+  have hci : CondIndepMass p A' B' S :=
+    condIndepMass_of_exists_factorization hA'B' hA'S hB'S hh hk (fun x => by
+      rw [hcover, blockMarginal_univ]; exact hpk x)
+  -- **The shrinking**, by (C2) on each side in turn.
+  have hci2 : CondIndepMass p A' B S := by
+    refine CondIndepMass.decomposition (D := B' \ B) (hA'B'.mono_right Finset.sdiff_subset) ?_
+    rwa [Finset.union_sdiff_of_subset hBB']
+  have hci3 : CondIndepMass p B A' S := hci2.symm
+  refine (CondIndepMass.decomposition (A := B) (B := A) (D := A' \ A)
+    ((hA'B'.mono_right hBB').symm.mono_right Finset.sdiff_subset) ?_).symm
+  rwa [Finset.union_sdiff_of_subset hAA']
 
 /-- **(F) ⇒ (L)** — the second link of Lauritzen Proposition 3.8, p. 35, by composition with
 `globalMarkov_implies_localMarkov`. -/
