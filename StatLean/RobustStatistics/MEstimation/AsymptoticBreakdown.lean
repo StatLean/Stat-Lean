@@ -197,10 +197,10 @@ theorem mLocationRoot_contamination_unbounded {P : Measure ℝ} [IsProbabilityMe
       (continuous_const.mul (hψc.comp (continuous_const.sub continuous_id)))
   obtain ⟨θ, hθmem, hθ0⟩ :=
     intermediate_value_Icc' hle hcont.continuousOn (Set.mem_Icc.2 ⟨hneg.le, hpos.le⟩)
-  refine ⟨x₀, θ, by linarith [hθmem.1], ?_⟩
-  show ∫ x, ψ (x - θ) ∂(contaminate P (Measure.dirac x₀) ε) = 0
-  rw [integral_contaminate_dirac hε0.le hε1.le (hiP θ)]
-  exact hθ0
+  have hroot : ∫ x, ψ (x - θ) ∂(contaminate P (Measure.dirac x₀) ε) = 0 := by
+    rw [integral_contaminate_dirac hε0.le hε1.le (hiP θ)]
+    exact hθ0
+  exact ⟨x₀, θ, by linarith [hθmem.1], hroot⟩
 
 /-- **Odd scores break down at `1/2`** (`MMY §3.2.1`: `k₁ = k₂` gives `ε* = 0.5`): for
 `ε < 1/2` the contaminated roots stay uniformly bounded. -/
@@ -213,7 +213,12 @@ theorem mLocationRoot_bounded_of_odd {P : Measure ℝ} [IsProbabilityMeasure P]
     (hε0 : 0 ≤ ε) (hε : ε < 1 / 2) :
     ∃ B : ℝ, ∀ (Q : Measure ℝ), IsProbabilityMeasure Q → ∀ θ : ℝ,
       IsMLocationRoot ψ (contaminate P Q ε) θ → |θ| ≤ B := by
-  sorry
+  refine mLocationRoot_bounded_of_contamination hψm hbot htop hk hk hε0 ?_
+  have hkey : min k k / (k + k) = 1 / 2 := by
+    rw [min_self, div_eq_iff (ne_of_gt (by linarith : (0:ℝ) < k + k))]
+    ring
+  rw [hkey]
+  exact hε
 
 /-- **The Huber location functional has asymptotic breakdown point `1/2`**
 (`MMY §3.2.1`): the Huber score is monotone with limits `∓c`, so contaminated roots stay
@@ -221,7 +226,8 @@ bounded for every `ε < 1/2`. -/
 theorem huberLocationRoot_bounded {P : Measure ℝ} [IsProbabilityMeasure P] {c ε : ℝ}
     (hc : 0 < c) (hε0 : 0 ≤ ε) (hε : ε < 1 / 2) :
     ∃ B : ℝ, ∀ (Q : Measure ℝ), IsProbabilityMeasure Q → ∀ θ : ℝ,
-      IsMLocationRoot (huberPsi c) (contaminate P Q ε) θ → |θ| ≤ B := by
-  sorry
+      IsMLocationRoot (huberPsi c) (contaminate P Q ε) θ → |θ| ≤ B :=
+  mLocationRoot_bounded_of_odd (huberPsi_monotone c) (huberPsi_tendsto_atBot c)
+    (huberPsi_tendsto_atTop hc.le) hc hε0 hε
 
 end StatLean.RobustStatistics
