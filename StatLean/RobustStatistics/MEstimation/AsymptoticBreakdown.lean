@@ -156,7 +156,51 @@ theorem mLocationRoot_contamination_unbounded {P : Measure ℝ} [IsProbabilityMe
     (hε : k₁ / (k₁ + k₂) < ε) (hε1 : ε < 1) :
     ∀ B : ℝ, ∃ (x₀ θ : ℝ), B < θ ∧
       IsMLocationRoot ψ (contaminate P (Measure.dirac x₀) ε) θ := by
-  sorry
+  intro B
+  have hlow := neg_le_psi' hψm hbot
+  have hCb := psi_abs_le hψm hbot htop hk₁ hk₂
+  have hsum : 0 < k₁ + k₂ := by linarith
+  have hε0 : 0 < ε := lt_trans (div_pos hk₁ hsum) hε
+  -- the numerical consequence of `ε > k₁/(k₁+k₂)` (MMY eq. (3.62))
+  have hk1lt : k₁ < ε * (k₁ + k₂) := by
+    have h : k₁ / (k₁ + k₂) * (k₁ + k₂) < ε * (k₁ + k₂) := mul_lt_mul_of_pos_right hε hsum
+    rwa [div_mul_cancel₀ _ hsum.ne'] at h
+  have hkey : (1 - ε) * k₁ < ε * k₂ := by nlinarith
+  have hiP : ∀ θ : ℝ, Integrable (fun x => ψ (x - θ)) P := fun θ =>
+    integrable_psi_sub hψm.measurable ⟨k₁ + k₂, hCb⟩ θ
+  -- the contaminated score at the point mass `x₀`, evaluated beyond `B`
+  have hε1' : 0 < 1 - ε := by linarith
+  -- (i) push the point mass right until the contaminated score at `B + 1` is positive
+  obtain ⟨u₀, hu₀⟩ := eventually_atTop.1 ((htop.const_mul ε).eventually_const_lt hkey)
+  set x₀ : ℝ := B + 1 + u₀ with hx₀
+  have hxs : x₀ - (B + 1) = u₀ := by rw [hx₀]; ring
+  have hglowB : -k₁ ≤ mLocationScore ψ P (B + 1) := by
+    simpa using integral_mono (integrable_const (-k₁)) (hiP (B + 1))
+      fun x => hlow (x - (B + 1))
+  have hpos : 0 < (1 - ε) * mLocationScore ψ P (B + 1) + ε * ψ (x₀ - (B + 1)) := by
+    have h2 : (1 - ε) * k₁ < ε * ψ (x₀ - (B + 1)) := by
+      rw [hxs]; exact hu₀ u₀ le_rfl
+    linarith [mul_le_mul_of_nonneg_left hglowB hε1'.le]
+  -- (ii) as `θ → ∞` both parts of the contaminated score fall to `-k₁ < 0`
+  have hcT : Tendsto (fun θ => (1 - ε) * mLocationScore ψ P θ + ε * ψ (x₀ - θ)) atTop
+      (𝓝 ((1 - ε) * -k₁ + ε * -k₁)) :=
+    ((tendsto_mLocationScore_atTop hψm hbot hiP).const_mul _).add
+      ((hbot.comp (tendsto_const_sub_atTop_atBot' x₀)).const_mul _)
+  obtain ⟨θ', hθ'⟩ := eventually_atTop.1
+    (hcT.eventually_lt_const (by linarith : (1 - ε) * -k₁ + ε * -k₁ < 0))
+  -- (iii) the intermediate value theorem on `[B + 1, max (B+1) θ']`
+  have hle : B + 1 ≤ max (B + 1) θ' := le_max_left _ _
+  have hneg : (1 - ε) * mLocationScore ψ P (max (B + 1) θ') + ε * ψ (x₀ - max (B + 1) θ') < 0 :=
+    hθ' _ (le_max_right _ _)
+  have hcont : Continuous fun θ => (1 - ε) * mLocationScore ψ P θ + ε * ψ (x₀ - θ) :=
+    (continuous_const.mul (continuous_mLocationScore hψc ⟨k₁ + k₂, hCb⟩)).add
+      (continuous_const.mul (hψc.comp (continuous_const.sub continuous_id)))
+  obtain ⟨θ, hθmem, hθ0⟩ :=
+    intermediate_value_Icc' hle hcont.continuousOn (Set.mem_Icc.2 ⟨hneg.le, hpos.le⟩)
+  refine ⟨x₀, θ, by linarith [hθmem.1], ?_⟩
+  show ∫ x, ψ (x - θ) ∂(contaminate P (Measure.dirac x₀) ε) = 0
+  rw [integral_contaminate_dirac hε0.le hε1.le (hiP θ)]
+  exact hθ0
 
 /-- **Odd scores break down at `1/2`** (`MMY §3.2.1`: `k₁ = k₂` gives `ε* = 0.5`): for
 `ε < 1/2` the contaminated roots stay uniformly bounded. -/
