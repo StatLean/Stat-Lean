@@ -211,7 +211,17 @@ theorem mLocationRoot_influence {P : Measure ℝ} [IsProbabilityMeasure P]
     -- USER-INPUT: nondegenerate denominator; MMY Thm 10.7 (B ≠ 0)
     (hA0 : A ≠ 0) :
     d = ψ (x₀ - θ₀) / A := by
-  sorry
+  -- The bound `C` is automatically nonnegative: it dominates `|ψ' 0|`.
+  have hC : 0 ≤ C := (abs_nonneg _).trans (hψ'b 0)
+  -- A globally differentiable score with derivative bounded by `C` is `C`-Lipschitz (MVT).
+  have hlip : LipschitzWith C.toNNReal ψ := by
+    refine lipschitzWith_of_nnnorm_deriv_le (fun u => (hψ u).differentiableAt) fun u => ?_
+    rw [← NNReal.coe_le_coe, coe_nnnorm, Real.coe_toNNReal C hC, (hψ u).deriv,
+      Real.norm_eq_abs]
+    exact hψ'b u
+  exact mLocationRoot_influence_of_lipschitz hlip hint
+    (Filter.Eventually.of_forall fun x => hψ (x - θ₀))
+    (hψ'_meas.comp (measurable_id.sub_const θ₀)).aestronglyMeasurable hroot hθ0 hθd hA hA0
 
 /-- **The influence function of an M-location functional** (`MMY` eq. (3.7)), packaged
 for a functional `T : Measure ℝ → ℝ` whose values solve the contaminated M-equation along
@@ -241,7 +251,10 @@ theorem mLocation_influence_bounded {ψ : ℝ → ℝ} {c A u : ℝ}
     -- USER-INPUT: bounded score; MMY §2.3.2 / Def 2.2
     (hψb : ∀ v, |ψ v| ≤ c) (hA0 : A ≠ 0) :
     |ψ u / A| ≤ c / |A| := by
-  sorry
+  have hApos : 0 < |A| := abs_pos.mpr hA0
+  rw [abs_div]
+  gcongr
+  exact hψb u
 
 /-! ### The Huber instance (`MMY §2.3.2` + §3.1) -/
 
