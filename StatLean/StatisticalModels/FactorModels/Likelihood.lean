@@ -95,7 +95,7 @@ theorem factorLaw_eq_withDensity_exp_factorLogLik (P : FactorParams p q)
     (hP : IsProperFactorParams P)
     -- USER-INPUT: nondegenerate observed covariance — a singular Σ has no Lebesgue
     -- density at all; BKM Eq. (3.5)
-    (hΣ : (factorCovariance P).PosDef) :
+    (hSig : (factorCovariance P).PosDef) :
     factorLaw P (multivariateGaussian 0 P.factorCov) (multivariateGaussian 0 P.uniqueCov)
       = volume.withDensity fun x => ENNReal.ofReal (Real.exp (factorLogLik P x)) := by
   sorry
@@ -105,7 +105,7 @@ every invariance below is a one-line corollary. -/
 theorem factorLogLik_congr (P P' : FactorParams p q)
     -- LEAN-ONLY: the two parameter tuples agree on the pair the density depends on;
     -- antecedent, no scope change
-    (hμ : P.μ = P'.μ) (hΣ : factorCovariance P = factorCovariance P')
+    (hμ : P.μ = P'.μ) (hSig : factorCovariance P = factorCovariance P')
     (x : EuclideanSpace ℝ (Fin p)) :
     factorLogLik P x = factorLogLik P' x := by
   sorry

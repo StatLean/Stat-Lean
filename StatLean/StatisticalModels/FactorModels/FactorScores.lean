@@ -45,7 +45,7 @@ Gaussian, `MixedEffects.condMeanMatrix_lmm` gives the regression matrix,
 gives the covariance-vs-precision form, and `Gaussian.posSemidef_condCovMatrix` gives the
 Schur complement's positive semidefiniteness; only `toEuclideanLin (1 : Matrix) μ = μ` has to
 be discharged. **No matrix identity of these shapes is proved here.** *Junk values:* `Matrix.inv` is `0`
-at singular matrices, so `hΣ : (factorCovariance P).PosDef` is carried explicitly wherever
+at singular matrices, so `hSig : (factorCovariance P).PosDef` is carried explicitly wherever
 `Σ⁻¹` appears; `multivariateGaussian` degenerates to a Dirac off the PSD cone, so `Φ` and `Ψ`
 carry PSD hypotheses. *Book vs Lean:* `BKM` Eq. (3.6) states the posterior at its
 normalization `Φ = I`, and writes the posterior covariance in the Woodbury form
@@ -153,7 +153,7 @@ theorem compProd_factorJointLaw (P : FactorParams p q)
     (hΦ : P.factorCov.PosSemidef) (hΨ : P.uniqueCov.PosSemidef)
     -- USER-INPUT: nondegenerate observed covariance Σ = ΛΦΛᵀ + Ψ — without it `Σ⁻¹` is the
     -- `Matrix.inv` junk value; BKM Eq. (3.6)
-    (hΣ : (factorCovariance P).PosDef) :
+    (hSig : (factorCovariance P).PosDef) :
     factorLaw P (multivariateGaussian 0 P.factorCov) (multivariateGaussian 0 P.uniqueCov)
         ⊗ₘ factorScoreKernel P
       = factorJointLaw P (multivariateGaussian 0 P.factorCov)
@@ -207,7 +207,7 @@ theorem posSemidef_condCovMatrix_factorScores (P : FactorParams p q)
     -- USER-INPUT: genuine covariance parameters; BKM Eq. (3.1)–(3.2)
     (hΦ : P.factorCov.PosSemidef) (hΨ : P.uniqueCov.PosSemidef)
     -- USER-INPUT: nondegenerate observed covariance; BKM Eq. (3.6)
-    (hΣ : (factorCovariance P).PosDef) :
+    (hSig : (factorCovariance P).PosDef) :
     (condCovMatrix (factorCovariance P) (P.loading * P.factorCov) P.factorCov).PosSemidef := by
   sorry
 

@@ -109,7 +109,7 @@ theorem communality_le_one (P : FactorParams p q)
     (i : Fin p)
     -- USER-INPUT: the observed variable `i` is standardized (Σ is a correlation matrix);
     -- BKM §3.4
-    (hΣ : factorCovariance P i i = 1) :
+    (hSig : factorCovariance P i i = 1) :
     communality P i ≤ 1 := by
   sorry
 
