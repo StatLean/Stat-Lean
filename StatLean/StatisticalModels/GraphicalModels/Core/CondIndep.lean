@@ -398,38 +398,38 @@ so makes the left-hand side nonzero. See `CondIndep.comp`'s docstring for the na
 area depends on this section. -/
 
 /-- Sample space: the plane `ℝ × Bool`. -/
-private def Pt : Type := ℝ × Bool
+def Pt : Type := ℝ × Bool
 
 /-- A point of the sample space. -/
-private def pt (x : ℝ) (b : Bool) : Pt := (x, b)
+def pt (x : ℝ) (b : Bool) : Pt := (x, b)
 
 /-- The first coordinate. -/
-private def fst' : Pt → ℝ := fun p => (Prod.fst : ℝ × Bool → ℝ) p
+def fst' : Pt → ℝ := fun p => (Prod.fst : ℝ × Bool → ℝ) p
 
 /-- The second coordinate. -/
-private def snd' : Pt → Bool := fun p => (Prod.snd : ℝ × Bool → Bool) p
+def snd' : Pt → Bool := fun p => (Prod.snd : ℝ × Bool → Bool) p
 
-@[simp] private theorem fst'_pt (x : ℝ) (b : Bool) : fst' (pt x b) = x := rfl
+@[simp] theorem fst'_pt (x : ℝ) (b : Bool) : fst' (pt x b) = x := rfl
 
-@[simp] private theorem snd'_pt (x : ℝ) (b : Bool) : snd' (pt x b) = b := rfl
+@[simp] theorem snd'_pt (x : ℝ) (b : Bool) : snd' (pt x b) = b := rfl
 
 /-- The σ-algebra sees only the first coordinate. -/
-private instance : MeasurableSpace Pt := MeasurableSpace.comap fst' ⊤
+instance : MeasurableSpace Pt := MeasurableSpace.comap fst' ⊤
 
 /-- The measurable sets are exactly the first-coordinate preimages. -/
-private theorem measurableSet_iff {s : Set Pt} :
+theorem measurableSet_iff {s : Set Pt} :
     MeasurableSet s ↔ ∃ t : Set ℝ, fst' ⁻¹' t = s := by
   constructor
   · rintro ⟨t, -, rfl⟩; exact ⟨t, rfl⟩
   · rintro ⟨t, rfl⟩; exact ⟨t, trivial, rfl⟩
 
 /-- One unit of mass on each point `(x, true)`. -/
-private noncomputable def mu : Measure Pt :=
+noncomputable def mu : Measure Pt :=
   Measure.sum fun x : ℝ => Measure.dirac (pt x true)
 
 /-- Every nonempty measurable set has positive mass: being a first-coordinate preimage, it
 contains a point of the form `(x, true)`. In particular `mu` has no nonempty null set. -/
-private theorem mu_ne_zero {s : Set Pt} (hs : MeasurableSet s) (hne : s.Nonempty) : mu s ≠ 0 := by
+theorem mu_ne_zero {s : Set Pt} (hs : MeasurableSet s) (hne : s.Nonempty) : mu s ≠ 0 := by
   obtain ⟨t, rfl⟩ := measurableSet_iff.1 hs
   obtain ⟨p, hp⟩ := hne
   have h1 := Measure.le_sum (fun x : ℝ => Measure.dirac (pt x true)) (fst' p) (fst' ⁻¹' t)
@@ -439,12 +439,12 @@ private theorem mu_ne_zero {s : Set Pt} (hs : MeasurableSet s) (hne : s.Nonempty
   rw [show (Measure.sum fun x : ℝ => Measure.dirac (pt x true)) = mu from rfl, h0] at h1
   simp at h1
 
-private theorem mu_ne_zero' : mu ≠ 0 := fun h =>
+theorem mu_ne_zero' : mu ≠ 0 := fun h =>
   mu_ne_zero MeasurableSet.univ ⟨pt 0 true, trivial⟩ (by rw [h]; rfl)
 
 /-- `mu` is **not s-finite**: the uncountably many fibres all carry positive mass, which
 `MeasureTheory.Measure.countable_meas_pos_of_disjoint_iUnion` forbids for an s-finite measure. -/
-private theorem not_sfinite_mu : ¬ SFinite mu := by
+theorem not_sfinite_mu : ¬ SFinite mu := by
   intro hs
   have hmble : ∀ x : ℝ, MeasurableSet (fst' ⁻¹' {x}) := fun x => measurableSet_iff.2 ⟨{x}, rfl⟩
   have hdisj : Pairwise (Function.onFun Disjoint (fun x : ℝ => fst' ⁻¹' {x})) := by
@@ -460,35 +460,33 @@ private theorem not_sfinite_mu : ¬ SFinite mu := by
   rw [huniv] at hcount
   exact (not_countable_iff.2 inferInstance) (Set.countable_univ_iff.1 hcount)
 
+/-- `mu` has no nonempty null set, so a.e. measurability is measurability outright. -/
+theorem measurable_of_aemeasurable {δ : Type*} [MeasurableSpace δ] {F : Pt → δ}
+    (h : AEMeasurable F mu) : Measurable F := by
+  obtain ⟨g, hg, hae⟩ := h
+  have hnull : mu {p : Pt | F p ≠ g p} = 0 := ae_iff.1 hae
+  have hempty : {p : Pt | F p ≠ g p} = ∅ := by
+    by_contra hne
+    exact mu_ne_zero (measurableSet_toMeasurable mu {p : Pt | F p ≠ g p})
+      ((Set.nonempty_iff_ne_empty.2 hne).mono (subset_toMeasurable mu _))
+      (by rw [measure_toMeasurable]; exact hnull)
+  have : F = g := funext fun p => not_not.1 fun hp => (Set.eq_empty_iff_forall_notMem.1 hempty p) hp
+  exact this ▸ hg
+
+/-- The half-plane `{snd' = true}` is **not** measurable: it is not a first-coordinate
+preimage. This is the single source of non-measurability in the counterexample. -/
+theorem not_measurableSet_snd'_true : ¬ MeasurableSet (snd' ⁻¹' {true}) := by
+  intro hm
+  obtain ⟨t, ht⟩ := measurableSet_iff.1 hm
+  have h1 : pt 0 true ∈ fst' ⁻¹' t := by rw [ht]; rfl
+  have h2 : pt 0 false ∈ fst' ⁻¹' t := h1
+  rw [ht] at h2
+  exact Bool.noConfusion h2
+
 /-- The second coordinate is not measurable, and — `mu` having no nonempty null set — not even
 a.e. measurable. -/
-private theorem not_aemeasurable_snd' : ¬ AEMeasurable snd' mu := by
-  rintro ⟨g, hg, hae⟩
-  -- a measurable `g` is constant on each fibre
-  have hconst : ∀ x : ℝ, g (pt x false) = g (pt x true) := by
-    intro x
-    obtain ⟨t, ht⟩ := measurableSet_iff.1 (hg (measurableSet_singleton (g (pt x true))))
-    have h1 : pt x true ∈ fst' ⁻¹' t := by rw [ht]; rfl
-    have h2 : pt x false ∈ fst' ⁻¹' t := h1
-    rw [ht] at h2
-    exact h2
-  -- hence `snd'` differs from `g` somewhere ...
-  have hNne : {p : Pt | snd' p ≠ g p}.Nonempty := by
-    by_cases h0 : g (pt 0 true) = true
-    · refine ⟨pt 0 false, ?_⟩
-      change snd' (pt 0 false) ≠ g (pt 0 false)
-      rw [hconst 0, h0]
-      simp
-    · refine ⟨pt 0 true, ?_⟩
-      change snd' (pt 0 true) ≠ g (pt 0 true)
-      simp only [Bool.not_eq_true] at h0
-      rw [h0]
-      simp
-  -- ... yet that set is null, so its measurable hull is a nonempty measurable null set
-  have hnull : mu {p : Pt | snd' p ≠ g p} = 0 := ae_iff.1 hae
-  refine mu_ne_zero (measurableSet_toMeasurable mu {p : Pt | snd' p ≠ g p})
-    (hNne.mono (subset_toMeasurable mu _)) ?_
-  rw [measure_toMeasurable]; exact hnull
+theorem not_aemeasurable_snd' : ¬ AEMeasurable snd' mu := fun h =>
+  not_measurableSet_snd'_true (measurable_of_aemeasurable h (measurableSet_singleton true))
 
 /-- The frozen (C2) **hypothesis** holds here: the law of the triple is the junk `0` (the triple
 is not a.e. measurable), and so is the right-hand side (`mu` is not s-finite). -/
