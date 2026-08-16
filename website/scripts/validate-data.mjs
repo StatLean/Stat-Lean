@@ -271,7 +271,7 @@ const resultFullNames = new Set();
 for (let index = 0; index < results.length; index += 1) {
   const result = results[index];
   const location = `results.json[${index}]`;
-  if (!exactKeys(result, resultRequiredKeys, ["formalizationNotes", "shortRef", "reference", "keywords", "crossListed"], location)) continue;
+  if (!exactKeys(result, resultRequiredKeys, ["formalizationNotes", "shortRef", "reference", "keywords", "crossListed", "hidden"], location)) continue;
 
   for (const field of ["id", "category", "kind", "leanName", "fullName", "title", "citation", "file", "docGenUrl", "informal", "summary", "leanSignature"]) {
     nonemptyString(result[field], `${location}.${field}`);
@@ -294,6 +294,9 @@ for (let index = 0; index < results.length; index += 1) {
         seenCats.add(extra[i]);
       }
     }
+  }
+  if (Object.hasOwn(result, "hidden") && result.hidden !== true) {
+    fail(`${location}.hidden`, "expected true — drop the key to publish the result");
   }
   if (!leanName.test(result.fullName)) fail(`${location}.fullName`, "is not a valid dotted Lean name");
   if (resultFullNames.has(result.fullName)) fail(`${location}.fullName`, `duplicate fullName ${JSON.stringify(result.fullName)}`);

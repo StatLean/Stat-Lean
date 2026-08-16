@@ -18,7 +18,13 @@ cytoscape.use(fcose);
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DATA = join(HERE, "..", "src", "data");
 const GRAPHS = join(DATA, "graphs");
-const RESULTS = JSON.parse(readFileSync(join(DATA, "results.json"), "utf8"));
+const ALL_RESULTS = JSON.parse(readFileSync(join(DATA, "results.json"), "utf8"));
+// Hidden results have no page on the site, so they contribute no node here
+// either — their graph file is skipped in the union below.
+const RESULTS = ALL_RESULTS.filter((r) => !r.hidden);
+const HIDDEN_GRAPHS = new Set(
+  ALL_RESULTS.filter((r) => r.hidden).map((r) => `${r.id}.json`),
+);
 const CORE_GRAPH = join(DATA, "global-core.json");
 const EXTERNAL_GRAPH = join(DATA, "global-external.json");
 const CORE_LAYOUT = join(DATA, "layout-core.json");
@@ -88,7 +94,7 @@ function nodeSize(node) {
 const nodeMap = new Map();
 const edgeSet = new Set();
 for (const file of readdirSync(GRAPHS).sort()) {
-  if (!file.endsWith(".json")) continue;
+  if (!file.endsWith(".json") || HIDDEN_GRAPHS.has(file)) continue;
   const graph = JSON.parse(readFileSync(join(GRAPHS, file), "utf8"));
   for (const node of graph.nodes) {
     const normalized = { ...node, kind: node.kind === "root" ? "repo" : node.kind };

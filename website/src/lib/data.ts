@@ -1,7 +1,14 @@
 import type { CategoryId, DepGraph, ResultEntry } from "./types";
 import rawResults from "../data/results.json";
 
-export const RESULTS = rawResults as unknown as ResultEntry[];
+/**
+ * Every result the site shows. Entries flagged `hidden` are withheld here, at
+ * the single point every page reads from, so a hidden result has no card, no
+ * search hit, no index entry, no graph node and no page of its own.
+ */
+export const RESULTS = (rawResults as unknown as ResultEntry[]).filter(
+  (r) => !r.hidden,
+);
 
 /** Is this result listed under `cat` — as its own topic or by cross-listing? */
 export function inCategory(r: ResultEntry, cat: CategoryId): boolean {

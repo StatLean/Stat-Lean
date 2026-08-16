@@ -116,9 +116,9 @@ export const CATEGORIES: CategoryMeta[] = [
   {
     id: "statlearning",
     name: "Statistical Learning",
-    tagline: "PAC learning, VC dimension & Rademacher",
+    tagline: "PAC learning, VC dimension & kernel methods",
     blurb:
-      "Empirical risk minimization and uniform convergence, PAC and agnostic learnability of finite classes, VC dimension and growth functions, Rademacher complexity and symmetrization, stability and PAC-Bayes bounds.",
+      "Empirical risk minimization and uniform convergence, PAC and agnostic learnability of finite classes, VC dimension and growth functions, Rademacher complexity and symmetrization, stability and PAC-Bayes bounds, and the reproducing-kernel Hilbert spaces behind the representer theorem and the maximal-margin classifier.",
   },
   {
     id: "expdesign",

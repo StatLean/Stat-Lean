@@ -48,7 +48,7 @@ then the formalization note and the reference block.
 Required: `id`, `category`, `kind`, `leanName`, `fullName`, `title`, `citation`,
 `file`, `docGenUrl`, `informal`, `summary`, `leanSignature`, `hypotheses`,
 `hasGraph`. Optional: `formalizationNotes`, `shortRef`, `reference`, `keywords`,
-`crossListed`.
+`crossListed`, `hidden`.
 
 Anything else is rejected — the validator uses an exact key set, so a typo in a
 field name fails the build rather than silently doing nothing.
@@ -364,6 +364,18 @@ colour, its graph-node colour and its prev/next navigation.
 Note that `id` and display `name` are decoupled — renaming a topic on the front
 page is a `categories.ts` change only. Do **not** rename the id: it appears in
 every result entry and in `DIR_AREA`.
+
+### Withholding a result from the site
+
+Set `hidden: true` (the only accepted value; drop the key to publish again) on a
+result whose formalization is not ready to show — a Lean proof still carrying
+`sorry`, say. The entry, its graph and its `targets.txt` row all stay in the
+repository, but `RESULTS` in `src/lib/data.ts` filters it out, which is the one
+list every page reads: no card, no search hit, no index entry, and its own URL
+redirects home. `scripts/precompute-layout.mjs` skips its graph file too, so it
+leaves no node in the global dependency graph — **re-run `npm run layout` after
+hiding or unhiding a result**, otherwise the global graph keeps a node whose page
+no longer exists.
 
 ---
 

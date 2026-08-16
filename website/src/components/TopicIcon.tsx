@@ -48,14 +48,13 @@ export function TopicIcon({
         </svg>
       );
     case "highdim":
-      // sparse signal — a grid with only a few active coordinates
+      // the ℓ¹ ball — a diamond with a corner on each axis, the corner itself
+      // marked: the sparse solutions the ℓ¹ constraint singles out
       return (
         <svg {...common}>
-          <rect x="8" y="8" width="32" height="32" rx="2" />
-          <path d="M8 19h32M8 30h32M19 8v32M30 8v32" opacity={0.4} />
-          <circle cx="13.5" cy="13.5" r="2.1" fill="currentColor" stroke="none" />
-          <circle cx="35" cy="24.5" r="2.1" fill="currentColor" stroke="none" />
-          <circle cx="24" cy="35" r="2.1" fill="currentColor" stroke="none" />
+          <path d="M24 4v40M4 24h40" opacity={0.45} />
+          <path d="M24 9 39 24 24 39 9 24z" />
+          <circle cx="39" cy="24" r="2.4" fill="currentColor" stroke="none" />
         </svg>
       );
     case "multipletesting":

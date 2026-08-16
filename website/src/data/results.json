@@ -13783,6 +13783,9 @@
     "keywords": [
       "reproducing kernel Hilbert space",
       "kernel function"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -13828,6 +13831,9 @@
     "hasGraph": true,
     "keywords": [
       "reproducing kernel Hilbert space"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -13872,6 +13878,9 @@
     "hasGraph": true,
     "keywords": [
       "kernel function"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -13917,6 +13926,9 @@
     "keywords": [
       "kernel function",
       "reproducing kernel Hilbert space"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -13960,6 +13972,9 @@
     "hasGraph": true,
     "keywords": [
       "Gram matrix"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -14005,6 +14020,9 @@
     "keywords": [
       "Moore–Aronszajn theorem",
       "reproducing kernel Hilbert space"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -14048,6 +14066,9 @@
     "hasGraph": true,
     "keywords": [
       "reproducing kernel Hilbert space"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -14093,6 +14114,9 @@
     "hasGraph": true,
     "keywords": [
       "reproducing kernel Hilbert space"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -14137,6 +14161,9 @@
     "hasGraph": true,
     "keywords": [
       "Parseval frame"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -14181,6 +14208,9 @@
     "keywords": [
       "Parseval frame",
       "reproducing kernel Hilbert space"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -14225,6 +14255,9 @@
     "keywords": [
       "reproducing kernel Hilbert space",
       "kernel function"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -14270,6 +14303,9 @@
     "hasGraph": true,
     "keywords": [
       "kernel function"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -14321,6 +14357,9 @@
     "keywords": [
       "reproducing kernel Hilbert space",
       "Sobolev class"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -14368,6 +14407,9 @@
     "keywords": [
       "integral operator",
       "Mercer's theorem"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -14413,6 +14455,9 @@
     "hasGraph": true,
     "keywords": [
       "integral operator"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -14495,6 +14540,9 @@
     "keywords": [
       "Mercer's theorem",
       "integral operator"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -14546,6 +14594,9 @@
     "hasGraph": true,
     "keywords": [
       "Mercer's theorem"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -14603,6 +14654,9 @@
     "keywords": [
       "Mercer's theorem",
       "reproducing kernel Hilbert space"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -14648,6 +14702,9 @@
     "keywords": [
       "feature map",
       "kernel function"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -14705,6 +14762,9 @@
     "keywords": [
       "representer theorem",
       "empirical risk minimization"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -14780,6 +14840,9 @@
     "hasGraph": true,
     "keywords": [
       "support vector machine"
+    ],
+    "crossListed": [
+      "statlearning"
     ]
   },
   {
@@ -16308,7 +16371,8 @@
     "keywords": [
       "Berry–Esseen theorem",
       "Gaussian approximation"
-    ]
+    ],
+    "hidden": true
   },
   {
     "id": "mbe_convex_improved",
@@ -16371,7 +16435,8 @@
     "keywords": [
       "Berry–Esseen theorem",
       "Gaussian approximation"
-    ]
+    ],
+    "hidden": true
   },
   {
     "id": "mbe_ball_improved",
@@ -16427,7 +16492,8 @@
     "keywords": [
       "Berry–Esseen theorem",
       "Gaussian approximation"
-    ]
+    ],
+    "hidden": true
   },
   {
     "id": "uniform_riemann_lebesgue",

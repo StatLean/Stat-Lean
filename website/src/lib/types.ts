@@ -84,6 +84,13 @@ export interface ResultEntry {
    * estimation and a class of statistical models).
    */
   crossListed?: CategoryId[];
+  /**
+   * Withhold this result from the site: it is dropped from every listing,
+   * search, index, dependency view and from its own page, which then 404s.
+   * Used for entries whose Lean proof is still in progress, so the authored
+   * page can stay in the repository until the formalization is complete.
+   */
+  hidden?: boolean;
   kind: ResultKind;
   /** 1-3 index terms for the Index page (standard textbook terminology). */
   keywords?: string[];
