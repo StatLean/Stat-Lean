@@ -34,27 +34,57 @@ noncomputable def sampleMAD (x : Fin n → ℝ) : ℝ :=
 
 /-- The MAD is nonnegative. -/
 theorem sampleMAD_nonneg (x : Fin n → ℝ) : 0 ≤ sampleMAD x := by
-  sorry
+  by_cases hn : n = 0
+  · subst hn; simp [sampleMAD, sampleMedian]
+  · rw [sampleMAD, sampleMedian_eq_orderStat hn]
+    exact orderStat_nonneg _ (fun i => abs_nonneg _) _
 
 /-- **The MAD is location invariant** (`MMY` eq. (2.58), first condition). -/
 theorem sampleMAD_add_const (x : Fin n → ℝ) (a : ℝ) :
     sampleMAD (x + a • (1 : Fin n → ℝ)) = sampleMAD x := by
-  sorry
+  by_cases hn : n = 0
+  · subst hn; simp [sampleMAD, sampleMedian]
+  -- The median shifts with the data, so the absolute deviations are unchanged.
+  have hmed : sampleMedian (x + a • (1 : Fin n → ℝ)) = sampleMedian x + a :=
+    sampleMedian_locEquivariant hn a x
+  have hdev : (fun i => |(x + a • (1 : Fin n → ℝ)) i - sampleMedian (x + a • (1 : Fin n → ℝ))|)
+      = fun i => |x i - sampleMedian x| := by
+    funext i
+    rw [hmed]
+    have hxi : (x + a • (1 : Fin n → ℝ)) i = x i + a := by simp
+    rw [hxi]
+    congr 1
+    ring
+  rw [sampleMAD, sampleMAD, hdev]
 
 /-- **The MAD is absolutely scale equivariant for odd `n`** (`MMY` eq. (2.58), second
 condition): `MAD(cx) = |c|·MAD(x)`. -/
 theorem sampleMAD_const_mul {k : ℕ} (hn : n = 2 * k + 1) (c : ℝ) (x : Fin n → ℝ) :
     sampleMAD (fun i => c * x i) = |c| * sampleMAD x := by
-  sorry
+  -- `Med(cx) = c·Med(x)` (odd `n`), so the deviations get multiplied by `|c|`.
+  have hmed : sampleMedian (fun i => c * x i) = c * sampleMedian x :=
+    sampleMedian_const_mul_of_odd hn c x
+  have hdev : (fun i => |c * x i - sampleMedian fun i => c * x i|)
+      = fun i => |c| * |x i - sampleMedian x| := by
+    funext i
+    rw [hmed, ← mul_sub, abs_mul]
+  simp only [sampleMAD]
+  rw [hdev, sampleMedian_const_mul_of_nonneg (abs_nonneg c)]
 
 /-- **The MAD is a dispersion estimator for odd `n`** (`MMY` eq. (2.58)). -/
 theorem sampleMAD_isDispersionEstimator {k : ℕ} (hn : n = 2 * k + 1) :
     IsDispersionEstimator (sampleMAD (n := n)) := by
-  sorry
+  refine ⟨fun a x => sampleMAD_add_const x a, fun c x => ?_⟩
+  have hsmul : (c • x) = fun i => c * x i := by funext i; simp
+  rw [hsmul, sampleMAD_const_mul hn]
 
 /-- The MAD of a constant sample vanishes (`MMY §2.7.1`, the degenerate case handled
 there by the convention `μ̂ = Med(x)`). -/
 theorem sampleMAD_const (a : ℝ) : sampleMAD (fun _ : Fin n => a) = 0 := by
-  sorry
+  by_cases hn : n = 0
+  · subst hn; simp [sampleMAD, sampleMedian]
+  -- Both medians collapse: the deviations from the median `a` are all `|a - a| = 0`.
+  simp only [sampleMAD, sampleMedian_const hn]
+  simp
 
 end StatLean.RobustStatistics
