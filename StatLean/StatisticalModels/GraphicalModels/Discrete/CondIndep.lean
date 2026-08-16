@@ -435,6 +435,151 @@ theorem CondIndepMass.contraction {p : (V → α) → ℝ≥0∞} {A B C D : Fin
     rw [z1, z2, zero_mul, mul_zero]
   · exact mul_cancel_cross hz (blockMarginal_ne_top _ _ hp) H₁ H₂
 
+/-! ### Helpers for (C5)
+
+Lauritzen's Proposition 3.1 runs through the factorisation criterion (3.6), which is stated
+below as `condIndepMass_of_exists_factorization`; since (C5) precedes it in the file's frozen
+order, the content of that `mpr` half lives here as a private lemma, and the public theorem is
+its instance. The rest of this section is the four-point identity that turns each premise of
+(C5) into a statement free of the block it does not see. -/
+
+/-- The content of `condIndepMass_of_exists_factorization` (Lauritzen eq. (3.6) ⇒ (3.2)),
+placed early so that `CondIndepMass.intersection` can consume it. See the public theorem below
+for the statement's provenance and the route. -/
+private theorem condIndepMass_of_factorization {p : (V → α) → ℝ≥0∞} {A B C : Finset V}
+    (hAB : Disjoint A B) (hAC : Disjoint A C) (hBC : Disjoint B C)
+    {h k : (V → α) → ℝ≥0∞}
+    (hh : DependsOn h ((A ∪ C : Finset V) : Set V))
+    (hk : DependsOn k ((B ∪ C : Finset V) : Set V))
+    (hfac : ∀ x, blockMarginal (A ∪ B ∪ C) p x = h x * k x) :
+    CondIndepMass p A B C := by
+  intro x
+  -- The three ways of writing the joint block, as they come out of the splitting identity.
+  have hs1 : A ∪ C ∪ B = A ∪ B ∪ C := by ext v; simp only [Finset.mem_union]; tauto
+  have hs2 : B ∪ C ∪ A = A ∪ B ∪ C := by ext v; simp only [Finset.mem_union]; tauto
+  have hs3 : C ∪ A ∪ B = A ∪ B ∪ C := by ext v; simp only [Finset.mem_union]; tauto
+  have hBAC : Disjoint B (A ∪ C) := Finset.disjoint_union_right.mpr ⟨hAB.symm, hBC⟩
+  have hABC : Disjoint A (B ∪ C) := Finset.disjoint_union_right.mpr ⟨hAB, hAC⟩
+  have hBCA : Disjoint B (C ∪ A) := Finset.disjoint_union_right.mpr ⟨hBC, hAB.symm⟩
+  -- A factor free of the updated block is constant along the sum.
+  have hoff : ∀ (f : (V → α) → ℝ≥0∞) (E T : Finset V), DependsOn f (E : Set V) →
+      Disjoint T E → ∀ (y : V → α) (b : ↥T → α),
+        f (Function.updateFinset (π := fun _ => α) y T b) = f y := by
+    intro f E T hf hTE y b
+    refine hf fun i hi => ?_
+    have hiT : i ∉ T := Finset.disjoint_right.mp hTE (by simpa using hi)
+    simp [Function.updateFinset, dif_neg hiT]
+  -- `k` sees the `B`-update but not the `A`-update underneath it.
+  have hk2 : ∀ (a : ↥A → α) (b : ↥B → α),
+      k (Function.updateFinset (π := fun _ => α)
+          (Function.updateFinset (π := fun _ => α) x A a) B b)
+        = k (Function.updateFinset (π := fun _ => α) x B b) := by
+    intro a b
+    refine hk fun i hi => ?_
+    simp only [Finset.coe_union, Set.mem_union, Finset.mem_coe] at hi
+    by_cases hiB : i ∈ B
+    · simp [Function.updateFinset, dif_pos hiB]
+    · have hiA : i ∉ A := Finset.disjoint_right.mp hAC (by tauto)
+      simp [Function.updateFinset, dif_neg hiB, dif_neg hiA]
+  -- Marginal on `A ∪ C`: sum the factorisation over `B`.
+  have eAC : blockMarginal (A ∪ C) p x
+      = h x * ∑ b : ↥B → α, k (Function.updateFinset (π := fun _ => α) x B b) := by
+    rw [blockMarginal_eq_sum_updateFinset p (A ∪ C) B x hBAC, hs1, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun b _ => by
+      rw [hfac _, hoff h (A ∪ C) B hh hBAC x b]
+  -- Marginal on `B ∪ C`: sum the factorisation over `A`.
+  have eBC : blockMarginal (B ∪ C) p x
+      = (∑ a : ↥A → α, h (Function.updateFinset (π := fun _ => α) x A a)) * k x := by
+    rw [blockMarginal_eq_sum_updateFinset p (B ∪ C) A x hABC, hs2, Finset.sum_mul]
+    exact Finset.sum_congr rfl fun a _ => by
+      rw [hfac _, hoff k (B ∪ C) A hk hABC x a]
+  -- Marginal on `C`: sum over `A`, then over `B`.
+  have eC : blockMarginal C p x
+      = (∑ a : ↥A → α, h (Function.updateFinset (π := fun _ => α) x A a))
+        * ∑ b : ↥B → α, k (Function.updateFinset (π := fun _ => α) x B b) := by
+    rw [blockMarginal_eq_sum_updateFinset p C A x hAC, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun a _ => ?_
+    rw [blockMarginal_eq_sum_updateFinset p (C ∪ A) B _ hBCA, hs3, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun b _ => ?_
+    rw [hfac _, hoff h (A ∪ C) B hh hBAC _ b, hk2 a b]
+  rw [hfac x, eC, eAC, eBC]
+  ring
+
+/-- `z` with its `E`-coordinates replaced by those of the reference configuration `x₀`. The
+`ℝ≥0∞` bookkeeping of (C5) needs a *named* configuration in which one block has been frozen at
+a reference value, and this is it. Private: not part of the frozen interface. -/
+private def substOn (x₀ : V → α) (E : Finset V) (z : V → α) : V → α :=
+  fun i => if i ∈ E then x₀ i else z i
+
+omit [Fintype V] [Fintype α] [DecidableEq α] in
+private theorem substOn_of_mem {x₀ : V → α} {E : Finset V} {z : V → α} {i : V} (hi : i ∈ E) :
+    substOn x₀ E z i = x₀ i := if_pos hi
+
+omit [Fintype V] [Fintype α] [DecidableEq α] in
+private theorem substOn_of_notMem {x₀ : V → α} {E : Finset V} {z : V → α} {i : V} (hi : i ∉ E) :
+    substOn x₀ E z i = z i := if_neg hi
+
+/-- The `ℝ≥0∞` half of the four-point identity: four evaluations of (3.2) at configurations
+that pair up in the two blocks give `g₁·g₄ = g₂·g₃` after cancelling `m²`. -/
+private theorem mul_cancel_four {g₁ g₂ g₃ g₄ n₂ n₃ r₂ r₃ m : ℝ≥0∞}
+    (hm0 : m ≠ 0) (hmt : m ≠ ∞)
+    (e₁ : g₁ * m = n₃ * r₂) (e₂ : g₂ * m = n₂ * r₂)
+    (e₃ : g₃ * m = n₃ * r₃) (e₄ : g₄ * m = n₂ * r₃) :
+    g₁ * g₄ = g₂ * g₃ := by
+  refine (ENNReal.mul_left_inj hm0 hmt).mp ((ENNReal.mul_left_inj hm0 hmt).mp ?_)
+  calc g₁ * g₄ * m * m = g₁ * m * (g₄ * m) := by ring
+    _ = n₃ * r₂ * (n₂ * r₃) := by rw [e₁, e₄]
+    _ = g₂ * m * (g₃ * m) := by rw [e₂, e₃]; ring
+    _ = g₂ * g₃ * m * m := by ring
+
+/-- The chaining step of (C5): the two four-point identities, one per premise, compose into the
+one that exhibits the conditional mass as a function of the second block alone. -/
+private theorem mul_cancel_chain {g₁ g₂ g₃ g₄ g₅ g₆ : ℝ≥0∞}
+    (h30 : g₃ ≠ 0) (h3t : g₃ ≠ ∞) (h40 : g₄ ≠ 0) (h4t : g₄ ≠ ∞)
+    (hα : g₁ * g₄ = g₂ * g₃) (hβ : g₃ * g₆ = g₄ * g₅) :
+    g₁ * g₆ = g₂ * g₅ := by
+  refine (ENNReal.mul_left_inj h30 h3t).mp ((ENNReal.mul_left_inj h40 h4t).mp ?_)
+  calc g₁ * g₆ * g₃ * g₄ = g₁ * g₄ * (g₃ * g₆) := by ring
+    _ = g₂ * g₃ * (g₄ * g₅) := by rw [hα, hβ]
+    _ = g₂ * g₅ * g₃ * g₄ := by ring
+
+/-- **The four-point identity.** Take four configurations that agree on the conditioning block
+`C`, pair up on `A` (`x₁ ~ x₃`, `x₂ ~ x₄`) and pair up the other way on `B` (`x₁ ~ x₂`,
+`x₃ ~ x₄`). Evaluating (3.2) at each of them and cancelling `p_C²` — this is where strict
+positivity is spent — gives a *multiplicative* four-point relation on the joint marginal, free
+of the two conditional factors. Running it once per premise of (C5) is Lauritzen's argument
+that the conditional mass of `A` given the rest does not in fact depend on `B` or `D`. -/
+private theorem condIndepMass_four_point {p : (V → α) → ℝ≥0∞} {A B C : Finset V}
+    (hp : ∀ y, p y ≠ ∞) (hpos : ∀ y, p y ≠ 0) (hci : CondIndepMass p A B C)
+    {x₁ x₂ x₃ x₄ : V → α}
+    (hC₂ : ∀ i ∈ C, x₁ i = x₂ i) (hC₃ : ∀ i ∈ C, x₁ i = x₃ i) (hC₄ : ∀ i ∈ C, x₁ i = x₄ i)
+    (hA₁₃ : ∀ i ∈ A, x₁ i = x₃ i) (hA₂₄ : ∀ i ∈ A, x₂ i = x₄ i)
+    (hB₁₂ : ∀ i ∈ B, x₁ i = x₂ i) (hB₃₄ : ∀ i ∈ B, x₃ i = x₄ i) :
+    blockMarginal (A ∪ B ∪ C) p x₁ * blockMarginal (A ∪ B ∪ C) p x₄
+      = blockMarginal (A ∪ B ∪ C) p x₂ * blockMarginal (A ∪ B ∪ C) p x₃ := by
+  have dep : ∀ (E : Finset V) (y z : V → α), (∀ i ∈ E, y i = z i) →
+      blockMarginal E p y = blockMarginal E p z :=
+    fun E y z hyz => dependsOn_blockMarginal E p fun i hi => hyz i (by simpa using hi)
+  have depU : ∀ (E F : Finset V) (y z : V → α), (∀ i ∈ E, y i = z i) → (∀ i ∈ F, y i = z i) →
+      blockMarginal (E ∪ F) p y = blockMarginal (E ∪ F) p z := by
+    intro E F y z hE hF
+    refine dep (E ∪ F) y z fun i hi => ?_
+    rcases Finset.mem_union.mp hi with h | h
+    · exact hE i h
+    · exact hF i h
+  have e₁ := hci x₁
+  have e₂ := hci x₂
+  have e₃ := hci x₃
+  have e₄ := hci x₄
+  rw [← dep C x₁ x₂ hC₂] at e₂
+  rw [← dep C x₁ x₃ hC₃] at e₃
+  rw [← dep C x₁ x₄ hC₄] at e₄
+  rw [depU A C x₁ x₃ hA₁₃ hC₃, depU B C x₁ x₂ hB₁₂ hC₂] at e₁
+  rw [← depU A C x₂ x₄ hA₂₄ fun i hi => (hC₂ i hi).symm.trans (hC₄ i hi),
+    ← depU B C x₃ x₄ hB₃₄ fun i hi => (hC₃ i hi).symm.trans (hC₄ i hi)] at e₄
+  exact mul_cancel_four (blockMarginal_ne_zero C x₁ hpos) (blockMarginal_ne_top C x₁ hp)
+    e₁ e₂ e₃ e₄
+
 /-- **(C5), intersection, under strict positivity** — Lauritzen **Proposition 3.1**, p. 29.
 
 *Hypotheses.* Finiteness, strict positivity, and the book's full pairwise-disjointness
@@ -462,7 +607,109 @@ theorem CondIndepMass.intersection {p : (V → α) → ℝ≥0∞} {A B C D : Fi
     -- USER-INPUT: `X ⫫ W ∣ (Z, Y)`; Lauritzen §3.1 (C5), p. 30
     (h₂ : CondIndepMass p A D (C ∪ B)) :
     CondIndepMass p A (B ∪ D) C := by
-  sorry
+  classical
+  -- With no configuration at all there is nothing to prove; otherwise fix a reference one.
+  rcases isEmpty_or_nonempty (V → α) with hE | hne
+  · exact fun x => (hE.false x).elim
+  obtain ⟨x₀⟩ := hne
+  -- The joint block, as each premise spells it.
+  have hW₁ : A ∪ B ∪ (C ∪ D) = A ∪ (B ∪ D) ∪ C := by
+    ext v; simp only [Finset.mem_union]; tauto
+  have hW₂ : A ∪ D ∪ (C ∪ B) = A ∪ (B ∪ D) ∪ C := by
+    ext v; simp only [Finset.mem_union]; tauto
+  have hg0 : ∀ z : V → α, blockMarginal (A ∪ (B ∪ D) ∪ C) p z ≠ 0 :=
+    fun z => blockMarginal_ne_zero _ z hpos
+  have hgt : ∀ z : V → α, blockMarginal (A ∪ (B ∪ D) ∪ C) p z ≠ ∞ :=
+    fun z => blockMarginal_ne_top _ z hp
+  -- Membership facts used to evaluate `substOn`.
+  have hCD' : ∀ i ∈ C, i ∉ D := fun i hi => Finset.disjoint_left.mp hCD hi
+  have hBD' : ∀ i ∈ B, i ∉ D := fun i hi => Finset.disjoint_left.mp hBD hi
+  have hAD' : ∀ i ∈ A, i ∉ D := fun i hi => Finset.disjoint_left.mp hAD hi
+  have hCB' : ∀ i ∈ C, i ∉ B := fun i hi => Finset.disjoint_right.mp hBC hi
+  have hAB' : ∀ i ∈ A, i ∉ B := fun i hi => Finset.disjoint_left.mp hAB hi
+  refine condIndepMass_of_factorization
+    (Finset.disjoint_union_right.mpr ⟨hAB, hAD⟩) hAC
+    (Finset.disjoint_union_left.mpr ⟨hBC, hCD.symm⟩)
+    (h := fun z => blockMarginal (A ∪ (B ∪ D) ∪ C) p (substOn x₀ (B ∪ D) z))
+    (k := fun z => blockMarginal (A ∪ (B ∪ D) ∪ C) p z /
+      blockMarginal (A ∪ (B ∪ D) ∪ C) p (substOn x₀ (B ∪ D) z)) ?_ ?_ ?_
+  · -- The first factor sees only `A ∪ C`: outside `B ∪ D` it is the reference configuration.
+    intro y z hyz
+    refine dependsOn_blockMarginal _ p fun i hi => ?_
+    by_cases hiBD : i ∈ B ∪ D
+    · rw [substOn_of_mem hiBD, substOn_of_mem hiBD]
+    · rw [substOn_of_notMem hiBD, substOn_of_notMem hiBD]
+      refine hyz i ?_
+      simp only [Finset.coe_union, Set.mem_union, Finset.mem_coe] at hi ⊢
+      simp only [Finset.mem_union, not_or] at hiBD
+      tauto
+  · -- The second factor sees only `(B ∪ D) ∪ C`: Lauritzen's argument, run through the
+    -- four-point identity once per premise.
+    intro x y hxy
+    have hmem : ∀ i : V, i ∈ B ∨ i ∈ D ∨ i ∈ C → x i = y i := by
+      intro i hi
+      refine hxy i ?_
+      simp only [Finset.coe_union, Set.mem_union, Finset.mem_coe]
+      tauto
+    have hxyB : ∀ i ∈ B, x i = y i := fun i hi => hmem i (Or.inl hi)
+    have hxyD : ∀ i ∈ D, x i = y i := fun i hi => hmem i (Or.inr (Or.inl hi))
+    have hxyC : ∀ i ∈ C, x i = y i := fun i hi => hmem i (Or.inr (Or.inr hi))
+    -- (α) from `h₂`: swap the `A`-block against the `D`-block, at fixed `B`, `C`.
+    have hα := condIndepMass_four_point (A := A) (B := D) (C := C ∪ B) hp hpos h₂
+      (x₁ := x) (x₂ := y) (x₃ := substOn x₀ D x) (x₄ := substOn x₀ D y)
+      (fun i hi => by
+        rcases Finset.mem_union.mp hi with h | h
+        · exact hxyC i h
+        · exact hxyB i h)
+      (fun i hi => by
+        rcases Finset.mem_union.mp hi with h | h
+        · rw [substOn_of_notMem (hCD' i h)]
+        · rw [substOn_of_notMem (hBD' i h)])
+      (fun i hi => by
+        rcases Finset.mem_union.mp hi with h | h
+        · rw [substOn_of_notMem (hCD' i h)]; exact hxyC i h
+        · rw [substOn_of_notMem (hBD' i h)]; exact hxyB i h)
+      (fun i hi => by rw [substOn_of_notMem (hAD' i hi)])
+      (fun i hi => by rw [substOn_of_notMem (hAD' i hi)])
+      hxyD
+      (fun i hi => by rw [substOn_of_mem hi, substOn_of_mem hi])
+    rw [hW₂] at hα
+    -- (β) from `h₁`: swap the `A`-block against the `B`-block, at fixed `C`, `D`.
+    have hβ := condIndepMass_four_point (A := A) (B := B) (C := C ∪ D) hp hpos h₁
+      (x₁ := substOn x₀ D x) (x₂ := substOn x₀ D y)
+      (x₃ := substOn x₀ (B ∪ D) x) (x₄ := substOn x₀ (B ∪ D) y)
+      (fun i hi => by
+        rcases Finset.mem_union.mp hi with h | h
+        · rw [substOn_of_notMem (hCD' i h), substOn_of_notMem (hCD' i h)]; exact hxyC i h
+        · rw [substOn_of_mem h, substOn_of_mem h])
+      (fun i hi => by
+        rcases Finset.mem_union.mp hi with h | h
+        · rw [substOn_of_notMem (hCD' i h),
+            substOn_of_notMem (by simp [Finset.mem_union, hCB' i h, hCD' i h])]
+        · rw [substOn_of_mem h, substOn_of_mem (Finset.mem_union_right B h)])
+      (fun i hi => by
+        rcases Finset.mem_union.mp hi with h | h
+        · rw [substOn_of_notMem (hCD' i h),
+            substOn_of_notMem (by simp [Finset.mem_union, hCB' i h, hCD' i h])]
+          exact hxyC i h
+        · rw [substOn_of_mem h, substOn_of_mem (Finset.mem_union_right B h)])
+      (fun i hi => by
+        rw [substOn_of_notMem (hAD' i hi),
+          substOn_of_notMem (by simp [Finset.mem_union, hAB' i hi, hAD' i hi])])
+      (fun i hi => by
+        rw [substOn_of_notMem (hAD' i hi),
+          substOn_of_notMem (by simp [Finset.mem_union, hAB' i hi, hAD' i hi])])
+      (fun i hi => by
+        rw [substOn_of_notMem (hBD' i hi), substOn_of_notMem (hBD' i hi)]; exact hxyB i hi)
+      (fun i hi => by
+        rw [substOn_of_mem (Finset.mem_union_left D hi),
+          substOn_of_mem (Finset.mem_union_left D hi)])
+    rw [hW₁] at hβ
+    have key := mul_cancel_chain (hg0 _) (hgt _) (hg0 _) (hgt _) hα hβ
+    exact (ENNReal.div_eq_div_iff (hg0 _) (hgt _) (hg0 _) (hgt _)).mpr
+      ((mul_comm _ _).trans (key.trans (mul_comm _ _)))
+  · intro x
+    exact (ENNReal.mul_div_cancel (hg0 _) (hgt _)).symm
 
 /-! ### The graphoid instances -/
 
@@ -524,58 +771,8 @@ theorem condIndepMass_of_exists_factorization {p : (V → α) → ℝ≥0∞} {A
     (hk : DependsOn k ((B ∪ C : Finset V) : Set V))
     -- USER-INPUT: the factorisation itself; Lauritzen eq. (3.6), p. 29
     (hfac : ∀ x, blockMarginal (A ∪ B ∪ C) p x = h x * k x) :
-    CondIndepMass p A B C := by
-  intro x
-  -- The three ways of writing the joint block, as they come out of the splitting identity.
-  have hs1 : A ∪ C ∪ B = A ∪ B ∪ C := by ext v; simp only [Finset.mem_union]; tauto
-  have hs2 : B ∪ C ∪ A = A ∪ B ∪ C := by ext v; simp only [Finset.mem_union]; tauto
-  have hs3 : C ∪ A ∪ B = A ∪ B ∪ C := by ext v; simp only [Finset.mem_union]; tauto
-  have hBAC : Disjoint B (A ∪ C) := Finset.disjoint_union_right.mpr ⟨hAB.symm, hBC⟩
-  have hABC : Disjoint A (B ∪ C) := Finset.disjoint_union_right.mpr ⟨hAB, hAC⟩
-  have hBCA : Disjoint B (C ∪ A) := Finset.disjoint_union_right.mpr ⟨hBC, hAB.symm⟩
-  -- A factor free of the updated block is constant along the sum.
-  have hoff : ∀ (f : (V → α) → ℝ≥0∞) (E T : Finset V), DependsOn f (E : Set V) →
-      Disjoint T E → ∀ (y : V → α) (b : ↥T → α),
-        f (Function.updateFinset (π := fun _ => α) y T b) = f y := by
-    intro f E T hf hTE y b
-    refine hf fun i hi => ?_
-    have hiT : i ∉ T := Finset.disjoint_right.mp hTE (by simpa using hi)
-    simp [Function.updateFinset, dif_neg hiT]
-  -- `k` sees the `B`-update but not the `A`-update underneath it.
-  have hk2 : ∀ (a : ↥A → α) (b : ↥B → α),
-      k (Function.updateFinset (π := fun _ => α)
-          (Function.updateFinset (π := fun _ => α) x A a) B b)
-        = k (Function.updateFinset (π := fun _ => α) x B b) := by
-    intro a b
-    refine hk fun i hi => ?_
-    simp only [Finset.coe_union, Set.mem_union, Finset.mem_coe] at hi
-    by_cases hiB : i ∈ B
-    · simp [Function.updateFinset, dif_pos hiB]
-    · have hiA : i ∉ A := Finset.disjoint_right.mp hAC (by tauto)
-      simp [Function.updateFinset, dif_neg hiB, dif_neg hiA]
-  -- Marginal on `A ∪ C`: sum the factorisation over `B`.
-  have eAC : blockMarginal (A ∪ C) p x
-      = h x * ∑ b : ↥B → α, k (Function.updateFinset (π := fun _ => α) x B b) := by
-    rw [blockMarginal_eq_sum_updateFinset p (A ∪ C) B x hBAC, hs1, Finset.mul_sum]
-    exact Finset.sum_congr rfl fun b _ => by
-      rw [hfac _, hoff h (A ∪ C) B hh hBAC x b]
-  -- Marginal on `B ∪ C`: sum the factorisation over `A`.
-  have eBC : blockMarginal (B ∪ C) p x
-      = (∑ a : ↥A → α, h (Function.updateFinset (π := fun _ => α) x A a)) * k x := by
-    rw [blockMarginal_eq_sum_updateFinset p (B ∪ C) A x hABC, hs2, Finset.sum_mul]
-    exact Finset.sum_congr rfl fun a _ => by
-      rw [hfac _, hoff k (B ∪ C) A hk hABC x a]
-  -- Marginal on `C`: sum over `A`, then over `B`.
-  have eC : blockMarginal C p x
-      = (∑ a : ↥A → α, h (Function.updateFinset (π := fun _ => α) x A a))
-        * ∑ b : ↥B → α, k (Function.updateFinset (π := fun _ => α) x B b) := by
-    rw [blockMarginal_eq_sum_updateFinset p C A x hAC, Finset.sum_mul]
-    refine Finset.sum_congr rfl fun a _ => ?_
-    rw [blockMarginal_eq_sum_updateFinset p (C ∪ A) B _ hBCA, hs3, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun b _ => ?_
-    rw [hfac _, hoff h (A ∪ C) B hh hBAC _ b, hk2 a b]
-  rw [hfac x, eC, eAC, eBC]
-  ring
+    CondIndepMass p A B C :=
+  condIndepMass_of_factorization hAB hAC hBC hh hk hfac
 
 /-- **Lauritzen eq. (3.6)**, p. 29, as an equivalence: for a finite mass function,
 `X_A ⫫ X_B ∣ X_C` holds **iff** the joint marginal factors as `h(x_{A∪C}) · k(x_{B∪C})`.
