@@ -172,6 +172,50 @@ theorem huberLocation_asymptoticNormal
       (ProbabilityTheory.gaussianReal 0 (Real.toNNReal (huberAsymptoticVariance P c θ₀))) := by
   sorry
 
+/-- Above the upper knot the Huber score is the constant `c`. (Branch formula for the
+derivative computation below; `Huber.lean` only exports the central-region formula.) -/
+private theorem huberPsi_of_clip_le {c u : ℝ} (hc : 0 ≤ c) (h : c ≤ u) : huberPsi c u = c := by
+  unfold huberPsi
+  rw [min_eq_left h, max_eq_right (by linarith)]
+
+/-- Below the lower knot the Huber score is the constant `-c`. -/
+private theorem huberPsi_of_le_neg_clip {c u : ℝ} (hc : 0 ≤ c) (h : u ≤ -c) :
+    huberPsi c u = -c := by
+  unfold huberPsi
+  rw [min_eq_right (by linarith), max_eq_left h]
+
+/-- **Off the two clipping knots `x = θ₀ ± c` the map `θ ↦ ψ_c(x − θ)` is differentiable at
+`θ₀`.** The derivative is `-1` on the central region `|x − θ₀| < c` and `0` outside it —
+exactly the indicator whose `P`-integral is the `B = -P(|x − θ₀| < c)` of `MMY` Thm 10.7.
+No two-sided gluing is needed: each of the three regions is *open* in `θ` around `θ₀`, so
+the branch formula holds on a whole neighbourhood and `congr_of_eventuallyEq` applies. -/
+private theorem hasDerivAt_huberPsi_sub {c θ₀ x : ℝ} (hc : 0 < c) (hx : |x - θ₀| ≠ c) :
+    HasDerivAt (fun θ => huberPsi c (x - θ))
+      (Set.indicator {y : ℝ | |y - θ₀| < c} (fun _ => (-1 : ℝ)) x) θ₀ := by
+  rcases lt_or_gt_of_ne hx with hin | hout
+  · -- Central region: `ψ_c(x − θ) = x − θ` on the open set `{θ | |x − θ| < c}`.
+    rw [Set.indicator_of_mem (show x ∈ {y : ℝ | |y - θ₀| < c} from hin)]
+    have h1 : HasDerivAt (fun θ : ℝ => x - θ) (-1 : ℝ) θ₀ := by
+      simpa using (hasDerivAt_id θ₀).const_sub x
+    refine h1.congr_of_eventuallyEq ?_
+    have hopen : IsOpen {θ : ℝ | |x - θ| < c} :=
+      isOpen_lt (continuous_const.sub continuous_id).abs continuous_const
+    filter_upwards [hopen.mem_nhds (show |x - θ₀| < c from hin)] with θ hθ
+    exact huberPsi_of_abs_le hc.le (le_of_lt hθ)
+  · -- Outside the central region the score is locally constant (`c` or `-c`).
+    rw [Set.indicator_of_notMem (by simpa using hout.le)]
+    rcases lt_abs.mp hout with hA | hB
+    · refine (hasDerivAt_const θ₀ c).congr_of_eventuallyEq ?_
+      have hopen : IsOpen {θ : ℝ | c < x - θ} :=
+        isOpen_lt continuous_const (continuous_const.sub continuous_id)
+      filter_upwards [hopen.mem_nhds (show c < x - θ₀ from hA)] with θ hθ
+      exact huberPsi_of_clip_le hc.le (le_of_lt hθ)
+    · refine (hasDerivAt_const θ₀ (-c)).congr_of_eventuallyEq ?_
+      have hopen : IsOpen {θ : ℝ | x - θ < -c} :=
+        isOpen_lt (continuous_const.sub continuous_id) continuous_const
+      filter_upwards [hopen.mem_nhds (show x - θ₀ < -c from by linarith)] with θ hθ
+      exact huberPsi_of_le_neg_clip hc.le (le_of_lt hθ)
+
 /-- **The population Huber score is differentiable at `θ₀` with derivative the negative
 central mass** (the `B` of `MMY` Theorem 10.7 for the Huber score): derived from the
 Lipschitz score and the absence of atoms at the knots, via differentiation under the
@@ -181,6 +225,59 @@ theorem hasDerivAt_mLocationScore_huber {P : Measure ℝ} [IsProbabilityMeasure 
     -- USER-INPUT: no atoms at the clipping knots; MMY §10.3
     (h_atom_add : P {θ₀ + c} = 0) (h_atom_sub : P {θ₀ - c} = 0) :
     HasDerivAt (mLocationScore (huberPsi c) P) (-(P.real {x | |x - θ₀| < c})) θ₀ := by
-  sorry
+  classical
+  set S : Set ℝ := {x : ℝ | |x - θ₀| < c} with hS_def
+  have hS : MeasurableSet S :=
+    measurableSet_lt (measurable_id.sub_const θ₀).abs measurable_const
+  have hF'meas : Measurable (Set.indicator S (fun _ => (-1 : ℝ))) :=
+    measurable_const.indicator hS
+  -- The knot set `{x | |x − θ₀| = c} = {θ₀+c, θ₀−c}` is `P`-null: this is precisely where
+  -- the atom hypotheses enter.
+  have hnull : P {x : ℝ | |x - θ₀| = c} = 0 := by
+    refine measure_mono_null (fun x hx => ?_) (measure_union_null h_atom_add h_atom_sub)
+    simp only [Set.mem_setOf_eq] at hx
+    have : x = θ₀ + c ∨ x = θ₀ - c := by
+      rcases (abs_eq hc.le).mp hx with h | h
+      · exact Or.inl (by linarith)
+      · exact Or.inr (by linarith)
+    rcases this with h | h <;> simp [h]
+  have hae : ∀ᵐ x ∂P, |x - θ₀| ≠ c := by
+    rw [MeasureTheory.ae_iff]
+    simpa using hnull
+  have h_diff : ∀ᵐ x ∂P,
+      HasDerivAt (fun θ => huberPsi c (x - θ)) (Set.indicator S (fun _ => (-1 : ℝ)) x) θ₀ := by
+    filter_upwards [hae] with x hx using hasDerivAt_huberPsi_sub hc hx
+  -- The parameter-Lipschitz domination: `θ ↦ ψ_c(x − θ)` is `1`-Lipschitz, uniformly in `x`,
+  -- so the constant `1` is an (integrable) Lipschitz bound.
+  have h_lip : ∀ᵐ x ∂P, LipschitzOnWith (Real.nnabs ((fun _ : ℝ => (1 : ℝ)) x))
+      (fun θ => huberPsi c (x - θ)) Set.univ := by
+    refine Filter.Eventually.of_forall fun x => ?_
+    have h1 : LipschitzWith 1 (fun θ : ℝ => huberPsi c (x - θ)) := by
+      refine LipschitzWith.of_dist_le_mul fun a b => ?_
+      have h := (huberPsi_lipschitz c).dist_le_mul (x - a) (x - b)
+      simp only [Real.dist_eq, NNReal.coe_one, one_mul] at h ⊢
+      calc |huberPsi c (x - a) - huberPsi c (x - b)| ≤ |x - a - (x - b)| := h
+        _ = |a - b| := by rw [show x - a - (x - b) = -(a - b) from by ring, abs_neg]
+    simpa [show Real.nnabs (1 : ℝ) = 1 from by ext; simp] using
+      (lipschitzOnWith_univ (K := 1) (f := fun θ : ℝ => huberPsi c (x - θ))).mpr h1
+  have hcont : Continuous fun x : ℝ => huberPsi c (x - θ₀) :=
+    (huberPsi_continuous c).comp (continuous_id.sub continuous_const)
+  have hF_meas : ∀ᶠ θ in 𝓝 θ₀, AEStronglyMeasurable (fun x : ℝ => huberPsi c (x - θ)) P :=
+    Filter.Eventually.of_forall fun θ =>
+      ((huberPsi_continuous c).comp (continuous_id.sub continuous_const)).aestronglyMeasurable
+  have hF_int : Integrable (fun x : ℝ => huberPsi c (x - θ₀)) P :=
+    Integrable.mono' (integrable_const c) hcont.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => by
+        simpa [Real.norm_eq_abs] using abs_huberPsi_le hc.le (x - θ₀))
+  obtain ⟨-, hderiv⟩ := hasDerivAt_integral_of_dominated_loc_of_lip
+    (F := fun θ x => huberPsi c (x - θ)) (x₀ := θ₀) (s := Set.univ)
+    (bound := fun _ : ℝ => (1 : ℝ)) (F' := Set.indicator S (fun _ => (-1 : ℝ)))
+    Filter.univ_mem hF_meas hF_int hF'meas.aestronglyMeasurable h_lip
+    (integrable_const 1) h_diff
+  have hval : ∫ x, Set.indicator S (fun _ => (-1 : ℝ)) x ∂P = -(P.real S) := by
+    rw [integral_indicator_const (-1 : ℝ) hS]
+    simp
+  rw [hval] at hderiv
+  exact hderiv
 
 end StatLean.RobustStatistics
