@@ -39,8 +39,9 @@ with `a_{γμ} = 0` whenever `γ ≠ μ` are non-adjacent; then the model is
 * `condIndepCoords_weakUnion_of_disjoint`, `condIndepCoords_contraction_of_disjoint`,
   `condIndepCoords_intersection_of_disjoint` — the three named sub-lemmas that instance needs
   ((C3), (C4), (C5)); symmetry and decomposition come free from `Core.Coordinates`;
-* `isGlobalMarkov_of_mem_gaussianGraphicalModel` (later lane) — `IsGlobalMarkov`, i.e. (G),
-  obtained from the graphoid instance through Theorem 3.7;
+* `isGlobalMarkov_of_mem_gaussianGraphicalModel` — `IsGlobalMarkov`, i.e. (G), obtained from the
+  graphoid instance through Theorem 3.7 on nonempty blocks, plus
+  `CondIndepCoords.of_isEmpty_left` for the degenerate blocks Theorem 3.7 provably cannot reach;
 * `isLocalMarkov_of_mem_gaussianGraphicalModel` — `IsLocalMarkov`, i.e. (L)
   `Y_γ ⫫ Y_{Γ∖cl(γ)} ∣ Y_{bd(γ)}`, obtained from (G) by pure graph separation. It is stated
   *after* (G) because that is the direction of the dependency: `IsGlobalMarkov ⇒ IsLocalMarkov`
@@ -115,10 +116,10 @@ rewriting in between.
 | `N(m, S)` is a probability measure | `ProbabilityTheory.IsGaussian.toIsProbabilityMeasure` (instance; `Gaussian/Basic.lean:50`) |
 | the feasibility witness `Σ = 1` | `Matrix.PosDef.one`, `Matrix.inv_one`, `Matrix.one_apply_ne` |
 | graph extensionality for `SeparatesTarget` | `SimpleGraph.ext` on `Adj` (the diagonal is covered by `SimpleGraph.irrefl`) |
-| (C1) symmetry, (C2) decomposition of the Gaussian relation | `CondIndepCoords.symm`, `CondIndepCoords.decomposition` (`Core.Coordinates`) — already available, do **not** re-prove |
-| (C3), (C4), (C5) for the Gaussian relation | the three named sub-lemmas of this file; (C5) is Lauritzen Proposition 3.1, p. 29. The pin has no Lebesgue-density lemma for `multivariateGaussian`, so the intended route is block-splitting rather than the book's density argument: reduce to `multivariateGaussian_fromBlocks_prod` (G2.9) on the reindexed sum space, where the premises force the relevant off-diagonal *concentration* blocks to vanish. **Still open**, and all three wait on one brick — the block form (†) of Proposition 5.2 at general disjoint blocks, which `Gaussian.Precision` does not state; (C4) additionally needs a Schur-marginalisation lemma, since its two premises live on *different* index blocks. See the section docstring of "Lauritzen Proposition 3.1 at the Gaussian" below for the full reduction |
+| (C1) symmetry, (C2) decomposition of the Gaussian relation | `CondIndepCoords.symm`, `CondIndepCoords.decomposition_of_sfinite` (`Core.Coordinates`) — already available, do **not** re-prove; the hypothesis-free `CondIndepCoords.decomposition` was refuted and deleted |
+| (C3), (C4), (C5) for the Gaussian relation | the three named sub-lemmas of this file; (C5) is Lauritzen Proposition 3.1, p. 29. The pin has no Lebesgue-density lemma for `multivariateGaussian`, so the route is block-splitting rather than the book's density argument: all three read off the block form (†) of Proposition 5.2, `Gaussian.Precision.condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero`, at a single shared index block `E = A ∪ B ∪ C ∪ D`. (C3) and (C5) are then bookkeeping; (C4) additionally consumes `Gaussian.Precision.precisionMatrix_principalSubmatrix_apply_of_row_eq_zero` (marginalisation is Schur complementation of `K`), since its two premises live on *different* index blocks. See the section docstring of "Lauritzen Proposition 3.1 at the Gaussian" below for the full reduction |
 | (G) ⇒ (L), (L) ⇒ (P), (G) ⇒ (P) | `Undirected.Markov.globalMarkov_implies_localMarkov`, `localMarkov_implies_pairwiseMarkov`, `globalMarkov_implies_pairwiseMarkov` — Lauritzen Proposition 3.4; **never** re-derive the hierarchy per model class |
-| (P) ⇒ (G) | `Undirected.Markov.pairwiseMarkov_implies_globalMarkov` (Theorem 3.7, Pearl–Paz) fed by `isGraphoid_condIndepCoords_multivariateGaussian` — this is the whole content of "since the density is positive and continuous, this implies the global and local Markov properties" |
+| (P) ⇒ (G) | `Undirected.Markov.pairwiseMarkov_implies_globalMarkov_of_nonempty` (Theorem 3.7, Pearl–Paz) fed by `isGraphoid_condIndepCoords_multivariateGaussian`, plus `CondIndepCoords.of_isEmpty_left` for the degenerate blocks Theorem 3.7 cannot reach — this is the whole content of "since the density is positive and continuous, this implies the global and local Markov properties" |
 
 **Bibliographic comments.** Covariance selection is A. P. Dempster's, "Covariance selection,"
 *Biometrics* **28** (1972), 157–175 — the name, the model class `S⁺(G)` and the maximum
@@ -335,11 +336,11 @@ theorem multivariateGaussian_mem_gaussianGraphicalModel_iff_pairwise {G : Simple
 /-! ### Lauritzen Proposition 3.1 at the Gaussian — the graphoid instance
 
 The Gaussian's contribution to the `Core.Semigraphoid` abstraction. (C1) and (C2) are already
-available as `CondIndepCoords.symm` and `CondIndepCoords.decomposition`; the three sub-lemmas
-below are the genuine debts, kept named rather than buried inside the instance so that the gap
+available as `CondIndepCoords.symm` and `CondIndepCoords.decomposition_of_sfinite`; the three
+sub-lemmas below are the genuine debts, kept named rather than buried inside the instance so that the gap
 structure stays visible. All three carry the book's pairwise disjointness of the blocks.
 
-### The reduction, and the one brick all three wait on
+### The reduction, and the two bricks all three consume
 
 Write `K^E := (Σ_E)⁻¹` for the concentration matrix of the **principal submatrix** of `Σ` on a
 block `E ⊆ Γ` — equivalently of the marginal law of `Y_E`, a Gaussian marginal being the
@@ -356,34 +357,34 @@ normal are independent iff that cross-block vanishes (Corollary C.6,
 complement with the `A ∪ B` principal block of `K^{A ∪ B ∪ C}`, whose off-diagonal block vanishes
 exactly when the Schur complement's does.
 
-`Gaussian.Precision` states (†) only in the pairwise instance `A = {γ}`, `B = {μ}`,
-`C = Γ ∖ {γ, μ}` (`condIndepCoords_gaussianCoords_iff_precisionMatrix_eq_zero`), which is all
-that `isPairwiseMarkov_of_mem_gaussianGraphicalModel` needs. **(†) at general disjoint blocks is
-not available anywhere in the repo, and it is the single brick the three sub-lemmas below wait
-on.** It belongs next to Proposition 5.2 in `Gaussian.Precision` rather than here: its `⟹`
-direction needs essential uniqueness of the disintegration — identifying the anonymous kernels
-of `CondIndep` with the conditional laws — which is precisely the machinery Proposition 5.2's
-own `⟹` direction must build, and which `Core.CondIndep` declines to provide in general (see
-its module docstring). Re-deriving it here would duplicate that lane's hardest step.
+(†) is `Gaussian.Precision.condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero`, and
+it belongs there rather than here: its `⟹` direction needs essential uniqueness of the
+disintegration — identifying the anonymous kernels of `CondIndep` with the conditional laws —
+which is exactly the machinery Proposition 5.2's own `⟹` direction builds, so both are index
+transports of a single analytic core in that file. **Nothing below re-derives it.** Note that
+(†) takes the index block `E` as a *parameter* with `hE : A ∪ B ∪ C = E`: the type of `K^E`
+depends on `E`, so a literal union would force a dependent transport every time two blocks were
+presented differently. All three sub-lemmas below exploit this by fixing **one**
+`E := A ∪ B ∪ C ∪ D` and reading every premise and the conclusion on it.
 
-*Granted (†), the three sub-lemmas go as follows.* Every statement of (C3) and (C5), and the
-conclusion of (C4), lives on the **same** index block `E := A ∪ B ∪ C ∪ D`, since
-`A ∪ (B ∪ D) ∪ C = A ∪ B ∪ (C ∪ D) = E`.
+*The three sub-lemmas then go as follows.* Every statement of (C3) and (C5), and the conclusion
+of (C4), lives on that same `E`, since `A ∪ (B ∪ D) ∪ C = A ∪ B ∪ (C ∪ D) = E`.
 
-* **(C3)** is then pure bookkeeping: `(K^E)_{A, B ∪ D} = 0` gives `(K^E)_{AB} = 0`.
-* **(C5)** is pure bookkeeping too: its second premise's index block is `A ∪ D ∪ C ∪ B = E` as
+* **(C3)** is pure bookkeeping: `(K^E)_{A, B ∪ D} = 0` gives `(K^E)_{AB} = 0`.
+* **(C5)** is pure bookkeeping too: its second premise's index block is `A ∪ D ∪ (C ∪ B) = E` as
   well, so the two premises are `(K^E)_{AB} = 0` and `(K^E)_{AD} = 0`, which together *are* the
   conclusion `(K^E)_{A, B ∪ D} = 0`.
-* **(C4) is not bookkeeping**, and the route table's "the premises force the relevant
-  off-diagonal covariance blocks to vanish simultaneously" understates it: the second premise
-  `Y_A ⫫ Y_D ∣ Y_C` lives on the strictly smaller block `A ∪ C ∪ D`, so it delivers
-  `(K^{A ∪ C ∪ D})_{AD} = 0` and **not** `(K^E)_{AD} = 0`. The two are linked by marginalisation:
-  deleting `B` from `E` replaces `K^E` by its Schur complement,
-  `K^{A ∪ C ∪ D} = (K^E)_{ACD} − (K^E)_{ACD,B}((K^E)_{BB})⁻¹(K^E)_{B,ACD}`, whose `(A, D)` entry
-  is `(K^E)_{AD} − (K^E)_{AB}((K^E)_{BB})⁻¹(K^E)_{BD}`. The *first* premise `(K^E)_{AB} = 0`
-  kills the correction term, so `(K^E)_{AD} = (K^{A ∪ C ∪ D})_{AD} = 0`. Hence (C4) needs (†)
-  **and** one Schur-marginalisation lemma, and it is the only one of the three whose two
-  premises genuinely interact at the matrix level. -/
+* **(C4) is not bookkeeping**, and it is the one that needs the *second* brick. Its second
+  premise `Y_A ⫫ Y_D ∣ Y_C` lives on the strictly smaller block `F := A ∪ D ∪ C`, so it delivers
+  `(K^F)_{AD} = 0` and **not** `(K^E)_{AD} = 0`. The two are linked by marginalisation: deleting
+  `B` from `E` replaces `K^E` by its Schur complement,
+  `K^F = (K^E)_{F} − (K^E)_{F,B}((K^E)_{BB})⁻¹(K^E)_{B,F}`, whose `(A, D)` entry is
+  `(K^E)_{AD} − (K^E)_{AB}((K^E)_{BB})⁻¹(K^E)_{BD}`. The *first* premise `(K^E)_{AB} = 0` kills
+  the correction term, so `(K^E)_{AD} = (K^F)_{AD} = 0`. That marginalisation step — the **dual
+  of (C.3)**, marginalisation being Schur complementation of `K` just as conditioning is
+  principal submatrixing of `K` — is
+  `Gaussian.Precision.precisionMatrix_principalSubmatrix_apply_of_row_eq_zero`, in the sharp
+  form "a row of `K` that already vanishes on the deleted block survives marginalisation". -/
 
 /-- **(C3), weak union, for the Gaussian** (Lauritzen §3.1, p. 29): `X_A ⫫ (X_B, X_D) ∣ X_C`
 implies `X_A ⫫ X_B ∣ (X_C, X_D)`.
@@ -392,9 +393,12 @@ implies `X_A ⫫ X_B ∣ (X_C, X_D)`.
 essential uniqueness of disintegrations — so the Gaussian supplies this itself, by block
 splitting rather than through the general calculus.
 
-*Open.* Blocked on the block form (†) of Proposition 5.2; see the section docstring. Granted (†),
-this is bookkeeping only: premise and conclusion live on the same index block
-`A ∪ B ∪ C ∪ D` and read `(K^E)_{A, B ∪ D} = 0` and `(K^E)_{AB} = 0`. -/
+*Proof.* Bookkeeping on top of the block form (†) of Proposition 5.2
+(`condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero`): premise and conclusion live
+on the **same** index block `E := A ∪ B ∪ C ∪ D`, since `A ∪ (B ∪ D) ∪ C = A ∪ B ∪ (C ∪ D) = E`,
+and read `(K^E)_{A, B ∪ D} = 0` and `(K^E)_{AB} = 0`. The second is the first restricted along
+`B ⊆ B ∪ D`. Taking `E` as a *parameter* of (†) rather than the literal union is what makes this
+a restriction rather than a dependent transport. -/
 theorem condIndepCoords_weakUnion_of_disjoint
     (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ}
     -- USER-INPUT: `Σ` regular; Lauritzen §5.2, p. 131
@@ -405,15 +409,33 @@ theorem condIndepCoords_weakUnion_of_disjoint
     -- USER-INPUT: the independence to be weakened; Lauritzen §3.1 (C3), p. 29
     (h : CondIndepCoords (multivariateGaussian m S) gaussianCoords A (B ∪ D) C) :
     CondIndepCoords (multivariateGaussian m S) gaussianCoords A B (C ∪ D) := by
-  sorry
+  classical
+  set E : Finset ι := A ∪ B ∪ C ∪ D with hEdef
+  have hE₁ : A ∪ (B ∪ D) ∪ C = E := by
+    rw [hEdef]; ext x; simp only [Finset.mem_union]; tauto
+  have hE₂ : A ∪ B ∪ (C ∪ D) = E := by
+    rw [hEdef]; ext x; simp only [Finset.mem_union]; tauto
+  rw [condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero m hS
+      (Finset.disjoint_union_right.mpr ⟨hAB, hAD⟩) hAC
+      (Finset.disjoint_union_left.mpr ⟨hBC, hCD.symm⟩) hE₁] at h
+  rw [condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero m hS hAB
+      (Finset.disjoint_union_right.mpr ⟨hAC, hAD⟩)
+      (Finset.disjoint_union_right.mpr ⟨hBC, hBD⟩) hE₂]
+  exact fun a b ha hb => h a b ha (Finset.mem_union_left _ hb)
 
 /-- **(C4), contraction, for the Gaussian** (Lauritzen §3.1, p. 29): `X_A ⫫ X_B ∣ (X_C, X_D)`
 together with `X_A ⫫ X_D ∣ X_C` implies `X_A ⫫ (X_B, X_D) ∣ X_C`.
 
-*Open.* Blocked on the block form (†) of Proposition 5.2 **and** on one Schur-marginalisation
-lemma; see the section docstring. This is the only one of the three whose two premises interact:
-the second lives on the strictly smaller index block `A ∪ C ∪ D`, and it is the first premise
-`(K^E)_{AB} = 0` that kills the correction term produced by deleting `B`. -/
+*Proof.* The only one of the three whose two premises genuinely interact, because they live on
+**different** index blocks: the conclusion and the first premise on `E := A ∪ B ∪ C ∪ D`, the
+second premise on the strictly smaller `F := A ∪ D ∪ C`. For a target index `b ∈ B` the first
+premise is already the conclusion. For `b ∈ D` the two are linked by marginalisation: deleting
+`B` from `E` replaces `K^E` by its Schur complement
+`(K^E)_{F} − (K^E)_{F,B}((K^E)_{BB})⁻¹(K^E)_{B,F}`, and the first premise `(K^E)_{AB} = 0` says
+precisely that row `a` of the correction term vanishes, so `(K^E)_{ab} = (K^F)_{ab} = 0` by the
+second premise. That step is
+`Gaussian.Precision.precisionMatrix_principalSubmatrix_apply_of_row_eq_zero`, the `Finset` form
+of the dual of Lauritzen (C.3). -/
 theorem condIndepCoords_contraction_of_disjoint
     (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ}
     -- USER-INPUT: `Σ` regular; Lauritzen §5.2, p. 131
@@ -426,7 +448,50 @@ theorem condIndepCoords_contraction_of_disjoint
     -- USER-INPUT: second premise of (C4); Lauritzen §3.1, p. 29
     (h₂ : CondIndepCoords (multivariateGaussian m S) gaussianCoords A D C) :
     CondIndepCoords (multivariateGaussian m S) gaussianCoords A (B ∪ D) C := by
-  sorry
+  classical
+  set E : Finset ι := A ∪ B ∪ C ∪ D with hEdef
+  set F : Finset ι := A ∪ D ∪ C with hFdef
+  have hE₁ : A ∪ B ∪ (C ∪ D) = E := by
+    rw [hEdef]; ext x; simp only [Finset.mem_union]; tauto
+  have hE₃ : A ∪ (B ∪ D) ∪ C = E := by
+    rw [hEdef]; ext x; simp only [Finset.mem_union]; tauto
+  have hFE : F ⊆ E := by
+    rw [hFdef, hEdef]; intro x hx; simp only [Finset.mem_union] at hx ⊢; tauto
+  -- what `E` has and `F` does not is exactly `B`
+  have hmemF : ∀ x ∈ E, x ∉ F → x ∈ B := by
+    intro x hx hxF
+    rw [hEdef] at hx; rw [hFdef] at hxF
+    simp only [Finset.mem_union] at hx hxF
+    tauto
+  rw [condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero m hS hAB
+      (Finset.disjoint_union_right.mpr ⟨hAC, hAD⟩)
+      (Finset.disjoint_union_right.mpr ⟨hBC, hBD⟩) hE₁] at h₁
+  rw [condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero m hS hAD hAC hCD.symm
+      (rfl : A ∪ D ∪ C = F)] at h₂
+  rw [condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero m hS
+      (Finset.disjoint_union_right.mpr ⟨hAB, hAD⟩) hAC
+      (Finset.disjoint_union_left.mpr ⟨hBC, hCD.symm⟩) hE₃]
+  intro a b ha hb
+  rcases Finset.mem_union.mp hb with hb | hb
+  · exact h₁ a b ha hb
+  -- the interesting case: `b ∈ D`, where the second premise lives on the smaller block `F`
+  have haF : (a : ι) ∈ F := by rw [hFdef]; simp only [Finset.mem_union]; tauto
+  have hbF : (b : ι) ∈ F := by rw [hFdef]; simp only [Finset.mem_union]; tauto
+  -- the first premise says row `a` of `K^E` already vanishes on the block to be deleted
+  have hrow : ∀ c : ↥E, (c : ι) ∉ F →
+      precisionMatrix (principalSubmatrix S E) ⟨(a : ι), hFE haF⟩ c = 0 := by
+    intro c hc
+    have hca : (⟨(a : ι), hFE haF⟩ : ↥E) = a := Subtype.ext rfl
+    rw [hca]
+    exact h₁ a c ha (hmemF c c.2 hc)
+  have hmarg := precisionMatrix_principalSubmatrix_apply_of_row_eq_zero hS hFE haF hrow hbF
+  have hzero : precisionMatrix (principalSubmatrix S F) ⟨(a : ι), haF⟩ ⟨(b : ι), hbF⟩ = 0 :=
+    h₂ ⟨(a : ι), haF⟩ ⟨(b : ι), hbF⟩ ha hb
+  rw [hzero] at hmarg
+  have hca : (⟨(a : ι), hFE haF⟩ : ↥E) = a := Subtype.ext rfl
+  have hcb : (⟨(b : ι), hFE hbF⟩ : ↥E) = b := Subtype.ext rfl
+  rw [hca, hcb] at hmarg
+  exact hmarg.symm
 
 /-- **(C5), intersection, for the Gaussian — Lauritzen Proposition 3.1** (p. 29): a strictly
 positive continuous joint density satisfies intersection. A regular multivariate normal has such
@@ -441,11 +506,11 @@ disjointness is Lauritzen's own standing convention — see the module docstring
 positive density: (C5) fails outright for a degenerate law, by Lauritzen's `X = Y = Z`
 counterexample on p. 30.
 
-*Open.* Blocked on the block form (†) of Proposition 5.2; see the section docstring. Granted (†),
-this is bookkeeping only: both premises live on the same index block `E := A ∪ B ∪ C ∪ D` (the
-second because `A ∪ D ∪ C ∪ B = E`) and read `(K^E)_{AB} = 0`, `(K^E)_{AD} = 0`, which together
-are the conclusion. Note where the regularity actually enters on this route: it is `Σ.PosDef`
-that makes `K^E` exist at all, which is the matrix shadow of "the density is positive". -/
+*Proof.* Bookkeeping on top of the block form (†) of Proposition 5.2: both premises live on the
+same index block `E := A ∪ B ∪ C ∪ D` (the second because `A ∪ D ∪ (C ∪ B) = E`) and read
+`(K^E)_{AB} = 0`, `(K^E)_{AD} = 0`, which together are the conclusion `(K^E)_{A, B ∪ D} = 0`.
+Note where the regularity actually enters on this route: it is `Σ.PosDef` that makes `K^E` exist
+at all, which is the matrix shadow of "the density is positive". -/
 theorem condIndepCoords_intersection_of_disjoint
     (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ}
     -- USER-INPUT: `Σ` regular — this is what makes the density positive and continuous;
@@ -459,7 +524,27 @@ theorem condIndepCoords_intersection_of_disjoint
     -- USER-INPUT: second premise of (C5); Lauritzen §3.1, p. 30
     (h₂ : CondIndepCoords (multivariateGaussian m S) gaussianCoords A D (C ∪ B)) :
     CondIndepCoords (multivariateGaussian m S) gaussianCoords A (B ∪ D) C := by
-  sorry
+  classical
+  set E : Finset ι := A ∪ B ∪ C ∪ D with hEdef
+  have hE₁ : A ∪ B ∪ (C ∪ D) = E := by
+    rw [hEdef]; ext x; simp only [Finset.mem_union]; tauto
+  have hE₂ : A ∪ D ∪ (C ∪ B) = E := by
+    rw [hEdef]; ext x; simp only [Finset.mem_union]; tauto
+  have hE₃ : A ∪ (B ∪ D) ∪ C = E := by
+    rw [hEdef]; ext x; simp only [Finset.mem_union]; tauto
+  rw [condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero m hS hAB
+      (Finset.disjoint_union_right.mpr ⟨hAC, hAD⟩)
+      (Finset.disjoint_union_right.mpr ⟨hBC, hBD⟩) hE₁] at h₁
+  rw [condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero m hS hAD
+      (Finset.disjoint_union_right.mpr ⟨hAC, hAB⟩)
+      (Finset.disjoint_union_right.mpr ⟨hCD.symm, hBD.symm⟩) hE₂] at h₂
+  rw [condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero m hS
+      (Finset.disjoint_union_right.mpr ⟨hAB, hAD⟩) hAC
+      (Finset.disjoint_union_left.mpr ⟨hBC, hCD.symm⟩) hE₃]
+  intro a b ha hb
+  rcases Finset.mem_union.mp hb with hb | hb
+  · exact h₁ a b ha hb
+  · exact h₂ a b ha hb
 
 /-- **The conditional-independence relation of a regular Gaussian is a graphoid** — the Gaussian
 instance of `Core.Semigraphoid.IsGraphoid`, i.e. Lauritzen **Proposition 3.1** (p. 29) applied to
@@ -467,12 +552,15 @@ the normal density, which §5.2 (p. 131) invokes when it says "since the density
 continuous, this implies the global and local Markov properties".
 
 This is the single object `Undirected.Markov` needs from the Gaussian side: with it,
-`pairwiseMarkov_implies_globalMarkov` (Theorem 3.7, Pearl–Paz) and `markov_tfae` apply verbatim,
-and no Markov implication has to be re-proved for this model class.
+`pairwiseMarkov_implies_globalMarkov_of_nonempty` (Theorem 3.7, Pearl–Paz) and
+`markov_tfae_of_nonempty` apply verbatim, and no Markov implication has to be re-proved for this
+model class.
 
 Assembly (no new mathematics): `symm := CondIndepCoords.symm`,
-`decomposition := CondIndepCoords.decomposition` at `B ⊆ B ∪ D`, and the three named sub-lemmas
-above for `weakUnion`, `contraction` and `intersection`. -/
+`decomposition := CondIndepCoords.decomposition_of_sfinite` at `B ⊆ B ∪ D` (the frozen
+`CondIndepCoords.decomposition` was refuted and deleted; its s-finiteness hypothesis is an
+instance here, a Gaussian being a probability measure), and the three named sub-lemmas above for
+`weakUnion`, `contraction` and `intersection`. -/
 theorem isGraphoid_condIndepCoords_multivariateGaussian
     (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ}
     -- USER-INPUT: `Σ` regular — positivity and continuity of the density; Lauritzen Prop. 3.1,
@@ -480,7 +568,7 @@ theorem isGraphoid_condIndepCoords_multivariateGaussian
     (hS : S.PosDef) :
     IsGraphoid (CondIndepCoords (multivariateGaussian m S) gaussianCoords) := by
   refine ⟨⟨fun _ _ _ h => h.symm, fun _ _ _ _ _ h =>
-      CondIndepCoords.decomposition Finset.subset_union_left h, ?_, ?_⟩, ?_⟩
+      CondIndepCoords.decomposition_of_sfinite Finset.subset_union_left h, ?_, ?_⟩, ?_⟩
   · intro A B D C hAB hAC hAD hBC hBD hCD h
     exact condIndepCoords_weakUnion_of_disjoint m hS hAB hAC hAD hBC hBD hCD h
   · intro A B D C hAB hAC hAD hBC hBD hCD h₁ h₂
@@ -493,21 +581,36 @@ density is positive and continuous, this implies the global and local Markov pro
 instance of `Undirected.Markov.IsGlobalMarkov`. Separation is `Core.Separation.Separates` and the
 three disjointness conditions are part of that definition; nothing is restated here.
 
-Later lane, and it carries **no debt of its own**: destructure `hP` into a regular
-`multivariateGaussian m S`, then apply
-`pairwiseMarkov_implies_globalMarkov G (isGraphoid_condIndepCoords_multivariateGaussian m hS)`
-to `isPairwiseMarkov_of_mem_gaussianGraphicalModel hP`. The real content sits in Theorem 3.7 (in
+It carries **no debt of its own**: destructure `hP` into a regular `multivariateGaussian m S`,
+then apply `pairwiseMarkov_implies_globalMarkov_of_nonempty G
+(isGraphoid_condIndepCoords_multivariateGaussian m hS)` to
+`isPairwiseMarkov_of_mem_gaussianGraphicalModel hP`. The real content sits in Theorem 3.7 (in
 `Undirected.Markov`) and in the graphoid instance above — which is exactly Lauritzen's own
-argument, and not a fresh Gaussian computation. -/
+argument, and not a fresh Gaussian computation.
+
+**Why the `_of_nonempty` form, and why no hypothesis is added.** Theorem 3.7 as frozen over
+*all* disjoint triples is false (`not_forall_pairwiseMarkov_implies_globalMarkov`) and has been
+deleted: `IsGlobalMarkov` demands `ci ∅ B S` of every instance while (P) says nothing about
+empty blocks, and no graphoid axiom can manufacture a first `ci`-statement. The Gaussian,
+however, *can* supply those degenerate cases directly — `CondIndepCoords.of_isEmpty_left`, the
+subvector on an empty block taking values in a singleton type — so the empty-block regime is
+discharged here rather than assumed, and the frozen signature of this theorem is unchanged. -/
 theorem isGlobalMarkov_of_mem_gaussianGraphicalModel {G : SimpleGraph ι}
     {P : Measure (EuclideanSpace ℝ ι)}
     -- USER-INPUT: a law of the covariance selection model; Lauritzen §5.2, p. 131
     (hP : P ∈ gaussianGraphicalModel G) :
     IsGlobalMarkov G (CondIndepCoords P gaussianCoords) := by
   obtain ⟨m, S, hS, hz, rfl⟩ := mem_gaussianGraphicalModel_iff.mp hP
-  exact pairwiseMarkov_implies_globalMarkov G
+  intro A B T hAB hAT hBT hsep
+  -- the two degenerate blocks, which Theorem 3.7 cannot reach but the Gaussian supplies itself
+  rcases A.eq_empty_or_nonempty with rfl | hA
+  · exact CondIndepCoords.of_isEmpty_left measurable_gaussianCoords B T
+  rcases B.eq_empty_or_nonempty with rfl | hB
+  · exact (CondIndepCoords.of_isEmpty_left measurable_gaussianCoords A T).symm
+  -- and Theorem 3.7 (Pearl–Paz) on the book's own nonempty blocks
+  exact pairwiseMarkov_implies_globalMarkov_of_nonempty G
     (isGraphoid_condIndepCoords_multivariateGaussian m hS)
-    (isPairwiseMarkov_of_mem_gaussianGraphicalModel hP)
+    (isPairwiseMarkov_of_mem_gaussianGraphicalModel hP) A B T hA hB hAB hAT hBT hsep
 
 /-- **The local Markov property** (Lauritzen §3.2, p. 32, property (L)):
 `Y_γ ⫫ Y_{Γ∖cl(γ)} ∣ Y_{bd(γ)}`, as an instance of `Undirected.Markov.IsLocalMarkov`.

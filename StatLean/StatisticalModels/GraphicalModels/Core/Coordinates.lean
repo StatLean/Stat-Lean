@@ -17,12 +17,14 @@ single vocabulary.
   a coordinate of a subvector is a coordinate, and restricting a bigger subvector to a smaller
   index set gives the smaller subvector;
 * `CondIndepCoords μ X A B C` — `X_A ⫫ X_B ∣ X_C`;
-* `CondIndepCoords.symm` / `CondIndepCoords.decomposition` — the two graphoid properties that
-  are structural at this level, inherited from `CondIndep.symm` / `CondIndep.comp`. **The
-  decomposition statement is false as frozen**, exactly as `CondIndep.comp` is — see its
-  docstring, the machine-checked
-  `CondIndepCoords.DecompositionCounterexample.decomposition_is_false`, and the proved repair
-  `CondIndepCoords.decomposition_of_sfinite`.
+* `CondIndepCoords.symm` / `CondIndepCoords.decomposition_of_sfinite` — the two graphoid
+  properties that are structural at this level, inherited from `CondIndep.symm` /
+  `CondIndep.comp_of_sfinite`. The frozen `CondIndepCoords.decomposition`, which carried no
+  s-finiteness hypothesis, was **false** and has been **deleted**, exactly as `CondIndep.comp`
+  was — see the section *"(C2) without s-finiteness — deleted, and why"* below and the
+  machine-checked `CondIndepCoords.DecompositionCounterexample.decomposition_is_false`;
+* `CondIndepCoords.of_isEmpty_left` — the `A = ∅` edge case, a theorem rather than a remark:
+  the subvector on an empty block is conditionally independent of everything.
 
 **Reference.** S. L. Lauritzen, *Graphical Models*, Oxford Statistical Science Series 17,
 Clarendon Press, Oxford, 1996, §3.1, pp. 28–30 — conditional independence between blocks of a
@@ -33,8 +35,8 @@ vector indexed by a finite vertex set; the Lean carrier is `Finset.restrict`, wh
 `↥A → α` is indexed by the coercion of the `Finset` to a subtype. Consequently the *type* of
 `X_A` depends on `A`, and set-level manipulations (`A ⊆ B`, `A ∪ B`) become explicit transport
 maps `Finset.restrict₂` rather than silent equalities — this is why `restrict₂_comp_coords` is
-load-bearing and why decomposition at this level is an instance of `CondIndep.comp` rather
-than a rewriting step.
+load-bearing and why decomposition at this level is an instance of `CondIndep.comp_of_sfinite`
+rather than a rewriting step.
 
 The index type `V` is *not* assumed finite here: only the three blocks are finite sets, so the
 vocabulary also covers infinite graphs. Finiteness of `V` enters only where the complement
@@ -102,41 +104,44 @@ theorem CondIndepCoords.symm
     CondIndepCoords μ X B A C :=
   CondIndep.symm hci
 
-/-- **(C2), decomposition** at the coordinate level (Lauritzen p. 29): dropping variables from
-the second block preserves conditional independence. An instance of `CondIndep.comp` with the
-transport map `Finset.restrict₂`.
+/-! ### (C2) without s-finiteness — deleted, and why
 
-**REFUTED AS FROZEN — this statement is FALSE; the `sorry` is deliberate.** Being an instance of
-`CondIndep.comp`, it inherits that theorem's falsity (see its docstring): `⊗ₘ` is `0` by fiat
-when the conditioning law is not s-finite, so the frozen statement equates a possibly nonzero
-law with `0`. `CondIndepCoords.DecompositionCounterexample.decomposition_is_false` is a
-machine-checked derivation of `False` from this very statement; the instance is
-`V := Bool`, `α := Ω := CondIndep.CompCounterexample.Pt`, `μ := mu`, with the random vector
-`XX` whose coordinate `false` is the identity (measurable, and with a non-s-finite law) and
-whose coordinate `true` reads the invisible second coordinate of `Pt` (not a.e. measurable),
-and with the blocks `A = B = ∅ ⊆ D = {true}`, `C = {false}`.
+There used to be a declaration `CondIndepCoords.decomposition` here: Lauritzen (C2) at the
+coordinate level, stated with **no** hypothesis on the conditioning law, and carrying a `sorry`.
+**That statement is false, and has been deleted rather than left `sorry`ed** — a `sorry` on a
+statement known to be false is indistinguishable, in any census, from honest unfinished work.
+What was deleted is exactly
+
+```
+theorem CondIndepCoords.decomposition (hBD : B ⊆ D) (hci : CondIndepCoords μ X A D C) :
+    CondIndepCoords μ X A B C
+```
+
+and `CondIndepCoords.DecompositionCounterexample.decomposition_is_false` below derives `False`
+from precisely that statement, so the refutation is machine-checked, not narrative.
+
+*Why it is false.* Being an instance of the (likewise deleted, likewise false) `CondIndep.comp`,
+it inherits that theorem's falsity: `⊗ₘ` is `0` by fiat when the conditioning law is not
+s-finite (`MeasureTheory.Measure.compProd_of_not_sfinite`), so the statement equates a possibly
+nonzero law with `0`. The witness is `V := Bool`, `α := Ω := CondIndep.CompCounterexample.Pt`,
+`μ := mu`, with the random vector `XX` whose coordinate `false` is the identity (measurable, and
+with a non-s-finite law) and whose coordinate `true` reads the invisible second coordinate of
+`Pt` (not a.e. measurable), and with the blocks `A = B = ∅ ⊆ D = {true}`, `C = {false}`.
 
 `CondIndepCoords.decomposition_of_sfinite` below is the same theorem with the one missing
 hypothesis `[SFinite (μ.map (coords C X))]` restored, and is fully proved; it is free at every
 intended instance, since `SFinite (μ.map _)` is an instance whenever `μ` is s-finite (in
-particular for any probability measure). Repairing the frozen statement is a scope decision and
-is left to the user. -/
-theorem CondIndepCoords.decomposition
-    -- USER-INPUT: the block to be kept is part of the block that is independent;
-    -- Lauritzen §3.1 (C2)
-    (hBD : B ⊆ D)
-    -- USER-INPUT: the block conditional independence to be weakened; Lauritzen §3.1 (C2)
-    (hci : CondIndepCoords μ X A D C) :
-    CondIndepCoords μ X A B C := by
-  sorry
+particular for any probability measure), and it is what every consumer in this area now uses. -/
 
-/-- **(C2), decomposition at the coordinate level — the repaired statement.** Identical to
-`CondIndepCoords.decomposition` except for the one hypothesis that makes it true; see the
-refutation in that declaration's docstring. An instance of `CondIndep.comp_of_sfinite` with the
-transport map `Finset.restrict₂`, whose defining equation is `restrict₂_comp_coords`. -/
+/-- **(C2), decomposition** at the coordinate level (Lauritzen p. 29): dropping variables from
+the second block preserves conditional independence. An instance of `CondIndep.comp_of_sfinite`
+with the transport map `Finset.restrict₂`, whose defining equation is `restrict₂_comp_coords`.
+
+This is the **repaired** form of the deleted `CondIndepCoords.decomposition`: identical to it
+except for the one hypothesis that makes it true; see the section above. -/
 theorem CondIndepCoords.decomposition_of_sfinite
-    -- LEAN-ONLY: the hypothesis missing from `CondIndepCoords.decomposition`, which is false
-    -- without it; see `CondIndep.comp_of_sfinite`
+    -- LEAN-ONLY: the hypothesis missing from the deleted `CondIndepCoords.decomposition`,
+    -- which is false without it; see `CondIndep.comp_of_sfinite`
     [SFinite (μ.map (coords C X))]
     -- USER-INPUT: the block to be kept is part of the block that is independent;
     -- Lauritzen §3.1 (C2)
@@ -147,13 +152,33 @@ theorem CondIndepCoords.decomposition_of_sfinite
   CondIndep.comp_of_sfinite (φ := id) (ψ := Finset.restrict₂ (π := fun _ => α) hBD)
     measurable_id (Finset.measurable_restrict₂ (X := fun _ => α) hBD) hci
 
+/-- **The `A = ∅` edge case is a theorem, not a convention**: the subvector on an empty index
+block takes values in a singleton type, so it is conditionally independent of every other block
+given every third block. Together with `CondIndepCoords.symm` this covers both degenerate blocks
+of `Undirected.Markov.IsGlobalMarkov`, whose definition quantifies over *all* disjoint triples —
+which is what lets a model class supply (G) from Theorem 3.7's nonempty-blocks form.
+
+An instance of `condIndep_of_subsingleton_left`: `↥(∅ : Finset V) → α` is a singleton type
+(`IsEmpty` domain), and the other block's subvector is measurable by `measurable_coords`. -/
+theorem CondIndepCoords.of_isEmpty_left
+    -- LEAN-ONLY: `condDistrib` supplies the disintegration only for a finite measure
+    [IsFiniteMeasure μ]
+    -- LEAN-ONLY: `condDistrib` needs a standard Borel nonempty target; for `α = ℝ` (the
+    -- Gaussian and the discrete-on-`ℝ` consumers) both are instances
+    [StandardBorelSpace α] [Nonempty α]
+    -- LEAN-ONLY: measurability of the ambient random vector, inherited by its subvectors
+    (hX : Measurable X) (B C : Finset V) :
+    CondIndepCoords μ X ∅ B C :=
+  condIndep_of_subsingleton_left (measurable_coords B hX).aemeasurable
+
 namespace CondIndepCoords.DecompositionCounterexample
 
-/-! ### Refutation of `CondIndepCoords.decomposition` as frozen
+/-! ### Refutation of the deleted `CondIndepCoords.decomposition`
 
 The coordinate-level instance of the counterexample in `Core.CondIndep`: a random vector on the
 plane `Pt` whose conditioning coordinate is rich (its law is not s-finite) and whose other
-coordinate is invisible to the σ-algebra. Nothing else in the area depends on this section. -/
+coordinate is invisible to the σ-algebra. **This section is what keeps the refutation alive
+after the deletion**; nothing else in the area depends on it. -/
 
 open CondIndep.CompCounterexample
 
@@ -225,9 +250,9 @@ theorem not_condIndepCoords : ¬ CondIndepCoords mu XX ∅ ∅ {false} := by
     Measure.map_eq_zero_iff hm.aemeasurable] at hmap
   exact mu_ne_zero' hmap
 
-/-- **`CondIndepCoords.decomposition` is false as frozen**: its statement, taken as a hypothesis,
-yields `False`. The missing hypothesis is `SFinite (μ.map (coords C X))`; with it the theorem is
-true, and proved, as `CondIndepCoords.decomposition_of_sfinite`. -/
+/-- **The deleted `CondIndepCoords.decomposition` is false**: its statement, taken as a
+hypothesis, yields `False`. The missing hypothesis is `SFinite (μ.map (coords C X))`; with it the
+theorem is true, and proved, as `CondIndepCoords.decomposition_of_sfinite`. -/
 theorem decomposition_is_false
     (decomposition : ∀ {V α Ω : Type} [MeasurableSpace α] [MeasurableSpace Ω] {μ : Measure Ω}
       {X : Ω → V → α} {A B C D : Finset V},

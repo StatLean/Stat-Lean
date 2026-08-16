@@ -19,13 +19,17 @@ distribution, we *assert that a product disintegration exists*.
 * `CondIndep μ f g h` — the joint law of `(h, (f, g))` under `μ` factors as
   `(law of h) ⊗ₘ (κ ×ₖ η)` for two Markov kernels `κ`, `η` out of the conditioning space;
 * `CondIndep.symm` — Lauritzen (C1), *symmetry*: swap the two kernels;
-* `CondIndep.comp` — Lauritzen (C2), *decomposition* in its functional form
-  `U = φ(X), W = ψ(Y)`: push the kernels through measurable maps. **As frozen this statement is
-  false** — see its docstring and the machine-checked
-  `CondIndep.CompCounterexample.comp_is_false`; `CondIndep.comp_of_sfinite` is the same theorem
-  with the missing `[SFinite (μ.map h)]` restored, and is proved;
+* `CondIndep.comp_of_sfinite` — Lauritzen (C2), *decomposition* in its functional form
+  `U = φ(X), W = ψ(Y)`: push the kernels through measurable maps. The frozen statement
+  `CondIndep.comp`, which carried no `[SFinite (μ.map h)]` hypothesis, was **false** and has been
+  **deleted**; see the section *"(C2) without s-finiteness — deleted, and why"* below, the
+  machine-checked `CondIndep.CompCounterexample.comp_is_false`, and the proved repair;
 * `CondIndep.const_right` / `condIndep_const_of_indepFun` — conditioning on a **constant**
   is ordinary independence, in both directions;
+* `condIndep_congr_law` — the predicate depends only on the **joint law** of the triple, so it
+  transfers across reindexings and marginalisations of a model;
+* `condIndep_of_subsingleton_left` — a **degenerate** argument (subsingleton value space, i.e.
+  the subvector on an empty block) is conditionally independent of everything;
 * `condIndepFun_of_condIndep` — the **export bridge** to Mathlib's
   `ProbabilityTheory.CondIndepFun`. Stated so that our results are exportable; **no**
   theorem of this area depends on it.
@@ -49,7 +53,7 @@ must not inherit. Two consequences of the chosen shape are worth recording.
   kernel pair, push the kernels forward. (C1) does hold in this generality; (C2) does *not*,
   because `⊗ₘ` is `0` by fiat when the conditioning law is not s-finite
   (`MeasureTheory.Measure.compProd_of_not_sfinite`), and the swap of (C1) is an involution while
-  a general `φ` is not — see `CondIndep.comp`. Weak union (C3),
+  a general `φ` is not — see `CondIndep.comp_of_sfinite`. Weak union (C3),
   contraction (C4) and intersection (C5) need essential uniqueness of disintegrations and are
   therefore proved in the discrete layer only, never assumed here (roadmap §3).
 * `const_right` genuinely needs `IsProbabilityMeasure μ`, not merely `IsFiniteMeasure μ`: for
@@ -158,25 +162,26 @@ theorem CondIndep.symm
   · rw [Measure.compProd_of_not_sfinite _ _ hs, Measure.compProd_of_not_sfinite _ _ hs,
       Measure.map_zero]
 
-/-- **(C2), decomposition in functional form** (Lauritzen p. 29: `X ⫫ Y ∣ Z` and `U = φ(X)`
-imply `U ⫫ Y ∣ Z`; Pearl 1988 calls it *decomposition*): measurable transformations of the two
-independent arguments preserve conditional independence. Structural — push each kernel forward
-through the corresponding map.
+/-! ### (C2) without s-finiteness — deleted, and why
 
-Route (do not re-derive): the witnesses are `κ.map φ` and `η.map ψ`, Markov by
-`ProbabilityTheory.Kernel.IsMarkovKernel.map`; `ProbabilityTheory.Kernel.map_prod_map hφ hψ`
-rewrites their product as `(κ ×ₖ η).map (Prod.map φ ψ)`, and
-`MeasureTheory.Measure.compProd_map (hφ.prodMap hψ)` moves that map outside `⊗ₘ`, where it
-matches the left-hand side by `MeasureTheory.Measure.map_map`.
+There used to be a declaration `CondIndep.comp` here: Lauritzen (C2) in functional form
+(`X ⫫ Y ∣ Z` and `U = φ(X)`, `W = ψ(Y)` imply `U ⫫ W ∣ Z`) stated with **no** hypothesis on
+`μ.map h`, and carrying a `sorry`. **That statement is false, and has been deleted rather than
+left `sorry`ed**: a `sorry` on a statement known to be false is indistinguishable, in any
+census, from honest unfinished work. What was deleted is exactly
 
-**REFUTED AS FROZEN — this statement is FALSE; the `sorry` is deliberate.** The route above
-needs `SFinite (μ.map h)`, which `MeasureTheory.Measure.compProd_map` demands and which the
-statement does not supply, and the gap is not an artefact of the route: see
-`CondIndep.CompCounterexample.comp_is_false`, a machine-checked derivation of `False` from this
-very statement. The counterexample lives in the `⊗ₘ`-junk regime that the module docstring warns
-about for `Measure.map`, and reads:
+```
+theorem CondIndep.comp {α' β' : Type*} [MeasurableSpace α'] [MeasurableSpace β']
+    {φ : α → α'} {ψ : β → β'} (hφ : Measurable φ) (hψ : Measurable ψ)
+    (hci : CondIndep μ f g h) : CondIndep μ (φ ∘ f) (ψ ∘ g) h
+```
 
-* `Pt := ℝ × Bool` carrying the σ-algebra `MeasurableSpace.comap fst' ⊤`, which sees only the
+and `CondIndep.CompCounterexample.comp_is_false` below derives `False` from precisely that
+statement (in `Type`-universe form), so the refutation is machine-checked, not narrative.
+
+*The counterexample.* It lives in the `⊗ₘ`-junk regime that the module docstring warns about:
+
+* `Pt := ℝ × Bool` carries the σ-algebra `MeasurableSpace.comap fst' ⊤`, which sees only the
   first coordinate, and `mu := ∑ₓ dirac (x, true)`;
 * `mu` is **not s-finite** (the uncountably many fibres `fst' ⁻¹' {x}` all have positive mass,
   contradicting `MeasureTheory.Measure.countable_meas_pos_of_disjoint_iUnion`), so *every*
@@ -188,33 +193,35 @@ about for `Measure.map`, and reads:
   measurable, so its law has mass `mu Set.univ ≠ 0` — while the right-hand side is still `0`.
   The conclusion `CondIndep mu (φ ∘ snd') (ψ ∘ snd') id` therefore **fails**.
 
+The gap is not an artefact of the intended route (`Kernel.map_prod_map` then
+`MeasureTheory.Measure.compProd_map`, the latter demanding s-finiteness): it is the statement.
 `CondIndep.comp_of_sfinite` below is the same theorem with the one missing hypothesis
 `[SFinite (μ.map h)]` restored, and is fully proved; it is free at every intended instance,
-since `SFinite (μ.map h)` is an instance whenever `μ` is (in particular for any probability or
-σ-finite `μ`). Repairing the frozen statement is a scope decision and is left to the user. -/
-theorem CondIndep.comp {α' β' : Type*} [MeasurableSpace α'] [MeasurableSpace β']
-    {φ : α → α'} {ψ : β → β'}
-    -- LEAN-ONLY: Lauritzen (C2) allows an arbitrary function `U = φ(X)`; measurability is
-    -- what makes the pushforward kernel `κ.map φ` a kernel at all
-    (hφ : Measurable φ)
-    -- LEAN-ONLY: same for the second argument
-    (hψ : Measurable ψ)
-    -- USER-INPUT: the conditional independence to be transformed; Lauritzen §3.1 (C2)
-    (hci : CondIndep μ f g h) :
-    CondIndep μ (φ ∘ f) (ψ ∘ g) h := by
-  sorry
+since `SFinite (μ.map h)` is an instance whenever `SFinite μ` is (in particular for any
+probability or σ-finite `μ`), and it is what every consumer in this area now uses. -/
 
-/-- **(C2), decomposition in functional form — the repaired statement.** Identical to
-`CondIndep.comp` except for the one hypothesis that makes it true; see the refutation in
-`CondIndep.comp`'s docstring and `CondIndep.CompCounterexample.comp_is_false`.
+/-- **(C2), decomposition in functional form** (Lauritzen p. 29: `X ⫫ Y ∣ Z` and `U = φ(X)`
+imply `U ⫫ Y ∣ Z`; Pearl 1988 calls it *decomposition*): measurable transformations of the two
+independent arguments preserve conditional independence. Structural — push each kernel forward
+through the corresponding map.
+
+Route (do not re-derive): the witnesses are `κ.map φ` and `η.map ψ`, Markov by
+`ProbabilityTheory.Kernel.IsMarkovKernel.map`; `ProbabilityTheory.Kernel.map_prod_map hφ hψ`
+rewrites their product as `(κ ×ₖ η).map (Prod.map φ ψ)`, and
+`MeasureTheory.Measure.compProd_map (hφ.prodMap hψ)` moves that map outside `⊗ₘ`, where it
+matches the left-hand side by `MeasureTheory.Measure.map_map`.
+
+This is the **repaired** form of the deleted `CondIndep.comp`: identical to it except for the
+one hypothesis that makes it true; see the section above and
+`CondIndep.CompCounterexample.comp_is_false`.
 
 No measurability of `f`, `g`, `h` is needed: when the joint map is not a.e. measurable, its law
 is `0`, `MeasureTheory.Measure.fst_compProd` forces `μ.map h = 0`, and the transformed law is `0`
 as well (either `μ = 0`, or `h` is not a.e. measurable and neither is the transformed triple). -/
 theorem CondIndep.comp_of_sfinite {α' β' : Type*} [MeasurableSpace α'] [MeasurableSpace β']
     {φ : α → α'} {ψ : β → β'}
-    -- LEAN-ONLY: the hypothesis missing from `CondIndep.comp`, which is false without it.
-    -- `⊗ₘ` is *defined* to be `0` when the left measure is not s-finite
+    -- LEAN-ONLY: the hypothesis missing from the deleted `CondIndep.comp`, which is false
+    -- without it. `⊗ₘ` is *defined* to be `0` when the left measure is not s-finite
     -- (`MeasureTheory.Measure.compProd_of_not_sfinite`), so the frozen statement equates a
     -- possibly nonzero law with `0`. Free at every intended instance: `SFinite (μ.map h)` is
     -- an instance as soon as `SFinite μ` is
@@ -325,6 +332,89 @@ theorem condIndep_const_of_indepFun
       hg.aemeasurable).1 hind, Measure.map_map measurable_prodMk_left (hf.prodMk hg)]
   rfl
 
+/-- **Conditional independence depends only on the joint law of the triple.** Two triples
+`(h, (f, g))` and `(h', (f', g'))` — possibly on different sample spaces, under different
+measures — with the *same* joint law satisfy the predicate together.
+
+This is the transfer principle that `Gaussian.Precision` deliberately declined to assume ("that
+is a `Core.CondIndep` statement, is not in this file's scope"): it is what lets a block statement
+about the canonical coordinate vector of `N(m, Σ)` be re-read on a *reindexed* or *marginalised*
+Gaussian, whose coordinate blocks have the same joint law but live on a different sample space.
+
+The only content is that the conditioning law `μ.map h` is itself a marginal of the joint law
+(`Prod.fst`), so both sides of the defining identity are functions of the joint law alone; the
+measurability hypotheses are exactly what `MeasureTheory.Measure.map_map` needs to say so. -/
+theorem condIndep_congr_law {Ω' : Type*} [MeasurableSpace Ω'] {ν : Measure Ω'} {f' : Ω' → α}
+    {g' : Ω' → β} {h' : Ω' → γ}
+    -- LEAN-ONLY: measurability of the first triple, so that its `h`-marginal is `μ.map h`
+    (hT : Measurable fun ω => (h ω, (f ω, g ω)))
+    -- LEAN-ONLY: same for the second triple
+    (hT' : Measurable fun ω => (h' ω, (f' ω, g' ω)))
+    -- USER-INPUT: the two triples have the same joint law
+    (hlaw : μ.map (fun ω => (h ω, (f ω, g ω))) = ν.map (fun ω => (h' ω, (f' ω, g' ω)))) :
+    CondIndep μ f g h ↔ CondIndep ν f' g' h' := by
+  have hh : μ.map h = ν.map h' := by
+    have h1 : μ.map h = (μ.map fun ω => (h ω, (f ω, g ω))).map Prod.fst := by
+      rw [Measure.map_map measurable_fst hT]; rfl
+    have h2 : ν.map h' = (ν.map fun ω => (h' ω, (f' ω, g' ω))).map Prod.fst := by
+      rw [Measure.map_map measurable_fst hT']; rfl
+    rw [h1, h2, hlaw]
+  constructor
+  · rintro ⟨κ, η, hκ, hη, heq⟩
+    exact ⟨κ, η, hκ, hη, by rw [← hlaw, ← hh]; exact heq⟩
+  · rintro ⟨κ, η, hκ, hη, heq⟩
+    exact ⟨κ, η, hκ, hη, by rw [hlaw, hh]; exact heq⟩
+
+/-- **A degenerate argument is conditionally independent of everything.** If the value space of
+`f` is a subsingleton — in the block vocabulary of `Core.Coordinates`, if `f` is the subvector
+`X_∅` on an empty index block — then `f ⫫ g ∣ h` holds for every `g` and `h`, because a
+disintegration of `(h, g)` exists and can be padded with the constant `f`.
+
+This is the *edge behaviour* the module docstring of `Core.Coordinates` records for `A = ∅`, made
+into a theorem. It is what lets a model class supply the global Markov property of
+`Undirected.Markov` — whose definition quantifies over *all* disjoint triples, empty blocks
+included — from Theorem 3.7's nonempty-blocks form.
+
+Route (do not re-derive): the witnesses are `Kernel.const _ (dirac a₀)` and the regular
+conditional distribution `ProbabilityTheory.condDistrib g h μ`, whose defining property
+`ProbabilityTheory.compProd_map_condDistrib` *is* the disintegration of `(h, g)`; padding it
+with the constant is `MeasureTheory.Measure.compProd_map measurable_prodMk_left` on the kernel
+side and `MeasureTheory.Measure.dirac_prod` on the measure side. -/
+theorem condIndep_of_subsingleton_left
+    -- LEAN-ONLY: `condDistrib` is defined for finite measures; without *some* disintegration
+    -- hypothesis the statement is false in the `⊗ₘ`-junk regime, exactly as for
+    -- `CondIndep.comp_of_sfinite`
+    [IsFiniteMeasure μ]
+    -- LEAN-ONLY: `condDistrib g h μ` exists only for a standard Borel nonempty target
+    [StandardBorelSpace β] [Nonempty β]
+    -- LEAN-ONLY: the degeneracy — `f` takes values in a singleton type. Nonemptiness is what
+    -- makes the padding value `a₀` available; on an empty value space no `f` exists unless
+    -- `Ω` is empty too
+    [Subsingleton α] [Nonempty α]
+    -- LEAN-ONLY: measurability of the non-degenerate argument, demanded by `condDistrib`'s
+    -- defining property
+    (hg : AEMeasurable g μ) :
+    CondIndep μ f g h := by
+  obtain ⟨a₀⟩ := ‹Nonempty α›
+  refine ⟨Kernel.const γ (Measure.dirac a₀), condDistrib g h μ, inferInstance, inferInstance, ?_⟩
+  -- the triple is the pair `(h, g)` padded by the constant `a₀`
+  have hcomp : (fun ω => (h ω, (f ω, g ω)))
+      = (Prod.map (id : γ → γ) (Prod.mk a₀ : β → α × β)) ∘ (fun ω => (h ω, g ω)) := by
+    funext ω
+    simp [Prod.map, Subsingleton.elim (f ω) a₀]
+  have he : Measurable (Prod.map (id : γ → γ) (Prod.mk a₀ : β → α × β)) :=
+    measurable_id.prodMap measurable_prodMk_left
+  have he' : Measurable (Prod.map (id : γ → γ) (Prod.snd : α × β → β)) :=
+    measurable_id.prodMap measurable_snd
+  -- the padded product kernel is the conditional distribution padded by a `dirac`
+  have hker : (condDistrib g h μ).map (Prod.mk a₀)
+      = Kernel.const γ (Measure.dirac a₀) ×ₖ condDistrib g h μ := by
+    refine (Kernel.ext fun c => ?_).symm
+    rw [Kernel.prod_apply, Kernel.const_apply, Kernel.map_apply _ measurable_prodMk_left,
+      Measure.dirac_prod]
+  rw [hcomp, map_comp_of_leftInverse he he' (fun p => rfl), ← compProd_map_condDistrib hg,
+    ← hker, Measure.compProd_map measurable_prodMk_left]
+
 /-- **Export bridge (ours ⇒ Mathlib's).** On a standard Borel sample space with a finite
 measure and standard Borel nonempty value spaces, our disintegration predicate implies
 Mathlib's `ProbabilityTheory.CondIndepFun` given the σ-algebra generated by `h`.
@@ -388,14 +478,15 @@ theorem condIndepFun_of_condIndep
 
 namespace CondIndep.CompCounterexample
 
-/-! ### Refutation of `CondIndep.comp` as frozen
+/-! ### Refutation of the deleted `CondIndep.comp`
 
-A machine-checked counterexample to `CondIndep.comp`, living in the `⊗ₘ`-junk regime: the
-conditioning law is not s-finite, so *every* `⊗ₘ` on the right-hand side is `0`, while a constant
-transformation of the two variables turns a non-a.e.-measurable triple into a measurable one and
-so makes the left-hand side nonzero. See `CondIndep.comp`'s docstring for the narrative, and
-`comp_is_false` for the derivation of `False` from the frozen statement. Nothing else in the
-area depends on this section. -/
+A machine-checked counterexample to the deleted `CondIndep.comp`, living in the `⊗ₘ`-junk
+regime: the conditioning law is not s-finite, so *every* `⊗ₘ` on the right-hand side is `0`,
+while a constant transformation of the two variables turns a non-a.e.-measurable triple into a
+measurable one and so makes the left-hand side nonzero. See the section *"(C2) without
+s-finiteness — deleted, and why"* above for the narrative, and `comp_is_false` for the
+derivation of `False` from the deleted statement. **This section is what keeps the refutation
+alive after the deletion**; nothing else in the area depends on it. -/
 
 /-- Sample space: the plane `ℝ × Bool`. -/
 def Pt : Type := ℝ × Bool
@@ -511,9 +602,9 @@ theorem not_condIndep_comp_snd' :
     Measure.map_eq_zero_iff hm.aemeasurable] at hmap
   exact mu_ne_zero' hmap
 
-/-- **`CondIndep.comp` is false as frozen**: its statement, taken as a hypothesis, yields `False`.
-The missing hypothesis is `SFinite (μ.map h)`; with it the theorem is true, and proved, as
-`CondIndep.comp_of_sfinite`. -/
+/-- **The deleted `CondIndep.comp` is false**: its statement, taken as a hypothesis, yields
+`False`. The missing hypothesis is `SFinite (μ.map h)`; with it the theorem is true, and proved,
+as `CondIndep.comp_of_sfinite`. -/
 theorem comp_is_false
     (comp : ∀ {Ω α β γ : Type} [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace β]
       [MeasurableSpace γ] {μ : Measure Ω} {f : Ω → α} {g : Ω → β} {h : Ω → γ}
