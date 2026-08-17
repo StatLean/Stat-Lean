@@ -75,6 +75,7 @@ Results are organized into twelve categories (defined in `src/lib/categories.ts`
 | Causal Inference | `causal` | Potential outcomes, Neyman randomization, adjustment & matching, AIPW, IV/LATE |
 | Statistical Learning | `statlearning` | ERM & uniform convergence, PAC learnability, VC dimension, Rademacher, stability, PAC-Bayes |
 | Experimental Design | `expdesign` | Randomization designs, blocking, ANOVA identity, factorial characters, Horvitz–Thompson |
+| Robust Statistics | `robust` | Contamination & breakdown, influence functions, Huber M-estimation, minimax bias, quantile regression, sub-Gaussian mean estimation under heavy tails |
 
 ## Key features
 

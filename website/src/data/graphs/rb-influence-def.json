@@ -1,0 +1,37 @@
+{
+  "root": "StatLean.RobustStatistics.HasInfluenceAt",
+  "nodes": [
+    {"id":"StatLean.RobustStatistics.HasInfluenceAt","label":"HasInfluenceAt","full":"StatLean.RobustStatistics.HasInfluenceAt","kind":"root","decl":"def","module":"StatLean.RobustStatistics.Core.InfluenceFunction"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Filter.Tendsto","label":"Tendsto","full":"Filter.Tendsto","kind":"mathlib","decl":"def","module":"Mathlib.Order.Filter.Defs"},
+    {"id":"StatLean.RobustStatistics.contaminate","label":"contaminate","full":"StatLean.RobustStatistics.contaminate","kind":"repo","decl":"def","module":"StatLean.RobustStatistics.Core.Contamination"},
+    {"id":"MeasureTheory.Measure.dirac","label":"dirac","full":"MeasureTheory.Measure.dirac","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.Dirac"},
+    {"id":"nhdsWithin","label":"nhdsWithin","full":"nhdsWithin","kind":"mathlib","decl":"def","module":"Mathlib.Topology.Defs.Filter"},
+    {"id":"Real.pseudoMetricSpace","label":"pseudoMetricSpace","full":"Real.pseudoMetricSpace","kind":"mathlib","decl":"def","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
+    {"id":"Set.Ioi","label":"Ioi","full":"Set.Ioi","kind":"mathlib","decl":"def","module":"Mathlib.Order.Interval.Set.Defs"},
+    {"id":"nhds","label":"nhds","full":"nhds","kind":"mathlib","decl":"def","module":"Mathlib.Topology.Defs.Filter"},
+    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"Algebra.id","label":"id","full":"Algebra.id","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Algebra.Defs"},
+    {"id":"ENNReal.ofReal","label":"ofReal","full":"ENNReal.ofReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.RobustStatistics.HasInfluenceAt","target":"MeasurableSpace"},
+    {"source":"StatLean.RobustStatistics.HasInfluenceAt","target":"MeasureTheory.Measure"},
+    {"source":"StatLean.RobustStatistics.HasInfluenceAt","target":"Real"},
+    {"source":"StatLean.RobustStatistics.HasInfluenceAt","target":"Filter.Tendsto"},
+    {"source":"StatLean.RobustStatistics.HasInfluenceAt","target":"StatLean.RobustStatistics.contaminate"},
+    {"source":"StatLean.RobustStatistics.HasInfluenceAt","target":"MeasureTheory.Measure.dirac"},
+    {"source":"StatLean.RobustStatistics.HasInfluenceAt","target":"nhdsWithin"},
+    {"source":"StatLean.RobustStatistics.HasInfluenceAt","target":"Real.pseudoMetricSpace"},
+    {"source":"StatLean.RobustStatistics.HasInfluenceAt","target":"Set.Ioi"},
+    {"source":"StatLean.RobustStatistics.HasInfluenceAt","target":"nhds"},
+    {"source":"StatLean.RobustStatistics.contaminate","target":"MeasurableSpace"},
+    {"source":"StatLean.RobustStatistics.contaminate","target":"MeasureTheory.Measure"},
+    {"source":"StatLean.RobustStatistics.contaminate","target":"Real"},
+    {"source":"StatLean.RobustStatistics.contaminate","target":"ENNReal"},
+    {"source":"StatLean.RobustStatistics.contaminate","target":"Algebra.id"},
+    {"source":"StatLean.RobustStatistics.contaminate","target":"ENNReal.ofReal"}
+  ]
+}

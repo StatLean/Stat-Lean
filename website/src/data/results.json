@@ -37709,5 +37709,2130 @@
       "cross-validation",
       "leave-one-out"
     ]
+  },
+  {
+    "id": "rb-contaminate-def",
+    "category": "robust",
+    "kind": "definition",
+    "leanName": "contaminate",
+    "fullName": "StatLean.RobustStatistics.contaminate",
+    "title": "Gross-Error Contamination",
+    "citation": "MMY (2019), §3.3",
+    "shortRef": "MMY (2019), §3.3",
+    "file": "StatLean/RobustStatistics/Core/Contamination.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/Core/Contamination.html#StatLean.RobustStatistics.contaminate",
+    "informal": "<p>Let $P$ be a probability distribution (the ideal model) and $Q$ an arbitrary probability distribution (the contamination). For a contamination fraction $\\varepsilon \\in [0,1]$, the <em>$\\varepsilon$-contaminated distribution</em> is <span data-link=\"h1\">the mixture</span> $$P_{\\varepsilon,Q} \\;=\\; (1-\\varepsilon)\\,P \\;+\\; \\varepsilon\\,Q,$$ under which a typical observation is drawn from $P$ with probability $1-\\varepsilon$ and from $Q$ with probability $\\varepsilon$. The <em>gross-error neighbourhood</em> of $P$ at level $\\varepsilon$ is the set of all such mixtures as $Q$ ranges over the probability distributions: $$\\mathcal F(P,\\varepsilon) \\;=\\; \\{(1-\\varepsilon)P + \\varepsilon Q : Q \\text{ a probability distribution}\\}.$$</p><p>Every robustness diagnostic on this site — the influence function, the breakdown point, the maximum bias — measures how an estimator behaves as its input ranges over this neighbourhood.</p>",
+    "summary": "The ε-contaminated mixture (1−ε)P + εQ and the gross-error neighbourhood F(P, ε) — the perturbation model underlying all robustness diagnostics.",
+    "leanSignature": "noncomputable def contaminate (P Q : Measure Ω) (ε : ℝ) : Measure Ω :=\n  ENNReal.ofReal (1 - ε) • P + ENNReal.ofReal ε • Q\n\ndef grossErrorNbhd (P : Measure Ω) (ε : ℝ) : Set (Measure Ω) :=\n  {R | ∃ Q : Measure Ω, IsProbabilityMeasure Q ∧ R = contaminate P Q ε}",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "ENNReal.ofReal (1 - ε) • P + ENNReal.ofReal ε • Q",
+        "label": "the mixture",
+        "note": "The convex combination (1−ε)P + εQ of the ideal model and the contaminating distribution."
+      }
+    ],
+    "formalizationNotes": "The mixture weights enter through nonnegative real coercions, so the definition is total in $\\varepsilon$: outside $[0,1]$ the weights are clamped at $0$ and the result is a junk measure — every theorem carries $0 \\le \\varepsilon \\le 1$ (or a strict version) explicitly. The mixture is definitionally the point-mass-path form used by the influence-function machinery, so the contamination derivative apparatus applies to it verbatim. The neighbourhood is a set of measures, with membership witnessed by the contaminating $Q$; monotonicity in $\\varepsilon$ and closure under measurable push-forwards are proved alongside.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§3.3 (Maximum asymptotic bias, the neighbourhood F(P, ε))",
+      "biblio": "The contaminated-distribution model enters with J. W. Tukey's survey of sampling from contaminated distributions (in *Contributions to Probability and Statistics*, Stanford, 1960, pp. 448–485); the $\\varepsilon$-contamination neighbourhood as the domain of a minimax problem is P. J. Huber (*Ann. Math. Statist.* **35** (1964), 73–101). The systematic neighbourhood viewpoint is developed in P. J. Huber and E. M. Ronchetti, *Robust Statistics*, 2nd ed., Wiley, 2009, §1.2 and ch. 4.",
+      "keys": [
+        "mmy2019",
+        "tukey1960",
+        "huber1964",
+        "huber-ronchetti2009"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "contamination",
+      "gross-error neighbourhood"
+    ]
+  },
+  {
+    "id": "rb-breakdown-def",
+    "category": "robust",
+    "kind": "definition",
+    "leanName": "breakdownCount",
+    "fullName": "StatLean.RobustStatistics.breakdownCount",
+    "title": "The Finite-Sample Breakdown Point",
+    "citation": "MMY (2019), Eqs. (3.24)–(3.25)",
+    "shortRef": "MMY (2019), Eqs. (3.24)–(3.25)",
+    "file": "StatLean/RobustStatistics/Core/BreakdownPoint.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/Core/BreakdownPoint.html#StatLean.RobustStatistics.breakdownCount",
+    "informal": "<p>Let $T$ be an estimator of location acting on samples $x = (x_1,\\dots,x_n)$. Say the sample <span data-link=\"h1\">resists $m$ replacements</span> if there is a bound $M$ such that every corrupted sample $y$ obtained from $x$ by arbitrarily changing at most $m$ coordinates has $|T(y)| \\le M$ — however wild the replacements, the estimate stays bounded. The <em>breakdown count</em> is <span data-link=\"h2\">the largest such $m$</span>, $$m^\\ast(T, x) \\;=\\; \\max\\{\\,m \\le n : T \\text{ resists } m \\text{ replacements of } x\\,\\},$$ and the <em>finite-sample replacement breakdown point</em> is the fraction $$\\varepsilon_n^\\ast(T,x) \\;=\\; \\frac{m^\\ast(T,x)}{n}.$$</p><p>The sample mean has $m^\\ast = 0$: a single replacement already drives it beyond any bound. The sample median of $n = 2k+1$ points has $m^\\ast = k$, the maximum any location-equivariant estimator can achieve.</p>",
+    "summary": "The replacement breakdown count m*(T, x) — the largest number of arbitrarily corrupted coordinates the estimate survives with a uniform bound — and the breakdown point m*/n.",
+    "leanSignature": "def Resists (m : ℕ) : Prop :=\n  ∃ M : ℝ, ∀ y : Fin n → ℝ, hammingDist x y ≤ m → |T y| ≤ M\n\nnoncomputable def breakdownCount : ℕ :=\n  sSup {m | m ≤ n ∧ Resists T x m}\n\nnoncomputable def breakdownPoint : ℝ :=\n  breakdownCount T x / n\n\nvariable {T x}",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hammingDist x y ≤ m → |T y| ≤ M",
+        "label": "resistance",
+        "note": "Some bound M dominates |T(y)| over every sample y differing from x in at most m coordinates."
+      },
+      {
+        "id": "h2",
+        "leanToken": "sSup {m | m ≤ n ∧ Resists T x m}",
+        "label": "the breakdown count",
+        "note": "The largest replacement budget m ≤ n that the sample resists."
+      }
+    ],
+    "formalizationNotes": "Corruption is measured by the Hamming distance on samples, which counts replaced coordinates — the population $\\varepsilon$-mixture is a separate notion with its own asymptotic breakdown theory. The count is a supremum over a set of naturals containing $0$ (zero replacements are always resisted for a location estimator), so it is well-defined without side conditions; the lattice lemmas — antitonicity of resistance, the two-sided characterization by a resisted $m$ and a breaking $m+1$ — are proved alongside. Dispersion estimators need a boundary-aware variant that also guards against implosion to zero; that notion lives with the scale results.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§3.2.5 (Finite-sample breakdown point), Eqs. (3.24)–(3.25)",
+      "biblio": "The finite-sample replacement formulation is D. L. Donoho and P. J. Huber (in *A Festschrift for Erich L. Lehmann*, Wadsworth, 1983, pp. 157–184); the asymptotic breakdown point descends from F. R. Hampel's qualitative-robustness framework (*Ann. Math. Statist.* **42** (1971), 1887–1896), with the first finite-sample tolerance computations in J. L. Hodges, Jr. (*Proc. Fifth Berkeley Symposium*, Vol. I, 1967).",
+      "keys": [
+        "mmy2019",
+        "donoho-huber1983",
+        "hampel1971",
+        "hodges1967"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "breakdown point"
+    ]
+  },
+  {
+    "id": "rb-equivariant-breakdown-bound",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "locEquivariant_breakdownCount_le",
+    "fullName": "StatLean.RobustStatistics.locEquivariant_breakdownCount_le",
+    "title": "The Maximal Breakdown of Equivariant Estimators",
+    "citation": "MMY (2019), Eq. (3.26)",
+    "shortRef": "MMY (2019), Eq. (3.26)",
+    "file": "StatLean/RobustStatistics/Core/BreakdownPoint.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/Core/BreakdownPoint.html#StatLean.RobustStatistics.locEquivariant_breakdownCount_le",
+    "informal": "<p>Let $T$ be a <span data-link=\"h1\">location-equivariant estimator</span> on samples of size $n$ — shifting every observation by $a$ shifts the estimate by $a$, $T(x_1+a,\\dots,x_n+a) = T(x) + a$ — and let <span data-link=\"h2\">the sample be nonempty</span>. Then its breakdown count at every sample obeys $$m^\\ast(T, x) \\;\\le\\; \\Big\\lfloor \\frac{n-1}{2} \\Big\\rfloor.$$ No location-equivariant estimator can survive half the sample being corrupted: once the replacements can outvote the genuine observations, equivariance itself forces the estimate to follow them. The sample median attains this bound at odd sample sizes, which is the precise sense in which it is the most breakdown-robust location-equivariant estimator.</p>",
+    "summary": "No location-equivariant estimator has breakdown count above ⌊(n−1)/2⌋ — the ceiling that the sample median attains.",
+    "leanSignature": "theorem locEquivariant_breakdownCount_le (hT : PointEstimation.IsLocEquivariant T)\n    (hn : 0 < n) : breakdownCount T x ≤ (n - 1) / 2",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "PointEstimation.IsLocEquivariant T",
+        "label": "location equivariance",
+        "note": "Shifting every coordinate of the sample by a shifts the estimate by a."
+      },
+      {
+        "id": "h2",
+        "leanToken": "0 < n",
+        "label": "nonempty sample",
+        "note": "At least one observation."
+      }
+    ],
+    "formalizationNotes": "The proof is the classical pigeonhole: if $m$ replacements with $2m \\ge n$ were resisted, a shift of the whole sample by a large constant $c$ could be realized in two ways as $m$-replacement corruptions of the same intermediate sample, and equivariance would force two values $c$ apart into one bounded window. Equivariance is the finite-sample predicate shared with the point-estimation library, so the theorem applies verbatim to the mean, the median, trimmed means, and every location M-estimate.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§3.2.5, Eq. (3.26)",
+      "biblio": "The bound and the pigeonhole argument are D. L. Donoho and P. J. Huber (in *A Festschrift for Erich L. Lehmann*, Wadsworth, 1983, pp. 157–184).",
+      "keys": [
+        "mmy2019",
+        "donoho-huber1983"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "breakdown point",
+      "equivariance"
+    ]
+  },
+  {
+    "id": "rb-influence-def",
+    "category": "robust",
+    "kind": "definition",
+    "leanName": "HasInfluenceAt",
+    "fullName": "StatLean.RobustStatistics.HasInfluenceAt",
+    "title": "The Influence Function",
+    "citation": "MMY (2019), Eqs. (3.4)–(3.5)",
+    "shortRef": "MMY (2019), Eqs. (3.4)–(3.5)",
+    "file": "StatLean/RobustStatistics/Core/InfluenceFunction.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/Core/InfluenceFunction.html#StatLean.RobustStatistics.HasInfluenceAt",
+    "informal": "<p>Let $T$ be a statistical functional, assigning a real value to each probability distribution, and let $P$ be a distribution. Contaminate $P$ in the direction of a point mass at $x_0$: for $\\varepsilon \\ge 0$ form the mixture $(1-\\varepsilon)P + \\varepsilon\\,\\delta_{x_0}$. The <em>influence function</em> of $T$ at $P$ is <span data-link=\"h1\">the one-sided derivative of the contamination path at $\\varepsilon = 0$</span>: $$\\operatorname{IF}(x_0; T, P) \\;=\\; \\lim_{\\varepsilon \\downarrow 0} \\frac{T\\big((1-\\varepsilon)P + \\varepsilon\\,\\delta_{x_0}\\big) - T(P)}{\\varepsilon}.$$</p><p>It measures the first-order effect of an infinitesimal fraction of observations placed at $x_0$. A bounded influence function means no single contamination point can move the estimator disproportionately; the gross-error sensitivity $\\sup_{x_0} |\\operatorname{IF}(x_0)|$ summarizes it in one number.</p>",
+    "summary": "The influence function IF(x₀; T, P) — the one-sided derivative of ε ↦ T((1−ε)P + εδ_{x₀}) at ε = 0 — the infinitesimal robustness diagnostic.",
+    "leanSignature": "def HasInfluenceAt (T : Measure Ω → ℝ) (P : Measure Ω) (x : Ω) (v : ℝ) : Prop :=\n  Tendsto (fun t : ℝ => (T (contaminate P (Measure.dirac x) t) - T P) / t)\n    (𝓝[>] (0 : ℝ)) (𝓝 v)",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "𝓝[>] (0 : ℝ)",
+        "label": "one-sided limit",
+        "note": "The derivative is taken along ε ↓ 0 from the right, where the mixture is a genuine probability distribution."
+      }
+    ],
+    "formalizationNotes": "The derivative is one-sided by design: negative $\\varepsilon$ does not define a probability measure, so the limit is taken along the right neighbourhood filter of $0$. This is cleaner than silently extending the contamination path to signed measures, and it is the same filter the von-Mises-derivative machinery of the semiparametric library uses, so the two apparatuses compose. Uniqueness of the influence value and the slope-comparison bridges are proved alongside the definition.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§3.1 (The influence function), Eqs. (3.4)–(3.5)",
+      "biblio": "The influence curve was introduced by F. R. Hampel (*J. Amer. Statist. Assoc.* **69** (1974), 383–393), building on his 1968 Berkeley thesis; the derivative-of-a-functional viewpoint goes back to R. von Mises (*Ann. Math. Statist.* **18** (1947), 309–348). The book-length development is F. R. Hampel, E. M. Ronchetti, P. J. Rousseeuw, and W. A. Stahel, *Robust Statistics: The Approach Based on Influence Functions*, Wiley, 1986.",
+      "keys": [
+        "mmy2019",
+        "hampel1974",
+        "vonmises1947",
+        "hampel-etal1986"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "influence function"
+    ]
+  },
+  {
+    "id": "rb-median-breakdown",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "sampleMedian_breakdownCount",
+    "fullName": "StatLean.RobustStatistics.sampleMedian_breakdownCount",
+    "title": "The Median Has Maximal Breakdown",
+    "citation": "MMY (2019), §3.2.5",
+    "shortRef": "MMY (2019), §3.2.5",
+    "file": "StatLean/RobustStatistics/LocationScale/MedianBreakdown.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/LocationScale/MedianBreakdown.html#StatLean.RobustStatistics.sampleMedian_breakdownCount",
+    "informal": "<p>Let the sample size be <span data-link=\"h1\">odd, $n = 2k+1$</span>, and let $x$ be any sample. The breakdown count of the sample median is exactly $$m^\\ast(\\mathrm{med}, x) \\;=\\; k :$$ however adversarially at most $k$ observations are replaced, the corrupted median stays between the smallest and largest order statistics of the surviving data — while $k+1$ replacements, all placed beyond any bound $M$, drive the median past $M$.</p><p>Hence $\\varepsilon_n^\\ast(\\mathrm{med}) = k/(2k+1) \\to 1/2$: the median survives just under half the sample being corrupted, and by the general bound $m^\\ast \\le \\lfloor (n-1)/2 \\rfloor = k$ for location-equivariant estimators, no such estimator does better. The contrast with the sample mean, whose breakdown count is $0$, is the sharpest elementary expression of the median's robustness.</p>",
+    "summary": "For n = 2k+1 the sample median's breakdown count is exactly k — it resists k arbitrary replacements and breaks under k+1 — attaining the equivariant maximum ⌊(n−1)/2⌋.",
+    "leanSignature": "theorem sampleMedian_breakdownCount (hn : n = 2 * k + 1) (x : Fin n → ℝ) :\n    breakdownCount sampleMedian x = k\n\ntheorem sampleMedian_breakdownCount_eq_max (hn : n = 2 * k + 1) (x : Fin n → ℝ) :\n    breakdownCount sampleMedian x = (n - 1) / 2",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "n = 2 * k + 1",
+        "label": "odd sample size",
+        "note": "The sample size is n = 2k+1, so the median is the unique middle order statistic."
+      }
+    ],
+    "formalizationNotes": "The median is the low median — the order statistic of rank $k+1$ — which at odd sample sizes is the unique middle value. Resistance is quantitative: the corrupted median is bracketed by order statistics of the original sample at ranks shifted by the corruption budget, a perturbation bound proved in the order-statistics layer. The companion statement records that $k$ equals the equivariant maximum, so the two theorems together identify the median as an exact maximizer of finite-sample breakdown among location-equivariant estimators.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§3.2.5 (Finite-sample breakdown point)",
+      "biblio": "The finite-sample computation and the maximality among equivariant estimators are D. L. Donoho and P. J. Huber (in *A Festschrift for Erich L. Lehmann*, Wadsworth, 1983, pp. 157–184); the asymptotic value $1/2$ is F. R. Hampel (*Ann. Math. Statist.* **42** (1971), 1887–1896), and the median's tolerance of extremes was first quantified by J. L. Hodges, Jr. (*Proc. Fifth Berkeley Symposium*, Vol. I, 1967).",
+      "keys": [
+        "mmy2019",
+        "donoho-huber1983",
+        "hampel1971",
+        "hodges1967"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "breakdown point",
+      "median"
+    ]
+  },
+  {
+    "id": "rb-mean-breakdown",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "sampleMean_breakdownCount",
+    "fullName": "StatLean.RobustStatistics.sampleMean_breakdownCount",
+    "title": "The Mean Has Zero Breakdown",
+    "citation": "MMY (2019), §3.2.5",
+    "shortRef": "MMY (2019), §3.2.5",
+    "file": "StatLean/RobustStatistics/LocationScale/Mean.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/LocationScale/Mean.html#StatLean.RobustStatistics.sampleMean_breakdownCount",
+    "informal": "<p>For every <span data-link=\"h1\">nonempty sample</span> $x$, the breakdown count of the sample mean is $$m^\\ast(\\bar x, x) \\;=\\; 0 :$$ a single replacement suffices to move the mean beyond any prescribed bound, since sending one observation to $\\pm\\infty$ carries the average with it at rate $1/n$. The finite-sample breakdown point is $\\varepsilon_n^\\ast(\\bar x) = 0$ — the mean tolerates no contamination at all in the breakdown sense.</p><p>This is one third of the mean's fragility trilogy: its influence function $x_0 - \\mu(P)$ is unbounded in the contamination point, and its maximum contamination bias is infinite at every positive contamination level.</p>",
+    "summary": "The sample mean's breakdown count is 0: one arbitrary replacement drives it beyond any bound, so ε*ₙ = 0.",
+    "leanSignature": "theorem sampleMean_breakdownCount {n : ℕ} (hn : 0 < n) (x : Fin n → ℝ) :\n    breakdownCount sampleMean x = 0",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "0 < n",
+        "label": "nonempty sample",
+        "note": "At least one observation."
+      }
+    ],
+    "formalizationNotes": "The breaking replacement is explicit: replacing one coordinate by $n(M+1) - \\sum_{i} x_i$-sized values realizes any target mean, so the one-replacement neighbourhood of any sample already has unbounded image. Zero replacements are trivially resisted, which pins the count at exactly $0$ through the two-sided characterization of the breakdown count.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§3.2.5 (Finite-sample breakdown point)",
+      "biblio": "The observation is folklore going back to the earliest robustness discussions; the formal replacement framework in which it is stated is D. L. Donoho and P. J. Huber (in *A Festschrift for Erich L. Lehmann*, Wadsworth, 1983, pp. 157–184), and the mean's zero tolerance of extremes was already noted by J. L. Hodges, Jr. (*Proc. Fifth Berkeley Symposium*, Vol. I, 1967).",
+      "keys": [
+        "mmy2019",
+        "donoho-huber1983",
+        "hodges1967"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "breakdown point",
+      "sample mean"
+    ]
+  },
+  {
+    "id": "rb-mean-influence",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "meanFunctional_hasInfluenceAt",
+    "fullName": "StatLean.RobustStatistics.meanFunctional_hasInfluenceAt",
+    "title": "The Influence Function of the Mean",
+    "citation": "MMY (2019), §3.1",
+    "shortRef": "MMY (2019), §3.1",
+    "file": "StatLean/RobustStatistics/LocationScale/Mean.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/LocationScale/Mean.html#StatLean.RobustStatistics.meanFunctional_hasInfluenceAt",
+    "informal": "<p>Let $P$ be a distribution <span data-link=\"h1\">with a finite mean</span> $\\mu(P) = \\int x \\, dP$. At every contamination point $x_0$, the mean functional has influence value $$\\operatorname{IF}(x_0; \\mu, P) \\;=\\; x_0 - \\mu(P).$$ Along the point-mass contamination path the computation is exact, not merely first-order: $\\mu\\big((1-\\varepsilon)P + \\varepsilon \\delta_{x_0}\\big) = \\mu(P) + \\varepsilon\\,(x_0 - \\mu(P))$ for all $\\varepsilon$, so the difference quotient is constant.</p><p>The influence function is unbounded in $x_0$: the gross-error sensitivity of the mean is infinite, and no reweighting of a single contamination point has a diminishing effect. This infinitesimal fragility matches the mean's zero breakdown point and its infinite maximum bias.</p>",
+    "summary": "IF(x₀; mean, P) = x₀ − μ(P): the mean's influence function is exactly linear in the contamination point, hence unbounded.",
+    "leanSignature": "theorem meanFunctional_hasInfluenceAt {P : Measure ℝ}\n    -- USER-INPUT: P has a well-defined mean; MMY §3.1\n    (hP : Integrable id P) (x₀ : ℝ) :\n    HasInfluenceAt meanFunctional P x₀ (x₀ - meanFunctional P)",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "Integrable id P",
+        "label": "finite mean",
+        "note": "The identity is integrable under P, so μ(P) = ∫x dP is well-defined."
+      }
+    ],
+    "formalizationNotes": "The mean functional is the Bochner integral of the identity, whose junk value at non-integrable inputs is $0$; integrability of $P$ is therefore carried as the one genuine hypothesis, and the point mass is always integrable. The unboundedness statement — for every candidate bound there is a contamination point whose influence value exceeds it — is proved as a companion theorem in the same file.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§3.1 (The influence function)",
+      "biblio": "The computation is Example 3.1-level classical material; the influence curve itself is F. R. Hampel (*J. Amer. Statist. Assoc.* **69** (1974), 383–393), where the unboundedness of the mean's curve is the motivating example.",
+      "keys": [
+        "mmy2019",
+        "hampel1974"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "influence function",
+      "sample mean"
+    ]
+  },
+  {
+    "id": "rb-mean-bias-unbounded",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "meanFunctional_bias_unbounded",
+    "fullName": "StatLean.RobustStatistics.meanFunctional_bias_unbounded",
+    "title": "The Mean Has Infinite Maximum Bias",
+    "citation": "MMY (2019), §3.3",
+    "shortRef": "MMY (2019), §3.3",
+    "file": "StatLean/RobustStatistics/LocationScale/Mean.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/LocationScale/Mean.html#StatLean.RobustStatistics.meanFunctional_bias_unbounded",
+    "informal": "<p>Let $P$ have <span data-link=\"h1\">a finite mean</span> and let <span data-link=\"h2\">the contamination level $\\varepsilon$ be positive</span> (and at most one). Then no finite bound $b$ dominates the contamination bias of the mean over the gross-error neighbourhood: for every $b$ there is a contaminating distribution $Q$ with $$\\big|\\mu\\big((1-\\varepsilon)P + \\varepsilon Q\\big) - \\mu(P)\\big| \\;>\\; b.$$ In the language of maximum-bias curves, $\\mathrm{MB}(\\varepsilon; \\mu, P) = \\infty$ for every $\\varepsilon > 0$.</p><p>The witness is a point mass pushed to infinity: contaminating with $\\delta_M$ biases the mean by $\\varepsilon(M - \\mu(P))$, which is unbounded in $M$. Together with the unbounded influence function and the zero breakdown point, all three robustness diagnostics agree that the sample mean is maximally fragile.</p>",
+    "summary": "At every contamination level ε > 0 the mean's maximum bias over the gross-error neighbourhood is infinite: contaminate with δ_M and let M → ∞.",
+    "leanSignature": "theorem meanFunctional_bias_unbounded {P : Measure ℝ} {ε : ℝ} (hε : 0 < ε) (hε1 : ε ≤ 1)\n    -- USER-INPUT: P has a well-defined mean; MMY §3.3\n    (hP : Integrable id P) :\n    ∀ b : ℝ, ¬ContaminationBiasLE meanFunctional P ε b",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "Integrable id P",
+        "label": "finite mean",
+        "note": "μ(P) = ∫x dP is well-defined."
+      },
+      {
+        "id": "h2",
+        "leanToken": "0 < ε",
+        "label": "positive contamination",
+        "note": "The contamination level is strictly positive (and at most 1)."
+      }
+    ],
+    "formalizationNotes": "The statement is phrased through a bounded-bias predicate — some $b$ dominates the bias over all probability contaminations — whose negation is proved; this avoids extended-real suprema while capturing exactly the divergence of the maximum-bias curve. The mixture mean is evaluated by the exact point-mass contamination formula, so the argument is three lines of algebra once the witness $\\delta_M$ is chosen.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§3.3 (Maximum asymptotic bias)",
+      "biblio": "Maximum-bias curves as a systematic diagnostic are developed from P. J. Huber's minimax analysis (*Ann. Math. Statist.* **35** (1964), 73–101); the modern min–max bias program is R. D. Martin, V. J. Yohai, and R. H. Zamar (*Ann. Statist.* **17** (1989), 1608–1630).",
+      "keys": [
+        "mmy2019",
+        "huber1964",
+        "martin-yohai-zamar1989"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "maximum bias",
+      "sample mean"
+    ]
+  },
+  {
+    "id": "rb-huber-loss",
+    "category": "robust",
+    "kind": "definition",
+    "leanName": "huberRho",
+    "fullName": "StatLean.RobustStatistics.huberRho",
+    "title": "The Huber Loss and Score",
+    "citation": "MMY (2019), Eqs. (2.28)–(2.29)",
+    "shortRef": "MMY (2019), Eqs. (2.28)–(2.29)",
+    "file": "StatLean/RobustStatistics/LocationScale/Huber.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/LocationScale/Huber.html#StatLean.RobustStatistics.huberRho",
+    "informal": "<p>For a clipping constant $c \\ge 0$, the <em>Huber loss</em> interpolates between squared loss near the origin and absolute loss in the tails: $$\\rho_c(u) \\;=\\; \\begin{cases} u^2/2, & |u| \\le c,\\\\ c\\,|u| - c^2/2, & |u| > c,\\end{cases}$$ and its derivative, the <em>Huber score</em>, is <span data-link=\"h1\">the clipped identity</span> $$\\psi_c(u) \\;=\\; \\max\\big(-c,\\; \\min(c, u)\\big) \\;=\\; \\begin{cases} -c, & u < -c,\\\\ u, & |u| \\le c,\\\\ c, & u > c.\\end{cases}$$ The differentiation $\\rho_c' = \\psi_c$ holds everywhere, including at the knots $u = \\pm c$.</p><p>The bounded score $|\\psi_c| \\le c$ is the analytic source of the Huber estimator's robustness: bounded score means bounded influence, in contrast with the unbounded score $\\psi(u) = u$ of squared loss. Convexity, evenness, monotonicity, the $1$-Lipschitz property, and the tail limits $\\psi_c(\\pm\\infty) = \\pm c$ are proved alongside.</p>",
+    "summary": "Huber's loss ρ_c (quadratic core, linear tails) and its everywhere-derivative, the clipped score ψ_c(u) = max(−c, min(c, u)) with |ψ_c| ≤ c.",
+    "leanSignature": "noncomputable def huberRho (c u : ℝ) : ℝ :=\n  if |u| ≤ c then u ^ 2 / 2 else c * |u| - c ^ 2 / 2\n\nnoncomputable def huberPsi (c u : ℝ) : ℝ :=\n  max (-c) (min c u)\n\ntheorem hasDerivAt_huberRho {c : ℝ} (hc : 0 ≤ c) (u : ℝ) :\n    HasDerivAt (huberRho c) (huberPsi c u) u",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "max (-c) (min c u)",
+        "label": "the clipped score",
+        "note": "ψ_c clips the identity to the interval [−c, c]."
+      }
+    ],
+    "formalizationNotes": "We normalize the quadratic core as $u^2/2$ so that the score is exactly the clipped identity; the book's display carries $u^2$, a factor-two rescaling that changes no minimizer and is recorded where it matters. The derivative theorem at the knots carries the hypothesis $c \\ge 0$; at $c = 0$ the loss and score degenerate to the zero function and the statement remains true. The tail-limit lemma at $+\\infty$ requires $c \\ge 0$ as well — for negative $c$ the score is constant — and the formalization keeps that hypothesis explicit.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§2.2 (M-estimators of location), Eqs. (2.28)–(2.29)",
+      "biblio": "The loss, the clipped score, and their minimax justification are P. J. Huber (*Ann. Math. Statist.* **35** (1964), 73–101); the role of bounded scores in bounding influence is F. R. Hampel (*J. Amer. Statist. Assoc.* **69** (1974), 383–393).",
+      "keys": [
+        "mmy2019",
+        "huber1964",
+        "hampel1974"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "Huber loss",
+      "M-estimator"
+    ]
+  },
+  {
+    "id": "rb-median-l1",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "isMLocationEstimate_abs_sampleMedian",
+    "fullName": "StatLean.RobustStatistics.isMLocationEstimate_abs_sampleMedian",
+    "title": "The Median Minimizes Absolute Loss",
+    "citation": "MMY (2019), Eqs. (2.18), (2.21)",
+    "shortRef": "MMY (2019), Eqs. (2.18), (2.21)",
+    "file": "StatLean/RobustStatistics/LocationScale/MLocation.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/LocationScale/MLocation.html#StatLean.RobustStatistics.isMLocationEstimate_abs_sampleMedian",
+    "informal": "<p>For every sample $x_1, \\dots, x_n$, the sample median minimizes <span data-link=\"h1\">the total absolute deviation</span>: for every candidate $t$, $$\\sum_{i=1}^n \\big|x_i - \\mathrm{med}(x)\\big| \\;\\le\\; \\sum_{i=1}^n |x_i - t|.$$ The median is thus the location M-estimate for the absolute-value loss, exactly as the sample mean is the M-estimate for squared loss. These are the two poles of the M-estimation family that the Huber loss interpolates between — and the robustness gulf between them (breakdown $1/2$ versus $0$) is what M-estimation with a bounded score is designed to bridge.</p>",
+    "summary": "The sample median minimizes t ↦ Σ|xᵢ − t|: it is the location M-estimate for absolute loss, the robust pole of the M-estimation family.",
+    "leanSignature": "def IsMLocationEstimate (ρ : ℝ → ℝ) (x : Fin n → ℝ) (θ : ℝ) : Prop :=\n  ∀ t : ℝ, ∑ i, ρ (x i - θ) ≤ ∑ i, ρ (x i - t)\n\ntheorem isMLocationEstimate_abs_sampleMedian (x : Fin n → ℝ) :\n    IsMLocationEstimate (fun u => |u|) x (sampleMedian x)",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "(fun u => |u|)",
+        "label": "absolute-value loss",
+        "note": "The objective is the L1 loss Σ|xᵢ − t|."
+      }
+    ],
+    "formalizationNotes": "The median is the low median (the order statistic of rank $\\lceil n/2 \\rceil$), which at even sample sizes selects one endpoint of the interval of minimizers; the theorem asserts global minimality, which holds for every point of that interval. No sample-size hypothesis is needed: the empty-sample case is vacuous, both sides of the inequality being empty sums. The proof is the classical exchange argument on sorted data, carried out with the order-statistics API. The companion result that squared loss is minimized exactly by the sample mean is proved in the same file.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§2.3.1, Eqs. (2.18) and (2.21)",
+      "biblio": "The characterization of the median as the L1 minimizer is classical, running back through the early history of least absolute deviations; its role as the boundary member of the M-estimation family is set out in P. J. Huber (*Ann. Math. Statist.* **35** (1964), 73–101).",
+      "keys": [
+        "mmy2019",
+        "huber1964"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "median",
+      "M-estimator"
+    ]
+  },
+  {
+    "id": "rb-mean-l2",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "isMLocationEstimate_sq_iff",
+    "fullName": "StatLean.RobustStatistics.isMLocationEstimate_sq_iff",
+    "title": "The Mean Minimizes Squared Loss",
+    "citation": "MMY (2019), Eq. (2.16)",
+    "shortRef": "MMY (2019), Eq. (2.16)",
+    "file": "StatLean/RobustStatistics/LocationScale/MLocation.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/LocationScale/MLocation.html#StatLean.RobustStatistics.isMLocationEstimate_sq_iff",
+    "informal": "<p>For a <span data-link=\"h1\">nonempty sample</span> $x_1,\\dots,x_n$, a value $\\theta$ minimizes the total squared deviation $\\sum_i (x_i - \\theta)^2$ if and only if $\\theta$ is the sample mean $\\bar x = \\tfrac1n \\sum_i x_i$. Squared loss thus has a unique location M-estimate, and it is the estimator whose fragility — zero breakdown, unbounded influence, infinite maximum bias — motivates the entire robust family: replacing $u^2$ by losses with bounded derivative trades a little efficiency at the normal model for bounded sensitivity everywhere.</p>",
+    "summary": "θ minimizes Σ(xᵢ − θ)² iff θ = x̄: squared loss characterizes the sample mean, the fragile pole of the M-estimation family.",
+    "leanSignature": "theorem isMLocationEstimate_sq_iff {x : Fin n → ℝ} {θ : ℝ} (hn : 0 < n) :\n    IsMLocationEstimate (fun u => u ^ 2) x θ ↔ θ = sampleMean x",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "0 < n",
+        "label": "nonempty sample",
+        "note": "At least one observation, so the mean is well-defined and the minimizer unique."
+      }
+    ],
+    "formalizationNotes": "Stated as a two-sided characterization: the minimizing property is equivalent to equality with the sample mean, which packages both the first-order condition and strict convexity in one statement. The loss is normalized as $u^2$ (any positive multiple gives the same minimizer).",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§2.3.1, Eq. (2.16)",
+      "biblio": "Classical least squares, here in its role as the non-robust boundary case of M-estimation as framed by P. J. Huber (*Ann. Math. Statist.* **35** (1964), 73–101).",
+      "keys": [
+        "mmy2019",
+        "huber1964"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "sample mean",
+      "M-estimator"
+    ]
+  },
+  {
+    "id": "rb-mlocation-root-exists",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "exists_isMLocationRoot",
+    "fullName": "StatLean.RobustStatistics.exists_isMLocationRoot",
+    "title": "Existence of Population M-Location Roots",
+    "citation": "MMY (2019), Theorem 10.4 context",
+    "shortRef": "MMY (2019), Theorem 10.4 context",
+    "file": "StatLean/RobustStatistics/MEstimation/MLocationFunctional.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/MEstimation/MLocationFunctional.html#StatLean.RobustStatistics.exists_isMLocationRoot",
+    "informal": "<p>Let $\\psi$ be a <span data-link=\"h1\">nondecreasing</span>, <span data-link=\"h2\">continuous</span> score with <span data-link=\"h3\">limits $-k_1 \\lt  0$ at $-\\infty$ and $k_2 \\gt  0$ at $+\\infty$</span>, and let $P$ be any probability distribution. Then the population M-estimating equation $$\\int \\psi(x - \\theta)\\, dP(x) \\;=\\; 0$$ has at least one root $\\theta$. The population score $\\lambda(\\theta) = \\int \\psi(x-\\theta)\\,dP$ is continuous (by dominated convergence), nonincreasing, and tends to $k_2 \\gt  0$ at $\\theta \\to -\\infty$ and to $-k_1 \\lt  0$ at $\\theta \\to +\\infty$, so the intermediate value theorem produces a crossing.</p><p>Uniqueness holds when the population score is strictly decreasing — for instance under a strictly increasing $\\psi$, or when $P$ charges every interval; without it, the root set is a closed interval.</p>",
+    "summary": "For a bounded monotone continuous score with limits of opposite signs, the population equation ∫ψ(x − θ)dP = 0 has a root — the asymptotic value of the location M-estimator.",
+    "leanSignature": "def IsMLocationRoot (ψ : ℝ → ℝ) (P : Measure ℝ) (θ : ℝ) : Prop :=\n  ∫ x, ψ (x - θ) ∂P = 0\n\ntheorem exists_isMLocationRoot {ψ : ℝ → ℝ} {P : Measure ℝ} [IsProbabilityMeasure P]\n    {k₁ k₂ : ℝ}\n    -- USER-INPUT: continuous monotone score; MMY Thm 10.1/10.4\n    (hψc : Continuous ψ) (hψm : Monotone ψ)\n    -- USER-INPUT: score limits of opposite sign (MMY (10.3): lim_{θ→θ₁} Ψ > 0 > lim_{θ→θ₂} Ψ)\n    (hbot : Tendsto ψ atBot (𝓝 (-k₁))) (htop : Tendsto ψ atTop (𝓝 k₂))\n    (hk₁ : 0 < k₁) (hk₂ : 0 < k₂) :\n    ∃ θ : ℝ, IsMLocationRoot ψ P θ",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "Monotone ψ",
+        "label": "monotone score",
+        "note": "ψ is nondecreasing."
+      },
+      {
+        "id": "h2",
+        "leanToken": "Continuous ψ",
+        "label": "continuous score",
+        "note": "ψ is continuous, so the population score is continuous by dominated convergence."
+      },
+      {
+        "id": "h3",
+        "leanToken": "Tendsto ψ atBot (𝓝 (-k₁))",
+        "label": "opposite-sign limits",
+        "note": "ψ(−∞) = −k₁ < 0 and ψ(+∞) = k₂ > 0, so the population score changes sign."
+      }
+    ],
+    "formalizationNotes": "The root predicate is the raw Bochner-integral equation, whose junk value at non-integrable scores would make it vacuous — but a monotone score with finite limits is bounded, hence integrable against every probability measure, which is derived rather than assumed. Existence applies in particular to the Huber score with $k_1 = k_2 = c$; that instance is drawn as a corollary in the same file.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§10.1 (Existence and uniqueness of solutions), Theorem 10.4 route",
+      "biblio": "Existence and uniqueness theory for M-estimating equations is P. J. Huber's (*Ann. Math. Statist.* **35** (1964), 73–101, and *Robust Statistics*, Wiley, 1981, ch. 3); the treatment of estimators as functionals of the distribution descends from R. von Mises (*Ann. Math. Statist.* **18** (1947), 309–348).",
+      "keys": [
+        "mmy2019",
+        "huber1964",
+        "huber1981",
+        "vonmises1947"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "M-estimator"
+    ]
+  },
+  {
+    "id": "rb-mlocation-if",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "mLocationRoot_influence",
+    "fullName": "StatLean.RobustStatistics.mLocationRoot_influence",
+    "title": "The Influence Function of M-Estimators",
+    "citation": "MMY (2019), Eq. (3.7)",
+    "shortRef": "MMY (2019), Eq. (3.7)",
+    "file": "StatLean/RobustStatistics/MEstimation/Influence.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/MEstimation/Influence.html#StatLean.RobustStatistics.mLocationRoot_influence",
+    "informal": "<p>Let $\\psi$ be a <span data-link=\"h1\">differentiable score with derivative $\\psi'$</span> that is <span data-link=\"h2\">bounded</span> and <span data-link=\"h9\">measurable</span>, let $\\theta_0$ solve the population equation $\\int \\psi(x - \\theta_0)\\,dP = 0$ with <span data-link=\"h3\">$\\psi(\\cdot - \\theta_0)$ integrable</span>, and set $$A \\;=\\; \\int \\psi'(x - \\theta_0)\\, dP(x) \\;\\ne\\; 0 \\;\\;\\text{(<span data-link=\"h4\">nondegenerate</span>)}.$$ Suppose <span data-link=\"h5\">a root path $\\theta(\\varepsilon)$ solves the $\\delta_{x_0}$-contaminated equation for small $\\varepsilon \\ge 0$</span>, <span data-link=\"h6\">starts at $\\theta_0$</span>, and is <span data-link=\"h7\">right-differentiable at $0$ with derivative $d$</span>, where <span data-link=\"h8\">$A$ is the stated integral</span>. Then $$d \\;=\\; \\operatorname{IF}(x_0; T, P) \\;=\\; \\frac{\\psi(x_0 - \\theta_0)}{A}.$$</p><p>The influence of an M-estimator is proportional to its own score. The immediate corollary: a score bounded by $c$ gives influence bounded by $c/|A|$ — bounded score means bounded influence, which is the design principle behind Huber's estimator.</p>",
+    "summary": "IF(x₀; T, P) = ψ(x₀ − θ₀)/A with A = ∫ψ′(x − θ₀)dP: an M-estimator's influence function is proportional to its score, so bounded score ⟹ bounded influence.",
+    "leanSignature": "theorem mLocationRoot_influence {P : Measure ℝ} [IsProbabilityMeasure P]\n    {ψ ψ' : ℝ → ℝ} {C : ℝ} {θ : ℝ → ℝ} {θ₀ x₀ d A : ℝ}\n    -- USER-INPUT: differentiable score with derivative ψ'; MMY §3.8.1\n    (hψ : ∀ u, HasDerivAt ψ (ψ' u) u)\n    -- USER-INPUT: bounded score derivative (dominates the interchange); MMY (10.8)\n    (hψ'b : ∀ u, |ψ' u| ≤ C)\n    -- USER-INPUT: the score is integrable at the uncontaminated root; MMY §3.8.1 context\n    (hint : Integrable (fun x => ψ (x - θ₀)) P)\n    -- LEAN-ONLY: measurability of ψ'; automatic for continuous derivatives\n    (hψ'_meas : Measurable ψ')\n    -- USER-INPUT: θ t solves the contaminated M-equation for small t ≥ 0; MMY (3.58)\n    (hroot : ∀ᶠ t in 𝓝[Set.Ici (0 : ℝ)] 0,\n      IsMLocationRoot ψ (contaminate P (Measure.dirac x₀) t) (θ t))\n    (hθ0 : θ 0 = θ₀)\n    -- USER-INPUT: the contaminated root path is right-differentiable at 0; MMY §3.8.1\n    (hθd : HasDerivWithinAt θ d (Set.Ici 0) 0)\n    (hA : A = ∫ x, ψ' (x - θ₀) ∂P)\n    -- USER-INPUT: nondegenerate denominator; MMY Thm 10.7 (B ≠ 0)\n    (hA0 : A ≠ 0) :\n    d = ψ (x₀ - θ₀) / A",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "∀ u, HasDerivAt ψ (ψ' u) u",
+        "label": "differentiable score",
+        "note": "ψ is differentiable everywhere with derivative ψ′."
+      },
+      {
+        "id": "h2",
+        "leanToken": "∀ u, |ψ' u| ≤ C",
+        "label": "bounded derivative",
+        "note": "|ψ′| ≤ C, dominating the differentiation under the integral."
+      },
+      {
+        "id": "h9",
+        "leanToken": "Measurable ψ'",
+        "label": "measurable derivative",
+        "note": "ψ′ is measurable, as the parametric-integral theorem requires."
+      },
+      {
+        "id": "h3",
+        "leanToken": "Integrable (fun x => ψ (x - θ₀)) P",
+        "label": "integrable score",
+        "note": "ψ(· − θ₀) is integrable under P, so the estimating equation is honest."
+      },
+      {
+        "id": "h4",
+        "leanToken": "A ≠ 0",
+        "label": "nondegenerate slope",
+        "note": "The mean score derivative A does not vanish."
+      },
+      {
+        "id": "h5",
+        "leanToken": "IsMLocationRoot ψ (contaminate P (Measure.dirac x₀) t) (θ t)",
+        "label": "contaminated root path",
+        "note": "θ(ε) solves the point-mass-contaminated M-equation for all small ε ≥ 0."
+      },
+      {
+        "id": "h6",
+        "leanToken": "θ 0 = θ₀",
+        "label": "correct start",
+        "note": "The path starts at the uncontaminated root."
+      },
+      {
+        "id": "h7",
+        "leanToken": "HasDerivWithinAt θ d (Set.Ici 0) 0",
+        "label": "one-sided differentiability",
+        "note": "The root path has right derivative d at ε = 0."
+      },
+      {
+        "id": "h8",
+        "leanToken": "A = ∫ x, ψ' (x - θ₀) ∂P",
+        "label": "the denominator",
+        "note": "A is the P-mean of ψ′ along the θ₀-shifted data."
+      }
+    ],
+    "formalizationNotes": "The theorem is the smooth-score specialization of a Lipschitz engine proved in the same file, which needs only a Lipschitz $\\psi$ with an almost-everywhere derivative — the form the Huber score satisfies. Differentiability of the contaminated root path is carried as a hypothesis, matching the classical treatment, which takes the existence of $\\partial\\theta_\\varepsilon/\\partial\\varepsilon$ for granted; everything else — the differentiation under the integral, the mixture split, the uniqueness of the one-sided derivative — is derived. The bounded-influence corollary and the Huber instance, with $A$ the mass of the central region, are drawn immediately after.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§3.8.1 (IF of general M-estimators), Eq. (3.7)",
+      "biblio": "The influence function of M-estimators is F. R. Hampel (*J. Amer. Statist. Assoc.* **69** (1974), 383–393), with the book-length treatment in Hampel, Ronchetti, Rousseeuw, and Stahel, *Robust Statistics: The Approach Based on Influence Functions*, Wiley, 1986, §2.3; the functional-derivative viewpoint is R. von Mises (*Ann. Math. Statist.* **18** (1947), 309–348).",
+      "keys": [
+        "mmy2019",
+        "hampel1974",
+        "hampel-etal1986",
+        "vonmises1947"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "influence function",
+      "M-estimator"
+    ]
+  },
+  {
+    "id": "rb-huber-if",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "huberLocation_influence",
+    "fullName": "StatLean.RobustStatistics.huberLocation_influence",
+    "title": "The Huber Estimator Has Bounded Influence",
+    "citation": "MMY (2019), Eq. (3.7) with Eq. (2.29)",
+    "shortRef": "MMY (2019), Eq. (3.7) with Eq. (2.29)",
+    "file": "StatLean/RobustStatistics/MEstimation/Influence.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/MEstimation/Influence.html#StatLean.RobustStatistics.huberLocation_influence",
+    "informal": "<p>Let $\\psi_c$ be the Huber score with <span data-link=\"h1\">clipping constant $c \\gt  0$</span>, let $\\theta_0$ be the Huber location value at $P$, and suppose <span data-link=\"h2\">$P$ has no atoms at the two clipping knots $\\theta_0 \\pm c$</span> and that <span data-link=\"h3\">the central region has positive mass</span> $A = P(|x - \\theta_0| \\lt  c) \\gt  0$. If <span data-link=\"h4\">a root path solves the $\\delta_{x_0}$-contaminated Huber equation near $\\varepsilon = 0$</span>, <span data-link=\"h5\">starting from $\\theta_0$</span>, and is <span data-link=\"h6\">right-differentiable with derivative $d$</span>, then $$d \\;=\\; \\operatorname{IF}(x_0) \\;=\\; \\frac{\\psi_c(x_0 - \\theta_0)}{P\\big(|x - \\theta_0| \\lt  c\\big)},$$ and consequently $$\\sup_{x_0} \\big|\\operatorname{IF}(x_0)\\big| \\;\\le\\; \\frac{c}{P\\big(|x - \\theta_0| \\lt  c\\big)} \\;\\lt \\; \\infty.$$</p><p>The mean's influence $x_0 - \\mu$ grows without bound; the Huber estimator's influence is clipped at a constant. This is the precise sense in which M-estimation with a bounded score repairs the mean's infinitesimal fragility.</p>",
+    "summary": "IF(x₀) = ψ_c(x₀ − θ₀)/P(|x − θ₀| < c) for the Huber location functional — bounded by c/P(|x − θ₀| < c), in contrast with the mean's unbounded influence.",
+    "leanSignature": "theorem huberLocation_influence {P : Measure ℝ} [IsProbabilityMeasure P] {c : ℝ}\n    (hc : 0 < c) {θ : ℝ → ℝ} {θ₀ x₀ d : ℝ}\n    -- USER-INPUT: no atoms at the clipping knots (a.e. differentiability of ψ_c along the\n    -- shifted data); MMY §10.3 (F continuous at the relevant points)\n    (h_atom_add : P {θ₀ + c} = 0) (h_atom_sub : P {θ₀ - c} = 0)\n    -- USER-INPUT: θ t solves the contaminated Huber equation for small t ≥ 0; MMY (3.58)\n    (hroot : ∀ᶠ t in 𝓝[Set.Ici (0 : ℝ)] 0,\n      IsMLocationRoot (huberPsi c) (contaminate P (Measure.dirac x₀) t) (θ t))\n    (hθ0 : θ 0 = θ₀)\n    -- USER-INPUT: right-differentiable root path; MMY §3.8.1\n    (hθd : HasDerivWithinAt θ d (Set.Ici 0) 0)\n    -- USER-INPUT: the central region has positive mass (B ≠ 0); MMY Thm 10.7\n    (hmass : 0 < P.real {x | |x - θ₀| < c}) :\n    d = huberPsi c (x₀ - θ₀) / P.real {x | |x - θ₀| < c}",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "0 < c",
+        "label": "positive clipping",
+        "note": "The Huber clipping constant is positive."
+      },
+      {
+        "id": "h2",
+        "leanToken": "P {θ₀ + c} = 0",
+        "label": "no atoms at the knots",
+        "note": "P puts no mass exactly at θ₀ ± c, so the clipped score is differentiable P-almost everywhere along the shifted data."
+      },
+      {
+        "id": "h3",
+        "leanToken": "0 < P.real {x | |x - θ₀| < c}",
+        "label": "positive central mass",
+        "note": "The denominator A = P(|x − θ₀| < c) is positive."
+      },
+      {
+        "id": "h4",
+        "leanToken": "IsMLocationRoot (huberPsi c) (contaminate P (Measure.dirac x₀) t) (θ t)",
+        "label": "contaminated root path",
+        "note": "θ(ε) solves the contaminated Huber equation for small ε ≥ 0."
+      },
+      {
+        "id": "h5",
+        "leanToken": "θ 0 = θ₀",
+        "label": "correct start",
+        "note": "The path starts at the uncontaminated Huber value."
+      },
+      {
+        "id": "h6",
+        "leanToken": "HasDerivWithinAt θ d (Set.Ici 0) 0",
+        "label": "one-sided differentiability",
+        "note": "The root path has right derivative d at ε = 0."
+      }
+    ],
+    "formalizationNotes": "The Huber score is Lipschitz but not differentiable at the knots, so the smooth-score influence formula does not apply directly; the proof instantiates the Lipschitz engine with the almost-everywhere derivative of the clipped score, which is the indicator of the central region — whence the denominator is the central mass itself. The no-atom hypotheses at the two knots are exactly what makes that derivative almost-everywhere valid; both they and the positive-mass condition are the classical regularity of the asymptotic theory.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§3.8.1, Eq. (3.7) applied to Eq. (2.29)",
+      "biblio": "The estimator and the boundedness principle are P. J. Huber (*Ann. Math. Statist.* **35** (1964), 73–101); the influence computation and the design philosophy of bounding the influence curve are F. R. Hampel (*J. Amer. Statist. Assoc.* **69** (1974), 383–393).",
+      "keys": [
+        "mmy2019",
+        "huber1964",
+        "hampel1974"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "influence function",
+      "Huber estimator"
+    ]
+  },
+  {
+    "id": "rb-mestimator-breakdown",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "mLocationRoot_bounded_of_contamination",
+    "fullName": "StatLean.RobustStatistics.mLocationRoot_bounded_of_contamination",
+    "title": "The Breakdown Point of Location M-Estimators",
+    "citation": "MMY (2019), Eq. (3.21)",
+    "shortRef": "MMY (2019), Eq. (3.21)",
+    "file": "StatLean/RobustStatistics/MEstimation/AsymptoticBreakdown.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/MEstimation/AsymptoticBreakdown.html#StatLean.RobustStatistics.mLocationRoot_bounded_of_contamination",
+    "informal": "<p>Let $\\psi$ be a <span data-link=\"h1\">nondecreasing score with finite limits</span> $-k_1 = \\psi(-\\infty)$ and $k_2 = \\psi(+\\infty)$, both nonzero with <span data-link=\"h2\">$k_1, k_2 \\gt  0$</span>. If the <span data-link=\"h3\">contamination level satisfies</span> $$\\varepsilon \\;\\lt \\; \\varepsilon^\\ast \\;=\\; \\frac{\\min(k_1, k_2)}{k_1 + k_2},$$ then there is a single bound $B$ such that every solution $\\theta$ of every $\\varepsilon$-contaminated M-equation $\\int \\psi(x-\\theta)\\, d\\big[(1-\\varepsilon)P + \\varepsilon Q\\big] = 0$, over all contaminating distributions $Q$, satisfies $|\\theta| \\le B$. Beyond the threshold the conclusion fails: for $\\varepsilon \\gt  k_1/(k_1+k_2)$, point-mass contamination pushed to $+\\infty$ produces roots beyond every bound.</p><p>For an odd bounded score, $k_1 = k_2$ and $\\varepsilon^\\ast = 1/2$: a location M-estimator with a symmetric bounded score — the Huber estimator among them — attains the maximal asymptotic breakdown point.</p>",
+    "summary": "An M-estimator with monotone score bounded between −k₁ and k₂ resists contamination below ε* = min(k₁,k₂)/(k₁+k₂) — equal to 1/2 for odd scores, as for Huber's estimator — and breaks beyond it.",
+    "leanSignature": "theorem mLocationRoot_bounded_of_contamination {P : Measure ℝ} [IsProbabilityMeasure P]\n    {ψ : ℝ → ℝ} {k₁ k₂ ε : ℝ}\n    -- USER-INPUT: monotone score with finite limits; MMY §3.2.1 (k₁ = -ψ(-∞), k₂ = ψ(∞))\n    (hψm : Monotone ψ) (hbot : Tendsto ψ atBot (𝓝 (-k₁))) (htop : Tendsto ψ atTop (𝓝 k₂))\n    (hk₁ : 0 < k₁) (hk₂ : 0 < k₂)\n    -- USER-INPUT: contamination level below the breakdown point; MMY eq. (3.21)\n    (hε0 : 0 ≤ ε) (hε : ε < min k₁ k₂ / (k₁ + k₂)) :\n    ∃ B : ℝ, ∀ (Q : Measure ℝ), IsProbabilityMeasure Q → ∀ θ : ℝ,\n      IsMLocationRoot ψ (contaminate P Q ε) θ → |θ| ≤ B",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "Monotone ψ",
+        "label": "monotone score",
+        "note": "ψ is nondecreasing with finite limits −k₁ at −∞ and k₂ at +∞."
+      },
+      {
+        "id": "h2",
+        "leanToken": "0 < k₁",
+        "label": "nondegenerate limits",
+        "note": "Both tail limits are nonzero: k₁ > 0 and k₂ > 0."
+      },
+      {
+        "id": "h3",
+        "leanToken": "ε < min k₁ k₂ / (k₁ + k₂)",
+        "label": "subcritical contamination",
+        "note": "The contamination level is below the breakdown threshold min(k₁,k₂)/(k₁+k₂)."
+      }
+    ],
+    "formalizationNotes": "The statement quantifies over all solutions of all contaminated equations, matching the multi-root reading of asymptotic breakdown: boundedness of the entire solution set. The sharpness companion in the same file produces, for any bound and any supercritical level, a point-mass contamination with a root beyond the bound, via the intermediate value theorem on the contaminated population score; the Huber instance with threshold one-half is drawn as a corollary.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§3.2.1 (Location M-estimators), Eqs. (3.21)–(3.22)",
+      "biblio": "The breakdown analysis of monotone M-estimators is Huber's; see P. J. Huber, *Robust Statistics*, Wiley, 1981, ch. 3, and P. J. Huber and E. M. Ronchetti, *Robust Statistics*, 2nd ed., Wiley, 2009, §3.2, with the qualitative framework of F. R. Hampel (*Ann. Math. Statist.* **42** (1971), 1887–1896).",
+      "keys": [
+        "mmy2019",
+        "huber1981",
+        "huber-ronchetti2009",
+        "hampel1971"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "breakdown point",
+      "M-estimator"
+    ]
+  },
+  {
+    "id": "rb-mlocation-consistent",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "mLocation_consistent",
+    "fullName": "StatLean.RobustStatistics.mLocation_consistent",
+    "title": "Consistency of Location M-Estimators",
+    "citation": "MMY (2019), §10.2",
+    "shortRef": "MMY (2019), §10.2",
+    "file": "StatLean/RobustStatistics/MEstimation/Asymptotics.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/MEstimation/Asymptotics.html#StatLean.RobustStatistics.mLocation_consistent",
+    "informal": "<p>Let $X_1, X_2, \\dots$ be <span data-link=\"h1\">independent observations</span> with <span data-link=\"h2\">common law $P$</span> and <span data-link=\"h9\">measurable coordinates</span>, and let $\\psi$ be a <span data-link=\"h3\">bounded, continuous, nondecreasing score</span> whose population score $\\lambda(\\theta) = \\int \\psi(x - \\theta)\\,dP$ is <span data-link=\"h5\">strictly positive left of $\\theta_0$ and strictly negative right of it</span> — the root $\\theta_0$ is well-separated. Let $\\hat\\theta_n$ be any sequence of estimates that <span data-link=\"h7\">asymptotically solves the empirical equation</span>, $\\tfrac1n \\sum_{i\\le n} \\psi(X_i - \\hat\\theta_n) \\to 0$ in probability. Then $\\hat\\theta_n$ is consistent: $$\\hat\\theta_n \\;\\xrightarrow{\\;P\\;}\\; \\theta_0.$$</p><p>The hypotheses are exactly those of the classical monotone Z-estimator consistency theorem, and the proof is an instantiation of that general result — the robust theory reuses the asymptotic machinery rather than rebuilding it.</p>",
+    "summary": "Any asymptotic root of the empirical ψ-equation converges in probability to the well-separated population root θ₀ — consistency of location M-estimators by reuse of monotone Z-estimator theory.",
+    "leanSignature": "theorem mLocation_consistent\n    {Ξ : Type*} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]\n    {P : Measure ℝ} [IsProbabilityMeasure P] {ψ : ℝ → ℝ} {θ₀ : ℝ}\n    {X : ℕ → Ξ → ℝ} {θhat : ℕ → Ξ → ℝ}\n    -- USER-INPUT: i.i.d. data with common law P; MMY §10.2\n    (hX_meas : ∀ i, Measurable (X i))\n    (hX_indep : ProbabilityTheory.iIndepFun X μ)\n    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)\n    (hX_law : μ.map (X 0) = P)\n    -- USER-INPUT: continuous monotone bounded score (ψ-function shape); MMY Def 2.2, §2.3.1\n    (hψc : Continuous ψ) (hψm : Monotone ψ) (hψb : ∃ C, ∀ u, |ψ u| ≤ C)\n    -- USER-INPUT: θ₀ is identified — the population score changes sign strictly at θ₀;\n    -- MMY Thm 10.5 / eq. (10.7)\n    (hsign_lt : ∀ θ < θ₀, 0 < mLocationScore ψ P θ)\n    (hsign_gt : ∀ θ, θ₀ < θ → mLocationScore ψ P θ < 0)\n    -- USER-INPUT: θ̂ₙ nearly solves the empirical M-equation (in probability); MMY (10.1)\n    (hnear : TendstoInMeasure μ\n      (fun (n : ℕ) ξ => (n : ℝ)⁻¹ * ∑ i : Fin n, ψ (X i ξ - θhat n ξ)) atTop\n      (fun _ => (0 : ℝ))) :\n    ∀ ε > (0 : ℝ), Tendsto (fun n => μ {ξ | ε ≤ |θhat n ξ - θ₀|}) atTop (𝓝 0)",
+    "hypotheses": [
+      {
+        "id": "h9",
+        "leanToken": "∀ i, Measurable (X i)",
+        "label": "measurable data",
+        "note": "Each observation is a measurable function on the sample space."
+      },
+      {
+        "id": "h1",
+        "leanToken": "ProbabilityTheory.iIndepFun X μ",
+        "label": "independent sample",
+        "note": "The observations are jointly independent."
+      },
+      {
+        "id": "h2",
+        "leanToken": "μ.map (X 0) = P",
+        "label": "identically distributed",
+        "note": "Every observation has the common law P."
+      },
+      {
+        "id": "h3",
+        "leanToken": "Monotone ψ",
+        "label": "monotone bounded score",
+        "note": "ψ is nondecreasing, continuous, and bounded."
+      },
+      {
+        "id": "h5",
+        "leanToken": "∀ θ < θ₀, 0 < mLocationScore ψ P θ",
+        "label": "well-separated root",
+        "note": "The population score is strictly positive left of θ₀ and strictly negative right of it, identifying θ₀."
+      },
+      {
+        "id": "h7",
+        "leanToken": "TendstoInMeasure μ",
+        "label": "asymptotic estimating equation",
+        "note": "The empirical score at the estimator tends to zero in probability."
+      }
+    ],
+    "formalizationNotes": "The theorem is stated for near-roots — the empirical equation is solved only asymptotically, in probability — which is both weaker and more honest than exact-root formulations, since exact empirical roots need not exist at discontinuity-free finite samples. The proof instantiates the one-dimensional monotone Z-estimator consistency theorem of the asymptotic-statistics library with the negated empirical score, the weak law of large numbers supplying the pointwise convergence. The Huber instance is drawn as a corollary in the same file.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§10.2 (Consistency)",
+      "biblio": "Consistency of M-estimators under minimal conditions is P. J. Huber (*Proc. Fifth Berkeley Symposium*, Vol. I, 1967, pp. 221–233), following the 1964 paper; the modern formulation through well-separated roots of monotone criteria is ch. 5 of A. W. van der Vaart, *Asymptotic Statistics*, Cambridge University Press, 1998.",
+      "keys": [
+        "mmy2019",
+        "huber1967",
+        "huber1964"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "M-estimator",
+      "consistency"
+    ]
+  },
+  {
+    "id": "rb-huber-clt",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "huberLocation_asymptoticNormal",
+    "fullName": "StatLean.RobustStatistics.huberLocation_asymptoticNormal",
+    "title": "Asymptotic Normality of the Huber Estimator",
+    "citation": "MMY (2019), Theorem 10.7",
+    "shortRef": "MMY (2019), Theorem 10.7",
+    "file": "StatLean/RobustStatistics/MEstimation/Asymptotics.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/MEstimation/Asymptotics.html#StatLean.RobustStatistics.huberLocation_asymptoticNormal",
+    "informal": "<p>Let $X_1, X_2, \\dots$ be <span data-link=\"h1\">independent</span> observations with <span data-link=\"h2\">common law $P$</span> and <span data-link=\"h8\">measurable coordinates</span>, let $c \\gt  0$ be <span data-link=\"h9\">the Huber clipping constant</span>, and let $\\theta_0$ solve <span data-link=\"h3\">the population Huber equation</span>. Assume <span data-link=\"h4\">$P$ has no atoms at the clipping knots $\\theta_0 \\pm c$</span> and that <span data-link=\"h5\">the central region has positive mass</span> $B = P(|x-\\theta_0| \\lt  c) \\gt  0$. Let $\\hat\\theta_n = \\hat\\theta_n(X_1,\\dots,X_n)$ be <span data-link=\"h10\">a measurable estimator sequence</span> that is <span data-link=\"h6\">consistent for $\\theta_0$</span> and <span data-link=\"h7\">solves the empirical Huber equation at rate $o_P(n^{-1/2})$</span>. Then $$\\sqrt n\\,\\big(\\hat\\theta_n - \\theta_0\\big) \\;\\rightsquigarrow\\; N\\!\\left(0,\\; \\frac{\\int \\psi_c(x-\\theta_0)^2\\, dP}{P\\big(|x-\\theta_0| \\lt  c\\big)^2}\\right).$$</p><p>The asymptotic variance is the classical sandwich $E\\psi^2/(E\\psi')^2$: the derivative of the clipped score is the indicator of the central region, so its mean is the central mass $B$. No pointwise derivative of the score exists at the knots — the Lipschitz empirical-process route replaces it, with the no-atom conditions making the population score differentiable.</p>",
+    "summary": "√n(θ̂ₙ − θ₀) ⇝ N(0, Eψ_c²/P(|x−θ₀|<c)²) for the Huber location estimator: the sandwich variance with the central mass as denominator, via the Lipschitz Z-estimator route.",
+    "leanSignature": "theorem huberLocation_asymptoticNormal\n    {Ξ : Type} [MeasurableSpace Ξ] {μ : Measure Ξ} [IsProbabilityMeasure μ]\n    {P : Measure ℝ} [IsProbabilityMeasure P] {c : ℝ} (hc : 0 < c) {θ₀ : ℝ}\n    {X : ℕ → Ξ → ℝ} (θhat : ∀ n, (Fin n → ℝ) → ℝ)\n    -- USER-INPUT: i.i.d. data with common law P; MMY §10.3\n    (hX_meas : ∀ i, Measurable (X i))\n    (hX_indep : ProbabilityTheory.iIndepFun X μ)\n    (hX_id : ∀ i, ProbabilityTheory.IdentDistrib (X i) (X 0) μ μ)\n    (hX_law : μ.map (X 0) = P)\n    -- USER-INPUT: θ₀ solves the population Huber equation; MMY (2.22)\n    (hroot : IsMLocationRoot (huberPsi c) P θ₀)\n    -- USER-INPUT: no atoms at the clipping knots; MMY §10.3 (Example 10.4: F continuous)\n    (h_atom_add : P {θ₀ + c} = 0) (h_atom_sub : P {θ₀ - c} = 0)\n    -- USER-INPUT: nondegenerate central mass (B ≠ 0 in Thm 10.7)\n    (hmass : 0 < P.real {x | |x - θ₀| < c})\n    -- LEAN-ONLY: measurable estimator sequence, for the image laws to exist\n    (hθhat_meas : ∀ n, Measurable (fun ξ => θhat n (fun i : Fin n => X i.val ξ)))\n    -- USER-INPUT: consistency of the estimator sequence (from `huberLocation_consistent`);\n    -- MMY Thm 10.5\n    (h_consist : ∀ ε > (0 : ℝ), Tendsto\n      (fun n => μ {ξ | ε ≤ |θhat n (fun i : Fin n => X i.val ξ) - θ₀|}) atTop (𝓝 0))\n    -- USER-INPUT: the estimating equation is solved at rate o_P(n^{-1/2}); MMY (10.1),\n    -- vdV Thm 5.21 estimating-equation condition\n    (h_est_eq : TendstoInMeasure μ\n      (fun (n : ℕ) ξ => Real.sqrt n * ((n : ℝ)⁻¹ * ∑ i : Fin n,\n        huberPsi c (X i ξ - θhat n (fun i : Fin n => X i.val ξ))))\n      atTop (fun _ => (0 : ℝ))) :\n    WeakConverges\n      (fun n => μ.map (fun ξ =>\n        Real.sqrt n * (θhat n (fun i : Fin n => X i.val ξ) - θ₀)))\n      (ProbabilityTheory.gaussianReal 0 (Real.toNNReal (huberAsymptoticVariance P c θ₀)))",
+    "hypotheses": [
+      {
+        "id": "h8",
+        "leanToken": "∀ i, Measurable (X i)",
+        "label": "measurable data",
+        "note": "Each observation is measurable."
+      },
+      {
+        "id": "h1",
+        "leanToken": "ProbabilityTheory.iIndepFun X μ",
+        "label": "independent sample",
+        "note": "The observations are jointly independent."
+      },
+      {
+        "id": "h2",
+        "leanToken": "μ.map (X 0) = P",
+        "label": "identically distributed",
+        "note": "Every observation has the common law P."
+      },
+      {
+        "id": "h9",
+        "leanToken": "0 < c",
+        "label": "positive clipping",
+        "note": "The Huber clipping constant is positive."
+      },
+      {
+        "id": "h3",
+        "leanToken": "IsMLocationRoot (huberPsi c) P θ₀",
+        "label": "population root",
+        "note": "θ₀ solves ∫ψ_c(x − θ₀)dP = 0."
+      },
+      {
+        "id": "h4",
+        "leanToken": "P {θ₀ + c} = 0",
+        "label": "no atoms at the knots",
+        "note": "P puts no mass at θ₀ ± c, so the population score is differentiable at θ₀."
+      },
+      {
+        "id": "h5",
+        "leanToken": "0 < P.real {x | |x - θ₀| < c}",
+        "label": "positive central mass",
+        "note": "The derivative of the population score at θ₀ is −P(|x − θ₀| < c) ≠ 0."
+      },
+      {
+        "id": "h10",
+        "leanToken": "Measurable (fun ξ => θhat n (fun i : Fin n => X i.val ξ))",
+        "label": "measurable statistic",
+        "note": "The estimator is a measurable function of the first n observations."
+      },
+      {
+        "id": "h6",
+        "leanToken": "ε ≤ |θhat n (fun i : Fin n => X i.val ξ) - θ₀|",
+        "label": "consistency",
+        "note": "θ̂ₙ → θ₀ in probability, as supplied by the consistency theorem."
+      },
+      {
+        "id": "h7",
+        "leanToken": "TendstoInMeasure μ",
+        "label": "√n-rate estimating equation",
+        "note": "√n times the empirical Huber score at θ̂ₙ tends to zero in probability."
+      }
+    ],
+    "formalizationNotes": "The estimator is a statistic of the sample, $\\hat\\theta_n = \\hat\\theta_n(X_1,\\dots,X_n)$, which is what the classical statement means and what the underlying Z-estimator engine requires; the generalization to arbitrary sequences of random variables not factoring through the data would need that engine's estimator argument generalized and is deliberately out of scope. The proof instantiates the Lipschitz-score asymptotic-normality theorem of the empirical-process library at the one-dimensional parameter, deriving the Fréchet differentiability of the population score internally from the no-atom conditions — the derivative computation is recorded separately as the score-derivative theorem in the same file. The variance is stated as a ratio of the raw second moment to the squared central mass.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§10.3 (Asymptotic normality), Theorem 10.7",
+      "biblio": "Asymptotic normality of M-estimators without pointwise differentiability of the score is P. J. Huber (*Proc. Fifth Berkeley Symposium*, Vol. I, 1967, pp. 221–233); the empirical-process formulation used here is ch. 5 of A. W. van der Vaart, *Asymptotic Statistics*, Cambridge University Press, 1998.",
+      "keys": [
+        "mmy2019",
+        "huber1967",
+        "huber1964"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "M-estimator",
+      "asymptotic normality",
+      "Huber estimator"
+    ]
+  },
+  {
+    "id": "rb-mregression-normal-eq",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "normalEquation",
+    "fullName": "StatLean.RobustStatistics.IsMRegressionEstimate.normalEquation",
+    "title": "The M-Regression Normal Equations",
+    "citation": "MMY (2019), Eq. (4.40)",
+    "shortRef": "MMY (2019), Eq. (4.40)",
+    "file": "StatLean/RobustStatistics/Regression/MRegression.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/Regression/MRegression.html#StatLean.RobustStatistics.IsMRegressionEstimate.normalEquation",
+    "informal": "<p>Consider the linear-regression M-estimation problem with design matrix $X \\in \\mathbb R^{n \\times p}$ and responses $y \\in \\mathbb R^n$: a regression M-estimate $\\hat\\beta$ globally minimizes $b \\mapsto \\sum_{i=1}^n \\rho(y_i - x_i^{\\mathsf T} b)$. If <span data-link=\"h1\">the loss $\\rho$ is differentiable with derivative $\\psi$</span> and <span data-link=\"h2\">$\\hat\\beta$ is such a minimizer</span>, then the score-weighted design columns vanish: for every coordinate $j$, $$\\sum_{i=1}^n \\psi\\big(y_i - x_i^{\\mathsf T}\\hat\\beta\\big)\\, x_{ij} \\;=\\; 0.$$</p><p>With $\\rho(u) = u^2/2$ this is the least-squares normal equation $X^{\\mathsf T}(y - X\\hat\\beta) = 0$; with the Huber loss it is the estimating equation of robust regression, whose residual score is clipped. The equations are necessary conditions; for convex losses they are also sufficient.</p>",
+    "summary": "At a regression M-estimate the ψ-weighted design columns sum to zero: Σᵢ ψ(yᵢ − xᵢᵀβ̂)xᵢⱼ = 0 — the M-analogue of the least-squares normal equations.",
+    "leanSignature": "theorem IsMRegressionEstimate.normalEquation {ρ ψ : ℝ → ℝ} {X : Fin n → Fin p → ℝ}\n    {y : Fin n → ℝ} {β : Fin p → ℝ}\n    -- USER-INPUT: differentiable loss with score ψ = ρ'; MMY eq. (4.40)\n    (hρ : ∀ u, HasDerivAt ρ (ψ u) u)\n    (hβ : IsMRegressionEstimate ρ X y β) (j : Fin p) :\n    ∑ i, ψ (y i - ∑ k, X i k * β k) * X i j = 0",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "∀ u, HasDerivAt ρ (ψ u) u",
+        "label": "differentiable loss",
+        "note": "ρ is differentiable everywhere with derivative ψ."
+      },
+      {
+        "id": "h2",
+        "leanToken": "IsMRegressionEstimate ρ X y β",
+        "label": "global minimizer",
+        "note": "β̂ globally minimizes the M-objective b ↦ Σρ(yᵢ − xᵢᵀb)."
+      }
+    ],
+    "formalizationNotes": "The proof restricts the objective to the line through $\\hat\\beta$ in each coordinate direction and differentiates at the minimum; no convexity is needed for this necessary condition. The least-squares specialization and the convexity of the objective for convex losses (hence of Huber regression) are separate results in the same file.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§4.4 (Regression M-estimators), Eq. (4.40)",
+      "biblio": "Regression M-estimators are P. J. Huber (*Ann. Statist.* **1** (1973), 799–821); the systematic treatment of their estimating equations is ch. 7 of P. J. Huber and E. M. Ronchetti, *Robust Statistics*, 2nd ed., Wiley, 2009.",
+      "keys": [
+        "mmy2019",
+        "huber1973",
+        "huber-ronchetti2009"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "regression M-estimator"
+    ]
+  },
+  {
+    "id": "rb-leverage",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "huberRegression_score_leverage_unbounded",
+    "fullName": "StatLean.RobustStatistics.huberRegression_score_leverage_unbounded",
+    "title": "Bounded Residual Score Does Not Bound Leverage",
+    "citation": "MMY (2019), §5.11 context",
+    "shortRef": "MMY (2019), §5.11 context",
+    "file": "StatLean/RobustStatistics/Regression/MRegression.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/Regression/MRegression.html#StatLean.RobustStatistics.huberRegression_score_leverage_unbounded",
+    "informal": "<p>In the regression estimating equation, each observation contributes the term $x_i\\,\\psi_c(y_i - x_i\\beta)$ — its design point times its clipped residual score. Even though the Huber score is bounded by <span data-link=\"h1\">the clipping constant $c \\gt  0$</span>, the contribution is not: for every bound $B$ there is a design–response pair $(x_0, y_0)$ whose single-observation term satisfies $$\\big|x_0\\, \\psi_c(y_0 - x_0\\beta)\\big| \\;\\gt \\; B.$$ Placing the residual at the clipping threshold and letting the design point grow realizes arbitrarily large contributions.</p><p>Clipping residuals protects against outlying responses but not against outlying design points — high-leverage observations retain unbounded influence on M-regression. This is the counterexample that motivates bounded-influence (generalized M-) estimators and the high-breakdown regression methods.</p>",
+    "summary": "One observation's estimating-equation term x₀ψ_c(y₀ − x₀β) is unbounded in the design point even for the bounded Huber score — leverage defeats residual clipping.",
+    "leanSignature": "theorem huberRegression_score_leverage_unbounded {c : ℝ} (hc : 0 < c) (β : ℝ) :\n    ∀ B : ℝ, ∃ x₀ y₀ : ℝ, B < |x₀ * huberPsi c (y₀ - x₀ * β)|",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "0 < c",
+        "label": "positive clipping",
+        "note": "The Huber clipping constant is positive; its boundedness is what the counterexample defeats."
+      }
+    ],
+    "formalizationNotes": "Stated in the simple-regression coordinate for transparency: the witness sets the residual exactly at the clip, where the score equals $c$, and takes the design value $\\max(B,0)/c + 1$. The moral transfers verbatim to the multivariate estimating equation, where the term is the design vector scaled by the residual score.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§5.11.1 (Generalized M-estimators, motivation)",
+      "biblio": "The leverage problem and the bounded-influence response are treated in ch. 6 of F. R. Hampel, E. M. Ronchetti, P. J. Rousseeuw, and W. A. Stahel, *Robust Statistics: The Approach Based on Influence Functions*, Wiley, 1986; robust regression M-estimation itself is P. J. Huber (*Ann. Statist.* **1** (1973), 799–821).",
+      "keys": [
+        "mmy2019",
+        "hampel-etal1986",
+        "huber1973"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "regression M-estimator",
+      "leverage"
+    ]
+  },
+  {
+    "id": "rb-quantile-regression",
+    "category": "robust",
+    "kind": "definition",
+    "leanName": "IsQuantileRegressionEstimate",
+    "fullName": "StatLean.RobustStatistics.IsQuantileRegressionEstimate",
+    "title": "Regression Quantiles",
+    "citation": "MMY (2019), Eq. (4.68)",
+    "shortRef": "MMY (2019), Eq. (4.68)",
+    "file": "StatLean/RobustStatistics/Regression/MRegression.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/Regression/MRegression.html#StatLean.RobustStatistics.IsQuantileRegressionEstimate",
+    "informal": "<p>For a quantile level $\\alpha \\in (0,1)$, the <em>check loss</em> (or pinball loss) is <span data-link=\"h1\">the tilted absolute value</span> $$\\rho_\\alpha(u) \\;=\\; \\max\\big(\\alpha u,\\; (\\alpha-1)u\\big) \\;=\\; \\begin{cases}\\alpha\\, u, & u \\ge 0,\\\\ -(1-\\alpha)\\,u, & u \\lt  0,\\end{cases}$$ and the <em>regression $\\alpha$-quantile</em> of Koenker–Bassett is <span data-link=\"h2\">any global minimizer</span> of the check-loss objective $$\\hat\\beta_\\alpha \\;\\in\\; \\arg\\min_{b} \\sum_{i=1}^n \\rho_\\alpha\\big(y_i - x_i^{\\mathsf T} b\\big).$$</p><p>The case $\\alpha = 1/2$ is median (least-absolute-deviations) regression, since $\\rho_{1/2}(u) = |u|/2$. The objective is convex — the check loss is a maximum of two linear functions — and the fit is regression-equivariant and scale-equivariant; at the location level the same loss is minimized by the sample $\\alpha$-quantile.</p>",
+    "summary": "The check loss ρ_α(u) = max(αu, (α−1)u) and the Koenker–Bassett regression α-quantile — quantile regression as check-loss M-estimation, with α = 1/2 giving L1 regression.",
+    "leanSignature": "def checkLoss (α x : ℝ) : ℝ := max (α * x) ((α - 1) * x)\n\ndef IsQuantileRegressionEstimate (α : ℝ) (X : Fin n → Fin p → ℝ) (y : Fin n → ℝ)\n    (β : Fin p → ℝ) : Prop :=\n  IsMRegressionEstimate (checkLoss α) X y β",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "max (α * x) ((α - 1) * x)",
+        "label": "the check loss",
+        "note": "ρ_α is the maximum of the two linear functions αu and (α−1)u — the tilted absolute value."
+      },
+      {
+        "id": "h2",
+        "leanToken": "IsMRegressionEstimate (checkLoss α) X y β",
+        "label": "the argmin property",
+        "note": "β̂ globally minimizes the check-loss regression objective."
+      }
+    ],
+    "formalizationNotes": "The loss is implemented in max form, which exposes convexity as a maximum of linear functions and equals the book's case split for $\\alpha \\in [0,1]$; positive homogeneity $\\rho_\\alpha(cu) = c\\rho_\\alpha(u)$ for $c \\ge 0$ is the engine of scale equivariance. Convexity of the objective, both equivariances, the identity with L1 regression at $\\alpha = 1/2$, and the location-level characterizations — the sample $\\alpha$-quantile minimizes the empirical check loss, and the population root condition is exactly that $\\theta$ has cumulative probability $\\alpha$ — are all proved in the same file.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§4.8 (Regression quantiles), Eq. (4.68)",
+      "biblio": "Regression quantiles are R. Koenker and G. Bassett, Jr. (*Econometrica* **46** (1978), 33–50); the book-length treatment is R. Koenker, *Quantile Regression*, Cambridge University Press, 2005.",
+      "keys": [
+        "mmy2019",
+        "koenker-bassett1978",
+        "koenker2005"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "quantile regression",
+      "check loss"
+    ]
+  },
+  {
+    "id": "rb-quantile-fit",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "checkLoss_orderStat_isMLocationEstimate",
+    "fullName": "StatLean.RobustStatistics.checkLoss_orderStat_isMLocationEstimate",
+    "title": "The Sample Quantile Minimizes the Check Loss",
+    "citation": "MMY (2019), §4.8",
+    "shortRef": "MMY (2019), §4.8",
+    "file": "StatLean/RobustStatistics/Regression/MRegression.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/Regression/MRegression.html#StatLean.RobustStatistics.checkLoss_orderStat_isMLocationEstimate",
+    "informal": "<p>Fix a quantile level <span data-link=\"h1\">$\\alpha \\in (0,1)$</span> and a <span data-link=\"h2\">nonempty sample</span> $x_1,\\dots,x_n$. Let $r = \\lceil \\alpha n\\rceil$ and let $x_{(r)}$ be <span data-link=\"h3\">the $r$-th order statistic</span> of the sample. Then $x_{(r)}$ minimizes the empirical check-loss objective: for every $t$, $$\\sum_{i=1}^n \\rho_\\alpha\\big(x_i - x_{(r)}\\big) \\;\\le\\; \\sum_{i=1}^n \\rho_\\alpha(x_i - t).$$ The sample $\\alpha$-quantile is the location fit of quantile regression, exactly as the median ($\\alpha = 1/2$) minimizes total absolute deviation.</p><p>The proof is the subgradient counting argument: at the order statistic of rank $\\lceil \\alpha n \\rceil$, at least $\\alpha n$ observations lie at or below and at least $(1-\\alpha)n$ at or above, which makes a suitable choice of per-observation subgradients of the convex check loss sum to the correct sign in both directions.</p>",
+    "summary": "The order statistic of rank ⌈αn⌉ globally minimizes t ↦ Σρ_α(xᵢ − t): the sample α-quantile is the check-loss location fit.",
+    "leanSignature": "theorem checkLoss_orderStat_isMLocationEstimate {α : ℝ} (hα0 : 0 < α) (hα1 : α < 1)\n    (hn : n ≠ 0) (x : Fin n → ℝ) {r : Fin n}\n    -- USER-INPUT: the rank is the α-quantile rank ⌈αn⌉ (0-indexed: ⌈αn⌉ − 1);\n    -- MMY §4.8 / Problem 2.13\n    (hr : (r : ℕ) + 1 = ⌈α * n⌉₊) :\n    IsMLocationEstimate (checkLoss α)\n      x (StatLean.MultipleTesting.orderStat x r)",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "0 < α",
+        "label": "interior level",
+        "note": "The quantile level satisfies 0 < α < 1."
+      },
+      {
+        "id": "h2",
+        "leanToken": "n ≠ 0",
+        "label": "nonempty sample",
+        "note": "At least one observation, so the rank ⌈αn⌉ names an order statistic."
+      },
+      {
+        "id": "h3",
+        "leanToken": "(r : ℕ) + 1 = ⌈α * n⌉₊",
+        "label": "the quantile rank",
+        "note": "The minimizing value is the order statistic of rank ⌈αn⌉ (stated with a 0-indexed rank)."
+      }
+    ],
+    "formalizationNotes": "The rank is supplied as a zero-indexed position whose successor is $\\lceil \\alpha n \\rceil$, which keeps the index well-formed without ceiling arithmetic inside the conclusion. The companion population statement — for an atomless law, $\\theta$ solves the check-score equation $\\int (\\alpha - \\mathbf 1\\{x \\lt  \\theta\\})\\,dP = 0$ exactly when $P(-\\infty, \\theta] = \\alpha$ — is proved beside it.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§4.8, the location display (after Problem 2.13)",
+      "biblio": "The quantile-as-minimizer characterization underlies R. Koenker and G. Bassett, Jr. (*Econometrica* **46** (1978), 33–50), where it motivates the regression generalization; see also R. Koenker, *Quantile Regression*, Cambridge University Press, 2005, §1.3.",
+      "keys": [
+        "mmy2019",
+        "koenker-bassett1978",
+        "koenker2005"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "quantile regression",
+      "order statistic"
+    ]
+  },
+  {
+    "id": "rb-affine-equivariance",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "covMatrixFunctional_affineEquivariant",
+    "fullName": "StatLean.RobustStatistics.covMatrixFunctional_affineEquivariant",
+    "title": "Affine Equivariance of Location and Scatter",
+    "citation": "MMY (2019), §6.17.1",
+    "shortRef": "MMY (2019), §6.17.1",
+    "file": "StatLean/RobustStatistics/Multivariate/AffineEquivariance.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/Multivariate/AffineEquivariance.html#StatLean.RobustStatistics.covMatrixFunctional_affineEquivariant",
+    "informal": "<p>A multivariate location functional $T$ and a scatter functional $S$ are <em>affine equivariant</em> when, for every nonsingular matrix $A$ and vector $b$, transforming the underlying distribution by $x \\mapsto Ax + b$ transforms the values by $$T \\mapsto A\\,T + b, \\qquad S \\mapsto A\\,S\\,A^{\\mathsf T}.$$ The theorem verifies the scatter half for the covariance-matrix functional: if the distribution has <span data-link=\"h1\">square-integrable coordinates</span>, then the covariance matrix of the image of $P$ under $x \\mapsto Ax + b$ equals $A\\,\\Sigma(P)\\,A^{\\mathsf T}$, where $\\Sigma(P)$ is the covariance matrix of $P$; the companion result gives the mean vector the location law $\\mu \\mapsto A\\mu + b$.</p><p>Affine equivariance is the multivariate analogue of location–scale equivariance and the entrance requirement for robust location–scatter estimation: the classical mean and covariance satisfy it but break down under contamination, which is what the robust M-, S-, and MM-estimators of scatter are built to repair.</p>",
+    "summary": "Under x ↦ Ax + b the mean vector transforms as Aμ + b and the covariance matrix as AΣAᵀ — the affine-equivariance interface of multivariate robust estimation, verified for the classical functionals.",
+    "leanSignature": "theorem covMatrixFunctional_affineEquivariant :\n    IsAffineEquivariantScatter (covMatrixFunctional (d := d))\n      {P | IsProbabilityMeasure P ∧ ∀ i, MemLp (fun x => x i) 2 P}",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "MemLp (fun x => x i) 2 P",
+        "label": "square-integrable coordinates",
+        "note": "Each coordinate of the distribution has a finite second moment, so the covariance matrix exists."
+      }
+    ],
+    "formalizationNotes": "The transformation acts entrywise through push-forward integrals; the proof expands the transformed centered coordinates as linear combinations of the original ones and integrates term by term, with integrability of the products supplied by the coordinatewise square-integrability. The robust replacements themselves — M-estimators of scatter and their high-breakdown refinements — are future-round material; this file fixes the interface they must satisfy.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§6.17.1 (Why affine equivariance?)",
+      "biblio": "Affine-equivariant robust estimation of multivariate location and scatter begins with R. A. Maronna (*Ann. Statist.* **4** (1976), 51–67); see also ch. 8 of P. J. Huber, *Robust Statistics*, Wiley, 1981, and P. L. Davies (*Ann. Statist.* **15** (1987), 1269–1292).",
+      "keys": [
+        "mmy2019",
+        "maronna1976",
+        "huber1981",
+        "davies1987"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "equivariance",
+      "scatter matrix"
+    ]
+  },
+  {
+    "id": "rb-mscale-logscale",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "isMScaleRoot_iff_logScale",
+    "fullName": "StatLean.RobustStatistics.isMScaleRoot_iff_logScale",
+    "title": "Scale M-Estimation Is Location M-Estimation in the Log Scale",
+    "citation": "MMY (2019), §3.2.2",
+    "shortRef": "MMY (2019), §3.2.2",
+    "file": "StatLean/RobustStatistics/Scale/MScale.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/Scale/MScale.html#StatLean.RobustStatistics.isMScaleRoot_iff_logScale",
+    "informal": "<p>A scale M-functional at level $\\delta$ assigns to a distribution $P$ the solutions $\\sigma \\gt  0$ of $$\\int \\rho\\Big(\\frac{x}{\\sigma}\\Big)\\, dP(x) \\;=\\; \\delta,$$ for <span data-link=\"h1\">an even loss $\\rho$</span> that is <span data-link=\"h5\">measurable</span>. Suppose <span data-link=\"h2\">$P$ has no atom at the origin</span>, <span data-link=\"h3\">the loss is integrable at scale $\\sigma$</span>, and <span data-link=\"h4\">$\\sigma \\gt  0$</span>. Then $\\sigma$ solves the scale equation if and only if $\\log \\sigma$ solves the <em>location</em> M-equation for the transported score $\\psi(t) = \\rho(e^t) - \\delta$ under the push-forward of $P$ by $x \\mapsto \\log|x|$.</p><p>Robustness of scale is a two-sided affair — contamination can explode $\\sigma$ to infinity with outliers or implode it to zero with inliers — and the reduction turns both into the ordinary location breakdown analysis in the log scale, where the whole location toolkit applies.</p>",
+    "summary": "σ solves ∫ρ(x/σ)dP = δ iff log σ is a location M-root of ψ(t) = ρ(eᵗ) − δ under the law of log|x| — the reduction that turns scale robustness into location theory.",
+    "leanSignature": "theorem isMScaleRoot_iff_logScale {ρ : ℝ → ℝ} {δ : ℝ} {P : Measure ℝ}\n    [IsProbabilityMeasure P] {σ : ℝ} (hσ : 0 < σ)\n    -- USER-INPUT: even loss; MMY §3.2.2 (\"since ρ is even\")\n    (hρ_even : ∀ x, ρ (-x) = ρ x)\n    -- LEAN-ONLY: measurability of ρ, to transport the integral; regularity\n    (hρ_meas : Measurable ρ)\n    -- USER-INPUT: no atom at 0 (so |x| > 0 a.e. and the log is honest); MMY §3.2.2\n    -- (implicit in y = log|x|)\n    (hP0 : P {0} = 0)\n    -- USER-INPUT: the loss is integrable at scale σ; MMY (2.49) context\n    (hint : Integrable (fun x => ρ (x / σ)) P) :\n    IsMScaleRoot ρ δ P σ ↔\n      IsMLocationRoot (scaleScorePsi ρ δ) (P.map logAbs) (Real.log σ)",
+    "hypotheses": [
+      {
+        "id": "h4",
+        "leanToken": "0 < σ",
+        "label": "positive scale",
+        "note": "Scale parameters live on (0, ∞)."
+      },
+      {
+        "id": "h1",
+        "leanToken": "∀ x, ρ (-x) = ρ x",
+        "label": "even loss",
+        "note": "ρ depends on its argument only through |x|."
+      },
+      {
+        "id": "h5",
+        "leanToken": "Measurable ρ",
+        "label": "measurable loss",
+        "note": "ρ is measurable, so the integral transports along the push-forward."
+      },
+      {
+        "id": "h2",
+        "leanToken": "P {0} = 0",
+        "label": "no atom at zero",
+        "note": "P{0} = 0, so log|x| is finite P-almost surely."
+      },
+      {
+        "id": "h3",
+        "leanToken": "Integrable (fun x => ρ (x / σ)) P",
+        "label": "integrable loss",
+        "note": "ρ(x/σ) is integrable under P, so the scale equation is honest."
+      }
+    ],
+    "formalizationNotes": "The no-atom hypothesis is what makes the logarithmic transport honest — the real logarithm's junk value at zero never matters off a null set. The scale breakdown theorems in the same file are pushed through this equivalence rather than re-proved: the transported score of a bounded even loss with $\\rho(0)=0$, $\\rho(\\infty)=1$ is monotone with limits $-\\delta$ and $1-\\delta$, and continuity of $\\rho$ is essential there — for a discontinuous loss such as the indicator, the transported score need not attain the lower limit, which is why the median absolute deviation is analyzed by finite-sample means instead.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§3.2.2 (Scale and dispersion estimators)",
+      "biblio": "M-estimators of scale are part of P. J. Huber's original program (*Ann. Math. Statist.* **35** (1964), 73–101; *Robust Statistics*, Wiley, 1981, ch. 5); the bias-robustness theory of scale is R. D. Martin and R. H. Zamar (*Ann. Statist.* **21** (1993), 991–1017).",
+      "keys": [
+        "mmy2019",
+        "huber1964",
+        "huber1981",
+        "martin-zamar1993"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "scale M-estimator"
+    ]
+  },
+  {
+    "id": "rb-mscale-breakdown",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "mScaleRoot_bounded_of_contamination",
+    "fullName": "StatLean.RobustStatistics.mScaleRoot_bounded_of_contamination",
+    "title": "The Breakdown Point of Scale M-Estimators",
+    "citation": "MMY (2019), Eq. (3.23)",
+    "shortRef": "MMY (2019), Eq. (3.23)",
+    "file": "StatLean/RobustStatistics/Scale/MScale.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/Scale/MScale.html#StatLean.RobustStatistics.mScaleRoot_bounded_of_contamination",
+    "informal": "<p>Let $\\rho$ be <span data-link=\"h1\">an even loss</span>, <span data-link=\"h2\">nondecreasing on $[0,\\infty)$ with $\\rho(0) = 0$ and $\\rho(\\infty) = 1$</span>, and <span data-link=\"h3\">continuous</span>; fix a target level <span data-link=\"h4\">$\\delta \\in (0,1)$</span> and let <span data-link=\"h5\">$P$ have no atom at the origin</span>. If the <span data-link=\"h6\">contamination level satisfies</span> $$\\varepsilon \\;\\lt \\; \\varepsilon^\\ast \\;=\\; \\min(\\delta,\\, 1-\\delta),$$ then there are $0 \\lt  \\sigma_{\\mathrm{lo}} \\le \\sigma_{\\mathrm{hi}}$ such that every scale M-root of every $\\varepsilon$-contamination of $P$ (by atomless-at-zero contaminants) lies in $[\\sigma_{\\mathrm{lo}}, \\sigma_{\\mathrm{hi}}]$ — no explosion to infinity and no implosion to zero. The threshold is sharp: beyond $\\delta$, far-out point masses explode the scale; beyond $1 - \\delta$, point masses at small positive values implode it.</p><p>At $\\delta = 1/2$ the breakdown point is $1/2$, the scale analogue of the median's optimality.</p>",
+    "summary": "Scale M-roots of all ε-contaminations stay in a fixed interval [σ_lo, σ_hi] ⊂ (0,∞) when ε < min(δ, 1−δ), and the threshold is sharp — δ is the explosion breakdown point, 1−δ the implosion one.",
+    "leanSignature": "theorem mScaleRoot_bounded_of_contamination {ρ : ℝ → ℝ} {δ ε : ℝ} {P : Measure ℝ}\n    [IsProbabilityMeasure P]\n    -- USER-INPUT: bounded even ρ-function; MMY §2.5 / Definition 2.1\n    (hρ_even : ∀ x, ρ (-x) = ρ x) (hρ_mono : MonotoneOn ρ (Set.Ici 0))\n    (hρ0 : ρ 0 = 0) (hρ_lim : Tendsto ρ atTop (𝓝 1))\n    -- USER-INPUT: continuous loss (see scaleScorePsi_monotone_limits for why this is\n    -- forced, not regularity-optional); MMY Thm 10.1-style\n    (hρc : Continuous ρ)\n    -- USER-INPUT: target level strictly inside (0,1); MMY §2.5 (0 < δ < 1)\n    (hδ0 : 0 < δ) (hδ1 : δ < 1)\n    -- USER-INPUT: no atom at 0; MMY §3.2.2 (implicit in the log scale)\n    (hP0 : P {0} = 0)\n    -- USER-INPUT: contamination level below the scale breakdown point; MMY (3.23)\n    (hε0 : 0 ≤ ε) (hε : ε < min δ (1 - δ)) :\n    ∃ σlo σhi : ℝ, 0 < σlo ∧\n      ∀ (Q : Measure ℝ), IsProbabilityMeasure Q → Q {0} = 0 → ∀ σ : ℝ,\n        IsMScaleRoot ρ δ (contaminate P Q ε) σ → σ ∈ Set.Icc σlo σhi",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "∀ x, ρ (-x) = ρ x",
+        "label": "even loss",
+        "note": "ρ depends only on |x|."
+      },
+      {
+        "id": "h2",
+        "leanToken": "MonotoneOn ρ (Set.Ici 0)",
+        "label": "bounded monotone loss",
+        "note": "ρ is nondecreasing on [0,∞) with ρ(0) = 0 and limit 1 at infinity."
+      },
+      {
+        "id": "h3",
+        "leanToken": "Continuous ρ",
+        "label": "continuous loss",
+        "note": "Continuity at 0 is what gives the transported score its lower limit −δ; the indicator loss genuinely fails here."
+      },
+      {
+        "id": "h4",
+        "leanToken": "0 < δ",
+        "label": "interior level",
+        "note": "The target level satisfies 0 < δ < 1."
+      },
+      {
+        "id": "h5",
+        "leanToken": "P {0} = 0",
+        "label": "no atom at zero",
+        "note": "The log-scale transport of P is honest."
+      },
+      {
+        "id": "h6",
+        "leanToken": "ε < min δ (1 - δ)",
+        "label": "subcritical contamination",
+        "note": "The contamination level is below min(δ, 1−δ)."
+      }
+    ],
+    "formalizationNotes": "The proof transports the problem to the log scale, where the transported score has limits $-\\delta$ and $1-\\delta$, and applies the location M-estimator breakdown theorem — the threshold $\\min(\\delta,1-\\delta)/(\\delta + (1-\\delta))$ is exactly $\\min(\\delta, 1-\\delta)$ because the limits sum to one. The two sharpness statements are separate theorems: explosion reuses the location sharpness result through the transport, while implosion — the mirror direction the location theory does not carry — runs its own intermediate-value argument, with the contaminating inliers at a small positive value rather than at zero, where the root set would simply be empty.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§3.2.2, Eq. (3.23)",
+      "biblio": "The scale breakdown analysis descends from P. J. Huber (*Ann. Math. Statist.* **35** (1964), 73–101; book treatment in *Robust Statistics*, Wiley, 1981, ch. 5); the sharp bias-robustness theory of scale is R. D. Martin and R. H. Zamar (*Ann. Statist.* **21** (1993), 991–1017).",
+      "keys": [
+        "mmy2019",
+        "huber1964",
+        "huber1981",
+        "martin-zamar1993"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "breakdown point",
+      "scale M-estimator"
+    ]
+  },
+  {
+    "id": "rb-sd-breakdown",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "sampleSD_dispersionBreakdownCount",
+    "fullName": "StatLean.RobustStatistics.sampleSD_dispersionBreakdownCount",
+    "title": "The Standard Deviation Has Zero Breakdown",
+    "citation": "MMY (2019), §3.2.2",
+    "shortRef": "MMY (2019), §3.2.2",
+    "file": "StatLean/RobustStatistics/Scale/DispersionBreakdown.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/Scale/DispersionBreakdown.html#StatLean.RobustStatistics.sampleSD_dispersionBreakdownCount",
+    "informal": "<p>For a dispersion estimator the parameter space is $(0,\\infty)$, so breakdown must guard both ends: a corrupted sample breaks the estimator if it can drive the value beyond every bound (<em>explosion</em>) or below every positive bound (<em>implosion</em>). For a sample of <span data-link=\"h1\">size at least two</span> whose <span data-link=\"h2\">standard deviation is positive</span>, the dispersion breakdown count of the sample standard deviation is $$m^\\ast(\\mathrm{SD}, x) \\;=\\; 0 :$$ one arbitrarily large replacement explodes it, since a single outlier at distance $d$ from the data contributes on the order of $d/\\sqrt n$ to the SD.</p><p>The median absolute deviation, by contrast, resists $k-1$ of $n = 2k+1$ replacements — the classical trio of dispersion breakdown values is $0$ for the SD, $1/2$ for the MAD, and $1/4$ for the interquartile range.</p>",
+    "summary": "The sample standard deviation's dispersion breakdown count is 0: one huge replacement explodes it — the fragile pole of scale estimation.",
+    "leanSignature": "def DispersionResists (S : (Fin n → ℝ) → ℝ) (x : Fin n → ℝ) (m : ℕ) : Prop :=\n  ∃ lo hi : ℝ, 0 < lo ∧\n    ∀ y : Fin n → ℝ, hammingDist x y ≤ m → S y ∈ Set.Icc lo hi\n\nnoncomputable def sampleSD (x : Fin n → ℝ) : ℝ :=\n  Real.sqrt (sampleMean fun i => (x i - sampleMean x) ^ 2)\n\ntheorem sampleSD_dispersionBreakdownCount (hn : 2 ≤ n) {x : Fin n → ℝ}\n    (hx : 0 < sampleSD x) : dispersionBreakdownCount sampleSD x = 0",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "2 ≤ n",
+        "label": "two observations",
+        "note": "With one observation the SD is identically zero and the question is vacuous."
+      },
+      {
+        "id": "h2",
+        "leanToken": "0 < sampleSD x",
+        "label": "positive dispersion",
+        "note": "The uncorrupted SD is off the boundary, so zero replacements are resisted."
+      }
+    ],
+    "formalizationNotes": "Dispersion resistance demands a two-sided bound $0 \\lt  \\mathrm{lo} \\le S(y) \\le \\mathrm{hi}$ uniformly over the corruption neighbourhood — the location notion guards only infinity, and a location-style count would miss implosion entirely. The SD is normalized with $1/n$ rather than the book's $1/(n-1)$; breakdown values are unaffected. The exploding replacement is exhibited by solving for the outlier that pins one residual at any target size.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§3.2.2 (Scale and dispersion estimators)",
+      "biblio": "The breakdown values of the classical dispersion estimators are recorded throughout the robustness literature from F. R. Hampel's advocacy of the median deviation (*J. Amer. Statist. Assoc.* **69** (1974), 383–393) onward; the finite-sample replacement framework is D. L. Donoho and P. J. Huber (in *A Festschrift for Erich L. Lehmann*, Wadsworth, 1983, pp. 157–184).",
+      "keys": [
+        "mmy2019",
+        "hampel1974",
+        "donoho-huber1983"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "breakdown point",
+      "standard deviation"
+    ]
+  },
+  {
+    "id": "rb-mad-breakdown",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "sampleMAD_dispersionBreakdownCount",
+    "fullName": "StatLean.RobustStatistics.sampleMAD_dispersionBreakdownCount",
+    "title": "The MAD Withstands Half the Sample",
+    "citation": "MMY (2019), §3.2.2",
+    "shortRef": "MMY (2019), §3.2.2",
+    "file": "StatLean/RobustStatistics/Scale/DispersionBreakdown.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/Scale/DispersionBreakdown.html#StatLean.RobustStatistics.sampleMAD_dispersionBreakdownCount",
+    "informal": "<p>Let the sample size be <span data-link=\"h1\">odd, $n = 2k+1$ with $k \\ge 1$</span>, and let the sample have <span data-link=\"h2\">pairwise distinct values</span>. The dispersion breakdown count of the median absolute deviation $$\\mathrm{MAD}(x) \\;=\\; \\operatorname{med}_i \\big|x_i - \\operatorname{med}(x)\\big|$$ is exactly $$m^\\ast(\\mathrm{MAD}, x) \\;=\\; k - 1.$$ With at most $k-1$ replacements, at most $k$ of the $n$ values can crowd within half the minimal gap of the corrupted median, so the MAD stays above a fixed positive bound (and below a fixed one). With $k$ replacements the MAD <em>implodes</em>: duplicating $k$ coordinates at one remaining data point creates $k+1$ equal values, the corrupted median lands on them, and a majority of the absolute deviations vanish.</p><p>Hence $\\varepsilon_n^\\ast(\\mathrm{MAD}) = (k-1)/(2k+1) \\to 1/2$. The MAD pays one replacement more than the median's location count $k$ because implosion — impossible for a location estimator — binds first.</p>",
+    "summary": "For n = 2k+1 distinct points the MAD's dispersion breakdown count is exactly k−1: it resists k−1 replacements two-sidedly and implodes to zero under k duplicates — ε*ₙ → 1/2.",
+    "leanSignature": "theorem sampleMAD_dispersionBreakdownCount {k : ℕ} (hn : n = 2 * k + 1) (hk : 1 ≤ k)\n    {x : Fin n → ℝ} (hinj : Function.Injective x) :\n    dispersionBreakdownCount sampleMAD x = k - 1",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "n = 2 * k + 1",
+        "label": "odd sample size",
+        "note": "n = 2k+1 with k ≥ 1, so both medians involved are unique middle order statistics."
+      },
+      {
+        "id": "h2",
+        "leanToken": "Function.Injective x",
+        "label": "distinct values",
+        "note": "The sample points are pairwise distinct; ties would lower the implosion budget."
+      }
+    ],
+    "formalizationNotes": "The distinctness hypothesis is genuine: a sample already carrying duplicates starts closer to implosion, and the exact count depends on its tie structure. The resisting bound is uniform — half the minimal gap of the original sample below, an order-statistic window above — and the imploding corruption is explicit. The asymptotic value $1/2$ matches the population statement that the MAD is the scale M-functional of the indicator loss at level one-half, a loss whose discontinuity keeps it outside the continuous-loss population theorems; the finite-sample route used here needs no continuity at all.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§3.2.2 (with Problem 3.3)",
+      "biblio": "The MAD was advocated as the robust scale estimate by F. R. Hampel (*J. Amer. Statist. Assoc.* **69** (1974), 383–393); its efficient refinements are P. J. Rousseeuw and C. Croux (*J. Amer. Statist. Assoc.* **88** (1993), 1273–1283), and the replacement framework is D. L. Donoho and P. J. Huber (in *A Festschrift for Erich L. Lehmann*, Wadsworth, 1983, pp. 157–184).",
+      "keys": [
+        "mmy2019",
+        "hampel1974",
+        "rousseeuw-croux1993",
+        "donoho-huber1983"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "breakdown point",
+      "median absolute deviation"
+    ]
+  },
+  {
+    "id": "rb-maxbias-bound",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "mLocationRoot_abs_le_maxBias",
+    "fullName": "StatLean.RobustStatistics.mLocationRoot_abs_le_maxBias",
+    "title": "The Maximum-Bias Curve of M-Estimators",
+    "citation": "MMY (2019), Eqs. (3.66)–(3.67)",
+    "shortRef": "MMY (2019), Eqs. (3.66)–(3.67)",
+    "file": "StatLean/RobustStatistics/MaxBias/MaxBiasLocation.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/MaxBias/MaxBiasLocation.html#StatLean.RobustStatistics.mLocationRoot_abs_le_maxBias",
+    "informal": "<p>Between the influence function (infinitesimal contamination) and the breakdown point (catastrophic contamination) sits the maximum-bias curve: the worst value an estimator takes over the whole $\\varepsilon$-neighbourhood. Let $\\psi$ be <span data-link=\"h1\">nondecreasing</span>, <span data-link=\"h2\">odd</span>, and <span data-link=\"h3\">bounded by $k$</span> with <span data-link=\"h4\">$k \\gt  0$</span>; let $P$ be <span data-link=\"h5\">symmetric about zero</span> with <span data-link=\"h6\">strictly increasing shift score</span> $g(b) = \\int \\psi(x+b)\\,dP$; fix <span data-link=\"h7\">a contamination level $0 \\le \\varepsilon \\lt  1/2$</span> and let <span data-link=\"h8\">$b_\\varepsilon$ solve</span> $$g(b_\\varepsilon) \\;=\\; \\frac{k\\,\\varepsilon}{1-\\varepsilon}.$$ Then every root $\\theta$ of every $\\varepsilon$-contaminated M-equation satisfies $$|\\theta| \\;\\le\\; b_\\varepsilon,$$ and the bound is attained in the limit by point-mass contamination pushed to infinity.</p><p>For the median — $\\psi = \\operatorname{sign}$, $k = 1$ — the equation solves to the quantile formula $b_\\varepsilon = F^{-1}\\big(\\tfrac{1}{2(1-\\varepsilon)}\\big)$, the reference curve of maximum-bias theory.</p>",
+    "summary": "Every root of every ε-contaminated M-equation lies in [−b_ε, b_ε], where g(b_ε) = kε/(1−ε) — the exact maximum-bias curve, attained by point mass at infinity.",
+    "leanSignature": "theorem mLocationRoot_abs_le_maxBias {ψ : ℝ → ℝ} {P : Measure ℝ}\n    [IsProbabilityMeasure P] {k ε bε : ℝ}\n    -- USER-INPUT: nondecreasing odd score bounded by k = ψ(∞); MMY §3.8.4\n    (hψm : Monotone ψ) (hψ_odd : ∀ u, ψ (-u) = -ψ u) (hψb : ∀ u, |ψ u| ≤ k)\n    (hk : 0 < k)\n    -- USER-INPUT: symmetric center; MMY §3.8.4 (\"F₀ is symmetric about zero\")\n    (hsym : P.map Neg.neg = P)\n    -- USER-INPUT: strictly increasing shift score; MMY §3.8.4 (\"it will be assumed\n    -- that g is increasing; this holds either if ψ is increasing, or if F₀ has\n    -- positive density everywhere\")\n    (hg : StrictMono (shiftScore ψ P))\n    -- USER-INPUT: contamination level; MMY §3.8.4 (\"let ε < 0.5\")\n    (hε0 : 0 ≤ ε) (hε : ε < 1 / 2)\n    -- USER-INPUT: b_ε solves the maximum-bias equation; MMY (3.66)\n    (hbε : shiftScore ψ P bε = k * ε / (1 - ε)) :\n    ∀ (Q : Measure ℝ), IsProbabilityMeasure Q → ∀ θ : ℝ,\n      IsMLocationRoot ψ (contaminate P Q ε) θ → |θ| ≤ bε",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "Monotone ψ",
+        "label": "monotone score",
+        "note": "ψ is nondecreasing."
+      },
+      {
+        "id": "h2",
+        "leanToken": "∀ u, ψ (-u) = -ψ u",
+        "label": "odd score",
+        "note": "ψ(−u) = −ψ(u), so both tails clip at the same height k."
+      },
+      {
+        "id": "h3",
+        "leanToken": "∀ u, |ψ u| ≤ k",
+        "label": "bounded score",
+        "note": "|ψ| ≤ k = ψ(∞)."
+      },
+      {
+        "id": "h4",
+        "leanToken": "0 < k",
+        "label": "nondegenerate bound",
+        "note": "k is positive."
+      },
+      {
+        "id": "h5",
+        "leanToken": "P.map Neg.neg = P",
+        "label": "symmetric center",
+        "note": "P is invariant under negation, so the shift score is odd."
+      },
+      {
+        "id": "h6",
+        "leanToken": "StrictMono (shiftScore ψ P)",
+        "label": "strictly increasing shift score",
+        "note": "g(b) = ∫ψ(x+b)dP is strictly increasing — as when ψ is strictly increasing or P charges every interval."
+      },
+      {
+        "id": "h7",
+        "leanToken": "ε < 1 / 2",
+        "label": "subcritical contamination",
+        "note": "0 ≤ ε < 1/2, below the breakdown point of the odd-score family."
+      },
+      {
+        "id": "h8",
+        "leanToken": "shiftScore ψ P bε = k * ε / (1 - ε)",
+        "label": "the bias equation",
+        "note": "b_ε is the solution of g(b) = kε/(1−ε), the maximum-bias value."
+      }
+    ],
+    "formalizationNotes": "This sharpens the breakdown-point boundedness theorem, which produced some bound, to the exact bias value: splitting the contaminated equation by the mixture and using the score bound confines the shift score of the root to $[-k\\varepsilon/(1-\\varepsilon),\\, k\\varepsilon/(1-\\varepsilon)]$, and strict monotonicity plus oddness converts that into the two-sided bound. Attainment is a separate theorem: for continuous scores, point masses far out produce roots within any distance of $b_\\varepsilon$. The median case is stated through the identity that its shift score is the centered distribution function.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§3.8.4 (Maximum bias of location M-estimators), Eqs. (3.66)–(3.68)",
+      "biblio": "The maximum-bias analysis originates with P. J. Huber (*Ann. Math. Statist.* **35** (1964), 73–101); the systematic min–max bias program is R. D. Martin, V. J. Yohai, and R. H. Zamar (*Ann. Statist.* **17** (1989), 1608–1630), with lower-bound refinements in X. He and D. G. Simpson (*Ann. Statist.* **21** (1993), 314–337).",
+      "keys": [
+        "mmy2019",
+        "huber1964",
+        "martin-yohai-zamar1989",
+        "he-simpson1993"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "maximum bias",
+      "M-estimator"
+    ]
+  },
+  {
+    "id": "rb-median-minimax-bias",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "locationEquivariant_maxBias_ge_median",
+    "fullName": "StatLean.RobustStatistics.locationEquivariant_maxBias_ge_median",
+    "title": "The Minimax-Bias Property of the Median",
+    "citation": "MMY (2019), §3.8.5",
+    "shortRef": "MMY (2019), §3.8.5",
+    "file": "StatLean/RobustStatistics/MaxBias/MedianMinimaxBias.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/MaxBias/MedianMinimaxBias.html#StatLean.RobustStatistics.locationEquivariant_maxBias_ge_median",
+    "informal": "<p>Let the center distribution have <span data-link=\"h1\">a density $f_0$</span> that is <span data-link=\"h2\">a probability density</span>, <span data-link=\"h3\">symmetric</span> and <span data-link=\"h4\">unimodal</span> — nonincreasing in $|x|$; fix <span data-link=\"h5\">a contamination level $0 \\lt  \\varepsilon \\lt  1/2$</span> and let <span data-link=\"h6\">$b_\\varepsilon \\ge 0$ solve the median's quantile equation</span> $F_0(b_\\varepsilon) = \\tfrac{1}{2(1-\\varepsilon)}$ — the median's own maximum bias. Then for every functional $T$ that is <span data-link=\"h7\">location equivariant on a domain containing the witness distribution</span>: some member $F$ of the $\\varepsilon$-gross-error neighbourhood of $F_0$ has $$|T(F)| \\;\\ge\\; b_\\varepsilon.$$ No location-equivariant functional has a smaller maximum bias than the median over symmetric unimodal centers.</p><p>The witness pair is explicit: $F_+$ keeps the density $(1-\\varepsilon)f_0$ up to $b_\\varepsilon$ and pastes the shifted density $(1-\\varepsilon)f_0(\\cdot - 2b_\\varepsilon)$ beyond it; $F_-$ is $F_+$ shifted left by $2b_\\varepsilon$. Both are $\\varepsilon$-contaminations of $F_0$ — nonnegativity of the contaminating density is exactly unimodality, its total mass exactly the quantile equation — and equivariance forces $T(F_+) - T(F_-) = 2b_\\varepsilon$, so the two values cannot both be smaller than $b_\\varepsilon$.</p>",
+    "summary": "Huber's theorem: over a symmetric unimodal center, every location-equivariant functional suffers maximum bias at least b_ε — the median's own value F₀⁻¹(1/(2(1−ε))). The median is minimax-bias optimal.",
+    "leanSignature": "theorem locationEquivariant_maxBias_ge_median {f₀ : ℝ → ℝ} {bε ε : ℝ}\n    {T : Measure ℝ → ℝ} {𝒟 : Set (Measure ℝ)}\n    (hmeas : Measurable f₀) (hint : Integrable f₀) (hnonneg : ∀ x, 0 ≤ f₀ x)\n    (hone : ∫ x, f₀ x = 1)\n    -- USER-INPUT: symmetric unimodal center; MMY §3.8.5\n    (hsym : ∀ x, f₀ (-x) = f₀ x)\n    (huni : ∀ a b : ℝ, 0 ≤ a → a ≤ b → f₀ b ≤ f₀ a)\n    (hbε : 0 ≤ bε) (hε : 0 < ε) (hε1 : ε < 1)\n    -- USER-INPUT: b_ε solves the median's maximum-bias quantile equation; MMY (3.68)\n    (hquant : ∫ x in Set.Iic bε, f₀ x = 1 / (2 * (1 - ε)))\n    -- USER-INPUT: T is location equivariant on a domain containing the witness; MMY\n    -- §3.8.5 (\"let θ̂ be any location equivariant estimator\")\n    (hT : IsLocationEquivariantOn T 𝒟)\n    (hD : densityMeasure (fun x => if x ≤ bε then (1 - ε) * f₀ x\n        else (1 - ε) * f₀ (x - 2 * bε)) ∈ 𝒟) :\n    ∃ F ∈ grossErrorNbhd (densityMeasure f₀) ε, bε ≤ |T F|",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "Measurable f₀",
+        "label": "measurable density",
+        "note": "The center is given by a Lebesgue density f₀ (measurable and integrable)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "∫ x, f₀ x = 1",
+        "label": "probability density",
+        "note": "f₀ is nonnegative with total integral one."
+      },
+      {
+        "id": "h3",
+        "leanToken": "∀ x, f₀ (-x) = f₀ x",
+        "label": "symmetric density",
+        "note": "f₀(−x) = f₀(x)."
+      },
+      {
+        "id": "h4",
+        "leanToken": "∀ a b : ℝ, 0 ≤ a → a ≤ b → f₀ b ≤ f₀ a",
+        "label": "unimodal density",
+        "note": "f₀ is nonincreasing on [0,∞) — a symmetric unimodal shape."
+      },
+      {
+        "id": "h5",
+        "leanToken": "0 < ε",
+        "label": "contamination window",
+        "note": "0 < ε < 1/2."
+      },
+      {
+        "id": "h6",
+        "leanToken": "∫ x in Set.Iic bε, f₀ x = 1 / (2 * (1 - ε))",
+        "label": "the median's bias",
+        "note": "b_ε ≥ 0 satisfies F₀(b_ε) = 1/(2(1−ε)), the median's maximum bias."
+      },
+      {
+        "id": "h7",
+        "leanToken": "IsLocationEquivariantOn T 𝒟",
+        "label": "location equivariance",
+        "note": "Shifting a distribution in the domain by a shifts T's value by a; the domain contains the witness contamination."
+      }
+    ],
+    "formalizationNotes": "The construction is carried out at the level of Lebesgue densities: the contaminating density is verified nonnegative from unimodality, of unit mass from the quantile equation, and the paste-and-shift density is proved equal to the mixture as measures; the shifted witness lies in the neighbourhood by the mirrored argument. Only the two witness distributions need to lie in the functional's equivariance domain — nothing is assumed about $T$ beyond equivariance there, which is what gives the theorem its minimax force.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§3.8.5 (The minimax bias property of the median)",
+      "biblio": "The theorem is P. J. Huber's (*Ann. Math. Statist.* **35** (1964), 73–101; see also *Robust Statistics*, Wiley, 1981, §4.2); generalizations beyond symmetric unimodal location are X. He and D. G. Simpson (*Ann. Statist.* **21** (1993), 314–337).",
+      "keys": [
+        "mmy2019",
+        "huber1964",
+        "huber1981",
+        "he-simpson1993"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "maximum bias",
+      "median"
+    ]
+  },
+  {
+    "id": "rb-chebyshev-baseline",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "sampleMean_chebyshev_deviation",
+    "fullName": "StatLean.RobustStatistics.sampleMean_chebyshev_deviation",
+    "title": "The Chebyshev Baseline for the Empirical Mean",
+    "citation": "Lugosi–Mendelson (2019), Eq. (2.3)",
+    "shortRef": "Lugosi–Mendelson (2019), Eq. (2.3)",
+    "file": "StatLean/RobustStatistics/HeavyTails/EmpiricalMeanBaseline.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/HeavyTails/EmpiricalMeanBaseline.html#StatLean.RobustStatistics.sampleMean_chebyshev_deviation",
+    "informal": "<p>Let $X_1,\\dots,X_n$ be <span data-link=\"h1\">independent</span>, <span data-link=\"h2\">identically distributed</span>, <span data-link=\"h7\">measurable</span> observations whose common law is <span data-link=\"h3\">square-integrable</span> with <span data-link=\"h4\">mean $\\mu$ and variance $\\sigma^2 \\gt  0$</span> (<span data-link=\"h8\">nondegenerate</span>). For every <span data-link=\"h5\">confidence level $\\delta \\in (0,1)$</span> and <span data-link=\"h6\">nonempty sample</span>, the empirical mean $\\bar X_n$ satisfies $$\\mathbb P\\left(\\big|\\bar X_n - \\mu\\big| \\;\\ge\\; \\sigma\\sqrt{\\frac{1}{n\\delta}}\\right) \\;\\le\\; \\delta.$$</p><p>Under a bare second moment this $1/\\sqrt{\\delta}$ dependence on the confidence level is essentially the best the empirical mean can do — exponentially worse than the $\\sqrt{\\log(1/\\delta)}$ a Gaussian sample would give. The estimators of the heavy-tailed family — median-of-means, Catoni's estimator, the trimmed mean — exist precisely to replace $1/\\sqrt\\delta$ by $\\sqrt{\\log(1/\\delta)}$ without strengthening the moment assumption.</p>",
+    "summary": "P(|X̄ₙ − μ| ≥ σ√(1/(nδ))) ≤ δ under two moments — the baseline whose 1/√δ confidence dependence the sub-Gaussian estimators are built to beat.",
+    "leanSignature": "theorem sampleMean_chebyshev_deviation {n : ℕ} (hn : n ≠ 0) {X : Fin n → Ξ → ℝ}\n    {μ₀ σ2 δ : ℝ}\n    -- LEAN-ONLY: measurability of each coordinate; regularity implicit in LM §2\n    (hX_meas : ∀ i, Measurable (X i))\n    -- USER-INPUT: the observations are jointly independent; LM §2\n    (hX_indep : iIndepFun X μprob)\n    -- USER-INPUT: common law P; LM §2\n    (hX_law : ∀ i, μprob.map (X i) = P)\n    -- USER-INPUT: P is square-integrable; LM (2.3) context\n    (hL2 : MemLp id 2 P)\n    -- USER-INPUT: mean and variance of P; LM §2\n    (hmean : ∫ x, x ∂P = μ₀) (hvar : ∫ x, (x - μ₀) ^ 2 ∂P = σ2)\n    -- USER-INPUT: confidence level; LM (2.1)\n    (hδ : 0 < δ) (hδ1 : δ < 1)\n    -- USER-INPUT: nondegenerate variance (the bound is trivial at σ = 0); LM (2.3)\n    (hσ : 0 < σ2) :\n    μprob.real {ξ | Real.sqrt σ2 * Real.sqrt (1 / (n * δ))\n      ≤ |sampleMean (fun i => X i ξ) - μ₀|} ≤ δ",
+    "hypotheses": [
+      {
+        "id": "h6",
+        "leanToken": "n ≠ 0",
+        "label": "nonempty sample",
+        "note": "At least one observation."
+      },
+      {
+        "id": "h7",
+        "leanToken": "∀ i, Measurable (X i)",
+        "label": "measurable data",
+        "note": "Each observation is measurable."
+      },
+      {
+        "id": "h1",
+        "leanToken": "iIndepFun X μprob",
+        "label": "independent sample",
+        "note": "The observations are jointly independent."
+      },
+      {
+        "id": "h2",
+        "leanToken": "μprob.map (X i) = P",
+        "label": "identically distributed",
+        "note": "Every observation has the common law P."
+      },
+      {
+        "id": "h3",
+        "leanToken": "MemLp id 2 P",
+        "label": "finite variance",
+        "note": "P is square-integrable."
+      },
+      {
+        "id": "h4",
+        "leanToken": "∫ x, x ∂P = μ₀",
+        "label": "mean and variance",
+        "note": "μ is the mean and σ² the variance of P."
+      },
+      {
+        "id": "h5",
+        "leanToken": "0 < δ",
+        "label": "confidence level",
+        "note": "δ ∈ (0,1)."
+      },
+      {
+        "id": "h8",
+        "leanToken": "0 < σ2",
+        "label": "nondegenerate variance",
+        "note": "σ² > 0, so the deviation radius is meaningful."
+      }
+    ],
+    "formalizationNotes": "The proof is Chebyshev's inequality applied to the sample mean, whose variance $\\sigma^2/n$ is computed from independence in a companion lemma. The near-optimality of the $1/\\sqrt\\delta$ rate for the empirical mean — there are two-moment laws on which it cannot be beaten — is the surrounding discussion in the survey and is not formalized; the formal counterpart in the library is the deviation lower bound, which no estimator at all can beat.",
+    "reference": {
+      "formal": "G. Lugosi and S. Mendelson, “Mean estimation and regression under heavy-tailed distributions: a survey,” *Foundations of Computational Mathematics* **19** (2019), 1145–1190.",
+      "pointer": "§2, Eq. (2.3)",
+      "biblio": "The tightness of Chebyshev's bound for the empirical mean is Proposition 6.2 of O. Catoni (*Ann. Inst. Henri Poincaré Probab. Stat.* **48** (2012), 1148–1185); the sub-Gaussian-estimator framework that measures every estimator against this baseline is L. Devroye, M. Lerasle, G. Lugosi, and R. I. Oliveira (*Ann. Statist.* **44** (2016), 2695–2725).",
+      "keys": [
+        "lugosi-mendelson2019survey",
+        "catoni2012",
+        "devroye-lerasle-lugosi-oliveira2016"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "mean estimation",
+      "Chebyshev inequality"
+    ],
+    "crossListed": [
+      "concentration"
+    ]
+  },
+  {
+    "id": "rb-mom-def",
+    "category": "robust",
+    "kind": "definition",
+    "leanName": "medianOfMeans",
+    "fullName": "StatLean.RobustStatistics.medianOfMeans",
+    "title": "The Median-of-Means Estimator",
+    "citation": "Lugosi–Mendelson (2019), §2.1",
+    "shortRef": "Lugosi–Mendelson (2019), §2.1",
+    "file": "StatLean/RobustStatistics/HeavyTails/MedianOfMeans.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/HeavyTails/MedianOfMeans.html#StatLean.RobustStatistics.medianOfMeans",
+    "informal": "<p>Partition a sample of $n = km$ observations into $k$ blocks of $m$ observations each, average within blocks, and take <span data-link=\"h1\">the median of the block means</span>: $$\\hat\\mu_{\\mathrm{MoM}} \\;=\\; \\operatorname{med}\\big(Z_1, \\dots, Z_k\\big), \\qquad Z_j = \\frac1m \\sum_{i \\in B_j} X_i.$$</p><p>Each block mean is an unbiased estimate of $\\mu$ with standard deviation $\\sigma\\sqrt{k/n}$; the median of $k$ independent such estimates concentrates exponentially in $k$. Choosing the number of blocks by the target confidence level turns a bare-variance sample into a sub-Gaussian mean estimate — the simplest of the heavy-tailed estimators and the workhorse of the modern theory.</p>",
+    "summary": "Median-of-means: split the data into k blocks, average each block, take the median of the k block means — the block structure trades variance for exponential concentration.",
+    "leanSignature": "noncomputable def medianOfMeans {k m : ℕ} (x : Fin k → Fin m → ℝ) : ℝ :=\n  sampleMedian (fun j => sampleMean (x j))",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "sampleMedian (fun j => sampleMean (x j))",
+        "label": "median of block means",
+        "note": "The estimator composes the sample median with the blockwise sample means."
+      }
+    ],
+    "formalizationNotes": "The data enters doubly indexed — block $j$, observation $i$ — so no integer division appears in the definition; the probabilistic theorems quantify over jointly independent doubly-indexed arrays. The median is the library's low median, which satisfies the defining property of the survey ('at least half the values on each side'); at $k = 0$ the estimator degenerates to the junk value $0$, and every theorem carries $k \\ne 0$.",
+    "reference": {
+      "formal": "G. Lugosi and S. Mendelson, “Mean estimation and regression under heavy-tailed distributions: a survey,” *Foundations of Computational Mathematics* **19** (2019), 1145–1190.",
+      "pointer": "§2.1 (The median-of-means estimator)",
+      "biblio": "The estimator was invented independently in stochastic optimization (A. S. Nemirovsky and D. B. Yudin, *Problem Complexity and Method Efficiency in Optimization*, Wiley, 1983), approximate counting (M. R. Jerrum, L. G. Valiant, and V. V. Vazirani, *Theoret. Comput. Sci.* **43** (1986), 169–188), and streaming algorithms (N. Alon, Y. Matias, and M. Szegedy, *J. Comput. System Sci.* **58** (1999), 137–147).",
+      "keys": [
+        "lugosi-mendelson2019survey",
+        "nemirovsky-yudin1983",
+        "jerrum-valiant-vazirani1986",
+        "alon-matias-szegedy1999"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "median-of-means",
+      "mean estimation"
+    ]
+  },
+  {
+    "id": "rb-mom-subgaussian",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "medianOfMeans_deviation",
+    "fullName": "StatLean.RobustStatistics.medianOfMeans_deviation",
+    "title": "Median-of-Means Is Sub-Gaussian",
+    "citation": "Lugosi–Mendelson (2019), Theorem 2",
+    "shortRef": "Lugosi–Mendelson (2019), Theorem 2",
+    "file": "StatLean/RobustStatistics/HeavyTails/MedianOfMeans.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/HeavyTails/MedianOfMeans.html#StatLean.RobustStatistics.medianOfMeans_deviation",
+    "informal": "<p>Let the $n = km$ observations be <span data-link=\"h1\">jointly independent</span>, <span data-link=\"h2\">identically distributed</span> with a <span data-link=\"h3\">square-integrable</span> law of <span data-link=\"h4\">mean $\\mu$ and variance $\\sigma^2$</span>, <span data-link=\"h8\">nondegenerate</span>, arranged into <span data-link=\"h5\">$k$ nonempty blocks</span> of <span data-link=\"h6\">$m$ observations</span> with <span data-link=\"h7\">measurable coordinates</span>. The median-of-means estimator with $k$ blocks satisfies $$\\mathbb P\\left(\\big|\\hat\\mu_{\\mathrm{MoM}} - \\mu\\big| \\;\\gt \\; \\sigma\\sqrt{\\frac 4m}\\right) \\;\\le\\; e^{-k/8}.$$ Choosing $k = \\lceil 8\\log(1/\\delta)\\rceil$ blocks gives, with probability at least $1-\\delta$, $$\\big|\\hat\\mu_{\\mathrm{MoM}} - \\mu\\big| \\;\\le\\; \\sigma\\sqrt{\\frac{32\\log(1/\\delta) + 4}{n}}.$$</p><p>A sub-Gaussian deviation bound from nothing but a finite variance: the block means land within $\\sigma\\sqrt{4/m}$ of $\\mu$ with probability $3/4$ each (Chebyshev), and the median misses only if half the blocks do — a binomial tail event that Hoeffding's inequality makes exponentially small in $k$.</p>",
+    "summary": "P(|μ̂_MoM − μ| > σ√(4/m)) ≤ e^{−k/8} under bare finite variance; with k = ⌈8log(1/δ)⌉ blocks, |μ̂ − μ| ≤ σ√((32log(1/δ)+4)/n) with probability 1−δ.",
+    "leanSignature": "theorem medianOfMeans_deviation {k m : ℕ} (hk : k ≠ 0) (hm : m ≠ 0)\n    {X : Fin k → Fin m → Ξ → ℝ} {μ₀ σ2 : ℝ}\n    -- LEAN-ONLY: coordinate measurability; LM §2.1 regularity\n    (hX_meas : ∀ j i, Measurable (X j i))\n    -- USER-INPUT: the n = k·m observations are jointly independent; LM Theorem 2\n    (hX_indep : iIndepFun (fun q : Fin k × Fin m => X q.1 q.2) μprob)\n    -- USER-INPUT: common law P; LM Theorem 2 (\"identically distributed\")\n    (hX_law : ∀ j i, μprob.map (X j i) = P)\n    -- USER-INPUT: P is square-integrable; LM Theorem 2 (\"with variance σ²\")\n    (hL2 : MemLp id 2 P)\n    -- USER-INPUT: mean and variance of P; LM Theorem 2\n    (hmean : ∫ x, x ∂P = μ₀) (hvar : ∫ x, (x - μ₀) ^ 2 ∂P = σ2)\n    -- USER-INPUT: nondegenerate variance (σ = 0 makes the band trivial); LM Theorem 2\n    (hσ : 0 < σ2) :\n    μprob.real {ξ | Real.sqrt σ2 * Real.sqrt (4 / m)\n        < |medianOfMeans (fun j i => X j i ξ) - μ₀|}\n      ≤ Real.exp (-(k : ℝ) / 8)\n\ntheorem medianOfMeans_subGaussian {k m n : ℕ} (hm : m ≠ 0)\n    {X : Fin k → Fin m → Ξ → ℝ} {μ₀ σ2 δ : ℝ}\n    -- LEAN-ONLY: coordinate measurability; LM §2.1 regularity\n    (hX_meas : ∀ j i, Measurable (X j i))\n    -- USER-INPUT: the n observations are jointly independent; LM Theorem 2\n    (hX_indep : iIndepFun (fun q : Fin k × Fin m => X q.1 q.2) μprob)\n    -- USER-INPUT: common law P; LM Theorem 2\n    (hX_law : ∀ j i, μprob.map (X j i) = P)\n    -- USER-INPUT: P is square-integrable; LM Theorem 2\n    (hL2 : MemLp id 2 P)\n    -- USER-INPUT: mean and variance of P; LM Theorem 2\n    (hmean : ∫ x, x ∂P = μ₀) (hvar : ∫ x, (x - μ₀) ^ 2 ∂P = σ2)\n    (hσ : 0 < σ2)\n    -- USER-INPUT: confidence level; LM Theorem 2\n    (hδ : 0 < δ) (hδ1 : δ < 1)\n    -- USER-INPUT: sample size and block count; LM Theorem 2 (\"n = mk\",\n    -- \"k = ⌈8 log(1/δ)⌉\")\n    (hn : n = k * m) (hkc : k = ⌈8 * Real.log (1 / δ)⌉₊) :\n    μprob.real {ξ | Real.sqrt σ2 * Real.sqrt ((32 * Real.log (1 / δ) + 4) / n)\n        < |medianOfMeans (fun j i => X j i ξ) - μ₀|}\n      ≤ δ",
+    "hypotheses": [
+      {
+        "id": "h5",
+        "leanToken": "k ≠ 0",
+        "label": "at least one block",
+        "note": "k ≥ 1 blocks."
+      },
+      {
+        "id": "h6",
+        "leanToken": "m ≠ 0",
+        "label": "nonempty blocks",
+        "note": "Each block holds m ≥ 1 observations."
+      },
+      {
+        "id": "h7",
+        "leanToken": "∀ j i, Measurable (X j i)",
+        "label": "measurable data",
+        "note": "Each observation is measurable."
+      },
+      {
+        "id": "h1",
+        "leanToken": "iIndepFun (fun q : Fin k × Fin m => X q.1 q.2) μprob",
+        "label": "independent sample",
+        "note": "All n = km observations are jointly independent."
+      },
+      {
+        "id": "h2",
+        "leanToken": "μprob.map (X j i) = P",
+        "label": "identically distributed",
+        "note": "Every observation has the common law P."
+      },
+      {
+        "id": "h3",
+        "leanToken": "MemLp id 2 P",
+        "label": "finite variance",
+        "note": "P is square-integrable — the only moment assumption."
+      },
+      {
+        "id": "h4",
+        "leanToken": "∫ x, x ∂P = μ₀",
+        "label": "mean and variance",
+        "note": "μ is the mean and σ² the variance of P."
+      },
+      {
+        "id": "h8",
+        "leanToken": "0 < σ2",
+        "label": "nondegenerate variance",
+        "note": "σ² > 0."
+      }
+    ],
+    "formalizationNotes": "The confidence-form radius is stated as $\\sigma\\sqrt{(32\\log(1/\\delta)+4)/n}$ where the survey prints $\\sigma\\sqrt{32\\log(1/\\delta)/n}$: with $k = \\lceil 8\\log(1/\\delta)\\rceil$ the provable radius is $\\sigma\\sqrt{4k/n}$, and the ceiling contributes the additive $4$ unless $8\\log(1/\\delta)$ is an integer — we state what the choice of $k$ supports. The block means are proved jointly independent as functions of disjoint coordinate blocks; the block-miss indicators are bounded, hence sub-Gaussian, and the binomial tail is the library's Hoeffding inequality.",
+    "reference": {
+      "formal": "G. Lugosi and S. Mendelson, “Mean estimation and regression under heavy-tailed distributions: a survey,” *Foundations of Computational Mathematics* **19** (2019), 1145–1190.",
+      "pointer": "§2.1, Theorem 2",
+      "biblio": "The nonasymptotic sub-Gaussian analysis of median-of-means is M. Lerasle and R. I. Oliveira (arXiv:1112.3914, 2011) and L. Devroye, M. Lerasle, G. Lugosi, and R. I. Oliveira (*Ann. Statist.* **44** (2016), 2695–2725), with the estimator's triple origin in Nemirovsky–Yudin (1983), Jerrum–Valiant–Vazirani (1986), and Alon–Matias–Szegedy (1999); D. Hsu and S. Sabato (*J. Mach. Learn. Res.* **17** (2016)) brought it into learning theory.",
+      "keys": [
+        "lugosi-mendelson2019survey",
+        "devroye-lerasle-lugosi-oliveira2016",
+        "lerasle-oliveira2011",
+        "nemirovsky-yudin1983",
+        "jerrum-valiant-vazirani1986",
+        "alon-matias-szegedy1999",
+        "hsu-sabato2016"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "median-of-means",
+      "mean estimation",
+      "sub-Gaussian deviation"
+    ],
+    "crossListed": [
+      "concentration"
+    ]
+  },
+  {
+    "id": "rb-catoni",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "catoni_deviation",
+    "fullName": "StatLean.RobustStatistics.catoni_deviation",
+    "title": "Catoni's Estimator Achieves the Optimal Constant",
+    "citation": "Lugosi–Mendelson (2019), Theorem 5",
+    "shortRef": "Lugosi–Mendelson (2019), Theorem 5",
+    "file": "StatLean/RobustStatistics/HeavyTails/Catoni.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/HeavyTails/Catoni.html#StatLean.RobustStatistics.catoni_deviation",
+    "informal": "<p>Catoni's estimator replaces the empirical-mean equation $\\sum_i (X_i - y) = 0$ by the softly truncated equation $\\sum_i \\psi\\big(\\alpha(X_i - y)\\big) = 0$, with the influence function $\\psi(x) = \\log(1 + x + x^2/2)$ for $x \\ge 0$, $\\psi(x) = -\\log(1 - x + x^2/2)$ for $x \\lt  0$, and a tuning parameter $\\alpha$. Let the observations be <span data-link=\"h1\">independent</span>, <span data-link=\"h2\">identically distributed</span>, <span data-link=\"h7\">measurable</span>, with <span data-link=\"h3\">square-integrable law</span> of <span data-link=\"h4\">mean $\\mu$ and variance $\\sigma^2 \\gt  0$</span> (<span data-link=\"h10\">nondegenerate</span>); fix <span data-link=\"h5\">$\\delta \\in (0,1)$ with $n \\gt  2\\log(1/\\delta)$</span> and <span data-link=\"h6\">the tuned parameter</span> $$\\alpha \\;=\\; \\sqrt{\\frac{2\\log(1/\\delta)}{n\\sigma^2\\big(1 + \\tfrac{2\\log(1/\\delta)}{n - 2\\log(1/\\delta)}\\big)}}.$$ Then every sequence $\\hat y_n$ of <span data-link=\"h8\">roots of the estimating equation</span> (<span data-link=\"h9\">measurably selected</span>) satisfies, with probability at least $1 - 2\\delta$, $$\\big|\\hat y_n - \\mu\\big| \\;\\lt \\; \\sqrt{\\frac{2\\sigma^2\\log(1/\\delta)}{n - 2\\log(1/\\delta)}}.$$</p><p>The leading constant $\\sqrt 2$ matches the Gaussian-sample benchmark exactly — sub-Gaussian estimation from two moments with the best possible constant. The root exists and is unique: the estimating function is continuous and strictly decreasing from $+\\infty$ to $-\\infty$.</p>",
+    "summary": "Catoni's soft-truncation M-estimator satisfies |μ̂ − μ| < √(2σ²log(1/δ)/(n − 2log(1/δ))) with probability 1−2δ — the sub-Gaussian rate with the optimal constant √2, from two moments.",
+    "leanSignature": "noncomputable def catoniPsi (x : ℝ) : ℝ :=\n  if 0 ≤ x then Real.log (1 + x + x ^ 2 / 2) else -Real.log (1 - x + x ^ 2 / 2)\n\ndef IsCatoniEstimate {n : ℕ} (α : ℝ) (x : Fin n → ℝ) (yhat : ℝ) : Prop :=\n  catoniR α x yhat = 0\n\ntheorem catoni_deviation {n : ℕ} (hn : n ≠ 0) {X : Fin n → Ξ → ℝ}\n    {Yhat : Ξ → ℝ} {μ₀ σ2 α δ : ℝ}\n    -- LEAN-ONLY: coordinate measurability; LM §2.2 regularity\n    (hX_meas : ∀ i, Measurable (X i))\n    -- USER-INPUT: jointly independent observations; LM Theorem 5\n    (hX_indep : iIndepFun X μprob)\n    -- USER-INPUT: common law P; LM Theorem 5\n    (hX_law : ∀ i, μprob.map (X i) = P)\n    -- USER-INPUT: P is square-integrable; LM Theorem 5\n    (hL2 : MemLp id 2 P)\n    -- USER-INPUT: mean and variance of P; LM Theorem 5\n    (hmean : ∫ x, x ∂P = μ₀) (hvar : ∫ x, (x - μ₀) ^ 2 ∂P = σ2)\n    (hσ : 0 < σ2)\n    -- USER-INPUT: confidence level and sample-size condition; LM Theorem 5\n    (hδ : 0 < δ) (hδ1 : δ < 1) (hnδ : 2 * Real.log (1 / δ) < n)\n    -- USER-INPUT: Catoni's tuned parameter; LM Theorem 5\n    (hαdef : α = Real.sqrt (2 * Real.log (1 / δ)\n      / (n * σ2 * (1 + 2 * Real.log (1 / δ) / (n - 2 * Real.log (1 / δ))))))\n    -- USER-INPUT: Ŷ solves the estimating equation sample-wise; LM §2.2\n    (hroot : ∀ ξ, IsCatoniEstimate α (fun i => X i ξ) (Yhat ξ))\n    -- LEAN-ONLY: measurability of the root selection, for the deviation event\n    (hYmeas : Measurable Yhat) :\n    μprob.real {ξ | Real.sqrt (2 * σ2 * Real.log (1 / δ) / (n - 2 * Real.log (1 / δ)))\n        ≤ |Yhat ξ - μ₀|}\n      ≤ 2 * δ",
+    "hypotheses": [
+      {
+        "id": "h7",
+        "leanToken": "∀ i, Measurable (X i)",
+        "label": "measurable data",
+        "note": "Each observation is measurable."
+      },
+      {
+        "id": "h1",
+        "leanToken": "iIndepFun X μprob",
+        "label": "independent sample",
+        "note": "The observations are jointly independent."
+      },
+      {
+        "id": "h2",
+        "leanToken": "μprob.map (X i) = P",
+        "label": "identically distributed",
+        "note": "Every observation has the common law P."
+      },
+      {
+        "id": "h3",
+        "leanToken": "MemLp id 2 P",
+        "label": "finite variance",
+        "note": "P is square-integrable — the only moment assumption."
+      },
+      {
+        "id": "h4",
+        "leanToken": "∫ x, x ∂P = μ₀",
+        "label": "mean and variance",
+        "note": "μ is the mean and σ² the variance of P."
+      },
+      {
+        "id": "h10",
+        "leanToken": "0 < σ2",
+        "label": "nondegenerate variance",
+        "note": "σ² > 0 (the tuning divides by it)."
+      },
+      {
+        "id": "h5",
+        "leanToken": "2 * Real.log (1 / δ) < n",
+        "label": "sample-size condition",
+        "note": "n > 2log(1/δ), so the deviation radius is finite."
+      },
+      {
+        "id": "h6",
+        "leanToken": "α = Real.sqrt (2 * Real.log (1 / δ)",
+        "label": "tuned parameter",
+        "note": "α is Catoni's variance-dependent choice; the estimator requires (an upper bound on) σ²."
+      },
+      {
+        "id": "h8",
+        "leanToken": "∀ ξ, IsCatoniEstimate α (fun i => X i ξ) (Yhat ξ)",
+        "label": "estimating-equation root",
+        "note": "Ŷ solves Σψ(α(Xᵢ − y)) = 0 sample-wise."
+      },
+      {
+        "id": "h9",
+        "leanToken": "Measurable Yhat",
+        "label": "measurable selection",
+        "note": "The root selection is measurable, so the deviation event is an event."
+      }
+    ],
+    "formalizationNotes": "The influence function is bracketed by its logarithmic companions $-\\log(1-x+x^2/2) \\le \\psi(x) \\le \\log(1+x+x^2/2)$, which convert the exponential moment of the estimating function into an explicit quadratic in $y$; Markov's inequality then localizes every root between the two roots of that quadratic. Existence and uniqueness of the root are a separate theorem (strict antitonicity plus the intermediate value theorem), so consuming the estimator as a measurable selection of roots loses nothing. The estimator depends on $\\sigma^2$ through $\\alpha$ — substituting an upper bound for the variance preserves the bound with that upper bound, and removing the dependence entirely costs the sub-Gaussian form, as the survey discusses.",
+    "reference": {
+      "formal": "G. Lugosi and S. Mendelson, “Mean estimation and regression under heavy-tailed distributions: a survey,” *Foundations of Computational Mathematics* **19** (2019), 1145–1190.",
+      "pointer": "§2.2, Theorem 5",
+      "biblio": "The estimator, the log-companion device, and the optimality of the constant $\\sqrt2$ are O. Catoni (*Ann. Inst. Henri Poincaré Probab. Stat.* **48** (2012), 1148–1185); the companion regression theory is J.-Y. Audibert and O. Catoni (*Ann. Statist.* **39** (2011), 2766–2794), and the soft-truncation idea descends from the clipped score of P. J. Huber (*Ann. Math. Statist.* **35** (1964), 73–101).",
+      "keys": [
+        "lugosi-mendelson2019survey",
+        "catoni2012",
+        "audibert-catoni2011",
+        "huber1964"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "mean estimation",
+      "Catoni estimator",
+      "sub-Gaussian deviation"
+    ],
+    "crossListed": [
+      "concentration"
+    ]
+  },
+  {
+    "id": "rb-trimmed-subgaussian",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "trimmedMean_deviation",
+    "fullName": "StatLean.RobustStatistics.trimmedMean_deviation",
+    "title": "The Trimmed Mean Is Sub-Gaussian",
+    "citation": "Lugosi–Mendelson (2019), Theorem 6",
+    "shortRef": "Lugosi–Mendelson (2019), Theorem 6",
+    "file": "StatLean/RobustStatistics/HeavyTails/TrimmedMean.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/HeavyTails/TrimmedMean.html#StatLean.RobustStatistics.trimmedMean_deviation",
+    "informal": "<p>Split $2n$ observations into two halves. The second half sets the truncation levels — its order statistics at ranks $\\varepsilon n$ and $(1-\\varepsilon)n$, for a trimming fraction $\\varepsilon$ tied to the confidence level — and the estimator averages the first half after clamping each observation into $[\\alpha, \\beta]$: $$\\hat\\mu_{2n} \\;=\\; \\frac1n \\sum_{i=1}^n \\phi_{\\alpha,\\beta}(X_i), \\qquad \\phi_{\\alpha,\\beta}(x) = \\max\\big(\\alpha, \\min(\\beta, x)\\big).$$ Let the $2n$ observations be <span data-link=\"h1\">jointly independent</span>, <span data-link=\"h2\">identically distributed</span>, <span data-link=\"h9\">measurable</span>, with <span data-link=\"h3\">square-integrable</span>, <span data-link=\"h10\">atomless</span> law of <span data-link=\"h4\">mean $\\mu$ and variance $\\sigma^2 \\gt  0$</span> (<span data-link=\"h11\">nondegenerate</span>); fix <span data-link=\"h5\">$\\delta \\in (0,1)$ with $n \\gt  \\tfrac{16}{3}\\log(8/\\delta)$</span>, take <span data-link=\"h6\">the trim count $r = \\tfrac{16}{3}\\log(8/\\delta)$</span> (an integer, with <span data-link=\"h7\">$1 \\le r$ and $4r \\lt  n$</span>) and <span data-link=\"h8\">the corresponding order-statistic ranks</span>. Then with probability at least $1 - \\delta$, $$\\big|\\hat\\mu_{2n} - \\mu\\big| \\;\\le\\; 9\\sigma\\sqrt{\\frac{\\log(8/\\delta)}{n}}.$$</p><p>Trimming at <em>data-driven</em> quantiles is what makes this work — fixed truncation levels cannot adapt to the confidence level. Among the sub-Gaussian estimators the trimmed mean is the classical one, and the one that extends to adversarially contaminated data.</p>",
+    "summary": "The two-sample trimmed mean, clipping at order statistics of a held-out half with trim depth ∝ log(1/δ), satisfies |μ̂ − μ| ≤ 9σ√(log(8/δ)/n) with probability 1−δ under two moments.",
+    "leanSignature": "noncomputable def trimmedMeanAt {n : ℕ} (a b : Fin n) (x y : Fin n → ℝ) : ℝ :=\n  sampleMean (fun i => truncate (orderStat y a) (orderStat y b) (x i))\n\ntheorem trimmedMean_deviation {n r : ℕ} {Z : Fin n ⊕ Fin n → Ξ → ℝ}\n    {a b : Fin n} {μ₀ σ2 δ : ℝ}\n    -- LEAN-ONLY: coordinate measurability; LM §2.3 regularity\n    (hZ_meas : ∀ i, Measurable (Z i))\n    -- USER-INPUT: the 2n observations are jointly independent; LM Theorem 6\n    (hZ_indep : iIndepFun Z μprob)\n    -- USER-INPUT: common law P; LM Theorem 6\n    (hZ_law : ∀ i, μprob.map (Z i) = P)\n    -- USER-INPUT: P is square-integrable with mean μ₀ and variance σ² > 0; LM Thm 6\n    (hL2 : MemLp id 2 P) (hmean : ∫ x, x ∂P = μ₀)\n    (hvar : ∫ x, (x - μ₀) ^ 2 ∂P = σ2) (hσ : 0 < σ2)\n    -- USER-INPUT: nonatomic P; LM §2.3 proof simplification\n    (hatom : ∀ t : ℝ, P {t} = 0)\n    -- USER-INPUT: confidence level and sample-size condition; LM Theorem 6\n    (hδ : 0 < δ) (hδ1 : δ < 1) (hn : 16 / 3 * Real.log (8 / δ) < n)\n    -- USER-INPUT: trim count integrality ε·n = r; LM §2.3 step (1) simplification\n    (hr : (r : ℝ) = 16 * Real.log (8 / δ) / 3) (hr1 : 1 ≤ r) (hrn : 4 * r < n)\n    -- USER-INPUT: trimming indices (0-indexed); LM §2.3 step (2)\n    (ha : (a : ℕ) + 1 = r) (hb : (b : ℕ) + r + 1 = n) :\n    μprob.real {ξ | 9 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)\n        < |trimmedMeanAt a b (fun i => Z (.inl i) ξ) (fun i => Z (.inr i) ξ) - μ₀|}\n      ≤ δ",
+    "hypotheses": [
+      {
+        "id": "h9",
+        "leanToken": "∀ i, Measurable (Z i)",
+        "label": "measurable data",
+        "note": "Each of the 2n observations is measurable."
+      },
+      {
+        "id": "h1",
+        "leanToken": "iIndepFun Z μprob",
+        "label": "independent sample",
+        "note": "The two halves together form a jointly independent family."
+      },
+      {
+        "id": "h2",
+        "leanToken": "μprob.map (Z i) = P",
+        "label": "identically distributed",
+        "note": "Every observation has the common law P."
+      },
+      {
+        "id": "h3",
+        "leanToken": "MemLp id 2 P",
+        "label": "finite variance",
+        "note": "P is square-integrable."
+      },
+      {
+        "id": "h4",
+        "leanToken": "∫ x, x ∂P = μ₀",
+        "label": "mean and variance",
+        "note": "μ is the mean and σ² the variance of P."
+      },
+      {
+        "id": "h11",
+        "leanToken": "0 < σ2",
+        "label": "nondegenerate variance",
+        "note": "σ² > 0."
+      },
+      {
+        "id": "h10",
+        "leanToken": "∀ t : ℝ, P {t} = 0",
+        "label": "atomless law",
+        "note": "P has no atoms — the survey's simplifying assumption, under which quantiles are exact."
+      },
+      {
+        "id": "h5",
+        "leanToken": "16 / 3 * Real.log (8 / δ) < n",
+        "label": "sample-size condition",
+        "note": "n > (16/3)log(8/δ)."
+      },
+      {
+        "id": "h6",
+        "leanToken": "(r : ℝ) = 16 * Real.log (8 / δ) / 3",
+        "label": "trim depth",
+        "note": "The trim count is r = εn = (16/3)log(8/δ), carried as an integrality hypothesis."
+      },
+      {
+        "id": "h7",
+        "leanToken": "4 * r < n",
+        "label": "working range",
+        "note": "1 ≤ r and 4r < n keep the trimming fraction below one quarter."
+      },
+      {
+        "id": "h8",
+        "leanToken": "(a : ℕ) + 1 = r",
+        "label": "trim ranks",
+        "note": "The truncation levels are the calibration half's order statistics at ranks r and n − r."
+      }
+    ],
+    "formalizationNotes": "The atomless and integer-trim-depth hypotheses are the survey's own simplifications, both carried explicitly. The proof runs exactly along the survey's lines: Bernstein's inequality brackets the data-driven truncation levels between population quantiles; on that event the truncation bias is at most $6\\sigma\\sqrt{\\log(8/\\delta)/n}$ by Chebyshev-and-Cauchy–Schwarz tail control, and Bernstein again concentrates the average of the bounded truncated variables within $3\\sigma\\sqrt{\\log(8/\\delta)/n}$ — whence the constant $9$.",
+    "reference": {
+      "formal": "G. Lugosi and S. Mendelson, “Mean estimation and regression under heavy-tailed distributions: a survey,” *Foundations of Computational Mathematics* **19** (2019), 1145–1190.",
+      "pointer": "§2.3, Theorem 6",
+      "biblio": "The nonasymptotic sub-Gaussian property of trimming at confidence-calibrated depth is R. I. Oliveira and P. Orenstein (2019); the classical trimmed-mean literature runs through J. W. Tukey and D. H. McLaughlin (*Sankhyā Ser. A* **25** (1963), 331–352), P. J. Bickel (*Ann. Math. Statist.* **36** (1965), 847–858), and S. M. Stigler (*Ann. Statist.* **1** (1973), 472–477); the multivariate, adversarially contaminated optimality is G. Lugosi and S. Mendelson (*Ann. Statist.* **49** (2021), 393–410).",
+      "keys": [
+        "lugosi-mendelson2019survey",
+        "oliveira-orenstein2019",
+        "tukey-mclaughlin1963",
+        "bickel1965",
+        "stigler1973",
+        "lugosi-mendelson2021"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "trimmed mean",
+      "mean estimation",
+      "sub-Gaussian deviation"
+    ],
+    "crossListed": [
+      "concentration"
+    ]
+  },
+  {
+    "id": "rb-deviation-lower",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "mean_estimator_deviation_lower",
+    "fullName": "StatLean.RobustStatistics.mean_estimator_deviation_lower",
+    "title": "No Estimator Beats the Sub-Gaussian Rate",
+    "citation": "Lugosi–Mendelson (2019), Theorem 1",
+    "shortRef": "Lugosi–Mendelson (2019), Theorem 1",
+    "file": "StatLean/RobustStatistics/HeavyTails/DeviationLowerBound.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/HeavyTails/DeviationLowerBound.html#StatLean.RobustStatistics.mean_estimator_deviation_lower",
+    "informal": "<p>For <span data-link=\"h1\">sample size $n \\gt  5$</span>, <span data-link=\"h2\">confidence level $\\delta \\in (2e^{-n/4}, 1/2)$</span>, <span data-link=\"h3\">target variance $\\sigma^2 \\gt  0$</span>, and <em>any</em> <span data-link=\"h4\">measurable mean estimator</span> $\\hat\\mu : \\mathbb R^n \\to \\mathbb R$, there is a probability distribution $P$ with variance $\\sigma^2$ whose mean $\\mu_P$ the estimator misses badly: $$\\mathbb P^{\\otimes n}\\!\\left(\\big|\\hat\\mu(X_1,\\dots,X_n) - \\mu_P\\big| \\;\\gt \\; \\sigma\\sqrt{\\frac{\\log\\frac{1}{2\\delta}}{n}}\\right) \\;\\ge\\; \\delta.$$</p><p>The sub-Gaussian deviation rate $\\sigma\\sqrt{\\log(1/\\delta)/n}$ is thus optimal up to constants: median-of-means, Catoni's estimator, and the trimmed mean achieve what no estimator can improve. The witness family is a pair of two-point distributions placing mass $p$ at $\\pm c$ and $1-p$ at $0$, coupled so that the two samples coincide with probability $(1-p)^n = 2\\delta$ — and on that event no estimator can be simultaneously close to both means.</p>",
+    "summary": "For any mean estimator there is a two-moment law on which |μ̂ − μ| > σ√(log(1/(2δ))/n) with probability ≥ δ — the minimax lower bound matching the sub-Gaussian estimators.",
+    "leanSignature": "theorem mean_estimator_deviation_lower {n : ℕ} (hn : 5 < n) {δ σ2 : ℝ}\n    -- USER-INPUT: confidence window; LM Theorem 1 (`δ ∈ (2e^{−n/4}, 1/2)`)\n    (hδlo : 2 * Real.exp (-(n : ℝ) / 4) < δ) (hδhi : δ < 1 / 2)\n    -- USER-INPUT: nondegenerate variance; LM Theorem 1 (`σ > 0`)\n    (hσ : 0 < σ2)\n    -- USER-INPUT: the estimator, an arbitrary statistic of the sample; LM §2\n    (μhat : (Fin n → ℝ) → ℝ)\n    -- LEAN-ONLY: measurability of the estimator, for the deviation event\n    (hμhat : Measurable μhat) :\n    ∃ P : Measure ℝ, IsProbabilityMeasure P ∧\n      (∫ x, (x - ∫ y, y ∂P) ^ 2 ∂P = σ2) ∧\n      δ ≤ (Measure.pi fun _ : Fin n => P).real\n        {x | Real.sqrt σ2 * Real.sqrt (Real.log (1 / (2 * δ)) / n)\n          < |μhat x - ∫ y, y ∂P|}",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "5 < n",
+        "label": "sample size",
+        "note": "n > 5."
+      },
+      {
+        "id": "h2",
+        "leanToken": "2 * Real.exp (-(n : ℝ) / 4) < δ",
+        "label": "confidence window",
+        "note": "δ ∈ (2e^{−n/4}, 1/2) — the regime in which the two-point construction operates."
+      },
+      {
+        "id": "h3",
+        "leanToken": "0 < σ2",
+        "label": "target variance",
+        "note": "The witness distribution has variance exactly σ²."
+      },
+      {
+        "id": "h4",
+        "leanToken": "Measurable μhat",
+        "label": "arbitrary estimator",
+        "note": "μ̂ is any measurable function of the sample — the bound is minimax over all estimators."
+      }
+    ],
+    "formalizationNotes": "The threshold is stated as $\\sigma\\sqrt{\\log(1/(2\\delta))/n}$ where the survey prints $\\sigma\\sqrt{\\log(1/\\delta)/n}$: the factor two inside the logarithm is the price of the union step in the two-point argument, and along this proof route it cannot be removed on the full window $\\delta \\lt  1/2$ — the shape and the small-$\\delta$ asymptotics are unchanged, and the survey's printed form is not claimed false. The centering is the witness distribution's own mean: the coupled pair cannot share a mean, so the theorem exhibits a distribution and measures the deviation from its mean, with free recentering available by translation. The extremal coupling has agreement probability exactly $2\\delta$.",
+    "reference": {
+      "formal": "G. Lugosi and S. Mendelson, “Mean estimation and regression under heavy-tailed distributions: a survey,” *Foundations of Computational Mathematics* **19** (2019), 1145–1190.",
+      "pointer": "§2, Theorem 1",
+      "biblio": "The two-point minimax argument is L. Devroye, M. Lerasle, G. Lugosi, and R. I. Oliveira (*Ann. Statist.* **44** (2016), 2695–2725); the sharpness of Chebyshev for the empirical mean itself is Proposition 6.2 of O. Catoni (*Ann. Inst. Henri Poincaré Probab. Stat.* **48** (2012), 1148–1185).",
+      "keys": [
+        "lugosi-mendelson2019survey",
+        "devroye-lerasle-lugosi-oliveira2016",
+        "catoni2012"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "mean estimation",
+      "minimax lower bound"
+    ],
+    "crossListed": [
+      "concentration",
+      "minimaxity"
+    ]
+  },
+  {
+    "id": "rb-ballmom",
+    "category": "robust",
+    "kind": "proposition",
+    "leanName": "ballMoM_deviation",
+    "fullName": "StatLean.RobustStatistics.ballMoM_deviation",
+    "title": "Dimension-Free Multivariate Median-of-Means",
+    "citation": "Lugosi–Mendelson (2019), Proposition 1",
+    "shortRef": "Lugosi–Mendelson (2019), Proposition 1",
+    "file": "StatLean/RobustStatistics/Multivariate/BallMoM.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/Multivariate/BallMoM.html#StatLean.RobustStatistics.ballMoM_deviation",
+    "informal": "<p>Extend median-of-means to random vectors in $\\mathbb R^d$: block the sample, average within blocks to get $Z_1,\\dots,Z_k$, and define the estimate $\\hat\\mu$ as a point whose <em>majority ball</em> — the smallest ball around it containing more than half of the block means — has minimal radius among all candidate centers. Let the $n = km$ observations be <span data-link=\"h1\">jointly independent</span>, <span data-link=\"h2\">identically distributed</span>, <span data-link=\"h9\">measurable</span> random vectors with <span data-link=\"h3\">square-integrable law</span> of <span data-link=\"h4\">mean $\\mu$ and covariance trace</span> $\\operatorname{Tr}(\\Sigma) = \\mathbb E\\|X - \\mu\\|^2 \\gt  0$ (<span data-link=\"h10\">nondegenerate</span>), arranged in <span data-link=\"h5\">$k$ blocks</span> of <span data-link=\"h6\">$m$ observations</span> with <span data-link=\"h7\">$k = \\lceil 8 \\log(1/\\delta)\\rceil$</span> for a confidence level $\\delta \\in (0,1)$. Then any <span data-link=\"h8\">measurable selection of ball-MoM centers</span> satisfies, with probability at least $1-\\delta$, $$\\big\\|\\hat\\mu - \\mu\\big\\| \\;\\le\\; 4\\sqrt{\\frac{\\operatorname{Tr}(\\Sigma)\\big(8\\log(1/\\delta) + 1\\big)}{n}}.$$</p><p>The bound involves the dimension only through $\\operatorname{Tr}(\\Sigma)$ — no $\\log d$ factor, unlike the coordinate-wise median. Chebyshev in norm puts each block mean within $r = 2\\sqrt{\\operatorname{Tr}(\\Sigma)/m}$ of $\\mu$ with probability $3/4$; on the majority event both $\\mu$ and $\\hat\\mu$ own majority balls of radius at most $r$, two majorities must share a block mean, and the triangle inequality gives $\\|\\hat\\mu - \\mu\\| \\le 2r$.</p>",
+    "summary": "The minimal-radius majority-ball median-of-means satisfies ‖μ̂ − μ‖ ≤ 4√(Tr(Σ)(8log(1/δ)+1)/n) with probability 1−δ — dimension-free multivariate mean estimation from second moments.",
+    "leanSignature": "noncomputable def momRadius {k : ℕ} (Z : Fin k → EuclideanSpace ℝ (Fin d))\n    (c : EuclideanSpace ℝ (Fin d)) : ℝ :=\n  sInf {r : ℝ | 0 ≤ r ∧ k < 2 * momCount Z c r}\n\ndef IsBallMoMCenter {k : ℕ} (Z : Fin k → EuclideanSpace ℝ (Fin d))\n    (c : EuclideanSpace ℝ (Fin d)) : Prop :=\n  ∀ a : EuclideanSpace ℝ (Fin d), momRadius Z c ≤ momRadius Z a\n\ntheorem ballMoM_deviation {k m n : ℕ} (hk : k ≠ 0) (hm : m ≠ 0)\n    {X : Fin k → Fin m → Ξ → EuclideanSpace ℝ (Fin d)}\n    {Chat : Ξ → EuclideanSpace ℝ (Fin d)} {μ₀ : EuclideanSpace ℝ (Fin d)}\n    {trSigma δ : ℝ}\n    -- LEAN-ONLY: coordinate measurability; LM §3 regularity\n    (hX_meas : ∀ j i, Measurable (X j i))\n    -- USER-INPUT: the n observations are jointly independent; LM Proposition 1\n    (hX_indep : iIndepFun (fun q : Fin k × Fin m => X q.1 q.2) μprob)\n    -- USER-INPUT: common law P; LM Proposition 1\n    (hX_law : ∀ j i, μprob.map (X j i) = P)\n    -- USER-INPUT: square-integrability, mean, covariance trace; LM Proposition 1\n    (hL2 : MemLp id 2 P) (hmean : ∫ x, x ∂P = μ₀)\n    (htr : ∫ x, ‖x - μ₀‖ ^ 2 ∂P = trSigma) (htrpos : 0 < trSigma)\n    -- USER-INPUT: confidence level and block count; LM Proposition 1\n    (hδ : 0 < δ) (hδ1 : δ < 1) (hn : n = k * m)\n    (hkc : k = ⌈8 * Real.log (1 / δ)⌉₊)\n    -- USER-INPUT: Ĉ is a ball-MoM center of the block means, sample-wise; LM §3.2\n    (hChat : ∀ ξ, IsBallMoMCenter (fun j => blockMeanVec (fun j i => X j i ξ) j)\n      (Chat ξ))\n    -- LEAN-ONLY: measurability of the selection, for the deviation event\n    (hCmeas : Measurable Chat) :\n    μprob.real {ξ | 4 * Real.sqrt (trSigma * (8 * Real.log (1 / δ) + 1) / n)\n        < ‖Chat ξ - μ₀‖}\n      ≤ δ",
+    "hypotheses": [
+      {
+        "id": "h5",
+        "leanToken": "k ≠ 0",
+        "label": "at least one block",
+        "note": "k ≥ 1 blocks."
+      },
+      {
+        "id": "h6",
+        "leanToken": "m ≠ 0",
+        "label": "nonempty blocks",
+        "note": "Each block holds m ≥ 1 observations."
+      },
+      {
+        "id": "h9",
+        "leanToken": "∀ j i, Measurable (X j i)",
+        "label": "measurable data",
+        "note": "Each vector observation is measurable."
+      },
+      {
+        "id": "h1",
+        "leanToken": "iIndepFun (fun q : Fin k × Fin m => X q.1 q.2) μprob",
+        "label": "independent sample",
+        "note": "All n = km observations are jointly independent."
+      },
+      {
+        "id": "h2",
+        "leanToken": "μprob.map (X j i) = P",
+        "label": "identically distributed",
+        "note": "Every observation has the common law P on ℝᵈ."
+      },
+      {
+        "id": "h3",
+        "leanToken": "MemLp id 2 P",
+        "label": "finite second moment",
+        "note": "P is square-integrable in norm."
+      },
+      {
+        "id": "h4",
+        "leanToken": "∫ x, ‖x - μ₀‖ ^ 2 ∂P = trSigma",
+        "label": "covariance trace",
+        "note": "Tr(Σ) = E‖X − μ‖², the total variance."
+      },
+      {
+        "id": "h10",
+        "leanToken": "0 < trSigma",
+        "label": "nondegenerate",
+        "note": "Tr(Σ) > 0."
+      },
+      {
+        "id": "h7",
+        "leanToken": "k = ⌈8 * Real.log (1 / δ)⌉₊",
+        "label": "block count",
+        "note": "k = ⌈8log(1/δ)⌉ blocks, tied to the confidence level."
+      },
+      {
+        "id": "h8",
+        "leanToken": "IsBallMoMCenter",
+        "label": "minimal majority ball",
+        "note": "μ̂ minimizes, over all centers, the radius of the smallest ball capturing a strict majority of the block means."
+      }
+    ],
+    "formalizationNotes": "The estimator is a predicate — any center whose majority-ball radius is minimal — so no choice function or computational model enters; the theorem consumes an arbitrary measurable selection. The majority-ball radius is an infimum over radii capturing a strict majority ($k \\lt  2\\cdot\\mathrm{count}$ in the integers), and the pigeonhole that two strict majorities intersect is the only geometry the proof needs. The truly sub-Gaussian multivariate bound, replacing $\\operatorname{Tr}(\\Sigma)\\log(1/\\delta)$ by $\\operatorname{Tr}(\\Sigma) + \\|\\Sigma\\|\\log(1/\\delta)$, belongs to the median-of-means tournament estimator, which is not formalized in this round.",
+    "reference": {
+      "formal": "G. Lugosi and S. Mendelson, “Mean estimation and regression under heavy-tailed distributions: a survey,” *Foundations of Computational Mathematics* **19** (2019), 1145–1190.",
+      "pointer": "§3.2, Proposition 1",
+      "biblio": "Multivariate median-of-means estimators are S. Minsker (*Bernoulli* **21** (2015), 2308–2335) and D. Hsu and S. Sabato (*J. Mach. Learn. Res.* **17** (2016)); the geometry of multivariate medians for mean estimation is surveyed in E. Joly, G. Lugosi, and R. I. Oliveira (*Electron. J. Statist.* **11** (2017), 440–451), and the fully sub-Gaussian tournament estimator is G. Lugosi and S. Mendelson (*Ann. Statist.* **47** (2019), 783–794).",
+      "keys": [
+        "lugosi-mendelson2019survey",
+        "minsker2015",
+        "hsu-sabato2016",
+        "joly-lugosi-oliveira2017",
+        "lugosi-mendelson2019"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "median-of-means",
+      "mean estimation"
+    ],
+    "crossListed": [
+      "concentration"
+    ]
+  },
+  {
+    "id": "rb-trimmedmean-breakdown",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "trimmedMean_breakdownCount",
+    "fullName": "StatLean.RobustStatistics.trimmedMean_breakdownCount",
+    "title": "The Breakdown Point of the Trimmed Mean",
+    "citation": "MMY (2019), §3.2.5",
+    "shortRef": "MMY (2019), §3.2.5",
+    "file": "StatLean/RobustStatistics/LocationScale/TrimmedMean.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/LocationScale/TrimmedMean.html#StatLean.RobustStatistics.trimmedMean_breakdownCount",
+    "informal": "<p>The $m$-fold trimmed mean discards the $m$ smallest and $m$ largest order statistics and averages the rest: $$\\bar x_{(m)} \\;=\\; \\frac{1}{n - 2m} \\sum_{i = m+1}^{n-m} x_{(i)}.$$ For a <span data-link=\"h1\">trim depth with $2m \\lt  n$</span>, its breakdown count is exactly $$m^\\ast\\big(\\bar x_{(m)}, x\\big) \\;=\\; m :$$ up to $m$ arbitrary replacements land among the discarded order statistics (or displace retained ones only within the range of the surviving data), while $m+1$ replacements can plant a value that survives the trimming and drags the average beyond any bound.</p><p>The trim depth is thus exactly the contamination budget: $\\varepsilon_n^\\ast = m/n$, interpolating between the mean ($m = 0$, breakdown $0$) and the median (maximal trimming, breakdown $\\to 1/2$).</p>",
+    "summary": "The m-fold trimmed mean's breakdown count is exactly m: the trim depth is the contamination budget, interpolating between mean (m = 0) and median.",
+    "leanSignature": "noncomputable def trimmedMean (m : ℕ) (x : Fin n → ℝ) : ℝ :=\n  (∑ i ∈ univ.filter (fun i : Fin n => m ≤ (i : ℕ) ∧ (i : ℕ) < n - m), orderStat x i) /\n    (n - 2 * m : ℝ)\n\ntheorem trimmedMean_breakdownCount {m : ℕ} (hm : 2 * m < n) (x : Fin n → ℝ) :\n    breakdownCount (trimmedMean m) x = m",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "2 * m < n",
+        "label": "proper trimming",
+        "note": "The trim depth leaves at least one retained observation: 2m < n."
+      }
+    ],
+    "formalizationNotes": "Resistance is proved through the order-statistic perturbation bounds: after at most $m$ replacements, every retained order statistic of the corrupted sample is bracketed by order statistics of the original sample, so the trimmed average stays in the original range. The breaking corruption places $m+1$ copies of a huge common value, of which at least one survives the upper trimming. The classical asymptotic statement $\\varepsilon^\\ast \\approx \\alpha$ for $\\alpha$-fraction trimming is the $m = \\lceil \\alpha n \\rceil$ reading of this count.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§3.2.5 (Finite-sample breakdown point)",
+      "biblio": "Trimmed means enter robust statistics with J. W. Tukey and D. H. McLaughlin (*Sankhyā Ser. A* **25** (1963), 331–352) and P. J. Bickel (*Ann. Math. Statist.* **36** (1965), 847–858); the replacement breakdown framework in which the count is computed is D. L. Donoho and P. J. Huber (in *A Festschrift for Erich L. Lehmann*, Wadsworth, 1983, pp. 157–184).",
+      "keys": [
+        "mmy2019",
+        "tukey-mclaughlin1963",
+        "bickel1965",
+        "donoho-huber1983"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "breakdown point",
+      "trimmed mean"
+    ]
+  },
+  {
+    "id": "rb-mad-dispersion",
+    "category": "robust",
+    "kind": "theorem",
+    "leanName": "sampleMAD_isDispersionEstimator",
+    "fullName": "StatLean.RobustStatistics.sampleMAD_isDispersionEstimator",
+    "title": "The Median Absolute Deviation",
+    "citation": "MMY (2019), Eqs. (2.58), (2.60)",
+    "shortRef": "MMY (2019), Eqs. (2.58), (2.60)",
+    "file": "StatLean/RobustStatistics/LocationScale/MAD.lean",
+    "docGenUrl": "../docs/StatLean/RobustStatistics/LocationScale/MAD.html#StatLean.RobustStatistics.sampleMAD_isDispersionEstimator",
+    "informal": "<p>The median absolute deviation of a sample centers at the median and takes the median of the absolute residuals: $$\\mathrm{MAD}(x) \\;=\\; \\operatorname{med}_i \\big|x_i - \\operatorname{med}(x)\\big|.$$ For an <span data-link=\"h1\">odd sample size $n = 2k+1$</span> it satisfies the two defining conditions of a dispersion estimator: shift invariance and absolute-scale equivariance, $$\\mathrm{MAD}(x + a\\mathbf 1) = \\mathrm{MAD}(x), \\qquad \\mathrm{MAD}(c\\,x) = |c|\\,\\mathrm{MAD}(x).$$</p><p>The MAD is the robust counterpart of the standard deviation — the same double-median structure that gives the location median its maximal breakdown gives the MAD a breakdown point tending to one half, against zero for the standard deviation. In practice it is normalized by $1/\\Phi^{-1}(3/4) \\approx 1.483$ to be consistent for the standard deviation at the normal model.</p>",
+    "summary": "MAD(x) = medᵢ|xᵢ − med(x)| is shift invariant and |c|-scale equivariant — the dispersion axioms, making the double median the robust counterpart of the SD.",
+    "leanSignature": "noncomputable def sampleMAD (x : Fin n → ℝ) : ℝ :=\n  sampleMedian fun i => |x i - sampleMedian x|\n\ntheorem sampleMAD_isDispersionEstimator {k : ℕ} (hn : n = 2 * k + 1) :\n    IsDispersionEstimator (sampleMAD (n := n))",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "n = 2 * k + 1",
+        "label": "odd sample size",
+        "note": "n = 2k+1, so both medians are unique middle order statistics and scale equivariance is exact."
+      }
+    ],
+    "formalizationNotes": "At even sample sizes the low median's tie-breaking spoils exact scale equivariance for negative multipliers, which is why the dispersion package is stated at odd sizes; shift invariance holds generally. Nonnegativity and the vanishing on constant samples are proved alongside. The normalization constant for normal-consistency is a modeling convention and is not formalized.",
+    "reference": {
+      "formal": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019.",
+      "pointer": "§2.6, Eqs. (2.58) and (2.60)",
+      "biblio": "The MAD was advocated as the default robust scale estimate by F. R. Hampel (*J. Amer. Statist. Assoc.* **69** (1974), 383–393), with the Princeton study (Andrews, Bickel, Hampel, Huber, Rogers, and Tukey, *Robust Estimates of Location*, Princeton, 1972) as proving ground; efficient alternatives are P. J. Rousseeuw and C. Croux (*J. Amer. Statist. Assoc.* **88** (1993), 1273–1283).",
+      "keys": [
+        "mmy2019",
+        "hampel1974",
+        "andrews-etal1972",
+        "rousseeuw-croux1993"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "median absolute deviation",
+      "dispersion estimator"
+    ]
   }
 ]

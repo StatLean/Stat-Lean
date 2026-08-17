@@ -1,0 +1,25 @@
+{
+  "root": "StatLean.RobustStatistics.breakdownCount",
+  "nodes": [
+    {"id":"StatLean.RobustStatistics.breakdownCount","label":"breakdownCount","full":"StatLean.RobustStatistics.breakdownCount","kind":"root","decl":"def","module":"StatLean.RobustStatistics.Core.BreakdownPoint"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"setOf","label":"setOf","full":"setOf","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"StatLean.RobustStatistics.Resists","label":"Resists","full":"StatLean.RobustStatistics.Resists","kind":"repo","decl":"def","module":"StatLean.RobustStatistics.Core.BreakdownPoint"},
+    {"id":"hammingDist","label":"hammingDist","full":"hammingDist","kind":"mathlib","decl":"def","module":"Mathlib.InformationTheory.Hamming"},
+    {"id":"Fin.fintype","label":"fintype","full":"Fin.fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Basic"},
+    {"id":"Real.decidableEq","label":"decidableEq","full":"Real.decidableEq","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"abs","label":"abs","full":"abs","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Order.Group.Unbundled.Abs"},
+    {"id":"Real.lattice","label":"lattice","full":"Real.lattice","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.RobustStatistics.breakdownCount","target":"Real"},
+    {"source":"StatLean.RobustStatistics.breakdownCount","target":"setOf"},
+    {"source":"StatLean.RobustStatistics.breakdownCount","target":"StatLean.RobustStatistics.Resists"},
+    {"source":"StatLean.RobustStatistics.Resists","target":"Real"},
+    {"source":"StatLean.RobustStatistics.Resists","target":"hammingDist"},
+    {"source":"StatLean.RobustStatistics.Resists","target":"Fin.fintype"},
+    {"source":"StatLean.RobustStatistics.Resists","target":"Real.decidableEq"},
+    {"source":"StatLean.RobustStatistics.Resists","target":"abs"},
+    {"source":"StatLean.RobustStatistics.Resists","target":"Real.lattice"}
+  ]
+}

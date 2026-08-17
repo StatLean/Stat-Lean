@@ -22,6 +22,7 @@ export const TEXTBOOK_KEYS = new Set([
   "lehmann-romano2022",
   "lehmann-casella1998",
   "gentle2002",
+  "mmy2019",
 ]);
 
 export function isTextbook(key: string): boolean {
@@ -183,6 +184,19 @@ const CHAPTER_TITLES: Record<string, Record<number, string>> = {
     9: "Nonparametric Estimation of Probability Density Functions",
     10: "Structure in Data",
     11: "Statistical Models of Dependencies",
+  },
+  "mmy2019": {
+    1: "Introduction",
+    2: "Location and Scale",
+    3: "Measuring Robustness",
+    4: "Linear Regression 1",
+    5: "Linear Regression 2",
+    6: "Multivariate Analysis",
+    7: "Generalized Linear Models",
+    8: "Time Series",
+    9: "Numerical Algorithms",
+    10: "Asymptotic Theory of M-estimators",
+    11: "Description of Datasets",
   },
   "tsybakov2009": {
     1: "Nonparametric Estimators",
