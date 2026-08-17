@@ -1,4 +1,6 @@
 import StatLean.RobustStatistics.LocationScale.Huber
+import StatLean.RobustStatistics.LocationScale.MLocation
+import StatLean.RobustStatistics.MEstimation.MLocationFunctional
 import Mathlib.Analysis.Convex.Function
 import Mathlib.Analysis.Calculus.Deriv.Pow
 
@@ -193,5 +195,112 @@ theorem huberRegression_score_leverage_unbounded {c : ℝ} (hc : 0 < c) (β : �
   have heq : (max B 0 / c + 1) * c = max B 0 + c := by field_simp
   rw [heq]
   linarith [le_max_left B 0]
+
+/-! ### Regression quantiles (`MMY §4.8`; Koenker–Bassett 1978)
+
+The check loss `ρ_α(x) = αx` for `x ≥ 0` and `−(1−α)x` for `x < 0` (`MMY §4.8`, the
+opening display) turns the M-regression framework into **quantile regression**: the
+regression `α`-quantile is the M-regression estimate for `ρ_α` (`MMY (4.68)`), the case
+`α = 1/2` is the L₁ (median) regression estimator, and at the location level the check
+loss is minimized by the sample `α`-quantile (`MMY §4.8`, citing Problem 2.13). The
+loss is implemented in max form, `ρ_α(x) = max(αx, (α−1)x)`, which exposes convexity as
+a maximum of linear functions and equals the book's case split. -/
+
+/-- **The check (pinball) loss** `ρ_α(x) = max(αx, (α−1)x)` (`MMY §4.8`, opening
+display): `αx` for `x ≥ 0`, `(α−1)x = −(1−α)x` for `x < 0`. -/
+def checkLoss (α x : ℝ) : ℝ := max (α * x) ((α - 1) * x)
+
+/-- The max form agrees with the book's case split (for `0 ≤ α ≤ 1`). -/
+theorem checkLoss_eq_ite {α : ℝ} (hα0 : 0 ≤ α) (hα1 : α ≤ 1) (x : ℝ) :
+    checkLoss α x = if 0 ≤ x then α * x else -(1 - α) * x := by
+  sorry
+
+/-- The check loss is nonnegative for `α ∈ [0, 1]`. -/
+theorem checkLoss_nonneg {α : ℝ} (hα0 : 0 ≤ α) (hα1 : α ≤ 1) (x : ℝ) :
+    0 ≤ checkLoss α x := by
+  sorry
+
+/-- **The median case**: `ρ_{1/2}(x) = |x|/2` (`MMY §4.8`, "the case `α = 0.5`
+corresponds to the L₁ estimator"). -/
+theorem checkLoss_half (x : ℝ) : checkLoss (1 / 2) x = |x| / 2 := by
+  sorry
+
+/-- The check loss is convex — a maximum of two linear functions. -/
+theorem checkLoss_convex (α : ℝ) : ConvexOn ℝ Set.univ (checkLoss α) := by
+  sorry
+
+/-- The check loss is positively homogeneous: `ρ_α(cx) = c ρ_α(x)` for `c ≥ 0` — the
+scale-equivariance engine for quantile regression. -/
+theorem checkLoss_smul_nonneg {α c : ℝ} (hc : 0 ≤ c) (x : ℝ) :
+    checkLoss α (c * x) = c * checkLoss α x := by
+  sorry
+
+/-- **The regression `α`-quantile** (`MMY (4.68)`; Koenker–Bassett 1978): an
+M-regression estimate for the check loss. -/
+def IsQuantileRegressionEstimate (α : ℝ) (X : Fin n → Fin p → ℝ) (y : Fin n → ℝ)
+    (β : Fin p → ℝ) : Prop :=
+  IsMRegressionEstimate (checkLoss α) X y β
+
+/-- The quantile-regression objective is convex in `β` (`MMY §4.8` context; instance of
+`mRegression_objective_convex`). -/
+theorem quantileRegression_objective_convex (α : ℝ) (X : Fin n → Fin p → ℝ)
+    (y : Fin n → ℝ) :
+    ConvexOn ℝ Set.univ
+      (fun b : Fin p → ℝ => ∑ i, checkLoss α (y i - ∑ j, X i j * b j)) := by
+  sorry
+
+/-- **Regression equivariance of the regression quantile** (`MMY (4.48)` applied at
+`ρ_α`; instance of `isMRegressionEstimate_regressionEquivariant`). -/
+theorem isQuantileRegressionEstimate_regressionEquivariant {α : ℝ}
+    {X : Fin n → Fin p → ℝ} {y : Fin n → ℝ} {β γ : Fin p → ℝ}
+    (h : IsQuantileRegressionEstimate α X y β) :
+    IsQuantileRegressionEstimate α X (fun i => y i + ∑ j, X i j * γ j) (β + γ) := by
+  sorry
+
+/-- **Scale equivariance of the regression quantile** (`MMY §4.9.1`, "scale
+equivariance (4.16)", via positive homogeneity of the check loss): scaling the
+responses by `c > 0` scales the estimate by `c`, *at the same quantile level* `α`. -/
+theorem isQuantileRegressionEstimate_scaleEquivariant {α c : ℝ} (hc : 0 < c)
+    {X : Fin n → Fin p → ℝ} {y : Fin n → ℝ} {β : Fin p → ℝ}
+    (h : IsQuantileRegressionEstimate α X y β) :
+    IsQuantileRegressionEstimate α X (fun i => c * y i) (fun j => c * β j) := by
+  sorry
+
+/-- **Median regression is L₁ regression** (`MMY §4.8`, "the case `α = 0.5` corresponds
+to the L₁ estimator" — cf. §4.5.1): at `α = 1/2` the quantile-regression estimates are
+exactly the least-absolute-deviations estimates (the objectives differ by the positive
+factor `1/2`). -/
+theorem isQuantileRegressionEstimate_half_iff {X : Fin n → Fin p → ℝ} {y : Fin n → ℝ}
+    {β : Fin p → ℝ} :
+    IsQuantileRegressionEstimate (1 / 2) X y β ↔
+      IsMRegressionEstimate (fun u => |u|) X y β := by
+  sorry
+
+/-- **The sample `α`-quantile minimizes the check loss** (`MMY §4.8`, "the solution of
+`∑ ρ_α(yᵢ − μ) = min` is the sample `α`-quantile", citing Problem 2.13): the order
+statistic at rank `⌈αn⌉` is a location M-estimate for the check loss. Stated for the
+strict interior case `0 < α < 1` with the rank supplied as a `Fin`-index. -/
+theorem checkLoss_orderStat_isMLocationEstimate {α : ℝ} (hα0 : 0 < α) (hα1 : α < 1)
+    (hn : n ≠ 0) (x : Fin n → ℝ) {r : Fin n}
+    -- USER-INPUT: the rank is the α-quantile rank ⌈αn⌉ (0-indexed: ⌈αn⌉ − 1);
+    -- MMY §4.8 / Problem 2.13
+    (hr : (r : ℕ) + 1 = ⌈α * n⌉₊) :
+    IsMLocationEstimate (checkLoss α)
+      x (StatLean.MultipleTesting.orderStat x r) := by
+  sorry
+
+/-- **The population `α`-quantile solves the check-loss estimating equation**
+(`MMY §4.8`, "the solution of `E ρ_α(y − μ) = min` is an `α`-quantile of `y`",
+first-order form): for an atomless law, `θ` is a root of the check-loss score
+`ψ_α(u) = α − 1{u < 0}` iff `P(−∞, θ] = α`. The score is the a.e. derivative of
+`ρ_α`. -/
+theorem isMLocationRoot_checkScore_iff {P : Measure ℝ} [IsProbabilityMeasure P]
+    {α θ : ℝ}
+    -- USER-INPUT: atomless law (so the quantile is characterized exactly); MMY §4.8
+    -- (implicit in "an α-quantile")
+    (hatom : ∀ t : ℝ, P {t} = 0) :
+    IsMLocationRoot (fun u => α - if u < 0 then 1 else 0) P θ ↔
+      P.real (Set.Iic θ) = α := by
+  sorry
 
 end StatLean.RobustStatistics
