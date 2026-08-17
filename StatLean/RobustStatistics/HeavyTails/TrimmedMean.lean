@@ -54,6 +54,14 @@ heavy-tailed distributions — a survey*, Found. Comput. Math. (2019); arXiv:190
   (that of the parametrised integral). What is left is block independence, the product
   form of the joint law, `Measure.prod_apply`, and measurability of order statistics
   (`measurable_orderStat`, from the counting characterisation).
+
+**Bibliographic comments.** Trimming is among the oldest robust devices (Tukey and
+McLaughlin, *Sankhyā Ser. A* **25** (1963), 331–352; Bickel, *Ann. Math. Statist.* **36**
+(1965), 847–858; Stigler, *Ann. Statist.* **1** (1973), 472–477), but its *non-asymptotic
+sub-Gaussian* property at confidence-calibrated trim depth is recent: R. I. Oliveira and
+P. Orenstein, *The sub-Gaussian property of trimmed means* (2019); the multivariate,
+adversarially-contaminated optimality is Lugosi and Mendelson, "Robust multivariate mean
+estimation: the optimality of trimmed mean," *Ann. Statist.* **49** (2021), 393–410.
 -/
 
 open MeasureTheory Filter Topology ProbabilityTheory
