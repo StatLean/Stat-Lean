@@ -1,0 +1,23 @@
+{
+  "root": "StatLean.StatisticalModels.FactorModels.rank_commonCovariance_le",
+  "nodes": [
+    {"id":"StatLean.StatisticalModels.FactorModels.rank_commonCovariance_le","label":"rank_commonCovariance_le","full":"StatLean.StatisticalModels.FactorModels.rank_commonCovariance_le","kind":"root","decl":"thm","module":"StatLean.StatisticalModels.FactorModels.Moments"},
+    {"id":"StatLean.StatisticalModels.FactorModels.FactorParams","label":"FactorParams","full":"StatLean.StatisticalModels.FactorModels.FactorParams","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.FactorModels.Defs"},
+    {"id":"StatLean.StatisticalModels.FactorModels.commonCovariance","label":"commonCovariance","full":"StatLean.StatisticalModels.FactorModels.commonCovariance","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.FactorModels.Defs"},
+    {"id":"StatLean.StatisticalModels.FactorModels.commonCovariance_eq","label":"commonCovariance_eq","full":"StatLean.StatisticalModels.FactorModels.commonCovariance_eq","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.FactorModels.Defs"},
+    {"id":"LE.le.trans","label":"trans","full":"LE.le.trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
+    {"id":"Matrix.rank_mul_le_left","label":"rank_mul_le_left","full":"Matrix.rank_mul_le_left","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.Rank"},
+    {"id":"Matrix.rank_le_width","label":"rank_le_width","full":"Matrix.rank_le_width","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.Rank"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalModels.FactorModels.rank_commonCovariance_le","target":"StatLean.StatisticalModels.FactorModels.FactorParams"},
+    {"source":"StatLean.StatisticalModels.FactorModels.rank_commonCovariance_le","target":"StatLean.StatisticalModels.FactorModels.commonCovariance"},
+    {"source":"StatLean.StatisticalModels.FactorModels.rank_commonCovariance_le","target":"StatLean.StatisticalModels.FactorModels.commonCovariance_eq"},
+    {"source":"StatLean.StatisticalModels.FactorModels.rank_commonCovariance_le","target":"LE.le.trans"},
+    {"source":"StatLean.StatisticalModels.FactorModels.rank_commonCovariance_le","target":"Matrix.rank_mul_le_left"},
+    {"source":"StatLean.StatisticalModels.FactorModels.rank_commonCovariance_le","target":"Matrix.rank_le_width"},
+    {"source":"StatLean.StatisticalModels.FactorModels.commonCovariance","target":"StatLean.StatisticalModels.FactorModels.FactorParams"},
+    {"source":"StatLean.StatisticalModels.FactorModels.commonCovariance_eq","target":"StatLean.StatisticalModels.FactorModels.FactorParams"},
+    {"source":"StatLean.StatisticalModels.FactorModels.commonCovariance_eq","target":"StatLean.StatisticalModels.FactorModels.commonCovariance"}
+  ]
+}
