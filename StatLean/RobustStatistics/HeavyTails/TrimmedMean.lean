@@ -969,6 +969,191 @@ theorem truncated_bias_le {μ₀ σ2 : ℝ} {r n : ℕ} {α β : ℝ}
     show 32 * (r:ℝ) / n = 32 * ((r:ℝ) / n) by ring]
   linarith
 
+/-! ### Where the truncation levels sit, and how wide the truncated variable is
+
+Chebyshev locates the quantiles within `σ/√p` of the mean, so a bracketed truncation
+interval has width at most `2σ√(2n/r)` — the `M ≤ σ√(2/ε)` of `LM`'s Theorem 6 proof. That
+width is the Bernstein scale of the truncated average; its variance is at most `σ²`
+because truncation is a contraction. -/
+
+/-- **Chebyshev's inequality** at the population level, in the form used below. -/
+private theorem chebyshev_tail {μ₀ σ2 c : ℝ} (hL2 : MemLp id 2 P) (hmean : ∫ x, x ∂P = μ₀)
+    (hvar : ∫ x, (x - μ₀) ^ 2 ∂P = σ2) (hc : 0 < c) :
+    P.real {x : ℝ | c ≤ |x - μ₀|} ≤ σ2 / c ^ 2 := by
+  have hL2' : MemLp (fun x : ℝ => x) 2 P := hL2
+  have hsqint : Integrable (fun x : ℝ => (x - μ₀) ^ 2) P :=
+    (hL2'.sub (memLp_const μ₀)).integrable_sq
+  have hmeas : MeasurableSet {x : ℝ | c ≤ |x - μ₀|} :=
+    measurableSet_le measurable_const (measurable_id.sub_const μ₀).abs
+  have hind : Integrable
+      (fun x => ({x : ℝ | c ≤ |x - μ₀|}).indicator (fun _ => c ^ 2) x) P :=
+    (integrable_const (c ^ 2)).indicator hmeas
+  have hptw : ∀ x : ℝ,
+      ({x : ℝ | c ≤ |x - μ₀|}).indicator (fun _ => c ^ 2) x ≤ (x - μ₀) ^ 2 := by
+    intro x
+    by_cases hx : x ∈ {x : ℝ | c ≤ |x - μ₀|}
+    · rw [Set.indicator_of_mem hx]
+      have h : c ≤ |x - μ₀| := hx
+      nlinarith [abs_nonneg (x - μ₀), sq_abs (x - μ₀)]
+    · rw [Set.indicator_of_notMem hx]
+      positivity
+  have hle := integral_mono hind hsqint hptw
+  rw [integral_indicator_const (c ^ 2) hmeas, smul_eq_mul, hvar] at hle
+  rw [le_div_iff₀ (by positivity)]
+  linarith
+
+/-- **Chebyshev locates the quantiles** (`LM Theorem 6` proof): `Q_{1−p} ≤ μ₀ + σ/√p`. -/
+private theorem quantile_upper_le {μ₀ σ2 p : ℝ} (hL2 : MemLp id 2 P) (hmean : ∫ x, x ∂P = μ₀)
+    (hvar : ∫ x, (x - μ₀) ^ 2 ∂P = σ2) (hσ : 0 < σ2) (hp : 0 < p) (hp1 : p < 1) :
+    quantile P (1 - p) ≤ μ₀ + Real.sqrt (σ2 / p) := by
+  refine csSup_le (quantile_set_nonempty_bddAbove P (by linarith) (by linarith)).1 ?_
+  intro M hM
+  have hM' : 1 - (1 - p) ≤ P.real {x : ℝ | M ≤ x} := hM
+  rcases le_or_gt M μ₀ with hle | hlt
+  · have : 0 ≤ Real.sqrt (σ2 / p) := Real.sqrt_nonneg _
+    linarith
+  · have hsub : {x : ℝ | M ≤ x} ⊆ {x : ℝ | (M - μ₀) ≤ |x - μ₀|} := by
+      intro x hx
+      simp only [Set.mem_setOf_eq] at hx ⊢
+      exact le_trans (by linarith) (le_abs_self (x - μ₀))
+    have hcheb := chebyshev_tail hL2 hmean hvar (show (0:ℝ) < M - μ₀ by linarith)
+    have hmono : P.real {x : ℝ | M ≤ x} ≤ P.real {x : ℝ | M - μ₀ ≤ |x - μ₀|} :=
+      measureReal_mono hsub
+    have hchain : p ≤ σ2 / (M - μ₀) ^ 2 := by linarith
+    have hsq : (M - μ₀) ^ 2 ≤ σ2 / p := by
+      rw [le_div_iff₀ hp, ← sub_nonneg]
+      rw [le_div_iff₀ (pow_pos (by linarith : (0:ℝ) < M - μ₀) 2)] at hchain
+      linarith
+    have : M - μ₀ ≤ Real.sqrt (σ2 / p) := by
+      calc M - μ₀ = Real.sqrt ((M - μ₀) ^ 2) := (Real.sqrt_sq (by linarith)).symm
+        _ ≤ Real.sqrt (σ2 / p) := Real.sqrt_le_sqrt hsq
+    linarith
+
+/-- **Chebyshev locates the quantiles** (`LM Theorem 6` proof): `μ₀ − σ/√p ≤ Q_p`. -/
+private theorem le_quantile_lower {μ₀ σ2 p : ℝ} (hL2 : MemLp id 2 P) (hmean : ∫ x, x ∂P = μ₀)
+    (hvar : ∫ x, (x - μ₀) ^ 2 ∂P = σ2) (hσ : 0 < σ2) (hp : 0 < p) (hp1 : p < 1) :
+    μ₀ - Real.sqrt (σ2 / p) ≤ quantile P p := by
+  refine le_csSup (quantile_set_nonempty_bddAbove P hp hp1).2 ?_
+  change 1 - p ≤ P.real {x : ℝ | μ₀ - Real.sqrt (σ2 / p) ≤ x}
+  have hspos : 0 < Real.sqrt (σ2 / p) := Real.sqrt_pos.2 (by positivity)
+  have hcheb := chebyshev_tail hL2 hmean hvar hspos
+  have hsq : Real.sqrt (σ2 / p) ^ 2 = σ2 / p := Real.sq_sqrt (by positivity)
+  have hsub : {x : ℝ | μ₀ - Real.sqrt (σ2 / p) ≤ x}ᶜ
+      ⊆ {x : ℝ | Real.sqrt (σ2 / p) ≤ |x - μ₀|} := by
+    intro x hx
+    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hx ⊢
+    rw [abs_sub_comm]
+    exact le_trans (by linarith) (le_abs_self (μ₀ - x))
+  have hcompl : P.real {x : ℝ | μ₀ - Real.sqrt (σ2 / p) ≤ x}ᶜ
+      ≤ P.real {x : ℝ | Real.sqrt (σ2 / p) ≤ |x - μ₀|} := measureReal_mono hsub
+  rw [measureReal_compl (μ := P) (s := {x : ℝ | μ₀ - Real.sqrt (σ2 / p) ≤ x})
+    measurableSet_Ici] at hcompl
+  simp only [probReal_univ] at hcompl
+  rw [hsq, show σ2 / (σ2 / p) = p by field_simp] at hcheb
+  linarith
+
+/-- Truncation is a contraction: `|φ(x) − φ(y)| ≤ |x − y|`. -/
+private theorem truncate_lipschitz (a b x y : ℝ) :
+    |truncate a b x - truncate a b y| ≤ |x - y| := by
+  have h1 := le_abs_self (x - y)
+  have h2 := neg_abs_le (x - y)
+  rw [truncate, truncate, abs_le]
+  constructor <;>
+    · simp only [max_def, min_def]
+      split_ifs <;> linarith
+
+/-! ### Bernstein for a bounded transform of the sample
+
+The truncated average is an average of i.i.d. variables bounded by the width of the
+truncation interval, with variance at most `σ²`. That is exactly the regime Bernstein's
+inequality is for: the huge range `σ√(n/r)` enters only through the scale `b`, multiplied
+by the (small) deviation `t`. -/
+
+open scoped ENNReal NNReal in
+/-- **Bernstein for a bounded transform**: if `|g − c| ≤ B` with `∫g = c` and variance `v`,
+the centred average of `g(Xᵢ)` has the Bernstein upper tail with scale `b = B/3`. -/
+private theorem bounded_bernstein_upper {n : ℕ} {X : Fin n → Ξ → ℝ} {g : ℝ → ℝ} {c B v t : ℝ}
+    (hX_meas : ∀ i, Measurable (X i)) (hX_indep : iIndepFun X μprob)
+    (hX_law : ∀ i, μprob.map (X i) = P) (hgm : Measurable g)
+    (hgb : ∀ x, |g x - c| ≤ B) (hB : 0 < B)
+    (hgmean : ∫ x, g x ∂P = c) (hgvar : ∫ x, (g x - c) ^ 2 ∂P = v) (hv : 0 < v)
+    (hn : 0 < n) (ht : 0 < t) :
+    μprob {ξ | t < (∑ i, (g (X i ξ) - c)) / n}
+      ≤ ENNReal.ofReal (Real.exp (-(n : ℝ) * t ^ 2 / (2 * (v + B / 3 * t)))) := by
+  have hgcm : Measurable (fun x => g x - c) := hgm.sub measurable_const
+  have hgcint : Integrable (fun x => g x - c) P := by
+    refine Integrable.mono' (integrable_const B) hgcm.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [Real.norm_eq_abs]
+    exact hgb x
+  have hg2int : Integrable (fun x => (g x - c) ^ 2) P := by
+    refine Integrable.mono' (integrable_const (B ^ 2)) (hgcm.pow_const 2).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+    nlinarith [hgb x, abs_nonneg (g x - c), sq_abs (g x - c)]
+  have hgint : Integrable g P := by
+    refine (hgcint.add (integrable_const c)).congr (Filter.Eventually.of_forall fun x => ?_)
+    show g x - c + c = g x
+    ring
+  have hmean0 : ∫ x, (g x - c) ∂P = 0 := by
+    rw [integral_sub hgint (integrable_const c), hgmean, integral_const]
+    simp
+  have htr : ∀ f : ℝ → ℝ, Measurable f → ∀ i, ∫ ξ, f (X i ξ) ∂μprob = ∫ x, f x ∂P := by
+    intro f hf i
+    rw [← hX_law i]
+    exact (integral_map (hX_meas i).aemeasurable hf.aestronglyMeasurable).symm
+  have htrL : ∀ f : ℝ → ℝ≥0∞, Measurable f → ∀ i,
+      ∫⁻ ξ, f (X i ξ) ∂μprob = ∫⁻ x, f x ∂P := by
+    intro f hf i
+    rw [← hX_law i]
+    exact (lintegral_map hf (hX_meas i)).symm
+  have hBc : ∀ i, ConcentrationInequalities.HasBernsteinCondition
+      (fun ξ => g (X i ξ) - c) (⟨v, hv.le⟩ : ℝ≥0) (⟨B / 3, by positivity⟩ : ℝ≥0) μprob := by
+    intro i
+    refine ⟨by rw [htr _ hgcm i]; exact hmean0, by
+      rw [htr (fun x => (g x - c) ^ 2) (hgcm.pow_const 2) i]; exact hgvar, ?_⟩
+    intro k hk
+    have hpt : ∀ ξ : Ξ, |g (X i ξ) - c| ^ k ≤ (g (X i ξ) - c) ^ 2 * B ^ (k - 2) := by
+      intro ξ
+      calc |g (X i ξ) - c| ^ k
+          = |g (X i ξ) - c| ^ 2 * |g (X i ξ) - c| ^ (k - 2) := by
+            rw [← pow_add]; congr 1; omega
+        _ ≤ |g (X i ξ) - c| ^ 2 * B ^ (k - 2) := by
+            gcongr
+            exact hgb _
+        _ = (g (X i ξ) - c) ^ 2 * B ^ (k - 2) := by rw [sq_abs]
+    calc ∫⁻ ξ, ENNReal.ofReal (|g (X i ξ) - c| ^ k) ∂μprob
+        ≤ ∫⁻ ξ, ENNReal.ofReal ((g (X i ξ) - c) ^ 2 * B ^ (k - 2)) ∂μprob :=
+          lintegral_mono fun ξ => ENNReal.ofReal_le_ofReal (hpt ξ)
+      _ = ENNReal.ofReal (v * B ^ (k - 2)) := by
+          rw [htrL (fun x => ENNReal.ofReal ((g x - c) ^ 2 * B ^ (k - 2)))
+            (ENNReal.measurable_ofReal.comp ((hgcm.pow_const 2).mul_const _)) i,
+            ← ofReal_integral_eq_lintegral_ofReal (hg2int.mul_const _)
+              (Filter.Eventually.of_forall fun x => by positivity),
+            integral_mul_const, hgvar]
+      _ ≤ ENNReal.ofReal ((⟨v, hv.le⟩ : ℝ≥0) / 2 * (k.factorial : ℝ)
+            * ((⟨B / 3, by positivity⟩ : ℝ≥0) : ℝ) ^ (k - 2)) := by
+          refine ENNReal.ofReal_le_ofReal ?_
+          have hfac : (2 : ℝ) * 3 ^ (k - 2) ≤ (k.factorial : ℝ) := by
+            exact_mod_cast two_mul_three_pow_le_factorial hk
+          have h3 : (B / 3) ^ (k - 2) = B ^ (k - 2) / 3 ^ (k - 2) := by
+            rw [div_pow]
+          have hp3 : (0:ℝ) < (3:ℝ) ^ (k - 2) := by positivity
+          have hpB : (0:ℝ) < B ^ (k - 2) := by positivity
+          rw [h3, show v / 2 * (k.factorial : ℝ) * (B ^ (k - 2) / 3 ^ (k - 2))
+              = (v * B ^ (k - 2)) * ((k.factorial : ℝ) / (2 * 3 ^ (k - 2))) by
+            field_simp]
+          have hone : (1:ℝ) ≤ (k.factorial : ℝ) / (2 * 3 ^ (k - 2)) :=
+            (one_le_div (by positivity)).mpr hfac
+          nlinarith [mul_nonneg hv.le hpB.le, hone]
+  have hbern := ConcentrationInequalities.bernstein_inequality
+    (X := fun i ξ => g (X i ξ) - c) (μ := μprob) (fun i => (hgcm.comp (hX_meas i)))
+    (hX_indep.comp (fun _ => fun x : ℝ => g x - c) (fun _ => hgcm)) hBc hn
+    (by rw [← NNReal.coe_pos]; simp; positivity)
+    (by rw [← NNReal.coe_pos]; simpa using hv) ht
+  refine le_trans hbern (le_of_eq ?_)
+  congr 2
+
 open StatLean.MultipleTesting in
 /-- **The trimmed mean is sub-Gaussian** (`LM Theorem 6`): two independent i.i.d.
 samples of size `n` (presented as one jointly independent family on `Fin n ⊕ Fin n`;
