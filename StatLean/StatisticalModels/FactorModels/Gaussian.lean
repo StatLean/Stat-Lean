@@ -9,8 +9,7 @@ observed law is again Gaussian.
 * `gaussianFactorModel` — the model map `P ↦ factorLaw P (N(0, Φ)) (N(0, Ψ))`, i.e. the
   parameter-to-law map of the normal factor model. This is the family the identifiability
   statements of `FactorModels.Identifiability` are stated against;
-* **`factorLaw_multivariateGaussian`** — `x ∼ N_p(μ, Λ Φ Λᵀ + Ψ)` (`BKM` Eq. (3.5) at
-  `Φ = I`), a corollary of `MixedEffects.lmmLaw_multivariateGaussian` through the bridge;
+* **`factorLaw_multivariateGaussian`** — `x ∼ N_p(μ, Λ Φ Λᵀ + Ψ)` (`BKM` Eq. (3.5) at `Φ = I`);
 * `realizesFactorParams_gaussian` — the Gaussian instantiation does realize the parameters,
   so all of `FactorModels.Moments` applies to it unconditionally;
 * `factorLaw_conditional_multivariateGaussian` — the conditional model `x ∣ y ∼ N_p(μ + Λ y,
@@ -20,10 +19,8 @@ observed law is again Gaussian.
 Analysis: A Unified Approach*, 3rd ed., Wiley, 2011, Eq. (3.1) (`x ∣ y ∼ N_p(μ + Λ y, Ψ)`),
 Eq. (3.2) (`y ∼ N_q(0, I)`), Eq. (3.3), Eq. (3.5) (`x ∼ N_p(μ, Λ Λ′ + Ψ)`) (`BKM`).
 
-**Proof formalization notes.** Pure transport: `Bridge.factorLaw_eq_lmmLaw` followed by
-`MixedEffects.lmmLaw_multivariateGaussian` at `Z = Λ`, `X = 1`, plus
-`toEuclideanLin_one_apply` to turn `toEuclideanLin 1 μ` into `μ`. *Junk values:*
-`multivariateGaussian m S` is `Measure.dirac m` when `S` is not positive semidefinite, so
+**Proof formalization notes.** *Junk values:* `multivariateGaussian m S` is
+`Measure.dirac m` when `S` is not positive semidefinite, so
 every statement carries `IsProperFactorParams` (or the individual PSD hypotheses)
 explicitly — without them `gaussianFactorModel` silently degenerates and, in particular, does
 **not** have covariance `factorCovariance P`. *Book vs Lean:* `BKM` Eq. (3.5) is the
@@ -72,8 +69,7 @@ theorem measurementKernel_multivariateGaussian (P : FactorParams p q)
   abel
 
 /-- **HEADLINE — `BKM` Eq. (3.5), general `Φ`**: the Gaussian factor model has observed law
-`x ∼ N_p(μ, Λ Φ Λᵀ + Ψ)`. A corollary of `MixedEffects.lmmLaw_multivariateGaussian` through
-the bridge. -/
+`x ∼ N_p(μ, Λ Φ Λᵀ + Ψ)`. -/
 theorem factorLaw_multivariateGaussian (P : FactorParams p q)
     -- USER-INPUT: genuine covariance parameters; BKM Eq. (3.1)–(3.2)
     (hΦ : P.factorCov.PosSemidef) (hΨ : P.uniqueCov.PosSemidef) :

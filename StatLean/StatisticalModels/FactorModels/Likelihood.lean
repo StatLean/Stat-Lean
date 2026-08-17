@@ -16,13 +16,11 @@ is the ordinary multivariate normal likelihood evaluated at the structured covar
   `−(p/2)log 2π − ½ log det S − ½ (x−m)ᵀ S⁻¹ (x−m)`;
 * `factorLogLik P x` — the factor model's observed-data log-likelihood contribution at `x`,
   *defined* as `gaussianLogDensity μ (factorCovariance P) x`, and tied to the actual law by
-  `factorLaw_eq_withDensity_exp_factorLogLik` (the density theorem — the one genuinely new
-  analytic statement in this file);
+  `factorLaw_eq_withDensity_exp_factorLogLik` (the density theorem);
 * `factorLogLikSample P x` — the log-likelihood of an i.i.d. sample `x : Fin n → ℝᵖ`;
 * **`factorLogLik_rotateParams`** — the likelihood is invariant under every nonsingular
-  reparameterization of the latent space; this is an immediate corollary of
-  `Rotation.factorCovariance_rotateParams` and is the precise sense in which maximum
-  likelihood cannot select a rotation (`BKM` §3.3, p. 50; §3.13.1).
+  reparameterization of the latent space, the precise sense in which maximum likelihood
+  cannot select a rotation (`BKM` §3.3, p. 50; §3.13.1).
 
 **Reference.** D. Bartholomew, M. Knott, and I. Moustaki, *Latent Variable Models and Factor
 Analysis: A Unified Approach*, 3rd ed., Wiley, 2011, Eq. (3.5) (the marginal law whose
@@ -31,15 +29,12 @@ density this is), Eq. (3.12) (`Σ = Λ Λ′ + Ψ`), §3.3, p. 50 (requiring `Λ
 D. N. Lawley, "The estimation of factor loadings by the method of maximum likelihood,"
 *Proc. Roy. Soc. Edinburgh* **60** (1940), 64–82 (`Law40`).
 
-**Proof formalization notes.** The rotation invariance is one rewrite by
-`Rotation.factorCovariance_rotateParams` — the whole point of stating the likelihood as a
-function of `(μ, Σ)`. The density theorem is the only real analytic content: the pin's
-`multivariateGaussian` is defined through `stdGaussian` and its Lebesgue density is **not** in
-Mathlib, so `factorLaw_eq_withDensity_exp_factorLogLik` is a named debt (route: the Gaussian
-law is the affine image of `stdGaussian` under `S^{1/2}`, `Gaussian.multivariateGaussian_map_affine`
-plus the change-of-variables formula `MeasureTheory.Measure.map_withDensity_eq_withDensity_...`
-for a linear isomorphism, with `volume` on `EuclideanSpace ℝ (Fin p)` the standard
-orthonormal-basis Haar measure). *Junk values:* `Matrix.det` of a singular `Σ` is `0` and
+**Proof formalization notes.** The rotation invariance is one rewrite of the covariance —
+the whole point of stating the likelihood as a function of `(μ, Σ)`. The density theorem is
+the real analytic content: the Gaussian law is the affine image of `stdGaussian` under
+`S^{1/2}`, so the change-of-variables formula for a linear isomorphism produces the classical
+Lebesgue density, with `volume` on `EuclideanSpace ℝ (Fin p)` the standard
+orthonormal-basis Haar measure. *Junk values:* `Matrix.det` of a singular `Σ` is `0` and
 `Real.log 0 = 0`, and `Matrix.inv` is `0`, so `gaussianLogDensity` is finite nonsense at a
 degenerate `Σ`; every statement about it as a likelihood carries `(factorCovariance P).PosDef`.
 *Book vs Lean:* `BKM` writes the likelihood at `Φ = I`; the general-`Φ` form here specializes
@@ -64,9 +59,7 @@ variable {p q : ℕ}
 `−(p/2) log 2π − ½ log det S − ½ (x−m)ᵀ S⁻¹ (x−m)`.
 
 *Edge behavior:* at a singular `S` this is finite nonsense (`Matrix.det S = 0` with
-`Real.log 0 = 0`, and `S⁻¹ = 0`); it represents a density only under `S.PosDef`. Stated in
-the `FactorModels` namespace because the Gaussian slice has no likelihood file yet;
-promoting it to `StatisticalModels.Gaussian` is a laptop follow-up. -/
+`Real.log 0 = 0`, and `S⁻¹ = 0`); it represents a density only under `S.PosDef`. -/
 noncomputable def gaussianLogDensity (m : EuclideanSpace ℝ (Fin p))
     (S : Matrix (Fin p) (Fin p) ℝ) (x : EuclideanSpace ℝ (Fin p)) : ℝ :=
   -(p / 2 : ℝ) * Real.log (2 * Real.pi) - (1 / 2 : ℝ) * Real.log S.det
@@ -88,11 +81,10 @@ noncomputable def factorLogLikSample {n : ℕ} (P : FactorParams p q)
     (x : Fin n → EuclideanSpace ℝ (Fin p)) : ℝ :=
   ∑ i, factorLogLik P (x i)
 
-/-! ### The Lebesgue density of the multivariate Gaussian (debt D-F1, discharged)
+/-! ### The Lebesgue density of the multivariate Gaussian
 
-The pin defines `multivariateGaussian m S` as a pushforward of `stdGaussian` and proves no
-Lebesgue density for it, so the density theorem below is genuinely new analytic content
-rather than transport. The chain is:
+`multivariateGaussian m S` is a pushforward of `stdGaussian`, and its classical Lebesgue
+density is obtained in four steps:
 
 1. `stdGaussian_eq_withDensity` — `stdGaussian (EuclideanSpace ℝ (Fin p))` is
    `volume.withDensity ((2π)^{-p/2} exp(−‖x‖²/2))`, obtained from the product form
@@ -107,10 +99,7 @@ rather than transport. The chain is:
 4. `multivariateGaussian_eq_withDensity_exp_gaussianLogDensity` — rewrite the constant as
    `exp(−(p/2)log 2π − ½ log det S)`.
 
-`AsymptoticStatistics.ForMathlib.MultivariateGaussianDensity` proves a *constant-free*
-version of step 2 (`multivariateGaussian_eq_smul_withDensity`, with the normalizer left
-abstract) and keeps its two ingredients `private`; a likelihood needs the constant, so
-steps 1–2 are carried out here with it tracked explicitly. -/
+A likelihood needs the normalizing constant, so it is tracked explicitly throughout. -/
 
 /-- The **standard Gaussian on `EuclideanSpace ℝ (Fin p)` has the classical Lebesgue
 density** `(2π)^{-p/2} exp(−‖x‖²/2)`. -/
@@ -296,11 +285,7 @@ theorem multivariateGaussian_eq_withDensity_exp_gaussianLogDensity (p : ℕ)
 
 /-- **The density theorem** — the observed law of the normal factor model has
 `exp (factorLogLik P ·)` as its Lebesgue density, i.e. `factorLogLik` really is the
-observed-data log-likelihood and not merely a formula named after one (`BKM` Eq. (3.5)).
-
-Formerly the named debt D-F1 ("the pin has no Lebesgue density for `multivariateGaussian`");
-`multivariateGaussian_eq_withDensity_exp_gaussianLogDensity` above supplies that density, and
-this theorem is its instantiation at `(μ, Σ)` through `factorLaw_multivariateGaussian`. -/
+observed-data log-likelihood and not merely a formula named after one (`BKM` Eq. (3.5)). -/
 theorem factorLaw_eq_withDensity_exp_factorLogLik (P : FactorParams p q)
     -- USER-INPUT: genuine covariance parameters; BKM Eq. (3.1)–(3.2)
     (hP : IsProperFactorParams P)
@@ -324,10 +309,9 @@ theorem factorLogLik_congr (P P' : FactorParams p q)
 
 /-- **HEADLINE — the likelihood is rotation invariant** (`BKM` §3.3, p. 50; §3.13.1): every
 nonsingular reparameterization `Λ ↦ Λ A`, `Φ ↦ A⁻¹ Φ A⁻ᵀ` of the latent space leaves the
-observed-data log-likelihood unchanged. Immediate from
-`Rotation.factorCovariance_rotateParams`; this is why maximum likelihood determines `Λ` only
-up to rotation and why an identifying restriction (`BKM`: `Λ′Ψ⁻¹Λ` diagonal) must be
-imposed. -/
+observed-data log-likelihood unchanged, because it leaves `Σ` unchanged. This is why maximum
+likelihood determines `Λ` only up to rotation and why an identifying restriction
+(`BKM`: `Λ′Ψ⁻¹Λ` diagonal) must be imposed. -/
 theorem factorLogLik_rotateParams (P : FactorParams p q) {A : Matrix (Fin q) (Fin q) ℝ}
     -- USER-INPUT: the reparameterization is a change of basis of the latent space;
     -- BKM §2.11

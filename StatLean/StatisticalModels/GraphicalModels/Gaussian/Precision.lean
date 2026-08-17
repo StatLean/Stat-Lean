@@ -21,7 +21,7 @@ all the others is **exactly** a vanishing entry of the inverse covariance matrix
   equivalently `condCovMatrix … = (K₂₂)⁻¹` (`condCovMatrix_eq_inv_submatrix_precisionMatrix`,
   the matrix form of Lauritzen (5.10)–(5.11));
 * `submatrix_precisionMatrix_fromBlocks_inr_inl` — Lauritzen **(C.4)**, the companion identity
-  `K₂₂⁻¹ K₂₁ = −Σ₂₁Σ₁₁⁻¹` consumed by `GraphicalModels.Gaussian.Regression`;
+  `K₂₂⁻¹ K₂₁ = −Σ₂₁Σ₁₁⁻¹`;
 * `map_multivariateGaussian_fromBlocks_eq_prod_iff` — Lauritzen **Corollary C.6** in block form:
   two blocks of a regular joint Gaussian are independent iff the cross-covariance vanishes iff
   the cross-concentration vanishes;
@@ -36,8 +36,8 @@ all the others is **exactly** a vanishing entry of the inverse covariance matrix
 * **`condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero` (HEADLINE, Lauritzen
   Proposition 5.2 in block form)**: for `Σ` regular and **pairwise disjoint** blocks `A`, `B`,
   `C` with union `E`, `Y_A ⫫ Y_B ∣ Y_C ⟺ (K^E)_{AB} = 0`, where `K^E = (Σ_E)⁻¹` is the
-  concentration matrix of the marginal law of `Y_E`. This is the form the graphoid axioms of
-  `Gaussian.Model` consume, at a single `E = A ∪ B ∪ C ∪ D` shared by premises and conclusion;
+  concentration matrix of the marginal law of `Y_E`. It is stated at a single
+  `E = A ∪ B ∪ C ∪ D` shared by premises and conclusion, which is what the graphoid axioms need;
 * **`condIndepCoords_gaussianCoords_iff_precisionMatrix_eq_zero` (Lauritzen
   Proposition 5.2, p. 129)**: for `Σ` regular and `γ ≠ μ`,
   `Y_γ ⫫ Y_μ ∣ Y_{Γ∖{γ,μ}} ⟺ k_{γμ} = 0` — the instance `A = {γ}`, `B = {μ}`, `C = Γ ∖ {γ, μ}`
@@ -54,61 +54,22 @@ p. 256, the determinant identity (C.5) and Corollary C.6 on p. 257
 *Generalized versus ordinary inverse.* Lauritzen writes `Σ₂₂⁻`, "an arbitrary generalized
 inverse", in (C.2)–(C.4), but his own proof of Proposition C.5 assumes `Σ` regular and then
 `Σ₂₂⁻ = Σ₂₂⁻¹`. We state the regular case only, matching both his proof and the standing
-hypothesis of §5.1.3; the pseudoinverse form is already a named future debt of the Gaussian
-slice (D-G1 in `Gaussian/Conditioning`).
+hypothesis of §5.1.3.
 
 **Proof formalization notes.**
 
 *Book vs Lean, orientation.* Lauritzen partitions `X = (X₁, X₂)` and conditions on the
 **second** block (Proposition C.5 computes the law of `X₁` given `X₂`), so his (C.3) reads
-`K₁₁⁻¹ = Σ₁₁ − Σ₁₂Σ₂₂⁻¹Σ₂₁`. The repo's Gaussian slice conditions on the **first** block:
-`condCovMatrix S₁₁ S₁₂ S₂₂ = S₂₂ − S₁₂ᵀ S₁₁⁻¹ S₁₂` is the law of block `ι₂` given block `ι₁`
-(`Gaussian.Conditioning`). Every book identity is therefore transcribed with the two blocks
-swapped: (C.3) becomes `K₂₂ = (condCovMatrix …)⁻¹` and (C.4) becomes
-`K₂₂⁻¹ K₂₁ = −condMeanMatrix …`. Nothing else changes.
+`K₁₁⁻¹ = Σ₁₁ − Σ₁₂Σ₂₂⁻¹Σ₂₁`. Here conditioning is on the **first** block:
+`condCovMatrix S₁₁ S₁₂ S₂₂ = S₂₂ − S₁₂ᵀ S₁₁⁻¹ S₁₂` is the law of block `ι₂` given block `ι₁`.
+Every book identity is therefore transcribed with the two blocks swapped: (C.3) becomes
+`K₂₂ = (condCovMatrix …)⁻¹` and (C.4) becomes `K₂₂⁻¹ K₂₁ = −condMeanMatrix …`. Nothing else
+changes.
 
 *Book vs Lean, regularity.* Lauritzen says "`Σ` regular"; `Matrix.inv` is a junk-valued total
 function (`0` at singular matrices) and `multivariateGaussian` degenerates to a Dirac mass off
 the positive-semidefinite cone, so every statement below carries an explicit `PosDef`
 hypothesis. `PosDef` rather than `PosSemidef`: an inverse is taken in every one of them.
-
-*Routes (do not re-derive).*
-
-| Step | Consumed from |
-|---|---|
-| Schur complement of a `PosDef` block | `Matrix.PosDef.fromBlocks₁₁` (`LinearAlgebra/Matrix/PosDef.lean:541`) — note the real name is on `PosDef`, **not** `PosSemidef`, and it needs `[Invertible A]`, supplied by `Matrix.PosDef.isUnit.invertible` |
-| the four blocks of `(fromBlocks A B C D)⁻¹` | `Matrix.invOf_fromBlocks₁₁_eq` (`SchurComplement.lean:285`) + `Matrix.invOf_eq_nonsing_inv` |
-| Schur complement is invertible | `Matrix.invertibleOfFromBlocks₁₁Invertible` (`SchurComplement.lean:315`) |
-| Gaussian conditional law (exact disintegration) | `compProd_gaussianCondKernel` (G3.4, `Gaussian.Conditioning`) |
-| zero cross-block ⇒ product law | `multivariateGaussian_fromBlocks_prod` (G2.9, `Gaussian.Marginal`) — the atom of every separation proof |
-| block marginals | `multivariateGaussian_map_blockFst` / `_blockSnd` (`Gaussian.Marginal`) |
-| covariance of a Gaussian law | `covMatrix_multivariateGaussian` (`ForMathlib.CovarianceMatrix`) |
-| `Fin`/`Sum` and `ι`/`Sum` index transport | `multivariateGaussian_map_reindex` (`Gaussian.FinCorridor`) — the **only** corridor |
-
-*Route for the headline (Proposition 5.2, block form).* The analytic content is isolated in the
-private `condIndep_blockProj_iff_precisionMatrix_eq_zero`, stated on a sum index
-`κ_C ⊕ (κ_A ⊕ κ_B)` with the conditioning block first (because `compProd_gaussianCondKernel`
-conditions on the first block); the two headlines are index transports of it. Transport `S` along
-`blockSplit4` — the four-block split `(C ⊕ (A ⊕ B)) ⊕ Eᶜ ≃ Γ` built from subtype coercions, so
-that the `coords` sub-vectors of `Core.Coordinates` are *definitionally* the transported blocks —
-through `multivariateGaussian_map_reindex`, delete the `Eᶜ` block with
-`multivariateGaussian_map_blockFst` (a Gaussian marginal is the principal submatrix: this is
-where `Σ_E` comes from), and re-read the conditional independence on the marginalised law with
-`Core.CondIndep.condIndep_congr_law`. Inside the core lemma:
-1. `compProd_gaussianCondKernel` writes the law as `N(m_C, Σ_CC) ⊗ₘ gaussianCondKernel …`, whose
-   conditional covariance `condCovMatrix Σ_CC Σ_{C,AB} Σ_{AB,AB}` does **not** depend on the
-   conditioning value — this is what makes the disintegration a *product* kernel and hence
-   `CondIndep`;
-2. (C.3) above identifies that conditional covariance's inverse with the principal submatrix
-   `K_{AB}` of the joint concentration matrix — Lauritzen (5.10);
-3. `map_multivariateGaussian_fromBlocks_eq_prod_iff` (Corollary C.6) applied *inside* the
-   conditional law splits it into a product over the two blocks iff its cross-covariance
-   vanishes iff the cross-concentration does;
-4. the `CondIndep` witnesses are the two block marginals of the conditional kernel
-   (`Kernel.map` of `gaussianCondKernel` along the two projections), Markov by
-   `Kernel.IsMarkovKernel.map`.
-Lauritzen's own proof is exactly this ("almost a direct consequence of Proposition C.5 and its
-proof", p. 129), so no shortcut is being taken.
 
 *Law transfer.* Everything here is stated for the **canonical** coordinate vector
 `gaussianCoords` on the Gaussian's own sample space `EuclideanSpace ℝ ι`. Transferring to an
@@ -222,11 +183,9 @@ end Basic
 
 section PosDefPlumbing
 
-/-- LEAN-ONLY (`ForMathlib` candidate; the pin has `Matrix.PosSemidef.submatrix` for an arbitrary
-index map and `Matrix.posSemidef_submatrix_equiv`, but no positive-definite analogue): a
-principal submatrix of a positive definite matrix along an **injective** index map is positive
-definite. Injectivity is essential — a repeated index makes the extension-by-zero of a nonzero
-vector cancel. -/
+/-- LEAN-ONLY: a principal submatrix of a positive definite matrix along an **injective** index
+map is positive definite. Injectivity is essential — a repeated index makes the
+extension-by-zero of a nonzero vector cancel. -/
 theorem posDef_submatrix_of_injective {n m : Type*} [Fintype n] [Fintype m]
     {M : Matrix n n ℝ}
     -- LEAN-ONLY: the ambient positive definiteness
@@ -352,7 +311,7 @@ theorem condCovMatrix_eq_inv_submatrix_precisionMatrix
 /-- **Lauritzen (C.4)** (App. C, p. 256: `K₁₁⁻¹K₁₂ = −Σ₁₂Σ₂₂⁻`), transcribed with the blocks
 swapped: the off-diagonal block of the concentration matrix, scaled by the conditional
 covariance, is minus the Gaussian regression matrix `condMeanMatrix S₁₁ S₁₂ = S₂₁S₁₁⁻¹`. This is
-the identity that `GraphicalModels.Gaussian.Regression` turns into `β_{γμ} = −k_{γμ}/k_{γγ}`. -/
+the identity behind the partial regression coefficient `β_{γμ} = −k_{γμ}/k_{γγ}`. -/
 theorem submatrix_precisionMatrix_fromBlocks_inr_inl
     (S₁₁ : Matrix ι₁ ι₁ ℝ) (S₁₂ : Matrix ι₁ ι₂ ℝ) (S₂₂ : Matrix ι₂ ι₂ ℝ)
     -- USER-INPUT: `Σ` regular; Lauritzen App. C, (C.4)
@@ -404,14 +363,14 @@ theorem submatrix_precisionMatrix_fromBlocks_inl_inr_eq_zero_iff
     exact h2
   · intro h; simp [h]
 
-/-- **Lauritzen Corollary C.6** (p. 257) in the repo's measure-level form: two blocks of a
-regular joint Gaussian are independent — the joint law transported to the product space is the
-product of the block marginals — iff the cross-concentration block vanishes.
+/-- **Lauritzen Corollary C.6** (p. 257) in measure-level form: two blocks of a regular joint
+Gaussian are independent — the joint law transported to the product space is the product of the
+block marginals — iff the cross-concentration block vanishes.
 
-The `⟸` direction is `multivariateGaussian_fromBlocks_prod` (G2.9) after
+The `⟸` direction is that a Gaussian with vanishing cross-covariance splits as a product, once
 `submatrix_precisionMatrix_fromBlocks_inl_inr_eq_zero_iff` turns `K₁₂ = 0` into `S₁₂ = 0`; the
-`⟹` direction reads the covariance off the product law with `covMatrix_multivariateGaussian`
-(the covariance of a product measure is block diagonal). -/
+`⟹` direction reads the covariance off the product law (the covariance of a product measure is
+block diagonal). -/
 theorem map_multivariateGaussian_fromBlocks_eq_prod_iff
     (m₁ : EuclideanSpace ℝ ι₁) (m₂ : EuclideanSpace ℝ ι₂)
     (S₁₁ : Matrix ι₁ ι₁ ℝ) (S₁₂ : Matrix ι₁ ι₂ ℝ) (S₂₂ : Matrix ι₂ ι₂ ℝ)
@@ -460,8 +419,8 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- LEAN-ONLY corridor for the block form of Proposition 5.2: the index equivalence
 `C ⊕ (A ⊕ B) ≃ A ∪ B ∪ C` for pairwise disjoint blocks. The conditioning block comes **first**,
-because the repo's Gaussian disintegration `compProd_gaussianCondKernel` conditions on the first
-block. Its three components are the subtype coercions, so the transported coordinate vector's
+because the Gaussian disintegration conditions on the first block. Its three components are the
+subtype coercions, so the transported coordinate vector's
 blocks are *definitionally* the `coords` sub-vectors of `Core.Coordinates` — which is what makes
 the coordinate identification below a `rfl`. -/
 private noncomputable def blockSplitE {ι : Type*} [DecidableEq ι] {A B C E : Finset ι}
@@ -552,19 +511,19 @@ concentration matrix vanishes.
 Everything Lauritzen's proof of Proposition 5.2 does happens here, and only here; both the
 pairwise Proposition 5.2 and its block form below are index transports of this statement.
 
-*Route (Lauritzen's own: "almost a direct consequence of Proposition C.5 and its proof", p. 129).*
-1. `compProd_gaussianCondKernel` writes the law as `N(m₁, T₁₁) ⊗ₘ gaussianCondKernel …`, whose
+*Proof sketch (Lauritzen's own: "almost a direct consequence of Proposition C.5 and its proof",
+p. 129).*
+1. the Gaussian disintegration writes the law as `N(m₁, T₁₁) ⊗ₘ gaussianCondKernel …`, whose
    conditional covariance `Q = condCovMatrix T₁₁ T₁₂ T₂₂` does **not** depend on the conditioning
    value — this is what makes the disintegration a *product* kernel and hence `CondIndep`;
-2. (C.3) `submatrix_precisionMatrix_fromBlocks_inr_inr` identifies `Q⁻¹` with the principal
-   submatrix of the joint concentration matrix on the conditioned block — Lauritzen (5.10);
-3. `map_multivariateGaussian_fromBlocks_eq_prod_iff` (Corollary C.6) applied *inside* the
-   conditional law splits it into a product over the two sub-blocks iff its cross-concentration
-   vanishes;
+2. (C.3) identifies `Q⁻¹` with the principal submatrix of the joint concentration matrix on the
+   conditioned block — Lauritzen (5.10);
+3. Corollary C.6 applied *inside* the conditional law splits it into a product over the two
+   sub-blocks iff its cross-concentration vanishes;
 4. the `CondIndep` witnesses are the two block marginals of the conditional kernel
-   (`Kernel.map` of `gaussianCondKernel` along the two projections), Markov by
-   `Kernel.IsMarkovKernel.map`; the `⟹` direction identifies the anonymous witnesses of
-   `CondIndep` with them through `eq_condKernel_of_measure_eq_compProd`. -/
+   (`Kernel.map` of `gaussianCondKernel` along the two projections), which are Markov; the `⟹`
+   direction identifies the anonymous witnesses of `CondIndep` with them by a.e. uniqueness of
+   the conditional kernel. -/
 private theorem condIndep_blockProj_iff_precisionMatrix_eq_zero {kC kA kB : Type*}
     [Fintype kC] [Fintype kA] [Fintype kB] [DecidableEq kC] [DecidableEq kA] [DecidableEq kB]
     (n : EuclideanSpace ℝ (kC ⊕ (kA ⊕ kB)))
@@ -804,15 +763,14 @@ For `A = {γ}`, `B = {μ}`, `C = Γ ∖ {γ, μ}` this is `E = Γ` and the pairw
 `↥E` — and hence the *type* of `K^E` — depends on `E`, so two presentations of the same union
 (`A ∪ (B ∪ D) ∪ C` and `A ∪ B ∪ (C ∪ D)`, say) would give propositionally equal but not
 syntactically equal blocks and force a dependent transport at every use. Taking `E` as a
-parameter lets the consumers of the graphoid axioms in `Gaussian.Model` fix **one** `E` and read
-all their premises and conclusions on it, which is exactly what makes (C3) and (C5) bookkeeping.
+parameter lets the graphoid axioms fix **one** `E` and read all their premises and conclusions
+on it, which is exactly what makes (C3) and (C5) bookkeeping.
 
-*Route.* Marginalise, then apply the analytic core. `blockSplit4` transports `Σ` to the four-block
-index `(C ⊕ (A ⊕ B)) ⊕ Eᶜ` (`multivariateGaussian_map_reindex`), `multivariateGaussian_map_blockFst`
-deletes the `Eᶜ` block — the *marginal* of a Gaussian being the principal submatrix, which is
-where `Σ_E` comes from — and `condIndep_congr_law` re-reads the conditional independence on the
-marginalised law, the two triples having the same joint law by construction. The concentration
-entries transport back along `Matrix.inv_submatrix_equiv`. -/
+*Proof sketch.* Marginalise, then apply the analytic core. `blockSplit4` transports `Σ` to the
+four-block index `(C ⊕ (A ⊕ B)) ⊕ Eᶜ`; deleting the `Eᶜ` block — the *marginal* of a Gaussian
+being the principal submatrix, which is where `Σ_E` comes from — leaves the conditional
+independence to be re-read on the marginalised law, the two triples having the same joint law by
+construction. The concentration entries transport back along `Matrix.inv_submatrix_equiv`. -/
 theorem condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero
     (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ}
     -- USER-INPUT: `Σ` regular; Lauritzen Prop. 5.2, p. 129
@@ -908,10 +866,9 @@ sample space. The degenerate case `Γ = {γ, μ}` (empty conditioning block) is 
 Corollary C.6.
 
 The conditioning block is written `Finset.univ \ {i, j}` rather than `({i, j} : Finset ι)ᶜ` so
-that this theorem lands **syntactically on the nose** of `Undirected.Markov.IsPairwiseMarkov`,
-which is how `Gaussian.Model` consumes it.
+that this theorem lands **syntactically on the nose** of the pairwise Markov property.
 
-*Route.* The instance `A = {γ}`, `B = {μ}`, `C = Γ ∖ {γ, μ}` of the block form above, whose
+*Proof sketch.* The instance `A = {γ}`, `B = {μ}`, `C = Γ ∖ {γ, μ}` of the block form above, whose
 index block is then all of `Γ`; `Matrix.inv_submatrix_equiv` along `Equiv.subtypeUnivEquiv`
 identifies `K^Γ` with `K`. -/
 theorem condIndepCoords_gaussianCoords_iff_precisionMatrix_eq_zero
@@ -966,7 +923,7 @@ The dual of Lauritzen (C.3). (C.3) says the concentration matrix of a **conditio
 *principal submatrix* of the joint concentration matrix (delete the rows and columns of the
 conditioned-on variables). Applying it to `K` in place of `Σ` gives the companion statement for
 **marginal** laws: the concentration matrix of a marginal is a *Schur complement* of the joint
-concentration matrix. The two together are what make the graphoid axioms of `Gaussian.Model`
+concentration matrix. The two together are what make the graphoid axioms
 provable — the block form of Proposition 5.2 reads a conditional independence off `K^E` for the
 block `E` carrying the statement, and contraction (C4) is the one axiom whose two premises live
 on *different* blocks, so it needs to compare `K^E` with `K^{E''}` for `E'' ⊆ E`. -/
@@ -974,9 +931,8 @@ on *different* blocks, so it needs to compare `K^E` with `K^{E''}` for `E'' ⊆ 
 variable {κ₁ κ₂ : Type*} [Fintype κ₁] [Fintype κ₂] [DecidableEq κ₁] [DecidableEq κ₂]
 
 /-- **Marginalisation is Schur complementation of the concentration matrix** — the dual of
-Lauritzen (C.3), and its immediate consequence: apply
-`submatrix_precisionMatrix_fromBlocks_inr_inr` to `K = Σ⁻¹` instead of to `Σ`, and use
-`precisionMatrix_precisionMatrix` to turn `K⁻¹` back into `Σ`.
+Lauritzen (C.3), and its immediate consequence: apply (C.3) to `K = Σ⁻¹` instead of to `Σ`, and
+turn `K⁻¹` back into `Σ`.
 
 In words: deleting the `κ₁` block from a regular joint law replaces `K` by
 `K₂₂ − K₂₁K₁₁⁻¹K₁₂`, the Schur complement of its `κ₁` block. -/

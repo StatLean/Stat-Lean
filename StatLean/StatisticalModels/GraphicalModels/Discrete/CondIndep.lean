@@ -13,7 +13,7 @@ import Mathlib.Algebra.BigOperators.Ring.Finset
 The finite-state model class: a vertex set `V`, a state space `α`, both finite, configurations
 `V → α`, and a **mass function** `p : (V → α) → ℝ≥0∞`. This is the layer where the whole
 graphoid calculus becomes elementary algebra of finite sums and products, and it is the layer
-that the factorization theory (`Discrete/Factorization.lean`) consumes.
+the factorization theory (`Discrete/Factorization.lean`) is built on.
 
 * `agreeOn A x` — the configurations that agree with `x` on the block `A`;
 * `blockMarginal A p` — the **marginal mass on `A`**, `p_A(x) = ∑ p(y)` over `y ∈ agreeOn A x`;
@@ -28,22 +28,20 @@ that the factorization theory (`Discrete/Factorization.lean`) consumes.
 * **`isGraphoid_condIndepMass_of_pos`** — (C5) as well, under strict positivity: Lauritzen
   **Proposition 3.1**, p. 29;
 * `condIndepMass_of_exists_factorization` / `condIndepMass_iff_exists_factorization` —
-  Lauritzen's **eq. (3.6)**, `f(x, y, z) = h(x, z) k(y, z)`; this is what the factorization
-  file consumes, and the `mpr` half is deliberately separated out because it needs neither
-  finiteness nor positivity;
+  Lauritzen's **eq. (3.6)**, `f(x, y, z) = h(x, z) k(y, z)`; the `mpr` half is deliberately
+  separated out because it needs neither finiteness nor positivity;
 * `condIndepMass_of_condIndepCoords` — the bridge from the general measure-theoretic
   `CondIndepCoords` of `Core/Coordinates.lean` down to the mass identity.
 
-**Carrier choice.** `p : (V → α) → ℝ≥0∞`, a bare function with **no** normalisation built in
-(this is the frozen contract's shape, `notes/factor_graphical/contract.md`). Three reasons.
-(i) Lauritzen's identity (3.2) is homogeneous of degree two in `p` — replacing `p` by `c·p`
-scales both sides by `c²` — so normalisation is genuinely irrelevant to (C1)–(C5) and putting
-it in the carrier would be a hypothesis nobody uses. (ii) `ℝ≥0∞` is a complete commutative
-semiring in which every finite sum and product is defined and no subtraction is ever needed, so
-each axiom is a rearrangement of sums and products; a `PMF` carrier would add a coercion to
-every algebraic step (and `PMF.pi` does not exist in this pin), and a `Measure (V → α)` carrier
-would route the same algebra through `lintegral`/`Measure.map`. (iii) The `Measure` reading is
-recovered exactly once, in `condIndepMass_of_condIndepCoords`, at `p := fun x => μ (X ⁻¹' {x})`.
+**Carrier choice.** `p : (V → α) → ℝ≥0∞`, a bare function with **no** normalisation built in.
+Three reasons. (i) Lauritzen's identity (3.2) is homogeneous of degree two in `p` — replacing
+`p` by `c·p` scales both sides by `c²` — so normalisation is genuinely irrelevant to (C1)–(C5)
+and putting it in the carrier would be a hypothesis nobody uses. (ii) `ℝ≥0∞` is a complete
+commutative semiring in which every finite sum and product is defined and no subtraction is ever
+needed, so each axiom is a rearrangement of sums and products; a `PMF` carrier would add a
+coercion to every algebraic step, and a `Measure (V → α)` carrier would route the same algebra
+through `lintegral`/`Measure.map`. (iii) The `Measure` reading is recovered exactly once, in
+`condIndepMass_of_condIndepCoords`, at `p := fun x => μ (X ⁻¹' {x})`.
 
 **Reference.** S. L. Lauritzen, *Graphical Models*, Oxford Statistical Science Series 17,
 Clarendon Press, Oxford, **1996**, §3.1: the density identity **(3.2)**
@@ -79,19 +77,6 @@ Proposition 3.1 is vacuous here (`Lauritzen §3.1`).
    matching the book. The standalone lemmas below record the *minimal* disjointness each
    identity actually uses — (C2) needs only `Disjoint A D`, (C4) needs none at all — so the
    bundling theorems discard the unused fields rather than the lemmas silently assuming them.
-
-**Reuse (binding).** Nothing is re-derived here. `DependsOn` is Mathlib's
-(`Logic/Function/DependsOn.lean`), including `DependsOn.mono` and `dependsOn_iff_exists_comp`;
-`Function.updateFinset` (`Data/Finset/Update.lean`) is the block-substitution operator;
-`Finset.restrict` (`Data/Finset/Pi.lean:161`) is inherited through `coords`; the sum algebra is
-`Finset.sum_le_sum_of_subset`, `Finset.mul_sum`, `Finset.sum_mul`, `Finset.sum_mul_sum`
-(`Algebra/BigOperators/Ring/Finset.lean`) and `Finset.sum_sigma`/`Fintype.sum_prod_type`; the
-cancellation steps are `ENNReal.mul_left_inj` / `ENNReal.mul_right_inj`
-(`Data/ENNReal/Operations.lean:72`/`:76`) and `ENNReal.div_mul_cancel` (`Inv.lean:175`); the
-measure-side bridge consumes `MeasureTheory.Measure.compProd_apply`,
-`ProbabilityTheory.Kernel.prod_apply` and `IsMarkovKernel`. The graphoid structure and its
-derived combinators are `Core/Semigraphoid.lean`, and the abstract Markov hierarchy is
-`Undirected/Markov.lean`; neither is restated.
 
 **Bibliographic comments.** The discrete factorisation criterion (3.6) is the working form of
 conditional independence used throughout the Markov-random-field literature since
@@ -139,7 +124,7 @@ noncomputable def blockMarginal (A : Finset V) (p : (V → α) → ℝ≥0∞) (
   ∑ y ∈ agreeOn A x, p y
 
 /-- The marginal on `A` depends on the configuration only through the coordinates in `A` —
-Lauritzen's `f_A` is a function of `x_A`. Route: `agreeOn A x = agreeOn A y` whenever `x` and
+Lauritzen's `f_A` is a function of `x_A`. Indeed `agreeOn A x = agreeOn A y` whenever `x` and
 `y` agree on `A`. -/
 theorem dependsOn_blockMarginal (A : Finset V) (p : (V → α) → ℝ≥0∞) :
     DependsOn (blockMarginal A p) (A : Set V) := by
@@ -170,8 +155,8 @@ theorem blockMarginal_empty (p : (V → α) → ℝ≥0∞) (x : V → α) :
   simp [blockMarginal, hset]
 
 /-- Marginals are **antitone** in the block: enlarging the block shrinks the index set of the
-sum. Route: `agreeOn B x ⊆ agreeOn A x` for `A ⊆ B`, then `Finset.sum_le_sum_of_subset`. This
-is the lemma that discharges the `p_C = 0` branch of every cancellation below. -/
+sum, since `agreeOn B x ⊆ agreeOn A x` for `A ⊆ B`. This is the lemma that discharges the
+`p_C = 0` branch of every cancellation below. -/
 theorem blockMarginal_antitone {A B : Finset V} (p : (V → α) → ℝ≥0∞) (x : V → α)
     -- LEAN-ONLY: the block inclusion along which the marginal decreases; Lauritzen's marginals
     -- are indexed by subsets and this monotonicity is implicit in his §3.1 manipulations
@@ -183,7 +168,7 @@ theorem blockMarginal_antitone {A B : Finset V} (p : (V → α) → ℝ≥0∞) 
   exact fun i hi => hy i (hAB hi)
 
 /-- A vanishing marginal forces every finer marginal to vanish — `blockMarginal_antitone` in
-the form the `ℝ≥0∞` cancellation branches consume. -/
+the form the `ℝ≥0∞` cancellation branches need. -/
 theorem blockMarginal_eq_zero_of_subset {A B : Finset V} (p : (V → α) → ℝ≥0∞) (x : V → α)
     -- LEAN-ONLY: the block inclusion; see `blockMarginal_antitone`
     (hAB : A ⊆ B)
@@ -203,7 +188,7 @@ theorem blockMarginal_ne_top {p : (V → α) → ℝ≥0∞} (A : Finset V) (x :
 
 /-- A strictly positive mass function has strictly positive marginals: `x ∈ agreeOn A x`, so
 every marginal sum has a positive summand. The hypothesis of Lauritzen's Proposition 3.1
-(p. 29) in the form (C5) consumes it. -/
+(p. 29) in the form (C5) needs it. -/
 theorem blockMarginal_ne_zero {p : (V → α) → ℝ≥0∞} (A : Finset V) (x : V → α)
     -- USER-INPUT: strict positivity of the mass function; Lauritzen Proposition 3.1, p. 29
     (hpos : ∀ y, p y ≠ 0) :
@@ -282,10 +267,9 @@ theorem CondIndepMass.symm {p : (V → α) → ℝ≥0∞} {A B C : Finset V}
 of the joint block `X_{B ∪ D}` given `X_C`, then it is independent of `X_B` given `X_C`.
 
 *Hypotheses.* Only `Disjoint A D`, and **no finiteness**: the proof sums Lauritzen's identity
-over the coordinates in `D ∖ (A ∪ B ∪ C)` and never divides. Route: apply
-`blockMarginal_eq_sum_updateFinset` with `T := D \ (A ∪ B ∪ C)` on both sides; the factors
-`p_C` and `p_{A∪C}` are constant along `T` by `dependsOn_blockMarginal`, and the two set
-identities `(A ∪ (B ∪ D) ∪ C) \ T = A ∪ B ∪ C` and `((B ∪ D) ∪ C) \ T = B ∪ C` — the second is
+over the extra coordinates `T = D ∖ (A ∪ B ∪ C)` on both sides and never divides. The factors
+`p_C` and `p_{A∪C}` are constant along `T`, and the two set identities
+`(A ∪ (B ∪ D) ∪ C) \ T = A ∪ B ∪ C` and `((B ∪ D) ∪ C) \ T = B ∪ C` — the second is
 where `Disjoint A D` is used — put the summed factors back in place. -/
 theorem CondIndepMass.decomposition {p : (V → α) → ℝ≥0∞} {A B C D : Finset V}
     -- USER-INPUT: the book's disjointness convention, in the one instance the identity uses:
@@ -346,7 +330,7 @@ theorem CondIndepMass.decomposition {p : (V → α) → ℝ≥0∞} {A B C D : F
 /-- The single `ℝ≥0∞` cancellation shared by (C3) and (C4): from `a·b = c·d` and `c·e = f·b`,
 divide out the invertible `b` to get `a·e = f·d`. (C3) and (C4) are *the same* algebraic step,
 run in opposite directions — (C4) cancels the marginal on `C ∪ D` and (C3) the one on `C` — so
-they are both instances of this lemma. Not part of the frozen interface: a private helper. -/
+they are both instances of this lemma. -/
 private theorem mul_cancel_cross {a b c d e f : ℝ≥0∞} (hb0 : b ≠ 0) (hbt : b ≠ ∞)
     (H₁ : a * b = c * d) (H₂ : c * e = f * b) :
     a * e = f * d := by
@@ -361,11 +345,10 @@ private theorem mul_cancel_cross {a b c d e f : ℝ≥0∞} (hb0 : b ≠ 0) (hbt
 moved into the conditioning set.
 
 *Hypotheses.* `Disjoint A B` (to extract `X_A ⫫ X_D ∣ X_C` from the premise by (C2)) and
-finiteness. Route: multiply the goal through by `p_C`; the premise rewrites the left-hand side
-and `CondIndepMass.decomposition` (applied at `A`, `D`, `C` after commuting the union) rewrites
-the right-hand side, and both land on `p_{A∪C} · p_{B∪C∪D} · p_{C∪D}`. Cancel `p_C` by
-`ENNReal.mul_left_inj`, splitting off the branch `p_C x = 0`, where
-`blockMarginal_eq_zero_of_subset` collapses both sides of the conclusion to `0`. -/
+finiteness. Multiply the goal through by `p_C`; the premise rewrites the left-hand side and
+(C2), applied at `A`, `D`, `C` after commuting the union, rewrites the right-hand side, and
+both land on `p_{A∪C} · p_{B∪C∪D} · p_{C∪D}`. Cancelling `p_C` is legitimate away from `0` and
+`∞`; on the branch `p_C x = 0` both sides of the conclusion collapse to `0`. -/
 theorem CondIndepMass.weakUnion {p : (V → α) → ℝ≥0∞} {A B C D : Finset V}
     -- LEAN-ONLY: finiteness of the mass function — `ℝ≥0∞` cancellation is invalid at `∞`;
     -- Lauritzen's `f` is a density and this hypothesis is vacuous for him
@@ -403,11 +386,11 @@ conditioning set, together with independence of the extra block given the smalle
 recombines into independence of the union.
 
 *Hypotheses.* Finiteness only — **no disjointness at all**; the identity is a rearrangement of
-the two premises followed by one cancellation. Route: multiply the goal by `p_{C∪D}`, rewrite
+the two premises followed by one cancellation. Multiply the goal by `p_{C∪D}`, rewrite
 the left-hand side by the first premise and then by the second, and observe that both sides
-become `p_{A∪C} · p_{B∪C∪D} · p_{C∪D}`. Cancel `p_{C∪D}` by `ENNReal.mul_left_inj`; on the
-branch `p_{C∪D} x = 0` both `p_{A∪B∪D∪C} x` and `p_{B∪D∪C} x` vanish by
-`blockMarginal_eq_zero_of_subset` and the conclusion reads `0 = 0`. -/
+become `p_{A∪C} · p_{B∪C∪D} · p_{C∪D}`. Cancelling `p_{C∪D}` is legitimate away from `0` and
+`∞`; on the branch `p_{C∪D} x = 0` both `p_{A∪B∪D∪C} x` and `p_{B∪D∪C} x` vanish and the
+conclusion reads `0 = 0`. -/
 theorem CondIndepMass.contraction {p : (V → α) → ℝ≥0∞} {A B C D : Finset V}
     -- LEAN-ONLY: finiteness of the mass function; see `CondIndepMass.weakUnion`
     (hp : ∀ y, p y ≠ ∞)
@@ -438,14 +421,14 @@ theorem CondIndepMass.contraction {p : (V → α) → ℝ≥0∞} {A B C D : Fin
 /-! ### Helpers for (C5)
 
 Lauritzen's Proposition 3.1 runs through the factorisation criterion (3.6), which is stated
-below as `condIndepMass_of_exists_factorization`; since (C5) precedes it in the file's frozen
-order, the content of that `mpr` half lives here as a private lemma, and the public theorem is
-its instance. The rest of this section is the four-point identity that turns each premise of
+below as `condIndepMass_of_exists_factorization`; since (C5) precedes it in this file, the
+content of that `mpr` half lives here as a private lemma, and the public theorem is its
+instance. The rest of this section is the four-point identity that turns each premise of
 (C5) into a statement free of the block it does not see. -/
 
 /-- The content of `condIndepMass_of_exists_factorization` (Lauritzen eq. (3.6) ⇒ (3.2)),
-placed early so that `CondIndepMass.intersection` can consume it. See the public theorem below
-for the statement's provenance and the route. -/
+placed early so that `CondIndepMass.intersection` can use it. See the public theorem below
+for the statement's provenance. -/
 private theorem condIndepMass_of_factorization {p : (V → α) → ℝ≥0∞} {A B C : Finset V}
     (hAB : Disjoint A B) (hAC : Disjoint A C) (hBC : Disjoint B C)
     {h k : (V → α) → ℝ≥0∞}
@@ -506,8 +489,8 @@ private theorem condIndepMass_of_factorization {p : (V → α) → ℝ≥0∞} {
   ring
 
 /-- `z` with its `E`-coordinates replaced by those of the reference configuration `x₀`. The
-`ℝ≥0∞` bookkeeping of (C5) needs a *named* configuration in which one block has been frozen at
-a reference value, and this is it. Private: not part of the frozen interface. -/
+`ℝ≥0∞` bookkeeping of (C5) needs a *named* configuration in which one block has been fixed at
+a reference value, and this is it. -/
 private def substOn (x₀ : V → α) (E : Finset V) (z : V → α) : V → α :=
   fun i => if i ∈ E then x₀ i else z i
 
@@ -588,11 +571,11 @@ p. 30 takes `X = Y = Z` uniform on `{0, 1}`, where both premises hold and the co
 Continuity, the book's other hypothesis, is vacuous here — Lauritzen notes on p. 28 that every
 function on a discrete space is continuous.
 
-Route: under `hpos` every marginal lies in `(0, ∞)` (`blockMarginal_ne_zero`,
-`blockMarginal_ne_top`), so both premises may be solved for the conditional masses; the first
-exhibits `p_{A∪B∪C∪D}` as a product of a factor free of `x_D` and one free of `x_A`, the second
-as a product of a factor free of `x_B` and one free of `x_A`, and combining them gives a
-factorisation `h(x_{A∪C}) · k(x_{B∪D∪C})`, which is `condIndepMass_of_exists_factorization`. -/
+Under `hpos` every marginal lies in `(0, ∞)`, so both premises may be solved for the
+conditional masses; the first exhibits `p_{A∪B∪C∪D}` as a product of a factor free of `x_D` and
+one free of `x_A`, the second as a product of a factor free of `x_B` and one free of `x_A`, and
+combining them gives a factorisation `h(x_{A∪C}) · k(x_{B∪D∪C})`, which is the criterion
+(3.6). -/
 theorem CondIndepMass.intersection {p : (V → α) → ℝ≥0∞} {A B C D : Finset V}
     -- LEAN-ONLY: finiteness of the mass function; see `CondIndepMass.weakUnion`
     (hp : ∀ y, p y ≠ ∞)
@@ -718,11 +701,10 @@ theorem CondIndepMass.intersection {p : (V → α) → ℝ≥0∞} {A B C D : Fi
 `Undirected/Markov.lean` — (G) ⇒ (L) ⇒ (P), Lauritzen Proposition 3.4 — instantiates at it
 without further work.
 
-The four fields are `CondIndepMass.symm`, `.decomposition`, `.weakUnion` and `.contraction`;
-the structure's disjointness hypotheses are strictly more than those lemmas consume, and are
-simply discarded. Only `hp` is needed, and only by (C3) and (C4). -/
+The structure's disjointness hypotheses are strictly more than the four identities need, and
+are simply discarded. Only `hp` is needed, and only by (C3) and (C4). -/
 theorem isSemigraphoid_condIndepMass {p : (V → α) → ℝ≥0∞}
-    -- LEAN-ONLY: finiteness of the mass function; consumed by (C3) and (C4) only, and vacuous
+    -- LEAN-ONLY: finiteness of the mass function; needed by (C3) and (C4) only, and vacuous
     -- for Lauritzen, whose `f` is a density
     (hp : ∀ y, p y ≠ ∞) :
     IsSemigraphoid (CondIndepMass p) := by
@@ -754,13 +736,7 @@ theorem isGraphoid_condIndepMass_of_pos {p : (V → α) → ℝ≥0∞}
 Stated separately from the equivalence below because this half needs **neither finiteness nor
 positivity**: summing the factorisation over `A`, over `B`, and over `A ∪ B` gives
 `p_{B∪C} = H·k`, `p_{A∪C} = h·K` and `p_C = H·K`, whence both sides of (3.2) equal
-`h·k·H·K` by commutativity alone. It is this half that
-`Discrete/Factorization.factorizesOver_implies_globalMarkov` consumes, which is why that
-theorem carries no finiteness hypothesis either.
-
-Route: three applications of `blockMarginal_eq_sum_updateFinset` (at `T := B`, `T := A` and
-`T := A ∪ B`), `Finset.mul_sum`/`Finset.sum_mul` to pull the constant factor out of each sum —
-constancy is `hh`/`hk` via `DependsOn` — and `Finset.sum_mul_sum` for the double sum. -/
+`h·k·H·K` by commutativity alone. -/
 theorem condIndepMass_of_exists_factorization {p : (V → α) → ℝ≥0∞} {A B C : Finset V}
     -- USER-INPUT: the book's disjointness convention on the triple; Lauritzen §3.1
     (hAB : Disjoint A B) (hAC : Disjoint A C) (hBC : Disjoint B C)
@@ -777,13 +753,12 @@ theorem condIndepMass_of_exists_factorization {p : (V → α) → ℝ≥0∞} {A
 /-- **Lauritzen eq. (3.6)**, p. 29, as an equivalence: for a finite mass function,
 `X_A ⫫ X_B ∣ X_C` holds **iff** the joint marginal factors as `h(x_{A∪C}) · k(x_{B∪C})`.
 
-The `mpr` half is `condIndepMass_of_exists_factorization` (no side conditions). The `mp` half
-takes `h := p_{A∪C}` and `k := p_{B∪C} / p_C`, whose dependence on `(x_B, x_C)` is
-`dependsOn_blockMarginal` together with `DependsOn.mono` for the denominator; finiteness is
-what makes `p_{A∪C} · (p_{B∪C} / p_C) = p_{A∪B∪C}` on `{p_C ≠ 0}` (`ENNReal.div_mul_cancel`),
-and on `{p_C = 0}` both sides vanish by `blockMarginal_eq_zero_of_subset` — note that in
-`ℝ≥0∞` the junk value `0 / 0 = 0` makes that branch work without a case split in the formula
-itself. -/
+The `mpr` half needs no side conditions. The `mp` half takes `h := p_{A∪C}` and
+`k := p_{B∪C} / p_C`, whose dependence on `(x_B, x_C)` is that of the two marginals (the
+denominator's block `C` sits inside `B ∪ C`); finiteness is what makes
+`p_{A∪C} · (p_{B∪C} / p_C) = p_{A∪B∪C}` on `{p_C ≠ 0}`, and on `{p_C = 0}` both sides vanish —
+note that in `ℝ≥0∞` the junk value `0 / 0 = 0` makes that branch work without a case split in
+the formula itself. -/
 theorem condIndepMass_iff_exists_factorization {p : (V → α) → ℝ≥0∞} {A B C : Finset V}
     -- LEAN-ONLY: finiteness of the mass function, used only by the forward direction, where a
     -- division by `p_C` must be undone; Lauritzen's `f` is a density
@@ -827,11 +802,10 @@ theorem condIndepMass_iff_exists_factorization {p : (V → α) → ℝ≥0∞} {
 measure-theoretic conditional independence `X_A ⫫ X_B ∣ X_C` of `Core/Coordinates.lean`, then
 its mass function `p x = μ (X ⁻¹' {x})` satisfies Lauritzen's identity (3.2).
 
-Route: evaluate the disintegration identity
-`μ.map (X_C, (X_A, X_B)) = (μ.map X_C) ⊗ₘ (κ ×ₖ η)` at the singleton `(x_C, (x_A, x_B))` using
-`MeasureTheory.Measure.compProd_apply` and `ProbabilityTheory.Kernel.prod_apply`, obtaining
-`p_{A∪B∪C}(x) = p_C(x) · κ(x_C){x_A} · η(x_C){x_B}`. Summing over the `B`-block and using
-`IsMarkovKernel η` gives `p_{A∪C} = p_C · κ(x_C){x_A}`, and symmetrically for `p_{B∪C}`;
+Evaluate the disintegration identity
+`μ.map (X_C, (X_A, X_B)) = (μ.map X_C) ⊗ₘ (κ ×ₖ η)` at the singleton `(x_C, (x_A, x_B))`,
+obtaining `p_{A∪B∪C}(x) = p_C(x) · κ(x_C){x_A} · η(x_C){x_B}`. Summing over the `B`-block and
+using `IsMarkovKernel η` gives `p_{A∪C} = p_C · κ(x_C){x_A}`, and symmetrically for `p_{B∪C}`;
 multiplying the two recovers (3.2). No disjointness of the blocks is used: agreement on
 `A ∪ B ∪ C` is agreement on each of `A`, `B`, `C` whether or not they overlap.
 
@@ -839,8 +813,7 @@ multiplying the two recovers (3.2). No disjointness of the blocks is used: agree
 *construction* rather than an identity: the witnessing kernels are the normalised conditional
 masses `κ(z){a} = p_{A∪C}/p_C`, which need a junk fallback on the null set `{p_C = 0}` (hence a
 `[Nonempty α]` hypothesis) and a `Kernel` packaging with its measurability proof. It belongs
-with the discrete-kernel machinery, not with the mass algebra, and is left to a later lane; no
-theorem of this area depends on it. -/
+with the discrete-kernel machinery, not with the mass algebra. -/
 theorem condIndepMass_of_condIndepCoords {Ω : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
     -- LEAN-ONLY: singletons of `α` must be measurable for the singleton evaluation above to be
     -- meaningful; on Lauritzen's finite state space this is automatic

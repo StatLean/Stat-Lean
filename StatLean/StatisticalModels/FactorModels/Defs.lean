@@ -18,11 +18,9 @@ structure, not parametric families:
 * `factorLaw P F E` — the observed law: the latent law `F` mixed through the affine
   measurement kernel `y ↦ law of (Λ y + μ + ξ)`, `ξ ∼ E` (`BKM` (3.1)–(3.3));
 * `factorDesign P` — the same model read as a `MixedEffects.LMMDesign` with fixed-effects
-  design `1` and random-effects design `Λ`; this is what makes the anti-duplication bridge
-  of `FactorModels.Bridge` a theorem rather than a re-derivation;
+  design `1` and random-effects design `Λ`;
 * `factorCovariance P = Λ Φ Λᵀ + Ψ` and `commonCovariance P = Λ Φ Λᵀ` — the *parameter-side*
-  matrices; that they are the moments of `factorLaw` is `FactorModels.Moments`, obtained
-  through the LMM bridge and never re-derived here;
+  matrices; that they are the moments of `factorLaw` is `FactorModels.Moments`;
 * `RealizesFactorParams P F E` — the compatibility predicate saying the two free laws
   actually carry the parameters `(Φ, Ψ)` and are centered.
 
@@ -30,12 +28,11 @@ structure, not parametric families:
 Analysis: A Unified Approach*, 3rd ed., Wiley, 2011, §3.2, Eq. (3.1)–(3.3) (the normal linear
 factor model), Eq. (3.12) (the covariance decomposition) (`BKM`).
 
-**Proof formalization notes.** Laptop-only data model — definitions and `rfl`-level lemmas
-only. *Book vs Lean:* `BKM` fixes the latent law at `y ∼ N_q(0, I)` (Eq. (3.2)), i.e. `Φ = I`,
+**Proof formalization notes.** Definitions and `rfl`-level lemmas only.
+*Book vs Lean:* `BKM` fixes the latent law at `y ∼ N_q(0, I)` (Eq. (3.2)), i.e. `Φ = I`,
 and states the covariance decomposition as `Σ = Λ Λ′ + Ψ` (Eq. (3.12)); the general
-correlated-factor form `Σ = Λ Φ Λ′ + Ψ` is **our** generalization (it is the level of
-generality the repo's linear mixed model already carries, and Eq. (3.12) is recovered as the
-corollary at `Φ = I`). *Junk values:* `factorLaw` is a probability measure exactly when `F`
+correlated-factor form `Σ = Λ Φ Λ′ + Ψ` is **our** generalization (Eq. (3.12) is recovered as
+the corollary at `Φ = I`). *Junk values:* `factorLaw` is a probability measure exactly when `F`
 and `E` are (instance below); for non-s-finite `F`/`E` the kernel composition is the usual
 `Measure.bind` junk. `Matrix.inv` is `0` at singular matrices, so every statement mentioning
 `(factorCovariance P)⁻¹` carries an explicit invertibility hypothesis.
@@ -112,8 +109,7 @@ noncomputable def commonCovariance (P : FactorParams p q) : Matrix (Fin p) (Fin 
 
 /-- The **factor covariance** `Σ = Λ Φ Λᵀ + Ψ` (`BKM` Eq. (3.12) at `Φ = I`; the general `Φ`
 is our generalization). This is a *parameter-side* definition: that it is the covariance
-matrix of `factorLaw` is `FactorModels.Moments.covMatrix_factorLaw_eq_factorCovariance`,
-which is obtained through the linear-mixed-model bridge. -/
+matrix of `factorLaw` is `FactorModels.Moments.covMatrix_factorLaw_eq_factorCovariance`. -/
 noncomputable def factorCovariance (P : FactorParams p q) : Matrix (Fin p) (Fin p) ℝ :=
   P.loading * P.factorCov * P.loadingᵀ + P.uniqueCov
 
@@ -137,8 +133,7 @@ private theorem measurable_loadingAct (Λ : Matrix (Fin p) (Fin q) ℝ) :
 
 /-- The **measurement kernel** `y ↦ law of (Λ y + μ + ξ)`, `ξ ∼ E`: `BKM`'s conditional model
 `x ∣ y ∼ N_p(μ + Λ y, Ψ)` (Eq. (3.1)) with the conditional law's shape left free (Gaussian
-`E` recovers (3.1) exactly). Built from `affineNoiseKernel`, so measurability and the Markov
-property are inherited, never hand-proved. -/
+`E` recovers (3.1) exactly). -/
 noncomputable def measurementKernel (P : FactorParams p q)
     (E : Measure (EuclideanSpace ℝ (Fin p))) :
     Kernel (EuclideanSpace ℝ (Fin q)) (EuclideanSpace ℝ (Fin p)) :=
@@ -175,10 +170,7 @@ theorem measurementKernel_apply (P : FactorParams p q)
 /-! ### The bridge design
 
 The factor model is the linear mixed model with fixed-effects design `1`, fixed effect `μ`,
-and random-effects design `Λ`. Everything the repo already proves about `lmmLaw` — the
-marginal moments, the Gaussian marginal, the joint law of `(observation, latent)` and the
-Gaussian conditioning that computes factor scores — is therefore available by transport;
-`FactorModels.Bridge` is where that transport happens. -/
+and random-effects design `Λ`; the identity of the two models is `FactorModels.Bridge`. -/
 
 /-- The factor model read as a **linear mixed-effects design**: `X = 1`, `Z = Λ`
 (`LW82` Eq. (1.1) instantiated at `BKM` Eq. (3.3)). -/

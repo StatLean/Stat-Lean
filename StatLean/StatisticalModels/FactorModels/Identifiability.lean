@@ -6,8 +6,7 @@ import StatLean.StatisticalModels.Identifiability.Transfer
 
 The rotational indeterminacy of `FactorModels.Rotation` is exactly an identifiability
 failure, and it is stated here against the library's own predicates
-(`StatLean.PointEstimation.Identifiable` and `StatisticalModels.IdentifiesTarget`) — no new
-notion of identifiability is introduced.
+(`StatLean.PointEstimation.Identifiable` and `StatisticalModels.IdentifiesTarget`).
 
 **Not identified — the loadings.**
 
@@ -34,11 +33,10 @@ Eq. (3.50)–(3.51) (the parameter count); §2.11, Eq. (2.24)–(2.26) and §3.1
 E. L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed., Springer, 1998, §1.5
 (identifiability of a parametrization) (`TPE2 §1.5`).
 
-**Proof formalization notes.** The negative results are `Rotation.gaussianFactorModel_rotateParams`
-plus an explicit witness (the all-ones loading matrix and its negative, distinct because
-`p, q ≥ 1` and `ℝ` has characteristic zero); the positive ones are
-`Identifiability.identifiesTarget_of_rep` at the representing functional `covMatrix`
-(resp. `meanVec`), evaluated through `Gaussian.covMatrix_gaussianFactorModel`.
+**Proof formalization notes.** The negative results run on an explicit witness pair (the
+all-ones loading matrix and its negative, distinct because `p, q ≥ 1` and `ℝ` has
+characteristic zero); the positive ones exhibit the representing functional `covMatrix`
+(resp. `meanVec`) of the observed law.
 *Junk values:* the positive results are stated over the **subtype of proper parameters**, and
 this is not cosmetic — at a non-PSD `Φ` the Gaussian collapses to a Dirac and the law no
 longer determines `factorCovariance` (two parameters with `Φ = 0` and with a non-PSD `Φ`

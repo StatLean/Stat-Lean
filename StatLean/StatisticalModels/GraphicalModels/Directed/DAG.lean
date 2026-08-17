@@ -21,7 +21,7 @@ existence of a topological (linear) extension in which every parent precedes its
   the five neighbourhoods as `Finset`s, with their membership characterisations;
 * `DAG.parents_subset_nonDescendants`, `DAG.notMem_ancestors_self`,
   `DAG.disjoint_singleton_nonDescendants` — the sanity lemmas the directed local Markov
-  property will consume (`v ⫫ nd(v) ∖ pa(v) ∣ pa(v)` needs exactly these disjointnesses);
+  property needs (`v ⫫ nd(v) ∖ pa(v) ∣ pa(v)` needs exactly these disjointnesses);
 * `DAG.IsAncestralSet`, `DAG.ancestralClosure` — closure under parents, and the smallest
   ancestral set containing a given block, with monotonicity, extensivity, idempotence, and
   minimality;
@@ -30,25 +30,13 @@ existence of a topological (linear) extension in which every parent precedes its
   ancestor precedes its descendant;
 * `DAG.induce` — the sub-DAG induced on a vertex block `A`, together with
   `DAG.parents_induce_of_isAncestralSet`: on an **ancestral** set the induced parent sets are
-  unchanged. This is the construction Lauritzen's Corollary 3.23 restricts to before
-  moralizing, and it lives here (rather than in `Directed/Moralization.lean`) because it is a
-  DAG-to-DAG operation; `Moralization.lean` only post-composes it with `moralGraph`.
+  unchanged. This is the construction Lauritzen's Corollary 3.23 restricts to before moralizing.
 
-**Why a bare relation and not `Digraph`.** Mathlib's `Digraph` in this pin
-(`Combinatorics/Digraph/Basic.lean`, 233 lines) is a bare
-`structure Digraph (V) where Adj : V → V → Prop` carrying **only** lattice algebra — `⊔`, `⊓`,
-`ᶜ`, `\`, `sSup`, `sInf`, the `CompleteAtomicBooleanAlgebra` instance, and adjacency-decidability
-instances. It has **no** walks, no reachability, no acyclicity, no ancestors: `grep -rn
-"Walk\|Reachable\|Path" Mathlib/Combinatorics/Digraph/` returns nothing, and the only other file
-in that directory (`Orientation.lean`, 92 lines) merely converts a `Digraph` to a `SimpleGraph`
-by forgetting orientations (`Digraph.toSimpleGraphInclusive = SimpleGraph.fromRel G.Adj`).
-`Relation.ReflTransGen` / `Relation.TransGen` (`Logic/Relation.lean`), by contrast, come with a
-full library — `trans`, `head`, `tail`, `single`, `mono`, `lift`, `head_induction_on`,
-`trans_induction_on`, `cases_head`, `reflTransGen_iff_eq_or_transGen` — which is exactly the
-induction principle every proof below runs on. We therefore build the directed theory on a bare
-`Adj : V → V → Prop` plus `Relation.(Refl)TransGen`, and record here that this was checked
-against the pin rather than assumed. (Nothing is lost: `Digraph` adds no content over its `Adj`
-field, so a `Digraph`-phrased development would have to build the same closure API anyway.)
+**Acyclicity and reachability via `Relation.(Refl)TransGen`.** The directed theory is built on a
+bare edge relation `Adj : V → V → Prop`: acyclicity is `∀ v, ¬ Relation.TransGen Adj v v`, and
+reachability is `Relation.ReflTransGen Adj`. The closure API of these two — `trans`, `head`,
+`tail`, `single`, `mono`, `lift`, `head_induction_on`, `trans_induction_on`, `cases_head`,
+`reflTransGen_iff_eq_or_transGen` — is the induction principle every proof below runs on.
 
 **Reference.** S. L. Lauritzen, *Graphical Models*, Oxford Statistical Science Series 17,
 Clarendon Press, Oxford, **1996**, §2.1.1, pp. 5–7. Every notion in this file is an
@@ -78,47 +66,39 @@ and `An(A)` is the smallest ancestral set containing `A`. `G_A` denotes the subg
 3. **Structure *and* predicate.** `IsAcyclicRel` is the predicate on a bare relation; `DAG` is
    the bundled carrier. Both are wanted: the bundle gives dot notation and lets `moralGraph`
    and `DAG.induce` be honest functions `DAG V → _`, matching the `SimpleGraph`-shaped
-   vocabulary the round-1 undirected layer already speaks; the predicate lets us say
+   vocabulary of the undirected side; the predicate lets us say
    "this sub-relation is still acyclic" (`IsAcyclicRel.mono`) without building a structure.
 4. **The neighbourhoods are `Finset`s, and their decidability is explicit.** `Finset V` is the
    index-block vocabulary of `Core.Separation`, `Core.Semigraphoid` and `Core.Coordinates`, so
-   the directed neighbourhoods must be `Finset`s to be consumable there. That forces
+   the directed neighbourhoods must be `Finset`s to fit there. That forces
    `[Fintype V]` plus a `Decidable` instance for the predicate being filtered:
    `[DecidableRel D.Adj]` for `parents`/`children`, and
    `[DecidableRel (Relation.TransGen D.Adj)]` for `ancestors`/`descendants`/`nonDescendants`/
-   `ancestralClosure`. **The pin has no instance for the latter** — its only reachability
-   instance is `DecidableRel G.Reachable` for a `SimpleGraph`
-   (`Combinatorics/SimpleGraph/Connectivity/Finite.lean:56`), and deciding `Relation.TransGen`
-   is a genuine transitive-closure computation that is out of scope here. So we take it as an
-   instance **argument** rather than hiding it behind `Classical.dec`: every consumer can
-   discharge it with `classical`, and any two choices give equal `Finset`s by
-   `Finset.filter_congr_decidable`.
+   `ancestralClosure`. Deciding `Relation.TransGen` is a genuine transitive-closure computation
+   that is out of scope here, so we take it as an instance **argument** rather than hiding it
+   behind `Classical.dec`: it can always be discharged with `classical`, and any two choices
+   give equal `Finset`s by `Finset.filter_congr_decidable`.
 5. **`DAG.induce A` keeps the vertex type `V`** and merely restricts the edge relation to `A`,
    leaving vertices outside `A` isolated, rather than moving to the subtype `↥A`. Lauritzen's
    `G_A` is the subgraph on the vertex set `A`; the two agree on everything we ask of them,
    because every edge of `DAG.induce A` has both endpoints in `A`, so every directed chain and
    (after moralization) every walk between vertices of `A` stays inside `A`. Keeping `V` fixed
-   is what lets the round-1 `Separates`/`IsGlobalMarkov` vocabulary, which is phrased on
-   `Finset V` for a single `V`, apply verbatim to the moralized restriction — the alternative
-   would drag a subtype transport through every statement of Corollary 3.23.
+   lets the `Separates`/`IsGlobalMarkov` vocabulary, which is phrased on `Finset V` for a single
+   `V`, apply to the moralized restriction — the alternative would drag a subtype transport
+   through every statement of Corollary 3.23.
 6. **The topological order is stated as an existence theorem, not a sort.** Mathlib's
    `extend_partialOrder` (`Order/Extension/Linear.lean`, the Szpilrajn extension theorem) turns
    the partial order `Relation.ReflTransGen D.Adj` into a linear one, and on a finite type
-   `monoEquivOfFin` (`Data/Fintype/Sort.lean:29`) converts a linear order into an enumeration
-   by `Fin (Fintype.card V)`. We consume both rather than writing a topological sort: per the
-   reuse ledger, a hand-rolled sort would re-derive Szpilrajn.
+   `monoEquivOfFin` converts a linear order into an enumeration by `Fin (Fintype.card V)`.
 
 **Bibliographic comments.** Directed graphical models and their ancestral vocabulary are due to
 the recursive-model literature — T. Speed and H. Kiiveri, "Gaussian Markov distributions over
 finite graphs," *Ann. Statist.* **14** (1986), 138–150; S. L. Lauritzen and D. J. Spiegelhalter,
 "Local computations with probabilities on graphical structures," *J. Roy. Statist. Soc. Ser. B*
 **50** (1988), 157–224; and J. Pearl, *Probabilistic Reasoning in Intelligent Systems*, Morgan
-Kaufmann, 1988. The linear-extension theorem consumed in `DAG.exists_linearOrder_extending` is
+Kaufmann, 1988. The linear-extension theorem behind `DAG.exists_linearOrder_extending` is
 E. Szpilrajn, "Sur l'extension de l'ordre partiel," *Fund. Math.* **16** (1930), 386–389, which
-Mathlib proves via Zorn's lemma. Mathlib has no DAG vocabulary of its own beyond the bare
-`Digraph` adjacency lattice discussed above, so everything in this file is new here, while every
-closure-theoretic ingredient (`Relation.TransGen`, `Relation.ReflTransGen`, `extend_partialOrder`,
-`monoEquivOfFin`) is Mathlib's.
+Mathlib proves via Zorn's lemma.
 -/
 
 namespace StatLean.StatisticalModels.GraphicalModels
@@ -137,7 +117,7 @@ def IsAcyclicRel (r : V → V → Prop) : Prop :=
   ∀ v : V, ¬ Relation.TransGen r v v
 
 /-- A sub-relation of an acyclic relation is acyclic — the fact that makes every restriction of
-a DAG (in particular `DAG.induce`) a DAG again. Consumes `Relation.TransGen.mono`. -/
+a DAG (in particular `DAG.induce`) a DAG again. -/
 theorem IsAcyclicRel.mono {r p : V → V → Prop}
     -- USER-INPUT: the ambient acyclic relation; Lauritzen §2.1.1, p. 6
     (hp : IsAcyclicRel p)
@@ -406,7 +386,7 @@ variable [Fintype V] [DecidableEq V]
 
 /-- Membership in `An(A)`: `u ∈ An(A)` exactly when `u` reaches some element of `A`, the
 reflexive reading (`Relation.ReflTransGen`) capturing both `u ∈ A` and `u ∈ an(v)` for some
-`v ∈ A`. Consumes `Relation.reflTransGen_iff_eq_or_transGen`. -/
+`v ∈ A`. -/
 theorem mem_ancestralClosure {D : DAG V} [DecidableRel (Relation.TransGen D.Adj)]
     {A : Finset V} {u : V} :
     u ∈ D.ancestralClosure A ↔ ∃ v ∈ A, Relation.ReflTransGen D.Adj u v := by
@@ -435,7 +415,7 @@ theorem isAncestralSet_ancestralClosure (D : DAG V) [DecidableRel (Relation.Tran
   exact mem_ancestralClosure.mpr ⟨w, hw, Relation.ReflTransGen.head huv h⟩
 
 /-- **Minimality**: `An(A)` is contained in every ancestral set containing `A` — the second half
-of Lauritzen's characterisation, and the form Corollary 3.23 consumes. -/
+of Lauritzen's characterisation, and the form Corollary 3.23 needs. -/
 theorem ancestralClosure_subset_of_isAncestralSet {D : DAG V}
     [DecidableRel (Relation.TransGen D.Adj)] {A B : Finset V}
     -- USER-INPUT: the ancestral superset; Lauritzen §2.1.1, p. 7 ("the smallest ancestral set
@@ -487,8 +467,7 @@ relative to an ordering in which the parents of a vertex precede it. On a finite
 two statements below supply such an ordering. -/
 
 /-- **Szpilrajn for a DAG**: reachability extends to a linear order, so every ancestor precedes
-its descendants. Consumes Mathlib's `extend_partialOrder` (`Order/Extension/Linear.lean`)
-applied to the partial order `DAG.isPartialOrder_reflTransGen`; no sort is written by hand. -/
+its descendants. -/
 theorem exists_linearOrder_extending (D : DAG V) :
     ∃ s : V → V → Prop, IsLinearOrder V s ∧
       ∀ ⦃u v : V⦄, Relation.ReflTransGen D.Adj u v → s u v := by
@@ -498,9 +477,7 @@ theorem exists_linearOrder_extending (D : DAG V) :
 
 /-- **Topological order on a finite vertex set**: an enumeration of `V` by
 `Fin (Fintype.card V)` in which every ancestor precedes its descendant — in particular every
-parent precedes its child (take `Relation.TransGen.single`). Route: the linear order of
-`DAG.exists_linearOrder_extending`, made into a `LinearOrder V` instance (its decidability
-supplied classically), then `monoEquivOfFin` (`Data/Fintype/Sort.lean:29`).
+parent precedes its child (take `Relation.TransGen.single`).
 
 *Edge behaviour.* On the empty vertex type the equivalence is the empty one and the statement is
 vacuous. -/
@@ -526,8 +503,7 @@ theorem exists_topologicalOrder [Fintype V] (D : DAG V) :
 /-! ### The induced sub-DAG
 
 Lauritzen's `G_A` (§2.1.1, p. 7). See the module docstring, note 5, for why the vertex type is
-kept fixed. This construction lives here rather than in `Directed/Moralization.lean` because it
-is a DAG-to-DAG operation; moralization merely post-composes it. -/
+kept fixed. -/
 
 /-- The **sub-DAG induced on `A`** (Lauritzen `G_A`, §2.1.1, p. 7): keep exactly the edges with
 both endpoints in `A`.
@@ -536,7 +512,7 @@ both endpoints in `A`.
 rather than being deleted. Every edge of `D.induce A` has both endpoints in `A`
 (`DAG.mem_of_induce_adj`), so the isolated points take part in no directed chain and, after
 moralization, in no walk — which is why this presentation proves the same theorems as the book's
-vertex-deleting `G_A` while keeping the round-1 `Finset V`-indexed vocabulary applicable.
+vertex-deleting `G_A` while keeping the `Finset V`-indexed vocabulary applicable.
 Acyclicity is inherited by `IsAcyclicRel.mono`. *Edge behaviour.* `D.induce Finset.univ = D`
 (`DAG.induce_univ`) and `D.induce ∅` is the empty graph. -/
 def induce (D : DAG V) (A : Finset V) : DAG V where

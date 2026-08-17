@@ -12,15 +12,14 @@ The keystone of the graphical-models area: a conditional-independence predicate
 side condition, so that the same vocabulary carries the discrete (mass-function) theory,
 the Gaussian theory, and any future semiparametric/causal consumer.
 
-The idiom is the repo's existence-of-a-kernel one (`Coarsening.IsMAR`,
-`Operators.IsCoarseningAtRandom`): rather than *invoking* a regular conditional
-distribution, we *assert that a product disintegration exists*.
+Rather than *invoking* a regular conditional distribution, we *assert that a product
+disintegration exists*.
 
 * `CondIndep μ f g h` — the joint law of `(h, (f, g))` under `μ` factors as
   `(law of h) ⊗ₘ (κ ×ₖ η)` for two Markov kernels `κ`, `η` out of the conditioning space;
 * `CondIndep.symm` — Lauritzen (C1), *symmetry*: swap the two kernels;
 * `CondIndep.comp_of_sfinite` — Lauritzen (C2), *decomposition* in its functional form
-  `U = φ(X), W = ψ(Y)`: push the kernels through measurable maps. The frozen statement
+  `U = φ(X), W = ψ(Y)`: push the kernels through measurable maps. The statement
   `CondIndep.comp`, which carried no `[SFinite (μ.map h)]` hypothesis, was **false** and has been
   **deleted**; see the section *"(C2) without s-finiteness — deleted, and why"* below, the
   machine-checked `CondIndep.CompCounterexample.comp_is_false`, and the proved repair;
@@ -31,8 +30,7 @@ distribution, we *assert that a product disintegration exists*.
 * `condIndep_of_subsingleton_left` — a **degenerate** argument (subsingleton value space, i.e.
   the subvector on an empty block) is conditionally independent of everything;
 * `condIndepFun_of_condIndep` — the **export bridge** to Mathlib's
-  `ProbabilityTheory.CondIndepFun`. Stated so that our results are exportable; **no**
-  theorem of this area depends on it.
+  `ProbabilityTheory.CondIndepFun`.
 
 **Reference.** S. L. Lauritzen, *Graphical Models*, Oxford Statistical Science Series 17,
 Clarendon Press, Oxford, 1996, §3.1, pp. 28–29, equations (3.1)–(3.7) — in particular the
@@ -44,10 +42,7 @@ p. 29 (`Lauritzen §3.1`).
 **Proof formalization notes.** *Book vs Lean:* Lauritzen states conditional independence
 through densities with respect to a product measure (3.1); we state the equivalent
 measure-theoretic disintegration, which needs no dominating measure and no standard Borel
-hypothesis. The repo deliberately does **not** build on Mathlib's `CondIndepFun` (see
-`CausalInference/Core/PopulationDefs.lean:47`): `CondIndepFun` carries a
-`StandardBorelSpace Ω` burden on the *sample* space, which the model-level statements here
-must not inherit. Two consequences of the chosen shape are worth recording.
+hypothesis. Two consequences of the chosen shape are worth recording.
 
 * Symmetry (C1) and the functional form of decomposition (C2) are **structural** — swap the
   kernel pair, push the kernels forward. (C1) does hold in this generality; (C2) does *not*,
@@ -55,36 +50,11 @@ must not inherit. Two consequences of the chosen shape are worth recording.
   (`MeasureTheory.Measure.compProd_of_not_sfinite`), and the swap of (C1) is an involution while
   a general `φ` is not — see `CondIndep.comp_of_sfinite`. Weak union (C3),
   contraction (C4) and intersection (C5) need essential uniqueness of disintegrations and are
-  therefore proved in the discrete layer only, never assumed here (roadmap §3).
+  therefore proved in the discrete layer only, never assumed here.
 * `const_right` genuinely needs `IsProbabilityMeasure μ`, not merely `IsFiniteMeasure μ`: for
   a finite measure of total mass `m`, the disintegration identity gives
   `μ.map (f, g) = m · (κ c).prod (η c)` while `(μ.map f).prod (μ.map g) = m² · (κ c).prod (η c)`,
   so the two agree exactly when `m ∈ {0, 1}`.
-
-**Reuse (binding).** Nothing measure-theoretic is re-derived here; every proof is an
-assembly of existing Mathlib kernel algebra, and each theorem's docstring names its route.
-
-* swap the kernel pair — `ProbabilityTheory.Kernel.map_prod_swap`
-  (`Kernel/Composition/Prod.lean:198`);
-* push kernels through maps — `ProbabilityTheory.Kernel.map_prod_map` (`Prod.lean:174`) and
-  `ProbabilityTheory.Kernel.IsMarkovKernel.map` (`MapComap.lean:118`);
-* move a `Kernel.map` across `⊗ₘ` — `MeasureTheory.Measure.compProd_map`
-  (`Kernel/Composition/Lemmas.lean:120`);
-* constant conditioning variable — `MeasureTheory.Measure.map_const` (`Measure/Dirac.lean:91`);
-* land on Mathlib's independence — `ProbabilityTheory.indepFun_iff_map_prod_eq_prod_map_map`
-  (`Independence/Basic.lean:701`);
-* uniqueness of the disintegrating kernel —
-  `ProbabilityTheory.condDistrib_ae_eq_of_measure_eq_compProd` (`Kernel/CondDistrib.lean:163`);
-* Mathlib's conditional independence already in our shape —
-  `ProbabilityTheory.condIndepFun_iff_map_prod_eq_prod_condDistrib_prod_condDistrib`
-  (`Independence/Conditional.lean:817`), with
-  `condIndepFun_iff_condDistrib_prod_ae_eq_prodMkRight` (`:867`) as the alternative.
-
-In particular the bridge `condIndepFun_of_condIndep` is a *citation*: the right-hand side of
-`condIndepFun_iff_map_prod_eq_prod_condDistrib_prod_condDistrib` is literally our definition
-with `κ := condDistrib f h μ`, `η := condDistrib g h μ` (modulo
-`Measure.compProd_eq_comp_prod`), and `condDistrib_ae_eq_of_measure_eq_compProd` identifies
-our anonymous witnesses with those two after marginalising the product kernel.
 
 **Bibliographic comments.** The axiomatic treatment of conditional independence as a
 free-standing relation is A. P. Dawid, "Conditional independence in statistical theory,"
@@ -121,7 +91,7 @@ variable {Ω α β γ : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [Measur
 failure of `AEMeasurable` back, so both sides are the junk `0` in that case.
 
 LEAN-ONLY: a bookkeeping lemma, not a mathematical hypothesis; `MeasureTheory.Measure.map_map`
-only applies to a.e. measurable `T`, and the frozen statements of this file carry no
+only applies to a.e. measurable `T`, and the statements of this file carry no
 measurability hypothesis on `f`, `g`, `h`. -/
 private theorem map_comp_of_leftInverse {δ ε : Type*} [MeasurableSpace δ] [MeasurableSpace ε]
     {e : δ → ε} {e' : ε → δ} (he : Measurable e) (he' : Measurable e')
@@ -136,12 +106,7 @@ private theorem map_comp_of_leftInverse {δ ε : Type*} [MeasurableSpace δ] [Me
     rw [Measure.map_of_not_aemeasurable hT', Measure.map_of_not_aemeasurable hT, Measure.map_zero]
 
 /-- **(C1), symmetry** (Lauritzen p. 29; Pearl 1988 calls it *symmetry*): conditional
-independence is symmetric in its two arguments. Structural — swap the kernel pair.
-
-Route (do not re-derive): map both sides of the disintegration through `Prod.map id Prod.swap`
-using `MeasureTheory.Measure.map_map` on the left and
-`MeasureTheory.Measure.compProd_map measurable_swap` on the right, then
-`ProbabilityTheory.Kernel.map_prod_swap` turns `(κ ×ₖ η).map Prod.swap` into `η ×ₖ κ`. -/
+independence is symmetric in its two arguments. Structural — swap the kernel pair. -/
 theorem CondIndep.symm
     -- USER-INPUT: the conditional independence to be reversed; Lauritzen §3.1 (C1)
     (hci : CondIndep μ f g h) :
@@ -166,9 +131,7 @@ theorem CondIndep.symm
 
 There used to be a declaration `CondIndep.comp` here: Lauritzen (C2) in functional form
 (`X ⫫ Y ∣ Z` and `U = φ(X)`, `W = ψ(Y)` imply `U ⫫ W ∣ Z`) stated with **no** hypothesis on
-`μ.map h`, and carrying a `sorry`. **That statement is false, and has been deleted rather than
-left `sorry`ed**: a `sorry` on a statement known to be false is indistinguishable, in any
-census, from honest unfinished work. What was deleted is exactly
+`μ.map h`. **That statement is false, and has been deleted.** What was deleted is exactly
 
 ```
 theorem CondIndep.comp {α' β' : Type*} [MeasurableSpace α'] [MeasurableSpace β']
@@ -193,23 +156,16 @@ statement (in `Type`-universe form), so the refutation is machine-checked, not n
   measurable, so its law has mass `mu Set.univ ≠ 0` — while the right-hand side is still `0`.
   The conclusion `CondIndep mu (φ ∘ snd') (ψ ∘ snd') id` therefore **fails**.
 
-The gap is not an artefact of the intended route (`Kernel.map_prod_map` then
-`MeasureTheory.Measure.compProd_map`, the latter demanding s-finiteness): it is the statement.
+The gap is not an artefact of the proof method: it is the statement.
 `CondIndep.comp_of_sfinite` below is the same theorem with the one missing hypothesis
 `[SFinite (μ.map h)]` restored, and is fully proved; it is free at every intended instance,
 since `SFinite (μ.map h)` is an instance whenever `SFinite μ` is (in particular for any
-probability or σ-finite `μ`), and it is what every consumer in this area now uses. -/
+probability or σ-finite `μ`). -/
 
 /-- **(C2), decomposition in functional form** (Lauritzen p. 29: `X ⫫ Y ∣ Z` and `U = φ(X)`
 imply `U ⫫ Y ∣ Z`; Pearl 1988 calls it *decomposition*): measurable transformations of the two
 independent arguments preserve conditional independence. Structural — push each kernel forward
 through the corresponding map.
-
-Route (do not re-derive): the witnesses are `κ.map φ` and `η.map ψ`, Markov by
-`ProbabilityTheory.Kernel.IsMarkovKernel.map`; `ProbabilityTheory.Kernel.map_prod_map hφ hψ`
-rewrites their product as `(κ ×ₖ η).map (Prod.map φ ψ)`, and
-`MeasureTheory.Measure.compProd_map (hφ.prodMap hψ)` moves that map outside `⊗ₘ`, where it
-matches the left-hand side by `MeasureTheory.Measure.map_map`.
 
 This is the **repaired** form of the deleted `CondIndep.comp`: identical to it except for the
 one hypothesis that makes it true; see the section above and
@@ -222,7 +178,7 @@ theorem CondIndep.comp_of_sfinite {α' β' : Type*} [MeasurableSpace α'] [Measu
     {φ : α → α'} {ψ : β → β'}
     -- LEAN-ONLY: the hypothesis missing from the deleted `CondIndep.comp`, which is false
     -- without it. `⊗ₘ` is *defined* to be `0` when the left measure is not s-finite
-    -- (`MeasureTheory.Measure.compProd_of_not_sfinite`), so the frozen statement equates a
+    -- (`MeasureTheory.Measure.compProd_of_not_sfinite`), so the statement equates a
     -- possibly nonzero law with `0`. Free at every intended instance: `SFinite (μ.map h)` is
     -- an instance as soon as `SFinite μ` is
     [SFinite (μ.map h)]
@@ -255,10 +211,9 @@ theorem CondIndep.comp_of_sfinite {α' β' : Type*} [MeasurableSpace α'] [Measu
 /-- Marginalising a `dirac`-conditioned disintegration: pushing `(dirac c) ⊗ₘ K` forward through
 `Prod.snd` returns the kernel's value at `c`.
 
-LEAN-ONLY: bookkeeping. Mathlib's `MeasureTheory.Measure.dirac_compProd_apply` is the same fact
-but assumes `MeasurableSingletonClass` on the conditioning space, which the frozen statements
-here do not carry; the proof below uses `lintegral_dirac'` instead, which only needs
-measurability of the integrand. -/
+LEAN-ONLY: bookkeeping. Stated without a `MeasurableSingletonClass` hypothesis on the
+conditioning space, which the statements here do not carry; measurability of the integrand
+is all that is needed. -/
 private theorem map_snd_dirac_compProd {δ : Type*} [MeasurableSpace δ] (c : γ) (K : Kernel γ δ)
     [IsSFiniteKernel K] : ((Measure.dirac c) ⊗ₘ K).map Prod.snd = K c := by
   ext S hS
@@ -268,14 +223,8 @@ private theorem map_snd_dirac_compProd {δ : Type*} [MeasurableSpace δ] (c : γ
 
 /-- Conditioning on a **constant** is ordinary independence (Lauritzen §3.1: `X ⫫ Y ∣ Z` with
 `Z` degenerate is `X ⫫ Y`). Forward direction, landing on Mathlib's
-`ProbabilityTheory.IndepFun` — no new independence notion. The probability-measure hypothesis
-is essential, not cosmetic — see the module docstring.
-
-Route (do not re-derive): `MeasureTheory.Measure.map_const` collapses `μ.map (fun _ => c)` to
-`dirac c`; pushing the disintegration through `Prod.snd` gives
-`μ.map (fun ω => (f ω, g ω)) = (κ c).prod (η c)`, and pushing further through `Prod.fst` /
-`Prod.snd` identifies `κ c = μ.map f` and `η c = μ.map g`; conclude with
-`ProbabilityTheory.indepFun_iff_map_prod_eq_prod_map_map`. -/
+`ProbabilityTheory.IndepFun`. The probability-measure hypothesis
+is essential, not cosmetic — see the module docstring. -/
 theorem CondIndep.const_right
     -- LEAN-ONLY: `IndepFun` compares `μ(A ∩ B)` with `μ(A)·μ(B)`, which is scale-sensitive;
     -- a finite measure of mass `m ∉ {0,1}` satisfies the disintegration but not `IndepFun`
@@ -307,12 +256,7 @@ theorem CondIndep.const_right
   rw [hfc, hgc, h2]
 
 /-- Converse of `CondIndep.const_right`: independence is conditional independence given a
-constant, witnessed by the two constant kernels carrying the marginal laws.
-
-Route (do not re-derive): take `κ := Kernel.const _ (μ.map f)` and `η := Kernel.const _ (μ.map g)`
-(Markov by `MeasureTheory.Measure.isProbabilityMeasure_map`), unfold the independence with
-`ProbabilityTheory.indepFun_iff_map_prod_eq_prod_map_map`, and use
-`MeasureTheory.Measure.map_const` on the conditioning variable. -/
+constant, witnessed by the two constant kernels carrying the marginal laws. -/
 theorem condIndep_const_of_indepFun
     -- LEAN-ONLY: see `CondIndep.const_right`; also makes `μ.map f` a probability measure, so
     -- that `Kernel.const _ (μ.map f)` is a Markov kernel
@@ -336,10 +280,9 @@ theorem condIndep_const_of_indepFun
 `(h, (f, g))` and `(h', (f', g'))` — possibly on different sample spaces, under different
 measures — with the *same* joint law satisfy the predicate together.
 
-This is the transfer principle that `Gaussian.Precision` deliberately declined to assume ("that
-is a `Core.CondIndep` statement, is not in this file's scope"): it is what lets a block statement
-about the canonical coordinate vector of `N(m, Σ)` be re-read on a *reindexed* or *marginalised*
-Gaussian, whose coordinate blocks have the same joint law but live on a different sample space.
+This is the transfer principle that lets a block statement about the canonical coordinate vector
+of `N(m, Σ)` be re-read on a *reindexed* or *marginalised* Gaussian, whose coordinate blocks
+have the same joint law but live on a different sample space.
 
 The only content is that the conditioning law `μ.map h` is itself a marginal of the joint law
 (`Prod.fst`), so both sides of the defining identity are functions of the joint law alone; the
@@ -373,13 +316,7 @@ disintegration of `(h, g)` exists and can be padded with the constant `f`.
 This is the *edge behaviour* the module docstring of `Core.Coordinates` records for `A = ∅`, made
 into a theorem. It is what lets a model class supply the global Markov property of
 `Undirected.Markov` — whose definition quantifies over *all* disjoint triples, empty blocks
-included — from Theorem 3.7's nonempty-blocks form.
-
-Route (do not re-derive): the witnesses are `Kernel.const _ (dirac a₀)` and the regular
-conditional distribution `ProbabilityTheory.condDistrib g h μ`, whose defining property
-`ProbabilityTheory.compProd_map_condDistrib` *is* the disintegration of `(h, g)`; padding it
-with the constant is `MeasureTheory.Measure.compProd_map measurable_prodMk_left` on the kernel
-side and `MeasureTheory.Measure.dirac_prod` on the measure side. -/
+included — from Theorem 3.7's nonempty-blocks form. -/
 theorem condIndep_of_subsingleton_left
     -- LEAN-ONLY: `condDistrib` is defined for finite measures; without *some* disintegration
     -- hypothesis the statement is false in the `⊗ₘ`-junk regime, exactly as for
@@ -417,17 +354,7 @@ theorem condIndep_of_subsingleton_left
 
 /-- **Export bridge (ours ⇒ Mathlib's).** On a standard Borel sample space with a finite
 measure and standard Borel nonempty value spaces, our disintegration predicate implies
-Mathlib's `ProbabilityTheory.CondIndepFun` given the σ-algebra generated by `h`.
-
-Route: `ProbabilityTheory.condIndepFun_iff_map_prod_eq_prod_condDistrib_prod_condDistrib`
-states `CondIndepFun` as exactly this identity with `κ := condDistrib f h μ` and
-`η := condDistrib g h μ`; essential uniqueness of disintegration identifies the anonymous
-witnesses of `CondIndep` with those two kernels (marginalising the product kernel through
-`Prod.fst` / `Prod.snd`). The instance burden is inherited verbatim from that lemma plus the
-`StandardBorelSpace Ω`/`IsFiniteMeasure μ` burden of `CondIndepFun` itself.
-
-**No theorem in this area depends on this bridge** (roadmap §3): it exists so that results
-proved with `CondIndep` are exportable to Mathlib-facing consumers. -/
+Mathlib's `ProbabilityTheory.CondIndepFun` given the σ-algebra generated by `h`. -/
 theorem condIndepFun_of_condIndep
     -- LEAN-ONLY: `ProbabilityTheory.CondIndepFun` is defined through `condExpKernel`, which
     -- requires the sample space to be standard Borel; our predicate does not
@@ -485,8 +412,7 @@ regime: the conditioning law is not s-finite, so *every* `⊗ₘ` on the right-h
 while a constant transformation of the two variables turns a non-a.e.-measurable triple into a
 measurable one and so makes the left-hand side nonzero. See the section *"(C2) without
 s-finiteness — deleted, and why"* above for the narrative, and `comp_is_false` for the
-derivation of `False` from the deleted statement. **This section is what keeps the refutation
-alive after the deletion**; nothing else in the area depends on it. -/
+derivation of `False` from the deleted statement. -/
 
 /-- Sample space: the plane `ℝ × Bool`. -/
 def Pt : Type := ℝ × Bool
@@ -579,7 +505,7 @@ a.e. measurable. -/
 theorem not_aemeasurable_snd' : ¬ AEMeasurable snd' mu := fun h =>
   not_measurableSet_snd'_true (measurable_of_aemeasurable h (measurableSet_singleton true))
 
-/-- The frozen (C2) **hypothesis** holds here: the law of the triple is the junk `0` (the triple
+/-- The deleted (C2) **hypothesis** holds here: the law of the triple is the junk `0` (the triple
 is not a.e. measurable), and so is the right-hand side (`mu` is not s-finite). -/
 theorem condIndep_snd' : CondIndep mu snd' snd' id := by
   refine ⟨Kernel.const _ (Measure.dirac true), Kernel.const _ (Measure.dirac true),

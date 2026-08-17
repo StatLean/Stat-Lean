@@ -7,11 +7,10 @@ import Mathlib.Combinatorics.SimpleGraph.Clique
 
 Lauritzen's *moral graph* (§2.1.1, p. 7, unnumbered): marry the parents — join every pair of
 vertices with a common child — and then drop the directions. The result is an **undirected**
-graph, and building it as a `SimpleGraph V` is the single most important design point of the
-directed round: it makes the whole round-1 undirected layer (`Core.Separation.Separates`,
-`Undirected.Markov.IsGlobalMarkov`, `Discrete.Factorization.FactorizesOver`) applicable to a
-directed model verbatim, so the directed theorems are proved by **transport** to `G^m` rather
-than by a parallel directed development.
+graph, so the undirected vocabulary (`Core.Separation.Separates`,
+`Undirected.Markov.IsGlobalMarkov`, `Discrete.Factorization.FactorizesOver`) applies to a
+directed model, and the directed theorems are proved by **transport** to `G^m` rather than by a
+parallel directed development.
 
 * `DAG.moralRel` — the relation "edge, or common child", the input to `SimpleGraph.fromRel`;
 * `DAG.moralGraph` — the moral graph `G^m`, with its adjacency characterisation
@@ -30,9 +29,7 @@ than by a parallel directed development.
 * `DAG.moralGraph_induce_adj`, `DAG.moralGraph_induce_le`,
   `DAG.isClique_insert_parents_induce` — moralization of the sub-DAG induced on a block, i.e.
   `(G_A)^m`. Lauritzen's Corollary 3.23 and Proposition 3.25 are stated at
-  `A = An(A ∪ B ∪ S)`, so `(G_{An(A∪B∪S)})^m` is *the* object of the directed round; the
-  induced-sub-DAG construction itself lives one file down, in `Directed.DAG` (`DAG.induce`),
-  because it is a DAG-to-DAG operation.
+  `A = An(A ∪ B ∪ S)`, so `(G_{An(A∪B∪S)})^m` is *the* object of interest.
 
 **Reference.** S. L. Lauritzen, *Graphical Models*, Oxford Statistical Science Series 17,
 Clarendon Press, Oxford, **1996**, §2.1.1, p. 7: the moral graph `G^m` of a directed acyclic
@@ -49,17 +46,12 @@ moral graph, hence property (DG)) and **Proposition 3.25** (p. 48, d-separation 
 1. **"Unmarried parents" versus all parents.** Lauritzen adds edges between parents that are
    *not already adjacent*; we take the union of the edge relation with the common-child relation
    in one step. The two graphs are identical — adding an edge that is already present is a
-   no-op — and the one-step form is what `SimpleGraph.fromRel` consumes.
+   no-op — and the one-step form is the input `SimpleGraph.fromRel` takes.
 2. **`SimpleGraph.fromRel` supplies symmetry and looplessness.** `fromRel r` has
-   `Adj a b ↔ a ≠ b ∧ (r a b ∨ r b a)` (`Combinatorics/SimpleGraph/Basic.lean:132`), which is
-   exactly "symmetrize, then delete the diagonal"; its `DecidableRel` instance (`:146`) is what
-   `DAG.instDecidableRelMoralGraphAdj` consumes. Deleting the diagonal is faithful, not a
-   repair: the marriage relation is between *pairs* of parents, so a vertex is never married to
-   itself, and `D.Adj u u` is impossible in a DAG anyway (`DAG.irrefl`). Mathlib's
-   `Digraph.toSimpleGraphInclusive` (`Combinatorics/Digraph/Orientation.lean`) is literally
-   `SimpleGraph.fromRel G.Adj`, i.e. our `DAG.skeleton`; we cannot route through `Digraph`
-   itself (see `Directed.DAG`'s module docstring), but the "drop directions" half of
-   moralization is the same operation Mathlib names there.
+   `Adj a b ↔ a ≠ b ∧ (r a b ∨ r b a)`, which is exactly "symmetrize, then delete the
+   diagonal". Deleting the diagonal is faithful, not a repair: the marriage relation is between
+   *pairs* of parents, so a vertex is never married to itself, and `D.Adj u u` is impossible in
+   a DAG anyway (`DAG.irrefl`).
 3. **`(G_A)^m` is not `G^m` restricted to `A`, and the order of operations matters.** Two
    vertices of `A` whose only common child lies *outside* `A` are married in `G^m` but not in
    `(G_A)^m`. `DAG.moralGraph_induce_adj` makes the difference visible (the witness `w` is
@@ -80,9 +72,6 @@ systems," *J. Roy. Statist. Soc. Ser. B* **50** (1988), 157–224, where it is t
 the junction-tree construction; the equivalence of d-separation (J. Pearl, *Probabilistic
 Reasoning in Intelligent Systems*, Morgan Kaufmann, 1988) with separation in the moralized
 ancestral subgraph is Lauritzen's Proposition 3.25, and is the reason this file exists.
-Mathlib has no moralization, no directed-model vocabulary and no ancestral sets; everything here
-is new, while `SimpleGraph.fromRel`, `SimpleGraph.IsClique` and the `SimpleGraph` lattice order
-are Mathlib's.
 -/
 
 namespace StatLean.StatisticalModels.GraphicalModels
@@ -113,9 +102,8 @@ instance instDecidableRelMoralRel [Fintype V] (D : DAG V) [DecidableRel D.Adj] :
 join every pair of vertices sharing a child ("marry the parents"), then drop the directions.
 
 Built through `SimpleGraph.fromRel`, so the result is a genuine `SimpleGraph V` — symmetric and
-loopless by construction — and therefore every result of the round-1 undirected layer
-(`Separates`, the three Markov properties, clique factorization) applies to it unchanged. That
-transport is the whole point of the construction: the directed theorems of Lauritzen §3.2.2 are
+loopless by construction — and the undirected vocabulary (`Separates`, the three Markov
+properties, clique factorization) applies to it. The directed theorems of Lauritzen §3.2.2 are
 proved by moving to `G^m`, not by redeveloping separation for directed graphs.
 
 *Edge behaviour.* Moralization only adds edges (`DAG.skeleton_le_moralGraph`); it is idempotent
@@ -126,10 +114,8 @@ def moralGraph (D : DAG V) : SimpleGraph V :=
 
 /-- Adjacency in `G^m` is decidable — required, not optional: `Undirected.Markov.IsLocalMarkov`,
 `Discrete.Factorization.completeSubsets` and `SimpleGraph.neighborFinset` all carry a
-`[DecidableRel G.Adj]` binder, so without this instance the round-1 undirected layer could not be
-instantiated at the moral graph at all. Inherited from `SimpleGraph.fromRel`'s own instance
-(`Combinatorics/SimpleGraph/Basic.lean:146`), which is why `moralGraph` is built through
-`fromRel` rather than by hand. -/
+`[DecidableRel G.Adj]` binder, so without this instance none of them could be instantiated at the
+moral graph. Inherited from `SimpleGraph.fromRel`'s own instance. -/
 instance instDecidableRelMoralGraphAdj [Fintype V] [DecidableEq V] (D : DAG V)
     [DecidableRel D.Adj] : DecidableRel D.moralGraph.Adj :=
   inferInstanceAs (DecidableRel (SimpleGraph.fromRel D.moralRel).Adj)
@@ -181,8 +167,7 @@ theorem moralGraph_adj_of_common_child {D : DAG V} {u v w : V}
     D.moralGraph.Adj u v :=
   (moralGraph_adj D u v).2 ⟨huv, Or.inr (Or.inr ⟨w, hu, hv⟩)⟩
 
-/-- `DAG.moralGraph_adj_of_common_child` in the `Finset` vocabulary of `DAG.parents`, which is
-the form the factorization lane consumes. -/
+/-- `DAG.moralGraph_adj_of_common_child` in the `Finset` vocabulary of `DAG.parents`. -/
 theorem moralGraph_adj_of_mem_parents [Fintype V] {D : DAG V} [DecidableRel D.Adj] {u v w : V}
     -- USER-INPUT: the two parents are distinct; Lauritzen §2.1.1, p. 7
     (huv : u ≠ v)
@@ -232,9 +217,7 @@ theorem moralGraph_mono {D₁ D₂ : DAG V}
 
 /-! ### The undirected skeleton
 
-The "drop directions" half of moralization on its own. Mathlib names the same operation
-`Digraph.toSimpleGraphInclusive` (`Combinatorics/Digraph/Orientation.lean`), but we cannot route
-through `Digraph` — see `Directed.DAG`'s module docstring. -/
+The "drop directions" half of moralization on its own. -/
 
 /-- The **skeleton** of a DAG: forget the orientations, keep no other edge. Not Lauritzen's moral
 graph — the marriages are missing — but the natural reference point for it
@@ -311,10 +294,9 @@ theorem moralGraph_induce_univ (D : DAG V) :
 /-- **The families of an ancestral set are complete in `(G_A)^m`.** For `v` in an ancestral block
 `A`, the family `fa(v) = {v} ∪ pa(v)` — computed in the *original* DAG, since ancestral sets have
 `pa_{G_A}(v) = pa_G(v)` (`DAG.parents_induce_of_isAncestralSet`) — is a clique of the moralized
-restriction. This is the exact form Lauritzen's Corollary 3.23 (p. 47) consumes: it is what lets
-a recursive factorization of the full DAG be read as a `FactorizesOver (D.induce A).moralGraph`
-statement, and hence lets the global Markov property of the round-1 undirected layer be applied
-to `(G_{An(A∪B∪S)})^m`. -/
+restriction. This is the exact form Lauritzen's Corollary 3.23 (p. 47) needs: it is what lets a
+recursive factorization of the full DAG be read as a `FactorizesOver (D.induce A).moralGraph`
+statement, and hence lets the global Markov property be applied to `(G_{An(A∪B∪S)})^m`. -/
 theorem isClique_insert_parents_induce (D : DAG V) [DecidableRel D.Adj] {A : Finset V}
     -- USER-INPUT: the block is ancestral; Lauritzen §2.1.1, p. 7 — the hypothesis of Cor. 3.23
     -- (p. 47), where the block is `An(A ∪ B ∪ S)`. Without it `pa_{G_A}(v)` is a proper subset

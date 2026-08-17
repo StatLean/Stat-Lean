@@ -56,16 +56,7 @@ Theorem 3.7 (`Lauritzen §3.1`).
 3. **Functional versus set form of (C2)/(C3).** Lauritzen phrases (C2)/(C3) with a function
    `U = h(X)`; on index blocks the corresponding statement is the set form
    `ci A (B ∪ D) C → ci A B C`, which is what the coordinate-level `CondIndepCoords`
-   decomposition (an instance of `CondIndep.comp` with `Finset.restrict₂`) delivers.
-
-**Reuse.** This file is pure order-theoretic logic: no measure theory, no probability, and no
-imports beyond `Finset`. Every proof is `exact`/`tauto` from the structure fields plus the
-existing `Finset` disjointness API — `Finset.disjoint_union_left` / `Finset.disjoint_union_right`
-(`Data/Finset/Basic.lean:76`/`:80`), `Finset.sdiff_disjoint` (`:266`),
-`Finset.disjoint_empty_left`/`_right` (`Data/Finset/Disjoint.lean:80`/`:84`), `Disjoint.symm`,
-`Disjoint.mono_left`/`mono_right` (`Order/Disjoint.lean:60`/`:78`/`:87`) — together with
-`Finset.union_comm`, `Finset.union_eq_right`, `Finset.empty_union` and
-`Finset.sdiff_union_of_subset`. Nothing here is a re-derivation.
+   decomposition delivers.
 
 `IsGraphoid` extends `IsSemigraphoid`, so `hci.toIsSemigraphoid` gives access to every derived
 combinator below from a graphoid.
@@ -137,8 +128,7 @@ theorem IsSemigraphoid.comm
     ci A B C ↔ ci B A C :=
   ⟨hci.symm hAB hAC hBC, hci.symm hAB.symm hBC hAC⟩
 
-/-- **(C2) on the other summand**: `X_A ⫫ (X_B, X_D) ∣ X_C ⇒ X_A ⫫ X_D ∣ X_C`. Route: commute
-the union with `Finset.union_comm`, then apply the field. -/
+/-- **(C2) on the other summand**: `X_A ⫫ (X_B, X_D) ∣ X_C ⇒ X_A ⫫ X_D ∣ X_C`. -/
 theorem IsSemigraphoid.decomposition_right
     -- USER-INPUT: the ambient calculus; Lauritzen §3.1 (C2), p. 29
     (hci : IsSemigraphoid ci)
@@ -150,9 +140,8 @@ theorem IsSemigraphoid.decomposition_right
     ci A D C :=
   hci.decomposition hAD hAC hAB hCD.symm hBC.symm (by rwa [Finset.union_comm D B])
 
-/-- **(C2) on the left factor**, via (C1): `(X_A, X_D) ⫫ X_B ∣ X_C ⇒ X_A ⫫ X_B ∣ X_C`. Route:
-`Finset.disjoint_union_left` to feed `symm`, then the field, then `symm` back. `Disjoint A D`
-is not needed. -/
+/-- **(C2) on the left factor**, via (C1): `(X_A, X_D) ⫫ X_B ∣ X_C ⇒ X_A ⫫ X_B ∣ X_C`.
+`Disjoint A D` is not needed. -/
 theorem IsSemigraphoid.decomposition_left
     -- USER-INPUT: the ambient calculus; Lauritzen §3.1 (C1)+(C2), p. 29
     (hci : IsSemigraphoid ci)
@@ -208,7 +197,7 @@ theorem IsSemigraphoid.weakUnion_left
   exact hci.symm hAB.symm hBCD hACD (hci.weakUnion hAB.symm hBC hBD hAC hAD hCD h')
 
 /-- **(C3) in "move a sub-block into the conditioning set" form**: this is the shape the
-local ⇒ pairwise Markov implication consumes. `Disjoint (B \ D) D` is
+local ⇒ pairwise Markov implication needs. `Disjoint (B \ D) D` is
 `Finset.sdiff_disjoint`, and the disjointness facts about `D` follow from those about `B` by
 `Disjoint.mono_right`, so only `A`, `B`, `C` facts are required. -/
 theorem IsSemigraphoid.weakUnion_sdiff
@@ -262,8 +251,7 @@ theorem IsSemigraphoid.union_iff
     fun h => hci.contraction hAB hAC hAD hBC hBD hCD h.1 h.2⟩
 
 /-- **`∅`-conditioning corollary of (C3)**: unconditional independence of a union splits into
-a conditional statement. The `∅` disjointness facts are `Finset.disjoint_empty_right` /
-`Finset.disjoint_empty_left`, and `Finset.empty_union` closes the conditioning set. -/
+a conditional statement. -/
 theorem IsSemigraphoid.weakUnion_empty
     -- USER-INPUT: the ambient calculus; Lauritzen §3.1 (C3), p. 29
     (hci : IsSemigraphoid ci)

@@ -25,10 +25,9 @@ rotation of the loadings) and Eq. (2.27) (oblique rotation); §3.13.1–§3.13.2
 §3.3, p. 50 (the normalization `Λ′Ψ⁻¹Λ` diagonal "removes the freedom to arbitrarily rotate
 `Λ`") (`BKM`).
 
-**Proof formalization notes.** The covariance invariance is `Matrix.mul_nonsing_inv` plus
-`Matrix.transpose_nonsing_inv` — `(A⁻¹)ᵀ Aᵀ = (A A⁻¹)ᵀ = 1`; the law invariance is
-`Matrix.toEuclideanLin` functoriality (`(Λ A) (A⁻¹ y) = Λ y`) inside the measurement kernel.
-For orthogonal `Q`, `Q⁻¹ = Qᵀ` is `Matrix.inv_eq_right_inv`. *Book vs Lean:* `BKM`'s model
+**Proof formalization notes.** The covariance invariance rests on `(A⁻¹)ᵀ Aᵀ = (A A⁻¹)ᵀ = 1`;
+the law invariance on `(Λ A)(A⁻¹ y) = Λ y` inside the measurement kernel. For orthogonal `Q`
+the inverse is the transpose. *Book vs Lean:* `BKM`'s model
 fixes `Φ = I` and therefore discusses orthogonal rotation as the whole story (§3.13.1),
 oblique rotation entering as a separate construction (§3.13.2); carrying `Φ` as a parameter
 makes both the *same* statement at different `A`, which is why the general-`A` theorem comes

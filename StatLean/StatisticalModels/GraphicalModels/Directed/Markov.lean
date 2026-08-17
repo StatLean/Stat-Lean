@@ -15,17 +15,13 @@ conditional-independence relation `ci : Finset V → Finset V → Finset V → P
   conditionally independent of its non-descendants, given its parents";
 * `IsDirectedGlobalMarkov D ci` — **(DG)**, Lauritzen **Corollary 3.23**, p. 47: `A ⫫ B ∣ S`
   whenever `S` separates `A` from `B` in `(𝒢_{An(A ∪ B ∪ S)})^m`, the moral graph of the
-  smallest ancestral set containing `A ∪ B ∪ S`. Stated by *consuming* `Separates`,
-  `DAG.ancestralClosure` and the moralization of the induced sub-DAG (`inducedMoralGraph`);
-  nothing is re-spelled.
+  smallest ancestral set containing `A ∪ B ∪ S`.
 
 and the results:
 
 * **`recursivelyFactorizes_implies_directedGlobalMarkov`** — Lauritzen **Corollary 3.23**, p. 47,
-  for the discrete instance: (DF) ⇒ (DG). This is the theorem the whole design exists to make
-  cheap; it is *four* citations of existing work glued together — Proposition 3.22, Lemma 3.21,
-  the round-1 undirected (F) ⇒ (G) (`factorizesOver_implies_globalMarkov`, Proposition 3.8), and
-  a marginalisation transfer;
+  for the discrete instance: (DF) ⇒ (DG). It combines Proposition 3.22, Lemma 3.21, the
+  undirected (F) ⇒ (G) (Proposition 3.8) and a marginalisation transfer;
 * `directedGlobalMarkov_implies_directedLocalMarkov` — (DG) ⇒ (DL), the middle implication of
   Theorem 3.27's proof (p. 51), pure graph theory: no property of `ci` is used;
 * `directedLocalMarkov_implies_directedPairwiseMarkov` — (DL) ⇒ (DP), p. 50 ("As
@@ -55,7 +51,7 @@ and all directed Markov properties are equivalent (`Lauritzen §3.2.2` in tags).
 1. **Disjointness is carried by `IsDirectedGlobalMarkov`.** Corollary 3.23 states (DG) without
    naming the disjointness convention, but Proposition 3.25 — the d-separation reading of the
    very same property, two pages later — opens with "Let `A`, `B` and `S` be **disjoint** subsets
-   of a directed acyclic graph". We follow round 1's `IsGlobalMarkov` and put the three
+   of a directed acyclic graph". We follow the undirected `IsGlobalMarkov` and put the three
    `Disjoint` hypotheses in the definition. (DP) and (DL) need no such hypothesis: their blocks
    are disjoint by construction, `v ∉ nd(v)` and `pa(v) ⊆ nd(v)`.
 2. **(DL) conditions on `nd(v) ∖ pa(v)`, not on `nd(v)`.** Lauritzen writes `α ⫫ nd(α) ∣ pa(α)`,
@@ -84,8 +80,8 @@ and all directed Markov properties are equivalent (`Lauritzen §3.2.2` in tags).
    be **false**, refuted by `2 • p` for any recursively factorizing `p`. Finiteness of `p` is
    *not* listed separately: it follows from the normalisation.
 
-**Where the empty-block regime bites, exactly as in round 1.** `IsDirectedGlobalMarkov` demands
-`ci ∅ ∅ ∅` of every instance (`separates_empty_left`), while (DP) and (DL) assert nothing at
+**Where the empty-block regime bites.** `IsDirectedGlobalMarkov` demands `ci ∅ ∅ ∅` of every
+instance (`separates_empty_left`), while (DP) and (DL) assert nothing at
 empty blocks and every semi-graphoid axiom is a `ci → ci` implication. So for an **abstract**
 `ci` neither "(DP) ⇒ (DL) at a vertex with `nd(v) = pa(v)`" nor "(DL) ⇒ (DG)" can hold in full
 generality — the everywhere-false relation is a graphoid satisfying (DP) and (DL) vacuously
@@ -95,21 +91,7 @@ records, and it is why `directedPairwiseMarkov_implies_directedLocalMarkov_of_no
 a nonemptiness side condition. It costs nothing at the discrete instance: `CondIndepMass p`
 *does* hold at empty blocks, by pure algebra, which is why
 `directedPairwiseMarkov_implies_directedLocalMarkov_of_pos` and `directedMarkov_tfae` are stated
-without any restriction. A machine-checked counterexample in the style of round 1 is **not**
-recorded here because it needs a concrete `DAG` term, i.e. the constructor of a structure owned
-by the concurrent `Directed/DAG.lean`; see the closing section.
-
-**Reuse (binding).** From `Directed/DAG.lean`: `DAG`, `DAG.parents`, `DAG.nonDescendants`,
-`DAG.IsAncestralSet`, `DAG.ancestralClosure`, `DAG.parents_subset_nonDescendants`,
-`DAG.notMem_nonDescendants_self`, `DAG.notMem_parents_self`,
-`DAG.disjoint_singleton_nonDescendants`. From `Directed/Moralization.lean`: `DAG.moralGraph`
-and `DAG.induce`, via the composite `inducedMoralGraph`. From `Core/Separation.lean`:
-`Separates` and its whole monotonicity API — never re-spelled. From `Core/Semigraphoid.lean`:
-`IsSemigraphoid.weakUnion` and `IsGraphoid.intersection`. From `Discrete/CondIndep.lean`:
-`CondIndepMass`, `blockMarginal`, `isSemigraphoid_condIndepMass`,
-`isGraphoid_condIndepMass_of_pos`. From `Discrete/Factorization.lean`:
-`factorizesOver_implies_globalMarkov` — the undirected (F) ⇒ (G), never re-proved. From
-`Directed/Factorization.lean`: (DF), Lemma 3.21 and Proposition 3.22.
+without any restriction. See the closing section.
 
 **Bibliographic comments.** The directed Markov properties and their equivalence are due to
 H. Kiiveri, T. P. Speed and J. B. Carlin (1984), J. Pearl and T. Verma (1987), T. Verma and
@@ -117,8 +99,7 @@ J. Pearl (1990), J. Q. Smith (1989), D. Geiger and J. Pearl (1990), and S. L. La
 A. P. Dawid, B. N. Larsen and H.-G. Leimer, "Independence properties of directed Markov fields,"
 *Networks* **20** (1990), 491–505 — the last being the source of the density-free (DL) ⟺ (DG)
 that Lauritzen records after Theorem 3.27. Pearl's d-separation reading of (DG) is Lauritzen's
-Proposition 3.25 (p. 48) and is *not* formalized here. Mathlib has no directed-Markov
-vocabulary.
+Proposition 3.25 (p. 48).
 -/
 
 open SimpleGraph
@@ -165,14 +146,8 @@ def IsDirectedLocalMarkov : Prop :=
   ∀ v : V, ci {v} (D.nonDescendants v \ D.parents v) (D.parents v)
 
 /-- **Lauritzen's `(𝒢_{An(T)})^m`** (Corollary 3.23, p. 47): moralize the sub-DAG induced on the
-smallest ancestral set containing `T`. A one-line composite of `DAG.ancestralClosure` with
-`inducedMoralGraph`, so that (DG) reads as the book does and so that the two ingredients are
-consumed at a single site.
-
-⚠️ *Duplicate to dedup at merge.* `Directed/DSeparation.lean`, which is **downstream** of this
-file, defines `moralAncestralGraph D A B S` for the same object with the union spelled out; it
-is definitionally `ancestralMoralGraph D (A ∪ B ∪ S)`. The two were written concurrently. The
-downstream copy should be repointed here at merge. -/
+smallest ancestral set containing `T`. A composite of `DAG.ancestralClosure` with
+`inducedMoralGraph`, so that (DG) reads as the book does. -/
 abbrev ancestralMoralGraph (T : Finset V) : SimpleGraph V :=
   inducedMoralGraph D (D.ancestralClosure T)
 
@@ -181,14 +156,13 @@ disjoint blocks `A`, `B`, `S`,
 `X_A ⫫ X_B ∣ X_S` whenever `S` separates `A` from `B` in `(𝒢_{An(A ∪ B ∪ S)})^m`.
 
 *Book vs Lean.* The disjointness is Proposition 3.25's, not Corollary 3.23's, but it is the
-book's standing convention for triples and it matches round 1's `IsGlobalMarkov`; see module
-docstring, note 1. Separation is `Core/Separation.Separates` verbatim, the ancestral closure and
-the moralization are the concurrent `Directed/` definitions — nothing is re-spelled here.
+book's standing convention for triples and it matches the undirected `IsGlobalMarkov`; see module
+docstring, note 1.
 
 *Edge behaviour.* `Separates G S ∅ B` holds (`separates_empty_left`), so (DG) demands `ci ∅ B S`
 of every instance; for the discrete relation `CondIndepMass p` that is free (both sides of the
-identity coincide), for an abstract `ci` it is a real demand. This is the same asymmetry round 1
-records under `IsGlobalMarkov`. -/
+identity coincide), for an abstract `ci` it is a real demand. This is the same asymmetry the
+undirected `IsGlobalMarkov` records. -/
 def IsDirectedGlobalMarkov : Prop :=
   ∀ A B S : Finset V, Disjoint A B → Disjoint A S → Disjoint B S →
     Separates (ancestralMoralGraph D (A ∪ B ∪ S)) S A B → ci A B S
@@ -201,8 +175,8 @@ variable {ci}
 "(DG) implies (DL) follows by observing that `{α} ∪ nd(α)` is an ancestral set and that `pa(α)`
 obviously separates `{α}` from `nd(α) ∖ pa(α)` in `(𝒢_{{α} ∪ nd(α)})^m`."
 
-**No property of `ci` is used** — this is pure graph theory, exactly as round 1's
-`globalMarkov_implies_localMarkov`. Two facts carry it. First, `{v} ∪ nd(v)` is ancestral (a
+**No property of `ci` is used** — this is pure graph theory. Two facts carry it. First,
+`{v} ∪ nd(v)` is ancestral (a
 parent of a non-descendant is a non-descendant, else its child would be a descendant), so it is
 its own ancestral closure and `{v} ∪ (nd(v) ∖ pa(v)) ∪ pa(v) = {v} ∪ nd(v)` — here
 `pa(v) ⊆ nd(v)` is used. Second, in the moral graph of the sub-DAG induced on `{v} ∪ nd(v)` the
@@ -316,7 +290,7 @@ theorem directedLocalMarkov_implies_directedPairwiseMarkov
 /-- **(DP) ⇒ (DL) under the intersection property, at the vertices where (DP) says anything** —
 Lauritzen p. 52: "If the probability distribution `P` satisfies (3.10), for example if the
 density is positive, then it is not difficult to see that (DP) implies (DL)". Condition (3.10) is
-`IsGraphoid.intersection`, exactly as in round 1's Theorem 3.7.
+`IsGraphoid.intersection`, as in Theorem 3.7.
 
 **Proof.** Fix `v` and write `N = nd(v)`, `P = pa(v)`, `R = N ∖ P`. Induct on nonempty `B ⊆ R`,
 claiming `ci {v} B (N ∖ B)`; the base case `B = {β}` is (DP) verbatim, and the step from `B` to
@@ -407,10 +381,10 @@ theorem directedPairwiseMarkov_implies_directedLocalMarkov_of_nonempty
   have hfinal := key (D.nonDescendants v \ D.parents v) Finset.Subset.rfl hne
   rwa [Finset.sdiff_sdiff_eq_self hPN] at hfinal
 
-/-- **(DG) ⇒ (DP)** — the composite of the two implications above, recorded because it is the
-directed analogue of round 1's `globalMarkov_implies_pairwiseMarkov`. Unlike that one it does
-need the calculus: there is no direct separation argument, because the conditioning set of (DP)
-is `nd(v) ∖ {β}` rather than a neighbourhood. -/
+/-- **(DG) ⇒ (DP)** — the composite of the two implications above, the directed analogue of
+`globalMarkov_implies_pairwiseMarkov`. Unlike that one it does need the calculus: there is no
+direct separation argument, because the conditioning set of (DP) is `nd(v) ∖ {β}` rather than a
+neighbourhood. -/
 theorem directedGlobalMarkov_implies_directedPairwiseMarkov
     -- USER-INPUT: the ambient conditional-independence calculus; Lauritzen §3.1 (C1)–(C4), p. 29
     (hci : IsSemigraphoid ci)
@@ -426,16 +400,15 @@ end Abstract
 
 Corollary 3.23 proves a conditional independence *for the marginal on an ancestral set* and then
 asserts it for the law itself. The two statements are not literally the same object, so the
-passage is a lemma. It belongs with the mass algebra of `Discrete/CondIndep.lean`; it is stated
-here only because that file is outside this batch's touch-set. -/
+passage is a lemma. -/
 
 section Discrete
 
 variable {V α : Type*} [Fintype V] [DecidableEq V] [Fintype α] [DecidableEq α]
 
 /-- **The fibre of a block restriction has `#α ^ #(V ∖ A)` elements** — the combinatorial content
-of the rescaling factor below. Auxiliary; route: `agreeOn A x` is the `Fintype.piFinset` of the
-family that pins the coordinates in `A` to those of `x` and leaves the rest free. -/
+of the rescaling factor below. Auxiliary: `agreeOn A x` is the `Fintype.piFinset` of the family
+that pins the coordinates in `A` to those of `x` and leaves the rest free. -/
 private theorem card_agreeOn (A : Finset V) (x : V → α) :
     (agreeOn A x).card = Fintype.card α ^ (Finset.univ \ A).card := by
   classical
@@ -494,8 +467,8 @@ theorem blockMarginal_blockMarginal_of_subset (p : (V → α) → ℝ≥0∞) {E
 contained in the marginalised block. This is the step Lauritzen leaves implicit in Corollary 3.23
 ("`A ⫫ B ∣ S`", asserted of `P` after being proved of `P_{An(A ∪ B ∪ S)}`).
 
-Route: `blockMarginal_blockMarginal_of_subset` rescales all four marginals in the identity (3.2)
-by the *same* factor `c = #α ^ #(V ∖ T)`, so both sides acquire `c²`; cancel it.
+*Proof idea.* Marginalising twice rescales all four marginals in the identity (3.2) by the *same*
+factor `c = #α ^ #(V ∖ T)`, so both sides acquire `c²`; cancel it.
 
 *No hypothesis on `α` is needed, although `c = 0` looks possible.* `c` vanishes only if `α` is
 empty and `T ≠ Finset.univ`; but if `α` is empty and `V` is not, then `V → α` is empty and
@@ -554,18 +527,15 @@ theorem condIndepMass_of_condIndepMass_blockMarginal {p : (V → α) → ℝ≥0
 /-- **Lauritzen Corollary 3.23**, p. 47: a mass function that factorizes recursively according to
 `D` obeys the **directed global Markov property**.
 
-This is the headline of the directed lane, and it is assembled entirely from results that already
-exist — the design's whole point:
+*Proof idea.* Four steps:
 
-1. `blockMarginal_recursivelyFactorizesOn_of_ancestralSet` (**Proposition 3.22**) — the marginal
-   on `T = An(A ∪ B ∪ S)` factorizes recursively over the sub-DAG induced on `T`;
-2. `recursivelyFactorizesOn_implies_factorizesOver_inducedMoralGraph` (**Lemma 3.21**) — hence
-   it factorizes, in the undirected sense (F), over `(𝒢_T)^m`;
-3. `factorizesOver_implies_globalMarkov` (round 1, **Proposition 3.8**) — hence it is globally
-   Markov with respect to `(𝒢_T)^m`, which applied to the given separation yields
-   `X_A ⫫ X_B ∣ X_S` **for the marginal**;
-4. `condIndepMass_of_condIndepMass_blockMarginal` — hence for `p` itself, since
-   `A ∪ B ∪ S ⊆ T`.
+1. **Proposition 3.22** — the marginal on `T = An(A ∪ B ∪ S)` factorizes recursively over the
+   sub-DAG induced on `T`;
+2. **Lemma 3.21** — hence it factorizes, in the undirected sense (F), over `(𝒢_T)^m`;
+3. the undirected (F) ⇒ (G), **Proposition 3.8** — hence it is globally Markov with respect to
+   `(𝒢_T)^m`, which applied to the given separation yields `X_A ⫫ X_B ∣ X_S` **for the
+   marginal**;
+4. the marginalisation transfer — hence for `p` itself, since `A ∪ B ∪ S ⊆ T`.
 
 Steps 1 and 2 need `T` to be ancestral, which is what `DAG.ancestralClosure` delivers, and step 3
 needs the three `Disjoint` hypotheses, which `IsDirectedGlobalMarkov` carries. No finiteness and
@@ -584,7 +554,7 @@ theorem recursivelyFactorizes_implies_directedGlobalMarkov (D : DAG V) [Decidabl
   intro A B S hAB hAS hBS hsep
   have hT : D.IsAncestralSet (D.ancestralClosure (A ∪ B ∪ S)) :=
     D.isAncestralSet_ancestralClosure _
-  -- Proposition 3.22, Lemma 3.21, round-1 (F) ⇒ (G), marginalisation transfer
+  -- Proposition 3.22, Lemma 3.21, undirected (F) ⇒ (G), marginalisation transfer
   have h1 := blockMarginal_recursivelyFactorizesOn_of_ancestralSet D
     (D.ancestralClosure (A ∪ B ∪ S)) hT p hp
   have h2 := recursivelyFactorizesOn_implies_factorizesOver_inducedMoralGraph D
@@ -808,12 +778,7 @@ spaces, and the law in which `X = Y = Z` and `W` is independent of `X`, with
 * Consequently, by Theorem 3.27, this law admits **no** recursive factorization according to the
   graph — which is Lauritzen's own closing remark on the example.
 
-It is **not formalized**, and not because it is hard: writing it down requires a concrete `DAG`
-term, i.e. the constructor of the structure owned by the concurrent `Directed/DAG.lean`, whose
-field names are not this file's to guess. Faking it — asserting the refutation without the
-witness — is forbidden. Once `Directed/DAG.lean` lands, this is a cheap, self-contained addition
-in the style of round 1's `not_forall_pairwiseMarkov_implies_globalMarkov`, and it is the honest
-counterexample justifying the `IsGraphoid` hypothesis of
+It is **not formalized** here. It is the counterexample justifying the `IsGraphoid` hypothesis of
 `directedPairwiseMarkov_implies_directedLocalMarkov_of_nonempty`.
 
 **(ii) The density-free (DL) ⟺ (DG)** (Lauritzen p. 51, closing remark, crediting Lauritzen,
@@ -824,11 +789,11 @@ for *any* probability distribution.
 That remark is not stated here as a theorem, for two independent reasons. First, in the abstract
 `ci` formulation it is **false as literally written**: `IsDirectedGlobalMarkov` demands `ci ∅ ∅ ∅`
 and (DL) never produces a statement about empty blocks, so the everywhere-false relation is a
-graphoid satisfying (DL) and failing (DG) — the exact obstruction round 1 machine-checks in
-`not_forall_pairwiseMarkov_implies_globalMarkov`. Second, the repaired nonempty-block version is
-a claim about probability measures whose standard proof (LDLL 1990) goes through the *ordered*
-local Markov property and a well-ordering compatible with the DAG; whether it holds for an
-arbitrary semi-graphoid is a separate question that this batch has not verified, and freezing an
-unverified statement is worse than leaving the lane open. It is a designated follow-up. -/
+graphoid satisfying (DL) and failing (DG) — the exact obstruction
+`not_forall_pairwiseMarkov_implies_globalMarkov` machine-checks in the undirected case. Second,
+the repaired nonempty-block version is a claim about probability measures whose standard proof
+(LDLL 1990) goes through the *ordered* local Markov property and a well-ordering compatible with
+the DAG; whether it holds for an arbitrary semi-graphoid is a separate question, not settled
+here. -/
 
 end StatLean.StatisticalModels.GraphicalModels

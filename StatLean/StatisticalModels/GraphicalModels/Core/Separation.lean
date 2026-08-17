@@ -23,7 +23,7 @@ graphoid calculus mirrors the probabilistic one (Lauritzen's Example 3.2).
   bridge into Mathlib's connectivity API: separation is exactly non-reachability in the graph
   with `S` deleted, equivalently "different connected components outside `S`". These are the
   hinges through which any future connectivity-flavoured result (menger-type statements,
-  decomposable graphs) will be proved; they are stated here and proved in a later lane.
+  decomposable graphs) will be proved.
 
 **Reference.** S. L. Lauritzen, *Graphical Models*, Oxford Statistical Science Series 17,
 Clarendon Press, Oxford, 1996, §2.1.1, p. 6: an *(α, β)-separator* is a set `S` such that
@@ -56,18 +56,12 @@ graphoid axioms; that is the reason this file's API is shaped like `IsSemigrapho
 The two Mathlib bridges are stated with **no** disjointness or non-membership side conditions
 and are genuinely unconditional: if `a ∈ S` then no element of the deleted-vertex subtype lies
 over `a`, so the right-hand sides quantify vacuously exactly where `Separates` is vacuous.
-The intended proof of both is `SimpleGraph.Walk.induce` (lift a walk avoiding `S` to the
-induced subgraph on `Sᶜ`) in one direction and `Walk.map` along the induced embedding in the
-other.
 
 **Bibliographic comments.** Separation of vertex sets is classical graph theory (Menger 1927);
 its use as the combinatorial carrier of conditional independence is due to the
 Markov-field literature — J. M. Hammersley and P. Clifford's unpublished 1971 manuscript,
 and in the form used here Lauritzen's book, which credits the graphoid reading to J. Pearl,
-*Probabilistic Reasoning in Intelligent Systems*, Morgan Kaufmann, 1988. Mathlib has no
-separator vocabulary of its own in this pin (`grep -rn "separator" Mathlib/Combinatorics/`
-returns nothing), so `Separates` is new; everything below it — walks, supports, vertex
-deletion, components of a complement — is Mathlib's.
+*Probabilistic Reasoning in Intelligent Systems*, Morgan Kaufmann, 1988.
 -/
 
 namespace StatLean.StatisticalModels.GraphicalModels
@@ -167,7 +161,7 @@ theorem separates_iff_forall_path (S A B : Finset V) :
     Separates G S A B ↔
       ∀ a ∈ A, ∀ b ∈ B, ∀ p : G.Path a b,
         ∃ s ∈ S, s ∈ (p : G.Walk a b).support := by
-  -- LEAN-ONLY: `Walk.bypass` needs `DecidableEq V`, which the frozen statement does not carry;
+  -- LEAN-ONLY: `Walk.bypass` needs `DecidableEq V`, which the statement does not carry;
   -- supplied classically, so the statement is unchanged
   classical
   refine ⟨fun h a ha b hb p => h a ha b hb (p : G.Walk a b), fun h a ha b hb w => ?_⟩
@@ -183,9 +177,7 @@ The subtype `((⊤ : G.Subgraph).deleteVerts S).verts` is `Set.univ \ S` by
 vertices outside `S`; vertices of `A ∩ S` are excluded on the right-hand side and vacuous on
 the left (`separates_self_left`), which is why no disjointness hypothesis appears.
 
-This is the hinge into Mathlib's connectivity API. Proof route: `SimpleGraph.Walk.induce`
-lifts an `S`-avoiding walk to the induced subgraph, and `SimpleGraph.Walk.map` along the
-induced embedding pushes it back. -/
+This is the hinge into Mathlib's connectivity API. -/
 theorem separates_iff_not_reachable_deleteVerts (S A B : Finset V) :
     Separates G S A B ↔
       ∀ a b : ((⊤ : G.Subgraph).deleteVerts (S : Set V)).verts,
@@ -225,7 +217,7 @@ outside-the-separator side condition, so again nothing is assumed about `A ∩ S
 
 Equivalent to `separates_iff_not_reachable_deleteVerts` via
 `SimpleGraph.ConnectedComponent.eq`; kept separate because `ComponentCompl` is the form the
-`Ends` API and any future decomposable-graph lane consume. -/
+`Ends` API and any future decomposable-graph result needs. -/
 theorem separates_iff_componentComplMk_ne (S A B : Finset V) :
     Separates G S A B ↔
       ∀ a ∈ A, ∀ b ∈ B, ∀ (ha : a ∉ (S : Set V)) (hb : b ∉ (S : Set V)),

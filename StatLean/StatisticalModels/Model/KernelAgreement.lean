@@ -26,10 +26,8 @@ in Statistical Decision Theory*, Springer, 1986, Ch. 1 (verify §); TPE2 §1.1.
 **Proof formalization notes.** All proofs are `funext`/`Kernel.ext` plus the defining `apply`
 lemmas (`Kernel.comp_apply`, `Kernel.map_apply`, `Kernel.compProd_apply`). Measurability of
 `observe P κ` for measurable `P` is free by rewriting through `observe_coe` at
-`toKernel P hP` — no bespoke measurability inductions (contrast
-`StatLean.Bayesian.ForMathlib.IIDKernel.measurable_pi_const_kernel`, which is the genuinely
-inductive case and is reused, not reproved, in `Adapters.Bayes`). The exact `⊗ₖ`/`prodMkLeft`
-spelling of `condProd_coe_const` is pinned here (named Batch-0 verification item).
+`toKernel P hP` — no bespoke measurability inductions. The exact `⊗ₖ`/`prodMkLeft`
+spelling of `condProd_coe_const` is pinned here.
 
 **Bibliographic comments.** That parameterized families and transition kernels are the same
 object (given measurability) is folklore of the kernel formulation of statistics; see

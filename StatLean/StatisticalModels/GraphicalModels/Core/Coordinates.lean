@@ -19,7 +19,7 @@ single vocabulary.
 * `CondIndepCoords μ X A B C` — `X_A ⫫ X_B ∣ X_C`;
 * `CondIndepCoords.symm` / `CondIndepCoords.decomposition_of_sfinite` — the two graphoid
   properties that are structural at this level, inherited from `CondIndep.symm` /
-  `CondIndep.comp_of_sfinite`. The frozen `CondIndepCoords.decomposition`, which carried no
+  `CondIndep.comp_of_sfinite`. The statement `CondIndepCoords.decomposition`, which carried no
   s-finiteness hypothesis, was **false** and has been **deleted**, exactly as `CondIndep.comp`
   was — see the section *"(C2) without s-finiteness — deleted, and why"* below and the
   machine-checked `CondIndepCoords.DecompositionCounterexample.decomposition_is_false`;
@@ -107,10 +107,8 @@ theorem CondIndepCoords.symm
 /-! ### (C2) without s-finiteness — deleted, and why
 
 There used to be a declaration `CondIndepCoords.decomposition` here: Lauritzen (C2) at the
-coordinate level, stated with **no** hypothesis on the conditioning law, and carrying a `sorry`.
-**That statement is false, and has been deleted rather than left `sorry`ed** — a `sorry` on a
-statement known to be false is indistinguishable, in any census, from honest unfinished work.
-What was deleted is exactly
+coordinate level, stated with **no** hypothesis on the conditioning law.
+**That statement is false, and has been deleted.** What was deleted is exactly
 
 ```
 theorem CondIndepCoords.decomposition (hBD : B ⊆ D) (hci : CondIndepCoords μ X A D C) :
@@ -131,7 +129,7 @@ with a non-s-finite law) and whose coordinate `true` reads the invisible second 
 `CondIndepCoords.decomposition_of_sfinite` below is the same theorem with the one missing
 hypothesis `[SFinite (μ.map (coords C X))]` restored, and is fully proved; it is free at every
 intended instance, since `SFinite (μ.map _)` is an instance whenever `μ` is s-finite (in
-particular for any probability measure), and it is what every consumer in this area now uses. -/
+particular for any probability measure). -/
 
 /-- **(C2), decomposition** at the coordinate level (Lauritzen p. 29): dropping variables from
 the second block preserves conditional independence. An instance of `CondIndep.comp_of_sfinite`
@@ -177,8 +175,7 @@ namespace CondIndepCoords.DecompositionCounterexample
 
 The coordinate-level instance of the counterexample in `Core.CondIndep`: a random vector on the
 plane `Pt` whose conditioning coordinate is rich (its law is not s-finite) and whose other
-coordinate is invisible to the σ-algebra. **This section is what keeps the refutation alive
-after the deletion**; nothing else in the area depends on it. -/
+coordinate is invisible to the σ-algebra. -/
 
 open CondIndep.CompCounterexample
 
