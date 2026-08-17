@@ -292,25 +292,17 @@ private theorem integral_exp_catoniPsi_le {μ₀ σ2 α y : ℝ} (hL2 : MemLp id
     ring
   linarith [hbound, hval.le, hval.ge]
 
-/-- **The exponential-moment bound** (`LM §2.2`, first display chain): for i.i.d. data
-with mean `μ₀` and variance `σ²`, for every fixed `y`,
-
-  `E exp(R_{n,α}(y)) ≤ exp( nα(μ₀ − y) + nα²(σ² + (μ₀ − y)²)/2 )`.
-
-Pointwise `exp ψ(α(X−y)) ≤ 1 + α(X−y) + α²(X−y)²/2` (upper companion), expectations
-multiply across independent coordinates, and `1 + u ≤ eᵘ` closes. -/
-theorem integral_exp_catoniR_le {n : ℕ} {X : Fin n → Ξ → ℝ} {μ₀ σ2 α y : ℝ}
-    -- LEAN-ONLY: coordinate measurability; LM §2.2 regularity
+omit [IsProbabilityMeasure μprob] in
+/-- The exponential-moment bound, **without the sign restriction on `α`**. The lower tail
+of `LM Theorem 5` is the upper tail run at `−α` (see `catoniR_neg_alpha`), so the
+factorization step must be available for negative `α` too; `0 < α` is nowhere used in
+this argument (it is needed only for the strict antitonicity of `R_{n,α}`). -/
+private theorem integral_exp_catoniR_le_aux {n : ℕ} {X : Fin n → Ξ → ℝ} {μ₀ σ2 α y : ℝ}
     (hX_meas : ∀ i, Measurable (X i))
-    -- USER-INPUT: jointly independent observations; LM Theorem 5
     (hX_indep : iIndepFun X μprob)
-    -- USER-INPUT: common law P; LM Theorem 5
     (hX_law : ∀ i, μprob.map (X i) = P)
-    -- USER-INPUT: P is square-integrable; LM Theorem 5 ("with variance σ²")
     (hL2 : MemLp id 2 P)
-    -- USER-INPUT: mean and variance of P; LM Theorem 5
-    (hmean : ∫ x, x ∂P = μ₀) (hvar : ∫ x, (x - μ₀) ^ 2 ∂P = σ2)
-    (hα : 0 < α) :
+    (hmean : ∫ x, x ∂P = μ₀) (hvar : ∫ x, (x - μ₀) ^ 2 ∂P = σ2) :
     ∫ ξ, Real.exp (catoniR α (fun i => X i ξ) y) ∂μprob
       ≤ Real.exp ((n : ℝ) * α * (μ₀ - y)
           + (n : ℝ) * α ^ 2 * (σ2 + (μ₀ - y) ^ 2) / 2) := by
@@ -348,6 +340,96 @@ theorem integral_exp_catoniR_le {n : ℕ} {X : Fin n → Ξ → ℝ} {μ₀ σ2 
         Finset.prod_congr rfl fun i _ => hcoord i
     _ = M ^ n := by simp
     _ ≤ Real.exp t ^ n := pow_le_pow_left₀ hMnn hMt n
+
+/-- **The exponential-moment bound** (`LM §2.2`, first display chain): for i.i.d. data
+with mean `μ₀` and variance `σ²`, for every fixed `y`,
+
+  `E exp(R_{n,α}(y)) ≤ exp( nα(μ₀ − y) + nα²(σ² + (μ₀ − y)²)/2 )`.
+
+Pointwise `exp ψ(α(X−y)) ≤ 1 + α(X−y) + α²(X−y)²/2` (upper companion), expectations
+multiply across independent coordinates, and `1 + u ≤ eᵘ` closes. -/
+theorem integral_exp_catoniR_le {n : ℕ} {X : Fin n → Ξ → ℝ} {μ₀ σ2 α y : ℝ}
+    -- LEAN-ONLY: coordinate measurability; LM §2.2 regularity
+    (hX_meas : ∀ i, Measurable (X i))
+    -- USER-INPUT: jointly independent observations; LM Theorem 5
+    (hX_indep : iIndepFun X μprob)
+    -- USER-INPUT: common law P; LM Theorem 5
+    (hX_law : ∀ i, μprob.map (X i) = P)
+    -- USER-INPUT: P is square-integrable; LM Theorem 5 ("with variance σ²")
+    (hL2 : MemLp id 2 P)
+    -- USER-INPUT: mean and variance of P; LM Theorem 5
+    (hmean : ∫ x, x ∂P = μ₀) (hvar : ∫ x, (x - μ₀) ^ 2 ∂P = σ2)
+    (hα : 0 < α) :
+    ∫ ξ, Real.exp (catoniR α (fun i => X i ξ) y) ∂μprob
+      ≤ Real.exp ((n : ℝ) * α * (μ₀ - y)
+          + (n : ℝ) * α ^ 2 * (σ2 + (μ₀ - y) ^ 2) / 2) :=
+  integral_exp_catoniR_le_aux hX_meas hX_indep hX_law hL2 hmean hvar
+
+/-! ### Markov's inequality needs genuine integrability
+
+`integral_exp_catoniR_le` is a bound on a Bochner integral, which is the junk value `0`
+when the integrand is not integrable; the deviation proof therefore also needs
+`Integrable (exp ∘ R_{n,α}(y))`, established here from the same quadratic majorant plus
+`Integrable.fintype_prod` transported along `iIndepFun_iff_map_fun_eq_pi_map`. -/
+
+omit [IsProbabilityMeasure P] in
+/-- Second moments are integrable under `MemLp id 2`. -/
+private theorem integrable_sq_of_memLp (hL2 : MemLp id 2 P) :
+    Integrable (fun x : ℝ => x ^ 2) P := by simpa using hL2.integrable_sq
+
+/-- Every quadratic is `P`-integrable under `MemLp id 2`. -/
+private theorem integrable_quadratic (hL2 : MemLp id 2 P) (a b c : ℝ) :
+    Integrable (fun x : ℝ => a + b * x + c * x ^ 2) P :=
+  ((integrable_const a).add ((integrable_id_of_memLp hL2).const_mul b)).add
+    ((integrable_sq_of_memLp hL2).const_mul c)
+
+/-- The per-coordinate exponential is `P`-integrable: it is dominated by the quadratic
+majorant `1 + α(x − y) + α²(x − y)²/2`. -/
+private theorem integrable_exp_catoniPsi (hL2 : MemLp id 2 P) (α y : ℝ) :
+    Integrable (fun x : ℝ => Real.exp (catoniPsi (α * (x - y)))) P := by
+  refine Integrable.mono' (integrable_quadratic hL2 (1 - α * y + α ^ 2 * y ^ 2 / 2)
+    (α - α ^ 2 * y) (α ^ 2 / 2)) ?_ (Eventually.of_forall fun x => ?_)
+  · exact ((Real.continuous_exp.comp catoniPsi_continuous).comp
+      (by fun_prop)).aestronglyMeasurable
+  · have h := exp_catoniPsi_le (α * (x - y))
+    have e : 1 - α * y + α ^ 2 * y ^ 2 / 2 + (α - α ^ 2 * y) * x + α ^ 2 / 2 * x ^ 2
+        = 1 + α * (x - y) + (α * (x - y)) ^ 2 / 2 := by ring
+    rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), e]
+    exact h
+
+/-- `exp ∘ R_{n,α}(y)` is `μprob`-integrable: under joint independence the sample map
+pushes `μprob` to `Measure.pi (fun _ => P)`, where the product of the per-coordinate
+integrable factors is integrable. -/
+private theorem integrable_exp_catoniR {n : ℕ} {X : Fin n → Ξ → ℝ} {α y : ℝ}
+    (hX_meas : ∀ i, Measurable (X i)) (hX_indep : iIndepFun X μprob)
+    (hX_law : ∀ i, μprob.map (X i) = P) (hL2 : MemLp id 2 P) :
+    Integrable (fun ξ => Real.exp (catoniR α (fun i => X i ξ) y)) μprob := by
+  set f : ℝ → ℝ := fun x => Real.exp (catoniPsi (α * (x - y))) with hf
+  have hfc : Continuous f :=
+    (Real.continuous_exp.comp catoniPsi_continuous).comp (by fun_prop)
+  have hfi : Integrable f P := integrable_exp_catoniPsi hL2 α y
+  have hmap : μprob.map (fun ω => (fun i => X i ω)) = Measure.pi (fun _ : Fin n => P) := by
+    rw [(iIndepFun_iff_map_fun_eq_pi_map (fun i => (hX_meas i).aemeasurable)).1 hX_indep]
+    exact congrArg Measure.pi (funext hX_law)
+  have hF : Integrable (fun x : Fin n → ℝ => ∏ i, f (x i))
+      (μprob.map (fun ω => (fun i => X i ω))) := by
+    rw [hmap]; exact Integrable.fintype_prod (fun _ => hfi)
+  have hgc : Continuous (fun x : Fin n → ℝ => ∏ i, f (x i)) :=
+    continuous_finset_prod _ fun i _ => hfc.comp (continuous_apply i)
+  have hcomp : Integrable (fun ξ => ∏ i, f (X i ξ)) μprob :=
+    (integrable_map_measure hgc.aestronglyMeasurable
+      (measurable_pi_lambda _ hX_meas).aemeasurable).1 hF
+  have heq : (fun ξ => Real.exp (catoniR α (fun i => X i ξ) y)) = fun ξ => ∏ i, f (X i ξ) := by
+    funext ξ; rw [catoniR, Real.exp_sum]
+  rw [heq]; exact hcomp
+
+/-- Flipping the sign of `α` flips the estimating function, by antisymmetry of `ψ`. This
+is what turns the lower tail of `LM Theorem 5` into another instance of the upper one. -/
+private theorem catoniR_neg_alpha {n : ℕ} (α : ℝ) (x : Fin n → ℝ) (y : ℝ) :
+    catoniR (-α) x y = -catoniR α x y := by
+  simp only [catoniR, ← Finset.sum_neg_distrib]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [show -α * (x i - y) = -(α * (x i - y)) by ring, catoniPsi_neg]
 
 /-- **Catoni's estimator is sub-Gaussian with the optimal constant** (`LM Theorem 5`):
 for i.i.d. data with mean `μ₀` and variance `σ² > 0`, `δ ∈ (0,1)` with
@@ -387,6 +469,86 @@ theorem catoni_deviation {n : ℕ} (hn : n ≠ 0) {X : Fin n → Ξ → ℝ}
     μprob.real {ξ | Real.sqrt (2 * σ2 * Real.log (1 / δ) / (n - 2 * Real.log (1 / δ)))
         ≤ |Yhat ξ - μ₀|}
       ≤ 2 * δ := by
-  sorry
+  set L : ℝ := Real.log (1 / δ) with hLdef
+  have hL : 0 < L := Real.log_pos (by rw [lt_div_iff₀ hδ]; linarith)
+  have hm : 0 < (n : ℝ) - 2 * L := by linarith
+  have hNpos : (0 : ℝ) < n := by linarith
+  set B : ℝ := Real.sqrt (2 * σ2 * L / ((n : ℝ) - 2 * L)) with hBdef
+  have hBpos : 0 < B := Real.sqrt_pos.2 (by positivity)
+  -- Catoni's tuned parameter in closed form: `1 + 2L/(n−2L) = n/(n−2L)`
+  have hrad : 2 * L / ((n : ℝ) * σ2 * (1 + 2 * L / ((n : ℝ) - 2 * L)))
+      = 2 * L * ((n : ℝ) - 2 * L) / ((n : ℝ) ^ 2 * σ2) := by field_simp; ring
+  have hArad : (0 : ℝ) ≤ 2 * L * ((n : ℝ) - 2 * L) / ((n : ℝ) ^ 2 * σ2) := by positivity
+  have hαpos : 0 < α := by rw [hαdef, hrad]; exact Real.sqrt_pos.2 (by positivity)
+  have hα2 : α ^ 2 = 2 * L * ((n : ℝ) - 2 * L) / ((n : ℝ) ^ 2 * σ2) := by
+    rw [hαdef, hrad, Real.sq_sqrt hArad]
+  have hB2 : B ^ 2 = 2 * σ2 * L / ((n : ℝ) - 2 * L) := Real.sq_sqrt (by positivity)
+  have hαB : α * B = 2 * L / (n : ℝ) := by
+    rw [hαdef, hBdef, hrad, ← Real.sqrt_mul hArad,
+      show 2 * L * ((n : ℝ) - 2 * L) / ((n : ℝ) ^ 2 * σ2) * (2 * σ2 * L / ((n : ℝ) - 2 * L))
+        = (2 * L / (n : ℝ)) ^ 2 by field_simp]
+    exact Real.sqrt_sq (by positivity)
+  -- the two halves of Catoni's calibration: `nαB = 2L` and `nα²(σ² + B²)/2 = L`,
+  -- so the Markov exponent at `μ₀ ± B` is exactly `−2L + L = −L`, i.e. the bound is `δ`
+  have hprod1 : (n : ℝ) * α * B = 2 * L := by rw [mul_assoc, hαB]; field_simp
+  have hprod2 : (n : ℝ) * α ^ 2 * (σ2 + B ^ 2) / 2 = L := by
+    rw [hα2, hB2]; field_simp; ring
+  have hdelta : Real.exp (-L) = δ := by
+    rw [hLdef, Real.exp_neg, Real.exp_log (by positivity : (0 : ℝ) < 1 / δ)]
+    field_simp
+  -- Markov at the level `1`, for either sign of the tuning parameter
+  have key : ∀ (β y : ℝ), β ^ 2 = α ^ 2 → (n : ℝ) * β * (μ₀ - y) = -2 * L →
+      (μ₀ - y) ^ 2 = B ^ 2 →
+      μprob.real {ξ | (1 : ℝ) ≤ Real.exp (catoniR β (fun i => X i ξ) y)} ≤ δ := by
+    intro β y hβ2 hβ hy2
+    have hint : Integrable (fun ξ => Real.exp (catoniR β (fun i => X i ξ) y)) μprob :=
+      integrable_exp_catoniR hX_meas hX_indep hX_law hL2
+    have hmark := mul_meas_ge_le_integral_of_nonneg
+      (μ := μprob) (f := fun ξ => Real.exp (catoniR β (fun i => X i ξ) y))
+      (Eventually.of_forall fun ξ => (Real.exp_pos _).le) hint 1
+    have hbnd := integral_exp_catoniR_le_aux (μprob := μprob) (P := P) (X := X)
+      (α := β) (y := y) hX_meas hX_indep hX_law hL2 hmean hvar
+    have hexpo : (n : ℝ) * β * (μ₀ - y) + (n : ℝ) * β ^ 2 * (σ2 + (μ₀ - y) ^ 2) / 2 = -L := by
+      rw [hβ, hβ2, hy2, hprod2]; ring
+    rw [hexpo, hdelta] at hbnd
+    rw [one_mul] at hmark
+    linarith
+  -- upper tail: `Ŷ ≥ μ₀ + B` forces `R_{n,α}(μ₀+B) ≥ R_{n,α}(Ŷ) = 0` by antitonicity
+  have hup : μprob.real {ξ | μ₀ + B ≤ Yhat ξ} ≤ δ := by
+    refine le_trans (measureReal_mono ?_ (measure_ne_top _ _)) (key α (μ₀ + B) rfl ?_ ?_)
+    · intro ξ hξ
+      have h0 : catoniR α (fun i => X i ξ) (Yhat ξ) = 0 := hroot ξ
+      have hanti := (catoniR_strictAnti hn hαpos (fun i => X i ξ)).antitone hξ
+      simp only [Set.mem_setOf_eq]
+      rw [← Real.exp_zero]
+      exact Real.exp_le_exp.2 (by linarith)
+    · rw [show μ₀ - (μ₀ + B) = -B by ring]
+      rw [show (n : ℝ) * α * -B = -((n : ℝ) * α * B) by ring, hprod1]; ring
+    · rw [show μ₀ - (μ₀ + B) = -B by ring]; ring
+  -- lower tail: the same argument at `−α`, where `R_{n,−α} = −R_{n,α}`
+  have hlo : μprob.real {ξ | Yhat ξ ≤ μ₀ - B} ≤ δ := by
+    refine le_trans (measureReal_mono ?_ (measure_ne_top _ _)) (key (-α) (μ₀ - B) (by ring) ?_ ?_)
+    · intro ξ hξ
+      have h0 : catoniR α (fun i => X i ξ) (Yhat ξ) = 0 := hroot ξ
+      have hanti := (catoniR_strictAnti hn hαpos (fun i => X i ξ)).antitone hξ
+      simp only [Set.mem_setOf_eq, catoniR_neg_alpha]
+      rw [← Real.exp_zero]
+      exact Real.exp_le_exp.2 (by linarith)
+    · rw [show μ₀ - (μ₀ - B) = B by ring,
+        show (n : ℝ) * -α * B = -((n : ℝ) * α * B) by ring, hprod1]; ring
+    · rw [show μ₀ - (μ₀ - B) = B by ring]
+  have hsub : {ξ | B ≤ |Yhat ξ - μ₀|}
+      ⊆ {ξ | μ₀ + B ≤ Yhat ξ} ∪ {ξ | Yhat ξ ≤ μ₀ - B} := by
+    intro ξ hξ
+    simp only [Set.mem_setOf_eq] at hξ
+    rcases le_abs.1 hξ with h | h
+    · exact Or.inl (by simp only [Set.mem_setOf_eq]; linarith)
+    · exact Or.inr (by simp only [Set.mem_setOf_eq]; linarith)
+  calc μprob.real {ξ | B ≤ |Yhat ξ - μ₀|}
+      ≤ μprob.real ({ξ | μ₀ + B ≤ Yhat ξ} ∪ {ξ | Yhat ξ ≤ μ₀ - B}) :=
+        measureReal_mono hsub (measure_ne_top _ _)
+    _ ≤ μprob.real {ξ | μ₀ + B ≤ Yhat ξ} + μprob.real {ξ | Yhat ξ ≤ μ₀ - B} :=
+        measureReal_union_le _ _
+    _ ≤ 2 * δ := by linarith
 
 end StatLean.RobustStatistics
