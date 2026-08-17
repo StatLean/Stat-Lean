@@ -69,15 +69,40 @@ def IsBallMoMCenter {k : ℕ} (Z : Fin k → EuclideanSpace ℝ (Fin d))
 /-- If a radius `r ≥ 0` captures a strict majority, the majority-ball radius is `≤ r`. -/
 theorem momRadius_le_of_majority {k : ℕ} {Z : Fin k → EuclideanSpace ℝ (Fin d)}
     {c : EuclideanSpace ℝ (Fin d)} {r : ℝ} (hr : 0 ≤ r)
-    (h : k < 2 * momCount Z c r) : momRadius Z c ≤ r := by
-  sorry
+    (h : k < 2 * momCount Z c r) : momRadius Z c ≤ r :=
+  -- The defining set is bounded below by `0` (membership carries `0 ≤ r`), so `csInf_le`
+  -- applies to the witness `r` itself.
+  csInf_le ⟨0, fun _ hx => hx.1⟩ ⟨hr, h⟩
+
+/-- The majority count is monotone in the radius (the filter is monotone in its
+predicate). -/
+private theorem momCount_mono {k : ℕ} {Z : Fin k → EuclideanSpace ℝ (Fin d)}
+    {c : EuclideanSpace ℝ (Fin d)} {r₁ r₂ : ℝ} (h : r₁ ≤ r₂) :
+    momCount Z c r₁ ≤ momCount Z c r₂ := by
+  refine Finset.card_le_card fun j hj => ?_
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj ⊢
+  exact hj.trans h
 
 /-- Any radius strictly above the majority-ball radius captures a strict majority (the
 count is monotone in `r`, and the infimum's defining set is upward closed). -/
 theorem majority_of_lt_momRadius {k : ℕ} {Z : Fin k → EuclideanSpace ℝ (Fin d)}
     {c : EuclideanSpace ℝ (Fin d)} {r : ℝ} (hk : k ≠ 0)
     (h : momRadius Z c < r) : k < 2 * momCount Z c r := by
-  sorry
+  have hbdd : BddBelow {r : ℝ | 0 ≤ r ∧ k < 2 * momCount Z c r} := ⟨0, fun _ hx => hx.1⟩
+  -- The total sum of the distances dominates every single distance, so it captures all
+  -- `k` points; with `k ≠ 0` that is a strict majority, and the defining set is nonempty.
+  have hne : {r : ℝ | 0 ≤ r ∧ k < 2 * momCount Z c r}.Nonempty := by
+    refine ⟨∑ j, ‖Z j - c‖, Finset.sum_nonneg fun _ _ => norm_nonneg _, ?_⟩
+    have hall : momCount Z c (∑ j, ‖Z j - c‖) = k := by
+      unfold momCount
+      rw [Finset.filter_true_of_mem fun j _ =>
+        Finset.single_le_sum (f := fun j => ‖Z j - c‖) (fun _ _ => norm_nonneg _)
+          (Finset.mem_univ j)]
+      simp
+    rw [hall]; omega
+  -- Some member of the defining set already lies below `r`; upward closure does the rest.
+  obtain ⟨a, haS, har⟩ := (csInf_lt_iff hbdd hne).mp h
+  exact lt_of_lt_of_le haS.2 (Nat.mul_le_mul_left 2 (momCount_mono har.le))
 
 /-- **Two majority balls intersect in a data point** (`LM §3.2` proof, "at least one of
 the `Z_j` is within distance `r` to both `μ` and `μ̂`"): if balls of radii `r₁, r₂` at
@@ -87,7 +112,21 @@ theorem dist_le_of_majority_two {k : ℕ} {Z : Fin k → EuclideanSpace ℝ (Fin
     {c₁ c₂ : EuclideanSpace ℝ (Fin d)} {r₁ r₂ : ℝ}
     (h₁ : k < 2 * momCount Z c₁ r₁) (h₂ : k < 2 * momCount Z c₂ r₂) :
     ‖c₁ - c₂‖ ≤ r₁ + r₂ := by
-  sorry
+  set A := Finset.univ.filter fun j => ‖Z j - c₁‖ ≤ r₁ with hA
+  set B := Finset.univ.filter fun j => ‖Z j - c₂‖ ≤ r₂ with hB
+  -- `|A ∪ B| + |A ∩ B| = |A| + |B| > k ≥ |A ∪ B|`, so the intersection is nonempty.
+  have hcard : (A ∪ B).card + (A ∩ B).card = A.card + B.card :=
+    Finset.card_union_add_card_inter A B
+  have hub : (A ∪ B).card ≤ k := by simpa using Finset.card_le_univ (A ∪ B)
+  have hpos : 0 < (A ∩ B).card := by
+    simp only [momCount, ← hA, ← hB] at h₁ h₂
+    omega
+  obtain ⟨j, hj⟩ := Finset.card_pos.mp hpos
+  rw [Finset.mem_inter, hA, hB] at hj
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj
+  calc ‖c₁ - c₂‖ = ‖(c₁ - Z j) + (Z j - c₂)‖ := by congr 1; abel
+    _ ≤ ‖c₁ - Z j‖ + ‖Z j - c₂‖ := norm_add_le _ _
+    _ ≤ r₁ + r₂ := by rw [norm_sub_rev]; exact add_le_add hj.1 hj.2
 
 variable {Ξ : Type*} [MeasurableSpace Ξ] {μprob : Measure Ξ} [IsProbabilityMeasure μprob]
   {P : Measure (EuclideanSpace ℝ (Fin d))} [IsProbabilityMeasure P]
