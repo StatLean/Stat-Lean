@@ -213,27 +213,55 @@ def checkLoss (α x : ℝ) : ℝ := max (α * x) ((α - 1) * x)
 /-- The max form agrees with the book's case split (for `0 ≤ α ≤ 1`). -/
 theorem checkLoss_eq_ite {α : ℝ} (hα0 : 0 ≤ α) (hα1 : α ≤ 1) (x : ℝ) :
     checkLoss α x = if 0 ≤ x then α * x else -(1 - α) * x := by
-  sorry
+  rw [checkLoss]
+  split_ifs with h
+  · exact max_eq_left (by nlinarith)
+  · push_neg at h
+    rw [max_eq_right (by nlinarith)]
+    ring
+
+/-- On the nonnegative axis the check loss is the linear branch `α x`. -/
+private theorem checkLoss_of_nonneg {α x : ℝ} (hx : 0 ≤ x) : checkLoss α x = α * x :=
+  max_eq_left (by nlinarith)
+
+/-- On the nonpositive axis the check loss is the linear branch `(α - 1) x`. -/
+private theorem checkLoss_of_nonpos {α x : ℝ} (hx : x ≤ 0) : checkLoss α x = (α - 1) * x :=
+  max_eq_right (by nlinarith)
 
 /-- The check loss is nonnegative for `α ∈ [0, 1]`. -/
 theorem checkLoss_nonneg {α : ℝ} (hα0 : 0 ≤ α) (hα1 : α ≤ 1) (x : ℝ) :
     0 ≤ checkLoss α x := by
-  sorry
+  rcases le_or_gt 0 x with h | h
+  · exact le_trans (mul_nonneg hα0 h) (le_max_left _ _)
+  · exact le_trans (by nlinarith) (le_max_right (α * x) ((α - 1) * x))
 
 /-- **The median case**: `ρ_{1/2}(x) = |x|/2` (`MMY §4.8`, "the case `α = 0.5`
 corresponds to the L₁ estimator"). -/
 theorem checkLoss_half (x : ℝ) : checkLoss (1 / 2) x = |x| / 2 := by
-  sorry
+  rcases le_or_gt 0 x with h | h
+  · rw [checkLoss_of_nonneg h, abs_of_nonneg h]; ring
+  · rw [checkLoss_of_nonpos h.le, abs_of_neg h]; ring
 
 /-- The check loss is convex — a maximum of two linear functions. -/
 theorem checkLoss_convex (α : ℝ) : ConvexOn ℝ Set.univ (checkLoss α) := by
-  sorry
+  refine ⟨convex_univ, fun x _ y _ a b ha hb _ => ?_⟩
+  simp only [smul_eq_mul, checkLoss]
+  refine max_le ?_ ?_
+  · calc α * (a * x + b * y) = a * (α * x) + b * (α * y) := by ring
+      _ ≤ a * max (α * x) ((α - 1) * x) + b * max (α * y) ((α - 1) * y) :=
+          add_le_add (mul_le_mul_of_nonneg_left (le_max_left _ _) ha)
+            (mul_le_mul_of_nonneg_left (le_max_left _ _) hb)
+  · calc (α - 1) * (a * x + b * y) = a * ((α - 1) * x) + b * ((α - 1) * y) := by ring
+      _ ≤ a * max (α * x) ((α - 1) * x) + b * max (α * y) ((α - 1) * y) :=
+          add_le_add (mul_le_mul_of_nonneg_left (le_max_right _ _) ha)
+            (mul_le_mul_of_nonneg_left (le_max_right _ _) hb)
 
 /-- The check loss is positively homogeneous: `ρ_α(cx) = c ρ_α(x)` for `c ≥ 0` — the
 scale-equivariance engine for quantile regression. -/
 theorem checkLoss_smul_nonneg {α c : ℝ} (hc : 0 ≤ c) (x : ℝ) :
     checkLoss α (c * x) = c * checkLoss α x := by
-  sorry
+  rw [checkLoss, checkLoss, mul_max_of_nonneg (α * x) ((α - 1) * x) hc]
+  congr 1 <;> ring
 
 /-- **The regression `α`-quantile** (`MMY (4.68)`; Koenker–Bassett 1978): an
 M-regression estimate for the check loss. -/
@@ -246,16 +274,16 @@ def IsQuantileRegressionEstimate (α : ℝ) (X : Fin n → Fin p → ℝ) (y : F
 theorem quantileRegression_objective_convex (α : ℝ) (X : Fin n → Fin p → ℝ)
     (y : Fin n → ℝ) :
     ConvexOn ℝ Set.univ
-      (fun b : Fin p → ℝ => ∑ i, checkLoss α (y i - ∑ j, X i j * b j)) := by
-  sorry
+      (fun b : Fin p → ℝ => ∑ i, checkLoss α (y i - ∑ j, X i j * b j)) :=
+  mRegression_objective_convex (checkLoss_convex α) X y
 
 /-- **Regression equivariance of the regression quantile** (`MMY (4.48)` applied at
 `ρ_α`; instance of `isMRegressionEstimate_regressionEquivariant`). -/
 theorem isQuantileRegressionEstimate_regressionEquivariant {α : ℝ}
     {X : Fin n → Fin p → ℝ} {y : Fin n → ℝ} {β γ : Fin p → ℝ}
     (h : IsQuantileRegressionEstimate α X y β) :
-    IsQuantileRegressionEstimate α X (fun i => y i + ∑ j, X i j * γ j) (β + γ) := by
-  sorry
+    IsQuantileRegressionEstimate α X (fun i => y i + ∑ j, X i j * γ j) (β + γ) :=
+  isMRegressionEstimate_regressionEquivariant.mpr h
 
 /-- **Scale equivariance of the regression quantile** (`MMY §4.9.1`, "scale
 equivariance (4.16)", via positive homogeneity of the check loss): scaling the
@@ -264,7 +292,33 @@ theorem isQuantileRegressionEstimate_scaleEquivariant {α c : ℝ} (hc : 0 < c)
     {X : Fin n → Fin p → ℝ} {y : Fin n → ℝ} {β : Fin p → ℝ}
     (h : IsQuantileRegressionEstimate α X y β) :
     IsQuantileRegressionEstimate α X (fun i => c * y i) (fun j => c * β j) := by
-  sorry
+  intro b
+  -- pulling the scale factor out of every residual turns the objective into `c ·` the
+  -- original objective, evaluated at the rescaled candidate `c⁻¹ b`
+  have hpull : ∀ (d : ℝ) (v : Fin p → ℝ) (i : Fin n),
+      ∑ j, X i j * (fun j => d * v j) j = d * ∑ j, X i j * v j := by
+    intro d v i
+    rw [Finset.mul_sum]
+    exact Finset.sum_congr rfl fun j _ => by ring
+  have hL : ∀ i : Fin n, c * y i - ∑ j, X i j * (fun j => c * β j) j
+      = c * (y i - ∑ j, X i j * β j) := by
+    intro i; rw [hpull c β i]; ring
+  have hR : ∀ i : Fin n, c * y i - ∑ j, X i j * b j
+      = c * (y i - ∑ j, X i j * (fun j => c⁻¹ * b j) j) := by
+    intro i
+    rw [hpull c⁻¹ b i]
+    field_simp
+  calc ∑ i, checkLoss α (c * y i - ∑ j, X i j * (fun j => c * β j) j)
+      = ∑ i, c * checkLoss α (y i - ∑ j, X i j * β j) :=
+        Finset.sum_congr rfl fun i _ => by rw [hL i, checkLoss_smul_nonneg hc.le]
+    _ = c * ∑ i, checkLoss α (y i - ∑ j, X i j * β j) := by rw [Finset.mul_sum]
+    _ ≤ c * ∑ i, checkLoss α (y i - ∑ j, X i j * (fun j => c⁻¹ * b j) j) :=
+        mul_le_mul_of_nonneg_left (h _) hc.le
+    _ = ∑ i, c * checkLoss α (y i - ∑ j, X i j * (fun j => c⁻¹ * b j) j) := by
+        rw [Finset.mul_sum]
+    _ = ∑ i, checkLoss α (c * y i - ∑ j, X i j * b j) :=
+        Finset.sum_congr rfl fun i _ => by
+          rw [hR i, checkLoss_smul_nonneg hc.le]
 
 /-- **Median regression is L₁ regression** (`MMY §4.8`, "the case `α = 0.5` corresponds
 to the L₁ estimator" — cf. §4.5.1): at `α = 1/2` the quantile-regression estimates are
@@ -274,7 +328,21 @@ theorem isQuantileRegressionEstimate_half_iff {X : Fin n → Fin p → ℝ} {y :
     {β : Fin p → ℝ} :
     IsQuantileRegressionEstimate (1 / 2) X y β ↔
       IsMRegressionEstimate (fun u => |u|) X y β := by
-  sorry
+  have key : ∀ b : Fin p → ℝ, ∑ i, checkLoss (1 / 2) (y i - ∑ j, X i j * b j)
+      = (∑ i, |y i - ∑ j, X i j * b j|) / 2 := by
+    intro b
+    rw [Finset.sum_div]
+    exact Finset.sum_congr rfl fun i _ => checkLoss_half _
+  constructor
+  · intro h b
+    have h1 := h b
+    rw [key β, key b] at h1
+    have h2 : ∑ i, |y i - ∑ j, X i j * β j| ≤ ∑ i, |y i - ∑ j, X i j * b j| := by linarith
+    exact h2
+  · intro h b
+    have h1 : ∑ i, |y i - ∑ j, X i j * β j| ≤ ∑ i, |y i - ∑ j, X i j * b j| := h b
+    rw [key β, key b]
+    linarith
 
 /-- **The sample `α`-quantile minimizes the check loss** (`MMY §4.8`, "the solution of
 `∑ ρ_α(yᵢ − μ) = min` is the sample `α`-quantile", citing Problem 2.13): the order
