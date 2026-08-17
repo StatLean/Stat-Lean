@@ -212,7 +212,51 @@ theorem directedGlobalMarkov_implies_directedLocalMarkov
     -- USER-INPUT: the directed global Markov property of the law; Lauritzen Corollary 3.23, p. 47
     (h : IsDirectedGlobalMarkov D ci) :
     IsDirectedLocalMarkov D ci := by
-  sorry
+  classical
+  intro v
+  have hPN : D.parents v ⊆ D.nonDescendants v := D.parents_subset_nonDescendants v
+  have hvN : v ∉ D.nonDescendants v := D.notMem_nonDescendants_self v
+  have hvP : v ∉ D.parents v := D.notMem_parents_self v
+  -- `{v} ∪ nd(v)` is ancestral, hence its own ancestral closure …
+  have hM : D.IsAncestralSet (insert v (D.nonDescendants v)) := by
+    intro a b hab hb
+    rcases Finset.mem_insert.mp hb with rfl | hb
+    · exact Finset.mem_insert_of_mem (hPN (DAG.mem_parents.mpr hab))
+    · rw [DAG.mem_nonDescendants] at hb
+      refine Finset.mem_insert_of_mem (DAG.mem_nonDescendants.mpr ⟨?_, ?_⟩)
+      · rintro rfl; exact hb.2 (Relation.TransGen.single hab)
+      · exact fun hcon => hb.2 (hcon.tail hab)
+  have hunion : ({v} : Finset V) ∪ (D.nonDescendants v \ D.parents v) ∪ D.parents v
+      = insert v (D.nonDescendants v) := by
+    rw [Finset.union_assoc, Finset.sdiff_union_of_subset hPN, Finset.singleton_union]
+  refine h {v} (D.nonDescendants v \ D.parents v) (D.parents v)
+    (Finset.disjoint_singleton_left.mpr fun hc => hvN (Finset.mem_sdiff.mp hc).1)
+    (Finset.disjoint_singleton_left.mpr hvP) Finset.sdiff_disjoint ?_
+  rw [ancestralMoralGraph, hunion, (D.ancestralClosure_eq_self_iff _).mpr hM]
+  -- … and in `(𝒢_{{v} ∪ nd(v)})^m` every neighbour of `v` is a parent of `v`
+  have hchild : ∀ z, D.Adj v z → z ∉ insert v (D.nonDescendants v) := by
+    intro z hz hmem
+    rcases Finset.mem_insert.mp hmem with rfl | hmem
+    · exact D.irrefl _ hz
+    · exact (DAG.mem_nonDescendants.mp hmem).2 (Relation.TransGen.single hz)
+  have hnb : ∀ w, (D.induce (insert v (D.nonDescendants v))).moralGraph.Adj v w →
+      w ∈ D.parents v := by
+    intro w hw
+    rw [DAG.moralGraph_induce_adj] at hw
+    obtain ⟨_, _, hwM, hcases⟩ := hw
+    rcases hcases with hadj | hadj | ⟨z, hzM, hvz, _⟩
+    · exact absurd hwM (hchild w hadj)
+    · exact DAG.mem_parents.mpr hadj
+    · exact absurd hzM (hchild z hvz)
+  intro a ha b hb w
+  rw [Finset.mem_singleton] at ha
+  subst ha
+  cases w with
+  | nil => exact absurd (Finset.mem_sdiff.mp hb).1 hvN
+  | cons hadj rest =>
+      refine ⟨_, hnb _ hadj, ?_⟩
+      simp only [SimpleGraph.Walk.support_cons, List.mem_cons]
+      exact Or.inr rest.start_mem_support
 
 /-- **(DL) ⇒ (DP)** — Lauritzen p. 50: "As `pa(α) ⊆ nd(α)`, it follows from properties (C2) and
 (C3) of conditional independence that the directed local Markov property (DL) implies the
@@ -232,7 +276,42 @@ theorem directedLocalMarkov_implies_directedPairwiseMarkov
     -- USER-INPUT: the directed local Markov property of the law; Lauritzen §3.2.2 (DL), p. 50
     (h : IsDirectedLocalMarkov D ci) :
     IsDirectedPairwiseMarkov D ci := by
-  sorry
+  classical
+  intro v β hβ
+  obtain ⟨hβN, hβP⟩ := Finset.mem_sdiff.mp hβ
+  have hPN : D.parents v ⊆ D.nonDescendants v := D.parents_subset_nonDescendants v
+  have hvN : v ∉ D.nonDescendants v := D.notMem_nonDescendants_self v
+  have hvP : v ∉ D.parents v := D.notMem_parents_self v
+  -- the discarded block of weak union
+  have hBE : ({β} : Finset V)
+      ∪ ((D.nonDescendants v \ D.parents v) \ {β}) = D.nonDescendants v \ D.parents v := by
+    rw [Finset.union_comm]
+    exact Finset.sdiff_union_of_subset (Finset.singleton_subset_iff.mpr hβ)
+  have hCE : D.parents v ∪ ((D.nonDescendants v \ D.parents v) \ {β})
+      = D.nonDescendants v \ {β} := by
+    ext w
+    simp only [Finset.mem_union, Finset.mem_sdiff, Finset.mem_singleton]
+    constructor
+    · rintro (hw | ⟨⟨hw1, _⟩, hw3⟩)
+      · exact ⟨hPN hw, by rintro rfl; exact hβP hw⟩
+      · exact ⟨hw1, hw3⟩
+    · rintro ⟨hw1, hw2⟩
+      by_cases hwP : w ∈ D.parents v
+      · exact Or.inl hwP
+      · exact Or.inr ⟨⟨hw1, hwP⟩, hw2⟩
+  have hres := hci.weakUnion (A := ({v} : Finset V)) (B := ({β} : Finset V))
+    (D := (D.nonDescendants v \ D.parents v) \ {β}) (C := D.parents v)
+    (Finset.disjoint_singleton.mpr (by rintro rfl; exact hvN hβN))
+    (Finset.disjoint_singleton_left.mpr hvP)
+    (Finset.disjoint_singleton_left.mpr fun hc =>
+      hvN (Finset.mem_sdiff.mp (Finset.mem_sdiff.mp hc).1).1)
+    (Finset.disjoint_singleton_left.mpr hβP)
+    (Finset.disjoint_singleton_left.mpr fun hc =>
+      (Finset.mem_sdiff.mp hc).2 (Finset.mem_singleton_self β))
+    (Finset.disjoint_left.mpr fun a ha hb =>
+      (Finset.mem_sdiff.mp (Finset.mem_sdiff.mp hb).1).2 ha)
+    (by rw [hBE]; exact h v)
+  rwa [hCE] at hres
 
 /-- **(DP) ⇒ (DL) under the intersection property, at the vertices where (DP) says anything** —
 Lauritzen p. 52: "If the probability distribution `P` satisfies (3.10), for example if the
@@ -261,7 +340,72 @@ theorem directedPairwiseMarkov_implies_directedLocalMarkov_of_nonempty
     (h : IsDirectedPairwiseMarkov D ci) :
     ∀ v : V, (D.nonDescendants v \ D.parents v).Nonempty →
       ci {v} (D.nonDescendants v \ D.parents v) (D.parents v) := by
-  sorry
+  classical
+  intro v hne
+  have hPN : D.parents v ⊆ D.nonDescendants v := D.parents_subset_nonDescendants v
+  have hvN : v ∉ D.nonDescendants v := D.notMem_nonDescendants_self v
+  -- `ci {v} B (nd(v) ∖ B)` for every nonempty `B ⊆ nd(v) ∖ pa(v)`, by (C5)
+  have key : ∀ B : Finset V, B ⊆ D.nonDescendants v \ D.parents v → B.Nonempty →
+      ci {v} B (D.nonDescendants v \ B) := by
+    intro B
+    induction B using Finset.induction_on with
+    | empty => intro _ hB; simp at hB
+    | insert a B ha ih =>
+      intro hsub _
+      have haR : a ∈ D.nonDescendants v \ D.parents v := hsub (Finset.mem_insert_self a B)
+      have haN : a ∈ D.nonDescendants v := (Finset.mem_sdiff.mp haR).1
+      rcases B.eq_empty_or_nonempty with rfl | hB
+      · simpa using h v a haR
+      · have hBR : B ⊆ D.nonDescendants v \ D.parents v :=
+          fun w hw => hsub (Finset.mem_insert_of_mem hw)
+        have hBN : B ⊆ D.nonDescendants v := fun w hw => (Finset.mem_sdiff.mp (hBR hw)).1
+        -- the two premises of the intersection axiom, after rewriting the conditioning sets
+        have hprem1 : ci {v} B ((D.nonDescendants v \ insert a B) ∪ {a}) := by
+          have hset : (D.nonDescendants v \ insert a B) ∪ ({a} : Finset V)
+              = D.nonDescendants v \ B := by
+            ext w
+            simp only [Finset.mem_union, Finset.mem_sdiff, Finset.mem_insert,
+              Finset.mem_singleton, not_or]
+            constructor
+            · rintro (⟨hw1, _, hw3⟩ | rfl)
+              · exact ⟨hw1, hw3⟩
+              · exact ⟨haN, ha⟩
+            · rintro ⟨hw1, hw2⟩
+              by_cases hwa : w = a
+              · exact Or.inr hwa
+              · exact Or.inl ⟨hw1, hwa, hw2⟩
+          rw [hset]
+          exact ih hBR hB
+        have hprem2 : ci {v} {a} ((D.nonDescendants v \ insert a B) ∪ B) := by
+          have hset : (D.nonDescendants v \ insert a B) ∪ B
+              = D.nonDescendants v \ {a} := by
+            ext w
+            simp only [Finset.mem_union, Finset.mem_sdiff, Finset.mem_insert,
+              Finset.mem_singleton, not_or]
+            constructor
+            · rintro (⟨hw1, hw2, _⟩ | hw)
+              · exact ⟨hw1, hw2⟩
+              · exact ⟨hBN hw, by rintro rfl; exact ha hw⟩
+            · rintro ⟨hw1, hw2⟩
+              by_cases hwB : w ∈ B
+              · exact Or.inr hwB
+              · exact Or.inl ⟨hw1, hw2, hwB⟩
+          rw [hset]
+          exact h v a haR
+        have hres := hci.intersection (A := ({v} : Finset V)) (B := B) (D := ({a} : Finset V))
+          (C := D.nonDescendants v \ insert a B)
+          (Finset.disjoint_singleton_left.mpr fun hc => hvN (hBN hc))
+          (Finset.disjoint_singleton_left.mpr fun hc => hvN (Finset.mem_sdiff.mp hc).1)
+          (Finset.disjoint_singleton.mpr (by rintro rfl; exact hvN haN))
+          (Finset.disjoint_left.mpr fun w hw hc =>
+            (Finset.mem_sdiff.mp hc).2 (Finset.mem_insert_of_mem hw))
+          (Finset.disjoint_singleton_right.mpr ha)
+          (Finset.disjoint_singleton_right.mpr fun hc =>
+            (Finset.mem_sdiff.mp hc).2 (Finset.mem_insert_self a B))
+          hprem1 hprem2
+        rwa [Finset.union_comm B {a}, Finset.singleton_union] at hres
+  have hfinal := key (D.nonDescendants v \ D.parents v) Finset.Subset.rfl hne
+  rwa [Finset.sdiff_sdiff_eq_self hPN] at hfinal
 
 /-- **(DG) ⇒ (DP)** — the composite of the two implications above, recorded because it is the
 directed analogue of round 1's `globalMarkov_implies_pairwiseMarkov`. Unlike that one it does
@@ -289,6 +433,29 @@ section Discrete
 
 variable {V α : Type*} [Fintype V] [DecidableEq V] [Fintype α] [DecidableEq α]
 
+/-- **The fibre of a block restriction has `#α ^ #(V ∖ A)` elements** — the combinatorial content
+of the rescaling factor below. Auxiliary; route: `agreeOn A x` is the `Fintype.piFinset` of the
+family that pins the coordinates in `A` to those of `x` and leaves the rest free. -/
+private theorem card_agreeOn (A : Finset V) (x : V → α) :
+    (agreeOn A x).card = Fintype.card α ^ (Finset.univ \ A).card := by
+  classical
+  have hset : agreeOn A x
+      = Fintype.piFinset (fun i : V => if i ∈ A then ({x i} : Finset α) else Finset.univ) := by
+    ext y
+    simp only [mem_agreeOn, Fintype.mem_piFinset]
+    constructor
+    · intro hy i
+      by_cases hi : i ∈ A
+      · simp [hi, hy i hi]
+      · simp [hi]
+    · intro hy i hi
+      simpa [hi] using hy i
+  have hfilter : Finset.univ.filter (fun i : V => ¬ i ∈ A) = Finset.univ \ A := by
+    ext i; simp
+  rw [hset, Fintype.card_piFinset]
+  simp only [apply_ite Finset.card, Finset.card_singleton, Finset.card_univ]
+  rw [Finset.prod_ite, Finset.prod_const_one, Finset.prod_const, one_mul, hfilter]
+
 /-- **Marginalising twice rescales.** For `E ⊆ T`, the marginal on `E` of the marginal on `T` is
 the marginal on `E` of `p`, multiplied by the number of configurations of the discarded
 coordinates.
@@ -304,7 +471,24 @@ theorem blockMarginal_blockMarginal_of_subset (p : (V → α) → ℝ≥0∞) {E
     (hET : E ⊆ T) (x : V → α) :
     blockMarginal E (blockMarginal T p) x
       = (Fintype.card α : ℝ≥0∞) ^ (Finset.univ \ T).card * blockMarginal E p x := by
-  sorry
+  classical
+  have hcond : ∀ y z : V → α,
+      (y ∈ agreeOn E x ∧ z ∈ agreeOn T y) ↔ (y ∈ agreeOn T z ∧ z ∈ agreeOn E x) := by
+    intro y z
+    simp only [mem_agreeOn]
+    constructor
+    · rintro ⟨h1, h2⟩
+      exact ⟨fun i hi => (h2 i hi).symm, fun i hi => (h2 i (hET hi)).trans (h1 i hi)⟩
+    · rintro ⟨g1, g2⟩
+      exact ⟨fun i hi => (g1 i (hET hi)).trans (g2 i hi), fun i hi => (g1 i hi).symm⟩
+  calc blockMarginal E (blockMarginal T p) x
+      = ∑ y ∈ agreeOn E x, ∑ z ∈ agreeOn T y, p z := rfl
+    _ = ∑ z ∈ agreeOn E x, ∑ _y ∈ agreeOn T z, p z := Finset.sum_comm' hcond
+    _ = ∑ z ∈ agreeOn E x, (Fintype.card α : ℝ≥0∞) ^ (Finset.univ \ T).card * p z := by
+        refine Finset.sum_congr rfl fun z _ => ?_
+        rw [Finset.sum_const, card_agreeOn T z, nsmul_eq_mul, Nat.cast_pow]
+    _ = (Fintype.card α : ℝ≥0∞) ^ (Finset.univ \ T).card * blockMarginal E p x :=
+        (Finset.mul_sum _ _ _).symm
 
 /-- **Conditional independence passes from a marginal to the law**, provided the three blocks are
 contained in the marginalised block. This is the step Lauritzen leaves implicit in Corollary 3.23
@@ -324,7 +508,46 @@ theorem condIndepMass_of_condIndepMass_blockMarginal {p : (V → α) → ℝ≥0
     -- USER-INPUT: the conditional independence established for the marginal
     (h : CondIndepMass (blockMarginal T p) A B S) :
     CondIndepMass p A B S := by
-  sorry
+  classical
+  rcases isEmpty_or_nonempty (V → α) with hemp | hne
+  · intro x; exact (hemp.false x).elim
+  · -- the common rescaling factor is neither `0` nor `∞`, so it cancels from both sides
+    have hAT : A ⊆ T := (Finset.subset_union_left.trans Finset.subset_union_left).trans hsub
+    have hBT : B ⊆ T := (Finset.subset_union_right.trans Finset.subset_union_left).trans hsub
+    have hST : S ⊆ T := Finset.subset_union_right.trans hsub
+    have hc0 : ((Fintype.card α : ℝ≥0∞) ^ (Finset.univ \ T).card) ≠ 0 := by
+      rcases Nat.eq_zero_or_pos (Fintype.card α) with h0 | h0
+      · -- `α` is empty, so `V` is empty (else `V → α` would be) and the exponent is `0`
+        have hαe : IsEmpty α := Fintype.card_eq_zero_iff.mp h0
+        obtain ⟨y⟩ := hne
+        have hVe : IsEmpty V := ⟨fun v => hαe.false (y v)⟩
+        have : Finset.univ \ T = (∅ : Finset V) :=
+          Finset.eq_empty_of_forall_notMem fun v _ => hVe.false v
+        rw [this]
+        simp
+      · exact pow_ne_zero _ (Nat.cast_ne_zero.mpr h0.ne')
+    have hctop : ((Fintype.card α : ℝ≥0∞) ^ (Finset.univ \ T).card) ≠ ∞ :=
+      ENNReal.pow_ne_top (ENNReal.natCast_ne_top _)
+    intro x
+    have e1 := blockMarginal_blockMarginal_of_subset p (E := A ∪ B ∪ S) hsub x
+    have e2 := blockMarginal_blockMarginal_of_subset p (E := S) hST x
+    have e3 := blockMarginal_blockMarginal_of_subset p (E := A ∪ S)
+      (Finset.union_subset hAT hST) x
+    have e4 := blockMarginal_blockMarginal_of_subset p (E := B ∪ S)
+      (Finset.union_subset hBT hST) x
+    have hx := h x
+    rw [e1, e2, e3, e4] at hx
+    refine (ENNReal.mul_right_inj (mul_ne_zero hc0 hc0) (ENNReal.mul_ne_top hctop hctop)).mp ?_
+    calc ((Fintype.card α : ℝ≥0∞) ^ (Finset.univ \ T).card
+            * (Fintype.card α : ℝ≥0∞) ^ (Finset.univ \ T).card)
+          * (blockMarginal (A ∪ B ∪ S) p x * blockMarginal S p x)
+        = ((Fintype.card α : ℝ≥0∞) ^ (Finset.univ \ T).card * blockMarginal (A ∪ B ∪ S) p x)
+          * ((Fintype.card α : ℝ≥0∞) ^ (Finset.univ \ T).card * blockMarginal S p x) := by ring
+      _ = ((Fintype.card α : ℝ≥0∞) ^ (Finset.univ \ T).card * blockMarginal (A ∪ S) p x)
+          * ((Fintype.card α : ℝ≥0∞) ^ (Finset.univ \ T).card * blockMarginal (B ∪ S) p x) := hx
+      _ = ((Fintype.card α : ℝ≥0∞) ^ (Finset.univ \ T).card
+            * (Fintype.card α : ℝ≥0∞) ^ (Finset.univ \ T).card)
+          * (blockMarginal (A ∪ S) p x * blockMarginal (B ∪ S) p x) := by ring
 
 /-! ### Corollary 3.23 — (DF) ⇒ (DG) -/
 
@@ -358,7 +581,16 @@ theorem recursivelyFactorizes_implies_directedGlobalMarkov (D : DAG V) [Decidabl
     -- USER-INPUT: property (DF); Lauritzen §3.2.2, p. 46
     (hp : RecursivelyFactorizes D p) :
     IsDirectedGlobalMarkov D (CondIndepMass p) := by
-  sorry
+  intro A B S hAB hAS hBS hsep
+  have hT : D.IsAncestralSet (D.ancestralClosure (A ∪ B ∪ S)) :=
+    D.isAncestralSet_ancestralClosure _
+  -- Proposition 3.22, Lemma 3.21, round-1 (F) ⇒ (G), marginalisation transfer
+  have h1 := blockMarginal_recursivelyFactorizesOn_of_ancestralSet D
+    (D.ancestralClosure (A ∪ B ∪ S)) hT p hp
+  have h2 := recursivelyFactorizesOn_implies_factorizesOver_inducedMoralGraph D
+    (D.ancestralClosure (A ∪ B ∪ S)) _ hT h1
+  have h3 := factorizesOver_implies_globalMarkov _ _ h2 A B S hAB hAS hBS hsep
+  exact condIndepMass_of_condIndepMass_blockMarginal (D.subset_ancestralClosure _) h3
 
 /-- **(DF) ⇒ (DL)** — Corollary 3.23 composed with (DG) ⇒ (DL). -/
 theorem recursivelyFactorizes_implies_directedLocalMarkov (D : DAG V) [DecidableRel D.Adj]
@@ -406,7 +638,14 @@ theorem directedPairwiseMarkov_implies_directedLocalMarkov_of_pos (D : DAG V)
     -- USER-INPUT: the directed pairwise Markov property; Lauritzen §3.2.2 (DP), p. 50
     (h : IsDirectedPairwiseMarkov D (CondIndepMass p)) :
     IsDirectedLocalMarkov D (CondIndepMass p) := by
-  sorry
+  intro v
+  rcases (D.nonDescendants v \ D.parents v).eq_empty_or_nonempty with hemp | hne
+  · -- the empty-block regime: the assertion is an identity, with no hypothesis at all
+    rw [hemp]
+    intro x
+    simp
+  · exact directedPairwiseMarkov_implies_directedLocalMarkov_of_nonempty D
+      (isGraphoid_condIndepMass_of_pos hp hpos) h v hne
 
 /-! ### Theorem 3.27 -/
 
@@ -446,7 +685,111 @@ theorem directedMarkov_tfae (D : DAG V) [DecidableRel D.Adj]
     [RecursivelyFactorizes D p,
       IsDirectedGlobalMarkov D (CondIndepMass p),
       IsDirectedLocalMarkov D (CondIndepMass p)].TFAE := by
-  sorry
+  classical
+  have hfin : ∀ y : V → α, p y ≠ ∞ := by
+    intro y
+    have hle : p y ≤ ∑ z : V → α, p z :=
+      Finset.single_le_sum (f := p) (fun i _ => zero_le _) (Finset.mem_univ y)
+    rw [hnorm] at hle
+    exact ne_top_of_le_ne_top ENNReal.one_ne_top hle
+  have hden0 : ∀ (C : Finset V) (x : V → α), blockMarginal C p x ≠ 0 :=
+    fun C x => blockMarginal_ne_zero C x hpos
+  have hdent : ∀ (C : Finset V) (x : V → α), blockMarginal C p x ≠ ∞ :=
+    fun C x => blockMarginal_ne_top C x hfin
+  tfae_have 1 → 2 := fun hp => recursivelyFactorizes_implies_directedGlobalMarkov D p hp
+  tfae_have 2 → 3 := fun hg => directedGlobalMarkov_implies_directedLocalMarkov D hg
+  tfae_have 3 → 1 := by
+    intro hl
+    -- the kernels are the conditional masses `p_{{v} ∪ pa(v)} / p_{pa(v)}`
+    obtain ⟨k, hkv⟩ : ∃ k : V → (V → α) → ℝ≥0∞, ∀ v x, k v x =
+        blockMarginal (insert v (D.parents v)) p x / blockMarginal (D.parents v) p x :=
+      ⟨_, fun _ _ => rfl⟩
+    have hsemi : IsSemigraphoid (CondIndepMass p) := isSemigraphoid_condIndepMass hfin
+    refine ⟨k, ?_, ?_⟩
+    · -- the kernel family is local and normalised
+      intro v _
+      have hvpa : v ∉ D.parents v := D.notMem_parents_self v
+      refine ⟨?_, ?_⟩
+      · intro y z hyz
+        rw [hkv v y, hkv v z, dependsOn_blockMarginal (insert v (D.parents v)) p hyz,
+          DependsOn.mono (Finset.coe_subset.mpr (Finset.subset_insert v (D.parents v)))
+            (dependsOn_blockMarginal (D.parents v) p) hyz]
+      · intro x
+        have hconst : ∀ a : α, blockMarginal (D.parents v) p (Function.update x v a)
+            = blockMarginal (D.parents v) p x := by
+          intro a
+          refine dependsOn_blockMarginal _ p ?_
+          intro i hi
+          have hiv : i ≠ v := by rintro rfl; exact hvpa (Finset.mem_coe.mp hi)
+          exact Function.update_of_ne hiv a x
+        have hstep : ∀ a : α, k v (Function.update x v a)
+            = blockMarginal (insert v (D.parents v)) p (Function.update x v a)
+              * (blockMarginal (D.parents v) p x)⁻¹ := by
+          intro a
+          rw [hkv v (Function.update x v a), hconst a, div_eq_mul_inv]
+        rw [Finset.sum_congr rfl (fun a _ => hstep a), ← Finset.sum_mul,
+          ← blockMarginal_eq_sum_update p hvpa x, ← div_eq_mul_inv]
+        exact ENNReal.div_self (hden0 _ _) (hdent _ _)
+    · -- the product telescopes along the ancestral sets, by induction on their size
+      obtain ⟨f, hf⟩ := D.exists_topologicalOrder
+      have key : ∀ n : ℕ, ∀ C : Finset V, C.card = n → D.IsAncestralSet C →
+          ∀ x, blockMarginal C p x = ∏ v ∈ C, k v x := by
+        intro n
+        induction n using Nat.strong_induction_on with
+        | _ n ih =>
+          intro C hcard hC x
+          rcases C.eq_empty_or_nonempty with rfl | hCne
+          · rw [blockMarginal_empty p x, hnorm, Finset.prod_empty]
+          · have hn : 0 < n := hcard ▸ Finset.card_pos.mpr hCne
+            -- the topologically last vertex of `C` has no descendant inside `C`
+            obtain ⟨u, huC, humax⟩ := Finset.exists_max_image C f hCne
+            have hnd : ∀ w ∈ C, w ≠ u → w ∈ D.nonDescendants u := by
+              intro w hw hwu
+              exact DAG.mem_nonDescendants.mpr
+                ⟨hwu, fun hc => absurd (hf hc) (not_lt.mpr (humax w hw))⟩
+            have hpaC : D.parents u ⊆ C.erase u := by
+              intro w hw
+              refine Finset.mem_erase.mpr ⟨?_, hC (DAG.mem_parents.mp hw) huC⟩
+              rintro rfl
+              exact D.irrefl _ (DAG.mem_parents.mp hw)
+            have hC' : D.IsAncestralSet (C.erase u) := by
+              intro a b hab hb
+              have hbC : b ∈ C := Finset.mem_of_mem_erase hb
+              refine Finset.mem_erase.mpr ⟨?_, hC hab hbC⟩
+              rintro rfl
+              exact absurd (hf (Relation.TransGen.single hab)) (not_lt.mpr (humax b hbC))
+            have IH := ih (n - 1) (by omega) (C.erase u)
+              (by rw [Finset.card_erase_of_mem huC, hcard]) hC' x
+            -- (DL) at `u`, shrunk to the block `C ∖ {u} ∖ pa(u)`
+            have hci2 : CondIndepMass p {u} (C.erase u \ D.parents u) (D.parents u) :=
+              hsemi.decomposition_subset
+                (fun w hw => Finset.mem_sdiff.mpr
+                  ⟨hnd w (Finset.mem_of_mem_erase (Finset.mem_sdiff.mp hw).1)
+                    (Finset.ne_of_mem_erase (Finset.mem_sdiff.mp hw).1),
+                   (Finset.mem_sdiff.mp hw).2⟩)
+                (Finset.disjoint_singleton_left.mpr fun hc =>
+                  D.notMem_nonDescendants_self u (Finset.mem_sdiff.mp hc).1)
+                (Finset.disjoint_singleton_left.mpr (D.notMem_parents_self u))
+                Finset.sdiff_disjoint (hl u)
+            have hid := hci2 x
+            rw [Finset.union_assoc, Finset.sdiff_union_of_subset hpaC, Finset.singleton_union,
+              Finset.insert_erase huC, Finset.singleton_union] at hid
+            -- `p_C · p_{pa(u)} = p_{{u} ∪ pa(u)} · p_{C ∖ {u}}`, so the quotient telescopes
+            calc blockMarginal C p x
+                = blockMarginal C p x * blockMarginal (D.parents u) p x
+                    / blockMarginal (D.parents u) p x :=
+                  (ENNReal.mul_div_cancel_right (hden0 _ _) (hdent _ _)).symm
+              _ = blockMarginal (insert u (D.parents u)) p x * blockMarginal (C.erase u) p x
+                    / blockMarginal (D.parents u) p x := by rw [hid]
+              _ = k u x * ∏ v ∈ C.erase u, k v x := by
+                  rw [hkv u x, IH]
+                  simp only [div_eq_mul_inv]
+                  ring
+              _ = ∏ v ∈ C, k v x := Finset.mul_prod_erase C (fun v => k v x) huC
+      intro x
+      rw [← blockMarginal_univ p]
+      exact key _ Finset.univ rfl (D.isAncestralSet_univ) x
+  tfae_finish
 
 end Discrete
 
