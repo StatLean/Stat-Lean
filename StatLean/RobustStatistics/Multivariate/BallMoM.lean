@@ -264,6 +264,71 @@ theorem norm_blockMeanVec_sq_moment {m : ℕ} (hm : m ≠ 0)
     _ = trSigma / m := by field_simp
 
 
+/-- **Currying a finite product measure** (the measure-theoretic half of the grouping
+lemma): pushing a product measure over the index `κ × ι` forward along currying gives the
+product-of-products over `κ` then `ι`. Proved by `Measure.pi_eq` on the *uncurried* side,
+where a rectangle pulls back to a rectangle of rectangles. -/
+private theorem map_curry_pi {α : Type*} [MeasurableSpace α] {κ ι : Type*}
+    [Fintype κ] [Fintype ι] (ν : Measure α) [IsProbabilityMeasure ν] :
+    (Measure.pi fun _ : κ × ι => ν).map (fun f (j : κ) (i : ι) => f (j, i))
+      = Measure.pi fun _ : κ => Measure.pi fun _ : ι => ν := by
+  have hcurry : Measurable (fun (f : κ × ι → α) (j : κ) (i : ι) => f (j, i)) := by fun_prop
+  have huncurry : Measurable (fun (g : κ → ι → α) (q : κ × ι) => g q.1 q.2) := by fun_prop
+  have key : Measure.pi (fun _ : κ × ι => ν)
+      = (Measure.pi fun _ : κ => Measure.pi fun _ : ι => ν).map
+          (fun (g : κ → ι → α) (q : κ × ι) => g q.1 q.2) := by
+    refine Measure.pi_eq fun s hs => ?_
+    rw [Measure.map_apply huncurry (MeasurableSet.univ_pi hs)]
+    have hpre : (fun (g : κ → ι → α) (q : κ × ι) => g q.1 q.2) ⁻¹' (Set.univ.pi s)
+        = Set.univ.pi fun j => Set.univ.pi fun i => s (j, i) := by
+      ext g; simp [Set.mem_pi, Prod.forall]
+    rw [hpre, Measure.pi_pi]
+    simp_rw [Measure.pi_pi]
+    rw [Fintype.prod_prod_type]
+  rw [key, Measure.map_map hcurry huncurry,
+    show ((fun (f : κ × ι → α) (j : κ) (i : ι) => f (j, i)) ∘
+      (fun (g : κ → ι → α) (q : κ × ι) => g q.1 q.2)) = id from rfl, Measure.map_id]
+
+/-- **Blocks of jointly independent data are jointly independent** (`LM Proposition 1`
+proof, implicit): if the `k·m` observations are jointly independent with common law `P`,
+then the `k` block *tuples* `ξ ↦ (X_{j,1}(ξ), …, X_{j,m}(ξ))` are jointly independent.
+This is the vector-valued grouping brick; the block means are measurable functions of the
+block tuples, so `iIndepFun.comp` transfers independence to them. -/
+private theorem iIndepFun_blockTuple {k m : ℕ}
+    {X : Fin k → Fin m → Ξ → EuclideanSpace ℝ (Fin d)}
+    (hX_meas : ∀ j i, Measurable (X j i))
+    (hX_indep : iIndepFun (fun q : Fin k × Fin m => X q.1 q.2) μprob)
+    (hX_law : ∀ j i, μprob.map (X j i) = P) :
+    iIndepFun (fun (j : Fin k) (ξ : Ξ) (i : Fin m) => X j i ξ) μprob := by
+  have hTmeas : Measurable (fun ξ (q : Fin k × Fin m) => X q.1 q.2 ξ) :=
+    measurable_pi_lambda _ fun q => hX_meas q.1 q.2
+  have hcurry : Measurable
+      (fun (f : Fin k × Fin m → EuclideanSpace ℝ (Fin d)) (j : Fin k) (i : Fin m) => f (j, i)) := by
+    fun_prop
+  rw [iIndepFun_iff_map_fun_eq_pi_map
+    (fun j => (measurable_pi_lambda _ fun i => hX_meas j i).aemeasurable)]
+  have hrow : ∀ j : Fin k, μprob.map (fun ξ (i : Fin m) => X j i ξ)
+      = Measure.pi (fun _ : Fin m => P) := by
+    intro j
+    have hinj : Function.Injective (fun i : Fin m => ((j, i) : Fin k × Fin m)) :=
+      fun a b h => by simpa using h
+    have hind : iIndepFun (fun i : Fin m => X j i) μprob := hX_indep.precomp (g := fun i : Fin m => ((j, i) : Fin k × Fin m)) hinj
+    rw [(iIndepFun_iff_map_fun_eq_pi_map (fun i => (hX_meas j i).aemeasurable)).mp hind]
+    simp [hX_law j]
+  have hT : μprob.map (fun ξ (q : Fin k × Fin m) => X q.1 q.2 ξ)
+      = Measure.pi (fun _ : Fin k × Fin m => P) := by
+    rw [(iIndepFun_iff_map_fun_eq_pi_map
+      (fun q : Fin k × Fin m => (hX_meas q.1 q.2).aemeasurable)).mp hX_indep]
+    simp [hX_law]
+  have hall : μprob.map (fun ξ (j : Fin k) (i : Fin m) => X j i ξ)
+      = Measure.pi (fun _ : Fin k => Measure.pi (fun _ : Fin m => P)) := by
+    rw [show (fun ξ (j : Fin k) (i : Fin m) => X j i ξ)
+        = (fun (f : Fin k × Fin m → EuclideanSpace ℝ (Fin d)) (j : Fin k) (i : Fin m) => f (j, i))
+          ∘ (fun ξ (q : Fin k × Fin m) => X q.1 q.2 ξ) from rfl,
+      ← Measure.map_map hcurry hTmeas, hT, map_curry_pi]
+  rw [hall]
+  exact congrArg Measure.pi (funext fun j => (hrow j).symm)
+
 /-- **The minimal-radius-ball median-of-means is dimension-free** (`LM Proposition 1`):
 for i.i.d. random vectors with mean `μ₀` and covariance trace `trSigma`, blocked into
 `k = ⌈8 log(1/δ)⌉` blocks of size `m` with `n = km`, any measurable selection `Ĉ` of
