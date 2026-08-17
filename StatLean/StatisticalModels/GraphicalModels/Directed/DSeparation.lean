@@ -223,7 +223,10 @@ theorem start_mem_support {u w : V} (c : Chain r u w) : u ∈ c.support := by
   cases c <;> simp
 
 theorem end_mem_support {u w : V} (c : Chain r u w) : w ∈ c.support := by
-  sorry
+  induction c with
+  | nil v => simp
+  | fwd _ _ ih => simp [ih]
+  | bwd _ _ ih => simp [ih]
 
 /-- Concatenate the reverse of the first chain with the second — the engine of `Chain.reverse`,
 modelled on `SimpleGraph.Walk.reverseAux`. Reversing swaps the roles of `fwd` and `bwd`, which
@@ -236,6 +239,29 @@ def reverseAux : ∀ {u v w : V}, Chain r u v → Chain r u w → Chain r v w
 /-- A chain read from its far end. Each step keeps its arrow and changes its traversal
 direction. -/
 def reverse {u w : V} (c : Chain r u w) : Chain r w u := c.reverseAux (nil u)
+
+/-- The direction, **read at the first vertex of the chain**, of the arrow leaving it — `none`
+for the chain of length `0`, which has no arrow at all.
+
+This is the bookkeeping device of `Chain.blocked_reverse`: it names the `dout` argument that the
+recursion of `Chain.BlockedFrom` reads off the constructor at the chain's own first vertex, so
+that gluing two chains at a common first vertex (which is exactly what `Chain.reverseAux` does)
+can be stated without unfolding the recursion. -/
+def headDir : ∀ {u w : V}, Chain r u w → Option ArrowDir
+  | _, _, nil _ => none
+  | _, _, fwd _ _ => some ArrowDir.outOf
+  | _, _, bwd _ _ => some ArrowDir.into
+
+@[simp]
+theorem headDir_nil (v : V) : (nil v : Chain r v v).headDir = none := rfl
+
+@[simp]
+theorem headDir_fwd {u v w : V} (h : r u v) (c : Chain r v w) :
+    (fwd h c).headDir = some ArrowDir.outOf := rfl
+
+@[simp]
+theorem headDir_bwd {u v w : V} (h : r v u) (c : Chain r v w) :
+    (bwd h c).headDir = some ArrowDir.into := rfl
 
 end Chain
 
@@ -270,6 +296,38 @@ is blocked, which is what makes `dSeparated_self_left` / `_right` true and mirro
 so `BlocksAt` is the negation of "`γ` leaves the chain open at this occurrence". -/
 def BlocksAt (r : V → V → Prop) (S : Finset V) (din dout : Option ArrowDir) (γ : V) : Prop :=
   (¬ IsCollider din dout ∧ γ ∈ S) ∨ (IsCollider din dout ∧ NoDescendantIn r S γ)
+
+/-- **Blocking at a vertex occurrence does not depend on which side the chain is entered from.**
+Both clauses of `BlocksAt` mention the two arrow directions only through `IsCollider`, which is
+symmetric (`isCollider_comm`); this is the pointwise content of `Chain.blocked_reverse`. -/
+theorem blocksAt_comm {r : V → V → Prop} {S : Finset V} {din dout : Option ArrowDir} {γ : V} :
+    BlocksAt r S din dout γ ↔ BlocksAt r S dout din γ := by
+  unfold BlocksAt
+  rw [isCollider_comm din dout]
+
+/-- **At a non-collider the rule is "lie in the separator"** — the first clause of `BlocksAt`,
+isolated. -/
+theorem blocksAt_iff_mem_of_not_isCollider {r : V → V → Prop} {S : Finset V}
+    {din dout : Option ArrowDir} {γ : V} (h : ¬ IsCollider din dout) :
+    BlocksAt r S din dout γ ↔ γ ∈ S := by
+  simp [BlocksAt, h]
+
+/-- **At a collider the rule is "have no descendant in the separator"** — the second clause of
+`BlocksAt`, isolated. -/
+theorem blocksAt_iff_noDescendantIn_of_isCollider {r : V → V → Prop} {S : Finset V}
+    {din dout : Option ArrowDir} {γ : V} (h : IsCollider din dout) :
+    BlocksAt r S din dout γ ↔ NoDescendantIn r S γ := by
+  simp [BlocksAt, h]
+
+/-- An end of the chain on the near side blocks exactly when it lies in the separator. -/
+theorem blocksAt_none_left {r : V → V → Prop} {S : Finset V} {dout : Option ArrowDir} {γ : V} :
+    BlocksAt r S none dout γ ↔ γ ∈ S :=
+  blocksAt_iff_mem_of_not_isCollider (not_isCollider_none_left dout)
+
+/-- An end of the chain on the far side blocks exactly when it lies in the separator. -/
+theorem blocksAt_none_right {r : V → V → Prop} {S : Finset V} {din : Option ArrowDir} {γ : V} :
+    BlocksAt r S din none γ ↔ γ ∈ S :=
+  blocksAt_iff_mem_of_not_isCollider (not_isCollider_none_right din)
 
 namespace Chain
 
@@ -308,6 +366,81 @@ def Active {u w : V} (c : Chain r u w) (S : Finset V) : Prop :=
 theorem active_iff_not_blocked {u w : V} (c : Chain r u w) (S : Finset V) :
     c.Active S ↔ ¬ c.Blocked S := Iff.rfl
 
+/-! #### The recursion of `Chain.BlockedFrom`, as rewrite rules -/
+
+@[simp]
+theorem blockedFrom_nil {S : Finset V} {din : Option ArrowDir} (v : V) :
+    BlockedFrom S din (nil v : Chain r v v) = BlocksAt r S din none v := rfl
+
+@[simp]
+theorem blockedFrom_fwd {S : Finset V} {din : Option ArrowDir} {u v w : V} (h : r u v)
+    (c : Chain r v w) :
+    BlockedFrom S din (fwd h c) =
+      (BlocksAt r S din (some ArrowDir.outOf) u ∨ BlockedFrom S (some ArrowDir.into) c) := rfl
+
+@[simp]
+theorem blockedFrom_bwd {S : Finset V} {din : Option ArrowDir} {u v w : V} (h : r v u)
+    (c : Chain r v w) :
+    BlockedFrom S din (bwd h c) =
+      (BlocksAt r S din (some ArrowDir.into) u ∨ BlockedFrom S (some ArrowDir.outOf) c) := rfl
+
+/-- **Blocking at the first vertex already blocks the whole chain.** The only fact about the
+recursion of `Chain.BlockedFrom` that the reversal argument needs: the recursion evaluates
+`BlocksAt` at the first vertex with far-side direction `Chain.headDir`, and puts that disjunct
+first. -/
+theorem blockedFrom_of_blocksAt_headDir {S : Finset V} {din : Option ArrowDir} {u w : V}
+    (c : Chain r u w) (h : BlocksAt r S din c.headDir u) : BlockedFrom S din c := by
+  cases c with
+  | nil v => exact h
+  | fwd _ _ => exact Or.inl h
+  | bwd _ _ => exact Or.inl h
+
+/-- **The reversal identity for `Chain.reverseAux`.** `p.reverseAux q` glues the reverse of `p`
+to `q` at their common first vertex `u`; a vertex occurrence of the glued chain blocks exactly
+when it blocks in `p` — read from `u` with the arrow of `q` behind it — or in `q`, read from `u`
+with the arrow of `p` behind it. The junction `u` itself is counted by *both* disjuncts, which is
+harmless: `blocksAt_comm` says the two readings of it agree.
+
+This is the statement that carries `Chain.blocked_reverse`: the two accumulators are exchanged,
+which is exactly "reversing a chain exchanges the near and far side at every occurrence". -/
+theorem blockedFrom_reverseAux {S : Finset V} {w : V} :
+    ∀ {u v : V} (p : Chain r u v) (q : Chain r u w),
+      BlockedFrom S none (p.reverseAux q) ↔
+        BlockedFrom S q.headDir p ∨ BlockedFrom S p.headDir q := by
+  intro u v p
+  induction p with
+  | nil x =>
+      intro q
+      simp only [reverseAux, headDir_nil, blockedFrom_nil]
+      refine ⟨fun h => Or.inr h, ?_⟩
+      rintro (h | h)
+      · exact blockedFrom_of_blocksAt_headDir q (blocksAt_comm.mp h)
+      · exact h
+  | @fwd x y v hh p ih =>
+      intro q
+      have hp : BlocksAt r S p.headDir (some ArrowDir.into) y →
+          BlockedFrom S (some ArrowDir.into) p := fun h =>
+        blockedFrom_of_blocksAt_headDir p (blocksAt_comm.mp h)
+      have hq : BlocksAt r S q.headDir (some ArrowDir.outOf) x →
+          BlockedFrom S (some ArrowDir.outOf) q := fun h =>
+        blockedFrom_of_blocksAt_headDir q (blocksAt_comm.mp h)
+      show BlockedFrom S none (p.reverseAux (bwd hh q)) ↔ _
+      rw [ih (bwd hh q)]
+      simp only [headDir_bwd, headDir_fwd, blockedFrom_bwd, blockedFrom_fwd]
+      tauto
+  | @bwd x y v hh p ih =>
+      intro q
+      have hp : BlocksAt r S p.headDir (some ArrowDir.outOf) y →
+          BlockedFrom S (some ArrowDir.outOf) p := fun h =>
+        blockedFrom_of_blocksAt_headDir p (blocksAt_comm.mp h)
+      have hq : BlocksAt r S q.headDir (some ArrowDir.into) x →
+          BlockedFrom S (some ArrowDir.into) q := fun h =>
+        blockedFrom_of_blocksAt_headDir q (blocksAt_comm.mp h)
+      show BlockedFrom S none (p.reverseAux (fwd hh q)) ↔ _
+      rw [ih (fwd hh q)]
+      simp only [headDir_bwd, headDir_fwd, blockedFrom_bwd, blockedFrom_fwd]
+      tauto
+
 /-- **Blocking does not depend on the direction of traversal.** Reversing a chain exchanges the
 near and far side at every vertex occurrence, and `IsCollider` is symmetric
 (`isCollider_comm`), so the set of blocking occurrences is unchanged. This is what makes
@@ -319,7 +452,13 @@ The intended proof generalises over the accumulator: `BlockedFrom S din (p.rever
 exchanged. -/
 theorem blocked_reverse {u w : V} (c : Chain r u w) (S : Finset V) :
     c.reverse.Blocked S ↔ c.Blocked S := by
-  sorry
+  show BlockedFrom S none (c.reverseAux (nil u)) ↔ BlockedFrom S none c
+  rw [blockedFrom_reverseAux c (nil u)]
+  simp only [headDir_nil, blockedFrom_nil]
+  refine ⟨?_, Or.inl⟩
+  rintro (h | h)
+  · exact h
+  · exact blockedFrom_of_blocksAt_headDir c (blocksAt_comm.mp h)
 
 /-- A chain that **starts** inside the separator is blocked: its first vertex has no arrow
 behind it, hence is not a collider, hence blocks as soon as it lies in `S`. The directed
@@ -328,16 +467,16 @@ theorem blocked_of_start_mem {u w : V} (c : Chain r u w) {S : Finset V}
     -- USER-INPUT: the first vertex lies in the separator; Lauritzen p. 48 excludes this by
     -- assuming `A`, `B`, `S` disjoint, so this is a Lean-side completion of the definition
     (hu : u ∈ S) :
-    c.Blocked S := by
-  sorry
+    c.Blocked S :=
+  blockedFrom_of_blocksAt_headDir c (Or.inl ⟨not_isCollider_none_left _, hu⟩)
 
 /-- A chain that **ends** inside the separator is blocked — the mirror image of
 `blocked_of_start_mem`, via the last vertex. -/
 theorem blocked_of_end_mem {u w : V} (c : Chain r u w) {S : Finset V}
     -- USER-INPUT: the last vertex lies in the separator; see `blocked_of_start_mem`
     (hw : w ∈ S) :
-    c.Blocked S := by
-  sorry
+    c.Blocked S :=
+  (blocked_reverse c S).mp (c.reverse.blocked_of_start_mem hw)
 
 end Chain
 
@@ -431,7 +570,15 @@ theorem not_dSeparated_of_rel {a b : V}
     -- USER-INPUT: the head is outside the separator; Lauritzen p. 48 assumes `B`, `S` disjoint
     (hbS : b ∉ S) :
     ¬ DSeparated r S {a} {b} := by
-  sorry
+  intro h
+  have hb := h a (Finset.mem_singleton_self a) b (Finset.mem_singleton_self b)
+    (Chain.fwd hab (Chain.nil b))
+  -- the two vertices of a one-arrow chain are both *ends*, hence both non-colliders
+  have hb' : BlocksAt r S none (some ArrowDir.outOf) a ∨
+      BlocksAt r S (some ArrowDir.into) none b := hb
+  rcases hb' with h1 | h1
+  · exact haS (blocksAt_none_left.mp h1)
+  · exact hbS (blocksAt_none_right.mp h1)
 
 /-! ### The separator is not monotone — refutation
 
@@ -449,17 +596,64 @@ a genuine directed acyclic graph; it is used only to refute monotonicity of d-se
 separator. -/
 def colliderRel : Fin 3 → Fin 3 → Prop := fun a b => (a = 0 ∨ a = 1) ∧ b = 2
 
+/-- Every arrow of `colliderRel` ends at `2` — the structural fact both collider statements run
+on. Together with `colliderRel_not_two_left` it says that a chain alternates between `{0, 1}` and
+`2`, meeting `2` head-to-head every time. -/
+theorem colliderRel_eq_two {a b : Fin 3} (h : colliderRel a b) : b = 2 := h.2
+
+/-- `2` has no outgoing arrow. -/
+theorem colliderRel_not_two_left {b : Fin 3} : ¬ colliderRel 2 b := by
+  rintro ⟨h, -⟩
+  revert h
+  decide
+
+/-- **Every interior meeting at `2` is a collider that blocks over the empty separator.** A chain
+*starting* at `2` can only leave it against an arrow (`bwd`), so if it was entered along one
+(`din = into`) the arrows meet head-to-head; and over `S = ∅` the descendant clause is vacuous.
+The hypothesis `y ≠ 2` rules out the chain of length `0`, whose far side is `none`. -/
+theorem blockedFrom_of_start_eq_two {x y : Fin 3} (c : Chain colliderRel x y) (hx : x = 2)
+    (hy : y ≠ 2) : Chain.BlockedFrom ∅ (some ArrowDir.into) c := by
+  induction c with
+  | nil v => exact absurd hx hy
+  | fwd h _ _ => exact absurd (hx ▸ h) colliderRel_not_two_left
+  | bwd _ _ _ =>
+      exact Or.inl (Or.inr ⟨⟨rfl, rfl⟩, fun d _ => Finset.notMem_empty d⟩)
+
 /-- Over the empty separator the collider blocks: every chain from `0` to `1` must leave `0`
 along `0 → 2` and arrive at `1` against `1 → 2`, so it meets `2` head-to-head, and with `S = ∅`
 the descendant condition is vacuous. -/
 theorem dSeparated_collider_empty : DSeparated colliderRel ∅ {0} {1} := by
-  sorry
+  have key : ∀ {x y : Fin 3} (c : Chain colliderRel x y), x ≠ 2 → y ≠ 2 → x ≠ y →
+      Chain.BlockedFrom ∅ none c := by
+    intro x y c
+    induction c with
+    | nil v => exact fun _ _ h => absurd rfl h
+    | fwd h c _ => exact fun _ hy _ => Or.inr (blockedFrom_of_start_eq_two c h.2 hy)
+    | bwd h _ _ => exact fun hx _ _ => absurd h.2 hx
+  intro a ha b hb c
+  rw [Finset.mem_singleton] at ha hb
+  subst ha; subst hb
+  exact key c (by decide) (by decide) (by decide)
 
 /-- Conditioning **on** the collider opens the chain `0 → 2 ← 1`: at `2` the arrows meet
 head-to-head and `2` is one of its own descendants, so `2` does not block; the two ends `0` and
 `1` are not colliders and are not in `{2}`, so they do not block either. -/
 theorem not_dSeparated_collider_singleton : ¬ DSeparated colliderRel {2} {0} {1} := by
-  sorry
+  intro h
+  have h02 : colliderRel 0 2 := ⟨Or.inl rfl, rfl⟩
+  have h12 : colliderRel 1 2 := ⟨Or.inr rfl, rfl⟩
+  -- the chain `0 → 2 ← 1`
+  have hb := h 0 (Finset.mem_singleton_self 0) 1 (Finset.mem_singleton_self 1)
+    (Chain.fwd h02 (Chain.bwd h12 (Chain.nil 1)))
+  have hb' : BlocksAt colliderRel {2} none (some ArrowDir.outOf) 0 ∨
+      BlocksAt colliderRel {2} (some ArrowDir.into) (some ArrowDir.into) 2 ∨
+      BlocksAt colliderRel {2} (some ArrowDir.outOf) none 1 := hb
+  rcases hb' with h1 | h1 | h1
+  · exact absurd (blocksAt_none_left.mp h1) (by decide)
+  · -- `2` is one of its own descendants, so the collider does not block
+    exact (blocksAt_iff_noDescendantIn_of_isCollider ⟨rfl, rfl⟩).mp h1 2
+      Relation.ReflTransGen.refl (Finset.mem_singleton_self 2)
+  · exact absurd (blocksAt_none_right.mp h1) (by decide)
 
 /-- **d-separation is not monotone in the separator.** The undirected `separates_of_subset_sep`
 has no analogue here: `∅ ⊆ {2}` d-separates `{0}` from `{1}` in `0 → 2 ← 1` while `{2}` does
