@@ -131,6 +131,17 @@ theorem dist_le_of_majority_two {k : ℕ} {Z : Fin k → EuclideanSpace ℝ (Fin
 variable {Ξ : Type*} [MeasurableSpace Ξ] {μprob : Measure Ξ} [IsProbabilityMeasure μprob]
   {P : Measure (EuclideanSpace ℝ (Fin d))} [IsProbabilityMeasure P]
 
+/-- Coordinate evaluation on `EuclideanSpace` is measurable (the `WithLp` measurable
+structure is the product one). -/
+private theorem measurable_coord (a : Fin d) :
+    Measurable (fun v : EuclideanSpace ℝ (Fin d) => v a) := by fun_prop
+
+/-- The squared Euclidean norm as the sum of the squared coordinates. -/
+private theorem norm_sq_eq_sum_coord (v : EuclideanSpace ℝ (Fin d)) :
+    ‖v‖ ^ 2 = ∑ a, (v a) ^ 2 := by
+  rw [EuclideanSpace.norm_eq, Real.sq_sqrt (by positivity)]
+  simp [sq_abs]
+
 /-- **Second moment of a block mean** (`LM §3.2` proof, `E‖Z_j − μ‖² = Tr(Σ)/m`): for a
 block of `m` i.i.d. centered square-integrable vectors, the squared-norm moment of the
 block mean is `trSigma/m`, where `trSigma = E‖X − μ₀‖²` is the trace of the covariance. -/
@@ -147,7 +158,111 @@ theorem norm_blockMeanVec_sq_moment {m : ℕ} (hm : m ≠ 0)
     (hL2 : MemLp id 2 P) (hmean : ∫ x, x ∂P = μ₀)
     (htr : ∫ x, ‖x - μ₀‖ ^ 2 ∂P = trSigma) :
     ∫ ξ, ‖(m : ℝ)⁻¹ • (∑ i, X i ξ) - μ₀‖ ^ 2 ∂μprob = trSigma / m := by
-  sorry
+  have hmR : (0 : ℝ) < m := by positivity
+  have hmR' : (m : ℝ) ≠ 0 := ne_of_gt hmR
+  have hid : Integrable (fun v : EuclideanSpace ℝ (Fin d) => v) P := hL2.integrable one_le_two
+  have hcen : Measurable (fun v : EuclideanSpace ℝ (Fin d) => v - μ₀) :=
+    measurable_id.sub_const μ₀
+  -- the law transports square-integrability from `P` to each observation
+  have hXL2 : ∀ i, MemLp (X i) 2 μprob := by
+    intro i
+    have h := hL2
+    rw [← hX_law i] at h
+    exact (memLp_map_measure_iff (by fun_prop) (hX_meas i).aemeasurable).mp h
+  have hYL2 : ∀ i, MemLp (fun ξ => X i ξ - μ₀) 2 μprob := fun i =>
+    (hXL2 i).sub (memLp_const μ₀)
+  have hYmeas : ∀ i, Measurable (fun ξ => X i ξ - μ₀) := fun i => (hX_meas i).sub measurable_const
+  -- coordinates of the centred observations, under `μprob` and under `P`
+  have hWmeas : ∀ (a : Fin d) (i : Fin m), Measurable (fun ξ => (X i ξ - μ₀) a) := fun a i =>
+    (measurable_coord a).comp (hYmeas i)
+  have hWL2 : ∀ (a : Fin d) (i : Fin m), MemLp (fun ξ => (X i ξ - μ₀) a) 2 μprob := fun a i =>
+    (hYL2 i).mono (hWmeas a i).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun _ => PiLp.norm_apply_le _ a)
+  have hPWL2 : ∀ a : Fin d, MemLp (fun v : EuclideanSpace ℝ (Fin d) => (v - μ₀) a) 2 P :=
+    fun a => (hL2.sub (memLp_const μ₀)).mono
+      ((measurable_coord a).comp hcen).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun _ => PiLp.norm_apply_le _ a)
+  -- transport of a coordinate integrand from `μprob` to `P`
+  have htrans : ∀ (i : Fin m) (f : EuclideanSpace ℝ (Fin d) → ℝ), Measurable f →
+      ∫ ξ, f (X i ξ) ∂μprob = ∫ v, f v ∂P := by
+    intro i f hf
+    rw [← hX_law i, integral_map (hX_meas i).aemeasurable hf.aestronglyMeasurable]
+  -- each centred coordinate has mean zero
+  have hWmean : ∀ (a : Fin d) (i : Fin m), ∫ ξ, (X i ξ - μ₀) a ∂μprob = 0 := by
+    intro a i
+    rw [htrans i (fun v => (v - μ₀) a) ((measurable_coord a).comp hcen)]
+    have hint : Integrable (fun v : EuclideanSpace ℝ (Fin d) => v - μ₀) P :=
+      hid.sub (integrable_const μ₀)
+    have hcomm := ContinuousLinearMap.integral_comp_comm (EuclideanSpace.proj (𝕜 := ℝ) a) hint
+    rw [show (∫ v, (v - μ₀) a ∂P) = ∫ v, EuclideanSpace.proj (𝕜 := ℝ) a (v - μ₀) ∂P from rfl,
+      hcomm, integral_sub hid (integrable_const _)]
+    simp [hmean]
+  have hfun : ∀ a : Fin d, (∑ i ∈ Finset.univ, fun ξ => (X i ξ - μ₀) a)
+      = fun ξ => ∑ i, (X i ξ - μ₀) a := fun a => by
+    funext ξ; simp [Finset.sum_apply]
+  -- the block-sum variance identity, one coordinate at a time
+  have hWvar : ∀ a : Fin d, ∫ ξ, (∑ i, (X i ξ - μ₀) a) ^ 2 ∂μprob
+      = m * ∫ v, ((v - μ₀) a) ^ 2 ∂P := by
+    intro a
+    have hindep : Set.Pairwise (↑(Finset.univ : Finset (Fin m)))
+        fun i j => (fun ξ => (X i ξ - μ₀) a) ⟂ᵢ[μprob] (fun ξ => (X j ξ - μ₀) a) :=
+      fun i _ j _ hij => (hX_indep.indepFun hij).comp
+        ((measurable_coord a).comp hcen) ((measurable_coord a).comp hcen)
+    have hvs := IndepFun.variance_sum
+      (fun i (_ : i ∈ (Finset.univ : Finset (Fin m))) => hWL2 a i) hindep
+    rw [hfun a] at hvs
+    have hmeanS : ∫ ξ, ∑ i, (X i ξ - μ₀) a ∂μprob = 0 := by
+      rw [integral_finset_sum _ fun i _ => (hWL2 a i).integrable one_le_two]
+      exact Finset.sum_eq_zero fun i _ => hWmean a i
+    have hLHS : Var[fun ξ => ∑ i, (X i ξ - μ₀) a; μprob]
+        = ∫ ξ, (∑ i, (X i ξ - μ₀) a) ^ 2 ∂μprob := by
+      rw [variance_eq_integral
+        (Finset.measurable_sum _ fun i _ => hWmeas a i).aemeasurable, hmeanS]
+      simp
+    have hRHS : ∀ i : Fin m, Var[fun ξ => (X i ξ - μ₀) a; μprob]
+        = ∫ v, ((v - μ₀) a) ^ 2 ∂P := by
+      intro i
+      rw [variance_eq_integral (hWmeas a i).aemeasurable, hWmean a i]
+      simp only [sub_zero]
+      exact htrans i (fun v => ((v - μ₀) a) ^ 2) (((measurable_coord a).comp hcen).pow_const 2)
+    rw [hLHS] at hvs
+    rw [hvs, Finset.sum_congr rfl fun i _ => hRHS i]
+    simp [Finset.card_univ]
+  -- sum the coordinates back up
+  have hsum : ∫ ξ, ‖∑ i, (X i ξ - μ₀)‖ ^ 2 ∂μprob = m * trSigma := by
+    have h1 : ∀ ξ, ‖∑ i, (X i ξ - μ₀)‖ ^ 2 = ∑ a, (∑ i, (X i ξ - μ₀) a) ^ 2 := by
+      intro ξ; rw [norm_sq_eq_sum_coord]; simp
+    have hSL2 : ∀ a : Fin d, MemLp (fun ξ => ∑ i, (X i ξ - μ₀) a) 2 μprob := fun a => by
+      have h := memLp_finset_sum' (μ := μprob) (p := 2) (f := fun i ξ => (X i ξ - μ₀) a)
+        Finset.univ fun i _ => hWL2 a i
+      rwa [hfun a] at h
+    calc ∫ ξ, ‖∑ i, (X i ξ - μ₀)‖ ^ 2 ∂μprob
+        = ∫ ξ, ∑ a, (∑ i, (X i ξ - μ₀) a) ^ 2 ∂μprob := by simp only [h1]
+      _ = ∑ a, ∫ ξ, (∑ i, (X i ξ - μ₀) a) ^ 2 ∂μprob :=
+          integral_finset_sum _ fun a _ => (hSL2 a).integrable_sq
+      _ = ∑ a, (m : ℝ) * ∫ v, ((v - μ₀) a) ^ 2 ∂P := Finset.sum_congr rfl fun a _ => hWvar a
+      _ = (m : ℝ) * ∑ a, ∫ v, ((v - μ₀) a) ^ 2 ∂P := by rw [Finset.mul_sum]
+      _ = (m : ℝ) * ∫ v, ∑ a, ((v - μ₀) a) ^ 2 ∂P := by
+          rw [integral_finset_sum _ fun a _ => (hPWL2 a).integrable_sq]
+      _ = (m : ℝ) * trSigma := by
+          rw [← htr]; congr 1; exact integral_congr_ae
+            (Filter.Eventually.of_forall fun v => (norm_sq_eq_sum_coord (v - μ₀)).symm)
+  -- rewrite the block mean as the centred block sum and conclude
+  have hpt : ∀ ξ, (m : ℝ)⁻¹ • (∑ i, X i ξ) - μ₀ = (m : ℝ)⁻¹ • ∑ i, (X i ξ - μ₀) := by
+    intro ξ
+    have hs : ∑ i, (X i ξ - μ₀) = (∑ i, X i ξ) - (m : ℝ) • μ₀ := by
+      rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+        ← Nat.cast_smul_eq_nsmul ℝ]
+    rw [hs, smul_sub, inv_smul_smul₀ hmR']
+  calc ∫ ξ, ‖(m : ℝ)⁻¹ • (∑ i, X i ξ) - μ₀‖ ^ 2 ∂μprob
+      = ∫ ξ, ((m : ℝ) ^ 2)⁻¹ * ‖∑ i, (X i ξ - μ₀)‖ ^ 2 ∂μprob := by
+        refine integral_congr_ae (Filter.Eventually.of_forall fun ξ => ?_)
+        show ‖(m : ℝ)⁻¹ • (∑ i, X i ξ) - μ₀‖ ^ 2
+            = ((m : ℝ) ^ 2)⁻¹ * ‖∑ i, (X i ξ - μ₀)‖ ^ 2
+        rw [hpt ξ, norm_smul, mul_pow, Real.norm_eq_abs, abs_inv, Nat.abs_cast, inv_pow]
+    _ = ((m : ℝ) ^ 2)⁻¹ * ((m : ℝ) * trSigma) := by rw [integral_const_mul, hsum]
+    _ = trSigma / m := by field_simp
+
 
 /-- **The minimal-radius-ball median-of-means is dimension-free** (`LM Proposition 1`):
 for i.i.d. random vectors with mean `μ₀` and covariance trace `trSigma`, blocked into
