@@ -1,0 +1,9 @@
+{
+  "root": "StatLean.ComputationalStatistics.pi_map_deleteSplit",
+  "nodes": [
+    {"id":"StatLean.ComputationalStatistics.pi_map_deleteSplit","label":"pi_map_deleteSplit","full":"StatLean.ComputationalStatistics.pi_map_deleteSplit","kind":"root","decl":"thm","module":"StatLean.ComputationalStatistics.ForMathlib.PiMarginal"}
+  ],
+  "edges": [
+
+  ]
+}

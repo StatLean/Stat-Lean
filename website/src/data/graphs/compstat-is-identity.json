@@ -1,0 +1,20 @@
+{
+  "root": "StatLean.ComputationalStatistics.integral_importanceWeight_mul",
+  "nodes": [
+    {"id":"StatLean.ComputationalStatistics.integral_importanceWeight_mul","label":"integral_importanceWeight_mul","full":"StatLean.ComputationalStatistics.integral_importanceWeight_mul","kind":"root","decl":"thm","module":"StatLean.ComputationalStatistics.MonteCarlo.ImportanceSampling"},
+    {"id":"StatLean.ComputationalStatistics.importanceWeight","label":"importanceWeight","full":"StatLean.ComputationalStatistics.importanceWeight","kind":"repo","decl":"def","module":"StatLean.ComputationalStatistics.MonteCarlo.ImportanceSampling"},
+    {"id":"MeasureTheory.integral_toReal_rnDeriv_mul","label":"integral_toReal_rnDeriv_mul","full":"MeasureTheory.integral_toReal_rnDeriv_mul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym"},
+    {"id":"MeasureTheory.Measure.haveLebesgueDecomposition_of_sigmaFinite","label":"haveLebesgueDecomposition_of_sigmaFinite","full":"MeasureTheory.Measure.haveLebesgueDecomposition_of_sigmaFinite","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Decomposition.Lebesgue"},
+    {"id":"MeasureTheory.integral_congr_ae","label":"integral_congr_ae","full":"MeasureTheory.integral_congr_ae","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
+    {"id":"Filter.Eventually.of_forall","label":"of_forall","full":"Filter.Eventually.of_forall","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Basic"},
+    {"id":"mul_comm","label":"mul_comm","full":"mul_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.ComputationalStatistics.integral_importanceWeight_mul","target":"StatLean.ComputationalStatistics.importanceWeight"},
+    {"source":"StatLean.ComputationalStatistics.integral_importanceWeight_mul","target":"MeasureTheory.integral_toReal_rnDeriv_mul"},
+    {"source":"StatLean.ComputationalStatistics.integral_importanceWeight_mul","target":"MeasureTheory.Measure.haveLebesgueDecomposition_of_sigmaFinite"},
+    {"source":"StatLean.ComputationalStatistics.integral_importanceWeight_mul","target":"MeasureTheory.integral_congr_ae"},
+    {"source":"StatLean.ComputationalStatistics.integral_importanceWeight_mul","target":"Filter.Eventually.of_forall"},
+    {"source":"StatLean.ComputationalStatistics.integral_importanceWeight_mul","target":"mul_comm"}
+  ]
+}
