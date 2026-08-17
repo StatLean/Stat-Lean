@@ -191,6 +191,19 @@ export function TopicIcon({
           <circle cx="34.5" cy="14.5" r="1.8" opacity={0.9} />
         </svg>
       );
+    case "compstat":
+      // Scattered Monte Carlo draws filling the area under a target density
+      return (
+        <svg {...common}>
+          <path d="M6 36c6 0 8-22 18-22s12 22 18 22" />
+          <path d="M6 36h36" opacity={0.5} />
+          <circle cx="17" cy="30" r="1.7" opacity={0.9} />
+          <circle cx="23" cy="24" r="1.7" opacity={0.9} />
+          <circle cx="28" cy="31" r="1.7" opacity={0.9} />
+          <circle cx="24" cy="33" r="1.7" opacity={0.6} />
+          <circle cx="33" cy="34" r="1.7" opacity={0.6} />
+        </svg>
+      );
     default:
       // Never render an empty card: fall back to a neutral mark for any new topic.
       return (

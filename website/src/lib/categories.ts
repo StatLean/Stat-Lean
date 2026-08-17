@@ -127,6 +127,13 @@ export const CATEGORIES: CategoryMeta[] = [
     blurb:
       "Randomization and sampling designs as distributions over allocations, completely randomized and blocked experiments, the analysis-of-variance identity, factorial characters, and Horvitz-Thompson estimation.",
   },
+  {
+    id: "compstat",
+    name: "Computational Statistics",
+    tagline: "Monte Carlo, resampling & simulation correctness",
+    blurb:
+      "The mathematics that makes simulation-based inference correct: Monte Carlo estimation and its error, importance sampling and the optimal importance density, rejection sampling, Markov chain Monte Carlo, multinomial resampling of particles, the finite-sample bootstrap and jackknife, and cross-validation.",
+  },
 ];
 
 export const CATEGORY_BY_ID: Record<CategoryId, CategoryMeta> = Object.fromEntries(

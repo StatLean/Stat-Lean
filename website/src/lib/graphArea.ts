@@ -22,6 +22,7 @@ export const AREA_VAR: Record<Area, string> = {
   causal: "--c-causal",
   statlearning: "--c-slearn",
   expdesign: "--c-exp",
+  compstat: "--c-comp",
   external: "--c-ext",
 };
 
@@ -43,6 +44,7 @@ export const AREA_LABEL: Record<Area, string> = {
   causal: "Causal Inference",
   statlearning: "Statistical Learning",
   expdesign: "Experimental Design",
+  compstat: "Computational Statistics",
   external: "Mathlib / external",
 };
 
@@ -65,6 +67,7 @@ export const AREAS: Area[] = [
   "causal",
   "statlearning",
   "expdesign",
+  "compstat",
   "external",
 ];
 
@@ -89,6 +92,7 @@ const DIR_AREA: Partial<Record<string, CategoryId>> = {
   CausalInference: "causal",
   StatisticalLearning: "statlearning",
   ExperimentalDesign: "expdesign",
+  ComputationalStatistics: "compstat",
 };
 
 /** Drop an optional leading `StatLean.` / `StatLean/` root segment. */

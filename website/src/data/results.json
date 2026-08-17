@@ -11481,6 +11481,9 @@
     "keywords": [
       "Markov chain Monte Carlo",
       "Metropolis–Hastings algorithm"
+    ],
+    "crossListed": [
+      "compstat"
     ]
   },
   {
@@ -11528,6 +11531,9 @@
     "keywords": [
       "Markov chain Monte Carlo",
       "Metropolis–Hastings algorithm"
+    ],
+    "crossListed": [
+      "compstat"
     ]
   },
   {
@@ -11574,6 +11580,9 @@
     "keywords": [
       "Markov chain Monte Carlo",
       "Gibbs sampler"
+    ],
+    "crossListed": [
+      "compstat"
     ]
   },
   {
@@ -11621,6 +11630,9 @@
     "keywords": [
       "Rao–Blackwell theorem",
       "Markov chain Monte Carlo"
+    ],
+    "crossListed": [
+      "compstat"
     ]
   },
   {
@@ -11976,6 +11988,9 @@
     "keywords": [
       "Gibbs sampler",
       "hierarchical model"
+    ],
+    "crossListed": [
+      "compstat"
     ]
   },
   {
@@ -33476,6 +33491,1526 @@
     "keywords": [
       "threshold autoregression",
       "stationary process"
+    ]
+  },
+  {
+    "id": "compstat-empirical-measure",
+    "category": "compstat",
+    "kind": "definition",
+    "leanName": "empiricalMeasure",
+    "fullName": "StatLean.ComputationalStatistics.empiricalMeasure",
+    "title": "The Empirical Measure and the Monte Carlo Average",
+    "citation": "Gentle (2002), §2.5",
+    "shortRef": "Gentle (2002), §2.5",
+    "file": "StatLean/ComputationalStatistics/Core/Defs.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Core/Defs.html#StatLean.ComputationalStatistics.empiricalMeasure",
+    "informal": "<p>A sample $x_1,\\dots,x_n$ carries a <span data-link=\"h1\">discrete uniform population</span> of its own: the empirical measure $$\\mathbb P_n \\;=\\; \\frac1n\\sum_{i=1}^n \\delta_{x_i},$$ which places mass $1/n$ at each observation. Gentle's bootstrap principle is that this measure is a usable surrogate for the population the data came from. The corresponding <span data-link=\"h2\">Monte Carlo average</span> of a function $g$ is $$\\widehat I_n(g) \\;=\\; \\frac1n\\sum_{i=1}^n g(x_i),$$ the sample mean of the transformed observations.</p>",
+    "summary": "The empirical measure (1/n)Σδ_{x_i} of a sample and the Monte Carlo average (1/n)Σg(x_i), the two objects every Monte Carlo and resampling statement in this topic is built from.",
+    "leanSignature": "noncomputable def empiricalMeasure {n : ℕ} (x : Fin n → 𝓧) : Measure 𝓧 :=\n  (n : ℝ≥0∞)⁻¹ • ∑ i : Fin n, Measure.dirac (x i)\n\nnoncomputable def mcEstimate {n : ℕ} (g : 𝓧 → ℝ) (x : Fin n → 𝓧) : ℝ :=\n  (n : ℝ)⁻¹ * ∑ i, g (x i)",
+    "formalizationNotes": "Both objects are defined for an arbitrary measurable space and an arbitrary finite sample, with no probability structure assumed. Edge behaviour is fixed rather than excluded: at n = 0 the empirical measure is the zero measure (the empty sum, scaled by the junk value (0 : ℝ≥0∞)⁻¹ = ∞, collapses to 0) and the Monte Carlo average is the junk value 0, since (0 : ℝ)⁻¹ = 0 in Lean. Statements that need a genuine probability measure carry a positive-sample-size instance.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "(n : ℝ≥0∞)⁻¹ • ∑ i : Fin n, Measure.dirac (x i)",
+        "label": "discrete uniform population",
+        "note": "Mass $1/n$ at each of the $n$ observations; a probability measure as soon as $n \\ge 1$."
+      },
+      {
+        "id": "h2",
+        "leanToken": "(n : ℝ)⁻¹ * ∑ i, g (x i)",
+        "label": "Monte Carlo average",
+        "note": "The sample mean $\\frac1n\\sum_i g(x_i)$, which is exactly the integral of $g$ against the empirical measure."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§2.5 (random sampling from data), ch. 4, p. 83",
+      "keys": [
+        "gentle2002",
+        "efron1979"
+      ],
+      "biblio": "The use of the empirical distribution as a surrogate population is B. Efron, \"Bootstrap methods: another look at the jackknife,\" *Annals of Statistics* **7** (1979), 1–26."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "empirical measure",
+      "Monte Carlo average"
+    ]
+  },
+  {
+    "id": "compstat-empirical-integral",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "integral_empiricalMeasure",
+    "fullName": "StatLean.ComputationalStatistics.integral_empiricalMeasure",
+    "title": "Integration Against the Empirical Measure Is Averaging",
+    "citation": "Gentle (2002), ch. 4, p. 84",
+    "shortRef": "Gentle (2002), ch. 4, p. 84",
+    "file": "StatLean/ComputationalStatistics/Core/EmpiricalMeasure.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Core/EmpiricalMeasure.html#StatLean.ComputationalStatistics.integral_empiricalMeasure",
+    "informal": "<p>Integrating a <span data-link=\"h1\">function</span> against the empirical measure of a sample returns the sample average of its values: $$\\int f \\, d\\mathbb P_n \\;=\\; \\frac1n\\sum_{i=1}^n f(x_i).$$ This is the plug-in principle in its most basic form — a population functional $\\Theta(P)=\\int f\\,dP$ evaluated at $\\mathbb P_n$ is a finite sum — and it is what lets every later Monte Carlo and resampling statement move between measure-theoretic and finite-sum language without redoing the conversion.</p>",
+    "summary": "The integral of f against the empirical measure equals the sample average of f, the identity that converts every plug-in functional into a finite sum.",
+    "leanSignature": "theorem integral_empiricalMeasure\n    (hf : StronglyMeasurable f) :\n    ∫ z, f z ∂(empiricalMeasure x) = mcEstimate f x",
+    "formalizationNotes": "Proved by expanding the empirical measure as a scaled finite sum of Dirac measures and integrating termwise (`integral_smul_measure`, `integral_finset_sum_measure`, `integral_dirac'`), then converting the ℝ≥0∞ scalar (n : ℝ≥0∞)⁻¹ to the real (n : ℝ)⁻¹. Strong measurability is what Mathlib's Dirac-integral lemma requires; it is a regularity hypothesis, not a restriction on the statistical content.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hf : StronglyMeasurable f",
+        "label": "function",
+        "note": "Strong measurability of the integrand, needed to integrate against a Dirac measure."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "ch. 4 (the plug-in principle), p. 84",
+      "keys": [
+        "gentle2002",
+        "efron1979"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "plug-in principle",
+      "empirical measure"
+    ]
+  },
+  {
+    "id": "compstat-weighted-measure-prob",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "isProbabilityMeasure_weightedMeasure",
+    "fullName": "StatLean.ComputationalStatistics.isProbabilityMeasure_weightedMeasure",
+    "title": "Weighted Particle Populations Are Probability Measures",
+    "citation": "Gentle (2002), §2.6",
+    "shortRef": "Gentle (2002), §2.6",
+    "file": "StatLean/ComputationalStatistics/Core/EmpiricalMeasure.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Core/EmpiricalMeasure.html#StatLean.ComputationalStatistics.isProbabilityMeasure_weightedMeasure",
+    "informal": "<p>A weighted sample $(x_1,w_1),\\dots,(x_n,w_n)$ whose weights are <span data-link=\"h1\">nonnegative</span> and <span data-link=\"h2\">sum to one</span> defines a probability measure $$\\widehat\\pi \\;=\\; \\sum_{i=1}^n w_i\\,\\delta_{x_i}.$$ This is the object that importance sampling and sequential Monte Carlo actually manipulate: the particles $x_i$ record where the sample looked, the weights $w_i$ record how much each look counts. The empirical measure is the special case $w_i \\equiv 1/n$.</p>",
+    "summary": "A nonnegative weight vector summing to one turns a finite sample into a probability measure Σ w_i δ_{x_i} — the particle approximation used by importance sampling and SMC.",
+    "leanSignature": "theorem isProbabilityMeasure_weightedMeasure\n    (hw0 : ∀ i, 0 ≤ w i)\n    (hw1 : ∑ i, w i = 1) :\n    IsProbabilityMeasure (weightedMeasure w x)",
+    "formalizationNotes": "The weights are real and are converted to ℝ≥0∞ by `ENNReal.ofReal`, which clips negative values to 0; nonnegativity is therefore a genuine hypothesis rather than a coercion artefact, and the total-mass computation goes through `ENNReal.ofReal_sum_of_nonneg`. The companion lemma `integral_weightedMeasure` evaluates integrals against this measure as Σᵢ wᵢ f(xᵢ).",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hw0 : ∀ i, 0 ≤ w i",
+        "label": "nonnegative",
+        "note": "Each particle weight is nonnegative."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hw1 : ∑ i, w i = 1",
+        "label": "sum to one",
+        "note": "The weights are normalized, so the particle population carries unit mass."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§2.6 (reducing variance in Monte Carlo methods), p. 59",
+      "keys": [
+        "gentle2002",
+        "kahn-marshall1953"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "weighted sample",
+      "particle approximation"
+    ]
+  },
+  {
+    "id": "compstat-bootstrap-draw-law",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "empiricalMeasure_eq_map_categorical",
+    "fullName": "StatLean.ComputationalStatistics.empiricalMeasure_eq_map_categorical",
+    "title": "Bootstrap Draws Have the Empirical Distribution",
+    "citation": "Gentle (2002), ch. 4, p. 84",
+    "shortRef": "Gentle (2002), ch. 4, p. 84",
+    "file": "StatLean/ComputationalStatistics/Core/EmpiricalMeasure.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Core/EmpiricalMeasure.html#StatLean.ComputationalStatistics.empiricalMeasure_eq_map_categorical",
+    "informal": "<p>Resampling a datum in the bootstrap is the same as drawing an index uniformly and reading off the observation at that index: $$\\text{Law}\\big(x_{A}\\big) \\;=\\; \\mathbb P_n, \\qquad A \\sim \\text{Uniform}\\{1,\\dots,n\\}.$$ Formally, the empirical measure is the pushforward of the uniform categorical law on indices through the data map. This is the bridge between the two ways of describing a bootstrap sample — as values drawn from $\\mathbb P_n$, or as indices drawn with replacement — and it is what makes the multinomial count representation available.</p>",
+    "summary": "The empirical measure is the pushforward of a uniform index draw through the data, identifying value resampling with index resampling with replacement.",
+    "leanSignature": "theorem empiricalMeasure_eq_map_categorical [NeZero n] :\n    empiricalMeasure x = (categorical fun _ : Fin n => (n : ℝ)⁻¹).map x",
+    "formalizationNotes": "No measurability hypothesis on the data map x is required: its domain `Fin n` is a finite discrete measurable space, so every function out of it is measurable (`Measurable.of_discrete`). The positive-sample-size instance excludes the degenerate n = 0 case, where the left side is the zero measure. The index-level companion `resampleLaw_eq_map_indexResampling` lifts this to whole bootstrap samples.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "[NeZero n]",
+        "label": "nonempty sample",
+        "note": "At least one observation, so that the uniform index law $1/n$ is well defined."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "ch. 4 (the resampling vector), p. 84",
+      "keys": [
+        "gentle2002",
+        "efron1979"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "bootstrap",
+      "resampling"
+    ]
+  },
+  {
+    "id": "compstat-pi-avg-mean",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "integral_avg_eval_pi",
+    "fullName": "StatLean.ComputationalStatistics.integral_avg_eval_pi",
+    "title": "Unbiasedness of an i.i.d. Coordinate Average",
+    "citation": "Gentle (2002), §2.2",
+    "shortRef": "Gentle (2002), §2.2",
+    "file": "StatLean/ComputationalStatistics/ForMathlib/PiMoments.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/ForMathlib/PiMoments.html#StatLean.ComputationalStatistics.integral_avg_eval_pi",
+    "informal": "<p>Under the i.i.d. law of a sample of size $n$ from $P$, the average of an <span data-link=\"h1\">integrable</span> function over the coordinates has expectation the population integral: $$\\mathbb E\\Big[\\frac1n\\sum_{i=1}^n g(X_i)\\Big] \\;=\\; \\int g \\, dP.$$ This is the exact, non-asymptotic statement behind \"the sample mean estimates the population mean\", stated on the canonical product space so that every estimator built from an i.i.d. sample can appeal to it directly.</p>",
+    "summary": "E[(1/n)Σ g(X_i)] = ∫ g dP for an i.i.d. sample — the unbiasedness identity underlying every Monte Carlo estimator in this topic.",
+    "leanSignature": "theorem integral_avg_eval_pi [NeZero n]\n    (hg : Integrable g P) :\n    ∫ x, (n : ℝ)⁻¹ * ∑ i, g (x i) ∂(Measure.pi fun _ : Fin n => P)\n      = ∫ z, g z ∂P",
+    "formalizationNotes": "The i.i.d. sample is the canonical product measure `Measure.pi (fun _ : Fin n => P)` rather than an abstract family of random variables, so the coordinate reads are measure-preserving by `MeasureTheory.measurePreserving_eval` and each summand transports to ∫ g dP. Packaging this once at the bottom layer removes a computation that had been inlined at roughly eight separate use sites elsewhere in StatLean.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hg : Integrable g P",
+        "label": "integrable",
+        "note": "$g$ has a finite first moment under $P$, so both sides are defined."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§2.2 (Monte Carlo estimation), eq. (2.8), p. 51",
+      "keys": [
+        "gentle2002"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "Monte Carlo estimation",
+      "sample mean"
+    ]
+  },
+  {
+    "id": "compstat-pi-avg-variance",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "variance_avg_eval_pi",
+    "fullName": "StatLean.ComputationalStatistics.variance_avg_eval_pi",
+    "title": "Variance of an i.i.d. Coordinate Average",
+    "citation": "Gentle (2002), §2.2",
+    "shortRef": "Gentle (2002), §2.2",
+    "file": "StatLean/ComputationalStatistics/ForMathlib/PiMoments.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/ForMathlib/PiMoments.html#StatLean.ComputationalStatistics.variance_avg_eval_pi",
+    "informal": "<p>For a <span data-link=\"h1\">square-integrable</span> function of an i.i.d. sample, averaging divides the variance by the sample size: $$\\operatorname{Var}\\Big(\\frac1n\\sum_{i=1}^n g(X_i)\\Big) \\;=\\; \\frac{\\operatorname{Var}_P(g)}{n}.$$ Everything quantitative about Monte Carlo error rests on this identity — it is why the root-mean-square error of a simulation estimate decays like $n^{-1/2}$, independently of the dimension of the space being integrated over.</p>",
+    "summary": "Var((1/n)Σ g(X_i)) = Var_P(g)/n for an i.i.d. sample, the source of the n^{-1/2} Monte Carlo error rate.",
+    "leanSignature": "theorem variance_avg_eval_pi [NeZero n]\n    (hg : MemLp g 2 P) :\n    variance (fun x : Fin n → 𝓧 => (n : ℝ)⁻¹ * ∑ i, g (x i))\n        (Measure.pi fun _ : Fin n => P)\n      = variance g P / n",
+    "formalizationNotes": "Proved from Mathlib's `variance_sum_pi`, which already gives the variance of a sum of functions of independent coordinates under a product measure; only the constant factor (`variance_const_mul`) and the count of identical summands remain. The independence input is therefore loaded from the pinned Mathlib rather than reproved.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hg : MemLp g 2 P",
+        "label": "square-integrable",
+        "note": "$g$ has a finite second moment under $P$, so its variance is finite."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§2.2 (Monte Carlo estimation), eq. (2.9), p. 52",
+      "keys": [
+        "gentle2002",
+        "hammersley-handscomb1964"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "Monte Carlo error",
+      "variance"
+    ]
+  },
+  {
+    "id": "compstat-pi-delete-split",
+    "category": "compstat",
+    "kind": "lemma",
+    "leanName": "pi_map_deleteSplit",
+    "fullName": "StatLean.ComputationalStatistics.pi_map_deleteSplit",
+    "title": "Deleting One Observation Leaves an Independent i.i.d. Sample",
+    "citation": "Gentle (2002), §3.3",
+    "shortRef": "Gentle (2002), §3.3",
+    "file": "StatLean/ComputationalStatistics/ForMathlib/PiMarginal.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/ForMathlib/PiMarginal.html#StatLean.ComputationalStatistics.pi_map_deleteSplit",
+    "informal": "<p>Split an i.i.d. sample of size $n+1$ into the $i$-th observation and the remaining $n$: the pair is distributed as $$ (X_i, X_{(-i)}) \\;\\sim\\; P \\otimes P^{\\otimes n}. $$ The deleted observation is independent of the sample that remains, and that remaining sample is again i.i.d. from $P$. This elementary fact is used silently in every jackknife and cross-validation computation — it is what makes a delete-one statistic behave like a statistic computed from a genuine sample of size $n$, and what makes a held-out observation a fresh test point.</p>",
+    "summary": "Under an i.i.d. product law, the i-th coordinate and the remaining n coordinates are independent, and the remainder is again an i.i.d. sample — the measure-theoretic content of delete-one resampling.",
+    "leanSignature": "theorem pi_map_deleteSplit (i : Fin (n + 1)) :\n    (Measure.pi fun _ : Fin (n + 1) => P).map (fun x => (x i, x ∘ i.succAbove))\n      = P.prod (Measure.pi fun _ : Fin n => P)",
+    "formalizationNotes": "Deletion is indexed by `Fin.succAbove`, which lists the coordinates other than i without any n − 1 arithmetic. The proof is Mathlib's `measurePreserving_piFinSuccAbove` at a constant family; the companion `pi_map_precomp_succAbove` takes the second marginal to recover the reduced sample alone.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "(i : Fin (n + 1))",
+        "label": "deleted index",
+        "note": "The observation held out; the remaining coordinates are re-indexed by $\\texttt{Fin.succAbove}$."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§3.3 (jackknife methods), p. 74",
+      "keys": [
+        "gentle2002",
+        "quenouille1949"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "jackknife",
+      "sample splitting"
+    ]
+  },
+  {
+    "id": "compstat-mc-unbiased",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "mcEstimate_unbiased",
+    "fullName": "StatLean.ComputationalStatistics.mcEstimate_unbiased",
+    "title": "The Monte Carlo Estimator Is Unbiased",
+    "citation": "Gentle (2002), §2.2",
+    "shortRef": "Gentle (2002), §2.2",
+    "file": "StatLean/ComputationalStatistics/MonteCarlo/Estimation.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/MonteCarlo/Estimation.html#StatLean.ComputationalStatistics.mcEstimate_unbiased",
+    "informal": "<p>Write the quantity of interest as an expectation, $\\theta=\\int g\\,dP$, simulate $X_1,\\dots,X_n$ independently from $P$, and average. The resulting estimator $$\\widehat\\theta \\;=\\; \\frac1n\\sum_{i=1}^n g(X_i)$$ has expectation exactly $\\theta$, provided $g$ is <span data-link=\"h1\">integrable</span>: simulation introduces no systematic error, only sampling error. This is the first of Gentle's three steps — decompose the integrand so that a probability density appears as a factor, identify an expectation, and estimate it by a sample average.</p>",
+    "summary": "The ordinary Monte Carlo estimator (1/n)Σg(X_i) built from an i.i.d. simulation has expectation exactly ∫ g dP.",
+    "leanSignature": "theorem mcEstimate_unbiased [NeZero n]\n    (hg : Integrable g P) :\n    ∫ x, mcEstimate g x ∂(Measure.pi fun _ : Fin n => P) = ∫ z, g z ∂P",
+    "formalizationNotes": "A textbook-named wrapper of the coordinate-average lemma `integral_avg_eval_pi`: unfolding `mcEstimate` turns the estimator into the average of g over the coordinates of the canonical i.i.d. product law, and the general lemma applies verbatim.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hg : Integrable g P",
+        "label": "integrable",
+        "note": "$g$ has a finite first moment under the sampling distribution $P$."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§2.2 (Monte Carlo estimation), eq. (2.8), p. 51",
+      "keys": [
+        "gentle2002",
+        "metropolis-ulam1949"
+      ],
+      "biblio": "Monte Carlo estimation of integrals dates to N. Metropolis and S. Ulam, \"The Monte Carlo method,\" *Journal of the American Statistical Association* **44** (1949), 335–341; the variance analysis is standard since J. M. Hammersley and D. C. Handscomb, *Monte Carlo Methods*, Methuen, London, 1964."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "Monte Carlo estimation",
+      "unbiased estimator"
+    ]
+  },
+  {
+    "id": "compstat-mc-variance",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "mcEstimate_variance",
+    "fullName": "StatLean.ComputationalStatistics.mcEstimate_variance",
+    "title": "Monte Carlo Variance Is σ²/n",
+    "citation": "Gentle (2002), §2.2",
+    "shortRef": "Gentle (2002), §2.2",
+    "file": "StatLean/ComputationalStatistics/MonteCarlo/Estimation.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/MonteCarlo/Estimation.html#StatLean.ComputationalStatistics.mcEstimate_variance",
+    "informal": "<p>The Monte Carlo estimator of $\\int g\\,dP$ from $n$ independent draws has variance $$\\operatorname{Var}(\\widehat\\theta) \\;=\\; \\frac{\\operatorname{Var}_P(g)}{n}$$ whenever $g$ is <span data-link=\"h1\">square-integrable</span>. Two consequences shape all of simulation practice: the error decays like $n^{-1/2}$, so accuracy is bought by quadrupling the sample for each extra digit; and the rate does not depend on the dimension of the space, which is why Monte Carlo displaces quadrature for high-dimensional integrals.</p>",
+    "summary": "Var of the Monte Carlo estimator equals Var_P(g)/n — the dimension-free n^{-1/2} error rate of simulation.",
+    "leanSignature": "theorem mcEstimate_variance [NeZero n]\n    (hg : MemLp g 2 P) :\n    variance (mcEstimate g) (Measure.pi fun _ : Fin n => P)\n      = variance g P / n",
+    "formalizationNotes": "A wrapper of `variance_avg_eval_pi`. Note that the identity is exact and non-asymptotic: no central limit theorem is involved, only independence and finiteness of the second moment.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hg : MemLp g 2 P",
+        "label": "square-integrable",
+        "note": "$g$ has a finite second moment under $P$; without it the variance need not exist."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§2.2 (Monte Carlo estimation), eq. (2.9), p. 52",
+      "keys": [
+        "gentle2002",
+        "hammersley-handscomb1964"
+      ],
+      "biblio": "Monte Carlo estimation of integrals dates to N. Metropolis and S. Ulam, \"The Monte Carlo method,\" *Journal of the American Statistical Association* **44** (1949), 335–341; the variance analysis is standard since J. M. Hammersley and D. C. Handscomb, *Monte Carlo Methods*, Methuen, London, 1964."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "Monte Carlo error",
+      "variance"
+    ]
+  },
+  {
+    "id": "compstat-mc-mse",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "mcEstimate_mse",
+    "fullName": "StatLean.ComputationalStatistics.mcEstimate_mse",
+    "title": "Mean-Squared Error of the Monte Carlo Estimator",
+    "citation": "Gentle (2002), §2.2",
+    "shortRef": "Gentle (2002), §2.2",
+    "file": "StatLean/ComputationalStatistics/MonteCarlo/Estimation.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/MonteCarlo/Estimation.html#StatLean.ComputationalStatistics.mcEstimate_mse",
+    "informal": "<p>Because the estimator is unbiased, its mean-squared error about the true value is exactly its variance: $$\\mathbb E\\big[(\\widehat\\theta-\\theta)^2\\big] \\;=\\; \\frac{\\operatorname{Var}_P(g)}{n}, \\qquad \\theta=\\int g\\,dP,$$ for <span data-link=\"h1\">square-integrable</span> $g$. Stating the error in this form is what makes a simulation reportable: the root-mean-square error $\\sigma/\\sqrt n$ can be estimated from the same sample, which is the standard error attached to a Monte Carlo answer.</p>",
+    "summary": "E[(θ̂ − θ)²] = Var_P(g)/n: the Monte Carlo mean-squared error is pure variance, since the estimator carries no bias.",
+    "leanSignature": "theorem mcEstimate_mse [NeZero n]\n    (hg : MemLp g 2 P) :\n    ∫ x, (mcEstimate g x - ∫ z, g z ∂P) ^ 2 ∂(Measure.pi fun _ : Fin n => P)\n      = variance g P / n",
+    "formalizationNotes": "Proved by recognising the left-hand side as the variance of the estimator — its mean is ∫ g dP by the unbiasedness lemma — and then applying the variance identity. The measurability side conditions come from `MemLp` transported along the measure-preserving coordinate maps.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hg : MemLp g 2 P",
+        "label": "square-integrable",
+        "note": "Finite second moment under $P$, so the squared error is integrable."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§2.2 (Monte Carlo estimation), eq. (2.9), p. 52",
+      "keys": [
+        "gentle2002",
+        "hammersley-handscomb1964"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "mean squared error",
+      "Monte Carlo estimation"
+    ]
+  },
+  {
+    "id": "compstat-mc-consistency",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "mcEstimate_consistent_ae",
+    "fullName": "StatLean.ComputationalStatistics.mcEstimate_consistent_ae",
+    "title": "Strong Consistency of the Monte Carlo Estimator",
+    "citation": "Gentle (2002), §2.2",
+    "shortRef": "Gentle (2002), §2.2",
+    "file": "StatLean/ComputationalStatistics/MonteCarlo/Estimation.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/MonteCarlo/Estimation.html#StatLean.ComputationalStatistics.mcEstimate_consistent_ae",
+    "informal": "<p>Along an infinite i.i.d. simulation stream, the Monte Carlo estimates converge to the true value with probability one: $$\\frac1n\\sum_{i=1}^n g(X_i) \\;\\longrightarrow\\; \\int g\\,dP \\qquad \\text{almost surely},$$ for every <span data-link=\"h1\">integrable</span> and <span data-link=\"h2\">measurable</span> $g$. Gentle states exactly this as the guarantee that ordinary Monte Carlo estimation relies on; it is the reason a simulation can be run until its answer stabilises.</p>",
+    "summary": "Along an infinite i.i.d. stream the Monte Carlo estimates converge almost surely to ∫ g dP, by the strong law of large numbers.",
+    "leanSignature": "theorem mcEstimate_consistent_ae {g : 𝓧 → ℝ}\n    (hg : Integrable g P)\n    (hgm : Measurable g) :\n    ∀ᵐ ω ∂(Measure.infinitePi fun _ : ℕ => P),\n      Tendsto (fun n : ℕ => mcEstimate g fun i : Fin n => ω i)\n        atTop (𝓝 (∫ z, g z ∂P))",
+    "formalizationNotes": "The infinite simulation stream is Mathlib's `Measure.infinitePi` over ℕ, whose coordinate reads are measure-preserving and independent; the conclusion is then Mathlib's `strong_law_ae_real` (an Etemadi-style proof of Kolmogorov's law) transported to the Fin-indexed averages used elsewhere in the area.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hg : Integrable g P",
+        "label": "integrable",
+        "note": "Finite first moment under $P$ — the hypothesis of the strong law."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hgm : Measurable g",
+        "label": "measurable",
+        "note": "Measurability of the integrand, needed to transport the law along the coordinate maps."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§2.2 (convergence of iterative Monte Carlo), p. 53",
+      "keys": [
+        "gentle2002",
+        "kolmogorov1933"
+      ],
+      "biblio": "The almost-sure law of large numbers is A. N. Kolmogorov, *Grundbegriffe der Wahrscheinlichkeitsrechnung*, Springer, Berlin, 1933; the formalization routes through Mathlib's Etemadi-style proof."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "law of large numbers",
+      "Monte Carlo estimation"
+    ]
+  },
+  {
+    "id": "compstat-is-identity",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "integral_importanceWeight_mul",
+    "fullName": "StatLean.ComputationalStatistics.integral_importanceWeight_mul",
+    "title": "The Importance-Sampling Identity",
+    "citation": "Gentle (2002), §2.6",
+    "shortRef": "Gentle (2002), §2.6",
+    "file": "StatLean/ComputationalStatistics/MonteCarlo/ImportanceSampling.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/MonteCarlo/ImportanceSampling.html#StatLean.ComputationalStatistics.integral_importanceWeight_mul",
+    "informal": "<p>If the target $P$ is <span data-link=\"h1\">dominated</span> by a proposal $Q$, then integrating against $P$ is the same as integrating the reweighted function against $Q$: $$\\int g \\, dP \\;=\\; \\int g \\, w \\; dQ, \\qquad w = \\frac{dP}{dQ}.$$ This change of measure is the whole of importance sampling: one may simulate from a convenient distribution $Q$ and correct by the weight $w$, and the answer is unchanged. Domination is not a technicality — where $P$ puts mass and $Q$ does not, no reweighting of $Q$-draws can recover it.</p>",
+    "summary": "∫ g dP = ∫ g·(dP/dQ) dQ under P ≪ Q: the change-of-measure identity that licenses simulating from a proposal instead of the target.",
+    "leanSignature": "theorem integral_importanceWeight_mul [SigmaFinite P] [SigmaFinite Q] {g : 𝓧 → ℝ}\n    (hPQ : P ≪ Q) :\n    ∫ z, g z * importanceWeight P Q z ∂Q = ∫ z, g z ∂P",
+    "formalizationNotes": "The importance weight is defined as the real-valued Radon–Nikodym derivative `(P.rnDeriv Q z).toReal`. The theorem is a textbook-named wrapper of Mathlib's `integral_toReal_rnDeriv_mul`, kept so that downstream statements read in the language of importance sampling rather than of Radon–Nikodym derivatives.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hPQ : P ≪ Q",
+        "label": "dominated",
+        "note": "$P \\ll Q$: every $Q$-null set is $P$-null, so the density $dP/dQ$ exists. This is Gentle's support condition on the importance function."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§2.6 (importance sampling), eq. (2.11), p. 60",
+      "keys": [
+        "gentle2002",
+        "kahn-marshall1953"
+      ],
+      "biblio": "Importance sampling is H. Kahn and A. W. Marshall, \"Methods of reducing sample size in Monte Carlo computations,\" *Journal of the Operations Research Society of America* **1** (1953), 263–278; the optimal-density calculation appears as Theorem 4.3.1 of R. Y. Rubinstein, *Simulation and the Monte Carlo Method*, Wiley, New York, 1981."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "importance sampling",
+      "change of measure"
+    ]
+  },
+  {
+    "id": "compstat-is-unbiased",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "importanceSampling_unbiased",
+    "fullName": "StatLean.ComputationalStatistics.importanceSampling_unbiased",
+    "title": "The Importance-Sampling Estimator Is Unbiased",
+    "citation": "Gentle (2002), §2.6",
+    "shortRef": "Gentle (2002), §2.6",
+    "file": "StatLean/ComputationalStatistics/MonteCarlo/ImportanceSampling.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/MonteCarlo/ImportanceSampling.html#StatLean.ComputationalStatistics.importanceSampling_unbiased",
+    "informal": "<p>Draw $X_1,\\dots,X_n$ independently from the proposal $Q$ and average the weighted values: $$\\widehat\\theta_{\\mathrm{IS}} \\;=\\; \\frac1n\\sum_{i=1}^n g(X_i)\\,w(X_i), \\qquad w=\\frac{dP}{dQ}.$$ Under <span data-link=\"h1\">domination</span> and <span data-link=\"h2\">integrability of the weighted integrand</span>, this estimator has expectation $\\int g\\,dP$ — it is unbiased for the target integral even though not a single draw came from the target.</p>",
+    "summary": "The importance-sampling estimator (1/n)Σ g(X_i)w(X_i), built from proposal draws, is unbiased for ∫ g dP.",
+    "leanSignature": "theorem importanceSampling_unbiased [IsProbabilityMeasure Q] [SigmaFinite P]\n    {n : ℕ} [NeZero n] {g : 𝓧 → ℝ}\n    (hPQ : P ≪ Q)\n    (hgw : Integrable (fun z => g z * importanceWeight P Q z) Q) :\n    ∫ x, mcEstimate (fun z => g z * importanceWeight P Q z) x\n        ∂(Measure.pi fun _ : Fin n => Q)\n      = ∫ z, g z ∂P",
+    "formalizationNotes": "Composed from the general coordinate-average lemma applied at the weighted integrand g·w under the proposal law, followed by the change-of-measure identity. The estimator is the ordinary Monte Carlo estimator of a different integrand, which is exactly why no new probabilistic content is needed.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hPQ : P ≪ Q",
+        "label": "domination",
+        "note": "The target is absolutely continuous with respect to the proposal."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hgw : Integrable (fun z => g z * importanceWeight P Q z) Q",
+        "label": "integrability of the weighted integrand",
+        "note": "$g\\,w$ has a finite first moment under $Q$; equivalently $g$ is $P$-integrable."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§2.6 (importance sampling), eq. (2.11), p. 60",
+      "keys": [
+        "gentle2002",
+        "kahn-marshall1953"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "importance sampling",
+      "unbiased estimator"
+    ]
+  },
+  {
+    "id": "compstat-is-variance",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "importanceSampling_variance",
+    "fullName": "StatLean.ComputationalStatistics.importanceSampling_variance",
+    "title": "Variance of the Importance-Sampling Estimator",
+    "citation": "Gentle (2002), §2.6",
+    "shortRef": "Gentle (2002), §2.6",
+    "file": "StatLean/ComputationalStatistics/MonteCarlo/ImportanceSampling.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/MonteCarlo/ImportanceSampling.html#StatLean.ComputationalStatistics.importanceSampling_variance",
+    "informal": "<p>The importance-sampling estimator has variance $$\\operatorname{Var}(\\widehat\\theta_{\\mathrm{IS}}) \\;=\\; \\frac{\\operatorname{Var}_Q(g\\,w)}{n},$$ the variance now being that of the <span data-link=\"h1\">weighted integrand</span> under the proposal. This is what makes the choice of proposal a design problem rather than a convenience: unbiasedness holds for any dominating $Q$, but the efficiency of the scheme is decided entirely by how nearly constant the product $g\\,w$ is.</p>",
+    "summary": "Var(θ̂_IS) = Var_Q(g·w)/n: the proposal affects not the bias but the variance, through the spread of the weighted integrand.",
+    "leanSignature": "theorem importanceSampling_variance [IsProbabilityMeasure Q] {n : ℕ} [NeZero n]\n    {g : 𝓧 → ℝ}\n    (hgw : MemLp (fun z => g z * importanceWeight P Q z) 2 Q) :\n    variance (mcEstimate fun z => g z * importanceWeight P Q z)\n        (Measure.pi fun _ : Fin n => Q)\n      = variance (fun z => g z * importanceWeight P Q z) Q / n",
+    "formalizationNotes": "The general i.i.d. variance identity applied at the weighted integrand. No domination hypothesis appears: the statement is about the estimator actually computed from proposal draws, whose variance is well defined whether or not the weight represents a genuine density.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hgw : MemLp (fun z => g z * importanceWeight P Q z) 2 Q",
+        "label": "weighted integrand",
+        "note": "$g\\,w$ is square-integrable under the proposal; this can fail even when $g$ is bounded, if the weights are heavy-tailed."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§2.6 (importance sampling), p. 60",
+      "keys": [
+        "gentle2002",
+        "kahn-marshall1953"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "importance sampling",
+      "variance reduction"
+    ]
+  },
+  {
+    "id": "compstat-is-optimal-bound",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "lintegral_sq_le_lintegral_sq_div",
+    "fullName": "StatLean.ComputationalStatistics.lintegral_sq_le_lintegral_sq_div",
+    "title": "Lower Bound on the Second Moment of Any Importance Density",
+    "citation": "Gentle (2002), §2.6",
+    "shortRef": "Gentle (2002), §2.6",
+    "file": "StatLean/ComputationalStatistics/MonteCarlo/ImportanceSampling.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/MonteCarlo/ImportanceSampling.html#StatLean.ComputationalStatistics.lintegral_sq_le_lintegral_sq_div",
+    "informal": "<p>For any <span data-link=\"h3\">importance density</span> $p$ and any <span data-link=\"h1\">nonnegative integrand</span> $f$, $$\\Big(\\int f \\, d\\nu\\Big)^{2} \\;\\le\\; \\int \\frac{f^{2}}{p} \\, d\\nu.$$ The right-hand side is the second moment of the importance-sampling integrand $f/p$, so no choice of importance density can push it below the squared value of the integral itself. This is the Jensen — equivalently Cauchy–Schwarz — inequality that identifies how much variance reduction is available at best, and its companion result exhibits the density that attains it.</p>",
+    "summary": "(∫f)² ≤ ∫ f²/p for every importance density p: a floor on the second moment of the importance-sampling integrand, hence on its variance.",
+    "leanSignature": "theorem lintegral_sq_le_lintegral_sq_div {f p : 𝓧 → ℝ≥0∞}\n    (hf : Measurable f)\n    (hp : Measurable p)\n    (hp1 : ∫⁻ z, p z ∂ν = 1) :\n    (∫⁻ z, f z ∂ν) ^ 2 ≤ ∫⁻ z, f z ^ 2 / p z ∂ν",
+    "formalizationNotes": "Stated in ℝ≥0∞ so that no support condition is needed: where p vanishes but f does not, the right-hand side is ∞ by the division convention and the bound is trivially true. The substantive case splits off that null set and applies Hölder's inequality with conjugate exponents 2 and 2 to the factorization f = (f²/p)^{1/2} · p^{1/2}, the second factor integrating to 1.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hf : Measurable f",
+        "label": "nonnegative integrand",
+        "note": "An ℝ≥0∞-valued measurable function; nonnegativity is built into the value type."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hp1 : ∫⁻ z, p z ∂ν = 1",
+        "label": "importance density",
+        "note": "$p$ is a probability density with respect to the base measure $\\nu$."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hp : Measurable p",
+        "label": "measurable density",
+        "note": "Measurability of the importance density."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§2.6 (importance sampling), p. 60",
+      "keys": [
+        "gentle2002",
+        "rubinstein1981"
+      ],
+      "biblio": "Importance sampling is H. Kahn and A. W. Marshall, \"Methods of reducing sample size in Monte Carlo computations,\" *Journal of the Operations Research Society of America* **1** (1953), 263–278; the optimal-density calculation appears as Theorem 4.3.1 of R. Y. Rubinstein, *Simulation and the Monte Carlo Method*, Wiley, New York, 1981."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "importance sampling",
+      "Cauchy-Schwarz inequality"
+    ]
+  },
+  {
+    "id": "compstat-is-optimal-density",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "lintegral_sq_div_optimalImportance",
+    "fullName": "StatLean.ComputationalStatistics.lintegral_sq_div_optimalImportance",
+    "title": "The Optimal Importance Density Attains the Bound",
+    "citation": "Gentle (2002), §2.6",
+    "shortRef": "Gentle (2002), §2.6",
+    "file": "StatLean/ComputationalStatistics/MonteCarlo/ImportanceSampling.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/MonteCarlo/ImportanceSampling.html#StatLean.ComputationalStatistics.lintegral_sq_div_optimalImportance",
+    "informal": "<p>The lower bound of the previous result is attained exactly at the density proportional to the integrand: for <span data-link=\"h1\">any measurable</span> $f \\ge 0$, taking $$p^{*} \\;=\\; \\frac{f}{\\int f \\, d\\nu} \\qquad\\text{gives}\\qquad \\int \\frac{f^{2}}{p^{*}} \\, d\\nu \\;=\\; \\Big(\\int f \\, d\\nu\\Big)^{2}.$$ At this choice the importance-sampling integrand $f/p^{*}$ is constant, so the estimator has zero variance. The catch, as Gentle observes, is that $p^{*}$ requires knowing $\\int f\\,d\\nu$ — the very quantity being estimated — so in practice one seeks a density merely close to proportional to $|f|$.</p>",
+    "summary": "At p* = f/∫f the second moment equals (∫f)², so the importance-sampling integrand is constant and the estimator has zero variance — the unattainable ideal that guides proposal design.",
+    "leanSignature": "theorem lintegral_sq_div_optimalImportance {f : 𝓧 → ℝ≥0∞}\n    (hf : Measurable f) :\n    ∫⁻ z, f z ^ 2 / (f z / ∫⁻ y, f y ∂ν) ∂ν = (∫⁻ z, f z ∂ν) ^ 2",
+    "formalizationNotes": "Holds for every measurable f with no side conditions at all, including the degenerate cases ∫f = 0 (both sides vanish) and ∫f = ∞ (both sides are ∞), which the ℝ≥0∞ division conventions 0/0 = 0 and x/0 = ∞ resolve. The substantive case 0 < ∫f < ∞ reduces to the pointwise identity f²/(f/c) = f·c off the null set where f vanishes.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hf : Measurable f",
+        "label": "any measurable",
+        "note": "Measurability is the only hypothesis; the degenerate cases are handled by the ℝ≥0∞ conventions rather than excluded."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§2.6 (importance sampling), p. 60",
+      "keys": [
+        "gentle2002",
+        "rubinstein1981"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "importance sampling",
+      "variance reduction"
+    ]
+  },
+  {
+    "id": "compstat-rejection-marginal",
+    "category": "compstat",
+    "kind": "lemma",
+    "leanName": "rejectionSampling_restrict_map",
+    "fullName": "StatLean.ComputationalStatistics.rejectionSampling_restrict_map",
+    "title": "Accepted Draws Carry a Rescaled Target Measure",
+    "citation": "Gentle (2002), §2.1",
+    "shortRef": "Gentle (2002), §2.1",
+    "file": "StatLean/ComputationalStatistics/MonteCarlo/RejectionSampling.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/MonteCarlo/RejectionSampling.html#StatLean.ComputationalStatistics.rejectionSampling_restrict_map",
+    "informal": "<p>Run one step of the acceptance/rejection method: draw $Y$ from the <span data-link=\"h1\">proposal density</span> $q$ and $U$ uniform on $[0,1]$, and accept when $U \\le p(Y)/(c\\,q(Y))$, where $c\\,q$ <span data-link=\"h2\">majorizes</span> the target $p$ with <span data-link=\"h3\">envelope constant</span> $c$. Restricting the joint law of $(Y,U)$ to the acceptance event and reading off the first coordinate gives the target measure scaled by $1/c$: $$\\text{(mass on accepted } Y) \\;=\\; \\frac1c\\,P.$$ Both the acceptance probability and the law of an accepted draw follow from this one computation.</p>",
+    "summary": "Restricting the proposal–uniform pair to the acceptance region and projecting to the proposed value yields c⁻¹ times the target measure.",
+    "leanSignature": "theorem rejectionSampling_restrict_map\n    (hp : Measurable p)\n    (hq : Measurable q)\n    (hq1 : ∫⁻ z, q z ∂ν = 1)\n    (henv : ∀ y, p y ≤ c * q y)\n    (hc0 : c ≠ 0) (hcT : c ≠ ∞) :\n    (((ν.withDensity q).prod uniform01).restrict (rejectionAccept p q c)).map\n        Prod.fst\n      = c⁻¹ • ν.withDensity p",
+    "formalizationNotes": "The acceptance region is stated multiplicatively as ofReal u · (c · q y) ≤ p y, which is junk-free where q vanishes and agrees with the book's ratio form off a null set. The proof computes the y-section of the acceptance region under the uniform law, which has measure p(y)/(c q(y)) in the substantive case, and integrates against the proposal density; the cases q(y) = 0 and q(y) = ∞ are handled pointwise, the latter being ν-null thanks to the normalization hypothesis.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hq1 : ∫⁻ z, q z ∂ν = 1",
+        "label": "proposal density",
+        "note": "The majorizing function is a genuine probability density. Without it the statement is false: an infinite-valued proposal makes the acceptance region null, and a machine-checked counterexample to that effect is kept in the source file."
+      },
+      {
+        "id": "h2",
+        "leanToken": "henv : ∀ y, p y ≤ c * q y",
+        "label": "majorizes",
+        "note": "$p(y) \\le c\\,q(y)$ for every $y$ — Gentle's majorizing-function condition; the target's support must lie in the proposal's."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hc0 : c ≠ 0",
+        "label": "envelope constant",
+        "note": "A nonzero, finite envelope constant $c$. Necessarily $c \\ge 1$ when both densities integrate to one."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§2.1 (acceptance/rejection methods), Algorithm 2.1, p. 40",
+      "keys": [
+        "gentle2002",
+        "vonneumann1951"
+      ],
+      "biblio": "The acceptance/rejection method is J. von Neumann, \"Various techniques used in connection with random digits,\" *National Bureau of Standards Applied Mathematics Series* **12** (1951), 36–38; the majorizing-density formulation is standard since L. Devroye, *Non-Uniform Random Variate Generation*, Springer, New York, 1986, §II.3."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "rejection sampling",
+      "random variate generation"
+    ]
+  },
+  {
+    "id": "compstat-rejection-accept-prob",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "rejectionSampling_acceptProb",
+    "fullName": "StatLean.ComputationalStatistics.rejectionSampling_acceptProb",
+    "title": "Acceptance Probability of Rejection Sampling Is 1/c",
+    "citation": "Gentle (2002), §2.1",
+    "shortRef": "Gentle (2002), §2.1",
+    "file": "StatLean/ComputationalStatistics/MonteCarlo/RejectionSampling.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/MonteCarlo/RejectionSampling.html#StatLean.ComputationalStatistics.rejectionSampling_acceptProb",
+    "informal": "<p>With a <span data-link=\"h4\">target density</span> $p$, a <span data-link=\"h1\">proposal density</span> $q$ and an <span data-link=\"h3\">envelope constant</span> $c$ for which $c\\,q$ <span data-link=\"h2\">majorizes</span> $p$, each round of the acceptance/rejection method succeeds with probability $$\\Pr(\\text{accept}) \\;=\\; \\frac1c.$$ The envelope constant is therefore the exact cost of the method: on average $c$ proposals are consumed per delivered variate, so the number of trials until the first acceptance is geometric with mean $c$, and a proposal that fits the target tightly is what makes the sampler cheap.</p>",
+    "summary": "Each round of the acceptance/rejection method accepts with probability exactly 1/c, so the envelope constant is precisely the expected number of proposals per accepted draw.",
+    "leanSignature": "theorem rejectionSampling_acceptProb\n    (hp : Measurable p)\n    (hq : Measurable q)\n    (hq1 : ∫⁻ z, q z ∂ν = 1)\n    (hp1 : ∫⁻ z, p z ∂ν = 1)\n    (henv : ∀ y, p y ≤ c * q y)\n    (hc0 : c ≠ 0) (hcT : c ≠ ∞) :\n    ((ν.withDensity q).prod uniform01) (rejectionAccept p q c) = c⁻¹",
+    "formalizationNotes": "Obtained from the accepted-restricted marginal identity evaluated on the whole space, where the target's normalization turns c⁻¹ · P(𝓧) into c⁻¹. The geometric law of the number of trials until the first acceptance is deliberately deferred: it needs an infinite proposal stream and a hitting-time construction, orthogonal to the correctness core.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hq1 : ∫⁻ z, q z ∂ν = 1",
+        "label": "proposal density",
+        "note": "The majorizing function is a genuine probability density. Without it the statement is false: an infinite-valued proposal makes the acceptance region null, and a machine-checked counterexample to that effect is kept in the source file."
+      },
+      {
+        "id": "h2",
+        "leanToken": "henv : ∀ y, p y ≤ c * q y",
+        "label": "majorizes",
+        "note": "$p(y) \\le c\\,q(y)$ for every $y$ — Gentle's majorizing-function condition; the target's support must lie in the proposal's."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hc0 : c ≠ 0",
+        "label": "envelope constant",
+        "note": "A nonzero, finite envelope constant $c$. Necessarily $c \\ge 1$ when both densities integrate to one."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hp1 : ∫⁻ z, p z ∂ν = 1",
+        "label": "target density",
+        "note": "The target is a probability density with respect to the same base measure."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§2.1 (acceptance/rejection methods), Algorithm 2.1, p. 40",
+      "keys": [
+        "gentle2002",
+        "vonneumann1951",
+        "devroye1986"
+      ],
+      "biblio": "The acceptance/rejection method is J. von Neumann, \"Various techniques used in connection with random digits,\" *National Bureau of Standards Applied Mathematics Series* **12** (1951), 36–38; the majorizing-density formulation is standard since L. Devroye, *Non-Uniform Random Variate Generation*, Springer, New York, 1986, §II.3."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "rejection sampling",
+      "acceptance probability"
+    ]
+  },
+  {
+    "id": "compstat-rejection-law",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "rejectionSampling_conditionalLaw",
+    "fullName": "StatLean.ComputationalStatistics.rejectionSampling_conditionalLaw",
+    "title": "Rejection Sampling Returns Exactly the Target Distribution",
+    "citation": "Gentle (2002), §2.1",
+    "shortRef": "Gentle (2002), §2.1",
+    "file": "StatLean/ComputationalStatistics/MonteCarlo/RejectionSampling.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/MonteCarlo/RejectionSampling.html#StatLean.ComputationalStatistics.rejectionSampling_conditionalLaw",
+    "informal": "<p>Conditionally on acceptance, the value delivered by the acceptance/rejection method has exactly the <span data-link=\"h4\">target</span> distribution: $$\\text{Law}\\big(Y \\mid \\text{accepted}\\big) \\;=\\; P.$$ No approximation and no asymptotics are involved — one accepted draw is already a perfect sample from $P$, which is what distinguishes rejection sampling from Markov chain methods, where the target is reached only in the limit. The result holds for a <span data-link=\"h1\">proposal density</span> $q$ and <span data-link=\"h3\">envelope constant</span> $c$ whenever $c\\,q$ <span data-link=\"h2\">majorizes</span> $p$.</p>",
+    "summary": "The accepted draw of the acceptance/rejection method is an exact sample from the target: its conditional law given acceptance is P itself.",
+    "leanSignature": "theorem rejectionSampling_conditionalLaw\n    (hp : Measurable p)\n    (hq : Measurable q)\n    (hq1 : ∫⁻ z, q z ∂ν = 1)\n    (hp1 : ∫⁻ z, p z ∂ν = 1)\n    (henv : ∀ y, p y ≤ c * q y)\n    (hc0 : c ≠ 0) (hcT : c ≠ ∞) :\n    (ProbabilityTheory.cond ((ν.withDensity q).prod uniform01)\n        (rejectionAccept p q c)).map Prod.fst\n      = ν.withDensity p",
+    "formalizationNotes": "Conditioning is Mathlib's `ProbabilityTheory.cond`, which normalizes the restricted measure by the mass of the conditioning event; combining the acceptance-probability and restricted-marginal identities cancels the two factors of c exactly. Densities are ℝ≥0∞-valued against an arbitrary σ-finite base measure, so Gentle's remark that the argument covers probability mass functions verbatim is automatic — take the base measure to be counting measure.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hq1 : ∫⁻ z, q z ∂ν = 1",
+        "label": "proposal density",
+        "note": "The majorizing function is a genuine probability density. Without it the statement is false: an infinite-valued proposal makes the acceptance region null, and a machine-checked counterexample to that effect is kept in the source file."
+      },
+      {
+        "id": "h2",
+        "leanToken": "henv : ∀ y, p y ≤ c * q y",
+        "label": "majorizes",
+        "note": "$p(y) \\le c\\,q(y)$ for every $y$ — Gentle's majorizing-function condition; the target's support must lie in the proposal's."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hc0 : c ≠ 0",
+        "label": "envelope constant",
+        "note": "A nonzero, finite envelope constant $c$. Necessarily $c \\ge 1$ when both densities integrate to one."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hp1 : ∫⁻ z, p z ∂ν = 1",
+        "label": "target density",
+        "note": "The target is a probability density with respect to the same base measure."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§2.1 (acceptance/rejection methods), Algorithm 2.1, p. 40",
+      "keys": [
+        "gentle2002",
+        "vonneumann1951",
+        "devroye1986"
+      ],
+      "biblio": "The acceptance/rejection method is J. von Neumann, \"Various techniques used in connection with random digits,\" *National Bureau of Standards Applied Mathematics Series* **12** (1951), 36–38; the majorizing-density formulation is standard since L. Devroye, *Non-Uniform Random Variate Generation*, Springer, New York, 1986, §II.3."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "rejection sampling",
+      "exact simulation"
+    ]
+  },
+  {
+    "id": "compstat-counts-multinomial",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "map_categoricalCounts_pi",
+    "fullName": "StatLean.ComputationalStatistics.map_categoricalCounts_pi",
+    "title": "Category Counts of an i.i.d. Sample Are Multinomial",
+    "citation": "Gentle (2002), ch. 4, p. 84",
+    "shortRef": "Gentle (2002), ch. 4, p. 84",
+    "file": "StatLean/ComputationalStatistics/Resampling/CategoricalCounts.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Resampling/CategoricalCounts.html#StatLean.ComputationalStatistics.map_categoricalCounts_pi",
+    "informal": "<p>Draw $n$ indices independently from a <span data-link=\"h1\">probability vector</span> $q$ on $\\{1,\\dots,m\\}$ and count how often each category appears. The count vector $$V_j \\;=\\; \\#\\{i : A_i = j\\}$$ has the multinomial distribution $\\mathcal M_m(n;q)$. This is the bridge between the sampling description of resampling — draw indices with replacement — and its combinatorial description as a multinomial count vector, and it is what turns Gentle's resampling vector into a distributional object one can compute with.</p>",
+    "summary": "The vector of category counts of n i.i.d. categorical draws has exactly the multinomial law M_m(n; q), linking index resampling to the multinomial distribution.",
+    "leanSignature": "theorem map_categoricalCounts_pi {q : Fin m → ℝ}\n    (hq0 : ∀ i, 0 ≤ q i)\n    (hq1 : ∑ i, q i = 1) :\n    (Measure.pi fun _ : Fin n => categorical q).map categoricalCounts\n      = StatLean.Bayesian.multinomialKernel m n q",
+    "formalizationNotes": "The multinomial law is not rebuilt here: the statement lands on `StatLean.Bayesian.multinomialKernel`, the construction already used for Dirichlet–multinomial conjugacy. The proof compares the two measures on singletons of the countable count space; the combinatorial input — that the fiber over a count vector v with Σv = n has cardinality equal to the multinomial coefficient — has no counterpart in Mathlib and was proved from scratch by induction on n, peeling the first coordinate and using a Pascal-style recurrence for the coefficient.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hq0 : ∀ i, 0 ≤ q i",
+        "label": "probability vector",
+        "note": "Nonnegative category probabilities."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hq1 : ∑ i, q i = 1",
+        "label": "normalized",
+        "note": "The probabilities sum to one; off the simplex the multinomial weight is defined to vanish, while the pushforward would not."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "ch. 4 (the resampling vector), p. 84",
+      "keys": [
+        "gentle2002",
+        "efron1979",
+        "johnson-kotz-balakrishnan1997"
+      ],
+      "biblio": "The multinomial law of category counts is classical (de Moivre); its role as the bootstrap resampling vector is Efron (1979), §2. Standard reference for multinomial moments: N. L. Johnson, S. Kotz and N. Balakrishnan, *Discrete Multivariate Distributions*, Wiley, New York, 1997, ch. 35."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "multinomial distribution",
+      "resampling"
+    ]
+  },
+  {
+    "id": "compstat-multinomial-mean",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "integral_categoricalCount",
+    "fullName": "StatLean.ComputationalStatistics.integral_categoricalCount",
+    "title": "Mean of a Multinomial Count",
+    "citation": "Gentle (2002), ch. 4, p. 84",
+    "shortRef": "Gentle (2002), ch. 4, p. 84",
+    "file": "StatLean/ComputationalStatistics/Resampling/MultinomialMoments.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Resampling/MultinomialMoments.html#StatLean.ComputationalStatistics.integral_categoricalCount",
+    "informal": "<p>Each category count of an i.i.d. categorical sample has mean proportional to its <span data-link=\"h1\">probability</span>: $$\\mathbb E[V_j] \\;=\\; n\\,q_j.$$ For the bootstrap, where every index is equally likely, this says each observation appears once on average in a resample of the same size as the data.</p>",
+    "summary": "E[V_j] = n q_j for the category counts of an i.i.d. categorical sample.",
+    "leanSignature": "theorem integral_categoricalCount\n    (hq0 : ∀ i, 0 ≤ q i)\n    (hq1 : ∑ i, q i = 1) (j : Fin m) :\n    ∫ a, (categoricalCounts a j : ℝ) ∂(Measure.pi fun _ : Fin n => categorical q)\n      = n * q j",
+    "formalizationNotes": "Proved by writing the count as a sum of coordinate indicators and integrating termwise; each coordinate marginal is the categorical law, so each indicator contributes q_j. No multinomial pmf manipulation is needed, and integrability is automatic because the index space is finite.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hq0 : ∀ i, 0 ≤ q i",
+        "label": "probability",
+        "note": "Nonnegative category probabilities."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hq1 : ∑ i, q i = 1",
+        "label": "normalized",
+        "note": "The probabilities sum to one."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "ch. 4 (the resampling vector), p. 84",
+      "keys": [
+        "gentle2002",
+        "johnson-kotz-balakrishnan1997"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "multinomial distribution",
+      "moments"
+    ]
+  },
+  {
+    "id": "compstat-multinomial-variance",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "variance_categoricalCount",
+    "fullName": "StatLean.ComputationalStatistics.variance_categoricalCount",
+    "title": "Variance of a Multinomial Count",
+    "citation": "Gentle (2002), ch. 4, p. 84",
+    "shortRef": "Gentle (2002), ch. 4, p. 84",
+    "file": "StatLean/ComputationalStatistics/Resampling/MultinomialMoments.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Resampling/MultinomialMoments.html#StatLean.ComputationalStatistics.variance_categoricalCount",
+    "informal": "<p>A multinomial count is a sum of Bernoulli indicators, one per draw, so its variance is $$\\operatorname{Var}(V_j) \\;=\\; n\\,q_j(1-q_j),$$ for a <span data-link=\"h1\">probability vector</span> $q$. Note that the bound $q_j \\le 1$ needed here is not assumed: it follows from nonnegativity and <span data-link=\"h2\">normalization</span> of the whole vector.</p>",
+    "summary": "Var(V_j) = n q_j (1 − q_j): each multinomial count is a binomial count in disguise.",
+    "leanSignature": "theorem variance_categoricalCount\n    (hq0 : ∀ i, 0 ≤ q i)\n    (hq1 : ∑ i, q i = 1) (j : Fin m) :\n    variance (fun a => (categoricalCounts a j : ℝ))\n        (Measure.pi fun _ : Fin n => categorical q)\n      = n * q j * (1 - q j)",
+    "formalizationNotes": "The count is expanded into coordinate indicators, which are independent under the product law (`iIndepFun_pi`), so the variance of the sum is the sum of the variances; each summand is a Bernoulli(q_j) variance q_j − q_j². The inequality q_j ≤ 1 is derived inside the proof from the simplex hypotheses rather than added as an assumption.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hq0 : ∀ i, 0 ≤ q i",
+        "label": "probability vector",
+        "note": "Nonnegative category probabilities."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hq1 : ∑ i, q i = 1",
+        "label": "normalization",
+        "note": "The probabilities sum to one, which forces each $q_j \\le 1$."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "ch. 4 (the resampling vector), p. 84",
+      "keys": [
+        "gentle2002",
+        "johnson-kotz-balakrishnan1997"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "multinomial distribution",
+      "variance"
+    ]
+  },
+  {
+    "id": "compstat-multinomial-cov",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "covariance_categoricalCount",
+    "fullName": "StatLean.ComputationalStatistics.covariance_categoricalCount",
+    "title": "Multinomial Counts Are Negatively Correlated",
+    "citation": "Gentle (2002), ch. 4, p. 84",
+    "shortRef": "Gentle (2002), ch. 4, p. 84",
+    "file": "StatLean/ComputationalStatistics/Resampling/MultinomialMoments.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Resampling/MultinomialMoments.html#StatLean.ComputationalStatistics.covariance_categoricalCount",
+    "informal": "<p>Counts in <span data-link=\"h3\">distinct</span> categories have covariance $$\\operatorname{Cov}(V_j, V_k) \\;=\\; -\\,n\\,q_j q_k \\;<\\; 0 .$$ The negative sign is forced by the total: the counts must add up to $n$, so a draw landing in one category is a draw denied to every other. This is the dependence that makes the bootstrap resampling vector something other than a collection of independent counts.</p>",
+    "summary": "Cov(V_j, V_k) = −n q_j q_k for distinct categories: multinomial counts are negatively correlated because they share a fixed total.",
+    "leanSignature": "theorem covariance_categoricalCount\n    (hq0 : ∀ i, 0 ≤ q i)\n    (hq1 : ∑ i, q i = 1) {j k : Fin m}\n    (hjk : j ≠ k) :\n    covariance (fun a => (categoricalCounts a j : ℝ))\n        (fun a => (categoricalCounts a k : ℝ))\n        (Measure.pi fun _ : Fin n => categorical q)\n      = -(n * q j * q k)",
+    "formalizationNotes": "Bilinearity of the covariance over the two indicator sums leaves only the diagonal terms, since indicators of different coordinates are independent; within one coordinate the product of the two indicators vanishes because a single draw cannot land in two categories at once, leaving −q_j q_k per draw.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hq0 : ∀ i, 0 ≤ q i",
+        "label": "probability vector",
+        "note": "Nonnegative category probabilities."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hq1 : ∑ i, q i = 1",
+        "label": "normalized",
+        "note": "The probabilities sum to one."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hjk : j ≠ k",
+        "label": "distinct",
+        "note": "Distinct categories; at $j = k$ the covariance is the variance instead."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "ch. 4 (the resampling vector), p. 84",
+      "keys": [
+        "gentle2002",
+        "johnson-kotz-balakrishnan1997"
+      ]
+    },
+    "hasGraph": true,
+    "keywords": [
+      "multinomial distribution",
+      "covariance"
+    ]
+  },
+  {
+    "id": "compstat-particle-resampling",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "particleResampling_unbiased",
+    "fullName": "StatLean.ComputationalStatistics.particleResampling_unbiased",
+    "title": "Multinomial Resampling Is Unbiased",
+    "citation": "Gentle (2002), §2.5",
+    "shortRef": "Gentle (2002), §2.5",
+    "file": "StatLean/ComputationalStatistics/Resampling/ParticleResampling.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Resampling/ParticleResampling.html#StatLean.ComputationalStatistics.particleResampling_unbiased",
+    "informal": "<p>Given a weighted particle population $(x_i,w_i)$ with <span data-link=\"h1\">nonnegative</span>, <span data-link=\"h2\">normalized</span> weights, resample $N$ particle indices independently with probabilities $w$ and give every survivor equal weight. Conditionally on the population, the resampled average reproduces the weighted average exactly: $$\\mathbb E\\Big[\\frac1N\\sum_{j=1}^N g\\big(x_{A_j}\\big)\\Big] \\;=\\; \\sum_{i=1}^n w_i\\, g(x_i).$$ Resampling therefore discards weight information without introducing bias — the property that licenses the resampling step of a particle filter.</p>",
+    "summary": "Multinomial resampling of a weighted particle population preserves the weighted average in conditional expectation.",
+    "leanSignature": "theorem particleResampling_unbiased [NeZero N]\n    (hw0 : ∀ i, 0 ≤ w i)\n    (hw1 : ∑ i, w i = 1) :\n    ∫ a, mcEstimate g (x ∘ a) ∂(Measure.pi fun _ : Fin N => categorical w)\n      = ∑ i, w i * g (x i)",
+    "formalizationNotes": "Conditioning on the particle population is formalized by treating the particles and weights as parameters: the only randomness is the index draw, whose law is exactly the conditional law given the population. Integrability is automatic on the finite index space. Sequential Monte Carlo itself — the propagate–reweight–resample recursion and its Feynman–Kac limit theory — is deliberately out of scope; this is the reusable single-step correctness brick.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hw0 : ∀ i, 0 ≤ w i",
+        "label": "nonnegative",
+        "note": "Nonnegative particle weights."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hw1 : ∑ i, w i = 1",
+        "label": "normalized",
+        "note": "Weights sum to one, so the population is a probability distribution over particles."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§2.5 (random sampling from data), p. 58",
+      "keys": [
+        "gentle2002",
+        "gordon-salmond-smith1993"
+      ],
+      "biblio": "Multinomial resampling enters the particle-filter literature with N. J. Gordon, D. J. Salmond and A. F. M. Smith, \"Novel approach to nonlinear/non-Gaussian Bayesian state estimation,\" *IEE Proceedings F* **140** (1993), 107–113; comparisons of resampling schemes are due to R. Douc and O. Cappé, \"Comparison of resampling schemes for particle filtering,\" *Proceedings ISPA 2005*, 64–69."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "sequential Monte Carlo",
+      "resampling"
+    ]
+  },
+  {
+    "id": "compstat-particle-resampling-measure",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "particleResampling_measure_unbiased",
+    "fullName": "StatLean.ComputationalStatistics.particleResampling_measure_unbiased",
+    "title": "Resampling Preserves the Particle Measure Setwise",
+    "citation": "Gentle (2002), §2.5",
+    "shortRef": "Gentle (2002), §2.5",
+    "file": "StatLean/ComputationalStatistics/Resampling/ParticleResampling.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Resampling/ParticleResampling.html#StatLean.ComputationalStatistics.particleResampling_measure_unbiased",
+    "informal": "<p>The unbiasedness of multinomial resampling holds set by set, not merely for averages: for every <span data-link=\"h3\">measurable</span> set $S$, $$\\mathbb E\\big[\\widehat{\\mathbb P}_N(S)\\big] \\;=\\; \\widehat\\pi(S), \\qquad \\widehat\\pi=\\sum_i w_i \\delta_{x_i},$$ where $\\widehat{\\mathbb P}_N$ is the equally-weighted empirical measure of the resampled particles and the weights are <span data-link=\"h1\">nonnegative</span> and <span data-link=\"h2\">normalized</span>. In other words the resampled cloud is an unbiased estimate of the weighted cloud as a measure.</p>",
+    "summary": "The empirical measure of the resampled particles is, in expectation, the weighted particle measure — unbiasedness as measures rather than merely for a fixed test function.",
+    "leanSignature": "theorem particleResampling_measure_unbiased [NeZero N]\n    (hw0 : ∀ i, 0 ≤ w i)\n    (hw1 : ∑ i, w i = 1) {s : Set 𝓧}\n    (hs : MeasurableSet s) :\n    ∫ a, (empiricalMeasure (x ∘ a) s).toReal\n        ∂(Measure.pi fun _ : Fin N => categorical w)\n      = (weightedMeasure w x s).toReal",
+    "formalizationNotes": "Obtained from the function-level statement applied to the indicator of the set, after identifying the mass the resampled empirical measure gives to S with the Monte Carlo average of that indicator. Masses are compared as real numbers via `ENNReal.toReal`, which is faithful here because both measures are finite.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hw0 : ∀ i, 0 ≤ w i",
+        "label": "nonnegative",
+        "note": "Nonnegative particle weights."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hw1 : ∑ i, w i = 1",
+        "label": "normalized",
+        "note": "The weights sum to one."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hs : MeasurableSet s",
+        "label": "measurable",
+        "note": "Measurability of the event whose mass is compared."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§2.5 (random sampling from data), p. 58",
+      "keys": [
+        "gentle2002",
+        "gordon-salmond-smith1993",
+        "douc-cappe2005"
+      ],
+      "biblio": "Multinomial resampling enters the particle-filter literature with N. J. Gordon, D. J. Salmond and A. F. M. Smith, \"Novel approach to nonlinear/non-Gaussian Bayesian state estimation,\" *IEE Proceedings F* **140** (1993), 107–113; comparisons of resampling schemes are due to R. Douc and O. Cappé, \"Comparison of resampling schemes for particle filtering,\" *Proceedings ISPA 2005*, 64–69."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "sequential Monte Carlo",
+      "empirical measure"
+    ]
+  },
+  {
+    "id": "compstat-bootstrap-mean",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "bootstrapMean_expectation",
+    "fullName": "StatLean.ComputationalStatistics.bootstrapMean_expectation",
+    "title": "The Bootstrap Sample Mean Is Centred at the Sample Mean",
+    "citation": "Gentle (2002), ch. 4",
+    "shortRef": "Gentle (2002), ch. 4",
+    "file": "StatLean/ComputationalStatistics/Resampling/BootstrapMoments.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Resampling/BootstrapMoments.html#StatLean.ComputationalStatistics.bootstrapMean_expectation",
+    "informal": "<p>Draw a bootstrap sample $Y_1^{*},\\dots,Y_n^{*}$ with replacement from the <span data-link=\"h1\">observed data</span> and average it. Conditionally on the data, $$\\mathbb E^{*}\\big[\\bar Y^{*}\\big] \\;=\\; \\bar y .$$ The bootstrap world is centred where the real world's estimate sits: the resampling distribution of the mean is centred at the observed mean, not at the unknown population mean, which is precisely why the bootstrap estimates the <em>spread</em> and <em>bias</em> of a statistic rather than its value.</p>",
+    "summary": "Conditionally on the data, the bootstrap sample mean has expectation the observed sample mean.",
+    "leanSignature": "theorem bootstrapMean_expectation [NeZero n] :\n    ∫ z, mcEstimate id z ∂(Measure.pi fun _ : Fin n => empiricalMeasure y)\n      = mcEstimate id y",
+    "formalizationNotes": "The bootstrap resampling law is the product of n copies of the empirical measure, so the statement is the general i.i.d. unbiasedness identity instantiated at P = empiricalMeasure y — the empirical measure is a probability measure, and nothing else about it is used. This is the finite-sample, exact-conditional side of the bootstrap; its asymptotic theory lives in the Hypothesis Tests topic.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "empiricalMeasure y",
+        "label": "observed data",
+        "note": "Resampling is i.i.d. drawing from the empirical measure of the observed sample $y$."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "ch. 4 (bootstrap methods), p. 84",
+      "keys": [
+        "gentle2002",
+        "efron1979"
+      ],
+      "biblio": "The nonparametric bootstrap is B. Efron, \"Bootstrap methods: another look at the jackknife,\" *Annals of Statistics* **7** (1979), 1–26; the standard monograph is B. Efron and R. J. Tibshirani, *An Introduction to the Bootstrap*, Chapman & Hall, New York, 1993."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "bootstrap",
+      "resampling"
+    ]
+  },
+  {
+    "id": "compstat-bootstrap-variance",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "bootstrapMean_variance",
+    "fullName": "StatLean.ComputationalStatistics.bootstrapMean_variance",
+    "title": "Bootstrap Variance of the Sample Mean",
+    "citation": "Gentle (2002), §4.2",
+    "shortRef": "Gentle (2002), §4.2",
+    "file": "StatLean/ComputationalStatistics/Resampling/BootstrapMoments.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Resampling/BootstrapMoments.html#StatLean.ComputationalStatistics.bootstrapMean_variance",
+    "informal": "<p>The ideal bootstrap variance of the sample mean is available in closed form: $$\\operatorname{Var}^{*}\\big(\\bar Y^{*}\\big) \\;=\\; \\frac{1}{n^{2}}\\sum_{i=1}^{n}\\big(y_i-\\bar y\\big)^{2},$$ conditionally on the <span data-link=\"h1\">observed data</span>. This is the plug-in variance $\\widehat\\sigma^2/n$ with the divide-by-$n$ sample variance — Monte Carlo resampling is not needed to evaluate it, and comparing it with the usual $s^2/n$ shows exactly the $n/(n-1)$ factor the bootstrap omits.</p>",
+    "summary": "Var*(Ȳ*) = n⁻²Σ(y_i − ȳ)², the ideal (simulation-free) bootstrap variance of the sample mean.",
+    "leanSignature": "theorem bootstrapMean_variance [NeZero n] :\n    variance (mcEstimate id) (Measure.pi fun _ : Fin n => empiricalMeasure y)\n      = ((n : ℝ) ^ 2)⁻¹ * ∑ i, (y i - mcEstimate id y) ^ 2",
+    "formalizationNotes": "Instantiates the general i.i.d. variance identity at the empirical measure and then evaluates the plug-in variance of the identity function, which is the divide-by-n sample variance. \"Ideal bootstrap\" means the exact conditional variance, not its Monte Carlo approximation from m resamples (Gentle eq. (4.7)); the latter needs no new theorem, being the ordinary Monte Carlo estimator applied to the resampling law.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "empiricalMeasure y",
+        "label": "observed data",
+        "note": "The conditioning is on the observed sample; the only randomness is the resampling."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§4.2 (bootstrap estimation of variance), eq. (4.6), p. 86",
+      "keys": [
+        "gentle2002",
+        "efron1979",
+        "efron-tibshirani1993"
+      ],
+      "biblio": "The nonparametric bootstrap is B. Efron, \"Bootstrap methods: another look at the jackknife,\" *Annals of Statistics* **7** (1979), 1–26; the standard monograph is B. Efron and R. J. Tibshirani, *An Introduction to the Bootstrap*, Chapman & Hall, New York, 1993."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "bootstrap",
+      "variance estimation"
+    ]
+  },
+  {
+    "id": "compstat-bootstrap-bias",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "bootstrapBiasCorrection_sqMean",
+    "fullName": "StatLean.ComputationalStatistics.bootstrapBiasCorrection_sqMean",
+    "title": "Ideal Bootstrap Bias Correction for the Squared Mean",
+    "citation": "Gentle (2002), §4.1",
+    "shortRef": "Gentle (2002), §4.1",
+    "file": "StatLean/ComputationalStatistics/Resampling/BootstrapMoments.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Resampling/BootstrapMoments.html#StatLean.ComputationalStatistics.bootstrapBiasCorrection_sqMean",
+    "informal": "<p>The squared sample mean overestimates the squared population mean, and the bootstrap corrects it without simulation. Gentle's bias-corrected estimator $T_1 = 2T(\\mathbb P_n) - \\mathbb E^{*}\\big[T(\\mathbb P_n^{(1)})\\big]$ evaluates, for $T$ the squared mean of the <span data-link=\"h1\">observed data</span>, to $$T_1 \\;=\\; \\bar y^{2} \\;-\\; \\frac{1}{n^{2}}\\sum_{i=1}^{n}\\big(y_i-\\bar y\\big)^{2}.$$ The correction subtracts exactly the bootstrap variance of the mean — the upward bias of $\\bar y^2$ — which is the computation Gentle sets as Exercise 4.1.</p>",
+    "summary": "Gentle's bootstrap bias correction T₁ = 2T − E*[T*], evaluated in closed form for the squared mean: it subtracts precisely the bootstrap variance of the mean.",
+    "leanSignature": "theorem bootstrapBiasCorrection_sqMean [NeZero n] :\n    2 * (mcEstimate id y) ^ 2\n        - ∫ z, (mcEstimate id z) ^ 2\n            ∂(Measure.pi fun _ : Fin n => empiricalMeasure y)\n      = (mcEstimate id y) ^ 2\n          - ((n : ℝ) ^ 2)⁻¹ * ∑ i, (y i - mcEstimate id y) ^ 2",
+    "formalizationNotes": "Follows from the companion identity for the bootstrap expectation of the squared mean, E*[(Ȳ*)²] = ȳ² + Var*(Ȳ*), which is the variance-plus-squared-mean decomposition applied under the resampling law. Everything is exact and conditional: no Monte Carlo approximation of the bootstrap expectation is involved.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "empiricalMeasure y",
+        "label": "observed data",
+        "note": "The bootstrap expectation is taken under resampling from the observed sample."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§4.1 (bootstrap bias corrections), eq. (4.4), p. 85",
+      "keys": [
+        "gentle2002",
+        "efron1979",
+        "efron-tibshirani1993"
+      ],
+      "biblio": "The nonparametric bootstrap is B. Efron, \"Bootstrap methods: another look at the jackknife,\" *Annals of Statistics* **7** (1979), 1–26; the standard monograph is B. Efron and R. J. Tibshirani, *An Introduction to the Bootstrap*, Chapman & Hall, New York, 1993."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "bootstrap",
+      "bias correction"
+    ]
+  },
+  {
+    "id": "compstat-bootstrap-counts",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "bootstrapCounts_multinomial",
+    "fullName": "StatLean.ComputationalStatistics.bootstrapCounts_multinomial",
+    "title": "Efron's Resampling Vector Is Multinomial",
+    "citation": "Gentle (2002), ch. 4, p. 84",
+    "shortRef": "Gentle (2002), ch. 4, p. 84",
+    "file": "StatLean/ComputationalStatistics/Resampling/BootstrapMoments.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Resampling/BootstrapMoments.html#StatLean.ComputationalStatistics.bootstrapCounts_multinomial",
+    "informal": "<p>Record how many times each original observation appears in a bootstrap sample. That count vector is multinomial with equal cell probabilities: $$\\big(N_1^{*},\\dots,N_n^{*}\\big) \\;\\sim\\; \\mathcal M_n\\Big(n; \\tfrac1n,\\dots,\\tfrac1n\\Big).$$ Gentle's resampling vector $p^{*}$ is $N^{*}/n$, and this identification is what lets bootstrap replications be written as functions of a multinomial vector — the starting point for the variance-reduction and balanced-resampling schemes of §4.5.</p>",
+    "summary": "The bootstrap resampling counts (how often each datum is redrawn) follow the multinomial law with n equal cell probabilities 1/n.",
+    "leanSignature": "theorem bootstrapCounts_multinomial [NeZero n] :\n    ((Measure.pi fun _ : Fin n => categorical fun _ : Fin n => (n : ℝ)⁻¹).map\n        categoricalCounts)\n      = StatLean.Bayesian.multinomialKernel n n (fun _ => (n : ℝ)⁻¹)",
+    "formalizationNotes": "The uniform-weight case of the general counts-are-multinomial bridge; the simplex side conditions are discharged from the positive-sample-size instance. The target law is the multinomial kernel already used for Dirichlet–multinomial conjugacy in the Bayesian area, so the two topics share one multinomial object.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "[NeZero n]",
+        "label": "nonempty sample",
+        "note": "At least one observation, so that the uniform resampling probability $1/n$ is well defined."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "ch. 4 (the resampling vector), p. 84",
+      "keys": [
+        "gentle2002",
+        "efron1979"
+      ],
+      "biblio": "The nonparametric bootstrap is B. Efron, \"Bootstrap methods: another look at the jackknife,\" *Annals of Statistics* **7** (1979), 1–26; the standard monograph is B. Efron and R. J. Tibshirani, *An Introduction to the Bootstrap*, Chapman & Hall, New York, 1993."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "bootstrap",
+      "multinomial distribution"
+    ]
+  },
+  {
+    "id": "compstat-jackknife-pseudovalue",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "jackknifePseudoValue_mcEstimate",
+    "fullName": "StatLean.ComputationalStatistics.jackknifePseudoValue_mcEstimate",
+    "title": "Pseudovalues of a Plug-In Average Are the Observations",
+    "citation": "Gentle (2002), §3.3",
+    "shortRef": "Gentle (2002), §3.3",
+    "file": "StatLean/ComputationalStatistics/Resampling/Jackknife.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Resampling/Jackknife.html#StatLean.ComputationalStatistics.jackknifePseudoValue_mcEstimate",
+    "informal": "<p>The jackknife pseudovalues of a statistic $T$ are $$T^{*}_i \\;=\\; n\\,T \\;-\\; (n-1)\\,T_{(-i)},$$ where $T_{(-i)}$ omits observation $i$. When $T$ is a <span data-link=\"h1\">plug-in average</span> — a linear functional of the empirical distribution — the pseudovalues collapse to the observations themselves, $T^{*}_i = g(x_i)$. Gentle records exactly this, and it explains why the jackknife tells one nothing new about a sample mean: the pseudovalues are the data, so the jackknifed statistic is the original statistic and the jackknife variance is the classical one.</p>",
+    "summary": "For a plug-in average, the i-th jackknife pseudovalue is just g(x_i) — the jackknife reproduces the data for linear statistics.",
+    "leanSignature": "theorem jackknifePseudoValue_mcEstimate (g : 𝓧 → ℝ) (i : Fin (n + 1))\n    (x : Fin (n + 1) → 𝓧) :\n    jackknifePseudoValue (mcEstimate g) (mcEstimate g) i x = g (x i)",
+    "formalizationNotes": "Pure finite-sum algebra: the deleted average is the full sum minus the deleted term (`Fin.sum_univ_succAbove`), and the weights n+1 and −n cancel everything but g(x_i). A statistic is passed as the pair of its full-sample and reduced-sample versions, since \"a statistic defined at every sample size\" is not a single Lean function; deletion is indexed by `Fin.succAbove`, so no n − 1 arithmetic appears.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "mcEstimate g",
+        "label": "plug-in average",
+        "note": "The statistic is the sample average of $g$, i.e. a linear functional of the empirical distribution."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§3.3 (jackknife methods), eq. (3.6), p. 75",
+      "keys": [
+        "gentle2002",
+        "quenouille1949",
+        "tukey1958"
+      ],
+      "biblio": "The jackknife is M. H. Quenouille, \"Approximate tests of correlation in time-series,\" *Journal of the Royal Statistical Society B* **11** (1949), 68–84, and \"Notes on bias in estimation,\" *Biometrika* **43** (1956), 353–360 (bias correction); pseudovalues and the variance estimator are J. W. Tukey, \"Bias and confidence in not-quite large samples (abstract),\" *Annals of Mathematical Statistics* **29** (1958), 614. Higher-order versions are W. R. Schucany, H. L. Gray and D. B. Owen, \"On bias reduction in estimation,\" *Journal of the American Statistical Association* **66** (1971), 524–533."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "jackknife",
+      "pseudovalues"
+    ]
+  },
+  {
+    "id": "compstat-jackknife-variance",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "jackknifeVariance_mcEstimate",
+    "fullName": "StatLean.ComputationalStatistics.jackknifeVariance_mcEstimate",
+    "title": "Tukey's Jackknife Variance Estimate for the Sample Mean",
+    "citation": "Gentle (2002), §3.3",
+    "shortRef": "Gentle (2002), §3.3",
+    "file": "StatLean/ComputationalStatistics/Resampling/Jackknife.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Resampling/Jackknife.html#StatLean.ComputationalStatistics.jackknifeVariance_mcEstimate",
+    "informal": "<p>Tukey's jackknife variance estimator treats the pseudovalues as if they were independent and takes the variance of their mean. For a <span data-link=\"h1\">plug-in average</span> over $n+1$ observations it evaluates to $$\\widehat{\\operatorname{Var}}_{J} \\;=\\; \\frac{1}{(n+1)\\,n}\\sum_{i}\\big(g(x_i)-\\bar g\\big)^{2} \\;=\\; \\frac{s^{2}}{n+1},$$ the textbook standard error of a sample mean with the Bessel-corrected sample variance $s^2$. Gentle notes this coincidence as the sanity check on the definition: on the one statistic where the answer is already known, the jackknife reproduces it exactly.</p>",
+    "summary": "For the sample mean the jackknife variance estimator equals s²/(n+1), the classical standard error — the sanity check on Tukey's definition.",
+    "leanSignature": "theorem jackknifeVariance_mcEstimate (g : 𝓧 → ℝ) (x : Fin (n + 1) → 𝓧) :\n    jackknifeVarianceEstimate (mcEstimate g) (mcEstimate g) x\n      = (((n : ℝ) + 1) * n)⁻¹ * ∑ i, (g (x i) - mcEstimate g x) ^ 2",
+    "formalizationNotes": "Immediate once the pseudovalues are identified with the observations and the jackknifed statistic with the original average: the estimator's defining sum becomes Σ(g(xᵢ) − ḡ)² divided by r(r−1) with r = n+1 groups. The file uses the delete-one grouping (group size k = 1), which Gentle notes is the common and optimal choice.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "mcEstimate g",
+        "label": "plug-in average",
+        "note": "The statistic is the sample average of $g$."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§3.3 (jackknife variance estimate), eq. (3.9), p. 75",
+      "keys": [
+        "gentle2002",
+        "tukey1958"
+      ],
+      "biblio": "The jackknife is M. H. Quenouille, \"Approximate tests of correlation in time-series,\" *Journal of the Royal Statistical Society B* **11** (1949), 68–84, and \"Notes on bias in estimation,\" *Biometrika* **43** (1956), 353–360 (bias correction); pseudovalues and the variance estimator are J. W. Tukey, \"Bias and confidence in not-quite large samples (abstract),\" *Annals of Mathematical Statistics* **29** (1958), 614. Higher-order versions are W. R. Schucany, H. L. Gray and D. B. Owen, \"On bias reduction in estimation,\" *Journal of the American Statistical Association* **66** (1971), 524–533."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "jackknife",
+      "variance estimation"
+    ]
+  },
+  {
+    "id": "compstat-jackknife-bias",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "jackknife_bias_reduction",
+    "fullName": "StatLean.ComputationalStatistics.jackknife_bias_reduction",
+    "title": "The Jackknife Annihilates First-Order Bias",
+    "citation": "Gentle (2002), §3.3",
+    "shortRef": "Gentle (2002), §3.3",
+    "file": "StatLean/ComputationalStatistics/Resampling/JackknifeBias.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Resampling/JackknifeBias.html#StatLean.ComputationalStatistics.jackknife_bias_reduction",
+    "informal": "<p>Suppose an estimator's bias admits the expansion $\\mathbb E[T_m] = \\theta + a_1/m + a_2/m^{2}$ at the two sample sizes involved — <span data-link=\"h1\">$n+1$</span> and <span data-link=\"h2\">$n$</span>. Then the jackknifed statistic has $$\\mathbb E\\big[J(T)\\big] \\;=\\; \\theta \\;-\\; \\frac{a_2}{(n+1)\\,n}.$$ The $1/n$ term is gone: bias of order $n^{-1}$ has been reduced to order $n^{-2}$, with an explicit constant. This is the reason Quenouille introduced the device, and the reason it is worth computing $n+1$ extra estimates.</p>",
+    "summary": "Under a two-term bias expansion the jackknifed statistic has bias exactly −a₂/((n+1)n): the leading 1/n bias term is annihilated.",
+    "leanSignature": "theorem jackknife_bias_reduction [NeZero n] {θ a₁ a₂ : ℝ}\n    (hT : Integrable T (Measure.pi fun _ : Fin (n + 1) => P))\n    (hT' : Integrable T' (Measure.pi fun _ : Fin n => P))\n    (hT'm : AEStronglyMeasurable T' (Measure.pi fun _ : Fin n => P))\n    (hTn : ∫ x, T x ∂(Measure.pi fun _ : Fin (n + 1) => P)\n        = θ + a₁ / ((n : ℝ) + 1) + a₂ / ((n : ℝ) + 1) ^ 2)\n    (hTn' : ∫ z, T' z ∂(Measure.pi fun _ : Fin n => P)\n        = θ + a₁ / (n : ℝ) + a₂ / (n : ℝ) ^ 2) :\n    ∫ x, jackknifed T T' x ∂(Measure.pi fun _ : Fin (n + 1) => P)\n      = θ - a₂ / (((n : ℝ) + 1) * n)",
+    "formalizationNotes": "Gentle assumes a full power series Σ a_q/n^q with constant coefficients and concludes that the bias is O(n⁻²); the formalization assumes only the two-term expansion at the two sample sizes actually used, which is weaker, and in exchange the conclusion is an exact identity rather than an order statement. The probabilistic input is that each delete-one sample is again i.i.d., so the delete-one average has the reduced-sample expectation.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hTn : ∫ x, T x ∂(Measure.pi fun _ : Fin (n + 1) => P)\n        = θ + a₁ / ((n : ℝ) + 1) + a₂ / ((n : ℝ) + 1) ^ 2",
+        "label": "$n+1$",
+        "note": "Two-term bias expansion of the statistic at sample size $n+1$."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hTn' : ∫ z, T' z ∂(Measure.pi fun _ : Fin n => P)\n        = θ + a₁ / (n : ℝ) + a₂ / (n : ℝ) ^ 2",
+        "label": "$n$",
+        "note": "The same expansion at sample size $n$, with the same coefficients — this is what makes the leading term cancel."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§3.3 (jackknife bias correction), pp. 76–77",
+      "keys": [
+        "gentle2002",
+        "quenouille1956",
+        "schucany-gray-owen1971"
+      ],
+      "biblio": "The jackknife is M. H. Quenouille, \"Approximate tests of correlation in time-series,\" *Journal of the Royal Statistical Society B* **11** (1949), 68–84, and \"Notes on bias in estimation,\" *Biometrika* **43** (1956), 353–360 (bias correction); pseudovalues and the variance estimator are J. W. Tukey, \"Bias and confidence in not-quite large samples (abstract),\" *Annals of Mathematical Statistics* **29** (1958), 614. Higher-order versions are W. R. Schucany, H. L. Gray and D. B. Owen, \"On bias reduction in estimation,\" *Journal of the American Statistical Association* **66** (1971), 524–533."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "jackknife",
+      "bias correction"
+    ]
+  },
+  {
+    "id": "compstat-holdout",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "holdout_unbiased",
+    "fullName": "StatLean.ComputationalStatistics.holdout_unbiased",
+    "title": "Holdout Loss Is Unbiased for the Trained Rule's Risk",
+    "citation": "Gentle (2002), §3.2",
+    "shortRef": "Gentle (2002), §3.2",
+    "file": "StatLean/ComputationalStatistics/Partitioning/Holdout.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Partitioning/Holdout.html#StatLean.ComputationalStatistics.holdout_unbiased",
+    "informal": "<p>Fix a prediction rule $h$ — in practice, the rule fitted on the training set, so that the statement is conditional on the training data — and score it on an independent test sample of size $k$. Then the average test loss is unbiased for that rule's prediction risk: $$\\mathbb E\\Big[\\frac1k\\sum_{j=1}^k \\ell\\big(h, Z_j\\big)\\Big] \\;=\\; R(h) \\;=\\; \\int \\ell(h,z)\\,dD(z),$$ provided the <span data-link=\"h1\">loss is integrable</span>. Gentle's warning is the counterpoint: the apparent error computed on the data used for fitting is <em>not</em> unbiased and is systematically optimistic.</p>",
+    "summary": "The average loss on an independent test sample is unbiased for the prediction risk of the (fixed, or training-conditional) rule being scored.",
+    "leanSignature": "theorem holdout_unbiased {k : ℕ} [NeZero k] (h : H)\n    (hint : Integrable (ℓ h) D) :\n    ∫ t, mcEstimate (ℓ h) t ∂(Measure.pi fun _ : Fin k => D)\n      = predictionRisk D ℓ h",
+    "formalizationNotes": "Conditioning on the training data is formalized by quantifying over the hypothesis h: the identity holds for every h, hence in particular at h = A(s) for every training outcome s, which is the conditional statement. It is the i.i.d. unbiasedness identity applied to the loss of a fixed rule.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hint : Integrable (ℓ h) D",
+        "label": "loss is integrable",
+        "note": "The loss of the rule being scored has a finite mean under the data distribution."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§3.2 (cross validation for smoothing and fitting), eq. (3.2), p. 72",
+      "keys": [
+        "gentle2002",
+        "stone1974"
+      ],
+      "biblio": "Cross-validation in this form is M. Stone, \"Cross-validatory choice and assessment of statistical predictions,\" *Journal of the Royal Statistical Society B* **36** (1974), 111–147, and S. Geisser, \"The predictive sample reuse method with applications,\" *Journal of the American Statistical Association* **70** (1975), 320–328; the leave-one-out prediction sum of squares is D. M. Allen, \"The relationship between variable selection and data augmentation and a method for prediction,\" *Technometrics* **16** (1974), 125–127."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "cross-validation",
+      "prediction risk"
+    ]
+  },
+  {
+    "id": "compstat-holdout-integrated",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "holdout_integrated",
+    "fullName": "StatLean.ComputationalStatistics.holdout_integrated",
+    "title": "What Holdout Validation Estimates, Averaged Over Training Sets",
+    "citation": "Gentle (2002), §3.2",
+    "shortRef": "Gentle (2002), §3.2",
+    "file": "StatLean/ComputationalStatistics/Partitioning/Holdout.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Partitioning/Holdout.html#StatLean.ComputationalStatistics.holdout_integrated",
+    "informal": "<p>Averaging over the training sample as well as the test sample, holdout validation estimates the <em>expected risk of the fitted rule</em>: $$\\mathbb E_{S,T}\\Big[\\frac1k\\sum_{j}\\ell\\big(A(S),Z_j\\big)\\Big] \\;=\\; \\mathbb E_{S}\\big[R(A(S))\\big],$$ for a <span data-link=\"h1\">learning rule</span> $A$ with <span data-link=\"h2\">integrable</span> loss. The target is a property of the training procedure at that sample size — not the risk of any one fitted rule, and not the risk of the rule fitted to all the data. Keeping this distinction explicit is what stops the standard overclaim about what cross-validation measures.</p>",
+    "summary": "Averaged over training and test samples, holdout validation is unbiased for the expected risk of the rule the procedure produces at that training-set size.",
+    "leanSignature": "theorem holdout_integrated {m k : ℕ} [NeZero k] (A : (Fin m → Z) → H)\n    (hint : Integrable\n      (fun p : (Fin m → Z) × (Fin k → Z) => mcEstimate (ℓ (A p.1)) p.2)\n      ((Measure.pi fun _ : Fin m => D).prod (Measure.pi fun _ : Fin k => D)))\n    (hloss : ∀ s, Integrable (ℓ (A s)) D) :\n    ∫ p, mcEstimate (ℓ (A p.1)) p.2\n        ∂((Measure.pi fun _ : Fin m => D).prod (Measure.pi fun _ : Fin k => D))\n      = ∫ s, predictionRisk D ℓ (A s) ∂(Measure.pi fun _ : Fin m => D)",
+    "formalizationNotes": "Fubini over the independent training and test blocks, with the fixed-rule identity applied inside. The per-training-outcome integrability hypothesis is slightly stronger than the almost-everywhere version Fubini would supply; it is recorded as a regularity assumption a caller can discharge (bounded loss, say) rather than silently weakened.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "(A : (Fin m → Z) → H)",
+        "label": "learning rule",
+        "note": "A map from training samples of size $m$ to hypotheses; no measurability or optimality is assumed of it."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hloss : ∀ s, Integrable (ℓ (A s)) D",
+        "label": "integrable",
+        "note": "For each training outcome the fitted rule has integrable loss."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§3.2 (cross validation for smoothing and fitting), eq. (3.3), p. 73",
+      "keys": [
+        "gentle2002",
+        "stone1974"
+      ],
+      "biblio": "Cross-validation in this form is M. Stone, \"Cross-validatory choice and assessment of statistical predictions,\" *Journal of the Royal Statistical Society B* **36** (1974), 111–147, and S. Geisser, \"The predictive sample reuse method with applications,\" *Journal of the American Statistical Association* **70** (1975), 320–328; the leave-one-out prediction sum of squares is D. M. Allen, \"The relationship between variable selection and data augmentation and a method for prediction,\" *Technometrics* **16** (1974), 125–127."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "cross-validation",
+      "generalization error"
+    ]
+  },
+  {
+    "id": "compstat-kfold",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "kFold_unbiased",
+    "fullName": "StatLean.ComputationalStatistics.kFold_unbiased",
+    "title": "What K-Fold Cross Validation Estimates",
+    "citation": "Gentle (2002), §3.2",
+    "shortRef": "Gentle (2002), §3.2",
+    "file": "StatLean/ComputationalStatistics/Partitioning/KFold.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Partitioning/KFold.html#StatLean.ComputationalStatistics.kFold_unbiased",
+    "informal": "<p>Split the data into $K+1$ folds; hold each fold out in turn, fit on the remaining $K$ folds with the <span data-link=\"h1\">learning rule</span> $A$, score on the held-out fold, and average. The resulting estimate is unbiased for the expected risk of the rule trained on $K$ folds: $$\\mathbb E\\big[\\mathrm{CV}_K\\big] \\;=\\; \\mathbb E_{S}\\big[R(A(S))\\big], \\qquad |S| = K\\,m .$$ The target is the risk at the <em>reduced</em> training-set size, which is the honest statement — cross-validation is not unbiased for the risk of the rule fitted to the full data, and that difference is the pessimistic bias of $K$-fold.</p>",
+    "summary": "K-fold cross validation is unbiased for the expected risk of a rule trained on K folds — the reduced-size risk, not the full-sample rule's risk.",
+    "leanSignature": "theorem kFold_unbiased {K m : ℕ} [NeZero m] (A : (Fin K → Fin m → Z) → H)\n    (hint : Integrable\n      (fun p : (Fin K → Fin m → Z) × (Fin m → Z) =>\n        mcEstimate (ℓ (A p.1)) p.2)\n      ((Measure.pi fun _ : Fin K => Measure.pi fun _ : Fin m => D).prod\n        (Measure.pi fun _ : Fin m => D)))\n    (hloss : ∀ s, Integrable (ℓ (A s)) D) :\n    ∫ z, kFoldEstimate ℓ A z\n        ∂(Measure.pi fun _ : Fin (K + 1) => Measure.pi fun _ : Fin m => D)\n      = ∫ s, predictionRisk D ℓ (A s)\n          ∂(Measure.pi fun _ : Fin K => Measure.pi fun _ : Fin m => D)",
+    "formalizationNotes": "Folds are modelled as a matrix of observations, so fold deletion is the same `Fin.succAbove` operation used by the jackknife and no divisibility bookkeeping about n/K is needed. Each of the K+1 fold terms has the same expectation by exchangeability of the folds, and the held-out fold is independent of the training folds by the delete-and-split lemma.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "(A : (Fin K → Fin m → Z) → H)",
+        "label": "learning rule",
+        "note": "Fits a hypothesis from $K$ folds of $m$ observations each."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hloss : ∀ s, Integrable (ℓ (A s)) D",
+        "label": "integrable loss",
+        "note": "Each fitted rule has integrable loss under the data distribution."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§3.2 (cross validation for smoothing and fitting), pp. 72–73",
+      "keys": [
+        "gentle2002",
+        "stone1974",
+        "geisser1975"
+      ],
+      "biblio": "Cross-validation in this form is M. Stone, \"Cross-validatory choice and assessment of statistical predictions,\" *Journal of the Royal Statistical Society B* **36** (1974), 111–147, and S. Geisser, \"The predictive sample reuse method with applications,\" *Journal of the American Statistical Association* **70** (1975), 320–328; the leave-one-out prediction sum of squares is D. M. Allen, \"The relationship between variable selection and data augmentation and a method for prediction,\" *Technometrics* **16** (1974), 125–127."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "cross-validation",
+      "K-fold"
+    ]
+  },
+  {
+    "id": "compstat-loo",
+    "category": "compstat",
+    "kind": "theorem",
+    "leanName": "loo_unbiased",
+    "fullName": "StatLean.ComputationalStatistics.loo_unbiased",
+    "title": "Leave-One-Out Cross Validation and PRESS",
+    "citation": "Gentle (2002), §3.2",
+    "shortRef": "Gentle (2002), §3.2",
+    "file": "StatLean/ComputationalStatistics/Partitioning/KFold.lean",
+    "docGenUrl": "../docs/StatLean/ComputationalStatistics/Partitioning/KFold.html#StatLean.ComputationalStatistics.loo_unbiased",
+    "informal": "<p>Hold out one observation at a time, fit on the other $n$, and average the $n+1$ prediction losses. This leave-one-out estimate is unbiased for the expected risk of the rule trained on $n$ observations: $$\\mathbb E\\big[\\mathrm{LOO}\\big] \\;=\\; \\mathbb E_{S}\\big[R(A(S))\\big], \\qquad |S| = n,$$ for any <span data-link=\"h1\">learning rule</span> with <span data-link=\"h2\">integrable</span> joint loss. With squared-error loss the sum is Allen's PRESS statistic, the prediction sum of squares used for variable selection in linear models.</p>",
+    "summary": "Leave-one-out cross validation is unbiased for the expected risk of the delete-one rule; with squared-error loss it is Allen's PRESS.",
+    "leanSignature": "theorem loo_unbiased {n : ℕ} (A : (Fin n → Z) → H)\n    (hint : Integrable\n      (fun p : (Fin n → Z) × Z => ℓ (A p.1) p.2)\n      ((Measure.pi fun _ : Fin n => D).prod D)) :\n    ∫ x, looEstimate ℓ A x ∂(Measure.pi fun _ : Fin (n + 1) => D)\n      = ∫ s, predictionRisk D ℓ (A s) ∂(Measure.pi fun _ : Fin n => D)",
+    "formalizationNotes": "Each summand is transported through the delete-and-split map, whose law is the product of the reduced-sample law and the deleted observation's law; Fubini then produces the risk of the fitted rule, the same value for every deleted index, so the average collapses. Only the algebraic identity is claimed: model-selection consistency of cross-validation is out of scope.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "(A : (Fin n → Z) → H)",
+        "label": "learning rule",
+        "note": "Fits a hypothesis from $n$ observations; the held-out observation is the $(n+1)$-st."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hint : Integrable\n      (fun p : (Fin n → Z) × Z => ℓ (A p.1) p.2)\n      ((Measure.pi fun _ : Fin n => D).prod D)",
+        "label": "integrable",
+        "note": "The loss of the fitted rule at a fresh observation has a finite joint mean."
+      }
+    ],
+    "reference": {
+      "formal": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002.",
+      "pointer": "§3.2 (cross validation), eq. (3.4), p. 73",
+      "keys": [
+        "gentle2002",
+        "stone1974",
+        "allen1974"
+      ],
+      "biblio": "Cross-validation in this form is M. Stone, \"Cross-validatory choice and assessment of statistical predictions,\" *Journal of the Royal Statistical Society B* **36** (1974), 111–147, and S. Geisser, \"The predictive sample reuse method with applications,\" *Journal of the American Statistical Association* **70** (1975), 320–328; the leave-one-out prediction sum of squares is D. M. Allen, \"The relationship between variable selection and data augmentation and a method for prediction,\" *Technometrics* **16** (1974), 125–127."
+    },
+    "hasGraph": true,
+    "keywords": [
+      "cross-validation",
+      "leave-one-out"
     ]
   }
 ]

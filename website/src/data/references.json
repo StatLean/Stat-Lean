@@ -30,6 +30,11 @@
     "html": "S. M. Ali and S. D. Silvey, \"A general class of coefficients of divergence of one distribution from another,\" *Journal of the Royal Statistical Society, Series B* **28**, 1966, pp. 131–142."
   },
   {
+    "key": "allen1974",
+    "sortKey": "Allen",
+    "html": "D. M. Allen, \"The relationship between variable selection and data augmentation and a method for prediction,\" *Technometrics* **16**(1), 1974, pp. 125–127."
+  },
+  {
     "key": "an-huang1996",
     "sortKey": "An",
     "html": "H. Z. An and F. C. Huang, \"The geometrical ergodicity of nonlinear autoregressive models,\" *Statistica Sinica* **6**(4), 1996, pp. 943–956."
@@ -448,6 +453,91 @@
     "key": "castillovdv2012",
     "sortKey": "Castillo",
     "html": "I. Castillo and A. W. van der Vaart, “Needles and straw in a haystack: posterior concentration for possibly sparse sequences,” *The Annals of Statistics* **40**(4), 2012, pp. 2069–2101."
+  },
+  {
+    "key": "devroye1986",
+    "sortKey": "Devroye",
+    "html": "L. Devroye, *Non-Uniform Random Variate Generation*, Springer, New York, 1986."
+  },
+  {
+    "key": "douc-cappe2005",
+    "sortKey": "Douc",
+    "html": "R. Douc and O. Cappé, \"Comparison of resampling schemes for particle filtering,\" *Proceedings of the 4th International Symposium on Image and Signal Processing and Analysis (ISPA 2005)*, pp. 64–69."
+  },
+  {
+    "key": "efron-tibshirani1993",
+    "sortKey": "Efron",
+    "html": "B. Efron and R. J. Tibshirani, *An Introduction to the Bootstrap*, Monographs on Statistics and Applied Probability **57**, Chapman & Hall, New York, 1993."
+  },
+  {
+    "key": "geisser1975",
+    "sortKey": "Geisser",
+    "html": "S. Geisser, \"The predictive sample reuse method with applications,\" *Journal of the American Statistical Association* **70**(350), 1975, pp. 320–328."
+  },
+  {
+    "key": "gentle2002",
+    "sortKey": "Gentle",
+    "html": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002."
+  },
+  {
+    "key": "gordon-salmond-smith1993",
+    "sortKey": "Gordon",
+    "html": "N. J. Gordon, D. J. Salmond, and A. F. M. Smith, \"Novel approach to nonlinear/non-Gaussian Bayesian state estimation,\" *IEE Proceedings F (Radar and Signal Processing)* **140**(2), 1993, pp. 107–113."
+  },
+  {
+    "key": "hammersley-handscomb1964",
+    "sortKey": "Hammersley",
+    "html": "J. M. Hammersley and D. C. Handscomb, *Monte Carlo Methods*, Methuen, London, 1964."
+  },
+  {
+    "key": "johnson-kotz-balakrishnan1997",
+    "sortKey": "Johnson",
+    "html": "N. L. Johnson, S. Kotz, and N. Balakrishnan, *Discrete Multivariate Distributions*, Wiley Series in Probability and Statistics, Wiley, New York, 1997."
+  },
+  {
+    "key": "kahn-marshall1953",
+    "sortKey": "Kahn",
+    "html": "H. Kahn and A. W. Marshall, \"Methods of reducing sample size in Monte Carlo computations,\" *Journal of the Operations Research Society of America* **1**(5), 1953, pp. 263–278."
+  },
+  {
+    "key": "metropolis-ulam1949",
+    "sortKey": "Metropolis",
+    "html": "N. Metropolis and S. Ulam, \"The Monte Carlo method,\" *Journal of the American Statistical Association* **44**(247), 1949, pp. 335–341."
+  },
+  {
+    "key": "quenouille1949",
+    "sortKey": "Quenouille",
+    "html": "M. H. Quenouille, \"Approximate tests of correlation in time-series,\" *Journal of the Royal Statistical Society, Series B* **11**(1), 1949, pp. 68–84."
+  },
+  {
+    "key": "quenouille1956",
+    "sortKey": "Quenouille",
+    "html": "M. H. Quenouille, \"Notes on bias in estimation,\" *Biometrika* **43**(3–4), 1956, pp. 353–360."
+  },
+  {
+    "key": "rubinstein1981",
+    "sortKey": "Rubinstein",
+    "html": "R. Y. Rubinstein, *Simulation and the Monte Carlo Method*, Wiley Series in Probability and Statistics, Wiley, New York, 1981."
+  },
+  {
+    "key": "schucany-gray-owen1971",
+    "sortKey": "Schucany",
+    "html": "W. R. Schucany, H. L. Gray, and D. B. Owen, \"On bias reduction in estimation,\" *Journal of the American Statistical Association* **66**(335), 1971, pp. 524–533."
+  },
+  {
+    "key": "stone1974",
+    "sortKey": "Stone",
+    "html": "M. Stone, \"Cross-validatory choice and assessment of statistical predictions,\" *Journal of the Royal Statistical Society, Series B* **36**(2), 1974, pp. 111–147."
+  },
+  {
+    "key": "tukey1958",
+    "sortKey": "Tukey",
+    "html": "J. W. Tukey, \"Bias and confidence in not-quite large samples (abstract),\" *The Annals of Mathematical Statistics* **29**(2), 1958, p. 614."
+  },
+  {
+    "key": "vonneumann1951",
+    "sortKey": "von Neumann",
+    "html": "J. von Neumann, \"Various techniques used in connection with random digits,\" *National Bureau of Standards Applied Mathematics Series* **12**, 1951, pp. 36–38."
   },
   {
     "key": "cencov1962",

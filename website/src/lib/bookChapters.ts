@@ -19,6 +19,7 @@ export const TEXTBOOK_KEYS = new Set([
   "paulsen-raghupathi2016",
   "lehmann-romano2022",
   "lehmann-casella1998",
+  "gentle2002",
 ]);
 
 export function isTextbook(key: string): boolean {
@@ -168,7 +169,20 @@ const CHAPTER_TITLES: Record<string, Record<number, string>> = {
     7: "Model Choice",
     10: "Hierarchical and Empirical Bayes Extensions",
   },
-  tsybakov2009: {
+  "gentle2002": {
+    1: "Preliminaries",
+    2: "Monte Carlo Methods for Inference",
+    3: "Randomization and Data Partitioning",
+    4: "Bootstrap Methods",
+    5: "Tools for Identification of Structure in Data",
+    6: "Estimation of Functions",
+    7: "Graphical Methods in Computational Statistics",
+    8: "Estimation of Probability Density Functions Using Parametric Models",
+    9: "Nonparametric Estimation of Probability Density Functions",
+    10: "Structure in Data",
+    11: "Statistical Models of Dependencies",
+  },
+  "tsybakov2009": {
     1: "Nonparametric Estimators",
     2: "Lower Bounds on the Minimax Risk",
     3: "Asymptotic Efficiency and Adaptation",
