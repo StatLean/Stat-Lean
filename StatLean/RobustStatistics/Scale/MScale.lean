@@ -71,14 +71,20 @@ theorem isMScaleRoot_iff_logScale {ρ : ℝ → ℝ} {δ : ℝ} {P : Measure ℝ
       IsMLocationRoot (scaleScorePsi ρ δ) (P.map logAbs) (Real.log σ) := by
   sorry
 
-/-- The transported score of a bounded even loss is monotone with limits `−δ` at `−∞`
-and `1 − δ` at `+∞` (`MMY §3.2.2` with `ρ(0) = 0`, `ρ(∞) = 1`): the location breakdown
-data `k₁ = δ`, `k₂ = 1 − δ` of `MMY (3.23)`. -/
+/-- The transported score of a bounded even *continuous* loss is monotone with limits
+`−δ` at `−∞` and `1 − δ` at `+∞` (`MMY §3.2.2` with `ρ(0) = 0`, `ρ(∞) = 1`): the
+location breakdown data `k₁ = δ`, `k₂ = 1 − δ` of `MMY (3.23)`.
+
+Continuity is *not* cosmetic: `exp t > 0` for every `t`, so the `−∞` limit is the limit
+of `ρ` at `0⁺`, which equals `ρ(0) = 0` only under continuity at `0` — for the (monotone,
+`ρ(0)=0`) indicator loss `ρ = 1_{(0,∞)}` the transported score is *constantly* `1 − δ`
+and the claimed `−δ` limit fails. This is why the MAD's indicator loss is excluded from
+this file (see the module docstring). -/
 theorem scaleScorePsi_monotone_limits {ρ : ℝ → ℝ} {δ : ℝ}
-    -- USER-INPUT: the loss is a bounded ρ-function: even, nondecreasing on [0,∞),
-    -- ρ(0) = 0, ρ(∞) = 1; MMY §2.5 / Definition 2.1
+    -- USER-INPUT: the loss is a bounded continuous ρ-function: even, nondecreasing on
+    -- [0,∞), ρ(0) = 0, ρ(∞) = 1; MMY §2.5 / Definition 2.1 + Thm 10.1 regularity
     (hρ_mono : MonotoneOn ρ (Set.Ici 0)) (hρ0 : ρ 0 = 0)
-    (hρ_lim : Tendsto ρ atTop (𝓝 1)) :
+    (hρ_lim : Tendsto ρ atTop (𝓝 1)) (hρc : Continuous ρ) :
     Monotone (scaleScorePsi ρ δ) ∧
       Tendsto (scaleScorePsi ρ δ) atBot (𝓝 (-δ)) ∧
       Tendsto (scaleScorePsi ρ δ) atTop (𝓝 (1 - δ)) := by
@@ -95,8 +101,9 @@ theorem mScaleRoot_bounded_of_contamination {ρ : ℝ → ℝ} {δ ε : ℝ} {P 
     -- USER-INPUT: bounded even ρ-function; MMY §2.5 / Definition 2.1
     (hρ_even : ∀ x, ρ (-x) = ρ x) (hρ_mono : MonotoneOn ρ (Set.Ici 0))
     (hρ0 : ρ 0 = 0) (hρ_lim : Tendsto ρ atTop (𝓝 1))
-    -- LEAN-ONLY: measurability of ρ; regularity
-    (hρ_meas : Measurable ρ)
+    -- USER-INPUT: continuous loss (see scaleScorePsi_monotone_limits for why this is
+    -- forced, not regularity-optional); MMY Thm 10.1-style
+    (hρc : Continuous ρ)
     -- USER-INPUT: target level strictly inside (0,1); MMY §2.5 (0 < δ < 1)
     (hδ0 : 0 < δ) (hδ1 : δ < 1)
     -- USER-INPUT: no atom at 0; MMY §3.2.2 (implicit in the log scale)
