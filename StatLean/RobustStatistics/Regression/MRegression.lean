@@ -344,6 +344,41 @@ theorem isQuantileRegressionEstimate_half_iff {X : Fin n → Fin p → ℝ} {y :
     rw [key β, key b]
     linarith
 
+/-- Every slope in `[α - 1, α]` is a subgradient of `ρ_α` at `0`: `s·u ≤ ρ_α(u)`. -/
+private theorem checkLoss_smul_le {α s : ℝ} (hs0 : α - 1 ≤ s) (hs1 : s ≤ α) (u : ℝ) :
+    s * u ≤ checkLoss α u := by
+  rcases le_or_gt 0 u with hu | hu
+  · exact le_trans (mul_le_mul_of_nonneg_right hs1 hu) (le_max_left _ _)
+  · exact le_trans (mul_le_mul_of_nonpos_right hs0 hu.le) (le_max_right _ _)
+
+/-- A two-valued slope selection sums to `αm` minus the number of `¬P`-indices. -/
+private theorem sum_ite_card_not {m : ℕ} (α : ℝ) (P : Fin m → Prop) [DecidablePred P] :
+    ∑ i, (if P i then α else α - 1)
+      = α * m - ((univ.filter fun i => ¬ P i).card : ℝ) := by
+  have h2 : ∀ i : Fin m,
+      (if P i then α else α - 1) = α - (if ¬ P i then (1 : ℝ) else 0) := by
+    intro i; by_cases h : P i <;> simp [h]
+  calc ∑ i, (if P i then α else α - 1)
+      = ∑ i : Fin m, (α - (if ¬ P i then (1 : ℝ) else 0)) :=
+        Finset.sum_congr rfl fun i _ => h2 i
+    _ = (∑ _i : Fin m, α) - ∑ i : Fin m, (if ¬ P i then (1 : ℝ) else 0) := by
+        rw [Finset.sum_sub_distrib]
+    _ = α * m - ((univ.filter fun i => ¬ P i).card : ℝ) := by
+        rw [Finset.sum_const, Finset.sum_boole]
+        simp [mul_comm]
+
+/-- The same selection, counted on the `P`-side. -/
+private theorem sum_ite_card {m : ℕ} (α : ℝ) (P : Fin m → Prop) [DecidablePred P] :
+    ∑ i, (if P i then α else α - 1)
+      = α * m - m + ((univ.filter P).card : ℝ) := by
+  rw [sum_ite_card_not α P]
+  have hpart : (univ.filter P).card + (univ.filter fun i => ¬ P i).card = m := by
+    rw [Finset.card_filter_add_card_filter_not]
+    simp
+  have h2 : ((univ.filter P).card : ℝ) + ((univ.filter fun i => ¬ P i).card : ℝ) = m := by
+    exact_mod_cast hpart
+  linarith
+
 /-- **The sample `α`-quantile minimizes the check loss** (`MMY §4.8`, "the solution of
 `∑ ρ_α(yᵢ − μ) = min` is the sample `α`-quantile", citing Problem 2.13): the order
 statistic at rank `⌈αn⌉` is a location M-estimate for the check loss. Stated for the
@@ -355,7 +390,90 @@ theorem checkLoss_orderStat_isMLocationEstimate {α : ℝ} (hα0 : 0 < α) (hα1
     (hr : (r : ℕ) + 1 = ⌈α * n⌉₊) :
     IsMLocationEstimate (checkLoss α)
       x (StatLean.MultipleTesting.orderStat x r) := by
-  sorry
+  set θ := StatLean.MultipleTesting.orderStat x r with hθ
+  -- the rank inequalities `r < αn ≤ r + 1` supplied by `⌈αn⌉ = r + 1`
+  have hlt : ((r : ℕ) : ℝ) < α * n := by
+    have h1 : ((⌈α * (n : ℝ)⌉₊ : ℕ) : ℝ) < α * n + 1 :=
+      Nat.ceil_lt_add_one (by positivity)
+    rw [← hr] at h1
+    push_cast at h1
+    linarith
+  have hge : α * n ≤ ((r : ℕ) : ℝ) + 1 := by
+    have h1 : α * (n : ℝ) ≤ (⌈α * (n : ℝ)⌉₊ : ℝ) := Nat.le_ceil _
+    rw [← hr] at h1
+    push_cast at h1
+    linarith
+  -- the subgradient engine: any admissible selection of slopes gives a lower bound
+  have main : ∀ (t : ℝ) (s : Fin n → ℝ), (∀ i, α - 1 ≤ s i) → (∀ i, s i ≤ α) →
+      (∀ i, checkLoss α (x i - θ) = s i * (x i - θ)) →
+      0 ≤ (∑ i, s i) * (θ - t) →
+      ∑ i, checkLoss α (x i - θ) ≤ ∑ i, checkLoss α (x i - t) := by
+    intro t s h0 h1 hsv hpos
+    have step : ∀ i ∈ (univ : Finset (Fin n)),
+        checkLoss α (x i - θ) + s i * ((x i - t) - (x i - θ)) ≤ checkLoss α (x i - t) := by
+      intro i _
+      calc checkLoss α (x i - θ) + s i * ((x i - t) - (x i - θ))
+          = s i * (x i - t) := by rw [hsv i]; ring
+        _ ≤ checkLoss α (x i - t) := checkLoss_smul_le (h0 i) (h1 i) _
+    have hsum := Finset.sum_le_sum step
+    rw [Finset.sum_add_distrib] at hsum
+    have hid : ∑ i, s i * ((x i - t) - (x i - θ)) = (∑ i, s i) * (θ - t) := by
+      rw [Finset.sum_mul]
+      exact Finset.sum_congr rfl fun i _ => by ring
+    rw [hid] at hsum
+    linarith
+  intro t
+  rcases lt_trichotomy t θ with ht | ht | ht
+  · -- `t < θ`: take the slope `α` on `{xᵢ ≥ θ}` and `α - 1` on `{xᵢ < θ}`; at most `r`
+    -- observations lie strictly below `θ`, so the slope sum is `αn - #{xᵢ < θ} > 0`
+    refine main t (fun i => if θ ≤ x i then α else α - 1)
+      (fun i => by dsimp only; split_ifs <;> linarith)
+      (fun i => by dsimp only; split_ifs <;> linarith) (fun i => ?_) ?_
+    · dsimp only
+      by_cases h : θ ≤ x i
+      · rw [if_pos h, checkLoss_of_nonneg (by linarith)]
+      · have h' : x i < θ := lt_of_not_ge h
+        rw [if_neg h, checkLoss_of_nonpos (by linarith)]
+    · have hcount : (n : ℕ) - (r : ℕ)
+          ≤ (univ.filter fun j => θ ≤ x j).card := by
+        have h := card_orderStat_le x r
+        rwa [← hθ] at h
+      have hcast : (n : ℝ) - ((r : ℕ) : ℝ)
+          ≤ ((univ.filter fun j => θ ≤ x j).card : ℝ) := by
+        have hrn : (r : ℕ) < n := r.isLt
+        have h2 : (n : ℕ) ≤ (univ.filter fun j => θ ≤ x j).card + (r : ℕ) := by omega
+        have h3 : (n : ℝ) ≤ ((univ.filter fun j => θ ≤ x j).card : ℝ) + ((r : ℕ) : ℝ) := by
+          exact_mod_cast h2
+        linarith
+      have hsum : 0 ≤ ∑ i, (if θ ≤ x i then α else α - 1) := by
+        rw [sum_ite_card α fun i => θ ≤ x i]
+        linarith
+      exact mul_nonneg hsum (by linarith)
+  · rw [ht]
+  · -- `θ < t`: take the slope `α` on `{xᵢ > θ}` and `α - 1` on `{xᵢ ≤ θ}`; at least
+    -- `r + 1` observations lie at or below `θ`, so the slope sum is `αn - #{xᵢ ≤ θ} ≤ 0`
+    refine main t (fun i => if θ < x i then α else α - 1)
+      (fun i => by dsimp only; split_ifs <;> linarith)
+      (fun i => by dsimp only; split_ifs <;> linarith) (fun i => ?_) ?_
+    · dsimp only
+      by_cases h : θ < x i
+      · rw [if_pos h, checkLoss_of_nonneg (by linarith)]
+      · have h' : x i ≤ θ := le_of_not_gt h
+        rw [if_neg h, checkLoss_of_nonpos (by linarith)]
+    · have hcount : (r : ℕ) + 1 ≤ (univ.filter fun j => x j ≤ θ).card := by
+        have h := card_le_orderStat_le x r
+        rwa [← hθ] at h
+      have hfe : (univ.filter fun i => ¬ (θ < x i)) = (univ.filter fun j => x j ≤ θ) :=
+        Finset.filter_congr fun i _ => by simp [not_lt]
+      have hcast : ((r : ℕ) : ℝ) + 1
+          ≤ ((univ.filter fun i => ¬ (θ < x i)).card : ℝ) := by
+        rw [hfe]
+        exact_mod_cast hcount
+      have hsum : (∑ i, (if θ < x i then α else α - 1)) ≤ 0 := by
+        rw [sum_ite_card_not α fun i => θ < x i]
+        linarith
+      have hd : θ - t ≤ 0 := by linarith
+      nlinarith [mul_nonneg (neg_nonneg.mpr hsum) (neg_nonneg.mpr hd)]
 
 open MeasureTheory in
 /-- **The population `α`-quantile solves the check-loss estimating equation**
