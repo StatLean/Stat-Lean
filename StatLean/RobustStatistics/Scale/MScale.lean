@@ -52,6 +52,10 @@ noncomputable def logAbs (x : ℝ) : ℝ := Real.log |x|
 /-- The transported score `ψ(t) = ρ(eᵗ) − δ` of the `MMY §3.2.2` reduction. -/
 noncomputable def scaleScorePsi (ρ : ℝ → ℝ) (δ : ℝ) (t : ℝ) : ℝ := ρ (Real.exp t) - δ
 
+/-- The log-modulus map is measurable — the transport map of the reduction. -/
+private theorem measurable_logAbs : Measurable logAbs := by
+  unfold logAbs; fun_prop
+
 /-- **The log-scale reduction** (`MMY §3.2.2`, the display `ρ(x/σ) − δ = ψ(y − μ)`):
 for an even loss, `σ` is a scale M-root of `P` iff `log σ` is a *location* M-root of the
 transported score under the pushforward `P.map logAbs`. This is the engine that turns
@@ -69,7 +73,33 @@ theorem isMScaleRoot_iff_logScale {ρ : ℝ → ℝ} {δ : ℝ} {P : Measure ℝ
     (hint : Integrable (fun x => ρ (x / σ)) P) :
     IsMScaleRoot ρ δ P σ ↔
       IsMLocationRoot (scaleScorePsi ρ δ) (P.map logAbs) (Real.log σ) := by
-  sorry
+  have hF : Measurable fun y => scaleScorePsi ρ δ (y - Real.log σ) :=
+    (hρ_meas.comp (Real.measurable_exp.comp (measurable_id.sub_const _))).sub measurable_const
+  -- transport the location integral back to `P`
+  have hmap : ∫ y, scaleScorePsi ρ δ (y - Real.log σ) ∂(P.map logAbs)
+      = ∫ x, scaleScorePsi ρ δ (logAbs x - Real.log σ) ∂P :=
+    integral_map measurable_logAbs.aemeasurable hF.aestronglyMeasurable
+  have h0 : ∀ᵐ x ∂P, x ≠ 0 := by
+    rw [ae_iff]; simpa using hP0
+  -- off the (null) atom at `0`: `exp(log|x| − log σ) = |x|/σ` and `ρ(|x|/σ) = ρ(x/σ)`
+  have hae : (fun x => scaleScorePsi ρ δ (logAbs x - Real.log σ))
+      =ᵐ[P] fun x => ρ (x / σ) - δ := by
+    filter_upwards [h0] with x hx
+    have hxa : (0:ℝ) < |x| := abs_pos.2 hx
+    have hexp : Real.exp (logAbs x - Real.log σ) = |x| / σ := by
+      rw [logAbs, Real.exp_sub, Real.exp_log hxa, Real.exp_log hσ]
+    rw [scaleScorePsi, hexp]
+    rcases abs_choice x with h | h
+    · rw [h]
+    · rw [h, show (-x) / σ = -(x / σ) by ring, hρ_even]
+  have hsub : ∫ x, scaleScorePsi ρ δ (logAbs x - Real.log σ) ∂P
+      = (∫ x, ρ (x / σ) ∂P) - δ := by
+    rw [integral_congr_ae hae, integral_sub hint (integrable_const δ)]
+    simp
+  rw [IsMScaleRoot, IsMLocationRoot, hmap, hsub]
+  constructor
+  · rintro ⟨-, h⟩; rw [h, sub_self]
+  · intro h; exact ⟨hσ, by linarith⟩
 
 /-- The transported score of a bounded even *continuous* loss is monotone with limits
 `−δ` at `−∞` and `1 − δ` at `+∞` (`MMY §3.2.2` with `ρ(0) = 0`, `ρ(∞) = 1`): the
@@ -88,7 +118,16 @@ theorem scaleScorePsi_monotone_limits {ρ : ℝ → ℝ} {δ : ℝ}
     Monotone (scaleScorePsi ρ δ) ∧
       Tendsto (scaleScorePsi ρ δ) atBot (𝓝 (-δ)) ∧
       Tendsto (scaleScorePsi ρ δ) atTop (𝓝 (1 - δ)) := by
-  sorry
+  refine ⟨fun s t hst => ?_, ?_, ?_⟩
+  · exact sub_le_sub_right (hρ_mono (Set.mem_Ici.2 (Real.exp_pos s).le)
+      (Set.mem_Ici.2 (Real.exp_pos t).le) (Real.exp_le_exp.2 hst)) δ
+  · -- `exp t → 0⁺` as `t → −∞`, and continuity at `0` turns `ρ(0⁺)` into `ρ(0) = 0`
+    have h1 : Tendsto (fun t => ρ (Real.exp t)) atBot (𝓝 (ρ 0)) :=
+      (hρc.tendsto 0).comp Real.tendsto_exp_atBot
+    rw [hρ0] at h1
+    simpa [scaleScorePsi] using h1.sub_const δ
+  · have h2 : Tendsto (fun t => ρ (Real.exp t)) atTop (𝓝 1) := hρ_lim.comp Real.tendsto_exp_atTop
+    simpa [scaleScorePsi] using h2.sub_const δ
 
 /-- **Scale M-roots resist contamination below `min(δ, 1−δ)`** (`MMY (3.23)`, stability
 direction): for a bounded even loss and `ε < min(δ, 1−δ)`, all scale M-roots of all
