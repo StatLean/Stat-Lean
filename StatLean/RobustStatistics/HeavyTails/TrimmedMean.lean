@@ -31,6 +31,29 @@ heavy-tailed distributions — a survey*, Found. Comput. Math. (2019); arXiv:190
 (`LM`.) §2.3, displays (2.6)–(2.7), Theorem 6; after R. I. Oliveira and P. Orenstein,
 *The sub-Gaussian property of trimmed means* (2019). Truncation levels are Round-1
 `orderStat`s; the count concentration is `ConcentrationInequalities.bernstein_inequality`.
+
+**Closure notes (constants and route).**
+
+* *The `3/16` of `(2.6)`–`(2.7)` is exact.* All four bracket events are upper deviations of
+  a count over a half-line, so one Bernstein brick (`count_upper_deviation`) serves all
+  four. Centred indicators are bounded by `1` with variance exactly `q(1−q)`, hence satisfy
+  the Bernstein condition with scale `b = 1/3` — and `b = 1/3` is what produces `3/16`
+  (the binding events are the `ε/2`-level ones, where the bound is attained with equality;
+  the `2ε`-level events give the slacker `3/14`).
+* *The `9` of Theorem 6 survives, but not through `LM`'s bias bound.* The bias is the
+  **difference** `∫(α−X)⁺ − ∫(X−β)⁺` of two nonnegative tails, so it is bounded by the
+  larger of the two, not by their sum; with the sharp one-sided bound `S² ≤ p(σ² + S²)`
+  this gives `σ√(4r/n) ≈ 4.62 σ√(L/n)` (`truncated_bias_le_sharp`), of which the frozen
+  `σ√(32r/n)` of `truncated_bias_le` is a weakening. `LM`'s own bookkeeping (add the tails,
+  bound each by `σ√(8ε)`) yields `≈ 13.1 σ√(L/n)`, with which the composite constant `9` is
+  unreachable. The remaining `4 σ√(L/n)` is spent on Bernstein, whose exponent is then at
+  least `3 log(8/δ)` — a factor `3` of slack.
+* *The conditioning step is proved, not assumed.* `block_transfer` compares the estimator to
+  the constant `μ₀` rather than to the level-dependent centre `∫ φ_{α,β} dP`, which folds
+  the bias into the fixed-level bound and removes the only hard measurability obligation
+  (that of the parametrised integral). What is left is block independence, the product
+  form of the joint law, `Measure.prod_apply`, and measurability of order statistics
+  (`measurable_orderStat`, from the counting characterisation).
 -/
 
 open MeasureTheory Filter Topology ProbabilityTheory
@@ -660,11 +683,12 @@ self-referential bound `S² ≤ p(σ² + S²)`: Cauchy–Schwarz gives `S² ≤ 
 and the second moment of the tail is controlled by `σ² + S²` because the mean shift
 `μ₀ − β` is itself at most `S`. -/
 
+omit [IsProbabilityMeasure P] in
 /-- `max f 0` inherits integrability from `f` (`max a 0 = (a + |a|)/2`). -/
 private theorem integrable_max_zero {f : ℝ → ℝ} (hf : Integrable f P) :
     Integrable (fun x => max (f x) 0) P := by
   refine ((hf.add hf.abs).div_const 2).congr (Filter.Eventually.of_forall fun x => ?_)
-  show (f x + |f x|) / 2 = max (f x) 0
+  change (f x + |f x|) / 2 = max (f x) 0
   rcases le_or_gt 0 (f x) with hx | hx
   · rw [max_eq_left hx, abs_of_nonneg hx]; ring
   · rw [max_eq_right hx.le, abs_of_neg hx]; ring
@@ -812,7 +836,7 @@ private theorem tail_sq_le {f : ℝ → ℝ} {m w p : ℝ} (hfm : Measurable f) 
 /-- The one-sided tail bound in the form used: `∫ f⁺ ≤ √w · √(p/(1−p))`. -/
 private theorem tail_le_sqrt {f : ℝ → ℝ} {m w p : ℝ} (hfm : Measurable f) (hf : MemLp f 2 P)
     (hm : ∫ x, f x ∂P = m) (hw : ∫ x, (f x - m) ^ 2 ∂P = w)
-    (hp : P.real {x : ℝ | 0 < f x} ≤ p) (hp0 : 0 ≤ p) (hp1 : p < 1) (hw0 : 0 ≤ w) :
+    (hp : P.real {x : ℝ | 0 < f x} ≤ p) (_hp0 : 0 ≤ p) (hp1 : p < 1) (hw0 : 0 ≤ w) :
     ∫ x, max (f x) 0 ∂P ≤ Real.sqrt w * Real.sqrt (p / (1 - p)) := by
   have hkey := tail_sq_le hfm hf hm hw hp
   have hS0 : 0 ≤ ∫ x, max (f x) 0 ∂P := integral_nonneg fun x => le_max_right _ _
@@ -847,8 +871,8 @@ private theorem truncated_bias_le_sharp {μ₀ σ2 : ℝ} {r n : ℕ} {α β : �
     (hatom : ∀ t : ℝ, P {t} = 0)
     (hr1 : 1 ≤ r) (hrn : 4 * r < n)
     -- USER-INPUT: the levels sit inside the LM (2.6)–(2.7) brackets
-    (hα₁ : quantile P (r / (2 * n)) ≤ α) (hα₂ : α ≤ quantile P (2 * r / n))
-    (hβ₁ : quantile P (1 - 2 * r / n) ≤ β) (hβ₂ : β ≤ quantile P (1 - r / (2 * n))) :
+    (_hα₁ : quantile P (r / (2 * n)) ≤ α) (hα₂ : α ≤ quantile P (2 * r / n))
+    (hβ₁ : quantile P (1 - 2 * r / n) ≤ β) (_hβ₂ : β ≤ quantile P (1 - r / (2 * n))) :
     |(∫ x, truncate α β x ∂P) - μ₀| ≤ Real.sqrt σ2 * Real.sqrt (4 * r / n) := by
   have hn0 : 0 < n := by omega
   have hN : (0:ℝ) < n := by exact_mod_cast hn0
@@ -977,7 +1001,7 @@ width is the Bernstein scale of the truncated average; its variance is at most `
 because truncation is a contraction. -/
 
 /-- **Chebyshev's inequality** at the population level, in the form used below. -/
-private theorem chebyshev_tail {μ₀ σ2 c : ℝ} (hL2 : MemLp id 2 P) (hmean : ∫ x, x ∂P = μ₀)
+private theorem chebyshev_tail {μ₀ σ2 c : ℝ} (hL2 : MemLp id 2 P) (_hmean : ∫ x, x ∂P = μ₀)
     (hvar : ∫ x, (x - μ₀) ^ 2 ∂P = σ2) (hc : 0 < c) :
     P.real {x : ℝ | c ≤ |x - μ₀|} ≤ σ2 / c ^ 2 := by
   have hL2' : MemLp (fun x : ℝ => x) 2 P := hL2
@@ -1004,7 +1028,7 @@ private theorem chebyshev_tail {μ₀ σ2 c : ℝ} (hL2 : MemLp id 2 P) (hmean :
 
 /-- **Chebyshev locates the quantiles** (`LM Theorem 6` proof): `Q_{1−p} ≤ μ₀ + σ/√p`. -/
 private theorem quantile_upper_le {μ₀ σ2 p : ℝ} (hL2 : MemLp id 2 P) (hmean : ∫ x, x ∂P = μ₀)
-    (hvar : ∫ x, (x - μ₀) ^ 2 ∂P = σ2) (hσ : 0 < σ2) (hp : 0 < p) (hp1 : p < 1) :
+    (hvar : ∫ x, (x - μ₀) ^ 2 ∂P = σ2) (_hσ : 0 < σ2) (hp : 0 < p) (hp1 : p < 1) :
     quantile P (1 - p) ≤ μ₀ + Real.sqrt (σ2 / p) := by
   refine csSup_le (quantile_set_nonempty_bddAbove P (by linarith) (by linarith)).1 ?_
   intro M hM
@@ -1093,7 +1117,7 @@ private theorem bounded_bernstein_upper {n : ℕ} {X : Fin n → Ξ → ℝ} {g 
     nlinarith [hgb x, abs_nonneg (g x - c), sq_abs (g x - c)]
   have hgint : Integrable g P := by
     refine (hgcint.add (integrable_const c)).congr (Filter.Eventually.of_forall fun x => ?_)
-    show g x - c + c = g x
+    change g x - c + c = g x
     ring
   have hmean0 : ∫ x, (g x - c) ∂P = 0 := by
     rw [integral_sub hgint (integrable_const c), hgmean, integral_const]
@@ -1149,7 +1173,7 @@ private theorem bounded_bernstein_upper {n : ℕ} {X : Fin n → Ξ → ℝ} {g 
   have hbern := ConcentrationInequalities.bernstein_inequality
     (X := fun i ξ => g (X i ξ) - c) (μ := μprob) (fun i => (hgcm.comp (hX_meas i)))
     (hX_indep.comp (fun _ => fun x : ℝ => g x - c) (fun _ => hgcm)) hBc hn
-    (by rw [← NNReal.coe_pos]; simp; positivity)
+    (by rw [← NNReal.coe_pos, NNReal.coe_mk]; positivity)
     (by rw [← NNReal.coe_pos]; simpa using hv) ht
   refine le_trans hbern (le_of_eq ?_)
   congr 2
@@ -1157,9 +1181,9 @@ private theorem bounded_bernstein_upper {n : ℕ} {X : Fin n → Ξ → ℝ} {g 
 /-- Ledger, denominator: `2(v + (B/3)t) ≤ 16σ²` at `t = 4σ√(L/n)`, `B ≤ 2σ√(2n/r)`,
 `v ≤ σ²` and `√(2n/r)·√(L/n) ≤ 5/8`. -/
 private theorem ledger_denominator {σ2 s q y z B v : ℝ}
-    (hs : s * s = σ2) (hs0 : 0 < s) (hq0 : 0 ≤ q) (hy0 : 0 ≤ y)
+    (hs : s * s = σ2) (hs0 : 0 < s) (_hq0 : 0 ≤ q) (hy0 : 0 ≤ y)
     (hqy : q * y = z) (hz : z ≤ 5 / 8)
-    (hB : B ≤ 2 * (s * q)) (hB0 : 0 < B) (hv : v ≤ σ2) (hv0 : 0 < v) :
+    (hB : B ≤ 2 * (s * q)) (_hB0 : 0 < B) (hv : v ≤ σ2) (hv0 : 0 < v) :
     2 * (v + B / 3 * (4 * s * y)) ≤ 16 * σ2 := by
   have hsy : (0:ℝ) ≤ 4 * s * y := by positivity
   have hσ0 : 0 < σ2 := by nlinarith
@@ -1194,7 +1218,7 @@ private theorem exp_le_of_ledger {N t D L σ2 δ : ℝ} (hDpos : 0 < D)
 
 /-- The one sqrt identity of the Theorem 6 ledger: at `L = 3r/16` the Bernstein scale and
 the deviation combine into `√((2n/r)(L/n)) = √(3/8)`. -/
-private theorem sqrt_prod_ledger {n r : ℕ} {L : ℝ} (hN : (0:ℝ) < n) (hR : (0:ℝ) < r)
+private theorem sqrt_prod_ledger {n r : ℕ} {L : ℝ} (hN : (0 : ℝ) < n) (hR : (0 : ℝ) < r)
     (hL : L = 3 * r / 16) :
     Real.sqrt (2 * n / r) * Real.sqrt (L / n) = Real.sqrt (3 / 8) := by
   rw [← Real.sqrt_mul (by positivity)]
@@ -1329,7 +1353,7 @@ private theorem fixed_level_concentration {n r : ℕ} {X : Fin n → Ξ → ℝ}
           have hcg : ∫ x, (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 ∂P
               = ∫ _x : ℝ, (0:ℝ) ∂P :=
             integral_congr_ae (Filter.Eventually.of_forall fun x => by
-              show (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 = 0
+              change (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 = 0
               rw [hzero x]; ring)
           rw [hcg, integral_zero]
         linarith
@@ -1525,7 +1549,7 @@ fixed-level bound instead. -/
 private theorem block_transfer {n : ℕ} {Z : Fin n ⊕ Fin n → Ξ → ℝ} {a b : Fin n}
     {t c μ₀ : ℝ} {Good : ℝ → ℝ → Prop}
     (hZ_meas : ∀ i, Measurable (Z i)) (hZ_indep : iIndepFun Z μprob)
-    (hGood : MeasurableSet {p : ℝ × ℝ | Good p.1 p.2}) (hc : 0 ≤ c)
+    (hGood : MeasurableSet {p : ℝ × ℝ | Good p.1 p.2}) (_hc : 0 ≤ c)
     (hfixed : ∀ α₀ β₀ : ℝ, Good α₀ β₀ →
       μprob {ξ | t < |sampleMean (fun i => truncate α₀ β₀ (Z (Sum.inl i) ξ)) - μ₀|}
         ≤ ENNReal.ofReal c) :
