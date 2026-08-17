@@ -9,7 +9,7 @@ slurm-logs/
 *.sbatch
 slurm-*.out
 slurm-*.err
-# Claude/AI collaboration scaffolding + meta — tracked once, ignored going forward.
+# Claude/AI collaboration scaffolding + meta — laptop-local only, never published.
 .claude/
 notes/
 tools/
