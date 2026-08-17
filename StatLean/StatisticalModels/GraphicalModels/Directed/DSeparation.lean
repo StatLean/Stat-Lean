@@ -42,7 +42,8 @@ blocks (**Proposition 3.25**, p. 48).
   for disjoint `A`, `B`, `S` in a DAG, `S` d-separates `A` from `B` **iff** `S` separates `A`
   from `B` in `(G_{An(A ∪ B ∪ S)})^m`;
 * `dSeparated_iff_forall_nodup` — the book's own phrasing, over chains with *distinct* vertices
-  (see note 1); a corollary of Proposition 3.25 applied to both readings;
+  (see note 1); **not** a corollary of Proposition 3.25 — proved by shortening a chain of
+  minimal length, over `Chain.exists_shorter_of_not_nodup` and `Chain.forward_run`;
 * `condIndep_of_dSeparated` — the consequence: under the **directed global Markov property**,
   d-separation implies conditional independence. Cited as **Proposition 3.25 + Corollary
   3.23**; see the reference block for why there is no single theorem number for it.
@@ -80,11 +81,17 @@ misattribute (`Lauritzen §3.2.2` in tags).
    `Chain.BlockedFrom` and every proof below run on, and adding a `Nodup` side condition to the
    *definition* would make the recursion carry a proof obligation it does not need. The two
    readings of d-separation agree — `dSeparated_iff_forall_nodup` — but, unlike in the
-   undirected case, this is **not** a `Walk.bypass` argument: shortening a chain can turn a
-   collider into a non-collider. It is instead a corollary of Proposition 3.25, which holds for
-   either reading (the book's proof constructs and consumes chains whose vertex-distinctness is
-   never used). This is why the equivalence is stated for a DAG with disjoint blocks and not in
-   general.
+   undirected case, this is **not** `Walk.bypass`: shortening a chain can turn a non-collider
+   into a **collider**, and a collider is exactly what blocks when nothing below it lies in `S`.
+   ⚠️ The route this note originally announced — "a corollary of Proposition 3.25, which holds
+   for either reading" — **does not close**, and is not the one taken; see
+   `dSeparated_iff_forall_nodup` for why (Proposition 3.25 is proved here only for the walk
+   reading, and the chain its proof builds out of a moral walk need not have distinct vertices).
+   The equivalence is instead proved directly, by shortening a chain of **minimal length**:
+   `Chain.exists_shorter_of_not_nodup` shows the merged occurrence cannot block, the one
+   dangerous configuration being ruled out by acyclicity (`Chain.forward_run`). Consequently the
+   proof uses only the DAG hypothesis, **not** the disjointness of the three blocks, which the
+   frozen statement nevertheless carries.
 2. **Orientation is data, not a proposition.** A chain could have been modelled as a walk in
    the underlying undirected graph `Relation.SymmGen r` plus a predicate reading off which of
    `r u v`, `r v u` holds at each step. We rejected that: `Relation.SymmGen r u v` is a
@@ -235,6 +242,24 @@ theorem support_fwd {u v w : V} (h : r u v) (c : Chain r v w) :
 @[simp]
 theorem support_bwd {u v w : V} (h : r v u) (c : Chain r v w) :
     (bwd h c).support = u :: c.support := rfl
+
+/-- The number of arrows of a chain — the analogue of `SimpleGraph.Walk.length`, and the measure
+`dSeparated_iff_forall_nodup` inducts on. -/
+def length : ∀ {u w : V}, Chain r u w → ℕ
+  | _, _, nil _ => 0
+  | _, _, fwd _ c => c.length + 1
+  | _, _, bwd _ c => c.length + 1
+
+@[simp]
+theorem length_nil (v : V) : (nil v : Chain r v v).length = 0 := rfl
+
+@[simp]
+theorem length_fwd {u v w : V} (h : r u v) (c : Chain r v w) :
+    (fwd h c).length = c.length + 1 := rfl
+
+@[simp]
+theorem length_bwd {u v w : V} (h : r v u) (c : Chain r v w) :
+    (bwd h c).length = c.length + 1 := rfl
 
 theorem start_mem_support {u w : V} (c : Chain r u w) : u ∈ c.support := by
   cases c <;> simp
@@ -566,6 +591,157 @@ theorem exists_chain_prepend_of_reflTransGen {S : Finset V} {x t : V}
           ((blocksAt_iff_mem_of_not_isCollider (not_isCollider_outOf_left _)).mp hb)
       · exact hc'' hb
 
+/-! #### Shortening a chain that repeats a vertex
+
+The machinery of `dSeparated_iff_forall_nodup`. The book's chains have *distinct* vertices;
+`Chain` does not (module docstring, note 1), and the two readings of d-separation are reconciled
+here rather than — as that note guessed — by a corollary of Proposition 3.25. See
+`dSeparated_iff_forall_nodup` for why the corollary route does not in fact close. -/
+
+/-- **The accumulator matters only through the blocking of the first vertex.** Strengthens
+`blockedFrom_congr_din`: it is enough that neither accumulator makes the *first occurrence*
+block, whether or not it is a collider. -/
+theorem blockedFrom_congr_din' {S : Finset V} {din din' : Option ArrowDir} {u w : V}
+    (c : Chain r u w) (h : ¬ BlocksAt r S din c.headDir u)
+    (h' : ¬ BlocksAt r S din' c.headDir u) :
+    BlockedFrom S din c ↔ BlockedFrom S din' c := by
+  cases c with
+  | nil v => exact iff_of_false h h'
+  | fwd hh c' =>
+      simp only [headDir_fwd] at h h'
+      simp only [blockedFrom_fwd, or_iff_right h, or_iff_right h']
+  | bwd hh c' =>
+      simp only [headDir_bwd] at h h'
+      simp only [blockedFrom_bwd, or_iff_right h, or_iff_right h']
+
+/-- **A chain entered along an arrow, out of a vertex with no descendant in `S`, runs forward
+all the way.** Under `din = into`, a `bwd` step would make the first vertex a collider and — the
+descendant clause being satisfied — block; so an unblocked chain can only take `fwd` steps, and
+every vertex it visits is a descendant of its first one.
+
+This is the observation that makes the shortening argument below work, and it is where
+acyclicity enters `dSeparated_iff_forall_nodup`: a chain that comes back to its own starting
+vertex under these conditions would close a directed cycle. -/
+theorem forward_run {S : Finset V} : ∀ {x y : V} (c : Chain r x y), NoDescendantIn r S x →
+    ¬ BlockedFrom S (some ArrowDir.into) c → ∀ z ∈ c.support, Relation.ReflTransGen r x z := by
+  intro x y c
+  induction c with
+  | nil v =>
+      intro _ _ z hz
+      rw [support_nil, List.mem_singleton] at hz
+      exact hz ▸ Relation.ReflTransGen.refl
+  | @fwd x v y h c ih =>
+      intro hnd hact z hz
+      rw [blockedFrom_fwd, not_or] at hact
+      rw [support_fwd, List.mem_cons] at hz
+      rcases hz with rfl | hz
+      · exact Relation.ReflTransGen.refl
+      · exact Relation.ReflTransGen.head h
+          (ih (fun d hd => hnd d (Relation.ReflTransGen.head h hd)) hact.2 z hz)
+  | @bwd x v y h c ih =>
+      intro hnd hact _ _
+      rw [blockedFrom_bwd, not_or] at hact
+      exact absurd ((blocksAt_iff_noDescendantIn_of_isCollider isCollider_into_into).mpr hnd)
+        hact.1
+
+/-- **Every vertex a chain visits starts an unblocked tail of it.** Cutting a chain at an
+occurrence of `z` leaves a chain from `z` to the same endpoint, no longer, which is unblocked for
+the accumulator that occurrence carried. -/
+theorem exists_suffix {S : Finset V} : ∀ {x y : V} (c : Chain r x y) (din : Option ArrowDir),
+    ¬ BlockedFrom S din c → ∀ z ∈ c.support,
+      ∃ (d : Option ArrowDir) (Q : Chain r z y), Q.length ≤ c.length ∧
+        ¬ BlockedFrom S d Q := by
+  intro x y c
+  induction c with
+  | nil v =>
+      intro din hact z hz
+      rw [support_nil, List.mem_singleton] at hz
+      subst hz
+      exact ⟨din, nil z, le_rfl, hact⟩
+  | @fwd x v y h c ih =>
+      intro din hact z hz
+      rw [support_fwd, List.mem_cons] at hz
+      rcases hz with rfl | hz
+      · exact ⟨din, fwd h c, le_rfl, hact⟩
+      · rw [blockedFrom_fwd, not_or] at hact
+        obtain ⟨d, Q, hQ, hQb⟩ := ih (some ArrowDir.into) hact.2 z hz
+        exact ⟨d, Q, hQ.trans (Nat.le_succ _), hQb⟩
+  | @bwd x v y h c ih =>
+      intro din hact z hz
+      rw [support_bwd, List.mem_cons] at hz
+      rcases hz with rfl | hz
+      · exact ⟨din, bwd h c, le_rfl, hact⟩
+      · rw [blockedFrom_bwd, not_or] at hact
+        obtain ⟨d, Q, hQ, hQb⟩ := ih (some ArrowDir.outOf) hact.2 z hz
+        exact ⟨d, Q, hQ.trans (Nat.le_succ _), hQb⟩
+
+/-- **An unblocked chain that repeats a vertex can be shortened without becoming blocked.**
+
+Deleting the stretch between two occurrences of `x` changes the blocking rule *only at `x`*,
+whose two incident arrows are now the near one of the first occurrence and the far one of the
+second. The surviving occurrence can therefore be a collider where neither of the original ones
+was, which is exactly why `SimpleGraph.Walk.bypass` has no analogue here. It does not block all
+the same:
+
+* if the chain leaves `x` **along** an arrow at the first occurrence (`fwd`), then `x` cannot
+  have all its descendants outside `S`: `Chain.forward_run` would make the second occurrence of
+  `x` a descendant of `x`, i.e. a directed cycle. So the collider clause is satisfied;
+* if it leaves `x` **against** an arrow (`bwd`) and the first occurrence is a collider, activity
+  there already supplies a descendant in `S`; and if it is not a collider, neither is the merged
+  occurrence, and `x ∉ S`. -/
+theorem exists_shorter_of_not_nodup {S : Finset V} (hacyc : IsAcyclicRel r) :
+    ∀ {x y : V} (c : Chain r x y) (din : Option ArrowDir), ¬ BlockedFrom S din c →
+      ¬ c.support.Nodup →
+      ∃ c' : Chain r x y, c'.length < c.length ∧ ¬ BlockedFrom S din c' := by
+  intro x y c
+  induction c with
+  | nil v => intro _ _ hdup; exact absurd (by simp) hdup
+  | @fwd x v y h c ih =>
+      intro din hact hdup
+      rw [blockedFrom_fwd, not_or] at hact
+      have hxS : x ∉ S := fun hm =>
+        hact.1 ((blocksAt_iff_mem_of_not_isCollider (not_isCollider_outOf_right din)).mpr hm)
+      rw [support_fwd, List.nodup_cons, not_and_or, not_not] at hdup
+      rcases hdup with hmem | hdup
+      · -- `x` occurs again: it has a descendant in `S`, else the chain would close a cycle
+        have hnd : ¬ NoDescendantIn r S x := fun hn =>
+          hacyc x (Relation.TransGen.head' h
+            (forward_run c (fun d hd => hn d (Relation.ReflTransGen.head h hd)) hact.2 x hmem))
+        obtain ⟨d, Q, hQlen, hQb⟩ := exists_suffix c (some ArrowDir.into) hact.2 x hmem
+        have hnew : ¬ BlocksAt r S din Q.headDir x := by
+          rintro (⟨-, hm⟩ | ⟨-, hn⟩)
+          · exact hxS hm
+          · exact hnd hn
+        refine ⟨Q, by simp only [length_fwd]; exact Nat.lt_succ_of_le hQlen, ?_⟩
+        exact fun hb => hQb ((blockedFrom_congr_din' Q hnew
+          (fun hb' => hQb (blockedFrom_of_blocksAt_headDir Q hb'))).mp hb)
+      · obtain ⟨c', hlt, hb⟩ := ih (some ArrowDir.into) hact.2 hdup
+        exact ⟨fwd h c', by simpa using hlt, by rw [blockedFrom_fwd, not_or]; exact ⟨hact.1, hb⟩⟩
+  | @bwd x v y h c ih =>
+      intro din hact hdup
+      rw [blockedFrom_bwd, not_or] at hact
+      rw [support_bwd, List.nodup_cons, not_and_or, not_not] at hdup
+      rcases hdup with hmem | hdup
+      · obtain ⟨d, Q, hQlen, hQb⟩ := exists_suffix c (some ArrowDir.outOf) hact.2 x hmem
+        have hQhead : ¬ BlocksAt r S d Q.headDir x := fun hb' =>
+          hQb (blockedFrom_of_blocksAt_headDir Q hb')
+        have hnew : ¬ BlocksAt r S din Q.headDir x := by
+          by_cases hcol : IsCollider din (some ArrowDir.into)
+          · have hnd : ¬ NoDescendantIn r S x := fun hn =>
+              hact.1 ((blocksAt_iff_noDescendantIn_of_isCollider hcol).mpr hn)
+            rintro (⟨hnc, hm⟩ | ⟨-, hn⟩)
+            · exact hQhead (Or.inl ⟨fun hc2 => hnc ⟨hcol.1, hc2.2⟩, hm⟩)
+            · exact hnd hn
+          · have hxS : x ∉ S := fun hm =>
+              hact.1 ((blocksAt_iff_mem_of_not_isCollider hcol).mpr hm)
+            rintro (⟨-, hm⟩ | ⟨hc2, -⟩)
+            · exact hxS hm
+            · exact hcol ⟨hc2.1, rfl⟩
+        refine ⟨Q, by simp only [length_bwd]; exact Nat.lt_succ_of_le hQlen, ?_⟩
+        exact fun hb => hQb ((blockedFrom_congr_din' Q hnew hQhead).mp hb)
+      · obtain ⟨c', hlt, hb⟩ := ih (some ArrowDir.outOf) hact.2 hdup
+        exact ⟨bwd h c', by simpa using hlt, by rw [blockedFrom_bwd, not_or]; exact ⟨hact.1, hb⟩⟩
+
 end Chain
 
 /-! ### d-separation -/
@@ -896,7 +1072,8 @@ of it lies in `S`, and that is the case the book reroutes. The reroute uses the 
 ancestral set: a blocking collider `γ` lies in `T` and has no descendant in `S`, so it must reach
 a vertex `t` of `A ∪ B`, along a line of descent that avoids `S`
 (`Chain.exists_chain_of_reflTransGen`, `Chain.exists_chain_prepend_of_reflTransGen`). Which
-half of the walk survives depends on which block `t` lands in, and that is why the conclusion is a **disjunction**:
+half of the walk survives depends on which block `t` lands in, and that is why the conclusion
+is a **disjunction**:
 
 * the first disjunct hands the caller a chain out of `x` that is unblocked *for every*
   accumulator, so that the caller may prepend its own arrow to it whichever way that arrow points
@@ -1036,7 +1213,21 @@ explicitly constructed undirected graph.
   from `A` to `B`.
 
 Note where acyclicity is used: in "the ancestral set was smallest", i.e. in the fact that a
-vertex of `An(A ∪ B ∪ S)` which is not an ancestor of `S` must be an ancestor of `A ∪ B`. -/
+vertex of `An(A ∪ B ∪ S)` which is not an ancestor of `S` must be an ancestor of `A ∪ B`.
+
+**As formalized.** Each contrapositive is a single structural recursion —
+`exists_moralWalk_of_active` and `exists_active_chain_of_moralWalk` above — and neither
+*iterates*. In particular the book's "rerouting produces a chain with one head-to-head meeting
+fewer, and iterating terminates" is replaced by a disjunctive conclusion: the reroute at the
+first blocking collider either keeps the walk's prefix (`t ∈ B`) and hands the caller a chain to
+extend, or keeps its suffix (`t ∈ A`) and is already a finished answer. So no well-founded
+measure on the number of blocking colliders is needed.
+
+*The three disjointness hypotheses are not used.* Both constructions are local — activity of the
+chain, respectively `S`-avoidance of the walk, supplies every non-membership of `S` that is
+needed — so the equivalence holds for arbitrary `A`, `B`, `S`. They are kept because the
+statement is frozen; the book assumes them because its blocking rule is stated for disjoint
+blocks. -/
 theorem dSeparated_iff_separates_moralGraph_ancestralClosure (D : DAG V) [DecidableRel D.Adj] [DecidableRel (Relation.TransGen D.Adj)] (A B S : Finset V)
     -- USER-INPUT: the two separated blocks are disjoint; Lauritzen Proposition 3.25, p. 48
     -- ("let `A`, `B` and `S` be disjoint subsets")
@@ -1080,13 +1271,35 @@ Lauritzen's chains (§2.1.1, p. 6) are vertex-distinct sequences; `Chain` drops 
 
 *This is not the undirected argument.* `separates_iff_forall_path` follows from
 `SimpleGraph.Walk.bypass`, which shortens a walk to a path with smaller support; the same move
-is **unavailable** here, because deleting a repeated section of a chain can turn a collider into
-a non-collider and so turn a blocked chain into an active one. The equivalence is instead a
-corollary of Proposition 3.25 applied twice: the book proves that *its* (vertex-distinct)
-d-separation is equivalent to separation in `(G_{An(A∪B∪S)})^m`, and
-`dSeparated_iff_separates_moralGraph_ancestralClosure` proves the same for the walk reading, so
-the two agree. That is why this statement — unlike every other basic lemma in this file —
-carries the DAG and the disjointness hypotheses. -/
+is **unavailable** here, because deleting a repeated section of a chain can turn a non-collider
+into a **collider** and so turn an active chain into a blocked one.
+
+⚠️ **The route this docstring originally announced does not close, and is not the one taken.**
+It proposed to read the equivalence off Proposition 3.25 applied twice — "the book proves that
+*its* (vertex-distinct) d-separation is equivalent to separation in `(𝒢_{An(A∪B∪S)})^m`". That
+is a citation, not a proof: nothing in this file proves Proposition 3.25 *for the vertex-distinct
+reading*, and it cannot be obtained from
+`dSeparated_iff_separates_moralGraph_ancestralClosure` by rewriting, because the chain that
+`exists_active_chain_of_moralWalk` builds out of a moral walk need not have distinct vertices
+(two marriage edges may share a witness, and a rerouting line of descent may re-meet the walk).
+Getting a *vertex-distinct* chain out of that construction is a strictly stronger statement than
+the one proved above.
+
+**What is proved instead: bypass, repaired.** Take an active chain from `a` to `b` of **minimal
+length**. If it repeated a vertex `x`, deleting the stretch between two occurrences would leave a
+shorter chain, and `Chain.exists_shorter_of_not_nodup` shows that chain is still active — the
+merged occurrence of `x` cannot block. The one configuration in which it could — `x` becoming a
+collider with no descendant in `S` — is impossible on an active chain: if the chain leaves `x`
+*along* an arrow at the first occurrence, `Chain.forward_run` forces every later vertex, the
+second occurrence of `x` included, to be a descendant of `x`, i.e. a **directed cycle**; and if
+it leaves against an arrow, the first occurrence is already a collider (so activity supplies the
+descendant in `S`) or is not one (so neither is the merged occurrence). Minimality therefore
+forces distinct vertices, and the two readings agree.
+
+*Consequences for the signature.* Acyclicity is genuinely used — it is what kills the cycle
+above, and `Chain.exists_shorter_of_not_nodup` carries it as `IsAcyclicRel`. The three
+**disjointness hypotheses are not used at all**: the argument is chain-local and never looks at
+where `A`, `B` and `S` meet. They are kept because the statement is frozen. -/
 theorem dSeparated_iff_forall_nodup (D : DAG V) [DecidableRel D.Adj] [DecidableRel (Relation.TransGen D.Adj)] (A B S : Finset V)
     -- USER-INPUT: the two separated blocks are disjoint; Lauritzen Proposition 3.25, p. 48
     (hAB : Disjoint A B)
@@ -1096,7 +1309,25 @@ theorem dSeparated_iff_forall_nodup (D : DAG V) [DecidableRel D.Adj] [DecidableR
     (hBS : Disjoint B S) :
     DSeparated D.Adj S A B ↔
       ∀ a ∈ A, ∀ b ∈ B, ∀ c : Chain D.Adj a b, c.support.Nodup → c.Blocked S := by
-  sorry
+  refine ⟨fun h a ha b hb c _ => h a ha b hb c, fun h a ha b hb c => ?_⟩
+  by_contra hact
+  -- induct on a bound for the length: a shortest active chain from `a` to `b` has no repeats
+  have key : ∀ n : ℕ, ∀ c : Chain D.Adj a b, c.length ≤ n → ¬ c.Blocked S → False := by
+    intro n
+    induction n with
+    | zero =>
+        intro c hlen hactc
+        by_cases hnodup : c.support.Nodup
+        · exact hactc (h a ha b hb c hnodup)
+        · obtain ⟨c', hlt, -⟩ := Chain.exists_shorter_of_not_nodup D.acyclic c none hactc hnodup
+          omega
+    | succ n ih =>
+        intro c hlen hactc
+        by_cases hnodup : c.support.Nodup
+        · exact hactc (h a ha b hb c hnodup)
+        · obtain ⟨c', hlt, hb'⟩ := Chain.exists_shorter_of_not_nodup D.acyclic c none hactc hnodup
+          exact ih c' (by omega) hb'
+  exact key c.length c le_rfl hact
 
 /-- **d-separation implies conditional independence** — Lauritzen **Proposition 3.25** (p. 48)
 composed with **Corollary 3.23** (p. 47).
