@@ -37,6 +37,13 @@ are *derived internally* from the i.i.d. inputs.
 Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.) §2.3.2 (eq.
 (2.22)–(2.25)), §10.2 (Thm 10.5), §10.3 (Thm 10.7). Cross-reference: van der Vaart,
 *Asymptotic Statistics*, Lemma 5.10 and Theorem 5.21 (`vdV §5.2–5.3`).
+
+**Bibliographic comments.** Consistency and asymptotic normality of M-estimators under
+minimal conditions are P. J. Huber, "The behavior of maximum likelihood estimates under
+nonstandard conditions," *Proc. Fifth Berkeley Symp. Math. Statist. Probab.*, Vol. I, Univ.
+California Press, 1967, pp. 221–233 (after Huber 1964); the modern empirical-process
+treatment this file actually reuses is ch. 5 of van der Vaart, *Asymptotic Statistics*,
+Cambridge Univ. Press, 1998.
 -/
 
 open MeasureTheory Filter Topology AsymptoticStatistics

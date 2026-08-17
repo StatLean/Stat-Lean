@@ -28,6 +28,14 @@ definition is definitionally the mixture form
 Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.) §2.2 (eq. (2.6),
 (2.7): departures from normality via mixtures), §3.3 (eq. (3.3): contamination
 neighbourhoods).
+
+**Bibliographic comments.** The contaminated-distribution model enters with J. W. Tukey, "A
+survey of sampling from contaminated distributions," in *Contributions to Probability and
+Statistics: Essays in Honor of Harold Hotelling*, Stanford Univ. Press, 1960, pp. 448–485;
+the ε-contamination *neighbourhood* as the domain of a minimax problem is P. J. Huber,
+"Robust estimation of a location parameter," *Ann. Math. Statist.* **35** (1964), 73–101.
+Systematic treatments: Huber and Ronchetti, *Robust Statistics*, 2nd ed., Wiley, 2009,
+§1.2 and ch. 4.
 -/
 
 open MeasureTheory

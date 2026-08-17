@@ -19,6 +19,13 @@ all headline robustness theorems are stated for odd `n`, where the conventions c
 **Reference.** R. A. Maronna, R. D. Martin, V. J. Yohai and M. Salibián-Barrera, *Robust
 Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.) §1.2, §2.3.1
 (eq. (2.18), (2.21): the median as the L¹ location estimate), §4.5.1 (high/low median).
+
+**Bibliographic comments.** The median's status as the archetypal robust estimator was fixed
+by J. L. Hodges, Jr. (*Proc. Fifth Berkeley Symp.*, Vol. I, 1967 — the first finite-sample
+tolerance computations), F. R. Hampel ("A general qualitative definition of robustness,"
+*Ann. Math. Statist.* **42** (1971), 1887–1896 — asymptotic breakdown point 1/2), and the
+Princeton study (Andrews, Bickel, Hampel, Huber, Rogers and Tukey, *Robust Estimates of
+Location: Survey and Advances*, Princeton Univ. Press, 1972).
 -/
 
 open StatLean.MultipleTesting Finset

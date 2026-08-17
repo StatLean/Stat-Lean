@@ -24,6 +24,11 @@ differentiable `ρ` with score `ψ = ρ'` — is characterized by the estimating
 **Reference.** R. A. Maronna, R. D. Martin, V. J. Yohai and M. Salibián-Barrera, *Robust
 Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.) §2.3.1 (eq.
 (2.13), (2.16), (2.18)–(2.19)), Theorem 10.1 (existence/uniqueness of solutions).
+
+**Bibliographic comments.** Location M-estimators — maximum-likelihood-type estimators for
+a free loss `ρ` — are P. J. Huber, "Robust estimation of a location parameter," *Ann. Math.
+Statist.* **35** (1964), 73–101; existence, uniqueness and computation are treated in Huber
+and Ronchetti, *Robust Statistics*, 2nd ed., Wiley, 2009, chs. 3 and 6.
 -/
 
 open Filter Topology

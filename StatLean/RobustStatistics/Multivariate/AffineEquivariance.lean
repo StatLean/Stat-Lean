@@ -16,6 +16,12 @@ avoiding inner-product-space packaging.
 
 **Reference.** R. A. Maronna, R. D. Martin, V. J. Yohai and M. Salibián-Barrera, *Robust
 Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.) §6.2, §6.17.1.
+
+**Bibliographic comments.** Affine-equivariant multivariate location and scatter estimation
+begins with R. A. Maronna, "Robust M-estimators of multivariate location and scatter,"
+*Ann. Statist.* **4** (1976), 51–67; see also ch. 8 of Huber, *Robust Statistics*, Wiley,
+1981, and P. L. Davies, "Asymptotic behaviour of S-estimates of multivariate location
+parameters and dispersion matrices," *Ann. Statist.* **15** (1987), 1269–1292.
 -/
 
 open MeasureTheory

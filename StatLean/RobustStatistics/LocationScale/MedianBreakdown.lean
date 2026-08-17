@@ -22,6 +22,12 @@ the sample mean has `m* = 0` (`LocationScale/Mean.lean`).
 **Reference.** R. A. Maronna, R. D. Martin, V. J. Yohai and M. Salibián-Barrera, *Robust
 Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.) §3.2.5 (eq.
 (3.24)–(3.26)), §3.8.2.
+
+**Bibliographic comments.** The finite-sample computation — the median resists `k` of
+`2k+1` replacements, and no location-equivariant estimator does better than `⌊(n−1)/2⌋` —
+is D. L. Donoho and P. J. Huber, "The notion of breakdown point," in *A Festschrift for
+Erich L. Lehmann*, Wadsworth, 1983, pp. 157–184, sharpening Hodges (1967) and Hampel's
+asymptotic 1/2 (1971).
 -/
 
 open Finset
