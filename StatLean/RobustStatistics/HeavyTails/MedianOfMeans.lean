@@ -2,7 +2,7 @@ import StatLean.RobustStatistics.LocationScale.Median
 import StatLean.RobustStatistics.LocationScale.Mean
 import StatLean.ConcentrationInequalities.SubGaussian.Hoeffding
 import StatLean.ConcentrationInequalities.SubGaussian.Bounded
-import Mathlib.Probability.Variance
+import Mathlib.Probability.Moments.Variance
 
 /-!
 # The median-of-means estimator — sub-Gaussian deviation under two moments

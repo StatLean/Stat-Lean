@@ -1,5 +1,5 @@
 import StatLean.RobustStatistics.LocationScale.Mean
-import Mathlib.Probability.Variance
+import Mathlib.Probability.Moments.Variance
 
 /-!
 # The empirical-mean baseline — Chebyshev deviation under two moments

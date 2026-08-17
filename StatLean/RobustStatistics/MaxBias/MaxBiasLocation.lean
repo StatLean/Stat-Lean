@@ -1,6 +1,7 @@
 import StatLean.RobustStatistics.MEstimation.MLocationFunctional
 import StatLean.RobustStatistics.MEstimation.AsymptoticBreakdown
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Data.Real.Sign
 
 /-!
 # The maximum asymptotic bias of location M-estimators — the sharp `b_ε` bound

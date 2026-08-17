@@ -1,6 +1,6 @@
 import StatLean.RobustStatistics.MEstimation.MLocationFunctional
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
-import Mathlib.Probability.Variance
+import Mathlib.Probability.Moments.Variance
 
 /-!
 # Catoni's mean estimator — a soft-truncation M-estimator with sub-Gaussian deviation

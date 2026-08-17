@@ -2,7 +2,7 @@ import StatLean.RobustStatistics.LocationScale.Mean
 import StatLean.ConcentrationInequalities.SubGaussian.Hoeffding
 import StatLean.ConcentrationInequalities.SubGaussian.Bounded
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
-import Mathlib.Probability.Variance
+import Mathlib.Probability.Moments.Variance
 
 /-!
 # Multivariate median-of-means via minimal-radius majority balls — dimension-free

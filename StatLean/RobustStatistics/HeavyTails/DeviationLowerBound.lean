@@ -1,6 +1,6 @@
 import StatLean.RobustStatistics.Core.Contamination
 import Mathlib.MeasureTheory.Constructions.Pi
-import Mathlib.Probability.Variance
+import Mathlib.Probability.Moments.Variance
 
 /-!
 # The sub-Gaussian deviation rate is optimal — no estimator beats `σ√(log(1/δ)/n)`

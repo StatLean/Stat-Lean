@@ -1,7 +1,7 @@
 import StatLean.RobustStatistics.ForMathlib.OrderStatPerturb
 import StatLean.RobustStatistics.LocationScale.Mean
 import StatLean.ConcentrationInequalities.Bernstein.Bernstein
-import Mathlib.Probability.Variance
+import Mathlib.Probability.Moments.Variance
 
 /-!
 # The trimmed mean is sub-Gaussian — truncation at data-driven quantiles
