@@ -131,6 +131,40 @@ theorem sampleMean_chebyshev_deviation {n : ℕ} (hn : n ≠ 0) {X : Fin n → �
     (hσ : 0 < σ2) :
     μprob.real {ξ | Real.sqrt σ2 * Real.sqrt (1 / (n * δ))
       ≤ |sampleMean (fun i => X i ξ) - μ₀|} ≤ δ := by
-  sorry
+  have hnR : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn)
+  have hnR' : (n : ℝ) ≠ 0 := ne_of_gt hnR
+  have hML : ∀ i, MemLp (X i) 2 μprob := fun i =>
+    memLp_two_of_law (hX_meas i) (hX_law i) hL2
+  have hint : ∀ i, Integrable (X i) μprob := fun i => (hML i).integrable (by norm_num)
+  have hEX : ∀ i, ∫ ξ, X i ξ ∂μprob = μ₀ := fun i =>
+    integral_of_law (hX_meas i) (hX_law i) hmean
+  have hMmeas : Measurable fun ξ => sampleMean (fun i => X i ξ) := by
+    simp only [sampleMean]
+    exact (Finset.measurable_sum _ fun i _ => hX_meas i).div_const _
+  have hMmean : ∫ ξ, sampleMean (fun i => X i ξ) ∂μprob = μ₀ := by
+    simp only [sampleMean]
+    rw [integral_div, integral_finset_sum _ fun i _ => hint i]
+    simp only [hEX, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    field_simp
+  have hM2 : MemLp (fun ξ => sampleMean (fun i => X i ξ)) 2 μprob := by
+    have hsum : MemLp (fun ξ => ∑ i, X i ξ) 2 μprob :=
+      memLp_finset_sum _ fun i _ => hML i
+    simpa [sampleMean, div_eq_inv_mul] using hsum.const_mul ((n : ℝ)⁻¹)
+  -- the variance of the empirical mean, from the previous theorem
+  have hVM : Var[fun ξ => sampleMean (fun i => X i ξ); μprob] = σ2 / n := by
+    rw [variance_eq_integral hMmeas.aemeasurable, hMmean]
+    exact sampleMean_variance hn hX_meas hX_indep hX_law hL2 hmean hvar
+  -- Chebyshev at the threshold `c = σ√(1/(nδ))`, whose square is `σ²/(nδ)`
+  set c : ℝ := Real.sqrt σ2 * Real.sqrt (1 / (n * δ)) with hcdef
+  have hc : 0 < c :=
+    mul_pos (Real.sqrt_pos.mpr hσ) (Real.sqrt_pos.mpr (by positivity))
+  have hc2 : c ^ 2 = σ2 * (1 / (n * δ)) := by
+    rw [hcdef, mul_pow, Real.sq_sqrt hσ.le, Real.sq_sqrt (by positivity)]
+  have hcheb := meas_ge_le_variance_div_sq (μ := μprob) hM2 hc
+  rw [hMmean, hVM, hc2] at hcheb
+  have hval : σ2 / (n : ℝ) / (σ2 * (1 / (n * δ))) = δ := by
+    field_simp
+  rw [hval] at hcheb
+  exact ENNReal.toReal_le_of_le_ofReal hδ.le hcheb
 
 end StatLean.RobustStatistics
