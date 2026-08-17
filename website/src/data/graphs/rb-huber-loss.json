@@ -1,0 +1,18 @@
+{
+  "root": "StatLean.RobustStatistics.huberRho",
+  "nodes": [
+    {"id":"StatLean.RobustStatistics.huberRho","label":"huberRho","full":"StatLean.RobustStatistics.huberRho","kind":"root","decl":"def","module":"StatLean.RobustStatistics.LocationScale.Huber"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"abs","label":"abs","full":"abs","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Order.Group.Unbundled.Abs"},
+    {"id":"Real.lattice","label":"lattice","full":"Real.lattice","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Real.decidableLE","label":"decidableLE","full":"Real.decidableLE","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Monoid.toPow","label":"toPow","full":"Monoid.toPow","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Group.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.RobustStatistics.huberRho","target":"Real"},
+    {"source":"StatLean.RobustStatistics.huberRho","target":"abs"},
+    {"source":"StatLean.RobustStatistics.huberRho","target":"Real.lattice"},
+    {"source":"StatLean.RobustStatistics.huberRho","target":"Real.decidableLE"},
+    {"source":"StatLean.RobustStatistics.huberRho","target":"Monoid.toPow"}
+  ]
+}
