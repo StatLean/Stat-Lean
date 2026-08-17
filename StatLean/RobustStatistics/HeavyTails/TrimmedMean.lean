@@ -220,6 +220,160 @@ theorem measure_ge_quantile (P : Measure ℝ) [IsProbabilityMeasure P]
 variable {Ξ : Type*} [MeasurableSpace Ξ] {μprob : Measure Ξ} [IsProbabilityMeasure μprob]
   {P : Measure ℝ} [IsProbabilityMeasure P]
 
+/-! ### Bernstein for indicator counts
+
+All four bracket events of `LM (2.6)`–`(2.7)` are upper deviations of the count
+`#{i : Yᵢ ∈ A}` for a suitable half-line `A`, so one brick serves all four. A centred
+indicator is bounded by `1` and has variance exactly `q(1−q)`, hence satisfies the Bernstein
+moment condition with scale `b = 1/3` — the scale that produces `LM`'s `3/16`. -/
+
+/-- The Bernstein moment condition for a bounded centred variable needs `2·3^{k-2} ≤ k!`
+for `k ≥ 3` — with equality at `k = 3`, which is what pins the scale `b = 1/3`. -/
+private theorem two_mul_three_pow_le_factorial {k : ℕ} (hk : 3 ≤ k) :
+    2 * 3 ^ (k - 2) ≤ k.factorial := by
+  induction k, hk using Nat.le_induction with
+  | base => norm_num [Nat.factorial]
+  | succ m hm ih =>
+    have h1 : m + 1 - 2 = (m - 2) + 1 := by omega
+    rw [h1, pow_succ, Nat.factorial_succ]
+    calc 2 * (3 ^ (m - 2) * 3) = 3 * (2 * 3 ^ (m - 2)) := by ring
+      _ ≤ 3 * m.factorial := by gcongr
+      _ ≤ (m + 1) * m.factorial := by gcongr; omega
+
+open scoped ENNReal NNReal in
+open Finset in
+/-- **Upper-deviation bound for an i.i.d. count** (the engine of `LM (2.6)`–`(2.7)`):
+if `P(A) = q ∈ (0,1)` then, for every deviation `t > 0`,
+
+  `μ{ #{i : Yᵢ ∈ A} ≥ qn + tn } ≤ exp(−n t²/(2(q(1−q) + t/3)))`.
+
+This is `bernstein_inequality` for the centred indicators `1_A(Yᵢ) − q`, whose variance is
+`q(1−q)` and whose Bernstein scale is `b = 1/3`. The count is written as a sum of
+indicators (no decidability side conditions); the event is stated non-strictly, which is
+what the order-statistic counting bricks produce, while `bernstein_inequality` supplies the
+strict event — the two agree in the limit because the exponent is continuous in `t`. -/
+private theorem count_upper_deviation {n : ℕ} {Y : Fin n → Ξ → ℝ} {A : Set ℝ} {q t : ℝ}
+    (hY_meas : ∀ i, Measurable (Y i)) (hY_indep : iIndepFun Y μprob)
+    (hY_law : ∀ i, μprob.map (Y i) = P) (hA : MeasurableSet A)
+    (hq : P.real A = q) (hq0 : 0 < q) (hq1 : q < 1) (hn : 0 < n) (ht : 0 < t) :
+    μprob {ξ | q * n + t * n ≤ ∑ i, A.indicator (fun _ => (1:ℝ)) (Y i ξ)}
+      ≤ ENNReal.ofReal (Real.exp (-(n : ℝ) * t ^ 2 / (2 * (q * (1 - q) + t / 3)))) := by
+  have hqq : 0 < q * (1 - q) := by nlinarith
+  -- ### The centred indicator and its first two moments under `P`.
+  have hgm : Measurable (fun x : ℝ => A.indicator (fun _ => (1:ℝ)) x - q) :=
+    (measurable_const.indicator hA).sub measurable_const
+  have hindint : Integrable (fun x : ℝ => A.indicator (fun _ => (1:ℝ)) x) P :=
+    (integrable_const (1:ℝ)).indicator hA
+  have hintind : ∫ x, A.indicator (fun _ => (1:ℝ)) x ∂P = q := by
+    rw [integral_indicator_const (1:ℝ) hA, hq, smul_eq_mul, mul_one]
+  have hmean : ∫ x, (A.indicator (fun _ => (1:ℝ)) x - q) ∂P = 0 := by
+    rw [integral_sub hindint (integrable_const q), hintind, integral_const]
+    simp
+  have hsqpt : ∀ x : ℝ, (A.indicator (fun _ => (1:ℝ)) x - q) ^ 2
+      = (1 - 2 * q) * A.indicator (fun _ => (1:ℝ)) x + q ^ 2 := by
+    intro x
+    by_cases hx : x ∈ A
+    · rw [Set.indicator_of_mem hx]; ring
+    · rw [Set.indicator_of_notMem hx]; ring
+  have hsqint : Integrable (fun x : ℝ => (A.indicator (fun _ => (1:ℝ)) x - q) ^ 2) P := by
+    refine Integrable.congr ((hindint.const_mul (1 - 2 * q)).add (integrable_const (q ^ 2))) ?_
+    exact Filter.Eventually.of_forall fun x => (hsqpt x).symm
+  have hvar : ∫ x, (A.indicator (fun _ => (1:ℝ)) x - q) ^ 2 ∂P = q * (1 - q) := by
+    rw [integral_congr_ae (Filter.Eventually.of_forall hsqpt),
+      integral_add (hindint.const_mul (1 - 2 * q)) (integrable_const (q ^ 2)),
+      integral_const_mul, hintind, integral_const]
+    simp
+    ring
+  -- ### Transfer of moments from `P` to `μprob` along the common law.
+  have htr : ∀ f : ℝ → ℝ, Measurable f → ∀ i, ∫ ξ, f (Y i ξ) ∂μprob = ∫ x, f x ∂P := by
+    intro f hf i
+    rw [← hY_law i]
+    exact (integral_map (hY_meas i).aemeasurable hf.aestronglyMeasurable).symm
+  have htrL : ∀ f : ℝ → ℝ≥0∞, Measurable f → ∀ i,
+      ∫⁻ ξ, f (Y i ξ) ∂μprob = ∫⁻ x, f x ∂P := by
+    intro f hf i
+    rw [← hY_law i]
+    exact (lintegral_map hf (hY_meas i)).symm
+  -- ### The Bernstein condition, with variance `q(1−q)` and scale `1/3`.
+  have hB : ∀ i, ConcentrationInequalities.HasBernsteinCondition
+      (fun ξ => A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q)
+      (⟨q * (1 - q), hqq.le⟩ : ℝ≥0) (⟨1/3, by norm_num⟩ : ℝ≥0) μprob := by
+    intro i
+    refine ⟨by rw [htr _ hgm i]; exact hmean, ?_, ?_⟩
+    · rw [htr (fun x => (A.indicator (fun _ => (1:ℝ)) x - q) ^ 2) (hgm.pow_const 2) i]
+      exact hvar
+    · intro k hk
+      have hpt : ∀ ξ : Ξ, |A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q| ^ k
+          ≤ (A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q) ^ 2 := by
+        intro ξ
+        have hb : |A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q| ≤ 1 := by
+          by_cases hx : Y i ξ ∈ A
+          · rw [Set.indicator_of_mem hx, abs_le]; constructor <;> linarith
+          · rw [Set.indicator_of_notMem hx, abs_le]; constructor <;> linarith
+        calc |A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q| ^ k
+            = |A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q| ^ 2
+              * |A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q| ^ (k - 2) := by
+              rw [← pow_add]; congr 1; omega
+          _ ≤ |A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q| ^ 2 * 1 := by
+              gcongr
+              exact pow_le_one₀ (abs_nonneg _) hb
+          _ = (A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q) ^ 2 := by rw [mul_one, sq_abs]
+      calc ∫⁻ ξ, ENNReal.ofReal (|A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q| ^ k) ∂μprob
+          ≤ ∫⁻ ξ, ENNReal.ofReal ((A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q) ^ 2) ∂μprob :=
+            lintegral_mono fun ξ => ENNReal.ofReal_le_ofReal (hpt ξ)
+        _ = ENNReal.ofReal (q * (1 - q)) := by
+            rw [htrL (fun x => ENNReal.ofReal ((A.indicator (fun _ => (1:ℝ)) x - q) ^ 2))
+              (ENNReal.measurable_ofReal.comp (hgm.pow_const 2)) i,
+              ← ofReal_integral_eq_lintegral_ofReal hsqint
+                (Filter.Eventually.of_forall fun x => sq_nonneg _), hvar]
+        _ ≤ ENNReal.ofReal ((⟨q * (1 - q), hqq.le⟩ : ℝ≥0) / 2 * (k.factorial : ℝ)
+              * ((⟨1/3, by norm_num⟩ : ℝ≥0) : ℝ) ^ (k - 2)) := by
+            refine ENNReal.ofReal_le_ofReal ?_
+            have hfac : (2 : ℝ) * 3 ^ (k - 2) ≤ (k.factorial : ℝ) := by
+              exact_mod_cast two_mul_three_pow_le_factorial hk
+            have hp : (0:ℝ) < (3 ^ (k - 2) : ℝ) := by positivity
+            rw [show ((1:ℝ)/3) ^ (k - 2) = (3 ^ (k - 2) : ℝ)⁻¹ by
+              rw [one_div, ← inv_pow], inv_eq_one_div, mul_one_div, le_div_iff₀ hp]
+            nlinarith [mul_le_mul_of_nonneg_left hfac
+              (show (0:ℝ) ≤ q * (1 - q) / 2 by positivity)]
+  -- ### Bernstein at every deviation `s ∈ (0, t)`, then let `s ↑ t`.
+  have hsum : ∀ ξ : Ξ, ∑ i, (A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q)
+      = (∑ i, A.indicator (fun _ => (1:ℝ)) (Y i ξ)) - q * n := by
+    intro ξ
+    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      nsmul_eq_mul, mul_comm (n : ℝ) q]
+  have hkey : ∀ s : ℝ, 0 < s → s < t →
+      μprob {ξ | q * n + t * n ≤ ∑ i, A.indicator (fun _ => (1:ℝ)) (Y i ξ)}
+        ≤ ENNReal.ofReal (Real.exp (-(n : ℝ) * s ^ 2 / (2 * (q * (1 - q) + s / 3)))) := by
+    intro s hs hst
+    have hbern := ConcentrationInequalities.bernstein_inequality
+      (X := fun i ξ => A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q) (μ := μprob)
+      (fun i => (hgm.comp (hY_meas i)))
+      (hY_indep.comp (fun _ => fun x : ℝ => A.indicator (fun _ => (1:ℝ)) x - q)
+        (fun _ => hgm)) hB hn (by rw [← NNReal.coe_pos]; norm_num)
+      (by rw [← NNReal.coe_pos]; simpa using hqq) hs
+    have hsub : {ξ : Ξ | q * n + t * n ≤ ∑ i, A.indicator (fun _ => (1:ℝ)) (Y i ξ)}
+        ⊆ {ξ : Ξ | s < (∑ i, (A.indicator (fun _ => (1:ℝ)) (Y i ξ) - q)) / (n : ℝ)} := by
+      intro ξ hξ
+      simp only [Set.mem_setOf_eq] at hξ ⊢
+      rw [hsum ξ, lt_div_iff₀ (by exact_mod_cast hn)]
+      nlinarith [show (0:ℝ) < n by exact_mod_cast hn]
+    refine le_trans (measure_mono hsub) (le_trans hbern (le_of_eq ?_))
+    congr 2
+    simp only [NNReal.coe_mk]
+    ring
+  have hden : 2 * (q * (1 - q) + t / 3) ≠ 0 := by positivity
+  have hcont : ContinuousAt
+      (fun s : ℝ => ENNReal.ofReal
+        (Real.exp (-(n : ℝ) * s ^ 2 / (2 * (q * (1 - q) + s / 3))))) t := by
+    refine ENNReal.continuous_ofReal.continuousAt.comp ?_
+    refine Real.continuous_exp.continuousAt.comp ?_
+    exact ContinuousAt.div (by fun_prop) (by fun_prop) hden
+  refine ge_of_tendsto (hcont.continuousWithinAt (s := Set.Iio t)) ?_
+  filter_upwards [self_mem_nhdsWithin,
+    (eventually_gt_nhds ht).filter_mono nhdsWithin_le_nhds] with s hslt hspos
+  exact hkey s hspos (Set.mem_Iio.1 hslt)
+
 open StatLean.MultipleTesting in
 /-- **The Bernstein order-statistic brackets** (`LM (2.6)`–`(2.7)`): with probability at
 least `1 − 4 exp(−(3/16) r)`, the trimming order statistics of an i.i.d. sample `Y` are
