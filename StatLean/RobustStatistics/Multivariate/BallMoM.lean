@@ -257,7 +257,7 @@ theorem norm_blockMeanVec_sq_moment {m : ℕ} (hm : m ≠ 0)
   calc ∫ ξ, ‖(m : ℝ)⁻¹ • (∑ i, X i ξ) - μ₀‖ ^ 2 ∂μprob
       = ∫ ξ, ((m : ℝ) ^ 2)⁻¹ * ‖∑ i, (X i ξ - μ₀)‖ ^ 2 ∂μprob := by
         refine integral_congr_ae (Filter.Eventually.of_forall fun ξ => ?_)
-        show ‖(m : ℝ)⁻¹ • (∑ i, X i ξ) - μ₀‖ ^ 2
+        change ‖(m : ℝ)⁻¹ • (∑ i, X i ξ) - μ₀‖ ^ 2
             = ((m : ℝ) ^ 2)⁻¹ * ‖∑ i, (X i ξ - μ₀)‖ ^ 2
         rw [hpt ξ, norm_smul, mul_pow, Real.norm_eq_abs, abs_inv, Nat.abs_cast, inv_pow]
     _ = ((m : ℝ) ^ 2)⁻¹ * ((m : ℝ) * trSigma) := by rw [integral_const_mul, hsum]
@@ -312,7 +312,8 @@ private theorem iIndepFun_blockTuple {k m : ℕ}
     intro j
     have hinj : Function.Injective (fun i : Fin m => ((j, i) : Fin k × Fin m)) :=
       fun a b h => by simpa using h
-    have hind : iIndepFun (fun i : Fin m => X j i) μprob := hX_indep.precomp (g := fun i : Fin m => ((j, i) : Fin k × Fin m)) hinj
+    have hind : iIndepFun (fun i : Fin m => X j i) μprob :=
+      hX_indep.precomp (g := fun i : Fin m => ((j, i) : Fin k × Fin m)) hinj
     rw [(iIndepFun_iff_map_fun_eq_pi_map (fun i => (hX_meas j i).aemeasurable)).mp hind]
     simp [hX_law j]
   have hT : μprob.map (fun ξ (q : Fin k × Fin m) => X q.1 q.2 ξ)
@@ -334,7 +335,12 @@ for i.i.d. random vectors with mean `μ₀` and covariance trace `trSigma`, bloc
 `k = ⌈8 log(1/δ)⌉` blocks of size `m` with `n = km`, any measurable selection `Ĉ` of
 ball-MoM centers satisfies, with probability at least `1 − δ`,
 
-  `‖Ĉ − μ₀‖ ≤ 4 √( trSigma (8 log(1/δ) + 1) / n )`. -/
+  `‖Ĉ − μ₀‖ ≤ 4 √( trSigma (8 log(1/δ) + 1) / n )`.
+
+**Note on `hCmeas`.** The selection's measurability turns out to be unnecessary: the
+deviation event is *contained* in the block-failure event, and `measureReal_mono` needs
+no measurability of the smaller set (only finiteness of the larger, automatic here). The
+hypothesis is kept because the statement is frozen. -/
 theorem ballMoM_deviation {k m n : ℕ} (hk : k ≠ 0) (hm : m ≠ 0)
     {X : Fin k → Fin m → Ξ → EuclideanSpace ℝ (Fin d)}
     {Chat : Ξ → EuclideanSpace ℝ (Fin d)} {μ₀ : EuclideanSpace ℝ (Fin d)}
@@ -359,6 +365,230 @@ theorem ballMoM_deviation {k m n : ℕ} (hk : k ≠ 0) (hm : m ≠ 0)
     μprob.real {ξ | 4 * Real.sqrt (trSigma * (8 * Real.log (1 / δ) + 1) / n)
         < ‖Chat ξ - μ₀‖}
       ≤ δ := by
-  sorry
+  have hkR : (0 : ℝ) < k := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hk)
+  have hmR : (0 : ℝ) < m := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm)
+  have hs2 : 0 < trSigma / m := div_pos htrpos hmR
+  -- the Chebyshev radius
+  have hr : 0 < 2 * Real.sqrt (trSigma / m) :=
+    mul_pos two_pos (Real.sqrt_pos.mpr hs2)
+  have hr2 : (2 * Real.sqrt (trSigma / m)) ^ 2 = 4 * (trSigma / m) := by
+    rw [mul_pow, Real.sq_sqrt hs2.le]; ring
+  -- ## Step 1: the per-block second moment
+  have hmom : ∀ j : Fin k,
+      ∫ ξ, ‖(m : ℝ)⁻¹ • (∑ i, X j i ξ) - μ₀‖ ^ 2 ∂μprob = trSigma / m := by
+    intro j
+    refine norm_blockMeanVec_sq_moment hm (fun i => hX_meas j i) ?_ (fun i => hX_law j i)
+      hL2 hmean htr
+    exact hX_indep.precomp (g := fun i : Fin m => ((j, i) : Fin k × Fin m))
+      (fun a b h => by simpa using h)
+  -- ## Step 2: square-integrability of the block means
+  have hXL2 : ∀ j i, MemLp (X j i) 2 μprob := by
+    intro j i
+    have h := hL2
+    rw [← hX_law j i] at h
+    exact (memLp_map_measure_iff (by fun_prop) (hX_meas j i).aemeasurable).mp h
+  have hZL2 : ∀ j : Fin k, MemLp (fun ξ => (m : ℝ)⁻¹ • (∑ i, X j i ξ) - μ₀) 2 μprob := by
+    intro j
+    exact (((memLp_finset_sum Finset.univ fun i _ => hXL2 j i).const_smul
+      ((m : ℝ)⁻¹))).sub (memLp_const μ₀)
+  have hInt : ∀ j : Fin k,
+      Integrable (fun ξ => ‖(m : ℝ)⁻¹ • (∑ i, X j i ξ) - μ₀‖ ^ 2) μprob := fun j =>
+    (memLp_two_iff_integrable_sq_norm (hZL2 j).aestronglyMeasurable).mp (hZL2 j)
+  -- ## Step 3: Chebyshev in norm — each block mean misses the ball w.p. ≤ 1/4
+  have hMarkov : ∀ j : Fin k, μprob.real
+      {ξ | 2 * Real.sqrt (trSigma / m) < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖}
+      ≤ 1 / 4 := by
+    intro j
+    have h1 := mul_meas_ge_le_integral_of_nonneg
+      (f := fun ξ => ‖(m : ℝ)⁻¹ • (∑ i, X j i ξ) - μ₀‖ ^ 2)
+      (Filter.Eventually.of_forall fun ξ => by positivity) (hInt j)
+      ((2 * Real.sqrt (trSigma / m)) ^ 2)
+    rw [hmom j, hr2] at h1
+    have hsub :
+        {ξ | 2 * Real.sqrt (trSigma / m) < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖}
+        ⊆ {ξ | 4 * (trSigma / m) ≤ ‖(m : ℝ)⁻¹ • (∑ i, X j i ξ) - μ₀‖ ^ 2} := by
+      intro ξ hξ
+      have hξ' : 2 * Real.sqrt (trSigma / m) < ‖(m : ℝ)⁻¹ • (∑ i, X j i ξ) - μ₀‖ := hξ
+      have : (2 * Real.sqrt (trSigma / m)) ^ 2
+          ≤ ‖(m : ℝ)⁻¹ • (∑ i, X j i ξ) - μ₀‖ ^ 2 := by
+        nlinarith [hr, norm_nonneg ((m : ℝ)⁻¹ • (∑ i, X j i ξ) - μ₀)]
+      rw [hr2] at this
+      exact this
+    have h2 := measureReal_mono hsub (measure_ne_top μprob _)
+    nlinarith [h1, h2, hs2, measureReal_nonneg (μ := μprob)
+      (s := {ξ | 4 * (trSigma / m) ≤ ‖(m : ℝ)⁻¹ • (∑ i, X j i ξ) - μ₀‖ ^ 2})]
+  -- ## Step 4: the block-failure indicators and their means
+  have hnorm_meas : ∀ j : Fin k,
+      Measurable (fun ξ => ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖) := by
+    intro j
+    have h : Measurable (fun ξ => (m : ℝ)⁻¹ • (∑ i, X j i ξ) - μ₀) := by
+      refine Measurable.sub ?_ measurable_const
+      exact (Finset.measurable_sum Finset.univ fun i _ => hX_meas j i).const_smul ((m : ℝ)⁻¹)
+    exact h.norm
+  have hbad_meas : ∀ j : Fin k, MeasurableSet
+      {ξ | 2 * Real.sqrt (trSigma / m) < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖} :=
+    fun j => measurableSet_lt measurable_const (hnorm_meas j)
+  have hWmean : ∀ j : Fin k,
+      ∫ ξ, (if 2 * Real.sqrt (trSigma / m)
+          < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0) ∂μprob
+      = μprob.real
+        {ξ | 2 * Real.sqrt (trSigma / m) < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖} := by
+    intro j
+    rw [show (fun ξ => if 2 * Real.sqrt (trSigma / m)
+            < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0)
+        = Set.indicator {ξ | 2 * Real.sqrt (trSigma / m)
+            < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖} (1 : Ξ → ℝ) from by
+      funext ξ; simp [Set.indicator_apply]]
+    exact integral_indicator_one (hbad_meas j)
+  have hWle : ∀ j : Fin k, ∫ ξ, (if 2 * Real.sqrt (trSigma / m)
+      < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0) ∂μprob ≤ 1 / 4 := by
+    intro j; rw [hWmean j]; exact hMarkov j
+  -- ## Step 5: bounded ⟹ sub-Gaussian with proxy 1/4
+  have hprox : ((‖(1 : ℝ) - 0‖₊ / 2) ^ 2 : NNReal) = 1 / 4 := by
+    rw [← NNReal.coe_inj]; push_cast; norm_num
+  have hWsubG : ∀ j : Fin k, HasSubgaussianMGF
+      (fun ξ => (if 2 * Real.sqrt (trSigma / m)
+            < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0)
+          - ∫ ξ, (if 2 * Real.sqrt (trSigma / m)
+            < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0) ∂μprob)
+      ((1 : NNReal) / 4) μprob := by
+    intro j
+    have h := ConcentrationInequalities.isSubGaussian_of_mem_Icc (μ := μprob) (a := 0) (b := 1)
+      (X := fun ξ => if 2 * Real.sqrt (trSigma / m)
+        < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0)
+      (((measurable_const.ite (hbad_meas j) measurable_const)).aemeasurable)
+      (Filter.Eventually.of_forall fun ξ => by
+        change (if 2 * Real.sqrt (trSigma / m)
+            < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0)
+          ∈ Set.Icc (0 : ℝ) 1
+        rw [Set.mem_Icc]; split_ifs <;> norm_num)
+    rw [hprox] at h
+    exact h
+  -- ## Step 6: independence of the centred indicators (grouping)
+  have hindepW : iIndepFun
+      (fun (j : Fin k) (ξ : Ξ) => (if 2 * Real.sqrt (trSigma / m)
+            < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0)
+          - ∫ ξ, (if 2 * Real.sqrt (trSigma / m)
+            < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0) ∂μprob)
+      μprob := by
+    have hbt := iIndepFun_blockTuple hX_meas hX_indep hX_law
+    refine hbt.comp (fun j (g : Fin m → EuclideanSpace ℝ (Fin d)) =>
+      (if 2 * Real.sqrt (trSigma / m) < ‖(m : ℝ)⁻¹ • (∑ i, g i) - μ₀‖ then (1 : ℝ) else 0)
+        - ∫ ξ, (if 2 * Real.sqrt (trSigma / m)
+            < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0) ∂μprob)
+      (fun j => ?_)
+    have hg : Measurable
+        (fun g : Fin m → EuclideanSpace ℝ (Fin d) => ‖(m : ℝ)⁻¹ • (∑ i, g i) - μ₀‖) := by
+      fun_prop
+    exact (measurable_const.ite (measurableSet_lt measurable_const hg)
+      measurable_const).sub_const _
+  -- ## Step 7: Hoeffding on the indicators
+  have hHoeff : μprob.real {ξ | (k : ℝ) / 4 ≤ ∑ j, ((if 2 * Real.sqrt (trSigma / m)
+        < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0)
+      - ∫ ξ, (if 2 * Real.sqrt (trSigma / m)
+        < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0) ∂μprob)}
+      ≤ Real.exp (-(k : ℝ) / 8) := by
+    have h := HasSubgaussianMGF.measure_sum_ge_le_of_iIndepFun hindepW
+      (s := Finset.univ) (c := fun _ : Fin k => (1 : NNReal) / 4)
+      (fun j _ => hWsubG j) (by positivity : (0 : ℝ) ≤ (k : ℝ) / 4)
+    refine h.trans (le_of_eq ?_)
+    congr 1
+    have hcs : ((∑ _j : Fin k, (1 : NNReal) / 4 : NNReal) : ℝ) = (k : ℝ) / 4 := by
+      push_cast [Finset.sum_const, Finset.card_univ]
+      simp [nsmul_eq_mul]
+      ring
+    rw [hcs]
+    field_simp
+    ring
+  -- ## Step 8: failure of the majority forces a large centred indicator sum
+  have hBAD : ∀ ξ : Ξ,
+      ¬ (k < 2 * momCount (fun j => blockMeanVec (fun j i => X j i ξ) j) μ₀
+            (2 * Real.sqrt (trSigma / m))) →
+      (k : ℝ) / 4 ≤ ∑ j, ((if 2 * Real.sqrt (trSigma / m)
+          < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0)
+        - ∫ ξ, (if 2 * Real.sqrt (trSigma / m)
+          < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0) ∂μprob) := by
+    intro ξ hξ
+    have hcount : 2 * momCount (fun j => blockMeanVec (fun j i => X j i ξ) j) μ₀
+        (2 * Real.sqrt (trSigma / m)) ≤ k := Nat.not_lt.mp hξ
+    have hpart : (Finset.univ.filter fun j : Fin k => 2 * Real.sqrt (trSigma / m)
+          < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖).card
+        + momCount (fun j => blockMeanVec (fun j i => X j i ξ) j) μ₀
+            (2 * Real.sqrt (trSigma / m)) = k := by
+      have h := Finset.card_filter_add_card_filter_not
+        (s := (Finset.univ : Finset (Fin k)))
+        (p := fun j => 2 * Real.sqrt (trSigma / m)
+          < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖)
+      simpa [momCount, not_lt] using h
+    have hc2 : k ≤ 2 * (Finset.univ.filter fun j : Fin k => 2 * Real.sqrt (trSigma / m)
+        < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖).card := by omega
+    have hcR : (k : ℝ) / 2 ≤ ((Finset.univ.filter fun j : Fin k =>
+        2 * Real.sqrt (trSigma / m)
+          < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖).card : ℝ) := by
+      have h : (k : ℝ) ≤ 2 * ((Finset.univ.filter fun j : Fin k =>
+          2 * Real.sqrt (trSigma / m)
+            < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖).card : ℝ) := by exact_mod_cast hc2
+      linarith
+    have hsumW : ∑ j : Fin k, (if 2 * Real.sqrt (trSigma / m)
+        < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0)
+        = ((Finset.univ.filter fun j : Fin k => 2 * Real.sqrt (trSigma / m)
+            < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖).card : ℝ) := by
+      simp [Finset.sum_boole]
+    have hmeans : ∑ j : Fin k, (∫ ξ, (if 2 * Real.sqrt (trSigma / m)
+        < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0) ∂μprob)
+        ≤ (k : ℝ) / 4 := by
+      calc ∑ j : Fin k, (∫ ξ, (if 2 * Real.sqrt (trSigma / m)
+            < ‖blockMeanVec (fun j i => X j i ξ) j - μ₀‖ then (1 : ℝ) else 0) ∂μprob)
+          ≤ ∑ _j : Fin k, (1 / 4 : ℝ) := Finset.sum_le_sum fun j _ => hWle j
+        _ = (k : ℝ) / 4 := by simp [Finset.card_univ]; ring
+    rw [Finset.sum_sub_distrib, hsumW]
+    linarith
+  -- ## Step 9: on the majority event the ball-MoM center is within `2r`
+  have hgood : ∀ ξ : Ξ,
+      (k < 2 * momCount (fun j => blockMeanVec (fun j i => X j i ξ) j) μ₀
+            (2 * Real.sqrt (trSigma / m))) →
+      ‖Chat ξ - μ₀‖ ≤ 2 * (2 * Real.sqrt (trSigma / m)) := by
+    intro ξ hξ
+    have h1 : momRadius (fun j => blockMeanVec (fun j i => X j i ξ) j) μ₀
+        ≤ 2 * Real.sqrt (trSigma / m) := momRadius_le_of_majority hr.le hξ
+    have h2 : momRadius (fun j => blockMeanVec (fun j i => X j i ξ) j) (Chat ξ)
+        ≤ 2 * Real.sqrt (trSigma / m) := le_trans (hChat ξ μ₀) h1
+    refine le_of_forall_pos_le_add fun ε hε => ?_
+    have h3 := majority_of_lt_momRadius (Z := fun j => blockMeanVec (fun j i => X j i ξ) j)
+      (c := Chat ξ) (r := 2 * Real.sqrt (trSigma / m) + ε / 2) hk (by linarith)
+    have h4 := majority_of_lt_momRadius (Z := fun j => blockMeanVec (fun j i => X j i ξ) j)
+      (c := μ₀) (r := 2 * Real.sqrt (trSigma / m) + ε / 2) hk (by linarith)
+    have h5 := dist_le_of_majority_two h3 h4
+    linarith
+  -- ## Step 10: `k = ⌈8 log(1/δ)⌉ ≤ 8 log(1/δ) + 1` widens the radius to the stated one
+  have hlogpos : 0 ≤ Real.log (1 / δ) := Real.log_nonneg (by rw [le_div_iff₀ hδ]; linarith)
+  have hkle : (k : ℝ) ≤ 8 * Real.log (1 / δ) + 1 := by
+    rw [hkc]; exact le_of_lt (Nat.ceil_lt_add_one (by linarith))
+  have hnR : (0 : ℝ) < n := by rw [hn]; push_cast; positivity
+  have hradius : 2 * (2 * Real.sqrt (trSigma / m))
+      ≤ 4 * Real.sqrt (trSigma * (8 * Real.log (1 / δ) + 1) / n) := by
+    have hle : trSigma / m ≤ trSigma * (8 * Real.log (1 / δ) + 1) / n := by
+      rw [hn]
+      push_cast
+      rw [div_le_div_iff₀ hmR (by positivity)]
+      nlinarith [mul_le_mul_of_nonneg_left hkle (le_of_lt (mul_pos htrpos hmR))]
+    have hsq := Real.sqrt_le_sqrt hle
+    linarith
+  -- ## Step 11: the exponential bound is at most `δ`
+  have hexp : Real.exp (-(k : ℝ) / 8) ≤ δ := by
+    have hLk : 8 * Real.log (1 / δ) ≤ (k : ℝ) := by rw [hkc]; exact Nat.le_ceil _
+    have hinv : Real.log (1 / δ) = -Real.log δ := by
+      rw [one_div, Real.log_inv]
+    have hle : -(k : ℝ) / 8 ≤ Real.log δ := by rw [hinv] at hLk; linarith
+    calc Real.exp (-(k : ℝ) / 8) ≤ Real.exp (Real.log δ) := Real.exp_le_exp.mpr hle
+      _ = δ := Real.exp_log hδ
+  -- ## Step 12: assemble
+  refine le_trans (le_trans (measureReal_mono ?_ (measure_ne_top μprob _)) hHoeff) hexp
+  intro ξ hξ
+  refine hBAD ξ fun hmaj => ?_
+  have h := hgood ξ hmaj
+  simp only [Set.mem_setOf_eq] at hξ
+  linarith
+
 
 end StatLean.RobustStatistics
