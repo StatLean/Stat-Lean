@@ -45,12 +45,12 @@ noncomputable def truncate (a b x : ℝ) : ℝ := max a (min b x)
 
 /-- Truncation projects into the interval: `a ≤ b → truncate a b x ∈ [a, b]`. -/
 theorem truncate_mem_Icc {a b : ℝ} (hab : a ≤ b) (x : ℝ) :
-    truncate a b x ∈ Set.Icc a b := by
-  sorry
+    truncate a b x ∈ Set.Icc a b :=
+  ⟨le_max_left _ _, max_le hab (min_le_left b x)⟩
 
 /-- Truncation fixes interval points: `x ∈ [a, b] → truncate a b x = x`. -/
 theorem truncate_eq_self {a b x : ℝ} (hx : x ∈ Set.Icc a b) : truncate a b x = x := by
-  sorry
+  rw [truncate, min_eq_right hx.2, max_eq_right hx.1]
 
 open StatLean.MultipleTesting in
 /-- **The two-sample trimmed mean** (`LM §2.3`, the estimator of Theorem 6): truncate
@@ -66,6 +66,80 @@ bounded above, so the supremum is honest. -/
 noncomputable def quantile (P : Measure ℝ) (p : ℝ) : ℝ :=
   sSup {M : ℝ | 1 - p ≤ P.real {x | M ≤ x}}
 
+/-! ### Right-tail mass: the elementary continuity bricks
+
+`M ↦ P(X ≥ M)` is antitone with limits `1` at `−∞` and `0` at `+∞`; it is left-continuous
+always (`Ici` is a decreasing intersection of `Ici`s) and right-continuous exactly when the
+level carries no atom. These three facts are all the quantile lemmas below need. -/
+
+/-- The right-tail mass `M ↦ P(X ≥ M)` is antitone. -/
+private theorem tail_antitone (P : Measure ℝ) [IsProbabilityMeasure P] :
+    Antitone (fun M : ℝ => P.real {x | M ≤ x}) := fun _ _ h =>
+  measureReal_mono (fun _ hx => le_trans h hx)
+
+/-- Right-tail mass tends to `1` at `−∞` (continuity from below: `⋃ M, [M, ∞) = ℝ`). -/
+private theorem tail_tendsto_atBot (P : Measure ℝ) [IsProbabilityMeasure P] :
+    Tendsto (fun M : ℝ => P.real {x | M ≤ x}) atBot (𝓝 1) := by
+  have hU : (⋃ M : ℝ, {x : ℝ | M ≤ x}) = Set.univ := by
+    ext x
+    simp only [Set.mem_iUnion, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    exact ⟨x, le_rfl⟩
+  have h := tendsto_measure_iUnion_atBot (μ := P) (s := fun M : ℝ => {x : ℝ | M ≤ x})
+    (fun _ _ h _ hx => le_trans h hx)
+  rw [hU, measure_univ] at h
+  have := (ENNReal.tendsto_toReal (by simp)).comp h
+  simpa [Function.comp, measureReal_def] using this
+
+/-- Right-tail mass tends to `0` at `+∞` (continuity from above: `⋂ M, [M, ∞) = ∅`). -/
+private theorem tail_tendsto_atTop (P : Measure ℝ) [IsProbabilityMeasure P] :
+    Tendsto (fun M : ℝ => P.real {x | M ≤ x}) atTop (𝓝 0) := by
+  have hI : (⋂ M : ℝ, {x : ℝ | M ≤ x}) = (∅ : Set ℝ) := by
+    ext x
+    simp only [Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+      not_forall, not_le]
+    exact ⟨x + 1, by linarith⟩
+  have h := tendsto_measure_iInter_atTop (μ := P) (s := fun M : ℝ => {x : ℝ | M ≤ x})
+    (fun _ => (measurableSet_Ici (a := _)).nullMeasurableSet)
+    (fun _ _ h _ hx => le_trans h hx) ⟨0, measure_ne_top P _⟩
+  rw [hI, measure_empty] at h
+  have := (ENNReal.tendsto_toReal (by simp)).comp h
+  simpa [Function.comp, measureReal_def] using this
+
+/-- Left-continuity of the right-tail mass, in the only form used: if the level `1 − p` is
+attained strictly to the left of `Q`, it is attained at `Q`. -/
+private theorem tail_le_of_forall_lt (P : Measure ℝ) [IsProbabilityMeasure P] {Q c : ℝ}
+    (h : ∀ M, M < Q → c ≤ P.real {x | M ≤ x}) : c ≤ P.real {x | Q ≤ x} := by
+  have hanti : Antitone (fun k : ℕ => {x : ℝ | Q - 1 / (k + 1) ≤ x}) := by
+    intro k l hkl x hx
+    simp only [Set.mem_setOf_eq] at hx ⊢
+    have h1 : (1 : ℝ) / (l + 1) ≤ 1 / (k + 1) := by
+      apply one_div_le_one_div_of_le (by positivity)
+      exact_mod_cast Nat.succ_le_succ hkl
+    linarith
+  have hI : (⋂ k : ℕ, {x : ℝ | Q - 1 / (k + 1) ≤ x}) = {x : ℝ | Q ≤ x} := by
+    ext x
+    simp only [Set.mem_iInter, Set.mem_setOf_eq]
+    constructor
+    · intro hx
+      refine not_lt.1 fun hlt => ?_
+      obtain ⟨k, hk⟩ := exists_nat_one_div_lt (show (0:ℝ) < Q - x by linarith)
+      have := hx k
+      linarith
+    · intro hx k
+      have : (0:ℝ) < 1 / (k + 1) := by positivity
+      linarith
+  have hten := tendsto_measure_iInter_atTop (μ := P)
+    (s := fun k : ℕ => {x : ℝ | Q - 1 / (k + 1) ≤ x})
+    (fun _ => (measurableSet_Ici (a := _)).nullMeasurableSet) hanti ⟨0, measure_ne_top P _⟩
+  rw [hI] at hten
+  have hreal := (ENNReal.tendsto_toReal (measure_ne_top P _)).comp hten
+  refine ge_of_tendsto hreal ?_
+  filter_upwards with k
+  change c ≤ P.real {x : ℝ | Q - 1 / (k + 1) ≤ x}
+  refine h _ ?_
+  have : (0:ℝ) < 1 / (k + 1) := by positivity
+  linarith
+
 /-- The quantile's defining set is nonempty and bounded above when `0 < p < 1`
 (`LM §2.3` proof, implicit): mass to the right tends to `1` at `−∞` and to `0` at
 `+∞`. -/
@@ -73,7 +147,13 @@ theorem quantile_set_nonempty_bddAbove (P : Measure ℝ) [IsProbabilityMeasure P
     {p : ℝ} (hp : 0 < p) (hp1 : p < 1) :
     {M : ℝ | 1 - p ≤ P.real {x | M ≤ x}}.Nonempty ∧
       BddAbove {M : ℝ | 1 - p ≤ P.real {x | M ≤ x}} := by
-  sorry
+  constructor
+  · obtain ⟨M, hM⟩ :=
+      ((tail_tendsto_atBot P).eventually_const_lt (show 1 - p < 1 by linarith)).exists
+    exact ⟨M, hM.le⟩
+  · obtain ⟨K, hK⟩ := Filter.eventually_atTop.1
+      ((tail_tendsto_atTop P).eventually_lt_const (show (0:ℝ) < 1 - p by linarith))
+    exact ⟨K, fun M hM => not_lt.1 fun hlt => absurd hM (not_le.2 (hK M hlt.le))⟩
 
 /-- **Right-tail mass at the quantile** (`LM §2.3` proof, "in that case
 `P(X ≥ Q_p) = 1 − p`"): for a nonatomic distribution the quantile achieves its level
@@ -84,7 +164,58 @@ theorem measure_ge_quantile (P : Measure ℝ) [IsProbabilityMeasure P]
     (hatom : ∀ t : ℝ, P {t} = 0)
     {p : ℝ} (hp : 0 < p) (hp1 : p < 1) :
     P.real {x | quantile P p ≤ x} = 1 - p := by
-  sorry
+  obtain ⟨hne, hbdd⟩ := quantile_set_nonempty_bddAbove P hp hp1
+  have hQ : quantile P p = sSup {M : ℝ | 1 - p ≤ P.real {x | M ≤ x}} := rfl
+  refine le_antisymm ?_ (tail_le_of_forall_lt P fun M hM => ?_)
+  · -- **Right-continuity at the quantile.** Beyond `Q` the defining inequality fails, and
+    -- `(Q, ∞)` is the increasing union of the `[Q + 1/(k+1), ∞)`; the atom at `Q` is null.
+    have hmono : Monotone (fun k : ℕ => {x : ℝ | quantile P p + 1 / (k + 1) ≤ x}) := by
+      intro k l hkl x hx
+      simp only [Set.mem_setOf_eq] at hx ⊢
+      have h1 : (1:ℝ) / (l + 1) ≤ 1 / (k + 1) :=
+        one_div_le_one_div_of_le (by positivity) (by exact_mod_cast Nat.succ_le_succ hkl)
+      linarith
+    have hU : (⋃ k : ℕ, {x : ℝ | quantile P p + 1 / (k + 1) ≤ x})
+        = {x : ℝ | quantile P p < x} := by
+      ext x
+      simp only [Set.mem_iUnion, Set.mem_setOf_eq]
+      constructor
+      · rintro ⟨k, hk⟩
+        have hpos : (0:ℝ) < 1 / (k + 1) := by positivity
+        linarith
+      · intro hx
+        obtain ⟨k, hk⟩ := exists_nat_one_div_lt (show (0:ℝ) < x - quantile P p by linarith)
+        exact ⟨k, by linarith⟩
+    have hten := tendsto_measure_iUnion_atTop (μ := P) hmono
+    rw [hU] at hten
+    have hreal := (ENNReal.tendsto_toReal (measure_ne_top P _)).comp hten
+    have hlim : P.real {x : ℝ | quantile P p < x} ≤ 1 - p := by
+      refine le_of_tendsto hreal ?_
+      filter_upwards with k
+      change P.real {x : ℝ | quantile P p + 1 / (k + 1) ≤ x} ≤ 1 - p
+      by_contra hcon
+      have hmem : quantile P p + 1 / (k + 1) ∈ {M : ℝ | 1 - p ≤ P.real {x | M ≤ x}} :=
+        (not_le.1 hcon).le
+      have hle := le_csSup hbdd hmem
+      rw [← hQ] at hle
+      have hpos : (0:ℝ) < 1 / (k + 1) := by positivity
+      linarith
+    have hsplit : P.real {x : ℝ | quantile P p ≤ x} ≤ P.real {x : ℝ | quantile P p < x} := by
+      simp only [measureReal_def]
+      refine ENNReal.toReal_mono (measure_ne_top P _) ?_
+      calc P {x : ℝ | quantile P p ≤ x} ≤ P ({quantile P p} ∪ {x : ℝ | quantile P p < x}) := by
+            refine measure_mono fun x hx => ?_
+            rcases eq_or_lt_of_le (Set.mem_setOf_eq ▸ hx) with h | h
+            · exact Or.inl h.symm
+            · exact Or.inr h
+        _ ≤ P {quantile P p} + P {x : ℝ | quantile P p < x} := measure_union_le _ _
+        _ = P {x : ℝ | quantile P p < x} := by rw [hatom (quantile P p), zero_add]
+    linarith
+  · -- **Left-continuity below the quantile.** Every `M < Q` is dominated by a member of the
+    -- defining set, so the level `1 − p` is attained at every such `M`.
+    rw [hQ] at hM
+    obtain ⟨M', hM'S, hMM'⟩ := exists_lt_of_lt_csSup hne hM
+    exact le_trans hM'S (tail_antitone P hMM'.le)
 
 variable {Ξ : Type*} [MeasurableSpace Ξ] {μprob : Measure Ξ} [IsProbabilityMeasure μprob]
   {P : Measure ℝ} [IsProbabilityMeasure P]
