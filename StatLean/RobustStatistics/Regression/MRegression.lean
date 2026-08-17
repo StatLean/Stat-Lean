@@ -370,6 +370,31 @@ theorem isMLocationRoot_checkScore_iff {P : MeasureTheory.Measure ℝ}
     (hatom : ∀ t : ℝ, P {t} = 0) :
     IsMLocationRoot (fun u => α - if u < 0 then 1 else 0) P θ ↔
       P.real (Set.Iic θ) = α := by
-  sorry
+  have hmeas : MeasurableSet (Set.Iio θ) := measurableSet_Iio
+  have hint : Integrable (Set.indicator (Set.Iio θ) (1 : ℝ → ℝ)) P :=
+    (integrable_const (1 : ℝ)).indicator hmeas
+  -- the score's jump part is the indicator of the open lower ray
+  have hfun : ∀ x : ℝ, (if x - θ < 0 then (1 : ℝ) else 0)
+      = Set.indicator (Set.Iio θ) (1 : ℝ → ℝ) x := by
+    intro x
+    rw [Set.indicator_apply]
+    simp only [Set.mem_Iio, Pi.one_apply, sub_neg]
+  have hfe : (fun x : ℝ => α - if x - θ < 0 then (1 : ℝ) else 0)
+      = fun x : ℝ => α - Set.indicator (Set.Iio θ) (1 : ℝ → ℝ) x := by
+    funext x
+    rw [hfun x]
+  have hval : ∫ x, (α - if x - θ < 0 then (1 : ℝ) else 0) ∂P = α - P.real (Set.Iio θ) := by
+    rw [hfe, integral_sub (integrable_const α) hint, integral_const,
+      integral_indicator_one hmeas]
+    simp
+  -- atomless ⟹ the closed and open rays have the same mass
+  have hIio : P.real (Set.Iio θ) = P.real (Set.Iic θ) := by
+    have h1 : P (Set.Iic θ) = P (Set.Iio θ) := by
+      rw [← Set.Iio_union_right, measure_union (by simp) (measurableSet_singleton θ),
+        hatom θ, add_zero]
+    simp only [measureReal_def, h1]
+  simp only [IsMLocationRoot]
+  rw [hval, hIio]
+  constructor <;> intro h <;> linarith
 
 end StatLean.RobustStatistics
