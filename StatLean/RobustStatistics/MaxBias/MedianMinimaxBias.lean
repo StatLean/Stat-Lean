@@ -1,6 +1,8 @@
 import StatLean.RobustStatistics.MaxBias.MaxBiasLocation
 import StatLean.RobustStatistics.Core.Equivariance
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
+import Mathlib.MeasureTheory.Group.Integral
 
 /-!
 # The minimax-bias property of the median (Huber)
@@ -36,6 +38,65 @@ namespace StatLean.RobustStatistics
 noncomputable def densityMeasure (f₀ : ℝ → ℝ) : Measure ℝ :=
   MeasureTheory.volume.withDensity fun x => ENNReal.ofReal (f₀ x)
 
+/-! ### Private density plumbing
+
+Three reusable bricks: a density measure with total mass one is a probability measure, a
+mixture of two Lebesgue densities is the `contaminate` mixture of the two density measures,
+and translating a density measure translates its density. All three are stated privately so
+the frozen statements above stay untouched. -/
+
+/-- A nonnegative integrable density of total mass one gives a probability measure. -/
+private theorem isProbabilityMeasure_densityMeasure {u : ℝ → ℝ}
+    (hint : Integrable u) (hu0 : ∀ x, 0 ≤ u x) (hmass : ∫ x, u x = 1) :
+    IsProbabilityMeasure (densityMeasure u) := by
+  constructor
+  rw [densityMeasure, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
+    ← ofReal_integral_eq_lintegral_ofReal hint (Eventually.of_forall hu0), hmass,
+    ENNReal.ofReal_one]
+
+/-- The mixture of two Lebesgue densities is the `contaminate` mixture of the density
+measures (`MMY §3.8.5`, "`f₊ = (1−ε)f₀ + εg`" at the level of measures). -/
+private theorem densityMeasure_mixture {u v : ℝ → ℝ} (hu : Measurable u) (hv : Measurable v)
+    (hu0 : ∀ x, 0 ≤ u x) (hv0 : ∀ x, 0 ≤ v x) {ε : ℝ} (hε : 0 ≤ ε) (hε1 : ε ≤ 1) :
+    densityMeasure (fun x => (1 - ε) * u x + ε * v x)
+      = contaminate (densityMeasure u) (densityMeasure v) ε := by
+  have h1 : (0:ℝ) ≤ 1 - ε := by linarith
+  refine Measure.ext fun s hs => ?_
+  rw [densityMeasure, withDensity_apply _ hs, contaminate_apply, densityMeasure, densityMeasure,
+    withDensity_apply _ hs, withDensity_apply _ hs,
+    ← lintegral_const_mul _ hu.ennreal_ofReal, ← lintegral_const_mul _ hv.ennreal_ofReal,
+    ← lintegral_add_left (hu.ennreal_ofReal.const_mul _)]
+  refine lintegral_congr fun x => ?_
+  rw [ENNReal.ofReal_add (mul_nonneg h1 (hu0 x)) (mul_nonneg hε (hv0 x)),
+    ENNReal.ofReal_mul h1, ENNReal.ofReal_mul hε]
+
+/-- Translating a Lebesgue density measure translates its density (Lebesgue measure is
+translation invariant). -/
+private theorem map_add_densityMeasure (u : ℝ → ℝ) (c : ℝ) :
+    (densityMeasure u).map (· + c) = densityMeasure (fun x => u (x - c)) := by
+  refine Measure.ext fun s hs => ?_
+  have hsc : MeasurableSet ((fun x : ℝ => x + c) ⁻¹' s) := (measurable_add_const c) hs
+  have e1 : ((densityMeasure u).map (· + c)) s
+      = ∫⁻ x, Set.indicator ((fun x : ℝ => x + c) ⁻¹' s)
+          (fun y => ENNReal.ofReal (u y)) x := by
+    rw [Measure.map_apply (measurable_add_const c) hs, densityMeasure,
+      withDensity_apply _ hsc, ← lintegral_indicator hsc]
+  have e2 : (densityMeasure fun x => u (x - c)) s
+      = ∫⁻ x, Set.indicator s (fun y => ENNReal.ofReal (u (y - c))) x := by
+    rw [densityMeasure, withDensity_apply _ hs, ← lintegral_indicator hs]
+  have e3 : ∫⁻ x, Set.indicator s (fun y => ENNReal.ofReal (u (y - c))) x
+      = ∫⁻ x, Set.indicator s (fun y => ENNReal.ofReal (u (y - c))) (x + c) :=
+    (lintegral_add_right_eq_self
+      (fun x => Set.indicator s (fun y => ENNReal.ofReal (u (y - c))) x) c).symm
+  rw [e1, e2, e3]
+  refine lintegral_congr fun x => ?_
+  by_cases hx : x + c ∈ s
+  · rw [Set.indicator_of_mem hx,
+      Set.indicator_of_mem (show x ∈ (fun x : ℝ => x + c) ⁻¹' s from hx)]
+    simp
+  · rw [Set.indicator_of_notMem hx,
+      Set.indicator_of_notMem (show x ∉ (fun x : ℝ => x + c) ⁻¹' s from hx)]
+
 /-- **The minimax witness density** (`MMY §3.8.5`, the display for `g`):
 `g(x) = ((1−ε)/ε) (f₀(x − 2b_ε) − f₀(x))` for `x > b_ε` and `0` otherwise. -/
 noncomputable def minimaxWitnessDensity (f₀ : ℝ → ℝ) (bε ε : ℝ) (x : ℝ) : ℝ :=
@@ -51,7 +112,37 @@ theorem minimaxWitnessDensity_nonneg {f₀ : ℝ → ℝ} {bε ε : ℝ}
     (huni : ∀ a b : ℝ, 0 ≤ a → a ≤ b → f₀ b ≤ f₀ a)
     (hbε : 0 ≤ bε) (hε : 0 < ε) (hε1 : ε < 1) (x : ℝ) :
     0 ≤ minimaxWitnessDensity f₀ bε ε x := by
-  sorry
+  rw [minimaxWitnessDensity]
+  split_ifs with h
+  · -- `|x − 2b_ε| ≤ |x|` for `x > b_ε ≥ 0`, so unimodality gives `f₀(x − 2b_ε) ≥ f₀ x`.
+    have hmono : f₀ x ≤ f₀ (x - 2 * bε) := by
+      rcases le_or_gt 0 (x - 2 * bε) with hx | hx
+      · exact huni _ _ hx (by linarith)
+      · have hrefl : f₀ (x - 2 * bε) = f₀ (2 * bε - x) := by
+          rw [show (2 * bε - x) = -(x - 2 * bε) by ring, hsym]
+        rw [hrefl]
+        exact huni _ _ (by linarith) (by linarith)
+    exact mul_nonneg (div_nonneg (by linarith) hε.le) (by linarith)
+  · exact le_refl 0
+
+/-- The witness density is the `(b_ε, ∞)`-indicator of the density difference. -/
+private theorem minimaxWitnessDensity_eq_indicator (f₀ : ℝ → ℝ) (bε ε : ℝ) :
+    minimaxWitnessDensity f₀ bε ε
+      = Set.indicator (Set.Ioi bε) fun x => (1 - ε) / ε * (f₀ (x - 2 * bε) - f₀ x) := by
+  funext x
+  simp [minimaxWitnessDensity, Set.indicator_apply, Set.mem_Ioi]
+
+private theorem measurable_minimaxWitnessDensity {f₀ : ℝ → ℝ} (hmeas : Measurable f₀)
+    (bε ε : ℝ) : Measurable (minimaxWitnessDensity f₀ bε ε) := by
+  rw [minimaxWitnessDensity_eq_indicator]
+  exact Measurable.indicator
+    (measurable_const.mul ((hmeas.comp (measurable_id.sub_const (2 * bε))).sub hmeas))
+    measurableSet_Ioi
+
+private theorem integrable_minimaxWitnessDensity {f₀ : ℝ → ℝ} (hint : Integrable f₀)
+    (bε ε : ℝ) : Integrable (minimaxWitnessDensity f₀ bε ε) := by
+  rw [minimaxWitnessDensity_eq_indicator]
+  exact (((hint.comp_sub_right (2 * bε)).sub hint).const_mul _).indicator measurableSet_Ioi
 
 /-- **The witness density has total mass one** (`MMY §3.8.5`, "its integral equals one,
 since by (3.68), `∫_{b_ε}^∞ (f₀(x − 2b_ε) − f₀(x)) dx = 2F₀(b_ε) − 1 = ε/(1−ε)`"). -/
@@ -67,7 +158,36 @@ theorem integral_minimaxWitnessDensity {f₀ : ℝ → ℝ} {bε ε : ℝ}
     -- USER-INPUT: b_ε solves the median's maximum-bias quantile equation; MMY (3.68)
     (hquant : ∫ x in Set.Iic bε, f₀ x = 1 / (2 * (1 - ε))) :
     ∫ x, minimaxWitnessDensity f₀ bε ε x = 1 := by
-  sorry
+  have h1ε : (0:ℝ) < 1 - ε := by linarith
+  -- `∫_{(b_ε,∞)} f₀(x − 2b_ε) dx = ∫_{(−b_ε,∞)} f₀` (translation invariance).
+  have hshift : ∫ x in Set.Ioi bε, f₀ (x - 2 * bε) = ∫ x in Set.Ioi (-bε), f₀ x := by
+    rw [← integral_indicator measurableSet_Ioi, ← integral_indicator measurableSet_Ioi,
+      ← integral_sub_right_eq_self (fun y => (Set.Ioi (-bε)).indicator f₀ y) (2 * bε)]
+    refine integral_congr_ae (Eventually.of_forall fun x => ?_)
+    simp only [Set.indicator_apply, Set.mem_Ioi]
+    split_ifs with h1 h2 h3 <;> first | rfl | (exfalso; linarith)
+  -- `∫_{(−b_ε,∞)} f₀ = ∫_{(−∞,b_ε]} f₀` (symmetry of `f₀`).
+  have hrefl : ∫ x in Set.Ioi (-bε), f₀ x = ∫ x in Set.Iic bε, f₀ x := by
+    have h := integral_comp_neg_Ioi (-bε) f₀
+    rw [neg_neg] at h
+    rw [← h]
+    exact setIntegral_congr_fun measurableSet_Ioi fun x _ => (hsym x).symm
+  -- `∫_{(b_ε,∞)} f₀ = 1 − F₀(b_ε)`.
+  -- NB: the `∫ … , _` body binds at precedence 60, so `+` would be swallowed without
+  -- these parentheses.
+  have hcompl : (∫ x in Set.Iic bε, f₀ x) + (∫ x in Set.Ioi bε, f₀ x) = 1 := by
+    rw [← hone]
+    have h := integral_add_compl (μ := volume) (f := f₀) (s := Set.Iic bε)
+      measurableSet_Iic hint
+    rwa [Set.compl_Iic] at h
+  have hIoi : ∫ x in Set.Ioi bε, f₀ x = 1 - 1 / (2 * (1 - ε)) := by
+    rw [hquant] at hcompl; linarith
+  rw [minimaxWitnessDensity_eq_indicator, integral_indicator measurableSet_Ioi,
+    integral_const_mul,
+    integral_sub ((hint.comp_sub_right (2 * bε)).integrableOn) hint.integrableOn,
+    hshift, hrefl, hquant, hIoi]
+  field_simp
+  ring
 
 /-- **`F₊` is an `ε`-contamination of `F₀`** (`MMY §3.8.5`, "`f₊` belongs to
 `F(F₀, ε)`; in fact it can be written as `f₊ = (1−ε)f₀ + εg`"): the paste-and-shift
@@ -83,7 +203,41 @@ theorem medianMinimaxPlus_eq_contaminate {f₀ : ℝ → ℝ} {bε ε : ℝ}
         else (1 - ε) * f₀ (x - 2 * bε))
       = contaminate (densityMeasure f₀)
           (densityMeasure (minimaxWitnessDensity f₀ bε ε)) ε := by
-  sorry
+  have hne : ε ≠ 0 := hε.ne'
+  have hfun : (fun x => if x ≤ bε then (1 - ε) * f₀ x else (1 - ε) * f₀ (x - 2 * bε))
+      = fun x => (1 - ε) * f₀ x + ε * minimaxWitnessDensity f₀ bε ε x := by
+    funext x
+    by_cases h : x ≤ bε
+    · rw [if_pos h, minimaxWitnessDensity, if_neg (not_lt.2 h)]
+      ring
+    · rw [if_neg h, minimaxWitnessDensity, if_pos (not_le.1 h)]
+      field_simp
+      ring
+  rw [hfun]
+  exact densityMeasure_mixture hmeas (measurable_minimaxWitnessDensity hmeas bε ε) hnonneg
+    (minimaxWitnessDensity_nonneg hsym huni hbε hε hε1) hε.le hε1.le
+
+/-- The left shift of `f₊` by `2b_ε` is `(1−ε)f₀` plus `ε` times the *reflected* witness
+density (`MMY §3.8.5`, "which also belongs to `F(F₀, ε)` by the same argument"). The two
+sides agree at the boundary point `x = −b_ε` as well, by symmetry of `f₀`, so this is an
+everywhere identity — no null set is discarded. -/
+private theorem minimaxWitness_reflect_shift {f₀ : ℝ → ℝ} {bε ε : ℝ}
+    (hsym : ∀ x, f₀ (-x) = f₀ x) (hε : 0 < ε) (x : ℝ) :
+    (if x + 2 * bε ≤ bε then (1 - ε) * f₀ (x + 2 * bε) else (1 - ε) * f₀ x)
+      = (1 - ε) * f₀ x + ε * minimaxWitnessDensity f₀ bε ε (-x) := by
+  have hne : ε ≠ 0 := hε.ne'
+  rw [minimaxWitnessDensity]
+  by_cases h : bε < -x
+  · rw [if_pos h, if_pos (by linarith : x + 2 * bε ≤ bε),
+      show (-x - 2 * bε) = -(x + 2 * bε) from by ring, hsym (x + 2 * bε), hsym x]
+    field_simp
+    ring
+  · rw [if_neg h, mul_zero, add_zero]
+    rw [not_lt] at h
+    by_cases h2 : x + 2 * bε ≤ bε
+    · rw [if_pos h2, show x = -bε from by linarith, show -bε + 2 * bε = bε from by ring,
+        hsym bε]
+    · rw [if_neg h2]
 
 /-- **`F₋` is also an `ε`-contamination of `F₀`** (`MMY §3.8.5`, "define
 `F₋(x) = F₊(x + 2b_ε)`, which also belongs to `F(F₀, ε)` by the same argument"): the
@@ -98,7 +252,33 @@ theorem medianMinimaxMinus_mem_nbhd {f₀ : ℝ → ℝ} {bε ε : ℝ}
     (densityMeasure (fun x => if x ≤ bε then (1 - ε) * f₀ x
         else (1 - ε) * f₀ (x - 2 * bε))).map (· + (-(2 * bε)))
       ∈ grossErrorNbhd (densityMeasure f₀) ε := by
-  sorry
+  have hgm0 : ∀ x, 0 ≤ minimaxWitnessDensity f₀ bε ε (-x) := fun x =>
+    minimaxWitnessDensity_nonneg hsym huni hbε hε hε1 (-x)
+  have hgmM : Measurable fun x => minimaxWitnessDensity f₀ bε ε (-x) :=
+    (measurable_minimaxWitnessDensity hmeas bε ε).comp measurable_neg
+  have hgmI : Integrable fun x => minimaxWitnessDensity f₀ bε ε (-x) :=
+    (integrable_minimaxWitnessDensity hint bε ε).comp_neg
+  have hgmMass : ∫ x, minimaxWitnessDensity f₀ bε ε (-x) = 1 := by
+    rw [integral_neg_eq_self (minimaxWitnessDensity f₀ bε ε) volume]
+    exact integral_minimaxWitnessDensity hmeas hint hnonneg hone hsym huni hbε hε hε1 hquant
+  haveI : IsProbabilityMeasure (densityMeasure fun x => minimaxWitnessDensity f₀ bε ε (-x)) :=
+    isProbabilityMeasure_densityMeasure hgmI hgm0 hgmMass
+  refine ⟨densityMeasure fun x => minimaxWitnessDensity f₀ bε ε (-x), inferInstance, ?_⟩
+  have key : (densityMeasure fun x => if x ≤ bε then (1 - ε) * f₀ x
+        else (1 - ε) * f₀ (x - 2 * bε)).map (· + (-(2 * bε)))
+      = densityMeasure fun x =>
+          (1 - ε) * f₀ x + ε * minimaxWitnessDensity f₀ bε ε (-x) := by
+    rw [map_add_densityMeasure]
+    congr 1
+    funext x
+    show (if x - -(2 * bε) ≤ bε then (1 - ε) * f₀ (x - -(2 * bε))
+        else (1 - ε) * f₀ (x - -(2 * bε) - 2 * bε))
+      = (1 - ε) * f₀ x + ε * minimaxWitnessDensity f₀ bε ε (-x)
+    rw [show x - -(2 * bε) = x + 2 * bε from by ring,
+      show x + 2 * bε - 2 * bε = x from by ring]
+    exact minimaxWitness_reflect_shift hsym hε x
+  rw [key]
+  exact densityMeasure_mixture hmeas hgmM hnonneg hgm0 hε.le hε1.le
 
 /-- **The minimax-bias property of the median** (`MMY §3.8.5`; Huber (1964)): for a
 symmetric unimodal center `F₀` and any functional `T` that is location equivariant on a
@@ -122,6 +302,23 @@ theorem locationEquivariant_maxBias_ge_median {f₀ : ℝ → ℝ} {bε ε : ℝ
     (hD : densityMeasure (fun x => if x ≤ bε then (1 - ε) * f₀ x
         else (1 - ε) * f₀ (x - 2 * bε)) ∈ 𝒟) :
     ∃ F ∈ grossErrorNbhd (densityMeasure f₀) ε, bε ≤ |T F| := by
-  sorry
+  haveI hwit : IsProbabilityMeasure (densityMeasure (minimaxWitnessDensity f₀ bε ε)) :=
+    isProbabilityMeasure_densityMeasure (integrable_minimaxWitnessDensity hint bε ε)
+      (minimaxWitnessDensity_nonneg hsym huni hbε hε hε1)
+      (integral_minimaxWitnessDensity hmeas hint hnonneg hone hsym huni hbε hε hε1 hquant)
+  have hplus : densityMeasure (fun x => if x ≤ bε then (1 - ε) * f₀ x
+      else (1 - ε) * f₀ (x - 2 * bε)) ∈ grossErrorNbhd (densityMeasure f₀) ε :=
+    ⟨_, hwit, medianMinimaxPlus_eq_contaminate hmeas hint hnonneg hone hsym huni hbε hε hε1
+      hquant⟩
+  have hminus := medianMinimaxMinus_mem_nbhd hmeas hint hnonneg hone hsym huni hbε hε hε1 hquant
+  -- Equivariance: `T(F₋) = T(F₊) − 2b_ε`, so `|T(F₊)|` and `|T(F₋)|` cannot both be `< b_ε`.
+  have hTeq := hT _ hD (-(2 * bε))
+  by_cases h : bε ≤ |T (densityMeasure fun x => if x ≤ bε then (1 - ε) * f₀ x
+      else (1 - ε) * f₀ (x - 2 * bε))|
+  · exact ⟨_, hplus, h⟩
+  · refine ⟨_, hminus, ?_⟩
+    rw [hTeq]
+    rw [not_le] at h
+    exact le_abs.2 (Or.inr (by linarith [(abs_lt.1 h).2]))
 
 end StatLean.RobustStatistics
