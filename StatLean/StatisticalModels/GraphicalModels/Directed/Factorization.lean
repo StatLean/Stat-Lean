@@ -244,7 +244,20 @@ theorem factorizesOver_of_recursivelyFactorizesOn (D : DAG V) [DecidableRel D.Ad
     -- USER-INPUT: property (DF) on the block; Lauritzen §3.2.2, p. 46
     (hp : RecursivelyFactorizesOn D A p) :
     FactorizesOver G p := by
-  sorry
+  classical
+  obtain ⟨k, hk, hprod⟩ := hp
+  -- send `v ↦ fa(v) = {v} ∪ pa(v)`; the potential of a complete set is the product of the
+  -- kernels in its fibre, and the fibres of the complete sets receiving no vertex are empty
+  refine ⟨fun c x => ∏ v ∈ Finset.filter (fun v => insert v (D.parents v) = c) A, k v x, ?_, ?_⟩
+  · intro c _ y z hyz
+    refine Finset.prod_congr rfl fun v hv => ?_
+    rw [Finset.mem_filter] at hv
+    have hdep : DependsOn (k v) ((c : Finset V) : Set V) := hv.2 ▸ (hk v hv.1).1
+    exact hdep hyz
+  · intro x
+    rw [hprod x]
+    exact (Finset.prod_fiberwise_of_maps_to
+      (fun v hv => mem_completeSubsets.mpr (hclique v hv)) _).symm
 
 /-- **Lauritzen Lemma 3.21**, p. 47, first half: a mass function admitting a recursive
 factorization according to the DAG `D` **factorizes according to the moral graph** `𝒢^m`.
@@ -260,8 +273,9 @@ theorem recursivelyFactorizes_implies_factorizesOver_moralGraph (D : DAG V)
     [DecidableRel D.Adj] (p : (V → α) → ℝ≥0∞)
     -- USER-INPUT: property (DF); Lauritzen §3.2.2, p. 46
     (hp : RecursivelyFactorizes D p) :
-    FactorizesOver D.moralGraph p := by
-  sorry
+    FactorizesOver D.moralGraph p :=
+  factorizesOver_of_recursivelyFactorizesOn D Finset.univ D.moralGraph p
+    (fun v _ => D.isClique_insert_parents v) hp
 
 /-- **Lauritzen Lemma 3.21**, p. 47, second half: "…and obeys therefore the global Markov
 property relative to `𝒢^m`". A one-liner: the first half followed by the undirected
@@ -289,8 +303,9 @@ theorem recursivelyFactorizesOn_implies_factorizesOver_inducedMoralGraph (D : DA
     (hT : D.IsAncestralSet T)
     -- USER-INPUT: property (DF) on the block; Lauritzen §3.2.2, p. 46
     (hp : RecursivelyFactorizesOn D T p) :
-    FactorizesOver (inducedMoralGraph D T) p := by
-  sorry
+    FactorizesOver (inducedMoralGraph D T) p :=
+  factorizesOver_of_recursivelyFactorizesOn D T (inducedMoralGraph D T) p
+    (fun _ hv => D.isClique_insert_parents_induce hT hv) hp
 
 /-! ### Proposition 3.22 — restriction to an ancestral set -/
 
@@ -314,7 +329,66 @@ theorem sum_update_prod_of_notMem_parents (D : DAG V) [DecidableRel D.Adj] (A : 
     -- induction, p. 51 (proof of Theorem 3.27) and p. 47 (Proposition 3.22)
     (hv : ∀ u ∈ A, u ≠ v → v ∉ D.parents u) (x : V → α) :
     ∑ a : α, ∏ u ∈ A, k u (Function.update x v a) = ∏ u ∈ A.erase v, k u x := by
-  sorry
+  classical
+  -- every factor other than `k v` is constant along the `v`-coordinate …
+  have hconst : ∀ a : α, ∏ u ∈ A.erase v, k u (Function.update x v a)
+      = ∏ u ∈ A.erase v, k u x := by
+    intro a
+    refine Finset.prod_congr rfl fun u hu => ?_
+    have huA : u ∈ A := Finset.mem_of_mem_erase hu
+    have hune : u ≠ v := Finset.ne_of_mem_erase hu
+    refine (hk u huA).1 ?_
+    intro i hi
+    simp only [Finset.coe_insert, Set.mem_insert_iff, Finset.mem_coe] at hi
+    have hiv : i ≠ v := by
+      rcases hi with rfl | hi
+      · exact hune
+      · rintro rfl; exact hv u huA hune hi
+    exact Function.update_of_ne hiv a x
+  -- … and `k v` sums to `1`.
+  calc ∑ a : α, ∏ u ∈ A, k u (Function.update x v a)
+      = ∑ a : α, k v (Function.update x v a) *
+          ∏ u ∈ A.erase v, k u (Function.update x v a) :=
+        Finset.sum_congr rfl fun a _ =>
+          (Finset.mul_prod_erase A (fun u => k u (Function.update x v a)) hvA).symm
+    _ = ∑ a : α, k v (Function.update x v a) * ∏ u ∈ A.erase v, k u x :=
+        Finset.sum_congr rfl fun a _ => by rw [hconst a]
+    _ = (∑ a : α, k v (Function.update x v a)) * ∏ u ∈ A.erase v, k u x := by
+        rw [Finset.sum_mul]
+    _ = ∏ u ∈ A.erase v, k u x := by rw [(hk v hvA).2 x, one_mul]
+
+/-- **Summing out one coordinate of a marginal.** Marginalising on `C` is the same as
+marginalising on the one-vertex-larger block `insert u C` and then summing over the
+`u`-coordinate.
+
+Auxiliary, and the one-vertex instance of `Discrete/CondIndep.blockMarginal_eq_sum_updateFinset`,
+spelled with `Function.update` rather than `Function.updateFinset` so that it composes on the
+nose with `sum_update_prod_of_notMem_parents` (whose normalisation is a sum over `α`, not over
+`↥{u} → α`). Route: the fibres `agreeOn (insert u C) (Function.update x u a)`, as `a` ranges over
+`α`, are exactly the fibres of `y ↦ y u` on `agreeOn C x` (`Finset.sum_fiberwise`). -/
+theorem blockMarginal_eq_sum_update (p : (V → α) → ℝ≥0∞) {C : Finset V} {u : V}
+    -- LEAN-ONLY: the fresh coordinate must not already be marginalised on, else the fibres below
+    -- are not a partition
+    (hu : u ∉ C) (x : V → α) :
+    blockMarginal C p x = ∑ a : α, blockMarginal (insert u C) p (Function.update x u a) := by
+  classical
+  have key : ∀ a : α, agreeOn (insert u C) (Function.update x u a)
+      = Finset.filter (fun y : V → α => y u = a) (agreeOn C x) := by
+    intro a
+    ext y
+    simp only [Finset.mem_filter, mem_agreeOn, Finset.mem_insert]
+    constructor
+    · intro hy
+      refine ⟨fun i hi => ?_, ?_⟩
+      · have hiv : i ≠ u := by rintro rfl; exact hu hi
+        simpa [Function.update_of_ne hiv] using hy i (Or.inr hi)
+      · simpa using hy u (Or.inl rfl)
+    · rintro ⟨h1, h2⟩ i (rfl | hi)
+      · simpa using h2
+      · have hiv : i ≠ u := by rintro rfl; exact hu hi
+        simpa [Function.update_of_ne hiv] using h1 i hi
+  simp only [blockMarginal, key]
+  exact (Finset.sum_fiberwise (agreeOn C x) (fun y : V → α => y u) p).symm
 
 /-- **Lauritzen Proposition 3.22**, p. 47: if `P` admits a recursive factorization according to
 `𝒢` and `A` is an **ancestral** set, then the marginal `P_A` admits a recursive factorization
@@ -340,7 +414,59 @@ theorem blockMarginal_recursivelyFactorizesOn_of_ancestralSet (D : DAG V) [Decid
     -- USER-INPUT: property (DF); Lauritzen §3.2.2, p. 46
     (hp : RecursivelyFactorizes D p) :
     RecursivelyFactorizesOn D A (blockMarginal A p) := by
-  sorry
+  classical
+  obtain ⟨k, hk, hprod⟩ := hp
+  refine ⟨k, IsLocalKernelOn.mono (Finset.subset_univ A) hk, ?_⟩
+  -- A topological order supplies, at every proper ancestral block, a vertex outside it all of
+  -- whose parents are inside it — the vertex whose coordinate is summed out next.
+  obtain ⟨f, hf⟩ := D.exists_topologicalOrder
+  have key : ∀ n : ℕ, ∀ C : Finset V, (Finset.univ \ C).card = n → D.IsAncestralSet C →
+      ∀ x, blockMarginal C p x = ∏ v ∈ C, k v x := by
+    intro n
+    induction n using Nat.strong_induction_on with
+    | _ n ih =>
+      intro C hcard hC x
+      rcases Nat.eq_zero_or_pos n with rfl | hn
+      · -- `C = Finset.univ`: the marginal is `p` itself
+        have hCuniv : C = Finset.univ :=
+          Finset.univ_subset_iff.mp
+            (Finset.sdiff_eq_empty_iff_subset.mp (Finset.card_eq_zero.mp hcard))
+        rw [hCuniv, blockMarginal_univ]
+        exact hprod x
+      · -- pick the topologically first vertex outside `C`; its parents all lie in `C`
+        have hne : (Finset.univ \ C).Nonempty := Finset.card_pos.mp (hcard ▸ hn)
+        obtain ⟨u, huS, humin⟩ := Finset.exists_min_image (Finset.univ \ C) f hne
+        have huC : u ∉ C := (Finset.mem_sdiff.mp huS).2
+        have hpa : ∀ w, D.Adj w u → w ∈ C := by
+          intro w hw
+          by_contra hwC
+          exact absurd (hf (Relation.TransGen.single hw))
+            (not_lt.mpr (humin w (Finset.mem_sdiff.mpr ⟨Finset.mem_univ w, hwC⟩)))
+        have hC' : D.IsAncestralSet (insert u C) := by
+          intro a b hab hb
+          rcases Finset.mem_insert.mp hb with rfl | hb
+          · exact Finset.mem_insert_of_mem (hpa a hab)
+          · exact Finset.mem_insert_of_mem (hC hab hb)
+        have hsdiff : Finset.univ \ insert u C = (Finset.univ \ C).erase u := by
+          ext w
+          simp only [Finset.mem_sdiff, Finset.mem_erase, Finset.mem_insert, Finset.mem_univ,
+            true_and, not_or]
+        have hcard' : (Finset.univ \ insert u C).card = n - 1 := by
+          rw [hsdiff, Finset.card_erase_of_mem huS, hcard]
+        have IH := ih (n - 1) (by omega) (insert u C) hcard' hC'
+        -- sum out the `u`-coordinate: `blockMarginal` gains a vertex, the product loses `k u`
+        have hchild : ∀ w ∈ insert u C, w ≠ u → u ∉ D.parents w := by
+          intro w hw hwu hmem
+          rcases Finset.mem_insert.mp hw with rfl | hw
+          · exact hwu rfl
+          · exact huC (hC (DAG.mem_parents.mp hmem) hw)
+        rw [blockMarginal_eq_sum_update p huC x]
+        simp only [fun a : α => IH (Function.update x u a)]
+        rw [sum_update_prod_of_notMem_parents D (insert u C) k
+            (IsLocalKernelOn.mono (Finset.subset_univ _) hk) (Finset.mem_insert_self u C)
+            hchild x,
+          Finset.erase_insert huC]
+  exact key _ A rfl hA
 
 /-- **A recursively factorizing mass is a probability mass function** — Lauritzen's remark on
 p. 46 that "it is an easy induction argument to show that … the kernels `k^α(·, x_{pa(α)})` are
@@ -362,7 +488,11 @@ theorem sum_eq_one_of_recursivelyFactorizes
     -- USER-INPUT: property (DF); Lauritzen §3.2.2, p. 46
     (hp : RecursivelyFactorizes D p) :
     ∑ x : V → α, p x = 1 := by
-  sorry
+  obtain ⟨k, _, hprod⟩ :=
+    blockMarginal_recursivelyFactorizesOn_of_ancestralSet D ∅ (D.isAncestralSet_empty) p hp
+  have h := hprod (fun _ => Classical.arbitrary α)
+  rw [blockMarginal_empty] at h
+  simpa using h
 
 /-- A recursively factorizing mass is pointwise finite — the hypothesis `hp : ∀ y, p y ≠ ∞` that
 every lemma of `Discrete/CondIndep.lean` carries, obtained from
@@ -373,6 +503,9 @@ theorem ne_top_of_recursivelyFactorizes
     -- USER-INPUT: property (DF); Lauritzen §3.2.2, p. 46
     (hp : RecursivelyFactorizes D p) (x : V → α) :
     p x ≠ ∞ := by
-  sorry
+  have h : p x ≤ ∑ y : V → α, p y :=
+    Finset.single_le_sum (f := p) (fun i _ => zero_le _) (Finset.mem_univ x)
+  rw [sum_eq_one_of_recursivelyFactorizes D p hp] at h
+  exact ne_top_of_le_ne_top ENNReal.one_ne_top h
 
 end StatLean.StatisticalModels.GraphicalModels
