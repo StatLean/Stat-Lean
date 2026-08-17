@@ -289,12 +289,12 @@ theorem checkLoss_orderStat_isMLocationEstimate {α : ℝ} (hα0 : 0 < α) (hα1
       x (StatLean.MultipleTesting.orderStat x r) := by
   sorry
 
+open MeasureTheory in
 /-- **The population `α`-quantile solves the check-loss estimating equation**
 (`MMY §4.8`, "the solution of `E ρ_α(y − μ) = min` is an `α`-quantile of `y`",
 first-order form): for an atomless law, `θ` is a root of the check-loss score
 `ψ_α(u) = α − 1{u < 0}` iff `P(−∞, θ] = α`. The score is the a.e. derivative of
 `ρ_α`. -/
-open MeasureTheory in
 theorem isMLocationRoot_checkScore_iff {P : MeasureTheory.Measure ℝ}
     [MeasureTheory.IsProbabilityMeasure P] {α θ : ℝ}
     -- USER-INPUT: atomless law (so the quantile is characterized exactly); MMY §4.8

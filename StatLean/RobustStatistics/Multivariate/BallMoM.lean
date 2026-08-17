@@ -94,10 +94,10 @@ variable {Ξ : Type*} [MeasurableSpace Ξ] {μprob : Measure Ξ} [IsProbabilityM
 
 /-- **Second moment of a block mean** (`LM §3.2` proof, `E‖Z_j − μ‖² = Tr(Σ)/m`): for a
 block of `m` i.i.d. centered square-integrable vectors, the squared-norm moment of the
-block mean is `trΣ/m`, where `trΣ = E‖X − μ₀‖²` is the trace of the covariance. -/
+block mean is `trSigma/m`, where `trSigma = E‖X − μ₀‖²` is the trace of the covariance. -/
 theorem norm_blockMeanVec_sq_moment {m : ℕ} (hm : m ≠ 0)
     {X : Fin m → Ξ → EuclideanSpace ℝ (Fin d)} {μ₀ : EuclideanSpace ℝ (Fin d)}
-    {trΣ : ℝ}
+    {trSigma : ℝ}
     -- LEAN-ONLY: coordinate measurability; LM §3 regularity
     (hX_meas : ∀ i, Measurable (X i))
     -- USER-INPUT: independent block coordinates; LM Proposition 1
@@ -106,20 +106,20 @@ theorem norm_blockMeanVec_sq_moment {m : ℕ} (hm : m ≠ 0)
     (hX_law : ∀ i, μprob.map (X i) = P)
     -- USER-INPUT: square-integrability, mean, and trace second moment; LM §3
     (hL2 : MemLp id 2 P) (hmean : ∫ x, x ∂P = μ₀)
-    (htr : ∫ x, ‖x - μ₀‖ ^ 2 ∂P = trΣ) :
-    ∫ ξ, ‖(m : ℝ)⁻¹ • (∑ i, X i ξ) - μ₀‖ ^ 2 ∂μprob = trΣ / m := by
+    (htr : ∫ x, ‖x - μ₀‖ ^ 2 ∂P = trSigma) :
+    ∫ ξ, ‖(m : ℝ)⁻¹ • (∑ i, X i ξ) - μ₀‖ ^ 2 ∂μprob = trSigma / m := by
   sorry
 
 /-- **The minimal-radius-ball median-of-means is dimension-free** (`LM Proposition 1`):
-for i.i.d. random vectors with mean `μ₀` and covariance trace `trΣ`, blocked into
+for i.i.d. random vectors with mean `μ₀` and covariance trace `trSigma`, blocked into
 `k = ⌈8 log(1/δ)⌉` blocks of size `m` with `n = km`, any measurable selection `Ĉ` of
 ball-MoM centers satisfies, with probability at least `1 − δ`,
 
-  `‖Ĉ − μ₀‖ ≤ 4 √( trΣ (8 log(1/δ) + 1) / n )`. -/
+  `‖Ĉ − μ₀‖ ≤ 4 √( trSigma (8 log(1/δ) + 1) / n )`. -/
 theorem ballMoM_deviation {k m n : ℕ} (hk : k ≠ 0) (hm : m ≠ 0)
     {X : Fin k → Fin m → Ξ → EuclideanSpace ℝ (Fin d)}
     {Chat : Ξ → EuclideanSpace ℝ (Fin d)} {μ₀ : EuclideanSpace ℝ (Fin d)}
-    {trΣ δ : ℝ}
+    {trSigma δ : ℝ}
     -- LEAN-ONLY: coordinate measurability; LM §3 regularity
     (hX_meas : ∀ j i, Measurable (X j i))
     -- USER-INPUT: the n observations are jointly independent; LM Proposition 1
@@ -128,7 +128,7 @@ theorem ballMoM_deviation {k m n : ℕ} (hk : k ≠ 0) (hm : m ≠ 0)
     (hX_law : ∀ j i, μprob.map (X j i) = P)
     -- USER-INPUT: square-integrability, mean, covariance trace; LM Proposition 1
     (hL2 : MemLp id 2 P) (hmean : ∫ x, x ∂P = μ₀)
-    (htr : ∫ x, ‖x - μ₀‖ ^ 2 ∂P = trΣ) (htrpos : 0 < trΣ)
+    (htr : ∫ x, ‖x - μ₀‖ ^ 2 ∂P = trSigma) (htrpos : 0 < trSigma)
     -- USER-INPUT: confidence level and block count; LM Proposition 1
     (hδ : 0 < δ) (hδ1 : δ < 1) (hn : n = k * m)
     (hkc : k = ⌈8 * Real.log (1 / δ)⌉₊)
@@ -137,7 +137,7 @@ theorem ballMoM_deviation {k m n : ℕ} (hk : k ≠ 0) (hm : m ≠ 0)
       (Chat ξ))
     -- LEAN-ONLY: measurability of the selection, for the deviation event
     (hCmeas : Measurable Chat) :
-    μprob.real {ξ | 4 * Real.sqrt (trΣ * (8 * Real.log (1 / δ) + 1) / n)
+    μprob.real {ξ | 4 * Real.sqrt (trSigma * (8 * Real.log (1 / δ) + 1) / n)
         < ‖Chat ξ - μ₀‖}
       ≤ δ := by
   sorry
