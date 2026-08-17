@@ -54,7 +54,8 @@ The site is driven by two data layers:
 
 ## Categories
 
-Results are organized into twelve categories (defined in `src/lib/categories.ts`):
+Results are organized into nineteen categories (defined in `src/lib/categories.ts`, listed here in
+the order they appear there):
 
 | Category | `id` | Content |
 |---|---|---|
@@ -69,13 +70,14 @@ Results are organized into twelve categories (defined in `src/lib/categories.ts`
 | Optimization | `optimization` | Gradient, proximal, Frank–Wolfe & accelerated methods |
 | Bayesian Statistics | `bayesian` | Posteriors, conjugacy, hierarchical/empirical Bayes, MCMC, posterior contraction |
 | Nonparametric Statistics | `nonparametric` | Kernel density estimation, local polynomial regression, projection estimators, RKHS & Mercer theory |
-| Statistical Models | `statisticalmodels` | Survival analysis & the Cox model, mixed effects & BLUP, GEE, missing data & coarsening |
+| Statistical Models | `statisticalmodels` | Survival analysis & the Cox model, mixed effects & BLUP, GEE, missing data & coarsening, factor models, graphical models |
+| Robust Statistics | `robust` | Contamination & breakdown, influence functions, Huber M-estimation, minimax bias, quantile regression, sub-Gaussian mean estimation under heavy tails |
 | Miscellaneous Results | `probability` | Prékopa–Leindler, Anderson's lemma, Le Cam lemmas, multivariate CLT |
 | Time Series | `timeseries` | Stationarity, Herglotz & spectra, mixing limit theorems, ARMA/ARCH/GARCH/TAR |
 | Causal Inference | `causal` | Potential outcomes, Neyman randomization, adjustment & matching, AIPW, IV/LATE |
 | Statistical Learning | `statlearning` | ERM & uniform convergence, PAC learnability, VC dimension, Rademacher, stability, PAC-Bayes |
 | Experimental Design | `expdesign` | Randomization designs, blocking, ANOVA identity, factorial characters, Horvitz–Thompson |
-| Robust Statistics | `robust` | Contamination & breakdown, influence functions, Huber M-estimation, minimax bias, quantile regression, sub-Gaussian mean estimation under heavy tails |
+| Computational Statistics | `compstat` | Monte Carlo & importance sampling, rejection sampling, bootstrap & jackknife identities, cross-validation |
 
 ## Key features
 
