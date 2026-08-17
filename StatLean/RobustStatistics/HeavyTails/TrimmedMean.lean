@@ -652,6 +652,296 @@ theorem orderStat_quantile_brackets {n r : ℕ} {Y : Fin n → Ξ → ℝ}
     simp only [Set.mem_setOf_eq, sum_indicator_gt_eq_card]
     linarith
 
+/-! ### The truncation bias
+
+The bias of a truncated variable is a *difference* of two one-sided tail integrals, so it
+is bounded by the larger of the two, not by their sum. Each one-sided tail obeys the sharp
+self-referential bound `S² ≤ p(σ² + S²)`: Cauchy–Schwarz gives `S² ≤ p·E[(X−β)²1_{X>β}]`,
+and the second moment of the tail is controlled by `σ² + S²` because the mean shift
+`μ₀ − β` is itself at most `S`. -/
+
+/-- `max f 0` inherits integrability from `f` (`max a 0 = (a + |a|)/2`). -/
+private theorem integrable_max_zero {f : ℝ → ℝ} (hf : Integrable f P) :
+    Integrable (fun x => max (f x) 0) P := by
+  refine ((hf.add hf.abs).div_const 2).congr (Filter.Eventually.of_forall fun x => ?_)
+  show (f x + |f x|) / 2 = max (f x) 0
+  rcases le_or_gt 0 (f x) with hx | hx
+  · rw [max_eq_left hx, abs_of_nonneg hx]; ring
+  · rw [max_eq_right hx.le, abs_of_neg hx]; ring
+
+/-- **The one-sided tail bound** (`LM Theorem 6` proof, the Cauchy–Schwarz step): for an
+`L²` function `f` with mean `m`, variance `w` and `P(f > 0) ≤ p`, the positive part obeys
+
+  `(∫ f⁺)² ≤ p · (w + (∫ f⁺)²)`.
+
+The self-reference is what makes the bound sharp without assuming the tail is on the far
+side of the mean: when `m > 0` the second moment of `f⁺` costs `w + m²`, and `m ≤ ∫ f⁺`. -/
+private theorem tail_sq_le {f : ℝ → ℝ} {m w p : ℝ} (hfm : Measurable f) (hf : MemLp f 2 P)
+    (hm : ∫ x, f x ∂P = m) (hw : ∫ x, (f x - m) ^ 2 ∂P = w)
+    (hp : P.real {x : ℝ | 0 < f x} ≤ p) :
+    (∫ x, max (f x) 0 ∂P) ^ 2 ≤ p * (w + (∫ x, max (f x) 0 ∂P) ^ 2) := by
+  have hfint : Integrable f P := hf.integrable one_le_two
+  have hhint : Integrable (fun x => max (f x) 0) P := integrable_max_zero hfint
+  have hsqint : Integrable (fun x => f x ^ 2) P := hf.integrable_sq
+  have hwint : Integrable (fun x => (f x - m) ^ 2) P :=
+    (hf.sub (memLp_const m)).integrable_sq
+  have hhmeas : Measurable (fun x => max (f x) 0) := hfm.max measurable_const
+  have hVint : Integrable (fun x => max (f x) 0 ^ 2) P := by
+    refine hsqint.mono (hhmeas.pow_const 2).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => ?_)
+    rcases le_or_gt 0 (f x) with hx | hx
+    · rw [max_eq_left hx]
+    · rw [max_eq_right hx.le]
+      simp only [Real.norm_eq_abs, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
+        zero_pow, abs_zero]
+      positivity
+  have hS0 : 0 ≤ ∫ x, max (f x) 0 ∂P :=
+    integral_nonneg fun x => le_max_right _ _
+  have hV0 : 0 ≤ ∫ x, max (f x) 0 ^ 2 ∂P := integral_nonneg fun x => sq_nonneg _
+  have hmeasset : MeasurableSet {x : ℝ | 0 < f x} := hfm measurableSet_Ioi
+  have hindint : Integrable
+      (fun x => ({x : ℝ | 0 < f x}).indicator (fun _ => (1:ℝ)) x) P :=
+    (integrable_const (1:ℝ)).indicator hmeasset
+  have hindval : ∫ x, ({x : ℝ | 0 < f x}).indicator (fun _ => (1:ℝ)) x ∂P
+      = P.real {x : ℝ | 0 < f x} := by
+    rw [integral_indicator_const (1:ℝ) hmeasset, smul_eq_mul, mul_one]
+  have hp0 : 0 ≤ P.real {x : ℝ | 0 < f x} := measureReal_nonneg
+  -- ### Cauchy–Schwarz by the elementary `ab ≤ (λa² + b²/λ)/2`.
+  have hlam : ∀ l : ℝ, 0 < l → ∫ x, max (f x) 0 ∂P
+      ≤ l / 2 * ∫ x, max (f x) 0 ^ 2 ∂P + P.real {x : ℝ | 0 < f x} / (2 * l) := by
+    intro l hl
+    have hbound : ∫ x, max (f x) 0 ∂P
+        ≤ ∫ x, (l / 2 * max (f x) 0 ^ 2
+            + 1 / (2 * l) * ({x : ℝ | 0 < f x}).indicator (fun _ => (1:ℝ)) x) ∂P := by
+      refine integral_mono hhint ((hVint.const_mul _).add (hindint.const_mul _))
+        fun x => ?_
+      rcases le_or_gt (f x) 0 with hx | hx
+      · rw [max_eq_right hx]
+        have hind : (0:ℝ) ≤ ({x : ℝ | 0 < f x}).indicator (fun _ => (1:ℝ)) x :=
+          Set.indicator_nonneg (fun _ _ => zero_le_one) x
+        have hpos : 0 ≤ 1 / (2 * l) * ({x : ℝ | 0 < f x}).indicator (fun _ => (1:ℝ)) x :=
+          mul_nonneg (by positivity) hind
+        nlinarith [hpos]
+      · rw [max_eq_left hx.le,
+          Set.indicator_of_mem (show x ∈ {x : ℝ | 0 < f x} from hx)]
+        have hstep : f x ≤ l / 2 * f x ^ 2 + 1 / (2 * l) := by
+          rw [← sub_nonneg,
+            show l / 2 * f x ^ 2 + 1 / (2 * l) - f x = (l * f x - 1) ^ 2 / (2 * l) by
+              field_simp; ring]
+          positivity
+        simpa using hstep
+    rw [integral_add (hVint.const_mul _) (hindint.const_mul _), integral_const_mul,
+      integral_const_mul, hindval] at hbound
+    calc ∫ x, max (f x) 0 ∂P
+        ≤ l / 2 * ∫ x, max (f x) 0 ^ 2 ∂P + 1 / (2 * l) * P.real {x : ℝ | 0 < f x} := hbound
+      _ = l / 2 * ∫ x, max (f x) 0 ^ 2 ∂P + P.real {x : ℝ | 0 < f x} / (2 * l) := by
+          ring
+  have hCS : (∫ x, max (f x) 0 ∂P) ^ 2
+      ≤ P.real {x : ℝ | 0 < f x} * ∫ x, max (f x) 0 ^ 2 ∂P := by
+    rcases eq_or_lt_of_le hS0 with hS | hS
+    · rw [← hS]
+      simpa using mul_nonneg hp0 hV0
+    · have hVpos : 0 < ∫ x, max (f x) 0 ^ 2 ∂P := by
+        rcases eq_or_lt_of_le hV0 with hV | hV
+        · exfalso
+          have hae : (fun x => max (f x) 0 ^ 2) =ᵐ[P] 0 :=
+            (integral_eq_zero_iff_of_nonneg (fun x => sq_nonneg _) hVint).1 hV.symm
+          have hae2 : (fun x => max (f x) 0) =ᵐ[P] 0 := by
+            filter_upwards [hae] with x hx
+            simpa [pow_eq_zero_iff] using hx
+          rw [integral_congr_ae hae2] at hS
+          simp at hS
+        · exact hV
+      have hl := hlam ((∫ x, max (f x) 0 ∂P) / ∫ x, max (f x) 0 ^ 2 ∂P) (by positivity)
+      rw [show (∫ x, max (f x) 0 ∂P) / (∫ x, max (f x) 0 ^ 2 ∂P) / 2
+            * ∫ x, max (f x) 0 ^ 2 ∂P = (∫ x, max (f x) 0 ∂P) / 2 by
+          field_simp,
+        show P.real {x : ℝ | 0 < f x}
+            / (2 * ((∫ x, max (f x) 0 ∂P) / ∫ x, max (f x) 0 ^ 2 ∂P))
+            = P.real {x : ℝ | 0 < f x} * (∫ x, max (f x) 0 ^ 2 ∂P)
+              / (2 * ∫ x, max (f x) 0 ∂P) by field_simp] at hl
+      have h5 : (∫ x, max (f x) 0 ∂P) / 2
+          ≤ P.real {x : ℝ | 0 < f x} * (∫ x, max (f x) 0 ^ 2 ∂P)
+            / (2 * ∫ x, max (f x) 0 ∂P) := by linarith
+      have h6 := mul_le_mul_of_nonneg_right h5
+        (show (0:ℝ) ≤ 2 * ∫ x, max (f x) 0 ∂P by linarith)
+      rw [show (∫ x, max (f x) 0 ∂P) / 2 * (2 * ∫ x, max (f x) 0 ∂P)
+            = (∫ x, max (f x) 0 ∂P) ^ 2 by ring,
+        show P.real {x : ℝ | 0 < f x} * (∫ x, max (f x) 0 ^ 2 ∂P)
+            / (2 * ∫ x, max (f x) 0 ∂P) * (2 * ∫ x, max (f x) 0 ∂P)
+            = P.real {x : ℝ | 0 < f x} * ∫ x, max (f x) 0 ^ 2 ∂P by field_simp] at h6
+      exact h6
+  -- ### The tail second moment: `V ≤ w + S²`.
+  have hVw : ∫ x, max (f x) 0 ^ 2 ∂P ≤ w + (∫ x, max (f x) 0 ∂P) ^ 2 := by
+    rcases le_or_gt m 0 with hm0 | hm0
+    · have hle : ∫ x, max (f x) 0 ^ 2 ∂P ≤ ∫ x, (f x - m) ^ 2 ∂P := by
+        refine integral_mono hVint hwint fun x => ?_
+        rcases le_or_gt (f x) 0 with hx | hx
+        · rw [max_eq_right hx]
+          simpa using sq_nonneg (f x - m)
+        · rw [max_eq_left hx.le]
+          nlinarith
+      rw [hw] at hle
+      nlinarith [sq_nonneg (∫ x, max (f x) 0 ∂P)]
+    · have h1 : ∫ x, max (f x) 0 ^ 2 ∂P ≤ ∫ x, f x ^ 2 ∂P := by
+        refine integral_mono hVint hsqint fun x => ?_
+        rcases le_or_gt (f x) 0 with hx | hx
+        · rw [max_eq_right hx]
+          simpa using sq_nonneg (f x)
+        · rw [max_eq_left hx.le]
+      have h2 : ∫ x, f x ^ 2 ∂P = w + m ^ 2 := by
+        have hexp : ∫ x, (f x - m) ^ 2 ∂P
+            = ∫ x, (f x ^ 2 - 2 * m * f x + m ^ 2) ∂P :=
+          integral_congr_ae (Filter.Eventually.of_forall fun x => by ring)
+        have e1 : ∫ x, (f x ^ 2 - 2 * m * f x + m ^ 2) ∂P
+            = (∫ x, (f x ^ 2 - 2 * m * f x) ∂P) + ∫ _x : ℝ, m ^ 2 ∂P :=
+          integral_add (hsqint.sub (hfint.const_mul (2 * m))) (integrable_const (m ^ 2))
+        have e2 : ∫ x, (f x ^ 2 - 2 * m * f x) ∂P
+            = (∫ x, f x ^ 2 ∂P) - ∫ x, 2 * m * f x ∂P :=
+          integral_sub hsqint (hfint.const_mul (2 * m))
+        have e3 : ∫ x, 2 * m * f x ∂P = 2 * m * m := by rw [integral_const_mul, hm]
+        have e4 : ∫ _x : ℝ, m ^ 2 ∂P = m ^ 2 := by simp
+        rw [hexp, e1, e2, e3, e4] at hw
+        linarith
+      have h3 : m ≤ ∫ x, max (f x) 0 ∂P := by
+        rw [← hm]
+        exact integral_mono hfint hhint fun x => le_max_left _ _
+      nlinarith
+  nlinarith [hCS, hVw, hp0, hV0, mul_le_mul_of_nonneg_right hp hV0]
+
+/-- The one-sided tail bound in the form used: `∫ f⁺ ≤ √w · √(p/(1−p))`. -/
+private theorem tail_le_sqrt {f : ℝ → ℝ} {m w p : ℝ} (hfm : Measurable f) (hf : MemLp f 2 P)
+    (hm : ∫ x, f x ∂P = m) (hw : ∫ x, (f x - m) ^ 2 ∂P = w)
+    (hp : P.real {x : ℝ | 0 < f x} ≤ p) (hp0 : 0 ≤ p) (hp1 : p < 1) (hw0 : 0 ≤ w) :
+    ∫ x, max (f x) 0 ∂P ≤ Real.sqrt w * Real.sqrt (p / (1 - p)) := by
+  have hkey := tail_sq_le hfm hf hm hw hp
+  have hS0 : 0 ≤ ∫ x, max (f x) 0 ∂P := integral_nonneg fun x => le_max_right _ _
+  have hsq : (∫ x, max (f x) 0 ∂P) ^ 2 ≤ w * (p / (1 - p)) := by
+    rw [show w * (p / (1 - p)) = p * w / (1 - p) by ring, le_div_iff₀ (by linarith)]
+    nlinarith
+  rw [← Real.sqrt_mul hw0]
+  calc ∫ x, max (f x) 0 ∂P = Real.sqrt ((∫ x, max (f x) 0 ∂P) ^ 2) := (Real.sqrt_sq hS0).symm
+    _ ≤ Real.sqrt (w * (p / (1 - p))) := Real.sqrt_le_sqrt hsq
+
+/-- The quantile is monotone in its level. -/
+private theorem quantile_mono (P : Measure ℝ) [IsProbabilityMeasure P] {p p' : ℝ}
+    (hp : 0 < p) (hp' : p' < 1) (hpp : p ≤ p') : quantile P p ≤ quantile P p' := by
+  refine csSup_le_csSup (quantile_set_nonempty_bddAbove P (by linarith) hp').2
+    (quantile_set_nonempty_bddAbove P hp (by linarith)).1 ?_
+  intro M hM
+  simp only [Set.mem_setOf_eq] at hM ⊢
+  linarith
+
+/-- **The sharp truncation-bias bound** (`LM Theorem 6` proof, the Cauchy–Schwarz display,
+sharpened): the bias is the *difference* `∫(α−X)⁺ − ∫(X−β)⁺` of two nonnegative tails, so it
+is bounded by the larger one, and each tail obeys `tail_le_sqrt` at level `p = 2r/n`. Since
+`4r < n` gives `p/(1−p) ≤ 2p`, the bias is at most `σ√(4r/n)` — a factor `√8` better than
+the `σ√(32r/n)` that `LM` records (they add the two tails and bound each by `σ√(8ε)`).
+The main theorem needs this sharper form: `LM`'s composite constant `9` does not survive
+the lossy version. -/
+private theorem truncated_bias_le_sharp {μ₀ σ2 : ℝ} {r n : ℕ} {α β : ℝ}
+    -- USER-INPUT: P is square-integrable with mean μ₀ and variance σ²; LM Theorem 6
+    (hL2 : MemLp id 2 P) (hmean : ∫ x, x ∂P = μ₀)
+    (hvar : ∫ x, (x - μ₀) ^ 2 ∂P = σ2)
+    -- USER-INPUT: nonatomic P; LM §2.3 proof simplification
+    (hatom : ∀ t : ℝ, P {t} = 0)
+    (hr1 : 1 ≤ r) (hrn : 4 * r < n)
+    -- USER-INPUT: the levels sit inside the LM (2.6)–(2.7) brackets
+    (hα₁ : quantile P (r / (2 * n)) ≤ α) (hα₂ : α ≤ quantile P (2 * r / n))
+    (hβ₁ : quantile P (1 - 2 * r / n) ≤ β) (hβ₂ : β ≤ quantile P (1 - r / (2 * n))) :
+    |(∫ x, truncate α β x ∂P) - μ₀| ≤ Real.sqrt σ2 * Real.sqrt (4 * r / n) := by
+  have hn0 : 0 < n := by omega
+  have hN : (0:ℝ) < n := by exact_mod_cast hn0
+  have hR1 : (1:ℝ) ≤ (r:ℝ) := by exact_mod_cast hr1
+  have hRN : 4 * (r:ℝ) < (n:ℝ) := by exact_mod_cast hrn
+  have hL2' : MemLp (fun x : ℝ => x) 2 P := hL2
+  have hσ0 : 0 ≤ σ2 := by rw [← hvar]; exact integral_nonneg fun x => sq_nonneg _
+  -- ### The tail level `p = 2r/n < 1/2`.
+  have hp0 : (0:ℝ) < 2 * (r:ℝ) / n := by positivity
+  have hphalf : 2 * (r:ℝ) / n < 1 / 2 := by rw [div_lt_iff₀ hN]; linarith
+  -- ### `α ≤ β`, so the truncation interval is honest.
+  have hab : α ≤ β :=
+    le_trans hα₂ (le_trans (quantile_mono P hp0 (by linarith) (by linarith)) hβ₁)
+  -- ### Integrability of the pieces.
+  have hidint : Integrable (fun x : ℝ => x) P := hL2'.integrable one_le_two
+  have hαint : Integrable (fun x : ℝ => max (α - x) 0) P :=
+    integrable_max_zero ((integrable_const α).sub hidint)
+  have hβint : Integrable (fun x : ℝ => max (x - β) 0) P :=
+    integrable_max_zero (hidint.sub (integrable_const β))
+  -- ### The bias is the *difference* of the two one-sided tails.
+  have hpt : ∀ x : ℝ, truncate α β x = x + max (α - x) 0 - max (x - β) 0 := by
+    intro x
+    rcases le_or_gt x α with hx | hx
+    · rw [truncate, min_eq_right (le_trans hx hab), max_eq_left hx,
+        max_eq_left (by linarith : (0:ℝ) ≤ α - x), max_eq_right (by linarith : x - β ≤ 0)]
+      ring
+    · rcases le_or_gt x β with hx2 | hx2
+      · rw [truncate, min_eq_right hx2, max_eq_right hx.le,
+          max_eq_right (by linarith : α - x ≤ 0), max_eq_right (by linarith : x - β ≤ 0)]
+        ring
+      · rw [truncate, min_eq_left hx2.le, max_eq_right hab,
+          max_eq_right (by linarith : α - x ≤ 0), max_eq_left (by linarith : (0:ℝ) ≤ x - β)]
+        ring
+  have hint : ∫ x, truncate α β x ∂P
+      = μ₀ + (∫ x, max (α - x) 0 ∂P) - ∫ x, max (x - β) 0 ∂P := by
+    have e0 : ∫ x, truncate α β x ∂P = ∫ x, (x + max (α - x) 0 - max (x - β) 0) ∂P :=
+      integral_congr_ae (Filter.Eventually.of_forall hpt)
+    have e1 : ∫ x, (x + max (α - x) 0 - max (x - β) 0) ∂P
+        = (∫ x, (x + max (α - x) 0) ∂P) - ∫ x, max (x - β) 0 ∂P :=
+      integral_sub (hidint.add hαint) hβint
+    have e2 : ∫ x, (x + max (α - x) 0) ∂P = (∫ x : ℝ, x ∂P) + ∫ x, max (α - x) 0 ∂P :=
+      integral_add hidint hαint
+    rw [e0, e1, e2, hmean]
+  -- ### Each tail is at most `√σ² · √(p/(1−p))`.
+  have hSβ : ∫ x, max (x - β) 0 ∂P
+      ≤ Real.sqrt σ2 * Real.sqrt ((2 * (r:ℝ) / n) / (1 - 2 * (r:ℝ) / n)) := by
+    refine tail_le_sqrt (m := μ₀ - β) (measurable_id.sub_const β)
+      (hL2'.sub (memLp_const β)) ?_ ?_ ?_ hp0.le (by linarith) hσ0
+    · rw [integral_sub hidint (integrable_const β), hmean, integral_const]
+      simp
+    · calc ∫ x, ((x - β) - (μ₀ - β)) ^ 2 ∂P = ∫ x, (x - μ₀) ^ 2 ∂P :=
+            integral_congr_ae (Filter.Eventually.of_forall fun x => by ring)
+        _ = σ2 := hvar
+    · have hsub : {x : ℝ | 0 < x - β}
+          ⊆ {x : ℝ | quantile P (1 - 2 * (r:ℝ) / n) ≤ x} := fun x hx => by
+        simp only [Set.mem_setOf_eq] at hx ⊢
+        linarith
+      calc P.real {x : ℝ | 0 < x - β}
+          ≤ P.real {x : ℝ | quantile P (1 - 2 * (r:ℝ) / n) ≤ x} := measureReal_mono hsub
+        _ = 2 * (r:ℝ) / n := by
+            rw [measure_ge_quantile P hatom (by linarith) (by linarith)]; ring
+  have hSα : ∫ x, max (α - x) 0 ∂P
+      ≤ Real.sqrt σ2 * Real.sqrt ((2 * (r:ℝ) / n) / (1 - 2 * (r:ℝ) / n)) := by
+    refine tail_le_sqrt (m := α - μ₀) (measurable_const.sub measurable_id)
+      ((memLp_const α).sub hL2') ?_ ?_ ?_ hp0.le (by linarith) hσ0
+    · rw [integral_sub (integrable_const α) hidint, hmean, integral_const]
+      simp
+    · calc ∫ x, ((α - x) - (α - μ₀)) ^ 2 ∂P = ∫ x, (x - μ₀) ^ 2 ∂P :=
+            integral_congr_ae (Filter.Eventually.of_forall fun x => by ring)
+        _ = σ2 := hvar
+    · have hsub : {x : ℝ | 0 < α - x} ⊆ {x : ℝ | x < quantile P (2 * (r:ℝ) / n)} :=
+        fun x hx => by
+          simp only [Set.mem_setOf_eq] at hx ⊢
+          linarith
+      calc P.real {x : ℝ | 0 < α - x}
+          ≤ P.real {x : ℝ | x < quantile P (2 * (r:ℝ) / n)} := measureReal_mono hsub
+        _ = 2 * (r:ℝ) / n := by
+            rw [measureReal_lt_eq, measure_ge_quantile P hatom hp0 (by linarith)]; ring
+  -- ### A difference of two nonnegative terms is bounded by the larger of them.
+  have hSα0 : 0 ≤ ∫ x, max (α - x) 0 ∂P := integral_nonneg fun x => le_max_right _ _
+  have hSβ0 : 0 ≤ ∫ x, max (x - β) 0 ∂P := integral_nonneg fun x => le_max_right _ _
+  have hfinal : Real.sqrt σ2 * Real.sqrt ((2 * (r:ℝ) / n) / (1 - 2 * (r:ℝ) / n))
+      ≤ Real.sqrt σ2 * Real.sqrt (4 * (r:ℝ) / n) := by
+    refine mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt ?_) (Real.sqrt_nonneg _)
+    have hu : (0:ℝ) < (r:ℝ) / n := by positivity
+    have hu2 : 2 * ((r:ℝ) / n) < 1 / 2 := by rw [← mul_div_assoc]; exact hphalf
+    rw [show 2 * (r:ℝ) / n = 2 * ((r:ℝ) / n) by ring,
+      show 4 * (r:ℝ) / n = 4 * ((r:ℝ) / n) by ring, div_le_iff₀ (by linarith)]
+    nlinarith [hu, hu2]
+  rw [hint]
+  rw [abs_le]
+  constructor <;> linarith
+
 /-- **The truncation-bias bound** (`LM Theorem 6` proof, the display
 `|E[φ_{α,β}(X)|Y] − μ| ≤ σ√(32ε)`): whenever the truncation levels are quantile-
 bracketed as in `orderStat_quantile_brackets`, the conditional bias of the truncated
@@ -669,7 +959,15 @@ theorem truncated_bias_le {μ₀ σ2 : ℝ} {r n : ℕ} {α β : ℝ}
     (hα₁ : quantile P (r / (2 * n)) ≤ α) (hα₂ : α ≤ quantile P (2 * r / n))
     (hβ₁ : quantile P (1 - 2 * r / n) ≤ β) (hβ₂ : β ≤ quantile P (1 - r / (2 * n))) :
     |(∫ x, truncate α β x ∂P) - μ₀| ≤ Real.sqrt σ2 * Real.sqrt (32 * r / n) := by
-  sorry
+  refine le_trans (truncated_bias_le_sharp hL2 hmean hvar hatom hr1 hrn hα₁ hα₂ hβ₁ hβ₂) ?_
+  have hN : (0:ℝ) < n := by
+    have : 0 < n := by omega
+    exact_mod_cast this
+  refine mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt ?_) (Real.sqrt_nonneg _)
+  have : (0:ℝ) ≤ (r:ℝ) / n := by positivity
+  rw [show 4 * (r:ℝ) / n = 4 * ((r:ℝ) / n) by ring,
+    show 32 * (r:ℝ) / n = 32 * ((r:ℝ) / n) by ring]
+  linarith
 
 open StatLean.MultipleTesting in
 /-- **The trimmed mean is sub-Gaussian** (`LM Theorem 6`): two independent i.i.d.
