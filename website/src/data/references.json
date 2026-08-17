@@ -2548,5 +2548,145 @@
     "key": "zhao-yu2006",
     "sortKey": "Zhao",
     "html": "P. Zhao and B. Yu, \"On model selection consistency of Lasso,\" *Journal of Machine Learning Research* **7**, 2006, pp. 2541–2563."
+  },
+  {
+    "key": "bkm2011",
+    "sortKey": "Bartholomew",
+    "html": "D. Bartholomew, M. Knott, and I. Moustaki, *Latent Variable Models and Factor Analysis: A Unified Approach*, 3rd ed., Wiley Series in Probability and Statistics, John Wiley & Sons, 2011."
+  },
+  {
+    "key": "spearman1904-general-intelligence",
+    "sortKey": "Spearman",
+    "html": "C. Spearman, \"'General intelligence,' objectively determined and measured,\" *The American Journal of Psychology* **15**(2), 1904, pp. 201–292."
+  },
+  {
+    "key": "thurstone1947",
+    "sortKey": "Thurstone",
+    "html": "L. L. Thurstone, *Multiple-Factor Analysis: A Development and Expansion of The Vectors of Mind*, University of Chicago Press, Chicago, 1947."
+  },
+  {
+    "key": "lawley1940",
+    "sortKey": "Lawley",
+    "html": "D. N. Lawley, \"The estimation of factor loadings by the method of maximum likelihood,\" *Proceedings of the Royal Society of Edinburgh* **60**(1), 1940, pp. 64–82."
+  },
+  {
+    "key": "kaiser1958",
+    "sortKey": "Kaiser",
+    "html": "H. F. Kaiser, \"The varimax criterion for analytic rotation in factor analysis,\" *Psychometrika* **23**(3), 1958, pp. 187–200."
+  },
+  {
+    "key": "rubin-thayer1982",
+    "sortKey": "Rubin",
+    "html": "D. B. Rubin and D. T. Thayer, \"EM algorithms for ML factor analysis,\" *Psychometrika* **47**(1), 1982, pp. 69–76."
+  },
+  {
+    "key": "lazarsfeld1950",
+    "sortKey": "Lazarsfeld",
+    "html": "P. F. Lazarsfeld, \"The logical and mathematical foundation of latent structure analysis,\" in S. A. Stouffer, L. Guttman, E. A. Suchman, P. F. Lazarsfeld, S. A. Star, and J. A. Clausen, *Measurement and Prediction*, Studies in Social Psychology in World War II, vol. IV, Princeton University Press, Princeton, 1950, ch. 10–11."
+  },
+  {
+    "key": "lauritzen1996",
+    "sortKey": "Lauritzen",
+    "html": "S. L. Lauritzen, *Graphical Models*, Oxford Statistical Science Series 17, Clarendon Press, Oxford, 1996."
+  },
+  {
+    "key": "pearl1988",
+    "sortKey": "Pearl",
+    "html": "J. Pearl, *Probabilistic Reasoning in Intelligent Systems: Networks of Plausible Inference*, Morgan Kaufmann, San Mateo, CA, 1988."
+  },
+  {
+    "key": "pearl-paz1987",
+    "sortKey": "Pearl",
+    "html": "J. Pearl and A. Paz, \"Graphoids: a graph-based logic for reasoning about relevance relations,\" in *Advances in Artificial Intelligence II*, North-Holland, Amsterdam, 1987, pp. 357–363."
+  },
+  {
+    "key": "dawid1979",
+    "sortKey": "Dawid",
+    "html": "A. P. Dawid, \"Conditional independence in statistical theory,\" *Journal of the Royal Statistical Society, Series B* **41**(1), 1979, pp. 1–31."
+  },
+  {
+    "key": "studeny1992",
+    "sortKey": "Studený",
+    "html": "M. Studený, \"Conditional independence relations have no finite complete characterization,\" in *Information Theory, Statistical Decision Functions and Random Processes* (Transactions of the 11th Prague Conference, vol. B), Kluwer, Dordrecht, 1992, pp. 377–396."
+  },
+  {
+    "key": "hammersley-clifford1971",
+    "sortKey": "Hammersley",
+    "html": "J. M. Hammersley and P. E. Clifford, \"Markov fields on finite graphs and lattices,\" unpublished manuscript, 1971."
+  },
+  {
+    "key": "besag1974",
+    "sortKey": "Besag",
+    "html": "J. Besag, \"Spatial interaction and the statistical analysis of lattice systems,\" *Journal of the Royal Statistical Society, Series B* **36**(2), 1974, pp. 192–236."
+  },
+  {
+    "key": "grimmett1973",
+    "sortKey": "Grimmett",
+    "html": "G. R. Grimmett, \"A theorem about random fields,\" *Bulletin of the London Mathematical Society* **5**(1), 1973, pp. 81–84."
+  },
+  {
+    "key": "moussouris1974",
+    "sortKey": "Moussouris",
+    "html": "J. Moussouris, \"Gibbs and Markov random systems with constraints,\" *Journal of Statistical Physics* **10**(1), 1974, pp. 11–33."
+  },
+  {
+    "key": "menger1927",
+    "sortKey": "Menger",
+    "html": "K. Menger, \"Zur allgemeinen Kurventheorie,\" *Fundamenta Mathematicae* **10**, 1927, pp. 96–115."
+  },
+  {
+    "key": "dempster1972",
+    "sortKey": "Dempster",
+    "html": "A. P. Dempster, \"Covariance selection,\" *Biometrics* **28**(1), 1972, pp. 157–175."
+  },
+  {
+    "key": "pearl1986",
+    "sortKey": "Pearl",
+    "html": "J. Pearl, “Fusion, propagation, and structuring in belief networks,” *Artificial Intelligence* **29** (1986), 241–288."
+  },
+  {
+    "key": "verma-pearl1990",
+    "sortKey": "Verma",
+    "html": "T. Verma and J. Pearl, “Causal networks: semantics and expressiveness,” in *Uncertainty in Artificial Intelligence 4*, North-Holland, Amsterdam, 1990, pp. 69–76."
+  },
+  {
+    "key": "geiger-pearl1990",
+    "sortKey": "Geiger",
+    "html": "D. Geiger and J. Pearl, “On the logic of causal models,” in *Uncertainty in Artificial Intelligence 4*, North-Holland, Amsterdam, 1990."
+  },
+  {
+    "key": "lauritzen-spiegelhalter1988",
+    "sortKey": "Lauritzen",
+    "html": "S. L. Lauritzen and D. J. Spiegelhalter, “Local computations with probabilities on graphical structures and their application to expert systems,” *Journal of the Royal Statistical Society, Series B* **50** (1988), 157–224."
+  },
+  {
+    "key": "lauritzen-dawid-larsen-leimer1990",
+    "sortKey": "Lauritzen",
+    "html": "S. L. Lauritzen, A. P. Dawid, B. N. Larsen and H.-G. Leimer, “Independence properties of directed Markov fields,” *Networks* **20** (1990), 491–505."
+  },
+  {
+    "key": "kiiveri-speed-carlin1984",
+    "sortKey": "Kiiveri",
+    "html": "H. Kiiveri, T. P. Speed and J. B. Carlin, “Recursive causal models,” *Journal of the Australian Mathematical Society, Series A* **36** (1984), 30–52."
+  },
+  {
+    "key": "speed-kiiveri1986",
+    "sortKey": "Speed",
+    "html": "T. P. Speed and H. T. Kiiveri, “Gaussian Markov distributions over finite graphs,” *Annals of Statistics* **14** (1986), 138–150."
+  },
+  {
+    "key": "szpilrajn1930",
+    "sortKey": "Szpilrajn",
+    "html": "E. Szpilrajn, “Sur l'extension de l'ordre partiel,” *Fundamenta Mathematicae* **16** (1930), 386–389."
+  },
+  {
+    "key": "berkson1946",
+    "sortKey": "Berkson",
+    "html": "J. Berkson, “Limitations of the application of fourfold table analysis to hospital data,” *Biometrics Bulletin* **2** (1946), 47–53."
+  },
+  {
+    "key": "wright1921",
+    "sortKey": "Wright",
+    "html": "S. Wright, “Correlation and causation,” *Journal of Agricultural Research* **20** (1921), 557–585."
   }
 ]
