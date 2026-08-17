@@ -45,6 +45,60 @@ junk value `0`. -/
 noncomputable def medianOfMeans {k m : ℕ} (x : Fin k → Fin m → ℝ) : ℝ :=
   sampleMedian (fun j => sampleMean (x j))
 
+/-! ### Measurability and product-measure plumbing -/
+
+/-- The sample mean is a measurable function of the sample. -/
+private lemma measurable_sampleMean {m : ℕ} : Measurable fun w : Fin m → ℝ => sampleMean w := by
+  simp only [sampleMean]
+  exact (Finset.measurable_sum _ fun i _ => measurable_pi_apply i).div_const _
+
+omit [IsProbabilityMeasure P] in
+/-- Independence transports backwards along a common measurable map: if the family `f` is
+independent under the pushforward `μ.map Y`, then `f ∘ Y` is independent under `μ`. -/
+private lemma iIndepFun_comp_left {Ω' : Type*} [MeasurableSpace Ω'] {ι : Type*} [Fintype ι]
+    {Y : Ξ → Ω'} (hY : Measurable Y) {f : ι → Ω' → ℝ} (hf : ∀ i, Measurable (f i))
+    (h : iIndepFun f (μprob.map Y)) : iIndepFun (fun i ξ => f i (Y ξ)) μprob := by
+  haveI : IsProbabilityMeasure (μprob.map Y) := Measure.isProbabilityMeasure_map hY.aemeasurable
+  rw [iIndepFun_iff_map_fun_eq_pi_map (f := fun i ξ => f i (Y ξ))
+    fun i => ((hf i).comp hY).aemeasurable]
+  rw [iIndepFun_iff_map_fun_eq_pi_map fun i => (hf i).aemeasurable] at h
+  have h1 : (fun ξ i => f i (Y ξ)) = (fun ω i => f i ω) ∘ Y := rfl
+  rw [h1, ← Measure.map_map (measurable_pi_lambda _ fun i => hf i) hY, h]
+  congr 1
+  funext i
+  rw [Measure.map_map (hf i) hY]
+  rfl
+
+/-- Currying the index: a product measure over a product index type is, under the
+curry map, the iterated product measure over the blocks. -/
+private lemma pi_map_curry {k m : ℕ} (ν : Fin k × Fin m → Measure ℝ)
+    [∀ q, IsProbabilityMeasure (ν q)] :
+    (Measure.pi ν).map (fun (v : Fin k × Fin m → ℝ) (j : Fin k) (i : Fin m) => v (j, i))
+      = Measure.pi fun j => Measure.pi fun i => ν (j, i) := by
+  have hU : Measurable fun (w : Fin k → Fin m → ℝ) (q : Fin k × Fin m) => w q.1 q.2 :=
+    measurable_pi_lambda _ fun q => (measurable_pi_apply q.2).comp (measurable_pi_apply q.1)
+  have hC : Measurable fun (v : Fin k × Fin m → ℝ) (j : Fin k) (i : Fin m) => v (j, i) :=
+    measurable_pi_lambda _ fun j => measurable_pi_lambda _ fun i => measurable_pi_apply _
+  -- the uncurry map pushes the iterated product forward to the product over pairs
+  have hA : (Measure.pi fun j => Measure.pi fun i => ν (j, i)).map
+      (fun (w : Fin k → Fin m → ℝ) (q : Fin k × Fin m) => w q.1 q.2) = Measure.pi ν := by
+    refine (Measure.pi_eq fun s hs => ?_).symm
+    rw [Measure.map_apply hU (MeasurableSet.univ_pi hs)]
+    have hpre : (fun (w : Fin k → Fin m → ℝ) (q : Fin k × Fin m) => w q.1 q.2) ⁻¹'
+        Set.univ.pi s = Set.univ.pi fun j => Set.univ.pi fun i => s (j, i) := by
+      ext w
+      simp only [Set.mem_preimage, Set.mem_pi, Set.mem_univ, forall_const, Prod.forall]
+    rw [hpre, Measure.pi_pi]
+    simp_rw [Measure.pi_pi]
+    rw [Fintype.prod_prod_type]
+  have hCU : (fun (v : Fin k × Fin m → ℝ) (j : Fin k) (i : Fin m) => v (j, i)) ∘
+      (fun (w : Fin k → Fin m → ℝ) (q : Fin k × Fin m) => w q.1 q.2) = id := rfl
+  calc (Measure.pi ν).map (fun v j i => v (j, i))
+      = ((Measure.pi fun j => Measure.pi fun i => ν (j, i)).map
+          (fun w q => w q.1 q.2)).map (fun v j i => v (j, i)) := by rw [hA]
+    _ = Measure.pi fun j => Measure.pi fun i => ν (j, i) := by
+        rw [Measure.map_map hC hU, hCU, Measure.map_id]
+
 /-- The median step, stated directly for the values whose median is taken: if strictly more
 than `k/2` of the `Z j` lie in `[μ₀ − a, μ₀ + a]`, then so does `sampleMedian Z`. The two
 Round-1 counting bricks (`card_le_sampleMedian`, `card_sampleMedian_le`) pin the median from
@@ -111,7 +165,37 @@ theorem iIndepFun_blockMean {k m : ℕ} {X : Fin k → Fin m → Ξ → ℝ}
     -- USER-INPUT: the n = k·m observations are jointly independent; LM Theorem 2
     (hX_indep : iIndepFun (fun q : Fin k × Fin m => X q.1 q.2) μprob) :
     iIndepFun (fun j ξ => sampleMean (fun i => X j i ξ)) μprob := by
-  sorry
+  classical
+  haveI hνblock : ∀ (j : Fin k) (i : Fin m), IsProbabilityMeasure (μprob.map (X j i)) :=
+    fun j i => Measure.isProbabilityMeasure_map (hX_meas j i).aemeasurable
+  haveI hνprob : ∀ q : Fin k × Fin m, IsProbabilityMeasure (μprob.map (X q.1 q.2)) :=
+    fun q => hνblock q.1 q.2
+  have hYmeas : Measurable fun ξ (q : Fin k × Fin m) => X q.1 q.2 ξ :=
+    measurable_pi_lambda _ fun q => hX_meas q.1 q.2
+  -- Step 1: joint independence says the joint law is the product law.
+  have hlaw : μprob.map (fun ξ (q : Fin k × Fin m) => X q.1 q.2 ξ)
+      = Measure.pi fun (q : Fin k × Fin m) => μprob.map (X q.1 q.2) :=
+    (iIndepFun_iff_map_fun_eq_pi_map
+      fun (q : Fin k × Fin m) => (hX_meas q.1 q.2).aemeasurable).1 hX_indep
+  -- Step 2: under a product law, functions of disjoint coordinate blocks are independent.
+  have hblocks : iIndepFun
+      (fun (j : Fin k) (v : Fin k × Fin m → ℝ) => sampleMean fun i => v (j, i))
+      (Measure.pi fun (q : Fin k × Fin m) => μprob.map (X q.1 q.2)) := by
+    have hpi : iIndepFun
+        (fun (j : Fin k) (w : Fin k → Fin m → ℝ) => sampleMean (w j))
+        (Measure.pi fun j => Measure.pi fun i => μprob.map (X j i)) :=
+      iIndepFun_pi (X := fun (_ : Fin k) (w : Fin m → ℝ) => sampleMean w)
+        fun _ => measurable_sampleMean.aemeasurable
+    refine iIndepFun_comp_left (Y := fun (v : Fin k × Fin m → ℝ) (j : Fin k) (i : Fin m) =>
+      v (j, i)) (measurable_pi_lambda _ fun j => measurable_pi_lambda _ fun i =>
+        measurable_pi_apply _) (fun j => measurable_sampleMean.comp (measurable_pi_apply j)) ?_
+    rw [pi_map_curry]
+    exact hpi
+  -- Step 3: transport the product-law statement back along the joint law.
+  exact iIndepFun_comp_left hYmeas
+    (fun j => measurable_sampleMean.comp
+      (measurable_pi_lambda _ fun i => measurable_pi_apply _))
+    (by rw [hlaw]; exact hblocks)
 
 /-- **Median-of-means is sub-Gaussian, exponential form** (`LM Theorem 2`, first
 display): for i.i.d. data with mean `μ₀` and variance `σ²`, arranged in `k` blocks of
