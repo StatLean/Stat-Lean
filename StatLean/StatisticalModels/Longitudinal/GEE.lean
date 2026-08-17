@@ -18,9 +18,8 @@ Two routes, both stated:
 
 * `gee_unbiased` — the **L² pairing route** (primary): with `MemLp 2` USER-INPUT moment
   hypotheses, each term is `⟪W, y − μ⟫_{L²(Q)} = ⟪W, condExpL2 (y − μ)⟫ = 0` via the
-  self-adjointness of `condExpL2` against covariate-measurable elements — the exact pattern
-  of `AsymptoticStatistics.Operators.CAR` (its `condExpL2` pairing toolkit is imported and
-  reused). This avoids the bounded-factor limitation of `condExp` pull-out.
+  self-adjointness of `condExpL2` against covariate-measurable elements. This avoids the
+  bounded-factor limitation of `condExp` pull-out.
 * `gee_unbiased_of_bounded` — the corollary whose hypotheses match the books' phrasing
   (bounded weights, integrable responses), via `condExp` pull-out for bounded factors.
 

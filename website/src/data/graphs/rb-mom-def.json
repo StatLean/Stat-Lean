@@ -1,0 +1,33 @@
+{
+  "root": "StatLean.RobustStatistics.medianOfMeans",
+  "nodes": [
+    {"id":"StatLean.RobustStatistics.medianOfMeans","label":"medianOfMeans","full":"StatLean.RobustStatistics.medianOfMeans","kind":"root","decl":"def","module":"StatLean.RobustStatistics.HeavyTails.MedianOfMeans"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"StatLean.RobustStatistics.sampleMedian","label":"sampleMedian","full":"StatLean.RobustStatistics.sampleMedian","kind":"repo","decl":"def","module":"StatLean.RobustStatistics.LocationScale.Median"},
+    {"id":"StatLean.RobustStatistics.sampleMean","label":"sampleMean","full":"StatLean.RobustStatistics.sampleMean","kind":"repo","decl":"def","module":"StatLean.RobustStatistics.LocationScale.Mean"},
+    {"id":"StatLean.MultipleTesting.orderStat","label":"orderStat","full":"StatLean.MultipleTesting.orderStat","kind":"repo","decl":"def","module":"StatLean.MultipleTesting.ForMathlib.OrderStatistics"},
+    {"id":"Finset.sum","label":"sum","full":"Finset.sum","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.BigOperators.Group.Finset.Defs"},
+    {"id":"Finset.univ","label":"univ","full":"Finset.univ","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
+    {"id":"Fin.fintype","label":"fintype","full":"Fin.fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Basic"},
+    {"id":"Equiv.Perm","label":"Perm","full":"Equiv.Perm","kind":"mathlib","decl":"def","module":"Mathlib.Logic.Equiv.Defs"},
+    {"id":"EquivLike.toFunLike","label":"toFunLike","full":"EquivLike.toFunLike","kind":"mathlib","decl":"def","module":"Mathlib.Data.FunLike.Equiv"},
+    {"id":"Tuple.sort","label":"sort","full":"Tuple.sort","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fin.Tuple.Sort"},
+    {"id":"Real.linearOrder","label":"linearOrder","full":"Real.linearOrder","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.RobustStatistics.medianOfMeans","target":"Real"},
+    {"source":"StatLean.RobustStatistics.medianOfMeans","target":"StatLean.RobustStatistics.sampleMedian"},
+    {"source":"StatLean.RobustStatistics.medianOfMeans","target":"StatLean.RobustStatistics.sampleMean"},
+    {"source":"StatLean.RobustStatistics.sampleMedian","target":"Real"},
+    {"source":"StatLean.RobustStatistics.sampleMedian","target":"StatLean.MultipleTesting.orderStat"},
+    {"source":"StatLean.RobustStatistics.sampleMean","target":"Real"},
+    {"source":"StatLean.RobustStatistics.sampleMean","target":"Finset.sum"},
+    {"source":"StatLean.RobustStatistics.sampleMean","target":"Finset.univ"},
+    {"source":"StatLean.RobustStatistics.sampleMean","target":"Fin.fintype"},
+    {"source":"StatLean.MultipleTesting.orderStat","target":"Real"},
+    {"source":"StatLean.MultipleTesting.orderStat","target":"Equiv.Perm"},
+    {"source":"StatLean.MultipleTesting.orderStat","target":"EquivLike.toFunLike"},
+    {"source":"StatLean.MultipleTesting.orderStat","target":"Tuple.sort"},
+    {"source":"StatLean.MultipleTesting.orderStat","target":"Real.linearOrder"}
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "root": "StatLean.StatisticalModels.GraphicalModels.IsSemigraphoid",
+  "nodes": [
+    {"id":"StatLean.StatisticalModels.GraphicalModels.IsSemigraphoid","label":"IsSemigraphoid","full":"StatLean.StatisticalModels.GraphicalModels.IsSemigraphoid","kind":"root","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Core.Semigraphoid"},
+    {"id":"Finset","label":"Finset","full":"Finset","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalModels.GraphicalModels.IsSemigraphoid","target":"Finset"}
+  ]
+}

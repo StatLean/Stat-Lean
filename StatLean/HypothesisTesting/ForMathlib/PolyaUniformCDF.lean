@@ -22,8 +22,9 @@ Mathlib-only; the conclusion is stated with Mathlib's `TendstoUniformly`.
 
 **Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
 Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 11 (Basic Large-Sample
-Theory), §11.2 (Weak Convergence and Central Limit Theorems), Pólya's theorem: pointwise
-convergence of distribution functions to a continuous limit is uniform. (`TSH4 §11.2`.)
+Theory), §11.2 (Weak Convergence and Central Limit Theorems), **Theorem 11.2.9** (Polyá's Theorem):
+pointwise convergence of distribution functions to a continuous limit is uniform.
+(`TSH4 §11.2 Thm 11.2.9`.)
 
 **Proof formalization notes.**
 * Standard proof: fix `ε > 0` and choose a finite grid `x₀ < ⋯ < x_k` with `F x₀ < ε`,

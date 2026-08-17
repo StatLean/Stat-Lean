@@ -30,6 +30,11 @@
     "html": "S. M. Ali and S. D. Silvey, \"A general class of coefficients of divergence of one distribution from another,\" *Journal of the Royal Statistical Society, Series B* **28**, 1966, pp. 131–142."
   },
   {
+    "key": "allen1974",
+    "sortKey": "Allen",
+    "html": "D. M. Allen, \"The relationship between variable selection and data augmentation and a method for prediction,\" *Technometrics* **16**(1), 1974, pp. 125–127."
+  },
+  {
     "key": "an-huang1996",
     "sortKey": "An",
     "html": "H. Z. An and F. C. Huang, \"The geometrical ergodicity of nonlinear autoregressive models,\" *Statistica Sinica* **6**(4), 1996, pp. 943–956."
@@ -448,6 +453,91 @@
     "key": "castillovdv2012",
     "sortKey": "Castillo",
     "html": "I. Castillo and A. W. van der Vaart, “Needles and straw in a haystack: posterior concentration for possibly sparse sequences,” *The Annals of Statistics* **40**(4), 2012, pp. 2069–2101."
+  },
+  {
+    "key": "devroye1986",
+    "sortKey": "Devroye",
+    "html": "L. Devroye, *Non-Uniform Random Variate Generation*, Springer, New York, 1986."
+  },
+  {
+    "key": "douc-cappe2005",
+    "sortKey": "Douc",
+    "html": "R. Douc and O. Cappé, \"Comparison of resampling schemes for particle filtering,\" *Proceedings of the 4th International Symposium on Image and Signal Processing and Analysis (ISPA 2005)*, pp. 64–69."
+  },
+  {
+    "key": "efron-tibshirani1993",
+    "sortKey": "Efron",
+    "html": "B. Efron and R. J. Tibshirani, *An Introduction to the Bootstrap*, Monographs on Statistics and Applied Probability **57**, Chapman & Hall, New York, 1993."
+  },
+  {
+    "key": "geisser1975",
+    "sortKey": "Geisser",
+    "html": "S. Geisser, \"The predictive sample reuse method with applications,\" *Journal of the American Statistical Association* **70**(350), 1975, pp. 320–328."
+  },
+  {
+    "key": "gentle2002",
+    "sortKey": "Gentle",
+    "html": "J. E. Gentle, *Elements of Computational Statistics*, Springer Texts in Statistics, Springer, New York, 2002."
+  },
+  {
+    "key": "gordon-salmond-smith1993",
+    "sortKey": "Gordon",
+    "html": "N. J. Gordon, D. J. Salmond, and A. F. M. Smith, \"Novel approach to nonlinear/non-Gaussian Bayesian state estimation,\" *IEE Proceedings F (Radar and Signal Processing)* **140**(2), 1993, pp. 107–113."
+  },
+  {
+    "key": "hammersley-handscomb1964",
+    "sortKey": "Hammersley",
+    "html": "J. M. Hammersley and D. C. Handscomb, *Monte Carlo Methods*, Methuen, London, 1964."
+  },
+  {
+    "key": "johnson-kotz-balakrishnan1997",
+    "sortKey": "Johnson",
+    "html": "N. L. Johnson, S. Kotz, and N. Balakrishnan, *Discrete Multivariate Distributions*, Wiley Series in Probability and Statistics, Wiley, New York, 1997."
+  },
+  {
+    "key": "kahn-marshall1953",
+    "sortKey": "Kahn",
+    "html": "H. Kahn and A. W. Marshall, \"Methods of reducing sample size in Monte Carlo computations,\" *Journal of the Operations Research Society of America* **1**(5), 1953, pp. 263–278."
+  },
+  {
+    "key": "metropolis-ulam1949",
+    "sortKey": "Metropolis",
+    "html": "N. Metropolis and S. Ulam, \"The Monte Carlo method,\" *Journal of the American Statistical Association* **44**(247), 1949, pp. 335–341."
+  },
+  {
+    "key": "quenouille1949",
+    "sortKey": "Quenouille",
+    "html": "M. H. Quenouille, \"Approximate tests of correlation in time-series,\" *Journal of the Royal Statistical Society, Series B* **11**(1), 1949, pp. 68–84."
+  },
+  {
+    "key": "quenouille1956",
+    "sortKey": "Quenouille",
+    "html": "M. H. Quenouille, \"Notes on bias in estimation,\" *Biometrika* **43**(3–4), 1956, pp. 353–360."
+  },
+  {
+    "key": "rubinstein1981",
+    "sortKey": "Rubinstein",
+    "html": "R. Y. Rubinstein, *Simulation and the Monte Carlo Method*, Wiley Series in Probability and Statistics, Wiley, New York, 1981."
+  },
+  {
+    "key": "schucany-gray-owen1971",
+    "sortKey": "Schucany",
+    "html": "W. R. Schucany, H. L. Gray, and D. B. Owen, \"On bias reduction in estimation,\" *Journal of the American Statistical Association* **66**(335), 1971, pp. 524–533."
+  },
+  {
+    "key": "stone1974",
+    "sortKey": "Stone",
+    "html": "M. Stone, \"Cross-validatory choice and assessment of statistical predictions,\" *Journal of the Royal Statistical Society, Series B* **36**(2), 1974, pp. 111–147."
+  },
+  {
+    "key": "tukey1958",
+    "sortKey": "Tukey",
+    "html": "J. W. Tukey, \"Bias and confidence in not-quite large samples (abstract),\" *The Annals of Mathematical Statistics* **29**(2), 1958, p. 614."
+  },
+  {
+    "key": "vonneumann1951",
+    "sortKey": "von Neumann",
+    "html": "J. von Neumann, \"Various techniques used in connection with random digits,\" *National Bureau of Standards Applied Mathematics Series* **12**, 1951, pp. 36–38."
   },
   {
     "key": "cencov1962",
@@ -2285,6 +2375,11 @@
     "html": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998."
   },
   {
+    "key": "vanhandel2016",
+    "sortKey": "van Handel",
+    "html": "R. van Handel, *Probability in High Dimension*, APC 550 Lecture Notes, Princeton University, 2016."
+  },
+  {
     "key": "vanderweele-ding2017",
     "sortKey": "VanderWeele",
     "html": "T. J. VanderWeele and P. Ding, “Sensitivity analysis in observational research: introducing the E-value,” *Annals of Internal Medicine* **167** (2017), 268–274."
@@ -2453,5 +2548,325 @@
     "key": "zhao-yu2006",
     "sortKey": "Zhao",
     "html": "P. Zhao and B. Yu, \"On model selection consistency of Lasso,\" *Journal of Machine Learning Research* **7**, 2006, pp. 2541–2563."
+  },
+  {
+    "key": "bkm2011",
+    "sortKey": "Bartholomew",
+    "html": "D. Bartholomew, M. Knott, and I. Moustaki, *Latent Variable Models and Factor Analysis: A Unified Approach*, 3rd ed., Wiley Series in Probability and Statistics, John Wiley & Sons, 2011."
+  },
+  {
+    "key": "spearman1904-general-intelligence",
+    "sortKey": "Spearman",
+    "html": "C. Spearman, \"'General intelligence,' objectively determined and measured,\" *The American Journal of Psychology* **15**(2), 1904, pp. 201–292."
+  },
+  {
+    "key": "thurstone1947",
+    "sortKey": "Thurstone",
+    "html": "L. L. Thurstone, *Multiple-Factor Analysis: A Development and Expansion of The Vectors of Mind*, University of Chicago Press, Chicago, 1947."
+  },
+  {
+    "key": "lawley1940",
+    "sortKey": "Lawley",
+    "html": "D. N. Lawley, \"The estimation of factor loadings by the method of maximum likelihood,\" *Proceedings of the Royal Society of Edinburgh* **60**(1), 1940, pp. 64–82."
+  },
+  {
+    "key": "kaiser1958",
+    "sortKey": "Kaiser",
+    "html": "H. F. Kaiser, \"The varimax criterion for analytic rotation in factor analysis,\" *Psychometrika* **23**(3), 1958, pp. 187–200."
+  },
+  {
+    "key": "rubin-thayer1982",
+    "sortKey": "Rubin",
+    "html": "D. B. Rubin and D. T. Thayer, \"EM algorithms for ML factor analysis,\" *Psychometrika* **47**(1), 1982, pp. 69–76."
+  },
+  {
+    "key": "lazarsfeld1950",
+    "sortKey": "Lazarsfeld",
+    "html": "P. F. Lazarsfeld, \"The logical and mathematical foundation of latent structure analysis,\" in S. A. Stouffer, L. Guttman, E. A. Suchman, P. F. Lazarsfeld, S. A. Star, and J. A. Clausen, *Measurement and Prediction*, Studies in Social Psychology in World War II, vol. IV, Princeton University Press, Princeton, 1950, ch. 10–11."
+  },
+  {
+    "key": "lauritzen1996",
+    "sortKey": "Lauritzen",
+    "html": "S. L. Lauritzen, *Graphical Models*, Oxford Statistical Science Series 17, Clarendon Press, Oxford, 1996."
+  },
+  {
+    "key": "pearl1988",
+    "sortKey": "Pearl",
+    "html": "J. Pearl, *Probabilistic Reasoning in Intelligent Systems: Networks of Plausible Inference*, Morgan Kaufmann, San Mateo, CA, 1988."
+  },
+  {
+    "key": "pearl-paz1987",
+    "sortKey": "Pearl",
+    "html": "J. Pearl and A. Paz, \"Graphoids: a graph-based logic for reasoning about relevance relations,\" in *Advances in Artificial Intelligence II*, North-Holland, Amsterdam, 1987, pp. 357–363."
+  },
+  {
+    "key": "dawid1979",
+    "sortKey": "Dawid",
+    "html": "A. P. Dawid, \"Conditional independence in statistical theory,\" *Journal of the Royal Statistical Society, Series B* **41**(1), 1979, pp. 1–31."
+  },
+  {
+    "key": "studeny1992",
+    "sortKey": "Studený",
+    "html": "M. Studený, \"Conditional independence relations have no finite complete characterization,\" in *Information Theory, Statistical Decision Functions and Random Processes* (Transactions of the 11th Prague Conference, vol. B), Kluwer, Dordrecht, 1992, pp. 377–396."
+  },
+  {
+    "key": "hammersley-clifford1971",
+    "sortKey": "Hammersley",
+    "html": "J. M. Hammersley and P. E. Clifford, \"Markov fields on finite graphs and lattices,\" unpublished manuscript, 1971."
+  },
+  {
+    "key": "besag1974",
+    "sortKey": "Besag",
+    "html": "J. Besag, \"Spatial interaction and the statistical analysis of lattice systems,\" *Journal of the Royal Statistical Society, Series B* **36**(2), 1974, pp. 192–236."
+  },
+  {
+    "key": "grimmett1973",
+    "sortKey": "Grimmett",
+    "html": "G. R. Grimmett, \"A theorem about random fields,\" *Bulletin of the London Mathematical Society* **5**(1), 1973, pp. 81–84."
+  },
+  {
+    "key": "moussouris1974",
+    "sortKey": "Moussouris",
+    "html": "J. Moussouris, \"Gibbs and Markov random systems with constraints,\" *Journal of Statistical Physics* **10**(1), 1974, pp. 11–33."
+  },
+  {
+    "key": "menger1927",
+    "sortKey": "Menger",
+    "html": "K. Menger, \"Zur allgemeinen Kurventheorie,\" *Fundamenta Mathematicae* **10**, 1927, pp. 96–115."
+  },
+  {
+    "key": "dempster1972",
+    "sortKey": "Dempster",
+    "html": "A. P. Dempster, \"Covariance selection,\" *Biometrics* **28**(1), 1972, pp. 157–175."
+  },
+  {
+    "key": "pearl1986",
+    "sortKey": "Pearl",
+    "html": "J. Pearl, “Fusion, propagation, and structuring in belief networks,” *Artificial Intelligence* **29** (1986), 241–288."
+  },
+  {
+    "key": "verma-pearl1990",
+    "sortKey": "Verma",
+    "html": "T. Verma and J. Pearl, “Causal networks: semantics and expressiveness,” in *Uncertainty in Artificial Intelligence 4*, North-Holland, Amsterdam, 1990, pp. 69–76."
+  },
+  {
+    "key": "geiger-pearl1990",
+    "sortKey": "Geiger",
+    "html": "D. Geiger and J. Pearl, “On the logic of causal models,” in *Uncertainty in Artificial Intelligence 4*, North-Holland, Amsterdam, 1990."
+  },
+  {
+    "key": "lauritzen-spiegelhalter1988",
+    "sortKey": "Lauritzen",
+    "html": "S. L. Lauritzen and D. J. Spiegelhalter, “Local computations with probabilities on graphical structures and their application to expert systems,” *Journal of the Royal Statistical Society, Series B* **50** (1988), 157–224."
+  },
+  {
+    "key": "lauritzen-dawid-larsen-leimer1990",
+    "sortKey": "Lauritzen",
+    "html": "S. L. Lauritzen, A. P. Dawid, B. N. Larsen and H.-G. Leimer, “Independence properties of directed Markov fields,” *Networks* **20** (1990), 491–505."
+  },
+  {
+    "key": "kiiveri-speed-carlin1984",
+    "sortKey": "Kiiveri",
+    "html": "H. Kiiveri, T. P. Speed and J. B. Carlin, “Recursive causal models,” *Journal of the Australian Mathematical Society, Series A* **36** (1984), 30–52."
+  },
+  {
+    "key": "speed-kiiveri1986",
+    "sortKey": "Speed",
+    "html": "T. P. Speed and H. T. Kiiveri, “Gaussian Markov distributions over finite graphs,” *Annals of Statistics* **14** (1986), 138–150."
+  },
+  {
+    "key": "szpilrajn1930",
+    "sortKey": "Szpilrajn",
+    "html": "E. Szpilrajn, “Sur l'extension de l'ordre partiel,” *Fundamenta Mathematicae* **16** (1930), 386–389."
+  },
+  {
+    "key": "berkson1946",
+    "sortKey": "Berkson",
+    "html": "J. Berkson, “Limitations of the application of fourfold table analysis to hospital data,” *Biometrics Bulletin* **2** (1946), 47–53."
+  },
+  {
+    "key": "wright1921",
+    "sortKey": "Wright",
+    "html": "S. Wright, “Correlation and causation,” *Journal of Agricultural Research* **20** (1921), 557–585."
+  },
+  {
+    "key": "mmy2019",
+    "sortKey": "Maronna",
+    "html": "R. A. Maronna, R. D. Martin, V. J. Yohai, and M. Salibián-Barrera, *Robust Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, Hoboken, 2019."
+  },
+  {
+    "key": "lugosi-mendelson2019survey",
+    "sortKey": "Lugosi",
+    "html": "G. Lugosi and S. Mendelson, “Mean estimation and regression under heavy-tailed distributions: a survey,” *Foundations of Computational Mathematics* **19** (2019), 1145–1190."
+  },
+  {
+    "key": "lugosi-mendelson2019",
+    "sortKey": "Lugosi",
+    "html": "G. Lugosi and S. Mendelson, “Sub-Gaussian estimators of the mean of a random vector,” *The Annals of Statistics* **47**(2), 2019, pp. 783–794."
+  },
+  {
+    "key": "lugosi-mendelson2021",
+    "sortKey": "Lugosi",
+    "html": "G. Lugosi and S. Mendelson, “Robust multivariate mean estimation: the optimality of trimmed mean,” *The Annals of Statistics* **49**(1), 2021, pp. 393–410."
+  },
+  {
+    "key": "catoni2012",
+    "sortKey": "Catoni",
+    "html": "O. Catoni, “Challenging the empirical mean and empirical variance: a deviation study,” *Annales de l'Institut Henri Poincaré, Probabilités et Statistiques* **48**(4), 2012, pp. 1148–1185."
+  },
+  {
+    "key": "devroye-lerasle-lugosi-oliveira2016",
+    "sortKey": "Devroye",
+    "html": "L. Devroye, M. Lerasle, G. Lugosi, and R. I. Oliveira, “Sub-Gaussian mean estimators,” *The Annals of Statistics* **44**(6), 2016, pp. 2695–2725."
+  },
+  {
+    "key": "donoho-huber1983",
+    "sortKey": "Donoho",
+    "html": "D. L. Donoho and P. J. Huber, “The notion of breakdown point,” in *A Festschrift for Erich L. Lehmann* (P. J. Bickel, K. A. Doksum, and J. L. Hodges, Jr., eds.), Wadsworth, Belmont, 1983, pp. 157–184."
+  },
+  {
+    "key": "hampel1971",
+    "sortKey": "Hampel",
+    "html": "F. R. Hampel, “A general qualitative definition of robustness,” *The Annals of Mathematical Statistics* **42**(6), 1971, pp. 1887–1896."
+  },
+  {
+    "key": "hampel1974",
+    "sortKey": "Hampel",
+    "html": "F. R. Hampel, “The influence curve and its role in robust estimation,” *Journal of the American Statistical Association* **69**(346), 1974, pp. 383–393."
+  },
+  {
+    "key": "hampel-etal1986",
+    "sortKey": "Hampel",
+    "html": "F. R. Hampel, E. M. Ronchetti, P. J. Rousseeuw, and W. A. Stahel, *Robust Statistics: The Approach Based on Influence Functions*, Wiley, New York, 1986."
+  },
+  {
+    "key": "huber1973",
+    "sortKey": "Huber",
+    "html": "P. J. Huber, “Robust regression: asymptotics, conjectures and Monte Carlo,” *The Annals of Statistics* **1**(5), 1973, pp. 799–821."
+  },
+  {
+    "key": "huber1981",
+    "sortKey": "Huber",
+    "html": "P. J. Huber, *Robust Statistics*, Wiley, New York, 1981."
+  },
+  {
+    "key": "huber-ronchetti2009",
+    "sortKey": "Huber",
+    "html": "P. J. Huber and E. M. Ronchetti, *Robust Statistics*, 2nd ed., Wiley, Hoboken, 2009."
+  },
+  {
+    "key": "tukey1960",
+    "sortKey": "Tukey",
+    "html": "J. W. Tukey, “A survey of sampling from contaminated distributions,” in *Contributions to Probability and Statistics: Essays in Honor of Harold Hotelling* (I. Olkin, ed.), Stanford University Press, 1960, pp. 448–485."
+  },
+  {
+    "key": "hodges1967",
+    "sortKey": "Hodges",
+    "html": "J. L. Hodges, Jr., “Efficiency in normal samples and tolerance of extreme values for some estimates of location,” in *Proceedings of the Fifth Berkeley Symposium on Mathematical Statistics and Probability*, Vol. I, University of California Press, 1967, pp. 163–186."
+  },
+  {
+    "key": "koenker-bassett1978",
+    "sortKey": "Koenker",
+    "html": "R. Koenker and G. Bassett, Jr., “Regression quantiles,” *Econometrica* **46**(1), 1978, pp. 33–50."
+  },
+  {
+    "key": "koenker2005",
+    "sortKey": "Koenker",
+    "html": "R. Koenker, *Quantile Regression*, Cambridge University Press, Cambridge, 2005."
+  },
+  {
+    "key": "maronna1976",
+    "sortKey": "Maronna",
+    "html": "R. A. Maronna, “Robust M-estimators of multivariate location and scatter,” *The Annals of Statistics* **4**(1), 1976, pp. 51–67."
+  },
+  {
+    "key": "minsker2015",
+    "sortKey": "Minsker",
+    "html": "S. Minsker, “Geometric median and robust estimation in Banach spaces,” *Bernoulli* **21**(4), 2015, pp. 2308–2335."
+  },
+  {
+    "key": "hsu-sabato2016",
+    "sortKey": "Hsu",
+    "html": "D. Hsu and S. Sabato, “Loss minimization and parameter estimation with heavy tails,” *Journal of Machine Learning Research* **17**(18), 2016, pp. 1–40."
+  },
+  {
+    "key": "joly-lugosi-oliveira2017",
+    "sortKey": "Joly",
+    "html": "E. Joly, G. Lugosi, and R. I. Oliveira, “On the estimation of the mean of a random vector,” *Electronic Journal of Statistics* **11**(1), 2017, pp. 440–451."
+  },
+  {
+    "key": "nemirovsky-yudin1983",
+    "sortKey": "Nemirovsky",
+    "html": "A. S. Nemirovsky and D. B. Yudin, *Problem Complexity and Method Efficiency in Optimization*, Wiley, New York, 1983."
+  },
+  {
+    "key": "jerrum-valiant-vazirani1986",
+    "sortKey": "Jerrum",
+    "html": "M. R. Jerrum, L. G. Valiant, and V. V. Vazirani, “Random generation of combinatorial structures from a uniform distribution,” *Theoretical Computer Science* **43** (1986), 169–188."
+  },
+  {
+    "key": "alon-matias-szegedy1999",
+    "sortKey": "Alon",
+    "html": "N. Alon, Y. Matias, and M. Szegedy, “The space complexity of approximating the frequency moments,” *Journal of Computer and System Sciences* **58**(1), 1999, pp. 137–147."
+  },
+  {
+    "key": "lerasle-oliveira2011",
+    "sortKey": "Lerasle",
+    "html": "M. Lerasle and R. I. Oliveira, “Robust empirical mean estimators,” preprint, arXiv:1112.3914, 2011."
+  },
+  {
+    "key": "oliveira-orenstein2019",
+    "sortKey": "Oliveira",
+    "html": "R. I. Oliveira and P. Orenstein, “The sub-Gaussian property of trimmed means,” preprint, 2019."
+  },
+  {
+    "key": "audibert-catoni2011",
+    "sortKey": "Audibert",
+    "html": "J.-Y. Audibert and O. Catoni, “Robust linear least squares regression,” *The Annals of Statistics* **39**(5), 2011, pp. 2766–2794."
+  },
+  {
+    "key": "tukey-mclaughlin1963",
+    "sortKey": "Tukey",
+    "html": "J. W. Tukey and D. H. McLaughlin, “Less vulnerable confidence and significance procedures for location based on a single sample: trimming/Winsorization 1,” *Sankhyā, Series A* **25**(3), 1963, pp. 331–352."
+  },
+  {
+    "key": "bickel1965",
+    "sortKey": "Bickel",
+    "html": "P. J. Bickel, “On some robust estimates of location,” *The Annals of Mathematical Statistics* **36**(3), 1965, pp. 847–858."
+  },
+  {
+    "key": "stigler1973",
+    "sortKey": "Stigler",
+    "html": "S. M. Stigler, “The asymptotic distribution of the trimmed mean,” *The Annals of Statistics* **1**(3), 1973, pp. 472–477."
+  },
+  {
+    "key": "andrews-etal1972",
+    "sortKey": "Andrews",
+    "html": "D. F. Andrews, P. J. Bickel, F. R. Hampel, P. J. Huber, W. H. Rogers, and J. W. Tukey, *Robust Estimates of Location: Survey and Advances*, Princeton University Press, Princeton, 1972."
+  },
+  {
+    "key": "martin-yohai-zamar1989",
+    "sortKey": "Martin",
+    "html": "R. D. Martin, V. J. Yohai, and R. H. Zamar, “Min–max bias robust regression,” *The Annals of Statistics* **17**(4), 1989, pp. 1608–1630."
+  },
+  {
+    "key": "martin-zamar1993",
+    "sortKey": "Martin",
+    "html": "R. D. Martin and R. H. Zamar, “Bias robust estimation of scale,” *The Annals of Statistics* **21**(2), 1993, pp. 991–1017."
+  },
+  {
+    "key": "he-simpson1993",
+    "sortKey": "He",
+    "html": "X. He and D. G. Simpson, “Lower bounds for contamination bias: globally minimax versus locally linear estimation,” *The Annals of Statistics* **21**(1), 1993, pp. 314–337."
+  },
+  {
+    "key": "rousseeuw-croux1993",
+    "sortKey": "Rousseeuw",
+    "html": "P. J. Rousseeuw and C. Croux, “Alternatives to the median absolute deviation,” *Journal of the American Statistical Association* **88**(424), 1993, pp. 1273–1283."
+  },
+  {
+    "key": "davies1987",
+    "sortKey": "Davies",
+    "html": "P. L. Davies, “Asymptotic behaviour of S-estimates of multivariate location parameters and dispersion matrices,” *The Annals of Statistics* **15**(3), 1987, pp. 1269–1292."
   }
 ]

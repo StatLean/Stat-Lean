@@ -15,7 +15,9 @@ export type CategoryId =
   | "timeseries"
   | "causal"
   | "statlearning"
-  | "expdesign";
+  | "expdesign"
+  | "compstat"
+  | "robust";
 
 export type ResultKind = "definition" | "theorem" | "lemma" | "proposition" | "corollary" | "equation";
 

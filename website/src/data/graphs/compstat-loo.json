@@ -1,0 +1,15 @@
+{
+  "root": "StatLean.ComputationalStatistics.loo_unbiased",
+  "nodes": [
+    {"id":"StatLean.ComputationalStatistics.loo_unbiased","label":"loo_unbiased","full":"StatLean.ComputationalStatistics.loo_unbiased","kind":"root","decl":"thm","module":"StatLean.ComputationalStatistics.Partitioning.KFold"},
+    {"id":"StatLean.ComputationalStatistics.looEstimate","label":"looEstimate","full":"StatLean.ComputationalStatistics.looEstimate","kind":"repo","decl":"def","module":"StatLean.ComputationalStatistics.Partitioning.KFold"},
+    {"id":"StatLean.ComputationalStatistics.predictionRisk","label":"predictionRisk","full":"StatLean.ComputationalStatistics.predictionRisk","kind":"repo","decl":"def","module":"StatLean.ComputationalStatistics.Partitioning.Holdout"},
+    {"id":"StatLean.ComputationalStatistics.jackknifeDelete","label":"jackknifeDelete","full":"StatLean.ComputationalStatistics.jackknifeDelete","kind":"repo","decl":"def","module":"StatLean.ComputationalStatistics.Resampling.Jackknife"}
+  ],
+  "edges": [
+    {"source":"StatLean.ComputationalStatistics.loo_unbiased","target":"StatLean.ComputationalStatistics.looEstimate"},
+    {"source":"StatLean.ComputationalStatistics.loo_unbiased","target":"StatLean.ComputationalStatistics.predictionRisk"},
+    {"source":"StatLean.ComputationalStatistics.loo_unbiased","target":"StatLean.ComputationalStatistics.jackknifeDelete"},
+    {"source":"StatLean.ComputationalStatistics.looEstimate","target":"StatLean.ComputationalStatistics.jackknifeDelete"}
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "root": "StatLean.StatisticalModels.GraphicalModels.FactorizesOver",
+  "nodes": [
+    {"id":"StatLean.StatisticalModels.GraphicalModels.FactorizesOver","label":"FactorizesOver","full":"StatLean.StatisticalModels.GraphicalModels.FactorizesOver","kind":"root","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Discrete.Factorization"},
+    {"id":"Fintype","label":"Fintype","full":"Fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
+    {"id":"SimpleGraph","label":"SimpleGraph","full":"SimpleGraph","kind":"mathlib","decl":"def","module":"Mathlib.Combinatorics.SimpleGraph.Basic"},
+    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"Finset","label":"Finset","full":"Finset","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Defs"},
+    {"id":"StatLean.StatisticalModels.GraphicalModels.IsCliquePotential","label":"IsCliquePotential","full":"StatLean.StatisticalModels.GraphicalModels.IsCliquePotential","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Discrete.Factorization"},
+    {"id":"Finset.prod","label":"prod","full":"Finset.prod","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.BigOperators.Group.Finset.Defs"},
+    {"id":"CommSemiring.toCommMonoid","label":"toCommMonoid","full":"CommSemiring.toCommMonoid","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Ring.Defs"},
+    {"id":"StatLean.StatisticalModels.GraphicalModels.completeSubsets","label":"completeSubsets","full":"StatLean.StatisticalModels.GraphicalModels.completeSubsets","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Discrete.Factorization"},
+    {"id":"SimpleGraph.IsClique","label":"IsClique","full":"SimpleGraph.IsClique","kind":"mathlib","decl":"def","module":"Mathlib.Combinatorics.SimpleGraph.Clique"},
+    {"id":"DependsOn","label":"DependsOn","full":"DependsOn","kind":"mathlib","decl":"def","module":"Mathlib.Logic.Function.DependsOn"},
+    {"id":"Finset.filter","label":"filter","full":"Finset.filter","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Filter"},
+    {"id":"Finset.univ","label":"univ","full":"Finset.univ","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
+    {"id":"Finset.fintype","label":"fintype","full":"Finset.fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Powerset"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalModels.GraphicalModels.FactorizesOver","target":"Fintype"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.FactorizesOver","target":"SimpleGraph"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.FactorizesOver","target":"ENNReal"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.FactorizesOver","target":"Finset"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.FactorizesOver","target":"StatLean.StatisticalModels.GraphicalModels.IsCliquePotential"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.FactorizesOver","target":"Finset.prod"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.FactorizesOver","target":"CommSemiring.toCommMonoid"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.FactorizesOver","target":"StatLean.StatisticalModels.GraphicalModels.completeSubsets"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.IsCliquePotential","target":"SimpleGraph"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.IsCliquePotential","target":"Finset"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.IsCliquePotential","target":"ENNReal"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.IsCliquePotential","target":"SimpleGraph.IsClique"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.IsCliquePotential","target":"DependsOn"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.completeSubsets","target":"Fintype"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.completeSubsets","target":"SimpleGraph"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.completeSubsets","target":"Finset"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.completeSubsets","target":"Finset.filter"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.completeSubsets","target":"SimpleGraph.IsClique"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.completeSubsets","target":"Finset.univ"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.completeSubsets","target":"Finset.fintype"}
+  ]
+}

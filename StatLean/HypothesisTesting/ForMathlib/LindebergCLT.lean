@@ -47,8 +47,8 @@ probability with `MeasureTheory.TendstoInMeasure`.
 
 **Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
 Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 11 (Basic Large-Sample
-Theory), §11.2 (Weak Convergence and Central Limit Theorems), the Lindeberg–Feller central
-limit theorem for triangular arrays. (`TSH4 §11.2`.)
+Theory), §11.2 (Weak Convergence and Central Limit Theorems), **Theorem 11.2.5** (Lindeberg Central
+Limit Theorem) for triangular arrays. (`TSH4 §11.2 Thm 11.2.5`.)
 
 **Proof formalization notes.**
 * Route: characteristic functions. Lindeberg's swapping/telescoping argument bounds

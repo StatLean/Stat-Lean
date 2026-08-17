@@ -34,7 +34,8 @@ the same procedure.
 §19.2.2 (Bonferroni Correction), for the Bonferroni correction.
 Lu, *Big Data Analysis* states the plain Bonferroni correction but contains *no* Holm step-down
 theorem; the Holm result is formalized from S. Holm, "A simple sequentially rejective multiple
-test procedure", *Scand. J. Statist.* **6** (1979), 65–70 (see Bibliographic comments). Hypotheses
+test procedure", *Scand. J. Statist.* **6** (1979), 65–70, **Theorem 1** (see Bibliographic
+comments). Hypotheses
 sourced to Holm (1979) are tagged accordingly.
 
 **Proof formalization notes.** The deterministic crux `holm_rejects_true_null_imp` shows that if

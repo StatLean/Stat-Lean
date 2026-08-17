@@ -20,8 +20,7 @@ parametric families:
   (`Measure.pi` of per-cluster laws).
 
 In the Core calculus reading: `lmmLaw` is the latent marginalization (`mix`) of the latent
-model through the affine conditional kernel; the agreement is definitional through
-`Measure.bind`/`map` and is not restated.
+model through the affine conditional kernel, definitionally through `Measure.bind`/`map`.
 
 **Reference.** N. M. Laird and J. H. Ware, "Random-effects models for longitudinal data,"
 *Biometrics* **38** (1982), 963–974, Eq. (1.1)–(1.2) (`LW82`); G. M. Fitzmaurice, N. M.

@@ -30,6 +30,8 @@
   --c-causal: 205 48 22;   /* vermilion — Causal Inference */
   --c-slearn: 174 28 170;  /* vivid magenta — Statistical Learning */
   --c-exp: 93 108 0;       /* olive — Experimental Design */
+  --c-comp: 168 74 118;    /* mulberry — Computational Statistics */
+  --c-robust: 52 96 158;   /* steel blue — Robust Statistics */
   --c-ext: 214 178 38;     /* yellow — Mathlib / external */
 
   --grain-opacity: 0.04;
@@ -62,6 +64,8 @@
   --c-causal: 226 148 104;
   --c-slearn: 178 146 244;
   --c-exp: 194 200 104;
+  --c-comp: 238 150 190;
+  --c-robust: 122 168 228;
   --c-ext: 232 206 96;     /* yellow — Mathlib / external */
 
   --grain-opacity: 0.05;
@@ -118,6 +122,8 @@ body::before {
 [data-cat="causal"] { --accent: var(--c-causal); }
 [data-cat="statlearning"] { --accent: var(--c-slearn); }
 [data-cat="expdesign"] { --accent: var(--c-exp); }
+[data-cat="compstat"] { --accent: var(--c-comp); }
+[data-cat="robust"] { --accent: var(--c-robust); }
 
 /* bare `accent` className = active-accent text color (not a Tailwind utility) */
 .accent { color: rgb(var(--accent)); }

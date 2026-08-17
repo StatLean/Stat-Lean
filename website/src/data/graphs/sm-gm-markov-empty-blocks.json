@@ -1,0 +1,29 @@
+{
+  "root": "StatLean.StatisticalModels.GraphicalModels.not_forall_pairwiseMarkov_implies_globalMarkov",
+  "nodes": [
+    {"id":"StatLean.StatisticalModels.GraphicalModels.not_forall_pairwiseMarkov_implies_globalMarkov","label":"not_forall_pairwiseMarkov_implies_globalMarkov","full":"StatLean.StatisticalModels.GraphicalModels.not_forall_pairwiseMarkov_implies_globalMarkov","kind":"root","decl":"thm","module":"StatLean.StatisticalModels.GraphicalModels.Undirected.Markov"},
+    {"id":"StatLean.StatisticalModels.GraphicalModels.IsGraphoid","label":"IsGraphoid","full":"StatLean.StatisticalModels.GraphicalModels.IsGraphoid","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Core.Semigraphoid"},
+    {"id":"StatLean.StatisticalModels.GraphicalModels.IsPairwiseMarkov","label":"IsPairwiseMarkov","full":"StatLean.StatisticalModels.GraphicalModels.IsPairwiseMarkov","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Undirected.Markov"},
+    {"id":"StatLean.StatisticalModels.GraphicalModels.IsGlobalMarkov","label":"IsGlobalMarkov","full":"StatLean.StatisticalModels.GraphicalModels.IsGlobalMarkov","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Undirected.Markov"},
+    {"id":"StatLean.StatisticalModels.GraphicalModels.IsGraphoid.mk","label":"mk","full":"StatLean.StatisticalModels.GraphicalModels.IsGraphoid.mk","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Core.Semigraphoid"},
+    {"id":"StatLean.StatisticalModels.GraphicalModels.IsSemigraphoid.mk","label":"mk","full":"StatLean.StatisticalModels.GraphicalModels.IsSemigraphoid.mk","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Core.Semigraphoid"},
+    {"id":"StatLean.StatisticalModels.GraphicalModels.separates_empty_left","label":"separates_empty_left","full":"StatLean.StatisticalModels.GraphicalModels.separates_empty_left","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.GraphicalModels.Core.Separation"},
+    {"id":"StatLean.StatisticalModels.GraphicalModels.Separates","label":"Separates","full":"StatLean.StatisticalModels.GraphicalModels.Separates","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Core.Separation"},
+    {"id":"StatLean.StatisticalModels.GraphicalModels.IsSemigraphoid","label":"IsSemigraphoid","full":"StatLean.StatisticalModels.GraphicalModels.IsSemigraphoid","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Core.Semigraphoid"},
+    {"id":"Finset.notMem_empty","label":"notMem_empty","full":"Finset.notMem_empty","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Finset.Empty"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalModels.GraphicalModels.not_forall_pairwiseMarkov_implies_globalMarkov","target":"StatLean.StatisticalModels.GraphicalModels.IsGraphoid"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.not_forall_pairwiseMarkov_implies_globalMarkov","target":"StatLean.StatisticalModels.GraphicalModels.IsPairwiseMarkov"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.not_forall_pairwiseMarkov_implies_globalMarkov","target":"StatLean.StatisticalModels.GraphicalModels.IsGlobalMarkov"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.not_forall_pairwiseMarkov_implies_globalMarkov","target":"StatLean.StatisticalModels.GraphicalModels.IsGraphoid.mk"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.not_forall_pairwiseMarkov_implies_globalMarkov","target":"StatLean.StatisticalModels.GraphicalModels.IsSemigraphoid.mk"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.not_forall_pairwiseMarkov_implies_globalMarkov","target":"StatLean.StatisticalModels.GraphicalModels.separates_empty_left"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.IsGlobalMarkov","target":"StatLean.StatisticalModels.GraphicalModels.Separates"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.IsGraphoid.mk","target":"StatLean.StatisticalModels.GraphicalModels.IsSemigraphoid"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.IsGraphoid.mk","target":"StatLean.StatisticalModels.GraphicalModels.IsGraphoid"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.IsSemigraphoid.mk","target":"StatLean.StatisticalModels.GraphicalModels.IsSemigraphoid"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.separates_empty_left","target":"StatLean.StatisticalModels.GraphicalModels.Separates"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.separates_empty_left","target":"Finset.notMem_empty"}
+  ]
+}

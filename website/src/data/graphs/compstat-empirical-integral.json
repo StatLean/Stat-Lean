@@ -1,0 +1,28 @@
+{
+  "root": "StatLean.ComputationalStatistics.integral_empiricalMeasure",
+  "nodes": [
+    {"id":"StatLean.ComputationalStatistics.integral_empiricalMeasure","label":"integral_empiricalMeasure","full":"StatLean.ComputationalStatistics.integral_empiricalMeasure","kind":"root","decl":"thm","module":"StatLean.ComputationalStatistics.Core.EmpiricalMeasure"},
+    {"id":"StatLean.ComputationalStatistics.empiricalMeasure","label":"empiricalMeasure","full":"StatLean.ComputationalStatistics.empiricalMeasure","kind":"repo","decl":"def","module":"StatLean.ComputationalStatistics.Core.Defs"},
+    {"id":"StatLean.ComputationalStatistics.mcEstimate","label":"mcEstimate","full":"StatLean.ComputationalStatistics.mcEstimate","kind":"repo","decl":"def","module":"StatLean.ComputationalStatistics.Core.Defs"},
+    {"id":"MeasureTheory.integrable_dirac'","label":"integrable_dirac'","full":"MeasureTheory.integrable_dirac'","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.L1Space.Integrable"},
+    {"id":"IsScalarTower.right","label":"right","full":"IsScalarTower.right","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Algebra.Defs"},
+    {"id":"MeasureTheory.integral_smul_measure","label":"integral_smul_measure","full":"MeasureTheory.integral_smul_measure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
+    {"id":"MeasureTheory.integral_finset_sum_measure","label":"integral_finset_sum_measure","full":"MeasureTheory.integral_finset_sum_measure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
+    {"id":"ENNReal.toReal_inv","label":"toReal_inv","full":"ENNReal.toReal_inv","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Inv"},
+    {"id":"ENNReal.toReal_natCast","label":"toReal_natCast","full":"ENNReal.toReal_natCast","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"Finset.sum_congr","label":"sum_congr","full":"Finset.sum_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
+    {"id":"MeasureTheory.integral_dirac'","label":"integral_dirac'","full":"MeasureTheory.integral_dirac'","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.ComputationalStatistics.integral_empiricalMeasure","target":"StatLean.ComputationalStatistics.empiricalMeasure"},
+    {"source":"StatLean.ComputationalStatistics.integral_empiricalMeasure","target":"StatLean.ComputationalStatistics.mcEstimate"},
+    {"source":"StatLean.ComputationalStatistics.integral_empiricalMeasure","target":"MeasureTheory.integrable_dirac'"},
+    {"source":"StatLean.ComputationalStatistics.integral_empiricalMeasure","target":"IsScalarTower.right"},
+    {"source":"StatLean.ComputationalStatistics.integral_empiricalMeasure","target":"MeasureTheory.integral_smul_measure"},
+    {"source":"StatLean.ComputationalStatistics.integral_empiricalMeasure","target":"MeasureTheory.integral_finset_sum_measure"},
+    {"source":"StatLean.ComputationalStatistics.integral_empiricalMeasure","target":"ENNReal.toReal_inv"},
+    {"source":"StatLean.ComputationalStatistics.integral_empiricalMeasure","target":"ENNReal.toReal_natCast"},
+    {"source":"StatLean.ComputationalStatistics.integral_empiricalMeasure","target":"Finset.sum_congr"},
+    {"source":"StatLean.ComputationalStatistics.integral_empiricalMeasure","target":"MeasureTheory.integral_dirac'"}
+  ]
+}

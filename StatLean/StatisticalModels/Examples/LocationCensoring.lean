@@ -20,8 +20,7 @@ observations," *J. Amer. Statist. Assoc.* **53** (1958), 457–481, §2 (verify 
 measurability is inherited, never proved by hand; its pointwise form and Markov property are
 the two lemmas. Tie convention: `Δ = decide (T ≤ C)` (ties count as events) — Book-vs-Lean
 note: the classical treatments assume `P(T = C) = 0`, where the convention is immaterial.
-The Survival slice reuses this kernel; here it only exercises `observe` and the transfer
-theorems.
+Here the kernel only exercises `observe` and the transfer theorems.
 
 **Bibliographic comments.** Random censorship as an explicit observation mechanism goes back
 to Kaplan–Meier 1958 and J. Gilbert's 1962 thesis; the kernel packaging is ours.

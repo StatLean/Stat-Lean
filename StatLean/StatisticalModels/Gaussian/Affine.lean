@@ -16,9 +16,6 @@ The transformation calculus of the Gaussian slice:
 * **`multivariateGaussian_map_affine` (G2.4, the slice's workhorse)** — the affine image of
   a Gaussian is Gaussian with mean `A m + b` and covariance `A S Aᵀ`.
 
-Sums of independent Gaussians are already available —
-`AsymptoticStatistics.ForMathlib.MultivariateGaussianConv` (imported, reused, not restated).
-
 **Reference.** T. W. Anderson, *An Introduction to Multivariate Statistical Analysis*,
 Wiley, 1958, §2.4 (linear transformations of normal vectors) (verify §) (`And58 §2.4`).
 

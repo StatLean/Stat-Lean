@@ -93,6 +93,13 @@ export const CATEGORIES: CategoryMeta[] = [
       "Statistical models over an abstract parameter space: survival analysis with censoring, Kaplan–Meier and the Cox model, linear mixed effects and BLUP, GEE sandwich covariance, and missing-data mechanisms with IPW.",
   },
   {
+    id: "robust",
+    name: "Robust Statistics",
+    tagline: "Contamination, breakdown & heavy tails",
+    blurb:
+      "Gross-error contamination, influence functions and breakdown points, Huber M-estimation and the median's minimax bias, scale and regression quantiles, and modern sub-Gaussian mean estimation under heavy tails.",
+  },
+  {
     id: "probability",
     name: "Miscellaneous Results",
     tagline: "Load-bearing probability & analysis",
@@ -126,6 +133,13 @@ export const CATEGORIES: CategoryMeta[] = [
     tagline: "Randomization, ANOVA & survey sampling",
     blurb:
       "Randomization and sampling designs as distributions over allocations, completely randomized and blocked experiments, the analysis-of-variance identity, factorial characters, and Horvitz-Thompson estimation.",
+  },
+  {
+    id: "compstat",
+    name: "Computational Statistics",
+    tagline: "Monte Carlo, resampling & simulation correctness",
+    blurb:
+      "The mathematics that makes simulation-based inference correct: Monte Carlo estimation and its error, importance sampling and the optimal importance density, rejection sampling, Markov chain Monte Carlo, multinomial resampling of particles, the finite-sample bootstrap and jackknife, and cross-validation.",
   },
 ];
 

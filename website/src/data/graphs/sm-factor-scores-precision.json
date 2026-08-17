@@ -1,0 +1,36 @@
+{
+  "root": "StatLean.StatisticalModels.FactorModels.condMeanMatrix_factorScores_precision",
+  "nodes": [
+    {"id":"StatLean.StatisticalModels.FactorModels.condMeanMatrix_factorScores_precision","label":"condMeanMatrix_factorScores_precision","full":"StatLean.StatisticalModels.FactorModels.condMeanMatrix_factorScores_precision","kind":"root","decl":"thm","module":"StatLean.StatisticalModels.FactorModels.FactorScores"},
+    {"id":"StatLean.StatisticalModels.FactorModels.FactorParams","label":"FactorParams","full":"StatLean.StatisticalModels.FactorModels.FactorParams","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.FactorModels.Defs"},
+    {"id":"StatLean.StatisticalModels.FactorModels.factorCovariance","label":"factorCovariance","full":"StatLean.StatisticalModels.FactorModels.factorCovariance","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.FactorModels.Defs"},
+    {"id":"StatLean.StatisticalModels.FactorModels.gammaMatrix","label":"gammaMatrix","full":"StatLean.StatisticalModels.FactorModels.gammaMatrix","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.FactorModels.FactorScores"},
+    {"id":"StatLean.StatisticalModels.MixedEffects.pushThrough","label":"pushThrough","full":"StatLean.StatisticalModels.MixedEffects.pushThrough","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.MixedEffects.Henderson"},
+    {"id":"Matrix.isUnit_iff_isUnit_det","label":"isUnit_iff_isUnit_det","full":"Matrix.isUnit_iff_isUnit_det","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.NonsingularInverse"},
+    {"id":"Matrix.PosDef.isUnit","label":"isUnit","full":"Matrix.PosDef.isUnit","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.PosDef"},
+    {"id":"Matrix.nonsing_inv_mul","label":"nonsing_inv_mul","full":"Matrix.nonsing_inv_mul","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.NonsingularInverse"},
+    {"id":"Matrix.mul_assoc","label":"mul_assoc","full":"Matrix.mul_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Matrix.Mul"},
+    {"id":"Matrix.one_mul","label":"one_mul","full":"Matrix.one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Matrix.Mul"},
+    {"id":"Matrix.mul_one","label":"mul_one","full":"Matrix.mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Matrix.Mul"},
+    {"id":"Matrix.add_mul","label":"add_mul","full":"Matrix.add_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Matrix.Mul"},
+    {"id":"Matrix.mul_add","label":"mul_add","full":"Matrix.mul_add","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Matrix.Mul"},
+    {"id":"Matrix.mul_nonsing_inv","label":"mul_nonsing_inv","full":"Matrix.mul_nonsing_inv","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Matrix.NonsingularInverse"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalModels.FactorModels.condMeanMatrix_factorScores_precision","target":"StatLean.StatisticalModels.FactorModels.FactorParams"},
+    {"source":"StatLean.StatisticalModels.FactorModels.condMeanMatrix_factorScores_precision","target":"StatLean.StatisticalModels.FactorModels.factorCovariance"},
+    {"source":"StatLean.StatisticalModels.FactorModels.condMeanMatrix_factorScores_precision","target":"StatLean.StatisticalModels.FactorModels.gammaMatrix"},
+    {"source":"StatLean.StatisticalModels.FactorModels.condMeanMatrix_factorScores_precision","target":"StatLean.StatisticalModels.MixedEffects.pushThrough"},
+    {"source":"StatLean.StatisticalModels.FactorModels.factorCovariance","target":"StatLean.StatisticalModels.FactorModels.FactorParams"},
+    {"source":"StatLean.StatisticalModels.FactorModels.gammaMatrix","target":"StatLean.StatisticalModels.FactorModels.FactorParams"},
+    {"source":"StatLean.StatisticalModels.MixedEffects.pushThrough","target":"Matrix.isUnit_iff_isUnit_det"},
+    {"source":"StatLean.StatisticalModels.MixedEffects.pushThrough","target":"Matrix.PosDef.isUnit"},
+    {"source":"StatLean.StatisticalModels.MixedEffects.pushThrough","target":"Matrix.nonsing_inv_mul"},
+    {"source":"StatLean.StatisticalModels.MixedEffects.pushThrough","target":"Matrix.mul_assoc"},
+    {"source":"StatLean.StatisticalModels.MixedEffects.pushThrough","target":"Matrix.one_mul"},
+    {"source":"StatLean.StatisticalModels.MixedEffects.pushThrough","target":"Matrix.mul_one"},
+    {"source":"StatLean.StatisticalModels.MixedEffects.pushThrough","target":"Matrix.add_mul"},
+    {"source":"StatLean.StatisticalModels.MixedEffects.pushThrough","target":"Matrix.mul_add"},
+    {"source":"StatLean.StatisticalModels.MixedEffects.pushThrough","target":"Matrix.mul_nonsing_inv"}
+  ]
+}

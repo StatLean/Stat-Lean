@@ -1,0 +1,22 @@
+{
+  "root": "StatLean.ComputationalStatistics.isProbabilityMeasure_weightedMeasure",
+  "nodes": [
+    {"id":"StatLean.ComputationalStatistics.isProbabilityMeasure_weightedMeasure","label":"isProbabilityMeasure_weightedMeasure","full":"StatLean.ComputationalStatistics.isProbabilityMeasure_weightedMeasure","kind":"root","decl":"thm","module":"StatLean.ComputationalStatistics.Core.EmpiricalMeasure"},
+    {"id":"StatLean.ComputationalStatistics.weightedMeasure","label":"weightedMeasure","full":"StatLean.ComputationalStatistics.weightedMeasure","kind":"repo","decl":"def","module":"StatLean.ComputationalStatistics.Core.Defs"},
+    {"id":"MeasureTheory.Measure.finset_sum_apply","label":"finset_sum_apply","full":"MeasureTheory.Measure.finset_sum_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpace"},
+    {"id":"Finset.sum_congr","label":"sum_congr","full":"Finset.sum_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
+    {"id":"MeasureTheory.Measure.dirac.isProbabilityMeasure","label":"isProbabilityMeasure","full":"MeasureTheory.Measure.dirac.isProbabilityMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Dirac"},
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"ENNReal.ofReal_sum_of_nonneg","label":"ofReal_sum_of_nonneg","full":"ENNReal.ofReal_sum_of_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.BigOperators"},
+    {"id":"ENNReal.ofReal_one","label":"ofReal_one","full":"ENNReal.ofReal_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.ComputationalStatistics.isProbabilityMeasure_weightedMeasure","target":"StatLean.ComputationalStatistics.weightedMeasure"},
+    {"source":"StatLean.ComputationalStatistics.isProbabilityMeasure_weightedMeasure","target":"MeasureTheory.Measure.finset_sum_apply"},
+    {"source":"StatLean.ComputationalStatistics.isProbabilityMeasure_weightedMeasure","target":"Finset.sum_congr"},
+    {"source":"StatLean.ComputationalStatistics.isProbabilityMeasure_weightedMeasure","target":"MeasureTheory.Measure.dirac.isProbabilityMeasure"},
+    {"source":"StatLean.ComputationalStatistics.isProbabilityMeasure_weightedMeasure","target":"mul_one"},
+    {"source":"StatLean.ComputationalStatistics.isProbabilityMeasure_weightedMeasure","target":"ENNReal.ofReal_sum_of_nonneg"},
+    {"source":"StatLean.ComputationalStatistics.isProbabilityMeasure_weightedMeasure","target":"ENNReal.ofReal_one"}
+  ]
+}

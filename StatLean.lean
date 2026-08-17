@@ -13,6 +13,8 @@ import StatLean.TimeSeries
 import StatLean.CausalInference
 import StatLean.ExperimentalDesign
 import StatLean.StatisticalLearning
+import StatLean.ComputationalStatistics
+import StatLean.RobustStatistics
 
 /-!
 # StatLean
@@ -88,6 +90,25 @@ theory, organized into per-area sublibraries.
   fundamental theorem for finite VC dimension, algorithmic stability with
   Tikhonov regularization, and PAC-Bayes (Shalev-Shwartz & Ben-David,
   *Understanding Machine Learning*).
+* `StatLean.ComputationalStatistics` — correctness of sampling and resampling
+  algorithms: empirical/weighted/categorical measures, Monte Carlo estimation,
+  importance sampling (with the optimal importance function), rejection
+  sampling, multinomial particle resampling and the multinomial-counts bridge,
+  finite-sample bootstrap identities, the jackknife with exact first-order
+  bias annihilation, and holdout / K-fold / leave-one-out cross validation
+  (Gentle, *Elements of Computational Statistics*).
+* `StatLean.RobustStatistics` — robust statistics: how estimators respond to
+  contamination, and the estimators built to withstand it. Gross-error
+  contamination and its neighbourhoods, equivariance of functionals, the
+  finite-sample replacement breakdown point (exact values for the mean, the
+  median — attaining the maximum for location-equivariant estimators — and the
+  trimmed mean), the one-sided influence function with the general M-functional
+  formula and its bounded-score corollary, maximum contamination bias, Huber's
+  loss and score, location M-estimators and M-functionals (existence,
+  uniqueness, consistency, asymptotic normality), the MAD, M-regression with the
+  leverage counterexample, and affine equivariance of multivariate location and
+  scatter (Maronna, Martin, Yohai & Salibián-Barrera, *Robust Statistics: Theory
+  and Methods*, 2nd ed.).
 
 Per-area umbrellas are imported above as each area lands.
 -/

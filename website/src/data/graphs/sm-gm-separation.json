@@ -1,0 +1,16 @@
+{
+  "root": "StatLean.StatisticalModels.GraphicalModels.Separates",
+  "nodes": [
+    {"id":"StatLean.StatisticalModels.GraphicalModels.Separates","label":"Separates","full":"StatLean.StatisticalModels.GraphicalModels.Separates","kind":"root","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Core.Separation"},
+    {"id":"SimpleGraph","label":"SimpleGraph","full":"SimpleGraph","kind":"mathlib","decl":"def","module":"Mathlib.Combinatorics.SimpleGraph.Basic"},
+    {"id":"Finset","label":"Finset","full":"Finset","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Defs"},
+    {"id":"SimpleGraph.Walk","label":"Walk","full":"SimpleGraph.Walk","kind":"mathlib","decl":"def","module":"Mathlib.Combinatorics.SimpleGraph.Walks.Basic"},
+    {"id":"SimpleGraph.Walk.support","label":"support","full":"SimpleGraph.Walk.support","kind":"mathlib","decl":"def","module":"Mathlib.Combinatorics.SimpleGraph.Walks.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalModels.GraphicalModels.Separates","target":"SimpleGraph"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.Separates","target":"Finset"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.Separates","target":"SimpleGraph.Walk"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.Separates","target":"SimpleGraph.Walk.support"}
+  ]
+}

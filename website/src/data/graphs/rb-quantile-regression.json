@@ -1,0 +1,22 @@
+{
+  "root": "StatLean.RobustStatistics.IsQuantileRegressionEstimate",
+  "nodes": [
+    {"id":"StatLean.RobustStatistics.IsQuantileRegressionEstimate","label":"IsQuantileRegressionEstimate","full":"StatLean.RobustStatistics.IsQuantileRegressionEstimate","kind":"root","decl":"def","module":"StatLean.RobustStatistics.Regression.MRegression"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"StatLean.RobustStatistics.IsMRegressionEstimate","label":"IsMRegressionEstimate","full":"StatLean.RobustStatistics.IsMRegressionEstimate","kind":"repo","decl":"def","module":"StatLean.RobustStatistics.Regression.MRegression"},
+    {"id":"StatLean.RobustStatistics.checkLoss","label":"checkLoss","full":"StatLean.RobustStatistics.checkLoss","kind":"repo","decl":"def","module":"StatLean.RobustStatistics.Regression.MRegression"},
+    {"id":"Finset.sum","label":"sum","full":"Finset.sum","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.BigOperators.Group.Finset.Defs"},
+    {"id":"Finset.univ","label":"univ","full":"Finset.univ","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
+    {"id":"Fin.fintype","label":"fintype","full":"Fin.fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.RobustStatistics.IsQuantileRegressionEstimate","target":"Real"},
+    {"source":"StatLean.RobustStatistics.IsQuantileRegressionEstimate","target":"StatLean.RobustStatistics.IsMRegressionEstimate"},
+    {"source":"StatLean.RobustStatistics.IsQuantileRegressionEstimate","target":"StatLean.RobustStatistics.checkLoss"},
+    {"source":"StatLean.RobustStatistics.IsMRegressionEstimate","target":"Real"},
+    {"source":"StatLean.RobustStatistics.IsMRegressionEstimate","target":"Finset.sum"},
+    {"source":"StatLean.RobustStatistics.IsMRegressionEstimate","target":"Finset.univ"},
+    {"source":"StatLean.RobustStatistics.IsMRegressionEstimate","target":"Fin.fintype"},
+    {"source":"StatLean.RobustStatistics.checkLoss","target":"Real"}
+  ]
+}
