@@ -481,25 +481,20 @@ section Prop325
 
 variable [Fintype V] [DecidableEq V]
 
-/-- The undirected graph `(G_{An(A ∪ B ∪ S)})^m` of Lauritzen's Proposition 3.25 (p. 48):
-**moralize the sub-DAG induced on the smallest ancestral set containing `A ∪ B ∪ S`.**
+/-! ### The graph of Proposition 3.25 — supplied upstream, not redefined here
 
-Named because the object occurs in the statement of Proposition 3.25, of Corollary 3.23 (the
-directed global Markov property), and of every consumer of either; the two operations it
-composes are both supplied by `Directed/DAG.lean` and `Directed/Moralization.lean` and are
-**not** re-derived here.
+Lauritzen's `(G_{An(A ∪ B ∪ S)})^m` — moralize the sub-DAG induced on the smallest ancestral
+set containing `A ∪ B ∪ S` — is already provided by `Directed/Markov.lean` as
+`ancestralMoralGraph D T = inducedMoralGraph D (D.ancestralClosure T)`, which in turn composes
+`Directed/Factorization.lean`'s `inducedMoralGraph`. Both are upstream of this file, so the
+statements below consume `ancestralMoralGraph D (A ∪ B ∪ S)` rather than introducing a third
+spelling of the same composite.
 
-*Edge behaviour.* `ancestralClosure` of the empty set is empty and moralization of the empty
-sub-DAG is the empty graph, so at `A = B = S = ∅` this is `⊥` and `Separates ⊥ ∅ ∅ ∅` holds
-vacuously — matching `dSeparated_empty_left`. The vertex type is all of `V`: the induced
-sub-DAG keeps `V` as its vertex type and merely deletes arrows leaving the ancestral set, so
-`Separates` and `DSeparated` speak about the same blocks without any subtype transport. -/
-*Deduplicated.* This object is **not** defined here. `Directed/Markov.lean` already provides
-`ancestralMoralGraph D T = inducedMoralGraph D (D.ancestralClosure T)`, which at
-`T := A ∪ B ∪ S` is exactly the graph Proposition 3.25 reads in, and which in turn composes
-`Directed/Factorization.lean`'s `inducedMoralGraph`. Both files are upstream of this one, so
-the statements below consume `ancestralMoralGraph D (A ∪ B ∪ S)` directly rather than
-introducing a third spelling of the same composite. -/
+*Edge behaviour* (inherited): `ancestralClosure ∅ = ∅` and moralization of the empty sub-DAG is
+the empty graph, so at `A = B = S = ∅` the graph is `⊥` and `Separates ⊥ ∅ ∅ ∅` holds vacuously,
+matching `dSeparated_empty_left`. The vertex type stays `V`: the induced sub-DAG keeps `V` and
+merely deletes arrows leaving the ancestral set, so `Separates` and `DSeparated` speak about the
+same blocks with no subtype transport. -/
 
 /-- **Lauritzen Proposition 3.25** (p. 48) — *the headline of this file*. For **disjoint**
 blocks `A`, `B`, `S` of a directed acyclic graph `D`, the separator `S` d-separates `A` from `B`
