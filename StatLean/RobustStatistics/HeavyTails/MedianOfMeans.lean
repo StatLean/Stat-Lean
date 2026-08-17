@@ -45,6 +45,53 @@ junk value `0`. -/
 noncomputable def medianOfMeans {k m : ℕ} (x : Fin k → Fin m → ℝ) : ℝ :=
   sampleMedian (fun j => sampleMean (x j))
 
+/-- The median step, stated directly for the values whose median is taken: if strictly more
+than `k/2` of the `Z j` lie in `[μ₀ − a, μ₀ + a]`, then so does `sampleMedian Z`. The two
+Round-1 counting bricks (`card_le_sampleMedian`, `card_sampleMedian_le`) pin the median from
+both sides; the ℕ-division bookkeeping is discharged by `omega`. -/
+private lemma abs_sampleMedian_sub_le_of_majority {k : ℕ} (hk : k ≠ 0) (Z : Fin k → ℝ)
+    {μ₀ a : ℝ}
+    (hmaj : k < 2 * (Finset.univ.filter fun j => |Z j - μ₀| ≤ a).card) :
+    |sampleMedian Z - μ₀| ≤ a := by
+  classical
+  -- any set of indices missing the band is contained in the complement of the majority set
+  have hcompl : ∀ S : Finset (Fin k), (∀ j ∈ S, a < |Z j - μ₀|) →
+      S.card ≤ k - (Finset.univ.filter fun j => |Z j - μ₀| ≤ a).card := by
+    intro S hS
+    have hsub : S ⊆ Finset.univ \ (Finset.univ.filter fun j => |Z j - μ₀| ≤ a) := by
+      intro j hj
+      refine Finset.mem_sdiff.mpr ⟨Finset.mem_univ j, ?_⟩
+      simp only [Finset.mem_filter, not_and, not_le]
+      exact fun _ => hS j hj
+    calc S.card ≤ (Finset.univ \ (Finset.univ.filter fun j => |Z j - μ₀| ≤ a)).card :=
+          Finset.card_le_card hsub
+      _ = k - _ := by
+          rw [Finset.card_sdiff, Finset.inter_univ, Finset.card_univ, Fintype.card_fin]
+  rw [abs_le]
+  constructor
+  · -- if the median undershot, every index below it would miss the band
+    by_contra hcon
+    rw [not_le] at hcon
+    have hS : ∀ j ∈ Finset.univ.filter fun j => Z j ≤ sampleMedian Z, a < |Z j - μ₀| := by
+      intro j hj
+      have hle : Z j ≤ sampleMedian Z := (Finset.mem_filter.mp hj).2
+      rw [lt_abs]
+      exact Or.inr (by linarith)
+    have h1 := hcompl _ hS
+    have h2 := card_le_sampleMedian hk Z
+    omega
+  · -- if the median overshot, every index above it would miss the band
+    by_contra hcon
+    rw [not_le] at hcon
+    have hS : ∀ j ∈ Finset.univ.filter fun j => sampleMedian Z ≤ Z j, a < |Z j - μ₀| := by
+      intro j hj
+      have hle : sampleMedian Z ≤ Z j := (Finset.mem_filter.mp hj).2
+      rw [lt_abs]
+      exact Or.inl (by linarith)
+    have h1 := hcompl _ hS
+    have h2 := card_sampleMedian_le hk Z
+    omega
+
 /-- **The deterministic median step** (`LM Theorem 2` proof, the counting display): if
 strictly more than `k/2` of the block means lie in `[μ₀ − a, μ₀ + a]`, then so does the
 median-of-means. Strict majority in ℕ is written `k < 2 * card`. -/
@@ -52,8 +99,8 @@ theorem abs_medianOfMeans_sub_le_of_majority {k m : ℕ} (hk : k ≠ 0)
     (x : Fin k → Fin m → ℝ) {μ₀ a : ℝ}
     (hmaj : k < 2 * (Finset.univ.filter
       fun j => |sampleMean (x j) - μ₀| ≤ a).card) :
-    |medianOfMeans x - μ₀| ≤ a := by
-  sorry
+    |medianOfMeans x - μ₀| ≤ a :=
+  abs_sampleMedian_sub_le_of_majority hk _ hmaj
 
 /-- **Block means of independent data are independent** (`LM Theorem 2` proof,
 implicit): if the doubly-indexed family is jointly independent, the `k` blockwise sample
