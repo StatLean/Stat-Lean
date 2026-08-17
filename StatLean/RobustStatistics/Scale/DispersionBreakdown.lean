@@ -1,5 +1,6 @@
 import StatLean.RobustStatistics.Core.BreakdownPoint
 import StatLean.RobustStatistics.LocationScale.MAD
+import StatLean.RobustStatistics.LocationScale.MedianBreakdown
 import StatLean.RobustStatistics.LocationScale.Mean
 
 /-!
@@ -33,9 +34,11 @@ and the IQR are 0, 1/2 and 1/4", Problem 3.3), §3.2.5 (the replacement FBP (3.2
 Donoho–Huber (1983).
 -/
 
-open MeasureTheory
+open MeasureTheory Finset
 
 namespace StatLean.RobustStatistics
+
+open StatLean.MultipleTesting
 
 variable {n : ℕ}
 
@@ -189,11 +192,74 @@ theorem sampleSD_dispersionBreakdownCount (hn : 2 ≤ n) {x : Fin n → ℝ}
 /-- **`k` replacements implode the MAD** (`MMY §3.2.2` + Problem 3.3, finite-sample
 form, `n = 2k+1`): replacing `k` coordinates by the value of a remaining data point
 creates `k + 1` copies of one value; the corrupted median is that value, a majority of
-the absolute deviations vanish, and the MAD is `0`. -/
+the absolute deviations vanish, and the MAD is `0`.
+
+**Note on `hinj`.** Distinctness is *not* used by the implosion argument (duplicating
+`x i₀` onto `k` coordinates collapses the MAD for arbitrary data); the hypothesis is kept
+because the breakdown-count theorem pairs this verdict with
+`sampleMAD_dispersionResists`, where distinctness is essential. -/
 theorem sampleMAD_implodes_under {k : ℕ} (hn : n = 2 * k + 1) (hk : 1 ≤ k)
     {x : Fin n → ℝ} (hinj : Function.Injective x) :
     DispersionBreaksUnder sampleMAD x k := by
-  sorry
+  classical
+  rintro ⟨lo, hi, hlo, H⟩
+  have hkn : k < n := by omega
+  have hn0 : 0 < n := by omega
+  set i₀ : Fin n := ⟨0, hn0⟩ with hi₀
+  set K : Fin n := ⟨k, hkn⟩ with hK
+  -- duplicate the value `x i₀` onto the `k` coordinates `1 ≤ j ≤ k`
+  set y : Fin n → ℝ := fun j => if (j : ℕ) ≤ k then x i₀ else x j with hy
+  have hcopy : ∀ j : Fin n, j ≤ K → y j = x i₀ := by
+    intro j hj
+    have hjk : (j : ℕ) ≤ k := hj
+    simp [hy, hjk]
+  have hdist : hammingDist x y ≤ k := by
+    have hsub : (univ.filter fun j => x j ≠ y j) ⊆ (Finset.Iic K).erase i₀ := by
+      intro j hj
+      rw [mem_filter] at hj
+      have hjk : (j : ℕ) ≤ k := by
+        by_contra hc
+        exact hj.2 (by simp [hy, hc])
+      refine Finset.mem_erase.2 ⟨?_, Finset.mem_Iic.2 hjk⟩
+      intro hje
+      exact hj.2 (by simp [hy, hje, hi₀])
+    calc hammingDist x y ≤ ((Finset.Iic K).erase i₀).card := Finset.card_le_card hsub
+      _ = k := by
+          rw [Finset.card_erase_of_mem (Finset.mem_Iic.2 (by simp [hi₀, hK])), Fin.card_Iic]
+          simp [hK]
+  -- `k + 1` copies of `x i₀` pin the corrupted median to `x i₀`
+  have hcard_le : k + 1 ≤ (univ.filter fun j => y j ≤ x i₀).card := by
+    have hsub : Finset.Iic K ⊆ univ.filter fun j => y j ≤ x i₀ := fun j hj =>
+      mem_filter.2 ⟨mem_univ j, le_of_eq (hcopy j (Finset.mem_Iic.1 hj))⟩
+    have h2 := Finset.card_le_card hsub
+    rw [Fin.card_Iic] at h2
+    simpa [hK] using h2
+  have hcard_ge : n - k ≤ (univ.filter fun j => x i₀ ≤ y j).card := by
+    have hsub : Finset.Iic K ⊆ univ.filter fun j => x i₀ ≤ y j := fun j hj =>
+      mem_filter.2 ⟨mem_univ j, ge_of_eq (hcopy j (Finset.mem_Iic.1 hj))⟩
+    have h2 := Finset.card_le_card hsub
+    rw [Fin.card_Iic] at h2
+    simp only [hK] at h2
+    omega
+  have hmed : sampleMedian y = x i₀ := by
+    rw [sampleMedian_odd hn]
+    exact le_antisymm (orderStat_le_of_card_le y ⟨k, hkn⟩ (x i₀) (by simpa using hcard_le))
+      (le_orderStat_of_card_le y ⟨k, hkn⟩ (x i₀) (by simpa using hcard_ge))
+  -- a majority of the absolute deviations vanish, so the MAD implodes to `0`
+  have hmad : sampleMAD y = 0 := by
+    refine le_antisymm ?_ (sampleMAD_nonneg y)
+    rw [sampleMAD, hmed, sampleMedian_odd hn]
+    refine orderStat_le_of_card_le _ ⟨k, hkn⟩ 0 ?_
+    have hsub : Finset.Iic K ⊆ univ.filter fun j => |y j - x i₀| ≤ 0 := by
+      intro j hj
+      refine mem_filter.2 ⟨mem_univ j, ?_⟩
+      rw [hcopy j (Finset.mem_Iic.1 hj), sub_self, abs_zero]
+    have h2 := Finset.card_le_card hsub
+    rw [Fin.card_Iic] at h2
+    simpa [hK] using h2
+  have hge := (H y hdist).1
+  rw [hmad] at hge
+  linarith
 
 /-- **The MAD resists `k − 1` replacements** (`MMY §3.2.2` + Problem 3.3, finite-sample
 form, `n = 2k+1`, distinct data): with at most `k − 1` replacements, at most `k` of the
@@ -203,7 +269,108 @@ follows from the Round-1 order-statistic perturbation bricks. -/
 theorem sampleMAD_dispersionResists {k : ℕ} (hn : n = 2 * k + 1) (hk : 1 ≤ k)
     {x : Fin n → ℝ} (hinj : Function.Injective x) :
     DispersionResists sampleMAD x (k - 1) := by
-  sorry
+  classical
+  have hkn : k < n := by omega
+  have hn0 : 0 < n := by omega
+  -- the minimal gap of the (distinct) data
+  set pairs : Finset (Fin n × Fin n) := univ.filter (fun p => p.1 ≠ p.2) with hpairs
+  have hpne : pairs.Nonempty := by
+    refine ⟨(⟨0, by omega⟩, ⟨1, by omega⟩), ?_⟩
+    rw [hpairs, mem_filter]
+    exact ⟨mem_univ _, by simp [Fin.ext_iff]⟩
+  set g : ℝ := (pairs.image fun p => |x p.1 - x p.2|).min' (hpne.image _) with hg
+  have hgmem : g ∈ pairs.image fun p => |x p.1 - x p.2| := Finset.min'_mem _ _
+  have hgpos : 0 < g := by
+    rw [Finset.mem_image] at hgmem
+    obtain ⟨p, hp, hpg⟩ := hgmem
+    rw [hpairs, mem_filter] at hp
+    rw [← hpg]
+    exact abs_pos.2 (sub_ne_zero.2 fun hc => hp.2 (hinj hc))
+  have hgle : ∀ i j : Fin n, i ≠ j → g ≤ |x i - x j| := by
+    intro i j hij
+    refine Finset.min'_le _ _ (Finset.mem_image.2 ⟨(i, j), ?_, rfl⟩)
+    rw [hpairs, mem_filter]
+    exact ⟨mem_univ _, hij⟩
+  -- the window the corrupted median lives in (Round-1 median resistance)
+  set m₀ : ℝ := ⨅ i, x i with hm₀
+  set M₀ : ℝ := ⨆ i, x i with hM₀
+  have hxlo : ∀ j, m₀ ≤ x j := fun j => ciInf_le (Set.Finite.bddBelow (Set.finite_range x)) j
+  have hxhi : ∀ j, x j ≤ M₀ := fun j => le_ciSup (Set.Finite.bddAbove (Set.finite_range x)) j
+  refine ⟨g / 2, M₀ - m₀, by linarith, fun y hy => ?_⟩
+  have hyk : hammingDist x y ≤ k := le_trans hy (by omega)
+  set t : ℝ := sampleMedian y with ht
+  have htmem : t ∈ Set.Icc m₀ M₀ := sampleMedian_mem_Icc_of_hammingDist hn hyk
+  set D : Finset (Fin n) := univ.filter (fun j => x j ≠ y j) with hD
+  have hDcard : D.card ≤ k - 1 := hy
+  set d : Fin n → ℝ := fun j => |y j - t| with hd
+  have hMAD : sampleMAD y = orderStat d ⟨k, hkn⟩ := by
+    rw [sampleMAD, sampleMedian_odd hn]
+  constructor
+  · -- at most `k` deviations can be below `g/2`: the `≤ k−1` replaced ones plus at most
+    -- ONE surviving original (two would sit within `g` of each other)
+    set Bad : Finset (Fin n) := univ.filter (fun j => d j < g / 2) with hBad
+    have hBadD : (Bad \ D).card ≤ 1 := by
+      refine Finset.card_le_one.2 fun a ha b hb => ?_
+      rw [Finset.mem_sdiff, hBad, mem_filter, hD, mem_filter] at ha hb
+      have hae : x a = y a := by by_contra hc; exact ha.2 ⟨mem_univ a, hc⟩
+      have hbe : x b = y b := by by_contra hc; exact hb.2 ⟨mem_univ b, hc⟩
+      by_contra hab
+      have h1 : |y a - t| < g / 2 := ha.1.2
+      have h2 : |y b - t| < g / 2 := hb.1.2
+      have h3 : |x a - x b| < g := by
+        rw [hae, hbe]
+        calc |y a - y b| = |(y a - t) - (y b - t)| := by ring_nf
+          _ ≤ |y a - t| + |y b - t| := abs_sub _ _
+          _ < g := by linarith
+      exact absurd (hgle a b hab) (not_le.2 h3)
+    have hBadcard : Bad.card ≤ k := by
+      have hsub : Bad ⊆ (Bad \ D) ∪ D := by
+        intro a ha
+        by_cases hc : a ∈ D
+        · exact Finset.mem_union_right _ hc
+        · exact Finset.mem_union_left _ (Finset.mem_sdiff.2 ⟨ha, hc⟩)
+      have := (Finset.card_le_card hsub).trans (Finset.card_union_le _ _)
+      omega
+    have hsplit : Bad.card + (univ.filter fun j => ¬ (d j < g / 2)).card = n := by
+      rw [hBad]
+      simpa using Finset.card_filter_add_card_filter_not
+        (s := (univ : Finset (Fin n))) (p := fun j => d j < g / 2)
+    have hgood : n - k ≤ (univ.filter fun j => g / 2 ≤ d j).card := by
+      have hcongr : (univ.filter fun j => ¬ (d j < g / 2))
+          = univ.filter fun j => g / 2 ≤ d j := by
+        apply Finset.filter_congr
+        intro j _
+        simp [not_lt]
+      rw [← hcongr]
+      omega
+    rw [hMAD]
+    exact le_orderStat_of_card_le d ⟨k, hkn⟩ (g / 2) (by simpa using hgood)
+  · -- at least `k+2` deviations come from surviving data points, all `≤ M₀ − m₀`
+    have hsurv : ∀ j : Fin n, j ∉ D → d j ≤ M₀ - m₀ := by
+      intro j hj
+      have hxy : x j = y j := by
+        by_contra hc
+        exact hj (by rw [hD, mem_filter]; exact ⟨mem_univ j, hc⟩)
+      rw [hd]
+      simp only
+      rw [← hxy, abs_le]
+      exact ⟨by linarith [hxlo j, htmem.2], by linarith [hxhi j, htmem.1]⟩
+    have hsplit : D.card + (univ.filter fun j => ¬ (x j ≠ y j)).card = n := by
+      rw [hD]
+      simpa using Finset.card_filter_add_card_filter_not
+        (s := (univ : Finset (Fin n))) (p := fun j => x j ≠ y j)
+    have hsub : (univ.filter fun j => ¬ (x j ≠ y j)) ⊆ univ.filter fun j => d j ≤ M₀ - m₀ := by
+      intro j hj
+      rw [mem_filter] at hj
+      refine mem_filter.2 ⟨mem_univ j, hsurv j ?_⟩
+      rw [hD, mem_filter]
+      rintro ⟨-, hne⟩
+      exact hj.2 hne
+    have hcard := Finset.card_le_card hsub
+    rw [hMAD]
+    refine orderStat_le_of_card_le d ⟨k, hkn⟩ (M₀ - m₀) ?_
+    simp only []
+    omega
 
 /-- **The dispersion breakdown count of the MAD is exactly `k − 1`** (`MMY §3.2.2` +
 Problem 3.3, finite-sample form): `(k−1)/(2k+1) → 1/2`, the asymptotic MAD breakdown
@@ -212,7 +379,9 @@ point. Note the contrast with the median's location breakdown count `k`
 implosion — impossible for a location estimator — binds first. -/
 theorem sampleMAD_dispersionBreakdownCount {k : ℕ} (hn : n = 2 * k + 1) (hk : 1 ≤ k)
     {x : Fin n → ℝ} (hinj : Function.Injective x) :
-    dispersionBreakdownCount sampleMAD x = k - 1 := by
-  sorry
+    dispersionBreakdownCount sampleMAD x = k - 1 :=
+  dispersionBreakdownCount_eq_of_resists_of_breaksUnder (by omega)
+    (sampleMAD_dispersionResists hn hk hinj)
+    (by rw [show k - 1 + 1 = k by omega]; exact sampleMAD_implodes_under hn hk hinj)
 
 end StatLean.RobustStatistics
