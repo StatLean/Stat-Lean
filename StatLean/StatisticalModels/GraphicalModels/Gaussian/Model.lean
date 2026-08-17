@@ -38,15 +38,13 @@ with `a_{γμ} = 0` whenever `γ ≠ μ` are non-adjacent; then the model is
   global through `Undirected.Markov`;
 * `condIndepCoords_weakUnion_of_disjoint`, `condIndepCoords_contraction_of_disjoint`,
   `condIndepCoords_intersection_of_disjoint` — the three named sub-lemmas that instance needs
-  ((C3), (C4), (C5)); symmetry and decomposition come free from `Core.Coordinates`;
+  ((C3), (C4), (C5)); symmetry and decomposition hold for the coordinate relation in general;
 * `isGlobalMarkov_of_mem_gaussianGraphicalModel` — `IsGlobalMarkov`, i.e. (G), obtained from the
   graphoid instance through Theorem 3.7 on nonempty blocks, plus
   `CondIndepCoords.of_isEmpty_left` for the degenerate blocks Theorem 3.7 provably cannot reach;
 * `isLocalMarkov_of_mem_gaussianGraphicalModel` — `IsLocalMarkov`, i.e. (L)
   `Y_γ ⫫ Y_{Γ∖cl(γ)} ∣ Y_{bd(γ)}`, obtained from (G) by pure graph separation. It is stated
-  *after* (G) because that is the direction of the dependency: `IsGlobalMarkov ⇒ IsLocalMarkov`
-  is `Undirected.Markov`'s `globalMarkov_implies_localMarkov`, so nothing here re-walks the
-  hierarchy.
+  *after* (G) because that is the direction of the dependency: `IsGlobalMarkov ⇒ IsLocalMarkov`.
 
 ## Note: `SeparatesTarget` and why the book's model does not identify its graph
 
@@ -93,33 +91,13 @@ undirected `G = (Γ, E)`; the zero constraint is quantified over `γ ≠ μ` so 
 `k_{γγ} > 0` always — is untouched, exactly as in the book ("for all pairs `γ, μ` which are not
 adjacent").
 
-*No re-statement of the Markov vocabulary.* The three Markov properties are `Undirected.Markov`'s
-`IsPairwiseMarkov` / `IsLocalMarkov` / `IsGlobalMarkov`, instantiated at the abstract relation
-`ci := CondIndepCoords P gaussianCoords`; separation is `Core.Separation.Separates`, consumed
-*inside* `IsGlobalMarkov` and never re-spelled here. Nothing in this file redefines a Markov
-property, a separation predicate, or a graphoid axiom. The three `Disjoint` hypotheses that
-`IsGlobalMarkov` carries are part of its definition, so its Gaussian instance takes no
-`Disjoint` arguments of its own.
+*Disjointness in the Markov properties.* The three `Disjoint` hypotheses that `IsGlobalMarkov`
+carries are part of its definition, so its Gaussian instance takes no `Disjoint` arguments of its
+own.
 
-*Landing on the nose.* `IsPairwiseMarkov` conditions on `Finset.univ \ {i, j}`, so
-`Gaussian.Precision`'s Proposition 5.2 is stated with that same expression rather than
-`({i, j} : Finset ι)ᶜ`; the instantiation is then syntactic, with no `Finset.compl_eq_univ_sdiff`
-rewriting in between.
-
-*Routes (do not re-derive).*
-
-| Step | Consumed from |
-|---|---|
-| pairwise Markov, both directions | `condIndepCoords_gaussianCoords_iff_precisionMatrix_eq_zero` — Prop. 5.2 (`Gaussian.Precision`) |
-| `Σ` regular from `Σ⁻¹` regular | `Matrix.posDef_inv_iff` (`LinearAlgebra/Matrix/PosDef.lean:499`) |
-| a Gaussian law determines its covariance (for `mem_..._iff` and `SeparatesTarget`) | `covMatrix_multivariateGaussian` (`ForMathlib.CovarianceMatrix`) + `meanVec_multivariateGaussian` |
-| `N(m, S)` is a probability measure | `ProbabilityTheory.IsGaussian.toIsProbabilityMeasure` (instance; `Gaussian/Basic.lean:50`) |
-| the feasibility witness `Σ = 1` | `Matrix.PosDef.one`, `Matrix.inv_one`, `Matrix.one_apply_ne` |
-| graph extensionality for `SeparatesTarget` | `SimpleGraph.ext` on `Adj` (the diagonal is covered by `SimpleGraph.irrefl`) |
-| (C1) symmetry, (C2) decomposition of the Gaussian relation | `CondIndepCoords.symm`, `CondIndepCoords.decomposition_of_sfinite` (`Core.Coordinates`) — already available, do **not** re-prove; the hypothesis-free `CondIndepCoords.decomposition` was refuted and deleted |
-| (C3), (C4), (C5) for the Gaussian relation | the three named sub-lemmas of this file; (C5) is Lauritzen Proposition 3.1, p. 29. The pin has no Lebesgue-density lemma for `multivariateGaussian`, so the route is block-splitting rather than the book's density argument: all three read off the block form (†) of Proposition 5.2, `Gaussian.Precision.condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero`, at a single shared index block `E = A ∪ B ∪ C ∪ D`. (C3) and (C5) are then bookkeeping; (C4) additionally consumes `Gaussian.Precision.precisionMatrix_principalSubmatrix_apply_of_row_eq_zero` (marginalisation is Schur complementation of `K`), since its two premises live on *different* index blocks. See the section docstring of "Lauritzen Proposition 3.1 at the Gaussian" below for the full reduction |
-| (G) ⇒ (L), (L) ⇒ (P), (G) ⇒ (P) | `Undirected.Markov.globalMarkov_implies_localMarkov`, `localMarkov_implies_pairwiseMarkov`, `globalMarkov_implies_pairwiseMarkov` — Lauritzen Proposition 3.4; **never** re-derive the hierarchy per model class |
-| (P) ⇒ (G) | `Undirected.Markov.pairwiseMarkov_implies_globalMarkov_of_nonempty` (Theorem 3.7, Pearl–Paz) fed by `isGraphoid_condIndepCoords_multivariateGaussian`, plus `CondIndepCoords.of_isEmpty_left` for the degenerate blocks Theorem 3.7 cannot reach — this is the whole content of "since the density is positive and continuous, this implies the global and local Markov properties" |
+*Landing on the nose.* `IsPairwiseMarkov` conditions on `Finset.univ \ {i, j}`, so Proposition
+5.2 is stated with that same expression rather than `({i, j} : Finset ι)ᶜ`; the instantiation is
+then syntactic, with no `Finset.compl_eq_univ_sdiff` rewriting in between.
 
 **Bibliographic comments.** Covariance selection is A. P. Dempster's, "Covariance selection,"
 *Biometrics* **28** (1972), 157–175 — the name, the model class `S⁺(G)` and the maximum
@@ -203,9 +181,8 @@ theorem mem_gaussianGraphicalModel_iff {G : SimpleGraph ι}
     exact ⟨m, S, ⟨precisionMatrix_posDef hS, hz⟩, rfl⟩
 
 /-- LEAN-ONLY (`private`, file-scope): a regular Gaussian law determines its covariance
-parameter. This is `covMatrix_multivariateGaussian` read as an injectivity statement; it is what
-lets a membership hypothesis stated for *some* `(m', S')` be transported back to the given `S`.
-Not a new mathematical input — the covariance of `N(m, Σ)` is `Σ`. -/
+parameter — the covariance of `N(m, Σ)` is `Σ`. It is what lets a membership hypothesis stated
+for *some* `(m', S')` be transported back to the given `S`. -/
 private theorem posDef_eq_of_multivariateGaussian_eq {m m' : EuclideanSpace ℝ ι}
     {S S' : Matrix ι ι ℝ} (hS : S.PosDef) (hS' : S'.PosDef)
     (h : multivariateGaussian m S = multivariateGaussian m' S') : S = S' := by
@@ -335,34 +312,27 @@ theorem multivariateGaussian_mem_gaussianGraphicalModel_iff_pairwise {G : Simple
 
 /-! ### Lauritzen Proposition 3.1 at the Gaussian — the graphoid instance
 
-The Gaussian's contribution to the `Core.Semigraphoid` abstraction. (C1) and (C2) are already
-available as `CondIndepCoords.symm` and `CondIndepCoords.decomposition_of_sfinite`; the three
-sub-lemmas below are the genuine debts, kept named rather than buried inside the instance so that the gap
-structure stays visible. All three carry the book's pairwise disjointness of the blocks.
+The Gaussian's contribution to the `Core.Semigraphoid` abstraction. (C1) and (C2) hold for the
+coordinate relation in general; the three sub-lemmas below are the ones that need the Gaussian,
+and are stated separately rather than inline in the instance. All three carry the book's pairwise
+disjointness of the blocks.
 
-### The reduction, and the two bricks all three consume
+### The reduction
 
 Write `K^E := (Σ_E)⁻¹` for the concentration matrix of the **principal submatrix** of `Σ` on a
 block `E ⊆ Γ` — equivalently of the marginal law of `Y_E`, a Gaussian marginal being the
-principal submatrix (`multivariateGaussian_map_blockFst`). The block form of Proposition 5.2
-reads
+principal submatrix. The block form of Proposition 5.2 reads
 
 `Y_A ⫫ Y_B ∣ Y_C  ⟺  (K^{A ∪ B ∪ C})_{AB} = 0`   (†)
 
 for pairwise disjoint `A`, `B`, `C`: conditioning on `Y_C` leaves `(Y_A, Y_B)` jointly normal
 with covariance the Schur complement `Σ_{AB} − Σ_{AB,C}Σ_{CC}⁻¹Σ_{C,AB}`; two blocks of a regular
-normal are independent iff that cross-block vanishes (Corollary C.6,
-`map_multivariateGaussian_fromBlocks_eq_prod_iff`), and (C.3)
-(`condCovMatrix_eq_inv_submatrix_precisionMatrix`) identifies the *inverse* of that Schur
-complement with the `A ∪ B` principal block of `K^{A ∪ B ∪ C}`, whose off-diagonal block vanishes
-exactly when the Schur complement's does.
+normal are independent iff that cross-block vanishes (Corollary C.6), and (C.3) identifies the
+*inverse* of that Schur complement with the `A ∪ B` principal block of `K^{A ∪ B ∪ C}`, whose
+off-diagonal block vanishes exactly when the Schur complement's does.
 
-(†) is `Gaussian.Precision.condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero`, and
-it belongs there rather than here: its `⟹` direction needs essential uniqueness of the
-disintegration — identifying the anonymous kernels of `CondIndep` with the conditional laws —
-which is exactly the machinery Proposition 5.2's own `⟹` direction builds, so both are index
-transports of a single analytic core in that file. **Nothing below re-derives it.** Note that
-(†) takes the index block `E` as a *parameter* with `hE : A ∪ B ∪ C = E`: the type of `K^E`
+(†) is `condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero`. Note that it takes the
+index block `E` as a *parameter* with `hE : A ∪ B ∪ C = E`: the type of `K^E`
 depends on `E`, so a literal union would force a dependent transport every time two blocks were
 presented differently. All three sub-lemmas below exploit this by fixing **one**
 `E := A ∪ B ∪ C ∪ D` and reading every premise and the conclusion on it.
@@ -374,24 +344,23 @@ of (C4), lives on that same `E`, since `A ∪ (B ∪ D) ∪ C = A ∪ B ∪ (C �
 * **(C5)** is pure bookkeeping too: its second premise's index block is `A ∪ D ∪ (C ∪ B) = E` as
   well, so the two premises are `(K^E)_{AB} = 0` and `(K^E)_{AD} = 0`, which together *are* the
   conclusion `(K^E)_{A, B ∪ D} = 0`.
-* **(C4) is not bookkeeping**, and it is the one that needs the *second* brick. Its second
+* **(C4) is not bookkeeping**, and it is the one that also needs marginalisation. Its second
   premise `Y_A ⫫ Y_D ∣ Y_C` lives on the strictly smaller block `F := A ∪ D ∪ C`, so it delivers
   `(K^F)_{AD} = 0` and **not** `(K^E)_{AD} = 0`. The two are linked by marginalisation: deleting
   `B` from `E` replaces `K^E` by its Schur complement,
   `K^F = (K^E)_{F} − (K^E)_{F,B}((K^E)_{BB})⁻¹(K^E)_{B,F}`, whose `(A, D)` entry is
   `(K^E)_{AD} − (K^E)_{AB}((K^E)_{BB})⁻¹(K^E)_{BD}`. The *first* premise `(K^E)_{AB} = 0` kills
-  the correction term, so `(K^E)_{AD} = (K^F)_{AD} = 0`. That marginalisation step — the **dual
-  of (C.3)**, marginalisation being Schur complementation of `K` just as conditioning is
-  principal submatrixing of `K` — is
-  `Gaussian.Precision.precisionMatrix_principalSubmatrix_apply_of_row_eq_zero`, in the sharp
-  form "a row of `K` that already vanishes on the deleted block survives marginalisation". -/
+  the correction term, so `(K^E)_{AD} = (K^F)_{AD} = 0`. That marginalisation step is the **dual
+  of (C.3)** — marginalisation being Schur complementation of `K` just as conditioning is
+  principal submatrixing of `K` — in the sharp form "a row of `K` that already vanishes on the
+  deleted block survives marginalisation". -/
 
 /-- **(C3), weak union, for the Gaussian** (Lauritzen §3.1, p. 29): `X_A ⫫ (X_B, X_D) ∣ X_C`
 implies `X_A ⫫ X_B ∣ (X_C, X_D)`.
 
-`Core.CondIndep` deliberately proves only (C1)–(C2) in full generality — weak union needs
-essential uniqueness of disintegrations — so the Gaussian supplies this itself, by block
-splitting rather than through the general calculus.
+In full generality only (C1)–(C2) are available — weak union needs essential uniqueness of
+disintegrations — so the Gaussian supplies this itself, by block splitting rather than through
+the general calculus.
 
 *Proof.* Bookkeeping on top of the block form (†) of Proposition 5.2
 (`condIndepCoords_gaussianCoords_iff_blockPrecisionMatrix_eq_zero`): premise and conclusion live
@@ -433,9 +402,8 @@ premise is already the conclusion. For `b ∈ D` the two are linked by marginali
 `B` from `E` replaces `K^E` by its Schur complement
 `(K^E)_{F} − (K^E)_{F,B}((K^E)_{BB})⁻¹(K^E)_{B,F}`, and the first premise `(K^E)_{AB} = 0` says
 precisely that row `a` of the correction term vanishes, so `(K^E)_{ab} = (K^F)_{ab} = 0` by the
-second premise. That step is
-`Gaussian.Precision.precisionMatrix_principalSubmatrix_apply_of_row_eq_zero`, the `Finset` form
-of the dual of Lauritzen (C.3). -/
+second premise. That step is `precisionMatrix_principalSubmatrix_apply_of_row_eq_zero`, the
+`Finset` form of the dual of Lauritzen (C.3). -/
 theorem condIndepCoords_contraction_of_disjoint
     (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ}
     -- USER-INPUT: `Σ` regular; Lauritzen §5.2, p. 131
@@ -551,16 +519,15 @@ instance of `Core.Semigraphoid.IsGraphoid`, i.e. Lauritzen **Proposition 3.1** (
 the normal density, which §5.2 (p. 131) invokes when it says "since the density is positive and
 continuous, this implies the global and local Markov properties".
 
-This is the single object `Undirected.Markov` needs from the Gaussian side: with it,
-`pairwiseMarkov_implies_globalMarkov_of_nonempty` (Theorem 3.7, Pearl–Paz) and
-`markov_tfae_of_nonempty` apply verbatim, and no Markov implication has to be re-proved for this
-model class.
+This is the single object the Markov hierarchy needs from the Gaussian side: with it,
+Theorem 3.7 (Pearl–Paz) and the equivalence of the three Markov properties apply to this model
+class.
 
-Assembly (no new mathematics): `symm := CondIndepCoords.symm`,
-`decomposition := CondIndepCoords.decomposition_of_sfinite` at `B ⊆ B ∪ D` (the frozen
-`CondIndepCoords.decomposition` was refuted and deleted; its s-finiteness hypothesis is an
-instance here, a Gaussian being a probability measure), and the three named sub-lemmas above for
-`weakUnion`, `contraction` and `intersection`. -/
+The fields are `symm := CondIndepCoords.symm`,
+`decomposition := CondIndepCoords.decomposition_of_sfinite` at `B ⊆ B ∪ D` (a decomposition
+without the s-finiteness hypothesis is false; here that hypothesis is an instance, a Gaussian
+being a probability measure), and the three named sub-lemmas above for `weakUnion`,
+`contraction` and `intersection`. -/
 theorem isGraphoid_condIndepCoords_multivariateGaussian
     (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ}
     -- USER-INPUT: `Σ` regular — positivity and continuity of the density; Lauritzen Prop. 3.1,
@@ -579,22 +546,18 @@ theorem isGraphoid_condIndepCoords_multivariateGaussian
 /-- **The global Markov property** (Lauritzen §3.2, p. 32, property (G); §5.2, p. 131: "Since the
 density is positive and continuous, this implies the global and local Markov properties"), as an
 instance of `Undirected.Markov.IsGlobalMarkov`. Separation is `Core.Separation.Separates` and the
-three disjointness conditions are part of that definition; nothing is restated here.
+three disjointness conditions are part of that definition.
 
-It carries **no debt of its own**: destructure `hP` into a regular `multivariateGaussian m S`,
-then apply `pairwiseMarkov_implies_globalMarkov_of_nonempty G
-(isGraphoid_condIndepCoords_multivariateGaussian m hS)` to
-`isPairwiseMarkov_of_mem_gaussianGraphicalModel hP`. The real content sits in Theorem 3.7 (in
-`Undirected.Markov`) and in the graphoid instance above — which is exactly Lauritzen's own
-argument, and not a fresh Gaussian computation.
+*Proof.* Destructure `hP` into a regular `multivariateGaussian m S`, then apply Theorem 3.7 to
+the pairwise Markov property through the graphoid instance above — which is exactly Lauritzen's
+own argument.
 
-**Why the `_of_nonempty` form, and why no hypothesis is added.** Theorem 3.7 as frozen over
-*all* disjoint triples is false (`not_forall_pairwiseMarkov_implies_globalMarkov`) and has been
-deleted: `IsGlobalMarkov` demands `ci ∅ B S` of every instance while (P) says nothing about
-empty blocks, and no graphoid axiom can manufacture a first `ci`-statement. The Gaussian,
-however, *can* supply those degenerate cases directly — `CondIndepCoords.of_isEmpty_left`, the
-subvector on an empty block taking values in a singleton type — so the empty-block regime is
-discharged here rather than assumed, and the frozen signature of this theorem is unchanged. -/
+**Why the `_of_nonempty` form, and why no hypothesis is added.** Theorem 3.7 over *all* disjoint
+triples is false (`not_forall_pairwiseMarkov_implies_globalMarkov`): `IsGlobalMarkov` demands
+`ci ∅ B S` of every instance while (P) says nothing about empty blocks, and no graphoid axiom
+can manufacture a first `ci`-statement. The Gaussian, however, *can* supply those degenerate
+cases directly — `CondIndepCoords.of_isEmpty_left`, the subvector on an empty block taking
+values in a singleton type — so the empty-block regime is discharged here rather than assumed. -/
 theorem isGlobalMarkov_of_mem_gaussianGraphicalModel {G : SimpleGraph ι}
     {P : Measure (EuclideanSpace ℝ ι)}
     -- USER-INPUT: a law of the covariance selection model; Lauritzen §5.2, p. 131
@@ -615,7 +578,7 @@ theorem isGlobalMarkov_of_mem_gaussianGraphicalModel {G : SimpleGraph ι}
 /-- **The local Markov property** (Lauritzen §3.2, p. 32, property (L)):
 `Y_γ ⫫ Y_{Γ∖cl(γ)} ∣ Y_{bd(γ)}`, as an instance of `Undirected.Markov.IsLocalMarkov`.
 
-Carries **no debt of its own**: it is `globalMarkov_implies_localMarkov` applied to
+It is `globalMarkov_implies_localMarkov` applied to
 `isGlobalMarkov_of_mem_gaussianGraphicalModel`, a step that is pure graph separation and uses no
 property of `ci` at all. -/
 theorem isLocalMarkov_of_mem_gaussianGraphicalModel {G : SimpleGraph ι}

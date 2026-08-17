@@ -33,8 +33,8 @@ J. P. Fine and R. J. Gray, "A proportional hazards model for the subdistribution
 competing risk," *JASA* **94** (1999), 496–509 (defs only).
 
 **Proof formalization notes.** All identities are `restrict`/`withDensity`/`map`
-bookkeeping in the style of the closed `Censoring.lean` (whose `withDensity`-merge and
-`0·∞ = 0` conventions are reused); S6.1 is countable additivity of `restrict` over the
+bookkeeping under the `withDensity`-merge and `0·∞ = 0` conventions; S6.1 is countable
+additivity of `restrict` over the
 disjoint cause slices; S6.3 replays the S2.3 density-merge with the roles of the two laws
 symmetrized. Tie convention in `crObserve₂`: ties go to cause `0` (*Book vs Lean:* the
 references assume no ties a.s.).

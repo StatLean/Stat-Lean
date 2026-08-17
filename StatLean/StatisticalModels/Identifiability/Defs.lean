@@ -3,9 +3,8 @@ import StatLean.PointEstimation.Model.Defs
 /-!
 # Identifiability of targets — estimands as functionals of the law
 
-Reuses `StatLean.PointEstimation.Identifiable` (`Function.Injective P`) as the library's single
-notion of model identifiability — deliberately imported, never redefined — and adds the two
-target-level notions the model calculus needs:
+`StatLean.PointEstimation.Identifiable` (`Function.Injective P`) is the library's notion of
+model identifiability; this file adds the two target-level notions the model calculus needs:
 
 * `IdentifiesTarget P ψ` — the estimand `ψ : Θ → Γ` is **identified** by the model: it factors
   through the law map (`P θ₁ = P θ₂ → ψ θ₁ = ψ θ₂`). Definitionally

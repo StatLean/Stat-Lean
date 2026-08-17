@@ -56,20 +56,9 @@ casing the definition: the book's formula is used verbatim, degenerate diagonal 
 *Book vs Lean, the two-variable displays of p. 130.* Lauritzen also records
 `V(Y_γ ∣ Y_{Γ∖{γ,μ}}) = k_{μμ}/(k_{γγ}k_{μμ} − k_{γμ}²)` and
 `Cov(Y_γ, Y_μ ∣ Y_{Γ∖{γ,μ}}) = −k_{γμ}/(k_{γγ}k_{μμ} − k_{γμ}²)`. These are the entries of the
-explicit `2 × 2` inverse (5.11) and are *not* stubbed separately: `neg_inv_apply_div_sqrt_eq`
-packages exactly the combination of them that the partial correlation needs, and the full
-entrywise form is `Matrix.inv_def` + `Matrix.adjugate_fin_two` after a `Fin 2` reindexing.
-
-*Routes (do not re-derive).*
-
-| Step | Consumed from |
-|---|---|
-| `k_{γγ} > 0` | `precisionMatrix_diag_pos` (`Gaussian.Precision`) |
-| the conditional concentration matrix is a principal submatrix of `K` | `submatrix_precisionMatrix_fromBlocks_inr_inr` — Lauritzen (C.3) (`Gaussian.Precision`) |
-| `ρ = 0 ⟺ k_{γμ} = 0 ⟺ CI` | `condIndepCoords_gaussianCoords_iff_precisionMatrix_eq_zero` — Prop. 5.2 (`Gaussian.Precision`) |
-| the `2 × 2` inverse | `Matrix.inv_def`, `Matrix.adjugate_fin_two_of`, `Matrix.det_fin_two_of` after transporting `ι₂ ≃ Fin 2` (`Fintype.equivFinOfCardEq`) |
-| `det Σ > 0` for a regular covariance | `Matrix.PosDef.det_pos` (`Analysis/Matrix/PosDef.lean:85`) |
-| (5.12) determinant bookkeeping | `Matrix.det_fromBlocks₁₁` (`SchurComplement.lean:369`) — this is Lauritzen (C.5), `det Σ = det Σ₂₂ / det K₁₁`, applied four times |
+explicit `2 × 2` inverse (5.11); `neg_inv_apply_div_sqrt_eq` packages exactly the combination of
+them that the partial correlation needs, and the full entrywise form is the `2 × 2` adjugate
+formula after a `Fin 2` reindexing.
 
 **Bibliographic comments.** Partial correlation is K. Pearson and G. U. Yule's (1896–1907); the
 identification of the scaled inverse covariance with minus the partial correlations is classical
@@ -196,8 +185,8 @@ end ConditionalVariance
 section TwoBySignTrap
 
 /-- LEAN-ONLY corridor: a two-element index type is `Fin 2`, with the equivalence pinned to a
-prescribed pair of distinct elements. Used to import Mathlib's explicit `2 × 2` determinant and
-adjugate (`Matrix.det_fin_two`, `Matrix.adjugate_fin_two`) onto an abstract index type. -/
+prescribed pair of distinct elements. Used to transport the explicit `2 × 2` determinant and
+adjugate formulas onto an abstract index type. -/
 private noncomputable def pairEquiv {ι₂ : Type*} [Fintype ι₂] [DecidableEq ι₂] {a b : ι₂}
     (hcard : Fintype.card ι₂ = 2) (hab : a ≠ b) : Fin 2 ≃ ι₂ :=
   Equiv.ofBijective ![a, b] <| by
@@ -219,8 +208,8 @@ private theorem det_eq_of_card_two {ι₂ : Type*} [Fintype ι₂] [DecidableEq 
   rw [← h, Matrix.det_fin_two]
   simp [Matrix.submatrix_apply, pairEquiv_zero, pairEquiv_one]
 
-/-- LEAN-ONLY: the explicit `2 × 2` inverse on an abstract two-element index type
-(`Matrix.inv_def` + `Matrix.adjugate_fin_two` transported along `pairEquiv`). -/
+/-- LEAN-ONLY: the explicit `2 × 2` inverse on an abstract two-element index type, transported
+along `pairEquiv`. -/
 private theorem inv_apply_of_card_two {ι₂ : Type*} [Fintype ι₂] [DecidableEq ι₂]
     (M : Matrix ι₂ ι₂ ℝ) (hcard : Fintype.card ι₂ = 2) {a b : ι₂} (hab : a ≠ b) :
     M⁻¹ a a = (M.det)⁻¹ * M b b ∧ M⁻¹ a b = (M.det)⁻¹ * (-(M a b)) := by
@@ -319,11 +308,7 @@ private theorem splitEquiv_inr (A : Finset ι) (y : ↥A) : splitEquiv A (Sum.in
 /-- **Lauritzen (C.5)** (App. C, p. 257) in principal-submatrix form: `det K_A · det Σ =
 det Σ_{Γ∖A}`, i.e. the principal minor of the concentration matrix on `A` is the complementary
 principal minor of `Σ` divided by `det Σ`. Applied at `A = {γ}`, `{μ}`, `{γ, μ}` this is the
-"(C.5) four times" bookkeeping behind (5.12).
-
-Route: transport `S` along `splitEquiv A`, whose `Sum.inr` block is `A`; then
-`Matrix.det_fromBlocks₁₁` (this *is* (C.5)) and Lauritzen (C.3)
-(`submatrix_precisionMatrix_fromBlocks_inr_inr`). -/
+"(C.5) four times" bookkeeping behind (5.12). -/
 private theorem det_principalSubmatrix_precisionMatrix
     (hS : S.PosDef) (A : Finset ι) :
     (principalSubmatrix (precisionMatrix S) A).det * S.det

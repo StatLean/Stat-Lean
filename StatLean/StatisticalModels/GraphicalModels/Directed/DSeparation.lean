@@ -36,8 +36,8 @@ blocks (**Proposition 3.25**, p. 48).
   `not_forall_dSeparated_of_subset_sep` is the machine-checkable refutation, witnessed by the
   three-vertex collider `0 → 2 ← 1`. This is the one structural difference between
   d-separation and `Separates`;
-* the graph `(G_{An(A ∪ B ∪ S)})^m` in which Proposition 3.25 reads is `Markov.ancestralMoralGraph`
-  (upstream — not redefined here);
+* the graph `(G_{An(A ∪ B ∪ S)})^m` in which Proposition 3.25 reads is
+  `Markov.ancestralMoralGraph`;
 * `dSeparated_iff_separates_moralGraph_ancestralClosure` — **Proposition 3.25**, the headline:
   for disjoint `A`, `B`, `S` in a DAG, `S` d-separates `A` from `B` **iff** `S` separates `A`
   from `B` in `(G_{An(A ∪ B ∪ S)})^m`;
@@ -83,26 +83,21 @@ misattribute (`Lauritzen §3.2.2` in tags).
    readings of d-separation agree — `dSeparated_iff_forall_nodup` — but, unlike in the
    undirected case, this is **not** `Walk.bypass`: shortening a chain can turn a non-collider
    into a **collider**, and a collider is exactly what blocks when nothing below it lies in `S`.
-   ⚠️ The route this note originally announced — "a corollary of Proposition 3.25, which holds
-   for either reading" — **does not close**, and is not the one taken; see
-   `dSeparated_iff_forall_nodup` for why (Proposition 3.25 is proved here only for the walk
-   reading, and the chain its proof builds out of a moral walk need not have distinct vertices).
-   The equivalence is instead proved directly, by shortening a chain of **minimal length**:
-   `Chain.exists_shorter_of_not_nodup` shows the merged occurrence cannot block, the one
-   dangerous configuration being ruled out by acyclicity (`Chain.forward_run`). Consequently the
-   proof uses only the DAG hypothesis, **not** the disjointness of the three blocks, which the
-   frozen statement nevertheless carries.
-2. **Orientation is data, not a proposition.** A chain could have been modelled as a walk in
-   the underlying undirected graph `Relation.SymmGen r` plus a predicate reading off which of
-   `r u v`, `r v u` holds at each step. We rejected that: `Relation.SymmGen r u v` is a
-   *disjunction of propositions*, so "which way does this arrow point" is only recoverable by
-   case analysis, and every statement about colliders would carry that case split. Recording
-   the direction in the constructor (`fwd`/`bwd`) makes "arrows meet head-to-head at `γ`" a
-   structural side condition of the recursion, needs no decidability of `r`, and needs no
-   acyclicity — so the vocabulary is available for an arbitrary relation, and the DAG
-   hypotheses appear only where they are genuinely used (Proposition 3.25 and below).
-   The moral graph is *not* the underlying undirected graph anyway (it has extra marriage
-   edges), so no walk type could have served both sides of Proposition 3.25.
+   ⚠️ The equivalence is also **not** a corollary of Proposition 3.25: that proposition is
+   proved here only for the walk reading, and the chain its proof builds out of a moral walk
+   need not have distinct vertices. It is proved directly instead, by shortening a chain of
+   **minimal length**: `Chain.exists_shorter_of_not_nodup` shows the merged occurrence cannot
+   block, the one dangerous configuration being ruled out by acyclicity (`Chain.forward_run`).
+   Consequently the proof uses only the DAG hypothesis, **not** the disjointness of the three
+   blocks, which the statement nevertheless carries.
+2. **Orientation is data, not a proposition.** The direction of each step is recorded by the
+   constructor used (`fwd`/`bwd`), so "arrows meet head-to-head at `γ`" is a *structural*
+   condition of the recursion rather than a proposition recovered by case analysis on which of
+   `r u v`, `r v u` holds. It needs no decidability of `r` and no acyclicity — so the vocabulary
+   is available for an arbitrary relation, and the DAG hypotheses appear only where they are
+   genuinely used (Proposition 3.25 and below). The moral graph is *not* the underlying
+   undirected graph anyway (it has extra marriage edges), so the two sides of Proposition 3.25
+   are walks in different graphs.
 3. **Blocking is evaluated at vertex *occurrences*.** Lauritzen writes "it contains a vertex
    `γ ∈ π`"; a chain that repeats a vertex meets it with different pairs of incident arrows
    each time, and the same vertex may be a collider at one occurrence and not at another. The
@@ -126,10 +121,7 @@ directed acyclic graph `G` one can choose state spaces and a probability `P` for
 `A ⫫ B ∣ S ⟺ S` d-separates `A` from `B` — so no strictly finer graphical rule reads more
 conditional independences out of the graph than d-separation does. That is a statement about
 the *existence of a law*, quantified over state spaces, and is recorded here as a remark only:
-it is far outside this file's scope and is deliberately **not** stated in Lean. Mathlib has no
-d-separation vocabulary in this pin (`Digraph` is a bare `Adj : V → V → Prop` with no path
-API), so `Chain` and everything above it is new; `Relation.ReflTransGen`, `List.Nodup` and
-`SimpleGraph` are Mathlib's, and `Separates` is this area's round-1 file.
+it is far outside this file's scope and is deliberately **not** stated in Lean.
 -/
 
 namespace StatLean.StatisticalModels.GraphicalModels
@@ -318,9 +310,8 @@ descendants in `S`", read as the single condition `De(γ) ∩ S = ∅` with
 
 *Book vs Lean.* Stated with `Relation.ReflTransGen` on a bare relation rather than with
 `Directed.DAG.descendants`, so that `BlocksAt` is available before any DAG structure is fixed;
-for `r = D.Adj` the two agree by unfolding `descendants`, and no reachability fact is
-re-derived here. *Edge behaviour.* Vacuously true for `S = ∅`, so over an empty separator a
-chain is blocked exactly when it has a collider. -/
+for `r = D.Adj` the two agree by unfolding `descendants`. *Edge behaviour.* Vacuously true for
+`S = ∅`, so over an empty separator a chain is blocked exactly when it has a collider. -/
 def NoDescendantIn (r : V → V → Prop) (S : Finset V) (γ : V) : Prop :=
   ∀ d : V, Relation.ReflTransGen r γ d → d ∉ S
 
@@ -595,8 +586,8 @@ theorem exists_chain_prepend_of_reflTransGen {S : Finset V} {x t : V}
 
 The machinery of `dSeparated_iff_forall_nodup`. The book's chains have *distinct* vertices;
 `Chain` does not (module docstring, note 1), and the two readings of d-separation are reconciled
-here rather than — as that note guessed — by a corollary of Proposition 3.25. See
-`dSeparated_iff_forall_nodup` for why the corollary route does not in fact close. -/
+here directly, not by a corollary of Proposition 3.25 — see `dSeparated_iff_forall_nodup` for
+why that route does not close. -/
 
 /-- **The accumulator matters only through the blocking of the first vertex.** Strengthens
 `blockedFrom_congr_din`: it is enough that neither accumulator makes the *first occurrence*
@@ -930,29 +921,12 @@ theorem not_forall_dSeparated_of_subset_sep :
 
 /-! ### Proposition 3.25 — d-separation is moral-graph separation
 
-⚠️ *Names imported from the concurrent directed files.* This section is stated against
-`DAG` / `DAG.Adj` / `DAG.induce` (`Directed/DAG.lean`), `moralGraph` (`Directed/Moralization.lean`)
-and `IsDirectedGlobalMarkov` (`Directed/Markov.lean`). Everything above this line is
-independent of those files. -/
+From here on the statements are about a `DAG` and its moral graph; everything above is stated
+for a bare relation. -/
 
 section Prop325
 
 variable [Fintype V] [DecidableEq V]
-
-/-! ### The graph of Proposition 3.25 — supplied upstream, not redefined here
-
-Lauritzen's `(G_{An(A ∪ B ∪ S)})^m` — moralize the sub-DAG induced on the smallest ancestral
-set containing `A ∪ B ∪ S` — is already provided by `Directed/Markov.lean` as
-`ancestralMoralGraph D T = inducedMoralGraph D (D.ancestralClosure T)`, which in turn composes
-`Directed/Factorization.lean`'s `inducedMoralGraph`. Both are upstream of this file, so the
-statements below consume `ancestralMoralGraph D (A ∪ B ∪ S)` rather than introducing a third
-spelling of the same composite.
-
-*Edge behaviour* (inherited): `ancestralClosure ∅ = ∅` and moralization of the empty sub-DAG is
-the empty graph, so at `A = B = S = ∅` the graph is `⊥` and `Separates ⊥ ∅ ∅ ∅` holds vacuously,
-matching `dSeparated_empty_left`. The vertex type stays `V`: the induced sub-DAG keeps `V` and
-merely deletes arrows leaving the ancestral set, so `Separates` and `DSeparated` speak about the
-same blocks with no subtype transport. -/
 
 open SimpleGraph in
 /-- **Contracting the colliders of an active chain into marriage edges** — the construction
@@ -977,7 +951,7 @@ chain, not off the part already traversed. The three conclusions are, in order:
   active there.
 
 The graph is abstracted to any `M` with the adjacency of `(𝒢_T)^m` (`DAG.moralGraph_induce_adj`),
-so that this recursion is stated once and consumed at `T = An(A ∪ B ∪ S)`. -/
+so that this recursion is stated once and instantiated at `T = An(A ∪ B ∪ S)`. -/
 private theorem exists_moralWalk_of_active {D : DAG V} {B S T : Finset V} {M : SimpleGraph V}
     (hTanc : D.IsAncestralSet T) (hBT : B ⊆ T) (hST : S ⊆ T)
     (hMadj : ∀ u v : V, M.Adj u v ↔ u ≠ v ∧ u ∈ T ∧ v ∈ T ∧
@@ -1187,10 +1161,15 @@ private theorem exists_active_chain_of_moralWalk {D : DAG V} {A B S T : Finset V
 blocks `A`, `B`, `S` of a directed acyclic graph `D`, the separator `S` d-separates `A` from `B`
 **iff** `S` separates `A` from `B` in `(G_{An(A∪B∪S)})^m`.
 
-This is the bridge that lets the entire round-1 undirected layer (`Core.Separation` and its
-`Undirected.Markov` consumers) serve the directed theory: the left-hand side is Pearl's local,
-chain-by-chain criterion, the right-hand side is a single application of `Separates` to one
-explicitly constructed undirected graph.
+This is the bridge that lets the undirected separation theory serve the directed one: the
+left-hand side is Pearl's local, chain-by-chain criterion, the right-hand side is a single
+application of `Separates` to one explicitly constructed undirected graph.
+
+*Edge behaviour.* `ancestralClosure ∅ = ∅` and moralization of the empty sub-DAG is the empty
+graph, so at `A = B = S = ∅` the graph is `⊥` and `Separates ⊥ ∅ ∅ ∅` holds vacuously, matching
+`dSeparated_empty_left`. The vertex type stays `V`: the induced sub-DAG keeps `V` and merely
+deletes arrows leaving the ancestral set, so `Separates` and `DSeparated` speak about the same
+blocks with no subtype transport.
 
 **Proof (the book's, p. 48–49).** Both directions are contrapositives.
 
@@ -1225,9 +1204,8 @@ measure on the number of blocking colliders is needed.
 
 *The three disjointness hypotheses are not used.* Both constructions are local — activity of the
 chain, respectively `S`-avoidance of the walk, supplies every non-membership of `S` that is
-needed — so the equivalence holds for arbitrary `A`, `B`, `S`. They are kept because the
-statement is frozen; the book assumes them because its blocking rule is stated for disjoint
-blocks. -/
+needed — so the equivalence holds for arbitrary `A`, `B`, `S`. They are kept because the book
+assumes them: its blocking rule is stated for disjoint blocks. -/
 theorem dSeparated_iff_separates_moralGraph_ancestralClosure (D : DAG V) [DecidableRel D.Adj] [DecidableRel (Relation.TransGen D.Adj)] (A B S : Finset V)
     -- USER-INPUT: the two separated blocks are disjoint; Lauritzen Proposition 3.25, p. 48
     -- ("let `A`, `B` and `S` be disjoint subsets")
@@ -1274,11 +1252,8 @@ Lauritzen's chains (§2.1.1, p. 6) are vertex-distinct sequences; `Chain` drops 
 is **unavailable** here, because deleting a repeated section of a chain can turn a non-collider
 into a **collider** and so turn an active chain into a blocked one.
 
-⚠️ **The route this docstring originally announced does not close, and is not the one taken.**
-It proposed to read the equivalence off Proposition 3.25 applied twice — "the book proves that
-*its* (vertex-distinct) d-separation is equivalent to separation in `(𝒢_{An(A∪B∪S)})^m`". That
-is a citation, not a proof: nothing in this file proves Proposition 3.25 *for the vertex-distinct
-reading*, and it cannot be obtained from
+⚠️ **Nor does it follow from Proposition 3.25 applied twice.** Nothing here proves
+Proposition 3.25 *for the vertex-distinct reading*, and the equivalence cannot be obtained from
 `dSeparated_iff_separates_moralGraph_ancestralClosure` by rewriting, because the chain that
 `exists_active_chain_of_moralWalk` builds out of a moral walk need not have distinct vertices
 (two marriage edges may share a witness, and a rerouting line of descent may re-meet the walk).
@@ -1299,7 +1274,7 @@ forces distinct vertices, and the two readings agree.
 *Consequences for the signature.* Acyclicity is genuinely used — it is what kills the cycle
 above, and `Chain.exists_shorter_of_not_nodup` carries it as `IsAcyclicRel`. The three
 **disjointness hypotheses are not used at all**: the argument is chain-local and never looks at
-where `A`, `B` and `S` meet. They are kept because the statement is frozen. -/
+where `A`, `B` and `S` meet. They are kept to match Proposition 3.25's statement. -/
 theorem dSeparated_iff_forall_nodup (D : DAG V) [DecidableRel D.Adj] [DecidableRel (Relation.TransGen D.Adj)] (A B S : Finset V)
     -- USER-INPUT: the two separated blocks are disjoint; Lauritzen Proposition 3.25, p. 48
     (hAB : Disjoint A B)

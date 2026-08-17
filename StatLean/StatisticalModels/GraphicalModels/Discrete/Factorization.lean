@@ -9,8 +9,8 @@ Lauritzen's fourth Markov-type property: a mass function **factorizes** over an 
 graph `G` when it is a product of non-negative factors, one for each complete vertex set, each
 depending on the configuration only through its own coordinates. Together with
 `Discrete/CondIndep.lean` (which supplies the graphoid calculus) this closes the discrete
-chain (F) ⇒ (G) ⇒ (L) ⇒ (P) of Lauritzen's Proposition 3.8, and sets up the round-2 headline,
-Hammersley–Clifford.
+chain (F) ⇒ (G) ⇒ (L) ⇒ (P) of Lauritzen's Proposition 3.8, and carries the
+Hammersley–Clifford theorem.
 
 * `completeSubsets G` — the `Finset` of complete vertex sets, assembled from Mathlib's
   `SimpleGraph.IsClique`;
@@ -45,29 +45,25 @@ p. 28 that on a discrete space every function is continuous (`Lauritzen §3.2`).
    which he calls cliques; the two properties are equivalent, since a potential attached to a
    complete set can be absorbed into any maximal complete set containing it. Mathlib's
    `SimpleGraph.IsClique` means *complete*, not maximal, so `FactorizesOver` is (3.11)
-   verbatim. Mathlib's `SimpleGraph.cliqueFinset n` is the finset of complete sets of a **given
-   size** `n` and is therefore not the index family we need; `completeSubsets` filters
-   `Finset.univ : Finset (Finset V)` by `IsClique` instead. No notion of clique is redefined.
+   verbatim, with `completeSubsets` — the filter of `Finset.univ : Finset (Finset V)` by
+   `IsClique` — as its index family.
 2. **The potentials are functions of the whole configuration.** As in `Discrete/CondIndep.lean`,
    `ψ c : (V → α) → ℝ≥0∞` with the constraint `DependsOn (ψ c) ↑c` (Mathlib's `DependsOn`),
    rather than a function on the subtype `↥c → α`. The two readings are interchangeable by
    `dependsOn_iff_exists_comp`; keeping a single type is what makes the product
    `∏ c ∈ completeSubsets G, ψ c x` a plain `Finset.prod` in `ℝ≥0∞`.
 3. **No normalisation, no finiteness in (F) ⇒ (G).** Lauritzen's `f` is a density; ours is a
-   bare `ℝ≥0∞`-valued mass. `factorizesOver_implies_globalMarkov` needs neither: the route
-   splits a product and then applies `condIndepMass_of_exists_factorization`, which is the
-   division-free half of the criterion (3.6). Finiteness reappears only in
+   bare `ℝ≥0∞`-valued mass. `factorizesOver_implies_globalMarkov` needs neither: it splits a
+   product and then applies the division-free half of the criterion (3.6).
+   Finiteness reappears only in
    `hammersleyClifford`, whose reverse implication runs through the graphoid calculus.
 4. **The extension step in (F) ⇒ (G) is explicit.** The product only splits when the three
    blocks *cover* `V`. For a general separated triple `(A, B, S)` one first enlarges `A` to the
    union of the connected components of `G ∖ S` meeting `A`, sets `B'` to the rest, splits
-   there, and then shrinks back with (C2); the shrinking is `CondIndepMass.decomposition`,
-   which needs neither finiteness nor positivity. The enlargement is spelled *with walks* —
-   `A' = {v ∉ S | some walk from `A` to `v` avoids `S`}` — rather than with Mathlib's
-   `ComponentCompl` and `separates_iff_componentComplMk_ne`: the two describe the same set, but
-   the walk form needs only `Walk.append` and `Walk.mem_support_append_iff`, so
-   `factorizesOver_implies_globalMarkov` depends on none of the (still open) reachability
-   bridges of `Core/Separation.lean` and comes out axiom-clean.
+   there, and then shrinks back with (C2), which needs neither finiteness nor positivity. The
+   enlargement is spelled *with walks* —
+   `A' = {v ∉ S | some walk from `A` to `v` avoids `S`}` — which is the same set as the union
+   of the connected components of `G ∖ S` meeting `A`.
 
 **Moussouris's example — why Theorem 3.9 needs positivity** (Lauritzen **Example 3.10**,
 pp. 37–38). On the four-cycle `1 − 2 − 3 − 4 − 1` with binary states there is a mass function
@@ -77,19 +73,8 @@ four edges forces a potential to vanish somewhere it must not. The example is *n
 here, and deliberately so — it is a counterexample, not a reusable theorem, and stating it
 would require pinning a concrete `V = Fin 4`, `α = Fin 2` model. Its role in this file is
 documentary: it is the reason `hammersleyClifford` carries `hpos`, and the reason
-`Undirected/Markov.pairwiseMarkov_implies_globalMarkov` carries `IsGraphoid` rather than
-`IsSemigraphoid`.
-
-**Reuse (binding).** `SimpleGraph.IsClique` and its `Decidable` instance
-(`Combinatorics/SimpleGraph/Clique.lean:73`), `SimpleGraph.IsClique.subset`, `Separates` and
-its API from `Core/Separation.lean`, `SimpleGraph.Walk`/`Walk.support` for the straddling
-argument, `DependsOn` and `DependsOn.mono` from Mathlib, `Finset.prod_filter_mul_prod_filter_not`
-and `Finset.prod_congr` for the product split, and from `Discrete/CondIndep.lean` the whole
-mass API — `blockMarginal_univ`, `condIndepMass_of_exists_factorization`,
-`CondIndepMass.decomposition`, `CondIndepMass.symm`, `isSemigraphoid_condIndepMass`,
-`isGraphoid_condIndepMass_of_pos`. The Markov hierarchy itself
-(`globalMarkov_implies_localMarkov`, `globalMarkov_implies_pairwiseMarkov`) is
-`Undirected/Markov.lean` and is composed with, never re-proved.
+`Undirected/Markov.pairwiseMarkov_implies_globalMarkov_of_nonempty` carries `IsGraphoid`
+rather than `IsSemigraphoid`.
 
 **Bibliographic comments.** The equivalence of the Markov property and factorization for
 strictly positive distributions is the Hammersley–Clifford theorem: J. M. Hammersley and
@@ -113,8 +98,7 @@ variable {V α : Type*} [Fintype V] [DecidableEq V] [Fintype α] [DecidableEq α
 /-- The **complete vertex sets** of `G` — Lauritzen's index family for eq. (3.11), p. 34.
 
 Assembled from Mathlib's `SimpleGraph.IsClique` (which means *complete*, not maximal) by
-filtering `Finset.univ : Finset (Finset V)`. Mathlib's `SimpleGraph.cliqueFinset n` is the
-family of complete sets of a **fixed size** `n`, so it is not usable here.
+filtering `Finset.univ : Finset (Finset V)`.
 
 Edge behaviour: `∅` and every singleton are complete (`SimpleGraph.IsClique.of_subsingleton`),
 so `completeSubsets G` always contains `∅` and all `{v}`; for the complete graph it is all of
@@ -161,7 +145,7 @@ variable (G : SimpleGraph V)
 blocks cover `V`, then every complete set lies entirely inside `A ∪ S` or entirely inside
 `B ∪ S`.
 
-This is the only graph theory in the file. Route: if a complete `c` met both `A ∖ S` and
+This is the only graph theory in the file. If a complete `c` met both `A ∖ S` and
 `B ∖ S` at two distinct vertices they would be adjacent, and the one-edge walk between them has
 support contained in `{a, b}`, which is disjoint from `S` — contradicting `hsep`; if it met
 them at the *same* vertex, the `nil` walk at that vertex gives the same contradiction. The
@@ -210,11 +194,10 @@ theorem isClique_subset_or_of_separates {A B S c : Finset V}
 covering `V`, the product over complete sets breaks into the complete sets inside `A ∪ S` and
 those inside `B ∪ S`, giving Lauritzen's criterion **(3.6)** at the blocks `A`, `B`, `S`.
 
-Route: `isClique_subset_or_of_separates` shows the predicate "`c ⊆ A ∪ S`" partitions
+Since no complete set straddles the separator, the predicate "`c ⊆ A ∪ S`" partitions
 `completeSubsets G` into a part on which it holds and a part contained in `B ∪ S`; take
-`h := ∏` over the first part and `k := ∏` over the second
-(`Finset.prod_filter_mul_prod_filter_not`), whose dependence on the respective blocks is
-`IsCliquePotential` plus `DependsOn.mono`. -/
+`h := ∏` over the first part and `k := ∏` over the second, whose dependence on the respective
+blocks is that of the clique potentials indexed by their subsets. -/
 theorem exists_factorization_of_separates [DecidableRel G.Adj] {p : (V → α) → ℝ≥0∞}
     {A B S : Finset V}
     -- USER-INPUT: property (F); Lauritzen eqs. (3.11)/(3.12), pp. 34–35
@@ -253,20 +236,18 @@ theorem exists_factorization_of_separates [DecidableRel G.Adj] {p : (V → α) �
 
 Stated against the abstract `IsGlobalMarkov` of `Undirected/Markov.lean` instantiated at the
 discrete relation `CondIndepMass p`, so that the rest of the hierarchy — (G) ⇒ (L) ⇒ (P),
-Lauritzen Proposition 3.4 — is obtained by composition rather than re-proof.
+Lauritzen Proposition 3.4 — is obtained by composition.
 
-*No finiteness or positivity hypothesis.* Both halves of the route are division-free: the
-product split (`exists_factorization_of_separates`) and the `mpr` half of the criterion (3.6)
-(`condIndepMass_of_exists_factorization`), and the final shrinking step
-(`CondIndepMass.decomposition`) is a pure sum rearrangement.
+*No finiteness or positivity hypothesis.* Both halves of the argument are division-free — the
+product split and the `mpr` half of the criterion (3.6) — and the final shrinking step, (C2),
+is a pure sum rearrangement.
 
-Route, given a disjoint separated triple `(A, B, S)`: enlarge `A` to `A'`, the union of `A`
+Given a disjoint separated triple `(A, B, S)`: enlarge `A` to `A'`, the union of `A`
 with all connected components of `G` minus `S` that meet `A`, and set `B' := V ∖ (A' ∪ S)`.
 Then `A ⊆ A'`, `B ⊆ B'`, the triple `(A', B', S)` is disjoint, covers `V`, and `S` still
-separates `A'` from `B'` (`separates_iff_componentComplMk_ne`). Split the product there, feed
-it to `condIndepMass_of_exists_factorization` after rewriting `p` as
-`blockMarginal (A' ∪ B' ∪ S) p` via `blockMarginal_univ`, and shrink `A' ↝ A`, `B' ↝ B` with
-`CondIndepMass.decomposition` (using `CondIndepMass.symm` on the left-hand block). -/
+separates `A'` from `B'`. Split the product there, feed it to the criterion (3.6) after
+rewriting `p` as `blockMarginal (A' ∪ B' ∪ S) p`, and shrink `A' ↝ A`, `B' ↝ B` with (C2)
+(using symmetry on the left-hand block). -/
 theorem factorizesOver_implies_globalMarkov [DecidableRel G.Adj] (p : (V → α) → ℝ≥0∞)
     -- USER-INPUT: property (F); Lauritzen eqs. (3.11)/(3.12), pp. 34–35
     (hfac : FactorizesOver G p) :
@@ -369,8 +350,8 @@ cancellation in the vanishing argument.
 
 /-! #### The subset-lattice (Möbius) machinery
 
-Everything in this block is private scaffolding for `hammersleyClifford`; nothing here is part
-of the frozen interface. The declarations are stated over fresh type variables `W`, `β` wherever
+Everything in this block is private scaffolding for `hammersleyClifford`. The declarations are
+stated over fresh type variables `W`, `β` wherever
 they are pure combinatorics, so that none of the file's `Fintype`/`DecidableEq` section
 variables leak into them. -/
 
@@ -395,11 +376,10 @@ summing the interactions over all subsets of `s` recovers `F s`.
 `b ⊆ a` the two agree, and `|a| + |b|` behaves far better under `Finset.card_insert_of_notMem`,
 which is what the vanishing argument below needs.
 
-Route: exchange the two sums (`Finset.sum_comm`, after replacing the inner index set `a.powerset`
-by `s.powerset` guarded by `b ⊆ a`), reindex the resulting inner sum
-`∑_{b ⊆ a ⊆ s}` by `a ↦ a ∖ b` onto `(s ∖ b).powerset` (`Finset.sum_nbij'`), and collapse it with
-`sum_powerset_neg_one_pow_card_real`: the alternating sum vanishes unless `s ∖ b = ∅`, i.e.
-unless `b = s`. -/
+Exchange the two sums, after replacing the inner index set `a.powerset` by `s.powerset` guarded
+by `b ⊆ a`; reindex the resulting inner sum `∑_{b ⊆ a ⊆ s}` by `a ↦ a ∖ b` onto
+`(s ∖ b).powerset`, and collapse it with the alternating sum over a subset lattice: it vanishes
+unless `s ∖ b = ∅`, i.e. unless `b = s`. -/
 private theorem sum_powerset_moebius {W : Type*} (F : Finset W → ℝ) (s : Finset W) :
     ∑ a ∈ s.powerset, ∑ b ∈ a.powerset, (-1 : ℝ) ^ (a.card + b.card) * F b = F s := by
   classical
@@ -521,12 +501,11 @@ all the remaining coordinates is equivalent to the vanishing of the `2 × 2` "in
 
 Here `y₀ = (s,t,r)`, `y₁ = (s',t,r)`, `y₂ = (s,t',r)`, `y₃ = (s',t',r)`.
 
-Route: write `M := p_{V ∖ {i,j}}`, `A := p_{V ∖ {j}}`, `B := p_{V ∖ {i}}`. Lauritzen's identity
+Write `M := p_{V ∖ {i,j}}`, `A := p_{V ∖ {j}}`, `B := p_{V ∖ {i}}`. Lauritzen's identity
 (3.2) at the blocks `{i}`, `{j}`, `V ∖ {i,j}` reads `p · M = A · B` (the joint block is all of
-`V`, so `blockMarginal_univ` applies), and `M` is common to all four configurations while `A`
-is common to `y₀, y₂` and to `y₁, y₃`, and `B` to `y₀, y₁` and to `y₂, y₃`
-(`dependsOn_blockMarginal`). Multiplying the four instances pairwise gives the claim after
-cancelling `M²`, which is legitimate by `blockMarginal_ne_zero`/`blockMarginal_ne_top`. -/
+`V`), and `M` is common to all four configurations while `A` is common to `y₀, y₂` and to
+`y₁, y₃`, and `B` to `y₀, y₁` and to `y₂, y₃`. Multiplying the four instances pairwise gives
+the claim after cancelling `M²`, which is legitimate because `M` is nonzero and finite. -/
 private theorem crossRatio_of_condIndepMass {p : (V → α) → ℝ≥0∞}
     -- LEAN-ONLY: finiteness of the mass function — the `ℝ≥0∞` cancellation of `M²` is invalid
     -- at `∞`; Lauritzen's `f` is a density
@@ -643,16 +622,15 @@ private theorem crossRatio_of_condIndepMass {p : (V → α) → ℝ≥0∞}
 /-- **The crux of Hammersley–Clifford**: the interaction term `φ_a` vanishes identically whenever
 `a` is **not** complete — Lauritzen **Theorem 3.9**, p. 36.
 
-Route: pick non-adjacent `i ≠ j` in `a` and write `a = insert i (insert j c)` with
-`c = (a.erase i).erase j`. Splitting `a.powerset` twice with `Finset.sum_powerset_insert`
-regroups the alternating sum as
+Pick non-adjacent `i ≠ j` in `a` and write `a = insert i (insert j c)` with
+`c = (a.erase i).erase j`. Splitting `a.powerset` twice regroups the alternating sum as
 `∑_{b ⊆ c} ±(H_b − H_{b ∪ i} − H_{b ∪ j} + H_{b ∪ {i,j}})`,
 and each bracket vanishes: the four configurations `x^b`, `x^{b ∪ i}`, `x^{b ∪ j}`,
-`x^{b ∪ {i,j}}` differ only in the `i`- and `j`-coordinates, so
-`crossRatio_of_condIndepMass` — fed by the pairwise Markov property at `(i, j)` — makes their
-masses satisfy `p·p = p·p`, hence their logarithms cancel. -/
+`x^{b ∪ {i,j}}` differ only in the `i`- and `j`-coordinates, so the cross-ratio identity — fed
+by the pairwise Markov property at `(i, j)` — makes their masses satisfy `p·p = p·p`, hence
+their logarithms cancel. -/
 private theorem hcPhi_eq_zero_of_not_isClique {p : (V → α) → ℝ≥0∞}
-    -- LEAN-ONLY: finiteness of the mass function; consumed by `crossRatio_of_condIndepMass`
+    -- LEAN-ONLY: finiteness of the mass function; needed by `crossRatio_of_condIndepMass`
     (hp : ∀ y, p y ≠ ∞)
     -- USER-INPUT: strict positivity; Lauritzen Theorem 3.9, p. 36
     (hpos : ∀ y, p y ≠ 0)
@@ -761,7 +739,7 @@ counterpart of "`f` is a density", needed so that the graphoid calculus
 *Positivity is not removable.* Without it, (P) — indeed even (G) — fails to imply (F):
 Lauritzen's **Example 3.10** (Moussouris, pp. 37–38); see the module docstring.
 
-**Proof.** The `mp` direction is `factorizesOver_implies_pairwiseMarkov` and carries no debt.
+**Proof.** The `mp` direction is `factorizesOver_implies_pairwiseMarkov`.
 
 The `mpr` direction is the Möbius inversion of `log p` over the subset lattice (Besag 1974;
 Grimmett 1973; Lauritzen Appendix A.3). Fix a reference configuration `x✶` — legitimate because

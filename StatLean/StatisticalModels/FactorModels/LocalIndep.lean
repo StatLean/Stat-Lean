@@ -19,11 +19,9 @@ predicate of the graphical slice, applied to the factor model of `FactorModels.D
 
   *Coordinate order.* This is the **latent-first** joint law, because everything here
   conditions *on* the factor. `FactorScores.factorJointLaw` is the **observation-first** joint
-  law of the same model, because there one conditions on the observation to obtain `y ∣ x`;
-  it is stated in that order so it lands on `MixedEffects.lmmJointLaw` and hence on the
-  existing Gaussian conditioning layer. The two are each other's `Prod.swap` pushforward;
-  neither is redundant, and the names are kept distinct so a reader is never in doubt about
-  which coordinate is being conditioned on.
+  law of the same model, because there one conditions on the observation to obtain `y ∣ x`.
+  The two are each other's `Prod.swap` pushforward; the names are kept distinct so a reader is
+  never in doubt about which coordinate is being conditioned on.
 * `indepFun_eval_measurementKernel` — at a **fixed** factor value, two distinct observed
   coordinates are independent (`BKM` Eq. (1.9), pairwise form);
 * `iIndepFun_eval_measurementKernel` — the **family** version: at a fixed factor value the
@@ -44,7 +42,7 @@ produces the second from the first: the common factor manufactures the observed 
 and `Ψ` diagonal says that nothing else does. A graphical model describes dependence by which
 conditional independences hold **among the observed variables themselves**; a factor model
 describes it by positing latent variables that **explain the dependence away**. The two are
-therefore complementary descriptions of the same phenomenon (roadmap §1), and this file is the
+therefore complementary descriptions of the same phenomenon, and this file is the
 one place where both vocabularies are used in a single statement.
 
 **Reference.** D. Bartholomew, M. Knott, and I. Moustaki, *Latent Variable Models and Factor
@@ -73,39 +71,11 @@ The linear-Gaussian instance is §3.2, Eq. (3.1)–(3.3) and Eq. (3.12) (`BKM`).
    statement uses the general `GraphicalModels.CondIndep μ f g h` and *not* the contracted
    `CondIndepCoords`, whose three arguments are all blocks of one vector.
 3. **The family version lives at the kernel level.** `GraphicalModels.CondIndep` is a binary
-   predicate; a *family* conditional-independence predicate (an `iIndepFun` conditioned on a
-   third variable) is not part of the round-1 `Core` API. `iIndepFun_eval_measurementKernel`
+   predicate, and no *family* conditional-independence predicate (an `iIndepFun` conditioned
+   on a third variable) is available. `iIndepFun_eval_measurementKernel`
    and `map_measurementKernel_eq_pi` therefore state the joint independence of all `p`
    coordinates **under the conditional law at each factor value** — which is exactly what
-   `BKM` Eq. (1.9) asserts, since (1.9) is a statement about `g(· ∣ y)` for each `y`. Lifting
-   it to a family predicate on the joint space is deferred to the round-2 `Core` extension.
-
-*Routes (do not re-derive).*
-
-| Step | Consumed from |
-|---|---|
-| `x ∣ y ∼ N(μ + Λy, Ψ)` | `measurementKernel_multivariateGaussian` (`FactorModels.Gaussian`) |
-| uncorrelated ⇒ independent, jointly Gaussian | `HasGaussianLaw.indepFun_of_covariance_eq_zero`, family version `.iIndepFun_of_covariance_eq_zero`; in block form `Gaussian.multivariateGaussian_fromBlocks_prod` (G2.9) |
-| covariance entries of a Gaussian | `ProbabilityTheory.covariance_eval_multivariateGaussian` |
-| the one-dimensional coordinate marginals | `measurePreserving_eval_multivariateGaussian` |
-| `iIndepFun` as a product of marginals | `ProbabilityTheory.iIndepFun_iff_map_fun_eq_pi_map` |
-| marginals of the joint law | `Measure.fst_compProd`, `Measure.snd_compProd` |
-| pushing a map through `⊗ₘ` | `Measure.compProd_map` : `μ ⊗ₘ (κ.map f) = (μ ⊗ₘ κ).map (Prod.map id f)` |
-| the product kernel `κ ×ₖ η` | `Kernel.prod_apply`, `Kernel.map_prod_map`, `Kernel.IsMarkovKernel.map` |
-| independence forces zero covariance | `ProbabilityTheory.IndepFun.covariance_eq_zero` |
-| `Σ = Λ Φ Λᵀ + Ψ`, and that it is PSD | `factorCovariance`, `posSemidef_factorCovariance` (`FactorModels.Moments`) |
-
-Nothing about Gaussian independence, and nothing about the covariance decomposition, is
-re-derived here; the entries above are the whole content of every proof in this file.
-
-*Route for the headline.* `Measure.compProd_map` at `f := fun x => (x i, x j)` turns
-`(latentObsJointLaw P F E).map (fun z => (z.1, (z.2 i, z.2 j)))` into
-`F ⊗ₘ ((measurementKernel P E).map f)`; `Measure.fst_compProd` identifies `μ.map Prod.fst` with
-`F`; and `Kernel.ext` plus `indepFun_eval_measurementKernel` (in its
-`indepFun_iff_map_prod_eq_prod_map_map` form) identifies `(measurementKernel P E).map f` with
-the product kernel `κ ×ₖ η`, where `κ := (measurementKernel P E).map (fun x => x i)` and
-`η := (measurementKernel P E).map (fun x => x j)` are Markov by `Kernel.IsMarkovKernel.map`.
-Those two kernels are the witnesses `CondIndep` asks for.
+   `BKM` Eq. (1.9) asserts, since (1.9) is a statement about `g(· ∣ y)` for each `y`.
 
 *Junk values.* `multivariateGaussian m S` collapses to `Measure.dirac m` off the
 positive-semidefinite cone, so every statement carries `P.uniqueCov.PosSemidef` (or
@@ -186,8 +156,7 @@ theorem latentObsJointLaw_snd (P : FactorParams p q) (F : Measure (EuclideanSpac
 map into the bare product `Fin n → ℝ`. This is the hypothesis shape that Mathlib's
 `HasGaussianLaw.indepFun_of_covariance_eq_zero` / `.iIndepFun_of_covariance_eq_zero` demand, and
 it is nothing but `IsGaussian.hasGaussianLaw_id` transported along the continuous linear
-equivalence `PiLp.continuousLinearEquiv` that forgets the `L²` norm; no Gaussian theory is
-re-derived. -/
+equivalence `PiLp.continuousLinearEquiv` that forgets the `L²` norm. -/
 private theorem hasGaussianLaw_coords {n : ℕ} (m : EuclideanSpace ℝ (Fin n))
     (S : Matrix (Fin n) (Fin n) ℝ) :
     HasGaussianLaw (fun (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) => x i)
@@ -197,13 +166,7 @@ private theorem hasGaussianLaw_coords {n : ℕ} (m : EuclideanSpace ℝ (Fin n))
 
 /-- **`BKM` Eq. (1.9), pairwise form.** With Gaussian specific factors and a **diagonal**
 specific-factor covariance `Ψ`, two distinct observed coordinates are independent under the
-conditional law given the factor — for *every* value `y` of the factor.
-
-Route (do not re-derive): `measurementKernel_multivariateGaussian` rewrites the conditional law
-as `N(μ + Λ y, Ψ)`; `covariance_eval_multivariateGaussian` reads its `(i, j)` covariance entry
-off as `Ψ i j`, which is `0` by diagonality; and
-`HasGaussianLaw.indepFun_of_covariance_eq_zero` converts a vanishing covariance of jointly
-Gaussian variables into independence. -/
+conditional law given the factor — for *every* value `y` of the factor. -/
 theorem indepFun_eval_measurementKernel (P : FactorParams p q)
     -- USER-INPUT: the specific factors are uncorrelated across coordinates, i.e. `Ψ` diagonal;
     -- BKM §3.2 Eq. (3.1), the hypothesis that makes Eq. (1.9) hold in the linear model
@@ -222,11 +185,7 @@ theorem indepFun_eval_measurementKernel (P : FactorParams p q)
 
 /-- **`BKM` Eq. (1.9), family form.** All `p` observed coordinates are *jointly* independent
 under the conditional law at a fixed factor value — the statement `BKM` actually makes, since
-Eq. (1.9) is a product over all `i = 1, …, p`.
-
-Route (do not re-derive): as for the pairwise form, but through
-`HasGaussianLaw.iIndepFun_of_covariance_eq_zero`, whose hypothesis is exactly
-"`cov(xᵢ, xⱼ) = 0` for all `i ≠ j`", i.e. diagonality of `Ψ`. -/
+Eq. (1.9) is a product over all `i = 1, …, p`. -/
 theorem iIndepFun_eval_measurementKernel (P : FactorParams p q)
     -- USER-INPUT: `Ψ` diagonal; BKM §3.2 Eq. (3.1)
     (hΨdiag : HasDiagonalUniqueness P)
@@ -242,12 +201,7 @@ theorem iIndepFun_eval_measurementKernel (P : FactorParams p q)
 /-- **`BKM` Eq. (1.9) verbatim**: `g(x ∣ y) = ∏_{i=1}^{p} gᵢ(xᵢ ∣ y)`, with the univariate
 conditional laws `gᵢ(· ∣ y) = N((μ + Λ y)ᵢ, ψᵢ)` read off the diagonal of `Ψ`. The pushforward
 along `WithLp.ofLp` is only the passage from `EuclideanSpace ℝ (Fin p)` to the bare product
-`Fin p → ℝ` on which `Measure.pi` lives; it changes nothing measure-theoretically.
-
-Route (do not re-derive): `iIndepFun_eval_measurementKernel` in the form
-`iIndepFun_iff_map_fun_eq_pi_map`, with the coordinate marginals supplied by
-`measurePreserving_eval_multivariateGaussian` after
-`measurementKernel_multivariateGaussian`. -/
+`Fin p → ℝ` on which `Measure.pi` lives; it changes nothing measure-theoretically. -/
 theorem map_measurementKernel_eq_pi (P : FactorParams p q)
     -- USER-INPUT: `Ψ` diagonal; BKM §3.2 Eq. (3.1)
     (hΨdiag : HasDiagonalUniqueness P)
@@ -276,14 +230,13 @@ Eq. (3.1)). In the Gaussian linear factor model with a **diagonal** specific-fac
 
 This is the bridge between the two areas: the conclusion is `GraphicalModels.CondIndep`, the
 disintegration predicate of the graphical slice, and the model is `FactorModels.latentObsJointLaw`.
-The witnesses `CondIndep` asks for are the two coordinate marginals of the measurement kernel;
-see the module docstring for the route.
+The witnesses `CondIndep` asks for are the two coordinate marginals of the measurement kernel.
 
 *Book vs Lean:* `BKM` Eq. (1.9) states local independence for the whole family and for an
 arbitrary conditional density; here it is a **theorem** in the Gaussian linear model, in the
 pairwise form that `CondIndep` can express. The family form is
 `iIndepFun_eval_measurementKernel` / `map_measurementKernel_eq_pi`, stated at the kernel level
-because round 1 has no family conditional-independence predicate. -/
+for want of a family conditional-independence predicate. -/
 theorem condIndep_eval_latentObsJointLaw (P : FactorParams p q)
     (F : Measure (EuclideanSpace ℝ (Fin q)))
     -- LEAN-ONLY: the latent law is a probability measure — needed for `⊗ₘ` to be the joint law
@@ -306,8 +259,7 @@ theorem condIndep_eval_latentObsJointLaw (P : FactorParams p q)
   have hmij : Measurable (fun x : EuclideanSpace ℝ (Fin p) => (x i, x j)) := hmi.prodMk hmj
   refine ⟨K.map (fun x => x i), K.map (fun x => x j),
     Kernel.IsMarkovKernel.map _ hmi, Kernel.IsMarkovKernel.map _ hmj, ?_⟩
-  -- the measurement kernel, read pairwise, *is* the product of its two coordinate marginals:
-  -- that is `indepFun_eval_measurementKernel` in its `Measure.prod` form
+  -- the measurement kernel, read pairwise, *is* the product of its two coordinate marginals
   have hK : K.map (fun x : EuclideanSpace ℝ (Fin p) => (x i, x j))
       = (K.map fun x => x i) ×ₖ (K.map fun x => x j) := by
     refine Kernel.ext fun y => ?_
@@ -339,10 +291,8 @@ section Contrast
 
 /-- The **off-diagonal entries of the one-factor covariance**: for `q = 1` and `Ψ` diagonal,
 `Σᵢⱼ = λᵢ φ λⱼ` whenever `i ≠ j` — the specific factors drop out entirely off the diagonal
-(contrast `Communality.variance_eq_common_add_specificVariance`, which is the diagonal case).
-
-Route: `factorCovariance_eq` plus `Matrix.mul_apply` twice, the sums over `Fin 1` collapsing by
-`Finset.sum_singleton` / `Fin.sum_univ_one`, and `hΨdiag hij : Ψ i j = 0`. -/
+(contrast `Communality.variance_eq_common_add_specificVariance`, which is the diagonal
+case). -/
 theorem factorCovariance_apply_of_oneFactor (P : FactorParams p 1)
     -- USER-INPUT: `Ψ` diagonal — the factor-analytic restriction; BKM Eq. (3.1), (3.12)
     (hΨdiag : HasDiagonalUniqueness P) {i j : Fin p}
@@ -378,12 +328,8 @@ one-factor model with two non-zero loadings, the two observed coordinates are **
 independent — even though `condIndep_eval_latentObsJointLaw` makes them conditionally independent
 given the factor. Together the two theorems are the conceptual payload of this file.
 
-Route (do not re-derive): `gaussianFactorModel_eq_multivariateGaussian` identifies the observed
-law as `N(μ, Σ)`; `IndepFun.covariance_eq_zero` (with `MemLp` supplied by
-`IsGaussian.memLp_two_id`) would force `cov(xᵢ, xⱼ) = 0`;
-`covariance_eval_multivariateGaussian`, applicable since `posSemidef_factorCovariance` holds,
-identifies that covariance with `Σᵢⱼ`; and
-`factorCovariance_apply_ne_zero_of_oneFactor` contradicts it. -/
+The observed law is `N(μ, Σ)`, so independence of the two coordinates would force
+`cov(xᵢ, xⱼ) = Σᵢⱼ = 0`, contradicting `factorCovariance_apply_ne_zero_of_oneFactor`. -/
 theorem not_indepFun_eval_gaussianFactorModel (P : FactorParams p 1)
     -- USER-INPUT: genuine covariance parameters; BKM Eq. (3.1)–(3.2) — without them
     -- `gaussianFactorModel` degenerates to a Dirac mass, under which every pair of coordinates

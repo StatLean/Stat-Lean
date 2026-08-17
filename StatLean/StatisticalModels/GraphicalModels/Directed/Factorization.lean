@@ -10,15 +10,13 @@ function factorizes recursively according to `D` when it is a product of one *ke
 vertex,
 `p(x) = ∏_{v ∈ V} k_v(x_v, x_{pa(v)})`,
 each `k_v` non-negative and normalised to `1` in its first argument. The whole point of the
-property is **Lemma 3.21**: it transports into the undirected layer, where `Discrete/` and
-`Undirected/` already prove everything, because `{v} ∪ pa(v)` is a *clique* of the moral graph —
-that is exactly what marrying the parents of a common child buys.
+property is **Lemma 3.21**: it transports into the undirected setting, because `{v} ∪ pa(v)` is a
+*clique* of the moral graph — that is exactly what marrying the parents of a common child buys.
 
-We work in the **same discrete setting as round 1** — `V` and `α` finite, `p : (V → α) → ℝ≥0∞`,
-marginals `blockMarginal`, conditional independence `CondIndepMass` — so that
-`Discrete/Factorization.factorizesOver_implies_globalMarkov` and the whole graphoid calculus of
-`Discrete/CondIndep.lean` apply verbatim to whatever this file produces. Nothing here is
-re-proved from scratch: the directed theory is *routed through* the undirected one.
+The setting is the discrete one — `V` and `α` finite, `p : (V → α) → ℝ≥0∞`, marginals
+`blockMarginal`, conditional independence `CondIndepMass` — in which the undirected
+factorization theory and the graphoid calculus of `Discrete/CondIndep.lean` are stated, so the
+directed theory is obtained from the undirected one by transport.
 
 * `IsLocalKernelOn` / `IsLocalKernel` — Lauritzen's kernels `k^α(·, ·)` on
   `𝒳_α × 𝒳_{pa(α)}`: each depends only on the coordinates of `{v} ∪ pa(v)` and sums to `1`
@@ -31,11 +29,9 @@ re-proved from scratch: the directed theory is *routed through* the undirected o
   which every `{v} ∪ pa(v)` is complete receives the factorization;
 * **`recursivelyFactorizes_implies_factorizesOver_moralGraph`** — Lauritzen **Lemma 3.21**,
   p. 47, and `recursivelyFactorizes_implies_globalMarkov_moralGraph` its second half
-  ("and obeys therefore the global Markov property relative to `𝒢^m`"), which is a one-liner
-  over round 1;
+  ("and obeys therefore the global Markov property relative to `𝒢^m`");
 * `recursivelyFactorizesOn_implies_factorizesOver_inducedMoralGraph` — Lemma 3.21 read on the
-  sub-DAG induced on an ancestral set, the form `Directed/Markov.lean` consumes for
-  Corollary 3.23;
+  sub-DAG induced on an ancestral set, the form needed for Corollary 3.23;
 * `sum_update_prod_of_notMem_parents` — the induction step of everything below: summing a
   childless vertex out of the product telescopes, *because* the kernels are normalised;
 * **`blockMarginal_recursivelyFactorizesOn_of_ancestralSet`** — Lauritzen **Proposition 3.22**,
@@ -84,27 +80,11 @@ conditional densities of `X_α` given `X_{pa(α)}` is on p. 46 (`Lauritzen §3.2
    sample spaces of random variables and are never empty. No other statement in the file needs
    the hypothesis: they are all `∀ x` statements, hence vacuously true in that degenerate regime.
 
-**On `inducedMoralGraph`.** `Directed/Moralization.lean` (concurrent batch) owns moralization and
-the induced sub-DAG; this file only *composes* them, so that the composite has one name and one
-place to be repaired. If that file ships the composite under its own name, delete this one and
-repoint. The intended reading of `inducedMoralGraph D T` is Lauritzen's `(𝒢_T)^m`: keep only the
-vertices of `T` and the arrows between them, marry parents-within-`T` of a common child in `T`,
-then drop directions. It is *not* the same as `(D.moralGraph)` restricted to `T` — a marriage
-created by a child outside `T` survives in the latter and must not survive in the former, and
-that difference is exactly what makes the directed global Markov property sharp.
-
-**Reuse (binding).** From `Directed/DAG.lean`: `DAG`, `DAG.parents`, `DAG.notMem_parents_self`,
-`DAG.IsAncestralSet`, `DAG.isAncestralSet_iff_parents_subset`, `DAG.induce`,
-`DAG.parents_induce_of_isAncestralSet`, `DAG.exists_topologicalOrder`. From
-`Directed/Moralization.lean`: **`DAG.isClique_insert_parents`** and
-**`DAG.isClique_insert_parents_induce`** — the two clique facts that discharge `hclique` below,
-and the only moralization input this file needs — plus `DAG.moralGraph_induce_univ`. From
-`Discrete/Factorization.lean`: `FactorizesOver`,
-`IsCliquePotential`, `completeSubsets`, `mem_completeSubsets` and
-**`factorizesOver_implies_globalMarkov`** — the undirected (F) ⇒ (G) is never re-proved here.
-From `Discrete/CondIndep.lean`: `blockMarginal`, `agreeOn`, `dependsOn_blockMarginal`,
-`blockMarginal_univ`. From Mathlib: `DependsOn`, `DependsOn.mono`, `Function.update`,
-`Finset.prod_fiberwise_of_maps_to`, `Finset.prod_congr`, `Finset.mul_prod_erase`.
+**On `inducedMoralGraph`.** The intended reading of `inducedMoralGraph D T` is Lauritzen's
+`(𝒢_T)^m`: keep only the vertices of `T` and the arrows between them, marry parents-within-`T` of
+a common child in `T`, then drop directions. It is *not* the same as `(D.moralGraph)` restricted
+to `T` — a marriage created by a child outside `T` survives in the latter and must not survive in
+the former, and that difference is exactly what makes the directed global Markov property sharp.
 
 **Bibliographic comments.** Recursive factorization on a DAG and its equivalence with the
 directed Markov properties are due to H. Kiiveri, T. P. Speed and J. B. Carlin, "Recursive causal
@@ -112,8 +92,7 @@ models," *J. Austral. Math. Soc. Ser. A* **36** (1984), 30–52 — Lauritzen's 
 p. 46 — with the moralization device and the global reading developed by J. Pearl and
 T. Verma (1987), T. Verma and J. Pearl (1990), and S. L. Lauritzen, A. P. Dawid, B. N. Larsen and
 H.-G. Leimer, "Independence properties of directed Markov fields," *Networks* **20** (1990),
-491–505. Mathlib has no directed-graphical-model vocabulary; every ingredient below the
-`DAG`/moralization layer (`Finset.prod`, `DependsOn`, `SimpleGraph.IsClique`) is Mathlib's.
+491–505.
 -/
 
 open SimpleGraph
@@ -201,25 +180,14 @@ theorem recursivelyFactorizes_iff_on_univ (D : DAG V) [DecidableRel D.Adj]
     RecursivelyFactorizes D p ↔ RecursivelyFactorizesOn D Finset.univ p :=
   Iff.rfl
 
-/-! ### The moral graph of an induced sub-DAG
-
-`Directed/Moralization.lean` owns `DAG.moralGraph` and the induced sub-DAG; the composite below
-exists only so that Lauritzen's `(𝒢_A)^m` has a single name here and a single place to be
-repointed. See the module docstring. -/
+/-! ### The moral graph of an induced sub-DAG -/
 
 /-- **Lauritzen's `(𝒢_T)^m`** (p. 47, Corollary 3.23): moralize the sub-DAG induced on `T`.
 
 *Not* `D.moralGraph` restricted to `T` — a marriage of two vertices of `T` created by a common
 child *outside* `T` belongs to the latter and must be absent from the former. That difference is
 what makes the directed global Markov property sharp, and it is why the ancestral closure appears
-in Corollary 3.23 at all.
-
-⚠️ *Duplicate to dedup at merge.* `Directed/DSeparation.lean` — which is **downstream** of
-`Directed/Markov.lean` — spells the same object as
-`moralAncestralGraph D A B S = inducedMoralGraph D (D.ancestralClosure (A ∪ B ∪ S))`,
-i.e. as `Markov.ancestralMoralGraph D (A ∪ B ∪ S)`. The two were written concurrently; the
-upstream one is this file's, and the downstream definition should be repointed at merge rather
-than the other way round. -/
+in Corollary 3.23 at all. -/
 abbrev inducedMoralGraph (D : DAG V) (T : Finset V) : SimpleGraph V :=
   (D.induce T).moralGraph
 
@@ -231,11 +199,10 @@ factorizes over `G` in the undirected sense (F).
 
 This is the content of Lauritzen's proof of Lemma 3.21 — "the sets `{α} ∪ pa(α)` are complete in
 `𝒢^m` and we can therefore let `ψ_{{α}∪pa(α)} = k^α`" — isolated from moralization, so that both
-Lemma 3.21 and its ancestral-restriction form below are instantiations. Route: send `v` to the
-complete set `insert v (D.parents v)` and let `ψ c` be the product of the `k v` in that fibre
-(`Finset.prod_fiberwise_of_maps_to`); `DependsOn (ψ c) ↑c` because every factor in the fibre
-depends on `c` on the nose, and the potentials of the complete sets that receive no vertex are
-the empty product `1`. -/
+Lemma 3.21 and its ancestral-restriction form below are instantiations. The construction: send
+`v` to the complete set `insert v (D.parents v)` and let `ψ c` be the product of the `k v` in
+that fibre; `DependsOn (ψ c) ↑c` because every factor in the fibre depends on `c` on the nose,
+and the potentials of the complete sets that receive no vertex are the empty product `1`. -/
 theorem factorizesOver_of_recursivelyFactorizesOn (D : DAG V) [DecidableRel D.Adj]
     (A : Finset V) (G : SimpleGraph V) [DecidableRel G.Adj] (p : (V → α) → ℝ≥0∞)
     -- USER-INPUT: `{v} ∪ pa(v)` is complete in `G` — for `G = 𝒢^m` this is exactly what
@@ -264,11 +231,8 @@ factorization according to the DAG `D` **factorizes according to the moral graph
 
 This is the hinge of the entire directed theory: it is the only place where a directed statement
 becomes an undirected one, and everything downstream — Corollary 3.23, the directed hierarchy,
-Theorem 3.27 — is obtained by feeding this into round 1 rather than by re-proving anything.
-
-Route: `factorizesOver_of_recursivelyFactorizesOn` at `A = Finset.univ` and `G = D.moralGraph`,
-whose clique hypothesis is precisely the defining property of moralization (marrying the parents
-of a common child makes `{v} ∪ pa(v)` complete). -/
+Theorem 3.27 — rests on it. The clique hypothesis is precisely the defining property of
+moralization: marrying the parents of a common child makes `{v} ∪ pa(v)` complete. -/
 theorem recursivelyFactorizes_implies_factorizesOver_moralGraph (D : DAG V)
     [DecidableRel D.Adj] (p : (V → α) → ℝ≥0∞)
     -- USER-INPUT: property (DF); Lauritzen §3.2.2, p. 46
@@ -278,9 +242,8 @@ theorem recursivelyFactorizes_implies_factorizesOver_moralGraph (D : DAG V)
     (fun v _ => D.isClique_insert_parents v) hp
 
 /-- **Lauritzen Lemma 3.21**, p. 47, second half: "…and obeys therefore the global Markov
-property relative to `𝒢^m`". A one-liner: the first half followed by the undirected
-(F) ⇒ (G) of `Discrete/Factorization.factorizesOver_implies_globalMarkov` (Lauritzen
-Proposition 3.8), which is *never* re-proved here. -/
+property relative to `𝒢^m`" — the first half followed by the undirected (F) ⇒ (G) (Lauritzen
+Proposition 3.8). -/
 theorem recursivelyFactorizes_implies_globalMarkov_moralGraph (D : DAG V)
     [DecidableRel D.Adj] (p : (V → α) → ℝ≥0∞)
     -- USER-INPUT: property (DF); Lauritzen §3.2.2, p. 46
@@ -289,7 +252,7 @@ theorem recursivelyFactorizes_implies_globalMarkov_moralGraph (D : DAG V)
   factorizesOver_implies_globalMarkov D.moralGraph p
     (recursivelyFactorizes_implies_factorizesOver_moralGraph D p hp)
 
-/-- **Lemma 3.21 on an induced sub-DAG** — the form Corollary 3.23 consumes. For an **ancestral**
+/-- **Lemma 3.21 on an induced sub-DAG** — the form Corollary 3.23 needs. For an **ancestral**
 `T`, a mass function factorizing recursively over `T` factorizes, in the undirected sense, over
 `(𝒢_T)^m`.
 
@@ -361,11 +324,10 @@ theorem sum_update_prod_of_notMem_parents (D : DAG V) [DecidableRel D.Adj] (A : 
 marginalising on the one-vertex-larger block `insert u C` and then summing over the
 `u`-coordinate.
 
-Auxiliary, and the one-vertex instance of `Discrete/CondIndep.blockMarginal_eq_sum_updateFinset`,
-spelled with `Function.update` rather than `Function.updateFinset` so that it composes on the
+Spelled with `Function.update` rather than `Function.updateFinset` so that it composes on the
 nose with `sum_update_prod_of_notMem_parents` (whose normalisation is a sum over `α`, not over
-`↥{u} → α`). Route: the fibres `agreeOn (insert u C) (Function.update x u a)`, as `a` ranges over
-`α`, are exactly the fibres of `y ↦ y u` on `agreeOn C x` (`Finset.sum_fiberwise`). -/
+`↥{u} → α`). The fibres `agreeOn (insert u C) (Function.update x u a)`, as `a` ranges over `α`,
+are exactly the fibres of `y ↦ y u` on `agreeOn C x`. -/
 theorem blockMarginal_eq_sum_update (p : (V → α) → ℝ≥0∞) {C : Finset V} {u : V}
     -- LEAN-ONLY: the fresh coordinate must not already be marginalised on, else the fibres below
     -- are not a partition
@@ -399,11 +361,10 @@ multiplied over `A` only. Ancestrality gives `pa(v) ⊆ A` for `v ∈ A`, so the
 the `𝒢_A`-kernels there, and the product over `A` depends on `x` only through `x_A`, as a
 marginal must. See module docstring, note 3, for why the product cannot run over all of `V`.
 
-Route: induct on `A`'s complement. Ancestrality of `A` makes `V ∖ A` closed under children, so
-the induced sub-DAG on `V ∖ A` — finite and acyclic — has a vertex `u` with no children at all;
-`sum_update_prod_of_notMem_parents` deletes `k_u` from the product and `A ∪ (V ∖ A ∖ {u})` is
-again ancestral. `blockMarginal_univ` starts the induction and `dependsOn_blockMarginal`
-identifies the surviving product with the marginal.
+*Proof idea.* Induct on `A`'s complement. Ancestrality of `A` makes `V ∖ A` closed under
+children, so the induced sub-DAG on `V ∖ A` — finite and acyclic — has a vertex `u` with no
+children at all; summing out its coordinate deletes `k_u` from the product
+(`sum_update_prod_of_notMem_parents`), and `A ∪ (V ∖ A ∖ {u})` is again ancestral.
 
 *Degenerate regime.* With `α` empty and `V` nonempty both sides quantify over an empty
 configuration space, so the statement is vacuously true; no `[Nonempty α]` is needed. -/
@@ -477,9 +438,9 @@ This is the reason (DF) is *not* scale-invariant, unlike the undirected `Factori
 therefore the reason Theorem 3.27 carries an explicit normalisation hypothesis on `p` in the
 direction that produces (DF).
 
-Route: `blockMarginal_recursivelyFactorizesOn_of_ancestralSet` at the ancestral set `A = ∅`,
-whose marginal is the total mass (`blockMarginal_empty`) and whose empty product is `1`;
-equivalently, iterate `sum_update_prod_of_notMem_parents` over a reverse topological order. -/
+*Proof idea.* Marginalise on the ancestral set `A = ∅`: the marginal is the total mass and the
+empty product is `1`; equivalently, sum out the coordinates in reverse topological order,
+deleting one normalised kernel at a time. -/
 theorem sum_eq_one_of_recursivelyFactorizes
     -- LEAN-ONLY: a nonempty state space. With `α` empty and `V` nonempty the configuration space
     -- `V → α` is empty, every hypothesis of (DF) is vacuous and the total mass is `0`;

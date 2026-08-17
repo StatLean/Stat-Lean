@@ -4,8 +4,7 @@ import Mathlib.Combinatorics.SimpleGraph.Hasse
 /-!
 # The three-variable chain `0 — 1 — 2` — the smoke test for the graphical layer
 
-The smallest undirected graph in which the Markov properties have non-vacuous content, and the
-first end-to-end use of the abstract API of `Core.Separation` and `Undirected.Markov`: the
+The smallest undirected graph in which the Markov properties have non-vacuous content: the
 middle vertex **screens off** the two ends.
 
 * `chainGraph` — the chain on `Fin 3` with edges `{0, 1}` and `{1, 2}`, defined so that its
@@ -33,7 +32,7 @@ these consequences apply verbatim to every model class of the area — the discr
 relation, the Gaussian precision relation, and the general `Core.CondIndep` — with no further
 work. That is exactly what this file is here to demonstrate.
 
-**A note on colliders (directed theory, round 2).** The chain's behaviour is not the only one
+**A note on colliders.** The chain's behaviour is not the only one
 available on three variables. In the *directed* graph `0 → 1 ← 2` — a **collider**, or
 v-structure, at `1` — the pattern is reversed: the two ends are independent *marginally* and
 become dependent once the middle variable is conditioned on. Nothing in this file expresses
@@ -41,8 +40,8 @@ that: `SimpleGraph` is undirected, and `chainGraph` is the undirected skeleton s
 chain `0 → 1 → 2`, the chain `0 ← 1 ← 2`, the fork `0 ← 1 → 2` **and** the collider. The
 distinction lives in Lauritzen's d-separation (Proposition 3.25, p. 48, together with
 Corollary 3.23, p. 47: d-separation is separation in the moralised graph of the ancestral set,
-and it is precisely *moralisation* that joins the two parents of a collider), which the roadmap
-schedules for round 2. **No directed vocabulary is defined here.**
+and it is precisely *moralisation* that joins the two parents of a collider). **No directed
+vocabulary is defined here.**
 
 **Reference.** S. L. Lauritzen, *Graphical Models*, Oxford Statistical Science Series 17,
 Clarendon Press, Oxford, **1996 (first edition)**: §2.1.1, p. 6, for separators (unnumbered);
@@ -55,29 +54,20 @@ the example, only for the definitions and the Markov properties it instantiates.
 
 **Proof formalization notes.**
 
-*Why not `SimpleGraph.pathGraph 3` as the definition?* Mathlib's `pathGraph n` is `hasse (Fin n)`,
-whose adjacency is `a ⋖ b ∨ b ⋖ a` in the covering relation. The pin has **no**
-`DecidableRel (· ⋖ ·)` instance except on `Bool`
-(`Order/Cover.lean:452,455`), so `decide` cannot see through it; `pathGraph_adj` characterises
-the relation but only after a rewrite. We therefore define `chainGraph` with the arithmetic
+*The shape of the definition.* `SimpleGraph.pathGraph n` is `hasse (Fin n)`, whose adjacency is
+`a ⋖ b ∨ b ⋖ a` in the covering relation. `chainGraph` is instead defined with the arithmetic
 adjacency `i + 1 = j ∨ j + 1 = i` — which is `pathGraph_adj`'s right-hand side verbatim, so
-`chainGraph_eq_pathGraph` is a `rfl`-level identification — and register the decidability
-instance. Every adjacency fact below is then a one-line `decide`.
+`chainGraph_eq_pathGraph` is a `rfl`-level identification — together with the corresponding
+decidability instance. Every adjacency fact below is then a one-line `decide`.
 
 *What is and is not decidable here.* Adjacency, `Finset` identities on `Fin 3` and disjointness
 of explicit blocks are decidable, and are proved by `decide`. `Separates` is **not**: it
 quantifies over the type `SimpleGraph.Walk`, which is infinite (a walk may repeat vertices
-arbitrarily often). `chain_separates_middle` is therefore *not* a `decide`; it is obtained from
-the named graph lemma `separates_sdiff_pair` (`Undirected.Markov`) at `i = 0`, `j = 2`,
+arbitrarily often). `chain_separates_middle` is therefore *not* a `decide`; it is the general
+fact that the complement of a non-adjacent pair separates that pair, at `i = 0`, `j = 2`,
 rewritten along `chain_sdiff_pair_eq_middle`. The negative statement
 `chain_not_separates_empty` is proved the other way, by exhibiting the explicit walk
 `chainWalk : chainGraph.Walk 0 2`.
-
-*Reuse (binding).* Nothing graph-theoretic or probabilistic is re-proved. `Separates`,
-`separates_sdiff_pair`, `IsGlobalMarkov` and `IsLocalMarkov` are consumed from
-`Core.Separation` / `Undirected.Markov` (in particular `chain_separates_middle` is **not** an
-independent walk induction — it is `separates_sdiff_pair` specialised); `Walk`, `Walk.cons`,
-`Walk.support`, `neighborFinset`, `pathGraph` and the `Finset` algebra are Mathlib's.
 
 **Bibliographic comments.** The chain, the fork and the collider are the three elementary
 "connection types" of J. Pearl, *Probabilistic Reasoning in Intelligent Systems*, Morgan
@@ -111,10 +101,7 @@ instance : DecidableRel chainGraph.Adj := fun i j =>
 
 /-- `chainGraph` **is** Mathlib's path graph on three vertices — the definition above only
 replaces the covering relation of `SimpleGraph.pathGraph` by the arithmetic condition that
-`SimpleGraph.pathGraph_adj` proves equivalent to it, so that `decide` applies.
-
-Route: `SimpleGraph.ext` (through `ext i j`), then `SimpleGraph.pathGraph_adj`, after which the
-two sides are definitionally the same proposition. -/
+`SimpleGraph.pathGraph_adj` proves equivalent to it, so that `decide` applies. -/
 theorem chainGraph_eq_pathGraph : chainGraph = SimpleGraph.pathGraph 3 := by
   ext i j
   exact SimpleGraph.pathGraph_adj.symm
@@ -134,10 +121,7 @@ theorem chain_not_adj_zero_two : ¬ chainGraph.Adj 0 2 := by decide
 /-! ### Neighbourhoods and the block algebra of `Fin 3` -/
 
 /-- The neighbourhood of the end `0` is the middle vertex. This is the conditioning block of the
-local Markov property at `0`.
-
-Route: `Finset.ext` plus `SimpleGraph.mem_neighborFinset`, then `Fin.cases`/`decide` on the
-three vertices. -/
+local Markov property at `0`. -/
 theorem chain_neighborFinset_zero : chainGraph.neighborFinset 0 = {1} := by
   ext v
   simp only [SimpleGraph.mem_neighborFinset, Finset.mem_singleton]
@@ -169,9 +153,9 @@ def chainWalk : chainGraph.Walk 0 2 :=
 /-- **The middle vertex separates the two ends** (Lauritzen §2.1.1, p. 6): every walk from `0`
 to `2` in the chain visits `1`.
 
-Not a `decide` — `Separates` quantifies over the infinite type `SimpleGraph.Walk`. Obtained
-from `separates_sdiff_pair` (the graph lemma of `Undirected.Markov`, whose hypotheses are the
-distinctness and non-adjacency of the pair) rewritten along `chain_sdiff_pair_eq_middle`. -/
+Not a `decide` — `Separates` quantifies over the infinite type `SimpleGraph.Walk`. It is the
+separation of a distinct non-adjacent pair by the complement of that pair, rewritten along
+`chain_sdiff_pair_eq_middle`. -/
 theorem chain_separates_middle : Separates chainGraph {1} {0} {2} := by
   have hsep := separates_sdiff_pair chainGraph 0 2 (by decide) chain_not_adj_zero_two
   rwa [chain_sdiff_pair_eq_middle] at hsep
@@ -189,11 +173,7 @@ theorem chain_not_separates_empty : ¬ Separates chainGraph ∅ {0} {2} := by
 over *disjoint* triples `(A, B, S)`; at `S = {0, 2}` the blocks `A`, `B` must live in the single
 remaining vertex `{1}` and be disjoint from each other, so one of them is empty and the
 instance is vacuous. This is the precise sense in which `{0, 2}` "separates nothing relevant":
-not that separation fails, but that there is no admissible pair of blocks to separate.
-
-Route: `Finset.disjoint_left` plus `Finset.subset_iff` and a `decide` on the three vertices give
-`A ⊆ {1}` and `B ⊆ {1}`; `Finset.subset_singleton_iff` then leaves four cases, of which the only
-non-trivial one, `A = B = {1}`, contradicts `hAB` by `Finset.disjoint_singleton`. -/
+not that separation fails, but that there is no admissible pair of blocks to separate. -/
 theorem chain_ends_no_admissible_blocks {A B : Finset (Fin 3)}
     -- USER-INPUT: `A` is disjoint from the separator; Lauritzen §3.2 (G), p. 32
     (hA : Disjoint A ({0, 2} : Finset (Fin 3)))
@@ -217,9 +197,8 @@ variable (ci : Finset (Fin 3) → Finset (Fin 3) → Finset (Fin 3) → Prop)
 
 /-- **The chain moral, from the global Markov property** (Lauritzen §3.2 (G), p. 32): any law
 that is globally Markov with respect to the chain satisfies `X₀ ⫫ X₂ ∣ X₁` — the middle
-variable screens the two ends off from one another. The first end-to-end use of the abstract
-Markov API: `IsGlobalMarkov` instantiated at the disjoint triple `({0}, {2}, {1})`, whose
-separation is `chain_separates_middle`. -/
+variable screens the two ends off from one another. This is `IsGlobalMarkov` instantiated at the
+disjoint triple `({0}, {2}, {1})`, whose separation is `chain_separates_middle`. -/
 theorem chain_condIndep_of_isGlobalMarkov
     -- USER-INPUT: the global Markov property of the law relative to the chain;
     -- Lauritzen §3.2 (G), p. 32
@@ -232,11 +211,8 @@ theorem chain_condIndep_of_isGlobalMarkov
 /-- **The chain moral, from the local Markov property** (Lauritzen §3.2 (L), p. 32): the same
 conclusion from the *weaker* hypothesis, because on the chain the local property at the end `0`
 already says `X₀ ⫫ X_{V ∖ cl(0)} ∣ X_{ne(0)}`, and `ne(0) = {1}`, `V ∖ cl(0) = {2}`. No
-property of `ci` is needed — unlike the general `local ⇒ pairwise` implication, which consumes
-weak union.
-
-Route: `h 0`, then rewrite with `chain_neighborFinset_zero` and the `Finset` identity
-`Finset.univ \ insert 0 ({1} : Finset (Fin 3)) = {2}` (a `decide`). -/
+property of `ci` is needed — unlike the general `local ⇒ pairwise` implication, which requires
+weak union. -/
 theorem chain_condIndep_of_isLocalMarkov
     -- USER-INPUT: the local Markov property of the law relative to the chain;
     -- Lauritzen §3.2 (L), p. 32

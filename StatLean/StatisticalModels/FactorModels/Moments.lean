@@ -8,9 +8,7 @@ The moment theory of `factorLaw`, in the declared parameters:
 
 * `meanVec_factorLaw_of_realizes` — `E x = μ`;
 * **`covMatrix_factorLaw_eq_factorCovariance`** — `Σ = Λ Φ Λᵀ + Ψ`, the factor-analytic
-  covariance decomposition. It is obtained by specializing `Bridge.covMatrix_factorLaw` (=
-  `MixedEffects.covMatrix_lmmLaw` across the bridge) at laws realizing the parameters; there
-  is **no re-derivation** of the decomposition in this area;
+  covariance decomposition, for latent and specific laws realizing the parameters `(Φ, Ψ)`;
 * `posSemidef_commonCovariance` / `posSemidef_factorCovariance` — the common part `Λ Φ Λᵀ`
   and the total `Σ` are genuine covariance matrices;
 * **`rank_commonCovariance_le`** — `rank(Λ Φ Λᵀ) ≤ q`: the common part is at most as rich as
@@ -21,15 +19,9 @@ The moment theory of `factorLaw`, in the declared parameters:
 Analysis: A Unified Approach*, 3rd ed., Wiley, 2011, Eq. (3.10) (the variance decomposition),
 Eq. (3.12) (`Σ = Λ Λ′ + Ψ`), §3.12.1, Eq. (3.50)–(3.51) (the parameter count) (`BKM`).
 
-**Proof formalization notes.** Every statement here is a specialization, across
-`Bridge.factorLaw_eq_lmmLaw`, of a mixed-model theorem; the PSD statements reuse
-`MixedEffects.posSemidef_variance_components` and `Matrix.PosSemidef.mul_mul_conjTranspose_same`
-(`ForMathlib.posSemidef_covMatrix` is the alternative route through the law). The rank bound
-is `Matrix.rank_mul_le` composed with `Matrix.rank_le_width`. Nothing here is proved by hand.
-*Book vs Lean:* `BKM`
-states Eq. (3.12) in the orthogonal case `Φ = I` (its model fixes `y ∼ N_q(0, I)` at
-Eq. (3.2)); the general-`Φ` form below is our generalization, with (3.12) the corollary at
-`IsStandardized P`.
+**Proof formalization notes.** *Book vs Lean:* `BKM` states Eq. (3.12) in the orthogonal case
+`Φ = I` (its model fixes `y ∼ N_q(0, I)` at Eq. (3.2)); the general-`Φ` form below is our
+generalization, with (3.12) the corollary at `IsStandardized P`.
 
 **Bibliographic comments.** The decomposition `Σ = Λ Λ′ + Ψ` with `Ψ` diagonal and `Λ` of
 rank `q` is Spearman's (1904) and Thurstone's (1947) organizing identity; the rank condition
@@ -58,8 +50,7 @@ theorem meanVec_factorLaw_of_realizes (P : FactorParams p q)
   meanVec_factorLaw P F E hPFE.meanVec_latent hPFE.meanVec_error hF1 hE1
 
 /-- **HEADLINE — the factor-analytic covariance decomposition** (`BKM` Eq. (3.12), general
-`Φ`): `Σ = Λ Φ Λᵀ + Ψ`. A corollary of `MixedEffects.covMatrix_lmmLaw` through the bridge,
-specialized to latent and specific laws realizing `(Φ, Ψ)`. -/
+`Φ`): `Σ = Λ Φ Λᵀ + Ψ`, for latent and specific laws realizing `(Φ, Ψ)`. -/
 theorem covMatrix_factorLaw_eq_factorCovariance (P : FactorParams p q)
     (F : Measure (EuclideanSpace ℝ (Fin q))) (E : Measure (EuclideanSpace ℝ (Fin p)))
     [IsProbabilityMeasure F] [IsProbabilityMeasure E]
@@ -88,7 +79,7 @@ theorem posSemidef_commonCovariance (P : FactorParams p q)
     hΦ.mul_mul_conjTranspose_same P.loading
 
 /-- The **factor covariance is a genuine covariance**: `Λ Φ Λᵀ + Ψ ⪰ 0` for proper
-parameters (`MixedEffects.posSemidef_variance_components` at `Z = Λ`). -/
+parameters. -/
 theorem posSemidef_factorCovariance (P : FactorParams p q)
     -- USER-INPUT: genuine covariance parameters; BKM Eq. (3.1)–(3.2)
     (hP : IsProperFactorParams P) :

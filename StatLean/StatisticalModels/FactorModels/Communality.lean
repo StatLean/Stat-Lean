@@ -19,10 +19,8 @@ explained by the common factors and the part specific to that coordinate:
 Analysis: A Unified Approach*, 3rd ed., Wiley, 2011, Eq. (3.10) and the paragraph defining
 the communality (p. 49) (`BKM`).
 
-**Proof formalization notes.** Everything is the `(i, i)` entry of
-`Moments.covMatrix_factorLaw_eq_factorCovariance`, so nothing here re-derives the
-decomposition; the sum-of-squares form of `(Λ Λᵀ) i i` is `Matrix.mul_apply` plus
-`Matrix.transpose_apply` and `sq`. Nonnegativity of `ψᵢ` is `Matrix.PosSemidef.diag_nonneg`.
+**Proof formalization notes.** Everything here is the `(i, i)` entry of the covariance
+decomposition `Σ = Λ Φ Λᵀ + Ψ`.
 *Book vs Lean:* `BKM` Eq. (3.10) presumes its normalization `Φ = I` (Eq. (3.2)); the
 statements below therefore carry `IsStandardized` explicitly. With correlated factors
 (`Φ ≠ I`) the split is `var(xᵢ) = (Λ Φ Λᵀ)ᵢᵢ + ψᵢ`, which is

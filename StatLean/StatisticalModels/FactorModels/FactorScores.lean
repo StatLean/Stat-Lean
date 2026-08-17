@@ -12,13 +12,12 @@ $$y \mid x \;\sim\; N_q\big(\Phi \Lambda^{\!\top} \Sigma^{-1}(x-\mu),\;
     \Phi - \Phi \Lambda^{\!\top} \Sigma^{-1} \Lambda \Phi\big), \qquad
   \Sigma = \Lambda \Phi \Lambda^{\!\top} + \Psi .$$
 
-This is the same matrix identity as Henderson's BLUP: `condMeanMatrix_factorScores` is
-`MixedEffects.condMeanMatrix_lmm` at `Z = Λ`, `G = Φ`, `R = Ψ` — the posterior mean of the
-factors **is** the best linear unbiased predictor of the random effects, and nothing is
-re-derived here.
+The posterior mean of the factors **is** the best linear unbiased predictor of the random
+effects: `condMeanMatrix_factorScores` is Henderson's BLUP matrix at `Z = Λ`, `G = Φ`,
+`R = Ψ`.
 
-* `factorJointLaw` — the joint law of `(x, y)`, defined as `MixedEffects.lmmJointLaw` across
-  the bridge; `factorJointLaw_fst` recovers the observed law;
+* `factorJointLaw` — the joint law of `(x, y)`, i.e. `MixedEffects.lmmJointLaw` at the factor
+  design; `factorJointLaw_fst` recovers the observed law;
 * `factorJointLaw_eq_blockGaussian` — in the Gaussian model it is the block Gaussian with
   `Σ_xx = Λ Φ Λᵀ + Ψ`, `Σ_xy = Λ Φ`, `Σ_yy = Φ`;
 * `factorScoreKernel` — the posterior kernel, an instance of `gaussianCondKernel`;
@@ -27,8 +26,7 @@ re-derived here.
   posterior kernel is the joint law;
 * `condMeanMatrix_factorScores_precision` — the **covariance form = precision form** of the
   score matrix, `Φ Λᵀ Σ⁻¹ = (Λᵀ Ψ⁻¹ Λ + Φ⁻¹)⁻¹ Λᵀ Ψ⁻¹`. This is `BKM` Eq. (3.7)–(3.8)/(3.64)
-  and it is **exactly** Henderson's push-through identity
-  `MixedEffects.pushThrough` at `Z = Λ`, `G = Φ`, `R = Ψ` — consumed, not re-proved. Its
+  and it is **exactly** Henderson's push-through identity at `Z = Λ`, `G = Φ`, `R = Ψ`. Its
   `Φ = I` specialization `condMeanMatrix_factorScores_standardized` is `BKM` Eq. (3.64)
   verbatim, `Λ′Σ⁻¹ = (I + Γ)⁻¹ Λ′Ψ⁻¹` with `Γ = gammaMatrix P = Λ′Ψ⁻¹Λ`.
 
@@ -39,14 +37,8 @@ Analysis: A Unified Approach*, 3rd ed., Wiley, 2011, Eq. (3.6) (`y ∣ x ∼ N_q
 C. R. Henderson, "Estimation of genetic parameters," *Ann. Math. Statist.* **21** (1950),
 309–310 (`Hen50`).
 
-**Proof formalization notes.** Pure transport of `MixedEffects.BLUP` across
-`Bridge.factorLaw_eq_lmmLaw`: `MixedEffects.lmmJointLaw_eq_blockGaussian` gives the block
-Gaussian, `MixedEffects.condMeanMatrix_lmm` gives the regression matrix,
-`MixedEffects.compProd_lmmJointLaw` gives the disintegration, `MixedEffects.pushThrough`
-gives the covariance-vs-precision form, and `Gaussian.posSemidef_condCovMatrix` gives the
-Schur complement's positive semidefiniteness; only `toEuclideanLin (1 : Matrix) μ = μ` has to
-be discharged. **No matrix identity of these shapes is proved here.** *Junk values:* `Matrix.inv` is `0`
-at singular matrices, so `hSig : (factorCovariance P).PosDef` is carried explicitly wherever
+**Proof formalization notes.** *Junk values:* `Matrix.inv` is `0` at singular matrices, so
+`hSig : (factorCovariance P).PosDef` is carried explicitly wherever
 `Σ⁻¹` appears; `multivariateGaussian` degenerates to a Dirac off the PSD cone, so `Φ` and `Ψ`
 carry PSD hypotheses. *Book vs Lean:* `BKM` Eq. (3.6) states the posterior at its
 normalization `Φ = I`, and writes the posterior covariance in the Woodbury form
@@ -72,7 +64,7 @@ variable {p q : ℕ}
 
 /-- The **joint law of `(x, y)`** — observation block first, latent factors second (the block
 order at which `Gaussian.Conditioning` applies without a swap). Defined as the mixed-model
-joint law across the bridge, so all of `MixedEffects.BLUP` is available. -/
+joint law of the factor design. -/
 noncomputable def factorJointLaw (P : FactorParams p q)
     (F : Measure (EuclideanSpace ℝ (Fin q))) (E : Measure (EuclideanSpace ℝ (Fin p))) :
     Measure (EuclideanSpace ℝ (Fin p) × EuclideanSpace ℝ (Fin q)) :=
@@ -86,8 +78,7 @@ theorem factorJointLaw_fst (P : FactorParams p q)
   rw [factorJointLaw, MixedEffects.lmmJointLaw_fst, factorLaw_eq_lmmLaw]
 
 /-- **The Gaussian joint law** (`BKM` Eq. (3.1)–(3.3) jointly): `(x, y)` is the block Gaussian
-with `Σ_xx = Λ Φ Λᵀ + Ψ`, `Σ_xy = Λ Φ` and `Σ_yy = Φ`. Transported from
-`MixedEffects.lmmJointLaw_eq_blockGaussian`. -/
+with `Σ_xx = Λ Φ Λᵀ + Ψ`, `Σ_xy = Λ Φ` and `Σ_yy = Φ`. -/
 theorem factorJointLaw_eq_blockGaussian (P : FactorParams p q)
     -- USER-INPUT: genuine covariance parameters; BKM Eq. (3.1)–(3.2)
     (hΦ : P.factorCov.PosSemidef) (hΨ : P.uniqueCov.PosSemidef) :
@@ -116,7 +107,7 @@ noncomputable def factorScoreKernel (P : FactorParams p q) :
 
 /-- **The posterior mean matrix is `Φ Λᵀ Σ⁻¹`** — Thomson's regression-score matrix
 (`BKM` Eq. (3.64); at `Φ = I` this is `Λ′Σ⁻¹`). It is the *same* matrix identity as
-Henderson's BLUP matrix `G Zᵀ V⁻¹`, cited from `MixedEffects.condMeanMatrix_lmm`. -/
+Henderson's BLUP matrix `G Zᵀ V⁻¹`. -/
 theorem condMeanMatrix_factorScores (P : FactorParams p q)
     -- USER-INPUT: symmetric latent covariance; BKM Eq. (3.2)
     (hΦ : P.factorCovᵀ = P.factorCov) :
@@ -150,8 +141,7 @@ theorem factorScoreKernel_apply (P : FactorParams p q)
     condCovMatrix_factorScores P hΦ, zero_add]
 
 /-- **HEADLINE — factor scores as an exact disintegration** (`BKM` Eq. (3.6)): the observed
-law composed with the factor-score kernel is the joint law of `(x, y)`. Transported from
-`MixedEffects.compProd_lmmJointLaw`. -/
+law composed with the factor-score kernel is the joint law of `(x, y)`. -/
 theorem compProd_factorJointLaw (P : FactorParams p q)
     -- USER-INPUT: genuine covariance parameters; BKM Eq. (3.1)–(3.2)
     (hΦ : P.factorCov.PosSemidef) (hΨ : P.uniqueCov.PosSemidef)
@@ -173,8 +163,7 @@ theorem compProd_factorJointLaw (P : FactorParams p q)
 `BKM` gives the factor-score matrix in two shapes — `Λ′Σ⁻¹` (covariance form, Eq. (3.64)
 left) and `(I + Γ)⁻¹Λ′Ψ⁻¹` (precision form, Eq. (3.64) right, with `Γ = Λ′Ψ⁻¹Λ`) — and
 Eq. (3.7)–(3.8) is the passage between them. That passage **is** Henderson's push-through
-identity, already proved in `MixedEffects.Henderson`; the theorems below are its
-instantiations at `Z = Λ`, `G = Φ`, `R = Ψ` and prove nothing new. -/
+identity at `Z = Λ`, `G = Φ`, `R = Ψ`. -/
 
 /-- `BKM`'s `Γ = Λ′Ψ⁻¹Λ` (`BKM` Eq. (3.9)). **Symbol warning:** in `BKM` ch. 3, `Γ` is this
 matrix and `Φ` denotes the *correlation matrix of the latent variables* (Eq. (3.56)); the two
@@ -187,8 +176,7 @@ noncomputable def gammaMatrix (P : FactorParams p q) : Matrix (Fin q) (Fin q) �
 
 /-- **`BKM` Eq. (3.7)–(3.8), general `Φ`** — the covariance form of the factor-score matrix
 equals its precision form. This is **exactly** Henderson's push-through identity
-(`MixedEffects.pushThrough`, `Hen50`; Searle–Casella–McCulloch §7.6) at `Z = Λ`, `G = Φ`,
-`R = Ψ`; it is consumed here, not re-proved. -/
+(`Hen50`; Searle–Casella–McCulloch §7.6) at `Z = Λ`, `G = Φ`, `R = Ψ`. -/
 theorem condMeanMatrix_factorScores_precision (P : FactorParams p q)
     -- USER-INPUT: positive-definite variance components (both inverses must exist);
     -- BKM Eq. (3.7)–(3.8)
@@ -199,7 +187,7 @@ theorem condMeanMatrix_factorScores_precision (P : FactorParams p q)
 
 /-- **`BKM` Eq. (3.64) verbatim** — at the book's normalization `Φ = I`, the regression-score
 matrix is `C = Λ′Σ⁻¹ = (I + Γ)⁻¹Λ′Ψ⁻¹`. The `Φ = I` case of
-`condMeanMatrix_factorScores_precision`, hence of `MixedEffects.pushThrough`. -/
+`condMeanMatrix_factorScores_precision`. -/
 theorem condMeanMatrix_factorScores_standardized (P : FactorParams p q)
     -- USER-INPUT: BKM's normalization y ∼ N_q(0, I); BKM Eq. (3.2)
     (hP : IsStandardized P)
@@ -213,9 +201,7 @@ theorem condMeanMatrix_factorScores_standardized (P : FactorParams p q)
   exact h
 
 /-- LEAN-ONLY: the joint covariance of `(x, y)` is positive semidefinite, exhibited as
-`C Φ Cᵀ + D Ψ Dᵀ` with `C = [Λ; I]` and `D = [I; 0]`. (`MixedEffects.BLUP` proves the same
-fact as `posSemidef_lmmJoint`, but that declaration is `private` and therefore unreachable;
-this is the only block-algebra fact restated in this file.) -/
+`C Φ Cᵀ + D Ψ Dᵀ` with `C = [Λ; I]` and `D = [I; 0]`. -/
 private theorem posSemidef_factorJoint (P : FactorParams p q)
     (hΦ : P.factorCov.PosSemidef) (hΨ : P.uniqueCov.PosSemidef) :
     (Matrix.fromBlocks (factorCovariance P) (P.loading * P.factorCov)
@@ -261,8 +247,8 @@ private theorem posSemidef_factorJoint (P : FactorParams p q)
   rw [← hsum]
   exact hC.add hD
 
-/-- The posterior covariance is a genuine covariance (the Schur complement of a joint
-covariance, `Gaussian.posSemidef_condCovMatrix` at the factor model's blocks). -/
+/-- The posterior covariance is a genuine covariance — the Schur complement of a joint
+covariance. -/
 theorem posSemidef_condCovMatrix_factorScores (P : FactorParams p q)
     -- USER-INPUT: genuine covariance parameters; BKM Eq. (3.1)–(3.2)
     (hΦ : P.factorCov.PosSemidef) (hΨ : P.uniqueCov.PosSemidef)
