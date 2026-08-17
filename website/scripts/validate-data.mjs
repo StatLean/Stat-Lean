@@ -25,7 +25,7 @@ const categories = new Set([
   "statisticalmodels",
   "probability",
 ,
-  "timeseries", "causal", "statlearning", "expdesign", "compstat",]);
+  "timeseries", "causal", "statlearning", "expdesign", "compstat", "robust",]);
 const resultKinds = new Set(["definition", "theorem", "lemma", "proposition", "corollary", "equation"]);
 const nodeKinds = new Set(["root", "repo", "mathlib"]);
 const declarationKinds = new Set(["thm", "def"]);

@@ -16,7 +16,8 @@ export type CategoryId =
   | "causal"
   | "statlearning"
   | "expdesign"
-  | "compstat";
+  | "compstat"
+  | "robust";
 
 export type ResultKind = "definition" | "theorem" | "lemma" | "proposition" | "corollary" | "equation";
 

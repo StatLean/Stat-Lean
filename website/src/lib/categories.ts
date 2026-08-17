@@ -93,6 +93,13 @@ export const CATEGORIES: CategoryMeta[] = [
       "Statistical models over an abstract parameter space: survival analysis with censoring, Kaplan–Meier and the Cox model, linear mixed effects and BLUP, GEE sandwich covariance, and missing-data mechanisms with IPW.",
   },
   {
+    id: "robust",
+    name: "Robust Statistics",
+    tagline: "Contamination, breakdown & heavy tails",
+    blurb:
+      "Gross-error contamination, influence functions and breakdown points, Huber M-estimation and the median's minimax bias, scale and regression quantiles, and modern sub-Gaussian mean estimation under heavy tails.",
+  },
+  {
     id: "probability",
     name: "Miscellaneous Results",
     tagline: "Load-bearing probability & analysis",

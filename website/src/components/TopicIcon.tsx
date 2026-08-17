@@ -204,6 +204,19 @@ export function TopicIcon({
           <circle cx="33" cy="34" r="1.7" opacity={0.6} />
         </svg>
       );
+    case "robust":
+      // A shield over a data point, with contaminating outliers deflected outside:
+      // robustness to gross errors.
+      return (
+        <svg {...common}>
+          <path d="M24 6l14 5v10c0 9-6 15.5-14 19-8-3.5-14-10-14-19V11l14-5z" />
+          <circle cx="24" cy="21" r="4.5" />
+          <path d="M24 27.5v6" opacity={0.7} />
+          <circle cx="7" cy="34" r="1.6" opacity={0.6} />
+          <circle cx="41" cy="32" r="1.6" opacity={0.6} />
+          <circle cx="38" cy="42" r="1.6" opacity={0.4} />
+        </svg>
+      );
     default:
       // Never render an empty card: fall back to a neutral mark for any new topic.
       return (
