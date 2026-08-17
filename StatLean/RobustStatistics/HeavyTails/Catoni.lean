@@ -200,8 +200,97 @@ theorem existsUnique_isCatoniEstimate {n : ℕ} (hn : n ≠ 0) {α : ℝ} (hα :
     ⟨hnb.le, hpa.le⟩
   exact ⟨y, hy, fun z hz => (catoniR_strictAnti hn hα x).injective (hz.trans hy.symm)⟩
 
+/-- The exponential form of the upper log-companion bound (`LM §2.2`):
+`exp ψ(u) ≤ 1 + u + u²/2`. This is the inequality that makes the exponential moment
+of the estimating function a quadratic. -/
+private theorem exp_catoniPsi_le (u : ℝ) :
+    Real.exp (catoniPsi u) ≤ 1 + u + u ^ 2 / 2 := by
+  have := Real.exp_le_exp.2 (catoniPsi_le u)
+  rwa [Real.exp_log (catoni_companion_pos u)] at this
+
 variable {Ξ : Type*} [MeasurableSpace Ξ] {μprob : Measure Ξ} [IsProbabilityMeasure μprob]
   {P : Measure ℝ} [IsProbabilityMeasure P]
+
+/-! ### `L²` bookkeeping for the per-coordinate bound
+
+`MemLp id 2 P` supplies the first and second moments used to evaluate the quadratic
+majorant of `exp ψ(α(x − y))`. -/
+
+/-- A square-integrable law has an integrable identity. -/
+private theorem integrable_id_of_memLp (hL2 : MemLp id 2 P) :
+    Integrable (fun x : ℝ => x) P :=
+  hL2.integrable (by norm_num)
+
+/-- Centred squares are integrable under `MemLp id 2`. -/
+private theorem integrable_sub_sq (hL2 : MemLp id 2 P) (c : ℝ) :
+    Integrable (fun x : ℝ => (x - c) ^ 2) P := by
+  have h := (hL2.sub (memLp_const c)).integrable_sq
+  simpa using h
+
+/-- The centred first moment vanishes. -/
+private theorem integral_sub_const_eq (hL2 : MemLp id 2 P) {μ₀ : ℝ}
+    (hmean : ∫ x, x ∂P = μ₀) : ∫ x, (x - μ₀) ∂P = 0 := by
+  rw [integral_sub (integrable_id_of_memLp hL2) (integrable_const μ₀), hmean]
+  simp
+
+/-- **The per-coordinate exponential-moment bound** (`LM §2.2`): the quadratic majorant
+`exp ψ(α(x − y)) ≤ 1 + α(x − y) + α²(x − y)²/2` integrates to
+`1 + α(μ₀ − y) + α²(σ² + (μ₀ − y)²)/2` — expand around `μ₀`, the cross term drops out. -/
+private theorem integral_exp_catoniPsi_le {μ₀ σ2 α y : ℝ} (hL2 : MemLp id 2 P)
+    (hmean : ∫ x, x ∂P = μ₀) (hvar : ∫ x, (x - μ₀) ^ 2 ∂P = σ2) :
+    ∫ x, Real.exp (catoniPsi (α * (x - y))) ∂P
+      ≤ 1 + α * (μ₀ - y) + α ^ 2 * (σ2 + (μ₀ - y) ^ 2) / 2 := by
+  have hlin : Integrable (fun x : ℝ => (α + α ^ 2 * (μ₀ - y)) * (x - μ₀)) P :=
+    (((integrable_id_of_memLp hL2).sub (integrable_const μ₀)).const_mul _)
+  have hsq : Integrable (fun x : ℝ => α ^ 2 / 2 * (x - μ₀) ^ 2) P :=
+    (integrable_sub_sq hL2 μ₀).const_mul _
+  have key : (fun x : ℝ => 1 + α * (x - y) + α ^ 2 * (x - y) ^ 2 / 2)
+      = fun x : ℝ => ((1 + α * (μ₀ - y) + α ^ 2 * (μ₀ - y) ^ 2 / 2)
+          + (α + α ^ 2 * (μ₀ - y)) * (x - μ₀)) + α ^ 2 / 2 * (x - μ₀) ^ 2 := by
+    funext x; ring
+  have hQ : Integrable (fun x : ℝ => 1 + α * (x - y) + α ^ 2 * (x - y) ^ 2 / 2) P := by
+    rw [key]
+    exact ((integrable_const _).add hlin).add hsq
+  have hE : Integrable (fun x : ℝ => Real.exp (catoniPsi (α * (x - y)))) P := by
+    refine Integrable.mono' hQ ?_ (Eventually.of_forall fun x => ?_)
+    · exact ((Real.continuous_exp.comp catoniPsi_continuous).comp
+        (by fun_prop)).aestronglyMeasurable
+    · have h := exp_catoniPsi_le (α * (x - y))
+      have e : (α * (x - y)) ^ 2 = α ^ 2 * (x - y) ^ 2 := by ring
+      rw [e] at h
+      rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
+      exact h
+  have hbound : ∫ x, Real.exp (catoniPsi (α * (x - y))) ∂P
+      ≤ ∫ x, (1 + α * (x - y) + α ^ 2 * (x - y) ^ 2 / 2) ∂P :=
+    integral_mono hE hQ fun x => by
+      have h := exp_catoniPsi_le (α * (x - y))
+      have e : (α * (x - y)) ^ 2 = α ^ 2 * (x - y) ^ 2 := by ring
+      rw [e] at h
+      exact h
+  have hval : ∫ x, (1 + α * (x - y) + α ^ 2 * (x - y) ^ 2 / 2) ∂P
+      = 1 + α * (μ₀ - y) + α ^ 2 * (σ2 + (μ₀ - y) ^ 2) / 2 := by
+    -- `integral_add` is stated as a `have` throughout: rewriting under the `Pi.add`
+    -- shape produced by `rw [key]` does not match.
+    have hadd1 : ∫ x : ℝ, (((1 + α * (μ₀ - y) + α ^ 2 * (μ₀ - y) ^ 2 / 2)
+          + (α + α ^ 2 * (μ₀ - y)) * (x - μ₀)) + α ^ 2 / 2 * (x - μ₀) ^ 2) ∂P
+        = (∫ x : ℝ, ((1 + α * (μ₀ - y) + α ^ 2 * (μ₀ - y) ^ 2 / 2)
+            + (α + α ^ 2 * (μ₀ - y)) * (x - μ₀)) ∂P)
+          + ∫ x : ℝ, α ^ 2 / 2 * (x - μ₀) ^ 2 ∂P :=
+      integral_add ((integrable_const _).add hlin) hsq
+    have hadd2 : ∫ x : ℝ, ((1 + α * (μ₀ - y) + α ^ 2 * (μ₀ - y) ^ 2 / 2)
+          + (α + α ^ 2 * (μ₀ - y)) * (x - μ₀)) ∂P
+        = (∫ _x : ℝ, (1 + α * (μ₀ - y) + α ^ 2 * (μ₀ - y) ^ 2 / 2) ∂P)
+          + ∫ x : ℝ, (α + α ^ 2 * (μ₀ - y)) * (x - μ₀) ∂P :=
+      integral_add (integrable_const _) hlin
+    rw [key, hadd1, hadd2]
+    have h1 : ∫ x : ℝ, (α + α ^ 2 * (μ₀ - y)) * (x - μ₀) ∂P = 0 := by
+      rw [integral_const_mul, integral_sub_const_eq hL2 hmean, mul_zero]
+    have h2 : ∫ x : ℝ, α ^ 2 / 2 * (x - μ₀) ^ 2 ∂P = α ^ 2 / 2 * σ2 := by
+      rw [integral_const_mul, hvar]
+    rw [h1, h2, integral_const]
+    simp
+    ring
+  linarith [hbound, hval.le, hval.ge]
 
 /-- **The exponential-moment bound** (`LM §2.2`, first display chain): for i.i.d. data
 with mean `μ₀` and variance `σ²`, for every fixed `y`,
@@ -225,7 +314,40 @@ theorem integral_exp_catoniR_le {n : ℕ} {X : Fin n → Ξ → ℝ} {μ₀ σ2 
     ∫ ξ, Real.exp (catoniR α (fun i => X i ξ) y) ∂μprob
       ≤ Real.exp ((n : ℝ) * α * (μ₀ - y)
           + (n : ℝ) * α ^ 2 * (σ2 + (μ₀ - y) ^ 2) / 2) := by
-  sorry
+  set f : ℝ → ℝ := fun x => Real.exp (catoniPsi (α * (x - y))) with hf
+  have hfc : Continuous f :=
+    (Real.continuous_exp.comp catoniPsi_continuous).comp (by fun_prop)
+  -- `exp` of the sum is a product; joint independence factorizes the integral
+  have hprod : ∫ ξ, Real.exp (catoniR α (fun i => X i ξ) y) ∂μprob
+      = ∏ i, ∫ ξ, f (X i ξ) ∂μprob := by
+    have hrw : ∀ ξ, Real.exp (catoniR α (fun i => X i ξ) y) = ∏ i, f (X i ξ) := fun ξ => by
+      rw [catoniR, Real.exp_sum]
+    rw [integral_congr_ae (Eventually.of_forall hrw)]
+    exact hX_indep.integral_fun_prod_comp (fun i => (hX_meas i).aemeasurable)
+      (fun i => hfc.aestronglyMeasurable)
+  -- every factor is the same `P`-integral
+  have hcoord : ∀ i, ∫ ξ, f (X i ξ) ∂μprob = ∫ x, f x ∂P := by
+    intro i
+    rw [← hX_law i, integral_map (hX_meas i).aemeasurable hfc.aestronglyMeasurable]
+  set M : ℝ := ∫ x, f x ∂P with hM
+  have hMnn : 0 ≤ M := integral_nonneg fun x => (Real.exp_pos _).le
+  set t : ℝ := α * (μ₀ - y) + α ^ 2 * (σ2 + (μ₀ - y) ^ 2) / 2 with ht
+  have hMt : M ≤ Real.exp t := by
+    have h1 : M ≤ 1 + α * (μ₀ - y) + α ^ 2 * (σ2 + (μ₀ - y) ^ 2) / 2 :=
+      integral_exp_catoniPsi_le hL2 hmean hvar
+    have h2 : t + 1 ≤ Real.exp t := Real.add_one_le_exp t
+    rw [ht] at h2 ⊢
+    linarith
+  have hgoal : Real.exp ((n : ℝ) * α * (μ₀ - y)
+      + (n : ℝ) * α ^ 2 * (σ2 + (μ₀ - y) ^ 2) / 2) = Real.exp t ^ n := by
+    rw [← Real.exp_nat_mul]
+    congr 1
+    rw [ht]; ring
+  rw [hprod, hgoal]
+  calc ∏ i, ∫ ξ, f (X i ξ) ∂μprob = ∏ _i : Fin n, M :=
+        Finset.prod_congr rfl fun i _ => hcoord i
+    _ = M ^ n := by simp
+    _ ≤ Real.exp t ^ n := pow_le_pow_left₀ hMnn hMt n
 
 /-- **Catoni's estimator is sub-Gaussian with the optimal constant** (`LM Theorem 5`):
 for i.i.d. data with mean `μ₀` and variance `σ² > 0`, `δ ∈ (0,1)` with
