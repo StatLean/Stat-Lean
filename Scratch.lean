@@ -78,3 +78,50 @@ open StatLean.RobustStatistics
 #print axioms mLocation_consistent
 #print axioms huberLocation_consistent
 #print axioms huberLocation_asymptoticNormal
+
+-- ==========================================================================
+-- Round 2 headliners (breadth + modern).
+-- ==========================================================================
+
+-- Modern sub-Gaussian mean estimation (LM 2019).
+#print axioms sampleMean_chebyshev_deviation
+#print axioms medianOfMeans_deviation
+#print axioms medianOfMeans_subGaussian
+#print axioms catoni_deviation
+#print axioms existsUnique_isCatoniEstimate
+#print axioms mean_estimator_deviation_lower
+#print axioms trimmedMean_deviation
+#print axioms orderStat_quantile_brackets
+#print axioms ballMoM_deviation
+#print axioms dist_le_of_majority_two
+
+-- Scale M-functionals and dispersion breakdown (MMY (3.23), §3.2.2).
+#print axioms isMScaleRoot_iff_logScale
+#print axioms mScaleRoot_bounded_of_contamination
+#print axioms mScaleRoot_explodes
+#print axioms mScaleRoot_implodes
+#print axioms sampleSD_breaksUnder_one
+#print axioms sampleSD_dispersionBreakdownCount
+#print axioms sampleMAD_implodes_under
+#print axioms sampleMAD_dispersionResists
+#print axioms sampleMAD_dispersionBreakdownCount
+
+-- Maximum-bias theory (MMY (3.66)–(3.68), §3.8.5).
+#print axioms mLocationRoot_abs_le_maxBias
+#print axioms maxBias_attained
+#print axioms shiftScore_sign_of_symm
+#print axioms sign_maxBias_iff
+#print axioms minimaxWitnessDensity_nonneg
+#print axioms integral_minimaxWitnessDensity
+#print axioms medianMinimaxPlus_eq_contaminate
+#print axioms medianMinimaxMinus_mem_nbhd
+#print axioms locationEquivariant_maxBias_ge_median
+
+-- Regression quantiles (MMY §4.8).
+#print axioms checkLoss_convex
+#print axioms quantileRegression_objective_convex
+#print axioms isQuantileRegressionEstimate_regressionEquivariant
+#print axioms isQuantileRegressionEstimate_scaleEquivariant
+#print axioms isQuantileRegressionEstimate_half_iff
+#print axioms checkLoss_orderStat_isMLocationEstimate
+#print axioms isMLocationRoot_checkScore_iff
