@@ -26,9 +26,7 @@ re-proved from scratch: the directed theory is *routed through* the undirected o
 * `RecursivelyFactorizesOn` / `RecursivelyFactorizes` — property **(DF)**, p. 46, in a
   block form and its `V`-wide instance;
 * `inducedMoralGraph` — the moral graph of the sub-DAG induced on a vertex block, i.e.
-  Lauritzen's `(𝒢_A)^m`; a one-line composite of the concurrent `DAG.induced` and
-  `DAG.moralGraph`, kept here only because `Directed/Moralization.lean` is not this batch's
-  file to edit;
+  Lauritzen's `(𝒢_A)^m`; a one-line composite of `DAG.induce` and `DAG.moralGraph`;
 * `factorizesOver_of_recursivelyFactorizesOn` — the graph-free hinge: any undirected graph in
   which every `{v} ∪ pa(v)` is complete receives the factorization;
 * **`recursivelyFactorizes_implies_factorizesOver_moralGraph`** — Lauritzen **Lemma 3.21**,
@@ -95,9 +93,13 @@ then drop directions. It is *not* the same as `(D.moralGraph)` restricted to `T`
 created by a child outside `T` survives in the latter and must not survive in the former, and
 that difference is exactly what makes the directed global Markov property sharp.
 
-**Reuse (binding).** From `Directed/DAG.lean`: `DAG`, `DAG.parents`, `DAG.AncestralSet`,
-`DAG.induced`. From `Directed/Moralization.lean`: `DAG.moralGraph` and the fact that
-`{v} ∪ pa(v)` is complete in it. From `Discrete/Factorization.lean`: `FactorizesOver`,
+**Reuse (binding).** From `Directed/DAG.lean`: `DAG`, `DAG.parents`, `DAG.notMem_parents_self`,
+`DAG.IsAncestralSet`, `DAG.isAncestralSet_iff_parents_subset`, `DAG.induce`,
+`DAG.parents_induce_of_isAncestralSet`, `DAG.exists_topologicalOrder`. From
+`Directed/Moralization.lean`: **`DAG.isClique_insert_parents`** and
+**`DAG.isClique_insert_parents_induce`** — the two clique facts that discharge `hclique` below,
+and the only moralization input this file needs — plus `DAG.moralGraph_induce_univ`. From
+`Discrete/Factorization.lean`: `FactorizesOver`,
 `IsCliquePotential`, `completeSubsets`, `mem_completeSubsets` and
 **`factorizesOver_implies_globalMarkov`** — the undirected (F) ⇒ (G) is never re-proved here.
 From `Discrete/CondIndep.lean`: `blockMarginal`, `agreeOn`, `dependsOn_blockMarginal`,
@@ -136,17 +138,19 @@ as `Function.update x v ·`, which by the dependence condition moves exactly the
 products below. Kernels are `ℝ≥0∞`-valued and are not required to be finite pointwise, only
 summable to `1`, which does force each value to be `≤ 1`. On a vertex with no parents the
 condition says `k v` is a probability mass function on `α` alone. -/
-def IsLocalKernelOn (D : DAG V) (A : Finset V) (k : V → (V → α) → ℝ≥0∞) : Prop :=
+def IsLocalKernelOn (D : DAG V) [DecidableRel D.Adj] (A : Finset V)
+    (k : V → (V → α) → ℝ≥0∞) : Prop :=
   ∀ v ∈ A, DependsOn (k v) ((insert v (D.parents v) : Finset V) : Set V) ∧
     ∀ x : V → α, ∑ a : α, k v (Function.update x v a) = 1
 
 /-- **Lauritzen's kernel family** `{k^α}_{α ∈ V}` (p. 46, unnumbered) — `IsLocalKernelOn` at the
 full vertex set. -/
-def IsLocalKernel (D : DAG V) (k : V → (V → α) → ℝ≥0∞) : Prop :=
+def IsLocalKernel (D : DAG V) [DecidableRel D.Adj] (k : V → (V → α) → ℝ≥0∞) : Prop :=
   IsLocalKernelOn D Finset.univ k
 
 /-- A kernel family that is local on a block is local on every sub-block. -/
-theorem IsLocalKernelOn.mono {D : DAG V} {A B : Finset V} {k : V → (V → α) → ℝ≥0∞}
+theorem IsLocalKernelOn.mono {D : DAG V} [DecidableRel D.Adj] {A B : Finset V}
+    {k : V → (V → α) → ℝ≥0∞}
     -- LEAN-ONLY: the block inclusion along which the (purely pointwise) condition restricts
     (hAB : A ⊆ B)
     -- USER-INPUT: the kernel family; Lauritzen §3.2.2, p. 46
@@ -155,7 +159,8 @@ theorem IsLocalKernelOn.mono {D : DAG V} {A B : Finset V} {k : V → (V → α) 
   fun v hv => hk v (hAB hv)
 
 /-- A `V`-wide kernel family is local on every block. -/
-theorem IsLocalKernel.isLocalKernelOn {D : DAG V} {k : V → (V → α) → ℝ≥0∞}
+theorem IsLocalKernel.isLocalKernelOn {D : DAG V} [DecidableRel D.Adj]
+    {k : V → (V → α) → ℝ≥0∞}
     -- USER-INPUT: the kernel family; Lauritzen §3.2.2, p. 46
     (hk : IsLocalKernel D k) (A : Finset V) :
     IsLocalKernelOn D A k :=
@@ -174,7 +179,8 @@ kernel family of `𝒢_A` and that of `𝒢` are the same object read on `A`. Ta
 
 *Edge behaviour.* `RecursivelyFactorizesOn D ∅ p` says `p ≡ 1`, the empty product — the
 degenerate marginal "on no variables" of a probability mass function. -/
-def RecursivelyFactorizesOn (D : DAG V) (A : Finset V) (p : (V → α) → ℝ≥0∞) : Prop :=
+def RecursivelyFactorizesOn (D : DAG V) [DecidableRel D.Adj] (A : Finset V)
+    (p : (V → α) → ℝ≥0∞) : Prop :=
   ∃ k : V → (V → α) → ℝ≥0∞, IsLocalKernelOn D A k ∧ ∀ x, p x = ∏ v ∈ A, k v x
 
 /-- **Property (DF), recursive factorization** — Lauritzen p. 46, unnumbered:
@@ -186,11 +192,12 @@ def RecursivelyFactorizesOn (D : DAG V) (A : Finset V) (p : (V → α) → ℝ�
 density of a probability distribution and his kernels are conditional densities. On the empty DAG
 (no arrows) it says `p` is a product of one-dimensional probability mass functions, i.e. the
 coordinates are independent; on a complete DAG it says nothing beyond `∑ p = 1`. -/
-def RecursivelyFactorizes (D : DAG V) (p : (V → α) → ℝ≥0∞) : Prop :=
+def RecursivelyFactorizes (D : DAG V) [DecidableRel D.Adj] (p : (V → α) → ℝ≥0∞) : Prop :=
   RecursivelyFactorizesOn D Finset.univ p
 
 /-- (DF) is the block form at the full vertex set — definitionally. -/
-theorem recursivelyFactorizes_iff_on_univ (D : DAG V) (p : (V → α) → ℝ≥0∞) :
+theorem recursivelyFactorizes_iff_on_univ (D : DAG V) [DecidableRel D.Adj]
+    (p : (V → α) → ℝ≥0∞) :
     RecursivelyFactorizes D p ↔ RecursivelyFactorizesOn D Finset.univ p :=
   Iff.rfl
 
@@ -205,9 +212,16 @@ repointed. See the module docstring. -/
 *Not* `D.moralGraph` restricted to `T` — a marriage of two vertices of `T` created by a common
 child *outside* `T` belongs to the latter and must be absent from the former. That difference is
 what makes the directed global Markov property sharp, and it is why the ancestral closure appears
-in Corollary 3.23 at all. -/
+in Corollary 3.23 at all.
+
+⚠️ *Duplicate to dedup at merge.* `Directed/DSeparation.lean` — which is **downstream** of
+`Directed/Markov.lean` — spells the same object as
+`moralAncestralGraph D A B S = inducedMoralGraph D (D.ancestralClosure (A ∪ B ∪ S))`,
+i.e. as `Markov.ancestralMoralGraph D (A ∪ B ∪ S)`. The two were written concurrently; the
+upstream one is this file's, and the downstream definition should be repointed at merge rather
+than the other way round. -/
 abbrev inducedMoralGraph (D : DAG V) (T : Finset V) : SimpleGraph V :=
-  (D.induced T).moralGraph
+  (D.induce T).moralGraph
 
 /-! ### Lemma 3.21 — into the undirected layer -/
 
@@ -222,8 +236,8 @@ complete set `insert v (D.parents v)` and let `ψ c` be the product of the `k v`
 (`Finset.prod_fiberwise_of_maps_to`); `DependsOn (ψ c) ↑c` because every factor in the fibre
 depends on `c` on the nose, and the potentials of the complete sets that receive no vertex are
 the empty product `1`. -/
-theorem factorizesOver_of_recursivelyFactorizesOn (D : DAG V) (A : Finset V) (G : SimpleGraph V)
-    [DecidableRel G.Adj] (p : (V → α) → ℝ≥0∞)
+theorem factorizesOver_of_recursivelyFactorizesOn (D : DAG V) [DecidableRel D.Adj]
+    (A : Finset V) (G : SimpleGraph V) [DecidableRel G.Adj] (p : (V → α) → ℝ≥0∞)
     -- USER-INPUT: `{v} ∪ pa(v)` is complete in `G` — for `G = 𝒢^m` this is exactly what
     -- moralization is built to deliver; Lauritzen Lemma 3.21, p. 47
     (hclique : ∀ v ∈ A, G.IsClique ((insert v (D.parents v) : Finset V) : Set V))
@@ -243,7 +257,7 @@ Route: `factorizesOver_of_recursivelyFactorizesOn` at `A = Finset.univ` and `G =
 whose clique hypothesis is precisely the defining property of moralization (marrying the parents
 of a common child makes `{v} ∪ pa(v)` complete). -/
 theorem recursivelyFactorizes_implies_factorizesOver_moralGraph (D : DAG V)
-    [DecidableRel D.moralGraph.Adj] (p : (V → α) → ℝ≥0∞)
+    [DecidableRel D.Adj] (p : (V → α) → ℝ≥0∞)
     -- USER-INPUT: property (DF); Lauritzen §3.2.2, p. 46
     (hp : RecursivelyFactorizes D p) :
     FactorizesOver D.moralGraph p := by
@@ -254,7 +268,7 @@ property relative to `𝒢^m`". A one-liner: the first half followed by the undi
 (F) ⇒ (G) of `Discrete/Factorization.factorizesOver_implies_globalMarkov` (Lauritzen
 Proposition 3.8), which is *never* re-proved here. -/
 theorem recursivelyFactorizes_implies_globalMarkov_moralGraph (D : DAG V)
-    [DecidableRel D.moralGraph.Adj] (p : (V → α) → ℝ≥0∞)
+    [DecidableRel D.Adj] (p : (V → α) → ℝ≥0∞)
     -- USER-INPUT: property (DF); Lauritzen §3.2.2, p. 46
     (hp : RecursivelyFactorizes D p) :
     IsGlobalMarkov D.moralGraph (CondIndepMass p) :=
@@ -269,10 +283,10 @@ Ancestrality is what makes the clique hypothesis of `factorizesOver_of_recursive
 payable: for `v ∈ T` it gives `pa(v) ⊆ T`, hence `pa_{𝒢_T}(v) = pa(v)`, hence
 `{v} ∪ pa(v)` is a set of vertices of `𝒢_T` married by the moralization of `𝒢_T` itself. Without
 it, `{v} ∪ pa(v)` need not even be contained in `T`. -/
-theorem recursivelyFactorizesOn_implies_factorizesOver_inducedMoralGraph (D : DAG V) (T : Finset V)
-    [DecidableRel (inducedMoralGraph D T).Adj] (p : (V → α) → ℝ≥0∞)
+theorem recursivelyFactorizesOn_implies_factorizesOver_inducedMoralGraph (D : DAG V)
+    [DecidableRel D.Adj] (T : Finset V) (p : (V → α) → ℝ≥0∞)
     -- USER-INPUT: `T` is an ancestral set; Lauritzen §2.1.1, p. 6, and Proposition 3.22, p. 47
-    (hT : D.AncestralSet T)
+    (hT : D.IsAncestralSet T)
     -- USER-INPUT: property (DF) on the block; Lauritzen §3.2.2, p. 46
     (hp : RecursivelyFactorizesOn D T p) :
     FactorizesOver (inducedMoralGraph D T) p := by
@@ -290,7 +304,8 @@ Two facts do the work, and they are the two halves of `IsLocalKernelOn`: every o
 sums to `1`, which is the normalisation. This lemma is Lauritzen's "easy induction argument"
 (p. 46) in one line, and both `blockMarginal_recursivelyFactorizesOn_of_ancestralSet` and
 `sum_eq_one_of_recursivelyFactorizes` are inductions on it. -/
-theorem sum_update_prod_of_notMem_parents (D : DAG V) (A : Finset V) (k : V → (V → α) → ℝ≥0∞)
+theorem sum_update_prod_of_notMem_parents (D : DAG V) [DecidableRel D.Adj] (A : Finset V)
+    (k : V → (V → α) → ℝ≥0∞)
     -- USER-INPUT: the kernel family; Lauritzen §3.2.2, p. 46
     (hk : IsLocalKernelOn D A k) {v : V}
     -- USER-INPUT: the vertex being summed out lies in the block
@@ -318,9 +333,10 @@ identifies the surviving product with the marginal.
 
 *Degenerate regime.* With `α` empty and `V` nonempty both sides quantify over an empty
 configuration space, so the statement is vacuously true; no `[Nonempty α]` is needed. -/
-theorem blockMarginal_recursivelyFactorizesOn_of_ancestralSet (D : DAG V) (A : Finset V)
+theorem blockMarginal_recursivelyFactorizesOn_of_ancestralSet (D : DAG V) [DecidableRel D.Adj]
+    (A : Finset V)
     -- USER-INPUT: `A` is an ancestral set; Lauritzen §2.1.1, p. 6, and Proposition 3.22, p. 47
-    (hA : D.AncestralSet A) (p : (V → α) → ℝ≥0∞)
+    (hA : D.IsAncestralSet A) (p : (V → α) → ℝ≥0∞)
     -- USER-INPUT: property (DF); Lauritzen §3.2.2, p. 46
     (hp : RecursivelyFactorizes D p) :
     RecursivelyFactorizesOn D A (blockMarginal A p) := by
@@ -342,7 +358,7 @@ theorem sum_eq_one_of_recursivelyFactorizes
     -- LEAN-ONLY: a nonempty state space. With `α` empty and `V` nonempty the configuration space
     -- `V → α` is empty, every hypothesis of (DF) is vacuous and the total mass is `0`;
     -- Lauritzen's state spaces `𝒳_α` are sample spaces of random variables, hence never empty
-    [Nonempty α] (D : DAG V) (p : (V → α) → ℝ≥0∞)
+    [Nonempty α] (D : DAG V) [DecidableRel D.Adj] (p : (V → α) → ℝ≥0∞)
     -- USER-INPUT: property (DF); Lauritzen §3.2.2, p. 46
     (hp : RecursivelyFactorizes D p) :
     ∑ x : V → α, p x = 1 := by
@@ -353,7 +369,7 @@ every lemma of `Discrete/CondIndep.lean` carries, obtained from
 `sum_eq_one_of_recursivelyFactorizes` by `Finset.single_le_sum`. -/
 theorem ne_top_of_recursivelyFactorizes
     -- LEAN-ONLY: a nonempty state space; see `sum_eq_one_of_recursivelyFactorizes`
-    [Nonempty α] (D : DAG V) (p : (V → α) → ℝ≥0∞)
+    [Nonempty α] (D : DAG V) [DecidableRel D.Adj] (p : (V → α) → ℝ≥0∞)
     -- USER-INPUT: property (DF); Lauritzen §3.2.2, p. 46
     (hp : RecursivelyFactorizes D p) (x : V → α) :
     p x ≠ ∞ := by

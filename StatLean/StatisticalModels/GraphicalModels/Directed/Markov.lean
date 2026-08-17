@@ -100,9 +100,11 @@ recorded here because it needs a concrete `DAG` term, i.e. the constructor of a 
 by the concurrent `Directed/DAG.lean`; see the closing section.
 
 **Reuse (binding).** From `Directed/DAG.lean`: `DAG`, `DAG.parents`, `DAG.nonDescendants`,
-`DAG.AncestralSet`, `DAG.ancestralClosure`. From `Directed/Moralization.lean`: `DAG.moralGraph`
-and the induced sub-DAG, via `inducedMoralGraph`. From `Core/Separation.lean`: `Separates` and
-its whole monotonicity API — separation is never re-spelled. From `Core/Semigraphoid.lean`:
+`DAG.IsAncestralSet`, `DAG.ancestralClosure`, `DAG.parents_subset_nonDescendants`,
+`DAG.notMem_nonDescendants_self`, `DAG.notMem_parents_self`,
+`DAG.disjoint_singleton_nonDescendants`. From `Directed/Moralization.lean`: `DAG.moralGraph`
+and `DAG.induce`, via the composite `inducedMoralGraph`. From `Core/Separation.lean`:
+`Separates` and its whole monotonicity API — never re-spelled. From `Core/Semigraphoid.lean`:
 `IsSemigraphoid.weakUnion` and `IsGraphoid.intersection`. From `Discrete/CondIndep.lean`:
 `CondIndepMass`, `blockMarginal`, `isSemigraphoid_condIndepMass`,
 `isGraphoid_condIndepMass_of_pos`. From `Discrete/Factorization.lean`:
@@ -126,8 +128,8 @@ namespace StatLean.StatisticalModels.GraphicalModels
 
 section Abstract
 
-variable {V : Type*} [Fintype V] [DecidableEq V] (D : DAG V)
-  (ci : Finset V → Finset V → Finset V → Prop)
+variable {V : Type*} [Fintype V] [DecidableEq V] (D : DAG V) [DecidableRel D.Adj]
+  [DecidableRel (Relation.TransGen D.Adj)] (ci : Finset V → Finset V → Finset V → Prop)
 
 /-! ### The three directed Markov properties -/
 
@@ -164,8 +166,13 @@ def IsDirectedLocalMarkov : Prop :=
 
 /-- **Lauritzen's `(𝒢_{An(T)})^m`** (Corollary 3.23, p. 47): moralize the sub-DAG induced on the
 smallest ancestral set containing `T`. A one-line composite of `DAG.ancestralClosure` with
-`inducedMoralGraph`, so that (DG) reads as the book does and so that the two concurrent
-definitions are consumed at a single site. -/
+`inducedMoralGraph`, so that (DG) reads as the book does and so that the two ingredients are
+consumed at a single site.
+
+⚠️ *Duplicate to dedup at merge.* `Directed/DSeparation.lean`, which is **downstream** of this
+file, defines `moralAncestralGraph D A B S` for the same object with the union spelled out; it
+is definitionally `ancestralMoralGraph D (A ∪ B ∪ S)`. The two were written concurrently. The
+downstream copy should be repointed here at merge. -/
 abbrev ancestralMoralGraph (T : Finset V) : SimpleGraph V :=
   inducedMoralGraph D (D.ancestralClosure T)
 
@@ -346,14 +353,16 @@ no positivity: every step is division-free.
 the instance is supplied **classically inside the proof** (`classical`), exactly as
 `Core/Separation.separates_iff_forall_path` does for `DecidableEq V`. The statement is unchanged;
 any two `Decidable` instances agree by `Subsingleton.elim`. -/
-theorem recursivelyFactorizes_implies_directedGlobalMarkov (D : DAG V) (p : (V → α) → ℝ≥0∞)
+theorem recursivelyFactorizes_implies_directedGlobalMarkov (D : DAG V) [DecidableRel D.Adj]
+    [DecidableRel (Relation.TransGen D.Adj)] (p : (V → α) → ℝ≥0∞)
     -- USER-INPUT: property (DF); Lauritzen §3.2.2, p. 46
     (hp : RecursivelyFactorizes D p) :
     IsDirectedGlobalMarkov D (CondIndepMass p) := by
   sorry
 
 /-- **(DF) ⇒ (DL)** — Corollary 3.23 composed with (DG) ⇒ (DL). -/
-theorem recursivelyFactorizes_implies_directedLocalMarkov (D : DAG V) (p : (V → α) → ℝ≥0∞)
+theorem recursivelyFactorizes_implies_directedLocalMarkov (D : DAG V) [DecidableRel D.Adj]
+    [DecidableRel (Relation.TransGen D.Adj)] (p : (V → α) → ℝ≥0∞)
     -- USER-INPUT: property (DF); Lauritzen §3.2.2, p. 46
     (hp : RecursivelyFactorizes D p) :
     IsDirectedLocalMarkov D (CondIndepMass p) :=
@@ -367,7 +376,8 @@ bounded by `1`. -/
 theorem recursivelyFactorizes_implies_directedPairwiseMarkov
     -- LEAN-ONLY: a nonempty state space, needed only to know that a recursively factorizing mass
     -- is finite; see `sum_eq_one_of_recursivelyFactorizes`
-    [Nonempty α] (D : DAG V) (p : (V → α) → ℝ≥0∞)
+    [Nonempty α] (D : DAG V) [DecidableRel D.Adj] [DecidableRel (Relation.TransGen D.Adj)]
+    (p : (V → α) → ℝ≥0∞)
     -- USER-INPUT: property (DF); Lauritzen §3.2.2, p. 46
     (hp : RecursivelyFactorizes D p) :
     IsDirectedPairwiseMarkov D (CondIndepMass p) :=
@@ -386,7 +396,7 @@ the identity `p_{{v} ∪ pa(v)} · p_{pa(v)} = p_{{v} ∪ pa(v)} · p_{pa(v)}` �
 `Finset.union_empty` and `Finset.empty_union`, with no hypothesis at all. That is the concrete
 sense in which the empty-block gap of the abstract theory is an artefact of abstraction. -/
 theorem directedPairwiseMarkov_implies_directedLocalMarkov_of_pos (D : DAG V)
-    (p : (V → α) → ℝ≥0∞)
+    [DecidableRel D.Adj] [DecidableRel (Relation.TransGen D.Adj)] (p : (V → α) → ℝ≥0∞)
     -- LEAN-ONLY: finiteness of the mass function; the `ℝ≥0∞` counterpart of "`f` is a density",
     -- consumed by the graphoid calculus
     (hp : ∀ x, p x ≠ ∞)
@@ -424,7 +434,8 @@ assumed: it follows from `hnorm`.
 p. 52 — and that fourth implication is
 `directedPairwiseMarkov_implies_directedLocalMarkov_of_pos`, kept separate because it is a
 different citation. -/
-theorem directedMarkov_tfae (D : DAG V) (p : (V → α) → ℝ≥0∞)
+theorem directedMarkov_tfae (D : DAG V) [DecidableRel D.Adj]
+    [DecidableRel (Relation.TransGen D.Adj)] (p : (V → α) → ℝ≥0∞)
     -- USER-INPUT: `p` is a probability mass function; Lauritzen Theorem 3.27, p. 51 ("for a
     -- probability distribution `P` … which has density with respect to a product measure `μ`")
     (hnorm : ∑ x : V → α, p x = 1)
