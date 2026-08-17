@@ -34,6 +34,12 @@ exactly what the kinked Huber score satisfies when `P` has no atoms at `θ₀ ±
 **Reference.** R. A. Maronna, R. D. Martin, V. J. Yohai and M. Salibián-Barrera, *Robust
 Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.) §3.1 (eq. (3.7)),
 §3.3 (eq. (3.29)–(3.31)), §3.8.1 (eq. (3.58)–(3.59)).
+
+**Bibliographic comments.** The influence function of an M-estimator — `ψ(x−θ)/A`, bounded
+score ⟹ bounded influence — is F. R. Hampel, "The influence curve and its role in robust
+estimation," *J. Amer. Statist. Assoc.* **69** (1974), 383–393, developed at book length in
+Hampel, Ronchetti, Rousseeuw and Stahel, *Robust Statistics: The Approach Based on Influence
+Functions*, Wiley, 1986, §2.3; the von Mises derivative framework is von Mises (1947).
 -/
 
 open MeasureTheory Filter Topology

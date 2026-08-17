@@ -27,6 +27,13 @@ heavy-tailed distributions — a survey*, Found. Comput. Math. (2019); arXiv:190
 O. Catoni, *Challenging the empirical mean and empirical variance: a deviation study*,
 Ann. Inst. H. Poincaré Probab. Stat. 48 (2012). Root existence/uniqueness reuses the
 IVT/monotone route of `MEstimation/MLocationFunctional`.
+
+**Bibliographic comments.** The estimator, its log-companion device, and the optimality of
+the `√2` constant are O. Catoni, "Challenging the empirical mean and empirical variance: a
+deviation study," *Ann. Inst. Henri Poincaré Probab. Stat.* **48** (2012), 1148–1185; the
+soft-truncation idea descends from Huber's 1964 clipped score. The companion regression
+theory is Audibert and Catoni, "Robust linear least squares regression," *Ann. Statist.*
+**39** (2011), 2766–2794.
 -/
 
 open MeasureTheory Filter Topology ProbabilityTheory

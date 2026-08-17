@@ -24,6 +24,11 @@ into the two directions that *are* eq. (3.21), without introducing an `ε*` supr
 **Reference.** R. A. Maronna, R. D. Martin, V. J. Yohai and M. Salibián-Barrera, *Robust
 Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.) §3.2.1 (eq.
 (3.21)–(3.22)), §3.8.3.1 (eq. (3.61)–(3.63)).
+
+**Bibliographic comments.** The asymptotic breakdown point `min(k₁,k₂)/(k₁+k₂)` of a
+monotone-score location M-estimator — `1/2` for odd bounded scores — is due to Huber; see
+Huber and Ronchetti, *Robust Statistics*, 2nd ed., Wiley, 2009, §3.2, and Hampel's
+qualitative-robustness framework (*Ann. Math. Statist.* **42** (1971), 1887–1896).
 -/
 
 open MeasureTheory Filter Topology

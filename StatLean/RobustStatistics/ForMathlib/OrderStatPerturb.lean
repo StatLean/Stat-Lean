@@ -26,6 +26,12 @@ no statistical content.
 **Reference.** R. A. Maronna, R. D. Martin, V. J. Yohai and M. Salibián-Barrera, *Robust
 Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.) The perturbation
 bound is implicit in the finite-sample breakdown computations of `MMY §3.2.5`.
+
+**Bibliographic comments.** Order statistics are classical — H. A. David and H. N. Nagaraja,
+*Order Statistics*, 3rd ed., Wiley, 2003 — but the perturbation bounds under coordinate
+replacement collected here are the combinatorial engine of finite-sample breakdown analysis,
+implicit throughout D. L. Donoho and P. J. Huber, "The notion of breakdown point," in *A
+Festschrift for Erich L. Lehmann*, Wadsworth, 1983, pp. 157–184.
 -/
 
 open Finset

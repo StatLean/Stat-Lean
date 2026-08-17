@@ -17,6 +17,14 @@ in this directory is built to beat.
 heavy-tailed distributions — a survey*, Found. Comput. Math. (2019); arXiv:1906.04280v1.
 (`LM`.) §2, displays (2.1)–(2.3). The estimator is Round-1's `sampleMean`; Chebyshev is
 Mathlib's `ProbabilityTheory.meas_ge_le_variance_div_sq`.
+
+**Bibliographic comments.** That Chebyshev's `1/√(nδ)` is essentially *sharp* for the
+empirical mean — so that sub-Gaussian confidence under heavy tails requires a different
+estimator — is Proposition 6.2 of O. Catoni, "Challenging the empirical mean and empirical
+variance: a deviation study," *Ann. Inst. Henri Poincaré Probab. Stat.* **48** (2012),
+1148–1185; the sub-Gaussian-estimator framework the comparison lives in is Devroye,
+Lerasle, Lugosi and Oliveira, "Sub-Gaussian mean estimators," *Ann. Statist.* **44**
+(2016), 2695–2725.
 -/
 
 open MeasureTheory Filter Topology ProbabilityTheory

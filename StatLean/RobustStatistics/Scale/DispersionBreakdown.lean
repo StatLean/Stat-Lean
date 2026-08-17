@@ -32,6 +32,12 @@ Problem 3.3, finite-sample form):
 and the IQR are 0, 1/2 and 1/4", Problem 3.3), §3.2.5 (the replacement FBP (3.24)–
 (3.25) and its boundary-aware reading for `Θ = (0, ∞)`); the FBP notion is from
 Donoho–Huber (1983).
+
+**Bibliographic comments.** The classical breakdown verdicts — SD `0`, MAD `1/2`, IQR
+`1/4` — trace to Hampel's advocacy of the median deviation ("The influence curve and its
+role in robust estimation," *J. Amer. Statist. Assoc.* **69** (1974), 383–393) and the
+finite-sample framework of Donoho and Huber (1983); efficient high-breakdown alternatives
+to the MAD are Rousseeuw and Croux, *J. Amer. Statist. Assoc.* **88** (1993), 1273–1283.
 -/
 
 open MeasureTheory Finset

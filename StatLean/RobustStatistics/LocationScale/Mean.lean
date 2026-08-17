@@ -22,6 +22,13 @@ This is the negative pole of the flagship contrast; the positive pole is the med
 **Reference.** R. A. Maronna, R. D. Martin, V. J. Yohai and M. Salibián-Barrera, *Robust
 Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.) §3.1 (mean IF),
 §3.2.5 (mean breakdown), §3.3 (maximum bias), §3.7 (the mean as a functional).
+
+**Bibliographic comments.** The fragility of the sample mean is the founding observation of
+the subject: Tukey (1960) showed minute contamination destroys its efficiency, J. L. Hodges,
+Jr. quantified its zero tolerance of extreme values ("Efficiency in normal samples and
+tolerance of extreme values for some estimates of location," *Proc. Fifth Berkeley Symp.
+Math. Statist. Probab.*, Vol. I, Univ. California Press, 1967), and Hampel (1974) exhibited
+its unbounded influence curve.
 -/
 
 open MeasureTheory

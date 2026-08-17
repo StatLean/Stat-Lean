@@ -97,4 +97,26 @@ regression under heavy-tailed distributions — a survey*, Found. Comput. Math. 
 arXiv:1906.04280v1 (`LM Thm N` / `LM (x.y)` in tags) — the modern spine.
 
 Laptop-only file: edited by the laptop session at wave merges.
+
+**Bibliographic comments.** The subject begins with Tukey's contaminated-normal alarm ("A
+survey of sampling from contaminated distributions," in *Contributions to Probability and
+Statistics: Essays in Honor of Harold Hotelling*, Stanford Univ. Press, 1960, pp. 448–485),
+becomes a theory in Huber's minimax paper ("Robust estimation of a location parameter," *Ann.
+Math. Statist.* **35** (1964), 73–101), and acquires its diagnostic vocabulary in Hampel's
+thesis and papers — qualitative robustness and the breakdown point ("A general qualitative
+definition of robustness," *Ann. Math. Statist.* **42** (1971), 1887–1896) and the influence
+curve ("The influence curve and its role in robust estimation," *J. Amer. Statist. Assoc.*
+**69** (1974), 383–393); the finite-sample replacement breakdown point is Donoho and Huber
+("The notion of breakdown point," in *A Festschrift for Erich L. Lehmann*, Wadsworth, 1983,
+pp. 157–184). The monographs are Huber (*Robust Statistics*, Wiley, 1981; 2nd ed. with
+Ronchetti, 2009), Hampel, Ronchetti, Rousseeuw and Stahel (*Robust Statistics: The Approach
+Based on Influence Functions*, Wiley, 1986), and MMY 2019 (the area's spine). The modern
+heavy-tails program formalized in `HeavyTails/` runs from the median-of-means of
+Nemirovsky–Yudin (*Problem Complexity and Method Efficiency in Optimization*, Wiley, 1983),
+Jerrum–Valiant–Vazirani (*Theoret. Comput. Sci.* **43** (1986), 169–188) and
+Alon–Matias–Szegedy (*J. Comput. System Sci.* **58** (1999), 137–147) through Catoni (*Ann.
+Inst. Henri Poincaré Probab. Stat.* **48** (2012), 1148–1185) to the sub-Gaussian-estimator
+framework of Devroye, Lerasle, Lugosi and Oliveira (*Ann. Statist.* **44** (2016),
+2695–2725) and the LM survey; the multivariate story continues with Minsker (*Bernoulli*
+**21** (2015), 2308–2335) and Lugosi–Mendelson (*Ann. Statist.* **47** (2019), 783–794).
 -/

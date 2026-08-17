@@ -28,6 +28,16 @@ heavy-tailed distributions — a survey*, Found. Comput. Math. (2019); arXiv:190
 (`LM`.) §2.1, Theorem 2. The median step reuses Round-1's `sampleMedian` counting API;
 the binomial tail is `ConcentrationInequalities.hoeffding` on indicator variables
 (bounded, hence sub-Gaussian by `isSubGaussian_of_mem_Icc`).
+
+**Bibliographic comments.** Median-of-means was invented independently in stochastic
+optimization (Nemirovsky and Yudin, *Problem Complexity and Method Efficiency in
+Optimization*, Wiley, 1983), approximate counting (Jerrum, Valiant and Vazirani, *Theoret.
+Comput. Sci.* **43** (1986), 169–188), and streaming algorithms (Alon, Matias and Szegedy,
+*J. Comput. System Sci.* **58** (1999), 137–147). Its role as a sub-Gaussian mean estimator
+under bare second moments is Lerasle and Oliveira (arXiv:1112.3914, 2011) and Devroye,
+Lerasle, Lugosi and Oliveira, "Sub-Gaussian mean estimators," *Ann. Statist.* **44**
+(2016), 2695–2725; Hsu and Sabato (*J. Mach. Learn. Res.* **17** (2016)) carried it into
+learning theory.
 -/
 
 open MeasureTheory Filter Topology ProbabilityTheory

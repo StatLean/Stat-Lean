@@ -28,6 +28,12 @@ in absolute value.
 §3.8.5 ("The minimax bias property of the median"), using (3.68); the result is
 P. J. Huber, *Robust estimation of a location parameter*, Ann. Math. Statist. 35
 (1964) (bib note).
+
+**Bibliographic comments.** The minimax-bias property of the median is P. J. Huber, "Robust
+estimation of a location parameter," *Ann. Math. Statist.* **35** (1964), 73–101 (see also
+Huber–Ronchetti 2009, §4.2: the median minimizes the maximum asymptotic bias among
+translation-equivariant functionals over symmetric unimodal centers); generalizations
+beyond location are He and Simpson, *Ann. Statist.* **21** (1993), 314–337.
 -/
 
 open MeasureTheory Filter Topology

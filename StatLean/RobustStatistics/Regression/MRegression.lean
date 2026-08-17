@@ -26,6 +26,15 @@ A regression M-estimate for the loss `ρ` (known scale, absorbed into `ρ`) mini
 **Reference.** R. A. Maronna, R. D. Martin, V. J. Yohai and M. Salibián-Barrera, *Robust
 Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.) §4.4 (eq.
 (4.36)–(4.40)), §4.4.2 (eq. (4.48)), §5.11 (GM-estimators motivation).
+
+**Bibliographic comments.** Regression M-estimators are P. J. Huber, "Robust regression:
+asymptotics, conjectures and Monte Carlo," *Ann. Statist.* **1** (1973), 799–821; the
+leverage problem that bounded residual scores do not fix motivates the bounded-influence
+(GM-) estimators of Hampel, Ronchetti, Rousseeuw and Stahel, *Robust Statistics*, Wiley,
+1986, ch. 6, and the high-breakdown methods of MMY ch. 5. Regression quantiles are
+R. Koenker and G. Bassett, Jr., "Regression quantiles," *Econometrica* **46** (1978),
+33–50; the book-length treatment is Koenker, *Quantile Regression*, Cambridge Univ. Press,
+2005.
 -/
 
 open Finset

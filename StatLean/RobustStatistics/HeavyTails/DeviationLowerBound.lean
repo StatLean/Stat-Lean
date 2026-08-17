@@ -33,6 +33,12 @@ recovered by translating the whole construction. We state the translation-fixed 
 heavy-tailed distributions — a survey*, Found. Comput. Math. (2019); arXiv:1906.04280v1.
 (`LM`.) §2, Theorem 1; after L. Devroye, M. Lerasle, G. Lugosi and R. I. Oliveira,
 *Sub-Gaussian mean estimators*, Ann. Statist. 44 (2016).
+
+**Bibliographic comments.** The two-point coupling argument is Devroye, Lerasle, Lugosi and
+Oliveira, "Sub-Gaussian mean estimators," *Ann. Statist.* **44** (2016), 2695–2725 (their
+Theorem 3.1 context); the earlier sharpness-of-Chebyshev statement is Catoni (2012),
+Proposition 6.2. Together they bracket the empirical mean strictly between the Chebyshev
+baseline and the sub-Gaussian optimum.
 -/
 
 open MeasureTheory Filter Topology ProbabilityTheory

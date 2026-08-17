@@ -23,6 +23,12 @@ strict monotonicity, and the mean as the special case `ψ = id`.
 **Reference.** R. A. Maronna, R. D. Martin, V. J. Yohai and M. Salibián-Barrera, *Robust
 Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.) §2.3.2 (eq.
 (2.22)), §3.7 (eq. (3.51)), §10.1–10.2 (Theorems 10.1, 10.4, 10.5).
+
+**Bibliographic comments.** Treating an estimator as a functional of the underlying
+distribution goes back to R. von Mises, "On the asymptotic distribution of differentiable
+statistical functions," *Ann. Math. Statist.* **18** (1947), 309–348; the population
+M-equation and its root theory are Huber (1964) and ch. 3 of Huber and Ronchetti, *Robust
+Statistics*, 2nd ed., Wiley, 2009.
 -/
 
 open MeasureTheory Filter Topology

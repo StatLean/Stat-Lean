@@ -32,6 +32,12 @@ reduction; eq. (3.23)). The population MAD (`MMY (2.62)`) is the scale M-functio
 the *discontinuous* loss `ρ = 1{|x| ≥ 1}` at `δ = 1/2`; it is outside the continuous-`ρ`
 hypotheses used here and is treated only through its finite-sample breakdown
 (`Scale/DispersionBreakdown.lean`).
+
+**Bibliographic comments.** M-estimators of scale and their breakdown are part of Huber's
+original program (Huber 1964; Huber and Ronchetti, *Robust Statistics*, 2nd ed., Wiley,
+2009, ch. 5); the bias-robustness theory of scale — where the `min(δ, 1−δ)` explosion/
+implosion dichotomy is sharpened to maximum-bias optimality — is R. D. Martin and R. H.
+Zamar, "Bias robust estimation of scale," *Ann. Statist.* **21** (1993), 991–1017.
 -/
 
 open MeasureTheory Filter Topology

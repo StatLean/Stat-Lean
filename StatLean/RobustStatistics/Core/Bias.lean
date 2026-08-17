@@ -17,6 +17,12 @@ touching consumers.
 **Reference.** R. A. Maronna, R. D. Martin, V. J. Yohai and M. Salibián-Barrera, *Robust
 Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.) §3.3 (maximum
 asymptotic bias, contamination sensitivity).
+
+**Bibliographic comments.** The bias caused by contamination — as opposed to the variance
+studied by classical asymptotics — is the organizing quantity of P. J. Huber, "Robust
+estimation of a location parameter," *Ann. Math. Statist.* **35** (1964), 73–101; the
+systematic study of maximum-bias curves is R. D. Martin, V. J. Yohai and R. H. Zamar,
+"Min–max bias robust regression," *Ann. Statist.* **17** (1989), 1608–1630.
 -/
 
 open MeasureTheory

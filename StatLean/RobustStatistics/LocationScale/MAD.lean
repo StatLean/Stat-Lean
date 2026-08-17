@@ -21,6 +21,13 @@ therefore given for odd `n`. Location invariance holds for every `n`.
 **Reference.** R. A. Maronna, R. D. Martin, V. J. Yohai and M. Salibián-Barrera, *Robust
 Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.) §2.6 (eq.
 (2.58), (2.60), (2.63)), §2.7.1.
+
+**Bibliographic comments.** The median absolute deviation was advocated as *the* robust
+scale estimate by F. R. Hampel ("The influence curve and its role in robust estimation,"
+*J. Amer. Statist. Assoc.* **69** (1974), 383–393, where it is the "median deviation");
+its normalization and higher-efficiency alternatives are P. J. Rousseeuw and C. Croux,
+"Alternatives to the median absolute deviation," *J. Amer. Statist. Assoc.* **88** (1993),
+1273–1283.
 -/
 
 namespace StatLean.RobustStatistics

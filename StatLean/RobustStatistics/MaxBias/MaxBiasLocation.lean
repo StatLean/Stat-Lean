@@ -33,6 +33,14 @@ stated here as the identity `g(b) = 2 F₀(b) − 1` for atomless `P`.
 §3.3 (the neighbourhood `F_{ε,θ}` and `MB`), §3.8.4 (eqs. (3.66)–(3.68) with proofs).
 The minimax-bias optimality of the median over location-equivariant functionals is the
 companion file `MaxBias/MedianMinimaxBias.lean` (`MMY §3.8.5`).
+
+**Bibliographic comments.** The maximum-bias function of a location M-estimator and its
+`g(b) = kε/(1−ε)` characterization are due to Huber ("Robust estimation of a location
+parameter," *Ann. Math. Statist.* **35** (1964), 73–101; book form in Huber–Ronchetti 2009,
+§4.2); the systematic min–max bias program is Martin, Yohai and Zamar, *Ann. Statist.*
+**17** (1989), 1608–1630, with lower-bound refinements in He and Simpson, "Lower bounds for
+contamination bias: globally minimax versus locally linear estimation," *Ann. Statist.*
+**21** (1993), 314–337.
 -/
 
 open MeasureTheory Filter Topology

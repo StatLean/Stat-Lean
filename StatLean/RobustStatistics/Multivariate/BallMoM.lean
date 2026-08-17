@@ -31,6 +31,15 @@ median-of-means *tournament* estimator (`LM §3.4`) and the geometric median-of-
 **Reference.** G. Lugosi and S. Mendelson, *Mean estimation and regression under
 heavy-tailed distributions — a survey*, Found. Comput. Math. (2019); arXiv:1906.04280v1.
 (`LM`.) §3.1–§3.2, display (3.1), Proposition 1.
+
+**Bibliographic comments.** Multivariate median-of-means estimators appear in Minsker,
+"Geometric median and robust estimation in Banach spaces," *Bernoulli* **21** (2015),
+2308–2335, and Hsu and Sabato, "Loss minimization and parameter estimation with heavy
+tails," *J. Mach. Learn. Res.* **17** (2016); the dimension-free smallest-majority-ball
+analysis is from the LM survey, with the fully sub-Gaussian (but computationally hard)
+tournament estimator in Lugosi and Mendelson, "Sub-Gaussian estimators of the mean of a
+random vector," *Ann. Statist.* **47** (2019), 783–794, and the median-of-means geometry
+surveyed in Joly, Lugosi and Oliveira, *Electron. J. Statist.* **11** (2017), 440–451.
 -/
 
 open MeasureTheory Filter Topology ProbabilityTheory

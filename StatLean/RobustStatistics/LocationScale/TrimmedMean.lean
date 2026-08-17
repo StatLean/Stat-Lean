@@ -18,6 +18,14 @@ replacement-perturbation bound on order statistics
 **Reference.** R. A. Maronna, R. D. Martin, V. J. Yohai and M. Salibián-Barrera, *Robust
 Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.) §2.4 (trimmed
 and Winsorized means), §3.2.5 (their breakdown).
+
+**Bibliographic comments.** Trimmed means as a systematic tool begin with J. W. Tukey and
+D. H. McLaughlin, "Less vulnerable confidence and significance procedures for location based
+on a single sample: trimming/Winsorization 1," *Sankhyā Ser. A* **25** (1963), 331–352;
+their asymptotics are P. J. Bickel, "On some robust estimates of location," *Ann. Math.
+Statist.* **36** (1965), 847–858, and S. M. Stigler, "The asymptotic distribution of the
+trimmed mean," *Ann. Statist.* **1** (1973), 472–477. The finite-sample breakdown count
+`m* = m` at trim depth `m` is the pattern of Donoho–Huber (1983).
 -/
 
 open StatLean.MultipleTesting Finset

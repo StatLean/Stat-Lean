@@ -28,6 +28,13 @@ equivariance actually holds.
 **Reference.** R. A. Maronna, R. D. Martin, V. J. Yohai and M. Salibián-Barrera, *Robust
 Statistics: Theory and Methods (with R)*, 2nd ed., Wiley, 2019. (`MMY`.) §2.3 (shift
 equivariance of M-estimators), eq. (2.58) (dispersion estimators), §3.8.2, §4.9.1.
+
+**Bibliographic comments.** Equivariant estimation goes back to E. J. G. Pitman, "The
+estimation of the location and scale parameters of a continuous population of any given
+form," *Biometrika* **30** (1939), 391–421; its decision-theoretic role is ch. 3 of Lehmann
+and Casella, *Theory of Point Estimation*, 2nd ed., Springer, 1998. In robustness it is the
+side condition of Huber's 1964 minimax problem and of the maximal-breakdown bound
+(Donoho–Huber 1983).
 -/
 
 open MeasureTheory
