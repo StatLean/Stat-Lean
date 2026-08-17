@@ -377,6 +377,45 @@ theorem medianOfMeans_subGaussian {k m n : ℕ} (hm : m ≠ 0)
     μprob.real {ξ | Real.sqrt σ2 * Real.sqrt ((32 * Real.log (1 / δ) + 4) / n)
         < |medianOfMeans (fun j i => X j i ξ) - μ₀|}
       ≤ δ := by
-  sorry
+  classical
+  -- `log(1/δ) > 0`, hence `k = ⌈8 log(1/δ)⌉ ≥ 1` and `n = km ≥ 1`
+  have hLpos : 0 < Real.log (1 / δ) := Real.log_pos ((one_lt_div hδ).mpr hδ1)
+  have hk : k ≠ 0 := by
+    rw [hkc, ne_eq, Nat.ceil_eq_zero, not_le]
+    linarith
+  have hn0 : n ≠ 0 := by rw [hn]; exact Nat.mul_ne_zero hk hm
+  have hmR : (0 : ℝ) < (m : ℝ) := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm)
+  have hnR : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn0)
+  have hkR : (k : ℝ) ≤ 8 * Real.log (1 / δ) + 1 := by
+    rw [hkc]
+    exact le_of_lt (Nat.ceil_lt_add_one (by linarith))
+  have hkL : 8 * Real.log (1 / δ) ≤ (k : ℝ) := by
+    rw [hkc]; exact Nat.le_ceil _
+  -- the stated radius dominates the `σ√(4/m)` radius of the exponential form
+  have hradius : Real.sqrt σ2 * Real.sqrt (4 / m)
+      ≤ Real.sqrt σ2 * Real.sqrt ((32 * Real.log (1 / δ) + 4) / n) := by
+    refine mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt ?_) (Real.sqrt_nonneg _)
+    have hfrac : (4 : ℝ) / (m : ℝ) = 4 * (k : ℝ) / (n : ℝ) := by
+      rw [hn]
+      push_cast
+      field_simp
+    rw [hfrac]
+    gcongr
+    linarith
+  have hsub : {ξ | Real.sqrt σ2 * Real.sqrt ((32 * Real.log (1 / δ) + 4) / n)
+        < |medianOfMeans (fun j i => X j i ξ) - μ₀|}
+      ⊆ {ξ | Real.sqrt σ2 * Real.sqrt (4 / m)
+        < |medianOfMeans (fun j i => X j i ξ) - μ₀|} :=
+    fun ξ hξ => lt_of_le_of_lt hradius hξ
+  refine le_trans (measureReal_mono hsub (measure_ne_top _ _)) ?_
+  refine le_trans
+    (medianOfMeans_deviation hk hm hX_meas hX_indep hX_law hL2 hmean hvar hσ) ?_
+  -- `k ≥ 8 log(1/δ)` turns the exponential bound into `δ`
+  have hlog : Real.log (1 / δ) = -Real.log δ := by rw [one_div, Real.log_inv]
+  calc Real.exp (-(k : ℝ) / 8) ≤ Real.exp (Real.log δ) := by
+        apply Real.exp_le_exp.mpr
+        rw [hlog] at hkL
+        linarith
+    _ = δ := Real.exp_log hδ
 
 end StatLean.RobustStatistics
