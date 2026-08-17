@@ -1503,43 +1503,124 @@ private theorem measurable_orderStat {m : ℕ} {W : Fin m → Ξ → ℝ}
   rw [hset]
   exact hcard (MeasurableSet.of_discrete)
 
+set_option maxHeartbeats 1000000 in
+-- The product-measure bookkeeping elaborates several large `Set`/`Measure` unifications;
+-- no single step is expensive, but they share one budget.
 open StatLean.MultipleTesting in
-/-- **The conditioning step of `LM Theorem 6`** — *named debt of this closure lane*.
+/-- **The conditioning step of `LM Theorem 6`** ("conditionally on the second sample the
+first sample is still i.i.d. `P`"): a bound that holds for every *fixed* admissible pair of
+levels also holds when the levels are the order statistics of the calibration block.
 
-`LM` argue "conditionally on the second sample, the first sample is still i.i.d. `P`", and
-then apply the fixed-level bound `fixed_level_concentration` with the (now deterministic)
-truncation levels. Formally this is the statement that the deviation event, being a
-measurable set of the *pair* (calibration block, averaged block), has all its
-`y`-sections controlled: by `iIndepFun.indepFun_finset` the two coordinate blocks are
-independent, so the joint law is the product of the block laws
-(`indepFun_iff_map_prod_eq_prod_map_map`), and `Measure.prod_apply` integrates the section
-bound over the calibration marginal.
+The two coordinate blocks of the jointly independent family are independent
+(`iIndepFun.indepFun_finset`), so the joint law is the product of the block laws
+(`indepFun_iff_map_prod_eq_prod_map_map`) and `Measure.prod_apply` integrates the
+sectionwise bound over the calibration marginal. The sections are exactly the fixed-level
+events (empty when the levels are inadmissible), and the event itself is measurable in the
+product because order statistics are (`measurable_orderStat`).
 
-**MISSING**: this file proves every input to that argument except the product-measure
-bookkeeping itself — the block independence, the sectionwise bound (`hfixed`), and the
-measurability of the levels (`measurable_orderStat`) are all available; what is not
-formalized here is the Fubini step for the joint law together with the joint measurability
-of `(y, x) ↦ |μ̂(x, y) − ∫ φ_{y}|` (which needs, in addition, measurability of the
-parametrised integral `y ↦ ∫ φ_{α(y), β(y)} dP`). -/
-theorem trimmedMean_conditional_transfer {n : ℕ} {Z : Fin n ⊕ Fin n → Ξ → ℝ}
-    {a b : Fin n} {t c : ℝ} {Good : ℝ → ℝ → Prop}
-    -- LEAN-ONLY: coordinate measurability
-    (hZ_meas : ∀ i, Measurable (Z i))
-    -- USER-INPUT: the 2n observations are jointly independent; LM Theorem 6
-    (hZ_indep : iIndepFun Z μprob)
-    -- LEAN-ONLY: the level set is measurable (it is a bracket rectangle)
-    (hGood : MeasurableSet {p : ℝ × ℝ | Good p.1 p.2})
-    -- the fixed-level bound, uniform over admissible levels
+Comparing to a *constant* centre `μ₀` — rather than to the level-dependent centre
+`∫ φ_{α,β} dP` — is what keeps this elementary: it avoids having to prove that the
+parametrised integral `(α, β) ↦ ∫ φ_{α,β} dP` is measurable. The bias is folded into the
+fixed-level bound instead. -/
+private theorem block_transfer {n : ℕ} {Z : Fin n ⊕ Fin n → Ξ → ℝ} {a b : Fin n}
+    {t c μ₀ : ℝ} {Good : ℝ → ℝ → Prop}
+    (hZ_meas : ∀ i, Measurable (Z i)) (hZ_indep : iIndepFun Z μprob)
+    (hGood : MeasurableSet {p : ℝ × ℝ | Good p.1 p.2}) (hc : 0 ≤ c)
     (hfixed : ∀ α₀ β₀ : ℝ, Good α₀ β₀ →
-      μprob {ξ | t < |sampleMean (fun i => truncate α₀ β₀ (Z (.inl i) ξ))
-          - ∫ x, truncate α₀ β₀ x ∂P|} ≤ ENNReal.ofReal c) :
-    μprob {ξ | Good (orderStat (fun i => Z (.inr i) ξ) a)
-          (orderStat (fun i => Z (.inr i) ξ) b) ∧
-        t < |trimmedMeanAt a b (fun i => Z (.inl i) ξ) (fun i => Z (.inr i) ξ)
-          - ∫ x, truncate (orderStat (fun i => Z (.inr i) ξ) a)
-              (orderStat (fun i => Z (.inr i) ξ) b) x ∂P|}
+      μprob {ξ | t < |sampleMean (fun i => truncate α₀ β₀ (Z (Sum.inl i) ξ)) - μ₀|}
+        ≤ ENNReal.ofReal c) :
+    μprob {ξ | Good (orderStat (fun i => Z (Sum.inr i) ξ) a)
+          (orderStat (fun i => Z (Sum.inr i) ξ) b) ∧
+        t < |trimmedMeanAt a b (fun i => Z (Sum.inl i) ξ) (fun i => Z (Sum.inr i) ξ) - μ₀|}
       ≤ ENNReal.ofReal c := by
-  sorry
+  classical
+  have hYmeas : Measurable (fun ξ => (fun i => Z (Sum.inr i) ξ : Fin n → ℝ)) :=
+    measurable_pi_lambda _ fun i => hZ_meas _
+  have hXmeas : Measurable (fun ξ => (fun i => Z (Sum.inl i) ξ : Fin n → ℝ)) :=
+    measurable_pi_lambda _ fun i => hZ_meas _
+  -- ### The two coordinate blocks are independent.
+  have hdisj : Disjoint (Finset.univ.image (Sum.inr : Fin n → Fin n ⊕ Fin n))
+      (Finset.univ.image (Sum.inl : Fin n → Fin n ⊕ Fin n)) := by
+    refine Finset.disjoint_left.2 fun i hi hi' => ?_
+    simp only [Finset.mem_image, Finset.mem_univ, true_and] at hi hi'
+    obtain ⟨j, hj⟩ := hi
+    obtain ⟨k, hk⟩ := hi'
+    rw [← hj] at hk
+    exact Sum.inl_ne_inr hk
+  have hindep : IndepFun (fun ξ => (fun i => Z (Sum.inr i) ξ : Fin n → ℝ))
+      (fun ξ => (fun i => Z (Sum.inl i) ξ : Fin n → ℝ)) μprob := by
+    have hφ : Measurable (fun u : (Finset.univ.image (Sum.inr : Fin n → Fin n ⊕ Fin n))
+        → ℝ => (fun i : Fin n => u ⟨Sum.inr i, by simp⟩ : Fin n → ℝ)) :=
+      measurable_pi_lambda _ fun i => measurable_pi_apply _
+    have hψ : Measurable (fun u : (Finset.univ.image (Sum.inl : Fin n → Fin n ⊕ Fin n))
+        → ℝ => (fun i : Fin n => u ⟨Sum.inl i, by simp⟩ : Fin n → ℝ)) :=
+      measurable_pi_lambda _ fun i => measurable_pi_apply _
+    exact (hZ_indep.indepFun_finset _ _ hdisj hZ_meas).comp hφ hψ
+  -- ### The deviation event is a measurable subset of the product.
+  have hcoord1 : ∀ i : Fin n,
+      Measurable (fun p : (Fin n → ℝ) × (Fin n → ℝ) => p.1 i) :=
+    fun i => (measurable_pi_apply i).comp measurable_fst
+  have hcoord2 : ∀ i : Fin n,
+      Measurable (fun p : (Fin n → ℝ) × (Fin n → ℝ) => p.2 i) :=
+    fun i => (measurable_pi_apply i).comp measurable_snd
+  have h1 : Measurable (fun p : (Fin n → ℝ) × (Fin n → ℝ) => orderStat p.1 a) :=
+    measurable_orderStat hcoord1 a
+  have h2 : Measurable (fun p : (Fin n → ℝ) × (Fin n → ℝ) => orderStat p.1 b) :=
+    measurable_orderStat hcoord1 b
+  have h3 : Measurable (fun p : (Fin n → ℝ) × (Fin n → ℝ) =>
+      |trimmedMeanAt a b p.2 p.1 - μ₀|) := by
+    refine (Measurable.sub ?_ measurable_const).abs
+    refine Measurable.div ?_ measurable_const
+    refine Finset.measurable_sum _ fun i _ => ?_
+    exact h1.max (h2.min (hcoord2 i))
+  have hEmeas : MeasurableSet {p : (Fin n → ℝ) × (Fin n → ℝ) |
+      Good (orderStat p.1 a) (orderStat p.1 b) ∧ t < |trimmedMeanAt a b p.2 p.1 - μ₀|} :=
+    ((h1.prodMk h2) hGood).inter (measurableSet_lt measurable_const h3)
+  -- ### Fubini for the product of the two block laws.
+  have hpre : {ξ | Good (orderStat (fun i => Z (Sum.inr i) ξ) a)
+        (orderStat (fun i => Z (Sum.inr i) ξ) b) ∧
+      t < |trimmedMeanAt a b (fun i => Z (Sum.inl i) ξ) (fun i => Z (Sum.inr i) ξ) - μ₀|}
+      = (fun ξ => ((fun i => Z (Sum.inr i) ξ : Fin n → ℝ),
+          (fun i => Z (Sum.inl i) ξ : Fin n → ℝ))) ⁻¹'
+        {p : (Fin n → ℝ) × (Fin n → ℝ) | Good (orderStat p.1 a) (orderStat p.1 b)
+          ∧ t < |trimmedMeanAt a b p.2 p.1 - μ₀|} := rfl
+  rw [hpre, ← Measure.map_apply (hYmeas.prodMk hXmeas) hEmeas,
+    (indepFun_iff_map_prod_eq_prod_map_map hYmeas.aemeasurable hXmeas.aemeasurable).1 hindep,
+    Measure.prod_apply hEmeas]
+  have hsection : ∀ y : Fin n → ℝ,
+      (μprob.map (fun ξ => (fun i => Z (Sum.inl i) ξ : Fin n → ℝ)))
+          (Prod.mk y ⁻¹' {p : (Fin n → ℝ) × (Fin n → ℝ) |
+            Good (orderStat p.1 a) (orderStat p.1 b)
+              ∧ t < |trimmedMeanAt a b p.2 p.1 - μ₀|})
+        ≤ ENNReal.ofReal c := by
+    intro y
+    rw [Measure.map_apply hXmeas (hEmeas.preimage measurable_prodMk_left)]
+    by_cases hg : Good (orderStat y a) (orderStat y b)
+    · refine le_trans (measure_mono ?_) (hfixed (orderStat y a) (orderStat y b) hg)
+      intro ξ hξ
+      exact hξ.2
+    · have hempty : ((fun ξ => (fun i => Z (Sum.inl i) ξ : Fin n → ℝ)) ⁻¹'
+          (Prod.mk y ⁻¹' {p : (Fin n → ℝ) × (Fin n → ℝ) |
+            Good (orderStat p.1 a) (orderStat p.1 b)
+              ∧ t < |trimmedMeanAt a b p.2 p.1 - μ₀|})) = ∅ := by
+        ext ξ
+        simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+          not_and]
+        exact fun hcon => absurd hcon hg
+      rw [hempty, measure_empty]
+      positivity
+  have hprob : IsProbabilityMeasure
+      (μprob.map (fun ξ => (fun i => Z (Sum.inr i) ξ : Fin n → ℝ))) :=
+    Measure.isProbabilityMeasure_map hYmeas.aemeasurable
+  calc ∫⁻ y, (μprob.map (fun ξ => (fun i => Z (Sum.inl i) ξ : Fin n → ℝ)))
+          (Prod.mk y ⁻¹' {p : (Fin n → ℝ) × (Fin n → ℝ) |
+            Good (orderStat p.1 a) (orderStat p.1 b)
+              ∧ t < |trimmedMeanAt a b p.2 p.1 - μ₀|})
+          ∂(μprob.map (fun ξ => (fun i => Z (Sum.inr i) ξ : Fin n → ℝ)))
+      ≤ ∫⁻ _y, ENNReal.ofReal c
+          ∂(μprob.map (fun ξ => (fun i => Z (Sum.inr i) ξ : Fin n → ℝ))) :=
+        lintegral_mono hsection
+    _ = ENNReal.ofReal c := by simp
 
 open StatLean.MultipleTesting in
 /-- **The trimmed mean is sub-Gaussian** (`LM Theorem 6`): two independent i.i.d.
@@ -1635,25 +1716,6 @@ theorem trimmedMean_deviation {n r : ℕ} {Z : Fin n ⊕ Fin n → Ξ → ℝ}
           (measurableSet_le measurable_snd measurable_const)))
   have hp0 : (0:ℝ) < 2 * (r:ℝ) / n := by positivity
   have hp1 : 2 * (r:ℝ) / n < 1 := by rw [div_lt_one hN]; linarith
-  have hfixed : ∀ α₀ β₀ : ℝ,
-      (quantile P ((r:ℝ) / (2 * n)) ≤ α₀ ∧ α₀ ≤ quantile P (2 * (r:ℝ) / n) ∧
-        quantile P (1 - 2 * (r:ℝ) / n) ≤ β₀ ∧ β₀ ≤ quantile P (1 - (r:ℝ) / (2 * n))) →
-      μprob {ξ | 4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)
-          < |sampleMean (fun i => truncate α₀ β₀ (Z (Sum.inl i) ξ))
-            - ∫ x, truncate α₀ β₀ x ∂P|} ≤ ENNReal.ofReal (δ / 2) := by
-    intro α₀ β₀ hgood
-    refine fixed_level_concentration hXm hXind hXlaw hL2 hmean hvar hσ hδ hδ1 hr hr1 hrn
-      hgood.1 hgood.2.2.2 ?_
-    have hhalf : 2 * (r:ℝ) / n ≤ 1 - 2 * (r:ℝ) / n := by
-      rw [le_sub_iff_add_le, show 2 * (r:ℝ) / n + 2 * (r:ℝ) / n = 4 * (r:ℝ) / n by ring,
-        div_le_one hN]
-      linarith
-    exact le_trans hgood.2.1
-      (le_trans (quantile_mono P hp0 (by linarith) hhalf) hgood.2.2.1)
-  have hD := trimmedMean_conditional_transfer (P := P) (a := a) (b := b)
-    (t := 4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)) (c := δ / 2)
-    hZ_meas hZ_indep hGoodMeas hfixed
-  -- ### The bias half, and the covering of the bad event.
   have hb5 : Real.sqrt σ2 * Real.sqrt (4 * (r:ℝ) / n)
       ≤ 5 * (Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)) := by
     have h25 : Real.sqrt (4 * (r:ℝ) / n) ≤ 5 * Real.sqrt (Real.log (8 / δ) / n) := by
@@ -1670,6 +1732,36 @@ theorem trimmedMean_deviation {n r : ℕ} {Z : Fin n ⊕ Fin n → Ξ → ℝ}
         rw [hr]; linarith
       linarith
     nlinarith [Real.sqrt_nonneg σ2, Real.sqrt_nonneg (4 * (r:ℝ) / n)]
+  -- ### The fixed-level deviation bound: bias + Bernstein, at deterministic levels.
+  have hfixed : ∀ α₀ β₀ : ℝ,
+      (quantile P ((r:ℝ) / (2 * n)) ≤ α₀ ∧ α₀ ≤ quantile P (2 * (r:ℝ) / n) ∧
+        quantile P (1 - 2 * (r:ℝ) / n) ≤ β₀ ∧ β₀ ≤ quantile P (1 - (r:ℝ) / (2 * n))) →
+      μprob {ξ | 9 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)
+          < |sampleMean (fun i => truncate α₀ β₀ (Z (Sum.inl i) ξ)) - μ₀|}
+        ≤ ENNReal.ofReal (δ / 2) := by
+    intro α₀ β₀ hgood
+    have hhalf : 2 * (r:ℝ) / n ≤ 1 - 2 * (r:ℝ) / n := by
+      rw [le_sub_iff_add_le, show 2 * (r:ℝ) / n + 2 * (r:ℝ) / n = 4 * (r:ℝ) / n by ring,
+        div_le_one hN]
+      linarith
+    have hab : α₀ ≤ β₀ :=
+      le_trans hgood.2.1
+        (le_trans (quantile_mono P hp0 (by linarith) hhalf) hgood.2.2.1)
+    have hconc := fixed_level_concentration hXm hXind hXlaw hL2 hmean hvar hσ hδ hδ1 hr
+      hr1 hrn hgood.1 hgood.2.2.2 hab
+    have hbias := truncated_bias_le_sharp (P := P) hL2 hmean hvar hatom hr1 hrn
+      hgood.1 hgood.2.1 hgood.2.2.1 hgood.2.2.2
+    refine le_trans (measure_mono ?_) hconc
+    intro ξ hξ
+    simp only [Set.mem_setOf_eq] at hξ ⊢
+    have htri := abs_sub_le (sampleMean (fun i => truncate α₀ β₀ (Z (Sum.inl i) ξ)))
+      (∫ x, truncate α₀ β₀ x ∂P) μ₀
+    linarith
+  -- ### Transfer to the data-driven levels.
+  have hD := block_transfer (μ₀ := μ₀) (a := a) (b := b)
+    (t := 9 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)) (c := δ / 2)
+    hZ_meas hZ_indep hGoodMeas (by linarith) hfixed
+  -- ### Union bound: brackets fail with probability `δ/2`, the deviation with `δ/2`.
   refine le_trans (le_trans (measureReal_mono (show
       {ξ | 9 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)
         < |trimmedMeanAt a b (fun i => Z (Sum.inl i) ξ) (fun i => Z (Sum.inr i) ξ) - μ₀|}
@@ -1683,26 +1775,16 @@ theorem trimmedMean_deviation {n r : ℕ} {Z : Fin n ⊕ Fin n → Ξ → ℝ}
               quantile P (1 - 2 * (r:ℝ) / n) ≤ orderStat (fun i => Z (Sum.inr i) ξ) b ∧
               orderStat (fun i => Z (Sum.inr i) ξ) b
                 ≤ quantile P (1 - (r:ℝ) / (2 * n))) ∧
-            4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)
+            9 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)
               < |trimmedMeanAt a b (fun i => Z (Sum.inl i) ξ) (fun i => Z (Sum.inr i) ξ)
-                - ∫ x, truncate (orderStat (fun i => Z (Sum.inr i) ξ) a)
-                    (orderStat (fun i => Z (Sum.inr i) ξ) b) x ∂P|} from ?_))
+                - μ₀|} from ?_))
     (measureReal_union_le _ _)) ?_
   · intro ξ hξ
-    simp only [Set.mem_setOf_eq] at hξ
     by_cases hg : quantile P ((r:ℝ) / (2 * n)) ≤ orderStat (fun i => Z (Sum.inr i) ξ) a ∧
         orderStat (fun i => Z (Sum.inr i) ξ) a ≤ quantile P (2 * (r:ℝ) / n) ∧
         quantile P (1 - 2 * (r:ℝ) / n) ≤ orderStat (fun i => Z (Sum.inr i) ξ) b ∧
         orderStat (fun i => Z (Sum.inr i) ξ) b ≤ quantile P (1 - (r:ℝ) / (2 * n))
-    · refine Or.inr ⟨hg, ?_⟩
-      refine not_le.1 fun hcon => ?_
-      have hbias := truncated_bias_le_sharp (P := P) hL2 hmean hvar hatom hr1 hrn
-        hg.1 hg.2.1 hg.2.2.1 hg.2.2.2
-      have htri := abs_sub_le
-        (trimmedMeanAt a b (fun i => Z (Sum.inl i) ξ) (fun i => Z (Sum.inr i) ξ))
-        (∫ x, truncate (orderStat (fun i => Z (Sum.inr i) ξ) a)
-          (orderStat (fun i => Z (Sum.inr i) ξ) b) x ∂P) μ₀
-      linarith
+    · exact Or.inr ⟨hg, hξ⟩
     · exact Or.inl hg
   · have hDreal : μprob.real {ξ | (quantile P ((r:ℝ) / (2 * n))
               ≤ orderStat (fun i => Z (Sum.inr i) ξ) a ∧
@@ -1710,10 +1792,9 @@ theorem trimmedMean_deviation {n r : ℕ} {Z : Fin n ⊕ Fin n → Ξ → ℝ}
             quantile P (1 - 2 * (r:ℝ) / n) ≤ orderStat (fun i => Z (Sum.inr i) ξ) b ∧
             orderStat (fun i => Z (Sum.inr i) ξ) b
               ≤ quantile P (1 - (r:ℝ) / (2 * n))) ∧
-          4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)
+          9 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)
             < |trimmedMeanAt a b (fun i => Z (Sum.inl i) ξ) (fun i => Z (Sum.inr i) ξ)
-              - ∫ x, truncate (orderStat (fun i => Z (Sum.inr i) ξ) a)
-                  (orderStat (fun i => Z (Sum.inr i) ξ) b) x ∂P|} ≤ δ / 2 := by
+              - μ₀|} ≤ δ / 2 := by
       rw [measureReal_def]
       calc (μprob _).toReal ≤ (ENNReal.ofReal (δ / 2)).toReal :=
             ENNReal.toReal_mono ENNReal.ofReal_ne_top hD
