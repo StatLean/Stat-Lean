@@ -36,7 +36,8 @@ blocks (**Proposition 3.25**, p. 48).
   `not_forall_dSeparated_of_subset_sep` is the machine-checkable refutation, witnessed by the
   three-vertex collider `0 → 2 ← 1`. This is the one structural difference between
   d-separation and `Separates`;
-* `moralAncestralGraph` — the graph `(G_{An(A ∪ B ∪ S)})^m` in which Proposition 3.25 reads;
+* the graph `(G_{An(A ∪ B ∪ S)})^m` in which Proposition 3.25 reads is `Markov.ancestralMoralGraph`
+  (upstream — not redefined here);
 * `dSeparated_iff_separates_moralGraph_ancestralClosure` — **Proposition 3.25**, the headline:
   for disjoint `A`, `B`, `S` in a DAG, `S` d-separates `A` from `B` **iff** `S` separates `A`
   from `B` in `(G_{An(A ∪ B ∪ S)})^m`;
@@ -493,8 +494,12 @@ sub-DAG is the empty graph, so at `A = B = S = ∅` this is `⊥` and `Separates
 vacuously — matching `dSeparated_empty_left`. The vertex type is all of `V`: the induced
 sub-DAG keeps `V` as its vertex type and merely deletes arrows leaving the ancestral set, so
 `Separates` and `DSeparated` speak about the same blocks without any subtype transport. -/
-def moralAncestralGraph (D : DAG V) (A B S : Finset V) : SimpleGraph V :=
-  moralGraph (D.induce (ancestralClosure D (A ∪ B ∪ S)))
+*Deduplicated.* This object is **not** defined here. `Directed/Markov.lean` already provides
+`ancestralMoralGraph D T = inducedMoralGraph D (D.ancestralClosure T)`, which at
+`T := A ∪ B ∪ S` is exactly the graph Proposition 3.25 reads in, and which in turn composes
+`Directed/Factorization.lean`'s `inducedMoralGraph`. Both files are upstream of this one, so
+the statements below consume `ancestralMoralGraph D (A ∪ B ∪ S)` directly rather than
+introducing a third spelling of the same composite. -/
 
 /-- **Lauritzen Proposition 3.25** (p. 48) — *the headline of this file*. For **disjoint**
 blocks `A`, `B`, `S` of a directed acyclic graph `D`, the separator `S` d-separates `A` from `B`
@@ -527,7 +532,7 @@ explicitly constructed undirected graph.
 
 Note where acyclicity is used: in "the ancestral set was smallest", i.e. in the fact that a
 vertex of `An(A ∪ B ∪ S)` which is not an ancestor of `S` must be an ancestor of `A ∪ B`. -/
-theorem dSeparated_iff_separates_moralGraph_ancestralClosure (D : DAG V) (A B S : Finset V)
+theorem dSeparated_iff_separates_moralGraph_ancestralClosure (D : DAG V) [DecidableRel D.Adj] [DecidableRel (Relation.TransGen D.Adj)] (A B S : Finset V)
     -- USER-INPUT: the two separated blocks are disjoint; Lauritzen Proposition 3.25, p. 48
     -- ("let `A`, `B` and `S` be disjoint subsets")
     (hAB : Disjoint A B)
@@ -535,7 +540,7 @@ theorem dSeparated_iff_separates_moralGraph_ancestralClosure (D : DAG V) (A B S 
     (hAS : Disjoint A S)
     -- USER-INPUT: the second block avoids the separator; Lauritzen Proposition 3.25, p. 48
     (hBS : Disjoint B S) :
-    DSeparated D.Adj S A B ↔ Separates (moralAncestralGraph D A B S) S A B := by
+    DSeparated D.Adj S A B ↔ Separates (ancestralMoralGraph D (A ∪ B ∪ S)) S A B := by
   sorry
 
 /-- **The book's phrasing of d-separation**, over chains whose vertices are *distinct*.
@@ -551,7 +556,7 @@ d-separation is equivalent to separation in `(G_{An(A∪B∪S)})^m`, and
 `dSeparated_iff_separates_moralGraph_ancestralClosure` proves the same for the walk reading, so
 the two agree. That is why this statement — unlike every other basic lemma in this file —
 carries the DAG and the disjointness hypotheses. -/
-theorem dSeparated_iff_forall_nodup (D : DAG V) (A B S : Finset V)
+theorem dSeparated_iff_forall_nodup (D : DAG V) [DecidableRel D.Adj] [DecidableRel (Relation.TransGen D.Adj)] (A B S : Finset V)
     -- USER-INPUT: the two separated blocks are disjoint; Lauritzen Proposition 3.25, p. 48
     (hAB : Disjoint A B)
     -- USER-INPUT: the first block avoids the separator; Lauritzen Proposition 3.25, p. 48
@@ -577,7 +582,7 @@ Stated against the **abstract** relation `ci : Finset V → Finset V → Finset 
 class — the discrete mass relation, the Gaussian precision relation, the general `CondIndep` —
 gets the criterion once (Lauritzen's own remark after Proposition 3.4, p. 33, that these
 arguments depend only on the calculus). -/
-theorem condIndep_of_dSeparated (D : DAG V) (ci : Finset V → Finset V → Finset V → Prop)
+theorem condIndep_of_dSeparated (D : DAG V) [DecidableRel D.Adj] [DecidableRel (Relation.TransGen D.Adj)] (ci : Finset V → Finset V → Finset V → Prop)
     -- USER-INPUT: the directed global Markov property of the law; Lauritzen Corollary 3.23,
     -- p. 47, which is where (DG) is defined
     (hDG : IsDirectedGlobalMarkov D ci) (A B S : Finset V)
