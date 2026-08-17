@@ -146,15 +146,25 @@ common-child relation is already symmetric. -/
 theorem moralGraph_adj (D : DAG V) (u v : V) :
     D.moralGraph.Adj u v ↔
       u ≠ v ∧ (D.Adj u v ∨ D.Adj v u ∨ ∃ w : V, D.Adj u w ∧ D.Adj v w) := by
-  sorry
+  rw [moralGraph_adj_iff]
+  refine and_congr_right fun _ => ⟨?_, ?_⟩
+  · rintro ((h | ⟨w, hw₁, hw₂⟩) | (h | ⟨w, hw₁, hw₂⟩))
+    · exact Or.inl h
+    · exact Or.inr (Or.inr ⟨w, hw₁, hw₂⟩)
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr ⟨w, hw₂, hw₁⟩)
+  · rintro (h | h | ⟨w, hw₁, hw₂⟩)
+    · exact Or.inl (Or.inl h)
+    · exact Or.inr (Or.inl h)
+    · exact Or.inl (Or.inr ⟨w, hw₁, hw₂⟩)
 
 /-- **An edge of the DAG survives moralization** — "dropping directions" keeps every edge. The
 distinctness side condition is free: `DAG.ne_of_adj`. -/
 theorem moralGraph_adj_of_adj {D : DAG V} {u v : V}
     -- USER-INPUT: the directed edge; Lauritzen §2.1.1, p. 5
     (h : D.Adj u v) :
-    D.moralGraph.Adj u v := by
-  sorry
+    D.moralGraph.Adj u v :=
+  (moralGraph_adj D u v).2 ⟨D.ne_of_adj h, Or.inl h⟩
 
 /-- **Two parents of a common child are adjacent in `G^m`** — the "marry the parents" step
 (Lauritzen §2.1.1, p. 7). The distinctness hypothesis is genuine: a single parent is not married
@@ -168,8 +178,8 @@ theorem moralGraph_adj_of_common_child {D : DAG V} {u v w : V}
     (hu : D.Adj u w)
     -- USER-INPUT: the second parent edge; Lauritzen §2.1.1, p. 7
     (hv : D.Adj v w) :
-    D.moralGraph.Adj u v := by
-  sorry
+    D.moralGraph.Adj u v :=
+  (moralGraph_adj D u v).2 ⟨huv, Or.inr (Or.inr ⟨w, hu, hv⟩)⟩
 
 /-- `DAG.moralGraph_adj_of_common_child` in the `Finset` vocabulary of `DAG.parents`, which is
 the form the factorization lane consumes. -/
@@ -180,8 +190,8 @@ theorem moralGraph_adj_of_mem_parents [Fintype V] {D : DAG V} [DecidableRel D.Ad
     (hu : u ∈ D.parents w)
     -- USER-INPUT: the second vertex is a parent of `w`; Lauritzen §2.1.1, p. 7
     (hv : v ∈ D.parents w) :
-    D.moralGraph.Adj u v := by
-  sorry
+    D.moralGraph.Adj u v :=
+  moralGraph_adj_of_common_child huv (mem_parents.1 hu) (mem_parents.1 hv)
 
 /-- **The family `fa(v) = {v} ∪ pa(v)` is complete in `G^m`** (Lauritzen §2.1.1, p. 7, and the
 key step of Lemma 3.21, p. 47). Two distinct parents are married; a parent and the child are
@@ -191,7 +201,15 @@ the moral graph, i.e. into `Discrete.Factorization.FactorizesOver D.moralGraph`.
 theorem isClique_insert_parents [Fintype V] [DecidableEq V] (D : DAG V) [DecidableRel D.Adj]
     (v : V) :
     D.moralGraph.IsClique ((insert v (D.parents v) : Finset V) : Set V) := by
-  sorry
+  intro a ha b hb hab
+  simp only [Finset.coe_insert, Set.mem_insert_iff, Finset.mem_coe, mem_parents] at ha hb
+  rcases ha with rfl | ha
+  · rcases hb with rfl | hb
+    · exact absurd rfl hab
+    · exact (moralGraph_adj_of_adj hb).symm
+  · rcases hb with rfl | hb
+    · exact moralGraph_adj_of_adj ha
+    · exact moralGraph_adj_of_common_child hab ha hb
 
 /-- **Monotonicity**: adding edges to the DAG only adds edges to its moral graph — both the
 surviving directed edges and the marriages are monotone in the edge relation. Stated as an
@@ -202,7 +220,15 @@ theorem moralGraph_mono {D₁ D₂ : DAG V}
     -- `D.induce A ≤ D`, Lauritzen §2.1.1, p. 7)
     (h : ∀ u v : V, D₁.Adj u v → D₂.Adj u v) :
     D₁.moralGraph ≤ D₂.moralGraph := by
-  sorry
+  rw [SimpleGraph.le_iff_adj]
+  intro a b hab
+  rw [moralGraph_adj] at hab ⊢
+  obtain ⟨hne, hd⟩ := hab
+  refine ⟨hne, ?_⟩
+  rcases hd with hd | hd | ⟨w, hw₁, hw₂⟩
+  · exact Or.inl (h a b hd)
+  · exact Or.inr (Or.inl (h b a hd))
+  · exact Or.inr (Or.inr ⟨w, h a w hw₁, h b w hw₂⟩)
 
 /-! ### The undirected skeleton
 
@@ -222,7 +248,11 @@ theorem skeleton_adj (D : DAG V) (u v : V) :
 
 /-- **Moralization only adds edges.** -/
 theorem skeleton_le_moralGraph (D : DAG V) : D.skeleton ≤ D.moralGraph := by
-  sorry
+  rw [SimpleGraph.le_iff_adj]
+  intro a b hab
+  rw [skeleton_adj] at hab
+  rw [moralGraph_adj]
+  exact ⟨hab.1, hab.2.imp id Or.inl⟩
 
 /-! ### The moral graph of an induced sub-DAG — `(G_A)^m`
 
@@ -241,7 +271,17 @@ theorem moralGraph_induce_adj (D : DAG V) (A : Finset V) (u v : V) :
     (D.induce A).moralGraph.Adj u v ↔
       u ≠ v ∧ u ∈ A ∧ v ∈ A ∧
         (D.Adj u v ∨ D.Adj v u ∨ ∃ w ∈ A, D.Adj u w ∧ D.Adj v w) := by
-  sorry
+  rw [moralGraph_adj]
+  simp only [induce_adj]
+  constructor
+  · rintro ⟨hne, ⟨hu, hv, huv⟩ | ⟨hv, hu, hvu⟩ | ⟨w, ⟨hu, hw, huw⟩, hv, -, hvw⟩⟩
+    · exact ⟨hne, hu, hv, Or.inl huv⟩
+    · exact ⟨hne, hu, hv, Or.inr (Or.inl hvu)⟩
+    · exact ⟨hne, hu, hv, Or.inr (Or.inr ⟨w, hw, huw, hvw⟩)⟩
+  · rintro ⟨hne, hu, hv, huv | hvu | ⟨w, hw, huw, hvw⟩⟩
+    · exact ⟨hne, Or.inl ⟨hu, hv, huv⟩⟩
+    · exact ⟨hne, Or.inr (Or.inl ⟨hv, hu, hvu⟩)⟩
+    · exact ⟨hne, Or.inr (Or.inr ⟨w, ⟨hu, hw, huw⟩, hv, hw, hvw⟩)⟩
 
 /-- Every edge of `(G_A)^m` has both endpoints in `A` — the vertices outside `A`, which
 `DAG.induce` keeps as isolated points, take part in no walk of the moralized restriction, so
@@ -249,21 +289,24 @@ theorem moralGraph_induce_adj (D : DAG V) (A : Finset V) (u v : V) :
 theorem mem_of_moralGraph_induce_adj {D : DAG V} {A : Finset V} {u v : V}
     -- USER-INPUT: the edge of the moralized restriction; Lauritzen §2.1.1, p. 7
     (h : (D.induce A).moralGraph.Adj u v) :
-    u ∈ A ∧ v ∈ A := by
-  sorry
+    u ∈ A ∧ v ∈ A :=
+  let h' := (moralGraph_induce_adj D A u v).1 h
+  ⟨h'.2.1, h'.2.2.1⟩
 
 /-- **Only one inclusion holds**: `(G_A)^m ≤ G^m`. The reverse fails — two vertices of `A` whose
 only common child lies outside `A` are married in `G^m` but not in `(G_A)^m` — which is why
 Lauritzen restricts to an *ancestral* set before moralizing. Corollary of `DAG.moralGraph_mono`
 applied to `DAG.adj_of_induce_adj`. -/
 theorem moralGraph_induce_le (D : DAG V) (A : Finset V) :
-    (D.induce A).moralGraph ≤ D.moralGraph := by
-  sorry
+    (D.induce A).moralGraph ≤ D.moralGraph :=
+  moralGraph_mono fun _ _ h => adj_of_induce_adj h
 
 /-- Restricting to everything changes nothing. -/
 theorem moralGraph_induce_univ (D : DAG V) :
     (D.induce Finset.univ).moralGraph = D.moralGraph := by
-  sorry
+  ext u v
+  rw [moralGraph_induce_adj, moralGraph_adj]
+  simp
 
 /-- **The families of an ancestral set are complete in `(G_A)^m`.** For `v` in an ancestral block
 `A`, the family `fa(v) = {v} ∪ pa(v)` — computed in the *original* DAG, since ancestral sets have
@@ -280,7 +323,21 @@ theorem isClique_insert_parents_induce (D : DAG V) [DecidableRel D.Adj] {A : Fin
     -- USER-INPUT: the vertex lies in the block; Lauritzen §2.1.1, p. 7
     (hv : v ∈ A) :
     (D.induce A).moralGraph.IsClique ((insert v (D.parents v) : Finset V) : Set V) := by
-  sorry
+  have hmem : ∀ x : V, x = v ∨ D.Adj x v → x ∈ A := by
+    rintro x (rfl | hx)
+    · exact hv
+    · exact hA hx hv
+  intro a ha b hb hab
+  simp only [Finset.coe_insert, Set.mem_insert_iff, Finset.mem_coe, mem_parents] at ha hb
+  rw [moralGraph_induce_adj]
+  refine ⟨hab, hmem a ha, hmem b hb, ?_⟩
+  rcases ha with rfl | ha
+  · rcases hb with rfl | hb
+    · exact absurd rfl hab
+    · exact Or.inr (Or.inl hb)
+  · rcases hb with rfl | hb
+    · exact Or.inl ha
+    · exact Or.inr (Or.inr ⟨v, hv, ha, hb⟩)
 
 end Induce
 
