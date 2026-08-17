@@ -65,8 +65,14 @@ that is `tendsto_perm_cdf_blockSum` below.
 **Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
 Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 12 (Extensions of the
 CLT to Sums of Dependent Random Variables), §12.2 (Random Sampling Without Replacement from a
-Finite Population), and Chapter 17 (Permutation and Randomization Tests), §17.3, where the
-theorem is applied to the two-sample statistic. (`TSH4 §12.2`, `TSH4 §17.3`.)
+Finite Population), **Theorem 12.2.2** (Hájek's necessary and sufficient condition), and
+Chapter 17 (Permutation and Randomization Tests), §17.3, where the theorem is applied to the
+two-sample statistic. (`TSH4 §12.2 Thm 12.2.2`, `TSH4 §17.3`.) The fixed-stage Berry–Esseen
+bound `abs_avg_blockSum_sub_stdGaussianExpect_le` is not in Lehmann–Romano: it specializes the
+exchangeable-pair bound of L. H. Y. Chen, L. Goldstein and Q.-M. Shao, *Normal Approximation by
+Stein's Method*, Springer, 2011, **Theorem 4.9** (loaded here from `ForMathlib/SteinMethod`), the
+classical origin of combinatorial Berry–Esseen estimates being E. Bolthausen, *Z. Wahrsch. Verw.
+Gebiete* **66** (1984), 379–386.
 
 **Proof formalization notes.**
 * *Which model.* Sampling without replacement has two equivalent carriers in this

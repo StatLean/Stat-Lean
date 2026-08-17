@@ -5934,9 +5934,9 @@
       }
     ],
     "reference": {
-      "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
-      "pointer": "Holm (1979), Theorem 1",
-      "biblio": "The step-down procedure and its FWER guarantee are due to S. Holm, \"A simple sequentially rejective multiple test procedure\", *Scandinavian Journal of Statistics* **6** (1979), no. 2, 65–70; the level-$\\alpha$ FWER control formalized here is Holm's Theorem 1. The companion Bonferroni correction rests on Boole's inequality, commonly attributed to C. E. Bonferroni, \"Teoria statistica delle classi e calcolo delle probabilità\", *Pubblicazioni del R. Istituto Superiore di Scienze Economiche e Commerciali di Firenze* **8** (1936), 3–62; its use as a multiple-comparison correction was popularized by O. J. Dunn, \"Multiple comparisons among means\", *Journal of the American Statistical Association* **56** (1961), no. 293, 52–64.",
+      "formal": "S. Holm, \"A simple sequentially rejective multiple test procedure\", *Scandinavian Journal of Statistics* **6** (1979), no. 2, 65–70.",
+      "pointer": "Theorem 1",
+      "biblio": "The step-down procedure and its FWER guarantee are due to S. Holm, \"A simple sequentially rejective multiple test procedure\", *Scandinavian Journal of Statistics* **6** (1979), no. 2, 65–70; the level-$\\alpha$ FWER control formalized here is Holm's Theorem 1. The companion Bonferroni correction rests on Boole's inequality, commonly attributed to C. E. Bonferroni, \"Teoria statistica delle classi e calcolo delle probabilità\", *Pubblicazioni del R. Istituto Superiore di Scienze Economiche e Commerciali di Firenze* **8** (1936), 3–62; its use as a multiple-comparison correction was popularized by O. J. Dunn, \"Multiple comparisons among means\", *Journal of the American Statistical Association* **56** (1961), no. 293, 52–64. Lu, *Big Data Analysis* — the reference text for this area — states the plain Bonferroni correction (§19.2.2) but contains no Holm step-down theorem, so the formalization follows Holm's paper directly.",
       "keys": [
         "holm1979",
         "lu-bda",
@@ -12206,12 +12206,12 @@
       }
     ],
     "reference": {
-      "formal": "B. Efron, *Large-Scale Inference: Empirical Bayes Methods for Estimation, Testing, and Prediction*, Cambridge University Press, 2010.",
-      "pointer": "§5 (nonparametric empirical Bayes); Lindsay (1983)",
-      "biblio": "The finite-support NPMLE is B. G. Lindsay's theorem (\"The geometry of mixture likelihoods: a general theory,\" *Ann. Statist.* 11 (1983), 86–94), refining the consistency result of J. Kiefer and J. Wolfowitz (\"Consistency of the maximum likelihood estimator in the presence of infinitely many incidental parameters,\" *Ann. Math. Statist.* 27 (1956), 887–906). Its use for normal-means estimation (GMLEB) is W. Jiang and C.-H. Zhang (*Ann. Statist.* 37 (2009), 1647–1684); it is the nonparametric backbone of modern empirical-Bayes deconvolution (Efron 2010, §5).",
+      "formal": "B. G. Lindsay, \"The geometry of mixture likelihoods: a general theory\", *The Annals of Statistics* **11** (1983), no. 1, 86–94.",
+      "pointer": "the geometry of the mixture likelihood set: the Carathéodory bound on the number of support points",
+      "biblio": "The finite-support NPMLE is B. G. Lindsay's theorem (\"The geometry of mixture likelihoods: a general theory,\" *Ann. Statist.* 11 (1983), 86–94), refining the consistency result of J. Kiefer and J. Wolfowitz (\"Consistency of the maximum likelihood estimator in the presence of infinitely many incidental parameters,\" *Ann. Math. Statist.* 27 (1956), 887–906). Its use for normal-means estimation (GMLEB) is W. Jiang and C.-H. Zhang (*Ann. Statist.* 37 (2009), 1647–1684); it is the nonparametric backbone of modern empirical-Bayes deconvolution (Efron 2010, §5). Efron, *Large-Scale Inference* §5 surveys nonparametric empirical Bayes but does not prove the support bound.",
       "keys": [
-        "efron2010",
         "lindsay1983",
+        "efron2010",
         "kiefer-wolfowitz1956",
         "jiang-zhang2009"
       ]
@@ -15886,12 +15886,12 @@
     "formalizationNotes": "This is only the *characteristic-function half* of the Berry–Esseen theorem: it bounds the distance between characteristic functions, not the Kolmogorov distance between distribution functions. Converting it into a bound on cumulative distribution functions requires Esseen's smoothing inequality, which is built separately in the companion file EsseenSmoothing.lean. The constant is the elementary Lyapunov constant $\\rho/6$ rather than the optimal Berry–Esseen constant ($\\approx 0.4748$), and the statement is proved unconditionally (axiom-clean) from a telescoping product estimate plus a third-order Taylor bound for the complex exponential.",
     "shortRef": "Feller (1971), §XVI.5",
     "reference": {
-      "formal": "A. C. Berry, \"The accuracy of the Gaussian approximation to the sum of independent variates\", *Transactions of the American Mathematical Society* **49** (1941), 122–136.",
-      "pointer": "§XVI.5 (Feller, 1971)",
+      "formal": "W. Feller, *An Introduction to Probability Theory and Its Applications*, Vol. II, 2nd ed., Wiley, New York, 1971.",
+      "pointer": "§XVI.5 (the Berry–Esseen theorem); §XVI.3 (the smoothing inequality)",
       "keys": [
+        "feller1971",
         "berry1941",
-        "esseen1942",
-        "feller1971"
+        "esseen1942"
       ],
       "biblio": "The theorem is due independently to A. C. Berry (1941) and C.-G. Esseen (1942), who showed that a finite third absolute moment forces the Kolmogorov distance between the law of a standardized i.i.d. sum and the standard normal law to be $O(\\rho/(\\sigma^{3}\\sqrt n))$. The route formalized here is the textbook one of Feller (1971, §XVI.3 and §XVI.5): a third-order Taylor expansion of the characteristic function, a telescoping product bound, and finally Esseen's smoothing inequality. This declaration records exactly the first two steps — an explicit bound on the distance between the characteristic function of the standardized sum and the Gaussian one — with the elementary constant $\\rho/6$ rather than the optimal absolute constant."
     },
@@ -15976,7 +15976,7 @@
     "leanName": "lindeberg_clt",
     "fullName": "StatLean.HypothesisTesting.lindeberg_clt",
     "title": "Lindeberg–Feller central limit theorem for triangular arrays",
-    "citation": "Lehmann–Romano (2022), §11.2",
+    "citation": "Lehmann–Romano (2022), Thm 11.2.5",
     "file": "StatLean/HypothesisTesting/ForMathlib/LindebergCLT.lean",
     "docGenUrl": "../docs/StatLean/HypothesisTesting/ForMathlib/LindebergCLT.html#StatLean.HypothesisTesting.lindeberg_clt",
     "informal": "For each $n$ let $X_{n,1}, \\ldots, X_{n,m_n}$ be a finite row of real random variables on a common probability space. Assume the entries of each row are <span data-link=\"h1\">jointly independent</span>, are <span data-link=\"h2\">square-integrable</span>, and are <span data-link=\"h3\">centred</span>, that the row variances <span data-link=\"h4\">satisfy $\\sum_i \\operatorname{Var}(X_{n,i}) \\to 1$</span>, and that the <span data-link=\"h5\">Lindeberg condition</span>\n\n$$\\sum_i \\mathbb{E}\\bigl[X_{n,i}^{2}\\,\\mathbf{1}\\{|X_{n,i}| > \\varepsilon\\}\\bigr] \\;\\longrightarrow\\; 0 \\qquad \\text{for every } \\varepsilon > 0$$\n\nholds. Then the row sums converge in distribution to the standard normal law,\n\n$$\\sum_{i} X_{n,i} \\;\\rightsquigarrow\\; N(0,1).$$\n\nThe rows are otherwise unrelated: the row lengths $m_n$ are arbitrary and need not increase, and there is no requirement that the $n$-th row extend the $(n-1)$-st.",
@@ -16016,14 +16016,14 @@
     ],
     "hasGraph": true,
     "formalizationNotes": "Two deliberate deviations from the textbook statement, both weakenings of the hypotheses. (i) The variance normalisation is stated as $\\sum_i \\operatorname{Var}(X_{n,i}) \\to 1$ rather than exactly $=1$; this is strictly more general and is what the swapping argument actually consumes. (ii) The Lindeberg truncation uses the *open* set $\\{|X_{n,i}| > \\varepsilon\\}$, which at each fixed $\\varepsilon$ is the weaker hypothesis and is equivalent to the closed-set version once quantified over all $\\varepsilon > 0$. Convergence in distribution is stated in the random-variable form, so the limit is realised by a variable with the standard normal law on a possibly different space. The converse half (necessity of the Lindeberg condition under uniform asymptotic negligibility, due to Feller) is not formalized.",
-    "shortRef": "Lehmann–Romano (2022), §11.2",
+    "shortRef": "Lehmann–Romano (2022), Thm 11.2.5",
     "reference": {
-      "formal": "J. W. Lindeberg, \"Eine neue Herleitung des Exponentialgesetzes in der Wahrscheinlichkeitsrechnung\", *Mathematische Zeitschrift* **15** (1922), 211–225.",
-      "pointer": "§11.2 (Lehmann–Romano, 2022)",
+      "formal": "E. L. Lehmann and J. P. Romano, *Testing Statistical Hypotheses*, 4th ed., Springer, Cham, 2022.",
+      "pointer": "§11.2, Theorem 11.2.5 (Lindeberg Central Limit Theorem)",
       "keys": [
+        "lehmann-romano2022",
         "lindeberg1922",
-        "feller1935",
-        "lehmann-romano2022"
+        "feller1935"
       ],
       "biblio": "The condition and the theorem for a single i.i.d.-free sequence are due to J. W. Lindeberg (1922); the triangular-array formulation, together with the converse showing that the condition is necessary under uniform asymptotic negligibility, is due to W. Feller (1935). Lehmann and Romano (2022, §11.2) state it as the basic large-sample tool behind permutation, randomization and bootstrap asymptotics, which is exactly the use made of it here. The formalization proves the sufficiency half by Lindeberg's own swapping argument at the level of characteristic functions, closed by Lévy's continuity theorem."
     },
@@ -16165,7 +16165,7 @@
     "leanName": "tendsto_perm_cdf_blockSum",
     "fullName": "StatLean.HypothesisTesting.tendsto_perm_cdf_blockSum",
     "title": "Combinatorial central limit theorem for sampling without replacement",
-    "citation": "Lehmann–Romano (2022), §12.2",
+    "citation": "Lehmann–Romano (2022), Thm 12.2.2",
     "file": "StatLean/HypothesisTesting/ForMathlib/CombinatorialCLT.lean",
     "docGenUrl": "../docs/StatLean/HypothesisTesting/ForMathlib/CombinatorialCLT.html#StatLean.HypothesisTesting.tendsto_perm_cdf_blockSum",
     "informal": "For each stage $k$ let $d_k(1), \\ldots, d_k(N_k)$ be a finite population of real numbers which is <span data-link=\"h1\">centred</span>, $\\sum_l d_k(l) = 0$, and which is <span data-link=\"h4\">normalized in the second moment</span>, $N_k^{-1}\\sum_l d_k(l)^{2} \\to 1$. Draw a simple random sample of $m_k$ distinct positions without replacement — equivalently, apply a uniformly random permutation $\\sigma$ of the $N_k$ positions and read off a fixed block of size $m_k$ — and let\n\n$$B_\\sigma \\;=\\; \\sum_{i < m_k} d_k(\\sigma(a_i))$$\n\nbe the resulting block sum. Assume that <span data-link=\"h2\">the block grows</span>, $m_k \\to \\infty$, that <span data-link=\"h3\">its complement grows</span>, $N_k - m_k \\to \\infty$, and that the populations satisfy <span data-link=\"h5\">Hájek's Lindeberg condition</span> at the scale $\\sqrt{\\min(m_k,\\, N_k - m_k)}$:\n\n$$\\frac{1}{N_k}\\sum_{l}\\, d_k(l)^{2}\\,\\mathbf{1}\\bigl\\{|d_k(l)| \\ge \\varepsilon \\sqrt{\\min(m_k, N_k-m_k)}\\bigr\\} \\;\\longrightarrow\\; 0 \\qquad \\text{for every } \\varepsilon > 0.$$\n\nThen, with the standardizing scale $s_{N,m} = \\sqrt{m(N-m)/N}$, for every $t \\in \\mathbb{R}$\n\n$$\\mathbb{P}\\bigl\\{ B_\\sigma \\le t\\, s_{N_k,m_k}\\bigr\\} \\;\\longrightarrow\\; \\Phi(t),$$\n\nwhere $\\Phi$ is the standard normal distribution function and the probability is the uniform average over all permutations of the $N_k$ positions.",
@@ -16205,17 +16205,17 @@
     ],
     "hasGraph": true,
     "formalizationNotes": "The standardizing scale is the *asymptotic* standard deviation $\\sqrt{m(N-m)/N}$, not the exact finite-population one, which carries an extra factor $\\tfrac{N}{N-1}\\cdot N^{-1}\\sum_l d(l)^2$; under the stated hypotheses that factor tends to $1$, so nothing is lost, and the statement stays readable. The conclusion is phrased as convergence of the group-averaged distribution function (the uniform average over the symmetric group), which is precisely the form in which randomization distributions are defined elsewhere in the library. The proof runs through Stein's method for exchangeable pairs — swap one sampled position with one unsampled position — rather than through characteristic functions, followed by an elementary ramp de-smoothing.",
-    "shortRef": "Lehmann–Romano (2022), §12.2",
+    "shortRef": "Lehmann–Romano (2022), Thm 12.2.2",
     "reference": {
-      "formal": "W. Hoeffding, \"A combinatorial central limit theorem\", *Annals of Mathematical Statistics* **22** (1951), 558–566.",
-      "pointer": "§12.2 (Lehmann–Romano, 2022)",
+      "formal": "E. L. Lehmann and J. P. Romano, *Testing Statistical Hypotheses*, 4th ed., Springer, Cham, 2022.",
+      "pointer": "§12.2, Theorem 12.2.2 (Hájek's necessary and sufficient condition)",
       "keys": [
+        "lehmann-romano2022",
         "hoeffding1951",
         "waldwolfowitz1944",
         "hajek1960",
         "erdos-renyi1959",
-        "noether1949",
-        "lehmann-romano2022"
+        "noether1949"
       ],
       "biblio": "The result has a long lineage: A. Wald and J. Wolfowitz (1944) proved the first version for permutation statistics under strong moment conditions, G. E. Noether (1949) relaxed them, W. Hoeffding (1951) gave the general combinatorial central limit theorem for sums $\\sum_i c(i,\\sigma(i))$, and P. Erdős and A. Rényi (1959) and J. Hájek (1960) obtained the essentially necessary and sufficient Lindeberg-type condition for simple random sampling without replacement. Lehmann and Romano (2022, §12.2) present the Hájek form, which is what is formalized here; the requirement that both the sample and its complement grow is genuinely needed, and the truncation scale $\\sqrt{\\min(m, N-m)}$ is Hájek's."
     },
@@ -16231,7 +16231,7 @@
     "leanName": "abs_avg_blockSum_sub_stdGaussianExpect_le",
     "fullName": "StatLean.HypothesisTesting.abs_avg_blockSum_sub_stdGaussianExpect_le",
     "title": "Berry–Esseen-type bound for a finite-population block sum at a fixed stage",
-    "citation": "Lehmann–Romano (2022), §12.2",
+    "citation": "Chen–Goldstein–Shao (2011), Thm 4.9",
     "file": "StatLean/HypothesisTesting/ForMathlib/CombinatorialCLT.lean",
     "docGenUrl": "../docs/StatLean/HypothesisTesting/ForMathlib/CombinatorialCLT.html#StatLean.HypothesisTesting.abs_avg_blockSum_sub_stdGaussianExpect_le",
     "informal": "Let $d(1), \\ldots, d(N)$ be a <span data-link=\"h2\">centred</span> finite population, $N \\ge 2$, and let a block of $m$ <span data-link=\"h1\">distinct positions</span> with $0 < m < N$ be relabelled by a uniformly random permutation $\\sigma$, producing the block sum $B_\\sigma = \\sum_{i<m} d(\\sigma(a_i))$. Let $u > 0$ be the <span data-link=\"h3\">standardizing factor determined by $u^{2} = N/(m(N-m))$</span>. Then for every test function $h$ that is <span data-link=\"h4\">$L$-Lipschitz</span> and <span data-link=\"h5\">bounded by $C$</span>,\n\n$$\\Bigl|\\,\\mathbb{E}\\,h(u B_\\sigma) - \\mathbb{E}\\,h(Z)\\,\\Bigr| \\;\\le\\; 2L\\left(\\left|1 - \\frac{\\sum_l d(l)^{2}}{N-1}\\right| + \\frac{|N - 2m|}{2m(N-m)}\\sqrt{\\frac{m(N-m)}{N(N-1)}\\sum_l d(l)^{4}} + \\frac{2\\sum_l d(l)^{2}}{N(N-1)}\\right) + \\frac{10 L u}{N}\\sum_l |d(l)|^{3},$$\n\nwhere $Z$ is standard normal and the expectation on the left is the uniform average over all permutations of the $N$ positions. The first bracket is the *variance-regression defect* — the deviation of $(N-1)^{-1}\\sum_l d(l)^2$ from $1$ plus a fourth-moment fluctuation — and the last term is the *third-moment* term.",
@@ -16271,11 +16271,12 @@
     ],
     "hasGraph": true,
     "formalizationNotes": "This is a *smooth-metric* Berry–Esseen bound: it is stated against bounded Lipschitz test functions, not against half-line indicators, so it is a bound in a Wasserstein-type metric rather than the Kolmogorov distance. The constants ($2$ and $10$) are those the elementary exchangeable-pair argument actually yields and are not claimed to be optimal — in particular they are weaker than Bolthausen's (1984) sharp $O(N^{-1/2})$ Berry–Esseen rate for the combinatorial CLT. Every quantity on the right is an explicit finite-population moment, so the asymptotic combinatorial CLT follows by applying this to a truncated population.",
-    "shortRef": "Lehmann–Romano (2022), §12.2",
+    "shortRef": "Chen–Goldstein–Shao (2011), Thm 4.9",
     "reference": {
-      "formal": "E. Bolthausen, \"An estimate of the remainder in a combinatorial central limit theorem\", *Zeitschrift für Wahrscheinlichkeitstheorie und verwandte Gebiete* **66** (1984), 379–386.",
-      "pointer": "§12.2 (Lehmann–Romano, 2022)",
+      "formal": "L. H. Y. Chen, L. Goldstein, and Q.-M. Shao, *Normal Approximation by Stein's Method*, Probability and Its Applications, Springer, Berlin, 2011.",
+      "pointer": "Theorem 4.9 (the exchangeable-pair bound), specialized to the permutation pair",
       "keys": [
+        "chen-goldstein-shao2011",
         "bolthausen1984",
         "hoeffding1951",
         "stein1972",
@@ -16368,12 +16369,12 @@
     "formalizationNotes": "Everything is a finite sum. The exchangeable pair is carried by a finite configuration space together with a finite auxiliary randomisation index, so \"conditioning on the configuration\" is literally averaging over the randomisation index and the conditional variance is a *definition* rather than a hypothesis; no conditional-expectation machinery is needed. This is exactly the shape in which the combinatorial central limit theorem arrives (configurations = permutations, randomisation = which swap is performed). Consequently the statement is a finite-space theorem and does not cover general exchangeable pairs on abstract probability spaces.",
     "shortRef": "Chen–Goldstein–Shao (2011), Thm 4.9",
     "reference": {
-      "formal": "C. Stein, \"A bound for the error in the normal approximation to the distribution of a sum of dependent random variables\", in *Proceedings of the Sixth Berkeley Symposium on Mathematical Statistics and Probability*, Vol. 2, University of California Press, 1972, 583–602.",
-      "pointer": "Theorem 4.9 of Chen–Goldstein–Shao (2011)",
+      "formal": "L. H. Y. Chen, L. Goldstein, and Q.-M. Shao, *Normal Approximation by Stein's Method*, Probability and Its Applications, Springer, Berlin, 2011.",
+      "pointer": "Theorem 4.9 (the exchangeable-pair bound); Lemma 2.4 (bounds on the Stein solution)",
       "keys": [
+        "chen-goldstein-shao2011",
         "stein1972",
-        "stein1986",
-        "chen-goldstein-shao2011"
+        "stein1986"
       ],
       "biblio": "The exchangeable-pair device is C. Stein's (1972, 1986); the three-term bound in this form is Theorem 4.9 of Chen, Goldstein and Shao (2011). Its point is that no independence is used anywhere: the linearity condition $\\mathbb{E}[W'-W\\mid W] = -\\lambda W$ replaces it, and the two error terms measure how far the conditional variance of the increment is from its regression value and how heavy the increment's tail is. The formalization is faithful to that statement on a finite carrier."
     },
@@ -16575,7 +16576,7 @@
     "leanName": "eventually_norm_fourierOsc_le_of_totallyBounded",
     "fullName": "StatLean.HypothesisTesting.eventually_norm_fourierOsc_le_of_totallyBounded",
     "title": "Riemann–Lebesgue lemma, uniformly over a totally bounded family",
-    "citation": "Cramér (1937), §10",
+    "citation": "Lehmann–Romano (2022), §13.3",
     "file": "StatLean/HypothesisTesting/ForMathlib/UniformRiemannLebesgue.lean",
     "docGenUrl": "../docs/StatLean/HypothesisTesting/ForMathlib/UniformRiemannLebesgue.html#StatLean.HypothesisTesting.eventually_norm_fourierOsc_le_of_totallyBounded",
     "informal": "For an integrable $f : \\mathbb{R} \\to \\mathbb{C}$ write $\\widehat f(s) = \\int f(x)\\,e^{isx}\\,dx$ for its oscillatory integral. The Riemann–Lebesgue lemma says that $\\widehat f(s) \\to 0$ as $|s| \\to \\infty$ for each fixed $f$. Let now $S$ be a set of indices and $(f_i)_{i \\in S}$ a family of functions, each <span data-link=\"h1\">integrable</span>, which is <span data-link=\"h2\">totally bounded in $L^{1}$</span> — for every $\\delta > 0$ there is a finite subset $J \\subseteq S$ such that each $f_i$ is within $L^{1}$-distance $\\delta$ of some $f_j$ with $j \\in J$. Then for every $\\varepsilon > 0$ there is a compact set outside of which\n\n$$\\sup_{i \\in S}\\;\\bigl|\\widehat{f_i}(s)\\bigr| \\;\\le\\; \\varepsilon .$$\n\nUniformity is genuinely a consequence of total boundedness and does not hold without it: the translates $f(\\cdot - a)$, $a \\in \\mathbb{R}$, all have the same transform modulus, and no single function's transform decays uniformly along a family that is not relatively compact.",
@@ -16597,15 +16598,15 @@
     ],
     "hasGraph": true,
     "formalizationNotes": "The whole content is the two-line estimate $|\\widehat{f_i}(s)| \\le |\\widehat{f_j}(s)| + \\|f_i - f_j\\|_{L^1}$ with $j$ ranging over a finite net; total boundedness is exactly the hypothesis that makes the finitely many Riemann–Lebesgue \"eventually\"s intersect to a single one. The $\\varepsilon$-net hypothesis is stated as a finite set of *indices* rather than of $L^1$ elements, which is the form a finite subcover of a compact parameter set produces, and the $L^1$ distance is written as an honest integral rather than through the $L^p$ quotient by almost-everywhere equality; nothing is lost and no lifting into the quotient is needed.",
-    "shortRef": "Cramér (1937), §10",
+    "shortRef": "Lehmann–Romano (2022), §13.3",
     "reference": {
       "formal": "E. L. Lehmann and J. P. Romano, *Testing Statistical Hypotheses*, 4th ed., Springer, Cham, 2022.",
-      "pointer": "§11.2 / §16.4 (technical brick); cf. Cramér (1937), §10",
+      "pointer": "§13.3 (Edgeworth Expansions), Cramér's condition (13.30) of Theorem 13.3.1, and its multivariate analogue",
       "keys": [
         "lehmann-romano2022",
         "cramer1937"
       ],
-      "biblio": "The Riemann–Lebesgue lemma itself is classical. The uniform version over a totally bounded family is the technical device needed to verify a *multivariate* Cramér condition — H. Cramér's (1937) condition that the characteristic function be bounded away from modulus one at large frequencies — for a law carried by a curve, where the family is the set of one-dimensional projections indexed by a compact sphere of directions. Cramér's condition is what licences Edgeworth expansions and higher-order bootstrap accuracy in Lehmann and Romano (2022, Ch. 16)."
+      "biblio": "The Riemann–Lebesgue lemma itself is classical. The uniform version over a totally bounded family is the technical device needed to verify a *multivariate* Cramér condition — H. Cramér's (1937) condition that the characteristic function be bounded away from modulus one at large frequencies — for a law carried by a curve, where the family is the set of one-dimensional projections indexed by a compact sphere of directions. Cramér's condition is what licences Edgeworth expansions and higher-order bootstrap accuracy in Lehmann and Romano (2022, Ch. 16). Lehmann–Romano assume Cramér's condition rather than verify it; the uniform Riemann–Lebesgue statement proved here is the technical brick a verification needs."
     },
     "keywords": [
       "Riemann–Lebesgue lemma",
@@ -16701,7 +16702,7 @@
     "leanName": "tendstoUniformly_of_monotone_of_continuous",
     "fullName": "StatLean.HypothesisTesting.tendstoUniformly_of_monotone_of_continuous",
     "title": "Pólya's theorem: pointwise convergence of distribution functions to a continuous limit is uniform",
-    "citation": "Lehmann–Romano (2022), §11.2",
+    "citation": "Lehmann–Romano (2022), Thm 11.2.9",
     "file": "StatLean/HypothesisTesting/ForMathlib/PolyaUniformCDF.lean",
     "docGenUrl": "../docs/StatLean/HypothesisTesting/ForMathlib/PolyaUniformCDF.html#StatLean.HypothesisTesting.tendstoUniformly_of_monotone_of_continuous",
     "informal": "Let $F_1, F_2, \\ldots$ and $F$ be real functions on $\\mathbb{R}$. Assume each $F_n$ is <span data-link=\"h1\">nondecreasing</span> and is a distribution function in the sense that <span data-link=\"h2\">it tends to $0$ as $x \\to -\\infty$ and to $1$ as $x \\to +\\infty$</span>; assume the limit $F$ likewise tends to $0$ at $-\\infty$ and to $1$ at $+\\infty$ and is moreover <span data-link=\"h3\">continuous at every point</span>; and assume <span data-link=\"h4\">$F_n(x) \\to F(x)$ for every $x$</span>. Then the convergence is uniform:\n\n$$\\sup_{x \\in \\mathbb{R}} \\bigl|F_n(x) - F(x)\\bigr| \\;\\longrightarrow\\; 0 .$$",
@@ -16735,13 +16736,13 @@
     ],
     "hasGraph": true,
     "formalizationNotes": "Monotonicity of the limit is *not* a hypothesis: it is forced by monotonicity of the approximants together with pointwise convergence, and is derived in the proof. The tail limits of the approximants, by contrast, are genuinely needed — the sequence $F_n = F - n\\,\\mathbf{1}_{(-\\infty,-n)}$ is nondecreasing and converges pointwise to a continuous distribution function while the supremum distance diverges. The statement is purely about real functions, with no measure theory: it applies to any family of distribution functions, however produced.",
-    "shortRef": "Lehmann–Romano (2022), §11.2",
+    "shortRef": "Lehmann–Romano (2022), Thm 11.2.9",
     "reference": {
-      "formal": "G. Pólya, \"Über den zentralen Grenzwertsatz der Wahrscheinlichkeitsrechnung und das Momentenproblem\", *Mathematische Zeitschrift* **8** (1920), 171–181.",
-      "pointer": "§11.2 (Lehmann–Romano, 2022)",
+      "formal": "E. L. Lehmann and J. P. Romano, *Testing Statistical Hypotheses*, 4th ed., Springer, Cham, 2022.",
+      "pointer": "§11.2, Theorem 11.2.9 (Polyá's Theorem)",
       "keys": [
-        "polya1920",
-        "lehmann-romano2022"
+        "lehmann-romano2022",
+        "polya1920"
       ],
       "biblio": "The theorem is due to G. Pólya (1920), where it is used to upgrade the central limit theorem from a pointwise to a uniform approximation statement. Lehmann and Romano (2022, §11.2) record it as the standard tool for turning weak convergence into a uniform-in-the-argument approximation, which is what any statement about the attained level of a test requires. The formalization is faithful, with the limit's monotonicity derived rather than assumed."
     },
@@ -16775,11 +16776,11 @@
     "formalizationNotes": "The null-set equivalence is stated for an *arbitrary* set, with no measurability hypothesis. This is both safe and strictly stronger: the countable-sum vanishing criterion holds without measurability, and absolute continuity is itself defined by an implication between outer-measure values of arbitrary sets, so callers holding only a measurable set lose nothing. Domination is carried as an explicit hypothesis against an explicit reference measure rather than packaged into a structure, so the lemma applies verbatim to families dominated by a measure produced in the middle of another proof. The index type is assumed inhabited, which lets a genuinely finite selection be padded by repetition; repeating an index only merges weights for the same member and changes neither the null sets nor absolute continuity.",
     "shortRef": "Lehmann–Romano (2022), Thm 2.6.2 (supporting lemma)",
     "reference": {
-      "formal": "P. R. Halmos and L. J. Savage, \"Application of the Radon–Nikodym theorem to the theory of sufficient statistics\", *Annals of Mathematical Statistics* **20** (1949), 225–241.",
-      "pointer": "Halmos–Savage (1949); cf. Lehmann–Romano (2022), Thm 2.6.2",
+      "formal": "E. L. Lehmann and J. P. Romano, *Testing Statistical Hypotheses*, 4th ed., Springer, Cham, 2022.",
+      "pointer": "§2.6, supporting material for Theorem 2.6.2 (the equivalent countable mixture, eq. (2.29))",
       "keys": [
-        "halmos-savage1949",
-        "lehmann-romano2022"
+        "lehmann-romano2022",
+        "halmos-savage1949"
       ],
       "biblio": "The lemma and the equivalent-mixture device are due to P. R. Halmos and L. J. Savage (1949), who introduced them precisely in order to prove the factorization criterion for sufficiency in dominated families: without replacing the arbitrary dominating measure by a mixture of members of the family, densities need not behave measurably in the parameter. Lehmann and Romano (2022, §2.6) use it in the same way for Theorem 2.6.2. The formalized statement is the existence half, with the null-set equivalence strengthened to arbitrary (not necessarily measurable) sets."
     },
