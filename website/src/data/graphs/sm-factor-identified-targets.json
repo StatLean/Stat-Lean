@@ -1,0 +1,36 @@
+{
+  "root": "StatLean.StatisticalModels.FactorModels.identifiesTarget_loadingModel_commonCovariance",
+  "nodes": [
+    {"id":"StatLean.StatisticalModels.FactorModels.identifiesTarget_loadingModel_commonCovariance","label":"identifiesTarget_loadingModel_commonCovariance","full":"StatLean.StatisticalModels.FactorModels.identifiesTarget_loadingModel_commonCovariance","kind":"root","decl":"thm","module":"StatLean.StatisticalModels.FactorModels.Identifiability"},
+    {"id":"StatLean.StatisticalModels.IdentifiesTarget","label":"IdentifiesTarget","full":"StatLean.StatisticalModels.IdentifiesTarget","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Identifiability.Defs"},
+    {"id":"StatLean.StatisticalModels.FactorModels.loadingModel","label":"loadingModel","full":"StatLean.StatisticalModels.FactorModels.loadingModel","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.FactorModels.Identifiability"},
+    {"id":"StatLean.StatisticalModels.identifiesTarget_of_rep","label":"identifiesTarget_of_rep","full":"StatLean.StatisticalModels.identifiesTarget_of_rep","kind":"repo","decl":"thm","module":"StatLean.StatisticalModels.Identifiability.Transfer"},
+    {"id":"StatLean.StatisticalModels.covMatrix","label":"covMatrix","full":"StatLean.StatisticalModels.covMatrix","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.ForMathlib.CovarianceMatrix"},
+    {"id":"add_sub_cancel_right","label":"add_sub_cancel_right","full":"add_sub_cancel_right","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"StatLean.StatisticalModels.FactorModels.gaussianFactorModel","label":"gaussianFactorModel","full":"StatLean.StatisticalModels.FactorModels.gaussianFactorModel","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.FactorModels.Gaussian"},
+    {"id":"StatLean.StatisticalModels.FactorModels.FactorParams.mk","label":"mk","full":"StatLean.StatisticalModels.FactorModels.FactorParams.mk","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.FactorModels.Defs"},
+    {"id":"StatLean.StatisticalModels.FactorModels.FactorParams","label":"FactorParams","full":"StatLean.StatisticalModels.FactorModels.FactorParams","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.FactorModels.Defs"},
+    {"id":"StatLean.StatisticalModels.FactorModels.factorLaw","label":"factorLaw","full":"StatLean.StatisticalModels.FactorModels.factorLaw","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.FactorModels.Defs"},
+    {"id":"StatLean.StatisticalModels.FactorModels.measurementKernel","label":"measurementKernel","full":"StatLean.StatisticalModels.FactorModels.measurementKernel","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.FactorModels.Defs"},
+    {"id":"StatLean.StatisticalModels.affineNoiseKernel","label":"affineNoiseKernel","full":"StatLean.StatisticalModels.affineNoiseKernel","kind":"repo","decl":"def","module":"StatLean.StatisticalModels.Gaussian.Affine"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalModels.FactorModels.identifiesTarget_loadingModel_commonCovariance","target":"StatLean.StatisticalModels.IdentifiesTarget"},
+    {"source":"StatLean.StatisticalModels.FactorModels.identifiesTarget_loadingModel_commonCovariance","target":"StatLean.StatisticalModels.FactorModels.loadingModel"},
+    {"source":"StatLean.StatisticalModels.FactorModels.identifiesTarget_loadingModel_commonCovariance","target":"StatLean.StatisticalModels.identifiesTarget_of_rep"},
+    {"source":"StatLean.StatisticalModels.FactorModels.identifiesTarget_loadingModel_commonCovariance","target":"StatLean.StatisticalModels.covMatrix"},
+    {"source":"StatLean.StatisticalModels.FactorModels.identifiesTarget_loadingModel_commonCovariance","target":"add_sub_cancel_right"},
+    {"source":"StatLean.StatisticalModels.FactorModels.loadingModel","target":"StatLean.StatisticalModels.FactorModels.gaussianFactorModel"},
+    {"source":"StatLean.StatisticalModels.FactorModels.loadingModel","target":"StatLean.StatisticalModels.FactorModels.FactorParams.mk"},
+    {"source":"StatLean.StatisticalModels.identifiesTarget_of_rep","target":"StatLean.StatisticalModels.IdentifiesTarget"},
+    {"source":"StatLean.StatisticalModels.FactorModels.gaussianFactorModel","target":"StatLean.StatisticalModels.FactorModels.FactorParams"},
+    {"source":"StatLean.StatisticalModels.FactorModels.gaussianFactorModel","target":"StatLean.StatisticalModels.FactorModels.factorLaw"},
+    {"source":"StatLean.StatisticalModels.FactorModels.FactorParams.mk","target":"StatLean.StatisticalModels.FactorModels.FactorParams"},
+    {"source":"StatLean.StatisticalModels.FactorModels.factorLaw","target":"StatLean.StatisticalModels.FactorModels.FactorParams"},
+    {"source":"StatLean.StatisticalModels.FactorModels.factorLaw","target":"StatLean.StatisticalModels.FactorModels.measurementKernel"},
+    {"source":"StatLean.StatisticalModels.FactorModels.measurementKernel","target":"StatLean.StatisticalModels.FactorModels.FactorParams"},
+    {"source":"StatLean.StatisticalModels.FactorModels.measurementKernel","target":"StatLean.StatisticalModels.affineNoiseKernel"},
+    {"source":"StatLean.StatisticalModels.FactorModels.measurementKernel","target":"fact_one_le_two_ennreal"}
+  ]
+}

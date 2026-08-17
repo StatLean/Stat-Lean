@@ -1,0 +1,9 @@
+{
+  "root": "StatLean.StatisticalModels.GraphicalModels.DAG",
+  "nodes": [
+    {"id":"StatLean.StatisticalModels.GraphicalModels.DAG","label":"DAG","full":"StatLean.StatisticalModels.GraphicalModels.DAG","kind":"root","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Directed.DAG"}
+  ],
+  "edges": [
+
+  ]
+}

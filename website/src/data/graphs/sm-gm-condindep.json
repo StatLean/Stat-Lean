@@ -1,0 +1,22 @@
+{
+  "root": "StatLean.StatisticalModels.GraphicalModels.CondIndep",
+  "nodes": [
+    {"id":"StatLean.StatisticalModels.GraphicalModels.CondIndep","label":"CondIndep","full":"StatLean.StatisticalModels.GraphicalModels.CondIndep","kind":"root","decl":"def","module":"StatLean.StatisticalModels.GraphicalModels.Core.CondIndep"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"ProbabilityTheory.Kernel","label":"Kernel","full":"ProbabilityTheory.Kernel","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Kernel.Defs"},
+    {"id":"ProbabilityTheory.IsMarkovKernel","label":"IsMarkovKernel","full":"ProbabilityTheory.IsMarkovKernel","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Kernel.Defs"},
+    {"id":"MeasureTheory.Measure.map","label":"map","full":"MeasureTheory.Measure.map","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.Map"},
+    {"id":"MeasureTheory.Measure.compProd","label":"compProd","full":"MeasureTheory.Measure.compProd","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Kernel.Composition.MeasureCompProd"},
+    {"id":"ProbabilityTheory.Kernel.prod","label":"prod","full":"ProbabilityTheory.Kernel.prod","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Kernel.Composition.Prod"}
+  ],
+  "edges": [
+    {"source":"StatLean.StatisticalModels.GraphicalModels.CondIndep","target":"MeasurableSpace"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.CondIndep","target":"MeasureTheory.Measure"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.CondIndep","target":"ProbabilityTheory.Kernel"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.CondIndep","target":"ProbabilityTheory.IsMarkovKernel"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.CondIndep","target":"MeasureTheory.Measure.map"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.CondIndep","target":"MeasureTheory.Measure.compProd"},
+    {"source":"StatLean.StatisticalModels.GraphicalModels.CondIndep","target":"ProbabilityTheory.Kernel.prod"}
+  ]
+}
