@@ -49,12 +49,16 @@ theorem isProbabilityMeasure_twoPointPM {c p : ℝ} (hp0 : 0 ≤ p) (hp1 : p ≤
 "the means of the two distributions are ±pc"). -/
 theorem integral_twoPointPM {c p : ℝ} (hp0 : 0 ≤ p) (hp1 : p ≤ 1) :
     ∫ x, x ∂twoPointPM c p = p * c := by
-  sorry
+  rw [twoPointPM, integral_contaminate hp0 hp1 (integrable_dirac (by simp))
+    (integrable_dirac (by simp)), integral_dirac, integral_dirac]
+  ring
 
 /-- Variance of the two-point distribution: `σ² = c²p(1 − p)` (`LM Theorem 1` proof). -/
 theorem variance_twoPointPM {c p : ℝ} (hp0 : 0 ≤ p) (hp1 : p ≤ 1) :
     ∫ x, (x - p * c) ^ 2 ∂twoPointPM c p = c ^ 2 * p * (1 - p) := by
-  sorry
+  rw [twoPointPM, integral_contaminate hp0 hp1 (integrable_dirac (by finiteness))
+    (integrable_dirac (by finiteness)), integral_dirac, integral_dirac]
+  ring
 
 /-- **The coupling** (`LM Theorem 1` proof): the joint law of a pair `(X, Y)` with
 `P(X = Y = 0) = 1 − p` and `P(X = c, Y = −c) = p`. -/
@@ -64,12 +68,14 @@ noncomputable def twoPointCoupling (c p : ℝ) : Measure (ℝ × ℝ) :=
 /-- The first marginal of the coupling is `P₊ = P_{c,p}`. -/
 theorem twoPointCoupling_fst {c p : ℝ} (hp0 : 0 ≤ p) (hp1 : p ≤ 1) :
     (twoPointCoupling c p).map Prod.fst = twoPointPM c p := by
-  sorry
+  rw [twoPointCoupling, map_contaminate measurable_fst, Measure.map_dirac' measurable_fst,
+    Measure.map_dirac' measurable_fst, twoPointPM]
 
 /-- The second marginal of the coupling is `P₋ = P_{−c,p}`. -/
 theorem twoPointCoupling_snd {c p : ℝ} (hp0 : 0 ≤ p) (hp1 : p ≤ 1) :
     (twoPointCoupling c p).map Prod.snd = twoPointPM (-c) p := by
-  sorry
+  rw [twoPointCoupling, map_contaminate measurable_snd, Measure.map_dirac' measurable_snd,
+    Measure.map_dirac' measurable_snd, twoPointPM]
 
 /-- **The coupled samples agree with probability `(1 − p)ⁿ`** (`LM Theorem 1` proof,
 `P{X₁ⁿ = Y₁ⁿ} = (1 − p)ⁿ`): under the `n`-fold product of the coupling, all coordinate
@@ -80,7 +86,26 @@ theorem twoPointCoupling_agree_pow {c p : ℝ} (hc : c ≠ 0) (hp0 : 0 ≤ p) (h
     (Measure.pi fun _ : Fin n => twoPointCoupling c p).real
         {w | ∀ i, (w i).1 = (w i).2}
       = (1 - p) ^ n := by
-  sorry
+  haveI : IsProbabilityMeasure (twoPointCoupling c p) :=
+    isProbabilityMeasure_contaminate _ _ hp0 hp1
+  have hD : MeasurableSet {q : ℝ × ℝ | q.1 = q.2} :=
+    measurableSet_eq_fun measurable_fst measurable_snd
+  have hset : {w : Fin n → ℝ × ℝ | ∀ i, (w i).1 = (w i).2}
+      = Set.univ.pi fun _ : Fin n => {q : ℝ × ℝ | q.1 = q.2} := by
+    ext w; simp [Set.mem_pi]
+  have hcc : ((c, -c) : ℝ × ℝ) ∉ {q : ℝ × ℝ | q.1 = q.2} := by
+    intro h
+    simp only [Set.mem_setOf_eq] at h
+    exact hc (by linarith)
+  have hν : twoPointCoupling c p {q : ℝ × ℝ | q.1 = q.2} = ENNReal.ofReal (1 - p) := by
+    rw [twoPointCoupling, contaminate_apply, Measure.dirac_apply' _ hD,
+      Measure.dirac_apply' _ hD, Set.indicator_of_mem (by simp) _,
+      Set.indicator_of_notMem hcc]
+    simp
+  rw [measureReal_def, hset, Measure.pi_pi]
+  simp only [hν, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
+    ← ENNReal.ofReal_pow (by linarith : (0:ℝ) ≤ 1 - p)]
+  exact ENNReal.toReal_ofReal (pow_nonneg (by linarith) n)
 
 /-- **No mean estimator beats the sub-Gaussian rate** (`LM Theorem 1`): for every
 sample size `n > 5`, confidence `δ ∈ (2e^{−n/4}, 1/2)`, target variance `σ² > 0`, and
