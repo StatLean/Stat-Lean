@@ -1,3 +1,4 @@
+import StatLean.RobustStatistics.HeavyTails.EmpiricalMeanBaseline
 import StatLean.RobustStatistics.LocationScale.Median
 import StatLean.RobustStatistics.LocationScale.Mean
 import StatLean.ConcentrationInequalities.SubGaussian.Hoeffding
@@ -223,7 +224,128 @@ theorem medianOfMeans_deviation {k m : ℕ} (hk : k ≠ 0) (hm : m ≠ 0)
     μprob.real {ξ | Real.sqrt σ2 * Real.sqrt (4 / m)
         < |medianOfMeans (fun j i => X j i ξ) - μ₀|}
       ≤ Real.exp (-(k : ℝ) / 8) := by
-  sorry
+  classical
+  obtain ⟨Z, hZ⟩ : ∃ Z : Fin k → Ξ → ℝ, Z = fun j ξ => sampleMean fun i => X j i ξ :=
+    ⟨_, rfl⟩
+  obtain ⟨a, ha⟩ : ∃ a : ℝ, a = Real.sqrt σ2 * Real.sqrt (4 / m) := ⟨_, rfl⟩
+  obtain ⟨g, hgdef⟩ : ∃ g : ℝ → ℝ, g = fun y => if a ≤ |y - μ₀| then (1 : ℝ) else 0 :=
+    ⟨_, rfl⟩
+  have hgapp : ∀ y, g y = if a ≤ |y - μ₀| then (1 : ℝ) else 0 := fun y => by rw [hgdef]
+  -- the block means: measurable, independent, and each within the band w.p. ≥ 3/4
+  have hZmeas : ∀ j, Measurable (Z j) := by
+    intro j
+    simp only [hZ]
+    exact measurable_sampleMean.comp (measurable_pi_lambda _ fun i => hX_meas j i)
+  have hZindep : iIndepFun Z μprob := by
+    simp only [hZ]
+    exact iIndepFun_blockMean hX_meas hX_indep
+  have hcheb : ∀ j, μprob.real {ξ | a ≤ |Z j ξ - μ₀|} ≤ 1 / 4 := by
+    intro j
+    have hinj : Function.Injective fun i : Fin m => ((j, i) : Fin k × Fin m) := by
+      intro i1 i2 h; simpa using h
+    have hrow : iIndepFun (fun i => X j i) μprob :=
+      hX_indep.precomp (g := fun i : Fin m => ((j, i) : Fin k × Fin m)) hinj
+    have h := sampleMean_chebyshev_deviation (P := P) hm (fun i => hX_meas j i) hrow
+      (fun i => hX_law j i) hL2 hmean hvar (by norm_num : (0 : ℝ) < 1 / 4) (by norm_num) hσ
+    have harg : Real.sqrt σ2 * Real.sqrt (1 / ((m : ℝ) * (1 / 4))) = a := by
+      rw [ha]; congr 2; ring
+    rw [harg] at h
+    simpa [hZ] using h
+  -- the per-block failure indicators
+  have hgmeas : Measurable g := by
+    rw [hgdef]
+    exact Measurable.ite (measurableSet_le measurable_const
+      (measurable_id.sub_const μ₀).abs) measurable_const measurable_const
+  have hgIcc : ∀ y, g y ∈ Set.Icc (0 : ℝ) 1 := by
+    intro y
+    rw [hgapp]
+    split <;> norm_num
+  have hVint : ∀ j, ∫ ξ, g (Z j ξ) ∂μprob = μprob.real {ξ | a ≤ |Z j ξ - μ₀|} := by
+    intro j
+    have hset : MeasurableSet {ξ | a ≤ |Z j ξ - μ₀|} :=
+      measurableSet_le measurable_const ((hZmeas j).sub_const μ₀).abs
+    have heq : (fun ξ => g (Z j ξ))
+        = Set.indicator {ξ | a ≤ |Z j ξ - μ₀|} fun _ => (1 : ℝ) := by
+      funext ξ
+      by_cases h : a ≤ |Z j ξ - μ₀|
+      · have hmem : ξ ∈ {ξ | a ≤ |Z j ξ - μ₀|} := h
+        rw [hgapp, if_pos h, Set.indicator_of_mem hmem]
+      · have hmem : ξ ∉ {ξ | a ≤ |Z j ξ - μ₀|} := h
+        rw [hgapp, if_neg h, Set.indicator_of_notMem hmem]
+    rw [heq, integral_indicator_const (1 : ℝ) hset, smul_eq_mul, mul_one]
+  have hsubG : ∀ j, HasSubgaussianMGF
+      (fun ξ => g (Z j ξ) - ∫ ξ', g (Z j ξ') ∂μprob) (1 / 4 : NNReal) μprob := by
+    intro j
+    have h := ConcentrationInequalities.isSubGaussian_of_mem_Icc
+      (X := fun ξ => g (Z j ξ)) (a := 0) (b := 1) (μ := μprob)
+      (hgmeas.comp (hZmeas j)).aemeasurable (ae_of_all _ fun ξ => hgIcc (Z j ξ))
+    have hc : ((‖(1 : ℝ) - 0‖₊ / 2) ^ 2 : NNReal) = (1 / 4 : NNReal) := by
+      simp
+      norm_num
+    rwa [hc] at h
+  have hWindep : iIndepFun
+      (fun j ξ => g (Z j ξ) - ∫ ξ', g (Z j ξ') ∂μprob) μprob :=
+    hZindep.comp (fun j y => g y - ∫ ξ', g (Z j ξ') ∂μprob) fun _ => hgmeas.sub_const _
+  -- Hoeffding on the indicators
+  have hhoef := HasSubgaussianMGF.measure_sum_ge_le_of_iIndepFun hWindep
+    (s := Finset.univ) (c := fun _ : Fin k => (1 / 4 : NNReal)) (fun j _ => hsubG j)
+    (ε := (k : ℝ) / 4) (by positivity)
+  -- the median misses only if at least half the blocks do
+  have hsubset : {ξ | a < |(sampleMedian fun j => Z j ξ) - μ₀|} ⊆
+      {ξ | (k : ℝ) / 4 ≤ ∑ j, (g (Z j ξ) - ∫ ξ', g (Z j ξ') ∂μprob)} := by
+    intro ξ hξ
+    simp only [Set.mem_setOf_eq] at hξ ⊢
+    -- a strict majority of blocks inside the band would pin the median inside it
+    have hmaj : ¬ k < 2 * (Finset.univ.filter fun j => |Z j ξ - μ₀| ≤ a).card := fun hcon =>
+      absurd (abs_sampleMedian_sub_le_of_majority hk (fun j => Z j ξ) hcon) (not_le.mpr hξ)
+    rw [not_lt] at hmaj
+    -- so at least `k/2` blocks miss the band; count them with the indicators
+    have hAle : (Finset.univ.filter fun j => |Z j ξ - μ₀| ≤ a).card ≤ k := by
+      calc (Finset.univ.filter fun j => |Z j ξ - μ₀| ≤ a).card
+          ≤ (Finset.univ : Finset (Fin k)).card := Finset.card_filter_le _ _
+        _ = k := by simp
+    have hcompl : Finset.univ \ (Finset.univ.filter fun j => |Z j ξ - μ₀| ≤ a)
+        ⊆ Finset.univ.filter fun j => a ≤ |Z j ξ - μ₀| := by
+      intro j hj
+      simp only [Finset.mem_sdiff, Finset.mem_filter, Finset.mem_univ, true_and, not_le] at hj
+      exact Finset.mem_filter.mpr ⟨Finset.mem_univ j, le_of_lt hj⟩
+    have hcard := Finset.card_le_card hcompl
+    rw [Finset.card_sdiff, Finset.inter_univ, Finset.card_univ, Fintype.card_fin] at hcard
+    have hAB : k ≤ (Finset.univ.filter fun j => |Z j ξ - μ₀| ≤ a).card
+        + (Finset.univ.filter fun j => a ≤ |Z j ξ - μ₀|).card := by omega
+    have hABr : (k : ℝ) ≤ ((Finset.univ.filter fun j => |Z j ξ - μ₀| ≤ a).card : ℝ)
+        + ((Finset.univ.filter fun j => a ≤ |Z j ξ - μ₀|).card : ℝ) := by
+      exact_mod_cast hAB
+    have hmajr : 2 * ((Finset.univ.filter fun j => |Z j ξ - μ₀| ≤ a).card : ℝ) ≤ (k : ℝ) := by
+      exact_mod_cast hmaj
+    -- the indicator sum counts the missing blocks
+    have hsum : ∑ j, g (Z j ξ)
+        = ((Finset.univ.filter fun j => a ≤ |Z j ξ - μ₀|).card : ℝ) := by
+      simp only [hgapp]
+      rw [Finset.sum_boole]
+    have hmeanbd : ∑ j : Fin k, (∫ ξ', g (Z j ξ') ∂μprob) ≤ (k : ℝ) / 4 := by
+      calc ∑ j : Fin k, (∫ ξ', g (Z j ξ') ∂μprob)
+          ≤ ∑ _j : Fin k, (1 / 4 : ℝ) :=
+            Finset.sum_le_sum fun j _ => (hVint j) ▸ hcheb j
+        _ = (k : ℝ) / 4 := by
+            simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+            ring
+    rw [Finset.sum_sub_distrib, hsum]
+    linarith
+  -- assemble
+  have hsetEq : {ξ | Real.sqrt σ2 * Real.sqrt (4 / m)
+      < |medianOfMeans (fun j i => X j i ξ) - μ₀|}
+      = {ξ | a < |(sampleMedian fun j => Z j ξ) - μ₀|} := by
+    ext ξ
+    simp only [Set.mem_setOf_eq, ha, hZ, medianOfMeans]
+  rw [hsetEq]
+  refine le_trans (measureReal_mono hsubset (measure_ne_top _ _)) (hhoef.trans (le_of_eq ?_))
+  have hk' : (k : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hk
+  congr 1
+  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  push_cast
+  field_simp
+  ring
 
 /-- **Median-of-means is sub-Gaussian, confidence form** (`LM Theorem 2`, "in
 particular"): choosing `k = ⌈8 log(1/δ)⌉` blocks, with probability at least `1 − δ`,
