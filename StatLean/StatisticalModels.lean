@@ -65,3 +65,8 @@ import StatLean.StatisticalModels.GraphicalModels.Gaussian.PartialCorrelation
 import StatLean.StatisticalModels.GraphicalModels.Gaussian.Regression
 import StatLean.StatisticalModels.GraphicalModels.Gaussian.Model
 import StatLean.StatisticalModels.GraphicalModels.Examples.Chain
+import StatLean.StatisticalModels.GraphicalModels.Directed.DAG
+import StatLean.StatisticalModels.GraphicalModels.Directed.Moralization
+import StatLean.StatisticalModels.GraphicalModels.Directed.Factorization
+import StatLean.StatisticalModels.GraphicalModels.Directed.Markov
+import StatLean.StatisticalModels.GraphicalModels.Directed.DSeparation
