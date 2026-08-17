@@ -1154,6 +1154,327 @@ private theorem bounded_bernstein_upper {n : ℕ} {X : Fin n → Ξ → ℝ} {g 
   refine le_trans hbern (le_of_eq ?_)
   congr 2
 
+/-- Ledger, denominator: `2(v + (B/3)t) ≤ 16σ²` at `t = 4σ√(L/n)`, `B ≤ 2σ√(2n/r)`,
+`v ≤ σ²` and `√(2n/r)·√(L/n) ≤ 5/8`. -/
+private theorem ledger_denominator {σ2 s q y z B v : ℝ}
+    (hs : s * s = σ2) (hs0 : 0 < s) (hq0 : 0 ≤ q) (hy0 : 0 ≤ y)
+    (hqy : q * y = z) (hz : z ≤ 5 / 8)
+    (hB : B ≤ 2 * (s * q)) (hB0 : 0 < B) (hv : v ≤ σ2) (hv0 : 0 < v) :
+    2 * (v + B / 3 * (4 * s * y)) ≤ 16 * σ2 := by
+  have hsy : (0:ℝ) ≤ 4 * s * y := by positivity
+  have hσ0 : 0 < σ2 := by nlinarith
+  have h1 : B / 3 * (4 * s * y) ≤ 2 * (s * q) / 3 * (4 * s * y) := by nlinarith
+  have h2 : 2 * (s * q) / 3 * (4 * s * y) = 8 / 3 * σ2 * z := by rw [← hqy, ← hs]; ring
+  have h3 : 8 / 3 * σ2 * z ≤ 5 / 3 * σ2 := by nlinarith
+  linarith
+
+/-- Ledger, numerator: `n·t² = 16σ²L` at `t = 4σ√(L/n)`. -/
+private theorem ledger_numerator {σ2 s y L N : ℝ} (hs : s * s = σ2) (hy : y * y = L / N)
+    (hN : 0 < N) : N * (4 * s * y) ^ 2 = 16 * σ2 * L := by
+  have h : (4 * s * y) ^ 2 = 16 * (s * s) * (y * y) := by ring
+  rw [h, hs, hy]
+  field_simp
+
+/-- Ledger, exponent: with numerator `16σ²L` and denominator at most `16σ²`, the Bernstein
+exponent is at least `L`, so the tail is at most `δ/8` when `L = log(8/δ)`. -/
+private theorem exp_le_of_ledger {N t D L σ2 δ : ℝ} (hDpos : 0 < D)
+    (hnum : N * t ^ 2 = 16 * σ2 * L) (hD : D ≤ 16 * σ2) (hL : 0 < L)
+    (hlog : L = Real.log (8 / δ)) (hδ : 0 < δ) :
+    Real.exp (-N * t ^ 2 / D) ≤ δ / 8 := by
+  have hge : L ≤ N * t ^ 2 / D := by
+    rw [le_div_iff₀ hDpos, hnum]
+    nlinarith
+  calc Real.exp (-N * t ^ 2 / D) ≤ Real.exp (-L) := by
+        refine Real.exp_le_exp.2 ?_
+        rw [neg_mul, neg_div]
+        linarith
+    _ = δ / 8 := by
+        rw [hlog, Real.exp_neg, Real.exp_log (by positivity)]
+        field_simp
+
+/-- The one sqrt identity of the Theorem 6 ledger: at `L = 3r/16` the Bernstein scale and
+the deviation combine into `√((2n/r)(L/n)) = √(3/8)`. -/
+private theorem sqrt_prod_ledger {n r : ℕ} {L : ℝ} (hN : (0:ℝ) < n) (hR : (0:ℝ) < r)
+    (hL : L = 3 * r / 16) :
+    Real.sqrt (2 * n / r) * Real.sqrt (L / n) = Real.sqrt (3 / 8) := by
+  rw [← Real.sqrt_mul (by positivity)]
+  congr 1
+  rw [hL]
+  field_simp
+  ring
+
+open StatLean.MultipleTesting in
+/-- **The concentration half at fixed levels** (`LM Theorem 6` proof, the Bernstein step).
+For *deterministic* levels inside the outer brackets `[Q_{ε/2}, Q_{1−ε/2}]`, the truncated
+average is within `4σ√(log(8/δ)/n)` of its own mean except with probability `δ/2`.
+
+The ledger: the truncated variable has variance `v ≤ σ²` (truncation is a contraction) and
+range `B ≤ 2σ√(2n/r)` (Chebyshev locates the quantiles), so at `t = 4σ√(L/n)` with
+`r = 16L/3` the Bernstein scale contributes `Bt/3 ≤ (8/3)σ²√(3/8) ≤ (5/3)σ²`, the
+denominator is at most `(16/3)σ²`, and the exponent is at least `3L ≥ L` — a factor `3`
+of slack. Degenerate case: if `v = 0` the truncated variable is a.e. constant and the
+deviation event is null. -/
+private theorem fixed_level_concentration {n r : ℕ} {X : Fin n → Ξ → ℝ}
+    {μ₀ σ2 δ α₀ β₀ : ℝ}
+    (hX_meas : ∀ i, Measurable (X i)) (hX_indep : iIndepFun X μprob)
+    (hX_law : ∀ i, μprob.map (X i) = P)
+    (hL2 : MemLp id 2 P) (hmean : ∫ x, x ∂P = μ₀) (hvar : ∫ x, (x - μ₀) ^ 2 ∂P = σ2)
+    (hσ : 0 < σ2) (hδ : 0 < δ) (hδ1 : δ < 1)
+    (hr : (r : ℝ) = 16 * Real.log (8 / δ) / 3) (hr1 : 1 ≤ r) (hrn : 4 * r < n)
+    (hα : quantile P ((r : ℝ) / (2 * n)) ≤ α₀)
+    (hβ : β₀ ≤ quantile P (1 - (r : ℝ) / (2 * n))) (hab : α₀ ≤ β₀) :
+    μprob {ξ | 4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)
+        < |sampleMean (fun i => truncate α₀ β₀ (X i ξ)) - ∫ x, truncate α₀ β₀ x ∂P|}
+      ≤ ENNReal.ofReal (δ / 2) := by
+  have hn0 : 0 < n := by omega
+  have hN : (0:ℝ) < n := by exact_mod_cast hn0
+  have hR1 : (1:ℝ) ≤ (r:ℝ) := by exact_mod_cast hr1
+  have hRN : 4 * (r:ℝ) < (n:ℝ) := by exact_mod_cast hrn
+  have hL : 0 < Real.log (8 / δ) := Real.log_pos (by rw [lt_div_iff₀ hδ]; linarith)
+  have hs2 : Real.sqrt σ2 * Real.sqrt σ2 = σ2 := Real.mul_self_sqrt hσ.le
+  have hspos : 0 < Real.sqrt σ2 := Real.sqrt_pos.2 hσ
+  have hLn : 0 < Real.log (8 / δ) / n := by positivity
+  have htpos : 0 < 4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n) := by
+    have := Real.sqrt_pos.2 hLn
+    positivity
+  -- ### The truncated variable: bounded, with mean `c` and variance `v ≤ σ²`.
+  have hφm : Measurable (truncate α₀ β₀) :=
+    measurable_const.max (measurable_const.min measurable_id)
+  have hφmem : ∀ x, truncate α₀ β₀ x ∈ Set.Icc α₀ β₀ := truncate_mem_Icc hab
+  have hφint : Integrable (fun x => truncate α₀ β₀ x) P := by
+    refine Integrable.mono' (integrable_const (|α₀| + |β₀|)) hφm.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => ?_)
+    have h := hφmem x
+    rw [Real.norm_eq_abs, abs_le]
+    constructor
+    · linarith [h.1, neg_abs_le α₀, abs_nonneg β₀]
+    · linarith [h.2, le_abs_self β₀, abs_nonneg α₀]
+  have hcmem : α₀ ≤ ∫ x, truncate α₀ β₀ x ∂P ∧ (∫ x, truncate α₀ β₀ x ∂P) ≤ β₀ := by
+    constructor
+    · have := integral_mono (integrable_const α₀) hφint (fun x => (hφmem x).1)
+      simpa using this
+    · have := integral_mono hφint (integrable_const β₀) (fun x => (hφmem x).2)
+      simpa using this
+  have hbd : ∀ x, |truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P| ≤ β₀ - α₀ := by
+    intro x
+    rw [abs_le]
+    constructor
+    · linarith [(hφmem x).1, hcmem.2]
+    · linarith [(hφmem x).2, hcmem.1]
+  have hφ2int : Integrable
+      (fun x => (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2) P := by
+    refine Integrable.mono' (integrable_const ((β₀ - α₀) ^ 2))
+      ((hφm.sub measurable_const).pow_const 2).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+    nlinarith [hbd x, abs_nonneg (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P),
+      sq_abs (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P)]
+  have hv0 : 0 ≤ ∫ x, (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 ∂P :=
+    integral_nonneg fun x => sq_nonneg _
+  -- ### The sample mean in centred form.
+  have hmeaneq : ∀ ξ, sampleMean (fun i => truncate α₀ β₀ (X i ξ))
+        - ∫ y, truncate α₀ β₀ y ∂P
+      = (∑ i, (truncate α₀ β₀ (X i ξ) - ∫ y, truncate α₀ β₀ y ∂P)) / n := by
+    intro ξ
+    rw [sampleMean, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ,
+      Fintype.card_fin, nsmul_eq_mul]
+    field_simp
+  rcases eq_or_lt_of_le hv0 with hv | hv
+  · -- ### Degenerate case: the truncated variable is a.e. constant.
+    have hae : (fun x => (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2) =ᵐ[P] 0 :=
+      (integral_eq_zero_iff_of_nonneg (fun x => sq_nonneg _) hφ2int).1 hv.symm
+    have hnull : P {x : ℝ | truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P ≠ 0} = 0 := by
+      have hsub : {x : ℝ | truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P ≠ 0}
+          ⊆ {x : ℝ | (fun x => (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2) x
+              ≠ (0 : ℝ → ℝ) x} := by
+        intro x hx
+        simpa [pow_eq_zero_iff] using hx
+      exact measure_mono_null hsub (by simpa [Filter.EventuallyEq, ae_iff] using hae)
+    have haei : ∀ i, ∀ᵐ ξ ∂μprob,
+        truncate α₀ β₀ (X i ξ) - ∫ y, truncate α₀ β₀ y ∂P = 0 := by
+      intro i
+      have hms : MeasurableSet
+          {x : ℝ | truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P ≠ 0} :=
+        (hφm.sub measurable_const) (measurableSet_singleton (0:ℝ)).compl
+      have : μprob ((X i) ⁻¹'
+          {x : ℝ | truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P ≠ 0}) = 0 := by
+        rw [← Measure.map_apply (hX_meas i) hms, hX_law i]
+        exact hnull
+      rw [ae_iff]
+      exact this
+    have hallae : ∀ᵐ ξ ∂μprob, ∀ i,
+        truncate α₀ β₀ (X i ξ) - ∫ y, truncate α₀ β₀ y ∂P = 0 :=
+      ae_all_iff.2 haei
+    have hbadnull : μprob {ξ | 4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)
+        < |sampleMean (fun i => truncate α₀ β₀ (X i ξ))
+          - ∫ x, truncate α₀ β₀ x ∂P|} = 0 := by
+      refine measure_mono_null ?_ (ae_iff.1 hallae)
+      intro ξ hξ hcon
+      simp only [Set.mem_setOf_eq] at hξ
+      rw [hmeaneq ξ, Finset.sum_congr rfl (fun i _ => hcon i), Finset.sum_const, smul_zero,
+        zero_div, abs_zero] at hξ
+      linarith
+    rw [hbadnull]
+    exact zero_le _
+  · -- ### The Bernstein regime.
+    have hBpos : 0 < β₀ - α₀ := by
+      rcases eq_or_lt_of_le hab with hEq | hlt
+      · exfalso
+        have hB0 : β₀ - α₀ = 0 := by rw [← hEq]; ring
+        have hzero : ∀ x, truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P = 0 := fun x => by
+          have h := hbd x
+          rw [hB0] at h
+          exact abs_nonpos_iff.1 h
+        have hz2 : ∫ x, (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 ∂P = 0 := by
+          have hcg : ∫ x, (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 ∂P
+              = ∫ _x : ℝ, (0:ℝ) ∂P :=
+            integral_congr_ae (Filter.Eventually.of_forall fun x => by
+              show (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 = 0
+              rw [hzero x]; ring)
+          rw [hcg, integral_zero]
+        linarith
+      · linarith
+    -- variance `v ≤ σ²`
+    have hvσ : (∫ x, (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 ∂P) ≤ σ2 := by
+      have hL2' : MemLp (fun x : ℝ => x) 2 P := hL2
+      have hd := truncate_lipschitz α₀ β₀
+      have hcontr : ∀ x : ℝ, (truncate α₀ β₀ x - truncate α₀ β₀ μ₀) ^ 2 ≤ (x - μ₀) ^ 2 := by
+        intro x
+        have h := hd x μ₀
+        nlinarith [abs_nonneg (truncate α₀ β₀ x - truncate α₀ β₀ μ₀), abs_nonneg (x - μ₀),
+          sq_abs (truncate α₀ β₀ x - truncate α₀ β₀ μ₀), sq_abs (x - μ₀)]
+      have hdint : Integrable (fun x => (truncate α₀ β₀ x - truncate α₀ β₀ μ₀) ^ 2) P := by
+        refine Integrable.mono' (integrable_const ((β₀ - α₀) ^ 2))
+          ((hφm.sub measurable_const).pow_const 2).aestronglyMeasurable
+          (Filter.Eventually.of_forall fun x => ?_)
+        rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+        have h1 := hφmem x
+        have h2 := hφmem μ₀
+        nlinarith [h1.1, h1.2, h2.1, h2.2]
+      have hsqint : Integrable (fun x : ℝ => (x - μ₀) ^ 2) P :=
+        (hL2'.sub (memLp_const μ₀)).integrable_sq
+      -- the mean minimises the second moment
+      have hexp : ∀ d : ℝ, ∫ x, (truncate α₀ β₀ x - d) ^ 2 ∂P
+          = (∫ x, (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 ∂P)
+            + ((∫ y, truncate α₀ β₀ y ∂P) - d) ^ 2 := by
+        intro d
+        have hcint : Integrable (fun x => truncate α₀ β₀ x
+            - ∫ y, truncate α₀ β₀ y ∂P) P := hφint.sub (integrable_const _)
+        have e0 : ∫ x, (truncate α₀ β₀ x - d) ^ 2 ∂P
+            = ∫ x, ((truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2
+                + (2 * ((∫ y, truncate α₀ β₀ y ∂P) - d)
+                    * (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P)
+                  + ((∫ y, truncate α₀ β₀ y ∂P) - d) ^ 2)) ∂P :=
+          integral_congr_ae (Filter.Eventually.of_forall fun x => by ring)
+        have e1 : ∫ x, ((truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2
+              + (2 * ((∫ y, truncate α₀ β₀ y ∂P) - d)
+                  * (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P)
+                + ((∫ y, truncate α₀ β₀ y ∂P) - d) ^ 2)) ∂P
+            = (∫ x, (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 ∂P)
+              + ∫ x, (2 * ((∫ y, truncate α₀ β₀ y ∂P) - d)
+                  * (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P)
+                + ((∫ y, truncate α₀ β₀ y ∂P) - d) ^ 2) ∂P :=
+          integral_add hφ2int ((hcint.const_mul _).add (integrable_const _))
+        have e2 : ∫ x, (2 * ((∫ y, truncate α₀ β₀ y ∂P) - d)
+                * (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P)
+              + ((∫ y, truncate α₀ β₀ y ∂P) - d) ^ 2) ∂P
+            = (∫ x, 2 * ((∫ y, truncate α₀ β₀ y ∂P) - d)
+                * (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ∂P)
+              + ∫ _x : ℝ, ((∫ y, truncate α₀ β₀ y ∂P) - d) ^ 2 ∂P :=
+          integral_add (hcint.const_mul _) (integrable_const _)
+        have e3 : ∫ x, 2 * ((∫ y, truncate α₀ β₀ y ∂P) - d)
+              * (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ∂P = 0 := by
+          rw [integral_const_mul, integral_sub hφint (integrable_const _), integral_const]
+          simp
+        rw [e0, e1, e2, e3, integral_const]
+        simp
+      have hmin := hexp (truncate α₀ β₀ μ₀)
+      have hle : ∫ x, (truncate α₀ β₀ x - truncate α₀ β₀ μ₀) ^ 2 ∂P ≤ σ2 := by
+        rw [← hvar]
+        exact integral_mono hdint hsqint hcontr
+      nlinarith [sq_nonneg ((∫ y, truncate α₀ β₀ y ∂P) - truncate α₀ β₀ μ₀)]
+    -- range `B ≤ 2σ√(2n/r)`
+    have hp : (0:ℝ) < (r:ℝ) / (2 * n) := by positivity
+    have hp1 : (r:ℝ) / (2 * n) < 1 := by rw [div_lt_one (by linarith)]; linarith
+    have hBle : β₀ - α₀ ≤ 2 * (Real.sqrt σ2 * Real.sqrt (2 * n / r)) := by
+      have hup := quantile_upper_le (P := P) hL2 hmean hvar hσ hp hp1
+      have hlo := le_quantile_lower (P := P) hL2 hmean hvar hσ hp hp1
+      have hsplit : Real.sqrt (σ2 / ((r:ℝ) / (2 * n)))
+          = Real.sqrt σ2 * Real.sqrt (2 * n / r) := by
+        rw [show σ2 / ((r:ℝ) / (2 * n)) = σ2 * (2 * n / r) by field_simp,
+          Real.sqrt_mul hσ.le]
+      rw [hsplit] at hup hlo
+      linarith
+    -- the ledger
+    have hprod : Real.sqrt (2 * n / r) * Real.sqrt (Real.log (8 / δ) / n)
+        = Real.sqrt (3 / 8) :=
+      sqrt_prod_ledger hN (by linarith) (by linarith)
+    have hsq38 : Real.sqrt (3 / 8) ≤ 5 / 8 := by
+      rw [show (5:ℝ) / 8 = Real.sqrt ((5 / 8) ^ 2) from (Real.sqrt_sq (by norm_num)).symm]
+      exact Real.sqrt_le_sqrt (by norm_num)
+    have hden : 2 * ((∫ x, (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 ∂P)
+        + (β₀ - α₀) / 3 * (4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)))
+        ≤ 16 * σ2 :=
+      ledger_denominator hs2 hspos (Real.sqrt_nonneg _) (Real.sqrt_nonneg _) hprod hsq38
+        hBle hBpos hvσ hv
+    have hnum : (n:ℝ) * (4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)) ^ 2
+        = 16 * σ2 * Real.log (8 / δ) :=
+      ledger_numerator hs2 (Real.mul_self_sqrt hLn.le) hN
+    have hDpos : (0:ℝ) < 2 * ((∫ x, (truncate α₀ β₀ x
+          - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 ∂P)
+        + (β₀ - α₀) / 3 * (4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n))) := by
+      have h1 : (0:ℝ) < (β₀ - α₀) / 3
+          * (4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)) :=
+        mul_pos (by linarith) htpos
+      linarith
+    have hexpbd : Real.exp (-(n:ℝ)
+          * (4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)) ^ 2
+          / (2 * ((∫ x, (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 ∂P)
+              + (β₀ - α₀) / 3 * (4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)))))
+        ≤ δ / 8 :=
+      exp_le_of_ledger hDpos hnum hden hL rfl hδ
+    -- ### Two-sided Bernstein.
+    have hupper := bounded_bernstein_upper (P := P) (g := truncate α₀ β₀)
+      (c := ∫ y, truncate α₀ β₀ y ∂P) (B := β₀ - α₀)
+      (v := ∫ x, (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 ∂P)
+      hX_meas hX_indep hX_law hφm hbd hBpos rfl rfl hv hn0 htpos
+    have hlower := bounded_bernstein_upper (P := P) (g := fun x => -truncate α₀ β₀ x)
+      (c := -∫ y, truncate α₀ β₀ y ∂P) (B := β₀ - α₀)
+      (v := ∫ x, (truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) ^ 2 ∂P)
+      hX_meas hX_indep hX_law hφm.neg
+      (fun x => by rw [show -truncate α₀ β₀ x - -∫ y, truncate α₀ β₀ y ∂P
+          = -(truncate α₀ β₀ x - ∫ y, truncate α₀ β₀ y ∂P) by ring, abs_neg]; exact hbd x)
+      hBpos (by rw [integral_neg]) (by
+        refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+        ring) hv hn0 htpos
+    have hsub : {ξ | 4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)
+          < |sampleMean (fun i => truncate α₀ β₀ (X i ξ))
+            - ∫ x, truncate α₀ β₀ x ∂P|}
+        ⊆ {ξ | 4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)
+            < (∑ i, (truncate α₀ β₀ (X i ξ) - ∫ y, truncate α₀ β₀ y ∂P)) / n}
+          ∪ {ξ | 4 * Real.sqrt σ2 * Real.sqrt (Real.log (8 / δ) / n)
+            < (∑ i, ((fun x => -truncate α₀ β₀ x) (X i ξ)
+                - -∫ y, truncate α₀ β₀ y ∂P)) / n} := by
+      intro ξ hξ
+      simp only [Set.mem_setOf_eq] at hξ
+      rw [hmeaneq ξ] at hξ
+      have hsum : (∑ i, ((fun x => -truncate α₀ β₀ x) (X i ξ)
+            - -∫ y, truncate α₀ β₀ y ∂P))
+          = -(∑ i, (truncate α₀ β₀ (X i ξ) - ∫ y, truncate α₀ β₀ y ∂P)) := by
+        rw [← Finset.sum_neg_distrib]
+        exact Finset.sum_congr rfl fun i _ => by ring
+      rcases lt_abs.1 hξ with h | h
+      · exact Or.inl h
+      · refine Or.inr ?_
+        simp only [Set.mem_setOf_eq]
+        rw [hsum, neg_div]
+        exact h
+    refine le_trans (le_trans (measure_mono hsub) (measure_union_le _ _)) ?_
+    refine le_trans (add_le_add hupper hlower) ?_
+    rw [← ENNReal.ofReal_add (Real.exp_pos _).le (Real.exp_pos _).le]
+    refine ENNReal.ofReal_le_ofReal ?_
+    linarith
+
 open StatLean.MultipleTesting in
 /-- **The trimmed mean is sub-Gaussian** (`LM Theorem 6`): two independent i.i.d.
 samples of size `n` (presented as one jointly independent family on `Fin n ⊕ Fin n`;
